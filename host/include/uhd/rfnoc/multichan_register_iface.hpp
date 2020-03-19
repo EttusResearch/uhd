@@ -1,12 +1,14 @@
 //
-// Copyright 2019 Ettus Research, a National Instruments Brand
+// Copyright 2020 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_RFNOC_REGISTER_IFACE_HPP
-#define INCLUDED_LIBUHD_RFNOC_REGISTER_IFACE_HPP
+#ifndef INCLUDED_LIBUHD_RFNOC_MULTICHAN_REGISTER_IFACE_HPP
+#define INCLUDED_LIBUHD_RFNOC_MULTICHAN_REGISTER_IFACE_HPP
 
+#include <uhd/rfnoc/register_iface.hpp>
+#include <uhd/rfnoc/register_iface_holder.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/time_spec.hpp>
 #include <cstdint>
@@ -16,50 +18,37 @@
 
 namespace uhd { namespace rfnoc {
 
-/*!  A software interface to access low-level registers in a NoC block.
+/*!  A software interface to access low-level registers in a NoC block, which
+ * automatically handles address translation between multiple consecutive
+ * instances of the block. (For instance, accessing registers from multiple
+ * channels in hardware).
  *
  * This interface supports the following:
  * - Writing and reading registers
  * - Hardware timed delays (for time sequencing operations)
- * - Asynchronous messages (where a block requests a "register write" in software)
  *
- * This class has no public factory function or constructor.
  */
-class register_iface
+class multichan_register_iface
 {
 public:
-    using sptr = std::shared_ptr<register_iface>;
+    using sptr = std::shared_ptr<multichan_register_iface>;
 
-    virtual ~register_iface() = default;
+    multichan_register_iface(register_iface_holder& reg_iface_holder,
+        const uint32_t block_base_addr,
+        const size_t block_size)
+        : _reg_iface_holder(reg_iface_holder)
+        , _block_base_addr(block_base_addr)
+        , _block_size(block_size)
+    {
+    }
 
-    /*! Callback function for validating an asynchronous message.
-     *
-     *  When a block in the FPGA sends an asynchronous message to the software,
-     *  the async message validator function is called. An async message can be
-     *  modelled as a simple register write (key-value pair with addr/data) that
-     *  is initiated by the FPGA.
-     *  If this message returns true, the message is considered valid.
-     */
-    using async_msg_validator_t =
-        std::function<bool(uint32_t addr, const std::vector<uint32_t>& data)>;
-
-    /*! Callback function for acting upon an asynchronous message.
-     *
-     *  When a block in the FPGA sends an asynchronous message to the software,
-     *  and it has been validated, the async message callback function is called.
-     *  An async message can be modelled as a simple register write (key-value
-     *  pair with addr/data) that is initiated by the FPGA.
-     *
-     *  When this message is called, the async message was previously verified
-     *  by calling the async message validator callback.
-     */
-    using async_msg_callback_t = std::function<void(
-        uint32_t addr, const std::vector<uint32_t>& data, boost::optional<uint64_t>)>;
+    ~multichan_register_iface() = default;
 
     /*! Write a 32-bit register implemented in the NoC block.
      *
      * \param addr The byte address of the register to write to (truncated to 20 bits).
      * \param data New value of this register.
+     * \param instance The index of the block of registers to which the write applies
      * \param time The time at which the transaction should be executed.
      * \param ack Should transaction completion be acknowledged?
      *
@@ -68,10 +57,14 @@ public:
      * \throws op_seqerr if an ACK is requested and a sequence error occurs
      * \throws op_timeerr if an ACK is requested and a time error occurs (late command)
      */
-    virtual void poke32(uint32_t addr,
+    inline void poke32(uint32_t addr,
         uint32_t data,
+        const size_t instance = 0,
         uhd::time_spec_t time = uhd::time_spec_t::ASAP,
-        bool ack              = false) = 0;
+        bool ack              = false)
+    {
+        _reg_iface_holder.regs().poke32(_get_addr(addr, instance), data, time, ack);
+    }
 
     /*! Write two consecutive 32-bit registers implemented in the NoC block from
      * one 64-bit value.
@@ -83,6 +76,7 @@ public:
      * \param addr The byte address of the lower 32-bit register to read from
      *             (truncated to 20 bits).
      * \param data New value of the register(s).
+     * \param instance The index of the block of registers to which the writes apply.
      * \param time The time at which the transaction should be executed.
      * \param ack Should transaction completion be acknowledged?
      *
@@ -90,15 +84,13 @@ public:
      * \throws op_timeout if no response is received
      * \throws op_seqerr if a sequence error occurs
      */
-    void poke64(uint32_t addr,
+    inline void poke64(uint32_t addr,
         uint64_t data,
-        time_spec_t time = uhd::time_spec_t::ASAP,
-        bool ack         = false)
+        const size_t instance = 0,
+        time_spec_t time      = uhd::time_spec_t::ASAP,
+        bool ack              = false)
     {
-        block_poke32(addr,
-            {uint32_t(data & 0xFFFFFFFF), uint32_t((data >> 32) & 0xFFFFFFFF)},
-            time,
-            ack);
+        _reg_iface_holder.regs().poke64(_get_addr(addr, instance), data, time, ack);
     }
 
     /*! Write multiple 32-bit registers implemented in the NoC block.
@@ -110,19 +102,30 @@ public:
      *              (each truncated to 20 bits).
      * \param data New values of these registers. The lengths of data and addr
      *             must match.
+     * \param instance The index of the block of registers to which the writes apply.
      * \param time The time at which the first transaction should be executed.
      * \param ack Should transaction completion be acknowledged?
-     *
+
      * \throws uhd::value_error if lengths of data and addr don't match
      * \throws op_failed if an ACK is requested and the transaction fails
      * \throws op_timeout if an ACK is requested and no response is received
      * \throws op_seqerr if an ACK is requested and a sequence error occurs
      * \throws op_timeerr if an ACK is requested and a time error occurs (late command)
      */
-    virtual void multi_poke32(const std::vector<uint32_t> addrs,
+    inline void multi_poke32(const std::vector<uint32_t> addrs,
         const std::vector<uint32_t> data,
+        const size_t instance = 0,
         uhd::time_spec_t time = uhd::time_spec_t::ASAP,
-        bool ack              = false) = 0;
+        bool ack              = false)
+    {
+        std::vector<uint32_t> abs_addrs(addrs.size());
+        std::transform(addrs.begin(),
+            addrs.end(),
+            abs_addrs.begin(),
+            [this, instance](
+                uint32_t addr) -> uint32_t { return _get_addr(addr, instance); });
+        _reg_iface_holder.regs().multi_poke32(abs_addrs, data, time, ack);
+    }
 
     /*! Write multiple consecutive 32-bit registers implemented in the NoC block.
      *
@@ -136,6 +139,7 @@ public:
      *
      * \param first_addr The byte addresses of the first register to write
      * \param data New values of these registers
+     * \param instance The index of the block of registers to which the writes apply.
      * \param time The time at which the first transaction should be executed.
      * \param ack Should transaction completion be acknowledged?
      *
@@ -144,21 +148,32 @@ public:
      * \throws op_seqerr if an ACK is requested and a sequence error occurs
      * \throws op_timeerr if an ACK is requested and a time error occurs (late command)
      */
-    virtual void block_poke32(uint32_t first_addr,
+    inline void block_poke32(uint32_t first_addr,
         const std::vector<uint32_t> data,
+        const size_t instance = 0,
         uhd::time_spec_t time = uhd::time_spec_t::ASAP,
-        bool ack              = false) = 0;
+        bool ack              = false)
+    {
+        _reg_iface_holder.regs().block_poke32(
+            _get_addr(first_addr, instance), data, time, ack);
+    }
 
     /*! Read a 32-bit register implemented in the NoC block.
      *
      * \param addr The byte address of the register to read from (truncated to 20 bits).
+     * \param instance The index of the block of registers to which the read applies.
      * \param time The time at which the transaction should be executed.
      *
      * \throws op_failed if the transaction fails
      * \throws op_timeout if no response is received
      * \throws op_seqerr if a sequence error occurs
      */
-    virtual uint32_t peek32(uint32_t addr, time_spec_t time = uhd::time_spec_t::ASAP) = 0;
+    inline uint32_t peek32(uint32_t addr,
+        const size_t instance = 0,
+        time_spec_t time      = uhd::time_spec_t::ASAP)
+    {
+        return _reg_iface_holder.regs().peek32(_get_addr(addr, instance), time);
+    }
 
     /*! Read two consecutive 32-bit registers implemented in the NoC block
      * and return them as one 64-bit value.
@@ -169,16 +184,18 @@ public:
      *
      * \param addr The byte address of the lower 32-bit register to read from
      *             (truncated to 20 bits).
+     * \param instance The index of the block of registers to which the reads apply.
      * \param time The time at which the transaction should be executed.
      *
      * \throws op_failed if the transaction fails
      * \throws op_timeout if no response is received
      * \throws op_seqerr if a sequence error occurs
      */
-    uint64_t peek64(uint32_t addr, time_spec_t time = uhd::time_spec_t::ASAP)
+    inline uint64_t peek64(uint32_t addr,
+        const size_t instance = 0,
+        time_spec_t time      = uhd::time_spec_t::ASAP)
     {
-        const auto vals = block_peek32(addr, 2, time);
-        return uint64_t(vals[0]) | (uint64_t(vals[1]) << 32);
+        return _reg_iface_holder.regs().peek64(_get_addr(addr, instance), time);
     }
 
     /*! Read multiple 32-bit consecutive registers implemented in the NoC block.
@@ -186,6 +203,7 @@ public:
      * \param first_addr The byte address of the first register to read from
      *                   (truncated to 20 bits).
      * \param length The number of 32-bit values to read
+     * \param instance The index of the block of registers to which the reads apply.
      * \param time The time at which the transaction should be executed.
      * \return data New value of this register.
      *
@@ -200,9 +218,14 @@ public:
      * \throws op_timeout if no response is received
      * \throws op_seqerr if a sequence error occurs
      */
-    virtual std::vector<uint32_t> block_peek32(uint32_t first_addr,
+    inline std::vector<uint32_t> block_peek32(uint32_t first_addr,
         size_t length,
-        time_spec_t time = uhd::time_spec_t::ASAP) = 0;
+        const size_t instance = 0,
+        time_spec_t time      = uhd::time_spec_t::ASAP)
+    {
+        return _reg_iface_holder.regs().block_peek32(
+            _get_addr(first_addr, instance), length, time);
+    }
 
     /*! Poll a 32-bit register until its value for all bits in mask match data&mask
      *
@@ -221,7 +244,7 @@ public:
      * call would be thus:
      *
      * ~~~{.cpp}
-     * // iface is a register_iface::sptr:
+     * // iface is a multichan_register_iface::sptr:
      * iface->poll32(16, 0x1, 0x3, 1e-3);
      * ~~~
      *
@@ -231,6 +254,7 @@ public:
      *             value
      * \param timeout The max duration that the register is allowed to take
      *                before reaching its new state.
+     * \param instance The index of the block of registers to which the poll applies.
      * \param time When the poll should be executed
      * \param ack Should transaction completion be acknowledged? This is
      *            typically only necessary if the software needs a condition to
@@ -241,81 +265,30 @@ public:
      * \throws op_seqerr if an ACK is requested and a sequence error occurs
      * \throws op_timeerr if an ACK is requested and a time error occurs (late command)
      */
-    virtual void poll32(uint32_t addr,
+    inline void poll32(uint32_t addr,
         uint32_t data,
         uint32_t mask,
         time_spec_t timeout,
-        time_spec_t time = uhd::time_spec_t::ASAP,
-        bool ack         = false) = 0;
+        const size_t instance = 0,
+        time_spec_t time      = uhd::time_spec_t::ASAP,
+        bool ack              = false)
+    {
+        _reg_iface_holder.regs().poll32(
+            _get_addr(addr, instance), data, mask, timeout, time, ack);
+    }
 
+private:
+    register_iface_holder& _reg_iface_holder;
+    uint32_t _block_base_addr;
+    size_t _block_size;
 
-    /*! Send a command to halt (block) the control bus for a specified time.
-     * This is a hardware-timed sleep.
-     *
-     * \param duration The amount of time to sleep.
-     * \param ack Should transaction completion be acknowledged?
-     *
-     * \throws op_failed if an ACK is requested and the transaction fails
-     * \throws op_timeout if an ACK is requested and no response is received
-     * \throws op_seqerr if an ACK is requested and a sequence error occurs
-     */
-    virtual void sleep(time_spec_t duration, bool ack = false) = 0;
+    inline uint32_t _get_addr(const uint32_t reg_offset, const size_t instance) const
+    {
+        return _block_base_addr + reg_offset + _block_size * instance;
+    }
 
-    /*! Register a callback function to validate a received async message
-     *
-     * The purpose of this callback is to provide a method to the framework to
-     * make sure a received async message is valid. If this callback is
-     * provided, the framework will first pass the message to the validator for
-     * validation. If the validator returns true, the async message is ACK'd
-     * with a ctrl_status_t::CMD_OKAY response, and then the async message is
-     * executed. If the validator returns false, then the async message is ACK'd
-     * with a ctrl_status_t::CMD_CMDERR, and the async message handler is not
-     * excecuted.
-     *
-     * This callback may not communicate with the device, it can only look at
-     * the data and make a valid/not valid decision.
-     *
-     * Only one callback function can be registered. When calling this multiple
-     * times, only the last callback will be accepted.
-     *
-     * \param callback_f The function to call when an asynchronous message is received.
-     */
-    virtual void register_async_msg_validator(async_msg_validator_t callback_f) = 0;
-
-    /*! Register a callback function for when an async message is received
-     *
-     * Only one callback function can be registered. When calling this multiple
-     * times, only the last callback will be accepted.
-     *
-     * \param callback_f The function to call when an asynchronous message is received.
-     */
-    virtual void register_async_msg_handler(async_msg_callback_t callback_f) = 0;
-
-    /*! Set a policy that governs the operational parameters of this register bus.
-     *  Policies can be used to make tradeoffs between performance, resilience, latency,
-     *  etc.
-     *
-     * \param name The name of the policy to apply
-     * \param args Additional arguments to pass to the policy governor
-     */
-    virtual void set_policy(const std::string& name, const uhd::device_addr_t& args) = 0;
-
-    /*! Get the endpoint ID of the software counterpart of this register interface.
-     *  This information is useful to send async messages to the host.
-     *
-     * \return The 16-bit endpoint ID
-     */
-    virtual uint16_t get_src_epid() const = 0;
-
-    /*! Get the port number of the software counterpart of this register interface.
-     *  This information is useful to send async messages to the host.
-     *
-     * \return The 10-bit port number
-     */
-    virtual uint16_t get_port_num() const = 0;
-
-}; // class register_iface
+}; // class multichan_register_iface
 
 }} /* namespace uhd::rfnoc */
 
-#endif /* INCLUDED_LIBUHD_RFNOC_REGISTER_IFACE_HPP */
+#endif /* INCLUDED_LIBUHD_RFNOC_MULTICHAN_REGISTER_IFACE_HPP */

@@ -59,6 +59,7 @@ set(test_sources
     tx_streamer_test.cpp
     block_id_test.cpp
     rfnoc_property_test.cpp
+    multichan_register_iface_test.cpp
 )
 
 #turn each test cpp file into an executable with an int main() function
