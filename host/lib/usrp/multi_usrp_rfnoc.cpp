@@ -303,10 +303,11 @@ public:
             const double chan_rate =
                 _rx_rates.count(rx_channel) ? _rx_rates.at(rx_channel) : 1.0;
             if (chan_rate > 1.0 && rate != chan_rate) {
-                UHD_LOG_DEBUG("MULTI_USRP",
-                    "Inconsistent RX rates when creating streamer! Harmonizing "
-                    "to "
-                        << chan_rate);
+                if (rate > 1.0) {
+                    UHD_LOG_DEBUG("MULTI_USRP",
+                        "Inconsistent RX rates when creating streamer! "
+                        "Harmonizing to " << chan_rate);
+                }
                 rate = chan_rate;
             }
         }
@@ -609,13 +610,13 @@ public:
         for (auto& chain : _rx_chans) {
             auto radio = chain.second.radio;
             if (radio->get_block_id().get_device_no() == mboard) {
-                return radio->get_rate();
+                return radio->get_tick_rate();
             }
         }
         for (auto& chain : _tx_chans) {
             auto radio = chain.second.radio;
             if (radio->get_block_id().get_device_no() == mboard) {
-                return radio->get_rate();
+                return radio->get_tick_rate();
             }
         }
         throw uhd::key_error("Invalid mboard index!");
