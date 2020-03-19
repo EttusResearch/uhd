@@ -1,6 +1,7 @@
 //
 // Copyright 2015 Ettus Research LLC
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2020 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -27,7 +28,7 @@ module rx_frontend_gen3 #(
   wire               swap_iq;
   wire               invert_i;
   wire               invert_q;
-  wire               realmode_decim;
+  wire               downconvert;
   wire               bypass_all;
   wire [1:0]         iq_map_reserved;
   wire [17:0]        mag_corr, phase_corr;
@@ -37,12 +38,10 @@ module rx_frontend_gen3 #(
   reg  [23:0]        adc_i_mux, adc_q_mux;
   reg                adc_mux_stb;
   wire [23:0]        adc_i_ofs, adc_q_ofs, adc_i_comp, adc_q_comp;
-  reg  [23:0]        adc_i_ofs_dly, adc_q_ofs_dly;
   wire               adc_ofs_stb, adc_comp_stb;
   reg  [1:0]         adc_ofs_stb_dly;
   wire [23:0]        adc_i_dsp, adc_q_dsp;
   wire               adc_dsp_stb;
-  wire [35:0]        corr_i, corr_q;
   wire [15:0]        rx_i_out, rx_q_out;
 
   /********************************************************
@@ -58,7 +57,9 @@ module rx_frontend_gen3 #(
 
   setting_reg #(.my_addr(SR_IQ_MAPPING), .width(8)) sr_mux_sel (
     .clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
-    .in(set_data),.out({bypass_all,iq_map_reserved,realmode_decim,invert_i,invert_q,realmode,swap_iq}),.changed());
+    .in(set_data),
+    .out({bypass_all,iq_map_reserved,downconvert,invert_i,invert_q,realmode,swap_iq}),
+    .changed());
 
   // Setting reg: 1 bit to set phase direction: default to 0:
   //   direction bit == 0: the phase is increased by pi/2 (counter clockwise)
@@ -179,17 +180,9 @@ module rx_frontend_gen3 #(
     if (BYPASS_REALMODE_DSP == 0) begin
 
       wire [24:0] adc_i_dsp_cout, adc_q_dsp_cout;
-      wire [23:0] adc_i_cclip, adc_q_cclip;
-      wire [23:0] adc_i_hb, adc_q_hb;
-      wire [23:0] adc_i_dec, adc_q_dec;
+      wire [23:0] adc_i_filt, adc_q_filt;
       wire        adc_dsp_cout_stb;
-      wire        adc_cclip_stb;
-      wire        adc_hb_stb;
-
-      wire valid_hbf0;
-      wire valid_hbf1;
-      wire valid_dec0;
-      wire valid_dec1;
+      wire        adc_filt_stb;
 
       // 90 degree mixer
       quarter_rate_downconverter #(.WIDTH(24)) qr_dc_i(
@@ -204,28 +197,51 @@ module rx_frontend_gen3 #(
         18'd0, -18'd26536, 18'd0, 18'd14632, 18'd0, -18'd9187, 18'd0, 18'd5990, 18'd0, -18'd3900, 18'd0, 18'd2478, 18'd0, -18'd1505,
         18'd0, 18'd855, 18'd0, -18'd440, 18'd0, 18'd194, 18'd0, -18'd62};
 
-      axi_fir_filter_dec #(
-          .WIDTH(24),
-          .COEFF_WIDTH(18),
-          .NUM_COEFFS(47),
-          .COEFFS_VEC(HB_COEFS),
-          .BLANK_OUTPUT(0)
-        ) ffd0 (
-        .clk(clk), .reset(reset || sync_in),
+      // FIR filter for real part
+      axi_fir_filter #(.IN_WIDTH(24), .COEFF_WIDTH(18), .OUT_WIDTH(24), .NUM_COEFFS(47), .COEFFS_VEC(HB_COEFS),
+        .RELOADABLE_COEFFS(0), .BLANK_OUTPUT(0), .SYMMETRIC_COEFFS(1), .SKIP_ZERO_COEFFS(1), .USE_EMBEDDED_REGS_COEFFS(0)
+      ) hbfir0(
+        .clk(clk),
+        .reset(reset),
+        .clear(reset),
+        .s_axis_data_tdata(adc_i_dsp_cout),
+        .s_axis_data_tlast(1'b1),
+        .s_axis_data_tvalid(adc_dsp_cout_stb),
+        .s_axis_data_tready(),
+        .m_axis_data_tdata(adc_i_filt),
+        .m_axis_data_tlast(),
+        .m_axis_data_tvalid(adc_filt_stb),
+        .m_axis_data_tready(1'b1),
+        .s_axis_reload_tdata(18'd0),
+        .s_axis_reload_tvalid(1'b0),
+        .s_axis_reload_tlast(1'b0),
+        .s_axis_reload_tready()
+      );
 
-        .i_tdata({adc_i_dsp_cout, adc_q_dsp_cout}),
-        .i_tlast(1'b1),
-        .i_tvalid(adc_dsp_cout_stb),
-        .i_tready(),
+      // FIR filter for imag. part
+      axi_fir_filter #(.IN_WIDTH(24), .COEFF_WIDTH(18), .OUT_WIDTH(24), .NUM_COEFFS(47), .COEFFS_VEC(HB_COEFS),
+        .RELOADABLE_COEFFS(0), .BLANK_OUTPUT(0), .SYMMETRIC_COEFFS(1), .SKIP_ZERO_COEFFS(1), .USE_EMBEDDED_REGS_COEFFS(0)
+      ) hbfir1(
+        .clk(clk),
+        .reset(reset),
+        .clear(reset),
+        .s_axis_data_tdata(adc_q_dsp_cout),
+        .s_axis_data_tlast(1'b1),
+        .s_axis_data_tvalid(adc_dsp_cout_stb),
+        .s_axis_data_tready(),
+        .m_axis_data_tdata(adc_q_filt),
+        .m_axis_data_tlast(),
+        .m_axis_data_tvalid(),
+        .m_axis_data_tready(1'b1),
+        .s_axis_reload_tdata(18'd0),
+        .s_axis_reload_tvalid(1'b0),
+        .s_axis_reload_tlast(1'b0),
+        .s_axis_reload_tready()
+      );
 
-        .o_tdata({adc_i_dec, adc_q_dec}),
-        .o_tlast(),
-        .o_tvalid(adc_hb_stb),
-        .o_tready(1'b1));
-
-      assign adc_dsp_stb = realmode_decim ? adc_hb_stb : adc_comp_stb;
-      assign adc_i_dsp   = realmode_decim ? adc_i_dec : adc_i_comp;
-      assign adc_q_dsp   = realmode_decim ? adc_q_dec : adc_q_comp;
+      assign adc_dsp_stb = downconvert ? adc_filt_stb : adc_comp_stb;
+      assign adc_i_dsp   = downconvert ? adc_i_filt : adc_i_comp;
+      assign adc_q_dsp   = downconvert ? adc_q_filt : adc_q_comp;
 
     end else begin
       assign adc_dsp_stb = adc_comp_stb;

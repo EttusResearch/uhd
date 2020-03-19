@@ -1582,10 +1582,7 @@ private:
             tx_chan++;
         }
         UHD_ASSERT_THROW(rx_chan or tx_chan);
-        const double actual_rate = rx_chan ? _rx_fe_map.at(0).core->get_output_rate()
-                                           : get_rate();
-        RFNOC_LOG_DEBUG("Actual sample rate: " << (actual_rate / 1e6) << " Msps.");
-        radio_control_impl::set_rate(actual_rate);
+        RFNOC_LOG_DEBUG("Actual sample rate: " << (get_rate() / 1e6) << " Msps.");
 
         // Initialize the daughterboards now that frontend cores and connections exist
         _db_manager->initialize_dboards();

@@ -23,11 +23,11 @@ using namespace uhd;
 #define REG_RX_FE_MAPPING (base + reg_offset * 4)
 #define REG_RX_FE_HET_CORDIC_PHASE (base + reg_offset * 5)
 
-#define FLAG_DSP_RX_MAPPING_SWAP_IQ (1 << 0)
-#define FLAG_DSP_RX_MAPPING_REAL_MODE (1 << 1)
-#define FLAG_DSP_RX_MAPPING_INVERT_Q (1 << 2)
-#define FLAG_DSP_RX_MAPPING_INVERT_I (1 << 3)
-#define FLAG_DSP_RX_MAPPING_REAL_DECIM (1 << 4)
+#define FLAG_DSP_RX_MAPPING_SWAP_IQ     (1 << 0)
+#define FLAG_DSP_RX_MAPPING_REAL_MODE   (1 << 1)
+#define FLAG_DSP_RX_MAPPING_INVERT_Q    (1 << 2)
+#define FLAG_DSP_RX_MAPPING_INVERT_I    (1 << 3)
+#define FLAG_DSP_RX_MAPPING_DOWNCONVERT (1 << 4)
 //#define FLAG_DSP_RX_MAPPING_RESERVED    (1 << 5)
 //#define FLAG_DSP_RX_MAPPING_RESERVED    (1 << 6)
 #define FLAG_DSP_RX_MAPPING_BYPASS_ALL (1 << 7)
@@ -102,7 +102,7 @@ public:
                 break;
             case fe_connection_t::HETERODYNE:
                 mapping_reg_val = FLAG_DSP_RX_MAPPING_REAL_MODE
-                                  | FLAG_DSP_RX_MAPPING_REAL_DECIM;
+                                  | FLAG_DSP_RX_MAPPING_DOWNCONVERT;
                 break;
             default:
                 mapping_reg_val = 0;
@@ -187,18 +187,6 @@ public:
             .set(DEFAULT_IQ_BALANCE_VALUE)
             .add_coerced_subscriber(std::bind(
                 &rx_frontend_core_3000::set_iq_balance, this, std::placeholders::_1));
-    }
-
-    double get_output_rate()
-    {
-        switch (_fe_conn.get_sampling_mode()) {
-            case fe_connection_t::REAL:
-                return _adc_rate;
-            case fe_connection_t::HETERODYNE:
-                return _adc_rate / 2;
-            default:
-                return _adc_rate;
-        }
     }
 
 private:

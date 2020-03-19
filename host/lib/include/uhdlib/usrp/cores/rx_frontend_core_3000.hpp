@@ -45,13 +45,4 @@ public:
     virtual void set_iq_balance(const std::complex<double>& cor) = 0;
 
     virtual void populate_subtree(uhd::property_tree::sptr subtree) = 0;
-
-    /*! Return the sampling rate at the output
-     *
-     * In real mode, the frontend core will decimate the sampling rate by a
-     * factor of 2.
-     *
-     * \returns RX sampling rate
-     */
-    virtual double get_output_rate(void) = 0;
 };
