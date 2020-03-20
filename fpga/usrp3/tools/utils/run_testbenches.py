@@ -133,20 +133,20 @@ def parse_output(simout):
     # test executors.
     tb_match_fmt0 = ([
         b'.*TESTBENCH FINISHED: (.+)\n',
-        b' - Time elapsed:   (.+) ns.*\n',
-        b' - Tests Expected: (.+)\n',
-        b' - Tests Run:      (.+)\n',
-        b' - Tests Passed:   (.+)\n',
-        b'Result: (PASSED|FAILED).*',
+        b'(?:# )? - Time elapsed:   (.+) ns.*\n',
+        b'(?:# )? - Tests Expected: (.+)\n',
+        b'(?:# )? - Tests Run:      (.+)\n',
+        b'(?:# )? - Tests Passed:   (.+)\n',
+        b'(?:# )?Result: (PASSED|FAILED).*',
     ])
     m_fmt0 = re.match(b''.join(tb_match_fmt0), simout, re.DOTALL)
     tb_match_fmt1 = ([
         b'.*TESTBENCH FINISHED: (.*)\n',
-        b' - Time elapsed:  (.+) ns.*\n',
-        b' - Tests Run:     (.+)\n',
-        b' - Tests Passed:  (.+)\n',
-        b' - Tests Failed:  (.+)\n',
-        b'Result: (PASSED|FAILED).*',
+        b'(?:# )? - Time elapsed:  (.+) ns.*\n',
+        b'(?:# )? - Tests Run:     (.+)\n',
+        b'(?:# )? - Tests Passed:  (.+)\n',
+        b'(?:# )? - Tests Failed:  (.+)\n',
+        b'(?:# )?Result: (PASSED|FAILED).*',
     ])
     m_fmt1 = re.match(b''.join(tb_match_fmt1), simout, re.DOTALL)
 
@@ -368,7 +368,7 @@ def do_report(args):
 def get_options():
     parser = argparse.ArgumentParser(description='Batch testbench execution script')
     parser.add_argument('-d', '--basedir', default=BASE_DIR, help='Base directory for the usrp3 codebase')
-    parser.add_argument('-s', '--simulator', choices=['xsim', 'vsim'], default='xsim', help='Simulator name')
+    parser.add_argument('-s', '--simulator', choices=['xsim', 'vsim', 'modelsim'], default='xsim', help='Simulator name')
     parser.add_argument('-e', '--setupenv', default=None, help='Optional environment setup script to run for each TB')
     parser.add_argument('-r', '--report', default='testbench_report.csv', help='Name of the output report file')
     parser.add_argument('-x', '--excludes', default=None, help='Name of the excludes file. It contains all targets to exlude.')
