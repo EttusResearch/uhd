@@ -6,6 +6,8 @@
 
 #include <uhd/exception.hpp>
 #include <uhd/rfnoc/mb_controller.hpp>
+#include <uhd/rfnoc/multichan_register_iface.hpp>
+#include <uhd/rfnoc/register_iface.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/radio_control_impl.hpp>
 #include <uhdlib/utils/compat_check.hpp>
@@ -15,12 +17,6 @@
 using namespace uhd::rfnoc;
 
 namespace {
-
-inline uint32_t get_addr(const uint32_t base_addr, const size_t chan)
-{
-    return radio_control_impl::regmap::RADIO_BASE_ADDR + base_addr
-           + radio_control_impl::regmap::REG_CHAN_OFFSET * chan;
-}
 
 const std::string DEFAULT_GAIN_PROFILE("default");
 
@@ -77,6 +73,9 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
     , _spc(_radio_width & 0xFFFF)
     , _last_stream_cmd(
           get_num_output_ports(), uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS)
+    , _radio_reg_iface(*this,
+          radio_control_impl::regmap::RADIO_BASE_ADDR,
+          radio_control_impl::regmap::REG_CHAN_OFFSET)
 {
     uhd::assert_fpga_compat(MAJOR_COMPAT,
         MINOR_COMPAT,
@@ -156,8 +155,8 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
             const uint32_t words_per_pkt = spp.get();
             RFNOC_LOG_TRACE(
                 "Setting words_per_pkt to " << words_per_pkt << " on chan " << chan);
-            regs().poke32(
-                get_addr(regmap::REG_RX_MAX_WORDS_PER_PKT, chan), words_per_pkt);
+            _radio_reg_iface.poke32(
+                regmap::REG_RX_MAX_WORDS_PER_PKT, words_per_pkt, chan);
         });
         register_property(&_samp_rate_in.back());
         register_property(&_samp_rate_out.back());
@@ -220,28 +219,30 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
     for (size_t tx_chan = 0; tx_chan < get_num_output_ports(); tx_chan++) {
         // Set the EPID and port of our regs() object (all async messages go to
         // the same location)
-        regs().poke32(
-            get_addr(regmap::REG_TX_ERR_REM_EPID, tx_chan), regs().get_src_epid());
-        regs().poke32(
-            get_addr(regmap::REG_TX_ERR_REM_PORT, tx_chan), regs().get_port_num());
+        _radio_reg_iface.poke32(
+            regmap::REG_TX_ERR_REM_EPID, regs().get_src_epid(), tx_chan);
+        _radio_reg_iface.poke32(
+            regmap::REG_TX_ERR_REM_PORT, regs().get_port_num(), tx_chan);
         // Set the crossbar port for the async packet routing
-        regs().poke32(get_addr(regmap::REG_TX_ERR_PORT, tx_chan), xbar_port);
+        _radio_reg_iface.poke32(regmap::REG_TX_ERR_PORT, xbar_port, tx_chan);
         // Set the async message address
-        regs().poke32(get_addr(regmap::REG_TX_ERR_ADDR, tx_chan),
-            regmap::SWREG_TX_ERR + regmap::SWREG_CHAN_OFFSET * tx_chan);
+        _radio_reg_iface.poke32(regmap::REG_TX_ERR_ADDR,
+            regmap::SWREG_TX_ERR + regmap::SWREG_CHAN_OFFSET * tx_chan,
+            tx_chan);
     }
     for (size_t rx_chan = 0; rx_chan < get_num_input_ports(); rx_chan++) {
         // Set the EPID and port of our regs() object (all async messages go to
         // the same location)
-        regs().poke32(
-            get_addr(regmap::REG_RX_ERR_REM_EPID, rx_chan), regs().get_src_epid());
-        regs().poke32(
-            get_addr(regmap::REG_RX_ERR_REM_PORT, rx_chan), regs().get_port_num());
+        _radio_reg_iface.poke32(
+            regmap::REG_RX_ERR_REM_EPID, regs().get_src_epid(), rx_chan);
+        _radio_reg_iface.poke32(
+            regmap::REG_RX_ERR_REM_PORT, regs().get_port_num(), rx_chan);
         // Set the crossbar port for the async packet routing
-        regs().poke32(get_addr(regmap::REG_RX_ERR_PORT, rx_chan), xbar_port);
+        _radio_reg_iface.poke32(regmap::REG_RX_ERR_PORT, xbar_port, rx_chan);
         // Set the async message address
-        regs().poke32(get_addr(regmap::REG_RX_ERR_ADDR, rx_chan),
-            regmap::SWREG_RX_ERR + regmap::SWREG_CHAN_OFFSET * rx_chan);
+        _radio_reg_iface.poke32(regmap::REG_RX_ERR_ADDR,
+            regmap::SWREG_RX_ERR + regmap::SWREG_CHAN_OFFSET * rx_chan,
+            rx_chan);
     }
     // Now register a function to receive the async messages
     regs().register_async_msg_validator(
@@ -827,22 +828,22 @@ void radio_control_impl::issue_stream_cmd(
                 "requested fewer samples.");
             throw uhd::value_error("Requested too many samples in a single burst.");
         }
-        regs().poke32(
-            get_addr(regmap::REG_RX_CMD_NUM_WORDS_HI, chan), uint32_t(num_words >> 32));
-        regs().poke32(get_addr(regmap::REG_RX_CMD_NUM_WORDS_LO, chan),
-            uint32_t(num_words & 0xFFFFFFFF));
+        _radio_reg_iface.poke32(
+            regmap::REG_RX_CMD_NUM_WORDS_HI, uint32_t(num_words >> 32), chan);
+        _radio_reg_iface.poke32(
+            regmap::REG_RX_CMD_NUM_WORDS_LO, uint32_t(num_words & 0xFFFFFFFF), chan);
     }
     if (!stream_cmd.stream_now) {
         const uint64_t ticks = stream_cmd.time_spec.to_ticks(get_tick_rate());
-        regs().poke32(get_addr(regmap::REG_RX_CMD_TIME_HI, chan), uint32_t(ticks >> 32));
-        regs().poke32(get_addr(regmap::REG_RX_CMD_TIME_LO, chan), uint32_t(ticks >> 0));
+        _radio_reg_iface.poke32(regmap::REG_RX_CMD_TIME_HI, uint32_t(ticks >> 32), chan);
+        _radio_reg_iface.poke32(regmap::REG_RX_CMD_TIME_LO, uint32_t(ticks >> 0), chan);
     }
-    regs().poke32(get_addr(regmap::REG_RX_CMD, chan), cmd_word);
+    _radio_reg_iface.poke32(regmap::REG_RX_CMD, cmd_word, chan);
 }
 
 void radio_control_impl::enable_rx_timestamps(const bool enable, const size_t chan)
 {
-    regs().poke32(get_addr(regmap::REG_RX_HAS_TIME, chan), enable ? 0x1 : 0x0);
+    _radio_reg_iface.poke32(regmap::REG_RX_HAS_TIME, enable ? 0x1 : 0x0, chan);
 }
 
 /******************************************************************************

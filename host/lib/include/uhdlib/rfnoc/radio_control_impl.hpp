@@ -5,6 +5,7 @@
 //
 
 #include <uhd/rfnoc/defaults.hpp>
+#include <uhd/rfnoc/multichan_register_iface.hpp>
 #include <uhd/rfnoc/radio_control.hpp>
 #include <unordered_map>
 #include <mutex>
@@ -295,6 +296,9 @@ protected:
     std::vector<property_t<double>> _samp_rate_in;
     //! Properties for samp_rate (one per port)
     std::vector<property_t<double>> _samp_rate_out;
+
+    //! Block-specific register interface
+    multichan_register_iface _radio_reg_iface;
 
 private:
     //! Validator for the async messages

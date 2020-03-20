@@ -7,6 +7,7 @@
 #include <uhd/exception.hpp>
 #include <uhd/rfnoc/ddc_block_control.hpp>
 #include <uhd/rfnoc/defaults.hpp>
+#include <uhd/rfnoc/multichan_register_iface.hpp>
 #include <uhd/rfnoc/property.hpp>
 #include <uhd/rfnoc/registry.hpp>
 #include <uhd/types/ranges.hpp>
@@ -56,7 +57,8 @@ public:
     , _fpga_compat(regs().peek32(RB_COMPAT_NUM)),
         _num_halfbands(regs().peek32(RB_NUM_HB)),
         _cic_max_decim(regs().peek32(RB_CIC_MAX_DECIM)),
-        _residual_scaling(get_num_input_ports(), DEFAULT_SCALING)
+        _residual_scaling(get_num_input_ports(), DEFAULT_SCALING),
+        _ddc_reg_iface(*this, 0, REG_CHAN_OFFSET)
     {
         UHD_ASSERT_THROW(get_num_input_ports() == get_num_output_ports());
         UHD_ASSERT_THROW(_cic_max_decim > 0 && _cic_max_decim <= 0xFF);
@@ -186,16 +188,15 @@ public:
         issue_stream_cmd_action_handler(dst_edge, new_action);
     }
 
+protected:
+    //! Block-specific register interface
+    multichan_register_iface _ddc_reg_iface;
+
 private:
     //! Shorthand for num ports, since num input ports always equals num output ports
     inline size_t get_num_ports()
     {
         return get_num_input_ports();
-    }
-
-    inline uint32_t get_addr(const uint32_t base_addr, const size_t chan)
-    {
-        return base_addr + REG_CHAN_OFFSET * chan;
     }
 
     /**************************************************************************
@@ -468,14 +469,14 @@ private:
         UHD_ASSERT_THROW(hb_enable <= _num_halfbands);
         UHD_ASSERT_THROW(cic_decim > 0 and cic_decim <= _cic_max_decim);
         const uint32_t decim_word = (hb_enable << 8) | cic_decim;
-        regs().poke32(get_addr(SR_DECIM_ADDR, chan), decim_word);
+        _ddc_reg_iface.poke32(SR_DECIM_ADDR, decim_word, chan);
 
         // Rate change = M/N
-        regs().poke32(get_addr(SR_N_ADDR, chan), decim);
+        _ddc_reg_iface.poke32(SR_N_ADDR, decim, chan);
         // FIXME:
         // - eiscat DDC had a real mode, where M needed to be 2
         // - TwinRX had some issues with M == 1
-        regs().poke32(get_addr(SR_M_ADDR, chan), 1);
+        _ddc_reg_iface.poke32(SR_M_ADDR, 1, chan);
 
         if (cic_decim > 1 and hb_enable == 0) {
             RFNOC_LOG_WARNING(
@@ -515,7 +516,7 @@ private:
         const int32_t actual_factor = boost::math::iround(target_factor);
         // Write DDC with scaling correction for CIC and DDS that maximizes
         // dynamic range
-        regs().poke32(get_addr(SR_SCALE_IQ_ADDR, chan), actual_factor);
+        _ddc_reg_iface.poke32(SR_SCALE_IQ_ADDR, actual_factor, chan);
 
         // Calculate the error introduced by using fixedpoint representation for
         // the scaler, can be corrected in host later.
@@ -538,8 +539,8 @@ private:
         int32_t freq_word;
         std::tie(actual_freq, freq_word) =
             get_freq_and_freq_word(requested_freq, input_rate);
-        regs().poke32(
-            get_addr(SR_FREQ_ADDR, chan), uint32_t(freq_word), get_command_time(chan));
+        _ddc_reg_iface.poke32(
+            SR_FREQ_ADDR, uint32_t(freq_word), chan, get_command_time(chan));
         return actual_freq;
     }
 

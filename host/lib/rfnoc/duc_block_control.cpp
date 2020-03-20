@@ -7,6 +7,7 @@
 #include <uhd/exception.hpp>
 #include <uhd/rfnoc/defaults.hpp>
 #include <uhd/rfnoc/duc_block_control.hpp>
+#include <uhd/rfnoc/multichan_register_iface.hpp>
 #include <uhd/rfnoc/property.hpp>
 #include <uhd/rfnoc/registry.hpp>
 #include <uhd/types/ranges.hpp>
@@ -54,7 +55,8 @@ public:
     , _fpga_compat(regs().peek32(RB_COMPAT_NUM)),
         _num_halfbands(regs().peek32(RB_NUM_HB)),
         _cic_max_interp(regs().peek32(RB_CIC_MAX_INTERP)),
-        _residual_scaling(get_num_input_ports(), DEFAULT_SCALING)
+        _residual_scaling(get_num_input_ports(), DEFAULT_SCALING),
+        _duc_reg_iface(*this, 0, REG_CHAN_OFFSET)
     {
         UHD_ASSERT_THROW(get_num_input_ports() == get_num_output_ports());
         UHD_ASSERT_THROW(_cic_max_interp > 0 && _cic_max_interp <= 0xFF);
@@ -167,16 +169,15 @@ public:
         return _samp_rate_in.at(chan).get();
     }
 
+protected:
+    //! Block-specific register interface
+    multichan_register_iface _duc_reg_iface;
+
 private:
     //! Shorthand for num ports, since num input ports always equals num output ports
     inline size_t get_num_ports()
     {
         return get_num_input_ports();
-    }
-
-    inline uint32_t get_addr(const uint32_t base_addr, const size_t chan)
-    {
-        return base_addr + REG_CHAN_OFFSET * chan;
     }
 
     /**************************************************************************
@@ -454,13 +455,13 @@ private:
         UHD_ASSERT_THROW(hb_enable <= _num_halfbands);
         UHD_ASSERT_THROW(cic_interp > 0 and cic_interp <= _cic_max_interp);
         const uint32_t interp_word = (hb_enable << 8) | cic_interp;
-        regs().poke32(get_addr(SR_INTERP_ADDR, chan), interp_word);
+        _duc_reg_iface.poke32(SR_INTERP_ADDR, interp_word, chan);
 
         // Rate change = M/N, where N = 1
-        regs().poke32(get_addr(SR_M_ADDR, chan), interp);
+        _duc_reg_iface.poke32(SR_M_ADDR, interp, chan);
         // FIXME:
         // - TwinRX had some issues with N == 1
-        regs().poke32(get_addr(SR_N_ADDR, chan), 1);
+        _duc_reg_iface.poke32(SR_N_ADDR, 1, chan);
 
         if (cic_interp > 1 and hb_enable == 0) {
             RFNOC_LOG_WARNING(
@@ -496,7 +497,7 @@ private:
         const int32_t actual_factor = boost::math::iround(target_factor);
         // Write DUC with scaling correction for CIC and DDS that maximizes
         // dynamic range
-        regs().poke32(get_addr(SR_SCALE_IQ_ADDR, chan), actual_factor);
+        _duc_reg_iface.poke32(SR_SCALE_IQ_ADDR, actual_factor, chan);
 
         // Calculate the error introduced by using fixedpoint representation for
         // the scaler, can be corrected in host later.
@@ -519,8 +520,8 @@ private:
         int32_t freq_word;
         std::tie(actual_freq, freq_word) =
             get_freq_and_freq_word(requested_freq, input_rate);
-        regs().poke32(
-            get_addr(SR_FREQ_ADDR, chan), uint32_t(freq_word), get_command_time(chan));
+        _duc_reg_iface.poke32(
+            SR_FREQ_ADDR, uint32_t(freq_word), chan, get_command_time(chan));
         return actual_freq;
     }
 
