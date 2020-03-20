@@ -77,5 +77,6 @@ static const noc_id_t DUC_BLOCK        = 0xD0C00000;
 static const noc_id_t DDC_BLOCK        = 0xDDC00000;
 static const noc_id_t FIR_FILTER_BLOCK = 0xf1120000;
 static const noc_id_t FOSPHOR_BLOCK    = 0x666F0000;
+static const noc_id_t VECTOR_IIR_BLOCK = 0x11120000;
 
 }} // namespace uhd::rfnoc

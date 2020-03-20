@@ -49,5 +49,6 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/fosphor_block_control.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/null_block_control.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/radio_control_impl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/vector_iir_block_control.cpp
 )
 
