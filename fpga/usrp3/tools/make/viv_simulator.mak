@@ -52,7 +52,7 @@ NOQ_SV        := $(NOQ_DESIGN_SV) $(NOQ_SIM_SV)
 NOQ_PKG_SV    := $(filter %.sv,$(NOQ_INC_SRCS))
 
 # Seperate out Verilog
-NOQ_INC_DIRS       := $(sort $(dir $(NOQ_INC_SRCS)))
+NOQ_INC_DIRS       := $(sort $(dir $(NOQ_DESIGN_SRCS) $(NOQ_SIM_SRCS) $(NOQ_INC_SRCS)))
 NOQ_DESIGN_VERILOG := $(filter %.v,$(NOQ_DESIGN_SRCS))
 NOQ_SIM_VERILOG    := $(filter %.v,$(NOQ_SIM_SRCS))
 NOQ_VERILOG        := $(NOQ_DESIGN_VERILOG) $(NOQ_SIM_VERILOG)
@@ -61,21 +61,19 @@ NOQ_VERILOG        := $(NOQ_DESIGN_VERILOG) $(NOQ_SIM_VERILOG)
 MODELSIM_LIBS += unisims_ver
 
 # Arguments for various simulators
-MODELSIM_ARGS += -quiet
-SVLOG_ARGS    += -quiet
-SVLOG_ARGS    += +define+WORKING_DIR="\"${CURDIR}\""
-VLOG_ARGS     += -quiet
-VLOG_ARGS     += +define+WORKING_DIR="\"${CURDIR}\""
-VHDL_ARGS     += -quiet
+MODELSIM_ARGS_L += $(MODELSIM_ARGS) -quiet
+SVLOG_ARGS_L    += $(SVLOG_ARGS) -quiet +define+WORKING_DIR="\"${CURDIR}\""
+VLOG_ARGS_L     += $(VLOG_ARGS) -quiet +define+WORKING_DIR="\"${CURDIR}\""
+VHDL_ARGS_L     += $(VHDL_ARGS) -quiet
 
 # Working directory for standalone ModelSim execution
 MODELSIM_PROJ_DIR ?= modelsim_proj
 
 # Check if we want to load the ModelSim GUI
 ifeq ($(GUI), 1)
-	MODELSIM_ARGS += -do "run -all"
+	MODELSIM_ARGS_L +=
 else
-	MODELSIM_ARGS += -c -do "run -all; quit -f"
+	MODELSIM_ARGS_L += -c -do "run -all; quit -f"
 endif
 
 SETUP_AND_LAUNCH_SIMULATION = \
@@ -117,7 +115,7 @@ vsim: .check_tool $(COMPLIBDIR) $(DESIGN_SRCS) $(SIM_SRCS) $(INC_SRCS)
 
 ##modelsim:   Run the simulation using Modelsim (natively)
 modelsim: .check_tool vlint
-	cd $(MODELSIM_PROJ_DIR) && vsim $(MODELSIM_ARGS) $(foreach lib,$(MODELSIM_LIBS),-L $(lib)) $(SIM_TOP)
+	cd $(MODELSIM_PROJ_DIR) && vsim $(MODELSIM_ARGS_L) $(foreach lib,$(MODELSIM_LIBS),-L $(lib)) $(SIM_TOP)
 
 
 # NOTE: VHDL files require a correct compile order.  This script compiles files
@@ -125,36 +123,36 @@ modelsim: .check_tool vlint
 
 ##vlint:      Run ModelSim compiler to lint files.
 vlint: .check_tool $(COMPLIBDIR) $(DESIGN_SRCS) $(SIM_SRCS) $(INC_SRCS)
-	$(shell mkdir -p ./modelsim_proj)
-	$(file >modelsim_proj/svlogarglist.txt,/* Auto generated argument file for vlog -sv */)
-	$(file >>modelsim_proj/svlogarglist.txt,-sv)
-	$(foreach dir,$(NOQ_INC_DIRS),       $(file >>modelsim_proj/svlogarglist.txt,+incdir+$(dir)))
-	$(foreach src,$(NOQ_PKG_SV),         $(file >>modelsim_proj/svlogarglist.txt,$(src)))
-	$(foreach src,$(NOQ_SV),             $(file >>modelsim_proj/svlogarglist.txt,$(src)))
-	$(file >modelsim_proj/vlogarglist.txt,/* Auto generated argument file for vlog */)
-	$(file >>modelsim_proj/vlogarglist.txt,-vlog01compat)
-	$(foreach dir,$(NOQ_INC_DIRS),       $(file >>modelsim_proj/vlogarglist.txt,+incdir+$(dir)))
-	$(foreach src,$(NOQ_VERILOG),        $(file >>modelsim_proj/vlogarglist.txt,$(src)))
-	$(file >modelsim_proj/vcomarglist.txt,/* Auto generated argument file for vcom */)
-	$(file >>modelsim_proj/vcomarglist.txt,-2008) 
-	$(foreach src,$(NOQ_VHDL),$(file >>modelsim_proj/vcomarglist.txt,$(src)))
+	$(shell mkdir -p ./$(MODELSIM_PROJ_DIR))
+	$(file >$(MODELSIM_PROJ_DIR)/svlogarglist.txt,/* Auto generated argument file for vlog -sv */)
+	$(file >>$(MODELSIM_PROJ_DIR)/svlogarglist.txt,-sv)
+	$(foreach dir,$(NOQ_INC_DIRS),       $(file >>$(MODELSIM_PROJ_DIR)/svlogarglist.txt,+incdir+$(dir)))
+	$(foreach src,$(NOQ_PKG_SV),         $(file >>$(MODELSIM_PROJ_DIR)/svlogarglist.txt,$(src)))
+	$(foreach src,$(NOQ_SV),             $(file >>$(MODELSIM_PROJ_DIR)/svlogarglist.txt,$(src)))
+	$(file >$(MODELSIM_PROJ_DIR)/vlogarglist.txt,/* Auto generated argument file for vlog */)
+	$(file >>$(MODELSIM_PROJ_DIR)/vlogarglist.txt,-vlog01compat)
+	$(foreach dir,$(NOQ_INC_DIRS),       $(file >>$(MODELSIM_PROJ_DIR)/vlogarglist.txt,+incdir+$(dir)))
+	$(foreach src,$(NOQ_VERILOG),        $(file >>$(MODELSIM_PROJ_DIR)/vlogarglist.txt,$(src)))
+	$(file >$(MODELSIM_PROJ_DIR)/vcomarglist.txt,/* Auto generated argument file for vcom */)
+	$(file >>$(MODELSIM_PROJ_DIR)/vcomarglist.txt,-2008) 
+	$(foreach src,$(NOQ_VHDL),$(file >>$(MODELSIM_PROJ_DIR)/vcomarglist.txt,$(src)))
 ifneq ($(strip $(NOQ_SV)),)  
 	@echo "*** COMPILING SYSTEM VERILOG ***"
-	cd $(MODELSIM_PROJ_DIR) && vlog $(SVLOG_ARGS) -f svlogarglist.txt
+	cd $(MODELSIM_PROJ_DIR) && vlog $(SVLOG_ARGS_L) -f svlogarglist.txt
 endif
 ifneq ($(strip $(NOQ_VERILOG)),)  
 	@echo "*** COMPILING VERILOG ***"
-	cd $(MODELSIM_PROJ_DIR) && vlog $(VLOG_ARGS) -f vlogarglist.txt
+	cd $(MODELSIM_PROJ_DIR) && vlog $(VLOG_ARGS_L) -f vlogarglist.txt
 endif   
 ifneq ($(strip $(NOQ_VHDL)),) 
 	@echo "*** COMPILING VHDL ***"
-	cd $(MODELSIM_PROJ_DIR) && vcom $(VHDL_ARGS) -f vcomarglist.txt
+	cd $(MODELSIM_PROJ_DIR) && vcom $(VHDL_ARGS_L) -f vcomarglist.txt
 endif
    
 ##vclean:     Cleanup ModelSim intermediate files
 vclean:
 	@rm -f modelsim*.log
-	@rm -rf modelsim_proj
+	@rm -rf $(MODELSIM_PROJ_DIR)
 	@rm -f vivado_pid*.str
 
 # Use clean with :: to support allow "make clean" to work with multiple makefiles
