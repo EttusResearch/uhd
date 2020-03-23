@@ -38,6 +38,42 @@ def get_usrp_list(device_filter=None, env=None):
         result.append(this_result)
     return result
 
+def get_num_chans(device_args=None, env=None):
+    """ Returns a dictionary that contains the number of TX and RX channels """
+    # First, get the tree
+    try:
+        cmd = ['uhd_usrp_probe', '--tree']
+        if device_args is not None:
+            cmd += ['--args', device_args]
+        output = subprocess.check_output(cmd, env=env, universal_newlines=True)
+    except subprocess.CalledProcessError:
+        return {}
+
+    # Now look through the tree for frontend names
+    rx_channels = 0
+    tx_channels = 0
+    for line in output.splitlines():
+        if re.match('.*/[rt]x_frontends/[0-9AB]+/name$',line):
+            # Get the frontend name
+            try:
+                cmd = ['uhd_usrp_probe']
+                if device_args is not None:
+                    cmd += ['--args', device_args]
+                cmd += ['--string', line]
+                output = subprocess.check_output(cmd, env=env, universal_newlines=True)
+                # Ignore unknown frontends
+                if (output.find("Unknown") == -1):
+                    # Increment respective count
+                    if re.match('.*/rx_frontends/[0-9AB]+/name$', line):
+                        rx_channels += 1
+                    else:
+                        tx_channels += 1
+            except subprocess.CalledProcessError:
+                pass
+
+    # Finally, return the counts
+    return {'tx': tx_channels, 'rx': rx_channels}
+
 if __name__ == "__main__":
     print(get_usrp_list())
     print(get_usrp_list('type=x300'))
