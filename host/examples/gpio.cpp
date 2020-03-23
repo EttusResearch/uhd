@@ -225,7 +225,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                      % usrp->get_tx_subdev_spec(0).to_string()
               << std::endl;
 
-    // print out initial unconfigured state of FP GPIO
+    // print out initial unconfigured state of GPIO
     std::cout << "Initial GPIO values:" << std::endl;
     output_reg_values(gpio, usrp, num_bits);
 
@@ -297,25 +297,35 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     // set up streams
     uhd::stream_args_t rx_args(cpu, otw);
     uhd::stream_args_t tx_args(cpu, otw);
-    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(rx_args);
-    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(tx_args);
+    uhd::rx_streamer::sptr rx_stream;
+    uhd::tx_streamer::sptr tx_stream;
     uhd::stream_cmd_t rx_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     rx_cmd.stream_now = true;
-    usrp->set_rx_rate(rx_rate);
-    usrp->set_tx_rate(tx_rate);
+    if (usrp->get_rx_num_channels()) {
+        rx_stream = usrp->get_rx_stream(rx_args);
+        usrp->set_rx_rate(rx_rate);
+    }
+    if (usrp->get_tx_num_channels()) {
+        tx_stream = usrp->get_tx_stream(tx_args);
+        usrp->set_tx_rate(tx_rate);
+    }
 
     // set up buffers for tx and rx
-    const size_t max_samps_per_packet = rx_stream->get_max_num_samps();
-    const size_t nsamps_per_buff      = max_samps_per_packet;
-    std::vector<char> rx_buff(
-        max_samps_per_packet * uhd::convert::get_bytes_per_item(cpu));
-    std::vector<char> tx_buff(
-        max_samps_per_packet * uhd::convert::get_bytes_per_item(cpu));
+    const size_t rx_spp          = rx_stream ? rx_stream->get_max_num_samps() : 0;
+    const size_t tx_spp          = tx_stream ? tx_stream->get_max_num_samps() : 0;
+    const size_t nsamps_per_buff = std::max(rx_spp, tx_spp);
+    std::vector<char> rx_buff(nsamps_per_buff * uhd::convert::get_bytes_per_item(cpu));
+    std::vector<char> tx_buff(nsamps_per_buff * uhd::convert::get_bytes_per_item(cpu));
     std::vector<void*> rx_buffs, tx_buffs;
-    for (size_t ch = 0; ch < rx_stream->get_num_channels(); ch++)
-        rx_buffs.push_back(&rx_buff.front()); // same buffer for each channel
-    for (size_t ch = 0; ch < tx_stream->get_num_channels(); ch++)
-        tx_buffs.push_back(&tx_buff.front()); // same buffer for each channel
+    if (rx_stream) {
+        for (size_t ch = 0; ch < rx_stream->get_num_channels(); ch++) {
+            rx_buffs.push_back(&rx_buff.front()); // same buffer for each channel
+        }
+    }
+    if (tx_stream) {
+        for (size_t ch = 0; ch < tx_stream->get_num_channels(); ch++)
+            tx_buffs.push_back(&tx_buff.front()); // same buffer for each channel
+    }
 
     uhd::rx_metadata_t rx_md;
     uhd::tx_metadata_t tx_md;
@@ -391,104 +401,119 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             if (stop_signal_called)
                 break;
 
-            // test ATR RX by receiving for 1 second
-            std::cout << "\nTesting ATR RX output..." << std::flush;
-            rx_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
-            rx_stream->issue_stream_cmd(rx_cmd);
-            stop_time = std::chrono::steady_clock::now() + dwell_time;
-            while (
-                not stop_signal_called and std::chrono::steady_clock::now() < stop_time) {
+            if (rx_stream) {
+                // test ATR RX by receiving for 1 second
+                std::cout << "\nTesting ATR RX output..." << std::flush;
+                rx_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
+                rx_stream->issue_stream_cmd(rx_cmd);
+                stop_time = std::chrono::steady_clock::now() + dwell_time;
+                while (not stop_signal_called
+                       and std::chrono::steady_clock::now() < stop_time) {
+                    try {
+                        rx_stream->recv(rx_buffs, nsamps_per_buff, rx_md, timeout);
+                    } catch (...) {
+                    }
+                }
+                rb       = usrp->get_gpio_attr(gpio, "READBACK");
+                expected = GPIO_BIT(1);
+                if ((rb & expected) != expected) {
+                    ++failures;
+                    std::cout << "fail:" << std::endl;
+                    std::cout << "Bit 1 should be set, but is not" << std::endl;
+                } else {
+                    std::cout << "pass:" << std::endl;
+                }
+                output_reg_values(gpio, usrp, num_bits);
+                rx_stream->issue_stream_cmd(
+                    uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
+                // clear out any data left in the rx stream
                 try {
                     rx_stream->recv(rx_buffs, nsamps_per_buff, rx_md, timeout);
                 } catch (...) {
                 }
             }
-            rb       = usrp->get_gpio_attr(gpio, "READBACK");
-            expected = GPIO_BIT(1);
-            if ((rb & expected) != expected) {
-                ++failures;
-                std::cout << "fail:" << std::endl;
-                std::cout << "Bit 1 should be set, but is not" << std::endl;
-            } else {
-                std::cout << "pass:" << std::endl;
-            }
-            output_reg_values(gpio, usrp, num_bits);
-            rx_stream->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
-            // clear out any data left in the rx stream
-            try {
-                rx_stream->recv(rx_buffs, nsamps_per_buff, rx_md, timeout);
-            } catch (...) {
-            }
             if (stop_signal_called)
                 break;
 
-            // test ATR TX by transmitting for 1 second
-            std::cout << "\nTesting ATR TX output..." << std::flush;
-            stop_time            = std::chrono::steady_clock::now() + dwell_time;
-            tx_md.start_of_burst = true;
-            tx_md.end_of_burst   = false;
-            while (
-                not stop_signal_called and std::chrono::steady_clock::now() < stop_time) {
+            if (tx_stream) {
+                // test ATR TX by transmitting for 1 second
+                std::cout << "\nTesting ATR TX output..." << std::flush;
+                stop_time            = std::chrono::steady_clock::now() + dwell_time;
+                tx_md.start_of_burst = true;
+                tx_md.end_of_burst   = false;
+                while (not stop_signal_called
+                       and std::chrono::steady_clock::now() < stop_time) {
+                    try {
+                        tx_stream->send(tx_buffs, nsamps_per_buff, tx_md, timeout);
+                        tx_md.start_of_burst = false;
+                    } catch (...) {
+                    }
+                }
+                rb       = usrp->get_gpio_attr(gpio, "READBACK");
+                expected = GPIO_BIT(2);
+                if ((rb & expected) != expected) {
+                    ++failures;
+                    std::cout << "fail:" << std::endl;
+                    std::cout << "Bit 2 should be set, but is not" << std::endl;
+                } else {
+                    std::cout << "pass:" << std::endl;
+                }
+                output_reg_values(gpio, usrp, num_bits);
+                tx_md.end_of_burst = true;
                 try {
                     tx_stream->send(tx_buffs, nsamps_per_buff, tx_md, timeout);
-                    tx_md.start_of_burst = false;
                 } catch (...) {
                 }
             }
-            rb       = usrp->get_gpio_attr(gpio, "READBACK");
-            expected = GPIO_BIT(2);
-            if ((rb & expected) != expected) {
-                ++failures;
-                std::cout << "fail:" << std::endl;
-                std::cout << "Bit 2 should be set, but is not" << std::endl;
-            } else {
-                std::cout << "pass:" << std::endl;
-            }
-            output_reg_values(gpio, usrp, num_bits);
-            tx_md.end_of_burst = true;
-            try {
-                tx_stream->send(tx_buffs, nsamps_per_buff, tx_md, timeout);
-            } catch (...) {
-            }
             if (stop_signal_called)
                 break;
 
-            // test ATR RX by transmitting and receiving for 1 second
-            std::cout << "\nTesting ATR full duplex output..." << std::flush;
-            rx_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
-            rx_stream->issue_stream_cmd(rx_cmd);
-            tx_md.start_of_burst = true;
-            tx_md.end_of_burst   = false;
-            stop_time            = std::chrono::steady_clock::now() + dwell_time;
-            while (
-                not stop_signal_called and std::chrono::steady_clock::now() < stop_time) {
+            if (rx_stream and tx_stream) {
+                // test ATR full duplex by transmitting and receiving
+                std::cout << "\nTesting ATR full duplex output..." << std::flush;
+                rx_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
+                rx_stream->issue_stream_cmd(rx_cmd);
+                tx_md.start_of_burst = true;
+                tx_md.end_of_burst   = false;
+                stop_time            = std::chrono::steady_clock::now() + dwell_time;
+                while (not stop_signal_called
+                       and std::chrono::steady_clock::now() < stop_time) {
+                    try {
+                        tx_stream->send(tx_buffs, nsamps_per_buff, tx_md, timeout);
+                        tx_md.start_of_burst = false;
+                        rx_stream->recv(rx_buffs, nsamps_per_buff, rx_md, timeout);
+                    } catch (...) {
+                    }
+                }
+
+                // Read GPIO
+                rb = usrp->get_gpio_attr(gpio, "READBACK");
+
+                // Stop streaming
+                rx_stream->issue_stream_cmd(
+                    uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
+                tx_md.end_of_burst = true;
                 try {
                     tx_stream->send(tx_buffs, nsamps_per_buff, tx_md, timeout);
-                    tx_md.start_of_burst = false;
+                } catch (...) {
+                }
+
+                // clear out any data left in the rx stream
+                try {
                     rx_stream->recv(rx_buffs, nsamps_per_buff, rx_md, timeout);
                 } catch (...) {
                 }
-            }
-            rb       = usrp->get_gpio_attr(gpio, "READBACK");
-            expected = GPIO_BIT(3);
-            if ((rb & expected) != expected) {
-                ++failures;
-                std::cout << "fail:" << std::endl;
-                std::cout << "Bit 3 should be set, but is not" << std::endl;
-            } else {
-                std::cout << "pass:" << std::endl;
-            }
-            output_reg_values(gpio, usrp, num_bits);
-            rx_stream->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
-            tx_md.end_of_burst = true;
-            try {
-                tx_stream->send(tx_buffs, nsamps_per_buff, tx_md, timeout);
-            } catch (...) {
-            }
-            // clear out any data left in the rx stream
-            try {
-                rx_stream->recv(rx_buffs, nsamps_per_buff, rx_md, timeout);
-            } catch (...) {
+
+                // Analyze results
+                expected = GPIO_BIT(3);
+                if ((rb & expected) != expected) {
+                    ++failures;
+                    std::cout << "fail:" << std::endl;
+                    std::cout << "Bit 3 should be set, but is not" << std::endl;
+                } else {
+                    std::cout << "pass:" << std::endl;
+                }
+                output_reg_values(gpio, usrp, num_bits);
             }
 
             std::cout << std::endl;
