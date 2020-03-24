@@ -371,7 +371,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         // NOTE: TX delay defaults to 0.25 seconds to allow the buffer on the device to fill completely
         ("tx_delay", po::value<double>(&tx_delay)->default_value(0.25), "delay before starting TX in seconds")
         ("rx_delay", po::value<double>(&rx_delay)->default_value(0.05), "delay before starting RX in seconds")
-        ("priority", po::value<std::string>(&priority)->default_value("high"), "thread priority (high, normal)")
+        ("priority", po::value<std::string>(&priority)->default_value("normal"), "thread priority (normal, high)")
     ;
     // clang-format on
     po::variables_map vm;
