@@ -181,9 +181,11 @@ static std::string get_dboard_pp_string(
                 type, tree, path / (prefix + "_frontends") / name));
         }
     }
-    ss << make_border(get_codec_pp_string(type,
-        tree,
-        path.branch_path().branch_path() / (prefix + "_codecs") / path.leaf()));
+    const fs_path codec_path =
+        path.branch_path().branch_path() / (prefix + "_codecs") / path.leaf();
+    if (tree->exists(codec_path)) {
+        ss << make_border(get_codec_pp_string(type, tree, codec_path));
+    }
     return ss.str();
 }
 
@@ -207,11 +209,17 @@ static std::string get_rfnoc_connections_pp_string(rfnoc::rfnoc_graph::sptr grap
     return ss.str();
 }
 
-static std::string get_rfnoc_pp_string(rfnoc::rfnoc_graph::sptr graph)
+static std::string get_rfnoc_pp_string(
+    rfnoc::rfnoc_graph::sptr graph, property_tree::sptr tree)
 {
     std::stringstream ss;
     ss << make_border(get_rfnoc_blocks_pp_string(graph));
     ss << make_border(get_rfnoc_connections_pp_string(graph));
+    auto radio_blocks = graph->find_blocks("Radio");
+    for (std::string block : radio_blocks) {
+        ss << make_border(get_dboard_pp_string("TX", tree, "blocks" / block / "dboard"));
+        ss << make_border(get_dboard_pp_string("RX", tree, "blocks" / block / "dboard"));
+    }
     return ss.str();
 }
 
@@ -492,7 +500,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     } else if (not vm.count("init-only")) {
         std::string device_pp_string = get_device_pp_string(tree);
         if (graph) {
-            device_pp_string += get_rfnoc_pp_string(graph);
+            device_pp_string += get_rfnoc_pp_string(graph, tree);
         }
         std::cout << make_border(device_pp_string) << std::endl;
     }
