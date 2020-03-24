@@ -7,20 +7,24 @@
 //
 // Description:
 //
-// This block is an arbiter that merges control-port interfaces. This block is 
-// used when you have multiple control-port masters that need to access a 
-// single slave. For example, a NoC block with multiple submodules that each 
+// This block is an arbiter that merges control-port interfaces. This block is
+// used when you have multiple control-port masters that need to access a
+// single slave. For example, a NoC block with multiple submodules that each
 // need to read and/or write registers outside of themselves.
 //
-// This module combines the control-port requests from multiple masters into a 
-// single request for one slave. Simultaneous requests are handled in the order 
+// This module combines the control-port requests from multiple masters into a
+// single request for one slave. Simultaneous requests are handled in the order
 // specified by PRIORITY. The responding ACK is routed back to the requester.
+//
+// The module has been designed so that the latency through it is always the
+// same when PRIORITY=1 and there is no contention, so that it can be used in
+// applications where deterministic behavior is desired.
 //
 // Parameters:
 //
-//   NUM_MASTERS : The number of control-port masters to connect to a single 
+//   NUM_MASTERS : The number of control-port masters to connect to a single
 //                 control-port slave.
-//   PRIORITY    : Use PRIORITY = 0 for round robin arbitration, PRIORITY = 1 
+//   PRIORITY    : Use PRIORITY = 0 for round robin arbitration, PRIORITY = 1
 //                 for priority arbitration (lowest number port serviced first).
 //
 
@@ -69,6 +73,20 @@ module ctrlport_combiner #(
                                                 // currently being serviced.
   reg req_load_output = 1'b0;
 
+  // Helper function to convert one hot vector to binary index
+  // (LSB = index 0)
+  function integer one_hot_to_binary(input [NUM_MASTERS-1:0] one_hot_vec);
+    integer i, total;
+  begin
+    total = 0;
+    for (i = 0; i <= NUM_MASTERS-1; i = i + 1) begin
+      if (one_hot_vec[i]) begin
+        total = total + i;
+      end
+    end
+    one_hot_to_binary = total;
+  end
+  endfunction
 
   //---------------------------------------------------------------------------
   // Input Registers
@@ -131,7 +149,20 @@ module ctrlport_combiner #(
   //
   //---------------------------------------------------------------------------
 
-  reg req_active = 0;  // Indicates if there's a request being serviced
+  reg  req_active = 0;  // Indicates if there's a request being serviced
+  wire [NUM_MASTERS-1:0] next_slave_one_hot; // one hot for next active request
+                                             // (used for PRIORITY = 1)
+
+  generate
+    genvar i;
+    for (i = 0; i < NUM_MASTERS; i = i+1) begin : gen_next_slave_one_hot
+      if (i == 0) begin
+        assign next_slave_one_hot[i] = req_valid[i];
+      end else begin
+        assign next_slave_one_hot[i] = req_valid[i] & ~next_slave_one_hot[i-1];
+      end
+    end
+  endgenerate
 
   always @(posedge ctrlport_clk) begin
     if (ctrlport_rst) begin
@@ -146,8 +177,12 @@ module ctrlport_combiner #(
         if (m_ctrlport_resp_ack) begin
           req_active <= 1'b0;
 
-          // Go to the next slave so we don't service the same slave again
-          if(PRIORITY == 1 || slave_sel == NUM_MASTERS-1)
+          // Go to next slave immediately
+          if(PRIORITY == 1)
+            slave_sel <= one_hot_to_binary(next_slave_one_hot);
+          // Round robin - Go to the next slave so we don't service the same
+          // slave again
+          else if(slave_sel == NUM_MASTERS-1)
             slave_sel <= 0;
           else
             slave_sel <= slave_sel + 1;
@@ -159,8 +194,11 @@ module ctrlport_combiner #(
           req_active      <= 1'b1;
           req_load_output <= 1'b1;
         end else begin
-          // Nothing from this slave, so move to the next slave.
-          if (slave_sel == NUM_MASTERS-1)
+          // Go to next slave immediately
+          if(PRIORITY == 1)
+            slave_sel <= one_hot_to_binary(next_slave_one_hot);
+          // Round robin - Nothing from this slave, so move to the next slave.
+          else if (slave_sel == NUM_MASTERS-1)
             slave_sel <= 0;
           else
             slave_sel <= slave_sel + 1;
@@ -174,7 +212,7 @@ module ctrlport_combiner #(
   // Output Register
   //---------------------------------------------------------------------------
   //
-  // Here we load the active request for a single clock cycle and demultiplex 
+  // Here we load the active request for a single clock cycle and demultiplex
   // the response back to the requesting master.
   //
   //---------------------------------------------------------------------------
