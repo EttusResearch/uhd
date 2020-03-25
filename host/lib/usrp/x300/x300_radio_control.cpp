@@ -1911,8 +1911,8 @@ private:
         tx_frontend_core_200::sptr core;
     };
 
-    bool _basic_lf_rx;
-    bool _basic_lf_tx;
+    bool _basic_lf_rx = false;
+    bool _basic_lf_tx = false;
 
     std::unordered_map<size_t, rx_fe_perif> _rx_fe_map;
     std::unordered_map<size_t, tx_fe_perif> _tx_fe_map;
