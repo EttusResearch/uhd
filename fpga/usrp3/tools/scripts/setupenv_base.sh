@@ -17,7 +17,11 @@ if [[ $VIV_PLATFORM = "Cygwin" ]]; then
     fi
     MODELSIM_BASE_PATH="/cygdrive/c/mentor/modelsim"
 else
-    if [[ -d "/opt/Xilinx/Vivado_Lab" ]]; then
+    if [[ -d "/tools/Xilinx/Vivado_Lab" ]]; then
+        VIVADO_BASE_PATH="/tools/Xilinx/Vivado_Lab"
+    elif [[ -d "/tools/Xilinx/Vivado" ]]; then
+        VIVADO_BASE_PATH="/tools/Xilinx/Vivado"
+    elif [[ -d "/opt/Xilinx/Vivado_Lab" ]]; then
         VIVADO_BASE_PATH="/opt/Xilinx/Vivado_Lab"
     else
         VIVADO_BASE_PATH="/opt/Xilinx/Vivado"
