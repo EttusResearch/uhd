@@ -13,7 +13,6 @@
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/paths.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/format.hpp>
 #include <chrono>
 #include <cmath>
 #include <complex>
@@ -223,7 +222,7 @@ static void capture_samples(uhd::usrp::multi_usrp::sptr usrp,
     rx_stream->recv(&discard_buff.front(), discard_buff.size(), md);
     if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE) {
         throw std::runtime_error(
-            str(boost::format("Receiver error: %s") % md.strerror()));
+            std::string("Receiver error: ") + md.strerror());
     }
 
     // Now capture the data we want
@@ -232,7 +231,7 @@ static void capture_samples(uhd::usrp::multi_usrp::sptr usrp,
     // validate the received data
     if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE) {
         throw std::runtime_error(
-            str(boost::format("Receiver error: %s") % md.strerror()));
+            std::string("Receiver error: ") + md.strerror());
     }
 
     // we can live if all the data didnt come in
@@ -250,10 +249,11 @@ static void capture_samples(uhd::usrp::multi_usrp::sptr usrp,
 static uhd::usrp::multi_usrp::sptr setup_usrp_for_cal(
     std::string& args, std::string& subdev, std::string& serial)
 {
+    const std::string args_with_ignore = args + ",ignore_cal_file=1,ignore-cal-file=1";
     std::cout << std::endl;
-    std::cout << boost::format("Creating the usrp device with: %s...") % args
+    std::cout << "Creating the usrp device with: " << args_with_ignore << "..."
               << std::endl;
-    uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
+    uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args_with_ignore);
 
     // Configure subdev
     if (!subdev.empty()) {
