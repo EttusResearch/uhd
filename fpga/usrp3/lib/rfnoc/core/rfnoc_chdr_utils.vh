@@ -198,3 +198,24 @@ function [15:0] chdr_calc_payload_length(input [31:0] chdr_w, input [63:0] heade
     chdr_calc_payload_length = payload_length;
   end
 endfunction
+
+// Return a CHDR header with the length field updated, based on the CHDR_W,
+// payload byte length, and current header fields.
+function [63:0] chdr_update_length(
+  input [31:0] chdr_w,
+  input [63:0] base_hdr,
+  input [15:0] payload_length
+);
+  reg [15:0] length, mdata_length, header_length;
+  begin
+    if (chdr_w == 64) begin
+      header_length = chdr_get_has_time(base_hdr) ? 2*(chdr_w/8) : (chdr_w/8);
+    end else begin
+      header_length = chdr_w/8;
+    end
+    mdata_length = chdr_get_num_mdata(base_hdr) * (chdr_w/8);
+    length = header_length + mdata_length + payload_length;
+    
+    chdr_update_length = chdr_set_length(chdr_w, length);
+  end
+endfunction
