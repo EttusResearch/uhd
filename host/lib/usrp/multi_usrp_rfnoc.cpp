@@ -31,6 +31,26 @@ using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::rfnoc;
 
+//! Fan out (mux) an API call that is for all channels or all motherboards
+#define MUX_API_CALL(max_index, api_call, mux_var, mux_cond, ...) \
+        if (mux_var == mux_cond) { \
+            for (size_t __index = 0; __index < max_index; ++__index) { \
+                api_call(__VA_ARGS__, __index); \
+            } \
+            return; \
+        }
+
+//! Fan out (mux) an RX-specific API call that is for all channels
+#define MUX_RX_API_CALL(api_call, ...) \
+    MUX_API_CALL(get_rx_num_channels(), api_call, chan, ALL_CHANS, __VA_ARGS__)
+//! Fan out (mux) an TX-specific API call that is for all channels
+#define MUX_TX_API_CALL(api_call, ...) \
+    MUX_API_CALL(get_tx_num_channels(), api_call, chan, ALL_CHANS, __VA_ARGS__)
+//! Fan out (mux) a motherboard-specific API call that is for all boards
+#define MUX_MB_API_CALL(api_call, ...) \
+    MUX_API_CALL(get_num_mboards(), api_call, mboard, ALL_MBOARDS, __VA_ARGS__)
+
+
 namespace {
 constexpr char DEFAULT_CPU_FORMAT[] = "fc32";
 constexpr char DEFAULT_OTW_FORMAT[] = "sc16";
@@ -526,7 +546,7 @@ public:
     /*******************************************************************
      * Mboard methods
      ******************************************************************/
-    void set_master_clock_rate(double rate, size_t mboard = ALL_MBOARDS)
+    void set_master_clock_rate(double rate, size_t mboard)
     {
         for (auto& chain : _rx_chans) {
             auto radio = chain.second.radio;
@@ -636,25 +656,15 @@ public:
         return get_mbc(mboard)->get_timekeeper(0)->get_time_last_pps();
     }
 
-    void set_time_now(const time_spec_t& time_spec, size_t mboard = ALL_MBOARDS)
+    void set_time_now(const time_spec_t& time_spec, size_t mboard)
     {
-        if (mboard == ALL_MBOARDS) {
-            for (size_t i = 0; i < get_num_mboards(); ++i) {
-                set_time_now(time_spec, i);
-            }
-            return;
-        }
+        MUX_MB_API_CALL(set_time_now, time_spec);
         get_mbc(mboard)->get_timekeeper(0)->set_time_now(time_spec);
     }
 
-    void set_time_next_pps(const time_spec_t& time_spec, size_t mboard = ALL_MBOARDS)
+    void set_time_next_pps(const time_spec_t& time_spec, size_t mboard)
     {
-        if (mboard == ALL_MBOARDS) {
-            for (size_t i = 0; i < get_num_mboards(); ++i) {
-                set_time_next_pps(time_spec, i);
-            }
-            return;
-        }
+        MUX_MB_API_CALL(set_time_next_pps, time_spec);
         get_mbc(mboard)->get_timekeeper(0)->set_time_next_pps(time_spec);
     }
 
@@ -704,14 +714,9 @@ public:
         return true;
     }
 
-    void set_command_time(const uhd::time_spec_t& time_spec, size_t mboard = ALL_MBOARDS)
+    void set_command_time(const uhd::time_spec_t& time_spec, size_t mboard)
     {
-        if (mboard == ALL_MBOARDS) {
-            for (size_t i = 0; i < get_num_mboards(); ++i) {
-                set_command_time(time_spec, i);
-            }
-            return;
-        }
+        MUX_MB_API_CALL(set_command_time, time_spec);
 
         // Set command time on all the blocks that are connected
         for (auto& chain : _rx_chans) {
@@ -728,7 +733,7 @@ public:
         }
     }
 
-    void clear_command_time(size_t mboard = ALL_MBOARDS)
+    void clear_command_time(size_t mboard)
     {
         if (mboard == ALL_MBOARDS) {
             for (size_t i = 0; i < get_num_mboards(); ++i) {
@@ -768,14 +773,9 @@ public:
         }
     }
 
-    void set_time_source(const std::string& source, const size_t mboard = ALL_MBOARDS)
+    void set_time_source(const std::string& source, const size_t mboard)
     {
-        if (mboard == ALL_MBOARDS) {
-            for (size_t i = 0; i < get_num_mboards(); ++i) {
-                set_time_source(source, i);
-            }
-            return;
-        }
+        MUX_MB_API_CALL(set_time_source, source);
         get_mbc(mboard)->set_time_source(source);
     }
 
@@ -789,14 +789,9 @@ public:
         return get_mbc(mboard)->get_time_sources();
     }
 
-    void set_clock_source(const std::string& source, const size_t mboard = ALL_MBOARDS)
+    void set_clock_source(const std::string& source, const size_t mboard)
     {
-        if (mboard == ALL_MBOARDS) {
-            for (size_t i = 0; i < get_num_mboards(); ++i) {
-                set_clock_source(source, i);
-            }
-            return;
-        }
+        MUX_MB_API_CALL(set_clock_source, source);
         get_mbc(mboard)->set_clock_source(source);
     }
 
@@ -812,26 +807,15 @@ public:
 
     void set_sync_source(const std::string& clock_source,
         const std::string& time_source,
-        const size_t mboard = ALL_MBOARDS)
+        const size_t mboard)
     {
-        if (mboard == ALL_MBOARDS) {
-            for (size_t i = 0; i < get_num_mboards(); ++i) {
-                set_sync_source(clock_source, time_source, i);
-            }
-            return;
-        }
+        MUX_MB_API_CALL(set_sync_source, clock_source, time_source);
         get_mbc(mboard)->set_sync_source(clock_source, time_source);
     }
 
-    void set_sync_source(
-        const device_addr_t& sync_source, const size_t mboard = ALL_MBOARDS)
+    void set_sync_source(const device_addr_t& sync_source, const size_t mboard)
     {
-        if (mboard == ALL_MBOARDS) {
-            for (size_t i = 0; i < get_num_mboards(); ++i) {
-                set_sync_source(sync_source, i);
-            }
-            return;
-        }
+        MUX_MB_API_CALL(set_sync_source, sync_source);
         get_mbc(mboard)->set_sync_source(sync_source);
     }
 
@@ -845,13 +829,15 @@ public:
         return get_mbc(mboard)->get_sync_sources();
     }
 
-    void set_clock_source_out(const bool enb, const size_t mboard = ALL_MBOARDS)
+    void set_clock_source_out(const bool enb, const size_t mboard)
     {
+        MUX_MB_API_CALL(set_clock_source_out, enb);
         get_mbc(mboard)->set_clock_source_out(enb);
     }
 
-    void set_time_source_out(const bool enb, const size_t mboard = ALL_MBOARDS)
+    void set_time_source_out(const bool enb, const size_t mboard)
     {
+        MUX_MB_API_CALL(set_time_source_out, enb);
         get_mbc(mboard)->set_time_source_out(enb);
     }
 
@@ -982,7 +968,7 @@ public:
     }
 
     void set_rx_subdev_spec(
-        const uhd::usrp::subdev_spec_t& spec, size_t mboard = ALL_MBOARDS)
+        const uhd::usrp::subdev_spec_t& spec, size_t mboard)
     {
         // First, generate a vector of the RX channels that we need to register
         auto new_rx_chans = [this, spec, mboard]() {
@@ -1048,15 +1034,10 @@ public:
         return rx_chain.radio->get_fe_name(rx_chain.block_chan, uhd::RX_DIRECTION);
     }
 
-    void set_rx_rate(double rate, size_t chan = ALL_CHANS)
+    void set_rx_rate(double rate, size_t chan)
     {
         std::lock_guard<std::recursive_mutex> l(_graph_mutex);
-        if (chan == ALL_CHANS) {
-            for (size_t chan = 0; chan < _rx_chans.size(); ++chan) {
-                set_rx_rate(rate, chan);
-            }
-            return;
-        }
+        MUX_RX_API_CALL(set_rx_rate, rate);
         const double actual_rate = [&]() {
             auto rx_chain = _get_rx_chan(chan);
             if (rx_chain.ddc) {
@@ -1077,12 +1058,7 @@ public:
     void set_rx_spp(const size_t spp, const size_t chan = ALL_CHANS)
     {
         std::lock_guard<std::recursive_mutex> l(_graph_mutex);
-        if (chan == ALL_CHANS) {
-            for (size_t chan = 0; chan < _rx_chans.size(); ++chan) {
-                set_rx_spp(spp, chan);
-            }
-            return;
-        }
+        MUX_RX_API_CALL(set_rx_spp, spp);
         auto rx_chain = _get_rx_chan(chan);
         rx_chain.radio->set_property<int>(
             "spp", narrow_cast<int>(spp), rx_chain.block_chan);
@@ -1112,6 +1088,7 @@ public:
     tune_result_t set_rx_freq(const tune_request_t& tune_request, size_t chan)
     {
         std::lock_guard<std::recursive_mutex> l(_graph_mutex);
+
         // TODO: Add external LO warning
 
         auto rx_chain = _get_rx_chan(chan);
@@ -1436,28 +1413,18 @@ public:
         return rx_chain.radio->get_rx_sensor_names(rx_chain.block_chan);
     }
 
-    void set_rx_dc_offset(const bool enb, size_t chan = ALL_CHANS)
+    void set_rx_dc_offset(const bool enb, size_t chan)
     {
-        if (chan != ALL_CHANS) {
-            auto rx_chain = _get_rx_chan(chan);
-            rx_chain.radio->set_rx_dc_offset(enb, rx_chain.block_chan);
-            return;
-        }
-        for (size_t ch = 0; ch < get_rx_num_channels(); ++ch) {
-            set_rx_dc_offset(enb, ch);
-        }
+        MUX_RX_API_CALL(set_rx_dc_offset, enb);
+        const auto rx_chain = _get_rx_chan(chan);
+        rx_chain.radio->set_rx_dc_offset(enb, rx_chain.block_chan);
     }
 
-    void set_rx_dc_offset(const std::complex<double>& offset, size_t chan = ALL_CHANS)
+    void set_rx_dc_offset(const std::complex<double>& offset, size_t chan)
     {
-        if (chan != ALL_CHANS) {
-            auto rx_chain = _get_rx_chan(chan);
-            rx_chain.radio->set_rx_dc_offset(offset, rx_chain.block_chan);
-            return;
-        }
-        for (size_t ch = 0; ch < get_rx_num_channels(); ++ch) {
-            set_rx_dc_offset(offset, ch);
-        }
+        MUX_RX_API_CALL(set_rx_dc_offset, offset);
+        const auto rx_chain = _get_rx_chan(chan);
+        rx_chain.radio->set_rx_dc_offset(offset, rx_chain.block_chan);
     }
 
     meta_range_t get_rx_dc_offset_range(size_t chan)
@@ -1479,16 +1446,11 @@ public:
     }
 
     void set_rx_iq_balance(
-        const std::complex<double>& correction, size_t chan = ALL_CHANS)
+        const std::complex<double>& correction, size_t chan)
     {
-        if (chan != ALL_CHANS) {
-            auto rx_chain = _get_rx_chan(chan);
-            rx_chain.radio->set_rx_iq_balance(correction, rx_chain.block_chan);
-            return;
-        }
-        for (size_t ch = 0; ch < get_rx_num_channels(); ++ch) {
-            set_rx_iq_balance(correction, ch);
-        }
+        MUX_RX_API_CALL(set_rx_iq_balance, correction);
+        const auto rx_chain = _get_rx_chan(chan);
+        rx_chain.radio->set_rx_iq_balance(correction, rx_chain.block_chan);
     }
 
     /*******************************************************************
@@ -1591,7 +1553,7 @@ public:
     }
 
     void set_tx_subdev_spec(
-        const uhd::usrp::subdev_spec_t& spec, size_t mboard = ALL_MBOARDS)
+        const uhd::usrp::subdev_spec_t& spec, size_t mboard)
     {
         /* TODO: Refactor with get_rx_subdev_spec- the algorithms are the same, just the
          * types are different
@@ -1660,15 +1622,10 @@ public:
         return tx_chain.radio->get_fe_name(tx_chain.block_chan, uhd::TX_DIRECTION);
     }
 
-    void set_tx_rate(double rate, size_t chan = ALL_CHANS)
+    void set_tx_rate(double rate, size_t chan)
     {
         std::lock_guard<std::recursive_mutex> l(_graph_mutex);
-        if (chan == ALL_CHANS) {
-            for (size_t chan = 0; chan < _tx_chans.size(); ++chan) {
-                set_tx_rate(rate, chan);
-            }
-            return;
-        }
+        MUX_TX_API_CALL(set_tx_rate, rate);
         const double actual_rate = [&]() {
             auto tx_chain = _get_tx_chan(chan);
             if (tx_chain.duc) {
@@ -1899,7 +1856,8 @@ public:
 
     void set_tx_dc_offset(const std::complex<double>& offset, size_t chan)
     {
-        auto tx_chain = _get_tx_chan(chan);
+        MUX_TX_API_CALL(set_tx_dc_offset, offset);
+        const auto tx_chain = _get_tx_chan(chan);
         tx_chain.radio->set_tx_dc_offset(offset, tx_chain.block_chan);
     }
 
@@ -1911,7 +1869,8 @@ public:
 
     void set_tx_iq_balance(const std::complex<double>& correction, size_t chan)
     {
-        auto tx_chain = _get_tx_chan(chan);
+        MUX_TX_API_CALL(set_tx_iq_balance, correction);
+        const auto tx_chain = _get_tx_chan(chan);
         tx_chain.radio->set_tx_iq_balance(correction, tx_chain.block_chan);
     }
 
