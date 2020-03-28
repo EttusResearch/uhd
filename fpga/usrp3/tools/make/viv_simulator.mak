@@ -71,7 +71,7 @@ MODELSIM_PROJ_DIR ?= modelsim_proj
 
 # Check if we want to load the ModelSim GUI
 ifeq ($(GUI), 1)
-	MODELSIM_ARGS_L +=
+	MODELSIM_ARGS_L += -voptargs=+acc
 else
 	MODELSIM_ARGS_L += -c -do "run -all; quit -f"
 endif
