@@ -70,6 +70,9 @@ proc ::vivado_utils::initialize_project { {save_to_disk 0} } {
         } elseif [expr [lsearch {.xdc} $src_ext] >= 0] {
             puts "BUILDER: Adding XDC     : $src_file"
             read_xdc $src_file
+        } elseif [expr [lsearch {.sdc} $src_ext] >= 0] {
+            puts "BUILDER: Adding SDC     : $src_file"
+            read_xdc $src_file
         } elseif [expr [lsearch {.xci} $src_ext] >= 0] {
             puts "BUILDER: Adding IP      : $src_file"
             read_ip $src_file
