@@ -13,6 +13,7 @@
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/types/device_addr.hpp>
+#include <uhdlib/utils/prefs.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
 #include <future>
@@ -206,7 +207,13 @@ device_addrs_t mpmd_find(const device_addr_t& hint_)
         }
     }
 #endif
-    device_addrs_t hints = separate_device_addr(hint_);
+    device_addrs_t hints_without_prefs = separate_device_addr(hint_);
+    device_addrs_t hints;
+    for (size_t i = 0; i < hints_without_prefs.size(); i++)
+    {
+        hints.push_back(prefs::get_usrp_args(hints_without_prefs[i]));
+    }
+
     if (hint_.has_key("type")) {
         if (std::find(MPM_DEVICE_TYPES.cbegin(), MPM_DEVICE_TYPES.cend(), hint_["type"])
             == MPM_DEVICE_TYPES.cend()) {

@@ -9,6 +9,7 @@
 #include <uhd/types/component_file.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/tasks.hpp>
+#include <uhdlib/utils/prefs.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/thread.hpp>
 #include <chrono>
@@ -149,7 +150,12 @@ const std::string mpmd_impl::MPM_ECHO_CMD               = "MPM-ECHO";
 mpmd_impl::mpmd_impl(const device_addr_t& device_args)
     : rfnoc_device(), _device_args(device_args)
 {
-    const device_addrs_t mb_args = separate_device_addr(device_args);
+    const device_addrs_t mb_args_without_prefs = separate_device_addr(device_args);
+    device_addrs_t mb_args;
+    for (size_t i = 0; i < mb_args_without_prefs.size(); ++i)
+    {
+        mb_args.push_back(prefs::get_usrp_args(mb_args_without_prefs[i]));
+    }
     const size_t num_mboards     = mb_args.size();
     _mb.reserve(num_mboards);
     const bool serialize_init = device_args.has_key("serialize_init");
