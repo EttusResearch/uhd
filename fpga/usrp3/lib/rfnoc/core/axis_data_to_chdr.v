@@ -11,27 +11,42 @@
 //   with sideband information for packet flags and timestamp). A CHDR packet 
 //   will be generated for each data packet that is input.
 //
-//   The sideband information (e.g., timestamp, flags) must be input coincident 
-//   with the AXI-Stream data input and will be sampled coincident with the 
-//   last word of data in the packet (i.e., when tlast is asserted).
+//   The sideband information (e.g., timestamp, flags) must be input with the
+//   AXI-Stream data input and will be sampled coincident with either the first
+//   word or the last word of data in the packet (i.e., when tlast is
+//   asserted), depending on the SIDEBAND_AT_END parameter setting.
+//
+//   If sideband information is sampled at the beginning of a packet then
+//   tlength must be provided.
+//
+//   If sideband information is sampled at the end of the packet then tlength
+//   will be ignored, and the entire packet will be buffered before the CHDR
+//   output can begin. Also, in this mode, the payload FIFO size will be
+//   coerced to be at least as big as the MTU. This mode is intended for cases
+//   when the sideband information is not known until the end of the packet
+//   (e.g., the length).
 //
 //   This module also performs an optional clock crossing and data width 
 //   conversion from a user requested width for the payload bus to CHDR_W.
 //
 // Parameters:
 //
-//   CHDR_W         : Width of the input CHDR bus in bits
-//   ITEM_W         : Width of the output item bus in bits
-//   NIPC           : The number of output items delivered per cycle
-//   SYNC_CLKS      : Are the CHDR and data clocks synchronous to each other?
-//   MTU            : Log2 of the maximum packet size in CHDR words
-//   INFO_FIFO_SIZE : Log2 of the info FIFO size. This determines the number of 
-//                    packets that can be simultaneously buffered in the 
-//                    payload FIFO.
-//   PYLD_FIFO_SIZE : Log2 of the payload FIFO size. The actual FIFO size will 
-//                    be the maximum of 2**MTU or 2**PYLD_FIFO_SIZE, since the 
-//                    FIFO must be at least one MTU so that we can calculate 
-//                    the packet length in the header.
+//   CHDR_W          : Width of the input CHDR bus in bits
+//   ITEM_W          : Width of the output item bus in bits
+//   NIPC            : The number of output items delivered per cycle
+//   SYNC_CLKS       : Are the CHDR and data clocks synchronous to each other?
+//   MTU             : Log2 of the maximum packet size in CHDR words
+//   INFO_FIFO_SIZE  : Log2 of the info FIFO size. This determines the number
+//                     of packets that can be simultaneously buffered in the
+//                     payload FIFO.
+//   PYLD_FIFO_SIZE  : Log2 of the payload FIFO size. The actual FIFO size will 
+//                     be the maximum of 2**MTU or 2**PYLD_FIFO_SIZE, since the 
+//                     FIFO must be at least one MTU so that we can calculate 
+//                     the packet length in the header.
+//   SIDEBAND_AT_END : If 0 then the sideband information is sampled coincident
+//                     with the first word of the input packet. If 1, then the
+//                     sideband information is sampled with the last word of the
+//                     input packet (the word in which tlast is asserted).
 //
 // Signals:
 //
@@ -41,13 +56,14 @@
 //
 
 module axis_data_to_chdr #(
-  parameter CHDR_W         = 256,
-  parameter ITEM_W         = 32,
-  parameter NIPC           = 2,
-  parameter SYNC_CLKS      = 0,
-  parameter MTU            = 10,
-  parameter INFO_FIFO_SIZE = 5,
-  parameter PYLD_FIFO_SIZE = MTU
+  parameter CHDR_W          = 256,
+  parameter ITEM_W          = 32,
+  parameter NIPC            = 2,
+  parameter SYNC_CLKS       = 0,
+  parameter MTU             = 10,
+  parameter INFO_FIFO_SIZE  = 5,
+  parameter PYLD_FIFO_SIZE  = MTU,
+  parameter SIDEBAND_AT_END = 1
 )(
   // Clock, reset and settings
   input  wire                     axis_chdr_clk,
@@ -68,6 +84,7 @@ module axis_data_to_chdr #(
   // Payload sideband info
   input  wire [63:0]              s_axis_ttimestamp,
   input  wire                     s_axis_thas_time,
+  input  wire [15:0]              s_axis_tlength,
   input  wire                     s_axis_teov,
   input  wire                     s_axis_teob,
   // Flush signals
@@ -77,11 +94,11 @@ module axis_data_to_chdr #(
   output wire                     flush_done
 );
 
-  // Make sure the payload FIFO is large enough to store an entire packet's 
-  // worth of payload data. This will ensure that we can buffer the entire 
-  // packet to calculate its length.
-  localparam PAYLOAD_FIFO_SIZE = PYLD_FIFO_SIZE > MTU ? 
-                                 PYLD_FIFO_SIZE : MTU;
+  // If we are sampling the sideband information at the end of the packet then
+  // the payload FIFO must be large enough to store an entire packet's worth of
+  // payload data. We coerce the size here if needed.
+  localparam PAYLOAD_FIFO_SIZE =
+   (!SIDEBAND_AT_END || PYLD_FIFO_SIZE > MTU) ? PYLD_FIFO_SIZE : MTU;
 
 
   // ---------------------------------------------------
@@ -93,12 +110,24 @@ module axis_data_to_chdr #(
 
 
   //---------------------------------------------------------------------------
-  // Timestamp and Flags Capture
+  // Start of Packet Register
   //---------------------------------------------------------------------------
-  //
-  // The timestamp and flags that we use for each packet is that of the last 
-  // data word. Here, we capture this information at the end of the packet. 
-  //
+
+  // The sop register will indicate if the next word on s_axis_t* is the first
+  // word of a packet.
+  reg start_of_packet = 1'b1;
+
+  always @(posedge axis_data_clk) begin
+    if (axis_data_rst) begin
+      start_of_packet <= 1'b1;
+    end else if (s_axis_tvalid && s_axis_tready) begin
+      start_of_packet <= s_axis_tlast;
+    end
+  end
+
+
+  //---------------------------------------------------------------------------
+  // Timestamp and Flags Capture
   //---------------------------------------------------------------------------
 
   reg [63:0] packet_timestamp;
@@ -107,7 +136,10 @@ module axis_data_to_chdr #(
   reg        packet_eob;
 
   always @(posedge axis_data_clk) begin
-    if (s_axis_tvalid & s_axis_tready & s_axis_tlast) begin
+    if (s_axis_tvalid && s_axis_tready &&
+      (( SIDEBAND_AT_END && s_axis_tlast) || 
+       (!SIDEBAND_AT_END && start_of_packet))
+    ) begin
       packet_timestamp <= s_axis_ttimestamp;
       packet_has_time  <= s_axis_thas_time;
       packet_eov       <= s_axis_teov;
@@ -121,43 +153,70 @@ module axis_data_to_chdr #(
   //---------------------------------------------------------------------------
   //
   // Here We track the state of the incoming packet to determine the payload 
-  // length.
+  // length, if needed.
   //
   //---------------------------------------------------------------------------
 
-  localparam HDR_LEN = CHDR_W/8;      // Length of CHDR header word in bytes
-
-  reg [15:0] packet_length;
-  reg [15:0] length_count       = HDR_LEN;
   reg        in_pkt_info_tvalid = 0;
   wire       in_pkt_info_tready;
+  reg [15:0] packet_length;
 
-  always @(posedge axis_data_clk) begin : pkt_length_counter
-    if (axis_data_rst) begin
-      length_count       <= HDR_LEN;
-      in_pkt_info_tvalid <= 1'b0;
-    end else begin : pkt_length_counter_main
-      // Calculate the length of this word in bytes, taking tkeep into account
-      integer i;
-      integer num_bytes;
-      num_bytes = 0;
-      for (i = 0; i < NIPC; i = i + 1) begin
-        num_bytes = num_bytes + (s_axis_tkeep[i]*(ITEM_W/8));
+  localparam HDR_LEN = CHDR_W/8;      // Length of CHDR header word in bytes
+
+  generate
+    if (!SIDEBAND_AT_END) begin : gen_sample_sop
+      //-------------------------------
+      //  Sample at Start of Packet
+      //-------------------------------
+
+      always @(posedge axis_data_clk) begin
+        if (axis_data_rst) begin
+          in_pkt_info_tvalid <= 1'b0;
+        end else begin
+          in_pkt_info_tvalid <= 1'b0;
+          if (s_axis_tvalid && s_axis_tready && start_of_packet) begin
+            packet_length      <= s_axis_tlength + HDR_LEN;
+            in_pkt_info_tvalid <= 1'b1;
+          end
+        end
       end
 
-      // Update the packet length if the word is accepted
-      in_pkt_info_tvalid <= 1'b0;
-      if (s_axis_tvalid && s_axis_tready) begin
-        if (s_axis_tlast) begin
+    end else begin : gen_sample_eop
+      //-------------------------------
+      //  Sample at End of Packet
+      //-------------------------------
+
+      reg [15:0] length_count = HDR_LEN;
+
+      always @(posedge axis_data_clk) begin : pkt_length_counter
+        if (axis_data_rst) begin
           length_count       <= HDR_LEN;
-          packet_length      <= length_count + num_bytes;
-          in_pkt_info_tvalid <= 1'b1;
-        end else begin
-          length_count <= length_count + num_bytes;
+          in_pkt_info_tvalid <= 1'b0;
+        end else begin : pkt_length_counter_main
+          // Calculate the length of this word in bytes, taking tkeep into account
+          integer i;
+          integer num_bytes;
+          num_bytes = 0;
+          for (i = 0; i < NIPC; i = i + 1) begin
+            num_bytes = num_bytes + (s_axis_tkeep[i]*(ITEM_W/8));
+          end
+
+          // Update the packet length if the word is accepted
+          in_pkt_info_tvalid <= 1'b0;
+          if (s_axis_tvalid && s_axis_tready) begin
+            if (s_axis_tlast) begin
+              length_count       <= HDR_LEN;
+              packet_length      <= length_count + num_bytes;
+              in_pkt_info_tvalid <= 1'b1;
+            end else begin
+              length_count <= length_count + num_bytes;
+            end
+          end
         end
       end
     end
-  end
+  endgenerate
+
 
 
   //---------------------------------------------------------------------------
