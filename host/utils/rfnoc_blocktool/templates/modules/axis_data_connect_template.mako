@@ -3,7 +3,7 @@
   num_inputs  = len(config['data']['inputs'])
   num_outputs = len(config['data']['outputs'])
 %>\
-    // AXI-Stream Payload Context Clock and Reset
+    // AXI-Stream Clock and Reset
     .axis_data_clk (axis_data_clk),
     .axis_data_rst (axis_data_rst),
 %for idx, port_name in enumerate(config['data']['inputs']):
