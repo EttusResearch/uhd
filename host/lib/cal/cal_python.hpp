@@ -8,8 +8,8 @@
 #define INCLUDED_UHD_CAL_PYTHON_HPP
 
 #include <uhd/cal/database.hpp>
-#include <uhd/cal/interpolation.hpp>
 #include <uhd/cal/iq_cal.hpp>
+#include <uhd/utils/interpolation.hpp>
 
 std::vector<uint8_t> pybytes_to_vector(const py::bytes& data)
 {
@@ -59,9 +59,9 @@ void export_cal(py::module& m)
                 database::write_cal_data(key, serial, pybytes_to_vector(data));
             });
 
-    py::enum_<interp_mode>(m, "interp_mode")
-        .value("NEAREST_NEIGHBOR", interp_mode::NEAREST_NEIGHBOR)
-        .value("LINEAR", interp_mode::LINEAR);
+    py::enum_<uhd::math::interp_mode>(m, "interp_mode")
+        .value("NEAREST_NEIGHBOR", uhd::math::interp_mode::NEAREST_NEIGHBOR)
+        .value("LINEAR", uhd::math::interp_mode::LINEAR);
 
     py::class_<container, std::shared_ptr<container>>(m, "container")
         .def("get_name", &container::get_name)

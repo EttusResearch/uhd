@@ -8,10 +8,12 @@
 #include <uhd/cal/iq_cal_generated.h>
 #include <uhd/exception.hpp>
 #include <uhd/utils/math.hpp>
+#include <uhdlib/utils/interpolation.hpp>
 #include <map>
 #include <string>
 
 using namespace uhd::usrp::cal;
+using namespace uhd::math;
 
 constexpr int VERSION_MAJOR = 1;
 constexpr int VERSION_MINOR = 0;

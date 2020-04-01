@@ -10,6 +10,7 @@
 #include <iostream>
 
 using namespace uhd::usrp::cal;
+using namespace uhd::math;
 
 BOOST_AUTO_TEST_CASE(test_iq_cal_api)
 {

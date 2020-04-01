@@ -36,6 +36,7 @@ set(test_sources
     fp_compare_delta_test.cpp
     fp_compare_epsilon_test.cpp
     gain_group_test.cpp
+    interpolation_test.cpp
     isatty_test.cpp
     log_test.cpp
     math_test.cpp

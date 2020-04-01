@@ -8,8 +8,8 @@
 #define INCLUDED_LIBUHD_CAL_IQ_DATA_HPP
 
 #include <uhd/cal/container.hpp>
-#include <uhd/cal/interpolation.hpp>
 #include <uhd/config.hpp>
+#include <uhd/utils/interpolation.hpp>
 #include <complex>
 #include <memory>
 #include <string>
@@ -35,7 +35,7 @@ public:
     // \param interp The new interpolation mode
     // \throws uhd::value_error if the given interpolation mode is not
     //         supported.
-    virtual void set_interp_mode(const interp_mode interp) = 0;
+    virtual void set_interp_mode(const uhd::math::interp_mode interp) = 0;
 
     //! Return a calibration coefficient for a given frequency
     //
