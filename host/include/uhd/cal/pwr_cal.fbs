@@ -1,0 +1,46 @@
+//
+// Copyright 2020 Ettus Research, a National Instruments Brand
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+
+// Calibration Table for power calibration coefficents.
+// See also pwr_cal.hpp
+
+include "cal_metadata.fbs";
+
+namespace uhd.usrp.cal;
+
+// Maps a gain value (dB) to a power value (dBm)
+struct PowerMap
+{
+    gain: double (key);
+    power_dbm: double;
+}
+
+// For a given frequency, stores all gain -> power measurements, as well as a
+// max and min power level the device can reasonably produce.
+table FreqPowerMap
+{
+    freq: ulong (key);
+    powers: [PowerMap];
+    min_power: double; // Minimum power achievable at this frequency
+    max_power: double; // Maximum power achievable at this frequency
+}
+
+// Given a temperature, store a gain table
+table TempFreqMap
+{
+    temperature: int (key); // Temperature in C
+    freqs: [FreqPowerMap];
+}
+
+table PowerCal
+{
+    metadata: Metadata;
+    temp_freq_map: [TempFreqMap];
+    ref_gain: int = -1;
+}
+
+root_type PowerCal;
+file_identifier "dB/m"; // dB per dBm

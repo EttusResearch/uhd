@@ -27,6 +27,7 @@ set(test_sources
     cast_test.cpp
     cal_database_test.cpp
     cal_data_iq_test.cpp
+    cal_data_gain_pwr_test.cpp
     chdr_test.cpp
     constrained_device_args_test.cpp
     convert_test.cpp

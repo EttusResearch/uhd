@@ -9,7 +9,16 @@
 
 #include <uhd/cal/database.hpp>
 #include <uhd/cal/iq_cal.hpp>
+#include <uhd/cal/pwr_cal.hpp>
 #include <uhd/utils/interpolation.hpp>
+#include <pybind11/stl.h>
+
+namespace pybind11 { namespace detail {
+template <typename T>
+struct type_caster<boost::optional<T>> : optional_caster<boost::optional<T>>
+{
+};
+}}
 
 std::vector<uint8_t> pybytes_to_vector(const py::bytes& data)
 {
@@ -94,6 +103,43 @@ void export_cal(py::module& m)
             py::arg("suppression_abs")   = 0,
             py::arg("suppression_delta") = 0)
         .def("clear", &iq_cal::clear);
+
+    py::class_<pwr_cal, container, pwr_cal::sptr>(m, "pwr_cal")
+        .def(py::init([](const std::string& name,
+                          const std::string& serial,
+                          const uint64_t timestamp) {
+            return pwr_cal::make(name, serial, timestamp);
+        }))
+        .def(py::init([]() { return pwr_cal::make(); }))
+        .def(py::init([](const py::bytes data) {
+            return container::make<pwr_cal>(pybytes_to_vector(data));
+        }))
+        .def("add_power_table",
+            &pwr_cal::add_power_table,
+            py::arg("gain_power_map"),
+            py::arg("max_power"),
+            py::arg("min_power"),
+            py::arg("freq"),
+            py::arg("temperature") = boost::optional<int>())
+        .def("clear", &pwr_cal::clear)
+        .def("set_temperature", &pwr_cal::set_temperature)
+        .def("get_temperature", &pwr_cal::get_temperature)
+        .def("set_ref_gain", &pwr_cal::set_ref_gain)
+        .def("get_ref_gain", &pwr_cal::get_ref_gain)
+        .def("get_power_limits",
+            &pwr_cal::get_power_limits,
+            py::arg("freq"),
+            py::arg("temperature") = boost::optional<int>())
+        .def("get_power",
+            &pwr_cal::get_power,
+            py::arg("gain"),
+            py::arg("freq"),
+            py::arg("temperature") = boost::optional<int>())
+        .def("get_gain",
+            &pwr_cal::get_gain,
+            py::arg("power_dbm"),
+            py::arg("freq"),
+            py::arg("temperature") = boost::optional<int>());
 }
 
 #endif /* INCLUDED_UHD_CAL_PYTHON_HPP */

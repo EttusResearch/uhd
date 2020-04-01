@@ -17,5 +17,6 @@ from ... import libpyuhd as lib
 database = lib.cal.database
 Source = lib.cal.source
 IQCal = lib.cal.iq_cal
+PwrCal = lib.cal.pwr_cal
 InterpMode = lib.cal.interp_mode
 # pylint: enable=invalid-name
