@@ -107,9 +107,159 @@ frontend names available. The frontend names are documented in \ref page_dboards
 
 \section config_stream_args Streaming Arguments (Stream Args)
 
-When initializing a streamer using uhd::device::get_tx_stream() and/or uhd::device::get_rx_stream(),
-you must specify a uhd::stream_args_t object (see the manual for this struct and an in-depth
-explanation of the individual components).
+When initializing a streamer using `uhd::device::get_tx_stream()` and/or
+`uhd::device::get_rx_stream()`, you must specify a `uhd::stream_args_t` object
+to configure the streamers. See the manual for this struct and an in-depth
+explanation of the individual components.
+
+The `uhd::stream_args_t` object consists of four components:
+
+-   The CPU data format (`cpu_format`)
+-   The over-the-wire data format (`otw_format`)
+-   A collection of implementation-specific key/value pairs used to pass
+    additional information to the streamers (`args`)
+-   A list of channel numbers for setting channel mapping (`channels`)
+
+\subsection config_stream_args_cpu_format CPU Data Format Specification
+
+The CPU data format is a string that describes the format of the sample data
+in host memory. When the client application calls `recv()` on an instance of
+`uhd::rx_streamer` or `send()` on an instance of `uhd::tx_streamer`, the
+samples are returned or expected to be provided in this format. The client
+application is free to choose whichever CPU data format best meets its
+particular needs.
+
+Conversions for the following CPU formats have been implemented:
+
+String | Corresponding C++ type    | Notes
+-------|---------------------------|--------------------------------------------
+`fc64` | `std::complex<double>`    | Complex-valued double-precision data
+`fc32` | `std::complex<float>`     | Complex-valued single-precision data
+`sc16` | `std::complex<int16_t>`   | Complex-valued signed 16-bit integer data
+`sc8`  | `std::complex<int8_t>`    | Complex-valued signed 8-bit integer data
+`f32`  | `float`                   | Single-precision data
+`s16`  | `int16_t`                 | Signed 16-bit integer data
+`s8`   | `int8_t`                  | Signed 8-bit integer data
+
+\subsection config_stream_args_otw_format Over-the-wire Data Format Specification
+
+The over-the-wire (OTW) data format is a string that describes the format of
+the sample data as it is carried across the transport to and from the RFNoC
+stream endpoint associated with the stream. The following over-the-wire
+formats are supported. In the following, data carried over the wire for each
+format is denoted by the data type (`i8`, `i16`, etc.), which part of the
+sample is represented (`I` for in-phase portion, `Q` for quadrature portion,
+or `R` for a real value), and the sample index in square brackets.
+
+- `sc16`
+<table><tr><td> `i16 Q[n]` </td><td> `i16 I[n]`</td><td> `i16 Q[n+1]`</td><td> `i16 I[n+1]`</td> ... </td></tr></table>
+- `sc8`
+<table><tr><td> `i8 Q[n+1]` </td><td> `i8 I[n+1]` </td><td> `i8 Q[n]` </td><td> `i8 I[n]` </td><td> `i8 Q[n+3]` </td><td> `i8 I[n+3]` </td><td> `i8 Q[n+2]` </td><td> `i8 I[n+2]` </td><td> ... </td></tr></table>
+- `sc12`
+(only supported by some devices)
+- `s16`
+<table><tr><td> `i16 R[n+1]` </td><td> `i16 R[n]` </td><td> `i16 R[n+3]` </td><td> `i16 R[n+2]` </td><td> ... </td></tr></table>
+- `s8`
+<table><tr><td> `i8 R[n+3]` </td><td> `i8 R[n+2]` </td><td> `i8 R[n+1]` </td><td> `i8 R[n]` </td><td> `i8 R[n+7]` </td><td> `i8 R[n+6]` </td><td> ... </td></tr></table>
+
+Note that the in-tree RFNoC blocks that are provided with UHD only support
+`sc16` for complex-valued data.
+
+As UHD will convert samples between the CPU and over-the-wire data formats
+automatically, setting the OTW format should, in theory, be transparent to
+the application. However, changing the OTW format can have side effects.
+For example, using an OTW format with fewer bits (`sc8` vs. `sc16`, for
+instance) reduces the load on the data link and allows more bandwidth, but
+also reduces the dynamic range of the data and increases quantization noise.
+
+\subsection config_stream_args_args Additional Stream Arguments
+
+Additional implementation-dependent stream arguments may be provided as
+key/value pairs to a streamer via the `args` parameter. These settings control
+the behavior of the stream under various conditions.  Note that the value
+specified for the key should be in string format, e.g.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+my_stream_args.args["spp"] = std::to_string(10000);
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following parameters are supported:
+
+- `spp`: The `spp` (samples per packet) option controls the size of receive
+  packets. When not specified, the packets are always the maximum frame
+  size that can pass through the graph given the MTU (maximum transmission
+  unit). Using a smaller value for `spp` may reduce packet latency through
+  a graph.
+- `underflow_policy` (applies to B100, B2xx and N2xx devices only): This option
+  controls how the TX DSP should recover from an underflow condition.
+  The following options are supported:
+  - `next_burst`: The DSP will drop incoming packets until a new burst has
+    started.
+  - `next_packet`: The DSP will begin transmitting again upon reception of
+    the next packet.
+  - `wait`: (B2xx and N2xx only) The DSP will not transmit until reset.
+- `fullscale`: (applies to B100, B2xx and N2xx devices only) This option
+  specifies the full-scale amplitude when using floats. By default, the
+  fullscale amplitude with floating point values is 1.0. Clients can scale the
+  samples on the host to the expected input and/or output range of their
+  application by changing this value.
+- `peak`: (applies to B100, B2xx and N2xx devices only) This option specifies
+  a fractional sample level to calculate when scaling using the `sc8`
+  over-the-wire format. When using `sc8` samples over the wire, samples must
+  be scaled both on the host and in the device to satisfy dynamic range needs.
+  The peak value specifies a fraction of the maximum sample level (1.0 =
+  100%). Set peak to the maximum sample level divided by the full scale
+  level to ensure optimum dynamic range.
+- `noclear` (applies to B100 and N2xx only)
+- `port` and `addr` (N2xx only) These settings specify an alternate receiver
+  streamer destination.
+
+\subsubsection config_stream_args_transport Transport-related Stream Arguments
+
+The following arguments that alter the behavior of the underlying transport
+are normally passed to the USRP device as initialization-time arguments
+(see \ref config_devaddr):
+
+- `num_send_frames`
+- `num_recv_frames`
+- `send_frame_size`
+- `recv_frame_size`
+- `send_buff_size`
+- `recv_buff_size`
+
+However, for MPMD-based and X3x0 devices, these parameters may also be
+specified in the stream arguments. When one of these parameters is passed
+via the stream arguments, they override any value specified in the device
+arguments. See \ref page_transport for more information on the meaning of
+these parameters and their default values.
+
+
+\subsection config_stream_args_channels Channels
+
+The `uhd::stream_args_t` object allows the specification of a list of
+channel numbers mapping device channels to the stream. When left unset, the
+stream defaults to channel 0 (i.e., single-channel operation). For a multi-
+channel application, this list specifies the mapping of device channels to
+the data in the stream. Channel mapping also depends on the front-end
+selection (see also \ref config_subdev).
+
+Consider an X300 with two daughterboards and a subdev spec of
+`A:0 B:0`. This means the device has two channels available. Here are some
+simple examples of channel mappings with subdev specs:
+
+- Setting `stream_args.channels = {0, 1}` configures time-aligned streaming
+  from both channels. The first channel in the stream will be mapped to first
+  subdev spec (`A:0`) and the second channel will be mapped to the mapped to
+  the second subdev spec (`B:0`).
+- Switching the channel indices (e.g., `stream_args.channels = {1, 0}`)
+  results in the switching of the order of the channels in the stream. The
+  first channel of the stream is mapped to the second subdev spec while the
+  second channel of the stream is mapped to the first subdev spec.
+- If only a single channel is specified (e.g., `stream_args.channels = {1}`),
+  the stream will only consist of a single channel of data from the second
+  subdev spec. When streaming a single channel from the B-side radio of a
+  USRP, this is a more versatile solution than setting the subdev globally to
+  `B:0`.
 
 */
 // vim:ft=doxygen:

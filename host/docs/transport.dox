@@ -11,7 +11,50 @@ parameters control how the transport object allocates memory, resizes
 kernel buffers, spawns threads, etc. When not specified, the transport
 layer will use values for these parameters that are known to perform
 well on a variety of systems. The transport parameters are defined below
-for the various transports in the UHD software:
+for the various transports in the UHD software.
+
+\subsection transport_param_overrides Overriding transport parameters
+
+On MPMD-based and X300 devices, applications may wish to further modify
+certain transport parameters beyond the default values chosen by the UHD
+software or those supplied via the device address.  For the following
+transport parameters, if a value is specified in the device arguments,
+that value is used to configure the transport, overriding the default
+value chosen by UHD.  Additionally, if a value is specified in the
+stream arguments, that value takes priority over the value specified in
+the device arguments for the transport associated with the stream.
+
+<b>Note:</b> These default values apply to UDP transports.
+
+- `num_send_frames` and `num_recv_frames`
+  - Default value: 32
+  - <b>Note:</b> Value is only applied to TX and RX links, not control links
+- `send_frame_size`
+  - Default value (X3x0):
+       1472 (if link rate is GigE) or
+       4000 (if link rate is 10GigE)
+  - Default value (MPMD):
+       1472 (if link rate is GigE);
+       8000 (if link rate is 10GigE);
+       TX MTU (other link rates)
+  - <b>Note:</b> Value will be capped at the link's send MTU
+- `recv_frame_size`
+  - Default value (X3x0 and MPMD):
+       1472 (if link rate is GigE);
+       8000 (if link rate is 10GigE);
+       RX MTU (other link rates)
+  - <b>Note:</b> Value will be capped at the link's receive MTU
+- `send_buff_size`
+  - Default value (X3x0 and MPMD):
+       20 ms of data at the link rate (2.5 MB for 1GigE, 25 MB for 10GigE)
+- `recv_buff_size`
+  - Default value (X3x0 and MPMD):
+       20 ms of data at the link rate
+       (X3x0: <b>OR</b> 64 1472-byte packets, whichever is larger)
+
+<b>Note:</b> Be aware that values may be further limited due to platform-
+specific restrictions. See the platform-specific notes below for more
+details.
 
 \section transport_udp UDP Transport (Sockets)
 
@@ -21,8 +64,13 @@ standard Berkeley sockets API using `send()`/`recv()`.
 \subsection transport_udp_params Transport parameters
 
 The following parameters can be used to alter the transport's default
-behavior (these options can be passed to a USRP device as arguments
-at initialization time, see also \ref config_devaddr):
+behavior. These options can be passed to a USRP device as arguments
+at initialization time (see \ref config_devaddr). For MPMD-based and X3x0
+devices, some of these parameters may also be passed via stream arguments (see
+\ref config_stream_args), in which case the values passed as device arguments
+are overridden. See \ref transport_param_overrides for more details on
+default values and the priority of device argument and stream argument
+overrides.
 
 -   `recv_frame_size:` The size of a single receive buffer in bytes
 -   `num_recv_frames:` The number of receive buffers to allocate
@@ -127,6 +175,12 @@ of the sockets stack. This can be adjusted with the
 instantaneous bandwidth. Application can take time to ramp-up to full
 performance capability. It is recommended that users set the power
 profile to "high performance".
+
+\subsection transport_udp_osx Mac OS X specific notes
+
+OS X restricts the value of the `send_buff_size` and `recv_buff_size`
+transport parameters to a maximum value of 1 MiB (1048576 bytes).
+
 
 \section transport_usb USB Transport (LibUSB)
 
