@@ -12,7 +12,6 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/paths.hpp>
-#include <boost/filesystem.hpp>
 #include <chrono>
 #include <cmath>
 #include <complex>
@@ -21,8 +20,6 @@
 #include <iostream>
 #include <thread>
 #include <vector>
-
-namespace fs = boost::filesystem;
 
 struct result_t
 {
