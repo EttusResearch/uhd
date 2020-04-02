@@ -483,6 +483,7 @@ b200_impl::b200_impl(
     } // flush ctrl xport
     _tree->create<double>(mb_path / "link_max_rate")
         .set((usb_speed == 3) ? B200_MAX_RATE_USB3 : B200_MAX_RATE_USB2);
+    _tree->create<int>(mb_path / "usb_version").set(usb_speed);
 
     ////////////////////////////////////////////////////////////////////
     // Async task structure
