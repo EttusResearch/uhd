@@ -33,6 +33,14 @@
 
 namespace clmdep_msgpack {
 
+#if defined(__clang__) || defined(__GNUC__)
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#    if defined(__GNUC__) && __GNUC__ >= 8
+#        pragma GCC diagnostic ignored "-Wclass-memaccess"
+#    endif
+#endif
+
 /// @cond
 MSGPACK_API_VERSION_NAMESPACE(v1) {
 /// @endcond
@@ -829,6 +837,10 @@ inline std::ostream& operator<< (std::ostream& s, const clmdep_msgpack::object& 
 /// @cond
 }  // MSGPACK_API_VERSION_NAMESPACE(v1)
 /// @endcond
+
+#if defined(__clang__) || defined(__GNUC__)
+#    pragma GCC diagnostic pop
+#endif
 
 }  // namespace clmdep_msgpack
 
