@@ -87,16 +87,19 @@ public:
             UHD_THROW_INVALID_CODE_PATH();
         }
 
-        if ((addr & SLOT_OFFSET) == 0) {
-            UHD_LOG_INFO("MOCK_REG_IFACE", "Set flush timeout to " << data);
+        const size_t blockno = (addr / SLOT_OFFSET) - 1 - NUM_STREAM_ENDPOINTS;
+
+        if ((addr % SLOT_OFFSET) == 0) {
+            UHD_LOG_INFO("MOCK_REG_IFACE",
+                "Block: " << blockno << " Set flush timeout to " << data);
             last_flush_timeout = data;
             return;
         }
-        if ((addr & SLOT_OFFSET) == 1) {
+        if ((addr % SLOT_OFFSET) == 4) {
             UHD_LOG_INFO("MOCK_REG_IFACE",
-                "Set flush/reset bits to flush=" << (data & 0x1) << ",ctrl_rst="
-                                                 << ((data >> 1) & 0x1 >> 1)
-                                                 << ",chdr_rst=" << ((data >> 2) & 0x1));
+                "Block: " << blockno << " Set flush/reset bits to flush=" << (data & 0x1)
+                          << ",ctrl_rst=" << ((data >> 1) & 0x1)
+                          << ",chdr_rst=" << ((data >> 2) & 0x1));
         }
     }
 
@@ -207,7 +210,9 @@ BOOST_AUTO_TEST_CASE(simple_read_if_chdr_pkt)
     BOOST_CHECK_EQUAL(mock_client0->get_flush_active(3), false);
     BOOST_CHECK_EQUAL(mock_client0->get_flush_done(3), true);
     // Flushing and Reset
+    UHD_LOG_INFO("TEST", "Setting and resetting flush flags...");
     BOOST_CHECK_THROW(mock_client0->set_flush(0), uhd::index_error);
+    // First block is on port 3
     BOOST_CHECK_NO_THROW(mock_client0->set_flush(3));
     BOOST_CHECK_THROW(mock_client0->set_flush(9), uhd::index_error);
     BOOST_CHECK_THROW(mock_client0->reset_ctrl(0), uhd::index_error);
@@ -216,6 +221,7 @@ BOOST_AUTO_TEST_CASE(simple_read_if_chdr_pkt)
     BOOST_CHECK_THROW(mock_client0->reset_chdr(0), uhd::index_error);
     BOOST_CHECK_NO_THROW(mock_client0->reset_chdr(3));
     BOOST_CHECK_THROW(mock_client0->reset_chdr(9), uhd::index_error);
+    UHD_LOG_INFO("TEST", "Done Setting and resetting flush flags.");
 
     // Block Config
     auto mock_config = mock_client0->get_block_info(3);
