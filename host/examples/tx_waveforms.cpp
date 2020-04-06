@@ -42,7 +42,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     std::string args, wave_type, ant, subdev, ref, pps, otw, channel_list;
     uint64_t total_num_samps;
     size_t spb;
-    double rate, freq, gain, wave_freq, bw, lo_offset;
+    double rate, freq, gain, power, wave_freq, bw, lo_offset;
     float ampl;
 
     // setup the program options
@@ -59,6 +59,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             "Offset for frontend LO in Hz (optional)")
         ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "amplitude of the waveform [0 to 0.7]")
         ("gain", po::value<double>(&gain), "gain for the RF chain")
+        ("power", po::value<double>(&power), "Transmit power (if USRP supports it)")
         ("ant", po::value<std::string>(&ant), "antenna selection")
         ("subdev", po::value<std::string>(&subdev), "subdevice specification")
         ("bw", po::value<double>(&bw), "analog frontend filter bandwidth in Hz")
@@ -127,6 +128,22 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         return ~0;
     }
 
+    // for the const wave, set the wave freq for small samples per period
+    if (wave_freq == 0) {
+        if (wave_type == "CONST") {
+            wave_freq = usrp->get_tx_rate() / 2;
+        } else {
+            throw std::runtime_error(
+                "wave freq cannot be 0 with wave type other than CONST");
+        }
+    }
+
+    // pre-compute the waveform values
+    const wave_table_class wave_table(wave_type, ampl);
+    const size_t step =
+        boost::math::iround(wave_freq / usrp->get_tx_rate() * wave_table_len);
+    size_t index = 0;
+
     for (size_t ch = 0; ch < channel_nums.size(); ch++) {
         std::cout << boost::format("Setting TX Freq: %f MHz...") % (freq / 1e6)
                   << std::endl;
@@ -142,7 +159,23 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                   << std::endl;
 
         // set the rf gain
-        if (vm.count("gain")) {
+        if (vm.count("power")) {
+            if (!usrp->has_tx_power_reference(ch)) {
+                std::cout << "ERROR: USRP does not have a reference power API on channel "
+                          << ch << "!" << std::endl;
+                return EXIT_FAILURE;
+            }
+            std::cout << "Setting TX output power: " << power << " dBm..." << std::endl;
+            usrp->set_tx_power_reference(power - wave_table.get_power(), ch);
+            std::cout << "Actual TX output power: "
+                      << usrp->get_tx_power_reference(ch) + wave_table.get_power()
+                      << " dBm..." << std::endl;
+            if (vm.count("gain")) {
+                std::cout << "WARNING: If you specify both --power and --gain, "
+                             " the latter will be ignored."
+                          << std::endl;
+            }
+        } else if (vm.count("gain")) {
             std::cout << boost::format("Setting TX Gain: %f dB...") % gain << std::endl;
             usrp->set_tx_gain(gain, channel_nums[ch]);
             std::cout << boost::format("Actual TX Gain: %f dB...")
@@ -169,16 +202,6 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     std::this_thread::sleep_for(std::chrono::seconds(1)); // allow for some setup time
 
-    // for the const wave, set the wave freq for small samples per period
-    if (wave_freq == 0) {
-        if (wave_type == "CONST") {
-            wave_freq = usrp->get_tx_rate() / 2;
-        } else {
-            throw std::runtime_error(
-                "wave freq cannot be 0 with wave type other than CONST");
-        }
-    }
-
     // error when the waveform is not possible to generate
     if (std::abs(wave_freq) > usrp->get_tx_rate() / 2) {
         throw std::runtime_error("wave freq out of Nyquist zone");
@@ -186,12 +209,6 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     if (usrp->get_tx_rate() / std::abs(wave_freq) > wave_table_len / 2) {
         throw std::runtime_error("wave freq too small for table");
     }
-
-    // pre-compute the waveform values
-    const wave_table_class wave_table(wave_type, ampl);
-    const size_t step =
-        boost::math::iround(wave_freq / usrp->get_tx_rate() * wave_table_len);
-    size_t index = 0;
 
     // create a transmit streamer
     // linearly map channels (index0 = channel0, index1 = channel1, ...)
