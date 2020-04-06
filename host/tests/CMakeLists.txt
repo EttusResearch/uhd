@@ -269,6 +269,12 @@ UHD_ADD_NONAPI_TEST(
     ${CMAKE_SOURCE_DIR}/lib/transport/offload_io_service.cpp
 )
 
+UHD_ADD_NONAPI_TEST(
+    TARGET "serial_number_test.cpp"
+    EXTRA_SOURCES
+    ${CMAKE_SOURCE_DIR}/lib/utils/serial_number.cpp
+)
+
 ########################################################################
 # demo of a loadable module
 ########################################################################

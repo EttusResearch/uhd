@@ -9,6 +9,7 @@
 #include "mpmd_devices.hpp"
 #include "mpmd_impl.hpp"
 #include "mpmd_link_if_mgr.hpp"
+#include <uhdlib/utils/serial_number.hpp>
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/types/device_addr.hpp>
@@ -110,7 +111,7 @@ device_addrs_t mpmd_find_with_addr(
         }
         // filter the discovered device below by matching optional keys
         if ((not hint_.has_key("name") or hint_["name"] == new_addr["name"])
-            and (not hint_.has_key("serial") or hint_["serial"] == new_addr["serial"])
+            and (not hint_.has_key("serial") or uhd::serial_numbers_match(hint_["serial"], new_addr["serial"]))
             and (not hint_.has_key("type") or hint_["type"] == new_addr["type"]
                     or hint_["type"] == MPM_CATCHALL_DEVICE_TYPE)
             and (not hint_.has_key("product")
