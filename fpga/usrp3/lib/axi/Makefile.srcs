@@ -14,7 +14,6 @@ axi_chdr_test_pattern.v \
 axi_defs.v \
 axi_dma_fifo.v \
 axi_dma_master.v \
-axi_replay.v \
 axi_embed_tlast.v \
 axi_extract_tlast.v \
 axi_fast_extract_tlast.v \

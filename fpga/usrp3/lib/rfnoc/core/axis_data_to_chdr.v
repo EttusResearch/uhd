@@ -231,7 +231,6 @@ module axis_data_to_chdr #(
   wire              in_pyld_tlast;
   wire              in_pyld_tvalid;
   wire              in_pyld_tready;
-  wire              width_conv_tready;
 
   wire [CHDR_W-1:0] out_pyld_tdata;
   wire              out_pyld_tlast;
@@ -366,12 +365,6 @@ module axis_data_to_chdr #(
       end
     end
   endgenerate
-
-
-
-
-
-
 
 
   // This state machine prevents data from transferring when the pkt_info_fifo

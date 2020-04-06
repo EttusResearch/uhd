@@ -1,0 +1,63 @@
+schema: rfnoc_modtool_args
+module_name: replay
+version: 1.0
+rfnoc_version: 1.0
+chdr_width: 64
+noc_id: 0x4E91A000
+makefile_srcs: "${fpga_lib_dir}/blocks/rfnoc_block_replay/Makefile.srcs"
+
+parameters:
+  NUM_PORTS: 2
+  MEM_DATA_W: 64
+  MEM_ADDR_W: 30
+
+clocks:
+  - name: rfnoc_chdr
+    freq: "[]"
+  - name: rfnoc_ctrl
+    freq: "[]"
+  - name: mem
+    freq: "[]"
+
+control:
+  sw_iface: nocscript
+  fpga_iface: ctrlport
+  interface_direction: slave
+  fifo_depth: 32
+  clk_domain: mem
+  ctrlport:
+    byte_mode: False
+    timed: False
+    has_status: False
+
+data:
+  fpga_iface: axis_data
+  clk_domain: mem
+  inputs:
+    in:
+      num_ports: NUM_PORTS
+      item_width: 32
+      nipc: MEM_DATA_W/32
+      info_fifo_depth: 32
+      payload_fifo_depth: MTU
+      format: int32
+      mdata_sig: ~
+  outputs:
+    out:
+      num_ports: NUM_PORTS
+      item_width: 32
+      nipc: MEM_DATA_W/32
+      info_fifo_depth: 32
+      payload_fifo_depth: MTU
+      sideband_at_end: 1
+      format: int32
+      mdata_sig: ~
+
+io_ports:
+  axi_ram:
+    type: axi4_mm_2x64_4g
+    drive: master
+
+registers:
+
+properties:
