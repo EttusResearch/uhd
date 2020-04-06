@@ -120,14 +120,14 @@ set_clock_groups -asynchronous \
 
 # TCXO DAC SPI
 # 12 MHz SPI clock rate
-set_max_delay -datapath_only -from [all_registers -edge_triggered] -to [get_ports TCXO_DAC*] 40.000
-set_min_delay -from [all_registers -edge_triggered] -to [get_ports TCXO_DAC*] 1.000
+set_max_delay -datapath_only -from [all_ffs] -to [get_ports TCXO_DAC*] 40.000
+set_min_delay -from [all_ffs] -to [get_ports TCXO_DAC*] 1.000
 
 # User GPIO
-set_max_delay -datapath_only -to   [get_ports PL_GPIO*] -from [all_registers -edge_triggered] [expr 15.0]
-set_min_delay                -to   [get_ports PL_GPIO*] -from [all_registers -edge_triggered] 5.0
-set_max_delay -datapath_only -from [get_ports PL_GPIO*] -to   [all_registers -edge_triggered] [expr 15.0]
-set_min_delay                -from [get_ports PL_GPIO*] -to   [all_registers -edge_triggered] 5.0
+set_max_delay -datapath_only -to   [get_ports PL_GPIO*] -from [all_ffs] [expr 15.0]
+set_min_delay                -to   [get_ports PL_GPIO*] -from [all_ffs] 5.0
+set_max_delay -datapath_only -from [get_ports PL_GPIO*] -to   [all_ffs] [expr 15.0]
+set_min_delay                -from [get_ports PL_GPIO*] -to   [all_ffs] 5.0
 
 # GPIO muxing
 set_max_delay -from [get_pins e31x_core_inst/fp_gpio_src_reg_reg[*]/C] -to [get_clocks CAT_DATA_CLK] $cat_data_clk_period -datapath_only
