@@ -28,6 +28,7 @@
     .s_${port_name}_axis_tready     (s_${port_name}_axis_tready),
     .s_${port_name}_axis_ttimestamp (s_${port_name}_axis_ttimestamp),
     .s_${port_name}_axis_thas_time  (s_${port_name}_axis_thas_time),
+    .s_${port_name}_axis_tlength    (s_${port_name}_axis_tlength),
     .s_${port_name}_axis_teov       (s_${port_name}_axis_teov),
     .s_${port_name}_axis_teob       (s_${port_name}_axis_teob)${"," if (idx < num_outputs -1) else ""}
 %endfor

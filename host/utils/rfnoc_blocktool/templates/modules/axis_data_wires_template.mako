@@ -61,6 +61,7 @@
   ${out_wire}wire [${num_ports}-1:0]        ${sl_pre}${port_name}_axis_tready${term}
   ${in_wire}wire [${num_ports}*64-1:0]     ${sl_pre}${port_name}_axis_ttimestamp${term}
   ${in_wire}wire [${num_ports}-1:0]        ${sl_pre}${port_name}_axis_thas_time${term}
+  ${in_wire}wire [${num_ports}*16-1:0]     ${sl_pre}${port_name}_axis_tlength${term}
   ${in_wire}wire [${num_ports}-1:0]        ${sl_pre}${port_name}_axis_teov${term}
   ${in_wire}wire [${num_ports}-1:0]        ${sl_pre}${port_name}_axis_teob${term if (term == ";") or (idx < num_inputs - 1) else ""}
 %else:
@@ -72,6 +73,7 @@
   ${out_wire}wire               ${sl_pre}${port_name}_axis_tready${term}
   ${in_wire}wire [63:0]        ${sl_pre}${port_name}_axis_ttimestamp${term}
   ${in_wire}wire               ${sl_pre}${port_name}_axis_thas_time${term}
+  ${in_wire}wire [15:0]        ${sl_pre}${port_name}_axis_tlength${term}
   ${in_wire}wire               ${sl_pre}${port_name}_axis_teov${term}
   ${in_wire}wire               ${sl_pre}${port_name}_axis_teob${term if (term == ";") or (idx < num_outputs - 1) else ""}
 %endif

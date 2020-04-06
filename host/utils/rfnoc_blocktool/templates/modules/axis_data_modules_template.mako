@@ -37,7 +37,7 @@ import math
       .m_axis_tready      (m_${port_name}_axis_tready[i]),
       .m_axis_ttimestamp  (m_${port_name}_axis_ttimestamp[64*i+:64]),
       .m_axis_thas_time   (m_${port_name}_axis_thas_time[i]),
-      .m_axis_tlength     (m_${port_name}_axis_tlength[i*16+:16]),
+      .m_axis_tlength     (m_${port_name}_axis_tlength[16*i+:16]),
       .m_axis_teov        (m_${port_name}_axis_teov[i]),
       .m_axis_teob        (m_${port_name}_axis_teob[i]),
       .flush_en           (data_i_flush_en),
@@ -99,13 +99,14 @@ import math
 %if num_ports != 1:
   for (i = 0; i < ${num_ports}; i = i + 1) begin: gen_output_${port_name}
     axis_data_to_chdr #(
-      .CHDR_W         (CHDR_W),
-      .ITEM_W         (${port_info['item_width']}),
-      .NIPC           (${port_info['nipc']}),
-      .SYNC_CLKS      (${1 if config['data']['clk_domain'] == "rfnoc_chdr" else 0}),
-      .INFO_FIFO_SIZE ($clog2(${port_info['info_fifo_depth']})),
-      .PYLD_FIFO_SIZE ($clog2(${port_info['payload_fifo_depth']})),
-      .MTU            (MTU)
+      .CHDR_W          (CHDR_W),
+      .ITEM_W          (${port_info['item_width']}),
+      .NIPC            (${port_info['nipc']}),
+      .SYNC_CLKS       (${1 if config['data']['clk_domain'] == "rfnoc_chdr" else 0}),
+      .INFO_FIFO_SIZE  ($clog2(${port_info['info_fifo_depth']})),
+      .PYLD_FIFO_SIZE  ($clog2(${port_info['payload_fifo_depth']})),
+      .MTU             (MTU),
+      .SIDEBAND_AT_END (${int(port_info['sideband_at_end']) if 'sideband_at_end' in port_info else 1})
     ) axis_data_to_chdr_out_${port_name} (
       .axis_chdr_clk      (rfnoc_chdr_clk),
       .axis_chdr_rst      (rfnoc_chdr_rst),
@@ -122,6 +123,7 @@ import math
       .s_axis_tready      (s_${port_name}_axis_tready[i]),
       .s_axis_ttimestamp  (s_${port_name}_axis_ttimestamp[64*i+:64]),
       .s_axis_thas_time   (s_${port_name}_axis_thas_time[i]),
+      .s_axis_tlength     (s_${port_name}_axis_tlength[16*i+:16]),
       .s_axis_teov        (s_${port_name}_axis_teov[i]),
       .s_axis_teob        (s_${port_name}_axis_teob[i]),
       .flush_en           (data_o_flush_en),
@@ -132,13 +134,14 @@ import math
   end
 %else:
   axis_data_to_chdr #(
-    .CHDR_W         (CHDR_W),
-    .ITEM_W         (${port_info['item_width']}),
-    .NIPC           (${port_info['nipc']}),
-    .SYNC_CLKS      (${1 if config['data']['clk_domain'] == "rfnoc_chdr" else 0}),
-    .INFO_FIFO_SIZE ($clog2(${port_info['info_fifo_depth']})),
-    .PYLD_FIFO_SIZE ($clog2(${port_info['payload_fifo_depth']})),
-    .MTU            (MTU)
+    .CHDR_W          (CHDR_W),
+    .ITEM_W          (${port_info['item_width']}),
+    .NIPC            (${port_info['nipc']}),
+    .SYNC_CLKS       (${1 if config['data']['clk_domain'] == "rfnoc_chdr" else 0}),
+    .INFO_FIFO_SIZE  ($clog2(${port_info['info_fifo_depth']})),
+    .PYLD_FIFO_SIZE  ($clog2(${port_info['payload_fifo_depth']})),
+    .MTU             (MTU),
+    .SIDEBAND_AT_END (${int(port_info['sideband_at_end']) if 'sideband_at_end' in port_info else 1})
   ) axis_data_to_chdr_out_${port_name} (
     .axis_chdr_clk      (rfnoc_chdr_clk),
     .axis_chdr_rst      (rfnoc_chdr_rst),
@@ -155,6 +158,7 @@ import math
     .s_axis_tready      (s_${port_name}_axis_tready),
     .s_axis_ttimestamp  (s_${port_name}_axis_ttimestamp),
     .s_axis_thas_time   (s_${port_name}_axis_thas_time),
+    .s_axis_tlength     (s_${port_name}_axis_tlength),
     .s_axis_teov        (s_${port_name}_axis_teov),
     .s_axis_teob        (s_${port_name}_axis_teob),
     .flush_en           (data_o_flush_en),

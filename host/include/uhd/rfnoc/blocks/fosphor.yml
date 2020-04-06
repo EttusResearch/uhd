@@ -41,6 +41,7 @@ data:
       nipc: 4
       info_fifo_depth: 32
       payload_fifo_depth: 32
+      sideband_at_end: False
       format: u8
       mdata_sig: ~
     wf:
@@ -48,6 +49,7 @@ data:
       nipc: 4
       info_fifo_depth: 32
       payload_fifo_depth: 32
+      sideband_at_end: False
       format: u8
       mdata_sig: ~
 
