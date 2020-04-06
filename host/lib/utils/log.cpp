@@ -105,7 +105,8 @@ inline std::string path_to_filename(std::string path)
  **********************************************************************/
 void console_log(const uhd::log::logging_info& log_info)
 {
-    std::clog
+    std::ostringstream log_buffer;
+    log_buffer
 #ifdef UHD_LOG_CONSOLE_COLOR
         << verbosity_color(log_info.verbosity)
 #endif
@@ -124,6 +125,7 @@ void console_log(const uhd::log::logging_info& log_info)
         << verbosity_color(uhd::log::off) // This will reset colors
 #endif
         << log_info.message << std::endl;
+    std::clog << log_buffer.str();
 }
 
 /*! Helper class to implement file logging
