@@ -183,18 +183,22 @@ void client_zero::reset_ctrl(uint16_t portno)
 {
     _check_port_number(portno);
     // The flush and reset registers are the second write register
+    // A reset gets triggered on the rising edge
+    regs().poke32(_get_port_base_addr(portno) + FLUSH_RESET_ADDR, 0);
     regs().poke32(_get_port_base_addr(portno) + FLUSH_RESET_ADDR, (1 << 1) /* 1st bit */);
+    // We wait the requested time (see the RFNoC spec) before returning
     std::this_thread::sleep_for(100us);
-    regs().poke32(_get_port_base_addr(portno) + FLUSH_RESET_ADDR, (1 << 1));
 }
 
 void client_zero::reset_chdr(uint16_t portno)
 {
     _check_port_number(portno);
     // The flush and reset registers are the second write register
+    // A reset gets triggered on the rising edge
+    regs().poke32(_get_port_base_addr(portno) + FLUSH_RESET_ADDR, 0);
     regs().poke32(_get_port_base_addr(portno) + FLUSH_RESET_ADDR, (1 << 2) /* 2nd bit */);
+    // We wait the requested time (see the RFNoC spec) before returning
     std::this_thread::sleep_for(1ms);
-    regs().poke32(_get_port_base_addr(portno) + FLUSH_RESET_ADDR, (1 << 2));
 }
 
 client_zero::block_config_info client_zero::get_block_info(uint16_t portno)
