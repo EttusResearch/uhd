@@ -6,8 +6,7 @@
 //
 
 
-#ifndef INCLUDED_UHD_TRANSPORT_NIRIO_STATUS_H
-#define INCLUDED_UHD_TRANSPORT_NIRIO_STATUS_H
+#pragma once
 
 #include <stdio.h>
 #include <stddef.h>
@@ -52,5 +51,3 @@ UHD_API void nirio_status_to_exception(const nirio_status& status, const std::st
     static const nirio_status CONST_NAME = ERR_CODE;
 #include "nirio_err_template.h"
 #undef NIRIO_ERR_INFO
-
-#endif /* INCLUDED_UHD_TRANSPORT_NIRIO_STATUS_H */

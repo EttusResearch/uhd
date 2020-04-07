@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_RFNOC_RX_STREAMER_HPP
-#define INCLUDED_LIBUHD_RFNOC_RX_STREAMER_HPP
+#pragma once
 
 #include <uhd/rfnoc/node.hpp>
 #include <uhdlib/rfnoc/chdr_rx_data_xport.hpp>
@@ -113,5 +112,3 @@ private:
 };
 
 }} // namespace uhd::rfnoc
-
-#endif /* INCLUDED_LIBUHD_RFNOC_RX_STREAMER_HPP */

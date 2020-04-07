@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_TRANSPORT_MUXED_ZERO_COPY_IF_HPP
-#define INCLUDED_LIBUHD_TRANSPORT_MUXED_ZERO_COPY_IF_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/transport/zero_copy.hpp>
@@ -61,5 +60,3 @@ public:
 };
 
 }} // namespace uhd::transport
-
-#endif /* INCLUDED_LIBUHD_TRANSPORT_MUXED_ZERO_COPY_IF_HPP */

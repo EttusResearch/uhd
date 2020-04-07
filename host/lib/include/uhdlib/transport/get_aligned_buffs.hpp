@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_GET_ALIGNED_BUFFS_HPP
-#define INCLUDED_LIBUHD_GET_ALIGNED_BUFFS_HPP
+#pragma once
 
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
@@ -172,5 +171,3 @@ private:
 };
 
 }} // namespace uhd::transport
-
-#endif /* INCLUDED_LIBUHD_GET_ALIGNED_BUFFS_HPP */

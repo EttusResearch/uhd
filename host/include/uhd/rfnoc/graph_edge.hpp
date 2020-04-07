@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_RFNOC_GRAPH_EDGE_HPP
-#define INCLUDED_LIBUHD_RFNOC_GRAPH_EDGE_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <string>
@@ -82,5 +81,3 @@ struct UHD_API graph_edge_t
 
 
 }} /* namespace uhd::rfnoc */
-
-#endif /* INCLUDED_LIBUHD_RFNOC_GRAPH_EDGE_HPP */

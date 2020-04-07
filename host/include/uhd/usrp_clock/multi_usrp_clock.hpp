@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_MULTI_USRP_CLOCK_HPP
-#define INCLUDED_UHD_MULTI_USRP_CLOCK_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/device.hpp>
@@ -92,5 +91,3 @@ public:
 };
 
 }} // namespace uhd::usrp_clock
-
-#endif /* INCLUDED_UHD_MULTI_USRP_CLOCK_HPP */

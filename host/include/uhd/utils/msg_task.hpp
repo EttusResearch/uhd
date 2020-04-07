@@ -6,8 +6,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_UTILS_MSG_TASK_HPP
-#define INCLUDED_UHD_UTILS_MSG_TASK_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/transport/zero_copy.hpp>
@@ -66,5 +65,3 @@ public:
     static sptr make(const task_fcn_type& task_fcn);
 };
 } // namespace uhd
-
-#endif /* INCLUDED_UHD_UTILS_MSG_TASK_HPP */

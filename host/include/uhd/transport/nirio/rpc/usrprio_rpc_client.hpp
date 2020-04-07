@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_USRPRIO_RPC_CLIENT_HPP
-#define INCLUDED_USRPRIO_RPC_CLIENT_HPP
+#pragma once
 
 #include <uhd/transport/nirio/rpc/rpc_client.hpp>
 #include <uhd/transport/nirio/rpc/rpc_common.hpp>
@@ -50,5 +49,3 @@ private:
 };
 
 }} // namespace uhd::usrprio_rpc
-
-#endif /* INCLUDED_USRPRIO_RPC_CLIENT_HPP */

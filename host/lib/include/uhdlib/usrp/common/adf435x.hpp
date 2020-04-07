@@ -6,8 +6,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_ADF435X_HPP
-#define INCLUDED_ADF435X_HPP
+#pragma once
 
 #include "adf4350_regs.hpp"
 #include "adf4351_regs.hpp"
@@ -615,5 +614,3 @@ inline int adf435x_impl<adf4351_regs_t>::_get_rfdiv_setting(uint16_t div)
             UHD_THROW_INVALID_CODE_PATH();
     }
 }
-
-#endif // INCLUDED_ADF435X_HPP

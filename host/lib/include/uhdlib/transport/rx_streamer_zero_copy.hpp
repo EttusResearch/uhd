@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_RX_STREAMER_ZERO_COPY_HPP
-#define INCLUDED_LIBUHD_RX_STREAMER_ZERO_COPY_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
@@ -384,5 +383,3 @@ private:
 };
 
 }} // namespace uhd::transport
-
-#endif /* INCLUDED_LIBUHD_RX_STREAMER_ZERO_COPY_HPP */

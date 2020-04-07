@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_RFNOC_ASYNC_MSG_HPP
-#define INCLUDED_UHD_RFNOC_ASYNC_MSG_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/types/sid.hpp>
@@ -84,4 +83,3 @@ struct async_msg_t
 };
 
 }} // namespace uhd::rfnoc
-#endif /* INCLUDED_UHD_RFNOC_ASYNC_MSG_HPP */

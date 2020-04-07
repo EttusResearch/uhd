@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_VERSION_HPP
-#define INCLUDED_UHD_VERSION_HPP
+#pragma once
 
 /*!
  * The ABI version string that the client application builds against.
@@ -40,5 +39,3 @@ namespace uhd{
 
 } //namespace uhd
 #endif
-
-#endif /* INCLUDED_UHD_VERSION_HPP */

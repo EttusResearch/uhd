@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0+
 //
 
-#ifndef INCLUDED_LIBUHD_UTILS_PREFS_HPP
-#define INCLUDED_LIBUHD_UTILS_PREFS_HPP
+#pragma once
 
 #include <uhd/types/device_addr.hpp>
 #include <uhdlib/utils/config_parser.hpp>
@@ -83,5 +82,3 @@ uhd::device_addr_t get_dpdk_args(const uhd::device_addr_t& user_args);
  */
 uhd::device_addr_t get_dpdk_nic_args(const uhd::device_addr_t& user_args);
 }} /* namespace uhd::prefs */
-
-#endif /* INCLUDED_LIBUHD_UTILS_PREFS_HPP */

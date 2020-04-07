@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_CONVERT_HPP
-#define INCLUDED_UHD_CONVERT_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/types/ref_vector.hpp>
@@ -101,5 +100,3 @@ UHD_API void register_bytes_per_item(const std::string& format, const size_t siz
 UHD_API size_t get_bytes_per_item(const std::string& format);
 
 }} // namespace uhd::convert
-
-#endif /* INCLUDED_UHD_CONVERT_HPP */

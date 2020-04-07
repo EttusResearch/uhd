@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_PROPERTY_HPP
-#define INCLUDED_LIBUHD_PROPERTY_HPP
+#pragma once
 
 #include <uhd/exception.hpp>
 #include <uhd/rfnoc/res_source_info.hpp>
@@ -305,5 +304,3 @@ private:
 }} /* namespace uhd::rfnoc */
 
 #include <uhd/rfnoc/property.ipp>
-
-#endif /* INCLUDED_LIBUHD_PROPERTY_HPP */

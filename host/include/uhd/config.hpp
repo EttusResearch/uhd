@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_CONFIG_HPP
-#define INCLUDED_UHD_CONFIG_HPP
+#pragma once
 
 #include <boost/config.hpp>
 #include <boost/version.hpp>
@@ -137,5 +136,3 @@ typedef ptrdiff_t ssize_t;
 #endif
 
 #define STR(x) XSTR(x)
-
-#endif /* INCLUDED_UHD_CONFIG_HPP */

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_USRP_GPIO_DEFS_HPP
-#define INCLUDED_LIBUHD_USRP_GPIO_DEFS_HPP
+#pragma once
 
 namespace uhd { namespace usrp { namespace gpio_atr {
 
@@ -18,5 +17,3 @@ enum gpio_atr_reg_t {
 };
 
 }}} // namespace uhd::usrp::gpio_atr
-
-#endif /* INCLUDED_LIBUHD_USRP_GPIO_DEFS_HPP */

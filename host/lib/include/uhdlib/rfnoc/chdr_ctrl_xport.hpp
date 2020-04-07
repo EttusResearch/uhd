@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_RFNOC_CHDR_CTRL_XPORT_HPP
-#define INCLUDED_RFNOC_CHDR_CTRL_XPORT_HPP
+#pragma once
 
 #include <uhdlib/rfnoc/chdr_packet.hpp>
 #include <uhdlib/rfnoc/chdr_types.hpp>
@@ -158,5 +157,3 @@ private:
 };
 
 }} // namespace uhd::rfnoc
-
-#endif /* INCLUDED_UHDLIB_RFNOC_CHDR_CTRL_XPORT_HPP */

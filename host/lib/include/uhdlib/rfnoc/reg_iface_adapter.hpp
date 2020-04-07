@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_RFNOC_REG2WBIF_ADAPTER_HPP
-#define INCLUDED_LIBUHD_RFNOC_REG2WBIF_ADAPTER_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/rfnoc/register_iface.hpp>
@@ -116,5 +115,3 @@ private:
 
 
 }} /* namespace uhd::rfnoc */
-
-#endif /* INCLUDED_LIBUHD_RFNOC_REG2WBIF_ADAPTER_HPP */

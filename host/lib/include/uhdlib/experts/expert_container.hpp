@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_EXPERTS_EXPERT_CONTAINER_HPP
-#define INCLUDED_UHD_EXPERTS_EXPERT_CONTAINER_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/utils/noncopyable.hpp>
@@ -192,5 +191,3 @@ private:
 };
 
 }} // namespace uhd::experts
-
-#endif /* INCLUDED_UHD_EXPERTS_EXPERT_CONTAINER_HPP */

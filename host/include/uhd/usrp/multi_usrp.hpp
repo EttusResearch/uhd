@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_USRP_MULTI_USRP_HPP
-#define INCLUDED_UHD_USRP_MULTI_USRP_HPP
+#pragma once
 
 // define API capabilities for compile time detection of new features
 #define UHD_USRP_MULTI_USRP_REF_SOURCES_API
@@ -1638,5 +1637,3 @@ public:
 
 } // namespace usrp
 } // namespace uhd
-
-#endif /* INCLUDED_UHD_USRP_MULTI_USRP_HPP */

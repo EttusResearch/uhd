@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LMX2592_HPP
-#define INCLUDED_LMX2592_HPP
+#pragma once
 
 #include "lmx2592_regs.hpp"
 #include <uhd/utils/log.hpp>
@@ -53,5 +52,3 @@ public:
 
     virtual void commit() = 0;
 };
-
-#endif // INCLUDED_LMX2592_HPP

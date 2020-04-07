@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_RFNOC_CONSTANTS_HPP
-#define INCLUDED_LIBUHD_RFNOC_CONSTANTS_HPP
+#pragma once
 
 #include <uhd/rfnoc/defaults.hpp>
 #include <uhd/types/dict.hpp>
@@ -95,5 +94,3 @@ static const std::string VALID_BLOCKID_REGEX =
     "(?:(\\d+)(?:/))?([A-Za-z][A-Za-z0-9]*)(?:(?:#)(\\d\\d?))?";
 
 }} /* namespace uhd::rfnoc */
-
-#endif /* INCLUDED_LIBUHD_RFNOC_CONSTANTS_HPP */

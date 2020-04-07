@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_TYPES_TIME_SPEC_HPP
-#define INCLUDED_UHD_TYPES_TIME_SPEC_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <stdint.h>
@@ -130,5 +129,3 @@ UHD_INLINE double time_spec_t::get_frac_secs(void) const
 }
 
 } // namespace uhd
-
-#endif /* INCLUDED_UHD_TYPES_TIME_SPEC_HPP */

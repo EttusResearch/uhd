@@ -10,8 +10,7 @@
 // It should not be used in production code.
 //
 
-#ifndef INCLUDED_UHD_UTILS_AUTO_TIMER_HPP
-#define INCLUDED_UHD_UTILS_AUTO_TIMER_HPP
+#pragma once
 
 // for now, only implemented for windows
 #ifdef UHD_PLATFORM_WIN32
@@ -131,5 +130,3 @@ private:
 #    define PROFILE_TIMING_WITH_THRESHOLD_AND_SCALE(context, threshold, unitScale)
 
 #endif
-
-#endif /* INCLUDED_UHD_UTILS_AUTO_TIMER_HPP */

@@ -6,8 +6,7 @@
 
 // Various interpolation functions used within UHD
 
-#ifndef INCLUDED_UHD_UTILS_INTERP_HPP
-#define INCLUDED_UHD_UTILS_INTERP_HPP
+#pragma once
 
 #include <uhd/utils/math.hpp>
 #include <uhd/utils/interpolation.hpp>
@@ -136,5 +135,3 @@ typename map_type::mapped_type at_lin_interp(
 }
 
 }} // namespace uhd::math
-
-#endif /* INCLUDED_UHD_UTILS_INTERP_HPP */

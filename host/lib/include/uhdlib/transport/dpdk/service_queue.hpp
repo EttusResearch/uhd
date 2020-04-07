@@ -3,8 +3,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
-#ifndef _INCLUDED_UHDLIB_TRANSPORT_DPDK_SERVICE_QUEUE_HPP_
-#define _INCLUDED_UHDLIB_TRANSPORT_DPDK_SERVICE_QUEUE_HPP_
+#pragma once
 
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
@@ -261,5 +260,3 @@ private:
 };
 
 }}} // namespace uhd::transport::dpdk
-
-#endif /*_INCLUDED_UHDLIB_TRANSPORT_DPDK_SERVICE_QUEUE_HPP_ */

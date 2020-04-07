@@ -5,8 +5,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-#ifndef INCLUDED_UHD_TYPES_STRING_VECTOR_H
-#define INCLUDED_UHD_TYPES_STRING_VECTOR_H
+#pragma once
 
 #include <uhd/config.h>
 #include <uhd/error.h>
@@ -72,5 +71,3 @@ UHD_API uhd_error uhd_string_vector_last_error(
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* INCLUDED_UHD_TYPES_STRING_VECTOR_H */

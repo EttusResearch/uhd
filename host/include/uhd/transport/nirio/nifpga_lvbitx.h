@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_TRANSPORT_NIRIO_NIFPGA_LVBITX_H
-#define INCLUDED_UHD_TRANSPORT_NIRIO_NIFPGA_LVBITX_H
+#pragma once
 
 #include <uhd/transport/nirio/nirio_resource_manager.h>
 #include <uhd/transport/nirio/niriok_proxy.h>
@@ -43,6 +42,4 @@ protected:
 };
 
 }}
-
-#endif /* INCLUDED_UHD_TRANSPORT_NIRIO_NIFPGA_LVBITX_H */
 

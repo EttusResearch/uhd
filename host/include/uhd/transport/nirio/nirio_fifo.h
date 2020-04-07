@@ -7,8 +7,7 @@
 //
 
 
-#ifndef INCLUDED_UHD_TRANSPORT_NIRIO_NIRIO_FIFO_H
-#define INCLUDED_UHD_TRANSPORT_NIRIO_NIRIO_FIFO_H
+#pragma once
 
 #include <uhd/transport/nirio/nirio_driver_iface.h>
 #include <uhd/transport/nirio/niriok_proxy.h>
@@ -232,5 +231,3 @@ private:    //Members
 #include <uhd/transport/nirio/nirio_fifo.ipp>
 
 }}
-
-#endif /* INCLUDED_UHD_TRANSPORT_NIRIO_NIRIO_FIFO_H */

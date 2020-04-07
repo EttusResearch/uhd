@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_USRP_TIME64_CORE_200_HPP
-#define INCLUDED_LIBUHD_USRP_TIME64_CORE_200_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/types/time_spec.hpp>
@@ -53,5 +52,3 @@ public:
 
     virtual std::vector<std::string> get_time_sources(void) = 0;
 };
-
-#endif /* INCLUDED_LIBUHD_USRP_TIME64_CORE_200_HPP */

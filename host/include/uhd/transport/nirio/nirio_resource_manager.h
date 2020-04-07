@@ -6,8 +6,7 @@
 //
 
 
-#ifndef INCLUDED_UHD_TRANSPORT_NIRIO_NIRIO_RESOURCE_MANAGER_H
-#define INCLUDED_UHD_TRANSPORT_NIRIO_NIRIO_RESOURCE_MANAGER_H
+#pragma once
 
 #include <uhd/transport/nirio/nirio_fifo.h>
 #include <uhd/transport/nirio/niriok_proxy.h>
@@ -106,4 +105,3 @@ private:
 };
 
 }}
-#endif /* INCLUDED_UHD_TRANSPORT_NIRIO_NIRIO_RESOURCE_MANAGER_H */

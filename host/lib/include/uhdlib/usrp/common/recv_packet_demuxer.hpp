@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_USRP_COMMON_RECV_PACKET_DEMUXER_HPP
-#define INCLUDED_LIBUHD_USRP_COMMON_RECV_PACKET_DEMUXER_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/transport/zero_copy.hpp>
@@ -33,5 +32,3 @@ public:
 };
 
 }} // namespace uhd::usrp
-
-#endif /* INCLUDED_LIBUHD_USRP_COMMON_RECV_PACKET_DEMUXER_HPP */

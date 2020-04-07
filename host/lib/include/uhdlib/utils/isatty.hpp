@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHDLIB_UTILS_ISATTY_HPP
-#define INCLUDED_UHDLIB_UTILS_ISATTY_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhdlib/utils/narrow.hpp>
@@ -52,5 +51,3 @@ bool is_a_tty(const int fd)
 #endif
 
 } /* namespace uhd */
-
-#endif /* INCLUDED_UHDLIB_UTILS_ISATTY_HPP */

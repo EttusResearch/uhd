@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_RES_SRC_INFO_HPP
-#define INCLUDED_LIBUHD_RES_SRC_INFO_HPP
+#pragma once
 
 #include <uhd/exception.hpp>
 #include <cstdint>
@@ -87,5 +86,3 @@ struct hash<uhd::rfnoc::res_source_info>
     }
 };
 } // namespace std
-
-#endif /* INCLUDED_LIBUHD_RES_SRC_INFO_HPP */

@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_EPID_ALLOCATOR_HPP
-#define INCLUDED_LIBUHD_EPID_ALLOCATOR_HPP
+#pragma once
 
 #include <uhdlib/rfnoc/mgmt_portal.hpp>
 #include <uhdlib/rfnoc/rfnoc_common.hpp>
@@ -74,5 +73,3 @@ private:
 };
 
 }} /* namespace uhd::rfnoc */
-
-#endif /* INCLUDED_LIBUHD_EPID_ALLOCATOR_HPP */

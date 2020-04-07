@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_TRAFFIC_COUNTER_HPP
-#define INCLUDED_LIBUHD_TRAFFIC_COUNTER_HPP
+#pragma once
 
 #include <uhd/property_tree.hpp>
 #include <uhdlib/utils/narrow.hpp>
@@ -72,5 +71,3 @@ private:
 };
 
 }} /* namespace uhd::rfnoc */
-
-#endif /* INCLUDED_LIBUHD_TRAFFIC_COUNTER_HPP */

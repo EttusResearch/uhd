@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_USRP_DBOARD_BASE_HPP
-#define INCLUDED_UHD_USRP_DBOARD_BASE_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/property_tree.hpp>
@@ -97,5 +96,3 @@ public:
 };
 
 }} // namespace uhd::usrp
-
-#endif /* INCLUDED_UHD_USRP_DBOARD_BASE_HPP */

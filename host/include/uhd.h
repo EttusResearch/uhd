@@ -6,8 +6,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-#ifndef INCLUDED_UHD_H
-#define INCLUDED_UHD_H
+#pragma once
 
 #include <uhd/config.h>
 #include <uhd/error.h>
@@ -30,5 +29,3 @@
 
 #include <uhd/utils/thread_priority.h>
 #include <uhd/utils/log.h>
-
-#endif /* INCLUDED_UHD_H */

@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHDLIB_UTILS_COMPATCHECK_HPP
-#define INCLUDED_UHDLIB_UTILS_COMPATCHECK_HPP
+#pragma once
 
 #include <cstddef>
 #include <string>
@@ -35,5 +34,3 @@ void assert_fpga_compat(const size_t uhd_major,
     const bool fail_on_minor_behind = false);
 
 } /* namespace uhd */
-
-#endif /* INCLUDED_UHDLIB_UTILS_COMPATCHECK_HPP */

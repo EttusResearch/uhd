@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_IO_SERVICE_MGR_HPP
-#define INCLUDED_LIBUHD_IO_SERVICE_MGR_HPP
+#pragma once
 
 #include <uhd/transport/adapter_id.hpp>
 #include <uhd/types/device_addr.hpp>
@@ -102,5 +101,3 @@ public:
 };
 
 }} // namespace uhd::usrp
-
-#endif /* INCLUDED_LIBUHD_IO_SERVICE_MGR_HPP */

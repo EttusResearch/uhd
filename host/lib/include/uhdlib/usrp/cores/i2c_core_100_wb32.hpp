@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_USRP_I2C_CORE_100_WB32_HPP
-#define INCLUDED_LIBUHD_USRP_I2C_CORE_100_WB32_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/types/serial.hpp>
@@ -26,5 +25,3 @@ public:
 
     virtual void set_clock_rate(const double rate) = 0;
 };
-
-#endif /* INCLUDED_LIBUHD_USRP_I2C_CORE_100_WB32_HPP */

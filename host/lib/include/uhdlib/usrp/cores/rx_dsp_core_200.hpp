@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_USRP_RX_DSP_CORE_200_HPP
-#define INCLUDED_LIBUHD_USRP_RX_DSP_CORE_200_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/stream.hpp>
@@ -56,5 +55,3 @@ public:
 
     virtual void setup(const uhd::stream_args_t& stream_args) = 0;
 };
-
-#endif /* INCLUDED_LIBUHD_USRP_RX_DSP_CORE_200_HPP */

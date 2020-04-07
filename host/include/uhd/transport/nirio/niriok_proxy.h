@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_TRANSPORT_NIRIO_NIRIO_INTERFACE_H
-#define INCLUDED_UHD_TRANSPORT_NIRIO_NIRIO_INTERFACE_H
+#pragma once
 
 #include <uhd/transport/nirio/nirio_driver_iface.h>
 #include <uhd/transport/nirio/nirio_quirks.h>
@@ -271,5 +270,3 @@ namespace uhd { namespace niusrprio
         nirio_status cache_status;
     };
 }}
-
-#endif /* INCLUDED_UHD_TRANSPORT_NIRIO_NIRIO_INTERFACE_H */

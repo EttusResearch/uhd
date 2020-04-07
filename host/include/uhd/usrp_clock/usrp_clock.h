@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_USRP_CLOCK_H
-#define INCLUDED_UHD_USRP_CLOCK_H
+#pragma once
 
 #include <uhd/config.h>
 #include <uhd/error.h>
@@ -111,5 +110,3 @@ UHD_API uhd_error uhd_usrp_clock_get_sensor_names(
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* INCLUDED_UHD_USRP_CLOCK_H */

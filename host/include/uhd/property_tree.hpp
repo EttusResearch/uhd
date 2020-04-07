@@ -6,8 +6,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_PROPERTY_TREE_HPP
-#define INCLUDED_UHD_PROPERTY_TREE_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/utils/noncopyable.hpp>
@@ -268,5 +267,3 @@ private:
 } // namespace uhd
 
 #include <uhd/property_tree.ipp>
-
-#endif /* INCLUDED_UHD_PROPERTY_TREE_HPP */

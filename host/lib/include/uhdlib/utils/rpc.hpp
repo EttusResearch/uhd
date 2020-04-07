@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UTILS_RPC_HPP
-#define INCLUDED_UTILS_RPC_HPP
+#pragma once
 
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
@@ -326,5 +325,3 @@ private:
 };
 
 } /* namespace uhd */
-
-#endif /* INCLUDED_UTILS_RPC_HPP */

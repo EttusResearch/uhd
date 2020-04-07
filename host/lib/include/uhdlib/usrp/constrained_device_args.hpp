@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_USRP_COMMON_CONSTRAINED_DEV_ARGS_HPP
-#define INCLUDED_LIBUHD_USRP_COMMON_CONSTRAINED_DEV_ARGS_HPP
+#pragma once
 
 #include <uhd/exception.hpp>
 #include <uhd/types/device_addr.hpp>
@@ -327,5 +326,3 @@ protected: // Methods
     }
 };
 }} // namespace uhd::usrp
-
-#endif /* INCLUDED_LIBUHD_USRP_COMMON_CONSTRAINED_DEV_ARGS_HPP */

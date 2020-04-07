@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_DSP_CORE_UTILS_HPP
-#define INCLUDED_LIBUHD_DSP_CORE_UTILS_HPP
+#pragma once
 
 #include <tuple>
 
@@ -23,5 +22,3 @@ void get_freq_and_freq_word(const double requested_freq,
  */
 std::tuple<double, int> get_freq_and_freq_word(
     const double requested_freq, const double tick_rate);
-
-#endif /* INCLUDED_LIBUHD_DSP_CORE_UTILS_HPP */

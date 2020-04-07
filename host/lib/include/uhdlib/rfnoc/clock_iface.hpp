@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_RFNOC_CLOCK_IFACE_HPP
-#define INCLUDED_UHD_RFNOC_CLOCK_IFACE_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
@@ -83,5 +82,3 @@ private:
 };
 
 }} // namespace uhd::rfnoc
-
-#endif /* INCLUDED_UHD_RFNOC_CLOCK_IFACE_HPP */

@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_DPDK_SIMPLE_HPP
-#define INCLUDED_DPDK_SIMPLE_HPP
+#pragma once
 
 #include <uhd/transport/udp_simple.hpp>
 
@@ -53,5 +52,3 @@ public:
 };
 
 }} // namespace uhd::transport
-
-#endif /* INCLUDED_DPDK_SIMPLE_HPP */

@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_UTILS_GRAPH_UTILS_HPP
-#define INCLUDED_UHD_UTILS_GRAPH_UTILS_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/rfnoc/block_id.hpp>
@@ -65,5 +64,3 @@ void UHD_API connect_through_blocks(rfnoc_graph::sptr graph,
     const size_t dst_port);
 
 }} // namespace uhd::rfnoc
-
-#endif /* INCLUDED_UHD_UTILS_GRAPH_UTILS_HPP */

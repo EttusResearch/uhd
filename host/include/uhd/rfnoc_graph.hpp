@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_RFNOCDEV_GRAPH_HPP
-#define INCLUDED_LIBUHD_RFNOCDEV_GRAPH_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/rfnoc/block_id.hpp>
@@ -342,5 +341,3 @@ public:
 }; // class rfnoc_graph
 
 }}; // namespace uhd::rfnoc
-
-#endif /* INCLUDED_LIBUHD_RFNOCDEV_GRAPH_HPP */

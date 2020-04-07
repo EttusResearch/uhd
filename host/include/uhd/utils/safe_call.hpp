@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_UTILS_SAFE_CALL_HPP
-#define INCLUDED_UHD_UTILS_SAFE_CALL_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
@@ -31,5 +30,3 @@
     } catch (...) {                                        \
         _UHD_SAFE_CALL_WARNING(code, "unknown exception"); \
     }
-
-#endif /* INCLUDED_UHD_UTILS_SAFE_CALL_HPP */

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_RFNOC_RESOLVE_CONTEXT_HPP
-#define INCLUDED_UHD_RFNOC_RESOLVE_CONTEXT_HPP
+#pragma once
 
 namespace uhd { namespace rfnoc {
 
@@ -22,5 +21,3 @@ enum class resolve_context {
 };
 
 }} // namespace uhd::rfnoc
-
-#endif /* INCLUDED_UHD_RFNOC_RESOLVE_CONTEXT_HPP */

@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_TRANSPORT_ADAPTER_ID_HPP
-#define INCLUDED_UHD_TRANSPORT_ADAPTER_ID_HPP
+#pragma once
 
 #include <cstddef>
 
@@ -17,5 +16,3 @@ using adapter_id_t = size_t;
 static const adapter_id_t NULL_ADAPTER_ID = 0;
 
 }} // namespace uhd::transport
-
-#endif /* INCLUDED_UHD_TRANSPORT_ADAPTER_ID_HPP */

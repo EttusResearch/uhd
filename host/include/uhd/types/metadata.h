@@ -5,8 +5,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-#ifndef INCLUDED_UHD_TYPES_METADATA_H
-#define INCLUDED_UHD_TYPES_METADATA_H
+#pragma once
 
 #include <uhd/config.h>
 #include <uhd/error.h>
@@ -350,5 +349,3 @@ UHD_API uhd_error uhd_async_metadata_last_error(
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* INCLUDED_UHD_TYPES_METADATA_H */

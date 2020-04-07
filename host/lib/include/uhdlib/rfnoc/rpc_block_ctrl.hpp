@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_RFNOC_RPC_BLOCK_CTRL_HPP
-#define INCLUDED_LIBUHD_RFNOC_RPC_BLOCK_CTRL_HPP
+#pragma once
 
 #include <uhd/types/device_addr.hpp>
 #include <uhdlib/utils/rpc.hpp>
@@ -33,5 +32,3 @@ public:
 };
 
 }} // namespace uhd::rfnoc
-
-#endif /* INCLUDED_LIBUHD_RFNOC_RPC_BLOCK_CTRL_HPP */

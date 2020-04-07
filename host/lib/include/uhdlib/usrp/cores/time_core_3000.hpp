@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_USRP_TIME_CORE_3000_HPP
-#define INCLUDED_LIBUHD_USRP_TIME_CORE_3000_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/types/time_spec.hpp>
@@ -46,5 +45,3 @@ public:
 
     virtual void set_time_next_pps(const uhd::time_spec_t& time) = 0;
 };
-
-#endif /* INCLUDED_LIBUHD_USRP_TIME_CORE_3000_HPP */

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_UTILS_PIMPL_HPP
-#define INCLUDED_UHD_UTILS_PIMPL_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <memory>
@@ -41,5 +40,3 @@
  * \param _args the constructor args for the pimpl
  */
 #define UHD_PIMPL_MAKE(_name, _args) std::shared_ptr<_name>(new _name _args)
-
-#endif /* INCLUDED_UHD_UTILS_PIMPL_HPP */

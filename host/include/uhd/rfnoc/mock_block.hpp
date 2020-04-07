@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_MOCK_BLOCK_HPP
-#define INCLUDED_LIBUHD_MOCK_BLOCK_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/property_tree.hpp>
@@ -188,5 +187,3 @@ UHD_API mock_block_container get_mock_block(const noc_id_t noc_id,
     std::shared_ptr<mock_reg_iface_t> client_reg_iface = nullptr);
 
 }}; // namespace uhd::rfnoc
-
-#endif /* INCLUDED_LIBUHD_MOCK_BLOCK_HPP */

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_TYPES_RANGES_HPP
-#define INCLUDED_UHD_TYPES_RANGES_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <string>
@@ -113,5 +112,3 @@ typedef meta_range_t gain_range_t;
 typedef meta_range_t freq_range_t;
 
 } // namespace uhd
-
-#endif /* INCLUDED_UHD_TYPES_RANGES_HPP */

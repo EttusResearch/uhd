@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_USRP_RADIO_CTRL_3000_HPP
-#define INCLUDED_LIBUHD_USRP_RADIO_CTRL_3000_HPP
+#pragma once
 
 #include <uhd/transport/zero_copy.hpp>
 #include <uhd/types/time_spec.hpp>
@@ -48,5 +47,3 @@ public:
     //! Set the tick rate (converting time into ticks)
     virtual void set_tick_rate(const double rate) = 0;
 };
-
-#endif /* INCLUDED_LIBUHD_USRP_RADIO_CTRL_3000_HPP */

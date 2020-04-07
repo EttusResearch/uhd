@@ -6,8 +6,7 @@
 
 // More math, but not meant for public API
 
-#ifndef INCLUDED_UHDLIB_UTILS_MATH_HPP
-#define INCLUDED_UHDLIB_UTILS_MATH_HPP
+#pragma once
 
 #include <uhdlib/utils/narrow.hpp>
 #include <cmath>
@@ -97,5 +96,3 @@ std::pair<IntegerType, IntegerType> rational_approximation(
 
 
 }} /* namespace uhd::math */
-
-#endif /* INCLUDED_UHDLIB_UTILS_MATH_HPP */

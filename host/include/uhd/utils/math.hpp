@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_UTILS_MATH_HPP
-#define INCLUDED_UHD_UTILS_MATH_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
@@ -256,5 +255,3 @@ inline IntegerType gcd(IntegerType x, IntegerType y)
 
 #include <uhd/utils/fp_compare_delta.ipp>
 #include <uhd/utils/fp_compare_epsilon.ipp>
-
-#endif /* INCLUDED_UHD_UTILS_MATH_HPP */

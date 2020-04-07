@@ -6,8 +6,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_UTILS_CAST_HPP
-#define INCLUDED_UHD_UTILS_CAST_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
@@ -62,5 +61,3 @@ template <>
 UHD_API std::string from_str(const std::string& val);
 
 }} // namespace uhd::cast
-
-#endif /* INCLUDED_UHD_UTILS_CAST_HPP */

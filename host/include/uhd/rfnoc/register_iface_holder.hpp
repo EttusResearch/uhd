@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_REGISTER_IFACE_HOLDER_HPP
-#define INCLUDED_LIBUHD_REGISTER_IFACE_HOLDER_HPP
+#pragma once
 
 #include <uhd/rfnoc/register_iface.hpp>
 
@@ -39,5 +38,3 @@ private:
 };
 
 }} /* namespace uhd::rfnoc */
-
-#endif /* INCLUDED_LIBUHD_REGISTER_IFACE_HOLDER_HPP */

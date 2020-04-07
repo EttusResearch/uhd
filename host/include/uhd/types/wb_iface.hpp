@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_TYPES_WB_IFACE_HPP
-#define INCLUDED_UHD_TYPES_WB_IFACE_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/types/time_spec.hpp>
@@ -85,5 +84,3 @@ public:
 };
 
 } // namespace uhd
-
-#endif /* INCLUDED_UHD_TYPES_WB_IFACE_HPP */

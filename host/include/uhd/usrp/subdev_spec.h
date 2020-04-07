@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_USRP_SUBDEV_SPEC_H
-#define INCLUDED_UHD_USRP_SUBDEV_SPEC_H
+#pragma once
 
 #include <uhd/config.h>
 #include <uhd/error.h>
@@ -123,5 +122,3 @@ UHD_API void uhd_subdev_spec_pair_cpp_to_c(
     uhd_subdev_spec_pair_t *subdev_spec_pair_c
 );
 #endif
-
-#endif /* INCLUDED_UHD_USRP_SUBDEV_SPEC_H */

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_RPC_COMMON_HPP
-#define INCLUDED_RPC_COMMON_HPP
+#pragma once
 
 #define USE_BINARY_ARCHIVE 0
 
@@ -161,5 +160,3 @@ public:
 }} // namespace uhd::usrprio_rpc
 
 #undef USE_BINARY_ARCHIVE
-
-#endif /* INCLUDED_RPC_COMMON_HPP */

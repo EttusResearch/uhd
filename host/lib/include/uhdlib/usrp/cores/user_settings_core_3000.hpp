@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_USRP_USER_SETTINGS_CORE_3000_HPP
-#define INCLUDED_LIBUHD_USRP_USER_SETTINGS_CORE_3000_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/types/wb_iface.hpp>
@@ -22,5 +21,3 @@ public:
         const wb_addr_type sr_base_addr,
         const wb_addr_type rb_reg_addr);
 };
-
-#endif /* INCLUDED_LIBUHD_USRP_USER_SETTINGS_CORE_3000_HPP */

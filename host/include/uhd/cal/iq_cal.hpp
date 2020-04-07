@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_CAL_IQ_DATA_HPP
-#define INCLUDED_LIBUHD_CAL_IQ_DATA_HPP
+#pragma once
 
 #include <uhd/cal/container.hpp>
 #include <uhd/config.hpp>
@@ -74,5 +73,3 @@ public:
 };
 
 }}} // namespace uhd::usrp::cal
-
-#endif /* INCLUDED_LIBUHD_CAL_IQ_DATA_HPP */

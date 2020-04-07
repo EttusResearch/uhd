@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_CONFIG_H
-#define INCLUDED_UHD_CONFIG_H
+#pragma once
 
 #ifdef _MSC_VER
 // Bring in "and", "or", and "not"
@@ -81,5 +80,3 @@ typedef ptrdiff_t ssize_t;
 #elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD_kernel__)
     #define UHD_PLATFORM_BSD
 #endif
-
-#endif /* INCLUDED_UHD_CONFIG_H */

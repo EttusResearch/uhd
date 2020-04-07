@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_TRANSPORT_FRAME_BUFF_HPP
-#define INCLUDED_UHD_TRANSPORT_FRAME_BUFF_HPP
+#pragma once
 
 #include <memory>
 
@@ -65,5 +64,3 @@ protected:
 };
 
 }} // namespace uhd::transport
-
-#endif /* INCLUDED_UHD_TRANSPORT_FRAME_BUFF_HPP */

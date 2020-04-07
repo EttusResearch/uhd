@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_USRP_RX_VITA_CORE_3000_HPP
-#define INCLUDED_LIBUHD_USRP_RX_VITA_CORE_3000_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/stream.hpp>
@@ -44,5 +43,3 @@ public:
 
     virtual bool in_continuous_streaming_mode(void) = 0;
 };
-
-#endif /* INCLUDED_LIBUHD_USRP_RX_VITA_CORE_3000_HPP */

@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_SCOPE_EXIT_HPP
-#define INCLUDED_UHD_SCOPE_EXIT_HPP
+#pragma once
 
 #include <functional>
 #include <memory>
@@ -50,5 +49,3 @@ private:
 };
 
 }} // namespace uhd::utils
-
-#endif /* INCLUDED_UHD_SCOPE_EXIT_HPP */

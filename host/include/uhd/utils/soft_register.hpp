@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_UTILS_SOFT_REGISTER_HPP
-#define INCLUDED_UHD_UTILS_SOFT_REGISTER_HPP
+#pragma once
 
 #include <uhd/exception.hpp>
 #include <uhd/types/wb_iface.hpp>
@@ -705,5 +704,3 @@ private:
 };
 
 } // namespace uhd
-
-#endif /* INCLUDED_UHD_UTILS_SOFT_REGISTER_HPP */

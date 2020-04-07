@@ -6,8 +6,7 @@
 //
 
 
-#ifndef INCLUDED_UHD_TRANSPORT_NIRIO_NIUSRPRIO_SESSION_H
-#define INCLUDED_UHD_TRANSPORT_NIRIO_NIUSRPRIO_SESSION_H
+#pragma once
 
 #include <uhd/transport/nirio/nifpga_lvbitx.h>
 #include <uhd/transport/nirio/nirio_resource_manager.h>
@@ -108,5 +107,3 @@ private:
 };
 
 }} // namespace uhd::niusrprio
-
-#endif /* INCLUDED_UHD_TRANSPORT_NIRIO_NIUSRPRIO_SESSION_H */

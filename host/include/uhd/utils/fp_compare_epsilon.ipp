@@ -9,8 +9,7 @@
 #include <cmath>
 #include <typeinfo>
 
-#ifndef INCLUDED_UHD_UTILS_FP_COMPARE_EPSILON_IPP
-#define INCLUDED_UHD_UTILS_FP_COMPARE_EPSILON_IPP
+#pragma once
 
 
 namespace uhd { namespace math { namespace fp_compare {
@@ -163,5 +162,3 @@ namespace uhd { namespace math { namespace fp_compare {
     }
 
 } } } //namespace uhd::math::fp_compare
-
-#endif /* INCLUDED_UHD_UTILS_FP_COMPARE_EPSILON_IPP */

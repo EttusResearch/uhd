@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_USRP_FE_CONNECTION_HPP
-#define INCLUDED_UHD_USRP_FE_CONNECTION_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <boost/operators.hpp>
@@ -123,5 +122,3 @@ private:
 UHD_API bool operator==(const fe_connection_t& lhs, const fe_connection_t& rhs);
 
 }} // namespace uhd::usrp
-
-#endif /* INCLUDED_UHD_USRP_FE_CONNECTION_HPP */

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_RPC_CLIENT_HPP
-#define INCLUDED_RPC_CLIENT_HPP
+#pragma once
 
 #include "rpc_common.hpp"
 #include <uhd/utils/log.hpp>
@@ -83,5 +82,3 @@ private:
 };
 
 }} // namespace uhd::usrprio_rpc
-
-#endif /* INCLUDED_RPC_CLIENT_HPP */

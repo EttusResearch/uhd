@@ -4,12 +4,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#pragma once
+
 #include <condition_variable>
 #include <chrono>
 #include <mutex>
-
-#ifndef INCLUDED_UHDLIB_UTILS_SEMAPHORE_HPP
-#    define INCLUDED_UHDLIB_UTILS_SEMAPHORE_HPP
 
 namespace uhd {
 
@@ -67,5 +66,3 @@ private:
 };
 
 } // namespace uhd
-
-#endif /* INCLUDED_UHDLIB_UTILS_SEMAPHORE_HPP */

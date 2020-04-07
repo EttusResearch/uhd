@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_USRP_TX_FRONTEND_CORE_3000_HPP
-#define INCLUDED_LIBUHD_USRP_TX_FRONTEND_CORE_3000_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/property_tree.hpp>
@@ -56,5 +55,3 @@ public:
      */
     virtual double get_output_rate(void) = 0;
 };
-
-#endif /* INCLUDED_LIBUHD_USRP_TX_FRONTEND_CORE_3000_HPP */

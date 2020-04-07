@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_AD9361_MANAGER_HPP
-#define INCLUDED_AD9361_MANAGER_HPP
+#pragma once
 
 #include <uhd/property_tree.hpp>
 #include <uhd/types/direction.hpp>
@@ -110,5 +109,3 @@ public:
 }; /* class ad936x_manager */
 
 }} /* namespace uhd::usrp */
-
-#endif /* INCLUDED_AD9361_MANAGER_HPP */

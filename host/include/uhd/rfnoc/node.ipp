@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_RFNOC_NODE_IPP
-#define INCLUDED_LIBUHD_RFNOC_NODE_IPP
+#pragma once
 
 #include <boost/format.hpp>
 #include <boost/units/detail/utility.hpp>
@@ -90,6 +89,4 @@ const prop_data_t& node_t::get_property(
 }
 
 }} /* namespace uhd::rfnoc */
-
-#endif /* INCLUDED_LIBUHD_RFNOC_NODE_IPP */
 

@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_RFNOC_GRAPH_STREAM_MANAGER_HPP
-#define INCLUDED_LIBUHD_RFNOC_GRAPH_STREAM_MANAGER_HPP
+#pragma once
 
 #include <uhd/stream.hpp>
 #include <uhd/transport/adapter_id.hpp>
@@ -167,5 +166,3 @@ public:
 }; // class graph_stream_manager
 
 }} /* namespace uhd::rfnoc */
-
-#endif /* INCLUDED_LIBUHD_RFNOC_GRAPH_STREAM_MANAGER_HPP */

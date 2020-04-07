@@ -6,8 +6,7 @@
 
 // Note: Including this file requires C++11 features enabled.
 
-#ifndef INCLUDED_UHD_UTILS_LOG_ADD_HPP
-#define INCLUDED_UHD_UTILS_LOG_ADD_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/utils/log.hpp>
@@ -29,5 +28,3 @@ typedef std::function<void(const uhd::log::logging_info&)> log_fn_t;
  */
 UHD_API void add_logger(const std::string& key, log_fn_t logger_fn);
 }} /* namespace uhd::log */
-
-#endif /* INCLUDED_UHD_UTILS_LOG_ADD_HPP */

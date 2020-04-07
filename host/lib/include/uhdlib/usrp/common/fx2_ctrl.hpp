@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_USRP_COMMON_FX2_CTRL_HPP
-#define INCLUDED_LIBUHD_USRP_COMMON_FX2_CTRL_HPP
+#pragma once
 
 #include <uhd/transport/usb_control.hpp>
 #include <uhd/types/serial.hpp> //i2c iface
@@ -130,5 +129,3 @@ public:
 };
 
 }} // namespace uhd::usrp
-
-#endif /* INCLUDED_LIBUHD_USRP_COMMON_FX2_CTRL_HPP */

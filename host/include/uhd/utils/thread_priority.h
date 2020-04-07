@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_UTILS_THREAD_PRIORITY_H
-#define INCLUDED_UHD_UTILS_THREAD_PRIORITY_H
+#pragma once
 
 #include <uhd/config.h>
 #include <uhd/error.h>
@@ -39,5 +38,3 @@ UHD_API uhd_error uhd_set_thread_priority(
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* INCLUDED_UHD_UTILS_THREAD_PRIORITY_H */

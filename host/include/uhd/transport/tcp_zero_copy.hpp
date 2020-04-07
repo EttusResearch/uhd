@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_TRANSPORT_TCP_ZERO_COPY_HPP
-#define INCLUDED_UHD_TRANSPORT_TCP_ZERO_COPY_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/transport/zero_copy.hpp>
@@ -43,5 +42,3 @@ struct UHD_API tcp_zero_copy : public virtual zero_copy_if
 };
 
 }} // namespace uhd::transport
-
-#endif /* INCLUDED_UHD_TRANSPORT_TCP_ZERO_COPY_HPP */

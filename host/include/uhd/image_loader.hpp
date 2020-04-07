@@ -6,8 +6,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_IMAGE_LOADER_HPP
-#define INCLUDED_UHD_IMAGE_LOADER_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/types/device_addr.hpp>
@@ -79,5 +78,3 @@ public:
 };
 
 } // namespace uhd
-
-#endif /* INCLUDED_UHD_IMAGE_LOADER_HPP */

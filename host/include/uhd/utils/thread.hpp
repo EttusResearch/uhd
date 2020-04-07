@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_UTILS_THREAD_HPP
-#define INCLUDED_UHD_UTILS_THREAD_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <boost/thread/thread.hpp>
@@ -65,5 +64,3 @@ UHD_API void set_thread_name(std::thread* thread, const std::string& name);
 UHD_API void set_thread_affinity(const std::vector<size_t>& cpu_affinity_list);
 
 } // namespace uhd
-
-#endif /* INCLUDED_UHD_UTILS_THREAD_HPP */

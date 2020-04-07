@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_TYPES_TUNE_RESULT_HPP
-#define INCLUDED_UHD_TYPES_TUNE_RESULT_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <string>
@@ -75,5 +74,3 @@ struct UHD_API tune_result_t
 };
 
 } // namespace uhd
-
-#endif /* INCLUDED_UHD_TYPES_TUNE_RESULT_HPP */

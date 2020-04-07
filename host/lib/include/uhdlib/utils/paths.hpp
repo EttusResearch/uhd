@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0+
 //
 
-#ifndef INCLUDED_UHDLIB_UTILS_PATHS_HPP
-#define INCLUDED_UHDLIB_UTILS_PATHS_HPP
+#pragma once
 
 #include <boost/filesystem.hpp>
 #include <string>
@@ -43,5 +42,3 @@ boost::filesystem::path get_xdg_config_home();
 boost::filesystem::path get_legacy_config_home();
 
 } /* namespace uhd */
-
-#endif /* INCLUDED_UHDLIB_UTILS_PATHS_HPP */

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_USRP_TX_FRONTEND_CORE_200_HPP
-#define INCLUDED_LIBUHD_USRP_TX_FRONTEND_CORE_200_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/property_tree.hpp>
@@ -39,5 +38,3 @@ public:
 
     virtual void populate_subtree(uhd::property_tree::sptr subtree) = 0;
 };
-
-#endif /* INCLUDED_LIBUHD_USRP_TX_FRONTEND_CORE_200_HPP */

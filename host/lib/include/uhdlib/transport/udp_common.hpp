@@ -6,8 +6,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_TRANSPORT_UDP_COMMON_HPP
-#define INCLUDED_TRANSPORT_UDP_COMMON_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
@@ -285,5 +284,3 @@ inline link_params_t calculate_udp_link_params(
 
 
 }} // namespace uhd::transport
-
-#endif /* INCLUDED_TRANSPORT_UDP_COMMON_HPP */

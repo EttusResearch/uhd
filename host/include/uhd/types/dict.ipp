@@ -6,8 +6,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_TYPES_DICT_IPP
-#define INCLUDED_UHD_TYPES_DICT_IPP
+#pragma once
 
 #include <uhd/exception.hpp>
 #include <boost/format.hpp>
@@ -168,5 +167,3 @@ namespace uhd{
     }
 
 } //namespace uhd
-
-#endif /* INCLUDED_UHD_TYPES_DICT_IPP */

@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_RFNOC_RFNOC_COMMON_HPP
-#define INCLUDED_RFNOC_RFNOC_COMMON_HPP
+#pragma once
 
 #include <uhd/rfnoc/defaults.hpp>
 #include <uhdlib/transport/link_if.hpp>
@@ -101,5 +100,3 @@ constexpr uint32_t MAX_FC_HEADROOM_PKTS  = (uint32_t(1) << 8) - 1;
 constexpr size_t MIN_NUM_FRAMES = 2;
 
 }} // namespace uhd::rfnoc
-
-#endif /* INCLUDED_RFNOC_RFNOC_COMMON_HPP */

@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHDLIB_TRANSPORT_LINKS_HPP
-#define INCLUDED_UHDLIB_TRANSPORT_LINKS_HPP
+#pragma once
 
 #include <uhdlib/transport/io_service.hpp>
 #include <uhdlib/transport/link_if.hpp>
@@ -38,5 +37,3 @@ struct link_params_t
 
 
 }} // namespace uhd::transport
-
-#endif /* INCLUDED_UHDLIB_TRANSPORT_LINKS_HPP */

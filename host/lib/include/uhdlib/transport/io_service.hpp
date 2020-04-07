@@ -34,8 +34,7 @@
  */
 
 
-#ifndef INCLUDED_UHDLIB_TRANSPORT_IO_SERVICE_HPP
-#define INCLUDED_UHDLIB_TRANSPORT_IO_SERVICE_HPP
+#pragma once
 
 #include <uhdlib/transport/link_if.hpp>
 #include <functional>
@@ -363,5 +362,3 @@ public:
 };
 
 }} // namespace uhd::transport
-
-#endif /* INCLUDED_UHDLIB_TRANSPORT_IO_SERVICE_HPP */

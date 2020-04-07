@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_TX_STREAMER_IMPL_HPP
-#define INCLUDED_LIBUHD_TX_STREAMER_IMPL_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/convert.hpp>
@@ -455,5 +454,3 @@ private:
 };
 
 }} // namespace uhd::transport
-
-#endif /* INCLUDED_LIBUHD_TRANSPORT_TX_STREAMER_IMPL_HPP */

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_USRP_GPIO_CORE_200_HPP
-#define INCLUDED_LIBUHD_USRP_GPIO_CORE_200_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/types/wb_iface.hpp>
@@ -75,5 +74,3 @@ public:
 
     virtual void set_all_regs(const uint32_t value) = 0;
 };
-
-#endif /* INCLUDED_LIBUHD_USRP_GPIO_CORE_200_HPP */

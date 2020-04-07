@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_USRP_GPIO_CORE_3000_HPP
-#define INCLUDED_LIBUHD_USRP_GPIO_CORE_3000_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/types/wb_iface.hpp>
@@ -200,5 +199,3 @@ public:
 };
 
 }}} // namespace uhd::usrp::gpio_atr
-
-#endif /* INCLUDED_LIBUHD_USRP_GPIO_CORE_3000_HPP */

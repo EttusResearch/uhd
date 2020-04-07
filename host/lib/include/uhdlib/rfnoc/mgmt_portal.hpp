@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_MGMT_PORTAL_HPP
-#define INCLUDED_LIBUHD_MGMT_PORTAL_HPP
+#pragma once
 
 #include <uhdlib/rfnoc/chdr_ctrl_xport.hpp>
 #include <uhdlib/rfnoc/chdr_packet.hpp>
@@ -206,5 +205,3 @@ public:
 };
 
 }}} // namespace uhd::rfnoc::mgmt
-
-#endif /* INCLUDED_LIBUHD_MGMT_PORTAL_HPP */

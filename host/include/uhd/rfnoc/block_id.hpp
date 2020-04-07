@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_TYPES_BLOCK_ID_HPP
-#define INCLUDED_UHD_TYPES_BLOCK_ID_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <stdint.h>
@@ -234,5 +233,3 @@ inline std::ostream& operator<<(std::ostream& out, block_id_t block_id)
 
 } // namespace rfnoc
 } // namespace uhd
-
-#endif /* INCLUDED_UHD_TYPES_BLOCK_ID_HPP */

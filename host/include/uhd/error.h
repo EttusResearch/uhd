@@ -5,8 +5,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-#ifndef INCLUDED_UHD_ERROR_H
-#define INCLUDED_UHD_ERROR_H
+#pragma once
 
 #include <stdlib.h>
 
@@ -156,5 +155,3 @@ UHD_API uhd_error uhd_get_last_error(
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* INCLUDED_UHD_ERROR_H */

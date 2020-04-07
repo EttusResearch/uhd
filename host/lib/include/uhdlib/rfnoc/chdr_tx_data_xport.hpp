@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_CHDR_TX_DATA_XPORT_HPP
-#define INCLUDED_LIBUHD_CHDR_TX_DATA_XPORT_HPP
+#pragma once
 
 #include <uhd/exception.hpp>
 #include <uhd/types/metadata.hpp>
@@ -401,5 +400,3 @@ private:
 };
 
 }} // namespace uhd::rfnoc
-
-#endif /* INCLUDED_LIBUHD_CHDR_TX_DATA_XPORT_HPP */

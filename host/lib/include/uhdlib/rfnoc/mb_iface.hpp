@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_MB_IFACE_HPP
-#define INCLUDED_LIBUHD_MB_IFACE_HPP
+#pragma once
 
 #include <uhd/exception.hpp>
 #include <uhd/transport/adapter_id.hpp>
@@ -169,5 +168,3 @@ private:
 };
 
 }} /* namespace uhd::rfnoc */
-
-#endif /* INCLUDED_LIBUHD_MB_IFACE_HPP */

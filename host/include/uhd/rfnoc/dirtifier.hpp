@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_DIRTIFYIER_HPP
-#define INCLUDED_LIBUHD_DIRTIFYIER_HPP
+#pragma once
 
 #include <uhd/rfnoc/property.hpp>
 
@@ -69,5 +68,3 @@ private:
 };
 
 }} /* namespace uhd::rfnoc */
-
-#endif /* INCLUDED_LIBUHD_DIRTIFYIER_HPP */

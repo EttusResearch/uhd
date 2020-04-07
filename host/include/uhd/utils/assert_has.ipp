@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_UTILS_ASSERT_HAS_IPP
-#define INCLUDED_UHD_UTILS_ASSERT_HAS_IPP
+#pragma once
 
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/exception.hpp>
@@ -38,5 +37,3 @@ namespace uhd{
     }
 
 }//namespace uhd
-
-#endif /* INCLUDED_UHD_UTILS_ASSERT_HAS_IPP */

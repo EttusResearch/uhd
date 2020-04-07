@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_TX_ASYNC_MSG_QUEUE_HPP
-#define INCLUDED_LIBUHD_TX_ASYNC_MSG_QUEUE_HPP
+#pragma once
 
 #include <uhd/types/metadata.hpp>
 #include <boost/lockfree/queue.hpp>
@@ -45,5 +44,3 @@ private:
 };
 
 }} // namespace uhd::rfnoc
-
-#endif /* INCLUDED_LIBUHD_TX_ASYNC_MSG_QUEUE_HPP */

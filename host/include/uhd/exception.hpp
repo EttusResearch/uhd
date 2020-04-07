@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_EXCEPTION_HPP
-#define INCLUDED_UHD_EXCEPTION_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <boost/current_function.hpp>
@@ -327,5 +326,3 @@ struct UHD_API routing_error : rfnoc_error
     }
 
 } // namespace uhd
-
-#endif /* INCLUDED_UHD_EXCEPTION_HPP */

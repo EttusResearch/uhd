@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_PROPERTY_IPP
-#define INCLUDED_LIBUHD_PROPERTY_IPP
+#pragma once
 
 template <typename data_t>
 uhd::rfnoc::property_t<data_t>::property_t(
@@ -33,5 +32,3 @@ uhd::rfnoc::property_t<data_t>::property_t(
 {
     // nop
 }
-
-#endif /* INCLUDED_LIBUHD_PROPERTY_IPP */

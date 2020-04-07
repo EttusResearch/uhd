@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_AD9361_CTRL_HPP
-#define INCLUDED_AD9361_CTRL_HPP
+#pragma once
 
 #include <uhd/exception.hpp>
 #include <uhd/types/filters.hpp>
@@ -162,5 +161,3 @@ public:
 };
 
 }} // namespace uhd::usrp
-
-#endif /* INCLUDED_AD9361_CTRL_HPP */

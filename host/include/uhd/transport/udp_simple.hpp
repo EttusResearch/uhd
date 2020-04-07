@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_TRANSPORT_UDP_SIMPLE_HPP
-#define INCLUDED_UHD_TRANSPORT_UDP_SIMPLE_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/types/serial.hpp>
@@ -94,5 +93,3 @@ public:
 };
 
 }} // namespace uhd::transport
-
-#endif /* INCLUDED_UHD_TRANSPORT_UDP_SIMPLE_HPP */

@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHDLIB_UTILS_NONCOPYABLE_HPP
-#define INCLUDED_UHDLIB_UTILS_NONCOPYABLE_HPP
+#pragma once
 
 #ifdef UHD_AVOID_BOOST
 
@@ -47,5 +46,3 @@ typedef boost::noncopyable noncopyable;
 }
 
 #endif
-
-#endif /* INCLUDED_UHDLIB_UTILS_NONCOPYABLE_HPP */

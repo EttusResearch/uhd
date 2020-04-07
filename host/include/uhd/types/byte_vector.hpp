@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_TYPES_BYTE_VECTOR_HPP
-#define INCLUDED_UHD_TYPES_BYTE_VECTOR_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <boost/range.hpp>
@@ -32,5 +31,3 @@ UHD_API std::string bytes_to_string(const byte_vector_t& bytes);
 UHD_API byte_vector_t string_to_bytes(const std::string& str, size_t max_length);
 
 } // namespace uhd
-
-#endif /* INCLUDED_UHD_TYPES_BYTE_VECTOR_HPP */

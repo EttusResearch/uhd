@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHDLIB_TRANSPORT_ADAPTER_INFO_HPP
-#define INCLUDED_UHDLIB_TRANSPORT_ADAPTER_INFO_HPP
+#pragma once
 
 #include <uhd/transport/adapter_id.hpp>
 #include <uhd/utils/noncopyable.hpp>
@@ -26,5 +25,3 @@ public:
 };
 
 }} // namespace uhd::transport
-
-#endif /* INCLUDED_UHDLIB_TRANSPORT_ADAPTER_INFO_HPP */

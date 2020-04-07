@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_ADF535X_HPP
-#define INCLUDED_ADF535X_HPP
+#pragma once
 
 #include "adf5355_regs.hpp"
 #include "adf5356_regs.hpp"
@@ -614,5 +613,3 @@ inline void adf535x_impl<adf5356_regs_t>::_commit()
         _write_fn(addr_vtr_t(ONE_REG, _regs.get_reg(0)));
     }
 }
-
-#endif // INCLUDED_ADF535X_HPP

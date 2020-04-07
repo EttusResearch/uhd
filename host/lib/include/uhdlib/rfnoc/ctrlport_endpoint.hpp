@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_RFNOC_CTRLPORT_ENDPOINT_HPP
-#define INCLUDED_LIBUHD_RFNOC_CTRLPORT_ENDPOINT_HPP
+#pragma once
 
 #include <uhd/rfnoc/register_iface.hpp>
 #include <uhdlib/rfnoc/chdr_types.hpp>
@@ -58,5 +57,3 @@ public:
 }; // class ctrlport_endpoint
 
 }} /* namespace uhd::rfnoc */
-
-#endif /* INCLUDED_LIBUHD_RFNOC_CTRLPORT_ENDPOINT_HPP */

@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_RFNOC_RX_FLOW_CTRL_STATE_HPP
-#define INCLUDED_LIBUHD_RFNOC_RX_FLOW_CTRL_STATE_HPP
+#pragma once
 
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/rfnoc_common.hpp>
@@ -117,5 +116,3 @@ private:
 };
 
 }} // namespace uhd::rfnoc
-
-#endif /* INCLUDED_LIBUHD_RFNOC_RX_FLOW_CTRL_STATE_HPP */

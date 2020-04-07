@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_TYPES_DEVICE_ADDR_HPP
-#define INCLUDED_UHD_TYPES_DEVICE_ADDR_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/types/dict.hpp>
@@ -94,5 +93,3 @@ UHD_API device_addrs_t separate_device_addr(const device_addr_t& dev_addr);
 UHD_API device_addr_t combine_device_addrs(const device_addrs_t& dev_addrs);
 
 } // namespace uhd
-
-#endif /* INCLUDED_UHD_TYPES_DEVICE_ADDR_HPP */

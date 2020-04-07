@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_TRANSPORT_USB_DEVICE_HANDLE_HPP
-#define INCLUDED_UHD_TRANSPORT_USB_DEVICE_HANDLE_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/utils/noncopyable.hpp>
@@ -86,5 +85,3 @@ public:
 }; // namespace usb
 
 }} // namespace uhd::transport
-
-#endif /* INCLUDED_UHD_TRANSPORT_USB_DEVICE_HANDLE_HPP */

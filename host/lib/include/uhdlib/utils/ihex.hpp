@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_IHEX_READER_HPP
-#define INCLUDED_IHEX_READER_HPP
+#pragma once
 
 #include <stdint.h>
 #include <functional>
@@ -64,5 +63,3 @@ private:
 };
 
 }; /* namespace uhd */
-
-#endif /* INCLUDED_IHEX_READER_HPP */

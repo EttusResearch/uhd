@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_RFNOC_CHDR_TYPES_HPP
-#define INCLUDED_RFNOC_CHDR_TYPES_HPP
+#pragma once
 
 #include <uhd/types/endianness.hpp>
 #include <uhd/utils/byteswap.hpp>
@@ -823,5 +822,3 @@ private:
 };
 
 }}} // namespace uhd::rfnoc::chdr
-
-#endif /* INCLUDED_RFNOC_CHDR_TYPES_HPP */

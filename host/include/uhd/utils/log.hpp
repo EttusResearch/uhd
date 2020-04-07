@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_UTILS_LOG_HPP
-#define INCLUDED_UHD_UTILS_LOG_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <boost/current_function.hpp>
@@ -313,5 +312,3 @@ public:
 } // namespace _log
 //! \endcond
 } /* namespace uhd */
-
-#endif /* INCLUDED_UHD_UTILS_LOG_HPP */

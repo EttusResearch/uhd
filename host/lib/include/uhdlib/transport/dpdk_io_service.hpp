@@ -3,8 +3,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
-#ifndef _INCLUDED_UHDLIB_TRANSPORT_DPDK_IO_SERVICE_HPP_
-#define _INCLUDED_UHDLIB_TRANSPORT_DPDK_IO_SERVICE_HPP_
+#pragma once
 
 #include <uhdlib/transport/dpdk/common.hpp>
 #include <uhdlib/transport/dpdk/service_queue.hpp>
@@ -242,5 +241,3 @@ private:
 };
 
 }} // namespace uhd::transport
-
-#endif /* _INCLUDED_UHDLIB_TRANSPORT_DPDK_IO_SERVICE_HPP_ */

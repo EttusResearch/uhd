@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_MB_CONTROLLER_HPP
-#define INCLUDED_LIBUHD_MB_CONTROLLER_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/types/device_addr.hpp>
@@ -400,5 +399,3 @@ private:
 };
 
 }} // namespace uhd::rfnoc
-
-#endif /* INCLUDED_LIBUHD_MB_CONTROLLER_HPP */

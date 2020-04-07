@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_UTILS_PATHS_HPP
-#define INCLUDED_UHD_UTILS_PATHS_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <boost/filesystem.hpp>
@@ -82,5 +81,3 @@ UHD_API std::string find_utility(const std::string& name);
 UHD_API std::string print_utility_error(
     const std::string& name, const std::string& args = "");
 } // namespace uhd
-
-#endif /* INCLUDED_UHD_UTILS_PATHS_HPP */

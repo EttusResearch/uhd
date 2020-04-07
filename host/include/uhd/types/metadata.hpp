@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_TYPES_METADATA_HPP
-#define INCLUDED_UHD_TYPES_METADATA_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/types/time_spec.hpp>
@@ -238,5 +237,3 @@ struct UHD_API async_metadata_t
 };
 
 } // namespace uhd
-
-#endif /* INCLUDED_UHD_TYPES_METADATA_HPP */

@@ -9,8 +9,7 @@
 #include <cmath>
 #include <typeinfo>
 
-#ifndef INCLUDED_UHD_UTILS_FLOAT_COMPARE_DELTA_IPP
-#define INCLUDED_UHD_UTILS_FLOAT_COMPARE_DELTA_IPP
+#pragma once
 
 
 namespace uhd { namespace math { namespace fp_compare {
@@ -161,5 +160,3 @@ namespace uhd { namespace math { namespace fp_compare {
     }
 
 } } } //namespace uhd::math::fp_compare
-
-#endif /* INCLUDED_UHD_UTILS_FLOAT_COMPARE_DELTA_IPP */

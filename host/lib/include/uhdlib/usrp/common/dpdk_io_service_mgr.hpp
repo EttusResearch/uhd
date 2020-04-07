@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHDLIB_TRANSPORT_DPDK_IO_SERVICE_MGR_HPP
-#define INCLUDED_UHDLIB_TRANSPORT_DPDK_IO_SERVICE_MGR_HPP
+#pragma once
 
 #include <uhdlib/transport/dpdk/common.hpp>
 #include <uhdlib/transport/dpdk_io_service.hpp>
@@ -65,5 +64,3 @@ private:
 };
 
 }} // namespace uhd::usrp
-
-#endif /* INCLUDED_UHDLIB_TRANSPORT_DPDK_IO_SERVICE_MGR_HPP */

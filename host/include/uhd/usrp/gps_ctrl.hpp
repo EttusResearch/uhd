@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_GPS_CTRL_HPP
-#define INCLUDED_GPS_CTRL_HPP
+#pragma once
 
 #include <uhd/types/sensors.hpp>
 #include <uhd/types/serial.hpp>
@@ -48,5 +47,3 @@ public:
 };
 
 } // namespace uhd
-
-#endif /* INCLUDED_GPS_CTRL_HPP */

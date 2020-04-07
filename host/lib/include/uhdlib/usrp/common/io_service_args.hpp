@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_IO_SERVICE_ARGS_HPP
-#define INCLUDED_LIBUHD_IO_SERVICE_ARGS_HPP
+#pragma once
 
 #include <uhd/types/device_addr.hpp>
 #include <map>
@@ -99,5 +98,3 @@ device_addr_t merge_io_service_dev_args(
     const device_addr_t& dev_args, const device_addr_t& stream_args);
 
 }} // namespace uhd::usrp
-
-#endif /* INCLUDED_LIBUHD_IO_SERVICE_ARGS_HPP */

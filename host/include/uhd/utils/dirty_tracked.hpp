@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_UTILS_DIRTY_TRACKED_HPP
-#define INCLUDED_UHD_UTILS_DIRTY_TRACKED_HPP
+#pragma once
 
 namespace uhd {
 /*!
@@ -124,5 +123,3 @@ private:
 };
 
 } // namespace uhd
-
-#endif /* INCLUDED_UHD_UTILS_DIRTY_TRACKED_HPP */

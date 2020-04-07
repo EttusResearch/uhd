@@ -4,12 +4,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#pragma once
+
 #include <uhd/transport/adapter_id.hpp>
 #include <uhd/transport/frame_buff.hpp>
 #include <memory>
-
-#ifndef INCLUDED_UHDLIB_TRANSPORT_LINK_IF_HPP
-#    define INCLUDED_UHDLIB_TRANSPORT_LINK_IF_HPP
 
 namespace uhd { namespace transport {
 
@@ -126,5 +125,3 @@ public:
 };
 
 }} // namespace uhd::transport
-
-#endif /* INCLUDED_UHDLIB_TRANSPORT_LINK_IF_HPP */

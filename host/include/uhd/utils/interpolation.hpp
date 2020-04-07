@@ -4,13 +4,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_INTERP_HPP
-#define INCLUDED_UHD_INTERP_HPP
+#pragma once
 
 namespace uhd { namespace math {
 
 enum class interp_mode { NEAREST_NEIGHBOR, LINEAR };
 
 }} // namespace uhd::math
-
-#endif /* INCLUDED_UHD_INTERP_HPP */

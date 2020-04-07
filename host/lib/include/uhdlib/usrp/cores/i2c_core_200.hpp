@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_USRP_I2C_CORE_200_HPP
-#define INCLUDED_LIBUHD_USRP_I2C_CORE_200_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/types/serial.hpp>
@@ -25,5 +24,3 @@ public:
     //! makes a new i2c core from iface and slave base
     static sptr make(uhd::wb_iface::sptr iface, const size_t base, const size_t readback);
 };
-
-#endif /* INCLUDED_LIBUHD_USRP_I2C_CORE_200_HPP */

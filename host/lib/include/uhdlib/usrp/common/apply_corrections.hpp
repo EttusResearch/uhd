@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_USRP_COMMON_APPLY_CORRECTIONS_HPP
-#define INCLUDED_LIBUHD_USRP_COMMON_APPLY_CORRECTIONS_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/property_tree.hpp>
@@ -76,5 +75,3 @@ void apply_rx_fe_corrections(property_tree::sptr sub_tree, // starts at mboards/
 
 
 }} // namespace uhd::usrp
-
-#endif /* INCLUDED_LIBUHD_USRP_COMMON_APPLY_CORRECTIONS_HPP */

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_USRP_SPI_CORE_3000_HPP
-#define INCLUDED_LIBUHD_USRP_SPI_CORE_3000_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/types/serial.hpp>
@@ -44,5 +43,3 @@ public:
     //! Get state of shutdown register
     virtual bool get_shutdown() = 0;
 };
-
-#endif /* INCLUDED_LIBUHD_USRP_SPI_CORE_3000_HPP */

@@ -6,8 +6,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_USRP_DMA_FIFO_CORE_3000_HPP
-#define INCLUDED_LIBUHD_USRP_DMA_FIFO_CORE_3000_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/utils/noncopyable.hpp>
@@ -53,5 +52,3 @@ public:
     //! Return the number of packats that have been transferred
     virtual uint32_t get_packet_count() = 0;
 };
-
-#endif /* INCLUDED_LIBUHD_USRP_DMA_FIFO_CORE_3000_HPP */

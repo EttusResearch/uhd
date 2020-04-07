@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_RADIO_BLOCK_CONTROL_HPP
-#define INCLUDED_LIBUHD_RADIO_BLOCK_CONTROL_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/rfnoc/noc_block_base.hpp>
@@ -687,5 +686,3 @@ public:
 };
 
 }} // namespace uhd::rfnoc
-
-#endif /* INCLUDED_LIBUHD_RADIO_BLOCK_CONTROL_HPP */

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_TYPES_SENSORS_H
-#define INCLUDED_UHD_TYPES_SENSORS_H
+#pragma once
 
 #include <uhd/config.h>
 #include <uhd/error.h>
@@ -231,5 +230,3 @@ UHD_API uhd_error uhd_sensor_value_last_error(
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* INCLUDED_UHD_TYPES_SENSORS_H */

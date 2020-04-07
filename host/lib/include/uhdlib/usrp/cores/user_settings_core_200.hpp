@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_USRP_USER_SETTINGS_CORE_200_HPP
-#define INCLUDED_LIBUHD_USRP_USER_SETTINGS_CORE_200_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/types/wb_iface.hpp>
@@ -26,5 +25,3 @@ public:
 
     virtual void set_reg(const user_reg_t& reg) = 0;
 };
-
-#endif /* INCLUDED_LIBUHD_USRP_USER_SETTINGS_CORE_200_HPP */

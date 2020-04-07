@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHDLIB_TRANSPORT_LINK_BASE_HPP
-#define INCLUDED_UHDLIB_TRANSPORT_LINK_BASE_HPP
+#pragma once
 
 #include <uhdlib/transport/link_if.hpp>
 #include <cassert>
@@ -229,5 +228,3 @@ private:
 };
 
 }} // namespace uhd::transport
-
-#endif /* INCLUDED_UHDLIB_TRANSPORT_LINK_BASE_HPP */

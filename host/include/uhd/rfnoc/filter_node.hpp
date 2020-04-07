@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_FILTER_NODE_HPP
-#define INCLUDED_LIBUHD_FILTER_NODE_HPP
+#pragma once
 
 #include <uhd/types/filters.hpp>
 #include <string>
@@ -38,5 +37,3 @@ public:
 };
 
 }}} /* namespace uhd::rfnoc::detail */
-
-#endif /* INCLUDED_LIBUHD_FILTER_NODE_HPP */

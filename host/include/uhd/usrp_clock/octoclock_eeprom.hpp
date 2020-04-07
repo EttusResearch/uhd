@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_USRP_CLOCK_OCTOCLOCK_EEPROM_HPP
-#define INCLUDED_UHD_USRP_CLOCK_OCTOCLOCK_EEPROM_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/transport/udp_simple.hpp>
@@ -49,5 +48,3 @@ private:
 };
 
 }} // namespace uhd::usrp_clock
-
-#endif /* INCLUDED_UHD_USRP_CLOCK_OCTOCLOCK_EEPROM_HPP */

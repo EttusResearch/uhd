@@ -6,8 +6,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_UHD_PROPERTY_TREE_IPP
-#define INCLUDED_UHD_PROPERTY_TREE_IPP
+#pragma once
 
 #include <uhd/exception.hpp>
 #include <typeindex>
@@ -201,5 +200,3 @@ typename std::shared_ptr<property<T> > property_tree::pop(const fs_path& path)
 }
 
 } // namespace uhd
-
-#endif /* INCLUDED_UHD_PROPERTY_TREE_IPP */

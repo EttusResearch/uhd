@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_RFNOC_DEFAULTS_HPP
-#define INCLUDED_LIBUHD_RFNOC_DEFAULTS_HPP
+#pragma once
 
 #include <string>
 
@@ -78,5 +77,3 @@ static const noc_id_t DDC_BLOCK        = 0xDDC00000;
 static const noc_id_t FIR_FILTER_BLOCK = 0xf1120000;
 
 }} // namespace uhd::rfnoc
-
-#endif /* INCLUDED_LIBUHD_RFNOC_DEFAULTS_HPP */

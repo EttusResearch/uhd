@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_CLIENT_ZERO_HPP
-#define INCLUDED_LIBUHD_CLIENT_ZERO_HPP
+#pragma once
 
 #include <uhd/rfnoc/register_iface_holder.hpp>
 #include <uhdlib/rfnoc/chdr_ctrl_endpoint.hpp>
@@ -221,5 +220,3 @@ private:
 };
 
 }}} /* namespace uhd::rfnoc::detail */
-
-#endif /* INCLUDED_LIBUHD_CLIENT_ZERO_HPP */

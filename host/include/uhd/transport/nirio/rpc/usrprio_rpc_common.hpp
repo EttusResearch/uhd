@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_USRPRIO_RPC_COMMON_HPP
-#define INCLUDED_USRPRIO_RPC_COMMON_HPP
+#pragma once
 
 #include <uhd/transport/nirio/rpc/rpc_common.hpp>
 
@@ -64,5 +63,3 @@ typedef std::vector<usrprio_device_info> usrprio_device_info_vtr;
 #define NIUSRPRIO_DOWNLOAD_FPGA_TO_FLASH_ARGS \
     const std::string &resource, const std::string &bitstream_path
 }} // namespace uhd::usrprio_rpc
-
-#endif /* INCLUDED_USRPRIO_RPC_COMMON_HPP */

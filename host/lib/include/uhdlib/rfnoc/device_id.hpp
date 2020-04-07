@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_DEVICE_ID_HPP
-#define INCLUDED_LIBUHD_DEVICE_ID_HPP
+#pragma once
 
 #include <uhdlib/rfnoc/rfnoc_common.hpp>
 
@@ -17,5 +16,3 @@ namespace uhd { namespace rfnoc {
 device_id_t allocate_device_id();
 
 }} /* namespace uhd::rfnoc */
-
-#endif /* INCLUDED_LIBUHD_DEVICE_ID_HPP */

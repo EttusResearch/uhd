@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_NOC_BLOCK_MAKE_ARGS_HPP
-#define INCLUDED_LIBUHD_NOC_BLOCK_MAKE_ARGS_HPP
+#pragma once
 
 #include <uhd/property_tree.hpp>
 #include <uhd/rfnoc/noc_block_base.hpp>
@@ -63,5 +62,3 @@ struct noc_block_base::make_args_t
 };
 
 }} /* namespace uhd::rfnoc */
-
-#endif /* INCLUDED_LIBUHD_NOC_BLOCK_MAKE_ARGS_HPP */

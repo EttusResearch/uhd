@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_CONFIG_PARSER_HPP
-#define INCLUDED_LIBUHD_CONFIG_PARSER_HPP
+#pragma once
 
 #include <uhd/exception.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -107,5 +106,3 @@ private:
 };
 
 } /* namespace uhd */
-
-#endif /* INCLUDED_LIBUHD_CONFIG_PARSER_HPP */

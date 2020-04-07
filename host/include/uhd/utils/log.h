@@ -4,8 +4,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-#ifndef INCLUDED_UHD_UTILS_LOG_H
-#define INCLUDED_UHD_UTILS_LOG_H
+#pragma once
 
 #include <uhd/config.h>
 
@@ -81,5 +80,3 @@ extern "C" {
 #endif
 
 #endif /* #ifndef __cplusplus */
-
-#endif /* INCLUDED_UHD_UTILS_LOG_H */
