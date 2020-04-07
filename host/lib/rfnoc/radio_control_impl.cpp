@@ -67,15 +67,15 @@ static constexpr double OVERRUN_RESTART_DELAY = 0.05;
  ***************************************************************************/
 radio_control_impl::radio_control_impl(make_args_ptr make_args)
     : radio_control(std::move(make_args))
+    , _radio_reg_iface(*this,
+          radio_control_impl::regmap::RADIO_BASE_ADDR,
+          radio_control_impl::regmap::REG_CHAN_OFFSET)
     , _fpga_compat(regs().peek32(regmap::REG_COMPAT_NUM))
     , _radio_width(regs().peek32(regmap::REG_RADIO_WIDTH))
     , _samp_width(_radio_width >> 16)
     , _spc(_radio_width & 0xFFFF)
     , _last_stream_cmd(
           get_num_output_ports(), uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS)
-    , _radio_reg_iface(*this,
-          radio_control_impl::regmap::RADIO_BASE_ADDR,
-          radio_control_impl::regmap::REG_CHAN_OFFSET)
 {
     uhd::assert_fpga_compat(MAJOR_COMPAT,
         MINOR_COMPAT,

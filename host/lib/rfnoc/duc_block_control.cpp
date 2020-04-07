@@ -52,11 +52,11 @@ class duc_block_control_impl : public duc_block_control
 {
 public:
     RFNOC_BLOCK_CONSTRUCTOR(duc_block_control)
-    , _fpga_compat(regs().peek32(RB_COMPAT_NUM)),
+    , _duc_reg_iface(*this, 0, REG_CHAN_OFFSET),
+        _fpga_compat(regs().peek32(RB_COMPAT_NUM)),
         _num_halfbands(regs().peek32(RB_NUM_HB)),
         _cic_max_interp(regs().peek32(RB_CIC_MAX_INTERP)),
-        _residual_scaling(get_num_input_ports(), DEFAULT_SCALING),
-        _duc_reg_iface(*this, 0, REG_CHAN_OFFSET)
+        _residual_scaling(get_num_input_ports(), DEFAULT_SCALING)
     {
         UHD_ASSERT_THROW(get_num_input_ports() == get_num_output_ports());
         UHD_ASSERT_THROW(_cic_max_interp > 0 && _cic_max_interp <= 0xFF);
