@@ -4,6 +4,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#pragma once
+
 #include <uhd/types/byte_vector.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/types/mac_addr.hpp>
