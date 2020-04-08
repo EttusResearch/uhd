@@ -1076,13 +1076,12 @@ public:
 
     meta_range_t get_rx_rates(size_t chan)
     {
+        std::lock_guard<std::recursive_mutex> l(_graph_mutex);
         auto rx_chain = _get_rx_chan(chan);
-        return (rx_chain.ddc)
-                   ? make_overall_tune_range(
-                         rx_chain.radio->get_rx_frequency_range(rx_chain.block_chan),
-                         rx_chain.ddc->get_frequency_range(rx_chain.block_chan),
-                         rx_chain.radio->get_rx_bandwidth(rx_chain.block_chan))
-                   : rx_chain.radio->get_rx_frequency_range(rx_chain.block_chan);
+        if (rx_chain.ddc) {
+            return rx_chain.ddc->get_output_rates(rx_chain.block_chan);
+        }
+        return rx_chain.radio->get_rate_range();
     }
 
     tune_result_t set_rx_freq(const tune_request_t& tune_request, size_t chan)
@@ -1655,13 +1654,12 @@ public:
 
     meta_range_t get_tx_rates(size_t chan)
     {
+        std::lock_guard<std::recursive_mutex> l(_graph_mutex);
         auto tx_chain = _get_tx_chan(chan);
-        return (tx_chain.duc)
-                   ? make_overall_tune_range(
-                         tx_chain.radio->get_tx_frequency_range(tx_chain.block_chan),
-                         tx_chain.duc->get_frequency_range(tx_chain.block_chan),
-                         tx_chain.radio->get_tx_bandwidth(tx_chain.block_chan))
-                   : tx_chain.radio->get_tx_frequency_range(tx_chain.block_chan);
+        if (tx_chain.duc) {
+            return tx_chain.duc->get_input_rates(tx_chain.block_chan);
+        }
+        return tx_chain.radio->get_rate_range();
     }
 
     tune_result_t set_tx_freq(const tune_request_t& tune_request, size_t chan)
