@@ -117,6 +117,19 @@ macro(UHD_ADD_NONAPI_TEST)
 endmacro(UHD_ADD_NONAPI_TEST)
 
 ###############################################################################
+# Add a unit test for an RFNoC block controller
+###############################################################################
+macro(UHD_ADD_RFNOC_BLOCK_TEST)
+    cmake_parse_arguments(test "NOAUTORUN" "TARGET" "INCLUDE_DIRS;EXTRA_SOURCES;EXTRA_LIBS" ${ARGN})
+    UHD_ADD_NONAPI_TEST(
+        TARGET rfnoc_block_tests/${test_TARGET}
+        EXTRA_SOURCES
+        ${test_EXTRA_SOURCES}
+        ${CMAKE_SOURCE_DIR}/lib/rfnoc/graph.cpp
+    )
+endmacro(UHD_ADD_RFNOC_BLOCK_TEST)
+
+###############################################################################
 # Now add all unit tests that require special linkage
 ###############################################################################
 if(ENABLE_DPDK)
@@ -245,16 +258,21 @@ set_source_files_properties(
     PROPERTIES COMPILE_DEFINITIONS
     "HAVE_MICROSEC_CLOCK"
 )
-UHD_ADD_NONAPI_TEST(
-    TARGET rfnoc_blocks_test.cpp
-    EXTRA_SOURCES
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/graph.cpp
+
+UHD_ADD_RFNOC_BLOCK_TEST(
+    TARGET ddc_block_test.cpp
 )
 
-UHD_ADD_NONAPI_TEST(
+UHD_ADD_RFNOC_BLOCK_TEST(
+    TARGET duc_block_test.cpp
+)
+
+UHD_ADD_RFNOC_BLOCK_TEST(
     TARGET fir_filter_block_test.cpp
-    EXTRA_SOURCES
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/graph.cpp
+)
+
+UHD_ADD_RFNOC_BLOCK_TEST(
+    TARGET null_block_test.cpp
 )
 
 UHD_ADD_NONAPI_TEST(

@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "rfnoc_graph_mock_nodes.hpp"
+#include "../rfnoc_graph_mock_nodes.hpp"
 #include <uhd/rfnoc/actions.hpp>
 #include <uhd/rfnoc/defaults.hpp>
 #include <uhd/rfnoc/fir_filter_block_control.hpp>
@@ -33,7 +33,9 @@ noc_block_base::make_args_t::~make_args_t() = default;
 class fir_filter_mock_reg_iface_t : public mock_reg_iface_t
 {
 public:
-    fir_filter_mock_reg_iface_t(size_t max_num_coeffs) : _max_num_coeffs(max_num_coeffs) {}
+    fir_filter_mock_reg_iface_t(size_t max_num_coeffs) : _max_num_coeffs(max_num_coeffs)
+    {
+    }
 
     virtual void _poke_cb(
         uint32_t addr, uint32_t data, uhd::time_spec_t /*time*/, bool /*ack*/)
@@ -80,7 +82,7 @@ private:
  * case.
  */
 constexpr size_t MAX_NUM_COEFFS = 3000;
-constexpr size_t DEFAULT_MTU = 8000;
+constexpr size_t DEFAULT_MTU    = 8000;
 
 struct fir_filter_block_fixture
 {
