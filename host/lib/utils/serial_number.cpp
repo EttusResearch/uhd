@@ -8,8 +8,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace uhd
-{
+namespace uhd { namespace utils {
    bool serial_numbers_match(const std::string& serial_a, const std::string& serial_b)
    {
       try {
@@ -20,4 +19,4 @@ namespace uhd
          return false;
       }
    }
-}
+}}

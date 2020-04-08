@@ -112,7 +112,7 @@ device_addrs_t mpmd_find_with_addr(
         }
         // filter the discovered device below by matching optional keys
         if ((not hint_.has_key("name") or hint_["name"] == new_addr["name"])
-            and (not hint_.has_key("serial") or uhd::serial_numbers_match(hint_["serial"], new_addr["serial"]))
+            and (not hint_.has_key("serial") or utils::serial_numbers_match(hint_["serial"], new_addr["serial"]))
             and (not hint_.has_key("type") or hint_["type"] == new_addr["type"]
                     or hint_["type"] == MPM_CATCHALL_DEVICE_TYPE)
             and (not hint_.has_key("product")
