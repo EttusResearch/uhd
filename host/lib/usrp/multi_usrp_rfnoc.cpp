@@ -214,6 +214,20 @@ public:
                 }
             }
         }
+        // Manually propagate radio block sample rates to DDC/DUC blocks in order to allow
+        // DDC/DUC blocks to have valid internal state before graph is (later) connected
+        for (size_t rx_chan = 0; rx_chan < get_rx_num_channels(); ++rx_chan) {
+            auto& rx_chain = _get_rx_chan(rx_chan);
+            if (rx_chain.ddc) {
+                rx_chain.ddc->set_input_rate(rx_chain.radio->get_rate(), rx_chain.block_chan);
+            }
+        }
+        for (size_t tx_chan = 0; tx_chan < get_tx_num_channels(); ++tx_chan) {
+            auto& tx_chain = _get_tx_chan(tx_chan);
+            if (tx_chain.duc) {
+                tx_chain.duc->set_output_rate(tx_chain.radio->get_rate(), tx_chain.block_chan);
+            }
+        }
         _graph->commit();
     }
 

@@ -97,6 +97,13 @@ public:
      */
     virtual double get_output_rate(const size_t chan) const = 0;
 
+    /*! Manually set the sampling rate at this block's output
+     *
+     * \param rate The requested rate
+     * \param chan The channel for which the rate is being set
+     */
+    virtual void set_output_rate(const double rate, const size_t chan) = 0;
+
     /*! Return a range of valid input rates, based on the current output rate
      *
      * Note the return value is only valid as long as the output rate does not

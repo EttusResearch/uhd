@@ -138,6 +138,11 @@ public:
         return _samp_rate_out.at(chan).is_valid() ? _samp_rate_out.at(chan).get() : 1.0;
     }
 
+    void set_output_rate(const double rate, const size_t chan)
+    {
+        set_property<double>("samp_rate", rate, {res_source_info::OUTPUT_EDGE, chan});
+    }
+
     uhd::meta_range_t get_input_rates(const size_t chan) const
     {
         uhd::meta_range_t result;

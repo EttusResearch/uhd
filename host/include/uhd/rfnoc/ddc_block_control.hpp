@@ -89,6 +89,13 @@ public:
      */
     virtual double get_input_rate(const size_t chan) const = 0;
 
+    /*! Manually set the sampling rate at this block's input
+     *
+     * \param rate The requested rate
+     * \param chan The channel for which the rate is being set
+     */
+    virtual void set_input_rate(const double rate, const size_t chan) = 0;
+
     /*! Return the sampling rate at this block's output
      *
      * This is equivalent to calling get_input_rate() divided by the decimation.
