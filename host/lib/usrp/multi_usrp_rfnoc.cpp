@@ -56,6 +56,7 @@ constexpr char DEFAULT_CPU_FORMAT[] = "fc32";
 constexpr char DEFAULT_OTW_FORMAT[] = "sc16";
 constexpr double RX_SIGN            = +1.0;
 constexpr double TX_SIGN            = -1.0;
+constexpr char LOG_ID[]             = "MULTI_USRP";
 
 //! A faux container for a UHD device
 //
@@ -64,7 +65,10 @@ constexpr double TX_SIGN            = -1.0;
 // similar functionalities; these can be faked with this redirector class.
 //
 // The only exception is recv_async_msg(), which depends on the streamer. It
-// will throw a uhd::runtime_error now.
+// will print a warning once, and will attempt to access a Tx streamer if it
+// has access to a Tx streamer. If there is only ever one Tx streamer, this will
+// work as expected. For multiple streamers, only the last streamer's async
+// messages will make it through.
 class redirector_device : public uhd::device
 {
 public:
@@ -77,13 +81,22 @@ public:
 
     tx_streamer::sptr get_tx_stream(const stream_args_t& args)
     {
-        return _musrp->get_tx_stream(args);
+        auto streamer = _musrp->get_tx_stream(args);
+        _last_tx_streamer = streamer;
+        return streamer;
     }
 
-    bool recv_async_msg(async_metadata_t&, double)
+    bool recv_async_msg(async_metadata_t& md, double timeout)
     {
-        throw uhd::runtime_error(
-            "uhd::device::recv_async_msg() cannot be called on this device type!");
+        std::call_once(_async_warning_flag, []() {
+            UHD_LOG_WARNING(LOG_ID,
+                "Calling multi_usrp::recv_async_msg() is deprecated and can lead to "
+                "unexpected behaviour. Prefer calling tx_stream::recv_async_msg().");
+        });
+        auto streamer = _last_tx_streamer.lock();
+        if (streamer) {
+            return streamer->recv_async_msg(md, timeout);
+        }
         return false;
     }
 
@@ -97,7 +110,14 @@ public:
         return USRP;
     }
 
+    void set_tx_stream(tx_streamer::sptr streamer)
+    {
+        _last_tx_streamer = streamer;
+    }
+
 private:
+    std::once_flag _async_warning_flag;
+    std::weak_ptr<tx_streamer> _last_tx_streamer;
     multi_usrp* _musrp;
 };
 
@@ -380,6 +400,10 @@ public:
                 }
             }
         }
+        // For legacy purposes: This enables recv_async_msg(), which is considered
+        // deprecated, but as long as it's there, we need this to approximate
+        // previous behaviour.
+        _device->set_tx_stream(tx_streamer);
         return tx_streamer;
     }
 

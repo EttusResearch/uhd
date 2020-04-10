@@ -129,7 +129,7 @@ public:
      * For RFNoC devices, this won't return a true uhd::device anyway, because
      * direct device access is locked for those. The returned pointer will
      * still point to a valid device object, however, it has reduced
-     * functionality (in particular, recv_async_msg() won't work).
+     * functionality.
      *
      * \return the device object within this USRP
      */
