@@ -282,7 +282,7 @@ module chdr_to_axis_data #(
   end
 
   // ---------------------------------------------------
-  //  Payload and mdata FIFOs
+  //  Payload and Sideband Data FIFOs
   // ---------------------------------------------------
   wire [CHDR_W-1:0]       out_pyld_tdata;
   wire [CHDR_KEEP_W-1:0]  out_pyld_tkeep;
@@ -296,54 +296,48 @@ module chdr_to_axis_data #(
   wire                     conv_pyld_tlast, conv_pyld_tvalid, conv_pyld_tready;
 
 
-  generate if (SYNC_CLKS) begin : gen_sync_fifo
-    axi_fifo #(.WIDTH(INFO_W), .SIZE(INFO_FIFO_SIZE)) info_fifo_i (
-      .clk(axis_data_clk), .reset(axis_data_rst), .clear(1'b0),
-      .i_tdata(in_info_tdata),
-      .i_tvalid(in_info_tvalid), .i_tready(in_info_tready),
-      .o_tdata(out_info_tdata),
-      .o_tvalid(out_info_tvalid), .o_tready(out_info_tready),
-      .space(), .occupied()
-    );
-    axi_fifo #(.WIDTH(CHDR_W+CHDR_KEEP_W+1), .SIZE(PYLD_FIFO_SIZE)) pyld_fifo_i (
-      .clk(axis_data_clk), .reset(axis_data_rst), .clear(1'b0),
-      .i_tdata({in_pyld_tlast, in_pyld_tkeep, in_pyld_tdata}),
-      .i_tvalid(in_pyld_tvalid), .i_tready(in_pyld_tready),
-      .o_tdata({out_pyld_tlast, out_pyld_tkeep, out_pyld_tdata}),
-      .o_tvalid(out_pyld_tvalid), .o_tready(out_pyld_tready),
-      .space(), .occupied()
-    );
-  end else begin : gen_async_fifo
-    axi_fifo_2clk #(.WIDTH(INFO_W), .SIZE(INFO_FIFO_SIZE)) info_fifo_i (
-      .reset(axis_chdr_rst),
-      .i_aclk(axis_chdr_clk),
-      .i_tdata(in_info_tdata),
-      .i_tvalid(in_info_tvalid), .i_tready(in_info_tready),
-      .o_aclk(axis_data_clk),
-      .o_tdata(out_info_tdata),
-      .o_tvalid(out_info_tvalid), .o_tready(out_info_tready)
-    );
-    axi_fifo_2clk #(.WIDTH(CHDR_W+CHDR_KEEP_W+1), .SIZE(PYLD_FIFO_SIZE)) pyld_fifo_i (
-      .reset(axis_chdr_rst),
-      .i_aclk(axis_chdr_clk),
-      .i_tdata({in_pyld_tlast, in_pyld_tkeep, in_pyld_tdata}),
-      .i_tvalid(in_pyld_tvalid), .i_tready(in_pyld_tready),
-      .o_aclk(axis_data_clk),
-      .o_tdata({out_pyld_tlast, out_pyld_tkeep, out_pyld_tdata}),
-      .o_tvalid(out_pyld_tvalid), .o_tready(out_pyld_tready)
-    );
-  end endgenerate
-
-  // ---------------------------------------------------
-  //  Data Width Converter: CHDR_W => ITEM_W*NIPC
-  // ---------------------------------------------------
   generate
+    // Metadata FIFOs
+    if (SYNC_CLKS) begin : gen_sync_info_fifo
+      axi_fifo #(.WIDTH(INFO_W), .SIZE(INFO_FIFO_SIZE)) info_fifo_i (
+        .clk(axis_data_clk), .reset(axis_data_rst), .clear(1'b0),
+        .i_tdata(in_info_tdata),
+        .i_tvalid(in_info_tvalid), .i_tready(in_info_tready),
+        .o_tdata(out_info_tdata),
+        .o_tvalid(out_info_tvalid), .o_tready(out_info_tready),
+        .space(), .occupied()
+      );
+    end else begin : gen_async_info_fifo
+      axi_fifo_2clk #(.WIDTH(INFO_W), .SIZE(INFO_FIFO_SIZE)) info_fifo_i (
+        .reset(axis_chdr_rst),
+        .i_aclk(axis_chdr_clk),
+        .i_tdata(in_info_tdata),
+        .i_tvalid(in_info_tvalid), .i_tready(in_info_tready),
+        .o_aclk(axis_data_clk),
+        .o_tdata(out_info_tdata),
+        .o_tvalid(out_info_tvalid), .o_tready(out_info_tready)
+      );
+    end
+  
+    // Payload FIFOs
     if (CHDR_W != ITEM_W*NIPC) begin : gen_axis_width_conv
+      axi_fifo #(.WIDTH(CHDR_W+CHDR_KEEP_W+1), .SIZE(PYLD_FIFO_SIZE)) pyld_fifo_i (
+        .clk(axis_chdr_clk), .reset(axis_chdr_rst), .clear(1'b0),
+        .i_tdata({in_pyld_tlast, in_pyld_tkeep, in_pyld_tdata}),
+        .i_tvalid(in_pyld_tvalid), .i_tready(in_pyld_tready),
+        .o_tdata({out_pyld_tlast, out_pyld_tkeep, out_pyld_tdata}),
+        .o_tvalid(out_pyld_tvalid), .o_tready(out_pyld_tready),
+        .space(), .occupied()
+      );
+
+      // Do the width conversion and clock crossing in the axis_width_conv
+      // module to ensure that the resize happens on the correct side of the
+      // clock crossing.
       axis_width_conv #(
         .WORD_W(ITEM_W), .IN_WORDS(CHDR_W/ITEM_W), .OUT_WORDS(NIPC),
-        .SYNC_CLKS(1), .PIPELINE("NONE")
+        .SYNC_CLKS(SYNC_CLKS), .PIPELINE("NONE")
       ) payload_width_conv_i (
-        .s_axis_aclk(axis_data_clk), .s_axis_rst(axis_data_rst),
+        .s_axis_aclk(axis_chdr_clk), .s_axis_rst(axis_chdr_rst),
         .s_axis_tdata(out_pyld_tdata), .s_axis_tkeep(out_pyld_tkeep),
         .s_axis_tlast(out_pyld_tlast), .s_axis_tvalid(out_pyld_tvalid),
         .s_axis_tready(out_pyld_tready),
@@ -353,6 +347,28 @@ module chdr_to_axis_data #(
         .m_axis_tready(conv_pyld_tready)
       );
     end else begin : no_gen_axis_width_conv
+      if (SYNC_CLKS) begin : gen_sync_pyld_fifo
+        axi_fifo #(.WIDTH(CHDR_W+CHDR_KEEP_W+1), .SIZE(PYLD_FIFO_SIZE)) pyld_fifo_i (
+          .clk(axis_chdr_clk), .reset(axis_chdr_rst), .clear(1'b0),
+          .i_tdata({in_pyld_tlast, in_pyld_tkeep, in_pyld_tdata}),
+          .i_tvalid(in_pyld_tvalid), .i_tready(in_pyld_tready),
+          .o_tdata({out_pyld_tlast, out_pyld_tkeep, out_pyld_tdata}),
+          .o_tvalid(out_pyld_tvalid), .o_tready(out_pyld_tready),
+          .space(), .occupied()
+        );
+      end else begin : gen_async_pyld_fifo
+        axi_fifo_2clk #(.WIDTH(CHDR_W+CHDR_KEEP_W+1), .SIZE(PYLD_FIFO_SIZE)) pyld_fifo_i (
+          .reset(axis_chdr_rst),
+          .i_aclk(axis_chdr_clk),
+          .i_tdata({in_pyld_tlast, in_pyld_tkeep, in_pyld_tdata}),
+          .i_tvalid(in_pyld_tvalid), .i_tready(in_pyld_tready),
+          .o_aclk(axis_data_clk),
+          .o_tdata({out_pyld_tlast, out_pyld_tkeep, out_pyld_tdata}),
+          .o_tvalid(out_pyld_tvalid), .o_tready(out_pyld_tready)
+        );
+      end
+
+      // No width conversion needed
       assign conv_pyld_tdata  = out_pyld_tdata;
       assign conv_pyld_tkeep  = out_pyld_tkeep;
       assign conv_pyld_tlast  = out_pyld_tlast;
@@ -372,9 +388,9 @@ module chdr_to_axis_data #(
 
   assign flush_tdata      = { out_info_tdata, conv_pyld_tkeep, conv_pyld_tdata };
   assign flush_tlast      = conv_pyld_tlast;
-  assign flush_tvalid     = conv_pyld_tvalid  && out_info_tvalid;
-  assign conv_pyld_tready = flush_tready      && out_info_tvalid;
-  assign out_info_tready  = conv_pyld_tready  && conv_pyld_tlast && conv_pyld_tvalid;
+  assign flush_tvalid     = conv_pyld_tvalid && out_info_tvalid;
+  assign conv_pyld_tready = flush_tready     && out_info_tvalid;
+  assign out_info_tready  = conv_pyld_tready && conv_pyld_tlast && conv_pyld_tvalid;
 
   // ---------------------------------------------------
   //  Flushing Logic
