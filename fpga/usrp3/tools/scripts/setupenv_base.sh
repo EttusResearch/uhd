@@ -199,6 +199,30 @@ if [[ -x `which tput 2>/dev/null` ]] ; then
 fi
 VIVADO_EXEC="$REPO_BASE_PATH/tools/scripts/launch_vivado.sh"
 
+# If an extended (i.e. full) version is provided, use Vivado to check
+# that the installed version is correct.
+# This optional env variable may be used to check for specific Vivado
+# Updates or Patches to be installed.
+# If multiple patches are installed, it is recommended that the user
+# runs 'vivado -version' from the installation directory to determine
+# the order in which patches were applied by Vivado.
+# Example:
+#   VIVADO_VER=2019.1
+#   VIVADO_VER_FULL=2019.1.1_AR73068
+# The setupenv.sh script will setup Vivado 2019.1, but it will also
+# verify that both Update 1 and patch AR73068 are installed.
+if [[ -n $VIVADO_VER_FULL ]]; then
+    INSTALLED_VIV=$($VIVADO_PATH/bin/vivado -version | grep $VIVADO_VER_FULL)
+    if [[ $? -eq 0 ]]; then
+        echo "          Installed version is $INSTALLED_VIV"
+    else
+        echo "- Vivado: ERROR! Requested version ($VIVADO_VER_FULL) not installed."
+        echo "          Install the required updates/patches and verify that the env variable"
+        echo "          \"VIVADO_VER_FULL\" matches the version printed by \"vivado -version\"."
+        return 1
+    fi
+fi
+
 #----------------------------------------------------------------------------
 # Prepare Modelsim environment
 #----------------------------------------------------------------------------
