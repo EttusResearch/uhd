@@ -178,4 +178,5 @@ def generate(name, regs_tmpl, body_tmpl='', file=__file__, append=False):
     )
 
     #write the generated code to file specified by argv1
-    open(sys.argv[1], 'a' if append else 'w').write(code)
+    with open(sys.argv[1], 'a' if append else 'w') as f:
+        f.write(code)
