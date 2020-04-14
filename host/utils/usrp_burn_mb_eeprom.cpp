@@ -39,11 +39,11 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     // print the help message
     if (vm.count("help") or (not vm.count("values") and not vm.count("read-all"))) {
         std::cout << boost::format("USRP Burn Motherboard EEPROM %s") % desc << std::endl;
-        std::cout << boost::format("Omit the value argument to perform a readback,\n"
+        std::cout << boost::format("In values argument, omit value to perform a readback,\n"
                                    "Or specify a new value to burn into the EEPROM.\n"
                                    "Example (write to ip-addr0 and read out ip-addr1):\n"
                                    "    usrp_burn_mb_eeprom --args=<device args> "
-                                   "--values\"ip-addr0=192.168.10.3,ip-addr1\"")
+                                   "--values \"ip-addr0=192.168.10.3,ip-addr1\"")
                   << std::endl;
         return EXIT_FAILURE;
     }
@@ -56,9 +56,10 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     std::cout << std::endl;
 
     std::vector<std::string> keys_vec, vals_vec;
-    if (vm.count("read-all"))
-        keys_vec =
-            mb_eeprom.keys(); // Leaving vals_vec empty will force utility to only read
+    if (vm.count("read-all")) {
+        keys_vec = mb_eeprom.keys();
+        // Leaving vals_vec empty will force utility to only read
+    }
     else if (vm.count("values")) {
         // uhd::device_addr_t properly parses input values
         uhd::device_addr_t vals(input_str);
@@ -81,20 +82,21 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     std::cout << std::endl;
 
     // 2. Write new values if given
-    mb_eeprom = uhd::usrp::mboard_eeprom_t();
-    for (size_t i = 0; i < vals_vec.size(); i++) {
-        if (vals_vec[i] != "") {
-            mb_eeprom[keys_vec[i]] = vals_vec[i];
-            std::cout << boost::format("Setting EEPROM [\"%s\"] to \"%s\"...")
-                             % keys_vec[i] % vals_vec[i]
-                      << std::endl;
+    if (not vals_vec.empty()) {
+        mb_eeprom = uhd::usrp::mboard_eeprom_t();
+        for (size_t i = 0; i < vals_vec.size(); i++) {
+            if (vals_vec[i] != "") {
+                mb_eeprom[keys_vec[i]] = vals_vec[i];
+                std::cout << boost::format("Setting EEPROM [\"%s\"] to \"%s\"...")
+                                 % keys_vec[i] % vals_vec[i]
+                          << std::endl;
+            }
         }
+        tree->access<uhd::usrp::mboard_eeprom_t>("/mboards/0/eeprom").set(mb_eeprom);
+        std::cout << "Power-cycle the USRP device for the changes to take effect."
+                  << std::endl;
+        std::cout << std::endl;
     }
-    tree->access<uhd::usrp::mboard_eeprom_t>("/mboards/0/eeprom").set(mb_eeprom);
-    std::cout << "Power-cycle the USRP device for the changes to take effect."
-              << std::endl;
-    std::cout << std::endl;
-
     std::cout << "Done" << std::endl;
     return EXIT_SUCCESS;
 }
