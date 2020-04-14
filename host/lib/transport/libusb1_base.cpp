@@ -35,7 +35,13 @@ public:
     libusb_session_impl(void)
     {
         UHD_ASSERT_THROW(libusb_init(&_context) == 0);
+#if LIBUSB_API_VERSION >= 0x01000106
+        libusb_set_option(_context,
+            LIBUSB_OPTION_LOG_LEVEL,
+            static_cast<libusb_log_level>(debug_level));
+#else
         libusb_set_debug(_context, debug_level);
+#endif
         task_handler = task::make(
             std::bind(&libusb_session_impl::libusb_event_handler_task, this, _context));
     }
@@ -104,8 +110,15 @@ libusb::session::sptr libusb::session::get_global_session(void)
     const char* level_string = getenv("LIBUSB_DEBUG_LEVEL");
     if (level_string != NULL) {
         const int level = int(level_string[0] - '0'); // easy conversion to integer
-        if (level >= 0 and level <= 3)
+        if (level >= 0 and level <= 3) {
+#if LIBUSB_API_VERSION >= 0x01000106
+            libusb_set_option(new_global_session->get_context(),
+                LIBUSB_OPTION_LOG_LEVEL,
+                static_cast<libusb_log_level>(level));
+#else
             libusb_set_debug(new_global_session->get_context(), level);
+#endif
+        }
     }
 
     return new_global_session;
