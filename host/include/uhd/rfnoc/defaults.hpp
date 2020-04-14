@@ -30,6 +30,7 @@ static const std::string NODE_ID_SEP("SEP");
 
 using io_type_t                     = std::string;
 static const io_type_t IO_TYPE_SC16 = "sc16";
+static const io_type_t IO_TYPE_U8   = "u8";
 
 static const std::string ACTION_KEY_STREAM_CMD("stream_cmd");
 static const std::string ACTION_KEY_RX_EVENT("rx_event");
@@ -75,5 +76,6 @@ static const noc_id_t RADIO_BLOCK      = 0x12AD1000;
 static const noc_id_t DUC_BLOCK        = 0xD0C00000;
 static const noc_id_t DDC_BLOCK        = 0xDDC00000;
 static const noc_id_t FIR_FILTER_BLOCK = 0xf1120000;
+static const noc_id_t FOSPHOR_BLOCK    = 0x666F0000;
 
 }} // namespace uhd::rfnoc

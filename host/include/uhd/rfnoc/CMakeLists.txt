@@ -36,6 +36,7 @@ UHD_INSTALL(FILES
     dmafifo_block_control.hpp
     fft_block_control.hpp
     fir_filter_block_control.hpp
+    fosphor_block_control.hpp
     null_block_control.hpp
     radio_control.hpp
 

@@ -28,7 +28,7 @@ module fifo_srl #(
 	output wire full,
 	output wire afull,
 
-	output reg  [WIDTH-1:0] do,
+	output reg  [WIDTH-1:0] do = {WIDTH{1'b0}},
 	input  wire rden,
 	output reg  empty,
 
