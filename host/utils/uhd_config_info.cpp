@@ -29,6 +29,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("boost-version",      "Print Boost version")
         ("libusb-version",     "Print libusb version")
         ("pkg-path",           "Print pkg path")
+        ("lib-path",           "Print library path")
         ("images-dir",         "Print images dir")
         ("abi-version",        "Print ABI version string")
         ("print-all",          "Print everything")
@@ -81,6 +82,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         std::string _libusb_version = uhd::build_info::libusb_version();
         std::cout << "Libusb version: "
                   << (_libusb_version.empty() ? "N/A" : _libusb_version) << std::endl;
+    }
+    if (vm.count("lib-path") > 0 or print_all) {
+        std::cout << "Library path: " << uhd::get_lib_path() << std::endl;
     }
     if (vm.count("pkg-path") > 0 or print_all) {
         std::cout << "Package path: " << uhd::get_pkg_path() << std::endl;
