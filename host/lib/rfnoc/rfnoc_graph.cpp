@@ -564,7 +564,10 @@ private:
          * state before we construct their block controller, and so that we don't
          * reset any setting that the block controller writes
          */
-        _flush_and_reset_mboard(mb_idx, mb_cz, num_blocks, first_block_port);
+        UHD_LOG_TRACE(LOG_ID,
+            std::string("Flushing and resetting blocks on mboard ")
+                + std::to_string(mb_idx));
+        _flush_and_reset_mboard(mb_cz, num_blocks, first_block_port);
 
         // Make a map to count the number of each block we have
         std::unordered_map<std::string, uint16_t> block_count_map;
@@ -785,15 +788,10 @@ private:
     }
 
     //! Flush and reset each connected port on the mboard
-    void _flush_and_reset_mboard(size_t mb_idx,
-        detail::client_zero::sptr mb_cz,
+    void _flush_and_reset_mboard(detail::client_zero::sptr mb_cz,
         const size_t num_blocks,
         const size_t first_block_port)
     {
-        UHD_LOG_TRACE(LOG_ID,
-            std::string("Flushing and resetting blocks on mboard ")
-                + std::to_string(mb_idx));
-
         if (!mb_cz->complete_flush_all_blocks()) {
             UHD_LOG_WARNING(LOG_ID, "One or more blocks timed out during flush!");
         }

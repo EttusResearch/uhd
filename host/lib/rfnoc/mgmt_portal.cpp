@@ -249,7 +249,6 @@ public:
             throw uhd::lookup_error(
                 "initialize_endpoint(): Cannot reach node with specified address.");
         }
-        const node_addr_t& node_addr = _node_addr_map.at(lookup_node);
         // Add/update the entry in the stream endpoint ID map
         _epid_addr_map[epid] = addr;
         UHD_LOG_DEBUG("RFNOC::MGMT",
@@ -258,7 +257,7 @@ public:
         UHD_LOG_TRACE("RFNOC::MGMT",
             (boost::format(
                  "Stream endpoint with EPID=%d can be reached by taking the path: %s")
-                % epid % to_string(node_addr)));
+                % epid % to_string(_node_addr_map.at(lookup_node))));
     }
 
     virtual bool is_endpoint_registered(const sep_id_t& epid) const
