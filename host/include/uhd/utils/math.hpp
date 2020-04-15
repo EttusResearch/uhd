@@ -234,6 +234,17 @@ UHD_INLINE bool frequencies_are_equal(double lhs, double rhs)
             == fp_compare::fp_compare_delta<double>(rhs, FREQ_COMPARISON_DELTA_HZ));
 }
 
+inline double dB_to_lin(const double dB_val)
+{
+    return std::pow(10, (dB_val) / 10.0);
+}
+
+inline double lin_to_dB(const double val)
+{
+    return 10 * std::log10(val);
+}
+
+
 //! Portable version of lcm() across Boost versions
 template <typename IntegerType>
 inline IntegerType lcm(IntegerType x, IntegerType y)
