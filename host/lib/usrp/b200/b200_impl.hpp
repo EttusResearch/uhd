@@ -35,9 +35,11 @@
 #include <uhdlib/usrp/cores/tx_dsp_core_3000.hpp>
 #include <uhdlib/usrp/cores/tx_vita_core_3000.hpp>
 #include <uhdlib/usrp/cores/user_settings_core_3000.hpp>
+#include <uhdlib/usrp/common/pwr_cal_mgr.hpp>
 #include <boost/assign.hpp>
 #include <memory>
 #include <mutex>
+#include <unordered_map>
 
 static const uint8_t B200_FW_COMPAT_NUM_MAJOR = 8;
 static const uint8_t B200_FW_COMPAT_NUM_MINOR = 0;
@@ -203,6 +205,7 @@ private:
         std::weak_ptr<uhd::tx_streamer> tx_streamer;
         user_settings_core_3000::sptr user_settings;
         bool ant_rx2;
+        std::unordered_map<std::string, uhd::usrp::pwr_cal_mgr::sptr> pwr_mgr;
     };
     std::vector<radio_perifs_t> _radio_perifs;
 

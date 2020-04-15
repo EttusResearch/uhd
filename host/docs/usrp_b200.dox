@@ -141,6 +141,15 @@ The property to control the analog RX bandwidth is `bandwidth/value`.
 UHD will not allow you to set bandwidths larger than your current master clock
 rate.
 
+\subsection b200_fe_power Power API
+
+The B200 series support the UHD power calibration API (see: \ref page_power).
+The TX path and the two RX paths have their own calibration data, resulting in
+6 sets of calibration data total for the B210, and 3 for all the others.
+
+Devices have to be manually calibrated using a calibrated power meter or
+signal generator.
+
 \section b200_hw_ref Hardware Reference
 
 \subsection b200_hw_ref_leds LED Indicators

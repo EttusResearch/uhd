@@ -17,6 +17,7 @@
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/static.hpp>
+#include <uhd/cal/database.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/functional/hash.hpp>
@@ -974,38 +975,113 @@ void b200_impl::setup_radio(const size_t dspno)
     ////////////////////////////////////////////////////////////////////
     // create RF frontend interfacing
     ////////////////////////////////////////////////////////////////////
+    // The "calibration serial" is the motherboard serial plus the frontend
+    // (A or B) separated by colon, e.g. "1234ABC:A".
+    const std::string cal_serial =
+        _tree->access<mboard_eeprom_t>(mb_path / "eeprom").get()["serial"] + "#"
+        + (dspno ? "B" : "A");
+    // The "calibration key" is either b2xxmini_power_cal_$dir_$ant, or
+    // b2xx_power_cal_$dir_$ant, depending on the form factor.
+    // $dir is either "tx" or "rx", and "ant" is either "tx_rx" or "rx2" (i.e.,
+    // sanitized version of the antenna names that work in filenames.
+    const std::string cal_key_base = (_product == B200MINI or _product == B205MINI)
+                                         ? "b2xxmini_pwr_"
+                                         : "b2xx_pwr_";
     for (direction_t dir : std::vector<direction_t>{RX_DIRECTION, TX_DIRECTION}) {
-        const std::string x   = (dir == RX_DIRECTION) ? "rx" : "tx";
-        const std::string key = std::string(((dir == RX_DIRECTION) ? "RX" : "TX"))
+        const std::string dir_key = (dir == RX_DIRECTION) ? "rx" : "tx";
+        const std::string key     = std::string(((dir == RX_DIRECTION) ? "RX" : "TX"))
                                 + std::string(((dspno == _fe1) ? "1" : "2"));
         const fs_path rf_fe_path =
-            mb_path / "dboards" / "A" / (x + "_frontends") / (dspno ? "B" : "A");
+            mb_path / "dboards" / "A" / (dir_key + "_frontends") / (dspno ? "B" : "A");
+        const std::vector<std::string> ants =
+            (dir == RX_DIRECTION) ? std::vector<std::string>{"TX/RX", "RX2"}
+                                  : std::vector<std::string>{"TX/RX"};
 
         // This will connect all the AD936x-specific items
         _codec_mgr->populate_frontend_subtree(_tree->subtree(rf_fe_path), key, dir);
 
+        // Antenna controls are board-specific, not AD936x specific
+        if (dir == RX_DIRECTION) {
+            _tree->create<std::string>(rf_fe_path / "antenna" / "value")
+                .add_coerced_subscriber([this, dspno](const std::string& antenna) {
+                    this->update_antenna_sel(dspno, antenna);
+                })
+                .set("RX2");
+        } else if (dir == TX_DIRECTION) {
+            _tree->create<std::string>(rf_fe_path / "antenna" / "value").set("TX/RX");
+        }
+
+        // We don't add any baseband correction
+        auto ggroup                    = uhd::gain_group::make();
+        constexpr char HW_GAIN_STAGE[] = "hw";
+        ggroup->register_fcns(HW_GAIN_STAGE,
+            {// Get gain range:
+                [key]() { return ad9361_ctrl::get_gain_range(key); },
+                // Get gain:
+                [this, rf_fe_path, key]() {
+                    return _tree
+                        ->access<double>(rf_fe_path / "gains"
+                                         / ad9361_ctrl::get_gain_names(key).at(0)
+                                         / "value")
+                        .get();
+                },
+                // Set gain:
+                [this, rf_fe_path, key](const double gain) {
+                    _tree
+                        ->access<double>(rf_fe_path / "gains"
+                                         / ad9361_ctrl::get_gain_names(key).at(0)
+                                         / "value")
+                        .set(gain);
+                }});
+        // Add power controls
+        perif.pwr_mgr.insert({dir_key,
+            pwr_cal_mgr::make(
+                cal_serial,
+                "B200-CAL-" + key,
+                // Frequency getter:
+                [this, rf_fe_path]() {
+                    return _tree->access<double>(rf_fe_path / "freq" / "value").get();
+                },
+                // Current key getter (see notes on calibration key above):
+                [this, rf_fe_path, cal_key_base, dir_key]() {
+                    return cal_key_base + dir_key + "_"
+                           + pwr_cal_mgr::sanitize_antenna_name(
+                               _tree->access<std::string>(
+                                        rf_fe_path / "antenna" / "value")
+                                   .get());
+                },
+                ggroup)});
+        perif.pwr_mgr.at(dir_key)->populate_subtree(_tree->subtree(rf_fe_path));
+        perif.pwr_mgr.at(dir_key)->set_temperature(
+            _tree->access<sensor_value_t>(rf_fe_path / "sensors" / "temp")
+                .get()
+                .to_int());
+
         // Now connect all the b200_impl-specific items
         _tree->create<sensor_value_t>(rf_fe_path / "sensors" / "lo_locked")
             .set_publisher(
-                std::bind(&b200_impl::get_fe_pll_locked, this, dir == TX_DIRECTION));
+                [this, dir]() { return this->get_fe_pll_locked(dir == TX_DIRECTION); });
         _tree->access<double>(rf_fe_path / "freq" / "value")
-            .add_coerced_subscriber(
-                std::bind(&b200_impl::update_bandsel, this, key, std::placeholders::_1));
-        if (dir == RX_DIRECTION) {
-            static const std::vector<std::string> ants{"TX/RX", "RX2"};
-            _tree->create<std::vector<std::string>>(rf_fe_path / "antenna" / "options")
-                .set(ants);
-            _tree->create<std::string>(rf_fe_path / "antenna" / "value")
-                .add_coerced_subscriber(std::bind(
-                    &b200_impl::update_antenna_sel, this, dspno, std::placeholders::_1))
-                .set("RX2");
+            .add_coerced_subscriber([this, key](const double freq) {
+                return this->update_bandsel(key, freq);
+            })
+            // Every time we retune, we re-set the power level.
+            .add_coerced_subscriber([this, pwr_mgr = perif.pwr_mgr.at(dir_key)](
+                                        const double) { pwr_mgr->update_power(); })
 
-        } else if (dir == TX_DIRECTION) {
-            static const std::vector<std::string> ants(1, "TX/RX");
-            _tree->create<std::vector<std::string>>(rf_fe_path / "antenna" / "options")
-                .set(ants);
-            _tree->create<std::string>(rf_fe_path / "antenna" / "value").set("TX/RX");
-        }
+            ;
+        _tree->create<std::vector<std::string>>(rf_fe_path / "antenna" / "options")
+            .set(ants);
+        // When we set the gain, we need to disable power tracking. Note that
+        // the power manager also calls into the gains property, and thus
+        // clobbers its own tracking mode, but that's OK because set_power() will
+        // always reset the tracking mode.
+        _tree
+            ->access<double>(
+                rf_fe_path / "gains" / ad9361_ctrl::get_gain_names(key).at(0) / "value")
+            .add_coerced_subscriber([pwr_mgr = perif.pwr_mgr.at(dir_key)](const double) {
+                pwr_mgr->set_tracking_mode(pwr_cal_mgr::tracking_mode::TRACK_GAIN);
+            });
 
         if (_enable_user_regs) {
             _tree->create<uhd::wb_iface::sptr>(rf_fe_path / "user_settings/iface")
