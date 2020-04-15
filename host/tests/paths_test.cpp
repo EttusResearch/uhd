@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(test_get_paths)
     BOOST_CHECK(true);
 
     const std::string images_dir_search_path = "";
-    const std::string images_dir             = get_images_dir(images_dir_search_path);
+    std::cout << "images_dir: " << get_images_dir(images_dir_search_path) << std::endl;
     BOOST_REQUIRE_THROW(
         find_image_path("this_device_does_not_exist.bit", ""), uhd::io_error);
 
