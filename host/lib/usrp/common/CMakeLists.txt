@@ -35,6 +35,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/recv_packet_demuxer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/io_service_mgr.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/io_service_args.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/pwr_cal_mgr.cpp
 )
 
 if(ENABLE_DPDK)
