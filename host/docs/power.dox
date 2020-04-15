@@ -8,6 +8,11 @@ Starting with UHD 4, UHD comes with reference power level APIs. These allow to
 not just set a relative gain level, but configure a USRP to transmit a certain
 power, or to estimate received power levels.
 
+\b DISCLAIMER: USRPs are not factory-calibrated test and measurement devices,
+but general purpose SDR devices. As such, they are not intended to replace
+factory-calibrated power meters or signal generators, nor are they suitable
+devices for doing so.
+
 The actual transmitted or received power also depends on the transmitted signal
 itself. The absolute power setting is thus a *reference power level*.
 The reference power level maps a digital signal level (in dBFS) to an absolute,
@@ -149,6 +154,118 @@ These tables can be stored in three different ways:
   different environments, aging of components, or anything else.
 - On a file. Calibration data in a file is the most flexible, it can be replaced
   easily. It is however local to the computer that stores the calibration data.
+
+Access to the calibration data usually is done by using the uhd::usrp::cal::database
+class. Calibration data is identified by two identifiers, a key, and a serial.
+
+The \b key is a string that identifies a particular hardware path for an RF signal.
+For example, the B200 and B210 use the key `b2xx_power_cal_rx_rx2` to identify
+the RF path from the RX2 SMA connector on a B200mini all the way to the RFIC. On
+the B210, the same key is used for channels A and B, because the RF paths are
+identical (the PCB traces are symmetrical, and the components are the same as well).
+On the B200mini however, the RF path from RX2 to the RFIC is different (the PCB
+is smaller, for example) and thus the key is different (`b2xxmini_power_cal_rx_rx2`).
+
+The \b serial is usually derived from the serial of the DUT itself, but may also
+include other information, such as the channel. On the B210, the calibration
+serial consists of the motherboard serial plus the channel identifier (for
+example, if the device had a serial of `FFF1234`, the two calibration serials
+would be `FFF1234#A` and `FFF1234#B`. This way, the two channels can have their
+own calibration data.
+
+The key and serial that are used for a specific device can be queried from the
+device by either calling uhd::usrp::multi_usrp::get_usrp_rx_info() when using
+the multi_usrp API, or calling uhd::rfnoc::radio_control::get_rx_power_ref_keys().
+Equivalent calls for TX calibration are also available.
+
+If calibration data is hard-coded as part of UHD, the serial doesn't apply.
+That is because the only calibration data hard-coded in UHD is data that can be
+applied to all devices, and has been vetted against several measurement data
+sets. Such data will carry a much higher calibration error than specifically
+generated calibration data.
+
+\section power_usercal Calibrating your own device
+
+If UHD does not ship its own calibration data for a device, or if the power
+calbration must be finely tuned, it is necessary to manually calbrate the device.
+
+In order to calibrate the transmit power, a calibrated power meter is required.
+To calibrate the receive power, a calibrated signal generator is required. Note
+that it is possible to use a calibrated USRP as power meter / signal generator.
+A calibrated USRP can thus be used to calibrate another USRP.
+
+The calibration is performed using the `uhd_power_cal.py` utility, which is
+usually installed into the utilities directory (for example, `/usr/lib/uhd/utils`
+on some Linux distributions). It requires the Python API of UHD.
+
+The tool will control both the DUT (i.e., the USRP that is to be calibrated) as
+well as the measurement device (power meter or signal generator).
+UHD ships with some drivers for measurement devices, but can be extended for
+others easily (see \ref power_usercal_extend).
+
+In order to run a calibration, the measurement device and the DUT need to be
+connected to the host PC on which the calbration measurement is performed.
+The following command will calibrate a B200 transmit power using a VISA-based
+power meter:
+
+    uhd_power_cal.py --args type=b200 -d tx --meas-dev visa
+
+By default, it will try and calibrate all channels (for a B210). The calibration
+can be further constrained by limiting the frequency range, and the gain/frequency
+steps (for more coarse or fine calibration data).
+
+The tool has hard-coded some sensible defaults for most devices, such as frequency
+and gain steps.
+
+\subsection power_usercal_extend Extending the calibration utility for custom drivers
+
+\subsubsection power_usercal_extend_visa VISA/SCPI based devices
+
+Measurement devices using SCPI commands are particularly easy to add. UHD uses
+PyVISA to access VISA-based devices, so make sure to follow the PyVISA manual
+to set that driver up. For example, USB-based power meters may require setting
+additional privileges or system settings in order for user-space utilities to
+be able to communicate with them.
+
+Assuming PyVISA is working, and your VISA-based measurement device is reachable
+from PyVISA, exposing your VISA-based device is done by creating a Python
+module for your device. Assume the file is called `myvisa.py` and has the
+following content:
+
+~~~{.py~
+from uhd.usrp.cal.visa import VISADevice
+
+class MyVISADevice(VISADevice):
+    res_ids = {r'::1234::': "My VISA Device"}
+
+    def init_power_meter(self):
+        self.res.write("INIT") # Put appropriate SCPI commands here
+
+    # ... all other API calls ...
+~~~
+
+Now you can run the power calibration utility as such:
+
+    uhd_power_cal.py --meas-dev visa -o import=myvisa [other args]
+
+This will try and import `myvisa`, and will automatically detect classes within
+that file. If the VISA device used for calibration matches the resource ID (in
+this example, it needs to contain the substring `::1234::`), this class will be
+chosen. On success, the utility should print a string like
+"Found VISA device: My VISA Device".
+
+The file `visa.py` within the UHD Python module is a useful reference for
+writing custom VISA drivers.
+
+\subsubsection power_usercal_extend_generic Other measurement devices
+
+If a measurement device is not a VISA device, the procedure above can still
+be used. The only requirement is that the devices can be controlled from Python.
+The driver classes must derive either from `uhd.usrp.cal.meas_device.PowerMeterBase`
+or `uhd.usrp.cal.meas_device.PowerGeneratorBase`, respectively.
+
+The file `meas_device.py` in the UHD Python modulues contains the default
+drivers, as well as examples and further documentation.
 
 */
 // vim:ft=doxygen:

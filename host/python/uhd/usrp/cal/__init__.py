@@ -14,3 +14,6 @@ Python UHD Module: Calibration sub-module
 # pylint: disable=wildcard-import
 from .libtypes import *
 # pylint: enable=wildcard-import
+
+from .meas_device import get_meas_device
+from .usrp_calibrator import get_usrp_calibrator
