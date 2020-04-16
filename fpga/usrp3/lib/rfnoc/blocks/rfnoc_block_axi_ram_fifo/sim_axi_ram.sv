@@ -75,6 +75,10 @@ module sim_axi_ram #(
 
   localparam DEBUG = 0;
 
+  // Define a mask that can be used to tell which 4K window is being addressed
+  localparam [AWIDTH-1:0] MASK_4K = {AWIDTH{1'b1}} << 12;
+
+
   //---------------------------------------------------------------------------
   // Data Types
   //---------------------------------------------------------------------------
@@ -309,6 +313,10 @@ module sim_axi_ram #(
           assert ($cast(burst, s_axi_awburst)) else begin
             $fatal(1, "Invalid AWBURST value");
           end
+          assert ((s_axi_awaddr & MASK_4K) ==
+            ((s_axi_awaddr + (s_axi_awlen+1)*(2**s_axi_awsize) - 1) & MASK_4K)) else begin
+            $fatal(1, "Memory write burst crosses 4 KiB boundary");
+          end
 
           if (DEBUG) begin
             $display("WRITE REQ: id=%X, addr=%X, len=%X, size=%X, burst=%s, %t, %m", 
@@ -361,6 +369,10 @@ module sim_axi_ram #(
           end
           assert ($cast(burst, s_axi_awburst)) else begin
             $fatal(1, "Invalid ARBURST value");
+          end
+          assert ((s_axi_araddr & MASK_4K) ==
+            ((s_axi_araddr + (s_axi_arlen+1)*(2**s_axi_arsize) - 1) & MASK_4K)) else begin
+            $fatal(1, "Memory read burst crosses 4 KiB boundary");
           end
 
           if (DEBUG) begin
