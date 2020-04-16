@@ -773,6 +773,15 @@ Further information on how to use Chipscope can be found in the Xilinx Chipscope
 
 \section x3x0_misc Miscellaneous
 
+\subsection x3x0_misc_power Power API
+
+The X300 series support the UHD power calibration API (see: \ref page_power).
+Calibration data is daughterboard-specific, i.e., the daughterboard serial is
+used to map calibration data to a serial.
+
+Daughterboards have to be manually calibrated using a calibrated power meter or
+signal generator.
+
 \subsection x3x0_misc_settings Configuring the device in an application
 
 During runtime, the device can be configured in several different ways.

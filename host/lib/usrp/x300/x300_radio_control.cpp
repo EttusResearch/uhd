@@ -78,6 +78,7 @@ size_t _get_chan_from_map(std::unordered_map<size_t, map_type> map, const std::s
 }
 
 constexpr double DEFAULT_RATE = 200e6;
+constexpr char HW_GAIN_STAGE[] = "hw";
 
 } // namespace
 
@@ -147,7 +148,7 @@ public:
         // Note: ADC calibration and DAC sync happen in x300_mb_controller
         _init_codecs();
         _x300_mb_control->register_reset_codec_cb([this]() { this->reset_codec(); });
-        // FP-GPIO
+        // FP-GPIO (the gpio_atr_3000 ctor will initialize default values)
         RFNOC_LOG_TRACE("Creating FP-GPIO interface...");
         _fp_gpio = gpio_atr::gpio_atr_3000::make(_wb_iface,
             x300_regs::SR_FP_GPIO,
@@ -421,6 +422,7 @@ public:
 
     double set_tx_gain(const double gain, const std::string& name, const size_t chan)
     {
+        _tx_pwr_mgr.at(chan)->set_tracking_mode(pwr_cal_mgr::tracking_mode::TRACK_GAIN);
         if (_tx_gain_groups.count(chan)) {
             auto& gg = _tx_gain_groups.at(chan);
             gg->set_value(gain, name);
@@ -436,6 +438,7 @@ public:
 
     double set_rx_gain(const double gain, const std::string& name, const size_t chan)
     {
+        _rx_pwr_mgr.at(chan)->set_tracking_mode(pwr_cal_mgr::tracking_mode::TRACK_GAIN);
         auto& gg = _rx_gain_groups.at(chan);
         gg->set_value(gain, name);
         return radio_control_impl::set_rx_gain(gg->get_value(name), chan);
@@ -1557,11 +1560,12 @@ private:
             && boost::starts_with(
                    get_tree()->access<std::string>(DB_PATH / "rx_frontends/0/name").get(),
                    "TwinRX")) {
+            _twinrx = true;
             set_num_input_ports(0);
         }
         RFNOC_LOG_TRACE("Num Active Frontends: RX: " << get_num_output_ports()
                                                      << " TX: " << get_num_input_ports());
-    }
+    } // _init_db()
 
     void _init_dboards()
     {
@@ -1682,6 +1686,62 @@ private:
             }
             _rx_gain_groups[chan] = gg;
         }
+
+        ////////////////////////////////////////////////////////////////
+        // Load calibration data
+        ////////////////////////////////////////////////////////////////
+        RFNOC_LOG_TRACE("Initializing power calibration data...");
+        // RX and TX are symmetric, so we use a macro to avoid some duplication
+#define INIT_POWER_CAL(dir)                                                             \
+    {                                                                                   \
+        const std::string DIR  = (#dir == std::string("tx")) ? "TX" : "RX";             \
+        const size_t num_ports = (#dir == std::string("tx")) ? get_num_input_ports()    \
+                                                             : get_num_output_ports();  \
+        _##dir##_pwr_mgr.resize(num_ports);                                             \
+        for (size_t chan = 0; chan < num_ports; chan++) {                               \
+            const auto eeprom =                                                         \
+                get_tree()->access<dboard_eeprom_t>(DB_PATH / (#dir "_eeprom")).get();  \
+            /* The cal serial is the daughterboard serial plus the FE name */           \
+            const std::string cal_serial =                                              \
+                eeprom.serial + "#" + _##dir##_fe_map.at(chan).db_fe_name;              \
+            /* Now create a gain group for this. _?x_gain_groups won't work, */         \
+            /* unfortunately, because it doesn't group the gains we want them to */     \
+            /* be grouped. */                                                           \
+            auto ggroup = uhd::gain_group::make();                                      \
+            ggroup->register_fcns(HW_GAIN_STAGE,                                        \
+                {[this, chan]() { return get_##dir##_gain_range(chan); },               \
+                    [this, chan]() { return get_##dir##_gain(chan); },                  \
+                    [this, chan](const double gain) { set_##dir##_gain(gain, chan); }}, \
+                10 /* High priority */);                                                \
+            /* If we had a digital (baseband) gain, we would register it here, so */    \
+            /* that the power manager would know to use it as a backup gain stage. */   \
+            _##dir##_pwr_mgr.at(chan) = pwr_cal_mgr::make(                              \
+                cal_serial,                                                             \
+                "X300-CAL-" + DIR,                                                      \
+                [this, chan]() { return get_##dir##_frequency(chan); },                 \
+                [this, chan]() -> std::string {                                         \
+                    const auto id_path = get_db_path(#dir, chan) / "id";                \
+                    const std::string db_suffix =                                       \
+                        get_tree()->exists(id_path)                                     \
+                            ? get_tree()->access<std::string>(id_path).get()            \
+                            : "generic";                                                \
+                    const std::string ant = get_##dir##_antenna(chan);                  \
+                    return "x3xx_pwr_" + db_suffix + "_" + #dir + "_"                   \
+                           + pwr_cal_mgr::sanitize_antenna_name(ant);                   \
+                },                                                                      \
+                ggroup);                                                                \
+            /* Every time we retune, we need to re-set the power level, if */           \
+            /* we're in power tracking mode */                                          \
+            get_tree()                                                                  \
+                ->access<double>(get_db_path(#dir, chan) / "freq" / "value")            \
+                .add_coerced_subscriber([this, chan](const double) {                    \
+                    _##dir##_pwr_mgr.at(chan)->update_power();                          \
+                });                                                                     \
+        }                                                                               \
+    } // end macro
+
+        INIT_POWER_CAL(tx);
+        INIT_POWER_CAL(rx);
     } /* _init_dboards */
 
     void _set_db_eeprom(i2c_iface::sptr i2c,
@@ -1910,6 +1970,7 @@ private:
 
     bool _basic_lf_rx = false;
     bool _basic_lf_tx = false;
+    bool _twinrx = false;
 
     std::unordered_map<size_t, rx_fe_perif> _rx_fe_map;
     std::unordered_map<size_t, tx_fe_perif> _tx_fe_map;

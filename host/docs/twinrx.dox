@@ -101,5 +101,33 @@ gain on the second channel could be significantly lower or higher than expected.
 will increase in comparison to the direct antenna mapping so the phase of the received signal will be different
 depending on the antenna mapping.
 
+\subsection twinrx_power_cal Power Calibration
+
+The X300/X310 motherboards support power-calibrating the daughterboards, and
+therefore TwinRX can also make use of this calibration API (see also \ref page_power).
+
+However, unlike other daughterboards, the relationship between actual, received
+power, and power measured at the ADC depend on more parameters than with the
+other daughterboards. First of all, the TwinRX has two complete analog receiver
+chains, unlike all the other daughterboards. Both receiver chains can be connected
+to any RF input, which already increases the number of combinations that need to
+be calibrated. Furthermore, the RF paths inside the daughterboard have an
+optional switch, which allows both receivers to receive from the same input, at
+different frequencies.
+
+
+single chan
+
+x3xx_power_cal_rx_rx1 + serial:{0, 1}
+x3xx_power_cal_rx_rx2 + serial:{0, 1}
+
+dual chan
+
+
+x3xx_power_cal_rx_rx1 + serial:{00, 11}
+x3xx_power_cal_rx_rx2 + serial:{00, 11}
+
+
+
 */
 // vim:ft=doxygen:
