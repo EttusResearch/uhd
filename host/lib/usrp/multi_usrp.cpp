@@ -442,25 +442,6 @@ public:
             usrp_info["rx_serial"] = db_eeprom.serial;
             usrp_info["rx_id"]     = db_eeprom.id.to_pp_string();
         }
-        const auto rfnoc_path = mb_root(mcp.mboard) / "xbar";
-        if (_tree->exists(rfnoc_path)) {
-            const auto spec        = get_rx_subdev_spec(mcp.mboard).at(mcp.chan);
-            const auto radio_index = get_radio_index(spec.db_name);
-            const auto radio_path =
-                rfnoc_path / str(boost::format("Radio_%d") % radio_index);
-            const auto eeprom_path = radio_path / "eeprom";
-            if (_tree->exists(eeprom_path)) {
-                const auto db_eeprom   = _tree->access<eeprom_map_t>(eeprom_path).get();
-                usrp_info["rx_serial"] = db_eeprom.count("serial")
-                                             ? std::string(db_eeprom.at("serial").begin(),
-                                                   db_eeprom.at("serial").end())
-                                             : "n/a";
-                usrp_info["rx_id"] = db_eeprom.count("pid")
-                                         ? std::string(db_eeprom.at("pid").begin(),
-                                               db_eeprom.at("pid").end())
-                                         : "n/a";
-            }
-        }
         return usrp_info;
     }
 
@@ -491,25 +472,6 @@ public:
                     .get();
             usrp_info["tx_serial"] = db_eeprom.serial;
             usrp_info["tx_id"]     = db_eeprom.id.to_pp_string();
-        }
-        const auto rfnoc_path = mb_root(mcp.mboard) / "xbar";
-        if (_tree->exists(rfnoc_path)) {
-            const auto spec        = get_tx_subdev_spec(mcp.mboard).at(mcp.chan);
-            const auto radio_index = get_radio_index(spec.db_name);
-            const auto radio_path =
-                rfnoc_path / str(boost::format("Radio_%d") % radio_index);
-            const auto path = radio_path / "eeprom";
-            if (_tree->exists(path)) {
-                const auto db_eeprom   = _tree->access<eeprom_map_t>(path).get();
-                usrp_info["tx_serial"] = db_eeprom.count("serial")
-                                             ? std::string(db_eeprom.at("serial").begin(),
-                                                   db_eeprom.at("serial").end())
-                                             : "n/a";
-                usrp_info["tx_id"] = db_eeprom.count("pid")
-                                         ? std::string(db_eeprom.at("pid").begin(),
-                                               db_eeprom.at("pid").end())
-                                         : "n/a";
-            }
         }
         return usrp_info;
     }
