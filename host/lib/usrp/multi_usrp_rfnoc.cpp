@@ -453,6 +453,12 @@ public:
         usrp_info["rx_id"] =
             db_eeprom.count("rx_id") ? bytes_to_str(db_eeprom.at("rx_id")) : "";
 
+        const auto rx_power_ref_keys = rx_chain.radio->get_rx_power_ref_keys();
+        if (!rx_power_ref_keys.empty() && rx_power_ref_keys.size() == 2) {
+            usrp_info["rx_ref_power_key"] = rx_power_ref_keys.at(0);
+            usrp_info["rx_ref_power_serial"] = rx_power_ref_keys.at(1);
+        }
+
         return usrp_info;
     }
 
@@ -476,6 +482,12 @@ public:
             db_eeprom.count("tx_serial") ? bytes_to_str(db_eeprom.at("tx_serial")) : "";
         usrp_info["tx_id"] =
             db_eeprom.count("tx_id") ? bytes_to_str(db_eeprom.at("tx_id")) : "";
+
+        const auto tx_power_ref_keys = tx_chain.radio->get_tx_power_ref_keys();
+        if (!tx_power_ref_keys.empty() && tx_power_ref_keys.size() == 2) {
+            usrp_info["tx_ref_power_key"] = tx_power_ref_keys.at(0);
+            usrp_info["tx_ref_power_serial"] = tx_power_ref_keys.at(1);
+        }
 
         return usrp_info;
     }

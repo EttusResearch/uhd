@@ -442,6 +442,14 @@ public:
             usrp_info["rx_serial"] = db_eeprom.serial;
             usrp_info["rx_id"]     = db_eeprom.id.to_pp_string();
         }
+        if (_tree->exists(rx_rf_fe_root(chan) / "ref_power/key")) {
+            usrp_info["rx_ref_power_key"] =
+                _tree->access<std::string>(rx_rf_fe_root(chan) / "ref_power/key").get();
+        }
+        if (_tree->exists(rx_rf_fe_root(chan) / "ref_power/serial")) {
+            usrp_info["rx_ref_power_serial"] =
+                _tree->access<std::string>(rx_rf_fe_root(chan) / "ref_power/serial").get();
+        }
         return usrp_info;
     }
 
@@ -472,6 +480,14 @@ public:
                     .get();
             usrp_info["tx_serial"] = db_eeprom.serial;
             usrp_info["tx_id"]     = db_eeprom.id.to_pp_string();
+        }
+        if (_tree->exists(tx_rf_fe_root(chan) / "ref_power/key")) {
+            usrp_info["tx_ref_power_key"] =
+                _tree->access<std::string>(tx_rf_fe_root(chan) / "ref_power/key").get();
+        }
+        if (_tree->exists(tx_rf_fe_root(chan) / "ref_power/serial")) {
+            usrp_info["tx_ref_power_serial"] =
+                _tree->access<std::string>(tx_rf_fe_root(chan) / "ref_power/serial").get();
         }
         return usrp_info;
     }
