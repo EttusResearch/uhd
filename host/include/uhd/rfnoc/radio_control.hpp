@@ -238,6 +238,26 @@ public:
      */
     virtual double get_tx_power_reference(const size_t chan) = 0;
 
+    /*! Return the keys by which the power calibration data is referenced for this
+     * channel.
+     *
+     * The first entry is the key, the second the serial. These are the same
+     * arguments that can be used for uhd::usrp::cal::database::read_cal_data()
+     * and friends. See also \ref cal_db_serial.
+     *
+     * Note that the key can change at runtime, e.g., when the antenna port is
+     * switched.
+     *
+     * The difference between this and has_tx_power_reference() is that the
+     * latter requires both device support as well as calibration data, whereas
+     * this function will never throw, and will always return a non-empty vector
+     * if device support is there, even if the device does not have calbration
+     * data loaded.
+     *
+     * \returns an empty vector if no power calibration is supported, or a
+     *          vector of length 2 with key and serial if it does.
+     */
+    virtual std::vector<std::string> get_tx_power_ref_keys(const size_t chan = 0) = 0;
 
     /*! Return a list of valid RX gain names
      */
@@ -337,6 +357,27 @@ public:
      *         for this device
      */
     virtual double get_rx_power_reference(const size_t chan) = 0;
+
+    /*! Return the keys by which the power calibration data is referenced for this
+     * channel.
+     *
+     * The first entry is the key, the second the serial. These are the same
+     * arguments that can be used for uhd::usrp::cal::database::read_cal_data()
+     * and friends. See also \ref cal_db_serial.
+     *
+     * Note that the key can change at runtime, e.g., when the antenna port is
+     * switched.
+     *
+     * The difference between this and has_rx_power_reference() is that the
+     * latter requires both device support as well as calibration data, whereas
+     * this function will never throw, and will always return a non-empty vector
+     * if device support is there, even if the device does not have calbration
+     * data loaded.
+     *
+     * \returns an empty vector if no power calibration is supported, or a
+     *          vector of length 2 with key and serial if it does.
+     */
+    virtual std::vector<std::string> get_rx_power_ref_keys(const size_t chan = 0) = 0;
 
     /*! Return a list of TX gain profiles for this radio
      */

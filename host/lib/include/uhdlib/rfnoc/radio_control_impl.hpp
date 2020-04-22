@@ -106,6 +106,8 @@ public:
     virtual bool has_tx_power_reference(const size_t chan);
     virtual double get_rx_power_reference(const size_t chan);
     virtual double get_tx_power_reference(const size_t chan);
+    virtual std::vector<std::string> get_rx_power_ref_keys(const size_t);
+    virtual std::vector<std::string> get_tx_power_ref_keys(const size_t);
 
     /**************************************************************************
      * LO Controls

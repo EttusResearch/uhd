@@ -611,6 +611,16 @@ double radio_control_impl::get_tx_power_reference(const size_t)
     return 0.0;
 }
 
+std::vector<std::string> radio_control_impl::get_rx_power_ref_keys(const size_t)
+{
+    return {};
+}
+
+std::vector<std::string> radio_control_impl::get_tx_power_ref_keys(const size_t)
+{
+    return {};
+}
+
 /******************************************************************************
  * LO Default API
  *****************************************************************************/
