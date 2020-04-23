@@ -1,6 +1,6 @@
 <%namespace name="func" file="/functions.mako"/>\
 //
-// Copyright 2019 Ettus Research, A National Instruments Company
+// Copyright ${year} Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //

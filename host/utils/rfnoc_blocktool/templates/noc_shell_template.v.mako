@@ -3,7 +3,7 @@ import math
 %>\
 <%namespace name="func" file="/functions.mako"/>\
 //
-// Copyright 2019 Ettus Research, A National Instruments Brand
+// Copyright ${year} Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
