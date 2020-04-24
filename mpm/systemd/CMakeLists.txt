@@ -10,6 +10,9 @@ PKG_CHECK_MODULES(SYSTEMD "systemd" REQUIRED)
 PKG_GET_VARIABLE(SYSTEMD_SYSTEM_UNITDIR systemd systemdsystemunitdir)
 message(STATUS "Systemd system unit directory ${SYSTEMD_SYSTEM_UNITDIR}")
 
+PKG_GET_VARIABLE(SYSTEMD_SYSCTLDIR systemd sysctldir)
+message(STATUS "Systemd sysctl directory ${SYSTEMD_SYSCTLDIR}")
+
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/usrp-hwd.service.in
     ${CMAKE_CURRENT_BINARY_DIR}/usrp-hwd.service
@@ -18,4 +21,9 @@ configure_file(
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/usrp-hwd.service
   DESTINATION ${SYSTEMD_SYSTEM_UNITDIR}
+)
+
+install(FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/usrp-hwd.conf
+  DESTINATION ${SYSTEMD_SYSCTLDIR}
 )
