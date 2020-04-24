@@ -16,24 +16,34 @@ The receiver is capable of fast frequency hopping to detect frequency agile emit
 
 The TwinRX daughterboard only works with the X300/X310 series of USRPs.
 
-\subsection twinrx_dboards_mcr Master Clock Rate, Sampling Rate, and Tick Rate
+\subsection twinrx_dboards_mcr Master Clock Rate, Tick Rate, and Sampling Rate
 
-Due to the specific configuration of the analog filters, the TwinRX can only
-support a master clock rate of 200 MHz. Since the X310/X300 only has a single
+Due to the specific configuration of the analog filters, the TwinRX only
+supports a master clock rate of 200 MHz. Since the X300/X310 only has a single
 master clock, this means that the only valid tick rate for the X300/X310 is
 200 MHz, even if there is another daughterboard in the same device which could
 support a different tick rate.
 
-The TwinRX uses the dual-ADC of each X300 channel to sample two separate IF
-streams, thus enabling two receive channels where there usually only is one.
-Every IF channel is sampled at 200 MHz (real sampling), and then converted to
-a 100 Msps complex sample stream per channel. This means the total output of
-one daughterboard is 2x100 Msps, which is the same aggregate sampling rate as
-with single-channel daughterboards such as the UBX.
+The maximum supported sample rate is 200 Msps if using one channel and
+100 Msps if using both channels.  TwinRX only supports instantaneous
+bandwidth up to 80 MHz, so a sample rate of 100 Msps or less is sufficient
+for all applications.  Decimation from the 200 Msps tick rate to the desired
+sample rate is handled automatically when using the default FPGA images
+either by setting the sample rate (if using the multi_usrp API) or by
+setting the output rate of the DDC (if using the RFNoC API).
 
-The tick rate is then also halved to match the sampling rate. Timed commands
-are executed relative to a sample edge in the I/Q domain, i.e., at a granularity
-of 1/100 MHz = 10 ns.
+IMPORTANT NOTE:  If building a custom RFNoC image and using both channels
+of the TwinRX, the 400 Msps produced by the Radio block (2 channels at
+200 Msps each) exceeds the 200 Msps throughput capacity of the crossbar
+in the RFNoC framework. To resolve this, a block that consumes the 400 Msps
+and produces less than 200 Msps must be statically connected to the Radio
+block.  The default X300 and X310 FPGA images have a DDC block statically
+connected to the Radio block which handles the decimation automatically by
+setting the output rate on each channel of the DDC to 100 Msps or less.
+It is recommended to leave the DDC statically connected to the Radio for
+custom RFNoC FPGA images, but the DDC can be replaced by a custom block
+as long as it consumes the 400 Msps and produces an aggregate of less than
+200 Msps.
 
 
 \image html TwinRX_Block_Diagram.png "TwinRX Block Diagram"
