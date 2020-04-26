@@ -319,8 +319,12 @@ std::string dft_to_plot(const log_pwr_dft_type& dft_,
 #include <curses.h>
 #include <cstdlib>
 #include <iostream>
+#include <thread>
+#include <chrono>
 
 int main(void){
+    using namespace std::chrono_literals;
+
     initscr();
 
     while (true){
@@ -343,8 +347,9 @@ int main(void){
             12.5e4, 2.45e9,
             60, 0
         ).c_str());
+	refresh();
 
-        sleep(1);
+        std::this_thread::sleep_for(1s);
     }
 
 
