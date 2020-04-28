@@ -204,7 +204,7 @@ module rfnoc_block_${config['module_name']}_tb;
     //--------------------------------
 
     // <Add your test code here>
-    test.start_test("<Name your first test", 10us);
+    test.start_test("<Name your first test>", 100us);
     `ASSERT_WARNING(0, "This testbench doesn't test anything yet!");
     test.end_test();
 
