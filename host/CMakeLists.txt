@@ -291,10 +291,14 @@ set(UHD_BOOST_REQUIRED_COMPONENTS
     filesystem
     program_options
     system
-    unit_test_framework
     serialization
     thread
 )
+
+if(ENABLE_TESTS)
+    list(APPEND UHD_BOOST_REQUIRED_COMPONENTS unit_test_framework)
+endif(ENABLE_TESTS)
+
 include(UHDBoost)
 
 include_directories(${Boost_INCLUDE_DIRS})
