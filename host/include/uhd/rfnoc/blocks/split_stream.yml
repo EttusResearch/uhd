@@ -1,0 +1,37 @@
+schema: rfnoc_modtool_args
+module_name: split_stream
+version: 1.0
+rfnoc_version: 1.0
+chdr_width: 64
+noc_id: 0x57570000
+
+parameters:
+  NUM_PORTS: 1
+  NUM_BRANCHES: 2
+
+clocks:
+  - name: rfnoc_chdr
+    freq: "[]"
+  - name: rfnoc_ctrl
+    freq: "[]"
+
+control:
+  sw_iface: nocscript
+  fpga_iface: axis_ctrl
+  interface_direction: slave
+  fifo_depth: 32
+  clk_domain: rfnoc_ctrl
+
+data:
+  fpga_iface: axis_chdr
+  clk_domain: rfnoc_chdr
+  inputs:
+    in:
+      num_ports: NUM_PORTS
+  outputs:
+    out:
+      num_ports: NUM_PORTS*NUM_BRANCHES
+
+registers:
+
+properties:
