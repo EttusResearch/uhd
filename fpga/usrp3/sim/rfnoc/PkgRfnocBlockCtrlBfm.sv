@@ -83,6 +83,8 @@ package PkgRfnocBlockCtrlBfm;
   import PkgChdrIfaceBfm::*;
 
   export PkgChdrBfm::ChdrPacket;
+  export PkgCtrlIfaceBfm::CtrlIfaceBfm;
+  export PkgChdrIfaceBfm::ChdrIfaceBfm;
   export PkgChdrIfaceBfm::packet_info_t;
 
 
