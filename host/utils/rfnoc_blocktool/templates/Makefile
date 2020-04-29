@@ -19,7 +19,7 @@ include $(BASE_DIR)/../tools/make/viv_sim_preamble.mak
 #-------------------------------------------------
 # Design Specific
 #-------------------------------------------------
-# Include makefiles and sources for the DUT and its 
+# Include makefiles and sources for the DUT and its
 # dependencies.
 include $(BASE_DIR)/../lib/rfnoc/core/Makefile.srcs
 include $(BASE_DIR)/../lib/rfnoc/utils/Makefile.srcs

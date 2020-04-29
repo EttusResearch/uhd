@@ -9,7 +9,7 @@ import math
 //
 // Module: noc_shell_${config['module_name']}
 //
-// Description: 
+// Description:
 //
 //   This is a tool-generated NoC-shell for the ${config['module_name']} block.
 //   See the RFNoC specification for more information about NoC shells.
@@ -199,12 +199,12 @@ module noc_shell_${config['module_name']} #(
 %elif config['data']['fpga_iface'] == "axis_chdr":
   assign axis_chdr_clk = ${config['data']['clk_domain']}_clk;
   assign axis_chdr_rst = ${config['data']['clk_domain']}_rst;
-  
+
 <%include file="/modules/axis_chdr_modules_template.mako"/>\
 %elif config['data']['fpga_iface'] == "axis_data":
   assign axis_data_clk = ${config['data']['clk_domain']}_clk;
   assign axis_data_rst = ${config['data']['clk_domain']}_rst;
-  
+
 <%include file="/modules/axis_data_modules_template.mako"/>\
 %endif
 endmodule // noc_shell_${config['module_name']}
