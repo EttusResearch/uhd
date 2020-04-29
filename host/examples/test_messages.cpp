@@ -316,22 +316,29 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     // create RX and TX streamers
     uhd::stream_args_t stream_args("fc32"); // complex floats
-    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
-    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
+    uhd::rx_streamer::sptr rx_stream;
+    uhd::tx_streamer::sptr tx_stream;
+    if (usrp->get_rx_num_channels()) {
+        rx_stream = usrp->get_rx_stream(stream_args);
+    }
+    if (usrp->get_tx_num_channels()) {
+        tx_stream = usrp->get_tx_stream(stream_args);
+    }
 
     //------------------------------------------------------------------
     // begin messages test
     //------------------------------------------------------------------
     using test_executor_fn = std::function<bool(
         uhd::usrp::multi_usrp::sptr, uhd::rx_streamer::sptr, uhd::tx_streamer::sptr)>;
-    // clang-format off
-    uhd::dict<std::string, test_executor_fn> tests = boost::assign::map_list_of
-        ("Test Burst ACK ", &test_burst_ack_message)
-        ("Test Underflow ", &test_underflow_message)
-        ("Test Time Error", &test_time_error_message)
-        ("Test Late Command", &test_late_command_message)
-    ;
-    // clang-format on
+    uhd::dict<std::string, test_executor_fn> tests;
+    if (tx_stream) {
+        tests["Test Burst ACK "] = &test_burst_ack_message;
+        tests["Test Underflow "] = &test_underflow_message;
+        tests["Test Time Error"] = &test_time_error_message;
+    }
+    if (rx_stream) {
+        tests["Test Late Command"] = &test_late_command_message;
+    }
 
     if (vm.count("test-chain")) {
         tests["Test Broken Chain"] = &test_broken_chain_message;
@@ -350,8 +357,12 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         std::string key = tests.keys()[std::rand() % tests.size()];
         bool pass       = tests[key](usrp, rx_stream, tx_stream);
 
-        flush_recv(rx_stream);
-        flush_async(tx_stream);
+        if (rx_stream) {
+            flush_recv(rx_stream);
+        }
+        if (tx_stream) {
+            flush_async(tx_stream);
+        }
 
         // store result
         if (pass)
