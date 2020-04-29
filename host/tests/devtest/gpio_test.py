@@ -32,6 +32,9 @@ class gpio_test(uhd_example_test_case):
             app.returncode == 0,
             re.search('All tests passed!', app.stdout) is not None,
         ])
+        if not run_results['passed']:
+            print(app.stdout)
+            print(app.stderr)
         self.report_example_results(test_name, run_results)
         return run_results
 
