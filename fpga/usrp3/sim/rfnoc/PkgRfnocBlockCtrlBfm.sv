@@ -229,7 +229,7 @@ package PkgRfnocBlockCtrlBfm;
 
     // Return a handle to the indicated slave port BFM
     function ChdrIfaceBfm #(CHDR_W, ITEM_W) get_slave_data_bfm(int port);
-      assert (port >= 0 && port < m_data.size()) else begin
+      assert (port >= 0 && port < s_data.size()) else begin
         $fatal(1, "Invalid slave port number");
       end
       return s_data[port];
