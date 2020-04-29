@@ -139,22 +139,16 @@ a list and usage information
 ### X3x0 Targets and Outputs
 
 #### Supported Targets
-- X310_1G:  USRP X310. 1GigE on both SFP+ ports. DRAM TX FIFO (experimental!).
-- X300_1G:  USRP X300. 1GigE on both SFP+ ports. DRAM TX FIFO (experimental!).
-- X310_HG:  USRP X310. 1GigE on SFP+ Port0, 10Gig on SFP+ Port1. DRAM TX FIFO (experimental!).
-- X300_HG:  USRP X300. 1GigE on SFP+ Port0, 10Gig on SFP+ Port1. DRAM TX FIFO (experimental!).
-- X310_XG:  USRP X310. 10GigE on both SFP+ ports. DRAM TX FIFO (experimental!).
-- X300_XG:  USRP X300. 10GigE on both SFP+ ports. DRAM TX FIFO (experimental!).
-- X310_HA:  USRP X310. 1GigE on SFP+ Port0, Aurora on SFP+ Port1. DRAM TX FIFO.
-- X300_HA:  USRP X300. 1GigE on SFP+ Port0, Aurora on SFP+ Port1. DRAM TX FIFO.
-- X310_XA:  USRP X310. 10GigE on SFP+ Port0, Aurora on SFP+ Port1. DRAM TX FIFO.
-- X300_XA:  USRP X300. 10GigE on SFP+ Port0, Aurora on SFP+ Port1. DRAM TX FIFO.
-- X310_RFNOC_HG:  USRP X310. 1GigE on SFP+ Port0, 10Gig on SFP+ Port1. RFNoC CEs enabled
-- X300_RFNOC_HG:  USRP X300. 1GigE on SFP+ Port0, 10Gig on SFP+ Port1. RFNoC CEs enabled
-- X310_RFNOC_XG:  USRP X310. 10GigE on both SFP+ ports. RFNoC CEs enabled.
-- X300_RFNOC_XG:  USRP X300. 10GigE on both SFP+ ports. RFNoC CEs enabled.
-- X310_RFNOC_HLS_HG:  USRP X310. 1GigE on SFP+ Port0, 10Gig on SFP+ Port1. RFNoC CEs enabled + Vivado HLS
-- X300_RFNOC_HLS_HG:  USRP X300. 1GigE on SFP+ Port0, 10Gig on SFP+ Port1. RFNoC CEs enabled + Vivado HLS
+- X310_1G:  USRP X310. 1GigE on both SFP+ ports.
+- X300_1G:  USRP X300. 1GigE on both SFP+ ports.
+- X310_HG:  USRP X310. 1GigE on SFP+ Port0, 10Gig on SFP+ Port1.
+- X300_HG:  USRP X300. 1GigE on SFP+ Port0, 10Gig on SFP+ Port1.
+- X310_XG:  USRP X310. 10GigE on both SFP+ ports.
+- X300_XG:  USRP X300. 10GigE on both SFP+ ports.
+- X310_HA:  USRP X310. 1GigE on SFP+ Port0, Aurora on SFP+ Port1.
+- X300_HA:  USRP X300. 1GigE on SFP+ Port0, Aurora on SFP+ Port1.
+- X310_XA:  USRP X310. 10GigE on SFP+ Port0, Aurora on SFP+ Port1.
+- X300_XA:  USRP X300. 10GigE on SFP+ Port0, Aurora on SFP+ Port1.
 
 #### Outputs
 - `build/usrp_<product>_fpga_<image_type>.bit` :    Configuration bitstream with header
@@ -167,8 +161,6 @@ a list and usage information
 #### Supported Targets
 - E310_SG1 or E310 :  Builds the USRP E310 speed grade 1.
 - E310_SG3 or E310_sg3:  Builds the USRP E310 speed grade 3.
-- E310_SG1_RFNOC or E310_RFNOC:  Builds the USRP E310 RFNoC image for speed grade 1.
-- E310_SG3_RFNOC or E310_RFNOC_sg3:  Builds the USRP E310 RFNoC image for speed grade 3.
 
 #### Outputs
 - `build/usrp_<product>_fpga.bit` : Configuration bitstream with header
@@ -181,9 +173,6 @@ a list and usage information
 - E320_1G: 1GigE on SFP+ Port.
 - E320_XG: 10GigE on SFP+ Port.
 - E320_AA: Aurora on SFP+ Port.
-- E320_RFNOC_1G: 1GigE on SFP+ Port. RFNOC CEs enabled.
-- E320_RFNOC_XG: 10GigE on SFP+ Port. RFNOC CEs enabled.
-- E320_RFNOC_AA: Aurora on SFP+ Port. RFNOC CEs enabled.
 
 #### Outputs
 - `build/usrp_<product>_fpga.bit` : Configuration bitstream with header
@@ -202,25 +191,22 @@ combination of motherboard and daughterboards.
 - N300_AA: Aurora on both SFP+ ports
 - N300_HA: 1GigE on SFP0, Aurora on SFP1
 - N300_HG: 1GigE on SFP0, 10GigE on SFP1
-- N300_WX: White Rabbing on SFP0, 10GigE on SFP1
+- N300_WX: White Rabbit on SFP0, 10GigE on SFP1
 - N300_XA: 10GigE on SFP0, Aurora on SFP1
 - N300_XG: 10GigE on both SFP+ ports
 - N310_AA: Aurora on both SFP+ ports
 - N310_HA: 1GigE on SFP0, Aurora on SFP1
 - N310_HG: 1GigE on SFP0, 10GigE on SFP1
-- N310_WX: White Rabbing on SFP0, 10GigE on SFP1
+- N310_WX: White Rabbit on SFP0, 10GigE on SFP1
 - N310_XA: 10GigE on SFP0, Aurora on SFP1
 - N310_XG: 10GigE on both SFP+ ports
 - N320_AQ: 10GigE on both SFP+ ports, Aurora on QSFP+ ports
 - N320_HG: 1GigE on SFP0, 10GigE on SFP1
 - N320_XG: 10GigE on both SFP+ ports
 - N320_XQ: White Rabbit on SFP0, 10 GigE on QSFP0 and QSFP1
+- N320_WX:  White Rabbit on SFP0, 10GigE on SFP1
 
 For the N320 targets see also the N320 manual page on the UHD manual.
-
-All targets also support an RFNOC version (e.g. `N300_RFNOC_XG`), which enables
-custom selection of RFNoC blocks.
-
 
 #### Outputs
 - `build/usrp_<product>_fpga.bit` : Configuration bitstream with header
@@ -237,4 +223,3 @@ Here are the supported options:
 - `PROJECT_ONLY=1` : Only create a Xilinx project for the specified target(s). Useful for use with the ISE GUI. (*NOTE*: this option is only valid for Xilinx ISE)
 - `EXPORT_ONLY=1` :  Export build targets from a GUI build to the build directory. Requires the project in build-\*_\* to be built. (*NOTE*: this option is only valid for Xilinx ISE)
 - `GUI=1` : Run the Vivado build in GUI mode instead of batch mode. After the build is complete, Vivado provides an option to save the fully configured project for customization (*NOTE*: this option is only valid for Xilinx Vivado)
-
