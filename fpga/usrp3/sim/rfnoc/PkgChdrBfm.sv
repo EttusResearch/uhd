@@ -789,14 +789,14 @@ package PkgChdrBfm;
     end
 
     // Insert metadata
-    while (chdr_packet.metadata.size() > 0) begin
-      bus_word = chdr_packet.metadata.pop_front();
+    foreach (chdr_packet.metadata[i]) begin
+      bus_word = chdr_packet.metadata[i];
       axis_packet.data.push_back(bus_word);
     end
 
     // Insert payload
-    while (chdr_packet.data.size() > 0) begin
-      bus_word = chdr_packet.data.pop_front();
+    foreach (chdr_packet.data[i]) begin
+      bus_word = chdr_packet.data[i];
       axis_packet.data.push_back(bus_word);
     end
 
