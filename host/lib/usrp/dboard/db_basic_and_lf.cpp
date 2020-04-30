@@ -122,6 +122,8 @@ basic_rx::basic_rx(ctor_args_t args, double max_freq)
     // Register properties
     ////////////////////////////////////////////////////////////////////
     this->get_rx_subtree()->create<std::string>("name").set(db_name);
+    this->get_rx_subtree()->create<std::string>("id").set(
+        (get_rx_id().to_uint16() & 0xFF) == BASIC_RX_PID ? "basicrx" : "lfrx");
     this->get_rx_subtree()->create<int>("gains"); // phony property so this dir exists
     this->get_rx_subtree()->create<double>("freq/value").set_publisher([]() {
         return 0.0;
@@ -217,6 +219,8 @@ basic_tx::basic_tx(ctor_args_t args, double max_freq) : tx_dboard_base(args)
     // Register properties
     ////////////////////////////////////////////////////////////////////
     this->get_tx_subtree()->create<std::string>("name").set(db_name);
+    this->get_tx_subtree()->create<std::string>("id").set(
+        (get_tx_id().to_uint16() & 0xFF) == BASIC_TX_PID ? "basicrx" : "lfrx");
     this->get_tx_subtree()->create<int>("gains"); // phony property so this dir exists
     this->get_tx_subtree()->create<double>("freq/value").set_publisher([]() {
         return 0.0;
