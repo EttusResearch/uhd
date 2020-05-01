@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 Copyright 2019 Ettus Research, A National Instrument Brand
 
@@ -27,13 +27,9 @@ import re
 import yaml
 
 logging.basicConfig(format='[%(levelname).3s] %(message)s')
-# CMAKE will dump final site-package folder into this to allow the script find
-# its package folder
-sys.path.insert(0, "@RFNOC_PACKAGE_DIR@")
-#pylint : disable = wrong - import - position
-import rfnoc.image_builder
-import rfnoc.yaml_utils
 
+from uhd.imgbuilder import image_builder
+from uhd.imgbuilder import yaml_utils
 
 def setup_parser():
     """
@@ -114,15 +110,14 @@ def image_config(args):
     :return: image configuration as dictionary
     """
     if args.yaml_config:
-        config = \
-            rfnoc.yaml_utils.load_config(args.yaml_config, get_config_path())
+        config = yaml_utils.load_config(args.yaml_config, get_config_path())
         device = config.get('device') if args.device is None else args.device
         target = config.get('default_target') if args.target is None else args.target
         return config, args.yaml_config, device, target
     with open(args.grc_config) as grc_file:
         config = yaml.load(grc_file)
         logging.info("Converting GNU Radio Companion file to image builder format")
-        config = rfnoc.image_builder.convert_to_image_config(config, args.grc_blocks)
+        config = image_builder.convert_to_image_config(config, args.grc_blocks)
         return config, args.grc_config, args.device, args.target
 
 
@@ -164,7 +159,7 @@ def get_config_path():
 
 def main():
     """
-    Wrapper for rfnoc.image_builder.build_image.
+    Wrapper for image_builder.build_image.
     :return: exit code
     """
     args = setup_parser().parse_args()
@@ -176,7 +171,7 @@ def main():
     with open(source, "rb") as source_file:
         source_hash.update(source_file.read())
 
-    rfnoc.image_builder.build_image(
+    image_builder.build_image(
         config=config,
         fpga_path=args.fpga_dir,
         config_path=get_config_path(),
@@ -193,4 +188,4 @@ def main():
         )
 
 if __name__ == "__main__":
-    exit(main())
+    sys.exit(main())

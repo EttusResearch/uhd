@@ -26,6 +26,18 @@ foreach(util_source ${util_runtime_sources})
     UHD_INSTALL(TARGETS ${util_name} RUNTIME DESTINATION ${RUNTIME_DIR} COMPONENT utilities)
 endforeach(util_source)
 
+set(CONFIG_PATH "${CMAKE_INSTALL_PREFIX}/${PKG_DATA_DIR}")
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/rfnoc_image_builder.py"
+    "${CMAKE_CURRENT_BINARY_DIR}/rfnoc_image_builder"
+)
+UHD_INSTALL(PROGRAMS
+    ${CMAKE_CURRENT_BINARY_DIR}/rfnoc_image_builder
+    RENAME rfnoc_image_builder
+    DESTINATION ${RUNTIME_DIR}
+    COMPONENT utilities
+)
+
 ########################################################################
 # Utilities that get installed into the share path
 ########################################################################
@@ -105,6 +117,7 @@ UHD_INSTALL(PROGRAMS
     DESTINATION ${PKG_LIB_DIR}/utils
     COMPONENT utilities
 )
+
 if(LINUX)
     UHD_INSTALL(PROGRAMS
         ${CMAKE_CURRENT_BINARY_DIR}/uhd_images_downloader.py
@@ -156,38 +169,6 @@ if(ENABLE_USRP2)
     endforeach(burner ${burners})
 
 endif(ENABLE_USRP2)
-
-########################################################################
-# Python rfnoc package
-########################################################################
-set(RFNOC_PKG_FILES "")
-add_subdirectory(rfnoc)
-
-set(OUTPUT      "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")
-set(SETUP_PY_IN "${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in")
-set(SETUP_PY    "${CMAKE_CURRENT_BINARY_DIR}/setup.py")
-set(CONFIG_PATH "${CMAKE_INSTALL_PREFIX}/${PKG_DATA_DIR}")
-
-# construct site-package folder from install prefix
-execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
-    "from __future__ import print_function; from distutils import sysconfig; print(sysconfig.get_python_lib(plat_specific=True, prefix='${CMAKE_INSTALL_PREFIX}'))"
-    OUTPUT_VARIABLE RFNOC_PACKAGE_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-
-configure_file(${SETUP_PY_IN} ${SETUP_PY})
-# rfnoc_image_builder uses RFNOC_PACKAGE_DIR to find python package location
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/bin/rfnoc_image_builder" "${CMAKE_CURRENT_BINARY_DIR}/bin/rfnoc_image_builder")
-
-add_custom_command(OUTPUT ${OUTPUT}
-     COMMENT "build rfnoc package"
-     COMMAND ${CMAKE_COMMAND}  -DSOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}" -DBINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}"  -P ${CMAKE_CURRENT_SOURCE_DIR}/copy_python_module.cmake
-     COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} -q build
-     COMMAND ${CMAKE_COMMAND} -E touch ${OUTPUT}
-     DEPENDS ${RFNOC_PKG_FILES})
-add_custom_target(rfnoc ALL DEPENDS ${OUTPUT})
-
-get_filename_component(SETUP_FOLDER ${SETUP_PY} DIRECTORY)
-install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} install --force --prefix ${CMAKE_INSTALL_PREFIX} WORKING_DIRECTORY ${SETUP_FOLDER})")
 
 ########################################################################
 # Other files that are not utilities or executables
