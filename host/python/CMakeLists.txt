@@ -43,7 +43,11 @@ else()
     if(${PYTHON_EXTENSION_SUFFIX} STREQUAL "None")
         set(PYTHON_EXTENSION_SUFFIX ${CMAKE_SHARED_MODULE_SUFFIX})
     endif()
-    set_target_properties(pyuhd PROPERTIES PREFIX "lib" SUFFIX ${PYTHON_EXTENSION_SUFFIX})
+    set_target_properties(pyuhd
+        PROPERTIES
+        PREFIX "lib"
+        SUFFIX ${PYTHON_EXTENSION_SUFFIX}
+    )
 endif(WIN32)
 target_include_directories(pyuhd PUBLIC
     ${PYTHON_NUMPY_INCLUDE_DIR}
@@ -104,5 +108,22 @@ else()
     file(TO_CMAKE_PATH ${UHD_PYTHON_DIR} UHD_PYTHON_DIR)
 
     message(STATUS "Utilizing the python install directory: ${UHD_PYTHON_DIR}")
-    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/uhd DESTINATION ${UHD_PYTHON_DIR} COMPONENT pythonapi)
+    # CMake will create an up-to-date copy of the entire Python module within
+    # the build directory. Instead of using setuptools, we use distutils (above)
+    # to figure out the destination path, and then we simply copy this module
+    # recursively into its final destination.
+    install(DIRECTORY
+        ${CMAKE_CURRENT_BINARY_DIR}/uhd
+        DESTINATION ${UHD_PYTHON_DIR}
+        COMPONENT pythonapi
+    )
+    # On Linux/Unix systems, we must properly install the library file, though.
+    # install(DIRECTORY) will treat the .so file like any other file, which
+    # means it won't update its RPATH, and thus the RPATH would be stuck to the
+    # build directory.
+    if(UNIX)
+        install(TARGETS pyuhd
+            DESTINATION ${UHD_PYTHON_DIR}/uhd
+        )
+    endif(UNIX)
 endif(HAVE_PYTHON_VIRTUALENV)
