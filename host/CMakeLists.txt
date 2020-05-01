@@ -290,11 +290,8 @@ set(UHD_BOOST_REQUIRED_COMPONENTS
     system
     serialization
     thread
+    unit_test_framework
 )
-
-if(ENABLE_TESTS)
-    list(APPEND UHD_BOOST_REQUIRED_COMPONENTS unit_test_framework)
-endif(ENABLE_TESTS)
 
 include(UHDBoost)
 
