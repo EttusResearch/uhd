@@ -53,18 +53,10 @@ noc_blocks:
   ddc1:
     block_desc: 'ddc.yml'
     parameters:
-        NUM_PORTS: 2
+      NUM_PORTS: 2
   radio1:
     block_desc: 'radio_2x64.yml'
-  fifo0:
-    block_desc: 'axi_ram_fifo_2x64.yml'
-    parameters:
-      # These parameters match the interface on the x300/X310
-      MEM_DATA_W: 64
-      MEM_ADDR_W: 30
-      FIFO_ADDR_BASE: "{30'h02000000, 30'h00000000}"
-      FIFO_ADDR_MASK: "{30'h01FFFFFF, 30'h01FFFFFF}"
-      MEM_CLK_RATE: "300e6"
+  # Here's our new block:
   gain0:
     block_desc: 'gain.yml'
 
@@ -77,8 +69,7 @@ noc_blocks:
 #         - dstport = Port on the destination block to connect
 connections:
   # ep0 to radio0(0) - RFA TX
-  - { srcblk: ep0,    srcport: out0,  dstblk: fifo0,  dstport: in_0 }
-  - { srcblk: fifo0,  srcport: out_0, dstblk: duc0,   dstport: in_0 }
+  - { srcblk: ep0,    srcport: out0,  dstblk: duc0,   dstport: in_0 }
   - { srcblk: duc0,   srcport: out_0, dstblk: radio0, dstport: in_0 }
   # radio0(0) to ep0 - RFA RX
   - { srcblk: radio0, srcport: out_0, dstblk: ddc0,   dstport: in_0 }
@@ -87,8 +78,7 @@ connections:
   - { srcblk: radio0, srcport: out_1, dstblk: ddc0,   dstport: in_1 }
   - { srcblk: ddc0,   srcport: out_1, dstblk: ep1,    dstport: in0  }
   # ep2 to radio1(0) - RFB TX
-  - { srcblk: ep2,    srcport: out0,  dstblk: fifo0,  dstport: in_1 }
-  - { srcblk: fifo0,  srcport: out_1, dstblk: duc1,   dstport: in_0 }
+  - { srcblk: ep2,    srcport: out0,  dstblk: duc1,   dstport: in_0 }
   - { srcblk: duc1,   srcport: out_0, dstblk: radio1, dstport: in_0 }
   # radio1(0) to ep2 - RFB RX
   - { srcblk: radio1, srcport: out_0, dstblk: ddc1,   dstport: in_0 }
@@ -106,21 +96,18 @@ connections:
   - { srcblk: _device_, srcport: x300_radio1, dstblk: radio1, dstport: x300_radio }
   - { srcblk: _device_, srcport: time_keeper, dstblk: radio0, dstport: time_keeper }
   - { srcblk: _device_, srcport: time_keeper, dstblk: radio1, dstport: time_keeper }
-  - { srcblk: _device_, srcport: dram, dstblk: fifo0, dstport: axi_ram }
 
 # A list of all clock domain connections in design
-# ------------------------------------------------
+# ------------------------------------------
 # Format: A list of connection maps (list of key-value pairs) with the following keys
 #         - srcblk  = Source block to connect (Always "_device"_)
 #         - srcport = Clock domain on the source block to connect
 #         - dstblk  = Destination block to connect
 #         - dstport = Clock domain on the destination block to connect
 clk_domains:
-  - { srcblk: _device_, srcport: radio, dstblk: radio0, dstport: radio }
-  - { srcblk: _device_, srcport: ce,    dstblk: ddc0,   dstport: ce    }
-  - { srcblk: _device_, srcport: ce,    dstblk: duc0,   dstport: ce    }
-  - { srcblk: _device_, srcport: radio, dstblk: radio1, dstport: radio }
-  - { srcblk: _device_, srcport: ce,    dstblk: ddc1,   dstport: ce    }
-  - { srcblk: _device_, srcport: ce,    dstblk: duc1,   dstport: ce    }
-  - { srcblk: _device_, srcport: dram,  dstblk: fifo0,  dstport: mem   }
-
+    - { srcblk: _device_, srcport: radio, dstblk: radio0, dstport: radio }
+    - { srcblk: _device_, srcport: ce,    dstblk: ddc0,   dstport: ce    }
+    - { srcblk: _device_, srcport: ce,    dstblk: duc0,   dstport: ce    }
+    - { srcblk: _device_, srcport: radio, dstblk: radio1, dstport: radio }
+    - { srcblk: _device_, srcport: ce,    dstblk: ddc1,   dstport: ce    }
+    - { srcblk: _device_, srcport: ce,    dstblk: duc1,   dstport: ce    }
