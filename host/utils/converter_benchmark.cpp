@@ -14,7 +14,7 @@
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/program_options.hpp>
-#include <boost/timer.hpp>
+#include <chrono>
 #include <complex>
 #include <iomanip>
 #include <iostream>
@@ -200,11 +200,13 @@ double run_benchmark(converter::sptr conv,
     size_t n_items,
     size_t iterations)
 {
-    boost::timer benchmark_timer;
+    auto start = std::chrono::steady_clock::now();
     for (size_t i = 0; i < iterations; i++) {
         conv->conv(input_buf_refs, output_buf_refs, n_items);
     }
-    return benchmark_timer.elapsed();
+    auto stop = std::chrono::steady_clock::now();
+    std::chrono::duration<double> duration = stop - start;
+    return duration.count();
 }
 
 template <typename T>
