@@ -23,7 +23,6 @@ try:
     from ruamel import yaml
 except:
     import yaml
-from six import iteritems
 from usrp_probe import get_usrp_list
 
 #--------------------------------------------------------------------------
@@ -243,7 +242,7 @@ class uhd_example_test_case(uhd_test_case):
         Calls run_test().
         """
         test_params = getattr(self, 'test_params', {})
-        for test_name, test_args in iteritems(test_params):
+        for test_name, test_args in test_params.items():
             time.sleep(15) # Wait for X300 devices to reclaim them
             if not 'products' in test_args \
                     or (self.usrp_info['product'] in test_args.get('products', [])):
