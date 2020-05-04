@@ -205,7 +205,7 @@ public:
      *
      * \returns true if this channel has a TX power API available
      */
-    virtual bool has_tx_power_reference(const size_t chan = 0) = 0;
+    virtual bool has_tx_power_reference(const size_t chan) = 0;
 
     /*! Set the reference TX power level for a given channel
      *
@@ -222,7 +222,7 @@ public:
      *         for this device
      */
     virtual void set_tx_power_reference(
-        const double power_dbm, const size_t chan = 0) = 0;
+        const double power_dbm, const size_t chan) = 0;
 
     /*! Return the actual reference TX power level.
      *
@@ -236,7 +236,7 @@ public:
      * \throws uhd::not_implemented_error if this functionality does not exist
      *         for this device
      */
-    virtual double get_tx_power_reference(const size_t chan = 0) = 0;
+    virtual double get_tx_power_reference(const size_t chan) = 0;
 
 
     /*! Return a list of valid RX gain names
@@ -305,7 +305,7 @@ public:
      *
      * \returns true if this channel has an RX power API available
      */
-    virtual bool has_rx_power_reference(const size_t chan = 0) = 0;
+    virtual bool has_rx_power_reference(const size_t chan) = 0;
 
     /*! Set the reference RX power level for a given channel
      *
@@ -322,7 +322,7 @@ public:
      *         for this device
      */
     virtual void set_rx_power_reference(
-        const double power_dbm, const size_t chan = 0) = 0;
+        const double power_dbm, const size_t chan) = 0;
 
     /*! Return the actual reference RX power level.
      *
@@ -336,7 +336,7 @@ public:
      * \throws uhd::not_implemented_error if this functionality does not exist
      *         for this device
      */
-    virtual double get_rx_power_reference(const size_t chan = 0) = 0;
+    virtual double get_rx_power_reference(const size_t chan) = 0;
 
     /*! Return a list of TX gain profiles for this radio
      */
