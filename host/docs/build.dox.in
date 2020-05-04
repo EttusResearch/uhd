@@ -70,11 +70,10 @@ The directory to which you extract libusb must not contain spaces. This is to sa
 - **Comments for Windows Users:**
   - The Python binary installer must be selected to match the system processor. Although, the 32-bit Python version can be used with 32-bit or 64-bit Windows system, it is recommended to match between Python and Windows installers. If the system is occupied with 64-bit Windows and x64-based processor, the `Windows x86-64 MSI Installer -> python-version.amd64.msi` needs to be used.
   - The Python path needs to be added to the environment variables.
-  - Install fundamental packages for Python: On Windows Terminal, navigate to Python scripts folder, e.g. `C:\local\Python37\Scripts`, and execute the following commands to install requests, numpy and six packages, respectively:
+  - Install fundamental packages for Python: On Windows Terminal, navigate to Python scripts folder, e.g. `C:\local\Python37\Scripts`, and execute the following commands to install requests and numpy packages, respectively:
 
     pip install requests
     pip install numpy
-    pip install six
 
   - For curses package installation:
     - Download URL: https://www.lfd.uci.edu/~gohlke/pythonlibs/
