@@ -82,9 +82,13 @@ struct rx_vita_core_3000_impl : rx_vita_core_3000
             // not setup yet!";
             return;
         }
-        UHD_ASSERT_THROW(stream_cmd.num_samps <= 0x0fffffff);
-        _continuous_streaming = stream_cmd.stream_mode
-                                == stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
+        if ((stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE
+                || stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE)
+            && stream_cmd.num_samps > 0x0fffffff) {
+            throw uhd::assertion_error(
+                "Invalid stream command: num_samps exceeds maximum value! "
+                "(Note: Chain multiple commands to request larger bursts)");
+        }
 
         // setup the mode to instruction flags
         typedef std::tuple<bool, bool, bool, bool> inst_t;
