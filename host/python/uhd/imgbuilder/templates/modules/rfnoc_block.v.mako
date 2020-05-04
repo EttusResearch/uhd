@@ -2,7 +2,6 @@
 \
 <%
   import re
-  import six
 
   # Create two strings, one for the input and one for the output, that each
   # contains all the signal names to be connected to the input or output 
@@ -38,7 +37,7 @@
   wire              ${axis_outputs.format("m", "tready")};
 
 %if hasattr(block, "io_ports"):
-  %for name, io_port in six.iteritems(block.io_ports):
+  %for name, io_port in block.io_ports.items():
   //  ${name}
     %for wire in io_port["wires"]:
   wire [${"%3d" % wire["width"]}-1:0] ${block_name}_${wire["name"]};
@@ -49,7 +48,7 @@
   rfnoc_block_${block.module_name} #(
     .THIS_PORTID(${block_id}),
     .CHDR_W(CHDR_W),
-%for name, value in six.iteritems(block_params):
+%for name, value in block_params.items():
     .${name}(${value}),
 %endfor
     .MTU(MTU)
@@ -65,7 +64,7 @@
     .rfnoc_core_status  (rfnoc_core_status[512*${block_number + 1}-1:512*${block_number}]),
 
 %if hasattr(block, "io_ports"):
-  %for name, io_port in six.iteritems(block.io_ports):
+  %for name, io_port in block.io_ports.items():
     %for wire in io_port["wires"]:
     .${wire["name"]}(${block_name}_${wire["name"]}),
     %endfor

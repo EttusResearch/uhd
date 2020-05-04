@@ -2,7 +2,6 @@
 <%
   import math
   import re
-  import six
 
   axis_inputs = {}
   axis_outputs = {}

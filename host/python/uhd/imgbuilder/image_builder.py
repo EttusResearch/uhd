@@ -15,7 +15,6 @@ import os
 import re
 import sys
 
-import six
 import mako.lookup
 import mako.template
 from mako import exceptions
@@ -109,7 +108,7 @@ def expand_io_port_desc(io_ports, signatures):
     :param signatures: signature description from yml configuration
     :return: None
     """
-    for name, io_port in six.iteritems(io_ports):
+    for io_port in io_ports.values():
         wires = []
         for signature in signatures[io_port["type"]]["ports"]:
             width = signature.get("width", 1)
@@ -214,7 +213,7 @@ class ImageBuilderConfig:
         then unroll that port into multiple ports of the same name plus a
         number to make its name unique.
         """
-        for name, block in six.iteritems(self.noc_blocks):
+        for name, block in self.noc_blocks.items():
             desc = self.blocks[block["block_desc"]]
             # Update per-instance parameters
             if not hasattr(desc, "parameters"):
@@ -225,7 +224,7 @@ class ImageBuilderConfig:
                 if key not in desc.parameters:
                     logging.error("Unknown parameter %s for block %s", key, name)
                     del block["parameters"][key]
-            for param, value in six.iteritems(desc.parameters):
+            for param, value in desc.parameters.items():
                 if param not in block["parameters"]:
                     block["parameters"][param] = value
             # Generate list of block ports, adding 'index' to each port's dict
@@ -280,7 +279,7 @@ class ImageBuilderConfig:
         (_device_ for io ports of the bsp), the io port name and flow
         direction.
         """
-        for name, block in six.iteritems(self.noc_blocks):
+        for name, block in self.noc_blocks.items():
             desc = self.blocks[block["block_desc"]]
             if hasattr(desc, "io_ports"):
                 self.io_ports.update({
@@ -296,7 +295,7 @@ class ImageBuilderConfig:
         (_device_ for clocks of the bsp), the clock name and flow
         direction
         """
-        for name, block in six.iteritems(self.noc_blocks):
+        for name, block in self.noc_blocks.items():
             desc = self.blocks[block["block_desc"]]
             if hasattr(desc, "clocks"):
                 self.clocks.update({
@@ -444,10 +443,10 @@ def read_grc_block_configs(path):
     """
     result = {}
 
-    for root, dirs, names in os.walk(path):
+    for root, _dirs, names in os.walk(path):
         for name in names:
             if re.match(r".*\.block\.yml", name):
-                with open (os.path.join(root, name)) as stream:
+                with open(os.path.join(root, name)) as stream:
                     config = ordered_load(stream)
                     result[config["id"]] = config
 
@@ -462,7 +461,6 @@ def convert_to_image_config(grc, grc_config_path):
     """
     grc_blocks = read_grc_block_configs(grc_config_path)
     #filter all blocks that have no block representation
-    all = {item["name"]: item for item in grc["blocks"]}
     seps = {item["name"]: item for item in grc["blocks"] if item["parameters"]["type"] == 'sep'}
     blocks = {item["name"]: item for item in grc["blocks"] if item["parameters"]["type"] == 'block'}
     device = [item for item in grc["blocks"] if item["parameters"]["type"] == 'device']
@@ -489,15 +487,20 @@ def convert_to_image_config(grc, grc_config_path):
 
     result["stream_endpoints"] = {}
     for sep in seps.values():
-        result["stream_endpoints"][sep["name"]] = { "ctrl": bool(sep["parameters"]["ctrl"]),
-                                                    "data": bool(sep["parameters"]["data"]),
-                                                    "buff_size": int(sep["parameters"]["buff_size"]) }
+        result["stream_endpoints"][sep["name"]] = {"ctrl": bool(sep["parameters"]["ctrl"]),
+                                                   "data": bool(sep["parameters"]["data"]),
+                                                   "buff_size": int(sep["parameters"]["buff_size"])}
 
     result["noc_blocks"] = {}
     for block in blocks.values():
-        result["noc_blocks"][block["name"]] = { "block_desc": block["parameters"]["desc"] }
+        result["noc_blocks"][block["name"]] = {
+            "block_desc": block["parameters"]["desc"]
+        }
 
-    device_clocks = {port["id"]: port for port in grc_blocks[device['id']]["outputs"] if port["dtype"] == "message"}
+    device_clocks = {
+        port["id"]: port for port in grc_blocks[device['id']]["outputs"]
+        if port["dtype"] == "message"
+    }
 
     for connection in grc["connections"]:
         if connection[0] == device["name"]:
