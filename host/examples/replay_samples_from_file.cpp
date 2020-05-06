@@ -68,7 +68,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("radio-chan", po::value<size_t>(&radio_chan)->default_value(0), "radio channel to use")
         ("radio-args", po::value<std::string>(&radio_args), "radio arguments")
         ("replay-id", po::value<size_t>(&replay_id)->default_value(0), "replay block to use (e.g., 0 or 1)")
-        ("replay_chan", po::value<size_t>(&replay_chan)->default_value(0), "replay channel to use")
+        ("replay-chan", po::value<size_t>(&replay_chan)->default_value(0), "replay channel to use")
         ("nsamps", po::value<size_t>(&nsamps)->default_value(0), "number of samples to play (0 for infinite)")
         ("file", po::value<std::string>(&file)->default_value("usrp_samples.dat"), "name of the file to read binary samples from")
         ("freq", po::value<double>(&freq), "RF center frequency in Hz")
@@ -106,7 +106,6 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     uhd::rfnoc::radio_ctrl::sptr radio_ctrl;
     radio_ctrl = usrp->get_block_ctrl<uhd::rfnoc::radio_ctrl>(radio_ctrl_id);
     std::cout << "Using radio " << radio_id << ", channel " << radio_chan << std::endl;
-
 
     // Check if the replay block exists on this device
     uhd::rfnoc::block_id_t replay_ctrl_id(0, "Replay", replay_id);
@@ -209,6 +208,12 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     uhd::tx_streamer::sptr tx_stream;
     uhd::tx_metadata_t tx_md;
 
+    // Tell streamer what radio to use, even though we're not using a radio
+    // with this streamer. get_tx_stream() will always try to configure a
+    // downstream radio.
+    streamer_args["radio_id"]   = radio_ctrl->get_block_id().to_string();
+    streamer_args["radio_port"] = str(boost::format("%d") % radio_chan);
+    // Tell streamer what block we want to stream to
     streamer_args["block_id"]   = replay_ctrl->get_block_id().to_string();
     streamer_args["block_port"] = str(boost::format("%d") % replay_chan);
     stream_args.args            = streamer_args;
