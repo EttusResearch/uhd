@@ -9,6 +9,9 @@ set(python_examples
     tx_waveforms.py
     curses_fft.py
     benchmark_rate.py
+    usrp_power_meter.py
 )
 
-UHD_INSTALL(PROGRAMS ${python_examples} DESTINATION ${PKG_LIB_DIR}/examples/python COMPONENT examples)
+UHD_INSTALL(PROGRAMS ${python_examples}
+    DESTINATION ${PKG_LIB_DIR}/examples/python
+    COMPONENT examples)
