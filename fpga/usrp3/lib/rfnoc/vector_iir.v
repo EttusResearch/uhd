@@ -33,7 +33,7 @@
 //
 
 module vector_iir #(
-  parameter MAX_VECTOR_LEN  = 1024,
+  parameter MAX_VECTOR_LEN  = 1023,
   parameter IN_W            = 16,
   parameter OUT_W           = 16,
   parameter ALPHA_W         = 16,
@@ -41,19 +41,19 @@ module vector_iir #(
   parameter FEEDBACK_W      = 25,
   parameter ACCUM_HEADROOM  = 4
 )(
-  input  wire                               clk,
-  input  wire                               reset,
-  input  wire [$clog2(MAX_VECTOR_LEN)-1:0]  set_vector_len,
-  input  wire [BETA_W-1:0]                  set_beta,
-  input  wire [ALPHA_W-1:0]                 set_alpha,
-  input  wire [IN_W*2-1:0]                  i_tdata,
-  input  wire                               i_tlast,
-  input  wire                               i_tvalid,
-  output wire                               i_tready,
-  output wire [OUT_W*2-1:0]                 o_tdata,
-  output wire                               o_tlast,
-  output wire                               o_tvalid,
-  input  wire                               o_tready
+  input  wire                                clk,
+  input  wire                                reset,
+  input  wire [$clog2(MAX_VECTOR_LEN+1)-1:0] set_vector_len,
+  input  wire [BETA_W-1:0]                   set_beta,
+  input  wire [ALPHA_W-1:0]                  set_alpha,
+  input  wire [IN_W*2-1:0]                   i_tdata,
+  input  wire                                i_tlast,
+  input  wire                                i_tvalid,
+  output wire                                i_tready,
+  output wire [OUT_W*2-1:0]                  o_tdata,
+  output wire                                o_tlast,
+  output wire                                o_tvalid,
+  input  wire                                o_tready
 );
 
   // There are four registers between the input and output
@@ -70,9 +70,9 @@ module vector_iir #(
   localparam MIN_FB_DELAY = 4;
 
   // Pipeline settings for timing
-  reg [$clog2(MAX_VECTOR_LEN)-1:0]  reg_fb_delay;
-  reg signed [BETA_W-1:0]           reg_beta;
-  reg signed [ALPHA_W-1:0]          reg_alpha;
+  reg        [$clog2(MAX_VECTOR_LEN-MIN_FB_DELAY)-1:0] reg_fb_delay;
+  reg signed [                             BETA_W-1:0] reg_beta;
+  reg signed [                            ALPHA_W-1:0] reg_alpha;
 
   always @(posedge clk) begin
     reg_fb_delay <= set_vector_len - MIN_FB_DELAY - 1;  //Adjust for pipeline delay

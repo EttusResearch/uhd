@@ -42,9 +42,7 @@ module variable_delay_line #(
   input  wire [$clog2(DEPTH)-1:0] delay,
   output wire [WIDTH-1:0]         data_out
 );
-   //FIXME: Change to localparam when Vivado doesn't freak out
-   //       about the use of clog2.
-  parameter  ADDR_W = $clog2(DEPTH+1);
+  localparam ADDR_W = $clog2(DEPTH+1);
   localparam DATA_W = WIDTH;
 
   //-----------------------------------------------------------

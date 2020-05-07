@@ -1,0 +1,58 @@
+schema: rfnoc_modtool_args
+module_name: vector_iir
+version: 1.0
+rfnoc_version: 1.0
+chdr_width: 64
+noc_id: 0x11120000
+
+parameters:
+  NUM_PORTS: 1
+  # MAX_DELAY should correspond to the maximum SPP. Optimal values are a power
+  # of two, minus one (e.g, 2047). Here we multiply the CHDR MTU by the number
+  # of samples per CHDR word to get the maximum SPP.
+  MAX_DELAY: (2**MTU*CHDR_W/32-1)
+
+clocks:
+  - name: rfnoc_chdr
+    freq: "[]"
+  - name: rfnoc_ctrl
+    freq: "[]"
+  - name: ce
+    freq: "[]"
+
+control:
+  sw_iface: nocscript
+  fpga_iface: ctrlport
+  interface_direction: slave
+  fifo_depth: 32
+  clk_domain: ce
+  ctrlport:
+    byte_mode: False
+    timed: False
+    has_status: False
+
+data:
+  fpga_iface: axis_pyld_ctxt
+  clk_domain: ce
+  inputs:
+    in:
+      num_ports: NUM_PORTS
+      item_width: 32
+      nipc: 1
+      context_fifo_depth: 2
+      payload_fifo_depth: 32
+      format: int32
+      mdata_sig: ~
+  outputs:
+    out:
+      num_ports: NUM_PORTS
+      item_width: 32
+      nipc: 1
+      context_fifo_depth: 2
+      payload_fifo_depth: 32
+      format: int32
+      mdata_sig: ~
+
+registers:
+
+properties:
