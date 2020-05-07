@@ -15,6 +15,7 @@ import numpy
 import uhd
 from .tone_gen import ToneGenerator
 from .visa import get_visa_device
+from .ni_rf_instr import RFSADevice, RFSGDevice
 
 ###############################################################################
 # Base Classes
@@ -214,7 +215,32 @@ class ManualPowerGenerator(SignalGeneratorBase):
               .format(freq/1e6))
     # pylint: enable=no-self-use
 
+##############################################################################
+# RFSA: Run through a NI-RFSA device, using RFmx library
 ###############################################################################
+class RfsaPowerMeter(PowerMeterBase):
+    """
+    Power meter using RFmx TXP measurement on NI-RFSA devices.
+    """
+    key = 'rfsa'
+
+    def __init__(self, options):
+        super().__init__(options)
+        self.device = RFSADevice(options)
+
+    def set_frequency(self, freq):
+        """
+        Set the frequency of the measurement device.
+        """
+        self.device.set_frequency(freq)
+
+    def _get_power(self):
+        """
+        Return the current measured power in dBm.
+        """
+        return self.device.get_power_dbm()
+
+##############################################################################
 # VISA: Run through a VISA device, using SCPI commands
 ###############################################################################
 class VisaPowerMeter(PowerMeterBase):
@@ -321,6 +347,43 @@ class USRPPowerGenerator(SignalGeneratorBase):
         Return the output power of the measurement device.
         """
         return self._usrp.get_tx_power_reference(self._chan) + self._pwr_dbfs
+
+###############################################################################
+# RFSG: NI signal generator family
+###############################################################################
+class RFSGPowerGenerator(SignalGeneratorBase):
+    """
+    Power Generator using NI-RFSG devices.
+    """
+    key = 'rfsg'
+
+    def __init__(self, options):
+        super().__init__(options)
+        self.device = RFSGDevice(options)
+
+    def enable(self, enb=True):
+        """
+        Turn tone generation on and off
+        """
+        self.device.enable(enb)
+
+    def set_frequency(self, freq):
+        """
+        Set the center frequency of the generated signal.
+        """
+        self.device.set_frequency(freq)
+
+    def _set_power(self, power_dbm):
+        """
+        Set the output power of the device in dBm.
+        """
+        return self.device.set_power(power_dbm)
+
+    def _get_power(self):
+        """
+        Get the output power of the device in dBm.
+        """
+        return self.device.get_power()
 
 ###############################################################################
 # The dispatch function
