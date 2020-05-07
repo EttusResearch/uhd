@@ -133,7 +133,7 @@ module radio_core #(
 
   ctrlport_splitter #(
     .NUM_SLAVES (3)
-  ) ctrlport_decoder_i (
+  ) ctrlport_splitter_i (
     .ctrlport_clk            (radio_clk),
     .ctrlport_rst            (radio_rst),
     .s_ctrlport_req_wr       (s_ctrlport_req_wr),

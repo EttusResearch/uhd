@@ -302,7 +302,7 @@ module rfnoc_block_axi_ram_fifo #(
     .NUM_SLAVES   (NUM_PORTS),
     .BASE_ADDR    (0),
     .SLAVE_ADDR_W (RAM_FIFO_ADDR_W)
-  ) ctrlport_splitter_i (
+  ) ctrlport_decoder_i (
     .ctrlport_clk            (mem_clk),
     .ctrlport_rst            (mem_rst_block),
     .s_ctrlport_req_wr       (ctrlport_req_wr),
