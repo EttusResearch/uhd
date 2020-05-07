@@ -47,7 +47,6 @@ endif(NOT PYTHONINTERP_FOUND)
 if(NOT PYTHON_VERSION)
     message(STATUS "Manually determining build Python version...")
     execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "
-from __future__ import print_function
 import sys
 print('{}.{}.{}'.format(
     sys.version_info.major,

@@ -25,7 +25,7 @@ set(PYBIND11_INCLUDE_DIR
 include_directories(${PYBIND11_INCLUDE_DIR})
 execute_process(
     COMMAND "${PYTHON_EXECUTABLE}" -c
-    "from __future__ import print_function\ntry:\n import numpy\n import os\n inc_path = numpy.get_include()\n if os.path.exists(os.path.join(inc_path, 'numpy', 'arrayobject.h')):\n  print(inc_path, end='')\nexcept:\n pass"
+    "try:\n import numpy\n import os\n inc_path = numpy.get_include()\n if os.path.exists(os.path.join(inc_path, 'numpy', 'arrayobject.h')):\n  print(inc_path, end='')\nexcept:\n pass"
     OUTPUT_VARIABLE PYTHON_NUMPY_INCLUDE_DIR)
 
 # Build pyuhd library
@@ -99,8 +99,7 @@ else()
     # packages, and install to our prefix
     if(NOT DEFINED UHD_PYTHON_DIR)
         execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
-            "from __future__ import print_function;\
-            from distutils import sysconfig;\
+            "from distutils import sysconfig;\
             print(sysconfig.get_python_lib(plat_specific=True, prefix='${CMAKE_INSTALL_PREFIX}'));"
             OUTPUT_VARIABLE UHD_PYTHON_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
         )

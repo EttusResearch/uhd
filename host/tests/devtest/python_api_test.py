@@ -6,7 +6,6 @@
 #
 """ Test Python API """
 
-from __future__ import print_function
 import os
 from uhd_test_base import shell_application
 from uhd_test_base import uhd_test_case

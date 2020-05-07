@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright 2017-2018 Ettus Research, a National Instruments Company
 #

@@ -33,7 +33,6 @@ Inventory files are JSON files called `inventory.json`, by default. It is possib
 inventory file in command line arguments, but we don't recommend using this functionality unless
 you're really sure you need it.
 """
-from __future__ import print_function
 import argparse
 import hashlib
 import json

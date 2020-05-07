@@ -5,7 +5,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 """ Test all python API functions for the connected device. """
-from __future__ import print_function
 import sys
 import argparse
 import numpy

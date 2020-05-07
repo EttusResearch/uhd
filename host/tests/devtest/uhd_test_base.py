@@ -10,7 +10,6 @@
 Devtest: Base module. Provides classes for running devtest tests.
 """
 
-from __future__ import print_function
 import os
 import sys
 import unittest

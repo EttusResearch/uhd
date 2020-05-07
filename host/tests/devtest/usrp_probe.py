@@ -7,7 +7,6 @@
 #
 """ Run uhd_find_devices and parse the output. """
 
-from __future__ import print_function
 import re
 import subprocess
 

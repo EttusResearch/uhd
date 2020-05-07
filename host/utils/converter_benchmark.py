@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright 2015 Ettus Research LLC
 # Copyright 2018 Ettus Research, a National Instruments Company
@@ -9,7 +9,6 @@
 Wrap the converter_benchmark tool and produce prettier results.
 """
 
-from __future__ import print_function
 import argparse
 import csv
 import subprocess
