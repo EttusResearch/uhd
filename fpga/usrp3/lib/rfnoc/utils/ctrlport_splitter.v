@@ -60,55 +60,71 @@ module ctrlport_splitter #(
   input  wire [32*NUM_SLAVES-1:0] m_ctrlport_resp_data
 );
 
-  //---------------------------------------------------------------------------
-  // Split the requests among the slaves
-  //---------------------------------------------------------------------------
-
   generate
-    genvar i;
-    for (i = 0; i < NUM_SLAVES; i = i+1) begin : gen_split
-      // No special logic is required to split the requests from the master among
-      // multiple slaves.
-      assign m_ctrlport_req_wr[i]           = s_ctrlport_req_wr;
-      assign m_ctrlport_req_rd[i]           = s_ctrlport_req_rd;
-      assign m_ctrlport_req_addr[20*i+:20]  = s_ctrlport_req_addr;
-      assign m_ctrlport_req_data[32*i+:32]  = s_ctrlport_req_data;
-      assign m_ctrlport_req_byte_en[4*i+:4] = s_ctrlport_req_byte_en;
-      assign m_ctrlport_req_has_time[i]     = s_ctrlport_req_has_time;
-      assign m_ctrlport_req_time[64*i+:64]  = s_ctrlport_req_time;
+    if (NUM_SLAVES == 1) begin : gen_no_split
+      // No logic is needed if only one slave is going to be connected
+      assign m_ctrlport_req_wr       = s_ctrlport_req_wr;
+      assign m_ctrlport_req_rd       = s_ctrlport_req_rd;
+      assign m_ctrlport_req_addr     = s_ctrlport_req_addr;
+      assign m_ctrlport_req_data     = s_ctrlport_req_data;
+      assign m_ctrlport_req_byte_en  = s_ctrlport_req_byte_en;
+      assign m_ctrlport_req_has_time = s_ctrlport_req_has_time;
+      assign m_ctrlport_req_time     = s_ctrlport_req_time;
+      always @(*) begin
+        s_ctrlport_resp_ack     = m_ctrlport_resp_ack;
+        s_ctrlport_resp_status  = m_ctrlport_resp_status;
+        s_ctrlport_resp_data    = m_ctrlport_resp_data;
+      end
+
+    end else begin : gen_splitter
+      //---------------------------------------------------------------------------
+      // Split the requests among the slaves
+      //---------------------------------------------------------------------------
+
+      genvar i;
+      for (i = 0; i < NUM_SLAVES; i = i+1) begin : gen_split
+        // No special logic is required to split the requests from the master among
+        // multiple slaves.
+        assign m_ctrlport_req_wr[i]           = s_ctrlport_req_wr;
+        assign m_ctrlport_req_rd[i]           = s_ctrlport_req_rd;
+        assign m_ctrlport_req_addr[20*i+:20]  = s_ctrlport_req_addr;
+        assign m_ctrlport_req_data[32*i+:32]  = s_ctrlport_req_data;
+        assign m_ctrlport_req_byte_en[4*i+:4] = s_ctrlport_req_byte_en;
+        assign m_ctrlport_req_has_time[i]     = s_ctrlport_req_has_time;
+        assign m_ctrlport_req_time[64*i+:64]  = s_ctrlport_req_time;
+      end
+
+      //---------------------------------------------------------------------------
+      // Decode the responses
+      //---------------------------------------------------------------------------
+
+      reg [31:0] data;
+      reg [ 1:0] status;
+      reg        ack = 0;
+
+      // Take the responses and mask them with ack, then OR them together
+      always @(*) begin : comb_decode
+        integer s;
+        data   = 0;
+        status = 0;
+        ack    = 0;
+        for (s = 0; s < NUM_SLAVES; s = s+1) begin
+          data   = data   | (m_ctrlport_resp_data  [s*32 +: 32] & {32{m_ctrlport_resp_ack[s]}});
+          status = status | (m_ctrlport_resp_status[s* 2 +:  2] & { 2{m_ctrlport_resp_ack[s]}});
+          ack    = ack    | m_ctrlport_resp_ack[s];
+        end
+      end
+
+      // Register the output to break combinatorial path
+      always @(posedge ctrlport_clk) begin : response_reg
+        if (ctrlport_rst) begin
+          s_ctrlport_resp_ack  <= 0;
+        end else begin
+          s_ctrlport_resp_data   <= data;
+          s_ctrlport_resp_status <= status;
+          s_ctrlport_resp_ack    <= ack;
+        end
+      end
     end
   endgenerate
-
-  //---------------------------------------------------------------------------
-  // Decode the responses
-  //---------------------------------------------------------------------------
-
-  reg [31:0] data;
-  reg [ 1:0] status;
-  reg        ack = 0;
-
-  // Take the responses and mask them with ack, then OR them together
-  always @(*) begin : comb_decode
-    integer s;
-    data   = 0;
-    status = 0;
-    ack    = 0;
-    for (s = 0; s < NUM_SLAVES; s = s+1) begin
-      data   = data   | (m_ctrlport_resp_data  [s*32 +: 32] & {32{m_ctrlport_resp_ack[s]}});
-      status = status | (m_ctrlport_resp_status[s* 2 +:  2] & { 2{m_ctrlport_resp_ack[s]}});
-      ack    = ack    | m_ctrlport_resp_ack[s];
-    end
-  end
-
-  // Register the output to break combinatorial path
-  always @(posedge ctrlport_clk) begin
-    if (ctrlport_rst) begin
-      s_ctrlport_resp_ack  <= 0;
-    end else begin
-      s_ctrlport_resp_data   <= data;
-      s_ctrlport_resp_status <= status;
-      s_ctrlport_resp_ack    <= ack;
-    end
-  end
-
 endmodule
