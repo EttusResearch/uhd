@@ -85,9 +85,7 @@ module axil_regport_master #(
   input      [DWIDTH-1:0]    reg_rd_data
 );
 
-  //NOTE: clog2 only works when assigned to a parameter
-  //      localparam does not work
-  parameter ADDR_LSB = $clog2(DWIDTH/8); //Do not modify
+  localparam ADDR_LSB = $clog2(DWIDTH/8); // Do not modify
 
   //----------------------------------------------------------
   // Write state machine
@@ -116,28 +114,38 @@ module axil_regport_master #(
      if (!s_axi_aresetn) begin
         s_axi_wready <= 1'b0;
      end else begin
-        if (~s_axi_wready && s_axi_wvalid && s_axi_awvalid)
+        if (~s_axi_wready && s_axi_wvalid && s_axi_awvalid && wr_fifo_ready) begin
            s_axi_wready <= 1'b1;
-        else
+        end else begin
            s_axi_wready <= 1'b0;
+        end
      end
   end
 
   // Generate write response
-  assign wr_fifo_valid = s_axi_awready && s_axi_awvalid && s_axi_wready && s_axi_wvalid && ~s_axi_bvalid;
+  assign wr_fifo_valid = s_axi_awready && s_axi_awvalid && s_axi_wready && s_axi_wvalid;
 
+  reg [4:0]  unacked_writes; //sized big enough for SRL fifo (32 deep)
   always @(posedge s_axi_aclk) begin
      if (!s_axi_aresetn) begin
-        s_axi_bvalid <= 1'b0;
-        s_axi_bresp <= 2'b0;
+        s_axi_bvalid   <= 1'b0;
+        s_axi_bresp    <= 2'b0;
+        unacked_writes <= 0;
      end else begin
+        s_axi_bresp <= 2'b0; // 'OKAY' response
         if (wr_fifo_valid && wr_fifo_ready) begin
-            // indicates a valid write response is available
+           unacked_writes <= unacked_writes+1;
+        end
+        if (unacked_writes > 0) begin
+           // indicates a valid write response is available
            s_axi_bvalid <= 1'b1;
-           s_axi_bresp <= 2'b0; // 'OKAY' response
-        end else begin
-           if (s_axi_bready && s_axi_bvalid)
-              s_axi_bvalid <= 1'b0;
+        end
+        if (s_axi_bready && s_axi_bvalid) begin
+           if (wr_fifo_valid && wr_fifo_ready)
+             unacked_writes <= unacked_writes;
+           else
+             unacked_writes <= unacked_writes-1;
+           s_axi_bvalid <= 1'b0;
         end
      end
   end
@@ -156,30 +164,42 @@ module axil_regport_master #(
    //----------------------------------------------------------
    reg [TIMEOUT-1:0] read_pending_ctr = {TIMEOUT{1'b0}};
    wire              read_timed_out = (read_pending_ctr == {{(TIMEOUT-1){1'b0}}, 1'b1});
-   wire              read_pending = (read_pending_ctr != {TIMEOUT{1'b0}});
    wire [AWIDTH-1:0] rd_addr_rel = (s_axi_araddr - RDBASE);
 
    wire              rdreq_fifo_ready, rdresp_fifo_valid;
    wire [DWIDTH-1:0] rdresp_fifo_data;
 
    // Generate s_axi_arready and latch read address
+   reg [4:0]  unacked_reads; //sized big enough for SRL fifo (32 deep)   
    always @(posedge s_axi_aclk) begin
       if (!s_axi_aresetn) begin
          s_axi_arready <= 1'b0;
          read_pending_ctr <= {TIMEOUT{1'b0}};
+         unacked_reads <= 0;
       end else begin
+         if (unacked_reads > 0) begin
+            if (read_pending_ctr > 0) begin
+               read_pending_ctr <= read_pending_ctr-1;
+            end
+         end else begin
+            read_pending_ctr <= {TIMEOUT{1'b0}};
+         end
+
          if (~s_axi_arready && s_axi_arvalid && rdreq_fifo_ready) begin
             s_axi_arready <= 1'b1;
             read_pending_ctr <= {TIMEOUT{1'b1}};
+            unacked_reads <= unacked_reads+1;            
          end else begin
             s_axi_arready <= 1'b0;
          end
-         if (read_pending) begin
-            if (rdresp_fifo_valid && ~s_axi_rvalid)
-               read_pending_ctr <= {TIMEOUT{1'b0}};
-            else
-               read_pending_ctr <= read_pending_ctr - 1'b1;
-         end
+         
+         if (s_axi_rvalid && s_axi_rready) begin
+            if (~s_axi_arready && s_axi_arvalid && rdreq_fifo_ready) begin
+               unacked_reads <= unacked_reads;
+            end else begin
+               unacked_reads <= unacked_reads-1;
+            end
+         end         
       end
    end
 
@@ -190,12 +210,12 @@ module axil_regport_master #(
          s_axi_rresp <= 2'b00;
          s_axi_rdata <= 0;
       end else begin
-         if (read_pending && rdresp_fifo_valid && ~s_axi_rvalid) begin
+         if (unacked_reads > 0 && rdresp_fifo_valid && ~s_axi_rvalid) begin
             // Valid read data is available at the read data bus
             s_axi_rvalid <= 1'b1;
             s_axi_rresp <= 2'b00; // 'OKAY' response
             s_axi_rdata <= rdresp_fifo_data;
-         end else if (read_pending && read_timed_out && ~s_axi_rvalid) begin
+         end else if (unacked_reads > 0 && read_timed_out && ~s_axi_rvalid) begin
             // Read timed out. Assert error.
             s_axi_rvalid <= 1'b1;
             s_axi_rresp <= 2'b10; // 'SLVERR' response
@@ -222,7 +242,7 @@ module axil_regport_master #(
       .i_tvalid(reg_rd_resp), .i_tready(/* lossy */),
       .o_aclk(s_axi_aclk),
       .o_tdata(rdresp_fifo_data),
-      .o_tvalid(rdresp_fifo_valid), .o_tready(~read_pending || (s_axi_rvalid && (s_axi_rresp == 2'b00)))
+      .o_tvalid(rdresp_fifo_valid), .o_tready((unacked_reads==0) || (s_axi_rvalid && s_axi_rready && (s_axi_rresp == 2'b00)))
    );
 
 endmodule
