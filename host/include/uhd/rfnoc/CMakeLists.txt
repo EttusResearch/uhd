@@ -42,6 +42,7 @@ UHD_INSTALL(FILES
     radio_control.hpp
     split_stream_block_control.hpp
     vector_iir_block_control.hpp
+    window_block_control.hpp
 
     DESTINATION ${INCLUDE_DIR}/uhd/rfnoc
     COMPONENT headers

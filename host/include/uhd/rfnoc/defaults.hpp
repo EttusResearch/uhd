@@ -81,5 +81,6 @@ static const noc_id_t FOSPHOR_BLOCK      = 0x666F0000;
 static const noc_id_t SPLIT_STREAM_BLOCK = 0x57570000;
 static const noc_id_t RADIO_BLOCK        = 0x12AD1000;
 static const noc_id_t VECTOR_IIR_BLOCK   = 0x11120000;
+static const noc_id_t WINDOW_BLOCK       = 0xD0530000;
 
 }} // namespace uhd::rfnoc
