@@ -1078,8 +1078,8 @@
           <spirit:segment>
             <spirit:name>SEG_M00_AXI_Reg</spirit:name>
             <spirit:displayName>/M00_AXI/Reg</spirit:displayName>
-            <spirit:addressOffset>0x02000000</spirit:addressOffset>
-            <spirit:range>32M</spirit:range>
+            <spirit:addressOffset>0x00000000</spirit:addressOffset>
+            <spirit:range>1G</spirit:range>
           </spirit:segment>
         </spirit:segments>
       </spirit:addressSpace>
@@ -1092,7 +1092,7 @@
             <spirit:name>SEG_M00_AXI_Reg</spirit:name>
             <spirit:displayName>/M00_AXI/Reg</spirit:displayName>
             <spirit:addressOffset>0x00000000</spirit:addressOffset>
-            <spirit:range>32M</spirit:range>
+            <spirit:range>1G</spirit:range>
           </spirit:segment>
         </spirit:segments>
       </spirit:addressSpace>
