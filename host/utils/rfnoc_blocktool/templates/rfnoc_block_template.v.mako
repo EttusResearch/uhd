@@ -105,9 +105,16 @@ module rfnoc_block_${config['module_name']} #(
   //---------------------------------------------------------------------------
 
   noc_shell_${config['module_name']} #(
-    .CHDR_W      (CHDR_W),
-    .THIS_PORTID (THIS_PORTID),
-    .MTU         (MTU)
+    .CHDR_W              (CHDR_W),
+    .THIS_PORTID         (THIS_PORTID),
+    .MTU                 (MTU)${"," if ('parameters' in config) else ""}
+%if 'parameters' in config:
+<% param_count = 1 %>\
+%for param, value in config['parameters'].items():
+    .${'{:<19}'.format(param)} (${param})${',' if param_count < len(config['parameters']) else ''}
+<% param_count = param_count+1 %>\
+% endfor
+%endif
   ) noc_shell_${config['module_name']}_i (
     //---------------------
     // Framework Interface

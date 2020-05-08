@@ -25,10 +25,10 @@ module rfnoc_block_${config['module_name']}_tb;
   // Testbench Configuration
   //---------------------------------------------------------------------------
 
-  localparam [ 9:0] THIS_PORTID     = 10'h123;
   localparam [31:0] NOC_ID          = 32'h${format(config['noc_id'], "08X")};
-  localparam int    CHDR_W          = ${config['chdr_width']};
-  localparam int    ITEM_W          = 32;
+  localparam [ 9:0] THIS_PORTID     = 10'h123;
+  localparam int    CHDR_W          = ${'{:<4}'.format(str(config['chdr_width'])+';')}   // CHDR size in bits
+  localparam int    MTU             = 10;    // Log2 of max transmission unit in CHDR words
 %if 'parameters' in config:
 %for param, value in config['parameters'].items():
   localparam int    ${'{:<15}'.format(param)} = ${value};
@@ -36,15 +36,15 @@ module rfnoc_block_${config['module_name']}_tb;
 %endif
   localparam int    NUM_PORTS_I     = ${func.num_ports_in_str()};
   localparam int    NUM_PORTS_O     = ${func.num_ports_out_str()};
-  localparam int    MTU             = 13;
-  localparam int    SPP             = 64;
+  localparam int    ITEM_W          = 32;    // Sample size in bits
+  localparam int    SPP             = 64;    // Samples per packet
   localparam int    PKT_SIZE_BYTES  = SPP * (ITEM_W/8);
-  localparam int    STALL_PROB      = 25;      // Default BFM stall probability
-  localparam real   CHDR_CLK_PER    = 5.0;     // 200 MHz
-  localparam real   CTRL_CLK_PER    = 25.0;    // 40 MHz
+  localparam int    STALL_PROB      = 25;    // Default BFM stall probability
+  localparam real   CHDR_CLK_PER    = 5.0;   // 200 MHz
+  localparam real   CTRL_CLK_PER    = 8.0;   // 125 MHz
 %for clock in config['clocks']:
   %if clock['name'] not in ["rfnoc_chdr", "rfnoc_ctrl"]:
-  localparam real   ${clock['name'].upper()}_CLK_PER = 5.0;  // 200 MHz
+  localparam real   ${'{:<15}'.format(clock['name'].upper()+'_CLK_PER')} = 4.0;   // 250 MHz
   %endif
 %endfor
 
@@ -139,7 +139,14 @@ module rfnoc_block_${config['module_name']}_tb;
   rfnoc_block_${config['module_name']} #(
     .THIS_PORTID         (THIS_PORTID),
     .CHDR_W              (CHDR_W),
-    .MTU                 (MTU)
+    .MTU                 (MTU)${"," if ('parameters' in config) else ""}
+%if 'parameters' in config:
+<% param_count = 1 %>\
+%for param, value in config['parameters'].items():
+    .${'{:<19}'.format(param)} (${param})${',' if param_count < len(config['parameters']) else ''}
+<% param_count = param_count+1 %>\
+% endfor
+%endif
   ) dut (
     .rfnoc_chdr_clk      (rfnoc_chdr_clk),
     .rfnoc_ctrl_clk      (rfnoc_ctrl_clk),
