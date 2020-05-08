@@ -22,7 +22,7 @@
 
 module chdr_xb_ingress_buff #(
   parameter       WIDTH   = 64,
-  parameter       MTU     = 5,
+  parameter       MTU     = 10,
   parameter       DEST_W  = 4,
   parameter [9:0] NODE_ID = 0
 ) (

@@ -45,7 +45,7 @@ module chdr_crossbar_nxn #(
   parameter        CHDR_W         = 64,
   parameter [7:0]  NPORTS         = 8,
   parameter [7:0]  DEFAULT_PORT   = 0,
-  parameter        MTU            = 9,
+  parameter        MTU            = 10,
   parameter        ROUTE_TBL_SIZE = 6,
   parameter        MUX_ALLOC      = "ROUND-ROBIN",
   parameter        OPTIMIZE       = "AREA",

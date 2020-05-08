@@ -44,7 +44,7 @@ module axis_pyld_ctxt_to_chdr #(
   parameter SYNC_CLKS           = 0,
   parameter CONTEXT_FIFO_SIZE   = 1,
   parameter PAYLOAD_FIFO_SIZE   = 1,
-  parameter MTU                 = 9,
+  parameter MTU                 = 10,
   parameter CONTEXT_PREFETCH_EN = 1
 )(
   // Clock, reset and settings

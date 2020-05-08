@@ -47,7 +47,7 @@ module rfnoc_block_axi_ram_fifo_tb #(
   // Block configuration
   localparam int NOC_ID        = 'hF1F0_0000;
   localparam int THIS_PORTID   = 'h123;
-  localparam int MTU           = 12;
+  localparam int MTU           = 10;
   localparam int NUM_HB        = 3;
   localparam int CIC_MAX_DECIM = 255;
   localparam int BURST_TIMEOUT = 64;

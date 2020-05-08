@@ -32,7 +32,7 @@ module rfnoc_block_fosphor_tb;
   localparam int    ITEM_W          = 32;
   localparam int    NUM_PORTS_I     = 1;
   localparam int    NUM_PORTS_O     = 2;
-  localparam int    MTU             = 13;
+  localparam int    MTU             = 10;
   localparam int    SPP             = 128;
   localparam int    PKT_SIZE_BYTES  = SPP * (ITEM_W/8);
   localparam int    STALL_PROB      = 60;      // Default BFM stall probability
