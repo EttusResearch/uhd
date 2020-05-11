@@ -8,7 +8,12 @@
 set part_name        $::env(PART_NAME)              ;# Full Xilinx part name
 set hls_ip_name      $::env(HLS_IP_NAME)            ;# High level synthesis IP name
 set hls_ip_srcs      $::env(HLS_IP_SRCS)            ;# High level synthesis IP source files
-set hls_ip_inc       $::env(HLS_IP_INCLUDES)        ;# High level synthesis IP include directories
+
+if {[info exists env(HLS_IP_INCLUDES)]} {
+    set hls_ip_inc $::env(HLS_IP_INCLUDES);          # High level synthesis IP include directories
+} else {
+    set hls_ip_inc {}
+}
 
 # ---------------------------------------
 # Vivado Commands
