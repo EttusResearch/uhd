@@ -8,6 +8,7 @@
 UDP Transport manager
 """
 
+import subprocess
 from six import iteritems, itervalues
 from usrp_mpm import prefs
 from usrp_mpm.ethdispatch import EthDispatcherCtrl
@@ -126,6 +127,9 @@ class XportMgrUDP:
             for iface in ifaces_to_remove:
                 self._eth_dispatchers.pop(iface)
             for iface in self._chdr_ifaces:
+                if self.iface_config[iface]['type'] == 'forward':
+                    self._setup_forwarding(iface)
+                    continue
                 if iface not in self._eth_dispatchers:
                     self._eth_dispatchers[iface] = \
                         EthDispatcherCtrl(self.iface_config[iface]['label'])
@@ -134,8 +138,8 @@ class XportMgrUDP:
                 )
                 if self.iface_config[iface]['type'] == 'internal':
                     #TODO: Get MAC address from EEPROM
-                    internal_ip_addr = self.get_internal_interface_address(iface)
-                    self._eth_dispatchers[iface].setup_internal_interface('00:01:02:03:04:05', internal_ip_addr)
+                    internal_ip_addr = self.get_fpga_internal_ip_address(iface)
+                    self._eth_dispatchers[iface].setup_internal_interface(self.get_fpga_int_mac_address(iface), internal_ip_addr)
 
     def init(self, args):
         """
@@ -184,7 +188,8 @@ class XportMgrUDP:
         """
         return [
             {
-                'ipv4': str(iface_info['ip_addr']),
+                'ipv4': str(iface_info['ip_addr']) if (self.iface_config[iface_name]['type'] != 'internal')
+                    else str(self.get_fpga_internal_ip_address(iface_name)),
                 'port': str(self.chdr_port),
                 'link_rate': str(int(iface_info['link_speed'] * 1e6 / 8)),
                 'type': str(self.iface_config[iface_name]['type']),
@@ -192,3 +197,68 @@ class XportMgrUDP:
             }
             for iface_name, iface_info in iteritems(self._chdr_ifaces)
         ]
+
+    def _setup_forwarding(self, iface):
+        """
+        Configures forwarding with iptables from the specified interface
+        to an internal interface.
+        """
+        internal_ifaces = list(
+            filter(lambda int_iface: self.iface_config[int_iface]['type'] == 'internal', self._chdr_ifaces))
+        if len(internal_ifaces) == 0:
+            self.log.warning(
+                'No internal interface to forward CHDR packets to from {}.'
+                    .format(iface))
+
+        int_iface = internal_ifaces[0]
+        internal_ip_addr = self.get_fpga_internal_ip_address(int_iface)
+        prerouting_arguments = ['PREROUTING',
+            '-t', 'nat',
+            '-i', iface,
+            '-p', 'udp',
+            '--dport', str(self.chdr_port),
+            '-j', 'DNAT',
+            '--to', internal_ip_addr]
+        forward_arguments = ['FORWARD',
+            '-p', 'udp',
+            '-d', internal_ip_addr,
+            '--dport', str(self.chdr_port),
+            '-j', 'ACCEPT']
+        try:
+            result = subprocess.run(
+                ['iptables', '-C'] + prerouting_arguments,
+                timeout=2)
+            if result.returncode != 0:
+                self.log.debug('Adding iptables prerouting rule')
+                subprocess.run(
+                    ['iptables', '-A'] + prerouting_arguments,
+                    timeout=2,
+                    check=True)
+            result = subprocess.run(
+                ['iptables', '-C'] + forward_arguments,
+                timeout=2)
+            if result.returncode != 0:
+                self.log.debug('Adding iptables forward rule')
+                subprocess.run(
+                    ['iptables', '-A'] + forward_arguments,
+                    timeout=2,
+                    check=True)
+        except subprocess.SubprocessError:
+            self.log.warning('Unable to configure CHDR forwarding')
+
+    @staticmethod
+    def get_fpga_internal_ip_address(iface):
+        """
+        Returns the IP address of the FPGA reachable via the specified internal interface
+        """
+        return prefs.get_prefs().get(
+            iface,
+            'fpga_int_ip_address',
+            fallback='169.254.0.2')
+
+    @staticmethod
+    def get_fpga_int_mac_address(iface):
+        return prefs.get_prefs().get(
+            iface,
+            'fpga_int_mac_address',
+            fallback='00:01:02:03:04:05')

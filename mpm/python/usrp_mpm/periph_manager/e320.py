@@ -55,6 +55,10 @@ class E320XportMgrUDP(XportMgrUDP):
         'int0': {
             'label': 'misc-enet-int-regs',
             'type': 'internal',
+        },
+        'eth0': {
+            'label': '',
+            'type': 'forward',
         }
     }
 
