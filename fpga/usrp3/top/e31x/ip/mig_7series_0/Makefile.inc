@@ -27,6 +27,6 @@ mig_7series_0/example_design/sim/ddr3_model_parameters.vh \
 )
 
 $(IP_MIG_7SERIES_0_SRCS) $(IP_MIG_7SERIES_0_OUTS) : $(IP_DIR)/mig_7series_0/mig_7series_0.xci $(IP_DIR)/mig_7series_0/mig_*.prj
-	ln -fs mig_$(subst /,,$(PART_ID)).prj $(IP_DIR)/mig_7series_0/mig_a.prj	# Hack: This won't allow parallel IP builds
+	cp -f $(IP_DIR)/mig_7series_0/mig_$(subst /,,$(PART_ID)).prj $(IP_DIR)/mig_7series_0/mig_a.prj # Note: This won't allow parallel IP builds
 	$(call BUILD_VIVADO_IP,mig_7series_0,$(ARCH),$(PART_ID),$(IP_DIR),$(IP_BUILD_DIR),0)
 	rm -f $(IP_DIR)/mig_7series_0/mig_a.prj
