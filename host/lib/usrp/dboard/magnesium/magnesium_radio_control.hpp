@@ -167,11 +167,6 @@ public:
         const size_t chan, const uhd::direction_t direction) const;
     std::string get_fe_name(const size_t chan, const uhd::direction_t direction) const;
 
-    /**************************************************************************
-     * node_t API Calls
-     *************************************************************************/
-    void set_command_time(uhd::time_spec_t time, const size_t chan);
-
 private:
     /**************************************************************************
      * Helpers

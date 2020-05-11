@@ -702,17 +702,6 @@ bool rhodium_radio_control_impl::get_lo_lock_status(const direction_t dir) const
     return (dir == RX_DIRECTION) ? _rx_lo->get_lock_status() : _tx_lo->get_lock_status();
 }
 
-/**************************************************************************
- * node_t API Calls
- *************************************************************************/
-void rhodium_radio_control_impl::set_command_time(
-    uhd::time_spec_t time, const size_t chan)
-{
-    UHD_ASSERT_THROW(chan == 0);
-    node_t::set_command_time(time, chan);
-    _wb_iface->set_time(time);
-}
-
 // Register the block
 UHD_RFNOC_BLOCK_REGISTER_FOR_DEVICE_DIRECT(
     rhodium_radio_control, RADIO_BLOCK, N320, "Radio", true, "radio_clk", "bus_clk");

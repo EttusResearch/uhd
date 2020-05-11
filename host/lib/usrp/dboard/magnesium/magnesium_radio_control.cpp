@@ -1144,16 +1144,6 @@ sensor_value_t magnesium_radio_control_impl::get_tx_sensor(
 }
 
 /**************************************************************************
- * node_t API Calls
- *************************************************************************/
-void magnesium_radio_control_impl::set_command_time(
-    uhd::time_spec_t time, const size_t chan)
-{
-    node_t::set_command_time(time, chan);
-    _wb_ifaces.at(chan)->set_time(time);
-}
-
-/**************************************************************************
  * Radio Identification API Calls
  *************************************************************************/
 size_t magnesium_radio_control_impl::get_chan_from_dboard_fe(
