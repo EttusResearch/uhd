@@ -459,6 +459,15 @@ void twinrx_antenna_expert::resolve()
         throw uhd::value_error(
             "Cannot calibrate channel 1 and export the LO for channel 0.");
     }
+
+    // Set ID for power cal
+    if (_enabled_ch0 and _enabled_ch1) {
+        _id_ch0 = "twinrx2";
+        _id_ch1 = "twinrx2";
+    } else {
+        _id_ch0 = "twinrx";
+        _id_ch1 = "twinrx";
+    }
 }
 
 /*!---------------------------------------------------------

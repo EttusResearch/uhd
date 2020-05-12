@@ -195,6 +195,9 @@ public:
             prepend_ch("enabled", _ch_name),
             false,
             AUTO_RESOLVE_ON_WRITE);
+        // ID for cal data lookup. This depends on how many channels are enabled
+        expert_factory::add_prop_node<std::string>(
+            _expert, get_rx_subtree(), "id", prepend_ch("id", _ch_name), "twinrx");
 
         // Readback
         get_rx_subtree()

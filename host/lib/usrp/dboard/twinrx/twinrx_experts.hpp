@@ -374,6 +374,8 @@ public:
         , _lo_export_ch1(db, prepend_ch("los/all/export", "1"))
         , _ant_mapping(db, "com/ant_mapping")
         , _cal_mode(db, "com/cal_mode")
+        , _id_ch0(db, prepend_ch("id", "0"))
+        , _id_ch1(db, prepend_ch("id", "1"))
     {
         bind_accessor(_antenna_ch0);
         bind_accessor(_antenna_ch1);
@@ -383,6 +385,8 @@ public:
         bind_accessor(_lo_export_ch1);
         bind_accessor(_ant_mapping);
         bind_accessor(_cal_mode);
+        bind_accessor(_id_ch0);
+        bind_accessor(_id_ch1);
     }
 
 private:
@@ -398,6 +402,9 @@ private:
     // Outputs
     experts::data_writer_t<twinrx_ctrl::antenna_mapping_t> _ant_mapping;
     experts::data_writer_t<twinrx_ctrl::cal_mode_t> _cal_mode;
+
+    experts::data_writer_t<std::string> _id_ch0;
+    experts::data_writer_t<std::string> _id_ch1;
 };
 
 /*!---------------------------------------------------------
