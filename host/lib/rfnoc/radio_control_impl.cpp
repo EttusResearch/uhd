@@ -403,26 +403,32 @@ double radio_control_impl::set_rx_gain(
     return set_rx_gain(gain, chan);
 }
 
-bool radio_control_impl::has_rx_power_reference(const size_t)
+bool radio_control_impl::has_rx_power_reference(const size_t chan)
 {
-    return false;
+    return _rx_pwr_mgr.empty() ? false : _rx_pwr_mgr.at(chan)->has_power_data();
 }
 
-bool radio_control_impl::has_tx_power_reference(const size_t)
+bool radio_control_impl::has_tx_power_reference(const size_t chan)
 {
-    return false;
+    return _tx_pwr_mgr.empty() ? false : _tx_pwr_mgr.at(chan)->has_power_data();
 }
 
-void radio_control_impl::set_rx_power_reference(const double, const size_t)
+void radio_control_impl::set_rx_power_reference(const double power_dbm, const size_t chan)
 {
-    throw uhd::not_implemented_error(
-        "set_rx_power_reference() is not supported on this radio!");
+    if (_rx_pwr_mgr.empty()) {
+        throw uhd::not_implemented_error(
+            "set_rx_power_reference() is not supported on this radio!");
+    }
+    _rx_pwr_mgr.at(chan)->set_power(power_dbm);
 }
 
-void radio_control_impl::set_tx_power_reference(const double, const size_t)
+void radio_control_impl::set_tx_power_reference(const double power_dbm, const size_t chan)
 {
-    throw uhd::not_implemented_error(
-        "set_tx_power_reference() is not supported on this radio!");
+    if (_tx_pwr_mgr.empty()) {
+        throw uhd::not_implemented_error(
+            "set_tx_power_reference() is not supported on this radio!");
+    }
+    _tx_pwr_mgr.at(chan)->set_power(power_dbm);
 }
 
 void radio_control_impl::set_rx_agc(const bool, const size_t)
@@ -596,29 +602,40 @@ uhd::meta_range_t radio_control_impl::get_rx_bandwidth_range(size_t chan) const
     return result;
 }
 
-double radio_control_impl::get_rx_power_reference(const size_t)
+double radio_control_impl::get_rx_power_reference(const size_t chan)
 {
-    throw uhd::not_implemented_error(
-        "get_rx_power_reference() is not supported on this radio!");
-    return 0.0;
+    if (_rx_pwr_mgr.empty()) {
+        throw uhd::not_implemented_error(
+            "get_rx_power_reference() is not supported on this radio!");
+    }
+    return _rx_pwr_mgr.at(chan)->get_power();
 }
 
-double radio_control_impl::get_tx_power_reference(const size_t)
+double radio_control_impl::get_tx_power_reference(const size_t chan)
 {
-    throw uhd::not_implemented_error(
-        "get_tx_power_reference() is not supported on this radio!");
-    return 0.0;
+    if (_tx_pwr_mgr.empty()) {
+        throw uhd::not_implemented_error(
+            "get_tx_power_reference() is not supported on this radio!");
+    }
+    return _tx_pwr_mgr.at(chan)->get_power();
 }
 
-std::vector<std::string> radio_control_impl::get_rx_power_ref_keys(const size_t)
+std::vector<std::string> radio_control_impl::get_rx_power_ref_keys(const size_t chan)
 {
-    return {};
+    if (_rx_pwr_mgr.empty()) {
+        return {};
+    }
+    return {_rx_pwr_mgr.at(chan)->get_key(), _rx_pwr_mgr.at(chan)->get_serial()};
 }
 
-std::vector<std::string> radio_control_impl::get_tx_power_ref_keys(const size_t)
+std::vector<std::string> radio_control_impl::get_tx_power_ref_keys(const size_t chan)
 {
-    return {};
+    if (_tx_pwr_mgr.empty()) {
+        return {};
+    }
+    return {_tx_pwr_mgr.at(chan)->get_key(), _tx_pwr_mgr.at(chan)->get_serial()};
 }
+
 
 /******************************************************************************
  * LO Default API

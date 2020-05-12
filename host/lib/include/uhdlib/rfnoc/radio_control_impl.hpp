@@ -9,6 +9,7 @@
 #include <uhd/rfnoc/defaults.hpp>
 #include <uhd/rfnoc/multichan_register_iface.hpp>
 #include <uhd/rfnoc/radio_control.hpp>
+#include <uhdlib/usrp/common/pwr_cal_mgr.hpp>
 #include <unordered_map>
 #include <mutex>
 
@@ -309,6 +310,13 @@ protected:
 
     //! Block-specific register interface
     multichan_register_iface _radio_reg_iface;
+
+    //! Power manager for RX power cal. If the radio doesn't have a power API,
+    // simply leave these empty.
+    std::vector<uhd::usrp::pwr_cal_mgr::sptr> _rx_pwr_mgr;
+    //! Power manager for TX power cal. If the radio doesn't have a power API,
+    // simply leave these empty.
+    std::vector<uhd::usrp::pwr_cal_mgr::sptr> _tx_pwr_mgr;
 
 private:
     //! Validator for the async messages
