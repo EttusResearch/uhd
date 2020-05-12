@@ -6,10 +6,10 @@
 //
 
 
-#include <uhd/device.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
+#include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <boost/algorithm/string.hpp>
@@ -22,6 +22,31 @@ using namespace uhd;
 using namespace uhd::usrp;
 namespace po = boost::program_options;
 
+
+uhd::fs_path get_radio_path(uhd::property_tree::sptr tree, std::string& slot)
+{
+    // RFNoC devices:
+    if (tree->exists("/blocks")) {
+        if (slot.empty()) {
+            slot = "0";
+        }
+        const uhd::fs_path radio_path =
+            uhd::fs_path("/blocks/0/Radio#" + slot) / "dboard";
+        if (!tree->exists(radio_path)) {
+            throw uhd::assertion_error("Invalid slot index: " + slot);
+        }
+        return radio_path;
+    }
+    // Other devices:
+    const uhd::fs_path db_root            = "/mboards/0/dboards";
+    std::vector<std::string> dboard_names = tree->list(db_root);
+    if (dboard_names.size() == 1 and slot.empty()) {
+        slot = dboard_names.front();
+    }
+    uhd::assert_has(dboard_names, slot, "dboard slot name");
+    return db_root / slot;
+}
+
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
     // command line variables
@@ -32,7 +57,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""),    "device address args [default = \"\"]")
-        ("slot", po::value<std::string>(&slot)->default_value(""),    "dboard slot name [default is blank for automatic]")
+        ("slot", po::value<std::string>(&slot)->default_value(""),    "dboard slot name/index [default is blank for automatic]")
         ("unit", po::value<std::string>(&unit)->default_value(""),    "which unit [RX, TX, or GDB]")
         ("id",   po::value<std::string>(),                            "dboard id to burn, omit for readback")
         ("ser",  po::value<std::string>(),                            "serial to burn, omit for readback")
@@ -48,25 +73,23 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     if (vm.count("help")) {
         std::cout << boost::format("USRP Burn Daughterboard EEPROM %s") % desc
                   << std::endl;
-        std::cout << boost::format("Omit the ID argument to perform readback,\n"
-                                   "Or specify a new ID to burn into the EEPROM.\n")
+        std::cout << "Omit the ID argument to perform readback,\n"
+                     "Or specify a new ID to burn into the EEPROM.\n"
                   << std::endl;
+        return EXIT_SUCCESS;
+    }
+    if (unit.empty()) {
+        std::cout << "Error: --unit must be specified!" << std::endl;
         return EXIT_FAILURE;
     }
 
     // make the device and extract the dboard w/ property
-    device::sptr dev                      = device::make(args, device::USRP);
-    uhd::property_tree::sptr tree         = dev->get_tree();
-    const uhd::fs_path db_root            = "/mboards/0/dboards";
-    std::vector<std::string> dboard_names = tree->list(db_root);
-    if (dboard_names.size() == 1 and slot.empty())
-        slot = dboard_names.front();
-    uhd::assert_has(dboard_names, slot, "dboard slot name");
-
-    std::cout << boost::format("Reading %s EEPROM on %s dboard...") % unit % slot
-              << std::endl;
+    auto dev              = multi_usrp::make(args);
+    auto tree             = dev->get_tree();
+    const auto radio_path = get_radio_path(tree, slot);
+    std::cout << "Reading " << unit << " EEPROM on dboard " << slot << "..." << std::endl;
     boost::to_lower(unit);
-    const uhd::fs_path db_path = db_root / slot / (unit + "_eeprom");
+    const uhd::fs_path db_path = radio_path / (unit + "_eeprom");
     dboard_eeprom_t db_eeprom  = tree->access<dboard_eeprom_t>(db_path).get();
 
     //------------- handle the dboard ID -----------------------------//
