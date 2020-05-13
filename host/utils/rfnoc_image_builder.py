@@ -140,7 +140,7 @@ def get_fpga_path(args):
     if not os.path.isdir(result):
         logging.info("%s is not a valid directory.", result)
         result = resolve_path("@FPGA_PATH@", os.path.join(
-            os.path.dirname(__file__), '..', '..', '..', 'fpga-src'))
+            os.path.dirname(__file__), '..', '..', '..', 'fpga'))
         logging.info("Fall back to %s", result)
     return result
 
