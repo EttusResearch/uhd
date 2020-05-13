@@ -141,23 +141,24 @@ Your actual command may differ.
 
 \section build_get_source Getting the source code
 
-The UHD source is stored in a Git repository. To download it, follow these instructions:
+The UHD source is stored in a git repository. To download it, follow these
+instructions:
 
-    git clone git://github.com/EttusResearch/uhd.git
+    git clone https://github.com/EttusResearch/uhd.git
 
-If you also want the FPGA code (which is not necessary for building UHD and applications which depend on it), run:
+Our source code repository contains of the following branches:
 
-    git clone --recursive git://github.com/EttusResearch/uhd.git
-
-This will populate the `fpga-src` submodule inside the repository. You can also do this after cloning the repository by running these commands from the top level source directory:
-
-    git submodule init
-    git submodule update
-
-Our source code repository contains of two main branches:
-
-\li \b master: This is the main development branch, with updated new features and bug fixes.
-\li \b maint: This branch has all bugfixes since the last major release, but there are no new features. This is what you should be using if you need a stable release.
+- \b master: This is the main development branch, with updated new features and
+  bug fixes.
+- \b UHD-*: These branches are created from master upon a release or release
+  candidate. They are used to create releases within a stable release cycle, and
+  usually only receive bugfixes. For example, all 3.14.* releases are taken from
+  the same branch (UHD-3.14). These branches usually no longer receive updates
+  once the following major release branch is created (for example, when the
+  UHD-3.14 branch was created, the UHD-3.13 branch would only receive updates
+  under special circumstances).
+- \b UHD-*.LTS: These are long-term support branches. They serve the same purpose
+  as the other UHD-* branches, but generally receive bugfixes for much longer.
 
 We might also be publishing experimental feature branches which can then be found in the same repository.
 All of our versioned releases are associated with tags in the repository.
@@ -194,7 +195,7 @@ Example usage:
 \subsection build_install_unix Build and install
 
     make
-    make test
+    make test # This step is optional
     sudo make install
 
 \subsection libpath_linux Setup the library path (Linux)
