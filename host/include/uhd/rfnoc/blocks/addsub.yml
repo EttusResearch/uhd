@@ -1,0 +1,62 @@
+schema: rfnoc_modtool_args
+module_name: addsub
+version: 1.0
+rfnoc_version: 1.0
+chdr_width: 64
+noc_id: 0xADD00000
+
+parameters:
+  USE_IMPL: '"Verilog"'
+
+clocks:
+  - name: rfnoc_chdr
+    freq: "[]"
+  - name: rfnoc_ctrl
+    freq: "[]"
+  - name: ce
+    freq: "[]"
+
+control:
+  sw_iface: nocscript
+  fpga_iface: axis_ctrl
+  interface_direction: slave
+  fifo_depth: 2
+  clk_domain: rfnoc_ctrl
+
+data:
+  fpga_iface: axis_pyld_ctxt
+  clk_domain: ce
+  inputs:
+    in_a:
+      item_width: 32
+      nipc: 1
+      context_fifo_depth: 2
+      payload_fifo_depth: 2
+      format: sc16
+      mdata_sig: ~
+    in_b:
+      item_width: 32
+      nipc: 1
+      context_fifo_depth: 2
+      payload_fifo_depth: 2
+      format: sc16
+      mdata_sig: ~
+  outputs:
+    add:
+      item_width: 32
+      nipc: 1
+      context_fifo_depth: 2
+      payload_fifo_depth: 2
+      format: sc16
+      mdata_sig: ~
+    sub:
+      item_width: 32
+      nipc: 1
+      context_fifo_depth: 2
+      payload_fifo_depth: 2
+      format: sc16
+      mdata_sig: ~
+
+registers:
+
+properties:
