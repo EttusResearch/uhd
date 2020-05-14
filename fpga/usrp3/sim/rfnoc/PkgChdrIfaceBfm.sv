@@ -24,6 +24,19 @@ package PkgChdrIfaceBfm;
   } packet_info_t;
 
 
+  // Return 1 if the packet info is equivalent, 0 otherwise.
+  function automatic bit packet_info_equal(const ref packet_info_t a, b);
+    // If there's no time then the timestamp value doesn't matter, so make them
+    // the same for comparison.
+    if (!a.has_time) begin
+      packet_info_t a_copy = a;
+      a_copy.timestamp = b.timestamp;
+      return a_copy == b;
+    end
+    return a == b;
+  endfunction : packet_info_equal
+
+
   class ChdrIfaceBfm #(CHDR_W = 64, ITEM_W = 32) extends ChdrBfm #(CHDR_W);
 
     // Redefine the ChdrPacket_t and chdr_word_t data types from ChdrBfm due to

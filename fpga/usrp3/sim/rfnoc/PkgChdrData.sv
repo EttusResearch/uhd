@@ -150,6 +150,6 @@ package PkgChdrData;
       return 1;
     endfunction : item_equal
 
-  endclass
+  endclass : ChdrData
 
 endpackage : PkgChdrData
