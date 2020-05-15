@@ -286,9 +286,6 @@ public:
         _regs.fcal_enable = 1;
         commit();
 
-        UHD_LOGGER_TRACE("LMX2592")
-            << "PLL lock status: " << (get_lock_status() ? "Locked" : "Unlocked");
-
         return actual_f_lo;
     }
 
