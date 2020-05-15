@@ -119,8 +119,12 @@ public:
     virtual uint32_t peek32(
         uint32_t addr, uhd::time_spec_t timestamp = uhd::time_spec_t::ASAP)
     {
-        // Compute transaction expiration time
-        auto timeout_time = start_timeout(_policy.timeout);
+        // Compute transaction expiration time, use MASSIVE_TIMEOUT if a timed
+        // command is in the queue
+        auto timeout_time = start_timeout(
+            check_timed_in_queue() ? MASSIVE_TIMEOUT : _policy.timeout
+        );
+
         // Send request
         auto request =
             send_request_packet(OP_READ, addr, {uint32_t(0)}, timestamp, timeout_time);
@@ -141,8 +145,11 @@ public:
         return values;
 
         /* TODO: Uncomment when the atomic block peek is implemented in the FPGA
-        // Compute transaction expiration time
-        auto timeout_time = start_timeout(_policy.timeout);
+        // Compute transaction expiration time, use MASSIVE_TIMEOUT if a timed
+        // command is in the queue
+        auto timeout_time = start_timeout(
+            check_timed_in_queue() ? MASSIVE_TIMEOUT : _policy.timeout
+        );
         // Send request
         auto request = send_request_packet(OP_READ,
             first_addr,
@@ -165,8 +172,12 @@ public:
         // TODO: Uncomment when this is implemented in the FPGA
         throw uhd::not_implemented_error("Control poll not implemented in the FPGA");
 
-        // Compute transaction expiration time
-        auto timeout_time = start_timeout(_policy.timeout);
+        // Compute transaction expiration time, use MASSIVE_TIMEOUT if a timed
+        // command is in the queue
+        auto timeout_time = start_timeout(
+            check_timed_in_queue() ? MASSIVE_TIMEOUT : _policy.timeout
+        );
+
         // Send request
         auto request = send_request_packet(OP_POLL,
             addr,
@@ -181,8 +192,13 @@ public:
 
     virtual void sleep(uhd::time_spec_t duration, bool ack = false)
     {
-        // Compute transaction expiration time
-        auto timeout_time = start_timeout(_policy.timeout);
+
+        // Compute transaction expiration time, use MASSIVE_TIMEOUT if a timed
+        // command is in the queue
+        auto timeout_time = start_timeout(
+            check_timed_in_queue() ? MASSIVE_TIMEOUT : _policy.timeout
+        );
+
         // Send request
         auto request = send_request_packet(OP_SLEEP,
             0,
