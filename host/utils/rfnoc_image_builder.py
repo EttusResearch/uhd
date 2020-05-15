@@ -152,7 +152,7 @@ def get_config_path():
     :return: Configuration path
     """
     return os.path.normpath(resolve_path("@CONFIG_PATH@", os.path.join(
-        os.path.dirname(__file__), '..', '..', 'include', 'uhd')))
+        os.path.dirname(__file__), '..', 'include', 'uhd')))
 
 
 def main():
