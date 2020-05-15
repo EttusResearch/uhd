@@ -178,32 +178,44 @@ public:
         const auto f_iters = get_bounding_iterators(table, freqi);
         const uint64_t f1i = f_iters.first->first;
         const uint64_t f2i = f_iters.second->first;
-        // Frequency is out of bounds
         if (f1i == f2i) {
+            // Frequency is out of bounds
             return at_lin_interp(table.at(f1i).p2g, power_coerced);
         }
-        const double f1 = static_cast<double>(f1i);
-        const double f2 = static_cast<double>(f2i);
-        const auto pwr_iters = get_bounding_iterators(table.at(f1).p2g, power_coerced);
-        const double pwr1 = pwr_iters.first->first;
-        const double pwr2 = pwr_iters.second->first;
+
+        // NOTE: bilinear_interp() does not interpolate on an arbitrary tetragon,
+        // but requires the coordinates to be on a rectangular grid. Due to the
+        // frequency-dependent nature of power calibration, it is unlikely that
+        // the bounding power values for f1 and f2 (respectively) are identical.
+        // We therefore not only interpolate the final gain values, but we also
+        // nearest-neighbor-interpolate the grid coordinates for the power.
+        // This snap-to-grid adds another error, which can be counteracted by
+        // good choice of frequency and gain points on which to sample.
+        const auto f1pwr_iters = get_bounding_iterators(table.at(f1i).p2g, power_coerced);
+        const double f1pwr1    = f1pwr_iters.first->first;
+        const double f1pwr2    = f1pwr_iters.second->first;
+        const auto f2pwr_iters = get_bounding_iterators(table.at(f2i).p2g, power_coerced);
+        const double f2pwr1    = f2pwr_iters.first->first;
+        const double f2pwr2    = f2pwr_iters.second->first;
+        const double f1        = static_cast<double>(f1i);
+        const double f2        = static_cast<double>(f2i);
+        const double pwr1      = linear_interp(freq, f1, f1pwr1, f2, f2pwr1);
+        const double pwr2      = linear_interp(freq, f1, f1pwr2, f2, f2pwr2);
         // Power is out of bounds (this shouldn't happen after coercing, but this
         // is just another good sanity check on our data)
         if (pwr1 == pwr2) {
             return linear_interp(freq,
                 f1,
-                table.at(f1i).p2g.at(pwr1),
+                at_nearest(table.at(f1i).p2g, pwr1),
                 f2,
-                table.at(f2i).p2g.at(pwr1));
+                at_nearest(table.at(f2i).p2g, pwr2));
         }
-
-        // Both gain and freq are within bounds: Bi-Linear interpolation
-        // Find power values
-        const auto gain11 = table.at(f1i).p2g.at(pwr1);
-        const auto gain12 = table.at(f1i).p2g.at(pwr2);
-        const auto gain21 = table.at(f2i).p2g.at(pwr1);
-        const auto gain22 = table.at(f2i).p2g.at(pwr2);
-
+        // Both gain and freq are within bounds => Bi-Linear interpolation
+        // Find gain values:
+        const auto gain11 = table.at(f1i).p2g.at(f1pwr1);
+        const auto gain12 = table.at(f1i).p2g.at(f1pwr2);
+        const auto gain21 = table.at(f2i).p2g.at(f2pwr1);
+        const auto gain22 = table.at(f2i).p2g.at(f2pwr2);
         return bilinear_interp(
             freq, power_coerced, f1, pwr1, f2, pwr2, gain11, gain12, gain21, gain22);
     }
