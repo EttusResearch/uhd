@@ -4,7 +4,7 @@
 
 # -------------------------------------------------------------------
 # Usage: BUILD_VIVADO_HLS_IP
-# Args: $1 = HLS_IP_NAME (High level synthsis IP name)
+# Args: $1 = HLS_IP_NAME (High level synthesis IP name)
 #       $2 = PART_ID (<device>/<package>/<speedgrade>)
 #       $3 = HLS_IP_SRCS (Absolute paths to the HLS IP source files)
 #       $4 = HLS_IP_SRC_DIR (Absolute path to the top level HLS IP src dir)

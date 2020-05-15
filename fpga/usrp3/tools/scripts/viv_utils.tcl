@@ -59,6 +59,15 @@ proc ::vivado_utils::initialize_project { {save_to_disk 0} } {
         create_project -in_memory -part $g_part_name
     }
 
+    # Expand directories to include their contents (needed for HLS outputs)
+    foreach src_file $g_source_files {
+        if [expr [file isdirectory $src_file] == 1] {
+            puts "BUILDER: Expanding Directory : $src_file"
+            set dir_contents [glob $src_file/*.*]
+            append design_srcs " " $dir_contents
+        }
+    }
+
     foreach src_file $g_source_files {
         set src_ext [file extension $src_file ]
         if [expr [lsearch {.vhd .vhdl} $src_ext] >= 0] {

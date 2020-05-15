@@ -40,6 +40,15 @@ if [expr ([string equal $simulator "XSim"] == 0) && ([string length $sim_complib
 puts "BUILDER: Creating Vivado simulation project part $part_name"
 create_project -part $part_name -force $project_name/$project_name
 
+# Expand directories to include their contents (needed for HLS outputs)
+foreach src_file $design_srcs {
+    if [expr [file isdirectory $src_file] == 1] {
+        puts "BUILDER: Expanding Directory : $src_file"
+        set dir_contents [glob $src_file/*.*]
+        append design_srcs " " $dir_contents
+    }
+}
+
 foreach src_file $design_srcs {
     set src_ext [file extension $src_file ]
     if [expr [lsearch {.vhd .vhdl} $src_ext] >= 0] {
@@ -60,12 +69,15 @@ foreach src_file $design_srcs {
     } elseif [expr [lsearch {.ngc .edif} $src_ext] >= 0] {
         puts "BUILDER: Adding Netlist : $src_file"
         read_edif $src_file
+    } elseif [expr [lsearch {.dat} $src_ext] >= 0] {
+        puts "BUILDER: Adding Data File : $src_file"
+        add_files -fileset $sim_fileset -norecurse $src_file
     } elseif [expr [lsearch {.bd} $src_ext] >= 0] {
-            puts "BUILDER: Adding Block Diagram: $src_file"
-            add_files -norecurse $src_file
+        puts "BUILDER: Adding Block Diagram: $src_file"
+        add_files -norecurse $src_file
     } elseif [expr [lsearch {.bxml} $src_ext] >= 0] {
-            puts "BUILDER: Adding Block Diagram XML: $src_file"
-            add_files -norecurse $src_file
+        puts "BUILDER: Adding Block Diagram XML: $src_file"
+        add_files -norecurse $src_file
     } else {
         puts "BUILDER: \[WARNING\] File ignored!!!: $src_file"
     }
