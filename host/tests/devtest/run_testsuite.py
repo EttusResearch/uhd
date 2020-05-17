@@ -20,7 +20,7 @@ def setup_parser():
     """ Set up argparser """
     parser = argparse.ArgumentParser(description="Test utility for UHD/USRP.")
     parser.add_argument('--devtest-pattern', '-p', default='*', help='e.g. b2xx')
-    parser.add_argument('--device-filter', '-f', required=True, help='b200, x300, ...')
+    parser.add_argument('--args', '-a', default='', help='Device address arguments')
     parser.add_argument('--log-dir', '-l', default='.')
     parser.add_argument('--src-dir', default='.',
                         help='Directory where the test sources are stored')
@@ -86,7 +86,7 @@ def main():
     args = setup_parser().parse_args()
     env = setup_env(args)
     devtest_pattern = "devtest_{p}.py".format(p=args.devtest_pattern)
-    uhd_args_list = get_usrp_list("type=" + args.device_filter, env)
+    uhd_args_list = get_usrp_list(args.args, env)
     if len(uhd_args_list) == 0:
         print("No devices found. Exiting.")
         exit(1)

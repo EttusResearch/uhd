@@ -140,7 +140,7 @@ respectively.
                                      --devtest-pattern e3xx \
                                      --build-type na \
                                      --build-dir $BUILD_DIR \
-                                     --device-filter e3x0 \
+                                     --args type=e3x0 \
                                      --log-dir $LOG_DIR
 
 4. Devtest must report no failures for a 'pass' validation.
