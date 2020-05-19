@@ -123,6 +123,7 @@ public:
                               << " dB, Actual total power: " << coerced_total_power
                               << " dBm -> actual total gain: " << coerced_total_gain
                               << " dB");
+        _mode = tracking_mode::TRACK_POWER;
         // We directly scale the power with the residual gain
         return coerced_total_power;
     }
@@ -221,7 +222,7 @@ public:
             if (std::any_of(_cal_data.cbegin(),
                     _cal_data.cend(),
                     [](const cal_data_map_type::value_type& data) {
-                        return bool(data.second);
+                        return !bool(data.second);
                     })) {
                 UHD_LOG_WARNING(_log_id,
                     "Some ports for " << _serial
