@@ -117,8 +117,8 @@ void export_cal(py::module& m)
         .def("add_power_table",
             &pwr_cal::add_power_table,
             py::arg("gain_power_map"),
-            py::arg("max_power"),
             py::arg("min_power"),
+            py::arg("max_power"),
             py::arg("freq"),
             py::arg("temperature") = boost::optional<int>())
         .def("clear", &pwr_cal::clear)

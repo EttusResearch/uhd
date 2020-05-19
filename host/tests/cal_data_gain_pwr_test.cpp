@@ -93,6 +93,30 @@ BOOST_AUTO_TEST_CASE(test_pwr_cal_api)
     BOOST_CHECK_CLOSE(gain_power_data->get_gain(-19.0, ref_freq), 1/1.1, 1e-6);
 }
 
+BOOST_AUTO_TEST_CASE(test_pwr_cal_api_irreg)
+{
+    const std::string name   = "Mock Gain/Power Data";
+    const std::string serial = "ABC1234";
+    const uint64_t timestamp = 0x12340000;
+
+    auto gain_power_data = pwr_cal::make(name, serial, timestamp);
+    constexpr int ROOM_TEMP = 20;
+    gain_power_data->set_temperature(ROOM_TEMP);
+
+    constexpr double MIN_POWER = -40;
+    constexpr double MAX_POWER = -10;
+    // Write a table...
+    gain_power_data->add_power_table(
+        {{0.0, -30.0}, {10.0, -20.0}}, MIN_POWER, MAX_POWER, 1e9);
+    // Let's say power goes down 10 dB per octave
+    gain_power_data->add_power_table(
+        {{0.0, -40.0}, {10.0, -30.0}}, MIN_POWER, MAX_POWER, 2e9);
+    // Interpolated readback:
+    BOOST_CHECK_CLOSE(gain_power_data->get_power(5.0, 1.5e9), -30.0, 1e-6);
+    BOOST_CHECK_CLOSE(gain_power_data->get_gain(-30.0, 1.5e9), 5.0, 0.1);
+
+}
+
 BOOST_AUTO_TEST_CASE(test_pwr_cal_serdes)
 {
     const std::string name   = "Mock Gain/Power Data";

@@ -53,8 +53,8 @@ public:
      *
      * \param gain_power_map A mapping gain -> power (dB -> dBm) for all
      *                       measured gain points for this frequency.
-     * \param max_power The maximum available power for this frequency.
      * \param min_power The minimum available power for this frequency.
+     * \param max_power The maximum available power for this frequency.
      * \param freq The frequency at which this power level was measured
      * \param temperature The temperature at which this power level was measured,
      *                    in Celsius. This parameter is optional, the return
@@ -62,8 +62,8 @@ public:
      *                    is provided here.
      */
     virtual void add_power_table(const std::map<double, double>& gain_power_map,
-        const double max_power,
         const double min_power,
+        const double max_power,
         const double freq,
         const boost::optional<int> temperature = boost::none) = 0;
 
