@@ -46,6 +46,11 @@ struct res_source_info
         return rhs.type == type && rhs.instance == instance;
     }
 
+    bool operator!=(const res_source_info& rhs) const
+    {
+        return !(*this == rhs);
+    }
+
     //! Returns a string representation of the source
     std::string to_string() const
     {

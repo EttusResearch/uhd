@@ -38,6 +38,8 @@ public:
     using resolve_callback_t = std::function<void(void)>;
     using action_handler_t =
         std::function<void(const res_source_info&, action_info::sptr)>;
+    using forwarding_map_t =
+        std::unordered_map<res_source_info, std::vector<res_source_info>>;
 
     //! Types of property/action forwarding for those not defined by the block itself
     enum class forwarding_policy_t {
@@ -53,7 +55,9 @@ public:
         //! Forward the property to all ports
         ONE_TO_ALL,
         //! Property propagation ends here
-        DROP
+        DROP,
+        //! Forward the property based on a client-provided map
+        USE_MAP
     };
 
     static const size_t ANY_PORT = size_t(~0);
@@ -273,6 +277,27 @@ protected:
     void set_prop_forwarding_policy(
         forwarding_policy_t policy, const std::string& prop_id = "");
 
+    /*! Specify a table that maps how a property should be forwarded
+     *
+     * Whenever this node is asked to handle a property that is not registered,
+     * and the forwarding policy for the particular property is set to
+     * USE_MAP, the node will consult a user-provided map to determine what
+     * to do with the property. The map's keys are the source edges for the
+     * incoming property and the value associated with each key is a vector of
+     * destination edges to which the property should be propagated.
+     *
+     * If there is no key in the map matching an incoming property's source
+     * edge, or if the value of the key is the empty vector, the property is
+     * dropped and not propagated further.
+     *
+     * The following conditions will generate exceptions at property
+     * propagation time:
+     *   - Any value in the destination vector represents a non-existent port
+     *
+     * \param map The map describing how properties should be propagated
+     */
+    void set_prop_forwarding_map(const forwarding_map_t& map);
+
     /*! Set a specific property that belongs to this block.
      *
      * This is like set_property(), but it also allows setting edge properties.
@@ -341,6 +366,30 @@ protected:
      */
     void set_action_forwarding_policy(
         forwarding_policy_t policy, const std::string& action_key = "");
+
+    /*! Specify a table that maps how an action should be forwarded
+     *
+     * Whenever this node is asked to handle an action that is not registered,
+     * and the forwarding policy for the particular action is set to
+     * USE_MAP, the node will consult a user-provided map to determine what
+     * to do with the action. The map's keys are the source edges for the
+     * incoming action and the value associated with each key is a vector of
+     * destination edges to which the action should be forwarded.
+     *
+     * incoming action and the value is a vector of destination edges to
+     * which the action should be forwarded.
+     *
+     * If there is no key in the map matching an incoming action's source
+     * edge, or if the value of the key is the empty vector, the action is
+     * dropped and not forwarded further.
+     *
+     * The following conditions will generate exceptions at action
+     * forwarding time:
+     *   - Any value in the destination vector represents a non-existent port
+     *
+     * \param map The map describing how actions should be forwarded
+     */
+    void set_action_forwarding_map(const forwarding_map_t& map);
 
     /*! Post an action to an up- or downstream node in the graph.
      *
@@ -604,6 +653,9 @@ private:
     std::unordered_map<std::string, forwarding_policy_t> _prop_fwd_policies{
         {"", forwarding_policy_t::ONE_TO_ONE}};
 
+    //! Map describing how incoming properties should be propagated for USE_MAP
+    forwarding_map_t _prop_fwd_map;
+
     /**************************************************************************
      * Action-related attributes
      *************************************************************************/
@@ -621,6 +673,9 @@ private:
     // The default callback will simply drop actions
     action_handler_t _post_action_cb = [](const res_source_info&,
                                            action_info::sptr) { /* nop */ };
+
+    //! Map describing how incoming actions should be forwarded for USE_MAP
+    forwarding_map_t _action_fwd_map;
 
     /**************************************************************************
      * Other attributes
