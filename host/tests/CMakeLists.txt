@@ -302,6 +302,12 @@ UHD_ADD_NONAPI_TEST(
     ${CMAKE_SOURCE_DIR}/lib/utils/serial_number.cpp
 )
 
+UHD_ADD_NONAPI_TEST(
+    TARGET "pwr_cal_mgr_test.cpp"
+    EXTRA_SOURCES
+    ${CMAKE_SOURCE_DIR}/lib/usrp/common/pwr_cal_mgr.cpp
+)
+
 ########################################################################
 # demo of a loadable module
 ########################################################################
