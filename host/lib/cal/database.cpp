@@ -12,6 +12,9 @@
 #include <boost/filesystem.hpp>
 #include <ctime>
 #include <fstream>
+#include <array>
+#include <tuple>
+#include <vector>
 
 CMRC_DECLARE(rc);
 
@@ -29,22 +32,24 @@ constexpr char CAL_EXT[]          = ".cal";
 // we first load it entirely into heap space, and then deserialize it from there.
 constexpr size_t CALDATA_MAX_SIZE = 10 * 1024 * 1024; // 10 MiB
 
-
-//! Map a cal resource key into a source::RC path name
+/******************************************************************************
+ * RC implementation
+ *****************************************************************************/
+//! Helper: Map a cal resource key into a source::RC path name
 std::string get_cal_path_rc(const std::string& key)
 {
     return std::string("cal/") + key + CAL_EXT;
 }
 
 //! Return true if a cal data resource with given key exists
-bool has_cal_data_rc(const std::string& key)
+bool has_cal_data_rc(const std::string& key, const std::string&)
 {
     auto fs = rc::get_filesystem();
     return fs.is_file(get_cal_path_rc(key));
 }
 
 //! Return a byte array for a given cal resource
-std::vector<uint8_t> get_cal_data_rc(const std::string& key)
+std::vector<uint8_t> get_cal_data_rc(const std::string& key, const std::string&)
 {
     try {
         auto fs   = rc::get_filesystem();
@@ -55,6 +60,11 @@ std::vector<uint8_t> get_cal_data_rc(const std::string& key)
     }
 }
 
+/******************************************************************************
+ * Filesystem implementation
+ *****************************************************************************/
+//! Helper: Check a path exists, or create it if not. Does not create recursively,
+// think mkdir, not mkdir -p.
 void check_or_create_dir(fs::path dir)
 {
     if (fs::exists(dir)) {
@@ -95,8 +105,8 @@ void assert_cal_dir_exists()
     check_or_create_dir(cal_path);
 }
 
-
-//! Map a cal resource key into a filesystem path name (relative to get_cal_data_path())
+//! Helper: Map a cal resource key into a filesystem path name
+// (relative to get_cal_data_path())
 std::string get_cal_path_fs(const std::string& key, const std::string& serial)
 {
     return key + "_" + serial + CAL_EXT;
@@ -139,18 +149,29 @@ std::vector<uint8_t> get_cal_data_fs(const std::string& key, const std::string& 
 
 } // namespace
 
+
+/******************************************************************************
+ * Function lookup
+ *****************************************************************************/
+typedef bool (*has_cal_data_fn)(const std::string&, const std::string&);
+typedef std::vector<uint8_t> (*get_cal_data_fn)(const std::string&, const std::string&);
+// These are in order of priority!
+constexpr std::array<std::tuple<source, has_cal_data_fn, get_cal_data_fn>, 2> data_fns{
+    {{source::FILESYSTEM, &has_cal_data_fs, &get_cal_data_fs},
+        {source::RC, &has_cal_data_rc, &get_cal_data_rc}}};
+
+
+/******************************************************************************
+ * cal::database implementation
+ *****************************************************************************/
 std::vector<uint8_t> database::read_cal_data(
     const std::string& key, const std::string& serial, const source source_type)
 {
-    if (source_type == source::FILESYSTEM || source_type == source::ANY) {
-        if (has_cal_data_fs(key, serial)) {
-            return get_cal_data_fs(key, serial);
-        }
-    }
-
-    if (source_type == source::RC || source_type == source::ANY) {
-        if (has_cal_data_rc(key)) {
-            return get_cal_data_rc(key);
+    for (auto& data_fn : data_fns) {
+        if (source_type == source::ANY || source_type == std::get<0>(data_fn)) {
+            if (std::get<1>(data_fn)(key, serial)) {
+                return std::get<2>(data_fn)(key, serial);
+            }
         }
     }
 
@@ -163,15 +184,11 @@ std::vector<uint8_t> database::read_cal_data(
 bool database::has_cal_data(
     const std::string& key, const std::string& serial, const source source_type)
 {
-    if (source_type == source::FILESYSTEM || source_type == source::ANY) {
-        if (has_cal_data_fs(key, serial)) {
-            return true;
-        }
-    }
-
-    if (source_type == source::RC || source_type == source::ANY) {
-        if (has_cal_data_rc(key)) {
-            return true;
+    for (auto& data_fn : data_fns) {
+        if (source_type == source::ANY || source_type == std::get<0>(data_fn)) {
+            if (std::get<1>(data_fn)(key, serial)) {
+                return true;
+            }
         }
     }
 
