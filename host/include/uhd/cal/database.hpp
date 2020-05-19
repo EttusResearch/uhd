@@ -10,6 +10,7 @@
 #include <stddef.h>
 #include <string>
 #include <vector>
+#include <functional>
 
 namespace uhd { namespace usrp { namespace cal {
 
@@ -65,7 +66,6 @@ enum class source {
 class UHD_API database
 {
 public:
-
     //! Return a calibration data set as a serialized string
     //
     // Note: the \p source_type parameter can be used to specify where to read
@@ -130,6 +130,28 @@ public:
         const std::string& serial,
         const std::vector<uint8_t>& cal_data,
         const std::string& backup_ext = "");
+
+    //! Function type to look up if there is cal data given a key and serial
+    using has_data_fn_type = std::function<bool(const std::string&, const std::string&)>;
+
+    //! Function type to return serialized cal data key and serial
+    //
+    // These functions should throw a uhd::runtime_error if called with invalid
+    // key/serial pairs, although database will internally always call the
+    // corresponding 'has' function before calling this.
+    using get_data_fn_type =
+        std::function<std::vector<uint8_t>(const std::string&, const std::string&)>;
+
+    //! Register a lookup function for cal data
+    //
+    // \param has_cal_data A function object to a function that returns true if
+    //        cal data is available
+    // \param get_cal_data A function object to a function that returns serialized
+    //        cal data
+    // \param source_type Reserved. Must be source::FLASH.
+    static void register_lookup(has_data_fn_type has_cal_data,
+        get_data_fn_type get_cal_data,
+        const source source_type = source::FLASH);
 };
 
 

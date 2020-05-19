@@ -6,10 +6,12 @@
 
 #include <uhd/cal/database.hpp>
 #include <uhd/utils/paths.hpp>
+#include <uhd/exception.hpp>
 #include <stdlib.h> // putenv or _putenv
 #include <boost/filesystem.hpp>
 #include <boost/test/unit_test.hpp>
 #include <iostream>
+#include <numeric>
 
 using namespace uhd::usrp::cal;
 namespace fs = boost::filesystem;
@@ -85,4 +87,38 @@ BOOST_AUTO_TEST_CASE(test_fs)
     if (ec) {
         std::cout << "WARNING: Could not remove temp cal path." << std::endl;
     }
+}
+
+BOOST_AUTO_TEST_CASE(test_flash)
+{
+    // 4 bytes of cal data
+    std::vector<uint8_t> mock_cal_data{42, 23, 1, 2};
+
+    database::register_lookup(
+        [&](const std::string& key, const std::string&) {
+            // Note: We're deliberately not checking the key here, but below, so
+            // we can check all code paths in database.cpp, even the ones we're
+            // not supposed to reach
+            return key == "MOCK_KEY";
+        },
+        [&](const std::string& key, const std::string& serial) {
+            if (key == "MOCK_KEY" && serial == "MOCK_SERIAL") {
+                return mock_cal_data;
+            }
+            throw uhd::runtime_error("no such mock data!");
+        });
+    BOOST_CHECK(database::has_cal_data("MOCK_KEY", "MOCK_SERIAL", source::FLASH));
+    BOOST_CHECK(!database::has_cal_data("FOO_KEY", "FOO_SERIAL", source::FLASH));
+    auto cal_data1 = database::read_cal_data("MOCK_KEY", "MOCK_SERIAL", source::FLASH);
+    BOOST_CHECK_EQUAL_COLLECTIONS(mock_cal_data.cbegin(),
+        mock_cal_data.cend(),
+        cal_data1.cbegin(),
+        cal_data1.cend());
+    auto cal_data2 = database::read_cal_data("MOCK_KEY", "MOCK_SERIAL", source::ANY);
+    BOOST_CHECK_EQUAL_COLLECTIONS(mock_cal_data.cbegin(),
+        mock_cal_data.cend(),
+        cal_data2.cbegin(),
+        cal_data2.cend());
+    BOOST_REQUIRE_THROW(database::read_cal_data("MOCK_KEY", "FOO_SERIAL", source::FLASH),
+        uhd::runtime_error);
 }

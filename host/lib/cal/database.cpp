@@ -8,6 +8,7 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/paths.hpp>
+#include <uhd/utils/static.hpp>
 #include <cmrc/cmrc.hpp>
 #include <boost/filesystem.hpp>
 #include <ctime>
@@ -42,6 +43,9 @@ std::string get_cal_path_rc(const std::string& key)
 }
 
 //! Return true if a cal data resource with given key exists
+//
+// The serial parameter is ignored, as serial numbers should, by definition, not
+// matter for RC data
 bool has_cal_data_rc(const std::string& key, const std::string&)
 {
     auto fs = rc::get_filesystem();
@@ -149,6 +153,38 @@ std::vector<uint8_t> get_cal_data_fs(const std::string& key, const std::string& 
 
 } // namespace
 
+/******************************************************************************
+ * Flash/EEPROM implementation
+ *****************************************************************************/
+// Access to non-volatile memory is device-specific. Instead of implementing
+// anything here, we allow devices to register callbacks to look up cal data
+// from their EEPROMs / flash memories.
+using lookup_registry_type =
+    std::vector<std::pair<database::has_data_fn_type, database::get_data_fn_type>>;
+UHD_SINGLETON_FCN(lookup_registry_type, get_flash_lookup_registry);
+
+bool has_cal_data_flash(const std::string& key, const std::string& serial)
+{
+    for (auto& data_fn_pair : get_flash_lookup_registry()) {
+        if (data_fn_pair.first(key, serial)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+std::vector<uint8_t> get_cal_data_flash(const std::string& key, const std::string& serial)
+{
+    for (auto& data_fn_pair : get_flash_lookup_registry()) {
+        if (data_fn_pair.first(key, serial)) {
+            return data_fn_pair.second(key, serial);
+        }
+    }
+    // No data? Then throw:
+    throw uhd::key_error(
+        std::string("Cannot find flash cal data for key=") + key + ", serial=" + serial);
+}
+
 
 /******************************************************************************
  * Function lookup
@@ -156,9 +192,13 @@ std::vector<uint8_t> get_cal_data_fs(const std::string& key, const std::string& 
 typedef bool (*has_cal_data_fn)(const std::string&, const std::string&);
 typedef std::vector<uint8_t> (*get_cal_data_fn)(const std::string&, const std::string&);
 // These are in order of priority!
-constexpr std::array<std::tuple<source, has_cal_data_fn, get_cal_data_fn>, 2> data_fns{
-    {{source::FILESYSTEM, &has_cal_data_fs, &get_cal_data_fs},
-        {source::RC, &has_cal_data_rc, &get_cal_data_rc}}};
+// clang-format off
+constexpr std::array<std::tuple<source, has_cal_data_fn, get_cal_data_fn>, 3> data_fns{{
+    {source::FILESYSTEM, &has_cal_data_fs,    &get_cal_data_fs   },
+    {source::FLASH,      &has_cal_data_flash, &get_cal_data_flash},
+    {source::RC,         &has_cal_data_rc,    &get_cal_data_rc   }
+}};
+// clang-format on
 
 
 /******************************************************************************
@@ -219,4 +259,12 @@ void database::write_cal_data(const std::string& key,
     std::ofstream file(cal_file_path, std::ios::binary);
     UHD_LOG_DEBUG(LOG_ID, "Writing to " << cal_file_path);
     file.write(reinterpret_cast<const char*>(cal_data.data()), cal_data.size());
+}
+
+void database::register_lookup(has_data_fn_type has_cal_data,
+    get_data_fn_type get_cal_data,
+    const source source_type)
+{
+    UHD_ASSERT_THROW(source_type == source::FLASH);
+    get_flash_lookup_registry().push_back({has_cal_data, get_cal_data});
 }
