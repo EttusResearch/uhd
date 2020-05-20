@@ -47,10 +47,27 @@ def get_streamer(usrp, chan):
     stream_args.channels = [chan]
     return usrp.get_rx_stream(stream_args)
 
-def setup_device(usrp, args, chan):
+def setup_device(usrp, args):
     """
     Apply the settings from args to the device
     """
+    chan = args.channel
+    if chan > usrp.get_rx_num_channels():
+        print("ERROR: Invalid channel selected: {} (only {} channels available!)"
+              .format(chan, usrp.get_rx_num_channels()))
+        raise RuntimeError("Invalid channel selected")
+    print("Using channel: {}".format(chan))
+
+    if args.antenna:
+        print("Setting RX antenna to `{}'...".format(args.antenna), end='')
+        usrp.set_rx_antenna(args.antenna, chan)
+        print("OK")
+
+    if not usrp.has_rx_power_reference(chan):
+        antenna = usrp.get_rx_antenna()
+        print("ERROR: This device is not calibrated for RX at RF%d-%s!" % (chan, antenna))
+        raise RuntimeError("Device not calibrated for selected antenna")
+
     print("Requesting RX rate of {} Msps...".format(args.rate / 1e6), end='')
     usrp.set_rx_rate(args.rate, chan)
     if abs(usrp.get_rx_rate(chan) - args.rate) > 1.0:
@@ -58,10 +75,7 @@ def setup_device(usrp, args, chan):
               .format(usrp.get_rx_rate(chan) / 1e6))
     else:
         print("OK")
-    if args.antenna:
-        print("Setting RX antenna to `{}'...".format(args.antenna), end='')
-        usrp.set_rx_antenna(args.antenna, chan)
-        print("OK")
+
     print("Requesting RX frequency of {} MHz...".format(args.freq / 1e6), end='')
     tr = uhd.types.TuneRequest(args.freq, args.lo_offset)
     usrp.set_rx_freq(tr, chan)
@@ -69,6 +83,7 @@ def setup_device(usrp, args, chan):
         print("ALMOST. Actual frequency: {} MHz".format(usrp.get_rx_freq(chan) / 1e6))
     else:
         print("OK")
+
     print("Requesting RX power reference level of {:.2f} dBm..."
           .format(args.ref_level), end='')
     usrp.set_rx_power_reference(args.ref_level, chan)
@@ -77,6 +92,7 @@ def setup_device(usrp, args, chan):
         print("ALMOST. Actual ref level: {:.2f} dBm".format(ref_level))
     else:
         print("OK")
+
     if args.bandwidth:
         print("Requesting analog RX bandwidth of {} Msps..."
               .format(args.bandwidth), end='')
@@ -86,7 +102,7 @@ def setup_device(usrp, args, chan):
                   .format(usrp.get_rx_bandwidth(chan) / 1e6))
         else:
             print("OK")
-    return ref_level
+    return (chan, ref_level)
 
 RUN = True
 
@@ -96,16 +112,7 @@ def main():
     """
     args = parse_args()
     usrp = uhd.usrp.MultiUSRP(args.args)
-    chan = args.channel
-    if chan > usrp.get_rx_num_channels():
-        print("ERROR: Invalid channel selected: {} (only {} channels available!)"
-              .format(chan, usrp.get_rx_num_channels()))
-        return False
-    print("Using channel: {}".format(chan))
-    if not usrp.has_rx_power_reference(chan):
-        print("ERROR: This device is not calibrated for RX!")
-        return False
-    ref_level = setup_device(usrp, args, chan)
+    (chan, ref_level) = setup_device(usrp, args)
     streamer = get_streamer(usrp, chan)
     if args.mode == 'continuous':
         def handle_sigint(_sig, _frame):
