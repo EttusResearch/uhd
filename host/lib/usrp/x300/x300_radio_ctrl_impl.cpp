@@ -343,19 +343,21 @@ double x300_radio_ctrl_impl::get_rx_bandwidth(const size_t chan)
 
 double x300_radio_ctrl_impl::set_tx_gain(const double gain, const size_t chan)
 {
-    if (_tx_gain_groups.count(chan)) {
-        auto& gg = _tx_gain_groups.at(chan);
-        gg->set_value(gain);
-        return radio_ctrl_impl::set_tx_gain(gg->get_value(), chan);
-    }
-    return radio_ctrl_impl::set_tx_gain(0.0, chan);
+    auto& gg = _tx_gain_groups.at(chan);
+    gg->set_value(gain);
+    return gg->get_value();
+}
+
+double x300_radio_ctrl_impl::get_tx_gain(const size_t chan)
+{
+    return _tx_gain_groups.at(chan)->get_value();
 }
 
 double x300_radio_ctrl_impl::set_rx_gain(const double gain, const size_t chan)
 {
     auto& gg = _rx_gain_groups.at(chan);
     gg->set_value(gain);
-    return radio_ctrl_impl::set_rx_gain(gg->get_value(), chan);
+    return gg->get_value();
 }
 
 double x300_radio_ctrl_impl::get_rx_gain(const size_t chan)
