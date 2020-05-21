@@ -120,10 +120,10 @@ def parse_args():
                              "larger than this will require approval, either "
                              "interactively, or by providing --yes.")
     parser.add_argument("--http-proxy", type=str,
-                        help="Specify HTTP proxy in the format "
-                        "http://user:pass@1.2.3.4:port\n"
+                        help="Specify HTTP(S) proxy in the format "
+                        "http[s]://user:pass@1.2.3.4:port\n"
                         "If this this option is not given, the environment "
-                        "variable HTTP_PROXY can also be used to specify a proxy.")
+                        "variables HTTP_PROXY/HTTPS_PROXY can also be used to specify a proxy.")
     parser.add_argument("-b", "--base-url", type=str,
                         help="Set base URL for images download location. "
                         "Defaults to ${} if set, or {} otherwise.".format(
@@ -163,6 +163,7 @@ def parse_args():
     if args.http_proxy:
         global _PROXIES
         _PROXIES['http'] = args.http_proxy
+        _PROXIES['https'] = args.http_proxy
     return args
 
 
