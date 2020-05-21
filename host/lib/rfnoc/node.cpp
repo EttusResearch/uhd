@@ -581,7 +581,7 @@ void node_t::shutdown()
 bool node_t::_has_port(const res_source_info& port_info) const
 {
     return (port_info.type == res_source_info::INPUT_EDGE
-               && port_info.instance <= get_num_input_ports())
+               && port_info.instance < get_num_input_ports())
            || (port_info.type == res_source_info::OUTPUT_EDGE
-                  && port_info.instance <= get_num_output_ports());
+                  && port_info.instance < get_num_output_ports());
 }
