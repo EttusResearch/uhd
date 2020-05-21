@@ -428,4 +428,152 @@ private:
 };
 size_t mock_terminator_t::counter = 0;
 
+/*! Mock node with configurable number of input and output ports that have
+ * an edge property associated with each. The node can source actions with
+ * key 'action' from any of its edges. Incoming actions with key 'action'
+ * are stored in a (source port --> list of incoming actions) map.
+ */
+class mock_edge_node_t : public node_t
+{
+public:
+    using received_actions_map_t =
+        std::unordered_map<res_source_info, std::vector<action_info::sptr>>;
+
+    mock_edge_node_t(size_t input_ports,
+        size_t output_ports,
+        const std::string& name = "MOCK_EDGE_NODE")
+        : _input_ports(input_ports), _output_ports(output_ports), _name(name)
+    {
+        _in_props.reserve(_input_ports);
+        _out_props.reserve(_output_ports);
+        set_action_forwarding_policy(forwarding_policy_t::ONE_TO_ONE);
+
+        for (size_t i = 0; i < _input_ports; i++) {
+            _in_props.emplace_back(
+                property_t<int>{"prop", 0, {res_source_info::INPUT_EDGE, i}});
+            register_property(&_in_props.back());
+        }
+        for (size_t i = 0; i < _output_ports; i++) {
+            _out_props.emplace_back(
+                property_t<int>{"prop", 0, {res_source_info::OUTPUT_EDGE, i}});
+            register_property(&_out_props.back());
+        }
+
+        register_action_handler(
+            "action", [this](const res_source_info& src, action_info::sptr action) {
+                auto itr = _received_actions.find(src);
+                if (itr == _received_actions.end()) {
+                    _received_actions.insert({src, {action}});
+                } else {
+                    itr->second.push_back(action);
+                }
+            });
+    }
+
+    template <typename T>
+    void set_edge_property(
+        const std::string& id, const T& val, const res_source_info& rsi)
+    {
+        node_t::set_property<T>(id, val, rsi);
+    }
+
+    template <typename T>
+    T get_edge_property(const std::string& id, const res_source_info& rsi)
+    {
+        return node_t::get_property<T>(id, rsi);
+    }
+
+    size_t get_num_input_ports() const
+    {
+        return _input_ports;
+    }
+
+    size_t get_num_output_ports() const
+    {
+        return _output_ports;
+    }
+
+    std::string get_unique_id() const
+    {
+        return _name;
+    }
+
+    void post_input_edge_action(action_info::sptr action, size_t port)
+    {
+        UHD_ASSERT_THROW(port < _input_ports);
+        post_action({res_source_info::INPUT_EDGE, port}, action);
+    }
+
+    void post_output_edge_action(action_info::sptr action, size_t port)
+    {
+        UHD_ASSERT_THROW(port < _output_ports);
+        post_action({res_source_info::OUTPUT_EDGE, port}, action);
+    }
+
+    const received_actions_map_t& get_received_actions_map() const
+    {
+        return _received_actions;
+    }
+
+    void clear_received_actions_map()
+    {
+        _received_actions.clear();
+    }
+
+private:
+    size_t _input_ports;
+    size_t _output_ports;
+    std::string _name;
+    std::vector<property_t<int>> _in_props;
+    std::vector<property_t<int>> _out_props;
+    received_actions_map_t _received_actions;
+};
+
+/*! Do-nothing mock node used for testing property and action propagation
+ * between various edges with the USE_MAP forwarding strategy.
+ */
+class mock_routing_node_t : public node_t
+{
+public:
+    mock_routing_node_t(size_t input_ports, size_t output_ports)
+        : _input_ports(input_ports), _output_ports(output_ports)
+    {
+        // By default, the node will drop incoming properties and actions.
+        // Call set_property_prop_map() or set_action_forwarding_map() to
+        // configure the node to use the provided map.
+        set_prop_forwarding_policy(forwarding_policy_t::DROP);
+        set_action_forwarding_policy(forwarding_policy_t::DROP);
+    }
+
+    size_t get_num_input_ports() const
+    {
+        return _input_ports;
+    }
+
+    size_t get_num_output_ports() const
+    {
+        return _output_ports;
+    }
+
+    std::string get_unique_id() const
+    {
+        return "MOCK_ROUTING_NODE";
+    }
+
+    void set_prop_forwarding_map(const node_t::forwarding_map_t& fwd_map)
+    {
+        set_prop_forwarding_policy(forwarding_policy_t::USE_MAP);
+        node_t::set_prop_forwarding_map(fwd_map);
+    }
+
+    void set_action_forwarding_map(const node_t::forwarding_map_t& fwd_map)
+    {
+        set_action_forwarding_policy(forwarding_policy_t::USE_MAP);
+        node_t::set_action_forwarding_map(fwd_map);
+    }
+
+private:
+    size_t _input_ports;
+    size_t _output_ports;
+};
 #endif /* INCLUDED_LIBUHD_TESTS_MOCK_NODES_HPP */

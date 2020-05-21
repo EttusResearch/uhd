@@ -156,7 +156,6 @@ public:
     property_t<double> _x4{"x4", 4.0, {res_source_info::USER}};
 };
 
-
 // Do some sanity checks on the mock just so we don't get surprised later
 BOOST_AUTO_TEST_CASE(test_mock)
 {
@@ -430,3 +429,114 @@ BOOST_AUTO_TEST_CASE(test_circular_deps)
     mock_circular_prop_node.set_property<double>("x1", 5.0, 0);
     BOOST_CHECK_EQUAL(mock_circular_prop_node.get_property<double>("x4"), 4 * 5.0);
 }
+
+BOOST_AUTO_TEST_CASE(test_propagation_map)
+{
+    // Set up the graph
+    node_accessor_t node_accessor{};
+    uhd::rfnoc::detail::graph_t graph{};
+
+    constexpr size_t NUM_INPUTS  = 8;
+    constexpr size_t NUM_OUTPUTS = 8;
+
+    node_t::forwarding_map_t fwd_map = {
+        // input edges 0-3 --> output edges 3-0
+        {{res_source_info::INPUT_EDGE, 0}, {{res_source_info::OUTPUT_EDGE, 3}}},
+        {{res_source_info::INPUT_EDGE, 1}, {{res_source_info::OUTPUT_EDGE, 2}}},
+        {{res_source_info::INPUT_EDGE, 2}, {{res_source_info::OUTPUT_EDGE, 1}}},
+        {{res_source_info::INPUT_EDGE, 3}, {{res_source_info::OUTPUT_EDGE, 0}}},
+        // input edge 4 --> output edges 4 and 5
+        {{res_source_info::INPUT_EDGE, 4},
+            {{res_source_info::OUTPUT_EDGE, 4}, {res_source_info::OUTPUT_EDGE, 5}}},
+        // input edge 5 --> output edges 6 and 7
+        {{res_source_info::INPUT_EDGE, 5},
+            {{res_source_info::OUTPUT_EDGE, 6}, {res_source_info::OUTPUT_EDGE, 7}}},
+        // input edge 6 no destination (i.e. drop)
+        {{res_source_info::INPUT_EDGE, 6}, {}}
+        // input edge 7 not in map (i.e. drop)
+    };
+
+    mock_edge_node_t input{0, NUM_INPUTS, "MOCK_EDGE_NODE<input>"};
+    mock_routing_node_t middle{NUM_INPUTS, NUM_OUTPUTS};
+    mock_edge_node_t output{NUM_OUTPUTS, 0, "MOCK_EDGE_NODE<output>"};
+
+    middle.set_prop_forwarding_map(fwd_map);
+
+    // These init calls would normally be done by the framework
+    node_accessor.init_props(&input);
+    node_accessor.init_props(&middle);
+    node_accessor.init_props(&output);
+
+    // Prime the output edge properties on the input block
+    for (size_t i = 0; i < NUM_INPUTS; i++) {
+        input.set_edge_property<int>("prop", 100 + i, {res_source_info::OUTPUT_EDGE, i});
+    }
+
+    using graph_edge_t = uhd::rfnoc::detail::graph_t::graph_edge_t;
+
+    // Connect the nodes in the graph
+    for (size_t i = 0; i < NUM_INPUTS; i++) {
+        graph.connect(&input, &middle, {i, i, graph_edge_t::DYNAMIC, true});
+    }
+    for (size_t i = 0; i < NUM_OUTPUTS; i++) {
+        graph.connect(&middle, &output, {i, i, graph_edge_t::DYNAMIC, true});
+    }
+    UHD_LOG_INFO("TEST", "Now testing map-driven property propagation");
+    graph.commit();
+
+    // Verify that the properties were propagated per the table
+    BOOST_CHECK_EQUAL(
+        output.get_edge_property<int>("prop", {res_source_info::INPUT_EDGE, 0}), 103);
+    BOOST_CHECK_EQUAL(
+        output.get_edge_property<int>("prop", {res_source_info::INPUT_EDGE, 1}), 102);
+    BOOST_CHECK_EQUAL(
+        output.get_edge_property<int>("prop", {res_source_info::INPUT_EDGE, 2}), 101);
+    BOOST_CHECK_EQUAL(
+        output.get_edge_property<int>("prop", {res_source_info::INPUT_EDGE, 3}), 100);
+    BOOST_CHECK_EQUAL(
+        output.get_edge_property<int>("prop", {res_source_info::INPUT_EDGE, 4}), 104);
+    BOOST_CHECK_EQUAL(
+        output.get_edge_property<int>("prop", {res_source_info::INPUT_EDGE, 5}), 104);
+    BOOST_CHECK_EQUAL(
+        output.get_edge_property<int>("prop", {res_source_info::INPUT_EDGE, 6}), 105);
+    BOOST_CHECK_EQUAL(
+        output.get_edge_property<int>("prop", {res_source_info::INPUT_EDGE, 7}), 105);
+}
+
+BOOST_AUTO_TEST_CASE(test_propagation_map_exception_invalid_destination)
+{
+    // Set up the graph
+    node_accessor_t node_accessor{};
+    uhd::rfnoc::detail::graph_t graph{};
+
+    // Create a map that will generate an exception at propagation time due
+    // to the mapping pointing to a non-existent port
+    node_t::forwarding_map_t no_port_fwd_map = {
+        // input edge 0 --> output edge 1 (output port does not exist)
+        {{res_source_info::INPUT_EDGE, 0}, {{res_source_info::OUTPUT_EDGE, 1}}}};
+
+    mock_edge_node_t generator{0, 1, "MOCK_EDGE_NODE<generator>"};
+    mock_routing_node_t router{1, 1};
+    mock_edge_node_t receiver{1, 0, "MOCK_EDGE_NODE<receiver>"};
+
+    router.set_prop_forwarding_map(no_port_fwd_map);
+
+    // These init calls would normally be done by the framework
+    node_accessor.init_props(&generator);
+    node_accessor.init_props(&router);
+    node_accessor.init_props(&receiver);
+
+    generator.set_edge_property<int>("prop", 100, {res_source_info::OUTPUT_EDGE, 0});
+
+    using graph_edge_t = uhd::rfnoc::detail::graph_t::graph_edge_t;
+
+    // Connect the nodes in the graph
+    graph.connect(&generator, &router, {0, 0, graph_edge_t::DYNAMIC, true});
+    graph.connect(&router, &receiver, {0, 0, graph_edge_t::DYNAMIC, true});
+
+    UHD_LOG_INFO("TEST",
+        "Now testing map-driven property propagation with invalid map (no destination "
+        "port)");
+    BOOST_REQUIRE_THROW(graph.commit(), uhd::rfnoc_error);
+}
+
