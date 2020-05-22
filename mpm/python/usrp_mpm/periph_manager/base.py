@@ -164,7 +164,7 @@ class PeriphManagerBase(object):
                 version_string += "-g" + str(__githash__)
         except ImportError:
             version_string = ""
-        mboard_info["mpm_version"] = version_string
+        mboard_info["mpm_sw_version"] = version_string
         return mboard_info
 
     @staticmethod
