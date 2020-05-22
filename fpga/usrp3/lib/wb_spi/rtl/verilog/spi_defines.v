@@ -62,12 +62,18 @@
 `endif
 
 //
-// Maximum nuber of bits that can be send/received at once. 
+// Maximum number of bits that can be send/received at once.
 // Use SPI_MAX_CHAR for fine tuning the exact number, when using
 // SPI_MAX_CHAR_32, SPI_MAX_CHAR_24, SPI_MAX_CHAR_16, SPI_MAX_CHAR_8.
 //
-`ifndef SPI_MAX_CHAR_64
-  `define SPI_MAX_CHAR_128
+`ifndef SPI_MAX_CHAR_8
+  `ifndef SPI_MAX_CHAR_16
+    `ifndef SPI_MAX_CHAR_32
+      `ifndef SPI_MAX_CHAR_64
+        `define SPI_MAX_CHAR_128
+      `endif
+    `endif
+  `endif
 `endif
 //`define SPI_MAX_CHAR_64
 //`define SPI_MAX_CHAR_32
