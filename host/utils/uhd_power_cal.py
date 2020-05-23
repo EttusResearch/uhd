@@ -84,6 +84,12 @@ def parse_args():
         '-o', '--meas-option', default=[], action='append',
         help='Options that are passed to the measurement device')
     parser.add_argument(
+        '--switch', default='manual',
+        help='Type of switch to be used to connect antennas')
+    parser.add_argument(
+        '--switch-option', default=[], action='append',
+        help='Options that are passed to the switch')
+    parser.add_argument(
         '-r', '--rate', type=float,
         help='Sampling rate at which the calibration is performed')
     parser.add_argument(
@@ -194,6 +200,8 @@ def main():
     # not transmitting at full scale
     if args.dir == 'tx':
         meas_dev.power_offset -= 20 * math.log10(args.amplitude)
+    print("=== Initializing port connector...")
+    switch = uhd.usrp.cal.get_switch(args.dir, args.switch, args.switch_option)
     print("=== Initializing USRP calibration object...")
     usrp_cal = uhd.usrp.cal.get_usrp_calibrator(
         usrp, meas_dev, args.dir,
@@ -220,7 +228,7 @@ def main():
                   .format(chan, ant))
             # Set up all the objects
             getattr(usrp, 'set_{}_antenna'.format(args.dir))(ant, chan)
-            meas_dev.update_port(chan, ant)
+            switch.connect(chan, ant)
             usrp_cal.update_port(chan, ant)
             freqs = usrp_cal.init_frequencies(args.start, args.stop, args.step)
             usrp_cal.start() # This will activate siggen

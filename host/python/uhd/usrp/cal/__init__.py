@@ -16,4 +16,5 @@ from .libtypes import *
 # pylint: enable=wildcard-import
 
 from .meas_device import get_meas_device
+from .switch import get_switch
 from .usrp_calibrator import get_usrp_calibrator

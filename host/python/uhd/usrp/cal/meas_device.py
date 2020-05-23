@@ -47,15 +47,6 @@ class PowerMeterBase:
         """
         raise NotImplementedError()
 
-    # pylint: disable=no-self-use
-    def update_port(self, chan, antenna):
-        """
-        Tell the device we're measuring chan + antenna next
-        """
-        input("[TX] Connect your power meter to device channel {}, "
-              "antenna {}. Then, hit Enter.".format(chan, antenna))
-    # pylint: enable=no-self-use
-
 class SignalGeneratorBase:
     """
     Base class for measuring input power (Rx) of the USRP. That means the
@@ -115,16 +106,6 @@ class SignalGeneratorBase:
         Return the output power of the measurement device.
         """
         raise NotImplementedError()
-
-    # pylint: disable=no-self-use
-    def update_port(self, chan, antenna):
-        """
-        Tell the device we're measuring chan + antenna next
-        """
-        input("[RX] Connect your signal generator to device channel {}, "
-              "antenna {}. Then, hit Enter.".format(chan, antenna))
-    # pylint: enable=no-self-use
-
 
 ###############################################################################
 # Manual Measurement: For masochists, or for small sample sets
