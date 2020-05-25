@@ -22,7 +22,7 @@ from usrp_mpm.rpc_server import no_rpc
 from usrp_mpm.sys_utils import dtoverlay
 from usrp_mpm.sys_utils.sysfs_thermal import read_sysfs_sensors_value
 from usrp_mpm.sys_utils.udev import get_spidev_nodes
-from usrp_mpm.xports import XportMgrLiberio
+from usrp_mpm.xports import XportMgrLiberio, XportMgrUDP
 from usrp_mpm.periph_manager.e31x_periphs import MboardRegsControl
 from usrp_mpm.sys_utils.udev import get_eeprom_paths
 from usrp_mpm import e31x_legacy_eeprom
@@ -43,9 +43,22 @@ E310_GPIO_BANKS = ["INT0",]
 # Transport managers
 ###############################################################################
 # pylint: disable=too-few-public-methods
+
+class E310XportMgrUDP(XportMgrUDP):
+    "E310-specific UDP configuration"
+    iface_config = {
+        'int0': {
+            'label': 'misc-enet-int-regs',
+            'type': 'internal',
+        },
+        'eth0': {
+            'label': '',
+            'type': 'forward',
+        }
+    }
+
 class E310XportMgrLiberio(XportMgrLiberio):
     " E310-specific Liberio configuration "
-    max_chan = 5
 # pylint: enable=too-few-public-methods
 
 ###############################################################################
@@ -318,6 +331,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
         self._init_ref_clock_and_time(args)
         # Init CHDR transports
         self._xport_mgrs = {
+            'udp': E310XportMgrUDP(self.log, args),
             'liberio': E310XportMgrLiberio(self.log.getChild('liberio')),
         }
         # Init complete.
@@ -501,15 +515,23 @@ class e31x(ZynqComponents, PeriphManagerBase):
         """
         See PeriphManagerBase.get_chdr_link_types() for docs.
         """
-        return ['liberio']
+        assert self.mboard_info['rpc_connection'] in ('remote', 'local')
+        if self.mboard_info['rpc_connection'] == 'remote':
+            return ["udp"]
+        elif self._xport_mgrs["liberio"].max_chan > 0:
+            return ["liberio"]
+        else:
+            return ["udp"]
 
     def get_chdr_link_options(self, xport_type):
         """
         See PeriphManagerBase.get_chdr_link_options() for docs.
         """
-        assert xport_type == 'liberio', \
-            "Invalid xport_type! Must be 'liberio'"
-        return self._xport_mgrs['liberio'].get_chdr_link_options()
+        if xport_type not in self._xport_mgrs:
+            self.log.warning("Can't get link options for unknown link type: `{}'."
+                             .format(xport_type))
+            return []
+        return self._xport_mgrs[xport_type].get_chdr_link_options()
 
     ###########################################################################
     # Device info
