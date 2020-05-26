@@ -11,7 +11,8 @@ module axi_drop_partial_packet #(
   parameter WIDTH = 32,
   parameter MAX_PKT_SIZE = 1024,
   parameter HOLD_LAST_WORD = 0,       // Hold off sending last word until next full packet arrives
-  parameter SR_PKT_SIZE_ADDR = 1
+  parameter SR_PKT_SIZE_ADDR = 1,
+  parameter DEFAULT_PKT_SIZE = 1
 )(
   input clk, input reset, input clear,
   input flush,  // If using HOLD_LAST_WORD, will forcibly release all words in FIFO
@@ -31,7 +32,7 @@ module axi_drop_partial_packet #(
     end else begin
       // Settings register
       wire [$clog2(MAX_PKT_SIZE+1)-1:0] sr_pkt_size;
-      setting_reg #(.my_addr(SR_PKT_SIZE_ADDR), .width($clog2(MAX_PKT_SIZE+1)), .at_reset(1)) set_pkt_size (
+      setting_reg #(.my_addr(SR_PKT_SIZE_ADDR), .width($clog2(MAX_PKT_SIZE+1)), .at_reset(DEFAULT_PKT_SIZE)) set_pkt_size (
         .clk(clk), .rst(reset), .strobe(set_stb), .addr(set_addr), .in(set_data),
         .out(sr_pkt_size), .changed());
 
