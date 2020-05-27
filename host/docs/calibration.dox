@@ -77,25 +77,25 @@ renamed so it may be recovered by the user.
 
 \subsection modify_cal_data Modify Calibration Data
 
-There might be reasons to analyse or modify the calibration data outside UHDs
+There might be reasons to analyse or modify the calibration data outside UHD's
 calibration process. Because the data is stored using FlatBuffers this can be
-done without relying on UHD. UHD provides all FlatBuffer schema files in
+done without relying on UHD. UHD provides all FlatBuffers schema files in
 `<install-path>/share/uhd/cal`.
 
 First, install FlatBuffers. The package can be obtained from
 https://google.github.io/flatbuffers/.
 Once installed, `.cal` files can be converted to JSON using
 
-	flatc --strict-json -t <install dir>/share/uhd/cal/<flatbuffer>.fbs -- <data>.cal
+	flatc --strict-json -t <install dir>/share/uhd/cal/<foo>_cal.fbs -- <data>.cal
 	
-where `<flatbuffer>.fbs` is the scheme file used for the data,
+where `<foo>_cal.fbs` is the scheme file used for the data,
 e.g. `pwr_cal.fbs` for power calibration. `data.cal` is a calibration file in
 your working directory. This will generate a `<data>.json` in the same
 directory.
 
 The JSON data can be converted back to binary using
 
-	flatc -b <install dir>/include/uhd/cal/<flatbuffer>.fbs <data>.json
+	flatc -b <install dir>/include/uhd/cal/<foo>_cal.fbs <data>.json
 	
 This generates a `<data>.bin` that can be read by the calibration routines
 of UHD. To make UHD reading these files you need to rename it to `<data>.cal`.
