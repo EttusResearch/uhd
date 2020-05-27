@@ -38,37 +38,9 @@ function resolve_viv_path {
 }
 
 #----------------------------------------------------------------------------
-# Validate prerequisites
-#----------------------------------------------------------------------------
-# Ensure required variables
-if [ -z "$REPO_BASE_PATH" ]; then
-    echo "ERROR: Please define the variable REPO_BASE_PATH before calling this script"
-    return
-fi
-if [ -z "$VIVADO_VER" ]; then
-    echo "ERROR: Please define the variable VIVADO_VER before calling this script"
-    return
-fi
-if [ -z "$DISPLAY_NAME" ]; then
-    echo "ERROR: Please define the variable DISPLAY_NAME before calling this script"
-    return
-fi
-if [ ${#PRODUCT_ID_MAP[@]} -eq 0 ]; then
-    echo "ERROR: Please define the variable PRODUCT_ID_MAP before calling this script"
-    return
-fi
-
-# Ensure that the script is sourced
-if [[ $BASH_SOURCE = $0 ]]; then
-    echo "ERROR: This script must be sourced."
-    help
-    exit 1
-fi
-
-#----------------------------------------------------------------------------
 # Help message display function
 #----------------------------------------------------------------------------
-function help {
+function setupenv_help {
     cat <<EOHELP
 
 Usage: source setupenv.sh [--help|-h] [--vivado-path=<PATH>] [--modelsim-path=<PATH>]
@@ -89,6 +61,36 @@ Optional tools: Mentor Graphics Modelsim (Simulation)
 EOHELP
 }
 
+
+#----------------------------------------------------------------------------
+# Validate prerequisites
+#----------------------------------------------------------------------------
+# Ensure required variables
+if [ -z "$REPO_BASE_PATH" ]; then
+    echo "ERROR: Please define the variable REPO_BASE_PATH before calling this script"
+    return
+fi
+if [ -z "$VIVADO_VER" ]; then
+    echo "ERROR: Please define the variable VIVADO_VER before calling this script"
+    return
+fi
+if [ -z "$DISPLAY_NAME" ]; then
+    echo "ERROR: Please define the variable DISPLAY_NAME before calling this script"
+    return
+fi
+if [ ${#PRODUCT_ID_MAP[@]} -eq 0 ]; then
+    echo "ERROR: Please define the variable PRODUCT_ID_MAP before calling this script"
+    return
+fi
+
+# Ensure that the script is sourced directly or from another script, and not
+# executed.
+if [[ ${BASH_SOURCE[0]} == "$0" || ${BASH_SOURCE[1]} == "$0" ]]; then
+    echo "ERROR: This script must be sourced."
+    setupenv_help
+    exit 1
+fi
+
 #----------------------------------------------------------------------------
 # Setup and parse command line
 #----------------------------------------------------------------------------
@@ -106,7 +108,7 @@ PARSE_STATE=""
 for i in "$@"; do
     case $i in
         -h|--help)
-            help
+            setupenv_help
             return 0
             ;;
         --vivado-path=*)
@@ -148,7 +150,7 @@ for i in "$@"; do
                 ;;
                 *)
                     echo "ERROR: Unrecognized option: $i"
-                    help
+                    setupenv_help
                     return 1
                 ;;
             esac
