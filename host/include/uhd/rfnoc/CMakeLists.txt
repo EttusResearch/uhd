@@ -30,6 +30,7 @@ UHD_INSTALL(FILES
     res_source_info.hpp
     traffic_counter.hpp
     # Block controllers
+    addsub_block_control.hpp
     block_control.hpp
     ddc_block_control.hpp
     duc_block_control.hpp
