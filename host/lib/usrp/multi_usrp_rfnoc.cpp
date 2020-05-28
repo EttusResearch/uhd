@@ -1780,8 +1780,14 @@ public:
 
     double get_tx_freq(size_t chan)
     {
-        auto tx_chain = _get_tx_chan(chan);
-        return tx_chain.radio->get_tx_frequency(tx_chain.block_chan);
+        auto& tx_chain = _get_tx_chan(chan);
+        // extract actual dsp and IF frequencies
+        const double actual_rf_freq =
+            tx_chain.radio->get_tx_frequency(tx_chain.block_chan);
+        const double actual_dsp_freq =
+            (tx_chain.duc) ? tx_chain.duc->get_freq(tx_chain.block_chan) : 0.0;
+        // invert the sign on the dsp freq for transmit
+        return actual_rf_freq - actual_dsp_freq * TX_SIGN;
     }
 
     freq_range_t get_tx_freq_range(size_t chan)
