@@ -43,6 +43,39 @@ BUILD_VIVADO_IP = \
 	exit $$VIV_ERR
 
 # -------------------------------------------------------------------
+# Usage: REBUILD_VIVADO_IP_WITH_PATCH
+# Args: $1 = IP_NAME (IP name)
+#       $2 = ARCH (zynq, kintex7, etc)
+#       $3 = PART_ID (<device>/<package>/<speedgrade>[/<tempgrade>[/<silicon revision>]])
+#       $4 = IP_SRC_DIR (Absolute path to the top level ip src dir)
+#       $5 = IP_BUILD_DIR (Not used here, but kept for consistency with BUILD_VIVADO_IP)
+#       $6 = GENERATE_EXAMPLE (0 or 1)
+#       $7 = PATCHED_FILE (Patched version of the file from previous IP build)
+#       $8 = FILE_TO_PATCH (Path to file that needs to be patched)
+# Prereqs: 
+# - TOOLS_DIR must be defined globally
+# - This assumes BUILD_VIVADO_IP has been run once
+# -------------------------------------------------------------------
+REBUILD_VIVADO_IP_WITH_PATCH = \
+	@ \
+	echo "========================================================"; \
+	echo "BUILDER: Building Patched IP $(1)"; \
+	echo "========================================================"; \
+	export XCI_FILE=$(call RESOLVE_PATH,$(5)/$(1)/$(1).xci); \
+	export PART_NAME=`python $(TOOLS_DIR)/scripts/viv_gen_part_id.py $(2)/$(3)`; \
+	export GEN_EXAMPLE=$(6); \
+	export SYNTH_IP=$(SYNTH_IP); \
+	export PATCHED_FILE=$(7); \
+	export FILE_TO_PATCH=$(8); \
+	$(TOOLS_DIR)/scripts/shared-ip-loc-manage.sh --path=$(5)/$(1) reserve; \
+	cd $(5); \
+	echo "BUILDER: Building Patched IP..."; \
+	export VIV_ERR=0; \
+	$(TOOLS_DIR)/scripts/launch_vivado.py -mode batch -source $(call RESOLVE_PATH,$(TOOLS_DIR)/scripts/viv_generate_patch_ip.tcl) -log $(1).log -nojournal || export VIV_ERR=$$?; \
+	$(TOOLS_DIR)/scripts/shared-ip-loc-manage.sh --path=$(5)/$(1) release; \
+	exit $$VIV_ERR
+
+# -------------------------------------------------------------------
 # Usage: BUILD_VIVADO_BD
 # Args: $1 = BD_NAME (IP name)
 #       $2 = ARCH (zynq, kintex7, etc)
