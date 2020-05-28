@@ -261,6 +261,10 @@ set_source_files_properties(
 )
 
 UHD_ADD_RFNOC_BLOCK_TEST(
+    TARGET addsub_block_test.cpp
+)
+
+UHD_ADD_RFNOC_BLOCK_TEST(
     TARGET ddc_block_test.cpp
 )
 
