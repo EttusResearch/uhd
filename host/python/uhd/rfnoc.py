@@ -21,4 +21,5 @@ NocBlock = lib.rfnoc.noc_block_base
 DdcBlockControl = lib.rfnoc.ddc_block_control
 DucBlockControl = lib.rfnoc.duc_block_control
 FosphorBlockControl = lib.rfnoc.fosphor_block_control
+FirFilterBlockControl = lib.rfnoc.fir_filter_block_control
 
