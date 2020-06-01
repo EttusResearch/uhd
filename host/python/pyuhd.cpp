@@ -18,6 +18,7 @@ namespace py = pybind11;
 #include "rfnoc/duc_block_control_python.hpp"
 #include "rfnoc/fir_filter_block_control_python.hpp"
 #include "rfnoc/fosphor_block_control_python.hpp"
+#include "rfnoc/null_block_control_python.hpp"
 #include "rfnoc/radio_control_python.hpp"
 #include "rfnoc/rfnoc_python.hpp"
 #include "rfnoc/vector_iir_block_control_python.hpp"
@@ -84,6 +85,7 @@ PYBIND11_MODULE(libpyuhd, m)
     export_duc_block_control(rfnoc_module);
     export_fosphor_block_control(rfnoc_module);
     export_fir_filter_block_control(rfnoc_module);
+    export_null_block_control(rfnoc_module);
     export_radio_control(rfnoc_module);
     export_vector_iir_block_control(rfnoc_module);
 
