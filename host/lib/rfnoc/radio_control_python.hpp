@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <uhd/rfnoc/radio_control.hpp>
 #include "block_controller_factory_python.hpp"
+#include <uhd/rfnoc/radio_control.hpp>
 
 using namespace uhd::rfnoc;
 
