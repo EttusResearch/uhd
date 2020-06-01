@@ -24,7 +24,7 @@ class radio_control : public noc_block_base
 public:
     static const std::string ALL_LOS;
     static const std::string ALL_GAINS;
-    static const size_t ALL_CHANS;
+    static constexpr size_t ALL_CHANS = size_t(~0);
 
     RFNOC_DECLARE_BLOCK(radio_control)
 

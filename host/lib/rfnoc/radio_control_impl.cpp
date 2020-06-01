@@ -24,7 +24,6 @@ const std::string DEFAULT_GAIN_PROFILE("default");
 
 const std::string radio_control::ALL_LOS   = "all";
 const std::string radio_control::ALL_GAINS = "";
-const size_t radio_control::ALL_CHANS      = size_t(~0);
 
 const uint16_t radio_control_impl::MAJOR_COMPAT = 0;
 const uint16_t radio_control_impl::MINOR_COMPAT = 0;
