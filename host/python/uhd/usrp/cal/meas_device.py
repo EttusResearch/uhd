@@ -66,7 +66,7 @@ class SignalGeneratorBase:
         # Make sure to set this before doing RX cal
         self.max_output_power = None
 
-    def enable(self, enb=True):
+    def enable(self, enable=True):
         """
         Turn on the power generator. By default, it should be off, and only
         produce a signal when this was called with an argument value of 'True'.
@@ -82,7 +82,7 @@ class SignalGeneratorBase:
         This will coerce to the next possible power available and return the
         coerced value.
         """
-        assert self.max_output_power
+        assert self.max_output_power is not None
         if power_dbm > self.max_output_power:
             print("[SigGen] WARNING! Trying to set power beyond safe levels. "
                   "Capping output power at {} dBm.".format(self.max_output_power))
@@ -288,11 +288,11 @@ class USRPPowerGenerator(SignalGeneratorBase):
         self._tone_gen = ToneGenerator(self._rate, self._tone_freq, self._amplitude)
         self._tone_gen.set_streamer(self._streamer)
 
-    def enable(self, enb=True):
+    def enable(self, enable=True):
         """
         Turn the tone generator on or off.
         """
-        if enb:
+        if enable:
             print("[SigGen] Starting tone generator.")
             self._tone_gen.start()
         else:
@@ -349,5 +349,5 @@ def get_meas_device(direction, dev_key, options):
                 return obj(opt_dict)
         except TypeError:
             continue
-    raise RuntimeError("No {} measurement device found for key: {}".format(
-        direction.upper(), dev_key))
+    raise RuntimeError("No {} found for key: {}".format(
+        "signal generator" if direction == "rx" else "power meter", dev_key))
