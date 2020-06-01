@@ -16,6 +16,7 @@ namespace py = pybind11;
 #include "cal/cal_python.hpp"
 #include "rfnoc/ddc_block_control_python.hpp"
 #include "rfnoc/duc_block_control_python.hpp"
+#include "rfnoc/fosphor_block_control_python.hpp"
 #include "rfnoc/rfnoc_python.hpp"
 #include "stream_python.hpp"
 #include "types/filters_python.hpp"
@@ -78,6 +79,7 @@ PYBIND11_MODULE(libpyuhd, m)
     export_rfnoc(rfnoc_module);
     export_ddc_block_control(rfnoc_module);
     export_duc_block_control(rfnoc_module);
+    export_fosphor_block_control(rfnoc_module);
 
     // Register calibration submodule
     auto cal_module = m.def_submodule("cal", "Calibration Objects");
