@@ -18,3 +18,5 @@ RfnocGraph = lib.rfnoc.rfnoc_graph
 MBController = lib.rfnoc.mb_controller
 Timekeeper = lib.rfnoc.timekeeper
 NocBlock = lib.rfnoc.noc_block_base
+DdcBlockControl = lib.rfnoc.ddc_block_control
+
