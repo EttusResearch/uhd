@@ -98,13 +98,11 @@ module e31x_core #(
 
   // DMA xport adapter to PS
   input wire  [63:0] s_dma_tdata,
-  input wire  [3:0]  s_dma_tuser,
   input wire         s_dma_tlast,
   output wire        s_dma_tready,
   input wire         s_dma_tvalid,
 
   output wire [63:0] m_dma_tdata,
-  output wire [3:0]  m_dma_tdest,
   output wire        m_dma_tlast,
   input wire         m_dma_tready,
   output wire        m_dma_tvalid,
@@ -370,50 +368,6 @@ module e31x_core #(
 
   /////////////////////////////////////////////////////////////////////////////
   //
-  // DMA Transport Adapter
-  //
-  /////////////////////////////////////////////////////////////////////////////
-  wire [63:0] dmao_tdata;
-  wire        dmao_tlast;
-  wire        dmao_tvalid;
-  wire        dmao_tready;
-
-  wire [63:0] dmai_tdata;
-  wire        dmai_tlast;
-  wire        dmai_tvalid;
-  wire        dmai_tready;
-
-  liberio_chdr64_adapter #(
-    .DMA_ID_WIDTH                    (4)
-  ) dma_xport_adapter (
-    .clk                             (bus_clk),
-    .rst                             (bus_rst),
-    .device_id                       (device_id),
-    // From DMA engine to core
-    .s_dma_tdata                     (s_dma_tdata),
-    .s_dma_tuser                     (s_dma_tuser),
-    .s_dma_tlast                     (s_dma_tlast),
-    .s_dma_tvalid                    (s_dma_tvalid),
-    .s_dma_tready                    (s_dma_tready),
-    // From core to DMA engine
-    .m_dma_tdata                     (m_dma_tdata),
-    .m_dma_tuser                     (m_dma_tdest),
-    .m_dma_tlast                     (m_dma_tlast),
-    .m_dma_tvalid                    (m_dma_tvalid),
-    .m_dma_tready                    (m_dma_tready),
-    // CHDR buses
-    .s_chdr_tdata                    (dmao_tdata),
-    .s_chdr_tlast                    (dmao_tlast),
-    .s_chdr_tvalid                   (dmao_tvalid),
-    .s_chdr_tready                   (dmao_tready),
-    .m_chdr_tdata                    (dmai_tdata),
-    .m_chdr_tlast                    (dmai_tlast),
-    .m_chdr_tvalid                   (dmai_tvalid),
-    .m_chdr_tready                   (dmai_tready)
-  );
-
-  /////////////////////////////////////////////////////////////////////////////
-  //
   // Radio Daughter board and Front End Control
   //
   /////////////////////////////////////////////////////////////////////////////
@@ -637,14 +591,14 @@ module e31x_core #(
     .radio_tx_stb            ({tx_stb[1],     tx_stb[0]    }),
     .radio_tx_data           ({tx_data[1],    tx_data[0]   }),
     .radio_tx_running        ({tx_running[1], tx_running[0]}),
-    .s_dma_tdata             (dmai_tdata),
-    .s_dma_tlast             (dmai_tlast),
-    .s_dma_tvalid            (dmai_tvalid),
-    .s_dma_tready            (dmai_tready),
-    .m_dma_tdata             (dmao_tdata),
-    .m_dma_tlast             (dmao_tlast),
-    .m_dma_tvalid            (dmao_tvalid),
-    .m_dma_tready            (dmao_tready)
+    .s_dma_tdata             (s_dma_tdata),
+    .s_dma_tlast             (s_dma_tlast),
+    .s_dma_tvalid            (s_dma_tvalid),
+    .s_dma_tready            (s_dma_tready),
+    .m_dma_tdata             (m_dma_tdata),
+    .m_dma_tlast             (m_dma_tlast),
+    .m_dma_tvalid            (m_dma_tvalid),
+    .m_dma_tready            (m_dma_tready)
   );
 
   //---------------------------------------------------------------------------

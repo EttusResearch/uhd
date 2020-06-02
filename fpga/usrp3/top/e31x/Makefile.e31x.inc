@@ -25,6 +25,7 @@ include $(LIB_DIR)/hls/Makefile.inc
 include $(LIB_DIR)/control/Makefile.srcs
 include $(LIB_DIR)/fifo/Makefile.srcs
 include $(LIB_DIR)/axi/Makefile.srcs
+include $(LIB_DIR)/xge_interface/Makefile.srcs
 include $(LIB_DIR)/timing/Makefile.srcs
 include $(LIB_DIR)/packet_proc/Makefile.srcs
 include $(LIB_DIR)/dsp/Makefile.srcs
@@ -66,6 +67,7 @@ DESIGN_SRCS = \
 $(abspath $(TOP_SRCS)) \
 $(CONTROL_LIB_SRCS) \
 $(IP_XCI_SRCS) \
+$(XGE_INTERFACE_SRCS) \
 $(PACKET_PROC_SRCS) \
 $(AXI_SRCS) \
 $(FIFO_SRCS) \
