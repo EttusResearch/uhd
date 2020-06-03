@@ -165,6 +165,11 @@ class PeriphManagerBase(object):
         except ImportError:
             version_string = ""
         mboard_info["mpm_sw_version"] = version_string
+
+        for i,dboard_info in enumerate(dboard_infos):
+            mboard_info["dboard_{}_pid".format(i)] = str(dboard_info["pid"])
+            mboard_info["dboard_{}_serial".format(i)] = dboard_info["eeprom_md"]["serial"]
+
         return mboard_info
 
     @staticmethod
