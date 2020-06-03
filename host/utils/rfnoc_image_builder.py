@@ -46,8 +46,9 @@ def setup_parser():
         help="Path to grc file to generate config from")
     parser.add_argument(
         "-F", "--fpga-dir",
-        help="Path directory of the FPGA source tree",
-        required=True,
+        help="Path to directory for the FPGA source tree."
+             "Defaults to the FPGA source tree of the current repo.",
+        required=False,
         default=None)
     parser.add_argument(
         "-o", "--image-core-output",
@@ -131,18 +132,39 @@ def resolve_path(path, local):
 
 def get_fpga_path(args):
     """
-    Returns FPGA path. This is the fpga_dir of arguments, If fpga_dir does
-    not exists it is the predefined path of of the script.
+    Returns FPGA path. This is the fpga_dir from the arguments. If fpga_dir
+    does not exist, it is changed to the FPGA source path of the current repo.
+    If current directory is not in a repo, an error is generated.
     :param args: arguments passed to the script
     :return: FPGA root path
     """
-    result = args.fpga_dir
-    if not os.path.isdir(result):
-        logging.info("%s is not a valid directory.", result)
-        result = resolve_path("@FPGA_PATH@", os.path.join(
-            os.path.dirname(__file__), '..', '..', '..', 'fpga'))
-        logging.info("Fall back to %s", result)
-    return result
+    # If a valid path is given, use that
+    if args.fpga_dir:
+        if os.path.isdir(args.fpga_dir):
+            fpga_path = os.path.abspath(args.fpga_dir)
+            logging.info("Using FPGA directory %s", fpga_path)
+            return fpga_path
+        else:
+            logging.error("Bad fpga-dir argument. %s is not a valid directory.", args.fpga_dir)
+            sys.exit(1)
+    # Try to find an fpga directory at the base of the repo
+    repo_base = os.getcwd()
+    while True:
+        repo_base = os.path.split(repo_base)[0]
+        top_dir = os.path.split(repo_base)[1]
+        if top_dir == 'uhd' or top_dir == 'uhddev':
+            fpga_path = os.path.join(repo_base, 'fpga')
+            break
+        if top_dir == '':
+            fpga_path = None
+            break
+    # If it's valid FPGA base path, use that
+    if fpga_path and os.path.isdir(os.path.join(fpga_path, 'usrp3', 'top')):
+        logging.info("Using FPGA directory %s", fpga_path)
+        return fpga_path
+    # No valid path found
+    logging.error("FPGA path not found. Specify with --fpga-dir argument.")
+    sys.exit(1)
 
 
 def get_config_path():
@@ -171,7 +193,7 @@ def main():
 
     image_builder.build_image(
         config=config,
-        fpga_path=args.fpga_dir,
+        fpga_path=get_fpga_path(args),
         config_path=get_config_path(),
         device=device,
         target=target,
