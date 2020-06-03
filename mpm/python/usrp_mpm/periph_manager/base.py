@@ -166,6 +166,20 @@ class PeriphManagerBase(object):
             version_string = ""
         mboard_info["mpm_sw_version"] = version_string
 
+        try:
+            with open("/etc/version", "r") as version_file:
+                mboard_info["fs_version"] = version_file.read().strip(" \r\n")
+        except FileNotFoundError:
+            mboard_info["fs_version"] = "FILE NOT FOUND"
+
+        try:
+            with open("/etc/mender/artifact_info", "r") as artifact_file:
+                for line in artifact_file.read().splitlines():
+                    if line.startswith('artifact_name='):
+                        mboard_info['mender_artifact'] = line[14:]
+        except FileNotFoundError:
+            mboard_info['mender_artifact'] = "FILE NOT FOUND"
+
         for i,dboard_info in enumerate(dboard_infos):
             mboard_info["dboard_{}_pid".format(i)] = str(dboard_info["pid"])
             mboard_info["dboard_{}_serial".format(i)] = dboard_info["eeprom_md"]["serial"]
