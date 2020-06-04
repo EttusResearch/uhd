@@ -266,11 +266,23 @@ void export_rfnoc(py::module& m)
         .def("get_tick_rate", &noc_block_base::get_tick_rate)
         .def("get_mtu", &noc_block_base::get_mtu)
         .def("get_block_args", &noc_block_base::get_block_args)
-        .def("get_tree", [](noc_block_base::sptr& self) {
-            // Force the non-const `get_tree`
-            uhd::property_tree::sptr tree = self->get_tree();
-            return tree;
-        });
+        .def("get_tree",
+            [](noc_block_base::sptr& self) {
+                // Force the non-const `get_tree`
+                uhd::property_tree::sptr tree = self->get_tree();
+                return tree;
+            })
+        .def("__repr__",
+            [](noc_block_base::sptr& self) {
+                return "<NocBlock for block ID '" + self->get_unique_id() + "'>";
+            })
+        // node_t superclass methods--not worth having a separate Py class
+        // for them
+        .def("get_property_ids", &node_t::get_property_ids)
+        .def("set_properties",
+            &node_t::set_properties,
+            py::arg("props"),
+            py::arg("instance") = 0);
 }
 
 #endif /* INCLUDED_UHD_RFNOC_PYTHON_HPP */
