@@ -290,6 +290,10 @@ UHD_ADD_RFNOC_BLOCK_TEST(
 )
 
 UHD_ADD_RFNOC_BLOCK_TEST(
+    TARGET fft_block_test.cpp
+)
+
+UHD_ADD_RFNOC_BLOCK_TEST(
     TARGET fir_filter_block_test.cpp
 )
 
