@@ -528,7 +528,7 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         - rx_dev: RX device (/dev/rx-dma*)
         """
         if xport_type not in self._xport_mgrs:
-            self.log.warning("Can't get link options for unknown link type: `{}'.")
+            self.log.warning("Can't get link options for unknown link type: `{}'.".format(xport_type))
             return []
         return self._xport_mgrs[xport_type].get_chdr_link_options()
 
