@@ -80,12 +80,19 @@ class N3xxXportMgrUDP(XportMgrUDP):
             'label': 'misc-enet-regs1',
             'type': 'sfp',
         },
+        'int0': {
+            'label': 'misc-enet-int-regs',
+            'type': 'internal',
+        },
+        'eth0': {
+            'label': '',
+            'type': 'forward',
+        }
     }
     bridges = {'bridge0': ['sfp0', 'sfp1', 'bridge0']}
 
 class N3xxXportMgrLiberio(XportMgrLiberio):
     " N3xx-specific Liberio configuration "
-    max_chan = 10
 # pylint: enable=too-few-public-methods
 
 ###############################################################################
@@ -498,8 +505,10 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         assert self.mboard_info['rpc_connection'] in ('remote', 'local')
         if self.mboard_info['rpc_connection'] == 'remote':
             return ["udp"]
-        # else:
-        return ["liberio"]
+        elif self._xport_mgrs["liberio"].max_chan > 0:
+            return ["liberio"]
+        else:
+            return ["udp"]
 
     def get_chdr_link_options(self, xport_type):
         """
