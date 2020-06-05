@@ -42,7 +42,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     po::notify(vm);
 
     // Print the help message
-    if (vm.count("help") > 0) {
+    if (vm.count("help") > 0 or vm.empty()) {
         std::cout << boost::format("UHD Config Info - %s") % desc << std::endl;
         return EXIT_FAILURE;
     }
