@@ -23,7 +23,7 @@ from usrp_mpm.rpc_server import no_rpc
 from usrp_mpm.sys_utils import dtoverlay
 from usrp_mpm.sys_utils.sysfs_thermal import read_thermal_sensor_value, read_thermal_sensors_value
 from usrp_mpm.sys_utils.udev import get_spidev_nodes
-from usrp_mpm.xports import XportMgrUDP, XportMgrLiberio
+from usrp_mpm.xports import XportMgrUDP
 from usrp_mpm.periph_manager.e320_periphs import MboardRegsControl
 
 E320_DEFAULT_INT_CLOCK_FREQ = 20e6
@@ -62,8 +62,7 @@ class E320XportMgrUDP(XportMgrUDP):
         }
     }
 
-class E320XportMgrLiberio(XportMgrLiberio):
-    "E320-specific liberio configuration"
+
 # pylint: enable=too-few-public-methods
 
 ###############################################################################
@@ -291,8 +290,7 @@ class e320(ZynqComponents, PeriphManagerBase):
         self._init_gps_sensors()
         # Init CHDR transports
         self._xport_mgrs = {
-            'udp': E320XportMgrUDP(self.log, args),
-            'liberio': E320XportMgrLiberio(self.log),
+            'udp': E320XportMgrUDP(self.log, args)
         }
         # Spawn status monitoring thread
         self.log.trace("Spawning status monitor thread...")
@@ -378,15 +376,10 @@ class e320(ZynqComponents, PeriphManagerBase):
     ###########################################################################
     def get_chdr_link_types(self):
         """
-        This will only ever return a single item (udp or liberio).
+        This will only ever return a single item (udp).
         """
         assert self.mboard_info['rpc_connection'] in ('remote', 'local')
-        if self.mboard_info['rpc_connection'] == 'remote':
-            return ["udp"]
-        elif self._xport_mgrs["liberio"].max_chan > 0:
-            return ["liberio"]
-        else:
-            return ["udp"]
+        return ["udp"]
 
     def get_chdr_link_options(self, xport_type):
         """
