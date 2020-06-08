@@ -1,0 +1,56 @@
+schema: rfnoc_modtool_args
+module_name: window
+version: 1.0
+rfnoc_version: 1.0
+chdr_width: 64
+noc_id: 0xD0530000
+makefile_srcs: "${fpga_lib_dir}/blocks/rfnoc_block_window/Makefile.srcs"
+
+parameters:
+  NUM_PORTS: 1
+  MAX_WINDOW_SIZE: 4096   # In samples, ideally a power of two
+
+clocks:
+  - name: rfnoc_chdr
+    freq: "[]"
+  - name: rfnoc_ctrl
+    freq: "[]"
+  - name: ce
+    freq: "[]"
+
+control:
+  sw_iface: nocscript
+  fpga_iface: ctrlport
+  interface_direction: slave
+  fifo_depth: 32
+  clk_domain: ce
+  ctrlport:
+    byte_mode: False
+    timed: False
+    has_status: False
+
+data:
+  fpga_iface: axis_pyld_ctxt
+  clk_domain: ce
+  inputs:
+    in:
+      num_ports: NUM_PORTS
+      item_width: 32
+      nipc: 1
+      context_fifo_depth: 2
+      payload_fifo_depth: 32
+      format: sc16
+      mdata_sig: ~
+  outputs:
+    out:
+      num_ports: NUM_PORTS
+      item_width: 32
+      nipc: 1
+      context_fifo_depth: 2
+      payload_fifo_depth: 32
+      format: sc16
+      mdata_sig: ~
+
+registers:
+
+properties:
