@@ -8,6 +8,10 @@
 """
 Run device tests for the B2xx series.
 """
+
+# pylint: disable=wrong-import-position
+# pylint: disable=unused-import
+
 from usrp_probe_test import uhd_usrp_probe_test
 from python_api_test import uhd_python_api_test
 from benchmark_rate_test import uhd_benchmark_rate_test
@@ -90,4 +94,3 @@ from tx_bursts_test import uhd_tx_bursts_test
 from test_pps_test import uhd_test_pps_test
 from gpio_test import gpio_test
 from list_sensors_test import list_sensors_test
-
