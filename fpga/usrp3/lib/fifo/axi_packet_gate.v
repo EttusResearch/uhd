@@ -70,7 +70,7 @@ module axi_packet_gate #(
     .clka (clk), .ena(1'b1), .wea(wr_en),
     .addra(wr_addr), .dia(wr_data), .doa(),
     .clkb (clk), .enb(rd_en), .web(1'b0),
-    .addrb(rd_addr), .dib({WIDTH{1'b0}}), .dob(rd_data)
+    .addrb(rd_addr), .dib({WIDTH+1{1'b0}}), .dob(rd_data)
   );
 
   // FIFO empty/full logic. The condition for both
