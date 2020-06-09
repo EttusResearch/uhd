@@ -195,7 +195,7 @@ def discrete_options_test(usrp, prop, num_chans,
                      get_range)
 
 
-def list_test(usrp, prop, error_handling=None):
+def list_test(usrp, prop, error_handling, post_hook=None):
     """
     Function to perform tests on methods that return lists of possible
     discrete values (strings).
@@ -218,18 +218,20 @@ def list_test(usrp, prop, error_handling=None):
     # Try to set every possible value.
     for name in names:
         # GPSDO may not be connected.
-        if name == 'gpsdo' or name == 'internal':
+        if name in ('gpsdo', 'internal'):
             continue
         try:
             getattr(usrp, setter)(name)
-        except RuntimeError:
-            raise Exception('error found in setting {} to {}'
-                            .format(prop, name))
+        except RuntimeError as ex:
+            raise Exception('error found in setting {} to {} => {}'
+                            .format(prop, name, str(ex)))
         # Check if get function returns set value.
         get_value = getattr(usrp, getter)(0)
         if get_value != name:
             raise Exception('Error in setting acceptable value in {}'
                             .format(prop))
+    if post_hook:
+        post_hook()
     return True
 
 
@@ -395,16 +397,26 @@ def iq_balance_test(usrp, prop, num_chans):
     return True
 
 
-def filter_test(usrp, prop):
+def filter_test(usrp, prop, num_chans):
     """
     Test specifically for the get_filter function
     usrp -- Device object to run tests on.
     prop -- String of function to be tested.
     """
-    filters = getattr(usrp, 'get_filter_names')()
-    if getattr(usrp, prop)(filters[0]) is None:
-        raise Exception("{} function with {} arguments returns None"
-                        .format(prop, filters[0]))
+    for chan in range(num_chans):
+        filters = getattr(usrp, 'get_{}_filter_names'.format(prop))(chan)
+        for filter_name in filters:
+            # Read a filter object...
+            filter_obj = getattr(usrp, 'get_{}_filter'.format(prop))(filter_name, chan)
+            if filter_obj is None:
+                raise Exception("Filter object for {} returns None"
+                                .format(filter_name))
+            # ... and write it back:
+            try:
+                getattr(usrp, 'set_{}_filter'.format(prop))(filter_name, filter_obj, chan)
+            except RuntimeError as ex:
+                if "can not be written" not in str(ex):
+                    raise
     return True
 
 
@@ -443,7 +455,8 @@ def run_api_test(usrp):
                                        'coerce')),
 
         (['get_time_source', 'set_time_source', 'get_time_source_names'],
-         lambda: list_test(usrp, 'time_source', 'coerce')),
+         lambda: list_test(usrp, 'time_source', 'coerce',
+                           lambda: usrp.set_time_source('internal'))),
         (['get_clock_source', 'set_clock_source', 'get_clock_names'],
          lambda: list_test(usrp, 'clock_source', 'coerce')),
         (['get_rx_antenna', 'set_rx_antenna', 'get_rx_antenna_names'],
@@ -515,8 +528,6 @@ def run_api_test(usrp):
          lambda: mboard_range_test(usrp, "get_time_now", num_mboards)),
         (['get_time_last_pps'],
          lambda: mboard_range_test(usrp, "get_time_last_pps", num_mboards)),
-        (['enumerate_registers'],
-         lambda: mboard_range_test(usrp, "enumerate_registers", num_mboards)),
         (['set_rx_dc_offset'],
          lambda: chan_range_test(usrp, "set_rx_dc_offset", num_rx_chans)),
         (['set_tx_dc_offset'],
@@ -529,7 +540,6 @@ def run_api_test(usrp):
          lambda: gpio_attr_test(usrp, "set_gpio_attr", num_mboards)),
         (['get_fe_rx_freq_range'], usrp.get_fe_rx_freq_range),
         (['get_fe_tx_freq_range'], usrp.get_fe_tx_freq_range),
-        (['get_filter_names'], usrp.get_filter_names),
         (['get_normalized_tx_gain'], usrp.get_normalized_tx_gain),
         (['get_pp_string'], usrp.get_pp_string),
         (['get_rx_antennas'], usrp.get_rx_antennas),
@@ -550,8 +560,10 @@ def run_api_test(usrp):
          lambda: iq_balance_test(usrp, "set_tx_iq_balance", num_tx_chans)),
         (['get_clock_sources'],
          lambda: mboard_range_test(usrp, "get_clock_sources", num_mboards)),
-        (['get_filter'],
-         lambda: filter_test(usrp, "get_filter")),
+        (['get_rx_filter', 'set_rx_filter', 'get_rx_filter_names'],
+         lambda: filter_test(usrp, "rx", num_rx_chans)),
+        (['get_tx_filter', 'set_tx_filter', 'get_tx_filter_names'],
+         lambda: filter_test(usrp, "tx", num_rx_chans)),
         (['clear_command_time'], usrp.clear_command_time),
     ]
 
