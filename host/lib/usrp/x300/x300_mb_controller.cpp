@@ -181,6 +181,8 @@ void x300_mb_controller::set_time_source(const std::string& source)
         throw uhd::key_error("update_time_source: unknown source: " + source);
     }
 
+    _current_time_src = source;
+
     /* TODO - Implement intelligent PPS detection
     //check for valid pps
     if (!is_pps_present(mb)) {
