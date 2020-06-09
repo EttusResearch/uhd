@@ -104,3 +104,15 @@ function(UHD_ADD_TEST test_name)
     endif(WIN32)
 
 endfunction(UHD_ADD_TEST)
+
+########################################################################
+# Add a Python unit test
+########################################################################
+function(UHD_ADD_PYTEST test_name)
+    add_test(NAME ${test_name}
+        COMMAND ${RUNTIME_PYTHON_EXECUTABLE} -m unittest discover
+                                             -s ${CMAKE_CURRENT_SOURCE_DIR}
+                                             -p "${test_name}.*"
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/python"
+    )
+endfunction(UHD_ADD_PYTEST)

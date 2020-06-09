@@ -64,6 +64,12 @@ set(test_sources
     multichan_register_iface_test.cpp
 )
 
+# Note: Python-based tests cannot have the same name as a C++-based test (i.e.,
+# only differ in the cpp/py file extension). If in doubt, prepend 'py'
+set(pytest_sources
+    pyranges_test.py
+)
+
 #turn each test cpp file into an executable with an int main() function
 add_definitions(-DBOOST_TEST_DYN_LINK -DBOOST_TEST_MAIN)
 
@@ -97,6 +103,17 @@ foreach(benchmark_source ${benchmark_sources})
     target_link_libraries(${benchmark_name} uhd uhd_test ${Boost_LIBRARIES})
     UHD_INSTALL(TARGETS ${benchmark_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
 endforeach(benchmark_source)
+
+if(ENABLE_PYTHON_API)
+    foreach(test_source ${pytest_sources})
+        get_filename_component(test_name ${test_source} NAME_WE)
+        UHD_ADD_PYTEST(${test_name})
+    endforeach(test_source)
+    UHD_INSTALL(FILES ${pytest_sources}
+        DESTINATION ${PKG_LIB_DIR}/tests
+        COMPONENT tests
+    )
+endif(ENABLE_PYTHON_API)
 
 ###############################################################################
 # Add a unit test that requires linkage to internal parts of UHD which are not
