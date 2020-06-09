@@ -449,9 +449,11 @@ public:
 
         const auto db_eeprom = rx_chain.radio->get_db_eeprom();
         usrp_info["rx_serial"] =
-            db_eeprom.count("rx_serial") ? bytes_to_str(db_eeprom.at("rx_serial")) : "";
+            db_eeprom.count("rx_serial") ? bytes_to_str(db_eeprom.at("rx_serial")) :
+            db_eeprom.count("serial") ? bytes_to_str(db_eeprom.at("serial")) :"";
         usrp_info["rx_id"] =
-            db_eeprom.count("rx_id") ? bytes_to_str(db_eeprom.at("rx_id")) : "";
+            db_eeprom.count("rx_id") ? bytes_to_str(db_eeprom.at("rx_id")) :
+            db_eeprom.count("pid") ? bytes_to_str(db_eeprom.at("pid")) : "";
 
         const auto rx_power_ref_keys = rx_chain.radio->get_rx_power_ref_keys();
         if (!rx_power_ref_keys.empty() && rx_power_ref_keys.size() == 2) {
@@ -479,9 +481,11 @@ public:
 
         const auto db_eeprom = tx_chain.radio->get_db_eeprom();
         usrp_info["tx_serial"] =
-            db_eeprom.count("tx_serial") ? bytes_to_str(db_eeprom.at("tx_serial")) : "";
+            db_eeprom.count("tx_serial") ? bytes_to_str(db_eeprom.at("tx_serial")) :
+            db_eeprom.count("serial") ? bytes_to_str(db_eeprom.at("serial")) : "";
         usrp_info["tx_id"] =
-            db_eeprom.count("tx_id") ? bytes_to_str(db_eeprom.at("tx_id")) : "";
+            db_eeprom.count("tx_id") ? bytes_to_str(db_eeprom.at("tx_id")) :
+            db_eeprom.count("pid") ? bytes_to_str(db_eeprom.at("pid")) : "";
 
         const auto tx_power_ref_keys = tx_chain.radio->get_tx_power_ref_keys();
         if (!tx_power_ref_keys.empty() && tx_power_ref_keys.size() == 2) {
@@ -634,7 +638,7 @@ public:
         throw uhd::key_error("Invalid mboard index!");
     }
 
-    meta_range_t get_master_clock_rate_range(const size_t mboard = 0)
+    meta_range_t get_master_clock_rate_range(const size_t mboard)
     {
         // We pick the first radio we can find on this mboard, and hope that all
         // radios have the same range.
@@ -707,13 +711,13 @@ public:
         return get_mbc(mboard)->get_timekeeper(0)->get_time_last_pps();
     }
 
-    void set_time_now(const time_spec_t& time_spec, size_t mboard)
+    void set_time_now(const time_spec_t& time_spec, size_t mboard = ALL_MBOARDS)
     {
         MUX_MB_API_CALL(set_time_now, time_spec);
         get_mbc(mboard)->get_timekeeper(0)->set_time_now(time_spec);
     }
 
-    void set_time_next_pps(const time_spec_t& time_spec, size_t mboard)
+    void set_time_next_pps(const time_spec_t& time_spec, size_t mboard = ALL_MBOARDS)
     {
         MUX_MB_API_CALL(set_time_next_pps, time_spec);
         get_mbc(mboard)->get_timekeeper(0)->set_time_next_pps(time_spec);
@@ -765,18 +769,24 @@ public:
         return true;
     }
 
-    void set_command_time(const uhd::time_spec_t& time_spec, size_t mboard)
+    void set_command_time(const uhd::time_spec_t& time_spec, size_t mboard = ALL_MBOARDS)
     {
         MUX_MB_API_CALL(set_command_time, time_spec);
 
         // Set command time on all the blocks that are connected
         for (auto& chain : _rx_chans) {
+            if (chain.second.radio->get_block_id().get_device_no() != mboard) {
+                continue;
+            }
             chain.second.radio->set_command_time(time_spec, chain.second.block_chan);
             if (chain.second.ddc) {
                 chain.second.ddc->set_command_time(time_spec, chain.second.block_chan);
             }
         }
         for (auto& chain : _tx_chans) {
+            if (chain.second.radio->get_block_id().get_device_no() != mboard) {
+                continue;
+            }
             chain.second.radio->set_command_time(time_spec, chain.second.block_chan);
             if (chain.second.duc) {
                 chain.second.duc->set_command_time(time_spec, chain.second.block_chan);
@@ -784,7 +794,7 @@ public:
         }
     }
 
-    void clear_command_time(size_t mboard)
+    void clear_command_time(size_t mboard = ALL_MBOARDS)
     {
         if (mboard == ALL_MBOARDS) {
             for (size_t i = 0; i < get_num_mboards(); ++i) {
@@ -793,14 +803,20 @@ public:
             return;
         }
 
-        // Set command time on all the blocks that are connected
+        // Clear command time on all the blocks that are connected
         for (auto& chain : _rx_chans) {
+            if (chain.second.radio->get_block_id().get_device_no() != mboard) {
+                continue;
+            }
             chain.second.radio->clear_command_time(chain.second.block_chan);
             if (chain.second.ddc) {
                 chain.second.ddc->clear_command_time(chain.second.block_chan);
             }
         }
         for (auto& chain : _tx_chans) {
+            if (chain.second.radio->get_block_id().get_device_no() != mboard) {
+                continue;
+            }
             chain.second.radio->clear_command_time(chain.second.block_chan);
             if (chain.second.duc) {
                 chain.second.duc->clear_command_time(chain.second.block_chan);
@@ -810,21 +826,16 @@ public:
 
     void issue_stream_cmd(const stream_cmd_t& stream_cmd, size_t chan = ALL_CHANS)
     {
-        if (chan != ALL_CHANS) {
-            auto& rx_chain = _get_rx_chan(chan);
-            if (rx_chain.ddc) {
-                rx_chain.ddc->issue_stream_cmd(stream_cmd, rx_chain.block_chan);
-            } else {
-                rx_chain.radio->issue_stream_cmd(stream_cmd, rx_chain.block_chan);
-            }
-            return;
-        }
-        for (size_t c = 0; c < get_rx_num_channels(); c++) {
-            issue_stream_cmd(stream_cmd, c);
+        MUX_RX_API_CALL(issue_stream_cmd, stream_cmd);
+        auto& rx_chain = _get_rx_chan(chan);
+        if (rx_chain.ddc) {
+            rx_chain.ddc->issue_stream_cmd(stream_cmd, rx_chain.block_chan);
+        } else {
+            rx_chain.radio->issue_stream_cmd(stream_cmd, rx_chain.block_chan);
         }
     }
 
-    void set_time_source(const std::string& source, const size_t mboard)
+    void set_time_source(const std::string& source, const size_t mboard = ALL_MBOARDS)
     {
         MUX_MB_API_CALL(set_time_source, source);
         get_mbc(mboard)->set_time_source(source);
@@ -840,7 +851,7 @@ public:
         return get_mbc(mboard)->get_time_sources();
     }
 
-    void set_clock_source(const std::string& source, const size_t mboard)
+    void set_clock_source(const std::string& source, const size_t mboard = ALL_MBOARDS)
     {
         MUX_MB_API_CALL(set_clock_source, source);
         get_mbc(mboard)->set_clock_source(source);
@@ -858,13 +869,13 @@ public:
 
     void set_sync_source(const std::string& clock_source,
         const std::string& time_source,
-        const size_t mboard)
+        const size_t mboard = ALL_MBOARDS)
     {
         MUX_MB_API_CALL(set_sync_source, clock_source, time_source);
         get_mbc(mboard)->set_sync_source(clock_source, time_source);
     }
 
-    void set_sync_source(const device_addr_t& sync_source, const size_t mboard)
+    void set_sync_source(const device_addr_t& sync_source, const size_t mboard = ALL_MBOARDS)
     {
         MUX_MB_API_CALL(set_sync_source, sync_source);
         get_mbc(mboard)->set_sync_source(sync_source);
@@ -880,13 +891,13 @@ public:
         return get_mbc(mboard)->get_sync_sources();
     }
 
-    void set_clock_source_out(const bool enb, const size_t mboard)
+    void set_clock_source_out(const bool enb, const size_t mboard = ALL_MBOARDS)
     {
         MUX_MB_API_CALL(set_clock_source_out, enb);
         get_mbc(mboard)->set_clock_source_out(enb);
     }
 
-    void set_time_source_out(const bool enb, const size_t mboard)
+    void set_time_source_out(const bool enb, const size_t mboard = ALL_MBOARDS)
     {
         MUX_MB_API_CALL(set_time_source_out, enb);
         get_mbc(mboard)->set_time_source_out(enb);
@@ -1019,7 +1030,7 @@ public:
     }
 
     void set_rx_subdev_spec(
-        const uhd::usrp::subdev_spec_t& spec, size_t mboard)
+        const uhd::usrp::subdev_spec_t& spec, size_t mboard = ALL_MBOARDS)
     {
         // First, generate a vector of the RX channels that we need to register
         auto new_rx_chans = [this, spec, mboard]() {
@@ -1058,7 +1069,7 @@ public:
         }
     }
 
-    uhd::usrp::subdev_spec_t get_rx_subdev_spec(size_t mboard)
+    uhd::usrp::subdev_spec_t get_rx_subdev_spec(size_t mboard = 0)
     {
         uhd::usrp::subdev_spec_t result;
         for (size_t rx_chan = 0; rx_chan < get_rx_num_channels(); rx_chan++) {
@@ -1079,13 +1090,13 @@ public:
         return _rx_chans.size();
     }
 
-    std::string get_rx_subdev_name(size_t chan)
+    std::string get_rx_subdev_name(size_t chan = 0)
     {
         auto rx_chain = _get_rx_chan(chan);
         return rx_chain.radio->get_fe_name(rx_chain.block_chan, uhd::RX_DIRECTION);
     }
 
-    void set_rx_rate(double rate, size_t chan)
+    void set_rx_rate(double rate, size_t chan = ALL_CHANS)
     {
         std::lock_guard<std::recursive_mutex> l(_graph_mutex);
         MUX_RX_API_CALL(set_rx_rate, rate);
@@ -1115,7 +1126,7 @@ public:
             "spp", narrow_cast<int>(spp), rx_chain.block_chan);
     }
 
-    double get_rx_rate(size_t chan)
+    double get_rx_rate(size_t chan = 0)
     {
         std::lock_guard<std::recursive_mutex> l(_graph_mutex);
         auto& rx_chain = _get_rx_chan(chan);
@@ -1125,7 +1136,7 @@ public:
         return rx_chain.radio->get_rate();
     }
 
-    meta_range_t get_rx_rates(size_t chan)
+    meta_range_t get_rx_rates(size_t chan = 0)
     {
         std::lock_guard<std::recursive_mutex> l(_graph_mutex);
         auto rx_chain = _get_rx_chan(chan);
@@ -1135,7 +1146,7 @@ public:
         return rx_chain.radio->get_rate_range();
     }
 
-    tune_result_t set_rx_freq(const tune_request_t& tune_request, size_t chan)
+    tune_result_t set_rx_freq(const tune_request_t& tune_request, size_t chan = 0)
     {
         std::lock_guard<std::recursive_mutex> l(_graph_mutex);
 
@@ -1185,7 +1196,7 @@ public:
             tune_request);
     }
 
-    double get_rx_freq(size_t chan)
+    double get_rx_freq(size_t chan = 0)
     {
         auto& rx_chain = _get_rx_chan(chan);
 
@@ -1195,11 +1206,10 @@ public:
         const double actual_dsp_freq =
             (rx_chain.ddc) ? rx_chain.ddc->get_freq(rx_chain.block_chan) : 0.0;
 
-        // invert the sign on the dsp freq for transmit
         return actual_rf_freq - actual_dsp_freq * RX_SIGN;
     }
 
-    freq_range_t get_rx_freq_range(size_t chan)
+    freq_range_t get_rx_freq_range(size_t chan = 0)
     {
         auto fe_freq_range = get_fe_rx_freq_range(chan);
 
@@ -1212,7 +1222,7 @@ public:
         return dsp_freq_range;
     }
 
-    freq_range_t get_fe_rx_freq_range(size_t chan)
+    freq_range_t get_fe_rx_freq_range(size_t chan = 0)
     {
         auto rx_chain = _get_rx_chan(chan);
         return rx_chain.radio->get_rx_frequency_range(rx_chain.block_chan);
@@ -1221,113 +1231,117 @@ public:
     /**************************************************************************
      * LO controls
      *************************************************************************/
-    std::vector<std::string> get_rx_lo_names(size_t chan)
+    std::vector<std::string> get_rx_lo_names(size_t chan = 0)
     {
         auto rx_chain = _get_rx_chan(chan);
         return rx_chain.radio->get_rx_lo_names(rx_chain.block_chan);
     }
 
-    void set_rx_lo_source(const std::string& src, const std::string& name, size_t chan)
+    void set_rx_lo_source(const std::string& src, const std::string& name = ALL_LOS, size_t chan = 0)
     {
+        MUX_RX_API_CALL(set_rx_lo_source, src, name);
         auto rx_chain = _get_rx_chan(chan);
         rx_chain.radio->set_rx_lo_source(src, name, rx_chain.block_chan);
     }
 
-    const std::string get_rx_lo_source(const std::string& name, size_t chan)
+    const std::string get_rx_lo_source(const std::string& name = ALL_LOS, size_t chan = 0)
     {
         auto rx_chain = _get_rx_chan(chan);
         return rx_chain.radio->get_rx_lo_source(name, rx_chain.block_chan);
     }
 
-    std::vector<std::string> get_rx_lo_sources(const std::string& name, size_t chan)
+    std::vector<std::string> get_rx_lo_sources(const std::string& name = ALL_LOS, size_t chan = 0)
     {
         auto rx_chain = _get_rx_chan(chan);
-        return rx_chain.radio->get_rx_lo_sources(name, chan);
+        return rx_chain.radio->get_rx_lo_sources(name, rx_chain.block_chan);
     }
 
-    void set_rx_lo_export_enabled(bool enabled, const std::string& name, size_t chan)
+    void set_rx_lo_export_enabled(bool enabled, const std::string& name = ALL_LOS, size_t chan = 0)
     {
+        MUX_RX_API_CALL(set_rx_lo_export_enabled, enabled, name);
         auto rx_chain = _get_rx_chan(chan);
-        return rx_chain.radio->set_rx_lo_export_enabled(
+        rx_chain.radio->set_rx_lo_export_enabled(
             enabled, name, rx_chain.block_chan);
     }
 
-    bool get_rx_lo_export_enabled(const std::string& name, size_t chan)
+    bool get_rx_lo_export_enabled(const std::string& name = ALL_LOS, size_t chan = 0)
     {
         auto rx_chain = _get_rx_chan(chan);
         return rx_chain.radio->get_rx_lo_export_enabled(name, rx_chain.block_chan);
     }
 
-    double set_rx_lo_freq(double freq, const std::string& name, size_t chan)
+    double set_rx_lo_freq(double freq, const std::string& name, size_t chan = 0)
     {
         auto rx_chain = _get_rx_chan(chan);
         return rx_chain.radio->set_rx_lo_freq(freq, name, rx_chain.block_chan);
     }
 
-    double get_rx_lo_freq(const std::string& name, size_t chan)
+    double get_rx_lo_freq(const std::string& name, size_t chan = 0)
     {
         auto rx_chain = _get_rx_chan(chan);
         return rx_chain.radio->get_rx_lo_freq(name, rx_chain.block_chan);
     }
 
-    freq_range_t get_rx_lo_freq_range(const std::string& name, size_t chan)
+    freq_range_t get_rx_lo_freq_range(const std::string& name, size_t chan = 0)
     {
         auto rx_chain = _get_rx_chan(chan);
         return rx_chain.radio->get_rx_lo_freq_range(name, rx_chain.block_chan);
     }
 
     /*** TX LO API ***/
-    std::vector<std::string> get_tx_lo_names(size_t chan)
+    std::vector<std::string> get_tx_lo_names(size_t chan = 0)
     {
         auto tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->get_tx_lo_names(tx_chain.block_chan);
     }
 
     void set_tx_lo_source(
-        const std::string& src, const std::string& name, const size_t chan)
+        const std::string& src, const std::string& name = ALL_LOS, const size_t chan = 0)
     {
+        MUX_TX_API_CALL(set_tx_lo_source, src, name);
         auto tx_chain = _get_tx_chan(chan);
         tx_chain.radio->set_tx_lo_source(src, name, tx_chain.block_chan);
     }
 
-    const std::string get_tx_lo_source(const std::string& name, const size_t chan)
+    const std::string get_tx_lo_source(const std::string& name = ALL_LOS, const size_t chan = 0)
     {
         auto tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->get_tx_lo_source(name, tx_chain.block_chan);
     }
 
-    std::vector<std::string> get_tx_lo_sources(const std::string& name, const size_t chan)
+    std::vector<std::string> get_tx_lo_sources(const std::string& name = ALL_LOS, const size_t chan = 0)
     {
         auto tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->get_tx_lo_sources(name, tx_chain.block_chan);
     }
 
     void set_tx_lo_export_enabled(
-        const bool enabled, const std::string& name, const size_t chan)
+        const bool enabled, const std::string& name = ALL_LOS, const size_t chan = 0)
     {
+        MUX_TX_API_CALL(set_tx_lo_export_enabled, enabled, name);
         auto tx_chain = _get_tx_chan(chan);
         tx_chain.radio->set_tx_lo_export_enabled(enabled, name, tx_chain.block_chan);
     }
 
-    bool get_tx_lo_export_enabled(const std::string& name, const size_t chan)
+    bool get_tx_lo_export_enabled(const std::string& name = ALL_LOS, const size_t chan = 0)
     {
         auto tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->get_tx_lo_export_enabled(name, tx_chain.block_chan);
     }
 
-    double set_tx_lo_freq(const double freq, const std::string& name, const size_t chan)
+    double set_tx_lo_freq(const double freq, const std::string& name, const size_t chan = 0)
     {
         auto tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->set_tx_lo_freq(freq, name, tx_chain.block_chan);
     }
 
-    double get_tx_lo_freq(const std::string& name, const size_t chan)
+    double get_tx_lo_freq(const std::string& name, const size_t chan = 0)
     {
         auto tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->get_tx_lo_freq(name, tx_chain.block_chan);
     }
 
-    freq_range_t get_tx_lo_freq_range(const std::string& name, const size_t chan)
+    freq_range_t get_tx_lo_freq_range(const std::string& name, const size_t chan = 0)
     {
         auto tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->get_tx_lo_freq_range(name, tx_chain.block_chan);
@@ -1336,25 +1350,27 @@ public:
     /**************************************************************************
      * Gain controls
      *************************************************************************/
-    void set_rx_gain(double gain, const std::string& name, size_t chan)
+    void set_rx_gain(double gain, const std::string& name, size_t chan = 0)
     {
+        MUX_RX_API_CALL(set_rx_gain, gain, name);
         auto rx_chain = _get_rx_chan(chan);
         rx_chain.radio->set_rx_gain(gain, name, rx_chain.block_chan);
     }
 
-    std::vector<std::string> get_rx_gain_profile_names(const size_t chan)
+    std::vector<std::string> get_rx_gain_profile_names(const size_t chan = 0)
     {
         auto rx_chain = _get_rx_chan(chan);
         return rx_chain.radio->get_rx_gain_profile_names(rx_chain.block_chan);
     }
 
-    void set_rx_gain_profile(const std::string& profile, const size_t chan)
+    void set_rx_gain_profile(const std::string& profile, const size_t chan = 0)
     {
+        MUX_RX_API_CALL(set_rx_gain_profile, profile);
         auto rx_chain = _get_rx_chan(chan);
         rx_chain.radio->set_rx_gain_profile(profile, rx_chain.block_chan);
     }
 
-    std::string get_rx_gain_profile(const size_t chan)
+    std::string get_rx_gain_profile(const size_t chan = 0)
     {
         auto rx_chain = _get_rx_chan(chan);
         return rx_chain.radio->get_rx_gain_profile(rx_chain.block_chan);
@@ -1365,25 +1381,27 @@ public:
         if (gain > 1.0 || gain < 0.0) {
             throw uhd::runtime_error("Normalized gain out of range, must be in [0, 1].");
         }
+        MUX_RX_API_CALL(set_normalized_rx_gain, gain);
         gain_range_t gain_range = get_rx_gain_range(ALL_GAINS, chan);
         double abs_gain =
             (gain * (gain_range.stop() - gain_range.start())) + gain_range.start();
         set_rx_gain(abs_gain, ALL_GAINS, chan);
     }
 
-    void set_rx_agc(bool enable, size_t chan)
+    void set_rx_agc(bool enable, size_t chan = 0)
     {
+        MUX_RX_API_CALL(set_rx_agc, enable);
         auto& rx_chain = _get_rx_chan(chan);
         rx_chain.radio->set_rx_agc(enable, rx_chain.block_chan);
     }
 
-    double get_rx_gain(const std::string& name, size_t chan)
+    double get_rx_gain(const std::string& name, size_t chan = 0)
     {
         auto& rx_chain = _get_rx_chan(chan);
         return rx_chain.radio->get_rx_gain(name, rx_chain.block_chan);
     }
 
-    double get_normalized_rx_gain(size_t chan)
+    double get_normalized_rx_gain(size_t chan = 0)
     {
         gain_range_t gain_range       = get_rx_gain_range(ALL_GAINS, chan);
         const double gain_range_width = gain_range.stop() - gain_range.start();
@@ -1397,105 +1415,108 @@ public:
         return std::max(std::min(norm_gain, 1.0), 0.0);
     }
 
-    gain_range_t get_rx_gain_range(const std::string& name, size_t chan)
+    gain_range_t get_rx_gain_range(const std::string& name, size_t chan = 0)
     {
         auto& rx_chain = _get_rx_chan(chan);
         return rx_chain.radio->get_rx_gain_range(name, rx_chain.block_chan);
     }
 
-    std::vector<std::string> get_rx_gain_names(size_t chan)
+    std::vector<std::string> get_rx_gain_names(size_t chan = 0)
     {
         auto& rx_chain = _get_rx_chan(chan);
         return rx_chain.radio->get_rx_gain_names(rx_chain.block_chan);
     }
 
-    bool has_rx_power_reference(const size_t chan)
+    bool has_rx_power_reference(const size_t chan = 0)
     {
         auto& rx_chain = _get_rx_chan(chan);
         return rx_chain.radio->has_rx_power_reference(rx_chain.block_chan);
     }
 
-    void set_rx_power_reference(const double power_dbm, const size_t chan)
+    void set_rx_power_reference(const double power_dbm, const size_t chan = 0)
     {
+        MUX_RX_API_CALL(set_rx_power_reference, power_dbm);
         auto& rx_chain = _get_rx_chan(chan);
         rx_chain.radio->set_rx_power_reference(power_dbm, rx_chain.block_chan);
     }
 
-    double get_rx_power_reference(const size_t chan)
+    double get_rx_power_reference(const size_t chan = 0)
     {
         auto& rx_chain = _get_rx_chan(chan);
         return rx_chain.radio->get_rx_power_reference(rx_chain.block_chan);
     }
 
-    void set_rx_antenna(const std::string& ant, size_t chan)
+    void set_rx_antenna(const std::string& ant, size_t chan = 0)
     {
+        MUX_RX_API_CALL(set_rx_antenna, ant);
         auto& rx_chain = _get_rx_chan(chan);
         rx_chain.radio->set_rx_antenna(ant, rx_chain.block_chan);
     }
 
-    std::string get_rx_antenna(size_t chan)
+    std::string get_rx_antenna(size_t chan = 0)
     {
         auto& rx_chain = _get_rx_chan(chan);
         return rx_chain.radio->get_rx_antenna(rx_chain.block_chan);
     }
 
-    std::vector<std::string> get_rx_antennas(size_t chan)
+    std::vector<std::string> get_rx_antennas(size_t chan = 0)
     {
         auto& rx_chain = _get_rx_chan(chan);
         return rx_chain.radio->get_rx_antennas(rx_chain.block_chan);
     }
 
-    void set_rx_bandwidth(double bandwidth, size_t chan)
+    void set_rx_bandwidth(double bandwidth, size_t chan = 0)
     {
+        MUX_RX_API_CALL(set_rx_bandwidth, bandwidth);
         auto& rx_chain = _get_rx_chan(chan);
         rx_chain.radio->set_rx_bandwidth(bandwidth, rx_chain.block_chan);
     }
 
-    double get_rx_bandwidth(size_t chan)
+    double get_rx_bandwidth(size_t chan = 0)
     {
         auto& rx_chain = _get_rx_chan(chan);
         return rx_chain.radio->get_rx_bandwidth(rx_chain.block_chan);
     }
 
-    meta_range_t get_rx_bandwidth_range(size_t chan)
+    meta_range_t get_rx_bandwidth_range(size_t chan = 0)
     {
         auto& rx_chain = _get_rx_chan(chan);
         return rx_chain.radio->get_rx_bandwidth_range(rx_chain.block_chan);
     }
 
-    dboard_iface::sptr get_rx_dboard_iface(size_t chan)
+    dboard_iface::sptr get_rx_dboard_iface(size_t chan = 0)
     {
         auto& rx_chain = _get_rx_chan(chan);
         return rx_chain.radio->get_tree()->access<dboard_iface::sptr>("iface").get();
     }
 
-    sensor_value_t get_rx_sensor(const std::string& name, size_t chan)
+    sensor_value_t get_rx_sensor(const std::string& name, size_t chan = 0)
     {
         auto rx_chain = _get_rx_chan(chan);
         return rx_chain.radio->get_rx_sensor(name, rx_chain.block_chan);
     }
 
-    std::vector<std::string> get_rx_sensor_names(size_t chan)
+    std::vector<std::string> get_rx_sensor_names(size_t chan = 0)
     {
         auto rx_chain = _get_rx_chan(chan);
         return rx_chain.radio->get_rx_sensor_names(rx_chain.block_chan);
     }
 
-    void set_rx_dc_offset(const bool enb, size_t chan)
+    void set_rx_dc_offset(const bool enb, size_t chan = ALL_CHANS)
     {
         MUX_RX_API_CALL(set_rx_dc_offset, enb);
         const auto rx_chain = _get_rx_chan(chan);
         rx_chain.radio->set_rx_dc_offset(enb, rx_chain.block_chan);
     }
 
-    void set_rx_dc_offset(const std::complex<double>& offset, size_t chan)
+    void set_rx_dc_offset(const std::complex<double>& offset, size_t chan = ALL_CHANS)
     {
         MUX_RX_API_CALL(set_rx_dc_offset, offset);
         const auto rx_chain = _get_rx_chan(chan);
         rx_chain.radio->set_rx_dc_offset(offset, rx_chain.block_chan);
     }
 
-    meta_range_t get_rx_dc_offset_range(size_t chan)
+    meta_range_t get_rx_dc_offset_range(size_t chan = 0)
     {
         auto rx_chain = _get_rx_chan(chan);
         return rx_chain.radio->get_rx_dc_offset_range(rx_chain.block_chan);
@@ -1503,18 +1524,13 @@ public:
 
     void set_rx_iq_balance(const bool enb, size_t chan)
     {
-        if (chan != ALL_CHANS) {
-            auto rx_chain = _get_rx_chan(chan);
-            rx_chain.radio->set_rx_iq_balance(enb, rx_chain.block_chan);
-            return;
-        }
-        for (size_t ch = 0; ch < get_rx_num_channels(); ++ch) {
-            set_rx_iq_balance(enb, ch);
-        }
+        MUX_RX_API_CALL(set_rx_iq_balance, enb);
+        auto rx_chain = _get_rx_chan(chan);
+        rx_chain.radio->set_rx_iq_balance(enb, rx_chain.block_chan);
     }
 
     void set_rx_iq_balance(
-        const std::complex<double>& correction, size_t chan)
+        const std::complex<double>& correction, size_t chan = ALL_CHANS)
     {
         MUX_RX_API_CALL(set_rx_iq_balance, correction);
         const auto rx_chain = _get_rx_chan(chan);
@@ -1621,7 +1637,7 @@ public:
     }
 
     void set_tx_subdev_spec(
-        const uhd::usrp::subdev_spec_t& spec, size_t mboard)
+        const uhd::usrp::subdev_spec_t& spec, size_t mboard = ALL_MBOARDS)
     {
         /* TODO: Refactor with get_rx_subdev_spec- the algorithms are the same, just the
          * types are different
@@ -1663,7 +1679,7 @@ public:
         }
     }
 
-    uhd::usrp::subdev_spec_t get_tx_subdev_spec(size_t mboard)
+    uhd::usrp::subdev_spec_t get_tx_subdev_spec(size_t mboard = 0)
     {
         uhd::usrp::subdev_spec_t result;
         for (size_t tx_chan = 0; tx_chan < get_tx_num_channels(); tx_chan++) {
@@ -1684,13 +1700,13 @@ public:
         return _tx_chans.size();
     }
 
-    std::string get_tx_subdev_name(size_t chan)
+    std::string get_tx_subdev_name(size_t chan = 0)
     {
         auto tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->get_fe_name(tx_chain.block_chan, uhd::TX_DIRECTION);
     }
 
-    void set_tx_rate(double rate, size_t chan)
+    void set_tx_rate(double rate, size_t chan = ALL_CHANS)
     {
         std::lock_guard<std::recursive_mutex> l(_graph_mutex);
         MUX_TX_API_CALL(set_tx_rate, rate);
@@ -1711,7 +1727,7 @@ public:
         _tx_rates[chan] = actual_rate;
     }
 
-    double get_tx_rate(size_t chan)
+    double get_tx_rate(size_t chan = 0)
     {
         std::lock_guard<std::recursive_mutex> l(_graph_mutex);
         auto& tx_chain = _get_tx_chan(chan);
@@ -1721,7 +1737,7 @@ public:
         return tx_chain.radio->get_rate();
     }
 
-    meta_range_t get_tx_rates(size_t chan)
+    meta_range_t get_tx_rates(size_t chan = 0)
     {
         std::lock_guard<std::recursive_mutex> l(_graph_mutex);
         auto tx_chain = _get_tx_chan(chan);
@@ -1731,7 +1747,7 @@ public:
         return tx_chain.radio->get_rate_range();
     }
 
-    tune_result_t set_tx_freq(const tune_request_t& tune_request, size_t chan)
+    tune_result_t set_tx_freq(const tune_request_t& tune_request, size_t chan = 0)
     {
         std::lock_guard<std::recursive_mutex> l(_graph_mutex);
         auto tx_chain = _get_tx_chan(chan);
@@ -1778,7 +1794,7 @@ public:
             tune_request);
     }
 
-    double get_tx_freq(size_t chan)
+    double get_tx_freq(size_t chan = 0)
     {
         auto& tx_chain = _get_tx_chan(chan);
         // extract actual dsp and IF frequencies
@@ -1786,45 +1802,47 @@ public:
             tx_chain.radio->get_tx_frequency(tx_chain.block_chan);
         const double actual_dsp_freq =
             (tx_chain.duc) ? tx_chain.duc->get_freq(tx_chain.block_chan) : 0.0;
-        // invert the sign on the dsp freq for transmit
+
         return actual_rf_freq - actual_dsp_freq * TX_SIGN;
     }
 
-    freq_range_t get_tx_freq_range(size_t chan)
+    freq_range_t get_tx_freq_range(size_t chan = 0)
     {
-        auto tx_chain = _tx_chans.at(chan);
+        auto tx_chain = _get_tx_chan(chan);
         return (tx_chain.duc)
-                   ? make_overall_tune_range(get_fe_rx_freq_range(chan),
+                   ? make_overall_tune_range(get_fe_tx_freq_range(chan),
                          tx_chain.duc->get_frequency_range(tx_chain.block_chan),
-                         tx_chain.radio->get_rx_bandwidth(tx_chain.block_chan))
-                   : get_fe_rx_freq_range(chan);
+                         tx_chain.radio->get_tx_bandwidth(tx_chain.block_chan))
+                   : get_fe_tx_freq_range(chan);
     }
 
-    freq_range_t get_fe_tx_freq_range(size_t chan)
+    freq_range_t get_fe_tx_freq_range(size_t chan = 0)
     {
         auto tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->get_tx_frequency_range(tx_chain.block_chan);
     }
 
-    void set_tx_gain(double gain, const std::string& name, size_t chan)
+    void set_tx_gain(double gain, const std::string& name, size_t chan = 0)
     {
+        MUX_TX_API_CALL(set_tx_gain, gain, name);
         auto tx_chain = _get_tx_chan(chan);
         tx_chain.radio->set_tx_gain(gain, name, tx_chain.block_chan);
     }
 
-    std::vector<std::string> get_tx_gain_profile_names(const size_t chan)
+    std::vector<std::string> get_tx_gain_profile_names(const size_t chan = 0)
     {
         auto tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->get_tx_gain_profile_names(tx_chain.block_chan);
     }
 
-    void set_tx_gain_profile(const std::string& profile, const size_t chan)
+    void set_tx_gain_profile(const std::string& profile, const size_t chan = 0)
     {
+        MUX_TX_API_CALL(set_tx_gain_profile, profile);
         auto tx_chain = _get_tx_chan(chan);
         tx_chain.radio->set_tx_gain_profile(profile, tx_chain.block_chan);
     }
 
-    std::string get_tx_gain_profile(const size_t chan)
+    std::string get_tx_gain_profile(const size_t chan = 0)
     {
         auto tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->get_tx_gain_profile(tx_chain.block_chan);
@@ -1835,19 +1853,20 @@ public:
         if (gain > 1.0 || gain < 0.0) {
             throw uhd::runtime_error("Normalized gain out of range, must be in [0, 1].");
         }
+        MUX_TX_API_CALL(set_normalized_tx_gain, gain);
         gain_range_t gain_range = get_tx_gain_range(ALL_GAINS, chan);
         double abs_gain =
             (gain * (gain_range.stop() - gain_range.start())) + gain_range.start();
         set_tx_gain(abs_gain, ALL_GAINS, chan);
     }
 
-    double get_tx_gain(const std::string& name, size_t chan)
+    double get_tx_gain(const std::string& name, size_t chan = 0)
     {
         auto tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->get_tx_gain(name, tx_chain.block_chan);
     }
 
-    double get_normalized_tx_gain(size_t chan)
+    double get_normalized_tx_gain(size_t chan = 0)
     {
         gain_range_t gain_range       = get_tx_gain_range(ALL_GAINS, chan);
         const double gain_range_width = gain_range.stop() - gain_range.start();
@@ -1861,104 +1880,107 @@ public:
         return std::max(std::min(norm_gain, 1.0), 0.0);
     }
 
-    gain_range_t get_tx_gain_range(const std::string& name, size_t chan)
+    gain_range_t get_tx_gain_range(const std::string& name, size_t chan = 0)
     {
         auto tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->get_tx_gain_range(name, tx_chain.block_chan);
     }
 
-    std::vector<std::string> get_tx_gain_names(size_t chan)
+    std::vector<std::string> get_tx_gain_names(size_t chan = 0)
     {
         auto tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->get_tx_gain_names(tx_chain.block_chan);
     }
 
-    bool has_tx_power_reference(const size_t chan)
+    bool has_tx_power_reference(const size_t chan = 0)
     {
         auto& tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->has_rx_power_reference(tx_chain.block_chan);
     }
 
-    void set_tx_power_reference(const double power_dbm, const size_t chan)
+    void set_tx_power_reference(const double power_dbm, const size_t chan = 0)
     {
+        MUX_TX_API_CALL(set_tx_power_reference, power_dbm);
         auto& tx_chain = _get_tx_chan(chan);
         tx_chain.radio->set_tx_power_reference(power_dbm, tx_chain.block_chan);
     }
 
-    double get_tx_power_reference(const size_t chan)
+    double get_tx_power_reference(const size_t chan = 0)
     {
         auto& tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->get_tx_power_reference(tx_chain.block_chan);
     }
 
-    void set_tx_antenna(const std::string& ant, size_t chan)
+    void set_tx_antenna(const std::string& ant, size_t chan = 0)
     {
+        MUX_TX_API_CALL(set_tx_antenna, ant);
         auto tx_chain = _get_tx_chan(chan);
         tx_chain.radio->set_tx_antenna(ant, tx_chain.block_chan);
     }
 
-    std::string get_tx_antenna(size_t chan)
+    std::string get_tx_antenna(size_t chan = 0)
     {
         auto& tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->get_tx_antenna(tx_chain.block_chan);
     }
 
-    std::vector<std::string> get_tx_antennas(size_t chan)
+    std::vector<std::string> get_tx_antennas(size_t chan = 0)
     {
         auto& tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->get_tx_antennas(tx_chain.block_chan);
     }
 
-    void set_tx_bandwidth(double bandwidth, size_t chan)
+    void set_tx_bandwidth(double bandwidth, size_t chan = 0)
     {
+        MUX_TX_API_CALL(set_tx_bandwidth, bandwidth);
         auto tx_chain = _get_tx_chan(chan);
         tx_chain.radio->set_tx_bandwidth(bandwidth, tx_chain.block_chan);
     }
 
-    double get_tx_bandwidth(size_t chan)
+    double get_tx_bandwidth(size_t chan = 0)
     {
         auto tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->get_tx_bandwidth(tx_chain.block_chan);
     }
 
-    meta_range_t get_tx_bandwidth_range(size_t chan)
+    meta_range_t get_tx_bandwidth_range(size_t chan = 0)
     {
         auto tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->get_tx_bandwidth_range(tx_chain.block_chan);
     }
 
-    dboard_iface::sptr get_tx_dboard_iface(size_t chan)
+    dboard_iface::sptr get_tx_dboard_iface(size_t chan = 0)
     {
         auto& tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->get_tree()->access<dboard_iface::sptr>("iface").get();
     }
 
-    sensor_value_t get_tx_sensor(const std::string& name, size_t chan)
+    sensor_value_t get_tx_sensor(const std::string& name, size_t chan = 0)
     {
         auto tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->get_tx_sensor(name, tx_chain.block_chan);
     }
 
-    std::vector<std::string> get_tx_sensor_names(size_t chan)
+    std::vector<std::string> get_tx_sensor_names(size_t chan = 0)
     {
         auto tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->get_tx_sensor_names(tx_chain.block_chan);
     }
 
-    void set_tx_dc_offset(const std::complex<double>& offset, size_t chan)
+    void set_tx_dc_offset(const std::complex<double>& offset, size_t chan = ALL_CHANS)
     {
         MUX_TX_API_CALL(set_tx_dc_offset, offset);
         const auto tx_chain = _get_tx_chan(chan);
         tx_chain.radio->set_tx_dc_offset(offset, tx_chain.block_chan);
     }
 
-    meta_range_t get_tx_dc_offset_range(size_t chan)
+    meta_range_t get_tx_dc_offset_range(size_t chan = 0)
     {
         auto tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->get_tx_dc_offset_range(tx_chain.block_chan);
     }
 
-    void set_tx_iq_balance(const std::complex<double>& correction, size_t chan)
+    void set_tx_iq_balance(const std::complex<double>& correction, size_t chan = ALL_CHANS)
     {
         MUX_TX_API_CALL(set_tx_iq_balance, correction);
         const auto tx_chain = _get_tx_chan(chan);
@@ -2051,29 +2073,29 @@ public:
     }
 
     uint32_t get_gpio_attr(
-        const std::string& bank, const std::string& attr, const size_t mboard)
+        const std::string& bank, const std::string& attr, const size_t mboard = 0)
     {
         auto radio_bank_pair = _get_gpio_radio_bank(bank, mboard);
         return radio_bank_pair.first->get_gpio_attr(radio_bank_pair.second, attr);
     }
 
-    std::vector<std::string> get_gpio_src_banks(const size_t mboard)
+    std::vector<std::string> get_gpio_src_banks(const size_t mboard = 0)
     {
         return get_mbc(mboard)->get_gpio_banks();
     }
 
-    std::vector<std::string> get_gpio_srcs(const std::string& bank, const size_t mboard)
+    std::vector<std::string> get_gpio_srcs(const std::string& bank, const size_t mboard = 0)
     {
         return get_mbc(mboard)->get_gpio_srcs(bank);
     }
 
-    std::vector<std::string> get_gpio_src(const std::string& bank, const size_t mboard)
+    std::vector<std::string> get_gpio_src(const std::string& bank, const size_t mboard = 0)
     {
         return get_mbc(mboard)->get_gpio_src(bank);
     }
 
     void set_gpio_src(
-        const std::string& bank, const std::vector<std::string>& src, const size_t mboard)
+        const std::string& bank, const std::vector<std::string>& src, const size_t mboard = 0)
     {
         get_mbc(mboard)->set_gpio_src(bank, src);
     }
@@ -2164,6 +2186,7 @@ public:
     void set_rx_filter(
         const std::string& name, uhd::filter_info_base::sptr filter, const size_t chan)
     {
+        MUX_RX_API_CALL(set_rx_filter, name, filter);
         try {
             // The block_id_t constructor is pretty smart; let it handle the parsing.
             block_id_t block_id(name);
@@ -2284,6 +2307,7 @@ public:
     void set_tx_filter(
         const std::string& name, uhd::filter_info_base::sptr filter, const size_t chan)
     {
+        MUX_TX_API_CALL(set_tx_filter, name, filter);
         try {
             // The block_id_t constructor is pretty smart; let it handle the parsing.
             block_id_t block_id(name);
