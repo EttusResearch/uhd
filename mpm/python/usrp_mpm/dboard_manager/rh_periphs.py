@@ -27,7 +27,7 @@ class TCA6408(object):
 
     def __init__(self, i2c_dev):
         assert i2c_dev is not None
-        self._gpios = SysFSGPIO({'label': 'tca6408'}, 0x3F, 0x00, 0x00, i2c_dev)
+        self._gpios = SysFSGPIO({'device/name': 'tca6408'}, 0x3F, 0x00, 0x00, i2c_dev)
 
     def set(self, name, value=None):
         """
@@ -57,7 +57,7 @@ class FPGAtoLoDist(object):
     POWER_ON_TIMEOUT = 20 #ms
     POWER_ON_POLL_INTERVAL = 1 #ms
     GPIO_DEV_ID = {
-        'label': 'tca6424',
+        'device/name': 'tca6424',
         'device/of_node/name': 'rhodium-lodist-gpio',
     }
 

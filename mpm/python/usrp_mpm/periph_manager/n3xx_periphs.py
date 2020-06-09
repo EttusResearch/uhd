@@ -102,7 +102,7 @@ class TCA6424(object):
             self.pins = self.pins_list[1]
 
         default_val = 0x860101 if rev == 2 else 0x860780
-        self._gpios = SysFSGPIO({'label': 'tca6424', 'device/of_node/name': 'gpio'}, 0xFFF7FF, 0x86F7FF, default_val)
+        self._gpios = SysFSGPIO({'device/name': 'tca6424', 'device/of_node/name': 'gpio'}, 0xFFF7FF, 0x86F7FF, default_val)
 
     def set(self, name, value=None):
         """
