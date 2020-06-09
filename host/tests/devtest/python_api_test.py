@@ -14,6 +14,13 @@ try:
 except ImportError:
     uhd = None
 
+# For what we're doing here, ruamel.yaml and yaml are compatible, and we'll use
+# whatever we can find
+try:
+    from ruamel import yaml
+except:
+    import yaml
+
 
 class uhd_python_api_test(uhd_test_case):
     """ Run multi_usrp_test """
@@ -59,3 +66,11 @@ class uhd_python_api_test(uhd_test_case):
                 'status',
                 'Passed' if run_results['passed'] else 'Failed',
             )
+        self.assertTrue(
+            run_results['passed'],
+            msg="Errors occurred during test python_api_test. "
+                "Check log file for details.\n"
+                "Run results:\n{r}".format(
+                    r=yaml.dump(run_results, default_flow_style=False)
+                )
+        )
