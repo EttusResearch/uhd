@@ -29,10 +29,11 @@ $(RFNOC_OOT_SRCS) \
 #-------------------------------------------------
 # Testbench Specific
 #-------------------------------------------------
-SIM_TOP = rfnoc_block_null_src_sink_tb
+SIM_TOP = rfnoc_block_null_src_sink_all_tb
 
 SIM_SRCS = \
 $(abspath rfnoc_block_null_src_sink_tb.sv) \
+$(abspath rfnoc_block_null_src_sink_all_tb.sv) \
 
 # MODELSIM_USER_DO = $(abspath wave.do)
 

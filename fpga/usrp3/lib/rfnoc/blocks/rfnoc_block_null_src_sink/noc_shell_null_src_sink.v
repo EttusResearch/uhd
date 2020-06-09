@@ -23,6 +23,8 @@
 module noc_shell_null_src_sink #(
   parameter [9:0] THIS_PORTID     = 10'd0,
   parameter       CHDR_W          = 64,
+  parameter       ITEM_W          = 32,
+  parameter       NIPC            = 2,
   parameter [5:0] MTU             = 10
 ) (
   //---------------------
@@ -82,8 +84,8 @@ module noc_shell_null_src_sink #(
   output wire               axis_data_clk,
   output wire               axis_data_rst,
   // Payload Stream to User Logic: sink
-  output wire [32*2-1:0]    m_sink_payload_tdata,
-  output wire [2-1:0]       m_sink_payload_tkeep,
+  output wire [ITEM_W*NIPC-1:0] m_sink_payload_tdata,
+  output wire [NIPC-1:0]    m_sink_payload_tkeep,
   output wire               m_sink_payload_tlast,
   output wire               m_sink_payload_tvalid,
   input  wire               m_sink_payload_tready,
@@ -94,8 +96,8 @@ module noc_shell_null_src_sink #(
   output wire               m_sink_context_tvalid,
   input  wire               m_sink_context_tready,
   // Payload Stream to User Logic: loop
-  output wire [32*2-1:0]    m_loop_payload_tdata,
-  output wire [2-1:0]       m_loop_payload_tkeep,
+  output wire [ITEM_W*NIPC-1:0] m_loop_payload_tdata,
+  output wire [NIPC-1:0]    m_loop_payload_tkeep,
   output wire               m_loop_payload_tlast,
   output wire               m_loop_payload_tvalid,
   input  wire               m_loop_payload_tready,
@@ -106,8 +108,8 @@ module noc_shell_null_src_sink #(
   output wire               m_loop_context_tvalid,
   input  wire               m_loop_context_tready,
   // Payload Stream from User Logic: source
-  input  wire [32*2-1:0]    s_source_payload_tdata,
-  input  wire [1:0]         s_source_payload_tkeep,
+  input  wire [ITEM_W*NIPC-1:0] s_source_payload_tdata,
+  input  wire [NIPC-1:0]    s_source_payload_tkeep,
   input  wire               s_source_payload_tlast,
   input  wire               s_source_payload_tvalid,
   output wire               s_source_payload_tready,
@@ -118,8 +120,8 @@ module noc_shell_null_src_sink #(
   input  wire               s_source_context_tvalid,
   output wire               s_source_context_tready,
   // Payload Stream from User Logic: loop
-  input  wire [32*2-1:0]    s_loop_payload_tdata,
-  input  wire [1:0]         s_loop_payload_tkeep,
+  input  wire [ITEM_W*NIPC-1:0] s_loop_payload_tdata,
+  input  wire [NIPC-1:0]    s_loop_payload_tkeep,
   input  wire               s_loop_payload_tlast,
   input  wire               s_loop_payload_tvalid,
   output wire               s_loop_payload_tready,
@@ -233,8 +235,8 @@ module noc_shell_null_src_sink #(
 
   chdr_to_axis_pyld_ctxt #(
     .CHDR_W              (CHDR_W),
-    .ITEM_W              (32),
-    .NIPC                (2),
+    .ITEM_W              (ITEM_W),
+    .NIPC                (NIPC),
     .SYNC_CLKS           (1),
     .CONTEXT_FIFO_SIZE   ($clog2(2)),
     .PAYLOAD_FIFO_SIZE   ($clog2(2)),
@@ -266,8 +268,8 @@ module noc_shell_null_src_sink #(
 
   chdr_to_axis_pyld_ctxt #(
     .CHDR_W              (CHDR_W),
-    .ITEM_W              (32),
-    .NIPC                (2),
+    .ITEM_W              (ITEM_W),
+    .NIPC                (NIPC),
     .SYNC_CLKS           (1),
     .CONTEXT_FIFO_SIZE   ($clog2(2)),
     .PAYLOAD_FIFO_SIZE   ($clog2(2)),
@@ -303,8 +305,8 @@ module noc_shell_null_src_sink #(
 
   axis_pyld_ctxt_to_chdr #(
     .CHDR_W              (CHDR_W),
-    .ITEM_W              (32),
-    .NIPC                (2),
+    .ITEM_W              (ITEM_W),
+    .NIPC                (NIPC),
     .SYNC_CLKS           (1),
     .CONTEXT_FIFO_SIZE   ($clog2(2)),
     .PAYLOAD_FIFO_SIZE   ($clog2(2)),
@@ -338,8 +340,8 @@ module noc_shell_null_src_sink #(
 
   axis_pyld_ctxt_to_chdr #(
     .CHDR_W              (CHDR_W),
-    .ITEM_W              (32),
-    .NIPC                (2),
+    .ITEM_W              (ITEM_W),
+    .NIPC                (NIPC),
     .SYNC_CLKS           (1),
     .CONTEXT_FIFO_SIZE   ($clog2(2)),
     .PAYLOAD_FIFO_SIZE   ($clog2(2)),

@@ -29,11 +29,12 @@ $(RFNOC_XBAR_SRCS) \
 #-------------------------------------------------
 # Testbench Specific
 #-------------------------------------------------
-SIM_TOP = chdr_stream_endpoint_tb
+SIM_TOP = chdr_stream_endpoint_all_tb
 
 SIM_SRCS = \
 $(abspath lossy_xport_model.v) \
 $(abspath chdr_stream_endpoint_tb.sv) \
+$(abspath chdr_stream_endpoint_all_tb.sv) \
 
 #-------------------------------------------------
 # Bottom-of-Makefile

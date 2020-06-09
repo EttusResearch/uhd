@@ -58,12 +58,18 @@ module crossbar_tb #(
   //----------------------------------------------------
   // Instantiate traffic generators, checkers, buses
   //----------------------------------------------------
-  localparam FILE_PATH = {`WORKING_DIR, "/data/", ROUTER_IMPL};
+  `ifndef WORKING_DIR
+    // For XSim
+    localparam FILE_PATH = {`WORKING_DIR, "/data/", ROUTER_IMPL};
+  `else
+    // For ModelSim
+    localparam FILE_PATH = {"./work", "/data/", ROUTER_IMPL};
+  `endif
 
   // Data buses
   axis_t #(.DWIDTH(ROUTER_DWIDTH), .NUM_STREAMS(ROUTER_PORTS)) src2rtr_axis (.clk(clk));
   axis_t #(.DWIDTH(ROUTER_DWIDTH), .NUM_STREAMS(ROUTER_PORTS)) rtr2snk_axis (.clk(clk));
-  
+
   // Control buses
   settings_bus_master #(.SR_AWIDTH(16), .SR_DWIDTH(32)) rtr_sb (.clk(clk));
   wire rtr_sb_ack;
@@ -75,6 +81,7 @@ module crossbar_tb #(
   logic [31:0]  set_num_pkts_to_send;
   logic         snk_start_stb = 0;
   logic         src_start_stb = 0;
+  bit           done = 0;
 
   wire [63:0]             session_duration   [0:ROUTER_PORTS-1];
   wire [ROUTER_PORTS-1:0] src_active;
@@ -99,7 +106,7 @@ module crossbar_tb #(
       .MTU              (MTU_LOG2),
       .NODE_ID          (i),
       .NUM_NODES        (ROUTER_PORTS)
-    ) traffic_src (     
+    ) traffic_src (
       .clk              (clk),
       .rst              (rst),
       .current_time     (timestamp),
@@ -117,14 +124,14 @@ module crossbar_tb #(
       .xfer_count       (src_xfer_count[i]),
       .pkt_count        (src_pkt_count[i])
     );
-  
+
     chdr_traffic_sink_sim #(
       .WIDTH            (ROUTER_DWIDTH),
       .MTU              (MTU_LOG2),
       .NODE_ID          (i),
       .NUM_NODES        (ROUTER_PORTS),
       .FILE_PATH        (TEST_GEN_LL_FILES==1 ? FILE_PATH : "")
-    ) traffic_sink (    
+    ) traffic_sink (
       .clk              (clk),
       .rst              (rst),
       .current_time     (timestamp),
@@ -152,8 +159,8 @@ module crossbar_tb #(
       axi_fifo #(
         .WIDTH(ROUTER_DWIDTH+1), .SIZE(0)
       ) fifo_i (
-        .clk      (clk), 
-        .reset    (rst), 
+        .clk      (clk),
+        .reset    (rst),
         .clear    (1'b0),
         .i_tdata  ({src2rtr_axis.tlast[i], src2rtr_axis.tdata[((i+1)*ROUTER_DWIDTH)-1:i*ROUTER_DWIDTH]}),
         .i_tvalid (src2rtr_axis.tvalid[i]),
@@ -178,7 +185,7 @@ module crossbar_tb #(
       .reset        (rst),
       .clear        (1'b0),
       .local_addr   (8'd0),
-      // Inputs     
+      // Inputs
       .i_tdata      (src2rtr_axis.tdata),
       .i_tlast      (src2rtr_axis.tlast),
       .i_tvalid     (src2rtr_axis.tvalid),
@@ -210,7 +217,7 @@ module crossbar_tb #(
       .NPORTS_MGMT    (0),
       .EXT_RTCFG_PORT (1)
     ) router_dut_i (
-       // General         
+       // General
       .clk            (clk),
       .reset          (rst),
       // Inputs
@@ -242,12 +249,12 @@ module crossbar_tb #(
        // General
       .clk              (clk),
       .reset            (rst),
-      // Inputs         
+      // Inputs
       .s_axis_tdata     (src2rtr_axis.tdata),
       .s_axis_tlast     (src2rtr_axis.tlast),
       .s_axis_tvalid    (src2rtr_axis.tvalid),
       .s_axis_tready    (src2rtr_axis.tready),
-      // Output         
+      // Output
       .m_axis_tdata     (rtr2snk_axis.tdata),
       .m_axis_tlast     (rtr2snk_axis.tlast),
       .m_axis_tvalid    (rtr2snk_axis.tvalid),
@@ -313,7 +320,7 @@ module crossbar_tb #(
       @(posedge clk);
       if (deadlock_re) $display("WARNING: Deadlock detected");
       if (deadlock_fe) $display("Recovered from deadlock");
-    end 
+    end
     // Wait for sink blocks to finish consuming
     $display("All packets transmitted. Waiting to flush...");
     while (|snk_active) @(posedge clk);
@@ -423,6 +430,7 @@ module crossbar_tb #(
     `TEST_CASE_DONE(1)
 
     `TEST_BENCH_DONE
+    done = 1;
   end // initial begin
 
 endmodule

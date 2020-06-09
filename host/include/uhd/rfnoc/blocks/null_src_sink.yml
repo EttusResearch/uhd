@@ -8,6 +8,10 @@ noc_id: 0x1
 # FPGA repository
 makefile_srcs: "${fpga_lib_dir}/blocks/rfnoc_block_null_src_sink/Makefile.srcs"
 
+parameters:
+  NIPC: 2
+  ITEM_W: 32
+
 clocks:
   - name: rfnoc_chdr
     freq: "[]"

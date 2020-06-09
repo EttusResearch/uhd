@@ -1,5 +1,5 @@
 //
-// Copyright 2019 Ettus Research, A National Instruments Company
+// Copyright 2020 Ettus Research, A National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -8,14 +8,18 @@
 
 `default_nettype none
 
-
-module chdr_stream_endpoint_tb;
-
+module chdr_stream_endpoint_tb#(
+  parameter TEST_NAME  = "chdr_stream_endpoint_tb",
+  parameter CHDR_W     = 64
+)(
+ /* no IO */
+);
   // ----------------------------------------
   // Global settings
   // ----------------------------------------
-  
+
   // Include macros and time declarations for use with PkgTestExec
+  `define TEST_EXEC_OBJ test
   `include "test_exec.svh"
 
   import PkgTestExec::*;
@@ -34,7 +38,6 @@ module chdr_stream_endpoint_tb;
   localparam int    FAST_STALL_PROB   = 0;
   localparam int    SLOW_STALL_PROB   = 35;
 
-  localparam int    CHDR_W   = 64;
   localparam int    MTU      = 7;
   localparam [15:0] PROTOVER = {8'd1, 8'd0};
   localparam [15:0] DEV_ID   = 16'hBEEF;
@@ -108,14 +111,14 @@ module chdr_stream_endpoint_tb;
     .m_axis_chdr_tlast  (a2c_chdr_tlast                                    ),
     .m_axis_chdr_tvalid (a2c_chdr_tvalid                                   ),
     .m_axis_chdr_tready (a2c_chdr_tready                                   ),
-    .s_axis_data_tdata  ({m_a1_data.slave.tdata  , m_a0_data.slave.tdata  }),
-    .s_axis_data_tlast  ({m_a1_data.slave.tlast  , m_a0_data.slave.tlast  }),
-    .s_axis_data_tvalid ({m_a1_data.slave.tvalid , m_a0_data.slave.tvalid }),
-    .s_axis_data_tready ({m_a1_data.slave.tready , m_a0_data.slave.tready }),
-    .m_axis_data_tdata  ({s_a1_data.master.tdata , s_a0_data.master.tdata }),
-    .m_axis_data_tlast  ({s_a1_data.master.tlast , s_a0_data.master.tlast }),
-    .m_axis_data_tvalid ({s_a1_data.master.tvalid, s_a0_data.master.tvalid}),
-    .m_axis_data_tready ({s_a1_data.master.tready, s_a0_data.master.tready}),
+    .s_axis_data_tdata  ({m_a1_data.tdata  , m_a0_data.tdata  }),
+    .s_axis_data_tlast  ({m_a1_data.tlast  , m_a0_data.tlast  }),
+    .s_axis_data_tvalid ({m_a1_data.tvalid , m_a0_data.tvalid }),
+    .s_axis_data_tready ({m_a1_data.tready , m_a0_data.tready }),
+    .m_axis_data_tdata  ({s_a1_data.tdata , s_a0_data.tdata }),
+    .m_axis_data_tlast  ({s_a1_data.tlast , s_a0_data.tlast }),
+    .m_axis_data_tvalid ({s_a1_data.tvalid, s_a0_data.tvalid}),
+    .m_axis_data_tready ({s_a1_data.tready, s_a0_data.tready}),
     .s_axis_ctrl_tdata  (a_ctrl_out_tdata                                  ),
     .s_axis_ctrl_tlast  (a_ctrl_loop_tlast                                 ),
     .s_axis_ctrl_tvalid (a_ctrl_loop_tvalid                                ),
@@ -157,14 +160,14 @@ module chdr_stream_endpoint_tb;
     .m_axis_chdr_tlast  (b2c_chdr_tlast                                    ),
     .m_axis_chdr_tvalid (b2c_chdr_tvalid                                   ),
     .m_axis_chdr_tready (b2c_chdr_tready                                   ),
-    .s_axis_data_tdata  ({m_b1_data.slave.tdata  , m_b0_data.slave.tdata  }),
-    .s_axis_data_tlast  ({m_b1_data.slave.tlast  , m_b0_data.slave.tlast  }),
-    .s_axis_data_tvalid ({m_b1_data.slave.tvalid , m_b0_data.slave.tvalid }),
-    .s_axis_data_tready ({m_b1_data.slave.tready , m_b0_data.slave.tready }),
-    .m_axis_data_tdata  ({s_b1_data.master.tdata , s_b0_data.master.tdata }),
-    .m_axis_data_tlast  ({s_b1_data.master.tlast , s_b0_data.master.tlast }),
-    .m_axis_data_tvalid ({s_b1_data.master.tvalid, s_b0_data.master.tvalid}),
-    .m_axis_data_tready ({s_b1_data.master.tready, s_b0_data.master.tready}),
+    .s_axis_data_tdata  ({m_b1_data.tdata  , m_b0_data.tdata  }),
+    .s_axis_data_tlast  ({m_b1_data.tlast  , m_b0_data.tlast  }),
+    .s_axis_data_tvalid ({m_b1_data.tvalid , m_b0_data.tvalid }),
+    .s_axis_data_tready ({m_b1_data.tready , m_b0_data.tready }),
+    .m_axis_data_tdata  ({s_b1_data.tdata , s_b0_data.tdata }),
+    .m_axis_data_tlast  ({s_b1_data.tlast , s_b0_data.tlast }),
+    .m_axis_data_tvalid ({s_b1_data.tvalid, s_b0_data.tvalid}),
+    .m_axis_data_tready ({s_b1_data.tready, s_b0_data.tready}),
     .s_axis_ctrl_tdata  (b_ctrl_out_tdata                                  ),
     .s_axis_ctrl_tlast  (b_ctrl_loop_tlast                                 ),
     .s_axis_ctrl_tvalid (b_ctrl_loop_tvalid                                ),
@@ -194,14 +197,14 @@ module chdr_stream_endpoint_tb;
     .clk            (rfnoc_chdr_clk),
     .reset          (rfnoc_chdr_rst),
     .device_id      (DEV_ID),
-    .s_axis_tdata   ({b2c_chdr_tdata,   a2c_chdr_tdata,   m_tb_chdr.slave.tdata  }),
-    .s_axis_tlast   ({b2c_chdr_tlast,   a2c_chdr_tlast,   m_tb_chdr.slave.tlast  }),
-    .s_axis_tvalid  ({b2c_chdr_tvalid,  a2c_chdr_tvalid,  m_tb_chdr.slave.tvalid }),
-    .s_axis_tready  ({b2c_chdr_tready,  a2c_chdr_tready,  m_tb_chdr.slave.tready }),
-    .m_axis_tdata   ({c2bx_chdr_tdata,  c2ax_chdr_tdata,  s_tb_chdr.master.tdata }),
-    .m_axis_tlast   ({c2bx_chdr_tlast,  c2ax_chdr_tlast,  s_tb_chdr.master.tlast }),
-    .m_axis_tvalid  ({c2bx_chdr_tvalid, c2ax_chdr_tvalid, s_tb_chdr.master.tvalid}),
-    .m_axis_tready  ({c2bx_chdr_tready, c2ax_chdr_tready, s_tb_chdr.master.tready}),
+    .s_axis_tdata   ({b2c_chdr_tdata,   a2c_chdr_tdata,   m_tb_chdr.tdata  }),
+    .s_axis_tlast   ({b2c_chdr_tlast,   a2c_chdr_tlast,   m_tb_chdr.tlast  }),
+    .s_axis_tvalid  ({b2c_chdr_tvalid,  a2c_chdr_tvalid,  m_tb_chdr.tvalid }),
+    .s_axis_tready  ({b2c_chdr_tready,  a2c_chdr_tready,  m_tb_chdr.tready }),
+    .m_axis_tdata   ({c2bx_chdr_tdata,  c2ax_chdr_tdata,  s_tb_chdr.tdata }),
+    .m_axis_tlast   ({c2bx_chdr_tlast,  c2ax_chdr_tlast,  s_tb_chdr.tlast }),
+    .m_axis_tvalid  ({c2bx_chdr_tvalid, c2ax_chdr_tvalid, s_tb_chdr.tvalid}),
+    .m_axis_tready  ({c2bx_chdr_tready, c2ax_chdr_tready, s_tb_chdr.tready}),
     .ext_rtcfg_stb  ('0),
     .ext_rtcfg_addr ('0),
     .ext_rtcfg_data ('0),
@@ -264,14 +267,15 @@ module chdr_stream_endpoint_tb;
     end
   end
   // Respond with an ACK and the source and destination ports swapped
-  assign a_ctrl_out_tdata = 
+  assign a_ctrl_out_tdata =
     a_first ? {1'b1, a_ctrl_in_tdata[30:20], a_ctrl_in_tdata[9:0], a_ctrl_in_tdata[19:10]} : a_ctrl_in_tdata;
-  assign b_ctrl_out_tdata = 
+  assign b_ctrl_out_tdata =
     b_first ? {1'b1, b_ctrl_in_tdata[30:20], b_ctrl_in_tdata[9:0], b_ctrl_in_tdata[19:10]} : b_ctrl_in_tdata;
 
   // ----------------------------------------
   // Test Utilities
   // ----------------------------------------
+  TestExec test = new();
   integer cached_mgmt_seqnum = 0;
   integer cached_ctrl_seqnum = 0;
   integer cached_data_seqnum = 0;
@@ -320,7 +324,7 @@ module chdr_stream_endpoint_tb;
       op_payload:{32'h0, sep_a.REG_OSTRM_DATA_ERR_CNT}, op_code:MGMT_OP_CFG_RD_REQ, ops_pending:8'd2};
     tx_mgmt_pl.ops[3] = '{  // Hop 2: Read status
       op_payload:{32'h0, sep_a.REG_OSTRM_ROUTE_ERR_CNT}, op_code:MGMT_OP_CFG_RD_REQ, ops_pending:8'd1};
-    tx_mgmt_pl.ops[4] = '{  // Hop 2: Stream Endpoint: Return 
+    tx_mgmt_pl.ops[4] = '{  // Hop 2: Stream Endpoint: Return
       op_payload:48'h0, op_code:MGMT_OP_RETURN, ops_pending:8'd0};
     tx_mgmt_pl.ops[5] = '{  // Hop 3: Nop for return
       op_payload:48'h0, op_code:MGMT_OP_NOP, ops_pending:8'd0};
@@ -357,7 +361,7 @@ module chdr_stream_endpoint_tb;
       automatic ctrl_op_word_t ctrl_op;
       automatic ctrl_word_t ctrl_data[$];
       automatic chdr_word_t ctrl_ts;
-  
+
       ctrl_data.delete();
       for (int i = 0; i < $urandom_range(15,1); i++)
         ctrl_data[i] = $urandom();
@@ -406,6 +410,7 @@ module chdr_stream_endpoint_tb;
       if (VERBOSE) begin $write("ExpRx"); exp_chdr.print(); end
 
       // Validate contents
+      exp_chdr.disable_comparing_beyond_length = 1;
       `ASSERT_ERROR(exp_chdr.equal(rx_chdr),
         "Received CHDR control packet was incorrect");
     end
@@ -527,12 +532,12 @@ module chdr_stream_endpoint_tb;
 
     // Shared Variables
     // ----------------------------------------
-    timeout_t    timeout;
-    string       tc_label;
-    bit          stop_responder = 0;
-    logic [31:0] seq_err_count;
-    logic [31:0] route_err_count;
-    logic [31:0] data_err_count;
+    timeout_t     timeout;
+    string        tc_label;
+    automatic bit stop_responder = 0;
+    logic [31:0]  seq_err_count;
+    logic [31:0]  route_err_count;
+    logic [31:0]  data_err_count;
 
     a_signal_data_err = 0;
     b_signal_data_err = 0;
@@ -543,9 +548,10 @@ module chdr_stream_endpoint_tb;
     b_rterr_prob      = 0;
     b_lossy_input     = 0;
 
+
     // Initialize
     // ----------------------------------------
-    test.start_tb("chdr_stream_endpoint_tb");
+    test.start_tb({TEST_NAME,"chdr_stream_endpoint_tb"});
 
     // Start the BFMs
     a0_data_bfm.run();
@@ -562,7 +568,7 @@ module chdr_stream_endpoint_tb;
     rfnoc_ctrl_clk_gen.reset();
     rfnoc_chdr_clk_gen.reset();
 
-    test.start_test("Wait for reset");
+    test.start_test({TEST_NAME,"Wait for reset"});
     test.start_timeout(timeout, 1us, "Waiting for reset");
     while (rfnoc_ctrl_rst) @(posedge rfnoc_ctrl_clk);
     while (rfnoc_chdr_rst) @(posedge rfnoc_chdr_clk);
@@ -572,7 +578,7 @@ module chdr_stream_endpoint_tb;
 
     // Discover Topology
     // ----------------------------------------
-    test.start_test("Discover Topology");
+    test.start_test({TEST_NAME,"Discover Topology"});
     begin
       automatic chdr_header_t tx_mgmt_hdr, rx_mgmt_hdr;
       automatic chdr_mgmt_t tx_mgmt_pl, rx_mgmt_pl;
@@ -587,9 +593,9 @@ module chdr_stream_endpoint_tb;
       // Send a node info request to the crossbar
       tx_mgmt_pl.header.num_hops = 2;
       tx_mgmt_pl.ops.delete();
-      tx_mgmt_pl.ops[0] = '{  // Hop 1: Send node info 
+      tx_mgmt_pl.ops[0] = '{  // Hop 1: Send node info
         op_payload:48'h0, op_code:MGMT_OP_INFO_REQ, ops_pending:8'd1};
-      tx_mgmt_pl.ops[1] = '{  // Hop 1: Return 
+      tx_mgmt_pl.ops[1] = '{  // Hop 1: Return
         op_payload:48'h0, op_code:MGMT_OP_RETURN, ops_pending:8'd0};
       tx_mgmt_pl.ops[2] = '{  // Hop 2: Nop for return
         op_payload:48'h0, op_code:MGMT_OP_NOP, ops_pending:8'd0};
@@ -605,7 +611,7 @@ module chdr_stream_endpoint_tb;
       `ASSERT_ERROR(rx_mgmt_pl.ops[1] == exp_mgmt_op,
         "Discover XB: Mgmt response ops were incorrect");
 
-      // *Status* We just discovered a crossbar with 3 ports! 
+      // *Status* We just discovered a crossbar with 3 ports!
 
       // Configure the crossbar routing table with our (TB) address
       //  then send node info request on the other two ports
@@ -613,11 +619,11 @@ module chdr_stream_endpoint_tb;
       tx_mgmt_pl.ops.delete();
       tx_mgmt_pl.ops[0] = '{  // Hop 1: Crossbar: Config router to return packet to dest
         op_payload:{22'h0, PORT_TB, EPID_TB}, op_code:MGMT_OP_CFG_WR_REQ, ops_pending:8'd1};
-      tx_mgmt_pl.ops[1] = '{  // Hop 1: Crossbar: Config router 
+      tx_mgmt_pl.ops[1] = '{  // Hop 1: Crossbar: Config router
         op_payload:{38'h0, PORT_A}, op_code:MGMT_OP_SEL_DEST, ops_pending:8'd0};
-      tx_mgmt_pl.ops[2] = '{  // Hop 2: Stream Endpoint: Send node info 
+      tx_mgmt_pl.ops[2] = '{  // Hop 2: Stream Endpoint: Send node info
         op_payload:48'h0, op_code:MGMT_OP_INFO_REQ, ops_pending:8'd1};
-      tx_mgmt_pl.ops[3] = '{  // Hop 2: Return 
+      tx_mgmt_pl.ops[3] = '{  // Hop 2: Return
         op_payload:48'h0, op_code:MGMT_OP_RETURN, ops_pending:8'd0};
       tx_mgmt_pl.ops[4] = '{  // Hop 3: TB: Nop for return
         op_payload:48'h0, op_code:MGMT_OP_NOP, ops_pending:8'd0};
@@ -638,11 +644,11 @@ module chdr_stream_endpoint_tb;
       // Send node info request on the last port
       tx_mgmt_pl.header.num_hops = 3;
       tx_mgmt_pl.ops.delete();
-      tx_mgmt_pl.ops[0] = '{  // Hop 1: Crossbar: Config router 
+      tx_mgmt_pl.ops[0] = '{  // Hop 1: Crossbar: Config router
         op_payload:{38'h0, PORT_B}, op_code:MGMT_OP_SEL_DEST, ops_pending:8'd0};
-      tx_mgmt_pl.ops[1] = '{  // Hop 2: Stream Endpoint: Send node info 
+      tx_mgmt_pl.ops[1] = '{  // Hop 2: Stream Endpoint: Send node info
         op_payload:48'h0, op_code:MGMT_OP_INFO_REQ, ops_pending:8'd1};
-      tx_mgmt_pl.ops[2] = '{  // Hop 2: Return 
+      tx_mgmt_pl.ops[2] = '{  // Hop 2: Return
         op_payload:48'h0, op_code:MGMT_OP_RETURN, ops_pending:8'd0};
       tx_mgmt_pl.ops[3] = '{  // Hop 3: TB: Nop for return
         op_payload:48'h0, op_code:MGMT_OP_NOP, ops_pending:8'd0};
@@ -664,7 +670,7 @@ module chdr_stream_endpoint_tb;
 
     // Configure Routes to Stream Endpoints A and B
     // ----------------------------------------
-    test.start_test("Configure Routes");
+    test.start_test({TEST_NAME,"Configure Routes"});
     begin
       automatic chdr_header_t tx_mgmt_hdr, rx_mgmt_hdr;
       automatic chdr_mgmt_t tx_mgmt_pl, rx_mgmt_pl;
@@ -680,9 +686,9 @@ module chdr_stream_endpoint_tb;
 
       tx_mgmt_pl.ops[0] = '{  // Hop 1: Crossbar: Config path to EP A
         op_payload:{22'h0, PORT_A, EPID_A}, op_code:MGMT_OP_CFG_WR_REQ, ops_pending:8'd2};
-      tx_mgmt_pl.ops[1] = '{  // Hop 1: Crossbar: Config path to EP B 
+      tx_mgmt_pl.ops[1] = '{  // Hop 1: Crossbar: Config path to EP B
         op_payload:{22'h0, PORT_B, EPID_B}, op_code:MGMT_OP_CFG_WR_REQ, ops_pending:8'd1};
-      tx_mgmt_pl.ops[2] = '{  // Hop 1: Request node info to make the packet come back 
+      tx_mgmt_pl.ops[2] = '{  // Hop 1: Request node info to make the packet come back
         op_payload:48'h0, op_code:MGMT_OP_RETURN, ops_pending:8'd0};
       tx_mgmt_pl.ops[3] = '{  // Hop 2: Nop for return
         op_payload:48'h0, op_code:MGMT_OP_NOP, ops_pending:8'd0};
@@ -701,13 +707,13 @@ module chdr_stream_endpoint_tb;
 
     // Configure Stream Endpoints
     // ----------------------------------------
-    test.start_test("Configure Stream Endpoints");
+    test.start_test({TEST_NAME,"Configure Stream Endpoints"});
     begin
       automatic chdr_header_t tx_mgmt_hdr, rx_mgmt_hdr;
       automatic chdr_mgmt_t tx_mgmt_pl, rx_mgmt_pl;
       automatic chdr_mgmt_op_t exp_mgmt_op;
 
-      logic [15:0] epids[2] = {EPID_A, EPID_B};
+      automatic logic [15:0] epids[2] = {EPID_A, EPID_B};
       foreach (epids[i]) begin
         // Generic management header
         tx_mgmt_pl.header = '{
@@ -727,13 +733,13 @@ module chdr_stream_endpoint_tb;
           op_payload:{32'h0, sep_a.REG_EPID_SELF}, op_code:MGMT_OP_CFG_RD_REQ, ops_pending:8'd2};
         tx_mgmt_pl.ops[4] = '{  // Hop 2: Read EPID
           op_payload:{32'h0, sep_a.REG_OSTRM_CTRL_STATUS}, op_code:MGMT_OP_CFG_RD_REQ, ops_pending:8'd1};
-        tx_mgmt_pl.ops[5] = '{  // Hop 2: Stream Endpoint: Return 
+        tx_mgmt_pl.ops[5] = '{  // Hop 2: Stream Endpoint: Return
           op_payload:48'h0, op_code:MGMT_OP_RETURN, ops_pending:8'd0};
         tx_mgmt_pl.ops[6] = '{  // Hop 3: Nop for return
           op_payload:48'h0, op_code:MGMT_OP_NOP, ops_pending:8'd0};
         tx_mgmt_hdr = '{
           pkt_type:CHDR_MANAGEMENT, seq_num:cached_mgmt_seqnum++, dst_epid:epids[i], default:'0};
-  
+
         // Send the packet and check the response
         send_recv_mgmt_packet(tx_mgmt_hdr, tx_mgmt_pl, rx_mgmt_hdr, rx_mgmt_pl);
         `ASSERT_ERROR(rx_mgmt_pl.header.num_hops == 1,
@@ -752,13 +758,13 @@ module chdr_stream_endpoint_tb;
 
     // Setup a stream between Endpoint A and B
     // ----------------------------------------
-    test.start_test("Setup bidirectional stream between endpoints A and B");
+    test.start_test({TEST_NAME,"Setup bidirectional stream between endpoints A and B"});
     begin
       automatic chdr_header_t tx_mgmt_hdr, rx_mgmt_hdr;
       automatic chdr_mgmt_t tx_mgmt_pl, rx_mgmt_pl;
       automatic chdr_mgmt_op_t exp_mgmt_op;
 
-      logic [15:0] epids[2] = {EPID_A, EPID_B};
+      automatic logic [15:0] epids[2] = {EPID_A, EPID_B};
       foreach (epids[i]) begin
         // Generic management header
         tx_mgmt_pl.header = '{
@@ -784,7 +790,7 @@ module chdr_stream_endpoint_tb;
           op_payload:{32'h44, sep_a.REG_ISTRM_CTRL_STATUS}, op_code:MGMT_OP_CFG_WR_REQ, ops_pending:8'd2}; // Swap 32-bit words, endianness
         tx_mgmt_pl.ops[7] = '{  // Hop 2: Configure lossy and start config
           op_payload:{32'h47, sep_a.REG_OSTRM_CTRL_STATUS}, op_code:MGMT_OP_CFG_WR_REQ, ops_pending:8'd1}; // Swap 32-bit words, endianness, lossy and reset
-        tx_mgmt_pl.ops[8] = '{  // Hop 2: Stream Endpoint: Return 
+        tx_mgmt_pl.ops[8] = '{  // Hop 2: Stream Endpoint: Return
           op_payload:48'h0, op_code:MGMT_OP_RETURN, ops_pending:8'd0};
         tx_mgmt_pl.ops[9] = '{  // Hop 3: Nop for return
           op_payload:48'h0, op_code:MGMT_OP_NOP, ops_pending:8'd0};
@@ -818,7 +824,7 @@ module chdr_stream_endpoint_tb;
           op_payload:{32'h0, sep_a.REG_OSTRM_DATA_ERR_CNT}, op_code:MGMT_OP_CFG_RD_REQ, ops_pending:8'd2};
         tx_mgmt_pl.ops[7] = '{  // Hop 2: Read status
           op_payload:{32'h0, sep_a.REG_OSTRM_ROUTE_ERR_CNT}, op_code:MGMT_OP_CFG_RD_REQ, ops_pending:8'd1};
-        tx_mgmt_pl.ops[8] = '{  // Hop 2: Stream Endpoint: Return 
+        tx_mgmt_pl.ops[8] = '{  // Hop 2: Stream Endpoint: Return
           op_payload:48'h0, op_code:MGMT_OP_RETURN, ops_pending:8'd0};
         tx_mgmt_pl.ops[9] = '{  // Hop 3: Nop for return
           op_payload:48'h0, op_code:MGMT_OP_NOP, ops_pending:8'd0};
@@ -859,7 +865,7 @@ module chdr_stream_endpoint_tb;
     cached_ctrl_seqnum = 0;
     for (int cfg = 0; cfg < 2; cfg++) begin
       $sformat(tc_label, "Control Xact to A (%s)", (cfg?"Slow":"Fast"));
-      test.start_test(tc_label);
+      test.start_test({TEST_NAME,tc_label});
       begin
         tb_chdr_bfm.set_master_stall_prob(cfg?SLOW_STALL_PROB:FAST_STALL_PROB);
         tb_chdr_bfm.set_slave_stall_prob(cfg?SLOW_STALL_PROB:FAST_STALL_PROB);
@@ -874,7 +880,7 @@ module chdr_stream_endpoint_tb;
     cached_ctrl_seqnum = 0;
     for (int cfg = 0; cfg < 2; cfg++) begin
       $sformat(tc_label, "Control Xact to B (%s)", (cfg?"Slow":"Fast"));
-      test.start_test(tc_label);
+      test.start_test({TEST_NAME,tc_label});
       begin
         tb_chdr_bfm.set_master_stall_prob(cfg?SLOW_STALL_PROB:FAST_STALL_PROB);
         tb_chdr_bfm.set_slave_stall_prob(cfg?SLOW_STALL_PROB:FAST_STALL_PROB);
@@ -892,7 +898,7 @@ module chdr_stream_endpoint_tb;
       automatic logic slv_cfg = cfg[1];
       $sformat(tc_label, "Stream Data from A to B (%s Mst, %s Slv)",
         (mst_cfg?"Slow":"Fast"), (slv_cfg?"Slow":"Fast"));
-      test.start_test(tc_label);
+      test.start_test({TEST_NAME,tc_label});
       begin
         set_unidir_stall_prob(EPID_A, EPID_B,
           mst_cfg?SLOW_STALL_PROB:FAST_STALL_PROB,
@@ -911,7 +917,7 @@ module chdr_stream_endpoint_tb;
       automatic logic slv_cfg = cfg[1];
       $sformat(tc_label, "Stream Data from B to A (%s Mst, %s Slv)",
         (mst_cfg?"Slow":"Fast"), (slv_cfg?"Slow":"Fast"));
-      test.start_test(tc_label);
+      test.start_test({TEST_NAME,tc_label});
       begin
         set_unidir_stall_prob(EPID_B, EPID_A,
           mst_cfg?SLOW_STALL_PROB:FAST_STALL_PROB,
@@ -929,7 +935,7 @@ module chdr_stream_endpoint_tb;
       automatic logic slv_cfg = cfg[1];
       $sformat(tc_label, "Stream Data between A <=> B simultaneously (%s Mst, %s Slv)",
         (mst_cfg?"Slow":"Fast"), (slv_cfg?"Slow":"Fast"));
-      test.start_test(tc_label);
+      test.start_test({TEST_NAME,tc_label});
       begin
         set_bidir_stall_prob(
           mst_cfg?SLOW_STALL_PROB:FAST_STALL_PROB,
@@ -950,7 +956,7 @@ module chdr_stream_endpoint_tb;
       automatic logic slv_cfg = cfg[1];
       $sformat(tc_label, "Stream Data and Control between A <=> B (%s Mst, %s Slv)",
         (mst_cfg?"Slow":"Fast"), (slv_cfg?"Slow":"Fast"));
-      test.start_test(tc_label);
+      test.start_test({TEST_NAME,tc_label});
       begin
         tb_chdr_bfm.set_master_stall_prob(mst_cfg?SLOW_STALL_PROB:FAST_STALL_PROB);
         tb_chdr_bfm.set_slave_stall_prob(slv_cfg?SLOW_STALL_PROB:FAST_STALL_PROB);
@@ -976,9 +982,9 @@ module chdr_stream_endpoint_tb;
 
     // Check zero sequence errors after streaming
     // ----------------------------------------
-    test.start_test("Check zero sequence errors after streaming");
+    test.start_test({TEST_NAME,"Check zero sequence errors after streaming"});
     begin
-      logic [15:0] epids[2] = {EPID_A, EPID_B};
+      automatic logic [15:0] epids[2] = {EPID_A, EPID_B};
       foreach (epids[i]) begin
         mgmt_read_err_counts(epids[i], seq_err_count, route_err_count, data_err_count);
         `ASSERT_ERROR(seq_err_count == 32'd0, "Check NoErrs: Incorrect seq error count");
@@ -988,9 +994,13 @@ module chdr_stream_endpoint_tb;
     end
     test.end_test();
 
+
     // Force sequence error
+    // Note: Occasional StreamCommand to resynch occur, which
+    //   can cause the count to be greater than just the number data packets
+    //   that are sent, so the comparisons are to > instead of ==
     // ----------------------------------------
-    test.start_test("Force sequence error");
+    test.start_test({TEST_NAME,"Force sequence error"});
     begin
       // First sequence error
       send_recv_data_packets(EPID_A, EPID_B, 1, cached_data_seqnum++, 1);
@@ -999,7 +1009,7 @@ module chdr_stream_endpoint_tb;
       b_seqerr_prob = 0;
       repeat (100) @(posedge rfnoc_chdr_clk);  // Wait for sequence error to reach the upstream port
       mgmt_read_err_counts(EPID_A, seq_err_count, route_err_count, data_err_count);
-      `ASSERT_ERROR(seq_err_count == 32'd1, "Force SeqErr: Incorrect seq error count");
+      `ASSERT_ERROR(seq_err_count > 32'd0, "Force SeqErr: Incorrect seq error count");
       `ASSERT_ERROR(route_err_count == 32'd0, "Force SeqErr: Incorrect route error count");
       `ASSERT_ERROR(data_err_count == 32'd0, "Force SeqErr: Incorrect data error count");
 
@@ -1010,7 +1020,7 @@ module chdr_stream_endpoint_tb;
       b_seqerr_prob = 0;
       repeat (100) @(posedge rfnoc_chdr_clk);  // Wait for sequence error to reach the upstream port
       mgmt_read_err_counts(EPID_A, seq_err_count, route_err_count, data_err_count);
-      `ASSERT_ERROR(seq_err_count > 32'd1, "Force SeqErr: Incorrect seq error count");
+      `ASSERT_ERROR(seq_err_count > 32'd2, "Force SeqErr: Incorrect seq error count");
       `ASSERT_ERROR(route_err_count == 32'd0, "Force SeqErr: Incorrect route error count");
       `ASSERT_ERROR(data_err_count == 32'd0, "Force SeqErr: Incorrect data error count");
     end
@@ -1018,7 +1028,7 @@ module chdr_stream_endpoint_tb;
 
     // Force routing error
     // ----------------------------------------
-    test.start_test("Force routing error");
+    test.start_test({TEST_NAME,"Force routing error"});
     begin
       logic [31:0] old_route_err_count;
       // First sequence error
@@ -1048,13 +1058,13 @@ module chdr_stream_endpoint_tb;
 
     // Setup a stream between Endpoint A and B
     // ----------------------------------------
-    test.start_test("Reconfigure flow control (reset state)");
+    test.start_test({TEST_NAME,"Reconfigure flow control (reset state)"});
     begin
       automatic chdr_header_t tx_mgmt_hdr, rx_mgmt_hdr;
       automatic chdr_mgmt_t tx_mgmt_pl, rx_mgmt_pl;
       automatic chdr_mgmt_op_t exp_mgmt_op;
 
-      logic [15:0] epids[2] = {EPID_A, EPID_B};
+      automatic logic [15:0] epids[2] = {EPID_A, EPID_B};
       foreach (epids[i]) begin
         // Generic management header
         tx_mgmt_pl.header = '{
@@ -1070,7 +1080,7 @@ module chdr_stream_endpoint_tb;
           op_payload:{32'd0, sep_a.REG_ISTRM_CTRL_STATUS}, op_code:MGMT_OP_CFG_WR_REQ, ops_pending:8'd2};
         tx_mgmt_pl.ops[2] = '{  // Hop 2: Configure lossy and start config
           op_payload:{32'd3, sep_a.REG_OSTRM_CTRL_STATUS}, op_code:MGMT_OP_CFG_WR_REQ, ops_pending:8'd1};
-        tx_mgmt_pl.ops[3] = '{  // Hop 2: Stream Endpoint: Return 
+        tx_mgmt_pl.ops[3] = '{  // Hop 2: Stream Endpoint: Return
           op_payload:48'h0, op_code:MGMT_OP_RETURN, ops_pending:8'd0};
         tx_mgmt_pl.ops[4] = '{  // Hop 3: Nop for return
           op_payload:48'h0, op_code:MGMT_OP_NOP, ops_pending:8'd0};
@@ -1092,7 +1102,7 @@ module chdr_stream_endpoint_tb;
           op_payload:48'h0, op_code:MGMT_OP_NOP, ops_pending:8'd0};
         tx_mgmt_pl.ops[1] = '{  // Hop 2: Read status
           op_payload:{32'h0, sep_a.REG_OSTRM_CTRL_STATUS}, op_code:MGMT_OP_CFG_RD_REQ, ops_pending:8'd1};
-        tx_mgmt_pl.ops[2] = '{  // Hop 2: Stream Endpoint: Return 
+        tx_mgmt_pl.ops[2] = '{  // Hop 2: Stream Endpoint: Return
           op_payload:48'h0, op_code:MGMT_OP_RETURN, ops_pending:8'd0};
         tx_mgmt_pl.ops[3] = '{  // Hop 3: Nop for return
           op_payload:48'h0, op_code:MGMT_OP_NOP, ops_pending:8'd0};
@@ -1112,9 +1122,9 @@ module chdr_stream_endpoint_tb;
 
     // Check zero errors after reinit
     // ----------------------------------------
-    test.start_test("Check zero errors after reinit");
+    test.start_test({TEST_NAME,"Check zero errors after reinit"});
     begin
-      logic [15:0] epids[2] = {EPID_A, EPID_B};
+      automatic logic [15:0] epids[2] = {EPID_A, EPID_B};
       foreach (epids[i]) begin
         mgmt_read_err_counts(epids[i], seq_err_count, route_err_count, data_err_count);
         `ASSERT_ERROR(seq_err_count == 32'd0, "Check NoErrs: Incorrect seq error count");
@@ -1126,7 +1136,7 @@ module chdr_stream_endpoint_tb;
 
     // Stream data between A <=> B simultaneously
     // ----------------------------------------
-    test.start_test("Stream Data between A <=> B with a lossy link");
+    test.start_test({TEST_NAME,"Stream Data between A <=> B with a lossy link"});
     begin
       cached_data_seqnum = 0;
       set_bidir_stall_prob(FAST_STALL_PROB, SLOW_STALL_PROB);
@@ -1145,7 +1155,8 @@ module chdr_stream_endpoint_tb;
     // Finish Up
     // ----------------------------------------
     // Display final statistics and results
-    test.end_tb();
+    test.end_tb(.finish(0));
   end
 
 endmodule
+`default_nettype wire

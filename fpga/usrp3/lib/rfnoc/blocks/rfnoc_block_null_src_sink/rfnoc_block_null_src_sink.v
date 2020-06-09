@@ -4,30 +4,46 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
 // Module: rfnoc_block_null_src_sink
+//
 // Description:
 //
+//   This block can source, sink, or loopback data. Each port is used for a
+//   specific purpose. The RFNoC CHDR ports are mapped is as follows:
+//
+//    Input  Port 0 : Sink
+//    Input  Port 1 : Loopback in
+//    Output Port 0 : Source
+//    Output Port 1 : Loopback out
+//
 // Parameters:
+//   THIS_PORTID : Control crossbar port to which this block is connected
+//   CHDR_W      : AXIS-CHDR data bus width
+//   MTU         : Maximum transmission unit (i.e., maximum packet size in
+//                 CHDR words is 2**MTU).
+//   ITEM_W      : Item width
+//   NIPC        : Items per Clock
 //
 // Signals:
 
 module rfnoc_block_null_src_sink #(
   parameter  [9:0] THIS_PORTID = 10'd0,
   parameter        CHDR_W      = 64,
-  parameter        NIPC        = 2,
-  parameter  [5:0] MTU         = 10
+  parameter  [5:0] MTU         = 10,
+  parameter        ITEM_W      = 32,
+  parameter        NIPC        = CHDR_W/ITEM_W
 )(
   // RFNoC Framework Clocks and Resets
   input  wire                   rfnoc_chdr_clk,
   input  wire                   rfnoc_ctrl_clk,
-  // RFNoC Backend Interface    
+  // RFNoC Backend Interface
   input  wire [511:0]           rfnoc_core_config,
   output wire [511:0]           rfnoc_core_status,
-  // 2 CHDR Input Ports (from framework)        
+  // 2 CHDR Input Ports (from framework)
   input  wire [(CHDR_W*2)-1:0]  s_rfnoc_chdr_tdata,
   input  wire [1:0]             s_rfnoc_chdr_tlast,
   input  wire [1:0]             s_rfnoc_chdr_tvalid,
   output wire [1:0]             s_rfnoc_chdr_tready,
-  // 2 CHDR Output Ports (to framework)         
+  // 2 CHDR Output Ports (to framework)
   output wire [(CHDR_W*2)-1:0]  m_rfnoc_chdr_tdata,
   output wire [1:0]             m_rfnoc_chdr_tlast,
   output wire [1:0]             m_rfnoc_chdr_tvalid,
@@ -72,22 +88,24 @@ module rfnoc_block_null_src_sink #(
   reg                  ctrlport_resp_ack;
   reg  [31:0]          ctrlport_resp_data;
 
-  wire [(32*NIPC)-1:0] src_pyld_tdata ,                  loop_pyld_tdata ;
-  wire [NIPC-1:0]      src_pyld_tkeep ,                  loop_pyld_tkeep ;
-  wire                 src_pyld_tlast , snk_pyld_tlast , loop_pyld_tlast ;
-  wire                 src_pyld_tvalid, snk_pyld_tvalid, loop_pyld_tvalid;
-  wire                 src_pyld_tready, snk_pyld_tready, loop_pyld_tready;
+  wire [(ITEM_W*NIPC)-1:0] src_pyld_tdata ,                  loop_pyld_tdata ;
+  wire [NIPC-1:0]          src_pyld_tkeep ,                  loop_pyld_tkeep ;
+  wire                     src_pyld_tlast , snk_pyld_tlast , loop_pyld_tlast ;
+  wire                     src_pyld_tvalid, snk_pyld_tvalid, loop_pyld_tvalid;
+  wire                     src_pyld_tready, snk_pyld_tready, loop_pyld_tready;
 
-  wire [CHDR_W-1:0]    src_ctxt_tdata ,                  loop_ctxt_tdata ;
-  wire [3:0]           src_ctxt_tuser ,                  loop_ctxt_tuser ;
-  wire                 src_ctxt_tlast ,                  loop_ctxt_tlast ;
-  wire                 src_ctxt_tvalid,                  loop_ctxt_tvalid;
-  wire                 src_ctxt_tready, snk_ctxt_tready, loop_ctxt_tready;
+  wire [CHDR_W-1:0]        src_ctxt_tdata ,                  loop_ctxt_tdata ;
+  wire [3:0]               src_ctxt_tuser ,                  loop_ctxt_tuser ;
+  wire                     src_ctxt_tlast ,                  loop_ctxt_tlast ;
+  wire                     src_ctxt_tvalid,                  loop_ctxt_tvalid;
+  wire                     src_ctxt_tready, snk_ctxt_tready, loop_ctxt_tready;
 
   // NoC Shell
   // ---------------------------
   noc_shell_null_src_sink #(
     .THIS_PORTID (THIS_PORTID),
+    .NIPC        (NIPC),
+    .ITEM_W      (ITEM_W),
     .CHDR_W      (CHDR_W),
     .MTU         (MTU)
   ) noc_shell_null_src_sink_i (
@@ -257,17 +275,16 @@ module rfnoc_block_null_src_sink #(
     end
   end
 
-  assign src_pyld_tdata  = {NIPC{{~src_line_cnt[15:0], src_line_cnt[15:0]}}};
+  assign src_pyld_tdata  = {NIPC{{~src_line_cnt[ITEM_W/2-1:0], src_line_cnt[ITEM_W/2-1:0]}}};
   assign src_pyld_tkeep  = {NIPC{1'b1}};
   assign src_pyld_tlast  = (lines_left == 12'd0);
   assign src_pyld_tvalid = (state == ST_PYLD);
 
   assign src_ctxt_tdata  = chdr_build_header(
     6'd0, 1'b0, 1'b0, CHDR_PKT_TYPE_DATA, CHDR_NO_MDATA, src_pkt_cnt[15:0], reg_src_bpp, 16'd0);
-  assign src_ctxt_tuser  = CONTEXT_FIELD_HDR;
+  assign src_ctxt_tuser  = CHDR_W > 64 ? CONTEXT_FIELD_HDR_TS : CONTEXT_FIELD_HDR;
   assign src_ctxt_tlast  = 1'b1;
   assign src_ctxt_tvalid = (state == ST_HDR && reg_src_en);
-
 
   // Register Interface
   // ---------------------------
@@ -294,7 +311,7 @@ module rfnoc_block_null_src_sink #(
       if (ctrlport_req_rd) begin
         case(ctrlport_req_addr)
           REG_CTRL_STATUS:
-            ctrlport_resp_data <= {NIPC[7:0], 8'd32, state, 12'h0, reg_src_en, reg_clear_cnts};
+            ctrlport_resp_data <= {NIPC[7:0],ITEM_W[7:0], state, 12'h0, reg_src_en, reg_clear_cnts};
           REG_SRC_LINES_PER_PKT:
             ctrlport_resp_data <= {20'h0, reg_src_lpp};
           REG_SRC_BYTES_PER_PKT:

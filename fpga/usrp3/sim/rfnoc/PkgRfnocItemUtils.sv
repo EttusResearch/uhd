@@ -134,7 +134,7 @@ package PkgRfnocItemUtils;
 
     // Check if the contents of two buffers is equal
     function bit equal(
-      ItemDataBuff #(item_t) rhs
+      ItemDataBuff #(item_t,CHDR_W) rhs
     );
       if (this.size() != rhs.size()) return 0;
       for (int i = 0; i < this.size(); i++) begin

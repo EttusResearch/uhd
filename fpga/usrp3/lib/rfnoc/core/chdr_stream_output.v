@@ -411,7 +411,7 @@ module chdr_stream_output #(
             if (CHDR_W < 128)
               state <= ST_STRC_W1;
             else
-              state <= ST_STRC_WAIT;
+              state <= fc_resync_req ? ST_PASS_DATA : ST_STRC_WAIT;
         end
 
         // ST_STRC_W1
@@ -527,7 +527,7 @@ module chdr_stream_output #(
   assign msg_o_tready = msg_o_tvalid && (state == ST_PASS_DATA || state == ST_STRC_WAIT);
 
   // Acknowledge a flow control resync command
-  assign fc_resync_ack = fc_resync_req && (state == ST_STRC_W1) && 
+  assign fc_resync_ack = fc_resync_req && (state == ST_STRC_W1 || state == ST_STRC_W0) && 
                          chdr_out_tvalid && chdr_out_tready && chdr_out_tlast;
 
   // ---------------------------------------------------

@@ -5,7 +5,7 @@
 //
 // Module: PkgTestExec
 //
-// Description: This package provides infrastructure for tracking the state of 
+// Description: This package provides infrastructure for tracking the state of
 // testbench execution and the results of each test.
 //
 
@@ -29,6 +29,7 @@ package PkgTestExec;
     int    num_assertions;            // Number of assertions checked for the current test
     time   start_time, end_time;      // Start and end time of the testbench
     bit    stop_on_error = 1;         // Configuration option to stop when an error occurs
+    bit    done = 0;                  // Flag that sets when tb is finished
     bit    test_status[$];            // Pass/fail status of each test
 
     timeout_t tb_timeout;             // Handle to timeout for the overall testbench
@@ -54,7 +55,7 @@ package PkgTestExec;
       // Get the sempahore, to prevent multiple overlapping instances of the
       // same testbench.
       test_sem.get();
-
+      done = 0;
       $display("========================================================");
       $display("TESTBENCH STARTED: %s", tb_name);
       $display("========================================================");
@@ -65,8 +66,8 @@ package PkgTestExec;
       num_finished = 0;
       num_passed   = 0;
       start_timeout(
-        tb_timeout, 
-        time_limit, 
+        tb_timeout,
+        time_limit,
         $sformatf("Testbench \"%s\" time limit exceeded", tb_name),
         SEV_FATAL
       );
@@ -75,7 +76,7 @@ package PkgTestExec;
 
     // Call end_tb() at the end of a testbench to report final statistics and,
     // optionally, end simulation.
-    //    
+    //
     //    finish:  Set to 1 (default) to cause $finish() to be called at the
     //             end of simulation, cuasing the simulator to close.
     //
@@ -83,7 +84,6 @@ package PkgTestExec;
       assert (num_started == num_finished) else begin
         $fatal(1, "Testbench ended before test completed");
       end
-
       end_time = $time;
       $display("========================================================");
       $display("TESTBENCH FINISHED: %s", tb_name);
@@ -98,6 +98,7 @@ package PkgTestExec;
 
       end_timeout(tb_timeout);
 
+      done = 1;
       if (finish) $finish();
 
       // Release the semaphore to allow new instances of the testbench to run
@@ -118,8 +119,8 @@ package PkgTestExec;
       // Create a timeout for this test
       if (time_limit > 0) begin
         start_timeout(
-          test_timeout, 
-          time_limit, 
+          test_timeout,
+          time_limit,
           $sformatf("Test \"%s\" time limit exceeded", test_name),
           SEV_FATAL
         );
@@ -133,7 +134,7 @@ package PkgTestExec;
     endtask : start_test
 
 
-    // Call end_test() at the end of each test. 
+    // Call end_test() at the end of each test.
     //
     //   test_result:  Optional value to indicate the overall pass/fail result
     //                 of the test. Use non-zero for pass, 0 for fail.
@@ -149,7 +150,7 @@ package PkgTestExec;
 
       passed = test_status[num_started-1] && test_result;
       num_finished++;
-      $display("[TEST CASE %3d] (t = %t) DONE... %s", 
+      $display("[TEST CASE %3d] (t = %t) DONE... %s",
                num_started, $time, passed ? "Passed" : "FAILED");
 
       if (passed) num_passed++;
@@ -163,7 +164,7 @@ package PkgTestExec;
     //
     //   expr:     The expression value to be asserted
     //   message:  String to report if the assertion fails
-    //  
+    //
     function void assert_error(int expr, string message = "");
       num_assertions++;
       assert (expr) else begin
@@ -178,7 +179,7 @@ package PkgTestExec;
     //
     //   expr:     The expression value to be asserted
     //   message:  String to report if the assertion fails
-    //  
+    //
     function void assert_fatal(int expr, string message = "");
       num_assertions++;
       assert (expr) else begin
@@ -192,7 +193,7 @@ package PkgTestExec;
     //
     //   expr:     The expression value to be asserted
     //   message:  String to report if the assertion fails
-    //  
+    //
     function void assert_warning(int expr, string message = "");
       num_assertions++;
       assert (expr) else begin
@@ -209,7 +210,7 @@ package PkgTestExec;
     //   severity:  Indicates the type of severity task that should be used if
     //              the assertion fails ($info, $warning, $error, $fatal).
     //              Default value is SEV_ERROR.
-    //  
+    //
     function void assert_sev(
       int        expr,
       string     message = "",
@@ -249,8 +250,8 @@ package PkgTestExec;
     //                   used if the timeout expires. Default is SEV_ERROR.
     //
     task start_timeout(
-      output timeout_t  handle, 
-      input  realtime   timeout_delay, 
+      output timeout_t  handle,
+      input  realtime   timeout_delay,
       input  string     message = "Timeout",
       input  severity_t severity = SEV_ERROR
     );

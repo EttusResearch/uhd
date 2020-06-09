@@ -88,7 +88,7 @@ module chdr_traffic_sink_sim #(
     s_chdr.reset();
     while (1) begin
       // A session begins on the posedge of start_stb
-      while (~start_stb) @(posedge clk);
+      while (start_stb !== 1) @(posedge clk);
       session = session + 1;
       $sformat(filename, "%s/pkts_node%05d_inj%03d_lpp%05d_traffic%c_sess%04d.csv",
         FILE_PATH, NODE_ID, injection_rate, lines_per_pkt, traffic_patt, session);

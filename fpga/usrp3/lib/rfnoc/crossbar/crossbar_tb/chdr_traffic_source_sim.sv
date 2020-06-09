@@ -107,7 +107,7 @@ module chdr_traffic_source_sim #(
     m_chdr.reset();
     while (1) begin
       // A generation session begins on the posedge of start_stb
-      while (~start_stb) @(posedge clk);
+      while (start_stb !== 1) @(posedge clk);
       curr_pkt_num = 'd0;
       m_chdr.reset();
       num_samps_xferd = 'd0;

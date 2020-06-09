@@ -34,9 +34,10 @@ $(RFNOC_CORE_SRCS) \
 # Testbench Specific
 #-------------------------------------------------
 # Define only one toplevel module
-SIM_TOP = chdr_crossbar_nxn_tb
+SIM_TOP = chdr_crossbar_nxn_all_tb
 
 SIM_SRCS = \
+$(abspath chdr_crossbar_nxn_all_tb.sv) \
 $(abspath chdr_crossbar_nxn_tb.sv) \
 $(abspath ../crossbar_tb.sv) \
 $(abspath ../chdr_traffic_source_sim.sv) \

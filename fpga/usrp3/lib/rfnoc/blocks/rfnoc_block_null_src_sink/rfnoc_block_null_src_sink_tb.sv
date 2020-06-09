@@ -1,5 +1,5 @@
 //
-// Copyright 2019 Ettus Research, A National Instruments Company
+// Copyright 2020 Ettus Research, A National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -9,9 +9,15 @@
 `default_nettype none
 
 
-module rfnoc_block_null_src_sink_tb;
+module rfnoc_block_null_src_sink_tb #(
+  parameter TEST_NAME  = "rfnoc_block_null_src_sink_tb",
+  parameter CHDR_W     = 64
+)(
+  /* no IO */
+);
 
   // Include macros and time declarations for use with PkgTestExec
+  `define TEST_EXEC_OBJ test  
   `include "test_exec.svh"
 
   import PkgTestExec::*;
@@ -23,10 +29,10 @@ module rfnoc_block_null_src_sink_tb;
   localparam        NOC_ID      = 32'h0000_0001;
   localparam [9:0]  THIS_PORTID = 10'h17;
   localparam [15:0] THIS_EPID   = 16'hDEAD;
-  localparam int    CHDR_W      = 64;
-  localparam int    ITEM_W      = 32;
+  localparam int    ITEM_W      = 32; 
+  localparam int    NIPC        = CHDR_W/ITEM_W; // Expected Data generation only works for full words
   localparam int    SPP         = 201;
-  localparam int    LPP         = ((SPP+1)/2);
+  localparam int    LPP         = SPP % NIPC == 0 ? SPP/NIPC : SPP/NIPC+1;
   localparam int    NUM_PKTS    = 50;
 
   localparam int    PORT_SRCSNK = 0;
@@ -49,6 +55,8 @@ module rfnoc_block_null_src_sink_tb;
   AxiStreamIf #(CHDR_W) s0_chdr (rfnoc_chdr_clk);                 // Optional data iface
   AxiStreamIf #(CHDR_W) s1_chdr (rfnoc_chdr_clk);                 // Optional data iface
 
+  TestExec test = new();  
+  
   typedef ChdrData #(CHDR_W, ITEM_W)::chdr_word_t chdr_word_t;
 
   // Bus functional model for a software block controller
@@ -58,29 +66,30 @@ module rfnoc_block_null_src_sink_tb;
   rfnoc_block_null_src_sink #(
     .THIS_PORTID        (THIS_PORTID),
     .CHDR_W             (CHDR_W),
-    .NIPC               (2),
+    .ITEM_W             (ITEM_W),    
+    .NIPC               (NIPC),
     .MTU                (10)
   ) dut (
     .rfnoc_chdr_clk     (backend.chdr_clk),
     .rfnoc_ctrl_clk     (backend.ctrl_clk),
-    .rfnoc_core_config  (backend.slave.cfg),
-    .rfnoc_core_status  (backend.slave.sts),
-    .s_rfnoc_chdr_tdata ({m1_chdr.slave.tdata  , m0_chdr.slave.tdata  }),
-    .s_rfnoc_chdr_tlast ({m1_chdr.slave.tlast  , m0_chdr.slave.tlast  }),
-    .s_rfnoc_chdr_tvalid({m1_chdr.slave.tvalid , m0_chdr.slave.tvalid }),
-    .s_rfnoc_chdr_tready({m1_chdr.slave.tready , m0_chdr.slave.tready }),
-    .m_rfnoc_chdr_tdata ({s1_chdr.master.tdata , s0_chdr.master.tdata }),
-    .m_rfnoc_chdr_tlast ({s1_chdr.master.tlast , s0_chdr.master.tlast }),
-    .m_rfnoc_chdr_tvalid({s1_chdr.master.tvalid, s0_chdr.master.tvalid}),
-    .m_rfnoc_chdr_tready({s1_chdr.master.tready, s0_chdr.master.tready}),
-    .s_rfnoc_ctrl_tdata (m_ctrl.slave.tdata  ),
-    .s_rfnoc_ctrl_tlast (m_ctrl.slave.tlast  ),
-    .s_rfnoc_ctrl_tvalid(m_ctrl.slave.tvalid ),
-    .s_rfnoc_ctrl_tready(m_ctrl.slave.tready ),
-    .m_rfnoc_ctrl_tdata (s_ctrl.master.tdata ),
-    .m_rfnoc_ctrl_tlast (s_ctrl.master.tlast ),
-    .m_rfnoc_ctrl_tvalid(s_ctrl.master.tvalid),
-    .m_rfnoc_ctrl_tready(s_ctrl.master.tready)
+    .rfnoc_core_config  (backend.cfg),
+    .rfnoc_core_status  (backend.sts),
+    .s_rfnoc_chdr_tdata ({m1_chdr.tdata  , m0_chdr.tdata  }),
+    .s_rfnoc_chdr_tlast ({m1_chdr.tlast  , m0_chdr.tlast  }),
+    .s_rfnoc_chdr_tvalid({m1_chdr.tvalid , m0_chdr.tvalid }),
+    .s_rfnoc_chdr_tready({m1_chdr.tready , m0_chdr.tready }),
+    .m_rfnoc_chdr_tdata ({s1_chdr.tdata , s0_chdr.tdata }),
+    .m_rfnoc_chdr_tlast ({s1_chdr.tlast , s0_chdr.tlast }),
+    .m_rfnoc_chdr_tvalid({s1_chdr.tvalid, s0_chdr.tvalid}),
+    .m_rfnoc_chdr_tready({s1_chdr.tready, s0_chdr.tready}),
+    .s_rfnoc_ctrl_tdata (m_ctrl.tdata  ),
+    .s_rfnoc_ctrl_tlast (m_ctrl.tlast  ),
+    .s_rfnoc_ctrl_tvalid(m_ctrl.tvalid ),
+    .s_rfnoc_ctrl_tready(m_ctrl.tready ),
+    .m_rfnoc_ctrl_tdata (s_ctrl.tdata ),
+    .m_rfnoc_ctrl_tlast (s_ctrl.tlast ),
+    .m_rfnoc_ctrl_tvalid(s_ctrl.tvalid),
+    .m_rfnoc_ctrl_tready(s_ctrl.tready)
   );
 
   // ----------------------------------------
@@ -95,7 +104,7 @@ module rfnoc_block_null_src_sink_tb;
 
     // Initialize
     // ----------------------------------------
-    test.start_tb("rfnoc_block_null_src_sink_tb");
+    test.start_tb({TEST_NAME,"rfnoc_block_null_src_sink_tb"});
 
     // Start the stream endpoint BFM
     blk_ctrl = new(backend, m_ctrl, s_ctrl);
@@ -107,7 +116,7 @@ module rfnoc_block_null_src_sink_tb;
 
     // Startup block (Software initialization)
     // ----------------------------------------
-    test.start_test("Flush block then reset it");
+    test.start_test({TEST_NAME,"Flush block then reset it"});
     begin
       test.start_timeout(timeout, 10us, "Waiting for flush_and_reset");
       #100;  //Wait for GSR to deassert
@@ -118,7 +127,7 @@ module rfnoc_block_null_src_sink_tb;
 
     // Run Tests
     // ----------------------------------------
-    test.start_test("Read Block Info");
+    test.start_test({TEST_NAME,"Read Block Info"});
     begin
       test.start_timeout(timeout, 1us, "Waiting for block info response");
       // Get static block info and validate it
@@ -130,19 +139,20 @@ module rfnoc_block_null_src_sink_tb;
 
       // Read status register and validate it
       blk_ctrl.reg_read(dut.REG_CTRL_STATUS, rvalue);
-      `ASSERT_ERROR(rvalue[31:24] == 2, "Incorrect NIPC Value");
+      `ASSERT_ERROR(rvalue[31:24] == NIPC, "Incorrect NIPC Value");
       `ASSERT_ERROR(rvalue[23:16] == ITEM_W, "Incorrect ITEM_W Value");
       test.end_timeout(timeout);
     end
     test.end_test();
 
-    test.start_test("Stream Data Through Loopback Port");
+    test.start_test({TEST_NAME,"Stream Data Through Loopback Port m1->s1"});
     begin
       // Send and receive packets
       repeat (NUM_PKTS) begin
         chdr_word_t rx_data[$];
         int rx_bytes;
-        automatic ItemDataBuff #(logic[ITEM_W-1:0]) tx_dbuff = new, rx_dbuff = new;
+        automatic ItemDataBuff #(logic[ITEM_W-1:0],CHDR_W) tx_dbuff = new;
+        automatic ItemDataBuff #(logic[ITEM_W-1:0],CHDR_W) rx_dbuff = new;
         for (int i = 0; i < SPP; i++)
           tx_dbuff.put($urandom());
         test.start_timeout(timeout, 5us, "Waiting for pkt to loop back");
@@ -173,16 +183,16 @@ module rfnoc_block_null_src_sink_tb;
     end
     test.end_test();
 
-    test.start_test("Stream Data To Sink Port");
+    test.start_test({TEST_NAME,"Stream Data To Sink Port m0"});
     begin
       // Send packets
       repeat (NUM_PKTS) begin
         chdr_word_t rx_data[$];
         int rx_bytes;
-        automatic ItemDataBuff #(logic[ITEM_W-1:0]) tx_dbuff = new;
+        automatic ItemDataBuff #(logic[ITEM_W-1:0],CHDR_W) tx_dbuff = new;
         for (int i = 0; i < SPP; i++)
           tx_dbuff.put($urandom());
-        test.start_timeout(timeout, 5us, "Waiting for pkt to loop back");
+        test.start_timeout(timeout, 5us, "Waiting to send packet");
         blk_ctrl.send(PORT_SRCSNK, tx_dbuff.to_chdr_payload(), tx_dbuff.get_bytes());
         test.end_timeout(timeout);
       end
@@ -208,11 +218,12 @@ module rfnoc_block_null_src_sink_tb;
     end
     test.end_test();
 
-    test.start_test("Stream Data From Source Port");
+    test.start_test({TEST_NAME,"Stream Data From Source Port s0"});
     begin
       // Turn on the source for some time then stop it
       blk_ctrl.reg_write(dut.REG_SRC_LINES_PER_PKT, LPP-1);
-      blk_ctrl.reg_write(dut.REG_SRC_BYTES_PER_PKT, (LPP+1)*8);
+      // A line is generated as NIPC Items
+      blk_ctrl.reg_write(dut.REG_SRC_BYTES_PER_PKT, (LPP+1)*ITEM_W/8*NIPC);
       blk_ctrl.reg_write(dut.REG_CTRL_STATUS, 2'b10);
       repeat ((NUM_PKTS / 10) * LPP) @(posedge rfnoc_chdr_clk);
       blk_ctrl.reg_write(dut.REG_CTRL_STATUS, 2'b00);
@@ -228,7 +239,7 @@ module rfnoc_block_null_src_sink_tb;
         test.start_timeout(timeout, 5us, "Waiting for pkt to arrive");
         exp_data.delete();
         for (int i = p*LPP; i < (p+1)*LPP; i++)
-          exp_data.push_back({~i[15:0], i[15:0], ~i[15:0], i[15:0]});
+          exp_data.push_back({NIPC{{~i[ITEM_W/2-1:0], i[ITEM_W/2-1:0]}}});
         blk_ctrl.recv(PORT_SRCSNK, rx_data, rx_bytes);
         `ASSERT_ERROR(blk_ctrl.compare_data(exp_data, rx_data), "Data mismatch");
         test.end_timeout(timeout);
@@ -236,7 +247,7 @@ module rfnoc_block_null_src_sink_tb;
     end
     test.end_test();
 
-    test.start_test("Clear Counts");
+    test.start_test({TEST_NAME,"Clear Counts"});
     begin
       test.start_timeout(timeout, 1us, "Waiting for clear and readbacks");
       // Clear
@@ -266,7 +277,7 @@ module rfnoc_block_null_src_sink_tb;
     // Finish Up
     // ----------------------------------------
     // Display final statistics and results
-    test.end_tb();
+    test.end_tb(.finish(0));
   end
 
 endmodule
