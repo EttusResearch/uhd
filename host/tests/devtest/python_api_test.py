@@ -22,6 +22,11 @@ class uhd_python_api_test(uhd_test_case):
         Run test and report results.
         """
         if uhd is None:
+            print("UHD module not found -- checking for Python API")
+            config_info_app = shell_application('uhd_config_info')
+            config_info_app.run(['--enabled-components'])
+            if "Python API" in config_info_app.stdout:
+                raise RuntimeError("Python API enabled, but cannot load uhd module!")
             print("Skipping test, Python API not installed.")
             self.report_result("python_api_tester", 'status', 'Skipped')
             return
