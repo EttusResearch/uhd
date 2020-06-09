@@ -31,13 +31,14 @@ void export_filters(py::module& m)
         .def("get_type", &filter_info_base::get_type)
         .def("__str__", &filter_info_base::to_pp_string);
 
-    py::class_<analog_filter_base, analog_filter_base::sptr>(m, "analog_filter_base")
+    py::class_<analog_filter_base, filter_info_base, analog_filter_base::sptr>(
+        m, "analog_filter_base")
         .def(py::init<filter_info_type, bool, size_t, std::string>())
 
         // Methods
         .def("get_analog_type", &analog_filter_base::get_analog_type);
 
-    py::class_<analog_filter_lp, std::shared_ptr<analog_filter_lp>>(m, "analog_filter_lp")
+    py::class_<analog_filter_lp, analog_filter_base, std::shared_ptr<analog_filter_lp>>(m, "analog_filter_lp")
         .def(
             py::init<filter_info_type, bool, size_t, const std::string, double, double>())
 

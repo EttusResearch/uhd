@@ -1905,8 +1905,7 @@ public:
             throw uhd::runtime_error("Attempting to get non-existing filter: " + name);
         }
 
-        return _tree->access<filter_info_base::sptr>(rx_rf_fe_root(chan) / name / "value")
-            .get();
+        return _tree->access<filter_info_base::sptr>(fs_path(name) / "value").get();
     }
 
     void set_rx_filter(
@@ -1919,8 +1918,7 @@ public:
             throw uhd::runtime_error("Attempting to set non-existing filter: " + name);
         }
 
-        _tree->access<filter_info_base::sptr>(rx_rf_fe_root(chan) / name / "value")
-            .set(filter);
+        _tree->access<filter_info_base::sptr>(fs_path(name) / "value").set(filter);
     }
 
     std::vector<std::string> get_tx_filter_names(const size_t chan)
