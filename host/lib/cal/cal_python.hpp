@@ -75,7 +75,7 @@ void export_cal(py::module& m)
     py::class_<container, std::shared_ptr<container>>(m, "container")
         .def("get_name", &container::get_name)
         .def("get_serial", &container::get_serial)
-        .def("get_timestamp", &container::get_name)
+        .def("get_timestamp", &container::get_timestamp)
         .def("serialize",
             [](std::shared_ptr<container>& self) {
                 return vector_to_pybytes(self->serialize());
