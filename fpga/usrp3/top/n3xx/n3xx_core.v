@@ -105,13 +105,11 @@ module n3xx_core #(
 
   // DMA xport adapter to PS
   input wire  [63:0] s_dma_tdata,
-  input wire  [3:0]  s_dma_tuser,
   input wire         s_dma_tlast,
   output wire        s_dma_tready,
   input wire         s_dma_tvalid,
 
   output wire [63:0] m_dma_tdata,
-  output wire [3:0]  m_dma_tdest,
   output wire        m_dma_tlast,
   input wire         m_dma_tready,
   output wire        m_dma_tvalid,
@@ -489,49 +487,6 @@ module n3xx_core #(
     end
   end
 
-  /////////////////////////////////////////////////////////////////////////////
-  //
-  // DMA Transport Adapter
-  //
-  /////////////////////////////////////////////////////////////////////////////
-  wire [63:0] dmao_tdata;
-  wire        dmao_tlast;
-  wire        dmao_tvalid;
-  wire        dmao_tready;
-
-  wire [63:0] dmai_tdata;
-  wire        dmai_tlast;
-  wire        dmai_tvalid;
-  wire        dmai_tready;
-
-  liberio_chdr64_adapter #(
-    .DMA_ID_WIDTH                    (4)
-  ) dma_xport_adapter (
-    .clk                             (bus_clk),
-    .rst                             (bus_rst),
-    .device_id                       (device_id),
-    // From DMA engine to core
-    .s_dma_tdata                     (s_dma_tdata),
-    .s_dma_tuser                     (s_dma_tuser),
-    .s_dma_tlast                     (s_dma_tlast),
-    .s_dma_tvalid                    (s_dma_tvalid),
-    .s_dma_tready                    (s_dma_tready),
-    // From core to DMA engine
-    .m_dma_tdata                     (m_dma_tdata),
-    .m_dma_tuser                     (m_dma_tdest),
-    .m_dma_tlast                     (m_dma_tlast),
-    .m_dma_tvalid                    (m_dma_tvalid),
-    .m_dma_tready                    (m_dma_tready),
-    // CHDR buses
-    .s_chdr_tdata                    (dmao_tdata),
-    .s_chdr_tlast                    (dmao_tlast),
-    .s_chdr_tvalid                   (dmao_tvalid),
-    .s_chdr_tready                   (dmao_tready),
-    .m_chdr_tdata                    (dmai_tdata),
-    .m_chdr_tlast                    (dmai_tlast),
-    .m_chdr_tvalid                   (dmai_tvalid),
-    .m_chdr_tready                   (dmai_tready)
-  );
 
   /////////////////////////////////////////////////////////////////////
   //
@@ -1033,6 +988,12 @@ module n3xx_core #(
   );
 
 
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  // RFNoC Image Core
+  //
+  /////////////////////////////////////////////////////////////////////////////
+
   // Unused memory AXI ports
   for (i = 0; i < NUM_DRAM_FIFOS; i = i+1) begin : gen_unused_ram_signals
     assign dram_axi_buser[i] = 4'b0;
@@ -1163,14 +1124,14 @@ module n3xx_core #(
     .m_eth1_tlast            (v2e1_tlast ),
     .m_eth1_tvalid           (v2e1_tvalid),
     .m_eth1_tready           (v2e1_tready),
-    .s_dma_tdata             (dmai_tdata),
-    .s_dma_tlast             (dmai_tlast),
-    .s_dma_tvalid            (dmai_tvalid),
-    .s_dma_tready            (dmai_tready),
-    .m_dma_tdata             (dmao_tdata),
-    .m_dma_tlast             (dmao_tlast),
-    .m_dma_tvalid            (dmao_tvalid),
-    .m_dma_tready            (dmao_tready)
+    .s_dma_tdata             (s_dma_tdata),
+    .s_dma_tlast             (s_dma_tlast),
+    .s_dma_tvalid            (s_dma_tvalid),
+    .s_dma_tready            (s_dma_tready),
+    .m_dma_tdata             (m_dma_tdata),
+    .m_dma_tlast             (m_dma_tlast),
+    .m_dma_tvalid            (m_dma_tvalid),
+    .m_dma_tready            (m_dma_tready)
   );
 
 
