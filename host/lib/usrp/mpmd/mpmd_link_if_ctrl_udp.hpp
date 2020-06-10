@@ -10,6 +10,7 @@
 #include "mpmd_link_if_ctrl_base.hpp"
 #include "mpmd_link_if_mgr.hpp"
 #include <uhd/types/device_addr.hpp>
+#include <uhdlib/rfnoc/rfnoc_common.hpp>
 #include <unordered_map>
 
 namespace uhd { namespace mpmd { namespace xport {
@@ -30,7 +31,8 @@ public:
     using udp_link_info_map = std::unordered_map<std::string, udp_link_info_t>;
 
     mpmd_link_if_ctrl_udp(const uhd::device_addr_t& mb_args,
-        const mpmd_link_if_mgr::xport_info_list_t& xport_info);
+        const mpmd_link_if_mgr::xport_info_list_t& xport_info,
+        const uhd::rfnoc::chdr_w_t chdr_w);
 
     size_t get_num_links() const;
     uhd::transport::both_links_t get_link(const size_t link_idx,
@@ -51,7 +53,7 @@ private:
     std::vector<std::string> _available_addrs;
     //! MTU
     size_t _mtu;
-    static const uhd::rfnoc::chdr::chdr_packet_factory _pkt_factory;
+    const uhd::rfnoc::chdr::chdr_packet_factory _pkt_factory;
 };
 
 }}} /* namespace uhd::mpmd::xport */

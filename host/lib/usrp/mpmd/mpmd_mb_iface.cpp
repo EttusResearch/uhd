@@ -62,7 +62,7 @@ void mpmd_mboard_impl::mpmd_mb_iface::init()
                 "get_chdr_link_options", type);
         // User may have specified: addr=192.168.10.2, second_addr=
         // MPM may have said: "my addresses are 192.168.10.2 and 192.168.20.2"
-        if (_link_if_mgr->connect(type, xport_info)) {
+        if (_link_if_mgr->connect(type, xport_info, get_chdr_w())) {
             UHD_LOG_TRACE("MPMD::MB_IFACE", "Link type " << type << " successful.");
         }
     }

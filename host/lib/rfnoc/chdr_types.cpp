@@ -330,20 +330,25 @@ const std::string strc_payload::to_string() const
 
 //! Serialize this hop into a list of 64-bit words
 size_t mgmt_hop_t::serialize(std::vector<uint64_t>& target,
-    const std::function<uint64_t(uint64_t)>& conv_byte_order) const
+    const std::function<uint64_t(uint64_t)>& conv_byte_order,
+    const size_t padding_size) const
 {
     for (size_t i = 0; i < get_num_ops(); i++) {
         target.push_back(
             conv_byte_order((static_cast<uint64_t>(_ops.at(i).get_op_payload()) << 16)
                             | (static_cast<uint64_t>(_ops.at(i).get_op_code()) << 8)
                             | (static_cast<uint64_t>(get_num_ops() - i - 1) << 0)));
+        for (size_t j = 0; j < padding_size; j++) {
+            target.push_back(uint64_t(0));
+        }
     }
     return get_num_ops();
 }
 
 //! Deserialize this hop into from list of 64-bit words
-void mgmt_hop_t::deserialize(
-    std::list<uint64_t>& src, const std::function<uint64_t(uint64_t)>& conv_byte_order)
+void mgmt_hop_t::deserialize(std::list<uint64_t>& src,
+    const std::function<uint64_t(uint64_t)>& conv_byte_order,
+    const size_t padding_size)
 {
     _ops.clear();
     size_t ops_remaining = 0;
@@ -357,6 +362,10 @@ void mgmt_hop_t::deserialize(
             static_cast<uint64_t>((op_word >> 16)));
         _ops.push_back(op);
         src.pop_front();
+        for (size_t i = 0; i < padding_size; i++) {
+            src.pop_front();
+        }
+
     } while (ops_remaining > 0);
 }
 
@@ -381,9 +390,15 @@ size_t mgmt_payload::serialize(uint64_t* buff,
         | (static_cast<uint64_t>(static_cast<uint8_t>(_chdr_w) & 0x7) << 45)
         | (static_cast<uint64_t>(get_num_hops() & 0x3FF) << 16)
         | (static_cast<uint64_t>(_src_epid) << 0)));
+    // According to the RFNoC specification section 2.2.6, the MSBs are 0 for
+    // all widths greater than 64. This logic adds the padding.
+    for (size_t i = 0; i < _padding_size; i++) {
+        target.push_back(uint64_t(0));
+    }
+
     // Insert data from each hop
     for (const auto& hop : _hops) {
-        hop.serialize(target, conv_byte_order);
+        hop.serialize(target, conv_byte_order, _padding_size);
     }
     UHD_ASSERT_THROW(target.size() <= max_size_bytes);
 
@@ -401,21 +416,27 @@ void mgmt_payload::deserialize(const uint64_t* buff,
 
     // We use a list and copy just for ease of implementation
     // These transactions are not performance critical
-    std::list<uint64_t> src_list(buff, buff + num_elems);
+    std::list<uint64_t> src_list(buff, buff + (num_elems * (_padding_size + 1)));
 
     _hops.clear();
 
     // Deframe the header
     uint64_t hdr = conv_byte_order(src_list.front());
     _hops.resize(static_cast<size_t>((hdr >> 16) & 0x3FF));
-    _src_epid = static_cast<sep_id_t>(hdr & 0xFFFF);
-    _chdr_w   = static_cast<chdr_w_t>((hdr >> 45) & 0x7);
-    _protover = static_cast<uint16_t>((hdr >> 48) & 0xFFFF);
+    _src_epid     = static_cast<sep_id_t>(hdr & 0xFFFF);
+    _chdr_w       = static_cast<chdr_w_t>((hdr >> 45) & 0x7);
+    _protover     = static_cast<uint16_t>((hdr >> 48) & 0xFFFF);
+    _padding_size = (chdr_w_to_bits(_chdr_w) / 64) - 1;
     src_list.pop_front();
+    // According to the RFNoC specification section 2.2.6, the MSBs are 0 for
+    // all widths greater than 64. This logic removes the padding.
+    for (size_t i = 0; i < _padding_size; i++) {
+        src_list.pop_front();
+    }
 
     // Populate all hops
     for (size_t i = 0; i < get_num_hops(); i++) {
-        _hops[i].deserialize(src_list, conv_byte_order);
+        _hops[i].deserialize(src_list, conv_byte_order, _padding_size);
     }
 }
 
@@ -424,4 +445,12 @@ const std::string mgmt_payload::to_string() const
     return str(boost::format(
                    "mgmt_payload{src_epid:%lu, chdr_w:%d, protover:0x%x, num_hops:%lu}\n")
                % _src_epid % int(_chdr_w) % _protover % _hops.size());
+}
+
+
+bool mgmt_payload::operator==(const mgmt_payload& rhs) const
+{
+    return (_src_epid == rhs._src_epid) && (_protover == rhs._protover)
+           && (_chdr_w == rhs._chdr_w) && (_hops == rhs._hops)
+           && (_padding_size == rhs._padding_size);
 }

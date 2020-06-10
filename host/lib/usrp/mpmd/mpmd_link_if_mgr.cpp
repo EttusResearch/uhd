@@ -36,9 +36,11 @@ public:
     /**************************************************************************
      * API (see mpmd_link_if_mgr.hpp)
      *************************************************************************/
-    bool connect(const std::string& link_type, const xport_info_list_t& xport_info)
+    bool connect(const std::string& link_type,
+        const xport_info_list_t& xport_info,
+        const uhd::rfnoc::chdr_w_t chdr_w)
     {
-        auto link_if_ctrl = make_link_if_ctrl(link_type, xport_info);
+        auto link_if_ctrl = make_link_if_ctrl(link_type, xport_info, chdr_w);
         if (!link_if_ctrl) {
             UHD_LOG_WARNING(
                 "MPMD::XPORT", "Unable to create xport ctrl for link type " << link_type);
@@ -89,8 +91,9 @@ private:
     /**************************************************************************
      * Private methods / helpers
      *************************************************************************/
-    mpmd_link_if_ctrl_base::uptr make_link_if_ctrl(
-        const std::string& link_type, const xport_info_list_t& xport_info)
+    mpmd_link_if_ctrl_base::uptr make_link_if_ctrl(const std::string& link_type,
+        const xport_info_list_t& xport_info,
+        const uhd::rfnoc::chdr_w_t chdr_w)
     {
         // Here, we hard-code the list of available transport types
         if (link_type == "udp") {
@@ -100,7 +103,7 @@ private:
             //    xport_info);
             //}
 #endif
-            return std::make_unique<mpmd_link_if_ctrl_udp>(_mb_args, xport_info);
+            return std::make_unique<mpmd_link_if_ctrl_udp>(_mb_args, xport_info, chdr_w);
 #ifdef HAVE_LIBERIO
         } else if (link_type == "liberio") {
             return std::make_unique<mpmd_link_if_ctrl_liberio>(_mb_args, xport_info);

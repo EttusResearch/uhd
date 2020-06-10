@@ -74,6 +74,17 @@ strc_payload populate_strc_payload()
     return pyld;
 }
 
+mgmt_payload populate_mgmt_payload(const chdr_w_t chdr_w)
+{
+    mgmt_payload pyld;
+    pyld.set_header(sep_id_t(rand64() & 0xFFFF), uint16_t(rand64() & 0xFFFF), chdr_w);
+    mgmt_hop_t hop;
+    // management op payloads are 48 bits
+    hop.add_op(mgmt_op_t(mgmt_op_t::MGMT_OP_NOP, rand64() & 0xFFFFFFFFFFFF));
+    pyld.add_hop(hop);
+    return pyld;
+}
+
 void byte_swap(uint64_t* buff)
 {
     for (size_t i = 0; i < MAX_BUF_SIZE_WORDS; i++) {
@@ -262,5 +273,100 @@ BOOST_AUTO_TEST_CASE(chdr_generic_packet_calculate_pyld_offset_64)
         test_pyld_offset(pkt, PKT_TYPE_DATA_WITH_TS, 0);
         test_pyld_offset(pkt, PKT_TYPE_DATA_WITH_TS, 1);
         test_pyld_offset(pkt, PKT_TYPE_DATA_WITH_TS, 2);
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(chdr_mgmt_packet_no_swap_64)
+{
+    uint64_t buff[MAX_BUF_SIZE_WORDS];
+
+    chdr_mgmt_packet::uptr tx_pkt  = chdr64_be_factory.make_mgmt();
+    chdr_mgmt_packet::cuptr rx_pkt = chdr64_be_factory.make_mgmt();
+
+    for (size_t i = 0; i < NUM_ITERS; i++) {
+        chdr_header hdr   = chdr_header(rand64());
+        mgmt_payload pyld = populate_mgmt_payload(CHDR_W_64);
+
+        memset(buff, 0, MAX_BUF_SIZE_BYTES);
+        tx_pkt->refresh(buff, hdr, pyld);
+        BOOST_CHECK(tx_pkt->get_chdr_header() == hdr);
+        BOOST_CHECK(tx_pkt->get_payload() == pyld);
+
+        rx_pkt->refresh(buff);
+        BOOST_CHECK(rx_pkt->get_chdr_header() == hdr);
+        BOOST_CHECK(rx_pkt->get_payload() == pyld);
+
+        std::cout << pyld.to_string();
+    }
+}
+
+BOOST_AUTO_TEST_CASE(chdr_mgmt_packet_no_swap_256)
+{
+    uint64_t buff[MAX_BUF_SIZE_WORDS];
+
+    chdr_mgmt_packet::uptr tx_pkt  = chdr256_be_factory.make_mgmt();
+    chdr_mgmt_packet::cuptr rx_pkt = chdr256_be_factory.make_mgmt();
+
+    for (size_t i = 0; i < NUM_ITERS; i++) {
+        chdr_header hdr   = chdr_header(rand64());
+        mgmt_payload pyld = populate_mgmt_payload(CHDR_W_256);
+
+        memset(buff, 0, MAX_BUF_SIZE_BYTES);
+        tx_pkt->refresh(buff, hdr, pyld);
+        BOOST_CHECK(tx_pkt->get_chdr_header() == hdr);
+        BOOST_CHECK(tx_pkt->get_payload() == pyld);
+
+        rx_pkt->refresh(buff);
+        BOOST_CHECK(rx_pkt->get_chdr_header() == hdr);
+        BOOST_CHECK(rx_pkt->get_payload() == pyld);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(chdr_mgmt_packet_swap_64)
+{
+    uint64_t buff[MAX_BUF_SIZE_WORDS];
+
+    chdr_mgmt_packet::uptr tx_pkt  = chdr64_be_factory.make_mgmt();
+    chdr_mgmt_packet::cuptr rx_pkt = chdr64_le_factory.make_mgmt();
+
+    for (size_t i = 0; i < NUM_ITERS; i++) {
+        chdr_header hdr   = chdr_header(rand64());
+        mgmt_payload pyld = populate_mgmt_payload(CHDR_W_64);
+
+        memset(buff, 0, MAX_BUF_SIZE_BYTES);
+        tx_pkt->refresh(buff, hdr, pyld);
+        BOOST_CHECK(tx_pkt->get_chdr_header() == hdr);
+        BOOST_CHECK(tx_pkt->get_payload() == pyld);
+
+        byte_swap(buff);
+
+        rx_pkt->refresh(buff);
+        BOOST_CHECK(rx_pkt->get_chdr_header() == hdr);
+        BOOST_CHECK(rx_pkt->get_payload() == pyld);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(chdr_mgmt_packet_swap_256)
+{
+    uint64_t buff[MAX_BUF_SIZE_WORDS];
+
+    chdr_mgmt_packet::uptr tx_pkt  = chdr256_be_factory.make_mgmt();
+    chdr_mgmt_packet::cuptr rx_pkt = chdr256_le_factory.make_mgmt();
+
+    for (size_t i = 0; i < NUM_ITERS; i++) {
+        chdr_header hdr   = chdr_header(rand64());
+        mgmt_payload pyld = populate_mgmt_payload(CHDR_W_256);
+
+        memset(buff, 0, MAX_BUF_SIZE_BYTES);
+        tx_pkt->refresh(buff, hdr, pyld);
+        BOOST_CHECK(tx_pkt->get_chdr_header() == hdr);
+        BOOST_CHECK(tx_pkt->get_payload() == pyld);
+
+        byte_swap(buff);
+
+        rx_pkt->refresh(buff);
+        BOOST_CHECK(rx_pkt->get_chdr_header() == hdr);
+        BOOST_CHECK(rx_pkt->get_payload() == pyld);
     }
 }

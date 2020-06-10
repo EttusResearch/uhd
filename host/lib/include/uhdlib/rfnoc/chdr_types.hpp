@@ -678,6 +678,12 @@ public:
         return _op_payload;
     }
 
+    //! Comparison operator (==)
+    inline bool operator==(const mgmt_op_t& rhs) const
+    {
+        return (_op_code == rhs._op_code) && (_op_payload == rhs._op_payload);
+    }
+
 private:
     const op_code_t _op_code;
     const payload_t _op_payload;
@@ -712,12 +718,24 @@ public:
     }
 
     //! Serialize the payload to a uint64_t buffer
+    //  The RFNoC Specification section 2.2.6 specifies that for chdr widths
+    //  greater than 64, all MSBs are 0, so we pad out the hop based on the width
     size_t serialize(std::vector<uint64_t>& target,
-        const std::function<uint64_t(uint64_t)>& conv_byte_order) const;
+        const std::function<uint64_t(uint64_t)>& conv_byte_order,
+        const size_t padding_size) const;
 
     //! Deserialize the payload from a uint64_t buffer
+    //  The RFNoC Specification section 2.2.6 specifies that for chdr widths
+    //  greater than 64, all MSBs are 0, so we remove padding based on the width
     void deserialize(std::list<uint64_t>& src,
-        const std::function<uint64_t(uint64_t)>& conv_byte_order);
+        const std::function<uint64_t(uint64_t)>& conv_byte_order,
+        const size_t padding_size);
+
+    //! Comparison operator (==)
+    inline bool operator==(const mgmt_hop_t& rhs) const
+    {
+        return _ops == rhs._ops;
+    }
 
 private:
     std::vector<mgmt_op_t> _ops;
@@ -737,9 +755,10 @@ public:
 
     inline void set_header(sep_id_t src_epid, uint16_t protover, chdr_w_t chdr_w)
     {
-        _src_epid = src_epid;
-        _chdr_w   = chdr_w;
-        _protover = protover;
+        _src_epid     = src_epid;
+        _chdr_w       = chdr_w;
+        _protover     = protover;
+        _padding_size = (chdr_w_to_bits(_chdr_w) / 64) - 1;
     }
 
     //! Add a management hop to this transaction
@@ -814,11 +833,15 @@ public:
         return _src_epid;
     }
 
+    //! Comparison operator (==)
+    bool operator==(const mgmt_payload& rhs) const;
+
 private:
     sep_id_t _src_epid = 0;
     uint16_t _protover = 0;
     chdr_w_t _chdr_w   = CHDR_W_64;
     std::vector<mgmt_hop_t> _hops;
+    size_t _padding_size = 0;
 };
 
 }}} // namespace uhd::rfnoc::chdr

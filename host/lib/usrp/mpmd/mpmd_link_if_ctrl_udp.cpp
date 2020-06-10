@@ -26,9 +26,6 @@ using namespace uhd;
 using namespace uhd::transport;
 using namespace uhd::mpmd::xport;
 
-const uhd::rfnoc::chdr::chdr_packet_factory mpmd_link_if_ctrl_udp::_pkt_factory(
-    uhd::rfnoc::CHDR_W_64, ENDIANNESS_LITTLE);
-
 namespace {
 
 //! Maximum CHDR packet size in bytes
@@ -214,10 +211,12 @@ size_t discover_mtu(const std::string& address,
  * Structors
  *****************************************************************************/
 mpmd_link_if_ctrl_udp::mpmd_link_if_ctrl_udp(const uhd::device_addr_t& mb_args,
-    const mpmd_link_if_mgr::xport_info_list_t& xport_info)
+    const mpmd_link_if_mgr::xport_info_list_t& xport_info,
+    const uhd::rfnoc::chdr_w_t chdr_w)
     : _mb_args(mb_args)
     , _udp_info(get_udp_info_from_xport_info(xport_info))
     , _mtu(MPMD_10GE_DATA_FRAME_MAX_SIZE)
+    , _pkt_factory(chdr_w, ENDIANNESS_LITTLE)
 {
     const bool use_dpdk =
         mb_args.has_key("use_dpdk"); // FIXME use constrained_device_args

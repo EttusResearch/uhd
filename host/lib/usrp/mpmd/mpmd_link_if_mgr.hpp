@@ -11,6 +11,7 @@
 #include <uhd/types/dict.hpp>
 #include <uhd/types/direction.hpp>
 #include <uhdlib/rfnoc/chdr_packet.hpp>
+#include <uhdlib/rfnoc/rfnoc_common.hpp>
 #include <uhdlib/transport/links.hpp>
 #include <map>
 #include <memory>
@@ -80,8 +81,9 @@ public:
      *                   contain the available IP addresses.
      * \returns true on success
      */
-    virtual bool connect(
-        const std::string& xport_type, const xport_info_list_t& xport_info) = 0;
+    virtual bool connect(const std::string& xport_type,
+        const xport_info_list_t& xport_info,
+        const uhd::rfnoc::chdr_w_t chdr_w) = 0;
 
     /*! The number of available links
      *
