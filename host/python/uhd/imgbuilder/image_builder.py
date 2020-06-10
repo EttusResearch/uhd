@@ -235,8 +235,42 @@ class ImageBuilderConfig:
                     if "num_ports" in port_info:
                         parameter = port_info["num_ports"]
                         num_ports = parameter
-                        if parameter in block["parameters"]:
-                            num_ports = block["parameters"][parameter]
+
+                    # If num_ports isn't an integer, it could be an expression
+                    # using values from the parameters section (e.g.,
+                    # NUM_PORTS*NUM_BRANCHES for a stream-splitting block).
+                    # If the parameter doesn't resolve to an integer, treat it
+                    # as an expression that needs to be evaluated, hopefully to
+                    # an integer.
+                    if not isinstance(num_ports, int):
+                        # Create a regex to find identifiers.
+                        regex_ident = re.compile(r'[A-Za-z_][A-Za-z0-9_]*')
+
+                        # Get a list of all identifiers in the num_ports
+                        # expression and iterate over them all
+                        idents = re.finditer(regex_ident, num_ports)
+                        for ident in idents:
+                            # If the identifier represents a valid parameter
+                            # in the block, replace the identifier text with
+                            # the value of the parameter. If no matching
+                            # parameter is found, just leave the text in
+                            # place. That may result in an exception being
+                            # thrown from eval(), but we'll catch it and
+                            # report an error a bit later on.
+                            if ident[0] in block["parameters"]:
+                                val = str(block["parameters"][ident[0]])
+                                num_ports = re.sub(ident[0], val, num_ports)
+
+                        # Now, with identifiers resolved to parameter values,
+                        # attempt to evaluate the expression. If eval() fails,
+                        # we'll catch the exception, num_ports will remain non-
+                        # integral, and the if statement after the exception
+                        # is caught will inform the user.
+                        try:
+                            num_ports = eval(num_ports)
+                        except:
+                            pass
+
                     # Make sure the parameter resolved to a number
                     if not isinstance(num_ports, int):
                         logging.error(
