@@ -187,7 +187,7 @@ generated calibration data.
 \section power_usercal Calibrating your own device
 
 If UHD does not ship its own calibration data for a device, or if the power
-calbration must be finely tuned, it is necessary to manually calbrate the device.
+calibration must be finely tuned, it is necessary to manually calibrate the device.
 
 In order to calibrate the transmit power, a calibrated power meter is required.
 To calibrate the receive power, a calibrated signal generator is required. Note
@@ -217,6 +217,28 @@ steps (for more coarse or fine calibration data).
 The tool has hard-coded some sensible defaults for most devices, such as frequency
 and gain steps.
 
+\subsection power_cal_switch Calibrating multiple paths at once
+
+`uhd_power_cal.py` is able to calibrate all RF paths in a single run. Depending
+on the measurement setup it might be necessary to change the cabling between
+the measurement runs for the different paths. For this purpose the script 
+supports a switch parameter.
+
+If no switch is selected the script chooses the "manual" switch as default which
+asks the user to upate the cabeling before a new RF path is measured. If you
+do not have the need to change cabling (e.g. calibrating a single path only)
+you can pass `--switch-option mode=auto` to prevent the script stopping before
+the real measurement.
+
+UHD facilitates devices that supports the niswitch API. These devices are
+enabled using `--switch niswitch`. In default setup the port `comA` is used
+to switch between the RF paths. To use port `X` pass `--switch-option port=comX`
+as parameter. The channels of the switch must be cabled in the order the script
+runs the calibration, so the first RF path goes to `chX1` the second to `chX2`
+and so on. If your setup does not follow this rule you have to pass the order
+of channels to the script using `--channels ch1,ch2` where the channels are
+given in the order they are connected to the switch.
+
 \subsection power_usercal_extend Extending the calibration utility for custom drivers
 
 \subsubsection power_usercal_extend_visa VISA/SCPI based devices
@@ -232,7 +254,7 @@ from PyVISA, exposing your VISA-based device is done by creating a Python
 module for your device. Assume the file is called `myvisa.py` and has the
 following content:
 
-~~~{.py~
+~~~{.py}
 from uhd.usrp.cal.visa import VISADevice
 
 class MyVISADevice(VISADevice):
