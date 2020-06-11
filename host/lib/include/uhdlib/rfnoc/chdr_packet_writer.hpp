@@ -6,9 +6,10 @@
 
 #pragma once
 
+#include <uhd/rfnoc/chdr_types.hpp>
+#include <uhd/rfnoc/constants.hpp>
 #include <uhd/types/endianness.hpp>
 #include <uhd/utils/byteswap.hpp>
-#include <uhdlib/rfnoc/chdr_types.hpp>
 #include <limits>
 
 namespace uhd { namespace rfnoc { namespace chdr {

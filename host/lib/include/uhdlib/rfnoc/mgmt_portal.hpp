@@ -6,9 +6,10 @@
 
 #pragma once
 
+#include <uhd/rfnoc/chdr_types.hpp>
 #include <uhdlib/rfnoc/chdr_ctrl_xport.hpp>
 #include <uhdlib/rfnoc/chdr_packet_writer.hpp>
-#include <uhdlib/rfnoc/chdr_types.hpp>
+#include <uhdlib/rfnoc/rfnoc_common.hpp>
 #include <memory>
 #include <set>
 

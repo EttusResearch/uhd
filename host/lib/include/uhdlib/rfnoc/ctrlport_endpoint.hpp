@@ -6,8 +6,8 @@
 
 #pragma once
 
+#include <uhd/rfnoc/chdr_types.hpp>
 #include <uhd/rfnoc/register_iface.hpp>
-#include <uhdlib/rfnoc/chdr_types.hpp>
 #include <uhdlib/rfnoc/clock_iface.hpp>
 #include <memory>
 

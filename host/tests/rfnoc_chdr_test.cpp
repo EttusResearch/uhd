@@ -4,10 +4,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include <uhd/rfnoc/chdr_types.hpp>
 #include <uhd/types/endianness.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhdlib/rfnoc/chdr_packet_writer.hpp>
-#include <uhdlib/rfnoc/chdr_types.hpp>
 #include <boost/format.hpp>
 #include <boost/test/unit_test.hpp>
 #include <iostream>

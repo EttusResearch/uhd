@@ -12,6 +12,7 @@ UHD_INSTALL(FILES
     block_id.hpp
     blockdef.hpp
     constants.hpp
+    chdr_types.hpp
     defaults.hpp
     dirtifier.hpp
     filter_node.hpp
@@ -28,6 +29,7 @@ UHD_INSTALL(FILES
     register_iface_holder.hpp
     registry.hpp
     res_source_info.hpp
+    rfnoc_types.hpp
     traffic_counter.hpp
     # Block controllers
     addsub_block_control.hpp

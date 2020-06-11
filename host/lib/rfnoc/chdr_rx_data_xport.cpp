@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include <uhd/rfnoc/chdr_types.hpp>
 #include <uhdlib/rfnoc/chdr_rx_data_xport.hpp>
-#include <uhdlib/rfnoc/chdr_types.hpp>
 #include <uhdlib/rfnoc/mgmt_portal.hpp>
 #include <uhdlib/rfnoc/rfnoc_common.hpp>
 #include <uhdlib/transport/io_service.hpp>

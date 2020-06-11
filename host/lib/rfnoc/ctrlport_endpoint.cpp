@@ -5,9 +5,9 @@
 //
 
 #include <uhd/exception.hpp>
+#include <uhd/rfnoc/chdr_types.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/chdr_packet_writer.hpp>
-#include <uhdlib/rfnoc/chdr_types.hpp>
 #include <uhdlib/rfnoc/ctrlport_endpoint.hpp>
 #include <condition_variable>
 #include <boost/format.hpp>

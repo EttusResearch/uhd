@@ -15,6 +15,8 @@
 
 namespace uhd { namespace rfnoc {
 
+constexpr uint16_t RFNOC_PROTO_VER = 0x0100;
+
 static const size_t NOC_SHELL_COMPAT_MAJOR = 5;
 static const size_t NOC_SHELL_COMPAT_MINOR = 1;
 

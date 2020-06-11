@@ -7,10 +7,10 @@
 #pragma once
 
 #include <uhd/exception.hpp>
+#include <uhd/rfnoc/chdr_types.hpp>
 #include <uhd/types/metadata.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/chdr_packet_writer.hpp>
-#include <uhdlib/rfnoc/chdr_types.hpp>
 #include <uhdlib/rfnoc/rfnoc_common.hpp>
 #include <uhdlib/rfnoc/tx_flow_ctrl_state.hpp>
 #include <uhdlib/transport/io_service.hpp>

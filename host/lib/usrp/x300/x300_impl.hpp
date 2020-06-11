@@ -18,12 +18,12 @@
 #include "x300_mboard_type.hpp"
 #include "x300_regs.hpp"
 #include <uhd/property_tree.hpp>
+#include <uhd/rfnoc/chdr_types.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/utils/tasks.hpp>
-#include <uhdlib/rfnoc/chdr_types.hpp>
 #include <uhdlib/rfnoc/clock_iface.hpp>
 #include <uhdlib/rfnoc/mb_iface.hpp>
 #include <uhdlib/rfnoc/mgmt_portal.hpp>

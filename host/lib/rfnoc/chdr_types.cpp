@@ -5,8 +5,8 @@
 //
 
 #include <uhd/exception.hpp>
+#include <uhd/rfnoc/chdr_types.hpp>
 #include <uhd/types/endianness.hpp>
-#include <uhdlib/rfnoc/chdr_types.hpp>
 #include <boost/format.hpp>
 #include <cassert>
 
@@ -53,16 +53,16 @@ size_t ctrl_payload::serialize(uint64_t* buff,
     buff[ptr++] = conv_byte_order(
         ((static_cast<uint64_t>(dst_port) & mask_u64(DST_PORT_WIDTH)) << DST_PORT_OFFSET)
         | ((static_cast<uint64_t>(src_port) & mask_u64(SRC_PORT_WIDTH))
-              << SRC_PORT_OFFSET)
+            << SRC_PORT_OFFSET)
         | ((static_cast<uint64_t>(data_vtr.size()) & mask_u64(NUM_DATA_WIDTH))
-              << NUM_DATA_OFFSET)
+            << NUM_DATA_OFFSET)
         | ((static_cast<uint64_t>(seq_num) & mask_u64(SEQ_NUM_WIDTH)) << SEQ_NUM_OFFSET)
         | ((static_cast<uint64_t>(timestamp.is_initialized() ? 1 : 0)
                & mask_u64(HAS_TIME_WIDTH))
-              << HAS_TIME_OFFSET)
+            << HAS_TIME_OFFSET)
         | ((static_cast<uint64_t>(is_ack) & mask_u64(IS_ACK_WIDTH)) << IS_ACK_OFFSET)
         | ((static_cast<uint64_t>(src_epid) & mask_u64(SRC_EPID_WIDTH))
-              << SRC_EPID_OFFSET));
+            << SRC_EPID_OFFSET));
 
     // Populate optional timestamp
     if (timestamp.is_initialized()) {
@@ -73,7 +73,7 @@ size_t ctrl_payload::serialize(uint64_t* buff,
     buff[ptr++] = conv_byte_order(
         ((static_cast<uint64_t>(address) & mask_u64(ADDRESS_WIDTH)) << ADDRESS_OFFSET)
         | ((static_cast<uint64_t>(byte_enable) & mask_u64(BYTE_ENABLE_WIDTH))
-              << BYTE_ENABLE_OFFSET)
+            << BYTE_ENABLE_OFFSET)
         | ((static_cast<uint64_t>(op_code) & mask_u64(OPCODE_WIDTH)) << OPCODE_OFFSET)
         | ((static_cast<uint64_t>(status) & mask_u64(STATUS_WIDTH)) << STATUS_OFFSET)
         | (static_cast<uint64_t>(data_vtr[0]) << HI_DATA_OFFSET));
@@ -189,14 +189,14 @@ size_t strs_payload::serialize(uint64_t* buff,
         ((static_cast<uint64_t>(src_epid) & mask_u64(SRC_EPID_WIDTH)) << SRC_EPID_OFFSET)
         | ((static_cast<uint64_t>(status) & mask_u64(STATUS_WIDTH)) << STATUS_OFFSET)
         | ((static_cast<uint64_t>(capacity_bytes) & mask_u64(CAPACITY_BYTES_WIDTH))
-              << CAPACITY_BYTES_OFFSET));
+            << CAPACITY_BYTES_OFFSET));
 
     // Populate second word
     buff[1] = conv_byte_order(
         ((static_cast<uint64_t>(capacity_pkts) & mask_u64(CAPACITY_PKTS_WIDTH))
             << CAPACITY_PKTS_OFFSET)
         | ((static_cast<uint64_t>(xfer_count_pkts) & mask_u64(XFER_COUNT_PKTS_WIDTH))
-              << XFER_COUNT_PKTS_OFFSET));
+            << XFER_COUNT_PKTS_OFFSET));
 
     // Populate third word
     buff[2] = conv_byte_order(xfer_count_bytes);
@@ -206,7 +206,7 @@ size_t strs_payload::serialize(uint64_t* buff,
         ((static_cast<uint64_t>(buff_info) & mask_u64(BUFF_INFO_WIDTH))
             << BUFF_INFO_OFFSET)
         | ((static_cast<uint64_t>(status_info) & mask_u64(STATUS_INFO_WIDTH))
-              << STATUS_INFO_OFFSET));
+            << STATUS_INFO_OFFSET));
 
     // Return bytes written
     return (4 * sizeof(uint64_t));
@@ -285,7 +285,7 @@ size_t strc_payload::serialize(uint64_t* buff,
         | ((static_cast<uint64_t>(op_code) & mask_u64(OP_CODE_WIDTH)) << OP_CODE_OFFSET)
         | ((static_cast<uint64_t>(op_data) & mask_u64(OP_DATA_WIDTH)) << OP_DATA_OFFSET)
         | ((static_cast<uint64_t>(num_pkts) & mask_u64(NUM_PKTS_WIDTH))
-              << NUM_PKTS_OFFSET));
+            << NUM_PKTS_OFFSET));
 
     // Populate second word
     buff[1] = conv_byte_order(num_bytes);

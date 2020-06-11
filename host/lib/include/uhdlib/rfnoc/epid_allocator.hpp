@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <uhd/rfnoc/rfnoc_types.hpp>
 #include <uhdlib/rfnoc/mgmt_portal.hpp>
 #include <uhdlib/rfnoc/rfnoc_common.hpp>
 #include <map>

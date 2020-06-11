@@ -5,10 +5,10 @@
 //
 
 #include "../common/mock_link.hpp"
+#include <uhd/rfnoc/chdr_types.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhdlib/rfnoc/chdr_rx_data_xport.hpp>
 #include <uhdlib/rfnoc/chdr_tx_data_xport.hpp>
-#include <uhdlib/rfnoc/chdr_types.hpp>
 #include <uhdlib/transport/inline_io_service.hpp>
 #include <uhdlib/transport/rx_streamer_impl.hpp>
 #include <uhdlib/transport/tx_streamer_impl.hpp>

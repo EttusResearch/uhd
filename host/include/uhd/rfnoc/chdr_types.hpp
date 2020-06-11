@@ -6,9 +6,9 @@
 
 #pragma once
 
+#include <uhd/rfnoc/rfnoc_types.hpp>
 #include <uhd/types/endianness.hpp>
 #include <uhd/utils/byteswap.hpp>
-#include <uhdlib/rfnoc/rfnoc_common.hpp>
 #include <boost/optional.hpp>
 #include <list>
 #include <memory>
@@ -685,8 +685,8 @@ public:
     }
 
 private:
-    const op_code_t _op_code;
-    const payload_t _op_payload;
+    op_code_t _op_code;
+    payload_t _op_payload;
 };
 
 //! A class that represents a single management hop
@@ -755,10 +755,9 @@ public:
 
     inline void set_header(sep_id_t src_epid, uint16_t protover, chdr_w_t chdr_w)
     {
-        _src_epid     = src_epid;
-        _chdr_w       = chdr_w;
-        _protover     = protover;
-        _padding_size = (chdr_w_to_bits(_chdr_w) / 64) - 1;
+        set_src_epid(src_epid);
+        set_chdr_w(chdr_w);
+        set_proto_ver(protover);
     }
 
     //! Add a management hop to this transaction
@@ -833,8 +832,39 @@ public:
         return _src_epid;
     }
 
+    //! Set the source EPID for this transaction
+    inline void set_src_epid(sep_id_t src_epid)
+    {
+        _src_epid = src_epid;
+    }
+
     //! Comparison operator (==)
     bool operator==(const mgmt_payload& rhs) const;
+
+    //! Return the CHDR_W for this transaction
+    inline chdr_w_t get_chdr_w() const
+    {
+        return _chdr_w;
+    }
+
+    //! Set the CHDR_W for this transaction
+    inline void set_chdr_w(chdr_w_t chdr_w)
+    {
+        _chdr_w       = chdr_w;
+        _padding_size = (chdr_w_to_bits(_chdr_w) / 64) - 1;
+    }
+
+    //! Return the protocol version for this transaction
+    inline uint16_t get_proto_ver() const
+    {
+        return _protover;
+    }
+
+    //! Set the protocol version for this transaction
+    inline void set_proto_ver(uint16_t proto_ver)
+    {
+        _protover = proto_ver;
+    }
 
 private:
     sep_id_t _src_epid = 0;

@@ -7,6 +7,7 @@
 #pragma once
 
 #include <uhd/exception.hpp>
+#include <uhd/rfnoc/rfnoc_types.hpp>
 #include <uhd/transport/adapter_id.hpp>
 #include <uhd/types/endianness.hpp>
 #include <uhdlib/rfnoc/chdr_ctrl_xport.hpp>

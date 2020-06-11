@@ -5,12 +5,12 @@
 //
 
 #include <uhd/exception.hpp>
+#include <uhd/rfnoc/chdr_types.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/thread.hpp>
 #include <uhdlib/rfnoc/chdr_ctrl_endpoint.hpp>
 #include <uhdlib/rfnoc/chdr_packet_writer.hpp>
-#include <uhdlib/rfnoc/chdr_types.hpp>
 #include <boost/format.hpp>
 #include <atomic>
 #include <mutex>

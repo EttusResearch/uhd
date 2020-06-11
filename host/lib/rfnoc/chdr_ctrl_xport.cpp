@@ -4,9 +4,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include <uhd/rfnoc/chdr_types.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/chdr_ctrl_xport.hpp>
-#include <uhdlib/rfnoc/chdr_types.hpp>
 
 using namespace uhd;
 using namespace uhd::rfnoc;
