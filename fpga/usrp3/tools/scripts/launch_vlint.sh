@@ -25,7 +25,7 @@ function print_color {
         *Fatal:*)
             eval $ERR_CLR; echo "$line"; eval $CLR_OFF
             ;;
-        *Error:*)
+        *Error:*|*Error[[:space:]]\(suppressible\):*)
             eval $ERR_CLR; echo "$line"; eval $CLR_OFF
             ;;
         *Warning:*)
