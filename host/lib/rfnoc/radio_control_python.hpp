@@ -13,6 +13,9 @@ using namespace uhd::rfnoc;
 
 void export_radio_control(py::module& m)
 {
+    // Re-import ALL_CHANS here to avoid linker errors
+    const auto ALL_CHANS = radio_control::ALL_CHANS;
+
     py::class_<radio_control, noc_block_base, radio_control::sptr>(m, "radio_control")
         .def(py::init(&block_controller_factory<radio_control>::make_from))
         .def("set_rate", &radio_control::set_rate)
@@ -137,7 +140,7 @@ void export_radio_control(py::module& m)
         .def("set_rx_dc_offset",
             py::overload_cast<const bool, size_t>(&radio_control::set_rx_dc_offset),
             py::arg("enb"),
-            py::arg("chan") = radio_control::ALL_CHANS)
+            py::arg("chan") = ALL_CHANS)
         .def("set_rx_dc_offset",
             py::overload_cast<const std::complex<double>&, size_t>(
                 &radio_control::set_rx_dc_offset),
