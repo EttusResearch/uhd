@@ -35,6 +35,29 @@ struct block_xbar_info
     noc_id_t noc_id;
     size_t inst_num;
 };
+
+//! Information about a specific connection (used for streamer disconnect)
+struct connection_info_t
+{
+    detail::graph_t::node_ref_t src;
+    detail::graph_t::node_ref_t dst;
+    graph_edge_t edge;
+};
+
+//! Information about a streamer (used for streamer disconnect)
+struct streamer_info_t
+{
+    detail::graph_t::node_ref_t node;
+    std::map<size_t, connection_info_t> connections;
+};
+
+//! Information about a route (used for physical connect/disconnect)
+struct route_info_t
+{
+    graph_edge_t::edge_t edge_type;
+    graph_edge_t src_static_edge;
+    graph_edge_t dst_static_edge;
+};
 } // namespace
 
 class rfnoc_graph_impl : public rfnoc_graph
@@ -209,6 +232,30 @@ public:
             skip_property_propagation);
     }
 
+    void disconnect(const block_id_t& src_blk,
+        size_t src_port,
+        const block_id_t& dst_blk,
+        size_t dst_port)
+    {
+        if (not has_block(src_blk)) {
+            throw uhd::lookup_error(
+                std::string("Cannot disconnect blocks, source block not found: ")
+                + src_blk.to_string());
+        }
+        if (not has_block(dst_blk)) {
+            throw uhd::lookup_error(
+                std::string("Cannot disconnect blocks, destination block not found: ")
+                + dst_blk.to_string());
+        }
+        auto edge_type = _physical_disconnect(src_blk, src_port, dst_blk, dst_port);
+        graph_edge_t edge_info(src_port, dst_port, edge_type, true);
+        auto src              = get_block(src_blk);
+        auto dst              = get_block(dst_blk);
+        edge_info.src_blockid = src->get_unique_id();
+        edge_info.dst_blockid = dst->get_unique_id();
+        _graph->disconnect(src.get(), dst.get(), edge_info);
+    }
+
     void connect(uhd::tx_streamer::sptr streamer,
         size_t strm_port,
         const block_id_t& dst_blk,
@@ -264,6 +311,10 @@ public:
         auto dst = get_block(dst_blk);
         graph_edge_t edge_info(strm_port, dst_port, graph_edge_t::TX_STREAM, true);
         _graph->connect(rfnoc_streamer.get(), dst.get(), edge_info);
+
+        _tx_streamers[rfnoc_streamer->get_unique_id()].node = rfnoc_streamer.get();
+        _tx_streamers[rfnoc_streamer->get_unique_id()].connections[strm_port] = {
+            rfnoc_streamer.get(), dst.get(), edge_info};
     }
 
     void connect(const block_id_t& src_blk,
@@ -321,20 +372,85 @@ public:
         auto src = get_block(src_blk);
         graph_edge_t edge_info(src_port, strm_port, graph_edge_t::RX_STREAM, true);
         _graph->connect(src.get(), rfnoc_streamer.get(), edge_info);
+
+        _rx_streamers[rfnoc_streamer->get_unique_id()].node = rfnoc_streamer.get();
+        _rx_streamers[rfnoc_streamer->get_unique_id()].connections[strm_port] = {
+            src.get(), rfnoc_streamer.get(), edge_info};
+    }
+
+    void disconnect(const std::string& streamer_id)
+    {
+        UHD_LOG_TRACE(LOG_ID, std::string("Disconnecting ") + streamer_id);
+        if (_tx_streamers.count(streamer_id)) {
+            // TODO: Physically disconnect all connections
+            // This may not be strictly necessary because the destruction of
+            // the xport will prevent packets from being sent to the
+            // destination.
+
+            // Remove the node from the graph
+            _graph->remove(_tx_streamers[streamer_id].node);
+
+            // Remove the streamer from the map
+            _tx_streamers.erase(streamer_id);
+        } else if (_rx_streamers.count(streamer_id)) {
+            // TODO: Physically disconnect all connections
+
+            // Remove the node from the graph (logically disconnect)
+            _graph->remove(_rx_streamers[streamer_id].node);
+
+            // Remove the streamer from the map
+            _rx_streamers.erase(streamer_id);
+        } else {
+            throw uhd::lookup_error(
+                std::string("Cannot disconnect streamer. Streamer not found: ")
+                + streamer_id);
+        }
+        UHD_LOG_TRACE(LOG_ID, std::string("Disconnected ") + streamer_id);
+    }
+
+    void disconnect(const std::string& streamer_id, size_t port)
+    {
+        std::string id_str = streamer_id + ":" + std::to_string(port);
+        UHD_LOG_TRACE(LOG_ID, std::string("Disconnecting ") + id_str);
+        if (_tx_streamers.count(streamer_id)) {
+            if (_tx_streamers[streamer_id].connections.count(port)) {
+                auto connection = _tx_streamers[streamer_id].connections[port];
+                _graph->disconnect(connection.src, connection.dst, connection.edge);
+                _tx_streamers[streamer_id].connections.erase(port);
+            } else {
+                throw uhd::lookup_error(
+                    std::string("Cannot disconnect. Port not connected: ") + id_str);
+            }
+        } else if (_rx_streamers.count(streamer_id)) {
+            if (_rx_streamers[streamer_id].connections.count(port)) {
+                auto connection = _rx_streamers[streamer_id].connections[port];
+                // TODO: Physically disconnect port
+                _graph->disconnect(connection.src, connection.dst, connection.edge);
+                _rx_streamers[streamer_id].connections.erase(port);
+            } else {
+                throw uhd::lookup_error(
+                    std::string("Cannot disconnect. Port not connected: ") + id_str);
+            }
+        } else {
+            throw uhd::lookup_error(
+                std::string("Cannot disconnect streamer. Streamer not found: ")
+                + streamer_id);
+        }
+        UHD_LOG_TRACE(LOG_ID, std::string("Disconnected ") + id_str);
     }
 
     uhd::rx_streamer::sptr create_rx_streamer(
-        const size_t num_chans, const uhd::stream_args_t& args)
+        const size_t num_ports, const uhd::stream_args_t& args)
     {
-        _rx_streamers.push_back(std::make_shared<rfnoc_rx_streamer>(num_chans, args));
-        return _rx_streamers.back();
+        return std::make_shared<rfnoc_rx_streamer>(
+            num_ports, args, [this](const std::string& id) { this->disconnect(id); });
     }
 
     uhd::tx_streamer::sptr create_tx_streamer(
-        const size_t num_chans, const uhd::stream_args_t& args)
+        const size_t num_ports, const uhd::stream_args_t& args)
     {
-        _tx_streamers.push_back(std::make_shared<rfnoc_tx_streamer>(num_chans, args));
-        return _tx_streamers.back();
+        return std::make_shared<rfnoc_tx_streamer>(
+            num_ports, args, [this](const std::string& id) { this->disconnect(id); });
     }
 
     size_t get_num_mboards() const
@@ -703,54 +819,32 @@ private:
         _graph->connect(src_blk.get(), dst_blk.get(), edge_info);
     }
 
-    /*! Internal physical connection helper
+    /*! Internal helper to get route information
      *
-     * Make the connections in the physical device
+     * Checks the validity of the route and returns route information.
      *
      * \throws uhd::routing_error
-     *     if the blocks are statically connected to something else
+     *     if the routing is impossible
      */
-    graph_edge_t::edge_t _physical_connect(const block_id_t& src_blk,
+    route_info_t _get_route_info(const block_id_t& src_blk,
         size_t src_port,
         const block_id_t& dst_blk,
         size_t dst_port)
     {
+        graph_edge_t::edge_t edge_type = graph_edge_t::DYNAMIC;
+
         const std::string src_blk_info =
             src_blk.to_string() + ":" + std::to_string(src_port);
         const std::string dst_blk_info =
             dst_blk.to_string() + ":" + std::to_string(dst_port);
 
         // Find the static edge for src_blk:src_port
-        graph_edge_t src_static_edge = _assert_edge(
+        auto src_static_edge = _assert_edge(
             _get_static_edge(
                 [src_blk_id = src_blk.to_string(), src_port](const graph_edge_t& edge) {
                     return edge.src_blockid == src_blk_id && edge.src_port == src_port;
                 }),
             src_blk_info);
-
-        // Now see if it's already connected to the destination
-        if (src_static_edge.dst_blockid == dst_blk.to_string()
-            && src_static_edge.dst_port == dst_port) {
-            UHD_LOG_TRACE(LOG_ID,
-                "Blocks " << src_blk_info << " and " << dst_blk_info
-                          << " are already statically connected, no physical connection "
-                             "required.");
-            return graph_edge_t::STATIC;
-        }
-
-        // If they're not statically connected, the source *must* be connected
-        // to an SEP, or this route is impossible
-        if (block_id_t(src_static_edge.dst_blockid).get_block_name() != NODE_ID_SEP) {
-            const std::string err_msg =
-                src_blk_info + " is neither statically connected to " + dst_blk_info
-                + " nor to an SEP! Routing impossible.";
-            UHD_LOG_ERROR(LOG_ID, err_msg);
-            throw uhd::routing_error(err_msg);
-        }
-
-        // OK, now we know which source SEP we have
-        const std::string src_sep_info = src_static_edge.dst_blockid;
-        const sep_addr_t src_sep_addr  = _sep_map.at(src_sep_info);
 
         // Now find the static edge for the destination SEP
         auto dst_static_edge = _assert_edge(
@@ -760,9 +854,27 @@ private:
                 }),
             dst_blk_info);
 
-        // If they're not statically connected, the source *must* be connected
-        // to an SEP, or this route is impossible
-        if (block_id_t(dst_static_edge.src_blockid).get_block_name() != NODE_ID_SEP) {
+        // Now see if it's already connected to the destination
+        if (src_static_edge.dst_blockid == dst_blk.to_string()
+            && src_static_edge.dst_port == dst_port) {
+            // Blocks are statically connected
+            UHD_LOG_TRACE(LOG_ID,
+                "Blocks " << src_blk_info << " and " << dst_blk_info
+                          << " are statically connected");
+            edge_type = graph_edge_t::STATIC;
+        } else if (block_id_t(src_static_edge.dst_blockid).get_block_name()
+                   != NODE_ID_SEP) {
+            // Blocks are not statically connected and the source is not
+            // connected to an SEP
+            const std::string err_msg =
+                src_blk_info + " is neither statically connected to " + dst_blk_info
+                + " nor to an SEP! Routing impossible.";
+            UHD_LOG_ERROR(LOG_ID, err_msg);
+            throw uhd::routing_error(err_msg);
+        } else if (block_id_t(dst_static_edge.src_blockid).get_block_name()
+                   != NODE_ID_SEP) {
+            // Blocks are not statically connected and the destination is not
+            // connected to an SEP
             const std::string err_msg =
                 dst_blk_info + " is neither statically connected to " + src_blk_info
                 + " nor to an SEP! Routing impossible.";
@@ -770,21 +882,62 @@ private:
             throw uhd::routing_error(err_msg);
         }
 
-        // OK, now we know which destination SEP we have
-        const std::string dst_sep_info = dst_static_edge.src_blockid;
-        const sep_addr_t dst_sep_addr  = _sep_map.at(dst_sep_info);
+        return {edge_type, src_static_edge, dst_static_edge};
+    }
 
-        // Now all we need to do is dynamically connect those SEPs
-        auto strm_info = _gsm->create_device_to_device_data_stream(
-            dst_sep_addr, src_sep_addr, false, 0.1, 0.0, false);
+    /*! Internal physical connection helper
+     *
+     * Make the connections in the physical device
+     *
+     * \throws uhd::routing_error
+     *     if the routing is impossible
+     */
+    graph_edge_t::edge_t _physical_connect(const block_id_t& src_blk,
+        size_t src_port,
+        const block_id_t& dst_blk,
+        size_t dst_port)
+    {
+        auto route_info = _get_route_info(src_blk, src_port, dst_blk, dst_port);
 
-        UHD_LOGGER_DEBUG(LOG_ID)
-            << boost::format("Data stream between EPID %d and EPID %d established "
-                             "where downstream buffer can hold %lu bytes and %u packets")
-                   % std::get<0>(strm_info).first % std::get<0>(strm_info).second
-                   % std::get<1>(strm_info).bytes % std::get<1>(strm_info).packets;
+        if (route_info.edge_type == graph_edge_t::DYNAMIC) {
+            const std::string src_sep_info = route_info.src_static_edge.dst_blockid;
+            const sep_addr_t src_sep_addr  = _sep_map.at(src_sep_info);
+            const std::string dst_sep_info = route_info.dst_static_edge.src_blockid;
+            const sep_addr_t dst_sep_addr  = _sep_map.at(dst_sep_info);
 
-        return graph_edge_t::DYNAMIC;
+            auto strm_info = _gsm->create_device_to_device_data_stream(
+                dst_sep_addr, src_sep_addr, false, 0.1, 0.0, false);
+
+            UHD_LOGGER_DEBUG(LOG_ID)
+                << boost::format(
+                       "Data stream between EPID %d and EPID %d established "
+                       "where downstream buffer can hold %lu bytes and %u packets")
+                       % std::get<0>(strm_info).first % std::get<0>(strm_info).second
+                       % std::get<1>(strm_info).bytes % std::get<1>(strm_info).packets;
+        }
+
+        return route_info.edge_type;
+    }
+
+    /*! Internal physical disconnection helper
+     *
+     * Disconnects the physical device
+     *
+     * \throws uhd::routing_error
+     *     if the routing is impossible
+     */
+    graph_edge_t::edge_t _physical_disconnect(const block_id_t& src_blk,
+        size_t src_port,
+        const block_id_t& dst_blk,
+        size_t dst_port)
+    {
+        auto route_info = _get_route_info(src_blk, src_port, dst_blk, dst_port);
+
+        if (route_info.edge_type == graph_edge_t::DYNAMIC) {
+            // TODO: Add call into _gsm to physically disconnect the SEPs
+        }
+
+        return route_info.edge_type;
     }
 
     //! Flush and reset each connected port on the mboard
@@ -890,11 +1043,11 @@ private:
     //! Reference to a packet factory object. Gets initialized just before the GSM
     std::unique_ptr<chdr::chdr_packet_factory> _pkt_factory;
 
-    //! Reference to RX streamers
-    std::vector<rx_streamer::sptr> _rx_streamers;
+    //! Map from TX streamer ID to streamer info
+    std::map<std::string, streamer_info_t> _tx_streamers;
 
-    //! Reference to TX streamers
-    std::vector<tx_streamer::sptr> _tx_streamers;
+    //! Map from RX streamer ID to streamer info
+    std::map<std::string, streamer_info_t> _rx_streamers;
 }; /* class rfnoc_graph_impl */
 
 

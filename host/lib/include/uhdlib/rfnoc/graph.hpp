@@ -39,11 +39,24 @@ public:
      */
     void connect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t edge_info);
 
-    // void disconnect(node_ref_t src_node,
-    // node_ref_t dst_node,
-    // const size_t src_port,
-    // const size_t dst_port);
-    //
+    /*! Remove a connection from the graph
+     *
+     * After this function returns, the nodes will be considered disconnected
+     * along the ports specified in \p edge_info.
+     *
+     * \param src_node A reference to the source node
+     * \param dst_node A reference to the destination node
+     * \param edge_info Information about the type of edge
+     */
+    void disconnect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t edge_info);
+
+    /*! Remove a node from the graph
+     *
+     * Disconnects all edges and removes the node from the graph.
+     *
+     * \param src_node A reference to the node
+     */
+    void remove(node_ref_t node);
 
     /*! Commit graph and run initial checks
      *
@@ -221,6 +234,12 @@ private:
      * If it's already there, do nothing.
      */
     void _add_node(node_ref_t node);
+
+    /*! Remove a node, but only if it's in the graph.
+     *
+     * If it's not there, do nothing.
+     */
+    void _remove_node(node_ref_t node);
 
     /*! Find the neighbouring node for \p origin based on \p port_info
      *

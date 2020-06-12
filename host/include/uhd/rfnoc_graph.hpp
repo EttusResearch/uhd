@@ -166,7 +166,7 @@ public:
         const block_id_t& dst_blk,
         size_t dst_port) = 0;
 
-    /*! Connect a RFNOC block with block ID \p src_block to another with block ID \p
+    /*! Connect a RFNoC block with block ID \p src_block to another with block ID \p
      * dst_block.
      *
      * Note you need to also call this on statically connected blocks if you
@@ -220,6 +220,44 @@ public:
         uhd::rx_streamer::sptr streamer,
         size_t strm_port,
         uhd::transport::adapter_id_t adapter_id = uhd::transport::NULL_ADAPTER_ID) = 0;
+
+    /*! Disconnect a RFNoC block with block ID \p src_blk from another with block ID
+     * \p dst_blk.  This will logically disconnect the blocks, but the physical
+     * connection will not be changed until a new connection is made on the source
+     * port.
+     *
+     * \param src_blk The block ID of the source block to disconnect.
+     * \param src_port The port of the source block to disconnect.
+     * \param dst_blk The block ID of the destination block to disconnect from.
+     * \param dst_port The port of the destination block to disconnect from.
+     */
+    virtual void disconnect(const block_id_t& src_blk,
+        size_t src_port,
+        const block_id_t& dst_blk,
+        size_t dst_port) = 0;
+
+    /*! Disconnect a streamer with ID \p streamer_id. This will logically
+     * disconnect the streamer, but physical connection will not be changed.
+     * For RX streamers, the physical connection will be changed when a new
+     * connection is made to the upstream source port(s).  For TX streamers,
+     * the physical connection will be changed when the TX streamer is
+     * destroyed or the port(s) are connected to another block.
+     *
+     * \param streamer_id The ID of the streamer to disconnect.
+     */
+    virtual void disconnect(const std::string& streamer_id) = 0;
+
+    /*! Disconnect port \p port of a streamer with ID \p streamer_id. This
+     * will logically disconnect the streamer, but physical connection will
+     * not be changed.  For RX streamers, the physical connection will be
+     * changed when a new connection is made to the upstreame source port.
+     * For TX streamers, the physical connection will be changed when the TX
+     * streamer is destroyed or the port is connected to another block.
+     *
+     * \param streamer_id The ID of the streamer.
+     * \param port The port to disconnect.
+     */
+    virtual void disconnect(const std::string& streamer_id, size_t port) = 0;
 
     /*! Enumerate all the possible host transport adapters that can be used to
      * receive from the specified block

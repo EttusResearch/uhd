@@ -42,44 +42,6 @@ auto get_dirty_props(graph_t::node_ref_t node_ref)
     });
 }
 
-/*! Check that \p new_edge_info does not conflict with \p existing_edge_info
- *
- * \throws uhd::rfnoc_error if it does.
- */
-void assert_edge_new(const graph_t::graph_edge_t& new_edge_info,
-    const graph_t::graph_edge_t& existing_edge_info)
-{
-    if (existing_edge_info == new_edge_info) {
-        UHD_LOG_INFO(LOG_ID,
-            "Ignoring repeated call to connect "
-                << new_edge_info.src_blockid << ":" << new_edge_info.src_port << " -> "
-                << new_edge_info.dst_blockid << ":" << new_edge_info.dst_port);
-        return;
-    } else if (existing_edge_info.src_port == new_edge_info.src_port
-               && existing_edge_info.src_blockid == new_edge_info.src_blockid
-               && existing_edge_info.dst_port == new_edge_info.dst_port
-               && existing_edge_info.dst_blockid == new_edge_info.dst_blockid) {
-        UHD_LOG_ERROR(LOG_ID,
-            "Caught attempt to modify properties of edge "
-                << existing_edge_info.src_blockid << ":" << existing_edge_info.src_port
-                << " -> " << existing_edge_info.dst_blockid << ":"
-                << existing_edge_info.dst_port);
-        throw uhd::rfnoc_error("Caught attempt to modify properties of edge!");
-    } else if (new_edge_info.src_blockid == existing_edge_info.src_blockid
-               && new_edge_info.src_port == existing_edge_info.src_port) {
-        UHD_LOG_ERROR(LOG_ID,
-            "Attempting to reconnect output port " << existing_edge_info.src_blockid
-                                                   << ":" << existing_edge_info.src_port);
-        throw uhd::rfnoc_error("Attempting to reconnect output port!");
-    } else if (new_edge_info.dst_blockid == existing_edge_info.dst_blockid
-               && new_edge_info.dst_port == existing_edge_info.dst_port) {
-        UHD_LOG_ERROR(LOG_ID,
-            "Attempting to reconnect output port " << existing_edge_info.dst_blockid
-                                                   << ":" << existing_edge_info.dst_port);
-        throw uhd::rfnoc_error("Attempting to reconnect input port!");
-    }
-}
-
 } // namespace
 
 /*! Graph-filtering predicate to find dirty nodes only
@@ -141,17 +103,56 @@ void graph_t::connect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t edg
             this->enqueue_action(dst_node, src, action);
         });
 
-    // Check if connection exists
-    // This can be optimized: Edges can appear in both out_edges and in_edges,
-    // and we could skip double-checking them.
+    // Check if edge exists
     auto out_edge_range = boost::out_edges(src_vertex_desc, _graph);
     for (auto edge_it = out_edge_range.first; edge_it != out_edge_range.second;
          ++edge_it) {
-        assert_edge_new(edge_info, boost::get(edge_property_t(), _graph, *edge_it));
+        auto existing_edge_info = boost::get(edge_property_t(), _graph, *edge_it);
+
+        // if exact edge exists, do nothing and return
+        if (existing_edge_info == edge_info) {
+            UHD_LOG_INFO(LOG_ID,
+                "Ignoring repeated call to connect "
+                    << edge_info.src_blockid << ":" << edge_info.src_port << " -> "
+                    << edge_info.dst_blockid << ":" << edge_info.dst_port);
+            return;
+        }
+
+        // if there is already an edge for the source block and port
+        if (existing_edge_info.src_port == edge_info.src_port
+            && existing_edge_info.src_blockid == edge_info.src_blockid) {
+            // if same destination block and port
+            if (existing_edge_info.dst_port == edge_info.dst_port
+                && existing_edge_info.dst_blockid == edge_info.dst_blockid) {
+                // attempt to modify edge properties - throw an error
+                UHD_LOG_ERROR(LOG_ID,
+                    "Caught attempt to modify properties of edge "
+                        << existing_edge_info.src_blockid << ":"
+                        << existing_edge_info.src_port << " -> "
+                        << existing_edge_info.dst_blockid << ":"
+                        << existing_edge_info.dst_port);
+                throw uhd::rfnoc_error("Caught attempt to modify properties of edge!");
+            } else {
+                // Attempt to reconnect already connected source block and port
+                UHD_LOG_ERROR(LOG_ID,
+                    "Attempting to reconnect output port "
+                        << existing_edge_info.src_blockid << ":"
+                        << existing_edge_info.src_port);
+                throw uhd::rfnoc_error("Attempting to reconnect output port!");
+            }
+        }
     }
     auto in_edge_range = boost::in_edges(dst_vertex_desc, _graph);
     for (auto edge_it = in_edge_range.first; edge_it != in_edge_range.second; ++edge_it) {
-        assert_edge_new(edge_info, boost::get(edge_property_t(), _graph, *edge_it));
+        auto existing_edge_info = boost::get(edge_property_t(), _graph, *edge_it);
+        if (edge_info.dst_blockid == existing_edge_info.dst_blockid
+            && edge_info.dst_port == existing_edge_info.dst_port) {
+            UHD_LOG_ERROR(LOG_ID,
+                "Attempting to reconnect input port " << existing_edge_info.dst_blockid
+                                                      << ":"
+                                                      << existing_edge_info.dst_port);
+            throw uhd::rfnoc_error("Attempting to reconnect input port!");
+        }
     }
 
     // Create edge
@@ -174,6 +175,35 @@ void graph_t::connect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t edg
             "Adding edge without disabling property_propagation_active will lead "
             "to unresolvable graph!");
     }
+}
+
+void graph_t::disconnect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t edge_info)
+{
+    // Find vertex descriptor
+    auto src_vertex_desc = _node_map.at(src_node);
+    auto dst_vertex_desc = _node_map.at(dst_node);
+
+    edge_info.src_blockid = src_node->get_unique_id();
+    edge_info.dst_blockid = dst_node->get_unique_id();
+
+    boost::remove_out_edge_if(src_vertex_desc,
+        [this, edge_info](rfnoc_graph_t::edge_descriptor edge_desc) {
+            return (edge_info == boost::get(edge_property_t(), this->_graph, edge_desc));
+        },
+        _graph);
+
+    if (boost::degree(src_vertex_desc, _graph) == 0) {
+        _remove_node(src_node);
+    }
+
+    if (boost::degree(dst_vertex_desc, _graph) == 0) {
+        _remove_node(dst_node);
+    }
+}
+
+void graph_t::remove(node_ref_t node)
+{
+    _remove_node(node);
 }
 
 void graph_t::commit()
@@ -509,6 +539,29 @@ void graph_t::_add_node(node_ref_t new_node)
     }
 
     _node_map.emplace(new_node, boost::add_vertex(new_node, _graph));
+}
+
+void graph_t::_remove_node(node_ref_t node)
+{
+    if (_node_map.count(node)) {
+        auto vertex_desc = _node_map.at(node);
+
+        // Remove all edges
+        boost::clear_vertex(vertex_desc, _graph);
+
+        // Remove the vertex
+        boost::remove_vertex(vertex_desc, _graph);
+        _node_map.erase(node);
+
+        // Removing the vertex changes the vertex descriptors,
+        // so update the node map
+        auto vertex_range = boost::vertices(_graph);
+        for (auto vertex_it = vertex_range.first; vertex_it != vertex_range.second;
+             vertex_it++) {
+            auto node       = boost::get(vertex_property_t(), _graph, *vertex_it);
+            _node_map[node] = *vertex_it;
+        }
+    }
 }
 
 
