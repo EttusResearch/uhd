@@ -16,11 +16,13 @@ const std::string STREAMER_ID = "TxStreamer";
 static std::atomic<uint64_t> streamer_inst_ctr;
 static constexpr size_t ASYNC_MSG_QUEUE_SIZE = 1000;
 
-rfnoc_tx_streamer::rfnoc_tx_streamer(
-    const size_t num_chans, const uhd::stream_args_t stream_args)
-    : tx_streamer_impl<chdr_tx_data_xport>(num_chans, stream_args)
+rfnoc_tx_streamer::rfnoc_tx_streamer(const size_t num_chans,
+    const uhd::stream_args_t stream_args,
+    disconnect_fn_t disconnect_cb)
+    : tx_streamer_impl<chdr_tx_data_xport>(stream_args.channels.size(), stream_args)
     , _unique_id(STREAMER_ID + "#" + std::to_string(streamer_inst_ctr++))
     , _stream_args(stream_args)
+    , _disconnect_cb(disconnect_cb)
 {
     _async_msg_queue = std::make_shared<tx_async_msg_queue>(ASYNC_MSG_QUEUE_SIZE);
 
@@ -76,6 +78,13 @@ rfnoc_tx_streamer::rfnoc_tx_streamer(
 
     node_accessor_t node_accessor;
     node_accessor.init_props(this);
+}
+
+rfnoc_tx_streamer::~rfnoc_tx_streamer()
+{
+    if (_disconnect_cb) {
+        _disconnect_cb(_unique_id);
+    }
 }
 
 std::string rfnoc_tx_streamer::get_unique_id() const

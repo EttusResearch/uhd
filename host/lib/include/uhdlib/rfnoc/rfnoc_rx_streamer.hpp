@@ -22,13 +22,23 @@ namespace uhd { namespace rfnoc {
 class rfnoc_rx_streamer : public node_t,
                           public transport::rx_streamer_impl<chdr_rx_data_xport>
 {
+    using disconnect_fn_t = std::function<void(const std::string&)>;
+
 public:
     /*! Constructor
      *
      * \param num_ports The number of ports
      * \param stream_args Arguments to aid the construction of the streamer
+     * \param disconnect_cb Callback function to disconnect the streamer when
+     *                      the object is destroyed
      */
-    rfnoc_rx_streamer(const size_t num_ports, const uhd::stream_args_t stream_args);
+    rfnoc_rx_streamer(const size_t num_ports,
+        const uhd::stream_args_t stream_args,
+        disconnect_fn_t disconnect_cb);
+
+    /*! Destructor
+     */
+    ~rfnoc_rx_streamer();
 
     /*! Returns a unique identifier string for this node. In every RFNoC graph,
      * no two nodes cannot have the same ID. Returns a string in the form of
@@ -106,6 +116,9 @@ private:
 
     // Stream args provided at construction
     const uhd::stream_args_t _stream_args;
+
+    // Callback function to disconnect
+    const disconnect_fn_t _disconnect_cb;
 
     std::atomic<bool> _overrun_handling_mode{false};
     size_t _overrun_channel = 0;
