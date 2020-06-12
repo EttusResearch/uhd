@@ -37,4 +37,3 @@ class gpio_test(uhd_example_test_case):
             print(app.stderr)
         self.report_example_results(test_name, run_results)
         return run_results
-

@@ -8,35 +8,16 @@
 
 import os
 from uhd_test_base import shell_application
-from uhd_test_base import uhd_test_case
-try:
-    import uhd
-except ImportError:
-    uhd = None
+from uhd_test_base import UHDPythonTestCase
 
-# For what we're doing here, ruamel.yaml and yaml are compatible, and we'll use
-# whatever we can find
-try:
-    from ruamel import yaml
-except:
-    import yaml
-
-
-class uhd_python_api_test(uhd_test_case):
+class uhd_python_api_test(UHDPythonTestCase):
     """ Run multi_usrp_test """
-    def test_api(self):
+    test_name = 'uhd_python_api_test'
+
+    def run_test(self, test_name, test_args):
         """
         Run test and report results.
         """
-        if uhd is None:
-            print("UHD module not found -- checking for Python API")
-            config_info_app = shell_application('uhd_config_info')
-            config_info_app.run(['--enabled-components'])
-            if "Python API" in config_info_app.stdout:
-                raise RuntimeError("Python API enabled, but cannot load uhd module!")
-            print("Skipping test, Python API not installed.")
-            self.report_result("python_api_tester", 'status', 'Skipped')
-            return
         devtest_src_dir = os.getenv('_UHD_DEVTEST_SRC_DIR', '')
         multi_usrp_test_path = \
             os.path.join(devtest_src_dir, 'multi_usrp_test.py')
@@ -71,11 +52,4 @@ class uhd_python_api_test(uhd_test_case):
                 'status',
                 'Passed' if run_results['passed'] else 'Failed',
             )
-        self.assertTrue(
-            run_results['passed'],
-            msg="Errors occurred during test python_api_test. "
-                "Check log file for details.\n"
-                "Run results:\n{r}".format(
-                    r=yaml.dump(run_results, default_flow_style=False)
-                )
-        )
+        return run_results
