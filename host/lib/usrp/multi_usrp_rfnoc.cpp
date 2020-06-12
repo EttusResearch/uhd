@@ -15,6 +15,8 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/utils/graph_utils.hpp>
 #include <uhdlib/rfnoc/rfnoc_device.hpp>
+#include <uhdlib/rfnoc/rfnoc_rx_streamer.hpp>
+#include <uhdlib/rfnoc/rfnoc_tx_streamer.hpp>
 #include <uhdlib/usrp/gpio_defs.hpp>
 #include <uhdlib/utils/narrow.hpp>
 #include <unordered_set>
@@ -32,13 +34,13 @@ using namespace uhd::usrp;
 using namespace uhd::rfnoc;
 
 //! Fan out (mux) an API call that is for all channels or all motherboards
-#define MUX_API_CALL(max_index, api_call, mux_var, mux_cond, ...) \
-        if (mux_var == mux_cond) { \
-            for (size_t __index = 0; __index < max_index; ++__index) { \
-                api_call(__VA_ARGS__, __index); \
-            } \
-            return; \
-        }
+#define MUX_API_CALL(max_index, api_call, mux_var, mux_cond, ...)  \
+    if (mux_var == mux_cond) {                                     \
+        for (size_t __index = 0; __index < max_index; ++__index) { \
+            api_call(__VA_ARGS__, __index);                        \
+        }                                                          \
+        return;                                                    \
+    }
 
 //! Fan out (mux) an RX-specific API call that is for all channels
 #define MUX_RX_API_CALL(api_call, ...) \
@@ -81,7 +83,7 @@ public:
 
     tx_streamer::sptr get_tx_stream(const stream_args_t& args)
     {
-        auto streamer = _musrp->get_tx_stream(args);
+        auto streamer     = _musrp->get_tx_stream(args);
         _last_tx_streamer = streamer;
         return streamer;
     }
@@ -239,13 +241,15 @@ public:
         for (size_t rx_chan = 0; rx_chan < get_rx_num_channels(); ++rx_chan) {
             auto& rx_chain = _get_rx_chan(rx_chan);
             if (rx_chain.ddc) {
-                rx_chain.ddc->set_input_rate(rx_chain.radio->get_rate(), rx_chain.block_chan);
+                rx_chain.ddc->set_input_rate(
+                    rx_chain.radio->get_rate(), rx_chain.block_chan);
             }
         }
         for (size_t tx_chan = 0; tx_chan < get_tx_num_channels(); ++tx_chan) {
             auto& tx_chain = _get_tx_chan(tx_chan);
             if (tx_chain.duc) {
-                tx_chain.duc->set_output_rate(tx_chain.radio->get_rate(), tx_chain.block_chan);
+                tx_chain.duc->set_output_rate(
+                    tx_chain.radio->get_rate(), tx_chain.block_chan);
             }
         }
         _graph->commit();
@@ -270,33 +274,34 @@ public:
     {
         std::lock_guard<std::recursive_mutex> l(_graph_mutex);
         stream_args_t args = sanitize_stream_args(args_);
+        double rate        = 1.0;
+
         // Note that we don't release the graph, which means that property
         // propagation is possible. This is necessary so we don't disrupt
         // existing streamers. We use the _graph_mutex to try and avoid any
         // property propagation where possible.
-        double rate = 1.0;
-        // This will create an unconnected streamer
-        auto rx_streamer = _graph->create_rx_streamer(args.channels.size(), args);
+
+        // Connect the chains
+        _connect_rx_chains(args.channels);
+
+        // Create the streamer
+        // The disconnect callback must disconnect the entire chain because the radio
+        // relies on the connections to determine what is enabled.
+        auto rx_streamer = std::make_shared<rfnoc_rx_streamer>(args.channels.size(),
+            args,
+            [this, channels = args.channels](const std::string& id) {
+                this->_graph->disconnect(id);
+                this->_disconnect_rx_chains(channels);
+            });
+
+        // Connect the streamer
         for (size_t strm_port = 0; strm_port < args.channels.size(); ++strm_port) {
             auto rx_channel = args.channels.at(strm_port);
             auto rx_chain   = _get_rx_chan(rx_channel);
-            UHD_ASSERT_THROW(!rx_chain.edge_list.empty())
-            // Make all of the connections in our chain
-            for (auto edge : rx_chain.edge_list) {
-                if (block_id_t(edge.dst_blockid).match(NODE_ID_SEP)) {
-                    break;
-                }
-                UHD_LOG_TRACE("MULTI_USRP",
-                    boost::format("Connecting RX edge: %s:%d -> %s:%d") % edge.src_blockid
-                        % edge.src_port % edge.dst_blockid % edge.dst_port);
-                _graph->connect(
-                    edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
-            }
-            // Including the connection to the streamer
             UHD_LOG_TRACE("MULTI_USRP",
-                boost::format("Connecting %s:%d -> RxStreamer:%d")
-                    % rx_chain.edge_list.back().src_blockid
-                    % rx_chain.edge_list.back().src_port % strm_port);
+                "Connecting " << rx_chain.edge_list.back().src_blockid << ":"
+                              << rx_chain.edge_list.back().src_port
+                              << " -> RxStreamer:" << strm_port);
             _graph->connect(rx_chain.edge_list.back().src_blockid,
                 rx_chain.edge_list.back().src_port,
                 rx_streamer,
@@ -307,11 +312,13 @@ public:
                 if (rate > 1.0) {
                     UHD_LOG_DEBUG("MULTI_USRP",
                         "Inconsistent RX rates when creating streamer! "
-                        "Harmonizing to " << chan_rate);
+                        "Harmonizing to "
+                            << chan_rate);
                 }
                 rate = chan_rate;
             }
         }
+
         // Now everything is connected, commit() again so we can have stream
         // commands go through the graph
         _graph->commit();
@@ -333,6 +340,7 @@ public:
                 }
             }
         }
+
         return rx_streamer;
     }
 
@@ -340,33 +348,34 @@ public:
     {
         std::lock_guard<std::recursive_mutex> l(_graph_mutex);
         stream_args_t args = sanitize_stream_args(args_);
+        double rate        = 1.0;
+
         // Note that we don't release the graph, which means that property
         // propagation is possible. This is necessary so we don't disrupt
         // existing streamers. We use the _graph_mutex to try and avoid any
         // property propagation where possible.
-        double rate = 1.0;
-        // This will create an unconnected streamer
-        auto tx_streamer = _graph->create_tx_streamer(args.channels.size(), args);
+
+        // Connect the chains
+        _connect_tx_chains(args.channels);
+
+        // Create a streamer
+        // The disconnect callback must disconnect the entire chain because the radio
+        // relies on the connections to determine what is enabled.
+        auto tx_streamer = std::make_shared<rfnoc_tx_streamer>(args.channels.size(),
+            args,
+            [this, channels = args.channels](const std::string& id) {
+                this->_graph->disconnect(id);
+                this->_disconnect_tx_chains(channels);
+            });
+
+        // Connect the streamer
         for (size_t strm_port = 0; strm_port < args.channels.size(); ++strm_port) {
             auto tx_channel = args.channels.at(strm_port);
             auto tx_chain   = _get_tx_chan(tx_channel);
-            UHD_ASSERT_THROW(!tx_chain.edge_list.empty())
-            // Make all of the connections in our chain
-            for (auto edge : tx_chain.edge_list) {
-                if (block_id_t(edge.src_blockid).match(NODE_ID_SEP)) {
-                    break;
-                }
-                UHD_LOG_TRACE("MULTI_USRP",
-                    boost::format("Connecting TX edge %s:%d -> %s:%d") % edge.src_blockid
-                        % edge.src_port % edge.dst_blockid % edge.dst_port);
-                _graph->connect(
-                    edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
-            }
-            // Including the connection to the streamer
             UHD_LOG_TRACE("MULTI_USRP",
-                boost::format("Connecting TxStreamer:%d -> %s:%d") % strm_port
-                    % tx_chain.edge_list.back().dst_blockid
-                    % tx_chain.edge_list.back().dst_port);
+                "Connecting TxStreamer:" << strm_port << " -> "
+                                         << tx_chain.edge_list.back().dst_blockid << ":"
+                                         << tx_chain.edge_list.back().dst_port);
             _graph->connect(tx_streamer,
                 strm_port,
                 tx_chain.edge_list.back().dst_blockid,
@@ -403,10 +412,12 @@ public:
                 }
             }
         }
+
         // For legacy purposes: This enables recv_async_msg(), which is considered
         // deprecated, but as long as it's there, we need this to approximate
         // previous behaviour.
         _device->set_tx_stream(tx_streamer);
+
         return tx_streamer;
     }
 
@@ -451,15 +462,17 @@ public:
 
         const auto db_eeprom = rx_chain.radio->get_db_eeprom();
         usrp_info["rx_serial"] =
-            db_eeprom.count("rx_serial") ? bytes_to_str(db_eeprom.at("rx_serial")) :
-            db_eeprom.count("serial") ? bytes_to_str(db_eeprom.at("serial")) :"";
+            db_eeprom.count("rx_serial")
+                ? bytes_to_str(db_eeprom.at("rx_serial"))
+                : db_eeprom.count("serial") ? bytes_to_str(db_eeprom.at("serial")) : "";
         usrp_info["rx_id"] =
-            db_eeprom.count("rx_id") ? bytes_to_str(db_eeprom.at("rx_id")) :
-            db_eeprom.count("pid") ? bytes_to_str(db_eeprom.at("pid")) : "";
+            db_eeprom.count("rx_id")
+                ? bytes_to_str(db_eeprom.at("rx_id"))
+                : db_eeprom.count("pid") ? bytes_to_str(db_eeprom.at("pid")) : "";
 
         const auto rx_power_ref_keys = rx_chain.radio->get_rx_power_ref_keys();
         if (!rx_power_ref_keys.empty() && rx_power_ref_keys.size() == 2) {
-            usrp_info["rx_ref_power_key"] = rx_power_ref_keys.at(0);
+            usrp_info["rx_ref_power_key"]    = rx_power_ref_keys.at(0);
             usrp_info["rx_ref_power_serial"] = rx_power_ref_keys.at(1);
         }
 
@@ -483,15 +496,17 @@ public:
 
         const auto db_eeprom = tx_chain.radio->get_db_eeprom();
         usrp_info["tx_serial"] =
-            db_eeprom.count("tx_serial") ? bytes_to_str(db_eeprom.at("tx_serial")) :
-            db_eeprom.count("serial") ? bytes_to_str(db_eeprom.at("serial")) : "";
+            db_eeprom.count("tx_serial")
+                ? bytes_to_str(db_eeprom.at("tx_serial"))
+                : db_eeprom.count("serial") ? bytes_to_str(db_eeprom.at("serial")) : "";
         usrp_info["tx_id"] =
-            db_eeprom.count("tx_id") ? bytes_to_str(db_eeprom.at("tx_id")) :
-            db_eeprom.count("pid") ? bytes_to_str(db_eeprom.at("pid")) : "";
+            db_eeprom.count("tx_id")
+                ? bytes_to_str(db_eeprom.at("tx_id"))
+                : db_eeprom.count("pid") ? bytes_to_str(db_eeprom.at("pid")) : "";
 
         const auto tx_power_ref_keys = tx_chain.radio->get_tx_power_ref_keys();
         if (!tx_power_ref_keys.empty() && tx_power_ref_keys.size() == 2) {
-            usrp_info["tx_ref_power_key"] = tx_power_ref_keys.at(0);
+            usrp_info["tx_ref_power_key"]    = tx_power_ref_keys.at(0);
             usrp_info["tx_ref_power_serial"] = tx_power_ref_keys.at(1);
         }
 
@@ -877,7 +892,8 @@ public:
         get_mbc(mboard)->set_sync_source(clock_source, time_source);
     }
 
-    void set_sync_source(const device_addr_t& sync_source, const size_t mboard = ALL_MBOARDS)
+    void set_sync_source(
+        const device_addr_t& sync_source, const size_t mboard = ALL_MBOARDS)
     {
         MUX_MB_API_CALL(set_sync_source, sync_source);
         get_mbc(mboard)->set_sync_source(sync_source);
@@ -1069,10 +1085,16 @@ public:
             return new_rx_chans;
         }();
 
-        // Now register them
+        // Disconnect and clear the existing chains
+        for (size_t i = 0; i < _rx_chans.size(); i++) {
+            _disconnect_rx_chain(i);
+        }
         _rx_chans.clear();
-        for (size_t rx_chan = 0; rx_chan < new_rx_chans.size(); ++rx_chan) {
-            _rx_chans.emplace(rx_chan, new_rx_chans.at(rx_chan));
+
+        // Register the new chains
+        size_t musrp_rx_channel = 0;
+        for (auto rx_chan : new_rx_chans) {
+            _rx_chans.emplace(musrp_rx_channel++, rx_chan);
         }
     }
 
@@ -1244,7 +1266,8 @@ public:
         return rx_chain.radio->get_rx_lo_names(rx_chain.block_chan);
     }
 
-    void set_rx_lo_source(const std::string& src, const std::string& name = ALL_LOS, size_t chan = 0)
+    void set_rx_lo_source(
+        const std::string& src, const std::string& name = ALL_LOS, size_t chan = 0)
     {
         MUX_RX_API_CALL(set_rx_lo_source, src, name);
         auto rx_chain = _get_rx_chan(chan);
@@ -1257,18 +1280,19 @@ public:
         return rx_chain.radio->get_rx_lo_source(name, rx_chain.block_chan);
     }
 
-    std::vector<std::string> get_rx_lo_sources(const std::string& name = ALL_LOS, size_t chan = 0)
+    std::vector<std::string> get_rx_lo_sources(
+        const std::string& name = ALL_LOS, size_t chan = 0)
     {
         auto rx_chain = _get_rx_chan(chan);
         return rx_chain.radio->get_rx_lo_sources(name, rx_chain.block_chan);
     }
 
-    void set_rx_lo_export_enabled(bool enabled, const std::string& name = ALL_LOS, size_t chan = 0)
+    void set_rx_lo_export_enabled(
+        bool enabled, const std::string& name = ALL_LOS, size_t chan = 0)
     {
         MUX_RX_API_CALL(set_rx_lo_export_enabled, enabled, name);
         auto rx_chain = _get_rx_chan(chan);
-        rx_chain.radio->set_rx_lo_export_enabled(
-            enabled, name, rx_chain.block_chan);
+        rx_chain.radio->set_rx_lo_export_enabled(enabled, name, rx_chain.block_chan);
     }
 
     bool get_rx_lo_export_enabled(const std::string& name = ALL_LOS, size_t chan = 0)
@@ -1310,13 +1334,15 @@ public:
         tx_chain.radio->set_tx_lo_source(src, name, tx_chain.block_chan);
     }
 
-    const std::string get_tx_lo_source(const std::string& name = ALL_LOS, const size_t chan = 0)
+    const std::string get_tx_lo_source(
+        const std::string& name = ALL_LOS, const size_t chan = 0)
     {
         auto tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->get_tx_lo_source(name, tx_chain.block_chan);
     }
 
-    std::vector<std::string> get_tx_lo_sources(const std::string& name = ALL_LOS, const size_t chan = 0)
+    std::vector<std::string> get_tx_lo_sources(
+        const std::string& name = ALL_LOS, const size_t chan = 0)
     {
         auto tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->get_tx_lo_sources(name, tx_chain.block_chan);
@@ -1330,13 +1356,15 @@ public:
         tx_chain.radio->set_tx_lo_export_enabled(enabled, name, tx_chain.block_chan);
     }
 
-    bool get_tx_lo_export_enabled(const std::string& name = ALL_LOS, const size_t chan = 0)
+    bool get_tx_lo_export_enabled(
+        const std::string& name = ALL_LOS, const size_t chan = 0)
     {
         auto tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->get_tx_lo_export_enabled(name, tx_chain.block_chan);
     }
 
-    double set_tx_lo_freq(const double freq, const std::string& name, const size_t chan = 0)
+    double set_tx_lo_freq(
+        const double freq, const std::string& name, const size_t chan = 0)
     {
         auto tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->set_tx_lo_freq(freq, name, tx_chain.block_chan);
@@ -1679,10 +1707,16 @@ public:
             return new_tx_chans;
         }();
 
-        // Now register them
+        // Disconnect and clear existing chains
+        for (size_t i = 0; i < _tx_chans.size(); i++) {
+            _disconnect_tx_chain(i);
+        }
         _tx_chans.clear();
-        for (size_t tx_chan = 0; tx_chan < new_tx_chans.size(); ++tx_chan) {
-            _tx_chans.emplace(tx_chan, new_tx_chans.at(tx_chan));
+
+        // Register new chains
+        size_t musrp_tx_channel = 0;
+        for (auto tx_chan : new_tx_chans) {
+            _tx_chans.emplace(musrp_tx_channel++, tx_chan);
         }
     }
 
@@ -1987,7 +2021,8 @@ public:
         return tx_chain.radio->get_tx_dc_offset_range(tx_chain.block_chan);
     }
 
-    void set_tx_iq_balance(const std::complex<double>& correction, size_t chan = ALL_CHANS)
+    void set_tx_iq_balance(
+        const std::complex<double>& correction, size_t chan = ALL_CHANS)
     {
         MUX_TX_API_CALL(set_tx_iq_balance, correction);
         const auto tx_chain = _get_tx_chan(chan);
@@ -2091,18 +2126,21 @@ public:
         return get_mbc(mboard)->get_gpio_banks();
     }
 
-    std::vector<std::string> get_gpio_srcs(const std::string& bank, const size_t mboard = 0)
+    std::vector<std::string> get_gpio_srcs(
+        const std::string& bank, const size_t mboard = 0)
     {
         return get_mbc(mboard)->get_gpio_srcs(bank);
     }
 
-    std::vector<std::string> get_gpio_src(const std::string& bank, const size_t mboard = 0)
+    std::vector<std::string> get_gpio_src(
+        const std::string& bank, const size_t mboard = 0)
     {
         return get_mbc(mboard)->get_gpio_src(bank);
     }
 
-    void set_gpio_src(
-        const std::string& bank, const std::vector<std::string>& src, const size_t mboard = 0)
+    void set_gpio_src(const std::string& bank,
+        const std::vector<std::string>& src,
+        const size_t mboard = 0)
     {
         get_mbc(mboard)->set_gpio_src(bank, src);
     }
@@ -2381,6 +2419,90 @@ private:
                 std::string("Invalid TX channel: ") + std::to_string(chan));
         }
         return _tx_chans.at(chan);
+    }
+
+    void _connect_rx_chain(size_t chan)
+    {
+        auto rx_chan = _rx_chans.at(chan);
+        for (auto edge : rx_chan.edge_list) {
+            if (block_id_t(edge.dst_blockid).match(NODE_ID_SEP)) {
+                break;
+            }
+            UHD_LOG_TRACE(
+                "MULTI_USRP", std::string("Connecting RX edge: ") + edge.to_string());
+            _graph->connect(
+                edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
+        }
+    }
+
+    void _connect_rx_chains(std::vector<size_t> chans)
+    {
+        for (auto chan : chans) {
+            _connect_rx_chain(chan);
+        }
+    }
+
+    void _connect_tx_chain(size_t chan)
+    {
+        auto tx_chan = _tx_chans.at(chan);
+        for (auto edge : tx_chan.edge_list) {
+            if (block_id_t(edge.src_blockid).match(NODE_ID_SEP)) {
+                break;
+            }
+            UHD_LOG_TRACE(
+                "MULTI_USRP", std::string("Connecting TX edge: ") + edge.to_string());
+            _graph->connect(
+                edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
+        }
+    }
+
+    void _connect_tx_chains(std::vector<size_t> chans)
+    {
+        for (auto chan : chans) {
+            _connect_tx_chain(chan);
+        }
+    }
+
+    void _disconnect_rx_chain(size_t chan)
+    {
+        auto rx_chan = _rx_chans.at(chan);
+        for (auto edge : rx_chan.edge_list) {
+            if (block_id_t(edge.dst_blockid).match(NODE_ID_SEP)) {
+                break;
+            }
+            UHD_LOG_TRACE(
+                "MULTI_USRP", std::string("Disconnecting RX edge: ") + edge.to_string());
+            _graph->disconnect(
+                edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
+        }
+    }
+
+    void _disconnect_rx_chains(std::vector<size_t> chans)
+    {
+        for (auto chan : chans) {
+            _disconnect_rx_chain(chan);
+        }
+    }
+
+    void _disconnect_tx_chain(size_t chan)
+    {
+        auto tx_chan = _tx_chans.at(chan);
+        for (auto edge : tx_chan.edge_list) {
+            if (block_id_t(edge.src_blockid).match(NODE_ID_SEP)) {
+                break;
+            }
+            UHD_LOG_TRACE(
+                "MULTI_USRP", std::string("Disconnecting TX edge: ") + edge.to_string());
+            _graph->disconnect(
+                edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
+        }
+    }
+
+    void _disconnect_tx_chains(std::vector<size_t> chans)
+    {
+        for (auto chan : chans) {
+            _disconnect_tx_chain(chan);
+        }
     }
 
     /**************************************************************************
