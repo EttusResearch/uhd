@@ -89,7 +89,7 @@ $(RFNOC_BLOCK_DUC_SRCS) $(RFNOC_BLOCK_DDC_SRCS) $(RFNOC_BLOCK_RADIO_SRCS) \
 $(RFNOC_BLOCK_EXAMPLE_SRCS) \
 $(abspath $(MB_XDC))
 
-EDGE_TBL_DEF="RFNOC_EDGE_TBL_FILE=$(EDGE_FILE)"
+EDGE_TBL_DEF="RFNOC_EDGE_TBL_FILE=$(call RESOLVE_PATH,$(EDGE_FILE))"
 
 ##################################################
 # Dependency Targets
