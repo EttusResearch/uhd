@@ -10,8 +10,8 @@ using namespace uhd::rfnoc;
 using namespace uhd;
 
 namespace {
-//! Default timeout value for tRPC calls that we know can take long (ms)
-constexpr size_t MPMD_DEFAULT_LONG_TIMEOUT = 12000; // ms
+//! Default timeout value for RPC calls that we know can take long (ms)
+constexpr size_t MPMD_DEFAULT_LONG_TIMEOUT = 30000; // ms
 } // namespace
 
 mpmd_mb_controller::mpmd_mb_controller(
