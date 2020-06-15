@@ -16,7 +16,7 @@ endif
 #       $4 = IP_SRC_DIR (Absolute path to the top level ip src dir)
 #       $5 = IP_BUILD_DIR (Absolute path to the top level ip build dir)
 #       $6 = GENERATE_EXAMPLE (0 or 1)
-# Prereqs: 
+# Prereqs:
 # - TOOLS_DIR must be defined globally
 # -------------------------------------------------------------------
 BUILD_VIVADO_IP = \
@@ -29,7 +29,8 @@ BUILD_VIVADO_IP = \
 	export GEN_EXAMPLE=$(6); \
 	export SYNTH_IP=$(SYNTH_IP); \
 	echo "BUILDER: Staging IP in build directory..."; \
-	rm -rf $(5)/$(1)/*; \
+	rm -rf $(5)/$(1); \
+	mkdir -p $(5)/$(1); \
 	$(TOOLS_DIR)/scripts/shared-ip-loc-manage.sh --path=$(5)/$(1) reserve; \
 	cp -rf $(4)/$(1)/* $(5)/$(1); \
 	echo "BUILDER: Retargeting IP to part $(2)/$(3)..."; \
@@ -48,7 +49,7 @@ BUILD_VIVADO_IP = \
 #       $3 = PART_ID (<device>/<package>/<speedgrade>[/<tempgrade>[/<silicon revision>]])
 #       $4 = BD_SRC_DIR (Absolute path to the top level ip src dir)
 #       $5 = BD_BUILD_DIR (Absolute path to the top level ip build dir)
-# Prereqs: 
+# Prereqs:
 # - TOOLS_DIR must be defined globally
 # -------------------------------------------------------------------
 BUILD_VIVADO_BD = \
@@ -59,15 +60,16 @@ BUILD_VIVADO_BD = \
 	export BD_FILE=$(call RESOLVE_PATH,$(5)/$(1)/$(1).bd); \
 	export PART_NAME=`python $(TOOLS_DIR)/scripts/viv_gen_part_id.py $(2)/$(3)`; \
 	echo "BUILDER: Staging BD in build directory..."; \
-	rm $(5)/$(1)/* -rf; \
+	rm -rf $(5)/$(1); \
+	mkdir -p $(5)/$(1); \
 	$(TOOLS_DIR)/scripts/shared-ip-loc-manage.sh --path=$(5)/$(1) reserve; \
-        cp -rf $(4)/$(1)/* $(5)/$(1); \
+	cp -rf $(4)/$(1)/* $(5)/$(1); \
 	echo "BUILDER: Retargeting BD to part $(2)/$(3)..."; \
 	cd $(5)/$(1); \
 	echo "BUILDER: Building BD..."; \
 	export VIV_ERR=0; \
 	$(TOOLS_DIR)/scripts/launch_vivado.py -mode batch -source $(call RESOLVE_PATH,$(TOOLS_DIR)/scripts/viv_generate_bd.tcl) -log $(1).log -nojournal || export VIV_ERR=$$?; \
-        $(TOOLS_DIR)/scripts/shared-ip-loc-manage.sh --path=$(5)/$(1) release; \
+	$(TOOLS_DIR)/scripts/shared-ip-loc-manage.sh --path=$(5)/$(1) release; \
 	exit $$VIV_ERR
 
 # -------------------------------------------------------------------
@@ -79,7 +81,7 @@ BUILD_VIVADO_BD = \
 #       $5 = BDTCL_BUILD_DIR (Absolute path to the top level ip build dir)
 #       $6 = BD_IP_REPOS (space-separated list of absolute paths to IP repos)
 #       $7 = BD_HDL_SRCS (space-separated list of absolute paths to HDL sources)
-# Prereqs: 
+# Prereqs:
 # - TOOLS_DIR must be defined globally
 # -------------------------------------------------------------------
 BUILD_VIVADO_BDTCL = \
@@ -92,13 +94,14 @@ BUILD_VIVADO_BDTCL = \
 	export BD_IP_REPOS=$(call RESOLVE_PATH,$(6)); \
 	export BD_HDL_SRCS=$(call RESOLVE_PATHS,$(7)); \
 	echo "BUILDER: Staging BD Tcl in build directory..."; \
-	rm $(5)/$(1)/* -rf; \
+	rm -rf $(5)/$(1); \
+	mkdir -p $(5)/$(1); \
 	$(TOOLS_DIR)/scripts/shared-ip-loc-manage.sh --path=$(5)/$(1) reserve; \
-        cp -rf $(4)/$(1)/* $(5)/$(1); \
+	cp -rf $(4)/$(1)/* $(5)/$(1); \
 	echo "BUILDER: Retargeting BD to part $(2)/$(3)..."; \
 	cd $(5)/$(1); \
 	echo "BUILDER: Generating BD..."; \
 	export VIV_ERR=0; \
 	$(TOOLS_DIR)/scripts/launch_vivado.py -mode batch -source $(call RESOLVE_PATH,$(TOOLS_DIR)/scripts/viv_generate_bd.tcl) -log $(1).log -nojournal || export VIV_ERR=$$?; \
-        $(TOOLS_DIR)/scripts/shared-ip-loc-manage.sh --path=$(5)/$(1) release; \
+	$(TOOLS_DIR)/scripts/shared-ip-loc-manage.sh --path=$(5)/$(1) release; \
 	exit $$VIV_ERR
