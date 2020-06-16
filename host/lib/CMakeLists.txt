@@ -59,7 +59,7 @@ endmacro(INCLUDE_SUBDIRECTORY)
 ########################################################################
 message(STATUS "")
 # Dependencies
-find_package(USB1)
+find_package(LIBUSB)
 find_package(LIBERIO)
 find_package(DPDK 18.11 EXACT)
 LIBUHD_REGISTER_COMPONENT("LIBERIO" ENABLE_LIBERIO ON "ENABLE_LIBUHD;LIBERIO_FOUND" OFF OFF)
