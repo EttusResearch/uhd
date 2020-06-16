@@ -126,21 +126,24 @@ if [[ -n "$SV_FILES" ]]; then
     vlog $SVLOG_ARGS -sv -f svlogarglist.txt 2>&1 | while IFS= read -r line; do
         print_color $line
     done
-    if [ ${PIPESTATUS[0]} -ne 0 ]; then exit ${PIPESTATUS[0]}; fi
+    exit_status=${PIPESTATUS[0]}
+    if [ ${exit_status} -ne 0 ]; then exit ${exit_status}; fi
 fi
 if [[ -n "$V_FILES" ]]; then
     echo "* Compiling Verilog"
     vlog $VLOG_ARGS -f vlogarglist.txt 2>&1 | while IFS= read -r line; do
         print_color $line
     done
-    if [ ${PIPESTATUS[0]} -ne 0 ]; then exit ${PIPESTATUS[0]}; fi
+    exit_status=${PIPESTATUS[0]}
+    if [ ${exit_status} -ne 0 ]; then exit ${exit_status}; fi
 fi
 if [[ -n "$VHD_FILES" ]]; then
     echo "* Compiling VHDL"
     vcom $VHDL_ARGS -f vcomarglist.txt 2>&1 | while IFS= read -r line; do
         print_color $line
     done
-    if [ ${PIPESTATUS[0]} -ne 0 ]; then exit ${PIPESTATUS[0]}; fi
+    exit_status=${PIPESTATUS[0]}
+    if [ ${exit_status} -ne 0 ]; then exit ${exit_status}; fi
 fi
 
 

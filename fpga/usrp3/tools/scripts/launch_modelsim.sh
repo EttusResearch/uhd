@@ -57,13 +57,17 @@ do
 done
 
 if [ $MSIM_MODE == "gui" ]; then
+    echo "* Launching ModelSim"
     vsim $MSIM_DEFAULT $MSIM_ARGS $MSIM_LIB_ARGS $MSIM_SIM_TOP 2>&1 | while IFS= read -r line; do
         print_color $line
     done
-    if [ ${PIPESTATUS[0]} -ne 0 ]; then exit ${PIPESTATUS[0]}; fi
+    exit_status=${PIPESTATUS[0]}
+    if [ ${exit_status} -ne 0 ]; then exit ${exit_status}; fi
 elif [ $MSIM_MODE == "batch" ]; then
+    echo "* Launching ModelSim"
     vsim -batch -do "run -all; quit -f" $MSIM_DEFAULT $MSIM_ARGS $MSIM_LIB_ARGS $MSIM_SIM_TOP 2>&1 | while IFS= read -r line; do
         print_color $line
     done
-    if [ ${PIPESTATUS[0]} -ne 0 ]; then exit ${PIPESTATUS[0]}; fi
+    exit_status=${PIPESTATUS[0]}
+    if [ ${exit_status} -ne 0 ]; then exit ${exit_status}; fi
 fi
