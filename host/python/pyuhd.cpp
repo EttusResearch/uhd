@@ -23,6 +23,7 @@ namespace py = pybind11;
 #include "rfnoc/radio_control_python.hpp"
 #include "rfnoc/rfnoc_python.hpp"
 #include "rfnoc/vector_iir_block_control_python.hpp"
+#include "rfnoc/window_block_control_python.hpp"
 #include "stream_python.hpp"
 #include "types/filters_python.hpp"
 #include "types/metadata_python.hpp"
@@ -90,6 +91,7 @@ PYBIND11_MODULE(libpyuhd, m)
     export_null_block_control(rfnoc_module);
     export_radio_control(rfnoc_module);
     export_vector_iir_block_control(rfnoc_module);
+    export_window_block_control(rfnoc_module);
 
     // Register calibration submodule
     auto cal_module = m.def_submodule("cal", "Calibration Objects");
