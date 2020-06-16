@@ -53,7 +53,7 @@ def find_uhd_source_path(hint):
             "Invalid UHD source path: {} (does not have subdir: {})"
             .format(hint, os.path.join(*CAL_SUBDIR)))
     # If there's no hint, we try our own path as a hint:
-    return find_uhd_source_path(str(pathlib.Path().absolute().parent))
+    return find_uhd_source_path(str(pathlib.Path(__file__).parent.absolute().parent))
 
 def parse_args():
     """ Parse args and return args object """
@@ -104,23 +104,29 @@ def verify_fbs(flatc_exe, files):
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
-def main():
-    """ Go, go, go! """
-    args = parse_args()
-    flatc_exe = find_flatc(args.flatc_exe)
-    print("Found flatc executable: {}".format(flatc_exe))
+def run(flatc_exe, uhd_path=None, verify=False):
+    """
+    The actual code, minus arg parsing
+    """
     try:
-        cal_path = os.path.join(find_uhd_source_path(args.uhd_path), *CAL_SUBDIR)
+        cal_path = os.path.join(find_uhd_source_path(uhd_path), *CAL_SUBDIR)
     except RuntimeError as ex:
         print("ERROR: {}".format(str(ex)))
         return False
     print("Checking UHD cal data in: {}".format(cal_path))
     os.chdir(cal_path)
     files = glob.glob("*.fbs")
-    if args.verify:
-        return not verify_fbs(flatc_exe, files)
+    if verify:
+        return verify_fbs(flatc_exe, files)
     subprocess.check_call([flatc_exe, '--cpp'] + files)
     return True
+
+def main():
+    """ Go, go, go! """
+    args = parse_args()
+    flatc_exe = find_flatc(args.flatc_exe)
+    print("Found flatc executable: {}".format(flatc_exe))
+    return run(flatc_exe, uhd_path=args.uhd_path, verify=args.verify)
 
 if __name__ == "__main__":
     sys.exit(not main())
