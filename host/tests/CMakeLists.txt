@@ -314,6 +314,10 @@ UHD_ADD_RFNOC_BLOCK_TEST(
     TARGET vector_iir_block_test.cpp
 )
 
+UHD_ADD_RFNOC_BLOCK_TEST(
+    TARGET window_block_test.cpp
+)
+
 UHD_ADD_NONAPI_TEST(
     TARGET "transport_test.cpp"
     EXTRA_SOURCES
