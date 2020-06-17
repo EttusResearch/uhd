@@ -29,6 +29,7 @@ static const std::string PROP_KEY_MTU("mtu");
 static const std::string NODE_ID_SEP("SEP");
 
 using io_type_t                     = std::string;
+static const io_type_t IO_TYPE_S16  = "s16";
 static const io_type_t IO_TYPE_SC16 = "sc16";
 static const io_type_t IO_TYPE_U8   = "u8";
 
@@ -78,6 +79,7 @@ static const noc_id_t DDC_BLOCK          = 0xDDC00000;
 static const noc_id_t FFT_BLOCK          = 0xFF700000;
 static const noc_id_t FIR_FILTER_BLOCK   = 0xF1120000;
 static const noc_id_t FOSPHOR_BLOCK      = 0x666F0000;
+static const noc_id_t LOGPWR_BLOCK       = 0x4C500000;
 static const noc_id_t SPLIT_STREAM_BLOCK = 0x57570000;
 static const noc_id_t RADIO_BLOCK        = 0x12AD1000;
 static const noc_id_t VECTOR_IIR_BLOCK   = 0x11120000;

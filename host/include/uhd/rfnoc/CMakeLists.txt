@@ -38,6 +38,7 @@ UHD_INSTALL(FILES
     fft_block_control.hpp
     fir_filter_block_control.hpp
     fosphor_block_control.hpp
+    logpwr_block_control.hpp
     null_block_control.hpp
     radio_control.hpp
     split_stream_block_control.hpp
