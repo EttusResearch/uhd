@@ -101,12 +101,11 @@ def parse_args():
                                      description=__doc__)
     parser.add_argument('-t', '--types', action='append',
                         help="RegEx to select image sets from the manifest file.")
-    parser.add_argument('-i', '--install-location',
-                        default=None,
+    parser.add_argument('-i', '--install-location', type=str, default=None,
                         help="Set custom install location for images")
-    parser.add_argument('-m', '--manifest-location', type=str, default="",
+    parser.add_argument('-m', '--manifest-location', type=str, default=None,
                         help="Set custom location for the manifest file")
-    parser.add_argument('-I', '--inventory-location', type=str, default="",
+    parser.add_argument('-I', '--inventory-location', type=str, default=None,
                         help="Set custom location for the inventory file")
     parser.add_argument('-l', '--list-targets', action="store_true", default=False,
                         help="Print targets in the manifest file to stdout, and exit.\n"
@@ -225,11 +224,16 @@ def get_manifest_raw(args):
     needs to be parsed to be of any practical use.
     """
     # If we're given a path to a manifest file, use it
-    if os.path.exists(args.manifest_location):
+    if args.manifest_location:
         manifest_fn = args.manifest_location
-        log("INFO", "Using manifest file at location: {}".format(manifest_fn))
-        with open(manifest_fn, 'r') as manifest_file:
-            manifest_raw = manifest_file.read()
+        if os.path.exists(manifest_fn):
+            log("INFO", "Using manifest file at location: {}".format(manifest_fn))
+            with open(manifest_fn, 'r') as manifest_file:
+                manifest_raw = manifest_file.read()
+        else:
+            log("WARN", "Invalid manifest file specified: {}, using default"
+                .format(manifest_fn))
+            manifest_raw = _MANIFEST_CONTENTS       
     # Otherwise, use the CMake Magic manifest
     else:
         manifest_raw = _MANIFEST_CONTENTS
@@ -553,10 +557,16 @@ def main():
             return False
 
         # Read the inventory into a dictionary we can perform lookups on
-        if os.path.isfile(args.inventory_location):
-            inventory_fn = args.inventory_location
+        default_inventory_fn = os.path.join(images_dir, _INVENTORY_FILENAME)
+        if args.inventory_location:
+            if os.path.isfile(args.inventory_location):
+                inventory_fn = args.inventory_location
+            else:
+                log("WARN", "Invalid inentory file specified: {}, using default: {}"
+                    .format(args.inventory_location, default_inventory_fn))
+                inventory_fn = default_inventory_fn
         else:
-            inventory_fn = os.path.join(images_dir, _INVENTORY_FILENAME)
+            inventory_fn = default_inventory_fn
         inventory = parse_inventory(inventory_fn=inventory_fn)
         log("TRACE", "Inventory: {}\n{}".format(
             os.path.abspath(inventory_fn),
