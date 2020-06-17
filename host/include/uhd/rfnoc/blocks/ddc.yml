@@ -39,7 +39,7 @@ data:
       nipc: 1
       info_fifo_depth: 32
       payload_fifo_depth: MTU
-      format: int32
+      format: sc16
       mdata_sig: ~
   outputs:
     out:
@@ -48,7 +48,7 @@ data:
       nipc: 1
       info_fifo_depth: 32
       payload_fifo_depth: MTU
-      format: int32
+      format: sc16
       mdata_sig: ~
 
 registers:

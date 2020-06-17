@@ -42,7 +42,7 @@ data:
       nipc: 1
       context_fifo_depth: 2
       payload_fifo_depth: 32
-      format: int32
+      format: sc16
       mdata_sig: ~
   outputs:
     out:
@@ -51,7 +51,7 @@ data:
       nipc: 1
       context_fifo_depth: 2
       payload_fifo_depth: 32
-      format: int32
+      format: sc16
       mdata_sig: ~
 
 registers:

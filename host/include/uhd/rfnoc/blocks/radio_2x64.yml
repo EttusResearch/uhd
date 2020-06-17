@@ -36,14 +36,14 @@ data:
       nipc: 1
       info_fifo_depth: 32
       payload_fifo_depth: MTU
-      format: int32
+      format: sc16
       mdata_sig: ~
     in_1:
       item_width: 32
       nipc: 1
       info_fifo_depth: 32
       payload_fifo_depth: MTU
-      format: int32
+      format: sc16
       mdata_sig: ~
   outputs:
     out_0:
@@ -51,14 +51,14 @@ data:
       nipc: 1
       info_fifo_depth: 32
       payload_fifo_depth: MTU
-      format: int32
+      format: sc16
       mdata_sig: ~
     out_1:
       item_width: 32
       nipc: 1
       info_fifo_depth: 32
       payload_fifo_depth: MTU
-      format: int32
+      format: sc16
       mdata_sig: ~
 
 io_ports:

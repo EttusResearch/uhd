@@ -38,14 +38,14 @@ data:
       nipc: 2
       context_fifo_depth: 2
       payload_fifo_depth: 2
-      format: int32
+      format: sc16
       mdata_sig: ~
     loop:
       item_width: 32
       nipc: 2
       context_fifo_depth: 2
       payload_fifo_depth: 2
-      format: int32
+      format: sc16
       mdata_sig: ~
   outputs:
     source:
@@ -53,14 +53,14 @@ data:
       nipc: 2
       context_fifo_depth: 2
       payload_fifo_depth: 2
-      format: int32
+      format: sc16
       mdata_sig: ~
     loop:
       item_width: 32
       nipc: 2
       context_fifo_depth: 2
       payload_fifo_depth: 2
-      format: int32
+      format: sc16
       mdata_sig: ~
 
 io_port:
