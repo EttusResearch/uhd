@@ -39,6 +39,7 @@ settings_bus_mux.v \
 settings_bus_timed_2clk.v \
 simple_i2c_core.v \
 simple_spi_core.v \
+simple_spi_core_64bit.v \
 synchronizer_impl.v \
 synchronizer.v \
 pulse_synchronizer.v \
