@@ -4,6 +4,7 @@ version: 1.0
 rfnoc_version: 1.0
 chdr_width: 64
 noc_id: 0x666F0000
+makefile_srcs: "${fpga_lib_dir}/blocks/rfnoc_block_fosphor/Makefile.srcs"
 
 clocks:
   - name: rfnoc_chdr

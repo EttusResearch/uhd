@@ -4,6 +4,7 @@ version: 1.0
 rfnoc_version: 1.0
 chdr_width: 64
 noc_id: 0x57570000
+makefile_srcs: "${fpga_lib_dir}/blocks/rfnoc_block_split_stream/Makefile.srcs"
 
 parameters:
   NUM_PORTS: 1
