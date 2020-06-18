@@ -324,8 +324,8 @@ module eth_ipv4_chdr64_adapter #(
   wire [15:0] udp_checksum = 16'h0;
 
   ip_hdr_checksum ip_hdr_checksum (
-    .clk(clk), .in({misc_ip, ip_len, ident, flag_frag, ttl_prot, 16'd0, my_ipv4_addr, ip_dst}),
-    .out(iphdr_checksum)
+    .clk(clk), .in({misc_ip, ip_len, ident, flag_frag, ttl_prot, 16'd0,
+    my_ipv4_addr, ip_dst}), .clken(1'b1), .out(iphdr_checksum)
   );
 
   always @(*) begin

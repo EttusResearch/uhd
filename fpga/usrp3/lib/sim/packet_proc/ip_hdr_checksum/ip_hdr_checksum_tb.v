@@ -1,9 +1,9 @@
 //
-// Copyright 2014 Ettus Research LLC
-// Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2020 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
+
 module ip_hdr_checksum_tb();
    
    initial $dumpfile("ip_hdr_checksum_tb.vcd");
@@ -28,7 +28,8 @@ module ip_hdr_checksum_tb();
    ip_hdr_checksum ip_hdr_checksum
      (.clk(clk), 
       .in(in),
-      .out(out));
+      .out(out),
+      .clken(1));
 
    initial
      begin
