@@ -1,0 +1,13 @@
+#
+# Copyright 2020 Ettus Research, A National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+##################################################
+# RFNoC Utility Sources
+##################################################
+AXI4LITE_SV_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/axi4lite_sv/, \
+PkgAxiLite.sv \
+AxiLiteIf.sv \
+))
