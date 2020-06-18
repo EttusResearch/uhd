@@ -103,6 +103,10 @@ magnesium_radio_control_impl::magnesium_radio_control_impl(make_args_ptr make_ar
 {
     RFNOC_LOG_TRACE("Entering magnesium_radio_control_impl ctor...");
     UHD_ASSERT_THROW(get_block_id().get_block_count() < 2);
+
+    _tx_gain_profile_api = std::make_shared<rf_control::enumerated_gain_profile>(MAGNESIUM_GP_OPTIONS, "default", MAGNESIUM_NUM_CHANS);
+    _rx_gain_profile_api = std::make_shared<rf_control::enumerated_gain_profile>(MAGNESIUM_GP_OPTIONS, "default", MAGNESIUM_NUM_CHANS);
+
     const char radio_slot_name[2] = {'A', 'B'};
     _radio_slot                   = radio_slot_name[get_block_id().get_block_count()];
     RFNOC_LOG_TRACE("Radio slot: " << _radio_slot);
@@ -361,28 +365,6 @@ double magnesium_radio_control_impl::set_tx_bandwidth(
     RFNOC_LOG_WARNING("set_tx_bandwidth take no effect on AD9371. "
                       "Default analog bandwidth is 100MHz");
     return AD9371_TX_MAX_BANDWIDTH;
-}
-
-void magnesium_radio_control_impl::set_tx_gain_profile(
-    const std::string& profile, const size_t)
-{
-    if (std::find(MAGNESIUM_GP_OPTIONS.begin(), MAGNESIUM_GP_OPTIONS.end(), profile)
-        == MAGNESIUM_GP_OPTIONS.end()) {
-        RFNOC_LOG_ERROR("Invalid TX gain profile: " << profile);
-        throw uhd::key_error("Invalid TX gain profile!");
-    }
-    _gain_profile[TX_DIRECTION] = profile;
-}
-
-void magnesium_radio_control_impl::set_rx_gain_profile(
-    const std::string& profile, const size_t)
-{
-    if (std::find(MAGNESIUM_GP_OPTIONS.begin(), MAGNESIUM_GP_OPTIONS.end(), profile)
-        == MAGNESIUM_GP_OPTIONS.end()) {
-        RFNOC_LOG_ERROR("Invalid RX gain profile: " << profile);
-        throw uhd::key_error("Invalid RX gain profile!");
-    }
-    _gain_profile[RX_DIRECTION] = profile;
 }
 
 double magnesium_radio_control_impl::set_tx_gain(const double gain, const size_t chan)
@@ -714,28 +696,6 @@ uhd::gain_range_t magnesium_radio_control_impl::get_rx_gain_range(
     }
     RFNOC_LOG_ERROR("Invalid RX gain name: " << name);
     throw uhd::key_error("Invalid RX gain name!");
-}
-
-std::vector<std::string> magnesium_radio_control_impl::get_tx_gain_profile_names(
-    const size_t) const
-{
-    return MAGNESIUM_GP_OPTIONS;
-}
-
-std::vector<std::string> magnesium_radio_control_impl::get_rx_gain_profile_names(
-    const size_t) const
-{
-    return MAGNESIUM_GP_OPTIONS;
-}
-
-std::string magnesium_radio_control_impl::get_tx_gain_profile(const size_t) const
-{
-    return _gain_profile.at(TX_DIRECTION);
-}
-
-std::string magnesium_radio_control_impl::get_rx_gain_profile(const size_t) const
-{
-    return _gain_profile.at(RX_DIRECTION);
 }
 
 meta_range_t magnesium_radio_control_impl::get_tx_bandwidth_range(size_t) const

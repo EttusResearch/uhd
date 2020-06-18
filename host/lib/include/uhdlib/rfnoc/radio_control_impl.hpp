@@ -11,6 +11,8 @@
 #include <uhd/rfnoc/radio_control.hpp>
 #include <uhdlib/features/discoverable_feature_registry.hpp>
 #include <uhdlib/usrp/common/pwr_cal_mgr.hpp>
+#include <uhd/rfnoc/rf_control/core_iface.hpp>
+#include <uhdlib/rfnoc/rf_control/gain_profile_iface.hpp>
 #include <unordered_map>
 #include <mutex>
 
@@ -321,6 +323,9 @@ protected:
     //! Power manager for TX power cal. If the radio doesn't have a power API,
     // simply leave these empty.
     std::vector<uhd::usrp::pwr_cal_mgr::sptr> _tx_pwr_mgr;
+
+    rf_control::gain_profile_iface::sptr _tx_gain_profile_api;
+    rf_control::gain_profile_iface::sptr _rx_gain_profile_api;
 
 private:
     //! Validator for the async messages

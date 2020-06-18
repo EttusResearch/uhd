@@ -253,6 +253,10 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
                                           boost::optional<uint64_t> timestamp) {
         this->async_message_handler(addr, data, timestamp);
     });
+
+    // Set the default gain profiles
+    _rx_gain_profile_api = std::make_shared<rf_control::default_gain_profile>();
+    _tx_gain_profile_api = std::make_shared<rf_control::default_gain_profile>();
 } /* ctor */
 
 /******************************************************************************
@@ -436,42 +440,34 @@ void radio_control_impl::set_rx_agc(const bool, const size_t)
     throw uhd::not_implemented_error("set_rx_agc() is not supported on this radio!");
 }
 
-void radio_control_impl::set_tx_gain_profile(const std::string& profile, const size_t)
+void radio_control_impl::set_tx_gain_profile(const std::string& profile, const size_t chan)
 {
-    if (profile != DEFAULT_GAIN_PROFILE) {
-        throw uhd::value_error(
-            std::string("set_tx_gain_profile(): Unknown gain profile: `") + profile
-            + "'");
-    }
+    _tx_gain_profile_api->set_gain_profile(profile, chan);
 }
 
-void radio_control_impl::set_rx_gain_profile(const std::string& profile, const size_t)
+void radio_control_impl::set_rx_gain_profile(const std::string& profile, const size_t chan)
 {
-    if (profile != DEFAULT_GAIN_PROFILE) {
-        throw uhd::value_error(
-            std::string("set_rx_gain_profile(): Unknown gain profile: `") + profile
-            + "'");
-    }
+    _rx_gain_profile_api->set_gain_profile(profile, chan);
 }
 
-std::vector<std::string> radio_control_impl::get_tx_gain_profile_names(const size_t) const
+std::vector<std::string> radio_control_impl::get_tx_gain_profile_names(const size_t chan) const
 {
-    return {DEFAULT_GAIN_PROFILE};
+    return _tx_gain_profile_api->get_gain_profile_names(chan);
 }
 
-std::vector<std::string> radio_control_impl::get_rx_gain_profile_names(const size_t) const
+std::vector<std::string> radio_control_impl::get_rx_gain_profile_names(const size_t chan) const
 {
-    return {DEFAULT_GAIN_PROFILE};
+    return _rx_gain_profile_api->get_gain_profile_names(chan);
 }
 
-std::string radio_control_impl::get_tx_gain_profile(const size_t) const
+std::string radio_control_impl::get_tx_gain_profile(const size_t chan) const
 {
-    return DEFAULT_GAIN_PROFILE;
+    return _tx_gain_profile_api->get_gain_profile(chan);
 }
 
-std::string radio_control_impl::get_rx_gain_profile(const size_t) const
+std::string radio_control_impl::get_rx_gain_profile(const size_t chan) const
 {
-    return DEFAULT_GAIN_PROFILE;
+    return _rx_gain_profile_api->get_gain_profile(chan);
 }
 
 double radio_control_impl::set_tx_bandwidth(const double bandwidth, const size_t chan)

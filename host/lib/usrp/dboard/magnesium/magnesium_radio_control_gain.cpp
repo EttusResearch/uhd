@@ -31,7 +31,7 @@ double magnesium_radio_control_impl::_set_all_gain(
     const size_t ad9371_chan = chan;
     auto chan_sel            = static_cast<magnesium_cpld_ctrl::chan_sel_t>(chan);
     gain_tuple_t gain_tuple;
-    std::string gp = _gain_profile[dir];
+    std::string gp = dir == RX_DIRECTION ? get_rx_gain_profile(0) : get_tx_gain_profile(0);
 
     RFNOC_LOG_TRACE("Gain profile: " << gp);
     if (gp == "manual") {

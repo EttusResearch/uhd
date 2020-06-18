@@ -51,13 +51,13 @@ void magnesium_radio_control_impl::_init_defaults()
     if (block_args.has_key("tx_gain_profile")) {
         RFNOC_LOG_INFO("Using user specified TX gain profile: " << block_args.get(
                            "tx_gain_profile"));
-        _gain_profile[TX_DIRECTION] = block_args.get("tx_gain_profile");
+        set_tx_gain_profile(block_args.get("tx_gain_profile"), 0);
     }
 
     if (block_args.has_key("rx_gain_profile")) {
         RFNOC_LOG_INFO("Using user specified RX gain profile: " << block_args.get(
                            "rx_gain_profile"));
-        _gain_profile[RX_DIRECTION] = block_args.get("rx_gain_profile");
+        set_rx_gain_profile(block_args.get("rx_gain_profile"), 0);
     }
 
     if (block_args.has_key("rx_band_map")) {

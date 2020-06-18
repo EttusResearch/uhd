@@ -61,3 +61,4 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/window_block_control.cpp
 )
 
+INCLUDE_SUBDIRECTORY(rf_control)

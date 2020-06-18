@@ -60,4 +60,4 @@ UHD_INSTALL(FILES
 
 add_subdirectory(blocks)
 add_subdirectory(core)
-
+add_subdirectory(rf_control)

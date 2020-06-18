@@ -87,8 +87,6 @@ public:
     double set_rx_gain(const double gain, const std::string& name, const size_t chan);
     double set_tx_bandwidth(const double bandwidth, const size_t chan);
     double set_rx_bandwidth(const double bandwidth, const size_t chan);
-    void set_tx_gain_profile(const std::string& profile, const size_t chan);
-    void set_rx_gain_profile(const std::string& profile, const size_t chan);
 
     // Getters
     std::vector<std::string> get_tx_antennas(const size_t chan) const;
@@ -103,10 +101,6 @@ public:
     uhd::gain_range_t get_tx_gain_range(const std::string&, const size_t) const;
     uhd::gain_range_t get_rx_gain_range(const size_t) const;
     uhd::gain_range_t get_rx_gain_range(const std::string&, const size_t) const;
-    std::vector<std::string> get_tx_gain_profile_names(const size_t chan) const;
-    std::vector<std::string> get_rx_gain_profile_names(const size_t chan) const;
-    std::string get_tx_gain_profile(const size_t chan) const;
-    std::string get_rx_gain_profile(const size_t chan) const;
     uhd::meta_range_t get_tx_bandwidth_range(size_t chan) const;
     uhd::meta_range_t get_rx_bandwidth_range(size_t chan) const;
 
@@ -351,9 +345,6 @@ private:
     //! All gain
     double _all_rx_gain = 0.0;
     double _all_tx_gain = 0.0;
-    //! Gain profile
-    std::map<direction_t, std::string> _gain_profile = {
-        {RX_DIRECTION, "default"}, {TX_DIRECTION, "default"}};
 
     bool _rx_bypass_lnas = true;
     bool _tx_bypass_amp  = true;

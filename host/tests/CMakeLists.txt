@@ -376,6 +376,12 @@ UHD_ADD_NONAPI_TEST(
     ${CMAKE_SOURCE_DIR}/lib/features/discoverable_feature_registry.cpp
 )
 
+UHD_ADD_NONAPI_TEST(
+    TARGET "rf_control_gain_profile_test.cpp"
+    EXTRA_SOURCES
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/rf_control/gain_profile.cpp
+)
+
 ########################################################################
 # demo of a loadable module
 ########################################################################
