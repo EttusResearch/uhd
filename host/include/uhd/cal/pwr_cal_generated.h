@@ -29,8 +29,9 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) PowerMap FLATBUFFERS_FINAL_CLASS {
   double power_dbm_;
 
  public:
-  PowerMap() {
-    memset(static_cast<void *>(this), 0, sizeof(PowerMap));
+  PowerMap()
+      : gain_(0),
+        power_dbm_(0) {
   }
   PowerMap(double _gain, double _power_dbm)
       : gain_(flatbuffers::EndianScalar(_gain)),
@@ -108,7 +109,6 @@ struct FreqPowerMapBuilder {
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  FreqPowerMapBuilder &operator=(const FreqPowerMapBuilder &);
   flatbuffers::Offset<FreqPowerMap> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<FreqPowerMap>(end);
@@ -187,7 +187,6 @@ struct TempFreqMapBuilder {
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  TempFreqMapBuilder &operator=(const TempFreqMapBuilder &);
   flatbuffers::Offset<TempFreqMap> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<TempFreqMap>(end);
@@ -261,7 +260,6 @@ struct PowerCalBuilder {
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  PowerCalBuilder &operator=(const PowerCalBuilder &);
   flatbuffers::Offset<PowerCal> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<PowerCal>(end);
@@ -319,6 +317,10 @@ inline bool VerifyPowerCalBuffer(
 inline bool VerifySizePrefixedPowerCalBuffer(
     flatbuffers::Verifier &verifier) {
   return verifier.VerifySizePrefixedBuffer<uhd::usrp::cal::PowerCal>(PowerCalIdentifier());
+}
+
+inline const char *PowerCalExtension() {
+  return "cal";
 }
 
 inline void FinishPowerCalBuffer(

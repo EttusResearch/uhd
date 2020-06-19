@@ -44,3 +44,4 @@ table PowerCal
 
 root_type PowerCal;
 file_identifier "dB/m"; // dB per dBm
+file_extension "cal";

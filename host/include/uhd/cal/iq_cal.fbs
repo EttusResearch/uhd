@@ -30,3 +30,4 @@ table IQCalCoeffs
 
 root_type IQCalCoeffs;
 file_identifier "IQ/f"; // I/Q data per frequency
+file_extension "cal";

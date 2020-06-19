@@ -97,8 +97,8 @@ The JSON data can be converted back to binary using
 
 	flatc -b <install dir>/include/uhd/cal/<foo>_cal.fbs <data>.json
 	
-This generates a `<data>.bin` that can be read by the calibration routines
-of UHD. To make UHD reading these files you need to rename it to `<data>.cal`.
+This generates a `<data>.cal` that can be read by the calibration routines
+of UHD.
 	
 \subsection calibration_data_csv Converting UHD 3.x calibration data to UHD 4
 

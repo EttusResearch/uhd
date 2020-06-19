@@ -15,6 +15,7 @@ namespace cal {
 struct IQCalCoeff;
 
 struct IQCalCoeffs;
+struct IQCalCoeffsBuilder;
 
 FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) IQCalCoeff FLATBUFFERS_FINAL_CLASS {
  private:
@@ -25,8 +26,12 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) IQCalCoeff FLATBUFFERS_FINAL_CLASS {
   double suppression_delta_;
 
  public:
-  IQCalCoeff() {
-    memset(static_cast<void *>(this), 0, sizeof(IQCalCoeff));
+  IQCalCoeff()
+      : freq_(0),
+        coeff_real_(0),
+        coeff_imag_(0),
+        suppression_abs_(0),
+        suppression_delta_(0) {
   }
   IQCalCoeff(double _freq, double _coeff_real, double _coeff_imag, double _suppression_abs, double _suppression_delta)
       : freq_(flatbuffers::EndianScalar(_freq)),
@@ -54,6 +59,7 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) IQCalCoeff FLATBUFFERS_FINAL_CLASS {
 FLATBUFFERS_STRUCT_END(IQCalCoeff, 40);
 
 struct IQCalCoeffs FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  typedef IQCalCoeffsBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_METADATA = 4,
     VT_COEFFS = 6
@@ -61,8 +67,8 @@ struct IQCalCoeffs FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const Metadata *metadata() const {
     return GetPointer<const Metadata *>(VT_METADATA);
   }
-  const flatbuffers::Vector<const IQCalCoeff *> *coeffs() const {
-    return GetPointer<const flatbuffers::Vector<const IQCalCoeff *> *>(VT_COEFFS);
+  const flatbuffers::Vector<const uhd::usrp::cal::IQCalCoeff *> *coeffs() const {
+    return GetPointer<const flatbuffers::Vector<const uhd::usrp::cal::IQCalCoeff *> *>(VT_COEFFS);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -75,19 +81,19 @@ struct IQCalCoeffs FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 };
 
 struct IQCalCoeffsBuilder {
+  typedef IQCalCoeffs Table;
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
   void add_metadata(flatbuffers::Offset<Metadata> metadata) {
     fbb_.AddOffset(IQCalCoeffs::VT_METADATA, metadata);
   }
-  void add_coeffs(flatbuffers::Offset<flatbuffers::Vector<const IQCalCoeff *>> coeffs) {
+  void add_coeffs(flatbuffers::Offset<flatbuffers::Vector<const uhd::usrp::cal::IQCalCoeff *>> coeffs) {
     fbb_.AddOffset(IQCalCoeffs::VT_COEFFS, coeffs);
   }
   explicit IQCalCoeffsBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  IQCalCoeffsBuilder &operator=(const IQCalCoeffsBuilder &);
   flatbuffers::Offset<IQCalCoeffs> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<IQCalCoeffs>(end);
@@ -98,7 +104,7 @@ struct IQCalCoeffsBuilder {
 inline flatbuffers::Offset<IQCalCoeffs> CreateIQCalCoeffs(
     flatbuffers::FlatBufferBuilder &_fbb,
     flatbuffers::Offset<Metadata> metadata = 0,
-    flatbuffers::Offset<flatbuffers::Vector<const IQCalCoeff *>> coeffs = 0) {
+    flatbuffers::Offset<flatbuffers::Vector<const uhd::usrp::cal::IQCalCoeff *>> coeffs = 0) {
   IQCalCoeffsBuilder builder_(_fbb);
   builder_.add_coeffs(coeffs);
   builder_.add_metadata(metadata);
@@ -108,8 +114,8 @@ inline flatbuffers::Offset<IQCalCoeffs> CreateIQCalCoeffs(
 inline flatbuffers::Offset<IQCalCoeffs> CreateIQCalCoeffsDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
     flatbuffers::Offset<Metadata> metadata = 0,
-    const std::vector<IQCalCoeff> *coeffs = nullptr) {
-  auto coeffs__ = coeffs ? _fbb.CreateVectorOfStructs<IQCalCoeff>(*coeffs) : 0;
+    const std::vector<uhd::usrp::cal::IQCalCoeff> *coeffs = nullptr) {
+  auto coeffs__ = coeffs ? _fbb.CreateVectorOfStructs<uhd::usrp::cal::IQCalCoeff>(*coeffs) : 0;
   return uhd::usrp::cal::CreateIQCalCoeffs(
       _fbb,
       metadata,
@@ -141,6 +147,10 @@ inline bool VerifyIQCalCoeffsBuffer(
 inline bool VerifySizePrefixedIQCalCoeffsBuffer(
     flatbuffers::Verifier &verifier) {
   return verifier.VerifySizePrefixedBuffer<uhd::usrp::cal::IQCalCoeffs>(IQCalCoeffsIdentifier());
+}
+
+inline const char *IQCalCoeffsExtension() {
+  return "cal";
 }
 
 inline void FinishIQCalCoeffsBuffer(
