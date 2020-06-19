@@ -1,0 +1,55 @@
+schema: rfnoc_modtool_args
+module_name: siggen
+version: 1.0
+rfnoc_version: 1.0
+chdr_width: 64
+noc_id: 0x51663110
+makefile_srcs: "${fpga_lib_dir}/blocks/rfnoc_block_siggen/Makefile.srcs"
+
+parameters:
+  NUM_PORTS: 1
+
+clocks:
+  - name: rfnoc_chdr
+    freq: "[]"
+  - name: rfnoc_ctrl
+    freq: "[]"
+  - name: ce
+    freq: "[]"
+
+control:
+  sw_iface: nocscript
+  fpga_iface: ctrlport
+  interface_direction: slave
+  fifo_depth: 32
+  clk_domain: ce
+  ctrlport:
+    byte_mode: False
+    timed: False
+    has_status: False
+
+data:
+  fpga_iface: axis_data
+  clk_domain: ce
+  inputs:
+    unused:
+      item_width: 32
+      nipc: 1
+      info_fifo_depth: 1
+      payload_fifo_depth: 1
+      format: sc16
+      mdata_sig: ~
+  outputs:
+    out:
+      num_ports: NUM_PORTS
+      item_width: 32
+      nipc: 1
+      info_fifo_depth: 32
+      payload_fifo_depth: 32
+      sideband_at_end: 0
+      format: sc16
+      mdata_sig: ~
+
+registers:
+
+properties:

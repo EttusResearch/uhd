@@ -40,7 +40,7 @@ module axi_setting_reg #(
   reg init;
 
   reg [WIDTH-1:0] o_tdata_int;
-  reg o_tlast_int, o_tvalid_int;
+  reg o_tlast_int, o_tvalid_int = VALID_AT_RESET;
   wire o_tready_int;
 
   always @(posedge clk) begin

@@ -102,6 +102,7 @@ ddc.v \
 duc.v \
 cic_decimate.v \
 cic_interpolate.v \
+sine_tone.v \
 axi_fir_filter.v \
 fir_filter_slice.v \
 axi_fir_filter_dec.v \

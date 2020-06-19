@@ -69,7 +69,7 @@ module axis_packetize #(
   reg [SIZE_W-1:0] word_count      = 0;    // Count of output words
   reg [SIZE_W-1:0] current_size    = DEFAULT_SIZE;  // Current packet size
 
-  reg gating     = 1'b1;     // Indicate if output is blocked
+  reg gating     = 1'b0;     // Indicate if output is blocked
   reg mid_packet = 1'b0;     // Indicate if we're in the middle of a packet
 
   //---------------------------------------------------------------------------
@@ -80,27 +80,27 @@ module axis_packetize #(
 
   always @(posedge clk) begin
     if (rst) begin
-      start_of_packet <= 1;
-      word_count      <= 0;
+      start_of_packet <= 1'b1;
       current_size    <= DEFAULT_SIZE;
-      o_tlast         <= 0;
+      word_count      <= 0;
+      o_tlast         <= (DEFAULT_SIZE == 1);
     end else begin
       if (gating) begin
         // Wait until we're enabled. Setup for the start of the next packet.
-        start_of_packet <= 1;
+        start_of_packet <= 1'b1;
         current_size    <= size;
-        word_count      <= 0;
+        word_count      <= size;
         o_tlast         <= (size == 1);
       end else if (o_tvalid && o_tready) begin
         start_of_packet <= 1'b0;
-        word_count      <= word_count + 1;
+        word_count      <= word_count - 1;
         if (o_tlast) begin
           // This is the last sample, so restart everything for a new packet.
-          o_tlast         <= (size == 1);
-          current_size    <= size;
-          word_count      <= 0;
           start_of_packet <= 1'b1;
-        end else if (word_count == current_size-2) begin
+          current_size    <= size;
+          word_count      <= size;
+          o_tlast         <= (size == 1);
+        end else if (word_count == 2) begin
           // This is the second to last sample, so we assert tlast for the
           // last sample.
           o_tlast <= 1'b1;
@@ -109,7 +109,7 @@ module axis_packetize #(
         // We're waiting for the start of the next packet. Keep checking the
         // size input until the next packet starts.
         current_size <= size;
-        word_count   <= 0;
+        word_count   <= size;
         o_tlast      <= (size == 1);
       end
     end
@@ -119,13 +119,11 @@ module axis_packetize #(
   // Handshake Monitor
   //---------------------------------------------------------------------------
   
-  // We start out gated to allow a clock cycle for the length to be loaded.
-
   // Monitor the state of the handshake so we know when it's OK to
   // enable/disable data transfer.
   always @(posedge clk) begin
     if (rst) begin
-      gating     = 1'b1;
+      gating     = 1'b0;
       mid_packet = 1'b0;
     end else begin
       // Keep track of if we are in the middle of a packet or not. Note that
@@ -142,8 +140,9 @@ module axis_packetize #(
         // We can stop gating any time
         if (!gate) gating <= 0;
       end else begin
-        // Only start gating between packets or at the end of a packet
-        if ((mid_packet && !o_tvalid) || (o_tvalid && o_tready && o_tlast)) begin
+        // Only start gating between packets when the output is idle, or after
+        // the output transfer completes at the end of packet.
+        if ((!mid_packet && !o_tvalid) || (o_tvalid && o_tready && o_tlast)) begin
           gating <= gate;
         end
       end
@@ -153,6 +152,11 @@ module axis_packetize #(
   //---------------------------------------------------------------------------
   // Data Pass-Through
   //---------------------------------------------------------------------------
+
+  // Note that "gating" only asserts when a transfer completes at the end of a
+  // packet, or between packets when the output is idle. This ensures that
+  // o_tvalid won't deassert during a transfer and cause a handshake protocol
+  // violation.
 
   assign o_tdata  = i_tdata;
   assign o_tvalid = i_tvalid && !gating;
