@@ -280,6 +280,7 @@ public:
         for (size_t strm_port = 0; strm_port < args.channels.size(); ++strm_port) {
             auto rx_channel = args.channels.at(strm_port);
             auto rx_chain   = _get_rx_chan(rx_channel);
+            UHD_ASSERT_THROW(!rx_chain.edge_list.empty())
             // Make all of the connections in our chain
             for (auto edge : rx_chain.edge_list) {
                 if (block_id_t(edge.dst_blockid).match(NODE_ID_SEP)) {
@@ -349,6 +350,7 @@ public:
         for (size_t strm_port = 0; strm_port < args.channels.size(); ++strm_port) {
             auto tx_channel = args.channels.at(strm_port);
             auto tx_chain   = _get_tx_chan(tx_channel);
+            UHD_ASSERT_THROW(!tx_chain.edge_list.empty())
             // Make all of the connections in our chain
             for (auto edge : tx_chain.edge_list) {
                 if (block_id_t(edge.src_blockid).match(NODE_ID_SEP)) {
