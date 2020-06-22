@@ -32,7 +32,6 @@ set(test_sources
     constrained_device_args_test.cpp
     convert_test.cpp
     dict_test.cpp
-    discoverable_feature_test.cpp
     eeprom_utils_test.cpp
     error_test.cpp
     fp_compare_delta_test.cpp
@@ -337,6 +336,12 @@ UHD_ADD_NONAPI_TEST(
     TARGET "pwr_cal_mgr_test.cpp"
     EXTRA_SOURCES
     ${CMAKE_SOURCE_DIR}/lib/usrp/common/pwr_cal_mgr.cpp
+)
+
+UHD_ADD_NONAPI_TEST(
+    TARGET "discoverable_feature_test.cpp"
+    EXTRA_SOURCES
+    ${CMAKE_SOURCE_DIR}/lib/features/discoverable_feature_registry.cpp
 )
 
 ########################################################################

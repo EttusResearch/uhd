@@ -5,6 +5,7 @@
 //
 
 #include <uhd/features/discoverable_feature_getter_iface.hpp>
+#include <uhdlib/features/discoverable_feature_registry.hpp>
 #include <boost/test/unit_test.hpp>
 #include <iostream>
 
@@ -38,43 +39,16 @@ public:
     }
 };
 
-class test_feature_getter : public discoverable_feature_getter_iface
+class test_feature_getter : public discoverable_feature_registry
 {
 public:
     test_feature_getter(bool feature0_enabled, bool feature1_enabled)
     {
         if (feature0_enabled)
-            _test_feature0.reset(new test_feature0());
+            register_feature(std::make_shared<test_feature0>());
         if (feature1_enabled)
-            _test_feature1.reset(new test_feature1);
+            register_feature(std::make_shared<test_feature1>());
     }
-
-    std::vector<std::string> enumerate_features() override
-    {
-        std::vector<std::string> features;
-        if (_test_feature0)
-            features.push_back(_test_feature0->get_feature_name());
-        if (_test_feature1)
-            features.push_back(_test_feature1->get_feature_name());
-        return features;
-    }
-
-private:
-    discoverable_feature::sptr get_feature_ptr(
-        discoverable_feature::feature_id_t feature_id) override
-    {
-        switch (feature_id) {
-            case discoverable_feature::RESERVED0:
-                return _test_feature0;
-            case discoverable_feature::RESERVED1:
-                return _test_feature1;
-            default:
-                return discoverable_feature::sptr();
-        };
-    }
-
-    discoverable_feature::sptr _test_feature0;
-    discoverable_feature::sptr _test_feature1;
 };
 
 BOOST_AUTO_TEST_CASE(test_has_feature_works)
@@ -89,10 +63,19 @@ BOOST_AUTO_TEST_CASE(test_enumerate_feature_works)
     test_feature_getter feature_getter(true, true);
     const auto features = feature_getter.enumerate_features();
 
-    // Note that ordering isn't strictly a requirement of the interface,
-    // we just leverage that here to demonstrate API usage concisely.
-    BOOST_CHECK_EQUAL(features[0], "test_feature0");
-    BOOST_CHECK_EQUAL(features[1], "test_feature1");
+    bool has_feature0 = false;
+    bool has_feature1 = false;
+    for (auto& feature : features) {
+        if (feature == "test_feature0") {
+            has_feature0 = true;
+        }
+        if (feature == "test_feature1") {
+            has_feature1 = true;
+        }
+    }
+    BOOST_CHECK_EQUAL(has_feature0, true);
+    BOOST_CHECK_EQUAL(has_feature1, true);
+    BOOST_CHECK_EQUAL(features.size(), 2);
 }
 
 BOOST_AUTO_TEST_CASE(test_get_feature_works)
