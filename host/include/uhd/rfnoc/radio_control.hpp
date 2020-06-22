@@ -7,6 +7,7 @@
 #pragma once
 
 #include <uhd/config.hpp>
+#include <uhd/features/discoverable_feature_getter_iface.hpp>
 #include <uhd/rfnoc/noc_block_base.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/direction.hpp>
@@ -19,7 +20,8 @@ namespace uhd { namespace rfnoc {
 
 /*! Parent class for radio block controllers
  */
-class radio_control : public noc_block_base
+class radio_control : public noc_block_base,
+                      public virtual ::uhd::features::discoverable_feature_getter_iface
 {
 public:
     static const std::string ALL_LOS;

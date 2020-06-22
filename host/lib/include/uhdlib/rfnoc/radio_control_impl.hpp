@@ -9,6 +9,7 @@
 #include <uhd/rfnoc/defaults.hpp>
 #include <uhd/rfnoc/multichan_register_iface.hpp>
 #include <uhd/rfnoc/radio_control.hpp>
+#include <uhdlib/features/discoverable_feature_registry.hpp>
 #include <uhdlib/usrp/common/pwr_cal_mgr.hpp>
 #include <unordered_map>
 #include <mutex>
@@ -26,7 +27,8 @@ namespace uhd { namespace rfnoc {
  * Many of the radio_control API calls have virtual (default) implementations
  * here, but they can be overridden.
  */
-class radio_control_impl : public radio_control
+class radio_control_impl : public radio_control,
+                           public ::uhd::features::discoverable_feature_registry
 {
 public:
     /**************************************************************************
