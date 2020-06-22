@@ -9,36 +9,26 @@ Utility to update the .fbs files in UHD, or to verify them.
 """
 
 import os
-import sys
 import glob
 import argparse
-import filecmp
 import pathlib
-import tempfile
+import re
 import shutil
 import subprocess
+import sys
 
 CAL_SUBDIR = ('include', 'uhd', 'cal')
 
-def find_flatc(hint):
+def find_executable(name, hint=None):
     """
-    Return a valid path to flatc or throw otherwise.
+    Find an executable file. See documentation of which
+    for platform depended behaviour.
     """
-    def is_executable(filename):
-        """ Check filename points to an executable """
-        return os.path.isfile(filename) and os.access(filename, os.X_OK)
-    if hint:
-        if is_executable(hint):
-            return hint
-        raise RuntimeError("Not a valid path to a flatc executable: `{}'"
-                           .format(hint))
-    for path in os.environ.get("PATH", "").split(os.pathsep):
-        flatc_exe = os.path.join(path, 'flatc')
-        if is_executable(flatc_exe):
-            return flatc_exe
-    raise RuntimeError("Could not find flatc in $PATH.")
+    result = shutil.which(name, path=hint)
+    print("Found {} executable: {}".format(name, result))
+    return result
 
-def find_uhd_source_path(hint):
+def find_uhd_source_path(hint=None):
     """
     Find UHD path
     """
@@ -61,8 +51,12 @@ def parse_args():
         description="Update or verify FlatBuffer files in UHD",
     )
     parser.add_argument(
-        '--flatc-exe',
+        '--flatc-path',
         help="Path to flatc executable. Will attempt to find the executable if "
+             "not provided.")
+    parser.add_argument(
+        '--git-path',
+        help="Path to git executable. Will attempt to find the executable if "
              "not provided.")
     parser.add_argument(
         '--uhd-path',
@@ -74,59 +68,88 @@ def parse_args():
              "non-zero if they are not.")
     return parser.parse_args()
 
-def verify_fbs(flatc_exe, files):
+def get_schema_files(uhd_path=None):
+    """
+    Returns a list of flatbuffers schema files (using glob) in uhd_path
+    """
+    try:
+        cal_path = os.path.join(find_uhd_source_path(uhd_path), *CAL_SUBDIR)
+        cal_path = os.path.abspath(cal_path)
+    except RuntimeError as ex:
+        print("ERROR: {}".format(str(ex)))
+        return False
+
+    print("Checking UHD cal data in: {}".format(cal_path))
+    os.chdir(cal_path)
+    return glob.glob("*.fbs")
+
+def get_hash(git_exe, file):
+    """
+    return the latest git hash of file. Returns None if git does not return 0.
+    """
+    try:
+        # git command to extract the hash of the last commit
+        git_cmd = (git_exe, "log", "-1", "--oneline", "--pretty='%h'")
+        result = subprocess.check_output(git_cmd + (file,), stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as error:
+        print("Failed to read hash from {} ({})".format(file, error.output))
+        result = None
+    return result
+
+
+def verify(git_exe, uhd_path=None):
     """
     Make sure that the .fbs files are all up to date w.r.t. their generated
-    files. This is accomplished by re-generating them in an temp dir and diffing
-    the new files with the existing ones.
+    files. Because the content of the generated headers differ between the
+    versions of flatbuffers we cannot compare generated files with files
+    in repo.
+    Instead the git hashes of the schema and the generated headers files
+    are compared. This will detect changes to the .fbs that are not
+    accompanied by a change of the header. It also detects manual
+    changes to the generated header files.
     """
-    tmp_dir = tempfile.mkdtemp()
-    # Generate them all again, but put them in a temp dir
-    subprocess.check_call([flatc_exe, '-o', tmp_dir, '--cpp'] + files)
-    uhd_gen_files = sorted(glob.glob("*generated.h"))
-    tmp_gen_files = sorted(glob.glob(os.path.join(tmp_dir, '*generated.h')))
-    if len(uhd_gen_files) != len(tmp_gen_files):
-        print("List of generated files does not match list of .fbs files!")
-        return False
+    try:
+        subprocess.check_output(("git", "status"), stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as error:
+        print("Cannot verify schema files (not a git repo), assuming pass")
+        return True
     try:
         result = True
-        for uhd_file, tmp_file in zip(uhd_gen_files, tmp_gen_files):
-            print("Checking {}... ".format(uhd_file), end="")
-            if not filecmp.cmp(uhd_file, tmp_file):
-                print("ERROR")
-                result = False
-            else:
-                print("OK")
+        for file in get_schema_files(uhd_path):
+            print(file, end="...")
+            fbs_hash = get_hash(git_exe, file)
+            hpp_hash = get_hash(git_exe,
+                                re.sub(r'\.fbs$', '_generated.h', file))
+            if fbs_hash and hpp_hash:
+                # we have a valid hash for both files
+                if fbs_hash == hpp_hash:
+                    print("OK")
+                else:
+                    print("ERROR git hashes of schema {} and header {} differ."
+                          .format(fbs_hash, hpp_hash))
+                    result = False
         return result
     except BaseException as ex:
         print("ERROR: " + str(ex))
         return False
-    finally:
-        shutil.rmtree(tmp_dir, ignore_errors=True)
 
-def run(flatc_exe, uhd_path=None, verify=False):
+def generate(flatc_exe, uhd_path=None):
     """
-    The actual code, minus arg parsing
+    Generate header files from schema
     """
-    try:
-        cal_path = os.path.join(find_uhd_source_path(uhd_path), *CAL_SUBDIR)
-    except RuntimeError as ex:
-        print("ERROR: {}".format(str(ex)))
-        return False
-    print("Checking UHD cal data in: {}".format(cal_path))
-    os.chdir(cal_path)
-    files = glob.glob("*.fbs")
-    if verify:
-        return verify_fbs(flatc_exe, files)
+    files = get_schema_files(uhd_path)
     subprocess.check_call([flatc_exe, '--cpp'] + files)
     return True
 
 def main():
     """ Go, go, go! """
     args = parse_args()
-    flatc_exe = find_flatc(args.flatc_exe)
-    print("Found flatc executable: {}".format(flatc_exe))
-    return run(flatc_exe, uhd_path=args.uhd_path, verify=args.verify)
+    if args.verify:
+        git_exe = find_executable("git", hint=args.git_path)
+        return verify(git_exe, uhd_path=args.uhd_path)
+
+    flatc_exe = find_executable("flatc", hint=args.flatc_path)
+    return generate(flatc_exe, uhd_path=args.uhd_path)
 
 if __name__ == "__main__":
     sys.exit(not main())
