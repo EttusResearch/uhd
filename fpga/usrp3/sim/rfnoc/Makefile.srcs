@@ -11,6 +11,7 @@
 SIM_RFNOC_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/, \
 axi4lite_sv/PkgAxiLite.sv \
 axi4lite_sv/AxiLiteIf.sv \
+axi4s_sv/AxiStreamIf.sv \
 ))
 
 ##################################################
@@ -23,6 +24,7 @@ test_exec.svh \
 sim_clock_gen.sv \
 PkgAxiStreamBfm.sv \
 PkgAxiLiteBfm.sv \
+PkgEthernet.sv \
 PkgChdrData.sv \
 PkgChdrUtils.sv \
 PkgChdrBfm.sv \

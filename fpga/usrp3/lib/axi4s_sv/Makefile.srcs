@@ -1,0 +1,18 @@
+#
+# Copyright 2020 Ettus Research, A National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+##################################################
+# RFNoC Utility Sources
+##################################################
+AXI4S_SV_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/axi4s_sv/, \
+AxiStreamIf.sv \
+axi4s_remove_bytes.sv \
+axi4s_remove_bytes_start.sv \
+axi4s_add_bytes.sv \
+axi4s_fifo.sv \
+axi4s_packet_gate.sv \
+axi4s_width_conv.sv \
+))

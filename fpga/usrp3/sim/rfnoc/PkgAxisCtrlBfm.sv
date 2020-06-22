@@ -5,7 +5,7 @@
 //
 // Module: PkgAxisCtrlBfm
 //
-// Description: Package for an AXIS-Ctrl bus functional model (BFM), which 
+// Description: Package for an AXIS-Ctrl bus functional model (BFM), which
 // consists primarily of the AxisCtrlPacket and AxisCtrlBfm classes.
 //
 
@@ -129,7 +129,7 @@ package PkgAxisCtrlBfm;
   // AXIS-Ctrl BFM Methods
   //---------------------------------------------------------------------------
 
-  // Class constructor. This must be given an interface for the master 
+  // Class constructor. This must be given an interface for the master
   // connection and an interface for the slave connection.
   function AxisCtrlBfm::new (
     virtual AxiStreamIf #(32).master master,
@@ -147,7 +147,7 @@ package PkgAxisCtrlBfm;
   endtask : put_ctrl
 
 
-  // Attempt to queue the provided packet for transmission. Return 1 if 
+  // Attempt to queue the provided packet for transmission. Return 1 if
   // successful, return 0 if the queue is full.
   task AxisCtrlBfm::try_put_ctrl(AxisCtrlPacket ctrl_packet);
     AxisPacket_t axis_packet;
@@ -163,7 +163,7 @@ package PkgAxisCtrlBfm;
   endtask : get_ctrl
 
 
-  // Get the next packet if there's one available and return 1. Return 0 if 
+  // Get the next packet if there's one available and return 1. Return 0 if
   // there's no packet available.
   function bit AxisCtrlBfm::try_get_ctrl(output AxisCtrlPacket ctrl_packet);
     AxisPacket_t axis_packet;
@@ -173,7 +173,7 @@ package PkgAxisCtrlBfm;
   endfunction : try_get_ctrl
 
 
-  // Convert an AXIS-Ctrl packet data structure to an AXI-Stream packet data 
+  // Convert an AXIS-Ctrl packet data structure to an AXI-Stream packet data
   // structure.
   function AxisCtrlBfm::AxisPacket_t AxisCtrlBfm::axis_ctrl_to_axis(AxisCtrlPacket ctrl_packet);
     AxisPacket_t axis_packet = new();
@@ -184,7 +184,7 @@ package PkgAxisCtrlBfm;
     axis_packet.data.push_back(ctrl_packet.header[63:32]);
 
     // Insert timestamp if has_time is set (words 2 and 3)
-    if (ctrl_packet.header.has_time) begin 
+    if (ctrl_packet.header.has_time) begin
       axis_packet.data.push_back(ctrl_packet.timestamp[31: 0]);
       axis_packet.data.push_back(ctrl_packet.timestamp[63:32]);
     end
@@ -201,12 +201,12 @@ package PkgAxisCtrlBfm;
   endfunction : axis_ctrl_to_axis
 
 
-  // Convert an AXI-Stream packet data structure to an AXIS-Ctrl packet data 
+  // Convert an AXI-Stream packet data structure to an AXIS-Ctrl packet data
   // structure.
   function AxisCtrlPacket AxisCtrlBfm::axis_to_axis_ctrl(AxisPacket_t axis_packet);
     AxisCtrlPacket ctrl_packet = new();
     int i;  // Use an index instead of pop_front() to workaround a ModelSim bug
-    
+
     // Grab words 0 and 1 (header)
     ctrl_packet.header[31: 0] = axis_packet.data[0];
     ctrl_packet.header[63:32] = axis_packet.data[1];
@@ -224,7 +224,7 @@ package PkgAxisCtrlBfm;
 
     // Grab data
     ctrl_packet.data = axis_packet.data[(i+1):$];
-    
+
     return ctrl_packet;
   endfunction : axis_to_axis_ctrl
 

@@ -13,3 +13,7 @@ top/n3xx/sim/ten_gig_eth_loopback
 top/x300/sim/x300_pcie_int
 top/n3xx/dboards/eiscat/radio/noc_block_ddc_eiscat_tb
 top/n3xx/dboards/eiscat/radio/noc_block_radio_core_eiscat_tb
+
+# These testbenches only work in ModelSim
+lib/axi4s_sv/axi4s_remove_bytes_tb
+lib/axi4s_sv/axi4s_add_bytes_tb
