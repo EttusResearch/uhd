@@ -22,7 +22,7 @@ from usrp_mpm.rpc_server import no_rpc
 from usrp_mpm.sys_utils import dtoverlay
 from usrp_mpm.sys_utils.sysfs_thermal import read_sysfs_sensors_value
 from usrp_mpm.sys_utils.udev import get_spidev_nodes
-from usrp_mpm.xports import XportMgrLiberio, XportMgrUDP
+from usrp_mpm.xports import XportMgrUDP
 from usrp_mpm.periph_manager.e31x_periphs import MboardRegsControl
 from usrp_mpm.sys_utils.udev import get_eeprom_paths
 from usrp_mpm import e31x_legacy_eeprom
@@ -57,8 +57,7 @@ class E310XportMgrUDP(XportMgrUDP):
         }
     }
 
-class E310XportMgrLiberio(XportMgrLiberio):
-    " E310-specific Liberio configuration "
+
 # pylint: enable=too-few-public-methods
 
 ###############################################################################
@@ -331,8 +330,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
         self._init_ref_clock_and_time(args)
         # Init CHDR transports
         self._xport_mgrs = {
-            'udp': E310XportMgrUDP(self.log, args),
-            'liberio': E310XportMgrLiberio(self.log.getChild('liberio')),
+            'udp': E310XportMgrUDP(self.log, args)
         }
         # Init complete.
         self.log.debug("mboard info: {}".format(self.mboard_info))
@@ -516,12 +514,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
         See PeriphManagerBase.get_chdr_link_types() for docs.
         """
         assert self.mboard_info['rpc_connection'] in ('remote', 'local')
-        if self.mboard_info['rpc_connection'] == 'remote':
-            return ["udp"]
-        elif self._xport_mgrs["liberio"].max_chan > 0:
-            return ["liberio"]
-        else:
-            return ["udp"]
+        return ["udp"]
 
     def get_chdr_link_options(self, xport_type):
         """
