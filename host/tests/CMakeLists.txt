@@ -68,6 +68,7 @@ set(test_sources
 # only differ in the cpp/py file extension). If in doubt, prepend 'py'
 set(pytest_sources
     pyranges_test.py
+    verify_fbs_test.py
 )
 
 #turn each test cpp file into an executable with an int main() function
