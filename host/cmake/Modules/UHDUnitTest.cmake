@@ -42,7 +42,10 @@ function(UHD_ADD_TEST test_name)
     #add_test(${ARGV})
     #set_tests_properties(${test_name} PROPERTIES ENVIRONMENT "${environs}")
 
-    if(UNIX)
+    if(ENABLE_QEMU_UNITTESTS)
+        # use QEMU emulator for executing test
+        add_test(${test_name} ${QEMU_EXECUTABLE} -L ${QEMU_SYSROOT} ${test_name})
+    elseif(UNIX)
         set(LD_PATH_VAR "LD_LIBRARY_PATH")
         if(APPLE)
             set(LD_PATH_VAR "DYLD_LIBRARY_PATH")
