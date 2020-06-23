@@ -28,6 +28,7 @@ set(test_sources
     cal_database_test.cpp
     cal_data_iq_test.cpp
     cal_data_gain_pwr_test.cpp
+    chdr_parse_test.cpp
     chdr_test.cpp
     constrained_device_args_test.cpp
     convert_test.cpp
@@ -203,7 +204,6 @@ UHD_ADD_NONAPI_TEST(
     TARGET "streamer_benchmark.cpp"
     EXTRA_SOURCES
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/chdr_packet_writer.cpp
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/chdr_types.cpp
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/chdr_ctrl_xport.cpp
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/chdr_rx_data_xport.cpp
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/chdr_tx_data_xport.cpp
@@ -259,7 +259,6 @@ UHD_ADD_NONAPI_TEST(
 UHD_ADD_NONAPI_TEST(
     TARGET rfnoc_chdr_test.cpp
     EXTRA_SOURCES
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/chdr_types.cpp
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/chdr_packet_writer.cpp
     INCLUDE_DIRS
     ${CMAKE_BINARY_DIR}/lib/rfnoc/

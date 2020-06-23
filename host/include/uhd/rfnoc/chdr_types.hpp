@@ -9,7 +9,9 @@
 #include <uhd/rfnoc/rfnoc_types.hpp>
 #include <uhd/types/endianness.hpp>
 #include <uhd/utils/byteswap.hpp>
+#include <boost/format.hpp>
 #include <boost/optional.hpp>
+#include <deque>
 #include <list>
 #include <memory>
 #include <vector>
@@ -173,6 +175,19 @@ public: // Functions
         return *this;
     }
 
+    //! Return a string representation of this object
+    inline const std::string to_string() const
+    {
+        // The static_casts are because vc and num_mdata are uint8_t -> unsigned char
+        // For some reason, despite the %u meaning unsigned int, boost still formats them
+        // as chars
+        return str(boost::format("chdr_header{vc:%u, eob:%b, eov:%b, pkt_type:%u, "
+                                 "num_mdata:%u, seq_num:%u, length:%u, dst_epid:%u}\n")
+                   % static_cast<uint16_t>(get_vc()) % get_eob() % get_eov()
+                   % get_pkt_type() % static_cast<uint16_t>(get_num_mdata())
+                   % get_seq_num() % get_length() % get_dst_epid());
+    }
+
 private:
     // The flattened representation of the header stored in host order
     uint64_t _flat_hdr = 0;
@@ -246,7 +261,7 @@ enum ctrl_opcode_t {
     OP_USER6       = 0xF,
 };
 
-class ctrl_payload
+class UHD_API ctrl_payload
 {
 public: // Members
     //! Destination port for transaction (10 bits)
@@ -314,6 +329,9 @@ public: // Functions
         deserialize(buff, num_elems, conv_byte_order);
     }
 
+    //! Get the serialized size of this payload in 64 bit words
+    size_t get_length() const;
+
     // Return whether or not we have a valid timestamp
     bool has_timestamp() const
     {
@@ -373,7 +391,7 @@ enum strs_status_t {
     STRS_RTERR   = 0x4, //! Unexpected destination (routing error)
 };
 
-class strs_payload
+class UHD_API strs_payload
 {
 public: // Members
     //! The source EPID for the stream (16 bits)
@@ -435,6 +453,9 @@ public: // Functions
         deserialize(buff, num_elems, conv_byte_order);
     }
 
+    //! Get the serialized size of this payload in 64 bit words
+    size_t get_length() const;
+
     //! Comparison operator (==)
     bool operator==(const strs_payload& rhs) const;
 
@@ -476,7 +497,7 @@ enum strc_op_code_t {
     STRC_RESYNC = 0x2, //! Re-synchronize flow control
 };
 
-class strc_payload
+class UHD_API strc_payload
 {
 public: // Members
     //! The source EPID for the stream (16 bits)
@@ -534,6 +555,9 @@ public: // Functions
         deserialize(buff, num_elems, conv_byte_order);
     }
 
+    //! Get the serialized size of this payload in 64 bit words
+    size_t get_length() const;
+
     //! Comparison operator (==)
     bool operator==(const strc_payload& rhs) const;
 
@@ -566,7 +590,7 @@ private:
 //! A class that represents a single management operation
 //  An operation consists of an operation code and some
 //  payload associated with that operation.
-class mgmt_op_t
+class UHD_API mgmt_op_t
 {
 public:
     // Operation code
@@ -684,6 +708,9 @@ public:
         return (_op_code == rhs._op_code) && (_op_payload == rhs._op_payload);
     }
 
+    //! Return a string representation of this object
+    const std::string to_string() const;
+
 private:
     op_code_t _op_code;
     payload_t _op_payload;
@@ -692,7 +719,7 @@ private:
 //! A class that represents a single management hop
 //  A hop is a collection for management transactions for
 //  a single node.
-class mgmt_hop_t
+class UHD_API mgmt_hop_t
 {
 public:
     mgmt_hop_t()                      = default;
@@ -737,6 +764,9 @@ public:
         return _ops == rhs._ops;
     }
 
+    //! Return a string representation of this object
+    const std::string to_string() const;
+
 private:
     std::vector<mgmt_op_t> _ops;
 };
@@ -744,7 +774,7 @@ private:
 //! A class that represents a complete multi-hop management transaction
 //  A transaction is a collection of hops, where each hop is a collection
 //  of management transactions.
-class mgmt_payload
+class UHD_API mgmt_payload
 {
 public:
     mgmt_payload()                        = default;
@@ -777,6 +807,14 @@ public:
     inline const mgmt_hop_t& get_hop(size_t i) const
     {
         return _hops.at(i);
+    }
+
+    //! Pop the first hop of the transaction and return it
+    inline mgmt_hop_t pop_hop()
+    {
+        auto hop = _hops.front();
+        _hops.pop_front();
+        return hop;
     }
 
     inline size_t get_size_bytes() const
@@ -823,8 +861,14 @@ public:
         deserialize(buff, num_elems, conv_byte_order);
     }
 
+    //! Get the serialized size of this payload in 64 bit words
+    size_t get_length() const;
+
     //! Return a string representation of this object
     const std::string to_string() const;
+
+    //! Return a string representaiton of the hops contained by this object
+    const std::string hops_to_string() const;
 
     //! Return the source EPID for this transaction
     inline sep_id_t get_src_epid() const
@@ -867,11 +911,39 @@ public:
     }
 
 private:
-    sep_id_t _src_epid = 0;
-    uint16_t _protover = 0;
-    chdr_w_t _chdr_w   = CHDR_W_64;
-    std::vector<mgmt_hop_t> _hops;
+    sep_id_t _src_epid   = 0;
+    uint16_t _protover   = 0;
+    chdr_w_t _chdr_w     = CHDR_W_64;
     size_t _padding_size = 0;
+    std::deque<mgmt_hop_t> _hops;
 };
+
+//! Conversion from payload_t to pkt_type
+template <typename payload_t>
+constexpr packet_type_t payload_to_packet_type();
+
+template <>
+constexpr packet_type_t payload_to_packet_type<ctrl_payload>()
+{
+    return PKT_TYPE_CTRL;
+}
+
+template <>
+constexpr packet_type_t payload_to_packet_type<mgmt_payload>()
+{
+    return PKT_TYPE_MGMT;
+}
+
+template <>
+constexpr packet_type_t payload_to_packet_type<strc_payload>()
+{
+    return PKT_TYPE_STRC;
+}
+
+template <>
+constexpr packet_type_t payload_to_packet_type<strs_payload>()
+{
+    return PKT_TYPE_STRS;
+}
 
 }}} // namespace uhd::rfnoc::chdr

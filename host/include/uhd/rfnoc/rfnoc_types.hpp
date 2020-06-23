@@ -6,7 +6,8 @@
 
 #pragma once
 
-#include <memory>
+#include <cstddef>
+#include <cstdint>
 
 namespace uhd { namespace rfnoc {
 

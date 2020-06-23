@@ -9,6 +9,7 @@
 #include <uhd/types/endianness.hpp>
 #include <boost/format.hpp>
 #include <cassert>
+#include <sstream>
 
 using namespace uhd;
 using namespace uhd::rfnoc::chdr;
@@ -141,6 +142,17 @@ void ctrl_payload::deserialize(const uint64_t* buff,
     UHD_ASSERT_THROW(ptr <= max_size_bytes);
 }
 
+size_t ctrl_payload::get_length() const
+{
+    size_t length = 1;
+    if (this->has_timestamp()) {
+        length += 1;
+    }
+    size_t operations = 1 + this->data_vtr.size();
+    length += operations / 2 + operations % 2;
+    return length;
+}
+
 bool ctrl_payload::operator==(const ctrl_payload& rhs) const
 {
     return (dst_port == rhs.dst_port) && (src_port == rhs.src_port)
@@ -241,6 +253,11 @@ void strs_payload::deserialize(const uint64_t* buff,
     status_info = get_field_u64<uint64_t>(word3, STATUS_INFO_OFFSET, STATUS_INFO_WIDTH);
 }
 
+size_t strs_payload::get_length() const
+{
+    return 4;
+}
+
 bool strs_payload::operator==(const strs_payload& rhs) const
 {
     return (src_epid == rhs.src_epid) && (status == rhs.status)
@@ -310,6 +327,11 @@ void strc_payload::deserialize(const uint64_t* buff,
     num_bytes = conv_byte_order(buff[1]);
 }
 
+size_t strc_payload::get_length() const
+{
+    return 2;
+}
+
 bool strc_payload::operator==(const strc_payload& rhs) const
 {
     return (src_epid == rhs.src_epid) && (op_code == rhs.op_code)
@@ -327,6 +349,74 @@ const std::string strc_payload::to_string() const
 //----------------------------------------------------
 // CHDR Management Payload
 //----------------------------------------------------
+
+const std::string mgmt_op_t::to_string() const
+{
+    std::stringstream stream;
+    switch (get_op_code()) {
+        case mgmt_op_t::MGMT_OP_NOP:
+            stream << "NOP";
+            break;
+        case mgmt_op_t::MGMT_OP_ADVERTISE:
+            stream << "ADVERTISE";
+            break;
+        case mgmt_op_t::MGMT_OP_SEL_DEST:
+            stream << "SEL_DEST";
+            break;
+        case mgmt_op_t::MGMT_OP_RETURN:
+            stream << "RETURN";
+            break;
+        case mgmt_op_t::MGMT_OP_INFO_REQ:
+            stream << "INFO_REQ";
+            break;
+        case mgmt_op_t::MGMT_OP_INFO_RESP:
+            stream << "INFO_RESP";
+            break;
+        case mgmt_op_t::MGMT_OP_CFG_WR_REQ:
+            stream << "CFG_WR_REQ";
+            break;
+        case mgmt_op_t::MGMT_OP_CFG_RD_REQ:
+            stream << "CFG_RD_REQ";
+            break;
+        case mgmt_op_t::MGMT_OP_CFG_RD_RESP:
+            stream << "CFG_RD_RESP";
+            break;
+        default:
+            UHD_THROW_INVALID_CODE_PATH();
+    }
+    stream << ": ";
+    switch (get_op_code()) {
+        case mgmt_op_t::MGMT_OP_SEL_DEST: {
+            mgmt_op_t::sel_dest_payload payload = static_cast<uint64_t>(get_op_payload());
+            stream << "dest:" << payload.dest;
+            break;
+        }
+        case mgmt_op_t::MGMT_OP_CFG_WR_REQ:
+        case mgmt_op_t::MGMT_OP_CFG_RD_REQ:
+        case mgmt_op_t::MGMT_OP_CFG_RD_RESP: {
+            mgmt_op_t::cfg_payload payload = static_cast<uint64_t>(get_op_payload());
+            stream << str(
+                boost::format("addr:0x%08x, data:0x%08x") % payload.addr % payload.data);
+            break;
+        }
+        case mgmt_op_t::MGMT_OP_INFO_REQ:
+        case mgmt_op_t::MGMT_OP_INFO_RESP: {
+            mgmt_op_t::node_info_payload payload =
+                static_cast<uint64_t>(get_op_payload());
+            stream << "device_id:" << payload.device_id
+                   << ", node_type:" << payload.node_type
+                   << ", node_inst:" << payload.node_inst
+                   << ", ext_info:" << payload.ext_info;
+            break;
+        }
+        default: {
+            stream << "-";
+            break;
+        }
+    }
+    stream << "\n";
+    return stream.str();
+}
 
 //! Serialize this hop into a list of 64-bit words
 size_t mgmt_hop_t::serialize(std::vector<uint64_t>& target,
@@ -367,6 +457,21 @@ void mgmt_hop_t::deserialize(std::list<uint64_t>& src,
         }
 
     } while (ops_remaining > 0);
+}
+
+const std::string mgmt_hop_t::to_string() const
+{
+    std::stringstream stream;
+    for (size_t op_index = 0; op_index < get_num_ops(); op_index++) {
+        if (op_index == 0) {
+            stream << " -> ";
+        } else {
+            stream << "    ";
+        }
+        const mgmt_op_t& op = get_op(op_index);
+        stream << op.to_string();
+    }
+    return stream.str();
 }
 
 void mgmt_payload::populate_header(chdr_header& header) const
@@ -440,11 +545,30 @@ void mgmt_payload::deserialize(const uint64_t* buff,
     }
 }
 
+size_t mgmt_payload::get_length() const
+{
+    size_t length = 1 + _padding_size; /* header */
+    for (const auto& hop : this->_hops) {
+        length += hop.get_num_ops() + _padding_size;
+    }
+    return length;
+}
+
 const std::string mgmt_payload::to_string() const
 {
     return str(boost::format(
                    "mgmt_payload{src_epid:%lu, chdr_w:%d, protover:0x%x, num_hops:%lu}\n")
                % _src_epid % int(_chdr_w) % _protover % _hops.size());
+}
+
+const std::string mgmt_payload::hops_to_string() const
+{
+    std::stringstream stream;
+    for (size_t hop_index = 0; hop_index < get_num_hops(); hop_index++) {
+        const mgmt_hop_t& hop = get_hop(hop_index);
+        stream << hop.to_string();
+    }
+    return stream.str();
 }
 
 

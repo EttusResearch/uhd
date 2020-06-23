@@ -5,6 +5,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
+add_subdirectory(chdr)
+
 UHD_INSTALL(FILES
     algorithm.hpp
     assert_has.hpp
