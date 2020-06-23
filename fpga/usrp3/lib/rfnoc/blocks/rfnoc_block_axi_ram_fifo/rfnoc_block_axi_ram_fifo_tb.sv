@@ -757,11 +757,10 @@ module rfnoc_block_axi_ram_fifo_tb #(
   task test_read_suppression();
     chdr_word_t test_data[$];
     logic [31:0] val32, save32;
-    int port;
+    
+    localparam int port = 0; // Only test one port
 
-    test.start_test("Read suppression test", 100us);
-
-    port = 0; // Only test one port
+    test.start_test("Read suppression test", 1ms);
 
     // Turn on read suppression with the max threshold to cause it to 
     // suppress everything.
@@ -770,18 +769,27 @@ module rfnoc_block_axi_ram_fifo_tb #(
     val32[REG_FIFO_SUPPRESS_THRESH_POS +: REG_FIFO_SUPPRESS_THRESH_W] = {REG_FIFO_SUPPRESS_THRESH_W{1'b1}};
     write_reg(port, REG_FIFO_READ_SUPPRESS, val32);
 
-    // Generate the test data to send (send 8 RAM bursts)
-    gen_test_data(MEM_DATA_W/8 * 256 * 8, test_data);
+    // Disable the input stall check to properly test read suppression. If it
+    // were not disabled, it would override the read suppression setting,
+    // making it difficult to test.
+    force rfnoc_block_axi_ram_fifo_i.gen_ram_fifos[port].axi_ram_fifo_i.input_stalled = 1'b0;
+
+    // Generate enough test data to ensure we should get some output if read
+    // suppression weren't being used (1 full input FIFO plus 8 RAM bursts).
+    gen_test_data((2**IN_FIFO_SIZE + 256*8)*(MEM_DATA_W/8), test_data);
 
     // Start sending packets then wait for the input to stall, either because 
     // we've filled the FIFO or we've input everything.
     blk_ctrl.set_master_stall_prob(port, 0);
     blk_ctrl.send_packets(port, test_data);
-    wait (s_rfnoc_chdr_tvalid && s_rfnoc_chdr_tready);
-    wait (!s_rfnoc_chdr_tvalid || !s_rfnoc_chdr_tready);
+    wait (s_rfnoc_chdr_tvalid[port] && s_rfnoc_chdr_tready[port]);
+    wait (s_rfnoc_chdr_tvalid[port] && !s_rfnoc_chdr_tready[port]);
 
     // Make sure nothing made it through
     `ASSERT_ERROR(blk_ctrl.num_received(port) == 0, "Read suppression failed");
+
+    // Re-enable the input stall check
+    release rfnoc_block_axi_ram_fifo_i.gen_ram_fifos[port].axi_ram_fifo_i.input_stalled;
 
     // Turn down the threshold 
     val32[REG_FIFO_SUPPRESS_THRESH_POS +: REG_FIFO_SUPPRESS_THRESH_W] = {REG_FIFO_SUPPRESS_THRESH_W{1'b0}};
