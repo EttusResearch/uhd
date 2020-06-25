@@ -34,4 +34,5 @@ axis_upsizer.v \
 axis_downsizer.v \
 axis_width_conv.v \
 axis_split.v \
+axis_packetize.v \
 ))
