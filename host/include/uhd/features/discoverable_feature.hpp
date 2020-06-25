@@ -25,6 +25,9 @@ class discoverable_feature
 {
 public:
     using sptr = std::shared_ptr<discoverable_feature>;
+
+    //! An enum of all features supported by the driver. When creating a new
+    // feature, you should add an entry to this enum.
     enum feature_id_t {
         RESERVED0,
         RESERVED1,
@@ -32,7 +35,7 @@ public:
 
     virtual ~discoverable_feature() = default;
 
-    //! Returns a human-readonable string name of this feature.
+    //! Returns a human-readable string name of this feature.
     virtual std::string get_feature_name() const = 0;
 };
 
