@@ -70,6 +70,7 @@ set(test_sources
 set(pytest_sources
     pyranges_test.py
     verify_fbs_test.py
+    pychdr_parse_test.py
 )
 
 #turn each test cpp file into an executable with an int main() function

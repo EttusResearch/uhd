@@ -118,4 +118,6 @@ function(UHD_ADD_PYTEST test_name)
                                              -p "${test_name}.*"
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/python"
     )
+    set_tests_properties(${test_name} PROPERTIES
+        ENVIRONMENT PYTHONPATH=${CMAKE_SOURCE_DIR}/tests/common)
 endfunction(UHD_ADD_PYTEST)

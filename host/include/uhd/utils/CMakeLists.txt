@@ -29,6 +29,7 @@ UHD_INSTALL(FILES
     paths.hpp
     pimpl.hpp
     platform.hpp
+    pybind_adaptors.hpp
     safe_call.hpp
     safe_main.hpp
     scope_exit.hpp

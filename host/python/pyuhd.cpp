@@ -37,6 +37,7 @@ namespace py = pybind11;
 #include "usrp/multi_usrp_python.hpp"
 #include "usrp/subdev_spec_python.hpp"
 #include "utils/paths_python.hpp"
+#include "utils/utils_python.hpp"
 
 // We need this hack because import_array() returns NULL
 // for newer Python versions.
@@ -96,4 +97,7 @@ PYBIND11_MODULE(libpyuhd, m)
     // Register calibration submodule
     auto cal_module = m.def_submodule("cal", "Calibration Objects");
     export_cal(cal_module);
+
+    auto chdr_module = m.def_submodule("chdr", "CHDR Parsing");
+    export_utils(chdr_module);
 }

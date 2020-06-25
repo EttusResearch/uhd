@@ -11,25 +11,8 @@
 #include <uhd/cal/iq_cal.hpp>
 #include <uhd/cal/pwr_cal.hpp>
 #include <uhd/utils/interpolation.hpp>
+#include <uhd/utils/pybind_adaptors.hpp>
 #include <pybind11/stl.h>
-
-namespace pybind11 { namespace detail {
-template <typename T>
-struct type_caster<boost::optional<T>> : optional_caster<boost::optional<T>>
-{
-};
-}}
-
-std::vector<uint8_t> pybytes_to_vector(const py::bytes& data)
-{
-    const std::string data_str = std::string(data);
-    return std::vector<uint8_t>(data_str.cbegin(), data_str.cend());
-}
-
-py::bytes vector_to_pybytes(const std::vector<uint8_t>& data)
-{
-    return py::bytes(std::string(data.cbegin(), data.cend()));
-}
 
 void export_cal(py::module& m)
 {
@@ -48,7 +31,8 @@ void export_cal(py::module& m)
         .value("NONE", source::NONE);
 
     py::class_<database>(m, "database")
-        .def_static("read_cal_data",
+        .def_static(
+            "read_cal_data",
             [](const std::string& key,
                 const std::string& serial,
                 const source source_type) {
