@@ -17,3 +17,4 @@ top/n3xx/dboards/eiscat/radio/noc_block_radio_core_eiscat_tb
 # These testbenches only work in ModelSim
 lib/axi4s_sv/axi4s_remove_bytes_tb
 lib/axi4s_sv/axi4s_add_bytes_tb
+lib/rfnoc/xport_sv/eth_interface_tb

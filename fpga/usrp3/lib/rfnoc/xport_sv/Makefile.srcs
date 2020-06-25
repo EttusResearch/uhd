@@ -1,0 +1,16 @@
+#
+# Copyright 2020 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+##################################################
+# RFNoC Utility Sources
+##################################################
+RFNOC_XPORT_SV_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/rfnoc/xport_sv/, \
+chdr_xport_adapter.sv \
+eth_ipv4_add_udp.sv \
+eth_ipv4_chdr_adapter.sv \
+eth_ipv4_chdr_dispatch.sv \
+eth_ipv4_interface.sv \
+))
