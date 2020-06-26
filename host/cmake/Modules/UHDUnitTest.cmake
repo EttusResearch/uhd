@@ -81,7 +81,7 @@ function(UHD_ADD_TEST test_name)
 
         add_test(${test_name} ${SHELL} ${sh_file})
 
-    endif(UNIX)
+    endif(ENABLE_QEMU_UNITTESTS)
 
     if(WIN32)
         list(APPEND libpath ${DLL_PATHS} "%PATH%")
