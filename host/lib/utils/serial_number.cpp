@@ -17,6 +17,8 @@ namespace uhd { namespace utils {
          return a == b;
       } catch (std::out_of_range& e) {
          return false;
+      } catch (std::invalid_argument& e) {
+         return false;
       }
    }
 }}

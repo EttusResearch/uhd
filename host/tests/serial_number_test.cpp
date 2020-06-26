@@ -19,4 +19,7 @@ BOOST_AUTO_TEST_CASE(test_serial_numbers_match)
 
    // Out of range
    BOOST_CHECK_EQUAL(false, uhd::utils::serial_numbers_match("aaaaaaaaaaaaaa", "abcd123"));
+
+   // Invalid argument
+   BOOST_CHECK_EQUAL(false, uhd::utils::serial_numbers_match("", "abcd123"));
 }
