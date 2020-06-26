@@ -1604,7 +1604,7 @@ void ad9361_device_t::initialize()
     std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
     /* Check device ID to make sure iface works */
-    uint32_t device_id = (_io_iface->peek8(0x037) & 0x8);
+    uint32_t device_id = (_io_iface->peek8(0x037) & 0xf8);
     if (device_id != 0x8) {
         throw uhd::runtime_error(
             str(boost::format("[ad9361_device_t::initialize] Device ID readback failure. "
