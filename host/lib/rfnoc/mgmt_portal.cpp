@@ -8,7 +8,7 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/chdr_ctrl_xport.hpp>
-#include <uhdlib/rfnoc/chdr_packet.hpp>
+#include <uhdlib/rfnoc/chdr_packet_writer.hpp>
 #include <uhdlib/rfnoc/mgmt_portal.hpp>
 #include <unordered_set>
 #include <boost/format.hpp>

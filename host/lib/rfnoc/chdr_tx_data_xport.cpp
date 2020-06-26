@@ -96,8 +96,8 @@ static chdr_tx_data_xport::fc_params_t configure_flow_ctrl(io_service::sptr io_s
     const double fc_freq_ratio,
     const double fc_headroom_ratio)
 {
-    chdr::chdr_strc_packet::uptr strc_packet = pkt_factory.make_strc();
-    chdr::chdr_packet::uptr recv_packet      = pkt_factory.make_generic();
+    chdr::chdr_strc_packet::uptr strc_packet   = pkt_factory.make_strc();
+    chdr::chdr_packet_writer::uptr recv_packet = pkt_factory.make_generic();
 
     // No flow control at initialization, just release all send buffs
     auto send_cb = [](frame_buff::uptr buff, send_link_if* send_link) {

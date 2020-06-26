@@ -8,7 +8,7 @@
 
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
-#include <uhdlib/rfnoc/chdr_packet.hpp>
+#include <uhdlib/rfnoc/chdr_packet_writer.hpp>
 #include <uhdlib/rfnoc/chdr_types.hpp>
 #include <uhdlib/rfnoc/rfnoc_common.hpp>
 #include <uhdlib/rfnoc/rx_flow_ctrl_state.hpp>
@@ -391,10 +391,10 @@ private:
     uint16_t _data_seq_num = 0;
 
     // Packet for received data
-    chdr::chdr_packet::uptr _recv_packet;
+    chdr::chdr_packet_writer::uptr _recv_packet;
 
     // Packet for received data used in callbacks
-    chdr::chdr_packet::uptr _recv_packet_cb;
+    chdr::chdr_packet_writer::uptr _recv_packet_cb;
 
     // Handles sending of strs flow control response packets
     detail::rx_flow_ctrl_sender _fc_sender;

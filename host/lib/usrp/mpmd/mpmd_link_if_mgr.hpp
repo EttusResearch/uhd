@@ -10,7 +10,7 @@
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/types/direction.hpp>
-#include <uhdlib/rfnoc/chdr_packet.hpp>
+#include <uhdlib/rfnoc/chdr_packet_writer.hpp>
 #include <uhdlib/rfnoc/rfnoc_common.hpp>
 #include <uhdlib/transport/links.hpp>
 #include <map>

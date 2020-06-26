@@ -8,7 +8,7 @@
 
 #include <uhd/stream.hpp>
 #include <uhd/transport/adapter_id.hpp>
-#include <uhdlib/rfnoc/chdr_packet.hpp>
+#include <uhdlib/rfnoc/chdr_packet_writer.hpp>
 #include <uhdlib/rfnoc/chdr_rx_data_xport.hpp>
 #include <uhdlib/rfnoc/chdr_tx_data_xport.hpp>
 #include <uhdlib/rfnoc/client_zero.hpp>

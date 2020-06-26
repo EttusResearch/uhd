@@ -21,15 +21,16 @@ namespace uhd { namespace rfnoc { namespace chdr {
 //  container provides a high level API to read and write the header, metadata and payload
 //  of the packet. The payload can be accessed as a generic buffer using this interface.
 //
-class chdr_packet
+class chdr_packet_writer
 {
 public:
-    //! A unique pointer to a const chdr_packet. Useful as a read-only interface.
-    typedef std::unique_ptr<const chdr_packet> cuptr;
-    //! A unique pointer to a non-const chdr_packet. Useful as a read-write interface.
-    typedef std::unique_ptr<chdr_packet> uptr;
+    //! A unique pointer to a const chdr_packet_writer. Useful as a read-only interface.
+    typedef std::unique_ptr<const chdr_packet_writer> cuptr;
+    //! A unique pointer to a non-const chdr_packet_writer. Useful as a read-write
+    //! interface.
+    typedef std::unique_ptr<chdr_packet_writer> uptr;
 
-    virtual ~chdr_packet() = 0;
+    virtual ~chdr_packet_writer() = 0;
 
     /*! Updates the underlying storage of this packet. This is a const method and is
      *  only useful for read-only (RX) access.
@@ -177,16 +178,20 @@ public:
 //  and deserialized appropriately.
 //
 template <typename payload_t>
-class chdr_packet_specific
+class chdr_packet_writer_specific
 {
 public:
-    //! A unique pointer to a const chdr_packet. Useful as a read-only interface.
-    typedef std::unique_ptr<const chdr_packet_specific<payload_t>> cuptr;
-    //! A unique pointer to a non-const chdr_packet. Useful as a read-write interface.
-    typedef std::unique_ptr<chdr_packet_specific<payload_t>> uptr;
+    //! A unique pointer to a const chdr_packet_writer. Useful as a read-only interface.
+    typedef std::unique_ptr<const chdr_packet_writer_specific<payload_t>> cuptr;
+    //! A unique pointer to a non-const chdr_packet_writer. Useful as a read-write
+    //! interface.
+    typedef std::unique_ptr<chdr_packet_writer_specific<payload_t>> uptr;
 
-    chdr_packet_specific(chdr_packet::uptr chdr_pkt) : _chdr_pkt(std::move(chdr_pkt)) {}
-    ~chdr_packet_specific() = default;
+    chdr_packet_writer_specific(chdr_packet_writer::uptr chdr_pkt)
+        : _chdr_pkt(std::move(chdr_pkt))
+    {
+    }
+    ~chdr_packet_writer_specific() = default;
 
     //! Updates the underlying storage of this packet. This is a const method and is
     //  only useful for read-only access.
@@ -233,7 +238,7 @@ public:
     }
 
 private:
-    chdr_packet::uptr _chdr_pkt;
+    chdr_packet_writer::uptr _chdr_pkt;
 };
 
 //----------------------------------------------------
@@ -241,16 +246,16 @@ private:
 //----------------------------------------------------
 
 //! CHDR control packet
-typedef chdr_packet_specific<ctrl_payload> chdr_ctrl_packet;
+typedef chdr_packet_writer_specific<ctrl_payload> chdr_ctrl_packet;
 
 //! CHDR stream status packet
-typedef chdr_packet_specific<strs_payload> chdr_strs_packet;
+typedef chdr_packet_writer_specific<strs_payload> chdr_strs_packet;
 
 //! CHDR stream command packet
-typedef chdr_packet_specific<strc_payload> chdr_strc_packet;
+typedef chdr_packet_writer_specific<strc_payload> chdr_strc_packet;
 
 //! CHDR management packet
-typedef chdr_packet_specific<mgmt_payload> chdr_mgmt_packet;
+typedef chdr_packet_writer_specific<mgmt_payload> chdr_mgmt_packet;
 
 //----------------------------------------------------
 // CHDR packet factory
@@ -275,7 +280,7 @@ public:
     chdr_packet_factory(chdr_packet_factory&& rhs)      = default;
 
     //! Makes a generic CHDR packet and transfers ownership to the client
-    chdr_packet::uptr make_generic(
+    chdr_packet_writer::uptr make_generic(
         size_t mtu_bytes = std::numeric_limits<size_t>::max()) const;
 
     //! Makes a CHDR control packet and transfers ownership to the client

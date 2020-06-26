@@ -6,7 +6,7 @@
 
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhdlib/rfnoc/chdr_packet.hpp>
+#include <uhdlib/rfnoc/chdr_packet_writer.hpp>
 #include <uhdlib/rfnoc/chdr_types.hpp>
 #include <uhdlib/rfnoc/ctrlport_endpoint.hpp>
 #include <condition_variable>
@@ -121,9 +121,8 @@ public:
     {
         // Compute transaction expiration time, use MASSIVE_TIMEOUT if a timed
         // command is in the queue
-        auto timeout_time = start_timeout(
-            check_timed_in_queue() ? MASSIVE_TIMEOUT : _policy.timeout
-        );
+        auto timeout_time =
+            start_timeout(check_timed_in_queue() ? MASSIVE_TIMEOUT : _policy.timeout);
 
         // Send request
         auto request =
@@ -174,9 +173,8 @@ public:
 
         // Compute transaction expiration time, use MASSIVE_TIMEOUT if a timed
         // command is in the queue
-        auto timeout_time = start_timeout(
-            check_timed_in_queue() ? MASSIVE_TIMEOUT : _policy.timeout
-        );
+        auto timeout_time =
+            start_timeout(check_timed_in_queue() ? MASSIVE_TIMEOUT : _policy.timeout);
 
         // Send request
         auto request = send_request_packet(OP_POLL,
@@ -192,12 +190,10 @@ public:
 
     virtual void sleep(uhd::time_spec_t duration, bool ack = false)
     {
-
         // Compute transaction expiration time, use MASSIVE_TIMEOUT if a timed
         // command is in the queue
-        auto timeout_time = start_timeout(
-            check_timed_in_queue() ? MASSIVE_TIMEOUT : _policy.timeout
-        );
+        auto timeout_time =
+            start_timeout(check_timed_in_queue() ? MASSIVE_TIMEOUT : _policy.timeout);
 
         // Send request
         auto request = send_request_packet(OP_SLEEP,
@@ -421,7 +417,7 @@ private:
             // If we can fit the current request in the queue then we can proceed
             return (_buff_occupied + pyld_size)
                    <= (_buff_capacity
-                          - (ASYNC_MESSAGE_SIZE * _max_outstanding_async_msgs));
+                       - (ASYNC_MESSAGE_SIZE * _max_outstanding_async_msgs));
         };
         if (!buff_not_full()) {
             // If we're sending a timed command or if we have a timed command in the

@@ -16,7 +16,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/block_container.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/block_id.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/chdr_types.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/chdr_packet.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/chdr_packet_writer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/chdr_ctrl_xport.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/chdr_rx_data_xport.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/chdr_tx_data_xport.cpp

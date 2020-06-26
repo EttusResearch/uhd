@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhdlib/rfnoc/chdr_packet.hpp>
+#include <uhdlib/rfnoc/chdr_packet_writer.hpp>
 #include <cassert>
 #include <functional>
 #include <memory>
@@ -13,14 +13,14 @@ using namespace uhd;
 using namespace uhd::rfnoc;
 using namespace uhd::rfnoc::chdr;
 
-chdr_packet::~chdr_packet() = default;
+chdr_packet_writer::~chdr_packet_writer() = default;
 
 //------------------------------------------------------------
 // chdr_packet
 //------------------------------------------------------------
 // endianness is the link endianness, not the host endianness
 template <size_t chdr_w, endianness_t endianness>
-class chdr_packet_impl : public chdr_packet
+class chdr_packet_impl : public chdr_packet_writer
 {
 public:
     chdr_packet_impl() = delete;
@@ -165,7 +165,7 @@ chdr_packet_factory::chdr_packet_factory(chdr_w_t chdr_w, endianness_t endiannes
 {
 }
 
-chdr_packet::uptr chdr_packet_factory::make_generic(size_t mtu_bytes) const
+chdr_packet_writer::uptr chdr_packet_factory::make_generic(size_t mtu_bytes) const
 {
     if (_endianness == ENDIANNESS_BIG) {
         switch (_chdr_w) {
@@ -198,7 +198,7 @@ chdr_packet::uptr chdr_packet_factory::make_generic(size_t mtu_bytes) const
                 assert(0);
         }
     }
-    return chdr_packet::uptr();
+    return chdr_packet_writer::uptr();
 }
 
 chdr_ctrl_packet::uptr chdr_packet_factory::make_ctrl(size_t mtu_bytes) const

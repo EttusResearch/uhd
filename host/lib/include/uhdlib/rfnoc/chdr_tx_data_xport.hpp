@@ -9,7 +9,7 @@
 #include <uhd/exception.hpp>
 #include <uhd/types/metadata.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhdlib/rfnoc/chdr_packet.hpp>
+#include <uhdlib/rfnoc/chdr_packet_writer.hpp>
 #include <uhdlib/rfnoc/chdr_types.hpp>
 #include <uhdlib/rfnoc/rfnoc_common.hpp>
 #include <uhdlib/rfnoc/tx_flow_ctrl_state.hpp>
@@ -378,10 +378,10 @@ private:
     chdr::chdr_header _send_header;
 
     // Packet for send data
-    chdr::chdr_packet::uptr _send_packet;
+    chdr::chdr_packet_writer::uptr _send_packet;
 
     // Packet to receive strs messages
-    chdr::chdr_packet::uptr _recv_packet;
+    chdr::chdr_packet_writer::uptr _recv_packet;
 
     // Handles sending of strc flow control ack packets
     detail::tx_flow_ctrl_sender _fc_sender;

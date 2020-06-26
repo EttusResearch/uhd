@@ -6,7 +6,7 @@
 
 #include <uhd/types/endianness.hpp>
 #include <uhd/utils/byteswap.hpp>
-#include <uhdlib/rfnoc/chdr_packet.hpp>
+#include <uhdlib/rfnoc/chdr_packet_writer.hpp>
 #include <uhdlib/rfnoc/chdr_types.hpp>
 #include <boost/format.hpp>
 #include <boost/test/unit_test.hpp>
@@ -237,27 +237,28 @@ BOOST_AUTO_TEST_CASE(chdr_strc_packet_no_swap_64)
 BOOST_AUTO_TEST_CASE(chdr_generic_packet_calculate_pyld_offset_64)
 {
     // Check calculation without timestamp
-    auto test_pyld_offset =
-        [](chdr_packet::uptr& pkt, const packet_type_t pkt_type, const size_t num_mdata) {
-            uint64_t buff[MAX_BUF_SIZE_WORDS];
-            chdr_header header;
-            header.set_pkt_type(pkt_type);
-            header.set_num_mdata(num_mdata);
+    auto test_pyld_offset = [](chdr_packet_writer::uptr& pkt,
+                                const packet_type_t pkt_type,
+                                const size_t num_mdata) {
+        uint64_t buff[MAX_BUF_SIZE_WORDS];
+        chdr_header header;
+        header.set_pkt_type(pkt_type);
+        header.set_num_mdata(num_mdata);
 
-            pkt->refresh(reinterpret_cast<void*>(buff), header, 0);
+        pkt->refresh(reinterpret_cast<void*>(buff), header, 0);
 
-            const size_t pyld_offset = pkt->calculate_payload_offset(pkt_type, num_mdata);
+        const size_t pyld_offset = pkt->calculate_payload_offset(pkt_type, num_mdata);
 
-            void* pyld_ptr = pkt->get_payload_ptr();
+        void* pyld_ptr = pkt->get_payload_ptr();
 
-            const size_t non_pyld_bytes = static_cast<size_t>(
-                reinterpret_cast<uint8_t*>(pyld_ptr) - reinterpret_cast<uint8_t*>(buff));
+        const size_t non_pyld_bytes = static_cast<size_t>(
+            reinterpret_cast<uint8_t*>(pyld_ptr) - reinterpret_cast<uint8_t*>(buff));
 
-            BOOST_CHECK(pyld_offset == non_pyld_bytes);
-        };
+        BOOST_CHECK(pyld_offset == non_pyld_bytes);
+    };
 
     {
-        chdr_packet::uptr pkt = chdr64_be_factory.make_generic();
+        chdr_packet_writer::uptr pkt = chdr64_be_factory.make_generic();
         test_pyld_offset(pkt, PKT_TYPE_DATA_NO_TS, 0);
         test_pyld_offset(pkt, PKT_TYPE_DATA_NO_TS, 1);
         test_pyld_offset(pkt, PKT_TYPE_DATA_NO_TS, 2);
@@ -266,7 +267,7 @@ BOOST_AUTO_TEST_CASE(chdr_generic_packet_calculate_pyld_offset_64)
         test_pyld_offset(pkt, PKT_TYPE_DATA_WITH_TS, 2);
     }
     {
-        chdr_packet::uptr pkt = chdr256_be_factory.make_generic();
+        chdr_packet_writer::uptr pkt = chdr256_be_factory.make_generic();
         test_pyld_offset(pkt, PKT_TYPE_DATA_NO_TS, 0);
         test_pyld_offset(pkt, PKT_TYPE_DATA_NO_TS, 1);
         test_pyld_offset(pkt, PKT_TYPE_DATA_NO_TS, 2);

@@ -7,7 +7,7 @@
 #pragma once
 
 #include <uhdlib/rfnoc/chdr_ctrl_xport.hpp>
-#include <uhdlib/rfnoc/chdr_packet.hpp>
+#include <uhdlib/rfnoc/chdr_packet_writer.hpp>
 #include <uhdlib/rfnoc/ctrlport_endpoint.hpp>
 #include <functional>
 #include <memory>

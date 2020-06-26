@@ -106,7 +106,7 @@ chdr_rx_data_xport::fc_params_t chdr_rx_data_xport::configure_sep(io_service::sp
     const sep_id_t local_epid  = epids.second;
 
     rx_flow_ctrl_sender fc_sender(pkt_factory, epids);
-    chdr::chdr_packet::uptr pkt = pkt_factory.make_generic();
+    chdr::chdr_packet_writer::uptr pkt = pkt_factory.make_generic();
     fc_sender.set_capacity(recv_capacity);
     chdr::strc_payload strc;
 

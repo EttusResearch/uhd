@@ -10,7 +10,7 @@
 
 #include "mpmd_link_if_mgr.hpp"
 #include <uhd/types/device_addr.hpp>
-#include <uhdlib/rfnoc/chdr_packet.hpp>
+#include <uhdlib/rfnoc/chdr_packet_writer.hpp>
 #include <uhdlib/transport/links.hpp>
 #include <memory>
 

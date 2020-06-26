@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <uhdlib/rfnoc/chdr_packet.hpp>
+#include <uhdlib/rfnoc/chdr_packet_writer.hpp>
 #include <uhdlib/rfnoc/chdr_types.hpp>
 #include <uhdlib/transport/io_service.hpp>
 #include <mutex>
@@ -145,7 +145,7 @@ private:
     sep_id_t _my_epid;
 
     // Packet for received data
-    chdr::chdr_packet::uptr _recv_packet;
+    chdr::chdr_packet_writer::uptr _recv_packet;
 
     send_io_if::sptr _send_if;
     recv_io_if::sptr _ctrl_recv_if;
