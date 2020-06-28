@@ -168,7 +168,16 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ascii_art_dft::log_pwr_dft_type lpdft(
             ascii_art_dft::log_pwr_dft(&buff.front(), num_rx_samps)
         );
-        std::string frame = ascii_art_dft::dft_to_plot(
+        
+        const size_t num_bins = lpdft.size() - 1 + lpdft.size() % 2; // make it odd
+        ascii_art_dft::log_pwr_dft_type dft(num_bins);
+        for (size_t n = 0; n < num_bins; n++) {
+        dft[n] = lpdft[(n + num_bins / 2) % num_bins];
+        printf("%f,",dft[n]);
+        }
+        printf("\n");
+
+        /*std::string frame = ascii_art_dft::dft_to_plot(
             lpdft, COLS, LINES,
             usrp->get_rx_rate(),
             usrp->get_rx_freq(),
@@ -182,7 +191,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         //curses key handling: no timeout, any key to exit
         timeout(0);
         int ch = getch();
-        if (ch != KEY_RESIZE and ch != ERR) break;
+        if (ch != KEY_RESIZE and ch != ERR) break;*/
     }
 
     //------------------------------------------------------------------
