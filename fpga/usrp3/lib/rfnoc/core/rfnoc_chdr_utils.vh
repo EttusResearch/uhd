@@ -216,6 +216,6 @@ function [63:0] chdr_update_length(
     mdata_length = chdr_get_num_mdata(base_hdr) * (chdr_w/8);
     length = header_length + mdata_length + payload_length;
     
-    chdr_update_length = chdr_set_length(chdr_w, length);
+    chdr_update_length = chdr_set_length(base_hdr, length);
   end
 endfunction
