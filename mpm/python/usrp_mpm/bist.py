@@ -216,14 +216,13 @@ def filter_results_for_lv(results, lv_compat_format):
     }
     return results
 
-def get_product_id_from_eeprom(valid_ids):
+def get_product_id_from_eeprom(valid_ids, cmd='eeprom-id'):
     """Return the mboard product ID
 
     Returns something like n300, n310, e320...
     """
-    cmd = ['eeprom-id']
     output = subprocess.check_output(
-        cmd,
+        [cmd],
         stderr=subprocess.STDOUT,
         shell=True,
     ).decode('utf-8')

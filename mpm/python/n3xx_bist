@@ -111,7 +111,17 @@ class N3XXBIST(bist.UsrpBIST):
 
     def get_product_id(self):
         """Return the mboard product ID (n310 or n300):"""
-        return bist.get_product_id_from_eeprom(valid_ids=['n300', 'n310', 'n320'])
+        product_map = {
+            #(mboard, dboard): product
+            ('n300', 'magnesium'): 'n300',
+            ('n300', ''):          'n300', # n300 mboard with no dboard
+            ('n310', 'magnesium'): 'n310',
+            ('n310', ''):          'n310', # n310 mboard with no dboard
+            ('n310', 'rhodium'):   'n320',
+        }
+        mb_id = bist.get_product_id_from_eeprom(valid_ids=['n300', 'n310'], cmd='eeprom-id')
+        db_id = bist.get_product_id_from_eeprom(valid_ids=['magnesium', 'rhodium', ''], cmd='db-id')
+        return product_map[(mb_id, db_id)]
 
 #############################################################################
 # BISTS
@@ -154,7 +164,7 @@ class N3XXBIST(bist.UsrpBIST):
                 self.get_product_id(),
             )
         except Exception as ex:
-            return {
+            return False, {
                 'throughput': 0,
                 'error_msg': "Failed to load AA image: {}".format(str(ex)),
             }
