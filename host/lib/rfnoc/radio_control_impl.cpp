@@ -173,7 +173,7 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
                 const int mtu_samps       = mtu / (_samp_width / 8);
                 const int max_spp_per_mtu = mtu_samps - (mtu_samps % _spc);
                 if (spp.get() > max_spp_per_mtu) {
-                    RFNOC_LOG_WARNING("spp value " << spp.get() << " exceeds MTU of "
+                    RFNOC_LOG_DEBUG("spp value " << spp.get() << " exceeds MTU of "
                                                    << mtu << "! Coercing to "
                                                    << max_spp_per_mtu);
                     spp = max_spp_per_mtu;
