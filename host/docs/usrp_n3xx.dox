@@ -1471,14 +1471,14 @@ channel configuration with a single shared LO source.
 The protocols supported on the SFP+ and QSFP+ ports depend on the FPGA image
 currently loaded.
 
-Interface    | HG     | XG     | XQ           | AQ
--------------|--------|--------|--------------|--------
-SFP+ 0       | 1 GbE  | 10 GbE | White Rabbit | 10 GbE
-SFP+ 1       | 10 GbE | 10 GbE | Unused       | 10 GbE
-QSFP+ lane 0 | Unused | Unused | 10 GbE       | Aurora
-QSFP+ lane 1 | Unused | Unused | 10 GbE       | Aurora
-QSFP+ lane 2 | Unused | Unused | Unused       | Aurora
-QSFP+ lane 3 | Unused | Unused | Unused       | Aurora
+Interface    | HG     | XG     | WX           | XQ           | AQ
+-------------|--------|--------|--------------|--------------|--------
+SFP+ 0       | 1 GbE  | 10 GbE | White Rabbit | White Rabbit | 10 GbE
+SFP+ 1       | 10 GbE | 10 GbE | 10 GbE       | Unused       | 10 GbE
+QSFP+ lane 0 | Unused | Unused | Unused       | 10 GbE       | Aurora
+QSFP+ lane 1 | Unused | Unused | Unused       | 10 GbE       | Aurora
+QSFP+ lane 2 | Unused | Unused | Unused       | Unused       | Aurora
+QSFP+ lane 3 | Unused | Unused | Unused       | Unused       | Aurora
 
 \subsection n3xx_rh_eeprom_flags EEPROM flags
 
