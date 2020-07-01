@@ -21,4 +21,4 @@ It contains many Data packets, as well as some Stream Status and Stream Command 
 5. Save the trace with a descriptive name in the `host/tests/common/chdr_resource` directory as a `.c` file
 6. In the `host/tests/common/chdr_resource` directory, run `./format_trace.py {filename}`, where `{filename}` is the name of the `.c` file you save the trace as.
 
-This will create a `.cpp` file of the same name, which contains the trace data inside a namespace matching the filename. The trace can now be accessed in unit tests with `#include <chdr_resource/{filename}.cpp>`.
+This will create a `.cpp` file and a `.py` file of the same name, which contains the trace data inside a namespace matching the filename. The trace can now be accessed in unit tests with `#include <chdr_resource/{filename}.cpp>` in C++ and `from chdr_resource import {filename}` in Python.
