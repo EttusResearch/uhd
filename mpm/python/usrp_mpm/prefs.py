@@ -34,6 +34,7 @@ class _MPMPrefs(configparser.ConfigParser):
     Said dictionary needs to be compatible with the ConfigParser.read_dict()
     API call (refer to the Python documentation).
     """
+    # Note: When changing this, you might also want to update host/docs/configfiles.dox
     default_prefs = {
         'mpm': {
             'log_level': MPM_DEFAULT_LOG_LEVEL,

@@ -44,7 +44,50 @@ ext_adc_self_test=1
 ~~~~
 
 This will act as if this key/value pair had been passed to the device args
-directly.
+directly. This means the valid key/value pairs for the config files are the
+same as those for the device args (see \ref config_devaddr).
+
+\section configfiles_usrps_dpdk Configuring DPDK
+
+DPDK is a special case. Because there are so many things to configure for
+DPDK, it is highly recommended to use config files. The section headers for
+DPDK configurations depend on on the network device used, not the USRP device.
+For more details, see \ref dpdk_nic_config.
+
+\section configfiles_usrps_mpm Configuring MPM
+
+MPM devices (N3xx, E3xx) have their own configuration file (`mpm.conf`)
+which is read once during initialization of MPM. It controls different things
+than the `uhd.conf` file (both can be used for a session, but the UHD
+configuration will be used at every UHD session, whereas the MPM configuration
+file is only read once during MPM initialization). To reload the MPM
+configuration file, a restart of MPM is required.
+
+The `mpm.conf` files are structured a bit differently from `uhd.conf`, so here's
+an example:
+
+~~~~{.ini}
+; This section is for any MPM behaviour
+[mpm]
+; Default log level for journald, can be overwritten by -v when starting manually
+log_level=info
+; Number of log records to buffer for the next get_log_buf() API call
+log_buf_size=100
+
+; Device-specific behaviour is set here. This allows having the same file for
+; different device types, e.g., when a fleet of different devices are
+; managed via Salt or similar tools. The key here is the same as what you would
+; use in device args as a type value.
+[n3xx]
+KEY=VALUE
+
+; Alternatively, specify a product value.
+[n310]
+KEY=VALUE
+~~~~
+
+The key/value pairs for the `type` or `product` sections are documented
+in \ref config_mpm.
 
 \section configfiles_location Location of configuration files
 
