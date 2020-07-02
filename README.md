@@ -30,7 +30,7 @@ operating systems.
 
 * Linux (Fedora and Ubuntu)
 * Mac OS X (Intel)
-* Windows 7
+* Windows 10
 
 Other operating systems will most likely work, too, but are not officially
 supported.
