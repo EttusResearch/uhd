@@ -211,7 +211,7 @@ public:
      * Examples:
      * - The B200 series' master clock rate can be changed at runtime and
      *   will report the true range of supported values
-     * - The X300 series has _two_ discrete options for the clock rate, but will
+     * - The X300 series has a valid range for the clock rate, but will
      *   always return the clock rate which the USRP was initialized to because
      *   it cannot be changed at runtime
      * - The N200 series does not have a configurable clock rate, and will
@@ -555,6 +555,8 @@ public:
      * \param addr 8-bit register address
      * \param data 32-bit register value
      * \param mboard which motherboard to set the user register
+     * \throws uhd::not_implemented_error on RFNoC devices, uhd::lookup_error on
+     *         other devices if this API is not implemented.
      */
     virtual void set_user_register(
         const uint8_t addr, const uint32_t data, size_t mboard = ALL_MBOARDS) = 0;
