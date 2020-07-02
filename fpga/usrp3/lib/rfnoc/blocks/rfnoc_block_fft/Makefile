@@ -1,5 +1,5 @@
 #
-# Copyright 2019 Ettus Research, A National Instruments Company
+# Copyright 2019 Ettus Research, a National Instruments Brand
 #
 # SPDX-License-Identifier: LGPL-3.0-or-later
 #
@@ -45,13 +45,10 @@ $(RFNOC_OOT_SRCS) \
 #-------------------------------------------------
 # Testbench Specific
 #-------------------------------------------------
-# Define only one toplevel module
-SIM_TOP = rfnoc_block_fft_tb
-
-# Add test bench, user design under test, and
-# additional user created files
+SIM_TOP = rfnoc_block_fft_tb glbl
 SIM_SRCS = \
-$(abspath rfnoc_block_fft_tb.sv)
+$(abspath rfnoc_block_fft_tb.sv) \
+$(VIVADO_PATH)/data/verilog/src/glbl.v \
 
 #-------------------------------------------------
 # Bottom-of-Makefile

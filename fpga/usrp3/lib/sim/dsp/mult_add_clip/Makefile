@@ -25,13 +25,14 @@ $(DSP_SRCS) \
 #-------------------------------------------------
 # Testbench Specific
 #-------------------------------------------------
-# Define only one toplevel module
-SIM_TOP = mult_add_clip_tb
+# Define toplevel module
+SIM_TOP = mult_add_clip_tb glbl
 
 # Add test bench, user design under test, and
 # additional user created files
 SIM_SRCS = $(abspath \
 mult_add_clip_tb.sv \
+$(VIVADO_PATH)/data/verilog/src/glbl.v \
 )
 
 # MODELSIM_USER_DO = $(abspath wave.do)

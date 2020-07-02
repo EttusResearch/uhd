@@ -25,11 +25,12 @@ DESIGN_SRCS = $(abspath ../../e310_io.v) \
 #-------------------------------------------------
 # Testbench Specific
 #-------------------------------------------------
-# Define only one toplevel module
-SIM_TOP = e310_io_tb
+# Define toplevel module
+SIM_TOP = e310_io_tb glbl
 
 SIM_SRCS = \
-$(abspath e310_io_tb.sv)
+$(abspath e310_io_tb.sv) \
+$(VIVADO_PATH)/data/verilog/src/glbl.v \
 
 #-------------------------------------------------
 # Bottom-of-Makefile
