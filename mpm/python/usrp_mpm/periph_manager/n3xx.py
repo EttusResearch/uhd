@@ -192,9 +192,6 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         Lists device tree overlays that need to be applied before this class can
         be used. List of strings.
         Are applied in order.
-
-        eeprom_md -- Dictionary of info read out from the mboard EEPROM
-        device_args -- Arbitrary dictionary of info, typically user-defined
         """
         # In the N3xx case, we name the dtbo file the same as the product.
         # N310 -> n310.dtbo, N300 -> n300.dtbo and so on.
@@ -584,8 +581,8 @@ class n3xx(ZynqComponents, PeriphManagerBase):
     def set_time_source(self, time_source):
         " Set a time source "
         clock_source = self._clock_source
-        assert clock_source != None
-        assert time_source != None
+        assert clock_source is not None
+        assert time_source is not None
         if (clock_source, time_source) not in self.valid_sync_sources:
             if time_source == 'sfp0':
                 clock_source = 'internal'

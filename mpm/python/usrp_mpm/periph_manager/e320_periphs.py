@@ -353,4 +353,3 @@ class MboardRegsControl(MboardRegsCommon):
         else:
             self.log.trace("RX RF PLL locked")
         return locked
-

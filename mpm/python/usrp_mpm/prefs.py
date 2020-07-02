@@ -8,7 +8,6 @@ MPM preferences management
 """
 
 import configparser
-from builtins import object
 from usrp_mpm.mpmlog import TRACE, DEBUG, INFO, WARNING, ERROR, CRITICAL
 
 # Store the global preferences object
@@ -19,6 +18,9 @@ MPM_DEFAULT_CONFFILE_PATH = '/etc/uhd/mpm.conf'
 MPM_DEFAULT_LOG_LEVEL = 'info'
 MPM_DEFAULT_LOG_BUF_SIZE = 100 # Number of log records to buf
 
+# ConfigParser has too many parents for PyLint's liking, but we don't control
+# that, so disable that warning
+# pylint: disable=too-many-ancestors
 class _MPMPrefs(configparser.ConfigParser):
     """
     Container for MPM preferences.
@@ -83,6 +85,7 @@ class _MPMPrefs(configparser.ConfigParser):
         because the logger isn't ready yet.
         """
         return self._errors
+# pylint: enable=too-many-ancestors
 
 def get_prefs():
     """
@@ -92,4 +95,3 @@ def get_prefs():
     if _PREFS is None:
         _PREFS = _MPMPrefs()
     return _PREFS
-

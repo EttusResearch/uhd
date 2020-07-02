@@ -8,14 +8,13 @@
 UDP Transport manager
 """
 
-from builtins import object
 from six import iteritems, itervalues
 from usrp_mpm.ethdispatch import EthDispatcherCtrl
 from usrp_mpm.sys_utils import net
 
 DEFAULT_BRIDGE_MODE = False
 
-class XportMgrUDP(object):
+class XportMgrUDP:
     """
     Transport manager for UDP connections
     """
@@ -153,7 +152,6 @@ class XportMgrUDP(object):
 
     def deinit(self):
         " Clean up after a session terminates "
-        pass
 
     def get_xport_info(self):
         """

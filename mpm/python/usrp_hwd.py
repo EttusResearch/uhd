@@ -174,7 +174,7 @@ def main():
         log_default_delta=args.verbose-args.quiet
     ).getChild('main')
     version_string = mpm.__version__
-    if len(mpm.__githash__):
+    if mpm.__githash__:
         version_string += "-g" + mpm.__githash__
     log.info("Launching USRP/MPM, version: %s", version_string)
     if args.init_only:
@@ -189,4 +189,4 @@ def main():
     return spawn_processes(log, args)
 
 if __name__ == '__main__':
-    exit(not main())
+    sys.exit(not main())
