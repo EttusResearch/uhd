@@ -948,6 +948,12 @@ public:
         return nullptr;
     }
 
+    uhd::rfnoc::radio_control& get_radio_control(const size_t)
+    {
+        throw uhd::not_implemented_error(
+            "get_radio_control() not supported on this device!");
+    }
+
     /*******************************************************************
      * RX methods
      ******************************************************************/

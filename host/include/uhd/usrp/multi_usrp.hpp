@@ -36,6 +36,7 @@
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/utils/noncopyable.hpp>
+#include <uhd/rfnoc/radio_control.hpp>
 #include <complex>
 #include <memory>
 #include <string>
@@ -586,6 +587,25 @@ public:
      *          nullptr if the device doesn't support this interface.
      */
     virtual uhd::wb_iface::sptr get_user_settings_iface(const size_t chan = 0) = 0;
+
+    /*! Get direct access to the underlying RFNoC radio object.
+     *
+     * Note: This is an advanced API, created for corner cases where the
+     * application is using multi_usrp, but some special features from
+     * radio_control need to be used that are not exposed by multi_usrp. Note
+     * that it is possible to put the radio and multi_usrp into a broken state
+     * by directly accessing the radio. For typical radio operations (such as
+     * tuning, setting gain or antenna, etc.) it is therefore highly recommended
+     * to not use this API call, but use the native multi_usrp API calls.
+     *
+     * The lifetime of the radio is linked to the lifetime of the device object,
+     * so storing a reference from this function is not allowed.
+     *
+     * \param chan The channel index
+     * \returns A reference to the radio block matching the given channel
+     * \throws uhd::not_implemented_error if not on an RFNoC device.
+     */
+    virtual uhd::rfnoc::radio_control& get_radio_control(const size_t chan = 0) = 0;
 
     /*******************************************************************
      * RX methods

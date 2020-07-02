@@ -588,6 +588,7 @@ def run_api_test(usrp):
                     'get_tx_dboard_iface',
                     'get_rx_dboard_iface',
                     'set_time_unknown_pps',
+                    'get_radio_control',
                    ]
     success = True
 

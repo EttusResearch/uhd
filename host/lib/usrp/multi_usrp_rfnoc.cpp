@@ -933,6 +933,11 @@ public:
         return nullptr;
     }
 
+    uhd::rfnoc::radio_control& get_radio_control(const size_t chan = 0)
+    {
+        return *_get_rx_chan(chan).radio;
+    }
+
     /*******************************************************************
      * RX methods
      ******************************************************************/
