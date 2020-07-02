@@ -8,7 +8,7 @@ Unit test for libpyuhd.chdr (CHDR Parsing API)
 """
 
 import unittest
-from uhd.libpyuhd import chdr
+from uhd import chdr
 from chdr_resource import hardcoded_packets
 from chdr_resource import rfnoc_packets_data
 from chdr_resource import rfnoc_packets_ctrl_mgmt
