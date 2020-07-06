@@ -430,15 +430,6 @@ void e3xx_radio_control_impl::loopback_self_test(const size_t chan)
     const double current_rate = this->get_rate();
     // Set 2R2T mode, stream on all channels
     this->set_streaming_mode(true, true, true, true);
-    // This was in there in the E320 code, but the comments didn't make sense:
-    // this->set_streaming_mode(true, true, true, true);
-    // Set maximum rate for 2R2T mode
-    /* FIXME
-     * We're directly setting the master clock rate here because we want to
-     * avoid property propagation, etc, and we know that we're going to set it
-     * back once we're done
-     * this->set_rate(30.72e6);
-     */
     _ad9361->set_clock_rate(30.72e6);
     // Put AD936x in loopback mode
     _ad9361->data_port_loopback(true);
@@ -492,8 +483,6 @@ void e3xx_radio_control_impl::loopback_self_test(const size_t chan)
     _ad9361->data_port_loopback(false);
     this->set_streaming_mode(true, false, true, false);
     // Switch back to current rate
-    // FIXME along with the other comment above
-    // this->set_rate(current_rate);
     _ad9361->set_clock_rate(current_rate);
 }
 
