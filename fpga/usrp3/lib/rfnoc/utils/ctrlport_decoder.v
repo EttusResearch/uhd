@@ -12,24 +12,24 @@
 // example, a NoC block where the registers are implemented in multiple
 // submodules that must be read/written by a single NoC shell.
 //
-// This version also implements address decoding. The request is passed to a 
-// slave only if the address falls within that slave's address space. Each 
-// slave is given an address space of 2**ADDR_W and the first slave starts at 
-// address BASE_ADDR. In other words, the request address is partitioned as 
-// shown below. 
+// This version also implements address decoding. The request is passed to a
+// slave only if the address falls within that slave's address space. Each
+// slave is given an address space of 2**ADDR_W and the first slave starts at
+// address BASE_ADDR. In other words, the request address is partitioned as
+// shown below.
 //
 //   |---------------- 32-bit -----------------|
 //   |    Base     | Port Num |  Slave Addr    |
 //   |-----------------------------------------|
 //
-// When passed to the slave, the base address and port number bits are stripped 
-// from the request address and only the SLAVE_ADDR_W-bit address is passed 
+// When passed to the slave, the base address and port number bits are stripped
+// from the request address and only the SLAVE_ADDR_W-bit address is passed
 // through.
 //
 // Parameters:
 //
 //   NUM_SLAVES   : Number of slave devices that you want to connect to master.
-//   BASE_ADDR    : Base address for slave 0. This should be a power-of-2 
+//   BASE_ADDR    : Base address for slave 0. This should be a power-of-2
 //                  multiple of the combined slave address spaces.
 //   SLAVE_ADDR_W : Number of address bits to allocate to each slave.
 //
@@ -80,40 +80,42 @@ module ctrlport_decoder #(
 
   wire [NUM_SLAVES-1:0] decoder;
 
-  genvar i;
-  for (i = 0; i < NUM_SLAVES; i = i+1) begin : gen_split
-    // Check if the upper bits of the request address match each slave. If the 
-    // address matches, set the corresponding decoder[] bit.
-    if (PORT_NUM_W == 0) begin
-      // Only one port in this case, so there are no port number bits to check
-      assign decoder[i] = ((s_ctrlport_req_addr & BASE_ADDR_MASK) == BASE_ADDR);
-    end else begin
-      assign decoder[i] = ((s_ctrlport_req_addr & BASE_ADDR_MASK) == BASE_ADDR) && 
-                           (s_ctrlport_req_addr[PORT_NUM_POS +: PORT_NUM_W] == i);
-    end
-
-    always @(posedge ctrlport_clk) begin
-      if (ctrlport_rst) begin
-        m_ctrlport_req_wr[i] <= 1'b0;
-        m_ctrlport_req_rd[i] <= 1'b0;
+  generate
+    genvar i;
+    for (i = 0; i < NUM_SLAVES; i = i+1) begin : gen_split
+      // Check if the upper bits of the request address match each slave. If the
+      // address matches, set the corresponding decoder[] bit.
+      if (PORT_NUM_W == 0) begin
+        // Only one port in this case, so there are no port number bits to check
+        assign decoder[i] = ((s_ctrlport_req_addr & BASE_ADDR_MASK) == BASE_ADDR);
       end else begin
-        // Mask WR and RD based on address decoding
-        m_ctrlport_req_wr[i] <= s_ctrlport_req_wr & decoder[i];
-        m_ctrlport_req_rd[i] <= s_ctrlport_req_rd & decoder[i];
+        assign decoder[i] = ((s_ctrlport_req_addr & BASE_ADDR_MASK) == BASE_ADDR) &&
+                             (s_ctrlport_req_addr[PORT_NUM_POS +: PORT_NUM_W] == i);
+      end
 
-        // Other values pass through to all slaves, but should be ignored
-        // unless the corresponding WR or RD is not asserted.
-        m_ctrlport_req_data    [32*i +: 32] <= s_ctrlport_req_data;
-        m_ctrlport_req_byte_en [4*i +: 4]   <= s_ctrlport_req_byte_en;
-        m_ctrlport_req_has_time[i]          <= s_ctrlport_req_has_time;
-        m_ctrlport_req_time    [64*i +: 64] <= s_ctrlport_req_time;
+      always @(posedge ctrlport_clk) begin
+        if (ctrlport_rst) begin
+          m_ctrlport_req_wr[i] <= 1'b0;
+          m_ctrlport_req_rd[i] <= 1'b0;
+        end else begin
+          // Mask WR and RD based on address decoding
+          m_ctrlport_req_wr[i] <= s_ctrlport_req_wr & decoder[i];
+          m_ctrlport_req_rd[i] <= s_ctrlport_req_rd & decoder[i];
 
-        // Pass through only the relevant slave bits
-        m_ctrlport_req_addr[20*i+:20]           <= 20'b0;
-        m_ctrlport_req_addr[20*i+:SLAVE_ADDR_W] <= s_ctrlport_req_addr[SLAVE_ADDR_W-1:0];
+          // Other values pass through to all slaves, but should be ignored
+          // unless the corresponding WR or RD is not asserted.
+          m_ctrlport_req_data    [32*i +: 32] <= s_ctrlport_req_data;
+          m_ctrlport_req_byte_en [4*i +: 4]   <= s_ctrlport_req_byte_en;
+          m_ctrlport_req_has_time[i]          <= s_ctrlport_req_has_time;
+          m_ctrlport_req_time    [64*i +: 64] <= s_ctrlport_req_time;
+
+          // Pass through only the relevant slave bits
+          m_ctrlport_req_addr[20*i+:20]           <= 20'b0;
+          m_ctrlport_req_addr[20*i+:SLAVE_ADDR_W] <= s_ctrlport_req_addr[SLAVE_ADDR_W-1:0];
+        end
       end
     end
-  end
+  endgenerate
 
 
   //---------------------------------------------------------------------------
