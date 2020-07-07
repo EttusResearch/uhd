@@ -14,7 +14,6 @@ UHD_INSTALL(FILES
     direction.hpp
     eeprom.hpp
     endianness.hpp
-    io_type.hpp
     mac_addr.hpp
     metadata.hpp
     ranges.hpp
