@@ -325,7 +325,7 @@ uhd::transport::both_links_t mpmd_link_if_ctrl_udp::get_link(const size_t link_i
             true,
             true);
 #else
-        UHD_LOG_WARNING("X300", "Cannot create DPDK transport, falling back to UDP");
+        UHD_LOG_WARNING("MPMD", "Cannot create DPDK transport, falling back to UDP");
 #endif
     }
     auto link = uhd::transport::udp_boost_asio_link::make(ip_addr,
