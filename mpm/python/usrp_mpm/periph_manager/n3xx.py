@@ -23,7 +23,7 @@ from usrp_mpm.rpc_server import no_rpc
 from usrp_mpm.sys_utils import dtoverlay
 from usrp_mpm.sys_utils import i2c_dev
 from usrp_mpm.sys_utils.sysfs_thermal import read_thermal_sensor_value
-from usrp_mpm.xports import XportMgrUDP, XportMgrLiberio
+from usrp_mpm.xports import XportMgrUDP
 from usrp_mpm.periph_manager.n3xx_periphs import TCA6424
 from usrp_mpm.periph_manager.n3xx_periphs import BackpanelGPIO
 from usrp_mpm.periph_manager.n3xx_periphs import MboardRegsControl
@@ -91,8 +91,7 @@ class N3xxXportMgrUDP(XportMgrUDP):
     }
     bridges = {'bridge0': ['sfp0', 'sfp1', 'bridge0']}
 
-class N3xxXportMgrLiberio(XportMgrLiberio):
-    " N3xx-specific Liberio configuration "
+
 # pylint: enable=too-few-public-methods
 
 ###############################################################################
@@ -388,7 +387,6 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         # Init CHDR transports
         self._xport_mgrs = {
             'udp': N3xxXportMgrUDP(self.log.getChild('UDP'), args),
-            'liberio': N3xxXportMgrLiberio(self.log.getChild('liberio')),
         }
         # Spawn status monitoring thread
         self.log.trace("Spawning status monitor thread...")
@@ -500,15 +498,10 @@ class n3xx(ZynqComponents, PeriphManagerBase):
     ###########################################################################
     def get_chdr_link_types(self):
         """
-        This will only ever return a single item (udp or liberio).
+        This will only ever return a single item (udp).
         """
         assert self.mboard_info['rpc_connection'] in ('remote', 'local')
-        if self.mboard_info['rpc_connection'] == 'remote':
-            return ["udp"]
-        elif self._xport_mgrs["liberio"].max_chan > 0:
-            return ["liberio"]
-        else:
-            return ["udp"]
+        return ["udp"]
 
     def get_chdr_link_options(self, xport_type):
         """
@@ -522,10 +515,6 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         - ipv4 (IP Address)
         - port (UDP port)
         - link_rate (bps of the link, e.g. 10e9 for 10GigE)
-
-        For Liberio, every entry has the following keys:
-        - tx_dev: TX device (/dev/tx-dma*)
-        - rx_dev: RX device (/dev/rx-dma*)
         """
         if xport_type not in self._xport_mgrs:
             self.log.warning("Can't get link options for unknown link type: `{}'.".format(xport_type))
