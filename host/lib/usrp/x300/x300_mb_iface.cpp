@@ -117,7 +117,10 @@ uhd::rfnoc::chdr_ctrl_xport::sptr x300_impl::x300_mb_iface::make_ctrl_transport(
         _pkt_factory,
         local_epid,
         send_link->get_num_send_frames(),
-        recv_link->get_num_recv_frames());
+        recv_link->get_num_recv_frames(),
+        [this, send_link, recv_link]() {
+            this->get_io_srv_mgr()->disconnect_links(recv_link, send_link);
+        });
     return xport;
 }
 
@@ -182,9 +185,11 @@ uhd::rfnoc::chdr_rx_data_xport::uptr x300_impl::x300_mb_iface::make_rx_data_tran
         recv_capacity,
         fc_freq,
         fc_headroom,
-        lossy_xport);
+        lossy_xport,
+        [this, recv_link, send_link]() {
+            this->get_io_srv_mgr()->disconnect_links(recv_link, send_link);
+        });
 
-    get_io_srv_mgr()->disconnect_links(recv_link, send_link);
     cfg_io_srv.reset();
 
     // Connect the links to an I/O service
@@ -202,7 +207,10 @@ uhd::rfnoc::chdr_rx_data_xport::uptr x300_impl::x300_mb_iface::make_rx_data_tran
         _pkt_factory,
         epids,
         recv_link->get_num_recv_frames(),
-        fc_params);
+        fc_params,
+        [this, recv_link, send_link]() {
+            this->get_io_srv_mgr()->disconnect_links(recv_link, send_link);
+        });
 
     return rx_xport;
 }
@@ -251,9 +259,11 @@ uhd::rfnoc::chdr_tx_data_xport::uptr x300_impl::x300_mb_iface::make_tx_data_tran
         pyld_buff_fmt,
         mdata_buff_fmt,
         fc_freq_ratio,
-        fc_headroom_ratio);
+        fc_headroom_ratio,
+        [this, recv_link, send_link]() {
+            this->get_io_srv_mgr()->disconnect_links(recv_link, send_link);
+        });
 
-    get_io_srv_mgr()->disconnect_links(recv_link, send_link);
     cfg_io_srv.reset();
 
     // Connect the links to an I/O service
@@ -271,7 +281,10 @@ uhd::rfnoc::chdr_tx_data_xport::uptr x300_impl::x300_mb_iface::make_tx_data_tran
         _pkt_factory,
         epids,
         send_link->get_num_send_frames(),
-        buff_capacity);
+        buff_capacity,
+        [this, recv_link, send_link]() {
+            this->get_io_srv_mgr()->disconnect_links(recv_link, send_link);
+        });
 
     return tx_xport;
 }

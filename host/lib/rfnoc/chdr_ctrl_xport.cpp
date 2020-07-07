@@ -19,8 +19,9 @@ chdr_ctrl_xport::chdr_ctrl_xport(io_service::sptr io_srv,
     const chdr::chdr_packet_factory& pkt_factory,
     sep_id_t my_epid,
     size_t num_send_frames,
-    size_t num_recv_frames)
-    : _my_epid(my_epid), _recv_packet(pkt_factory.make_generic())
+    size_t num_recv_frames,
+    disconnect_callback_t disconnect)
+    : _my_epid(my_epid), _recv_packet(pkt_factory.make_generic()), _disconnect(disconnect)
 {
     /* Make dumb send pipe */
     send_io_if::send_callback_t send_cb = [this](
@@ -99,6 +100,9 @@ chdr_ctrl_xport::~chdr_ctrl_xport()
     _send_if.reset();
     _ctrl_recv_if.reset();
     _mgmt_recv_if.reset();
+
+    // Disconnect the transport
+    _disconnect();
 }
 
 /*!

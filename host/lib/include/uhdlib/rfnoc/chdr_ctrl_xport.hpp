@@ -19,12 +19,13 @@ namespace uhd { namespace rfnoc {
 class chdr_ctrl_xport
 {
 public:
-    using io_service   = uhd::transport::io_service;
-    using frame_buff   = uhd::transport::frame_buff;
-    using send_link_if = uhd::transport::send_link_if;
-    using recv_link_if = uhd::transport::recv_link_if;
-    using send_io_if   = uhd::transport::send_io_if;
-    using recv_io_if   = uhd::transport::recv_io_if;
+    using io_service            = uhd::transport::io_service;
+    using frame_buff            = uhd::transport::frame_buff;
+    using send_link_if          = uhd::transport::send_link_if;
+    using recv_link_if          = uhd::transport::recv_link_if;
+    using send_io_if            = uhd::transport::send_io_if;
+    using recv_io_if            = uhd::transport::recv_io_if;
+    using disconnect_callback_t = uhd::transport::disconnect_callback_t;
 
     using sptr = std::shared_ptr<chdr_ctrl_xport>;
 
@@ -37,6 +38,7 @@ public:
      * \param my_epid The local EPID for this transport
      * \param num_send_frames Number of frames to reserve for TX
      * \param num_recv_frames Number of frames to reserve for RX
+     * \param disconnect Callback function to disconnect the links
      */
     static sptr make(io_service::sptr io_srv,
         send_link_if::sptr send_link,
@@ -44,7 +46,8 @@ public:
         const chdr::chdr_packet_factory& pkt_factory,
         sep_id_t my_epid,
         size_t num_send_frames,
-        size_t num_recv_frames)
+        size_t num_recv_frames,
+        disconnect_callback_t disconnect)
     {
         return std::make_shared<chdr_ctrl_xport>(io_srv,
             send_link,
@@ -52,7 +55,8 @@ public:
             pkt_factory,
             my_epid,
             num_send_frames,
-            num_recv_frames);
+            num_recv_frames,
+            disconnect);
     }
 
     /*!
@@ -64,6 +68,7 @@ public:
      * \param my_epid The local EPID for this transport
      * \param num_send_frames Number of frames to reserve for TX
      * \param num_recv_frames Number of frames to reserve for RX
+     * \param disconnect Callback function to disconnect the links
      */
     chdr_ctrl_xport(io_service::sptr io_srv,
         send_link_if::sptr send_link,
@@ -71,7 +76,8 @@ public:
         const chdr::chdr_packet_factory& pkt_factory,
         sep_id_t my_epid,
         size_t num_send_frames,
-        size_t num_recv_frames);
+        size_t num_recv_frames,
+        disconnect_callback_t disconnect);
 
     ~chdr_ctrl_xport();
 
@@ -151,6 +157,8 @@ private:
     recv_io_if::sptr _ctrl_recv_if;
     recv_io_if::sptr _mgmt_recv_if;
 
+    // Disconnect callback
+    disconnect_callback_t _disconnect;
 
     // FIXME: Remove this when have threaded_io_service
     std::mutex _mutex;

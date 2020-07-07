@@ -78,6 +78,13 @@ using recv_callback_t =
     std::function<bool(frame_buff::uptr&, recv_link_if*, send_link_if*)>;
 
 /*!
+ * Callback to disconnect links.  This allows a function to be registered
+ * that can call back to the io_service_mgr to completely disconnect the
+ * links.
+ */
+using disconnect_callback_t = std::function<void()>;
+
+/*!
  * Interface for a recv transport to request/release buffers from a link. A
  * recv transport is a transport with a primary purpose of receiving data, and
  * the recv_io_if class interacts with the io_service to schedule the data

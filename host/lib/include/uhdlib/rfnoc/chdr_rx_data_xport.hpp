@@ -100,8 +100,9 @@ private:
 class chdr_rx_data_xport
 {
 public:
-    using uptr   = std::unique_ptr<chdr_rx_data_xport>;
-    using buff_t = transport::frame_buff;
+    using uptr                  = std::unique_ptr<chdr_rx_data_xport>;
+    using buff_t                = transport::frame_buff;
+    using disconnect_callback_t = uhd::transport::disconnect_callback_t;
 
     //! Values extracted from received RX data packets
     struct packet_info_t
@@ -135,6 +136,7 @@ public:
      * \param fc_freq Frequency of flow control status messages
      * \param fc_headroom Headroom for flow control status messages
      * \param lossy_xport Whether the xport is lossy, for flow control configuration
+     * \param disconnect Callback function to disconnect the links
      * \return Parameters for xport flow control
      */
     static fc_params_t configure_sep(uhd::transport::io_service::sptr io_srv,
@@ -148,7 +150,8 @@ public:
         const stream_buff_params_t& recv_capacity,
         const stream_buff_params_t& fc_freq,
         const stream_buff_params_t& fc_headroom,
-        const bool lossy_xport);
+        const bool lossy_xport,
+        disconnect_callback_t disconnect);
 
     /*! Constructor
      *
@@ -159,6 +162,7 @@ public:
      * \param epids Source and destination endpoint IDs
      * \param num_recv_frames Num frames to reserve from the recv link
      * \param fc_params Parameters for flow control
+     * \param disconnect Callback function to disconnect the links
      */
     chdr_rx_data_xport(uhd::transport::io_service::sptr io_srv,
         uhd::transport::recv_link_if::sptr recv_link,
@@ -166,7 +170,8 @@ public:
         const chdr::chdr_packet_factory& pkt_factory,
         const uhd::rfnoc::sep_id_pair_t& epids,
         const size_t num_recv_frames,
-        const fc_params_t& fc_params);
+        const fc_params_t& fc_params,
+        disconnect_callback_t disconnect);
 
     /*! Destructor
      */
@@ -404,6 +409,9 @@ private:
 
     //! The CHDR width in bytes.
     size_t _chdr_w_bytes;
+
+    // Disconnect callback
+    disconnect_callback_t _disconnect;
 };
 
 }} // namespace uhd::rfnoc

@@ -31,12 +31,14 @@ chdr_tx_data_xport::chdr_tx_data_xport(uhd::transport::io_service::sptr io_srv,
     const chdr::chdr_packet_factory& pkt_factory,
     const uhd::rfnoc::sep_id_pair_t& epids,
     const size_t num_send_frames,
-    const fc_params_t fc_params)
+    const fc_params_t fc_params,
+    disconnect_callback_t disconnect)
     : _fc_state(fc_params.buff_capacity)
     , _fc_sender(pkt_factory, epids)
     , _epid(epids.first)
     , _chdr_w_bytes(chdr_w_to_bits(pkt_factory.get_chdr_w()) / 8)
     , _frame_size(send_link->get_send_frame_size())
+    , _disconnect(disconnect)
 {
     UHD_LOG_TRACE("XPORT::TX_DATA_XPORT",
         "Creating tx xport with local epid=" << epids.first
@@ -78,6 +80,9 @@ chdr_tx_data_xport::~chdr_tx_data_xport()
 {
     // Release send_io before allowing members needed by callbacks be destroyed
     _send_io.reset();
+
+    // Disconnect the transport
+    _disconnect();
 }
 
 /*
@@ -225,7 +230,8 @@ chdr_tx_data_xport::fc_params_t chdr_tx_data_xport::configure_sep(io_service::sp
     const sw_buff_t pyld_buff_fmt,
     const sw_buff_t mdata_buff_fmt,
     const double fc_freq_ratio,
-    const double fc_headroom_ratio)
+    const double fc_headroom_ratio,
+    disconnect_callback_t disconnect)
 {
     const sep_id_t remote_epid = epids.second;
     const sep_id_t local_epid  = epids.first;
@@ -238,17 +244,14 @@ chdr_tx_data_xport::fc_params_t chdr_tx_data_xport::configure_sep(io_service::sp
         pkt_factory,
         local_epid,
         1, // num_send_frames
-        1); // num_recv_frames
+        1, // num_recv_frames
+        disconnect);
 
     // Setup a route to the EPID
     mgmt_portal.setup_local_route(*ctrl_xport, remote_epid);
 
     mgmt_portal.config_local_tx_stream(
         *ctrl_xport, remote_epid, pyld_buff_fmt, mdata_buff_fmt);
-
-    // We no longer need the control xport, release it so
-    // the control xport is no longer connected to the I/O service.
-    ctrl_xport.reset();
 
     return configure_flow_ctrl(io_srv,
         recv_link,

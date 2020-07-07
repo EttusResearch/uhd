@@ -182,7 +182,10 @@ uhd::rfnoc::chdr_ctrl_xport::sptr mpmd_mboard_impl::mpmd_mb_iface::make_ctrl_tra
         pkt_factory,
         local_epid,
         send_link->get_num_send_frames(),
-        recv_link->get_num_recv_frames());
+        recv_link->get_num_recv_frames(),
+        [this, send_link, recv_link]() {
+            this->get_io_srv_mgr()->disconnect_links(recv_link, send_link);
+        });
     return xport;
 }
 
@@ -250,9 +253,11 @@ mpmd_mboard_impl::mpmd_mb_iface::make_rx_data_transport(
         recv_capacity,
         fc_freq,
         fc_headroom,
-        lossy_xport);
+        lossy_xport,
+        [this, recv_link, send_link]() {
+            this->get_io_srv_mgr()->disconnect_links(recv_link, send_link);
+        });
 
-    get_io_srv_mgr()->disconnect_links(recv_link, send_link);
     cfg_io_srv.reset();
 
     // Connect the links to an I/O service
@@ -269,7 +274,10 @@ mpmd_mboard_impl::mpmd_mb_iface::make_rx_data_transport(
         pkt_factory,
         epids,
         recv_link->get_num_recv_frames(),
-        fc_params);
+        fc_params,
+        [this, recv_link, send_link]() {
+            this->get_io_srv_mgr()->disconnect_links(recv_link, send_link);
+        });
 
     return rx_xport;
 }
@@ -320,9 +328,11 @@ mpmd_mboard_impl::mpmd_mb_iface::make_tx_data_transport(
         pyld_buff_fmt,
         mdata_buff_fmt,
         fc_freq_ratio,
-        fc_headroom_ratio);
+        fc_headroom_ratio,
+        [this, recv_link, send_link]() {
+            this->get_io_srv_mgr()->disconnect_links(recv_link, send_link);
+        });
 
-    get_io_srv_mgr()->disconnect_links(recv_link, send_link);
     cfg_io_srv.reset();
 
     // Connect the links to an I/O service
@@ -340,7 +350,10 @@ mpmd_mboard_impl::mpmd_mb_iface::make_tx_data_transport(
         pkt_factory,
         epids,
         send_link->get_num_send_frames(),
-        buff_capacity);
+        buff_capacity,
+        [this, recv_link, send_link]() {
+            this->get_io_srv_mgr()->disconnect_links(recv_link, send_link);
+        });
 
     return tx_xport;
 }

@@ -302,7 +302,11 @@ static std::shared_ptr<rx_streamer_mock_link> make_rx_streamer_mock_link(
         pkt_factory,
         epids,
         send_link->get_num_send_frames(),
-        fc_params);
+        fc_params,
+        [io_srv = io_srv, recv_link, send_link]() {
+            io_srv->detach_recv_link(recv_link);
+            io_srv->detach_send_link(send_link);
+        });
 
     streamer->connect_channel(0, std::move(xport));
     return streamer;
@@ -341,7 +345,11 @@ static std::shared_ptr<tx_streamer_mock_link> make_tx_streamer_mock_link(
         pkt_factory,
         epids,
         send_link->get_num_send_frames(),
-        fc_params);
+        fc_params,
+        [io_srv = io_srv, recv_link, send_link]() {
+            io_srv->detach_recv_link(recv_link);
+            io_srv->detach_send_link(send_link);
+        });
 
     streamer->connect_channel(0, std::move(xport));
     return streamer;

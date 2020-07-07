@@ -36,11 +36,13 @@ chdr_rx_data_xport::chdr_rx_data_xport(uhd::transport::io_service::sptr io_srv,
     const chdr::chdr_packet_factory& pkt_factory,
     const uhd::rfnoc::sep_id_pair_t& epids,
     const size_t num_recv_frames,
-    const fc_params_t& fc_params)
+    const fc_params_t& fc_params,
+    disconnect_callback_t disconnect)
     : _fc_state(epids, fc_params.freq)
     , _fc_sender(pkt_factory, epids)
     , _epid(epids.second)
     , _chdr_w_bytes(chdr_w_to_bits(pkt_factory.get_chdr_w()) / 8)
+    , _disconnect(disconnect)
 {
     UHD_LOG_TRACE("XPORT::RX_DATA_XPORT",
         "Creating rx xport with local epid=" << epids.second
@@ -87,6 +89,9 @@ chdr_rx_data_xport::~chdr_rx_data_xport()
 {
     // Release recv_io before allowing members needed by callbacks be destroyed
     _recv_io.reset();
+
+    // Disconnect the links
+    _disconnect();
 }
 
 chdr_rx_data_xport::fc_params_t chdr_rx_data_xport::configure_sep(io_service::sptr io_srv,
@@ -100,7 +105,8 @@ chdr_rx_data_xport::fc_params_t chdr_rx_data_xport::configure_sep(io_service::sp
     const stream_buff_params_t& recv_capacity,
     const stream_buff_params_t& fc_freq,
     const stream_buff_params_t& fc_headroom,
-    const bool lossy_xport)
+    const bool lossy_xport,
+    disconnect_callback_t disconnect)
 {
     const sep_id_t remote_epid = epids.first;
     const sep_id_t local_epid  = epids.second;
@@ -166,7 +172,8 @@ chdr_rx_data_xport::fc_params_t chdr_rx_data_xport::configure_sep(io_service::sp
         pkt_factory,
         local_epid,
         1, // num_send_frames
-        1); // num_recv_frames
+        1, // num_recv_frames
+        disconnect);
 
     // Setup a route to the EPID
     // Note that this may be gratuitous--The endpoint may already have been set up

@@ -106,6 +106,7 @@ public:
     using buff_t = transport::frame_buff;
     using enqueue_async_msg_fn_t =
         std::function<void(async_metadata_t::event_code_t, bool, uint64_t)>;
+    using disconnect_callback_t = uhd::transport::disconnect_callback_t;
 
     //! Information about data packet
     struct packet_info_t
@@ -135,6 +136,7 @@ public:
      * \param mdata_buff_fmt Datatype of SW buffer that holds the data metadata
      * \param fc_freq_ratio Ratio to use to configure the device fc frequency
      * \param fc_headroom_ratio Ratio to use to configure the device fc headroom
+     * \param disconnect Callback function to disconnect the links
      * \return Parameters for xport flow control
      */
     static fc_params_t configure_sep(uhd::transport::io_service::sptr io_srv,
@@ -146,7 +148,8 @@ public:
         const uhd::rfnoc::sw_buff_t pyld_buff_fmt,
         const uhd::rfnoc::sw_buff_t mdata_buff_fmt,
         const double fc_freq_ratio,
-        const double fc_headroom_ratio);
+        const double fc_headroom_ratio,
+        disconnect_callback_t disconnect);
 
     /*! Constructor
      *
@@ -157,6 +160,7 @@ public:
      * \param epids Source and destination endpoint IDs
      * \param num_send_frames Num frames to reserve from the send link
      * \param fc_params Parameters for flow control
+     * \param disconnect Callback function to disconnect the links
      */
     chdr_tx_data_xport(uhd::transport::io_service::sptr io_srv,
         uhd::transport::recv_link_if::sptr recv_link,
@@ -164,7 +168,8 @@ public:
         const chdr::chdr_packet_factory& pkt_factory,
         const uhd::rfnoc::sep_id_pair_t& epids,
         const size_t num_send_frames,
-        const fc_params_t fc_params);
+        const fc_params_t fc_params,
+        disconnect_callback_t disconnect);
 
     /*! Destructor
      */
@@ -397,6 +402,9 @@ private:
 
     //! The size of the send frame
     size_t _frame_size;
+
+    // Disconnect callback
+    disconnect_callback_t _disconnect;
 };
 
 }} // namespace uhd::rfnoc
