@@ -72,7 +72,8 @@ void rhodium_radio_ctrl_impl::_update_rx_freq_switches(const double freq)
     UHD_LOG_TRACE(
         unique_id(), "Update all RX freq related switches. f=" << freq << " Hz, ");
     const auto band = _map_freq_to_rx_band(freq);
-    UHD_LOG_TRACE(unique_id(), "Selected band " << rx_band_to_log(band));
+    const auto UHD_UNUSED(log_band) = rx_band_to_log(band);
+    UHD_LOG_TRACE(unique_id(), "Selected band " << log_band);
 
     // select values for lowband/highband switches
     const bool is_lowband = (band == rx_band::RX_BAND_0);
@@ -141,7 +142,8 @@ void rhodium_radio_ctrl_impl::_update_tx_freq_switches(const double freq)
 
     const auto band = _map_freq_to_tx_band(freq);
 
-    UHD_LOG_TRACE(unique_id(), "Selected band " << tx_band_to_log(band));
+    const auto UHD_UNUSED(log_band) = tx_band_to_log(band);
+    UHD_LOG_TRACE(unique_id(), "Selected band " << log_band);
 
     // select values for lowband/highband switches
     const bool is_lowband = (band == tx_band::TX_BAND_0);
