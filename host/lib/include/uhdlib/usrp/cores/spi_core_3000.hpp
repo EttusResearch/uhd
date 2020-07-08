@@ -35,11 +35,4 @@ public:
 
     //! Set the spi clock divider to something usable
     virtual void set_divider(const double div) = 0;
-
-    //! Place SPI core in shutdown mode. All attempted SPI transactions are dropped by
-    //  the core.
-    virtual void set_shutdown(const bool shutdown) = 0;
-
-    //! Get state of shutdown register
-    virtual bool get_shutdown() = 0;
 };

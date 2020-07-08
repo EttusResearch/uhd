@@ -37,7 +37,6 @@ public:
         , _spi_div_addr(base + 0 * reg_offset)
         , _spi_ctrl_addr(base + 1 * reg_offset)
         , _spi_data_addr(base + 2 * reg_offset)
-        , _spi_shutdown_addr(base + 3 * reg_offset)
         , _readback_addr(readback)
     {
         this->set_divider(DEFAULT_DIVIDER);
@@ -94,17 +93,6 @@ public:
         return 0;
     }
 
-    void set_shutdown(const bool shutdown)
-    {
-        _shutdown_cache = shutdown;
-        _poke32(_spi_shutdown_addr, _shutdown_cache);
-    }
-
-    bool get_shutdown()
-    {
-        return _shutdown_cache;
-    }
-
     void set_divider(const double div)
     {
         _div = size_t((div / 2) - 0.5);
@@ -116,10 +104,8 @@ private:
     const size_t _spi_div_addr;
     const size_t _spi_ctrl_addr;
     const size_t _spi_data_addr;
-    const size_t _spi_shutdown_addr;
     const size_t _readback_addr;
     uint32_t _ctrl_word_cache = 0;
-    bool _shutdown_cache;
     std::mutex _mutex;
     size_t _div;
     size_t _divider_cache = 0;
