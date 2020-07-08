@@ -236,6 +236,21 @@ void e3xx_radio_ctrl_impl::_init_frontend_subtree(
             });
     }
 
+    // RX AGC setup
+    const std::list<std::string> mode_strings{"slow", "fast"};
+    const std::string rx_fe = get_which_ad9361_chain(RX_DIRECTION, chan_idx);
+    subtree->create<bool>(rx_fe_path / "gain/agc/enable")
+        .set(E3XX_DEFAULT_AGC_ENABLE)
+        .add_coerced_subscriber(
+            [this, rx_fe](const bool enable) { _ad9361->set_agc(rx_fe, enable); });
+    subtree->create<std::string>(rx_fe_path / "gain/agc/mode/value")
+        .set(mode_strings.front())
+        .add_coerced_subscriber([this, rx_fe](const std::string& value) {
+            _ad9361->set_agc_mode(rx_fe, value);
+        });
+    subtree->create<std::list<std::string>>(rx_fe_path / "gain/agc/mode/options")
+        .set(mode_strings);
+
     // TX LO lock sensor //////////////////////////////////////////////////////
     // Note: The AD9361 LO lock sensors are generated programmatically in
     // set_rpc_client(). The actual lo_locked publisher is also set there.
