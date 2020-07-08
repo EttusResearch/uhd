@@ -293,7 +293,9 @@ std::string uhd::get_pkg_path(void)
 std::string uhd::get_lib_path(void)
 {
     fs::path runtime_libfile_path = boost::dll::this_line_location();
-    return runtime_libfile_path.remove_filename().string();
+    //Normalize before decomposing path so result is reliable
+    fs::path lib_path = runtime_libfile_path.lexically_normal().parent_path();
+    return lib_path.string();
 }
 #else
 std::string uhd::get_pkg_path(void)
