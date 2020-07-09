@@ -323,7 +323,6 @@ module n3xx (
 
   // Internal connections to PS
   // HP0 -- High Performance port 0, FPGA is the master
-  wire [5:0]  S_AXI_HP0_AWID;
   wire [31:0] S_AXI_HP0_AWADDR;
   wire [2:0]  S_AXI_HP0_AWPROT;
   wire        S_AXI_HP0_AWVALID;
@@ -335,7 +334,6 @@ module n3xx (
   wire [1:0]  S_AXI_HP0_BRESP;
   wire        S_AXI_HP0_BVALID;
   wire        S_AXI_HP0_BREADY;
-  wire [5:0]  S_AXI_HP0_ARID;
   wire [31:0] S_AXI_HP0_ARADDR;
   wire [2:0]  S_AXI_HP0_ARPROT;
   wire        S_AXI_HP0_ARVALID;
@@ -356,7 +354,6 @@ module n3xx (
   wire [2:0]  S_AXI_HP0_ARSIZE;
 
   // GP0 -- General Purpose port 0, FPGA is the master
-  wire [4:0]  S_AXI_GP0_AWID;
   wire [31:0] S_AXI_GP0_AWADDR;
   wire [2:0]  S_AXI_GP0_AWPROT;
   wire        S_AXI_GP0_AWVALID;
@@ -368,7 +365,6 @@ module n3xx (
   wire [1:0]  S_AXI_GP0_BRESP;
   wire        S_AXI_GP0_BVALID;
   wire        S_AXI_GP0_BREADY;
-  wire [4:0]  S_AXI_GP0_ARID;
   wire [31:0] S_AXI_GP0_ARADDR;
   wire [2:0]  S_AXI_GP0_ARPROT;
   wire        S_AXI_GP0_ARVALID;
@@ -477,6 +473,7 @@ module n3xx (
   wire [1:0]  M_AXI_GP0_RRESP;
   wire [31:0] M_AXI_GP0_RDATA;
 
+  // ETH DMA
   wire        M_AXI_ETH_DMA0_ARVALID;
   wire        M_AXI_ETH_DMA0_AWVALID;
   wire        M_AXI_ETH_DMA0_BREADY;
@@ -498,6 +495,23 @@ module n3xx (
   wire [1:0]  M_AXI_ETH_DMA0_BRESP;
   wire [1:0]  M_AXI_ETH_DMA0_RRESP;
   wire [31:0] M_AXI_ETH_DMA0_RDATA;
+  wire        m_axi_eth_internal_arvalid;
+  wire        m_axi_eth_internal_awvalid;
+  wire        m_axi_eth_internal_bready;
+  wire        m_axi_eth_internal_rready;
+  wire        m_axi_eth_internal_wvalid;
+  wire [31:0] m_axi_eth_internal_araddr;
+  wire [31:0] m_axi_eth_internal_awaddr;
+  wire [31:0] m_axi_eth_internal_wdata;
+  wire [3:0]  m_axi_eth_internal_wstrb;
+  wire        m_axi_eth_internal_arready;
+  wire        m_axi_eth_internal_awready;
+  wire        m_axi_eth_internal_bvalid;
+  wire        m_axi_eth_internal_rvalid;
+  wire        m_axi_eth_internal_wready;
+  wire [1:0]  m_axi_eth_internal_bresp;
+  wire [1:0]  m_axi_eth_internal_rresp;
+  wire [31:0] m_axi_eth_internal_rdata;
 
   wire        M_AXI_NET0_ARVALID;
   wire        M_AXI_NET0_AWVALID;
@@ -1603,15 +1617,25 @@ module n3xx (
   wire          e10_tlast, e10_tvalid, e10_tready;
 
 
-  // DMA xport adapter to PS
+  // Internal Ethernet xport adapter to PS
+  wire [63:0] h2e_tdata;
+  wire [7:0]  h2e_tkeep;
+  wire        h2e_tlast;
+  wire        h2e_tready;
+  wire        h2e_tvalid;
+
+  wire [63:0] e2h_tdata;
+  wire [7:0]  e2h_tkeep;
+  wire        e2h_tlast;
+  wire        e2h_tready;
+  wire        e2h_tvalid;
+
   wire [63:0] m_axis_dma_tdata;
-  wire [3:0]  m_axis_dma_tuser;
   wire        m_axis_dma_tlast;
   wire        m_axis_dma_tready;
   wire        m_axis_dma_tvalid;
 
   wire [63:0] s_axis_dma_tdata;
-  wire [3:0]  s_axis_dma_tdest;
   wire        s_axis_dma_tlast;
   wire        s_axis_dma_tready;
   wire        s_axis_dma_tvalid;
@@ -1924,8 +1948,6 @@ module n3xx (
   assign  IRQ_F2P[0] = arm_eth0_rx_irq;
   assign  IRQ_F2P[1] = arm_eth0_tx_irq;
 
-  assign {S_AXI_HP0_AWID, S_AXI_HP0_ARID} = 12'd0;
-  assign {S_AXI_GP0_AWID, S_AXI_GP0_ARID} = 10'd0;
 
 `ifdef QSFP_10GBE
   // QSFP+ lanes connect to DMA engines and crossbar
@@ -2526,6 +2548,80 @@ module n3xx (
 
   /////////////////////////////////////////////////////////////////////
   //
+  // Internal Ethernet Interface
+  //
+  //////////////////////////////////////////////////////////////////////
+  eth_internal #(
+    .DWIDTH(REG_DWIDTH),
+    .AWIDTH(REG_AWIDTH),
+    .PORTNUM(8'd1)
+  ) eth_internal_i (
+    // Resets
+    .bus_rst (bus_rst),
+    // Clocks
+    .bus_clk (bus_clk),
+
+    //Axi-lite
+    .s_axi_aclk     (clk40),
+    .s_axi_aresetn  (clk40_rstn),
+    .s_axi_awaddr   (m_axi_eth_internal_awaddr),
+    .s_axi_awvalid  (m_axi_eth_internal_awvalid),
+    .s_axi_awready  (m_axi_eth_internal_awready),
+
+    .s_axi_wdata    (m_axi_eth_internal_wdata),
+    .s_axi_wstrb    (m_axi_eth_internal_wstrb),
+    .s_axi_wvalid   (m_axi_eth_internal_wvalid),
+    .s_axi_wready   (m_axi_eth_internal_wready),
+
+    .s_axi_bresp    (m_axi_eth_internal_bresp),
+    .s_axi_bvalid   (m_axi_eth_internal_bvalid),
+    .s_axi_bready   (m_axi_eth_internal_bready),
+
+    .s_axi_araddr   (m_axi_eth_internal_araddr),
+    .s_axi_arvalid  (m_axi_eth_internal_arvalid),
+    .s_axi_arready  (m_axi_eth_internal_arready),
+
+    .s_axi_rdata    (m_axi_eth_internal_rdata),
+    .s_axi_rresp    (m_axi_eth_internal_rresp),
+    .s_axi_rvalid   (m_axi_eth_internal_rvalid),
+    .s_axi_rready   (m_axi_eth_internal_rready),
+
+    // Host-Ethernet DMA interface
+    .e2h_tdata    (e2h_tdata),
+    .e2h_tkeep    (e2h_tkeep),
+    .e2h_tlast    (e2h_tlast),
+    .e2h_tvalid   (e2h_tvalid),
+    .e2h_tready   (e2h_tready),
+
+    .h2e_tdata    (h2e_tdata),
+    .h2e_tkeep    (h2e_tkeep),
+    .h2e_tlast    (h2e_tlast),
+    .h2e_tvalid   (h2e_tvalid),
+    .h2e_tready   (h2e_tready),
+
+    // Vita router interface
+    .e2v_tdata    (m_axis_dma_tdata),
+    .e2v_tlast    (m_axis_dma_tlast),
+    .e2v_tvalid   (m_axis_dma_tvalid),
+    .e2v_tready   (m_axis_dma_tready),
+
+    .v2e_tdata    (s_axis_dma_tdata),
+    .v2e_tlast    (s_axis_dma_tlast),
+    .v2e_tvalid   (s_axis_dma_tvalid),
+    .v2e_tready   (s_axis_dma_tready),
+
+    // MISC
+    .port_info    (),
+    .device_id    (device_id),
+
+    .link_up      (),
+    .activity     ()
+
+  );
+
+
+  /////////////////////////////////////////////////////////////////////
+  //
   // Processing System
   //
   //////////////////////////////////////////////////////////////////////
@@ -2636,6 +2732,26 @@ module n3xx (
     .M_AXI_ETH_DMA1_wready(M_AXI_ETH_DMA1_WREADY),
     .M_AXI_ETH_DMA1_wstrb(M_AXI_ETH_DMA1_WSTRB),
     .M_AXI_ETH_DMA1_wvalid(M_AXI_ETH_DMA1_WVALID),
+
+    .m_axi_eth_internal_araddr(m_axi_eth_internal_araddr),
+    .m_axi_eth_internal_arprot(),
+    .m_axi_eth_internal_arready(m_axi_eth_internal_arready),
+    .m_axi_eth_internal_arvalid(m_axi_eth_internal_arvalid),
+    .m_axi_eth_internal_awaddr(m_axi_eth_internal_awaddr),
+    .m_axi_eth_internal_awprot(),
+    .m_axi_eth_internal_awready(m_axi_eth_internal_awready),
+    .m_axi_eth_internal_awvalid(m_axi_eth_internal_awvalid),
+    .m_axi_eth_internal_bready(m_axi_eth_internal_bready),
+    .m_axi_eth_internal_bresp(m_axi_eth_internal_bresp),
+    .m_axi_eth_internal_bvalid(m_axi_eth_internal_bvalid),
+    .m_axi_eth_internal_rdata(m_axi_eth_internal_rdata),
+    .m_axi_eth_internal_rready(m_axi_eth_internal_rready),
+    .m_axi_eth_internal_rresp(m_axi_eth_internal_rresp),
+    .m_axi_eth_internal_rvalid(m_axi_eth_internal_rvalid),
+    .m_axi_eth_internal_wdata(m_axi_eth_internal_wdata),
+    .m_axi_eth_internal_wready(m_axi_eth_internal_wready),
+    .m_axi_eth_internal_wstrb(m_axi_eth_internal_wstrb),
+    .m_axi_eth_internal_wvalid(m_axi_eth_internal_wvalid),
 
     .M_AXI_JESD0_araddr(M_AXI_JESD0_ARADDR),
     .M_AXI_JESD0_arprot(),
@@ -2808,7 +2924,6 @@ module n3xx (
     .S_AXI_GP0_araddr(S_AXI_GP0_ARADDR),
     .S_AXI_GP0_arburst(S_AXI_GP0_ARBURST),
     .S_AXI_GP0_arcache(S_AXI_GP0_ARCACHE),
-    .S_AXI_GP0_arid(S_AXI_GP0_ARID),
     .S_AXI_GP0_arlen(S_AXI_GP0_ARLEN),
     .S_AXI_GP0_arlock(1'b0),
     .S_AXI_GP0_arprot(S_AXI_GP0_ARPROT),
@@ -2820,7 +2935,6 @@ module n3xx (
     .S_AXI_GP0_awaddr(S_AXI_GP0_AWADDR),
     .S_AXI_GP0_awburst(S_AXI_GP0_AWBURST),
     .S_AXI_GP0_awcache(S_AXI_GP0_AWCACHE),
-    .S_AXI_GP0_awid(S_AXI_GP0_AWID),
     .S_AXI_GP0_awlen(S_AXI_GP0_AWLEN),
     .S_AXI_GP0_awlock(1'b0),
     .S_AXI_GP0_awprot(S_AXI_GP0_AWPROT),
@@ -2829,12 +2943,10 @@ module n3xx (
     .S_AXI_GP0_awready(S_AXI_GP0_AWREADY),
     .S_AXI_GP0_awsize(S_AXI_GP0_AWSIZE),
     .S_AXI_GP0_awvalid(S_AXI_GP0_AWVALID),
-    .S_AXI_GP0_bid(),
     .S_AXI_GP0_bready(S_AXI_GP0_BREADY),
     .S_AXI_GP0_bresp(S_AXI_GP0_BRESP),
     .S_AXI_GP0_bvalid(S_AXI_GP0_BVALID),
     .S_AXI_GP0_rdata(S_AXI_GP0_RDATA),
-    .S_AXI_GP0_rid(),
     .S_AXI_GP0_rlast(S_AXI_GP0_RLAST),
     .S_AXI_GP0_rready(S_AXI_GP0_RREADY),
     .S_AXI_GP0_rresp(S_AXI_GP0_RRESP),
@@ -2892,31 +3004,29 @@ module n3xx (
     .S_AXI_HP0_araddr(S_AXI_HP0_ARADDR),
     .S_AXI_HP0_arburst(S_AXI_HP0_ARBURST),
     .S_AXI_HP0_arcache(S_AXI_HP0_ARCACHE),
-    .S_AXI_HP0_arid(S_AXI_HP0_ARID),
     .S_AXI_HP0_arlen(S_AXI_HP0_ARLEN),
     .S_AXI_HP0_arlock(1'b0),
     .S_AXI_HP0_arprot(S_AXI_HP0_ARPROT),
     .S_AXI_HP0_arqos(4'b0000),
     .S_AXI_HP0_arready(S_AXI_HP0_ARREADY),
+    .S_AXI_HP0_arregion(4'b0),
     .S_AXI_HP0_arsize(S_AXI_HP0_ARSIZE),
     .S_AXI_HP0_arvalid(S_AXI_HP0_ARVALID),
     .S_AXI_HP0_awaddr(S_AXI_HP0_AWADDR),
     .S_AXI_HP0_awburst(S_AXI_HP0_AWBURST),
     .S_AXI_HP0_awcache(S_AXI_HP0_AWCACHE),
-    .S_AXI_HP0_awid(S_AXI_HP0_AWID),
     .S_AXI_HP0_awlen(S_AXI_HP0_AWLEN),
     .S_AXI_HP0_awlock(1'b0),
     .S_AXI_HP0_awprot(S_AXI_HP0_AWPROT),
     .S_AXI_HP0_awqos(4'b0000),
     .S_AXI_HP0_awready(S_AXI_HP0_AWREADY),
+    .S_AXI_HP0_awregion(4'b0),
     .S_AXI_HP0_awsize(S_AXI_HP0_AWSIZE),
     .S_AXI_HP0_awvalid(S_AXI_HP0_AWVALID),
-    .S_AXI_HP0_bid(),
     .S_AXI_HP0_bready(S_AXI_HP0_BREADY),
     .S_AXI_HP0_bresp(S_AXI_HP0_BRESP),
     .S_AXI_HP0_bvalid(S_AXI_HP0_BVALID),
     .S_AXI_HP0_rdata(S_AXI_HP0_RDATA),
-    .S_AXI_HP0_rid(),
     .S_AXI_HP0_rlast(S_AXI_HP0_RLAST),
     .S_AXI_HP0_rready(S_AXI_HP0_RREADY),
     .S_AXI_HP0_rresp(S_AXI_HP0_RRESP),
@@ -2968,16 +3078,16 @@ module n3xx (
     .S_AXI_HP1_wvalid(S_AXI_HP1_WVALID),
 
     // ARM DMA
-    .s_axis_dma_tdata(s_axis_dma_tdata),
-    .s_axis_dma_tdest(s_axis_dma_tdest),
-    .s_axis_dma_tlast(s_axis_dma_tlast),
-    .s_axis_dma_tready(s_axis_dma_tready),
-    .s_axis_dma_tvalid(s_axis_dma_tvalid),
-    .m_axis_dma_tdata(m_axis_dma_tdata),
-    .m_axis_dma_tuser(m_axis_dma_tuser),
-    .m_axis_dma_tlast(m_axis_dma_tlast),
-    .m_axis_dma_tready(m_axis_dma_tready),
-    .m_axis_dma_tvalid(m_axis_dma_tvalid),
+    .s_axis_dma_tdata(e2h_tdata),
+    .s_axis_dma_tkeep(e2h_tkeep),
+    .s_axis_dma_tlast(e2h_tlast),
+    .s_axis_dma_tready(e2h_tready),
+    .s_axis_dma_tvalid(e2h_tvalid),
+    .m_axis_dma_tdata(h2e_tdata),
+    .m_axis_dma_tkeep(h2e_tkeep),
+    .m_axis_dma_tlast(h2e_tlast),
+    .m_axis_dma_tready(h2e_tready),
+    .m_axis_dma_tvalid(h2e_tvalid),
 
     // Misc Interrupts, GPIO, clk
     .IRQ_F2P(IRQ_F2P),
@@ -3469,15 +3579,13 @@ module n3xx (
     .ddr3_axi_rvalid           (ddr3_axi_rvalid),
     .ddr3_axi_rready           (ddr3_axi_rready),
 
-    // DMA to PS
+    // Internal Ethernet DMA to PS
     .m_dma_tdata(s_axis_dma_tdata),
-    .m_dma_tdest(s_axis_dma_tdest),
     .m_dma_tlast(s_axis_dma_tlast),
     .m_dma_tready(s_axis_dma_tready),
     .m_dma_tvalid(s_axis_dma_tvalid),
 
     .s_dma_tdata(m_axis_dma_tdata),
-    .s_dma_tuser(m_axis_dma_tuser),
     .s_dma_tlast(m_axis_dma_tlast),
     .s_dma_tready(m_axis_dma_tready),
     .s_dma_tvalid(m_axis_dma_tvalid),
