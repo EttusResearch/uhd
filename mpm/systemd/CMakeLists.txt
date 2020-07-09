@@ -43,7 +43,19 @@ install(FILES
 )
 
 # udev rules
-install(FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/udev/70-sfp-net.rules
-  DESTINATION ${UDEV_UDEVDIR}/rules.d
+if(MPM_DEVICE STREQUAL "n3xx")
+  install(FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/udev/n3xx/70-sfp-net.rules
+    DESTINATION ${UDEV_UDEVDIR}/rules.d
 )
+elseif(MPM_DEVICE STREQUAL "e320")
+  install(FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/udev/e3xx/70-sfp-net.rules
+    DESTINATION ${UDEV_UDEVDIR}/rules.d
+)
+elseif(MPM_DEVICE STREQUAL "e31x")
+  install(FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/udev/e3xx/70-sfp-net.rules
+    DESTINATION ${UDEV_UDEVDIR}/rules.d
+)
+endif(MPM_DEVICE STREQUAL "n3xx")
