@@ -104,7 +104,7 @@ class DAC37J82Rh(object):
 
         self.log.trace("DAC Configuration.")
         self.pokes16((
-            (0x00, 0x0018), # config0: Interpolation 1x; ALARM enabled w/ pos. logic.
+            (0x00, 0x001B), # config0: Interpolation 1x; ALARM enabled w/ pos. logic.
             (0x01, 0x0003), # config1: Rewriting reserved default values.
             (0x02, 0x0002), # config2: Data not zero when link not established; 2's comp. arrives at input.
             (0x03, 0x9300), # config3: Coarse DAC = 10 (9+1); TXENABLE internal is kept low.
