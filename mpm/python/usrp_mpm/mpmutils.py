@@ -135,9 +135,10 @@ def assert_compat_number(
         err_msg = "Minor compat number mismatch{}: {}".format(
             component_str, expected_actual_str
         )
-        log_err(err_msg)
         if fail_on_old_minor:
+            log_err(err_msg)
             raise RuntimeError(err_msg)
+        log_warn(err_msg)
     return
 
 def str2bool(value):
