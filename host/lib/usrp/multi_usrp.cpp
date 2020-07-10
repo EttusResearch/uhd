@@ -1961,8 +1961,7 @@ public:
             throw uhd::runtime_error("Attempting to get non-existing filter: " + name);
         }
 
-        return _tree->access<filter_info_base::sptr>(tx_rf_fe_root(chan) / name / "value")
-            .get();
+        return _tree->access<filter_info_base::sptr>(fs_path(name) / "value").get();
     }
 
     void set_tx_filter(
@@ -1975,8 +1974,7 @@ public:
             throw uhd::runtime_error("Attempting to set non-existing filter: " + name);
         }
 
-        _tree->access<filter_info_base::sptr>(tx_rf_fe_root(chan) / name / "value")
-            .set(filter);
+        _tree->access<filter_info_base::sptr>(fs_path(name) / "value").set(filter);
     }
 
     /*******************************************************************
