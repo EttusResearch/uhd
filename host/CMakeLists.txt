@@ -276,35 +276,6 @@ if(WIN32)
 endif(WIN32)
 
 ########################################################################
-# Option to use QEMU for running unittests
-#
-# This is useful when cross-compiling UHD for other architectures like arm or
-# aarch64
-#
-# QEMU_EXECUTABLE must be set to the name of the QEMU executable. When using
-# openembedded build environment, this should be set to "qemu-${TUNE_ARCH}"
-# or "${WORKDIR}/recipe-sysroot-native/usr/bin/qemu-${TUNE_ARCH}"
-#
-# QEMU_SYSROOT must be set to the same sysroot of the target architecture that
-# was used when compiling UHD. When using openembedded build environment, this
-# should be set to "${WORKDIR}/recipe-sysroot"
-########################################################################
-option(ENABLE_QEMU_UNITTESTS "Use QEMU for running unittests" OFF)
-mark_as_advanced(ENABLE_QEMU_UNITTESTS)
-if(ENABLE_QEMU_UNITTESTS)
-    message(STATUS "")
-    message(STATUS "Use QEMU for running unittests: ${ENABLE_QEMU_UNITTESTS}")
-    if("${QEMU_EXECUTABLE}" STREQUAL "")
-      message(FATAL_ERROR "The variable QEMU_EXECUTABLE is not set")
-    endif()
-    if("${QEMU_SYSROOT}" STREQUAL "")
-      message(FATAL_ERROR "The variable QEMU_SYSROOT is not set")
-    endif()
-    message(STATUS "  QEMU executable: ${QEMU_EXECUTABLE}")
-    message(STATUS "  QEMU sysroot: ${QEMU_SYSROOT}")
-endif(ENABLE_QEMU_UNITTESTS)
-
-########################################################################
 # Setup Boost
 ########################################################################
 message(STATUS "")
@@ -367,6 +338,59 @@ PYTHON_CHECK_MODULE(
     "ruamel.yaml" "LooseVersion(ruamel.yaml.__version__) >= LooseVersion('${RUAMEL.YAML_MIN_VERSION}')"
     HAVE_PYTHON_MODULE_YAML
 )
+
+########################################################################
+# Option to use QEMU for running unittests
+#
+# This is useful when cross-compiling UHD for other architectures like arm or
+# aarch64
+#
+# QEMU_EXECUTABLE must be set to the name of the QEMU executable. When using
+# openembedded build environment, this should be set to "qemu-${TUNE_ARCH}"
+# or "${WORKDIR}/recipe-sysroot-native/usr/bin/qemu-${TUNE_ARCH}"
+#
+# QEMU_SYSROOT must be set to the same sysroot of the target architecture that
+# was used when compiling UHD. When using openembedded build environment, this
+# should be set to "${WORKDIR}/recipe-sysroot".
+#
+# QEMU_PYTHON_EXECUTABLE must be set to the path of the python executable
+# compiled for the target architecture. If it is included in the target sysroot,
+# this is typically ${QEMU_SYSROOT}${PYTHON_RUNTIME_EXECUTABLE}. The variable
+# is automatically set to this path if the executable is available.
+########################################################################
+option(ENABLE_QEMU_UNITTESTS "Use QEMU for running unittests" OFF)
+mark_as_advanced(ENABLE_QEMU_UNITTESTS)
+if(ENABLE_QEMU_UNITTESTS)
+    message(STATUS "")
+    message(STATUS "Use QEMU for running unittests: ${ENABLE_QEMU_UNITTESTS}")
+    if("${QEMU_EXECUTABLE}" STREQUAL "")
+      if(NOT "$ENV{OECORE_NATIVE_SYSROOT}" STREQUAL "" AND
+         NOT "$ENV{OECORE_TARGET_ARCH}" STREQUAL "" AND
+         EXISTS "$ENV{OECORE_NATIVE_SYSROOT}/usr/bin/qemu-$ENV{OECORE_TARGET_ARCH}")
+         set(QEMU_EXECUTABLE "$ENV{OECORE_NATIVE_SYSROOT}/usr/bin/qemu-$ENV{OECORE_TARGET_ARCH}")
+      else()
+        message(FATAL_ERROR "The variable QEMU_EXECUTABLE is not set")
+      endif()
+    endif()
+    if("${QEMU_SYSROOT}" STREQUAL "")
+      if(NOT "$ENV{OECORE_TARGET_SYSROOT}" STREQUAL "" AND
+         EXISTS "$ENV{OECORE_TARGET_SYSROOT}")
+         set(QEMU_SYSROOT, "$ENV{OECORE_TARGET_SYSROOT}")
+      else()
+        message(FATAL_ERROR "The variable QEMU_SYSROOT is not set")
+      endif()
+    endif()
+    if("${QEMU_PYTHON_EXECUTABLE}" STREQUAL "")
+      if (EXISTS ${QEMU_SYSROOT}${RUNTIME_PYTHON_EXECUTABLE})
+        set(QEMU_PYTHON_EXECUTABLE ${QEMU_SYSROOT}${RUNTIME_PYTHON_EXECUTABLE})
+      else()
+        message(FATAL_ERROR "The variable QEMU_PYTHON_EXECUTABLE is not set")
+      endif()
+    endif()
+    message(STATUS "  QEMU executable: ${QEMU_EXECUTABLE}")
+    message(STATUS "  QEMU Python executable: ${QEMU_PYTHON_EXECUTABLE}")
+    message(STATUS "  QEMU sysroot: ${QEMU_SYSROOT}")
+endif(ENABLE_QEMU_UNITTESTS)
 
 ########################################################################
 # Create Uninstall Target

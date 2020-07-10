@@ -112,12 +112,24 @@ endfunction(UHD_ADD_TEST)
 # Add a Python unit test
 ########################################################################
 function(UHD_ADD_PYTEST test_name)
-    add_test(NAME ${test_name}
-        COMMAND ${RUNTIME_PYTHON_EXECUTABLE} -m unittest discover
-                                             -s ${CMAKE_CURRENT_SOURCE_DIR}
-                                             -p "${test_name}.*"
-        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/python"
-    )
+    if(ENABLE_QEMU_UNITTESTS)
+        # use QEMU emulator for executing test
+        add_test(NAME ${test_name}
+            COMMAND ${QEMU_EXECUTABLE} -L ${QEMU_SYSROOT}
+                                       ${QEMU_PYTHON_EXECUTABLE}
+                                       -m unittest discover
+                                       -s ${CMAKE_CURRENT_SOURCE_DIR}
+                                       -p "${test_name}.*"
+            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/python"
+        )
+    else()
+        add_test(NAME ${test_name}
+            COMMAND ${RUNTIME_PYTHON_EXECUTABLE} -m unittest discover
+                                                 -s ${CMAKE_CURRENT_SOURCE_DIR}
+                                                 -p "${test_name}.*"
+            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/python"
+        )
+    endif(ENABLE_QEMU_UNITTESTS)
     set_tests_properties(${test_name} PROPERTIES
         ENVIRONMENT PYTHONPATH=${CMAKE_SOURCE_DIR}/tests/common)
 endfunction(UHD_ADD_PYTEST)
