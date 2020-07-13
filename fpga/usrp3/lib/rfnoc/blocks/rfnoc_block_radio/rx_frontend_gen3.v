@@ -179,7 +179,7 @@ module rx_frontend_gen3 #(
   generate
     if (BYPASS_REALMODE_DSP == 0) begin
 
-      wire [24:0] adc_i_dsp_cout, adc_q_dsp_cout;
+      wire [23:0] adc_i_dsp_cout, adc_q_dsp_cout;
       wire [23:0] adc_i_filt, adc_q_filt;
       wire        adc_dsp_cout_stb;
       wire        adc_filt_stb;
