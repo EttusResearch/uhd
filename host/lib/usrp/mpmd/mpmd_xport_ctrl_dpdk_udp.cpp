@@ -219,7 +219,7 @@ uhd::both_xports_t mpmd_xport_ctrl_dpdk_udp::make_transport(
             "Could not find a DPDK port with route to " + xport_info["ipv4"]);
     }
     auto recv                     = transport::dpdk_zero_copy::make(_ctx,
-        (const unsigned int)dpdk_port_id,
+        static_cast<unsigned>(dpdk_port_id),
         xport_info["ipv4"],
         xport_info["port"],
         "0",

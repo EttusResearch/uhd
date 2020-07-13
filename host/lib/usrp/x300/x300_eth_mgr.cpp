@@ -274,7 +274,7 @@ both_xports_t eth_manager::make_transport(both_xports_t xports,
                 "Could not find a DPDK port with route to " + conn.addr);
         }
         auto recv = transport::dpdk_zero_copy::make(dpdk_ctx,
-            (const unsigned int)dpdk_port_id,
+            static_cast<unsigned>(dpdk_port_id),
             conn.addr,
             BOOST_STRINGIZE(X300_VITA_UDP_PORT),
             "0",
