@@ -46,8 +46,10 @@ size_t ctrl_payload::serialize(uint64_t* buff,
     size_t max_size_bytes,
     const std::function<uint64_t(uint64_t)>& conv_byte_order) const
 {
+    // Ctrl Packet Payload can't have more than 15 data -> 8 CHDR_W (RFNoC Spec.
+    // Section 2.2.3)
     UHD_ASSERT_THROW((data_vtr.size() > 0 && data_vtr.size() < 16));
-    // We assume that buff has room to hold the entire packet
+    UHD_ASSERT_THROW(get_length() * sizeof(uint64_t) <= max_size_bytes);
     size_t ptr = 0;
 
     // Populate control header
@@ -90,8 +92,7 @@ size_t ctrl_payload::serialize(uint64_t* buff,
                             | static_cast<uint64_t>(data_vtr[i]) << LO_DATA_OFFSET);
     }
 
-    // FIXME: This UHD_ASSERT_THROW is a bit late because memory has already been
-    // corrupted
+    // This really should be impossible but we'll leave it for safety's sake
     UHD_ASSERT_THROW(ptr <= max_size_bytes);
     // Return bytes written
     return (ptr * sizeof(uint64_t));
