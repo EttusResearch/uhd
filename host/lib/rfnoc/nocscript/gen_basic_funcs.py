@@ -289,7 +289,7 @@ namespace uhd { namespace rfnoc { namespace nocscript {
 """
 
 # Not a Mako template:
-FOOTER="""
+FOOTER = """
 }}} /* namespace uhd::rfnoc::nocscript */
 
 #endif /* INCLUDED_LIBUHD_RFNOC_NOCSCRIPT_BASICFUNCS_HPP */
@@ -321,7 +321,7 @@ REGISTER_COMMANDS_TEMPLATE = """
             ${func_name}_args
     );"""
 
-DOXY_TEMPLATE = """/*! \page page_nocscript_funcs NocScript Function Reference
+DOXY_TEMPLATE = r"""/*! \page page_nocscript_funcs NocScript Function Reference
 % for cat, func_by_name in func_list_tree.items():
 - ${cat}
 %   for func_name, func_info_list in func_by_name.items():
@@ -336,6 +336,7 @@ DOXY_TEMPLATE = """/*! \page page_nocscript_funcs NocScript Function Reference
 """
 
 def parse_tmpl(_tmpl_text, **kwargs):
+    """Load template and parse"""
     return Template(_tmpl_text).render(**kwargs)
 
 def make_cxx_func_name(func_dict):
@@ -353,10 +354,10 @@ def make_cxx_func_body(func_dict):
     Formats the function body properly
     """
     type_lookup_methods = {
-            'INT': 'get_int',
-            'DOUBLE': 'get_double',
-            'BOOL': 'get_bool',
-            'STRING': 'get_string',
+        'INT': 'get_int',
+        'DOUBLE': 'get_double',
+        'BOOL': 'get_bool',
+        'STRING': 'get_string',
     }
     args_lookup = []
     for idx, arg_type in enumerate(func_dict['arglist']):
@@ -378,7 +379,7 @@ def prep_function_list():
     """
     comment_remove_re = re.compile(r'^\s*#.*$', flags=re.MULTILINE)
     func_list_wo_comments = comment_remove_re.sub('', FUNCTION_LIST)
-    func_splitter_re = re.compile(r'(?<=^})\s*$', flags=re.MULTILINE)
+    func_splitter_re = re.compile(r'(?<=^})\s+$', flags=re.MULTILINE)
     func_list_split = func_splitter_re.split(func_list_wo_comments)
     func_list_split = [x.strip() for x in func_list_split if len(x.strip())]
     func_list = []
@@ -417,11 +418,11 @@ def write_function_header(output_filename):
         func_prototypes += FUNC_TEMPLATE.format(
             NAME=func['func_name'],
             BODY=make_cxx_func_body(func),
-            ARGS="args" if len(func['arglist']) else ""
+            ARGS="args" if func['arglist'] else ""
         )
         registry_commands += parse_tmpl(
-                REGISTER_COMMANDS_TEMPLATE,
-                **func
+            REGISTER_COMMANDS_TEMPLATE,
+            **func
         )
     # Step 2: Write the registry process
     register_func = parse_tmpl(REGISTER_MACRO_TEMPLATE, registry=registry_commands)
@@ -429,10 +430,10 @@ def write_function_header(output_filename):
 
     # Final step: Join parts and write to file
     full_file = "\n".join((
-            parse_tmpl(HEADER, file = os.path.basename(__file__), INCLUDE_LIST=INCLUDE_LIST),
-            func_prototypes,
-            register_func,
-            FOOTER,
+        parse_tmpl(HEADER, file=os.path.basename(__file__), INCLUDE_LIST=INCLUDE_LIST),
+        func_prototypes,
+        register_func,
+        FOOTER,
     ))
     open(output_filename, 'w').write(full_file)
 
@@ -452,9 +453,12 @@ def write_manual_file(output_filename):
 
 
 def main():
+    """
+    GoGoGo
+    """
     if len(sys.argv) < 2:
         print("No output file specified!")
-        exit(1)
+        sys.exit(1)
     outfile = sys.argv[1]
     if os.path.splitext(outfile)[1] == '.dox':
         write_manual_file(outfile)
