@@ -845,11 +845,9 @@ class PeriphManagerBase(object):
         The return value is a list of strings. Every string is a key for a
         transport type. Values include:
         - "udp": Means this device can be reached via UDP
-        - "liberio": Means this device can be reached via Liberio (local DMA)
 
         The list is filtered based on what the device knows about where the UHD
-        session is. For example, on an N310, it will only either return "UDP"
-        or "Liberio", depending on if we're remotely launching UHD, or locally.
+        session is. For example, on an N310, it will only return "UDP".
 
         In order to get further information about how to connect to the device,
         the keys returned from this function can be used with
@@ -870,9 +868,6 @@ class PeriphManagerBase(object):
         - port (UDP port)
         - link_rate (bps of the link, e.g. 10e9 for 10GigE)
 
-        For Liberio, every entry has the following keys:
-        - tx_dev: TX device (/dev/tx-dma*)
-        - rx_dev: RX device (/dev/rx-dma*)
         """
         raise NotImplementedError("get_chdr_link_options() not implemented.")
 

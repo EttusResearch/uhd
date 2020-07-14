@@ -394,9 +394,6 @@ class e320(ZynqComponents, PeriphManagerBase):
         - port (UDP port)
         - link_rate (bps of the link, e.g. 10e9 for 10GigE)
 
-        For Liberio, every entry has the following keys:
-        - tx_dev: TX device (/dev/tx-dma*)
-        - rx_dev: RX device (/dev/rx-dma*)
         """
         if xport_type not in self._xport_mgrs:
             self.log.warning("Can't get link options for unknown link type: `{}'."

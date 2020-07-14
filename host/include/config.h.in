@@ -13,7 +13,6 @@
 #define UHD_VERSION_ABI   ${UHD_VERSION_ABI}
 #define UHD_VERSION_PATCH ${UHD_VERSION_PATCH}
 #cmakedefine ENABLE_USB
-#cmakedefine ENABLE_LIBERIO
 #ifndef UHD_VERSION
 #cmakedefine UHD_VERSION @UHD_VERSION_ADDED@
 #endif

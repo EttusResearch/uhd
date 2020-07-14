@@ -75,7 +75,7 @@ public:
      * from mb_args in the \p xport_info. If yes, it will use that for
      * connections.
      *
-     * \param xport_type The type of xport ("udp", "liberio", ...)
+     * \param xport_type The type of xport ("udp")
      * \param xport_info The available information on this transport. For
      *                   example, if the xport_type is "udp", then this would
      *                   contain the available IP addresses.

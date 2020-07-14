@@ -18,7 +18,6 @@ set(USRP_MPM_TOP_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/e31x_legacy_eeprom.py
     ${CMAKE_CURRENT_SOURCE_DIR}/ethdispatch.py
     ${CMAKE_CURRENT_SOURCE_DIR}/gpsd_iface.py
-    ${CMAKE_CURRENT_SOURCE_DIR}/liberiotable.py
     ${CMAKE_CURRENT_SOURCE_DIR}/mpmlog.py
     ${CMAKE_CURRENT_SOURCE_DIR}/mpmtypes.py
     ${CMAKE_CURRENT_SOURCE_DIR}/mpmutils.py
