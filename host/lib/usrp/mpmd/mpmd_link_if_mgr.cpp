@@ -9,9 +9,6 @@
 #include "mpmd_impl.hpp"
 #include "mpmd_link_if_ctrl_base.hpp"
 #include "mpmd_link_if_ctrl_udp.hpp"
-#ifdef HAVE_LIBERIO
-#    include "mpmd_link_if_ctrl_liberio.hpp"
-#endif
 
 uhd::dict<std::string, std::string> uhd::mpmd::xport::filter_args(
     const uhd::device_addr_t& args, const std::string& prefix)
@@ -104,10 +101,6 @@ private:
             //}
 #endif
             return std::make_unique<mpmd_link_if_ctrl_udp>(_mb_args, xport_info, chdr_w);
-#ifdef HAVE_LIBERIO
-        } else if (link_type == "liberio") {
-            return std::make_unique<mpmd_link_if_ctrl_liberio>(_mb_args, xport_info);
-#endif
         }
         UHD_LOG_WARNING("MPMD", "Cannot instantiate transport medium " << link_type);
         return nullptr;
