@@ -77,7 +77,17 @@ public:
         if (not this->has_key(key))
             return def;
         try {
+            // Avoid Boost warnings from lexical_cast. Some Boost versions use
+            // default-initializers, which can throw off the compiler if they're
+            // not defined.
+#if defined(__clang__) || defined(__GNUC__)
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
             return boost::lexical_cast<T>((*this)[key]);
+#if defined(__clang__) || defined(__GNUC__)
+#    pragma GCC diagnostic pop
+#endif
         } catch (const boost::bad_lexical_cast&) {
             throw std::runtime_error("cannot cast " + key + " = " + (*this)[key]);
         }
