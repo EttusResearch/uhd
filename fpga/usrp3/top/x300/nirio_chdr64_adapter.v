@@ -107,4 +107,4 @@ module nirio_chdr64_adapter #(
     .ctrlport_resp_data  (/* unused */ 32'd0)
   );
 
-endmodule // liberio_chdr64_adapter
+endmodule

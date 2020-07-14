@@ -13,5 +13,4 @@ eth_ipv4_chdr64_adapter.v \
 eth_ipv4_chdr64_dispatch.v \
 eth_interface.v \
 eth_internal.v \
-liberio_chdr64_adapter.v \
 ))
