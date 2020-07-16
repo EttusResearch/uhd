@@ -15,6 +15,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/platform.hpp>
+#include <boost/bind.hpp>
 #include <boost/format.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/make_shared.hpp>

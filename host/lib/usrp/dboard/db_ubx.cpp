@@ -20,6 +20,7 @@
 #include <uhd/utils/static.hpp>
 #include <uhdlib/usrp/common/max287x.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/bind.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>

@@ -6,6 +6,7 @@
 //
 
 #include "xport_benchmarker.hpp"
+#include <boost/bind.hpp>
 #include <chrono>
 #include <thread>
 

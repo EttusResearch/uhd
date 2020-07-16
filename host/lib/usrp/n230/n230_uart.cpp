@@ -12,6 +12,7 @@
 #include <uhd/types/time_spec.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/log.hpp>
+#include <boost/bind.hpp>
 
 using namespace uhd;
 using namespace uhd::transport;

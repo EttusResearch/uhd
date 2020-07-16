@@ -8,6 +8,7 @@
 #include "soft_time_ctrl.hpp"
 #include <uhd/utils/tasks.hpp>
 #include <uhdlib/utils/system_time.hpp>
+#include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/thread/condition_variable.hpp>

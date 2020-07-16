@@ -7,6 +7,7 @@
 
 #include "db_sbx_common.hpp"
 #include <boost/algorithm/string.hpp>
+#include <boost/bind.hpp>
 #include <boost/math/special_functions/round.hpp>
 
 using namespace uhd;

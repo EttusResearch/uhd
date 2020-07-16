@@ -259,6 +259,9 @@ else()
     # disable Boost's use of std::experimental::string_view
     # works for Boost 1.67.0 and newer & doesn't hurt older
     add_definitions(-DBOOST_ASIO_DISABLE_STD_EXPERIMENTAL_STRING_VIEW)
+    # UHD 3.15 still uses global placeholders (_1, _2, ...) from Boost which
+    # need to be enabled explicitly for some Boost versions
+    add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
 
     # Boost 1.70.0's find cmake scripts don't always set the expected
     # return variables. Replicate the commit that fixes that issue here:

@@ -17,6 +17,7 @@
 #include <uhdlib/usrp/common/apply_corrections.hpp>
 #include <uhdlib/usrp/cores/gpio_atr_3000.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time_io.hpp>
 #include <boost/make_shared.hpp>
 #include <bitset>

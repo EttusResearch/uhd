@@ -12,6 +12,7 @@
 #include <uhd/usrp_clock/multi_usrp_clock.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/thread.hpp>
+#include <boost/bind.hpp>
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
 #include <chrono>

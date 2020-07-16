@@ -12,6 +12,7 @@
 #include <uhdlib/usrp/cores/dsp_core_utils.hpp>
 #include <uhdlib/usrp/cores/tx_dsp_core_3000.hpp>
 #include <boost/assign/list_of.hpp>
+#include <boost/bind.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <boost/thread/thread.hpp> //sleep
 #include <algorithm>

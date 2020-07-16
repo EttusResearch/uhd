@@ -15,6 +15,7 @@
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhdlib/usrp/common/apply_corrections.hpp>
+#include <boost/bind.hpp>
 #include <boost/format.hpp>
 #include <chrono>
 #include <cstdio>

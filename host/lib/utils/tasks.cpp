@@ -10,6 +10,7 @@
 #include <uhd/utils/msg_task.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/utils/thread.hpp>
+#include <boost/bind.hpp>
 #include <boost/thread/barrier.hpp>
 #include <boost/thread/thread.hpp>
 #include <atomic>

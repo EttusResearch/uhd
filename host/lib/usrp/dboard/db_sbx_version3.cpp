@@ -9,6 +9,7 @@
 #include "db_sbx_common.hpp"
 #include <uhd/types/tune_request.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/bind.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;

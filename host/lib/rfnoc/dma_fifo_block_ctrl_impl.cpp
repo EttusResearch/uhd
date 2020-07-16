@@ -11,6 +11,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/wb_iface_adapter.hpp>
 #include <uhdlib/usrp/cores/dma_fifo_core_3000.hpp>
+#include <boost/bind.hpp>
 #include <boost/format.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/thread/mutex.hpp>

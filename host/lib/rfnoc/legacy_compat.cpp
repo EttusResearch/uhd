@@ -19,6 +19,7 @@
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/legacy_compat.hpp>
+#include <boost/bind.hpp>
 #include <boost/make_shared.hpp>
 #include <set>
 

@@ -7,6 +7,7 @@
 
 #include <uhd/exception.hpp>
 #include <uhdlib/utils/ihex.hpp>
+#include <boost/bind.hpp>
 #include <boost/format.hpp>
 #include <boost/make_shared.hpp>
 #include <fstream>
