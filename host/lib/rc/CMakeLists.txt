@@ -10,3 +10,4 @@ cmrc_add_resource_library(uhd-resources
     NAMESPACE rc
     cal/test.cal
 )
+set_property(TARGET uhd-resources PROPERTY POSITION_INDEPENDENT_CODE ON)
