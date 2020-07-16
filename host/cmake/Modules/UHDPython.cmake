@@ -6,6 +6,14 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
+if (POLICY CMP0094)
+  # See https://cmake.org/cmake/help/v3.15/policy/CMP0094.html
+  # set Python3_FIND_STRATEGY to LOCATION - this ensures that Python from
+  # sysroot is used first when cross-compiling
+  # note: policy CMP0094 is available starting with CMake 3.15
+  cmake_policy(SET CMP0094 NEW)
+endif()
+
 if(NOT DEFINED INCLUDED_UHD_PYTHON_CMAKE)
 set(INCLUDED_UHD_PYTHON_CMAKE TRUE)
 
