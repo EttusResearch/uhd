@@ -4,7 +4,7 @@ set(DISSECTOR_SRC
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-rfnoc.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/../../../../host/lib/exception.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/../../../../host/lib/rfnoc/chdr_types.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/../../../../host/lib/rfnoc/chdr_packet.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/../../../../host/lib/rfnoc/chdr_packet_writer.cpp
 )
 
 set(PLUGIN_FILES

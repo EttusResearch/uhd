@@ -25,7 +25,7 @@ extern "C" {
 #include <iostream>
 
 #include "../../../../host/lib/usrp/x300/x300_fw_common.h"
-#include <uhdlib/rfnoc/chdr_packet.hpp>
+#include <uhdlib/rfnoc/chdr_packet_writer.hpp>
 
 constexpr unsigned int RFNOC_PORT = X300_VITA_UDP_PORT;
 static const uhd::rfnoc::chdr::chdr_packet_factory pkt_factory(uhd::rfnoc::CHDR_W_64, uhd::ENDIANNESS_LITTLE);
