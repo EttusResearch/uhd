@@ -4,87 +4,141 @@
 
 \section linux_rio Linux NI RIO Installation and Usage
 
+\subsection linux_overview Overview
+
+UHD can communicate with USRP X300 / X310 devices using the PCIe transport
+connection. The ni-usrp-rio package in the NI Linux Device Drivers repository
+includes the infrastructure to enable this functionality. This package is only
+intended for UHD PCIe transport support. This does not include NI-USRP API support
+on Linux.
+
 \subsection linux_requirements Requirements
 
 In order to use the PCIe transport connection on the USRP X300 / X310 devices,
 you must install the NI USRP RIO driver stack. These include kernel modules
-which must be loaded.
-
-Your kernel version must be supported by the kernel modules. Only 64-bit kernels
-are supported.
-
-<b>Currently, the latest supported kernel version is 4.2.x.</b>
+which are loaded using DKMS. Kernel headers are required to build these
+modules. Only x86_64/AMD64 kernels are supported.
 
 \subsection linux_installation Installing the Drivers in Linux
 
-The NI USRP RIO installer can be found <a
-href=http://files.ettus.com/binaries/niusrprio/niusrprio-installer-18.0.0.tar.gz>here</a>.
+The NI Linux Device Driver repository can be found at <a
+href=https://www.ni.com/en-us/support/downloads/drivers/download.ni-linux-device-drivers.html>NI Linux Device Drivers</a>.
 
-Download the installer and extract it with the following command:
+Note: This guide was written for the NI Linux Device Drivers 2020 release.
 
-    tar zxf niusrprio-installer-18.0.0.tar.gz
+<b>Download the corresponding repository rpm or deb for your platform.</b>
 
-The files will be extracted into a directory called <b>niusrprio-installer</b>.
+For Fedora 31, download the EL8 repository.
 
-To install the NI USRPRIO kernel modules and RPC server, run the following
-command:
+For Ubuntu 18.04, download the Bionic repository.
 
-    sudo niusrprio-installer/INSTALL
+<b>Install the repository rpm or deb:</b>
+    
+Fedora
 
-Select 'y' for each prompt, and the script will install all necessary
-components.  This script will automatically load all necessary kernel modules
-for the duration of the session.
+    rpm -i {ni drivers repository}.rpm
+
+Ubuntu
+
+    dpkg -i {ni drivers repository}.deb
+
+<b>Update package information:</b>
+
+Fedora
+
+    dnf check-update
+Ubuntu
+
+    apt update
+
+<b>Install kernel-headers:</b>
+
+Fedora
+
+    dnf install kernel-devel
+
+Ubuntu
+
+    apt install linux-headers-$(uname -r)
+
+Note: You must ensure that the kernel header version is the same as the system kernel version.
+You can check the system kernel version by running:
+
+    uname -r
+
+<b>Install ni-usrp-rio:</b>
+
+Fedora
+
+    dnf install ni-usrp-rio
+
+Ubuntu
+
+    apt install ni-usrp-rio
+
+<b>Build kernel modules using DKMS:</b>
+
+    dkms autoinstall
+
+If you run into build errors, ensure the kernel headers are installed for
+your current kernel.
+
+<b>Reboot:</b>
+
+    reboot
+
+<b>Run UHD application:</b>
+
+At this point, the connected PCIe device should be visible from UHD. To verify this run:
+
+    uhd_find_devices
+or
+
+    uhd_usrp_probe
 
 \subsection linux_enabling Enabling and Disabling Usage
 
-Once everything is installed, run the following commands to enable use of the
-X300/X310 over PCI Express:
+The package installers automatically starts the niusrpriorpc service on boot. This service is required to
+communicate with UHD.
 
-    sudo /usr/local/bin/niusrprio_pcie start
+To start the service:
 
-To stop these processes, run the following command:
+    systemctl start niusrpriorpc.service
 
-    sudo /usr/local/bin/niusrprio_pcie stop
+To stop the service:
 
-To check if the kernel modules are loaded and if the RPC server is running, run
-the following command:
+    systemctl stop niusrpriorpc.service
 
-    /usr/local/bin/niusrprio_pcie status
+To disable the service on boot:
 
-<b>NOTE:</b> niusrprio_pcie start does not run when the host system is booted.
-If you would like the USRP PCIe device to be available automatically after
-a system restart, please create an init.d script that runs niusrprio_pcie start.
+    systemctl disable niusrpriorpc.service
+
+To reenable the service on boot:
+
+    systemctl enable niusrpriorpc.service
 
 \subsection linux_swapping Hot-Plugging and Power-Cycling
 
 The USRP X3x0, NI USRP-294x and NI USRP-295x devices <b>cannot</b> be hot-swapped when connected over PCI Express.
-Unplugging the PCI Express connection or powering the device should be done only after disabling the device or
-powering off the host computer.
-
-<b>WARNING:</b> If the device is unplugged without running the `niusrprio_pcie stop` command, the system could become unstable.
+Unplugging the PCI Express connection or powering the device should be done only after powering off the host computer.
 
 \subsection linux_upgrades Upgrading Kernels
 
-The NI USRPRIO kernel modules are built for a specific kernel version.  If the
-kernel version is changed, the modules must be rebuilt for the current kernel.
-The `niusrprio_pcie start` command checks for the necessary modules and rebuilds
-them if necessary.
+DKMS will automatically rebuild the kernel modules when updating kernels. Ensure that the
+appropriate kernel headers are installed when updating kernel versions.
 
-If it ever becomes necessary to rebuild the modules manually, run the following:
+\subsection linux_uninstalling Uninstalling the Driver in Linux
 
-    sudo /usr/local/bin/niusrprio_pcie stop 
-    sudo /usr/local/bin/updateNIDrivers --no-prompt 
-    sudo /usr/local/bin/niusrprio_pcie start
+To uninstall ni-usrp-rio, run the following commands:
 
-\subsection linux_uninstalling Uninstalling in Linux
+Fedora:
 
-To uninstall the NI USRP RIO kernel modules and RPC server, run the following
-command:
+    dnf remove ni-usrp-rio
 
-    sudo /usr/local/bin/niusrprio_uninstall
-
-Select y at the prompt, and the script will uninstall all installed components.
-
+Ubuntu:
+ 
+    apt remove ni-usrp-rio
+    apt autoremove
 
 \section windows_rio Windows NI RIO Installation and Usage
 
