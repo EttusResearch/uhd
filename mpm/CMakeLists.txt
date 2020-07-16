@@ -19,23 +19,18 @@ endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
 list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake/Modules)
 set(UHD_HOST_ROOT ${CMAKE_SOURCE_DIR}/../host)
+list(INSERT CMAKE_MODULE_PATH 0 ${UHD_HOST_ROOT}/cmake/Modules)
 ########################################################################
 # Setup Python API
 ########################################################################
+
 # We don't need to support older versions of Python, since we will always
 # deploy this on devices where we control the Python version.
 # MPM might work with future versions of Python, but we make no guarantees.
-set(MPM_PYTHON_VERSION 3.5)
+set(PYTHON_MIN_VERSION 3.5)
 
-# This variable is a helper for the find_package() commands below, and only
-# takes effect if the build is happening on a system where the FindPython*.cmake
-# files are older than ${MPM_PYTHON_VERSION}, which is usually not the case.
-set(PYTHON_ADDITIONAL_VERSIONS ${MPM_PYTHON_VERSION})
-find_package(PythonInterp ${MPM_PYTHON_VERSION} REQUIRED)
-find_package(PythonLibs ${MPM_PYTHON_VERSION} REQUIRED)
-# Now, we can also include CMake modules from UHD:
-list(INSERT CMAKE_MODULE_PATH 0 ${UHD_HOST_ROOT}/cmake/Modules)
-
+# search the Python interpreter, modules and include directories
+include(UHDPython)
 
 ########################################################################
 # Version Information
