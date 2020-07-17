@@ -251,6 +251,9 @@ module e31x (
   wire        s_axis_dma_tready;
   wire        s_axis_dma_tvalid;
 
+  //Misc
+  wire [15:0] device_id;
+
   /////////////////////////////////////////////////////////////////////
   //
   // Resets:
@@ -923,7 +926,8 @@ module e31x (
     .dboard_status(dboard_status),
     .xadc_readback(32'h0), //Unused
     .fp_gpio_ctrl(), //Unused
-    .dboard_ctrl(dboard_ctrl)
+    .dboard_ctrl(dboard_ctrl),
+    .device_id(device_id)
   );
 
   /////////////////////////////////////////////////////////////////////
