@@ -330,12 +330,12 @@ module e31x (
 
     // DMA
     .s_axis_dma_tdata(),
-    .s_axis_dma_tdest(),
+    .s_axis_dma_tkeep(),
     .s_axis_dma_tlast(),
     .s_axis_dma_tready(),
     .s_axis_dma_tvalid(1'b0),
     .m_axis_dma_tdata(),
-    .m_axis_dma_tuser(),
+    .m_axis_dma_tkeep(),
     .m_axis_dma_tlast(),
     .m_axis_dma_tready(1'b1),
     .m_axis_dma_tvalid()
