@@ -8,9 +8,7 @@
 // Module: e31x_core
 // Description:
 //  - Motherboard Registers
-//  - Crossbar
-//  - Noc Block Radio
-//  - Noc Block Dram Fifo
+//  - RFNoC Image Core + Blocks
 //  - Radio Front End control
 //
 /////////////////////////////////////////////////////////////////////

@@ -130,7 +130,7 @@ module e31x (
   output        TCXO_DAC_SDIN,
   input         TCXO_CLK,
 
-  // gpios, change to inout somehow
+  // Internal GPIOs (INT0)
   inout [5:0]   PL_GPIO
 );
 
@@ -170,7 +170,9 @@ module e31x (
 
   //ETH DMA
   wire        m_axi_eth_internal_arvalid;
+  wire        m_axi_eth_internal_arready;
   wire        m_axi_eth_internal_awvalid;
+  wire        m_axi_eth_internal_awready;
   wire        m_axi_eth_internal_bready;
   wire        m_axi_eth_internal_rready;
   wire        m_axi_eth_internal_wvalid;
@@ -181,8 +183,9 @@ module e31x (
   wire        m_axi_eth_internal_rvalid;
   wire        m_axi_eth_internal_wready;
   wire [1:0]  m_axi_eth_internal_bresp;
+  wire        m_axi_eth_internal_bvalid;
   wire [1:0]  m_axi_eth_internal_rresp;
-  wire [31:0] m_axi_eth_internal_rdata;  
+  wire [31:0] m_axi_eth_internal_rdata;
 
   // Crossbar
   wire        m_axi_xbar_arvalid;
@@ -250,6 +253,11 @@ module e31x (
   wire        s_axis_dma_tlast;
   wire        s_axis_dma_tready;
   wire        s_axis_dma_tvalid;
+
+  // GPIO
+  wire [63:0] ps_gpio_in;
+  wire [63:0] ps_gpio_out;
+  wire [63:0] ps_gpio_tri;
 
   //Misc
   wire [15:0] device_id;
@@ -461,10 +469,6 @@ module e31x (
   // PS Connections
   //
   //////////////////////////////////////////////////////////////////////
-
-  wire [63:0] ps_gpio_in;
-  wire [63:0] ps_gpio_out;
-  wire [63:0] ps_gpio_tri;
 
   e31x_ps_bd e31x_ps_bd_inst (
 
@@ -815,12 +819,9 @@ module e31x (
 
   /////////////////////////////////////////////////////////////////////
   //
-  // E320 Core:
-  //   - xbar
-  //   - Radio
-  //   - DMA
-  //   - DRAM
-  //   - CEs
+  // E310 Core:
+  //   - RFNoC Image Core (incl. radio, RFNoC blocks, etc.)
+  //   - Other RFNoC controls
   //
   //////////////////////////////////////////////////////////////////////
 
