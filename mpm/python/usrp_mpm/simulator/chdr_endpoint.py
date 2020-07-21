@@ -15,7 +15,6 @@ import select
 from uhd.chdr import ChdrPacket, ChdrWidth
 from .rfnoc_graph import XbarNode, XportNode, StreamEndpointNode, RFNoCGraph, NodeType
 from .chdr_stream import SendWrapper, ChdrOutputStream, ChdrInputStream, SelectableQueue
-from .sample_source import NullSamples
 
 CHDR_W = ChdrWidth.W64
 
@@ -25,14 +24,13 @@ class ChdrEndpoint:
     traffic to the appropriate destination, and responding to said
     traffic.
 
-    The extra_args parameter is passed in from the periph_manager, and
-    coresponds to the --default_args flag of usrp_hwd.py on the
-    command line
+    The config parameter is a Config object (see simulator/config.py)
     """
-    def __init__(self, log, extra_args):
+    def __init__(self, log, config):
         self.log = log.getChild("ChdrEndpoint")
-        self.source_gen = NullSamples
-        self.sink_gen = NullSamples
+        self.config = config
+        self.source_gen = config.source_gen
+        self.sink_gen = config.sink_gen
         self.xport_map = {}
 
         self.send_queue = SelectableQueue()

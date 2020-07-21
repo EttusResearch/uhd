@@ -8,7 +8,6 @@ This module contains the interface for providing data to a simulator
 stream and receiving data from a simulator stream.
 """
 
-#TODO: This is currently unused, as the cli is largely incomplete
 sources = {}
 sinks = {}
 

@@ -17,6 +17,7 @@ from usrp_mpm.rpc_server import no_claim
 from usrp_mpm.periph_manager import PeriphManagerBase
 from usrp_mpm.simulator.sim_dboard_catalina import SimulatedCatalinaDboard
 from usrp_mpm.simulator.chdr_endpoint import ChdrEndpoint
+from usrp_mpm.simulator.config import Config
 
 CLOCK_SOURCE_INTERNAL = "internal"
 
@@ -81,9 +82,17 @@ class sim(PeriphManagerBase):
     ###########################################################################
     def __init__(self, args):
         super().__init__()
+        if 'config' in args:
+            config_path = args['config']
+            self.log.info("Loading config from {}".format(config_path))
+            self.config = Config.from_path(config_path)
+        else:
+            self.log.warn("No config specified, using default")
+            self.config = Config.default()
+
         self.device_id = 1
 
-        self.chdr_endpoint = ChdrEndpoint(self.log, args)
+        self.chdr_endpoint = ChdrEndpoint(self.log, self.config)
 
         # Unlike the real hardware drivers, if there is an exception here,
         # we just crash. No use missing an error when testing.
