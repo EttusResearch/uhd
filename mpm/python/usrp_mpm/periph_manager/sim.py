@@ -16,6 +16,7 @@ from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.rpc_server import no_claim
 from usrp_mpm.periph_manager import PeriphManagerBase
 from usrp_mpm.simulator.sim_dboard_catalina import SimulatedCatalinaDboard
+from usrp_mpm.simulator.chdr_sniffer import ChdrSniffer
 
 CLOCK_SOURCE_INTERNAL = "internal"
 
@@ -67,8 +68,6 @@ class sim(PeriphManagerBase):
     """
     #########################################################################
     # Overridables
-    #
-    # See PeriphManagerBase for documentation on these fields
     #########################################################################
     description = "E320-Series Device - SIMULATED"
     pids = {0xE320: 'e320'}
@@ -84,6 +83,8 @@ class sim(PeriphManagerBase):
         super().__init__()
         self.device_id = 1
 
+        self.chdr_sniffer = ChdrSniffer(self.log, args)
+
         # Unlike the real hardware drivers, if there is an exception here,
         # we just crash. No use missing an error when testing.
         self._init_peripherals(args)
@@ -91,8 +92,9 @@ class sim(PeriphManagerBase):
         if not args.get('skip_boot_init', False):
             self.init(args)
 
-    def _simulator_frequency(self, freq):
-        self.log.debug("Setting Simulator Sample Frequency to {}".format(freq))
+    def _simulator_sample_rate(self, freq):
+        self.log.debug("Setting Simulator Sample Rate to {}".format(freq))
+        self.chdr_endpoint.set_sample_rate(freq)
 
     @classmethod
     def generate_device_info(cls, eeprom_md, mboard_info, dboard_infos):
@@ -148,7 +150,8 @@ class sim(PeriphManagerBase):
         self.log.debug("Device info: {}".format(self.device_info))
 
     def _init_dboards(self, dboard_infos, override_dboard_pids, default_args):
-        self.dboards.append(SimulatedCatalinaDboard(E320_DBOARD_SLOT_IDX, self._simulator_frequency))
+        self.dboards.append(SimulatedCatalinaDboard(
+            E320_DBOARD_SLOT_IDX, self._simulator_sample_rate))
         self.log.info("Found %d daughterboard(s).", len(self.dboards))
 
     ###########################################################################
