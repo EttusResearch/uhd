@@ -7,10 +7,12 @@
 dboards module __init__.py
 """
 from .base import DboardManagerBase
-from .magnesium import Magnesium
-from .rhodium import Rhodium
-from .neon import Neon
-from .e31x_db import E31x_db
-from .eiscat import EISCAT
-from .test import test
-from .unknown import unknown
+from usrp_mpm import __simulated__
+if not __simulated__:
+    from .magnesium import Magnesium
+    from .rhodium import Rhodium
+    from .neon import Neon
+    from .e31x_db import E31x_db
+    from .eiscat import EISCAT
+    from .test import test
+    from .unknown import unknown

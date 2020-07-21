@@ -6,9 +6,8 @@
 """
 usrp simulation module
 
-This module is used to emulate a usrp when running on a standard
-computer. You can build mpm in this configuration by using the cmake
-flag -DMPM_DEVICE=sim
+This module is used to emulate simulated devices. You can build mpm in this
+configuration by using the cmake flag -DMPM_DEVICE=sim
 """
 
 from pyroute2 import IPRoute
@@ -16,6 +15,7 @@ from usrp_mpm.xports import XportMgrUDP
 from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.rpc_server import no_claim
 from usrp_mpm.periph_manager import PeriphManagerBase
+from usrp_mpm.simulator.sim_dboard_catalina import SimulatedCatalinaDboard
 
 CLOCK_SOURCE_INTERNAL = "internal"
 
@@ -91,6 +91,9 @@ class sim(PeriphManagerBase):
         if not args.get('skip_boot_init', False):
             self.init(args)
 
+    def _simulator_frequency(self, freq):
+        self.log.debug("Setting Simulator Sample Frequency to {}".format(freq))
+
     @classmethod
     def generate_device_info(cls, eeprom_md, mboard_info, dboard_infos):
         """
@@ -143,6 +146,10 @@ class sim(PeriphManagerBase):
 
         # Init complete.
         self.log.debug("Device info: {}".format(self.device_info))
+
+    def _init_dboards(self, dboard_infos, override_dboard_pids, default_args):
+        self.dboards.append(SimulatedCatalinaDboard(E320_DBOARD_SLOT_IDX, self._simulator_frequency))
+        self.log.info("Found %d daughterboard(s).", len(self.dboards))
 
     ###########################################################################
     # Device info
@@ -218,10 +225,6 @@ class sim(PeriphManagerBase):
     #######################################################################
     # Timekeeper API
     #######################################################################
-    def get_master_clock_rate(self):
-        """ Return the master clock rate set during init """
-        return self._master_clock_rate
-
     def get_num_timekeepers(self):
         """
         Return the number of timekeepers
