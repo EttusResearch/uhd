@@ -316,6 +316,10 @@ UHD_ADD_RFNOC_BLOCK_TEST(
 )
 
 UHD_ADD_RFNOC_BLOCK_TEST(
+    TARGET siggen_block_test.cpp
+)
+
+UHD_ADD_RFNOC_BLOCK_TEST(
     TARGET split_stream_block_test.cpp
 )
 
