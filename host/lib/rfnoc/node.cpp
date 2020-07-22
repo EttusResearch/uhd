@@ -48,11 +48,28 @@ std::vector<std::string> node_t::get_property_ids() const
 void node_t::set_properties(const uhd::device_addr_t& props, const size_t instance)
 {
     for (const auto& key : props.keys()) {
+        std::string local_key  = key;
+        size_t local_instance  = instance;
+        const size_t colon_pos = key.find(':');
+        if (colon_pos != std::string::npos) {
+            // Extract the property ID and instance
+            local_key                 = key.substr(0, colon_pos);
+            std::string instance_part = key.substr(colon_pos + 1);
+            try {
+                local_instance = std::stoi(instance_part);
+            } catch (...) {
+                // If no number, or an invalid number is specified after the
+                // colon, throw a value_error.
+                throw uhd::value_error("Property id `" + local_key
+                                       + "' contains a malformed instance override!");
+            }
+        }
+
         property_base_t* prop_ref =
-            _find_property({res_source_info::USER, instance}, key);
+            _find_property({res_source_info::USER, local_instance}, local_key);
         if (!prop_ref) {
             RFNOC_LOG_WARNING("set_properties() cannot set property `"
-                              << key << "': No such property.");
+                              << local_key << "': No such property.");
             continue;
         }
         auto prop_access = _request_property_access(prop_ref, property_base_t::RW);

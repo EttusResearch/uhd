@@ -21,6 +21,8 @@ public:
             std::cout << "Calling clean callback for user prop" << std::endl;
             this->user_prop_cb_called = true;
         });
+        register_property(&multi_instance_prop_0);
+        register_property(&multi_instance_prop_1);
         register_property(&_double_prop_in);
         register_property(&_double_prop_out);
 
@@ -80,6 +82,10 @@ private:
         "double_prop", 0.0, {res_source_info::INPUT_EDGE, 0}};
     property_t<double> _double_prop_out{
         "double_prop", 0.0, {res_source_info::OUTPUT_EDGE, 1}};
+    property_t<double> multi_instance_prop_0{
+        "multi_instance_prop", 0.0, {res_source_info::USER, 0}};
+    property_t<double> multi_instance_prop_1{
+        "multi_instance_prop", 0.0, {res_source_info::USER, 1}};
 
     const size_t _num_input_ports;
     const size_t _num_output_ports;
@@ -102,7 +108,7 @@ BOOST_AUTO_TEST_CASE(test_node_prop_access)
     BOOST_CHECK(TN1.get_unique_id() != TN2.get_unique_id());
 
     auto user_prop_ids = TN1.get_property_ids();
-    BOOST_REQUIRE_EQUAL(user_prop_ids.size(), 1);
+    BOOST_REQUIRE_EQUAL(user_prop_ids.size(), 3);
     BOOST_CHECK_EQUAL(user_prop_ids[0], "double_prop");
 
     BOOST_REQUIRE_THROW(TN1.get_property<int>("nonexistant_prop"), uhd::lookup_error);
@@ -112,6 +118,20 @@ BOOST_AUTO_TEST_CASE(test_node_prop_access)
     BOOST_REQUIRE_THROW(TN1.get_property<double>("double_prop", 5), uhd::lookup_error);
 
     BOOST_CHECK_EQUAL(TN1.get_property<double>("double_prop"), 0.0);
+
+    // Check that set_properties() works with the override specification
+    TN1.set_properties(
+        uhd::device_addr_t("multi_instance_prop:0=1.234,multi_instance_prop:1=-5.678"),
+        5);
+    BOOST_CHECK_EQUAL(TN1.get_property<double>("multi_instance_prop", 0), 1.234);
+    BOOST_CHECK_EQUAL(TN1.get_property<double>("multi_instance_prop", 1), -5.678);
+
+    // And check that it throws an exception with a bad override specification
+    BOOST_REQUIRE_THROW(
+        TN1.set_properties(uhd::device_addr_t("multi_instance_prop:")), uhd::value_error);
+    BOOST_REQUIRE_THROW(
+        TN1.set_properties(uhd::device_addr_t("multi_instance_prop:chicken")),
+        uhd::value_error);
 
     BOOST_REQUIRE_THROW(TN1.set_property<int>("nonexistant_prop", 5), uhd::lookup_error);
     // If this next test fails, RTTI is not available. There might be cases when
@@ -131,8 +151,13 @@ BOOST_AUTO_TEST_CASE(test_node_accessor)
         return (prop->get_src_info().type == res_source_info::USER);
     });
 
-    BOOST_CHECK_EQUAL(user_props.size(), 1);
-    BOOST_CHECK_EQUAL((*user_props.begin())->get_id(), "double_prop");
+    BOOST_CHECK_EQUAL(user_props.size(), 3);
+    std::map<std::string, int> prop_count;
+    for (const auto& prop : user_props) {
+        prop_count[prop->get_id()]++;
+    }
+    BOOST_CHECK_EQUAL(prop_count["double_prop"], 1);
+    BOOST_CHECK_EQUAL(prop_count["multi_instance_prop"], 2);
     BOOST_CHECK((*user_props.begin())->get_src_info().type == res_source_info::USER);
 
     BOOST_CHECK(!TN1.user_prop_cb_called);

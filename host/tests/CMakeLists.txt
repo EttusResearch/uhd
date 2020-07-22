@@ -46,6 +46,7 @@ set(test_sources
     narrow_cast_test.cpp
     property_test.cpp
     ranges_test.cpp
+    rfnoc_node_test.cpp
     scope_exit_test.cpp
     sensors_test.cpp
     soft_reg_test.cpp

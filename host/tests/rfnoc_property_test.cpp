@@ -65,6 +65,19 @@ BOOST_AUTO_TEST_CASE(test_get_set)
     BOOST_CHECK(prop_i.is_dirty());
 }
 
+BOOST_AUTO_TEST_CASE(test_valid_names)
+{
+    bool value_error_caught = false;
+    try {
+        property_t<int> prop_i{"int_prop:0", 10, {res_source_info::USER, 0}};
+    } catch(const uhd::value_error& e) {
+        value_error_caught = true;
+    } catch(...) {
+    }
+
+    BOOST_CHECK(value_error_caught);
+}
+
 BOOST_AUTO_TEST_CASE(test_lock)
 {
     prop_accessor_t prop_accessor;

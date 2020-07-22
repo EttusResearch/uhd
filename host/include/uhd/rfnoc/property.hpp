@@ -36,6 +36,9 @@ public:
     property_base_t(const std::string& id, const res_source_info& source_info)
         : _id(id), _source_info(source_info)
     {
+        if(_id.find(':') != std::string::npos) {
+            throw uhd::value_error("Property ID `" + _id + "' contains invalid character!");
+        }
     }
 
     //! Gets the ID (name) of this property

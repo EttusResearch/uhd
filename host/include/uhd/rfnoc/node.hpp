@@ -135,6 +135,27 @@ public:
      *
      * Property resolution happens after all properties have been updated.
      *
+     * This function allows the client to override the \p instance parameter
+     * for each property key/value pair passed in via the \p props parameter.
+     * If the key consists of the property name, followed by a colon (':') and
+     * then a number, the number following the colon is used to determine
+     * which instance of the property this set pertains to, and the \p
+     * instance parameter is ignored for that property. (Note that if the key
+     * does not have the colon and instance number override syntax, then
+     * \p instance is still used to determine which instance of the property
+     * to set. For example, in the following call:
+     *
+     *     node->set_properties("dog=10,cat:2=5,bird:0=0.5", 1)
+     *
+     * instance 1 of node's 'dog' property is set to 10, the 1 coming from the
+     * instance parameter, instance 2 of the node's 'cat' property is set to
+     * 5 due to the override syntax provided in the string, and instance 0 of
+     * the node's 'bird' property is set to 0.5 due to its override.
+     *
+     * If the instance override is malformed, that is, there is no
+     * number following the colon, or the number cannot be parsed as an
+     * integer, a value_error is thrown.
+     *
      * If a key in \p props is not a valid property of this block, a warning is
      * logged, but no error is raised.
      */
