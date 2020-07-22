@@ -45,6 +45,7 @@ UHD_INSTALL(FILES
     null_block_control.hpp
     radio_control.hpp
     split_stream_block_control.hpp
+    switchboard_block_control.hpp
     vector_iir_block_control.hpp
     window_block_control.hpp
 
