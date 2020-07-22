@@ -33,7 +33,7 @@ from usrp_mpm.sys_utils import net
 TIMEOUT_INTERVAL = 5.0 # Seconds before claim expires (default value)
 TOKEN_LEN = 16 # Length of the token string
 # Compatibility number for MPM
-MPM_COMPAT_NUM = (2, 0)
+MPM_COMPAT_NUM = (3, 0)
 
 def no_claim(func):
     " Decorator for functions that require no token check "
