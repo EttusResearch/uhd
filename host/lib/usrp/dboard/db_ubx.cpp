@@ -7,6 +7,7 @@
 /***********************************************************************
  * Included Files and Libraries
  **********************************************************************/
+#include "db_ubx.hpp"
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/types/direction.hpp>
@@ -30,6 +31,7 @@
 
 using namespace uhd;
 using namespace uhd::usrp;
+using namespace uhd::usrp::dboard::ubx;
 
 /***********************************************************************
  * UBX Data Structures
@@ -134,22 +136,6 @@ enum spi_dest_t {
  * UBX Constants
  **********************************************************************/
 #define fMHz (1000000.0)
-static const dboard_id_t UBX_PROTO_V3_TX_ID(0x73);
-static const dboard_id_t UBX_PROTO_V3_RX_ID(0x74);
-static const dboard_id_t UBX_PROTO_V4_TX_ID(0x75);
-static const dboard_id_t UBX_PROTO_V4_RX_ID(0x76);
-static const dboard_id_t UBX_V1_40MHZ_TX_ID(0x77);
-static const dboard_id_t UBX_V1_40MHZ_RX_ID(0x78);
-static const dboard_id_t UBX_V1_160MHZ_TX_ID(0x79);
-static const dboard_id_t UBX_V1_160MHZ_RX_ID(0x7A);
-static const dboard_id_t UBX_V2_40MHZ_TX_ID(0x7B);
-static const dboard_id_t UBX_V2_40MHZ_RX_ID(0x7C);
-static const dboard_id_t UBX_V2_160MHZ_TX_ID(0x7D);
-static const dboard_id_t UBX_V2_160MHZ_RX_ID(0x7E);
-static const dboard_id_t UBX_LP_160MHZ_TX_ID(0x0200);
-static const dboard_id_t UBX_LP_160MHZ_RX_ID(0x0201);
-static const dboard_id_t UBX_TDD_160MHZ_TX_ID(0x0202);
-static const dboard_id_t UBX_TDD_160MHZ_RX_ID(0x0203);
 static const freq_range_t ubx_freq_range(10e6, 6.0e9);
 static const gain_range_t ubx_tx_gain_range(0, 31.5, double(0.5));
 static const gain_range_t ubx_rx_gain_range(0, 31.5, double(0.5));

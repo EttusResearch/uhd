@@ -197,12 +197,11 @@ private:
         if (dev_args.has_key(_dboard_clock_rate.key())) {
             _dboard_clock_rate.parse(dev_args[_dboard_clock_rate.key()]);
         } else {
-            // Some daughterboards may require other rates, but this default
-            // works best for all newer daughterboards (i.e. CBX, WBX, SBX,
-            // UBX, and TwinRX).
+            // This default clock rate works best for most daughterboards (i.e. DBSRX2,
+            // WBX, SBX, CBX, and TwinRX).
             if (_master_clock_rate.get() >= MIN_TICK_RATE
                 && _master_clock_rate.get() <= MAX_TICK_RATE) {
-                _dboard_clock_rate.set(_master_clock_rate.get() / 4);
+                _dboard_clock_rate.set(_master_clock_rate.get() / 2);
             } else {
                 throw uhd::value_error("Can't infer daughterboard clock rate. Specify "
                                        "dboard_clk_rate in the device args.");

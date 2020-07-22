@@ -13,6 +13,7 @@
 #include <uhdlib/usrp/common/adf535x.hpp>
 #include <uhdlib/utils/narrow.hpp>
 #include <chrono>
+#include <cmath>
 #include <thread>
 
 using namespace uhd;
@@ -29,10 +30,9 @@ inline uint32_t bool2bin(bool x)
     return x ? 1 : 0;
 }
 
-const double TWINRX_DESIRED_REFERENCE_FREQ = 50e6;
-const double TWINRX_REV_AB_PFD_FREQ        = 6.25e6;
-const double TWINRX_REV_C_PFD_FREQ         = 12.5e6;
-const double TWINRX_SPI_CLOCK_FREQ         = 3e6;
+const double TWINRX_REV_AB_PFD_FREQ = 6.25e6;
+const double TWINRX_REV_C_PFD_FREQ  = 12.5e6;
+const double TWINRX_SPI_CLOCK_FREQ  = 3e6;
 } // namespace
 
 class twinrx_ctrl_impl : public twinrx_ctrl
@@ -49,22 +49,29 @@ public:
         _spi_config.divider            = uhd::narrow_cast<size_t>(std::ceil(
             _db_iface->get_codec_rate(dboard_iface::UNIT_TX) / TWINRX_SPI_CLOCK_FREQ));
 
+        // Daughterboard clock rates must be a multiple of the pfd frequency
+        if (rx_id == twinrx::TWINRX_REV_C_ID) {
+            if (fmod(_db_iface->get_clock_rate(dboard_iface::UNIT_RX),
+                    TWINRX_REV_C_PFD_FREQ)
+                != 0) {
+                throw uhd::value_error(
+                    str(boost::format(
+                            "TwinRX clock rate %f is not a multiple of the pfd freq %f.")
+                        % _db_iface->get_clock_rate(dboard_iface::UNIT_RX)
+                        % TWINRX_REV_C_PFD_FREQ));
+            }
+        } else {
+            if (fmod(_db_iface->get_clock_rate(dboard_iface::UNIT_RX),
+                    TWINRX_REV_AB_PFD_FREQ)
+                != 0) {
+                throw uhd::value_error(
+                    str(boost::format(
+                            "TwinRX clock rate %f is not a multiple of the pfd freq %f.")
+                        % _db_iface->get_clock_rate(dboard_iface::UNIT_RX)
+                        % TWINRX_REV_AB_PFD_FREQ));
+            }
+        }
         // Initialize dboard clocks
-        bool found_rate = false;
-        for (double rate : _db_iface->get_clock_rates(dboard_iface::UNIT_TX)) {
-            found_rate |=
-                uhd::math::frequencies_are_equal(rate, TWINRX_DESIRED_REFERENCE_FREQ);
-        }
-        for (double rate : _db_iface->get_clock_rates(dboard_iface::UNIT_RX)) {
-            found_rate |=
-                uhd::math::frequencies_are_equal(rate, TWINRX_DESIRED_REFERENCE_FREQ);
-        }
-        if (not found_rate) {
-            throw uhd::runtime_error("TwinRX not supported on this motherboard");
-        }
-        _db_iface->set_clock_rate(dboard_iface::UNIT_TX, TWINRX_DESIRED_REFERENCE_FREQ);
-        _db_iface->set_clock_rate(dboard_iface::UNIT_RX, TWINRX_DESIRED_REFERENCE_FREQ);
-
         _db_iface->set_clock_enabled(dboard_iface::UNIT_TX, true);
         _db_iface->set_clock_enabled(dboard_iface::UNIT_RX, true);
 
@@ -126,7 +133,8 @@ public:
                 _lo1_iface[i]->set_pfd_freq(TWINRX_REV_AB_PFD_FREQ);
             }
             _lo1_iface[i]->set_output_power(adf535x_iface::OUTPUT_POWER_5DBM);
-            _lo1_iface[i]->set_reference_freq(TWINRX_DESIRED_REFERENCE_FREQ);
+            _lo1_iface[i]->set_reference_freq(
+                _db_iface->get_clock_rate(dboard_iface::UNIT_TX));
             _lo1_iface[i]->set_muxout_mode(adf535x_iface::MUXOUT_DLD);
             _lo1_iface[i]->set_frequency(3e9, 1.0e3);
 
@@ -137,7 +145,8 @@ public:
                 });
             _lo2_iface[i]->set_feedback_select(adf435x_iface::FB_SEL_DIVIDED);
             _lo2_iface[i]->set_output_power(adf435x_iface::OUTPUT_POWER_5DBM);
-            _lo2_iface[i]->set_reference_freq(TWINRX_DESIRED_REFERENCE_FREQ);
+            _lo2_iface[i]->set_reference_freq(
+                _db_iface->get_clock_rate(dboard_iface::UNIT_RX));
             _lo2_iface[i]->set_muxout_mode(adf435x_iface::MUXOUT_DLD);
             _lo2_iface[i]->set_tuning_mode(adf435x_iface::TUNING_MODE_LOW_SPUR);
             _lo2_iface[i]->set_prescaler(adf435x_iface::PRESCALER_8_9);
