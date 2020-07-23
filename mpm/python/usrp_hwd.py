@@ -102,10 +102,7 @@ def kill_time(sig, frame):
         proc.terminate()
         log.info("Terminating pid: {0}".format(proc.pid))
     for proc in _PROCESSES:
-        try:
             proc.join()
-        except BlockingSwitchOutError:
-            log.debug("Caught BlockingSwitchOutError for {}".format(str(proc)))
     log.info("System exiting")
     sys.exit(0)
 

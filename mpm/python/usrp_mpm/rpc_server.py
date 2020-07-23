@@ -13,6 +13,8 @@ import copy
 from random import choice
 from string import ascii_letters, digits
 from multiprocessing import Process
+import threading
+import sys
 from gevent.server import StreamServer
 from gevent.pool import Pool
 from gevent import signal
@@ -555,8 +557,17 @@ def _rpc_server_process(shared_state, port, default_args):
         handle=MPMServer(shared_state, default_args),
         spawn=connections)
     # catch signals and stop the stream server
-    signal(signal.SIGTERM, lambda *args: server.stop())
-    signal(signal.SIGINT, lambda *args: server.stop())
+    # Previously, the signal callbacks simply called server.stop()
+    # gevent doesn't like this because server.stop() may block waiting
+    # for greenlets to stop, and signal callbacks are not supposed to block
+    stop_event = threading.Event()
+    def stop_worker():
+        stop_event.wait()
+        server.stop()
+        sys.exit(0)
+    threading.Thread(target=stop_worker, daemon=True).start()
+    signal(signal.SIGTERM, lambda *args: stop_event.set())
+    signal(signal.SIGINT, lambda *args: stop_event.set())
     server.serve_forever()
 
 
