@@ -23,6 +23,7 @@ namespace py = pybind11;
 #include "rfnoc/null_block_control_python.hpp"
 #include "rfnoc/radio_control_python.hpp"
 #include "rfnoc/rfnoc_python.hpp"
+#include "rfnoc/switchboard_block_control_python.hpp"
 #include "rfnoc/vector_iir_block_control_python.hpp"
 #include "rfnoc/window_block_control_python.hpp"
 #include "stream_python.hpp"
@@ -93,6 +94,7 @@ PYBIND11_MODULE(libpyuhd, m)
     export_moving_average_block_control(rfnoc_module);
     export_null_block_control(rfnoc_module);
     export_radio_control(rfnoc_module);
+    export_switchboard_block_control(rfnoc_module);
     export_vector_iir_block_control(rfnoc_module);
     export_window_block_control(rfnoc_module);
 

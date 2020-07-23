@@ -26,5 +26,6 @@ FirFilterBlockControl = lib.rfnoc.fir_filter_block_control
 MovingAverageBlockControl = lib.rfnoc.moving_average_block_control
 NullBlockControl = lib.rfnoc.null_block_control
 RadioControl = lib.rfnoc.radio_control
+SwitchboardBlockControl = lib.rfnoc.switchboard_block_control
 VectorIirBlockControl = lib.rfnoc.vector_iir_block_control
 WindowBlockControl = lib.rfnoc.window_block_control
