@@ -320,6 +320,10 @@ UHD_ADD_RFNOC_BLOCK_TEST(
 )
 
 UHD_ADD_RFNOC_BLOCK_TEST(
+    TARGET switchboard_block_test.cpp
+)
+
+UHD_ADD_RFNOC_BLOCK_TEST(
     TARGET vector_iir_block_test.cpp
 )
 
