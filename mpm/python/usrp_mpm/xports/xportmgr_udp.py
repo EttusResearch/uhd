@@ -209,6 +209,7 @@ class XportMgrUDP:
             self.log.warning(
                 'No internal interface to forward CHDR packets to from {}.'
                     .format(iface))
+            return
 
         int_iface = internal_ifaces[0]
         internal_ip_addr = self.get_fpga_internal_ip_address(int_iface)
