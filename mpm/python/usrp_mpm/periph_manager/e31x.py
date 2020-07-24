@@ -31,7 +31,7 @@ E310_DEFAULT_CLOCK_SOURCE = 'internal'
 E310_DEFAULT_TIME_SOURCE = 'internal'
 E310_DEFAULT_ENABLE_FPGPIO = True
 E310_DEFAULT_DONT_RELOAD_FPGA = False # False means idle image gets reloaded
-E310_FPGA_COMPAT = (5, 0)
+E310_FPGA_COMPAT = (6, 0)
 E310_DBOARD_SLOT_IDX = 0
 E310_GPIO_SRC_PS = "PS"
 # We use the index positions of RFA and RFB to map between name and radio index
