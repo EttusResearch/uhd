@@ -1,0 +1,41 @@
+schema: rfnoc_modtool_args
+module_name: switchboard
+version: 1.0
+rfnoc_version: 1.0
+chdr_width: 64
+noc_id: 0xBE110000
+
+parameters:
+  NUM_INPUTS: 1
+  NUM_OUTPUTS: 1 
+
+clocks:
+  - name: rfnoc_chdr
+    freq: "[]"
+  - name: rfnoc_ctrl
+    freq: "[]"
+
+control:
+  sw_iface: nocscript
+  fpga_iface: ctrlport
+  interface_direction: slave
+  fifo_depth: 32
+  clk_domain: rfnoc_chdr
+  ctrlport:
+    byte_mode: False
+    timed: False
+    has_status: False
+
+data:
+  fpga_iface: axis_chdr
+  clk_domain: rfnoc_chdr
+  inputs:
+    in:
+      num_ports: NUM_INPUTS
+  outputs:
+    out:
+      num_ports: NUM_OUTPUTS
+
+registers:
+
+properties:
