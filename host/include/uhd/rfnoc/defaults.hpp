@@ -82,6 +82,7 @@ static const noc_id_t FIR_FILTER_BLOCK     = 0xF1120000;
 static const noc_id_t FOSPHOR_BLOCK        = 0x666F0000;
 static const noc_id_t LOGPWR_BLOCK         = 0x4C500000;
 static const noc_id_t MOVING_AVERAGE_BLOCK = 0xAAD20000;
+static const noc_id_t SIGGEN_BLOCK         = 0x51663110;
 static const noc_id_t SPLIT_STREAM_BLOCK   = 0x57570000;
 static const noc_id_t SWITCHBOARD_BLOCK    = 0xBE110000;
 static const noc_id_t RADIO_BLOCK          = 0x12AD1000;

@@ -52,6 +52,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/moving_average_block_control.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/null_block_control.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/radio_control_impl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/siggen_block_control.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/split_stream_block_control.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/switchboard_block_control.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/vector_iir_block_control.cpp
