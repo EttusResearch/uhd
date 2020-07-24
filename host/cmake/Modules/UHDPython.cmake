@@ -81,9 +81,22 @@ message(STATUS "Override with: -DPYTHON_EXECUTABLE=<path-to-python>")
 
 #this allows the user to override RUNTIME_PYTHON_EXECUTABLE
 if(NOT RUNTIME_PYTHON_EXECUTABLE)
-    #default to the buildtime interpreter
-    set(RUNTIME_PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE})
-    set(RUNTIME_PYTHON_VERSION ${PYTHON_VERSION})
+    if(CMAKE_CROSSCOMPILING)
+        message(STATUS "Cross compiling, setting python runtime to /usr/bin/python3")
+        message(STATUS "and interpreter to min. required version ${PYTHON_MIN_VERSION}")
+        message(STATUS "If this is not what you want, please set RUNTIME_PYTHON_EXECUTABLE")
+        message(STATUS "and RUNTIME_PYTHON_VERSION manually")
+        set(RUNTIME_PYTHON_EXECUTABLE "/usr/bin/python3")
+        set(RUNTIME_PYTHON_VERSION ${PYTHON_MIN_VERSION})
+        set(EXACT_ARGUMENT "")
+    else(CMAKE_CROSSCOMPILING)
+        #default to the buildtime interpreter
+        set(RUNTIME_PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE})
+        set(RUNTIME_PYTHON_VERSION ${PYTHON_VERSION})
+        set(EXACT_ARGUMENT "EXACT")
+    endif(CMAKE_CROSSCOMPILING)
+else(NOT RUNTIME_PYTHON_EXECUTABLE)
+    set(EXACT_ARGUMENT "EXACT")
 endif(NOT RUNTIME_PYTHON_EXECUTABLE)
 
 if(NOT RUNTIME_PYTHON_VERSION)
@@ -144,11 +157,11 @@ endmacro(PYTHON_CHECK_MODULE)
 # - See if Python3_LIBRARIES is already set (or Python2_LIBRARIES)
 if(NOT PYTHON_LIBRARIES OR NOT PYTHON_INCLUDE_DIRS)
     message(STATUS "Finding Python Libraries...")
-    find_package(PythonLibs ${RUNTIME_PYTHON_VERSION} EXACT QUIET)
-    if(RUNTIME_PYTHON_VERSION VERSION_LESS 3)
+    find_package(PythonLibs ${RUNTIME_PYTHON_VERSION} ${EXACT_ARGUMENT} QUIET)
+    if(NOT RUNTIME_PYTHON_VERSION VERSION_LESS 3)
         if(NOT PYTHON_LIBRARIES OR NOT PYTHON_INCLUDE_DIRS)
             find_package(Python3 ${RUNTIME_PYTHON_VERSION}
-                EXACT
+                ${EXACT_ARGUMENT}
                 QUIET
                 COMPONENTS Interpreter Development)
             if(Python3_Development_FOUND)
@@ -156,10 +169,10 @@ if(NOT PYTHON_LIBRARIES OR NOT PYTHON_INCLUDE_DIRS)
                 set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS})
             endif(Python3_Development_FOUND)
         endif(NOT PYTHON_LIBRARIES OR NOT PYTHON_INCLUDE_DIRS)
-    else(RUNTIME_PYTHON_VERSION VERSION_LESS 3)
+    else(NOT RUNTIME_PYTHON_VERSION VERSION_LESS 3)
         if(NOT PYTHON_LIBRARIES OR NOT PYTHON_INCLUDE_DIRS)
             find_package(Python2 ${RUNTIME_PYTHON_VERSION}
-                EXACT
+                ${EXACT_ARGUMENT}
                 QUIET
                 COMPONENTS Interpreter Development)
             if(Python2_Development_FOUND)
@@ -167,7 +180,7 @@ if(NOT PYTHON_LIBRARIES OR NOT PYTHON_INCLUDE_DIRS)
                 set(PYTHON_INCLUDE_DIRS ${Python2_INCLUDE_DIRS})
             endif(Python2_Development_FOUND)
         endif(NOT PYTHON_LIBRARIES OR NOT PYTHON_INCLUDE_DIRS)
-    endif(RUNTIME_PYTHON_VERSION VERSION_LESS 3)
+    endif(NOT RUNTIME_PYTHON_VERSION VERSION_LESS 3)
     if(NOT PYTHON_LIBRARIES OR NOT PYTHON_INCLUDE_DIRS)
         message(STATUS "Could not find Python Libraries.")
     endif(NOT PYTHON_LIBRARIES OR NOT PYTHON_INCLUDE_DIRS)
