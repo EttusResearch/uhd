@@ -195,6 +195,9 @@ class ChdrOutputStream:
             if num_samps_left == 0:
                 break
             header.seq_num = seq_num
+            timestamp = self.stream_spec.init_timestamp  \
+                if seq_num == 0 and self.stream_spec.is_timed \
+                else None
             packet = ChdrPacket(self.chdr_w, header, bytes(0))
             packet_samples = self.stream_spec.packet_samples
             if num_samps_left is not None:

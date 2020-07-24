@@ -26,6 +26,8 @@ REGS_PER_PORT = 16
 REG_RX_MAX_WORDS_PER_PKT = 0x28
 REG_RX_CMD_NUM_WORDS_HI = 0x1C
 REG_RX_CMD_NUM_WORDS_LO = 0x18
+REG_RX_CMD_TIME_LO = 0x20
+REG_RX_CMD_TIME_HI = 0x24
 REG_RX_CMD = 0x14
 
 RX_CMD_CONTINUOUS = 0x2
@@ -207,10 +209,14 @@ class NocBlockRegs:
             self.get_stream_spec().set_num_words_hi(value)
         elif reg == REG_RX_CMD_NUM_WORDS_LO:
             self.get_stream_spec().set_num_words_lo(value)
+        elif reg == REG_RX_CMD_TIME_HI:
+            self.get_stream_spec().set_timestamp_hi(value)
+        elif reg == REG_RX_CMD_TIME_LO:
+            self.get_stream_spec().set_timestamp_lo(value)
         elif reg == REG_RX_CMD:
             if value & (1 << 31) != 0:
-                self.log.warn("Timed Streams are not supported. Starting immediately")
                 value = value & ~(1 << 31) # Clear the flag
+                self.get_stream_spec().is_timed = True
             if value == RX_CMD_STOP:
                 sep_block_id = self.resolve_ep_towards_outputs((self.get_radio_port(), chan))
                 self.stop_tx_stream(sep_block_id)
