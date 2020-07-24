@@ -24,14 +24,14 @@ The X300 series will create subdevices 0 and 1 for each BasicRX or LFRX board.
 The default is to make a channel for each subdevice. That can be controlled by
 setting the subdev spec:
 
-~~~~{.cpp}
+~~~{.cpp}
 auto usrp = uhd::usrp::multi_usrp::make("type=x300");
 usrp->set_rx_subdev_spec("A:1"); // Only 1 channel using subdevice 1 on Radio A
 ~~~
 
 The antenna mode is selected for each channel using the antenna API:
 
-~~~~{.cpp}
+~~~{.cpp}
 auto usrp = uhd::usrp::multi_usrp::make("type=x300");
 usrp->set_rx_antenna("A", 0); // Disable RXB port on channel 0
 ~~~
@@ -39,7 +39,7 @@ usrp->set_rx_antenna("A", 0); // Disable RXB port on channel 0
 On the USRP2, the N200 series, the B100 series, the E100, and the USRP1 the mode
 depends on the subdev spec applied:
 
-~~~~{.cpp}
+~~~{.cpp}
 auto usrp = uhd::usrp::multi_usrp::make("type=usrp2");
 usrp->set_rx_subdev_spec("A:A"); // Disable RXB port
 ~~~
