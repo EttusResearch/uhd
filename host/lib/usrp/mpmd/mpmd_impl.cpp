@@ -152,11 +152,10 @@ mpmd_impl::mpmd_impl(const device_addr_t& device_args)
 {
     const device_addrs_t mb_args_without_prefs = separate_device_addr(device_args);
     device_addrs_t mb_args;
-    for (size_t i = 0; i < mb_args_without_prefs.size(); ++i)
-    {
+    for (size_t i = 0; i < mb_args_without_prefs.size(); ++i) {
         mb_args.push_back(prefs::get_usrp_args(mb_args_without_prefs[i]));
     }
-    const size_t num_mboards     = mb_args.size();
+    const size_t num_mboards = mb_args.size();
     _mb.reserve(num_mboards);
     const bool serialize_init = device_args.has_key("serialize_init");
     const bool skip_init      = device_args.has_key("skip_init");
@@ -208,6 +207,14 @@ mpmd_impl::mpmd_impl(const device_addr_t& device_args)
 }
 
 mpmd_impl::~mpmd_impl()
+{
+    _deinit();
+}
+
+/*****************************************************************************
+ * Protected methods
+ ****************************************************************************/
+void mpmd_impl::_deinit()
 {
     _tree.reset();
     _mb.clear();

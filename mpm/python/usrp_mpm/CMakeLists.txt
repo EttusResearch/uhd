@@ -23,6 +23,7 @@ set(USRP_MPM_TOP_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/mpmutils.py
     ${CMAKE_CURRENT_SOURCE_DIR}/prefs.py
     ${CMAKE_CURRENT_SOURCE_DIR}/rpc_server.py
+    ${CMAKE_CURRENT_SOURCE_DIR}/process_manager.py
 )
 list(APPEND USRP_MPM_FILES ${USRP_MPM_TOP_FILES})
 add_subdirectory(chips)

@@ -24,12 +24,22 @@ from threading import Event, Thread
 
 _PROCESSES = []
 _KILL_EVENT = Event()
+# This Global Variable is used by the Simulator to make the spawn_processes,
+# and by extension the main method, exit without waiting for the simulator to stop.
+# See process_manager.py:bootstrap() for more information.
+JOIN_PROCESSES = True
 
 def setup_arg_parser():
     """
     Create an arg parser
     """
     parser = argparse.ArgumentParser(description="USRP Hardware Daemon")
+    parser.add_argument(
+        '--no-logbuf',
+        dest='use_logbuf',
+        help="Do not send log messages to UHD",
+        action="store_false",
+    )
     parser.add_argument(
         '--daemon',
         help="Run as daemon",
@@ -169,8 +179,9 @@ def spawn_processes(log, args):
     Thread(target=kill_thread, daemon=False).start()
     signal.signal(signal.SIGTERM, kill_time)
     signal.signal(signal.SIGINT, kill_time)
-    for proc in _PROCESSES:
-        proc.join()
+    if JOIN_PROCESSES:
+        for proc in _PROCESSES:
+            proc.join()
     return True
 
 def main():
@@ -181,6 +192,7 @@ def main():
     """
     args = parse_args()
     log = mpm.get_main_logger(
+        use_logbuf=args.use_logbuf,
         log_default_delta=args.verbose-args.quiet
     ).getChild('main')
     version_string = mpm.__version__

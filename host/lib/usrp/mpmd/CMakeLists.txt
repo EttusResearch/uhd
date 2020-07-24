@@ -18,6 +18,12 @@ if(ENABLE_MPMD)
         ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_link_if_ctrl_udp.cpp
     )
 
+    if(ENABLE_SIM)
+        LIBUHD_APPEND_SOURCES(
+            ${CMAKE_CURRENT_SOURCE_DIR}/sim_find.cpp
+        )
+    endif(ENABLE_SIM)
+
     if(ENABLE_DPDK)
         include_directories(${DPDK_INCLUDE_DIRS})
         set_property(

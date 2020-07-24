@@ -227,6 +227,10 @@ public:
         return _mb.at(mb_idx)->get_mb_iface();
     }
 
+protected:
+    //! Destroys the mboard_impls and the device_tree
+    void _deinit();
+
 private:
     /*************************************************************************
      * Private methods/helpers
