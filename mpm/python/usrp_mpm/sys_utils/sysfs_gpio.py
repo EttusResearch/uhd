@@ -229,12 +229,32 @@ class SysFSGPIO(object):
         self.log.trace("Reading value {} from `{}'...".format(read_value, value_path))
         return read_value
 
-class GPIOBank(object):
+class GPIOBank:
     """
-    Extension of a SysFSGPIO
+    Usability / convenience wrapper for GPIO banks accessed by SysFSGPIO
+
+    This class is useful when:
+    - Accessing a GPIO bank that is hanging off of a SysFSGPIO node
+    - All pins in this bank are consecutive pins on the SysFSGPIO node
+    - The pins can be at an offset (i.e., do not have to start at pin 0 of the
+      SysFSGPIO node)
+    - The pins might have to be written/read as a whole
+
+    For example, assume that a device has 8 GPIO pins, starting at pin 10. The
+    user wants to read all pins at once as a single byte:
+
+    >>> gpio_bank = GPIOBank(
+            label_dict, # See SysFSGPIO for this parameter
+            10,         # Pin offset
+            0xFF,       # 8 pins. Must be consecutive ones!
+            0x00)       # All pins are readable
+    >>> if gpio_bank.get_all() == 3:
+        print("Pins 0 and 1 are high!")
     """
     def __init__(self, uio_identifiers, offset, usemask, ddr):
         self._gpiosize = bin(usemask).count("1")
+        # Make sure the pins are all one:
+        assert (1 << self._gpiosize) == usemask+1
         self._offset = offset
         self._ddr = ddr
         self._usemask = usemask
@@ -256,29 +276,33 @@ class GPIOBank(object):
         Clear all pins
         """
         for i in range(self._gpiosize):
-            self._gpios.reset(self._offset+i)
+            if self._ddr & i:
+                self._gpios.reset(self._offset+i)
 
     def reset(self, index):
         """
         Clear a pin by index
+
+        Read back a pin by index. See also SysFSGPIO.reset(). The DDR value for
+        this pin must be high.
         """
         assert index in range(self._gpiosize)
         self._gpios.reset(self._offset + index)
 
     def get_all(self):
         """
-        Read back all pins
+        Read back all pins. Pins with a DDR value of 1 ("output") are left zero.
         """
         result = 0
         for i in range(self._gpiosize):
-            if not (1<<i)&self._ddr:
+            if not (1<<i) & self._ddr:
                 value = self._gpios.get(self._offset + i)
                 result = (result << 1) | value
         return result
 
     def get(self, index):
         """
-        Read back a pin by index
+        Read back a pin by index. See also SysFSGPIO.get()
         """
         assert index in range(self._gpiosize)
         return self._gpios.get(self._offset + index)
