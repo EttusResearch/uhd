@@ -81,18 +81,34 @@ mpmd_link_if_ctrl_udp::udp_link_info_map get_udp_info_from_xport_info(
 std::vector<std::string> get_addrs_from_mb_args(const uhd::device_addr_t& mb_args,
     const mpmd_link_if_ctrl_udp::udp_link_info_map& link_info_list)
 {
-    // mb_args must always include addr
-    if (not mb_args.has_key(FIRST_ADDR_KEY)) {
-        UHD_LOG_WARNING("MPMD::XPORT::UDP",
-            "The `" << FIRST_ADDR_KEY
-                    << "' key must be specified in "
-                       "device args to create an Ethernet transport to an RFNoC block");
-        return {};
+    std::vector<std::string> addrs;
+    if(link_info_list.size() > 0 &&
+        link_info_list.begin()->second.link_type == "internal") {
+        // If link_type is "internal" we are local. In this case
+        // use this address always. MPM knows better than us.
+        addrs.push_back(link_info_list.begin()->first);
     }
-    std::vector<std::string> addrs{mb_args[FIRST_ADDR_KEY]};
-    if (mb_args.has_key(SECOND_ADDR_KEY)) {
-        addrs.push_back(mb_args[SECOND_ADDR_KEY]);
+    else {
+        if (mb_args.has_key(FIRST_ADDR_KEY)) {
+            addrs.push_back(mb_args[FIRST_ADDR_KEY]);
+        }
+        if (mb_args.has_key(SECOND_ADDR_KEY)) {
+            addrs.push_back(mb_args[SECOND_ADDR_KEY]);
+        }
     }
+    if(addrs.empty()) {
+        if(link_info_list.size() > 0) {
+            addrs.push_back(link_info_list.begin()->first);
+        }
+        else {
+            UHD_LOG_WARNING("MPMD::XPORT::UDP",
+                "The `" << FIRST_ADDR_KEY
+                        << "' key must be specified in "
+                        "device args to create an Ethernet transport to an RFNoC block");
+            return {};
+        }
+    }
+
     // This is where in UHD we encode the knowledge about what
     // get_chdr_link_options() returns to us.
     for (const auto& ip_addr : addrs) {

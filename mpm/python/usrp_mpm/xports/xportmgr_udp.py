@@ -178,7 +178,7 @@ class XportMgrUDP:
             (x['ip_addr'] for x in itervalues(available_interfaces))
         ))
 
-    def get_chdr_link_options(self):
+    def get_chdr_link_options(self, host_location = 'all'):
         """
         Returns a list of dictionaries for returning by
         PeriphManagerBase.get_chdr_link_options().
@@ -186,6 +186,8 @@ class XportMgrUDP:
         Note: This requires a claim, which means that init() was called, and
         deinit() was not yet called.
         """
+        assert host_location in ('remote', 'local', 'all')
+          
         return [
             {
                 'ipv4': str(iface_info['ip_addr']) if (self.iface_config[iface_name]['type'] != 'internal')
@@ -196,6 +198,10 @@ class XportMgrUDP:
                 'mtu': str(iface_info['mtu'])
             }
             for iface_name, iface_info in iteritems(self._chdr_ifaces)
+            if((self.iface_config[iface_name]['type'] == 'internal' and host_location == 'local') or
+                (self.iface_config[iface_name]['type'] != 'internal' and self.iface_config[iface_name]['type'] != 'forward'
+                and host_location == 'remote') or
+                host_location == 'all')
         ]
 
     def _setup_forwarding(self, iface):

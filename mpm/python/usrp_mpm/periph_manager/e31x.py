@@ -524,7 +524,11 @@ class e31x(ZynqComponents, PeriphManagerBase):
             self.log.warning("Can't get link options for unknown link type: `{}'."
                              .format(xport_type))
             return []
-        return self._xport_mgrs[xport_type].get_chdr_link_options()
+        if xport_type == "udp":
+            return self._xport_mgrs[xport_type].get_chdr_link_options(
+                self.mboard_info['rpc_connection'])
+        else:
+            return self._xport_mgrs[xport_type].get_chdr_link_options()
 
     ###########################################################################
     # Device info
