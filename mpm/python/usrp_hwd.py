@@ -12,15 +12,18 @@ import sys
 import time
 import argparse
 from gevent import signal
-try:
-    from gevent.hub import BlockingSwitchOutError
-except ImportError:
-    from gevent.exceptions import BlockingSwitchOutError
 import usrp_mpm as mpm
 from usrp_mpm.mpmtypes import SharedState
 from usrp_mpm.sys_utils import watchdog
 
+# pylint: disable=wrong-import-order
+# We have to import threading here because it must be imported after
+# gevent.monkey.patch_all is called in rpc_server.py.
+# (imported in the usrp_mpm __init__.py)
+from threading import Event, Thread
+
 _PROCESSES = []
+_KILL_EVENT = Event()
 
 def setup_arg_parser():
     """
@@ -92,17 +95,23 @@ def parse_args():
 
 def kill_time(sig, frame):
     """
-    kill all processes
+    kill all processes by setting _KILL_EVENT
     to be used in a signal handler
+    """
+    _KILL_EVENT.set()
 
+def kill_thread():
+    """
+    Kill all processes after _KILL_EVENT is triggered
     If all processes are properly terminated, this will exit
     """
+    _KILL_EVENT.wait()
     log = mpm.get_main_logger().getChild('kill')
     for proc in _PROCESSES:
         proc.terminate()
         log.info("Terminating pid: {0}".format(proc.pid))
     for proc in _PROCESSES:
-            proc.join()
+        proc.join()
     log.info("System exiting")
     sys.exit(0)
 
@@ -154,6 +163,10 @@ def spawn_processes(log, args):
     )
     log.debug("Discovery process has PID: %d", _PROCESSES[-1].pid)
     log.info("Processes launched. Registering signal handlers.")
+    # Launch the kill thread
+    # This is used because we cannot block in a signal handler,
+    # meaning we cannot join threads
+    Thread(target=kill_thread, daemon=False).start()
     signal.signal(signal.SIGTERM, kill_time)
     signal.signal(signal.SIGINT, kill_time)
     for proc in _PROCESSES:
