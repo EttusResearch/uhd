@@ -221,3 +221,40 @@ BOOST_AUTO_TEST_CASE(test_graph_unresolvable)
         uhd::resolve_error);
     UHD_LOG_INFO("TEST", "^^^ Expected ERROR here.");
 }
+
+BOOST_AUTO_TEST_CASE(test_graph_disconnect_reconnect)
+{
+    graph_t graph{};
+    node_accessor_t node_accessor{};
+
+    // Define some mock nodes:
+    // Source radio
+    mock_radio_node_t mock_rx_radio(0);
+    // Sink radio
+    mock_radio_node_t mock_tx_radio(1);
+
+    // These init calls would normally be done by the framework
+    node_accessor.init_props(&mock_rx_radio);
+    node_accessor.init_props(&mock_tx_radio);
+
+    uhd::rfnoc::detail::graph_t::graph_edge_t edge_info(
+        0, 0, graph_t::graph_edge_t::DYNAMIC, true);
+
+    // Now create the graph and commit:
+    graph.connect(&mock_rx_radio, &mock_tx_radio, edge_info);
+    graph.commit();
+
+    BOOST_CHECK_EQUAL(graph.enumerate_edges().size(), 1);
+
+    // disconnect:
+    graph.disconnect(&mock_rx_radio, &mock_tx_radio, edge_info);
+    graph.release();
+
+    BOOST_CHECK_EQUAL(graph.enumerate_edges().size(), 0);
+
+    // Reconnect:
+    graph.connect(&mock_rx_radio, &mock_tx_radio, edge_info);
+    graph.commit();
+
+    BOOST_CHECK_EQUAL(graph.enumerate_edges().size(), 1);
+}
