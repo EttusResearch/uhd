@@ -76,7 +76,7 @@ interface AxiLiteIf #(
   task automatic drive_w(input data_t data,
                          input strb_t strb = '1);
     wdata   = data;
-    wstrb   = wstrb;
+    wstrb   = strb;
     wvalid  = 1;
   endtask
 
@@ -207,3 +207,76 @@ interface AxiLiteIf #(
   );
 
 endinterface : AxiLiteIf
+
+interface AxiLiteIf_v #(
+  int DATA_WIDTH = 64,
+  int ADDR_WIDTH = 1
+) (
+  input logic clk,
+  input logic rst = 1'b0
+);
+
+  import PkgAxiLite::*;
+
+  localparam BYTES_PER_WORD = DATA_WIDTH/8;
+  // local type defs
+  typedef logic [DATA_WIDTH-1:0]     data_t;
+  typedef logic [ADDR_WIDTH-1:0]     addr_t;
+  typedef logic [BYTES_PER_WORD-1:0] strb_t;
+
+  // Signals that make up an AxiLite interface
+  // AXI-Lite
+  // Write Address Channel
+  addr_t awaddr;
+  logic  awvalid;
+  logic  awready;
+
+  // Write Data Channel
+  data_t wdata;
+  strb_t wstrb;
+  logic  wvalid;
+  logic  wready;
+
+  // Write Response Channel
+  resp_t bresp;
+  logic  bvalid;
+  logic  bready;
+
+  // Read Address Channel
+  addr_t araddr;
+  logic  arvalid;
+  logic  arready;
+
+  // Read Data Channel
+  data_t rdata;
+  resp_t rresp;
+  logic  rvalid;
+  logic  rready;
+
+  // View from the master side
+  modport master (
+    input  clk, rst,
+    output awaddr,awvalid,wdata,wstrb,wvalid,bready,araddr,arvalid,rready,
+    input  awready,wready,bresp,bvalid,arready,rdata,rresp,rvalid,
+    import drive_aw,
+    import drive_w,
+    import drive_w_idle,
+    import drive_aw_idle,
+    import drive_read,
+    import drive_read_idle
+
+  );
+
+  // View from the slave side
+  modport slave (
+    input  clk, rst,
+    input  awaddr,awvalid,wdata,wstrb,wvalid,bready,araddr,arvalid,rready,
+    output awready,wready,bresp,bvalid,arready,rdata,rresp,rvalid,
+    import drive_write_resp,
+    import drive_write_resp_idle,
+    import drive_read_resp,
+    import drive_read_resp_idle
+
+  );
+
+endinterface : AxiLiteIf_v
