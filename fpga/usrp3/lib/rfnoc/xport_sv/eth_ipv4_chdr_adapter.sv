@@ -16,15 +16,15 @@
 //
 // Parameters:
 //   - PROTOVER: RFNoC protocol version {8'd<major>, 8'd<minor>}
-//   - MTU: Log2 of the MTU of the packet in 64-bit words
-//   - CPU_FIFO_SIZE: Log2 of the FIFO depth (in 64-bit words) for the CPU egress path
+//   - CPU_FIFO_SIZE: Log2 of the FIFO depth (in bytes) for the CPU egress path
+//   - CHDR_FIFO_SIZE: Log2 of the FIFO depth (in bytes) for the CHDR egress path
 //   - RT_TBL_SIZE: Log2 of the depth of the return-address routing table
 //   - NODE_INST: The node type to return for a node-info discovery
 //   - DROP_UNKNOWN_MAC: Drop packets not addressed to us?
 //   - DROP_MIN_PACKET: Drop packets smaller than 64 bytes?
 //   - PREAMBLE_BYTES: Number of bytes of Preamble expected
-//   - ADD_SOF: Add a SOF indication into the tuser field
-//              If false use TKEEP instead of USER
+//   - ADD_SOF: Add a SOF indication into the tuser field of the e2c path.
+//              If false use TKEEP instead of USER.
 //   - SYNC: Set if MAC is not the same as bus_clk
 //   - ENET_W: Width of the link to the Ethernet MAC
 //   - CPU_W: Width of the CPU interface
@@ -45,8 +45,8 @@
 
 module eth_ipv4_chdr_adapter #(
   logic [15:0] PROTOVER         = {8'd1, 8'd0},
-  int          MTU              = 10,
-  int          CPU_FIFO_SIZE    = MTU,
+  int          CPU_FIFO_SIZE    = $clog2(8*1024),
+  int          CHDR_FIFO_SIZE   = $clog2(8*1024),
   int          RT_TBL_SIZE      = 6,
   int          NODE_INST        = 0,
   bit          DROP_UNKNOWN_MAC = 0,
@@ -58,12 +58,16 @@ module eth_ipv4_chdr_adapter #(
   int          CPU_W            = 64,
   int          CHDR_W           = 64
 )(
+
   // Device info
   input  logic [15:0] device_id,
   // Device addresses
   input  logic [47:0] my_mac,
   input  logic [31:0] my_ip,
   input  logic [15:0] my_udp_chdr_port,
+
+  output logic        chdr_dropped,
+  output logic        cpu_dropped,
 
   // Ethernet MAC
   AxiStreamIf.master eth_tx, // tUser = {1'b0,trailing bytes};
@@ -90,6 +94,10 @@ module eth_ipv4_chdr_adapter #(
 
   `include "eth_constants.vh"
 
+
+  //   tUser = {error,trailing_bytes}
+  AxiStreamIf #(.DATA_WIDTH(ENET_W),.USER_WIDTH(ENET_USER_W),.TKEEP(0)) eth_rx1(eth_rx.clk,eth_rx.rst);
+
   //---------------------------------------
   // E2V and E2C DEMUX
   //---------------------------------------
@@ -98,9 +106,8 @@ module eth_ipv4_chdr_adapter #(
   //   tUser = {*not used*}
   AxiStreamIf #(.DATA_WIDTH(CHDR_W),.TKEEP(0),.TUSER(0)) e2v2(e2v.clk,e2v.rst);
   //   tUser = {*not used*}
-  AxiStreamIf #(.DATA_WIDTH(CHDR_W),.TKEEP(0),.TUSER(0)) e2v4(e2v.clk,e2v.rst);
-  //   tUser = {*not used*}
-  AxiStreamIf #(.DATA_WIDTH(CHDR_W),.TKEEP(0),.TUSER(0)) e2v5(e2v.clk,e2v.rst);
+  AxiStreamIf #(.DATA_WIDTH(CHDR_W),.TKEEP(0),.TUSER(0)) e2v3(e2v.clk,e2v.rst);
+
 
   //   tUser = {1'b0,trailing bytes}
   AxiStreamIf #(.DATA_WIDTH(ENET_W),.USER_WIDTH(ENET_USER_W),.TKEEP(0)) e2c1(eth_rx.clk,eth_rx.rst);
@@ -109,35 +116,35 @@ module eth_ipv4_chdr_adapter #(
                 .TKEEP(!ADD_SOF), .TUSER(ADD_SOF))
      e2c2(e2c.clk,e2c.rst);
 
-  logic [47:0] e_my_mac;
-  logic [31:0] e_my_ip;
-  logic [15:0] e_my_udp_chdr_port;
-  // crossing clock boundaries. 
-  // my_mac, my_ip,,my_udp_chdr_port must be written 
-  // prior to traffic, or an inconsistent version will
-  // exist for a clock period or 2.  This would be better
-  // done with a full handshake.
-  synchronizer #(.WIDTH(96),.STAGES(1))
-    e_info_sync (.clk(eth_rx.clk),.rst(eth_rx.rst),
-                 .in({my_mac,my_ip,my_udp_chdr_port}),
-                 .out({e_my_mac,e_my_ip,e_my_udp_chdr_port}));
+  // The older implementation connected with tUser containing trailing bytes
+  // The newer implementation brings in TKEEP
+  // inside this block we expect trailing bytes.
+  always_comb begin
+    `AXI4S_ASSIGN(eth_rx1,eth_rx)
+    if (eth_rx.TKEEP) begin
+      eth_rx1.tuser = {eth_rx.tuser[ENET_USER_W-1],eth_rx.keep2trailing(eth_rx.tkeep)};
+    end
+  end
 
   // Ethernet sink. Inspects packet and dispatches
   // to the correct port.
   eth_ipv4_chdr_dispatch #(
     .CPU_FIFO_SIZE(CPU_FIFO_SIZE),
+    .CHDR_FIFO_SIZE(CHDR_FIFO_SIZE),
     .PREAMBLE_BYTES(PREAMBLE_BYTES),
     .MAX_PACKET_BYTES(MAX_PACKET_BYTES),
     .DROP_UNKNOWN_MAC(DROP_UNKNOWN_MAC),
     .DROP_MIN_PACKET(DROP_MIN_PACKET),
     .ENET_W(ENET_W)
   ) eth_dispatch_i (
-    .eth_rx           (eth_rx),
+    .eth_rx           (eth_rx1),
     .e2v              (e2v1),
     .e2c              (e2c1),
-    .my_mac           (e_my_mac),
-    .my_ip            (e_my_ip),
-    .my_udp_chdr_port (e_my_udp_chdr_port)
+    .my_mac           (my_mac),
+    .my_ip            (my_ip),
+    .my_udp_chdr_port (my_udp_chdr_port),
+    .chdr_dropped     (chdr_dropped),
+    .cpu_dropped      (cpu_dropped)
   );
 
   //---------------------------------------
@@ -222,7 +229,7 @@ module eth_ipv4_chdr_adapter #(
     .my_udp_chdr_port    (my_udp_chdr_port),
 
     .eth_rx     (e2v2), // from ethernet
-    .e2v        (e2v4), // to   CHDR
+    .e2v        (e2v3), // to   CHDR
     // optional loop from ethernet to ethernet to talk to node
     .v2e        (v2e),  // from CHDR
     .eth_tx     (v2e1D)  // to   ethernet
@@ -261,27 +268,13 @@ module eth_ipv4_chdr_adapter #(
   // E2V Output Buffering
   //---------------------------------------
 
-  // The transport should hook up to a crossbar downstream, which
-  // may backpressure this module because it is in the middle of
-  // transferring a packet. To ensure that upstream logic is not
-  // blocked, we instantiate one packet worth of buffering here.
-  axi4s_fifo #(
-    .SIZE(MTU)
-  ) chdr_fifo_i (
-    .clear(1'b0),.space(),.occupied(),
-    .i(e2v4),.o(e2v5)
-  );
-
   if (DEBUG) begin
-    `AXI4S_DEBUG_ASSIGN(e2v,e2v5)
+    `AXI4S_DEBUG_ASSIGN(e2v,e2v3)
   end else begin
     always_comb begin : e2v_direct_assign
-      `AXI4S_ASSIGN(e2v,e2v5)
+      `AXI4S_ASSIGN(e2v,e2v3)
     end
   end
-
-
-
 
   //---------------------------------------
   // C2E Path
@@ -291,7 +284,7 @@ module eth_ipv4_chdr_adapter #(
                 .TKEEP(c2e.TKEEP),.TUSER(c2e.TUSER))
     c2eD(c2e.clk,c2e.rst);
   //   tUser = {1'b0,trailing bytes}
-  AxiStreamIf #(.DATA_WIDTH(ENET_W),.USER_WIDTH(ENET_USER_W),.TKEEP(0)) c2e1(eth_rx.clk,eth_rx.rst);
+  AxiStreamIf #(.DATA_WIDTH(ENET_W),.USER_WIDTH(ENET_USER_W),.TKEEP(0),.MAX_PACKET_BYTES(MAX_PACKET_BYTES)) c2e1(eth_rx.clk,eth_rx.rst);
   //   tUser = {1'b0,trailing bytes}
   AxiStreamIf #(.DATA_WIDTH(ENET_W),.USER_WIDTH(ENET_USER_W),.TKEEP(0),.MAX_PACKET_BYTES(MAX_PACKET_BYTES)) c2e2(eth_rx.clk,eth_rx.rst);
   //   tUser = {1'b0,trailing bytes}
@@ -332,8 +325,8 @@ module eth_ipv4_chdr_adapter #(
     // Add pad of PREAMBLE_BYTES empty bytes to the ethernet packet going
     // from the CPU to the SFP. This padding added before MAC addresses
     // aligns the source and destination IP addresses, UDP headers etc.
-    // Note that the xge_mac_wrapper strips this padding to recreate the ethernet
-    // packet
+    // Note that the xge_mac_wrapper strips this padding to recreate the
+    // ethernet packet.
     axi4s_add_bytes #(.ADD_START(0),.ADD_BYTES(PREAMBLE_BYTES)
     ) add_header (
      .i(c2e1), .o(c2e2)
@@ -380,7 +373,7 @@ module eth_ipv4_chdr_adapter #(
 
     always_comb begin : c2e3_pad
       if (pad_state == ST_IDLE) begin
-        //force to a full word
+        // force to a full word
         // preserve SOF if it's there, but force
         // trailing bytes to zero (full word)
         c2e3.tuser = 0;
@@ -429,12 +422,13 @@ module eth_ipv4_chdr_adapter #(
   //---------------------------------------
   // V2E and C2E MUX
   //---------------------------------------
+  //   tUser = {1'b0,trailing bytes}
+  AxiStreamIf #(.DATA_WIDTH(ENET_W),.USER_WIDTH(ENET_USER_W),.TKEEP(0)) eth_tx1 (eth_rx.clk,eth_rx.rst);
+  //   tUser = {1'b0,trailing bytes}
+  AxiStreamIf #(.DATA_WIDTH(ENET_W),.USER_WIDTH(ENET_USER_W)) eth_tx2 (eth_rx.clk,eth_rx.rst);
+
+
   logic c2e3_tready;
-  logic eth_tx1_tlast;
-  logic eth_tx1_tvalid;
-  logic eth_tx1_tready;
-  logic [ENET_W-1:0]      eth_tx1_tdata;
-  logic [ENET_USER_W-1:0] eth_tx1_tuser;
   always_comb begin
     c2e3.tready    = c2e3_tready;
   end
@@ -444,30 +438,47 @@ module eth_ipv4_chdr_adapter #(
     .clk(eth_rx.clk), .reset(eth_rx.rst), .clear(1'b0),
     .i_tdata({c2e3.tuser, c2e3.tdata, v2e3.tuser, v2e3.tdata}), .i_tlast({c2e3.tlast, v2e3.tlast}),
     .i_tvalid({c2e3.tvalid, v2e3.tvalid}), .i_tready({c2e3_tready, v2e3.tready}),
-    .o_tdata({eth_tx1_tuser, eth_tx1_tdata}), .o_tlast(eth_tx1_tlast),
-    .o_tvalid(eth_tx1_tvalid), .o_tready(eth_tx1_tready)
+    .o_tdata({eth_tx1.tuser, eth_tx1.tdata}), .o_tlast(eth_tx1.tlast),
+    .o_tvalid(eth_tx1.tvalid), .o_tready(eth_tx1.tready)
   );
 
+
+
   // Clean up the noisy mux output.  I suspect it is annoying
-  // the xilinx cores that tlast and tuser(tkeep) flop around
+  // the Xilinx cores that tlast and tuser(tkeep) flop around
   // when tvalid isn't true.
   always_comb begin : eth_tx_assign
-    if (eth_tx1_tvalid) begin
-      eth_tx.tvalid = 1'b1;
-      eth_tx.tdata  = eth_tx1_tdata;
-      eth_tx.tlast  = eth_tx1_tlast;
-      if (eth_tx1_tlast) begin
-        eth_tx.tuser  = eth_tx1_tuser;
+    if (eth_tx1.tvalid) begin
+      eth_tx2.tvalid = 1'b1;
+      eth_tx2.tdata  = eth_tx1.tdata;
+      eth_tx2.tlast  = eth_tx1.tlast;
+      // driving both tuser and tkeep
+      if (eth_tx1.tlast) begin
+        eth_tx2.tuser  = eth_tx1.tuser;
+        eth_tx2.tkeep  = eth_tx1.trailing2keep(eth_tx1.tuser);
       end else begin
-        eth_tx.tuser  = '0;
+        eth_tx2.tuser  = '0;
+        eth_tx2.tkeep  = '1;
       end
     end else begin
-      eth_tx.tvalid = 1'b0;
-      eth_tx.tdata  = 'X; // use X so synth will optimize
-      eth_tx.tlast  = 0;
-      eth_tx.tuser  = '0;
+      eth_tx2.tvalid = 1'b0;
+      eth_tx2.tdata  = 'X; // use X so synth will optimize
+      eth_tx2.tlast  = 0;
+      eth_tx2.tuser  = '0;
+      eth_tx2.tkeep  = '1;
     end
-    eth_tx1_tready = eth_tx.tready;
+    eth_tx1.tready = eth_tx2.tready;
   end
+
+  //---------------------------------------
+  // Output pipeline stage
+  //---------------------------------------
+  axi4s_fifo #(
+    .SIZE(1)
+  ) in_reg_i (
+    .clear(1'b0),.space(),.occupied(),
+    .i(eth_tx2), .o(eth_tx)
+  );
+
 
 endmodule // eth_ipv4_chdr_adapter

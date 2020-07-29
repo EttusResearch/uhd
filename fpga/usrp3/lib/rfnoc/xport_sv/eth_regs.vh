@@ -27,3 +27,6 @@ localparam [REG_AWIDTH-1:0] REG_BRIDGE_MAC_MSB = BASE + 'h1014;
 localparam [REG_AWIDTH-1:0] REG_BRIDGE_IP      = BASE + 'h1018;
 localparam [REG_AWIDTH-1:0] REG_BRIDGE_UDP     = BASE + 'h101c;
 localparam [REG_AWIDTH-1:0] REG_BRIDGE_ENABLE  = BASE + 'h1020;
+
+localparam [REG_AWIDTH-1:0] REG_CHDR_DROPPED   = BASE + 'h1030;
+localparam [REG_AWIDTH-1:0] REG_CPU_DROPPED    = BASE + 'h1034;

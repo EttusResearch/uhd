@@ -11,14 +11,14 @@
 //
 // Parameters:
 //   - PROTOVER: RFNoC protocol version {8'd<major>, 8'd<minor>}
-//   - MTU: Log2 of the MTU of the packet in 64-bit words
-//   - CPU_FIFO_SIZE: Log2 of the FIFO depth (in 64-bit words) for the CPU egress path
+//   - CPU_FIFO_SIZE: Log2 of the FIFO depth (in bytes) for the CPU egress path
+//   - CHDR_FIFO_SIZE: Log2 of the FIFO depth (in bytes) for the CHDR egress path
 //   - RT_TBL_SIZE: Log2 of the depth of the return-address routing table
 //   - NODE_INST: The node type to return for a node-info discovery
 //   - DROP_UNKNOWN_MAC: Drop packets not addressed to us?
 //   - DROP_MIN_PACKET: Drop packets smaller than 64 bytes?
 //   - PREAMBLE_BYTES: Number of bytes of Preamble expected
-//   - ADD_SOF: Add a SOF indication into the tuser field
+//   - ADD_SOF: Add a SOF indication into the tuser field of e2c
 //   - SYNC: Set if MAC is not the same as bus_clk
 //   - ENET_W: Width of the link to the Ethernet MAC
 //   - CPU_W: Width of the CPU interface
@@ -27,8 +27,8 @@
 
 module eth_ipv4_interface #(
   logic [15:0] PROTOVER         = {8'd1, 8'd0},
-  int          MTU              = 10,
-  int          CPU_FIFO_SIZE    = MTU,
+  int          CPU_FIFO_SIZE    = $clog2(8*1024),
+  int          CHDR_FIFO_SIZE   = $clog2(8*1024),
   int          NODE_INST        = 0,
   int          RT_TBL_SIZE      = 6,
   int          REG_AWIDTH       = 14,
@@ -98,6 +98,10 @@ module eth_ipv4_interface #(
   logic [31:0] bridge_ip_reg   = DEFAULT_IP_ADDR;
   logic [15:0] bridge_udp_port = DEFAULT_UDP_PORT;
   logic        bridge_en;
+  logic        cpu_dropped;
+  logic        chdr_dropped;
+  logic [31:0] chdr_drop_count = 0;
+  logic [31:0] cpu_drop_count  = 0;
 
   always_comb begin : bridge_mux
     my_mac            = bridge_en ? bridge_mac_reg : mac_reg;
@@ -153,8 +157,16 @@ module eth_ipv4_interface #(
     if (bus_rst) begin
       reg_rd_resp <= 1'b0;
       reg_rd_data <= 32'd0;
+      chdr_drop_count <= 32'd0;
+      cpu_drop_count  <= 32'd0;
     end
     else begin
+      if (chdr_dropped) begin
+        chdr_drop_count <= chdr_drop_count+1;
+      end
+      if (cpu_dropped) begin
+        cpu_drop_count <= cpu_drop_count+1;
+      end
       if (reg_rd_req) begin
         // Assert read response one cycle after read request
         reg_rd_resp <= 1'b1;
@@ -185,7 +197,19 @@ module eth_ipv4_interface #(
 
           REG_BRIDGE_ENABLE:
             reg_rd_data <= {31'b0,bridge_en};
-
+          // Drop counts are used to debug situations
+          // Where the incoming data goes faster than
+          // chdr can consume it
+          REG_CHDR_DROPPED:
+            begin
+              reg_rd_data <= chdr_drop_count;
+              chdr_drop_count <= 0; // clear when read
+            end
+          REG_CPU_DROPPED:
+            begin
+              reg_rd_data <= cpu_drop_count;
+              cpu_drop_count <= 0; // clear when read
+            end
          default:
             reg_rd_resp <= 1'b0;
          endcase
@@ -197,10 +221,30 @@ module eth_ipv4_interface #(
     end
   end
 
+  logic b_dropped_valid;
+  logic e_cpu_dropped,  b_cpu_dropped;
+  logic e_chdr_dropped, b_chdr_dropped;
+  // push over the clock domain
+  // Sized to fit into 2 SRL's
+  axi_fifo_2clk #(.WIDTH(2), .SIZE(4)) fifo_i (
+    .reset(eth_rx.rst),
+    .i_aclk(eth_rx.clk),
+    .i_tdata({e_cpu_dropped, e_chdr_dropped}),
+    .i_tvalid(e_cpu_dropped || e_chdr_dropped), .i_tready(/*not used*/),
+    .o_aclk(bus_clk),
+    .o_tdata({b_cpu_dropped, b_chdr_dropped}),
+    .o_tvalid(b_dropped_valid), .o_tready(1'b1)
+  );
+
+  always_comb begin
+    cpu_dropped  = b_cpu_dropped  && b_dropped_valid;
+    chdr_dropped = b_chdr_dropped && b_dropped_valid;
+  end
+
   eth_ipv4_chdr_adapter #(
     .PROTOVER        (PROTOVER),
-    .MTU             (MTU),
     .CPU_FIFO_SIZE   (CPU_FIFO_SIZE),
+    .CHDR_FIFO_SIZE  (CHDR_FIFO_SIZE),
     .RT_TBL_SIZE     (RT_TBL_SIZE),
     .NODE_INST       (NODE_INST),
     .DROP_UNKNOWN_MAC(DROP_UNKNOWN_MAC),
@@ -221,7 +265,9 @@ module eth_ipv4_interface #(
     .device_id       (device_id),
     .my_mac          (my_mac   ),
     .my_ip           (my_ip    ),
-    .my_udp_chdr_port(my_udp_chdr_port  )
+    .my_udp_chdr_port(my_udp_chdr_port),
+    .chdr_dropped    (e_chdr_dropped),
+    .cpu_dropped     (e_cpu_dropped)
   );
 
 

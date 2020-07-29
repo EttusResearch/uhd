@@ -48,7 +48,7 @@ module eth_ifc_tb #(
   // Include for register offsets
   `include "../eth_regs.vh"
   // allows the DUT to push full words and tb does not check tuser/tkeep of packets it's transmitting
-  localparam IGNORE_EXTRA_DATA = 1;
+  localparam IGNORE_EXTRA_DATA = 0;
 
   //---------------------------------------------------------------------------
   // Clocks
@@ -68,10 +68,10 @@ module eth_ifc_tb #(
   TestExec test = new();
 
   localparam MAX_PACKET_BYTES = 2**16;
-  AxiStreamIf #(.DATA_WIDTH(ENET_W),.USER_WIDTH(ENET_USER_W),.TKEEP(0),
+  AxiStreamIf #(.DATA_WIDTH(ENET_W),.USER_WIDTH(ENET_USER_W),
                 .MAX_PACKET_BYTES(MAX_PACKET_BYTES))
     eth_tx (eth_clk, eth_reset);
-  AxiStreamIf #(.DATA_WIDTH(ENET_W),.USER_WIDTH(ENET_USER_W),.TKEEP(0),
+  AxiStreamIf #(.DATA_WIDTH(ENET_W),.USER_WIDTH(ENET_USER_W),
                 .MAX_PACKET_BYTES(MAX_PACKET_BYTES))
     eth_rx (eth_clk, eth_reset);
 
@@ -86,7 +86,7 @@ module eth_ifc_tb #(
     e2c    (clk, reset);
 
   // Bus functional model for a axi_stream controller
-  AxiStreamBfm #(.DATA_WIDTH(ENET_W),.USER_WIDTH(ENET_USER_W),.TKEEP(0),
+  AxiStreamBfm #(.DATA_WIDTH(ENET_W),.USER_WIDTH(ENET_USER_W),
                  .MAX_PACKET_BYTES(MAX_PACKET_BYTES)) eth =
     new(.master(eth_rx), .slave(eth_tx));
   AxiStreamBfm #(.DATA_WIDTH(CHDR_W),.USER_WIDTH(CHDR_USER_W),.TKEEP(0),.TUSER(0)) v =
@@ -123,8 +123,12 @@ module eth_ifc_tb #(
 
     eth_ipv4_interface #(
      .PREAMBLE_BYTES(PREAMBLE_BYTES),
-     .PROTOVER(PROTOVER), .MTU(MTU), .NODE_INST(NODE_INST),
-     .REG_AWIDTH(REG_AWIDTH), .RT_TBL_SIZE(RT_TBL_SIZE),
+     .CPU_FIFO_SIZE(MTU),
+     .CHDR_FIFO_SIZE(MTU),
+     .PROTOVER(PROTOVER),
+     .NODE_INST(NODE_INST),
+     .REG_AWIDTH(REG_AWIDTH),
+     .RT_TBL_SIZE(RT_TBL_SIZE),
      .BASE(BASE),.SYNC(SYNC),
      .ENET_W(ENET_W),.CPU_W(CPU_W),.CHDR_W(CHDR_W)
     ) eth_interface (
@@ -168,6 +172,7 @@ module eth_ifc_tb #(
     always_comb begin
      eth_tx.tdata  = eth_tx_tdata;
      eth_tx.tuser  = eth_tx_tuser;
+     eth_tx.tkeep  = eth_tx.trailing2keep(eth_tx_tuser);
      eth_tx.tlast  = eth_tx_tlast;
      eth_tx.tvalid = eth_tx_tvalid;
      eth_tx_tready = eth_tx.tready;
@@ -202,16 +207,13 @@ module eth_ifc_tb #(
     end
 
     eth_interface #(
-     .PROTOVER(PROTOVER), .MTU(MTU), .NODE_INST(NODE_INST),
+     .PROTOVER(PROTOVER), .NODE_INST(NODE_INST), .MTU(MTU),
      .REG_AWIDTH(REG_AWIDTH), .RT_TBL_SIZE(RT_TBL_SIZE),
      .BASE(BASE)
     ) eth_interface (
      .*,
      .my_udp_port   (my_udp_chdr_port)
     );
-  end
-  always_comb begin
-    eth_tx.tkeep = '1;
   end
 
   task automatic reg_wr (
@@ -310,7 +312,10 @@ module eth_ifc_tb #(
     reg_rd_check(REG_BRIDGE_MAC_MSB,DEF_BRIDGE_MAC_ADDR[47:32]);
     reg_rd_check(REG_BRIDGE_IP,DEF_BRIDGE_IP_ADDR);
     reg_rd_check(REG_BRIDGE_UDP,DEF_BRIDGE_UDP_PORT);
-
+    if (SV_ETH_IFC) begin
+      reg_rd_check(REG_CHDR_DROPPED,0);
+      reg_rd_check(REG_CPU_DROPPED,0);
+    end
     test.end_test();
   endtask : test_registers
 
@@ -330,7 +335,7 @@ module eth_ifc_tb #(
     typedef AxiStreamPacket   #(CHDR_W,CHDR_USER_W) ChdrAxisPacket_t;
     typedef ChdrPacket        #(CHDR_W,CHDR_USER_W) ChdrPacket_t;
 
-  task automatic test_ethcpu(int num_samples[$], int ERROR_PROB=2);
+  task automatic test_ethcpu(int num_samples[$], int ERROR_PROB=2, int EXPECT_DROPS=0);
     TestExec test_e2c = new();
     automatic EthXportPacket_t send[$];
     automatic CpuXportPacket_t expected[$];
@@ -402,20 +407,41 @@ module eth_ifc_tb #(
         end
       end
       begin //rx_thread
-        foreach(expected[i]) begin
-          automatic CpuAxisPacket_t  actual_a;
-          automatic CpuXportPacket_t actual = new();
-          cpu.get(actual_a);
-          actual.import_axis(actual_a);
-          actual.tuser_to_tkeep();
-//          $display({"****************::%s::**********************\n",
-//                    "**send** \n%s\n**expected**\n%s\n**actual**\n%s \n".
-//                    "%d byte with error %d"},
-//                   TEST_NAME,
-//                   send[i].sprint(),expected[i].sprint(),actual.sprint(),
-//                   num_samples[i],send[i].has_error());
-
-          `ASSERT_ERROR(!actual.compare_w_sof(expected[i]),"failed to send packet to e2c");
+        if (EXPECT_DROPS > 0) begin
+          automatic int pkt_num = 0;
+          automatic int drop_count = 0;
+          while (expected.size() > 0) begin
+            automatic CpuAxisPacket_t  actual_a;
+            automatic CpuXportPacket_t actual = new();
+            cpu.get(actual_a);
+            actual.import_axis(actual_a);
+            actual.tuser_to_tkeep();
+            while (expected.size > 0 && actual.compare_no_user(expected[0],.PRINT_LVL(0))) begin
+              void'(expected.pop_front());
+              ++drop_count;
+              ++pkt_num;
+               $display("Droped packet %d",pkt_num);
+              `ASSERT_ERROR(drop_count < EXPECT_DROPS,"Exceeded anticipated number of dropped packets e2c");
+            end
+            if (expected.size() > 0) begin
+              ++pkt_num;
+              $display("Rcvd packet   %d",pkt_num);
+              void'(expected.pop_front());
+            end
+          end
+          if (SV_ETH_IFC) begin
+            $display("Verify drop count is %d",drop_count);
+            reg_rd_check(REG_CPU_DROPPED,drop_count);
+          end
+        end else begin
+          foreach(expected[i]) begin
+            automatic CpuAxisPacket_t  actual_a;
+            automatic CpuXportPacket_t actual = new();
+            cpu.get(actual_a);
+            actual.import_axis(actual_a);
+            actual.tuser_to_tkeep();
+            `ASSERT_ERROR(!actual.compare_w_sof(expected[i]),"failed to send packet to e2c");
+          end
         end
       end
     join
@@ -512,7 +538,9 @@ module eth_ifc_tb #(
           wait_for_udp_packets(DEF_DEST_UDP_PORT);
           eth.get(actual_a);
           actual.import_axis(actual_a);
-          actual.tuser_to_tkeep();
+          if (!SV_ETH_IFC) begin
+            actual.tuser_to_tkeep();
+          end
          `ASSERT_ERROR(!actual.compare_w_pad(expected[i],!SV_ETH_IFC),"failed to send packet to c2e");
         end
       end
@@ -556,7 +584,7 @@ module eth_ifc_tb #(
     return chdr_pkt;
   endfunction : unflatten_chdr
 
-  task automatic test_ethchdr(int num_samples[$], int ERROR_PROB=2);
+  task automatic test_ethchdr(int num_samples[$], int ERROR_PROB=2, int EXPECT_DROPS=0);
     TestExec test_e2v = new();
     automatic EthXportPacket_t send[$];
     automatic ChdrXportPacket_t expected[$];
@@ -655,13 +683,41 @@ module eth_ifc_tb #(
         end
       end
       begin //rx_thread
-        foreach(expected[i]) begin
-          automatic ChdrAxisPacket_t  actual_a;
-          automatic ChdrXportPacket_t actual = new();
-          v.get(actual_a);
-          actual.import_axis(actual_a);
-          actual.tuser_to_tkeep();
-         `ASSERT_ERROR(!actual.compare_no_user(expected[i]),"failed to send packet e2v");
+        if (EXPECT_DROPS > 0) begin
+          automatic int pkt_num = 0;
+          automatic int drop_count = 0;
+          while (expected.size() > 0) begin
+            automatic ChdrAxisPacket_t  actual_a;
+            automatic ChdrXportPacket_t actual = new();
+            v.get(actual_a);
+            actual.import_axis(actual_a);
+            actual.tuser_to_tkeep();
+            while (expected.size > 0 && actual.compare_no_user(expected[0],.PRINT_LVL(0))) begin
+              void'(expected.pop_front());
+              ++drop_count;
+              ++pkt_num;
+               $display("Droped packet %d",pkt_num);
+              `ASSERT_ERROR(drop_count < EXPECT_DROPS,"Exceeded anticipated number of dropped packets e2v");
+            end
+            if (expected.size() > 0) begin
+              ++pkt_num;
+              $display("Rcvd packet   %d",pkt_num);
+              void'(expected.pop_front());
+            end
+          end
+          if (SV_ETH_IFC) begin
+            $display("Verify drop count is %d",drop_count);
+            reg_rd_check(REG_CHDR_DROPPED,drop_count);
+          end
+        end else begin
+          foreach(expected[i]) begin
+            automatic ChdrAxisPacket_t  actual_a;
+            automatic ChdrXportPacket_t actual = new();
+            v.get(actual_a);
+            actual.import_axis(actual_a);
+            actual.tuser_to_tkeep();
+           `ASSERT_ERROR(!actual.compare_no_user(expected[i]),"failed to send packet e2v");
+          end
         end
       end
     join
@@ -785,9 +841,8 @@ module eth_ifc_tb #(
           wait_for_udp_packets(.udp_dest_port(0));
           eth.get(actual_a);
           actual.import_axis(actual_a);
-          actual.tuser_to_tkeep();
           actual_raw = actual.dump_bytes();
-          repeat(PREAMBLE_BYTES) actual_raw.pop_front();
+          repeat(PREAMBLE_BYTES) void'(actual_raw.pop_front());
           decode_udp_pkt(actual_raw,eth_hdr,ipv4_hdr,udp_hdr,chdr_raw);
           chdr_pkt = unflatten_chdr(chdr_raw);
           // fills remainder of packet with zeros
@@ -939,9 +994,8 @@ module eth_ifc_tb #(
 
           eth.get(actual_a);
           actual.import_axis(actual_a);
-          actual.tuser_to_tkeep();
           actual_raw = actual.dump_bytes();
-          repeat(PREAMBLE_BYTES) actual_raw.pop_front();
+          repeat(PREAMBLE_BYTES) void'(actual_raw.pop_front());
           decode_udp_pkt(actual_raw,eth_hdr,ipv4_hdr,udp_hdr,chdr_raw);
           chdr_pkt = unflatten_chdr(chdr_raw);
           // fills remainder of packet with zeros
@@ -966,6 +1020,7 @@ module eth_ifc_tb #(
   initial begin : tb_main
    automatic int num_samples[$];
    automatic int cpu_num_samples[$];
+   automatic int expected_drops;
    localparam QUICK = 0;
    test.start_test({TEST_NAME,"Wait for Reset"}, 10us);
    clk_gen.reset();
@@ -980,6 +1035,42 @@ module eth_ifc_tb #(
    test_registers();
 
    test_chdr_endpoint();
+
+   // Check what happens if the input bandwidth exceeds
+   // the devices ability to consume packets
+   // This can happen in matched bandwidth cases
+   // if there is hold off from upstream
+   // Dropped packets exceed the drop count cause an error
+   // The actual droped count is compared versus the real count
+   test.start_test({TEST_NAME,"::Input overrun"}, 200us);
+
+   eth.set_master_stall_prob(0);
+   eth.set_slave_stall_prob(0);
+   cpu.set_master_stall_prob(0);
+   cpu.set_slave_stall_prob(0);
+   v.set_master_stall_prob(0);
+   v.set_slave_stall_prob(0);
+
+   num_samples = {7936,7936,7936,7936,7936,320,
+                  7936,7936,7936,7936,7936,320};
+
+   // The actual number of expected drops depends on the
+   // bus width difference between ENET_W and CHDR/CPU_W
+
+   // in this SIM unlimited etherent bandwidth is coming in at over 300 MHZ
+   // and output runs at 200 MHZ.  This causes excess BW on transmitter even when matched.
+   expected_drops = 9;
+   
+   test_ethchdr(num_samples,.EXPECT_DROPS(expected_drops),.ERROR_PROB(0));
+   test_ethcpu(num_samples,.EXPECT_DROPS(expected_drops),.ERROR_PROB(0));
+   test.end_test();
+
+   eth.set_master_stall_prob(38);
+   eth.set_slave_stall_prob(38);
+   cpu.set_master_stall_prob(38);
+   cpu.set_slave_stall_prob(38);
+   v.set_master_stall_prob(38);
+   v.set_slave_stall_prob(38);
 
    num_samples = {1,2,3,4,5,6,7,8,
                   ENET_W/8-1,ENET_W/8,ENET_W/8+1,

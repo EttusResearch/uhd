@@ -511,15 +511,29 @@ module chdr_xport_adapter #(
     data_fifo_o.tready  = au.tready & pass_packet;
   end
 
+  // Clock Crossing to the ethernet clock domain
+  logic [47:0] e_my_mac;
+  logic [31:0] e_my_ip;
+  logic [15:0] e_my_udp_chdr_port;
+  // crossing clock boundaries.
+  // my_mac, my_ip, my_udp_chdr_port must be written
+  // prior to traffic, or an inconsistent version will
+  // exist for a clock period or 2.  This would be better
+  // done with a full handshake.
+  synchronizer #(.WIDTH(96),.STAGES(1))
+    e_info_sync (.clk(eth_rx.clk),.rst(eth_rx.rst),
+                 .in({my_mac,my_ip,my_udp_chdr_port}),
+                 .out({e_my_mac,e_my_ip,e_my_udp_chdr_port}));
+
   // add the UDP header back on before sending to EthTx
   eth_ipv4_add_udp #(
     .PREAMBLE_BYTES(PREAMBLE_BYTES),
     .MAX_PACKET_BYTES(MAX_PACKET_BYTES)
   ) add_udp_i (
     .i(au), .o(eth_tx),
-    .mac_src(my_mac),
-    .ip_src(my_ip),
-    .udp_src(my_udp_chdr_port),
+    .mac_src(e_my_mac),
+    .ip_src(e_my_ip),
+    .udp_src(e_my_udp_chdr_port),
     .mac_dst(au_mac_dst),
     .ip_dst(au_ip_dst),
     .udp_dst(au_udp_dst)
