@@ -16,7 +16,6 @@ from six import iteritems, itervalues
 from usrp_mpm.components import ZynqComponents
 from usrp_mpm.dboard_manager import Neon
 from usrp_mpm.gpsd_iface import GPSDIfaceExtension
-from usrp_mpm.mpmtypes import SID
 from usrp_mpm.mpmutils import assert_compat_number, str2bool
 from usrp_mpm.periph_manager import PeriphManagerBase
 from usrp_mpm.rpc_server import no_rpc

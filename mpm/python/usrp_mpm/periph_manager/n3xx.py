@@ -17,7 +17,6 @@ from usrp_mpm.cores import WhiteRabbitRegsControl
 from usrp_mpm.components import ZynqComponents
 from usrp_mpm.gpsd_iface import GPSDIfaceExtension
 from usrp_mpm.periph_manager import PeriphManagerBase
-from usrp_mpm.mpmtypes import SID
 from usrp_mpm.mpmutils import assert_compat_number, str2bool, poll_with_timeout
 from usrp_mpm.rpc_server import no_rpc
 from usrp_mpm.sys_utils import dtoverlay
