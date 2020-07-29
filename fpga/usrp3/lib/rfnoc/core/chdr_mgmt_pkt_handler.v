@@ -181,7 +181,7 @@ module chdr_mgmt_pkt_handler #(
 
   generate 
     if (CHDR_W > 64)
-      assign m_mgmt_tdata[CHDR_W-1:CHDR_W-64] = 'h0;
+      assign m_mgmt_tdata[CHDR_W-1:64] = 'h0;
   endgenerate
 
   // ---------------------------------------------------
