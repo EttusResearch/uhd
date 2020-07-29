@@ -6,8 +6,8 @@
 # Environment Setup
 # -------------------------------------------------------------------
 ifeq ($(VIV_PLATFORM),Cygwin)
-RESOLVE_PATH = $(subst \,/,$(shell cygpath -aw $(1)))
-RESOLVE_PATHS = "$(foreach path,$(1),$(subst \,/,$(shell cygpath -aw $(abspath $(path)))))"
+RESOLVE_PATH = $(if $(1),$(subst \,/,$(shell cygpath -aw $(1))))
+RESOLVE_PATHS = "$(if $(1),$(foreach path,$(1),$(subst \,/,$(shell cygpath -aw $(abspath $(path))))))"
 else
 RESOLVE_PATH = $(1)
 RESOLVE_PATHS = "$(1)"
@@ -18,8 +18,8 @@ endif
 # -------------------------------------------------------------------
 # Requirement: BASE_DIR must be defined
 
-TOOLS_DIR = $(abspath $(BASE_DIR)/../tools)
-LIB_DIR = $(abspath $(BASE_DIR)/../lib)
+TOOLS_DIR  = $(abspath $(BASE_DIR)/../tools)
+LIB_DIR    = $(abspath $(BASE_DIR)/../lib)
 SIMLIB_DIR = $(abspath $(BASE_DIR)/../sim)
 LIB_IP_DIR = $(abspath $(LIB_DIR)/ip)
 HLS_IP_DIR = $(abspath $(LIB_DIR)/hls)
