@@ -94,12 +94,6 @@ private:
     {
         // Here, we hard-code the list of available transport types
         if (link_type == "udp") {
-#ifdef HAVE_DPDK
-            // if (_mb_args.has_key("use_dpdk")) {
-            //    return std::make_unique<mpmd_link_if_ctrl_dpdk_udp>(_mb_args,
-            //    xport_info);
-            //}
-#endif
             return std::make_unique<mpmd_link_if_ctrl_udp>(_mb_args, xport_info, chdr_w);
         }
         UHD_LOG_WARNING("MPMD", "Cannot instantiate transport medium " << link_type);

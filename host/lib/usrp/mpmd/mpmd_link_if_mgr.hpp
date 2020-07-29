@@ -42,10 +42,13 @@ uhd::dict<std::string, std::string> filter_args(
 
 /*! MPMD Transport Manager
  *
- * A transport manager is an object which sets up a physical connection to a
+ * A transport manager is a factory object which sets up a physical connection to a
  * CHDR device. Its implementation is specific to the underlying transport
  * medium. For example, if the medium is Ethernet/UDP, this class will create
  * sockets.
+ *
+ * Note: As of UHD 4.0, there is only one underlying transport medium (UDP).
+ * We keep this factory nevertheless for the sake of continuity and future-proofing.
  */
 class mpmd_link_if_mgr
 {
