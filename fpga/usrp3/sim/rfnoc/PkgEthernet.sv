@@ -514,14 +514,64 @@ package PkgEthernet;
       this.keep = axi_pkt.keep;
     endfunction : import_axis
 
+
+    // figure out the value of tkeep based on tuser(trailing words)
+    function keep_t calc_last_tkeep(user_t tuser);
+      keep_t last_tkeep;
+      // check if there is an X
+      if (tuser[$clog2(DATA_WIDTH/8)-1:0] === 0) begin
+        last_tkeep = '1;
+      end else if ($isunknown(tuser[$clog2(DATA_WIDTH/8)-1:0])) begin
+        last_tkeep = '1;
+      end else begin
+        last_tkeep = 0;
+        foreach (calc_last_tkeep[i]) begin
+          // set the bit if it's less than value of tuser
+          last_tkeep[i] = i < tuser[$clog2(DATA_WIDTH/8)-1:0];
+        end
+      end
+      return last_tkeep;
+    endfunction : calc_last_tkeep;
+
+    // figure out the value of tuser(traling words) based on tkeep
+    function user_t calc_last_tuser(keep_t tkeep);
+      user_t last_tuser;
+      // check if there is an X
+      if ($isunknown(tkeep)) begin
+        last_tuser = '0;
+      end else begin
+        last_tuser = 0;
+        foreach (tkeep[i]) begin
+          if (tkeep[i]==1'b1) begin
+            last_tuser = last_tuser+1;
+          end
+        end
+      end
+      // full word is 0
+      if (last_tuser == DATA_WIDTH/8) begin
+        last_tuser = 0;
+      end
+      return last_tuser;
+    endfunction : calc_last_tuser;
+
+    // clear bytes that aren't marked as valid by keep
+    function void  clear_unused_bytes();
+      keep_t last_tkeep;
+      last_tkeep = this.keep[$];
+      // check that the last user is the same as the last keep
+      assert (this.keep[$] == calc_last_tkeep(this.user[$])) else
+        $error("clear_unused_bytes: final tkeep and tuser don't match");
+
+      // set data bytes where the value isn't used to zero
+      foreach (last_tkeep[i]) begin
+        if (last_tkeep[i] == 0) this.data[$][i*8 +: 8] = 0;
+      end
+    endfunction : clear_unused_bytes;
+
     // take the tuser signal's and use them to set
     // tkeep signals
     task automatic tuser_to_tkeep(logic PRESERVE_TUSER=1);
-      keep_t last_tkeep;
-      user_t last_tuser;
-      logic [$clog2(DATA_WIDTH/8)-1:0] last_bytes;
-      last_tuser = this.user[$];
-      last_bytes = last_tuser[$clog2(DATA_WIDTH/8)-1:0];
+
       // set all the tuser values to zero
       // set all the tuser values to zero
       foreach (this.user[i]) begin
@@ -529,54 +579,31 @@ package PkgEthernet;
         if(!PRESERVE_TUSER)
           this.user[i] = 0;
       end
+
       // figure out the value of tkeep for the last word
-      if (last_bytes == 0) last_tkeep = '1;
-      // check if there is an X
-      else if ($isunknown(last_tuser)) last_tkeep = '1;
-      else begin
-        last_tkeep = 0;
-        foreach (last_tkeep[i]) begin
-          last_tkeep[i] = i < last_bytes;
-        end
-      end
-      this.keep[$] = last_tkeep;
+      this.keep[$] = calc_last_tkeep(this.user[$]);
+
       // set data bytes where the value isn't used to zero
-      foreach (last_tkeep[i]) begin
-        if (last_tkeep[i] == 0) this.data[$][i*8 +: 8] = 0;
-      end
+      clear_unused_bytes;
+
     endtask : tuser_to_tkeep
 
     // take the tkeep signal's and use them to set
     // width in the user signals
     task automatic tkeep_to_tuser(int ERROR_PROB=0);
-      keep_t last_tkeep;
-      user_t last_tuser;
 
-      last_tkeep = this.keep[$];
       // set all the tuser values to zero
       foreach (this.user[i]) begin
         this.user[i] = 0;
         this.user[i][UWIDTH-1] = $urandom_range(99) < ERROR_PROB;
       end
-      // check if there is an X
-      if ($isunknown(last_tkeep)) last_tuser = '0;
-      else begin
-        last_tuser = 0;
-        foreach (last_tkeep[i]) begin
-          if (last_tkeep[i]==1'b1) begin
-            last_tuser = last_tuser+1;
-          end
-        end
-      end
-      // full word is 0.  MSB set is error
-      if (last_tuser == DATA_WIDTH/8)last_tuser = 0;
-      this.user[$] = last_tuser;
+
+      // figure out the value of user for the last word
+      this.user[$] = calc_last_tuser(this.keep[$]);
       this.user[$][UWIDTH-1] = $urandom_range(99) < ERROR_PROB;
 
       // set data bytes where the value isn't used to zero
-      foreach (last_tkeep[i]) begin
-        if (last_tkeep[i] == 0) this.data[$][i*8 +: 8] = 0;
-      end
+      clear_unused_bytes;
 
     endtask : tkeep_to_tuser
 
@@ -659,8 +686,8 @@ package PkgEthernet;
 
       actual_copy.clear_error();
       expected_copy.clear_error();
-      actual_copy.clear_keep();
-      expected_copy.clear_keep();
+      actual_copy.clear_unused_bytes();
+      expected_copy.clear_unused_bytes();
 
       error_condition = (!expected_copy.equal(actual_copy) &&
                          (!exp_error || COMPARE_ERROR_PACKETS)) ||
@@ -703,8 +730,8 @@ package PkgEthernet;
       // error bit doubles for SOF
       actual_copy.clear_error();
       expected_copy.clear_error();
-      actual_copy.clear_keep();
-      expected_copy.clear_keep();
+      actual_copy.clear_unused_bytes();
+      expected_copy.clear_unused_bytes();
 
       // set SOF in expected
       expected_copy.user[0][UWIDTH-1] = 0;
@@ -745,14 +772,20 @@ package PkgEthernet;
       // not using MSB as error here.
       actual_copy.clear_error();
       expected_copy.clear_error();
-      actual_copy.clear_keep();
-      expected_copy.clear_keep();
+      actual_copy.clear_unused_bytes();
+      expected_copy.clear_unused_bytes();
+
       // Add pad bytes to user
       if (DUMB_ORIGINAL_WAY) begin
-        // I can't figure out how to calculate the expected on the
-        // original so I'm just copying the actual
+        actual_copy.clear_keep();
+        expected_copy.clear_keep();
+        // I can't figure out a goodway to calculate the
+        // expected tuser for non last word values.
+        // So I'm just copying the actual
         foreach (expected_copy.user[i]) begin
-          expected_copy.user[i] = actual_copy.user[i];
+          if (i != expected_copy.user.size()-1) begin
+            expected_copy.user[i] = actual_copy.user[i];
+          end
         end
       end
 
@@ -774,7 +807,7 @@ package PkgEthernet;
     // Keep is not compared
     // Check that this packet matches the expected packet
     // User is not compared
-    function automatic logic compare_no_user(XportPacket_t expected);
+    function automatic logic compare_no_user(XportPacket_t expected, int PRINT_LVL=1);
 
       automatic XportPacket_t actual_copy = this.copy();
       automatic XportPacket_t expected_copy = expected.copy();
@@ -782,8 +815,8 @@ package PkgEthernet;
       // not using MSB as error here.
       actual_copy.clear_error();
       expected_copy.clear_error();
-      actual_copy.clear_keep();
-      expected_copy.clear_keep();
+      actual_copy.clear_unused_bytes();
+      expected_copy.clear_unused_bytes();
 
       // Add pad bytes to user
       foreach (expected_copy.user[i]) begin
@@ -791,15 +824,16 @@ package PkgEthernet;
        actual_copy.user[i] = 0;
       end
 
-      if (!expected_copy.equal(actual_copy)) begin
-        $display("Expected");
-        expected.print();
-        $display("Actual");
-        this.print();
-        if (!expected_copy.equal(actual_copy))
-          $display("ERROR :: packet mismatch");
+      if (PRINT_LVL==1) begin
+        if (!expected_copy.equal(actual_copy)) begin
+          $display("Expected");
+          expected.print();
+          $display("Actual");
+          this.print();
+          if (!expected_copy.equal(actual_copy))
+            $display("ERROR :: packet mismatch");
+        end
       end
-
       return !expected_copy.equal(actual_copy);
 
     endfunction : compare_no_user
