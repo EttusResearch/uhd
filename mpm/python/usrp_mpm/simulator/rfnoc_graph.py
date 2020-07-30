@@ -148,7 +148,7 @@ class RFNoCGraph:
     It serves as an interface between the ChdrEndpoint and the
     individual blocks/nodes.
     """
-    def __init__(self, graph_list, log, device_id, send_wrapper, chdr_w):
+    def __init__(self, graph_list, log, device_id, send_wrapper, chdr_w, rfnoc_device_id):
         self.log = log.getChild("Graph")
         self.device_id = device_id
         self.stream_spec = StreamSpec()
@@ -173,8 +173,8 @@ class RFNoCGraph:
             (NocBlockPort(0, 1), StreamEndpointPort(0, 1))
         ]
         self.regs = NocBlockRegs(self.log, 1 << 16, True, 1, [radio], len(self.stream_ep), 1,
-                                 0xE320, adj_list, 8, 1, self.get_stream_spec, self.radio_tx_cmd,
-                                 self.radio_tx_stop)
+                                 rfnoc_device_id, adj_list, 8, 1, self.get_stream_spec,
+                                 self.radio_tx_cmd, self.radio_tx_stop)
 
     def radio_tx_cmd(self, sep_block_id):
         """Triggers the creation of a ChdrOutputStream in the ChdrEndpoint using

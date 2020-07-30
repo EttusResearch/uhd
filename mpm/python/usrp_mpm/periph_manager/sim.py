@@ -15,7 +15,7 @@ from usrp_mpm.xports import XportMgrUDP
 from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.rpc_server import no_claim
 from usrp_mpm.periph_manager import PeriphManagerBase
-from usrp_mpm.simulator.sim_dboard_catalina import SimulatedCatalinaDboard
+from usrp_mpm.simulator.sim_dboard import registry as dboards
 from usrp_mpm.simulator.chdr_endpoint import ChdrEndpoint
 from usrp_mpm.simulator.config import Config
 
@@ -70,27 +70,30 @@ class sim(PeriphManagerBase):
     #########################################################################
     # Overridables
     #########################################################################
-    description = "E320-Series Device - SIMULATED"
-    pids = {0xE320: 'e320'}
-
-    mboard_info = {"type": "e3xx", "product": "e320"}
-    mboard_max_rev = 7  # RevC
     mboard_sensor_callback_map = {}
 
     ###########################################################################
     # Ctor and device initialization tasks
     ###########################################################################
     def __init__(self, args):
-        super().__init__()
+        # Logger is initialized in super().__init__ but we need config values
+        # before we call that
+        config_log = get_logger("PeriphConfig")
         if 'config' in args:
             config_path = args['config']
-            self.log.info("Loading config from {}".format(config_path))
-            self.config = Config.from_path(config_path)
+            config_log.info("Loading config from {}".format(config_path))
+            self.config = Config.from_path(config_log, config_path)
         else:
-            self.log.warn("No config specified, using default")
+            config_log.warn("No config specified, using default")
             self.config = Config.default()
 
         self.device_id = 1
+        self.description = self.config.hardware.description
+        self.mboard_info = {"type": self.config.hardware.uhd_device_type,
+                            "product": self.config.hardware.product}
+        self.pids = {int(self.config.hardware.pid): self.config.hardware.product}
+        # This uses the description, mboard_info, and pids
+        super().__init__()
 
         self.chdr_endpoint = ChdrEndpoint(self.log, self.config)
 
@@ -105,8 +108,7 @@ class sim(PeriphManagerBase):
         self.log.debug("Setting Simulator Sample Rate to {}".format(freq))
         self.chdr_endpoint.set_sample_rate(freq)
 
-    @classmethod
-    def generate_device_info(cls, eeprom_md, mboard_info, dboard_infos):
+    def generate_device_info(self, eeprom_md, mboard_info, dboard_infos):
         """
         Hard-code our product map
         """
@@ -115,25 +117,23 @@ class sim(PeriphManagerBase):
             eeprom_md, mboard_info, dboard_infos)
         # Then add device-specific information
         mb_pid = eeprom_md.get('pid')
-        device_info['product'] = cls.pids.get(mb_pid, 'unknown')
+        device_info['product'] = self.pids.get(mb_pid, 'unknown')
         return device_info
 
     def _read_mboard_eeprom(self):
         """
         Read out a simulated mboard eeprom and saves it to the appropriate member variable
         """
-        self._eeprom_head = sim._generate_eeprom_head()
+        self._eeprom_head = self._generate_eeprom_head()
 
         self.log.trace("Found EEPROM metadata: '{}'"
                        .format(str(self._eeprom_head)))
         return (self._eeprom_head, None)
 
-    @staticmethod
-    def _generate_eeprom_head(serial=b'3196D2A', rev=2, rev_compat=2):
-        return {'pid': 0xE320,
-                'rev': rev,
-                'rev_compat': rev_compat,
-                'serial': serial}
+    def _generate_eeprom_head(self):
+        return {'pid': self.config.hardware.pid,
+                'rev': 0,
+                'serial': self.config.hardware.serial_num}
 
     def _init_peripherals(self, args):
         """
@@ -157,8 +157,11 @@ class sim(PeriphManagerBase):
         self.log.debug("Device info: {}".format(self.device_info))
 
     def _init_dboards(self, dboard_infos, override_dboard_pids, default_args):
-        self.dboards.append(SimulatedCatalinaDboard(
-            E320_DBOARD_SLOT_IDX, self._simulator_sample_rate))
+        # TODO: Support more than one Daughter Board
+        # Needs changes here and in config.py
+        dboard_name = self.config.hardware.dboard_class
+        dboard_class = dboards[dboard_name]
+        self.dboards.append(dboard_class(E320_DBOARD_SLOT_IDX, self._simulator_sample_rate))
         self.log.info("Found %d daughterboard(s).", len(self.dboards))
 
     ###########################################################################

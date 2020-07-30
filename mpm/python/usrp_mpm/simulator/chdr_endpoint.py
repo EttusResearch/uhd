@@ -36,7 +36,8 @@ class ChdrEndpoint:
         self.send_queue = SelectableQueue()
         self.send_wrapper = SendWrapper(self.send_queue)
 
-        self.graph = RFNoCGraph(self.get_default_nodes(), self.log, 1, self.send_wrapper, CHDR_W)
+        self.graph = RFNoCGraph(self.get_default_nodes(), self.log, 0, self.send_wrapper,
+                                CHDR_W, config.hardware.rfnoc_device_type)
         self.thread = Thread(target=self.socket_worker, daemon=True)
         self.thread.start()
 
