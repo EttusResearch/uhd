@@ -264,7 +264,7 @@ package PkgAxiLiteBfm;
           get_wr_response(xaction);
           assert (xaction.resp == resp) else begin
             xaction.print();
-            $error({"mismatch on wr response. expected:",xaction.resp.name});
+            $error({"mismatch on wr response. expected:",resp.name});
           end
         end
       join_none
@@ -321,7 +321,7 @@ package PkgAxiLiteBfm;
     endtask : rd_block
 
     // Non-blocking read that checks against an expected data response
-    task automatic rd(addr_t addr, data_t data, strb_t strb='1,resp_t resp=OKAY);
+    task automatic rd(addr_t addr, data_t data, resp_t resp=OKAY);
       AxiLiteTransaction_t xaction = new;
       post_rd(addr,xaction);
       fork
@@ -329,7 +329,7 @@ package PkgAxiLiteBfm;
           get_rd_response(xaction);
           assert (xaction.resp == resp) else begin
             xaction.print();
-            $error({"mismatch on rd response. expected:",xaction.resp.name});
+            $error({"mismatch on rd response. expected:",resp.name});
           end
           assert (xaction.data === data) else begin
             xaction.print();
