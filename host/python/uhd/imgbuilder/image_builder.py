@@ -726,7 +726,7 @@ def build(fpga_path, device, image_core_path, edge_file, **args):
     """
     ret_val = 0
     cwd = os.path.dirname(__file__)
-    build_dir = os.path.join(get_top_path(fpga_path), target_dir(device))
+    build_dir = os.path.join(get_top_path(os.path.abspath(fpga_path)), target_dir(device))
     if not os.path.isdir(build_dir):
         logging.error("Not a valid directory: %s", build_dir)
         return 1
@@ -804,7 +804,7 @@ def generate_image_core_path(output_path, source):
     """
     if output_path is not None:
         return output_path
-    source = os.path.splitext(os.path.normpath(source))[0]
+    source = os.path.splitext(os.path.abspath(os.path.normpath(source)))[0]
     return source + '.v'
 
 def generate_edge_file_path(output_path, device, source):
