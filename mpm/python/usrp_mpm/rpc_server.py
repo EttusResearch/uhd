@@ -122,7 +122,7 @@ class MPMServer(RPCServer):
                     delattr(self, method)
                 else:
                     self.log.warning(
-                        "Attempted to remove non-existant method: %s",
+                        "Attempted to remove non-existent method: %s",
                         method
                     )
         self._db_methods = []
@@ -300,7 +300,7 @@ class MPMServer(RPCServer):
             self._state.claim_token.value,
             self.client_host
         )
-        if self.client_host in net.get_local_ip_addrs():
+        if _is_connection_local(self.client_host):
             self.periph_manager.set_connection_type("local")
         else:
             self.periph_manager.set_connection_type("remote")
@@ -406,7 +406,7 @@ class MPMServer(RPCServer):
         """
         info = self.periph_manager.get_device_info()
         info["mpm_version"] = "{}.{}".format(*MPM_COMPAT_NUM)
-        if self.client_host in net.get_local_ip_addrs():
+        if _is_connection_local(self.client_host):
             info["connection"] = "local"
         else:
             info["connection"] = "remote"
@@ -543,6 +543,8 @@ class MPMServer(RPCServer):
         self.log.debug("End of update_component")
         self._reset_timer()
 
+def _is_connection_local(client_hostname):
+    return client_hostname in net.get_local_ip_addrs()
 
 ###############################################################################
 # Process control
@@ -566,8 +568,8 @@ def _rpc_server_process(shared_state, port, default_args):
         server.stop()
         sys.exit(0)
     threading.Thread(target=stop_worker, daemon=True).start()
-    signal(signal.SIGTERM, lambda *args: stop_event.set())
-    signal(signal.SIGINT, lambda *args: stop_event.set())
+    signal.signal(signal.SIGTERM, lambda *args: stop_event.set())
+    signal.signal(signal.SIGINT, lambda *args: stop_event.set())
     server.serve_forever()
 
 
