@@ -119,7 +119,7 @@ if(_has_no_psabi)
     message(STATUS "Disabling psABI warnings.")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi")
 endif(_has_no_psabi)
-set(MPM_ALL_DEVICES n3xx e320 e31x tests)
+set(MPM_ALL_DEVICES n3xx e320 e31x sim tests)
 set(MPM_DEVICE "n3xx" CACHE STRING "Choose an MPM device to build")
 set_property(CACHE MPM_DEVICE PROPERTY STRINGS ${MPM_ALL_DEVICES})
 # Validate MPM_DEVICE
@@ -137,6 +137,9 @@ elseif(MPM_DEVICE STREQUAL "e320")
     set(ENABLE_E320 ON)
 elseif(MPM_DEVICE STREQUAL "e31x")
     set(ENABLE_E300 ON)
+elseif(MPM_DEVICE STREQUAL "sim")
+    set(ENABLE_SIM TRUE)
+    set(ENABLE_LIBMPM OFF)
 endif()
 
 MPM_REGISTER_COMPONENT("LibMPM" ENABLE_LIBMPM ON "Boost_FOUND" OFF ON)
@@ -145,33 +148,38 @@ MPM_REGISTER_COMPONENT("Magnesium" ENABLE_MAGNESIUM OFF "ENABLE_MYKONOS" OFF OFF
 MPM_REGISTER_COMPONENT("E320" ENABLE_E320 OFF "ENABLE_LIBMPM" OFF OFF)
 MPM_REGISTER_COMPONENT("E300" ENABLE_E300 OFF "ENABLE_LIBMPM" OFF OFF)
 
-add_subdirectory(include)
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_BINARY_DIR}/include
-    ${UHD_HOST_ROOT}/include
-)
+if(NOT ENABLE_SIM)
+    add_subdirectory(include)
+    include_directories(
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_BINARY_DIR}/include
+        ${UHD_HOST_ROOT}/include
+    )
 
-add_subdirectory(lib)
+    add_subdirectory(lib)
 
-message("usrp_periphs objects: ${usrp_periphs_objects}")
-add_library(usrp-periphs SHARED ${usrp_periphs_objects})
-target_link_libraries(usrp-periphs
-    udev
-    ${Boost_LIBRARIES}
-)
+    message("usrp_periphs objects: ${usrp_periphs_objects}")
+    add_library(usrp-periphs SHARED ${usrp_periphs_objects})
+    target_link_libraries(usrp-periphs
+        udev
+        ${Boost_LIBRARIES}
+    )
 
-install(TARGETS usrp-periphs LIBRARY DESTINATION ${LIBRARY_DIR} COMPONENT libraries)
+    install(TARGETS usrp-periphs LIBRARY DESTINATION ${LIBRARY_DIR} COMPONENT libraries)
 
-# TODO: Come up with a versioning scheme for the MPM ABI. Not high priority
-# though... we're the only ones linking against that.
-set_target_properties(usrp-periphs PROPERTIES VERSION "${MPM_VERSION_MAJOR}.${MPM_VERSION_API}.${MPM_VERSION_ABI}")
-set_target_properties(usrp-periphs PROPERTIES SOVERSION ${MPM_VERSION_MAJOR})
+    # TODO: Come up with a versioning scheme for the MPM ABI. Not high priority
+    # though... we're the only ones linking against that.
+    set_target_properties(usrp-periphs PROPERTIES VERSION "${MPM_VERSION_MAJOR}.${MPM_VERSION_API}.${MPM_VERSION_ABI}")
+    set_target_properties(usrp-periphs PROPERTIES SOVERSION ${MPM_VERSION_MAJOR})
+
+    add_subdirectory(systemd)
+    add_subdirectory(tools)
+endif(NOT ENABLE_SIM)
 
 enable_testing()
 add_subdirectory(python)
-add_subdirectory(tools)
-add_subdirectory(systemd)
+
+
 
 ########################################################################
 # Print Summary

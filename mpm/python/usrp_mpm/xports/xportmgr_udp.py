@@ -8,10 +8,10 @@
 UDP Transport manager
 """
 
+import importlib
 import subprocess
 from six import iteritems, itervalues
 from usrp_mpm import prefs
-from usrp_mpm.ethdispatch import EthDispatcherCtrl
 from usrp_mpm.sys_utils import net
 
 DEFAULT_BRIDGE_MODE = False
@@ -30,7 +30,9 @@ class XportMgrUDP:
     iface_config = {}
     bridges = {}
 
-    def __init__(self, log, args):
+    def __init__(self, log, args, eth_dispatcher_cls=None):
+        self.eth_dispatcher_cls = eth_dispatcher_cls or \
+            importlib.import_module('usrp_mpm.ethdispatch').EthDispatcherCtrl
         assert self.iface_config
         assert all((
             all((key in x for key in ('label',)))
@@ -40,7 +42,7 @@ class XportMgrUDP:
         self.log.trace("Initializing UDP xport manager...")
         self._possible_chdr_ifaces = self.iface_config.keys()
         self.log.trace("Identifying available network interfaces...")
-        self.chdr_port = EthDispatcherCtrl.DEFAULT_VITA_PORT[0]
+        self.chdr_port = self.eth_dispatcher_cls.DEFAULT_VITA_PORT[0]
         self._chdr_ifaces = self._init_interfaces(self._possible_chdr_ifaces)
         self._bridge_mode = args.get('bridge_mode', DEFAULT_BRIDGE_MODE)
         self._eth_dispatchers = {}
@@ -106,7 +108,7 @@ class XportMgrUDP:
                 "Updated dispatchers in bridge mode with bridge interface {}"
                 .format(bridge_iface))
             self._eth_dispatchers = {
-                x: EthDispatcherCtrl(self.iface_config[x]['label'])
+                x: self.eth_dispatcher_cls(self.iface_config[x]['label'])
                 for x in self.bridges[bridge_iface]
             }
             for dispatcher, table in iteritems(self._eth_dispatchers):
@@ -132,7 +134,7 @@ class XportMgrUDP:
                     continue
                 if iface not in self._eth_dispatchers:
                     self._eth_dispatchers[iface] = \
-                        EthDispatcherCtrl(self.iface_config[iface]['label'])
+                        self.eth_dispatcher_cls(self.iface_config[iface]['label'])
                 self._eth_dispatchers[iface].set_ipv4_addr(
                     self._chdr_ifaces[iface]['ip_addr']
                 )
@@ -218,7 +220,7 @@ class XportMgrUDP:
         deinit() was not yet called.
         """
         assert host_location in ('remote', 'local', 'all')
-          
+
         return [
             {
                 'ipv4': str(iface_info['ip_addr']) if (self.iface_config[iface_name]['type'] != 'internal')

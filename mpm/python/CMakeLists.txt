@@ -16,15 +16,17 @@ elseif(MPM_DEVICE STREQUAL "e31x")
     add_library(pyusrp_periphs SHARED pyusrp_periphs/e31x/pyusrp_periphs.cpp)
 endif(MPM_DEVICE STREQUAL "n3xx")
 
-target_include_directories(pyusrp_periphs PUBLIC
-    ${PYTHON_INCLUDE_DIRS}
-    ${CMAKE_SOURCE_DIR}/lib/
-    ${UHD_HOST_ROOT}/lib/usrp/common
-    ${UHD_HOST_ROOT}/lib/usrp/common/ad9361_driver
-    ${UHD_HOST_ROOT}/lib/deps/pybind11/include
-)
-target_link_libraries(pyusrp_periphs ${Boost_LIBRARIES} usrp-periphs)
-add_custom_command(TARGET pyusrp_periphs POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/libpyusrp_periphs.so ${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm/libpyusrp_periphs.so)
+if(NOT ENABLE_SIM)
+    target_include_directories(pyusrp_periphs PUBLIC
+        ${PYTHON_INCLUDE_DIRS}
+        ${CMAKE_SOURCE_DIR}/lib/
+        ${UHD_HOST_ROOT}/lib/usrp/common
+        ${UHD_HOST_ROOT}/lib/usrp/common/ad9361_driver
+        ${UHD_HOST_ROOT}/lib/deps/pybind11/include
+    )
+    target_link_libraries(pyusrp_periphs ${Boost_LIBRARIES} usrp-periphs)
+    add_custom_command(TARGET pyusrp_periphs POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/libpyusrp_periphs.so ${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm/libpyusrp_periphs.so)
+endif(NOT ENABLE_SIM)
 
 set(USRP_MPM_FILES "")
 add_subdirectory(usrp_mpm)
@@ -34,9 +36,12 @@ set(SETUP_PY_IN "${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in")
 set(SETUP_PY    "${CMAKE_CURRENT_BINARY_DIR}/setup.py")
 set(PERIPH_MGR_INIT_IN "${CMAKE_CURRENT_SOURCE_DIR}/usrp_mpm/periph_manager/__init__.py.in")
 set(PERIPH_MGR_INIT "${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm/periph_manager/__init__.py")
+set(USRP_MPM_INIT_IN "${CMAKE_CURRENT_SOURCE_DIR}/usrp_mpm/__init__.py.in")
+set(USRP_MPM_INIT "${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm/__init__.py")
 
 configure_file(${SETUP_PY_IN} ${SETUP_PY})
 configure_file(${PERIPH_MGR_INIT_IN} ${PERIPH_MGR_INIT})
+configure_file(${USRP_MPM_INIT_IN} ${USRP_MPM_INIT})
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/usrp_hwd.py" "${CMAKE_CURRENT_BINARY_DIR}/usrp_hwd.py" COPYONLY)
 
 add_custom_command(OUTPUT ${OUTPUT}

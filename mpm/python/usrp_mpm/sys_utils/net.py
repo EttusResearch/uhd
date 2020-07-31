@@ -31,7 +31,10 @@ def get_valid_interfaces(iface_list):
                 continue
             valid_iface_idx = valid_iface_idx[0]
             link_info = ipr.get_links(valid_iface_idx)[0]
-            if link_info.get_attr('IFLA_OPERSTATE') == 'UP' \
+            # IFLA_OPERSTATE attribute isn't implemented on WSL
+            # Workaround is ignore it in the simulator
+            from usrp_mpm import __simulated__
+            if (link_info.get_attr('IFLA_OPERSTATE') == 'UP' or __simulated__) \
                     and len(get_iface_addrs(link_info.get_attr('IFLA_ADDRESS'))):
                 assert link_info.get_attr('IFLA_IFNAME') == iface
                 valid_ifaces.append(iface)
@@ -83,6 +86,11 @@ def get_link_speed(ifname):
     The speed is Megabits/sec
     (from kernel at https://www.kernel.org/doc/Documentation/ABI/testing/sysfs-class-net)
     """
+    # This wasn't implemented in WSL or in the linux pc I tested it on
+    # We will return a sensible default
+    from usrp_mpm import __simulated__
+    if __simulated__:
+        return 1000
     net_sysfs = [device for device in pyudev.Context().list_devices(subsystem='net')
                  if device.sys_name == ifname][0]
 
