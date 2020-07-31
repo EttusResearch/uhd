@@ -226,6 +226,13 @@ module rfnoc_block_fft #(
   localparam [31:0] SR_FFT_SCALING      = 135;
   localparam [31:0] SR_FFT_SHIFT_CONFIG = 136;
 
+  localparam RB_FFT_RESET        = 0;
+  localparam RB_MAGNITUDE_OUT    = 1;
+  localparam RB_FFT_SIZE_LOG2    = 2;
+  localparam RB_FFT_DIRECTION    = 3;
+  localparam RB_FFT_SCALING      = 4;
+  localparam RB_FFT_SHIFT_CONFIG = 5;
+
   // FFT Output
   localparam [1:0] COMPLEX_OUT = 0;
   localparam [1:0] MAG_OUT     = 1;
@@ -284,8 +291,7 @@ module rfnoc_block_fft #(
     .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
     .o_tdata(fft_core_size_log2_tdata), .o_tlast(), .o_tvalid(fft_core_size_log2_tvalid), .o_tready(fft_core_size_log2_tready));
 
-  // Forward = 0, Reverse = 1
-  localparam DEFAULT_FFT_DIRECTION = 0;
+  localparam DEFAULT_FFT_DIRECTION = FFT_FORWARD;
   wire fft_direction_tdata;
   wire fft_direction_tvalid, fft_direction_tready;
   axi_setting_reg #(
@@ -504,12 +510,12 @@ module rfnoc_block_fft #(
   // Readback registers
   always @*
     case(rb_addr)
-      3'd0    : rb_data <= {63'd0, fft_reset};
-      3'd1    : rb_data <= {62'd0, magnitude_out};
-      3'd2    : rb_data <= {fft_size_log2_tdata};
-      3'd3    : rb_data <= {63'd0, fft_direction_tdata};
-      3'd4    : rb_data <= {52'd0, fft_scaling_tdata};
-      3'd5    : rb_data <= {62'd0, fft_shift_config_tdata};
+      RB_FFT_RESET        : rb_data <= {63'd0, fft_reset};
+      RB_MAGNITUDE_OUT    : rb_data <= {62'd0, magnitude_out};
+      RB_FFT_SIZE_LOG2    : rb_data <= {fft_size_log2_tdata};
+      RB_FFT_DIRECTION    : rb_data <= {63'd0, fft_direction_tdata};
+      RB_FFT_SCALING      : rb_data <= {52'd0, fft_scaling_tdata};
+      RB_FFT_SHIFT_CONFIG : rb_data <= {62'd0, fft_shift_config_tdata};
       default : rb_data <= 64'h0BADC0DE0BADC0DE;
   endcase
 

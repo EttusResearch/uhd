@@ -30,7 +30,7 @@ module rfnoc_block_fft_tb();
   // Block configuration
   localparam int NOC_ID        = 32'hFF70_0000;
   localparam int CHDR_W        = 64;
-  localparam int SAMP_W        = 32;
+  localparam int ITEM_W        = 32;
   localparam int THIS_PORTID   = 'h123;
   localparam int MTU           = 10;
   localparam int NUM_PORTS     = 1;
@@ -41,7 +41,6 @@ module rfnoc_block_fft_tb();
   // FFT settings
   localparam [31:0] FFT_SIZE         = 256;
   localparam [31:0] FFT_SIZE_LOG2    = $clog2(FFT_SIZE);
-  const logic [31:0] FFT_DIRECTION    = DUT.FFT_FORWARD;  // Forward
   localparam [31:0] FFT_SCALING      = 12'b011010101010;           // Conservative scaling of 1/N
   localparam [31:0] FFT_SHIFT_CONFIG = 0;                          // Normal FFT shift
   localparam FFT_BIN                 = FFT_SIZE/8 + FFT_SIZE/2;    // 1/8 sample rate freq + FFT shift
@@ -61,7 +60,8 @@ module rfnoc_block_fft_tb();
   // Bus Functional Models
   //---------------------------------------------------------------------------
 
-  typedef ChdrData #(CHDR_W, SAMP_W)::chdr_word_t chdr_word_t;
+  typedef ChdrData #(CHDR_W, ITEM_W)::chdr_word_t chdr_word_t;
+  typedef ChdrData #(CHDR_W, ITEM_W)::item_t      item_t;
 
   RfnocBackendIf        backend            (rfnoc_chdr_clk, rfnoc_ctrl_clk);
   AxiStreamIf #(32)     m_ctrl             (rfnoc_ctrl_clk, 1'b0);
@@ -70,7 +70,7 @@ module rfnoc_block_fft_tb();
   AxiStreamIf #(CHDR_W) s_chdr             (rfnoc_chdr_clk, 1'b0);
 
   // Bus functional model for a software block controller
-  RfnocBlockCtrlBfm #(CHDR_W, SAMP_W) blk_ctrl = 
+  RfnocBlockCtrlBfm #(CHDR_W, ITEM_W) blk_ctrl = 
     new(backend, m_ctrl, s_ctrl);
 
   // Connect block controller to BFMs
@@ -141,9 +141,17 @@ module rfnoc_block_fft_tb();
   // Test Process
   //---------------------------------------------------------------------------
 
-  task automatic send_sine_wave (
+  task automatic test_sine_wave (
     input int unsigned port
   );
+    test.start_test("Test sine wave", 20us);
+
+    write_reg(port, DUT.SR_FFT_SIZE_LOG2, FFT_SIZE_LOG2);
+    write_reg(port, DUT.SR_FFT_DIRECTION, DUT.FFT_FORWARD);
+    write_reg(port, DUT.SR_FFT_SCALING, FFT_SCALING);
+    write_reg(port, DUT.SR_FFT_SHIFT_CONFIG, FFT_SHIFT_CONFIG);
+    write_reg(port, DUT.SR_MAGNITUDE_OUT, DUT.COMPLEX_OUT); // Enable real/imag out
+
     // Send a sine wave
     fork
       begin
@@ -164,9 +172,9 @@ module rfnoc_block_fft_tb();
       end
 
       begin
-        string s;
-        chdr_word_t   recv_payload[$], temp_payload[$];
-        int           data_bytes;
+        string       msg;
+        chdr_word_t  recv_payload[$], temp_payload[$];
+        int          data_bytes;
         logic [15:0] real_val;
         logic [15:0] cplx_val;
 
@@ -187,23 +195,184 @@ module rfnoc_block_fft_tb();
                 // Assert that for the special case of a 1/8th sample rate sine wave input, 
                 // the real part of the corresponding 1/8th sample rate FFT bin should always be greater than 0 and
                 // the complex part equal to 0.
-                
-                `ASSERT_ERROR(real_val > 32'd0, "FFT bin real part is not greater than 0!");
-                `ASSERT_ERROR(cplx_val == 32'd0, "FFT bin complex part is not 0!");
+                $sformat(msg, 
+                  "On iteration %0d, sample %0d, FFT real part is 0x%X, expected value > 0", 
+                  n, 2*k+i, real_val);
+                  `ASSERT_ERROR(real_val > 32'd0, msg);
+                $sformat(msg,
+                  "On iteration %0d, sample %0d, FFT complex part is 0x%X, expected 0", 
+                  n, 2*k+i, cplx_val);
+                  `ASSERT_ERROR(cplx_val == 32'd0, msg);
               end else begin
                 // Assert all other FFT bins should be 0 for both complex and real parts
-                `ASSERT_ERROR(real_val == 32'd0, "FFT bin real part is not 0!");
-                `ASSERT_ERROR(cplx_val == 32'd0, "FFT bin complex part is not 0!");
+                $sformat(msg, 
+                  "On iteration %0d, sample %0d, FFT real part is 0x%X, expected value 0", 
+                  n, 2*k+i, real_val);
+                  `ASSERT_ERROR(real_val == 32'd0, msg);
+                $sformat(msg,
+                  "On iteration %0d, sample %0d, FFT complex part is 0x%X, expected 0", 
+                  n, 2*k+i, cplx_val);
+                  `ASSERT_ERROR(cplx_val == 32'd0, msg);
               end
             end
           end
         end
       end
     join
-  endtask
+
+    test.end_test();
+  endtask : test_sine_wave
+
+
+  task automatic test_short (
+    input int unsigned port
+  );
+    item_t samples[$], spectrum[$], recv[$];
+    string msg;
+
+    test.start_test("Test short FFT", 10us);
+
+    write_reg(port, DUT.SR_FFT_SIZE_LOG2, 3);
+    write_reg(port, DUT.SR_FFT_DIRECTION, DUT.FFT_FORWARD);
+    write_reg(port, DUT.SR_FFT_SCALING, 0);         // No scaling
+    write_reg(port, DUT.SR_FFT_SHIFT_CONFIG, 10);   // Bypass shifting
+
+    // Samples to input to FFT (expected output of IFFT)
+    samples = '{ 
+      32'h000E_0000,  // {16'd14, 16'd0}, // Vivado won't allow concatenation
+      32'h000F_0000,  // {16'd15, 16'd0}, // in dynamic types.
+      32'h0010_0000,  // {16'd16, 16'd0},
+      32'h0011_0000,  // {16'd17, 16'd0},
+      32'h0012_0000,  // {16'd18, 16'd0},
+      32'h0013_0000,  // {16'd19, 16'd0},
+      32'h0014_0000,  // {16'd20, 16'd0},
+      32'h0015_0000   // {16'd21, 16'd0}
+    };
+
+    // Expected spectrum output by FFT (values to input to IFFT)
+    spectrum = '{ 
+      32'h008C_0000,  // { 16'sd140, 16'd0},
+      32'hFFFC_000A,  // {-16'sd4,   16'd10},
+      32'hFFFC_0004,  // {-16'sd4,   16'd4},
+      32'hFFFC_0002,  // {-16'sd4,   16'd2},
+      32'hFFFC_0000,  // {-16'sd4,   16'd0},
+      32'hFFFC_FFFE,  // {-16'sd4,  -16'd2},
+      32'hFFFC_FFFC,  // {-16'sd4,  -16'd4},
+      32'hFFFC_FFF6   // {-16'sd4,  -16'd10}
+    };
+
+    blk_ctrl.send_items(port, samples);
+    blk_ctrl.recv_items(port, recv);
+
+    foreach (recv[i]) begin
+      if (recv[i] != spectrum[i]) begin
+        $sformat(msg, "On sample %d, received (%d,%d), expected (%d,%d)", i,
+          signed'(recv[i][31:16]), signed'(recv[i][15:0]),
+          signed'(spectrum[i][31:16]), signed'(spectrum[i][15:0]));
+        `ASSERT_ERROR(0, msg);
+      end
+    end
+
+    test.end_test();
+
+    test.start_test("Test short IFFT", 10us);
+
+    write_reg(port, DUT.SR_FFT_DIRECTION, DUT.FFT_REVERSE);
+    write_reg(port, DUT.SR_FFT_SCALING, 12'b11);
+    blk_ctrl.send_items(port, spectrum);
+    blk_ctrl.recv_items(port, recv);
+
+    foreach (recv[i]) begin
+      if (recv[i] != samples[i]) begin
+        $sformat(msg, "On sample %d, received (%d,%d), expected (%d,%d)", i,
+          signed'(recv[i][31:16]), signed'(recv[i][15:0]),
+          signed'(samples[i][31:16]), signed'(samples[i][15:0]));
+        `ASSERT_ERROR(0, msg);
+      end
+    end
+
+    test.end_test();
+  endtask : test_short
+
+
+  task automatic test_regs (
+    input int unsigned port
+  );
+    logic [31:0] val;
+
+    test.start_test("Test registers", 10us);
+
+    write_reg(port, DUT.SR_FFT_RESET, 1);
+    write_reg(port, DUT.SR_FFT_RESET, 0);
+
+    // SR_FFT_SIZE_LOG2
+    read_user_reg(port, DUT.RB_FFT_SIZE_LOG2, val);
+    `ASSERT_ERROR(val == DUT.DEFAULT_FFT_SIZE, "FFT_SIZE_LOG2 is incorrect");
+    write_reg(port, DUT.SR_FFT_SIZE_LOG2, 32'hFFFFFFFF);
+    read_user_reg(port, DUT.RB_FFT_SIZE_LOG2, val);
+    `ASSERT_ERROR(val == 32'hFF, "FFT_SIZE_LOG2 is incorrect");
+    write_reg(port, DUT.SR_FFT_SIZE_LOG2, 32'h0);
+    read_user_reg(port, DUT.RB_FFT_SIZE_LOG2, val);
+    `ASSERT_ERROR(val == 32'h0, "FFT_SIZE_LOG2 is incorrect");
+    write_reg(port, DUT.SR_FFT_SIZE_LOG2, DUT.DEFAULT_FFT_SIZE);
+    read_user_reg(port, DUT.RB_FFT_SIZE_LOG2, val);
+    `ASSERT_ERROR(val == DUT.DEFAULT_FFT_SIZE, "FFT_SIZE_LOG2 is incorrect");
+
+    // SR_MAGNITUDE_OUT
+    read_user_reg(port, DUT.RB_MAGNITUDE_OUT, val);
+    `ASSERT_ERROR(val == 32'h0, "MAGNITUDE_OUT is incorrect");
+    write_reg(port, DUT.SR_MAGNITUDE_OUT, 32'hFFFFFFFF);
+    read_user_reg(port, DUT.RB_MAGNITUDE_OUT, val);
+    `ASSERT_ERROR(val == 32'h3, "MAGNITUDE_OUT is incorrect");
+    write_reg(port, DUT.SR_MAGNITUDE_OUT, 32'h0);
+    read_user_reg(port, DUT.RB_MAGNITUDE_OUT, val);
+    `ASSERT_ERROR(val == 32'h0, "MAGNITUDE_OUT is incorrect");
+
+    // SR_FFT_DIRECTION
+    read_user_reg(port, DUT.RB_FFT_DIRECTION, val);
+    `ASSERT_ERROR(val == DUT.DEFAULT_FFT_DIRECTION, "FFT_DIRECTION is incorrect");
+    write_reg(port, DUT.SR_FFT_DIRECTION, 32'hFFFFFFFF);
+    read_user_reg(port, DUT.RB_FFT_DIRECTION, val);
+    `ASSERT_ERROR(val == 32'h1, "FFT_DIRECTION is incorrect");
+    write_reg(port, DUT.SR_FFT_DIRECTION, 32'h0);
+    read_user_reg(port, DUT.RB_FFT_DIRECTION, val);
+    `ASSERT_ERROR(val == 32'h0, "FFT_DIRECTION is incorrect");
+    write_reg(port, DUT.SR_FFT_DIRECTION, DUT.DEFAULT_FFT_DIRECTION);
+    read_user_reg(port, DUT.RB_FFT_DIRECTION, val);
+    `ASSERT_ERROR(val == DUT.DEFAULT_FFT_DIRECTION, "FFT_DIRECTION is incorrect");
+
+    // SR_FFT_SCALING
+    read_user_reg(port, DUT.RB_FFT_SCALING, val);
+    `ASSERT_ERROR(val == DUT.DEFAULT_FFT_SCALING, "FFT_SCALING is incorrect");
+    write_reg(port, DUT.SR_FFT_SCALING, 32'hFFFFFFFF);
+    read_user_reg(port, DUT.RB_FFT_SCALING, val);
+    `ASSERT_ERROR(val == 32'hFFF, "FFT_SCALING is incorrect");
+    write_reg(port, DUT.SR_FFT_SCALING, 32'h0);
+    read_user_reg(port, DUT.RB_FFT_SCALING, val);
+    `ASSERT_ERROR(val == 32'h0, "FFT_SCALING is incorrect");
+    write_reg(port, DUT.SR_FFT_SCALING, DUT.DEFAULT_FFT_SCALING);
+    read_user_reg(port, DUT.RB_FFT_SCALING, val);
+    `ASSERT_ERROR(val == DUT.DEFAULT_FFT_SCALING, "FFT_SCALING is incorrect");
+
+    // SR_FFT_SHIFT_CONFIG
+    read_user_reg(port, DUT.RB_FFT_SHIFT_CONFIG, val);
+    `ASSERT_ERROR(val == 32'b0, "FFT_SHIFT_CONFIG is incorrect");
+    write_reg(port, DUT.SR_FFT_SHIFT_CONFIG, 32'hFFFFFFFF);
+    read_user_reg(port, DUT.RB_FFT_SHIFT_CONFIG, val);
+    `ASSERT_ERROR(val == 32'h3, "FFT_SHIFT_CONFIG is incorrect");
+    write_reg(port, DUT.SR_FFT_SHIFT_CONFIG, 32'h0);
+    read_user_reg(port, DUT.RB_FFT_SHIFT_CONFIG, val);
+    `ASSERT_ERROR(val == 32'h0, "FFT_SHIFT_CONFIG is incorrect");
+    write_reg(port, DUT.SR_FFT_SHIFT_CONFIG, 32'b0);
+    read_user_reg(port, DUT.RB_FFT_SHIFT_CONFIG, val);
+    `ASSERT_ERROR(val == 32'b0, "FFT_SHIFT_CONFIG is incorrect");
+
+    test.end_test();
+  endtask : test_regs
+
 
   initial begin : tb_main
-    const int port = 0;
+    static int port = 0;
     test.start_tb("rfnoc_block_fft_tb");
 
     // Start the BFMs running
@@ -233,24 +402,12 @@ module rfnoc_block_fft_tb();
     test.end_test();
 
     //-------------------------------------------------------------------------
-    // Setup FFT
+    // Tests
     //-------------------------------------------------------------------------
 
-    test.start_test("Setup FFT", 10us);
-    write_reg(port, DUT.SR_FFT_SIZE_LOG2, FFT_SIZE_LOG2);
-    write_reg(port, DUT.SR_FFT_DIRECTION, FFT_DIRECTION);
-    write_reg(port, DUT.SR_FFT_SCALING, FFT_SCALING);
-    write_reg(port, DUT.SR_FFT_SHIFT_CONFIG, FFT_SHIFT_CONFIG);
-    write_reg(port, DUT.SR_MAGNITUDE_OUT, DUT.COMPLEX_OUT); // Enable real/imag out
-    test.end_test();
-
-    //-------------------------------------------------------------------------76
-    // Test sine wave
-    //-------------------------------------------------------------------------
-
-    test.start_test("Test sine wave", 20us);
-    send_sine_wave (port);
-    test.end_test();
+    test_regs(port);
+    test_short(port);
+    test_sine_wave(port);
 
     //-------------------------------------------------------------------------
     // Finish
