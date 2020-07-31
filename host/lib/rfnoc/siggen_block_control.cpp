@@ -193,8 +193,8 @@ private:
             });
             register_property(&_prop_spp.back(), [this, port]() {
                 const uint32_t spp = _prop_spp.at(port).get();
-                RFNOC_LOG_TRACE("Setting samples per packet to " << words_per_pkt
-                                                                 << " on chan " << chan);
+                RFNOC_LOG_TRACE(
+                    "Setting samples per packet to " << spp << " on port " << port);
                 _siggen_reg_iface.poke32(REG_SPP_OFFSET, spp, port);
             });
 
