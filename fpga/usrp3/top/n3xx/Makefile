@@ -39,6 +39,7 @@ N310_DEFAULTS:=DEFAULT_RFNOC_IMAGE_CORE_FILE=n310_rfnoc_image_core.v DEFAULT_EDG
 N320_DEFAULTS:=DEFAULT_RFNOC_IMAGE_CORE_FILE=n320_rfnoc_image_core.v DEFAULT_EDGE_FILE=$(abspath n320_static_router.hex)
 N300AA_DEFAULTS:=DEFAULT_RFNOC_IMAGE_CORE_FILE=n300_bist_image_core.v DEFAULT_EDGE_FILE=$(abspath n300_bist_static_router.hex)
 N310AA_DEFAULTS:=DEFAULT_RFNOC_IMAGE_CORE_FILE=n310_bist_image_core.v DEFAULT_EDGE_FILE=$(abspath n310_bist_static_router.hex)
+N320AA_DEFAULTS:=DEFAULT_RFNOC_IMAGE_CORE_FILE=n320_bist_image_core.v DEFAULT_EDGE_FILE=$(abspath n320_bist_static_router.hex)
 
 # Set build option (check RTL, run synthesis, or do a full build)
 ifndef TARGET
@@ -161,6 +162,11 @@ N320_XQ: build/usrp_n320_fpga_XQ.dts
 N320_AQ: build/usrp_n320_fpga_AQ.dts
 	$(call vivado_build,N320,$(AQ_DEFS) N320=1,$(N320_DEFAULTS))
 	$(call post_build,N320,AQ)
+
+##N320_AA:  Aurora on SFP+ Port0, Aurora on SFP+ Port1.
+N320_AA: build/usrp_n320_fpga_AA.dts
+	$(call vivado_build,N320,$(AA_DEFS) N320=1,$(N320AA_DEFAULTS))
+	$(call post_build,N320,AA)
 
 build/%.dts: dts/%.dts dts/*.dtsi
 	-mkdir -p build
