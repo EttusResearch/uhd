@@ -6,7 +6,11 @@
 #
 """Setup file for uhd module"""
 
-from setuptools import setup
+from setuptools import setup, find_packages
+
+packages = find_packages()
+
+print("Including packages in pyuhd:", packages)
 
 setup(name='uhd',
       version='${UHD_VERSION_MAJOR}.${UHD_VERSION_API}.${UHD_VERSION_ABI}',
@@ -26,5 +30,5 @@ setup(name='uhd',
       package_dir={'': r'${NATIVE_CURRENT_BINARY_DIR}'},
       package_data={'uhd': ['*.so']},
       zip_safe=False,
-      packages=['uhd'],
+      packages=packages,
       install_requires=['numpy'])
