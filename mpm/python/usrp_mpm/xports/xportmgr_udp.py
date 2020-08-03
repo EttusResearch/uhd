@@ -199,8 +199,7 @@ class XportMgrUDP:
             }
             for iface_name, iface_info in iteritems(self._chdr_ifaces)
             if((self.iface_config[iface_name]['type'] == 'internal' and host_location == 'local') or
-                (self.iface_config[iface_name]['type'] != 'internal' and self.iface_config[iface_name]['type'] != 'forward'
-                and host_location == 'remote') or
+                (self.iface_config[iface_name]['type'] != 'internal' and host_location == 'remote') or
                 host_location == 'all')
         ]
 
