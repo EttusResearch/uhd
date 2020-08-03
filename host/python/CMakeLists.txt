@@ -84,6 +84,63 @@ set(TIMESTAMP_FILE "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")
 file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR} NATIVE_CURRENT_BINARY_DIR)
 configure_file(${SETUP_PY_IN} ${SETUP_PY})
 
+if(ENABLE_SIM)
+    set(MPM_DEVICE "sim")
+    add_subdirectory(${CMAKE_SOURCE_DIR}/../mpm/python simulator)
+    # simulator/usrp_mpm needs to be copied to usrp_mpm because setuptools only detects import packages in the working directory
+    add_custom_target(copy_mpm_packages ALL DEPENDS usrp_mpm)
+    add_custom_command(TARGET copy_mpm_packages
+                       PRE_BUILD
+                       COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm
+                       COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm/dboard_manager
+                       COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm/periph_manager
+                       COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm/simulator
+                       COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm/sys_utils
+                       COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm/xports
+
+                       COMMAND ${CMAKE_COMMAND} -E copy
+                       ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/dboard_manager/base.py
+                       ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/dboard_manager/__init__.py
+                       ${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm/dboard_manager
+
+                       COMMAND ${CMAKE_COMMAND} -E copy
+                       ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/periph_manager/base.py
+                       ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/periph_manager/common.py
+                       ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/periph_manager/sim.py
+                       ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/periph_manager/__init__.py
+                       ${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm/periph_manager
+
+                       COMMAND ${CMAKE_COMMAND} -E copy_directory
+                       ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/simulator
+                       ${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm/simulator
+
+                       COMMAND ${CMAKE_COMMAND} -E copy_directory
+                       ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/sys_utils
+                       ${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm/sys_utils
+
+                       COMMAND ${CMAKE_COMMAND} -E copy
+                       ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/xports/xportmgr_udp.py
+                       ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/xports/__init__.py
+                       ${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm/xports
+
+                       COMMAND ${CMAKE_COMMAND} -E copy
+                       ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/discovery.py
+                       ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/eeprom.py
+                       ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/ethdispatch.py
+                       ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/gpsd_iface.py
+                       ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/mpmlog.py
+                       ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/mpmtypes.py
+                       ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/mpmutils.py
+                       ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/prefs.py
+                       ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/rpc_server.py
+                       ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/__init__.py
+                       ${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm)
+    # Move usrp_hwd.py into usrp_mpm so that it is included in the package
+    configure_file(${CMAKE_SOURCE_DIR}/../mpm/python/usrp_hwd.py
+                   ${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm/usrp_hwd.py COPYONLY)
+    set(PYUHD_FILES ${PYUHD_FILES} copy_mpm_packages)
+endif(ENABLE_SIM)
+
 add_custom_command(OUTPUT ${TIMESTAMP_FILE}
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/uhd ${CMAKE_CURRENT_BINARY_DIR}/uhd
   COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} -q build

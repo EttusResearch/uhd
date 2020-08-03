@@ -10,5 +10,7 @@
 
 add_test(
   NAME mpm_unit_tests
-  COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/run_unit_tests.py ${MPM_DEVICE}
+  COMMAND ${CMAKE_COMMAND} -E env
+  PYTHONPATH=${CMAKE_BINARY_DIR}/python
+  ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/run_unit_tests.py ${MPM_DEVICE}
 )
