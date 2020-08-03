@@ -356,7 +356,7 @@ both_links_t pcie_manager::get_links(link_type_t link_type,
     // PCIe: Lossless, and little endian
     size_t recv_buff_size, send_buff_size;
     auto link =
-        nirio_link::make(_rio_fpga_interface, dma_channel_num, link_params, link_args);
+        nirio_link::make(_rio_fpga_interface, dma_channel_num, link_params, link_args, recv_buff_size, send_buff_size);
 
     return std::make_tuple(
         link, send_buff_size, link, recv_buff_size, false /*not lossy*/, false);

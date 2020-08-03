@@ -170,7 +170,9 @@ nirio_link::~nirio_link()
 nirio_link::sptr nirio_link::make(uhd::niusrprio::niusrprio_session::sptr fpga_session,
     const uint32_t instance,
     const uhd::transport::link_params_t& default_params,
-    const uhd::device_addr_t& hints)
+    const uhd::device_addr_t& hints,
+    size_t& recv_buff_size,
+    size_t& send_buff_size)
 {
     UHD_ASSERT_THROW(default_params.num_recv_frames != 0);
     UHD_ASSERT_THROW(default_params.num_send_frames != 0);
@@ -291,6 +293,9 @@ nirio_link::sptr nirio_link::make(uhd::niusrprio::niusrprio_session::sptr fpga_s
                 % page_size)
                 .str());
     }
+
+    recv_buff_size = link_params.num_recv_frames * link_params.recv_frame_size;
+    send_buff_size = link_params.num_send_frames * link_params.send_frame_size;
 
     return nirio_link::sptr(new nirio_link(fpga_session, instance, link_params));
 }

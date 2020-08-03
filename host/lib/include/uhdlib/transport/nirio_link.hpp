@@ -79,13 +79,15 @@ public:
      * \param addr a string representing the destination address
      * \param port a string representing the destination port
      * \param params Values for frame sizes, num frames, and buffer sizes
-     * \param[out] recv_socket_buff_size Returns the recv socket buffer size
-     * \param[out] send_socket_buff_size Returns the send socket buffer size
+     * \param[out] recv_buff_size Returns the recv buffer size
+     * \param[out] send_buff_size Returns the send buffer size
      */
     static sptr make(uhd::niusrprio::niusrprio_session::sptr fpga_session,
         const uint32_t instance,
         const link_params_t& params,
-        const uhd::device_addr_t& hints);
+        const uhd::device_addr_t& hints,
+        size_t& recv_buff_size,
+        size_t& send_buff_size);
 
     /*!
      * Get the physical adapter ID used for this link
