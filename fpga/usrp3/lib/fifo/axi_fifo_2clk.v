@@ -88,14 +88,14 @@ module axi_fifo_2clk #(
   wire             o_ext_tvalid;
   wire             o_ext_tready;
 
-  // Ideally the following parameters should be technology
-  // specific. For now these values have been optimized for
-  // 7Series FPGAs. They also work for Spartan6 but may not
-  // be optimal. For future generations, make these values
-  // depend on the DEVICE parameter.
-  localparam BASE_WIDTH     = 72;
-  localparam SRL_THRESHOLD  = 5;
-  localparam RAM_THRESHOLD  = 9;
+  // Derive constants based on device.
+  // First triple of values is for Intel's MAX10 FPGAs. The FIFO generator for
+  // those devices supports embedded memory only (SRL_THRESHOLD = 0).
+  // The later triple has been optimized for Xilinx 7Series FPGAs. They also
+  // work for Spartan6 but may not be optimal.
+  localparam BASE_WIDTH     = (DEVICE == "MAX10") ? 36 : 72;
+  localparam SRL_THRESHOLD  = (DEVICE == "MAX10") ?  0 :  5;
+  localparam RAM_THRESHOLD  = (DEVICE == "MAX10") ?  8 :  9;
 
   // How many parallel FIFOs to instantiate to fit WIDTH
   localparam NUM_FIFOS = ((WIDTH-1)/BASE_WIDTH)+1;

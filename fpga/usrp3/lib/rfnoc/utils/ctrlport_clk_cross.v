@@ -11,8 +11,9 @@
 //
 
 
-module ctrlport_clk_cross (
-
+module ctrlport_clk_cross #(
+  parameter DEVICE = "7SERIES" // FPGA technology identifier (for optimal FIFO inference)
+)(
   input wire rst, // Can be either clock domain, but must be glitch-free
 
   //---------------------------------------------------------------------------
@@ -58,7 +59,7 @@ module ctrlport_clk_cross (
   // Slave to Master Clock Crossing (Request)
   //---------------------------------------------------------------------------
 
-  localparam REQ_W = 
+  localparam REQ_W =
     1  + // ctrlport_req_wr
     1  + // ctrlport_req_rd
     20 + // ctrlport_req_addr
@@ -76,22 +77,25 @@ module ctrlport_clk_cross (
   wire              m_ctrlport_req_wr_tmp;
   wire              m_ctrlport_req_rd_tmp;
 
+  // Sort by descreasing order of usage possibility.
+  // This way instance, which do not need port IDs, time etc. can save the MSBs.
   assign s_req_flat = {
-    s_ctrlport_req_wr,
-    s_ctrlport_req_rd,
-    s_ctrlport_req_addr,
     s_ctrlport_req_portid,
     s_ctrlport_req_rem_epid,
     s_ctrlport_req_rem_portid,
-    s_ctrlport_req_data,
-    s_ctrlport_req_byte_en,
     s_ctrlport_req_has_time,
-    s_ctrlport_req_time
+    s_ctrlport_req_time,
+    s_ctrlport_req_byte_en,
+    s_ctrlport_req_data,
+    s_ctrlport_req_addr,
+    s_ctrlport_req_wr,
+    s_ctrlport_req_rd
   };
 
   axi_fifo_2clk #(
-    .WIDTH (REQ_W),
-    .SIZE  (3)
+    .WIDTH  (REQ_W),
+    .SIZE   (3),
+    .DEVICE (DEVICE)
   ) req_fifo (
     .reset    (rst),
     .i_aclk   (s_ctrlport_clk),
@@ -105,16 +109,16 @@ module ctrlport_clk_cross (
   );
 
   assign {
-    m_ctrlport_req_wr_tmp,
-    m_ctrlport_req_rd_tmp,
-    m_ctrlport_req_addr,
     m_ctrlport_req_portid,
     m_ctrlport_req_rem_epid,
     m_ctrlport_req_rem_portid,
-    m_ctrlport_req_data,
-    m_ctrlport_req_byte_en,
     m_ctrlport_req_has_time,
-    m_ctrlport_req_time
+    m_ctrlport_req_time,
+    m_ctrlport_req_byte_en,
+    m_ctrlport_req_data,
+    m_ctrlport_req_addr,
+    m_ctrlport_req_wr_tmp,
+    m_ctrlport_req_rd_tmp
   } = m_req_flat;
 
   assign m_ctrlport_req_wr = m_ctrlport_req_wr_tmp & m_req_flat_valid;
@@ -125,7 +129,7 @@ module ctrlport_clk_cross (
   // Master to Slave Clock Crossing (Response)
   //---------------------------------------------------------------------------
 
-  localparam RESP_W = 
+  localparam RESP_W =
     1  + // ctrlport_resp_ack,
     2  + // ctrlport_resp_status,
     32;  // ctrlport_resp_data
@@ -142,8 +146,9 @@ module ctrlport_clk_cross (
   };
 
   axi_fifo_2clk #(
-    .WIDTH (RESP_W),
-    .SIZE  (3)
+    .WIDTH  (RESP_W),
+    .SIZE   (3),
+    .DEVICE (DEVICE)
   ) resp_fifo (
     .reset    (rst),
     .i_aclk   (m_ctrlport_clk),
