@@ -153,6 +153,8 @@ class StreamSpec:
         self.sample_rate = None
         self.dst_epid = None
         self.addr = None
+        self.capacity_packets = 0
+        self.capacity_bytes = 0
 
     def set_timestamp_lo(self, low):
         """Set the low 32 bits of the initial timestamp"""
@@ -181,19 +183,6 @@ class StreamSpec:
         assert self.packet_samples != 0
         assert self.sample_rate != 0
         return self.packet_samples / self.sample_rate
-
-    def seq_num_iter(self):
-        """Returns a generator which returns an incrementing integer
-        for each packet that should be sent. This is useful to set the
-        seq_num of each transmitted packet.
-        """
-        i = 0
-        while True:
-            if not self.is_continuous:
-                if i >= self.total_samples:
-                    return
-            yield i
-            i += 1
 
     def __str__(self):
         return "StreamSpec{{total_samples: {}, is_continuous: {}, packet_samples: {}," \
