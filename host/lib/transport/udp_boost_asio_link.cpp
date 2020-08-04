@@ -84,17 +84,6 @@ udp_boost_asio_link::sptr udp_boost_asio_link::make(const std::string& addr,
     UHD_ASSERT_THROW(params.recv_buff_size != 0);
     UHD_ASSERT_THROW(params.send_buff_size != 0);
 
-#if defined(UHD_PLATFORM_MACOS) || defined(UHD_PLATFORM_BSD)
-    // limit buffer size on macos to avoid the warning issued by
-    // resize_buff_helper
-    if (params.recv_buff_size > MAX_BUFF_SIZE_ETH_MACOS) {
-        params.recv_buff_size = MAX_BUFF_SIZE_ETH_MACOS;
-    }
-    if (params.send_buff_size > MAX_BUFF_SIZE_ETH_MACOS) {
-        params.send_buff_size = MAX_BUFF_SIZE_ETH_MACOS;
-    }
-#endif
-
     udp_boost_asio_link::sptr link(new udp_boost_asio_link(addr, port, params));
 
     // call the helper to resize send and recv buffers
