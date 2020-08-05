@@ -10,10 +10,10 @@
 #include <uhd/types/endianness.hpp>
 
 namespace chdr_rfnoc = uhd::rfnoc::chdr;
-namespace chdr_util  = uhd::utils::chdr;
+namespace uhd { namespace utils { namespace chdr {
 
 template <typename payload_t>
-chdr_util::chdr_packet::chdr_packet(uhd::rfnoc::chdr_w_t chdr_w,
+chdr_packet::chdr_packet(uhd::rfnoc::chdr_w_t chdr_w,
     chdr_rfnoc::chdr_header header,
     payload_t payload,
     boost::optional<uint64_t> timestamp,
@@ -24,7 +24,7 @@ chdr_util::chdr_packet::chdr_packet(uhd::rfnoc::chdr_w_t chdr_w,
 }
 
 template <typename OutputIterator>
-void chdr_util::chdr_packet::serialize(
+void chdr_packet::serialize(
     OutputIterator first, OutputIterator last, uhd::endianness_t endianness) const
 {
     void* start = static_cast<void*>(&*first);
@@ -33,7 +33,7 @@ void chdr_util::chdr_packet::serialize(
 }
 
 template <typename InputIterator>
-chdr_util::chdr_packet chdr_util::chdr_packet::deserialize(uhd::rfnoc::chdr_w_t chdr_w,
+chdr_packet chdr_packet::deserialize(uhd::rfnoc::chdr_w_t chdr_w,
     InputIterator first,
     InputIterator last,
     uhd::endianness_t endianness)
@@ -44,7 +44,7 @@ chdr_util::chdr_packet chdr_util::chdr_packet::deserialize(uhd::rfnoc::chdr_w_t 
 }
 
 template <typename payload_t>
-payload_t chdr_util::chdr_packet::get_payload(uhd::endianness_t endianness) const
+payload_t chdr_packet::get_payload(uhd::endianness_t endianness) const
 {
     payload_t payload;
     // Only Data Packets are allowed to have end on a incomplete CHDR_W length.
@@ -61,7 +61,7 @@ payload_t chdr_util::chdr_packet::get_payload(uhd::endianness_t endianness) cons
 }
 
 template <typename payload_t>
-void chdr_util::chdr_packet::set_payload(payload_t payload, uhd::endianness_t endianness)
+void chdr_packet::set_payload(payload_t payload, uhd::endianness_t endianness)
 {
     _header.set_pkt_type(chdr_rfnoc::payload_to_packet_type<payload_t>());
     // Meaning a 64 bit word (The basic unit of data for payloads)
@@ -78,7 +78,7 @@ void chdr_util::chdr_packet::set_payload(payload_t payload, uhd::endianness_t en
 }
 
 template <typename payload_t>
-const std::string chdr_util::chdr_packet::to_string_with_payload(
+const std::string chdr_packet::to_string_with_payload(
     uhd::endianness_t endianness) const
 {
     payload_t payload = this->get_payload<payload_t>(endianness);
@@ -87,10 +87,12 @@ const std::string chdr_util::chdr_packet::to_string_with_payload(
 
 template <>
 const std::string
-chdr_util::chdr_packet::to_string_with_payload<chdr_rfnoc::mgmt_payload>(
+chdr_packet::to_string_with_payload<chdr_rfnoc::mgmt_payload>(
     uhd::endianness_t endianness) const
 {
     chdr_rfnoc::mgmt_payload payload =
         this->get_payload<chdr_rfnoc::mgmt_payload>(endianness);
     return to_string() + payload.to_string() + payload.hops_to_string();
 }
+
+}}}// namespace uhd::utils::chdr
