@@ -304,6 +304,10 @@ UHD_ADD_RFNOC_BLOCK_TEST(
 )
 
 UHD_ADD_RFNOC_BLOCK_TEST(
+    TARGET keep_one_in_n_test.cpp
+)
+
+UHD_ADD_RFNOC_BLOCK_TEST(
     TARGET logpwr_block_test.cpp
 )
 
