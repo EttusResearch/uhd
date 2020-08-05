@@ -1,0 +1,56 @@
+schema: rfnoc_modtool_args
+module_name: keep_one_in_n
+version: 1.0
+rfnoc_version: 1.0
+chdr_width: 64
+noc_id: 0x02460000
+makefile_srcs: "${fpga_lib_dir}/blocks/rfnoc_block_keep_one_in_n/Makefile.srcs"
+
+parameters:
+  NUM_PORTS: 1
+  WIDTH_N: 24
+
+clocks:
+  - name: rfnoc_chdr
+    freq: "[]"
+  - name: rfnoc_ctrl
+    freq: "[]"
+  - name: ce
+    freq: "[]"
+
+control:
+  sw_iface: nocscript
+  fpga_iface: ctrlport
+  interface_direction: slave
+  fifo_depth: 32
+  clk_domain: ce
+  ctrlport:
+    byte_mode: False
+    timed: False
+    has_status: False
+
+data:
+  fpga_iface: axis_data
+  clk_domain: ce
+  inputs:
+    in:
+      num_ports: NUM_PORTS
+      item_width: 32
+      nipc: 1
+      info_fifo_depth: 32
+      payload_fifo_depth: 32
+      format: int32
+      mdata_sig: ~
+  outputs:
+    out:
+      num_ports: NUM_PORTS
+      item_width: 32
+      nipc: 1
+      info_fifo_depth: 32
+      payload_fifo_depth: MTU
+      format: int32
+      mdata_sig: ~
+
+registers:
+
+properties:
