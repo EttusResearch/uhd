@@ -143,8 +143,6 @@ class sim(PeriphManagerBase):
         self._xport_mgrs = {
             'udp': SimXportMgrUDP(self.log, args, SimEthDispatcher)
         }
-        #TODO: Actually create transports here when RFNoC is integrated
-        self.log.trace("CHDR transport creation was skipped")
 
         # Init complete.
         self.log.debug("Device info: {}".format(self.device_info))
@@ -174,6 +172,7 @@ class sim(PeriphManagerBase):
         this motherboard.
         """
         self.device_id = device_id
+        self.chdr_endpoint.set_device_id(device_id)
 
     def get_device_id(self):
         """
