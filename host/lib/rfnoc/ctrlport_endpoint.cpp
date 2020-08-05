@@ -28,7 +28,7 @@ namespace {
 //! Max async msg (CTRL_WRITE) size in 32-bit words (2 hdr, 2 TS, 1 op-word, 1 data)
 constexpr size_t ASYNC_MESSAGE_SIZE = 6;
 //! Default completion timeout for transactions
-constexpr double DEFAULT_TIMEOUT = 0.1;
+constexpr double DEFAULT_TIMEOUT = 1.0;
 //! Long timeout for when we wait on a timed command
 constexpr double MASSIVE_TIMEOUT = 10.0;
 //! Default value for whether ACKs are always required
