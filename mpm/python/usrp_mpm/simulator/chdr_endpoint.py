@@ -3,17 +3,9 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-"""This module houses the ChdrSniffer class, which handles networking,
-packet dispatch, and the nitty gritty of spinning up rx and tx workers.
-
-Note: Rx and Tx are reversed when compared to their definitions in the
-UHD radio_control_impl.cpp file. Rx is when samples are coming to the
-simulator. Tx is when samples are being sent by the simulator.
-
-TODO: This class is run based on threads for development simplicity. If
-more throughput is desired, it should be rewritten to use processes
-instead. This allows the socket workers to truly work in parallel.
-Python threads are limited by holding the GIL while they are executing.
+"""This module houses the ChdrEndpoint class, which handles networking,
+packet dispatch, and acts as an interface between these and the RFNoC
+Graph.
 """
 
 from threading import Thread
@@ -23,7 +15,7 @@ from .rfnoc_graph import XbarNode, XportNode, StreamEndpointNode, RFNoCGraph, No
 
 CHDR_W = ChdrWidth.W64
 
-class ChdrSniffer:
+class ChdrEndpoint:
     """This class is created by the sim periph_manager
     It is responsible for opening sockets, dispatching all chdr packet
     traffic to the appropriate destination, and responding to said
@@ -34,7 +26,7 @@ class ChdrSniffer:
     command line
     """
     def __init__(self, log, extra_args):
-        self.log = log.getChild("ChdrSniffer")
+        self.log = log.getChild("ChdrEndpoint")
         self.thread = Thread(target=self.socket_worker, daemon=True)
         self.thread.start()
         self.graph = RFNoCGraph(self.get_default_nodes(), self.log, 1, self.begin_tx,
@@ -77,14 +69,14 @@ class ChdrSniffer:
         blocks on the CHDR socket and processes packets as they come
         in.
         """
-        self.log.info("Starting ChdrSniffer Thread")
+        self.log.info("Starting ChdrEndpoint Thread")
         main_sock = socket.socket(socket.AF_INET,
                                   socket.SOCK_DGRAM)
         main_sock.bind(("0.0.0.0", 49153))
 
         while True:
             # This allows us to block on multiple sockets at the same time
-            buffer = bytearray(8192) # Max MTU
+            buffer = bytearray(8000) # Max MTU
             # received Data over socket
             n_bytes, sender = main_sock.recvfrom_into(buffer)
             self.log.trace("received {} bytes of data from {}"

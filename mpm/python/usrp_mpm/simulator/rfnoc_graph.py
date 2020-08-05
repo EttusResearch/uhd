@@ -23,7 +23,7 @@ class StreamSpec:
     radio registers (noc_block_regs.py)
 
     sample_rate comes from an rpc to the daughterboard (through the
-    set_sample_rate method in chdr_sniffer.py)
+    set_sample_rate method in chdr_endpoint.py)
 
     dst_epid comes from the source stream_ep
 
@@ -146,18 +146,23 @@ class Node:
             next_node = self._handle_default_packet(packet, **kwargs)
         return next_node
 
+    # pylint: disable=unused-argument,no-self-use
     def _handle_mgmt_packet(self, packet, **kwargs):
         return NotImplemented
 
+    # pylint: disable=unused-argument,no-self-use
     def _handle_ctrl_packet(self, packet, **kwargs):
         return NotImplemented
 
+    # pylint: disable=unused-argument,no-self-use
     def _handle_data_packet(self, packet, **kwargs):
         return NotImplemented
 
+    # pylint: disable=unused-argument,no-self-use
     def _handle_strc_packet(self, packet, **kwargs):
         return NotImplemented
 
+    # pylint: disable=unused-argument,no-self-use
     def _handle_strs_packet(self, packet, **kwargs):
         return NotImplemented
 
@@ -329,7 +334,7 @@ class StreamEndpointNode(Node):
         REG_OSTRM_CTRL_STATUS register
         """
         if status.cfg_start:
-            # This only creates a new TxWorker if the cfg_start flag is set
+            # This only creates a new ChdrOutputStream if the cfg_start flag is set
             self.log.info("Starting Stream EPID:{} -> EPID:{}".format(self.epid, self.dst_epid))
             self.sep_config(self, True)
         return STRM_STATUS_FC_ENABLED
@@ -338,7 +343,7 @@ class StreamEndpointNode(Node):
         """Called by the ep_regs on a write to the
         REG_OSTRM_CTRL_STATUS register
         """
-        # This always triggers the graph to create a new RxWorker
+        # This always triggers the graph to create a new ChdrInputStream
         self.sep_config(self, False)
         return STRM_STATUS_FC_ENABLED
 
@@ -351,15 +356,18 @@ class StreamEndpointNode(Node):
         return NodeType.STRM_EP
 
     def get_epid(self):
+        """ Get the endpoint id of this stream endpoint """
         return self.epid
 
     def set_epid(self, epid):
+        """ Set the endpoint id of this stream endpoint """
         self.epid = epid
 
     def set_dst_epid(self, dst_epid):
+        """ Set the destination endpoint id of this stream endpoint """
         self.dst_epid = dst_epid
 
-    def _handle_mgmt_packet(self, packet, regs, **kwargs):
+    def _handle_mgmt_packet(self, packet, **kwargs):
         send_upstream = False
         payload = packet.get_payload_mgmt()
         our_hop = payload.pop_hop()
@@ -413,7 +421,7 @@ class RFNoCGraph:
     """This class holds all of the nodes of the NoC core and the Noc
     blocks.
 
-    It serves as an interface between the ChdrSniffer and the
+    It serves as an interface between the ChdrEndpoint and the
     individual blocks/nodes.
     """
     def __init__(self, graph_list, log, device_id, create_tx_func,
@@ -449,7 +457,7 @@ class RFNoCGraph:
                                  self.radio_tx_stop)
 
     def radio_tx_cmd(self, sep_block_id):
-        """Triggers the creation of a TxWorker in the ChdrSniffer using
+        """Triggers the creation of a ChdrOutputStream in the ChdrEndpoint using
         the current stream_spec.
 
         This method transforms the sep_block_id into an epid useable by
@@ -470,7 +478,7 @@ class RFNoCGraph:
         self.stream_spec = StreamSpec()
 
     def radio_tx_stop(self, sep_block_id):
-        """Triggers the destuction of a TxWorker in the ChdrSniffer
+        """Triggers the destuction of a ChdrOutputStream in the ChdrEndpoint
 
         This method transforms the sep_block_id into an epid useable by
         the transmit code
@@ -499,6 +507,7 @@ class RFNoCGraph:
             self.create_rx(stream_ep.epid)
 
     def change_spp(self, spp):
+        """Change the Stream Samples per Packet"""
         self.stream_spec.packet_samples = spp
 
     def find_ep_by_id(self, epid):
@@ -551,4 +560,5 @@ class RFNoCGraph:
         return response_packet
 
     def get_stream_spec(self):
+        """ Get the current output stream configuration """
         return self.stream_spec
