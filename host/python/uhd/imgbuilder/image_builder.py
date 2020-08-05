@@ -795,21 +795,26 @@ def get_core_config_path(config_path):
     """
     return os.path.join(config_path, RFNOC_CORE_DIR)
 
-def generate_image_core_path(output_path, source):
+def generate_image_core_path(output_path, device, source):
     """
     Creates the path where the image core file gets to be stored.
 
     output_path: If not None, this is returned
-    source: Otherwise, this path is returned with a .v argument
+    device: Device type string, used to generate default file name
+    source: Otherwise, this path is returned, combined with a default file name
     """
     if output_path is not None:
         return output_path
-    source = os.path.splitext(os.path.abspath(os.path.normpath(source)))[0]
-    return source + '.v'
+    source = os.path.split(os.path.abspath(os.path.normpath(source)))[0]
+    return os.path.join(source, "{}_rfnoc_image_core.v".format(device))
 
 def generate_edge_file_path(output_path, device, source):
     """
     Creates a valid path for the edge file to get stored.
+
+    output_path: If not None, this is returned
+    device: Device type string, used to generate default file name
+    source: Otherwise, this path is returned, combined with a default file name
     """
     if output_path is not None:
         return output_path
@@ -836,7 +841,8 @@ def build_image(config, fpga_path, config_path, device, **args):
     """
     logging.info("Selected device %s", device)
     image_core_path = \
-        generate_image_core_path(args.get('output_path'), args.get('source'))
+        generate_image_core_path(
+            args.get('output_path'), device, args.get('source'))
     edge_file = \
         generate_edge_file_path(
             args.get('router_hex_path'), device, args.get('source'))

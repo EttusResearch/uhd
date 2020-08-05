@@ -39,10 +39,10 @@ def setup_parser():
 
     config_group = parser.add_mutually_exclusive_group(required=True)
     config_group.add_argument(
-        "-y", "--yaml_config",
+        "-y", "--yaml-config",
         help="Path to yml configuration file")
     config_group.add_argument(
-        "-r", "--grc_config",
+        "-r", "--grc-config",
         help="Path to grc file to generate config from")
     parser.add_argument(
         "-F", "--fpga-dir",
@@ -53,11 +53,12 @@ def setup_parser():
     parser.add_argument(
         "-o", "--image-core-output",
         help="Path to where to save the image core Verilog source. "
-             "Defaults to the location of the YAML file.")
+             "Defaults to the directory of the YAML file, filename <DEVICE>_rfnoc_image_core.v",
+        default=None)
     parser.add_argument(
         "-x", "--router-hex-output",
         help="Path to where to save the static router hex file. "
-             "Defaults to the location of the YAML file, filename $device_static_router.hex",
+             "Defaults to the directory of the YAML file, filename <DEVICE>_static_router.hex",
         default=None)
     parser.add_argument(
         "-I", "--include-dir",
