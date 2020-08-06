@@ -45,13 +45,11 @@ namespace asio = boost::asio;
 namespace {
 
 constexpr unsigned int X300_UDP_RESERVED_FRAME_SIZE = 64;
-// Reduced to make sure flow control packets are not blocked for too long at
-// high rates:
-constexpr size_t XGE_DATA_FRAME_SEND_SIZE = 4000;
-constexpr size_t XGE_DATA_FRAME_RECV_SIZE = 8000;
-constexpr size_t GE_DATA_FRAME_SEND_SIZE  = 1472;
-constexpr size_t GE_DATA_FRAME_RECV_SIZE  = 1472;
-constexpr size_t ETH_MSG_NUM_FRAMES       = 64;
+constexpr size_t XGE_DATA_FRAME_SEND_SIZE           = 8972;
+constexpr size_t XGE_DATA_FRAME_RECV_SIZE           = 8972;
+constexpr size_t GE_DATA_FRAME_SEND_SIZE            = 1472;
+constexpr size_t GE_DATA_FRAME_RECV_SIZE            = 1472;
+constexpr size_t ETH_MSG_NUM_FRAMES                 = 64;
 
 // Default for num data frames is set to a value that will work well when send
 // or recv offload is enabled, or when using DPDK.
