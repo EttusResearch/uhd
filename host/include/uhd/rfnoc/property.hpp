@@ -41,6 +41,11 @@ public:
         }
     }
 
+    virtual ~property_base_t()
+    {
+        //nop
+    }
+
     //! Gets the ID (name) of this property
     const std::string& get_id() const
     {
