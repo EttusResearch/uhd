@@ -111,6 +111,8 @@ public:
     virtual double get_tx_power_reference(const size_t chan);
     virtual std::vector<std::string> get_rx_power_ref_keys(const size_t);
     virtual std::vector<std::string> get_tx_power_ref_keys(const size_t);
+    virtual meta_range_t get_rx_power_range(const size_t chan);
+    virtual meta_range_t get_tx_power_range(const size_t chan);
 
     /**************************************************************************
      * LO Controls

@@ -1484,6 +1484,12 @@ public:
         return rx_chain.radio->get_rx_power_reference(rx_chain.block_chan);
     }
 
+    meta_range_t get_rx_power_range(const size_t chan)
+    {
+        auto& rx_chain = _get_rx_chan(chan);
+        return rx_chain.radio->get_rx_power_range(rx_chain.block_chan);
+    }
+
     void set_rx_antenna(const std::string& ant, size_t chan = 0)
     {
         MUX_RX_API_CALL(set_rx_antenna, ant);
@@ -1953,6 +1959,12 @@ public:
     {
         auto& tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->get_tx_power_reference(tx_chain.block_chan);
+    }
+
+    meta_range_t get_tx_power_range(const size_t chan)
+    {
+        auto& tx_chain = _get_tx_chan(chan);
+        return tx_chain.radio->get_tx_power_range(tx_chain.block_chan);
     }
 
     void set_tx_antenna(const std::string& ant, size_t chan = 0)

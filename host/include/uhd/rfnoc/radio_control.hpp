@@ -261,6 +261,17 @@ public:
      */
     virtual std::vector<std::string> get_tx_power_ref_keys(const size_t chan = 0) = 0;
 
+    /*! Return the available TX power range given the current configuration
+     *
+     * This will return the range of available power levels given the current
+     * frequency, gain profile, antenna, and whatever other settings may affect
+     * the available power ranges. Note that the available power range may
+     * change frequently, so don't assume an immutable range.
+     *
+     * \param chan The channel index
+     */
+    virtual meta_range_t get_tx_power_range(const size_t chan) = 0;
+
     /*! Return a list of valid RX gain names
      */
     virtual std::vector<std::string> get_rx_gain_names(const size_t chan) const = 0;
@@ -380,6 +391,17 @@ public:
      *          vector of length 2 with key and serial if it does.
      */
     virtual std::vector<std::string> get_rx_power_ref_keys(const size_t chan = 0) = 0;
+
+    /*! Return the available RX power range given the current configuration
+     *
+     * This will return the range of available power levels given the current
+     * frequency, gain profile, antenna, and whatever other settings may affect
+     * the available power ranges. Note that the available power range may
+     * change frequently, so don't assume an immutable range.
+     *
+     * \param chan The channel index
+     */
+    virtual meta_range_t get_rx_power_range(const size_t chan) = 0;
 
     /*! Return a list of TX gain profiles for this radio
      */

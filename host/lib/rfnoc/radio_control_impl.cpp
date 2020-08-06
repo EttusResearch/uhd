@@ -636,6 +636,24 @@ std::vector<std::string> radio_control_impl::get_tx_power_ref_keys(const size_t 
     return {_tx_pwr_mgr.at(chan)->get_key(), _tx_pwr_mgr.at(chan)->get_serial()};
 }
 
+uhd::meta_range_t radio_control_impl::get_rx_power_range(const size_t chan)
+{
+    if (_rx_pwr_mgr.empty()) {
+        throw uhd::not_implemented_error(
+            "get_rx_power_range() is not supported on this radio!");
+    }
+    return _rx_pwr_mgr.at(chan)->get_power_range();
+}
+
+uhd::meta_range_t radio_control_impl::get_tx_power_range(const size_t chan)
+{
+    if (_tx_pwr_mgr.empty()) {
+        throw uhd::not_implemented_error(
+            "get_tx_power_range() is not supported on this radio!");
+    }
+    return _tx_pwr_mgr.at(chan)->get_power_range();
+}
+
 
 /******************************************************************************
  * LO Default API

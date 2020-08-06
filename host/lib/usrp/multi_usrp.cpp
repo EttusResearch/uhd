@@ -1730,6 +1730,17 @@ public:
         return _tree->access<double>(power_ref_path).get();
     }
 
+    meta_range_t get_rx_power_range(const size_t chan)
+    {
+        const auto power_ref_path = rx_rf_fe_root(chan) / "ref_power/range";
+        if (!_tree->exists(power_ref_path)) {
+            throw uhd::not_implemented_error(
+                "get_rx_power_range() not available for this device and channel");
+        }
+        return _tree->access<meta_range_t>(power_ref_path).get();
+
+    }
+
     void set_rx_antenna(const std::string& ant, size_t chan)
     {
         _tree->access<std::string>(rx_rf_fe_root(chan) / "antenna" / "value").set(ant);
@@ -2228,6 +2239,16 @@ public:
                 "get_tx_power_reference() not available for this device and channel");
         }
         return _tree->access<double>(power_ref_path).get();
+    }
+
+    meta_range_t get_tx_power_range(const size_t chan)
+    {
+        const auto power_ref_path = tx_rf_fe_root(chan) / "ref_power/range";
+        if (!_tree->exists(power_ref_path)) {
+            throw uhd::not_implemented_error(
+                "get_tx_power_range() not available for this device and channel");
+        }
+        return _tree->access<meta_range_t>(power_ref_path).get();
     }
 
     void set_tx_antenna(const std::string& ant, size_t chan)

@@ -130,6 +130,7 @@ void export_multi_usrp(py::module& m)
         .def("has_rx_power_reference"  , &multi_usrp::has_rx_power_reference, py::arg("chan") = 0)
         .def("set_rx_power_reference"  , &multi_usrp::set_rx_power_reference, py::arg("power_dbm"), py::arg("chan") = 0)
         .def("get_rx_power_reference"  , &multi_usrp::get_rx_power_reference, py::arg("chan") = 0)
+        .def("get_rx_power_range"      , &multi_usrp::get_rx_power_range, py::arg("chan") = 0)
 
         // TX methods
         .def("set_tx_subdev_spec"      , &multi_usrp::set_tx_subdev_spec, py::arg("spec"), py::arg("mboard") = ALL_MBOARDS)
@@ -171,6 +172,7 @@ void export_multi_usrp(py::module& m)
         .def("has_tx_power_reference"  , &multi_usrp::has_tx_power_reference, py::arg("chan") = 0)
         .def("set_tx_power_reference"  , &multi_usrp::set_tx_power_reference, py::arg("power_dbm"), py::arg("chan") = 0)
         .def("get_tx_power_reference"  , &multi_usrp::get_tx_power_reference, py::arg("chan") = 0)
+        .def("get_tx_power_range"      , &multi_usrp::get_tx_power_range, py::arg("chan") = 0)
 
         // GPIO methods
         .def("get_gpio_banks"          , &multi_usrp::get_gpio_banks)

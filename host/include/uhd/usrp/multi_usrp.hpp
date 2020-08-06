@@ -1252,6 +1252,17 @@ public:
      */
     virtual double get_rx_power_reference(const size_t chan = 0) = 0;
 
+    /*! Return the available RX power range given the current configuration
+     *
+     * This will return the range of available power levels given the current
+     * frequency, gain profile, antenna, and whatever other settings may affect
+     * the available power ranges. Note that the available power range may
+     * change frequently, so don't assume an immutable range.
+     *
+     * \param chan The channel index
+     */
+    virtual meta_range_t get_rx_power_range(const size_t chan) = 0;
+
     /*******************************************************************
      * TX methods
      ******************************************************************/
@@ -1499,6 +1510,17 @@ public:
      *         for this device
      */
     virtual double get_tx_power_reference(const size_t chan = 0) = 0;
+
+    /*! Return the available TX power range given the current configuration
+     *
+     * This will return the range of available power levels given the current
+     * frequency, gain profile, antenna, and whatever other settings may affect
+     * the available power ranges. Note that the available power range may
+     * change frequently, so don't assume an immutable range.
+     *
+     * \param chan The channel index
+     */
+    virtual meta_range_t get_tx_power_range(const size_t chan) = 0;
 
     /*!
      * Select the TX antenna on the frontend.
