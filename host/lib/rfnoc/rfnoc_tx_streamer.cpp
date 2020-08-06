@@ -19,7 +19,7 @@ static constexpr size_t ASYNC_MSG_QUEUE_SIZE = 1000;
 rfnoc_tx_streamer::rfnoc_tx_streamer(const size_t num_chans,
     const uhd::stream_args_t stream_args,
     disconnect_fn_t disconnect_cb)
-    : tx_streamer_impl<chdr_tx_data_xport>(stream_args.channels.size(), stream_args)
+    : tx_streamer_impl<chdr_tx_data_xport>(num_chans, stream_args)
     , _unique_id(STREAMER_ID + "#" + std::to_string(streamer_inst_ctr++))
     , _stream_args(stream_args)
     , _disconnect_cb(disconnect_cb)

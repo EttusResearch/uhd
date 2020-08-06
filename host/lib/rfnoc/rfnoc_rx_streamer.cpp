@@ -21,7 +21,7 @@ static std::atomic<uint64_t> streamer_inst_ctr;
 rfnoc_rx_streamer::rfnoc_rx_streamer(const size_t num_chans,
     const uhd::stream_args_t stream_args,
     disconnect_fn_t disconnect_cb)
-    : rx_streamer_impl<chdr_rx_data_xport>(stream_args.channels.size(), stream_args)
+    : rx_streamer_impl<chdr_rx_data_xport>(num_chans, stream_args)
     , _unique_id(STREAMER_ID + "#" + std::to_string(streamer_inst_ctr++))
     , _stream_args(stream_args)
     , _disconnect_cb(disconnect_cb)
