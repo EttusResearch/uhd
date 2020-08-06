@@ -11,7 +11,7 @@ it identifies itself as.
 """
 
 import configparser
-from .sample_source import sinks, sources, NullSamples
+from .sample_source import sinks, sources, NullSamples, from_import_path
 from .hardware_presets import presets
 import numbers
 
@@ -105,7 +105,12 @@ class Config:
     def _read_sample_section(section, lookup):
         args = dict(section)
         class_name = args.pop("class")
-        constructor = lookup[class_name]
+        constructor = None
+        if "import_path" in args:
+            import_path = args.pop("import_path")
+            constructor = from_import_path(class_name, import_path)
+        else:
+            constructor = lookup[class_name]
         def section_gen():
             return constructor(**args)
         return section_gen

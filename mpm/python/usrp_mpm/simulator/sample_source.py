@@ -7,6 +7,7 @@
 This module contains the interface for providing data to a simulator
 stream and receiving data from a simulator stream.
 """
+import importlib.util
 
 sources = {}
 sinks = {}
@@ -20,6 +21,22 @@ def cli_sink(cls):
     """This decorator adds a class to the global list of SampleSinks"""
     sinks[cls.__name__] = cls
     return cls
+
+name_index = 0
+module_lookup = {}
+def from_import_path(class_name, import_path):
+    global name_index
+    global module_lookup
+    module = None
+    if import_path in module_lookup:
+        module = module_lookup[import_path]
+    else:
+        spec = importlib.util.spec_from_file_location("simsample." + str(name_index), import_path)
+        name_index =+ 1
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        module_lookup[import_path] = module
+    return getattr(module, class_name)
 
 class SampleSource:
     """This class defines the interface of a SampleSource. It
