@@ -28,6 +28,14 @@ stream_endpoints:
     ctrl: False                     # Endpoint passes control traffic
     data: True                      # Endpoint passes data traffic
     buff_size: 0                    # Ingress buffer size for data
+  ep4:                       # Stream endpoint name
+    ctrl: False                     # Endpoint passes control traffic
+    data: True                      # Endpoint passes data traffic
+    buff_size: 4096                 # Ingress buffer size for data
+  ep5:                       # Stream endpoint name
+    ctrl: False                     # Endpoint passes control traffic
+    data: True                      # Endpoint passes data traffic
+    buff_size: 4096                 # Ingress buffer size for data
 
 # A list of all NoC blocks in design
 # ----------------------------------
@@ -52,16 +60,11 @@ noc_blocks:
       NUM_PORTS: 2
   radio1:
     block_desc: 'radio_2x64.yml'
-  # These parameters are for reference, in case a DRAM FIFO is required
-  #fifo0:
-    #block_desc: 'axi_ram_fifo_2x64.yml'
-    #parameters:
-      ## These parameters match the interface on the x300/X310
-      #MEM_DATA_W: 64
-      #MEM_ADDR_W: 30
-      #FIFO_ADDR_BASE: "{30'h02000000, 30'h00000000}"
-      #FIFO_ADDR_MASK: "{30'h01FFFFFF, 30'h01FFFFFF}"
-      #MEM_CLK_RATE: "300e6"
+  replay0:
+    block_desc: 'replay.yml'
+    parameters:
+      NUM_PORTS: 2
+      MEM_ADDR_W: 30
 
 # A list of all static connections in design
 # ------------------------------------------
@@ -89,9 +92,18 @@ connections:
   # radio1(1) to ep3 - RFB RX
   - { srcblk: radio1, srcport: out_1, dstblk: ddc1,   dstport: in_1 }
   - { srcblk: ddc1,   srcport: out_1, dstblk: ep3,    dstport: in0  }
+  # ep4 to replay0(0)
+  - { srcblk: ep4,     srcport: out0,  dstblk: replay0, dstport: in_0 }
+  # replay0(0) to ep4
+  - { srcblk: replay0, srcport: out_0, dstblk: ep4,     dstport: in0  }
+  # ep5 to replay0(1)
+  - { srcblk: ep5,     srcport: out0,  dstblk: replay0, dstport: in_1 }
+  # replay0(1) to ep5
+  - { srcblk: replay0, srcport: out_1, dstblk: ep5,     dstport: in0  }
   # BSP Connections
   - { srcblk: radio0, srcport: ctrl_port, dstblk: _device_, dstport: ctrlport_radio0 }
   - { srcblk: radio1, srcport: ctrl_port, dstblk: _device_, dstport: ctrlport_radio1 }
+  - { srcblk: replay0, srcport: axi_ram, dstblk: _device_, dstport: dram }
   - { srcblk: _device_, srcport: x300_radio0, dstblk: radio0, dstport: x300_radio }
   - { srcblk: _device_, srcport: x300_radio1, dstblk: radio1, dstport: x300_radio }
   - { srcblk: _device_, srcport: time_keeper, dstblk: radio0, dstport: time_keeper }
@@ -111,3 +123,4 @@ clk_domains:
     - { srcblk: _device_, srcport: radio, dstblk: radio1, dstport: radio }
     - { srcblk: _device_, srcport: ce,    dstblk: ddc1,   dstport: ce    }
     - { srcblk: _device_, srcport: ce,    dstblk: duc1,   dstport: ce    }
+    - { srcblk: _device_, srcport: dram,  dstblk: replay0, dstport: mem  }

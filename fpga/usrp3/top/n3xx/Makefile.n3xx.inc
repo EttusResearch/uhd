@@ -38,12 +38,13 @@ include $(BASE_DIR)/n3xx/dboards/rh/Makefile.srcs
 include $(BASE_DIR)/n3xx/dboards/mg/Makefile.srcs
 include $(BASE_DIR)/n3xx/dboards/common/Makefile.srcs
 # For sake of convenience, we include the Makefile.srcs for DRAM FIFO, DDC, and
-# DUC, and of course the radio. Any other block needs to use the
+# DUC, Replay, and of course the radio. Any other block needs to use the
 # RFNOC_OOT_MAKEFILE_SRCS variable (see below).
 include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_axi_ram_fifo/Makefile.srcs
 include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_radio/Makefile.srcs
 include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_ddc/Makefile.srcs
 include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_duc/Makefile.srcs
+include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_replay/Makefile.srcs
 # If out-of-tree modules want to be compiled into this image, then they need to
 # pass in the RFNOC_OOT_MAKEFILE_SRCS as a list of Makefile.srcs files.
 # Those files need to amend the RFNOC_OOT_SRCS variable with a list of actual
@@ -137,7 +138,8 @@ $(WHITE_RABBIT_SRCS) \
 $(RFNOC_FRAMEWORK_SRCS) \
 $(RFNOC_BLOCK_AXI_RAM_FIFO_SRCS) \
 $(RFNOC_BLOCK_DUC_SRCS) $(RFNOC_BLOCK_DDC_SRCS) \
-$(RFNOC_BLOCK_RADIO_SRCS)
+$(RFNOC_BLOCK_RADIO_SRCS) \
+$(RFNOC_BLOCK_REPLAY_SRCS)
 
 EDGE_TBL_DEF="RFNOC_EDGE_TBL_FILE=$(call RESOLVE_PATH,$(EDGE_FILE))"
 

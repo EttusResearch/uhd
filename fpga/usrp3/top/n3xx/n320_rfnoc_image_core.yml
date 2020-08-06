@@ -20,6 +20,14 @@ stream_endpoints:
     ctrl: False                       # Endpoint passes control traffic
     data: True                        # Endpoint passes data traffic
     buff_size: 65536                  # Ingress buffer size for data
+  ep2:                       # Stream endpoint name
+    ctrl: False                     # Endpoint passes control traffic
+    data: True                      # Endpoint passes data traffic
+    buff_size: 4096                 # Ingress buffer size for data
+  ep3:                       # Stream endpoint name
+    ctrl: False                     # Endpoint passes control traffic
+    data: True                      # Endpoint passes data traffic
+    buff_size: 4096                 # Ingress buffer size for data
 
 # A list of all NoC blocks in design
 # ----------------------------------
@@ -44,16 +52,11 @@ noc_blocks:
       NUM_PORTS: 1
   radio1:
     block_desc: 'radio_1x64.yml'
-  #fifo0:
-    #block_desc: 'axi_ram_fifo_4x64.yml'
-    #parameters:
-      ## These parameters match the memory interface on the N3XX
-      #NUM_PORTS: 4
-      #MEM_DATA_W: 64
-      #MEM_ADDR_W: 31
-      #FIFO_ADDR_BASE: "{30'h06000000, 30'h04000000, 30'h02000000, 30'h00000000}"
-      #FIFO_ADDR_MASK: "{30'h01FFFFFF, 30'h01FFFFFF, 30'h01FFFFFF, 30'h01FFFFFF}"
-      #MEM_CLK_RATE: "303819444" # 166.666666 MHz * 21.875 / 4 / 3 = 303.819444 MHz
+  replay0:
+    block_desc: 'replay.yml'
+    parameters:
+      NUM_PORTS: 2
+      MEM_ADDR_W: 31
 
 # A list of all static connections in design
 # ------------------------------------------
@@ -71,8 +74,13 @@ connections:
   - { srcblk: duc1,   srcport: out_0, dstblk: radio1, dstport: in_0 }
   - { srcblk: radio1, srcport: out_0, dstblk: ddc1,   dstport: in_0 }
   - { srcblk: ddc1,   srcport: out_0, dstblk: ep1,    dstport: in0  }
+  - { srcblk: ep2,     srcport: out0,  dstblk: replay0, dstport: in_0 }
+  - { srcblk: replay0, srcport: out_0, dstblk: ep2,     dstport: in0  }
+  - { srcblk: ep3,     srcport: out0,  dstblk: replay0, dstport: in_1 }
+  - { srcblk: replay0, srcport: out_1, dstblk: ep3,     dstport: in0  }
   - { srcblk: radio0, srcport: ctrl_port, dstblk: _device_, dstport: ctrlport_radio0 }
   - { srcblk: radio1, srcport: ctrl_port, dstblk: _device_, dstport: ctrlport_radio1 }
+  - { srcblk: replay0, srcport: axi_ram, dstblk: _device_, dstport: dram }
   - { srcblk: _device_, srcport: radio_ch0, dstblk: radio0, dstport: radio_iface }
   - { srcblk: _device_, srcport: radio_ch1, dstblk: radio1, dstport: radio_iface }
   - { srcblk: _device_, srcport: time_keeper, dstblk: radio0, dstport: time_keeper }
@@ -92,4 +100,4 @@ clk_domains:
   - { srcblk: _device_, srcport: radio, dstblk: radio1, dstport: radio }
   - { srcblk: _device_, srcport: radio, dstblk: ddc1,   dstport: ce    }
   - { srcblk: _device_, srcport: radio, dstblk: duc1,   dstport: ce    }
-# - { srcblk: _device_, srcport: dram,  dstblk: fifo0,  dstport: mem   }
+  - { srcblk: _device_, srcport: dram,  dstblk: replay0, dstport: mem  }
