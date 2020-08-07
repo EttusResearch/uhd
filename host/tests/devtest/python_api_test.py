@@ -43,7 +43,12 @@ class uhd_python_api_test(uhd_test_case):
         args = [
             self.create_addr_args_str(),
         ]
-        app = shell_application(multi_usrp_test_path)
+        app = None
+        if os.name == 'nt':
+            args.insert(0, multi_usrp_test_path)
+            app = shell_application('python')
+        else:
+            app = shell_application(multi_usrp_test_path)
         app.run(args)
         run_results = {
             'return_code': app.returncode,
