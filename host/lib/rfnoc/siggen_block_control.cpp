@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#define _USE_MATH_DEFINES
 #include <uhd/convert.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/rfnoc/defaults.hpp>
@@ -12,8 +11,8 @@
 #include <uhd/rfnoc/property.hpp>
 #include <uhd/rfnoc/registry.hpp>
 #include <uhd/rfnoc/siggen_block_control.hpp>
+#include <uhd/utils/math.hpp>
 #include <uhdlib/utils/narrow.hpp>
-#include <cmath>
 #include <limits>
 #include <string>
 
@@ -182,12 +181,12 @@ private:
             });
             register_property(&_prop_phase_inc.back(), [this, port]() {
                 const double phase_inc = _prop_phase_inc.at(port).get();
-                if (phase_inc < (-M_PI) || phase_inc > (M_PI)) {
+                if (phase_inc < (-uhd::math::PI) || phase_inc > (uhd::math::PI)) {
                     throw uhd::value_error(
                         "Phase increment value must be in [-pi, pi]");
                 }
                 const int16_t phase_inc_scaled_rads_fp =
-                    clamp<int16_t>((phase_inc / M_PI) * 8192.0);
+                    clamp<int16_t>((phase_inc / uhd::math::PI) * 8192.0);
                 _siggen_reg_iface.poke32(
                     REG_PHASE_INC_OFFSET, phase_inc_scaled_rads_fp & 0xffff, port);
             });

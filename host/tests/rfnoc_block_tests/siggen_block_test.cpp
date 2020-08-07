@@ -4,8 +4,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#define _USE_MATH_DEFINES
-
 #include "../rfnoc_graph_mock_nodes.hpp"
 #include <uhd/rfnoc/actions.hpp>
 #include <uhd/rfnoc/defaults.hpp>
@@ -13,11 +11,11 @@
 #include <uhd/rfnoc/multichan_register_iface.hpp>
 #include <uhd/rfnoc/register_iface_holder.hpp>
 #include <uhd/rfnoc/siggen_block_control.hpp>
+#include <uhd/utils/math.hpp>
 #include <uhdlib/rfnoc/graph.hpp>
 #include <uhdlib/rfnoc/node_accessor.hpp>
 #include <uhdlib/utils/narrow.hpp>
 #include <boost/test/unit_test.hpp>
-#include <cmath>
 #include <iostream>
 
 using namespace uhd::rfnoc;
@@ -125,7 +123,7 @@ public:
     static uint32_t phase_increment_to_register(double phase_inc)
     {
         const int16_t phase_inc_scaled_rads_fp =
-            clamp<int16_t>((phase_inc / M_PI) * 8192.0);
+            clamp<int16_t>((phase_inc / uhd::math::PI) * 8192.0);
         return static_cast<uint32_t>(phase_inc_scaled_rads_fp) & 0xffff;
     }
 
@@ -248,7 +246,7 @@ BOOST_FIXTURE_TEST_CASE(siggen_test_api, siggen_block_fixture)
         BOOST_CHECK_EQUAL(reg_iface->constants.at(port), siggen_mock_reg_iface_t::constant_to_register(constant));
         BOOST_CHECK_EQUAL(test_siggen->get_constant(port), constant);
 
-        const double phase_inc = (port * M_PI / 16.0);
+        const double phase_inc = (port * uhd::math::PI / 16.0);
         test_siggen->set_sine_phase_increment(phase_inc, port);
         BOOST_CHECK_EQUAL(reg_iface->phase_increments.at(port), siggen_mock_reg_iface_t::phase_increment_to_register(phase_inc));
         BOOST_CHECK_EQUAL(test_siggen->get_sine_phase_increment(port), phase_inc);
@@ -256,7 +254,7 @@ BOOST_FIXTURE_TEST_CASE(siggen_test_api, siggen_block_fixture)
         const double freq      = 1000 + (100 * port);
         const double samp_rate = 1e6;
         test_siggen->set_sine_frequency(freq, samp_rate, port);
-        const double calculated_phase_inc = freq / samp_rate * 2.0 * M_PI;
+        const double calculated_phase_inc = freq / samp_rate * 2.0 * uhd::math::PI;
         BOOST_CHECK_EQUAL(reg_iface->phase_increments.at(port),
             siggen_mock_reg_iface_t::phase_increment_to_register(calculated_phase_inc));
         BOOST_CHECK_EQUAL(
@@ -294,7 +292,7 @@ BOOST_FIXTURE_TEST_CASE(siggen_test_ranges, siggen_block_fixture)
         BOOST_CHECK_THROW(test_siggen->set_constant(bad_constant_q, port), uhd::value_error);
         BOOST_CHECK_THROW(test_siggen->set_constant(-bad_constant_q, port), uhd::value_error);
 
-        const double bad_phase_inc = 5 * M_PI;
+        const double bad_phase_inc = 5 * uhd::math::PI;
         BOOST_CHECK_THROW(
             test_siggen->set_sine_phase_increment(bad_phase_inc, port), uhd::value_error);
         BOOST_CHECK_THROW(test_siggen->set_sine_phase_increment(-bad_phase_inc, port),

@@ -30,6 +30,8 @@ namespace uhd {
  */
 namespace math {
 
+static const double PI = 3.14159265358979323846;
+
 /*!
  * Define epsilon values for floating point comparisons.
  *

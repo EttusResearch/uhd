@@ -6,10 +6,9 @@
 
 #pragma once
 
-#define _USE_MATH_DEFINES
 #include <uhd/config.hpp>
 #include <uhd/rfnoc/noc_block_base.hpp>
-#include <cmath>
+#include <uhd/utils/math.hpp>
 #include <complex>
 
 namespace uhd { namespace rfnoc {
@@ -195,8 +194,8 @@ public:
         if (sample_rate <= 0.0) {
             throw uhd::value_error("sample_rate must be > 0.0");
         }
-        const double phase_inc = (frequency / sample_rate) * 2.0 * M_PI;
-        if (phase_inc < -M_PI || phase_inc > M_PI) {
+        const double phase_inc = (frequency / sample_rate) * 2.0 * uhd::math::PI;
+        if (phase_inc < -uhd::math::PI || phase_inc > uhd::math::PI) {
             throw uhd::value_error("frequency must be in [-samp_rate/2, samp_rate/2]");
         }
         set_sine_phase_increment(phase_inc, port);
