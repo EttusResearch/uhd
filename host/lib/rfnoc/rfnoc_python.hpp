@@ -201,6 +201,13 @@ void export_rfnoc(py::module& m)
             py::arg("streamer"),
             py::arg("strm_port"),
             py::arg("adapter_id") = uhd::transport::NULL_ADAPTER_ID)
+        .def("disconnect",
+            py::overload_cast<const block_id_t&, size_t, const block_id_t&, size_t>(
+                &rfnoc_graph::disconnect))
+        .def(
+            "disconnect", py::overload_cast<const std::string&>(&rfnoc_graph::disconnect))
+        .def("disconnect",
+            py::overload_cast<const std::string&, size_t>(&rfnoc_graph::disconnect))
         .def("enumerate_adapters_from_src", &rfnoc_graph::enumerate_adapters_from_src)
         .def("enumerate_adapters_to_dst", &rfnoc_graph::enumerate_adapters_to_dst)
         .def("enumerate_static_connections", &rfnoc_graph::enumerate_static_connections)
