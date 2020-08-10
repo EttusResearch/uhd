@@ -7,8 +7,8 @@
 //
 // Description:
 //
-//   A framer module for CHDR data packets. It accepts an input data stream 
-//   with sideband information for packet flags and timestamp). A CHDR packet 
+//   A framer module for CHDR data packets. It accepts an input data stream
+//   with sideband information for packet flags and timestamp). A CHDR packet
 //   will be generated for each data packet that is input.
 //
 //   The sideband information (e.g., timestamp, flags) must be input with the
@@ -26,7 +26,7 @@
 //   when the sideband information is not known until the end of the packet
 //   (e.g., the length).
 //
-//   This module also performs an optional clock crossing and data width 
+//   This module also performs an optional clock crossing and data width
 //   conversion from a user requested width for the payload bus to CHDR_W.
 //
 // Parameters:
@@ -39,9 +39,9 @@
 //   INFO_FIFO_SIZE  : Log2 of the info FIFO size. This determines the number
 //                     of packets that can be simultaneously buffered in the
 //                     payload FIFO.
-//   PYLD_FIFO_SIZE  : Log2 of the payload FIFO size. The actual FIFO size will 
-//                     be the maximum of 2**MTU or 2**PYLD_FIFO_SIZE, since the 
-//                     FIFO must be at least one MTU so that we can calculate 
+//   PYLD_FIFO_SIZE  : Log2 of the payload FIFO size. The actual FIFO size will
+//                     be the maximum of 2**MTU or 2**PYLD_FIFO_SIZE, since the
+//                     FIFO must be at least one MTU so that we can calculate
 //                     the packet length in the header.
 //   SIDEBAND_AT_END : If 0 then the sideband information is sampled coincident
 //                     with the first word of the input packet. If 1, then the
@@ -137,7 +137,7 @@ module axis_data_to_chdr #(
 
   always @(posedge axis_data_clk) begin
     if (s_axis_tvalid && s_axis_tready &&
-      (( SIDEBAND_AT_END && s_axis_tlast) || 
+      (( SIDEBAND_AT_END && s_axis_tlast) ||
        (!SIDEBAND_AT_END && start_of_packet))
     ) begin
       packet_timestamp <= s_axis_ttimestamp;
@@ -152,16 +152,21 @@ module axis_data_to_chdr #(
   // Length Counters
   //---------------------------------------------------------------------------
   //
-  // Here We track the state of the incoming packet to determine the payload 
+  // Here We track the state of the incoming packet to determine the payload
   // length, if needed.
   //
   //---------------------------------------------------------------------------
 
-  reg        in_pkt_info_tvalid = 0;
-  wire       in_pkt_info_tready;
-  reg [15:0] packet_length;
+  localparam HDR_LEN = CHDR_W/8;     // Length of CHDR header word in bytes
+  localparam INFO_W  = 3 + 64 + 16;  // Length of pkt_info data
 
-  localparam HDR_LEN = CHDR_W/8;      // Length of CHDR header word in bytes
+  wire [INFO_W-1:0] in_pkt_info_tdata;
+  reg               in_pkt_info_tvalid = 1'b0;
+  wire              in_pkt_info_tready;
+  reg  [      15:0] packet_length;
+
+  assign in_pkt_info_tdata = { packet_eob, packet_eov, packet_has_time,
+                               packet_timestamp, packet_length };
 
   generate
     if (!SIDEBAND_AT_END) begin : gen_sample_sop
@@ -219,7 +224,7 @@ module axis_data_to_chdr #(
 
 
   //---------------------------------------------------------------------------
-  //  Data Width Conversion and Input FIFOs
+  // Data Width Conversion and Input FIFOs
   //---------------------------------------------------------------------------
   //
   // Convert the data width and cross the data into the CHDR clock domain, as
@@ -227,10 +232,10 @@ module axis_data_to_chdr #(
   //
   //---------------------------------------------------------------------------
 
-  wire [CHDR_W-1:0] in_pyld_tdata;
-  wire              in_pyld_tlast;
-  wire              in_pyld_tvalid;
-  wire              in_pyld_tready;
+  wire [(ITEM_W*NIPC)-1:0] in_pyld_tdata;
+  wire                     in_pyld_tlast;
+  wire                     in_pyld_tvalid;
+  wire                     in_pyld_tready;
 
   wire [CHDR_W-1:0] out_pyld_tdata;
   wire              out_pyld_tlast;
@@ -245,16 +250,49 @@ module axis_data_to_chdr #(
 
   reg gating = 0;
 
+  // This state machine prevents data from transferring when the pkt_info_fifo
+  // is stalled. This ensures that we don't overflow the pkt_info_fifo.
+  always @(posedge axis_data_clk) begin
+    if (axis_data_rst) begin
+      gating <= 0;
+    end else begin
+      if (gating) begin
+        if (in_pkt_info_tready) begin
+          gating <= 0;
+        end
+      end else begin
+        // whenever the pkt_info_fifo fills (i.e., in_pkt_info_tready
+        // deasserts), we want to assert "gating" to stop data transfer as soon
+        // as it's safe to do so.
+        //
+        // It's safe to gate (i.e., block) data transfer on in_pyld_* if we're
+        // not asserting tvalid or we're completing a transfer this cycle.
+        if (!in_pkt_info_tready && (!in_pyld_tvalid || (in_pyld_tvalid && in_pyld_tready))) begin
+          gating <= 1;
+        end
+      end
+    end
+  end
+
+  // Generate in_pyld_* from the s_axis_* data inputs. But block data input
+  // when "gating" asserts.
+  assign in_pyld_tdata  = s_axis_tdata;
+  assign in_pyld_tlast  = s_axis_tlast;
+  assign in_pyld_tvalid = s_axis_tvalid  & ~gating;
+  assign s_axis_tready  = in_pyld_tready & ~gating;
+
   generate
+    // Transfer packet info between clock domains:
+    // in_pkt_info_* (axis_data_clk) to out_pkt_info_* (axis_chdr_clk).
     if (SYNC_CLKS) begin : gen_sync_info_fifo
       axi_fifo #(
-        .WIDTH    (3 + 64 + 16),
+        .WIDTH    (INFO_W),
         .SIZE     (INFO_FIFO_SIZE)
       ) pkt_info_fifo (
         .clk      (axis_chdr_clk),
         .reset    (axis_chdr_rst),
         .clear    (1'b0),
-        .i_tdata  ({packet_eob, packet_eov, packet_has_time, packet_timestamp, packet_length}),
+        .i_tdata  (in_pkt_info_tdata),
         .i_tvalid (in_pkt_info_tvalid),
         .i_tready (in_pkt_info_tready),
         .o_tdata  ({out_eob, out_eov, out_has_time, out_timestamp, out_length}),
@@ -265,12 +303,12 @@ module axis_data_to_chdr #(
       );
     end else begin : gen_async_info_fifo
       axi_fifo_2clk #(
-        .WIDTH    (3 + 64 + 16),
+        .WIDTH    (INFO_W),
         .SIZE     (INFO_FIFO_SIZE)
       ) pkt_info_fifo (
         .reset    (axis_data_rst),
         .i_aclk   (axis_data_clk),
-        .i_tdata  ({packet_eob, packet_eov, packet_has_time, packet_timestamp, packet_length}),
+        .i_tdata  (in_pkt_info_tdata),
         .i_tvalid (in_pkt_info_tvalid),
         .i_tready (in_pkt_info_tready),
         .o_aclk   (axis_chdr_clk),
@@ -280,7 +318,14 @@ module axis_data_to_chdr #(
       );
     end
 
+    // Transfer packet payload between clock domains:
+    // in_pyld_* (axis_data_clk) to out_pyld_* (axis_chdr_clk)
     if (NIPC != CHDR_W/ITEM_W) begin : gen_axis_width_conv
+      wire [CHDR_W-1:0] pyld_resize_tdata;
+      wire              pyld_resize_tlast;
+      wire              pyld_resize_tvalid;
+      wire              pyld_resize_tready;
+
       // Do the width conversion and clock crossing in the axis_width_conv
       // module to ensure that the resize happens on the correct side of the
       // clock crossing.
@@ -293,18 +338,18 @@ module axis_data_to_chdr #(
       ) payload_width_conv_i (
         .s_axis_aclk   (axis_data_clk),
         .s_axis_rst    (axis_data_rst),
-        .s_axis_tdata  (s_axis_tdata),
+        .s_axis_tdata  (in_pyld_tdata),
         .s_axis_tkeep  ({NIPC{1'b1}}),
-        .s_axis_tlast  (s_axis_tlast),
-        .s_axis_tvalid (s_axis_tvalid),
-        .s_axis_tready (s_axis_tready),
+        .s_axis_tlast  (in_pyld_tlast),
+        .s_axis_tvalid (in_pyld_tvalid),
+        .s_axis_tready (in_pyld_tready),
         .m_axis_aclk   (axis_chdr_clk),
         .m_axis_rst    (axis_chdr_rst),
-        .m_axis_tdata  (in_pyld_tdata),
+        .m_axis_tdata  (pyld_resize_tdata),
         .m_axis_tkeep  (),
-        .m_axis_tlast  (in_pyld_tlast),
-        .m_axis_tvalid (in_pyld_tvalid),
-        .m_axis_tready (in_pyld_tready & ~gating)
+        .m_axis_tlast  (pyld_resize_tlast),
+        .m_axis_tvalid (pyld_resize_tvalid),
+        .m_axis_tready (pyld_resize_tready)
       );
 
       axi_fifo #(
@@ -314,9 +359,9 @@ module axis_data_to_chdr #(
         .clk      (axis_chdr_clk),
         .reset    (axis_chdr_rst),
         .clear    (1'b0),
-        .i_tdata  ({in_pyld_tlast, in_pyld_tdata}),
-        .i_tvalid (in_pyld_tvalid & ~gating),
-        .i_tready (in_pyld_tready),
+        .i_tdata  ({pyld_resize_tlast, pyld_resize_tdata}),
+        .i_tvalid (pyld_resize_tvalid),
+        .i_tready (pyld_resize_tready),
         .o_tdata  ({out_pyld_tlast, out_pyld_tdata}),
         .o_tvalid (out_pyld_tvalid),
         .o_tready (out_pyld_tready),
@@ -324,12 +369,6 @@ module axis_data_to_chdr #(
         .occupied ()
       );
     end else begin : no_gen_axis_width_conv
-      // No width conversion needed
-      assign in_pyld_tdata  = s_axis_tdata;
-      assign in_pyld_tlast  = s_axis_tlast;
-      assign in_pyld_tvalid = s_axis_tvalid;
-      assign s_axis_tready  = in_pyld_tready & ~gating;
-
       if (SYNC_CLKS) begin : gen_sync_pyld_fifo
         axi_fifo #(
           .WIDTH    (CHDR_W+1),
@@ -339,7 +378,7 @@ module axis_data_to_chdr #(
           .reset    (axis_chdr_rst),
           .clear    (1'b0),
           .i_tdata  ({in_pyld_tlast, in_pyld_tdata}),
-          .i_tvalid (in_pyld_tvalid & ~gating),
+          .i_tvalid (in_pyld_tvalid),
           .i_tready (in_pyld_tready),
           .o_tdata  ({out_pyld_tlast, out_pyld_tdata}),
           .o_tvalid (out_pyld_tvalid),
@@ -349,13 +388,13 @@ module axis_data_to_chdr #(
         );
       end else begin : gen_async_pyld_fifo
         axi_fifo_2clk #(
-          .WIDTH    (CHDR_W + 1),
+          .WIDTH    (CHDR_W+1),
           .SIZE     (PAYLOAD_FIFO_SIZE)
         ) pyld_fifo (
           .reset    (axis_data_rst),
           .i_aclk   (axis_data_clk),
           .i_tdata  ({in_pyld_tlast, in_pyld_tdata}),
-          .i_tvalid (in_pyld_tvalid & ~gating),
+          .i_tvalid (in_pyld_tvalid),
           .i_tready (in_pyld_tready),
           .o_aclk   (axis_chdr_clk),
           .o_tdata  ({out_pyld_tlast, out_pyld_tdata}),
@@ -367,25 +406,6 @@ module axis_data_to_chdr #(
   endgenerate
 
 
-  // This state machine prevents data from transferring when the pkt_info_fifo
-  // is stalled. This ensures that we don't overflow the pkt_info_fifo.
-  always @(posedge axis_chdr_clk) begin
-    if (axis_chdr_rst) begin
-      gating <= 0;
-    end else begin
-      if (gating) begin
-        if (in_pkt_info_tready) gating <= 0;
-      end else begin
-        // If we're not asserting tvalid, or we're completing a transfer this
-        // cycle, then it is safe to gate tvalid on the next cycle.
-        if (!in_pkt_info_tready && (!in_pyld_tvalid || (in_pyld_tvalid && in_pyld_tready))) begin
-          gating <= 1;
-        end
-      end
-    end
-  end
-
-
   //---------------------------------------------------------------------------
   // Output State Machine
   //---------------------------------------------------------------------------
@@ -394,9 +414,9 @@ module axis_data_to_chdr #(
   reg               chdr_pf_tlast, chdr_pf_tvalid;
   wire              chdr_pf_tready;
 
-  localparam [1:0] ST_HDR   = 0;   // Processing the output CHDR header       
-  localparam [1:0] ST_TS    = 1;   // Processing the output CHDR timestamp    
-  localparam [1:0] ST_PYLD  = 2;   // Processing the output CHDR payload word 
+  localparam [1:0] ST_HDR   = 0;   // Processing the output CHDR header
+  localparam [1:0] ST_TS    = 1;   // Processing the output CHDR timestamp
+  localparam [1:0] ST_PYLD  = 2;   // Processing the output CHDR payload word
 
   reg [1:0] state = ST_HDR;
 
@@ -406,7 +426,7 @@ module axis_data_to_chdr #(
   reg  [63:0] timestamp;
   wire [15:0] length;
 
-  // Some the payload, metadata, and timestamp lengths (out_length already 
+  // Some the payload, metadata, and timestamp lengths (out_length already
   // includes the header).
   assign length = (CHDR_W > 64) ? out_length : out_length + 8*out_has_time;
 
@@ -439,13 +459,13 @@ module axis_data_to_chdr #(
             seq_num <= seq_num + 1;
 
             if (CHDR_W > 64) begin
-              // When CHDR_W > 64, the timestamp is a part of the header word. 
-              // If this is a data packet (with or without a TS), we skip the 
+              // When CHDR_W > 64, the timestamp is a part of the header word.
+              // If this is a data packet (with or without a TS), we skip the
               // timestamp state move directly to the payload.
               state <= ST_PYLD;
             end else begin
-              // When CHDR_W == 64, the timestamp comes after the header. Check 
-              // if this is a data packet with a timestamp to figure out the 
+              // When CHDR_W == 64, the timestamp comes after the header. Check
+              // if this is a data packet with a timestamp to figure out the
               // next state.
               if (out_has_time) begin
                 state <= ST_TS;
@@ -516,7 +536,7 @@ module axis_data_to_chdr #(
     endcase
   end
 
-  
+
   //---------------------------------------------------------------------------
   // Flushing Logic
   //---------------------------------------------------------------------------
