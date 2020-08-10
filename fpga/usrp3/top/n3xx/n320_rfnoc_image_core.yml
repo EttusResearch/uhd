@@ -15,11 +15,11 @@ stream_endpoints:
   ep0:                         # Stream endpoint name
     ctrl: True                        # Endpoint passes control traffic
     data: True                        # Endpoint passes data traffic
-    buff_size: 32768                  # Ingress buffer size for data
+    buff_size: 65536                  # Ingress buffer size for data
   ep1:                         # Stream endpoint name
     ctrl: False                       # Endpoint passes control traffic
     data: True                        # Endpoint passes data traffic
-    buff_size: 32768                  # Ingress buffer size for data
+    buff_size: 65536                  # Ingress buffer size for data
 
 # A list of all NoC blocks in design
 # ----------------------------------
