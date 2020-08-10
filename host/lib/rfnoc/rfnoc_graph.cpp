@@ -400,10 +400,6 @@ public:
 
             // Remove the streamer from the map
             _rx_streamers.erase(streamer_id);
-        } else {
-            throw uhd::lookup_error(
-                std::string("Cannot disconnect streamer. Streamer not found: ")
-                + streamer_id);
         }
         UHD_LOG_TRACE(LOG_ID, std::string("Disconnected ") + streamer_id);
     }
@@ -431,10 +427,6 @@ public:
                 throw uhd::lookup_error(
                     std::string("Cannot disconnect. Port not connected: ") + id_str);
             }
-        } else {
-            throw uhd::lookup_error(
-                std::string("Cannot disconnect streamer. Streamer not found: ")
-                + streamer_id);
         }
         UHD_LOG_TRACE(LOG_ID, std::string("Disconnected ") + id_str);
     }
