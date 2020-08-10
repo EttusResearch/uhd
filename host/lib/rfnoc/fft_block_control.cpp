@@ -22,7 +22,7 @@ constexpr int DEFAULT_FFT_SCALING         = 1706; // Conservative 1/N scaling
 
 // FFT IP constraints
 constexpr int MIN_FFT_LENGTH = 8;
-constexpr int MAX_FFT_LENGTH = 2048;
+constexpr int MAX_FFT_LENGTH = 1024;
 
 const uhd::rfnoc::io_type_t DEFAULT_TYPE = uhd::rfnoc::IO_TYPE_SC16;
 
