@@ -11,9 +11,7 @@
 //
 
 
-module ctrlport_clk_cross #(
-  parameter DEVICE = "7SERIES" // FPGA technology identifier (for optimal FIFO inference)
-)(
+module ctrlport_clk_cross (
   input wire rst, // Can be either clock domain, but must be glitch-free
 
   //---------------------------------------------------------------------------
@@ -54,6 +52,16 @@ module ctrlport_clk_cross #(
   input  wire [ 1:0] m_ctrlport_resp_status,
   input  wire [31:0] m_ctrlport_resp_data
 );
+  //---------------------------------------------------------------------------
+  // Reset sync to both clock domains
+  //---------------------------------------------------------------------------
+  wire m_rst, s_rst;
+  reset_sync master_reset_sync_inst (
+    .clk(m_ctrlport_clk), .reset_in(rst), .reset_out(m_rst)
+  );
+  reset_sync slave_reset_sync_inst (
+    .clk(s_ctrlport_clk), .reset_in(rst), .reset_out(s_rst)
+  );
 
   //---------------------------------------------------------------------------
   // Slave to Master Clock Crossing (Request)
@@ -77,52 +85,53 @@ module ctrlport_clk_cross #(
   wire              m_ctrlport_req_wr_tmp;
   wire              m_ctrlport_req_rd_tmp;
 
-  // Sort by descreasing order of usage possibility.
-  // This way instance, which do not need port IDs, time etc. can save the MSBs.
   assign s_req_flat = {
+    s_ctrlport_req_wr,
+    s_ctrlport_req_rd,
+    s_ctrlport_req_addr,
     s_ctrlport_req_portid,
     s_ctrlport_req_rem_epid,
     s_ctrlport_req_rem_portid,
-    s_ctrlport_req_has_time,
-    s_ctrlport_req_time,
-    s_ctrlport_req_byte_en,
     s_ctrlport_req_data,
-    s_ctrlport_req_addr,
-    s_ctrlport_req_wr,
-    s_ctrlport_req_rd
+    s_ctrlport_req_byte_en,
+    s_ctrlport_req_has_time,
+    s_ctrlport_req_time
   };
 
-  axi_fifo_2clk #(
-    .WIDTH  (REQ_W),
-    .SIZE   (3),
-    .DEVICE (DEVICE)
-  ) req_fifo (
-    .reset    (rst),
-    .i_aclk   (s_ctrlport_clk),
-    .i_tdata  (s_req_flat),
-    .i_tvalid (s_ctrlport_req_wr | s_ctrlport_req_rd),
-    .i_tready (),
-    .o_aclk   (m_ctrlport_clk),
-    .o_tdata  (m_req_flat),
-    .o_tready (1'b1),
-    .o_tvalid (m_req_flat_valid)
+  // Busy flag can be ignored as the response handshake takes at least the same
+  // amount of cycles to transfer the response as this handshake instance needs
+  // to release the busy flag as they are configured with the same amount of
+  // synchronization stages. Furthermore the ctrlport protocol just allows for
+  // one transaction to be active at the same time. A request can only be issued
+  // once the response is provided.
+  handshake #(
+    .WIDTH(REQ_W)
+  ) req_handshake_inst (
+    .clk_a(s_ctrlport_clk),
+    .rst_a(s_rst),
+    .valid_a((s_ctrlport_req_wr | s_ctrlport_req_rd) & ~s_rst),
+    .data_a(s_req_flat),
+    .busy_a(),
+    .clk_b(m_ctrlport_clk),
+    .valid_b(m_req_flat_valid),
+    .data_b(m_req_flat)
   );
 
   assign {
+    m_ctrlport_req_wr_tmp,
+    m_ctrlport_req_rd_tmp,
+    m_ctrlport_req_addr,
     m_ctrlport_req_portid,
     m_ctrlport_req_rem_epid,
     m_ctrlport_req_rem_portid,
-    m_ctrlport_req_has_time,
-    m_ctrlport_req_time,
-    m_ctrlport_req_byte_en,
     m_ctrlport_req_data,
-    m_ctrlport_req_addr,
-    m_ctrlport_req_wr_tmp,
-    m_ctrlport_req_rd_tmp
+    m_ctrlport_req_byte_en,
+    m_ctrlport_req_has_time,
+    m_ctrlport_req_time
   } = m_req_flat;
 
-  assign m_ctrlport_req_wr = m_ctrlport_req_wr_tmp & m_req_flat_valid;
-  assign m_ctrlport_req_rd = m_ctrlport_req_rd_tmp & m_req_flat_valid;
+  assign m_ctrlport_req_wr = m_ctrlport_req_wr_tmp & m_req_flat_valid & ~m_rst;
+  assign m_ctrlport_req_rd = m_ctrlport_req_rd_tmp & m_req_flat_valid & ~m_rst;
 
 
   //---------------------------------------------------------------------------
@@ -145,20 +154,23 @@ module ctrlport_clk_cross #(
     m_ctrlport_resp_data
   };
 
-  axi_fifo_2clk #(
-    .WIDTH  (RESP_W),
-    .SIZE   (3),
-    .DEVICE (DEVICE)
-  ) resp_fifo (
-    .reset    (rst),
-    .i_aclk   (m_ctrlport_clk),
-    .i_tdata  (m_resp_flat),
-    .i_tvalid (m_ctrlport_resp_ack),
-    .i_tready (),
-    .o_aclk   (s_ctrlport_clk),
-    .o_tdata  (s_resp_flat),
-    .o_tready (1'b1),
-    .o_tvalid (s_resp_flat_valid)
+  // Busy flag can be ignored as the request handshake takes at least the same
+  // amount of cycles to transfer the request as this handshake instance needs
+  // to release the busy flag as they are configured with the same amount of
+  // synchronization stages. Furthermore the ctrlport protocol just allows for
+  // one transaction to be active at the same time. A response can only be
+  // issued once the request is available.
+  handshake #(
+    .WIDTH(RESP_W)
+  ) resp_handshake_inst (
+    .clk_a(m_ctrlport_clk),
+    .rst_a(m_rst),
+    .valid_a(m_ctrlport_resp_ack & ~m_rst),
+    .data_a(m_resp_flat),
+    .busy_a(),
+    .clk_b(s_ctrlport_clk),
+    .valid_b(s_resp_flat_valid),
+    .data_b(s_resp_flat)
   );
 
   assign {
@@ -167,6 +179,6 @@ module ctrlport_clk_cross #(
     s_ctrlport_resp_data
   } = s_resp_flat;
 
-  assign s_ctrlport_resp_ack = s_ctrlport_resp_ack_tmp & s_resp_flat_valid;
+  assign s_ctrlport_resp_ack = s_ctrlport_resp_ack_tmp & s_resp_flat_valid & ~s_rst;
 
 endmodule
