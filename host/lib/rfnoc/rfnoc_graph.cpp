@@ -442,15 +442,17 @@ public:
     uhd::rx_streamer::sptr create_rx_streamer(
         const size_t num_ports, const uhd::stream_args_t& args)
     {
+        auto this_graph = shared_from_this();
         return std::make_shared<rfnoc_rx_streamer>(
-            num_ports, args, [this](const std::string& id) { this->disconnect(id); });
+            num_ports, args, [this_graph](const std::string& id) { this_graph->disconnect(id); });
     }
 
     uhd::tx_streamer::sptr create_tx_streamer(
         const size_t num_ports, const uhd::stream_args_t& args)
     {
+        auto this_graph = shared_from_this();
         return std::make_shared<rfnoc_tx_streamer>(
-            num_ports, args, [this](const std::string& id) { this->disconnect(id); });
+            num_ports, args, [this_graph](const std::string& id) { this_graph->disconnect(id); });
     }
 
     size_t get_num_mboards() const

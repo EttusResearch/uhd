@@ -110,7 +110,7 @@ uhd::rfnoc::chdr_ctrl_xport::sptr x300_impl::x300_mb_iface::make_ctrl_transport(
 
     auto io_srv =
         get_io_srv_mgr()->connect_links(recv_link, send_link, link_type_t::CTRL);
-
+    auto io_srv_mgr = this->get_io_srv_mgr();
     auto xport = chdr_ctrl_xport::make(io_srv,
         send_link,
         recv_link,
@@ -118,8 +118,8 @@ uhd::rfnoc::chdr_ctrl_xport::sptr x300_impl::x300_mb_iface::make_ctrl_transport(
         local_epid,
         send_link->get_num_send_frames(),
         recv_link->get_num_recv_frames(),
-        [this, send_link, recv_link]() {
-            this->get_io_srv_mgr()->disconnect_links(recv_link, send_link);
+        [io_srv_mgr, send_link, recv_link]() {
+            io_srv_mgr->disconnect_links(recv_link, send_link);
         });
     return xport;
 }
@@ -174,6 +174,8 @@ uhd::rfnoc::chdr_rx_data_xport::uptr x300_impl::x300_mb_iface::make_rx_data_tran
     auto cfg_io_srv =
         get_io_srv_mgr()->connect_links(recv_link, send_link, link_type_t::CTRL);
 
+    auto io_srv_mgr = this->get_io_srv_mgr();
+
     auto fc_params = uhd::rfnoc::chdr_rx_data_xport::configure_sep(cfg_io_srv,
         recv_link,
         send_link,
@@ -186,8 +188,8 @@ uhd::rfnoc::chdr_rx_data_xport::uptr x300_impl::x300_mb_iface::make_rx_data_tran
         fc_freq,
         fc_headroom,
         lossy_xport,
-        [this, recv_link, send_link]() {
-            this->get_io_srv_mgr()->disconnect_links(recv_link, send_link);
+        [io_srv_mgr, recv_link, send_link]() {
+            io_srv_mgr->disconnect_links(recv_link, send_link);
         });
 
     cfg_io_srv.reset();
@@ -208,8 +210,8 @@ uhd::rfnoc::chdr_rx_data_xport::uptr x300_impl::x300_mb_iface::make_rx_data_tran
         epids,
         recv_link->get_num_recv_frames(),
         fc_params,
-        [this, recv_link, send_link]() {
-            this->get_io_srv_mgr()->disconnect_links(recv_link, send_link);
+        [io_srv_mgr, recv_link, send_link]() {
+            io_srv_mgr->disconnect_links(recv_link, send_link);
         });
 
     return rx_xport;
@@ -250,6 +252,8 @@ uhd::rfnoc::chdr_tx_data_xport::uptr x300_impl::x300_mb_iface::make_tx_data_tran
     auto cfg_io_srv =
         get_io_srv_mgr()->connect_links(recv_link, send_link, link_type_t::CTRL);
 
+    auto io_srv_mgr = this->get_io_srv_mgr();
+
     const auto buff_capacity = chdr_tx_data_xport::configure_sep(cfg_io_srv,
         recv_link,
         send_link,
@@ -260,8 +264,8 @@ uhd::rfnoc::chdr_tx_data_xport::uptr x300_impl::x300_mb_iface::make_tx_data_tran
         mdata_buff_fmt,
         fc_freq_ratio,
         fc_headroom_ratio,
-        [this, recv_link, send_link]() {
-            this->get_io_srv_mgr()->disconnect_links(recv_link, send_link);
+        [io_srv_mgr, recv_link, send_link]() {
+            io_srv_mgr->disconnect_links(recv_link, send_link);
         });
 
     cfg_io_srv.reset();
@@ -282,8 +286,8 @@ uhd::rfnoc::chdr_tx_data_xport::uptr x300_impl::x300_mb_iface::make_tx_data_tran
         epids,
         send_link->get_num_send_frames(),
         buff_capacity,
-        [this, recv_link, send_link]() {
-            this->get_io_srv_mgr()->disconnect_links(recv_link, send_link);
+        [io_srv_mgr, recv_link, send_link]() {
+            io_srv_mgr->disconnect_links(recv_link, send_link);
         });
 
     return tx_xport;

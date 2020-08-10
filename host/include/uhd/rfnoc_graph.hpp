@@ -29,7 +29,7 @@ class mb_controller;
  * session, but also manages the RFNoC blocks on those devices. Only devices
  * compatible with a modern version of RFNoC can be addressed by this class.
  */
-class UHD_API rfnoc_graph : public uhd::noncopyable
+class UHD_API rfnoc_graph : public uhd::noncopyable, public std::enable_shared_from_this<rfnoc_graph>
 {
 public:
     /*! A shared pointer to allow easy access to this class and for
