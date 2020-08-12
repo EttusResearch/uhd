@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// AXI-Stream multipler with select line
+// AXI-Stream multiplexer with select line
 //
 
 module axi_mux_select #(
@@ -29,12 +29,12 @@ module axi_mux_select #(
 
   genvar n;
   generate
-    if (PRE_FIFO_SIZE == 0) begin
+    if (PRE_FIFO_SIZE == 0) begin : gen_no_pre_fifo
       assign i_tdata_int  = i_tdata;
       assign i_tlast_int  = i_tlast;
       assign i_tvalid_int = i_tvalid;
       assign i_tready     = i_tready_int;
-    end else begin
+    end else begin : gen_pre_fifo
       for (n = 0; n < SIZE; n = n + 1) begin
         axi_fifo #(.WIDTH(WIDTH+1), .SIZE(PRE_FIFO_SIZE)) axi_fifo (
           .clk(clk), .reset(reset), .clear(clear),
@@ -48,32 +48,53 @@ module axi_mux_select #(
   // Make arrays for easier muxing
   genvar i;
   generate
-    for (i = 0; i < SIZE; i = i + 1) begin
+    for (i = 0; i < SIZE; i = i + 1) begin : gen_muxing
       assign i_tdata_arr[i] = i_tdata_int[WIDTH*(i+1)-1:WIDTH*i];
     end
   endgenerate
 
-  // Switch select line either immediately or after the last word in a packet
-  reg [$clog2(SIZE)-1:0] select_hold;
+  // Switch select line either immediately or if we're not in the middle of a
+  // packet.
+  reg [$clog2(SIZE)-1:0] select_hold = 0;
+
   generate
-    if (SWITCH_ON_LAST) begin
-      reg init;
+    if (SWITCH_ON_LAST) begin : gen_switch_on_last
+      reg  in_packet_reg = 1'b0;
+      wire in_packet;
+      wire end_of_packet;
+      wire enable_switch;
+
+      // Create a signal to indicate if we're in the middle of a packet
+      assign in_packet = in_packet_reg || o_tvalid_int;
+
+      // Create a signal to indicate if this is the last transfer of the packet
+      assign end_of_packet = o_tlast_int & o_tvalid_int & o_tready_int;
+
+      // Create a signal that indicates when it's OK to switch the mux select.
+      // We can switch if we're not in the middle of outputting a packet, or if
+      // we're on the last transfer of a packet.
+      assign enable_switch = !in_packet || end_of_packet;
+
       always @(posedge clk) begin
         if (reset | clear) begin
-          init        <= 1'b0;
-          select_hold <= 'd0;
+          select_hold   <= 0;
+          in_packet_reg <= 1'b0;
         end else begin
-          if (|i_tvalid) begin
-            init        <= 1'b1;
+          // Use in_packet_reg to indicate if we're in a packet. But this
+          // register is delayed by a clock cycle, so we need the in_pakcet
+          // signal above to add the first clock cycle of a packet.
+          if (end_of_packet) begin
+            in_packet_reg <= 1'b0;
+          end else if (o_tvalid_int) begin
+            in_packet_reg <= 1'b1;
           end
-          // Set select any time after reset and before the first packet OR
-          // at the end of a packet
-          if (~init | (o_tlast_int & o_tvalid_int & o_tready_int)) begin
+
+          if (enable_switch) begin
             select_hold <= select;
           end
         end
       end
-    end else begin
+    end else begin : gen_no_switch_on_last
       always @(*) begin
         select_hold <= select;
       end
@@ -87,12 +108,12 @@ module axi_mux_select #(
   assign i_tready_int = (1'b1 << select_hold) & {SIZE{o_tready_int}};
 
   generate
-    if(POST_FIFO_SIZE == 0) begin
+    if(POST_FIFO_SIZE == 0) begin : gen_no_post_fifo
       assign o_tdata = o_tdata_int;
       assign o_tlast = o_tlast_int;
       assign o_tvalid = o_tvalid_int;
       assign o_tready_int = o_tready;
-    end else begin
+    end else begin : gen_post_fifo
       axi_fifo #(.WIDTH(WIDTH+1),.SIZE(POST_FIFO_SIZE)) axi_fifo (
         .clk(clk), .reset(reset), .clear(clear),
         .i_tdata({o_tlast_int,o_tdata_int}), .i_tvalid(o_tvalid_int), .i_tready(o_tready_int),
