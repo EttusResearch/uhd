@@ -302,7 +302,7 @@ module rfnoc_block_switchboard #(
       for (out = 0; out < NUM_OUTPUTS; out = out + 1) begin : gen_mux_loop
         axi_mux_select #(
           .WIDTH(CHDR_W),
-          .SWITCH_ON_LAST(1'b0),
+          .SWITCH_ON_LAST(1'b1),
           .SIZE(NUM_INPUTS)
         ) axi_mux_select_i (
           .clk(axis_chdr_clk),
