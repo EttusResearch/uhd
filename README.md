@@ -43,7 +43,7 @@ third-party applications. Some common toolkits / frameworks are:
 * [GNU Radio](http://gnuradio.org/)
 * [NI LabVIEW](http://www.ni.com/download/ni-usrp-1.3/4711/en/)
 * [MathWorks Simulink](http://www.mathworks.com/discovery/sdr/usrp.html)
-* [REDHAWK](http://redhawksdr.github.io/Documentation/)
+* [REDHAWK](https://redhawksdr.org/)
 * [OpenBTS GSM](http://openbts.org)
 * [Osmocom GSM](http://osmocom.org)
 * [Amarisoft LTE](http://www.amarisoft.com/products-lte-ue-ots-sdr-pcie)
