@@ -1,6 +1,193 @@
 Change Log for Releases
 ==============================
 
+## 004.000.000.000
+* b200:
+  - Enable power calibration API
+  - Add a prop tree node usb_version
+* cal:
+  - Add utility to update all .fbs files, or check the generated ones
+  - Add pwr_cal container
+* cmake:
+  - Add ability to pass CXXFLAGS to CMake environment
+* docs:
+  - Update PCIe xport instructions for NI Repos
+  - n3xx: Include WX in table of N320 images
+  - Add stream and transport args documentation
+  - Update Basic/LF dboard references to use new operating mode
+  - e3xx/n3xx: Add sections on FP-GPIOs and how to drive them
+  - n3xx: Document eeprom flags
+  - Add note about DPDK needing to be built as shared libraries
+  - Change DPDK version to 18.11 and make args use underscores
+  - Clarifying which devices support DPDK
+* dpdk:
+  - Add new DPDK stack to integrate with I/O services
+* e31x:
+  - Fix filter bank and antenna switching for channel 0
+  - Swap out liberio for internal Ethernet
+* e320:
+  - Swap out liberio for internal Ethernet
+* examples:
+  - Add usrp_power_meter example
+  - Update test_messages example
+  - Update gpio example
+  - Add options to benchmark_rate
+  - Add example out-of-tree module for RFNoC modules
+  - Remove thread priority elevation
+* fpga:
+  - Replaced RFNoC architecture with new 4.0 version
+  - Added modelsim make simulation target
+  - Upgrade to Vivade 2019.1
+  - Removed unused coregen files and modules
+  - Removed fpga submodule and merged into uhd repo
+  - lib: Change max FFT size to 1024
+  - lib: add Intel MAX10 architecture for 2clk FIFO
+  - rfnoc: Port RFNoC Keep One in N block to new RFNoC architecture
+  - rfnoc: Port RFNoC Replay block to new RFNoC architecture
+  - rfnoc: Port Signal Generator RFNoC block to new RFNoC architecture
+  - Add Switchboard RFNoC block
+  - Remove liberio
+  - rfnoc: Port RFNoC Moving Average block to new RFNoC architecture
+  - rfnoc: Port Log-Power block to new RFNoC architecture
+  - rfnoc: Port RFNoC Window block to new RFNoC architecture
+  - lib: Add synthesizable AXI4-Stream SV components
+  - lib: Add interface and model for AXI4-Lite
+  - rfnoc: Add support for 512-bit CHDR widths
+  - rfnoc: Port RFNoC Add/Sub block to new RFNoC architecture
+  - rfnoc: Port Vector IIR RFNoC block to new RFNoC architecture
+  - lib: Add AXI-Stream splitter (axis_split)
+* lib:
+  - Add power cal manager
+  - deps: Add FlatBuffers 1.11.0 header files
+  - Add DPDK service queue
+* mpm:
+  - Add ability to run scripts to MPM shell
+  - n3xx: Remove eth1, eth2 from interface list
+  - Default virtual NIC CHDR IP selection
+  - Enable internal NIC on the N3xx
+  - Clean up code, improve Pylint score
+  - Move common mboard regs code to common location
+* mpmd:
+  - Remove liberio
+* multi_usrp:
+  - Fix connect/disconnect of RFNoC chains
+  - Various multi_usrp_rfnoc fixes
+* n310:
+  - Fix GPIO registers
+* n320:
+  - Double radio ingress buffer size
+  - Enable inverse sinc filter for DAC37J82
+* n3xx:
+  - Swap out liberio for internal Ethernet
+* python:
+  - Add Keep One in N block controller bindings
+  - Add replay RFNoC block controller bindings
+  - Add siggen RFNoC block controller bindings
+  - Add Switchboard block python bindings
+  - Add moving average RFNoC block controller bindings
+  - Add bindings for C++ CHDR Parser
+  - Add window RFNoC block controller bindings
+  - Add FFT RFNoC block controller bindings
+  - Add null RFNoC block controller bindings
+  - Add vector IIR RFNoC block controller bindings
+  - Add radio RFNoC block controller bindings
+  - Add FIR filter RFNoC block controller bindings
+  - Add Fosphor RFNoC block controller bindings
+  - Add DUC RFNoC block controller bindings
+  - Add DDC RFNoC block controller bindings
+  - Added new RFNoC image builder module under the uhd module
+  - Remove Python2-specific code
+  - Included complex.h to allow pybind to convert that data type
+* rfnoc:
+  - Add multichannel register interface
+  - Added support for destruction of streamers
+  - Add Keep One in N block support
+  - Port siggen RFNoC block controller support to new RFNoC architecture
+  - Add Switchboard block support
+  - Port Moving Average block controller to new RFNoC architecture
+  - Port Log Power RFNoC block support to new RFNoC architecture
+  - Port window RFNoC block controller to new RFNoC architecture
+  - Port Add/Sub RFNoC block support to new RFNoC architecture
+  - Add USE_MAP prop/action forwarding policy
+  - Port Split Stream RFNoC block to new RFNoC architecture
+  - Port Vector IIR RFNoC block support to new RFNoC architecture
+  - Port RFNoC fosphor block to new RFNoC architecture
+  - Port FIR filter RFNoC block controller to new RFNoC architecture
+  - Add multichannel register interface
+  - Add RFNoC Python API
+  - Unify endianness of transports
+  - Add DMA FIFO block controller
+  - examples: Port examples to new RFNoC
+  - Implement flushing on overrun
+  - client_zero can track num SEPs and num ctrl EPs separately
+  - Add basic round-robin allocation for links
+  - Add ability to select transport for streamers to user APIs
+  - Use link_stream_manager's mgmt_portal for all mgmt packets
+  - graph: Optimize property propagation algorithm
+  - Port DUC block controller to new RFNoC architecture
+  - Add MTU tracking
+  - Implement overrun handling using action API
+  - Port null block controller to new RFNoC architecture
+  - Add mb_controller API
+  - Port radio block controller to new RFNoC architecture
+  - Port default block controller to new RFNoC architecture
+  - Port DDC block controller to new RFNoC architecture
+  - Add rfnoc_graph class
+  - Add action API
+  - Refactored CHDR packet interfaces
+  - Add noc_block_base class
+* tests:
+  - Add unit tests for new RFNoC block controllers
+  - Fix multi_usrp_test
+  - Add unit tests for pwr_cal_mgr
+  - Migrated rfnoc block tests to dedicated subdirectory
+  - Add more tests for max rate streaming
+  - Add tests to exercise max streaming rates and report results
+* tools:
+  - Update dissectors for Wireshark major version 3, new CHDR
+  - Update FPGA functional verification tests for X3x0 mcr's & dpdk
+* transport:
+  - Implement eov indications for Rx and Tx streams
+  - Implement an I/O service that uses an offload thread
+  - Implement a single-threaded I/O service
+* twinrx:
+  - Update synthesizer register values for improved rf performance
+  - Fix increased noise floor
+  - Remove decimation from frontend
+* uhd:
+  - Disable optimizations for Mac for build speed
+  - remove liberio
+  - improved handling of empty serial number hints
+  - Add discoverable_features API
+  - Add reference power level API to multi_usrp and radio_control
+  - Add fuzzy serial number checking
+  - paths: Harmonize around XDG Base Directory specification
+  - cal: Use usrp::cal::database instead of CSV files
+  - cal: Add iq_cal calibration data container class
+  - cal: Add calibration container class
+  - cal: Add database class
+  - Introduce I/O service manager
+  - Replace usage of boost smart pointers with C++11 counterparts
+  - add udp boost asio implementation of transport interface
+  - Add thread affinity utility functions
+  - types: Extend stream_cmd_t::num_samps to 64 bits
+* utils:
+  - Expose CHDR Parsing API
+  - Expose CHDR Types in Public API
+  - Support expressions for num_ports in block defs
+  - Let uhd_images_downloader also use HTTPS proxies
+  - Fix FPGA search in rfnoc_image_builder from fpga-src to fpga
+  - Add convert_cal_data utility
+  - image_builder: Support parameterized number of ports on blocks
+* x300:
+  - Update frame sizes for 10GbE
+  - Fix for incorrect PCIe buffer size values
+  - Change default dboard clock rate from 50 to 100 MHz
+  - Update maximum bitstream size
+  - Enable power reference API
+  - Expand DRAM address space to 1G
+  - Add front-panel GPIO source control
+
 ## 003.015.000.000
 * N320: Fix MCR initialization, fix checks for LO distribution board,
   reset RX IQ balance on init, replace DRAM FIFO with replay block,
@@ -18,7 +205,8 @@ Change Log for Releases
   capability to flash NI-2974 FPGA, fix clocking code, enable 11.52 MHz
   and 23.04 MHz system ref rates, improve usage of constrained device
   args, enable ADC gain through RFNoC API, add mode to set master clock
-  rate to arbitrary values between 184.32 and 200 MHz
+  rate to arbitrary values between 184.32 and 200 MHz, fix get_tx_gain()
+  to make RX/TX gain functions symmetric
 * E320: Fix time source clobbering ref source, add support for RevE, fix
   reporting of FPGA version hash, fix SFP link up status, fix missing
   ce_clk driver
@@ -31,7 +219,7 @@ Change Log for Releases
 * SBX: Only update ATRs when lock state changes
 * TwinRX: add LO charge pump properties, increase default charge pump
   value on LO1, add low spur tuning mode, fix duplicate write to N value
-  in DDC
+  in DDC, add TwinRX support to phase alignment script
 * RFNoC/device3: Read command FIFO size from device instead of
   hardcoding values, fix multidevice graph connections, ENABLE_RFNOC now
   defaults to ON, search all nodes for tick rate, add update_graph()
@@ -58,7 +246,8 @@ Change Log for Releases
   channels on E310), wait for DPDK links to come up before proceeding,
   relax failure handling when updating components (fixes spurious errors
   when updating FPGA images over SFP), fix issue where RPC
-  initialization would hang on failure
+  initialization would hang on failure, fixed cmake macros for enabling
+  modules
 * FPGA: Use new device-tree overlay syntax, upgraded to Vivado 2018.3,
   broke various paths with critical timing, allow SystemVerilog source
   files, improve viv_modify_bd and viv_modify_tcl_bd, fix resets on 2clk
@@ -68,10 +257,14 @@ Change Log for Releases
   includes, demote various log messages, fix logging colours, fix
   deadlock on Windows machines
 * Examples: Fix benchmark_rate INIT_DELAY, fix memory leak in
-  tx_samples_c
+  tx_samples_c, fix replay example for replay_chan > 1, improve
+  benchmark_rate output to not interleave
 * Tests: Make the Python interpreter for devtests a parameter, add unit
   tests to MPM
-* Utilities: Fix converter benchmark for Py3k and scaling issue
+* Utilities: Fix converter benchmark for Py3k and scaling issue, use
+  runtime library path lookup instead of hardcoded paths, improvements
+  to images downloader (support UHD_IMAGES_URL; check conditions before
+  writing, use HTTPS instead of HTTP to avoid redirect)
 * Tools: Fix kitchen_sink
 * Docs: Various fixes, fix Doxygen warnings, fix links to KB
 * C API: Add uhd_get_abi_string, uhd_get_version_string
@@ -82,7 +275,10 @@ Change Log for Releases
   versions, add MPM unit testing, fix missing BIGOBJ for MSVC, add our
   own UHDBoost.cmake to better find Boost across versions and systems
 * Formatting: Apply clang-format to all files, break after template<>
-
+* AD9361: Fix mask for product ID check
+* Debian: Update control file to rely on Python3 versions of deps
+* Octoclock: Clear OctoClock packets and initialize version/seq num
+  before transmission
 
 ## 003.014.001.000
 N320: Terminate the DAC when not transmitting
