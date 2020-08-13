@@ -307,10 +307,10 @@ dpdk_ctx::~dpdk_ctx(void)
 {
     std::lock_guard<std::mutex> lock(global_ctx_mutex);
     global_ctx = nullptr;
-    // Stop all the ports
-    for (auto& port : _ports) {
-        rte_eth_dev_stop(port.first);
-    }
+    // Destroy the io service
+    _io_srv_portid_map.clear();
+    // Destroy and stop all the ports
+    _ports.clear();
     // Free mempools
     for (auto& pool : _rx_pktbuf_pools) {
         rte_mempool_free(pool);
