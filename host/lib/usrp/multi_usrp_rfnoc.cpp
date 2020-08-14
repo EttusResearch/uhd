@@ -157,7 +157,8 @@ std::string bytes_to_str(std::vector<uint8_t> str_b)
 
 } // namespace
 
-class multi_usrp_rfnoc : public multi_usrp
+class multi_usrp_rfnoc : public multi_usrp,
+                         public std::enable_shared_from_this<multi_usrp_rfnoc>
 {
 public:
     struct rx_chan_t
@@ -287,11 +288,12 @@ public:
         // Create the streamer
         // The disconnect callback must disconnect the entire chain because the radio
         // relies on the connections to determine what is enabled.
-        auto rx_streamer = std::make_shared<rfnoc_rx_streamer>(args.channels.size(),
+        auto this_multi_usrp = shared_from_this();
+        auto rx_streamer     = std::make_shared<rfnoc_rx_streamer>(args.channels.size(),
             args,
-            [this, channels = args.channels](const std::string& id) {
-                this->_graph->disconnect(id);
-                this->_disconnect_rx_chains(channels);
+            [channels = args.channels, this_multi_usrp](const std::string& id) {
+                this_multi_usrp->_graph->disconnect(id);
+                this_multi_usrp->_disconnect_rx_chains(channels);
             });
 
         // Connect the streamer
@@ -361,11 +363,12 @@ public:
         // Create a streamer
         // The disconnect callback must disconnect the entire chain because the radio
         // relies on the connections to determine what is enabled.
-        auto tx_streamer = std::make_shared<rfnoc_tx_streamer>(args.channels.size(),
+        auto this_multi_usrp = shared_from_this();
+        auto tx_streamer     = std::make_shared<rfnoc_tx_streamer>(args.channels.size(),
             args,
-            [this, channels = args.channels](const std::string& id) {
-                this->_graph->disconnect(id);
-                this->_disconnect_tx_chains(channels);
+            [channels = args.channels, this_multi_usrp](const std::string& id) {
+                this_multi_usrp->_graph->disconnect(id);
+                this_multi_usrp->_disconnect_tx_chains(channels);
             });
 
         // Connect the streamer
