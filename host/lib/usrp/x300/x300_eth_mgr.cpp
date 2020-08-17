@@ -45,8 +45,8 @@ namespace asio = boost::asio;
 namespace {
 
 constexpr unsigned int X300_UDP_RESERVED_FRAME_SIZE = 64;
-constexpr size_t XGE_DATA_FRAME_SEND_SIZE           = 8972;
-constexpr size_t XGE_DATA_FRAME_RECV_SIZE           = 8972;
+constexpr size_t XGE_DATA_FRAME_SEND_SIZE           = x300::DATA_FRAME_MAX_SIZE;
+constexpr size_t XGE_DATA_FRAME_RECV_SIZE           = x300::DATA_FRAME_MAX_SIZE;
 constexpr size_t GE_DATA_FRAME_SEND_SIZE            = 1472;
 constexpr size_t GE_DATA_FRAME_RECV_SIZE            = 1472;
 constexpr size_t ETH_MSG_NUM_FRAMES                 = 64;
