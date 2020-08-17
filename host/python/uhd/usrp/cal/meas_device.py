@@ -281,7 +281,11 @@ class USRPPowerGenerator(SignalGeneratorBase):
 
     def __init__(self, options):
         super().__init__(options)
-        self._usrp = uhd.usrp.MultiUSRP(options.get('args'))
+        usrp_args = options.get('args')
+        if not usrp_args:
+            raise RuntimeError(
+                "Must specify args for USRP measurement device!")
+        self._usrp = uhd.usrp.MultiUSRP(usrp_args)
         self._rate = float(options.get('rate', 5e6))
         self._lo_offset = float(options.get('lo_offset', 0))
         self._chan = int(options.get('chan', 0))
@@ -305,7 +309,7 @@ class USRPPowerGenerator(SignalGeneratorBase):
         else:
             print("[SigGen] Stopping tone generator.")
             self._tone_gen.stop()
-        time.sleep(0.1) # Give it some time to spin or down
+        time.sleep(0.1) # Give it some time to spin down
 
     def set_frequency(self, freq):
         """
@@ -342,11 +346,11 @@ class RFSGPowerGenerator(SignalGeneratorBase):
         super().__init__(options)
         self.device = RFSGDevice(options)
 
-    def enable(self, enb=True):
+    def enable(self, enable=True):
         """
         Turn tone generation on and off
         """
-        self.device.enable(enb)
+        self.device.enable(enable)
 
     def set_frequency(self, freq):
         """

@@ -67,7 +67,7 @@ def parse_args():
              'The argument is generally positive, e.g. 30 means 30 dB of attenuation.')
     parser.add_argument(
         '--tone-freq', type=float, default=1e6,
-        help='Frequency of the tone that is generated for Tx measurements. This'
+        help='Frequency of the tone that is generated for Tx measurements. This '
              'has the same effect as setting an LO offset, except in software.')
     parser.add_argument(
         '--antenna', default="*",
