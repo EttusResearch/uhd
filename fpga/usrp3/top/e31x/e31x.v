@@ -849,6 +849,7 @@ module e31x (
     .radio_rst(radio_rst),
     .bus_clk(bus_clk),
     .bus_rst(bus_rst),
+    .clk40(clk40),
 
     // Clocking and PPS Controls/Indicators
     .pps_refclk(pps),

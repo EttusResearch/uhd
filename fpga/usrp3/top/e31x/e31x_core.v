@@ -34,6 +34,7 @@ module e31x_core #(
   input wire radio_rst,
   input wire bus_clk,
   input wire bus_rst,
+  input wire clk40,
 
   // Motherboard Registers: AXI lite interface
   input wire                    s_axi_aclk,
@@ -666,7 +667,7 @@ module e31x_core #(
     .PROTOVER(RFNOC_PROTOVER)
   ) rfnoc_image_core_i (
     .chdr_aclk               (bus_clk    ),
-    .ctrl_aclk               (bus_clk    ), //TODO: X310 uses bus_clk_div2. we can also reduce it here.
+    .ctrl_aclk               (clk40      ),
     .core_arst               (bus_rst    ),
     .device_id               (device_id  ),
     .radio_clk               (radio_clk  ),
