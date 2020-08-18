@@ -60,4 +60,5 @@ map/kv_map.v \
 map/axis_muxed_kv_map.v \
 axil_ctrlport_master.v\
 handshake.v\
+ctrlport_to_regport.v \
 ))
