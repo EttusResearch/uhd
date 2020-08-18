@@ -197,6 +197,7 @@ module n3xx_core #(
   input  [63:0]   sfp_ports_info,
   output reg [15:0] device_id
 );
+  `include "../../lib/rfnoc/core/ctrlport.vh"
 
   /////////////////////////////////////////////////////////////////////////////////
   //
@@ -218,8 +219,14 @@ module n3xx_core #(
   /////////////////////////////////////////////////////////////////////////////////
 
   // Register base
-  localparam REG_BASE_MISC         = 14'h0;
-  localparam REG_BASE_TIMEKEEPER   = 14'h1000;
+  localparam [CTRLPORT_ADDR_W-1:0] REG_BASE_MISC       = 20'h0;
+  localparam [CTRLPORT_ADDR_W-1:0] REG_BASE_NPIO       = 20'h200;
+  localparam [CTRLPORT_ADDR_W-1:0] REG_BASE_TIMEKEEPER = 20'h1000;
+
+  // Register region sizes. Give each register region a 256-byte window.
+  localparam REG_GLOB_ADDR_W       = 8;
+  localparam REG_NPIO_ADDR_W       = 8;
+  localparam REG_TIMEKEEPER_ADDR_W = 8;
 
   // Misc Motherboard Registers
   localparam REG_COMPAT_NUM        = REG_BASE_MISC + 14'h00;
@@ -238,7 +245,7 @@ module n3xx_core #(
   localparam REG_FP_GPIO_RADIO_SRC = REG_BASE_MISC + 14'h34;
   localparam REG_NUM_TIMEKEEPERS   = REG_BASE_MISC + 14'h48;
 
-  localparam NUM_TIMEKEEPERS = 16'd1;
+  localparam NUM_TIMEKEEPERS = 1;
 
   wire                 m_ctrlport_req_wr_radio0;
   wire                 m_ctrlport_req_rd_radio0;
@@ -275,140 +282,243 @@ module n3xx_core #(
         bus_counter <= bus_counter + 32'd1;
   end
 
-  // Regport
-  wire                  reg_wr_req;
-  wire [REG_AWIDTH-1:0] reg_wr_addr;
-  wire [REG_DWIDTH-1:0] reg_wr_data;
-  wire                  reg_rd_req;
-  wire [REG_AWIDTH-1:0] reg_rd_addr;
-  wire                  reg_rd_resp;
-  wire [REG_DWIDTH-1:0] reg_rd_data;
 
-  reg                   reg_rd_resp_glob;
-  reg  [REG_DWIDTH-1:0] reg_rd_data_glob;
-  wire                  reg_rd_resp_tk;
-  wire [REG_DWIDTH-1:0] reg_rd_data_tk;
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  // Bus Bridge
+  //
+  /////////////////////////////////////////////////////////////////////////////
 
-  regport_resp_mux #(
-    .WIDTH(REG_DWIDTH),
-    .NUM_SLAVES(3)
-  ) inst_mboard_regport_resp_mux (
-    .clk(bus_clk),
-    .reset(bus_rst),
-    .sla_rd_resp({reg_rd_resp_npio, reg_rd_resp_glob, reg_rd_resp_tk}),
-    .sla_rd_data({reg_rd_data_npio, reg_rd_data_glob, reg_rd_data_tk}),
-    .mst_rd_resp(reg_rd_resp),
-    .mst_rd_data(reg_rd_data)
+  // Specify timeout for CtrlPort transactions that don't complete.
+  localparam CTRLPORT_TIMEOUT = 20;
+
+  wire                       cp_req_wr_aclk;
+  wire                       cp_req_rd_aclk;
+  wire [CTRLPORT_ADDR_W-1:0] cp_req_addr_aclk;
+  wire [CTRLPORT_DATA_W-1:0] cp_req_data_aclk;
+  wire                       cp_resp_ack_aclk;
+  wire [ CTRLPORT_STS_W-1:0] cp_resp_status_aclk;
+  wire [CTRLPORT_DATA_W-1:0] cp_resp_data_aclk;
+
+  // Convert the AXI4-Lite transactions to CtrlPort
+  axil_ctrlport_master #(
+    .TIMEOUT         (CTRLPORT_TIMEOUT),
+    .AXI_AWIDTH      (REG_AWIDTH),
+    .CTRLPORT_AWIDTH (CTRLPORT_ADDR_W)
+  ) axil_ctrlport_master_i (
+    .s_axi_aclk                (s_axi_aclk),
+    .s_axi_aresetn             (s_axi_aresetn),
+    .s_axi_awaddr              (s_axi_awaddr),
+    .s_axi_awvalid             (s_axi_awvalid),
+    .s_axi_awready             (s_axi_awready),
+    .s_axi_wdata               (s_axi_wdata),
+    .s_axi_wstrb               (s_axi_wstrb),
+    .s_axi_wvalid              (s_axi_wvalid),
+    .s_axi_wready              (s_axi_wready),
+    .s_axi_bresp               (s_axi_bresp),
+    .s_axi_bvalid              (s_axi_bvalid),
+    .s_axi_bready              (s_axi_bready),
+    .s_axi_araddr              (s_axi_araddr),
+    .s_axi_arvalid             (s_axi_arvalid),
+    .s_axi_arready             (s_axi_arready),
+    .s_axi_rdata               (s_axi_rdata),
+    .s_axi_rresp               (s_axi_rresp),
+    .s_axi_rvalid              (s_axi_rvalid),
+    .s_axi_rready              (s_axi_rready),
+    .m_ctrlport_req_wr         (cp_req_wr_aclk),
+    .m_ctrlport_req_rd         (cp_req_rd_aclk),
+    .m_ctrlport_req_addr       (cp_req_addr_aclk),
+    .m_ctrlport_req_portid     (),
+    .m_ctrlport_req_rem_epid   (),
+    .m_ctrlport_req_rem_portid (),
+    .m_ctrlport_req_data       (cp_req_data_aclk),
+    .m_ctrlport_req_byte_en    (),
+    .m_ctrlport_req_has_time   (),
+    .m_ctrlport_req_time       (),
+    .m_ctrlport_resp_ack       (cp_resp_ack_aclk),
+    .m_ctrlport_resp_status    (cp_resp_status_aclk),
+    .m_ctrlport_resp_data      (cp_resp_data_aclk)
   );
 
-  // Regport Master to convert AXI4-Lite to regport
-  axil_regport_master #(
-    .DWIDTH   (REG_DWIDTH), // Width of the AXI4-Lite data bus (must be 32 or 64)
-    .AWIDTH   (REG_AWIDTH), // Width of the address bus
-    .WRBASE   (0),          // Write address base
-    .RDBASE   (0),          // Read address base
-    .TIMEOUT  (10)          // log2(timeout). Read will timeout after (2^TIMEOUT - 1) cycles
-  ) mboard_regport_master_i (
-    // Clock and reset
-    .s_axi_aclk    (s_axi_aclk),
-    .s_axi_aresetn (s_axi_aresetn),
-    // AXI4-Lite: Write address port (domain: s_axi_aclk)
-    .s_axi_awaddr  (s_axi_awaddr),
-    .s_axi_awvalid (s_axi_awvalid),
-    .s_axi_awready (s_axi_awready),
-    // AXI4-Lite: Write data port (domain: s_axi_aclk)
-    .s_axi_wdata   (s_axi_wdata),
-    .s_axi_wstrb   (s_axi_wstrb),
-    .s_axi_wvalid  (s_axi_wvalid),
-    .s_axi_wready  (s_axi_wready),
-    // AXI4-Lite: Write response port (domain: s_axi_aclk)
-    .s_axi_bresp   (s_axi_bresp),
-    .s_axi_bvalid  (s_axi_bvalid),
-    .s_axi_bready  (s_axi_bready),
-    // AXI4-Lite: Read address port (domain: s_axi_aclk)
-    .s_axi_araddr  (s_axi_araddr),
-    .s_axi_arvalid (s_axi_arvalid),
-    .s_axi_arready (s_axi_arready),
-    // AXI4-Lite: Read data port (domain: s_axi_aclk)
-    .s_axi_rdata   (s_axi_rdata),
-    .s_axi_rresp   (s_axi_rresp),
-    .s_axi_rvalid  (s_axi_rvalid),
-    .s_axi_rready  (s_axi_rready),
-    // Register port: Write port (domain: reg_clk)
-    .reg_clk       (bus_clk),
-    .reg_wr_req    (reg_wr_req),
-    .reg_wr_addr   (reg_wr_addr),
-    .reg_wr_data   (reg_wr_data),
-    .reg_wr_keep   (/*unused*/),
-    // Register port: Read port (domain: reg_clk)
-    .reg_rd_req    (reg_rd_req),
-    .reg_rd_addr   (reg_rd_addr),
-    .reg_rd_resp   (reg_rd_resp),
-    .reg_rd_data   (reg_rd_data)
+  wire                       cp_req_wr;
+  wire                       cp_req_rd;
+  wire [CTRLPORT_ADDR_W-1:0] cp_req_addr;
+  wire [CTRLPORT_DATA_W-1:0] cp_req_data;
+  wire                       cp_resp_ack;
+  wire [ CTRLPORT_STS_W-1:0] cp_resp_status;
+  wire [CTRLPORT_DATA_W-1:0] cp_resp_data;
+
+  // Cross transactions from s_axi_clk to bus_clk domain
+  ctrlport_clk_cross ctrlport_clk_cross_i (
+    .rst                       (~s_axi_aresetn),
+    .s_ctrlport_clk            (s_axi_aclk),
+    .s_ctrlport_req_wr         (cp_req_wr_aclk),
+    .s_ctrlport_req_rd         (cp_req_rd_aclk),
+    .s_ctrlport_req_addr       (cp_req_addr_aclk),
+    .s_ctrlport_req_portid     ({CTRLPORT_PORTID_W{1'b0}}),
+    .s_ctrlport_req_rem_epid   ({CTRLPORT_REM_EPID_W{1'b0}}),
+    .s_ctrlport_req_rem_portid ({CTRLPORT_PORTID_W{1'b0}}),
+    .s_ctrlport_req_data       (cp_req_data_aclk),
+    .s_ctrlport_req_byte_en    ({CTRLPORT_BYTE_EN_W{1'b1}}),
+    .s_ctrlport_req_has_time   (1'b0),
+    .s_ctrlport_req_time       ({CTRLPORT_TIME_W{1'b0}}),
+    .s_ctrlport_resp_ack       (cp_resp_ack_aclk),
+    .s_ctrlport_resp_status    (cp_resp_status_aclk),
+    .s_ctrlport_resp_data      (cp_resp_data_aclk),
+    .m_ctrlport_clk            (bus_clk),
+    .m_ctrlport_req_wr         (cp_req_wr),
+    .m_ctrlport_req_rd         (cp_req_rd),
+    .m_ctrlport_req_addr       (cp_req_addr),
+    .m_ctrlport_req_portid     (),
+    .m_ctrlport_req_rem_epid   (),
+    .m_ctrlport_req_rem_portid (),
+    .m_ctrlport_req_data       (cp_req_data),
+    .m_ctrlport_req_byte_en    (),
+    .m_ctrlport_req_has_time   (),
+    .m_ctrlport_req_time       (),
+    .m_ctrlport_resp_ack       (cp_resp_ack),
+    .m_ctrlport_resp_status    (cp_resp_status),
+    .m_ctrlport_resp_data      (cp_resp_data)
   );
 
-  assign reg_wr_req_npio = reg_wr_req;
-  assign reg_wr_addr_npio = reg_wr_addr;
-  assign reg_wr_data_npio = reg_wr_data;
-  assign reg_rd_req_npio = reg_rd_req;
-  assign reg_rd_addr_npio = reg_rd_addr;
+  wire                       cp_glob_req_wr;
+  wire                       cp_glob_req_rd;
+  wire [CTRLPORT_ADDR_W-1:0] cp_glob_req_addr;
+  wire [CTRLPORT_DATA_W-1:0] cp_glob_req_data;
+  reg                        cp_glob_resp_ack  = 1'b0;
+  reg  [CTRLPORT_DATA_W-1:0] cp_glob_resp_data = 1'bX;
+
+  wire                       cp_npio_req_wr;
+  wire                       cp_npio_req_rd;
+  wire [CTRLPORT_ADDR_W-1:0] cp_npio_req_addr;
+  wire [CTRLPORT_DATA_W-1:0] cp_npio_req_data;
+  wire                       cp_npio_resp_ack;
+  wire [CTRLPORT_DATA_W-1:0] cp_npio_resp_data;
+
+  wire                       cp_tk_req_wr;
+  wire                       cp_tk_req_rd;
+  wire [CTRLPORT_ADDR_W-1:0] cp_tk_req_addr;
+  wire [CTRLPORT_DATA_W-1:0] cp_tk_req_data;
+  wire                       cp_tk_resp_ack;
+  wire [CTRLPORT_DATA_W-1:0] cp_tk_resp_data;
+
+  // Split the CtrlPort for the global registers and the timekeeper registers
+  ctrlport_decoder_param #(
+    .NUM_SLAVES  (3),
+    .PORT_BASE   ({   REG_BASE_TIMEKEEPER,   REG_BASE_NPIO,   REG_BASE_MISC }),
+    .PORT_ADDR_W ({ REG_TIMEKEEPER_ADDR_W, REG_NPIO_ADDR_W, REG_GLOB_ADDR_W })
+  ) ctrlport_decoder_param_i (
+    .ctrlport_clk            (bus_clk),
+    .ctrlport_rst            (bus_rst),
+    .s_ctrlport_req_wr       (cp_req_wr),
+    .s_ctrlport_req_rd       (cp_req_rd),
+    .s_ctrlport_req_addr     (cp_req_addr),
+    .s_ctrlport_req_data     (cp_req_data),
+    .s_ctrlport_req_byte_en  ({CTRLPORT_BYTE_EN_W{1'b1}}),
+    .s_ctrlport_req_has_time (1'b0),
+    .s_ctrlport_req_time     ({CTRLPORT_TIME_W{1'b0}}),
+    .s_ctrlport_resp_ack     (cp_resp_ack),
+    .s_ctrlport_resp_status  (cp_resp_status),
+    .s_ctrlport_resp_data    (cp_resp_data),
+    .m_ctrlport_req_wr       ({ cp_tk_req_wr,    cp_npio_req_wr,    cp_glob_req_wr }),
+    .m_ctrlport_req_rd       ({ cp_tk_req_rd,    cp_npio_req_rd,    cp_glob_req_rd }),
+    .m_ctrlport_req_addr     ({ cp_tk_req_addr,  cp_npio_req_addr,  cp_glob_req_addr }),
+    .m_ctrlport_req_data     ({ cp_tk_req_data,  cp_npio_req_data,  cp_glob_req_data }),
+    .m_ctrlport_req_byte_en  (),
+    .m_ctrlport_req_has_time (),
+    .m_ctrlport_req_time     (),
+    .m_ctrlport_resp_ack     ({ cp_tk_resp_ack,  cp_npio_resp_ack,  cp_glob_resp_ack }),
+    .m_ctrlport_resp_status  ({2{CTRL_STS_OKAY}}),
+    .m_ctrlport_resp_data    ({ cp_tk_resp_data, cp_npio_resp_data, cp_glob_resp_data })
+  );
+
+  // Convert NPIO from CtrlPort to RegPort
+  ctrlport_to_regport #(
+    .REG_AWIDTH (REG_AWIDTH),
+    .REG_DWIDTH (REG_DWIDTH)
+  ) ctrlport_to_regport_i (
+    .clk                  (bus_clk),
+    .rst                  (bus_rst),
+    .s_ctrlport_req_wr    (cp_npio_req_wr),
+    .s_ctrlport_req_rd    (cp_npio_req_rd),
+    .s_ctrlport_req_addr  (cp_npio_req_addr),
+    .s_ctrlport_req_data  (cp_npio_req_data),
+    .s_ctrlport_resp_ack  (cp_npio_resp_ack),
+    .s_ctrlport_resp_data (cp_npio_resp_data),
+    .reg_wr_req           (reg_wr_req_npio),
+    .reg_wr_addr          (reg_wr_addr_npio),
+    .reg_wr_data          (reg_wr_data_npio),
+    .reg_rd_req           (reg_rd_req_npio),
+    .reg_rd_addr          (reg_rd_addr_npio),
+    .reg_rd_resp          (reg_rd_resp_npio),
+    .reg_rd_data          (reg_rd_data_npio)
+  );
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  // Global Registers
+  //
+  /////////////////////////////////////////////////////////////////////////////
 
   reg b_ref_clk_locked_ms;
   reg b_ref_clk_locked;
   reg b_meas_clk_locked_ms;
   reg b_meas_clk_locked;
 
-  // Write Registers
   always @ (posedge bus_clk) begin
     if (bus_rst) begin
-      scratch_reg    <= 32'h0;
-      fp_gpio_master_reg <= 32'h0;
-      fp_gpio_src_reg <= 32'h0;
-      pps_select     <= 4'h1;
-      pps_select_sfp <= 2'h0;
-      pps_out_enb    <= 1'b0;
-      ref_clk_reset  <= 1'b0;
-      meas_clk_reset <= 1'b0;
+      cp_glob_resp_ack     <= 1'b0;
+      cp_glob_resp_data    <= 'bX;
+      scratch_reg          <= 32'h0;
+      fp_gpio_master_reg   <= 32'h0;
+      fp_gpio_src_reg      <= 32'h0;
+      pps_select           <= 4'h1;
+      pps_select_sfp       <= 2'h0;
+      pps_out_enb          <= 1'b0;
+      ref_clk_reset        <= 1'b0;
+      meas_clk_reset       <= 1'b0;
       enable_ref_clk_async <= 1'b1;
-      device_id      <= 16'h0;
-    end else if (reg_wr_req) begin
-      case (reg_wr_addr)
-        REG_DEVICE_ID: begin
-          device_id <= reg_wr_data[15:0];
-        end
-        REG_FP_GPIO_MASTER: begin
-          fp_gpio_master_reg <= reg_wr_data;
-        end
-        REG_FP_GPIO_RADIO_SRC: begin
-          fp_gpio_src_reg <= reg_wr_data;
-        end
-        REG_SCRATCH: begin
-          scratch_reg <= reg_wr_data;
-        end
-        REG_CLOCK_CTRL: begin
-          pps_select     <= reg_wr_data[3:0];
-          pps_out_enb    <= reg_wr_data[4];
-          pps_select_sfp <= reg_wr_data[6:5];
-          ref_clk_reset  <= reg_wr_data[8];
-          meas_clk_reset <= reg_wr_data[12];
-          // This bit is defined as "to disable, write '1' to bit 16" for backwards
-          // compatibility.
-          enable_ref_clk_async <= ~reg_wr_data[16];
-        end
-      endcase
-    end
-  end
-
-  // Read Registers
-  always @ (posedge bus_clk) begin
-    if (bus_rst) begin
-      reg_rd_resp_glob <= 1'b0;
+      device_id            <= 16'h0;
       b_ref_clk_locked_ms  <= 1'b0;
       b_ref_clk_locked     <= 1'b0;
       b_meas_clk_locked_ms <= 1'b0;
       b_meas_clk_locked    <= 1'b0;
-    end
-    else begin
+    end else begin
+      cp_glob_resp_ack <= 1'b0;
+
+      if (cp_glob_req_wr) begin
+        cp_glob_resp_ack <= 1'b1;
+        
+        case (cp_glob_req_addr[REG_GLOB_ADDR_W-1:0])
+          REG_DEVICE_ID:
+            device_id <= cp_glob_req_data[15:0];
+
+          REG_FP_GPIO_MASTER:
+            fp_gpio_master_reg <= cp_glob_req_data;
+
+          REG_FP_GPIO_RADIO_SRC:
+            fp_gpio_src_reg <= cp_glob_req_data;
+
+          REG_SCRATCH:
+            scratch_reg <= cp_glob_req_data;
+
+          REG_CLOCK_CTRL: begin
+            pps_select           <= cp_glob_req_data[3:0];
+            pps_out_enb          <= cp_glob_req_data[4];
+            pps_select_sfp       <= cp_glob_req_data[6:5];
+            ref_clk_reset        <= cp_glob_req_data[8];
+            meas_clk_reset       <= cp_glob_req_data[12];
+            // This bit is defined as "to disable, write '1' to bit 16" for backwards
+            // compatibility.
+            enable_ref_clk_async <= ~cp_glob_req_data[16];
+          end
+          default: begin
+            // Don't acknowledge if the address doesn't match
+            cp_glob_resp_ack <= 1'b0;
+          end
+        endcase
+      end
 
       // double-sync the locked bits into the bus_clk domain before using them
       b_ref_clk_locked_ms  <= ref_clk_locked;
@@ -416,73 +526,73 @@ module n3xx_core #(
       b_meas_clk_locked_ms <= meas_clk_locked;
       b_meas_clk_locked    <= b_meas_clk_locked_ms;
 
-      if (reg_rd_req) begin
-        reg_rd_resp_glob <= 1'b1;
+      if (cp_glob_req_rd) begin
+        cp_glob_resp_data <= 0;  // Unused bits will read 0
+        cp_glob_resp_ack  <= 1'b1;
 
-        case (reg_rd_addr)
-        REG_DEVICE_ID:
-          reg_rd_data_glob <= device_id;
+        case (cp_glob_req_addr[REG_GLOB_ADDR_W-1:0])
+          REG_DEVICE_ID:
+            cp_glob_resp_data <= {16'd0, device_id};
 
-        REG_RFNOC_INFO:
-          reg_rd_data_glob <= {CHDR_WIDTH[15:0], RFNOC_PROTOVER[15:0]};
+          REG_RFNOC_INFO:
+            cp_glob_resp_data <= {CHDR_WIDTH[15:0], RFNOC_PROTOVER[15:0]};
 
-        REG_COMPAT_NUM:
-          reg_rd_data_glob <= {COMPAT_MAJOR, COMPAT_MINOR};
+          REG_COMPAT_NUM:
+            cp_glob_resp_data <= {COMPAT_MAJOR, COMPAT_MINOR};
 
-        REG_DATESTAMP:
-          reg_rd_data_glob <= build_datestamp;
+          REG_DATESTAMP:
+            cp_glob_resp_data <= build_datestamp;
 
-        REG_GIT_HASH:
-          `ifndef GIT_HASH
-          `define GIT_HASH 32'h0BADC0DE
-          `endif
-          reg_rd_data_glob <= `GIT_HASH;
+          REG_GIT_HASH:
+            `ifndef GIT_HASH
+            `define GIT_HASH 32'h0BADC0DE
+            `endif
+            cp_glob_resp_data <= `GIT_HASH;
 
-        REG_FP_GPIO_MASTER:
-          reg_rd_data_glob <= fp_gpio_master_reg;
+          REG_FP_GPIO_MASTER:
+            cp_glob_resp_data <= fp_gpio_master_reg;
 
-        REG_FP_GPIO_RADIO_SRC:
-          reg_rd_data_glob <= fp_gpio_src_reg;
+          REG_FP_GPIO_RADIO_SRC:
+            cp_glob_resp_data <= fp_gpio_src_reg;
 
-        REG_SCRATCH:
-          reg_rd_data_glob <= scratch_reg;
+          REG_SCRATCH:
+            cp_glob_resp_data <= scratch_reg;
 
-        REG_CLOCK_CTRL: begin
-          reg_rd_data_glob <= 32'b0;
-          reg_rd_data_glob[3:0] <= pps_select;
-          reg_rd_data_glob[4]   <= pps_out_enb;
-          reg_rd_data_glob[6:5] <= pps_select_sfp;
-          reg_rd_data_glob[8]   <= ref_clk_reset;
-          reg_rd_data_glob[9]   <= b_ref_clk_locked;
-          reg_rd_data_glob[12]  <= meas_clk_reset;
-          reg_rd_data_glob[13]  <= b_meas_clk_locked;
-          reg_rd_data_glob[16]  <= ~enable_ref_clk_async;
-        end
+          REG_CLOCK_CTRL: begin
+            cp_glob_resp_data      <= 32'b0;
+            cp_glob_resp_data[3:0] <= pps_select;
+            cp_glob_resp_data[4]   <= pps_out_enb;
+            cp_glob_resp_data[6:5] <= pps_select_sfp;
+            cp_glob_resp_data[8]   <= ref_clk_reset;
+            cp_glob_resp_data[9]   <= b_ref_clk_locked;
+            cp_glob_resp_data[12]  <= meas_clk_reset;
+            cp_glob_resp_data[13]  <= b_meas_clk_locked;
+            cp_glob_resp_data[16]  <= ~enable_ref_clk_async;
+          end
 
-        REG_XADC_READBACK:
-          reg_rd_data_glob <= xadc_readback;
+          REG_XADC_READBACK:
+            cp_glob_resp_data <= xadc_readback;
 
-        REG_BUS_CLK_RATE:
-          reg_rd_data_glob <= BUS_CLK_RATE;
+          REG_BUS_CLK_RATE:
+            cp_glob_resp_data <= BUS_CLK_RATE;
 
-        REG_BUS_CLK_COUNT:
-          reg_rd_data_glob <= bus_counter;
+          REG_BUS_CLK_COUNT:
+            cp_glob_resp_data <= bus_counter;
 
-        REG_SFP_PORT0_INFO:
-          reg_rd_data_glob <= sfp_ports_info[31:0];
+          REG_SFP_PORT0_INFO:
+            cp_glob_resp_data <= sfp_ports_info[31:0];
 
-        REG_SFP_PORT1_INFO:
-          reg_rd_data_glob <= sfp_ports_info[63:32];
+          REG_SFP_PORT1_INFO:
+            cp_glob_resp_data <= sfp_ports_info[63:32];
 
-        REG_NUM_TIMEKEEPERS:
-          reg_rd_data_glob <= NUM_TIMEKEEPERS;
+          REG_NUM_TIMEKEEPERS:
+            cp_glob_resp_data <= NUM_TIMEKEEPERS;
 
-        default:
-          reg_rd_resp_glob <= 1'b0;
+          default: begin
+            // Don't acknowledge if the address doesn't match
+            cp_glob_resp_ack <= 1'b0;
+          end
         endcase
-      end
-      else if (reg_rd_resp_glob) begin
-          reg_rd_resp_glob <= 1'b0;
       end
     end
   end
@@ -964,27 +1074,33 @@ module n3xx_core #(
     end
   endgenerate
 
+
+  /////////////////////////////////////////////////////////////////////////////
+  //
   // Timekeeper
+  //
+  /////////////////////////////////////////////////////////////////////////////
+
   wire [63:0] radio_time;
 
   timekeeper #(
-    .BASE_ADDR      (REG_BASE_TIMEKEEPER),
-    .TIME_INCREMENT (1'b1)
+   .BASE_ADDR      (0),      // ctrlport_decoder removes the base offset
+   .TIME_INCREMENT (1'b1)
   ) timekeeper_i (
-    .tb_clk                (radio_clk),
-    .tb_rst                (radio_rst),
-    .s_ctrlport_clk        (bus_clk),
-    .s_ctrlport_req_wr     (reg_wr_req),
-    .s_ctrlport_req_rd     (reg_rd_req),
-    .s_ctrlport_req_addr   (reg_wr_req ? reg_wr_addr: reg_rd_addr),
-    .s_ctrlport_req_data   (reg_wr_data),
-    .s_ctrlport_resp_ack   (reg_rd_resp_tk),
-    .s_ctrlport_resp_data  (reg_rd_data_tk),
-    .sample_rx_stb         (rx_stb[0]),
-    .pps                   (pps),
-    .tb_timestamp          (radio_time),
-    .tb_timestamp_last_pps (),
-    .tb_period_ns_q32      ()
+   .tb_clk                (radio_clk),
+   .tb_rst                (radio_rst),
+   .s_ctrlport_clk        (bus_clk),
+   .s_ctrlport_req_wr     (cp_tk_req_wr),
+   .s_ctrlport_req_rd     (cp_tk_req_rd),
+   .s_ctrlport_req_addr   (cp_tk_req_addr),
+   .s_ctrlport_req_data   (cp_tk_req_data),
+   .s_ctrlport_resp_ack   (cp_tk_resp_ack),
+   .s_ctrlport_resp_data  (cp_tk_resp_data),
+   .sample_rx_stb         (rx_stb[0]),
+   .pps                   (pps),
+   .tb_timestamp          (radio_time),
+   .tb_timestamp_last_pps (),
+   .tb_period_ns_q32      ()
   );
 
 
@@ -1138,7 +1254,7 @@ module n3xx_core #(
   //---------------------------------------------------------------------------
   // Convert Control Port to Settings Bus
   //---------------------------------------------------------------------------
-`ifdef N320 
+`ifdef N320
   ctrlport_to_settings_bus # (
     .NUM_PORTS (NUM_CHANNELS_PER_RADIO),
     .USE_TIME  (1)

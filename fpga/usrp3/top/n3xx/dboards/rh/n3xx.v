@@ -893,8 +893,6 @@ module n3xx (
   wire                    reg_rd_resp_npio, reg_rd_resp_npio0, reg_rd_resp_npio1;
   wire [REG_DWIDTH-1:0]   reg_rd_data_npio, reg_rd_data_npio0, reg_rd_data_npio1;
 
-  localparam NPIO_REG_BASE = 14'h0200;
-
   regport_resp_mux #(
     .WIDTH      (REG_DWIDTH),
     .NUM_SLAVES (2)
@@ -1350,7 +1348,7 @@ module n3xx (
 
   n3xx_mgt_io_core #(
     .PROTOCOL       ("Aurora"),
-    .REG_BASE       (NPIO_REG_BASE + 14'h00),
+    .REG_BASE       (14'h00),             // Base offset removed by n3xx_core
     .REG_DWIDTH     (REG_DWIDTH),         // Width of the AXI4-Lite data bus (must be 32 or 64)
     .REG_AWIDTH     (REG_AWIDTH),         // Width of the address bus
     .PORTNUM        (8'd2),
@@ -1407,7 +1405,7 @@ module n3xx (
 
   n3xx_mgt_io_core #(
     .PROTOCOL       ("Aurora"),
-    .REG_BASE       (NPIO_REG_BASE + 14'h40),
+    .REG_BASE       (14'h40),             // Base offset removed by n3xx_core
     .REG_DWIDTH     (REG_DWIDTH),         // Width of the AXI4-Lite data bus (must be 32 or 64)
     .REG_AWIDTH     (REG_AWIDTH),         // Width of the address bus
     .PORTNUM        (8'd3),
