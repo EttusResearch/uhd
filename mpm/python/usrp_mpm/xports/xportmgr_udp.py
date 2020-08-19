@@ -172,11 +172,42 @@ class XportMgrUDP:
 
         In this case, returns the available IP addresses.
         """
-        available_interfaces = self._init_interfaces(self._possible_chdr_ifaces)
-        return dict(zip(
-            ("addr", "second_addr", "third_addr", "fourth_addr"),
-            (x['ip_addr'] for x in itervalues(available_interfaces))
+        # This section of code is intended to prioritize
+        # the sfp interfaces over the fowarding interface
+        chdr_interfaces = [
+            iface
+            for iface in self._possible_chdr_ifaces
+            if(self.iface_config[iface]['type'] != 'internal')
+        ]
+        forward_interfaces = [
+            iface
+            for iface in chdr_interfaces
+            if(self.iface_config[iface]['type'] == 'forward')
+        ]
+
+        # Call _init_interfaces once to get all valid interfaces then
+        # split out the forward interfaces from the external interfaces
+        # _init_interfaces calls cannot be split because it emits
+        # a user facing warning if no CHDR valid interfaces are found
+        available_chdr_interfaces = self._init_interfaces(chdr_interfaces)
+        external_chdr_interfaces = available_chdr_interfaces
+        forward_chdr_interfaces = {}
+        for iface in forward_interfaces:
+            if iface in external_chdr_interfaces.keys():
+                forward_chdr_interfaces[iface] = external_chdr_interfaces.pop(iface)
+
+        # Create two dictionaries
+        # One for the external/sfp interfaces and another forwarding interfaces
+        # fourth_addr is the lowest priority for mpmd interface selection
+        external_ip_dict = dict(zip(
+            ("addr", "second_addr", "third_addr"),
+            (x['ip_addr'] for x in itervalues(external_chdr_interfaces))
         ))
+        forward_ip_dict = dict(zip(
+            ("fourth_addr",),
+            (x['ip_addr'] for x in itervalues(forward_chdr_interfaces))
+        ))
+        return {**external_ip_dict, **forward_ip_dict}
 
     def get_chdr_link_options(self, host_location = 'all'):
         """
