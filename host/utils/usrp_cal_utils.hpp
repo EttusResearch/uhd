@@ -54,6 +54,7 @@ static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp)
         or mb_name.find("N210") != std::string::npos
         or mb_name.find("X300") != std::string::npos
         or mb_name.find("X310") != std::string::npos
+        or mb_name.find("NI-2974") != std::string::npos
         or mb_name.find("n3xx") != std::string::npos) {
         usrp->set_tx_rate(12.5e6);
         usrp->set_rx_rate(12.5e6);
