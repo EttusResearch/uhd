@@ -6,7 +6,7 @@
 //
 
 
-module timekeeper
+module timekeeper_legacy
   #(parameter SR_TIME_HI = 0,
     parameter SR_TIME_LO = 1,
     parameter SR_TIME_CTRL = 2,
@@ -84,4 +84,4 @@ module timekeeper
        else
          vita_time_lastpps <= vita_time + INCREMENT;
 
-endmodule // timekeeper
+endmodule // timekeeper_legacy

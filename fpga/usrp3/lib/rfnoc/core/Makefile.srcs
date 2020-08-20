@@ -21,10 +21,8 @@ axis_ctrl_slave.v \
 chdr_compute_tkeep.v \
 chdr_to_chdr_data.v \
 chdr_to_axis_pyld_ctxt.v \
-chdr_to_axis_data_mdata.v \
 chdr_to_axis_data.v \
 axis_pyld_ctxt_to_chdr.v \
-axis_data_mdata_to_chdr.v \
 axis_data_to_chdr.v \
 chdr_ingress_fifo.v \
 chdr_mgmt_pkt_handler.v \

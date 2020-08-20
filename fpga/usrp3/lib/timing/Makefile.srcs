@@ -10,7 +10,7 @@
 ##################################################
 TIMING_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/timing/, \
 time_compare.v \
-timekeeper.v \
+timekeeper_legacy.v \
 pps_generator.v \
 pps_synchronizer.v \
 pulse_generator.v \

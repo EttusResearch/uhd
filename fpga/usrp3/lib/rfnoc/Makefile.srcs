@@ -19,13 +19,7 @@ RFNOC_FRAMEWORK_SRCS = $(RFNOC_CORE_SRCS) $(RFNOC_XBAR_SRCS) $(RFNOC_UTIL_SRCS) 
 ##################################################
 RFNOC_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/rfnoc/, \
 chdr_fifo_large.v \
-chdr_framer.v \
-chdr_framer_2clk.v \
-chdr_deframer.v \
-chdr_deframer_2clk.v \
-chdr_pkt_types.vh \
-axi_packet_mux.v \
-axi_wrapper.v \
+noc_shell_regs.vh \
 axi_bit_reduce.v \
 null_source.v \
 split_stream.v \
@@ -49,7 +43,6 @@ cadd.v \
 keep_one_in_n.v \
 vector_iir.v \
 addsub.v \
-packet_resizer.v \
 axi_pipe.v \
 multiply.v \
 mult.v \
