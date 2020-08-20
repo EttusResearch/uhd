@@ -26,7 +26,8 @@ class VerifyFBSTest(unittest.TestCase):
         spec.loader.exec_module(update_fbs)
         try:
             git_exe = update_fbs.find_executable("git")
-        except RuntimeError:
+        # pylint: disable=broad-except
+        except Exception:
             # No git, no test. We pass b/c git is not a UHD dependency.
             return
         sys.argv.append('--verify')

@@ -108,9 +108,12 @@ def verify(git_exe, uhd_path=None):
     accompanied by a change of the header. It also detects manual
     changes to the generated header files.
     """
+    if not git_exe:
+        print("Cannot verify schema files (no git found), assuming pass")
+        return True
     try:
-        subprocess.check_output(("git", "status"), stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as error:
+        subprocess.check_output((git_exe, "status"), stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError:
         print("Cannot verify schema files (not a git repo), assuming pass")
         return True
     try:
