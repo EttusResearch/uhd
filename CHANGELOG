@@ -23,9 +23,12 @@ Change Log for Releases
 * dpdk:
   - Add new DPDK stack to integrate with I/O services
 * e31x:
+  - Change RFNoC Ctrl clock to 40 MHz
+  - Fix timeout for timekeeper registers
   - Fix filter bank and antenna switching for channel 0
   - Swap out liberio for internal Ethernet
 * e320:
+  - Fix timeout for timekeeper registers
   - Swap out liberio for internal Ethernet
 * examples:
   - Add usrp_power_meter example
@@ -61,6 +64,7 @@ Change Log for Releases
   - deps: Add FlatBuffers 1.11.0 header files
   - Add DPDK service queue
 * mpm:
+  - Exclude internal NIC for network hosts
   - Add ability to run scripts to MPM shell
   - n3xx: Remove eth1, eth2 from interface list
   - Default virtual NIC CHDR IP selection
@@ -78,6 +82,7 @@ Change Log for Releases
   - Double radio ingress buffer size
   - Enable inverse sinc filter for DAC37J82
 * n3xx:
+  - Fix timeout for timekeeper registers
   - Swap out liberio for internal Ethernet
 * python:
   - Add Keep One in N block controller bindings
