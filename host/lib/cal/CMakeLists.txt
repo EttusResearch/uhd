@@ -7,7 +7,7 @@
 ########################################################################
 # This file included, use CMake directory variables
 ########################################################################
-include_directories(${CMAKE_SOURCE_DIR}/lib/deps/flatbuffers/include)
+include_directories(${CMAKE_SOURCE_DIR}/lib/deps/flatbuffers/include ${CMRC_INCLUDE_DIR})
 LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/database.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/iq_cal.cpp
