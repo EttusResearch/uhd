@@ -336,7 +336,8 @@ int32_t main(int32_t argc, char* argv[])
             "Load a FPGA (bin) file into the FPGA.")(
         "load-bootloader,B", po::value<std::string>(&bl_file),
             "Load a bootloader (img) file into the EEPROM")(
-        "query-bootloader,Q", "Check if bootloader is loaded.");
+        "query-bootloader,Q", "Check if bootloader is loaded.")(
+        "unload-bootloader,u", "Remove bootloader.");
 
     // Hidden options provided for testing - use at your own risk!
     po::options_description hidden("Hidden options");
@@ -675,6 +676,36 @@ int32_t main(int32_t argc, char* argv[])
             return EXIT_FAILURE;
         }
         std::cout << "Bootloader is present" << std::endl;
+    } else if (vm.count("unload-bootloader")) {
+        auto signature = b200->read_eeprom(0x0, 0x0, 4);
+        if (signature != NEW_EEPROM_SIGNATURE) {
+            std::cout << "No bootloader found on device" << std::endl;
+            return EXIT_FAILURE;
+        }
+        auto vidpid = b200->read_eeprom(
+                EEPROM_DATA_ADDR_HIGH_BYTE, EEPROM_DATA_VID_PID_ADDR, 4);
+        auto eeprom_data = b200->read_eeprom(
+                EEPROM_DATA_ADDR_HIGH_BYTE, EEPROM_DATA_OLD_DATA_ADDR, 36);
+
+        uhd::byte_vector_t first_bl_record(OLD_EEPROM_SIGNATURE);
+        first_bl_record.push_back(vidpid[2]);
+        first_bl_record.push_back(vidpid[3]);
+        first_bl_record.push_back(vidpid[0]);
+        first_bl_record.push_back(vidpid[1]);
+        if (write_and_verify_eeprom(b200, first_bl_record)) {
+            return EXIT_FAILURE;
+        }
+        b200->write_eeprom(0x04, 0xDC, eeprom_data);
+
+        std::cout << "Bootloader unload complete, resetting device..." << std::endl;
+
+        // reset the device
+        try {
+            b200->reset_fx3();
+        } catch (uhd::exception& e) {
+            std::cerr << "Exception while resetting FX3: " << e.what() << std::endl;
+            return EXIT_FAILURE;
+        }
     }
 
     std::cout << "Operation complete!  I did it!  I did it!" << std::endl;
