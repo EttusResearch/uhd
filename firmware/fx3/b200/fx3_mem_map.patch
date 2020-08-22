@@ -1,58 +1,73 @@
-diff -ur 1.2.3-orig/common/cyfxtx.c 1.2.3/common/cyfxtx.c
---- 1.2.3-orig/common/cyfxtx.c	2013-02-07 17:16:54.000000000 -0800
-+++ 1.2.3/common/cyfxtx.c	2014-03-25 16:56:12.484602382 -0700
-@@ -33,7 +33,7 @@
-    such as thread stacks and memory for message queues. The Cypress FX3
-    libraries require a Mem heap size of at least 32 KB.
+diff -r -u cyfx3sdk/fw_build/boot_fw/cyfx3.ld cyfx3sdk-modified/fw_build/boot_fw/cyfx3.ld
+--- cyfx3sdk/fw_build/boot_fw/cyfx3.ld	2018-05-23 02:25:01.000000000 -0700
++++ cyfx3sdk-modified/fw_build/boot_fw/cyfx3.ld	2020-08-22 14:54:46.407481500 -0700
+@@ -39,12 +39,18 @@
+ 
+ MEMORY
+ {
++	BLANK   : ORIGIN = 0x40070000   LENGTH = 0x0100
+ 	SYS_MEM	: ORIGIN = 0x40078000	LENGTH = 0x7000
+ 	DATA	: ORIGIN = 0x4007F000	LENGTH = 0x1000
+ }
+ 
+ SECTIONS
+ {
++	.blank :
++	{
++		. += 0x100;
++	} > BLANK
++
+ 	.text :
+ 	{
+ 		*(RESET)
+diff -r -u cyfx3sdk/fw_build/fx3_fw/cyfxtx.c cyfx3sdk-modified/fw_build/fx3_fw/cyfxtx.c
+--- cyfx3sdk/fw_build/fx3_fw/cyfxtx.c	2018-05-23 02:25:01.000000000 -0700
++++ cyfx3sdk-modified/fw_build/fx3_fw/cyfxtx.c	2020-08-21 12:34:14.344699800 -0700
+@@ -98,7 +98,7 @@
+    area which is used by the application code as well as the drivers to allocate thread
+    stacks and other internal data structures.
   */
--#define CY_U3P_MEM_HEAP_BASE         ((uint8_t *)0x40038000)
-+#define CY_U3P_MEM_HEAP_BASE         ((uint8_t *)0x40044000)
+-#define CY_U3P_MEM_HEAP_BASE         (0x40038000)
++#define CY_U3P_MEM_HEAP_BASE         (0x40044000)
  #define CY_U3P_MEM_HEAP_SIZE         (0x8000)
  
- /* The last 32 KB of RAM is reserved for 2-stage boot operation. This value can be changed to
-diff -ur 1.2.3-orig/common/fx3.ld 1.2.3/common/fx3.ld
---- 1.2.3-orig/common/fx3.ld	2013-02-07 17:16:54.000000000 -0800
-+++ 1.2.3/common/fx3.ld	2014-03-25 16:59:40.872240377 -0700
-@@ -26,10 +26,11 @@
+ /*
+diff -r -u cyfx3sdk/fw_build/fx3_fw/fx3_512k.ld cyfx3sdk-modified/fw_build/fx3_fw/fx3_512k.ld
+--- cyfx3sdk/fw_build/fx3_fw/fx3_512k.ld	2018-05-23 02:25:01.000000000 -0700
++++ cyfx3sdk-modified/fw_build/fx3_fw/fx3_512k.ld	2020-08-21 12:34:14.345050200 -0700
+@@ -32,11 +32,11 @@
     The default memory map used for FX3 applications is as follows:
  
-    Descriptor area Base: 0x40000000 Size: 12KB
--   Code area       Base: 0x40003000 Size: 180KB
--   Data area       Base: 0x40030000 Size: 32KB
--   Driver heap     Base: 0x40038000 Size: 32KB  (Update cyfxtx.c to change this.)
--   Buffer area     Base: 0x40040000 Size: 256KB (Update cyfxtx.c to change this.)
+    Descriptor area    Base: 0x40000000 Size: 12KB
+-   Code area          Base: 0x40003000 Size: 180KB
+-   Data area          Base: 0x40030000 Size: 32KB
+-   Driver heap        Base: 0x40038000 Size: 32KB  (Update cyfxtx.c to change this.)
+-   Buffer area        Base: 0x40040000 Size: 224KB (Update cyfxtx.c to change this.)
+-   2-stage boot area  Base: 0x40078000 Size: 32KB  (Update cyfxtx.c to change this.)
 +   Code area       Base: 0x40003000 Size: 212KB
 +   Data area       Base: 0x40038000 Size: 32KB
 +   Heap            Base: 0x40040000 Size: 16KB
 +   Driver heap     Base: 0x40044000 Size: 32KB  (Update cyfxtx.c to change this.)
 +   Buffer area     Base: 0x4004C000 Size: 208KB (Update cyfxtx.c to change this.)
  
-    Interrupt handlers to be placed in I-TCM (16KB).
-    The first 256 bytes of ITCM are reserved for Exception Vectors.
-@@ -52,8 +53,8 @@
+    Interrupt handlers are placed in I-TCM (16KB). The first 256 bytes of ITCM are
+    reserved for Exception Vectors and will be loaded during firmware initialization.
+@@ -58,8 +58,8 @@
  MEMORY
  {
- 	I-TCM		: ORIGIN = 0x100,	LENGTH = 0x3F00
--	SYS_MEM		: ORIGIN = 0x40003000	LENGTH = 0x2D000
--	DATA		: ORIGIN = 0x40030000	LENGTH = 0x8000
-+	SYS_MEM		: ORIGIN = 0x40003000	LENGTH = 0x35000
-+	DATA		: ORIGIN = 0x40038000	LENGTH = 0x8000
+ 	I-TCM	: ORIGIN = 0x100	LENGTH = 0x3F00
+-	SYS_MEM	: ORIGIN = 0x40003000	LENGTH = 0x2D000
+-	DATA	: ORIGIN = 0x40030000	LENGTH = 0x8000
++	SYS_MEM	: ORIGIN = 0x40003000	LENGTH = 0x35000
++	DATA	: ORIGIN = 0x40038000	LENGTH = 0x8000
  }
  
  SECTIONS
-@@ -75,7 +76,7 @@
- 		 _etext = .;
- 	} > SYS_MEM
- 
--	. = 0x40030000;
-+	. = 0x40038000;
- 	.data :
- 	{
- 		_data = .;
-@@ -104,5 +105,16 @@
+@@ -114,5 +114,17 @@
+ 		. = ALIGN(4);
  	} > DATA
  	__exidx_end = .;
- 
++
 +	PROVIDE(__exidx_end = __exidx_end);
 +	
 +	. = ALIGN(4);
@@ -66,26 +81,3 @@ diff -ur 1.2.3-orig/common/fx3.ld 1.2.3/common/fx3.ld
 +	PROVIDE(__heap_size = __heap_end - __heap_start);
  }
  
-diff -ur 1.2.3-orig/boot_fw/src/cyfx3.ld 1.2.3/boot_fw/src/cyfx3.ld
---- 1.2.3-orig/boot_fw/src/cyfx3.ld	2019-02-12 16:40:48.000000000 -0800
-+++ 1.2.3/boot_fw/src/cyfx3.ld	2019-03-20 14:36:18.992529192 -0700
-@@ -34,12 +34,18 @@
- 
- MEMORY
- {
-+	BLANK		: ORIGIN = 0x40070000	LENGTH = 0x0100
- 	SYS_MEM		: ORIGIN = 0x40078000	LENGTH = 0x7000
- 	DATA		: ORIGIN = 0x4007F000	LENGTH = 0x1000
- }
- 
- SECTIONS
- {
-+	. = 0x40070000;
-+	.blank :
-+	{
-+		. += 0x100;
-+	} > BLANK
- 	. = 0x40078000;
- 	.text :
- 	{
-
