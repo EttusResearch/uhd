@@ -112,7 +112,7 @@ module chdr_xb_routing_table #(
     .PRE_FIFO_SIZE(0), .POST_FIFO_SIZE(1)
   ) rtcfg_mux_i (
     .clk(clk), .reset(reset), .clear(1'b0),
-    .i_tdata(cfg_tdata), .i_tlast({(NPORTS_W + 16){1'b1}}),
+    .i_tdata(cfg_tdata), .i_tlast({CFG_PORTS{1'b1}}),
     .i_tvalid(cfg_tvalid), .i_tready(cfg_tready),
     .o_tdata({insert_tdata, insert_tdest}), .o_tlast(),
     .o_tvalid(insert_tvalid), .o_tready(insert_tready)

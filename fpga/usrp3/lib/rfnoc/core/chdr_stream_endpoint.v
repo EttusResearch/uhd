@@ -197,7 +197,7 @@ module chdr_stream_endpoint #(
     .node_info(chdr_mgmt_build_node_info(EXTENDED_INFO, INST_NUM, NODE_TYPE_STREAM_EP, device_id)),
     .s_axis_chdr_tdata(mgmt_i_tdata), .s_axis_chdr_tlast(mgmt_i_tlast),
     .s_axis_chdr_tvalid(mgmt_i_tvalid), .s_axis_chdr_tready(mgmt_i_tready),
-    .s_axis_chdr_tuser('d0),
+    .s_axis_chdr_tuser(1'd0),
     .m_axis_chdr_tdata(mgmt_o_tdata), .m_axis_chdr_tlast(mgmt_o_tlast),
     .m_axis_chdr_tdest(/* unused */), .m_axis_chdr_tid(/* unused */),
     .m_axis_chdr_tvalid(mgmt_o_tvalid), .m_axis_chdr_tready(mgmt_o_tready),

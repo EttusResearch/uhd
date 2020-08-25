@@ -187,7 +187,7 @@ module chdr_crossbar_nxn #(
           .s_axis_chdr_tlast  (s_axis_tlast [n]                                                 ),
           .s_axis_chdr_tvalid (s_axis_tvalid[n]                                                 ),
           .s_axis_chdr_tready (s_axis_tready[n]                                                 ),
-          .s_axis_chdr_tuser  ('d0                                                              ),
+          .s_axis_chdr_tuser  (1'd0                                                             ),
           .m_axis_chdr_tdata  (i_tdata      [n]                                                 ),
           .m_axis_chdr_tdest  (i_tdest      [n]                                                 ), 
           .m_axis_chdr_tid    (i_tid        [n]                                                 ),
