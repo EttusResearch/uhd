@@ -324,7 +324,7 @@ package PkgChdrBfm;
     for (int i = 0; i < $bits(status); i += CHDR_W) begin
       data.push_back( status[i +: CHDR_W] );
     end
-    update_lengths();
+    update_lengths($bits(status)/8);
   endfunction : write_stream_status
 
 
@@ -344,8 +344,8 @@ package PkgChdrBfm;
     end
 
     header = this.header;
-    for (int i = 0; i < $bits(status)/CHDR_W; i++) begin
-      status[i*CHDR_W +: CHDR_W] = data[i];
+    for (int i = 0; i < $bits(status); i+= CHDR_W) begin
+      status[i +: CHDR_W] = data[i/CHDR_W];
     end
   endfunction : read_stream_status
 
@@ -361,7 +361,7 @@ package PkgChdrBfm;
     for (int i = 0; i < $bits(command); i += CHDR_W) begin
       data.push_back( command[i +: CHDR_W] );
     end
-    update_lengths();
+    update_lengths($bits(command)/8);
   endfunction : write_stream_cmd
 
 
@@ -381,8 +381,8 @@ package PkgChdrBfm;
     end
 
     header = this.header;
-    for (int i = 0; i < $bits(command)/CHDR_W; i++) begin
-      command[i*CHDR_W +: CHDR_W] = data[i];
+    for (int i = 0; i < $bits(command); i += CHDR_W) begin
+      command[i +: CHDR_W] = data[i/CHDR_W];
     end
   endfunction : read_stream_cmd
 
@@ -530,10 +530,10 @@ package PkgChdrBfm;
     // words.
     ctrl_packet_size = 3 + ctrl_header.num_data;     // header + op_word + data
     if (ctrl_header.has_time) ctrl_packet_size += 2; // timestamp
-    assert(data32.size() < ctrl_packet_size) else begin
+    assert (data32.size() >= ctrl_packet_size) else begin
       $error("ChdrPacket::read_ctrl: Not enough CHDR payload for control packet");
     end
-    assert(data32.size() > ctrl_packet_size) else begin
+    assert (data32.size() <= ctrl_packet_size) else begin
       $warning("ChdrPacket::read_ctrl: Excess CHDR payload for control packet");
     end
 
@@ -612,7 +612,7 @@ package PkgChdrBfm;
 
   // Returns 1 if the queues have the same contents, up to the
   // data_byte_length, if present.
-  function automatic bit ChdrPacket::chdr_word_queues_equal(
+  function bit ChdrPacket::chdr_word_queues_equal(
     ref   chdr_word_t a[$],
     ref   chdr_word_t b[$],
     input int         data_byte_length = -1
