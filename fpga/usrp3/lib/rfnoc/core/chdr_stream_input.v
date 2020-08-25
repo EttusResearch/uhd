@@ -123,7 +123,7 @@ module chdr_stream_input #(
   wire       fc_refresh;          // Refresh accumulated values
   wire       fc_override;         // Override total xfer counts
   reg        fc_override_del = 1'b0;
-  reg  [3:0] fc_due_shreg = 4'h0; // Is a response due? (shift register)
+  reg  [3:0] fc_due_shreg = 4'hF; // Is a response due? (shift register)
 
   // Endpoint IDs of this endpoint and the stream source
   reg [15:0] this_epid = 16'd0, return_epid = 16'd0;
@@ -174,7 +174,11 @@ module chdr_stream_input #(
   //    status messages are asynchronous wrt the input.
   always @(posedge clk) begin
     if (rst || !fc_enabled) begin
-      fc_due_shreg <= 4'h0;
+      // Reset to all ones so we don't send an extra stream status packet
+      // immediately after flow control is re-enabled. This also ensures we
+      // don't send an extra status packet when we get the first init command
+      // which has zero for num_bytes and num_pkts.
+      fc_due_shreg <= 4'hF;
     end else begin
       fc_due_shreg <= {
         fc_due_shreg[2:0],
@@ -408,6 +412,7 @@ module chdr_stream_input #(
 
   wire [51:0] resp_o_tdata;
   wire        resp_o_tvalid;
+  wire        resp_o_tready;
   reg  [51:0] resp_i_tdata;
   reg         resp_i_tvalid = 1'b0;
 
@@ -443,6 +448,8 @@ module chdr_stream_input #(
 
   assign fc_refresh = (resp_state == ST_STRS_DONE);
 
+  assign resp_o_tready = (resp_state == ST_STRS_DONE || !fc_enabled);
+
   // A FIFO that holds up to 32 posted responses and status information
   // NOTE: This is a lossy FIFO. If the downstream response port is clogged
   // then we will drop responses. That should never happen in a normal operating
@@ -450,7 +457,7 @@ module chdr_stream_input #(
   axi_fifo #(.WIDTH(48 + 4), .SIZE(5)) resp_fifo_i (
     .clk(clk), .reset(rst), .clear(1'b0),
     .i_tdata(resp_i_tdata), .i_tvalid(resp_i_tvalid), .i_tready(/* Lossy FIFO */),
-    .o_tdata(resp_o_tdata), .o_tvalid(resp_o_tvalid), .o_tready(resp_state == ST_STRS_DONE || !fc_enabled),
+    .o_tdata(resp_o_tdata), .o_tvalid(resp_o_tvalid), .o_tready(resp_o_tready),
     .space(), .occupied()
   );
 
