@@ -9,7 +9,7 @@
 `default_nettype none
 
 module chdr_stream_endpoint_tb#(
-  parameter TEST_NAME  = "chdr_stream_endpoint_tb",
+  parameter TEST_NAME  = "",
   parameter CHDR_W     = 64
 )(
  /* no IO */
@@ -19,7 +19,6 @@ module chdr_stream_endpoint_tb#(
   // ----------------------------------------
 
   // Include macros and time declarations for use with PkgTestExec
-  `define TEST_EXEC_OBJ test
   `include "test_exec.svh"
 
   import PkgTestExec::*;
@@ -29,8 +28,10 @@ module chdr_stream_endpoint_tb#(
   // Clocks and resets
   bit rfnoc_chdr_clk, rfnoc_chdr_rst;
   bit rfnoc_ctrl_clk, rfnoc_ctrl_rst;
-  sim_clock_gen #(6.0)  rfnoc_chdr_clk_gen (rfnoc_chdr_clk, rfnoc_chdr_rst); // 166.6 MHz
-  sim_clock_gen #(20.0) rfnoc_ctrl_clk_gen (rfnoc_ctrl_clk, rfnoc_ctrl_rst); // 50 MHz
+  sim_clock_gen #(.PERIOD(6.0), .AUTOSTART(0))
+    rfnoc_chdr_clk_gen (rfnoc_chdr_clk, rfnoc_chdr_rst); // 166.6 MHz
+  sim_clock_gen #(.PERIOD(20.0), .AUTOSTART(0))
+    rfnoc_ctrl_clk_gen (rfnoc_ctrl_clk, rfnoc_ctrl_rst); // 50 MHz
 
   // Parameters
   localparam bit    VERBOSE           = 0;
@@ -47,6 +48,9 @@ module chdr_stream_endpoint_tb#(
   localparam [9:0]  PORT_TB  = 10'd0;
   localparam [9:0]  PORT_A   = 10'd1;
   localparam [9:0]  PORT_B   = 10'd2;
+
+  // Create a formatted string with the test name for reporting output
+  string test_name = TEST_NAME == "" ? "" : {TEST_NAME, ": "};
 
   typedef ChdrData #(CHDR_W)::chdr_word_t chdr_word_t;
 
@@ -275,10 +279,108 @@ module chdr_stream_endpoint_tb#(
   // ----------------------------------------
   // Test Utilities
   // ----------------------------------------
-  TestExec test = new();
+
   integer cached_mgmt_seqnum = 0;
   integer cached_ctrl_seqnum = 0;
   integer cached_data_seqnum = 0;
+
+  // Test stream command packets and their stream status response packets
+  task automatic send_recv_stream_packets(
+    input [15:0] dst_epid
+  );
+    ChdrPacket         #(CHDR_W) tx_chdr, rx_chdr, exp_chdr;
+    chdr_header_t      chdr_hdr;
+    chdr_str_command_t str_cmd;
+    chdr_str_status_t  str_sts;
+    chdr_seq_num_t     seq_num, resp_seq_num;
+    int                xfer_count_bytes;
+    int                xfer_count_pkts;
+    chdr_strc_opcode_t op[] = {
+      STRC_INIT,    // Test once with zero init values
+      STRC_PING,
+      STRC_RESYNC,
+      STRC_INIT     // Test again with non-zero init values
+    };
+
+    seq_num = 0;
+    resp_seq_num = 0;
+    xfer_count_bytes = 0;
+    xfer_count_pkts = 0;
+
+    // Iterate over stream commands to test
+    foreach (op[i]) begin
+      chdr_hdr = '{
+        dst_epid : dst_epid,
+        seq_num  : seq_num,
+        default  : 0
+      };
+      str_cmd = '{
+        src_epid  : EPID_TB,
+        op_code   : op[i],
+        num_bytes : { $urandom(), $urandom() },  // 64-bit
+        num_pkts  : { $urandom(), $urandom() },  // 40-bit
+        default   : 0
+      };
+
+      // On the first STRC_INIT, test the init values of 0, which we use to get
+      // the buffer sizes. We should only get one status update in response.
+      if (i == 0) begin
+        assert (op[i] == STRC_INIT) else $fatal(1, "Expecting STRC_INIT op");
+        str_cmd.num_bytes = 0;
+        str_cmd.num_pkts  = 0;
+      end
+
+      // Send the stream command packet
+      tx_chdr = new();
+      tx_chdr.write_stream_cmd(chdr_hdr, str_cmd);
+      if (VERBOSE) begin $write("Tx"); tx_chdr.print(); end
+      tb_chdr_bfm.put_chdr(tx_chdr);
+
+      // Get the stream status packet response
+      tb_chdr_bfm.get_chdr(rx_chdr);
+      if (VERBOSE) begin $write("Rx"); rx_chdr.print(); end
+
+      // Build up the expected response
+      if (op[i] == STRC_INIT) begin
+        // STRC_INIT resets the counters in the stream endpoint
+        resp_seq_num     = 0;
+        xfer_count_pkts  = 0;
+        xfer_count_bytes = 0;
+      end
+      chdr_hdr.dst_epid = EPID_TB;  // Response should come back to TB endpoint
+      chdr_hdr.seq_num  = resp_seq_num;
+      str_sts = '{
+        src_epid         : dst_epid,
+        status           : STRS_OKAY,
+        capacity_bytes   : 2**(MTU+1) * (CHDR_W/8) - 1,
+        capacity_pkts    : 'hFFFFFF,
+        xfer_count_pkts  : xfer_count_pkts,
+        xfer_count_bytes : xfer_count_bytes,
+        default          : 0
+      };
+      $write(""); str_sts.status_info = 0; // Work around Vivado bug :(
+      if (op[i] == STRC_RESYNC) begin
+        // The STRC_RESYNC op should update the xfer_count_bytes in the SEP, so
+        // we should expect the values we sent to be echoed in the response.
+        str_sts.xfer_count_pkts  = str_cmd.num_pkts;
+        str_sts.xfer_count_bytes = str_cmd.num_bytes;
+      end
+      exp_chdr = new();
+      exp_chdr.write_stream_status(chdr_hdr, str_sts);
+      if (VERBOSE) begin $write("ExpRx"); exp_chdr.print(); end
+
+      // Validate contents of the response
+      `ASSERT_ERROR(exp_chdr.equal(rx_chdr),
+        "Received CHDR stream status packet was incorrect");
+
+      // Update counters. Note that xfer_count_bytes counts whole CHDR words
+      // because that's the width of the internal buffers.
+      xfer_count_bytes += $ceil(tx_chdr.header.length / (CHDR_W/8.0)) * (CHDR_W/8);
+      xfer_count_pkts  += 1;
+      resp_seq_num     += 1;
+      seq_num          += 1;
+    end
+  endtask : send_recv_stream_packets
 
   task automatic send_recv_mgmt_packet(
     input  chdr_header_t tx_mgmt_hdr,
@@ -390,7 +492,7 @@ module chdr_stream_endpoint_tb#(
       };
       tx_chdr.write_ctrl(chdr_hdr, ctrl_hdr, ctrl_op, ctrl_data, ctrl_ts);
 
-      test.start_timeout(ctrl_timeout, 2us, "Waiting for management transaction");
+      test.start_timeout(ctrl_timeout, 2us, "Waiting for control transaction");
       if (VERBOSE) begin $write("Tx"); tx_chdr.print(); end
       tb_chdr_bfm.put_chdr(tx_chdr.copy());
       tb_chdr_bfm.get_chdr(rx_chdr);
@@ -410,7 +512,6 @@ module chdr_stream_endpoint_tb#(
       if (VERBOSE) begin $write("ExpRx"); exp_chdr.print(); end
 
       // Validate contents
-      exp_chdr.disable_comparing_beyond_length = 1;
       `ASSERT_ERROR(exp_chdr.equal(rx_chdr),
         "Received CHDR control packet was incorrect");
     end
@@ -528,7 +629,7 @@ module chdr_stream_endpoint_tb#(
   // ----------------------------------------
   // Test Process
   // ----------------------------------------
-  initial begin
+  initial begin : tb_main
 
     // Shared Variables
     // ----------------------------------------
@@ -551,7 +652,7 @@ module chdr_stream_endpoint_tb#(
 
     // Initialize
     // ----------------------------------------
-    test.start_tb({TEST_NAME,"chdr_stream_endpoint_tb"});
+    test.start_tb({test_name, "chdr_stream_endpoint_tb"});
 
     // Start the BFMs
     a0_data_bfm.run();
@@ -563,12 +664,16 @@ module chdr_stream_endpoint_tb#(
     tb_chdr_bfm.set_master_stall_prob(0);
     tb_chdr_bfm.set_slave_stall_prob(0);
 
+    // Start the clocks
+    rfnoc_chdr_clk_gen.start();
+    rfnoc_ctrl_clk_gen.start();
+
     // Reset
     // ----------------------------------------
     rfnoc_ctrl_clk_gen.reset();
     rfnoc_chdr_clk_gen.reset();
 
-    test.start_test({TEST_NAME,"Wait for reset"});
+    test.start_test({test_name, "Wait for reset"});
     test.start_timeout(timeout, 1us, "Waiting for reset");
     while (rfnoc_ctrl_rst) @(posedge rfnoc_ctrl_clk);
     while (rfnoc_chdr_rst) @(posedge rfnoc_chdr_clk);
@@ -578,7 +683,7 @@ module chdr_stream_endpoint_tb#(
 
     // Discover Topology
     // ----------------------------------------
-    test.start_test({TEST_NAME,"Discover Topology"});
+    test.start_test({test_name, "Discover Topology"});
     begin
       automatic chdr_header_t tx_mgmt_hdr, rx_mgmt_hdr;
       automatic chdr_mgmt_t tx_mgmt_pl, rx_mgmt_pl;
@@ -670,7 +775,7 @@ module chdr_stream_endpoint_tb#(
 
     // Configure Routes to Stream Endpoints A and B
     // ----------------------------------------
-    test.start_test({TEST_NAME,"Configure Routes"});
+    test.start_test({test_name, "Configure Routes"});
     begin
       automatic chdr_header_t tx_mgmt_hdr, rx_mgmt_hdr;
       automatic chdr_mgmt_t tx_mgmt_pl, rx_mgmt_pl;
@@ -707,7 +812,7 @@ module chdr_stream_endpoint_tb#(
 
     // Configure Stream Endpoints
     // ----------------------------------------
-    test.start_test({TEST_NAME,"Configure Stream Endpoints"});
+    test.start_test({test_name, "Configure Stream Endpoints"});
     begin
       automatic chdr_header_t tx_mgmt_hdr, rx_mgmt_hdr;
       automatic chdr_mgmt_t tx_mgmt_pl, rx_mgmt_pl;
@@ -756,9 +861,20 @@ module chdr_stream_endpoint_tb#(
     end
     test.end_test();
 
+    // Test Stream Commands and Responses
+    // ----------------------------------------
+    test.start_test({test_name, "Test Stream Commands"}, 1ms);
+    begin
+      automatic logic [15:0] epids[2] = {EPID_A, EPID_B};
+      foreach (epids[i]) begin
+        send_recv_stream_packets(epids[i]);
+      end
+    end
+    test.end_test();
+
     // Setup a stream between Endpoint A and B
     // ----------------------------------------
-    test.start_test({TEST_NAME,"Setup bidirectional stream between endpoints A and B"});
+    test.start_test({test_name, "Setup bidirectional stream between endpoints A and B"});
     begin
       automatic chdr_header_t tx_mgmt_hdr, rx_mgmt_hdr;
       automatic chdr_mgmt_t tx_mgmt_pl, rx_mgmt_pl;
@@ -865,7 +981,7 @@ module chdr_stream_endpoint_tb#(
     cached_ctrl_seqnum = 0;
     for (int cfg = 0; cfg < 2; cfg++) begin
       $sformat(tc_label, "Control Xact to A (%s)", (cfg?"Slow":"Fast"));
-      test.start_test({TEST_NAME,tc_label});
+      test.start_test({test_name, tc_label});
       begin
         tb_chdr_bfm.set_master_stall_prob(cfg?SLOW_STALL_PROB:FAST_STALL_PROB);
         tb_chdr_bfm.set_slave_stall_prob(cfg?SLOW_STALL_PROB:FAST_STALL_PROB);
@@ -880,7 +996,7 @@ module chdr_stream_endpoint_tb#(
     cached_ctrl_seqnum = 0;
     for (int cfg = 0; cfg < 2; cfg++) begin
       $sformat(tc_label, "Control Xact to B (%s)", (cfg?"Slow":"Fast"));
-      test.start_test({TEST_NAME,tc_label});
+      test.start_test({test_name, tc_label});
       begin
         tb_chdr_bfm.set_master_stall_prob(cfg?SLOW_STALL_PROB:FAST_STALL_PROB);
         tb_chdr_bfm.set_slave_stall_prob(cfg?SLOW_STALL_PROB:FAST_STALL_PROB);
@@ -898,7 +1014,7 @@ module chdr_stream_endpoint_tb#(
       automatic logic slv_cfg = cfg[1];
       $sformat(tc_label, "Stream Data from A to B (%s Mst, %s Slv)",
         (mst_cfg?"Slow":"Fast"), (slv_cfg?"Slow":"Fast"));
-      test.start_test({TEST_NAME,tc_label});
+      test.start_test({test_name, tc_label});
       begin
         set_unidir_stall_prob(EPID_A, EPID_B,
           mst_cfg?SLOW_STALL_PROB:FAST_STALL_PROB,
@@ -917,7 +1033,7 @@ module chdr_stream_endpoint_tb#(
       automatic logic slv_cfg = cfg[1];
       $sformat(tc_label, "Stream Data from B to A (%s Mst, %s Slv)",
         (mst_cfg?"Slow":"Fast"), (slv_cfg?"Slow":"Fast"));
-      test.start_test({TEST_NAME,tc_label});
+      test.start_test({test_name, tc_label});
       begin
         set_unidir_stall_prob(EPID_B, EPID_A,
           mst_cfg?SLOW_STALL_PROB:FAST_STALL_PROB,
@@ -935,7 +1051,7 @@ module chdr_stream_endpoint_tb#(
       automatic logic slv_cfg = cfg[1];
       $sformat(tc_label, "Stream Data between A <=> B simultaneously (%s Mst, %s Slv)",
         (mst_cfg?"Slow":"Fast"), (slv_cfg?"Slow":"Fast"));
-      test.start_test({TEST_NAME,tc_label});
+      test.start_test({test_name, tc_label});
       begin
         set_bidir_stall_prob(
           mst_cfg?SLOW_STALL_PROB:FAST_STALL_PROB,
@@ -956,7 +1072,7 @@ module chdr_stream_endpoint_tb#(
       automatic logic slv_cfg = cfg[1];
       $sformat(tc_label, "Stream Data and Control between A <=> B (%s Mst, %s Slv)",
         (mst_cfg?"Slow":"Fast"), (slv_cfg?"Slow":"Fast"));
-      test.start_test({TEST_NAME,tc_label});
+      test.start_test({test_name, tc_label});
       begin
         tb_chdr_bfm.set_master_stall_prob(mst_cfg?SLOW_STALL_PROB:FAST_STALL_PROB);
         tb_chdr_bfm.set_slave_stall_prob(slv_cfg?SLOW_STALL_PROB:FAST_STALL_PROB);
@@ -982,7 +1098,7 @@ module chdr_stream_endpoint_tb#(
 
     // Check zero sequence errors after streaming
     // ----------------------------------------
-    test.start_test({TEST_NAME,"Check zero sequence errors after streaming"});
+    test.start_test({test_name, "Check zero sequence errors after streaming"});
     begin
       automatic logic [15:0] epids[2] = {EPID_A, EPID_B};
       foreach (epids[i]) begin
@@ -1000,7 +1116,7 @@ module chdr_stream_endpoint_tb#(
     //   can cause the count to be greater than just the number data packets
     //   that are sent, so the comparisons are to > instead of ==
     // ----------------------------------------
-    test.start_test({TEST_NAME,"Force sequence error"});
+    test.start_test({test_name, "Force sequence error"});
     begin
       // First sequence error
       send_recv_data_packets(EPID_A, EPID_B, 1, cached_data_seqnum++, 1);
@@ -1028,7 +1144,7 @@ module chdr_stream_endpoint_tb#(
 
     // Force routing error
     // ----------------------------------------
-    test.start_test({TEST_NAME,"Force routing error"});
+    test.start_test({test_name, "Force routing error"});
     begin
       logic [31:0] old_route_err_count;
       // First sequence error
@@ -1058,7 +1174,7 @@ module chdr_stream_endpoint_tb#(
 
     // Setup a stream between Endpoint A and B
     // ----------------------------------------
-    test.start_test({TEST_NAME,"Reconfigure flow control (reset state)"});
+    test.start_test({test_name, "Reconfigure flow control (reset state)"});
     begin
       automatic chdr_header_t tx_mgmt_hdr, rx_mgmt_hdr;
       automatic chdr_mgmt_t tx_mgmt_pl, rx_mgmt_pl;
@@ -1122,7 +1238,7 @@ module chdr_stream_endpoint_tb#(
 
     // Check zero errors after reinit
     // ----------------------------------------
-    test.start_test({TEST_NAME,"Check zero errors after reinit"});
+    test.start_test({test_name, "Check zero errors after reinit"});
     begin
       automatic logic [15:0] epids[2] = {EPID_A, EPID_B};
       foreach (epids[i]) begin
@@ -1136,7 +1252,7 @@ module chdr_stream_endpoint_tb#(
 
     // Stream data between A <=> B simultaneously
     // ----------------------------------------
-    test.start_test({TEST_NAME,"Stream Data between A <=> B with a lossy link"});
+    test.start_test({test_name, "Stream Data between A <=> B with a lossy link"});
     begin
       cached_data_seqnum = 0;
       set_bidir_stall_prob(FAST_STALL_PROB, SLOW_STALL_PROB);
@@ -1154,9 +1270,13 @@ module chdr_stream_endpoint_tb#(
 
     // Finish Up
     // ----------------------------------------
+    // Stop the clocks
+    rfnoc_chdr_clk_gen.kill();
+    rfnoc_ctrl_clk_gen.kill();
     // Display final statistics and results
     test.end_tb(.finish(0));
-  end
+  end : tb_main
 
 endmodule
+
 `default_nettype wire
