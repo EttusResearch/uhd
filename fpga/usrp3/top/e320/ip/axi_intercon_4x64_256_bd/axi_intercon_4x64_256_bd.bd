@@ -1,2191 +1,1368 @@
-﻿<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
-<bd:repository xmlns:bd="http://www.xilinx.com/bd" bd:isValidated="true" bd:synthFlowMode="None" bd:tool_version="2015.4" bd:top="axi_intercon_4x64_256_bd" bd:version="1.00.a">
-
-  <spirit:component xmlns:spirit="http://www.spiritconsortium.org/XMLSchema/SPIRIT/1685-2009">
-    <spirit:vendor>xilinx.com</spirit:vendor>
-    <spirit:library>BlockDiagram</spirit:library>
-    <spirit:name>axi_intercon_4x64_256_bd</spirit:name>
-    <spirit:version>1.00.a</spirit:version>
-    <spirit:parameters>
-      <spirit:parameter>
-        <spirit:name>isTop</spirit:name>
-        <spirit:value spirit:format="bool" spirit:resolve="immediate">true</spirit:value>
-      </spirit:parameter>
-    </spirit:parameters>
-    <spirit:busInterfaces>
-      <spirit:busInterface>
-        <spirit:name>M00_AXI</spirit:name>
-        <spirit:master/>
-        <spirit:busType spirit:library="interface" spirit:name="aximm" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:abstractionType spirit:library="interface" spirit:name="aximm_rtl" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:parameters>
-          <spirit:parameter>
-            <spirit:name>DATA_WIDTH</spirit:name>
-            <spirit:value>256</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>PROTOCOL</spirit:name>
-            <spirit:value>AXI4</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>FREQ_HZ</spirit:name>
-            <spirit:value>200000000</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>ID_WIDTH</spirit:name>
-            <spirit:value>4</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user_prop"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>ADDR_WIDTH</spirit:name>
-            <spirit:value>32</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>AWUSER_WIDTH</spirit:name>
-            <spirit:value>0</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>ARUSER_WIDTH</spirit:name>
-            <spirit:value>0</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>WUSER_WIDTH</spirit:name>
-            <spirit:value>0</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>RUSER_WIDTH</spirit:name>
-            <spirit:value>0</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>BUSER_WIDTH</spirit:name>
-            <spirit:value>0</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>READ_WRITE_MODE</spirit:name>
-            <spirit:value>READ_WRITE</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_BURST</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_LOCK</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_PROT</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_CACHE</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_QOS</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_REGION</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_WSTRB</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_BRESP</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_RRESP</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>SUPPORTS_NARROW_BURST</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="ip_prop"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>NUM_READ_OUTSTANDING</spirit:name>
-            <spirit:value>2</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>NUM_WRITE_OUTSTANDING</spirit:name>
-            <spirit:value>2</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>MAX_BURST_LENGTH</spirit:name>
-            <spirit:value>256</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="ip_prop"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>PHASE</spirit:name>
-            <spirit:value>0.000</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>CLK_DOMAIN</spirit:name>
-            <spirit:value>axi_intercon_4x64_128_bd_M00_ACLK</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-        </spirit:parameters>
-      </spirit:busInterface>
-      <spirit:busInterface>
-        <spirit:name>S00_AXI</spirit:name>
-        <spirit:slave/>
-        <spirit:busType spirit:library="interface" spirit:name="aximm" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:abstractionType spirit:library="interface" spirit:name="aximm_rtl" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:parameters>
-          <spirit:parameter>
-            <spirit:name>DATA_WIDTH</spirit:name>
-            <spirit:value>64</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>PROTOCOL</spirit:name>
-            <spirit:value>AXI4</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>FREQ_HZ</spirit:name>
-            <spirit:value>350000000</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>ID_WIDTH</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>ADDR_WIDTH</spirit:name>
-            <spirit:value>32</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>AWUSER_WIDTH</spirit:name>
-            <spirit:value>0</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>ARUSER_WIDTH</spirit:name>
-            <spirit:value>0</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>WUSER_WIDTH</spirit:name>
-            <spirit:value>0</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>RUSER_WIDTH</spirit:name>
-            <spirit:value>0</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>BUSER_WIDTH</spirit:name>
-            <spirit:value>0</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>READ_WRITE_MODE</spirit:name>
-            <spirit:value>READ_WRITE</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_BURST</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_LOCK</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_PROT</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_CACHE</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_QOS</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_REGION</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_WSTRB</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_BRESP</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_RRESP</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>SUPPORTS_NARROW_BURST</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>NUM_READ_OUTSTANDING</spirit:name>
-            <spirit:value>2</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>NUM_WRITE_OUTSTANDING</spirit:name>
-            <spirit:value>2</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>MAX_BURST_LENGTH</spirit:name>
-            <spirit:value>256</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>PHASE</spirit:name>
-            <spirit:value>0.000</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>CLK_DOMAIN</spirit:name>
-            <spirit:value>axi_intercon_4x64_128_bd_S00_ACLK</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-        </spirit:parameters>
-      </spirit:busInterface>
-      <spirit:busInterface>
-        <spirit:name>S01_AXI</spirit:name>
-        <spirit:slave/>
-        <spirit:busType spirit:library="interface" spirit:name="aximm" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:abstractionType spirit:library="interface" spirit:name="aximm_rtl" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:parameters>
-          <spirit:parameter>
-            <spirit:name>DATA_WIDTH</spirit:name>
-            <spirit:value>64</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>PROTOCOL</spirit:name>
-            <spirit:value>AXI4</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>FREQ_HZ</spirit:name>
-            <spirit:value>350000000</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>ID_WIDTH</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>ADDR_WIDTH</spirit:name>
-            <spirit:value>32</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>AWUSER_WIDTH</spirit:name>
-            <spirit:value>0</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>ARUSER_WIDTH</spirit:name>
-            <spirit:value>0</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>WUSER_WIDTH</spirit:name>
-            <spirit:value>0</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>RUSER_WIDTH</spirit:name>
-            <spirit:value>0</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>BUSER_WIDTH</spirit:name>
-            <spirit:value>0</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>READ_WRITE_MODE</spirit:name>
-            <spirit:value>READ_WRITE</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_BURST</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_LOCK</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_PROT</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_CACHE</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_QOS</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_REGION</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_WSTRB</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_BRESP</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_RRESP</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>SUPPORTS_NARROW_BURST</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>NUM_READ_OUTSTANDING</spirit:name>
-            <spirit:value>2</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>NUM_WRITE_OUTSTANDING</spirit:name>
-            <spirit:value>2</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>MAX_BURST_LENGTH</spirit:name>
-            <spirit:value>256</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>PHASE</spirit:name>
-            <spirit:value>0.000</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>CLK_DOMAIN</spirit:name>
-            <spirit:value>axi_intercon_4x64_128_bd_S01_ACLK</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-        </spirit:parameters>
-      </spirit:busInterface>
-      <spirit:busInterface>
-        <spirit:name>S02_AXI</spirit:name>
-        <spirit:slave/>
-        <spirit:busType spirit:library="interface" spirit:name="aximm" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:abstractionType spirit:library="interface" spirit:name="aximm_rtl" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:parameters>
-          <spirit:parameter>
-            <spirit:name>DATA_WIDTH</spirit:name>
-            <spirit:value>64</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>PROTOCOL</spirit:name>
-            <spirit:value>AXI4</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>FREQ_HZ</spirit:name>
-            <spirit:value>350000000</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>ID_WIDTH</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>ADDR_WIDTH</spirit:name>
-            <spirit:value>32</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>AWUSER_WIDTH</spirit:name>
-            <spirit:value>0</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>ARUSER_WIDTH</spirit:name>
-            <spirit:value>0</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>WUSER_WIDTH</spirit:name>
-            <spirit:value>0</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>RUSER_WIDTH</spirit:name>
-            <spirit:value>0</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>BUSER_WIDTH</spirit:name>
-            <spirit:value>0</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>READ_WRITE_MODE</spirit:name>
-            <spirit:value>READ_WRITE</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_BURST</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_LOCK</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_PROT</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_CACHE</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_QOS</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_REGION</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_WSTRB</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_BRESP</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_RRESP</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>SUPPORTS_NARROW_BURST</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>NUM_READ_OUTSTANDING</spirit:name>
-            <spirit:value>2</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>NUM_WRITE_OUTSTANDING</spirit:name>
-            <spirit:value>2</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>MAX_BURST_LENGTH</spirit:name>
-            <spirit:value>256</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>PHASE</spirit:name>
-            <spirit:value>0.000</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>CLK_DOMAIN</spirit:name>
-            <spirit:value>axi_intercon_4x64_128_bd_S00_ACLK</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-        </spirit:parameters>
-      </spirit:busInterface>
-      <spirit:busInterface>
-        <spirit:name>S03_AXI</spirit:name>
-        <spirit:slave/>
-        <spirit:busType spirit:library="interface" spirit:name="aximm" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:abstractionType spirit:library="interface" spirit:name="aximm_rtl" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:parameters>
-          <spirit:parameter>
-            <spirit:name>DATA_WIDTH</spirit:name>
-            <spirit:value>64</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>PROTOCOL</spirit:name>
-            <spirit:value>AXI4</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>FREQ_HZ</spirit:name>
-            <spirit:value>350000000</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>ID_WIDTH</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>ADDR_WIDTH</spirit:name>
-            <spirit:value>32</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>AWUSER_WIDTH</spirit:name>
-            <spirit:value>0</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>ARUSER_WIDTH</spirit:name>
-            <spirit:value>0</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>WUSER_WIDTH</spirit:name>
-            <spirit:value>0</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>RUSER_WIDTH</spirit:name>
-            <spirit:value>0</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>BUSER_WIDTH</spirit:name>
-            <spirit:value>0</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>READ_WRITE_MODE</spirit:name>
-            <spirit:value>READ_WRITE</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_BURST</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_LOCK</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_PROT</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_CACHE</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_QOS</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_REGION</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_WSTRB</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_BRESP</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>HAS_RRESP</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>SUPPORTS_NARROW_BURST</spirit:name>
-            <spirit:value>1</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>NUM_READ_OUTSTANDING</spirit:name>
-            <spirit:value>2</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>NUM_WRITE_OUTSTANDING</spirit:name>
-            <spirit:value>2</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>MAX_BURST_LENGTH</spirit:name>
-            <spirit:value>256</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>PHASE</spirit:name>
-            <spirit:value>0.000</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>CLK_DOMAIN</spirit:name>
-            <spirit:value>axi_intercon_4x64_128_bd_S00_ACLK</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-        </spirit:parameters>
-      </spirit:busInterface>
-      <spirit:busInterface>
-        <spirit:name>CLK.M00_AXI_ACLK</spirit:name>
-        <spirit:displayName>Clk</spirit:displayName>
-        <spirit:description>Clock</spirit:description>
-        <spirit:busType spirit:library="signal" spirit:name="clock" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:abstractionType spirit:library="signal" spirit:name="clock_rtl" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:slave/>
-        <spirit:portMaps>
-          <spirit:portMap>
-            <spirit:logicalPort>
-              <spirit:name>CLK</spirit:name>
-            </spirit:logicalPort>
-            <spirit:physicalPort>
-              <spirit:name>M00_AXI_ACLK</spirit:name>
-            </spirit:physicalPort>
-          </spirit:portMap>
-        </spirit:portMaps>
-        <spirit:parameters>
-          <spirit:parameter>
-            <spirit:name>FREQ_HZ</spirit:name>
-            <spirit:value>200000000</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>PHASE</spirit:name>
-            <spirit:value>0.000</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>CLK_DOMAIN</spirit:name>
-            <spirit:value>axi_intercon_4x64_128_bd_M00_ACLK</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>ASSOCIATED_BUSIF</spirit:name>
-            <spirit:value>M00_AXI</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>ASSOCIATED_RESET</spirit:name>
-            <spirit:value>M00_AXI_ARESETN</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-        </spirit:parameters>
-      </spirit:busInterface>
-      <spirit:busInterface>
-        <spirit:name>RST.M00_AXI_ARESETN</spirit:name>
-        <spirit:displayName>Reset</spirit:displayName>
-        <spirit:description>Reset</spirit:description>
-        <spirit:busType spirit:library="signal" spirit:name="reset" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:abstractionType spirit:library="signal" spirit:name="reset_rtl" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:slave/>
-        <spirit:portMaps>
-          <spirit:portMap>
-            <spirit:logicalPort>
-              <spirit:name>RST</spirit:name>
-            </spirit:logicalPort>
-            <spirit:physicalPort>
-              <spirit:name>M00_AXI_ARESETN</spirit:name>
-            </spirit:physicalPort>
-          </spirit:portMap>
-        </spirit:portMaps>
-        <spirit:parameters>
-          <spirit:parameter>
-            <spirit:name>POLARITY</spirit:name>
-            <spirit:value>ACTIVE_LOW</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-        </spirit:parameters>
-      </spirit:busInterface>
-      <spirit:busInterface>
-        <spirit:name>CLK.S00_AXI_ACLK</spirit:name>
-        <spirit:displayName>Clk</spirit:displayName>
-        <spirit:description>Clock</spirit:description>
-        <spirit:busType spirit:library="signal" spirit:name="clock" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:abstractionType spirit:library="signal" spirit:name="clock_rtl" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:slave/>
-        <spirit:portMaps>
-          <spirit:portMap>
-            <spirit:logicalPort>
-              <spirit:name>CLK</spirit:name>
-            </spirit:logicalPort>
-            <spirit:physicalPort>
-              <spirit:name>S00_AXI_ACLK</spirit:name>
-            </spirit:physicalPort>
-          </spirit:portMap>
-        </spirit:portMaps>
-        <spirit:parameters>
-          <spirit:parameter>
-            <spirit:name>FREQ_HZ</spirit:name>
-            <spirit:value>350000000</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>PHASE</spirit:name>
-            <spirit:value>0.000</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>CLK_DOMAIN</spirit:name>
-            <spirit:value>axi_intercon_4x64_128_bd_S00_ACLK</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>ASSOCIATED_BUSIF</spirit:name>
-            <spirit:value>S00_AXI</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>ASSOCIATED_RESET</spirit:name>
-            <spirit:value>S00_AXI_ARESETN</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-        </spirit:parameters>
-      </spirit:busInterface>
-      <spirit:busInterface>
-        <spirit:name>RST.S00_AXI_ARESETN</spirit:name>
-        <spirit:displayName>Reset</spirit:displayName>
-        <spirit:description>Reset</spirit:description>
-        <spirit:busType spirit:library="signal" spirit:name="reset" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:abstractionType spirit:library="signal" spirit:name="reset_rtl" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:slave/>
-        <spirit:portMaps>
-          <spirit:portMap>
-            <spirit:logicalPort>
-              <spirit:name>RST</spirit:name>
-            </spirit:logicalPort>
-            <spirit:physicalPort>
-              <spirit:name>S00_AXI_ARESETN</spirit:name>
-            </spirit:physicalPort>
-          </spirit:portMap>
-        </spirit:portMaps>
-        <spirit:parameters>
-          <spirit:parameter>
-            <spirit:name>POLARITY</spirit:name>
-            <spirit:value>ACTIVE_LOW</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-        </spirit:parameters>
-      </spirit:busInterface>
-      <spirit:busInterface>
-        <spirit:name>CLK.S01_AXI_ACLK</spirit:name>
-        <spirit:displayName>Clk</spirit:displayName>
-        <spirit:description>Clock</spirit:description>
-        <spirit:busType spirit:library="signal" spirit:name="clock" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:abstractionType spirit:library="signal" spirit:name="clock_rtl" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:slave/>
-        <spirit:portMaps>
-          <spirit:portMap>
-            <spirit:logicalPort>
-              <spirit:name>CLK</spirit:name>
-            </spirit:logicalPort>
-            <spirit:physicalPort>
-              <spirit:name>S01_AXI_ACLK</spirit:name>
-            </spirit:physicalPort>
-          </spirit:portMap>
-        </spirit:portMaps>
-        <spirit:parameters>
-          <spirit:parameter>
-            <spirit:name>FREQ_HZ</spirit:name>
-            <spirit:value>350000000</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>PHASE</spirit:name>
-            <spirit:value>0.000</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>CLK_DOMAIN</spirit:name>
-            <spirit:value>axi_intercon_4x64_128_bd_S01_ACLK</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>ASSOCIATED_BUSIF</spirit:name>
-            <spirit:value>S01_AXI</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>ASSOCIATED_RESET</spirit:name>
-            <spirit:value>S01_AXI_ARESETN</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-        </spirit:parameters>
-      </spirit:busInterface>
-      <spirit:busInterface>
-        <spirit:name>RST.S01_AXI_ARESETN</spirit:name>
-        <spirit:displayName>Reset</spirit:displayName>
-        <spirit:description>Reset</spirit:description>
-        <spirit:busType spirit:library="signal" spirit:name="reset" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:abstractionType spirit:library="signal" spirit:name="reset_rtl" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:slave/>
-        <spirit:portMaps>
-          <spirit:portMap>
-            <spirit:logicalPort>
-              <spirit:name>RST</spirit:name>
-            </spirit:logicalPort>
-            <spirit:physicalPort>
-              <spirit:name>S01_AXI_ARESETN</spirit:name>
-            </spirit:physicalPort>
-          </spirit:portMap>
-        </spirit:portMaps>
-        <spirit:parameters>
-          <spirit:parameter>
-            <spirit:name>POLARITY</spirit:name>
-            <spirit:value>ACTIVE_LOW</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-        </spirit:parameters>
-      </spirit:busInterface>
-      <spirit:busInterface>
-        <spirit:name>CLK.S02_AXI_ACLK</spirit:name>
-        <spirit:displayName>Clk</spirit:displayName>
-        <spirit:description>Clock</spirit:description>
-        <spirit:busType spirit:library="signal" spirit:name="clock" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:abstractionType spirit:library="signal" spirit:name="clock_rtl" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:slave/>
-        <spirit:portMaps>
-          <spirit:portMap>
-            <spirit:logicalPort>
-              <spirit:name>CLK</spirit:name>
-            </spirit:logicalPort>
-            <spirit:physicalPort>
-              <spirit:name>S02_AXI_ACLK</spirit:name>
-            </spirit:physicalPort>
-          </spirit:portMap>
-        </spirit:portMaps>
-        <spirit:parameters>
-          <spirit:parameter>
-            <spirit:name>FREQ_HZ</spirit:name>
-            <spirit:value>350000000</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>PHASE</spirit:name>
-            <spirit:value>0.000</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>CLK_DOMAIN</spirit:name>
-            <spirit:value>axi_intercon_4x64_128_bd_S00_ACLK</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>ASSOCIATED_BUSIF</spirit:name>
-            <spirit:value>S02_AXI</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>ASSOCIATED_RESET</spirit:name>
-            <spirit:value>S00_AXI_ARESETN:S02_AXI_ARESETN</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-        </spirit:parameters>
-      </spirit:busInterface>
-      <spirit:busInterface>
-        <spirit:name>RST.S02_AXI_ARESETN</spirit:name>
-        <spirit:displayName>Reset</spirit:displayName>
-        <spirit:description>Reset</spirit:description>
-        <spirit:busType spirit:library="signal" spirit:name="reset" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:abstractionType spirit:library="signal" spirit:name="reset_rtl" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:slave/>
-        <spirit:portMaps>
-          <spirit:portMap>
-            <spirit:logicalPort>
-              <spirit:name>RST</spirit:name>
-            </spirit:logicalPort>
-            <spirit:physicalPort>
-              <spirit:name>S02_AXI_ARESETN</spirit:name>
-            </spirit:physicalPort>
-          </spirit:portMap>
-        </spirit:portMaps>
-        <spirit:parameters>
-          <spirit:parameter>
-            <spirit:name>POLARITY</spirit:name>
-            <spirit:value>ACTIVE_LOW</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-        </spirit:parameters>
-      </spirit:busInterface>
-      <spirit:busInterface>
-        <spirit:name>CLK.S03_AXI_ACLK</spirit:name>
-        <spirit:displayName>Clk</spirit:displayName>
-        <spirit:description>Clock</spirit:description>
-        <spirit:busType spirit:library="signal" spirit:name="clock" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:abstractionType spirit:library="signal" spirit:name="clock_rtl" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:slave/>
-        <spirit:portMaps>
-          <spirit:portMap>
-            <spirit:logicalPort>
-              <spirit:name>CLK</spirit:name>
-            </spirit:logicalPort>
-            <spirit:physicalPort>
-              <spirit:name>S03_AXI_ACLK</spirit:name>
-            </spirit:physicalPort>
-          </spirit:portMap>
-        </spirit:portMaps>
-        <spirit:parameters>
-          <spirit:parameter>
-            <spirit:name>FREQ_HZ</spirit:name>
-            <spirit:value>350000000</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>PHASE</spirit:name>
-            <spirit:value>0.000</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>CLK_DOMAIN</spirit:name>
-            <spirit:value>axi_intercon_4x64_128_bd_S00_ACLK</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>ASSOCIATED_BUSIF</spirit:name>
-            <spirit:value>S02_AXI:S03_AXI</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-          <spirit:parameter>
-            <spirit:name>ASSOCIATED_RESET</spirit:name>
-            <spirit:value>S00_AXI_ARESETN:S02_AXI_ARESETN:S03_AXI_ARESETN</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="user"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-        </spirit:parameters>
-      </spirit:busInterface>
-      <spirit:busInterface>
-        <spirit:name>RST.S03_AXI_ARESETN</spirit:name>
-        <spirit:displayName>Reset</spirit:displayName>
-        <spirit:description>Reset</spirit:description>
-        <spirit:busType spirit:library="signal" spirit:name="reset" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:abstractionType spirit:library="signal" spirit:name="reset_rtl" spirit:vendor="xilinx.com" spirit:version="1.0"/>
-        <spirit:slave/>
-        <spirit:portMaps>
-          <spirit:portMap>
-            <spirit:logicalPort>
-              <spirit:name>RST</spirit:name>
-            </spirit:logicalPort>
-            <spirit:physicalPort>
-              <spirit:name>S03_AXI_ARESETN</spirit:name>
-            </spirit:physicalPort>
-          </spirit:portMap>
-        </spirit:portMaps>
-        <spirit:parameters>
-          <spirit:parameter>
-            <spirit:name>POLARITY</spirit:name>
-            <spirit:value>ACTIVE_LOW</spirit:value>
-            <spirit:vendorExtensions>
-              <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="default"/>
-              </bd:configElementInfos>
-            </spirit:vendorExtensions>
-          </spirit:parameter>
-        </spirit:parameters>
-      </spirit:busInterface>
-    </spirit:busInterfaces>
-    <spirit:model>
-      <spirit:views>
-        <spirit:view>
-          <spirit:name>BlockDiagram</spirit:name>
-          <spirit:envIdentifier>:vivado.xilinx.com:</spirit:envIdentifier>
-          <spirit:hierarchyRef spirit:library="BlockDiagram" spirit:name="axi_intercon_4x64_256_bd_imp" spirit:vendor="xilinx.com" spirit:version="1.00.a"/>
-        </spirit:view>
-      </spirit:views>
-      <spirit:ports>
-        <spirit:port>
-          <spirit:name>M00_AXI_ACLK</spirit:name>
-          <spirit:wire>
-            <spirit:direction>in</spirit:direction>
-          </spirit:wire>
-        </spirit:port>
-        <spirit:port>
-          <spirit:name>M00_AXI_ARESETN</spirit:name>
-          <spirit:wire>
-            <spirit:direction>in</spirit:direction>
-          </spirit:wire>
-        </spirit:port>
-        <spirit:port>
-          <spirit:name>S00_AXI_ACLK</spirit:name>
-          <spirit:wire>
-            <spirit:direction>in</spirit:direction>
-          </spirit:wire>
-        </spirit:port>
-        <spirit:port>
-          <spirit:name>S00_AXI_ARESETN</spirit:name>
-          <spirit:wire>
-            <spirit:direction>in</spirit:direction>
-          </spirit:wire>
-        </spirit:port>
-        <spirit:port>
-          <spirit:name>S01_AXI_ACLK</spirit:name>
-          <spirit:wire>
-            <spirit:direction>in</spirit:direction>
-          </spirit:wire>
-        </spirit:port>
-        <spirit:port>
-          <spirit:name>S01_AXI_ARESETN</spirit:name>
-          <spirit:wire>
-            <spirit:direction>in</spirit:direction>
-          </spirit:wire>
-        </spirit:port>
-        <spirit:port>
-          <spirit:name>S02_AXI_ACLK</spirit:name>
-          <spirit:wire>
-            <spirit:direction>in</spirit:direction>
-          </spirit:wire>
-        </spirit:port>
-        <spirit:port>
-          <spirit:name>S02_AXI_ARESETN</spirit:name>
-          <spirit:wire>
-            <spirit:direction>in</spirit:direction>
-          </spirit:wire>
-        </spirit:port>
-        <spirit:port>
-          <spirit:name>S03_AXI_ACLK</spirit:name>
-          <spirit:wire>
-            <spirit:direction>in</spirit:direction>
-          </spirit:wire>
-        </spirit:port>
-        <spirit:port>
-          <spirit:name>S03_AXI_ARESETN</spirit:name>
-          <spirit:wire>
-            <spirit:direction>in</spirit:direction>
-          </spirit:wire>
-        </spirit:port>
-      </spirit:ports>
-    </spirit:model>
-    <spirit:addressSpaces>
-      <spirit:addressSpace>
-        <spirit:name>S00_AXI</spirit:name>
-        <spirit:range>4G</spirit:range>
-        <spirit:width>32</spirit:width>
-        <spirit:segments>
-          <spirit:segment>
-            <spirit:name>SEG_M00_AXI_Reg</spirit:name>
-            <spirit:displayName>/M00_AXI/Reg</spirit:displayName>
-            <spirit:addressOffset>0x00000000</spirit:addressOffset>
-            <spirit:range>1G</spirit:range>
-          </spirit:segment>
-        </spirit:segments>
-      </spirit:addressSpace>
-      <spirit:addressSpace>
-        <spirit:name>S01_AXI</spirit:name>
-        <spirit:range>4G</spirit:range>
-        <spirit:width>32</spirit:width>
-        <spirit:segments>
-          <spirit:segment>
-            <spirit:name>SEG_M00_AXI_Reg</spirit:name>
-            <spirit:displayName>/M00_AXI/Reg</spirit:displayName>
-            <spirit:addressOffset>0x00000000</spirit:addressOffset>
-            <spirit:range>1G</spirit:range>
-          </spirit:segment>
-        </spirit:segments>
-      </spirit:addressSpace>
-      <spirit:addressSpace>
-        <spirit:name>S02_AXI</spirit:name>
-        <spirit:range>4G</spirit:range>
-        <spirit:width>32</spirit:width>
-        <spirit:segments>
-          <spirit:segment>
-            <spirit:name>SEG_M00_AXI_Reg</spirit:name>
-            <spirit:displayName>/M00_AXI/Reg</spirit:displayName>
-            <spirit:addressOffset>0x00000000</spirit:addressOffset>
-            <spirit:range>1G</spirit:range>
-          </spirit:segment>
-        </spirit:segments>
-      </spirit:addressSpace>
-      <spirit:addressSpace>
-        <spirit:name>S03_AXI</spirit:name>
-        <spirit:range>4G</spirit:range>
-        <spirit:width>32</spirit:width>
-        <spirit:segments>
-          <spirit:segment>
-            <spirit:name>SEG_M00_AXI_Reg</spirit:name>
-            <spirit:displayName>/M00_AXI/Reg</spirit:displayName>
-            <spirit:addressOffset>0x00000000</spirit:addressOffset>
-            <spirit:range>1G</spirit:range>
-          </spirit:segment>
-        </spirit:segments>
-      </spirit:addressSpace>
-    </spirit:addressSpaces>
-    <spirit:memoryMaps>
-      <spirit:memoryMap>
-        <spirit:name>M00_AXI</spirit:name>
-        <spirit:addressBlock>
-          <spirit:name>Reg</spirit:name>
-          <spirit:baseAddress>0</spirit:baseAddress>
-          <spirit:range>64K</spirit:range>
-          <spirit:width>32</spirit:width>
-          <spirit:usage>register</spirit:usage>
-        </spirit:addressBlock>
-      </spirit:memoryMap>
-    </spirit:memoryMaps>
-  </spirit:component>
-
-  <spirit:design xmlns:spirit="http://www.spiritconsortium.org/XMLSchema/SPIRIT/1685-2009">
-    <spirit:vendor>xilinx.com</spirit:vendor>
-    <spirit:library>BlockDiagram</spirit:library>
-    <spirit:name>axi_intercon_4x64_256_bd_imp</spirit:name>
-    <spirit:version>1.00.a</spirit:version>
-    <spirit:componentInstances>
-      <spirit:componentInstance>
-        <spirit:instanceName>m00_rs</spirit:instanceName>
-        <spirit:componentRef spirit:library="ip" spirit:name="axi_register_slice" spirit:vendor="xilinx.com" spirit:version="2.1"/>
-        <spirit:configurableElementValues>
-          <spirit:configurableElementValue spirit:referenceId="bd:xciName">axi_intercon_4x64_256_bd_m00_rs_0</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="ID_WIDTH">4</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_AW">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_AR">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_B">1</spirit:configurableElementValue>
-        </spirit:configurableElementValues>
-      </spirit:componentInstance>
-      <spirit:componentInstance>
-        <spirit:instanceName>s00_rs</spirit:instanceName>
-        <spirit:componentRef spirit:library="ip" spirit:name="axi_register_slice" spirit:vendor="xilinx.com" spirit:version="2.1"/>
-        <spirit:configurableElementValues>
-          <spirit:configurableElementValue spirit:referenceId="bd:xciName">axi_intercon_4x64_256_bd_s00_rs_0</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_AW">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_AR">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_R">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_W">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_B">1</spirit:configurableElementValue>
-        </spirit:configurableElementValues>
-      </spirit:componentInstance>
-      <spirit:componentInstance>
-        <spirit:instanceName>s00_width_conv</spirit:instanceName>
-        <spirit:componentRef spirit:library="ip" spirit:name="axi_dwidth_converter" spirit:vendor="xilinx.com" spirit:version="2.1"/>
-        <spirit:configurableElementValues>
-          <spirit:configurableElementValue spirit:referenceId="bd:xciName">axi_intercon_4x64_256_bd_s00_width_conv_0</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="SI_DATA_WIDTH">64</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="MI_DATA_WIDTH">256</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="FIFO_MODE">2</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="ACLK_ASYNC">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="SYNCHRONIZATION_STAGES">2</spirit:configurableElementValue>
-        </spirit:configurableElementValues>
-      </spirit:componentInstance>
-      <spirit:componentInstance>
-        <spirit:instanceName>s01_rs</spirit:instanceName>
-        <spirit:componentRef spirit:library="ip" spirit:name="axi_register_slice" spirit:vendor="xilinx.com" spirit:version="2.1"/>
-        <spirit:configurableElementValues>
-          <spirit:configurableElementValue spirit:referenceId="bd:xciName">axi_intercon_4x64_256_bd_s01_rs_0</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_AW">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_AR">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_R">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_W">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_B">1</spirit:configurableElementValue>
-        </spirit:configurableElementValues>
-      </spirit:componentInstance>
-      <spirit:componentInstance>
-        <spirit:instanceName>s01_width_conv</spirit:instanceName>
-        <spirit:componentRef spirit:library="ip" spirit:name="axi_dwidth_converter" spirit:vendor="xilinx.com" spirit:version="2.1"/>
-        <spirit:configurableElementValues>
-          <spirit:configurableElementValue spirit:referenceId="bd:xciName">axi_intercon_4x64_256_bd_s01_width_conv_0</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="SI_DATA_WIDTH">64</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="MI_DATA_WIDTH">256</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="FIFO_MODE">2</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="ACLK_ASYNC">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="SYNCHRONIZATION_STAGES">2</spirit:configurableElementValue>
-        </spirit:configurableElementValues>
-      </spirit:componentInstance>
-      <spirit:componentInstance>
-        <spirit:instanceName>xbar</spirit:instanceName>
-        <spirit:componentRef spirit:library="ip" spirit:name="axi_crossbar" spirit:vendor="xilinx.com" spirit:version="2.1"/>
-        <spirit:configurableElementValues>
-          <spirit:configurableElementValue spirit:referenceId="bd:xciName">axi_intercon_4x64_256_bd_xbar_0</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="NUM_SI">4</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="NUM_MI">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="STRATEGY">2</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="DATA_WIDTH">256</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="CONNECTIVITY_MODE">SAMD</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="ID_WIDTH">4</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="S00_SINGLE_THREAD">0</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="S01_BASE_ID">0x00000004</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="S02_BASE_ID">0x00000008</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="S03_BASE_ID">0x0000000c</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="S04_BASE_ID">0x00000010</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="S05_BASE_ID">0x00000014</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="S06_BASE_ID">0x00000018</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="S07_BASE_ID">0x0000001c</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="S08_BASE_ID">0x00000020</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="S09_BASE_ID">0x00000024</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="S10_BASE_ID">0x00000028</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="S11_BASE_ID">0x0000002c</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="S12_BASE_ID">0x00000030</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="S13_BASE_ID">0x00000034</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="S14_BASE_ID">0x00000038</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="S15_BASE_ID">0x0000003c</spirit:configurableElementValue>
-        </spirit:configurableElementValues>
-      </spirit:componentInstance>
-      <spirit:componentInstance>
-        <spirit:instanceName>s01_rs_256</spirit:instanceName>
-        <spirit:componentRef spirit:library="ip" spirit:name="axi_register_slice" spirit:vendor="xilinx.com" spirit:version="2.1"/>
-        <spirit:configurableElementValues>
-          <spirit:configurableElementValue spirit:referenceId="bd:xciName">axi_intercon_4x64_256_bd_s01_rs_256_0</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_AW">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_AR">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_R">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_W">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_B">1</spirit:configurableElementValue>
-        </spirit:configurableElementValues>
-      </spirit:componentInstance>
-      <spirit:componentInstance>
-        <spirit:instanceName>s00_rs_256</spirit:instanceName>
-        <spirit:componentRef spirit:library="ip" spirit:name="axi_register_slice" spirit:vendor="xilinx.com" spirit:version="2.1"/>
-        <spirit:configurableElementValues>
-          <spirit:configurableElementValue spirit:referenceId="bd:xciName">axi_intercon_4x64_256_bd_s00_rs_256_0</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_AW">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_AR">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_R">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_W">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_B">1</spirit:configurableElementValue>
-        </spirit:configurableElementValues>
-      </spirit:componentInstance>
-      <spirit:componentInstance>
-        <spirit:instanceName>s02_rs</spirit:instanceName>
-        <spirit:componentRef spirit:library="ip" spirit:name="axi_register_slice" spirit:vendor="xilinx.com" spirit:version="2.1"/>
-        <spirit:configurableElementValues>
-          <spirit:configurableElementValue spirit:referenceId="bd:xciName">axi_intercon_4x64_256_bd_s02_rs_0</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_AW">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_AR">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_R">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_W">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_B">1</spirit:configurableElementValue>
-        </spirit:configurableElementValues>
-      </spirit:componentInstance>
-      <spirit:componentInstance>
-        <spirit:instanceName>s03_rs</spirit:instanceName>
-        <spirit:componentRef spirit:library="ip" spirit:name="axi_register_slice" spirit:vendor="xilinx.com" spirit:version="2.1"/>
-        <spirit:configurableElementValues>
-          <spirit:configurableElementValue spirit:referenceId="bd:xciName">axi_intercon_4x64_256_bd_s03_rs_0</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_AW">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_AR">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_R">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_W">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_B">1</spirit:configurableElementValue>
-        </spirit:configurableElementValues>
-      </spirit:componentInstance>
-      <spirit:componentInstance>
-        <spirit:instanceName>s02_width_conv</spirit:instanceName>
-        <spirit:componentRef spirit:library="ip" spirit:name="axi_dwidth_converter" spirit:vendor="xilinx.com" spirit:version="2.1"/>
-        <spirit:configurableElementValues>
-          <spirit:configurableElementValue spirit:referenceId="bd:xciName">axi_intercon_4x64_256_bd_s02_width_conv_0</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="SI_DATA_WIDTH">64</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="MI_DATA_WIDTH">256</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="FIFO_MODE">2</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="ACLK_ASYNC">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="SYNCHRONIZATION_STAGES">2</spirit:configurableElementValue>
-        </spirit:configurableElementValues>
-      </spirit:componentInstance>
-      <spirit:componentInstance>
-        <spirit:instanceName>s03_width_conv</spirit:instanceName>
-        <spirit:componentRef spirit:library="ip" spirit:name="axi_dwidth_converter" spirit:vendor="xilinx.com" spirit:version="2.1"/>
-        <spirit:configurableElementValues>
-          <spirit:configurableElementValue spirit:referenceId="bd:xciName">axi_intercon_4x64_256_bd_s03_width_conv_0</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="SI_DATA_WIDTH">64</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="MI_DATA_WIDTH">256</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="FIFO_MODE">2</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="ACLK_ASYNC">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="SYNCHRONIZATION_STAGES">2</spirit:configurableElementValue>
-        </spirit:configurableElementValues>
-      </spirit:componentInstance>
-      <spirit:componentInstance>
-        <spirit:instanceName>s03_rs_256</spirit:instanceName>
-        <spirit:componentRef spirit:library="ip" spirit:name="axi_register_slice" spirit:vendor="xilinx.com" spirit:version="2.1"/>
-        <spirit:configurableElementValues>
-          <spirit:configurableElementValue spirit:referenceId="bd:xciName">axi_intercon_4x64_256_bd_s03_rs_256_0</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_AW">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_AR">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_R">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_W">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_B">1</spirit:configurableElementValue>
-        </spirit:configurableElementValues>
-      </spirit:componentInstance>
-      <spirit:componentInstance>
-        <spirit:instanceName>s02_rs_256</spirit:instanceName>
-        <spirit:componentRef spirit:library="ip" spirit:name="axi_register_slice" spirit:vendor="xilinx.com" spirit:version="2.1"/>
-        <spirit:configurableElementValues>
-          <spirit:configurableElementValue spirit:referenceId="bd:xciName">axi_intercon_4x64_256_bd_s02_rs_256_0</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_AW">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_AR">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_R">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_W">1</spirit:configurableElementValue>
-          <spirit:configurableElementValue spirit:referenceId="REG_B">1</spirit:configurableElementValue>
-        </spirit:configurableElementValues>
-      </spirit:componentInstance>
-    </spirit:componentInstances>
-    <spirit:interconnections>
-      <spirit:interconnection>
-        <spirit:name>s00_rs_M_AXI</spirit:name>
-        <spirit:activeInterface spirit:busRef="M_AXI" spirit:componentRef="s00_rs"/>
-        <spirit:activeInterface spirit:busRef="S_AXI" spirit:componentRef="s00_width_conv"/>
-      </spirit:interconnection>
-      <spirit:interconnection>
-        <spirit:name>s01_rs_M_AXI</spirit:name>
-        <spirit:activeInterface spirit:busRef="M_AXI" spirit:componentRef="s01_rs"/>
-        <spirit:activeInterface spirit:busRef="S_AXI" spirit:componentRef="s01_width_conv"/>
-      </spirit:interconnection>
-      <spirit:interconnection>
-        <spirit:name>xbar_M00_AXI</spirit:name>
-        <spirit:activeInterface spirit:busRef="S_AXI" spirit:componentRef="m00_rs"/>
-        <spirit:activeInterface spirit:busRef="M00_AXI" spirit:componentRef="xbar"/>
-      </spirit:interconnection>
-      <spirit:interconnection>
-        <spirit:name>s00_rs_256_M_AXI</spirit:name>
-        <spirit:activeInterface spirit:busRef="M_AXI" spirit:componentRef="s00_rs_256"/>
-        <spirit:activeInterface spirit:busRef="S00_AXI" spirit:componentRef="xbar"/>
-      </spirit:interconnection>
-      <spirit:interconnection>
-        <spirit:name>s01_rs_256_M_AXI</spirit:name>
-        <spirit:activeInterface spirit:busRef="M_AXI" spirit:componentRef="s01_rs_256"/>
-        <spirit:activeInterface spirit:busRef="S01_AXI" spirit:componentRef="xbar"/>
-      </spirit:interconnection>
-      <spirit:interconnection>
-        <spirit:name>s00_width_conv_M_AXI</spirit:name>
-        <spirit:activeInterface spirit:busRef="M_AXI" spirit:componentRef="s00_width_conv"/>
-        <spirit:activeInterface spirit:busRef="S_AXI" spirit:componentRef="s00_rs_256"/>
-      </spirit:interconnection>
-      <spirit:interconnection>
-        <spirit:name>s01_width_conv_M_AXI</spirit:name>
-        <spirit:activeInterface spirit:busRef="M_AXI" spirit:componentRef="s01_width_conv"/>
-        <spirit:activeInterface spirit:busRef="S_AXI" spirit:componentRef="s01_rs_256"/>
-      </spirit:interconnection>
-      <spirit:interconnection>
-        <spirit:name>s02_rs_M_AXI</spirit:name>
-        <spirit:activeInterface spirit:busRef="M_AXI" spirit:componentRef="s02_rs"/>
-        <spirit:activeInterface spirit:busRef="S_AXI" spirit:componentRef="s02_width_conv"/>
-      </spirit:interconnection>
-      <spirit:interconnection>
-        <spirit:name>s03_rs_M_AXI</spirit:name>
-        <spirit:activeInterface spirit:busRef="M_AXI" spirit:componentRef="s03_rs"/>
-        <spirit:activeInterface spirit:busRef="S_AXI" spirit:componentRef="s03_width_conv"/>
-      </spirit:interconnection>
-      <spirit:interconnection>
-        <spirit:name>s02_width_conv_M_AXI</spirit:name>
-        <spirit:activeInterface spirit:busRef="M_AXI" spirit:componentRef="s02_width_conv"/>
-        <spirit:activeInterface spirit:busRef="S_AXI" spirit:componentRef="s02_rs_256"/>
-      </spirit:interconnection>
-      <spirit:interconnection>
-        <spirit:name>s03_width_conv_M_AXI</spirit:name>
-        <spirit:activeInterface spirit:busRef="M_AXI" spirit:componentRef="s03_width_conv"/>
-        <spirit:activeInterface spirit:busRef="S_AXI" spirit:componentRef="s03_rs_256"/>
-      </spirit:interconnection>
-      <spirit:interconnection>
-        <spirit:name>s02_rs_256_M_AXI</spirit:name>
-        <spirit:activeInterface spirit:busRef="M_AXI" spirit:componentRef="s02_rs_256"/>
-        <spirit:activeInterface spirit:busRef="S02_AXI" spirit:componentRef="xbar"/>
-      </spirit:interconnection>
-      <spirit:interconnection>
-        <spirit:name>s03_rs_256_M_AXI</spirit:name>
-        <spirit:activeInterface spirit:busRef="M_AXI" spirit:componentRef="s03_rs_256"/>
-        <spirit:activeInterface spirit:busRef="S03_AXI" spirit:componentRef="xbar"/>
-      </spirit:interconnection>
-    </spirit:interconnections>
-    <spirit:adHocConnections>
-      <spirit:adHocConnection>
-        <spirit:name>M00_AXI_ACLK_1</spirit:name>
-        <spirit:externalPortReference spirit:portRef="M00_AXI_ACLK"/>
-        <spirit:internalPortReference spirit:componentRef="xbar" spirit:portRef="aclk"/>
-        <spirit:internalPortReference spirit:componentRef="m00_rs" spirit:portRef="aclk"/>
-        <spirit:internalPortReference spirit:componentRef="s00_rs_256" spirit:portRef="aclk"/>
-        <spirit:internalPortReference spirit:componentRef="s01_rs_256" spirit:portRef="aclk"/>
-        <spirit:internalPortReference spirit:componentRef="s01_width_conv" spirit:portRef="m_axi_aclk"/>
-        <spirit:internalPortReference spirit:componentRef="s00_width_conv" spirit:portRef="m_axi_aclk"/>
-        <spirit:internalPortReference spirit:componentRef="s02_width_conv" spirit:portRef="m_axi_aclk"/>
-        <spirit:internalPortReference spirit:componentRef="s03_width_conv" spirit:portRef="m_axi_aclk"/>
-        <spirit:internalPortReference spirit:componentRef="s02_rs_256" spirit:portRef="aclk"/>
-        <spirit:internalPortReference spirit:componentRef="s03_rs_256" spirit:portRef="aclk"/>
-      </spirit:adHocConnection>
-      <spirit:adHocConnection>
-        <spirit:name>M00_AXI_ARESETN_1</spirit:name>
-        <spirit:externalPortReference spirit:portRef="M00_AXI_ARESETN"/>
-        <spirit:internalPortReference spirit:componentRef="xbar" spirit:portRef="aresetn"/>
-        <spirit:internalPortReference spirit:componentRef="m00_rs" spirit:portRef="aresetn"/>
-        <spirit:internalPortReference spirit:componentRef="s00_rs_256" spirit:portRef="aresetn"/>
-        <spirit:internalPortReference spirit:componentRef="s01_rs_256" spirit:portRef="aresetn"/>
-        <spirit:internalPortReference spirit:componentRef="s01_width_conv" spirit:portRef="m_axi_aresetn"/>
-        <spirit:internalPortReference spirit:componentRef="s00_width_conv" spirit:portRef="m_axi_aresetn"/>
-        <spirit:internalPortReference spirit:componentRef="s02_width_conv" spirit:portRef="m_axi_aresetn"/>
-        <spirit:internalPortReference spirit:componentRef="s03_width_conv" spirit:portRef="m_axi_aresetn"/>
-        <spirit:internalPortReference spirit:componentRef="s02_rs_256" spirit:portRef="aresetn"/>
-        <spirit:internalPortReference spirit:componentRef="s03_rs_256" spirit:portRef="aresetn"/>
-      </spirit:adHocConnection>
-      <spirit:adHocConnection>
-        <spirit:name>S00_AXI_ACLK_1</spirit:name>
-        <spirit:externalPortReference spirit:portRef="S00_AXI_ACLK"/>
-        <spirit:internalPortReference spirit:componentRef="s00_rs" spirit:portRef="aclk"/>
-        <spirit:internalPortReference spirit:componentRef="s00_width_conv" spirit:portRef="s_axi_aclk"/>
-      </spirit:adHocConnection>
-      <spirit:adHocConnection>
-        <spirit:name>S00_AXI_ARESETN_1</spirit:name>
-        <spirit:externalPortReference spirit:portRef="S00_AXI_ARESETN"/>
-        <spirit:internalPortReference spirit:componentRef="s00_rs" spirit:portRef="aresetn"/>
-        <spirit:internalPortReference spirit:componentRef="s00_width_conv" spirit:portRef="s_axi_aresetn"/>
-      </spirit:adHocConnection>
-      <spirit:adHocConnection>
-        <spirit:name>S01_AXI_ACLK_1</spirit:name>
-        <spirit:externalPortReference spirit:portRef="S01_AXI_ACLK"/>
-        <spirit:internalPortReference spirit:componentRef="s01_rs" spirit:portRef="aclk"/>
-        <spirit:internalPortReference spirit:componentRef="s01_width_conv" spirit:portRef="s_axi_aclk"/>
-      </spirit:adHocConnection>
-      <spirit:adHocConnection>
-        <spirit:name>S01_AXI_ARESETN_1</spirit:name>
-        <spirit:externalPortReference spirit:portRef="S01_AXI_ARESETN"/>
-        <spirit:internalPortReference spirit:componentRef="s01_rs" spirit:portRef="aresetn"/>
-        <spirit:internalPortReference spirit:componentRef="s01_width_conv" spirit:portRef="s_axi_aresetn"/>
-      </spirit:adHocConnection>
-      <spirit:adHocConnection>
-        <spirit:name>S02_AXI_ACLK_1</spirit:name>
-        <spirit:externalPortReference spirit:portRef="S02_AXI_ACLK"/>
-        <spirit:internalPortReference spirit:componentRef="s02_rs" spirit:portRef="aclk"/>
-        <spirit:internalPortReference spirit:componentRef="s02_width_conv" spirit:portRef="s_axi_aclk"/>
-      </spirit:adHocConnection>
-      <spirit:adHocConnection>
-        <spirit:name>S02_AXI_ARESETN_1</spirit:name>
-        <spirit:externalPortReference spirit:portRef="S02_AXI_ARESETN"/>
-        <spirit:internalPortReference spirit:componentRef="s02_rs" spirit:portRef="aresetn"/>
-        <spirit:internalPortReference spirit:componentRef="s02_width_conv" spirit:portRef="s_axi_aresetn"/>
-      </spirit:adHocConnection>
-      <spirit:adHocConnection>
-        <spirit:name>S03_AXI_ACLK_1</spirit:name>
-        <spirit:externalPortReference spirit:portRef="S03_AXI_ACLK"/>
-        <spirit:internalPortReference spirit:componentRef="s03_rs" spirit:portRef="aclk"/>
-        <spirit:internalPortReference spirit:componentRef="s03_width_conv" spirit:portRef="s_axi_aclk"/>
-      </spirit:adHocConnection>
-      <spirit:adHocConnection>
-        <spirit:name>S03_AXI_ARESETN_1</spirit:name>
-        <spirit:externalPortReference spirit:portRef="S03_AXI_ARESETN"/>
-        <spirit:internalPortReference spirit:componentRef="s03_rs" spirit:portRef="aresetn"/>
-        <spirit:internalPortReference spirit:componentRef="s03_width_conv" spirit:portRef="s_axi_aresetn"/>
-      </spirit:adHocConnection>
-    </spirit:adHocConnections>
-    <spirit:hierConnections>
-      <spirit:hierConnection spirit:interfaceRef="M00_AXI/m00_rs_M_AXI">
-        <spirit:activeInterface spirit:busRef="M_AXI" spirit:componentRef="m00_rs"/>
-      </spirit:hierConnection>
-      <spirit:hierConnection spirit:interfaceRef="S00_AXI/S00_AXI_1">
-        <spirit:activeInterface spirit:busRef="S_AXI" spirit:componentRef="s00_rs"/>
-      </spirit:hierConnection>
-      <spirit:hierConnection spirit:interfaceRef="S01_AXI/S01_AXI_1">
-        <spirit:activeInterface spirit:busRef="S_AXI" spirit:componentRef="s01_rs"/>
-      </spirit:hierConnection>
-      <spirit:hierConnection spirit:interfaceRef="S02_AXI/S02_AXI_1">
-        <spirit:activeInterface spirit:busRef="S_AXI" spirit:componentRef="s02_rs"/>
-      </spirit:hierConnection>
-      <spirit:hierConnection spirit:interfaceRef="S03_AXI/S03_AXI_1">
-        <spirit:activeInterface spirit:busRef="S_AXI" spirit:componentRef="s03_rs"/>
-      </spirit:hierConnection>
-    </spirit:hierConnections>
-  </spirit:design>
-
-</bd:repository>
+{
+  "design": {
+    "design_info": {
+      "boundary_crc": "0x79F5CBFFB3FAB4CA",
+      "device": "xc7z045ffg900-3",
+      "name": "axi_intercon_4x64_256_bd",
+      "synth_flow_mode": "None",
+      "tool_version": "2019.1.1_AR73068",
+      "validated": "true"
+    },
+    "design_tree": {
+      "m00_rs": "",
+      "s00_rs": "",
+      "s00_width_conv": "",
+      "s01_rs": "",
+      "s01_width_conv": "",
+      "xbar": "",
+      "s01_rs_256": "",
+      "s00_rs_256": "",
+      "s02_rs": "",
+      "s03_rs": "",
+      "s02_width_conv": "",
+      "s03_width_conv": "",
+      "s03_rs_256": "",
+      "s02_rs_256": ""
+    },
+    "interface_ports": {
+      "M00_AXI": {
+        "mode": "Master",
+        "vlnv": "xilinx.com:interface:aximm_rtl:1.0",
+        "parameters": {
+          "ADDR_WIDTH": {
+            "value": "32"
+          },
+          "ARUSER_WIDTH": {
+            "value": "0",
+            "value_src": "ip_prop"
+          },
+          "AWUSER_WIDTH": {
+            "value": "0",
+            "value_src": "ip_prop"
+          },
+          "BUSER_WIDTH": {
+            "value": "0",
+            "value_src": "ip_prop"
+          },
+          "CLK_DOMAIN": {
+            "value": "axi_intercon_4x64_128_bd_M00_ACLK"
+          },
+          "DATA_WIDTH": {
+            "value": "256"
+          },
+          "FREQ_HZ": {
+            "value": "200000000"
+          },
+          "HAS_BRESP": {
+            "value": "1",
+            "value_src": "const_prop"
+          },
+          "HAS_BURST": {
+            "value": "1",
+            "value_src": "default"
+          },
+          "HAS_CACHE": {
+            "value": "1",
+            "value_src": "default"
+          },
+          "HAS_LOCK": {
+            "value": "1",
+            "value_src": "default"
+          },
+          "HAS_PROT": {
+            "value": "1",
+            "value_src": "const_prop"
+          },
+          "HAS_QOS": {
+            "value": "1",
+            "value_src": "default"
+          },
+          "HAS_REGION": {
+            "value": "1",
+            "value_src": "default"
+          },
+          "HAS_RRESP": {
+            "value": "1",
+            "value_src": "default"
+          },
+          "HAS_WSTRB": {
+            "value": "1",
+            "value_src": "const_prop"
+          },
+          "ID_WIDTH": {
+            "value": "4",
+            "value_src": "user_prop"
+          },
+          "INSERT_VIP": {
+            "value": "0",
+            "value_src": "default"
+          },
+          "MAX_BURST_LENGTH": {
+            "value": "256",
+            "value_src": "ip_prop"
+          },
+          "NUM_READ_OUTSTANDING": {
+            "value": "2"
+          },
+          "NUM_READ_THREADS": {
+            "value": "1",
+            "value_src": "ip_prop"
+          },
+          "NUM_WRITE_OUTSTANDING": {
+            "value": "2"
+          },
+          "NUM_WRITE_THREADS": {
+            "value": "1",
+            "value_src": "ip_prop"
+          },
+          "PHASE": {
+            "value": "0.000",
+            "value_src": "default"
+          },
+          "PROTOCOL": {
+            "value": "AXI4"
+          },
+          "READ_WRITE_MODE": {
+            "value": "READ_WRITE",
+            "value_src": "ip_prop"
+          },
+          "RUSER_BITS_PER_BYTE": {
+            "value": "0",
+            "value_src": "ip_prop"
+          },
+          "RUSER_WIDTH": {
+            "value": "0",
+            "value_src": "ip_prop"
+          },
+          "SUPPORTS_NARROW_BURST": {
+            "value": "1",
+            "value_src": "ip_prop"
+          },
+          "WUSER_BITS_PER_BYTE": {
+            "value": "0",
+            "value_src": "ip_prop"
+          },
+          "WUSER_WIDTH": {
+            "value": "0",
+            "value_src": "ip_prop"
+          }
+        }
+      },
+      "S00_AXI": {
+        "mode": "Slave",
+        "vlnv": "xilinx.com:interface:aximm_rtl:1.0",
+        "parameters": {
+          "ADDR_WIDTH": {
+            "value": "32"
+          },
+          "ARUSER_WIDTH": {
+            "value": "0"
+          },
+          "AWUSER_WIDTH": {
+            "value": "0"
+          },
+          "BUSER_WIDTH": {
+            "value": "0"
+          },
+          "CLK_DOMAIN": {
+            "value": "axi_intercon_4x64_128_bd_S00_ACLK"
+          },
+          "DATA_WIDTH": {
+            "value": "64"
+          },
+          "FREQ_HZ": {
+            "value": "350000000",
+            "value_src": "default"
+          },
+          "HAS_BRESP": {
+            "value": "1"
+          },
+          "HAS_BURST": {
+            "value": "1"
+          },
+          "HAS_CACHE": {
+            "value": "1"
+          },
+          "HAS_LOCK": {
+            "value": "1"
+          },
+          "HAS_PROT": {
+            "value": "1"
+          },
+          "HAS_QOS": {
+            "value": "1"
+          },
+          "HAS_REGION": {
+            "value": "1"
+          },
+          "HAS_RRESP": {
+            "value": "1"
+          },
+          "HAS_WSTRB": {
+            "value": "1"
+          },
+          "ID_WIDTH": {
+            "value": "1"
+          },
+          "INSERT_VIP": {
+            "value": "0",
+            "value_src": "default"
+          },
+          "MAX_BURST_LENGTH": {
+            "value": "256"
+          },
+          "NUM_READ_OUTSTANDING": {
+            "value": "2"
+          },
+          "NUM_READ_THREADS": {
+            "value": "1"
+          },
+          "NUM_WRITE_OUTSTANDING": {
+            "value": "2"
+          },
+          "NUM_WRITE_THREADS": {
+            "value": "1"
+          },
+          "PHASE": {
+            "value": "0.000",
+            "value_src": "default"
+          },
+          "PROTOCOL": {
+            "value": "AXI4"
+          },
+          "READ_WRITE_MODE": {
+            "value": "READ_WRITE"
+          },
+          "RUSER_BITS_PER_BYTE": {
+            "value": "0"
+          },
+          "RUSER_WIDTH": {
+            "value": "0"
+          },
+          "SUPPORTS_NARROW_BURST": {
+            "value": "1"
+          },
+          "WUSER_BITS_PER_BYTE": {
+            "value": "0"
+          },
+          "WUSER_WIDTH": {
+            "value": "0"
+          }
+        }
+      },
+      "S01_AXI": {
+        "mode": "Slave",
+        "vlnv": "xilinx.com:interface:aximm_rtl:1.0",
+        "parameters": {
+          "ADDR_WIDTH": {
+            "value": "32"
+          },
+          "ARUSER_WIDTH": {
+            "value": "0"
+          },
+          "AWUSER_WIDTH": {
+            "value": "0"
+          },
+          "BUSER_WIDTH": {
+            "value": "0"
+          },
+          "CLK_DOMAIN": {
+            "value": "axi_intercon_4x64_128_bd_S01_ACLK"
+          },
+          "DATA_WIDTH": {
+            "value": "64"
+          },
+          "FREQ_HZ": {
+            "value": "350000000",
+            "value_src": "default"
+          },
+          "HAS_BRESP": {
+            "value": "1"
+          },
+          "HAS_BURST": {
+            "value": "1"
+          },
+          "HAS_CACHE": {
+            "value": "1"
+          },
+          "HAS_LOCK": {
+            "value": "1"
+          },
+          "HAS_PROT": {
+            "value": "1"
+          },
+          "HAS_QOS": {
+            "value": "1"
+          },
+          "HAS_REGION": {
+            "value": "1"
+          },
+          "HAS_RRESP": {
+            "value": "1"
+          },
+          "HAS_WSTRB": {
+            "value": "1"
+          },
+          "ID_WIDTH": {
+            "value": "1"
+          },
+          "INSERT_VIP": {
+            "value": "0",
+            "value_src": "default"
+          },
+          "MAX_BURST_LENGTH": {
+            "value": "256"
+          },
+          "NUM_READ_OUTSTANDING": {
+            "value": "2"
+          },
+          "NUM_READ_THREADS": {
+            "value": "1"
+          },
+          "NUM_WRITE_OUTSTANDING": {
+            "value": "2"
+          },
+          "NUM_WRITE_THREADS": {
+            "value": "1"
+          },
+          "PHASE": {
+            "value": "0.000",
+            "value_src": "default"
+          },
+          "PROTOCOL": {
+            "value": "AXI4"
+          },
+          "READ_WRITE_MODE": {
+            "value": "READ_WRITE"
+          },
+          "RUSER_BITS_PER_BYTE": {
+            "value": "0"
+          },
+          "RUSER_WIDTH": {
+            "value": "0"
+          },
+          "SUPPORTS_NARROW_BURST": {
+            "value": "1"
+          },
+          "WUSER_BITS_PER_BYTE": {
+            "value": "0"
+          },
+          "WUSER_WIDTH": {
+            "value": "0"
+          }
+        }
+      },
+      "S02_AXI": {
+        "mode": "Slave",
+        "vlnv": "xilinx.com:interface:aximm_rtl:1.0",
+        "parameters": {
+          "ADDR_WIDTH": {
+            "value": "32"
+          },
+          "ARUSER_WIDTH": {
+            "value": "0"
+          },
+          "AWUSER_WIDTH": {
+            "value": "0"
+          },
+          "BUSER_WIDTH": {
+            "value": "0"
+          },
+          "CLK_DOMAIN": {
+            "value": "axi_intercon_4x64_128_bd_S00_ACLK"
+          },
+          "DATA_WIDTH": {
+            "value": "64"
+          },
+          "FREQ_HZ": {
+            "value": "350000000",
+            "value_src": "default"
+          },
+          "HAS_BRESP": {
+            "value": "1"
+          },
+          "HAS_BURST": {
+            "value": "1"
+          },
+          "HAS_CACHE": {
+            "value": "1"
+          },
+          "HAS_LOCK": {
+            "value": "1"
+          },
+          "HAS_PROT": {
+            "value": "1"
+          },
+          "HAS_QOS": {
+            "value": "1"
+          },
+          "HAS_REGION": {
+            "value": "1"
+          },
+          "HAS_RRESP": {
+            "value": "1"
+          },
+          "HAS_WSTRB": {
+            "value": "1"
+          },
+          "ID_WIDTH": {
+            "value": "1"
+          },
+          "INSERT_VIP": {
+            "value": "0",
+            "value_src": "default"
+          },
+          "MAX_BURST_LENGTH": {
+            "value": "256"
+          },
+          "NUM_READ_OUTSTANDING": {
+            "value": "2"
+          },
+          "NUM_READ_THREADS": {
+            "value": "1"
+          },
+          "NUM_WRITE_OUTSTANDING": {
+            "value": "2"
+          },
+          "NUM_WRITE_THREADS": {
+            "value": "1"
+          },
+          "PHASE": {
+            "value": "0.000",
+            "value_src": "default"
+          },
+          "PROTOCOL": {
+            "value": "AXI4"
+          },
+          "READ_WRITE_MODE": {
+            "value": "READ_WRITE"
+          },
+          "RUSER_BITS_PER_BYTE": {
+            "value": "0"
+          },
+          "RUSER_WIDTH": {
+            "value": "0"
+          },
+          "SUPPORTS_NARROW_BURST": {
+            "value": "1"
+          },
+          "WUSER_BITS_PER_BYTE": {
+            "value": "0"
+          },
+          "WUSER_WIDTH": {
+            "value": "0"
+          }
+        }
+      },
+      "S03_AXI": {
+        "mode": "Slave",
+        "vlnv": "xilinx.com:interface:aximm_rtl:1.0",
+        "parameters": {
+          "ADDR_WIDTH": {
+            "value": "32"
+          },
+          "ARUSER_WIDTH": {
+            "value": "0"
+          },
+          "AWUSER_WIDTH": {
+            "value": "0"
+          },
+          "BUSER_WIDTH": {
+            "value": "0"
+          },
+          "CLK_DOMAIN": {
+            "value": "axi_intercon_4x64_128_bd_S00_ACLK"
+          },
+          "DATA_WIDTH": {
+            "value": "64"
+          },
+          "FREQ_HZ": {
+            "value": "350000000",
+            "value_src": "default"
+          },
+          "HAS_BRESP": {
+            "value": "1"
+          },
+          "HAS_BURST": {
+            "value": "1"
+          },
+          "HAS_CACHE": {
+            "value": "1"
+          },
+          "HAS_LOCK": {
+            "value": "1"
+          },
+          "HAS_PROT": {
+            "value": "1"
+          },
+          "HAS_QOS": {
+            "value": "1"
+          },
+          "HAS_REGION": {
+            "value": "1"
+          },
+          "HAS_RRESP": {
+            "value": "1"
+          },
+          "HAS_WSTRB": {
+            "value": "1"
+          },
+          "ID_WIDTH": {
+            "value": "1"
+          },
+          "INSERT_VIP": {
+            "value": "0",
+            "value_src": "default"
+          },
+          "MAX_BURST_LENGTH": {
+            "value": "256"
+          },
+          "NUM_READ_OUTSTANDING": {
+            "value": "2"
+          },
+          "NUM_READ_THREADS": {
+            "value": "1"
+          },
+          "NUM_WRITE_OUTSTANDING": {
+            "value": "2"
+          },
+          "NUM_WRITE_THREADS": {
+            "value": "1"
+          },
+          "PHASE": {
+            "value": "0.000",
+            "value_src": "default"
+          },
+          "PROTOCOL": {
+            "value": "AXI4"
+          },
+          "READ_WRITE_MODE": {
+            "value": "READ_WRITE"
+          },
+          "RUSER_BITS_PER_BYTE": {
+            "value": "0"
+          },
+          "RUSER_WIDTH": {
+            "value": "0"
+          },
+          "SUPPORTS_NARROW_BURST": {
+            "value": "1"
+          },
+          "WUSER_BITS_PER_BYTE": {
+            "value": "0"
+          },
+          "WUSER_WIDTH": {
+            "value": "0"
+          }
+        }
+      }
+    },
+    "ports": {
+      "M00_AXI_ACLK": {
+        "type": "clk",
+        "direction": "I",
+        "parameters": {
+          "ASSOCIATED_BUSIF": {
+            "value": "M00_AXI",
+            "value_src": "default"
+          },
+          "ASSOCIATED_RESET": {
+            "value": "M00_AXI_ARESETN"
+          },
+          "CLK_DOMAIN": {
+            "value": "axi_intercon_4x64_128_bd_M00_ACLK"
+          },
+          "FREQ_HZ": {
+            "value": "200000000"
+          },
+          "INSERT_VIP": {
+            "value": "0",
+            "value_src": "default"
+          },
+          "PHASE": {
+            "value": "0.000",
+            "value_src": "default"
+          }
+        }
+      },
+      "M00_AXI_ARESETN": {
+        "type": "rst",
+        "direction": "I",
+        "parameters": {
+          "INSERT_VIP": {
+            "value": "0",
+            "value_src": "default"
+          },
+          "POLARITY": {
+            "value": "ACTIVE_LOW",
+            "value_src": "default"
+          }
+        }
+      },
+      "S00_AXI_ACLK": {
+        "type": "clk",
+        "direction": "I",
+        "parameters": {
+          "ASSOCIATED_BUSIF": {
+            "value": "S00_AXI"
+          },
+          "ASSOCIATED_RESET": {
+            "value": "S00_AXI_ARESETN"
+          },
+          "CLK_DOMAIN": {
+            "value": "axi_intercon_4x64_128_bd_S00_ACLK"
+          },
+          "FREQ_HZ": {
+            "value": "350000000"
+          },
+          "INSERT_VIP": {
+            "value": "0",
+            "value_src": "default"
+          },
+          "PHASE": {
+            "value": "0.000",
+            "value_src": "default"
+          }
+        }
+      },
+      "S00_AXI_ARESETN": {
+        "type": "rst",
+        "direction": "I",
+        "parameters": {
+          "INSERT_VIP": {
+            "value": "0",
+            "value_src": "default"
+          },
+          "POLARITY": {
+            "value": "ACTIVE_LOW",
+            "value_src": "default"
+          }
+        }
+      },
+      "S01_AXI_ACLK": {
+        "type": "clk",
+        "direction": "I",
+        "parameters": {
+          "ASSOCIATED_BUSIF": {
+            "value": "S01_AXI"
+          },
+          "ASSOCIATED_RESET": {
+            "value": "S01_AXI_ARESETN"
+          },
+          "CLK_DOMAIN": {
+            "value": "axi_intercon_4x64_128_bd_S01_ACLK"
+          },
+          "FREQ_HZ": {
+            "value": "350000000"
+          },
+          "INSERT_VIP": {
+            "value": "0",
+            "value_src": "default"
+          },
+          "PHASE": {
+            "value": "0.000",
+            "value_src": "default"
+          }
+        }
+      },
+      "S01_AXI_ARESETN": {
+        "type": "rst",
+        "direction": "I",
+        "parameters": {
+          "INSERT_VIP": {
+            "value": "0",
+            "value_src": "default"
+          },
+          "POLARITY": {
+            "value": "ACTIVE_LOW",
+            "value_src": "default"
+          }
+        }
+      },
+      "S02_AXI_ACLK": {
+        "type": "clk",
+        "direction": "I",
+        "parameters": {
+          "ASSOCIATED_BUSIF": {
+            "value": "S02_AXI"
+          },
+          "ASSOCIATED_RESET": {
+            "value": "S00_AXI_ARESETN:S02_AXI_ARESETN"
+          },
+          "CLK_DOMAIN": {
+            "value": "axi_intercon_4x64_128_bd_S00_ACLK"
+          },
+          "FREQ_HZ": {
+            "value": "350000000"
+          },
+          "INSERT_VIP": {
+            "value": "0",
+            "value_src": "default"
+          },
+          "PHASE": {
+            "value": "0.000",
+            "value_src": "default"
+          }
+        }
+      },
+      "S02_AXI_ARESETN": {
+        "type": "rst",
+        "direction": "I",
+        "parameters": {
+          "INSERT_VIP": {
+            "value": "0",
+            "value_src": "default"
+          },
+          "POLARITY": {
+            "value": "ACTIVE_LOW",
+            "value_src": "default"
+          }
+        }
+      },
+      "S03_AXI_ACLK": {
+        "type": "clk",
+        "direction": "I",
+        "parameters": {
+          "ASSOCIATED_BUSIF": {
+            "value": "S02_AXI:S03_AXI"
+          },
+          "ASSOCIATED_RESET": {
+            "value": "S00_AXI_ARESETN:S02_AXI_ARESETN:S03_AXI_ARESETN"
+          },
+          "CLK_DOMAIN": {
+            "value": "axi_intercon_4x64_128_bd_S00_ACLK"
+          },
+          "FREQ_HZ": {
+            "value": "350000000"
+          },
+          "INSERT_VIP": {
+            "value": "0",
+            "value_src": "default"
+          },
+          "PHASE": {
+            "value": "0.000",
+            "value_src": "default"
+          }
+        }
+      },
+      "S03_AXI_ARESETN": {
+        "type": "rst",
+        "direction": "I",
+        "parameters": {
+          "INSERT_VIP": {
+            "value": "0",
+            "value_src": "default"
+          },
+          "POLARITY": {
+            "value": "ACTIVE_LOW",
+            "value_src": "default"
+          }
+        }
+      }
+    },
+    "components": {
+      "m00_rs": {
+        "vlnv": "xilinx.com:ip:axi_register_slice:2.1",
+        "xci_name": "axi_intercon_4x64_256_bd_m00_rs_0",
+        "parameters": {
+          "ID_WIDTH": {
+            "value": "4"
+          },
+          "REG_AR": {
+            "value": "1"
+          },
+          "REG_AW": {
+            "value": "1"
+          },
+          "REG_B": {
+            "value": "1"
+          }
+        }
+      },
+      "s00_rs": {
+        "vlnv": "xilinx.com:ip:axi_register_slice:2.1",
+        "xci_name": "axi_intercon_4x64_256_bd_s00_rs_0",
+        "parameters": {
+          "REG_AR": {
+            "value": "1"
+          },
+          "REG_AW": {
+            "value": "1"
+          },
+          "REG_B": {
+            "value": "1"
+          },
+          "REG_R": {
+            "value": "1"
+          },
+          "REG_W": {
+            "value": "1"
+          }
+        }
+      },
+      "s00_width_conv": {
+        "vlnv": "xilinx.com:ip:axi_dwidth_converter:2.1",
+        "xci_name": "axi_intercon_4x64_256_bd_s00_width_conv_0",
+        "parameters": {
+          "ACLK_ASYNC": {
+            "value": "1"
+          },
+          "FIFO_MODE": {
+            "value": "2"
+          },
+          "MI_DATA_WIDTH": {
+            "value": "256"
+          },
+          "SI_DATA_WIDTH": {
+            "value": "64"
+          },
+          "SYNCHRONIZATION_STAGES": {
+            "value": "2"
+          }
+        }
+      },
+      "s01_rs": {
+        "vlnv": "xilinx.com:ip:axi_register_slice:2.1",
+        "xci_name": "axi_intercon_4x64_256_bd_s01_rs_0",
+        "parameters": {
+          "REG_AR": {
+            "value": "1"
+          },
+          "REG_AW": {
+            "value": "1"
+          },
+          "REG_B": {
+            "value": "1"
+          },
+          "REG_R": {
+            "value": "1"
+          },
+          "REG_W": {
+            "value": "1"
+          }
+        }
+      },
+      "s01_width_conv": {
+        "vlnv": "xilinx.com:ip:axi_dwidth_converter:2.1",
+        "xci_name": "axi_intercon_4x64_256_bd_s01_width_conv_0",
+        "parameters": {
+          "ACLK_ASYNC": {
+            "value": "1"
+          },
+          "FIFO_MODE": {
+            "value": "2"
+          },
+          "MI_DATA_WIDTH": {
+            "value": "256"
+          },
+          "SI_DATA_WIDTH": {
+            "value": "64"
+          },
+          "SYNCHRONIZATION_STAGES": {
+            "value": "2"
+          }
+        }
+      },
+      "xbar": {
+        "vlnv": "xilinx.com:ip:axi_crossbar:2.1",
+        "xci_name": "axi_intercon_4x64_256_bd_xbar_0",
+        "parameters": {
+          "CONNECTIVITY_MODE": {
+            "value": "SAMD"
+          },
+          "DATA_WIDTH": {
+            "value": "256"
+          },
+          "ID_WIDTH": {
+            "value": "4"
+          },
+          "NUM_MI": {
+            "value": "1"
+          },
+          "NUM_SI": {
+            "value": "4"
+          },
+          "S00_SINGLE_THREAD": {
+            "value": "0"
+          },
+          "S01_BASE_ID": {
+            "value": "0x00000004"
+          },
+          "S02_BASE_ID": {
+            "value": "0x00000008"
+          },
+          "S03_BASE_ID": {
+            "value": "0x0000000c"
+          },
+          "S04_BASE_ID": {
+            "value": "0x00000010"
+          },
+          "S05_BASE_ID": {
+            "value": "0x00000014"
+          },
+          "S06_BASE_ID": {
+            "value": "0x00000018"
+          },
+          "S07_BASE_ID": {
+            "value": "0x0000001c"
+          },
+          "S08_BASE_ID": {
+            "value": "0x00000020"
+          },
+          "S09_BASE_ID": {
+            "value": "0x00000024"
+          },
+          "S10_BASE_ID": {
+            "value": "0x00000028"
+          },
+          "S11_BASE_ID": {
+            "value": "0x0000002c"
+          },
+          "S12_BASE_ID": {
+            "value": "0x00000030"
+          },
+          "S13_BASE_ID": {
+            "value": "0x00000034"
+          },
+          "S14_BASE_ID": {
+            "value": "0x00000038"
+          },
+          "S15_BASE_ID": {
+            "value": "0x0000003c"
+          },
+          "STRATEGY": {
+            "value": "2"
+          }
+        }
+      },
+      "s01_rs_256": {
+        "vlnv": "xilinx.com:ip:axi_register_slice:2.1",
+        "xci_name": "axi_intercon_4x64_256_bd_s01_rs_256_0",
+        "parameters": {
+          "REG_AR": {
+            "value": "1"
+          },
+          "REG_AW": {
+            "value": "1"
+          },
+          "REG_B": {
+            "value": "1"
+          },
+          "REG_R": {
+            "value": "1"
+          },
+          "REG_W": {
+            "value": "1"
+          }
+        }
+      },
+      "s00_rs_256": {
+        "vlnv": "xilinx.com:ip:axi_register_slice:2.1",
+        "xci_name": "axi_intercon_4x64_256_bd_s00_rs_256_0",
+        "parameters": {
+          "REG_AR": {
+            "value": "1"
+          },
+          "REG_AW": {
+            "value": "1"
+          },
+          "REG_B": {
+            "value": "1"
+          },
+          "REG_R": {
+            "value": "1"
+          },
+          "REG_W": {
+            "value": "1"
+          }
+        }
+      },
+      "s02_rs": {
+        "vlnv": "xilinx.com:ip:axi_register_slice:2.1",
+        "xci_name": "axi_intercon_4x64_256_bd_s02_rs_0",
+        "parameters": {
+          "REG_AR": {
+            "value": "1"
+          },
+          "REG_AW": {
+            "value": "1"
+          },
+          "REG_B": {
+            "value": "1"
+          },
+          "REG_R": {
+            "value": "1"
+          },
+          "REG_W": {
+            "value": "1"
+          }
+        }
+      },
+      "s03_rs": {
+        "vlnv": "xilinx.com:ip:axi_register_slice:2.1",
+        "xci_name": "axi_intercon_4x64_256_bd_s03_rs_0",
+        "parameters": {
+          "REG_AR": {
+            "value": "1"
+          },
+          "REG_AW": {
+            "value": "1"
+          },
+          "REG_B": {
+            "value": "1"
+          },
+          "REG_R": {
+            "value": "1"
+          },
+          "REG_W": {
+            "value": "1"
+          }
+        }
+      },
+      "s02_width_conv": {
+        "vlnv": "xilinx.com:ip:axi_dwidth_converter:2.1",
+        "xci_name": "axi_intercon_4x64_256_bd_s02_width_conv_0",
+        "parameters": {
+          "ACLK_ASYNC": {
+            "value": "1"
+          },
+          "FIFO_MODE": {
+            "value": "2"
+          },
+          "MI_DATA_WIDTH": {
+            "value": "256"
+          },
+          "SI_DATA_WIDTH": {
+            "value": "64"
+          },
+          "SYNCHRONIZATION_STAGES": {
+            "value": "2"
+          }
+        }
+      },
+      "s03_width_conv": {
+        "vlnv": "xilinx.com:ip:axi_dwidth_converter:2.1",
+        "xci_name": "axi_intercon_4x64_256_bd_s03_width_conv_0",
+        "parameters": {
+          "ACLK_ASYNC": {
+            "value": "1"
+          },
+          "FIFO_MODE": {
+            "value": "2"
+          },
+          "MI_DATA_WIDTH": {
+            "value": "256"
+          },
+          "SI_DATA_WIDTH": {
+            "value": "64"
+          },
+          "SYNCHRONIZATION_STAGES": {
+            "value": "2"
+          }
+        }
+      },
+      "s03_rs_256": {
+        "vlnv": "xilinx.com:ip:axi_register_slice:2.1",
+        "xci_name": "axi_intercon_4x64_256_bd_s03_rs_256_0",
+        "parameters": {
+          "REG_AR": {
+            "value": "1"
+          },
+          "REG_AW": {
+            "value": "1"
+          },
+          "REG_B": {
+            "value": "1"
+          },
+          "REG_R": {
+            "value": "1"
+          },
+          "REG_W": {
+            "value": "1"
+          }
+        }
+      },
+      "s02_rs_256": {
+        "vlnv": "xilinx.com:ip:axi_register_slice:2.1",
+        "xci_name": "axi_intercon_4x64_256_bd_s02_rs_256_0",
+        "parameters": {
+          "REG_AR": {
+            "value": "1"
+          },
+          "REG_AW": {
+            "value": "1"
+          },
+          "REG_B": {
+            "value": "1"
+          },
+          "REG_R": {
+            "value": "1"
+          },
+          "REG_W": {
+            "value": "1"
+          }
+        }
+      }
+    },
+    "interface_nets": {
+      "s01_rs_256_M_AXI": {
+        "interface_ports": [
+          "s01_rs_256/M_AXI",
+          "xbar/S01_AXI"
+        ]
+      },
+      "s02_width_conv_M_AXI": {
+        "interface_ports": [
+          "s02_width_conv/M_AXI",
+          "s02_rs_256/S_AXI"
+        ]
+      },
+      "S03_AXI_1": {
+        "interface_ports": [
+          "S03_AXI",
+          "s03_rs/S_AXI"
+        ]
+      },
+      "m00_rs_M_AXI": {
+        "interface_ports": [
+          "M00_AXI",
+          "m00_rs/M_AXI"
+        ]
+      },
+      "S02_AXI_1": {
+        "interface_ports": [
+          "S02_AXI",
+          "s02_rs/S_AXI"
+        ]
+      },
+      "s03_width_conv_M_AXI": {
+        "interface_ports": [
+          "s03_width_conv/M_AXI",
+          "s03_rs_256/S_AXI"
+        ]
+      },
+      "s01_width_conv_M_AXI": {
+        "interface_ports": [
+          "s01_width_conv/M_AXI",
+          "s01_rs_256/S_AXI"
+        ]
+      },
+      "s00_rs_256_M_AXI": {
+        "interface_ports": [
+          "s00_rs_256/M_AXI",
+          "xbar/S00_AXI"
+        ]
+      },
+      "s01_rs_M_AXI": {
+        "interface_ports": [
+          "s01_rs/M_AXI",
+          "s01_width_conv/S_AXI"
+        ]
+      },
+      "s00_width_conv_M_AXI": {
+        "interface_ports": [
+          "s00_width_conv/M_AXI",
+          "s00_rs_256/S_AXI"
+        ]
+      },
+      "s03_rs_256_M_AXI": {
+        "interface_ports": [
+          "s03_rs_256/M_AXI",
+          "xbar/S03_AXI"
+        ]
+      },
+      "s00_rs_M_AXI": {
+        "interface_ports": [
+          "s00_rs/M_AXI",
+          "s00_width_conv/S_AXI"
+        ]
+      },
+      "s02_rs_256_M_AXI": {
+        "interface_ports": [
+          "s02_rs_256/M_AXI",
+          "xbar/S02_AXI"
+        ]
+      },
+      "s03_rs_M_AXI": {
+        "interface_ports": [
+          "s03_rs/M_AXI",
+          "s03_width_conv/S_AXI"
+        ]
+      },
+      "s02_rs_M_AXI": {
+        "interface_ports": [
+          "s02_rs/M_AXI",
+          "s02_width_conv/S_AXI"
+        ]
+      },
+      "xbar_M00_AXI": {
+        "interface_ports": [
+          "m00_rs/S_AXI",
+          "xbar/M00_AXI"
+        ]
+      },
+      "S01_AXI_1": {
+        "interface_ports": [
+          "S01_AXI",
+          "s01_rs/S_AXI"
+        ]
+      },
+      "S00_AXI_1": {
+        "interface_ports": [
+          "S00_AXI",
+          "s00_rs/S_AXI"
+        ]
+      }
+    },
+    "nets": {
+      "M00_AXI_ACLK_1": {
+        "ports": [
+          "M00_AXI_ACLK",
+          "xbar/aclk",
+          "m00_rs/aclk",
+          "s00_rs_256/aclk",
+          "s01_rs_256/aclk",
+          "s01_width_conv/m_axi_aclk",
+          "s00_width_conv/m_axi_aclk",
+          "s02_width_conv/m_axi_aclk",
+          "s03_width_conv/m_axi_aclk",
+          "s02_rs_256/aclk",
+          "s03_rs_256/aclk"
+        ]
+      },
+      "M00_AXI_ARESETN_1": {
+        "ports": [
+          "M00_AXI_ARESETN",
+          "xbar/aresetn",
+          "m00_rs/aresetn",
+          "s00_rs_256/aresetn",
+          "s01_rs_256/aresetn",
+          "s01_width_conv/m_axi_aresetn",
+          "s00_width_conv/m_axi_aresetn",
+          "s02_width_conv/m_axi_aresetn",
+          "s03_width_conv/m_axi_aresetn",
+          "s02_rs_256/aresetn",
+          "s03_rs_256/aresetn"
+        ]
+      },
+      "S00_AXI_ACLK_1": {
+        "ports": [
+          "S00_AXI_ACLK",
+          "s00_rs/aclk",
+          "s00_width_conv/s_axi_aclk"
+        ]
+      },
+      "S00_AXI_ARESETN_1": {
+        "ports": [
+          "S00_AXI_ARESETN",
+          "s00_rs/aresetn",
+          "s00_width_conv/s_axi_aresetn"
+        ]
+      },
+      "S01_AXI_ACLK_1": {
+        "ports": [
+          "S01_AXI_ACLK",
+          "s01_rs/aclk",
+          "s01_width_conv/s_axi_aclk"
+        ]
+      },
+      "S01_AXI_ARESETN_1": {
+        "ports": [
+          "S01_AXI_ARESETN",
+          "s01_rs/aresetn",
+          "s01_width_conv/s_axi_aresetn"
+        ]
+      },
+      "S02_AXI_ACLK_1": {
+        "ports": [
+          "S02_AXI_ACLK",
+          "s02_rs/aclk",
+          "s02_width_conv/s_axi_aclk"
+        ]
+      },
+      "S02_AXI_ARESETN_1": {
+        "ports": [
+          "S02_AXI_ARESETN",
+          "s02_rs/aresetn",
+          "s02_width_conv/s_axi_aresetn"
+        ]
+      },
+      "S03_AXI_ACLK_1": {
+        "ports": [
+          "S03_AXI_ACLK",
+          "s03_rs/aclk",
+          "s03_width_conv/s_axi_aclk"
+        ]
+      },
+      "S03_AXI_ARESETN_1": {
+        "ports": [
+          "S03_AXI_ARESETN",
+          "s03_rs/aresetn",
+          "s03_width_conv/s_axi_aresetn"
+        ]
+      }
+    },
+    "addressing": {
+      "/": {
+        "address_spaces": {
+          "S00_AXI": {
+            "range": "4G",
+            "width": "32",
+            "segments": {
+              "SEG_M00_AXI_Reg": {
+                "address_block": "/M00_AXI/Reg",
+                "offset": "0x00000000",
+                "range": "2G"
+              }
+            }
+          },
+          "S01_AXI": {
+            "range": "4G",
+            "width": "32",
+            "segments": {
+              "SEG_M00_AXI_Reg": {
+                "address_block": "/M00_AXI/Reg",
+                "offset": "0x00000000",
+                "range": "2G"
+              }
+            }
+          },
+          "S02_AXI": {
+            "range": "4G",
+            "width": "32",
+            "segments": {
+              "SEG_M00_AXI_Reg": {
+                "address_block": "/M00_AXI/Reg",
+                "offset": "0x00000000",
+                "range": "2G"
+              }
+            }
+          },
+          "S03_AXI": {
+            "range": "4G",
+            "width": "32",
+            "segments": {
+              "SEG_M00_AXI_Reg": {
+                "address_block": "/M00_AXI/Reg",
+                "offset": "0x00000000",
+                "range": "2G"
+              }
+            }
+          }
+        },
+        "memory_maps": {
+          "M00_AXI": {
+            "address_blocks": {
+              "Reg": {
+                "base_address": "0",
+                "range": "64K",
+                "width": "32",
+                "usage": "register"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
