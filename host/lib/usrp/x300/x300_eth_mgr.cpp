@@ -251,6 +251,13 @@ both_links_t eth_manager::get_links(link_type_t link_type,
         ETH_MSG_NUM_FRAMES * ETH_MSG_FRAME_SIZE); // enough to hold greater of 20 ms or
                                                   // number of msg frames
 
+#ifdef HAVE_DPDK
+    if(_args.get_use_dpdk()) {
+        default_link_params.num_recv_frames = default_link_params.recv_buff_size /
+            default_link_params.recv_frame_size;
+    }
+#endif
+
     link_params_t link_params = calculate_udp_link_params(link_type,
         get_mtu(uhd::TX_DIRECTION),
         get_mtu(uhd::RX_DIRECTION),

@@ -286,6 +286,7 @@ uhd::transport::both_links_t mpmd_link_if_ctrl_udp::get_link(const size_t link_i
     const std::string udp_port = _udp_info.at(ip_addr).udp_port;
 
     const size_t link_rate = get_link_rate(link_idx);
+    const bool use_dpdk = _mb_args.has_key("use_dpdk");  // FIXME use constrained device args
     link_params_t default_link_params;
     default_link_params.num_send_frames = MPMD_ETH_NUM_FRAMES;
     default_link_params.num_recv_frames = MPMD_ETH_NUM_FRAMES;
@@ -302,6 +303,13 @@ uhd::transport::both_links_t mpmd_link_if_ctrl_udp::get_link(const size_t link_i
     default_link_params.send_buff_size = get_link_rate(link_idx) * MPMD_BUFFER_DEPTH;
     default_link_params.recv_buff_size = get_link_rate(link_idx) * MPMD_BUFFER_DEPTH;
 
+#ifdef HAVE_DPDK
+    if(use_dpdk) {
+        default_link_params.num_recv_frames = default_link_params.recv_buff_size /
+            default_link_params.recv_frame_size;
+    }
+#endif
+
     link_params_t link_params = calculate_udp_link_params(link_type,
         get_mtu(uhd::TX_DIRECTION),
         get_mtu(uhd::RX_DIRECTION),
@@ -315,7 +323,7 @@ uhd::transport::both_links_t mpmd_link_if_ctrl_udp::get_link(const size_t link_i
     link_params.num_recv_frames =
         std::max(uhd::rfnoc::MIN_NUM_FRAMES, link_params.num_recv_frames);
 
-    if (_mb_args.has_key("use_dpdk")) { // FIXME use constrained device args
+    if (use_dpdk) {
 #ifdef HAVE_DPDK
         auto link = uhd::transport::udp_dpdk_link::make(ip_addr, udp_port, link_params);
         return std::make_tuple(link,
