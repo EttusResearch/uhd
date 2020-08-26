@@ -1,18 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Root MajorVersion="0" MinorVersion="33">
+<Root MajorVersion="0" MinorVersion="37">
   <CompositeFile CompositeFileTopName="axi_intercon_2x64_256_bd" CanBeSetAsTop="true" CanDisplayChildGraph="true">
     <Description>Composite Fileset</Description>
-    <Generation Name="SYNTHESIS" State="STALE" Timestamp="1501543653"/>
-    <Generation Name="IMPLEMENTATION" State="STALE" Timestamp="1501543653"/>
-    <Generation Name="SIMULATION" State="STALE" Timestamp="1501543653"/>
+    <Generation Name="SYNTHESIS" State="STALE" Timestamp="1591253143"/>
+    <Generation Name="IMPLEMENTATION" State="STALE" Timestamp="1591253143"/>
+    <Generation Name="SIMULATION" State="STALE" Timestamp="1591253143"/>
+    <Generation Name="HW_HANDOFF" State="STALE" Timestamp="1591253143"/>
     <FileCollection Name="SOURCES" Type="SOURCES">
-      <File Name="ip/axi_intercon_2x64_256_bd_s00_cc_0/axi_intercon_2x64_256_bd_s00_cc_0.xci" Type="IP">
-        <Properties IsEditable="false" IsVisible="false" Timestamp="0" IsTrackable="true" IsStatusTracked="true"/>
-        <Library Name="xil_defaultlib"/>
-        <UsedIn Val="SYNTHESIS"/>
-        <UsedIn Val="IMPLEMENTATION"/>
-        <UsedIn Val="SIMULATION"/>
-      </File>
       <File Name="ip/axi_intercon_2x64_256_bd_m00_rs_0/axi_intercon_2x64_256_bd_m00_rs_0.xci" Type="IP">
         <Instance HierarchyPath="m00_rs"/>
         <Properties IsEditable="false" IsVisible="true" Timestamp="0" IsTrackable="true" IsStatusTracked="true"/>
@@ -72,13 +66,6 @@
       <File Name="ip/axi_intercon_2x64_256_bd_s00_rs_256_0/axi_intercon_2x64_256_bd_s00_rs_256_0.xci" Type="IP">
         <Instance HierarchyPath="s00_rs_256"/>
         <Properties IsEditable="false" IsVisible="true" Timestamp="0" IsTrackable="true" IsStatusTracked="true"/>
-        <Library Name="xil_defaultlib"/>
-        <UsedIn Val="SYNTHESIS"/>
-        <UsedIn Val="IMPLEMENTATION"/>
-        <UsedIn Val="SIMULATION"/>
-      </File>
-      <File Name="ip/axi_intercon_2x64_256_bd_s01_cc_0/axi_intercon_2x64_256_bd_s01_cc_0.xci" Type="IP">
-        <Properties IsEditable="false" IsVisible="false" Timestamp="0" IsTrackable="true" IsStatusTracked="true"/>
         <Library Name="xil_defaultlib"/>
         <UsedIn Val="SYNTHESIS"/>
         <UsedIn Val="IMPLEMENTATION"/>
