@@ -98,11 +98,23 @@ else()
     # Otherwise, use distutils to determine the correct relative path for Python
     # packages, and install to our prefix
     if(NOT DEFINED UHD_PYTHON_DIR)
-        execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
-            "from distutils import sysconfig;\
-            print(sysconfig.get_python_lib(plat_specific=True, prefix='${CMAKE_INSTALL_PREFIX}'));"
-            OUTPUT_VARIABLE UHD_PYTHON_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
+        if(WIN32)
+            # CPack with NSIS generates an error when using install()
+            # with a DESTINATION that is an absolute path. Thus, specify
+            # a blank prefix, which returns only the Python library relative
+            # path, and use that in the install step below.
+            execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
+                "from distutils import sysconfig;\
+                print(sysconfig.get_python_lib(plat_specific=True, prefix=''));"
+                OUTPUT_VARIABLE UHD_PYTHON_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+        else()
+            execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
+                "from distutils import sysconfig;\
+                print(sysconfig.get_python_lib(plat_specific=True, prefix='${CMAKE_INSTALL_PREFIX}'));"
+                OUTPUT_VARIABLE UHD_PYTHON_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+        endif(WIN32)
     endif(NOT DEFINED UHD_PYTHON_DIR)
     file(TO_CMAKE_PATH ${UHD_PYTHON_DIR} UHD_PYTHON_DIR)
 
