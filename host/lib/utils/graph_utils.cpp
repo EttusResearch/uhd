@@ -124,9 +124,31 @@ void connect_through_blocks(rfnoc_graph::sptr graph,
             "GRAPH_UTILS", "Found destination chain for " + dst_blk.to_string());
     }
 
-    // Finally, make all of the connections in our chain
+    // Finally, make all of the connections in our chain.
+    // If we have SEPs in the chain, find them and directly
+    // call connect on the src and dst blocks since calling
+    // connect on SEPs is invalid
+    std::string src_to_sep_id;
+    size_t src_to_sep_port;
+    std::string sep_to_dst_id;
+    size_t sep_to_dst_port;
+    bool has_sep_connection = false;
+
     for (auto edge : block_chain) {
-        graph->connect(edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
+        if(uhd::rfnoc::block_id_t(edge.dst_blockid).match(uhd::rfnoc::NODE_ID_SEP)) {
+            has_sep_connection = true;
+            src_to_sep_id = edge.src_blockid;
+            src_to_sep_port = edge.src_port;
+        } else if(uhd::rfnoc::block_id_t(edge.src_blockid).match(uhd::rfnoc::NODE_ID_SEP)) {
+            has_sep_connection = true;
+            sep_to_dst_id = edge.dst_blockid;
+            sep_to_dst_port = edge.dst_port;
+        } else{
+            graph->connect(edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
+        }
+    }
+    if(has_sep_connection) {
+        graph->connect(src_to_sep_id, src_to_sep_port, sep_to_dst_id, sep_to_dst_port);
     }
 }
 
