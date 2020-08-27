@@ -180,6 +180,10 @@ void graph_t::connect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t edg
 void graph_t::disconnect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t edge_info)
 {
     // Find vertex descriptor
+    if (_node_map.count(src_node) == 0 && _node_map.count(dst_node) == 0) {
+        return;
+    }
+
     auto src_vertex_desc = _node_map.at(src_node);
     auto dst_vertex_desc = _node_map.at(dst_node);
 
