@@ -192,6 +192,37 @@ Example usage:
 
     cmake -DCMAKE_INSTALL_PREFIX=/opt/uhd ../
 
+<b>Ubuntu 20.04 note:</b> When building for Ubuntu 20.04, you may run into
+errors such as this during CMake's generation stage:
+
+    CMake Error in python/CMakeLists.txt:
+    Imported target "Boost::chrono" includes non-existent path
+
+    "/include"
+
+    in its INTERFACE_INCLUDE_DIRECTORIES.  Possible reasons include:
+
+    * The path was deleted, renamed, or moved to another location.
+
+    * An install or uninstall procedure did not complete successfully.
+
+    * The installation package was faulty and references files it does not
+      provide.
+
+These errors occur when CMake finds filesystem items by following the `/bin`
+symlink to `/usr/bin` and thus incorrectly calculating the root path for
+various directories needed by the build.
+
+If you encounter this issue, ensure that `/usr/bin` appears before `/bin` in
+the PATH environment variable of the process executing CMake. Alternatively,
+you can pass the `CMAKE_FIND_ROOT_PATH` configuration variable to CMake
+with a value of `/usr` to point it to the right starting directory for
+filesystem item searches.
+
+Example usage:
+
+    cmake -DCMAKE_FIND_ROOT_PATH=/usr ../
+
 \subsection build_install_unix Build and install
 
     make
