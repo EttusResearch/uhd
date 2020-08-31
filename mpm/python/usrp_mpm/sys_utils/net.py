@@ -87,6 +87,13 @@ def get_link_speed(ifname):
                  if device.sys_name == ifname][0]
 
     speed = net_sysfs.attributes.asint('speed')
+    # FIXME: This sysfs call occasionally returns -1 as the speed if the connection is at all
+    #        flaky. Returning 10 Gbs rather than 1 Gbs in this case mitigates negative side
+    #        effects in the driver when this occurs on 10GbE ports without breaking mpm
+    #        compatability.
+    if (speed < 0):
+        return 10000
+
     # TODO: 1Gige driver returns a bad value (less than 1000). Remove the conditional once the
     #       driver is fixed
     return speed if speed >= 10000 else 1000
