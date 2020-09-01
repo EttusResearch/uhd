@@ -23,6 +23,36 @@ Note that since UHD version 4.0.0.0, Python 2 is no longer supported.
 Static linking on is unsupported on Windows. Otherwise, compiling the Python API
 on Windows is no different from other operating systems.
 
+Note that you may have to set the `PYTHONPATH` environment variable to ensure
+that Python is able to find the UHD package. For example, if the UHD install
+base path is `C:\Program Files (x86)\UHD`:
+
+    set PYTHONPATH=%PYTHONPATH%;C:\Program Files (x86)\UHD\lib\site-packages
+
+<b>Python 3.8 Note:</b> If you receive an error similar to this when running
+`import uhd` in Python 3.8 and above on Windows:
+
+    ImportError: DLL load failed while importing libpyuhd: The specified module could not be found.
+
+this indicates a problem finding one or more of the DLLs that the UHD Python
+module depends on to load correctly.
+
+Python 3.8
+<a href="https://docs.python.org/3/whatsnew/3.8.html#bpo-36085-whatsnew">includes
+a change</a> to the paths Windows searches when attempting to find a module's
+dependent DLLs. To ensure that Python is able to find and load the DLLs
+required to import the UHD module, it is advised that the uhd.dll and
+libusb-1.0.dll (if UHD was build with USB support) DLLs be copied to one of
+the following directories:
+
+- The `%%windows%\system32` directory
+- The directory where the Python UHD package is installed (by default, this
+  is `C:\Program Files (x86)\UHD\lib\site-packages\uhd`
+- The directory from which the Python executable is run
+- Paths added to the import extension module DLL search path via Python's
+  <a href="https://docs.python.org/3/library/os.html#os.add_dll_directory">os.add_dll_directory</a>
+  function
+
 \subsection python_install_adv Advanced Usage Notes
 
 UHD uses the PyBind11 library to generate its Python bindings. UHD ships its own
