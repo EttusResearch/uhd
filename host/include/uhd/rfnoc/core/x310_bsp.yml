@@ -46,5 +46,5 @@ io_ports:
       pattern: (.*)
       repl: \1_radio1
   dram:
-    type: axi4_mm_2x64_4g
+    type: axi4_mm_4x64_4g
     drive: slave

@@ -616,7 +616,7 @@ module n3xx_core #(
 
   // AXI4 MM buses
   wire [0:0]  dram_axi_awid     [0:NUM_DRAM_FIFOS-1];
-  wire [31:0] dram_axi_awaddr   [0:NUM_DRAM_FIFOS-1];
+  wire [30:0] dram_axi_awaddr   [0:NUM_DRAM_FIFOS-1];
   wire [7:0]  dram_axi_awlen    [0:NUM_DRAM_FIFOS-1];
   wire [2:0]  dram_axi_awsize   [0:NUM_DRAM_FIFOS-1];
   wire [1:0]  dram_axi_awburst  [0:NUM_DRAM_FIFOS-1];
@@ -640,7 +640,7 @@ module n3xx_core #(
   wire        dram_axi_bvalid   [0:NUM_DRAM_FIFOS-1];
   wire        dram_axi_bready   [0:NUM_DRAM_FIFOS-1];
   wire [0:0]  dram_axi_arid     [0:NUM_DRAM_FIFOS-1];
-  wire [31:0] dram_axi_araddr   [0:NUM_DRAM_FIFOS-1];
+  wire [30:0] dram_axi_araddr   [0:NUM_DRAM_FIFOS-1];
   wire [7:0]  dram_axi_arlen    [0:NUM_DRAM_FIFOS-1];
   wire [2:0]  dram_axi_arsize   [0:NUM_DRAM_FIFOS-1];
   wire [1:0]  dram_axi_arburst  [0:NUM_DRAM_FIFOS-1];
@@ -664,7 +664,7 @@ module n3xx_core #(
    .S00_AXI_ACLK     (ddr3_dma_clk        ),
    .S00_AXI_ARESETN  (~ddr3_dma_rst       ),
    .S00_AXI_AWID     (dram_axi_awid    [0]),
-   .S00_AXI_AWADDR   (dram_axi_awaddr  [0]),
+   .S00_AXI_AWADDR   ({1,b0, dram_axi_awaddr[0]}),
    .S00_AXI_AWLEN    (dram_axi_awlen   [0]),
    .S00_AXI_AWSIZE   (dram_axi_awsize  [0]),
    .S00_AXI_AWBURST  (dram_axi_awburst [0]),
@@ -685,7 +685,7 @@ module n3xx_core #(
    .S00_AXI_BVALID   (dram_axi_bvalid  [0]),
    .S00_AXI_BREADY   (dram_axi_bready  [0]),
    .S00_AXI_ARID     (dram_axi_arid    [0]),
-   .S00_AXI_ARADDR   (dram_axi_araddr  [0]),
+   .S00_AXI_ARADDR   ({1,b0, dram_axi_araddr[0]}),
    .S00_AXI_ARLEN    (dram_axi_arlen   [0]),
    .S00_AXI_ARSIZE   (dram_axi_arsize  [0]),
    .S00_AXI_ARBURST  (dram_axi_arburst [0]),
@@ -706,7 +706,7 @@ module n3xx_core #(
    .S01_AXI_ACLK     (ddr3_dma_clk        ),
    .S01_AXI_ARESETN  (~ddr3_dma_rst       ),
    .S01_AXI_AWID     (dram_axi_awid    [1]),
-   .S01_AXI_AWADDR   (dram_axi_awaddr  [1]),
+   .S01_AXI_AWADDR   ({1,b0, dram_axi_awaddr[1]}),
    .S01_AXI_AWLEN    (dram_axi_awlen   [1]),
    .S01_AXI_AWSIZE   (dram_axi_awsize  [1]),
    .S01_AXI_AWBURST  (dram_axi_awburst [1]),
@@ -727,7 +727,7 @@ module n3xx_core #(
    .S01_AXI_BVALID   (dram_axi_bvalid  [1]),
    .S01_AXI_BREADY   (dram_axi_bready  [1]),
    .S01_AXI_ARID     (dram_axi_arid    [1]),
-   .S01_AXI_ARADDR   (dram_axi_araddr  [1]),
+   .S01_AXI_ARADDR   ({1,b0, dram_axi_araddr[1]}),
    .S01_AXI_ARLEN    (dram_axi_arlen   [1]),
    .S01_AXI_ARSIZE   (dram_axi_arsize  [1]),
    .S01_AXI_ARBURST  (dram_axi_arburst [1]),
@@ -748,7 +748,7 @@ module n3xx_core #(
    .S02_AXI_ACLK     (ddr3_dma_clk        ),
    .S02_AXI_ARESETN  (~ddr3_dma_rst       ),
    .S02_AXI_AWID     (dram_axi_awid    [2]),
-   .S02_AXI_AWADDR   (dram_axi_awaddr  [2]),
+   .S02_AXI_AWADDR   ({1,b0, dram_axi_awaddr[2]}),
    .S02_AXI_AWLEN    (dram_axi_awlen   [2]),
    .S02_AXI_AWSIZE   (dram_axi_awsize  [2]),
    .S02_AXI_AWBURST  (dram_axi_awburst [2]),
@@ -769,7 +769,7 @@ module n3xx_core #(
    .S02_AXI_BVALID   (dram_axi_bvalid  [2]),
    .S02_AXI_BREADY   (dram_axi_bready  [2]),
    .S02_AXI_ARID     (dram_axi_arid    [2]),
-   .S02_AXI_ARADDR   (dram_axi_araddr  [2]),
+   .S02_AXI_ARADDR   ({1,b0, dram_axi_araddr[2]}),
    .S02_AXI_ARLEN    (dram_axi_arlen   [2]),
    .S02_AXI_ARSIZE   (dram_axi_arsize  [2]),
    .S02_AXI_ARBURST  (dram_axi_arburst [2]),
@@ -790,7 +790,7 @@ module n3xx_core #(
    .S03_AXI_ACLK     (ddr3_dma_clk        ),
    .S03_AXI_ARESETN  (~ddr3_dma_rst       ),
    .S03_AXI_AWID     (dram_axi_awid    [3]),
-   .S03_AXI_AWADDR   (dram_axi_awaddr  [3]),
+   .S03_AXI_AWADDR   ({1,b0, dram_axi_awaddr[3]}),
    .S03_AXI_AWLEN    (dram_axi_awlen   [3]),
    .S03_AXI_AWSIZE   (dram_axi_awsize  [3]),
    .S03_AXI_AWBURST  (dram_axi_awburst [3]),
@@ -811,7 +811,7 @@ module n3xx_core #(
    .S03_AXI_BVALID   (dram_axi_bvalid  [3]),
    .S03_AXI_BREADY   (dram_axi_bready  [3]),
    .S03_AXI_ARID     (dram_axi_arid    [3]),
-   .S03_AXI_ARADDR   (dram_axi_araddr  [3]),
+   .S03_AXI_ARADDR   ({1,b0, dram_axi_araddr[3]}),
    .S03_AXI_ARLEN    (dram_axi_arlen   [3]),
    .S03_AXI_ARSIZE   (dram_axi_arsize  [3]),
    .S03_AXI_ARBURST  (dram_axi_arburst [3]),

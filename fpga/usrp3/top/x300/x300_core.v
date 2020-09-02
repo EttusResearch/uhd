@@ -207,7 +207,7 @@ module x300_core #(
    // Memory Controller AXI4 MM buses
    wire        s00_axi_awready, s01_axi_awready;
    wire [0:0]  s00_axi_awid, s01_axi_awid;
-   wire [31:0] s00_axi_awaddr, s01_axi_awaddr;
+   wire [29:0] s00_axi_awaddr, s01_axi_awaddr;
    wire [7:0]  s00_axi_awlen, s01_axi_awlen;
    wire [2:0]  s00_axi_awsize, s01_axi_awsize;
    wire [1:0]  s00_axi_awburst, s01_axi_awburst;
@@ -227,7 +227,7 @@ module x300_core #(
    wire [0:0]  s00_axi_buser, s01_axi_buser;
    wire        s00_axi_arready, s01_axi_arready;
    wire [0:0]  s00_axi_arid, s01_axi_arid;
-   wire [31:0] s00_axi_araddr, s01_axi_araddr;
+   wire [29:0] s00_axi_araddr, s01_axi_araddr;
    wire [7:0]  s00_axi_arlen, s01_axi_arlen;
    wire [2:0]  s00_axi_arsize, s01_axi_arsize;
    wire [1:0]  s00_axi_arburst, s01_axi_arburst;
@@ -399,7 +399,7 @@ module x300_core #(
       .S00_AXI_ACLK(ddr3_axi_clk_x2), // input S00_AXI_ACLK
       .S00_AXI_ARESETN(~ddr3_axi_rst), // input S00_AXI_ARESETN
       .S00_AXI_AWID(s00_axi_awid), // input [0 : 0] S00_AXI_AWID
-      .S00_AXI_AWADDR(s00_axi_awaddr), // input [31 : 0] S00_AXI_AWADDR
+      .S00_AXI_AWADDR({2'b0, s00_axi_awaddr}), // input [31 : 0] S00_AXI_AWADDR
       .S00_AXI_AWLEN(s00_axi_awlen), // input [7 : 0] S00_AXI_AWLEN
       .S00_AXI_AWSIZE(s00_axi_awsize), // input [2 : 0] S00_AXI_AWSIZE
       .S00_AXI_AWBURST(s00_axi_awburst), // input [1 : 0] S00_AXI_AWBURST
@@ -419,7 +419,7 @@ module x300_core #(
       .S00_AXI_BVALID(s00_axi_bvalid), // output S00_AXI_BVALID
       .S00_AXI_BREADY(s00_axi_bready), // input S00_AXI_BREADY
       .S00_AXI_ARID(s00_axi_arid), // input [0 : 0] S00_AXI_ARID
-      .S00_AXI_ARADDR(s00_axi_araddr), // input [31 : 0] S00_AXI_ARADDR
+      .S00_AXI_ARADDR({2'b0, s00_axi_araddr}), // input [31 : 0] S00_AXI_ARADDR
       .S00_AXI_ARLEN(s00_axi_arlen), // input [7 : 0] S00_AXI_ARLEN
       .S00_AXI_ARSIZE(s00_axi_arsize), // input [2 : 0] S00_AXI_ARSIZE
       .S00_AXI_ARBURST(s00_axi_arburst), // input [1 : 0] S00_AXI_ARBURST
@@ -439,7 +439,7 @@ module x300_core #(
       .S01_AXI_ACLK(ddr3_axi_clk_x2), // input S01_AXI_ACLK
       .S01_AXI_ARESETN(~ddr3_axi_rst), // input S00_AXI_ARESETN
       .S01_AXI_AWID(s01_axi_awid), // input [0 : 0] S01_AXI_AWID
-      .S01_AXI_AWADDR(s01_axi_awaddr), // input [31 : 0] S01_AXI_AWADDR
+      .S01_AXI_AWADDR({2'b0, s01_axi_awaddr}), // input [31 : 0] S01_AXI_AWADDR
       .S01_AXI_AWLEN(s01_axi_awlen), // input [7 : 0] S01_AXI_AWLEN
       .S01_AXI_AWSIZE(s01_axi_awsize), // input [2 : 0] S01_AXI_AWSIZE
       .S01_AXI_AWBURST(s01_axi_awburst), // input [1 : 0] S01_AXI_AWBURST
@@ -459,7 +459,7 @@ module x300_core #(
       .S01_AXI_BVALID(s01_axi_bvalid), // output S01_AXI_BVALID
       .S01_AXI_BREADY(s01_axi_bready), // input S01_AXI_BREADY
       .S01_AXI_ARID(s01_axi_arid), // input [0 : 0] S01_AXI_ARID
-      .S01_AXI_ARADDR(s01_axi_araddr), // input [31 : 0] S01_AXI_ARADDR
+      .S01_AXI_ARADDR({2'b0, s01_axi_araddr}), // input [31 : 0] S01_AXI_ARADDR
       .S01_AXI_ARLEN(s01_axi_arlen), // input [7 : 0] S01_AXI_ARLEN
       .S01_AXI_ARSIZE(s01_axi_arsize), // input [2 : 0] S01_AXI_ARSIZE
       .S01_AXI_ARBURST(s01_axi_arburst), // input [1 : 0] S01_AXI_ARBURST
