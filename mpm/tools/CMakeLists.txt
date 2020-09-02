@@ -7,6 +7,7 @@
 install(PROGRAMS
     mpm_shell.py
     mpm_debug.py
+    check-filesystem
     DESTINATION ${RUNTIME_DIR}
 )
 
