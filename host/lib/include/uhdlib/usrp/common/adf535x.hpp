@@ -140,12 +140,6 @@ public:
     void set_feedback_select(const feedback_sel_t fb_sel) override
     {
         _fb_after_divider = (fb_sel == FB_SEL_DIVIDED);
-
-        if (_fb_after_divider) {
-            _regs.feedback_select = adf535x_regs_t::FEEDBACK_SELECT_DIVIDED;
-        } else {
-            _regs.feedback_select = adf535x_regs_t::FEEDBACK_SELECT_FUNDAMENTAL;
-        }
     }
 
     void set_pfd_freq(const double pfd_freq) override
@@ -359,7 +353,7 @@ private: // Members
     uint32_t _wait_time_us;
     double _ref_freq;
     double _pfd_freq;
-    double _fb_after_divider;
+    bool _fb_after_divider;
 };
 
 // ADF5355 Functions
@@ -451,6 +445,12 @@ inline double adf535x_impl<adf5355_regs_t>::_set_frequency(
             % FRAC1 % MOD2 % FRAC2);
 
     /* Update registers */
+    if ((rf_divider == 1) or not _fb_after_divider) {
+        _regs.feedback_select = adf5355_regs_t::FEEDBACK_SELECT_FUNDAMENTAL;
+    }
+    else {
+        _regs.feedback_select = adf5355_regs_t::FEEDBACK_SELECT_DIVIDED;
+    }
     _regs.int_16_bit   = INT;
     _regs.frac1_24_bit = FRAC1;
     _regs.frac2_14_bit = FRAC2;
@@ -588,6 +588,12 @@ inline double adf535x_impl<adf5356_regs_t>::_set_frequency(
             % FRAC1 % MOD2 % FRAC2);
 
     /* Update registers */
+    if ((rf_divider == 1) or not _fb_after_divider) {
+        _regs.feedback_select = adf5356_regs_t::FEEDBACK_SELECT_FUNDAMENTAL;
+    }
+    else {
+        _regs.feedback_select = adf5356_regs_t::FEEDBACK_SELECT_DIVIDED;
+    }
     _regs.int_16_bit   = INT;
     _regs.frac1_24_bit = FRAC1;
     _regs.frac2_lsb    = narrow_cast<uint16_t>(FRAC2 & 0x3FFF);
