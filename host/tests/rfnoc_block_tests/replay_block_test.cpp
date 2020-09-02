@@ -73,8 +73,8 @@ struct replay_block_fixture
         : num_channels(4)
         , num_input_ports(num_channels)
         , num_output_ports(num_channels)
-        , mem_addr_size(20)
-        , max_buffer_size(1 << mem_addr_size)
+        , mem_addr_size(32)
+        , max_buffer_size(1ULL << mem_addr_size)
         , default_item_size(4)
         , word_size(8)
         , reg_iface(std::make_shared<replay_mock_reg_iface_t>(

@@ -77,7 +77,7 @@ public:
         _fpga_compat(_replay_reg_iface.peek32(REG_COMPAT_ADDR)),
         _word_size(
             uint16_t((_replay_reg_iface.peek32(REG_MEM_SIZE_ADDR) >> 16) & 0xFFFF) / 8),
-        _mem_size(uint64_t(1 << (_replay_reg_iface.peek32(REG_MEM_SIZE_ADDR) & 0xFFFF)))
+        _mem_size(uint64_t(1ULL << (_replay_reg_iface.peek32(REG_MEM_SIZE_ADDR) & 0xFFFF)))
     {
         UHD_ASSERT_THROW(get_num_input_ports() == get_num_output_ports());
         uhd::assert_fpga_compat(MAJOR_COMPAT,
