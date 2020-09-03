@@ -44,6 +44,9 @@ public:
         _streaming             = initial_state & 0x2;
         _nipc                  = (initial_state >> 24) & 0xFF;
         _item_width            = (initial_state >> 16) & 0xFF;
+        // Give the source some reasonable values to start
+        set_bytes_per_packet(1024);
+        set_throttle_cycles(0);
         reset_counters();
         register_issue_stream_cmd();
     }
