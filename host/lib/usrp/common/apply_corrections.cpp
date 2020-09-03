@@ -175,8 +175,6 @@ void uhd::usrp::apply_tx_fe_corrections(
     const double lo_freq // actual lo freq
 )
 {
-    std::lock_guard<std::mutex> l(corrections_mutex);
-
     // extract eeprom serial
     const uhd::fs_path db_path = "dboards/" + slot + "/tx_eeprom";
     const std::string db_serial =
@@ -192,7 +190,6 @@ void uhd::usrp::apply_rx_fe_corrections(
     const double lo_freq // actual lo freq
 )
 {
-    std::lock_guard<std::mutex> l(corrections_mutex);
     const uhd::fs_path db_path = "dboards/" + slot + "/rx_eeprom";
     const std::string db_serial =
         sub_tree->access<uhd::usrp::dboard_eeprom_t>(db_path).get().serial;
