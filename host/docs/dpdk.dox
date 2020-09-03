@@ -85,7 +85,7 @@ might be
 If successful, the script might provide an updated status like this:
 
     /usr/share/dpdk/usertools/dpdk-devbind.py -s
-    
+
     Network devices using DPDK-compatible driver
     ============================================
     0000:02:00.0 '82599ES 10-Gigabit SFI/SFP+ Network Connection 10fb' drv=vfio-pci unused=ixgbe
@@ -185,6 +185,22 @@ Device discovery via DPDK is not currently implemented, so the device args
 runtime. There is no mechanism for MPM's TCP/IP control traffic to flow over a
 link that is occupied by DPDK, so mgmt_addr must point to a link that is not
 used for CHDR, such as N310's RJ45 port.
+
+\subsection dpdk_link_detection DPDK Link Detection
+
+When DPDK is enabled and the driver is initializing, the status of all
+DPDK-enabled links is checked to verify that all links are active before the
+driver proceeds. The links are checked every 250 ms until all links have
+reported that they are up or until the link timeout expires, which by default
+is 1000 ms. If any of the links have not reported as being up by the time the
+timeout expires, a runtime error is thrown.
+
+Users may choose to override the link timeout in cases where particular
+systems and/or network cards take longer to establish stable DPDK links.
+The timeout can be overridden by passing `dpdk_link_timeout=N` in the device
+arguments, where N is the desired timeout time in <b>milliseconds</b>, or
+by adding a `dpdk_link_timeout` entry to the
+\ref page_configfiles "UHD configuration file".
 
 */
 // vim:ft=doxygen:
