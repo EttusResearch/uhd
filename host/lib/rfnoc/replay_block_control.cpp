@@ -392,9 +392,10 @@ private:
         add_property_resolver({&_play_size.at(port)},
             {&_play_size.at(port)},
             [this, port]() { _set_play_size(_play_size.at(port).get(), port); });
-        add_property_resolver({&_packet_size.at(port)}, {}, [this, port]() {
-            _set_packet_size(_packet_size.at(port).get(), port);
-        });
+        add_property_resolver({&_packet_size.at(port),
+                                  get_mtu_prop_ref({res_source_info::OUTPUT_EDGE, port})},
+            {},
+            [this, port]() { _set_packet_size(_packet_size.at(port).get(), port); });
     }
 
     void _set_play_type(const io_type_t type, const size_t port)
@@ -459,8 +460,6 @@ private:
         const uint32_t payload_size    = packet_size - CHDR_MAX_LEN_HDR;
         uint32_t ipp                   = payload_size / item_size;
         if (ipp > max_ipp_per_mtu) {
-            RFNOC_LOG_WARNING("ipp value " << ipp << " exceeds MTU of " << mtu
-                                           << "! Coercing to " << max_ipp_per_mtu);
             ipp = max_ipp_per_mtu;
         }
         if ((ipp % ipc) != 0) {
