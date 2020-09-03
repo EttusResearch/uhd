@@ -18,12 +18,14 @@
 namespace uhd { namespace transport { namespace dpdk {
 
 namespace {
-constexpr uint64_t USEC                   = 1000000;
-constexpr size_t DEFAULT_FRAME_SIZE       = 8000;
-constexpr int DEFAULT_NUM_MBUFS           = 1024;
-constexpr int DEFAULT_MBUF_CACHE_SIZE     = 315;
-constexpr size_t DPDK_HEADERS_SIZE        = 14 + 20 + 8; // Ethernet + IPv4 + UDP
-constexpr uint16_t DPDK_DEFAULT_RING_SIZE = 512;
+constexpr uint64_t USEC                      = 1000000;
+constexpr size_t DEFAULT_FRAME_SIZE          = 8000;
+constexpr int DEFAULT_NUM_MBUFS              = 1024;
+constexpr int DEFAULT_MBUF_CACHE_SIZE        = 315;
+constexpr size_t DPDK_HEADERS_SIZE           = 14 + 20 + 8; // Ethernet + IPv4 + UDP
+constexpr uint16_t DPDK_DEFAULT_RING_SIZE    = 512;
+constexpr int DEFAULT_DPDK_LINK_INIT_TIMEOUT = 1000;
+constexpr int LINK_STATUS_INTERVAL           = 250;
 
 inline char* eal_add_opt(
     std::vector<const char*>& argv, size_t n, char* dst, const char* opt, const char* arg)
@@ -123,6 +125,7 @@ dpdk_port::dpdk_port(port_id_t port,
     port_conf.rxmode.offloads       = rx_offloads | DEV_RX_OFFLOAD_JUMBO_FRAME;
     port_conf.rxmode.max_rx_pkt_len = _mtu;
     port_conf.txmode.offloads       = tx_offloads;
+    port_conf.intr_conf.lsc         = 1;
 
     retval = rte_eth_dev_configure(_port, _num_queues, _num_queues, &port_conf);
     if (retval != 0) {
@@ -403,6 +406,9 @@ void dpdk_ctx::init(const device_addr_t& user_args)
             "mtu: " << _mtu << " num_mbufs: " << _num_mbufs
                     << " mbuf_cache_size: " << _mbuf_cache_size);
 
+        _link_init_timeout =
+            dpdk_args.cast<int>("dpdk_link_timeout", DEFAULT_DPDK_LINK_INIT_TIMEOUT);
+
         /* Get device info for all the NIC ports */
         int num_dpdk_ports = rte_eth_dev_count_avail();
         if (num_dpdk_ports == 0) {
@@ -480,16 +486,31 @@ void dpdk_ctx::init(const device_addr_t& user_args)
         }
 
         UHD_LOG_TRACE("DPDK", "Waiting for links to come up...");
-        rte_delay_ms(1000);
-        for (auto& port : _ports) {
-            struct rte_eth_link link;
-            auto portid = port.second->get_port_id();
-            rte_eth_link_get(portid, &link);
-            unsigned int link_status = link.link_status;
-            unsigned int link_speed  = link.link_speed;
-            UHD_LOGGER_TRACE("DPDK") << boost::format("Port %u UP: %d, %u Mbps") % portid
-                                            % link_status % link_speed;
-        }
+        do {
+            bool all_ports_up = true;
+            for (auto& port : _ports) {
+                struct rte_eth_link link;
+                auto portid = port.second->get_port_id();
+                rte_eth_link_get(portid, &link);
+                unsigned int link_status = link.link_status;
+                unsigned int link_speed  = link.link_speed;
+                UHD_LOGGER_TRACE("DPDK") << boost::format("Port %u UP: %d, %u Mbps")
+                                                % portid % link_status % link_speed;
+                all_ports_up &= (link.link_status == 1);
+            }
+
+            if (all_ports_up) {
+                break;
+            }
+
+            rte_delay_ms(LINK_STATUS_INTERVAL);
+            _link_init_timeout -= LINK_STATUS_INTERVAL;
+            if (_link_init_timeout <= 0 && not all_ports_up) {
+                UHD_LOG_ERROR("DPDK", "All DPDK links did not report as up!")
+                throw uhd::runtime_error("DPDK: All DPDK links did not report as up!");
+            }
+        } while (true);
+
         UHD_LOG_TRACE("DPDK", "Init done -- spawning IO services");
         _init_done = true;
 

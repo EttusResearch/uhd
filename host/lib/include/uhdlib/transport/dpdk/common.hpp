@@ -387,6 +387,7 @@ private:
     size_t _mtu;
     int _num_mbufs;
     int _mbuf_cache_size;
+    int _link_init_timeout;
     std::mutex _init_mutex;
     std::atomic<bool> _init_done;
     uhd::dict<uint32_t, port_id_t> _routes;
