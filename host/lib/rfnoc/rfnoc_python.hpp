@@ -12,6 +12,7 @@
 #include <uhd/rfnoc/graph_edge.hpp>
 #include <uhd/rfnoc/mb_controller.hpp>
 #include <uhd/rfnoc/noc_block_base.hpp>
+#include <uhd/rfnoc/register_iface.hpp>
 #include <uhd/rfnoc/res_source_info.hpp>
 #include <uhd/rfnoc_graph.hpp>
 #include <uhd/transport/adapter_id.hpp>
@@ -279,6 +280,140 @@ void export_rfnoc(py::module& m)
                 uhd::property_tree::sptr tree = self->get_tree();
                 return tree;
             })
+        .def("poke32",
+            [](noc_block_base::sptr& self, uint32_t addr, uint32_t data) {
+                self->regs().poke32(addr, data);
+            },
+            py::arg("addr"),
+            py::arg("data"))
+        .def("poke32",
+            [](noc_block_base::sptr& self,
+                uint32_t addr,
+                uint32_t data,
+                uhd::time_spec_t time,
+                bool ack = false) { self->regs().poke32(addr, data, time, ack); },
+            py::arg("addr"),
+            py::arg("data"),
+            py::arg("time"),
+            py::arg("ack") = false)
+        .def("poke64",
+            [](noc_block_base::sptr& self, uint32_t addr, uint64_t data) {
+                self->regs().poke64(addr, data);
+            },
+            py::arg("addr"),
+            py::arg("data"))
+        .def("poke64",
+            [](noc_block_base::sptr& self,
+                uint32_t addr,
+                uint32_t data,
+                uhd::time_spec_t time,
+                bool ack = false) { self->regs().poke64(addr, data, time, ack); },
+            py::arg("addr"),
+            py::arg("data"),
+            py::arg("time"),
+            py::arg("ack") = false)
+        .def("multi_poke32",
+            [](noc_block_base::sptr& self,
+                std::vector<uint32_t> addr,
+                std::vector<uint32_t> data) { self->regs().multi_poke32(addr, data); },
+            py::arg("addr"),
+            py::arg("data"))
+        .def("multi_poke32",
+            [](noc_block_base::sptr& self,
+                std::vector<uint32_t> addr,
+                std::vector<uint32_t> data,
+                uhd::time_spec_t time,
+                bool ack = false) { self->regs().multi_poke32(addr, data, time, ack); },
+            py::arg("addr"),
+            py::arg("data"),
+            py::arg("time"),
+            py::arg("ack") = false)
+        .def("block_poke32",
+            [](noc_block_base::sptr& self,
+                uint32_t first_addr,
+                std::vector<uint32_t> data) {
+                self->regs().block_poke32(first_addr, data);
+            },
+            py::arg("first_addr"),
+            py::arg("data"))
+        .def("block_poke32",
+            [](noc_block_base::sptr& self,
+                uint32_t first_addr,
+                std::vector<uint32_t> data,
+                uhd::time_spec_t time,
+                bool ack = false) {
+                self->regs().block_poke32(first_addr, data, time, ack);
+            },
+            py::arg("first_addr"),
+            py::arg("data"),
+            py::arg("time"),
+            py::arg("ack") = false)
+        .def("peek32",
+            [](noc_block_base::sptr& self, uint32_t addr) {
+                return self->regs().peek32(addr);
+            },
+            py::arg("addr"))
+        .def("peek32",
+            [](noc_block_base::sptr& self, uint32_t addr, uhd::time_spec_t time) {
+                return self->regs().peek32(addr, time);
+            },
+            py::arg("addr"),
+            py::arg("time"))
+        .def("peek64",
+            [](noc_block_base::sptr& self, uint32_t addr) {
+                return self->regs().peek64(addr);
+            },
+            py::arg("addr"))
+        .def("peek64",
+            [](noc_block_base::sptr& self, uint32_t addr, uhd::time_spec_t time) {
+                return self->regs().peek64(addr, time);
+            },
+            py::arg("addr"),
+            py::arg("time"))
+        .def("block_peek32",
+            [](noc_block_base::sptr& self, uint32_t first_addr, size_t length) {
+                return self->regs().block_peek32(first_addr, length);
+            },
+            py::arg("first_addr"),
+            py::arg("length"))
+        .def("block_peek32",
+            [](noc_block_base::sptr& self,
+                uint32_t first_addr,
+                size_t length,
+                uhd::time_spec_t time) {
+                return self->regs().block_peek32(first_addr, length, time);
+            },
+            py::arg("first_addr"),
+            py::arg("length"),
+            py::arg("time"))
+        .def("poll32",
+            [](noc_block_base::sptr& self,
+                uint32_t addr,
+                uint32_t data,
+                uint32_t mask,
+                uhd::time_spec_t timeout) {
+                return self->regs().poll32(addr, data, mask, timeout);
+            },
+            py::arg("addr"),
+            py::arg("data"),
+            py::arg("mask"),
+            py::arg("timeout"))
+        .def("poll32",
+            [](noc_block_base::sptr& self,
+                uint32_t addr,
+                uint32_t data,
+                uint32_t mask,
+                uhd::time_spec_t timeout,
+                uhd::time_spec_t time,
+                bool ack = false) {
+                return self->regs().poll32(addr, data, mask, timeout, time, ack);
+            },
+            py::arg("addr"),
+            py::arg("data"),
+            py::arg("mask"),
+            py::arg("timeout"),
+            py::arg("time"),
+            py::arg("ack") = false)
         .def("__repr__",
             [](noc_block_base::sptr& self) {
                 return "<NocBlock for block ID '" + self->get_unique_id() + "'>";
