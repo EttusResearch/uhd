@@ -24,7 +24,7 @@ class MboardEEPROM(object):
     - 6 bytes MAC address
     - 2 bytes hw_pid
     - 2 bytes hw_rev
-    - 8 bytes serial number (zero-terminated string of 7 characters)
+    - 8 bytes serial number (xFF or NULL terminated)
     - 12 bytes padding
     - 8 bytes user_name
 
@@ -33,7 +33,7 @@ class MboardEEPROM(object):
     or ask the system.
     """
     # Refer e300_eeprom_manager.hpp.
-    eeprom_header_format = "<H H 6s H H 7s 12s 8s"
+    eeprom_header_format = "<H H 6s H H 8s 12s 8s"
     eeprom_header_keys = (
         'data_version_major',
         'data_version_minor',
@@ -55,11 +55,11 @@ class DboardEEPROM(object):
     - 2 bytes data_version_minor
     - 2 bytes hw_pid
     - 2 bytes hw_rev
-    - 8 bytes serial number (zero-terminated string of 7 characters)
+    - 8 bytes serial number (xFF or NULL terminated)
     - 12 bytes padding
     """
     # Refer e300_eeprom_manager.hpp.
-    eeprom_header_format = "<H H H H 7s 12s"
+    eeprom_header_format = "<H H H H 8s 12s"
     eeprom_header_keys = (
         'data_version_major',
         'data_version_minor',
@@ -100,6 +100,10 @@ def read_eeprom(
         parsed_data_list = list(parsed_data)
         parsed_data_list[3] = struct.unpack("<H", struct.pack(">H", parsed_data_list[3]))[0]
         parsed_data_list[4] = struct.unpack("<H", struct.pack(">H", parsed_data_list[4]))[0]
+        # Some revisions use xFF terminated strings for serial and user_name.
+        # Replace xFF with NULL to pass ascii conversion.
+        parsed_data_list[5] = parsed_data_list[5].replace(b'\xff',b'\x00')
+        parsed_data_list[7] = parsed_data_list[7].replace(b'\xff',b'\x00')
         parsed_data = tuple(parsed_data_list)
 
     else: # E310 DB.
@@ -108,6 +112,9 @@ def read_eeprom(
         parsed_data_list = list(parsed_data)
         parsed_data_list[2] = struct.unpack("<H", struct.pack(">H", parsed_data_list[2]))[0]
         parsed_data_list[3] = struct.unpack("<H", struct.pack(">H", parsed_data_list[3]))[0]
+        # Some revisions use xFF terminated strings for serial.
+        # Replace xFF with NULL to pass ascii conversion.
+        parsed_data_list[4] = parsed_data_list[4].replace(b'\xff',b'\x00')
         parsed_data = tuple(parsed_data_list)
 
     ret_val = (dict(list(zip(eeprom_keys, parsed_data))), data)
