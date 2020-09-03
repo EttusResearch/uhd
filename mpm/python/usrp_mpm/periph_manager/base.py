@@ -17,6 +17,8 @@ from builtins import str
 from builtins import object
 from six import iteritems, itervalues
 from usrp_mpm.mpmlog import get_logger
+from usrp_mpm.sys_utils.filesystem_status import get_fs_version
+from usrp_mpm.sys_utils.filesystem_status import get_mender_artifact
 from usrp_mpm.sys_utils.udev import get_eeprom_paths
 from usrp_mpm.sys_utils.udev import get_spidev_nodes
 from usrp_mpm.sys_utils import dtoverlay
@@ -166,19 +168,8 @@ class PeriphManagerBase(object):
             version_string = ""
         mboard_info["mpm_sw_version"] = version_string
 
-        try:
-            with open("/etc/version", "r") as version_file:
-                mboard_info["fs_version"] = version_file.read().strip(" \r\n")
-        except FileNotFoundError:
-            mboard_info["fs_version"] = "FILE NOT FOUND"
-
-        try:
-            with open("/etc/mender/artifact_info", "r") as artifact_file:
-                for line in artifact_file.read().splitlines():
-                    if line.startswith('artifact_name='):
-                        mboard_info['mender_artifact'] = line[14:]
-        except FileNotFoundError:
-            mboard_info['mender_artifact'] = "FILE NOT FOUND"
+        mboard_info["fs_version"] = get_fs_version()
+        mboard_info['mender_artifact'] = get_mender_artifact()
 
         for i,dboard_info in enumerate(dboard_infos):
             mboard_info["dboard_{}_pid".format(i)] = str(dboard_info["pid"])
