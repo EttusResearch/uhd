@@ -150,7 +150,12 @@ PACKAGE_MAPPING = {
                   'usrp_n320_fpga_AQ.bit.md5',
                   'usrp_n320_fpga_AQ.dts',
                   'usrp_n320_fpga_AQ.dts.md5',
-                  'usrp_n320_fpga_AQ.rpt',],
+                  'usrp_n320_fpga_AQ.rpt',
+                  'usrp_n320_fpga_AA.bit',
+                  'usrp_n320_fpga_AA.bit.md5',
+                  'usrp_n320_fpga_AA.dts',
+                  'usrp_n320_fpga_AA.dts.md5',
+                  'usrp_n320_fpga_AA.rpt',],
     },
     "n320_cpld": {
         "type": "n3xx",
