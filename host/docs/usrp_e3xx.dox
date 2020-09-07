@@ -468,6 +468,22 @@ that systemd-networkd might accidentally pick up.
 Note: Temporarily setting the IP addresses via ifconfig etc will only change the
 value until the next reboot or reload of the FPGA image.
 
+\subsection e3xx_getting_started_network_mode Network Mode
+With UHD 4.0 the RJ-45 port can also be used for streaming samples from the USRP device to the host or other
+remote operations such as `uhd_image_loader`. Please note: As the SDR application runs on an embedded CPU
+with limited processing capability, users should leverage the FPGA using tools such as RFNoC to offload compute
+intensive algorithms that process high bandwidth samples. The maximum sample rates that can be achieved are 4.4 MS/s on
+the E31x and 6.4 MS/s on the E320 when streaming through the RJ-45 port. As the E320 has an additional
+highspeed SFP Port, the RJ-45 port should only be used for streaming data from the E320 if necessary.
+
+The streaming sample rates can be tested and verified using the UHD example benchmark_rate:
+
+    /path/to/benchmark_rate --args addr=<e3xx-ip-address>,master_clock_rate=<master_clock_rate> --rx_rate=<rx_rate>
+
+To verify maximum streaming rates, the following configuration should be used:
+- E310: `master_clock_rate=13.2e6`, `rx_rate=4.4e6`
+- E320: `master_clock_rate=19.6e6`, `rx_rate=6.4e6`
+
 \subsection e3xx_getting_started_security Security-related settings
 
 The E320 ships without a root password set. It is possible to ssh into the
