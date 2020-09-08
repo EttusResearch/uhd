@@ -26,7 +26,7 @@ ifndef TARGET
 endif
 TOP ?= e31x
 
-DEFAULT_IMAGE_CORE_FILE_E31X=e31x_rfnoc_image_core.v
+DEFAULT_IMAGE_CORE_FILE_E31X=e310_rfnoc_image_core.v
 DEFAULT_EDGE_FILE_E31X=$(abspath e310_static_router.hex)
 
 # vivado_build($1=Device, $2=Definitions)
