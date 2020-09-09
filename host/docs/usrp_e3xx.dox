@@ -1396,15 +1396,16 @@ Slave 3   | 4001_4000 - 4001_41ff | dboard-regs      | Daughterboard control
 <tr>                                                            <td>4000_7000 onwards     <td>REMOTE_DST_IP   <td>W           <td>Destination IP, MAC, UDP for Outgoing Packet for 16 local addrs
 <tr>                                                            <td>4000_7400 onwards     <td>REMOTE_DST_UDP_MAC_HI<td>W      <td>Destination MAC (MSB)
 <tr>                                                            <td>4000_7800 onwards     <td>REMOTE_DST_MAC_LO<td>W          <td>Destination MAC (LSB)
-
-<tr><td rowspan="32">Slave 2   <td rowspan="27">e320_core       <td>4001_0000             <td>COMPAT_NUM      <td>R           <td>FPGA Compat Number
+<tr><td rowspan="35">Slave 2   <td rowspan="35">e3xx_core       <td>4001_0000             <td>COMPAT_NUM      <td>R           <td>FPGA Compat Number
 <tr>                                                            <td>[31:16]               <td>Major           <td>RO          <td>-
 <tr>                                                            <td>[15:0]                <td>Minor           <td>RO          <td>-
 <tr>                                                            <td>4001_0004             <td>DATESTAMP       <td>RO          <td>-
 <tr>                                                            <td>4001_0008             <td>GIT_HASH        <td>RO          <td>-
 <tr>                                                            <td>4001_000C             <td>SCRATCH         <td>RO          <td>-
-<tr>                                                            <td>4001_0010             <td>NUM_CE          <td>RO          <td>Number of Computation Engines (RFNoC Blocks)
-<tr>                                                            <td>4001_0014             <td>NUM_IO_CE       <td>RO          <td>Number of fixed IO CEs - Radios + DMA Fifo
+<tr>                                                            <td>4001_0010             <td>REG_DEVICE_ID   <td>RW          <td>RFNoC Device ID
+<tr>                                                            <td>4001_0014             <td>REG_RFNOC_INFO  <td>RO          <td>RFNoC Information
+<tr>                                                            <td>[31:16]               <td>CHDR_W          <td>RO          <td>RFNoC CHDR Width in Bits
+<tr>                                                            <td>[15:0]                <td>RFNOC_PROTOVER  <td>RO          <td>RFNoC Protocol Version
 <tr>                                                            <td>4001_0018             <td>CLOCK_CTRL      <td>            <td>-
 <tr>                                                            <td>[0]                   <td>pps select (internal 10 MHz)<td>RW<td>One-hot encoded pps_select to use the internal PPS from GPSDO
 <tr>                                                            <td>[1]                   <td>pps select (external 10 MHz)<td>RW<td>One-hot encoded pps_select to use the external PPS.
@@ -1415,13 +1416,13 @@ Slave 3   | 4001_4000 - 4001_41ff | dboard-regs      | Daughterboard control
 <tr>                                                            <td>4001_0024             <td>BUS_CLK_COUNT   <td>RO          <td>-
 <tr>                                                            <td>4001_0028             <td>SFP_PORT_INFO   <td>RO          <td>Same as port_info register 0x4000_4000
 <tr>                                                            <td>4001_002C             <td>FP_GPIO_CTRL    <td>RW          <td>-
-<tr>                                                            <td>4001_0030             <td>FP_GPIO_MASTER  <td>RW          <td>-
-<tr>                                                            <td>4001_0034             <td>FP_GPIO_RADIO_SRC  <td>RW       <td>-
-<tr>                                                            <td>4001_0038             <td>GPS_CTRL        <td>RW          <td>-
+<tr>                                                            <td>4001_0030             <td>FP_GPIO_MASTER  <td>RW          <td>GPIO master select bits. One bit per GPIO. LSB is for GPIO 0. Set bit to 0 for Radio, 1 for PS.
+<tr>                                                            <td>4001_0034             <td>FP_GPIO_RADIO_SRC  <td>RW       <td>Radio channel source select bits. Two bits per GPIO. Bits [1:0] are for GPIO 0. Set to 00 for channel 0, 01 for channel 1, etc.
+<tr>                                                            <td>4001_0038             <td>GPS_CTRL        <td>RW          <td>E320 Only
 <tr>                                                            <td>[0]                   <td>GPS_PWR_EN      <td>RW          <td>Power on GPSDO
 <tr>                                                            <td>[1]                   <td>GPS_RST_N       <td>RW          <td>-
 <tr>                                                            <td>[2]                   <td>GPS_INITSURV_N  <td>RW          <td>-
-<tr>                                                            <td>4001_003C             <td>GPS_STATUS      <td>RO          <td>GPSDO Status
+<tr>                                                            <td>4001_003C             <td>GPS_STATUS      <td>RO          <td>GPSDO Status, E320 Only
 <tr>                                                            <td>[0]                   <td>GPS_LOCK        <td>RO          <td>Returns 1 if GPSDO is locked
 <tr>                                                            <td>[1]                   <td>GPS_ALARM       <td>RO          <td>-
 <tr>                                                            <td>[2]                   <td>GPS_PHASELOCK   <td>RO          <td>-
@@ -1429,13 +1430,7 @@ Slave 3   | 4001_4000 - 4001_41ff | dboard-regs      | Daughterboard control
 <tr>                                                            <td>[4]                   <td>GPS_WARMUP      <td>RO          <td>-
 <tr>                                                            <td>4001_0040             <td>DBOARD_CTRL     <td>RO          <td>-
 <tr>                                                            <td>4001_0044             <td>DBOARD_STATUS   <td>RO          <td>-
-
-<tr>                           <td rowspan="5">axi_crossbar     <td>4001_1010             <td>XBAR_VERSION    <td>RO          <td>See crossbar kernel driver
-<tr>                                                            <td>4001_1014             <td>XBAR_NUM_PORTS  <td>RO          <td>See crossbar kernel driver
-<tr>                                                            <td>4001_1018             <td>LOCAL_ADDR      <td>RW          <td>See crossbar kernel driver
-<tr>                                                            <td>4001_1020             <td>remote_offset   <td>WO          <td>XBAR settings reg
-<tr>                                                            <td>4001_1420             <td>local_offset    <td>WO          <td>XBAR settings reg
-
+<tr>                                                            <td>4001_0048             <td>NUM_TIMEKEEPERS <td>RO          <td>Number of radio timekeepers
 <tr><td rowspan="6">Slave 4                                     <td>4001_4000<td>4001_41FF<td>Daughterboard Registers<td>- <td>Don't exist now. TBD
 
 

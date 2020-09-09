@@ -1193,9 +1193,9 @@ Slave 6   | 4001_8000 - 4001_bfff | dboard-regs1     | Daughterboard control, sl
 <tr><td rowspan="1">Slave 0    <td rowspan="1">axi_eth_dma0     <td>4000_0000 - 4000_4fff <td>Ethernet DMA    <td>RW          <td>See Linux Driver
 <tr><td rowspan="44">Slave 1   <td rowspan="7">n3xx_mgt_io_core <td>4000_4000             <td>PORT_INFO       <td>RO          <td>SFP port information
 <tr>                                                            <td>[31:24]               <td>COMPAT_NUM      <td>RO          <td>-
-<tr>                                                            <td>[23:18]               <td>6'h0	      <td>RO          <td>-
+<tr>                                                            <td>[23:18]               <td>6'h0	          <td>RO          <td>-
 <tr>                                                            <td>[17]                  <td>activity	      <td>RO          <td>-
-<tr>                                                            <td>[16]                  <td>link_up	      <td>RO          <td>-
+<tr>                                                            <td>[16]                  <td>link_up	        <td>RO          <td>-
 <tr>                                                            <td>[15:8]                <td>mgt_protocol    <td>RO          <td>0 - None, 1 - 1G, 2 - XG, 3 - Aurora
 <tr>                                                            <td>[7:0]                 <td>PORTNUM         <td>RO          <td>-
 <tr>                           <td rowspan="8">n3xx_mgt_io_core <td>4000_4004             <td>MAC_CTRL_STATUS <td>RW          <td>Control 10gE and Aurora mac
@@ -1235,21 +1235,20 @@ Slave 6   | 4001_8000 - 4001_bfff | dboard-regs1     | Daughterboard control, sl
 <tr>                                                            <td>4000_7000 onwards     <td>REMOTE_DST_IP   <td>W           <td>Destination IP, MAC, UDP for Outgoing Packet for 16 local addrs
 <tr>                                                            <td>4000_7400 onwards     <td>REMOTE_DST_UDP_MAC_HI<td>W      <td>Destination MAC (MSB)
 <tr>                                                            <td>4000_7800 onwards     <td>REMOTE_DST_MAC_LO<td>W          <td>Destination MAC (LSB)
-
 <tr><td rowspan="1">Slave 2    <td>axi_eth_dma1                 <td>4000_8000             <td>-               <td>            <td>Same as Slave 0, different base address
-
 <tr><td rowspan="3">Slave 3    <td>n3xx_mgt_io_core             <td>4000_c001 - 4000_cfff <td>-               <td>-           <td>Same as Slave 1, different base address
 <tr>                           <td>eth_dispatch                 <td>4000_d000 - 4000_dfff <td>-               <td>-           <td>Same as Slave 1, different base address
 <tr>                           <td>eth_switch                   <td>4000_e000 - 4000_efff <td>-               <td>-           <td>Same as Slave 1, different base address
-
-<tr><td rowspan="69">Slave 4   <td rowspan="22">n310_core       <td>4001_0000             <td>COMPAT_NUM      <td>R           <td>FPGA Compat Number
+<tr><td rowspan="71">Slave 4   <td rowspan="29">n3xx_core       <td>4001_0000             <td>COMPAT_NUM      <td>R           <td>FPGA Compat Number
 <tr>                                                            <td>[31:16]               <td>Major           <td>RO          <td>-
 <tr>                                                            <td>[15:0]                <td>Minor           <td>RO          <td>-
 <tr>                                                            <td>4001_0004             <td>DATESTAMP       <td>RO          <td>-
 <tr>                                                            <td>4001_0008             <td>GIT_HASH        <td>RO          <td>-
 <tr>                                                            <td>4001_000C             <td>SCRATCH         <td>RO          <td>-
-<tr>                                                            <td>4001_0010             <td>NUM_CE          <td>RO          <td>Number of Computation Engines (RFNoC Blocks)
-<tr>                                                            <td>4001_0014             <td>NUM_IO_CE       <td>RO          <td>Number of fixed IO CEs - Radios + DMA Fifo
+<tr>                                                            <td>4001_0010             <td>REG_DEVICE_ID   <td>RW          <td>RFNoC Device ID
+<tr>                                                            <td>4001_0014             <td>REG_RFNOC_INFO  <td>RO          <td>RFNoC Information
+<tr>                                                            <td>[31:16]               <td>CHDR_W          <td>RO          <td>RFNoC CHDR Width in Bits
+<tr>                                                            <td>[15:0]                <td>RFNOC_PROTOVER  <td>RO          <td>RFNoC Protocol Version
 <tr>                                                            <td>4001_0018             <td>CLOCK_CTRL      <td>            <td>
 <tr>                                                            <td>[0]                   <td>pps select (internal 10 MHz)<td>RW<td>One-hot encoded pps_select to use the external PPS input.
 <tr>                                                            <td>[1]                   <td>pps select (internal 25 MHz)<td>RW<td>One-hot encoded pps_select to use the internally generated PPS with a 10 MHz ref_clk.
@@ -1264,54 +1263,53 @@ Slave 6   | 4001_8000 - 4001_bfff | dboard-regs1     | Daughterboard control, sl
 <tr>                                                            <td>[11:0]                <td>FPGA temperature<td>RO
 <tr>                                                            <td>4001_0020             <td>BUS_CLK_RATE    <td>RO          <td>-
 <tr>                                                            <td>4001_0024             <td>BUS_CLK_COUNT   <td>RO          <td>-
-<tr>                           <td rowspan="5">axi_crossbar     <td>4001_1010             <td>XBAR_VERSION    <td>RO          <td>See crossbar kernel driver
-<tr>                                                            <td>4001_1014             <td>XBAR_NUM_PORTS  <td>RO          <td>See crossbar kernel driver
-<tr>                                                            <td>4001_1018             <td>LOCAL_ADDR      <td>RW          <td>See crossbar kernel driver
-<tr>                                                            <td>4001_1020             <td>remote_offset   <td>WO          <td>XBAR settings reg
-<tr>                                                            <td>4001_1420             <td>local_offset    <td>WO          <td>XBAR settings reg
-<tr>                           <td rowspan="7">n3xx_mgt_io_core (NPIO0)  <td>4001_0200    <td>PORT_INFO       <td>RO          <td>
+<tr>                                                            <td>4001_0028             <td>SFP_PORT0_INFO  <td>RO          <td>-
+<tr>                                                            <td>4001_002C             <td>SFP_PORT1_INFO  <td>RO          <td>-
+<tr>                                                            <td>4001_0030             <td>FP_GPIO_MASTER  <td>RO          <td>GPIO master select bits. One bit per GPIO. LSB is for GPIO 0. Set bit to 0 for Radio, 1 for PS.
+<tr>                                                            <td>4001_0034             <td>FP_GPIO_RADIO_SRC <td>RO        <td>Radio channel source select bits. Two bits per GPIO. Bits [1:0] are for GPIO 0. Set to 00 for channel 0, 01 for channel 1, etc.
+<tr>                                                            <td>4001_0048             <td>NUM_TIMEKEEPERS <td>RO          <td>Number of radio timekeepers
+<tr>                  <td rowspan="7">n3xx_mgt_io_core (NPIO0)  <td>4001_0200             <td>PORT_INFO       <td>RO          <td>
 <tr>                                                            <td>4001_0204             <td>MAC_CTRL_STATUS <td>RW          <td>
 <tr>                                                            <td>4001_0208             <td>PHY_CTRL_STATUS <td>RW          <td>
 <tr>                                                            <td>4001_0220             <td>AURORA_OVERUNS  <td>RO          <td>
 <tr>                                                            <td>4001_0224             <td>AURORA_CHECKSUM_ERRORS<td>RO    <td>
 <tr>                                                            <td>4001_0228             <td>AURORA_BIST_CHECKER_SAMPS<td>RO <td>
 <tr>                                                            <td>4001_022c             <td>AURORA_BIST_CHECKER_ERRORS<td>RO<td>
-<tr>                           <td rowspan="7">n3xx_mgt_io_core (NPIO1)     <td>4001_0240 <td>PORT_INFO       <td>RO          <td>
+<tr>                  <td rowspan="7">n3xx_mgt_io_core (NPIO1)  <td>4001_0240             <td>PORT_INFO       <td>RO          <td>
 <tr>                                                            <td>4001_0244             <td>MAC_CTRL_STATUS <td>RW          <td>
 <tr>                                                            <td>4001_0248             <td>PHY_CTRL_STATUS <td>RW          <td>
 <tr>                                                            <td>4001_0260             <td>AURORA_OVERUNS  <td>RO          <td>
 <tr>                                                            <td>4001_0264             <td>AURORA_CHECKSUM_ERRORS<td>RO<td>
 <tr>                                                            <td>4001_0268             <td>AURORA_BIST_CHECKER_SAMPS<td>RO<td>
 <tr>                                                            <td>4001_026c             <td>AURORA_BIST_CHECKER_ERRORS<td>RO<td>
-<tr>                           <td rowspan="7">n3xx_mgt_io_core (QSFP0)     <td>4001_0280 <td>PORT_INFO<td>RO<td>
+<tr>                  <td rowspan="7">n3xx_mgt_io_core (QSFP0)  <td>4001_0280             <td>PORT_INFO<td>RO<td>
 <tr>                                                            <td>4001_0284             <td>MAC_CTRL_STATUS<td>RW<td>
 <tr>                                                            <td>4001_0288             <td>PHY_CTRL_STATUS<td>RW<td>
 <tr>                                                            <td>4001_02a0             <td>AURORA_OVERUNS<td>RO<td>
 <tr>                                                            <td>4001_02a4             <td>AURORA_CHECKSUM_ERRORS<td>RO<td>
 <tr>                                                            <td>4001_02a8             <td>AURORA_BIST_CHECKER_SAMPS<td>RO<td>
 <tr>                                                            <td>4001_02ac             <td>AURORA_BIST_CHECKER_ERRORS<td>RO<td>
-<tr>                           <td rowspan="7">n3xx_mgt_io_core (QSFP1)     <td>4001_02c0 <td>PORT_INFO<td>RO<td>
+<tr>                  <td rowspan="7">n3xx_mgt_io_core (QSFP1)  <td>4001_02c0             <td>PORT_INFO<td>RO<td>
 <tr>                                                            <td>4001_02c4             <td>MAC_CTRL_STATUS<td>RW<td>
 <tr>                                                            <td>4001_02c8             <td>PHY_CTRL_STATUS<td>RW<td>
 <tr>                                                            <td>4001_02e0             <td>AURORA_OVERUNS<td>RO<td>
 <tr>                                                            <td>4001_02e4             <td>AURORA_CHECKSUM_ERRORS<td>RO<td>
 <tr>                                                            <td>4001_02e8             <td>AURORA_BIST_CHECKER_SAMPS<td>RO<td>
 <tr>                                                            <td>4001_02ec             <td>AURORA_BIST_CHECKER_ERRORS<td>RO<td>
-<tr>                           <td rowspan="7">n3xx_mgt_io_core (QSFP2)     <td>4001_0300 <td>PORT_INFO<td>RO<td>
+<tr>                  <td rowspan="7">n3xx_mgt_io_core (QSFP2)  <td>4001_0300             <td>PORT_INFO<td>RO<td>
 <tr>                                                            <td>4001_0304             <td>MAC_CTRL_STATUS<td>RW<td>
 <tr>                                                            <td>4001_0308             <td>PHY_CTRL_STATUS<td>RW<td>
 <tr>                                                            <td>4001_0320             <td>AURORA_OVERUNS<td>RO<td>
 <tr>                                                            <td>4001_0324             <td>AURORA_CHECKSUM_ERRORS<td>RO<td>
 <tr>                                                            <td>4001_0328             <td>AURORA_BIST_CHECKER_SAMPS<td>RO<td>
 <tr>                                                            <td>4001_032c             <td>AURORA_BIST_CHECKER_ERRORS<td>RO<td>
-<tr>                           <td rowspan="7">n3xx_mgt_io_core (QSFP3)   <td>4001_0340   <td>PORT_INFO<td>RO<td>
+<tr>                  <td rowspan="7">n3xx_mgt_io_core (QSFP3)  <td>4001_0340             <td>PORT_INFO<td>RO<td>
 <tr>                                                            <td>4001_0344             <td>MAC_CTRL_STATUS<td>RW<td>
 <tr>                                                            <td>4001_0348             <td>PHY_CTRL_STATUS<td>RW<td>
 <tr>                                                            <td>4001_0360             <td>AURORA_OVERUNS<td>RO<td>
 <tr>                                                            <td>4001_0364             <td>AURORA_CHECKSUM_ERRORS<td>RO<td>
 <tr>                                                            <td>4001_0368             <td>AURORA_BIST_CHECKER_SAMPS<td>RO<td>
 <tr>                                                            <td>4001_036C             <td>AURORA_BIST_CHECKER_ERRORS<td>RO<td>
-
 <tr><td rowspan="6">Slave 5                                     <td>4001_4000<td>4001_41FF<td>Clocking<td>see Clocking regmap<td>
 <tr>                                                            <td>4001_4200<td>4001_43FF<td>Sync<td>see Sync regmap<td>
 <tr>                                                            <td>4001_4400<td>4001_45FF<td>open<td>open<td>open<td>
