@@ -6,20 +6,22 @@ Radio transport protocols are used to exchange samples (or other items) between 
 If one were to sniff Ethernet traffic between a USRP and a PC, the packets would conform to a
 radio transport protocol.
 
-For USRP devices, two radio transport protocols are relevant: VRT (the VITA Radio Transport protocol)
-and CHDR (compressed header, an Ettus-specific protocol).
-Generation-3 devices and the B200 use CHDR, the rest use VRT.
+For USRP devices, three radio transport protocols are relevant: CHDR, Legacy
+CHDR (from UHD 3.x) and VRT (the VITA Radio Transport protocol).
 
-\section rtp_vrt VRT
-
-VRT is an open protocol defined by the VITA-49 standard. It was designed for interoperability,
-and to allow different device types to work with different software stacks.
-
-VRT is a very verbose standard, and only a subset is implemented in UHD/USRPs.
-The full standard is available from the VITA website: http://www.vita.com .
+All Generation-3 devices use CHDR. Prior to UHD 4.0, Generation-3 devices used
+legacy CHDR. The B200 continues to use the legacy CHDR format. All other
+Generation-1 and Generation-2 devices use VRT.
 
 
 \section rtp_chdr CHDR
+
+The CHDR protocol is described in detail in the 
+[RFNoC Specification](https://files.ettus.com/app_notes/RFNoC_Specification.pdf).
+Please refer to the specification document for protocol format information.
+
+
+\section rtp_legacy_chdr Legacy CHDR
 
 For the third generation of Ettus devices, a new type transport protocol was designed.
 It reduces the complexity of the original standard and uses a fixed-length 64-Bit header
@@ -65,6 +67,16 @@ Bit 63 | Bit 62 | Bit 61 | Bit 60 | Packet Type
 1      | 0      | x      | 0      | Command Packet
 1      | 1      | x      | 0      | Command Response
 1      | 1      | x      | 1      | Command Response (Error)
+
+
+\section rtp_vrt VRT
+
+VRT is an open protocol defined by the VITA-49 standard. It was designed for interoperability,
+and to allow different device types to work with different software stacks.
+
+VRT is a very verbose standard, and only a subset is implemented in UHD/USRPs.
+The full standard is available from the VITA website: http://www.vita.com .
+
 
 \section vrt_tools Tools
 
