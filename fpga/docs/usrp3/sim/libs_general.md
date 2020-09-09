@@ -1,4 +1,7 @@
-# General Purpose Libraries
+# Legacy Simulation Libraries
+
+This document describes legacy simulation libraries used by some testbenches.
+They are included here due to their continued use.
 
 ## Execution and Reporting (sim\_exec\_report.vh)
 
@@ -130,19 +133,11 @@ Shortcut macros to create typical clock and reset signals.
     //  - reset_duration: Duration of reset assertion
     //
 
-## File I/O (sim\_file\_io.sv)
+## File I/O (sim\_file\_io.svh)
 
 ### interface data\_file\_t
 
 Defines a ``data_file_t`` interface with the following functions:
-
-#### ctor
-
-    // Create a handle to a data_file with
-    // - FILENAME: Name of the file
-    // - FORMAT: Data format (HEX, DEC, OCT, BIN, FLOAT)
-    // - DWIDTH: Width of each element stored in the file (one line per word)
-    //
 
 #### open
 

@@ -7,11 +7,11 @@
 The USRP FPGA build system requires a UNIX-like environment with the following dependencies
 
 - [Xilinx Vivado 2019.1](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/2019-1.html) (For 7 Series FPGAs)
-- [Xilinx ISE 14.7](http://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/design-tools/v2012_4---14_7.html) (For all other FPGAs)
+- [Xilinx ISE 14.7](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/archive-ise.html) (For all other FPGAs)
 - [GNU Make 3.6+](https://www.gnu.org/software/make/)
 - [GNU Bash 4.0+](https://www.gnu.org/software/bash/)
-- [Python 2.7.x](https://www.python.org/)
-- [Doxygen](http://www.stack.nl/~dimitri/doxygen/index.html) (Optional: To build the manual)
+- [Python 3.5](https://www.python.org/)
+- [Doxygen](https://www.doxygen.nl/index.html) (Optional: To build the manual)
 - [ModelSim](https://www.mentor.com/products/fv/modelsim/) (Optional: For simulation)
 
 The following USRPs work with the free WebPack versions:
@@ -39,14 +39,15 @@ The following USRPs work with the free WebPack versions:
 ### Download and Install Xilinx Tools
 
 Download and install Xilinx Vivado or Xilinx ISE based on the target USRP.
-- The recommended installation directory is `/opt/Xilinx/` for Linux and `C:\Xilinx` in Windows
-- Please check the Xilinx Requirements document above for the FPGA technology used by your USRP device.
+- The recommended installation directory is `/opt/Xilinx/` for Linux and `C:\Xilinx` in Windows.
+- Please check the Xilinx requirements for the FPGA technology used by your USRP device.
 - You may need to acquire a synthesis and implementation license from Xilinx to build some USRP designs.
-- You may need to acquire a simulation license from Xilinx to run some testbenches
+- You may need to acquire a simulation license from Xilinx to run some testbenches.
 
 ### Download and Install ModelSim (Optional)
 
-Download and install Mentor ModelSim using the link above.
+If you prefer to use ModelSim, download and install Mentor ModelSim using the
+link above.
 - The recommended installation directory is `/opt/mentor/modelsim` for Linux and `C:\mentor\modelsim` in Windows
 - Supported versions are PE, DE, SE, DE-64 and SE-64
 - You may need to acquire a license from Mentor Graphics to run ModelSim
@@ -75,17 +76,17 @@ Download the latest version on [Cygwin](https://cygwin.com/install.html) (64-bit
 and install it using [these instructions](http://x.cygwin.com/docs/ug/setup-cygwin-x-installing.html).
 The following additional packages are also required and can be selected in the GUI installer
 
-    python patch patchutils bash make doxygen
+    python3 patch patchutils bash make gcc-core doxygen
 
 ## Build Instructions (Xilinx Vivado only)
 
 ### Makefile based Builder
 
-- Navigate to `usrp3/top/{project}` where project is:
-  + x300: For USRP X300 and USRP X310
-  + e31x: For USRP E310
-  + e320: For USRP E320
-  + n3xx: For USRP N300/N310/N320
+- Navigate to `<repo>/fpga/usrp3/top/{project}` where `{project}` is:
+  + `x300:` For USRP X300 and USRP X310
+  + `e31x:` For USRP E310
+  + `e320:` For USRP E320
+  + `n3xx:` For USRP N300/N310/N320
 
 - To add vivado to the PATH and to setup up the Ettus Xilinx build environment run
   + `source setupenv.sh` (If Vivado is installed in the default path /opt/Xilinx/Vivado) _OR_
@@ -96,22 +97,22 @@ The following additional packages are also required and can be selected in the G
   `make help`.
 
 - The build output will be specific to the product and will be located in the
-  `usrp3/top/{project}/build` directory. Run `make help` for more information.
+  `<repo>/fpga/usrp3/top/{project}/build` directory. Run `make help` for more information.
 
-### Environment Utilies
+### Environment Utilities
 
-The build environment also defines many ease-of-use utilites. Please use the \subpage md_usrp3_vivado_env_utils "Vivado Utility Reference" page for
+The build environment also defines many ease-of-use utilities. Please use the \subpage md_usrp3_vivado_env_utils "Vivado Utility Reference" page for
 a list and usage information
 
 ## Build Instructions (Xilinx ISE only)
 
-### Makefile based Builder
+### Makefile Based Builder
 
 - To add xtclsh to the PATH and to setup up the Xilinx build environment run
   + `source <install_dir>/Xilinx/14.7/ISE_DS/settings64.sh` (64-bit platform)
   + `source <install_dir>/Xilinx/14.7/ISE_DS/settings32.sh` (32-bit platform)
 
-- Navigate to `usrp3/top/{project}` where project is:
+- Navigate to `<repo>/fpga/usrp3/top/{project}` where `{project}` is:
   + b200: For USRP B200 and USRP B210
   + b200mini: For USRP B200mini
 
@@ -120,7 +121,7 @@ a list and usage information
   `make help`.
 
 - The build output will be specific to the product and will be located in the
-  `usrp3/top/{project}/build` directory. Run `make help` for more information.
+  `<repo>/fpga/usrp3/top/{project}/build` directory. Run `make help` for more information.
 
 ## Targets and Outputs
 
@@ -159,8 +160,10 @@ a list and usage information
 ### E310 Targets and Outputs
 
 #### Supported Targets
-- E310_SG1 or E310 :  Builds the USRP E310 speed grade 1.
-- E310_SG3 or E310_sg3:  Builds the USRP E310 speed grade 3.
+- E310_SG1 or E310:  Builds the USRP E310 (speed grade 1).
+- E310_SG3 or E310_sg3:  Builds the USRP E310 (speed grade 3).
+- E310_SG1_IDLE:  Builds the USRP E310 idle design (speed grade 1).
+- E310_SG3_IDLE:  Builds the USRP E310 idle design (sSpeed grade 3).
 
 #### Outputs
 - `build/usrp_<product>_fpga.bit` : Configuration bitstream with header
@@ -204,7 +207,8 @@ combination of motherboard and daughterboards.
 - N320_HG: 1GigE on SFP0, 10GigE on SFP1
 - N320_XG: 10GigE on both SFP+ ports
 - N320_XQ: White Rabbit on SFP0, 10 GigE on QSFP0 and QSFP1
-- N320_WX:  White Rabbit on SFP0, 10GigE on SFP1
+- N320_WX: White Rabbit on SFP0, 10GigE on SFP1
+- N320_AA: Aurora on SFP+ Port0, Aurora on SFP+ Port1
 
 For the N320 targets see also the N320 manual page on the UHD manual.
 
@@ -215,11 +219,21 @@ For the N320 targets see also the N320 manual page on the UHD manual.
 
 ### Additional Build Options
 
-It is possible to make a target and specific additional options in the form VAR=VALUE in
-the command. For example: `make B210 PROJECT_ONLY=1`
+It is possible to make a target and specify additional options in the form VAR=VALUE in
+the command. For example:
 
-Here are the supported options:
+$ make X310 GUI=1
 
-- `PROJECT_ONLY=1` : Only create a Xilinx project for the specified target(s). Useful for use with the ISE GUI. (*NOTE*: this option is only valid for Xilinx ISE)
-- `EXPORT_ONLY=1` :  Export build targets from a GUI build to the build directory. Requires the project in build-\*_\* to be built. (*NOTE*: this option is only valid for Xilinx ISE)
-- `GUI=1` : Run the Vivado build in GUI mode instead of batch mode. After the build is complete, Vivado provides an option to save the fully configured project for customization (*NOTE*: this option is only valid for Xilinx Vivado)
+The options available are described in the following subsections.
+
+#### Xilinx Vivado Make Options
+
+- `GUI=1` : Run the Vivado build in GUI mode instead of batch mode. After the build is complete, Vivado provides an option to save the fully configured project for customization
+- `CHECK=1` : Run elaboration only to check HDL syntax
+- `SYNTH=1` : Run synthesis only
+- `TOP=<module>` : Specify an alternate top-level module for syntax checking
+
+#### Xilinx ISE Make Options
+
+- `PROJECT_ONLY=1` : Only create a Xilinx project for the specified target(s). Useful for use with the ISE GUI.
+- `EXPORT_ONLY=1` :  Export build targets from a GUI build to the build directory. Requires the project in build-\*_\* to be built.

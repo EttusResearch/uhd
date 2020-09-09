@@ -1,4 +1,7 @@
-# AXI Interface Libraries
+# Legacy AXI Interface Libraries
+
+This document describes legacy AXI interface libraries used by some
+testbenches. They are included here due to their continued use.
 
 ## AXI4 Stream (sim\_axis\_lib.vh)
 
@@ -61,7 +64,10 @@ receive data on the bus.
     // - ramp_start: Start value for the ramp
     // - ramp_inc: Increment per clock cycle
 
-## Compressed VITA [CHDR] (sim\_chdr\_lib.vh)
+## Compressed VITA (sim\_chdr\_lib.vh)
+
+Note: This section describes legacy CHDR in 3.x and earlier. As of UHD 4.0,
+the CHDR protocol and format has changed.
 
 Defines ``cvita_stream_t``, an AXI Stream bus interface that implements the CHDR protocol and 
 several tasks to send and receive data on the bus.
