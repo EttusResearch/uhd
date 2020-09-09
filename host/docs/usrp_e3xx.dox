@@ -632,11 +632,11 @@ containing the update itself. These are files with a `.mender` suffix.
 
 Then run mender on the command line:
 
-    $ mender -rootfs /path/to/latest.mender
+    $ mender install /path/to/latest.mender
 
 The artifact can also be stored on a remote server:
 
-    $ mender -rootfs http://server.name/path/to/latest.mender
+    $ mender install http://server.name/path/to/latest.mender
 
 This procedure will take a while. After mender has logged a successful update,
 reboot the device:
@@ -646,7 +646,7 @@ reboot the device:
 If the reboot worked, and the device seems functional, commit the changes so
 the boot loader knows to permanently boot into this partition:
 
-    $ mender -commit
+    $ mender commit
 
 To identify the currently installed Mender artifact from the command line, the
 following file can be queried:
