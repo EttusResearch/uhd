@@ -9,6 +9,9 @@
 
 #include <uhd/exception.hpp>
 #include <uhdlib/transport/io_service.hpp>
+// Must come before the following include to fix an issue with Boost 1.67
+#include <boost/next_prior.hpp>
+///
 #include <boost/lockfree/spsc_queue.hpp>
 #include <utility>
 
