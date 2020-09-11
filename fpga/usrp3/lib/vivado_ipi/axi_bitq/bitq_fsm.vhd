@@ -12,6 +12,9 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity bitq_fsm is
+generic (
+  IDLE_VALUE : std_logic := 'Z'
+);
 port (
   clk  : in std_logic;
   rstn : in std_logic;
@@ -27,7 +30,6 @@ port (
   wr_data  : in std_logic_vector(31 downto 0);
   stb_data : in std_logic_vector(31 downto 0);
   rd_data  : out std_logic_vector(31 downto 0)
-
 );
 
 end bitq_fsm;
@@ -51,9 +53,9 @@ begin
   begin
     case (bitq_state) is
     when IDLE =>
-      bit_clk <= 'Z';
-      bit_out <= 'Z';
-      bit_stb <= 'Z';
+      bit_clk <= IDLE_VALUE;
+      bit_out <= IDLE_VALUE;
+      bit_stb <= IDLE_VALUE;
       ready   <= '1';
     when LOW =>
       bit_clk <= '0';
@@ -66,9 +68,9 @@ begin
       bit_stb <= bit_stb_r;
       ready <= '0';
     when others =>
-      bit_clk <= 'Z';
-      bit_out <= 'Z';
-      bit_stb <= 'Z';
+      bit_clk <= IDLE_VALUE;
+      bit_out <= IDLE_VALUE;
+      bit_stb <= IDLE_VALUE;
       ready   <= '1';
     end case;
   end process;

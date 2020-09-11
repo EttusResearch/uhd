@@ -90,7 +90,7 @@ begin
       S_AXI_RDATA <= (others => '0');
 
       case read_addr is
-      when "00" => 
+      when "00" =>
         S_AXI_RDATA(31 downto 0) <= wr_data;
       when "01" =>
         S_AXI_RDATA(31 downto 0) <= stb_data;
@@ -151,7 +151,7 @@ begin
       start <= '0';
     elsif (write_addr_token = '1') and (write_data_token = '1') then
       case write_addr(write_addr'left downto 2) is
-      when "00" => 
+      when "00" =>
         if (write_strb(0) = '1') and (ready = '1') then
           wr_data(7 downto 0) <= write_data(7 downto 0);
         end if;
@@ -164,7 +164,7 @@ begin
         if (write_strb(3) = '1') and (ready = '1') then
           wr_data(31 downto 24) <= write_data(31 downto 24);
         end if;
-      when "01" => 
+      when "01" =>
         if (write_strb(0) = '1') and (ready = '1') then
           stb_data(7 downto 0) <= write_data(7 downto 0);
         end if;
@@ -202,11 +202,14 @@ begin
   bitq_rstn <= '0' when (S_AXI_ARESETN = '0') or (bitq_soft_rst = '1') else '1';
 
   bitq_ctrl : entity bitq_fsm
+  generic map (
+    IDLE_VALUE => 'Z'
+  )
   port map (
     clk  => S_AXI_ACLK,
     rstn => S_AXI_ARESETN,
     prescalar => prescalar,
-  
+
     bit_clk  => bit_clk,
     bit_in   => bit_in,
     bit_out  => bit_out,
