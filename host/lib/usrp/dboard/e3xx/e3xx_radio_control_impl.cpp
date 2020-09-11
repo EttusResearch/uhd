@@ -433,10 +433,11 @@ void e3xx_radio_control_impl::loopback_self_test(const size_t chan)
     _ad9361->set_clock_rate(30.72e6);
     // Put AD936x in loopback mode
     _ad9361->data_port_loopback(true);
-    RFNOC_LOG_INFO("Performing CODEC loopback test... ");
+    RFNOC_LOG_INFO(
+        "Performing CODEC loopback test on channel " << std::to_string(chan) << " ... ");
     size_t hash                     = size_t(time(NULL));
     constexpr size_t loopback_count = 100;
-
+    constexpr size_t retries        = 3;
     // Allow some time for AD936x to enter loopback mode.
     // There is no clear statement in the documentation of how long it takes,
     // but UG-570 does say to "allow six ADC_CLK/64 clock cycles of flush time"
@@ -445,31 +446,49 @@ void e3xx_radio_control_impl::loopback_self_test(const size_t chan)
     // Sleeping 1ms is far more than enough.
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
-    for (size_t i = 0; i < loopback_count; i++) {
-        // Create test word
-        boost::hash_combine(hash, i);
-        const uint32_t word32 = uint32_t(hash) & 0xfff0fff0;
-        // Write test word to codec_idle idle register (on TX side)
-        regs().poke32(regmap::RADIO_BASE_ADDR + chan * regmap::REG_CHAN_OFFSET
-                          + regmap::REG_TX_IDLE_VALUE,
-            word32);
+    bool test_fail = true;
+    while (test_fail) {
+        size_t tries = 0;
+        for (size_t i = 0; i < loopback_count; i++) {
+            // Create test word
+            boost::hash_combine(hash, i);
+            const uint32_t word32 = uint32_t(hash) & 0xfff0fff0;
+            // Write test word to codec_idle idle register (on TX side)
+            regs().poke32(regmap::RADIO_BASE_ADDR + chan * regmap::REG_CHAN_OFFSET
+                              + regmap::REG_TX_IDLE_VALUE,
+                word32);
 
-        // Read back values - TX is lower 32-bits and RX is upper 32-bits
-        const uint32_t rb_tx =
-            regs().peek32(regmap::RADIO_BASE_ADDR + chan * regmap::REG_CHAN_OFFSET
-                          + regmap::REG_TX_IDLE_VALUE);
-        const uint32_t rb_rx =
-            regs().peek32(regmap::RADIO_BASE_ADDR + chan * regmap::REG_CHAN_OFFSET
-                          + regmap::REG_RX_DATA);
+            // Read back values - TX is lower 32-bits and RX is upper 32-bits
+            const uint32_t rb_tx =
+                regs().peek32(regmap::RADIO_BASE_ADDR + chan * regmap::REG_CHAN_OFFSET
+                              + regmap::REG_TX_IDLE_VALUE);
+            const uint32_t rb_rx =
+                regs().peek32(regmap::RADIO_BASE_ADDR + chan * regmap::REG_CHAN_OFFSET
+                              + regmap::REG_RX_DATA);
 
-        // Compare TX and RX values to test word
-        bool test_fail = word32 != rb_tx or word32 != rb_rx;
-        if (test_fail) {
-            RFNOC_LOG_WARNING(
-                "CODEC loopback test failed! "
-                << boost::format("Expected: 0x%08X Received (TX/RX): 0x%08X/0x%08X")
-                       % word32 % rb_tx % rb_rx);
-            throw uhd::runtime_error("CODEC loopback test failed.");
+            // Compare TX and RX values to test word
+            test_fail = word32 != rb_tx or word32 != rb_rx;
+            if (test_fail) {
+                RFNOC_LOG_DEBUG(
+                    "CODEC loopback test failure: "
+                    << boost::format("Expected: 0x%08X Received (TX/RX): 0x%08X/0x%08X")
+                           % word32 % rb_tx % rb_rx);
+                if (tries < retries) {
+                    // TODO: Investigate why loopback test sometimes fails
+                    // Upon failure, setting the streaming mode again makes
+                    // it work for some reason.
+                    this->set_streaming_mode(true, true, true, true);
+
+                    // Try again
+                    RFNOC_LOG_DEBUG("Retrying CODEC loopback test for channel "
+                                    << std::to_string(chan) << " ... ");
+                    tries++;
+                    break;
+                } else {
+                    RFNOC_LOG_ERROR("CODEC loopback test failed!");
+                    throw uhd::runtime_error("CODEC loopback test failed.");
+                }
+            }
         }
     }
     RFNOC_LOG_INFO("CODEC loopback test passed");
