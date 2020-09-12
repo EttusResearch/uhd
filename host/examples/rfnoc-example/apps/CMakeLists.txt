@@ -20,15 +20,7 @@ endif(MSVC)
 find_package(Boost 1.58 REQUIRED ${BOOST_REQUIRED_COMPONENTS})
 
 include_directories(
-    ${CMAKE_SOURCE_DIR}/lib
     ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_BINARY_DIR}/lib
-    ${CMAKE_BINARY_DIR}/include
-    ${UHD_INCLUDE_DIRS}
-    ${Boost_INCLUDE_DIR}
-)
-link_directories(
-    ${Boost_LIBRARY_DIRS}
 )
 
 add_executable(init_gain_block
@@ -37,4 +29,16 @@ add_executable(init_gain_block
 target_link_libraries(init_gain_block
     ${UHD_LIBRARIES}
     ${Boost_LIBRARIES}
+    -Wl,--no-as-needed
+    rfnoc-example
 )
+
+### Once it's built... ########################################################
+# Here, you would have commands to install your program.
+# We will skip these in this example.
+#install(
+#    TARGETS init_gain_block
+#    RUNTIME
+#    DESTINATION ${PROJECT_DATA_DIR}
+#    COMPONENT apps
+#)

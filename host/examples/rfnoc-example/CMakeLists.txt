@@ -20,7 +20,7 @@ project(rfnoc-example CXX C)
 # Setup install directories
 ########################################################################
 set(RFNOC_DATA_DIR     share                          CACHE PATH "Base location for data")
-set(RFNOC_PKG_DATA_DIR ${RFNOC_DATA_DIR}/rfnoc/       CACHE PATH "Path to install RFNoC package data")
+set(RFNOC_PKG_DATA_DIR ${RFNOC_DATA_DIR}/uhd/rfnoc/   CACHE PATH "Path to install RFNoC package data")
 set(PROJECT_DATA_DIR   ${RFNOC_PKG_DATA_DIR}/example/ CACHE PATH "Path for this project's package data")
 
 if(NOT DEFINED LIB_SUFFIX AND REDHAT AND CMAKE_SYSTEM_PROCESSOR MATCHES "64$")

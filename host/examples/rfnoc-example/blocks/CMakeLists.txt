@@ -12,6 +12,6 @@ file(GLOB yml_files "*.yml")
 install(
     FILES
     ${yml_files}
-    DESTINATION ${PROJECT_DATA_DIR}/blocks
+    DESTINATION ${RFNOC_PKG_DATA_DIR}/blocks
     COMPONENT blocks
 )
