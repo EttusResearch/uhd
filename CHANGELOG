@@ -3,14 +3,26 @@ Change Log for Releases
 
 ## 004.000.000.000
 * b200:
+  - Add unload-bootloader option to b2xx_fx3_utils
+  - Update FX3 SDK for bootloader and firmware
+  - Fix address for serial number in firmware
   - Enable power calibration API
   - Add a prop tree node usb_version
 * cal:
   - Add utility to update all .fbs files, or check the generated ones
   - Add pwr_cal container
 * cmake:
+  - Use relative path to Python lib location for Windows installer
   - Add ability to pass CXXFLAGS to CMake environment
 * docs:
+  - Add new CHDR format to transports
+  - Update register maps
+  - Update FPGA manual
+  - Update mender commands for Zeus filesystems
+  - Add section about network mode on E3xx devices
+  - Add DPDK link detection section
+  - Add Windows-specific UHD Python module notes
+  - Add note about compiling on Ubuntu 20.04
   - Update PCIe xport instructions for NI Repos
   - n3xx: Include WX in table of N320 images
   - Add stream and transport args documentation
@@ -21,8 +33,11 @@ Change Log for Releases
   - Change DPDK version to 18.11 and make args use underscores
   - Clarifying which devices support DPDK
 * dpdk:
+  - Improve link status detection
+  - Increase default num recv frames
   - Add new DPDK stack to integrate with I/O services
 * e31x:
+  - Add retry to loopback_self_test
   - Change RFNoC Ctrl clock to 40 MHz
   - Fix timeout for timekeeper registers
   - Fix filter bank and antenna switching for channel 0
@@ -31,6 +46,7 @@ Change Log for Releases
   - Fix timeout for timekeeper registers
   - Swap out liberio for internal Ethernet
 * examples:
+  - Fix install paths in OOT RFNoC block example
   - Add usrp_power_meter example
   - Update test_messages example
   - Update gpio example
@@ -38,6 +54,14 @@ Change Log for Releases
   - Add example out-of-tree module for RFNoC modules
   - Remove thread priority elevation
 * fpga:
+  - Added AA image mappings to N320 image package
+  - Add Replay Block to RFNoC Core Image
+  - Update DRAM IO signatures
+  - sim: chdr_stream_endpoint_tb improvements
+  - sim: Fix stream command and status models
+  - Update AXI interconnect address range for n3xx and e320
+  - rfnoc: Update CHDR stream INIT command
+  - Update coding guidelines
   - Replaced RFNoC architecture with new 4.0 version
   - Added modelsim make simulation target
   - Upgrade to Vivade 2019.1
@@ -60,10 +84,13 @@ Change Log for Releases
   - rfnoc: Port Vector IIR RFNoC block to new RFNoC architecture
   - lib: Add AXI-Stream splitter (axis_split)
 * lib:
+  - Remove recursive locks in apply_corrections
   - Add power cal manager
   - deps: Add FlatBuffers 1.11.0 header files
   - Add DPDK service queue
 * mpm:
+  - e31x: Accept FF terminated strings in eeprom (legacy support)
+  - Return 10 Gbs link speed on failure
   - Exclude internal NIC for network hosts
   - Add ability to run scripts to MPM shell
   - n3xx: Remove eth1, eth2 from interface list
@@ -77,14 +104,17 @@ Change Log for Releases
   - Fix connect/disconnect of RFNoC chains
   - Various multi_usrp_rfnoc fixes
 * n310:
+  - Add Replay Block to default FGPA images
   - Fix GPIO registers
 * n320:
+  - Add Replay Block to default FGPA images
   - Double radio ingress buffer size
   - Enable inverse sinc filter for DAC37J82
 * n3xx:
   - Fix timeout for timekeeper registers
   - Swap out liberio for internal Ethernet
 * python:
+  - Add peek/poke bindings to noc_block_base
   - Add Keep One in N block controller bindings
   - Add replay RFNoC block controller bindings
   - Add siggen RFNoC block controller bindings
@@ -104,6 +134,11 @@ Change Log for Releases
   - Remove Python2-specific code
   - Included complex.h to allow pybind to convert that data type
 * rfnoc:
+  - replay: Update packet size on mtu update
+  - Set null source/sink block initial state
+  - Add support for 32-bit memory address widths to Replay block
+  - Enable SEPs with connect_through_blocks
+  - Exit disconnect() early if nodes not in node map
   - Add multichannel register interface
   - Added support for destruction of streamers
   - Add Keep One in N block support
@@ -142,6 +177,7 @@ Change Log for Releases
   - Refactored CHDR packet interfaces
   - Add noc_block_base class
 * tests:
+  - Fix build issue with Boost 1.67
   - Add unit tests for new RFNoC block controllers
   - Fix multi_usrp_test
   - Add unit tests for pwr_cal_mgr
@@ -156,6 +192,7 @@ Change Log for Releases
   - Implement an I/O service that uses an offload thread
   - Implement a single-threaded I/O service
 * twinrx:
+  - Bypass adf535x feedback divider
   - Update synthesizer register values for improved rf performance
   - Fix increased noise floor
   - Remove decimation from frontend
@@ -185,6 +222,7 @@ Change Log for Releases
   - Add convert_cal_data utility
   - image_builder: Support parameterized number of ports on blocks
 * x300:
+  - Add Replay Block to default FGPA images
   - Update frame sizes for 10GbE
   - Fix for incorrect PCIe buffer size values
   - Change default dboard clock rate from 50 to 100 MHz

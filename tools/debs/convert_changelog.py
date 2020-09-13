@@ -28,7 +28,7 @@ import sys
 
 # Pass in first line of Debian changelog file, should contain last version
 def detect_last_version(line):
-    return convert_version_string(re.search("[0-9]+\.[0-9]+\.[0-9]", line).group(), False)
+    return convert_version_string(re.search("[0-9]+\.[0-9]+\.[0-9\.]+", line).group(), False)
 
 # "## 003.008.005" to "3.8.5" or vice versa
 def convert_version_string(version, to_debian=True):
@@ -73,7 +73,9 @@ if __name__ == "__main__":
     lines_in = f.readlines()
     f.close()
 
-    lines_out = []
+    f = open(options.output_file, "r")
+    lines_out = f.readlines()
+    f.close()
 
     g = open(options.output_file, "w")
 
@@ -105,9 +107,10 @@ if __name__ == "__main__":
             new_lines_out += ["  " + line]
     # Final footer
     new_lines_out += ["\n"]
-    new_lines_out += [get_footer(options.uploader_name, options.uploader_email)]
 
     new_lines_out += lines_out
+
+    g = open(options.output_file, "w")
     for line in new_lines_out:
         g.write(line)
     g.close()
