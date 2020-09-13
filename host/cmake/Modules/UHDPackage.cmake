@@ -158,8 +158,8 @@ set(CPACK_COMPONENTS_ALL libraries pythonapi headers utilities examples manual d
 ########################################################################
 # Setup CPack Debian
 ########################################################################
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-all-dev, python-requests")
-set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "python, python-tk")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-all-dev, python3-requests")
+set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "python3, python3-tk")
 foreach(filename preinst postinst prerm postrm)
     list(APPEND CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA ${CMAKE_BINARY_DIR}/debian/${filename})
     file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/debian)
@@ -176,7 +176,8 @@ configure_file(
 ########################################################################
 # Setup CPack RPM
 ########################################################################
-set(CPACK_RPM_PACKAGE_REQUIRES "boost-devel, python-requests")
+set(CPACK_RPM_SPEC_MORE_DEFINE "%global __python %{__python3}")
+set(CPACK_RPM_PACKAGE_REQUIRES "boost-devel, python3-requests")
 set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION "/usr/share/man;/usr/share/man/man1;/usr/lib64/pkgconfig;/usr/lib64/cmake;/usr/lib64/python2.7;/usr/lib64/python2.7/site-packages")
 foreach(filename post_install post_uninstall pre_install pre_uninstall)
     string(TOUPPER ${filename} filename_upper)
