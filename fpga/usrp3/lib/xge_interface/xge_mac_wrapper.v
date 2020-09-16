@@ -433,6 +433,7 @@ module xge_mac_wrapper #(
   // add cut through if we have "enough" data buffered up
   //
   reg cut_through;
+  reg cut_wait;
 
   if (CUT_THROUGH > 0) begin : yes_cut_through
 
@@ -446,7 +447,9 @@ module xge_mac_wrapper #(
     always @(posedge xgmii_clk) begin : cut_through_dff
       if (xgmii_reset) begin
         cut_through <= 1'b0;
+        cut_wait    <= 1'b0;
       end else begin
+        cut_wait    <= eth_tx_full;
         if (cut_start) begin
           cut_through <= 1'b1;
         end else if (cut_end) begin
@@ -455,7 +458,10 @@ module xge_mac_wrapper #(
       end
     end
   end else begin : no_cut_through
-    always @(*) cut_through <= 0;
+    always @(*) begin
+      cut_through <= 0;
+      cut_wait    <= 0;
+    end
   end
 
   //
@@ -478,8 +484,14 @@ module xge_mac_wrapper #(
   //
   // Suppress FIFO flags to stop overflow of MAC in Tx direction
   //
-  assign tx_tready_int3   = (enable_tx || cut_through);
-  assign eth_tx_valid     = (enable_tx || cut_through) & tx_tvalid_int3;
-  assign eth_tx_sof       = (enable_tx || cut_through) & tx_sof_int3;
+  if (CUT_THROUGH > 0) begin : yes_cut_through_ready
+    assign tx_tready_int3   = (cut_through && !(cut_wait));
+    assign eth_tx_valid     = (cut_through && !(cut_wait)) & tx_tvalid_int3;
+    assign eth_tx_sof       = (cut_through && !(cut_wait)) & tx_sof_int3;
+  end else begin : no_cut_through_ready
+    assign tx_tready_int3   = enable_tx;
+    assign eth_tx_valid     = enable_tx & tx_tvalid_int3;
+    assign eth_tx_sof       = enable_tx & tx_sof_int3;
+  end
 
 endmodule
