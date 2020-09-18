@@ -49,7 +49,9 @@ std::string get_cal_path_rc(const std::string& key)
 bool has_cal_data_rc(const std::string& key, const std::string&)
 {
     auto fs = rc::get_filesystem();
-    return fs.is_file(get_cal_path_rc(key));
+    const std::string cal_path(get_cal_path_rc(key));
+    UHD_LOG_TRACE(LOG_ID, "Checking for resource " << cal_path);
+    return fs.is_file(cal_path);
 }
 
 //! Return a byte array for a given cal resource
