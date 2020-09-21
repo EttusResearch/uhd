@@ -129,28 +129,32 @@ void connect_through_blocks(rfnoc_graph::sptr graph,
     // call connect on the src and dst blocks since calling
     // connect on SEPs is invalid
     std::string src_to_sep_id;
-    size_t src_to_sep_port = 0;
+    size_t src_to_sep_port         = 0;
+    bool has_src_to_sep_connection = false;
     std::string sep_to_dst_id;
-    size_t sep_to_dst_port  = 0;
-    bool has_sep_connection = false;
+    size_t sep_to_dst_port         = 0;
+    bool has_sep_to_dst_connection = false;
 
     for (auto edge : block_chain) {
         if (uhd::rfnoc::block_id_t(edge.dst_blockid).match(uhd::rfnoc::NODE_ID_SEP)) {
-            has_sep_connection = true;
-            src_to_sep_id      = edge.src_blockid;
-            src_to_sep_port    = edge.src_port;
+            has_src_to_sep_connection = true;
+            src_to_sep_id             = edge.src_blockid;
+            src_to_sep_port           = edge.src_port;
         } else if (uhd::rfnoc::block_id_t(edge.src_blockid)
                        .match(uhd::rfnoc::NODE_ID_SEP)) {
-            has_sep_connection = true;
-            sep_to_dst_id      = edge.dst_blockid;
-            sep_to_dst_port    = edge.dst_port;
+            has_sep_to_dst_connection = true;
+            sep_to_dst_id             = edge.dst_blockid;
+            sep_to_dst_port           = edge.dst_port;
         } else {
             graph->connect(
                 edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
         }
     }
-    if (has_sep_connection) {
+    if (has_src_to_sep_connection && has_sep_to_dst_connection) {
         graph->connect(src_to_sep_id, src_to_sep_port, sep_to_dst_id, sep_to_dst_port);
+    } else if (has_src_to_sep_connection != has_sep_to_dst_connection) {
+        throw uhd::runtime_error(
+            "[graph_utils] Incomplete path. Only one SEP edge found.");
     }
 }
 
