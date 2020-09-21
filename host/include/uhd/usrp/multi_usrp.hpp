@@ -36,6 +36,7 @@
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/utils/noncopyable.hpp>
+#include <uhd/rfnoc/mb_controller.hpp>
 #include <uhd/rfnoc/radio_control.hpp>
 #include <complex>
 #include <memory>
@@ -1783,6 +1784,25 @@ public:
     virtual void set_tx_filter(const std::string& name,
         uhd::filter_info_base::sptr filter,
         const size_t chan) = 0;
+
+     /*! Get direct access to the underlying mb_controller object.
+     *
+     * Note: This is an advanced API, created for corner cases where the
+     * application is using multi_usrp, but some special features from
+     * mb_controller need to be used that are not exposed by multi_usrp.
+     * Note that it is possible to put the mb_controller and multi_usrp into a
+     * broken state by directly accessing the mb_controller. For typical
+     * mb_controller operations it is therefore highly recommended
+     * to not use this API call, but use the native multi_usrp API calls.
+     *
+     * The lifetime of the mb_controller is linked to the lifetime of the
+     * device object, so storing a reference from this function is not allowed.
+     *
+     * \param mboard The motherboard index
+     * \returns A reference to the mb_controller for the corresponding mboard
+     * \throws uhd::not_implemented_error if not on an RFNoC device.
+     */
+    virtual uhd::rfnoc::mb_controller& get_mb_controller(const size_t mboard = 0) = 0;
 };
 
 } // namespace usrp

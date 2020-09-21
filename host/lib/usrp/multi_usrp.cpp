@@ -2557,6 +2557,12 @@ public:
             "set_gpio_src() not implemented for this motherboard!");
     }
 
+    uhd::rfnoc::mb_controller& get_mb_controller(const size_t /*mboard*/)
+    {
+        throw uhd::not_implemented_error(
+            "get_mb_controller() not supported on this device!");
+    }
+
 private:
     device::sptr _dev;
     property_tree::sptr _tree;

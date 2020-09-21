@@ -452,7 +452,7 @@ public:
     {
         auto& rx_chain      = _get_rx_chan(chan);
         const size_t mb_idx = rx_chain.radio->get_block_id().get_device_no();
-        auto mbc            = get_mbc(mb_idx);
+        auto mbc            = _get_mbc(mb_idx);
         auto mb_eeprom      = mbc->get_eeprom();
 
         dict<std::string, std::string> usrp_info;
@@ -486,7 +486,7 @@ public:
     {
         auto& tx_chain      = _get_tx_chan(chan);
         const size_t mb_idx = tx_chain.radio->get_block_id().get_device_no();
-        auto mbc            = get_mbc(mb_idx);
+        auto mbc            = _get_mbc(mb_idx);
         auto mb_eeprom      = mbc->get_eeprom();
 
         dict<std::string, std::string> usrp_info;
@@ -685,7 +685,7 @@ public:
                                % (_tree->access<std::string>("/name").get()));
         for (size_t m = 0; m < get_num_mboards(); m++) {
             buff += str(
-                boost::format("  Mboard %d: %s\n") % m % get_mbc(m)->get_mboard_name());
+                boost::format("  Mboard %d: %s\n") % m % _get_mbc(m)->get_mboard_name());
         }
 
 
@@ -718,29 +718,29 @@ public:
 
     std::string get_mboard_name(size_t mboard = 0)
     {
-        return get_mbc(mboard)->get_mboard_name();
+        return _get_mbc(mboard)->get_mboard_name();
     }
 
     time_spec_t get_time_now(size_t mboard = 0)
     {
-        return get_mbc(mboard)->get_timekeeper(0)->get_time_now();
+        return _get_mbc(mboard)->get_timekeeper(0)->get_time_now();
     }
 
     time_spec_t get_time_last_pps(size_t mboard = 0)
     {
-        return get_mbc(mboard)->get_timekeeper(0)->get_time_last_pps();
+        return _get_mbc(mboard)->get_timekeeper(0)->get_time_last_pps();
     }
 
     void set_time_now(const time_spec_t& time_spec, size_t mboard = ALL_MBOARDS)
     {
         MUX_MB_API_CALL(set_time_now, time_spec);
-        get_mbc(mboard)->get_timekeeper(0)->set_time_now(time_spec);
+        _get_mbc(mboard)->get_timekeeper(0)->set_time_now(time_spec);
     }
 
     void set_time_next_pps(const time_spec_t& time_spec, size_t mboard = ALL_MBOARDS)
     {
         MUX_MB_API_CALL(set_time_next_pps, time_spec);
-        get_mbc(mboard)->get_timekeeper(0)->set_time_next_pps(time_spec);
+        _get_mbc(mboard)->get_timekeeper(0)->set_time_next_pps(time_spec);
     }
 
     void set_time_unknown_pps(const time_spec_t& time_spec)
@@ -858,33 +858,33 @@ public:
     void set_time_source(const std::string& source, const size_t mboard = ALL_MBOARDS)
     {
         MUX_MB_API_CALL(set_time_source, source);
-        get_mbc(mboard)->set_time_source(source);
+        _get_mbc(mboard)->set_time_source(source);
     }
 
     std::string get_time_source(const size_t mboard)
     {
-        return get_mbc(mboard)->get_time_source();
+        return _get_mbc(mboard)->get_time_source();
     }
 
     std::vector<std::string> get_time_sources(const size_t mboard)
     {
-        return get_mbc(mboard)->get_time_sources();
+        return _get_mbc(mboard)->get_time_sources();
     }
 
     void set_clock_source(const std::string& source, const size_t mboard = ALL_MBOARDS)
     {
         MUX_MB_API_CALL(set_clock_source, source);
-        get_mbc(mboard)->set_clock_source(source);
+        _get_mbc(mboard)->set_clock_source(source);
     }
 
     std::string get_clock_source(const size_t mboard)
     {
-        return get_mbc(mboard)->get_clock_source();
+        return _get_mbc(mboard)->get_clock_source();
     }
 
     std::vector<std::string> get_clock_sources(const size_t mboard)
     {
-        return get_mbc(mboard)->get_clock_sources();
+        return _get_mbc(mboard)->get_clock_sources();
     }
 
     void set_sync_source(const std::string& clock_source,
@@ -892,36 +892,36 @@ public:
         const size_t mboard = ALL_MBOARDS)
     {
         MUX_MB_API_CALL(set_sync_source, clock_source, time_source);
-        get_mbc(mboard)->set_sync_source(clock_source, time_source);
+        _get_mbc(mboard)->set_sync_source(clock_source, time_source);
     }
 
     void set_sync_source(
         const device_addr_t& sync_source, const size_t mboard = ALL_MBOARDS)
     {
         MUX_MB_API_CALL(set_sync_source, sync_source);
-        get_mbc(mboard)->set_sync_source(sync_source);
+        _get_mbc(mboard)->set_sync_source(sync_source);
     }
 
     device_addr_t get_sync_source(const size_t mboard)
     {
-        return get_mbc(mboard)->get_sync_source();
+        return _get_mbc(mboard)->get_sync_source();
     }
 
     std::vector<device_addr_t> get_sync_sources(const size_t mboard)
     {
-        return get_mbc(mboard)->get_sync_sources();
+        return _get_mbc(mboard)->get_sync_sources();
     }
 
     void set_clock_source_out(const bool enb, const size_t mboard = ALL_MBOARDS)
     {
         MUX_MB_API_CALL(set_clock_source_out, enb);
-        get_mbc(mboard)->set_clock_source_out(enb);
+        _get_mbc(mboard)->set_clock_source_out(enb);
     }
 
     void set_time_source_out(const bool enb, const size_t mboard = ALL_MBOARDS)
     {
         MUX_MB_API_CALL(set_time_source_out, enb);
-        get_mbc(mboard)->set_time_source_out(enb);
+        _get_mbc(mboard)->set_time_source_out(enb);
     }
 
     size_t get_num_mboards(void)
@@ -931,12 +931,12 @@ public:
 
     sensor_value_t get_mboard_sensor(const std::string& name, size_t mboard = 0)
     {
-        return get_mbc(mboard)->get_sensor(name);
+        return _get_mbc(mboard)->get_sensor(name);
     }
 
     std::vector<std::string> get_mboard_sensor_names(size_t mboard = 0)
     {
-        return get_mbc(mboard)->get_sensor_names();
+        return _get_mbc(mboard)->get_sensor_names();
     }
 
     // This only works on the USRP2 and B100, both of which are not rfnoc_device
@@ -2138,26 +2138,26 @@ public:
 
     std::vector<std::string> get_gpio_src_banks(const size_t mboard = 0)
     {
-        return get_mbc(mboard)->get_gpio_banks();
+        return _get_mbc(mboard)->get_gpio_banks();
     }
 
     std::vector<std::string> get_gpio_srcs(
         const std::string& bank, const size_t mboard = 0)
     {
-        return get_mbc(mboard)->get_gpio_srcs(bank);
+        return _get_mbc(mboard)->get_gpio_srcs(bank);
     }
 
     std::vector<std::string> get_gpio_src(
         const std::string& bank, const size_t mboard = 0)
     {
-        return get_mbc(mboard)->get_gpio_src(bank);
+        return _get_mbc(mboard)->get_gpio_src(bank);
     }
 
     void set_gpio_src(const std::string& bank,
         const std::vector<std::string>& src,
         const size_t mboard = 0)
     {
-        get_mbc(mboard)->set_gpio_src(bank, src);
+        _get_mbc(mboard)->set_gpio_src(bank, src);
     }
 
     /*******************************************************************
@@ -2405,11 +2405,16 @@ public:
         }
     }
 
+    mb_controller& get_mb_controller(const size_t mboard)
+    {
+        return *_get_mbc(mboard);
+    }
+
 private:
     /**************************************************************************
      * Private Helpers
      *************************************************************************/
-    mb_controller::sptr get_mbc(const size_t mb_idx)
+    mb_controller::sptr _get_mbc(const size_t mb_idx)
     {
         if (mb_idx >= get_num_mboards()) {
             throw uhd::key_error(

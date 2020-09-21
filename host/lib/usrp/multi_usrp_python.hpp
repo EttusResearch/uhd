@@ -86,6 +86,7 @@ void export_multi_usrp(py::module& m)
         .def("get_mboard_sensor_names" , &multi_usrp::get_mboard_sensor_names, py::arg("mboard") = 0)
         .def("set_user_register"       , &multi_usrp::set_user_register, py::arg("addr"), py::arg("data"), py::arg("mboard") = ALL_MBOARDS)
         .def("get_radio_control"       , &multi_usrp::get_radio_control, py::arg("chan") = 0)
+        .def("get_mb_controller"       , &multi_usrp::get_mb_controller, py::arg("mboard") = 0)
 
         // RX methods
         .def("set_rx_subdev_spec"      , &multi_usrp::set_rx_subdev_spec, py::arg("spec"), py::arg("mboard") = ALL_MBOARDS)

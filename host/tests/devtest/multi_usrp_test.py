@@ -589,6 +589,7 @@ def run_api_test(usrp):
                     'get_rx_dboard_iface',
                     'set_time_unknown_pps',
                     'get_radio_control',
+                    'get_mb_controller',
                    ]
     success = True
 
