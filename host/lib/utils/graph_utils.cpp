@@ -52,7 +52,7 @@ std::vector<graph_edge_t> get_block_chain(const rfnoc_graph::sptr graph,
             if ((source_chain)
                     ? (edge.src_blockid == current_block && edge.src_port == current_port)
                     : (edge.dst_blockid == current_block
-                          && edge.dst_port == current_port)) {
+                        && edge.dst_port == current_port)) {
                 // If the current block is the edge's source, make the edge's
                 // destination the current block
                 next_found = true;
@@ -101,7 +101,7 @@ void connect_through_blocks(rfnoc_graph::sptr graph,
             // input port match what we're looking for
             return dst_found
                    || (dst_blk.to_string() == edge.dst_blockid
-                          && dst_port == edge.dst_port);
+                       && dst_port == edge.dst_port);
         });
     // If our dst_blk is in the chain already, make sure its the last element and continue
     if (dst_found) {
@@ -129,25 +129,27 @@ void connect_through_blocks(rfnoc_graph::sptr graph,
     // call connect on the src and dst blocks since calling
     // connect on SEPs is invalid
     std::string src_to_sep_id;
-    size_t src_to_sep_port;
+    size_t src_to_sep_port = 0;
     std::string sep_to_dst_id;
-    size_t sep_to_dst_port;
+    size_t sep_to_dst_port  = 0;
     bool has_sep_connection = false;
 
     for (auto edge : block_chain) {
-        if(uhd::rfnoc::block_id_t(edge.dst_blockid).match(uhd::rfnoc::NODE_ID_SEP)) {
+        if (uhd::rfnoc::block_id_t(edge.dst_blockid).match(uhd::rfnoc::NODE_ID_SEP)) {
             has_sep_connection = true;
-            src_to_sep_id = edge.src_blockid;
-            src_to_sep_port = edge.src_port;
-        } else if(uhd::rfnoc::block_id_t(edge.src_blockid).match(uhd::rfnoc::NODE_ID_SEP)) {
+            src_to_sep_id      = edge.src_blockid;
+            src_to_sep_port    = edge.src_port;
+        } else if (uhd::rfnoc::block_id_t(edge.src_blockid)
+                       .match(uhd::rfnoc::NODE_ID_SEP)) {
             has_sep_connection = true;
-            sep_to_dst_id = edge.dst_blockid;
-            sep_to_dst_port = edge.dst_port;
-        } else{
-            graph->connect(edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
+            sep_to_dst_id      = edge.dst_blockid;
+            sep_to_dst_port    = edge.dst_port;
+        } else {
+            graph->connect(
+                edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
         }
     }
-    if(has_sep_connection) {
+    if (has_sep_connection) {
         graph->connect(src_to_sep_id, src_to_sep_port, sep_to_dst_id, sep_to_dst_port);
     }
 }
