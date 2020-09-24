@@ -44,8 +44,14 @@ static device_addrs_t b100_find(const device_addr_t& hint)
 
     // Return an empty list of addresses when an address or resource is specified,
     // since an address and resource is intended for a different, non-USB, device.
-    if (hint.has_key("addr") || hint.has_key("resource"))
+    if (hint.has_key("addr"))
         return b100_addrs;
+
+    if (hint.has_key_with_prefix("resource")) {
+        UHD_LOG_TRACE(
+            "B100 FIND", "Returning early, PCIe is not supported with b100 devices.");
+        return b100_addrs;
+    }
 
     uint16_t vid, pid;
 

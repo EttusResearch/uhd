@@ -100,7 +100,9 @@ device_addrs_t x300_find(const device_addr_t& hint_)
         return reply_addrs;
     }
 
-    if (!hint.has_key("resource")) {
+    bool has_resource_key = hint.has_key_with_prefix("resource");
+
+    if (!has_resource_key) {
         // otherwise, no address was specified, send a broadcast on each interface
         for (const transport::if_addrs_t& if_addrs : transport::get_if_addrs()) {
             // avoid the loopback device
@@ -135,7 +137,7 @@ device_addrs_t x300_find(const device_addr_t& hint_)
         }
     }
 
-    device_addrs_t pcie_addrs = pcie_manager::find(hint, hint.has_key("resource"));
+    device_addrs_t pcie_addrs = pcie_manager::find(hint, has_resource_key);
     if (not pcie_addrs.empty()) {
         addrs.insert(addrs.end(), pcie_addrs.begin(), pcie_addrs.end());
     }

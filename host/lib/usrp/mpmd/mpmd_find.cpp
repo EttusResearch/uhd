@@ -224,6 +224,12 @@ device_addrs_t mpmd_find(const device_addr_t& hint_)
             return {};
         }
     }
+    if (hint_.has_key_with_prefix("resource")) {
+        UHD_LOG_TRACE(
+            "MPMD FIND", "Returning early, PCIe is not support with mpm devices.");
+        return {};
+    }
+
     UHD_LOG_TRACE("MPMD FIND", "Finding with " << hints.size() << " different hint(s).");
 
     // Scenario 1): User gave us at least one address
