@@ -8,6 +8,7 @@
 #include "b200_impl.hpp"
 #include "../../transport/libusb1_base.hpp"
 #include "b200_regs.hpp"
+#include <uhd/cal/database.hpp>
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/transport/usb_control.hpp>
@@ -17,7 +18,6 @@
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/static.hpp>
-#include <uhd/cal/database.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/functional/hash.hpp>
@@ -251,7 +251,7 @@ static device_addrs_t b200_find(const device_addr_t& hint)
             // this is a found b200 when the hint serial and name match or blank
             if ((not hint.has_key("name") or hint["name"] == new_addr["name"])
                 and (not hint.has_key("serial")
-                        or hint["serial"] == new_addr["serial"])) {
+                     or hint["serial"] == new_addr["serial"])) {
                 b200_addrs.push_back(new_addr);
             }
         }
@@ -984,9 +984,8 @@ void b200_impl::setup_radio(const size_t dspno)
     // b2xx_power_cal_$dir_$ant, depending on the form factor.
     // $dir is either "tx" or "rx", and "ant" is either "tx_rx" or "rx2" (i.e.,
     // sanitized version of the antenna names that work in filenames.
-    const std::string cal_key_base = (_product == B200MINI or _product == B205MINI)
-                                         ? "b2xxmini_pwr_"
-                                         : "b2xx_pwr_";
+    const std::string cal_key_base =
+        (_product == B200MINI or _product == B205MINI) ? "b2xxmini_pwr_" : "b2xx_pwr_";
     for (direction_t dir : std::vector<direction_t>{RX_DIRECTION, TX_DIRECTION}) {
         const std::string dir_key = (dir == RX_DIRECTION) ? "rx" : "tx";
         const std::string key     = std::string(((dir == RX_DIRECTION) ? "RX" : "TX"))
@@ -1148,7 +1147,7 @@ void b200_impl::enforce_tick_rate_limits(
 double b200_impl::set_tick_rate(const double new_tick_rate)
 {
     UHD_LOGGER_INFO("B200") << (boost::format("Asking for clock rate %.6f MHz... ")
-                                   % (new_tick_rate / 1e6))
+                                % (new_tick_rate / 1e6))
                             << std::flush;
     check_tick_rate_with_current_streamers(new_tick_rate); // Defined in b200_io_impl.cpp
 

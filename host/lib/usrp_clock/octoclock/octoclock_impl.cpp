@@ -151,7 +151,7 @@ device_addrs_t octoclock_find(const device_addr_t& hint)
                     // Filter based on optional keys (if any)
                     if ((not _hint.has_key("name") or (_hint["name"] == new_addr["name"]))
                         and (not _hint.has_key("serial")
-                                or (_hint["serial"] == new_addr["serial"]))) {
+                             or (_hint["serial"] == new_addr["serial"]))) {
                         octoclock_addrs.push_back(new_addr);
                     }
                 }

@@ -9,11 +9,11 @@
 #include "mpmd_devices.hpp"
 #include "mpmd_impl.hpp"
 #include "mpmd_link_if_mgr.hpp"
-#include <uhdlib/utils/serial_number.hpp>
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhdlib/utils/prefs.hpp>
+#include <uhdlib/utils/serial_number.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
 #include <future>
@@ -65,7 +65,8 @@ device_addrs_t mpmd_find_with_addr(
         const char* reply        = (const char*)buff;
         std::string reply_string = std::string(reply);
         std::vector<std::string> result;
-        boost::algorithm::split(result,
+        boost::algorithm::split(
+            result,
             reply_string,
             [](const char& in) { return in == ';'; },
             boost::token_compress_on);
@@ -102,7 +103,8 @@ device_addrs_t mpmd_find_with_addr(
         // device_args
         for (const auto& el : result) {
             std::vector<std::string> value;
-            boost::algorithm::split(value,
+            boost::algorithm::split(
+                value,
                 el,
                 [](const char& in) { return in == '='; },
                 boost::token_compress_on);
@@ -112,11 +114,12 @@ device_addrs_t mpmd_find_with_addr(
         }
         // filter the discovered device below by matching optional keys
         if ((not hint_.has_key("name") or hint_["name"] == new_addr["name"])
-            and (not hint_.has_key("serial") or utils::serial_numbers_match(hint_["serial"], new_addr["serial"]))
+            and (not hint_.has_key("serial")
+                 or utils::serial_numbers_match(hint_["serial"], new_addr["serial"]))
             and (not hint_.has_key("type") or hint_["type"] == new_addr["type"]
-                    or hint_["type"] == MPM_CATCHALL_DEVICE_TYPE)
+                 or hint_["type"] == MPM_CATCHALL_DEVICE_TYPE)
             and (not hint_.has_key("product")
-                    or hint_["product"] == new_addr["product"])) {
+                 or hint_["product"] == new_addr["product"])) {
             UHD_LOG_TRACE(
                 "MPMD FIND", "Found device that matches hints: " << new_addr.to_string());
             addrs.push_back(new_addr);
@@ -209,8 +212,7 @@ device_addrs_t mpmd_find(const device_addr_t& hint_)
 #endif
     device_addrs_t hints_without_prefs = separate_device_addr(hint_);
     device_addrs_t hints;
-    for (size_t i = 0; i < hints_without_prefs.size(); i++)
-    {
+    for (size_t i = 0; i < hints_without_prefs.size(); i++) {
         hints.push_back(prefs::get_usrp_args(hints_without_prefs[i]));
     }
 
@@ -227,7 +229,7 @@ device_addrs_t mpmd_find(const device_addr_t& hint_)
     // Scenario 1): User gave us at least one address
     if (not hints.empty()
         and (hints[0].has_key(xport::FIRST_ADDR_KEY)
-                or hints[0].has_key(MGMT_ADDR_KEY))) {
+             or hints[0].has_key(MGMT_ADDR_KEY))) {
         // Note: We don't try and connect to the devices in this mode, because
         // we only get here if the user specified addresses, and we assume she
         // knows what she's doing.

@@ -166,7 +166,7 @@ device_addrs_t usrp2_find(const device_addr_t& hint_)
             // filter the discovered device below by matching optional keys
             if ((not hint.has_key("name") or hint["name"] == new_addr["name"])
                 and (not hint.has_key("serial")
-                        or hint["serial"] == new_addr["serial"])) {
+                     or hint["serial"] == new_addr["serial"])) {
                 usrp2_addrs.push_back(new_addr);
             }
 
