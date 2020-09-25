@@ -26,7 +26,9 @@ using block_port_def = std::tuple<std::string, boost::optional<size_t>>;
  *  some of their ports, so we can optionally include a port number.
  */
 static const std::vector<block_port_def> TERMINATOR_BLOCKS{
-    {NODE_ID_SEP, boost::none}, {"Radio", boost::none}, {"NullSrcSink", 0}};
+    block_port_def{NODE_ID_SEP, boost::none},
+    block_port_def{"Radio", boost::none},
+    block_port_def{"NullSrcSink", 0}};
 
 /*!
  *  Get a chain of blocks that statically connect back to a terminating block. This
