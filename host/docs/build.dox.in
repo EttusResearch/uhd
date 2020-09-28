@@ -63,29 +63,30 @@ The directory to which you extract libusb must not contain spaces. This is to sa
 
 ### Python
 
-- **Purpose:** Used by mako build time,  and utility scripts and the Python API at runtime
+- **Purpose:** Used by mako build time, and utility scripts and the Python API at runtime
 - **Minimum Version:** 2.7
 - **Usage:** build time + runtime utility scripts (required)
 - **Download URL:** http://www.python.org/download/
 - **Comments for Windows Users:**
   - The Python binary installer must be selected to match the system processor. Although, the 32-bit Python version can be used with 32-bit or 64-bit Windows system, it is recommended to match between Python and Windows installers. If the system is occupied with 64-bit Windows and x64-based processor, the `Windows x86-64 MSI Installer -> python-version.amd64.msi` needs to be used.
   - The Python path needs to be added to the environment variables.
-  - Install fundamental packages for Python: On Windows Terminal, navigate to Python scripts folder, e.g. `C:\\local\\Python37\\Scripts`, and execute the following commands to install requests, numpy and six packages, respectively:
+  - Install fundamental packages for Python: On Windows Terminal, navigate to Python scripts folder, e.g. `C:\\local\\Python37\\Scripts`, and execute the following commands to install requests, numpy, six, and setuptools packages, respectively:
 
-    pip install requests
-    pip install numpy
-    pip install six
+    pip3 install requests
+    pip3 install numpy
+    pip3 install six
+    pip3 install setuptools
 
   - For curses package installation:
     - Download URL: https://www.lfd.uci.edu/~gohlke/pythonlibs/
     - Download a package that is similar to the Python version, Windows System, and system processor and copy it to Python scripts folder. For example, for Python 3.7, 64-bit Windows, and x64-based processor, download the `curses-2.2-cp37-cp37m-win_amd64.whl`.
     - Install the package dependency, wheel package:
 
-    pip install wheel
+    pip3 install wheel
 
     - Install the curses package and include it to Python scripts:
 
-    python -m pip install curses-2.2-cp37-cp37m-win_amd64.whl
+    python3 -m pip3 install curses-2.2-cp37-cp37m-win_amd64.whl
 
 ### Mako
 
@@ -93,9 +94,9 @@ The directory to which you extract libusb must not contain spaces. This is to sa
 - **Minimum Version:** @PY_MAKO_MIN_VERSION@
 - **Usage:** build time (required)
 - **Download URL:** http://www.makotemplates.org/download.html
-- **Alternative method:** You can use `pip` or `easy_install` to install Mako from PyPi. To install it using 'pip' on Windows, navigate to Python scripts folder, e.g. ´C:\\local\\Python37\\Scripts`, and run the following command:
+- **Alternative method:** You can use `pip3` or `easy_install` to install Mako from PyPi. To install it using 'pip3' on Windows, navigate to Python scripts folder, e.g. ´C:\\local\\Python37\\Scripts`, and run the following command:
 
-    pip install mako
+    pip3 install mako
 
 ### Doxygen
 
@@ -124,7 +125,7 @@ or install msysGit from http://code.google.com/p/msysgit/downloads/list.
 
 You can install all the dependencies through the package manager:
 
-    sudo apt-get install libboost-all-dev libusb-1.0-0-dev python-mako doxygen python-docutils cmake build-essential
+    sudo apt-get install libboost-all-dev libusb-1.0-0-dev doxygen python3-docutils python3-mako python3-numpy python3-requests python3-setuptools cmake build-essential
 
 Your actual command may differ.
 
@@ -132,11 +133,11 @@ Your actual command may differ.
 
 You can install all the dependencies through the package manager:
 
-    sudo yum -y install boost-devel libusb1-devel python-mako doxygen python-docutils cmake make gcc gcc-c++
+    sudo yum -y install boost-devel libusb1-devel doxygen python3-docutils python3-mako python3-numpy python3-requests python3-setuptools cmake make gcc gcc-c++
 
 or
 
-    sudo dnf -y install boost-devel libusb1-devel python-mako doxygen python-docutils cmake make gcc gcc-c++
+    sudo dnf -y install boost-devel libusb1-devel doxygen python3-docutils python3-mako python3-numpy python3-requests python3-setuptools cmake make gcc gcc-c++
 
 Your actual command may differ.
 
