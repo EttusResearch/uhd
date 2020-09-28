@@ -18,6 +18,7 @@ UHD_INSTALL(FILES
     filter_node.hpp
     graph_edge.hpp
     mb_controller.hpp
+    multichan_register_iface.hpp
     noc_block_base.hpp
     noc_block_make_args.hpp
     node.hpp
@@ -42,9 +43,11 @@ UHD_INSTALL(FILES
     fir_filter_block_control.hpp
     fosphor_block_control.hpp
     logpwr_block_control.hpp
+    mock_block.hpp
     moving_average_block_control.hpp
     null_block_control.hpp
     radio_control.hpp
+    replay_block_control.hpp
     siggen_block_control.hpp
     split_stream_block_control.hpp
     switchboard_block_control.hpp
