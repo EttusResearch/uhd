@@ -34,7 +34,7 @@ uhd-host:
  directories. The utils include tools for managing the
  flash memory or EEPROM configuration of various USRPs.
 
-libuhd003:
+libuhd4.0.0:
  Small package just for the library itself.
 
 libuhd-dev:
