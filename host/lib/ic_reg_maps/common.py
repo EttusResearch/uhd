@@ -21,25 +21,34 @@ COMMON_TMPL = """<% import time %>\
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
 #include <set>
+#include <vector>
 #include <stdint.h>
 
 class ${name}_t{
 public:
     % for reg in regs:
-    % if reg.get_enums():
+        % if reg.get_enums():
     enum ${reg.get_type()}{
-        % for i,enum in enumerate(reg.get_enums()):
+            % for i,enum in enumerate(reg.get_enums()):
         ${reg.get_name().upper()}_${enum[0].upper()} = ${enum[1]}<% comma = ',' if i != (len(reg.get_enums())-1) else '' %>${comma}
-        % endfor
+            % endfor
     };
-    % endif
+        % endif
+        % if reg.is_array:
+    std::vector<${reg.get_type()}> ${reg.get_name()};
+        % else:
     ${reg.get_type()} ${reg.get_name()};
+        % endif
     % endfor
 
     ${name}_t(void){
         _state = NULL;
         % for reg in regs:
+            % if reg.is_array:
+        ${reg.get_name()}.resize(${reg.get_array_len()}, ${reg.get_default()});
+            % else:
         ${reg.get_name()} = ${reg.get_default()};
+            % endif
         % endfor
     }
 
@@ -61,9 +70,17 @@ public:
         //check each register for changes
         std::set<T> addrs;
         % for reg in regs:
+            % if reg.is_array:
+        for (size_t i = 0; i < ${reg.get_array_len()}; i++) {
+            if(_state->${reg.get_name()}[i] != this->${reg.get_name()}[i]) {
+                addrs.insert(${reg.get_addr()} + i * ${reg.get_addr_step_size()});
+            }
+        }
+            % else:
         if(_state->${reg.get_name()} != this->${reg.get_name()}){
             addrs.insert(${reg.get_addr()});
         }
+            % endif
         % endfor
         return addrs;
     }
@@ -105,7 +122,7 @@ class ${name}_t:
     % for reg in regs:
     % if reg.get_enums():
     class ${reg.get_type()} (Enum):
-        % for i,enum in enumerate(reg.get_enums()):
+        % for i, enum in enumerate(reg.get_enums()):
         ${reg.get_name().upper()}_${enum[0].upper()} = ${enum[1]}
         % endfor
     % endif
@@ -115,11 +132,19 @@ class ${name}_t:
         ## Assign each register to its default value
         self._state = None
         % for reg in regs:
-        % if reg.get_enums():
-        self.${reg.get_name()} = self.${reg.get_name()}_t.${reg.get_default()}
-        % else:
+            % if reg.get_enums():
+                % if reg.is_array:
+        self.${reg.get_name()} = [self.${reg.get_name()}_t.${reg.get_default()},] * ${reg.get_array_len()}
+                % else:
         self.${reg.get_name()} = ${reg.get_default()}
-        % endif
+                % endif
+            % else:
+                % if reg.is_array:
+        self.${reg.get_name()} = [${reg.get_default()},] * ${reg.get_array_len()}
+                % else:
+        self.${reg.get_name()} = ${reg.get_default()}
+                % endif
+            % endif
         self.${reg.get_name()}_addr = ${reg.get_addr()}
         self.${reg.get_name()}_mask = ${reg.get_mask()}
         self.${reg.get_name()}_shift = ${reg.get_shift()}
@@ -140,8 +165,14 @@ class ${name}_t:
         #check each register for changes
         addrs = set()
         % for reg in regs:
+        % if reg.is_array:
+        for index, value in enumerate(self.${reg.get_name()}):
+            if self._state.${reg.get_name()}[index] != value:
+                addrs.add(${reg.get_addr()} + index * ${reg.get_addr_step_size()})
+        % else:
         if self._state.${reg.get_name()} != self.${reg.get_name()}:
             addrs.add(${reg.get_addr()})
+        % endif
         % endfor
         return addrs
 
@@ -169,25 +200,55 @@ class ${name}_t:
 def parse_tmpl(_tmpl_text, **kwargs):
     return Template(_tmpl_text).render(**kwargs)
 
-def to_num(arg): return int(eval(arg))
+def to_num(arg):
+    """
+    Return the integer representation of arg, which is usually a string, but can
+    be a Python representation
+    """
+    return int(eval(arg))
 
 class reg:
     def __init__(self, reg_des):
-        try: self.parse(reg_des)
+        self.is_array = False
+        self._array_len = 0
+        self._addr_step = 0
+        try:
+            self.parse(reg_des)
         except Exception as e:
-            raise Exception('Error parsing register description: "%s"\nWhat: %s'%(reg_des, e))
+            raise Exception(
+                'Error parsing register description: "{}"\nWhat: {}'
+                .format(reg_des, e))
 
     def parse(self, reg_des):
-        x = re.match('^(\w*)\s*(\w*)\[(.*)\]\s*(\w*)\s*(.*)$', reg_des)
-        name, addr, bit_range, default, enums = x.groups()
+        """
+        Parse a regmap line.
 
+        Unpacks lines like this:
+
+        REG_NAME[ARRAY_LEN]  BASE_ADDRESS[BITS] DEFAULT LIST_OF_ENUMS
+
+        Notes:
+        - Array length and enums are optional
+        - Base address == address if not an array
+
+        Example:
+
+        super_reg       0x1000[0:1]  0
+        duper_reg[128]  0x2000[0:31] 0
+
+        super_reg is a 2-bit field in register at address 0x1000. It will be
+        initialized to 0. duper_reg is an array of length 128, of 32-bit registers.
+        """
+        x = re.match(
+            r'^(\w*)(\[([0-9:]*)\])?\s*(\w*)\[(.*)\]\s*(\w*)\s*(.*)$',
+            reg_des)
+        name, _, addr_range, addr, bit_range, default, enums = x.groups()
         #store variables
         self._name = name
         self._addr = to_num(addr)
         if ':' in bit_range: self._addr_spec = sorted(map(int, bit_range.split(':')))
         else: self._addr_spec = int(bit_range), int(bit_range)
         self._default = to_num(default)
-
         #extract enum
         self._enums = list()
         if enums:
@@ -200,8 +261,27 @@ class reg:
                 else: enum_name = enum_str
                 self._enums.append((enum_name, enum_val))
                 enum_val += 1
+        # Extract address range for arrays
+        if addr_range is not None:
+            self.is_array = True
+            addr_range = addr_range.split(':', 3)
+            if len(addr_range) == 1:
+                self._array_len = to_num(addr_range[0])
+                self._addr_step = 4
+            else:
+                addr_start = to_num(addr_range[0])
+                addr_end = to_num(addr_range[1])
+                self._array_len = addr_end - addr_start + 1
+                self._addr_step = 4 if len(addr_range) == 2 else to_num(addr_range[2])
+                if addr_start > 0:
+                    self._addr += addr_start
 
-    def get_addr(self): return self._addr
+    def get_addr(self):
+        """
+        Return register address. If it's an array, then return the base address.
+        """
+        return self._addr
+
     def get_enums(self): return self._enums
     def get_name(self): return self._name
     def get_default(self):
@@ -214,6 +294,18 @@ class reg:
     def get_shift(self): return self._addr_spec[0]
     def get_mask(self): return hex(int('1'*self.get_bit_width(), 2))
     def get_bit_width(self): return self._addr_spec[1] - self._addr_spec[0] + 1
+
+    def get_array_len(self):
+        """
+        Return 1 for regular registers, or the array length for arrays
+        """
+        return self._array_len
+
+    def get_addr_step_size(self):
+        """
+        Return the step size for register arrays
+        """
+        return self._addr_step
 
 class mreg:
     def __init__(self, mreg_des, regs):
@@ -244,10 +336,13 @@ def generate(name, regs_tmpl, body_tmpl='', py_body_tmpl='', file=__file__, appe
         body_template = body_tmpl
 
     #evaluate the regs template and parse each line into a register
-    regs = list(); mregs = list()
+    regs = list()
+    mregs = list()
     for entry in parse_tmpl(regs_tmpl).splitlines():
-        if entry.startswith('~'): mregs.append(mreg(entry, regs))
-        else:                     regs.append(reg(entry))
+        if entry.startswith('~'):
+            mregs.append(mreg(entry, regs))
+        else:
+            regs.append(reg(entry))
 
     #evaluate the body template with the list of registers
     body = '\n    '.join(parse_tmpl(body_template, regs=regs).splitlines())
