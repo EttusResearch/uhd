@@ -675,6 +675,8 @@ def write_verilog(config, destination, source, source_hash):
     template engine.
     :param config: ImageBuilderConfig derived from script parameter
     :param destination: Filepath to write to
+    :param source: Filepath to the image YAML/GRC to generate from
+    :param source_hash: Source file hash value
     :return: None
     """
     template_dir = os.path.join(os.path.dirname(__file__), "templates")
@@ -696,6 +698,38 @@ def write_verilog(config, destination, source, source_hash):
         sys.exit(1)
 
     logging.info("Writing image core to %s", destination)
+    with open(destination, "w") as image_core_file:
+        image_core_file.write(block)
+
+
+def write_verilog_header(config, destination, source, source_hash):
+    """
+    Generates rfnoc_image_core.vh file for the device.
+    :param config: ImageBuilderConfig derived from script parameter
+    :param destination: Filepath to write to
+    :param source: Filepath to the image YAML/GRC to generate from
+    :param source_hash: Source file hash value
+    :return: None
+    """
+    template_dir = os.path.join(os.path.dirname(__file__), "templates")
+    lookup = mako.lookup.TemplateLookup(directories=[template_dir])
+    tpl_filename = os.path.join(template_dir, "rfnoc_image_core.vh.mako")
+    tpl = mako.template.Template(
+        filename=tpl_filename,
+        lookup=lookup,
+        strict_undefined=True)
+
+    try:
+        block = tpl.render(**{
+            "config": config,
+            "source": source,
+            "source_hash": source_hash,
+            })
+    except:
+        print(exceptions.text_error_template().render())
+        sys.exit(1)
+
+    logging.info("Writing image core header to %s", destination)
     with open(destination, "w") as image_core_file:
         image_core_file.write(block)
 
@@ -804,9 +838,22 @@ def generate_image_core_path(output_path, device, source):
     source: Otherwise, this path is returned, combined with a default file name
     """
     if output_path is not None:
-        return output_path
+        return os.path.splitext(output_path)[0] + '.v'
     source = os.path.split(os.path.abspath(os.path.normpath(source)))[0]
     return os.path.join(source, "{}_rfnoc_image_core.v".format(device))
+
+def generate_image_core_header_path(output_path, device, source):
+    """
+    Creates the path where the image core header file will be stored.
+
+    output_path: If not None, this is returned
+    device: Device type string, used to generate default file name
+    source: Otherwise, this path is returned, combined with a default file name
+    """
+    if output_path is not None:
+        return os.path.splitext(output_path)[0] + '.vh'
+    source = os.path.split(os.path.abspath(os.path.normpath(source)))[0]
+    return os.path.join(source, "{}_rfnoc_image_core.vh".format(device))
 
 def generate_edge_file_path(output_path, device, source):
     """
@@ -843,11 +890,15 @@ def build_image(config, fpga_path, config_path, device, **args):
     image_core_path = \
         generate_image_core_path(
             args.get('output_path'), device, args.get('source'))
+    image_core_header_path = \
+        generate_image_core_header_path(
+            args.get('output_path'), device, args.get('source'))
     edge_file = \
         generate_edge_file_path(
             args.get('router_hex_path'), device, args.get('source'))
 
     logging.debug("Image core output file: %s", image_core_path)
+    logging.debug("Image core header output file: %s", image_core_header_path)
     logging.debug("Edge output file: %s", edge_file)
 
     core_config_path = get_core_config_path(config_path)
@@ -867,6 +918,11 @@ def build_image(config, fpga_path, config_path, device, **args):
     write_verilog(
         builder_conf,
         image_core_path,
+        source=args.get('source'),
+        source_hash=args.get('source_hash'))
+    write_verilog_header(
+        builder_conf,
+        image_core_header_path,
         source=args.get('source'),
         source_hash=args.get('source_hash'))
     write_build_env()
