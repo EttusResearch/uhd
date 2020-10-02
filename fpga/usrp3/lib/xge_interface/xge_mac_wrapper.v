@@ -434,26 +434,40 @@ module xge_mac_wrapper #(
   //
   reg cut_through;
   reg cut_wait;
+  reg [15:0] cut_idlecount;
 
   if (CUT_THROUGH > 0) begin : yes_cut_through
 
     wire cut_start;
     wire cut_end;
 
-    assign cut_start = tx_occupied > CUT_THROUGH;
+    // start under 2 conditions
+    //    (1) we have more the CUT_THROUGH bytes buffered
+    assign cut_start = tx_occupied > CUT_THROUGH || 
+    //    (2) we have kept bytes waiting for too long
+    //   The second case happens when less than CUT_THROUGH bytes are pushed
+                       (cut_idlecount == 0);
     assign cut_end   = eth_tx_eof && eth_tx_valid;
 
     // Add SOF
     always @(posedge xgmii_clk) begin : cut_through_dff
       if (xgmii_reset) begin
-        cut_through <= 1'b0;
-        cut_wait    <= 1'b0;
+        cut_through   <= 1'b0;
+        cut_wait      <= 1'b0;
+        cut_idlecount <= CUT_THROUGH+2;
       end else begin
         cut_wait    <= eth_tx_full;
         if (cut_start) begin
           cut_through <= 1'b1;
         end else if (cut_end) begin
           cut_through <= 1'b0;
+        end
+        if (tx_occupied > 0 && cut_through == 1'b0) begin
+          if (cut_idlecount > 0) begin
+            cut_idlecount <= cut_idlecount-1;
+          end
+        end else begin
+          cut_idlecount <= CUT_THROUGH+2;
         end
       end
     end
