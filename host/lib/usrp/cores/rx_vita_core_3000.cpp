@@ -117,6 +117,9 @@ struct rx_vita_core_3000_impl : rx_vita_core_3000
         cmd_word |= uint32_t((inst_stop) ? 1 : 0) << 28;
         cmd_word |= (inst_samps) ? stream_cmd.num_samps : ((inst_stop) ? 0 : 1);
 
+        _continuous_streaming = stream_cmd.stream_mode
+                                == stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
+
         // issue the stream command
         _iface->poke32(REG_CTRL_CMD, cmd_word);
         const uint64_t ticks =
