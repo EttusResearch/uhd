@@ -337,8 +337,15 @@ double magnesium_radio_ctrl_impl::set_tx_gain(const double gain, const size_t ch
 {
     std::lock_guard<std::mutex> l(_set_lock);
     UHD_LOG_TRACE(unique_id(), "set_tx_gain(gain=" << gain << ", chan=" << chan << ")");
+    // First, clip to valid range
+    const double clipped_gain = uhd::clip(gain, ALL_TX_MIN_GAIN, ALL_TX_MAX_GAIN);
+    if (clipped_gain != gain) {
+        UHD_LOG_WARNING(unique_id(),
+            "Channel " << chan << ": Coercing TX gain from " << gain << " dB to "
+                       << clipped_gain);
+    }
     const double coerced_gain =
-        _set_all_gain(gain, this->get_tx_frequency(chan), chan, TX_DIRECTION);
+        _set_all_gain(clipped_gain, this->get_tx_frequency(chan), chan, TX_DIRECTION);
     radio_ctrl_impl::set_tx_gain(coerced_gain, chan);
     return coerced_gain;
 }
@@ -392,8 +399,15 @@ double magnesium_radio_ctrl_impl::set_rx_gain(const double gain, const size_t ch
 {
     std::lock_guard<std::mutex> l(_set_lock);
     UHD_LOG_TRACE(unique_id(), "set_rx_gain(gain=" << gain << ", chan=" << chan << ")");
+    // First, clip to valid range
+    const double clipped_gain = uhd::clip(gain, ALL_RX_MIN_GAIN, ALL_RX_MAX_GAIN);
+    if (clipped_gain != gain) {
+        UHD_LOG_WARNING(unique_id(),
+            "Channel " << chan << ": Coercing RX gain from " << gain << " dB to "
+                       << clipped_gain);
+    }
     const double coerced_gain =
-        _set_all_gain(gain, this->get_rx_frequency(chan), chan, RX_DIRECTION);
+        _set_all_gain(clipped_gain, this->get_rx_frequency(chan), chan, RX_DIRECTION);
     radio_ctrl_impl::set_rx_gain(coerced_gain, chan);
     return coerced_gain;
 }
