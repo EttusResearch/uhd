@@ -394,8 +394,14 @@ double magnesium_radio_control_impl::set_tx_gain(const double gain, const size_t
 {
     std::lock_guard<std::recursive_mutex> l(_set_lock);
     RFNOC_LOG_TRACE("set_tx_gain(gain=" << gain << ", chan=" << chan << ")");
+    // First, clip to valid range
+    const double clipped_gain = get_tx_gain_range(chan).clip(gain);
+    if (clipped_gain != gain) {
+        RFNOC_LOG_WARNING("Channel " << chan << ": Coercing TX gain from " << gain
+                                     << " dB to " << clipped_gain);
+    }
     const double coerced_gain =
-        _set_all_gain(gain, this->get_tx_frequency(chan), chan, TX_DIRECTION);
+        _set_all_gain(clipped_gain, this->get_tx_frequency(chan), chan, TX_DIRECTION);
     radio_control_impl::set_tx_gain(coerced_gain, chan);
     return coerced_gain;
 }
@@ -449,8 +455,14 @@ double magnesium_radio_control_impl::set_rx_gain(const double gain, const size_t
 {
     std::lock_guard<std::recursive_mutex> l(_set_lock);
     RFNOC_LOG_TRACE("set_rx_gain(gain=" << gain << ", chan=" << chan << ")");
+    // First, clip to valid range
+    const double clipped_gain = get_rx_gain_range(chan).clip(gain);
+    if (clipped_gain != gain) {
+        RFNOC_LOG_WARNING("Channel " << chan << ": Coercing RX gain from " << gain
+                                     << " dB to " << clipped_gain);
+    }
     const double coerced_gain =
-        _set_all_gain(gain, this->get_rx_frequency(chan), chan, RX_DIRECTION);
+        _set_all_gain(clipped_gain, this->get_rx_frequency(chan), chan, RX_DIRECTION);
     radio_control_impl::set_rx_gain(coerced_gain, chan);
     return coerced_gain;
 }
