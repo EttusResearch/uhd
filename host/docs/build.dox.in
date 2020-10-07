@@ -225,7 +225,8 @@ extensions:
   want it to be (check the PYTHON_VERSION variable)
 - Open the CMake GUI.
 - Set the path to the source code: `<uhd-repo-path>/host`.
-- Set the path to the build directory (this may require creating the folder \build\): `<uhd-repo-path>/host/build`.
+- Set the path to the build directory (this may require creating the folder "build"):
+  `<uhd-repo-path>/host/build`.
 - Make sure that the paths do not contain spaces.
 - Check the Advanced checkbox.
 - Click "Configure".

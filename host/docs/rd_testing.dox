@@ -188,7 +188,7 @@ installed.
      The radio test bench resides in `<fpga-dir>/usrp3/lib/radio/noc_block_radio_core_tb/`.
 
   4. Device specific test benches:
-     IPs specific to a device have test benches that exist in `<fpga-dir>/usrp3/top/x300/sim/*`. e.g. DMA testbench, PCIe, etc.
+     IPs specific to a device have test benches that exist in `<fpga-dir>/usrp3/top/x300/sim/`. e.g. DMA testbench, PCIe, etc.
 
 2. Setup the environment by running `source <fpga-dir>/usrp3/top/<device>/setupenv.sh`.
 
