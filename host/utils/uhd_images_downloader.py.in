@@ -60,6 +60,8 @@ except ImportError:
     exit(0)
 
 # pylint: disable=bad-whitespace
+_USERNAME_VARIABLE        = "UHD_IMAGES_USER"
+_PASSWORD_VARIABLE        = "UHD_IMAGES_PASSWORD"
 _DEFAULT_TARGET_REGEX     = "(fpga|fw|windrv)_default"
 _BASE_DIR_STRUCTURE_PARTS = ["share", "uhd", "images"]
 _DEFAULT_INSTALL_PATH     = os.path.join("@CMAKE_INSTALL_PREFIX@", *_BASE_DIR_STRUCTURE_PARTS)
@@ -344,6 +346,31 @@ def print_target_list(manifest, args):
             print(args.base_url+manifest_item[1]["url"])
 
 
+def parse_auth(env):
+    """
+    Parse a (potentially None) environment variable string as a username:password
+    for consumption by requests.
+    """
+    username = env.get(_USERNAME_VARIABLE, None)
+    password = env.get(_PASSWORD_VARIABLE, None)
+    if not username and not password:
+        return None
+
+    if not username:
+        raise RuntimeError(
+            "Password variable {} was specified, so username variable {} must be set as well"
+            .format(_PASSWORD_VARIABLE, _USERNAME_VARIABLE)
+        )
+
+    if not password:
+        raise RuntimeError(
+            "Username variable {} was specified, so password variable {} must as well"
+            .format(_USERNAME_VARIABLE, _PASSWORD_VARIABLE)
+        )
+
+    return (username, password)
+
+
 def download(
         images_url,
         filename,
@@ -354,15 +381,17 @@ def download(
     """ Run the download, show progress """
     download_limit = download_limit or _DEFAULT_DOWNLOAD_LIMIT
     log("TRACE", "Downloading {} to {}".format(images_url, filename))
+    auth = parse_auth(os.environ)
     try:
         resp = requests.get(images_url, stream=True, proxies=_PROXIES,
-                            headers={'User-Agent': 'UHD Images Downloader'})
+                            headers={'User-Agent': 'UHD Images Downloader'},
+                            auth=auth)
     except TypeError:
         # requests library versions pre-4c3b9df6091b65d8c72763222bd5fdefb7231149
         # (Dec.'12) workaround
         resp = requests.get(images_url, prefetch=False, proxies=_PROXIES,
                             headers={'User-Agent': 'UHD Images Downloader'},
-                            allow_redirects=True)
+                            allow_redirects=True, auth=auth)
     if resp.status_code != 200:
         raise RuntimeError("URL does not exist: {}".format(images_url))
     filesize = float(resp.headers.get('content-length', -1))
