@@ -1,8 +1,9 @@
 <%page args="io_ports"/>\
-//// IO ports //////////////////////////////////
+  // IO ports /////////////////////////
+
 %for name, io_port in io_ports.items():
-//  ${name}
+  // ${name}
   %for wire in io_port["wires"]:
-  ${wire["direction"]} wire [${"%3d" % wire["width"]}-1:0] ${wire["name"]},
+  ${wire["direction"]} wire [${"%4d" % (wire["width"]-1)}:0] ${wire["name"]},
   %endfor
 %endfor

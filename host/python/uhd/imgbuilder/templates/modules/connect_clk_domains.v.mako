@@ -9,4 +9,3 @@
 %>\
   assign ${dst_name}_${dst["name"]}_clk = ${src["name"]}_clk;
 %endfor
-

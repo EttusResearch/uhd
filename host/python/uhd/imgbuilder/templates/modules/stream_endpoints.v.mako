@@ -35,8 +35,8 @@ else:
   wire              ${axis_inputs[sep].format(sep,"tlast")};
   wire              ${axis_inputs[sep].format(sep,"tvalid")};
   wire              ${axis_inputs[sep].format(sep,"tready")};
-  wire [31:0]       m_${sep}_ctrl_tdata , s_${sep}_ctrl_tdata ;
-  wire              m_${sep}_ctrl_tlast , s_${sep}_ctrl_tlast ;
+  wire [      31:0] m_${sep}_ctrl_tdata,  s_${sep}_ctrl_tdata;
+  wire              m_${sep}_ctrl_tlast,  s_${sep}_ctrl_tlast;
   wire              m_${sep}_ctrl_tvalid, s_${sep}_ctrl_tvalid;
   wire              m_${sep}_ctrl_tready, s_${sep}_ctrl_tready;
 
@@ -53,19 +53,19 @@ else:
     .MTU                (MTU),
     .REPORT_STRM_ERRS   (1)
   ) ${sep}_i (
-    .rfnoc_chdr_clk     (rfnoc_chdr_clk    ),
-    .rfnoc_chdr_rst     (rfnoc_chdr_rst    ),
-    .rfnoc_ctrl_clk     (rfnoc_ctrl_clk    ),
-    .rfnoc_ctrl_rst     (rfnoc_ctrl_rst    ),
-    .device_id          (device_id         ),
-    .s_axis_chdr_tdata  (xb_to_${sep}_tdata  ),
-    .s_axis_chdr_tlast  (xb_to_${sep}_tlast  ),
-    .s_axis_chdr_tvalid (xb_to_${sep}_tvalid ),
-    .s_axis_chdr_tready (xb_to_${sep}_tready ),
-    .m_axis_chdr_tdata  (${sep}_to_xb_tdata  ),
-    .m_axis_chdr_tlast  (${sep}_to_xb_tlast  ),
-    .m_axis_chdr_tvalid (${sep}_to_xb_tvalid ),
-    .m_axis_chdr_tready (${sep}_to_xb_tready ),
+    .rfnoc_chdr_clk     (rfnoc_chdr_clk),
+    .rfnoc_chdr_rst     (rfnoc_chdr_rst),
+    .rfnoc_ctrl_clk     (rfnoc_ctrl_clk),
+    .rfnoc_ctrl_rst     (rfnoc_ctrl_rst),
+    .device_id          (device_id),
+    .s_axis_chdr_tdata  (xb_to_${sep}_tdata),
+    .s_axis_chdr_tlast  (xb_to_${sep}_tlast),
+    .s_axis_chdr_tvalid (xb_to_${sep}_tvalid),
+    .s_axis_chdr_tready (xb_to_${sep}_tready),
+    .m_axis_chdr_tdata  (${sep}_to_xb_tdata),
+    .m_axis_chdr_tlast  (${sep}_to_xb_tlast),
+    .m_axis_chdr_tvalid (${sep}_to_xb_tvalid),
+    .m_axis_chdr_tready (${sep}_to_xb_tready),
     .s_axis_data_tdata  ({${axis_inputs[sep].format(sep,"tdata")}}),
     .s_axis_data_tlast  ({${axis_inputs[sep].format(sep,"tlast")}}),
     .s_axis_data_tvalid ({${axis_inputs[sep].format(sep,"tvalid")}}),
@@ -74,18 +74,18 @@ else:
     .m_axis_data_tlast  ({${axis_outputs[sep].format(sep,"tlast")}}),
     .m_axis_data_tvalid ({${axis_outputs[sep].format(sep,"tvalid")}}),
     .m_axis_data_tready ({${axis_outputs[sep].format(sep,"tready")}}),
-    .s_axis_ctrl_tdata  (s_${sep}_ctrl_tdata ),
-    .s_axis_ctrl_tlast  (s_${sep}_ctrl_tlast ),
+    .s_axis_ctrl_tdata  (s_${sep}_ctrl_tdata),
+    .s_axis_ctrl_tlast  (s_${sep}_ctrl_tlast),
     .s_axis_ctrl_tvalid (s_${sep}_ctrl_tvalid),
     .s_axis_ctrl_tready (s_${sep}_ctrl_tready),
-    .m_axis_ctrl_tdata  (m_${sep}_ctrl_tdata ),
-    .m_axis_ctrl_tlast  (m_${sep}_ctrl_tlast ),
+    .m_axis_ctrl_tdata  (m_${sep}_ctrl_tdata),
+    .m_axis_ctrl_tlast  (m_${sep}_ctrl_tlast),
     .m_axis_ctrl_tvalid (m_${sep}_ctrl_tvalid),
     .m_axis_ctrl_tready (m_${sep}_ctrl_tready),
-    .strm_seq_err_stb   (                  ),
-    .strm_data_err_stb  (                  ),
-    .strm_route_err_stb (                  ),
-    .signal_data_err    (1'b0              )
+    .strm_seq_err_stb   (),
+    .strm_data_err_stb  (),
+    .strm_route_err_stb (),
+    .signal_data_err    (1'b0)
   );
 
 %endfor
