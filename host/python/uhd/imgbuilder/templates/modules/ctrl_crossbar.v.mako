@@ -10,10 +10,10 @@
   axisstr += "{0}_core_ctrl_{1}"
 %>\
 %for block in blocks:
-  wire [31:0]       m_${block}_ctrl_tdata ,   s_${block}_ctrl_tdata ;
-  wire              m_${block}_ctrl_tlast ,   s_${block}_ctrl_tlast ;
-  wire              m_${block}_ctrl_tvalid,   s_${block}_ctrl_tvalid;
-  wire              m_${block}_ctrl_tready,   s_${block}_ctrl_tready;
+  wire [31:0] m_${block}_ctrl_tdata,  s_${block}_ctrl_tdata;
+  wire        m_${block}_ctrl_tlast,  s_${block}_ctrl_tlast;
+  wire        m_${block}_ctrl_tvalid, s_${block}_ctrl_tvalid;
+  wire        m_${block}_ctrl_tready, s_${block}_ctrl_tready;
 %endfor
 
   axis_ctrl_crossbar_nxn #(
