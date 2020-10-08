@@ -180,7 +180,7 @@ def get_images_dir(args):
     return _DEFAULT_INSTALL_PATH
 
 
-def ask_permission(question, default_no=True):
+def ask_permission(question):
     """
     Ask the question, and have the user type y or n on the keyboard. If the
     global variable _YES is true, this always returns True without asking the
@@ -191,8 +191,7 @@ def ask_permission(question, default_no=True):
         log("DEBUG", "Assuming the answer is 'yes' for this question: " +
             question)
         return True
-    postfix = "[y/N]" if default_no else "[Y/n]"
-    answer = input(question + " " + postfix)
+    answer = input(question + " [y/N]")
     if answer and answer[0].lower() == 'y':
         return True
     return False
