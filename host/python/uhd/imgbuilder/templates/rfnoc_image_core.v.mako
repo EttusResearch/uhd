@@ -26,8 +26,12 @@
 
 `default_nettype none
 
+`include "${config.device.type}_rfnoc_image_core.vh"
+
 
 module rfnoc_image_core #(
+  parameter        CHDR_W   = `CHDR_WIDTH,
+  parameter        MTU      = 10,
   parameter [15:0] PROTOVER = {8'd1, 8'd0}
 ) (
   // Clocks
@@ -44,12 +48,15 @@ module rfnoc_image_core #(
 <%include file="/modules/device_transport.v.mako" args="transports=config.device.transports"/>\
 );
 
-  localparam CHDR_W        = 64;
-  localparam MTU           = 10;
   localparam EDGE_TBL_FILE = `"`RFNOC_EDGE_TBL_FILE`";
 
   wire rfnoc_chdr_clk, rfnoc_chdr_rst;
   wire rfnoc_ctrl_clk, rfnoc_ctrl_rst;
+
+  // Check that CHDR_W parameter matches value used by RFNoC Image Builder
+  if (CHDR_W != `CHDR_WIDTH) begin
+    ERROR_CHDR_W_values_do_not_match();
+  end
 
 
   //---------------------------------------------------------------------------
