@@ -33,7 +33,13 @@ void server_session::start() { do_read(); }
 void server_session::close() {
     LOG_INFO("Closing session.");
     exit_ = true;
-    write_strand_.post([this]() { socket_.close(); });
+    write_strand_.post([this]() {
+        try {
+            socket_.close();
+        } catch (const boost::system::system_error&) {
+            LOG_WARN("Error during closing socket.");
+        }
+    });
 }
 
 void server_session::do_read() {
