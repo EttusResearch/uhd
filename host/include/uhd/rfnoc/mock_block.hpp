@@ -9,6 +9,7 @@
 #include <uhd/config.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/rfnoc/defaults.hpp>
+#include <uhd/rfnoc/mb_controller.hpp>
 #include <uhd/rfnoc/noc_block_base.hpp>
 #include <uhd/rfnoc/register_iface.hpp>
 #include <uhd/types/time_spec.hpp>
@@ -184,6 +185,7 @@ UHD_API mock_block_container get_mock_block(const noc_id_t noc_id,
     const uhd::device_addr_t& args                     = uhd::device_addr_t(),
     const size_t mtu                                   = 8000,
     const device_type_t device_id                      = ANY_DEVICE,
-    std::shared_ptr<mock_reg_iface_t> client_reg_iface = nullptr);
+    std::shared_ptr<mock_reg_iface_t> client_reg_iface = nullptr,
+    mb_controller::sptr mbc                            = nullptr);
 
 }}; // namespace uhd::rfnoc

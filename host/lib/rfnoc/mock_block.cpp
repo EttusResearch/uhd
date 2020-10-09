@@ -19,7 +19,8 @@ uhd::rfnoc::mock_block_container uhd::rfnoc::get_mock_block(const noc_id_t noc_i
     const device_addr_t& args,
     const size_t mtu,
     const device_type_t device_id,
-    std::shared_ptr<mock_reg_iface_t> client_reg_iface)
+    std::shared_ptr<mock_reg_iface_t> client_reg_iface,
+    mb_controller::sptr mbc)
 {
     block_factory_info_t fac_info = factory::get_block_factory(noc_id, device_id);
 
@@ -42,10 +43,10 @@ uhd::rfnoc::mock_block_container uhd::rfnoc::get_mock_block(const noc_id_t noc_i
         std::make_shared<clock_iface>(fac_info.timebase_clk);
     ret_val.make_args->ctrlport_clk_iface =
         std::make_shared<clock_iface>(fac_info.ctrlport_clk);
-    // TODO Make a mock mb controller too
-    ret_val.make_args->mb_control = nullptr;
-    if (fac_info.mb_access) {
-        UHD_LOG_WARNING("MOCK", "Mock block controllers cannot have mb_controllers.");
+    ret_val.make_args->mb_control = mbc;
+    if (fac_info.mb_access && !mbc) {
+        UHD_LOG_WARNING("MOCK",
+            "Mock block controllers has request for MB controller, but none was given.");
     }
 
     // Make block and return
