@@ -14,6 +14,7 @@
 namespace py = pybind11;
 
 #include "cal/cal_python.hpp"
+#include "property_tree_python.hpp"
 #include "rfnoc/ddc_block_control_python.hpp"
 #include "rfnoc/duc_block_control_python.hpp"
 #include "rfnoc/fft_block_control_python.hpp"
@@ -110,4 +111,7 @@ PYBIND11_MODULE(libpyuhd, m)
 
     auto chdr_module = m.def_submodule("chdr", "CHDR Parsing");
     export_utils(chdr_module);
+
+    // Register property tree
+    export_property_tree(m);
 }

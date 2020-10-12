@@ -5,7 +5,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include <pybind11/complex.h>
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 namespace py = pybind11;
 
@@ -27,6 +29,8 @@ void export_multi_usrp(py::module& m)
         .def(py::init(&multi_usrp::make))
 
         // clang-format off
+        .def("get_tree"                , &multi_usrp::get_tree)
+
         // General USRP methods
         .def("get_rx_freq"             , &multi_usrp::get_rx_freq, py::arg("chan") = 0)
         .def("get_rx_num_channels"     , &multi_usrp::get_rx_num_channels)
