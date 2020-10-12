@@ -131,6 +131,12 @@ public:
         _allow_claim_failure_flag = allow;
     }
 
+    //! Read the device access token
+    std::string get_token()
+    {
+        return _token;
+    }
+
 private:
     /*! Reference to the RPC client that handles claiming
      */
@@ -164,6 +170,10 @@ private:
     /*! Continuously reclaims the device.
      */
     uhd::task::sptr _claimer_task;
+
+    /*! A copy of the device access token
+     */
+    std::string _token;
 
     /*! This flag is only used within the claim() function. Go look there if you
      * really need to know what it does.

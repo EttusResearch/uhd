@@ -379,6 +379,7 @@ uhd::task::sptr mpmd_mboard_impl::claim_device_and_make_task()
     // Save token for both RPC clients
     _claim_rpc->set_token(rpc_token);
     rpc->set_token(rpc_token);
+    _token = rpc_token;
     // Optionally clear log buf
     if (mb_args.has_key("skip_oldlog")) {
         try {
