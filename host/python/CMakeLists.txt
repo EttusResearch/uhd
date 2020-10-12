@@ -29,7 +29,10 @@ execute_process(
     OUTPUT_VARIABLE PYTHON_NUMPY_INCLUDE_DIR)
 
 # Build pyuhd library
-add_library(pyuhd SHARED pyuhd.cpp)
+add_library(pyuhd SHARED
+    pyuhd.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/multi_usrp_python.cpp
+)
 # python expects extension modules with a particular suffix
 if(WIN32)
     set_target_properties(pyuhd PROPERTIES PREFIX "lib" SUFFIX ".pyd")
