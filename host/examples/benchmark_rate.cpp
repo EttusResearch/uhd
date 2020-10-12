@@ -100,6 +100,11 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp,
     const double rate = usrp->get_rx_rate();
 
     uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
+    cmd.num_samps = max_samps_per_packet;
+    if (random_nsamps) {
+        cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE;
+        cmd.num_samps = (rand() % max_samps_per_packet) + 1;
+    }
     cmd.time_spec  = usrp->get_time_now() + uhd::time_spec_t(rx_delay);
     cmd.stream_now = (buffs.size() == 1);
     rx_stream->issue_stream_cmd(cmd);
@@ -115,11 +120,12 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp,
             stop_called = true;
         }
         if (random_nsamps) {
-            cmd.num_samps = rand() % max_samps_per_packet;
+            cmd.time_spec  = usrp->get_time_now() + uhd::time_spec_t(rx_delay);
+            cmd.num_samps = (rand() % max_samps_per_packet) + 1;
             rx_stream->issue_stream_cmd(cmd);
         }
         try {
-            num_rx_samps += rx_stream->recv(buffs, max_samps_per_packet, md, recv_timeout)
+            num_rx_samps += rx_stream->recv(buffs, cmd.num_samps, md, recv_timeout)
                             * rx_stream->get_num_channels();
             recv_timeout = burst_pkt_time;
         } catch (uhd::io_error& e) {
@@ -236,17 +242,17 @@ void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp,
     if (random_nsamps) {
         std::srand((unsigned int)time(NULL));
         while (not burst_timer_elapsed) {
-            size_t total_num_samps = rand() % max_samps_per_packet;
+            size_t total_num_samps = (rand() % max_samps_per_packet) + 1;
             size_t num_acc_samps   = 0;
 
-            usrp->set_time_now(uhd::time_spec_t(0.0));
             while (num_acc_samps < total_num_samps) {
                 // send a single packet
                 num_tx_samps += tx_stream->send(buffs, spp, md, timeout)
                                 * tx_stream->get_num_channels();
                 num_acc_samps += std::min(
-                    total_num_samps - num_acc_samps, tx_stream->get_max_num_samps());
+                    total_num_samps - num_acc_samps, max_samps_per_packet);
             }
+            md.has_time_spec = false;
         }
     } else {
         while (not burst_timer_elapsed) {
