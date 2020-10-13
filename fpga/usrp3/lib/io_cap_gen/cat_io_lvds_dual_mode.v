@@ -7,15 +7,15 @@
 //
 // Description:
 //
-// This is an LVDS interface for the AD9361 (Catalina). It uses the cat_io_lvds 
-// module to implement the interface, but supports both 1R1T and 2R2T timing 
-// modes while using full LVDS bandwidth. That is, it can support 1R1T at twice 
+// This is an LVDS interface for the AD9361 (Catalina). It uses the cat_io_lvds
+// module to implement the interface, but supports both 1R1T and 2R2T timing
+// modes while using full LVDS bandwidth. That is, it can support 1R1T at twice
 // the sample rate of 2R2T.
 //
-// This is controlled by the a_mimo control signal. When MIMO = 0 (1R1T mode), 
-// the radio_clk frequency equals that of rx_clk/2 and the data is output to 
-// both radio channels. If MIMO = 1 (2R2T), the frequency of radio_clk equals 
-// rx_clk/4 and the data stream is split between channel 0 and channel 1. This is used 
+// This is controlled by the a_mimo control signal. When MIMO = 0 (1R1T mode),
+// the radio_clk frequency equals that of rx_clk/2 and the data is output to
+// both radio channels. If MIMO = 1 (2R2T), the frequency of radio_clk equals
+// rx_clk/4 and the data stream is split between channel 0 and channel 1. This is used
 // for 2R2T mode.
 //
 
@@ -37,7 +37,6 @@ module cat_io_lvds_dual_mode #(
   parameter OUTPUT_CLOCK_DELAY = 16,
   parameter OUTPUT_DATA_DELAY  = 0
 ) (
-  input rst,
   input clk200,
 
   // Data and frame timing (asynchronous, glitch free)
@@ -51,18 +50,19 @@ module cat_io_lvds_dual_mode #(
   input       ctrl_ld_in_data_delay,
   input       ctrl_ld_in_clk_delay,
   input [4:0] ctrl_out_data_delay,
-  input [4:0] ctrl_out_clk_delay,  
+  input [4:0] ctrl_out_clk_delay,
   input       ctrl_ld_out_data_delay,
   input       ctrl_ld_out_clk_delay,
 
   // Baseband sample interface
+  input  radio_rst,           // Glitch-free, synchronous to radio_clk
   output radio_clk,
   //
-  output reg        rx_aligned,
-  output reg [11:0] rx_i0,
-  output reg [11:0] rx_q0,
-  output reg [11:0] rx_i1,
-  output reg [11:0] rx_q1,
+  output reg    rx_aligned,
+  output [11:0] rx_i0,
+  output [11:0] rx_q0,
+  output [11:0] rx_i1,
+  output [11:0] rx_q1,
   //
   input  [11:0] tx_i0,
   input  [11:0] tx_q0,
@@ -84,7 +84,7 @@ module cat_io_lvds_dual_mode #(
   output [5:0] tx_d_p,
   output [5:0] tx_d_n
 );
-  
+
   wire radio_clk_1x;    // rx_clk_p divided by 4
   wire radio_clk_2x;    // rx_clk_p divided by 2
 
@@ -115,7 +115,8 @@ module cat_io_lvds_dual_mode #(
   // Clock Mux
   //---------------------------------------------------------------------------
 
-  // Use radio_clk_1x when MIMO = 1, radio_clk_2x when MIMO = 0
+  // Select the source for radio_clk. Use radio_clk_1x when MIMO = 1 or
+  // radio_clk_2x when MIMO = 0.
   BUFGCTRL BUFGCTRL_radio_clk (
     .I0      (radio_clk_1x),
     .I1      (radio_clk_2x),
@@ -146,7 +147,7 @@ module cat_io_lvds_dual_mode #(
   //
   //   align_2x       ______|‾‾‾‾‾‾‾‾‾‾‾|___________|‾‾‾‾‾‾‾‾‾‾‾|___________|
   //
-  // These two alignment signals allow us to tell where in the frame period we 
+  // These two alignment signals allow us to tell where in the frame period we
   // are so that we can deserialize in the correct order.
   //
   //---------------------------------------------------------------------------
@@ -161,7 +162,7 @@ module cat_io_lvds_dual_mode #(
 
   always @(posedge radio_clk_2x)
   begin
-    // Align data capture to 1x clock so that we stay in sync with data. 
+    // Align data capture to 1x clock so that we stay in sync with data.
     // Otherwise, the data might be serialized in the wrong order.
     align_2x <= align_1x;
   end
@@ -171,11 +172,19 @@ module cat_io_lvds_dual_mode #(
   // Rx MIMO/SISO Serialization
   //---------------------------------------------------------------------------
   //
-  // This block of code takes the dual outputs when in SISO mode and serializes 
-  // them. Because we use the 2x clock when in SISO mode, this allows us to 
+  // This block of code takes the dual outputs when in SISO mode and serializes
+  // them. Because we use the 2x clock when in SISO mode, this allows us to
   // double the data rate when using a single channel.
   //
   //---------------------------------------------------------------------------
+
+  wire rx_aligned_t;
+  reg rx_aligned_reg;
+
+  wire [11:0] rx_i0_t;
+  wire [11:0] rx_q0_t;
+  wire [11:0] rx_i1_t;
+  wire [11:0] rx_q1_t;
 
   reg [11:0] rx_i0_ser;
   reg [11:0] rx_q0_ser;
@@ -187,19 +196,21 @@ module cat_io_lvds_dual_mode #(
   reg [11:0] rx_i1_out;
   reg [11:0] rx_q1_out;
 
+  reg rx_out_val;
+
   always @(posedge radio_clk_2x)
   begin
-    rx_aligned <= rx_aligned_t;
+    rx_aligned_reg <= rx_aligned_t;
 
     if (align_1x ^ align_2x) begin
-      // This clock cycle corresponds to the first 1x cycle in which two 
+      // This clock cycle corresponds to the first 1x cycle in which two
       // samples are output, so grab data from port 0.
       rx_i0_ser <= rx_i0_t;
       rx_q0_ser <= rx_q0_t;
       rx_i1_ser <= rx_i0_t;
       rx_q1_ser <= rx_q0_t;
     end else begin
-      // This radio_clk_2x cycle corresponds to the second 1x cycle in which 
+      // This radio_clk_2x cycle corresponds to the second 1x cycle in which
       // two samples are output, so grab data from port 1.
       rx_i0_ser <= rx_i1_t;
       rx_q0_ser <= rx_q1_t;
@@ -209,11 +220,17 @@ module cat_io_lvds_dual_mode #(
 
     // Select the correct Rx output based on MIMO setting
     if (r_mimo) begin
+      // In MIMO mode, we get new data for both channels every other
+      // radio_clk_2x clock cycle.
+      rx_out_val <= ~rx_out_val;
       rx_i0_out <= rx_i0_t;
       rx_q0_out <= rx_q0_t;
       rx_i1_out <= rx_i1_t;
       rx_q1_out <= rx_q1_t;
     end else begin
+      // In SISO mode, we get new data for one channel on every radio_clk_2x
+      // cock cycle.
+      rx_out_val <= 1'b1;
       rx_i0_out <= rx_i0_ser;
       rx_q0_out <= rx_q0_ser;
       rx_i1_out <= rx_i1_ser;
@@ -223,35 +240,106 @@ module cat_io_lvds_dual_mode #(
 
 
   //---------------------------------------------------------------------------
-  // Synchronize Rx to radio_clk Domain
+  // Cross RX Data from radio_clk_2x to radio_clk Domain
   //---------------------------------------------------------------------------
   //
-  //  This crosses the radio data from the radio_clk_1x domain to the radio_clk 
-  //  domain. We use the falling edge of radio_clk to allow for the BUFG 
-  //  insertion delay.
+  //  The clocks are synchronous and the data input rate matches the data
+  //  output rate, so this FIFO should never overflow or underflow once it is
+  //  primed and starts being read.
   //
   //---------------------------------------------------------------------------
 
-  reg [11:0] rx_i0_fall;
-  reg [11:0] rx_q0_fall;
-  reg [11:0] rx_i1_fall;
-  reg [11:0] rx_q1_fall;
-   
-  always @(negedge radio_clk)
-  begin
-    rx_i0_fall <= rx_i0_out;
-    rx_q0_fall <= rx_q0_out;
-    rx_i1_fall <= rx_i1_out;
-    rx_q1_fall <= rx_q1_out;
+  wire rx_fifo_full;
+  wire rx_fifo_empty;
+  reg  rx_fifo_rd_en;
+
+  fifo_short_2clk fifo_short_2clk_rx (
+    .rst           (radio_rst),         // Asynchronous reset input
+    .wr_clk        (radio_clk_2x),
+    .rd_clk        (radio_clk),
+    .din           ({rx_i1_out, rx_q1_out, rx_i0_out, rx_q0_out}),
+    .wr_en         (rx_out_val & ~rx_fifo_full & rx_aligned_reg),
+    .rd_en         (rx_fifo_rd_en & ~rx_fifo_empty),
+    .dout          ({rx_i1, rx_q1, rx_i0, rx_q0 }),
+    .full          (rx_fifo_full),
+    .empty         (rx_fifo_empty),
+    .rd_data_count (),
+    .wr_data_count ()
+  );
+
+  // Wait until the FIFO is partially filled before we start reading out data.
+  // Go back to waiting if the FIFO empties.
+  always @(posedge radio_clk) begin
+    if (radio_rst) begin
+      rx_fifo_rd_en <= 1'b0;
+      rx_aligned    <= 1'b0;
+    end else begin
+      if (!rx_fifo_empty) begin
+        rx_fifo_rd_en <= 1'b1;
+        rx_aligned    <= 1'b1;
+      end else if (rx_fifo_empty) begin
+        rx_fifo_rd_en <= 1'b0;
+        rx_aligned    <= 1'b0;
+      end
+    end
   end
 
-  // Re-clock data on the rising edge to present the whole period to external IP
-  always @(posedge radio_clk)
-  begin
-    rx_i0 <= rx_i0_fall;
-    rx_q0 <= rx_q0_fall;
-    rx_i1 <= rx_i1_fall;
-    rx_q1 <= rx_q1_fall;
+
+  //---------------------------------------------------------------------------
+  // Cross TX Data from radio_clk domain to radio_clk_2x Domain
+  //---------------------------------------------------------------------------
+  //
+  //  The clocks are synchronous and the data input rate matches the data
+  //  output rate, so this FIFO should never overflow or underflow once it is
+  //  primed and starts being read.
+  //
+  //---------------------------------------------------------------------------
+
+  // Cross the radio_rst to radio_clk_2x
+  synchronizer #(
+    .INITIAL_VAL (1'b1)
+  ) synchronizer_radio_rst_2x (
+    .clk (radio_clk_2x),
+    .rst (1'b0),
+    .in  (radio_rst),
+    .out (radio_rst_2x)
+  );
+
+  wire [11:0] tx_i0_del0;
+  wire [11:0] tx_q0_del0;
+  wire [11:0] tx_i1_del0;
+  wire [11:0] tx_q1_del0;
+
+  wire tx_fifo_full;
+  wire tx_fifo_empty;
+  reg  tx_fifo_rd_en;
+
+  fifo_short_2clk fifo_short_2clk_tx (
+    .rst           (radio_rst),         // Asynchronous reset input
+    .wr_clk        (radio_clk),
+    .rd_clk        (radio_clk_2x),
+    .din           ({tx_i1, tx_q1, tx_i0, tx_q0}),
+    .wr_en         (~tx_fifo_full),
+    .rd_en         (tx_fifo_rd_en & ~tx_fifo_empty),
+    .dout          ({tx_i1_del0, tx_q1_del0, tx_i0_del0, tx_q0_del0}),
+    .full          (tx_fifo_full),
+    .empty         (tx_fifo_empty),
+    .rd_data_count (),
+    .wr_data_count ()
+  );
+
+  // Wait until the FIFO is partially filled before we start reading out data.
+  // Go back to waiting if the FIFO empties.
+  always @(posedge radio_clk_2x) begin
+    if (radio_rst_2x) begin
+      tx_fifo_rd_en <= 1'b0;
+    end else begin
+      if (!tx_fifo_empty) begin
+        tx_fifo_rd_en <= 1'b1;
+      end else if (tx_fifo_empty) begin
+        tx_fifo_rd_en <= 1'b0;
+      end
+    end
   end
 
 
@@ -259,51 +347,56 @@ module cat_io_lvds_dual_mode #(
   // Tx MIMO/SISO Deserialization
   //---------------------------------------------------------------------------
   //
-  // This block of code takes the serialized output from the radios and 
-  // parallelizes it onto the two radio ports of the Catalina interface. It 
-  // also takes the radio data, output on the radio_clk domain, and crosses it 
+  // This block of code takes the serialized output from the radios and
+  // parallelizes it onto the two radio ports of the Catalina interface. It
+  // also takes the radio data, output on the radio_clk domain, and crosses it
   // to the radio_clk_1x domain.
   //
   //---------------------------------------------------------------------------
 
-  reg [11:0] tx_i0_del;
-  reg [11:0] tx_q0_del;
-  reg [11:0] tx_i1_del;
-  reg [11:0] tx_q1_del;
+  reg [11:0] tx_i0_del1;
+  reg [11:0] tx_q0_del1;
+  reg [11:0] tx_i1_del1;
+  reg [11:0] tx_q1_del1;
+
+  reg [11:0] tx_i0_t;
+  reg [11:0] tx_q0_t;
+  reg [11:0] tx_i1_t;
+  reg [11:0] tx_q1_t;
 
   always @(posedge radio_clk_2x)
   begin
-    // Capture copy of the data delayed by one radio_clk_2c cycle.
-    tx_i0_del <= tx_i0;
-    tx_q0_del <= tx_q0;
-    tx_i1_del <= tx_i1;
-    tx_q1_del <= tx_q1;
+    // Capture copy of the data delayed by one radio_clk_2x cycle.
+    tx_i0_del1 <= tx_i0_del0;
+    tx_q0_del1 <= tx_q0_del0;
+    tx_i1_del1 <= tx_i1_del0;
+    tx_q1_del1 <= tx_q1_del0;
   end
 
   always @(posedge radio_clk_1x)
   begin
     if (r_mimo) begin
-      // In MIMO mode, radio_clk is radio_clk_1x, so we just capture the same 
+      // In MIMO mode, radio_clk is radio_clk_1x, so we just capture the same
       // data for each radio_clk_1x cycle.
-      tx_i0_t <= tx_i0;
-      tx_q0_t <= tx_q0;
-      tx_i1_t <= tx_i1;
-      tx_q1_t <= tx_q1;
+      tx_i0_t <= tx_i0_del0;
+      tx_q0_t <= tx_q0_del0;
+      tx_i1_t <= tx_i1_del0;
+      tx_q1_t <= tx_q1_del0;
     end else begin
-      // In SISO mode, data is updated every radio_clk_2x cycle, so we output 
-      // the data from the previous radio_clk_2x cycle onto channel 0 and the 
-      // data from the current radio_clk_2x cycle onto channel 1. This puts the 
+      // In SISO mode, data is updated every radio_clk_2x cycle, so we output
+      // the data from the previous radio_clk_2x cycle onto channel 0 and the
+      // data from the current radio_clk_2x cycle onto channel 1. This puts the
       // data in the correct order when in 1R1T mode.
       if (r_tx_ch == 0) begin
-        tx_i0_t <= tx_i0_del;
-        tx_q0_t <= tx_q0_del;
-        tx_i1_t <= tx_i0;
-        tx_q1_t <= tx_q0;
+        tx_i0_t <= tx_i0_del1;
+        tx_q0_t <= tx_q0_del1;
+        tx_i1_t <= tx_i0_del0;
+        tx_q1_t <= tx_q0_del0;
       end else begin
-        tx_i0_t <= tx_i1_del;
-        tx_q0_t <= tx_q1_del;
-        tx_i1_t <= tx_i1;
-        tx_q1_t <= tx_q1;
+        tx_i0_t <= tx_i1_del1;
+        tx_q0_t <= tx_q1_del1;
+        tx_i1_t <= tx_i1_del0;
+        tx_q1_t <= tx_q1_del0;
       end
     end
   end
@@ -313,17 +406,6 @@ module cat_io_lvds_dual_mode #(
   // Catalina TX/RX Interface
   //---------------------------------------------------------------------------
 
-  wire        rx_aligned_t;
-  wire [11:0] rx_i0_t;
-  wire [11:0] rx_q0_t;
-  wire [11:0] rx_i1_t;
-  wire [11:0] rx_q1_t;
-
-  reg [11:0] tx_i0_t;
-  reg [11:0] tx_q0_t;
-  reg [11:0] tx_i1_t;
-  reg [11:0] tx_q1_t;
-  
   cat_io_lvds #(
     .INVERT_FRAME_RX    (0),
     .INVERT_DATA_RX     (6'b00_0000),
@@ -343,13 +425,13 @@ module cat_io_lvds_dual_mode #(
     .OUTPUT_DATA_DELAY  (OUTPUT_DATA_DELAY),
     .USE_BUFG           (0)
   ) cat_io_lvds_i0 (
-    .rst    (rst),
+    .rst    (radio_rst),
     .clk200 (clk200),
-    
+
     // Data and frame timing
     .mimo         (1),       // Set to 1 to always return all samples
     .frame_sample (~r_mimo), // Frame timing corresponds to SISO/MIMO setting
-    
+
     // Delay control interface
     .ctrl_clk               (ctrl_clk),
     //
@@ -362,7 +444,7 @@ module cat_io_lvds_dual_mode #(
     .ctrl_out_clk_delay     (ctrl_out_clk_delay),
     .ctrl_ld_out_data_delay (ctrl_ld_out_data_delay),
     .ctrl_ld_out_clk_delay  (ctrl_ld_out_clk_delay),
-    
+
     // Baseband sample interface
     .radio_clk    (radio_clk_1x),
     .radio_clk_2x (radio_clk_2x),
@@ -377,7 +459,7 @@ module cat_io_lvds_dual_mode #(
     .tx_q0        (tx_q0_t),
     .tx_i1        (tx_i1_t),
     .tx_q1        (tx_q1_t),
-    
+
     // Catalina interface
     .rx_clk_p   (rx_clk_p),
     .rx_clk_n   (rx_clk_n),
