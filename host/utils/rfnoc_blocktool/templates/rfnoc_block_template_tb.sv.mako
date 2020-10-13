@@ -123,14 +123,14 @@ module rfnoc_block_${config['module_name']}_tb;
   // Map the array of BFMs to a flat vector for the DUT connections
   for (genvar i = 0; i < NUM_PORTS_I; i++) begin : gen_dut_input_connections
     // Connect BFM master to DUT slave port
-    assign s_rfnoc_chdr_tdata[CHDR_W*i+:CHDR_W] = m_chdr[i].tdata;
+    assign s_rfnoc_chdr_tdata[CHDR_W*(i+1)-1:CHDR_W*i] = m_chdr[i].tdata;
     assign s_rfnoc_chdr_tlast[i]                = m_chdr[i].tlast;
     assign s_rfnoc_chdr_tvalid[i]               = m_chdr[i].tvalid;
     assign m_chdr[i].tready                     = s_rfnoc_chdr_tready[i];
   end
   for (genvar i = 0; i < NUM_PORTS_O; i++) begin : gen_dut_output_connections
     // Connect BFM slave to DUT master port
-    assign s_chdr[i].tdata        = m_rfnoc_chdr_tdata[CHDR_W*i+:CHDR_W];
+    assign s_chdr[i].tdata        = m_rfnoc_chdr_tdata[CHDR_W*(i+1)-1:CHDR_W*i];
     assign s_chdr[i].tlast        = m_rfnoc_chdr_tlast[i];
     assign s_chdr[i].tvalid       = m_rfnoc_chdr_tvalid[i];
     assign m_rfnoc_chdr_tready[i] = s_chdr[i].tready;
