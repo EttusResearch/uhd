@@ -57,7 +57,7 @@ module axis_strm_monitor #(
     end
   end
 
-  generate if (PKT_LENGTH_EN == 0) begin
+  generate if (PKT_LENGTH_EN) begin
     // Count the number of lines (transfers) in a packet
     always @(posedge clk) begin
       if (reset | eop) begin
@@ -71,7 +71,7 @@ module axis_strm_monitor #(
     always @(*) pkt_length <= 16'd0;
   end endgenerate
 
-  generate if (PKT_LENGTH_EN == 0) begin
+  generate if (PKT_CHKSUM_EN) begin
     // Compute the XOR checksum of the lines in a packet
     reg [WIDTH-1:0] chksum_prev = {WIDTH{1'b0}};
     always @(posedge clk) begin
