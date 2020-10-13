@@ -1,16 +1,19 @@
 //
-// Copyright 2016 Ettus Research, A National Instruments Company
+// Copyright 2020 Ettus Research, A National Instruments Company
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
 // Module: cat_io_lvds_dual_mode_tb
 //
-// Description: Testbench for cat_io_lvds_dual_mode. 
+// Description: Testbench for cat_io_lvds_dual_mode.
 //
 
 `timescale 1ns/1ps
 
 module cat_io_lvds_dual_mode_tb();
+
+  `include "test_exec.svh"
+  import PkgTestExec::*;
 
   localparam CLK_PERIOD    = 10;
   localparam CLK200_PERIOD = 2.5;
@@ -28,8 +31,7 @@ module cat_io_lvds_dual_mode_tb();
   localparam OUTPUT_CLOCK_DELAY = 31;
   localparam OUTPUT_DATA_DELAY  = 0;
 
-  reg [8*19:0] test_status;
-  reg          check_enabled;   // Controls when output checking is performed
+  reg       check_enabled;   // Controls when output checking is performed
 
   reg       clk    = 0;
   reg       rx_clk = 0;
@@ -42,7 +44,7 @@ module cat_io_lvds_dual_mode_tb();
   reg       rx_frame;
   reg [7:0] rx_count = 0;
 
-  // Each channel's data begins with a unique identifier (A../B.. or C../D..) 
+  // Each channel's data begins with a unique identifier (A../B.. or C../D..)
   // followed by a count, which should always be sequential.
   wire [11:0] i0 = { 4'hA, rx_count };
   wire [11:0] q0 = { 4'hB, rx_count };
@@ -96,66 +98,78 @@ module cat_io_lvds_dual_mode_tb();
   // Tasks
   //---------------------------------------------------------------------------
 
-  // Output a single burst of 2*len samples. In MIMO mode, this consists of len 
-  // samples on each channel. In SISO mode, this consists of 2*len samples on  
+  // Output a single burst of 2*len samples. In MIMO mode, this consists of len
+  // samples on each channel. In SISO mode, this consists of 2*len samples on
   // the same channel.
-  task Burst;
-    input [31:0] len;
-    input        do_mimo;
-    begin
-      repeat(len)
-        begin
-          mimo <= do_mimo;
+  task Burst(int len, logic do_mimo);
+    repeat(len)
+      begin
+        mimo <= do_mimo;
 
-          // Channel 0 sample
-          @(posedge clk);
-          rx_d <= i0[11:6];
-          rx_frame <= 1;
-          @(posedge clk);
-          rx_d <= q0[11:6];
-          rx_frame <= 1;
-          @(posedge clk);
-          rx_d <= i0[5:0];
-          rx_frame <= do_mimo;
-          @(posedge clk);
-          rx_d <= q0[5:0];
-          rx_frame <= do_mimo;
+        // Channel 0 sample
+        @(posedge clk);
+        rx_d <= i0[11:6];
+        rx_frame <= 1;
+        @(posedge clk);
+        rx_d <= q0[11:6];
+        rx_frame <= 1;
+        @(posedge clk);
+        rx_d <= i0[5:0];
+        rx_frame <= do_mimo;
+        @(posedge clk);
+        rx_d <= q0[5:0];
+        rx_frame <= do_mimo;
 
-          // Channel 1 sample / Second channel 0 sample
-          @(posedge clk);
-          rx_d <= i1[11:6];
-          rx_frame <= ~do_mimo;
-          @(posedge clk);
-          rx_d <= q1[11:6];
-          rx_frame <= ~do_mimo;
-          @(posedge clk);
-          rx_d <= i1[5:0];
-          rx_frame <= 0;
-          @(posedge clk);
-          rx_d <= q1[5:0];
-          rx_frame <= 0;
+        // Channel 1 sample / Second channel 0 sample
+        @(posedge clk);
+        rx_d <= i1[11:6];
+        rx_frame <= ~do_mimo;
+        @(posedge clk);
+        rx_d <= q1[11:6];
+        rx_frame <= ~do_mimo;
+        @(posedge clk);
+        rx_d <= i1[5:0];
+        rx_frame <= 0;
+        @(posedge clk);
+        rx_d <= q1[5:0];
+        rx_frame <= 0;
 
-          rx_count <= rx_count + 1;
-        end
-    end
-  endtask // Burst
+        rx_count <= rx_count + 1;
+      end
+  endtask : Burst
 
 
-  // Test receiving/transmitting 2*len samples, checking len-2 for correctness. 
-  // The output is checked by the Tx and Rx Output Checkers below. We have to 
-  // be a little bit careful when we enable output checking, because it takes a 
-  // few clock cycles for data to propagate through, and we don't want to check 
+  // Output zeros for len clk cycles (model what happens when the RFDC stops
+  // giving us data).
+  task Idle(int len = 100);
+    rx_d     <= 0;
+    rx_frame <= 0;
+    repeat (len) @(posedge clk);
+  endtask : Idle
+
+
+  task Reset(int num_cycles = 20);
+    reset <= 1;
+    repeat(num_cycles) @(negedge rx_clk);
+    reset <= 0;
+    repeat(2) @(negedge rx_clk);
+  endtask : Reset
+
+
+  // Test receiving/transmitting 2*len samples, checking len-2 for correctness.
+  // The output is checked by the Tx and Rx Output Checkers below. We have to
+  // be a little bit careful when we enable output checking, because it takes a
+  // few clock cycles for data to propagate through, and we don't want to check
   // the outputs when the outputs are not valid.
   task TestBurst;
     input [31:0] len;
     input        do_mimo;
     begin
       if (len <= 2) begin
-        $display("ERROR @%0t in %m: In TestBurst, len must be > 2", $time);
-        $finish;
+        $fatal(1, "ERROR @%0t in %m: In TestBurst, len must be > 2", $time);
       end
 
-      // Input several bursts, to fill the pipeline and cause results on the 
+      // Input several bursts, to fill the pipeline and cause results on the
       // outputs before we start checking.
       Burst(1, do_mimo);
 
@@ -178,182 +192,211 @@ module cat_io_lvds_dual_mode_tb();
   // Test Procedure
   //---------------------------------------------------------------------------
 
-  initial
-    begin
-      // Initial values
-      check_enabled <= 1'b0;
-      test_status <= "Reset";
-      reset = 1;
-      mimo  = 1;
-      ctrl_in_clk_delay      = INPUT_CLOCK_DELAY;
-      ctrl_in_data_delay     = INPUT_DATA_DELAY;
-      ctrl_ld_in_data_delay  = 1'b0;
-      ctrl_ld_in_clk_delay   = 1'b0;
-      ctrl_out_clk_delay     = OUTPUT_CLOCK_DELAY;
-      ctrl_out_data_delay    = OUTPUT_DATA_DELAY;
-      ctrl_ld_out_data_delay = 1'b0;
-      ctrl_ld_out_clk_delay  = 1'b0;
-      repeat(10) @(negedge rx_clk);
-      reset = 0;
+  initial begin : main
+
+    test.start_tb("cat_io_lvds_dual_mode_tb");
+
+    // Initial values
+    check_enabled <= 1'b0;
+    reset = 1;
+    mimo  = 1;
+    ctrl_in_clk_delay      = INPUT_CLOCK_DELAY;
+    ctrl_in_data_delay     = INPUT_DATA_DELAY;
+    ctrl_ld_in_data_delay  = 1'b0;
+    ctrl_ld_in_clk_delay   = 1'b0;
+    ctrl_out_clk_delay     = OUTPUT_CLOCK_DELAY;
+    ctrl_out_data_delay    = OUTPUT_DATA_DELAY;
+    ctrl_ld_out_data_delay = 1'b0;
+    ctrl_ld_out_clk_delay  = 1'b0;
+
+    Reset();
+
+    //-----------------------------------------------------------------------
+    // Test Changing Delays
+
+    test.start_test("Load IO delays");
+
+    if (CLOCK_IDELAY_MODE == "VAR_LOAD") begin
+      ctrl_ld_in_clk_delay  = 1'b1;
       @(negedge rx_clk);
-
-      //-----------------------------------------------------------------------
-      // Test Changing Delays
-
-      test_status <= "Load IO delays";
-
-      if (CLOCK_IDELAY_MODE == "VAR_LOAD") begin
-        ctrl_ld_in_clk_delay  = 1'b1;
-        @(negedge rx_clk);
-        ctrl_ld_in_clk_delay  = 1'b0;
-        @(negedge rx_clk);
-      end
-
-      if (DATA_IDELAY_MODE == "VAR_LOAD") begin
-        ctrl_ld_in_data_delay = 1'b1;
-        @(negedge rx_clk);
-        ctrl_ld_in_data_delay = 1'b0;
-        @(negedge rx_clk);
-      end
-
-      if (CLOCK_ODELAY_MODE == "VAR_LOAD") begin
-        ctrl_ld_out_clk_delay  = 1'b1;
-        @(negedge rx_clk);
-        ctrl_ld_out_clk_delay  = 1'b0;
-        @(negedge rx_clk);
-      end
-
-      if (DATA_ODELAY_MODE == "VAR_LOAD") begin
-        ctrl_ld_out_data_delay = 1'b1;
-        @(negedge rx_clk);
-        ctrl_ld_out_data_delay = 1'b0;
-        @(negedge rx_clk);
-      end
-
-      //-----------------------------------------------------------------------
-      // Startup
-
-      test_status <= "Startup";
-
-      // Pump a few clock cycles to get things started (flush out X values)
-      Burst(2,1);
-
-      //-----------------------------------------------------------------------
-      // Test MIMO
-
-      // Input data until the Rx circuit aligns
-      test_status <= "Wait align 1";
-      while (!rx_aligned) begin
-        Burst(1,1);
-      end
-
-      // Input some new samples
-      test_status <= "Burst 1 (MIMO)";
-      TestBurst(30, 1);
-
-      // Reset and do another burst
-      test_status <= "Reset 2";
-      reset = 1;
-      repeat(20) @(negedge rx_clk);
-      reset = 0;
-      repeat(2) @(negedge rx_clk);      
-
-      // Input data until the Rx circuit aligns
-      test_status <= "Wait align 2";
-      while (!rx_aligned) begin
-        Burst(1,1);
-      end
-
-      // Input some new samples
-      test_status <= "Burst 2 (MIMO)";
-      TestBurst(23, 1);
-
-      //-----------------------------------------------------------------------
-      // Test SISO (transmit channel 0)
-
-      tx_ch <= 1'b0;
-
-      // Reset and do another burst
-      test_status <= "Reset 3";
-      reset = 1;
-      repeat(20) @(negedge rx_clk);
-      reset = 0;
-      repeat(2) @(negedge rx_clk);      
-
-      // Input data until the Rx circuit aligns in SISO mode
-      test_status <= "Wait align 3";
-      while (!rx_aligned) begin
-        Burst(1,0);
-      end
-
-      // Test SISO mode
-      test_status <= "Burst 3 (SISO, Ch 0)";
-      TestBurst(25, 0);
-
-      // Reset and do another burst
-      test_status <= "Reset 4";
-      reset = 1;
-      repeat(20) @(negedge rx_clk);
-      reset = 0;
-      repeat(2) @(negedge rx_clk);      
-
-      // Input data until the Rx circuit aligns in SISO mode
-      test_status <= "Wait align 4";
-      while (!rx_aligned) begin
-        Burst(1,0);
-      end
-
-      // Test SISO mode
-      test_status <= "Burst 4 (SISO, Ch 0)";
-      TestBurst(27, 0);
-
-      //-----------------------------------------------------------------------
-      // Test SISO (transmit channel 1)
-
-      tx_ch <= 1'b1;
-
-      // Reset and do another burst
-      test_status <= "Reset 5";
-      reset = 1;
-      repeat(20) @(negedge rx_clk);
-      reset = 0;
-      repeat(2) @(negedge rx_clk);      
-
-      // Input data until the Rx circuit aligns in SISO mode
-      test_status <= "Wait align 5";
-      while (!rx_aligned) begin
-        Burst(1,0);
-      end
-
-      // Test SISO mode
-      test_status <= "Burst 5 (SISO, Ch 1)";
-      TestBurst(25, 0);
-
-      // Reset and do another burst
-      test_status <= "Reset 6";
-      reset = 1;
-      repeat(20) @(negedge rx_clk);
-      reset = 0;
-      repeat(2) @(negedge rx_clk);      
-
-      // Input data until the Rx circuit aligns in SISO mode
-      test_status <= "Wait align 6";
-      while (!rx_aligned) begin
-        Burst(1,0);
-      end
-
-      // Test SISO mode
-      test_status <= "Burst 6 (SISO, Ch 1)";
-      TestBurst(27, 0);
-
-      //-----------------------------------------------------------------------
-      // Done
-
-      test_status <= "Finished";
-      repeat(50) @(negedge rx_clk);
-
-      $finish;
+      ctrl_ld_in_clk_delay  = 1'b0;
+      @(negedge rx_clk);
     end
+
+    if (DATA_IDELAY_MODE == "VAR_LOAD") begin
+      ctrl_ld_in_data_delay = 1'b1;
+      @(negedge rx_clk);
+      ctrl_ld_in_data_delay = 1'b0;
+      @(negedge rx_clk);
+    end
+
+    if (CLOCK_ODELAY_MODE == "VAR_LOAD") begin
+      ctrl_ld_out_clk_delay  = 1'b1;
+      @(negedge rx_clk);
+      ctrl_ld_out_clk_delay  = 1'b0;
+      @(negedge rx_clk);
+    end
+
+    if (DATA_ODELAY_MODE == "VAR_LOAD") begin
+      ctrl_ld_out_data_delay = 1'b1;
+      @(negedge rx_clk);
+      ctrl_ld_out_data_delay = 1'b0;
+      @(negedge rx_clk);
+    end
+
+    test.end_test();
+
+    //-----------------------------------------------------------------------
+    // Startup
+
+    test.start_test("Load IO delays");
+
+    // Pump a few clock cycles to get things started (flush out X values)
+    Burst(2,1);
+
+    test.end_test();
+
+
+    //-----------------------------------------------------------------------
+    // Test MIMO
+
+    test.start_test("Test MIMO");
+
+    // Input data until the Rx circuit aligns
+    $display("Wait align 1");
+    while (!rx_aligned) begin
+      Burst(1,1);
+    end
+
+    // Input some new samples
+    $display("Burst 1 (MIMO)");
+    TestBurst(30, 1);
+
+    // Reset and do another burst
+    $display("Reset 2");
+    Reset();
+
+    // Input data until the Rx circuit aligns
+    $display("Wait align 2");
+    while (!rx_aligned) begin
+      Burst(1,1);
+    end
+
+    // Input some new samples
+    $display("Burst 2 (MIMO)");
+    TestBurst(23, 1);
+
+    test.end_test();
+
+    //-----------------------------------------------------------------------
+    // Test SISO (transmit channel 0)
+
+    test.start_test("Test SISO (transmit channel 0)");
+
+    tx_ch <= 1'b0;
+
+    // Reset and do another burst
+    $display("Reset 3");
+    Reset();
+
+    // Input data until the Rx circuit aligns in SISO mode
+    $display("Wait align 3");
+    while (!rx_aligned) Burst(1,0);
+
+    // Test SISO mode
+    $display("Burst 3 (SISO, Ch 0)");
+    TestBurst(25, 0);
+
+    // Reset and do another burst
+    $display("Reset 4");
+    Reset();
+
+    // Input data until the Rx circuit aligns in SISO mode
+    $display("Wait align 4");
+    while (!rx_aligned) Burst(1,0);
+
+    // Test SISO mode
+    $display("Burst 4 (SISO, Ch 0)");
+    TestBurst(27, 0);
+
+    test.end_test();
+
+    //-----------------------------------------------------------------------
+    // Test SISO (transmit channel 1)
+
+    test.start_test("Test SISO (transmit channel 1)");
+
+    tx_ch <= 1'b1;
+
+    // Reset and do another burst
+    $display("Reset 5");
+    Reset();
+
+    // Input data until the Rx circuit aligns in SISO mode
+    $display("Wait align 5");
+    while (!rx_aligned) Burst(1,0);
+
+    // Test SISO mode
+    $display("Burst 5 (SISO, Ch 1)");
+    TestBurst(25, 0);
+
+    // Reset and do another burst
+    $display("Reset 6");
+    Reset();
+
+    // Input data until the Rx circuit aligns in SISO mode
+    $display("Wait align 6");
+    while (!rx_aligned) Burst(1,0);
+
+    // Test SISO mode
+    $display("Burst 6 (SISO, Ch 1)");
+    TestBurst(27, 0);
+
+    test.end_test();
+
+    //-----------------------------------------------------------------------
+    // Test going Idle then starting SISO, without reset
+
+    test.start_test("Test Idle then SISO");
+
+    tx_ch <= 1'b1;
+
+    $display("Wait idle flush 6");
+    while (rx_aligned) Idle(1);
+    $display("Wait align 6");
+    while (!rx_aligned) Burst(1,0);
+
+    // Test SISO mode
+    $display("Burst 6 (SISO, Ch 1)");
+    TestBurst(25, 0);
+
+    test.end_test();
+
+    //-----------------------------------------------------------------------
+    // Test going Idle then starting MIMO, without reset
+
+    test.start_test("Test Idle then MIMO");
+
+    tx_ch <= 1'b1;
+
+    $display("Wait idle flush 7");
+    while (rx_aligned) Idle(1);
+    $display("Wait align 7");
+    while (!rx_aligned) begin
+      Burst(1,1);
+    end
+
+    // Test SISO mode
+    $display("Burst 7 (SISO, Ch 1)");
+    TestBurst(25, 1);
+
+    test.end_test();
+
+    //-----------------------------------------------------------------------
+    // Done
+
+    test.end_tb();
+  end : main
 
 
   //---------------------------------------------------------------------------
@@ -391,78 +434,69 @@ module cat_io_lvds_dual_mode_tb();
 
           // Check prefix for channel 0
           if (rx_i0[11:8] != 4'hA || rx_q0[11:8] != 4'hB) begin
-            $display("ERROR @%0t in %m: Rx channel 0 didn't have expected A/B prefix in MIMO mode", $time);
-            $finish;
+            $fatal(1, "ERROR in %m: Rx channel 0 didn't have expected A/B prefix in MIMO mode");
           end
 
           // Check prefix for channel 1
           if (rx_i1[11:8] != 4'hC || rx_q1[11:8] != 4'hD) begin
-            $display("ERROR @%0t in %m: Rx channel 1 didn't have expected C/D in MIMO mode", $time);
-            $finish;
+            $fatal(1, "ERROR in %m: Rx channel 1 didn't have expected C/D in MIMO mode");
           end
 
           // All outputs should have the same count in MIMO mode
           if (! (rx_i0[7:0] == rx_q0[7:0] &&
-                 rx_i0[7:0] == rx_i1[7:0] && 
+                 rx_i0[7:0] == rx_i1[7:0] &&
                  rx_i0[7:0] == rx_q1[7:0]) ) begin
-            $display("ERROR @%0t in %m: Rx data counts didn't match on all outputs in MIMO mode", $time);
-            $finish;
+            $fatal(1, "ERROR in %m: Rx data counts didn't match on all outputs in MIMO mode");
           end
 
           // Make sure the count increments
           if (rx_i0[7:0] != rx_i0_del1[7:0] + 8'd1 || rx_q0[7:0] != rx_q0_del1[7:0] + 8'd1 ||
               rx_i1[7:0] != rx_i1_del1[7:0] + 8'd1 || rx_q1[7:0] != rx_q1_del1[7:0] + 8'd1) begin
-            $display("ERROR @%0t in %m: Rx data count didn't increment as expected", $time);
-            $finish;
+            $fatal(1, "ERROR in %m: Rx data count didn't increment as expected");
           end
 
         end else begin  // if (mimo)
 
           // In SISO mode, both outputs should be the same
           if (rx_i0 != rx_i1 || rx_q0 != rx_q1) begin
-            $display("ERROR @%0t in %m: Rx channel 0 and 1 don't match in SISO mode", $time);
-            $finish;
+            $fatal(1, "ERROR in %m: Rx channel 0 and 1 don't match in SISO mode");
           end
 
-          // Check channel 0 prefix. No need to check channel 1, since we 
+          // Check channel 0 prefix. No need to check channel 1, since we
           // already checked that the channels match.
-          if (!((rx_i0[11:8] == 4'hA && rx_q0[11:8] == 4'hB) || 
+          if (!((rx_i0[11:8] == 4'hA && rx_q0[11:8] == 4'hB) ||
                 (rx_i0[11:8] == 4'hC && rx_q0[11:8] == 4'hD))) begin
-            $display("ERROR @%0t in %m: Rx data didn't have expected A/B or C/D prefix in SISO mode", $time);
-            $finish;
+            $fatal(1, "ERROR in %m: Rx data didn't have expected A/B or C/D prefix in SISO mode");
           end
 
-          // Make sure we're alternating between channel data. No need to check 
+          // Make sure we're alternating between channel data. No need to check
           // channel 1, since we already checked that the channels match.
           if (!((rx_i0[11:8] == 4'hA && rx_i0_del1[11:8] == 4'hC) ||
                 (rx_i0[11:8] == 4'hC && rx_i0_del1[11:8] == 4'hA) ||
                 (rx_q0[11:8] == 4'hB && rx_q0_del1[11:8] == 4'hD) ||
                 (rx_q0[11:8] == 4'hD && rx_q0_del1[11:8] == 4'hB))) begin
-            $display("ERROR @%0t in %m: Rx data not toggling between channel data in SISO mode", $time);
-            $finish;
+            $fatal(1, "ERROR in %m: Rx data not toggling between channel data in SISO mode");
           end
 
-          // Make sure the counts are the same for both I and Q. No need to 
+          // Make sure the counts are the same for both I and Q. No need to
           // check channel 1, since we already checked that the channels match.
           if (rx_i0[7:0] != rx_q0[7:0]) begin
-            $display("ERROR @%0t in %m: Rx data counts didn't match on all outputs in SISO mode", $time);
-            $finish;
+            $fatal(1, "ERROR in %m: Rx data counts didn't match on all outputs in SISO mode");
           end
 
-          // Make sure the count increments every other clock cycle. No need to 
+          // Make sure the count increments every other clock cycle. No need to
           // check channel 1, since we already checked that the channels match.
           if (!(
               rx_i0[7:0] != rx_i0_del2[7:0] + 8'd1 && (rx_i0[7:0] == rx_i0_del1[7:0] || rx_i0[7:0] == rx_i0_del1[7:0] + 8'd1) &&
               rx_q0[7:0] != rx_q0_del2[7:0] + 8'd1 && (rx_q0[7:0] == rx_q0_del1[7:0] || rx_q0[7:0] == rx_q0_del1[7:0] + 8'd1)
             )) begin
-            $display("ERROR @%0t in %m: Rx data count didn't increment as expected", $time);
-            $finish;
+            $fatal(1, "ERROR in %m: Rx data count didn't increment as expected");
           end
 
         end  // if (mimo)
       end  // if (!first_rx_check)
 
-      // Make sure we've captured at least one set of values, so we have a 
+      // Make sure we've captured at least one set of values, so we have a
       // previous set to look back to.
       first_rx_check <= 1'b0;
 
@@ -486,7 +520,7 @@ module cat_io_lvds_dual_mode_tb();
   // Tx Output Checker
   //---------------------------------------------------------------------------
   //
-  // The code implements a loopback, so the output should match the input. In 
+  // The code implements a loopback, so the output should match the input. In
   // SISO mode, however, the frame signal may not be aligned.
   //
   //---------------------------------------------------------------------------
@@ -549,7 +583,7 @@ module cat_io_lvds_dual_mode_tb();
 
       if (check_enabled) begin
         if (!first_tx_check) begin
-   
+
           if (mimo) begin
             //-----------------------------------------------------------------
             // Check MIMO output
@@ -557,55 +591,49 @@ module cat_io_lvds_dual_mode_tb();
 
             // Check that the frame signal is correct
             if (tx_frame_check != 8'b11110000) begin
-              $display("ERROR @%0t in %m: Tx frame was not correct in MIMO mode", $time);
-              $finish;
+              $fatal(1, "ERROR @%0t in %m: Tx frame was not correct in MIMO mode", $time);
             end
-  
+
             // Check prefix for channel 0
             if (tx_i0_check[11:8] != 4'hA || tx_q0_check[11:8] != 4'hB) begin
-              $display("ERROR @%0t in %m: Tx channel 0 didn't have expected A/B prefix in MIMO mode", $time);
-              $finish;
+              $fatal(1, "ERROR @%0t in %m: Tx channel 0 didn't have expected A/B prefix in MIMO mode", $time);
             end
-  
+
             // Check prefix for channel 1
             if (tx_i1_check[11:8] != 4'hC || tx_q1_check[11:8] != 4'hD) begin
-              $display("ERROR @%0t in %m: Tx channel 1 didn't have expected C/D in MIMO mode", $time);
-              $finish;
+              $fatal(1, "ERROR @%0t in %m: Tx channel 1 didn't have expected C/D in MIMO mode", $time);
             end
-  
+
             // All outputs should have the same count in MIMO mode
-            if (! (tx_i0_check[7:0] == tx_q0_check[7:0] && 
+            if (! (tx_i0_check[7:0] == tx_q0_check[7:0] &&
                    tx_i0_check[7:0] == tx_i1_check[7:0] &&
                    tx_i0_check[7:0] == tx_q1_check[7:0]) ) begin
-              $display("ERROR @%0t in %m: Rx data counts didn't match on all outputs in MIMO mode", $time);
-              $finish;
+              $fatal(1, "ERROR @%0t in %m: Rx data counts didn't match on all outputs in MIMO mode", $time);
             end
-  
+
             // Make sure the count increments
             if (tx_i0_check[7:0] != tx_i0_del1[7:0] + 8'd1 || tx_q0_check[7:0] != tx_q0_del1[7:0] + 8'd1 ||
                 tx_i1_check[7:0] != tx_i1_del1[7:0] + 8'd1 || tx_q1_check[7:0] != tx_q1_del1[7:0] + 8'd1) begin
-              $display("ERROR @%0t in %m: Rx data count didn't increment as expected", $time);
-              $finish;
+              $fatal(1, "ERROR @%0t in %m: Rx data count didn't increment as expected", $time);
             end
-          
-          end else begin  
+
+          end else begin
             //-----------------------------------------------------------------
             // Check SISO Output
             //-----------------------------------------------------------------
 
             // Check that the frame signal is correct
             if (tx_frame_check != 8'b11001100) begin
-              $display("ERROR @%0t in %m: Tx frame was not correct in SISO mode", $time);
-              $finish;
+              $fatal(1, "ERROR @%0t in %m: Tx frame was not correct in SISO mode", $time);
             end
 
 
-            // In SISO mode, the data we get depends on which channel is 
+            // In SISO mode, the data we get depends on which channel is
             // selected.
             //
             //        Channel 0:                   Channel 1:
             //  ...,A01,B01,A02,B02,...  OR  ...,C01,D01,C02,D02,...
-            // 
+            //
             // So we should receive
             //
             //       A01 A03 A05
@@ -626,40 +654,37 @@ module cat_io_lvds_dual_mode_tb();
               ((tx_ch == 0 &&
                 tx_i0_check[11:8] == 4'hA &&
                 tx_q0_check[11:8] == 4'hB) ||
-               (tx_ch == 1 && 
+               (tx_ch == 1 &&
                 tx_i0_check[11:8] == 4'hC &&
-                tx_q0_check[11:8] == 4'hD)) && 
+                tx_q0_check[11:8] == 4'hD)) &&
               // Samples 0 and 1 prefixes equal samples 2 and 3 prefixes
-              (tx_i0_check[11:8] == tx_i1_check[11:8]  && 
+              (tx_i0_check[11:8] == tx_i1_check[11:8]  &&
                tx_q0_check[11:8] == tx_q1_check[11:8])
               )) begin
-              $display("ERROR @%0t in %m: Tx channel didn't have expected prefixes in SISO mode", $time);
-              $finish;
+              $fatal(1, "ERROR @%0t in %m: Tx channel didn't have expected prefixes in SISO mode", $time);
             end
-  
+
             // Check that the data count matches between samples
             if (!(
               tx_i0_check[7:0] == tx_q0_check[7:0] &&
               tx_i1_check[7:0] == tx_q1_check[7:0] &&
               tx_i0_check[7:0] == tx_i1_check[7:0] - 8'd1
               )) begin
-              $display("ERROR @%0t in %m: Tx channel data counts didn't correlate in SISO mode", $time);
-              $finish;
+              $fatal(1, "ERROR @%0t in %m: Tx channel data counts didn't correlate in SISO mode", $time);
             end
 
             // Make sure the count increments form one burst to the next
-            if (tx_i0_check[7:0] != tx_i0_del1[7:0] + 8'd2 || 
+            if (tx_i0_check[7:0] != tx_i0_del1[7:0] + 8'd2 ||
                 tx_q0_check[7:0] != tx_q0_del1[7:0] + 8'd2 ||
                 tx_i1_check[7:0] != tx_i1_del1[7:0] + 8'd2 ||
                 tx_q1_check[7:0] != tx_q1_del1[7:0] + 8'd2) begin
-              $display("ERROR @%0t in %m: Tx data count didn't increment as expected", $time);
-              $finish;
+              $fatal(1, "ERROR @%0t in %m: Tx data count didn't increment as expected", $time);
             end
-          
+
           end
 
         end else begin  // if (!first_tx_check)
-          // Make sure we've captured at least one set of values, so we have a 
+          // Make sure we've captured at least one set of values, so we have a
           // previous set to look back to.
           first_tx_check <= 1'b0;
         end  // if (!first_tx_check)
@@ -670,7 +695,7 @@ module cat_io_lvds_dual_mode_tb();
         tx_i1_del1 <= tx_i1_check;
         tx_q1_del1 <= tx_q1_check;
 
-      end else begin  // if (check_enabled)        
+      end else begin  // if (check_enabled)
         first_tx_check <= 1'b1;
 
       end  // if (check_enabled)
@@ -727,13 +752,12 @@ module cat_io_lvds_dual_mode_tb();
     .OUTPUT_CLOCK_DELAY (OUTPUT_CLOCK_DELAY),
     .OUTPUT_DATA_DELAY  (OUTPUT_DATA_DELAY)
   ) cat_io_lvds_dual_mode_dut (
-    .rst    (reset),
     .clk200 (clk200),
-    
+
     // Data and frame timing
     .a_mimo  (mimo),
     .a_tx_ch (tx_ch),
-    
+
     // Delay control interface
     .ctrl_clk               (rx_clk),
     //
@@ -746,8 +770,9 @@ module cat_io_lvds_dual_mode_tb();
     .ctrl_out_clk_delay     (ctrl_out_clk_delay),
     .ctrl_ld_out_data_delay (ctrl_ld_out_data_delay),
     .ctrl_ld_out_clk_delay  (ctrl_ld_out_clk_delay),
-    
+
     // Baseband sample interface
+    .radio_rst  (reset),
     .radio_clk  (radio_clk),
     .rx_aligned (rx_aligned),
     //
@@ -760,7 +785,7 @@ module cat_io_lvds_dual_mode_tb();
     .tx_q0      (tx_q0),
     .tx_i1      (tx_i1),
     .tx_q1      (tx_q1),
-    
+
     // Catalina interface
     .rx_clk_p   (rx_clk),
     .rx_clk_n   (~rx_clk),

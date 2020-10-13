@@ -818,7 +818,6 @@ module e320 (
   wire [REG_DWIDTH-1:0] dboard_status;
   wire mimo_busclk, mimo_radioclk;
   wire tx_chan_sel_busclk, tx_chan_sel_radioclk;
-  wire rx_aligned;
 
   wire tx_pll_lock_busclk, rx_pll_lock_busclk;
 
@@ -890,7 +889,6 @@ module e320 (
     .OUTPUT_CLOCK_DELAY (0),
     .OUTPUT_DATA_DELAY  (OUTPUT_DATA_DELAY)
   ) cat_io_lvds_dual_mode_i0 (
-    .rst    (radio_rst),
     .clk200 (bus_clk),    // 200 MHz clock
 
     // Data and frame timing
@@ -911,9 +909,10 @@ module e320 (
     .ctrl_ld_out_clk_delay  (1'b0),
 
     // Sample interface
+    .radio_rst    (radio_rst),
     .radio_clk    (radio_clk),
-    .rx_aligned   (rx_aligned),
     //
+    .rx_aligned   (),
     .rx_i0        (rx_i0),
     .rx_q0        (rx_q0),
     .rx_i1        (rx_i1),
