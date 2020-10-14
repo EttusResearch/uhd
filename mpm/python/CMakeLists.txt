@@ -48,7 +48,7 @@ add_custom_command(OUTPUT ${OUTPUT}
      COMMAND ${CMAKE_COMMAND}  -DSOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}" -DBINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}"  -P ${CMAKE_CURRENT_SOURCE_DIR}/copy_python_module.cmake
      COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} -q build
      COMMAND ${CMAKE_COMMAND} -E touch ${OUTPUT}
-     DEPENDS ${USRP_MPM_FILES})
+     DEPENDS ${USRP_MPM_FILES} pyusrp_periphs)
 add_custom_target(usrp_mpm ALL DEPENDS ${OUTPUT} pyusrp_periphs)
 
 execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
