@@ -157,8 +157,7 @@ std::string bytes_to_str(std::vector<uint8_t> str_b)
 
 } // namespace
 
-class multi_usrp_rfnoc : public multi_usrp,
-                         public std::enable_shared_from_this<multi_usrp_rfnoc>
+class multi_usrp_rfnoc : public multi_usrp
 {
 public:
     struct rx_chan_t
@@ -283,17 +282,23 @@ public:
         // property propagation where possible.
 
         // Connect the chains
-        _connect_rx_chains(args.channels);
+        auto edges = _connect_rx_chains(args.channels);
+        std::weak_ptr<rfnoc_graph> graph_ref(_graph);
 
         // Create the streamer
         // The disconnect callback must disconnect the entire chain because the radio
         // relies on the connections to determine what is enabled.
-        auto this_multi_usrp = shared_from_this();
-        auto rx_streamer     = std::make_shared<rfnoc_rx_streamer>(args.channels.size(),
-            args,
-            [channels = args.channels, this_multi_usrp](const std::string& id) {
-                this_multi_usrp->_graph->disconnect(id);
-                this_multi_usrp->_disconnect_rx_chains(channels);
+        auto rx_streamer = std::make_shared<rfnoc_rx_streamer>(
+            args.channels.size(), args, [=](const std::string& id) {
+                if (auto graph = graph_ref.lock()) {
+                    _graph->disconnect(id);
+                    for (auto edge : edges) {
+                        _graph->disconnect(edge.src_blockid,
+                            edge.src_port,
+                            edge.dst_blockid,
+                            edge.dst_port);
+                    }
+                }
             });
 
         // Connect the streamer
@@ -358,17 +363,23 @@ public:
         // property propagation where possible.
 
         // Connect the chains
-        _connect_tx_chains(args.channels);
+        auto edges = _connect_tx_chains(args.channels);
+        std::weak_ptr<rfnoc_graph> graph_ref(_graph);
 
         // Create a streamer
         // The disconnect callback must disconnect the entire chain because the radio
         // relies on the connections to determine what is enabled.
-        auto this_multi_usrp = shared_from_this();
-        auto tx_streamer     = std::make_shared<rfnoc_tx_streamer>(args.channels.size(),
-            args,
-            [channels = args.channels, this_multi_usrp](const std::string& id) {
-                this_multi_usrp->_graph->disconnect(id);
-                this_multi_usrp->_disconnect_tx_chains(channels);
+        auto tx_streamer = std::make_shared<rfnoc_tx_streamer>(
+            args.channels.size(), args, [=](const std::string& id) {
+                if (auto graph = graph_ref.lock()) {
+                    graph->disconnect(id);
+                    for (auto edge : edges) {
+                        graph->disconnect(edge.src_blockid,
+                            edge.src_port,
+                            edge.dst_blockid,
+                            edge.dst_port);
+                    }
+                }
             });
 
         // Connect the streamer
@@ -1089,8 +1100,15 @@ public:
         }();
 
         // Disconnect and clear the existing chains
-        for (size_t i = 0; i < _rx_chans.size(); i++) {
-            _disconnect_rx_chain(i);
+        UHD_LOG_TRACE("MULTI_USRP", "Disconnecting RX chains");
+        for (auto entry : _rx_chans) {
+            for (auto edge : entry.second.edge_list) {
+                if (block_id_t(edge.dst_blockid).match(NODE_ID_SEP)) {
+                    break;
+                }
+                _graph->disconnect(
+                    edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
+            }
         }
         _rx_chans.clear();
 
@@ -1717,8 +1735,15 @@ public:
         }();
 
         // Disconnect and clear existing chains
-        for (size_t i = 0; i < _tx_chans.size(); i++) {
-            _disconnect_tx_chain(i);
+        UHD_LOG_TRACE("MULTI_USRP", "Disconnecting TX chains");
+        for (auto entry : _tx_chans) {
+            for (auto edge : entry.second.edge_list) {
+                if (block_id_t(edge.src_blockid).match(NODE_ID_SEP)) {
+                    break;
+                }
+                _graph->disconnect(
+                    edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
+            }
         }
         _tx_chans.clear();
 
@@ -2436,88 +2461,46 @@ private:
         return _tx_chans.at(chan);
     }
 
-    void _connect_rx_chain(size_t chan)
+    std::vector<graph_edge_t> _connect_rx_chains(std::vector<size_t> chans)
     {
-        auto rx_chan = _rx_chans.at(chan);
-        for (auto edge : rx_chan.edge_list) {
-            if (block_id_t(edge.dst_blockid).match(NODE_ID_SEP)) {
-                break;
-            }
-            UHD_LOG_TRACE(
-                "MULTI_USRP", std::string("Connecting RX edge: ") + edge.to_string());
-            _graph->connect(
-                edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
-        }
-    }
-
-    void _connect_rx_chains(std::vector<size_t> chans)
-    {
+        std::vector<graph_edge_t> edges;
         for (auto chan : chans) {
-            _connect_rx_chain(chan);
-        }
-    }
-
-    void _connect_tx_chain(size_t chan)
-    {
-        auto tx_chan = _tx_chans.at(chan);
-        for (auto edge : tx_chan.edge_list) {
-            if (block_id_t(edge.src_blockid).match(NODE_ID_SEP)) {
-                break;
-            }
             UHD_LOG_TRACE(
-                "MULTI_USRP", std::string("Connecting TX edge: ") + edge.to_string());
-            _graph->connect(
-                edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
-        }
-    }
-
-    void _connect_tx_chains(std::vector<size_t> chans)
-    {
-        for (auto chan : chans) {
-            _connect_tx_chain(chan);
-        }
-    }
-
-    void _disconnect_rx_chain(size_t chan)
-    {
-        auto rx_chan = _rx_chans.at(chan);
-        for (auto edge : rx_chan.edge_list) {
-            if (block_id_t(edge.dst_blockid).match(NODE_ID_SEP)) {
-                break;
+                "MULTI_USRP", std::string("Connecting RX chain for channel ") + chan);
+            auto chain = _rx_chans.at(chan);
+            for (auto edge : chain.edge_list) {
+                if (block_id_t(edge.dst_blockid).match(NODE_ID_SEP)) {
+                    break;
+                }
+                UHD_LOG_TRACE(
+                    "MULTI_USRP", std::string("Connecting RX edge: ") + edge.to_string());
+                _graph->connect(
+                    edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
+                edges.push_back(edge);
             }
-            UHD_LOG_TRACE(
-                "MULTI_USRP", std::string("Disconnecting RX edge: ") + edge.to_string());
-            _graph->disconnect(
-                edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
         }
+        return edges;
     }
 
-    void _disconnect_rx_chains(std::vector<size_t> chans)
+    std::vector<graph_edge_t> _connect_tx_chains(std::vector<size_t> chans)
     {
+        std::vector<graph_edge_t> edges;
         for (auto chan : chans) {
-            _disconnect_rx_chain(chan);
-        }
-    }
-
-    void _disconnect_tx_chain(size_t chan)
-    {
-        auto tx_chan = _tx_chans.at(chan);
-        for (auto edge : tx_chan.edge_list) {
-            if (block_id_t(edge.src_blockid).match(NODE_ID_SEP)) {
-                break;
+            UHD_LOG_TRACE(
+                "MULTI_USRP", std::string("Connecting TX chain for channel ") + chan);
+            auto chain = _tx_chans.at(chan);
+            for (auto edge : chain.edge_list) {
+                if (block_id_t(edge.src_blockid).match(NODE_ID_SEP)) {
+                    break;
+                }
+                UHD_LOG_TRACE(
+                    "MULTI_USRP", std::string("Connecting TX edge: ") + edge.to_string());
+                _graph->connect(
+                    edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
+                edges.push_back(edge);
             }
-            UHD_LOG_TRACE(
-                "MULTI_USRP", std::string("Disconnecting TX edge: ") + edge.to_string());
-            _graph->disconnect(
-                edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
         }
-    }
-
-    void _disconnect_tx_chains(std::vector<size_t> chans)
-    {
-        for (auto chan : chans) {
-            _disconnect_tx_chain(chan);
-        }
+        return edges;
     }
 
     /**************************************************************************
