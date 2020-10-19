@@ -69,6 +69,8 @@ private:
  *****************************************************************************/
 void graph_t::connect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t edge_info)
 {
+    std::lock_guard<std::recursive_mutex> l(_graph_mutex);
+
     node_accessor_t node_accessor{};
     UHD_LOG_TRACE(LOG_ID,
         "Connecting block " << src_node->get_unique_id() << ":" << edge_info.src_port
@@ -179,6 +181,8 @@ void graph_t::connect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t edg
 
 void graph_t::disconnect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t edge_info)
 {
+    std::lock_guard<std::recursive_mutex> l(_graph_mutex);
+
     // Find vertex descriptor
     if (_node_map.count(src_node) == 0 && _node_map.count(dst_node) == 0) {
         return;
@@ -210,12 +214,13 @@ void graph_t::disconnect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t 
 
 void graph_t::remove(node_ref_t node)
 {
+    std::lock_guard<std::recursive_mutex> l(_graph_mutex);
     _remove_node(node);
 }
 
 void graph_t::commit()
 {
-    std::lock_guard<std::recursive_mutex> l(_release_mutex);
+    std::lock_guard<std::recursive_mutex> l(_graph_mutex);
     if (_release_count) {
         _release_count--;
     }
@@ -227,14 +232,14 @@ void graph_t::commit()
 
 void graph_t::release()
 {
-    std::lock_guard<std::recursive_mutex> l(_release_mutex);
+    std::lock_guard<std::recursive_mutex> l(_graph_mutex);
     UHD_LOG_TRACE(LOG_ID, "graph::release() => " << _release_count);
     _release_count++;
 }
 
 void graph_t::shutdown()
 {
-    std::lock_guard<std::recursive_mutex> l(_release_mutex);
+    std::lock_guard<std::recursive_mutex> l(_graph_mutex);
     UHD_LOG_TRACE(LOG_ID, "graph::shutdown()");
     _shutdown      = true;
     _release_count = std::numeric_limits<size_t>::max();
@@ -270,7 +275,7 @@ void graph_t::resolve_all_properties(
     // method to make sure that a) different threads can't interfere with each
     // other, and b) that we don't release the graph while this method is still
     // running.
-    std::lock_guard<std::recursive_mutex> l(_release_mutex);
+    std::lock_guard<std::recursive_mutex> l(_graph_mutex);
     if (_shutdown) {
         return;
     }
@@ -428,7 +433,7 @@ void graph_t::enqueue_action(
     // method to make sure that we don't release the graph while this method is
     // still running.
     // It also prevents a different thread from throwing in their own actions.
-    std::lock_guard<std::recursive_mutex> release_lock(_release_mutex);
+    std::lock_guard<std::recursive_mutex> release_lock(_graph_mutex);
     if (_shutdown) {
         return;
     }
@@ -505,7 +510,7 @@ void graph_t::enqueue_action(
 
     // Release the action handling flag
     _action_handling_ongoing.clear();
-    // Now, the _release_mutex is released, and someone else can start sending
+    // Now, the _graph_mutex is released, and someone else can start sending
     // actions.
 }
 
