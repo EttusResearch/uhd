@@ -298,8 +298,8 @@ private:
     //! Flag to ensure serialized handling of actions
     std::atomic_flag _action_handling_ongoing;
 
-    //! Changes to the release/commit state of the graph are locked with this mutex
-    std::recursive_mutex _release_mutex;
+    //! Changes to the state of the graph are locked with this mutex
+    std::recursive_mutex _graph_mutex;
 
     //! This counter gets decremented everytime commit() is called. When zero,
     // the graph is committed.
