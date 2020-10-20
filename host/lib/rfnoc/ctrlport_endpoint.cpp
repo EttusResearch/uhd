@@ -389,14 +389,13 @@ private:
             // If we can fit the current request in the queue then we can proceed
             return (_buff_occupied + pyld_size)
                    <= (_buff_capacity
-                       - (ASYNC_MESSAGE_SIZE * _max_outstanding_async_msgs));
+                          - (ASYNC_MESSAGE_SIZE * _max_outstanding_async_msgs));
         };
         if (!buff_not_full()) {
             // If there is a timed command in the queue, use the
             // MASSIVE_TIMEOUT instead
-            auto timeout_time = start_timeout(check_timed_in_queue() ?
-                                                MASSIVE_TIMEOUT :
-                                                _policy.timeout);
+            auto timeout_time =
+                start_timeout(check_timed_in_queue() ? MASSIVE_TIMEOUT : _policy.timeout);
 
             if (not _buff_free_cond.wait_until(lock, timeout_time, buff_not_full)) {
                 throw uhd::op_timeout(
@@ -423,9 +422,8 @@ private:
             if (!resp_ready()) {
                 // If we're waiting for a timed command or if we have a
                 // command in the queue, use the MASSIVE_TIMEOUT instead
-                auto timeout_time = start_timeout(check_timed_in_queue() ?
-                                                  MASSIVE_TIMEOUT :
-                                                   _policy.timeout);
+                auto timeout_time = start_timeout(
+                    check_timed_in_queue() ? MASSIVE_TIMEOUT : _policy.timeout);
 
                 if (not _resp_ready_cond.wait_until(lock, timeout_time, resp_ready)) {
                     throw uhd::op_timeout("Control operation timed out waiting for ACK");
