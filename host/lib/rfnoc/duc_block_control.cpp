@@ -480,7 +480,7 @@ private:
         }
 
         // DDS gain:
-        constexpr double DDS_GAIN = 2.0;
+        constexpr double DDS_GAIN = 1.0;
         // Calculate algorithmic gain of CIC for a given interpolation.
         // For Ettus CIC R=interp, M=1, N=4. Gain = (R * M) ^ (N - 1)
         const double cic_gain = std::pow(double(cic_interp * 1), /*N*/ 4 - 1);
