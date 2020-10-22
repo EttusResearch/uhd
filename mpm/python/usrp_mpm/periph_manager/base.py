@@ -168,7 +168,9 @@ class PeriphManagerBase(object):
             version_string = ""
         mboard_info["mpm_sw_version"] = version_string
 
-        mboard_info["fs_version"] = get_fs_version()
+        fs_version = get_fs_version()
+        if fs_version is not None:
+            mboard_info["fs_version"] = fs_version
         # Mender artifacts are generally not present on a machine hosting
         # a simulated device--let it slide if not found on sim devices
         try:
