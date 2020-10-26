@@ -8,6 +8,47 @@
 # This file included, use CMake directory variables
 ########################################################################
 
+# Check installation status of Python modules required by MPM unit tests
+set(GEVENT_MIN_VERSION "1.4.0")
+set(PYUDEV_MIN_VERSION "0.21.0")
+
+PYTHON_CHECK_MODULE(
+    "gevent ${GEVENT_MIN_VERSION} or greater"
+    "gevent" "LooseVersion(gevent.__version__) >= LooseVersion('${GEVENT_MIN_VERSION}')"
+    HAVE_PYTHON_MODULE_GEVENT
+)
+
+# mprpc does not expose a __version__ attribute, so merely check for its
+# presence.
+PYTHON_CHECK_MODULE(
+    "mprpc"
+    "mprpc" "True"
+    HAVE_PYTHON_MODULE_MPRPC
+)
+
+PYTHON_CHECK_MODULE(
+    "pyudev ${PYUDEV_MIN_VERSION} or greater"
+    "pyudev" "LooseVersion(pyudev.__version__) >= LooseVersion('${PYUDEV_MIN_VERSION}')"
+    HAVE_PYTHON_MODULE_PYUDEV
+)
+
+# Older versions of pyroute2 (e.g. 0.5.2) do not expose a __version__
+# attribute, so merely check for its presence.
+PYTHON_CHECK_MODULE(
+    "pyroute2"
+    "pyroute2" "True"
+    HAVE_PYTHON_MODULE_PYROUTE2
+)
+
+if (HAVE_PYTHON_MODULE_GEVENT AND HAVE_PYTHON_MODULE_MPRPC AND HAVE_PYTHON_MODULE_PYUDEV AND HAVE_PYTHON_MODULE_PYROUTE2)
+    set(HAVE_MPM_TEST_PREREQS TRUE)
+    MESSAGE(STATUS "MPM unit test Python package prerequisites met!")
+else()
+    set(HAVE_MPM_TEST_PREREQS FALSE)
+    MESSAGE(STATUS "MPM unit test Python package prerequisites not met; skipping")
+endif()
+MESSAGE(STATUS "")
+
 if(MPM_DEVICE STREQUAL "n3xx")
     add_library(pyusrp_periphs SHARED pyusrp_periphs/n3xx/pyusrp_periphs.cpp)
 elseif(MPM_DEVICE STREQUAL "e320")
@@ -75,4 +116,7 @@ elseif (ENABLE_E320)
     )
 endif (ENABLE_MYKONOS)
 
-add_subdirectory(tests)
+if (HAVE_MPM_TEST_PREREQS)
+    add_subdirectory(tests)
+endif (HAVE_MPM_TEST_PREREQS)
+
