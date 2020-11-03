@@ -29,7 +29,7 @@ using namespace uhd::mpmd::xport;
 namespace {
 
 //! Maximum CHDR packet size in bytes
-const size_t MPMD_10GE_DATA_FRAME_MAX_SIZE    = 8000;
+const size_t MPMD_10GE_DATA_FRAME_MAX_SIZE    = 7972;
 const size_t MPMD_1GE_DATA_FRAME_MAX_SIZE     = 1472;
 const size_t MPMD_1GE_ASYNCMSG_FRAME_MAX_SIZE = 1472;
 
