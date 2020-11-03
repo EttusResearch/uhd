@@ -291,9 +291,9 @@ public:
         auto rx_streamer = std::make_shared<rfnoc_rx_streamer>(
             args.channels.size(), args, [=](const std::string& id) {
                 if (auto graph = graph_ref.lock()) {
-                    _graph->disconnect(id);
+                    graph->disconnect(id);
                     for (auto edge : edges) {
-                        _graph->disconnect(edge.src_blockid,
+                        graph->disconnect(edge.src_blockid,
                             edge.src_port,
                             edge.dst_blockid,
                             edge.dst_port);
@@ -2466,7 +2466,7 @@ private:
         std::vector<graph_edge_t> edges;
         for (auto chan : chans) {
             UHD_LOG_TRACE(
-                "MULTI_USRP", std::string("Connecting RX chain for channel ") + chan);
+                "MULTI_USRP", std::string("Connecting RX chain for channel ") + std::to_string(chan));
             auto chain = _rx_chans.at(chan);
             for (auto edge : chain.edge_list) {
                 if (block_id_t(edge.dst_blockid).match(NODE_ID_SEP)) {
@@ -2487,7 +2487,7 @@ private:
         std::vector<graph_edge_t> edges;
         for (auto chan : chans) {
             UHD_LOG_TRACE(
-                "MULTI_USRP", std::string("Connecting TX chain for channel ") + chan);
+                "MULTI_USRP", std::string("Connecting TX chain for channel ") + std::to_string(chan));
             auto chain = _tx_chans.at(chan);
             for (auto edge : chain.edge_list) {
                 if (block_id_t(edge.src_blockid).match(NODE_ID_SEP)) {
