@@ -40,8 +40,8 @@ class SimpleResult(unittest.TextTestResult):
                 % (flavour, self.getDescription(test), err))
 
 class CheckFilesystem(unittest.TestCase):
-    def _assert_filesystem_root_is_not_set():
-        if self.args.filesystem_root:
+    def _assert_filesystem_root_is_not_set(self):
+        if self.args.filesystem_root != '/':
             raise ValueError("Changing the filesystem root is not possible for this test")
 
     def __init__(self, methodName='runTest', args=None):
@@ -79,7 +79,7 @@ class CheckFilesystem(unittest.TestCase):
         self.assertEqual(opkg_status_md5sum, self.args.opkg_status_md5sum)
 
     def test_dt_overlays_available(self):
-        _assert_filesystem_root_is_not_set()
+        self._assert_filesystem_root_is_not_set()
         dt_overlays_available = list_available_overlays()
         dt_overlays_available.sort()
         reference = parse_list(self.args.dt_overlays_available)
@@ -87,7 +87,7 @@ class CheckFilesystem(unittest.TestCase):
         self.assertEqual(dt_overlays_available, reference)
 
     def test_dt_overlays_loaded(self):
-        _assert_filesystem_root_is_not_set()
+        self._assert_filesystem_root_is_not_set()
         dt_overlays_loaded = list(list_overlays(applied_only=True).keys())
         dt_overlays_loaded.sort()
         reference = parse_list(self.args.dt_overlays_loaded)
@@ -95,13 +95,13 @@ class CheckFilesystem(unittest.TestCase):
         self.assertEqual(dt_overlays_loaded, reference)
 
     def test_systemd_init_successful(self):
-        _assert_filesystem_root_is_not_set()
+        self._assert_filesystem_root_is_not_set()
         output = subprocess.check_output(['systemctl', 'is-system-running']).decode('utf-8')
         status = output.splitlines()[0]
         self.assertEqual(status, 'running')
 
     def test_mpm_init_successful(self):
-        _assert_filesystem_root_is_not_set()
+        self._assert_filesystem_root_is_not_set()
         p1 = subprocess.Popen(['echo', 'get_init_status'], stdout=subprocess.PIPE)
         p2 = subprocess.Popen(['mpm_shell.py', '-c', 'localhost'], stdin=p1.stdout,
                               stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
