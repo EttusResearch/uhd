@@ -15,6 +15,7 @@ UHD_INSTALL(FILES
     eeprom.hpp
     endianness.hpp
     mac_addr.hpp
+    memmap_iface.hpp
     metadata.hpp
     ranges.hpp
     ref_vector.hpp
