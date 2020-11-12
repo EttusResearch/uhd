@@ -31,9 +31,17 @@ include $(LIB_DIR)/packet_proc/Makefile.srcs
 include $(LIB_DIR)/dsp/Makefile.srcs
 include $(LIB_DIR)/io_cap_gen/Makefile.srcs
 include $(LIB_DIR)/rfnoc/Makefile.srcs
+# For the sake of convenience, we include the Makefile.srcs for the DDC, DUC,
+# and the radio. Any other block needs to use the RFNOC_OOT_MAKEFILE_SRCS
+# variable (see below).
 include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_radio/Makefile.srcs
 include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_ddc/Makefile.srcs
 include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_duc/Makefile.srcs
+# If out-of-tree modules want to be compiled into this image, then they need to
+# pass in the RFNOC_OOT_MAKEFILE_SRCS as a list of Makefile.srcs files.
+# Those files need to amend the RFNOC_OOT_SRCS variable with a list of actual
+# source files.
+-include $(RFNOC_OOT_MAKEFILE_SRCS)
 
 IMAGE_CORE ?= $(DEFAULT_RFNOC_IMAGE_CORE_FILE)
 EDGE_FILE ?= $(DEFAULT_EDGE_FILE)
