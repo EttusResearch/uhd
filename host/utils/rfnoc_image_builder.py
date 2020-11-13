@@ -200,7 +200,7 @@ def main():
         target=target,
         generate_only=args.generate_only,
         clean_all=args.clean_all,
-        gui=args.GUI,
+        GUI=args.GUI,
         source=source,
         source_hash=source_hash.hexdigest(),
         output_path=args.image_core_output,
