@@ -134,7 +134,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     if (vm.count("pps")) {
         // Lock mboard clocks
         for (size_t i = 0; i < graph->get_num_mboards(); ++i) {
-            graph->get_mb_controller(i)->set_time_source(ref);
+            graph->get_mb_controller(i)->set_time_source(pps);
         }
     }
 
