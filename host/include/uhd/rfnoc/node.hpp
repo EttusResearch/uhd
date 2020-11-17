@@ -570,6 +570,13 @@ private:
         _resolve_all_cb = resolver;
     }
 
+    /*! Restores the default property resolution behavior of the node.
+     */
+    void clear_resolve_all_callback()
+    {
+        _resolve_all_cb = _default_resolve_all_cb;
+    }
+
     /*! Forward the value of an edge property into this node
      *
      * Note that \p incoming_prop is a reference to the neighbouring node's
@@ -655,7 +662,11 @@ private:
 
     //! A callback that can be called to notify the graph manager that something
     // has changed, and that a property resolution needs to be performed.
-    resolve_callback_t _resolve_all_cb = [this]() {
+    resolve_callback_t _resolve_all_cb;
+
+    //! This is the default implementation of the property resolution
+    // method.
+    const resolve_callback_t _default_resolve_all_cb = [this]() {
         resolve_props();
         clean_props();
     };

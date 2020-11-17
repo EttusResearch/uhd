@@ -183,10 +183,17 @@ void graph_t::disconnect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t 
 {
     std::lock_guard<std::recursive_mutex> l(_graph_mutex);
 
+    node_accessor_t node_accessor{};
+
     // Find vertex descriptor
     if (_node_map.count(src_node) == 0 && _node_map.count(dst_node) == 0) {
         return;
     }
+
+    UHD_LOG_TRACE(LOG_ID,
+        "Disconnecting block " << src_node->get_unique_id() << ":" << edge_info.src_port
+                               << " -> " << dst_node->get_unique_id() << ":"
+                               << edge_info.dst_port);
 
     auto src_vertex_desc = _node_map.at(src_node);
     auto dst_vertex_desc = _node_map.at(dst_node);
@@ -202,6 +209,9 @@ void graph_t::disconnect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t 
 
     if (boost::degree(src_vertex_desc, _graph) == 0) {
         _remove_node(src_node);
+        UHD_LOG_TRACE(LOG_ID,
+            "Removing block " << src_node->get_unique_id() << ":" << edge_info.src_port);
+        node_accessor.clear_resolve_all_callback(src_node);
     }
 
     // Re-look up the vertex descriptor for dst_node, as the act of removing
@@ -209,6 +219,9 @@ void graph_t::disconnect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t 
     dst_vertex_desc = _node_map.at(dst_node);
     if (boost::degree(dst_vertex_desc, _graph) == 0) {
         _remove_node(dst_node);
+        UHD_LOG_TRACE(LOG_ID,
+            "Removing block " << dst_node->get_unique_id() << ":" << edge_info.dst_port);
+        node_accessor.clear_resolve_all_callback(dst_node);
     }
 }
 

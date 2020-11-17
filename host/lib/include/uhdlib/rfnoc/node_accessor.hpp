@@ -69,6 +69,15 @@ public:
         node->set_resolve_all_callback(std::move(resolver));
     }
 
+    /* Restore the resolver callback to its default implementation
+     *
+     * See node_t::clear_resolve_all_callback() for details.
+     */
+    void clear_resolve_all_callback(node_t* node)
+    {
+        node->clear_resolve_all_callback();
+    }
+
     /*! Forward an edge property to \p dst_node
      *
      * See node_t::forward_edge_property() for details.
