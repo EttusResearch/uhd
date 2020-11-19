@@ -43,7 +43,10 @@ void export_types(py::module& m)
         // Methods
         .def("__str__", &uhd::device_addr_t::to_pp_string)
         .def("to_string", &uhd::device_addr_t::to_string)
-        .def("to_pp_string", &uhd::device_addr_t::to_pp_string);
+        .def("to_pp_string", &uhd::device_addr_t::to_pp_string)
+        .def("to_dict", [](uhd::device_addr_t& self) {
+            return static_cast<std::map<std::string, std::string>>(self);
+        });
     // This will allow functions in Python that take a device_addr to also take
     // a string:
     py::implicitly_convertible<std::string, uhd::device_addr_t>();
