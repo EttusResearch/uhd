@@ -11,6 +11,16 @@ import numpy as np
 from .. import libpyuhd as lib
 
 
+def _get_mpm_client(token, mb_args):
+    """
+    Wrapper function to dynamically generate a Pythonic MPM client from
+    MultiUSRP.
+    """
+    from uhd.utils import mpmtools
+    rpc_addr = mb_args.get('mgmt_addr')
+    rpc_port = mb_args.get('rpc_port', mpmtools.MPM_RPC_PORT)
+    return mpmtools.MPMClient(mpmtools.InitMode.Hijack, rpc_addr, rpc_port, token)
+
 class MultiUSRP(lib.usrp.multi_usrp):
     """
     MultiUSRP object for controlling devices
@@ -18,6 +28,13 @@ class MultiUSRP(lib.usrp.multi_usrp):
     def __init__(self, args=""):
         """MultiUSRP constructor"""
         super(MultiUSRP, self).__init__(args)
+        # If we're on an MPM device, dynamically add this method to access the
+        # MPM client
+        if self.get_tree().exists("/mboards/0/token"):
+            token = self.get_tree().access_str("/mboards/0/token").get()
+            mb_args = \
+                self.get_tree().access_device_addr("/mboards/0/args").get().to_dict()
+            setattr(self, 'get_mpm_client', lambda: _get_mpm_client(token, mb_args))
 
     def recv_num_samps(self, num_samps, freq, rate=1e6, channels=(0,), gain=10):
         """
@@ -124,5 +141,3 @@ class MultiUSRP(lib.usrp.multi_usrp):
         # Help the garbage collection
         streamer = None
         return send_samps
-
-

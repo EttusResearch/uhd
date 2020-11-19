@@ -59,6 +59,28 @@ typically, high-performance applications will always run in network mode).
 
 \section mpm_debug Debugging Tools
 
+\subsection mpm_debug_python Python-based Debugging
+
+The Python API has additional methods for interacting with MPM. When creating a
+multi_usrp object, it is possible to get a direct reference to an MPM client:
+
+~~~{.python}
+import uhd
+# Assume args contains valid device args:
+usrp = uhd.MultiUSRP(args)
+mpmc = usrp.get_mpm_client()
+# Now load device info over RPC and print:
+print(mpmc.get_device_info())
+~~~
+
+The RPC API calls are directly mapped to Python.
+
+\b Note: When using the MPM client directly, it is possible to put UHD and the
+device into unsynchronized states. It is an advanced API, only recommended for
+unusual low-level access to the device, or debugging.
+
+\subsection mpm_debug_other MPM Tools
+
 The `mpm/tools/` subdirectory provides a useful tool for debugging and
 interacting with MPM called `mpm_shell.py`. It is a command line tool to
 directly access MPM commands. Like MPM, it requires Python 3. It can be invoked
