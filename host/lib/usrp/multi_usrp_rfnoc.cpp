@@ -2538,7 +2538,30 @@ multi_usrp::sptr make_rfnoc_device(
     detail::rfnoc_device::sptr rfnoc_device, const uhd::device_addr_t& dev_addr)
 {
     auto graph = uhd::rfnoc::detail::make_rfnoc_graph(rfnoc_device, dev_addr);
-    return std::make_shared<multi_usrp_rfnoc>(graph, dev_addr);
+
+    // The serialization of this function is intended to protect against
+    // multiple threads instantiating multi_usrp objects for the same
+    // device in parallel.
+    static std::mutex _map_mutex;
+    static std::map<std::weak_ptr<rfnoc_graph>,
+        std::weak_ptr<multi_usrp>,
+        std::owner_less<std::weak_ptr<rfnoc_graph>>>
+        graph_to_musrp;
+    multi_usrp::sptr musrp;
+
+    // Check if a multi_usrp was already created for this device
+    std::lock_guard<std::mutex> lock(_map_mutex);
+    if (graph_to_musrp.count(graph) and not graph_to_musrp[graph].expired()) {
+        musrp = graph_to_musrp[graph].lock();
+        if (musrp) {
+            return musrp;
+        }
+    }
+
+    // Create a new musrp
+    musrp                 = std::make_shared<multi_usrp_rfnoc>(graph, dev_addr);
+    graph_to_musrp[graph] = musrp;
+    return musrp;
 }
 
 }}} // namespace uhd::rfnoc::detail
