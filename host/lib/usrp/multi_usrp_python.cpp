@@ -29,7 +29,7 @@ void export_multi_usrp(py::module& m)
         .def(py::init(&multi_usrp::make))
 
         // clang-format off
-        .def("get_tree"                , &multi_usrp::get_tree)
+        .def("get_tree"                , [](multi_usrp& self){ return self.get_tree().get(); }, py::return_value_policy::reference_internal)
 
         // General USRP methods
         .def("get_rx_freq"             , &multi_usrp::get_rx_freq, py::arg("chan") = 0)
