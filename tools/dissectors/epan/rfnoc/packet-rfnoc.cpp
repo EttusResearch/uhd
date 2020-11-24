@@ -28,7 +28,19 @@ extern "C" {
 #include <uhdlib/rfnoc/chdr_packet_writer.hpp>
 
 constexpr unsigned int RFNOC_PORT = X300_VITA_UDP_PORT;
-static const uhd::rfnoc::chdr::chdr_packet_factory pkt_factory(uhd::rfnoc::CHDR_W_64, uhd::ENDIANNESS_LITTLE);
+
+#if RFNOC_CHDR_WIDTH==64
+static const uhd::rfnoc::chdr_w_t chdr_w = uhd::rfnoc::CHDR_W_64;
+#elif RFNOC_CHDR_WIDTH==128
+static const uhd::rfnoc::chdr_w_t chdr_w = uhd::rfnoc::CHDR_W_128;
+#elif RFNOC_CHDR_WIDTH==256
+static const uhd::rfnoc::chdr_w_t chdr_w = uhd::rfnoc::CHDR_W_256;
+#elif RFNOC_CHDR_WIDTH==512
+static const uhd::rfnoc::chdr_w_t chdr_w = uhd::rfnoc::CHDR_W_512;
+#else
+#error Invalid RFNOC_CHDR_WIDTH value. Valid values are 64, 128, 256 or 512.
+#endif
+static const uhd::rfnoc::chdr::chdr_packet_factory pkt_factory(chdr_w, uhd::ENDIANNESS_LITTLE);
 
 static int proto_rfnoc = -1;
 static int hf_rfnoc_hdr = -1;
@@ -199,8 +211,7 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
     gboolean is_network;
     gint endianness;
     size_t offset = 0;
-    /* FIXME: Assuming CHDR_W_64 */
-    size_t chdr_w_bytes = 8;
+    size_t chdr_w_bytes = RFNOC_CHDR_WIDTH/8;
 
     if (pinfo->match_uint == RFNOC_PORT) {
         is_network = TRUE;
@@ -257,9 +268,9 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
             /* TODO: Update offsets if there is a timestamp. Also update lengths */
             /* Add subtree based on packet type */
             uhd::rfnoc::chdr::packet_type_t pkttype = chdr_hdr.get_pkt_type();
-            offset += 8;
+            offset += chdr_w_bytes;
             if (pkttype == uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_CTRL) {
-                ctrl_item = proto_tree_add_item(rfnoc_tree, hf_rfnoc_ctrl, tvb, 8, chdr_len-8, endianness);
+                ctrl_item = proto_tree_add_item(rfnoc_tree, hf_rfnoc_ctrl, tvb, offset, chdr_len-chdr_w_bytes, endianness);
                 ctrl_tree = proto_item_add_subtree(ctrl_item, ett_rfnoc_ctrl);
                 auto pkt = pkt_factory.make_ctrl();
                 pkt->refresh(tvb_get_ptr(tvb, 0, chdr_len));
@@ -298,7 +309,7 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
             }
 
             if (pkttype == uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_STRS) {
-                strs_item = proto_tree_add_item(rfnoc_tree, hf_rfnoc_strs, tvb, offset, chdr_len-8, endianness);
+                strs_item = proto_tree_add_item(rfnoc_tree, hf_rfnoc_strs, tvb, offset, chdr_len-chdr_w_bytes, endianness);
                 strs_tree = proto_item_add_subtree(strs_item, ett_rfnoc_strs);
                 auto pkt = pkt_factory.make_strs();
                 pkt->refresh(tvb_get_ptr(tvb, 0, chdr_len));
@@ -320,7 +331,7 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
             }
 
             if (pkttype == uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_STRC) {
-                strc_item = proto_tree_add_item(rfnoc_tree, hf_rfnoc_strc, tvb, 8, chdr_len-8, endianness);
+                strc_item = proto_tree_add_item(rfnoc_tree, hf_rfnoc_strc, tvb, offset, chdr_len-chdr_w_bytes, endianness);
                 strc_tree = proto_item_add_subtree(strc_item, ett_rfnoc_strc);
                 auto pkt = pkt_factory.make_strc();
                 pkt->refresh(tvb_get_ptr(tvb, 0, chdr_len));
@@ -339,7 +350,7 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
             }
 
             if (pkttype == uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_MGMT) {
-                mgmt_item = proto_tree_add_item(rfnoc_tree, hf_rfnoc_mgmt, tvb, offset, len-8, endianness);
+                mgmt_item = proto_tree_add_item(rfnoc_tree, hf_rfnoc_mgmt, tvb, offset, len-chdr_w_bytes, endianness);
                 mgmt_tree = proto_item_add_subtree(mgmt_item, ett_rfnoc_mgmt);
                 auto pkt = pkt_factory.make_mgmt();
                 pkt->refresh(tvb_get_ptr(tvb, 0, chdr_len));
@@ -347,9 +358,8 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
                 /* Add source EPID */
                 proto_tree_add_uint(mgmt_tree, hf_rfnoc_src_epid, tvb, offset, 2, payload.get_src_epid());
                 size_t num_hops = payload.get_num_hops();
-                offset += 8;
+                offset += chdr_w_bytes;
 
-                /* FIXME: Assuming CHDR_W_64 here */
                 for (size_t hop_id = 0; hop_id < num_hops; hop_id++) {
                     auto hop = payload.get_hop(hop_id);
                     size_t num_ops = hop.get_num_ops();
@@ -407,9 +417,14 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
                     rfnoc_tree, hf_rfnoc_hdr_eov, tvb, offset + 7, 1, is_eov);
             }
             if (pkttype == uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_DATA_WITH_TS) {
+                size_t timestamp_offset = offset+8;
+                if (chdr_w_bytes > 8) {
+                    // The timestamp is in the same block as the header or CHDR widths above 64 bits
+                    timestamp_offset =- chdr_w_bytes;
+                }
                 auto pkt = pkt_factory.make_generic();
                 pkt->refresh(tvb_get_ptr(tvb, 0, chdr_len));
-                proto_tree_add_uint64(rfnoc_tree, hf_rfnoc_timestamp, tvb, offset+8, 8, *(pkt->get_timestamp()));
+                proto_tree_add_uint64(rfnoc_tree, hf_rfnoc_timestamp, tvb, timestamp_offset, 8, *(pkt->get_timestamp()));
             }
         }
     }
