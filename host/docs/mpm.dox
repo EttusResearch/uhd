@@ -71,9 +71,9 @@ argument is a network address at which the device can be reached.
 
 If the connection succeeds, commands can be directly entered on the command
 line. MPM Shell supports tab completion and on-line help using the `?` operator:
-By appending it to a command, its docstring will be displayed.
+By prepending it to a command, its docstring will be displayed.
 
-    > get_clock_source?
+    > ?get_clock_source
 
 Arguments to the commands can simply be appended to the command itself:
 
