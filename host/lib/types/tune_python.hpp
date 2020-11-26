@@ -31,6 +31,7 @@ void export_tune(py::module& m)
         .def_readwrite("rf_freq", &tune_request_t::rf_freq)
         .def_readwrite("dsp_freq", &tune_request_t::dsp_freq)
         .def_readwrite("args", &tune_request_t::args);
+    py::implicitly_convertible<double, tune_request_t>();
 
     py::class_<tune_result_t>(m, "tune_result")
         .def(py::init<>())
