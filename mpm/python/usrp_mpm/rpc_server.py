@@ -491,7 +491,7 @@ class MPMServer(RPCServer):
             unpack_params={'max_buffer_size': 50000000, 'raw': False},
         )
 
-    def reset_mgr(self):
+    def _reset_mgr(self):
         """
         Reset the Peripheral Manager for this RPC server.
         """
@@ -569,7 +569,7 @@ class MPMServer(RPCServer):
             try:
                 self.log.trace("Reset after updating component? {}".format(reset_now))
                 if reset_now:
-                    self.reset_mgr()
+                    self._reset_mgr()
                     self.log.debug("Reset the periph manager")
             except Exception as ex:
                 self.log.error(
