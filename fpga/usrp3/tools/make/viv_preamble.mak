@@ -55,7 +55,7 @@ endif
 .check_tool:
 	@echo "BUILDER: Checking tools..."
 	@echo -n "* "; bash --version | grep bash || (echo "ERROR: Bash not found in environment. Please install it"; exit 1;)
-	@echo -n "* "; python --version || (echo "ERROR: Python not found in environment. Please install it"; exit 1;)
+	@echo -n "* "; python3 --version || (echo "ERROR: Python not found in environment. Please install it"; exit 1;)
 	@echo -n "* "; vivado -version 2>&1 | grep Vivado || (echo "ERROR: Vivado not found in environment. Please run setupenv.sh"; exit 1;)
 
 # -------------------------------------------------------------------

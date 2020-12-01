@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Notice: Some parts of this file were copied from PyBOMBS, which has a
 # different copyright, and is highlighted appropriately. The following
@@ -24,7 +24,6 @@
 Run Vivado builds
 """
 
-from __future__ import print_function
 import os
 import sys
 import re
@@ -34,10 +33,7 @@ import time
 import argparse
 import subprocess
 import threading
-try:
-    from Queue import Queue, Empty
-except ImportError:
-    from queue import Queue, Empty  # Py3k
+from queue import Queue, Empty
 
 READ_TIMEOUT = 0.1 # s
 
@@ -472,4 +468,3 @@ def main():
 
 if __name__ == "__main__":
     exit(not main())
-

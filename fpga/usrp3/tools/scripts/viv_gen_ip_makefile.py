@@ -1,7 +1,7 @@
-#! /usr/bin/python
+#! /usr/bin/env python3
 
-import sys, os
-import collections
+import sys
+import os
 import argparse
 import datetime
 
@@ -10,7 +10,8 @@ def get_options():
     parser = argparse.ArgumentParser(description='Create a Makefile for Xilinx IP.')
     parser.add_argument('--ip_name', type=str, default=None, help='Name for the IP core')
     parser.add_argument('--dest', type=str, default=None, help='Destination directory')
-    parser.add_argument('--copright_auth', type=str, default='Ettus Research', help='Copyright author')
+    parser.add_argument('--copright_auth',
+                        type=str, default='Ettus Research', help='Copyright author')
     args = parser.parse_args()
     if not args.ip_name:
         print('ERROR: Please specify a name for the IP core\n')
@@ -39,13 +40,13 @@ $({ip_srcs_var}) $({ip_outs_var}) : $(IP_DIR)/{ip_name}/{ip_name}.xci
 """
 
 def main():
-    args = get_options();
-
+    args = get_options()
     transform = {}
     transform['ip_name'] = args.ip_name
     transform['ip_srcs_var'] = 'IP_' + args.ip_name.upper() + '_SRCS'
     transform['ip_outs_var'] = 'IP_' + args.ip_name.upper() + '_OUTS'
-    transform['copyright'] = 'Copyright ' + str(datetime.datetime.now().year) + ' ' + args.copright_auth
+    transform['copyright'] = 'Copyright {} {}'.format(
+        datetime.datetime.now().year, args.copright_auth)
 
     with open(os.path.join(args.dest, 'Makefile.inc'), 'w') as mak_file:
         mak_file.write(g_makefile_template.format(**transform))

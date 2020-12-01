@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright 2016 Ettus Research
 #
@@ -16,11 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import argparse
+import re
 import rfnocsim
 import ni_hw_models as hw
 import colosseum_models
-import argparse
-import re
 
 def main():
     # Arguments
@@ -101,39 +101,39 @@ def main():
         for u in sim_core.list_components('', '.*/' + ln):
             c = sim_core.lookup(u)
             m = re.match('(.+)/(SER_.*)', u)
-            if (c.get_utilization('bandwidth') != master_stats[ln]):
+            if c.get_utilization('bandwidth') != master_stats[ln]:
                 print('[WARN] Data flowing over ' + ln + ' is probably different between ' + master_fpga + ' and ' + m.group(1))
 
     # Visualize various metrics
     vis = rfnocsim.Visualizer(sim_core)
     vis.show_network()
-    vis.new_figure([1,2])
+    vis.new_figure([1, 2])
     vis.plot_utilization(rfnocsim.comptype.hardware, 'BEE7.*', 1)
     vis.plot_utilization(rfnocsim.comptype.producer, 'USRP.*', 2)
     vis.show_figure()
-    vis.new_figure([1,2])
+    vis.new_figure([1, 2])
     vis.plot_utilization(rfnocsim.comptype.channel, 'BEE7_000.*FPGA_NW.*EXT.*', 1)
     vis.plot_utilization(rfnocsim.comptype.channel, 'BEE7_006.*FPGA_SE.*EXT.*', 2)
     vis.show_figure()
-    vis.new_figure([1,3])
+    vis.new_figure([1, 3])
     vis.plot_utilization(rfnocsim.comptype.channel, 'BEE7_010.*FPGA_NW.*SER_EW_.*', 1)
     vis.plot_utilization(rfnocsim.comptype.channel, 'BEE7_010.*FPGA_NW.*SER_NS_.*', 2)
     vis.plot_utilization(rfnocsim.comptype.channel, 'BEE7_010.*FPGA_NW.*SER_XX_.*', 3)
     vis.show_figure()
-    vis.new_figure([1,4])
+    vis.new_figure([1, 4])
     vis.plot_utilization(rfnocsim.comptype.channel, 'BEE7_000.*FPGA_NW.*EXT.*', 1)
     vis.plot_utilization(rfnocsim.comptype.channel, 'BEE7_001.*FPGA_NW.*EXT.*', 2)
     vis.plot_utilization(rfnocsim.comptype.channel, 'BEE7_002.*FPGA_NW.*EXT.*', 3)
     vis.plot_utilization(rfnocsim.comptype.channel, 'BEE7_003.*FPGA_NW.*EXT.*', 4)
     vis.show_figure()
-    vis.new_figure([1,4])
+    vis.new_figure([1, 4])
     vis.plot_utilization(rfnocsim.comptype.channel, 'BEE7_010.*FPGA_NW.*EXT.*', 1)
     vis.plot_utilization(rfnocsim.comptype.channel, 'BEE7_010.*FPGA_NE.*EXT.*', 2)
     vis.plot_utilization(rfnocsim.comptype.channel, 'BEE7_010.*FPGA_SW.*EXT.*', 3)
     vis.plot_utilization(rfnocsim.comptype.channel, 'BEE7_010.*FPGA_SE.*EXT.*', 4)
     vis.show_figure()
-    vis.new_figure([1,2])
-    vis.plot_consumption_latency('.*','.*USRP_.*', 1)
+    vis.new_figure([1, 2])
+    vis.plot_consumption_latency('.*', '.*USRP_.*', 1)
     vis.plot_path_latency('tx[(0)]', '.*', 2)
     vis.show_figure()
     vis.plot_utilization(rfnocsim.comptype.producer, '.*MGMT_HOST.*')

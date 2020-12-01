@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 #
 # Copyright 2018 Ettus Research, a National Instruments Company
 #
@@ -11,7 +11,6 @@ import sys
 import subprocess
 import logging
 import re
-import io
 import time
 import datetime
 from queue import Queue
@@ -106,7 +105,7 @@ def gather_target_sims(basedir, targets, excludes):
 
 def parse_output(simout):
     # Gather results (basic metrics)
-    results = {'retcode':RETCODE_SUCCESS, 'stdout':simout, 'passed':False}
+    results = {'retcode': RETCODE_SUCCESS, 'stdout': simout, 'passed': False}
     # Look for the following in the log:
     # - A start timestamp (indicates that Vivado started)
     # - The testbench infrastructure start header (indicates that the TB started)
@@ -201,7 +200,11 @@ def run_sim(path, simulator, basedir, setupenv):
             setupenv = ''
             # Check if environment was setup
             if 'VIVADO_PATH' not in os.environ:
-                return {'retcode': RETCODE_EXEC_ERR, 'passed':False, 'stdout':bytes('Simulation environment was not initialized\n', 'utf-8')}
+                return {
+                    'retcode': RETCODE_EXEC_ERR,
+                    'passed': False,
+                    'stdout': bytes('Simulation environment was not initialized\n', 'utf-8')
+                }
         else:
             setupenv = '. ' + os.path.realpath(setupenv) + ';'
         # Run the simulation

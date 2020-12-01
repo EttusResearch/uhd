@@ -10,7 +10,7 @@ Package image files into image archive packages
 Provides functions for packaging image files into image packages. Generate the intermediate files
 (like hash files), and create image archives from sets.
 """
-from __future__ import print_function
+
 import argparse
 import copy
 import glob
@@ -108,7 +108,7 @@ def gen_md5(files_list, hash_filename=""):
 
     # Write the MD5 hashes to file
     with open(hash_filename, 'a') as hash_file:
-        for filename, md5_hex in hashes.items():
+        for filename, md5_hex in list(hashes.items()):
             newline = "{md5_hex}  {filename}\n".format(filename=filename, md5_hex=md5_hex)
             hash_file.write(newline)
 
@@ -225,7 +225,7 @@ def list_differences(list1, list2):
 
 def get_target_name(zip_filename):
     """Return the package target that created the given zip_filename"""
-    for target, target_info in PACKAGE_MAPPING.items():
+    for target, target_info in list(PACKAGE_MAPPING.items()):
         # First we need to strip the Git hash out of the filename
         githash = re.findall(r"-g([\d\w]{7,8})", zip_filename)[0]
         stripped_filename = os.path.basename(zip_filename.replace(githash, "{}"))
@@ -263,7 +263,7 @@ def verify_package(zip_filename):
 def edit_manifest_line(line, new_repo_and_hash, new_hashes_dict):
     """Edit the line in the manifest to (maybe) include the new repo, git hash, and SHA"""
     # Check each value in your dictionary of new hashes
-    for filename, new_hash in new_hashes_dict.items():
+    for filename, new_hash in list(new_hashes_dict.items()):
         # If the filename with a new hash shows up in the line
         # Note: the filename has a Git hash in it, so we need to peel that off first
         full_filename_matches = re.findall(r"([\d\w]+)-g([\da-fA-F]{7,8})", filename)
@@ -323,7 +323,7 @@ def determine_targets():
     :return: list of valid targets
     """
     found_targets = []
-    for target, target_info in PACKAGE_MAPPING.items():
+    for target, target_info in list(PACKAGE_MAPPING.items()):
         # Grab the list of files required, but remove any files that we're going to build here,
         # like the hash files
         required_files = copy.deepcopy(target_info['files'])
@@ -347,7 +347,7 @@ def main():
     if not args.githash:
         print("Please provide --githash `<REPO>-<GITHASH>'")
         return False
-    elif not re.findall(r"[\d\w]+-[\d\w]{7,8}", args.githash):
+    if not re.findall(r"[\d\w]+-[\d\w]{7,8}", args.githash):
         print("--githash does not match expected form. Should be `<REPO>-<GITHASH>'")
         return False
 

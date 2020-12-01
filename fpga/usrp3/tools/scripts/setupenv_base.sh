@@ -338,7 +338,7 @@ function viv_create_ip {
 
     $VIVADO_EXEC -mode gui -source $(resolve_viv_path $VIV_IP_UTILS) -nolog -nojournal -tclargs create $part_name $ip_name $(resolve_viv_path $ip_dir) $ip_vlnv
     echo "Generating Makefile..."
-    python $REPO_BASE_PATH/tools/scripts/viv_gen_ip_makefile.py --ip_name=$ip_name --dest=$ip_dir/$ip_name
+    python3 $REPO_BASE_PATH/tools/scripts/viv_gen_ip_makefile.py --ip_name=$ip_name --dest=$ip_dir/$ip_name
     echo "Done generating IP in $ip_dir/$ip_name"
 }
 
@@ -352,7 +352,7 @@ function viv_modify_ip {
     fi
 
     xci_path=$(readlink -f $1)
-    part_name=$(python $REPO_BASE_PATH/tools/scripts/viv_ip_xci_editor.py read_part $xci_path)
+    part_name=$(python3 $REPO_BASE_PATH/tools/scripts/viv_ip_xci_editor.py read_part $xci_path)
     if [[ -z $part_name ]]; then
         echo "ERROR: Invalid part name $part_name. XCI parse error."
         return 1
@@ -446,7 +446,7 @@ function viv_upgrade_ip {
     for xci_path in $xci_files; do
         if [[ -f $xci_path ]]; then
             echo "Upgrading $xci_path..."
-            part_name=$(python $REPO_BASE_PATH/tools/scripts/viv_ip_xci_editor.py read_part $xci_path)
+            part_name=$(python3 $REPO_BASE_PATH/tools/scripts/viv_ip_xci_editor.py read_part $xci_path)
             $VIVADO_EXEC -mode batch -source $(resolve_viv_path $VIV_IP_UTILS) -nolog -nojournal -tclargs upgrade $part_name $(resolve_viv_path $xci_path) | grep -v -E '(^$|^#|\*\*)'
             test ${PIPESTATUS[0]} -eq 0
         else
@@ -494,7 +494,7 @@ function probe_bitfile {
         echo "- <Bitfile Path>: Path to a .bit FPGA configuration file"
         return 1
     fi
-    python $REPO_BASE_PATH/tools/scripts/xil_bitfile_parser.py --info $1
+    python3 $REPO_BASE_PATH/tools/scripts/xil_bitfile_parser.py --info $1
 }
 
 echo

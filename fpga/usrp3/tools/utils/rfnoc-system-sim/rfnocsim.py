@@ -623,7 +623,7 @@ class Visualizer():
         for c in sorted(comps):
             comp = self.__sim_core.lookup(c)
             for s in sorted(comp.get_items()):
-                print(' - %s: (%s) Latency = %gs'%(s,c,comp.get_latency(s)))
+                print((' - %s: (%s) Latency = %gs' % (s, c, comp.get_latency(s))))
         print('=================================================================')
 
     def dump_debug_audit_log(self, ctype, name_filt='.*'):
@@ -645,7 +645,7 @@ class Visualizer():
                 status = 'WARNING (Used but Undriven)'
             else:
                 status = 'Unused'
-            print(' - %s: Status = %s'%(c,status))
+            print((' - %s: Status = %s'%(c,status)))
         print('=================================================================')
 
     def new_figure(self, grid_dims=[1,1], fignum=1, figsize=(16, 9), dpi=72):
