@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright 2016 Ettus Research
 #
@@ -16,8 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import rfnocsim
 import math
+import rfnocsim
 
 class UsrpX310(rfnocsim.SimComp):
     # Hardware specific constants

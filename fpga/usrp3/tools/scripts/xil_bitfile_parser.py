@@ -1,7 +1,8 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 import argparse
-import os, sys
+import os
+import sys
 import struct
 import re
 
@@ -13,7 +14,7 @@ def get_options():
     parser.add_argument('--flip', action='store_true', default=False, help='Flip 32-bit endianess')
     parser.add_argument('--info', action='store_true', default=False, help='Print bitfile info')
     args = parser.parse_args()
-    if (not os.path.isfile(args.bitfile)):
+    if not os.path.isfile(args.bitfile):
         print('ERROR: Bitfile ' + args.bitfile + ' could not be accessed or is not a file.\n')
         parser.print_help()
         sys.exit(1)
@@ -52,9 +53,9 @@ def parse_bitfile(bitfile_bytes):
 def flip32(data):
     sl = struct.Struct('<I')
     sb = struct.Struct('>I')
-    b = buffer(data)
+    b = memoryview(data)
     d = bytearray(len(data))
-    for offset in xrange(0, len(data), 4):
+    for offset in range(0, len(data), 4):
          sb.pack_into(d, offset, sl.unpack_from(b, offset)[0])
     return d
 
@@ -67,15 +68,15 @@ def main():
         if args.info:
             m = re.search('(.+);UserID=(.+);COMPRESS=(.+);Version=(.+)', header['design_name'])
             if m:
-                print 'Design Name: ' + m.group(1)
-                print 'User ID: ' + m.group(2)
-                print 'Compression: ' + m.group(3)
-                print 'Vivado Version: ' + m.group(4)
+                print('Design Name: ' + m.group(1))
+                print('User ID: ' + m.group(2))
+                print('Compression: ' + m.group(3))
+                print('Vivado Version: ' + m.group(4))
             else:
-                print 'Design Name: ' + header['design_name']
-            print 'Part Name: ' + header['part_name']
-            print 'Datestamp: ' + header['date'] + ' ' + header['time']
-            print 'Bitstream Size: ' + str(header['bitstream_len'])
+                print('Design Name: ' + header['design_name'])
+            print('Part Name: ' + header['part_name'])
+            print('Datestamp: ' + header['date'] + ' ' + header['time'])
+            print('Bitstream Size: ' + str(header['bitstream_len']))
         # Write a bin file
         if args.bin_out:
             open(args.bin_out, 'wb').write(flip32(data) if args.flip else data)

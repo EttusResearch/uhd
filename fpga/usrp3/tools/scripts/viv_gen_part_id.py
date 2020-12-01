@@ -1,8 +1,7 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 import argparse
-import os, sys
-import re
+import sys
 
 # Parse command line options
 def get_options():
@@ -21,7 +20,7 @@ def main():
     target_tok = args.target.split('/')
     if len(target_tok) < 4:
         print('ERROR: Invalid target format. Must be <arch>/<device>/<package>/<speedgrade>[/<temperaturegrade>[/<silicon_revision>]]')
-        print('ERROR: Parsed only ' + str(len(target_tok)) + ' tokens') 
+        print('ERROR: Parsed only ' + str(len(target_tok)) + ' tokens')
         sys.exit(1)
     if target_tok[0] in ['artix7', 'kintex7', 'zynq', 'spartan7', 'virtex7']:
         print('' + target_tok[1] + target_tok[2] + target_tok[3])

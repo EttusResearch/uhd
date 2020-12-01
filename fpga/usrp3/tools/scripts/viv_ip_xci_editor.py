@@ -1,7 +1,8 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 import argparse
-import os, sys
+import os
+import sys
 import re
 
 # Parse command line options
@@ -20,7 +21,7 @@ def get_options():
         print('ERROR: Please specify the location for the XCI file to operate on\n')
         parser.print_help()
         sys.exit(1)
-    if (not os.path.isfile(args.xci_filepath)):
+    if not os.path.isfile(args.xci_filepath):
         print('ERROR: XCI File ' + args.xci_filepath + ' could not be accessed or is not a file.\n')
         parser.print_help()
         sys.exit(1)
@@ -59,7 +60,7 @@ def main():
             print(xci_info['DEVICE'] + xci_info['PACKAGE'] + xci_info['SPEEDGRADE'])
     elif args.action == 'retarget':
         # Write a new XCI file with modified target info
-        if (not os.path.isdir(args.output_dir)):
+        if not os.path.isdir(args.output_dir):
             print('ERROR: IP Build directory ' + args.output_dir + ' could not be accessed or is not a directory.')
             sys.exit(1)
         if not args.target:
@@ -76,16 +77,16 @@ def main():
             replace_dict['TEMPERATURE_GRADE'] = target_tok[4]
         if len(target_tok) > 5:
             replace_dict['SILICON_REVISION'] = target_tok[5]
-        out_xci_filename = os.path.join(os.path.abspath(args.output_dir), os.path.basename(args.xci_filepath)) 
+        out_xci_filename = os.path.join(os.path.abspath(args.output_dir), os.path.basename(args.xci_filepath))
 
         with open(out_xci_filename, 'w') as out_file:
             for r_line in xci_lines:
                 w_line = r_line
-                m = re.search(get_match_str('(' + '|'.join(replace_dict.keys()) + ')'), r_line)
+                m = re.search(get_match_str('(' + '|'.join(list(replace_dict.keys())) + ')'), r_line)
                 if m is not None:
                     w_line = m.group(1) + replace_dict[m.group(2)] + m.group(4) +'\n'
                 else:
-                    m = re.search(get_empty_match_str('(' + '|'.join(replace_dict.keys()) + ')'), r_line)
+                    m = re.search(get_empty_match_str('(' + '|'.join(list(replace_dict.keys())) + ')'), r_line)
                     if m is not None:
                         w_line = m.group(1) + '>' + replace_dict[m.group(2)] + '</spirit:configurableElementValue>\n'
                 out_file.write(w_line)

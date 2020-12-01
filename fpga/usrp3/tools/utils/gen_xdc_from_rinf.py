@@ -1,9 +1,11 @@
-#! /usr/bin/python
+#! /usr/bin/env python3
 
-import sys, os
+import sys
+import os
 import collections
 import argparse
 import re
+from functools import reduce
 
 #------------------------------------------------------------
 # Types
@@ -23,11 +25,11 @@ class terminal_db_t:
         self.rev_db = dict()
 
     def add(self, ref_des, net_name, pin_name):
-        if self.db.has_key(ref_des):
+        if ref_des in self.db:
             self.db[ref_des].append(terminal_t(net_name, pin_name))
         else:
             self.db[ref_des] = [terminal_t(net_name, pin_name)]
-        if self.rev_db.has_key(net_name):
+        if net_name in self.rev_db:
             self.rev_db[net_name].append(ref_des)
         else:
             self.rev_db[net_name] = [ref_des]
@@ -52,13 +54,13 @@ class component_db_t:
         self.db[ref_des][prop] = value
 
     def exists(self, comp_name):
-        return self.db.has_key(comp_name)
+        return comp_name in self.db
 
     def lookup(self, comp_name):
         return self.db[comp_name]
 
     def attr_exists(self, comp_name, attr_name):
-        return self.exists(comp_name) and self.db[comp_name].has_key(attr_name)
+        return self.exists(comp_name) and attr_name in self.db[comp_name]
 
     def get_attr(self, comp_name, attr_name):
         return self.db[comp_name][attr_name]
@@ -68,7 +70,7 @@ class component_db_t:
 # Also maintans all the IO Types to aid in filtering
 class fpga_pin_db_t:
     def __init__(self, pkg_file, io_exclusions = []):
-        print 'INFO: Parsing Xilinx Package File ' + pkg_file + '...'
+        print('INFO: Parsing Xilinx Package File ' + pkg_file + '...')
         header = ['Pin','Pin Name','Memory Byte Group','Bank','VCCAUX Group','Super Logic Region','I/O Type','No-Connect']
         self.pindb = dict()
         self.iodb = set()
@@ -78,30 +80,30 @@ class fpga_pin_db_t:
                 if len(tokens) == 8:
                     if tokens != header:
                         pin_info = dict()
-                        for col in range(1,len(header)):
+                        for col in range(1, len(header)):
                             pin_info[header[col].strip()] = tokens[col].strip()
                         self.pindb[tokens[0].strip()] = pin_info
                         self.iodb.add(pin_info['I/O Type'])
-        if len(self.pindb.keys()) == 0 or len(self.iodb) == 0:
-            print 'ERROR: Could not parse Xilinx package file ' + pkg_file
+        if len(list(self.pindb.keys())) == 0 or len(self.iodb) == 0:
+            print('ERROR: Could not parse Xilinx package file ' + pkg_file)
             sys.exit(1)
 
-        print 'INFO: * Found IO types: ' + ', '.join(self.iodb)
+        print('INFO: * Found IO types: ' + ', '.join(self.iodb))
         self.iodb.remove('NA')
         for io in io_exclusions:
             if io:
                 self.iodb.remove(io.rstrip().lstrip())
-        print 'INFO: * Using IO types: ' + ', '.join(self.iodb)
+        print('INFO: * Using IO types: ' + ', '.join(self.iodb))
 
     def iface_pins(self):
         iface_pins = set()
-        for pin in self.pindb.keys():
+        for pin in list(self.pindb.keys()):
             if self.pindb[pin]['I/O Type'] in self.iodb:
                 iface_pins.add(pin)
         return iface_pins
 
     def is_iface_pin(self, pin):
-        return (self.pindb.has_key(pin)) and (self.pindb[pin]['I/O Type'] in self.iodb)
+        return (pin in self.pindb) and (self.pindb[pin]['I/O Type'] in self.iodb)
 
     def get_pin_attr(self, pin, attr):
         return self.pindb[pin][attr]
@@ -124,11 +126,11 @@ def get_options():
     parser.add_argument('--fix_names', action='store_true', default=False, help='Fix net names when writing the XDC and Verilog')
     args = parser.parse_args()
     if not args.xil_pkg_file:
-        print 'ERROR: Please specify a Xilinx package file using the --xil_pkg_file option\n'
+        print('ERROR: Please specify a Xilinx package file using the --xil_pkg_file option\n')
         parser.print_help()
         sys.exit(1)
     if not args.rinf:
-        print 'ERROR: Please specify an input RINF file using the --rinf option\n'
+        print('ERROR: Please specify an input RINF file using the --rinf option\n')
         parser.print_help()
         sys.exit(1)
     return args
@@ -145,7 +147,7 @@ def collapse_tokens(tokens):
 
 # Parse user specified RINF file and return a terminal and component database
 def parse_rinf(rinf_path, suppress_warnings):
-    print 'INFO: Parsing RINF File ' + rinf_path + '...'
+    print('INFO: Parsing RINF File ' + rinf_path + '...')
     terminal_db = terminal_db_t()
     component_db = component_db_t()
     with open(rinf_path, 'r') as rinf_f:
@@ -176,7 +178,7 @@ def parse_rinf(rinf_path, suppress_warnings):
                         terminal_db.add(tokens[0], net_name, tokens[1])
                     else:
                         if not suppress_warnings:
-                            print 'WARNING: Ignoring line continuation for ' + state + ' at line ' + str(line_num)
+                            print('WARNING: Ignoring line continuation for ' + state + ' at line ' + str(line_num))
     return (terminal_db, component_db)
 
 # From all the FPGA pins filter out the ones
@@ -218,7 +220,7 @@ def fix_net_name(name):
 # Write an XDC file with sanity checks and readability enhancements
 def write_output_files(xdc_path, vstub_path, fpga_pins, fix_names):
     # Figure out the max pin name length for human readable text alignment
-    max_pin_len = reduce(lambda x,y:max(x,y), map(len, fpga_pins.keys()))
+    max_pin_len = reduce(lambda x,y:max(x,y), list(map(len, list(fpga_pins.keys()))))
     # Create a bus database. Collapse multi-bit buses into single entries
     bus_db = dict()
     for pin in sorted(fpga_pins.keys()):
@@ -226,7 +228,7 @@ def write_output_files(xdc_path, vstub_path, fpga_pins, fix_names):
         if m:
             bus_name = m.group(1)
             bit_num = int(m.group(2))
-            if bus_db.has_key(bus_name):
+            if bus_name in bus_db:
                 bus_db[bus_name].append(bit_num)
             else:
                 bus_db[bus_name] = [bit_num]
@@ -234,10 +236,10 @@ def write_output_files(xdc_path, vstub_path, fpga_pins, fix_names):
                 bus_db[pin] = []
     # Walk through the bus database and write the XDC file
     with open(xdc_path, 'w') as xdc_f:
-        print 'INFO: Writing template XDC ' + xdc_path + '...'
+        print('INFO: Writing template XDC ' + xdc_path + '...')
         for bus in sorted(bus_db.keys()):
             if not re.match("[a-zA-Z].[a-zA-Z0-9_]*$", bus):
-                print ('CRITICAL WARNING: Invalid net name (bad Verilog syntax): ' + bus +
+                print('CRITICAL WARNING: Invalid net name (bad Verilog syntax): ' + bus +
                     ('. Possibly fixed but please review.' if fix_names else '. Please review.'))
             if bus_db[bus] == []:
                 xdc_pin = fix_net_name(bus.upper()) if fix_names else bus.upper()
@@ -249,9 +251,9 @@ def write_output_files(xdc_path, vstub_path, fpga_pins, fix_names):
                 xdc_f.write('\n')
             else:
                 bits = sorted(bus_db[bus])
-                coherent = (bits == range(0, bits[-1]+1))
+                coherent = (bits == list(range(0, bits[-1]+1)))
                 if not coherent:
-                    print 'CRITICAL WARNING: Incoherent bus: ' + bus + '. Some bits may be missing. Please review.'
+                    print('CRITICAL WARNING: Incoherent bus: ' + bus + '. Some bits may be missing. Please review.')
                 for bit in bits:
                     bus_full = bus + '(' + str(bit) + ')'
                     xdc_pin = bus.upper() + '[' + str(bit) + ']'
@@ -264,13 +266,13 @@ def write_output_files(xdc_path, vstub_path, fpga_pins, fix_names):
     # Walk through the bus database and write a stub Verilog file
     if vstub_path:
         with open(vstub_path, 'w') as vstub_f:
-            print 'INFO: Writing Verilog stub ' + vstub_path + '...'
+            print('INFO: Writing Verilog stub ' + vstub_path + '...')
             vstub_f.write('module ' + os.path.splitext(os.path.basename(vstub_path))[0] + ' (\n')
             i = 1
             for bus in sorted(bus_db.keys()):
                 port_name = fix_net_name(bus.upper()) if fix_names else bus.upper()
                 port_loc = fpga_pins[bus].loc.upper() if (bus_db[bus] == []) else '<Multiple>'
-                port_dir_short = raw_input('[' + str(i) + '/' + str(len(bus_db.keys())) +'] Direction for ' + port_name + ' (' + port_loc + ')? {[i]nput,[o]utput,[b]oth}: ').lower()
+                port_dir_short = input('[' + str(i) + '/' + str(len(list(bus_db.keys()))) +'] Direction for ' + port_name + ' (' + port_loc + ')? {[i]nput,[o]utput,[b]oth}: ').lower()
                 if port_dir_short.startswith('i'):
                     port_dir = '  input '
                 elif port_dir_short.startswith('o'):
@@ -288,18 +290,18 @@ def write_output_files(xdc_path, vstub_path, fpga_pins, fix_names):
 
 # Report unconnected pins
 def report_unconnected_pins(fpga_pins, fpga_pin_db):
-    print 'WARNING: The following pins were not connected. Please review.'
+    print('WARNING: The following pins were not connected. Please review.')
     # Collect all the pin locations that have been used for constrain/stub creation
     iface_pins = set()
-    for net in fpga_pins.keys():
+    for net in list(fpga_pins.keys()):
         iface_pins.add(fpga_pins[net].loc)
     # Loop through all possible pins and check if we have missed any
     for pin in sorted(fpga_pin_db.iface_pins()):
         if pin not in iface_pins:
-            print (' * ' + pin.ljust(6) + ': ' +
-                   'Bank = ' + str(fpga_pin_db.get_pin_attr(pin, 'Bank')).ljust(6) +
-                   'IO Type = ' + str(fpga_pin_db.get_pin_attr(pin, 'I/O Type')).ljust(10) +
-                   'Name = ' + str(fpga_pin_db.get_pin_attr(pin, 'Pin Name')).ljust(10))
+            print(' * ' + pin.ljust(6) + ': ' +
+                  'Bank = ' + str(fpga_pin_db.get_pin_attr(pin, 'Bank')).ljust(6) +
+                  'IO Type = ' + str(fpga_pin_db.get_pin_attr(pin, 'I/O Type')).ljust(10) +
+                  'Name = ' + str(fpga_pin_db.get_pin_attr(pin, 'Pin Name')).ljust(10))
 
 #------------------------------------------------------------
 # Main
@@ -311,21 +313,21 @@ def main():
     # Parse RINF netlist
     (terminal_db, component_db) = parse_rinf(args.rinf, args.suppress_warn)
     # Look for desired reference designator and print some info about it
-    print 'INFO: Resolving reference designator ' + args.ref_des + '...'
+    print('INFO: Resolving reference designator ' + args.ref_des + '...')
     if not component_db.exists(args.ref_des):
-        print 'ERROR: Reference designator not found in the netlist'
+        print('ERROR: Reference designator not found in the netlist')
         sys.exit(1)
     fpga_info = component_db.lookup(args.ref_des)
-    print 'INFO: * Name = ' + fpga_info['Name']
-    print 'INFO: * Description = ' + fpga_info['Description']
+    print('INFO: * Name = ' + fpga_info['Name'])
+    print('INFO: * Description = ' + fpga_info['Description'])
     # Build a list of all FPGA interface pins in the netlist
     fpga_pins = filter_fpga_pins(args.ref_des, terminal_db, fpga_pin_db, args.traverse_depth)
     if not fpga_pins:
-        print 'ERROR: Could not cross-reference pins for ' + args.ref_des + ' with FPGA device. Are you sure it is an FPGA?'
+        print('ERROR: Could not cross-reference pins for ' + args.ref_des + ' with FPGA device. Are you sure it is an FPGA?')
         sys.exit(1)
     # Write output XDC and Verilog
     write_output_files(args.xdc_out, args.vstub_out, fpga_pins, args.fix_names)
-    print 'INFO: Output file(s) generated successfully!'
+    print('INFO: Output file(s) generated successfully!')
     # Generate a report of all unconnected pins
     if not args.suppress_warn:
         report_unconnected_pins(fpga_pins, fpga_pin_db)

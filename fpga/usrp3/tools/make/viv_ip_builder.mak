@@ -25,7 +25,7 @@ BUILD_VIVADO_IP = \
 	echo "BUILDER: Building IP $(1)"; \
 	echo "========================================================"; \
 	export XCI_FILE=$(call RESOLVE_PATH,$(5)/$(1)/$(1).xci); \
-	export PART_NAME=`python $(TOOLS_DIR)/scripts/viv_gen_part_id.py $(2)/$(3)`; \
+	export PART_NAME=`python3 $(TOOLS_DIR)/scripts/viv_gen_part_id.py $(2)/$(3)`; \
 	export GEN_EXAMPLE=$(6); \
 	export SYNTH_IP=$(SYNTH_IP); \
 	echo "BUILDER: Staging IP in build directory..."; \
@@ -34,7 +34,7 @@ BUILD_VIVADO_IP = \
 	$(TOOLS_DIR)/scripts/shared-ip-loc-manage.sh --path=$(5)/$(1) reserve; \
 	cp -rf $(4)/$(1)/* $(5)/$(1); \
 	echo "BUILDER: Retargeting IP to part $(2)/$(3)..."; \
-	python $(TOOLS_DIR)/scripts/viv_ip_xci_editor.py --output_dir=$(5)/$(1) --target=$(2)/$(3) retarget $(4)/$(1)/$(1).xci; \
+	python3 $(TOOLS_DIR)/scripts/viv_ip_xci_editor.py --output_dir=$(5)/$(1) --target=$(2)/$(3) retarget $(4)/$(1)/$(1).xci; \
 	cd $(5); \
 	echo "BUILDER: Building IP..."; \
 	export VIV_ERR=0; \
@@ -58,7 +58,7 @@ BUILD_VIVADO_BD = \
 	echo "BUILDER: Building BD $(1)"; \
 	echo "========================================================"; \
 	export BD_FILE=$(call RESOLVE_PATH,$(5)/$(1)/$(1).bd); \
-	export PART_NAME=`python $(TOOLS_DIR)/scripts/viv_gen_part_id.py $(2)/$(3)`; \
+	export PART_NAME=`python3 $(TOOLS_DIR)/scripts/viv_gen_part_id.py $(2)/$(3)`; \
 	echo "BUILDER: Staging BD in build directory..."; \
 	rm -rf $(5)/$(1); \
 	mkdir -p $(5)/$(1); \
@@ -90,7 +90,7 @@ BUILD_VIVADO_BDTCL = \
 	echo "BUILDER: Generating BD from Tcl $(1)"; \
 	echo "========================================================"; \
 	export BD_FILE=$(call RESOLVE_PATH,$(5)/$(1)/$(1).tcl); \
-	export PART_NAME=`python $(TOOLS_DIR)/scripts/viv_gen_part_id.py $(2)/$(3)`; \
+	export PART_NAME=`python3 $(TOOLS_DIR)/scripts/viv_gen_part_id.py $(2)/$(3)`; \
 	export BD_IP_REPOS=$(call RESOLVE_PATH,$(6)); \
 	export BD_HDL_SRCS=$(call RESOLVE_PATHS,$(7)); \
 	echo "BUILDER: Staging BD Tcl in build directory..."; \
