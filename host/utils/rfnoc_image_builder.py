@@ -83,6 +83,11 @@ def setup_parser():
              "Needs to be specified either here, or in the configuration file.",
         default=None)
     parser.add_argument(
+        "-n", "--image_core_name",
+        help="Name to use for the RFNoC image core."
+             "Defaults to the device name.",
+        default=None)
+    parser.add_argument(
         "-t", "--target",
         help="Build target (e.g. X310_HG, N320_XG, ...). Needs to be specified "
              "either here, on the configuration file.",
@@ -113,12 +118,16 @@ def image_config(args):
         config = yaml_utils.load_config(args.yaml_config, get_config_path())
         device = config.get('device') if args.device is None else args.device
         target = config.get('default_target') if args.target is None else args.target
-        return config, args.yaml_config, device, target
+        image_core_name = config.get('image_core_name') if args.image_core_name is None else args.image_core_name
+        if image_core_name is None:
+            image_core_name = device
+        return config, args.yaml_config, device, image_core_name, target
     with open(args.grc_config) as grc_file:
         config = yaml.load(grc_file)
         logging.info("Converting GNU Radio Companion file to image builder format")
         config = image_builder.convert_to_image_config(config, args.grc_blocks)
-        return config, args.grc_config, args.device, args.target
+        image_core_name = args.device if args.image_core_name is None else args.image_core_name
+        return config, args.grc_config, args.device, image_core_name, args.target
 
 
 def resolve_path(path, local):
@@ -187,7 +196,7 @@ def main():
     if args.log_level is not None:
         logging.root.setLevel(args.log_level.upper())
 
-    config, source, device, target = image_config(args)
+    config, source, device, image_core_name, target = image_config(args)
     source_hash = hashlib.sha256()
     with open(source, "rb") as source_file:
         source_hash.update(source_file.read())
@@ -197,6 +206,7 @@ def main():
         fpga_path=get_fpga_path(args),
         config_path=get_config_path(),
         device=device,
+        image_core_name=image_core_name,
         target=target,
         generate_only=args.generate_only,
         clean_all=args.clean_all,

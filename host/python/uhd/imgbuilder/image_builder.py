@@ -829,31 +829,31 @@ def get_core_config_path(config_path):
     """
     return os.path.join(config_path, RFNOC_CORE_DIR)
 
-def generate_image_core_path(output_path, device, source):
+def generate_image_core_path(output_path, name, source):
     """
     Creates the path where the image core file gets to be stored.
 
     output_path: If not None, this is returned
-    device: Device type string, used to generate default file name
+    name: Device name string, used to generate default file name
     source: Otherwise, this path is returned, combined with a default file name
     """
     if output_path is not None:
         return os.path.splitext(output_path)[0] + '.v'
     source = os.path.split(os.path.abspath(os.path.normpath(source)))[0]
-    return os.path.join(source, "{}_rfnoc_image_core.v".format(device))
+    return os.path.join(source, "{}_rfnoc_image_core.v".format(name))
 
-def generate_image_core_header_path(output_path, device, source):
+def generate_image_core_header_path(output_path, name, source):
     """
     Creates the path where the image core header file will be stored.
 
     output_path: If not None, this is returned
-    device: Device type string, used to generate default file name
+    name: Device name string, used to generate default file name
     source: Otherwise, this path is returned, combined with a default file name
     """
     if output_path is not None:
         return os.path.splitext(output_path)[0] + '.vh'
     source = os.path.split(os.path.abspath(os.path.normpath(source)))[0]
-    return os.path.join(source, "{}_rfnoc_image_core.vh".format(device))
+    return os.path.join(source, "{}_rfnoc_image_core.vh".format(name))
 
 def generate_edge_file_path(output_path, device, source):
     """
@@ -889,13 +889,13 @@ def build_image(config, fpga_path, config_path, device, **args):
     logging.info("Selected device %s", device)
     image_core_path = \
         generate_image_core_path(
-            args.get('output_path'), device, args.get('source'))
+            args.get('output_path'), args.get('image_core_name'), args.get('source'))
     image_core_header_path = \
         generate_image_core_header_path(
-            args.get('output_path'), device, args.get('source'))
+            args.get('output_path'), args.get('image_core_name'), args.get('source'))
     edge_file = \
         generate_edge_file_path(
-            args.get('router_hex_path'), device, args.get('source'))
+            args.get('router_hex_path'), args.get('image_core_name'), args.get('source'))
 
     logging.debug("Image core output file: %s", image_core_path)
     logging.debug("Image core header output file: %s", image_core_header_path)

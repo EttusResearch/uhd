@@ -26,7 +26,13 @@
 
 `default_nettype none
 
-`include "${config.device.type}_rfnoc_image_core.vh"
+<%
+    if hasattr(config, 'image_core_name'):
+        image_core_name = config.image_core_name
+    else:
+        image_core_name = config.device.type
+%>\
+`include "${image_core_name}_rfnoc_image_core.vh"
 
 
 module rfnoc_image_core #(
