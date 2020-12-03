@@ -888,8 +888,9 @@ void radio_control_impl::issue_stream_cmd(
 
     if (cmd_bits == regmap::RX_CMD_FINITE) {
         if (stream_cmd.num_samps == 0) {
-            throw uhd::value_error("When requesting a finite number of samples, the "
-                                   "number of samples must be greater than zero.");
+            RFNOC_LOG_WARNING("Ignoring stream command for finite acquisition of "
+                              "zero samples");
+            return;
         }
         // FIXME: The num words might be different from num_samps, check the
         // radio width
