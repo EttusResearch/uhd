@@ -162,8 +162,8 @@ def get_main_logger(
         LOGGER.cpp_log_buf.set_notify_callback(log_from_cpp)
     # Flush errors stuck in the prefs module:
     log = LOGGER.getChild('prefs')
-    for err_key, err_msg in mpm_prefs.get_log_errors():
-        log.error('%s: %s', err_key, err_msg)
+    for err_msg in mpm_prefs.get_log_errors():
+        log.error(err_msg)
     return LOGGER
 
 def get_logger(child_name):
