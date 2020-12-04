@@ -14,6 +14,7 @@
 namespace py = pybind11;
 
 #include "cal/cal_python.hpp"
+#include "device_python.hpp"
 #include "property_tree_python.hpp"
 #include "rfnoc/ddc_block_control_python.hpp"
 #include "rfnoc/duc_block_control_python.hpp"
@@ -60,6 +61,9 @@ PYBIND11_MODULE(libpyuhd, m)
     // Initialize the numpy C API
     // (otherwise we will see segmentation faults)
     init_numpy();
+
+    // Register uhd::device::find
+    export_device(m);
 
     // Register paths submodule
     auto paths_module = m.def_submodule("paths", "Path Utilities");

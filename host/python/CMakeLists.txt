@@ -32,6 +32,7 @@ execute_process(
 add_library(pyuhd SHARED
     pyuhd.cpp
     ${CMAKE_SOURCE_DIR}/lib/property_tree_python.cpp
+    ${CMAKE_SOURCE_DIR}/lib/device_python.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/multi_usrp_python.cpp
 )
 # python expects extension modules with a particular suffix

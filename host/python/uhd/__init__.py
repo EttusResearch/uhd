@@ -14,6 +14,7 @@ from . import rfnoc
 from . import dsp
 from . import chdr
 from .libpyuhd.paths import *
+from .libpyuhd import find
 from .property_tree import PropertyTree
 
 
