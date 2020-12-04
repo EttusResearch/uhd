@@ -132,6 +132,11 @@ public:
         const double timeout,
         const bool one_packet)
     {
+        if (nsamps_per_buff == 0) {
+            metadata.reset();
+            return 0;
+        }
+
         if (_error_metadata_cache.check(metadata)) {
             return 0;
         }
