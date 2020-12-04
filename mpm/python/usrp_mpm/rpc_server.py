@@ -53,7 +53,8 @@ class MPMServer(RPCServer):
     RPC calls to appropiate calls in the periph_manager and dboard_managers.
     """
     # This is a list of methods in this class which require a claim
-    default_claimed_methods = ['init', 'update_component', 'reclaim', 'unclaim']
+    default_claimed_methods = ['init', 'update_component', 'reclaim', 'unclaim',
+                               'get_log_buf']
 
     ###########################################################################
     # RPC Server Initialization
