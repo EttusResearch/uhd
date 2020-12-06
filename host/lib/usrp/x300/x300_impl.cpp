@@ -638,7 +638,7 @@ void x300_impl::update_clock_source(mboard_members_t& mb, const std::string& sou
 {
     // Optimize for the case when the current source is internal and we are trying
     // to set it to internal. This is the only case where we are guaranteed that
-    // the clock has not gone away so we can skip setting the MUX and reseting the LMK.
+    // the clock has not gone away so we can skip setting the MUX and resetting the LMK.
     const bool reconfigure_clks = (mb.current_refclk_src != "internal")
                                   or (source != "internal");
     if (reconfigure_clks) {

@@ -452,7 +452,7 @@ blockdef::sptr blockdef::make_from_noc_id(uint64_t noc_id)
 
     if (valid.empty()) {
         throw uhd::assertion_error("Failed to find a valid XML path for RFNoC blocks.\n"
-                                   "Try setting the enviroment variable UHD_RFNOC_DIR "
+                                   "Try setting the environment variable UHD_RFNOC_DIR "
                                    "to the correct location");
     }
 

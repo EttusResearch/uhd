@@ -260,7 +260,7 @@ void twinrx_chan_gain_expert::resolve()
 {
     if (_gain_profile != "default") {
         // TODO: Implement me!
-        throw uhd::not_implemented_error("custom gain strategies not implemeted yet");
+        throw uhd::not_implemented_error("custom gain strategies not implemented yet");
     }
 
     // Lookup table using settings
