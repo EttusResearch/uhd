@@ -22,9 +22,6 @@ from gevent import spawn_later
 from gevent import Greenlet
 from gevent import monkey
 monkey.patch_all()
-from builtins import str, bytes
-from builtins import range
-from six import iteritems
 from contextlib import contextmanager
 from mprpc import RPCServer
 from usrp_mpm.mpmlog import get_main_logger
@@ -436,7 +433,7 @@ class MPMServer(RPCServer):
         log_records = get_main_logger().get_log_buf()
         self.log.trace("Returning %d log records.", len(log_records))
         return [
-            {k: str(v) for k, v in iteritems(record)}
+            {k: str(v) for k, v in iter(record.items())}
             for record in log_records
         ]
 
