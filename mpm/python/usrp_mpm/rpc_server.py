@@ -335,14 +335,18 @@ class MPMServer(RPCServer):
 
         Resets and deinitalizes the periph manager as well.
         """
-        self.log.debug("Releasing claim on session `{}'".format(
-            self.session_id
-        ))
-        self._state.claim_status.value = False
-        self._state.claim_token.value = b''
-        self.session_id = None
+        self._state.lock.acquire()
+        self.log.debug(
+            "Deinitializing device and releasing claim on session `{}'"
+            .format(self.session_id))
+        # Disable unclaim timer, we're now finished with reclaim loops.
+        self._timer.kill()
+        # We might need to clear the method registry
         if self.periph_manager.clear_rpc_registry_on_unclaim:
             self.clear_method_registry()
+        # Now unclaim and deinit the device. We will try and catch any exception
+        # here, because the session is over and we have nowhere to send the
+        # exception.
         try:
             self.periph_manager.claimed = False
             self.periph_manager.unclaim()
@@ -350,9 +354,16 @@ class MPMServer(RPCServer):
             self.periph_manager.deinit()
         except BaseException as ex:
             self._last_error = str(ex)
-            self.log.error("deinit() failed: %s", str(ex))
+            self.log.error("Deinitialization failed: %s", str(ex))
             # Don't want to propagate this failure -- the session is over
-        self._timer.kill()
+        finally:
+            # The finally clause is not strictly necessary, because we're catching
+            # everything and not returning, but it should be explicit that we
+            # must always clear the claim and the _state lock at this point.
+            self._state.claim_status.value = False
+            self._state.claim_token.value = b''
+            self._state.lock.release()
+            self.session_id = None
 
     def unclaim(self, token):
         """
