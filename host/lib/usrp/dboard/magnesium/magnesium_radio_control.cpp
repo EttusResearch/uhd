@@ -317,7 +317,7 @@ double magnesium_radio_control_impl::set_rx_frequency(
     const std::string ad9371_source  = this->get_rx_lo_source(MAGNESIUM_LO1, chan);
     const std::string adf4351_source = this->get_rx_lo_source(MAGNESIUM_LO2, chan);
     UHD_ASSERT_THROW(adf4351_source == "internal");
-    double coerced_if_freq = freq;
+    double coerced_if_freq = 0;
 
     if (_map_freq_to_rx_band(_rx_band_map, freq) == rx_band::LOWBAND) {
         _is_low_band[RX_DIRECTION]    = true;
