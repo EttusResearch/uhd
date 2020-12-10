@@ -305,6 +305,10 @@ public:
         for (size_t strm_port = 0; strm_port < args.channels.size(); ++strm_port) {
             auto rx_channel = args.channels.at(strm_port);
             auto rx_chain   = _get_rx_chan(rx_channel);
+            if (rx_chain.edge_list.empty()) {
+                throw uhd::runtime_error("Graph edge list is empty for rx channel "
+                                         + std::to_string(rx_channel));
+            }
             UHD_LOG_TRACE("MULTI_USRP",
                 "Connecting " << rx_chain.edge_list.back().src_blockid << ":"
                               << rx_chain.edge_list.back().src_port
@@ -386,6 +390,10 @@ public:
         for (size_t strm_port = 0; strm_port < args.channels.size(); ++strm_port) {
             auto tx_channel = args.channels.at(strm_port);
             auto tx_chain   = _get_tx_chan(tx_channel);
+            if (tx_chain.edge_list.empty()) {
+                throw uhd::runtime_error("Graph edge list is empty for tx channel "
+                                         + std::to_string(tx_channel));
+            }
             UHD_LOG_TRACE("MULTI_USRP",
                 "Connecting TxStreamer:" << strm_port << " -> "
                                          << tx_chain.edge_list.back().dst_blockid << ":"
