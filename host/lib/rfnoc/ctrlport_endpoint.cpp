@@ -158,7 +158,9 @@ public:
         // Send request
         auto request = send_request_packet(OP_POLL,
             addr,
-            {data, mask, static_cast<uint32_t>(timeout.to_ticks(_client_clk.get_freq()))},
+            {data,
+                mask,
+                static_cast<uint32_t>(timeout.to_ticks(_timebase_clk.get_freq()))},
             timestamp);
 
         // Optionally wait for an ACK
@@ -172,7 +174,7 @@ public:
         // Send request
         auto request = send_request_packet(OP_SLEEP,
             0,
-            {static_cast<uint32_t>(duration.to_ticks(_client_clk.get_freq()))},
+            {static_cast<uint32_t>(duration.to_ticks(_timebase_clk.get_freq()))},
             uhd::time_spec_t::ASAP);
 
         // Optionally wait for an ACK
