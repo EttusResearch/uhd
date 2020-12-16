@@ -617,6 +617,24 @@ public:
             _send_recv_mgmt_transaction(xport, cfg_xact);
         }
 
+        // Build a management transaction to configure the destination node
+        {
+            mgmt_payload cfg_xact;
+            cfg_xact.set_header(my_epid, _protover, _chdr_w);
+            _traverse_to_node(cfg_xact, dst_node_addr);
+            mgmt_hop_t cfg_hop;
+            // Configure buffer types
+            cfg_hop.add_op(mgmt_op_t(mgmt_op_t::MGMT_OP_CFG_WR_REQ,
+                mgmt_op_t::cfg_payload(REG_ISTRM_CTRL_STATUS,
+                    BUILD_CTRL_STATUS_WORD(false, false, BUFF_U64, BUFF_U64, false))));
+            // Return the packet back to us
+            cfg_hop.add_op(mgmt_op_t(mgmt_op_t::MGMT_OP_RETURN));
+            // Send the transaction and receive a response.
+            // We don't care about the contents of the response.
+            cfg_xact.add_hop(cfg_hop);
+            _send_recv_mgmt_transaction(xport, cfg_xact);
+        }
+
         // Wait for stream configuration to finish on the HW side
         _validate_stream_setup(xport, src_node_addr, timeout);
 
