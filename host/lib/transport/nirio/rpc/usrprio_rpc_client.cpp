@@ -40,14 +40,28 @@ nirio_status usrprio_rpc_client::niusrprio_enumerate(NIUSRPRIO_ENUMERATE_ARGS)
         _rpc_client.call(NIUSRPRIO_ENUMERATE, in_args, out_args, _timeout));
 
     if (nirio_status_not_fatal(status)) {
-        out_args >> status;
-        out_args >> vtr_size;
+        try {
+            out_args >> status;
+            out_args >> vtr_size;
+        } catch (std::exception&) {
+            if (status == NiRio_Status_Success) {
+                status = NiRio_Status_RpcSessionError;
+            }
+            return status;
+        }
     }
     if (nirio_status_not_fatal(status) && vtr_size > 0) {
         device_info_vtr.resize(vtr_size);
         for (size_t i = 0; i < (size_t)vtr_size; i++) {
             usrprio_device_info info;
-            out_args >> info;
+            try {
+                out_args >> info;
+            } catch (std::exception&) {
+                if (status == NiRio_Status_Success) {
+                    status = NiRio_Status_RpcSessionError;
+                }
+                return status;
+            }
             device_info_vtr[i] = info;
         }
     }
