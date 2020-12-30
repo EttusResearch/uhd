@@ -204,7 +204,7 @@ if(ENABLE_SIM)
     target_link_libraries(uhd ${PYTHON_LIBRARIES})
 
     if(APPLE)
-        target_link_options(pyuhd PRIVATE "LINKER:-undefined,dynamic_lookup")
+        target_link_options(uhd PRIVATE "LINKER:-undefined,dynamic_lookup")
     endif(APPLE)
 endif(ENABLE_SIM)
 
