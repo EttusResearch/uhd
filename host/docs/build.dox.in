@@ -75,7 +75,6 @@ The directory to which you extract libusb must not contain spaces. This is to sa
     pip3 install requests
     pip3 install numpy
     pip3 install ruamel.yaml
-    pip3 install six
     pip3 install setuptools
 
   - For curses package installation:
