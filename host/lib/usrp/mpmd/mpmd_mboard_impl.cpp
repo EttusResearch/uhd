@@ -308,7 +308,7 @@ mpmd_mboard_impl::mpmd_mboard_impl(
     if (!mb_args.has_key("skip_init")) {
         // Initialize mb_iface and mb_controller
         mb_iface = std::make_unique<mpmd_mb_iface>(mb_args, rpc);
-        mb_ctrl  = std::make_shared<rfnoc::mpmd_mb_controller>(rpc, device_info);
+        mb_ctrl  = std::make_shared<rfnoc::mpmd_mb_controller>(std::make_shared<uhd::usrp::mpmd_rpc>(rpc), device_info);
     } // Note -- when skip_init is used, these are not initialized, and trying
       // to use them will result in a null pointer dereference exception!
 }

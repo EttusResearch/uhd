@@ -7,6 +7,7 @@
 #pragma once
 
 #include <uhd/rfnoc/mb_controller.hpp>
+#include <uhdlib/usrp/common/rpc.hpp>
 #include <uhdlib/utils/rpc.hpp>
 #include <memory>
 
@@ -23,12 +24,18 @@ class mpmd_mb_controller : public mb_controller
 public:
     using sptr = std::shared_ptr<mpmd_mb_controller>;
 
-    mpmd_mb_controller(uhd::rpc_client::sptr rpcc, uhd::device_addr_t device_info);
+    mpmd_mb_controller(uhd::usrp::mpmd_rpc_iface::sptr rpcc, uhd::device_addr_t device_info);
 
     //! Return reference to the RPC client
     uhd::rpc_client::sptr get_rpc_client()
     {
-        return _rpc;
+        return _rpc->get_raw_rpc_client();
+    }
+
+    template<typename T>
+    std::shared_ptr<T> dynamic_cast_rpc_as()
+    {
+        return std::dynamic_pointer_cast<T>(_rpc);
     }
 
     /**************************************************************************
@@ -42,7 +49,7 @@ public:
     public:
         using sptr = std::shared_ptr<mpmd_timekeeper>;
 
-        mpmd_timekeeper(const size_t tk_idx, uhd::rpc_client::sptr rpc_client)
+        mpmd_timekeeper(const size_t tk_idx, uhd::usrp::mpmd_rpc_iface::sptr rpc_client)
             : _tk_idx(tk_idx), _rpc(rpc_client)
         {
             // nop
@@ -62,7 +69,7 @@ public:
 
     private:
         const size_t _tk_idx;
-        uhd::rpc_client::sptr _rpc;
+        uhd::usrp::mpmd_rpc_iface::sptr _rpc;
     };
 
     /**************************************************************************
@@ -94,7 +101,7 @@ private:
      * Attributes
      *************************************************************************/
     //! Reference to RPC interface
-    mutable uhd::rpc_client::sptr _rpc;
+    mutable uhd::usrp::mpmd_rpc_iface::sptr _rpc;
 
     uhd::device_addr_t _device_info;
 
