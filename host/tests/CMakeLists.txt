@@ -89,6 +89,7 @@ if(ENABLE_C_API)
 endif(ENABLE_C_API)
 
 include_directories("${CMAKE_SOURCE_DIR}/lib/include")
+include_directories("${CMAKE_BINARY_DIR}/lib/include")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/common")
 
 #for each source: build an executable, register it as a test
