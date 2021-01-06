@@ -13,7 +13,6 @@
 #include <functional>
 #include <memory>
 #include <string>
-#include <typeindex>
 #include <vector>
 
 namespace uhd {
@@ -253,15 +252,10 @@ private:
 
     //! Internal create property with wild-card type
     virtual void _create(const fs_path& path,
-        const std::shared_ptr<void>& prop,
-        std::type_index prop_type) = 0;
+        const std::shared_ptr<void>& prop) = 0;
 
     //! Internal access property with wild-card type
     virtual std::shared_ptr<void>& _access(const fs_path& path) const = 0;
-
-    //! Internal access property with wild-card type but with type verification
-    virtual std::shared_ptr<void>& _access_with_type_check(
-        const fs_path& path, std::type_index expected_prop_type) const = 0;
 };
 
 } // namespace uhd

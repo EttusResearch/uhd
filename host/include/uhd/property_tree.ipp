@@ -9,7 +9,6 @@
 #pragma once
 
 #include <uhd/exception.hpp>
-#include <typeindex>
 #include <vector>
 #include <memory>
 
@@ -181,8 +180,7 @@ template <typename T>
 property<T>& property_tree::create(const fs_path& path, coerce_mode_t coerce_mode)
 {
     this->_create(path,
-        typename std::shared_ptr<property<T> >(new property_impl<T>(coerce_mode)),
-        std::type_index(typeid(T)));
+        typename std::shared_ptr<property<T> >(new property_impl<T>(coerce_mode)));
     return this->access<T>(path);
 }
 
@@ -190,7 +188,7 @@ template <typename T>
 property<T>& property_tree::access(const fs_path& path)
 {
     return *std::static_pointer_cast<property<T> >(
-        this->_access_with_type_check(path, std::type_index(typeid(T))));
+        this->_access(path));
 }
 
 template <typename T>
