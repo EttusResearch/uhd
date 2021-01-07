@@ -238,12 +238,6 @@ public:
                 return 0;
         }
 
-        // Just return if no samples requested
-        if (nsamps_per_buff == 0) {
-            metadata.reset();
-            return 0;
-        }
-
         size_t accum_num_samps =
             recv_one_packet(buffs, nsamps_per_buff, metadata, timeout);
 

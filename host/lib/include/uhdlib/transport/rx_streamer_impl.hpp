@@ -136,11 +136,6 @@ public:
             return 0;
         }
 
-        if (nsamps_per_buff == 0) {
-            metadata.reset();
-            return 0;
-        }
-
         const int32_t timeout_ms = static_cast<int32_t>(timeout * 1000);
 
         detail::eov_data_wrapper eov_positions(metadata);
