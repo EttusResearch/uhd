@@ -213,21 +213,23 @@ public:
         auto result = _get_aligned_buffs(0);
 
         if (result == get_aligned_buffs_t::TIMEOUT) {
-            if (_stopped_due_to_overrun) {
-                // An overrun occurred and the user has read all the packets
-                // that were buffered prior to the overrun. Call the overrun
-                // handler and return overrun error.
-                _handle_overrun();
-                std::tie(metadata.has_time_spec, metadata.time_spec) =
-                    _last_read_time_info.get_next_packet_time(_samp_rate);
-                metadata.error_code     = rx_metadata_t::ERROR_CODE_OVERFLOW;
-                _stopped_due_to_overrun = false;
-                return 0;
-            } else {
+            if (!_stopped_due_to_overrun) {
                 // Packets were not available with zero timeout, wait for them
                 // to arrive using the specified timeout.
-                result = _get_aligned_buffs(timeout_ms);
-                if (_stopped_due_to_late_cmd) {
+                result = _get_aligned_buffs(std::max(1,timeout_ms));
+            }
+            if (result == get_aligned_buffs_t::TIMEOUT) {
+                if (_stopped_due_to_overrun) {
+                    // An overrun occurred and the user has read all the packets
+                    // that were buffered prior to the overrun. Call the overrun
+                    // handler and return overrun error.
+                    _handle_overrun();
+                    std::tie(metadata.has_time_spec, metadata.time_spec) =
+                        _last_read_time_info.get_next_packet_time(_samp_rate);
+                    metadata.error_code     = rx_metadata_t::ERROR_CODE_OVERFLOW;
+                    _stopped_due_to_overrun = false;
+                    return 0;
+                } else if (_stopped_due_to_late_cmd) {
                     metadata.has_time_spec   = false;
                     metadata.error_code      = rx_metadata_t::ERROR_CODE_LATE_COMMAND;
                     _stopped_due_to_late_cmd = false;
