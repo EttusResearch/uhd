@@ -151,7 +151,7 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
             PROP_KEY_TYPE, IO_TYPE_SC16, {res_source_info::OUTPUT_EDGE, chan}));
 
         register_property(&_spp_prop.back(), [this, chan, &spp = _spp_prop.back()]() {
-            const uint32_t words_per_pkt = spp.get();
+            const uint32_t words_per_pkt = spp.get() / _spc;
             RFNOC_LOG_TRACE(
                 "Setting words_per_pkt to " << words_per_pkt << " on chan " << chan);
             _radio_reg_iface.poke32(
@@ -888,10 +888,16 @@ void radio_control_impl::issue_stream_cmd(
                               "zero samples");
             return;
         }
-        // FIXME: The num words might be different from num_samps, check the
-        // radio width
-        const uint64_t num_words         = stream_cmd.num_samps;
+        uint64_t num_words = stream_cmd.num_samps / _spc;
         constexpr uint64_t max_num_words = 0x00FFFFFFFFFFFF; // 48 bits
+        if (stream_cmd.num_samps % _spc != 0) {
+            num_words++;
+            RFNOC_LOG_WARNING("The requested "
+                + std::to_string(stream_cmd.num_samps)
+                + " samples is not a multiple of the samples per cycle ("
+                + std::to_string(_spc) + "); returning "
+                + std::to_string(num_words * _spc) + " samples.");
+        }
         if (num_words > max_num_words) {
             RFNOC_LOG_ERROR("Requesting too many samples in a single burst! "
                             "Requested "
