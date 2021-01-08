@@ -166,13 +166,9 @@ public:
     {
     }
 
-<<<<<<< HEAD
-    virtual size_t get_num_recv_frames() const
-=======
     virtual ~recv_link_base() = default;
 
     size_t get_num_recv_frames() const override
->>>>>>> c3469ca62... host: Update code base using clang-tidy
     {
         return _num_recv_frames;
     }

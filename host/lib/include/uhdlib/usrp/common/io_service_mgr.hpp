@@ -59,6 +59,8 @@ class io_service_mgr
 public:
     using sptr = std::shared_ptr<io_service_mgr>;
 
+    virtual ~io_service_mgr() = default;
+
     /*! Connects a pair of links to an I/O service
      *
      * Call this method to connect a pair of links to an I/O service. For muxed
