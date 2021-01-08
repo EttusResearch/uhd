@@ -70,11 +70,11 @@ public:
         this->poke(REG_I2C_WR_CTRL, I2C_CTRL_EN); // enable I2C core
     }
 
-    void write_i2c(uint16_t addr, const byte_vector_t& bytes)
+    void write_i2c(uint16_t addr, const byte_vector_t& bytes) override
     {
         this->poke(REG_I2C_WR_DATA, (addr << 1) | 0); // addr and read bit (0)
         this->poke(REG_I2C_WR_CMD,
-            I2C_CMD_WR | I2C_CMD_START | (bytes.size() == 0 ? I2C_CMD_STOP : 0));
+            I2C_CMD_WR | I2C_CMD_START | (bytes.empty() ? I2C_CMD_STOP : 0));
 
         // wait for previous transfer to complete
         if (not wait_chk_ack()) {
@@ -93,7 +93,7 @@ public:
         }
     }
 
-    byte_vector_t read_i2c(uint16_t addr, size_t num_bytes)
+    byte_vector_t read_i2c(uint16_t addr, size_t num_bytes) override
     {
         byte_vector_t bytes;
         if (num_bytes == 0)

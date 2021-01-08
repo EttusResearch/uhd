@@ -86,7 +86,7 @@ public:
         /* NOP */
     }
 
-    void release(void)
+    void release(void) override
     {
         this->_commit_cb(_curr_buff, _next_buff, size());
     }
@@ -337,12 +337,12 @@ public:
         _stc           = stc;
     }
 
-    size_t get_num_channels(void) const
+    size_t get_num_channels(void) const override
     {
         return this->size();
     }
 
-    size_t get_max_num_samps(void) const
+    size_t get_max_num_samps(void) const override
     {
         return _max_num_samps;
     }
@@ -351,7 +351,7 @@ public:
         const size_t nsamps_per_buff,
         uhd::rx_metadata_t& metadata,
         const double timeout,
-        const bool one_packet)
+        const bool one_packet) override
     {
         // interleave a "soft" inline message into the receive stream:
         if (_stc->get_inline_queue().pop_with_haste(metadata))
@@ -363,7 +363,7 @@ public:
         return _stc->recv_post(metadata, num_samps_recvd);
     }
 
-    void issue_stream_cmd(const stream_cmd_t& stream_cmd)
+    void issue_stream_cmd(const stream_cmd_t& stream_cmd) override
     {
         _stc->issue_stream_cmd(stream_cmd);
     }
@@ -389,12 +389,12 @@ public:
         _tx_enb_fcn = tx_enb_fcn;
     }
 
-    size_t get_num_channels(void) const
+    size_t get_num_channels(void) const override
     {
         return this->size();
     }
 
-    size_t get_max_num_samps(void) const
+    size_t get_max_num_samps(void) const override
     {
         return _max_num_samps;
     }
@@ -402,7 +402,7 @@ public:
     size_t send(const tx_streamer::buffs_type& buffs,
         const size_t nsamps_per_buff,
         const uhd::tx_metadata_t& metadata,
-        const double timeout_)
+        const double timeout_) override
     {
         double timeout = timeout_; // rw copy
         _stc->send_pre(metadata, timeout);
@@ -426,7 +426,7 @@ public:
         return num_samps_sent;
     }
 
-    bool recv_async_msg(async_metadata_t& async_metadata, double timeout = 0.1)
+    bool recv_async_msg(async_metadata_t& async_metadata, double timeout = 0.1) override
     {
         return _stc->get_async_queue().pop_with_timed_wait(async_metadata, timeout);
     }

@@ -39,7 +39,7 @@ public:
             boost::thread(std::bind(&muxed_zero_copy_if_impl::_update_queues, this));
     }
 
-    virtual ~muxed_zero_copy_if_impl()
+    ~muxed_zero_copy_if_impl() override
     {
         UHD_SAFE_CALL(
             // Interrupt buffer updater loop
@@ -58,7 +58,7 @@ public:
             _streams.clear(););
     }
 
-    virtual zero_copy_if::sptr make_stream(const uint32_t stream_num)
+    zero_copy_if::sptr make_stream(const uint32_t stream_num) override
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         if (_streams.size() >= _max_num_streams) {
@@ -75,12 +75,12 @@ public:
         return stream;
     }
 
-    virtual size_t get_num_dropped_frames() const
+    size_t get_num_dropped_frames() const override
     {
         return _num_dropped_frames;
     }
 
-    void remove_stream(const uint32_t stream_num)
+    void remove_stream(const uint32_t stream_num) override
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         _streams.erase(stream_num);
@@ -96,12 +96,12 @@ private:
     public:
         stream_mrb(size_t size) : _buff(new char[size]) {}
 
-        ~stream_mrb()
+        ~stream_mrb() override
         {
             delete[] _buff;
         }
 
-        void release() {}
+        void release() override {}
 
         UHD_INLINE sptr get_new(char* buff, size_t len)
         {
@@ -138,7 +138,7 @@ private:
             }
         }
 
-        ~stream_impl(void)
+        ~stream_impl(void) override
         {
             // First remove the stream from muxed transport
             // so no more frames are pushed in
@@ -150,17 +150,17 @@ private:
             }
         }
 
-        size_t get_num_recv_frames(void) const
+        size_t get_num_recv_frames(void) const override
         {
             return _num_recv_frames;
         }
 
-        size_t get_recv_frame_size(void) const
+        size_t get_recv_frame_size(void) const override
         {
             return _recv_frame_size;
         }
 
-        managed_recv_buffer::sptr get_recv_buff(double timeout)
+        managed_recv_buffer::sptr get_recv_buff(double timeout) override
         {
             managed_recv_buffer::sptr buff;
             if (_buff_queue.pop_with_timed_wait(buff, timeout)) {
@@ -177,17 +177,17 @@ private:
             _buffer_index %= _buffers.size();
         }
 
-        size_t get_num_send_frames(void) const
+        size_t get_num_send_frames(void) const override
         {
             return _num_send_frames;
         }
 
-        size_t get_send_frame_size(void) const
+        size_t get_send_frame_size(void) const override
         {
             return _send_frame_size;
         }
 
-        managed_send_buffer::sptr get_send_buff(double timeout)
+        managed_send_buffer::sptr get_send_buff(double timeout) override
         {
             return _muxed_xport->base_xport()->get_send_buff(timeout);
         }

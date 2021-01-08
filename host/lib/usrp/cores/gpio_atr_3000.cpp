@@ -64,7 +64,7 @@ public:
         }
     }
 
-    virtual void set_atr_mode(const gpio_atr_mode_t mode, const uint32_t mask)
+    void set_atr_mode(const gpio_atr_mode_t mode, const uint32_t mask) override
     {
         // Each bit in the "ATR Disable" register determines whether the respective bit in
         // the GPIO output bus is driven by the ATR engine or a static register. For each
@@ -79,7 +79,7 @@ public:
         _update_attr_state(GPIO_CTRL, ~value, mask);
     }
 
-    virtual void set_gpio_ddr(const gpio_ddr_t dir, const uint32_t mask)
+    void set_gpio_ddr(const gpio_ddr_t dir, const uint32_t mask) override
     {
         // Each bit in the "DDR" register determines whether the respective bit in the
         // GPIO bus is an input or an output. For each bit position, a 1 means that the
@@ -92,9 +92,9 @@ public:
         _update_attr_state(GPIO_DDR, value, mask);
     }
 
-    virtual void set_atr_reg(const gpio_atr_reg_t atr,
+    void set_atr_reg(const gpio_atr_reg_t atr,
         const uint32_t value,
-        const uint32_t mask = MASK_SET_ALL)
+        const uint32_t mask = MASK_SET_ALL) override
     {
         // Set the value of the specified ATR register. For bits with ATR Disable set to
         // 1, the IDLE register will hold the output state This setting will only get
@@ -135,7 +135,7 @@ public:
         _update_attr_state(attr, value, mask);
     }
 
-    virtual void set_gpio_out(const uint32_t value, const uint32_t mask = MASK_SET_ALL)
+    void set_gpio_out(const uint32_t value, const uint32_t mask = MASK_SET_ALL) override
     {
         // Set the value of the specified GPIO output register.
         // This setting will only get applied to all bits in the "mask" that are 1. All
@@ -148,7 +148,7 @@ public:
         _update_attr_state(GPIO_OUT, value, mask);
     }
 
-    virtual uint32_t read_gpio()
+    uint32_t read_gpio() override
     {
         // Read the state of the GPIO pins
         // If a pin is configured as an input, reads the actual value of the pin
@@ -160,7 +160,7 @@ public:
         }
     }
 
-    virtual uint32_t get_attr_reg(const gpio_attr_t attr)
+    uint32_t get_attr_reg(const gpio_attr_t attr) override
     {
         if (attr == GPIO_SRC) {
             throw uhd::runtime_error("Can't get GPIO source by GPIO ATR interface.");
@@ -175,7 +175,7 @@ public:
         return _attr_reg_state.at(attr);
     }
 
-    inline virtual void set_gpio_attr(const gpio_attr_t attr, const uint32_t value)
+    inline void set_gpio_attr(const gpio_attr_t attr, const uint32_t value) override
     {
         // An attribute based API to configure all settings for the GPIO bus in one
         // function call. This API does not have a mask so it configures all bits at the
@@ -243,7 +243,7 @@ protected:
             return uhd::soft_reg32_wo_t::get(uhd::soft_reg32_wo_t::REGISTER);
         }
 
-        virtual void flush()
+        void flush() override
         {
             uhd::soft_reg32_wo_t::flush();
         }
@@ -260,12 +260,12 @@ protected:
         {
         }
 
-        virtual void set_with_mask(const uint32_t value, const uint32_t mask)
+        void set_with_mask(const uint32_t value, const uint32_t mask) override
         {
             _atr_idle_cache = (value & mask) | (_atr_idle_cache & (~mask));
         }
 
-        virtual uint32_t get()
+        uint32_t get() override
         {
             return _atr_idle_cache;
         }
@@ -280,7 +280,7 @@ protected:
             return _gpio_out_cache;
         }
 
-        virtual void flush()
+        void flush() override
         {
             set(REGISTER,
                 (_atr_idle_cache & (~_atr_disable_reg.get()))
@@ -344,26 +344,26 @@ public:
     }
 
     inline void set_pin_ctrl(
-        const db_unit_t unit, const uint32_t value, const uint32_t mask)
+        const db_unit_t unit, const uint32_t value, const uint32_t mask) override
     {
         gpio_atr_3000_impl::set_atr_mode(MODE_ATR, compute_mask(unit, value & mask));
         gpio_atr_3000_impl::set_atr_mode(MODE_GPIO, compute_mask(unit, (~value) & mask));
     }
 
-    inline uint32_t get_pin_ctrl(const db_unit_t unit)
+    inline uint32_t get_pin_ctrl(const db_unit_t unit) override
     {
         return (~_atr_disable_reg.get()) >> compute_shift(unit);
     }
 
     using gpio_atr_3000_impl::set_gpio_ddr;
     inline void set_gpio_ddr(
-        const db_unit_t unit, const uint32_t value, const uint32_t mask)
+        const db_unit_t unit, const uint32_t value, const uint32_t mask) override
     {
         gpio_atr_3000_impl::set_gpio_ddr(DDR_OUTPUT, compute_mask(unit, value & mask));
         gpio_atr_3000_impl::set_gpio_ddr(DDR_INPUT, compute_mask(unit, (~value) & mask));
     }
 
-    inline uint32_t get_gpio_ddr(const db_unit_t unit)
+    inline uint32_t get_gpio_ddr(const db_unit_t unit) override
     {
         return _ddr_reg.get() >> compute_shift(unit);
     }
@@ -372,13 +372,13 @@ public:
     inline void set_atr_reg(const db_unit_t unit,
         const gpio_atr_reg_t atr,
         const uint32_t value,
-        const uint32_t mask)
+        const uint32_t mask) override
     {
         gpio_atr_3000_impl::set_atr_reg(
             atr, value << compute_shift(unit), compute_mask(unit, mask));
     }
 
-    inline uint32_t get_atr_reg(const db_unit_t unit, const gpio_atr_reg_t atr)
+    inline uint32_t get_atr_reg(const db_unit_t unit, const gpio_atr_reg_t atr) override
     {
         masked_reg_t* reg = NULL;
         switch (atr) {
@@ -403,21 +403,21 @@ public:
 
     using gpio_atr_3000_impl::set_gpio_out;
     inline void set_gpio_out(
-        const db_unit_t unit, const uint32_t value, const uint32_t mask)
+        const db_unit_t unit, const uint32_t value, const uint32_t mask) override
     {
         gpio_atr_3000_impl::set_gpio_out(
             static_cast<uint32_t>(value) << compute_shift(unit),
             compute_mask(unit, mask));
     }
 
-    inline uint32_t get_gpio_out(const db_unit_t unit)
+    inline uint32_t get_gpio_out(const db_unit_t unit) override
     {
         return (_atr_idle_reg.get_gpio_out() & compute_mask(unit, MASK_SET_ALL))
                >> compute_shift(unit);
     }
 
     using gpio_atr_3000_impl::read_gpio;
-    inline uint32_t read_gpio(const db_unit_t unit)
+    inline uint32_t read_gpio(const db_unit_t unit) override
     {
         return (gpio_atr_3000_impl::read_gpio() & compute_mask(unit, MASK_SET_ALL))
                >> compute_shift(unit);

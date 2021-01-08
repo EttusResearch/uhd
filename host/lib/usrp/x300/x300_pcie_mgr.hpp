@@ -37,11 +37,11 @@ public:
 
     /*! Return a reference to a ZPU ctrl interface object
      */
-    uhd::wb_iface::sptr get_ctrl_iface();
+    uhd::wb_iface::sptr get_ctrl_iface() override;
 
     void init_link();
 
-    size_t get_mtu(uhd::direction_t dir);
+    size_t get_mtu(uhd::direction_t dir) override;
 
     /*! Safely release a ZPU control object
      *
@@ -52,7 +52,7 @@ public:
 
     /*! Return list of local device IDs associated with this link
      */
-    std::vector<uhd::rfnoc::device_id_t> get_local_device_ids()
+    std::vector<uhd::rfnoc::device_id_t> get_local_device_ids() override
     {
         return {_local_device_id};
     }
@@ -61,7 +61,7 @@ public:
         const uhd::rfnoc::device_id_t local_device_id,
         const uhd::rfnoc::sep_id_t& local_epid,
         const uhd::rfnoc::sep_id_t& remote_epid,
-        const uhd::device_addr_t& link_args);
+        const uhd::device_addr_t& link_args) override;
 
 private:
     /*! Allocate or return a previously allocated PCIe channel pair

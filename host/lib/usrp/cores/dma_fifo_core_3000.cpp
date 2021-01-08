@@ -83,12 +83,12 @@ public:
                 << dma_fifo_core_3000_impl::get_fifo_timeout() << " cycles");
     }
 
-    virtual ~dma_fifo_core_3000_impl() {}
+    ~dma_fifo_core_3000_impl() override {}
 
     /**************************************************************************
      * API
      *************************************************************************/
-    bool has_bist() const
+    bool has_bist() const override
     {
         return _has_bist;
     }
@@ -101,17 +101,17 @@ public:
     // TODO: read suppress API
 
     // fullness in bytes
-    uint64_t get_fifo_fullness()
+    uint64_t get_fifo_fullness() override
     {
         return peek64(REG_FIFO_FULLNESS);
     }
 
-    uint16_t get_fifo_timeout()
+    uint16_t get_fifo_timeout() override
     {
         return peek32(REG_FIFO_TIMEOUT) & 0xFFF;
     }
 
-    void set_fifo_timeout(const uint16_t timeout_cycles)
+    void set_fifo_timeout(const uint16_t timeout_cycles) override
     {
         UHD_ASSERT_THROW(timeout_cycles <= 0xFFF);
         poke32(timeout_cycles, REG_FIFO_TIMEOUT);
@@ -138,7 +138,7 @@ public:
         poke64(REG_FIFO_ADDR_BASE, base_addr);
     }
 
-    uint32_t get_packet_count()
+    uint32_t get_packet_count() override
     {
         return peek32(REG_FIFO_PACKET_CNT);
     }
@@ -197,7 +197,7 @@ public:
         poke32(REG_BIST_CTRL, 1 << 2);
     }
 
-    double run_bist(const uint64_t num_bytes, const double timeout_s)
+    double run_bist(const uint64_t num_bytes, const double timeout_s) override
     {
         // The number of cycles it will take to transfer all the BIST data if
         // there is a transfer on every clock cycle (this is the minimum time it

@@ -37,8 +37,8 @@ public:
     {
     }
 
-    virtual void _poke_cb(
-        uint32_t addr, uint32_t data, uhd::time_spec_t /*time*/, bool /*ack*/)
+    void _poke_cb(
+        uint32_t addr, uint32_t data, uhd::time_spec_t /*time*/, bool /*ack*/) override
     {
         if (addr == fir_filter_block_control::REG_FIR_MAX_NUM_COEFFS_ADDR) {
             throw uhd::assertion_error("Invalid write to read-only register");
@@ -52,7 +52,7 @@ public:
         }
     }
 
-    virtual void _peek_cb(uint32_t addr, uhd::time_spec_t /*time*/)
+    void _peek_cb(uint32_t addr, uhd::time_spec_t /*time*/) override
     {
         if (addr == fir_filter_block_control::REG_FIR_MAX_NUM_COEFFS_ADDR) {
             read_memory[addr] = uhd::narrow_cast<int32_t>(_max_num_coeffs);

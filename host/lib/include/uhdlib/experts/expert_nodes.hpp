@@ -149,13 +149,13 @@ public:
     }
 
     // Basic info
-    virtual const std::string& get_dtype() const
+    const std::string& get_dtype() const override
     {
         static const std::string dtype(boost::core::demangle(typeid(data_t).name()));
         return dtype;
     }
 
-    virtual std::string to_string() const
+    std::string to_string() const override
     {
         return data_node_printer::print(get());
     }
@@ -166,17 +166,17 @@ public:
     }
 
     // Graph resolution specific
-    virtual bool is_dirty() const
+    bool is_dirty() const override
     {
         return _data.is_dirty();
     }
 
-    virtual void mark_clean()
+    void mark_clean() override
     {
         _data.mark_clean();
     }
 
-    void resolve()
+    void resolve() override
     {
         // NOP
     }
@@ -222,32 +222,32 @@ public:
 
 private:
     // External callbacks
-    virtual void set_write_callback(const callback_func_t& func)
+    void set_write_callback(const callback_func_t& func) override
     {
         _wr_callback = func;
     }
 
-    virtual bool has_write_callback() const
+    bool has_write_callback() const override
     {
         return bool(_wr_callback);
     }
 
-    virtual void clear_write_callback()
+    void clear_write_callback() override
     {
         _wr_callback = nullptr;
     }
 
-    virtual void set_read_callback(const callback_func_t& func)
+    void set_read_callback(const callback_func_t& func) override
     {
         _rd_callback = func;
     }
 
-    virtual bool has_read_callback() const
+    bool has_read_callback() const override
     {
         return bool(_rd_callback);
     }
 
-    virtual void clear_read_callback()
+    void clear_read_callback() override
     {
         _rd_callback = nullptr;
     }
@@ -306,14 +306,14 @@ template <typename data_t>
 class data_accessor_base : public data_accessor_t
 {
 public:
-    virtual ~data_accessor_base() {}
+    ~data_accessor_base() override {}
 
-    virtual bool is_reader() const
+    bool is_reader() const override
     {
         return _access == ACCESS_READER;
     }
 
-    virtual bool is_writer() const
+    bool is_writer() const override
     {
         return _access == ACCESS_WRITER;
     }
@@ -350,7 +350,7 @@ protected:
     const node_access_t _access;
 
 private:
-    virtual dag_vertex_t& node() const
+    dag_vertex_t& node() const override
     {
         return _vertex;
     }
@@ -499,7 +499,7 @@ protected:
 
 private:
     // Graph resolution specific
-    virtual bool is_dirty() const
+    bool is_dirty() const override
     {
         bool inputs_dirty = false;
         for (data_accessor_t* acc : _inputs) {
@@ -508,40 +508,40 @@ private:
         return inputs_dirty;
     }
 
-    virtual void mark_clean()
+    void mark_clean() override
     {
         for (data_accessor_t* acc : _inputs) {
             acc->node().mark_clean();
         }
     }
 
-    virtual void resolve() = 0;
+    void resolve() override = 0;
 
     // Basic type info
-    virtual const std::string& get_dtype() const
+    const std::string& get_dtype() const override
     {
         static const std::string dtype = "<worker>";
         return dtype;
     }
 
-    virtual std::string to_string() const
+    std::string to_string() const override
     {
         return "<worker>";
     }
 
     // Workers don't have callbacks so implement stubs
-    virtual void set_write_callback(const callback_func_t&) {}
-    virtual bool has_write_callback() const
+    void set_write_callback(const callback_func_t&) override {}
+    bool has_write_callback() const override
     {
         return false;
     }
-    virtual void clear_write_callback() {}
-    virtual void set_read_callback(const callback_func_t&) {}
-    virtual bool has_read_callback() const
+    void clear_write_callback() override {}
+    void set_read_callback(const callback_func_t&) override {}
+    bool has_read_callback() const override
     {
         return false;
     }
-    virtual void clear_read_callback() {}
+    void clear_read_callback() override {}
 
     std::list<data_accessor_t*> _inputs;
     std::list<data_accessor_t*> _outputs;

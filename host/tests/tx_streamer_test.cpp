@@ -89,7 +89,7 @@ public:
     }
 
     bool recv_async_msg(
-        uhd::async_metadata_t& /*async_metadata*/, double /*timeout = 0.1*/)
+        uhd::async_metadata_t& /*async_metadata*/, double /*timeout = 0.1*/) override
     {
         return false;
     }

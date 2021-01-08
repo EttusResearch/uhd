@@ -28,7 +28,7 @@ public:
         _ctrl_transport = ctrl_transport;
     }
 
-    ~usrp1_iface_impl(void)
+    ~usrp1_iface_impl(void) override
     {
         /* NOP */
     }
@@ -36,7 +36,7 @@ public:
     /*******************************************************************
      * Peek and Poke
      ******************************************************************/
-    void poke32(const uint32_t addr, const uint32_t value)
+    void poke32(const uint32_t addr, const uint32_t value) override
     {
         uint32_t swapped = uhd::htonx(value);
 
@@ -56,7 +56,7 @@ public:
             throw uhd::io_error("USRP1: failed control write");
     }
 
-    uint32_t peek32(const uint32_t addr)
+    uint32_t peek32(const uint32_t addr) override
     {
         UHD_LOGGER_TRACE("USRP1") << "peek32(" << std::dec << std::setw(2) << addr << ")";
 
@@ -77,12 +77,12 @@ public:
         return uhd::ntohx(value_out);
     }
 
-    void poke16(const uint32_t, const uint16_t)
+    void poke16(const uint32_t, const uint16_t) override
     {
         throw uhd::not_implemented_error("Unhandled command poke16()");
     }
 
-    uint16_t peek16(const uint32_t)
+    uint16_t peek16(const uint32_t) override
     {
         throw uhd::not_implemented_error("Unhandled command peek16()");
         return 0;
@@ -91,12 +91,12 @@ public:
     /*******************************************************************
      * I2C
      ******************************************************************/
-    void write_i2c(uint16_t addr, const byte_vector_t& bytes)
+    void write_i2c(uint16_t addr, const byte_vector_t& bytes) override
     {
         return _ctrl_transport->write_i2c(addr, bytes);
     }
 
-    byte_vector_t read_i2c(uint16_t addr, size_t num_bytes)
+    byte_vector_t read_i2c(uint16_t addr, size_t num_bytes) override
     {
         return _ctrl_transport->read_i2c(addr, num_bytes);
     }
@@ -116,7 +116,7 @@ public:
         const spi_config_t&,
         uint32_t bits,
         size_t num_bits,
-        bool readback)
+        bool readback) override
     {
         UHD_LOGGER_TRACE("USRP1")
             << "transact_spi: "

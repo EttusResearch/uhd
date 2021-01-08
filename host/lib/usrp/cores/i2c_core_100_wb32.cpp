@@ -61,7 +61,7 @@ public:
         _iface->poke32(REG_I2C_CTRL, I2C_CTRL_EN); // enable I2C core
     }
 
-    void set_clock_rate(const double rate)
+    void set_clock_rate(const double rate) override
     {
         static const uint32_t i2c_datarate = 400000;
         uint16_t prescaler                 = uint16_t(rate / (i2c_datarate * 5) - 1);
@@ -69,11 +69,11 @@ public:
         _iface->poke32(REG_I2C_PRESCALER_HI, (prescaler >> 8) & 0xFF);
     }
 
-    void write_i2c(uint16_t addr, const byte_vector_t& bytes)
+    void write_i2c(uint16_t addr, const byte_vector_t& bytes) override
     {
         _iface->poke32(REG_I2C_DATA, (addr << 1) | 0); // addr and read bit (0)
         _iface->poke32(REG_I2C_CMD_STATUS,
-            I2C_CMD_WR | I2C_CMD_START | (bytes.size() == 0 ? I2C_CMD_STOP : 0));
+            I2C_CMD_WR | I2C_CMD_START | (bytes.empty() ? I2C_CMD_STOP : 0));
 
         // wait for previous transfer to complete
         if (not wait_chk_ack()) {
@@ -92,7 +92,7 @@ public:
         }
     }
 
-    byte_vector_t read_i2c(uint16_t addr, size_t num_bytes)
+    byte_vector_t read_i2c(uint16_t addr, size_t num_bytes) override
     {
         byte_vector_t bytes;
         if (num_bytes == 0)
@@ -119,7 +119,7 @@ public:
 
     // override read_eeprom so we can write once, read all N bytes
     // the default implementation calls read i2c once per byte
-    byte_vector_t read_eeprom(uint16_t addr, uint16_t offset, size_t num_bytes)
+    byte_vector_t read_eeprom(uint16_t addr, uint16_t offset, size_t num_bytes) override
     {
         this->write_i2c(addr, byte_vector_t(1, uint8_t(offset)));
         return this->read_i2c(addr, num_bytes);

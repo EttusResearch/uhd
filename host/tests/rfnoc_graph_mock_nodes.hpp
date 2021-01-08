@@ -114,17 +114,17 @@ public:
         set_action_forwarding_policy(policy);
     }
 
-    std::string get_unique_id() const
+    std::string get_unique_id() const override
     {
         return "MOCK_RADIO" + std::to_string(_radio_idx);
     }
 
-    size_t get_num_input_ports() const
+    size_t get_num_input_ports() const override
     {
         return 1;
     }
 
-    size_t get_num_output_ports() const
+    size_t get_num_output_ports() const override
     {
         return 1;
     }
@@ -228,17 +228,17 @@ public:
             });
     }
 
-    std::string get_unique_id() const
+    std::string get_unique_id() const override
     {
         return "MOCK_DDC";
     }
 
-    size_t get_num_input_ports() const
+    size_t get_num_input_ports() const override
     {
         return 1;
     }
 
-    size_t get_num_output_ports() const
+    size_t get_num_output_ports() const override
     {
         return 1;
     }
@@ -281,17 +281,17 @@ public:
         set_action_forwarding_policy(forwarding_policy_t::ONE_TO_ONE);
     }
 
-    std::string get_unique_id() const
+    std::string get_unique_id() const override
     {
         return "MOCK_FIFO";
     }
 
-    size_t get_num_input_ports() const
+    size_t get_num_input_ports() const override
     {
         return _num_ports;
     }
 
-    size_t get_num_output_ports() const
+    size_t get_num_output_ports() const override
     {
         return _num_ports;
     }
@@ -324,17 +324,17 @@ public:
         });
     }
 
-    std::string get_unique_id() const
+    std::string get_unique_id() const override
     {
         return "MOCK_STREAMER";
     }
 
-    size_t get_num_input_ports() const
+    size_t get_num_input_ports() const override
     {
         return _num_ports;
     }
 
-    size_t get_num_output_ports() const
+    size_t get_num_output_ports() const override
     {
         return _num_ports;
     }
@@ -379,17 +379,17 @@ public:
         }
     }
 
-    std::string get_unique_id() const
+    std::string get_unique_id() const override
     {
         return _name + std::to_string(_term_count);
     }
 
-    size_t get_num_input_ports() const
+    size_t get_num_input_ports() const override
     {
         return _num_ports;
     }
 
-    size_t get_num_output_ports() const
+    size_t get_num_output_ports() const override
     {
         return _num_ports;
     }
@@ -483,17 +483,17 @@ public:
         return node_t::get_property<T>(id, rsi);
     }
 
-    size_t get_num_input_ports() const
+    size_t get_num_input_ports() const override
     {
         return _input_ports;
     }
 
-    size_t get_num_output_ports() const
+    size_t get_num_output_ports() const override
     {
         return _output_ports;
     }
 
-    std::string get_unique_id() const
+    std::string get_unique_id() const override
     {
         return _name;
     }
@@ -545,17 +545,17 @@ public:
         set_action_forwarding_policy(forwarding_policy_t::DROP);
     }
 
-    size_t get_num_input_ports() const
+    size_t get_num_input_ports() const override
     {
         return _input_ports;
     }
 
-    size_t get_num_output_ports() const
+    size_t get_num_output_ports() const override
     {
         return _output_ports;
     }
 
-    std::string get_unique_id() const
+    std::string get_unique_id() const override
     {
         return "MOCK_ROUTING_NODE";
     }

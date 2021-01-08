@@ -39,7 +39,7 @@ static std::string make_border(const std::string& text)
     boost::split(lines, text, boost::is_any_of("\n"));
     while (lines.back().empty())
         lines.pop_back(); // strip trailing newlines
-    if (lines.size())
+    if (!lines.empty())
         lines[0] = "    " + lines[0]; // indent the title line
     for (const std::string& line : lines) {
         ss << boost::format("|   %s") % line << std::endl;
@@ -99,7 +99,7 @@ static std::string get_frontend_pp_string(
        << std::endl;
 
     std::vector<std::string> gain_names = tree->list(path / "gains");
-    if (gain_names.size() == 0)
+    if (gain_names.empty())
         ss << "Gain Elements: None" << std::endl;
     for (const std::string& name : gain_names) {
         meta_range_t gain_range =
@@ -139,7 +139,7 @@ static std::string get_codec_pp_string(
         ss << boost::format("Name: %s") % (tree->access<std::string>(path / "name").get())
            << std::endl;
         std::vector<std::string> gain_names = tree->list(path / "gains");
-        if (gain_names.size() == 0)
+        if (gain_names.empty())
             ss << "Gain Elements: None" << std::endl;
         for (const std::string& name : gain_names) {
             meta_range_t gain_range =

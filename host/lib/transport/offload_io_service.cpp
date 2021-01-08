@@ -259,18 +259,18 @@ public:
         io_service::sptr io_srv, const offload_io_service::params_t& params);
     ~offload_io_service_impl();
 
-    void attach_recv_link(recv_link_if::sptr link);
-    void attach_send_link(send_link_if::sptr link);
+    void attach_recv_link(recv_link_if::sptr link) override;
+    void attach_send_link(send_link_if::sptr link) override;
 
-    void detach_recv_link(recv_link_if::sptr link);
-    void detach_send_link(send_link_if::sptr link);
+    void detach_recv_link(recv_link_if::sptr link) override;
+    void detach_send_link(send_link_if::sptr link) override;
 
     recv_io_if::sptr make_recv_client(recv_link_if::sptr recv_link,
         size_t num_recv_frames,
         recv_callback_t cb,
         send_link_if::sptr fc_link,
         size_t num_send_frames,
-        recv_io_if::fc_callback_t fc_cb);
+        recv_io_if::fc_callback_t fc_cb) override;
 
     send_io_if::sptr make_send_client(send_link_if::sptr send_link,
         size_t num_send_frames,
@@ -278,7 +278,7 @@ public:
         recv_link_if::sptr recv_link,
         size_t num_recv_frames,
         recv_callback_t recv_cb,
-        send_io_if::fc_callback_t fc_cb);
+        send_io_if::fc_callback_t fc_cb) override;
 
 private:
     offload_io_service_impl(const offload_io_service_impl&) = delete;

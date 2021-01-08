@@ -104,7 +104,7 @@ public:
         throw uhd::runtime_error("Failure to create rfnoc_graph.");
     }
 
-    ~rfnoc_graph_impl()
+    ~rfnoc_graph_impl() override
     {
         UHD_LOG_TRACE(LOG_ID, "Shutting down detail::graph...");
         _graph->shutdown();
@@ -116,17 +116,17 @@ public:
     /**************************************************************************
      * Block Discovery/Retrieval
      *************************************************************************/
-    std::vector<block_id_t> find_blocks(const std::string& block_id_hint) const
+    std::vector<block_id_t> find_blocks(const std::string& block_id_hint) const override
     {
         return _block_registry->find_blocks(block_id_hint);
     }
 
-    bool has_block(const block_id_t& block_id) const
+    bool has_block(const block_id_t& block_id) const override
     {
         return _block_registry->has_block(block_id);
     }
 
-    noc_block_base::sptr get_block(const block_id_t& block_id) const
+    noc_block_base::sptr get_block(const block_id_t& block_id) const override
     {
         return _block_registry->get_block(block_id);
     }
@@ -137,7 +137,7 @@ public:
     bool is_connectable(const block_id_t& src_blk,
         size_t src_port,
         const block_id_t& dst_blk,
-        size_t dst_port)
+        size_t dst_port) override
     {
         try {
             const std::string src_blk_info =
@@ -211,7 +211,7 @@ public:
         size_t src_port,
         const block_id_t& dst_blk,
         size_t dst_port,
-        bool skip_property_propagation)
+        bool skip_property_propagation) override
     {
         if (!has_block(src_blk)) {
             throw uhd::lookup_error(
@@ -235,7 +235,7 @@ public:
     void disconnect(const block_id_t& src_blk,
         size_t src_port,
         const block_id_t& dst_blk,
-        size_t dst_port)
+        size_t dst_port) override
     {
         if (not has_block(src_blk)) {
             throw uhd::lookup_error(
@@ -260,7 +260,7 @@ public:
         size_t strm_port,
         const block_id_t& dst_blk,
         size_t dst_port,
-        uhd::transport::adapter_id_t adapter_id)
+        uhd::transport::adapter_id_t adapter_id) override
     {
         // Verify the streamer was created by us
         auto rfnoc_streamer = std::dynamic_pointer_cast<rfnoc_tx_streamer>(streamer);
@@ -321,7 +321,7 @@ public:
         size_t src_port,
         uhd::rx_streamer::sptr streamer,
         size_t strm_port,
-        uhd::transport::adapter_id_t adapter_id)
+        uhd::transport::adapter_id_t adapter_id) override
     {
         // Verify the streamer was created by us
         auto rfnoc_streamer = std::dynamic_pointer_cast<rfnoc_rx_streamer>(streamer);
@@ -378,7 +378,7 @@ public:
             src.get(), rfnoc_streamer.get(), edge_info};
     }
 
-    void disconnect(const std::string& streamer_id)
+    void disconnect(const std::string& streamer_id) override
     {
         UHD_LOG_TRACE(LOG_ID, std::string("Disconnecting ") + streamer_id);
         if (_tx_streamers.count(streamer_id)) {
@@ -404,7 +404,7 @@ public:
         UHD_LOG_TRACE(LOG_ID, std::string("Disconnected ") + streamer_id);
     }
 
-    void disconnect(const std::string& streamer_id, size_t port)
+    void disconnect(const std::string& streamer_id, size_t port) override
     {
         std::string id_str = streamer_id + ":" + std::to_string(port);
         UHD_LOG_TRACE(LOG_ID, std::string("Disconnecting ") + id_str);
@@ -432,7 +432,7 @@ public:
     }
 
     uhd::rx_streamer::sptr create_rx_streamer(
-        const size_t num_ports, const uhd::stream_args_t& args)
+        const size_t num_ports, const uhd::stream_args_t& args) override
     {
         auto this_graph = shared_from_this();
         return std::make_shared<rfnoc_rx_streamer>(
@@ -440,19 +440,19 @@ public:
     }
 
     uhd::tx_streamer::sptr create_tx_streamer(
-        const size_t num_ports, const uhd::stream_args_t& args)
+        const size_t num_ports, const uhd::stream_args_t& args) override
     {
         auto this_graph = shared_from_this();
         return std::make_shared<rfnoc_tx_streamer>(
             num_ports, args, [this_graph](const std::string& id) { this_graph->disconnect(id); });
     }
 
-    size_t get_num_mboards() const
+    size_t get_num_mboards() const override
     {
         return _num_mboards;
     }
 
-    std::shared_ptr<mb_controller> get_mb_controller(const size_t mb_index = 0)
+    std::shared_ptr<mb_controller> get_mb_controller(const size_t mb_index = 0) override
     {
         if (_mb_controllers.size() <= mb_index) {
             throw uhd::index_error(
@@ -462,7 +462,7 @@ public:
         return _mb_controllers.at(mb_index);
     }
 
-    bool synchronize_devices(const uhd::time_spec_t& time_spec, const bool quiet)
+    bool synchronize_devices(const uhd::time_spec_t& time_spec, const bool quiet) override
     {
         auto mb_controllers_copy = _mb_controllers;
         bool result =
@@ -476,13 +476,13 @@ public:
         return result;
     }
 
-    uhd::property_tree::sptr get_tree(void) const
+    uhd::property_tree::sptr get_tree(void) const override
     {
         return _tree;
     }
 
     std::vector<uhd::transport::adapter_id_t> enumerate_adapters_to_dst(
-        const block_id_t& dst_blk, size_t dst_port)
+        const block_id_t& dst_blk, size_t dst_port) override
     {
         // Verify dst_blk even exists in this graph
         if (!has_block(dst_blk)) {
@@ -515,7 +515,7 @@ public:
     }
 
     std::vector<uhd::transport::adapter_id_t> enumerate_adapters_from_src(
-        const block_id_t& src_blk, size_t src_port)
+        const block_id_t& src_blk, size_t src_port) override
     {
         // Verify src_blk even exists in this graph
         if (!has_block(src_blk)) {
@@ -547,23 +547,23 @@ public:
         return _gsm->get_adapters(sep_addr);
     }
 
-    std::vector<graph_edge_t> enumerate_active_connections()
+    std::vector<graph_edge_t> enumerate_active_connections() override
 
     {
         return _graph->enumerate_edges();
     }
 
-    std::vector<graph_edge_t> enumerate_static_connections() const
+    std::vector<graph_edge_t> enumerate_static_connections() const override
     {
         return _static_edges;
     }
 
-    void commit()
+    void commit() override
     {
         _graph->commit();
     }
 
-    void release()
+    void release() override
     {
         _graph->release();
     }

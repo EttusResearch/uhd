@@ -48,11 +48,11 @@ public:
             // nop
         }
 
-        uint64_t get_ticks_now();
-        uint64_t get_ticks_last_pps();
-        void set_ticks_now(const uint64_t ticks);
-        void set_ticks_next_pps(const uint64_t ticks);
-        void set_period(const uint64_t period_ns);
+        uint64_t get_ticks_now() override;
+        uint64_t get_ticks_last_pps() override;
+        void set_ticks_now(const uint64_t ticks) override;
+        void set_ticks_next_pps(const uint64_t ticks) override;
+        void set_period(const uint64_t period_ns) override;
 
         /*! Update the tick rate
          *  Note: This is separate from set_tick_rate because the latter is
@@ -68,26 +68,28 @@ public:
     /**************************************************************************
      * Motherboard Control API (see mb_controller.hpp)
      *************************************************************************/
-    std::string get_mboard_name() const;
-    void set_time_source(const std::string& source);
-    std::string get_time_source() const;
-    std::vector<std::string> get_time_sources() const;
-    void set_clock_source(const std::string& source);
-    std::string get_clock_source() const;
-    std::vector<std::string> get_clock_sources() const;
-    void set_sync_source(const std::string& clock_source, const std::string& time_source);
-    void set_sync_source(const uhd::device_addr_t& sync_source);
-    uhd::device_addr_t get_sync_source() const;
-    std::vector<uhd::device_addr_t> get_sync_sources();
-    void set_clock_source_out(const bool enb);
-    void set_time_source_out(const bool enb);
-    uhd::sensor_value_t get_sensor(const std::string& name);
-    std::vector<std::string> get_sensor_names();
-    uhd::usrp::mboard_eeprom_t get_eeprom();
-    std::vector<std::string> get_gpio_banks() const;
-    std::vector<std::string> get_gpio_srcs(const std::string& bank) const;
-    std::vector<std::string> get_gpio_src(const std::string& bank);
-    void set_gpio_src(const std::string& bank, const std::vector<std::string>& src);
+    std::string get_mboard_name() const override;
+    void set_time_source(const std::string& source) override;
+    std::string get_time_source() const override;
+    std::vector<std::string> get_time_sources() const override;
+    void set_clock_source(const std::string& source) override;
+    std::string get_clock_source() const override;
+    std::vector<std::string> get_clock_sources() const override;
+    void set_sync_source(
+        const std::string& clock_source, const std::string& time_source) override;
+    void set_sync_source(const uhd::device_addr_t& sync_source) override;
+    uhd::device_addr_t get_sync_source() const override;
+    std::vector<uhd::device_addr_t> get_sync_sources() override;
+    void set_clock_source_out(const bool enb) override;
+    void set_time_source_out(const bool enb) override;
+    uhd::sensor_value_t get_sensor(const std::string& name) override;
+    std::vector<std::string> get_sensor_names() override;
+    uhd::usrp::mboard_eeprom_t get_eeprom() override;
+    std::vector<std::string> get_gpio_banks() const override;
+    std::vector<std::string> get_gpio_srcs(const std::string& bank) const override;
+    std::vector<std::string> get_gpio_src(const std::string& bank) override;
+    void set_gpio_src(
+        const std::string& bank, const std::vector<std::string>& src) override;
 
 private:
     /**************************************************************************

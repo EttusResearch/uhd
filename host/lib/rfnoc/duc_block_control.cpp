@@ -103,7 +103,7 @@ public:
 
     double set_freq(const double freq,
         const size_t chan,
-        const boost::optional<uhd::time_spec_t> time)
+        const boost::optional<uhd::time_spec_t> time) override
     {
         // Store the current command time so we can restore it later
         auto prev_cmd_time = get_command_time(chan);
@@ -116,12 +116,12 @@ public:
         return get_freq(chan);
     }
 
-    double get_freq(const size_t chan) const
+    double get_freq(const size_t chan) const override
     {
         return _freq.at(chan).get();
     }
 
-    uhd::freq_range_t get_frequency_range(const size_t chan) const
+    uhd::freq_range_t get_frequency_range(const size_t chan) const override
     {
         const double input_rate =
             _samp_rate_in.at(chan).is_valid() ? _samp_rate_in.at(chan).get() : 1.0;
@@ -129,22 +129,22 @@ public:
         return uhd::freq_range_t(-input_rate / 2, input_rate / 2);
     }
 
-    double get_input_rate(const size_t chan) const
+    double get_input_rate(const size_t chan) const override
     {
         return _samp_rate_in.at(chan).is_valid() ? _samp_rate_in.at(chan).get() : 1.0;
     }
 
-    double get_output_rate(const size_t chan) const
+    double get_output_rate(const size_t chan) const override
     {
         return _samp_rate_out.at(chan).is_valid() ? _samp_rate_out.at(chan).get() : 1.0;
     }
 
-    void set_output_rate(const double rate, const size_t chan)
+    void set_output_rate(const double rate, const size_t chan) override
     {
         set_property<double>("samp_rate", rate, {res_source_info::OUTPUT_EDGE, chan});
     }
 
-    uhd::meta_range_t get_input_rates(const size_t chan) const
+    uhd::meta_range_t get_input_rates(const size_t chan) const override
     {
         uhd::meta_range_t result;
         if (!_samp_rate_out.at(chan).is_valid()) {
@@ -160,7 +160,7 @@ public:
         return result;
     }
 
-    double set_input_rate(const double rate, const size_t chan)
+    double set_input_rate(const double rate, const size_t chan) override
     {
         if (_samp_rate_out.at(chan).is_valid()) {
             const int coerced_interp = coerce_interp(get_output_rate(chan) / rate);

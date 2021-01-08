@@ -125,7 +125,7 @@ static void octoclock_setup_session(octoclock_session_t& session,
 {
     // See if we can find an OctoClock with the given args
     device_addrs_t devs = octoclock_find(args);
-    if (devs.size() == 0) {
+    if (devs.empty()) {
         session.found = false;
         return;
     } else if (devs.size() > 1) {
@@ -151,7 +151,7 @@ static void octoclock_setup_session(octoclock_session_t& session,
     session.found    = true;
 
     // If no filepath is given, use the default
-    if (filepath == "") {
+    if (filepath.empty()) {
         session.image_filepath =
             find_image_path(str(boost::format("octoclock_r%s_fw.hex")
                                 % session.dev_addr.get("revision", "4")));
@@ -207,7 +207,7 @@ static void octoclock_reset_into_bootloader(octoclock_session_t& session)
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
         uhd::device_addrs_t octoclocks = uhd::device::find(
             uhd::device_addr_t(str(boost::format("addr=%s") % session.dev_addr["addr"])));
-        if (octoclocks.size() == 0) {
+        if (octoclocks.empty()) {
             std::cout << "failed." << std::endl;
             throw uhd::runtime_error("Failed to reset OctoClock.");
         } else if (octoclocks[0]["type"] != "octoclock-bootloader") {

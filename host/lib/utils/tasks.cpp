@@ -91,7 +91,7 @@ public:
         _spawn_barrier.wait();
     }
 
-    ~msg_task_impl(void)
+    ~msg_task_impl(void) override
     {
         _running = false;
         _thread_group.interrupt_all();
@@ -104,7 +104,7 @@ public:
      * stranded messages here. This might happen during shutdown when dtors are called.
      * See also: comments in b200_io_impl->handle_async_task
      */
-    msg_payload_t get_msg_from_dump_queue(uint32_t sid)
+    msg_payload_t get_msg_from_dump_queue(uint32_t sid) override
     {
         boost::mutex::scoped_lock lock(_mutex);
         msg_payload_t b;

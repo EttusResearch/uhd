@@ -212,12 +212,12 @@ public:
      * Structors
      ************************************************************************/
     mpmd_impl(const uhd::device_addr_t& device_addr);
-    ~mpmd_impl();
+    ~mpmd_impl() override;
 
     /**************************************************************************
      * API
      ************************************************************************/
-    uhd::rfnoc::mb_iface& get_mb_iface(const size_t mb_idx)
+    uhd::rfnoc::mb_iface& get_mb_iface(const size_t mb_idx) override
     {
         if (mb_idx >= _mb.size()) {
             throw uhd::index_error(

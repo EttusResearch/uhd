@@ -27,7 +27,7 @@ class UHD_API expert_container : private uhd::noncopyable, public node_retriever
 public: // Methods
     typedef std::shared_ptr<expert_container> sptr;
 
-    virtual ~expert_container(){};
+    ~expert_container() override{};
 
     /*!
      * Return the name of this container
@@ -121,8 +121,8 @@ private:
      * \param name Name of the node to find
      *
      */
-    virtual const dag_vertex_t& lookup(const std::string& name) const = 0;
-    virtual dag_vertex_t& retrieve(const std::string& name) const     = 0;
+    const dag_vertex_t& lookup(const std::string& name) const override = 0;
+    dag_vertex_t& retrieve(const std::string& name) const override     = 0;
 
     /*!
      * expert_factory is a friend of expert_container and

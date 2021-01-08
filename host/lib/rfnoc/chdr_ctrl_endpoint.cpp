@@ -44,7 +44,7 @@ public:
                 % thread_name % _my_epid);
     }
 
-    virtual ~chdr_ctrl_endpoint_impl()
+    ~chdr_ctrl_endpoint_impl() override
     {
         UHD_SAFE_CALL(
             // Interrupt buffer updater loop
@@ -67,12 +67,12 @@ public:
             _endpoint_map.clear(););
     }
 
-    virtual ctrlport_endpoint::sptr get_ctrlport_ep(sep_id_t dst_epid,
+    ctrlport_endpoint::sptr get_ctrlport_ep(sep_id_t dst_epid,
         uint16_t dst_port,
         size_t buff_capacity,
         size_t max_outstanding_async_msgs,
         const clock_iface& client_clk,
-        const clock_iface& timebase_clk)
+        const clock_iface& timebase_clk) override
     {
         std::lock_guard<std::mutex> lock(_mutex);
 
@@ -111,7 +111,7 @@ public:
         }
     }
 
-    virtual size_t get_num_drops() const
+    size_t get_num_drops() const override
     {
         return _num_drops;
     }

@@ -47,52 +47,52 @@ public:
         _register_props();
     }
 
-    void set_direction(const fft_direction direction)
+    void set_direction(const fft_direction direction) override
     {
         set_property<int>(PROP_KEY_DIRECTION, static_cast<int>(direction));
     }
 
-    fft_direction get_direction() const
+    fft_direction get_direction() const override
     {
         return static_cast<fft_direction>(_direction.get());
     }
 
-    void set_magnitude(const fft_magnitude magnitude)
+    void set_magnitude(const fft_magnitude magnitude) override
     {
         set_property<int>(PROP_KEY_MAGNITUDE, static_cast<int>(magnitude));
     }
 
-    fft_magnitude get_magnitude() const
+    fft_magnitude get_magnitude() const override
     {
         return static_cast<fft_magnitude>(_magnitude.get());
     }
 
-    void set_shift_config(const fft_shift shift)
+    void set_shift_config(const fft_shift shift) override
     {
         set_property<int>(PROP_KEY_SHIFT_CONFIG, static_cast<int>(shift));
     }
 
-    fft_shift get_shift_config() const
+    fft_shift get_shift_config() const override
     {
         return static_cast<fft_shift>(_shift.get());
     }
 
-    void set_scaling(const uint16_t scaling)
+    void set_scaling(const uint16_t scaling) override
     {
         set_property<int>(PROP_KEY_FFT_SCALING, scaling);
     }
 
-    uint16_t get_scaling() const
+    uint16_t get_scaling() const override
     {
         return static_cast<uint16_t>(_scaling.get());
     }
 
-    void set_length(const size_t size)
+    void set_length(const size_t size) override
     {
         set_property<int>(PROP_KEY_LENGTH, size);
     }
 
-    size_t get_length() const
+    size_t get_length() const override
     {
         return static_cast<size_t>(_length.get());
     }

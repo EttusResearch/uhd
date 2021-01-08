@@ -36,18 +36,18 @@ struct time_core_3000_impl : time_core_3000
         this->set_tick_rate(1); // init to non zero
     }
 
-    ~time_core_3000_impl(void)
+    ~time_core_3000_impl(void) override
     {
         UHD_SAFE_CALL(; // NOP
         )
     }
 
-    void set_tick_rate(const double rate)
+    void set_tick_rate(const double rate) override
     {
         _tick_rate = rate;
     }
 
-    void self_test(void)
+    void self_test(void) override
     {
         const size_t sleep_millis = 100;
         UHD_LOGGER_DEBUG("CORES") << "Performing timer loopback test... ";
@@ -71,19 +71,19 @@ struct time_core_3000_impl : time_core_3000
                 << "Approximate clock rate: " << (approx_rate / 1e6) << " MHz\n";
     }
 
-    uhd::time_spec_t get_time_now(void)
+    uhd::time_spec_t get_time_now(void) override
     {
         const uint64_t ticks = _iface->peek64(_readback_bases.rb_now);
         return time_spec_t::from_ticks(ticks, _tick_rate);
     }
 
-    uhd::time_spec_t get_time_last_pps(void)
+    uhd::time_spec_t get_time_last_pps(void) override
     {
         const uint64_t ticks = _iface->peek64(_readback_bases.rb_pps);
         return time_spec_t::from_ticks(ticks, _tick_rate);
     }
 
-    void set_time_now(const uhd::time_spec_t& time)
+    void set_time_now(const uhd::time_spec_t& time) override
     {
         const uint64_t ticks = time.to_ticks(_tick_rate);
         _iface->poke32(REG_TIME_HI, uint32_t(ticks >> 32));
@@ -91,7 +91,7 @@ struct time_core_3000_impl : time_core_3000
         _iface->poke32(REG_TIME_CTRL, CTRL_LATCH_TIME_NOW);
     }
 
-    void set_time_sync(const uhd::time_spec_t& time)
+    void set_time_sync(const uhd::time_spec_t& time) override
     {
         const uint64_t ticks = time.to_ticks(_tick_rate);
         _iface->poke32(REG_TIME_HI, uint32_t(ticks >> 32));
@@ -99,7 +99,7 @@ struct time_core_3000_impl : time_core_3000
         _iface->poke32(REG_TIME_CTRL, CTRL_LATCH_TIME_SYNC);
     }
 
-    void set_time_next_pps(const uhd::time_spec_t& time)
+    void set_time_next_pps(const uhd::time_spec_t& time) override
     {
         const uint64_t ticks = time.to_ticks(_tick_rate);
         _iface->poke32(REG_TIME_HI, uint32_t(ticks >> 32));

@@ -76,32 +76,32 @@ public:
         // nop
     }
 
-    void poke32(const uhd::wb_iface::wb_addr_type addr, const uint32_t data)
+    void poke32(const uhd::wb_iface::wb_addr_type addr, const uint32_t data) override
     {
         _regs_accessor().poke32(_base_offset + addr, data, _time_accessor());
     }
 
-    void poke64(const uhd::wb_iface::wb_addr_type addr, const uint64_t data)
+    void poke64(const uhd::wb_iface::wb_addr_type addr, const uint64_t data) override
     {
         _regs_accessor().poke64(_base_offset + addr, data, _time_accessor());
     }
 
-    uint32_t peek32(const uhd::wb_iface::wb_addr_type addr)
+    uint32_t peek32(const uhd::wb_iface::wb_addr_type addr) override
     {
         return _regs_accessor().peek32(_base_offset + addr, _time_accessor());
     }
 
-    uint64_t peek64(const uhd::wb_iface::wb_addr_type addr)
+    uint64_t peek64(const uhd::wb_iface::wb_addr_type addr) override
     {
         return _regs_accessor().peek64(_base_offset + addr, _time_accessor());
     }
 
-    uhd::time_spec_t get_time(void)
+    uhd::time_spec_t get_time(void) override
     {
         return _time_accessor();
     }
 
-    void set_time(const uhd::time_spec_t& t)
+    void set_time(const uhd::time_spec_t& t) override
     {
         _time_setter(t);
     }

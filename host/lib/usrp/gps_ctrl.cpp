@@ -248,20 +248,20 @@ public:
         update_cache();
     }
 
-    ~gps_ctrl_impl(void)
+    ~gps_ctrl_impl(void) override
     {
         /* NOP */
     }
 
     // return a list of supported sensors
-    std::vector<std::string> get_sensors(void)
+    std::vector<std::string> get_sensors(void) override
     {
         std::vector<std::string> ret{
             "gps_gpgga", "gps_gprmc", "gps_time", "gps_locked", "gps_servo"};
         return ret;
     }
 
-    uhd::sensor_value_t get_sensor(std::string key)
+    uhd::sensor_value_t get_sensor(std::string key) override
     {
         if (key == "gps_gpgga" or key == "gps_gprmc") {
             return sensor_value_t(boost::to_upper_copy(key),
@@ -333,7 +333,7 @@ private:
                 std::string datestr = get_token(reply, 9);
                 std::string timestr = get_token(reply, 1);
 
-                if (datestr.size() == 0 or timestr.size() == 0) {
+                if (datestr.empty() or timestr.empty()) {
                     throw uhd::value_error(
                         str(boost::format("Invalid response \"%s\"") % reply));
                 }
@@ -368,7 +368,7 @@ private:
         return (get_time() - from_time_t(0)).total_seconds();
     }
 
-    bool gps_detected(void)
+    bool gps_detected(void) override
     {
         return (_gps_type != GPS_TYPE_NONE);
     }

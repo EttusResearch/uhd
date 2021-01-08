@@ -128,7 +128,7 @@ public:
         _simulate_io_timeout = simulate_io_timeout;
     }
 
-    adapter_id_t get_send_adapter_id() const
+    adapter_id_t get_send_adapter_id() const override
     {
         return NULL_ADAPTER_ID;
     }
@@ -228,7 +228,7 @@ public:
         _rx_lens.push_back(len);
     }
 
-    adapter_id_t get_recv_adapter_id() const
+    adapter_id_t get_recv_adapter_id() const override
     {
         return NULL_ADAPTER_ID;
     }

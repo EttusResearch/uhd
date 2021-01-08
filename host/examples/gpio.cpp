@@ -214,9 +214,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     std::cout << "Using GPIO bank: " << gpio << std::endl;
 
     // subdev spec
-    if (tx_subdev_spec != "")
+    if (!tx_subdev_spec.empty())
         usrp->set_tx_subdev_spec(tx_subdev_spec);
-    if (rx_subdev_spec != "")
+    if (!rx_subdev_spec.empty())
         usrp->set_rx_subdev_spec(rx_subdev_spec);
     std::cout << boost::format("  rx_subdev_spec: %s")
                      % usrp->get_rx_subdev_spec(0).to_string()

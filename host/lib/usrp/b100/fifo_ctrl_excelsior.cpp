@@ -58,7 +58,7 @@ public:
         this->init_spi();
     }
 
-    ~fifo_ctrl_excelsior_impl(void)
+    ~fifo_ctrl_excelsior_impl(void) override
     {
         _timeout = ACK_TIMEOUT; // reset timeout to something small
         UHD_SAFE_CALL(
@@ -66,7 +66,7 @@ public:
         )
     }
 
-    bool pop_async_msg(async_metadata_t& async_metadata, double timeout)
+    bool pop_async_msg(async_metadata_t& async_metadata, double timeout) override
     {
         return _async_fifo.pop_with_timed_wait(async_metadata, timeout);
     }
@@ -109,7 +109,7 @@ public:
     /*******************************************************************
      * Peek and poke 32 bit implementation
      ******************************************************************/
-    void poke32(const wb_addr_type addr, const uint32_t data)
+    void poke32(const wb_addr_type addr, const uint32_t data) override
     {
         std::lock_guard<std::mutex> lock(_mutex);
 
@@ -118,7 +118,7 @@ public:
         this->wait_for_ack(_seq_out - MAX_SEQS_OUT);
     }
 
-    uint32_t peek32(const wb_addr_type addr)
+    uint32_t peek32(const wb_addr_type addr) override
     {
         std::lock_guard<std::mutex> lock(_mutex);
 
@@ -130,12 +130,12 @@ public:
     /*******************************************************************
      * Peek and poke 16 bit not implemented
      ******************************************************************/
-    void poke16(const wb_addr_type, const uint16_t)
+    void poke16(const wb_addr_type, const uint16_t) override
     {
         throw uhd::not_implemented_error("poke16 not implemented in fifo ctrl module");
     }
 
-    uint16_t peek16(const wb_addr_type)
+    uint16_t peek16(const wb_addr_type) override
     {
         throw uhd::not_implemented_error("peek16 not implemented in fifo ctrl module");
     }
@@ -157,7 +157,7 @@ public:
         const spi_config_t& config,
         uint32_t data,
         size_t num_bits,
-        bool readback)
+        bool readback) override
     {
         std::lock_guard<std::mutex> lock(_mutex);
 
@@ -196,7 +196,7 @@ public:
     /*******************************************************************
      * Update methods for time
      ******************************************************************/
-    void set_time(const uhd::time_spec_t& time)
+    void set_time(const uhd::time_spec_t& time) override
     {
         std::lock_guard<std::mutex> lock(_mutex);
         _time     = time;
@@ -205,13 +205,13 @@ public:
             _timeout = MASSIVE_TIMEOUT; // permanently sets larger timeout
     }
 
-    uhd::time_spec_t get_time(void)
+    uhd::time_spec_t get_time(void) override
     {
         std::lock_guard<std::mutex> lock(_mutex);
         return _time;
     }
 
-    void set_tick_rate(const double rate)
+    void set_tick_rate(const double rate) override
     {
         std::lock_guard<std::mutex> lock(_mutex);
         _tick_rate = rate;

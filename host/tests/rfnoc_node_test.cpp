@@ -65,11 +65,11 @@ public:
             {&_double_prop_user}, {&temp}, []() { std::cout << "foo" << std::endl; });
     }
 
-    size_t get_num_input_ports() const
+    size_t get_num_input_ports() const override
     {
         return _num_input_ports;
     }
-    size_t get_num_output_ports() const
+    size_t get_num_output_ports() const override
     {
         return _num_output_ports;
     }

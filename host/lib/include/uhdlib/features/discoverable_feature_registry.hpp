@@ -20,7 +20,7 @@ namespace uhd { namespace features {
 class discoverable_feature_registry : public virtual discoverable_feature_getter_iface
 {
 public:
-    virtual ~discoverable_feature_registry() = default;
+    ~discoverable_feature_registry() override = default;
 
     std::vector<std::string> enumerate_features() override;
 

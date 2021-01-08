@@ -180,7 +180,7 @@ static void x300_setup_session(x300_session_t& session,
     const std::string& outpath)
 {
     device_addrs_t devs = x300_find(args);
-    if (devs.size() == 0) {
+    if (devs.empty()) {
         session.found = false;
         return;
     } else if (devs.size() > 1) {
@@ -224,8 +224,8 @@ static void x300_setup_session(x300_session_t& session,
      * If this cannot be determined, then the user is forced to specify a filename.
      */
     session.fpga_type = args.get("fpga", session.dev_addr.get("fpga", ""));
-    if (filepath == "") {
-        if (!session.dev_addr.has_key("product") or session.fpga_type == "") {
+    if (filepath.empty()) {
+        if (!session.dev_addr.has_key("product") or session.fpga_type.empty()) {
             throw uhd::runtime_error(
                 "Found a device but could not auto-generate an image filename.");
         } else {
@@ -243,8 +243,8 @@ static void x300_setup_session(x300_session_t& session,
      * The user can specify an output image path, or UHD will use the
      * system temporary path by default
      */
-    if (outpath == "") {
-        if (!session.dev_addr.has_key("product") or session.fpga_type == "") {
+    if (outpath.empty()) {
+        if (!session.dev_addr.has_key("product") or session.fpga_type.empty()) {
             throw uhd::runtime_error(
                 "Found a device but could not auto-generate an image filename.");
         }
@@ -598,7 +598,7 @@ static bool x300_image_loader(const image_loader::image_loader_args_t& image_loa
     // See if any X3x0 with the given args is found
     device_addrs_t devs = x300_find(image_loader_args.args);
 
-    if (devs.size() == 0)
+    if (devs.empty())
         return false;
 
     x300_session_t session;

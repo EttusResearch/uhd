@@ -34,31 +34,31 @@ public:
     {
     }
 
-    std::string get_name() const
+    std::string get_name() const override
     {
         return _name;
     }
 
     //! Return the name of this calibration table
-    std::string get_serial() const
+    std::string get_serial() const override
     {
         return _serial;
     }
 
     //! Timestamp of acquisition time
-    uint64_t get_timestamp() const
+    uint64_t get_timestamp() const override
     {
         return _timestamp;
     }
 
-    void set_interp_mode(const interp_mode interp)
+    void set_interp_mode(const interp_mode interp) override
     {
         UHD_ASSERT_THROW(
             interp == interp_mode::LINEAR || interp == interp_mode::NEAREST_NEIGHBOR);
         _interp = interp;
     }
 
-    std::complex<double> get_cal_coeff(const double freq) const
+    std::complex<double> get_cal_coeff(const double freq) const override
     {
         UHD_ASSERT_THROW(!_coeffs.empty());
         // Find the first coefficient in the map that maps to a larger frequency
@@ -95,13 +95,13 @@ public:
     void set_cal_coeff(const double freq,
         const std::complex<double> coeff,
         const double suppression_abs   = 0,
-        const double suppression_delta = 0)
+        const double suppression_delta = 0) override
     {
         _coeffs[freq] = coeff;
         _supp[freq]   = {suppression_abs, suppression_delta};
     }
 
-    void clear()
+    void clear() override
     {
         _coeffs.clear();
         _supp.clear();
@@ -110,7 +110,7 @@ public:
     /**************************************************************************
      * Container API (Serialization/Deserialization)
      *************************************************************************/
-    std::vector<uint8_t> serialize()
+    std::vector<uint8_t> serialize() override
     {
         // This is a magic value to estimate the amount of space the builder will
         // have to reserve on top of the coeff data.
@@ -151,7 +151,7 @@ public:
 
     // This will amend the existing table. If that's not desired, then it is
     // necessary to call clear() ahead of time.
-    void deserialize(const std::vector<uint8_t>& data)
+    void deserialize(const std::vector<uint8_t>& data) override
     {
         auto verifier = flatbuffers::Verifier(data.data(), data.size());
         if (!VerifyIQCalCoeffsBuffer(verifier)) {

@@ -36,151 +36,153 @@ public:
      *************************************************************************/
     radio_control_impl(make_args_ptr make_args);
 
-    virtual void deinit() {}
+    void deinit() override {}
 
-    virtual ~radio_control_impl() {}
+    ~radio_control_impl() override {}
 
     /**************************************************************************
      * Stream control API calls
      *************************************************************************/
-    void issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd, const size_t port);
+    void issue_stream_cmd(
+        const uhd::stream_cmd_t& stream_cmd, const size_t port) override;
 
-    void enable_rx_timestamps(const bool enable, const size_t chan);
+    void enable_rx_timestamps(const bool enable, const size_t chan) override;
 
     /**************************************************************************
      * Rate-Related API Calls
      *************************************************************************/
-    virtual double set_rate(const double rate);
-    virtual double get_rate() const;
-    virtual meta_range_t get_rate_range() const;
+    double set_rate(const double rate) override;
+    double get_rate() const override;
+    meta_range_t get_rate_range() const override;
 
     /**************************************************************************
      * RF-specific API calls
      *************************************************************************/
     // Setters
-    virtual void set_tx_antenna(const std::string& ant, const size_t chan);
-    virtual void set_rx_antenna(const std::string& ant, const size_t chan);
-    virtual double set_tx_frequency(const double freq, const size_t chan);
-    virtual double set_rx_frequency(const double freq, const size_t chan);
-    virtual void set_tx_tune_args(const uhd::device_addr_t&, const size_t chan);
-    virtual void set_rx_tune_args(const uhd::device_addr_t&, const size_t chan);
-    virtual double set_tx_gain(const double gain, const size_t chan);
-    virtual double set_tx_gain(
-        const double gain, const std::string& name, const size_t chan);
-    virtual double set_rx_gain(const double gain, const size_t chan);
-    virtual double set_rx_gain(
-        const double gain, const std::string& name, const size_t chan);
-    virtual void set_rx_agc(const bool enable, const size_t chan);
-    virtual double set_tx_bandwidth(const double bandwidth, const size_t chan);
-    virtual double set_rx_bandwidth(const double bandwidth, const size_t chan);
-    virtual void set_tx_gain_profile(const std::string& profile, const size_t chan);
-    virtual void set_rx_gain_profile(const std::string& profile, const size_t chan);
-    virtual void set_rx_power_reference(const double power_dbm, const size_t chan);
-    virtual void set_tx_power_reference(const double power_dbm, const size_t chan);
+    void set_tx_antenna(const std::string& ant, const size_t chan) override;
+    void set_rx_antenna(const std::string& ant, const size_t chan) override;
+    double set_tx_frequency(const double freq, const size_t chan) override;
+    double set_rx_frequency(const double freq, const size_t chan) override;
+    void set_tx_tune_args(const uhd::device_addr_t&, const size_t chan) override;
+    void set_rx_tune_args(const uhd::device_addr_t&, const size_t chan) override;
+    double set_tx_gain(const double gain, const size_t chan) override;
+    double set_tx_gain(
+        const double gain, const std::string& name, const size_t chan) override;
+    double set_rx_gain(const double gain, const size_t chan) override;
+    double set_rx_gain(
+        const double gain, const std::string& name, const size_t chan) override;
+    void set_rx_agc(const bool enable, const size_t chan) override;
+    double set_tx_bandwidth(const double bandwidth, const size_t chan) override;
+    double set_rx_bandwidth(const double bandwidth, const size_t chan) override;
+    void set_tx_gain_profile(const std::string& profile, const size_t chan) override;
+    void set_rx_gain_profile(const std::string& profile, const size_t chan) override;
+    void set_rx_power_reference(const double power_dbm, const size_t chan) override;
+    void set_tx_power_reference(const double power_dbm, const size_t chan) override;
 
     // Getters
-    virtual std::string get_tx_antenna(const size_t chan) const;
-    virtual std::string get_rx_antenna(const size_t chan) const;
-    virtual std::vector<std::string> get_tx_antennas(const size_t chan) const;
-    virtual std::vector<std::string> get_rx_antennas(const size_t chan) const;
-    virtual double get_tx_frequency(const size_t);
-    virtual double get_rx_frequency(const size_t);
-    virtual uhd::freq_range_t get_tx_frequency_range(const size_t chan) const;
-    virtual uhd::freq_range_t get_rx_frequency_range(const size_t chan) const;
-    virtual std::vector<std::string> get_tx_gain_names(const size_t) const;
-    virtual std::vector<std::string> get_rx_gain_names(const size_t) const;
-    virtual double get_tx_gain(const size_t);
-    virtual double get_tx_gain(const std::string&, size_t);
-    virtual double get_rx_gain(const size_t);
-    virtual double get_rx_gain(const std::string&, size_t);
-    virtual uhd::gain_range_t get_tx_gain_range(const size_t) const;
-    virtual uhd::gain_range_t get_tx_gain_range(const std::string&, const size_t) const;
-    virtual uhd::gain_range_t get_rx_gain_range(const size_t) const;
-    virtual uhd::gain_range_t get_rx_gain_range(const std::string&, const size_t) const;
-    virtual std::vector<std::string> get_tx_gain_profile_names(const size_t chan) const;
-    virtual std::vector<std::string> get_rx_gain_profile_names(const size_t chan) const;
-    virtual std::string get_tx_gain_profile(const size_t chan) const;
-    virtual std::string get_rx_gain_profile(const size_t chan) const;
-    virtual double get_tx_bandwidth(const size_t);
-    virtual double get_rx_bandwidth(const size_t);
-    virtual meta_range_t get_tx_bandwidth_range(size_t chan) const;
-    virtual meta_range_t get_rx_bandwidth_range(size_t chan) const;
-    virtual bool has_rx_power_reference(const size_t chan);
-    virtual bool has_tx_power_reference(const size_t chan);
-    virtual double get_rx_power_reference(const size_t chan);
-    virtual double get_tx_power_reference(const size_t chan);
-    virtual std::vector<std::string> get_rx_power_ref_keys(const size_t);
-    virtual std::vector<std::string> get_tx_power_ref_keys(const size_t);
-    virtual meta_range_t get_rx_power_range(const size_t chan);
-    virtual meta_range_t get_tx_power_range(const size_t chan);
+    std::string get_tx_antenna(const size_t chan) const override;
+    std::string get_rx_antenna(const size_t chan) const override;
+    std::vector<std::string> get_tx_antennas(const size_t chan) const override;
+    std::vector<std::string> get_rx_antennas(const size_t chan) const override;
+    double get_tx_frequency(const size_t) override;
+    double get_rx_frequency(const size_t) override;
+    uhd::freq_range_t get_tx_frequency_range(const size_t chan) const override;
+    uhd::freq_range_t get_rx_frequency_range(const size_t chan) const override;
+    std::vector<std::string> get_tx_gain_names(const size_t) const override;
+    std::vector<std::string> get_rx_gain_names(const size_t) const override;
+    double get_tx_gain(const size_t) override;
+    double get_tx_gain(const std::string&, size_t) override;
+    double get_rx_gain(const size_t) override;
+    double get_rx_gain(const std::string&, size_t) override;
+    uhd::gain_range_t get_tx_gain_range(const size_t) const override;
+    uhd::gain_range_t get_tx_gain_range(const std::string&, const size_t) const override;
+    uhd::gain_range_t get_rx_gain_range(const size_t) const override;
+    uhd::gain_range_t get_rx_gain_range(const std::string&, const size_t) const override;
+    std::vector<std::string> get_tx_gain_profile_names(const size_t chan) const override;
+    std::vector<std::string> get_rx_gain_profile_names(const size_t chan) const override;
+    std::string get_tx_gain_profile(const size_t chan) const override;
+    std::string get_rx_gain_profile(const size_t chan) const override;
+    double get_tx_bandwidth(const size_t) override;
+    double get_rx_bandwidth(const size_t) override;
+    meta_range_t get_tx_bandwidth_range(size_t chan) const override;
+    meta_range_t get_rx_bandwidth_range(size_t chan) const override;
+    bool has_rx_power_reference(const size_t chan) override;
+    bool has_tx_power_reference(const size_t chan) override;
+    double get_rx_power_reference(const size_t chan) override;
+    double get_tx_power_reference(const size_t chan) override;
+    std::vector<std::string> get_rx_power_ref_keys(const size_t) override;
+    std::vector<std::string> get_tx_power_ref_keys(const size_t) override;
+    meta_range_t get_rx_power_range(const size_t chan) override;
+    meta_range_t get_tx_power_range(const size_t chan) override;
 
     /**************************************************************************
      * LO Controls
      *************************************************************************/
-    virtual std::vector<std::string> get_rx_lo_names(const size_t chan) const;
-    virtual std::vector<std::string> get_rx_lo_sources(
-        const std::string& name, const size_t chan) const;
-    virtual freq_range_t get_rx_lo_freq_range(
-        const std::string& name, const size_t chan) const;
-    virtual void set_rx_lo_source(
-        const std::string& src, const std::string& name, const size_t chan);
-    virtual const std::string get_rx_lo_source(
-        const std::string& name, const size_t chan);
-    virtual void set_rx_lo_export_enabled(
-        bool enabled, const std::string& name, const size_t chan);
-    virtual bool get_rx_lo_export_enabled(
-        const std::string& name, const size_t chan) const;
-    virtual double set_rx_lo_freq(
-        double freq, const std::string& name, const size_t chan);
-    virtual double get_rx_lo_freq(const std::string& name, const size_t chan);
-    virtual std::vector<std::string> get_tx_lo_names(const size_t chan) const;
-    virtual std::vector<std::string> get_tx_lo_sources(
-        const std::string& name, const size_t chan);
-    virtual freq_range_t get_tx_lo_freq_range(const std::string& name, const size_t chan);
-    virtual void set_tx_lo_source(
-        const std::string& src, const std::string& name, const size_t chan);
-    virtual const std::string get_tx_lo_source(
-        const std::string& name, const size_t chan);
-    virtual void set_tx_lo_export_enabled(
-        const bool enabled, const std::string& name, const size_t chan);
-    virtual bool get_tx_lo_export_enabled(const std::string& name, const size_t chan);
-    virtual double set_tx_lo_freq(
-        const double freq, const std::string& name, const size_t chan);
-    virtual double get_tx_lo_freq(const std::string& name, const size_t chan);
+    std::vector<std::string> get_rx_lo_names(const size_t chan) const override;
+    std::vector<std::string> get_rx_lo_sources(
+        const std::string& name, const size_t chan) const override;
+    freq_range_t get_rx_lo_freq_range(
+        const std::string& name, const size_t chan) const override;
+    void set_rx_lo_source(
+        const std::string& src, const std::string& name, const size_t chan) override;
+    const std::string get_rx_lo_source(
+        const std::string& name, const size_t chan) override;
+    void set_rx_lo_export_enabled(
+        bool enabled, const std::string& name, const size_t chan) override;
+    bool get_rx_lo_export_enabled(
+        const std::string& name, const size_t chan) const override;
+    double set_rx_lo_freq(
+        double freq, const std::string& name, const size_t chan) override;
+    double get_rx_lo_freq(const std::string& name, const size_t chan) override;
+    std::vector<std::string> get_tx_lo_names(const size_t chan) const override;
+    std::vector<std::string> get_tx_lo_sources(
+        const std::string& name, const size_t chan) override;
+    freq_range_t get_tx_lo_freq_range(
+        const std::string& name, const size_t chan) override;
+    void set_tx_lo_source(
+        const std::string& src, const std::string& name, const size_t chan) override;
+    const std::string get_tx_lo_source(
+        const std::string& name, const size_t chan) override;
+    void set_tx_lo_export_enabled(
+        const bool enabled, const std::string& name, const size_t chan) override;
+    bool get_tx_lo_export_enabled(const std::string& name, const size_t chan) override;
+    double set_tx_lo_freq(
+        const double freq, const std::string& name, const size_t chan) override;
+    double get_tx_lo_freq(const std::string& name, const size_t chan) override;
 
     /**************************************************************************
      * Calibration-Related API Calls
      *************************************************************************/
-    virtual void set_tx_dc_offset(const std::complex<double>& offset, size_t chan);
-    virtual meta_range_t get_tx_dc_offset_range(size_t chan) const;
-    virtual void set_tx_iq_balance(const std::complex<double>& correction, size_t chan);
-    virtual void set_rx_dc_offset(const bool enb, size_t chan = ALL_CHANS);
-    virtual void set_rx_dc_offset(const std::complex<double>& offset, size_t chan);
-    virtual meta_range_t get_rx_dc_offset_range(size_t chan) const;
-    virtual void set_rx_iq_balance(const bool enb, size_t chan);
-    virtual void set_rx_iq_balance(const std::complex<double>& correction, size_t chan);
+    void set_tx_dc_offset(const std::complex<double>& offset, size_t chan) override;
+    meta_range_t get_tx_dc_offset_range(size_t chan) const override;
+    void set_tx_iq_balance(const std::complex<double>& correction, size_t chan) override;
+    void set_rx_dc_offset(const bool enb, size_t chan = ALL_CHANS) override;
+    void set_rx_dc_offset(const std::complex<double>& offset, size_t chan) override;
+    meta_range_t get_rx_dc_offset_range(size_t chan) const override;
+    void set_rx_iq_balance(const bool enb, size_t chan) override;
+    void set_rx_iq_balance(const std::complex<double>& correction, size_t chan) override;
 
     /**************************************************************************
      * GPIO Controls
      *************************************************************************/
-    virtual std::vector<std::string> get_gpio_banks() const;
-    virtual void set_gpio_attr(
-        const std::string& bank, const std::string& attr, const uint32_t value);
-    virtual uint32_t get_gpio_attr(const std::string& bank, const std::string& attr);
+    std::vector<std::string> get_gpio_banks() const override;
+    void set_gpio_attr(
+        const std::string& bank, const std::string& attr, const uint32_t value) override;
+    uint32_t get_gpio_attr(const std::string& bank, const std::string& attr) override;
 
     /**************************************************************************
      * Sensor API
      *************************************************************************/
-    virtual std::vector<std::string> get_rx_sensor_names(size_t chan) const;
-    virtual uhd::sensor_value_t get_rx_sensor(const std::string& name, size_t chan);
-    virtual std::vector<std::string> get_tx_sensor_names(size_t chan) const;
-    virtual uhd::sensor_value_t get_tx_sensor(const std::string& name, size_t chan);
+    std::vector<std::string> get_rx_sensor_names(size_t chan) const override;
+    uhd::sensor_value_t get_rx_sensor(const std::string& name, size_t chan) override;
+    std::vector<std::string> get_tx_sensor_names(size_t chan) const override;
+    uhd::sensor_value_t get_tx_sensor(const std::string& name, size_t chan) override;
 
     /**************************************************************************
      * Identification API
      *************************************************************************/
-    virtual std::string get_fe_name(
-        const size_t chan, const uhd::direction_t direction) const
+    std::string get_fe_name(
+        const size_t chan, const uhd::direction_t direction) const override
     {
         return get_dboard_fe_from_chan(chan, direction);
     }
@@ -188,8 +190,8 @@ public:
     /**************************************************************************
      * EEPROM API
      *************************************************************************/
-    virtual void set_db_eeprom(const uhd::eeprom_map_t& db_eeprom);
-    virtual uhd::eeprom_map_t get_db_eeprom();
+    void set_db_eeprom(const uhd::eeprom_map_t& db_eeprom) override;
+    uhd::eeprom_map_t get_db_eeprom() override;
 
     /***********************************************************************
      * Reg Map

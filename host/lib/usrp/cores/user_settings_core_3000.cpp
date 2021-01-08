@@ -25,7 +25,7 @@ public:
     {
     }
 
-    void poke64(const wb_addr_type offset, const uint64_t value)
+    void poke64(const wb_addr_type offset, const uint64_t value) override
     {
         if (offset % sizeof(uint64_t) != 0)
             throw uhd::value_error("poke64: Incorrect address alignment");
@@ -33,7 +33,7 @@ public:
         poke32(offset + 4, static_cast<uint32_t>(value >> 32));
     }
 
-    uint64_t peek64(const wb_addr_type offset)
+    uint64_t peek64(const wb_addr_type offset) override
     {
         if (offset % sizeof(uint64_t) != 0)
             throw uhd::value_error("peek64: Incorrect address alignment");
@@ -44,7 +44,7 @@ public:
         return _iface->peek64(_rb_reg_addr);
     }
 
-    void poke32(const wb_addr_type offset, const uint32_t value)
+    void poke32(const wb_addr_type offset, const uint32_t value) override
     {
         if (offset % sizeof(uint32_t) != 0)
             throw uhd::value_error("poke32: Incorrect address alignment");
@@ -55,7 +55,7 @@ public:
         _iface->poke32(REG_USER_SR_DATA, value);
     }
 
-    uint32_t peek32(const wb_addr_type offset)
+    uint32_t peek32(const wb_addr_type offset) override
     {
         if (offset % sizeof(uint32_t) != 0)
             throw uhd::value_error("peek32: Incorrect address alignment");

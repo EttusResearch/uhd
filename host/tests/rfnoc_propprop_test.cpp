@@ -29,17 +29,17 @@ public:
         add_property_resolver({&_out}, {&_in}, [this]() { _in = _out / 2; });
     }
 
-    std::string get_unique_id() const
+    std::string get_unique_id() const override
     {
         return "MOCK_INVALID_NODE1";
     }
 
-    size_t get_num_input_ports() const
+    size_t get_num_input_ports() const override
     {
         return 1;
     }
 
-    size_t get_num_output_ports() const
+    size_t get_num_output_ports() const override
     {
         return 1;
     }
@@ -88,17 +88,17 @@ public:
         _in.set(old_val);
     }
 
-    size_t get_num_input_ports() const
+    size_t get_num_input_ports() const override
     {
         return 1;
     }
 
-    size_t get_num_output_ports() const
+    size_t get_num_output_ports() const override
     {
         return 1;
     }
 
-    std::string get_unique_id() const
+    std::string get_unique_id() const override
     {
         return "MOCK_INVALID_NODE2";
     }
@@ -136,17 +136,17 @@ public:
         });
     }
 
-    size_t get_num_input_ports() const
+    size_t get_num_input_ports() const override
     {
         return 1;
     }
 
-    size_t get_num_output_ports() const
+    size_t get_num_output_ports() const override
     {
         return 1;
     }
 
-    std::string get_unique_id() const
+    std::string get_unique_id() const override
     {
         return "MOCK_CIRCULAR_PROPS";
     }

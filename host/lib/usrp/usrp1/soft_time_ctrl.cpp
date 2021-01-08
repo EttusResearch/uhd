@@ -50,13 +50,13 @@ public:
     /*******************************************************************
      * Time control
      ******************************************************************/
-    void set_time(const time_spec_t& time)
+    void set_time(const time_spec_t& time) override
     {
         boost::mutex::scoped_lock lock(_update_mutex);
         _time_offset = uhd::get_system_time() - time;
     }
 
-    time_spec_t get_time(void)
+    time_spec_t get_time(void) override
     {
         boost::mutex::scoped_lock lock(_update_mutex);
         return time_now();
@@ -80,7 +80,7 @@ public:
     /*******************************************************************
      * Receive control
      ******************************************************************/
-    size_t recv_post(rx_metadata_t& md, const size_t nsamps)
+    size_t recv_post(rx_metadata_t& md, const size_t nsamps) override
     {
         boost::mutex::scoped_lock lock(_update_mutex);
 
@@ -125,7 +125,7 @@ public:
         return nsamps;
     }
 
-    void issue_stream_cmd(const stream_cmd_t& cmd)
+    void issue_stream_cmd(const stream_cmd_t& cmd) override
     {
         _cmd_queue.push_with_wait(std::make_shared<stream_cmd_t>(cmd));
     }
@@ -139,7 +139,7 @@ public:
     /*******************************************************************
      * Transmit control
      ******************************************************************/
-    void send_pre(const tx_metadata_t& md, double& timeout)
+    void send_pre(const tx_metadata_t& md, double& timeout) override
     {
         if (not md.has_time_spec)
             return;
@@ -211,17 +211,17 @@ public:
         }
     }
 
-    bounded_buffer<async_metadata_t>& get_async_queue(void)
+    bounded_buffer<async_metadata_t>& get_async_queue(void) override
     {
         return _async_msg_queue;
     }
 
-    bounded_buffer<rx_metadata_t>& get_inline_queue(void)
+    bounded_buffer<rx_metadata_t>& get_inline_queue(void) override
     {
         return _inline_msg_queue;
     }
 
-    void stop(void)
+    void stop(void) override
     {
         _recv_cmd_task.reset();
     }

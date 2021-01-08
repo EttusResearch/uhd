@@ -33,7 +33,7 @@ public:
         read_memory[0x000C] = device_id | (DEVICE_TYPE << 16);
     }
 
-    virtual ~client_zero_test_iface() = default;
+    ~client_zero_test_iface() override = default;
 
     /**************************************************************************
      * Test API
@@ -76,7 +76,8 @@ public:
                               | NUM_STREAM_ENDPOINTS;
     }
 
-    void _poke_cb(uint32_t addr, uint32_t data, uhd::time_spec_t /*time*/, bool /*ack*/)
+    void _poke_cb(
+        uint32_t addr, uint32_t data, uhd::time_spec_t /*time*/, bool /*ack*/) override
     {
         if (addr < (1 + NUM_STREAM_ENDPOINTS) * SLOT_OFFSET
             || (addr % SLOT_OFFSET != 0 && addr % SLOT_OFFSET != 4)) {
@@ -103,7 +104,7 @@ public:
         }
     }
 
-    void _peek_cb(uint32_t addr, time_spec_t /*time*/)
+    void _peek_cb(uint32_t addr, time_spec_t /*time*/) override
     {
         if (read_memory.count(addr) == 0) {
             std::cout << "Bad peek32, addr=" << addr << std::endl;

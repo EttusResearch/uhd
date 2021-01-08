@@ -51,7 +51,7 @@ public:
         register_issue_stream_cmd();
     }
 
-    void issue_stream_cmd(const stream_cmd_t& stream_cmd)
+    void issue_stream_cmd(const stream_cmd_t& stream_cmd) override
     {
         if (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS) {
             RFNOC_LOG_TRACE("Received start stream request!");
@@ -66,7 +66,7 @@ public:
         }
     }
 
-    void reset_counters()
+    void reset_counters() override
     {
         const uint32_t streaming_flag = _streaming ? 0x2 : 0x0;
         regs().poke32(REG_CTRL_STATUS, streaming_flag | 0x1);
@@ -88,7 +88,7 @@ public:
         regs().poke32(REG_SRC_LINES_PER_PKT, lpp - 2);
     }
 
-    void set_bytes_per_packet(const uint32_t bpp)
+    void set_bytes_per_packet(const uint32_t bpp) override
     {
         if (bpp > 0xFFFF) {
             throw uhd::value_error("Null source lines per packet cannot exceed 16 bits!");
@@ -101,7 +101,7 @@ public:
         set_lines_per_packet(lpp);
     }
 
-    void set_throttle_cycles(const uint32_t cycs)
+    void set_throttle_cycles(const uint32_t cycs) override
     {
         if (cycs > 0x3FF) {
             throw uhd::value_error("Null source throttle cycles cannot exceed 10 bits!");
@@ -109,22 +109,23 @@ public:
         regs().poke32(REG_SRC_THROTTLE_CYC, cycs);
     }
 
-    uint32_t get_lines_per_packet()
+    uint32_t get_lines_per_packet() override
     {
         return regs().peek32(REG_SRC_LINES_PER_PKT) + 2;
     }
 
-    uint32_t get_bytes_per_packet()
+    uint32_t get_bytes_per_packet() override
     {
         return regs().peek32(REG_SRC_BYTES_PER_PKT);
     }
 
-    uint32_t get_throttle_cycles()
+    uint32_t get_throttle_cycles() override
     {
         return regs().peek32(REG_SRC_THROTTLE_CYC);
     }
 
-    uint64_t get_count(const port_type_t port_type, const count_type_t count_type)
+    uint64_t get_count(
+        const port_type_t port_type, const count_type_t count_type) override
     {
         const uint32_t count_addr_lo = [&]() {
             switch (port_type) {
@@ -164,7 +165,7 @@ private:
             });
     }
 
-    void deinit()
+    void deinit() override
     {
         issue_stream_cmd(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
     }

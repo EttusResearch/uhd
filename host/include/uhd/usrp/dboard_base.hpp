@@ -64,7 +64,7 @@ public:
      * Create a new xcvr dboard object, override in subclasses.
      */
     xcvr_dboard_base(ctor_args_t);
-    virtual ~xcvr_dboard_base() {}
+    ~xcvr_dboard_base() override {}
 };
 
 /*!
@@ -78,7 +78,7 @@ public:
      * Create a new rx dboard object, override in subclasses.
      */
     rx_dboard_base(ctor_args_t);
-    virtual ~rx_dboard_base() {}
+    ~rx_dboard_base() override {}
 };
 
 /*!
@@ -92,7 +92,7 @@ public:
      * Create a new rx dboard object, override in subclasses.
      */
     tx_dboard_base(ctor_args_t);
-    virtual ~tx_dboard_base() {}
+    ~tx_dboard_base() override {}
 };
 
 }} // namespace uhd::usrp

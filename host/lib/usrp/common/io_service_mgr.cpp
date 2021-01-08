@@ -416,9 +416,10 @@ public:
         const link_type_t link_type,
         const io_service_args_t& default_args,
         const uhd::device_addr_t& stream_args,
-        const std::string& streamer_id);
+        const std::string& streamer_id) override;
 
-    void disconnect_links(recv_link_if::sptr recv_link, send_link_if::sptr send_link);
+    void disconnect_links(
+        recv_link_if::sptr recv_link, send_link_if::sptr send_link) override;
 
 private:
     enum io_service_type_t { INLINE_IO_SRV, BLOCKING_IO_SRV, POLLING_IO_SRV };

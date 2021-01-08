@@ -94,11 +94,11 @@ public:
     //! load a bootloader image onto device EEPROM
     virtual uint32_t load_bootloader(const std::string filestring) = 0;
 
-    virtual void write_eeprom(
-        uint16_t addr, uint16_t offset, const uhd::byte_vector_t& bytes) = 0;
+    void write_eeprom(
+        uint16_t addr, uint16_t offset, const uhd::byte_vector_t& bytes) override = 0;
 
-    virtual uhd::byte_vector_t read_eeprom(
-        uint16_t addr, uint16_t offset, size_t num_bytes) = 0;
+    uhd::byte_vector_t read_eeprom(
+        uint16_t addr, uint16_t offset, size_t num_bytes) override = 0;
 
     static std::string fx3_state_string(uint8_t state);
 };

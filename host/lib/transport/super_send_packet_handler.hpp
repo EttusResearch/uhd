@@ -396,12 +396,12 @@ public:
         this->set_max_samples_per_packet(_max_num_samps);
     }
 
-    size_t get_num_channels(void) const
+    size_t get_num_channels(void) const override
     {
         return this->size();
     }
 
-    size_t get_max_num_samps(void) const
+    size_t get_max_num_samps(void) const override
     {
         return _max_num_samps;
     }
@@ -409,12 +409,13 @@ public:
     size_t send(const tx_streamer::buffs_type& buffs,
         const size_t nsamps_per_buff,
         const uhd::tx_metadata_t& metadata,
-        const double timeout)
+        const double timeout) override
     {
         return send_packet_handler::send(buffs, nsamps_per_buff, metadata, timeout);
     }
 
-    bool recv_async_msg(uhd::async_metadata_t& async_metadata, double timeout = 0.1)
+    bool recv_async_msg(
+        uhd::async_metadata_t& async_metadata, double timeout = 0.1) override
     {
         return send_packet_handler::recv_async_msg(async_metadata, timeout);
     }

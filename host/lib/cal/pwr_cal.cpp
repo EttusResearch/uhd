@@ -55,17 +55,17 @@ public:
     /**************************************************************************
      * Container API (Basics)
      *************************************************************************/
-    std::string get_name() const
+    std::string get_name() const override
     {
         return _name;
     }
 
-    std::string get_serial() const
+    std::string get_serial() const override
     {
         return _serial;
     }
 
-    uint64_t get_timestamp() const
+    uint64_t get_timestamp() const override
     {
         return _timestamp;
     }
@@ -77,7 +77,7 @@ public:
         const double min_power,
         const double max_power,
         const double freq,
-        const boost::optional<int> temperature = boost::none)
+        const boost::optional<int> temperature = boost::none) override
     {
         if (min_power > max_power) {
             throw uhd::runtime_error(
@@ -96,7 +96,7 @@ public:
     // a struct).
     double get_power(const double gain,
         const double freq,
-        const boost::optional<int> temperature = boost::none) const
+        const boost::optional<int> temperature = boost::none) const override
     {
         UHD_ASSERT_THROW(!_data.empty());
         const uint64_t freqi = static_cast<uint64_t>(freq);
@@ -134,33 +134,33 @@ public:
             freq, gain, f1, gain1, f2, gain2, power11, power12, power21, power22);
     }
 
-    void clear()
+    void clear() override
     {
         _data.clear();
     }
 
-    void set_temperature(const int temperature)
+    void set_temperature(const int temperature) override
     {
         _default_temp = temperature;
     }
 
-    int get_temperature() const
+    int get_temperature() const override
     {
         return _default_temp;
     }
 
-    void set_ref_gain(const double gain)
+    void set_ref_gain(const double gain) override
     {
         _ref_gain = gain;
     }
 
-    double get_ref_gain() const
+    double get_ref_gain() const override
     {
         return _ref_gain;
     }
 
-    uhd::meta_range_t get_power_limits(
-        const double freq, const boost::optional<int> temperature = boost::none) const
+    uhd::meta_range_t get_power_limits(const double freq,
+        const boost::optional<int> temperature = boost::none) const override
     {
         const auto table = at_nearest(_get_table(temperature), uint64_t(freq));
         return uhd::meta_range_t(table.min_power, table.max_power);
@@ -168,7 +168,7 @@ public:
 
     double get_gain(const double power_dbm,
         const double freq,
-        const boost::optional<int> temperature = boost::none) const
+        const boost::optional<int> temperature = boost::none) const override
     {
         UHD_ASSERT_THROW(!_data.empty());
         const uint64_t freqi = static_cast<uint64_t>(freq);
@@ -223,7 +223,7 @@ public:
     /**************************************************************************
      * Container API (Serialization/Deserialization)
      *************************************************************************/
-    std::vector<uint8_t> serialize()
+    std::vector<uint8_t> serialize() override
     {
         const size_t initial_size_bytes = 1024 * 20; // 20 kiB as an initial guess
         flatbuffers::FlatBufferBuilder builder(initial_size_bytes);
@@ -268,7 +268,7 @@ public:
 
     // This will amend the existing table. If that's not desired, then it is
     // necessary to call clear() ahead of time.
-    void deserialize(const std::vector<uint8_t>& data)
+    void deserialize(const std::vector<uint8_t>& data) override
     {
         auto verifier = flatbuffers::Verifier(data.data(), data.size());
         if (!VerifyPowerCalBuffer(verifier)) {

@@ -224,24 +224,26 @@ class max287x : public max287x_iface
 {
 public:
     max287x(write_fn func);
-    virtual ~max287x();
-    virtual void power_up(void);
-    virtual void shutdown(void);
-    virtual bool is_shutdown(void);
-    virtual double set_frequency(
-        double target_freq, double ref_freq, double target_pfd_freq, bool is_int_n);
-    virtual void set_output_power(output_power_t power);
-    virtual void set_ld_pin_mode(ld_pin_mode_t mode);
-    virtual void set_muxout_mode(muxout_mode_t mode);
-    virtual void set_charge_pump_current(charge_pump_current_t cp_current);
-    virtual void set_auto_retune(bool enabled);
-    virtual void set_clock_divider_mode(clock_divider_mode_t mode);
-    virtual void set_cycle_slip_mode(bool enabled);
-    virtual void set_low_noise_and_spur(low_noise_and_spur_t mode);
-    virtual void set_phase(uint16_t phase);
-    virtual void commit();
-    virtual bool can_sync();
-    virtual void config_for_sync(bool enable);
+    ~max287x() override;
+    void power_up(void) override;
+    void shutdown(void) override;
+    bool is_shutdown(void) override;
+    double set_frequency(double target_freq,
+        double ref_freq,
+        double target_pfd_freq,
+        bool is_int_n) override;
+    void set_output_power(output_power_t power) override;
+    void set_ld_pin_mode(ld_pin_mode_t mode) override;
+    void set_muxout_mode(muxout_mode_t mode) override;
+    void set_charge_pump_current(charge_pump_current_t cp_current) override;
+    void set_auto_retune(bool enabled) override;
+    void set_clock_divider_mode(clock_divider_mode_t mode) override;
+    void set_cycle_slip_mode(bool enabled) override;
+    void set_low_noise_and_spur(low_noise_and_spur_t mode) override;
+    void set_phase(uint16_t phase) override;
+    void commit() override;
+    bool can_sync() override;
+    void config_for_sync(bool enable) override;
 
 protected:
     max287x_regs_t _regs;
@@ -261,9 +263,11 @@ class max2870 : public max287x<max2870_regs_t>
 {
 public:
     max2870(write_fn func) : max287x<max2870_regs_t>(func) {}
-    ~max2870() {}
-    double set_frequency(
-        double target_freq, double ref_freq, double target_pfd_freq, bool is_int_n)
+    ~max2870() override {}
+    double set_frequency(double target_freq,
+        double ref_freq,
+        double target_pfd_freq,
+        bool is_int_n) override
     {
         _regs.cpoc = is_int_n ? max2870_regs_t::CPOC_ENABLED
                               : max2870_regs_t::CPOC_DISABLED;
@@ -274,7 +278,7 @@ public:
         return max287x<max2870_regs_t>::set_frequency(
             target_freq, ref_freq, target_pfd_freq, is_int_n);
     }
-    void commit(void)
+    void commit(void) override
     {
         // For MAX2870, we always need to write all registers.
         _write_all_regs = true;
@@ -354,8 +358,8 @@ class max2871 : public max287x<max2871_regs_t>
 {
 public:
     max2871(write_fn func) : max287x<max2871_regs_t>(func) {}
-    ~max2871(){};
-    void set_muxout_mode(muxout_mode_t mode)
+    ~max2871() override{};
+    void set_muxout_mode(muxout_mode_t mode) override
     {
         switch (mode) {
             case MUXOUT_SYNC:
@@ -369,8 +373,10 @@ public:
         }
     }
 
-    double set_frequency(
-        double target_freq, double ref_freq, double target_pfd_freq, bool is_int_n)
+    double set_frequency(double target_freq,
+        double ref_freq,
+        double target_pfd_freq,
+        bool is_int_n) override
     {
         _regs.feedback_select = max2871_regs_t::FEEDBACK_SELECT_DIVIDED;
         double freq           = max287x<max2871_regs_t>::set_frequency(
@@ -414,7 +420,7 @@ public:
         return freq;
     }
 
-    void commit()
+    void commit() override
     {
         max287x<max2871_regs_t>::commit();
 
@@ -883,7 +889,7 @@ void max287x<max287x_regs_t>::commit()
         try {
             changed_regs = _regs.template get_changed_addrs<uint32_t>();
             // register 0 must be written to apply double buffered fields
-            if (changed_regs.size() > 0) {
+            if (!changed_regs.empty()) {
                 changed_regs.insert(0);
             }
 

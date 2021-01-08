@@ -54,13 +54,13 @@ public:
     {
     }
 
-    ~rx_dsp_core_3000_impl(void)
+    ~rx_dsp_core_3000_impl(void) override
     {
         UHD_SAFE_CALL(; // NOP
         )
     }
 
-    void set_mux(const uhd::usrp::fe_connection_t& fe_conn)
+    void set_mux(const uhd::usrp::fe_connection_t& fe_conn) override
     {
         uint32_t reg_val = 0;
         switch (fe_conn.get_sampling_mode()) {
@@ -101,19 +101,19 @@ public:
         }
     }
 
-    void set_tick_rate(const double rate)
+    void set_tick_rate(const double rate) override
     {
         _tick_rate = rate;
         set_freq(_current_freq);
     }
 
-    void set_link_rate(const double rate)
+    void set_link_rate(const double rate) override
     {
         //_link_rate = rate/sizeof(uint32_t); //in samps/s
         _link_rate = rate / sizeof(uint16_t); // in samps/s (allows for 8sc)
     }
 
-    uhd::meta_range_t get_host_rates(void)
+    uhd::meta_range_t get_host_rates(void) override
     {
         meta_range_t range;
         if (!_is_b200) {
@@ -133,7 +133,7 @@ public:
         return range;
     }
 
-    double set_host_rate(const double rate)
+    double set_host_rate(const double rate) override
     {
         const size_t decim_rate =
             boost::math::iround(_tick_rate / this->get_host_rates().clip(rate, true));
@@ -237,12 +237,12 @@ public:
         _iface->poke32(REG_DSP_RX_SCALE_IQ, actual_scalar);
     }
 
-    double get_scaling_adjustment(void)
+    double get_scaling_adjustment(void) override
     {
         return _fxpt_scalar_correction * _host_extra_scaling / 32767.;
     }
 
-    double set_freq(const double requested_freq)
+    double set_freq(const double requested_freq) override
     {
         double actual_freq;
         int32_t freq_word;
@@ -253,12 +253,12 @@ public:
         return actual_freq;
     }
 
-    double get_freq(void)
+    double get_freq(void) override
     {
         return _current_freq;
     }
 
-    uhd::meta_range_t get_freq_range(void)
+    uhd::meta_range_t get_freq_range(void) override
     {
         // Too keep the DSP range symmetric about 0, we use abs(_dsp_freq_offset)
         const double offset = std::abs<double>(_dsp_freq_offset);
@@ -267,7 +267,7 @@ public:
             _tick_rate / std::pow(2.0, 32));
     }
 
-    void setup(const uhd::stream_args_t& stream_args)
+    void setup(const uhd::stream_args_t& stream_args) override
     {
         if (stream_args.otw_format == "sc16") {
             _dsp_extra_scaling  = 1.0;
@@ -294,7 +294,7 @@ public:
         this->update_scalar();
     }
 
-    void populate_subtree(property_tree::sptr subtree)
+    void populate_subtree(property_tree::sptr subtree) override
     {
         subtree->create<meta_range_t>("rate/range")
             .set_publisher(std::bind(&rx_dsp_core_3000::get_host_rates, this));

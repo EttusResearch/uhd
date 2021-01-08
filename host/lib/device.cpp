@@ -130,7 +130,7 @@ device::sptr device::make(const device_addr_t& hint, device_filter_t filter, siz
     }
 
     // check that we found any devices
-    if (dev_addr_makers.size() == 0) {
+    if (dev_addr_makers.empty()) {
         throw uhd::key_error(
             str(boost::format("No devices found for ----->\n%s") % hint.to_pp_string()));
     }

@@ -77,7 +77,7 @@ public:
         _guts = std::make_shared<tree_guts_type>();
     }
 
-    sptr subtree(const fs_path& path_) const
+    sptr subtree(const fs_path& path_) const override
     {
         const fs_path path = _root / path_;
         boost::mutex::scoped_lock lock(_guts->mutex);
@@ -87,7 +87,7 @@ public:
         return sptr(subtree);
     }
 
-    void remove(const fs_path& path_)
+    void remove(const fs_path& path_) override
     {
         const fs_path path = _root / path_;
         boost::mutex::scoped_lock lock(_guts->mutex);
@@ -105,7 +105,7 @@ public:
         parent->pop(fs_path(path.leaf()));
     }
 
-    bool exists(const fs_path& path_) const
+    bool exists(const fs_path& path_) const override
     {
         const fs_path path = _root / path_;
         boost::mutex::scoped_lock lock(_guts->mutex);
@@ -119,7 +119,7 @@ public:
         return true;
     }
 
-    std::vector<std::string> list(const fs_path& path_) const
+    std::vector<std::string> list(const fs_path& path_) const override
     {
         const fs_path path = _root / path_;
         boost::mutex::scoped_lock lock(_guts->mutex);
@@ -134,7 +134,7 @@ public:
         return node->keys();
     }
 
-    std::shared_ptr<void> _pop(const fs_path& path_)
+    std::shared_ptr<void> _pop(const fs_path& path_) override
     {
         const fs_path path = _root / path_;
         boost::mutex::scoped_lock lock(_guts->mutex);
@@ -159,7 +159,7 @@ public:
 
     void _create(const fs_path& path_,
         const std::shared_ptr<void>& prop,
-        std::type_index prop_type)
+        std::type_index prop_type) override
     {
         const fs_path path = _root / path_;
         boost::mutex::scoped_lock lock(_guts->mutex);
@@ -177,7 +177,7 @@ public:
         node->prop_type_hash = prop_type.hash_code();
     }
 
-    std::shared_ptr<void>& _access(const fs_path& path_) const
+    std::shared_ptr<void>& _access(const fs_path& path_) const override
     {
         const fs_path path = _root / path_;
         boost::mutex::scoped_lock lock(_guts->mutex);

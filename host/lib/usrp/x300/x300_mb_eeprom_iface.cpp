@@ -41,7 +41,7 @@ public:
         _compat_num = _wb->peek32(X300_FW_SHMEM_ADDR(X300_FW_SHMEM_COMPAT_NUM));
     }
 
-    ~x300_mb_eeprom_iface_impl()
+    ~x300_mb_eeprom_iface_impl() override
     {
         /* NOP */
     }
@@ -51,7 +51,7 @@ public:
      * \param addr the address
      * \param buf the vector of bytes
      */
-    void write_i2c(uint16_t addr, const byte_vector_t& buf)
+    void write_i2c(uint16_t addr, const byte_vector_t& buf) override
     {
         UHD_ASSERT_THROW(addr == MBOARD_EEPROM_ADDR);
         if (uhd::usrp::x300::claim_status(_wb) != uhd::usrp::x300::CLAIMED_BY_US) {
@@ -66,7 +66,7 @@ public:
      * \param num_bytes number of bytes to read
      * \return a vector of bytes
      */
-    byte_vector_t read_i2c(uint16_t addr, size_t num_bytes)
+    byte_vector_t read_i2c(uint16_t addr, size_t num_bytes) override
     {
         UHD_ASSERT_THROW(addr == MBOARD_EEPROM_ADDR);
         byte_vector_t bytes;
@@ -93,7 +93,7 @@ public:
      * \param offset byte offset
      * \param buf the vector of bytes
      */
-    void write_eeprom(uint16_t addr, uint16_t offset, const byte_vector_t& buf)
+    void write_eeprom(uint16_t addr, uint16_t offset, const byte_vector_t& buf) override
     {
         UHD_ASSERT_THROW(addr == MBOARD_EEPROM_ADDR);
         if (uhd::usrp::x300::claim_status(_wb) != uhd::usrp::x300::CLAIMED_BY_US) {
@@ -109,7 +109,7 @@ public:
      * \param num_bytes number of bytes to read
      * \return a vector of bytes
      */
-    byte_vector_t read_eeprom(uint16_t addr, uint16_t offset, size_t num_bytes)
+    byte_vector_t read_eeprom(uint16_t addr, uint16_t offset, size_t num_bytes) override
     {
         UHD_ASSERT_THROW(addr == MBOARD_EEPROM_ADDR);
         byte_vector_t bytes;

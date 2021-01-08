@@ -56,64 +56,64 @@ public:
         _register_props();
     }
 
-    void set_enable(const bool enable, const size_t port)
+    void set_enable(const bool enable, const size_t port) override
     {
         set_property<bool>(PROP_KEY_ENABLE, enable, port);
     }
 
-    bool get_enable(const size_t port) const
+    bool get_enable(const size_t port) const override
     {
         return _prop_enable.at(port).get();
     }
 
-    void set_waveform(const siggen_waveform waveform, const size_t port)
+    void set_waveform(const siggen_waveform waveform, const size_t port) override
     {
         set_property<int>(PROP_KEY_WAVEFORM, static_cast<int>(waveform), port);
     }
 
-    siggen_waveform get_waveform(const size_t port) const
+    siggen_waveform get_waveform(const size_t port) const override
     {
         return static_cast<siggen_waveform>(_prop_waveform.at(port).get());
     }
 
-    void set_amplitude(const double amplitude, const size_t port)
+    void set_amplitude(const double amplitude, const size_t port) override
     {
         set_property<double>(PROP_KEY_AMPLITUDE, amplitude, port);
     }
 
-    double get_amplitude(const size_t port) const
+    double get_amplitude(const size_t port) const override
     {
         return _prop_amplitude.at(port).get();
     }
 
-    void set_constant(const std::complex<double> constant, const size_t port)
+    void set_constant(const std::complex<double> constant, const size_t port) override
     {
         set_property<double>(PROP_KEY_CONSTANT_I, constant.real(), port);
         set_property<double>(PROP_KEY_CONSTANT_Q, constant.imag(), port);
     }
 
-    std::complex<double> get_constant(const size_t port) const
+    std::complex<double> get_constant(const size_t port) const override
     {
         return std::complex<double>(
             _prop_constant_i.at(port).get(), _prop_constant_q.at(port).get());
     }
 
-    void set_sine_phase_increment(const double phase_inc, const size_t port)
+    void set_sine_phase_increment(const double phase_inc, const size_t port) override
     {
         set_property<double>(PROP_KEY_SINE_PHASE_INC, phase_inc, port);
     }
 
-    double get_sine_phase_increment(const size_t port) const
+    double get_sine_phase_increment(const size_t port) const override
     {
         return _prop_phase_inc.at(port).get();
     }
 
-    void set_samples_per_packet(const size_t spp, const size_t port)
+    void set_samples_per_packet(const size_t spp, const size_t port) override
     {
         set_property<int>(PROP_KEY_SPP, uhd::narrow_cast<int>(spp), port);
     }
 
-    size_t get_samples_per_packet(const size_t port) const
+    size_t get_samples_per_packet(const size_t port) const override
     {
         return _prop_spp.at(port).get();
     }

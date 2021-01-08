@@ -41,8 +41,8 @@ public:
             input_select.push_back(0); 
     }
 
-    virtual void _poke_cb(
-        uint32_t addr, uint32_t data, uhd::time_spec_t /*time*/, bool /*ack*/)
+    void _poke_cb(
+        uint32_t addr, uint32_t data, uhd::time_spec_t /*time*/, bool /*ack*/) override
     {
         size_t chan   = addr / switchboard_block_control::REG_BLOCK_SIZE;
         size_t offset = addr % switchboard_block_control::REG_BLOCK_SIZE;
@@ -55,7 +55,7 @@ public:
         }
     }
 
-    virtual void _peek_cb(uint32_t addr, uhd::time_spec_t /*time*/)
+    void _peek_cb(uint32_t addr, uhd::time_spec_t /*time*/) override
     {
         size_t chan   = addr / switchboard_block_control::REG_BLOCK_SIZE;
         size_t offset = addr % switchboard_block_control::REG_BLOCK_SIZE;

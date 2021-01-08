@@ -32,8 +32,8 @@ noc_block_base::make_args_t::~make_args_t() = default;
 class fosphor_mock_reg_iface_t : public mock_reg_iface_t
 {
 public:
-    virtual void _poke_cb(
-        uint32_t addr, uint32_t data, uhd::time_spec_t /*time*/, bool /*ack*/)
+    void _poke_cb(
+        uint32_t addr, uint32_t data, uhd::time_spec_t /*time*/, bool /*ack*/) override
     {
         if (addr == fosphor_block_control::REG_ENABLE_ADDR) {
             fosphor_enable_reg = data;
@@ -47,7 +47,7 @@ public:
         }
     }
 
-    virtual void _peek_cb(uint32_t addr, uhd::time_spec_t /*time*/)
+    void _peek_cb(uint32_t addr, uhd::time_spec_t /*time*/) override
     {
         if (addr == fosphor_block_control::REG_ENABLE_ADDR) {
             read_memory[addr] = fosphor_enable_reg;

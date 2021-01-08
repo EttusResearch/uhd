@@ -160,7 +160,7 @@ device_addrs_t mpmd_find_with_addrs(const device_addrs_t& hints)
         UHD_LOG_TRACE("MPMD FIND", "Device responded: " << reply_addrs[0].to_string());
         found_devices.push_back(reply_addrs[0]);
     }
-    if (found_devices.size() == 0) {
+    if (found_devices.empty()) {
         return device_addrs_t();
     } else if (found_devices.size() == 1) {
         return found_devices;

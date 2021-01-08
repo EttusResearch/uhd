@@ -82,7 +82,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     if (!vm.count("read-all")) {
         std::cout << std::endl;
         for (size_t i = 0; i < vals_vec.size(); i++) {
-            if (vals_vec[i] != "") {
+            if (!vals_vec[i].empty()) {
                 oc_eeprom[keys_vec[i]] = vals_vec[i];
                 std::cout << boost::format("Setting EEPROM [\"%s\"] to \"%s\"...")
                                  % keys_vec[i] % vals_vec[i]

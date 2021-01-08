@@ -173,7 +173,7 @@ uhd::transport::usb_device_handle::sptr open_device(
         std::vector<uhd::transport::usb_device_handle::vid_pid_pair_t> vid_pid_pair_list(
             1, uhd::transport::usb_device_handle::vid_pid_pair_t(vid, pid));
         handles = uhd::transport::usb_device_handle::get_device_list(vid_pid_pair_list);
-        if (handles.size() == 0) {
+        if (handles.empty()) {
             if (user_supplied) {
                 std::cerr << (boost::format("Failed to open device with VID 0x%04x and "
                                             "PID 0x%04x - trying other known VID/PIDs")
@@ -183,15 +183,14 @@ uhd::transport::usb_device_handle::sptr open_device(
             }
 
             // try known VID/PIDs next
-            for (size_t i = 0; handles.size() == 0 && i < known_vid_pid_vector.size();
-                 i++) {
+            for (size_t i = 0; handles.empty() && i < known_vid_pid_vector.size(); i++) {
                 vp = known_vid_pid_vector[i];
                 handles =
                     uhd::transport::usb_device_handle::get_device_list(vp.vid, vp.pid);
             }
         }
 
-        if (handles.size() > 0) {
+        if (!handles.empty()) {
             handle = handles[0];
             std::cout << (boost::format("Device opened (VID=0x%04x,PID=0x%04x)") % vp.vid
                              % vp.pid)

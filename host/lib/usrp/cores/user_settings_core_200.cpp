@@ -26,7 +26,7 @@ public:
         // NOP
     }
 
-    void set_reg(const user_reg_t& reg)
+    void set_reg(const user_reg_t& reg) override
     {
         _iface->poke32(REG_USER_ADDR, reg.first);
         _iface->poke32(REG_USER_DATA, reg.second);

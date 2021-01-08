@@ -28,7 +28,7 @@ public:
     //! The function to call when sending a packet to a remote device
     using send_fn_t = std::function<void(const chdr::ctrl_payload&, double)>;
 
-    virtual ~ctrlport_endpoint() = 0;
+    ~ctrlport_endpoint() override = 0;
 
     //! Handles an incoming control packet (request and response)
     //

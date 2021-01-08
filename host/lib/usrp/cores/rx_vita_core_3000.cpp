@@ -41,12 +41,12 @@ struct rx_vita_core_3000_impl : rx_vita_core_3000
         this->clear();
     }
 
-    ~rx_vita_core_3000_impl(void)
+    ~rx_vita_core_3000_impl(void) override
     {
         UHD_SAFE_CALL(this->clear();)
     }
 
-    void configure_flow_control(const size_t window_size)
+    void configure_flow_control(const size_t window_size) override
     {
         // The window needs to be disabled in the case where this object is
         // uncleanly destroyed and the FC window is left enabled
@@ -63,19 +63,19 @@ struct rx_vita_core_3000_impl : rx_vita_core_3000
         _iface->poke32(REG_FC_ENABLE, window_size ? 1 : 0);
     }
 
-    void clear(void)
+    void clear(void) override
     {
         // FC should never be disabled, this will actually become
         // impossible in the future
         // this->configure_flow_control(0); //disable fc
     }
 
-    void set_nsamps_per_packet(const size_t nsamps)
+    void set_nsamps_per_packet(const size_t nsamps) override
     {
         _iface->poke32(REG_FRAMER_MAXLEN, nsamps);
     }
 
-    void issue_stream_command(const uhd::stream_cmd_t& stream_cmd)
+    void issue_stream_command(const uhd::stream_cmd_t& stream_cmd) override
     {
         if (not _is_setup) {
             // UHD_LOGGER_WARNING("CORES") << "rx vita core 3000 issue stream command -
@@ -134,28 +134,28 @@ struct rx_vita_core_3000_impl : rx_vita_core_3000
         _iface->poke32(REG_CTRL_TIME_LO, uint32_t(ticks >> 0)); // latches the command
     }
 
-    void set_tick_rate(const double rate)
+    void set_tick_rate(const double rate) override
     {
         _tick_rate = rate;
     }
 
-    void set_sid(const uint32_t sid)
+    void set_sid(const uint32_t sid) override
     {
         _iface->poke32(REG_FRAMER_SID, sid);
     }
 
-    void handle_overflow(void)
+    void handle_overflow(void) override
     {
         if (_continuous_streaming)
             this->issue_stream_command(stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     }
 
-    void setup(const uhd::stream_args_t&)
+    void setup(const uhd::stream_args_t&) override
     {
         _is_setup = true;
     }
 
-    bool in_continuous_streaming_mode(void)
+    bool in_continuous_streaming_mode(void) override
     {
         return _continuous_streaming;
     }

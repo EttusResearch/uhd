@@ -28,7 +28,7 @@ class basic_rx : public rx_dboard_base
 {
 public:
     basic_rx(ctor_args_t args, double max_freq);
-    virtual ~basic_rx(void);
+    ~basic_rx(void) override;
 
 private:
     double _max_freq;
@@ -38,7 +38,7 @@ class basic_tx : public tx_dboard_base
 {
 public:
     basic_tx(ctor_args_t args, double max_freq);
-    virtual ~basic_tx(void);
+    ~basic_tx(void) override;
 
 private:
     double _max_freq;

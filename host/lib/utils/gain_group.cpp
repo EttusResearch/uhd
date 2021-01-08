@@ -63,7 +63,7 @@ public:
         /*NOP*/
     }
 
-    gain_range_t get_range(const std::string& name)
+    gain_range_t get_range(const std::string& name) override
     {
         if (not name.empty())
             return _name_to_fcns.get(name).get_range();
@@ -83,7 +83,7 @@ public:
         return gain_range_t(overall_min, overall_max, overall_step);
     }
 
-    double get_value(const std::string& name)
+    double get_value(const std::string& name) override
     {
         if (not name.empty())
             return _name_to_fcns.get(name).get_value();
@@ -95,13 +95,13 @@ public:
         return overall_gain;
     }
 
-    void set_value(double gain, const std::string& name)
+    void set_value(double gain, const std::string& name) override
     {
         if (not name.empty())
             return _name_to_fcns.get(name).set_value(gain);
 
         std::vector<gain_fcns_t> all_fcns = get_all_fcns();
-        if (all_fcns.size() == 0)
+        if (all_fcns.empty())
             return; // nothing to set!
 
         // get the max step size among the gains
@@ -157,13 +157,13 @@ public:
         }
     }
 
-    const std::vector<std::string> get_names(void)
+    const std::vector<std::string> get_names(void) override
     {
         return _name_to_fcns.keys();
     }
 
     void register_fcns(
-        const std::string& name, const gain_fcns_t& gain_fcns, size_t priority)
+        const std::string& name, const gain_fcns_t& gain_fcns, size_t priority) override
     {
         if (name.empty() or _name_to_fcns.has_key(name)) {
             // ensure the name name is unique and non-empty

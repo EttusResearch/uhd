@@ -38,7 +38,7 @@ public:
 
     ~udp_boost_asio_adapter_info() {}
 
-    std::string to_string()
+    std::string to_string() override
     {
         return std::string("Ethernet(kernel):") + _src_ip.to_string();
     }
@@ -90,7 +90,7 @@ public:
     /*!
      * Get the physical adapter ID used for this link
      */
-    adapter_id_t get_send_adapter_id() const
+    adapter_id_t get_send_adapter_id() const override
     {
         return _adapter_id;
     }
@@ -98,7 +98,7 @@ public:
     /*!
      * Get the physical adapter ID used for this link
      */
-    adapter_id_t get_recv_adapter_id() const
+    adapter_id_t get_recv_adapter_id() const override
     {
         return _adapter_id;
     }

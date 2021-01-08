@@ -39,37 +39,37 @@ public:
         _register_props();
     }
 
-    void set_alpha(const double alpha, const size_t chan)
+    void set_alpha(const double alpha, const size_t chan) override
     {
         set_property<double>(PROP_KEY_ALPHA, alpha, chan);
     }
 
-    double get_alpha(const size_t chan) const
+    double get_alpha(const size_t chan) const override
     {
         return _prop_alpha.at(chan).get();
     }
 
-    void set_beta(const double beta, const size_t chan)
+    void set_beta(const double beta, const size_t chan) override
     {
         set_property<double>(PROP_KEY_BETA, beta, chan);
     }
 
-    double get_beta(const size_t chan) const
+    double get_beta(const size_t chan) const override
     {
         return _prop_beta.at(chan).get();
     }
 
-    void set_delay(const uint16_t delay, const size_t chan)
+    void set_delay(const uint16_t delay, const size_t chan) override
     {
         set_property<int>(PROP_KEY_DELAY, delay, chan);
     }
 
-    uint16_t get_delay(const size_t chan) const
+    uint16_t get_delay(const size_t chan) const override
     {
         return _prop_delay.at(chan).get();
     }
 
-    uint16_t get_max_delay(const size_t chan) const
+    uint16_t get_max_delay(const size_t chan) const override
     {
         return _prop_max_delay.at(chan).get();
     }

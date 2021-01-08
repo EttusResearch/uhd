@@ -85,7 +85,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     if (not vals_vec.empty()) {
         mb_eeprom = uhd::usrp::mboard_eeprom_t();
         for (size_t i = 0; i < vals_vec.size(); i++) {
-            if (vals_vec[i] != "") {
+            if (!vals_vec[i].empty()) {
                 mb_eeprom[keys_vec[i]] = vals_vec[i];
                 std::cout << boost::format("Setting EEPROM [\"%s\"] to \"%s\"...")
                                  % keys_vec[i] % vals_vec[i]

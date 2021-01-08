@@ -95,7 +95,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     }
 
     // Clean up paths, if given
-    if (image_loader_args.firmware_path != "") {
+    if (!image_loader_args.firmware_path.empty()) {
 #ifndef UHD_PLATFORM_WIN32
         if (image_loader_args.firmware_path.find("~") == 0) {
             image_loader_args.firmware_path.replace(0, 1, getenv("HOME"));
@@ -104,7 +104,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         image_loader_args.firmware_path =
             fs::absolute(image_loader_args.firmware_path).string();
     }
-    if (image_loader_args.fpga_path != "") {
+    if (!image_loader_args.fpga_path.empty()) {
 #ifndef UHD_PLATFORM_WIN32
         if (image_loader_args.fpga_path.find("~") == 0) {
             image_loader_args.fpga_path.replace(0, 1, getenv("HOME"));
@@ -112,7 +112,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 #endif /* UHD_PLATFORM_WIN32 */
         image_loader_args.fpga_path = fs::absolute(image_loader_args.fpga_path).string();
     }
-    if (image_loader_args.out_path != "") {
+    if (!image_loader_args.out_path.empty()) {
 #ifndef UHD_PLATFORM_WIN32
         if (image_loader_args.out_path.find("~") == 0) {
             image_loader_args.out_path.replace(0, 1, getenv("HOME"));

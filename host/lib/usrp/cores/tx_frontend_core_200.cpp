@@ -51,7 +51,7 @@ public:
         // NOP
     }
 
-    void set_mux(const std::string& mode)
+    void set_mux(const std::string& mode) override
     {
         static const uhd::dict<std::string, uint32_t> mode_to_mux =
             boost::assign::map_list_of(
@@ -63,7 +63,7 @@ public:
         _iface->poke32(REG_TX_FE_MUX, mode_to_mux[mode]);
     }
 
-    std::complex<double> set_dc_offset(const std::complex<double>& off)
+    std::complex<double> set_dc_offset(const std::complex<double>& off) override
     {
         static const double scaler = double(1ul << 23);
         const int32_t i_dc_off     = boost::math::iround(off.real() * scaler);
@@ -75,13 +75,13 @@ public:
         return std::complex<double>(i_dc_off / scaler, q_dc_off / scaler);
     }
 
-    void set_iq_balance(const std::complex<double>& cor)
+    void set_iq_balance(const std::complex<double>& cor) override
     {
         _iface->poke32(REG_TX_FE_MAG_CORRECTION, fs_to_bits(cor.real(), 18));
         _iface->poke32(REG_TX_FE_PHASE_CORRECTION, fs_to_bits(cor.imag(), 18));
     }
 
-    void populate_subtree(uhd::property_tree::sptr subtree)
+    void populate_subtree(uhd::property_tree::sptr subtree) override
     {
         subtree->create<uhd::meta_range_t>("dc_offset/range")
             .set(meta_range_t(DC_OFFSET_MIN, DC_OFFSET_MAX));

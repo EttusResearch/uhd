@@ -45,12 +45,12 @@ class x300_impl : public uhd::rfnoc::detail::rfnoc_device
 public:
     x300_impl(const uhd::device_addr_t&);
     void setup_mb(const size_t which, const uhd::device_addr_t&);
-    ~x300_impl(void);
+    ~x300_impl(void) override;
 
     /**************************************************************************
      * rfnoc_device API
      *************************************************************************/
-    virtual uhd::rfnoc::mb_iface& get_mb_iface(const size_t mb_idx)
+    uhd::rfnoc::mb_iface& get_mb_iface(const size_t mb_idx) override
     {
         if (mb_idx >= _mb_ifaces.size()) {
             throw uhd::index_error(
@@ -101,19 +101,21 @@ private:
         x300_mb_iface(uhd::usrp::x300::conn_manager::sptr conn_mgr,
             const double radio_clk_freq,
             const uhd::rfnoc::device_id_t remote_dev_id);
-        ~x300_mb_iface();
-        uint16_t get_proto_ver();
-        uhd::rfnoc::chdr_w_t get_chdr_w();
-        uhd::endianness_t get_endianness(const uhd::rfnoc::device_id_t local_device_id);
-        uhd::rfnoc::device_id_t get_remote_device_id();
-        std::vector<uhd::rfnoc::device_id_t> get_local_device_ids();
+        ~x300_mb_iface() override;
+        uint16_t get_proto_ver() override;
+        uhd::rfnoc::chdr_w_t get_chdr_w() override;
+        uhd::endianness_t get_endianness(
+            const uhd::rfnoc::device_id_t local_device_id) override;
+        uhd::rfnoc::device_id_t get_remote_device_id() override;
+        std::vector<uhd::rfnoc::device_id_t> get_local_device_ids() override;
         uhd::transport::adapter_id_t get_adapter_id(
-            const uhd::rfnoc::device_id_t local_device_id);
-        void reset_network();
-        uhd::rfnoc::clock_iface::sptr get_clock_iface(const std::string& clock_name);
+            const uhd::rfnoc::device_id_t local_device_id) override;
+        void reset_network() override;
+        uhd::rfnoc::clock_iface::sptr get_clock_iface(
+            const std::string& clock_name) override;
         uhd::rfnoc::chdr_ctrl_xport::sptr make_ctrl_transport(
             uhd::rfnoc::device_id_t local_device_id,
-            const uhd::rfnoc::sep_id_t& local_epid);
+            const uhd::rfnoc::sep_id_t& local_epid) override;
         uhd::rfnoc::chdr_rx_data_xport::uptr make_rx_data_transport(
             uhd::rfnoc::mgmt::mgmt_portal& mgmt_portal,
             const uhd::rfnoc::sep_addr_pair_t& addrs,
@@ -121,7 +123,7 @@ private:
             const uhd::rfnoc::sw_buff_t pyld_buff_fmt,
             const uhd::rfnoc::sw_buff_t mdata_buff_fmt,
             const uhd::device_addr_t& xport_args,
-            const std::string& streamer_id);
+            const std::string& streamer_id) override;
         uhd::rfnoc::chdr_tx_data_xport::uptr make_tx_data_transport(
             uhd::rfnoc::mgmt::mgmt_portal& mgmt_portal,
             const uhd::rfnoc::sep_addr_pair_t& addrs,
@@ -129,7 +131,7 @@ private:
             const uhd::rfnoc::sw_buff_t pyld_buff_fmt,
             const uhd::rfnoc::sw_buff_t mdata_buff_fmt,
             const uhd::device_addr_t& xport_args,
-            const std::string& streamer_id);
+            const std::string& streamer_id) override;
 
     private:
         const uhd::rfnoc::device_id_t _remote_dev_id;

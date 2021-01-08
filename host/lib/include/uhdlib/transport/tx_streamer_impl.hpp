@@ -127,12 +127,12 @@ public:
         }
     }
 
-    size_t get_num_channels() const
+    size_t get_num_channels() const override
     {
         return _zero_copy_streamer.get_num_channels();
     }
 
-    size_t get_max_num_samps() const
+    size_t get_max_num_samps() const override
     {
         return _spp;
     }
@@ -148,7 +148,7 @@ public:
     size_t send(const uhd::tx_streamer::buffs_type& buffs,
         const size_t nsamps_per_buff,
         const uhd::tx_metadata_t& metadata_,
-        const double timeout)
+        const double timeout) override
     {
         uhd::tx_metadata_t metadata(metadata_);
 

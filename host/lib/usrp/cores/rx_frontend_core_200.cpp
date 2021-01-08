@@ -52,17 +52,17 @@ public:
         // NOP
     }
 
-    void set_mux(const bool swap)
+    void set_mux(const bool swap) override
     {
         _iface->poke32(REG_RX_FE_SWAP_IQ, swap ? 1 : 0);
     }
 
-    void set_dc_offset_auto(const bool enb)
+    void set_dc_offset_auto(const bool enb) override
     {
         this->set_dc_offset(enb ? 0 : OFFSET_FIXED);
     }
 
-    std::complex<double> set_dc_offset(const std::complex<double>& off)
+    std::complex<double> set_dc_offset(const std::complex<double>& off) override
     {
         static const double scaler = double(1ul << 29);
         _i_dc_off                  = boost::math::iround(off.real() * scaler);
@@ -79,13 +79,13 @@ public:
         _iface->poke32(REG_RX_FE_OFFSET_Q, flags | (_q_dc_off & ~FLAG_MASK));
     }
 
-    void set_iq_balance(const std::complex<double>& cor)
+    void set_iq_balance(const std::complex<double>& cor) override
     {
         _iface->poke32(REG_RX_FE_MAG_CORRECTION, fs_to_bits(cor.real(), 18));
         _iface->poke32(REG_RX_FE_PHASE_CORRECTION, fs_to_bits(cor.imag(), 18));
     }
 
-    void populate_subtree(uhd::property_tree::sptr subtree)
+    void populate_subtree(uhd::property_tree::sptr subtree) override
     {
         subtree->create<uhd::meta_range_t>("dc_offset/range")
             .set(meta_range_t(DC_OFFSET_MIN, DC_OFFSET_MAX));

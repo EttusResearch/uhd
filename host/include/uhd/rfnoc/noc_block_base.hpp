@@ -52,13 +52,13 @@ public:
     //! Opaque pointer to the constructor arguments
     using make_args_ptr = std::unique_ptr<make_args_t>;
 
-    virtual ~noc_block_base();
+    ~noc_block_base() override;
 
     /**************************************************************************
      * node_t API calls
      *************************************************************************/
     //! Unique ID for an RFNoC block is its block ID
-    std::string get_unique_id() const
+    std::string get_unique_id() const override
     {
         return get_block_id().to_string();
     }
@@ -69,7 +69,7 @@ public:
     // Note: This may be overridden by the block (e.g., the X300 radio may not
     // have all ports available if no TwinRX board is plugged in), but the
     // subclassed version may never report more ports than this.
-    size_t get_num_input_ports() const
+    size_t get_num_input_ports() const override
     {
         return _num_input_ports;
     }
@@ -80,7 +80,7 @@ public:
     // Note: This may be overridden by the block (e.g., the X300 radio may not
     // have all ports available if no TwinRX board is plugged in), but the
     // subclassed version may never report more ports than this.
-    size_t get_num_output_ports() const
+    size_t get_num_output_ports() const override
     {
         return _num_output_ports;
     }
@@ -262,7 +262,7 @@ private:
      * - Call deinit()
      * - Invalidate regs()
      */
-    void shutdown();
+    void shutdown() override;
 
     /**************************************************************************
      * Attributes

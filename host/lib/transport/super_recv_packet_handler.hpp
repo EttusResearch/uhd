@@ -807,12 +807,12 @@ public:
         _max_num_samps = max_num_samps;
     }
 
-    size_t get_num_channels(void) const
+    size_t get_num_channels(void) const override
     {
         return this->size();
     }
 
-    size_t get_max_num_samps(void) const
+    size_t get_max_num_samps(void) const override
     {
         return _max_num_samps;
     }
@@ -821,13 +821,13 @@ public:
         const size_t nsamps_per_buff,
         uhd::rx_metadata_t& metadata,
         const double timeout,
-        const bool one_packet)
+        const bool one_packet) override
     {
         return recv_packet_handler::recv(
             buffs, nsamps_per_buff, metadata, timeout, one_packet);
     }
 
-    void issue_stream_cmd(const stream_cmd_t& stream_cmd)
+    void issue_stream_cmd(const stream_cmd_t& stream_cmd) override
     {
         return recv_packet_handler::issue_stream_cmd(stream_cmd);
     }

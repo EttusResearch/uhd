@@ -198,19 +198,19 @@ public:
         dboard_iface::sptr iface,
         property_tree::sptr subtree,
         bool defer_db_init);
-    virtual ~dboard_manager_impl(void);
+    ~dboard_manager_impl(void) override;
 
-    inline const std::vector<std::string>& get_rx_frontends() const
+    inline const std::vector<std::string>& get_rx_frontends() const override
     {
         return _rx_frontends;
     }
 
-    inline const std::vector<std::string>& get_tx_frontends() const
+    inline const std::vector<std::string>& get_tx_frontends() const override
     {
         return _tx_frontends;
     }
 
-    void initialize_dboards();
+    void initialize_dboards() override;
 
 private:
     void init(dboard_eeprom_t, dboard_eeprom_t, property_tree::sptr, bool);

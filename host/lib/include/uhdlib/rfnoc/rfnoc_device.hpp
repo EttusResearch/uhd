@@ -39,19 +39,19 @@ public:
     }
 
     //! Directly getting a streamer no longer supported
-    uhd::rx_streamer::sptr get_rx_stream(const stream_args_t&)
+    uhd::rx_streamer::sptr get_rx_stream(const stream_args_t&) override
     {
         UHD_THROW_INVALID_CODE_PATH();
     }
 
     //! Directly getting a streamer no longer supported
-    uhd::tx_streamer::sptr get_tx_stream(const stream_args_t&)
+    uhd::tx_streamer::sptr get_tx_stream(const stream_args_t&) override
     {
         UHD_THROW_INVALID_CODE_PATH();
     }
 
     //! Directly getting async messages no longer supported
-    bool recv_async_msg(uhd::async_metadata_t&, double)
+    bool recv_async_msg(uhd::async_metadata_t&, double) override
     {
         UHD_THROW_INVALID_CODE_PATH();
     }

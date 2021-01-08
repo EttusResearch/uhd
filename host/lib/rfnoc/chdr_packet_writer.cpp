@@ -25,16 +25,16 @@ class chdr_packet_impl : public chdr_packet_writer
 public:
     chdr_packet_impl() = delete;
     chdr_packet_impl(size_t mtu_bytes) : _mtu_bytes(mtu_bytes) {}
-    ~chdr_packet_impl() = default;
+    ~chdr_packet_impl() override = default;
 
-    virtual void refresh(const void* pkt_buff) const
+    void refresh(const void* pkt_buff) const override
     {
         assert(pkt_buff);
         _pkt_buff = const_cast<uint64_t*>(reinterpret_cast<const uint64_t*>(pkt_buff));
         _mdata_offset = _compute_mdata_offset(get_chdr_header());
     }
 
-    virtual void refresh(void* pkt_buff, chdr_header& header, uint64_t timestamp = 0)
+    void refresh(void* pkt_buff, chdr_header& header, uint64_t timestamp = 0) override
     {
         assert(pkt_buff);
         _pkt_buff    = reinterpret_cast<uint64_t*>(pkt_buff);
@@ -45,7 +45,7 @@ public:
         _mdata_offset = _compute_mdata_offset(get_chdr_header());
     }
 
-    virtual void update_payload_size(size_t payload_size_bytes)
+    void update_payload_size(size_t payload_size_bytes) override
     {
         chdr_header header = get_chdr_header();
         header.set_length(((_mdata_offset + header.get_num_mdata()) * chdr_w_bytes)
@@ -53,23 +53,23 @@ public:
         _pkt_buff[0] = u64_from_host(header);
     }
 
-    virtual endianness_t get_byte_order() const
+    endianness_t get_byte_order() const override
     {
         return endianness;
     }
 
-    virtual size_t get_mtu_bytes() const
+    size_t get_mtu_bytes() const override
     {
         return _mtu_bytes;
     }
 
-    virtual chdr_header get_chdr_header() const
+    chdr_header get_chdr_header() const override
     {
         assert(_pkt_buff);
         return std::move(chdr_header(u64_to_host(_pkt_buff[0])));
     }
 
-    virtual boost::optional<uint64_t> get_timestamp() const
+    boost::optional<uint64_t> get_timestamp() const override
     {
         if (_has_timestamp(get_chdr_header())) {
             // In a unit64_t buffer, the timestamp is always immediately after the header
@@ -80,43 +80,43 @@ public:
         }
     }
 
-    virtual size_t get_mdata_size() const
+    size_t get_mdata_size() const override
     {
         return get_chdr_header().get_num_mdata() * chdr_w_bytes;
     }
 
-    virtual const void* get_mdata_const_ptr() const
+    const void* get_mdata_const_ptr() const override
     {
         return const_cast<void*>(
             const_cast<chdr_packet_impl<chdr_w, endianness>*>(this)->get_mdata_ptr());
     }
 
-    virtual void* get_mdata_ptr()
+    void* get_mdata_ptr() override
     {
         return reinterpret_cast<void*>(_pkt_buff + (chdr_w_stride * _mdata_offset));
     }
 
-    virtual size_t get_payload_size() const
+    size_t get_payload_size() const override
     {
         return get_chdr_header().get_length() - get_mdata_size()
                - (chdr_w_bytes * _mdata_offset);
     }
 
-    virtual const void* get_payload_const_ptr() const
+    const void* get_payload_const_ptr() const override
     {
         return const_cast<void*>(
             const_cast<chdr_packet_impl<chdr_w, endianness>*>(this)->get_payload_ptr());
     }
 
-    virtual void* get_payload_ptr()
+    void* get_payload_ptr() override
     {
         return reinterpret_cast<void*>(
             _pkt_buff
             + (chdr_w_stride * (_mdata_offset + get_chdr_header().get_num_mdata())));
     }
 
-    virtual size_t calculate_payload_offset(
-        const packet_type_t pkt_type, const uint8_t num_mdata = 0) const
+    size_t calculate_payload_offset(
+        const packet_type_t pkt_type, const uint8_t num_mdata = 0) const override
     {
         chdr_header header;
         header.set_pkt_type(pkt_type);

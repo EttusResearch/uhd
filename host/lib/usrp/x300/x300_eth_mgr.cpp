@@ -555,7 +555,7 @@ void eth_manager::discover_eth(
         }
     }
 
-    if (eth_conns.size() == 0) {
+    if (eth_conns.empty()) {
         throw uhd::assertion_error(
             "X300 Initialization Error: No valid Ethernet interfaces specified.");
     }

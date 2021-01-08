@@ -36,9 +36,9 @@ class x300_dboard_iface : public uhd::usrp::dboard_iface
 {
 public:
     x300_dboard_iface(const x300_dboard_iface_config_t& config);
-    ~x300_dboard_iface(void);
+    ~x300_dboard_iface(void) override;
 
-    inline special_props_t get_special_props(void)
+    inline special_props_t get_special_props(void) override
     {
         special_props_t props;
         props.soft_clock_divider = false;
@@ -46,39 +46,44 @@ public:
         return props;
     }
 
-    void write_aux_dac(unit_t, aux_dac_t, double);
-    double read_aux_adc(unit_t, aux_adc_t);
+    void write_aux_dac(unit_t, aux_dac_t, double) override;
+    double read_aux_adc(unit_t, aux_adc_t) override;
 
-    void set_pin_ctrl(unit_t unit, uint32_t value, uint32_t mask = 0xffffffff);
-    uint32_t get_pin_ctrl(unit_t unit);
+    void set_pin_ctrl(unit_t unit, uint32_t value, uint32_t mask = 0xffffffff) override;
+    uint32_t get_pin_ctrl(unit_t unit) override;
     void set_atr_reg(
-        unit_t unit, atr_reg_t reg, uint32_t value, uint32_t mask = 0xffffffff);
-    uint32_t get_atr_reg(unit_t unit, atr_reg_t reg);
-    void set_gpio_ddr(unit_t unit, uint32_t value, uint32_t mask = 0xffffffff);
-    uint32_t get_gpio_ddr(unit_t unit);
-    void set_gpio_out(unit_t unit, uint32_t value, uint32_t mask = 0xffffffff);
-    uint32_t get_gpio_out(unit_t unit);
-    uint32_t read_gpio(unit_t unit);
+        unit_t unit, atr_reg_t reg, uint32_t value, uint32_t mask = 0xffffffff) override;
+    uint32_t get_atr_reg(unit_t unit, atr_reg_t reg) override;
+    void set_gpio_ddr(unit_t unit, uint32_t value, uint32_t mask = 0xffffffff) override;
+    uint32_t get_gpio_ddr(unit_t unit) override;
+    void set_gpio_out(unit_t unit, uint32_t value, uint32_t mask = 0xffffffff) override;
+    uint32_t get_gpio_out(unit_t unit) override;
+    uint32_t read_gpio(unit_t unit) override;
 
-    void set_command_time(const uhd::time_spec_t& t);
-    uhd::time_spec_t get_command_time(void);
+    void set_command_time(const uhd::time_spec_t& t) override;
+    uhd::time_spec_t get_command_time(void) override;
 
-    void write_i2c(uint16_t, const uhd::byte_vector_t&);
-    uhd::byte_vector_t read_i2c(uint16_t, size_t);
+    void write_i2c(uint16_t, const uhd::byte_vector_t&) override;
+    uhd::byte_vector_t read_i2c(uint16_t, size_t) override;
 
-    void set_clock_rate(unit_t, double);
-    double get_clock_rate(unit_t);
-    std::vector<double> get_clock_rates(unit_t);
-    void set_clock_enabled(unit_t, bool);
-    double get_codec_rate(unit_t);
+    void set_clock_rate(unit_t, double) override;
+    double get_clock_rate(unit_t) override;
+    std::vector<double> get_clock_rates(unit_t) override;
+    void set_clock_enabled(unit_t, bool) override;
+    double get_codec_rate(unit_t) override;
 
-    void write_spi(
-        unit_t unit, const uhd::spi_config_t& config, uint32_t data, size_t num_bits);
+    void write_spi(unit_t unit,
+        const uhd::spi_config_t& config,
+        uint32_t data,
+        size_t num_bits) override;
 
-    uint32_t read_write_spi(
-        unit_t unit, const uhd::spi_config_t& config, uint32_t data, size_t num_bits);
-    void set_fe_connection(
-        unit_t unit, const std::string& name, const uhd::usrp::fe_connection_t& fe_conn);
+    uint32_t read_write_spi(unit_t unit,
+        const uhd::spi_config_t& config,
+        uint32_t data,
+        size_t num_bits) override;
+    void set_fe_connection(unit_t unit,
+        const std::string& name,
+        const uhd::usrp::fe_connection_t& fe_conn) override;
 
     // X300 can set the FE connection on the RX side
     bool has_set_fe_connection(const unit_t unit) override

@@ -55,19 +55,19 @@ public:
         set_serial(serial);
     }
 
-    void set_gain_group(uhd::gain_group::sptr gain_group)
+    void set_gain_group(uhd::gain_group::sptr gain_group) override
     {
         _gain_group = gain_group;
     }
 
-    bool has_power_data()
+    bool has_power_data() override
     {
         const std::string key = _get_key();
         _load_cal_data(key);
         return _cal_data.count(key) && bool(_cal_data.at(key));
     }
 
-    void populate_subtree(uhd::property_tree::sptr subtree)
+    void populate_subtree(uhd::property_tree::sptr subtree) override
     {
         subtree->create<std::string>(uhd::fs_path("ref_power/key"))
             .set_coercer([](const std::string&) -> std::string {
@@ -93,7 +93,7 @@ public:
             .set_publisher([this]() { return this->get_power_range(); });
     }
 
-    double set_power(const double power_dbm)
+    double set_power(const double power_dbm) override
     {
         const std::string key = _get_key();
         _load_cal_data(key);
@@ -128,7 +128,7 @@ public:
         return coerced_total_power;
     }
 
-    double get_power()
+    double get_power() override
     {
         const std::string key = _get_key();
         _load_cal_data(key);
@@ -148,14 +148,14 @@ public:
         return hw_power + (_gain_group->get_value() - hw_gain);
     }
 
-    void update_power()
+    void update_power() override
     {
         if (_mode == tracking_mode::TRACK_POWER) {
             set_power(_desired_power);
         }
     }
 
-    uhd::meta_range_t get_power_range()
+    uhd::meta_range_t get_power_range() override
     {
         const std::string key = _get_key();
         _load_cal_data(key);
@@ -171,7 +171,7 @@ public:
         return cal_data->get_power_limits(freq);
     }
 
-    void set_temperature(const int temp_C)
+    void set_temperature(const int temp_C) override
     {
         for (auto& cal_data : _cal_data) {
             if (cal_data.second) {
@@ -180,12 +180,12 @@ public:
         }
     }
 
-    void set_tracking_mode(const tracking_mode mode)
+    void set_tracking_mode(const tracking_mode mode) override
     {
         _mode = mode;
     }
 
-    void set_serial(const std::string& serial)
+    void set_serial(const std::string& serial) override
     {
         if (serial == _serial || serial.empty()) {
             return;
@@ -233,12 +233,12 @@ public:
         }
     }
 
-    std::string get_serial() const
+    std::string get_serial() const override
     {
         return _serial;
     }
 
-    std::string get_key()
+    std::string get_key() override
     {
         return _get_key();
     }

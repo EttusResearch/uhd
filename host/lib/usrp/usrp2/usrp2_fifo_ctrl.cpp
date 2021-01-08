@@ -45,7 +45,7 @@ public:
         this->init_spi();
     }
 
-    ~usrp2_fifo_ctrl_impl(void)
+    ~usrp2_fifo_ctrl_impl(void) override
     {
         _timeout = ACK_TIMEOUT; // reset timeout to something small
         UHD_SAFE_CALL(
@@ -56,7 +56,7 @@ public:
     /*******************************************************************
      * Peek and poke 32 bit implementation
      ******************************************************************/
-    void poke32(const wb_addr_type addr, const uint32_t data)
+    void poke32(const wb_addr_type addr, const uint32_t data) override
     {
         boost::mutex::scoped_lock lock(_mutex);
 
@@ -65,7 +65,7 @@ public:
         this->wait_for_ack(_seq_out - MAX_SEQS_OUT);
     }
 
-    uint32_t peek32(const wb_addr_type addr)
+    uint32_t peek32(const wb_addr_type addr) override
     {
         boost::mutex::scoped_lock lock(_mutex);
 
@@ -77,12 +77,12 @@ public:
     /*******************************************************************
      * Peek and poke 16 bit not implemented
      ******************************************************************/
-    void poke16(const wb_addr_type, const uint16_t)
+    void poke16(const wb_addr_type, const uint16_t) override
     {
         throw uhd::not_implemented_error("poke16 not implemented in fifo ctrl module");
     }
 
-    uint16_t peek16(const wb_addr_type)
+    uint16_t peek16(const wb_addr_type) override
     {
         throw uhd::not_implemented_error("peek16 not implemented in fifo ctrl module");
     }
@@ -104,7 +104,7 @@ public:
         const spi_config_t& config,
         uint32_t data,
         size_t num_bits,
-        bool readback)
+        bool readback) override
     {
         boost::mutex::scoped_lock lock(_mutex);
 
@@ -143,7 +143,7 @@ public:
     /*******************************************************************
      * Update methods for time
      ******************************************************************/
-    void set_time(const uhd::time_spec_t& time)
+    void set_time(const uhd::time_spec_t& time) override
     {
         boost::mutex::scoped_lock lock(_mutex);
         _time     = time;
@@ -152,13 +152,13 @@ public:
             _timeout = MASSIVE_TIMEOUT; // permanently sets larger timeout
     }
 
-    uhd::time_spec_t get_time()
+    uhd::time_spec_t get_time() override
     {
         boost::mutex::scoped_lock lock(_mutex);
         return _time;
     }
 
-    void set_tick_rate(const double rate)
+    void set_tick_rate(const double rate) override
     {
         boost::mutex::scoped_lock lock(_mutex);
         _tick_rate = rate;

@@ -46,7 +46,7 @@ public:
         const spi_config_t& config,
         uint32_t data,
         size_t num_bits,
-        bool readback)
+        bool readback) override
     {
         std::lock_guard<std::mutex> lock(_mutex);
 
@@ -93,7 +93,7 @@ public:
         return 0;
     }
 
-    void set_divider(const double div)
+    void set_divider(const double div) override
     {
         _div = size_t((div / 2) - 0.5);
     }

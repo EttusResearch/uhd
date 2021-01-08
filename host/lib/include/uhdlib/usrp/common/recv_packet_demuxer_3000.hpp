@@ -117,32 +117,32 @@ struct recv_packet_demuxer_proxy_3000 : transport::zero_copy_if
         _demux->realloc_sid(_sid); // causes clear
     }
 
-    ~recv_packet_demuxer_proxy_3000(void)
+    ~recv_packet_demuxer_proxy_3000(void) override
     {
         _demux->realloc_sid(_sid); // causes clear
     }
 
-    size_t get_num_recv_frames(void) const
+    size_t get_num_recv_frames(void) const override
     {
         return _xport->get_num_recv_frames();
     }
-    size_t get_recv_frame_size(void) const
+    size_t get_recv_frame_size(void) const override
     {
         return _xport->get_recv_frame_size();
     }
-    transport::managed_recv_buffer::sptr get_recv_buff(double timeout)
+    transport::managed_recv_buffer::sptr get_recv_buff(double timeout) override
     {
         return _demux->get_recv_buff(_sid, timeout);
     }
-    size_t get_num_send_frames(void) const
+    size_t get_num_send_frames(void) const override
     {
         return _xport->get_num_send_frames();
     }
-    size_t get_send_frame_size(void) const
+    size_t get_send_frame_size(void) const override
     {
         return _xport->get_send_frame_size();
     }
-    transport::managed_send_buffer::sptr get_send_buff(double timeout)
+    transport::managed_send_buffer::sptr get_send_buff(double timeout) override
     {
         return _xport->get_send_buff(timeout);
     }

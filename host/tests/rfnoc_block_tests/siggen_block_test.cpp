@@ -44,8 +44,8 @@ public:
     {
     }
 
-    virtual void _poke_cb(
-        uint32_t addr, uint32_t data, uhd::time_spec_t /*time*/, bool /*ack*/)
+    void _poke_cb(
+        uint32_t addr, uint32_t data, uhd::time_spec_t /*time*/, bool /*ack*/) override
     {
         const size_t port = addr / siggen_block_control::REG_BLOCK_SIZE;
         if (port >= _num_ports) {
@@ -72,7 +72,7 @@ public:
         }
     }
 
-    virtual void _peek_cb(uint32_t addr, uhd::time_spec_t /*time*/)
+    void _peek_cb(uint32_t addr, uhd::time_spec_t /*time*/) override
     {
         const size_t port = addr / siggen_block_control::REG_BLOCK_SIZE;
         if (port >= _num_ports) {

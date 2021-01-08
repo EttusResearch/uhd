@@ -17,13 +17,14 @@ struct convert_star_1_to_sc12_item32_1 : public converter
         // NOP
     }
 
-    void set_scalar(const double scalar)
+    void set_scalar(const double scalar) override
     {
         _scalar = scalar;
     }
 
-    void operator()(
-        const input_type& inputs, const output_type& outputs, const size_t nsamps)
+    void operator()(const input_type& inputs,
+        const output_type& outputs,
+        const size_t nsamps) override
     {
         const std::complex<type>* input =
             reinterpret_cast<const std::complex<type>*>(inputs[0]);
