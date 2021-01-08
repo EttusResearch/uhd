@@ -29,7 +29,6 @@ std::string _get_which(const direction_t dir, const size_t chan)
 magnesium_ad9371_iface::magnesium_ad9371_iface(
     uhd::rpc_client::sptr rpcc, const size_t slot_idx)
     : _rpcc(rpcc)
-    , _slot_idx(slot_idx)
     , _rpc_prefix((slot_idx == 0) ? "db_0_" : "db_1_")
     , _log_prefix((slot_idx == 0) ? "AD9371-0" : "AD9371-1")
 {
