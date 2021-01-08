@@ -66,7 +66,7 @@ public:
     chdr_header get_chdr_header() const override
     {
         assert(_pkt_buff);
-        return std::move(chdr_header(u64_to_host(_pkt_buff[0])));
+        return chdr_header(u64_to_host(_pkt_buff[0]));
     }
 
     boost::optional<uint64_t> get_timestamp() const override

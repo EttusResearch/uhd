@@ -31,8 +31,8 @@ public:
         for (const auto& lnk : links) {
             UHD_ASSERT_THROW(lnk.second);
             _link_mgrs.emplace(lnk.first,
-                std::move(link_stream_manager::make(
-                    pkt_factory, *lnk.second, epid_alloc, lnk.first)));
+                link_stream_manager::make(
+                    pkt_factory, *lnk.second, epid_alloc, lnk.first));
             auto adapter = _link_mgrs.at(lnk.first)->get_adapter_id();
             if (_alloc_map.count(adapter) == 0) {
                 _alloc_map[adapter] = allocation_info{0, 0};

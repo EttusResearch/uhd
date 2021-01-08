@@ -217,7 +217,7 @@ public:
     //! Returns a class that represents the contents of the CHDR header
     inline chdr_header get_chdr_header() const
     {
-        return std::move(_chdr_pkt->get_chdr_header());
+        return _chdr_pkt->get_chdr_header();
     }
 
     //! Returns a class that represents the contents of the CHDR payload

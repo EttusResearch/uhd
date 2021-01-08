@@ -185,8 +185,8 @@ public:
         , _endianness(pkt_factory.get_endianness())
         , _my_node_id(my_sep_addr.first, NODE_TYPE_STRM_EP, xport.get_epid())
         , _send_seqnum(0)
-        , _send_pkt(std::move(pkt_factory.make_mgmt()))
-        , _recv_pkt(std::move(pkt_factory.make_mgmt()))
+        , _send_pkt(pkt_factory.make_mgmt())
+        , _recv_pkt(pkt_factory.make_mgmt())
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
         _discover_topology(xport);
