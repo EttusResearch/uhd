@@ -227,7 +227,7 @@ void magnesium_radio_control_impl::_init_frontend_subtree(
     // TX gains
     std::vector<std::string> tx_gain_names = get_tx_gain_names(chan_idx);
     tx_gain_names.push_back("all");
-    for (const auto gain_name : tx_gain_names) {
+    for (const auto& gain_name : tx_gain_names) {
         subtree->create<double>(tx_fe_path / "gains" / gain_name / "value")
             .set_coercer([this, chan_idx, gain_name](const double gain) {
                 return this->set_tx_gain(gain, gain_name, chan_idx);
@@ -256,7 +256,7 @@ void magnesium_radio_control_impl::_init_frontend_subtree(
     // RX gains
     std::vector<std::string> rx_gain_names = get_rx_gain_names(chan_idx);
     rx_gain_names.push_back("all");
-    for (const auto gain_name : rx_gain_names) {
+    for (const auto& gain_name : rx_gain_names) {
         subtree->create<double>(rx_fe_path / "gains" / gain_name / "value")
             .set_coercer([this, chan_idx, gain_name](const double gain) {
                 return this->set_rx_gain(gain, gain_name, chan_idx);

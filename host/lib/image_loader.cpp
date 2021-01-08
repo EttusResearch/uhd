@@ -59,7 +59,7 @@ bool uhd::image_loader::load(
         } else
             return get_image_loaders().at(type)(image_loader_args);
     } else {
-        for (const loader_fcn_pair_t& loader_fcn_pair : get_image_loaders()) {
+        for (const auto& loader_fcn_pair : get_image_loaders()) {
             if (loader_fcn_pair.second(image_loader_args))
                 return true;
         }
