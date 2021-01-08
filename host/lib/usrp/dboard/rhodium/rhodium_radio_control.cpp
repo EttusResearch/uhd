@@ -34,8 +34,6 @@ constexpr char RX_FE_CONNECTION_HIGHBAND[] = "IQ";
 constexpr char TX_FE_CONNECTION_LOWBAND[]  = "QI";
 constexpr char TX_FE_CONNECTION_HIGHBAND[] = "IQ";
 
-constexpr double DEFAULT_IDENTIFY_DURATION = 5.0; // seconds
-
 constexpr uint64_t SET_RATE_RPC_TIMEOUT_MS = 10000;
 
 } // namespace
