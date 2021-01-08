@@ -14,8 +14,10 @@ using namespace uhd;
 
 namespace {
 // clang-format off
-constexpr double LMX2592_DOUBLER_MAX_REF_FREQ = 60e6;
-constexpr double LMX2592_MAX_FREQ_PFD = 125e6;
+// Some constexprs are unused, but kept for reference. In this case, we keep
+// them as comments so compilers don't throw warnings.
+//constexpr double LMX2592_DOUBLER_MAX_REF_FREQ = 60e6;
+//constexpr double LMX2592_MAX_FREQ_PFD = 125e6;
 
 constexpr double LMX2592_MIN_REF_FREQ = 5e6;
 constexpr double LMX2592_MAX_REF_FREQ = 1400e6;
@@ -23,7 +25,7 @@ constexpr double LMX2592_MAX_REF_FREQ = 1400e6;
 constexpr double LMX2592_MAX_OUT_FREQ = 9.8e9;
 constexpr double LMX2592_MIN_OUT_FREQ = 20e6;
 
-constexpr double LMX2592_MIN_VCO_FREQ = 3.55e9;
+//constexpr double LMX2592_MIN_VCO_FREQ = 3.55e9;
 constexpr double LMX2592_MAX_VCO_FREQ = 7.1e9;
 
 constexpr double LMX2592_MAX_DOUBLER_INPUT_FREQ = 200e6;
@@ -47,10 +49,11 @@ const std::array<double, NUM_DIVIDERS> LMX2592_CHDIV_MIN_FREQ = {
     3550e6,   1775e6,   1183.33e6, 887.5e6, 591.67e6, 443.75e6, 295.83e6,
     221.88e6, 147.92e6, 110.94e6,  55.47e6, 36.98e6,  27.73e6,  20e6
 };
-constexpr std::array<double, NUM_DIVIDERS> LMX2592_CHDIV_MAX_FREQ = {
-    6000e6,   3550.0e6, 2366.67e6, 1775.00e6, 1183.33e6, 887.50e6, 591.67e6,
-    443.75e6, 295.83e6, 221.88e6,  110.94e6,  73.96e6, 55.47e6,  36.98e6
-};
+// Unused, but kept for reference
+//constexpr std::array<double, NUM_DIVIDERS> LMX2592_CHDIV_MAX_FREQ = {
+    //6000e6,   3550.0e6, 2366.67e6, 1775.00e6, 1183.33e6, 887.50e6, 591.67e6,
+    //443.75e6, 295.83e6, 221.88e6,  110.94e6,  73.96e6, 55.47e6,  36.98e6
+//};
 constexpr int NUM_CHDIV_STAGES = 3;
 constexpr std::array<std::array<int, NUM_CHDIV_STAGES>, NUM_DIVIDERS> LMX2592_CHDIV_SEGS = {
     { { 1, 1, 1 },
