@@ -64,7 +64,6 @@ class tx_eov_data_wrapper
 public:
     tx_eov_data_wrapper(const uhd::tx_metadata_t& metadata)
         : _eov_positions(metadata.eov_positions)
-        , _eov_positions_size(metadata.eov_positions_size)
         , _remaining(metadata.eov_positions_size)
         , _read_pos(0)
     {
@@ -89,7 +88,6 @@ public:
 
 private:
     size_t* _eov_positions;
-    size_t _eov_positions_size;
     size_t _remaining;
     size_t _read_pos;
 };
