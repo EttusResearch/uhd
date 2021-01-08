@@ -109,6 +109,16 @@ public:
         regs().poke32(REG_SRC_THROTTLE_CYC, cycs);
     }
 
+    uint32_t get_item_width()
+    {
+        return _item_width;
+    }
+
+    uint32_t get_nipc()
+    {
+        return _nipc;
+    }
+
     uint32_t get_lines_per_packet()
     {
         return regs().peek32(REG_SRC_LINES_PER_PKT) + 2;

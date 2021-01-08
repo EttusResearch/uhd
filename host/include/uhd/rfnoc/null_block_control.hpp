@@ -58,6 +58,14 @@ public:
      */
     virtual void set_throttle_cycles(const uint32_t cycs) = 0;
 
+    /*! Get item width (ITEM_W)
+     */
+    virtual uint32_t get_item_width() = 0;
+
+    /*! Get number of items per clock (NIPC)
+     */
+    virtual uint32_t get_nipc() = 0;
+
     /*! Get lines per packet (including the header!)
      */
     virtual uint32_t get_lines_per_packet() = 0;
