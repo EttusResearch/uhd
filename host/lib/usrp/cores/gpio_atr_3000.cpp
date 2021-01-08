@@ -54,7 +54,7 @@ public:
         _atr_fdx_reg.initialize(*_iface, true);
         _ddr_reg.initialize(*_iface, true);
         _atr_disable_reg.initialize(*_iface, true);
-        for (const gpio_attr_map_t::value_type attr : gpio_attr_map) {
+        for (const auto& attr : gpio_attr_map) {
             if (attr.first == usrp::gpio_atr::GPIO_SRC
                 || attr.first == usrp::gpio_atr::GPIO_READBACK) {
                 // Don't set the SRC and READBACK, they're handled elsewhere.

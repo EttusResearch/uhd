@@ -193,8 +193,8 @@ static std::string get_rfnoc_blocks_pp_string(rfnoc::rfnoc_graph::sptr graph)
 {
     std::stringstream ss;
     ss << "RFNoC blocks on this device:" << std::endl << std::endl;
-    for (const std::string& name : graph->find_blocks("")) {
-        ss << "* " << name << std::endl;
+    for (const auto& name : graph->find_blocks("")) {
+        ss << "* " << name.to_string() << std::endl;
     }
     return ss.str();
 }

@@ -159,7 +159,7 @@ public:
         // TODO: Do we need this section? Since the _fp_gpio handles state now, we
         // don't need to stash values here. We only need this if we want to set
         // anything to a default value.
-        for (const gpio_atr::gpio_attr_map_t::value_type attr : gpio_atr::gpio_attr_map) {
+        for (const auto& attr : gpio_atr::gpio_attr_map) {
             // TODO: Default values?
             if (attr.first == usrp::gpio_atr::GPIO_SRC) {
                 // Don't set the SRC
