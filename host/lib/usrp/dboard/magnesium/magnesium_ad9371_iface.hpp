@@ -61,9 +61,6 @@ private:
     //! Reference to the RPC client
     uhd::rpc_client::sptr _rpcc;
 
-    //! Slot index
-    const size_t _slot_idx;
-
     //! Stores the prefix to RPC calls
     const std::string _rpc_prefix;
 
