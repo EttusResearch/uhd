@@ -116,13 +116,14 @@ public:
         const std::string& name, const size_t chan) const override;
     void set_rx_lo_source(
         const std::string& src, const std::string& name, const size_t chan) override;
-    const std::string get_rx_lo_source(const std::string& name, const size_t chan) const;
+    const std::string get_rx_lo_source(
+        const std::string& name, const size_t chan) override;
     double set_rx_lo_freq(
         double freq, const std::string& name, const size_t chan) override;
     double get_rx_lo_freq(const std::string& name, const size_t chan) override;
     std::vector<std::string> get_tx_lo_names(const size_t chan) const override;
     std::vector<std::string> get_tx_lo_sources(
-        const std::string& name, const size_t chan) const;
+        const std::string& name, const size_t chan) const override;
     freq_range_t get_tx_lo_freq_range(
         const std::string& name, const size_t chan) override;
     void set_tx_lo_source(
@@ -150,9 +151,9 @@ public:
     /**************************************************************************
      * Sensor API
      *************************************************************************/
-    std::vector<std::string> get_rx_sensor_names(size_t chan);
+    std::vector<std::string> get_rx_sensor_names(size_t chan) const override;
     uhd::sensor_value_t get_rx_sensor(const std::string& name, size_t chan) override;
-    std::vector<std::string> get_tx_sensor_names(size_t chan);
+    std::vector<std::string> get_tx_sensor_names(size_t chan) const override;
     uhd::sensor_value_t get_tx_sensor(const std::string& name, size_t chan) override;
 
     /**************************************************************************

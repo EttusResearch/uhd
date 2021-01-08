@@ -326,8 +326,7 @@ public:
      * \param name the name of the LO stage to query
      * \param chan the channel index 0 to N-1
      */
-    virtual bool get_rx_lo_export_enabled(
-        const std::string& name, const size_t chan) const = 0;
+    virtual bool get_rx_lo_export_enabled(const std::string& name, const size_t chan) = 0;
 
     /*!
      * Set the RX LO frequency (Advanced).
@@ -365,7 +364,7 @@ public:
      * \return a vector of strings for possible settings
      */
     virtual std::vector<std::string> get_tx_lo_sources(
-        const std::string& name, const size_t chan) = 0;
+        const std::string& name, const size_t chan) const = 0;
 
     /*!
      * Get the LO frequency range of the tx LO.

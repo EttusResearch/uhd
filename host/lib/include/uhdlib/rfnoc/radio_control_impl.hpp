@@ -131,14 +131,13 @@ public:
         const std::string& name, const size_t chan) override;
     void set_rx_lo_export_enabled(
         bool enabled, const std::string& name, const size_t chan) override;
-    bool get_rx_lo_export_enabled(
-        const std::string& name, const size_t chan) const override;
+    bool get_rx_lo_export_enabled(const std::string& name, const size_t chan) override;
     double set_rx_lo_freq(
         double freq, const std::string& name, const size_t chan) override;
     double get_rx_lo_freq(const std::string& name, const size_t chan) override;
     std::vector<std::string> get_tx_lo_names(const size_t chan) const override;
     std::vector<std::string> get_tx_lo_sources(
-        const std::string& name, const size_t chan) override;
+        const std::string& name, const size_t chan) const override;
     freq_range_t get_tx_lo_freq_range(
         const std::string& name, const size_t chan) override;
     void set_tx_lo_source(

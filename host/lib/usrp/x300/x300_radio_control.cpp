@@ -696,8 +696,7 @@ public:
         }
     }
 
-    bool get_rx_lo_export_enabled(
-        const std::string& name, const size_t chan) const override
+    bool get_rx_lo_export_enabled(const std::string& name, const size_t chan) override
     {
         fs_path rx_fe_fe_root = get_db_path("rx", chan);
 

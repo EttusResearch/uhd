@@ -689,7 +689,7 @@ void radio_control_impl::set_rx_lo_export_enabled(bool, const std::string&, cons
         "set_rx_lo_export_enabled is not supported on this radio");
 }
 
-bool radio_control_impl::get_rx_lo_export_enabled(const std::string&, const size_t) const
+bool radio_control_impl::get_rx_lo_export_enabled(const std::string&, const size_t)
 {
     return false;
 }
@@ -709,7 +709,7 @@ std::vector<std::string> radio_control_impl::get_tx_lo_names(const size_t) const
 }
 
 std::vector<std::string> radio_control_impl::get_tx_lo_sources(
-    const std::string&, const size_t)
+    const std::string&, const size_t) const
 {
     return {"internal"};
 }
