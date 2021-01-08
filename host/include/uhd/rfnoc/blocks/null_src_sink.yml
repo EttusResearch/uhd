@@ -9,7 +9,7 @@ noc_id: 0x1
 makefile_srcs: "${fpga_lib_dir}/blocks/rfnoc_block_null_src_sink/Makefile.srcs"
 
 parameters:
-  NIPC: 2
+  NIPC: CHDR_W/32
   ITEM_W: 32
 
 clocks:
