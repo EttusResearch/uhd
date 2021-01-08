@@ -105,6 +105,7 @@ class adf4001_ctrl
 {
 public:
     adf4001_ctrl(uhd::spi_iface::sptr _spi, int slaveno);
+    virtual ~adf4001_ctrl() = default;
     virtual void set_lock_to_ext_ref(bool external);
 
 private:

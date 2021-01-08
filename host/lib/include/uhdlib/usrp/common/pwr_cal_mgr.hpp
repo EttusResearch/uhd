@@ -80,6 +80,8 @@ public:
         get_str_type&& get_key,
         uhd::gain_group::sptr gain_group);
 
+    virtual ~pwr_cal_mgr() = default;
+
     //! Update the gain group (see make());
     //
     // Not thread-safe: Don't call at the same time as set_power()

@@ -74,6 +74,8 @@ public:
     {
     }
 
+    virtual ~send_link_base() = default;
+
     size_t get_num_send_frames() const override
     {
         return _num_send_frames;
@@ -164,7 +166,13 @@ public:
     {
     }
 
+<<<<<<< HEAD
     size_t get_num_recv_frames() const override
+=======
+    virtual ~recv_link_base() = default;
+
+    virtual size_t get_num_recv_frames() const
+>>>>>>> lib: Add some virtual dtors
     {
         return _num_recv_frames;
     }

@@ -104,6 +104,8 @@ class recv_io_if
 public:
     using sptr = std::shared_ptr<recv_io_if>;
 
+    virtual ~recv_io_if() = default;
+
     /*!
      * Callback for producing a flow control response (or any other response
      * needed when a received frame_buff is released via
@@ -187,6 +189,8 @@ class send_io_if
 {
 public:
     using sptr = std::shared_ptr<send_io_if>;
+
+    virtual ~send_io_if() = default;
 
     /*!
      * Callback for sending the packet. Callback should call release_send_buff()
@@ -366,6 +370,7 @@ public:
     io_service()                  = default;
     io_service(const io_service&) = delete;
     io_service& operator=(const io_service&) = delete;
+    virtual ~io_service()                    = default;
 };
 
 }} // namespace uhd::transport
