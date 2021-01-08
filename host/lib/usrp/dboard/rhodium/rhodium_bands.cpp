@@ -14,7 +14,6 @@ using namespace uhd::rfnoc;
 using namespace uhd::math::fp_compare;
 
 namespace {
-constexpr double FREQ_COMPARE_EPSILON = 1e-5;
 
 /* Note on the RX filter bank:
  *
