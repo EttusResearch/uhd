@@ -38,6 +38,8 @@ constexpr double RHODIUM_DEFAULT_LO_GAIN      = 30; // gain index
 constexpr char RHODIUM_DEFAULT_RX_ANTENNA[]   = "RX2";
 constexpr char RHODIUM_DEFAULT_TX_ANTENNA[]   = "TX/RX";
 constexpr auto RHODIUM_DEFAULT_MASH_ORDER     = lmx2592_iface::mash_order_t::THIRD;
+constexpr double DEFAULT_IDENTIFY_DURATION    = 5.0; // seconds
+
 
 //! Returns the SPI config used by the CPLD
 spi_config_t _get_cpld_spi_config()
@@ -577,7 +579,7 @@ void rhodium_radio_control_impl::_init_mpm()
         const std::string identify_val = block_args.get("identify");
         int identify_duration          = std::atoi(identify_val.c_str());
         if (identify_duration == 0) {
-            identify_duration = 5;
+            identify_duration = DEFAULT_IDENTIFY_DURATION;
         }
         RFNOC_LOG_INFO("Running LED identification process for " << identify_duration
                                                                  << " seconds.");
