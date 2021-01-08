@@ -237,7 +237,6 @@ public:
         uint16_t dst_addr,
         uint16_t src_addr,
         uint32_t credits)
-        : _credits(credits)
     {
         _send_addr = (src_addr << 16) | (dst_addr << 0);
         _recv_addr = (dst_addr << 16) | (src_addr << 0);
@@ -374,10 +373,8 @@ public:
 private:
     uint32_t _send_addr;
     uint32_t _recv_addr;
-    uint32_t _credits;
     recv_io_if::sptr _recv_if;
     boost::lockfree::spsc_queue<uint32_t, boost::lockfree::capacity<8>> _msg_queue;
-    uint32_t _seqno = 0;
 };
 
 }} // namespace uhd::transport

@@ -20,12 +20,6 @@ using namespace uhd::rfnoc;
 // Redeclare this here, since it's only defined outside of UHD_API
 noc_block_base::make_args_t::~make_args_t() = default;
 
-namespace {
-
-constexpr size_t DEFAULT_MTU = 8000;
-
-} // namespace
-
 BOOST_AUTO_TEST_CASE(test_null_block)
 {
     node_accessor_t node_accessor{};

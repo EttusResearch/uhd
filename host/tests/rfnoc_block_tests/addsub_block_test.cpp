@@ -25,9 +25,6 @@ noc_block_base::make_args_t::~make_args_t() = default;
  * object, all of which are accessible to the test case. The instance of the
  * object is destroyed at the end of each test case.
  */
-constexpr size_t MAX_NUM_COEFFS = 3000;
-constexpr size_t DEFAULT_MTU    = 8000;
-
 struct addsub_block_fixture
 {
     addsub_block_fixture()

@@ -36,7 +36,6 @@ class vector_iir_mock_reg_iface_t : public mock_reg_iface_t
 {
 public:
     vector_iir_mock_reg_iface_t(size_t num_chans, uint16_t max_delay)
-        : _num_chans(num_chans)
     {
         for (size_t chan = 0; chan < num_chans; chan++) {
             _max_delays.push_back(max_delay);
@@ -65,7 +64,6 @@ public:
     }
 
 private:
-    const size_t _num_chans;
     std::vector<uint16_t> _max_delays;
     std::vector<uint16_t> _delays;
 };

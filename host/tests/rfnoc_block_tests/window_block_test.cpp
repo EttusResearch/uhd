@@ -101,7 +101,6 @@ private:
  * case. The instance of the object is destroyed at the end of each test
  * case.
  */
-constexpr size_t MAX_LEN     = 3000;
 constexpr size_t DEFAULT_MTU = 8000;
 constexpr size_t NUM_CHANS   = 4;
 static const std::vector<size_t> MAX_LENS{3000, 2500, 15, 666};
