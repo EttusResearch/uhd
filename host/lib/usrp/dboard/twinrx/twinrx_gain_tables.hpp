@@ -38,6 +38,9 @@ public:
     {
     }
 
+    twinrx_gain_config_t(const twinrx_gain_config_t& gc) = default;
+    ~twinrx_gain_config_t()                              = default;
+
     twinrx_gain_config_t& operator=(const twinrx_gain_config_t& src)
     {
         if (this != &src) {
