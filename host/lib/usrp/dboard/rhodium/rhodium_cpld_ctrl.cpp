@@ -18,7 +18,7 @@ namespace {
 //! Address of the CPLD scratch register
 constexpr uint8_t CPLD_REGS_SCRATCH = 0x05;
 //! Address of the CPLD gain table selection register
-constexpr uint8_t CPLD_REGS_GAIN_TBL_SEL = 0x06;
+// constexpr uint8_t CPLD_REGS_GAIN_TBL_SEL = 0x06;
 
 constexpr uint32_t MAX_GAIN_INDEX    = 60;
 constexpr uint32_t MAX_LO_GAIN_INDEX = 30;
