@@ -641,8 +641,8 @@ bool graph_t::_assert_edge_props_consistent(rfnoc_graph_t::edge_descriptor edge)
                             node_ref_t node) {
         node_accessor_t node_accessor{};
         // Create a set of all properties
-        auto props_set = node_accessor.filter_props(
-            node, [port, edge_type, node](property_base_t* prop) {
+        auto props_set =
+            node_accessor.filter_props(node, [port, edge_type](property_base_t* prop) {
                 return prop->get_src_info().instance == port
                        && prop->get_src_info().type == edge_type;
             });

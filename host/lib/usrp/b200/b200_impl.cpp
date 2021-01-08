@@ -758,7 +758,7 @@ b200_impl::b200_impl(
                         mb_path / "gpio" / "FP0" / attr.second)
                     .set(std::vector<std::string>(
                         32, usrp::gpio_atr::default_attr_value_map.at(attr.first)))
-                    .add_coerced_subscriber([this](const std::vector<std::string>&) {
+                    .add_coerced_subscriber([](const std::vector<std::string>&) {
                         throw uhd::runtime_error("This device does not support setting "
                                                  "the GPIO_SRC attribute.");
                     });
@@ -1065,7 +1065,7 @@ void b200_impl::setup_radio(const size_t dspno)
                 return this->update_bandsel(key, freq);
             })
             // Every time we retune, we re-set the power level.
-            .add_coerced_subscriber([this, pwr_mgr = perif.pwr_mgr.at(dir_key)](
+            .add_coerced_subscriber([pwr_mgr = perif.pwr_mgr.at(dir_key)](
                                         const double) { pwr_mgr->update_power(); })
 
             ;

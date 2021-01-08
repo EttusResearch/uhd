@@ -367,7 +367,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t& dev_addr)
     // require a clock rate of no more than the max pfd frequency to maintain phase
     // synchronization. If there is no UBX, the default daughterboard clock rate is half
     // of the master clock rate for X300.
-    const double x300_dboard_clock_rate = [this, dev_addr, mb]() -> double {
+    const double x300_dboard_clock_rate = [dev_addr, mb]() -> double {
         // Do not override use-specified dboard clock rates
         if (dev_addr.has_key("dboard_clock_rate")) {
             return mb.args.get_dboard_clock_rate();

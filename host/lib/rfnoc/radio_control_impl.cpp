@@ -198,6 +198,7 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
                 chan,
                 &samp_rate_in  = _samp_rate_in.at(chan),
                 &samp_rate_out = _samp_rate_out.at(chan)]() {
+                const auto UHD_UNUSED(log_chan) = chan;
                 RFNOC_LOG_TRACE("Calling resolver for samp_rate@" << chan);
                 samp_rate_in  = coerce_rate(samp_rate_in.get());
                 samp_rate_out = samp_rate_in.get();

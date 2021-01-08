@@ -57,10 +57,7 @@ public:
         });
         add_property_resolver({&_master_clock_rate},
             {&_master_clock_rate, &_samp_rate_in, &_samp_rate_out},
-            [& samp_rate_out       = _samp_rate_out,
-                &samp_rate_in      = _samp_rate_in,
-                &master_clock_rate = _master_clock_rate,
-                this]() {
+            [this]() {
                 UHD_LOG_INFO(
                     get_unique_id(), " Calling resolver for `master_clock_rate'...");
                 if (_master_clock_rate.get() > 150e6) {

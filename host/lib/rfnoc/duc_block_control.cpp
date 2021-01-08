@@ -318,6 +318,7 @@ private:
                 &interp        = *interp,
                 &samp_rate_out = *samp_rate_out,
                 &samp_rate_in  = *samp_rate_in]() {
+                const auto UHD_UNUSED(log_chan) = chan;
                 RFNOC_LOG_TRACE("Calling resolver for `samp_rate_in'@" << chan);
                 if (samp_rate_in.is_valid()) {
                     RFNOC_LOG_TRACE("New samp_rate_in is " << samp_rate_in.get());
@@ -347,6 +348,7 @@ private:
                 &freq          = *freq,
                 &samp_rate_out = *samp_rate_out,
                 &samp_rate_in  = *samp_rate_in]() {
+                const auto UHD_UNUSED(log_chan) = chan;
                 RFNOC_LOG_TRACE("Calling resolver for `samp_rate_out'@" << chan);
                 if (samp_rate_out.is_valid()) {
                     // If interp is changed, that will take care of scaling
