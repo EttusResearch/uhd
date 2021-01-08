@@ -19,6 +19,11 @@
 
 #include "flatbuffers/base.h"
 
+#if defined(__clang__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wdeprecated-copy"
+#endif
+
 #if defined(FLATBUFFERS_NAN_DEFAULTS)
 #include <cmath>
 #endif
@@ -2610,4 +2615,7 @@ volatile __attribute__((weak)) const char *flatbuffer_version_string =
 
 // clang-format on
 
+#if defined(__clang__)
+#    pragma GCC diagnostic pop
+#endif
 #endif  // FLATBUFFERS_H_

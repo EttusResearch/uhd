@@ -39,6 +39,9 @@
 #  if __GNUC__ >= 7
 #    pragma GCC diagnostic ignored "-Wnoexcept-type"
 #  endif
+#elif defined(__clang__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wunused-value"
 #endif
 
 #include "attr.h"
@@ -2001,6 +2004,6 @@ NAMESPACE_END(PYBIND11_NAMESPACE)
 
 #if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
 #  pragma warning(pop)
-#elif defined(__GNUG__) && !defined(__clang__)
+#elif defined(__GNUG__)
 #  pragma GCC diagnostic pop
 #endif
