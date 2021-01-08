@@ -145,7 +145,6 @@ private:
 
 constexpr auto RECV_ONLY          = offload_io_service::RECV_ONLY;
 constexpr auto SEND_ONLY          = offload_io_service::SEND_ONLY;
-constexpr auto BOTH_SEND_AND_RECV = offload_io_service::BOTH_SEND_AND_RECV;
 
 constexpr auto POLL  = offload_io_service::POLL;
 constexpr auto BLOCK = offload_io_service::BLOCK;

@@ -25,7 +25,6 @@ using namespace uhd::transport;
 
 static const double TICK_RATE    = 100e6;
 static const double SAMP_RATE    = 10e6;
-static const size_t FRAME_SIZE   = 1000;
 static const double SCALE_FACTOR = 2;
 
 /*!
