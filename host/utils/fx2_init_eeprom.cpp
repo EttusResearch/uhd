@@ -130,7 +130,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     uhd::device_addrs_t found_addrs = uhd::device::find(device_addr, uhd::device::USRP);
 
-    if (found_addrs.size() == 0) {
+    if (found_addrs.empty()) {
         std::cerr << "No USRP devices found" << std::endl;
         return EXIT_FAILURE;
     }

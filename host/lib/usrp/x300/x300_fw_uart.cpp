@@ -50,7 +50,7 @@ struct x300_uart_iface : uart_iface
         }
     }
 
-    void write_uart(const std::string& buff)
+    void write_uart(const std::string& buff) override
     {
         boost::mutex::scoped_lock lock(_write_mutex);
         for (const char ch : buff) {
@@ -118,7 +118,7 @@ struct x300_uart_iface : uart_iface
         }
     }
 
-    std::string read_uart(double timeout)
+    std::string read_uart(double timeout) override
     {
         boost::mutex::scoped_lock lock(_read_mutex);
         const auto exit_time = std::chrono::steady_clock::now()

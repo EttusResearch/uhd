@@ -42,8 +42,8 @@ constexpr int64_t REENUMERATION_TIMEOUT_MS = 3000;
 class b200_ad9361_client_t : public ad9361_params
 {
 public:
-    ~b200_ad9361_client_t() {}
-    double get_band_edge(frequency_band_t band)
+    ~b200_ad9361_client_t() override {}
+    double get_band_edge(frequency_band_t band) override
     {
         switch (band) {
             case AD9361_RX_BAND0:
@@ -56,15 +56,15 @@ public:
                 return 0;
         }
     }
-    clocking_mode_t get_clocking_mode()
+    clocking_mode_t get_clocking_mode() override
     {
         return clocking_mode_t::AD9361_XTAL_N_CLK_PATH;
     }
-    digital_interface_mode_t get_digital_interface_mode()
+    digital_interface_mode_t get_digital_interface_mode() override
     {
         return AD9361_DDR_FDD_LVCMOS;
     }
-    digital_interface_delays_t get_digital_interface_timing()
+    digital_interface_delays_t get_digital_interface_timing() override
     {
         digital_interface_delays_t delays;
         delays.rx_clk_delay  = 0;
@@ -79,8 +79,8 @@ public:
 class b2xxmini_ad9361_client_t : public ad9361_params
 {
 public:
-    ~b2xxmini_ad9361_client_t() {}
-    double get_band_edge(frequency_band_t band)
+    ~b2xxmini_ad9361_client_t() override {}
+    double get_band_edge(frequency_band_t band) override
     {
         switch (band) {
             case AD9361_RX_BAND0:
@@ -93,15 +93,15 @@ public:
                 return 0; // On both Rx and Tx
         }
     }
-    clocking_mode_t get_clocking_mode()
+    clocking_mode_t get_clocking_mode() override
     {
         return clocking_mode_t::AD9361_XTAL_N_CLK_PATH;
     }
-    digital_interface_mode_t get_digital_interface_mode()
+    digital_interface_mode_t get_digital_interface_mode() override
     {
         return AD9361_DDR_FDD_LVCMOS;
     }
-    digital_interface_delays_t get_digital_interface_timing()
+    digital_interface_delays_t get_digital_interface_timing() override
     {
         digital_interface_delays_t delays;
         delays.rx_clk_delay  = 0;

@@ -25,8 +25,10 @@ noc_block_base::make_args_t::~make_args_t() = default;
 class fft_mock_reg_iface_t : public mock_reg_iface_t
 {
 public:
-    virtual void _poke_cb(
-        uint32_t addr, uint32_t /*data*/, uhd::time_spec_t /*time*/, bool /*ack*/)
+    void _poke_cb(uint32_t addr,
+        uint32_t /*data*/,
+        uhd::time_spec_t /*time*/,
+        bool /*ack*/) override
     {
         if (addr == fft_block_control::REG_RESET_ADDR) {
             fft_was_reset = true;

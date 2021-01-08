@@ -80,150 +80,150 @@ public:
         _register_props();
     }
 
-    void set_enable_histogram(const bool enable_histogram)
+    void set_enable_histogram(const bool enable_histogram) override
     {
         set_property<bool>(PROP_KEY_ENABLE_HISTOGRAM, enable_histogram);
     }
 
-    bool get_enable_histogram() const
+    bool get_enable_histogram() const override
     {
         return _prop_enable_histogram.get();
     }
 
-    void set_enable_waterfall(const bool enable_waterfall)
+    void set_enable_waterfall(const bool enable_waterfall) override
     {
         set_property<bool>(PROP_KEY_ENABLE_WATERFALL, enable_waterfall);
     }
 
-    bool get_enable_waterfall() const
+    bool get_enable_waterfall() const override
     {
         return _prop_enable_waterfall.get();
     }
 
-    void clear_history()
+    void clear_history() override
     {
         set_property<bool>(PROP_KEY_CLEAR_HISTORY, true);
     }
 
-    void set_enable_dither(const bool enable_dither)
+    void set_enable_dither(const bool enable_dither) override
     {
         set_property<bool>(PROP_KEY_ENABLE_DITHER, enable_dither);
     }
 
-    bool get_enable_dither() const
+    bool get_enable_dither() const override
     {
         return _prop_enable_dither.get();
     }
 
-    void set_enable_noise(const bool enable_noise)
+    void set_enable_noise(const bool enable_noise) override
     {
         set_property<bool>(PROP_KEY_ENABLE_NOISE, enable_noise);
     }
 
-    bool get_enable_noise() const
+    bool get_enable_noise() const override
     {
         return _prop_enable_noise.get();
     }
 
-    void set_histogram_decimation(const uint16_t decimation)
+    void set_histogram_decimation(const uint16_t decimation) override
     {
         set_property<int>(PROP_KEY_HIST_DECIMATION, decimation);
     }
 
-    uint16_t get_histogram_decimation() const
+    uint16_t get_histogram_decimation() const override
     {
         return _prop_hist_decimation.get();
     }
 
-    void set_histogram_offset(const uint16_t offset)
+    void set_histogram_offset(const uint16_t offset) override
     {
         set_property<int>(PROP_KEY_OFFSET, offset);
     }
 
-    uint16_t get_histogram_offset() const
+    uint16_t get_histogram_offset() const override
     {
         return _prop_offset.get();
     }
 
-    void set_histogram_scale(const uint16_t scale)
+    void set_histogram_scale(const uint16_t scale) override
     {
         set_property<int>(PROP_KEY_SCALE, scale);
     }
 
-    uint16_t get_histogram_scale() const
+    uint16_t get_histogram_scale() const override
     {
         return _prop_scale.get();
     }
 
-    void set_histogram_rise_rate(const uint16_t rise_rate)
+    void set_histogram_rise_rate(const uint16_t rise_rate) override
     {
         set_property<int>(PROP_KEY_RISE_TIME, rise_rate);
     }
 
-    uint16_t get_histogram_rise_rate() const
+    uint16_t get_histogram_rise_rate() const override
     {
         return _prop_trise.get();
     }
 
-    void set_histogram_decay_rate(const uint16_t decay_rate)
+    void set_histogram_decay_rate(const uint16_t decay_rate) override
     {
         set_property<int>(PROP_KEY_DECAY_TIME, decay_rate);
     }
 
-    uint16_t get_histogram_decay_rate() const
+    uint16_t get_histogram_decay_rate() const override
     {
         return _prop_tdecay.get();
     }
 
-    void set_spectrum_alpha(const uint16_t alpha)
+    void set_spectrum_alpha(const uint16_t alpha) override
     {
         set_property<int>(PROP_KEY_ALPHA, alpha);
     }
 
-    uint16_t get_spectrum_alpha() const
+    uint16_t get_spectrum_alpha() const override
     {
         return _prop_alpha.get();
     }
 
-    void set_spectrum_max_hold_decay(const uint16_t epsilon)
+    void set_spectrum_max_hold_decay(const uint16_t epsilon) override
     {
         set_property<int>(PROP_KEY_EPSILON, epsilon);
     }
 
-    uint16_t get_spectrum_max_hold_decay() const
+    uint16_t get_spectrum_max_hold_decay() const override
     {
         return _prop_epsilon.get();
     }
 
     void set_waterfall_predivision(
-        const fosphor_waterfall_predivision_ratio waterfall_predivision)
+        const fosphor_waterfall_predivision_ratio waterfall_predivision) override
     {
         set_property<int>(
             PROP_KEY_WF_PREDIVISION_RATIO, static_cast<int>(waterfall_predivision));
     }
 
-    fosphor_waterfall_predivision_ratio get_waterfall_predivision() const
+    fosphor_waterfall_predivision_ratio get_waterfall_predivision() const override
     {
         return static_cast<fosphor_waterfall_predivision_ratio>(
             _prop_wf_prediv_ratio.get());
     }
 
-    void set_waterfall_mode(const fosphor_waterfall_mode waterfall_mode)
+    void set_waterfall_mode(const fosphor_waterfall_mode waterfall_mode) override
     {
         set_property<int>(PROP_KEY_WF_MODE, static_cast<int>(waterfall_mode));
     }
 
-    fosphor_waterfall_mode get_waterfall_mode() const
+    fosphor_waterfall_mode get_waterfall_mode() const override
     {
         return static_cast<fosphor_waterfall_mode>(_prop_wf_mode.get());
     }
 
-    void set_waterfall_decimation(const uint16_t waterfall_decimation)
+    void set_waterfall_decimation(const uint16_t waterfall_decimation) override
     {
         set_property<int>(PROP_KEY_WF_DECIMATION, waterfall_decimation);
     }
 
-    uint16_t get_waterfall_decimation() const
+    uint16_t get_waterfall_decimation() const override
     {
         return _prop_wf_decim.get();
     }

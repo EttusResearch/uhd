@@ -35,27 +35,27 @@ public:
         _register_props();
     }
 
-    size_t get_max_n() const
+    size_t get_max_n() const override
     {
         return _max_n;
     }
 
-    void set_n(const size_t n, const size_t chan = 0)
+    void set_n(const size_t n, const size_t chan = 0) override
     {
         set_property<int>(PROP_KEY_N, static_cast<int>(n), chan);
     }
 
-    size_t get_n(const size_t chan = 0) const
+    size_t get_n(const size_t chan = 0) const override
     {
         return _n.at(chan).get();
     }
 
-    void set_mode(const mode mode, const size_t chan = 0)
+    void set_mode(const mode mode, const size_t chan = 0) override
     {
         set_property<int>(PROP_KEY_MODE, static_cast<int>(mode), chan);
     }
 
-    mode get_mode(const size_t chan = 0) const
+    mode get_mode(const size_t chan = 0) const override
     {
         return static_cast<mode>(_mode.at(chan).get());
     }

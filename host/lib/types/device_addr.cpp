@@ -29,7 +29,7 @@ static std::string trim(const std::string& in)
 device_addr_t::device_addr_t(const std::string& args)
 {
     for (const std::string& pair : tokenizer(args, arg_delim)) {
-        if (trim(pair) == "")
+        if (trim(pair).empty())
             continue;
         std::vector<std::string> toks;
         for (const std::string& tok : tokenizer(pair, pair_delim)) {

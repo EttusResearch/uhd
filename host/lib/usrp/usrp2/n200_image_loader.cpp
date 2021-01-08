@@ -154,15 +154,15 @@ static void print_usrp2_error(const image_loader::image_loader_args_t& image_loa
 
     if (image_loader_args.load_firmware) {
         usrp2_card_burner_gui += str(boost::format("%s--fw=\"%s\"") % nl
-                                     % ((image_loader_args.firmware_path == "")
-                                               ? find_image_path("usrp2_fw.bin")
-                                               : image_loader_args.firmware_path));
+                                     % ((image_loader_args.firmware_path.empty())
+                                             ? find_image_path("usrp2_fw.bin")
+                                             : image_loader_args.firmware_path));
     }
     if (image_loader_args.load_fpga) {
-        usrp2_card_burner_gui +=
-            str(boost::format("%s--fpga=\"%s\"") % nl
-                % ((image_loader_args.fpga_path == "") ? find_image_path("usrp2_fpga.bin")
-                                                       : image_loader_args.fpga_path));
+        usrp2_card_burner_gui += str(
+            boost::format("%s--fpga=\"%s\"") % nl
+            % ((image_loader_args.fpga_path.empty()) ? find_image_path("usrp2_fpga.bin")
+                                                     : image_loader_args.fpga_path));
     }
 
     throw uhd::runtime_error(str(
@@ -204,7 +204,7 @@ static uhd::device_addr_t n200_find(
 
     uhd::device_addrs_t found = usrp2_find(image_loader_args.args);
 
-    if (found.size() > 0) {
+    if (!found.empty()) {
         uhd::device_addrs_t n200_found;
         udp_simple::sptr rev_xport;
         n200_fw_update_data_t pkt_out;
@@ -355,8 +355,8 @@ static void n200_setup_session(n200_session_t& session,
      * EEPROM or is otherwise unable to provide its revision, this is
      * impossible, and the user must manually provide a firmware file.
      */
-    if ((session.fw and image_loader_args.firmware_path == "")
-        or image_loader_args.fpga_path == "") {
+    if ((session.fw and image_loader_args.firmware_path.empty())
+        or image_loader_args.fpga_path.empty()) {
         if (session.dev_addr["hw_rev"] == "n2xx") {
             throw uhd::runtime_error("This device's revision cannot be determined. "
                                      "You must manually specify a filepath.");

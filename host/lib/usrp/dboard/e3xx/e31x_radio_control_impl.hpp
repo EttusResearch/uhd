@@ -29,9 +29,9 @@ public:
      * Structors and deinit
      ***********************************************************************/
     e31x_radio_control_impl(make_args_ptr make_args);
-    virtual ~e31x_radio_control_impl();
+    ~e31x_radio_control_impl() override;
 
-    std::vector<std::string> get_gpio_banks() const
+    std::vector<std::string> get_gpio_banks() const override
     {
         return {E31x_GPIO_BANK};
     }
@@ -117,22 +117,22 @@ private:
     /************************************************************************
      * E3XX API calls
      ***********************************************************************/
-    const std::string get_default_timing_mode()
+    const std::string get_default_timing_mode() override
     {
         return TIMING_MODE_1R1T;
     };
 
     uint32_t get_rx_switches(
-        const size_t chan, const double freq, const std::string& ant);
+        const size_t chan, const double freq, const std::string& ant) override;
 
-    uint32_t get_tx_switches(const size_t chan, const double freq);
+    uint32_t get_tx_switches(const size_t chan, const double freq) override;
 
-    uint32_t get_idle_switches();
+    uint32_t get_idle_switches() override;
 
-    uint32_t get_tx_led();
-    uint32_t get_rx_led();
-    uint32_t get_txrx_led();
-    uint32_t get_idle_led();
+    uint32_t get_tx_led() override;
+    uint32_t get_rx_led() override;
+    uint32_t get_txrx_led() override;
+    uint32_t get_idle_led() override;
 };
 
 }} /* namespace uhd::rfnoc */

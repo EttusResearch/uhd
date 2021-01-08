@@ -28,9 +28,9 @@ public:
     {
     }
 
-    virtual ~ad9361_io_spi() {}
+    ~ad9361_io_spi() override {}
 
-    virtual uint8_t peek8(uint32_t reg)
+    uint8_t peek8(uint32_t reg) override
     {
         std::lock_guard<std::mutex> lock(_mutex);
 
@@ -51,7 +51,7 @@ public:
         return static_cast<uint8_t>(val);
     }
 
-    virtual void poke8(uint32_t reg, uint8_t val)
+    void poke8(uint32_t reg, uint8_t val) override
     {
         std::lock_guard<std::mutex> lock(_mutex);
 
@@ -93,7 +93,7 @@ public:
     {
         _device.initialize();
     }
-    double set_gain(const std::string& which, const double value)
+    double set_gain(const std::string& which, const double value) override
     {
         std::lock_guard<std::mutex> lock(_mutex);
 
@@ -103,7 +103,7 @@ public:
         return return_val;
     }
 
-    void set_agc(const std::string& which, bool enable)
+    void set_agc(const std::string& which, bool enable) override
     {
         std::lock_guard<std::mutex> lock(_mutex);
 
@@ -111,7 +111,7 @@ public:
         _device.set_agc(chain, enable);
     }
 
-    void set_agc_mode(const std::string& which, const std::string& mode)
+    void set_agc_mode(const std::string& which, const std::string& mode) override
     {
         std::lock_guard<std::mutex> lock(_mutex);
         ad9361_device_t::chain_t chain = _get_chain_from_antenna(which);
@@ -125,7 +125,7 @@ public:
     }
 
     //! set a new clock rate, return the exact value
-    double set_clock_rate(const double rate)
+    double set_clock_rate(const double rate) override
     {
         std::lock_guard<std::mutex> lock(_mutex);
         // clip to known bounds
@@ -144,14 +144,14 @@ public:
     }
 
     //! set which RX and TX chains/antennas are active
-    void set_active_chains(bool tx1, bool tx2, bool rx1, bool rx2)
+    void set_active_chains(bool tx1, bool tx2, bool rx1, bool rx2) override
     {
         std::lock_guard<std::mutex> lock(_mutex);
         _device.set_active_chains(tx1, tx2, rx1, rx2);
     }
 
     //! set which timing mode to use - 1R1T, 2R2T
-    void set_timing_mode(const std::string& timing_mode)
+    void set_timing_mode(const std::string& timing_mode) override
     {
         std::lock_guard<std::mutex> lock(_mutex);
 
@@ -164,7 +164,7 @@ public:
     }
 
     //! tune the given frontend, return the exact value
-    double tune(const std::string& which, const double freq)
+    double tune(const std::string& which, const double freq) override
     {
         std::lock_guard<std::mutex> lock(_mutex);
 
@@ -179,7 +179,7 @@ public:
     }
 
     //! get the current frequency for the given frontend
-    double get_freq(const std::string& which)
+    double get_freq(const std::string& which) override
     {
         std::lock_guard<std::mutex> lock(_mutex);
 
@@ -188,7 +188,7 @@ public:
     }
 
     //! turn on/off data port loopback
-    void data_port_loopback(const bool on)
+    void data_port_loopback(const bool on) override
     {
         std::lock_guard<std::mutex> lock(_mutex);
 
@@ -196,7 +196,7 @@ public:
     }
 
     //! read internal RSSI sensor
-    sensor_value_t get_rssi(const std::string& which)
+    sensor_value_t get_rssi(const std::string& which) override
     {
         std::lock_guard<std::mutex> lock(_mutex);
 
@@ -205,12 +205,12 @@ public:
     }
 
     //! read the internal temp sensor. Average over 3 results
-    sensor_value_t get_temperature()
+    sensor_value_t get_temperature() override
     {
         return sensor_value_t("temp", _device.get_average_temperature(), "C");
     }
 
-    void set_dc_offset_auto(const std::string& which, const bool on)
+    void set_dc_offset_auto(const std::string& which, const bool on) override
     {
         std::lock_guard<std::mutex> lock(_mutex);
 
@@ -218,7 +218,7 @@ public:
         _device.set_dc_offset_auto(direction, on);
     }
 
-    void set_iq_balance_auto(const std::string& which, const bool on)
+    void set_iq_balance_auto(const std::string& which, const bool on) override
     {
         std::lock_guard<std::mutex> lock(_mutex);
 
@@ -226,7 +226,7 @@ public:
         _device.set_iq_balance_auto(direction, on);
     }
 
-    double set_bw_filter(const std::string& which, const double bw)
+    double set_bw_filter(const std::string& which, const double bw) override
     {
         ad9361_device_t::direction_t direction = _get_direction_from_antenna(which);
         double actual_bw                       = bw;
@@ -248,7 +248,7 @@ public:
         return actual_bw;
     }
 
-    std::vector<std::string> get_filter_names(const std::string& which)
+    std::vector<std::string> get_filter_names(const std::string& which) override
     {
         std::lock_guard<std::mutex> lock(_mutex);
 
@@ -257,7 +257,7 @@ public:
     }
 
     filter_info_base::sptr get_filter(
-        const std::string& which, const std::string& filter_name)
+        const std::string& which, const std::string& filter_name) override
     {
         std::lock_guard<std::mutex> lock(_mutex);
 
@@ -268,7 +268,7 @@ public:
 
     void set_filter(const std::string& which,
         const std::string& filter_name,
-        const filter_info_base::sptr filter)
+        const filter_info_base::sptr filter) override
     {
         std::lock_guard<std::mutex> lock(_mutex);
 
@@ -277,7 +277,7 @@ public:
         _device.set_filter(direction, chain, filter_name, filter);
     }
 
-    void output_digital_test_tone(bool enb)
+    void output_digital_test_tone(bool enb) override
     {
         _device.digital_test_tone(enb);
     }

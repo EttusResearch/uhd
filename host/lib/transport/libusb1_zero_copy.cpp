@@ -126,9 +126,9 @@ public:
     { /* NOP */
     }
 
-    virtual ~libusb_zero_copy_mb(void);
+    ~libusb_zero_copy_mb(void) override;
 
-    void release(void)
+    void release(void) override
     {
         _release_cb(this);
     }
@@ -409,34 +409,34 @@ struct libusb_zero_copy_impl : usb_zero_copy
             size_t(hints.cast<double>("send_frame_size", DEFAULT_XFER_SIZE))));
     }
 
-    virtual ~libusb_zero_copy_impl(void);
+    ~libusb_zero_copy_impl(void) override;
 
-    managed_recv_buffer::sptr get_recv_buff(double timeout)
+    managed_recv_buffer::sptr get_recv_buff(double timeout) override
     {
         boost::mutex::scoped_lock l(_recv_mutex);
         return _recv_impl->get_buff<managed_recv_buffer>(timeout);
     }
 
-    managed_send_buffer::sptr get_send_buff(double timeout)
+    managed_send_buffer::sptr get_send_buff(double timeout) override
     {
         boost::mutex::scoped_lock l(_send_mutex);
         return _send_impl->get_buff<managed_send_buffer>(timeout);
     }
 
-    size_t get_num_recv_frames(void) const
+    size_t get_num_recv_frames(void) const override
     {
         return _recv_impl->get_num_frames();
     }
-    size_t get_num_send_frames(void) const
+    size_t get_num_send_frames(void) const override
     {
         return _send_impl->get_num_frames();
     }
 
-    size_t get_recv_frame_size(void) const
+    size_t get_recv_frame_size(void) const override
     {
         return _recv_impl->get_frame_size();
     }
-    size_t get_send_frame_size(void) const
+    size_t get_send_frame_size(void) const override
     {
         return _send_impl->get_frame_size();
     }

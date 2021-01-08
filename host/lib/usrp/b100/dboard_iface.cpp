@@ -40,12 +40,12 @@ public:
         this->set_clock_rate(UNIT_TX, _clock->get_fpga_clock_rate());
     }
 
-    ~b100_dboard_iface(void)
+    ~b100_dboard_iface(void) override
     {
         /* NOP */
     }
 
-    special_props_t get_special_props(void)
+    special_props_t get_special_props(void) override
     {
         special_props_t props;
         props.soft_clock_divider = false;
@@ -53,39 +53,39 @@ public:
         return props;
     }
 
-    void write_aux_dac(unit_t, aux_dac_t, double);
-    double read_aux_adc(unit_t, aux_adc_t);
+    void write_aux_dac(unit_t, aux_dac_t, double) override;
+    double read_aux_adc(unit_t, aux_adc_t) override;
 
-    void set_pin_ctrl(unit_t unit, uint32_t value, uint32_t mask = 0xffffffff);
-    uint32_t get_pin_ctrl(unit_t unit);
+    void set_pin_ctrl(unit_t unit, uint32_t value, uint32_t mask = 0xffffffff) override;
+    uint32_t get_pin_ctrl(unit_t unit) override;
     void set_atr_reg(
-        unit_t unit, atr_reg_t reg, uint32_t value, uint32_t mask = 0xffffffff);
-    uint32_t get_atr_reg(unit_t unit, atr_reg_t reg);
-    void set_gpio_ddr(unit_t unit, uint32_t value, uint32_t mask = 0xffffffff);
-    uint32_t get_gpio_ddr(unit_t unit);
-    void set_gpio_out(unit_t unit, uint32_t value, uint32_t mask = 0xffffffff);
-    uint32_t get_gpio_out(unit_t unit);
-    uint32_t read_gpio(unit_t unit);
+        unit_t unit, atr_reg_t reg, uint32_t value, uint32_t mask = 0xffffffff) override;
+    uint32_t get_atr_reg(unit_t unit, atr_reg_t reg) override;
+    void set_gpio_ddr(unit_t unit, uint32_t value, uint32_t mask = 0xffffffff) override;
+    uint32_t get_gpio_ddr(unit_t unit) override;
+    void set_gpio_out(unit_t unit, uint32_t value, uint32_t mask = 0xffffffff) override;
+    uint32_t get_gpio_out(unit_t unit) override;
+    uint32_t read_gpio(unit_t unit) override;
 
-    void set_command_time(const uhd::time_spec_t& t);
-    uhd::time_spec_t get_command_time(void);
+    void set_command_time(const uhd::time_spec_t& t) override;
+    uhd::time_spec_t get_command_time(void) override;
 
-    void write_i2c(uint16_t, const byte_vector_t&);
-    byte_vector_t read_i2c(uint16_t, size_t);
+    void write_i2c(uint16_t, const byte_vector_t&) override;
+    byte_vector_t read_i2c(uint16_t, size_t) override;
 
     void write_spi(
-        unit_t unit, const spi_config_t& config, uint32_t data, size_t num_bits);
+        unit_t unit, const spi_config_t& config, uint32_t data, size_t num_bits) override;
 
     uint32_t read_write_spi(
-        unit_t unit, const spi_config_t& config, uint32_t data, size_t num_bits);
+        unit_t unit, const spi_config_t& config, uint32_t data, size_t num_bits) override;
 
-    void set_clock_rate(unit_t, double);
-    std::vector<double> get_clock_rates(unit_t);
-    double get_clock_rate(unit_t);
-    void set_clock_enabled(unit_t, bool);
-    double get_codec_rate(unit_t);
+    void set_clock_rate(unit_t, double) override;
+    std::vector<double> get_clock_rates(unit_t) override;
+    double get_clock_rate(unit_t) override;
+    void set_clock_enabled(unit_t, bool) override;
+    double get_codec_rate(unit_t) override;
     void set_fe_connection(
-        unit_t unit, const std::string&, const fe_connection_t& fe_conn);
+        unit_t unit, const std::string&, const fe_connection_t& fe_conn) override;
 
 private:
     timed_wb_iface::sptr _wb_iface;

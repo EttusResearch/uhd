@@ -48,7 +48,7 @@ size_t ctrl_payload::serialize(uint64_t* buff,
 {
     // Ctrl Packet Payload can't have more than 15 data -> 8 CHDR_W (RFNoC Spec.
     // Section 2.2.3)
-    UHD_ASSERT_THROW((data_vtr.size() > 0 && data_vtr.size() < 16));
+    UHD_ASSERT_THROW((!data_vtr.empty() && data_vtr.size() < 16));
     UHD_ASSERT_THROW(get_length() * sizeof(uint64_t) <= max_size_bytes);
     size_t ptr = 0;
 
@@ -108,7 +108,7 @@ void ctrl_payload::deserialize(const uint64_t* buff,
     // Read control header
     uint64_t ctrl_header = conv_byte_order(buff[ptr++]);
     data_vtr.resize(get_field_u64<size_t>(ctrl_header, NUM_DATA_OFFSET, NUM_DATA_WIDTH));
-    UHD_ASSERT_THROW((data_vtr.size() > 0 && data_vtr.size() < 16));
+    UHD_ASSERT_THROW((!data_vtr.empty() && data_vtr.size() < 16));
     dst_port = get_field_u64<uint16_t>(ctrl_header, DST_PORT_OFFSET, DST_PORT_WIDTH);
     src_port = get_field_u64<uint16_t>(ctrl_header, SRC_PORT_OFFSET, SRC_PORT_WIDTH);
     seq_num  = get_field_u64<uint8_t>(ctrl_header, SEQ_NUM_OFFSET, SEQ_NUM_WIDTH);
@@ -124,7 +124,7 @@ void ctrl_payload::deserialize(const uint64_t* buff,
 
     // Read control operation word
     uint64_t op_word = conv_byte_order(buff[ptr++]);
-    if (data_vtr.size() > 0) {
+    if (!data_vtr.empty()) {
         data_vtr[0] = get_field_u64<uint32_t>(op_word, HI_DATA_OFFSET, 32);
     }
     address     = get_field_u64<uint32_t>(op_word, ADDRESS_OFFSET, ADDRESS_WIDTH);

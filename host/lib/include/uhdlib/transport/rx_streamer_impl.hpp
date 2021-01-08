@@ -106,13 +106,13 @@ public:
     }
 
     //! Implementation of rx_streamer API method
-    size_t get_num_channels() const
+    size_t get_num_channels() const override
     {
         return _zero_copy_streamer.get_num_channels();
     }
 
     //! Implementation of rx_streamer API method
-    size_t get_max_num_samps() const
+    size_t get_max_num_samps() const override
     {
         return _spp;
     }
@@ -130,7 +130,7 @@ public:
         const size_t nsamps_per_buff,
         uhd::rx_metadata_t& metadata,
         const double timeout,
-        const bool one_packet)
+        const bool one_packet) override
     {
         if (_error_metadata_cache.check(metadata)) {
             return 0;

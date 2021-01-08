@@ -175,7 +175,7 @@ public:
         rx_streamer_impl<xport, true>::set_scale_factor(chan, scale_factor);
     }
 
-    void issue_stream_cmd(const stream_cmd_t& /*stream_cmd*/) {}
+    void issue_stream_cmd(const stream_cmd_t& /*stream_cmd*/) override {}
 };
 
 /*!
@@ -206,7 +206,7 @@ public:
     }
 
     bool recv_async_msg(
-        uhd::async_metadata_t& /*async_metadata*/, double /*timeout = 0.1*/)
+        uhd::async_metadata_t& /*async_metadata*/, double /*timeout = 0.1*/) override
     {
         return false;
     }

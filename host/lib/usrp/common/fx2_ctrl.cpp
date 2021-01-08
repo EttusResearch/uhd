@@ -134,7 +134,7 @@ public:
         _ctrl_transport = ctrl_transport;
     }
 
-    void usrp_fx2_reset(void)
+    void usrp_fx2_reset(void) override
     {
         unsigned char reset_y = 1;
         unsigned char reset_n = 0;
@@ -144,7 +144,7 @@ public:
         std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     }
 
-    void usrp_load_firmware(std::string filestring, bool force)
+    void usrp_load_firmware(std::string filestring, bool force) override
     {
         const char* filename = filestring.c_str();
 
@@ -218,7 +218,7 @@ public:
         throw uhd::io_error("usrp_load_firmware: bad record");
     }
 
-    void usrp_init(void)
+    void usrp_init(void) override
     {
         // disable
         usrp_rx_enable(false);
@@ -231,7 +231,7 @@ public:
         usrp_tx_reset(false);
     }
 
-    void usrp_load_fpga(std::string filestring)
+    void usrp_load_fpga(std::string filestring) override
     {
         const char* filename = filestring.c_str();
 
@@ -283,7 +283,7 @@ public:
             UHD_LOGGER_INFO("FX2") << "FPGA image loaded";
     }
 
-    void usrp_load_eeprom(std::string filestring)
+    void usrp_load_eeprom(std::string filestring) override
     {
         if (load_img_msg)
             UHD_LOGGER_INFO("FX2") << "Loading EEPROM image: " << filestring << "...";
@@ -369,13 +369,13 @@ public:
             >= 0);
     }
 
-    void usrp_tx_enable(bool on)
+    void usrp_tx_enable(bool on) override
     {
         UHD_ASSERT_THROW(usrp_control_write_cmd(VRQ_FPGA_SET_TX_ENABLE, on, 0) >= 0);
     }
 
 
-    void usrp_rx_enable(bool on)
+    void usrp_rx_enable(bool on) override
     {
         UHD_ASSERT_THROW(usrp_control_write_cmd(VRQ_FPGA_SET_RX_ENABLE, on, 0) >= 0);
     }
@@ -392,7 +392,7 @@ public:
         UHD_ASSERT_THROW(usrp_control_write_cmd(VRQ_FPGA_SET_RX_RESET, on, 0) >= 0);
     }
 
-    void usrp_fpga_reset(bool on)
+    void usrp_fpga_reset(bool on) override
     {
         UHD_ASSERT_THROW(usrp_control_write_cmd(VRQ_FPGA_SET_RESET, on, 0) >= 0);
     }
@@ -401,7 +401,7 @@ public:
         uint16_t value,
         uint16_t index,
         unsigned char* buff,
-        uint16_t length)
+        uint16_t length) override
     {
         return _ctrl_transport->submit(VRT_VENDOR_OUT, // bmReqeustType
             request, // bRequest
@@ -416,7 +416,7 @@ public:
         uint16_t value,
         uint16_t index,
         unsigned char* buff,
-        uint16_t length)
+        uint16_t length) override
     {
         return _ctrl_transport->submit(VRT_VENDOR_IN, // bmReqeustType
             request, // bRequest
@@ -432,18 +432,18 @@ public:
         return usrp_control_write(request, value, index, 0, 0);
     }
 
-    byte_vector_t read_eeprom(uint16_t addr, uint16_t offset, size_t num_bytes)
+    byte_vector_t read_eeprom(uint16_t addr, uint16_t offset, size_t num_bytes) override
     {
         this->write_i2c(addr, byte_vector_t(1, uint8_t(offset)));
         return this->read_i2c(addr, num_bytes);
     }
 
-    int usrp_i2c_write(uint16_t i2c_addr, unsigned char* buf, uint16_t len)
+    int usrp_i2c_write(uint16_t i2c_addr, unsigned char* buf, uint16_t len) override
     {
         return usrp_control_write(VRQ_I2C_WRITE, i2c_addr, 0, buf, len);
     }
 
-    int usrp_i2c_read(uint16_t i2c_addr, unsigned char* buf, uint16_t len)
+    int usrp_i2c_read(uint16_t i2c_addr, unsigned char* buf, uint16_t len) override
     {
         return usrp_control_read(VRQ_I2C_READ, i2c_addr, 0, buf, len);
     }
@@ -451,7 +451,7 @@ public:
     static const bool iface_debug          = false;
     static const size_t max_i2c_data_bytes = 64;
 
-    void write_i2c(uint16_t addr, const byte_vector_t& bytes)
+    void write_i2c(uint16_t addr, const byte_vector_t& bytes) override
     {
         UHD_ASSERT_THROW(bytes.size() < max_i2c_data_bytes);
 
@@ -462,7 +462,7 @@ public:
             uhd::runtime_error("USRP: failed i2c write");
     }
 
-    byte_vector_t read_i2c(uint16_t addr, size_t num_bytes)
+    byte_vector_t read_i2c(uint16_t addr, size_t num_bytes) override
     {
         UHD_ASSERT_THROW(num_bytes < max_i2c_data_bytes);
 

@@ -115,12 +115,12 @@ class b200_impl : public uhd::device
 public:
     // structors
     b200_impl(const uhd::device_addr_t&, uhd::transport::usb_device_handle::sptr& handle);
-    ~b200_impl(void);
+    ~b200_impl(void) override;
 
     // the io interface
-    uhd::rx_streamer::sptr get_rx_stream(const uhd::stream_args_t& args);
-    uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t& args);
-    bool recv_async_msg(uhd::async_metadata_t&, double);
+    uhd::rx_streamer::sptr get_rx_stream(const uhd::stream_args_t& args) override;
+    uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t& args) override;
+    bool recv_async_msg(uhd::async_metadata_t&, double) override;
 
     //! Check that the combination of stream args and tick rate are valid.
     //

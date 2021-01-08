@@ -106,7 +106,7 @@ public:
     {
     }
 
-    void issue_stream_cmd(const stream_cmd_t&) {}
+    void issue_stream_cmd(const stream_cmd_t&) override {}
 
     void set_tick_rate(double rate)
     {

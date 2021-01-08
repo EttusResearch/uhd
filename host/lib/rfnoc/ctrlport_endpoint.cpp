@@ -57,12 +57,12 @@ public:
     {
     }
 
-    virtual ~ctrlport_endpoint_impl() = default;
+    ~ctrlport_endpoint_impl() override = default;
 
-    virtual void poke32(uint32_t addr,
+    void poke32(uint32_t addr,
         uint32_t data,
         uhd::time_spec_t timestamp = uhd::time_spec_t::ASAP,
-        bool ack                   = false)
+        bool ack                   = false) override
     {
         // Send request
         auto request = send_request_packet(OP_WRITE, addr, {data}, timestamp);
@@ -72,10 +72,10 @@ public:
         }
     }
 
-    virtual void multi_poke32(const std::vector<uint32_t> addrs,
+    void multi_poke32(const std::vector<uint32_t> addrs,
         const std::vector<uint32_t> data,
         uhd::time_spec_t timestamp = uhd::time_spec_t::ASAP,
-        bool ack                   = false)
+        bool ack                   = false) override
     {
         if (addrs.size() != data.size()) {
             throw uhd::value_error("addrs and data vectors must be of the same length");
@@ -88,10 +88,10 @@ public:
         }
     }
 
-    virtual void block_poke32(uint32_t first_addr,
+    void block_poke32(uint32_t first_addr,
         const std::vector<uint32_t> data,
         uhd::time_spec_t timestamp = uhd::time_spec_t::ASAP,
-        bool ack                   = false)
+        bool ack                   = false) override
     {
         for (size_t i = 0; i < data.size(); i++) {
             poke32(first_addr + (i * sizeof(uint32_t)),
@@ -110,8 +110,8 @@ public:
         */
     }
 
-    virtual uint32_t peek32(
-        uint32_t addr, uhd::time_spec_t timestamp = uhd::time_spec_t::ASAP)
+    uint32_t peek32(
+        uint32_t addr, uhd::time_spec_t timestamp = uhd::time_spec_t::ASAP) override
     {
         // Send request
         auto request = send_request_packet(OP_READ, addr, {uint32_t(0)}, timestamp);
@@ -121,9 +121,9 @@ public:
         return response.data_vtr[0];
     }
 
-    virtual std::vector<uint32_t> block_peek32(uint32_t first_addr,
+    std::vector<uint32_t> block_peek32(uint32_t first_addr,
         size_t length,
-        uhd::time_spec_t timestamp = uhd::time_spec_t::ASAP)
+        uhd::time_spec_t timestamp = uhd::time_spec_t::ASAP) override
     {
         std::vector<uint32_t> values;
         for (size_t i = 0; i < length; i++) {
@@ -145,12 +145,12 @@ public:
         */
     }
 
-    virtual void poll32(uint32_t addr,
+    void poll32(uint32_t addr,
         uint32_t data,
         uint32_t mask,
         uhd::time_spec_t timeout,
         uhd::time_spec_t timestamp = uhd::time_spec_t::ASAP,
-        bool ack                   = false)
+        bool ack                   = false) override
     {
         // TODO: Uncomment when this is implemented in the FPGA
         throw uhd::not_implemented_error("Control poll not implemented in the FPGA");
@@ -169,7 +169,7 @@ public:
         }
     }
 
-    virtual void sleep(uhd::time_spec_t duration, bool ack = false)
+    void sleep(uhd::time_spec_t duration, bool ack = false) override
     {
         // Send request
         auto request = send_request_packet(OP_SLEEP,
@@ -183,19 +183,19 @@ public:
         }
     }
 
-    virtual void register_async_msg_validator(async_msg_validator_t callback_f)
+    void register_async_msg_validator(async_msg_validator_t callback_f) override
     {
         std::unique_lock<std::mutex> lock(_mutex);
         _validate_async_msg = callback_f;
     }
 
-    virtual void register_async_msg_handler(async_msg_callback_t callback_f)
+    void register_async_msg_handler(async_msg_callback_t callback_f) override
     {
         std::unique_lock<std::mutex> lock(_mutex);
         _handle_async_msg = callback_f;
     }
 
-    virtual void set_policy(const std::string& name, const uhd::device_addr_t& args)
+    void set_policy(const std::string& name, const uhd::device_addr_t& args) override
     {
         std::unique_lock<std::mutex> lock(_mutex);
         if (name == "default") {
@@ -207,7 +207,7 @@ public:
         }
     }
 
-    virtual void handle_recv(const ctrl_payload& rx_ctrl)
+    void handle_recv(const ctrl_payload& rx_ctrl) override
     {
         if (rx_ctrl.is_ack) {
             // Function to process a response with no sequence errors
@@ -312,13 +312,13 @@ public:
         }
     }
 
-    virtual uint16_t get_src_epid() const
+    uint16_t get_src_epid() const override
     {
         // Is const, does not require a mutex
         return _my_epid;
     }
 
-    virtual uint16_t get_port_num() const
+    uint16_t get_port_num() const override
     {
         // Is const, does not require a mutex
         return _local_port;
@@ -447,7 +447,7 @@ private:
                     throw uhd::op_timerr("Control operation returned a timestamp error");
                 }
                 // Check data vector size
-                if (rx_ctrl.data_vtr.size() == 0) {
+                if (rx_ctrl.data_vtr.empty()) {
                     throw uhd::op_failed(
                         "Control operation returned a malformed response");
                 }

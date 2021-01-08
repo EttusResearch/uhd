@@ -75,7 +75,7 @@ public:
 
     typedef uhd::usrp::gpio_atr::gpio_atr_reg_t atr_reg_t;
 
-    virtual ~dboard_iface(void){};
+    ~dboard_iface(void) override{};
 
     /*!
      * Get special properties information for this dboard slot.

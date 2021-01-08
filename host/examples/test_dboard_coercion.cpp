@@ -44,7 +44,7 @@ std::string return_usrp_config_string(
     std::string rx_serial, rx_subdev_name, rx_subdev_spec;
 
     mboard_id = tx_info.get("mboard_id");
-    if (tx_info.get("mboard_serial") == "")
+    if (tx_info.get("mboard_serial").empty())
         mboard_serial = "no serial";
     else
         mboard_serial = tx_info.get("mboard_serial");
@@ -53,7 +53,7 @@ std::string return_usrp_config_string(
         str(boost::format("Motherboard: %s (%s)\n") % mboard_id % mboard_serial);
 
     if (test_tx) {
-        if (tx_info.get("tx_serial") == "")
+        if (tx_info.get("tx_serial").empty())
             tx_serial = "no serial";
         else
             tx_serial = tx_info.get("tx_serial");
@@ -68,7 +68,7 @@ std::string return_usrp_config_string(
     if (test_tx and test_rx)
         info_string += "\n";
     if (test_rx) {
-        if (rx_info.get("rx_serial") == "")
+        if (rx_info.get("rx_serial").empty())
             rx_serial = "no serial";
         else
             rx_serial = rx_info.get("rx_serial");

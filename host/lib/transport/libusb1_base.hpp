@@ -165,7 +165,7 @@ class special_handle : public usb_device_handle
 public:
     typedef std::shared_ptr<special_handle> sptr;
 
-    virtual ~special_handle(void);
+    ~special_handle(void) override;
 
     //! make a new special handle from device
     static sptr make(device::sptr);

@@ -146,7 +146,7 @@ public:
         return _orig_args;
     }
 
-    inline virtual std::string to_string() const
+    inline std::string to_string() const override
     {
         // We leave out blank_eeprom for safety reasons
         return (!_first_addr.get().empty() ? (_first_addr.to_string() + ", ") : "")
@@ -185,7 +185,7 @@ public:
     }
 
 private:
-    virtual void _parse(const device_addr_t& dev_args)
+    void _parse(const device_addr_t& dev_args) override
     {
         _orig_args = dev_args;
         // Extract parameters from dev_args

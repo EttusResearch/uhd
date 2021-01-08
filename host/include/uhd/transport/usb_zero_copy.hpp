@@ -28,7 +28,7 @@ class UHD_API usb_zero_copy : public virtual zero_copy_if
 public:
     typedef std::shared_ptr<usb_zero_copy> sptr;
 
-    virtual ~usb_zero_copy(void);
+    ~usb_zero_copy(void) override;
 
     /*!
      * Make a new zero copy USB transport:

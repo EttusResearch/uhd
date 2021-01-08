@@ -215,7 +215,7 @@ public:
         }
     }
 
-    frame_buff::uptr get_recv_buff(int32_t timeout_ms)
+    frame_buff::uptr get_recv_buff(int32_t timeout_ms) override
     {
         auto buff = _io_srv->recv(this, _data_link.get(), timeout_ms);
         if (buff) {
@@ -225,7 +225,7 @@ public:
         return buff;
     }
 
-    void release_recv_buff(frame_buff::uptr buff)
+    void release_recv_buff(frame_buff::uptr buff) override
     {
         _fc_cb(frame_buff::uptr(std::move(buff)), _data_link.get(), _fc_link.get());
         _num_frames_in_use--;
@@ -271,7 +271,7 @@ public:
         }
     }
 
-    bool wait_for_dest_ready(size_t num_bytes, int32_t timeout_ms)
+    bool wait_for_dest_ready(size_t num_bytes, int32_t timeout_ms) override
     {
         if (!_recv_link) {
             // If there is no flow control link, then the destination must
@@ -290,7 +290,7 @@ public:
         return true;
     }
 
-    frame_buff::uptr get_send_buff(int32_t timeout_ms)
+    frame_buff::uptr get_send_buff(int32_t timeout_ms) override
     {
         frame_buff::uptr buff = _send_link->get_send_buff(timeout_ms);
         if (buff) {
@@ -301,7 +301,7 @@ public:
         return frame_buff::uptr();
     }
 
-    void release_send_buff(frame_buff::uptr buff)
+    void release_send_buff(frame_buff::uptr buff) override
     {
         // Send the packet using callback
         _send_cb(std::move(buff), _send_link.get());

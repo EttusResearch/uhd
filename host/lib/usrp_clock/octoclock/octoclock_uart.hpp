@@ -25,10 +25,10 @@ class octoclock_uart_iface : public uhd::uart_iface
 {
 public:
     octoclock_uart_iface(uhd::transport::udp_simple::sptr udp, uint32_t proto_ver);
-    ~octoclock_uart_iface(void){};
+    ~octoclock_uart_iface(void) override{};
 
-    void write_uart(const std::string& buf);
-    std::string read_uart(double timeout);
+    void write_uart(const std::string& buf) override;
+    std::string read_uart(double timeout) override;
 
 private:
     uhd::transport::udp_simple::sptr _udp;

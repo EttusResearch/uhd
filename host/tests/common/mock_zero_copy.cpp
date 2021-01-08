@@ -41,7 +41,7 @@ uhd::transport::managed_recv_buffer::sptr mock_zero_copy::get_recv_buff(double)
 
 uhd::transport::managed_send_buffer::sptr mock_zero_copy::get_send_buff(double)
 {
-    if (not _reuse_send_memory or _tx_mems.size() == 0) {
+    if (not _reuse_send_memory or _tx_mems.empty()) {
         _tx_mems.push_back(boost::shared_array<uint8_t>(new uint8_t[_send_frame_size]));
         _tx_lens.push_back(_send_frame_size);
     }

@@ -40,7 +40,7 @@ public:
         _update_forwarding_map();
     }
 
-    void connect(const size_t input, const size_t output)
+    void connect(const size_t input, const size_t output) override
     {
         set_property<int>(PROP_KEY_INPUT_SELECT, static_cast<int>(input), output);
         set_property<int>(PROP_KEY_OUTPUT_SELECT, static_cast<int>(output), input);

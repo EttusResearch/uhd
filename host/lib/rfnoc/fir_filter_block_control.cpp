@@ -40,12 +40,12 @@ public:
         _program_coefficients();
     }
 
-    size_t get_max_num_coefficients() const
+    size_t get_max_num_coefficients() const override
     {
         return _max_num_coeffs;
     }
 
-    void set_coefficients(const std::vector<int16_t>& coeffs)
+    void set_coefficients(const std::vector<int16_t>& coeffs) override
     {
         if (coeffs.size() > _max_num_coeffs) {
             std::string error_msg =
@@ -62,7 +62,7 @@ public:
         _program_coefficients();
     }
 
-    std::vector<int16_t> get_coefficients() const
+    std::vector<int16_t> get_coefficients() const override
     {
         return _coeffs;
     }

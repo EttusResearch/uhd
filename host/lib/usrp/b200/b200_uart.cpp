@@ -57,21 +57,21 @@ struct b200_uart_impl : b200_uart
         buff->commit(packet_info.num_packet_words32 * sizeof(uint32_t));
     }
 
-    void write_uart(const std::string& buff)
+    void write_uart(const std::string& buff) override
     {
         for (const char ch : buff) {
             this->send_char(ch);
         }
     }
 
-    std::string read_uart(double timeout)
+    std::string read_uart(double timeout) override
     {
         std::string line;
         _line_queue.pop_with_timed_wait(line, timeout);
         return line;
     }
 
-    void handle_uart_packet(managed_recv_buffer::sptr buff)
+    void handle_uart_packet(managed_recv_buffer::sptr buff) override
     {
         const uint32_t* packet_buff = buff->cast<const uint32_t*>();
         vrt::if_packet_info_t packet_info;

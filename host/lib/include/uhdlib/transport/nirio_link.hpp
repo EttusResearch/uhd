@@ -48,7 +48,7 @@ public:
 
     ~nirio_adapter_info() {}
 
-    std::string to_string()
+    std::string to_string() override
     {
         return std::string("NIRIO:") + _resource;
     }
@@ -92,7 +92,7 @@ public:
     /*!
      * Get the physical adapter ID used for this link
      */
-    adapter_id_t get_send_adapter_id() const
+    adapter_id_t get_send_adapter_id() const override
     {
         return _adapter_id;
     }
@@ -100,7 +100,7 @@ public:
     /*!
      * Get the physical adapter ID used for this link
      */
-    adapter_id_t get_recv_adapter_id() const
+    adapter_id_t get_recv_adapter_id() const override
     {
         return _adapter_id;
     }
@@ -109,7 +109,7 @@ public:
      * Returns whether this link type supports releasing the frame buffers
      * in an order different from that in which they were acquired.
      */
-    bool supports_send_buff_out_of_order() const
+    bool supports_send_buff_out_of_order() const override
     {
         return false;
     }
@@ -118,7 +118,7 @@ public:
      * Returns whether this link type supports releasing the frame buffers
      * in an order different from that in which they were acquired.
      */
-    bool supports_recv_buff_out_of_order() const
+    bool supports_recv_buff_out_of_order() const override
     {
         return false;
     }

@@ -35,7 +35,7 @@ public:
     { /*NOP*/
     }
 
-    void release(void)
+    void release(void) override
     {
         _claimer.release();
     }
@@ -84,7 +84,7 @@ public:
     { /*NOP*/
     }
 
-    void release(void)
+    void release(void) override
     {
         // Retry logic because send may fail with ENOBUFS.
         // This is known to occur at least on some OSX systems.
@@ -184,18 +184,18 @@ public:
      * Receive implementation:
      * Block on the managed buffer's get call and advance the index.
      ******************************************************************/
-    managed_recv_buffer::sptr get_recv_buff(double timeout)
+    managed_recv_buffer::sptr get_recv_buff(double timeout) override
     {
         if (_next_recv_buff_index == _num_recv_frames)
             _next_recv_buff_index = 0;
         return _mrb_pool[_next_recv_buff_index]->get_new(timeout, _next_recv_buff_index);
     }
 
-    size_t get_num_recv_frames(void) const
+    size_t get_num_recv_frames(void) const override
     {
         return _num_recv_frames;
     }
-    size_t get_recv_frame_size(void) const
+    size_t get_recv_frame_size(void) const override
     {
         return _recv_frame_size;
     }
@@ -204,18 +204,18 @@ public:
      * Send implementation:
      * Block on the managed buffer's get call and advance the index.
      ******************************************************************/
-    managed_send_buffer::sptr get_send_buff(double timeout)
+    managed_send_buffer::sptr get_send_buff(double timeout) override
     {
         if (_next_send_buff_index == _num_send_frames)
             _next_send_buff_index = 0;
         return _msb_pool[_next_send_buff_index]->get_new(timeout, _next_send_buff_index);
     }
 
-    size_t get_num_send_frames(void) const
+    size_t get_num_send_frames(void) const override
     {
         return _num_send_frames;
     }
-    size_t get_send_frame_size(void) const
+    size_t get_send_frame_size(void) const override
     {
         return _send_frame_size;
     }

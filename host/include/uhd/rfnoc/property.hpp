@@ -165,7 +165,7 @@ public:
     //
     // If true, this means the value was recently changed, but it wasn't marked
     // clean yet.
-    bool is_dirty() const
+    bool is_dirty() const override
     {
         return _data.is_dirty();
     }
@@ -174,12 +174,12 @@ public:
     //
     // If it's false, that means this property has a default value that should
     // NOT be used.
-    bool is_valid() const
+    bool is_valid() const override
     {
         return _valid;
     }
 
-    bool equal(property_base_t* rhs) const
+    bool equal(property_base_t* rhs) const override
     {
         if (!is_type_equal(rhs)) {
             return false;
@@ -193,7 +193,7 @@ public:
             new property_t<data_t>(get_id(), get(), new_src_info));
     }
 
-    void set_from_str(const std::string& new_val_str)
+    void set_from_str(const std::string& new_val_str) override
     {
         try {
             set(uhd::cast::from_str<data_t>(new_val_str));
@@ -228,7 +228,7 @@ public:
         }
     }
 
-    void force_dirty()
+    void force_dirty() override
     {
         if (write_access_granted()) {
             _data.force_dirty();
@@ -279,12 +279,12 @@ public:
     }
 
 private:
-    void mark_clean()
+    void mark_clean() override
     {
         _data.mark_clean();
     }
 
-    void forward(property_base_t* next_prop)
+    void forward(property_base_t* next_prop) override
     {
         if (not _valid) {
             throw uhd::resolve_error(
@@ -300,7 +300,7 @@ private:
         prop_ptr->set(get());
     }
 
-    bool is_type_equal(property_base_t* other_prop) const
+    bool is_type_equal(property_base_t* other_prop) const override
     {
         return dynamic_cast<property_t<data_t>*>(other_prop) != nullptr;
     }

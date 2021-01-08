@@ -74,17 +74,17 @@ public:
     {
     }
 
-    virtual size_t get_num_send_frames() const
+    size_t get_num_send_frames() const override
     {
         return _num_send_frames;
     }
 
-    virtual size_t get_send_frame_size() const
+    size_t get_send_frame_size() const override
     {
         return _send_frame_size;
     }
 
-    virtual frame_buff::uptr get_send_buff(int32_t timeout_ms)
+    frame_buff::uptr get_send_buff(int32_t timeout_ms) override
     {
         frame_buff* buff = _free_send_buffs.pop();
 
@@ -99,7 +99,7 @@ public:
         return frame_buff::uptr(buff);
     }
 
-    virtual void release_send_buff(frame_buff::uptr buff)
+    void release_send_buff(frame_buff::uptr buff) override
     {
         frame_buff* buff_ptr = buff.release();
         assert(buff_ptr);
@@ -164,17 +164,17 @@ public:
     {
     }
 
-    virtual size_t get_num_recv_frames() const
+    size_t get_num_recv_frames() const override
     {
         return _num_recv_frames;
     }
 
-    virtual size_t get_recv_frame_size() const
+    size_t get_recv_frame_size() const override
     {
         return _recv_frame_size;
     }
 
-    virtual frame_buff::uptr get_recv_buff(int32_t timeout_ms)
+    frame_buff::uptr get_recv_buff(int32_t timeout_ms) override
     {
         frame_buff* buff = _free_recv_buffs.pop();
 
@@ -192,7 +192,7 @@ public:
         }
     }
 
-    virtual void release_recv_buff(frame_buff::uptr buff)
+    void release_recv_buff(frame_buff::uptr buff) override
     {
         frame_buff* buff_ptr = buff.release();
         assert(buff_ptr);

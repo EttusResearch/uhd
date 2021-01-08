@@ -36,16 +36,16 @@ public:
         const mpmd_link_if_mgr::xport_info_list_t& xport_info,
         const uhd::rfnoc::chdr_w_t chdr_w);
 
-    size_t get_num_links() const;
+    size_t get_num_links() const override;
     uhd::transport::both_links_t get_link(const size_t link_idx,
         const uhd::transport::link_type_t link_type,
-        const uhd::device_addr_t& link_args);
-    size_t get_mtu(const uhd::direction_t) const
+        const uhd::device_addr_t& link_args) override;
+    size_t get_mtu(const uhd::direction_t) const override
     {
         return _mtu;
     }
-    double get_link_rate(const size_t link_idx) const;
-    const uhd::rfnoc::chdr::chdr_packet_factory& get_packet_factory() const;
+    double get_link_rate(const size_t link_idx) const override;
+    const uhd::rfnoc::chdr::chdr_packet_factory& get_packet_factory() const override;
 
 private:
     const uhd::device_addr_t _mb_args;

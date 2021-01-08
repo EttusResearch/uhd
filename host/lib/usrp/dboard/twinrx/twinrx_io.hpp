@@ -88,7 +88,7 @@ public:
         _db_iface->set_gpio_out(dboard_iface::UNIT_BOTH, 0, ~GPIO_PINCTRL_MASK);
     }
 
-    ~twinrx_gpio()
+    ~twinrx_gpio() override
     {
         _db_iface->set_gpio_ddr(dboard_iface::UNIT_BOTH, ~GPIO_OUTPUT_MASK, SET_ALL_BITS);
     }
@@ -111,7 +111,7 @@ public:
     }
 
     // CPLD register write-only interface
-    void poke32(const wb_addr_type addr, const uint32_t data)
+    void poke32(const wb_addr_type addr, const uint32_t data) override
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         using namespace soft_reg_field;

@@ -54,17 +54,17 @@ public:
             _sources.push_back("mimo");
     }
 
-    void enable_gpsdo(void)
+    void enable_gpsdo(void) override
     {
         _sources.push_back("gpsdo");
     }
 
-    void set_tick_rate(const double rate)
+    void set_tick_rate(const double rate) override
     {
         _tick_rate = rate;
     }
 
-    uhd::time_spec_t get_time_now(void)
+    uhd::time_spec_t get_time_now(void) override
     {
         for (size_t i = 0; i < 3;
              i++) { // special algorithm because we cant read 64 bits synchronously
@@ -78,7 +78,7 @@ public:
         throw uhd::runtime_error("time64_core_200: get time now timeout");
     }
 
-    uhd::time_spec_t get_time_last_pps(void)
+    uhd::time_spec_t get_time_last_pps(void) override
     {
         for (size_t i = 0; i < 3;
              i++) { // special algorithm because we cant read 64 bits synchronously
@@ -92,7 +92,7 @@ public:
         throw uhd::runtime_error("time64_core_200: get time last pps timeout");
     }
 
-    void set_time_now(const uhd::time_spec_t& time)
+    void set_time_now(const uhd::time_spec_t& time) override
     {
         const uint64_t ticks = time.to_ticks(_tick_rate);
         _iface->poke32(REG_TIME64_TICKS_LO, uint32_t(ticks >> 0));
@@ -100,7 +100,7 @@ public:
         _iface->poke32(REG_TIME64_TICKS_HI, uint32_t(ticks >> 32)); // latches all 3
     }
 
-    void set_time_next_pps(const uhd::time_spec_t& time)
+    void set_time_next_pps(const uhd::time_spec_t& time) override
     {
         const uint64_t ticks = time.to_ticks(_tick_rate);
         _iface->poke32(REG_TIME64_TICKS_LO, uint32_t(ticks >> 0));
@@ -108,7 +108,7 @@ public:
         _iface->poke32(REG_TIME64_TICKS_HI, uint32_t(ticks >> 32)); // latches all 3
     }
 
-    void set_time_source(const std::string& source)
+    void set_time_source(const std::string& source) override
     {
         assert_has(_sources, source, "time source");
 
@@ -130,7 +130,7 @@ public:
         }
     }
 
-    std::vector<std::string> get_time_sources(void)
+    std::vector<std::string> get_time_sources(void) override
     {
         return _sources;
     }

@@ -35,7 +35,7 @@ static constexpr size_t DEFAULT_RECV_FRAME_SIZE = 1024;
 class mock_msb : public uhd::transport::managed_send_buffer
 {
 public:
-    void release(void)
+    void release(void) override
     { /* nop */
     }
 
@@ -53,7 +53,7 @@ private:
 class mock_mrb : public uhd::transport::managed_recv_buffer
 {
 public:
-    void release(void)
+    void release(void) override
     { /* nop */
     }
 
@@ -76,22 +76,22 @@ public:
         size_t recv_frame_size = DEFAULT_RECV_FRAME_SIZE,
         size_t send_frame_size = DEFAULT_SEND_FRAME_SIZE);
 
-    uhd::transport::managed_recv_buffer::sptr get_recv_buff(double);
-    uhd::transport::managed_send_buffer::sptr get_send_buff(double);
+    uhd::transport::managed_recv_buffer::sptr get_recv_buff(double) override;
+    uhd::transport::managed_send_buffer::sptr get_send_buff(double) override;
 
-    size_t get_num_recv_frames(void) const
+    size_t get_num_recv_frames(void) const override
     {
         return 1;
     }
-    size_t get_num_send_frames(void) const
+    size_t get_num_send_frames(void) const override
     {
         return 1;
     }
-    size_t get_recv_frame_size(void) const
+    size_t get_recv_frame_size(void) const override
     {
         return _recv_frame_size;
     }
-    size_t get_send_frame_size(void) const
+    size_t get_send_frame_size(void) const override
     {
         return _send_frame_size;
     }

@@ -63,17 +63,17 @@ struct eeprom16_impl : i2c_iface
     }
     i2c_iface* _internal;
 
-    byte_vector_t read_i2c(uint16_t addr, size_t num_bytes)
+    byte_vector_t read_i2c(uint16_t addr, size_t num_bytes) override
     {
         return _internal->read_i2c(addr, num_bytes);
     }
 
-    void write_i2c(uint16_t addr, const byte_vector_t& bytes)
+    void write_i2c(uint16_t addr, const byte_vector_t& bytes) override
     {
         return _internal->write_i2c(addr, bytes);
     }
 
-    byte_vector_t read_eeprom(uint16_t addr, uint16_t offset, size_t num_bytes)
+    byte_vector_t read_eeprom(uint16_t addr, uint16_t offset, size_t num_bytes) override
     {
         byte_vector_t cmd = {
             narrow_cast<uint8_t>(offset >> 8), narrow_cast<uint8_t>(offset & 0xff)};
@@ -81,7 +81,7 @@ struct eeprom16_impl : i2c_iface
         return this->read_i2c(addr, num_bytes);
     }
 
-    void write_eeprom(uint16_t addr, uint16_t offset, const byte_vector_t& bytes)
+    void write_eeprom(uint16_t addr, uint16_t offset, const byte_vector_t& bytes) override
     {
         for (uint16_t i = 0; i < bytes.size(); i++) {
             // write a byte at a time, its easy that way

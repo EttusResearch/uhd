@@ -79,7 +79,7 @@ public: // Types
         {
             set(str_rep);
         }
-        inline virtual std::string to_string() const
+        inline std::string to_string() const override
         {
             return key() + "=" + get();
         }
@@ -125,7 +125,7 @@ public: // Types
                         % ex.what()));
             }
         }
-        inline virtual std::string to_string() const
+        inline std::string to_string() const override
         {
             return key() + "=" + std::to_string(get());
         }
@@ -179,7 +179,7 @@ public: // Types
 
             set(_str_values.at(str_rep_lowercase));
         }
-        inline virtual std::string to_string() const
+        inline std::string to_string() const override
         {
             std::string repr;
             for (const auto& value : _str_values) {
@@ -232,7 +232,7 @@ public: // Types
                         % key() % ex.what()));
             }
         }
-        inline virtual std::string to_string() const
+        inline std::string to_string() const override
         {
             return key() + "=" + (get() ? "true" : "false");
         }

@@ -38,7 +38,7 @@ public:
 
     /*! Destructor
      */
-    ~rfnoc_rx_streamer();
+    ~rfnoc_rx_streamer() override;
 
     /*! Returns a unique identifier string for this node. In every RFNoC graph,
      * no two nodes cannot have the same ID. Returns a string in the form of
@@ -46,13 +46,13 @@ public:
      *
      * \returns The unique ID as a string
      */
-    std::string get_unique_id() const;
+    std::string get_unique_id() const override;
 
     /*! Returns the number of input ports for this block.
      *
      * \return noc_id The number of ports
      */
-    size_t get_num_input_ports() const;
+    size_t get_num_input_ports() const override;
 
     /*! Returns the number of output ports for this block.
      *
@@ -60,13 +60,13 @@ public:
      *
      * \return noc_id The number of ports
      */
-    size_t get_num_output_ports() const;
+    size_t get_num_output_ports() const override;
 
     /*! Implementation of rx_streamer API method
      *
      * \param stream_cmd the stream command to issue
      */
-    void issue_stream_cmd(const stream_cmd_t& stream_cmd);
+    void issue_stream_cmd(const stream_cmd_t& stream_cmd) override;
 
     /*! Returns stream args provided at creation
      *
@@ -83,7 +83,7 @@ public:
      * \returns true if the block can deal with this configuration
      */
     bool check_topology(const std::vector<size_t>& connected_inputs,
-        const std::vector<size_t>& connected_outputs);
+        const std::vector<size_t>& connected_outputs) override;
 
     /*! Connects a channel to the streamer port
      *
@@ -92,7 +92,7 @@ public:
      * \param channel The streamer channel to which to connect
      * \param xport The transport for the specified channel
      */
-    void connect_channel(const size_t channel, chdr_rx_data_xport::uptr xport);
+    void connect_channel(const size_t channel, chdr_rx_data_xport::uptr xport) override;
 
 private:
     void _register_props(const size_t chan, const std::string& otw_format);

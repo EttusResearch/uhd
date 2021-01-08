@@ -27,7 +27,7 @@ public:
     }
 
 private:
-    void resolve()
+    void resolve() override
     {
         _c = _a + _b;
     }
@@ -51,7 +51,7 @@ public:
     }
 
 private:
-    void resolve()
+    void resolve() override
     {
         _e.set(_c.get() * _d.get());
     }
@@ -74,7 +74,7 @@ public:
     }
 
 private:
-    void resolve()
+    void resolve() override
     {
         _f.set(-_b.get());
     }
@@ -97,7 +97,7 @@ public:
     }
 
 private:
-    void resolve()
+    void resolve() override
     {
         _g.set(_e.get() - _f.get());
     }
@@ -120,7 +120,7 @@ public:
     }
 
 private:
-    void resolve()
+    void resolve() override
     {
         *_output = _g;
     }
@@ -137,7 +137,7 @@ public:
     worker6_t() : worker_node_t("null_worker") {}
 
 private:
-    void resolve() {}
+    void resolve() override {}
 };
 
 //=============================================================================

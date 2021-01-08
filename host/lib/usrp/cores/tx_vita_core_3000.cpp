@@ -44,12 +44,12 @@ struct tx_vita_core_3000_impl : tx_vita_core_3000
         this->clear();
     }
 
-    ~tx_vita_core_3000_impl(void)
+    ~tx_vita_core_3000_impl(void) override
     {
         UHD_SAFE_CALL(this->clear();)
     }
 
-    void clear(void)
+    void clear(void) override
     {
         this->configure_flow_control(0, 0);
         this->set_underflow_policy(_policy); // clears the seq
@@ -69,14 +69,15 @@ struct tx_vita_core_3000_impl : tx_vita_core_3000
         _policy = policy;
     }
 
-    void setup(const uhd::stream_args_t& stream_args)
+    void setup(const uhd::stream_args_t& stream_args) override
     {
         if (stream_args.args.has_key("underflow_policy")) {
             this->set_underflow_policy(stream_args.args["underflow_policy"]);
         }
     }
 
-    void configure_flow_control(const size_t cycs_per_up, const size_t pkts_per_up)
+    void configure_flow_control(
+        const size_t cycs_per_up, const size_t pkts_per_up) override
     {
         if (cycs_per_up == 0)
             _iface->poke32(_fc_base + REG_CTRL_FC_CYCLE_OFFSET, 0);

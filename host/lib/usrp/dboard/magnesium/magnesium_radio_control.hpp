@@ -67,99 +67,107 @@ public:
      * Structors
      ***********************************************************************/
     magnesium_radio_control_impl(make_args_ptr make_args);
-    virtual ~magnesium_radio_control_impl();
+    ~magnesium_radio_control_impl() override;
 
     /************************************************************************
      * RF API calls
      ***********************************************************************/
     // Note: We use the cached values in radio_ctrl_impl, so most getters are
     // not reimplemented here
-    double set_rate(double rate);
+    double set_rate(double rate) override;
 
     // Setters
-    void set_tx_antenna(const std::string& ant, const size_t chan);
-    void set_rx_antenna(const std::string& ant, const size_t chan);
-    double set_tx_frequency(const double freq, const size_t chan);
-    double set_rx_frequency(const double freq, const size_t chan);
-    double set_tx_gain(const double gain, const size_t chan);
-    double set_tx_gain(const double gain, const std::string& name, const size_t chan);
-    double set_rx_gain(const double gain, const size_t chan);
-    double set_rx_gain(const double gain, const std::string& name, const size_t chan);
-    double set_tx_bandwidth(const double bandwidth, const size_t chan);
-    double set_rx_bandwidth(const double bandwidth, const size_t chan);
+    void set_tx_antenna(const std::string& ant, const size_t chan) override;
+    void set_rx_antenna(const std::string& ant, const size_t chan) override;
+    double set_tx_frequency(const double freq, const size_t chan) override;
+    double set_rx_frequency(const double freq, const size_t chan) override;
+    double set_tx_gain(const double gain, const size_t chan) override;
+    double set_tx_gain(
+        const double gain, const std::string& name, const size_t chan) override;
+    double set_rx_gain(const double gain, const size_t chan) override;
+    double set_rx_gain(
+        const double gain, const std::string& name, const size_t chan) override;
+    double set_tx_bandwidth(const double bandwidth, const size_t chan) override;
+    double set_rx_bandwidth(const double bandwidth, const size_t chan) override;
 
     // Getters
-    std::vector<std::string> get_tx_antennas(const size_t chan) const;
-    std::vector<std::string> get_rx_antennas(const size_t chan) const;
-    uhd::freq_range_t get_tx_frequency_range(const size_t chan) const;
-    uhd::freq_range_t get_rx_frequency_range(const size_t chan) const;
-    std::vector<std::string> get_tx_gain_names(const size_t) const;
-    std::vector<std::string> get_rx_gain_names(const size_t) const;
-    double get_tx_gain(const std::string&, size_t);
-    double get_rx_gain(const std::string&, size_t);
-    uhd::gain_range_t get_tx_gain_range(const size_t) const;
-    uhd::gain_range_t get_tx_gain_range(const std::string&, const size_t) const;
-    uhd::gain_range_t get_rx_gain_range(const size_t) const;
-    uhd::gain_range_t get_rx_gain_range(const std::string&, const size_t) const;
-    uhd::meta_range_t get_tx_bandwidth_range(size_t chan) const;
-    uhd::meta_range_t get_rx_bandwidth_range(size_t chan) const;
+    std::vector<std::string> get_tx_antennas(const size_t chan) const override;
+    std::vector<std::string> get_rx_antennas(const size_t chan) const override;
+    uhd::freq_range_t get_tx_frequency_range(const size_t chan) const override;
+    uhd::freq_range_t get_rx_frequency_range(const size_t chan) const override;
+    std::vector<std::string> get_tx_gain_names(const size_t) const override;
+    std::vector<std::string> get_rx_gain_names(const size_t) const override;
+    double get_tx_gain(const std::string&, size_t) override;
+    double get_rx_gain(const std::string&, size_t) override;
+    uhd::gain_range_t get_tx_gain_range(const size_t) const override;
+    uhd::gain_range_t get_tx_gain_range(const std::string&, const size_t) const override;
+    uhd::gain_range_t get_rx_gain_range(const size_t) const override;
+    uhd::gain_range_t get_rx_gain_range(const std::string&, const size_t) const override;
+    uhd::meta_range_t get_tx_bandwidth_range(size_t chan) const override;
+    uhd::meta_range_t get_rx_bandwidth_range(size_t chan) const override;
 
     /**************************************************************************
      * LO Controls
      *************************************************************************/
-    std::vector<std::string> get_rx_lo_names(const size_t chan) const;
+    std::vector<std::string> get_rx_lo_names(const size_t chan) const override;
     std::vector<std::string> get_rx_lo_sources(
-        const std::string& name, const size_t chan) const;
-    freq_range_t get_rx_lo_freq_range(const std::string& name, const size_t chan) const;
+        const std::string& name, const size_t chan) const override;
+    freq_range_t get_rx_lo_freq_range(
+        const std::string& name, const size_t chan) const override;
     void set_rx_lo_source(
-        const std::string& src, const std::string& name, const size_t chan);
+        const std::string& src, const std::string& name, const size_t chan) override;
     const std::string get_rx_lo_source(const std::string& name, const size_t chan) const;
-    double set_rx_lo_freq(double freq, const std::string& name, const size_t chan);
-    double get_rx_lo_freq(const std::string& name, const size_t chan);
-    std::vector<std::string> get_tx_lo_names(const size_t chan) const;
+    double set_rx_lo_freq(
+        double freq, const std::string& name, const size_t chan) override;
+    double get_rx_lo_freq(const std::string& name, const size_t chan) override;
+    std::vector<std::string> get_tx_lo_names(const size_t chan) const override;
     std::vector<std::string> get_tx_lo_sources(
         const std::string& name, const size_t chan) const;
-    freq_range_t get_tx_lo_freq_range(const std::string& name, const size_t chan);
+    freq_range_t get_tx_lo_freq_range(
+        const std::string& name, const size_t chan) override;
     void set_tx_lo_source(
-        const std::string& src, const std::string& name, const size_t chan);
-    const std::string get_tx_lo_source(const std::string& name, const size_t chan);
-    double set_tx_lo_freq(const double freq, const std::string& name, const size_t chan);
-    double get_tx_lo_freq(const std::string& name, const size_t chan);
+        const std::string& src, const std::string& name, const size_t chan) override;
+    const std::string get_tx_lo_source(
+        const std::string& name, const size_t chan) override;
+    double set_tx_lo_freq(
+        const double freq, const std::string& name, const size_t chan) override;
+    double get_tx_lo_freq(const std::string& name, const size_t chan) override;
 
     /**************************************************************************
      * GPIO Controls
      *************************************************************************/
-    std::vector<std::string> get_gpio_banks() const;
+    std::vector<std::string> get_gpio_banks() const override;
     void set_gpio_attr(
-        const std::string& bank, const std::string& attr, const uint32_t value);
-    uint32_t get_gpio_attr(const std::string& bank, const std::string& attr);
+        const std::string& bank, const std::string& attr, const uint32_t value) override;
+    uint32_t get_gpio_attr(const std::string& bank, const std::string& attr) override;
 
     /**************************************************************************
      * EEPROM API
      *************************************************************************/
-    void set_db_eeprom(const uhd::eeprom_map_t& db_eeprom);
-    uhd::eeprom_map_t get_db_eeprom();
+    void set_db_eeprom(const uhd::eeprom_map_t& db_eeprom) override;
+    uhd::eeprom_map_t get_db_eeprom() override;
 
     /**************************************************************************
      * Sensor API
      *************************************************************************/
     std::vector<std::string> get_rx_sensor_names(size_t chan);
-    uhd::sensor_value_t get_rx_sensor(const std::string& name, size_t chan);
+    uhd::sensor_value_t get_rx_sensor(const std::string& name, size_t chan) override;
     std::vector<std::string> get_tx_sensor_names(size_t chan);
-    uhd::sensor_value_t get_tx_sensor(const std::string& name, size_t chan);
+    uhd::sensor_value_t get_tx_sensor(const std::string& name, size_t chan) override;
 
     /**************************************************************************
      * Radio Identification API Calls
      *************************************************************************/
-    std::string get_slot_name() const
+    std::string get_slot_name() const override
     {
         return _radio_slot;
     }
     size_t get_chan_from_dboard_fe(
-        const std::string& fe, const uhd::direction_t direction) const;
+        const std::string& fe, const uhd::direction_t direction) const override;
     std::string get_dboard_fe_from_chan(
-        const size_t chan, const uhd::direction_t direction) const;
-    std::string get_fe_name(const size_t chan, const uhd::direction_t direction) const;
+        const size_t chan, const uhd::direction_t direction) const override;
+    std::string get_fe_name(
+        const size_t chan, const uhd::direction_t direction) const override;
 
 private:
     /**************************************************************************

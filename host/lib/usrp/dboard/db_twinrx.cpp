@@ -247,7 +247,7 @@ public:
             _expert, prepend_ch("synth/LO2/mapping", _ch_name), MAPPING_NONE);
     }
 
-    virtual ~twinrx_rcvr_fe(void) {}
+    ~twinrx_rcvr_fe(void) override {}
 
     sensor_value_t get_lo_locked()
     {
@@ -287,7 +287,7 @@ public:
         _expert = expert_factory::create_container("twinrx_expert");
     }
 
-    virtual ~twinrx_rcvr(void) {}
+    ~twinrx_rcvr(void) override {}
 
     inline expert_container::sptr get_expert()
     {
@@ -299,7 +299,7 @@ public:
         return _ctrl;
     }
 
-    virtual void initialize()
+    void initialize() override
     {
         //---------------------------------------------------------
         // Add internal channel-agnostic data nodes to expert

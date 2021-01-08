@@ -51,14 +51,14 @@ public:
         }
     }
 
-    virtual ~graph_stream_manager_impl() = default;
+    ~graph_stream_manager_impl() override = default;
 
-    virtual const std::set<sep_addr_t>& get_reachable_endpoints() const
+    const std::set<sep_addr_t>& get_reachable_endpoints() const override
     {
         return _reachable_endpoints;
     }
 
-    virtual std::vector<device_id_t> get_local_devices() const
+    std::vector<device_id_t> get_local_devices() const override
     {
         std::vector<device_id_t> retval;
         for (const auto& mgr_pair : _link_mgrs) {
@@ -67,8 +67,8 @@ public:
         return retval;
     }
 
-    virtual sep_id_pair_t connect_host_to_device(sep_addr_t dst_addr,
-        uhd::transport::adapter_id_t adapter = uhd::transport::NULL_ADAPTER_ID)
+    sep_id_pair_t connect_host_to_device(sep_addr_t dst_addr,
+        uhd::transport::adapter_id_t adapter = uhd::transport::NULL_ADAPTER_ID) override
     {
         UHD_LOGGER_DEBUG("RFNOC::GRAPH")
             << boost::format("Connecting the Host to Endpoint %d:%d through Adapter "
@@ -90,8 +90,8 @@ public:
         return epid_pair;
     }
 
-    virtual sep_id_pair_t connect_device_to_device(
-        sep_addr_t dst_addr, sep_addr_t src_addr)
+    sep_id_pair_t connect_device_to_device(
+        sep_addr_t dst_addr, sep_addr_t src_addr) override
     {
         UHD_LOGGER_DEBUG("RFNOC::GRAPH")
             << boost::format("Connecting the Endpoint %d:%d to Endpoint %d:%d...")
@@ -119,11 +119,11 @@ public:
                                  "specified source endpoint");
     }
 
-    virtual ctrlport_endpoint::sptr get_block_register_iface(sep_addr_t dst_addr,
+    ctrlport_endpoint::sptr get_block_register_iface(sep_addr_t dst_addr,
         uint16_t block_index,
         const clock_iface& client_clk,
         const clock_iface& timebase_clk,
-        uhd::transport::adapter_id_t adapter = uhd::transport::NULL_ADAPTER_ID)
+        uhd::transport::adapter_id_t adapter = uhd::transport::NULL_ADAPTER_ID) override
     {
         // We must be connected to dst_addr before getting a register iface
         sep_id_t dst_epid = _epid_alloc->get_epid(dst_addr);
@@ -133,8 +133,9 @@ public:
             dst_epid, block_index, client_clk, timebase_clk);
     }
 
-    virtual detail::client_zero::sptr get_client_zero(sep_addr_t dst_addr,
-        uhd::transport::adapter_id_t adapter = uhd::transport::NULL_ADAPTER_ID) const
+    detail::client_zero::sptr get_client_zero(sep_addr_t dst_addr,
+        uhd::transport::adapter_id_t adapter =
+            uhd::transport::NULL_ADAPTER_ID) const override
     {
         // We must be connected to dst_addr before getting a client zero
         sep_id_t dst_epid = _epid_alloc->get_epid(dst_addr);
@@ -143,13 +144,13 @@ public:
         return _link_mgrs.at(dev)->get_client_zero(dst_epid);
     }
 
-    virtual std::tuple<sep_id_pair_t, stream_buff_params_t>
-    create_device_to_device_data_stream(const sep_addr_t dst_addr,
+    std::tuple<sep_id_pair_t, stream_buff_params_t> create_device_to_device_data_stream(
+        const sep_addr_t dst_addr,
         const sep_addr_t src_addr,
         const bool lossy_xport,
         const double fc_freq_ratio,
         const double fc_headroom_ratio,
-        const bool reset = false)
+        const bool reset = false) override
     {
         UHD_LOGGER_DEBUG("RFNOC::GRAPH")
             << boost::format(
@@ -190,7 +191,7 @@ public:
         const sw_buff_t mdata_buff_fmt,
         const uhd::transport::adapter_id_t adapter,
         const device_addr_t& xport_args,
-        const std::string& streamer_id)
+        const std::string& streamer_id) override
     {
         device_id_t dev = _check_dst_and_find_src(
             src_addr, adapter, uhd::transport::link_type_t::RX_DATA);
@@ -202,13 +203,12 @@ public:
             src_addr, pyld_buff_fmt, mdata_buff_fmt, xport_args, streamer_id);
     }
 
-    virtual chdr_tx_data_xport::uptr create_host_to_device_data_stream(
-        sep_addr_t dst_addr,
+    chdr_tx_data_xport::uptr create_host_to_device_data_stream(sep_addr_t dst_addr,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
         const uhd::transport::adapter_id_t adapter,
         const device_addr_t& xport_args,
-        const std::string& streamer_id)
+        const std::string& streamer_id) override
     {
         device_id_t dev = _check_dst_and_find_src(
             dst_addr, adapter, uhd::transport::link_type_t::TX_DATA);
@@ -220,7 +220,7 @@ public:
             dst_addr, pyld_buff_fmt, mdata_buff_fmt, xport_args, streamer_id);
     }
 
-    std::vector<uhd::transport::adapter_id_t> get_adapters(sep_addr_t addr) const
+    std::vector<uhd::transport::adapter_id_t> get_adapters(sep_addr_t addr) const override
     {
         auto adapters = std::vector<uhd::transport::adapter_id_t>();
         if (_src_map.count(addr) > 0) {

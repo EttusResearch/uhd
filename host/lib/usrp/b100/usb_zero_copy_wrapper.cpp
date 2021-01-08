@@ -34,7 +34,7 @@ public:
     { /*NOP*/
     }
 
-    void release(void)
+    void release(void) override
     {
         _mrb.reset(); // decrement ref count, other MRB's may hold a ref
         _claimer.release();
@@ -90,13 +90,13 @@ public:
         _task = uhd::task::make(std::bind(&usb_zero_copy_wrapper_msb::auto_flush, this));
     }
 
-    ~usb_zero_copy_wrapper_msb(void)
+    ~usb_zero_copy_wrapper_msb(void) override
     {
         // ensure the task has exited before anything auto deconstructs
         _task.reset();
     }
 
-    void release(void)
+    void release(void) override
     {
         boost::mutex::scoped_lock lock(_mutex);
         _ok_to_auto_flush = true;
@@ -185,7 +185,7 @@ public:
             std::make_shared<usb_zero_copy_wrapper_msb>(usb_zc, frame_boundary);
     }
 
-    managed_recv_buffer::sptr get_recv_buff(double timeout)
+    managed_recv_buffer::sptr get_recv_buff(double timeout) override
     {
         // lazy flush mechanism - negative timeout
         if (timeout < 0.0) {
@@ -208,28 +208,28 @@ public:
             _last_recv_buff, _last_recv_offset, timeout, _next_recv_buff_index);
     }
 
-    size_t get_num_recv_frames(void) const
+    size_t get_num_recv_frames(void) const override
     {
         return (_internal_zc->get_num_recv_frames() * _internal_zc->get_recv_frame_size())
                / this->get_recv_frame_size();
     }
 
-    size_t get_recv_frame_size(void) const
+    size_t get_recv_frame_size(void) const override
     {
         return std::min(_frame_boundary, _internal_zc->get_recv_frame_size());
     }
 
-    managed_send_buffer::sptr get_send_buff(double timeout)
+    managed_send_buffer::sptr get_send_buff(double timeout) override
     {
         return _the_only_msb->get_new(timeout);
     }
 
-    size_t get_num_send_frames(void) const
+    size_t get_num_send_frames(void) const override
     {
         return _internal_zc->get_num_send_frames();
     }
 
-    size_t get_send_frame_size(void) const
+    size_t get_send_frame_size(void) const override
     {
         return std::min(_frame_boundary, _internal_zc->get_send_frame_size());
     }

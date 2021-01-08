@@ -18,7 +18,7 @@ class i2c_core_100_wb32 : uhd::noncopyable, public uhd::i2c_iface
 public:
     typedef std::shared_ptr<i2c_core_100_wb32> sptr;
 
-    virtual ~i2c_core_100_wb32(void) = 0;
+    ~i2c_core_100_wb32(void) override = 0;
 
     //! makes a new i2c core from iface and slave base
     static sptr make(uhd::wb_iface::sptr iface, const size_t base);

@@ -15,7 +15,7 @@
 class user_settings_core_3000 : public uhd::wb_iface
 {
 public:
-    virtual ~user_settings_core_3000() {}
+    ~user_settings_core_3000() override {}
 
     static sptr make(wb_iface::sptr iface,
         const wb_addr_type sr_base_addr,

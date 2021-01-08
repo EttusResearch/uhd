@@ -72,35 +72,35 @@ public:
             *_ctrl_xport, _pkt_factory, sep_addr_t(_my_device_id, SEP_INST_MGMT_CTRL));
     }
 
-    virtual ~link_stream_manager_impl()
+    ~link_stream_manager_impl() override
     {
         for (const auto& epid : _allocated_epids) {
             _epid_alloc->deallocate_epid(epid);
         }
     }
 
-    virtual device_id_t get_self_device_id() const
+    device_id_t get_self_device_id() const override
     {
         return _my_device_id;
     }
 
-    virtual uhd::transport::adapter_id_t get_adapter_id() const
+    uhd::transport::adapter_id_t get_adapter_id() const override
     {
         return _my_adapter_id;
     }
 
-    virtual const std::set<sep_addr_t>& get_reachable_endpoints() const
+    const std::set<sep_addr_t>& get_reachable_endpoints() const override
     {
         return _mgmt_portal->get_reachable_endpoints();
     }
 
-    virtual bool can_connect_device_to_device(
-        sep_addr_t dst_addr, sep_addr_t src_addr) const
+    bool can_connect_device_to_device(
+        sep_addr_t dst_addr, sep_addr_t src_addr) const override
     {
         return _mgmt_portal->can_remote_route(dst_addr, src_addr);
     }
 
-    virtual sep_id_pair_t connect_host_to_device(sep_addr_t dst_addr)
+    sep_id_pair_t connect_host_to_device(sep_addr_t dst_addr) override
     {
         _ensure_ep_is_reachable(dst_addr);
 
@@ -130,8 +130,8 @@ public:
         return sep_id_pair_t(_my_mgmt_ctrl_epid, dst_epid);
     }
 
-    virtual sep_id_pair_t connect_device_to_device(
-        sep_addr_t dst_addr, sep_addr_t src_addr)
+    sep_id_pair_t connect_device_to_device(
+        sep_addr_t dst_addr, sep_addr_t src_addr) override
     {
         _ensure_ep_is_reachable(dst_addr);
         _ensure_ep_is_reachable(src_addr);
@@ -148,10 +148,10 @@ public:
         return sep_id_pair_t(src_epid, dst_epid);
     }
 
-    virtual ctrlport_endpoint::sptr get_block_register_iface(sep_id_t dst_epid,
+    ctrlport_endpoint::sptr get_block_register_iface(sep_id_t dst_epid,
         uint16_t block_index,
         const clock_iface& client_clk,
-        const clock_iface& timebase_clk)
+        const clock_iface& timebase_clk) override
     {
         // Ensure that the endpoint is initialized for control at the specified EPID
         if (_ctrl_ep == nullptr) {
@@ -176,7 +176,7 @@ public:
             timebase_clk);
     }
 
-    virtual client_zero::sptr get_client_zero(sep_id_t dst_epid) const
+    client_zero::sptr get_client_zero(sep_id_t dst_epid) const override
     {
         if (_client_zero_map.count(dst_epid) == 0) {
             throw uhd::runtime_error(
@@ -185,13 +185,12 @@ public:
         return _client_zero_map.at(dst_epid);
     }
 
-    virtual stream_buff_params_t create_device_to_device_data_stream(
-        const sep_id_t& dst_epid,
+    stream_buff_params_t create_device_to_device_data_stream(const sep_id_t& dst_epid,
         const sep_id_t& src_epid,
         const bool lossy_xport,
         const double fc_freq_ratio,
         const double fc_headroom_ratio,
-        const bool reset = false)
+        const bool reset = false) override
     {
         // We assume that the devices are already connected (because this API requires
         // EPIDs)
@@ -218,12 +217,11 @@ public:
             STREAM_SETUP_TIMEOUT);
     }
 
-    virtual chdr_tx_data_xport::uptr create_host_to_device_data_stream(
-        const sep_addr_t dst_addr,
+    chdr_tx_data_xport::uptr create_host_to_device_data_stream(const sep_addr_t dst_addr,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
         const device_addr_t& xport_args,
-        const std::string& streamer_id)
+        const std::string& streamer_id) override
     {
         _ensure_ep_is_reachable(dst_addr);
 
@@ -249,12 +247,11 @@ public:
             streamer_id);
     }
 
-    virtual chdr_rx_data_xport::uptr create_device_to_host_data_stream(
-        sep_addr_t src_addr,
+    chdr_rx_data_xport::uptr create_device_to_host_data_stream(sep_addr_t src_addr,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
         const device_addr_t& xport_args,
-        const std::string& streamer_id)
+        const std::string& streamer_id) override
     {
         _ensure_ep_is_reachable(src_addr);
 

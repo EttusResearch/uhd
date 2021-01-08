@@ -14,22 +14,22 @@ using namespace uhd::rfnoc;
 class mock_timekeeper : public mb_controller::timekeeper
 {
 public:
-    uint64_t get_ticks_now()
+    uint64_t get_ticks_now() override
     {
         return _ticks;
     }
 
-    uint64_t get_ticks_last_pps()
+    uint64_t get_ticks_last_pps() override
     {
         return _ticks;
     }
 
-    void set_ticks_now(const uint64_t ticks)
+    void set_ticks_now(const uint64_t ticks) override
     {
         _ticks = ticks;
     }
 
-    void set_ticks_next_pps(const uint64_t ticks)
+    void set_ticks_next_pps(const uint64_t ticks) override
     {
         _ticks = ticks;
     }
@@ -43,7 +43,7 @@ public:
     }
 
 private:
-    void set_period(const uint64_t period_ns)
+    void set_period(const uint64_t period_ns) override
     {
         _period = period_ns;
     }
@@ -61,79 +61,79 @@ public:
     /**************************************************************************
      * Motherboard Control API (see mb_controller.hpp)
      *************************************************************************/
-    std::string get_mboard_name() const
+    std::string get_mboard_name() const override
     {
         return "MOCK-MB";
     }
 
-    void set_time_source(const std::string& source)
+    void set_time_source(const std::string& source) override
     {
         time_source = source;
     }
 
-    std::string get_time_source() const
+    std::string get_time_source() const override
     {
         return time_source;
     }
 
-    std::vector<std::string> get_time_sources() const
+    std::vector<std::string> get_time_sources() const override
     {
         return {"internal", "external"};
     }
 
-    void set_clock_source(const std::string& source)
+    void set_clock_source(const std::string& source) override
     {
         clock_source = source;
     }
 
-    std::string get_clock_source() const
+    std::string get_clock_source() const override
     {
         return clock_source;
     }
 
-    std::vector<std::string> get_clock_sources() const
+    std::vector<std::string> get_clock_sources() const override
     {
         return {"internal", "external"};
     }
 
     void set_sync_source(
-        const std::string& /*clock_source*/, const std::string& /*time_source*/)
+        const std::string& /*clock_source*/, const std::string& /*time_source*/) override
     {
     }
 
-    void set_sync_source(const device_addr_t& /*sync_source*/) {}
+    void set_sync_source(const device_addr_t& /*sync_source*/) override {}
 
-    device_addr_t get_sync_source() const
-    {
-        return {};
-    }
-
-    std::vector<device_addr_t> get_sync_sources()
+    device_addr_t get_sync_source() const override
     {
         return {};
     }
 
-    void set_clock_source_out(const bool enb)
+    std::vector<device_addr_t> get_sync_sources() override
+    {
+        return {};
+    }
+
+    void set_clock_source_out(const bool enb) override
     {
         clock_source_out = enb;
     }
 
-    void set_time_source_out(const bool enb)
+    void set_time_source_out(const bool enb) override
     {
         time_source_out = enb;
     }
 
-    sensor_value_t get_sensor(const std::string& /*name*/)
+    sensor_value_t get_sensor(const std::string& /*name*/) override
     {
         return sensor_value_t("Ref", false, "locked", "unlocked");
     }
 
-    std::vector<std::string> get_sensor_names()
+    std::vector<std::string> get_sensor_names() override
     {
         return {"mock_sensor"};
     }
 
-    uhd::usrp::mboard_eeprom_t get_eeprom()
+    uhd::usrp::mboard_eeprom_t get_eeprom() override
     {
         return {};
     }

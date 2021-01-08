@@ -30,22 +30,22 @@ public:
         this->regs().poke32(REG_DIVISOR_ADDR, uint32_t(_divisor));
     }
 
-    void set_sum_len(const uint8_t sum_len)
+    void set_sum_len(const uint8_t sum_len) override
     {
         set_property(PROP_KEY_SUM_LEN, static_cast<int>(sum_len), res_source_info::USER);
     }
 
-    uint8_t get_sum_len() const
+    uint8_t get_sum_len() const override
     {
         return _sum_len;
     }
 
-    void set_divisor(const uint32_t divisor)
+    void set_divisor(const uint32_t divisor) override
     {
         set_property(PROP_KEY_DIVISOR, static_cast<int>(divisor), res_source_info::USER);
     }
 
-    uint32_t get_divisor() const
+    uint32_t get_divisor() const override
     {
         return _divisor;
     }

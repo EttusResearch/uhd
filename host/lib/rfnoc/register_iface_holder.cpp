@@ -19,68 +19,72 @@ using namespace uhd::rfnoc;
 class invalid_register_iface : public register_iface
 {
 public:
-    ~invalid_register_iface() = default;
+    ~invalid_register_iface() override = default;
 
-    void poke32(uint32_t, uint32_t, uhd::time_spec_t, bool)
+    void poke32(uint32_t, uint32_t, uhd::time_spec_t, bool) override
     {
         UHD_LOG_ERROR("REGS", "Attempting to use invalidated register interface!");
     }
 
-    void multi_poke32(
-        const std::vector<uint32_t>, const std::vector<uint32_t>, uhd::time_spec_t, bool)
+    void multi_poke32(const std::vector<uint32_t>,
+        const std::vector<uint32_t>,
+        uhd::time_spec_t,
+        bool) override
     {
         UHD_LOG_ERROR("REGS", "Attempting to use invalidated register interface!");
     }
 
-    void block_poke32(uint32_t, const std::vector<uint32_t>, uhd::time_spec_t, bool)
+    void block_poke32(
+        uint32_t, const std::vector<uint32_t>, uhd::time_spec_t, bool) override
     {
         UHD_LOG_ERROR("REGS", "Attempting to use invalidated register interface!");
     }
 
-    uint32_t peek32(uint32_t, uhd::time_spec_t)
-    {
-        UHD_LOG_ERROR("REGS", "Attempting to use invalidated register interface!");
-        return {};
-    }
-
-    std::vector<uint32_t> block_peek32(uint32_t, size_t, uhd::time_spec_t)
+    uint32_t peek32(uint32_t, uhd::time_spec_t) override
     {
         UHD_LOG_ERROR("REGS", "Attempting to use invalidated register interface!");
         return {};
     }
 
-    void poll32(uint32_t, uint32_t, uint32_t, uhd::time_spec_t, uhd::time_spec_t, bool)
+    std::vector<uint32_t> block_peek32(uint32_t, size_t, uhd::time_spec_t) override
+    {
+        UHD_LOG_ERROR("REGS", "Attempting to use invalidated register interface!");
+        return {};
+    }
+
+    void poll32(
+        uint32_t, uint32_t, uint32_t, uhd::time_spec_t, uhd::time_spec_t, bool) override
     {
         UHD_LOG_ERROR("REGS", "Attempting to use invalidated register interface!");
     }
 
-    void sleep(uhd::time_spec_t, bool)
+    void sleep(uhd::time_spec_t, bool) override
     {
         UHD_LOG_ERROR("REGS", "Attempting to use invalidated register interface!");
     }
 
-    void register_async_msg_handler(async_msg_callback_t)
+    void register_async_msg_handler(async_msg_callback_t) override
     {
         UHD_LOG_ERROR("REGS", "Attempting to use invalidated register interface!");
     }
 
-    void register_async_msg_validator(async_msg_validator_t)
+    void register_async_msg_validator(async_msg_validator_t) override
     {
         UHD_LOG_ERROR("REGS", "Attempting to use invalidated register interface!");
     }
 
-    void set_policy(const std::string&, const uhd::device_addr_t&)
+    void set_policy(const std::string&, const uhd::device_addr_t&) override
     {
         UHD_LOG_ERROR("REGS", "Attempting to use invalidated register interface!");
     }
 
-    uint16_t get_src_epid() const
+    uint16_t get_src_epid() const override
     {
         UHD_LOG_ERROR("REGS", "Attempting to use invalidated register interface!");
         return 0;
     }
 
-    uint16_t get_port_num() const
+    uint16_t get_port_num() const override
     {
         UHD_LOG_ERROR("REGS", "Attempting to use invalidated register interface!");
         return 0;

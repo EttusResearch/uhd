@@ -30,12 +30,12 @@ public:
         /* NOP */
     }
 
-    ~zero_copy_flow_ctrl_msb()
+    ~zero_copy_flow_ctrl_msb() override
     {
         /* NOP */
     }
 
-    void release()
+    void release() override
     {
         if (_mb) {
             _mb->commit(size());
@@ -64,12 +64,12 @@ public:
         /* NOP */
     }
 
-    ~zero_copy_flow_ctrl_mrb()
+    ~zero_copy_flow_ctrl_mrb() override
     {
         /* NOP */
     }
 
-    void release()
+    void release() override
     {
         if (_mb) {
             _mb.reset();
@@ -120,13 +120,13 @@ public:
         }
     }
 
-    ~zero_copy_flow_ctrl_impl() {}
+    ~zero_copy_flow_ctrl_impl() override {}
 
     /*******************************************************************
      * Receive implementation:
      * Pop the receive buffer pointer from the underlying transport
      ******************************************************************/
-    UHD_INLINE managed_recv_buffer::sptr get_recv_buff(double timeout)
+    UHD_INLINE managed_recv_buffer::sptr get_recv_buff(double timeout) override
     {
         managed_recv_buffer::sptr ptr;
         managed_recv_buffer::sptr buff = _transport->get_recv_buff(timeout);
@@ -139,12 +139,12 @@ public:
         return ptr;
     }
 
-    UHD_INLINE size_t get_num_recv_frames() const
+    UHD_INLINE size_t get_num_recv_frames() const override
     {
         return _transport->get_num_recv_frames();
     }
 
-    UHD_INLINE size_t get_recv_frame_size() const
+    UHD_INLINE size_t get_recv_frame_size() const override
     {
         return _transport->get_recv_frame_size();
     }
@@ -153,7 +153,7 @@ public:
      * Send implementation:
      * Pass the send buffer pointer from the underlying transport
      ******************************************************************/
-    managed_send_buffer::sptr get_send_buff(double timeout)
+    managed_send_buffer::sptr get_send_buff(double timeout) override
     {
         managed_send_buffer::sptr ptr;
         managed_send_buffer::sptr buff = _transport->get_send_buff(timeout);
@@ -166,12 +166,12 @@ public:
         return ptr;
     }
 
-    UHD_INLINE size_t get_num_send_frames() const
+    UHD_INLINE size_t get_num_send_frames() const override
     {
         return _transport->get_num_send_frames();
     }
 
-    UHD_INLINE size_t get_send_frame_size() const
+    UHD_INLINE size_t get_send_frame_size() const override
     {
         return _transport->get_send_frame_size();
     }

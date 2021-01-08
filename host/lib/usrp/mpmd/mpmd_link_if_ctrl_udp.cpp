@@ -82,13 +82,12 @@ std::vector<std::string> get_addrs_from_mb_args(const uhd::device_addr_t& mb_arg
     const mpmd_link_if_ctrl_udp::udp_link_info_map& link_info_list)
 {
     std::vector<std::string> addrs;
-    if(link_info_list.size() > 0 &&
-        link_info_list.begin()->second.link_type == "internal") {
+    if (!link_info_list.empty()
+        && link_info_list.begin()->second.link_type == "internal") {
         // If link_type is "internal" we are local. In this case
         // use this address always. MPM knows better than us.
         addrs.push_back(link_info_list.begin()->first);
-    }
-    else {
+    } else {
         if (mb_args.has_key(FIRST_ADDR_KEY)) {
             addrs.push_back(mb_args[FIRST_ADDR_KEY]);
         }
@@ -97,10 +96,9 @@ std::vector<std::string> get_addrs_from_mb_args(const uhd::device_addr_t& mb_arg
         }
     }
     if(addrs.empty()) {
-        if(link_info_list.size() > 0) {
+        if (!link_info_list.empty()) {
             addrs.push_back(link_info_list.begin()->first);
-        }
-        else {
+        } else {
             UHD_LOG_WARNING("MPMD::XPORT::UDP",
                 "The `" << FIRST_ADDR_KEY
                         << "' key must be specified in "

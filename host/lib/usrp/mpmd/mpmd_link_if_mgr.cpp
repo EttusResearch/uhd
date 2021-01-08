@@ -35,7 +35,7 @@ public:
      *************************************************************************/
     bool connect(const std::string& link_type,
         const xport_info_list_t& xport_info,
-        const uhd::rfnoc::chdr_w_t chdr_w)
+        const uhd::rfnoc::chdr_w_t chdr_w) override
     {
         auto link_if_ctrl = make_link_if_ctrl(link_type, xport_info, chdr_w);
         if (!link_if_ctrl) {
@@ -57,14 +57,14 @@ public:
         return true;
     }
 
-    size_t get_num_links()
+    size_t get_num_links() override
     {
         return _link_link_if_ctrl_map.size();
     }
 
     uhd::transport::both_links_t get_link(const size_t link_idx,
         const uhd::transport::link_type_t link_type,
-        const uhd::device_addr_t& link_args)
+        const uhd::device_addr_t& link_args) override
     {
         const size_t link_if_ctrl_idx = _link_link_if_ctrl_map.at(link_idx).first;
         const size_t xport_link_idx   = _link_link_if_ctrl_map.at(link_idx).second;
@@ -72,13 +72,13 @@ public:
             ->get_link(xport_link_idx, link_type, link_args);
     }
 
-    size_t get_mtu(const size_t link_idx, const uhd::direction_t dir) const
+    size_t get_mtu(const size_t link_idx, const uhd::direction_t dir) const override
     {
         return _link_if_ctrls.at(_link_link_if_ctrl_map.at(link_idx).first)->get_mtu(dir);
     }
 
     const uhd::rfnoc::chdr::chdr_packet_factory& get_packet_factory(
-        const size_t link_idx) const
+        const size_t link_idx) const override
     {
         const size_t link_if_ctrl_idx = _link_link_if_ctrl_map.at(link_idx).first;
         return _link_if_ctrls.at(link_if_ctrl_idx)->get_packet_factory();

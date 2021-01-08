@@ -28,12 +28,12 @@ class UHD_API mock_reg_iface_t : public register_iface
 {
 public:
     mock_reg_iface_t()          = default;
-    virtual ~mock_reg_iface_t() = default;
+    ~mock_reg_iface_t() override = default;
 
     /**************************************************************************
      * API
      *************************************************************************/
-    void poke32(uint32_t addr, uint32_t data, uhd::time_spec_t time, bool ack)
+    void poke32(uint32_t addr, uint32_t data, uhd::time_spec_t time, bool ack) override
     {
         write_memory[addr] = data;
         _poke_cb(addr, data, time, ack);
@@ -42,7 +42,7 @@ public:
     void multi_poke32(const std::vector<uint32_t> addrs,
         const std::vector<uint32_t> data,
         uhd::time_spec_t time,
-        bool ack)
+        bool ack) override
     {
         if (addrs.size() != data.size()) {
             throw uhd::value_error("addrs and data vectors must be of the same length");
@@ -55,14 +55,14 @@ public:
     void block_poke32(uint32_t first_addr,
         const std::vector<uint32_t> data,
         uhd::time_spec_t timestamp,
-        bool ack)
+        bool ack) override
     {
         for (size_t i = 0; i < data.size(); i++) {
             poke32(first_addr + 4 * i, data[i], timestamp, ack);
         }
     }
 
-    uint32_t peek32(uint32_t addr, uhd::time_spec_t time)
+    uint32_t peek32(uint32_t addr, uhd::time_spec_t time) override
     {
         _peek_cb(addr, time);
         try {
@@ -74,7 +74,7 @@ public:
     }
 
     std::vector<uint32_t> block_peek32(
-        uint32_t first_addr, size_t length, uhd::time_spec_t time)
+        uint32_t first_addr, size_t length, uhd::time_spec_t time) override
     {
         std::vector<uint32_t> result(length, 0);
         for (size_t i = 0; i < length; ++i) {
@@ -88,7 +88,7 @@ public:
         uint32_t mask,
         uhd::time_spec_t /* timeout */,
         uhd::time_spec_t time = uhd::time_spec_t::ASAP,
-        bool /* ack */        = false)
+        bool /* ack */        = false) override
     {
         if (force_timeout) {
             throw uhd::op_timeout("timeout");
@@ -101,33 +101,33 @@ public:
         }
     }
 
-    void sleep(uhd::time_spec_t /*duration*/, bool /*ack*/)
+    void sleep(uhd::time_spec_t /*duration*/, bool /*ack*/) override
     {
         // nop
     }
 
-    void register_async_msg_validator(async_msg_validator_t /*callback_f*/)
+    void register_async_msg_validator(async_msg_validator_t /*callback_f*/) override
     {
         // nop
     }
 
-    void register_async_msg_handler(async_msg_callback_t /*callback_f*/)
+    void register_async_msg_handler(async_msg_callback_t /*callback_f*/) override
     {
         // nop
     }
 
-    void set_policy(const std::string& name, const uhd::device_addr_t& args)
+    void set_policy(const std::string& name, const uhd::device_addr_t& args) override
     {
         UHD_LOG_INFO("MOCK_REG_IFACE",
             "Requested to set policy for " << name << " to " << args.to_string());
     }
 
-    uint16_t get_src_epid() const
+    uint16_t get_src_epid() const override
     {
         return 0;
     }
 
-    uint16_t get_port_num() const
+    uint16_t get_port_num() const override
     {
         return 0;
     }

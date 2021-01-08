@@ -439,9 +439,9 @@ usrp1_impl::usrp1_impl(const device_addr_t& device_addr)
         _tree->access<double>(mb_path / "rx_dsps" / name / "freq" / "value").set(0.0);
     }
 
-    if (_tree->list(mb_path / "rx_dsps").size() > 0)
+    if (!_tree->list(mb_path / "rx_dsps").empty())
         _tree->access<subdev_spec_t>(mb_path / "rx_subdev_spec").set(_rx_subdev_spec);
-    if (_tree->list(mb_path / "tx_dsps").size() > 0)
+    if (!_tree->list(mb_path / "tx_dsps").empty())
         _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(_tx_subdev_spec);
     _tree->create<double>(mb_path / "link_max_rate").set(USRP1_MAX_RATE_USB2);
 }

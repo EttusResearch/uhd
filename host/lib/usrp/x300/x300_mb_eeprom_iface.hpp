@@ -19,7 +19,7 @@ class x300_mb_eeprom_iface : public uhd::i2c_iface
 public:
     typedef std::shared_ptr<x300_mb_eeprom_iface> sptr;
 
-    virtual ~x300_mb_eeprom_iface(void) = 0;
+    ~x300_mb_eeprom_iface(void) override = 0;
 
     static sptr make(uhd::wb_iface::sptr wb, uhd::i2c_iface::sptr i2c);
 };

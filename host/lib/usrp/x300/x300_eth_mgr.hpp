@@ -39,12 +39,12 @@ public:
 
     /*! Return a reference to a ZPU ctrl interface object
      */
-    uhd::wb_iface::sptr get_ctrl_iface();
+    uhd::wb_iface::sptr get_ctrl_iface() override;
 
     void init_link(
         const mboard_eeprom_t& mb_eeprom, const std::string& loaded_fpga_image);
 
-    size_t get_mtu(uhd::direction_t dir);
+    size_t get_mtu(uhd::direction_t dir) override;
 
     /*! Safely release a ZPU control object
      *
@@ -57,7 +57,7 @@ public:
      *
      * Note: this will only be valid after init_link() is called.
      */
-    std::vector<uhd::rfnoc::device_id_t> get_local_device_ids()
+    std::vector<uhd::rfnoc::device_id_t> get_local_device_ids() override
     {
         return _local_device_ids;
     }
@@ -66,7 +66,7 @@ public:
         const uhd::rfnoc::device_id_t local_device_id,
         const uhd::rfnoc::sep_id_t& local_epid,
         const uhd::rfnoc::sep_id_t& remote_epid,
-        const uhd::device_addr_t& link_args);
+        const uhd::device_addr_t& link_args) override;
 
 private:
     //! Function to create a udp_simple::sptr (kernel-based or DPDK-based)

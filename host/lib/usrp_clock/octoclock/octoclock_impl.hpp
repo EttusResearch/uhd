@@ -34,13 +34,13 @@ class octoclock_impl : public uhd::device
 {
 public:
     octoclock_impl(const uhd::device_addr_t&);
-    ~octoclock_impl(void){};
+    ~octoclock_impl(void) override{};
 
-    uhd::rx_streamer::sptr get_rx_stream(const uhd::stream_args_t& args);
+    uhd::rx_streamer::sptr get_rx_stream(const uhd::stream_args_t& args) override;
 
-    uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t& args);
+    uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t& args) override;
 
-    bool recv_async_msg(uhd::async_metadata_t&, double);
+    bool recv_async_msg(uhd::async_metadata_t&, double) override;
 
 private:
     struct oc_container_type

@@ -23,7 +23,7 @@ class radio_ctrl_core_3000 : public uhd::timed_wb_iface
 public:
     typedef std::shared_ptr<radio_ctrl_core_3000> sptr;
 
-    virtual ~radio_ctrl_core_3000(void) = 0;
+    ~radio_ctrl_core_3000(void) override = 0;
 
     //! Make a new control object
     static sptr make(const bool big_endian,
@@ -39,10 +39,10 @@ public:
     virtual void push_response(const uint32_t* buff) = 0;
 
     //! Set the command time that will activate
-    virtual void set_time(const uhd::time_spec_t& time) = 0;
+    void set_time(const uhd::time_spec_t& time) override = 0;
 
     //! Get the command time that will activate
-    virtual uhd::time_spec_t get_time(void) = 0;
+    uhd::time_spec_t get_time(void) override = 0;
 
     //! Set the tick rate (converting time into ticks)
     virtual void set_tick_rate(const double rate) = 0;

@@ -23,13 +23,14 @@ struct convert_fc32_item32_1_to_star_1 : public converter
         // NOP
     }
 
-    void set_scalar(const double scalar)
+    void set_scalar(const double scalar) override
     {
         _scalar = scalar;
     }
 
-    void operator()(
-        const input_type& inputs, const output_type& outputs, const size_t nsamps)
+    void operator()(const input_type& inputs,
+        const output_type& outputs,
+        const size_t nsamps) override
     {
         const item32_t* input      = reinterpret_cast<const item32_t*>(inputs[0]);
         std::complex<type>* output = reinterpret_cast<std::complex<type>*>(outputs[0]);
@@ -56,13 +57,14 @@ struct convert_star_1_to_fc32_item32_1 : public converter
         // NOP
     }
 
-    void set_scalar(const double scalar)
+    void set_scalar(const double scalar) override
     {
         _scalar = scalar;
     }
 
-    void operator()(
-        const input_type& inputs, const output_type& outputs, const size_t nsamps)
+    void operator()(const input_type& inputs,
+        const output_type& outputs,
+        const size_t nsamps) override
     {
         const std::complex<type>* input =
             reinterpret_cast<const std::complex<type>*>(inputs[0]);

@@ -21,7 +21,7 @@ public:
     using poke32_fn_t = std::function<void(uint32_t, uint32_t)>;
     using peek32_fn_t = std::function<uint32_t(uint32_t)>;
 
-    virtual ~spi_core_3000(void) = 0;
+    ~spi_core_3000(void) override = 0;
 
     //! makes a new spi core from iface and slave base
     static sptr make(uhd::wb_iface::sptr iface, const size_t base, const size_t readback);

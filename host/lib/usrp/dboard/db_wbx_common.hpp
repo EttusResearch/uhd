@@ -95,7 +95,7 @@ class wbx_base : public xcvr_dboard_base
 {
 public:
     wbx_base(ctor_args_t args);
-    virtual ~wbx_base(void);
+    ~wbx_base(void) override;
 
 protected:
     virtual double set_rx_gain(double gain, const std::string& name);
@@ -156,11 +156,11 @@ protected:
     {
     public:
         wbx_version2(wbx_base* _self_wbx_base);
-        virtual ~wbx_version2(void);
+        ~wbx_version2(void) override;
 
-        double set_tx_gain(double gain, const std::string& name);
-        void set_tx_enabled(bool enb);
-        double set_lo_freq(dboard_iface::unit_t unit, double target_freq);
+        double set_tx_gain(double gain, const std::string& name) override;
+        void set_tx_enabled(bool enb) override;
+        double set_lo_freq(dboard_iface::unit_t unit, double target_freq) override;
     };
 
     /*!
@@ -172,11 +172,11 @@ protected:
     {
     public:
         wbx_version3(wbx_base* _self_wbx_base);
-        virtual ~wbx_version3(void);
+        ~wbx_version3(void) override;
 
-        double set_tx_gain(double gain, const std::string& name);
-        void set_tx_enabled(bool enb);
-        double set_lo_freq(dboard_iface::unit_t unit, double target_freq);
+        double set_tx_gain(double gain, const std::string& name) override;
+        void set_tx_enabled(bool enb) override;
+        double set_lo_freq(dboard_iface::unit_t unit, double target_freq) override;
     };
 
     /*!
@@ -188,11 +188,11 @@ protected:
     {
     public:
         wbx_version4(wbx_base* _self_wbx_base);
-        virtual ~wbx_version4(void);
+        ~wbx_version4(void) override;
 
-        double set_tx_gain(double gain, const std::string& name);
-        void set_tx_enabled(bool enb);
-        double set_lo_freq(dboard_iface::unit_t unit, double target_freq);
+        double set_tx_gain(double gain, const std::string& name) override;
+        void set_tx_enabled(bool enb) override;
+        double set_lo_freq(dboard_iface::unit_t unit, double target_freq) override;
     };
 
     /*!

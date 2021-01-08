@@ -123,7 +123,7 @@ public:
     /**************************************************************************
      * Replay Control API
      **************************************************************************/
-    void record(const uint64_t offset, const uint64_t size, const size_t port)
+    void record(const uint64_t offset, const uint64_t size, const size_t port) override
     {
         set_property<uint64_t>(
             PROP_KEY_RECORD_OFFSET, offset, {res_source_info::USER, port});
@@ -133,7 +133,7 @@ public:
         record_restart(port);
     }
 
-    void record_restart(const size_t port)
+    void record_restart(const size_t port) override
     {
         // Ensure that the buffer is properly configured before recording
         _validate_record_buffer(port);
@@ -145,7 +145,7 @@ public:
         const uint64_t size,
         const size_t port,
         const uhd::time_spec_t time_spec,
-        const bool repeat)
+        const bool repeat) override
     {
         config_play(offset, size, port);
         uhd::stream_cmd_t play_cmd =
@@ -157,19 +157,19 @@ public:
         issue_stream_cmd(play_cmd, port);
     }
 
-    void stop(const size_t port)
+    void stop(const size_t port) override
     {
         uhd::stream_cmd_t stop_cmd =
             uhd::stream_cmd_t(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
         issue_stream_cmd(stop_cmd, port);
     }
 
-    uint64_t get_mem_size() const
+    uint64_t get_mem_size() const override
     {
         return _mem_size;
     }
 
-    uint64_t get_word_size() const
+    uint64_t get_word_size() const override
     {
         return _word_size;
     }
@@ -177,27 +177,27 @@ public:
     /**************************************************************************
      * Record Buffer State API
      **************************************************************************/
-    uint64_t get_record_offset(const size_t port) const
+    uint64_t get_record_offset(const size_t port) const override
     {
         return _record_offset.at(port).get();
     }
 
-    uint64_t get_record_size(const size_t port) const
+    uint64_t get_record_size(const size_t port) const override
     {
         return _record_size.at(port).get();
     }
 
-    uint64_t get_record_fullness(const size_t port)
+    uint64_t get_record_fullness(const size_t port) override
     {
         return _replay_reg_iface.peek64(REG_REC_FULLNESS_LO_ADDR, port);
     }
 
-    io_type_t get_record_type(const size_t port) const
+    io_type_t get_record_type(const size_t port) const override
     {
         return _record_type.at(port).get();
     }
 
-    virtual size_t get_record_item_size(const size_t port) const
+    size_t get_record_item_size(const size_t port) const override
     {
         return uhd::convert::get_bytes_per_item(get_record_type(port));
     }
@@ -205,33 +205,33 @@ public:
     /**************************************************************************
      * Playback State API
      **************************************************************************/
-    uint64_t get_play_offset(const size_t port) const
+    uint64_t get_play_offset(const size_t port) const override
     {
         return _play_offset.at(port).get();
     }
 
-    uint64_t get_play_size(const size_t port) const
+    uint64_t get_play_size(const size_t port) const override
     {
         return _play_size.at(port).get();
     }
 
-    uint32_t get_max_items_per_packet(const size_t port) const
+    uint32_t get_max_items_per_packet(const size_t port) const override
     {
         return (_packet_size.at(port).get() - CHDR_MAX_LEN_HDR)
                / get_play_item_size(port);
     }
 
-    uint32_t get_max_packet_size(const size_t port) const
+    uint32_t get_max_packet_size(const size_t port) const override
     {
         return _packet_size.at(port).get();
     }
 
-    io_type_t get_play_type(const size_t port) const
+    io_type_t get_play_type(const size_t port) const override
     {
         return _play_type.at(port).get();
     }
 
-    size_t get_play_item_size(const size_t port) const
+    size_t get_play_item_size(const size_t port) const override
     {
         return uhd::convert::get_bytes_per_item(get_play_type(port));
     }
@@ -239,7 +239,7 @@ public:
     /**************************************************************************
      * Advanced Record Control API calls
      *************************************************************************/
-    void set_record_type(const io_type_t type, const size_t port)
+    void set_record_type(const io_type_t type, const size_t port) override
     {
         set_property<std::string>(
             PROP_KEY_TYPE, type, {res_source_info::INPUT_EDGE, port});
@@ -248,7 +248,8 @@ public:
     /**************************************************************************
      * Advanced Playback Control API
      **************************************************************************/
-    void config_play(const uint64_t offset, const uint64_t size, const size_t port)
+    void config_play(
+        const uint64_t offset, const uint64_t size, const size_t port) override
     {
         set_property<uint64_t>(
             PROP_KEY_PLAY_OFFSET, offset, {res_source_info::USER, port});
@@ -256,23 +257,23 @@ public:
         _validate_play_buffer(port);
     }
 
-    void set_play_type(const io_type_t type, const size_t port)
+    void set_play_type(const io_type_t type, const size_t port) override
     {
         set_property<std::string>(
             PROP_KEY_TYPE, type, {res_source_info::OUTPUT_EDGE, port});
     }
 
-    void set_max_items_per_packet(const uint32_t ipp, const size_t port)
+    void set_max_items_per_packet(const uint32_t ipp, const size_t port) override
     {
         set_max_packet_size(CHDR_MAX_LEN_HDR + ipp * get_play_item_size(port), port);
     }
 
-    void set_max_packet_size(const uint32_t size, const size_t port)
+    void set_max_packet_size(const uint32_t size, const size_t port) override
     {
         set_property<uint32_t>(PROP_KEY_PKT_SIZE, size, {res_source_info::USER, port});
     }
 
-    void issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd, const size_t port)
+    void issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd, const size_t port) override
     {
         // Ensure that the buffer is properly configured before issuing a stream command
         _validate_play_buffer(port);

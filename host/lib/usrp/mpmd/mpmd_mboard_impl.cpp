@@ -293,7 +293,7 @@ mpmd_mboard_impl::mpmd_mboard_impl(
     UHD_LOG_DEBUG("MPMD", "MPM reports device info: " << device_info.to_string());
     /// Get dboard info
     const auto dboards_info = rpc->request<std::vector<dev_info>>("get_dboard_info");
-    UHD_ASSERT_THROW(this->dboard_info.size() == 0);
+    UHD_ASSERT_THROW(this->dboard_info.empty());
     for (const auto& dboard_info_dict : dboards_info) {
         uhd::device_addr_t this_db_info;
         for (const auto& info_pair : dboard_info_dict) {

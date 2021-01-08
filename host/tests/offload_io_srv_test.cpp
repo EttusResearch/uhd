@@ -32,7 +32,7 @@ class mock_recv_io : public recv_io_if
 public:
     mock_recv_io(recv_link_if::sptr link) : _link(link) {}
 
-    frame_buff::uptr get_recv_buff(int32_t timeout_ms)
+    frame_buff::uptr get_recv_buff(int32_t timeout_ms) override
     {
         if (_frames_allocated > 0) {
             _frames_allocated--;
@@ -41,7 +41,7 @@ public:
         return nullptr;
     }
 
-    void release_recv_buff(frame_buff::uptr buff)
+    void release_recv_buff(frame_buff::uptr buff) override
     {
         _link->release_recv_buff(std::move(buff));
     }
@@ -71,17 +71,17 @@ class mock_send_io : public send_io_if
 public:
     mock_send_io(send_link_if::sptr link) : _link(link) {}
 
-    frame_buff::uptr get_send_buff(int32_t timeout_ms)
+    frame_buff::uptr get_send_buff(int32_t timeout_ms) override
     {
         return _link->get_send_buff(timeout_ms);
     }
 
-    bool wait_for_dest_ready(size_t, int32_t)
+    bool wait_for_dest_ready(size_t, int32_t) override
     {
         return true;
     }
 
-    void release_send_buff(frame_buff::uptr buff)
+    void release_send_buff(frame_buff::uptr buff) override
     {
         _link->release_send_buff(std::move(buff));
     }
@@ -103,10 +103,10 @@ private:
 class mock_io_service : public io_service
 {
 public:
-    void attach_recv_link(recv_link_if::sptr /*link*/) {}
-    void attach_send_link(send_link_if::sptr /*link*/) {}
-    void detach_recv_link(recv_link_if::sptr /*link*/) {}
-    void detach_send_link(send_link_if::sptr /*link*/) {}
+    void attach_recv_link(recv_link_if::sptr /*link*/) override {}
+    void attach_send_link(send_link_if::sptr /*link*/) override {}
+    void detach_recv_link(recv_link_if::sptr /*link*/) override {}
+    void detach_send_link(send_link_if::sptr /*link*/) override {}
 
     send_io_if::sptr make_send_client(send_link_if::sptr send_link,
         size_t /*num_send_frames*/,
@@ -114,7 +114,7 @@ public:
         recv_link_if::sptr /*recv_link*/,
         size_t /*num_recv_frames*/,
         recv_callback_t /*recv_cb*/,
-        send_io_if::fc_callback_t /*fc_cb*/)
+        send_io_if::fc_callback_t /*fc_cb*/) override
     {
         return std::make_shared<mock_send_io>(send_link);
     }
@@ -124,7 +124,7 @@ public:
         recv_callback_t /*cb*/,
         send_link_if::sptr /*fc_link*/,
         size_t /*num_send_frames*/,
-        recv_io_if::fc_callback_t /*fc_cb*/)
+        recv_io_if::fc_callback_t /*fc_cb*/) override
     {
         auto io = std::make_shared<mock_recv_io>(recv_link);
         _recv_io.push_back(io);

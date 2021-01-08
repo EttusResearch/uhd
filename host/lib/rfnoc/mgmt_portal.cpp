@@ -196,15 +196,15 @@ public:
         }
     }
 
-    virtual ~mgmt_portal_impl() {}
+    ~mgmt_portal_impl() override {}
 
-    virtual const std::set<sep_addr_t>& get_reachable_endpoints() const
+    const std::set<sep_addr_t>& get_reachable_endpoints() const override
     {
         return _discovered_ep_set;
     }
 
-    virtual void initialize_endpoint(
-        chdr_ctrl_xport& xport, const sep_addr_t& addr, const sep_id_t& epid)
+    void initialize_endpoint(
+        chdr_ctrl_xport& xport, const sep_addr_t& addr, const sep_id_t& epid) override
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
 
@@ -237,7 +237,7 @@ public:
         register_endpoint(addr, epid);
     }
 
-    virtual void register_endpoint(const sep_addr_t& addr, const sep_id_t& epid)
+    void register_endpoint(const sep_addr_t& addr, const sep_id_t& epid) override
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
         if (is_endpoint_registered(epid)) {
@@ -260,13 +260,13 @@ public:
                 % epid % to_string(_node_addr_map.at(lookup_node))));
     }
 
-    virtual bool is_endpoint_registered(const sep_id_t& epid) const
+    bool is_endpoint_registered(const sep_id_t& epid) const override
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
         return (_epid_addr_map.count(epid) > 0);
     }
 
-    virtual sep_info_t get_endpoint_info(const sep_id_t& epid) const
+    sep_info_t get_endpoint_info(const sep_id_t& epid) const override
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
 
@@ -295,7 +295,7 @@ public:
         return retval;
     }
 
-    virtual void setup_local_route(chdr_ctrl_xport& xport, const sep_id_t& dst_epid)
+    void setup_local_route(chdr_ctrl_xport& xport, const sep_id_t& dst_epid) override
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
         auto my_epid = xport.get_epid();
@@ -383,8 +383,8 @@ public:
                 % dst_epid % to_string(node_addr)));
     }
 
-    virtual bool can_remote_route(
-        const sep_addr_t& dst_addr, const sep_addr_t& src_addr) const
+    bool can_remote_route(
+        const sep_addr_t& dst_addr, const sep_addr_t& src_addr) const override
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
 
@@ -412,8 +412,9 @@ public:
         return false;
     }
 
-    virtual void setup_remote_route(
-        chdr_ctrl_xport& xport, const sep_id_t& dst_epid, const sep_id_t& src_epid)
+    void setup_remote_route(chdr_ctrl_xport& xport,
+        const sep_id_t& dst_epid,
+        const sep_id_t& src_epid) override
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
 
@@ -450,14 +451,14 @@ public:
                 % src_epid % dst_epid));
     }
 
-    virtual void config_local_rx_stream_start(chdr_ctrl_xport& xport,
+    void config_local_rx_stream_start(chdr_ctrl_xport& xport,
         const sep_id_t& epid,
         const bool lossy_xport,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
         const stream_buff_params_t& fc_freq,
         const stream_buff_params_t& fc_headroom,
-        const bool reset = false)
+        const bool reset = false) override
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
         auto my_epid = xport.get_epid();
@@ -501,8 +502,8 @@ public:
             (boost::format("Initiated RX stream setup for EPID=%d") % epid));
     }
 
-    virtual stream_buff_params_t config_local_rx_stream_commit(
-        chdr_ctrl_xport& xport, const sep_id_t& epid, const double timeout = 0.2)
+    stream_buff_params_t config_local_rx_stream_commit(
+        chdr_ctrl_xport& xport, const sep_id_t& epid, const double timeout = 0.2) override
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
 
@@ -517,11 +518,11 @@ public:
         return std::get<1>(_get_ostrm_status(xport, node_addr));
     }
 
-    virtual void config_local_tx_stream(chdr_ctrl_xport& xport,
+    void config_local_tx_stream(chdr_ctrl_xport& xport,
         const sep_id_t& epid,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
-        const bool reset = false)
+        const bool reset = false) override
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
         auto my_epid = xport.get_epid();
@@ -561,14 +562,14 @@ public:
             (boost::format("Finished TX stream setup for EPID=%d") % epid));
     }
 
-    virtual stream_buff_params_t config_remote_stream(chdr_ctrl_xport& xport,
+    stream_buff_params_t config_remote_stream(chdr_ctrl_xport& xport,
         const sep_id_t& dst_epid,
         const sep_id_t& src_epid,
         const bool lossy_xport,
         const stream_buff_params_t& fc_freq,
         const stream_buff_params_t& fc_headroom,
         const bool reset     = false,
-        const double timeout = 0.2)
+        const double timeout = 0.2) override
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
         auto my_epid = xport.get_epid();
@@ -647,9 +648,9 @@ public:
     }
 
 
-    virtual void register_xport_hop_cfg_fns(uint8_t xport_subtype,
+    void register_xport_hop_cfg_fns(uint8_t xport_subtype,
         xport_cfg_fn_t init_hop_cfg_fn,
-        xport_cfg_fn_t rtcfg_hop_cfg_fn)
+        xport_cfg_fn_t rtcfg_hop_cfg_fn) override
     {
         _init_cfg_fns[xport_subtype]  = init_hop_cfg_fn;
         _rtcfg_cfg_fns[xport_subtype] = rtcfg_hop_cfg_fn;

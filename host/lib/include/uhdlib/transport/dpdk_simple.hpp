@@ -13,7 +13,7 @@ namespace uhd { namespace transport {
 class dpdk_simple : public udp_simple
 {
 public:
-    virtual ~dpdk_simple(void) = 0;
+    ~dpdk_simple(void) override = 0;
 
     static udp_simple::sptr make_connected(
         const std::string& addr, const std::string& port);
@@ -27,7 +27,7 @@ public:
      * \param buff single asio buffer
      * \return the number of bytes sent
      */
-    virtual size_t send(const boost::asio::const_buffer& buff) = 0;
+    size_t send(const boost::asio::const_buffer& buff) override = 0;
 
     /*!
      * Receive into the provided buffer.
@@ -36,19 +36,19 @@ public:
      * \param timeout the timeout in seconds
      * \return the number of bytes received or zero on timeout
      */
-    virtual size_t recv(
-        const boost::asio::mutable_buffer& buff, double timeout = 0.1) = 0;
+    size_t recv(
+        const boost::asio::mutable_buffer& buff, double timeout = 0.1) override = 0;
 
     /*!
      * Get the last IP address as seen by recv().
      * Only use this with the broadcast socket.
      */
-    virtual std::string get_recv_addr(void) = 0;
+    std::string get_recv_addr(void) override = 0;
 
     /*!
      * Get the IP address for the destination
      */
-    virtual std::string get_send_addr(void) = 0;
+    std::string get_send_addr(void) override = 0;
 };
 
 }} // namespace uhd::transport

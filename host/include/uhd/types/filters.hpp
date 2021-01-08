@@ -77,7 +77,7 @@ public:
         return _analog_type;
     }
 
-    virtual std::string to_pp_string();
+    std::string to_pp_string() override;
 };
 
 class UHD_API analog_filter_lp : public analog_filter_base
@@ -115,7 +115,7 @@ public:
         _cutoff = cutoff;
     }
 
-    virtual std::string to_pp_string();
+    std::string to_pp_string() override;
 };
 
 template <typename tap_t>
@@ -181,7 +181,7 @@ public:
         return _taps;
     }
 
-    virtual std::string to_pp_string()
+    std::string to_pp_string() override
     {
         std::ostringstream os;
         os << filter_info_base::to_pp_string() << "\t[digital_filter_base]" << std::endl

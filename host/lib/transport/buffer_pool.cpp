@@ -35,12 +35,12 @@ public:
         /* NOP */
     }
 
-    ptr_type at(const size_t index) const
+    ptr_type at(const size_t index) const override
     {
         return _ptrs.at(index);
     }
 
-    size_t size(void) const
+    size_t size(void) const override
     {
         return _ptrs.size();
     }

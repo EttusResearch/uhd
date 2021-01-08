@@ -24,11 +24,11 @@ public:
 
     b200_local_spi_core(uhd::wb_iface::sptr iface, perif_t default_perif);
 
-    virtual uint32_t transact_spi(int which_slave,
+    uint32_t transact_spi(int which_slave,
         const uhd::spi_config_t& config,
         uint32_t data,
         size_t num_bits,
-        bool readback);
+        bool readback) override;
 
     void change_perif(perif_t perif);
     void restore_perif();
@@ -48,7 +48,7 @@ public:
     typedef std::shared_ptr<b200_ref_pll_ctrl> sptr;
 
     b200_ref_pll_ctrl(b200_local_spi_core::sptr spi);
-    virtual void set_lock_to_ext_ref(bool external);
+    void set_lock_to_ext_ref(bool external) override;
 
 private:
     b200_local_spi_core::sptr _spi;

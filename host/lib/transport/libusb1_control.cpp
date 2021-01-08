@@ -28,7 +28,7 @@ public:
         _handle->claim_interface(interface);
     }
 
-    virtual ~libusb_control_impl(void);
+    ~libusb_control_impl(void) override;
 
     int submit(uint8_t request_type,
         uint8_t request,
@@ -36,7 +36,7 @@ public:
         uint16_t index,
         unsigned char* buff,
         uint16_t length,
-        uint32_t libusb_timeout = 0)
+        uint32_t libusb_timeout = 0) override
     {
         boost::mutex::scoped_lock lock(_mutex);
         return libusb_control_transfer(_handle->get(),

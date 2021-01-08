@@ -29,7 +29,7 @@ public:
     {
     }
 
-    virtual void _peek_cb(uint32_t addr, uhd::time_spec_t /*time*/)
+    void _peek_cb(uint32_t addr, uhd::time_spec_t /*time*/) override
     {
         // Emulate the read-only behavior of the WIDTH_N register
         if (addr == keep_one_in_n_block_control::REG_WIDTH_N_OFFSET) {

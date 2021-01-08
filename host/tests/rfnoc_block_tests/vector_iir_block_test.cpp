@@ -44,8 +44,8 @@ public:
         }
     }
 
-    virtual void _poke_cb(
-        uint32_t addr, uint32_t data, uhd::time_spec_t /*time*/, bool /*ack*/)
+    void _poke_cb(
+        uint32_t addr, uint32_t data, uhd::time_spec_t /*time*/, bool /*ack*/) override
     {
         size_t chan   = addr / vector_iir_block_control::REG_BLOCK_SIZE;
         size_t offset = addr % vector_iir_block_control::REG_BLOCK_SIZE;
@@ -54,7 +54,7 @@ public:
         }
     }
 
-    virtual void _peek_cb(uint32_t addr, uhd::time_spec_t /*time*/)
+    void _peek_cb(uint32_t addr, uhd::time_spec_t /*time*/) override
     {
         size_t chan   = addr / vector_iir_block_control::REG_BLOCK_SIZE;
         size_t offset = addr % vector_iir_block_control::REG_BLOCK_SIZE;

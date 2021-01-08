@@ -81,7 +81,7 @@ public:
     {
     }
 
-    ~sim_impl()
+    ~sim_impl() override
     {
         // Destroys the mb_ifaces, causing mpm to be unclaimed before shutting down the
         // simulator

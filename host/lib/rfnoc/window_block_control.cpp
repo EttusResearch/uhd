@@ -32,12 +32,12 @@ public:
         _register_props();
     }
 
-    size_t get_max_num_coefficients(const size_t chan) const
+    size_t get_max_num_coefficients(const size_t chan) const override
     {
         return _max_len.at(chan);
     }
 
-    void set_coefficients(const std::vector<int16_t>& coeffs, const size_t chan)
+    void set_coefficients(const std::vector<int16_t>& coeffs, const size_t chan) override
     {
         if (coeffs.size() > _max_len.at(chan)) {
             std::string error_msg = "Too many window coefficients specified (max "
@@ -49,7 +49,7 @@ public:
         _program_coefficients(chan);
     }
 
-    std::vector<int16_t> get_coefficients(const size_t chan) const
+    std::vector<int16_t> get_coefficients(const size_t chan) const override
     {
         return _coeffs.at(chan);
     }

@@ -34,7 +34,7 @@ static b200_iface::sptr get_b200_iface(
     b200_iface::sptr iface;
     mboard_eeprom_t eeprom; // Internal use
 
-    if (dev_handles.size() > 0) {
+    if (!dev_handles.empty()) {
         for (usb_device_handle::sptr dev_handle : dev_handles) {
             if (dev_handle->firmware_loaded()) {
                 iface  = b200_iface::make(usb_control::make(dev_handle, 0));
@@ -104,7 +104,7 @@ static bool b200_image_loader(const image_loader::image_loader_args_t& image_loa
         return false; // No initialized B2x0 found
 
     std::string fpga_path;
-    if (image_loader_args.fpga_path == "") {
+    if (image_loader_args.fpga_path.empty()) {
         /*
          * Normally, we can auto-generate the FPGA filename from what's in the EEPROM,
          * but if the applicable value is not in the EEPROM, the user must give a specific

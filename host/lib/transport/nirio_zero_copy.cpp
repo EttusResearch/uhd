@@ -53,7 +53,7 @@ public:
     {
     }
 
-    void release(void)
+    void release(void) override
     {
         _fifo.release(_frame_size / sizeof(fifo_data_t));
     }
@@ -97,7 +97,7 @@ public:
     {
     }
 
-    void release(void)
+    void release(void) override
     {
         _fifo.release(_frame_size / sizeof(fifo_data_t));
     }
@@ -241,7 +241,7 @@ public:
         nirio_status_to_exception(status, "Could not create nirio_zero_copy transport.");
     }
 
-    virtual ~nirio_zero_copy_impl()
+    ~nirio_zero_copy_impl() override
     {
         _proxy()->get_rio_quirks().remove_tx_fifo(_fifo_instance);
 
@@ -263,18 +263,18 @@ public:
      * Receive implementation:
      * Block on the managed buffer's get call and advance the index.
      ******************************************************************/
-    managed_recv_buffer::sptr get_recv_buff(double timeout)
+    managed_recv_buffer::sptr get_recv_buff(double timeout) override
     {
         if (_next_recv_buff_index == _xport_params.num_recv_frames)
             _next_recv_buff_index = 0;
         return _mrb_pool[_next_recv_buff_index]->get_new(timeout, _next_recv_buff_index);
     }
 
-    size_t get_num_recv_frames(void) const
+    size_t get_num_recv_frames(void) const override
     {
         return _xport_params.num_recv_frames;
     }
-    size_t get_recv_frame_size(void) const
+    size_t get_recv_frame_size(void) const override
     {
         return _xport_params.recv_frame_size;
     }
@@ -283,18 +283,18 @@ public:
      * Send implementation:
      * Block on the managed buffer's get call and advance the index.
      ******************************************************************/
-    managed_send_buffer::sptr get_send_buff(double timeout)
+    managed_send_buffer::sptr get_send_buff(double timeout) override
     {
         if (_next_send_buff_index == _xport_params.num_send_frames)
             _next_send_buff_index = 0;
         return _msb_pool[_next_send_buff_index]->get_new(timeout, _next_send_buff_index);
     }
 
-    size_t get_num_send_frames(void) const
+    size_t get_num_send_frames(void) const override
     {
         return _xport_params.num_send_frames;
     }
-    size_t get_send_frame_size(void) const
+    size_t get_send_frame_size(void) const override
     {
         return _xport_params.send_frame_size;
     }

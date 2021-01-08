@@ -21,7 +21,7 @@ namespace uhd { namespace transport {
  */
 struct UHD_API tcp_zero_copy : public virtual zero_copy_if
 {
-    virtual ~tcp_zero_copy(void);
+    ~tcp_zero_copy(void) override;
 
     /*!
      * Make a new zero copy TCP transport:
