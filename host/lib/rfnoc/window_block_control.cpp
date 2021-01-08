@@ -111,7 +111,7 @@ private:
         std::transform(_coeffs.at(chan).begin(),
             _coeffs.at(chan).end() - 1,
             coeffs_minus_last.begin(),
-            [this](int16_t value) -> uint32_t { return static_cast<uint32_t>(value); });
+            [](int16_t value) -> uint32_t { return static_cast<uint32_t>(value); });
 
         _window_reg_iface.multi_poke32(coeffs_addr, coeffs_minus_last, chan);
         // ...and the final coefficient (num_coeffs-1)

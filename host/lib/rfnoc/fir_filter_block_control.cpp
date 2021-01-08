@@ -73,8 +73,10 @@ private:
         // Write coefficients [0..num_coeffs-2]..
         std::vector<uint32_t> coeffs_addr(_max_num_coeffs - 1, REG_FIR_LOAD_COEFF_ADDR);
         std::vector<uint32_t> coeffs_minus_last(_max_num_coeffs - 1);
-        std::transform(_coeffs.begin(), _coeffs.end() - 1, coeffs_minus_last.begin(),
-                [this](int16_t value) -> uint32_t { return static_cast<uint32_t>(value); });
+        std::transform(_coeffs.begin(),
+            _coeffs.end() - 1,
+            coeffs_minus_last.begin(),
+            [](int16_t value) -> uint32_t { return static_cast<uint32_t>(value); });
 
         this->regs().multi_poke32(coeffs_addr, coeffs_minus_last);
         // ...and the final coefficients (num_coeffs-1)

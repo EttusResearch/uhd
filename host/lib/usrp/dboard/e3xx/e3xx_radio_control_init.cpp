@@ -215,7 +215,7 @@ void e3xx_radio_control_impl::_init_frontend_subtree(
             .add_coerced_subscriber([](const meta_range_t&) {
                 throw uhd::runtime_error("Attempting to update gain range!");
             })
-            .set_publisher([this]() {
+            .set_publisher([]() {
                 return meta_range_t(
                     AD9361_MIN_TX_GAIN, AD9361_MAX_TX_GAIN, AD9361_TX_GAIN_STEP);
             });
@@ -235,7 +235,7 @@ void e3xx_radio_control_impl::_init_frontend_subtree(
             .add_coerced_subscriber([](const meta_range_t&) {
                 throw uhd::runtime_error("Attempting to update gain range!");
             })
-            .set_publisher([this]() {
+            .set_publisher([]() {
                 return meta_range_t(
                     AD9361_MIN_RX_GAIN, AD9361_MAX_RX_GAIN, AD9361_RX_GAIN_STEP);
             });

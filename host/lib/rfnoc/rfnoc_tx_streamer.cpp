@@ -60,7 +60,8 @@ rfnoc_tx_streamer::rfnoc_tx_streamer(const size_t num_chans,
 
         add_property_resolver({&_mtu_out[i]},
             std::move(mtu_resolver_out),
-            [& mtu_out = _mtu_out[i], i, this]() {
+            [&mtu_out = _mtu_out[i], i, this]() {
+                const auto UHD_UNUSED(ii) = i;
                 RFNOC_LOG_TRACE("Calling resolver for `mtu_out'@" << i);
                 if (mtu_out.is_valid()) {
                     const size_t mtu =
@@ -191,7 +192,8 @@ void rfnoc_tx_streamer::_register_props(const size_t chan, const std::string& ot
         });
 
     add_property_resolver(
-        {samp_rate_out}, {}, [& samp_rate_out = *samp_rate_out, chan, this]() {
+        {samp_rate_out}, {}, [&samp_rate_out = *samp_rate_out, chan, this]() {
+            const auto UHD_UNUSED(log_chan) = chan;
             RFNOC_LOG_TRACE("Calling resolver for `samp_rate_out'@" << chan);
             if (samp_rate_out.is_valid()) {
                 this->set_samp_rate(samp_rate_out.get());
@@ -199,7 +201,8 @@ void rfnoc_tx_streamer::_register_props(const size_t chan, const std::string& ot
         });
 
     add_property_resolver(
-        {tick_rate_out}, {}, [& tick_rate_out = *tick_rate_out, chan, this]() {
+        {tick_rate_out}, {}, [&tick_rate_out = *tick_rate_out, chan, this]() {
+            const auto UHD_UNUSED(log_chan) = chan;
             RFNOC_LOG_TRACE("Calling resolver for `tick_rate_out'@" << chan);
             if (tick_rate_out.is_valid()) {
                 this->set_tick_rate(tick_rate_out.get());

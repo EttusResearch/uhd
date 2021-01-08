@@ -24,8 +24,7 @@ chdr_ctrl_xport::chdr_ctrl_xport(io_service::sptr io_srv,
     : _my_epid(my_epid), _recv_packet(pkt_factory.make_generic()), _disconnect(disconnect)
 {
     /* Make dumb send pipe */
-    send_io_if::send_callback_t send_cb = [this](
-                                              frame_buff::uptr buff, send_link_if* link) {
+    send_io_if::send_callback_t send_cb = [](frame_buff::uptr buff, send_link_if* link) {
         link->release_send_buff(std::move(buff));
     };
     _send_if = io_srv->make_send_client(
