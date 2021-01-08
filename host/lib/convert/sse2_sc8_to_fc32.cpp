@@ -44,7 +44,6 @@ DECLARE_CONVERTER(sc8_item32_be, 1, fc32, 1, PRIORITY_SIMD)
     const int shuf      = _MM_SHUFFLE(3, 2, 1, 0);
 
     size_t i = 0, j = 0;
-    fc32_t dummy;
     size_t num_samps = nsamps;
 
     if ((size_t(inputs[0]) & 0x3) != 0) {
@@ -88,7 +87,6 @@ DECLARE_CONVERTER(sc8_item32_le, 1, fc32, 1, PRIORITY_SIMD)
     const int shuf      = _MM_SHUFFLE(0, 1, 2, 3);
 
     size_t i = 0, j = 0;
-    fc32_t dummy;
     size_t num_samps = nsamps;
 
     if ((size_t(inputs[0]) & 0x3) != 0) {
