@@ -56,7 +56,6 @@ DECLARE_CONVERTER(sc8_item32_be, 1, fc64, 1, PRIORITY_SIMD)
     const __m128d scalar = _mm_set1_pd(scale_factor / (1 << 24));
 
     size_t i = 0, j = 0;
-    fc32_t dummy;
     size_t num_samps = nsamps;
 
     if ((size_t(inputs[0]) & 0x3) != 0) {
@@ -103,7 +102,6 @@ DECLARE_CONVERTER(sc8_item32_le, 1, fc64, 1, PRIORITY_SIMD)
     const __m128d scalar = _mm_set1_pd(scale_factor / (1 << 24));
 
     size_t i = 0, j = 0;
-    fc32_t dummy;
     size_t num_samps = nsamps;
 
     if ((size_t(inputs[0]) & 0x3) != 0) {
