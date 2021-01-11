@@ -31,7 +31,6 @@ namespace {
 //! Maximum CHDR packet size in bytes
 const size_t MPMD_10GE_DATA_FRAME_MAX_SIZE    = 7972;
 const size_t MPMD_1GE_DATA_FRAME_MAX_SIZE     = 1472;
-const size_t MPMD_1GE_ASYNCMSG_FRAME_MAX_SIZE = 1472;
 
 //! Number of send/recv frames
 const size_t MPMD_ETH_NUM_FRAMES = 32;

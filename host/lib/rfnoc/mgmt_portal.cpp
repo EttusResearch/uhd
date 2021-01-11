@@ -23,6 +23,7 @@ using namespace transport;
 
 constexpr bool ALLOW_DAISY_CHAINING = true;
 
+// Unused values are left in as comments for reference.
 constexpr uint16_t REG_EPID_SELF               = 0x00; // RW
 constexpr uint16_t REG_RESET_AND_FLUSH         = 0x04; // W
 constexpr uint16_t REG_OSTRM_CTRL_STATUS       = 0x08; // RW
@@ -34,14 +35,14 @@ constexpr uint16_t REG_OSTRM_FC_HEADROOM       = 0x1C; // W
 constexpr uint16_t REG_OSTRM_BUFF_CAP_BYTES_LO = 0x20; // R
 constexpr uint16_t REG_OSTRM_BUFF_CAP_BYTES_HI = 0x24; // R
 constexpr uint16_t REG_OSTRM_BUFF_CAP_PKTS     = 0x28; // R
-constexpr uint16_t REG_OSTRM_SEQ_ERR_CNT       = 0x2C; // R
-constexpr uint16_t REG_OSTRM_DATA_ERR_CNT      = 0x30; // R
-constexpr uint16_t REG_OSTRM_ROUTE_ERR_CNT     = 0x34; // R
+// constexpr uint16_t REG_OSTRM_SEQ_ERR_CNT       = 0x2C; // R
+// constexpr uint16_t REG_OSTRM_DATA_ERR_CNT      = 0x30; // R
+// constexpr uint16_t REG_OSTRM_ROUTE_ERR_CNT     = 0x34; // R
 constexpr uint16_t REG_ISTRM_CTRL_STATUS       = 0x38; // RW
 
 constexpr uint32_t RESET_AND_FLUSH_OSTRM = (1 << 0);
 constexpr uint32_t RESET_AND_FLUSH_ISTRM = (1 << 1);
-constexpr uint32_t RESET_AND_FLUSH_CTRL  = (1 << 2);
+// constexpr uint32_t RESET_AND_FLUSH_CTRL  = (1 << 2);
 constexpr uint32_t RESET_AND_FLUSH_ALL   = 0x7;
 
 #ifdef UHD_BIG_ENDIAN
