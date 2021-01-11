@@ -96,7 +96,7 @@ static constexpr uint32_t SR_DB_GPIO   = PERIPH_BASE + 192 * PERIPH_REG_OFFSET;
 
 static constexpr uint32_t RB_MISC_IO = PERIPH_BASE + 16 * PERIPH_REG_OFFSET;
 static constexpr uint32_t RB_SPI     = PERIPH_BASE + 17 * PERIPH_REG_OFFSET;
-static constexpr uint32_t RB_LEDS    = PERIPH_BASE + 18 * PERIPH_REG_OFFSET;
+// static constexpr uint32_t RB_LEDS    = PERIPH_BASE + 18 * PERIPH_REG_OFFSET;
 static constexpr uint32_t RB_DB_GPIO = PERIPH_BASE + 19 * PERIPH_REG_OFFSET;
 static constexpr uint32_t RB_FP_GPIO = PERIPH_BASE + 20 * PERIPH_REG_OFFSET;
 

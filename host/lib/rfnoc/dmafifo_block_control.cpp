@@ -15,8 +15,6 @@ using namespace uhd::rfnoc;
 
 namespace {
 
-//! Default FIFO depth per channel: 32 MiB
-constexpr uint32_t DEFAULT_SIZE   = 32 * 1024 * 1024;
 constexpr uint64_t BYTES_PER_BIST = 8000000;
 constexpr double BIST_TIMEOUT     = 0.5; // s
 //! Address space between FIFO controls
