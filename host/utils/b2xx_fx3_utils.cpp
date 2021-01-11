@@ -51,7 +51,6 @@ const std::vector<vid_pid_t> known_vid_pid_vector(known_vid_pids,
 const uhd::byte_vector_t OLD_EEPROM_SIGNATURE = {0x43, 0x59, 0x14, 0xB2};
 const uhd::byte_vector_t NEW_EEPROM_SIGNATURE = {0x43, 0x59, 0x1A, 0xB0};
 
-const size_t EEPROM_INIT_VALUE_VECTOR_SIZE = 8;
 uhd::byte_vector_t construct_eeprom_init_value_vector(uint16_t vid, uint16_t pid)
 {
     uhd::byte_vector_t init_values(OLD_EEPROM_SIGNATURE);
