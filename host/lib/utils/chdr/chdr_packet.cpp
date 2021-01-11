@@ -114,7 +114,7 @@ chdr_util::chdr_packet chdr_util::chdr_packet::deserialize_ptr(
     UHD_ASSERT_THROW(mdata_src_end < static_cast<const uint64_t*>(end));
     std::transform(
         mdata_src_begin, mdata_src_end, mdata_ptr, [endianness](uint64_t value) {
-            return u64_from_host(endianness, value);
+            return u64_to_host(endianness, value);
         });
 
     size_t payload_size = packet_writer->get_payload_size();
