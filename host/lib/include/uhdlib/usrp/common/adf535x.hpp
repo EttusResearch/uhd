@@ -112,6 +112,7 @@ public:
         , _wait_fn(std::move(wait_fn))
         , _regs()
         , _rewrite_regs(true)
+        , _neg_bleed_changed(false)
         , _wait_time_us(0)
         , _ref_freq(0.0)
         , _pfd_freq(0.0)
@@ -350,6 +351,7 @@ private: // Members
     wait_fn_t _wait_fn;
     adf535x_regs_t _regs;
     bool _rewrite_regs;
+    bool _neg_bleed_changed;
     uint32_t _wait_time_us;
     double _ref_freq;
     double _pfd_freq;
@@ -602,6 +604,14 @@ inline double adf535x_impl<adf5356_regs_t>::_set_frequency(
     _regs.mod2_msb     = narrow_cast<uint16_t>(MOD2 >> 14);
     _regs.phase_24_bit = 0;
 
+    auto negative_bleed =   FRAC1 != 0 or FRAC2 != 0 ?
+                            adf5356_regs_t::NEGATIVE_BLEED_ENABLED :
+                            adf5356_regs_t::NEGATIVE_BLEED_DISABLED;
+    if (negative_bleed != _regs.negative_bleed) {
+        _regs.negative_bleed = negative_bleed;
+        _neg_bleed_changed = true;
+    }
+
     if (flush)
         commit();
     return coerced_out_freq;
@@ -630,9 +640,14 @@ inline void adf535x_impl<adf5356_regs_t>::_commit()
     } else {
         // Frequency update sequence from data sheet
         _write_fn(addr_vtr_t(ONE_REG, _regs.get_reg(13)));
-        _write_fn(addr_vtr_t(ONE_REG, _regs.get_reg(6)));
+        _write_fn(addr_vtr_t(ONE_REG, _regs.get_reg(10)));
+        if (_neg_bleed_changed) {
+            _write_fn(addr_vtr_t(ONE_REG, _regs.get_reg(6)));
+        }
         _write_fn(addr_vtr_t(ONE_REG, _regs.get_reg(2)));
         _write_fn(addr_vtr_t(ONE_REG, _regs.get_reg(1)));
+        _wait_fn(_wait_time_us);
         _write_fn(addr_vtr_t(ONE_REG, _regs.get_reg(0)));
     }
+    _neg_bleed_changed = false;
 }

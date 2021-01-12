@@ -121,7 +121,7 @@ public:
                     [this](uint32_t microseconds) {
                         _db_iface->sleep(boost::chrono::microseconds(microseconds));
                     });
-                _lo1_iface[i]->set_pfd_freq(TWINRX_REV_C_PFD_FREQ);
+                _lo1_pfd_freq = TWINRX_REV_C_PFD_FREQ;
             } else {
                 _lo1_iface[i] = adf535x_iface::make_adf5355(
                     [this](const std::vector<uint32_t>& regs) {
@@ -130,13 +130,14 @@ public:
                     [this](uint32_t microseconds) {
                         _db_iface->sleep(boost::chrono::microseconds(microseconds));
                     });
-                _lo1_iface[i]->set_pfd_freq(TWINRX_REV_AB_PFD_FREQ);
+                _lo1_pfd_freq = TWINRX_REV_AB_PFD_FREQ;
             }
+            _lo1_iface[i]->set_pfd_freq(_lo1_pfd_freq);
             _lo1_iface[i]->set_output_power(adf535x_iface::OUTPUT_POWER_5DBM);
             _lo1_iface[i]->set_reference_freq(
                 _db_iface->get_clock_rate(dboard_iface::UNIT_TX));
             _lo1_iface[i]->set_muxout_mode(adf535x_iface::MUXOUT_DLD);
-            _lo1_iface[i]->set_frequency(3e9, 1.0e3);
+            _lo1_iface[i]->set_frequency(3e9, _lo1_pfd_freq / 2);
 
             // LO2
             _lo2_iface[i] =
@@ -561,7 +562,7 @@ public:
     double set_lo1_synth_freq(channel_t ch, double freq, bool commit = true)
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
-        static const double RESOLUTION = 1e3;
+        static const double RESOLUTION = _lo1_pfd_freq / 2;
 
         double coerced_freq = 0.0;
         if (ch == CH1 or ch == BOTH) {
@@ -852,6 +853,7 @@ private: // Members
     twinrx_gpio::sptr _gpio_iface;
     twinrx_cpld_regmap::sptr _cpld_regs;
     spi_config_t _spi_config;
+    double _lo1_pfd_freq;
     adf535x_iface::sptr _lo1_iface[NUM_CHANS];
     adf435x_iface::sptr _lo2_iface[NUM_CHANS];
     lo_source_t _lo1_src[NUM_CHANS];
