@@ -595,6 +595,15 @@ class n3xx(ZynqComponents, PeriphManagerBase):
                  }
         self.set_sync_source(source)
 
+    def get_sync_sources(self):
+        """
+        Enumerate permissible time/clock source combinations for sync
+        """
+        return [{
+            "time_source": time_source,
+            "clock_source": clock_source
+        } for (clock_source, time_source) in self.valid_sync_sources]
+
     def set_sync_source(self, args):
         """
         Selects reference clock and PPS sources. Unconditionally re-applies the time

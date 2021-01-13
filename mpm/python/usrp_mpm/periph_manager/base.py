@@ -978,3 +978,15 @@ class PeriphManagerBase(object):
         assert src in self.get_gpio_srcs(bank), \
             "Invalid GPIO source: {}".format(src)
         raise NotImplementedError("set_gpio_src() not available on this device!")
+
+    #######################################################################
+    # Sync API
+    #######################################################################
+    def get_sync_source(self):
+        """
+        Gets the current time and clock source
+        """
+        return {
+            "time_source": self.get_time_source(),
+            "clock_source": self.get_clock_source(),
+        }
