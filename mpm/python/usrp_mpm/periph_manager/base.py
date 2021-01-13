@@ -169,7 +169,17 @@ class PeriphManagerBase(object):
         mboard_info["mpm_sw_version"] = version_string
 
         mboard_info["fs_version"] = get_fs_version()
-        mboard_info['mender_artifact'] = get_mender_artifact()
+        # Mender artifacts are generally not present on a machine hosting
+        # a simulated device--let it slide if not found on sim devices
+        try:
+            mboard_info['mender_artifact'] = get_mender_artifact()
+        except FileNotFoundError:
+            # Note that the simulated key will not be present for
+            # non-simulated devices, hence the use of get()
+            if mboard_info.get('simulated', '') == 'True':
+                pass
+            else:
+                raise
 
         for i,dboard_info in enumerate(dboard_infos):
             mboard_info["dboard_{}_pid".format(i)] = str(dboard_info["pid"])

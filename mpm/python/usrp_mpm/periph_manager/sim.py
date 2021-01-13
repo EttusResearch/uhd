@@ -90,7 +90,8 @@ class sim(PeriphManagerBase):
         self.device_id = 1
         self.description = self.config.hardware.description
         self.mboard_info = {"type": self.config.hardware.uhd_device_type,
-                            "product": self.config.hardware.product}
+                            "product": self.config.hardware.product,
+                            "simulated": "True"}
         self.pids = {int(self.config.hardware.pid): self.config.hardware.product}
         # This uses the description, mboard_info, and pids
         super().__init__()
