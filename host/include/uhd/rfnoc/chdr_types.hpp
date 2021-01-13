@@ -181,11 +181,12 @@ public: // Functions
         // The static_casts are because vc and num_mdata are uint8_t -> unsigned char
         // For some reason, despite the %u meaning unsigned int, boost still formats them
         // as chars
-        return str(boost::format("chdr_header{vc:%u, eob:%b, eov:%b, pkt_type:%u, "
+        return str(boost::format("chdr_header{vc:%u, eob:%c, eov:%c, pkt_type:%u, "
                                  "num_mdata:%u, seq_num:%u, length:%u, dst_epid:%u}\n")
-                   % static_cast<uint16_t>(get_vc()) % get_eob() % get_eov()
-                   % get_pkt_type() % static_cast<uint16_t>(get_num_mdata())
-                   % get_seq_num() % get_length() % get_dst_epid());
+                   % static_cast<uint16_t>(get_vc()) % (get_eob() ? 'Y' : 'N')
+                   % (get_eov() ? 'Y' : 'N') % get_pkt_type()
+                   % static_cast<uint16_t>(get_num_mdata()) % get_seq_num() % get_length()
+                   % get_dst_epid());
     }
 
 private:
