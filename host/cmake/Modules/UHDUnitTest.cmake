@@ -131,6 +131,11 @@ function(UHD_ADD_PYTEST test_name)
         )
     endif(ENABLE_QEMU_UNITTESTS)
     # Include ${CMAKE_BINARY_DIR}/utils/ for testing the python utils
-    set_tests_properties(${test_name} PROPERTIES
-        ENVIRONMENT PYTHONPATH=${CMAKE_SOURCE_DIR}/tests/common:${CMAKE_BINARY_DIR}/utils/)
+    if(APPLE)
+        set_tests_properties(${test_name} PROPERTIES
+            ENVIRONMENT "DYLD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/lib/;PYTHONPATH=${CMAKE_SOURCE_DIR}/tests/common:${CMAKE_BINARY_DIR}/utils/")
+    else()
+        set_tests_properties(${test_name} PROPERTIES
+            ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/lib/;PYTHONPATH=${CMAKE_SOURCE_DIR}/tests/common:${CMAKE_BINARY_DIR}/utils/")
+    endif()
 endfunction(UHD_ADD_PYTEST)
