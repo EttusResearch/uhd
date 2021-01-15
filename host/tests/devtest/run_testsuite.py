@@ -90,6 +90,7 @@ def main():
     env = setup_env(args)
     devtest_pattern = "devtest_{p}.py".format(p=args.devtest_pattern)
     uhd_args_list = get_usrp_list(args.args, env)
+    arg_dict = dict(arg.split('=') for arg in args.args.strip(',').split(','))
     if len(uhd_args_list) == 0:
         print("No devices found. Exiting.")
         exit(1)
@@ -103,13 +104,15 @@ def main():
         print('--- This will take some time. Better grab a cup of tea.')
         sys.stdout.flush()
         args_str = uhd_info['args']
-        env['_UHD_TEST_ARGS_STR'] = args_str
         logfile_name = "log{}.log".format(
             args_str.replace('type=', '_').replace('serial=', '_').replace(',', '')
         )
         resultsfile_name = "results{}.log".format(
             args_str.replace('type=', '_').replace('serial=', '_').replace(',', '')
         )
+        if 'addr' in arg_dict:
+            args_str += ',addr={}'.format(arg_dict['addr'])
+        env['_UHD_TEST_ARGS_STR'] = args_str
         env['_UHD_TEST_LOGFILE'] = os.path.join(args.log_dir, logfile_name)
         env['_UHD_TEST_RESULTSFILE'] = os.path.join(args.log_dir, resultsfile_name)
         env['_UHD_TEST_LOG_LEVEL'] = str(logging.INFO)
