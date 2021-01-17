@@ -20,7 +20,7 @@
 #include <uhd/exception.hpp>
 
 //define the endian macros to convert integers
-#ifdef BOOST_BIG_ENDIAN
+#ifdef UHD_BIG_ENDIAN
     #define BE_MACRO(x) (x)
     #define LE_MACRO(x) uhd::byteswap(x)
 #else

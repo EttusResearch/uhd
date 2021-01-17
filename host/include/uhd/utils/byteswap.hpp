@@ -19,6 +19,7 @@
 #define INCLUDED_UHD_UTILS_BYTESWAP_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/types/endianness.hpp>
 #include <boost/cstdint.hpp>
 
 /*! \file byteswap.hpp
