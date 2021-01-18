@@ -25,6 +25,7 @@
 #include <boost/thread/thread.hpp> //thread sleep
 #include <boost/math/special_functions/round.hpp>
 #include <boost/math/special_functions/sign.hpp>
+#include <boost/bind.hpp>
 #include <algorithm>
 #include <cmath>
 

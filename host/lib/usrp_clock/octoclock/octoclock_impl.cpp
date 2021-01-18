@@ -24,6 +24,7 @@
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/thread.hpp>
+#include <boost/bind.hpp>
 
 #include <uhd/device.hpp>
 #include <uhd/exception.hpp>

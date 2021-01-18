@@ -20,6 +20,7 @@
 #include <uhd/utils/msg.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/barrier.hpp>
+#include <boost/bind.hpp>
 #include <exception>
 #include <iostream>
 #include <vector>

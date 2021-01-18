@@ -24,6 +24,7 @@
 #include <boost/thread/thread.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/bind.hpp>
 //#include <boost/atomic.hpp>
 #include <iostream>
 #include <complex>

@@ -66,6 +66,7 @@
 #include <boost/thread.hpp>
 #include <boost/array.hpp>
 #include <boost/math/special_functions/round.hpp>
+#include <boost/bind.hpp>
 #include <utility>
 #include <cmath>
 

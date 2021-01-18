@@ -20,6 +20,7 @@
 #include <boost/foreach.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/thread/thread.hpp>
+#include <boost/bind.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;

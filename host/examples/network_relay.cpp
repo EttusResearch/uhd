@@ -22,6 +22,7 @@
 #include <boost/thread/thread.hpp>
 #include <boost/format.hpp>
 #include <boost/asio.hpp>
+#include <boost/bind.hpp>
 #include <iostream>
 #include <csignal>
 #include <vector>

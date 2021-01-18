@@ -23,6 +23,7 @@
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <boost/thread.hpp>
+#include <boost/bind.hpp>
 #include <iostream>
 #include <fstream>
 #include <csignal>

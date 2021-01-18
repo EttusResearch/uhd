@@ -19,6 +19,7 @@
 #include <uhd/exception.hpp>
 #include <boost/format.hpp>
 #include <boost/make_shared.hpp>
+#include <boost/bind.hpp>
 #include <sstream>
 #include <fstream>
 

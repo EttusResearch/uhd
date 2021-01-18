@@ -30,6 +30,7 @@
 #include <boost/thread/thread.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/math/special_functions/round.hpp>
+#include <boost/bind.hpp>
 #include <cstdio>
 
 using namespace uhd;

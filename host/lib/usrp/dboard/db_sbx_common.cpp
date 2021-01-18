@@ -16,6 +16,7 @@
 //
 
 #include "db_sbx_common.hpp"
+#include <boost/bind.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;

@@ -26,6 +26,7 @@
 #include <boost/format.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/math/special_functions/round.hpp>
+#include <boost/bind.hpp>
 #include <iostream>
 #include <complex>
 #include <cmath>

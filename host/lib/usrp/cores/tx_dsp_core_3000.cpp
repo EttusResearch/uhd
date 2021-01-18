@@ -24,6 +24,7 @@
 #include <boost/math/special_functions/round.hpp>
 #include <boost/math/special_functions/sign.hpp>
 #include <boost/thread/thread.hpp> //sleep
+#include <boost/bind.hpp>
 #include <algorithm>
 #include <cmath>
 
