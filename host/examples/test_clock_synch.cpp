@@ -20,6 +20,7 @@
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
 #include <boost/thread/thread.hpp>
+#include <boost/bind.hpp>
 
 #include <uhd/device.hpp>
 #include <uhd/exception.hpp>

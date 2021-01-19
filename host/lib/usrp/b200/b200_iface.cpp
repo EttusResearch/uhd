@@ -27,6 +27,7 @@
 #include <boost/cstdint.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/format.hpp>
+#include <boost/bind.hpp>
 #include <fstream>
 #include <string>
 #include <vector>

@@ -18,6 +18,7 @@
 #ifdef E300_NATIVE
 
 #include <boost/cstdint.hpp>
+#include <boost/bind.hpp>
 #include <uhd/config.hpp>
 
 // constants coded into the fpga parameters

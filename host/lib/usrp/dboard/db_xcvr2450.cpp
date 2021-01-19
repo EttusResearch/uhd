@@ -62,6 +62,7 @@
 #include <boost/format.hpp>
 #include <boost/thread.hpp>
 #include <boost/math/special_functions/round.hpp>
+#include <boost/bind.hpp>
 #include <utility>
 
 using namespace uhd;

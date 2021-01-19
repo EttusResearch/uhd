@@ -22,6 +22,7 @@
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/msg.hpp>
+#include <boost/bind.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;

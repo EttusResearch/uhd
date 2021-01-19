@@ -18,6 +18,7 @@
 #include "db_sbx_common.hpp"
 #include <boost/algorithm/string.hpp>
 #include <boost/math/special_functions/round.hpp>
+#include <boost/bind.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;

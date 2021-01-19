@@ -34,6 +34,7 @@
 #include <boost/thread.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/bind.hpp>
 #include <map>
 #include "max287x.hpp"
 

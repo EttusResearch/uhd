@@ -29,6 +29,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/bind.hpp>
 #include <iostream>
 #include <fstream>
 #include <csignal>

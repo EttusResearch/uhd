@@ -27,6 +27,7 @@
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <boost/assign/list_of.hpp>
+#include <boost/bind.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;

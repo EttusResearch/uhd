@@ -20,6 +20,7 @@
 #include <boost/make_shared.hpp>
 #include <boost/thread/condition_variable.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/bind.hpp>
 #include <iostream>
 
 using namespace uhd;

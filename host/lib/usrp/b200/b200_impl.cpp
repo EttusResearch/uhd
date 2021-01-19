@@ -34,6 +34,7 @@
 #include <boost/functional/hash.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/weak_ptr.hpp>
+#include <boost/bind.hpp>
 #include <cstdio>
 #include <ctime>
 #include <cmath>

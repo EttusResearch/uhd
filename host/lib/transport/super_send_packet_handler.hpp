@@ -32,6 +32,7 @@
 #include <boost/thread/thread_time.hpp>
 #include <boost/foreach.hpp>
 #include <boost/function.hpp>
+#include <boost/bind.hpp>
 #include <iostream>
 #include <vector>
 

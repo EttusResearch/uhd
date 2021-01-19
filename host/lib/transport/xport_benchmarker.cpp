@@ -16,6 +16,7 @@
 //
 
 #include "xport_benchmarker.hpp"
+#include <boost/bind.hpp>
 
 namespace uhd { namespace transport {
 
