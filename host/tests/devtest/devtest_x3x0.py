@@ -19,7 +19,7 @@ rx_chans = num_chans['rx']
 
 from benchmark_rate_test import uhd_benchmark_rate_test
 uhd_benchmark_rate_test.tests = {}
-for (rate, speed) in [(1e6, 'slow'), (12.5e6, 'fast')]:
+for (rate, speed) in [(1e6, 'slow'), (25e6, 'fast')]:
     for chan in range(tx_chans):
         uhd_benchmark_rate_test.tests.update({
             'tx_chan{}_{}'.format(chan, speed): {
@@ -48,7 +48,7 @@ for (rate, speed) in [(1e6, 'slow'), (12.5e6, 'fast')]:
                 'duration': 1,
                 'direction': 'tx',
                 'chan': all_chans_str,
-                'rate': rate,
+                'rate': rate if speed == 'slow' else rate / tx_chans,
                 'acceptable-underruns': 10,
                 'tx_buffer': (0.1*1e6)+32e6*8*1/32,  # 32 MB DRAM for each channel (32 bit OTW format),
             }
@@ -60,7 +60,7 @@ for (rate, speed) in [(1e6, 'slow'), (12.5e6, 'fast')]:
                 'duration': 1,
                 'direction': 'rx',
                 'chan': all_chans_str,
-                'rate': rate,
+                'rate': rate if speed == 'slow' else rate / rx_chans,
                 'rx_buffer': 0.1*1e6,
             }
         })
@@ -83,7 +83,7 @@ for (rate, speed) in [(1e6, 'slow'), (12.5e6, 'fast')]:
                 'duration': 1,
                 'direction': 'tx,rx',
                 'chan': all_chans_str,
-                'rate': rate,
+                'rate': rate if speed == 'slow' else rate / tx_chans,
                 'acceptable-underruns': 500,
                 'tx_buffer': (0.1*1e6)+32e6*8*1/32,  # 32 MB DRAM for each channel (32 bit OTW format),
                 'rx_buffer': 0.1*1e6,
