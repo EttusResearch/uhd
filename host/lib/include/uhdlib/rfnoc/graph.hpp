@@ -171,6 +171,9 @@ private:
     void resolve_all_properties(uhd::rfnoc::resolve_context context,
         rfnoc_graph_t::vertex_descriptor initial_node);
 
+    void resolve_all_properties(uhd::rfnoc::resolve_context context,
+        node_ref_t initial_node);
+
     /**************************************************************************
      * Action API
      *************************************************************************/
