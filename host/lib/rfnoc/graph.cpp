@@ -89,11 +89,11 @@ void graph_t::connect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t edg
     auto dst_vertex_desc = _node_map.at(dst_node);
 
     // Set resolver callbacks:
-    node_accessor.set_resolve_all_callback(src_node, [this, src_vertex_desc]() {
-        this->resolve_all_properties(resolve_context::NODE_PROP, src_vertex_desc);
+    node_accessor.set_resolve_all_callback(src_node, [this, src_node]() {
+        this->resolve_all_properties(resolve_context::NODE_PROP, src_node);
     });
-    node_accessor.set_resolve_all_callback(dst_node, [this, dst_vertex_desc]() {
-        this->resolve_all_properties(resolve_context::NODE_PROP, dst_vertex_desc);
+    node_accessor.set_resolve_all_callback(dst_node, [this, dst_node]() {
+        this->resolve_all_properties(resolve_context::NODE_PROP, dst_node);
     });
     // Set post action callbacks:
     node_accessor.set_post_action_callback(
@@ -324,6 +324,9 @@ void graph_t::resolve_all_properties(
     auto begin_it          = topo_sorted_nodes.begin();
     auto end_it            = topo_sorted_nodes.end();
     while (*node_it != initial_node) {
+        if (node_it == end_it) {
+            throw uhd::rfnoc_error("Cannot find node in graph!");
+        }
         // We know *node_it must be == initial_node at some point, because
         // otherwise, initial_dirty_nodes would have been empty
         node_it++;
@@ -437,6 +440,13 @@ void graph_t::resolve_all_properties(
         throw uhd::resolve_error(
             "Error during property resultion: Back-edges inconsistent!");
     }
+}
+
+void graph_t::resolve_all_properties(
+    resolve_context context, node_ref_t initial_node)
+{
+    auto initial_node_vertex_desc = _node_map.at(initial_node);
+    resolve_all_properties(context, initial_node_vertex_desc);
 }
 
 void graph_t::enqueue_action(
