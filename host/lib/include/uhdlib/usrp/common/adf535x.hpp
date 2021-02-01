@@ -68,7 +68,7 @@ public:
     virtual void set_muxout_mode(const muxout_t mode) = 0;
 
     virtual double set_frequency(const double target_freq,
-        const double freq_resolution,
+        const uint32_t mod2 = 2,
         const bool flush = false) = 0;
 
     virtual double set_charge_pump_current(
@@ -227,10 +227,10 @@ public:
     }
 
     double set_frequency(const double target_freq,
-        const double freq_resolution,
+        const uint32_t mod2 = 2,
         const bool flush = false) override
     {
-        return _set_frequency(target_freq, freq_resolution, flush);
+        return _set_frequency(target_freq, mod2, flush);
     }
 
     double set_charge_pump_current(const double current, const bool flush) override
@@ -340,7 +340,7 @@ public:
 
 protected:
     uint8_t _set_vco_band_div(double);
-    double _set_frequency(double, double, bool);
+    double _set_frequency(double, uint32_t, bool);
     uhd::meta_range_t _get_charge_pump_current_range();
     void _commit();
 
@@ -367,13 +367,13 @@ inline uint8_t adf535x_impl<adf5355_regs_t>::_set_vco_band_div(double pfd_freq)
 
 template <>
 inline double adf535x_impl<adf5355_regs_t>::_set_frequency(
-    double target_freq, double freq_resolution, bool flush)
+    double target_freq, uint32_t mod2, bool flush)
 {
     if (target_freq > ADF535X_MAX_OUT_FREQ or target_freq < ADF535X_MIN_OUT_FREQ) {
         throw uhd::runtime_error("requested frequency out of range.");
     }
-    if ((uint32_t)freq_resolution == 0) {
-        throw uhd::runtime_error("requested resolution cannot be less than 1.");
+    if (mod2 < 2 or mod2 > ADF5355_MAX_MOD2) {
+        throw uhd::runtime_error("requested mod2 out of range.");
     }
 
     /* Calculate target VCOout frequency */
@@ -422,12 +422,13 @@ inline double adf535x_impl<adf5355_regs_t>::_set_frequency(
     const auto FRAC1     = static_cast<uint32_t>(floor((N - INT) * ADF535X_MOD1));
     const double residue = (N - INT) * ADF535X_MOD1 - FRAC1;
 
-    const double gcd = double(
-        uhd::math::gcd(static_cast<int>(_pfd_freq), static_cast<int>(freq_resolution)));
-    const auto MOD2 = static_cast<uint16_t>(
-        std::min(floor(_pfd_freq / gcd), static_cast<double>(ADF5355_MAX_MOD2)));
-    const auto FRAC2 = static_cast<uint16_t>(
-        std::min(ceil(residue * MOD2), static_cast<double>(ADF5355_MAX_FRAC2)));
+    // The data sheet recommends reducing FRAC2 and MOD2 to the lowest possible values
+    const auto frac2 = static_cast<uint16_t>(
+        std::min(ceil(residue * mod2), static_cast<double>(ADF5355_MAX_FRAC2)));
+    const auto gcd = 
+        uhd::math::gcd(static_cast<int>(frac2), static_cast<int>(mod2));
+    const auto FRAC2 = frac2 == 0 ? 0 : frac2 / gcd;
+    const auto MOD2 = frac2 == 0 ? 2 : mod2 / gcd;
 
     const double coerced_vco_freq =
         _pfd_freq * (_fb_after_divider ? rf_divider : 1)
@@ -510,13 +511,13 @@ inline uint8_t adf535x_impl<adf5356_regs_t>::_set_vco_band_div(double pfd_freq)
 
 template <>
 inline double adf535x_impl<adf5356_regs_t>::_set_frequency(
-    double target_freq, double freq_resolution, bool flush)
+    double target_freq, uint32_t mod2, bool flush)
 {
     if (target_freq > ADF535X_MAX_OUT_FREQ or target_freq < ADF535X_MIN_OUT_FREQ) {
         throw uhd::runtime_error("requested frequency out of range.");
     }
-    if ((uint32_t)freq_resolution == 0) {
-        throw uhd::runtime_error("requested resolution cannot be less than 1.");
+    if (mod2 < 2 or mod2 > ADF5355_MAX_MOD2) {
+        throw uhd::runtime_error("requested mod2 out of range.");
     }
 
     /* Calculate target VCOout frequency */
@@ -565,12 +566,13 @@ inline double adf535x_impl<adf5356_regs_t>::_set_frequency(
     const auto FRAC1     = static_cast<uint32_t>(floor((N - INT) * ADF535X_MOD1));
     const double residue = (N - INT) * ADF535X_MOD1 - FRAC1;
 
-    const double gcd = double(
-        uhd::math::gcd(static_cast<int>(_pfd_freq), static_cast<int>(freq_resolution)));
-    const auto MOD2 = static_cast<uint32_t>(
-        std::min(floor(_pfd_freq / gcd), static_cast<double>(ADF5356_MAX_MOD2)));
-    const auto FRAC2 = static_cast<uint32_t>(
-        std::min(round(residue * MOD2), static_cast<double>(ADF5356_MAX_FRAC2)));
+    // The data sheet recommends reducing FRAC2 and MOD2 to the lowest possible values
+    const auto frac2 = static_cast<uint16_t>(
+        std::min(ceil(residue * mod2), static_cast<double>(ADF5356_MAX_FRAC2)));
+    const auto gcd =
+        uhd::math::gcd(static_cast<int>(frac2), static_cast<int>(mod2));
+    const auto FRAC2 = frac2 == 0 ? 0 : frac2 / gcd;
+    const auto MOD2 = frac2 == 0 ? 2 : mod2 / gcd;
 
     const double coerced_vco_freq =
         _pfd_freq * (_fb_after_divider ? rf_divider : 1)

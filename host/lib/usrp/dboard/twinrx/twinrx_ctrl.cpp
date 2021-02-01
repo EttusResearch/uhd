@@ -33,6 +33,7 @@ inline uint32_t bool2bin(bool x)
 const double TWINRX_REV_AB_PFD_FREQ = 6.25e6;
 const double TWINRX_REV_C_PFD_FREQ  = 12.5e6;
 const double TWINRX_SPI_CLOCK_FREQ  = 3e6;
+const uint32_t TWINRX_LO1_MOD2      = 2;
 } // namespace
 
 class twinrx_ctrl_impl : public twinrx_ctrl
@@ -137,7 +138,7 @@ public:
             _lo1_iface[i]->set_reference_freq(
                 _db_iface->get_clock_rate(dboard_iface::UNIT_TX));
             _lo1_iface[i]->set_muxout_mode(adf535x_iface::MUXOUT_DLD);
-            _lo1_iface[i]->set_frequency(3e9, _lo1_pfd_freq / 2);
+            _lo1_iface[i]->set_frequency(3e9, TWINRX_LO1_MOD2);
 
             // LO2
             _lo2_iface[i] =
@@ -562,17 +563,16 @@ public:
     double set_lo1_synth_freq(channel_t ch, double freq, bool commit = true)
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
-        static const double RESOLUTION = _lo1_pfd_freq / 2;
 
         double coerced_freq = 0.0;
         if (ch == CH1 or ch == BOTH) {
             coerced_freq =
-                _lo1_iface[size_t(CH1)]->set_frequency(freq, RESOLUTION, false);
+                _lo1_iface[size_t(CH1)]->set_frequency(freq, TWINRX_LO1_MOD2, false);
             _lo1_freq[size_t(CH1)] = tune_freq_t(freq);
         }
         if (ch == CH2 or ch == BOTH) {
             coerced_freq =
-                _lo1_iface[size_t(CH2)]->set_frequency(freq, RESOLUTION, false);
+                _lo1_iface[size_t(CH2)]->set_frequency(freq, TWINRX_LO1_MOD2, false);
             _lo1_freq[size_t(CH2)] = tune_freq_t(freq);
         }
 
