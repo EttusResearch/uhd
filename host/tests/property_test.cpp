@@ -265,3 +265,21 @@ BOOST_AUTO_TEST_CASE(test_prop_operators)
     path4              = path4 / x;
     BOOST_CHECK_EQUAL(path4, "/root/2");
 }
+
+BOOST_AUTO_TEST_CASE(test_mismatched_type_access)
+{
+    uhd::property_tree::sptr tree = uhd::property_tree::make();
+
+    // accesses of the correct type should succeed
+    tree->create<int>("/intprop");
+    tree->create<double>("/doubleprop");
+    tree->create<std::string>("/stringprop");
+    BOOST_CHECK_NO_THROW(tree->access<int>("/intprop"));
+    BOOST_CHECK_NO_THROW(tree->access<double>("/doubleprop"));
+    BOOST_CHECK_NO_THROW(tree->access<std::string>("/stringprop"));
+
+    // accesses of the incorrect type should throw an exception
+    BOOST_CHECK_THROW(tree->access<int>("/doubleprop"), uhd::runtime_error);
+    BOOST_CHECK_THROW(tree->access<double>("/stringprop"), uhd::runtime_error);
+    BOOST_CHECK_THROW(tree->access<std::string>("/intprop"), uhd::runtime_error);
+}

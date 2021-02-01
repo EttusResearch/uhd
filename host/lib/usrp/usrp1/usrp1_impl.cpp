@@ -47,14 +47,8 @@ static device_addrs_t usrp1_find(const device_addr_t& hint)
 
     // Return an empty list of addresses when an address or resource is specified,
     // since an address and resource is intended for a different, non-USB, device.
-    if (hint.has_key("addr"))
+    if (hint.has_key("addr") || hint.has_key("resource"))
         return usrp1_addrs;
-
-    if (hint.has_key_with_prefix("resource")) {
-        UHD_LOG_TRACE(
-            "USRP1 FIND", "Returning early, PCIe is not supported with usrp1 devices.");
-        return usrp1_addrs;
-    }
 
     uint16_t vid, pid;
 
@@ -127,7 +121,7 @@ static device_addrs_t usrp1_find(const device_addr_t& hint)
             // this is a found usrp1 when the hint serial and name match or blank
             if ((not hint.has_key("name") or hint["name"] == new_addr["name"])
                 and (not hint.has_key("serial")
-                     or hint["serial"] == new_addr["serial"])) {
+                        or hint["serial"] == new_addr["serial"])) {
                 usrp1_addrs.push_back(new_addr);
             }
         }

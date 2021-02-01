@@ -11,9 +11,9 @@
 #include <uhd/utils/static.hpp>
 #include <cmrc/cmrc.hpp>
 #include <boost/filesystem.hpp>
-#include <array>
 #include <ctime>
 #include <fstream>
+#include <array>
 #include <tuple>
 #include <vector>
 
@@ -24,8 +24,8 @@ namespace rc = cmrc::rc;
 namespace fs = boost::filesystem;
 
 namespace {
-constexpr char LOG_ID[]  = "CAL::DATABASE";
-constexpr char CAL_EXT[] = ".cal";
+constexpr char LOG_ID[] = "CAL::DATABASE";
+constexpr char CAL_EXT[]          = ".cal";
 //! This value is just for sanity checking. We pick a value (in bytes) that we
 // are guaranteed to never exceed. Its only purpose is to avoid loading files
 // that can't possibly be valid cal data based on the filesize. This can avoid
@@ -193,13 +193,12 @@ std::vector<uint8_t> get_cal_data_flash(const std::string& key, const std::strin
  *****************************************************************************/
 typedef bool (*has_cal_data_fn)(const std::string&, const std::string&);
 typedef std::vector<uint8_t> (*get_cal_data_fn)(const std::string&, const std::string&);
-typedef std::tuple<source, has_cal_data_fn, get_cal_data_fn> cal_data_fn_tuple;
 // These are in order of priority!
 // clang-format off
-constexpr std::array<cal_data_fn_tuple, 3> data_fns{{
-    cal_data_fn_tuple{source::FILESYSTEM, &has_cal_data_fs,    &get_cal_data_fs   },
-    cal_data_fn_tuple{source::FLASH,      &has_cal_data_flash, &get_cal_data_flash},
-    cal_data_fn_tuple{source::RC,         &has_cal_data_rc,    &get_cal_data_rc   }
+constexpr std::array<std::tuple<source, has_cal_data_fn, get_cal_data_fn>, 3> data_fns{{
+    {source::FILESYSTEM, &has_cal_data_fs,    &get_cal_data_fs   },
+    {source::FLASH,      &has_cal_data_flash, &get_cal_data_flash},
+    {source::RC,         &has_cal_data_rc,    &get_cal_data_rc   }
 }};
 // clang-format on
 

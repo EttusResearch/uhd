@@ -7,39 +7,17 @@
 #
 
 UHD_INSTALL(FILES
-    # Block controllers
-    addsub_block_control.hpp
-    block_control.hpp
-    ddc_block_control.hpp
-    dmafifo_block_control.hpp
-    duc_block_control.hpp
-    fft_block_control.hpp
-    fir_filter_block_control.hpp
-    fosphor_block_control.hpp
-    keep_one_in_n_block_control.hpp
-    logpwr_block_control.hpp
-    mock_block.hpp
-    moving_average_block_control.hpp
-    null_block_control.hpp
-    radio_control.hpp
-    replay_block_control.hpp
-    siggen_block_control.hpp
-    split_stream_block_control.hpp
-    switchboard_block_control.hpp
-    vector_iir_block_control.hpp
-    window_block_control.hpp
     # Infrastructure
     actions.hpp
     block_id.hpp
     blockdef.hpp
-    chdr_types.hpp
     constants.hpp
+    chdr_types.hpp
     defaults.hpp
     dirtifier.hpp
     filter_node.hpp
     graph_edge.hpp
     mb_controller.hpp
-    multichan_register_iface.hpp
     noc_block_base.hpp
     noc_block_make_args.hpp
     node.hpp
@@ -53,6 +31,25 @@ UHD_INSTALL(FILES
     res_source_info.hpp
     rfnoc_types.hpp
     traffic_counter.hpp
+    # Block controllers
+    addsub_block_control.hpp
+    block_control.hpp
+    ddc_block_control.hpp
+    duc_block_control.hpp
+    dmafifo_block_control.hpp
+    keep_one_in_n_block_control.hpp
+    fft_block_control.hpp
+    fir_filter_block_control.hpp
+    fosphor_block_control.hpp
+    logpwr_block_control.hpp
+    moving_average_block_control.hpp
+    null_block_control.hpp
+    radio_control.hpp
+    siggen_block_control.hpp
+    split_stream_block_control.hpp
+    switchboard_block_control.hpp
+    vector_iir_block_control.hpp
+    window_block_control.hpp
 
     DESTINATION ${INCLUDE_DIR}/uhd/rfnoc
     COMPONENT headers

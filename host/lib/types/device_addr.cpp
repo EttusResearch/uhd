@@ -9,7 +9,6 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 #include <boost/tokenizer.hpp>
-#include <algorithm>
 #include <regex>
 #include <sstream>
 #include <stdexcept>
@@ -50,14 +49,6 @@ device_addr_t::device_addr_t(const std::map<std::string, std::string>& info)
     for (auto& t : info) {
         this->set(t.first, t.second);
     }
-}
-
-bool device_addr_t::has_key_with_prefix(const std::string& prefix) const
-{
-    auto dev_keys = this->keys();
-    return std::any_of(dev_keys.begin(), dev_keys.end(), [prefix](const auto& key) {
-        return key.substr(0, prefix.size()) == prefix;
-    });
 }
 
 std::string device_addr_t::to_pp_string(void) const

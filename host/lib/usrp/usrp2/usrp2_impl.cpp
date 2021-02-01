@@ -68,11 +68,8 @@ device_addrs_t usrp2_find(const device_addr_t& hint_)
 
     // Return an empty list of addresses when a resource is specified,
     // since a resource is intended for a different, non-USB, device.
-    if (hint.has_key_with_prefix("resource")) {
-        UHD_LOG_TRACE(
-            "USRP2 FIND", "Returning early, PCIe is not supported with usrp2 devices.");
+    if (hint.has_key("resource"))
         return usrp2_addrs;
-    }
 
     // if no address was specified, send a broadcast on each interface
     if (not hint.has_key("addr")) {
