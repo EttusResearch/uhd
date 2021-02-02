@@ -1237,39 +1237,6 @@ UHD_API uhd_error uhd_usrp_get_gpio_attr(
     uint32_t *attr_out
 );
 
-//! Enumerate the full paths of USRP registers available for read/write
-UHD_API uhd_error uhd_usrp_enumerate_registers(
-    uhd_usrp_handle h,
-    size_t mboard,
-    uhd_string_vector_handle *registers_out
-);
-
-//! Get more information about a low-level device register
-UHD_API uhd_error uhd_usrp_get_register_info(
-    uhd_usrp_handle h,
-    const char* path,
-    size_t mboard,
-    uhd_usrp_register_info_t *register_info_out
-);
-
-//! Write a low-level register field for a device register in the USRP hardware
-UHD_API uhd_error uhd_usrp_write_register(
-    uhd_usrp_handle h,
-    const char* path,
-    uint32_t field,
-    uint64_t value,
-    size_t mboard
-);
-
-//! Read a low-level register field from a device register in the USRP hardware
-UHD_API uhd_error uhd_usrp_read_register(
-    uhd_usrp_handle h,
-    const char* path,
-    uint32_t field,
-    size_t mboard,
-    uint64_t *value_out
-);
-
 #ifdef __cplusplus
 }
 #endif
