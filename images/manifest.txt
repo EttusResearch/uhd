@@ -42,7 +42,7 @@ b2xx_b200_fpga_default          uhd-f2ec5c9       b2xx/uhd-f2ec5c9/b2xx_b200_fpg
 b2xx_b200mini_fpga_default      uhd-f2ec5c9       b2xx/uhd-f2ec5c9/b2xx_b200mini_fpga_default-gf2ec5c9.zip           3c122145a5bd23dc50ac35b9d18dfe3f3224eaed4242274765ada89c55838ce4
 b2xx_b210_fpga_default          uhd-f2ec5c9       b2xx/uhd-f2ec5c9/b2xx_b210_fpga_default-gf2ec5c9.zip               4eba82a362369cc21ba679a4debdcd6aabbc1ecea295eb4aefd94f2ba5e6ed70
 b2xx_b205mini_fpga_default      uhd-f2ec5c9       b2xx/uhd-f2ec5c9/b2xx_b205mini_fpga_default-gf2ec5c9.zip           a38fcecabcef43d57e463aa50f0b07ba21d7e9211428fbc5ef47bfeb75542e93
-b2xx_common_fw_default          uhd-437381b         b2xx/uhd-437381b/b2xx_common_fw_default-g437381b.zip                  a71b01cb7dfea975f26516b5b18f9d2bebd5083effaf21a79fd5925d2aaf6a32
+b2xx_common_fw_default          uhd-7f7d016         b2xx/uhd-7f7d016/b2xx_common_fw_default-g7f7d016.zip                  22ac0e54cc90d53d8494d481439447a0c89b9bbaced6fabe24df260eda3ce3a3
 
 # USRP2 Devices
 usrp2_usrp2_fw_default          fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_usrp2_fw_default-g6bea23d.zip                  d523a18318cb6a7637be40484bf03a6f54766410fee2c1a1f72e8971ea9a9cb6
