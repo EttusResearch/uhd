@@ -26,7 +26,7 @@ macro(ADD_DEVTEST pattern filter devtype)
         ${RUNTIME_PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/run_testsuite.py
         "--src-dir" "${CMAKE_CURRENT_SOURCE_DIR}"
         "--devtest-pattern" "${pattern}"
-        "--args" "$(EXTRA_DEV_ARGS),type=${filter}"
+        "--args" "type=${filter}"
         "--build-type" "${CMAKE_BUILD_TYPE}"
         "--build-dir" "${CMAKE_BINARY_DIR}"
         "--python-interp" "${RUNTIME_PYTHON_EXECUTABLE}"
