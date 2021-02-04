@@ -1,0 +1,15 @@
+# no CI triggers
+trigger: none
+
+# no PR triggers
+pr: none
+
+pool:
+  name: de-dre-lab
+  demands:
+  - 'uhd_oss_ats'
+
+steps:
+- checkout: none
+- script: printenv
+  displayName: Print Environment
