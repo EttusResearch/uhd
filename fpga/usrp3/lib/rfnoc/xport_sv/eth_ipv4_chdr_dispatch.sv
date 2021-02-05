@@ -34,6 +34,9 @@
 //   - my_ip            : The IPv4 address of this endpoint
 //   - my_udp_chdr_port : The UDP port allocated for CHDR traffic on this endpoint
 //
+//   - my pause set   : number of word of fullness on CHDR_FIFO before requesting a pause
+//   - my pause clear : number of word of fullness on CHDR_FIFO before clearing a pause request
+//
 
 module eth_ipv4_chdr_dispatch #(
   int CPU_FIFO_SIZE    = $clog2(8*1024),
@@ -46,6 +49,7 @@ module eth_ipv4_chdr_dispatch #(
 )(
 
   // AXI-Stream interfaces
+  output logic        eth_pause_req,
   AxiStreamIf.slave   eth_rx, // tUser={error,trailing bytes};
   AxiStreamIf.master  e2v,    // tUser={1'b0,trailing bytes};
   AxiStreamIf.master  e2c,    // tUser={1'b0,trailing bytes};
@@ -54,6 +58,9 @@ module eth_ipv4_chdr_dispatch #(
   input  logic [47:0] my_mac,
   input  logic [31:0] my_ip,
   input  logic [15:0] my_udp_chdr_port,
+  // Pause control
+  input  logic [15:0] my_pause_set,
+  input  logic [15:0] my_pause_clear,
 
   output logic        chdr_dropped,
   output logic        cpu_dropped
@@ -63,15 +70,17 @@ module eth_ipv4_chdr_dispatch #(
   logic [47:0] e_my_mac;
   logic [31:0] e_my_ip;
   logic [15:0] e_my_udp_chdr_port;
+  logic [15:0] e_pause_set;
+  logic [15:0] e_pause_clear;
   // crossing clock boundaries.
   // my_mac, my_ip,,my_udp_chdr_port must be written
   // prior to traffic, or an inconsistent version will
   // exist for a clock period or 2.  This would be better
   // done with a full handshake.
-  synchronizer #(.WIDTH(96),.STAGES(1))
+  synchronizer #(.WIDTH(96+32),.STAGES(1))
     e_info_sync (.clk(eth_rx.clk),.rst(eth_rx.rst),
-                 .in({my_mac,my_ip,my_udp_chdr_port}),
-                 .out({e_my_mac,e_my_ip,e_my_udp_chdr_port}));
+                 .in({my_mac,my_ip,my_udp_chdr_port,my_pause_set,my_pause_clear}),
+                 .out({e_my_mac,e_my_ip,e_my_udp_chdr_port,e_pause_set,e_pause_clear}));
 
 
   localparam ENET_USER_W = $clog2(ENET_W/8)+1;
@@ -515,11 +524,72 @@ module eth_ipv4_chdr_dispatch #(
   // transferring a packet. To ensure that upstream logic is not
   // blocked, we instantiate at laeast one packet of buffering here.
   // The actual size is set by CHDR_FIFO_SIZE.
+  logic [15:0] chdr_occupied;
+  logic [15:0] chdr_occupied_q;
+  localparam CHDR_FIFO_WORD_SIZE = CHDR_FIFO_SIZE-$clog2(ENET_W/8);
   axi4s_fifo #(
-    .SIZE(CHDR_FIFO_SIZE-$clog2(ENET_W/8))
+    .SIZE(CHDR_FIFO_WORD_SIZE)
   ) chdr_fifo_i (
-    .clear(1'b0),.space(),.occupied(),
+    .clear(1'b0),.space(),.occupied(chdr_occupied),
     .i(chdr1),.o(e2v)
   );
+
+  // documentation requires pause requests to be set for a minimum of 16 clocks.
+  // I'm providing the same gauranteed min time in the set and clear direction
+  logic [3:0] pause_timer;
+  typedef enum logic [1:0] {
+      ST_IDLE           = 2'd0,
+      ST_MIN_DELAY_SET  = 2'd1,
+      ST_REQUESTING     = 2'd2,
+      ST_MIN_DELAY_CLR  = 2'd3
+    } pause_state_t;
+  pause_state_t pause_state = ST_IDLE;
+
+  always_ff @(posedge eth_rx.clk) begin : pause_req_ff
+    if (eth_rx.rst) begin
+      chdr_occupied_q <= 0;
+      eth_pause_req   <= 1'b0;
+      pause_state     <= ST_IDLE;
+      pause_timer     <= 0;
+    end else begin
+      chdr_occupied_q <= chdr_occupied;
+
+      case (pause_state)
+
+        ST_IDLE: begin
+          pause_timer <= 0;
+          if (chdr_occupied_q >= e_pause_set) begin
+            eth_pause_req   <= 1'b1;
+            pause_state     <= ST_MIN_DELAY_SET;
+            pause_timer     <= pause_timer-1; // Wrap counter to max value
+          end
+        end
+
+        ST_MIN_DELAY_SET: begin
+          pause_timer     <= pause_timer-1;
+          if (pause_timer == 1) begin
+            pause_state     <= ST_REQUESTING;
+          end
+        end
+
+        ST_REQUESTING: begin
+          pause_timer     <= 0;
+          if (chdr_occupied_q <= e_pause_clear) begin
+            eth_pause_req   <= 1'b0;
+            pause_state     <= ST_MIN_DELAY_CLR;
+            pause_timer     <= pause_timer-1; // Wrap counter to max value
+          end
+        end
+
+        ST_MIN_DELAY_CLR: begin
+          pause_timer     <= pause_timer-1;
+          if (pause_timer == 1) begin
+            pause_state     <= ST_IDLE;
+          end
+        end
+      endcase
+    end
+  end
+
 
 endmodule // eth_ipv4_chdr_dispatch

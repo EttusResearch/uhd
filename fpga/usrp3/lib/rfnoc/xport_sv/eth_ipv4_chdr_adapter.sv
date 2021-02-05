@@ -65,11 +65,14 @@ module eth_ipv4_chdr_adapter #(
   input  logic [47:0] my_mac,
   input  logic [31:0] my_ip,
   input  logic [15:0] my_udp_chdr_port,
+  input  logic [15:0] my_pause_set,
+  input  logic [15:0] my_pause_clear,
 
   output logic        chdr_dropped,
   output logic        cpu_dropped,
 
   // Ethernet MAC
+  output logic       eth_pause_req,
   AxiStreamIf.master eth_tx, // tUser = {1'b0,trailing bytes};
   AxiStreamIf.slave  eth_rx, // tUser = {error,trailing bytes};
   // CHDR router interface
@@ -90,7 +93,7 @@ module eth_ipv4_chdr_adapter #(
   localparam CPU_USER_W  = $clog2(CPU_W/8)+1;
   localparam CHDR_USER_W = $clog2(CHDR_W/8);
   localparam MAX_PACKET_BYTES = 2**16;
-  localparam DEBUG = 1;
+  localparam DEBUG = 0;
 
   `include "eth_constants.vh"
 
@@ -137,12 +140,15 @@ module eth_ipv4_chdr_adapter #(
     .DROP_MIN_PACKET(DROP_MIN_PACKET),
     .ENET_W(ENET_W)
   ) eth_dispatch_i (
+    .eth_pause_req    (eth_pause_req),
     .eth_rx           (eth_rx1),
     .e2v              (e2v1),
     .e2c              (e2c1),
     .my_mac           (my_mac),
     .my_ip            (my_ip),
     .my_udp_chdr_port (my_udp_chdr_port),
+    .my_pause_set     (my_pause_set),
+    .my_pause_clear   (my_pause_clear),
     .chdr_dropped     (chdr_dropped),
     .cpu_dropped      (cpu_dropped)
   );

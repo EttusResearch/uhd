@@ -38,6 +38,7 @@ module eth_ipv4_interface #(
   int          PREAMBLE_BYTES   = 6,
   bit          ADD_SOF          = 1,
   bit          SYNC             = 0,
+  bit          PAUSE_EN         = 0,
   int          ENET_W           = 64,
   int          CPU_W            = 64,
   int          CHDR_W           = 64
@@ -63,6 +64,7 @@ module eth_ipv4_interface #(
   output logic [15:0] my_udp_chdr_port,
 
   // Ethernet MAC
+  output logic       eth_pause_req,
   AxiStreamIf.master eth_tx, // tUser = {1'b0,trailing bytes};
   AxiStreamIf.slave  eth_rx, // tUser = {error,trailing bytes};
   // CHDR router interface
@@ -77,6 +79,8 @@ module eth_ipv4_interface #(
   localparam [47:0] DEFAULT_MAC_ADDR  = {8'h00, 8'h80, 8'h2f, 8'h16, 8'hc5, 8'h2f};
   localparam [31:0] DEFAULT_IP_ADDR   = {8'd192, 8'd168, 8'd10, 8'd2};
   localparam [31:0] DEFAULT_UDP_PORT  = 16'd49153;
+  localparam [15:0] DEFAULT_PAUSE_SET   = 16'd00040;
+  localparam [15:0] DEFAULT_PAUSE_CLEAR = 16'd00020;
 
   //---------------------------------------------------------
   // Registers
@@ -102,6 +106,8 @@ module eth_ipv4_interface #(
   logic        chdr_dropped;
   logic [31:0] chdr_drop_count = 0;
   logic [31:0] cpu_drop_count  = 0;
+  logic [15:0] my_pause_set    = DEFAULT_PAUSE_SET;
+  logic [15:0] my_pause_clear  = DEFAULT_PAUSE_CLEAR;
 
   always_comb begin : bridge_mux
     my_mac            = bridge_en ? bridge_mac_reg : mac_reg;
@@ -118,6 +124,8 @@ module eth_ipv4_interface #(
       bridge_mac_reg  <= DEFAULT_MAC_ADDR;
       bridge_ip_reg   <= DEFAULT_IP_ADDR;
       bridge_udp_port <= DEFAULT_UDP_PORT;
+      my_pause_set    <= DEFAULT_PAUSE_SET;
+      my_pause_clear  <= DEFAULT_PAUSE_CLEAR;
     end
     else begin
       if (reg_wr_req)
@@ -149,6 +157,14 @@ module eth_ipv4_interface #(
 
         REG_BRIDGE_ENABLE:
           bridge_en             <= reg_wr_data[0];
+
+        REG_PAUSE:
+          begin
+            if (PAUSE_EN) begin
+              my_pause_set        <= reg_wr_data[15:0];
+              my_pause_clear      <= reg_wr_data[31:16];
+            end
+          end
         endcase
     end
   end
@@ -210,6 +226,14 @@ module eth_ipv4_interface #(
               reg_rd_data <= cpu_drop_count;
               cpu_drop_count <= 0; // clear when read
             end
+
+          REG_PAUSE:
+            begin
+              if (PAUSE_EN) begin
+                reg_rd_data[15:0]  <= my_pause_set;
+                reg_rd_data[31:16] <= my_pause_clear;
+              end
+            end
          default:
             reg_rd_resp <= 1'b0;
          endcase
@@ -256,6 +280,7 @@ module eth_ipv4_interface #(
     .CPU_W           (CPU_W),
     .CHDR_W          (CHDR_W)
   ) eth_adapter_i (
+    .eth_pause_req   (eth_pause_req),
     .eth_rx          (eth_rx   ),
     .eth_tx          (eth_tx   ),
     .v2e             (v2e      ),
@@ -266,6 +291,8 @@ module eth_ipv4_interface #(
     .my_mac          (my_mac   ),
     .my_ip           (my_ip    ),
     .my_udp_chdr_port(my_udp_chdr_port),
+    .my_pause_set    (my_pause_set),
+    .my_pause_clear  (my_pause_clear),
     .chdr_dropped    (e_chdr_dropped),
     .cpu_dropped     (e_cpu_dropped)
   );

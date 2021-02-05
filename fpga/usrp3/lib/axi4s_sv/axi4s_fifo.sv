@@ -22,7 +22,7 @@ module axi4s_fifo #(
 );
 
   `include "axi4s.vh"
-  
+
   // Parameter Checks
   initial begin
     assert (i.DATA_WIDTH == o.DATA_WIDTH) else

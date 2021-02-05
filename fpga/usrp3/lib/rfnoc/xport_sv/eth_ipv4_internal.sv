@@ -365,6 +365,7 @@ module eth_ipv4_internal #(
     .reg_rd_addr      (reg_rd_addr),
     .reg_rd_resp      (reg_rd_resp_eth_if),
     .reg_rd_data      (reg_rd_data_eth_if),
+    .eth_pause_req    (),
     .eth_tx           (e2h_chdr),
     .eth_rx           (h2e_chdr),
     .e2v              (e2v_chdr),
