@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<system name="$${FILENAME}">
+ <component
+   name="$${FILENAME}"
+   displayName="$${FILENAME}"
+   version="1.0"
+   description=""
+   tags="INTERNAL_COMPONENT=true"
+   categories="" />
+ <parameter name="bonusData"><![CDATA[bonusData 
+{
+   element altclkctrl_0
+   {
+      datum _sortIndex
+      {
+         value = "0";
+         type = "int";
+      }
+   }
+}
+]]></parameter>
+ <parameter name="clockCrossingAdapter" value="HANDSHAKE" />
+ <parameter name="device" value="10M04SAU169I7G" />
+ <parameter name="deviceFamily" value="MAX 10" />
+ <parameter name="deviceSpeedGrade" value="7" />
+ <parameter name="fabricMode" value="QSYS" />
+ <parameter name="generateLegacySim" value="false" />
+ <parameter name="generationId" value="0" />
+ <parameter name="globalResetBus" value="false" />
+ <parameter name="hdlLanguage" value="VERILOG" />
+ <parameter name="hideFromIPCatalog" value="true" />
+ <parameter name="lockedInterfaceDefinition" value="" />
+ <parameter name="maxAdditionalLatency" value="1" />
+ <parameter name="projectName" value="" />
+ <parameter name="sopcBorderPoints" value="false" />
+ <parameter name="systemHash" value="0" />
+ <parameter name="testBenchDutName" value="" />
+ <parameter name="timeStamp" value="0" />
+ <parameter name="useTestBenchNamingPattern" value="false" />
+ <instanceScript></instanceScript>
+ <interface
+   name="altclkctrl_input"
+   internal="altclkctrl_0.altclkctrl_input"
+   type="conduit"
+   dir="end">
+  <port name="inclk" internal="inclk" />
+  <port name="ena" internal="ena" />
+ </interface>
+ <interface
+   name="altclkctrl_output"
+   internal="altclkctrl_0.altclkctrl_output"
+   type="conduit"
+   dir="end">
+  <port name="outclk" internal="outclk" />
+ </interface>
+ <module
+   name="altclkctrl_0"
+   kind="altclkctrl"
+   version="18.1"
+   enabled="1"
+   autoexport="1">
+  <parameter name="CLOCK_TYPE" value="1" />
+  <parameter name="DEVICE_FAMILY" value="MAX 10" />
+  <parameter name="ENA_REGISTER_MODE" value="1" />
+  <parameter name="GUI_USE_ENA" value="true" />
+  <parameter name="NUMBER_OF_CLOCKS" value="1" />
+  <parameter name="USE_GLITCH_FREE_SWITCH_OVER_IMPLEMENTATION" value="false" />
+ </module>
+ <interconnectRequirement for="$system" name="qsys_mm.clockCrossingAdapter" value="HANDSHAKE" />
+ <interconnectRequirement for="$system" name="qsys_mm.enableEccProtection" value="FALSE" />
+ <interconnectRequirement for="$system" name="qsys_mm.insertDefaultSlave" value="FALSE" />
+ <interconnectRequirement for="$system" name="qsys_mm.maxAdditionalLatency" value="1" />
+</system>

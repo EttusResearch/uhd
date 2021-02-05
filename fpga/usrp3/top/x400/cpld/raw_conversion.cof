@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="US-ASCII" standalone="yes"?>
+<cof>
+	<output_filename>output_files/mb_cpld_converted.pof</output_filename>
+	<n_pages>1</n_pages>
+	<width>1</width>
+	<mode>14</mode>
+	<sof_data>
+		<user_name>Page_0</user_name>
+		<page_flags>1</page_flags>
+		<bit0>
+			<sof_filename>output_files/mb_cpld.sof<compress_bitstream>1</compress_bitstream></sof_filename> 
+		</bit0>
+	</sof_data>
+	<version>10</version>
+	<create_cvp_file>0</create_cvp_file>
+	<create_hps_iocsr>0</create_hps_iocsr>
+	<auto_create_rpd>1</auto_create_rpd>
+	<rpd_little_endian>1</rpd_little_endian>
+	<options>
+		<map_file>1</map_file>
+	</options>
+	<MAX10_device_options>
+		<por>0</por>
+		<io_pullup>1</io_pullup>
+		<config_from_cfm0_only>0</config_from_cfm0_only>
+		<isp_source>0</isp_source>
+		<verify_protect>0</verify_protect>
+		<epof>0</epof>
+		<ufm_source>0</ufm_source>
+	</MAX10_device_options>
+	<advanced_options>
+		<ignore_epcs_id_check>1</ignore_epcs_id_check>
+		<ignore_condone_check>2</ignore_condone_check>
+		<plc_adjustment>0</plc_adjustment>
+		<post_chain_bitstream_pad_bytes>-1</post_chain_bitstream_pad_bytes>
+		<post_device_bitstream_pad_bytes>-1</post_device_bitstream_pad_bytes>
+		<bitslice_pre_padding>1</bitslice_pre_padding>
+	</advanced_options>
+</cof>
