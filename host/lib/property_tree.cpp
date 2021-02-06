@@ -194,23 +194,13 @@ public:
     }
 
     std::shared_ptr<void>& _access_with_type_check(
-        const fs_path& path_, std::type_index expected_prop_type) const
+        const fs_path& path_, std::type_index /*expected_prop_type*/) const
     {
-        const fs_path path = _root / path_;
-        boost::mutex::scoped_lock lock(_guts->mutex);
-
-        node_type* node = &_guts->root;
-        for (const std::string& name : path_tokenizer(path)) {
-            if (not node->has_key(name))
-                throw_path_not_found(path);
-            node = &(*node)[name];
-        }
-        if (node->prop.get() == NULL)
-            throw uhd::runtime_error("Cannot access! Property uninitialized at: " + path);
-        if (node->prop_type_hash != expected_prop_type.hash_code())
-            throw uhd::runtime_error(
-                "Cannot access! Property types do not match at: " + path);
-        return node->prop;
+        // FIXME:  The type check didn't actually work because the hash code
+        // for the type_index can be different between the application and the
+        // library.  Leaving the this method implementation in place because
+        // it was added to the API.
+        return _access(path_);
     }
 
 private:
