@@ -139,6 +139,9 @@ device_addrs_t mpmd_find_with_addrs(const device_addrs_t& hints)
     device_addrs_t found_devices;
     found_devices.reserve(hints.size());
     for (const auto& hint : hints) {
+        if (hint.has_key("resource")) {
+            continue;
+        }
         if (not(hint.has_key(xport::FIRST_ADDR_KEY) or hint.has_key(MGMT_ADDR_KEY))) {
             UHD_LOG_DEBUG("MPMD FIND", "No address given in hint " << hint.to_string());
             continue;
@@ -169,6 +172,9 @@ device_addrs_t mpmd_find_with_addrs(const device_addrs_t& hints)
 device_addrs_t mpmd_find_with_bcast(const device_addr_t& hint)
 {
     device_addrs_t addrs;
+    if (hint.has_key("resource")) {
+        return addrs;
+    }
     UHD_LOG_TRACE(
         "MPMD FIND", "Broadcasting on all available interfaces to find MPM devices.");
     std::vector<std::future<device_addrs_t>> task_list;
@@ -224,12 +230,6 @@ device_addrs_t mpmd_find(const device_addr_t& hint_)
             return {};
         }
     }
-    if (hint_.has_key_with_prefix("resource")) {
-        UHD_LOG_TRACE(
-            "MPMD FIND", "Returning early, PCIe is not support with mpm devices.");
-        return {};
-    }
-
     UHD_LOG_TRACE("MPMD FIND", "Finding with " << hints.size() << " different hint(s).");
 
     // Scenario 1): User gave us at least one address

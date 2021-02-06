@@ -71,11 +71,8 @@ device_addrs_t octoclock_find(const device_addr_t& hint)
 
     // Return an empty list of addresses when a resource is specified,
     // since a resource is intended for a different, non-USB, device.
-    if (hint.has_key_with_prefix("resource")) {
-        UHD_LOG_TRACE("OCTOCLOCK FIND",
-            "Returning early, PCIe is not supported with octoclock devices.");
+    if (hint.has_key("resource"))
         return octoclock_addrs;
-    }
 
     // If no address was specified, send a broadcast on each interface
     if (not _hint.has_key("addr")) {

@@ -182,14 +182,8 @@ static device_addrs_t b200_find(const device_addr_t& hint)
     // Return an empty list of addresses when an address or resource is specified,
     // since an address and resource is intended for a different, non-USB, device.
     for (device_addr_t hint_i : separate_device_addr(hint)) {
-        if (hint_i.has_key("addr"))
+        if (hint_i.has_key("addr") || hint_i.has_key("resource"))
             return b200_addrs;
-
-        if (hint.has_key_with_prefix("resource")) {
-            UHD_LOG_TRACE(
-                "B200 FIND", "Returning early, PCIe is not supported with b200 devices.");
-            return b200_addrs;
-        }
     }
 
     // Important note:

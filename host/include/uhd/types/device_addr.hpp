@@ -50,13 +50,6 @@ public:
     device_addr_t(const std::map<std::string, std::string>& info);
 
     /*!
-     * Looks for any key that matches the prefix.
-     * \param prefix string to compare keys to
-     * \return a bool true if found else false
-     */
-    bool has_key_with_prefix(const std::string& prefix) const;
-
-    /*!
      * Convert a device address into a pretty print string.
      * \return a printable string representing the device address
      */
