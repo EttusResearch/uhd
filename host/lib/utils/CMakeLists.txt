@@ -62,7 +62,6 @@ endif()
 ########################################################################
 
 set(CMAKE_REQUIRED_LIBRARIES "pthread")
-
 CHECK_CXX_SOURCE_COMPILES("
     #include <pthread.h>
     int main(){
@@ -73,6 +72,7 @@ CHECK_CXX_SOURCE_COMPILES("
     }
     " HAVE_PTHREAD_SETNAME
 )
+set(CMAKE_REQUIRED_LIBRARIES)
 
 if(CYGWIN)
     #SCHED_RR non-operational on cygwin

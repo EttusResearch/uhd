@@ -3,7 +3,9 @@
 #sets LIBUSB_FOUND, LIBUSB_LIBRARIES, LIBUSB_INCLUDE_DIRS
 #override LIBUSB_LIBRARIES LIBUSB_INCLUDE_DIRS to manually set
 
-include(FindPkgConfig)
+if(NOT PKG_CONFIG_FOUND)
+    include(FindPkgConfig)
+endif()
 pkg_check_modules(PC_LIBUSB QUIET libusb-1.0)
 
 find_path(LIBUSB_INCLUDE_DIRS
@@ -56,6 +58,7 @@ CHECK_FUNCTION_EXISTS("libusb_strerror" HAVE_LIBUSB_STRERROR)
 if(HAVE_LIBUSB_STRERROR)
     list(APPEND LIBUSB_DEFINITIONS "HAVE_LIBUSB_STRERROR=1")
 endif(HAVE_LIBUSB_STRERROR)
+set(CMAKE_REQUIRED_LIBRARIES)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(LIBUSB DEFAULT_MSG LIBUSB_LIBRARIES LIBUSB_INCLUDE_DIRS)
