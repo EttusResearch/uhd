@@ -340,7 +340,7 @@ class MPMServer(RPCServer):
             "Deinitializing device and releasing claim on session `{}'"
             .format(self.session_id))
         # Disable unclaim timer, we're now finished with reclaim loops.
-        self._timer.kill()
+        self._timer.kill(block=False)
         # We might need to clear the method registry
         if self.periph_manager.clear_rpc_registry_on_unclaim:
             self.clear_method_registry()
