@@ -23,6 +23,7 @@ binary_encoder.v \
 db_control.v \
 fe_control.v \
 filter_bad_sid.v \
+gearbox_2x1.v \
 gpio_atr_io.v \
 gpio_atr.v \
 gray2bin.v \
