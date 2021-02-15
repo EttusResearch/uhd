@@ -15,7 +15,8 @@
 module sim_clock_gen #(
   parameter realtime PERIOD     = 10.0,  // Period in ns
   parameter real     DUTY_CYCLE = 0.5,   // Duty cycle, in the range (0.0, 1.0)
-  parameter bit      AUTOSTART  = 1      // Start clock automatically at time 0
+  parameter bit      AUTOSTART  = 1,     // Start clock automatically at time 0
+  parameter realtime PHASE      = 0.0    // Phase offset
 ) (
   output bit clk,
   output bit rst
@@ -112,6 +113,7 @@ module sim_clock_gen #(
   //--------------------------
 
   initial begin : clock_block
+    if (PHASE != 0.0) #(PHASE);
     // Toggle the clock in a loop
     forever begin : clock_loop
       #(low_time);
