@@ -10,6 +10,9 @@
 RFNOC_UTIL_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/rfnoc/utils/, \
 chdr_trim_payload.v \
 chdr_pad_packet.v \
+chdr_resize.v \
+chdr_convert_up.v \
+chdr_convert_down.v \
 context_handler_sync.v \
 context_builder.v \
 context_parser.v \
