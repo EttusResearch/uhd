@@ -4,12 +4,40 @@ trigger: none
 # no PR triggers
 pr: none
 
-pool:
-  name: de-dre-lab
-  demands:
-  - 'uhd_oss_ats'
+parameters:
+- name: run_pebbles_n310_0
+  type: boolean
+  default: true
+- name: runDevTest
+  type: boolean
+  default: false
+- name: runPyTest
+  type: boolean
+  default: true
 
-steps:
-- checkout: none
-- script: printenv
-  displayName: Print Environment
+resources:
+  repositories:
+  - repository: ettus-rts
+    type: github
+    endpoint: EttusResearch
+    name: EttusResearch/ettus-rts
+
+jobs:
+- template: templates/job-uhd-hardware-tests.yml
+  parameters:
+    runDevTest: ${{ parameters.runDevTest }}
+    runPyTest: ${{ parameters.runPyTest }}
+    dutMatrix:
+      pebbles-n310-0:
+        devType: 'n3xx'
+        devModel: 'n310'
+        devName: 'pebbles-n310-0'
+        devSerial: '311FE02'
+        devBus: ip
+        devAddr: '192.168.40.17'
+        devMgmtAddr: 'ni-n3xx-311FE02'
+        devtestPattern: 'n3x0'
+        pytestDUT: 'n310-0'
+        pytestAtsConfig: 'uhd_oss_ats'
+        pipelineAgent: pebbles-agent-1
+        deviceEnabled: ${{ parameters.run_pebbles_n310_0 }}
