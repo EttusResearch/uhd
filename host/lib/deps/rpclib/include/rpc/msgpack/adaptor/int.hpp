@@ -77,7 +77,7 @@ namespace detail {
 
     template <>
     struct object_char_sign<true> {
-        static inline void make(clmdep_msgpack::object& o, char v) {
+        static inline void make(clmdep_msgpack::object& o, signed char v) {
             if (v < 0) {
                 o.type = clmdep_msgpack::type::NEGATIVE_INTEGER;
                 o.via.i64 = v;
