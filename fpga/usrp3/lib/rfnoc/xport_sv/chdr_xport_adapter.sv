@@ -45,18 +45,18 @@ module chdr_xport_adapter #(
   int          NODE_INST    = 0,
   bit          ALLOW_DISC   = 1
 )(
-  // Device info
+  // Device info (domain: eth_rx.clk)
   input  logic [15:0] device_id,
-  // Device addresses
+  // Device addresses (domain: eth_rx.clk)
   input  logic [47:0] my_mac,
   input  logic [31:0] my_ip,
   input  logic [15:0] my_udp_chdr_port,
 
-  // Ethernet
+  // Ethernet (domain: eth_rx.clk)
   AxiStreamIf.slave  eth_rx, // tUser={*not used*}
   AxiStreamIf.master eth_tx, // tUser={1'b0,trailing bytes}
 
-  // CHDR
+  // CHDR (domain: eth_rx.clk)
   AxiStreamIf.slave  v2e,  // tUser={*not used*}
   AxiStreamIf.master e2v   // tUser={*not used*}
 );

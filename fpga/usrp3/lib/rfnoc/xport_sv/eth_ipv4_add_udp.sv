@@ -24,6 +24,8 @@ module eth_ipv4_add_udp #(
   logic [15:0] FLAG_FRAG = { 3'b010 /* don't fragment */, 13'h0 },
   logic [15:0] TTL_PROT = { 8'h10 /* TTL */, 8'h11 /* UDP */ }
 )(
+  // Clock domain: i.clk (o_.clk is unused)
+
   // Device addresses
   input  logic [47:0] mac_src,
   input  logic [31:0] ip_src,

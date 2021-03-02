@@ -47,7 +47,8 @@ module eth_ipv4_chdr_dispatch #(
   bit DROP_MIN_PACKET  = 0,
   int ENET_W           = 64
 )(
-
+  // Clock domain: eth_rx.clk (other interface clocks are unused)
+  
   // AXI-Stream interfaces
   output logic        eth_pause_req,
   AxiStreamIf.slave   eth_rx, // tUser={error,trailing bytes};

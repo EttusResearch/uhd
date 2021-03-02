@@ -3,8 +3,9 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// Header File: AxiIf.vh
-// Description: Macros for use with AXI4(FULL)
+// Header File: axi.vh
+//
+// Description: Macros for use with AxiIf (AXI4 full)
 //
 
 //-----------------------------------------------------------------------------

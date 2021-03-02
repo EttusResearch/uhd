@@ -14,6 +14,7 @@
 module axi4s_fifo #(
   int SIZE  = 1 // default size set to one to act as a pipe phase
  ) (
+  // Clock domain: i.clk (o.clk is unused)
   input logic clear=1'b0,
   interface   i,  // AxiStreamIf or AxiStreamPacketIf
   interface   o,  // AxiStreamIf or AxiStreamPacketIf

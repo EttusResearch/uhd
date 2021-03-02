@@ -25,7 +25,8 @@
 //   - PREAMBLE_BYTES: Number of bytes of Preamble expected
 //   - ADD_SOF: Add a SOF indication into the tuser field of the e2c path.
 //              If false use TKEEP instead of USER.
-//   - SYNC: Set if MAC is not the same as bus_clk
+//   - SYNC: Set if the CPU clock domain (c2e, e2c) is not the same as the
+//           Ethernet clock domain (eth_rx, eth_tx).
 //   - ENET_W: Width of the link to the Ethernet MAC
 //   - CPU_W: Width of the CPU interface
 //   - CHDR_W: Width of the CHDR interface
@@ -71,15 +72,19 @@ module eth_ipv4_chdr_adapter #(
   output logic        chdr_dropped,
   output logic        cpu_dropped,
 
-  // Ethernet MAC
+  // Ethernet MAC (domain: eth_rx.clk)
   output logic       eth_pause_req,
   AxiStreamIf.master eth_tx, // tUser = {1'b0,trailing bytes};
   AxiStreamIf.slave  eth_rx, // tUser = {error,trailing bytes};
-  // CHDR router interface
+
+  // CHDR router interface (eth_rx.clk)
   AxiStreamIf.master e2v, // tUser = {*not used*};
   AxiStreamIf.slave  v2e, // tUser = {*not used*};
+  
   // CPU DMA
+  // (domain: e2c.clk if SYNC=0, else eth_rx.clk)
   AxiStreamIf.master e2c, // tUser = {sof,trailing bytes};
+  // (domain: c2e.clk if SYNC=0, else eth_rx.clk)
   AxiStreamIf.slave  c2e  // tUser = {1'b0,trailing bytes};
 
 );
