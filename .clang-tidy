@@ -1,0 +1,7 @@
+---
+Checks:          '-*,misc-throw-by-value-catch-by-reference,misc-static-assert,readability-container-size-empty,modernize-use-override'
+WarningsAsErrors: ''
+AnalyzeTemporaryDtors: false
+FormatStyle:     file
+CheckOptions:
+...
