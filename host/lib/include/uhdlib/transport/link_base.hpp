@@ -166,13 +166,9 @@ public:
     {
     }
 
-<<<<<<< HEAD
-    size_t get_num_recv_frames() const override
-=======
     virtual ~recv_link_base() = default;
 
-    virtual size_t get_num_recv_frames() const
->>>>>>> lib: Add some virtual dtors
+    size_t get_num_recv_frames() const override
     {
         return _num_recv_frames;
     }
