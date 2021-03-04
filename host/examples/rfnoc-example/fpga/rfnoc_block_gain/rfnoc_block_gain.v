@@ -17,6 +17,11 @@
 //   CHDR_W      : AXIS-CHDR data bus width
 //   MTU         : Maximum transmission unit (i.e., maximum packet size in
 //                 CHDR words is 2**MTU).
+//   IP_OPTION   : Select which IP to use for the complex multiply. Use one of
+//                 the following options:
+//                 HDL_IP         = In-tree RFNoC HDL, with a DSP48E1 primitive
+//                 IN_TREE_IP     = In-tree "complex_multiplier" (Xilinx IP)
+//                 OUT_OF_TREE_IP = Out-of-tree "cmplx_mul" (Xilinx IP)
 //
 
 `default_nettype none
@@ -25,7 +30,8 @@
 module rfnoc_block_gain #(
   parameter [9:0] THIS_PORTID     = 10'd0,
   parameter       CHDR_W          = 64,
-  parameter [5:0] MTU             = 10
+  parameter [5:0] MTU             = 10,
+  parameter       IP_OPTION       = "HDL_IP"
 )(
   // RFNoC Framework Clocks and Resets
   input  wire                   rfnoc_chdr_clk,
@@ -250,36 +256,104 @@ module rfnoc_block_gain #(
   wire        mult_tvalid;
   wire        mult_tready;
 
-  // Multiply complex sample by a real-valued gain. Only input the gain
-  // (real_tvalid) when we have payload data to go in (cplx_tdata). That way
-  // the current gain value always applies to the current sample. This assumes
-  // that real_tready and cplx_tready have identical behavior.
+  // Multiply each complex sample by a real-valued gain. Only input the gain
+  // when we have payload data to go in (m_in_payload_tdata). That way the
+  // current gain value always applies to the current sample. This assumes that
+  // the tready of both inputs have identical behavior.
   // 
   // Note that we receive the data with I on bits [31:16] and Q on bits [15:0],
-  // but this does not matter to our multiplier.
-  //
-  mult_rc #(
-    .WIDTH_REAL (16),
-    .WIDTH_CPLX (16),
-    .WIDTH_P    (32),
-    .DROP_TOP_P (5),     // Must be 5 for a normal multiply in DSP48E1
-    .LATENCY    (4)      // Turn on all pipeline registers in the DSP48E1
-  ) mult_rc_i (
-    .clk         (axis_data_clk),
-    .reset       (axis_data_rst),
-    .real_tdata  (reg_gain),
-    .real_tlast  (m_in_payload_tlast),
-    .real_tvalid (m_in_payload_tvalid),
-    .real_tready (),
-    .cplx_tdata  (m_in_payload_tdata),
-    .cplx_tlast  (m_in_payload_tlast),
-    .cplx_tvalid (m_in_payload_tvalid),
-    .cplx_tready (m_in_payload_tready),
-    .p_tdata     (mult_tdata),
-    .p_tlast     (mult_tlast),
-    .p_tvalid    (mult_tvalid),
-    .p_tready    (mult_tready)
-  );
+  // but the I/Q order does not matter to our complex multiplier.
+  
+  generate
+    // Use a generate statement to choose which IP to use for the multiply.
+    // These all do the same thing and we only have multiple options to show
+    // how you can use IP from different locations.
+
+    if (IP_OPTION == "HDL_IP") begin : gen_rfnoc_ip
+      // Use the RFNoC mult_rc Verilog module, which uses a DSP48E1 primitive
+      mult_rc #(
+        .WIDTH_REAL (16),
+        .WIDTH_CPLX (16),
+        .WIDTH_P    (32),
+        .DROP_TOP_P (5),     // Must be 5 for a normal multiply in DSP48E1
+        .LATENCY    (4)      // Turn on all pipeline registers in the DSP48E1
+      ) mult_rc_i (
+        .clk         (axis_data_clk),
+        .reset       (axis_data_rst),
+        .real_tdata  (reg_gain),
+        .real_tlast  (m_in_payload_tlast),
+        .real_tvalid (m_in_payload_tvalid),
+        .real_tready (),
+        .cplx_tdata  (m_in_payload_tdata),
+        .cplx_tlast  (m_in_payload_tlast),
+        .cplx_tvalid (m_in_payload_tvalid),
+        .cplx_tready (m_in_payload_tready),
+        .p_tdata     (mult_tdata),
+        .p_tlast     (mult_tlast),
+        .p_tvalid    (mult_tvalid),
+        .p_tready    (mult_tready)
+      );
+
+    end else if (IP_OPTION == "IN_TREE_IP") begin : gen_in_tree_ip
+      // Use the in-tree "complex_multiplier" IP, which is a Xilinx Complex
+      // Multiplier LogiCORE IP located in the UHD repository in
+      // fpga/usrp3/lib/ip/.
+
+      // The LSB of the output is clipped in this IP, so double the gain to
+      // compensate. This limits the maximum gain in this version.
+      wire [15:0] gain = 2*reg_gain;
+
+      complex_multiplier complex_multiplier (
+        .aclk               (axis_data_clk),
+        .aresetn            (~axis_data_rst),
+        .s_axis_a_tdata     ({16'b0, gain}),
+        .s_axis_a_tlast     (m_in_payload_tlast),
+        .s_axis_a_tvalid    (m_in_payload_tvalid),
+        .s_axis_a_tready    (),
+        .s_axis_b_tdata     (m_in_payload_tdata),
+        .s_axis_b_tlast     (m_in_payload_tlast),
+        .s_axis_b_tvalid    (m_in_payload_tvalid),
+        .s_axis_b_tready    (m_in_payload_tready),
+        .s_axis_ctrl_tdata  (8'd0),
+        .s_axis_ctrl_tvalid (1'b1),
+        .s_axis_ctrl_tready (),
+        .m_axis_dout_tdata  (mult_tdata),
+        .m_axis_dout_tlast  (mult_tlast),
+        .m_axis_dout_tvalid (mult_tvalid),
+        .m_axis_dout_tready (mult_tready)
+      );
+
+    end else if (IP_OPTION == "OUT_OF_TREE_IP") begin : gen_oot_ip
+      // Use the out-of-tree "cmplx_mul" IP, which is a Xilinx Complex
+      // Multiplier LogiCORE IP located in the IP directory of this example.
+
+      // This IP has a 33-bit output, but because it's AXI-Stream, each
+      // component is placed in a 5-byte word. Since our gain is real only,
+      // we'll never need all 33-bits.
+      wire [79:0] m_axis_dout_tdata;
+
+      cmplx_mul cmplx_mul_i (
+        .aclk               (axis_data_clk),
+        .aresetn            (~axis_data_rst),
+        .s_axis_a_tdata     ({16'd0, reg_gain}),
+        .s_axis_a_tlast     (m_in_payload_tlast),
+        .s_axis_a_tvalid    (m_in_payload_tvalid),
+        .s_axis_a_tready    (),
+        .s_axis_b_tdata     (m_in_payload_tdata),
+        .s_axis_b_tlast     (m_in_payload_tlast),
+        .s_axis_b_tvalid    (m_in_payload_tvalid),
+        .s_axis_b_tready    (m_in_payload_tready),
+        .m_axis_dout_tdata  (m_axis_dout_tdata),
+        .m_axis_dout_tlast  (mult_tlast),
+        .m_axis_dout_tvalid (mult_tvalid),
+        .m_axis_dout_tready (mult_tready)
+      );
+
+      assign mult_tdata[31: 0] = m_axis_dout_tdata[31: 0];
+      assign mult_tdata[63:32] = m_axis_dout_tdata[71:40];
+
+    end
+  endgenerate
 
   // Clip the results
   axi_clip_complex #(
