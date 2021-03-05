@@ -34,7 +34,7 @@ magnesium_ad9371_iface::magnesium_ad9371_iface(
 {
     UHD_LOG_TRACE(_log_prefix,
         "Initialized controls with RPC prefix " << _rpc_prefix << " for slot "
-                                                << _slot_idx);
+                                                << slot_idx);
 }
 
 double magnesium_ad9371_iface::set_frequency(
