@@ -96,6 +96,8 @@ namespace uhd { namespace usrp {
     public:
         using sptr = std::shared_ptr<${iface.basename}_iface>;
 
+        virtual ~${iface.basename}_iface() = default;
+
         %for function in iface.functions:
             virtual ${function.return_type} ${function.name}(${",".join(function.args)}) = 0;
         %endfor
