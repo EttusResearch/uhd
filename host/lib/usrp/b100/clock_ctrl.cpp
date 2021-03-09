@@ -232,7 +232,7 @@ public:
         this->enable_tx_dboard_clock(false);
     }
 
-    ~b100_clock_ctrl_impl(void)
+    ~b100_clock_ctrl_impl(void) override
     {
         UHD_SAFE_CALL(this->enable_test_clock(ENABLE_THE_TEST_OUT);
                       this->enable_rx_dboard_clock(false);
@@ -339,7 +339,7 @@ public:
         this->send_all_regs();
     }
 
-    void set_fpga_clock_rate(double rate)
+    void set_fpga_clock_rate(double rate) override
     {
         if (_out_rate == rate)
             return;
@@ -352,7 +352,7 @@ public:
         set_tx_dboard_clock_rate(rate);
     }
 
-    double get_fpga_clock_rate(void)
+    double get_fpga_clock_rate(void) override
     {
         return this->_out_rate;
     }
@@ -360,7 +360,7 @@ public:
     /***********************************************************************
      * FPGA clock enable
      **********************************************************************/
-    void enable_fpga_clock(bool enb)
+    void enable_fpga_clock(bool enb) override
     {
         _ad9522_regs.out0_format          = ad9522_regs_t::OUT0_FORMAT_LVDS;
         _ad9522_regs.out0_lvds_power_down = !enb;
@@ -385,7 +385,7 @@ public:
     /***********************************************************************
      * RX Dboard Clock Control (output 9, divider 3)
      **********************************************************************/
-    void enable_rx_dboard_clock(bool enb)
+    void enable_rx_dboard_clock(bool enb) override
     {
         _ad9522_regs.out9_format          = ad9522_regs_t::OUT9_FORMAT_LVDS;
         _ad9522_regs.out9_lvds_power_down = !enb;
@@ -393,7 +393,7 @@ public:
         this->latch_regs();
     }
 
-    std::vector<double> get_rx_dboard_clock_rates(void)
+    std::vector<double> get_rx_dboard_clock_rates(void) override
     {
         std::vector<double> rates;
         for (size_t div = 1; div <= 16 + 16; div++)
@@ -401,7 +401,7 @@ public:
         return rates;
     }
 
-    void set_rx_dboard_clock_rate(double rate)
+    void set_rx_dboard_clock_rate(double rate) override
     {
         assert_has(get_rx_dboard_clock_rates(), rate, "rx dboard clock rate");
         _rx_clock_rate = rate;
@@ -416,7 +416,7 @@ public:
         this->soft_sync();
     }
 
-    double get_rx_clock_rate(void)
+    double get_rx_clock_rate(void) override
     {
         return _rx_clock_rate;
     }
@@ -424,7 +424,7 @@ public:
     /***********************************************************************
      * TX Dboard Clock Control (output 6, divider 2)
      **********************************************************************/
-    void enable_tx_dboard_clock(bool enb)
+    void enable_tx_dboard_clock(bool enb) override
     {
         _ad9522_regs.out6_format          = ad9522_regs_t::OUT6_FORMAT_LVDS;
         _ad9522_regs.out6_lvds_power_down = !enb;
@@ -432,12 +432,12 @@ public:
         this->latch_regs();
     }
 
-    std::vector<double> get_tx_dboard_clock_rates(void)
+    std::vector<double> get_tx_dboard_clock_rates(void) override
     {
         return get_rx_dboard_clock_rates(); // same master clock, same dividers...
     }
 
-    void set_tx_dboard_clock_rate(double rate)
+    void set_tx_dboard_clock_rate(double rate) override
     {
         assert_has(get_tx_dboard_clock_rates(), rate, "tx dboard clock rate");
         _tx_clock_rate = rate;
@@ -452,7 +452,7 @@ public:
         this->soft_sync();
     }
 
-    double get_tx_clock_rate(void)
+    double get_tx_clock_rate(void) override
     {
         return _tx_clock_rate;
     }
@@ -460,7 +460,7 @@ public:
     /***********************************************************************
      * Clock reference control
      **********************************************************************/
-    void use_internal_ref(void)
+    void use_internal_ref(void) override
     {
         _ad9522_regs.enable_ref2 = 1;
         _ad9522_regs.enable_ref1 = 0;
@@ -471,7 +471,7 @@ public:
         this->latch_regs();
     }
 
-    void use_external_ref(void)
+    void use_external_ref(void) override
     {
         _ad9522_regs.enable_ref2 = 0;
         _ad9522_regs.enable_ref1 = 1;
@@ -482,7 +482,7 @@ public:
         this->latch_regs();
     }
 
-    void use_auto_ref(void)
+    void use_auto_ref(void) override
     {
         _ad9522_regs.enable_ref2 = 1;
         _ad9522_regs.enable_ref1 = 1;
@@ -493,7 +493,7 @@ public:
         this->latch_regs();
     }
 
-    bool get_locked(void)
+    bool get_locked(void) override
     {
         static const uint8_t addr = 0x01F;
         uint32_t reg              = this->read_reg(addr);

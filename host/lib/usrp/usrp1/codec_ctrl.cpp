@@ -39,24 +39,24 @@ class usrp1_codec_ctrl_impl : public usrp1_codec_ctrl
 public:
     // structors
     usrp1_codec_ctrl_impl(spi_iface::sptr iface, int spi_slave);
-    ~usrp1_codec_ctrl_impl(void);
+    ~usrp1_codec_ctrl_impl(void) override;
 
     // aux adc and dac control
-    double read_aux_adc(aux_adc_t which);
-    void write_aux_dac(aux_dac_t which, double volts);
+    double read_aux_adc(aux_adc_t which) override;
+    void write_aux_dac(aux_dac_t which, double volts) override;
 
     // duc control
-    void set_duc_freq(double freq, double);
-    void enable_tx_digital(bool enb);
+    void set_duc_freq(double freq, double) override;
+    void enable_tx_digital(bool enb) override;
 
     // pga gain control
-    void set_tx_pga_gain(double);
-    double get_tx_pga_gain(void);
-    void set_rx_pga_gain(double, char);
-    double get_rx_pga_gain(char);
+    void set_tx_pga_gain(double) override;
+    double get_tx_pga_gain(void) override;
+    void set_rx_pga_gain(double, char) override;
+    double get_rx_pga_gain(char) override;
 
     // rx adc buffer control
-    void bypass_adc_buffers(bool bypass);
+    void bypass_adc_buffers(bool bypass) override;
 
 private:
     spi_iface::sptr _iface;

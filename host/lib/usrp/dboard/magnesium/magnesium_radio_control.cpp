@@ -104,8 +104,10 @@ magnesium_radio_control_impl::magnesium_radio_control_impl(make_args_ptr make_ar
     RFNOC_LOG_TRACE("Entering magnesium_radio_control_impl ctor...");
     UHD_ASSERT_THROW(get_block_id().get_block_count() < 2);
 
-    _tx_gain_profile_api = std::make_shared<rf_control::enumerated_gain_profile>(MAGNESIUM_GP_OPTIONS, "default", MAGNESIUM_NUM_CHANS);
-    _rx_gain_profile_api = std::make_shared<rf_control::enumerated_gain_profile>(MAGNESIUM_GP_OPTIONS, "default", MAGNESIUM_NUM_CHANS);
+    _tx_gain_profile_api = std::make_shared<rf_control::enumerated_gain_profile>(
+        MAGNESIUM_GP_OPTIONS, "default", MAGNESIUM_NUM_CHANS);
+    _rx_gain_profile_api = std::make_shared<rf_control::enumerated_gain_profile>(
+        MAGNESIUM_GP_OPTIONS, "default", MAGNESIUM_NUM_CHANS);
 
     const char radio_slot_name[2] = {'A', 'B'};
     _radio_slot                   = radio_slot_name[get_block_id().get_block_count()];
@@ -256,16 +258,17 @@ double magnesium_radio_control_impl::set_tx_frequency(
     double coerced_if_freq = 0;
 
     if (_map_freq_to_tx_band(_tx_band_map, freq) == tx_band::LOWBAND) {
-        _is_low_band[TX_DIRECTION]    = true;
-        coerced_if_freq =
-            this->_set_tx_lo_freq(adf4351_source, MAGNESIUM_LO2, MAGNESIUM_TX_IF_FREQ, chan);
+        _is_low_band[TX_DIRECTION] = true;
+        coerced_if_freq            = this->_set_tx_lo_freq(
+            adf4351_source, MAGNESIUM_LO2, MAGNESIUM_TX_IF_FREQ, chan);
         RFNOC_LOG_TRACE("coerced_if_freq = " << coerced_if_freq);
     } else {
         _is_low_band[TX_DIRECTION] = false;
         _lo_disable(_tx_lo);
     }
     // external LO required to tune at 2xdesired_frequency.
-    const double lo1_freq = (ad9371_source == "internal" ? 1 : 2) * (coerced_if_freq + freq);
+    const double lo1_freq =
+        (ad9371_source == "internal" ? 1 : 2) * (coerced_if_freq + freq);
 
     this->_set_tx_lo_freq(ad9371_source, MAGNESIUM_LO1, lo1_freq, chan);
     this->_update_freq(chan, TX_DIRECTION);
@@ -324,16 +327,17 @@ double magnesium_radio_control_impl::set_rx_frequency(
     double coerced_if_freq = 0;
 
     if (_map_freq_to_rx_band(_rx_band_map, freq) == rx_band::LOWBAND) {
-        _is_low_band[RX_DIRECTION]    = true;
-        coerced_if_freq =
-            this->_set_rx_lo_freq(adf4351_source, MAGNESIUM_LO2, MAGNESIUM_RX_IF_FREQ, chan);
+        _is_low_band[RX_DIRECTION] = true;
+        coerced_if_freq            = this->_set_rx_lo_freq(
+            adf4351_source, MAGNESIUM_LO2, MAGNESIUM_RX_IF_FREQ, chan);
         RFNOC_LOG_TRACE("coerced_if_freq = " << coerced_if_freq);
     } else {
         _is_low_band[RX_DIRECTION] = false;
         _lo_disable(_rx_lo);
     }
     // external LO required to tune at 2xdesired_frequency.
-    const double lo1_freq = (ad9371_source == "internal" ? 1 : 2) * coerced_if_freq + freq;
+    const double lo1_freq =
+        (ad9371_source == "internal" ? 1 : 2) * coerced_if_freq + freq;
 
     this->_set_rx_lo_freq(ad9371_source, MAGNESIUM_LO1, lo1_freq, chan);
 
@@ -714,14 +718,14 @@ meta_range_t magnesium_radio_control_impl::get_rx_bandwidth_range(size_t) const
  *****************************************************************************/
 std::vector<std::string> magnesium_radio_control_impl::get_rx_lo_names(
     const size_t /*chan*/
-    ) const
+) const
 {
     return std::vector<std::string>{MAGNESIUM_LO1, MAGNESIUM_LO2};
 }
 
 std::vector<std::string> magnesium_radio_control_impl::get_rx_lo_sources(
     const std::string& name, const size_t /*chan*/
-    ) const
+) const
 {
     if (name == MAGNESIUM_LO2) {
         return std::vector<std::string>{"internal"};
@@ -734,7 +738,7 @@ std::vector<std::string> magnesium_radio_control_impl::get_rx_lo_sources(
 
 freq_range_t magnesium_radio_control_impl::get_rx_lo_freq_range(
     const std::string& name, const size_t /*chan*/
-    ) const
+) const
 {
     if (name == MAGNESIUM_LO1) {
         return freq_range_t{ADF4351_MIN_FREQ, ADF4351_MAX_FREQ};
@@ -763,7 +767,7 @@ void magnesium_radio_control_impl::set_rx_lo_source(
 
 const std::string magnesium_radio_control_impl::get_rx_lo_source(
     const std::string& name, const size_t /*chan*/
-    ) const
+) const
 {
     if (name == MAGNESIUM_LO1) {
         // TODO: should we use this from cache?
@@ -832,14 +836,14 @@ double magnesium_radio_control_impl::get_rx_lo_freq(
 // TX LO
 std::vector<std::string> magnesium_radio_control_impl::get_tx_lo_names(
     const size_t /*chan*/
-    ) const
+) const
 {
     return std::vector<std::string>{MAGNESIUM_LO1, MAGNESIUM_LO2};
 }
 
 std::vector<std::string> magnesium_radio_control_impl::get_tx_lo_sources(
     const std::string& name, const size_t /*chan*/
-    ) const
+) const
 {
     if (name == MAGNESIUM_LO2) {
         return std::vector<std::string>{"internal"};

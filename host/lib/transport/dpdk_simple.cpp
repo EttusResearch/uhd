@@ -74,7 +74,7 @@ public:
         UHD_LOG_TRACE("DPDK::SIMPLE", "Constructor complete");
     }
 
-    ~dpdk_simple_impl(void)
+    ~dpdk_simple_impl(void) override
     {
         UHD_LOG_TRACE("DPDK::SIMPLE",
             "~dpdk_simple_impl(), DPDK port index " << _link->get_port()->get_port_id());
@@ -91,7 +91,7 @@ public:
      * \param length bytes of data to send
      * \return number of bytes sent (releases buffer if sent)
      */
-    size_t send(const boost::asio::const_buffer& user_buff)
+    size_t send(const boost::asio::const_buffer& user_buff) override
     {
         // Extract buff and sanity check
         const size_t nbytes = boost::asio::buffer_size(user_buff);
@@ -117,7 +117,7 @@ public:
      * \param timeout the timeout in seconds
      * \return the number of bytes received or zero on timeout
      */
-    size_t recv(const boost::asio::mutable_buffer& user_buff, double timeout)
+    size_t recv(const boost::asio::mutable_buffer& user_buff, double timeout) override
     {
         size_t user_buff_size = boost::asio::buffer_size(user_buff);
         uint8_t* user_data    = boost::asio::buffer_cast<uint8_t*>(user_buff);
@@ -146,12 +146,12 @@ public:
         return copy_len;
     }
 
-    std::string get_recv_addr(void)
+    std::string get_recv_addr(void) override
     {
         return dpdk::ipv4_num_to_str(_last_recv_addr);
     }
 
-    std::string get_send_addr(void)
+    std::string get_send_addr(void) override
     {
         return dpdk::ipv4_num_to_str(_link->get_remote_ipv4());
     }

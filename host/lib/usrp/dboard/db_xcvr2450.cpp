@@ -93,7 +93,7 @@ class xcvr2450 : public xcvr_dboard_base
 {
 public:
     xcvr2450(ctor_args_t args);
-    virtual ~xcvr2450(void);
+    ~xcvr2450(void) override;
 
 private:
     double _lo_freq;

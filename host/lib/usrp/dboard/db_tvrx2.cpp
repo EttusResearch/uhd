@@ -763,7 +763,7 @@ class tvrx2 : public rx_dboard_base
 {
 public:
     tvrx2(ctor_args_t args);
-    virtual ~tvrx2(void);
+    ~tvrx2(void) override;
 
 private:
     double _freq_scalar;

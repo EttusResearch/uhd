@@ -207,7 +207,7 @@ public:
         _num_send_frames = num_send_frames;
     }
 
-    ~inline_recv_io()
+    ~inline_recv_io() override
     {
         _io_srv->disconnect_receiver(_data_link.get(), this);
         if (_fc_link) {
@@ -263,7 +263,7 @@ public:
         _num_send_frames = num_send_frames;
     }
 
-    ~inline_send_io()
+    ~inline_send_io() override
     {
         _io_srv->disconnect_sender(_send_link.get());
         if (_recv_link) {

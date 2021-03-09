@@ -63,7 +63,7 @@ class rfx_xcvr : public xcvr_dboard_base
 public:
     rfx_xcvr(
         ctor_args_t args, const freq_range_t& freq_range, bool rx_div2, bool tx_div2);
-    virtual ~rfx_xcvr(void);
+    ~rfx_xcvr(void) override;
 
 private:
     const freq_range_t _freq_range;

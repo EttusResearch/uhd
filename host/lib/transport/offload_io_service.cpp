@@ -257,7 +257,7 @@ public:
 
     offload_io_service_impl(
         io_service::sptr io_srv, const offload_io_service::params_t& params);
-    ~offload_io_service_impl();
+    ~offload_io_service_impl() override;
 
     void attach_recv_link(recv_link_if::sptr link) override;
     void attach_send_link(send_link_if::sptr link) override;

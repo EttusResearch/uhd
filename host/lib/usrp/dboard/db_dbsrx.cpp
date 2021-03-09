@@ -56,7 +56,7 @@ class dbsrx : public rx_dboard_base
 {
 public:
     dbsrx(ctor_args_t args);
-    virtual ~dbsrx(void);
+    ~dbsrx(void) override;
 
 private:
     double _lo_freq;

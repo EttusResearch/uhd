@@ -109,12 +109,12 @@ public:
         regs().poke32(REG_SRC_THROTTLE_CYC, cycs);
     }
 
-    uint32_t get_item_width()
+    uint32_t get_item_width() override
     {
         return _item_width;
     }
 
-    uint32_t get_nipc()
+    uint32_t get_nipc() override
     {
         return _nipc;
     }

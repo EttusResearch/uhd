@@ -187,7 +187,7 @@ class tvrx : public rx_dboard_base
 {
 public:
     tvrx(ctor_args_t args);
-    virtual ~tvrx(void);
+    ~tvrx(void) override;
 
 private:
     uhd::dict<std::string, double> _gains;

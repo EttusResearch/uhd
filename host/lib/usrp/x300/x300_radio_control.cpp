@@ -219,7 +219,7 @@ public:
         }
     } /* ctor */
 
-    ~x300_radio_control_impl()
+    ~x300_radio_control_impl() override
     {
         // nop
     }
@@ -227,7 +227,7 @@ public:
     /**************************************************************************
      * Radio API calls
      *************************************************************************/
-    double set_rate(double rate)
+    double set_rate(double rate) override
     {
         // On X3x0, tick rate can't actually be changed at runtime
         const double actual_rate = get_rate();
@@ -239,7 +239,7 @@ public:
         return actual_rate;
     }
 
-    void set_tx_antenna(const std::string& ant, const size_t chan)
+    void set_tx_antenna(const std::string& ant, const size_t chan) override
     {
         // Antenna changes may result in a change of streaming mode for LF/Basic dboards
         if (_basic_lf_tx) {
@@ -256,14 +256,14 @@ public:
             .set(ant);
     }
 
-    std::string get_tx_antenna(const size_t chan) const
+    std::string get_tx_antenna(const size_t chan) const override
     {
         return get_tree()
             ->access<std::string>(get_db_path("tx", chan) / "antenna" / "value")
             .get();
     }
 
-    std::vector<std::string> get_tx_antennas(size_t chan) const
+    std::vector<std::string> get_tx_antennas(size_t chan) const override
     {
         return get_tree()
             ->access<std::vector<std::string>>(
@@ -271,7 +271,7 @@ public:
             .get();
     }
 
-    void set_rx_antenna(const std::string& ant, const size_t chan)
+    void set_rx_antenna(const std::string& ant, const size_t chan) override
     {
         // Antenna changes may result in a change of streaming mode for LF/Basic dboards
         if (_basic_lf_rx) {
@@ -290,14 +290,14 @@ public:
             .set(ant);
     }
 
-    std::string get_rx_antenna(const size_t chan) const
+    std::string get_rx_antenna(const size_t chan) const override
     {
         return get_tree()
             ->access<std::string>(get_db_path("rx", chan) / "antenna" / "value")
             .get();
     }
 
-    std::vector<std::string> get_rx_antennas(size_t chan) const
+    std::vector<std::string> get_rx_antennas(size_t chan) const override
     {
         return get_tree()
             ->access<std::vector<std::string>>(
@@ -305,7 +305,7 @@ public:
             .get();
     }
 
-    double set_tx_frequency(const double freq, const size_t chan)
+    double set_tx_frequency(const double freq, const size_t chan) override
     {
         return get_tree()
             ->access<double>(get_db_path("tx", chan) / "freq" / "value")
@@ -313,7 +313,7 @@ public:
             .get();
     }
 
-    void set_tx_tune_args(const uhd::device_addr_t& tune_args, const size_t chan)
+    void set_tx_tune_args(const uhd::device_addr_t& tune_args, const size_t chan) override
     {
         if (get_tree()->exists(get_db_path("tx", chan) / "tune_args")) {
             get_tree()
@@ -322,14 +322,14 @@ public:
         }
     }
 
-    double get_tx_frequency(const size_t chan)
+    double get_tx_frequency(const size_t chan) override
     {
         return get_tree()
             ->access<double>(get_db_path("tx", chan) / "freq" / "value")
             .get();
     }
 
-    double set_rx_frequency(const double freq, const size_t chan)
+    double set_rx_frequency(const double freq, const size_t chan) override
     {
         RFNOC_LOG_TRACE(
             "set_rx_frequency(freq=" << (freq / 1e6) << " MHz, chan=" << chan << ")");
@@ -339,7 +339,7 @@ public:
             .get();
     }
 
-    void set_rx_tune_args(const uhd::device_addr_t& tune_args, const size_t chan)
+    void set_rx_tune_args(const uhd::device_addr_t& tune_args, const size_t chan) override
     {
         if (get_tree()->exists(get_db_path("rx", chan) / "tune_args")) {
             get_tree()
@@ -348,21 +348,21 @@ public:
         }
     }
 
-    double get_rx_frequency(const size_t chan)
+    double get_rx_frequency(const size_t chan) override
     {
         return get_tree()
             ->access<double>(get_db_path("rx", chan) / "freq" / "value")
             .get();
     }
 
-    uhd::freq_range_t get_tx_frequency_range(const size_t chan) const
+    uhd::freq_range_t get_tx_frequency_range(const size_t chan) const override
     {
         return get_tree()
             ->access<uhd::freq_range_t>(get_db_path("tx", chan) / "freq" / "range")
             .get();
     }
 
-    uhd::freq_range_t get_rx_frequency_range(const size_t chan) const
+    uhd::freq_range_t get_rx_frequency_range(const size_t chan) const override
     {
         return get_tree()
             ->access<uhd::meta_range_t>(get_db_path("rx", chan) / "freq" / "range")
@@ -370,7 +370,7 @@ public:
     }
 
     /*** Bandwidth-Related APIs************************************************/
-    double set_rx_bandwidth(const double bandwidth, const size_t chan)
+    double set_rx_bandwidth(const double bandwidth, const size_t chan) override
     {
         return get_tree()
             ->access<double>(get_db_path("rx", chan) / "bandwidth" / "value")
@@ -378,21 +378,21 @@ public:
             .get();
     }
 
-    double get_rx_bandwidth(const size_t chan)
+    double get_rx_bandwidth(const size_t chan) override
     {
         return get_tree()
             ->access<double>(get_db_path("rx", chan) / "bandwidth" / "value")
             .get();
     }
 
-    uhd::meta_range_t get_rx_bandwidth_range(size_t chan) const
+    uhd::meta_range_t get_rx_bandwidth_range(size_t chan) const override
     {
         return get_tree()
             ->access<uhd::meta_range_t>(get_db_path("rx", chan) / "bandwidth" / "range")
             .get();
     }
 
-    double set_tx_bandwidth(const double bandwidth, const size_t chan)
+    double set_tx_bandwidth(const double bandwidth, const size_t chan) override
     {
         return get_tree()
             ->access<double>(get_db_path("tx", chan) / "bandwidth" / "value")
@@ -400,14 +400,14 @@ public:
             .get();
     }
 
-    double get_tx_bandwidth(const size_t chan)
+    double get_tx_bandwidth(const size_t chan) override
     {
         return get_tree()
             ->access<double>(get_db_path("tx", chan) / "bandwidth" / "value")
             .get();
     }
 
-    uhd::meta_range_t get_tx_bandwidth_range(size_t chan) const
+    uhd::meta_range_t get_tx_bandwidth_range(size_t chan) const override
     {
         return get_tree()
             ->access<uhd::meta_range_t>(get_db_path("tx", chan) / "bandwidth" / "range")
@@ -415,12 +415,13 @@ public:
     }
 
     /*** Gain-Related APIs ***************************************************/
-    double set_tx_gain(const double gain, const size_t chan)
+    double set_tx_gain(const double gain, const size_t chan) override
     {
         return set_tx_gain(gain, ALL_GAINS, chan);
     }
 
-    double set_tx_gain(const double gain, const std::string& name, const size_t chan)
+    double set_tx_gain(
+        const double gain, const std::string& name, const size_t chan) override
     {
         _tx_pwr_mgr.at(chan)->set_tracking_mode(pwr_cal_mgr::tracking_mode::TRACK_GAIN);
         if (_tx_gain_groups.count(chan)) {
@@ -431,12 +432,13 @@ public:
         return radio_control_impl::set_tx_gain(0.0, chan);
     }
 
-    double set_rx_gain(const double gain, const size_t chan)
+    double set_rx_gain(const double gain, const size_t chan) override
     {
         return set_rx_gain(gain, ALL_GAINS, chan);
     }
 
-    double set_rx_gain(const double gain, const std::string& name, const size_t chan)
+    double set_rx_gain(
+        const double gain, const std::string& name, const size_t chan) override
     {
         _rx_pwr_mgr.at(chan)->set_tracking_mode(pwr_cal_mgr::tracking_mode::TRACK_GAIN);
         auto& gg = _rx_gain_groups.at(chan);
@@ -444,42 +446,43 @@ public:
         return radio_control_impl::set_rx_gain(gg->get_value(name), chan);
     }
 
-    double get_rx_gain(const size_t chan)
+    double get_rx_gain(const size_t chan) override
     {
         return get_rx_gain(ALL_GAINS, chan);
     }
 
-    double get_rx_gain(const std::string& name, const size_t chan)
+    double get_rx_gain(const std::string& name, const size_t chan) override
     {
         return _rx_gain_groups.at(chan)->get_value(name);
     }
 
-    double get_tx_gain(const size_t chan)
+    double get_tx_gain(const size_t chan) override
     {
         return get_tx_gain(ALL_GAINS, chan);
     }
 
-    double get_tx_gain(const std::string& name, const size_t chan)
+    double get_tx_gain(const std::string& name, const size_t chan) override
     {
         return _tx_gain_groups.at(chan)->get_value(name);
     }
 
-    std::vector<std::string> get_tx_gain_names(const size_t chan) const
+    std::vector<std::string> get_tx_gain_names(const size_t chan) const override
     {
         return _tx_gain_groups.at(chan)->get_names();
     }
 
-    std::vector<std::string> get_rx_gain_names(const size_t chan) const
+    std::vector<std::string> get_rx_gain_names(const size_t chan) const override
     {
         return _rx_gain_groups.at(chan)->get_names();
     }
 
-    uhd::gain_range_t get_tx_gain_range(const size_t chan) const
+    uhd::gain_range_t get_tx_gain_range(const size_t chan) const override
     {
         return get_tx_gain_range(ALL_GAINS, chan);
     }
 
-    uhd::gain_range_t get_tx_gain_range(const std::string& name, const size_t chan) const
+    uhd::gain_range_t get_tx_gain_range(
+        const std::string& name, const size_t chan) const override
     {
         if (!_tx_gain_groups.count(chan)) {
             throw uhd::index_error(
@@ -488,12 +491,13 @@ public:
         return _tx_gain_groups.at(chan)->get_range(name);
     }
 
-    uhd::gain_range_t get_rx_gain_range(const size_t chan) const
+    uhd::gain_range_t get_rx_gain_range(const size_t chan) const override
     {
         return get_rx_gain_range(ALL_GAINS, chan);
     }
 
-    uhd::gain_range_t get_rx_gain_range(const std::string& name, const size_t chan) const
+    uhd::gain_range_t get_rx_gain_range(
+        const std::string& name, const size_t chan) const override
     {
         if (!_rx_gain_groups.count(chan)) {
             throw uhd::index_error(
@@ -502,7 +506,7 @@ public:
         return _rx_gain_groups.at(chan)->get_range(name);
     }
 
-    std::vector<std::string> get_tx_gain_profile_names(const size_t chan) const
+    std::vector<std::string> get_tx_gain_profile_names(const size_t chan) const override
     {
         return get_tree()
             ->access<std::vector<std::string>>(
@@ -510,7 +514,7 @@ public:
             .get();
     }
 
-    std::vector<std::string> get_rx_gain_profile_names(const size_t chan) const
+    std::vector<std::string> get_rx_gain_profile_names(const size_t chan) const override
     {
         return get_tree()
             ->access<std::vector<std::string>>(
@@ -519,14 +523,14 @@ public:
     }
 
 
-    void set_tx_gain_profile(const std::string& profile, const size_t chan)
+    void set_tx_gain_profile(const std::string& profile, const size_t chan) override
     {
         get_tree()
             ->access<std::string>(get_db_path("tx", chan) / "gains/all/profile/value")
             .set(profile);
     }
 
-    void set_rx_gain_profile(const std::string& profile, const size_t chan)
+    void set_rx_gain_profile(const std::string& profile, const size_t chan) override
     {
         get_tree()
             ->access<std::string>(get_db_path("rx", chan) / "gains/all/profile/value")
@@ -534,14 +538,14 @@ public:
     }
 
 
-    std::string get_tx_gain_profile(const size_t chan) const
+    std::string get_tx_gain_profile(const size_t chan) const override
     {
         return get_tree()
             ->access<std::string>(get_db_path("tx", chan) / "gains/all/profile/value")
             .get();
     }
 
-    std::string get_rx_gain_profile(const size_t chan) const
+    std::string get_rx_gain_profile(const size_t chan) const override
     {
         return get_tree()
             ->access<std::string>(get_db_path("rx", chan) / "gains/all/profile/value")
@@ -551,7 +555,7 @@ public:
     /**************************************************************************
      * LO controls
      *************************************************************************/
-    std::vector<std::string> get_rx_lo_names(const size_t chan) const
+    std::vector<std::string> get_rx_lo_names(const size_t chan) const override
     {
         fs_path rx_fe_fe_root = get_db_path("rx", chan);
         std::vector<std::string> lo_names;
@@ -564,7 +568,7 @@ public:
     }
 
     std::vector<std::string> get_rx_lo_sources(
-        const std::string& name, const size_t chan) const
+        const std::string& name, const size_t chan) const override
     {
         fs_path rx_fe_fe_root = get_db_path("rx", chan);
 
@@ -597,7 +601,7 @@ public:
     }
 
     void set_rx_lo_source(
-        const std::string& src, const std::string& name, const size_t chan)
+        const std::string& src, const std::string& name, const size_t chan) override
     {
         fs_path rx_fe_fe_root = get_db_path("rx", chan);
 
@@ -631,7 +635,8 @@ public:
         }
     }
 
-    const std::string get_rx_lo_source(const std::string& name, const size_t chan)
+    const std::string get_rx_lo_source(
+        const std::string& name, const size_t chan) override
     {
         fs_path rx_fe_fe_root = get_db_path("rx", chan);
 
@@ -659,7 +664,7 @@ public:
     }
 
     void set_rx_lo_export_enabled(
-        bool enabled, const std::string& name, const size_t chan)
+        bool enabled, const std::string& name, const size_t chan) override
     {
         fs_path rx_fe_fe_root = get_db_path("rx", chan);
 
@@ -691,7 +696,8 @@ public:
         }
     }
 
-    bool get_rx_lo_export_enabled(const std::string& name, const size_t chan) const
+    bool get_rx_lo_export_enabled(
+        const std::string& name, const size_t chan) const override
     {
         fs_path rx_fe_fe_root = get_db_path("rx", chan);
 
@@ -716,7 +722,8 @@ public:
         }
     }
 
-    double set_rx_lo_freq(double freq, const std::string& name, const size_t chan)
+    double set_rx_lo_freq(
+        double freq, const std::string& name, const size_t chan) override
     {
         fs_path rx_fe_fe_root = get_db_path("rx", chan);
 
@@ -742,7 +749,7 @@ public:
         }
     }
 
-    double get_rx_lo_freq(const std::string& name, const size_t chan)
+    double get_rx_lo_freq(const std::string& name, const size_t chan) override
     {
         fs_path rx_fe_fe_root = get_db_path("rx", chan);
 
@@ -765,7 +772,8 @@ public:
         }
     }
 
-    freq_range_t get_rx_lo_freq_range(const std::string& name, const size_t chan) const
+    freq_range_t get_rx_lo_freq_range(
+        const std::string& name, const size_t chan) const override
     {
         fs_path rx_fe_fe_root = get_db_path("rx", chan);
 
@@ -792,7 +800,7 @@ public:
     }
 
     /*** Calibration API *****************************************************/
-    void set_tx_dc_offset(const std::complex<double>& offset, size_t chan)
+    void set_tx_dc_offset(const std::complex<double>& offset, size_t chan) override
     {
         const fs_path dc_offset_path = get_fe_path("tx", chan) / "dc_offset" / "value";
         if (get_tree()->exists(dc_offset_path)) {
@@ -802,7 +810,7 @@ public:
         }
     }
 
-    meta_range_t get_tx_dc_offset_range(size_t chan) const
+    meta_range_t get_tx_dc_offset_range(size_t chan) const override
     {
         const fs_path range_path = get_fe_path("tx", chan) / "dc_offset" / "range";
         if (get_tree()->exists(range_path)) {
@@ -814,7 +822,7 @@ public:
         }
     }
 
-    void set_tx_iq_balance(const std::complex<double>& correction, size_t chan)
+    void set_tx_iq_balance(const std::complex<double>& correction, size_t chan) override
     {
         const fs_path iq_balance_path = get_fe_path("tx", chan) / "iq_balance" / "value";
         if (get_tree()->exists(iq_balance_path)) {
@@ -824,7 +832,7 @@ public:
         }
     }
 
-    void set_rx_dc_offset(const bool enb, size_t chan)
+    void set_rx_dc_offset(const bool enb, size_t chan) override
     {
         const fs_path dc_offset_path = get_fe_path("rx", chan) / "dc_offset" / "enable";
         if (get_tree()->exists(dc_offset_path)) {
@@ -835,7 +843,7 @@ public:
         }
     }
 
-    void set_rx_dc_offset(const std::complex<double>& offset, size_t chan)
+    void set_rx_dc_offset(const std::complex<double>& offset, size_t chan) override
     {
         const fs_path dc_offset_path = get_fe_path("rx", chan) / "dc_offset" / "value";
         if (get_tree()->exists(dc_offset_path)) {
@@ -845,7 +853,7 @@ public:
         }
     }
 
-    meta_range_t get_rx_dc_offset_range(size_t chan) const
+    meta_range_t get_rx_dc_offset_range(size_t chan) const override
     {
         const fs_path range_path = get_fe_path("rx", chan) / "dc_offset" / "range";
         if (get_tree()->exists(range_path)) {
@@ -857,7 +865,7 @@ public:
         }
     }
 
-    void set_rx_iq_balance(const bool enb, size_t chan)
+    void set_rx_iq_balance(const bool enb, size_t chan) override
     {
         const fs_path iq_balance_path = get_fe_path("rx", chan) / "iq_balance" / "enable";
         if (get_tree()->exists(iq_balance_path)) {
@@ -867,7 +875,7 @@ public:
         }
     }
 
-    void set_rx_iq_balance(const std::complex<double>& correction, size_t chan)
+    void set_rx_iq_balance(const std::complex<double>& correction, size_t chan) override
     {
         const fs_path iq_balance_path = get_fe_path("rx", chan) / "iq_balance" / "value";
         if (get_tree()->exists(iq_balance_path)) {
@@ -878,13 +886,13 @@ public:
     }
 
     /*** GPIO API ************************************************************/
-    std::vector<std::string> get_gpio_banks() const
+    std::vector<std::string> get_gpio_banks() const override
     {
         return {"RX", "TX", "FP0"};
     }
 
     void set_gpio_attr(
-        const std::string& bank, const std::string& attr, const uint32_t value)
+        const std::string& bank, const std::string& attr, const uint32_t value) override
     {
         if (bank == "FP0") {
             _fp_gpio->set_gpio_attr(usrp::gpio_atr::gpio_attr_rev_map.at(attr), value);
@@ -921,7 +929,7 @@ public:
             << "'. Ignoring call to set_gpio_attr() to retain backward compatibility.");
     }
 
-    uint32_t get_gpio_attr(const std::string& bank, const std::string& attr)
+    uint32_t get_gpio_attr(const std::string& bank, const std::string& attr) override
     {
         if (bank == "FP0") {
             return _fp_gpio->get_attr_reg(usrp::gpio_atr::gpio_attr_rev_map.at(attr));
@@ -959,7 +967,7 @@ public:
     /**************************************************************************
      * Sensor API
      *************************************************************************/
-    std::vector<std::string> get_rx_sensor_names(size_t chan) const
+    std::vector<std::string> get_rx_sensor_names(size_t chan) const override
     {
         const fs_path sensor_path = get_db_path("rx", chan) / "sensors";
         if (get_tree()->exists(sensor_path)) {
@@ -968,14 +976,14 @@ public:
         return {};
     }
 
-    uhd::sensor_value_t get_rx_sensor(const std::string& name, size_t chan)
+    uhd::sensor_value_t get_rx_sensor(const std::string& name, size_t chan) override
     {
         return get_tree()
             ->access<uhd::sensor_value_t>(get_db_path("rx", chan) / "sensors" / name)
             .get();
     }
 
-    std::vector<std::string> get_tx_sensor_names(size_t chan) const
+    std::vector<std::string> get_tx_sensor_names(size_t chan) const override
     {
         const fs_path sensor_path = get_db_path("tx", chan) / "sensors";
         if (get_tree()->exists(sensor_path)) {
@@ -984,7 +992,7 @@ public:
         return {};
     }
 
-    uhd::sensor_value_t get_tx_sensor(const std::string& name, size_t chan)
+    uhd::sensor_value_t get_tx_sensor(const std::string& name, size_t chan) override
     {
         return get_tree()
             ->access<uhd::sensor_value_t>(get_db_path("tx", chan) / "sensors" / name)
@@ -994,7 +1002,7 @@ public:
     /**************************************************************************
      * EEPROM API
      *************************************************************************/
-    void set_db_eeprom(const uhd::eeprom_map_t& db_eeprom)
+    void set_db_eeprom(const uhd::eeprom_map_t& db_eeprom) override
     {
         const std::string key_prefix = db_eeprom.count("rx_id") ? "rx_" : "tx_";
         const std::string id_key     = key_prefix + "id";
@@ -1021,7 +1029,7 @@ public:
     }
 
 
-    uhd::eeprom_map_t get_db_eeprom()
+    uhd::eeprom_map_t get_db_eeprom() override
     {
         uhd::eeprom_map_t result;
         if (get_tree()->exists(DB_PATH / "rx_eeprom")) {
@@ -1044,13 +1052,13 @@ public:
     /**************************************************************************
      * Radio Identification API Calls
      *************************************************************************/
-    std::string get_slot_name() const
+    std::string get_slot_name() const override
     {
         return _radio_type == PRIMARY ? "A" : "B";
     }
 
     size_t get_chan_from_dboard_fe(
-        const std::string& fe, const uhd::direction_t direction) const
+        const std::string& fe, const uhd::direction_t direction) const override
     {
         switch (direction) {
             case uhd::TX_DIRECTION:
@@ -1063,7 +1071,7 @@ public:
     }
 
     std::string get_dboard_fe_from_chan(
-        const size_t chan, const uhd::direction_t direction) const
+        const size_t chan, const uhd::direction_t direction) const override
     {
         switch (direction) {
             case uhd::TX_DIRECTION:
@@ -1075,7 +1083,8 @@ public:
         }
     }
 
-    std::string get_fe_name(const size_t chan, const uhd::direction_t direction) const
+    std::string get_fe_name(
+        const size_t chan, const uhd::direction_t direction) const override
     {
         fs_path name_path =
             get_db_path(direction == uhd::RX_DIRECTION ? "rx" : "tx", chan) / "name";
@@ -1087,7 +1096,7 @@ public:
     }
 
 
-    virtual void set_command_time(uhd::time_spec_t time, const size_t chan)
+    void set_command_time(uhd::time_spec_t time, const size_t chan) override
     {
         node_t::set_command_time(time, chan);
         // This is for TwinRX only:
@@ -1100,30 +1109,31 @@ public:
     /**************************************************************************
      * MB Interface API Calls
      *************************************************************************/
-    uint32_t get_adc_rx_word()
+    uint32_t get_adc_rx_word() override
     {
         return regs().peek32(regmap::RADIO_BASE_ADDR + regmap::REG_RX_DATA);
     }
 
-    void set_adc_test_word(const std::string& patterna, const std::string& patternb)
+    void set_adc_test_word(
+        const std::string& patterna, const std::string& patternb) override
     {
         _adc->set_test_word(patterna, patternb);
     }
 
-    void set_adc_checker_enabled(const bool enb)
+    void set_adc_checker_enabled(const bool enb) override
     {
         _regs->misc_outs_reg.write(
             radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, enb ? 1 : 0);
     }
 
-    bool get_adc_checker_locked(const bool I)
+    bool get_adc_checker_locked(const bool I) override
     {
         return bool(_regs->misc_ins_reg.read(
             I ? radio_regmap_t::misc_ins_reg_t::ADC_CHECKER1_I_LOCKED
               : radio_regmap_t::misc_ins_reg_t::ADC_CHECKER1_Q_LOCKED));
     }
 
-    uint32_t get_adc_checker_error_code(const bool I)
+    uint32_t get_adc_checker_error_code(const bool I) override
     {
         return _regs->misc_ins_reg.get(
             I ? radio_regmap_t::misc_ins_reg_t::ADC_CHECKER1_I_ERROR
@@ -1131,7 +1141,7 @@ public:
     }
 
     // Documented in x300_radio_mbc_iface.hpp
-    void self_test_adc(const uint32_t ramp_time_ms)
+    void self_test_adc(const uint32_t ramp_time_ms) override
     {
         RFNOC_LOG_DEBUG("Running ADC self-cal...");
         // Bypass all front-end corrections
@@ -1208,12 +1218,12 @@ public:
         }
     }
 
-    void sync_dac()
+    void sync_dac() override
     {
         _dac->sync();
     }
 
-    void set_dac_sync(const bool enb, const uhd::time_spec_t& time)
+    void set_dac_sync(const bool enb, const uhd::time_spec_t& time) override
     {
         if (time != uhd::time_spec_t(0.0)) {
             set_command_time(time, 0);
@@ -1225,7 +1235,7 @@ public:
         }
     }
 
-    void dac_verify_sync()
+    void dac_verify_sync() override
     {
         _dac->verify_sync();
     }
@@ -1816,7 +1826,7 @@ private:
     //! Safely shut down all peripherals
     //
     // Reminder: After this is called, no peeks and pokes are allowed!
-    void deinit()
+    void deinit() override
     {
         RFNOC_LOG_TRACE("deinit()");
         // Reset daughterboard
@@ -1840,7 +1850,7 @@ private:
     }
 
     bool check_topology(const std::vector<size_t>& connected_inputs,
-        const std::vector<size_t>& connected_outputs)
+        const std::vector<size_t>& connected_outputs) override
     {
         RFNOC_LOG_TRACE("check_topology()");
         if (!node_t::check_topology(connected_inputs, connected_outputs)) {

@@ -124,7 +124,7 @@ namespace uhd { namespace usrp {
         %endfor
 
         // Deprecated
-        uhd::rpc_client::sptr get_raw_rpc_client() { return _rpcc; }
+        uhd::rpc_client::sptr get_raw_rpc_client() override { return _rpcc; }
 
     private:
         uhd::rpc_client::sptr _rpcc;

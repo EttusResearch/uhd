@@ -156,19 +156,19 @@ public:
         commit();
     }
 
-    ~twinrx_ctrl_impl()
+    ~twinrx_ctrl_impl() override
     {
         UHD_SAFE_CALL(boost::lock_guard<boost::mutex> lock(_mutex);
                       _gpio_iface->set_field(twinrx_gpio::FIELD_SWPS_EN, 0);)
     }
 
-    void commit()
+    void commit() override
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         _commit();
     }
 
-    void set_chan_enabled(channel_t ch, bool enabled, bool commit = true)
+    void set_chan_enabled(channel_t ch, bool enabled, bool commit = true) override
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         if (ch == CH1 or ch == BOTH) {
@@ -189,7 +189,7 @@ public:
             _commit();
     }
 
-    void set_preamp1(channel_t ch, preamp_state_t value, bool commit = true)
+    void set_preamp1(channel_t ch, preamp_state_t value, bool commit = true) override
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         if (ch == CH1 or ch == BOTH) {
@@ -216,7 +216,7 @@ public:
             _commit();
     }
 
-    void set_preamp2(channel_t ch, bool enabled, bool commit = true)
+    void set_preamp2(channel_t ch, bool enabled, bool commit = true) override
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         if (ch == CH1 or ch == BOTH) {
@@ -233,7 +233,8 @@ public:
             _commit();
     }
 
-    void set_lb_preamp_preselector(channel_t ch, bool enabled, bool commit = true)
+    void set_lb_preamp_preselector(
+        channel_t ch, bool enabled, bool commit = true) override
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         if (ch == CH1 or ch == BOTH) {
@@ -248,7 +249,7 @@ public:
             _commit();
     }
 
-    void set_signal_path(channel_t ch, signal_path_t path, bool commit = true)
+    void set_signal_path(channel_t ch, signal_path_t path, bool commit = true) override
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         if (ch == CH1 or ch == BOTH) {
@@ -295,7 +296,8 @@ public:
             _commit();
     }
 
-    void set_lb_preselector(channel_t ch, preselector_path_t path, bool commit = true)
+    void set_lb_preselector(
+        channel_t ch, preselector_path_t path, bool commit = true) override
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         uint32_t sw7val = 0, sw8val = 0;
@@ -331,7 +333,8 @@ public:
             _commit();
     }
 
-    void set_hb_preselector(channel_t ch, preselector_path_t path, bool commit = true)
+    void set_hb_preselector(
+        channel_t ch, preselector_path_t path, bool commit = true) override
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         uint32_t sw9ch1val = 0, sw10ch1val = 0, sw9ch2val = 0, sw10ch2val = 0;
@@ -375,7 +378,7 @@ public:
             _commit();
     }
 
-    void set_input_atten(channel_t ch, uint8_t atten, bool commit = true)
+    void set_input_atten(channel_t ch, uint8_t atten, bool commit = true) override
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         if (ch == CH1 or ch == BOTH) {
@@ -388,7 +391,7 @@ public:
             _commit();
     }
 
-    void set_lb_atten(channel_t ch, uint8_t atten, bool commit = true)
+    void set_lb_atten(channel_t ch, uint8_t atten, bool commit = true) override
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         if (ch == CH1 or ch == BOTH) {
@@ -401,7 +404,7 @@ public:
             _commit();
     }
 
-    void set_hb_atten(channel_t ch, uint8_t atten, bool commit = true)
+    void set_hb_atten(channel_t ch, uint8_t atten, bool commit = true) override
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         if (ch == CH1 or ch == BOTH) {
@@ -414,7 +417,7 @@ public:
             _commit();
     }
 
-    void set_lo1_source(channel_t ch, lo_source_t source, bool commit = true)
+    void set_lo1_source(channel_t ch, lo_source_t source, bool commit = true) override
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         if (ch == CH1 or ch == BOTH) {
@@ -442,7 +445,7 @@ public:
             _commit();
     }
 
-    void set_lo2_source(channel_t ch, lo_source_t source, bool commit = true)
+    void set_lo2_source(channel_t ch, lo_source_t source, bool commit = true) override
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         if (ch == CH1 or ch == BOTH) {
@@ -467,7 +470,7 @@ public:
             _commit();
     }
 
-    void set_lo1_export_source(lo_export_source_t source, bool commit = true)
+    void set_lo1_export_source(lo_export_source_t source, bool commit = true) override
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         // SW22 may conflict with the cal switch but this attr takes priority and we
@@ -481,7 +484,7 @@ public:
             _commit();
     }
 
-    void set_lo2_export_source(lo_export_source_t source, bool commit = true)
+    void set_lo2_export_source(lo_export_source_t source, bool commit = true) override
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         _cpld_regs->if0_reg7.set(
@@ -496,7 +499,7 @@ public:
             _commit();
     }
 
-    void set_antenna_mapping(antenna_mapping_t mapping, bool commit = true)
+    void set_antenna_mapping(antenna_mapping_t mapping, bool commit = true) override
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
 
@@ -543,7 +546,7 @@ public:
             _commit();
     }
 
-    void set_crossover_cal_mode(cal_mode_t cal_mode, bool commit = true)
+    void set_crossover_cal_mode(cal_mode_t cal_mode, bool commit = true) override
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         if (_lo1_export == LO_CH1_SYNTH && cal_mode == CAL_CH2) {
@@ -560,7 +563,7 @@ public:
             _commit();
     }
 
-    double set_lo1_synth_freq(channel_t ch, double freq, bool commit = true)
+    double set_lo1_synth_freq(channel_t ch, double freq, bool commit = true) override
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
 
@@ -581,7 +584,7 @@ public:
         return coerced_freq;
     }
 
-    double set_lo2_synth_freq(channel_t ch, double freq, bool commit = true)
+    double set_lo2_synth_freq(channel_t ch, double freq, bool commit = true) override
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
 
@@ -600,7 +603,7 @@ public:
         return coerced_freq;
     }
 
-    double set_lo1_charge_pump(channel_t ch, double current, bool commit = true)
+    double set_lo1_charge_pump(channel_t ch, double current, bool commit = true) override
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         double coerced_current = 0.0;
@@ -619,7 +622,7 @@ public:
         return coerced_current;
     }
 
-    double set_lo2_charge_pump(channel_t ch, double current, bool commit = true)
+    double set_lo2_charge_pump(channel_t ch, double current, bool commit = true) override
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         double coerced_current = 0.0;
@@ -638,19 +641,19 @@ public:
         return coerced_current;
     }
 
-    uhd::meta_range_t get_lo1_charge_pump_range()
+    uhd::meta_range_t get_lo1_charge_pump_range() override
     {
         // assume that both channels have the same range
         return _lo1_iface[size_t(CH1)]->get_charge_pump_current_range();
     }
 
-    uhd::meta_range_t get_lo2_charge_pump_range()
+    uhd::meta_range_t get_lo2_charge_pump_range() override
     {
         // assume that both channels have the same range
         return _lo2_iface[size_t(CH1)]->get_charge_pump_current_range();
     }
 
-    bool read_lo1_locked(channel_t ch)
+    bool read_lo1_locked(channel_t ch) override
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
 
@@ -666,7 +669,7 @@ public:
         return locked;
     }
 
-    bool read_lo2_locked(channel_t ch)
+    bool read_lo2_locked(channel_t ch) override
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
 

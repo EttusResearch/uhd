@@ -70,12 +70,12 @@ public:
         this->send_ads62p48_reg(0x76);
     }
 
-    void reset()
+    void reset() override
     {
         init();
     }
 
-    double set_gain(const double& gain)
+    double set_gain(const double& gain) override
     {
         const meta_range_t gain_range = meta_range_t(0, 6.0, 0.5);
         const int gain_bits           = int((gain_range.clip(gain) * 2.0) + 0.5);
@@ -86,8 +86,9 @@ public:
         return gain_bits / 2;
     }
 
-    void set_test_word(
-        const std::string& patterna, const std::string& patternb, const uint32_t num)
+    void set_test_word(const std::string& patterna,
+        const std::string& patternb,
+        const uint32_t num) override
     {
         _ads62p48_regs.custom_pattern_low  = num & 0xff;
         _ads62p48_regs.custom_pattern_high = num >> 8;
@@ -117,7 +118,7 @@ public:
         this->send_ads62p48_reg(0x75);
     }
 
-    ~x300_adc_ctrl_impl(void)
+    ~x300_adc_ctrl_impl(void) override
     {
         _ads62p48_regs.power_down = ads62p48_regs_t::POWER_DOWN_GLOBAL;
         UHD_SAFE_CALL(this->send_ads62p48_reg(0x40);)

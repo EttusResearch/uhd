@@ -201,7 +201,7 @@ static std::string get_fpga_path(
         if (!dev_addr.has_key("product")) {
             throw uhd::runtime_error("Found a device but could not "
                                      "auto-generate an image filename.");
-        } else if (fpga_type == "") {
+        } else if (fpga_type.empty()) {
             return find_image_path(
                 "usrp_" + boost::algorithm::to_lower_copy(dev_addr["product"]) + "_fpga.bit");
         } else {

@@ -12,12 +12,11 @@ using namespace uhd::rfnoc::rf_control;
 
 void test_profile_invariant(gain_profile_iface& gain_profile)
 {
-   BOOST_CHECK(gain_profile.get_gain_profile_names(0).size() > 0);
-   for (auto& profile : gain_profile.get_gain_profile_names(0))
-   {
-      gain_profile.set_gain_profile(profile, 0);
-      BOOST_CHECK(gain_profile.get_gain_profile(0) == profile);
-   }
+    BOOST_CHECK(!gain_profile.get_gain_profile_names(0).empty());
+    for (auto& profile : gain_profile.get_gain_profile_names(0)) {
+        gain_profile.set_gain_profile(profile, 0);
+        BOOST_CHECK(gain_profile.get_gain_profile(0) == profile);
+    }
 }
 
 BOOST_AUTO_TEST_CASE(test_default_profile_get_set)
