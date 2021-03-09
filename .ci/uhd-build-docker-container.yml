@@ -1,0 +1,179 @@
+trigger:
+  branches:
+    include:
+    - master
+  paths:
+    include:
+    - .ci/docker
+    - .ci/uhd-build-docker-container.yml
+pr:
+  branches:
+    include:
+    - master
+  paths:
+    include:
+    - .ci/docker
+    - .ci/uhd-build-docker-container.yml
+
+variables:
+- template: uhd-pipeline-vars.yml
+- name: linuxDockerImages
+  value:
+    "{'Fedora-32-builder':{'dockerOSName':'fedora32','dockerImageName':'uhd-builder-fedora32'},
+    'Fedora-33-builder':{'dockerOSName':'fedora33','dockerImageName':'uhd-builder-fedora33'},
+    'Ubuntu-1804-builder':{'dockerOSName':'ubuntu1804','dockerImageName':'uhd-builder-ubuntu1804'},
+    'Ubuntu-2004-builder':{'dockerOSName':'ubuntu2004','dockerImageName':'uhd-builder-ubuntu2004'}}"
+- name: winDockerImages
+  value:
+    "{'VS2017-x86-builder':{'dockerOSName':'win-vs17-v141-x86','dockerImageName':'uhd-builder-vs2017-v141-x86','cmakeCompiler':'Visual Studio 15 2017','cmakeArch':'Win32','vsArch':'x86','vsYear':'2017'},
+    'VS2017-x64-builder':{'dockerOSName':'win-vs17-v141-x64','dockerImageName':'uhd-builder-vs2017-v141-x64','cmakeCompiler':'Visual Studio 15 2017','cmakeArch':'x64','vsArch':'x64','vsYear':'2017'},
+    'VS2019-x86-builder':{'dockerOSName':'win-vs19-v142-x86','dockerImageName':'uhd-builder-vs2019-v142-x86','cmakeCompiler':'Visual Studio 16 2019','cmakeArch':'Win32','vsArch':'x86','vsYear':'2019'},
+    'VS2019-x64-builder':{'dockerOSName':'win-vs19-v142-x64','dockerImageName':'uhd-builder-vs2019-v142-x64','cmakeCompiler':'Visual Studio 16 2019','cmakeArch':'x64','vsArch':'x64','vsYear':'2019'}}"
+
+- name: dockerImagePrefix
+  value: 'rfsdr/'
+
+jobs:
+- job: build_image_linux
+  displayName: Build Docker Image
+  pool:
+    name: Drivers-NIBuildFarm-RFMIBUILD
+    demands:
+      - agent.os -equals Linux
+      - docker
+  strategy:
+    matrix: $[ variables.linuxDockerImages ]
+  steps:
+  - checkout: self
+    clean: true
+  - task: Docker@2
+    displayName: Build Image
+    inputs:
+      command: 'build'
+      Dockerfile: '$(Build.SourcesDirectory)/.ci/docker/$(dockerImageName).Dockerfile'
+      containerRegistry: 'Docker / Artifactory - rnd-builds-local'
+      repository: '$(dockerImagePrefix)$(dockerImageName)'
+      tags: $(Build.BuildNumber)
+      arguments: --no-cache --pull
+  - task: Docker@2
+    displayName: Push Image
+    inputs:
+      command: 'push'
+      containerRegistry: 'Docker / Artifactory - rnd-builds-local'
+      repository: '$(dockerImagePrefix)$(dockerImageName)'
+      tags: $(Build.BuildNumber)
+
+- job: test_image_linux
+  displayName: Test Docker Image
+  dependsOn: build_image_linux
+  pool:
+    name: Drivers-NIBuildFarm-RFMIBUILD
+    demands:
+      - agent.os -equals Linux
+      - docker
+  strategy:
+    matrix: $[ variables.linuxDockerImages ]
+  container:
+    image: '$(dockerImagePrefix)$(dockerImageName):$(Build.BuildNumber)'
+    endpoint: 'Docker / Artifactory - rnd-builds-local'
+  workspace:
+    clean: outputs
+  steps:
+  - checkout: self
+    clean: true
+  - script: |
+        cd $(Build.BinariesDirectory)
+        mkdir -p uhddev/build
+        cd uhddev/build
+        cmake $(Build.SourcesDirectory)/host
+    displayName: Test image with cmake uhd
+  - script: |
+        cd $(Build.BinariesDirectory)
+        mkdir -p uhddev/build-ninja
+        cd uhddev/build-ninja
+        cmake -G Ninja $(Build.SourcesDirectory)/host
+    displayName: Test image with cmake ninja uhd
+
+- job: build_image_win
+  displayName: Build Docker Image Windows
+  timeoutInMinutes: 120
+  pool:
+    name: de-dre-lab
+    demands:
+      - agent.os -equals Windows_NT
+      - docker
+  strategy:
+    matrix: $[ variables.winDockerImages ]
+    maxParallel: 2
+  steps:
+  - checkout: self
+    clean: true
+  - task: Docker@2
+    displayName: Build Image
+    inputs:
+      command: 'build'
+      Dockerfile: '$(Build.SourcesDirectory)/.ci/docker/$(dockerImageName).Dockerfile'
+      containerRegistry: 'Docker / Artifactory - rnd-builds-local'
+      repository: '$(dockerImagePrefix)$(dockerImageName)'
+      tags: $(Build.BuildNumber)
+      arguments: --no-cache --pull
+  - task: Docker@2
+    displayName: Push Image
+    inputs:
+      command: 'push'
+      containerRegistry: 'Docker / Artifactory - rnd-builds-local'
+      repository: '$(dockerImagePrefix)$(dockerImageName)'
+      tags: $(Build.BuildNumber)
+
+- job: test_image_win
+  displayName: Test Docker Image Windows
+  dependsOn: build_image_win
+  pool:
+    name: de-dre-lab
+    demands:
+      - agent.os -equals Windows_NT
+      - docker
+  strategy:
+    matrix: $[ variables.winDockerImages ]
+  container:
+    image: '$(dockerImagePrefix)$(dockerImageName):$(Build.BuildNumber)'
+    endpoint: 'Docker / Artifactory - rnd-builds-local'
+  workspace:
+    clean: outputs
+  steps:
+  - checkout: self
+    clean: true
+  - script: |
+        cd $(Build.BinariesDirectory)
+        mkdir uhddev\build
+        cd uhddev\build
+        cmake $(Build.SourcesDirectory)/host ^
+          -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALL_DIR%\scripts\buildsystems\vcpkg.cmake ^
+          -G "$(cmakeCompiler)" -A $(cmakeArch)
+    displayName: Test image with cmake uhd
+  - script: |
+        cd $(Build.BinariesDirectory)
+        cd uhddev\build
+        "C:\Program Files (x86)\Microsoft Visual Studio\$(vsYear)\Community\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
+    displayName: Load Visual C++ Env
+
+- job: export_build_number
+  displayName: Export Image List to Artifacts
+  pool:
+    name: Drivers-NIBuildFarm-RFMIBUILD
+    demands: sh
+  steps:
+  - checkout: none
+  - script: |
+      cd $(Build.ArtifactStagingDirectory)
+      touch $(UHDPipelineDockerImageArtifactName)
+      echo "$(Build.BuildNumber)" > $(UHDPipelineDockerImageArtifactName)
+      echo "${{ variables.dockerImagePrefix }}" >> $(UHDPipelineDockerImageArtifactName)
+      echo "${{ variables.linuxDockerImages }}" >> $(UHDPipelineDockerImageArtifactName)
+      echo "${{ variables.winDockerImages }}" >> $(UHDPipelineDockerImageArtifactName)
+    displayName: Generate created image list
+  - task: PublishPipelineArtifact@1
+    inputs:
+      targetPath: $(Build.ArtifactStagingDirectory)
+      artifactName: $(UHDPipelineDockerImageArtifactName)
+    displayName: Upload image list artifact
