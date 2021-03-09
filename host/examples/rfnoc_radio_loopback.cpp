@@ -42,7 +42,7 @@ void sig_int_handler(int)
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
     // variables to be set by po
-    std::string args, rx_args, tx_args, rx_ant, tx_ant, rx_blockid, tx_blockid, ref, pps;
+    std::string args, rx_ant, tx_ant, rx_blockid, tx_blockid, ref, pps;
     size_t total_num_samps, spp, rx_chan, tx_chan;
     double rate, rx_freq, tx_freq, rx_gain, tx_gain, rx_bw, tx_bw, total_time, setup_time;
     bool rx_timestamps;
@@ -53,8 +53,6 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "UHD device address args")
-        ("rx_args", po::value<std::string>(&rx_args)->default_value(""), "Block args for the receive radio")
-        ("tx_args", po::value<std::string>(&tx_args)->default_value(""), "Block args for the transmit radio")
         ("spp", po::value<size_t>(&spp)->default_value(0), "Samples per packet (reduce for lower latency)")
         ("rx-freq", po::value<double>(&rx_freq)->default_value(0.0), "Rx RF center frequency in Hz")
         ("tx-freq", po::value<double>(&tx_freq)->default_value(0.0), "Tx RF center frequency in Hz")
@@ -161,6 +159,19 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         rx_radio_ctrl->set_rx_frequency(rx_freq, rx_chan);
         std::cout << boost::format("Actual RX Freq: %f MHz...")
                          % (rx_radio_ctrl->get_rx_frequency(rx_chan) / 1e6)
+                  << std::endl
+                  << std::endl;
+    }
+    if (vm.count("tx-freq")) {
+        std::cout << boost::format("Setting TX Freq: %f MHz...") % (tx_freq / 1e6)
+                  << std::endl;
+        uhd::tune_request_t tune_request(tx_freq);
+        if (vm.count("int-n")) {
+            tune_request.args = uhd::device_addr_t("mode_n=integer");
+        }
+        rx_radio_ctrl->set_tx_frequency(tx_freq, tx_chan);
+        std::cout << boost::format("Actual TX Freq: %f MHz...")
+                         % (rx_radio_ctrl->get_tx_frequency(tx_chan) / 1e6)
                   << std::endl
                   << std::endl;
     }
