@@ -4,14 +4,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhdlib/rfnoc/rf_control/gain_profile_iface.hpp>
 #include <uhd/types/ranges.hpp>
+#include <uhdlib/rfnoc/rf_control/gain_profile_iface.hpp>
 #include <boost/test/unit_test.hpp>
-#include <iostream>
 
 using namespace uhd::rfnoc::rf_control;
-
-static const double tolerance = 0.001; // %
 
 void test_profile_invariant(gain_profile_iface& gain_profile)
 {
