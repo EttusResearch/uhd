@@ -1271,6 +1271,25 @@ public:
         }
     }
 
+    void set_rx_lo_distribution(
+        bool enabled, const std::string& name, const std::string& output, size_t chan = 0)
+    {
+        if (_tree->exists(rx_rf_fe_root(chan) / "los")) {
+            if (_tree->exists(rx_rf_fe_root(chan) / "los" / name / "lo_distribution")) {
+                _tree
+                    ->access<bool>(rx_rf_fe_root(chan) / "los" / name / "lo_distribution"
+                                   / output / "export")
+                    .set(enabled);
+            } else {
+                throw uhd::runtime_error("This device does not support manual "
+                                         "configuration of LO distribution");
+            }
+        } else {
+            throw uhd::runtime_error(
+                "This device does not support manual configuration of LOs");
+        }
+    }
+
     void set_rx_lo_export_enabled(
         bool enabled, const std::string& name = ALL_LOS, size_t chan = 0)
     {
@@ -1487,6 +1506,25 @@ public:
             // If the daughterboard doesn't expose its LO(s) then it can only
             // be internal
             return std::vector<std::string>(1, "internal");
+        }
+    }
+
+    void set_tx_lo_distribution(
+        bool enabled, const std::string& name, const std::string& output, size_t chan = 0)
+    {
+        if (_tree->exists(tx_rf_fe_root(chan) / "los")) {
+            if (_tree->exists(tx_rf_fe_root(chan) / "los" / name / "lo_distribution")) {
+                _tree
+                    ->access<bool>(tx_rf_fe_root(chan) / "los" / name / "lo_distribution"
+                                   / output / "export")
+                    .set(enabled);
+            } else {
+                throw uhd::runtime_error("This device does not support manual "
+                                         "configuration of LO distribution");
+            }
+        } else {
+            throw uhd::runtime_error(
+                "This device does not support manual configuration of LOs");
         }
     }
 

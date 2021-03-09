@@ -745,6 +745,22 @@ public:
     virtual std::vector<std::string> get_rx_lo_sources(
         const std::string& name = ALL_LOS, size_t chan = 0) = 0;
 
+    /*! Set whether the RX LO splitter output is active
+     *
+     * For USRPs that support distributable LOs, this function
+     * configures if the distributor outputs are active or not.
+     *
+     * \param enabled if true then set the output active
+     * \param name the name of the LO stage to update
+     * \param output the output to update (e.g., LO_OUT_0, LO_OUT_1, ...)
+     * \param chan the channel index 0 to N-1 for the source channel
+     * \throws uhd::runtime_error if LO exporting is not enabled
+     */
+    virtual void set_rx_lo_distribution(bool enabled,
+        const std::string& name,
+        const std::string& output,
+        size_t chan = 0) = 0;
+
     /*! Set whether the LO used by the device is exported
      *
      * For USRPs that support exportable LOs, this function
@@ -868,6 +884,22 @@ public:
      */
     virtual std::vector<std::string> get_tx_lo_sources(
         const std::string& name = ALL_LOS, const size_t chan = 0) = 0;
+
+    /*! Set whether the TX LO splitter output is active
+     *
+     * For USRPs that support distributable LOs, this function
+     * configures if the distributor outputs are active or not.
+     *
+     * \param enabled if true then set the output active
+     * \param name the name of the LO stage to update
+     * \param output the output to update (e.g., LO_OUT_0, LO_OUT_1, ...)
+     * \param chan the channel index 0 to N-1 for the source channel
+     * \throws uhd::runtime_error if LO exporting is not enabled
+     */
+    virtual void set_tx_lo_distribution(bool enabled,
+        const std::string& name,
+        const std::string& output,
+        size_t chan = 0) = 0;
 
     /*! Set whether the TX LO used by the device is exported
      *
