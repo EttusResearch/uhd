@@ -12,8 +12,11 @@
 #include <iso646.h>
 
 // Define ssize_t
-#include <stddef.h>
-typedef ptrdiff_t ssize_t;
+#ifndef _SSIZE_T_DEFINED
+#define _SSIZE_T_DEFINED
+# include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#endif /* _SSIZE_T_DEFINED */
 
 #endif /* _MSC_VER */
 

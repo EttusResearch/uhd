@@ -118,12 +118,26 @@ endif(UNIX AND NOT BOOST_ROOT AND EXISTS "/usr/lib64")
 
 # special Microsoft Visual C handling
 if(MSVC)
-    set(BOOST_ALL_DYN_LINK "${BOOST_ALL_DYN_LINK}" CACHE BOOL "boost enable dynamic linking")
-    if(BOOST_ALL_DYN_LINK)
-        add_definitions(-DBOOST_ALL_DYN_LINK) #setup boost auto-linking in msvc
-    else(BOOST_ALL_DYN_LINK)
-        set(UHD_BOOST_REQUIRED_COMPONENTS) #empty components list for static link
-    endif(BOOST_ALL_DYN_LINK)
+    if(VCPKG_TARGET_TRIPLET)
+        message(STATUS "  VCPKG Libs")
+        string(FIND ${VCPKG_TARGET_TRIPLET} "static" vcpkg_check_static)
+        string(FIND ${VCPKG_TARGET_TRIPLET} "static-md" vcpkg_check_static_md)
+        if((NOT vcpkg_check_static EQUAL -1) AND vcpkg_check_static_md EQUAL -1)
+            # Statically linked CRT
+            message(STATUS "  VCPKG static CRT triplet found. Configuring compiler flags.")
+            set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+            set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+        endif((NOT vcpkg_check_static EQUAL -1) AND vcpkg_check_static_md EQUAL -1)
+    else(VCPKG_TARGET_TRIPLET)
+        set(BOOST_ALL_DYN_LINK "${BOOST_ALL_DYN_LINK}" CACHE BOOL "boost enable dynamic linking")
+        if(BOOST_ALL_DYN_LINK)
+            message(STATUS "  Dynamic Libs")
+            add_definitions(-DBOOST_ALL_DYN_LINK) #setup boost auto-linking in msvc
+        else(BOOST_ALL_DYN_LINK)
+            message(STATUS "  Static Libs")
+            set(UHD_BOOST_REQUIRED_COMPONENTS) #empty components list for static link
+        endif(BOOST_ALL_DYN_LINK)
+    endif(VCPKG_TARGET_TRIPLET)
 endif(MSVC)
 
 # Starting in CMake 3.15.0, if policy 'CMP0093' is available and set

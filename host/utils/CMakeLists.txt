@@ -53,6 +53,7 @@ set(util_share_sources_py
     uhd_power_cal.py
 )
 if(ENABLE_USB)
+    find_package(LIBUSB)
     list(APPEND util_share_sources
         fx2_init_eeprom.cpp
     )

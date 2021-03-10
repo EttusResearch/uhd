@@ -38,8 +38,11 @@
 #    include <ciso646>
 
 // define ssize_t
-#    include <cstddef>
-typedef ptrdiff_t ssize_t;
+#ifndef _SSIZE_T_DEFINED
+#define _SSIZE_T_DEFINED
+#    include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#endif /* _SSIZE_T_DEFINED */
 
 #endif // BOOST_MSVC
 
