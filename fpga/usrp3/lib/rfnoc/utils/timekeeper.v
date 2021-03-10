@@ -1,24 +1,46 @@
 //
-// Copyright 2019 Ettus Research, a National Instruments Company
+// Copyright 2021 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
 // Module: timekeeper
 //
-// Description: Timekeeper for RFNoC blocks. This block contains a 64-bit
-// counter to represent the current time in terms of sample clock cycles. The
-// counter can be updated and synchronized using the pps input.
+// Description:
 //
-// WARNING: All register larger than a single 32-bit word should be read and
-//          written least significant word first to guarantee coherency.
+//   Timekeeper for RFNoC blocks. This block contains a 64-bit counter to
+//   represent the current time in terms of sample clock cycles. The counter
+//   can be updated and synchronized using the pps input.
+//
+//   WARNING: All register larger than a single 32-bit word should be read and
+//            written least significant word first to guarantee coherency.
+//
+// Parameters:
+//
+//   BASE_ADDR      : Base address for the internal CtrlPort registers.
+//   TIME_INCREMENT : Amount by which to increment tb_timestamp for each radio
+//                    strobe. When 0, the time_increment input is used instead.
+//
+// Signals:
+//
+//   tb_clk                : Time-base clock
+//   tb_rst                : Time-base reset in tb_clk domain
+//   s_ctrlport_clk        : Clock for CtrlPort bus
+//   s_ctrlport_*          : CtrlPort bus for register access
+//   time_increment        : Amount by which to increment timestamp. This is
+//                           only used if TIME_INCREMENT parameter is 0.
+//   sample_rx_stb         : Sample Rx strobe (data valid indicator).
+//   pps                   : Pulse-per-second input
+//   tb_timestamp          : 64-bit global timestamp synchronous to tb_clk
+//   tb_timestamp_last_pps : 64-bit timestamp of the last PPS edge
+//   tb_period_ns_q32      : Time Period of time-base in nanoseconds
 //
 
 module timekeeper #(
   parameter BASE_ADDR      = 'h00,
-  parameter TIME_INCREMENT = 1  // Amount by which to increment time on each sample clock cycle
+  parameter TIME_INCREMENT = 1
 ) (
-  input wire         tb_clk,        // Time-base clock
-  input wire         tb_rst,        // Time-base reset in tb_clk domain
+  input wire         tb_clk,
+  input wire         tb_rst,
 
   //---------------------------------------------------------------------------
   // Control Interface
@@ -33,14 +55,15 @@ module timekeeper #(
   output wire [31:0] s_ctrlport_resp_data,
 
   //---------------------------------------------------------------------------
-  // Time
+  // Time (tb_clk domain)
   //---------------------------------------------------------------------------
 
-  input wire         sample_rx_stb,          // Sample Rx strobe (data valid indicator)
-  input wire         pps,                    // Pulse per second input
-  output reg [63:0]  tb_timestamp,           // 64-bit  global timestamp synchronous to tb_clk
-  output reg [63:0]  tb_timestamp_last_pps,  // 64-bit  global timestamp synchronous to tb_clk
-  output reg [63:0]  tb_period_ns_q32        // Time Period of time-base in nanoseconds
+  input wire [ 7:0]  time_increment,
+  input wire         sample_rx_stb,
+  input wire         pps,
+  output reg [63:0]  tb_timestamp,
+  output reg [63:0]  tb_timestamp_last_pps,
+  output reg [63:0]  tb_period_ns_q32
 );
 
   //---------------------------------------------------------------------------
@@ -230,6 +253,9 @@ module timekeeper #(
   // Time Tracker
   //---------------------------------------------------------------------------
 
+  // Amount by which to increment the timekeeper each clock cycle
+  wire [31:0] increment = TIME_INCREMENT ? TIME_INCREMENT : time_increment;
+
   reg time_event_armed; // Boolean to indicate if we're expecting a timed event
 
   wire time_event =
@@ -248,7 +274,7 @@ module timekeeper #(
         tb_timestamp     <= time_at_next_event;
       end else if (sample_rx_stb) begin
         // Update time for each sample word received
-        tb_timestamp <= tb_timestamp + TIME_INCREMENT;
+        tb_timestamp <= tb_timestamp + increment;
       end
 
       if (new_time_ctrl) begin
@@ -271,7 +297,7 @@ module timekeeper #(
       if (time_event) begin
         tb_timestamp_last_pps <= time_at_next_event;
       end else begin
-        tb_timestamp_last_pps <= tb_timestamp + TIME_INCREMENT;
+        tb_timestamp_last_pps <= tb_timestamp + increment;
       end
     end
   end
