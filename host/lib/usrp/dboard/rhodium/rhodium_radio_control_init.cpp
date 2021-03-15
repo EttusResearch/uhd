@@ -160,7 +160,7 @@ void rhodium_radio_control_impl::_init_peripherals()
     _tx_fe_core->populate_subtree(get_tree()->subtree(FE_PATH / "tx_fe_corrections" / 0));
 
     RFNOC_LOG_TRACE("Initializing RX frontend DSP core...")
-    _rx_fe_core = rx_frontend_core_3000::make(_wb_iface, n320_regs::SR_TX_FE_BASE);
+    _rx_fe_core = rx_frontend_core_3000::make(_wb_iface, n320_regs::SR_RX_FE_BASE);
     _rx_fe_core->set_adc_rate(_master_clock_rate);
     _rx_fe_core->set_dc_offset(rx_frontend_core_3000::DEFAULT_DC_OFFSET_VALUE);
     _rx_fe_core->set_dc_offset_auto(rx_frontend_core_3000::DEFAULT_DC_OFFSET_ENABLE);
