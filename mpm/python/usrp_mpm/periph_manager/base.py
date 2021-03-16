@@ -804,7 +804,10 @@ class PeriphManagerBase(object):
 
         All key/value pairs are string -> string
         """
-        return {k: str(v) for k, v in iteritems(self._eeprom_head)}
+        return {
+            k: v.decode() if isinstance(v, bytes) else str(v)
+            for k, v in iteritems(self._eeprom_head)
+        }
 
     def set_mb_eeprom(self, eeprom_vals):
         """
