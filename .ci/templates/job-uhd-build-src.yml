@@ -1,0 +1,99 @@
+parameters:
+- name: 'toolset'
+  type: string
+  values:
+  - make
+  - ninja
+  - msbuild
+
+jobs:
+- job: build_ctest_and_upload_uhd_${{ parameters.toolset }}
+  displayName: ${{ parameters.toolset }}, ctest, and upload UHD
+  dependsOn: get_latest_uhd_docker
+  variables:
+    # Docker vars from job-get-latest-uhd-docker.yml
+    dockerBuildNumber: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerBuildNumber'] ]
+    dockerImagePrefix: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImagePrefix'] ]
+    dockerImageMatrixLin: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixLin'] ]
+    dockerImageMatrixWin: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixWin'] ]
+  pool:
+    ${{ if eq(parameters.toolset, 'msbuild') }}:
+      name: de-dre-lab
+    ${{ if ne(parameters.toolset, 'msbuild') }}:
+      name: Drivers-NIBuildFarm-RFMIBUILD
+    demands:
+      - docker
+      - ${{ if eq(parameters.toolset, 'msbuild') }}:
+        - Agent.OS -equals Windows_NT
+      - ${{ if ne(parameters.toolset, 'msbuild') }}:
+        - Agent.OS -equals Linux
+  workspace:
+    clean: outputs
+  strategy:
+    ${{ if eq(parameters.toolset, 'msbuild') }}:
+      matrix: $[ variables.dockerImageMatrixWin ]
+    ${{ if ne(parameters.toolset, 'msbuild') }}:
+      matrix: $[ variables.dockerImageMatrixLin ]
+  container:
+    image: '$(dockerImagePrefix)$(DockerImageName):$(dockerBuildNumber)'
+    endpoint: 'Docker / Artifactory - rnd-builds-local'
+  steps:
+  - checkout: self
+    clean: true
+
+  - download: uhd_build_docker_container
+
+  - ${{ if eq(parameters.toolset, 'make') }}:
+    - template: steps-build-uhd-make.yml
+      parameters:
+        uhdSrcDir: $(Build.SourcesDirectory)
+        uhdBuildDir: $(Build.BinariesDirectory)/uhddev/build
+
+  - ${{ if eq(parameters.toolset, 'ninja') }}:
+    - template: steps-build-uhd-ninja.yml
+      parameters:
+        uhdSrcDir: $(Build.SourcesDirectory)
+        uhdBuildDir: $(Build.BinariesDirectory)/uhddev/build
+
+  - ${{ if eq(parameters.toolset, 'msbuild') }}:
+    - template: steps-build-uhd-msbuild.yml
+      parameters:
+        uhdSrcDir: $(Build.SourcesDirectory)
+        uhdBuildDir: $(Build.BinariesDirectory)\uhddev\build
+        cmakeCompiler: $(cmakeCompiler)
+        cmakeArch: $(cmakeArch)
+        vsArch: $(vsArch)
+        vsYear: $(vsYear)
+
+  - task: CopyFiles@2
+    inputs:
+      sourceFolder: $(Build.BinariesDirectory)
+      targetFolder: $(Build.ArtifactStagingDirectory)
+    displayName: Copy build files to artifact folder
+
+  - task: CopyFiles@2
+    inputs:
+      sourceFolder: $(Pipeline.Workspace)/uhd_build_docker_container/$(UHDPipelineDockerImageArtifactName)
+      targetFolder: $(Build.ArtifactStagingDirectory)
+    displayName:  Copy builder container version to artifact folder
+
+  - task: PublishPipelineArtifact@1
+    inputs:
+      targetPath: '$(Build.ArtifactStagingDirectory)'
+      artifactName: '$(dockerOSName)-${{ parameters.toolset }}'
+    displayName: Upload uhd build artifacts
+
+  - task: CopyFiles@2
+    inputs:
+      sourceFolder: $(Build.BinariesDirectory)/uhddev/
+      contents: build/Testing/**
+      targetFolder: $(Common.TestResultsDirectory)
+    displayName: Copy ${{ parameters.toolset }} ctest results
+
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: cTest
+      testResultsFiles: $(Common.TestResultsDirectory)/build/Testing/**/Test.xml
+      failTaskOnFailedTests: true
+      testRunTitle: uhd ctest $(dockerOSName)-${{ parameters.toolset }}
+    displayName: Publish $(dockerOSName)-${{ parameters.toolset }} ctest results

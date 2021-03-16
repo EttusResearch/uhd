@@ -1,0 +1,36 @@
+# Must include uhd-pipeline-vars.yml in top line pipeline to include this template
+# Reads and sets uhd docker builder information to variables
+# dockerBuildNumber, dockerImagePrefix, dockerImageMatrix
+# Reference the data by calling:
+# $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerBuildNumber'] ]
+# $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImagePrefix'] ]
+# $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixLin'] ]
+# $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixWin'] ]
+jobs:
+- job: get_latest_uhd_docker
+  displayName: Get Last Docker Build Version
+  pool:
+    name: Drivers-NIBuildFarm-RFMIBUILD
+    demands: sh
+  steps:
+  - checkout: none
+  - download: uhd_build_docker_container
+    displayName: Download Docker Image List
+  - script: |
+      cd $(Pipeline.Workspace)/uhd_build_docker_container/
+      docker_build_number=$(sed '1q;d' $(UHDPipelineDockerImageArtifactName)/$(UHDPipelineDockerImageArtifactName))
+      docker_image_prefix=$(sed '2q;d' $(UHDPipelineDockerImageArtifactName)/$(UHDPipelineDockerImageArtifactName))
+      docker_image_matrix_lin=$(sed '3q;d' $(UHDPipelineDockerImageArtifactName)/$(UHDPipelineDockerImageArtifactName))
+      docker_image_matrix_win=$(sed '4q;d' $(UHDPipelineDockerImageArtifactName)/$(UHDPipelineDockerImageArtifactName))
+      echo "##vso[task.setvariable variable=dockerBuildNumber;isOutput=true;]$docker_build_number"
+      echo "##vso[task.setvariable variable=dockerImagePrefix;isOutput=true;]$docker_image_prefix"
+      echo "##vso[task.setvariable variable=dockerImageMatrixLin;isOutput=true;]$docker_image_matrix_lin"
+      echo "##vso[task.setvariable variable=dockerImageMatrixWin;isOutput=true;]$docker_image_matrix_win"
+    name: setDockerVar
+  - script: |
+      echo "Docker Build Number: "
+      echo $(setDockerVar.dockerBuildNumber)
+      echo $(setDockerVar.dockerImagePrefix)
+      echo $(setDockerVar.dockerImageMatrixLin)
+      echo $(setDockerVar.dockerImageMatrixWin)
+    name: echoDockerVar

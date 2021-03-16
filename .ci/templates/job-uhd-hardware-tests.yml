@@ -25,7 +25,7 @@ jobs:
   - checkout: self
     clean: true
 
-  - template: steps-build-uhd.yml
+  - template: steps-build-uhd-make.yml
     parameters:
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
       uhdBuildDir: $(Build.BinariesDirectory)/uhddev/build

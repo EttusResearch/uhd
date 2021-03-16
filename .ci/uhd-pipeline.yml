@@ -1,0 +1,40 @@
+trigger:
+  branches:
+    include:
+    - master
+    - titanium-master
+  paths:
+    include:
+    - host
+    - .ci/uhd-pipeline.yml
+pr:
+  branches:
+    include:
+    - master
+    - titanium-master
+  paths:
+    include:
+    - host
+    - .ci/uhd-pipeline.yml
+
+variables:
+- template: uhd-pipeline-vars.yml
+
+resources:
+  pipelines:
+  - pipeline: uhd_build_docker_container
+    source: 'uhddev Build Docker Containers'
+    branch: master
+
+jobs:
+- template: templates/job-get-latest-uhd-docker.yml
+
+- template: templates/job-uhd-build-src.yml
+  parameters:
+    toolset: make
+- template: templates/job-uhd-build-src.yml
+  parameters:
+    toolset: ninja
+- template: templates/job-uhd-build-src.yml
+  parameters:
+    toolset: msbuild

@@ -116,6 +116,7 @@ jobs:
       containerRegistry: 'Docker / Artifactory - rnd-builds-local'
       repository: '$(dockerImagePrefix)$(dockerImageName)'
       tags: $(Build.BuildNumber)
+      buildContext: $(Build.SourcesDirectory)
       arguments: --no-cache --pull
   - task: Docker@2
     displayName: Push Image
@@ -148,6 +149,7 @@ jobs:
         mkdir uhddev\build
         cd uhddev\build
         cmake $(Build.SourcesDirectory)/host ^
+          -DVCPKG_TARGET_TRIPLET=uhd-$(vsArch)-windows-static-md ^
           -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALL_DIR%\scripts\buildsystems\vcpkg.cmake ^
           -G "$(cmakeCompiler)" -A $(cmakeArch)
     displayName: Test image with cmake uhd

@@ -1,0 +1,33 @@
+parameters:
+- name: uhdSrcDir
+  type: string
+- name: uhdBuildDir
+  type: string
+- name: cmakeCompiler
+  type: string
+- name: cmakeArch
+  type: string
+- name: vsArch
+  type: string
+- name: vsYear
+  type: string
+
+steps:
+- script: |
+    mkdir ${{ parameters.uhdBuildDir }}
+    cd ${{ parameters.uhdBuildDir }}
+    cmake ${{ parameters.uhdSrcDir }}/host ^
+      -DVCPKG_TARGET_TRIPLET=uhd-$(vsArch)-windows-static-md ^
+      -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALL_DIR%/scripts/buildsystems/vcpkg.cmake ^
+      -G "$(cmakeCompiler)" -A $(cmakeArch)
+  displayName: cmake msbuild UHD
+- script: |
+    cd ${{ parameters.uhdBuildDir }}
+    call "C:\Program Files (x86)\Microsoft Visual Studio\$(vsYear)\Community\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
+    msbuild.exe ALL_BUILD.vcxproj /p:configuration=release
+  displayName: msbuild UHD
+- script: |
+    cd ${{ parameters.uhdBuildDir }}
+    ctest --no-compress-output --output-on-failure -T test
+  continueOnError: true
+  displayName: ctest msbuild UHD

@@ -1,0 +1,21 @@
+parameters:
+- name: uhdSrcDir
+  type: string
+- name: uhdBuildDir
+  type: string
+
+steps:
+- script: |
+    mkdir -p ${{ parameters.uhdBuildDir }}
+    cd ${{ parameters.uhdBuildDir }}
+    cmake -G Ninja ${{ parameters.uhdSrcDir }}/host
+  displayName: cmake ninja UHD
+- script: |
+    cd ${{ parameters.uhdBuildDir }}
+    ninja
+  displayName: ninja UHD
+- script: |
+    cd ${{ parameters.uhdBuildDir }}
+    ctest --no-compress-output --output-on-failure -T test
+  continueOnError: true
+  displayName: ctest ninja UHD

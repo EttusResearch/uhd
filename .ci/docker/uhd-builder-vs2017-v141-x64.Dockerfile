@@ -1,3 +1,5 @@
+# Docker build context must be uhd/uhddev root
+
 # please follow docker best practices
 # https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/
 
@@ -36,7 +38,8 @@ RUN git clone https://github.com/microsoft/vcpkg %VCPKG_INSTALL_DIR% && \
     # This commit uses Boost 1.75 and libusb 1.0.24
     git checkout 3426db05b996481ca31e95fff3734cf23e0f51bc && \
     bootstrap-vcpkg.bat
+    # Add custom UHD vcpkg triplet
+COPY host/cmake/vcpkg/* c:/vcpkg/triplets/
 RUN cd %VCPKG_INSTALL_DIR% && vcpkg install --clean-after-build \
-    libusb:x64-windows \
-    boost:x64-windows
-
+    libusb:uhd-x64-windows-static-md \
+    boost:uhd-x64-windows-static-md
