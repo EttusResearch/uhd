@@ -289,6 +289,11 @@ uhd::meta_range_t radio_control_impl::get_rate_range() const
     return result;
 }
 
+size_t radio_control_impl::get_spc() const
+{
+    return _spc;
+}
+
 /****************************************************************************
  * RF API
  ***************************************************************************/

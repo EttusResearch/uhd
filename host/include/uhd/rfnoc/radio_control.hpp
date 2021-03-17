@@ -48,6 +48,20 @@ public:
     //! Return a list of valid rates
     virtual uhd::meta_range_t get_rate_range() const = 0;
 
+    //! Return the samples per clock (SPC) value of this radio
+    //
+    // Some radios may operate on multiple samples per clock cycle, usually in
+    // order to handle large bandwidths without requiring very fast FPGA clock
+    // rates.
+    //
+    // When the SPC value is greater than one, certain API calls may behave
+    // slightly differently. This is most relevant for issue_stream_cmd(). Other
+    // commands may round their execution time to the next integer multiple of
+    // SPC as well.
+    //
+    // Ultimately, the exact impact of SPC is device-dependent.
+    virtual size_t get_spc() const = 0;
+
     /**************************************************************************
      * RF-Related API Calls
      *************************************************************************/
@@ -226,6 +240,15 @@ public:
      * Streaming-Related API Calls
      *************************************************************************/
     /*! Issue stream command: Instruct the RX part of the radio to send samples
+     *
+     * When the radio is running at multiple samples per clock cycle, there are
+     * some restrictions in place:
+     * - When requesting a burst of length N, N must be an integer multiple of
+     *   SPC. If it's not, the radio will round up to the next integer multiple.
+     * - When requesting a start time, the start time may be rounded down such
+     *   that the first sample has a tick count value that is an integer multiple
+     *   of SPC. That means the sample at the requested time will always be
+     *   produced, but it might not be the first sample to be returned.
      *
      * \param stream_cmd The actual stream command to execute
      * \param port The port for which the stream command is meant

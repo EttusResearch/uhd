@@ -56,6 +56,7 @@ public:
     double set_rate(const double rate) override;
     double get_rate() const override;
     meta_range_t get_rate_range() const override;
+    size_t get_spc() const override;
 
     /**************************************************************************
      * RF-specific API calls

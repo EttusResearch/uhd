@@ -31,6 +31,10 @@ namespace uhd {
  * The stream now parameter controls when the stream begins.
  * When true, the device will begin streaming ASAP. When false,
  * the device will begin streaming at a time specified by time_spec.
+ *
+ * Note: When a radio runs at multiple samples per clock cycle, it may not be
+ * possible to request samples at any given time, and \p num_samps might have to
+ * be an integer multiple of SPC.
  */
 struct UHD_API stream_cmd_t
 {
