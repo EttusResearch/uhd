@@ -156,7 +156,7 @@ jobs:
   - script: |
         cd $(Build.BinariesDirectory)
         cd uhddev\build
-        "C:\Program Files (x86)\Microsoft Visual Studio\$(vsYear)\Community\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
+        "C:\Program Files (x86)\Microsoft Visual Studio\$(vsYear)\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
     displayName: Load Visual C++ Env
 
 - job: export_build_number

@@ -24,10 +24,10 @@ RUN choco install -y python3 --version=3.7.9
 RUN pip install mako requests numpy ruamel.yaml
 
 RUN powershell -NoProfile -ExecutionPolicy Bypass -Command \
-    Invoke-WebRequest "https://aka.ms/vs/16/release/vs_community.exe" \
-    -OutFile "%TEMP%\vs_community.exe" -UseBasicParsing
-RUN "%TEMP%\vs_community.exe"  --quiet --wait --norestart --noUpdateInstaller \
-    --add Microsoft.VisualStudio.Workload.NativeDesktop \
+    Invoke-WebRequest "https://aka.ms/vs/16/release/vs_buildtools.exe" \
+    -OutFile "%TEMP%\vs_buildtools.exe" -UseBasicParsing
+RUN "%TEMP%\vs_buildtools.exe"  --quiet --wait --norestart --noUpdateInstaller \
+    --add Microsoft.VisualStudio.Workload.VCTools \
     --includeRecommended
 
 RUN setx VCPKG_INSTALL_DIR "c:\\vcpkg" /m

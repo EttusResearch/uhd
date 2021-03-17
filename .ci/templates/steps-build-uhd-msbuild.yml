@@ -23,7 +23,7 @@ steps:
   displayName: cmake msbuild UHD
 - script: |
     cd ${{ parameters.uhdBuildDir }}
-    call "C:\Program Files (x86)\Microsoft Visual Studio\$(vsYear)\Community\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
+    call "C:\Program Files (x86)\Microsoft Visual Studio\$(vsYear)\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
     msbuild.exe ALL_BUILD.vcxproj /p:configuration=release
   displayName: msbuild UHD
 - script: |
