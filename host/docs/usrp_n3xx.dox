@@ -1479,6 +1479,64 @@ QSFP+ lane 1 | Unused | Unused | Unused       | 10 GbE       | Aurora
 QSFP+ lane 2 | Unused | Unused | Unused       | Unused       | Aurora
 QSFP+ lane 3 | Unused | Unused | Unused       | Unused       | Aurora
 
+\subsection n3xx_rh_frontend_corrections N320/N321 Frontend Corrections
+
+In an unmodified FPGA image, N320/N321 perform several steps of digital signal
+processing between the RFNoC Radio block and the ADC/DAC.
+
+It should be noted that the DACs/ADCs run at twice the master clock rate (e.g.,
+if the master clock rate is 250 MHz, the DACs/ADCs are clocked at 500 MHz). We
+perform a sample rate conversion to the master clock rate within the FPGA.
+
+```
+  ┌───────┐  ┌──────────────┐   ┌─────────────┐  ┌──────────────┐         ┌─────┐
+  │       │  │ TX           │   │TX           │  │ Halfband     │ 2x MCR  │     │
+  │       ├─>│ IQ Offset    ├──>│DC Offset    ├─>│ Interpolator ├────────>│ DAC │
+  │       │  │ Compensation │   │Compensation │  │ (47 taps)    │         │     │
+  │ RFNoC │  └──────────────┘   └─────────────┘  └──────────────┘         └─────┘
+  │ Radio │
+  │ Block │  ┌──────────────┐   ┌─────────────┐  ┌──────────────┐         ┌─────┐
+  │       │  │ RX           │   │RX           │  │Halfband      │ 2x MCR  │     │
+  │       │<─┤ IQ Offset    │<──┤DC Offset    │<─┤Decimator     │<────────┤ ADC │
+  │       │  │ Compensation │   │Compensation │  │(47 taps)     │         │     │
+  └───────┘  └──────────────┘   └─────────────┘  └──────────────┘         └─────┘
+```
+
+The IQ and DC offset compensation components can be controlled from the host
+side using the correction APIs. The following snippet shows the control of these
+APIs from the host side using the multi_usrp APIs:
+
+~~~{.cpp}
+// Generate an N320/N321 multi_usrp object
+auto usrp = uhd::usrp::multi_usrp::make("type=n3xx");
+// Set TX IQ offset value on channel zero:
+usrp->set_tx_iq_balance(my_tx_iq_offset_value, 0);
+// Set TX DC offset value on channel zero:
+usrp->set_tx_dc_offset(my_tx_dc_offset_value, 0);
+// Set RX IQ offset value on channel zero:
+usrp->set_tx_iq_balance(my_rx_iq_offset_value, 0);
+// Enable auto-RX-DC-offset on all channels:
+usrp->set_rx_dc_offset(true);
+// Set RX DC offset value to specific value on channel zero:
+usrp->set_tx_dc_offset(my_tx_dc_offset_value, 0);
+~~~
+
+When using the RFNoC API, use the uhd::rfnoc::radio_control API calls with the
+same names.
+
+Notes:
+- Other than the RX DC offset calibration, there are no automatic compensation
+  procedures. N320 uses a simple, single-tap IIR filter for automatic DC offset
+  correction (like X310).
+- The automatic RX DC offset correction acts as a notch filter around the LO
+  frequency.
+- For more details on the internals of these corrections, see \ref calibration_fe_corr.
+
+The halfband decimators/interpolators are not configurable. They are 47-tap
+halfband filters with the following coefficients:
+
+-62, 0, 194, 0, -440, 0, 855, 0, -1505, 0, 2478, 0, -3900, 0, 5990, 0, -9187, 0, 14632, 0, -26536, 0, 83009, 131071, 83009, 0, -26536, 0, 14632, 0, -9187, 0, 5990, 0, -3900, 0, 2478, 0, -1505, 0, 855, 0, -440, 0 194, 0, -62.
+
 \subsection n3xx_rh_eeprom_flags EEPROM flags
 
 EEPROM flags can be set with
