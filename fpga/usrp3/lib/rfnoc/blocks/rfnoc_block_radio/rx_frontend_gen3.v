@@ -5,7 +5,79 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
-
+// Module: rx_frontend_gen3
+//
+// Description:
+//
+//   RX Frontend Correction Module
+//   -----------------------------
+//
+//   This module will perform the following modifications of the signal, in this
+//   order:
+//
+//   1) I/Q Swapping/Reordering: The I and Q values from the ADC can be remapped
+//      arbitrarily and can be inverted. The behaviour of this IQ mux is
+//      controlled by writing to the settings register at SR_IQ_MAPPING.
+//
+//      This register uses the following bits:
+//
+//      Bit 0:  Set to 1 to swap I and Q.
+//      Bit 1:  Set to 1 to enable real mode (only relevant if
+//              BYPASS_REALMODE_DSP is set to 0, see below). If it is 1, then
+//              the Q input signal is ignored and assumed to be zero.
+//      Bit 2:  Set to 1 to invert the Q input signal
+//      Bit 3:  Set to 1 to invert the I input signal
+//      Bit 4:  Set to 1 to enable the quarter-rate downconverter (only relevant
+//              when BYPASS_REALMODE_DSP is set to 0, see below).
+//      Bit 7:  Disable all corrections in this module.
+//
+//   2) DC offset correction. See the rx_dcoffset module for details. This is
+//      either a fixed DC offset, or a notch filter around DC. The behaviour of
+//      this correction step is controlled by writing to settings registers at
+//      SR_OFFSET_I and SR_OFFSET_Q (they get forwarded to rx_dcoffset).
+//      Set BYPASS_DC_OFFSET_CORR to 1 to not synthesize this step.
+//
+//   3) IQ imbalance correction. This implements a simple, one-shot IQ imbalance
+//      correction. It will modify the I and Q signals as follows:
+//           _  _     _          _   _   _
+//          | I' |   |  A/64+1  0 | |  I  |
+//          |    | = |            | |     |
+//          |_Q'_|   |_ B/64    1_| |_ Q _|
+//
+//      Here, A is the value written to the register at SR_MAG_CORRECTION, and
+//      B is the value written to the register at SR_PHASE_CORRECTION.
+//      Set BYPASS_IQ_COMP to 1 to not synthesize this step.
+//
+//   4) Real-to-imaginary conversion. The converter is only enabled when the
+//      "downconvert" bit in the SR_IQ_MAPPING register is asserted. In this
+//      case, it enables a quarter-rate mixer. The direction of this mixer is
+//      controlled by the SR_HET_PHASE_INCR register (a 0 in this register
+//      rotates by pi/2 every clock cycle, a 1 in this register rotates by -pi/2).
+//
+//      The mixer is followed by a non-decimating half-band filter.
+//
+//      Set BYPASS_REALMODE_DSP to 1 to not synthesize this step.
+//
+//
+// UHD Developers Note: This module is typically controlled by rx_frontend_core_3000 in UHD,
+// and is also described in the calibration.dox manual page. When modifying this file, make
+// sure to also modify those files if necessary.
+//
+// Parameters:
+//   SR_MAG_CORRECTION     : Settings register address for the IQ correction "MAG" value
+//   SR_PHASE_CORRECTION   : Settings register address for the IQ correction "PHASE" value
+//   SR_OFFSET_I           : Settings register address for DC offset I correction
+//                           value (goes to rx_dcoffset)
+//   SR_OFFSET_Q           : Settings register address for DC offset Q correction
+//                           value (goes to rx_dcoffset)
+//   SR_IQ_MAPPING         : Settings register address for IQ mapping value
+//   SR_HET_PHASE_INCR     : Settings register address for the real mode phase
+//                           increment value
+//   BYPASS_DC_OFFSET_CORR : Set to 1 to disable DC offset correction
+//   BYPASS_IQ_COMP        : Set to 1 to disable IQ offset correction
+//   BYPASS_REALMODE_DSP   : Set to 1 to disable realmode to complex conversion
+//   DEVICE                : Unused.
+//
 module rx_frontend_gen3 #(
   parameter SR_MAG_CORRECTION = 0,
   parameter SR_PHASE_CORRECTION = 1,

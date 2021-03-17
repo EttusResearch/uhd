@@ -200,8 +200,8 @@ Q'
 \end{pmatrix}
 =
 \begin{pmatrix}
-A+1 & 0 \\
-B   & 1 \\
+A/64+1 & 0 \\
+B/64   & 1 \\
 \end{pmatrix}
 \begin{pmatrix}
 I \\
