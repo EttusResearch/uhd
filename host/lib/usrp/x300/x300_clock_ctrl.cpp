@@ -700,13 +700,16 @@ private:
                 // PLL1 - 2 MHz compare frequency
                 _lmk04816_regs.PLL1_N_28       = 48;
                 _lmk04816_regs.PLL1_R_27       = 5;
-                _lmk04816_regs.PLL1_CP_GAIN_27 = lmk04816_regs_t::PLL1_CP_GAIN_27_1600UA;
+                // Since this is not a zero-dealy mode, it is not intended for phase
+                // synchronization.  The charge pump current for PLL1 is lowered to
+                // reduce phase noise.
+                _lmk04816_regs.PLL1_CP_GAIN_27 = lmk04816_regs_t::PLL1_CP_GAIN_27_100UA;
 
                 // PLL2 - 7.68 MHz compare frequency
                 _lmk04816_regs.PLL2_N_30       = 168;
                 _lmk04816_regs.PLL2_P_30       = lmk04816_regs_t::PLL2_P_30_DIV_2A;
                 _lmk04816_regs.PLL2_R_28       = 25;
-                _lmk04816_regs.PLL2_CP_GAIN_26 = lmk04816_regs_t::PLL2_CP_GAIN_26_100UA;
+                _lmk04816_regs.PLL2_CP_GAIN_26 = lmk04816_regs_t::PLL2_CP_GAIN_26_3200UA;
 
                 _lmk04816_regs.PLL2_R3_LF = lmk04816_regs_t::PLL2_R3_LF_4KILO_OHM;
                 _lmk04816_regs.PLL2_C3_LF = lmk04816_regs_t::PLL2_C3_LF_39PF;
