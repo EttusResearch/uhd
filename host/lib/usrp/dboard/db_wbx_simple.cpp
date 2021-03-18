@@ -39,7 +39,7 @@ class wbx_simple : public wbx_base
 {
 public:
     wbx_simple(ctor_args_t args);
-    virtual ~wbx_simple(void);
+    ~wbx_simple(void) override;
 
 private:
     void set_rx_ant(const std::string& ant);

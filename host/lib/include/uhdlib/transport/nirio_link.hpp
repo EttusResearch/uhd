@@ -72,7 +72,7 @@ class nirio_link : public recv_link_base<nirio_link>, public send_link_base<niri
 public:
     using sptr = std::shared_ptr<nirio_link>;
 
-    ~nirio_link();
+    ~nirio_link() override;
 
     /*! Make a new NI-RIO link.
      *

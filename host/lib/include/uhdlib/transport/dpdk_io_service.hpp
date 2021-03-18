@@ -30,27 +30,27 @@ public:
     static sptr make(
         unsigned int lcore_id, std::vector<dpdk::dpdk_port*> ports, size_t servq_depth);
 
-    ~dpdk_io_service();
+    ~dpdk_io_service() override;
 
     // Add entry to RX flow table
     // This yields a link, which is then used for attaching to a buffer
     // We yank from the link immediately following, then process at the transport level
     // (so two tables here, one for transports, one for links)
-    void attach_recv_link(recv_link_if::sptr link);
+    void attach_recv_link(recv_link_if::sptr link) override;
 
     // Create object to hold set of queues, to go in TX table
-    void attach_send_link(send_link_if::sptr link);
+    void attach_send_link(send_link_if::sptr link) override;
 
-    void detach_recv_link(recv_link_if::sptr link);
+    void detach_recv_link(recv_link_if::sptr link) override;
 
-    void detach_send_link(send_link_if::sptr link);
+    void detach_send_link(send_link_if::sptr link) override;
 
     recv_io_if::sptr make_recv_client(recv_link_if::sptr data_link,
         size_t num_recv_frames,
         recv_callback_t cb,
         send_link_if::sptr fc_link,
         size_t num_send_frames,
-        recv_io_if::fc_callback_t fc_cb);
+        recv_io_if::fc_callback_t fc_cb) override;
 
     send_io_if::sptr make_send_client(send_link_if::sptr send_link,
         size_t num_send_frames,
@@ -58,7 +58,7 @@ public:
         recv_link_if::sptr recv_link,
         size_t num_recv_frames,
         recv_callback_t recv_cb,
-        send_io_if::fc_callback_t fc_cb);
+        send_io_if::fc_callback_t fc_cb) override;
 
 
 private:

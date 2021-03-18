@@ -70,7 +70,7 @@ x300_clock_ctrl::~x300_clock_ctrl(void)
 class x300_clock_ctrl_impl : public x300_clock_ctrl
 {
 public:
-    ~x300_clock_ctrl_impl(void) {}
+    ~x300_clock_ctrl_impl(void) override {}
 
     x300_clock_ctrl_impl(uhd::spi_iface::sptr spiface,
         const size_t slaveno,
@@ -88,7 +88,7 @@ public:
         init();
     }
 
-    void reset_clocks()
+    void reset_clocks() override
     {
         _lmk04816_regs.RESET = lmk04816_regs_t::RESET_RESET;
         this->write_regs(0);
@@ -113,23 +113,23 @@ public:
         this->write_regs(11);
     }
 
-    double get_master_clock_rate(void)
+    double get_master_clock_rate(void) override
     {
         return _master_clock_rate;
     }
 
-    double get_sysref_clock_rate(void)
+    double get_sysref_clock_rate(void) override
     {
         return _system_ref_rate;
     }
 
-    double get_refout_clock_rate(void)
+    double get_refout_clock_rate(void) override
     {
         // We support only one reference output rate
         return X300_REF_CLK_OUT_RATE;
     }
 
-    void set_dboard_rate(const x300_clock_which_t which, double rate)
+    void set_dboard_rate(const x300_clock_which_t which, double rate) override
     {
         uint16_t div  = uint16_t(_vco_freq / rate);
         uint16_t* reg = NULL;
@@ -174,7 +174,7 @@ public:
         sync_clocks();
     }
 
-    double get_dboard_rate(const x300_clock_which_t which)
+    double get_dboard_rate(const x300_clock_which_t which) override
     {
         double rate = 0.0;
         switch (which) {
@@ -192,7 +192,7 @@ public:
         return rate;
     }
 
-    std::vector<double> get_dboard_rates(const x300_clock_which_t)
+    std::vector<double> get_dboard_rates(const x300_clock_which_t) override
     {
         std::vector<double> rates;
         for (size_t div = size_t(_vco_freq / _master_clock_rate);
@@ -202,7 +202,7 @@ public:
         return rates;
     }
 
-    void enable_dboard_clock(const x300_clock_which_t which, const bool enable)
+    void enable_dboard_clock(const x300_clock_which_t which, const bool enable) override
     {
         switch (which) {
             case X300_CLOCK_WHICH_DB0_RX:
@@ -250,7 +250,7 @@ public:
         }
     }
 
-    void set_ref_out(const bool enable)
+    void set_ref_out(const bool enable) override
     {
         // TODO  Implement divider configuration to allow for configurable output
         // rates
@@ -267,8 +267,9 @@ public:
         _spiface->write_spi(_slaveno, spi_config_t::EDGE_RISE, data, 32);
     }
 
-    double set_clock_delay(
-        const x300_clock_which_t which, const double delay_ns, const bool resync = true)
+    double set_clock_delay(const x300_clock_which_t which,
+        const double delay_ns,
+        const bool resync = true) override
     {
         // All dividers have are delayed by 5 taps by default. The delay
         // set by this function is relative to the 5 tap delay
@@ -461,7 +462,7 @@ public:
         return coerced_delay;
     }
 
-    double get_clock_delay(const x300_clock_which_t which)
+    double get_clock_delay(const x300_clock_which_t which) override
     {
         switch (which) {
             case X300_CLOCK_WHICH_FPGA:

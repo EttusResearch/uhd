@@ -194,7 +194,7 @@ public:
     }
 
     std::shared_ptr<void>& _access_with_type_check(
-        const fs_path& path_, std::type_index /*expected_prop_type*/) const
+        const fs_path& path_, std::type_index /*expected_prop_type*/) const override
     {
         // FIXME:  The type check didn't actually work because the hash code
         // for the type_index can be different between the application and the

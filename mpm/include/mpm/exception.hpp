@@ -22,105 +22,105 @@ struct exception : std::runtime_error
 struct assertion_error : exception
 {
     assertion_error(const std::string& what);
-    virtual unsigned code(void) const;
-    virtual assertion_error* dynamic_clone(void) const;
-    virtual void dynamic_throw(void) const;
+    unsigned code(void) const override;
+    assertion_error* dynamic_clone(void) const override;
+    void dynamic_throw(void) const override;
 };
 
 struct lookup_error : exception
 {
     lookup_error(const std::string& what);
-    virtual unsigned code(void) const;
-    virtual lookup_error* dynamic_clone(void) const;
-    virtual void dynamic_throw(void) const;
+    unsigned code(void) const override;
+    lookup_error* dynamic_clone(void) const override;
+    void dynamic_throw(void) const override;
 };
 
 struct index_error : lookup_error
 {
     index_error(const std::string& what);
-    virtual unsigned code(void) const;
-    virtual index_error* dynamic_clone(void) const;
-    virtual void dynamic_throw(void) const;
+    unsigned code(void) const override;
+    index_error* dynamic_clone(void) const override;
+    void dynamic_throw(void) const override;
 };
 
 struct key_error : lookup_error
 {
     key_error(const std::string& what);
-    virtual unsigned code(void) const;
-    virtual key_error* dynamic_clone(void) const;
-    virtual void dynamic_throw(void) const;
+    unsigned code(void) const override;
+    key_error* dynamic_clone(void) const override;
+    void dynamic_throw(void) const override;
 };
 
 struct type_error : exception
 {
     type_error(const std::string& what);
-    virtual unsigned code(void) const;
-    virtual type_error* dynamic_clone(void) const;
-    virtual void dynamic_throw(void) const;
+    unsigned code(void) const override;
+    type_error* dynamic_clone(void) const override;
+    void dynamic_throw(void) const override;
 };
 
 struct value_error : exception
 {
     value_error(const std::string& what);
-    virtual unsigned code(void) const;
-    virtual value_error* dynamic_clone(void) const;
-    virtual void dynamic_throw(void) const;
+    unsigned code(void) const override;
+    value_error* dynamic_clone(void) const override;
+    void dynamic_throw(void) const override;
 };
 
 struct runtime_error : exception
 {
     runtime_error(const std::string& what);
-    virtual unsigned code(void) const;
-    virtual runtime_error* dynamic_clone(void) const;
-    virtual void dynamic_throw(void) const;
+    unsigned code(void) const override;
+    runtime_error* dynamic_clone(void) const override;
+    void dynamic_throw(void) const override;
 };
 
 struct not_implemented_error : runtime_error
 {
     not_implemented_error(const std::string& what);
-    virtual unsigned code(void) const;
-    virtual not_implemented_error* dynamic_clone(void) const;
-    virtual void dynamic_throw(void) const;
+    unsigned code(void) const override;
+    not_implemented_error* dynamic_clone(void) const override;
+    void dynamic_throw(void) const override;
 };
 
 struct environment_error : exception
 {
     environment_error(const std::string& what);
-    virtual unsigned code(void) const;
-    virtual environment_error* dynamic_clone(void) const;
-    virtual void dynamic_throw(void) const;
+    unsigned code(void) const override;
+    environment_error* dynamic_clone(void) const override;
+    void dynamic_throw(void) const override;
 };
 
 struct io_error : environment_error
 {
     io_error(const std::string& what);
-    virtual unsigned code(void) const;
-    virtual io_error* dynamic_clone(void) const;
-    virtual void dynamic_throw(void) const;
+    unsigned code(void) const override;
+    io_error* dynamic_clone(void) const override;
+    void dynamic_throw(void) const override;
 };
 
 struct os_error : environment_error
 {
     os_error(const std::string& what);
-    virtual unsigned code(void) const;
-    virtual os_error* dynamic_clone(void) const;
-    virtual void dynamic_throw(void) const;
+    unsigned code(void) const override;
+    os_error* dynamic_clone(void) const override;
+    void dynamic_throw(void) const override;
 };
 
 struct system_error : exception
 {
     system_error(const std::string& what);
-    virtual unsigned code(void) const;
-    virtual system_error* dynamic_clone(void) const;
-    virtual void dynamic_throw(void) const;
+    unsigned code(void) const override;
+    system_error* dynamic_clone(void) const override;
+    void dynamic_throw(void) const override;
 };
 
 struct syntax_error : exception
 {
     syntax_error(const std::string& what);
-    virtual unsigned code(void) const;
-    virtual syntax_error* dynamic_clone(void) const;
-    virtual void dynamic_throw(void) const;
+    unsigned code(void) const override;
+    syntax_error* dynamic_clone(void) const override;
+    void dynamic_throw(void) const override;
 };
 
 /*!

@@ -64,26 +64,65 @@ public:
             }
         }
     }
-    ~dummy_lvbitx() {}
+    ~dummy_lvbitx() override {}
 
-    virtual const char* get_bitfile_path() { return _fpga_lvbitx_path.c_str(); }
-    virtual const char* get_signature() { return _signature.c_str(); }
-    virtual const char* get_bitstream_checksum() { return _bitstream_checksum.c_str(); }
+    const char* get_bitfile_path() override
+    {
+        return _fpga_lvbitx_path.c_str();
+    }
+    const char* get_signature() override
+    {
+        return _signature.c_str();
+    }
+    const char* get_bitstream_checksum() override
+    {
+        return _bitstream_checksum.c_str();
+    }
 
-    virtual size_t get_input_fifo_count() { return 0; }
-    virtual const char** get_input_fifo_names() { return NULL; }
+    size_t get_input_fifo_count() override
+    {
+        return 0;
+    }
+    const char** get_input_fifo_names() override
+    {
+        return NULL;
+    }
 
-    virtual size_t get_output_fifo_count() { return 0; }
-    virtual const char** get_output_fifo_names() { return NULL; }
+    size_t get_output_fifo_count() override
+    {
+        return 0;
+    }
+    const char** get_output_fifo_names() override
+    {
+        return NULL;
+    }
 
-    virtual size_t get_control_count() { return 0; }
-    virtual const char** get_control_names() { return NULL; }
+    size_t get_control_count() override
+    {
+        return 0;
+    }
+    const char** get_control_names() override
+    {
+        return NULL;
+    }
 
-    virtual size_t get_indicator_count() { return 0; }
-    virtual const char** get_indicator_names() { return NULL; }
+    size_t get_indicator_count() override
+    {
+        return 0;
+    }
+    const char** get_indicator_names() override
+    {
+        return NULL;
+    }
 
-    virtual void init_register_info(nirio_register_info_vtr& vtr) { vtr.clear(); }
-    virtual void init_fifo_info(nirio_fifo_info_vtr& vtr) { vtr.clear(); }
+    void init_register_info(nirio_register_info_vtr& vtr) override
+    {
+        vtr.clear();
+    }
+    void init_fifo_info(nirio_fifo_info_vtr& vtr) override
+    {
+        vtr.clear();
+    }
 
 private:
     std::string _fpga_lvbitx_path;
@@ -124,8 +163,7 @@ int main(int argc, char *argv[])
     std::string resource_name = boost::str(boost::format("RIO%u") % interface_num);
 
     //Download LVBITX image
-    if (fpga_lvbitx_path != "")
-    {
+    if (!fpga_lvbitx_path.empty()) {
         printf("Downloading image %s to FPGA as %s...", fpga_lvbitx_path.c_str(), resource_name.c_str());
         fflush(stdout);
         uhd::niusrprio::niusrprio_session fpga_session(resource_name, rpc_port);
@@ -133,7 +171,7 @@ int main(int argc, char *argv[])
         nirio_status_chain(fpga_session.open(lvbitx, true), status);
         //Download BIN to flash or erase
         if (flash_path != "erase") {
-            if (flash_path != "") {
+            if (!flash_path.empty()) {
                 printf("Writing FPGA image %s to flash...", flash_path.c_str());
                 fflush(stdout);
                 nirio_status_chain(fpga_session.download_bitstream_to_flash(flash_path), status);
@@ -160,7 +198,7 @@ int main(int argc, char *argv[])
 
     niriok_proxy::sptr dev_proxy = niriok_proxy::make_and_open(interface_path);
 
-    if (poke_tokens_str != ""){
+    if (!poke_tokens_str.empty()) {
         std::stringstream ss;
         std::vector<std::string> poke_tokens;
         boost::split(poke_tokens, poke_tokens_str, boost::is_any_of(":"));
@@ -180,7 +218,7 @@ int main(int argc, char *argv[])
         printf("[POKE] %s:0x%x <= 0x%x (%u)\n", poke_tokens[0]=="c"?"Chinch":(poke_tokens[0]=="z"?"ZPU":"FPGA"), poke_addr, poke_data, poke_data);
     }
 
-    if (peek_tokens_str != ""){
+    if (!peek_tokens_str.empty()) {
         std::stringstream ss;
         std::vector<std::string> peek_tokens;
         boost::split(peek_tokens, peek_tokens_str, boost::is_any_of(":"));

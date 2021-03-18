@@ -77,7 +77,7 @@ public:
         this->enable_test_clock(enb_test_clk);
     }
 
-    ~usrp2_clock_ctrl_impl(void)
+    ~usrp2_clock_ctrl_impl(void) override
     {
         UHD_SAFE_CALL(
             // power down clock outputs
@@ -89,7 +89,7 @@ public:
             this->enable_test_clock(false);)
     }
 
-    void enable_mimo_clock_out(bool enb)
+    void enable_mimo_clock_out(bool enb) override
     {
         // calculate the low and high dividers
         size_t divider = size_t(this->get_master_clock_rate() / 10e6);
@@ -145,7 +145,7 @@ public:
     }
 
     // uses output clock 7 (cmos)
-    void enable_rx_dboard_clock(bool enb)
+    void enable_rx_dboard_clock(bool enb) override
     {
         switch (_iface->get_rev()) {
             case usrp2_iface::USRP_N200_R4:
@@ -170,7 +170,7 @@ public:
         }
     }
 
-    void set_rate_rx_dboard_clock(double rate)
+    void set_rate_rx_dboard_clock(double rate) override
     {
         assert_has(get_rates_rx_dboard_clock(), rate, "rx dboard clock rate");
         size_t divider = size_t(get_master_clock_rate() / rate);
@@ -188,7 +188,7 @@ public:
         this->update_regs();
     }
 
-    std::vector<double> get_rates_rx_dboard_clock(void)
+    std::vector<double> get_rates_rx_dboard_clock(void) override
     {
         std::vector<double> rates;
         for (size_t i = 1; i <= 16 + 16; i++)
@@ -198,7 +198,7 @@ public:
 
     // uses output clock 6 (cmos) on USRP2, output clock 5 (cmos) on N200/N210 r3,
     // and output clock 5 (lvds) on N200/N210 r4
-    void enable_tx_dboard_clock(bool enb)
+    void enable_tx_dboard_clock(bool enb) override
     {
         switch (_iface->get_rev()) {
             case usrp2_iface::USRP_N200_R4:
@@ -236,7 +236,7 @@ public:
         this->update_regs();
     }
 
-    void set_rate_tx_dboard_clock(double rate)
+    void set_rate_tx_dboard_clock(double rate) override
     {
         assert_has(get_rates_tx_dboard_clock(), rate, "tx dboard clock rate");
         size_t divider = size_t(get_master_clock_rate() / rate);
@@ -269,12 +269,12 @@ public:
         this->update_regs();
     }
 
-    std::vector<double> get_rates_tx_dboard_clock(void)
+    std::vector<double> get_rates_tx_dboard_clock(void) override
     {
         return get_rates_rx_dboard_clock(); // same master clock, same dividers...
     }
 
-    void enable_test_clock(bool enb)
+    void enable_test_clock(bool enb) override
     {
         _ad9510_regs.power_down_lvpecl_out0 =
             enb ? ad9510_regs_t::POWER_DOWN_LVPECL_OUT0_NORMAL
@@ -293,7 +293,7 @@ public:
      * If we are to use an external reference, enable the charge pump.
      * \param enb true to enable the CP
      */
-    void enable_external_ref(bool enb)
+    void enable_external_ref(bool enb) override
     {
         _ad9510_regs.charge_pump_mode = (enb) ? ad9510_regs_t::CHARGE_PUMP_MODE_NORMAL
                                               : ad9510_regs_t::CHARGE_PUMP_MODE_3STATE;
@@ -303,12 +303,12 @@ public:
         this->update_regs();
     }
 
-    double get_master_clock_rate(void)
+    double get_master_clock_rate(void) override
     {
         return 100e6;
     }
 
-    void set_mimo_clock_delay(double delay)
+    void set_mimo_clock_delay(double delay) override
     {
         // delay_val is a 5-bit value (0-31) for fine control
         // the equations below determine delay for a given ramp current, # of caps and

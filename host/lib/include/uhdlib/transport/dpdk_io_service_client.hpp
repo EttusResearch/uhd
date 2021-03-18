@@ -95,7 +95,7 @@ public:
         _waiter->complete = true;
     }
 
-    ~dpdk_send_io()
+    ~dpdk_send_io() override
     {
         UHD_LOG_TRACE("DPDK::SEND_IO", "~dpdk_send_io() " << _buffer_queue->name);
         // Deregister with I/O service
@@ -110,7 +110,7 @@ public:
         wait_req_put(_waiter);
     }
 
-    bool wait_for_dest_ready(size_t /*num_bytes*/, int32_t /*timeout_ms*/)
+    bool wait_for_dest_ready(size_t /*num_bytes*/, int32_t /*timeout_ms*/) override
     {
         // For this I/O service, the destination is the queue to the offload
         // thread. The queue is always able to accomodate new packets since it
@@ -118,7 +118,7 @@ public:
         return true;
     }
 
-    frame_buff::uptr get_send_buff(int32_t timeout_ms)
+    frame_buff::uptr get_send_buff(int32_t timeout_ms) override
     {
         frame_buff* buff_ptr;
         if (rte_ring_dequeue(_buffer_queue, (void**)&buff_ptr)) {
@@ -150,7 +150,7 @@ public:
         return frame_buff::uptr(buff_ptr);
     }
 
-    void release_send_buff(frame_buff::uptr buff)
+    void release_send_buff(frame_buff::uptr buff) override
     {
         auto buff_ptr = (dpdk::dpdk_frame_buff*)buff.release();
         assert(buff_ptr);
@@ -215,7 +215,7 @@ public:
         _waiter->complete = true;
     }
 
-    ~dpdk_recv_io()
+    ~dpdk_recv_io() override
     {
         // Deregister with I/O service
         UHD_LOG_TRACE("DPDK::RECV_IO", "~dpdk_recv_io() " << _recv_queue->name);
@@ -230,7 +230,7 @@ public:
         wait_req_put(_waiter);
     }
 
-    frame_buff::uptr get_recv_buff(int32_t timeout_ms)
+    frame_buff::uptr get_recv_buff(int32_t timeout_ms) override
     {
         frame_buff* buff_ptr;
         if (rte_ring_dequeue(_recv_queue, (void**)&buff_ptr)) {
@@ -262,7 +262,7 @@ public:
         return frame_buff::uptr(buff_ptr);
     }
 
-    void release_recv_buff(frame_buff::uptr buff)
+    void release_recv_buff(frame_buff::uptr buff) override
     {
         frame_buff* buff_ptr = buff.release();
         int status           = rte_ring_enqueue(_release_queue, buff_ptr);

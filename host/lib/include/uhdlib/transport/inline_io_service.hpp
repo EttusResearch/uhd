@@ -31,7 +31,7 @@ public:
         return sptr(new inline_io_service());
     }
 
-    virtual ~inline_io_service();
+    ~inline_io_service() override;
 
     void attach_recv_link(recv_link_if::sptr link) override;
     void attach_send_link(send_link_if::sptr link) override;

@@ -91,12 +91,12 @@ public:
         this->release(); // makes buffer available via get_new
     }
 
-    ~udp_zero_copy_asio_mrb(void)
+    ~udp_zero_copy_asio_mrb(void) override
     {
         WSACloseEvent(_overlapped.hEvent);
     }
 
-    void release(void)
+    void release(void) override
     {
         _wsa_buff.len = _frame_size;
         _flags        = 0;
@@ -143,12 +143,12 @@ public:
         WSASetEvent(_overlapped.hEvent); // makes buffer available via get_new
     }
 
-    ~udp_zero_copy_asio_msb(void)
+    ~udp_zero_copy_asio_msb(void) override
     {
         WSACloseEvent(_overlapped.hEvent);
     }
 
-    void release(void)
+    void release(void) override
     {
         _wsa_buff.len = size();
         WSASend(_sock_fd, &_wsa_buff, 1, NULL, 0, &_overlapped, NULL);
@@ -284,7 +284,7 @@ public:
         }
     }
 
-    ~udp_zero_copy_wsa_impl(void)
+    ~udp_zero_copy_wsa_impl(void) override
     {
         closesocket(_sock_fd);
     }
@@ -293,18 +293,18 @@ public:
      * Receive implementation:
      * Block on the managed buffer's get call and advance the index.
      ******************************************************************/
-    managed_recv_buffer::sptr get_recv_buff(double timeout)
+    managed_recv_buffer::sptr get_recv_buff(double timeout) override
     {
         if (_next_recv_buff_index == _num_recv_frames)
             _next_recv_buff_index = 0;
         return _mrb_pool[_next_recv_buff_index]->get_new(timeout, _next_recv_buff_index);
     }
 
-    size_t get_num_recv_frames(void) const
+    size_t get_num_recv_frames(void) const override
     {
         return _num_recv_frames;
     }
-    size_t get_recv_frame_size(void) const
+    size_t get_recv_frame_size(void) const override
     {
         return _recv_frame_size;
     }
@@ -313,23 +313,23 @@ public:
      * Send implementation:
      * Block on the managed buffer's get call and advance the index.
      ******************************************************************/
-    managed_send_buffer::sptr get_send_buff(double timeout)
+    managed_send_buffer::sptr get_send_buff(double timeout) override
     {
         if (_next_send_buff_index == _num_send_frames)
             _next_send_buff_index = 0;
         return _msb_pool[_next_send_buff_index]->get_new(timeout, _next_send_buff_index);
     }
 
-    size_t get_num_send_frames(void) const
+    size_t get_num_send_frames(void) const override
     {
         return _num_send_frames;
     }
-    size_t get_send_frame_size(void) const
+    size_t get_send_frame_size(void) const override
     {
         return _send_frame_size;
     }
 
-    uint16_t get_local_port(void) const
+    uint16_t get_local_port(void) const override
     {
         struct sockaddr_in addr_info;
         int addr_len        = sizeof(addr_info);
@@ -340,7 +340,7 @@ public:
         return local_port;
     }
 
-    std::string get_local_addr(void) const
+    std::string get_local_addr(void) const override
     {
         // Behold the beauty of winsock
         struct sockaddr_in addr_info;

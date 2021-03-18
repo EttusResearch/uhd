@@ -45,7 +45,7 @@ public:
     dpdk_adapter_info(port_id_t port) : _port(port) {}
     ~dpdk_adapter_info() {}
 
-    std::string to_string()
+    std::string to_string() override
     {
         return std::string("DPDK:") + std::to_string(_port);
     }

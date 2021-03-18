@@ -560,7 +560,7 @@ public:
             .set(0);
     }
 
-    virtual ~ubx_xcvr(void)
+    ~ubx_xcvr(void) override
     {
         UHD_SAFE_CALL(
             // Shutdown synthesizers

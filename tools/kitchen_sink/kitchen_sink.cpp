@@ -1016,7 +1016,7 @@ std::vector<size_t> get_channels(const std::string& channel_list, size_t max = -
     std::vector<std::string> channel_strings;
     std::vector<size_t> channel_nums;
 
-    if (channel_list.size() > 0)
+    if (!channel_list.empty())
         boost::split(channel_strings, channel_list, boost::is_any_of("\"',"));
 
     for (size_t ch = 0; ch < channel_strings.size(); ch++)
@@ -1246,15 +1246,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::vector<size_t> rx_channel_nums = get_channels((/*rx_channel_list.size() ? */rx_channel_list/* : channel_list*/), usrp->get_rx_num_channels());
         std::vector<size_t> tx_channel_nums = get_channels((/*tx_channel_list.size() ? */tx_channel_list/* : channel_list*/), usrp->get_tx_num_channels());
 
-        if ((rx_channel_nums.size() == 0) && (tx_channel_nums.size() == 0))
-        {
+        if ((rx_channel_nums.empty()) && (tx_channel_nums.empty())) {
             std::cout << HEADER_ERROR "Need at least one RX or one TX channel to run" << std::endl;
             return ~0;
         }
 
         bool rx_filename_has_format = false;
-        if (rx_channel_nums.size() > 0)
-        {
+        if (!rx_channel_nums.empty()) {
             std::string str0;
             try
             {
@@ -1284,13 +1282,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
         if ((tx_rx_sync) || (tx_follows_rx))
         {
-            if (tx_channel_nums.size() == 0)
-            {
+            if (tx_channel_nums.empty()) {
                 std::cout << HEADER_ERROR "Cannot sync/follow TX to RX without any TX channels" << std::endl;
                 return ~0;
             }
-            if (rx_channel_nums.size() == 0)
-            {
+            if (rx_channel_nums.empty()) {
                 std::cout << HEADER_ERROR "Cannot sync/follow TX to RX without any RX channels" << std::endl;
                 return ~0;
             }
@@ -1351,8 +1347,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             }
         }
 
-        if ((rx_channel_nums.size() > 0) || (still_set_rates))
-        {
+        if ((!rx_channel_nums.empty()) || (still_set_rates)) {
             if (rx_subdev.empty() == false)
             {
                 usrp->set_rx_subdev_spec(rx_subdev);
@@ -1386,8 +1381,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             }
         }
 
-        if ((tx_channel_nums.size() > 0) || (still_set_rates))
-        {
+        if ((!tx_channel_nums.empty()) || (still_set_rates)) {
             if (tx_subdev.empty() == false)
             {
                 usrp->set_tx_subdev_spec(tx_subdev);
@@ -1440,8 +1434,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             TX_PARAMS tx_params;
             RX_PARAMS rx_params;
 
-            if (rx_channel_nums.size() > 0)
-            {
+            if (!rx_channel_nums.empty()) {
                 //create a receive streamer
                 size_t bytes_per_rx_sample = uhd::convert::get_bytes_per_item(rx_cpu);
                 std::cout << boost::format(HEADER_RX"CPU bytes per RX sample: %d for '%s'") % bytes_per_rx_sample % rx_cpu << std::endl;
@@ -1562,7 +1555,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
                     rx_params));
             }
 
-            if (tx_channel_nums.size() > 0) {
+            if (!tx_channel_nums.empty()) {
                 //create a transmit streamer
                 size_t bytes_per_tx_sample = uhd::convert::get_bytes_per_item(tx_cpu);
                 std::cout << boost::format(HEADER_TX"CPU bytes per TX sample: %d for '%s'") % bytes_per_tx_sample % tx_cpu << std::endl;
@@ -1673,9 +1666,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
             thread_group.create_thread(boost::bind(&check_thread, usrp));
 
-            if (tx_channel_nums.size() > 0)
+            if (!tx_channel_nums.empty())
                 tx_thread_begin.wait(l_tx);
-            if (rx_channel_nums.size() > 0)
+            if (!rx_channel_nums.empty())
                 rx_thread_begin.wait(l_rx);
 
             std::signal(SIGINT, &sig_int_handler);
@@ -1693,12 +1686,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         boost::mutex::scoped_lock l_stop(stop_mutex);
         if (stop_signal_called == false)
         {
-            if ((rx_sample_limit > 0) && (tx_channel_nums.size() == 0))
-            {
+            if ((rx_sample_limit > 0) && (tx_channel_nums.empty())) {
                 rx_thread_complete.wait(l_stop);
-            }
-            else if (interactive)
-            {
+            } else if (interactive) {
                 if (duration > 0)
                 {
                     // FIXME: Stop time
@@ -1743,9 +1733,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
                     abort_event.timed_wait(l_stop, boost::posix_time::milliseconds(interactive_sleep));
                 } while (stop_signal_called == false);
-            }
-            else if (duration > 0)
-            {
+            } else if (duration > 0) {
                 //sleep for the required duration
                 std::cout << boost::format(HEADER "Main thread sleeping for: %f seconds (host wall clock)") % duration << std::endl;
                 std::cout << HEADER "Waiting for CTRL+C to finish early..." << std::endl;
@@ -1754,9 +1742,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
                 abort_event.timed_wait(l_stop, boost::posix_time::seconds(secs) + boost::posix_time::microseconds(usecs));
                 //boost::this_thread::sleep(boost::posix_time::seconds(secs) + boost::posix_time::microseconds(usecs));
-            }
-            else
-            {
+            } else {
                 std::cout << HEADER "Waiting for CTRL+C..." << std::endl;
                 abort_event.wait(l_stop);
             }
@@ -1768,7 +1754,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
         // FIXME: Timed wait & re-enable interruptions
 
-        if (rx_channel_nums.size() > 0) {
+        if (!rx_channel_nums.empty()) {
             std::cout << HEADER "Waiting for RX thread..." << std::endl;
             boost::mutex::scoped_lock l(begin_rx_mutex);
             while (rx_thread_finished == false)
@@ -1796,7 +1782,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             }
         }
 
-        if (tx_channel_nums.size() > 0) {
+        if (!tx_channel_nums.empty()) {
             std::cout << HEADER "Waiting for TX thread..." << std::endl;
             boost::mutex::scoped_lock l(begin_tx_mutex);
             while (tx_thread_finished == false)

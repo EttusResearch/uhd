@@ -26,7 +26,7 @@ public:
         const transport::link_type_t /*link_type*/,
         const io_service_args_t& /*default_args*/,
         const uhd::device_addr_t& /*stream_args*/,
-        const std::string& /*streamer_id*/)
+        const std::string& /*streamer_id*/) override
     {
         auto io_srv = _get_io_service(recv_link, send_link);
         io_srv->attach_recv_link(recv_link);
@@ -34,8 +34,8 @@ public:
         return io_srv;
     }
 
-    void disconnect_links(
-        transport::recv_link_if::sptr recv_link, transport::send_link_if::sptr send_link)
+    void disconnect_links(transport::recv_link_if::sptr recv_link,
+        transport::send_link_if::sptr send_link) override
     {
         auto io_srv = _get_io_service(recv_link, send_link);
         io_srv->detach_recv_link(recv_link);

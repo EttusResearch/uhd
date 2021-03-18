@@ -138,7 +138,7 @@ public:
     /*!
      * Get the number of frame buffers that can be queued by this link.
      */
-    size_t get_num_send_frames() const
+    size_t get_num_send_frames() const override
     {
         return _num_send_frames;
     }
@@ -146,7 +146,7 @@ public:
     /*!
      * Get the maximum capacity of a frame buffer.
      */
-    size_t get_send_frame_size() const
+    size_t get_send_frame_size() const override
     {
         return _send_frame_size;
     }
@@ -154,7 +154,7 @@ public:
     /*!
      * Get the physical adapter ID used for this link
      */
-    inline adapter_id_t get_send_adapter_id() const
+    inline adapter_id_t get_send_adapter_id() const override
     {
         return _adapter_id;
     }
@@ -162,7 +162,7 @@ public:
     /*!
      * Get the number of frame buffers that can be queued by this link.
      */
-    size_t get_num_recv_frames() const
+    size_t get_num_recv_frames() const override
     {
         return _num_recv_frames;
     }
@@ -170,7 +170,7 @@ public:
     /*!
      * Get the maximum capacity of a frame buffer.
      */
-    size_t get_recv_frame_size() const
+    size_t get_recv_frame_size() const override
     {
         return _recv_frame_size;
     }
@@ -178,7 +178,7 @@ public:
     /*!
      * Get the physical adapter ID used for this link
      */
-    inline adapter_id_t get_recv_adapter_id() const
+    inline adapter_id_t get_recv_adapter_id() const override
     {
         return _adapter_id;
     }
@@ -198,14 +198,14 @@ public:
      *
      * \return a frame buffer, or null uptr if timeout occurs
      */
-    frame_buff::uptr get_recv_buff(int32_t /*timeout_ms*/);
+    frame_buff::uptr get_recv_buff(int32_t /*timeout_ms*/) override;
 
     /*!
      * Release a frame buffer, allowing the link driver to reuse it.
      *
      * \param buffer frame buffer to release for reuse by the link
      */
-    void release_recv_buff(frame_buff::uptr buff);
+    void release_recv_buff(frame_buff::uptr buff) override;
 
     /*!
      * Get an empty frame buffer in which to write packet contents.
@@ -215,7 +215,7 @@ public:
                          until successful, and a value of 0 specifies no wait.
      * \return a frame buffer, or null uptr if timeout occurs
      */
-    frame_buff::uptr get_send_buff(int32_t /*timeout_ms*/);
+    frame_buff::uptr get_send_buff(int32_t /*timeout_ms*/) override;
 
     /*!
      * Send a packet with the contents of the frame buffer and release the
@@ -230,7 +230,7 @@ public:
      *
      * Throws an exception if an I/O error occurs while sending
      */
-    void release_send_buff(frame_buff::uptr buff);
+    void release_send_buff(frame_buff::uptr buff) override;
 
 private:
     //! A reference to the DPDK context
