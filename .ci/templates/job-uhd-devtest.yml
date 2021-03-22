@@ -1,0 +1,91 @@
+parameters:
+- name: suiteName
+  type: string
+- name: testOS
+  type: string
+  values:
+    - ubuntu2004
+- name: knownHost
+  type: string
+- name: toolset
+  type: string
+  values:
+    - make
+- name: uhdSrcDir
+  type: string
+- name: redisHost
+  type: string
+- name: dutMatrix
+  type: object
+
+jobs:
+- job: uhd_devtest_${{ parameters.suiteName }}_${{ parameters.testOS }}
+  displayName:  uhd devtest ${{ parameters.suiteName }} ${{ parameters.testOS }}
+  pool:
+    name: de-dre-lab
+    demands:
+    - suiteName -equals ${{ parameters.suiteName }}
+    - testOS -equals ${{ parameters.testOS }}
+  variables:
+  - group: sdr-pipeline-vars
+  strategy:
+    matrix: ${{ parameters.dutMatrix }}
+  workspace:
+    clean: outputs
+  steps:
+  - checkout: self
+    clean: true
+  - task: InstallSSHKey@0
+    displayName: 'Install Ettus SSH key'
+    inputs:
+      knownHostsEntry: '${{ parameters.knownHost }}'
+      sshPublicKey: '$(ettus_ssh_pubkey)'
+      sshKeySecureFile: 'id_rsa.ettus'
+  - download: current
+    artifact: ${{ parameters.testOS }}-${{ parameters.toolset }}
+    displayName: Download pipeline artifact ${{ parameters.testOS }}-${{ parameters.toolset }}
+  - task: ExtractFiles@1
+    inputs:
+      archiveFilePatterns: $(Pipeline.Workspace)/${{ parameters.testOS }}-${{ parameters.toolset }}/${{ parameters.testOS }}-${{ parameters.toolset }}.tar.gz
+      destinationFolder: $(Build.BinariesDirectory)
+      cleanDestinationFolder: true
+  - script: |
+      cd $(Build.BinariesDirectory)/uhddev/build
+      mkdir -p fpga_images
+      rm -rf fpga_images/*
+      python3 utils/uhd_images_downloader.py -t $(devModel) -i fpga_images \
+        -b $(sdr-fileserver)
+    displayName: Download FPGA Images
+  - script: |
+      mkdir -p $(Common.TestResultsDirectory)/devtest
+      cd $(Common.TestResultsDirectory)/devtest
+      export PATH=$(Build.BinariesDirectory)/uhddev/build/utils:$(Build.BinariesDirectory)/uhddev/build/examples:$PATH
+      export LD_LIBRARY_PATH=$(Build.BinariesDirectory)/uhddev/build/lib:$LD_LIBRARY_PATH
+      python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
+        --jtag_x3xx $(jtagServer),$(jtagSerial),$(Build.BinariesDirectory)/uhddev/build/fpga_images/usrp_$(devModel)_fpga_$(devFpga).bit \
+        ${{ parameters.redisHost }} $(devName) \
+        "$(Build.BinariesDirectory)/uhddev/build/utils/uhd_usrp_probe --args addr=$(devAddr)" \
+        "python3 ${{ parameters.uhdSrcDir }}/host/tests/devtest/run_testsuite.py \
+          --src-dir ${{ parameters.uhdSrcDir }}/host/tests/devtest \
+          --devtest-pattern $(devtestPattern) --args addr=$(devAddr),type=$(devType) \
+          --build-type Release --build-dir $(Build.BinariesDirectory)/uhddev/build \
+          --python-interp python3 --xml"
+    continueOnError: true
+    condition: and(succeeded(), eq(variables.devType, 'x300'), eq(variables.devBus, 'ip'))
+    displayName: Run devtest on $(devName) $(devFpga)
+  - script: |
+      cd $(Common.TestResultsDirectory)/devtest
+      python3 ${{ parameters.uhdSrcDir }}/.ci/utils/format_devtest_junitxml.py \
+        $(Common.TestResultsDirectory)/devtest \
+        $(Common.TestResultsDirectory)/devtest/devtestresults.xml
+    continueOnError: true
+    displayName: Format devtest xml
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: '$(Common.TestResultsDirectory)/devtest/devtestresults.xml'
+      testRunTitle: $(devName) $(devFpga) devtest
+      buildConfiguration: 'Release'
+      mergeTestResults: true
+      failTaskOnFailedTests: true
+    displayName: Upload devtest results

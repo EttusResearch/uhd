@@ -25,16 +25,27 @@ resources:
   - pipeline: uhd_build_docker_container
     source: 'uhddev Build Docker Containers'
     branch: master
+stages:
+- stage: build_uhd_stage
+  displayName: Build UHD
+  jobs:
+  - template: templates/job-get-latest-uhd-docker.yml
 
-jobs:
-- template: templates/job-get-latest-uhd-docker.yml
+  - template: templates/job-uhd-build-src.yml
+    parameters:
+      toolset: make
+  - template: templates/job-uhd-build-src.yml
+    parameters:
+      toolset: ninja
+  - template: templates/job-uhd-build-src.yml
+    parameters:
+      toolset: msbuild
 
-- template: templates/job-uhd-build-src.yml
-  parameters:
-    toolset: make
-- template: templates/job-uhd-build-src.yml
-  parameters:
-    toolset: ninja
-- template: templates/job-uhd-build-src.yml
-  parameters:
-    toolset: msbuild
+- stage: test_uhd_stage
+  displayName: Test UHD
+  dependsOn: build_uhd_stage
+  jobs:
+  - template: templates/job-uhd-devtest-rhombus.yml
+    parameters:
+      testOS: ubuntu2004
+      uhdSrcDir: $(Build.SourcesDirectory)

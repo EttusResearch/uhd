@@ -65,11 +65,15 @@ jobs:
         vsArch: $(vsArch)
         vsYear: $(vsYear)
 
-  - task: CopyFiles@2
+  - task: ArchiveFiles@2
     inputs:
-      sourceFolder: $(Build.BinariesDirectory)
-      targetFolder: $(Build.ArtifactStagingDirectory)
-    displayName: Copy build files to artifact folder
+      rootFolderOrFile: $(Build.BinariesDirectory)
+      includeRootFolder: false
+      archiveType: tar
+      tarCompression: gz
+      archiveFile: $(Build.ArtifactStagingDirectory)/$(dockerOSName)-${{ parameters.toolset }}.tar.gz
+      replaceExistingArchive: true
+    displayName: Compress build files
 
   - task: CopyFiles@2
     inputs:
