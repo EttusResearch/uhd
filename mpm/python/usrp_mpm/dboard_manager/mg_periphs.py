@@ -133,6 +133,7 @@ class MgCPLD(object):
         self.regs = regs
         self.poke16 = self.regs.poke16
         self.peek16 = self.regs.peek16
+        self.reset()
         signature = self.peek16(self.REG_SIGNATURE)
         if signature != self.CPLD_SIGNATURE:
             self.log.error(
@@ -188,7 +189,7 @@ class MgCPLD(object):
         'rx'.
         """
         mask = (1<<4) if which.lower() == 'tx' else 1
-        return bool(self.peek16(self.REG_LO_STATUS & mask))
+        return bool(self.peek16(self.REG_LO_STATUS) & mask)
 
     def reset_mykonos(self, keep_in_reset=False):
         """
