@@ -34,8 +34,8 @@ endmacro(LIBUHD_PYTHON_GEN_SOURCE)
 
 macro(INCLUDE_SUBDIRECTORY subdir)
     #insert the current directories on the front of the list
-    list(INSERT _cmake_source_dirs 0 ${CMAKE_CURRENT_SOURCE_DIR})
-    list(INSERT _cmake_binary_dirs 0 ${CMAKE_CURRENT_BINARY_DIR})
+    list(INSERT _UHD_SOURCE_DIRs 0 ${CMAKE_CURRENT_SOURCE_DIR})
+    list(INSERT _UHD_BINARY_DIRs 0 ${CMAKE_CURRENT_BINARY_DIR})
 
     #set the current directories to the names of the subdirs
     set(CMAKE_CURRENT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${subdir})
@@ -46,12 +46,12 @@ macro(INCLUDE_SUBDIRECTORY subdir)
     include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt)
 
     #reset the value of the current directories
-    list(GET _cmake_source_dirs 0 CMAKE_CURRENT_SOURCE_DIR)
-    list(GET _cmake_binary_dirs 0 CMAKE_CURRENT_BINARY_DIR)
+    list(GET _UHD_SOURCE_DIRs 0 CMAKE_CURRENT_SOURCE_DIR)
+    list(GET _UHD_BINARY_DIRs 0 CMAKE_CURRENT_BINARY_DIR)
 
     #pop the subdir names of the front of the list
-    list(REMOVE_AT _cmake_source_dirs 0)
-    list(REMOVE_AT _cmake_binary_dirs 0)
+    list(REMOVE_AT _UHD_SOURCE_DIRs 0)
+    list(REMOVE_AT _UHD_BINARY_DIRs 0)
 endmacro(INCLUDE_SUBDIRECTORY)
 
 ########################################################################
@@ -148,7 +148,7 @@ if(MSVC)
         if(IS_ABSOLUTE "${CUSTOM_RC_FILE}")
             set(UHD_RC_IN "${CUSTOM_RC_FILE}")
         else()
-            set(UHD_RC_IN "${CMAKE_BINARY_DIR}/${CUSTOM_RC_FILE}")
+            set(UHD_RC_IN "${UHD_BINARY_DIR}/${CUSTOM_RC_FILE}")
         endif(IS_ABSOLUTE "${CUSTOM_RC_FILE}")
         message(STATUS "")
         message(STATUS "Using custom RC template: ${UHD_RC_IN}")

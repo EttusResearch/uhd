@@ -47,7 +47,7 @@ PROJECT_BRIEF          = "UHD and USRP Manual"
 # exceed 55 pixels and the maximum width should not exceed 200 pixels.
 # Doxygen will copy the logo to the output directory.
 
-PROJECT_LOGO           = @CMAKE_SOURCE_DIR@/docs/Ettus_Logo.png
+PROJECT_LOGO           = @UHD_SOURCE_DIR@/docs/Ettus_Logo.png
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute)
 # base path where the generated documentation will be put.
@@ -132,7 +132,7 @@ FULL_PATH_NAMES        = YES
 # relative paths, which will be relative from the directory where doxygen is
 # started.
 
-STRIP_FROM_PATH        = @CMAKE_SOURCE_DIR@ @DOXYGEN_STRIP_EXTRA@
+STRIP_FROM_PATH        = @UHD_SOURCE_DIR@ @DOXYGEN_STRIP_EXTRA@
 
 # The STRIP_FROM_INC_PATH tag can be used to strip a user-defined part of
 # the path mentioned in the documentation of a class, which tells
@@ -141,7 +141,7 @@ STRIP_FROM_PATH        = @CMAKE_SOURCE_DIR@ @DOXYGEN_STRIP_EXTRA@
 # definition is used. Otherwise one should specify the include paths that
 # are normally passed to the compiler using the -I flag.
 
-STRIP_FROM_INC_PATH    = @CMAKE_SOURCE_DIR@/include
+STRIP_FROM_INC_PATH    = @UHD_SOURCE_DIR@/include
 
 # If the SHORT_NAMES tag is set to YES, doxygen will generate much shorter
 # (but less readable) file names. This can be useful if your file system
@@ -686,9 +686,9 @@ RECURSIVE              = YES
 # Note that relative paths are relative to the directory from which doxygen is
 # run.
 
-EXCLUDE                = @CMAKE_SOURCE_DIR@/include/uhd/transport/nirio \
-                         @CMAKE_SOURCE_DIR@/include/uhd/transport/nirio_zero_copy.hpp @DOXYGEN_EXCLUDE_DIRS@ \
-                         @CMAKE_SOURCE_DIR@/lib/deps
+EXCLUDE                = @UHD_SOURCE_DIR@/include/uhd/transport/nirio \
+                         @UHD_SOURCE_DIR@/include/uhd/transport/nirio_zero_copy.hpp @DOXYGEN_EXCLUDE_DIRS@ \
+                         @UHD_SOURCE_DIR@/lib/deps
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
@@ -736,7 +736,7 @@ EXAMPLE_RECURSIVE      = NO
 # directories that contain image that are included in the documentation (see
 # the \image command).
 
-IMAGE_PATH             = @CMAKE_SOURCE_DIR@/docs/res
+IMAGE_PATH             = @UHD_SOURCE_DIR@/docs/res
 
 # The INPUT_FILTER tag can be used to specify a program that doxygen should
 # invoke to filter for each input file. Doxygen will invoke the filter program

@@ -20,13 +20,13 @@ function(UHD_ADD_TEST test_name)
         #directory itself.
         if(WIN32)
             set(UHD_TEST_LIBRARY_DIRS
-                "${CMAKE_BINARY_DIR}/lib/${CMAKE_BUILD_TYPE}"
+                "${UHD_BINARY_DIR}/lib/${CMAKE_BUILD_TYPE}"
                 "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}"
                 "${Boost_LIBRARY_DIRS}"
             )
         else()
             set(UHD_TEST_LIBRARY_DIRS
-                "${CMAKE_BINARY_DIR}/lib"
+                "${UHD_BINARY_DIR}/lib"
                 "${CMAKE_CURRENT_BINARY_DIR}"
             )
             if(NOT APPLE)
@@ -53,7 +53,7 @@ function(UHD_ADD_TEST test_name)
 
         #replace list separator with the path separator
         string(REPLACE ";" ":" libpath "${libpath}")
-        list(APPEND environs "PATH=\"${binpath}\"" "${LD_PATH_VAR}=\"${libpath}\"" "UHD_RFNOC_DIR=\"${CMAKE_SOURCE_DIR}/include/uhd/rfnoc\"")
+        list(APPEND environs "PATH=\"${binpath}\"" "${LD_PATH_VAR}=\"${libpath}\"" "UHD_RFNOC_DIR=\"${UHD_SOURCE_DIR}/include/uhd/rfnoc\"")
 
         #generate a bat file that sets the environment and runs the test
         if (CMAKE_CROSSCOMPILING)
@@ -85,7 +85,7 @@ function(UHD_ADD_TEST test_name)
 
         #replace list separator with the path separator (escaped)
         string(REPLACE ";" "\\;" libpath "${libpath}")
-        list(APPEND environs "PATH=${libpath}" "UHD_RFNOC_DIR=${CMAKE_SOURCE_DIR}/include/uhd/rfnoc")
+        list(APPEND environs "PATH=${libpath}" "UHD_RFNOC_DIR=${UHD_SOURCE_DIR}/include/uhd/rfnoc")
 
         #generate a bat file that sets the environment and runs the test
         set(bat_file ${CMAKE_CURRENT_BINARY_DIR}/${test_name}_test.bat)
