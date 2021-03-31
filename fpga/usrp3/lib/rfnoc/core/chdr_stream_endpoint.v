@@ -218,11 +218,15 @@ module chdr_stream_endpoint #(
   //   - [1]: Flush control path
   // * REG_OSTRM_CTRL_STATUS (Read-Write):
   //   Control and status register for the output stream
-  //   - [0]  : Configuration start (strobe)
-  //   - [1]  : Is this transport lossy?
-  //   - [3:2]: Payload SW buff (0=u64, 1=u32, 2=u16, 3=u8)
-  //   - [5:4]: Metadata SW buff (0=u64, 1=u32, 2=u16, 3=u8)
-  //   - [6]  : Swap endianness
+  //   - [0]   : Configuration start (strobe)
+  //   - [1]   : Is this transport lossy?
+  //   - [3:2] : Payload SW buff (0=u64, 1=u32, 2=u16, 3=u8)
+  //   - [5:4] : Metadata SW buff (0=u64, 1=u32, 2=u16, 3=u8)
+  //   - [6]   : Swap endianness
+  //   - [28:7]: <Unused>
+  //   - [29]  : Configuration is pending (read-only)
+  //   - [30]  : Configuration has failed (read-only)
+  //   - [31]  : Is flow-control enabled? (read-only)
   // * REG_OSTRM_DST_EPID (Write-Only):
   //   The endpoint ID of a downstream stream endpoint
   //   - [15:0]: Endpoint ID

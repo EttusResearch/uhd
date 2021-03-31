@@ -10,7 +10,7 @@
 //   a downstream endpoint module (chdr_stream_input). Once
 //   a stream is setup, the CHDR data on the axis_data port
 //   can be sent downstream with full flow control. Stream
-//   status messages are recieved from the downstream node
+//   status messages are received from the downstream node
 //   to update flow control state. This module has an external
 //   configuration bus to initiate stream creation.
 //
@@ -340,6 +340,9 @@ module chdr_stream_output #(
   reg [15:0]  strc_seq_num = 16'd0;
   reg [2:0]   cfg_delay = 3'd0;
 
+  reg cfg_fc_freq_bytes_nz;
+  reg cfg_fc_freq_pkts_nz;
+
   always @(posedge clk) begin
     if (rst) begin
       state <= ST_PASS_DATA;
@@ -348,7 +351,13 @@ module chdr_stream_output #(
       strc_seq_num <= 16'd0;
       cfg_pending <= 1'b0;
       cfg_failed <= 1'b0;
+      cfg_fc_freq_bytes_nz <= 1'bX;
+      cfg_fc_freq_pkts_nz <= 1'bX;
     end else begin
+      // Capture if the flow-control update frequency is 0 (never)
+      cfg_fc_freq_bytes_nz <= (cfg_fc_freq_bytes != 0);
+      cfg_fc_freq_pkts_nz  <= (cfg_fc_freq_pkts  != 0);
+
       case (state)
 
         // ST_PASS_DATA
@@ -431,9 +440,11 @@ module chdr_stream_output #(
             if (msg_o_tdata == CHDR_STRS_STATUS_OKAY) begin
               state <= ST_INIT_DLY;
               cfg_delay <= 3'd4;
-              fc_enabled <= 1'b1;
               data_seq_num <= 16'd0;
               strc_seq_num <= 16'd0;
+              // Only enable flow control if we're requesting periodic flow
+              // control updates.
+              fc_enabled <= cfg_fc_freq_bytes_nz || cfg_fc_freq_pkts_nz;
             end else begin
               state <= ST_PASS_DATA;
               cfg_failed <= 1'b1;
