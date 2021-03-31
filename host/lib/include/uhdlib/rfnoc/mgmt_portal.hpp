@@ -148,9 +148,13 @@ public:
     //
     // \param xport The host stream endpoint's CTRL transport (same EPID as RX stream)
     // \param epid The endpoint ID of the data source
+    // \param timeout The max time to wait on stream validation
+    // \param fc_enabled Enable flow control in the FPGA
     //
-    virtual stream_buff_params_t config_local_rx_stream_commit(
-        chdr_ctrl_xport& xport, const sep_id_t& epid, const double timeout = 0.2) = 0;
+    virtual stream_buff_params_t config_local_rx_stream_commit(chdr_ctrl_xport& xport,
+        const sep_id_t& epid,
+        const double timeout  = 0.2,
+        const bool fc_enabled = true) = 0;
 
     //! Configure a flow controlled transmit data stream from this SW mgmt portal to the
     //  endpoint with the specified ID.
@@ -177,6 +181,8 @@ public:
     // \param mdata_buff_fmt Datatype of SW buffer that holds the data metadata
     // \param fc_freq Flow control response frequency parameters
     // \param fc_freq Flow control headroom parameters
+    // \param reset Reset source and destination stream endpoint states
+    // \param timeout The max time to wait on stream validation
     //
     virtual stream_buff_params_t config_remote_stream(chdr_ctrl_xport& xport,
         const sep_id_t& dst_epid,

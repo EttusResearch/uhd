@@ -200,7 +200,9 @@ chdr_rx_data_xport::fc_params_t chdr_rx_data_xport::configure_sep(io_service::sp
     recv_io->release_recv_buff(std::move(buff));
 
     // Finally, let the management portal know the setup is complete
-    mgmt_portal.config_local_rx_stream_commit(*ctrl_xport, remote_epid);
+    const bool fc_enabled = (fc_freq.bytes != 0) || (fc_freq.packets != 0);
+    mgmt_portal.config_local_rx_stream_commit(
+        *ctrl_xport, remote_epid, 0.2 /*default timeout*/, fc_enabled);
 
     // The flow control frequency requested is contained in the strc
     UHD_LOG_TRACE("XPORT::RX_DATA_XPORT",

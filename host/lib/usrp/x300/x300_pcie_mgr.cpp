@@ -347,6 +347,9 @@ both_links_t pcie_manager::get_links(link_type_t link_type,
             + ", no such device associated with this motherboard!");
     }
 
+    const bool enable_fc = not link_args.has_key("enable_fc")
+                           || uhd::cast::from_str<bool>(link_args.get("enable_fc"));
+
     const uint32_t dma_channel_num = allocate_pcie_dma_chan(remote_epid, link_type);
     // Note: The nirio_link object's factory has a lot of code for sanity
     // checking the link params, and merging the link_args with the default
@@ -358,6 +361,11 @@ both_links_t pcie_manager::get_links(link_type_t link_type,
     auto link =
         nirio_link::make(_rio_fpga_interface, dma_channel_num, link_params, link_args, recv_buff_size, send_buff_size);
 
-    return std::make_tuple(
-        link, send_buff_size, link, recv_buff_size, false /*not lossy*/, false);
+    return std::make_tuple(link,
+        send_buff_size,
+        link,
+        recv_buff_size,
+        false /*not lossy*/,
+        false,
+        enable_fc);
 }

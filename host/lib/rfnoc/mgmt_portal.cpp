@@ -503,14 +503,16 @@ public:
             (boost::format("Initiated RX stream setup for EPID=%d") % epid));
     }
 
-    stream_buff_params_t config_local_rx_stream_commit(
-        chdr_ctrl_xport& xport, const sep_id_t& epid, const double timeout = 0.2) override
+    stream_buff_params_t config_local_rx_stream_commit(chdr_ctrl_xport& xport,
+        const sep_id_t& epid,
+        const double timeout  = 0.2,
+        const bool fc_enabled = true) override
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
 
         // Wait for stream configuration to finish on the HW side
         const node_addr_t& node_addr = _lookup_sep_node_addr(epid);
-        _validate_stream_setup(xport, node_addr, timeout);
+        _validate_stream_setup(xport, node_addr, timeout, fc_enabled);
 
         UHD_LOG_DEBUG("RFNOC::MGMT",
             (boost::format("Finished RX stream setup for EPID=%d") % epid));
@@ -574,6 +576,7 @@ public:
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
         auto my_epid = xport.get_epid();
+        const bool fc_enabled = (fc_freq.bytes != 0) || (fc_freq.packets != 0);
 
         // First setup a route between the two endpoints
         setup_remote_route(xport, dst_epid, src_epid);
@@ -638,7 +641,7 @@ public:
         }
 
         // Wait for stream configuration to finish on the HW side
-        _validate_stream_setup(xport, src_node_addr, timeout);
+        _validate_stream_setup(xport, src_node_addr, timeout, fc_enabled);
 
         UHD_LOG_DEBUG("RFNOC::MGMT",
             (boost::format("Setup a stream from EPID=%d to EPID=%d") % src_epid
@@ -931,8 +934,10 @@ private: // Functions
     }
 
     // Make sure that stream setup is complete and successful, else throw exception
-    void _validate_stream_setup(
-        chdr_ctrl_xport& xport, const node_addr_t& node_addr, const double timeout)
+    void _validate_stream_setup(chdr_ctrl_xport& xport,
+        const node_addr_t& node_addr,
+        const double timeout,
+        const bool fc_enabled)
     {
         // Get the status of the output stream
         uint32_t ostrm_status = 0;
@@ -954,7 +959,7 @@ private: // Functions
         if ((ostrm_status & STRM_STATUS_SETUP_ERR) != 0) {
             throw uhd::op_failed("config_stream: Setup failure");
         }
-        if ((ostrm_status & STRM_STATUS_FC_ENABLED) == 0) {
+        if (fc_enabled != bool(ostrm_status & STRM_STATUS_FC_ENABLED)) {
             throw uhd::op_failed("config_stream: Flow control negotiation failed");
         }
     }

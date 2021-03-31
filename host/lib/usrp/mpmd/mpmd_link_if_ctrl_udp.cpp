@@ -12,6 +12,7 @@
 #include <uhd/transport/udp_constants.hpp>
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
+#include <uhd/utils/cast.hpp>
 #include <uhdlib/rfnoc/rfnoc_common.hpp>
 #include <uhdlib/transport/udp_boost_asio_link.hpp>
 #include <uhdlib/transport/udp_common.hpp>
@@ -283,6 +284,9 @@ uhd::transport::both_links_t mpmd_link_if_ctrl_udp::get_link(const size_t link_i
     const std::string udp_port = _udp_info.at(ip_addr).udp_port;
 
     const size_t link_rate = get_link_rate(link_idx);
+    const bool enable_fc   = not link_args.has_key("enable_fc")
+                           || uhd::cast::from_str<bool>(link_args.get("enable_fc"));
+    const bool lossy_xport = enable_fc;
     const bool use_dpdk = _mb_args.has_key("use_dpdk");  // FIXME use constrained device args
     link_params_t default_link_params;
     default_link_params.num_send_frames = MPMD_ETH_NUM_FRAMES;
@@ -327,8 +331,9 @@ uhd::transport::both_links_t mpmd_link_if_ctrl_udp::get_link(const size_t link_i
             link_params.send_buff_size,
             link,
             link_params.recv_buff_size,
+            lossy_xport,
             true,
-            true);
+            enable_fc);
 #else
         UHD_LOG_WARNING("MPMD", "Cannot create DPDK transport, falling back to UDP");
 #endif
@@ -338,8 +343,13 @@ uhd::transport::both_links_t mpmd_link_if_ctrl_udp::get_link(const size_t link_i
         link_params,
         link_params.recv_buff_size,
         link_params.send_buff_size);
-    return std::make_tuple(
-        link, link_params.send_buff_size, link, link_params.recv_buff_size, true, false);
+    return std::make_tuple(link,
+        link_params.send_buff_size,
+        link,
+        link_params.recv_buff_size,
+        lossy_xport,
+        false,
+        enable_fc);
 }
 
 size_t mpmd_link_if_ctrl_udp::get_num_links() const

@@ -20,6 +20,7 @@
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/byteswap.hpp>
+#include <uhd/utils/cast.hpp>
 #include <uhdlib/rfnoc/device_id.hpp>
 #include <uhdlib/rfnoc/rfnoc_common.hpp>
 #include <uhdlib/transport/udp_boost_asio_link.hpp>
@@ -227,6 +228,10 @@ both_links_t eth_manager::get_links(link_type_t link_type,
     x300_eth_conn_t conn = eth_conns[local_device_id];
     zero_copy_xport_params default_buff_args;
 
+    const bool enable_fc = not link_args.has_key("enable_fc")
+                           || uhd::cast::from_str<bool>(link_args.get("enable_fc"));
+    const bool lossy_xport = enable_fc;
+
     const size_t send_mtu = get_mtu(uhd::TX_DIRECTION);
     const size_t recv_mtu = get_mtu(uhd::RX_DIRECTION);
 
@@ -278,8 +283,9 @@ both_links_t eth_manager::get_links(link_type_t link_type,
             link_params.send_buff_size,
             link,
             link_params.recv_buff_size,
+            lossy_xport,
             true,
-            true);
+            enable_fc);
 #else
         UHD_LOG_WARNING("X300", "Cannot create DPDK transport, falling back to UDP");
 #endif
@@ -289,8 +295,13 @@ both_links_t eth_manager::get_links(link_type_t link_type,
         link_params,
         link_params.recv_buff_size,
         link_params.send_buff_size);
-    return std::make_tuple(
-        link, link_params.send_buff_size, link, link_params.recv_buff_size, true, false);
+    return std::make_tuple(link,
+        link_params.send_buff_size,
+        link,
+        link_params.recv_buff_size,
+        lossy_xport,
+        false,
+        enable_fc);
 }
 
 /******************************************************************************
