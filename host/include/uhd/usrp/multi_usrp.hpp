@@ -377,7 +377,7 @@ public:
      *
      * \param source a string representing the time source
      * \param mboard which motherboard to set the config
-     * \throws uhd::value_error if \p source is an invalid option
+     * \throws if \p source is an invalid option
      */
     virtual void set_time_source(
         const std::string& source, const size_t mboard = ALL_MBOARDS) = 0;
@@ -436,7 +436,7 @@ public:
      *
      * \param source a string representing the time source
      * \param mboard which motherboard to set the config
-     * \throws uhd::value_error if \p source is an invalid option
+     * \throws if \p source is an invalid option
      */
     virtual void set_clock_source(
         const std::string& source, const size_t mboard = ALL_MBOARDS) = 0;
@@ -508,24 +508,36 @@ public:
      */
     virtual std::vector<device_addr_t> get_sync_sources(const size_t mboard) = 0;
 
-    /*!
-     * Send the clock source to an output connector.
+    /*! Send the clock signal to an output connector.
+     *
      * This call is only applicable on devices with reference outputs.
      * By default, the reference output will be enabled for ease of use.
      * This call may be used to enable or disable the output.
+     *
+     * If the device does not support this operation, calling this method will
+     * throw a uhd::runtime_error.
+     *
      * \param enb true to output the clock source.
      * \param mboard which motherboard to set
+     * \throws if the device is incapable of exporting the
+     *         clock signal.
      */
     virtual void set_clock_source_out(
         const bool enb, const size_t mboard = ALL_MBOARDS) = 0;
 
-    /*!
-     * Send the time source to an output connector.
+    /*! Send the time signal (PPS) to an output connector.
+     *
      * This call is only applicable on devices with PPS outputs.
      * By default, the PPS output will be enabled for ease of use.
      * This call may be used to enable or disable the output.
+     *
+     * If the device does not support this operation, calling this method will
+     * throw a uhd::runtime_error.
+     *
      * \param enb true to output the time source.
      * \param mboard which motherboard to set
+     * \throws if the device is incapable of exporting the
+     *         clock signal.
      */
     virtual void set_time_source_out(
         const bool enb, const size_t mboard = ALL_MBOARDS) = 0;
@@ -611,13 +623,15 @@ public:
     /*******************************************************************
      * RX methods
      ******************************************************************/
-    /*!
-     * Set the RX frontend specification:
+    /*! Set the RX frontend specification
+     *
      * The subdev spec maps a physical part of a daughter-board to a channel number.
      * Set the subdev spec before calling into any methods with a channel number.
      * The subdev spec must be the same size across all motherboards.
+     *
      * \param spec the new frontend specification
      * \param mboard the motherboard index 0 to M-1
+     * \throws if an invalid spec is provided.
      */
     virtual void set_rx_subdev_spec(
         const uhd::usrp::subdev_spec_t& spec, size_t mboard = ALL_MBOARDS) = 0;
@@ -643,8 +657,12 @@ public:
      */
     virtual std::string get_rx_subdev_name(size_t chan = 0) = 0;
 
-    /*!
-     * Set the RX sample rate.
+    /*! Set the RX sample rate
+     *
+     * This function will coerce the requested rate to a rate that the device
+     * can handle. A warning may be logged during coercion. Call get_rx_rate()
+     * to identify the actual rate.
+     *
      * \param rate the rate in Sps
      * \param chan the channel index 0 to N-1
      */
@@ -675,8 +693,12 @@ public:
      */
     virtual meta_range_t get_rx_rates(size_t chan = 0) = 0;
 
-    /*!
-     * Set the RX center frequency.
+    /*! Set the RX center frequency.
+     *
+     * If the requested frequency is outside of the valid frequency range, it
+     * will be coerced to the nearest valid frequency. Check the return value or
+     * call get_rx_freq() to get the actual center frequency.
+     *
      * \param tune_request tune request instructions
      * \param chan the channel index 0 to N-1
      * \return a tune result object
@@ -731,12 +753,19 @@ public:
      *
      * For USRPs that support selectable LO sources, this function allows
      * switching between them. Typical options for source: internal, external.
+     * Call get_rx_lo_sources() to enumerate the list of valid options. Calling
+     * this function with an invalid argument will cause an exception to be
+     * thrown.
      *
      * \param src a string representing the LO source
      * \param name the name of the LO stage to update. If the wildcard value
      *             ALL_LOS is used, the setting will be applied to all LOs on
-     *             this channel.
+     *             this channel. Call get_tx_lo_names() for a list of valid
+     *             argument values.
      * \param chan the channel index 0 to N-1
+     * \throws uhd::not_implemented_error if the device cannot set the LO source
+     * \throws uhd::value_error if the device can set the LO source, but the LO
+     *                          name is invalid.
      */
     virtual void set_rx_lo_source(
         const std::string& src, const std::string& name = ALL_LOS, size_t chan = 0) = 0;
@@ -752,12 +781,13 @@ public:
     virtual const std::string get_rx_lo_source(
         const std::string& name = ALL_LOS, size_t chan = 0) = 0;
 
-    /*!  Get a list of possible LO sources.
+    /*! Get a list of possible LO sources.
      *
      * Channels which do not have controllable LO sources will return
      * "internal". Typical values are "internal" and "external", although the
-     * TwinRX has more options, such as "companion". These options are device-
-     * specific.
+     * TwinRX, for example, has more options, such as "companion". These options
+     * are device-specific, so consult the individual device manual pages for
+     * details.
      *
      * \param name the name of the LO stage to query
      * \param chan the channel index 0 to N-1
@@ -809,6 +839,7 @@ public:
      * \param name the name of the LO stage to update
      * \param chan the channel index 0 to N-1
      * \return a coerced LO frequency
+     * \throws if the LO name is not valid.
      */
     virtual double set_rx_lo_freq(
         double freq, const std::string& name, size_t chan = 0) = 0;
@@ -855,11 +886,15 @@ public:
      *
      * For USRPs that support selectable LO sources, this function allows
      * switching between them. Typical options for source: internal, external.
+     * Call get_tx_lo_sources() to enumerate the list of valid options. Calling
+     * this function with an invalid argument will cause an exception to be
+     * thrown.
      *
      * \param src a string representing the LO source
      * \param name the name of the LO stage to update. If the wildcard value
      *             ALL_LOS is used, the setting will be applied to all LOs on
-     *             this channel.
+     *             this channel. Call get_tx_lo_names() for a list of valid
+     *             argument values.
      * \param chan the channel index 0 to N-1
      */
     virtual void set_tx_lo_source(const std::string& src,
@@ -933,6 +968,7 @@ public:
      * \param name the name of the LO stage to update
      * \param chan the channel index 0 to N-1
      * \return a coerced LO frequency
+     * \throws if the LO name is not valid.
      */
     virtual double set_tx_lo_freq(
         const double freq, const std::string& name, const size_t chan = 0) = 0;
@@ -964,9 +1000,15 @@ public:
     /**************************************************************************
      * Gain controls
      *************************************************************************/
-    /*!
-     * Set the RX gain value for the specified gain element.
+    /*! Set the RX gain value for the specified gain element.
+     *
+     * If the requested gain value is outside the valid range, it will be
+     * coerced to a valid gain value. Call get_rx_gain_range() to return the
+     * currently valid gain range, and call get_rx_gain() after calling this
+     * function to return the actual current gain value after coercion.
+     *
      * For an empty name, distribute across all gain elements.
+     *
      * \param gain the gain in dB
      * \param name the name of the gain element
      * \param chan the channel index 0 to N-1
@@ -987,10 +1029,13 @@ public:
      */
     virtual std::vector<std::string> get_rx_gain_profile_names(const size_t chan = 0) = 0;
 
-    /*!
-     * Set the RX gain profile.
+    /*! Set the RX gain profile.
+     *
+     * Call get_rx_gain_profile_names() for valid names.
+     *
      * \param profile the profile string option
      * \param chan the channel index 0 to N-1
+     * \throws if the requested gain profile name is not valid.
      */
     virtual void set_rx_gain_profile(
         const std::string& profile, const size_t chan = 0) = 0;
@@ -1008,12 +1053,13 @@ public:
         return this->set_rx_gain(gain, ALL_GAINS, chan);
     }
 
-    /*!
-     * Set the normalized RX gain value.
+    /*! Set the normalized RX gain value.
      *
      * The normalized gain is a value in [0, 1], where 0 is the
      * smallest gain value available, and 1 is the largest, independent
      * of the device. In between, gains are linearly interpolated.
+     * If the requested normalized gain is outside of this range, an exception
+     * is thrown.
      *
      * Check the individual device manual for notes on the gain range.
      *
@@ -1026,13 +1072,22 @@ public:
      */
     virtual void set_normalized_rx_gain(double gain, size_t chan = 0) = 0;
 
-    /*!
-     * Enable or disable the RX AGC module.
+    /*! Enable or disable the RX AGC module.
+     *
+     * Only some devices implement an AGC, including all USRPs from the B200
+     * series, the E310, and the E320.
+     * When called on a device that does not implement an AGC, an exception will
+     * be thrown.
+     *
      * Once this module is enabled manual gain settings will be ignored.
-     * The AGC will start in a default configuration which should be good for most use
-     * cases. Device specific configuration parameters can be found in the property tree.
+     * The AGC will start in a default configuration which should be good for
+     * most use cases. Device specific configuration parameters can be found in
+     * the property tree.
+     *
      * \param enable Enable or Disable the AGC
      * \param chan the channel index 0 to N-1
+     * \throws if the underlying device does not
+     *         implement an AGC.
      */
     virtual void set_rx_agc(bool enable, size_t chan = 0) = 0;
 
@@ -1086,10 +1141,13 @@ public:
      */
     virtual std::vector<std::string> get_rx_gain_names(size_t chan = 0) = 0;
 
-    /*!
-     * Select the RX antenna on the frontend.
-     * \param ant the antenna name
+    /*! Select the RX antenna on the frontend.
+     *
+     * \param ant the antenna name. If an invalid name is provided, an exception
+     *            is thrown. Call get_rx_antennas() to return a valid list of
+     *            antenna names.
      * \param chan the channel index 0 to N-1
+     * \throws if an invalid antenna name is provided
      */
     virtual void set_rx_antenna(const std::string& ant, size_t chan = 0) = 0;
 
@@ -1107,15 +1165,19 @@ public:
      */
     virtual std::vector<std::string> get_rx_antennas(size_t chan = 0) = 0;
 
-    /*!
-     * Set the RX bandwidth on the frontend.
+    /*! Set the RX bandwidth on the frontend.
+     *
+     * If a bandwidth is provided that is outside the valid range, it is coerced
+     * to the nearest valid value. Call get_rx_bandwidth_range() to identify the
+     * valid range of bandwidth values.
+     *
      * \param bandwidth the bandwidth in Hz
      * \param chan the channel index 0 to N-1
      */
     virtual void set_rx_bandwidth(double bandwidth, size_t chan = 0) = 0;
 
-    /*!
-     * Get the RX bandwidth on the frontend.
+    /*! Get the RX bandwidth on the frontend
+     *
      * \param chan the channel index 0 to N-1
      * \return the bandwidth in Hz
      */
@@ -1267,13 +1329,14 @@ public:
     /*******************************************************************
      * TX methods
      ******************************************************************/
-    /*!
-     * Set the TX frontend specification:
+    /*! Set the TX frontend specification:
+     *
      * The subdev spec maps a physical part of a daughter-board to a channel number.
      * Set the subdev spec before calling into any methods with a channel number.
      * The subdev spec must be the same size across all motherboards.
      * \param spec the new frontend specification
      * \param mboard the motherboard index 0 to M-1
+     * \throws if an invalid spec is provided.
      */
     virtual void set_tx_subdev_spec(
         const uhd::usrp::subdev_spec_t& spec, size_t mboard = ALL_MBOARDS) = 0;
@@ -1299,8 +1362,12 @@ public:
      */
     virtual std::string get_tx_subdev_name(size_t chan = 0) = 0;
 
-    /*!
-     * Set the TX sample rate.
+    /*! Set the TX sample rate.
+     *
+     * This function will coerce the requested rate to a rate that the device
+     * can handle. A warning may be logged during coercion. Call get_rx_rate()
+     * to identify the actual rate.
+     *
      * \param rate the rate in Sps
      * \param chan the channel index 0 to N-1
      */
@@ -1320,8 +1387,12 @@ public:
      */
     virtual meta_range_t get_tx_rates(size_t chan = 0) = 0;
 
-    /*!
-     * Set the TX center frequency.
+    /*! Set the TX center frequency.
+     *
+     * If the requested frequency is outside of the valid frequency range, it
+     * will be coerced to the nearest valid frequency. Check the return value or
+     * call get_tx_freq() to get the actual center frequency.
+     *
      * \param tune_request tune request instructions
      * \param chan the channel index 0 to N-1
      * \return a tune result object
@@ -1354,9 +1425,15 @@ public:
      */
     virtual freq_range_t get_fe_tx_freq_range(size_t chan = 0) = 0;
 
-    /*!
-     * Set the TX gain value for the specified gain element.
+    /*! Set the TX gain value for the specified gain element.
+     *
+     * If the requested gain value is outside the valid range, it will be
+     * coerced to a valid gain value. Call get_rx_gain_range() to return the
+     * currently valid gain range, and call get_rx_gain() after calling this
+     * function to return the actual current gain value after coercion.
+     *
      * For an empty name, distribute across all gain elements.
+     *
      * \param gain the gain in dB
      * \param name the name of the gain element
      * \param chan the channel index 0 to N-1
@@ -1377,10 +1454,13 @@ public:
      */
     virtual std::vector<std::string> get_tx_gain_profile_names(const size_t chan = 0) = 0;
 
-    /*!
-     * Set the TX gain profile.
-     * \param profile the profile string option
+    /*! Set the TX gain profile.
+     *
+     * Call get_tx_gain_profile_names() for valid names.
+     *
+     * \param profile the profile string option.
      * \param chan the channel index 0 to N-1
+     * \throws if the requested gain profile name is not valid.
      */
     virtual void set_tx_gain_profile(
         const std::string& profile, const size_t chan = 0) = 0;
@@ -1403,6 +1483,8 @@ public:
      *
      * See set_normalized_rx_gain() for a discussion on normalized
      * gains.
+     * If the requested normalized gain is outside of this range, an exception
+     * is thrown.
      *
      * \param gain the normalized gain value
      * \param chan the channel index 0 to N-1
@@ -1525,8 +1607,11 @@ public:
 
     /*!
      * Select the TX antenna on the frontend.
-     * \param ant the antenna name
+     * \param ant the antenna name. If an invalid name is provided, an exception
+     *            is thrown. Call get_tx_antennas() to return a valid list of
+     *            antenna names.
      * \param chan the channel index 0 to N-1
+     * \throws if an invalid antenna name is provided
      */
     virtual void set_tx_antenna(const std::string& ant, size_t chan = 0) = 0;
 
@@ -1544,8 +1629,12 @@ public:
      */
     virtual std::vector<std::string> get_tx_antennas(size_t chan = 0) = 0;
 
-    /*!
-     * Set the TX bandwidth on the frontend.
+    /*! Set the TX bandwidth on the frontend.
+     *
+     * If a bandwidth is provided that is outside the valid range, it is coerced
+     * to the nearest valid value. Call get_tx_bandwidth_range() to identify the
+     * valid range of bandwidth values.
+     *
      * \param bandwidth the bandwidth in Hz
      * \param chan the channel index 0 to N-1
      */
@@ -1625,8 +1714,8 @@ public:
      */
     virtual std::vector<std::string> get_gpio_banks(const size_t mboard) = 0;
 
-    /*!
-     * Set a GPIO attribute on a particular GPIO bank.
+    /*! Set a GPIO attribute on a particular GPIO bank.
+     *
      * Possible attribute names:
      *  - CTRL - 1 for ATR mode 0 for GPIO mode
      *  - DDR - 1 for output 0 for input
@@ -1640,6 +1729,7 @@ public:
      * \param value the new value for this GPIO bank
      * \param mask the bit mask to effect which pins are changed
      * \param mboard the motherboard index 0 to M-1
+     * \throws an exception if either bank or attr are invalid values.
      */
     virtual void set_gpio_attr(const std::string& bank,
         const std::string& attr,
@@ -1715,6 +1805,10 @@ public:
      *        calling get_gpio_src_banks().
      * \param src a list of strings specifying the source of each pin in a GPIO bank
      * \param mboard the motherboard index 0 to M-1
+     * \throws uhd::key_error if the bank does not exist
+     * \throws uhd::value_error if the source does not exist
+     * \throws uhd::not_implemented_error if the current motherboard does not
+     *         support this feature
      */
     virtual void set_gpio_src(const std::string& bank,
         const std::vector<std::string>& src,
