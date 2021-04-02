@@ -36,5 +36,6 @@ endforeach(eeprom_tool_source ${eeprom_tool_sources})
 install(PROGRAMS
     eeprom-path
     eeprom-wrapper
+    eeprom-set-autoboot
     DESTINATION ${RUNTIME_DIR}
 )

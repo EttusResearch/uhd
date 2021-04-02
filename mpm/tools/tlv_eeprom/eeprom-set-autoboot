@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+#
+# Copyright 2021 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+import subprocess
+import sys
+
+# Default flags if none in present in eeprom
+# See board/titanium/usrp_eeprom.h in chromium-ec for details
+MCU_FLAGS_DEFAULT = [0x00, 0x06, 0x00, 0x00, 0x00, 0x00]
+
+
+def get_mcu_flags():
+    """
+    Return the current mcu flags stored in eeprom
+    """
+    p = subprocess.run(['eeprom-dump', 'mb'], check=True, capture_output=True, encoding='ascii')
+    lines = p.stdout.split('\n')
+    for line in lines:
+        if line.startswith('usrp_eeprom_mcu_flags'):
+            flags = line.strip().split(' ')[-6:]
+            return [int(x, 0) for x in flags]
+    return None
+
+
+def set_mcu_flags(flags):
+    """
+    Set mcu flags in eeprom
+    """
+    subprocess.run(['eeprom-update', 'mb', '--mcu_flags'] + [hex(x) for x in flags], check=True)
+
+
+def set_autoboot(enabled):
+    """
+    Control whether autoboot is enabled in the eeprom
+    """
+    flags = get_mcu_flags()
+    if flags is None:
+        flags = MCU_FLAGS_DEFAULT
+
+    flags[0] = flags[0] & ~0x1
+    if enabled:
+        flags[0] |= 1
+
+    if get_mcu_flags() != flags:
+        set_mcu_flags(flags)
+        readback = get_mcu_flags()
+        assert readback == flags
+
+
+if __name__ == '__main__':
+    if len(sys.argv) != 2 or sys.argv[1] not in ['on', 'off']:
+        print("usage: %s <on/off>" % sys.argv[0])
+        sys.exit(1)
+
+    set_autoboot(sys.argv[1] == 'on')
