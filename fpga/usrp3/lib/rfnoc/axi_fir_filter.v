@@ -116,7 +116,7 @@ module axi_fir_filter #(
       end
     // Coefficients are static
     end else begin
-      always @(*) begin
+      initial begin
         for (k = 0; k < NUM_SLICES; k = k + 1) begin
           coeffs[k]      <= COEFFS_VEC[COEFF_WIDTH*k +: COEFF_WIDTH];
           coeff_load_stb <= 1'b1;
