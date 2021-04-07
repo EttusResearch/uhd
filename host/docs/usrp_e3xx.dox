@@ -656,8 +656,8 @@ following file can be queried:
 If you are running a hosted server, the updates can be initiated from a web
 dashboard. From there, you can start the updates without having to log into the
 device, and can update groups of USRPs with a few clicks in a web GUI. The
-dashboard can also be used to inspect the state of USRPs. This is simple way to
-update groups of rack-mounted USRPs with custom file systems.
+dashboard can also be used to inspect the state of USRPs. This is a simple way
+to update groups of rack-mounted USRPs with custom file systems.
 
 \subsection e3xx_rasm_salt Salt: Remote configuration management and execution
 
