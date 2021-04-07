@@ -1992,7 +1992,7 @@ public:
     bool has_tx_power_reference(const size_t chan = 0) override
     {
         auto& tx_chain = _get_tx_chan(chan);
-        return tx_chain.radio->has_rx_power_reference(tx_chain.block_chan);
+        return tx_chain.radio->has_tx_power_reference(tx_chain.block_chan);
     }
 
     void set_tx_power_reference(const double power_dbm, const size_t chan = 0) override
