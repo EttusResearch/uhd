@@ -337,7 +337,7 @@ double magnesium_radio_control_impl::set_rx_frequency(
     }
     // external LO required to tune at 2xdesired_frequency.
     const double lo1_freq =
-        (ad9371_source == "internal" ? 1 : 2) * coerced_if_freq + freq;
+        (ad9371_source == "internal" ? 1 : 2) * (coerced_if_freq + freq);
 
     this->_set_rx_lo_freq(ad9371_source, MAGNESIUM_LO1, lo1_freq, chan);
 
