@@ -1,5 +1,5 @@
 #
-# Copyright 2019 Ettus Research, a National Instruments Brand
+# Copyright 2019-2021 Ettus Research, a National Instruments Brand
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -7,9 +7,10 @@
 LMK04832 parent driver class
 """
 
+import time
 from usrp_mpm.mpmlog import get_logger
 
-class LMK04832():
+class LMK04832:
     """
     Generic driver class for LMK04832 access.
     """
@@ -73,30 +74,41 @@ class LMK04832():
         Returns True if the specified PLLs are locked, False otherwise.
         """
         pll = pll.upper()
-        assert pll in ('BOTH', 'PLL1', 'PLL2'), 'Cannot check lock for invalid PLL'
+        assert pll in ('BOTH', 'PLL1', 'PLL2'), 'Invalid PLL specified'
         result = True
         pll_lock_status = self.peek8(0x183)
 
-        if pll == 'BOTH' or pll == 'PLL1':
-            # Lock status for PLL1 should be 0x01 on bits [3:2]
+        if pll in ('BOTH', 'PLL1'):
+            # Lock status for PLL1 is 0x01 on bits [3:2]
             if (pll_lock_status & 0xC) != 0x04:
                 self.log.debug("PLL1 reporting unlocked... Status: 0x{:x}"
                                .format(pll_lock_status))
                 result = False
-        if pll == 'BOTH' or pll == 'PLL2':
-            # Lock status for PLL2 should be 0x01 on bits [1:0]
+        if pll in ('BOTH', 'PLL2'):
+            # Lock status for PLL2 is 0x01 on bits [1:0]
             if (pll_lock_status & 0x3) != 0x01:
                 self.log.debug("PLL2 reporting unlocked... Status: 0x{:x}"
                                .format(pll_lock_status))
                 result = False
         return result
 
-    def clr_ld_lost_sticky(self):
+    def wait_for_pll_lock(self, pll='BOTH', timeout=2000):
         """
-        Sets and clears the CLR_PLLX_LD_LOST for PLL1 and PLL2
+        Waits for the PLL(s) to lock.
+        Returns False if the PLL(s) do not lock before the timeout (in ms)
         """
+        # Sets and clears the CLR_PLLX_LD_LOST for PLL1 and PLL2
         self.poke8(0x182, 0x03)
         self.poke8(0x182, 0x00)
+        # Now poll lock status until timeout
+        end_time = time.monotonic() + (timeout / 1000)
+        while time.monotonic() < end_time:
+            time.sleep(0.1)
+            if self.check_plls_locked(pll):
+                return True
+        pll = 'PLL1 or PLL2' if pll.upper() == 'BOTH' else pll
+        self.log.debug('{} not reporting locked after {} ms wait'.format(pll, timeout))
+        return False
 
     def soft_reset(self, value=True):
         """
@@ -117,7 +129,7 @@ class LMK04832():
         Run PLL1 R Divider sync according to
         http://www.ti.com/lit/ds/snas688c/snas688c.pdf chapter 8.3.1.1
 
-        Rising edge on sync pin is done by an callback which has to return it's
+        Rising edge on sync pin is done by an callback which has to return its
         success state. If the sync callback was successful, returns PLL1 lock
         state as overall success otherwise the method fails.
         """
@@ -142,8 +154,7 @@ class LMK04832():
 
         if result:
             return self.wait_for_pll_lock("PLL1")
-        else:
-            return False
+        return False
 
     ## Register bitfield definitions ##
 
