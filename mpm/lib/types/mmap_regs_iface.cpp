@@ -59,7 +59,6 @@ void mmap_regs_iface::open()
             throw mpm::runtime_error("Failed to mmap!");
         }
     }
-    log(mpm::types::log_level_t::TRACE, _path, "Opened mmap_regs_iface");
 }
 
 void mmap_regs_iface::close()
@@ -78,7 +77,6 @@ void mmap_regs_iface::close()
         }
         _fd = -1;
     }
-    log(mpm::types::log_level_t::TRACE, _path, "Closed mmap_regs_iface");
 }
 
 void mmap_regs_iface::poke32(const uint32_t addr, const uint32_t data)
