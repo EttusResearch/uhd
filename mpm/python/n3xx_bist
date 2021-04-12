@@ -287,7 +287,7 @@ class N3XXBIST(bist.UsrpBIST):
         result = bist.get_ref_clock_prop(
             'internal',
             'internal',
-            extra_args={'skip_rfic': 1, 'rfnoc_num_blocks': 0}
+            extra_args={'skip_rfic': 1}
         )
         return 'error_msg' not in result, result
 
@@ -314,7 +314,7 @@ class N3XXBIST(bist.UsrpBIST):
         result = bist.get_ref_clock_prop(
             'external',
             'external',
-            extra_args={'skip_rfic': 1, 'rfnoc_num_blocks': 0}
+            extra_args={'skip_rfic': 1}
         )
         return 'error_msg' not in result, result
 
@@ -341,7 +341,7 @@ class N3XXBIST(bist.UsrpBIST):
         result = bist.get_ref_clock_prop(
             'gpsdo',
             'gpsdo',
-            extra_args={'skip_rfic': 1, 'rfnoc_num_blocks': 0}
+            extra_args={'skip_rfic': 1}
         )
         return 'error_msg' not in result, result
 

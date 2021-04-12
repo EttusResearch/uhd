@@ -274,7 +274,7 @@ def test_ddr3_with_usrp_probe():
     reporting a good throughput. This is a bit of a roundabout way of testing
     the DDR3, but it uses existing software and also tests the RFNoC pathways.
     """
-    ddr3_bist_executor = 'uhd_usrp_probe --args addr=127.0.0.1,rfnoc_num_blocks=1'
+    ddr3_bist_executor = 'uhd_usrp_probe --args addr=127.0.0.1'
     try:
         output = subprocess.check_output(
             ddr3_bist_executor,
