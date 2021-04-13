@@ -22,14 +22,14 @@ namespace uhd {
  * associated with a property in a uhd::property_tree
  * and registering callbacks when that value changes.
  *
- * A property is defined to have two separate vales:
+ * A property is defined to have two separate values:
  * - Desired value: Value requested by the user
  * - Coerced value: Value that was actually possible
  *                  given HW and other requirements
  *
  * By default, the desired and coerced values are
  * identical as long as the property is not coerced.
- * A property can be coerced in two way:
+ * A property can be coerced in two ways:
  * 1. Using a coercer: A callback function that takes
  *    in a desired value and produces a coerced value.
  *    A property must have *exactly one* coercer.
@@ -121,7 +121,7 @@ public:
     virtual property<T>& add_coerced_subscriber(const subscriber_type& subscriber) = 0;
 
     /*!
-     * Update calls all subscribers w/ the current value.
+     * Calls all subscribers with the current value.
      *
      * \return a reference to this property for chaining
      * \throws uhd::assertion_error
