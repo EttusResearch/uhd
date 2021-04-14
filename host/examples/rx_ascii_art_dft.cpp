@@ -286,9 +286,11 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             ref_lvl -= 10;
         else if (ch == 'L')
             ref_lvl += 10;
-        else if (ch == 'd')
-            dyn_rng -= 10;
-        else if (ch == 'D')
+        else if (ch == 'd') {
+            if (dyn_rng > 10) {
+                dyn_rng -= 10;
+            }
+        } else if (ch == 'D')
             dyn_rng += 10;
         else if (ch == 's') {
             if (frame_rate > 1) {

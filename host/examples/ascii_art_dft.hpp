@@ -233,6 +233,10 @@ std::string dft_to_plot(const log_pwr_dft_type& dft_,
     float dyn_rng,
     float ref_lvl)
 {
+    if (dyn_rng <= 0.0) {
+        throw std::runtime_error("dyn_rng must be greater than zero in dft_to_plot");
+    }
+
     frame_type frame(width, height); // fill this frame
 
     // re-order the dft so dc in in the center
