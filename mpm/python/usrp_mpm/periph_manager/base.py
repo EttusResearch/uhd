@@ -500,6 +500,47 @@ class PeriphManagerBase(object):
             self.dboards.append(db_class(dboard_idx, **dboard_info))
         self.log.info("Initialized %d daughterboard(s).", len(self.dboards))
 
+    def _add_public_methods(self, src, prefix="", filter_cb=None):
+        """
+        Add public methods (=API) of src to self. To avoid naming conflicts and
+        make relations clear, all added method names are prefixed with 'prefix'.
+
+        Example:
+        >>> class Foo:
+        ...     def print_x(self, x):
+        ...         print(x)
+        ...
+        >>> foo = Foo()
+        >>> self._add_public_methods(foo, prefix="ext")
+        >>> self.ext_print_x(5) # Prints 5
+
+        :param source: The object to import the API from
+        :param prefix: method names in dest will be prefixed with prefix
+        :param filter_cb: A callback that returns true if the method should be
+                          added. Defaults to always returning True
+        """
+        filter_cb = filter_cb or (lambda *args: True)
+        assert callable(filter_cb)
+        self.log.trace("Adding API functions from %s to %s" % (
+            src.__class__.__name__, self.__class__.__name__))
+        # append _ to prefix if it is not an empty string
+        if prefix:
+            prefix = prefix + "_"
+        for name in [name for name in dir(src)
+                     if not name.startswith("_")
+                     and callable(getattr(src, name))
+                     and filter_cb(name, getattr(src, name))
+                     ]:
+            destname = prefix + name
+            if hasattr(self, destname):
+                self.log.warn("Cannot add method {} because it would "
+                              "overwrite existing method.".format(destname))
+            else:
+                method = getattr(src, name)
+                self.log.trace("Add function %s as %s", name, destname)
+                setattr(self, destname, method)
+
+
     ###########################################################################
     # Session (de-)initialization (at UHD startup)
     ###########################################################################
