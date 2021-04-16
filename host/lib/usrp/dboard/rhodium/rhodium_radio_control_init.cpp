@@ -154,13 +154,15 @@ void rhodium_radio_control_impl::_init_peripherals()
         _generate_read_spi(this->_spi, SEN_CPLD, _get_cpld_spi_config()));
 
     RFNOC_LOG_TRACE("Initializing TX frontend DSP core...")
-    _tx_fe_core = tx_frontend_core_200::make(_wb_iface, n320_regs::SR_TX_FE_BASE);
+    _tx_fe_core = tx_frontend_core_200::make(
+        _wb_iface, n320_regs::SR_TX_FE_BASE, n320_regs::PERIPH_REG_OFFSET);
     _tx_fe_core->set_dc_offset(tx_frontend_core_200::DEFAULT_DC_OFFSET_VALUE);
     _tx_fe_core->set_iq_balance(tx_frontend_core_200::DEFAULT_IQ_BALANCE_VALUE);
     _tx_fe_core->populate_subtree(get_tree()->subtree(FE_PATH / "tx_fe_corrections" / 0));
 
     RFNOC_LOG_TRACE("Initializing RX frontend DSP core...")
-    _rx_fe_core = rx_frontend_core_3000::make(_wb_iface, n320_regs::SR_RX_FE_BASE);
+    _rx_fe_core = rx_frontend_core_3000::make(
+        _wb_iface, n320_regs::SR_RX_FE_BASE, n320_regs::PERIPH_REG_OFFSET);
     _rx_fe_core->set_adc_rate(_master_clock_rate);
     _rx_fe_core->set_dc_offset(rx_frontend_core_3000::DEFAULT_DC_OFFSET_VALUE);
     _rx_fe_core->set_dc_offset_auto(rx_frontend_core_3000::DEFAULT_DC_OFFSET_ENABLE);
