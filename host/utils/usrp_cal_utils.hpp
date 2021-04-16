@@ -11,9 +11,11 @@
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/utils/algorithm.hpp>
+#include <uhd/utils/math.hpp>
 #include <uhd/utils/paths.hpp>
+#include <uhd/utils/thread.hpp>
+#include <atomic>
 #include <chrono>
-#include <cmath>
 #include <complex>
 #include <cstdlib>
 #include <fstream>
@@ -31,8 +33,7 @@ typedef std::complex<float> samp_type;
 /***********************************************************************
  * Constants
  **********************************************************************/
-static const double tau                   = 6.28318531;
-static const size_t wave_table_len        = 65536;
+static const double tau                   = 2 * uhd::math::PI;
 static const size_t num_search_steps      = 5;
 static const double default_precision     = 0.0001;
 static const double default_freq_step     = 7.3e6;
@@ -126,28 +127,6 @@ void check_for_empty_serial(uhd::usrp::multi_usrp::sptr usrp)
 }
 
 /***********************************************************************
- * Sinusoid wave table
- **********************************************************************/
-class wave_table
-{
-public:
-    wave_table(const double ampl)
-    {
-        _table.resize(wave_table_len);
-        for (size_t i = 0; i < wave_table_len; i++)
-            _table[i] = samp_type(std::polar(ampl, (tau * i) / wave_table_len));
-    }
-
-    inline samp_type operator()(const size_t index) const
-    {
-        return _table[index % wave_table_len];
-    }
-
-private:
-    std::vector<samp_type> _table;
-};
-
-/***********************************************************************
  * Compute power of a tone
  **********************************************************************/
 static inline double compute_tone_dbrms(const std::vector<samp_type>& samples,
@@ -172,7 +151,6 @@ static inline void write_samples_to_file(
     outfile.write((const char*)&samples.front(), samples.size() * sizeof(samp_type));
     outfile.close();
 }
-
 
 /***********************************************************************
  * Store data to file
@@ -347,6 +325,70 @@ UHD_INLINE void set_optimal_rx_gain(uhd::usrp::multi_usrp::sptr usrp,
     usrp->set_rx_gain(rx_gain);
 }
 
+/***********************************************************************
+ * Transmit thread
+ **********************************************************************/
+static void tx_thread(std::atomic_flag* transmit,
+    uhd::usrp::multi_usrp::sptr usrp,
+    uhd::tx_streamer::sptr tx_stream,
+    const double tx_wave_freq,
+    const double tx_wave_ampl)
+{
+    // increase thread priority for TX to prevent underruns
+    uhd::set_thread_priority();
+
+    // set max TX gain
+    usrp->set_tx_gain(usrp->get_tx_gain_range().stop());
+
+    // setup variables
+    uhd::tx_metadata_t md;
+    md.has_time_spec        = false;
+    const double tx_rate    = usrp->get_tx_rate();
+    const size_t frame_size = tx_stream->get_max_num_samps();
+
+    // set up buffer
+    // make buffer size of 1 second aligned to a complete wave
+    // to provide accuracy down to 1 Hz with no discontinuity
+    const size_t buff_size =
+        tx_wave_freq == 0.0
+            ? frame_size
+            : static_cast<size_t>(tx_rate)
+                  - static_cast<size_t>((tx_wave_freq - static_cast<size_t>(tx_wave_freq))
+                                        * tx_rate / tx_wave_freq);
+    // Since send calls are aligned to the frame size, make the buffer 1 frame
+    // larger to prevent an overrun when it reaches the end and wraps around.
+    std::vector<samp_type> buff(buff_size + frame_size);
+
+    // fill buffer
+    for (size_t i = 0; i < buff.size(); i++) {
+        if (tx_wave_freq == 0.0) {
+            // fill with constant value
+            buff[i] = samp_type(static_cast<float>(tx_wave_ampl), 0.0);
+        } else {
+            // fill with sine waves
+            buff[i] =
+                samp_type(std::polar(tx_wave_ampl, (tau * i * tx_wave_freq / tx_rate)));
+        }
+    }
+
+    // send until stopped
+    size_t index = 0;
+    while (transmit->test_and_set()) {
+        // send calls are aligned to the frame size for optimal performance
+        tx_stream->send(&buff[index], frame_size, md);
+
+        // increment index
+        index += frame_size;
+
+        // wrap around at end of buffer
+        // (actual buffer size is 1 frame larger to prevent overrun)
+        index %= buff_size;
+    }
+
+    // send a mini EOB packet
+    md.end_of_burst = true;
+    tx_stream->send("", 0, md);
+}
 
 /*! Returns true if any error on the TX stream has occurred
  */
