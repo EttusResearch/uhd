@@ -58,6 +58,9 @@ static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp)
         or mb_name.find("n3xx") != std::string::npos) {
         usrp->set_tx_rate(12.5e6);
         usrp->set_rx_rate(12.5e6);
+    } else if (mb_name.find("n320") != std::string::npos) {
+        usrp->set_tx_rate(12.288e6);
+        usrp->set_rx_rate(12.288e6);
     } else if (mb_name.find("B100") != std::string::npos) {
         usrp->set_tx_rate(4e6);
         usrp->set_rx_rate(4e6);
@@ -219,8 +222,7 @@ static void capture_samples(uhd::usrp::multi_usrp::sptr usrp,
     // Discard the transient samples.
     rx_stream->recv(&discard_buff.front(), discard_buff.size(), md);
     if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE) {
-        throw std::runtime_error(
-            std::string("Receiver error: ") + md.strerror());
+        throw std::runtime_error(std::string("Receiver error: ") + md.strerror());
     }
 
     // Now capture the data we want
@@ -228,8 +230,7 @@ static void capture_samples(uhd::usrp::multi_usrp::sptr usrp,
 
     // validate the received data
     if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE) {
-        throw std::runtime_error(
-            std::string("Receiver error: ") + md.strerror());
+        throw std::runtime_error(std::string("Receiver error: ") + md.strerror());
     }
 
     // we can live if all the data didnt come in
@@ -258,9 +259,9 @@ static uhd::usrp::multi_usrp::sptr setup_usrp_for_cal(
         usrp->set_tx_subdev_spec(subdev);
         usrp->set_rx_subdev_spec(subdev);
     }
-    std::cout << "Running calibration for " << usrp->get_tx_subdev_name(0);
+    std::cout << "Running calibration for " << usrp->get_tx_subdev_name(0) << std::endl;
     serial = get_serial(usrp, "tx");
-    std::cout << "Daughterboard serial: " << serial;
+    std::cout << "Daughterboard serial: " << serial << std::endl;
 
     // set the antennas to cal
     if (not uhd::has(usrp->get_rx_antennas(), "CAL")
