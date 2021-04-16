@@ -10,11 +10,8 @@
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/safe_main.hpp>
-#include <uhd/utils/thread.hpp>
 #include <boost/format.hpp>
-#include <boost/math/special_functions/round.hpp>
 #include <boost/program_options.hpp>
-#include <boost/thread/thread.hpp>
 #include <chrono>
 #include <cmath>
 #include <complex>
@@ -22,36 +19,8 @@
 #include <ctime>
 #include <functional>
 #include <iostream>
-#include <thread>
 
 namespace po = boost::program_options;
-
-/***********************************************************************
- * Transmit thread
- **********************************************************************/
-static void tx_thread(uhd::usrp::multi_usrp::sptr usrp,
-    uhd::tx_streamer::sptr tx_stream,
-    const double tx_wave_ampl)
-{
-    // set max TX gain
-    usrp->set_tx_gain(usrp->get_tx_gain_range().stop());
-
-    // setup variables and allocate buffer
-    uhd::tx_metadata_t md;
-    md.has_time_spec = false;
-    std::vector<samp_type> buff(tx_stream->get_max_num_samps() * 10);
-
-    // fill buff and send until interrupted
-    while (not boost::this_thread::interruption_requested()) {
-        for (size_t i = 0; i < buff.size(); i++)
-            buff[i] = float(tx_wave_ampl);
-        tx_stream->send(&buff.front(), buff.size(), md);
-    }
-
-    // send a mini EOB packet
-    md.end_of_burst = true;
-    tx_stream->send("", 0, md);
-}
 
 /***********************************************************************
  * Tune RX and TX routine
@@ -142,8 +111,10 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
 
     // create a transmitter thread
-    boost::thread_group threads;
-    threads.create_thread(std::bind(&tx_thread, usrp, tx_stream, tx_wave_ampl));
+    std::atomic_flag transmit = ATOMIC_FLAG_INIT;
+    transmit.test_and_set();
+    auto transmitter =
+        std::thread(std::bind(&tx_thread, &transmit, usrp, tx_stream, 0.0, tx_wave_ampl));
 
     // re-usable buffer for samples
     std::vector<samp_type> buff;
@@ -292,10 +263,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     std::cout << std::endl;
 
     // stop the transmitter
-    threads.interrupt_all();
-    std::this_thread::sleep_for(
-        std::chrono::milliseconds(500)); // wait for threads to finish
-    threads.join_all();
+    transmit.clear();
+    transmitter.join();
 
     store_results(results, "RX", "rx", "iq", serial);
 
