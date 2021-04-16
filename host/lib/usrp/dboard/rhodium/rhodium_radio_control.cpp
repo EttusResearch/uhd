@@ -532,12 +532,12 @@ bool rhodium_radio_control_impl::_get_timed_command_enabled() const
 
 std::vector<std::string> rhodium_radio_control_impl::get_tx_antennas(const size_t) const
 {
-    return RHODIUM_RX_ANTENNAS;
+    return RHODIUM_TX_ANTENNAS;
 }
 
 std::vector<std::string> rhodium_radio_control_impl::get_rx_antennas(const size_t) const
 {
-    return RHODIUM_TX_ANTENNAS;
+    return RHODIUM_RX_ANTENNAS;
 }
 
 uhd::freq_range_t rhodium_radio_control_impl::get_tx_frequency_range(const size_t) const
