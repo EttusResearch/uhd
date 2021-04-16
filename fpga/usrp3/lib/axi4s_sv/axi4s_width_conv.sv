@@ -25,8 +25,8 @@ module axi4s_width_conv #(
   bit    O_USER_TRAILING_BYTES = 0,
   bit    SYNC_CLKS = 1
 ) (
-   interface   i,  // AxiStreamIf or AxiStreamPacketIf
-   interface   o   // AxiStreamIf or AxiStreamPacketIf
+   interface.slave   i,  // AxiStreamIf or AxiStreamPacketIf
+   interface.master  o   // AxiStreamIf or AxiStreamPacketIf
 );
 
   localparam IWIDTH =i.DATA_WIDTH;

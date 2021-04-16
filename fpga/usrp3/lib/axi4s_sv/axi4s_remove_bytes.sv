@@ -35,8 +35,8 @@ module axi4s_remove_bytes #(
   REM_START=0,
   REM_END=8
 )(
-   interface   i,  // AxiStreamIf or AxiStreamPacketIf
-   interface   o   // AxiStreamIf or AxiStreamPacketIf
+   interface.slave  i,  // AxiStreamIf or AxiStreamPacketIf
+   interface.master o   // AxiStreamIf or AxiStreamPacketIf
 );
 
   localparam BYTES_PER_WORD = i.DATA_WIDTH/8;
