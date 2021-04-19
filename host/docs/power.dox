@@ -2,7 +2,7 @@
 
 \tableofcontents
 
-\section power_overview
+\section power_overview Power Level Controls: Overview
 
 Starting with UHD 4, UHD comes with reference power level APIs. These allow to
 not just set a relative gain level, but configure a USRP to transmit a certain
