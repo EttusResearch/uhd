@@ -1,5 +1,5 @@
 //
-// Copyright 2020 Ettus Research, A National Instruments Brand
+// Copyright 2021 Ettus Research, A National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -8,7 +8,7 @@
 //
 
 //-----------------------------------------------------------------------------
-// AXI4-Lite 
+// AXI4-Lite
 //-----------------------------------------------------------------------------
 
 // Macro that drives o from i for all fields. Of course ready runs in the
@@ -37,6 +37,7 @@
   ``I.rvalid  = ``O.rvalid;\
   ``O.rready  = ``I.rready;
 
+// All signals
 `define AXI4LITE_PORT_ASSIGN(FORMAL,ACTUAL) \
   .``FORMAL``_aclk(``ACTUAL``.clk),\
   .``FORMAL``_sreset(``ACTUAL``.rst),\
@@ -58,6 +59,7 @@
   .``FORMAL``_wstrb(``ACTUAL``.wstrb),\
   .``FORMAL``_wvalid(``ACTUAL``.wvalid),
 
+//NR removes clock and reset
 `define AXI4LITE_PORT_ASSIGN_NR(FORMAL,ACTUAL) \
   .``FORMAL``_araddr(``ACTUAL``.araddr),\
   .``FORMAL``_arready(``ACTUAL``.arready),\
@@ -75,6 +77,25 @@
   .``FORMAL``_wdata(``ACTUAL``.wdata),\
   .``FORMAL``_wready(``ACTUAL``.wready),\
   .``FORMAL``_wstrb(``ACTUAL``.wstrb),\
+  .``FORMAL``_wvalid(``ACTUAL``.wvalid),
+
+//NRS removes wstrb clock and reset
+`define AXI4LITE_PORT_ASSIGN_NRS(FORMAL,ACTUAL) \
+  .``FORMAL``_araddr(``ACTUAL``.araddr),\
+  .``FORMAL``_arready(``ACTUAL``.arready),\
+  .``FORMAL``_arvalid(``ACTUAL``.arvalid),\
+  .``FORMAL``_awaddr(``ACTUAL``.awaddr),\
+  .``FORMAL``_awready(``ACTUAL``.awready),\
+  .``FORMAL``_awvalid(``ACTUAL``.awvalid),\
+  .``FORMAL``_bready(``ACTUAL``.bready),\
+  .``FORMAL``_bresp(``ACTUAL``.bresp[1:0]),\
+  .``FORMAL``_bvalid(``ACTUAL``.bvalid),\
+  .``FORMAL``_rdata(``ACTUAL``.rdata),\
+  .``FORMAL``_rready(``ACTUAL``.rready),\
+  .``FORMAL``_rresp(``ACTUAL``.rresp[1:0]),\
+  .``FORMAL``_rvalid(``ACTUAL``.rvalid),\
+  .``FORMAL``_wdata(``ACTUAL``.wdata),\
+  .``FORMAL``_wready(``ACTUAL``.wready),\
   .``FORMAL``_wvalid(``ACTUAL``.wvalid),
 
 `define AXI4LITE_DEBUG_ASSIGN(O,I) \
