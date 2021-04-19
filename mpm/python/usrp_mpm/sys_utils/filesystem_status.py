@@ -57,4 +57,4 @@ def get_opkg_status_md5sum(filesystem_root='/'):
     file = pathlib.Path(filesystem_root, 'var/lib/opkg/status')
     if not file.exists():
         return None
-    return hashlib.md5sum(file.read_text()).hexdigest()
+    return hashlib.md5(file.read_bytes()).hexdigest()
