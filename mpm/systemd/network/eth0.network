@@ -8,4 +8,5 @@ IPForward=ipv4
 
 [DHCP]
 UseHostname=true
+UseDomains=true
 ClientIdentifier=mac
