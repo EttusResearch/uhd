@@ -8,9 +8,9 @@ RPC/MPM utilities for debugging USRPs
 """
 
 from enum import Enum
-import time
 import multiprocessing
-
+import queue
+import signal
 from mprpc import RPCClient
 from mprpc.exceptions import RPCError
 
@@ -26,17 +26,38 @@ def _claim_loop(host, port, cmd_q, token_q):
     exit.
     The token queue is used to read back the current token.
     """
+
+    def _sig_term_handler(_signo, _stack):
+        """
+        gracefully terminate claim loop
+        """
+        cmd_q.put("exit")
+
     command = None
     token = None
     exit_loop = False
+
+    signal.signal(signal.SIGTERM, _sig_term_handler)
+
     client = RPCClient(host, port, pack_params={'use_bin_type': True})
     try:
         while not exit_loop:
-            if token and not command:
-                client.call('reclaim', token)
-            elif command == 'claim':
+            try:
+                command = cmd_q.get(True, 1)
+            except queue.Empty:
+                # if we do not receive a command, reclaim device
+                if token:
+                    client.call('reclaim', token)
+                continue
+
+            if command == 'claim':
                 if not token:
-                    token = client.call('claim', 'UHD')
+                    try:
+                        token = client.call('claim', 'UHD')
+                    except RPCError as ex:
+                        # catch RPC errors here so the loop keeps running
+                        # and token queue receives an (empty) value
+                        print(str(ex))
                 else:
                     print("Already have claim")
                 token_q.put(token)
@@ -51,10 +72,6 @@ def _claim_loop(host, port, cmd_q, token_q):
                 token = None
                 token_q.put(None)
                 exit_loop = True
-            time.sleep(1)
-            command = None
-            if not cmd_q.empty():
-                command = cmd_q.get(False)
     except RPCError as ex:
         print("Unexpected RPC error in claimer loop!")
         print(str(ex))
@@ -72,6 +89,7 @@ class MPMClaimer:
             name="Claimer Loop",
             args=(host, port, self._cmd_q, self._token_q)
         )
+        self._claim_loop.daemon = True
         self._claim_loop.start()
 
     def exit(self):
@@ -87,14 +105,16 @@ class MPMClaimer:
         Unclaim device.
         """
         self._cmd_q.put('unclaim')
-        self.token = None
+        self.token = self._token_q.get(True, 1)
 
     def claim(self):
         """
         Claim device.
         """
         self._cmd_q.put('claim')
-        self.token = self._token_q.get(True, 5.0)
+        self.token = self._token_q.get(True, 1)
+        if not self.token:
+            raise RuntimeError("Failed to claim device")
 
     def get_token(self):
         """
@@ -105,6 +125,9 @@ class MPMClaimer:
         return self.token
 
 class InitMode(Enum):
+    """
+    Init modes for MPM session
+    """
     Hijack = 1
     Claim = 2
     Noclaim = 3
@@ -116,17 +139,11 @@ class MPMClient:
     """
     MPM RPC Client: Will make all MPM commands accessible as Python methods.
     """
-    def __init__(self, init_mode, host, port, token=None):
+    def __init__(self, init_mode, host, port=MPM_RPC_PORT, token=None):
         assert isinstance(init_mode, InitMode)
         print("[MPMRPC] Attempting to connect to {host}:{port}...".format(
             host=host, port=port
         ))
-        try:
-            self._client = RPCClient(host, port, pack_params={'use_bin_type': True})
-            print("[MPMRPC] Connection successful.")
-        except Exception as ex:
-            print("[MPMRPC] Connection refused: {}".format(ex))
-            raise RuntimeError("RPC connection refused.")
         self._remote_methods = []
         if init_mode == InitMode.Hijack:
             assert token
@@ -135,12 +152,34 @@ class MPMClient:
             self._claimer = MPMClaimer(host, port)
             self._claimer.claim()
             self._token = self._claimer.token
+
+        try:
+            self._client = RPCClient(host, port, pack_params={'use_bin_type': True})
+            print("[MPMRPC] Connection successful.")
+        except Exception as ex:
+            print("[MPMRPC] Connection refused: {}".format(ex))
+            raise RuntimeError("RPC connection refused.")
         print("[MPMRPC] Getting methods...")
         methods = self._client.call('list_methods')
         for method in methods:
             self._add_command(*method)
         print("[MPMRPC] Added {} methods.".format(len(methods)))
 
+    def __del__(self):
+        if hasattr(self, '_claimer'):
+            self._claimer.exit()
+
+    def claim(self):
+        """
+        Use claimer (instead of RPC method) to claim MPM device
+        """
+        self._claimer.claim()
+
+    def unclaim(self):
+        """
+        Use claimer (instead of RPC method) to unclaim MPM device
+        """
+        self._claimer.unclaim()
 
     def _add_command(self, command, docs, requires_token):
         """
