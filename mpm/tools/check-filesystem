@@ -50,11 +50,11 @@ class CheckFilesystem(unittest.TestCase):
 
     def test_uhd_version(self):
         uhd_version = get_uhd_version(filesystem_root=self.args.filesystem_root)
-        self.assertEqual(uhd_version['version'], self.args.uhd_version)
+        self.assertIn(self.args.uhd_version, uhd_version)
 
     def test_uhd_githash(self):
         uhd_version = get_uhd_version(filesystem_root=self.args.filesystem_root)
-        self.assertEqual(uhd_version['githash'], self.args.uhd_githash)
+        self.assertIn(self.args.uhd_githash, uhd_version)
 
     def test_mender_artifact(self):
         mender_artifact = get_mender_artifact(filesystem_root=self.args.filesystem_root)

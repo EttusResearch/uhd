@@ -13,18 +13,9 @@ import subprocess
 import time
 
 def get_uhd_version(filesystem_root='/'):
-    def parse_uhd_version(versionstring):
-        assert(versionstring[0:4] == 'UHD ')
-        array = versionstring[4:].split('-')
-        assert(len(array) == 3)
-        return {
-            'version': array[0],
-            'appendix': array[1],
-            'githash': array[2],
-        }
     file = pathlib.Path(filesystem_root, 'usr/bin/uhd_config_info')
     versionstring = subprocess.check_output([file, '--version']).decode('utf-8').splitlines()[0]
-    return parse_uhd_version(versionstring)
+    return versionstring
 
 def get_mender_artifact(filesystem_root='/', parse_manually=False):
     def parse_artifact(output):
