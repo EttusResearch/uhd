@@ -35,10 +35,11 @@ class Mount():
         Returns true if the mount point is mounted
         """
         assert self.devicepath is not None
-        collection = [line.split()[0] for line in open("/etc/mtab")
-                      if line.split()[0] == self.devicepath]
-        mounted = len(collection) != 0
-        return mounted
+        with open("/etc/mtab") as mtab_f:
+            return any(
+                line.split()[0] == self.devicepath and line.split()[1] == self.mountpoint \
+                for line in mtab_f
+            )
 
     def get_mount_point(self):
         """
