@@ -68,7 +68,7 @@ class Mount():
         Mounts the mount point
         """
         if self.ismounted():
-            self.log.warning("{} was already mounted".format(self.mountpoint))
+            self.log.debug("{} was already mounted".format(self.mountpoint))
             return True
         self.prepare_mountpoint()
         self.log.debug("Mounting {}".format(self.mountpoint))
