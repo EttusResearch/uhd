@@ -487,7 +487,7 @@ class PeriphManagerBase(object):
                 self.log.trace("Found spidev nodes: {0}".format(spi_nodes))
             else:
                 spi_nodes = []
-                self.log.warning("No SPI nodes for dboard %d.", dboard_idx)
+                self.log.trace("No SPI nodes for dboard %d.", dboard_idx)
             dboard_info.update({
                 'spi_nodes': spi_nodes,
                 'default_args': default_args,
