@@ -36,12 +36,15 @@ helpful move for the team and future maintainability of the UHD FPGA codebase.
 // Module: <MODULE_NAME>
 //
 // Description:
+//
 //   <Add a detailed description>
 //
 // Parameters:
+//
 //   <Describe the parameters, if helpful>
 //
 // Signals:
+//
 //   <Describe the port signals, if helpful>
 //
 ```
