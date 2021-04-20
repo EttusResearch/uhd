@@ -26,6 +26,9 @@ class DBFlash():
             self.log = get_logger("DBFlash")
         else:
             self.log = log.getChild("DBFlash")
+        self.mount = None
+        self.mtd_devpath = None
+        self.mtdblock_devpath = None
         self.initialized = False
 
     def init(self):
@@ -38,15 +41,19 @@ class DBFlash():
         time.sleep(0.2)
         try:
             self.mtd_devpath = get_device_from_symbol(self.dt_symbol, ['*', 'mtd'])
-            self.mtdblock_devpath = get_device_from_symbol(self.dt_symbol, ['*', 'block'])
+            self.mtdblock_devpath = get_device_from_symbol(
+                self.dt_symbol, ['*', 'block'])
         except FileNotFoundError:
-            raise ValueError("could not find MTD/-block device for device tree symbol {}".format(self.dt_symbol))
+            raise ValueError(
+                "could not find MTD/-block device for device tree symbol {}".format(
+                    self.dt_symbol))
         try:
             self.mount = Mount(self.mtdblock_devpath, '/mnt/' + self.dt_symbol,
                                ['-t', 'jffs2'], log=self.log)
-            ret = self.mount.mount()
-            if not ret:
-                raise RuntimeError()
+            if not self.mount.ismounted():
+                ret = self.mount.mount()
+                if not ret:
+                    raise RuntimeError()
             self.initialized = True
         except:
             self.log.warning("Failed to initialize daughterboard flash")
@@ -71,8 +78,7 @@ class DBFlash():
                 dtoverlay.rm_overlay_safe(self.overlay)
                 self.initialized = False
             return ret
-        else:
-            return False
+        return False
 
     def clear_flash(self):
         """
