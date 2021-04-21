@@ -521,7 +521,7 @@ class MPMServer(RPCServer):
         # Stop the timer, reset_timer_and_mgr can take some time:
         with self._timeout_disabler():
             try:
-                self.reset_mgr()
+                self._reset_mgr()
                 self.log.debug("Reset the periph manager")
             except Exception as ex:
                 self.log.error(
