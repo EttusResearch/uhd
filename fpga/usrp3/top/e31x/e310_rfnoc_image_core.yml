@@ -6,7 +6,8 @@ license: 'SPDX-License-Identifier: LGPL-3.0-or-later' # License information used
 version: '1.0'                          # File version
 rfnoc_version: '1.0'                    # RFNoC protocol version
 chdr_width: 64                          # Bit width of the CHDR bus for this image
-device: 'e310'
+device: 'e310'                          # USRP type
+image_core_name: 'e310'                 # Name to use for the RFNoC Image Core files
 default_target: 'E310_SG3'
 
 # A list of all stream endpoints in design
