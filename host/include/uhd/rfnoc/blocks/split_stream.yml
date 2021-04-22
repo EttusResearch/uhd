@@ -1,7 +1,7 @@
 schema: rfnoc_modtool_args
 module_name: split_stream
-version: 1.0
-rfnoc_version: 1.0
+version: "1.0"
+rfnoc_version: "1.0"
 chdr_width: 64
 noc_id: 0x57570000
 makefile_srcs: "${fpga_lib_dir}/blocks/rfnoc_block_split_stream/Makefile.srcs"

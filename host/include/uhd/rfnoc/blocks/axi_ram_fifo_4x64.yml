@@ -1,7 +1,7 @@
 schema: rfnoc_modtool_args
 module_name: axi_ram_fifo
-version: 1.0
-rfnoc_version: 1.0
+version: "1.0"
+rfnoc_version: "1.0"
 chdr_width: 64
 noc_id: 0xF1F00000
 

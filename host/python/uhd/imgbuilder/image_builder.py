@@ -508,8 +508,8 @@ def convert_to_image_config(grc, grc_config_path):
         "schema": "rfnoc_imagebuilder",
         "copyright": "Ettus Research, A National Instruments Brand",
         "license": "SPDX-License-Identifier: LGPL-3.0-or-later",
-        "version": 1.0,
-        "rfnoc_version": 1.0}
+        "version": "1.0",
+        "rfnoc_version": "1.0"}
     # for param in [item for item in grc["blocks"] if item["id"] == "parameter"]:
     #     result[param["name"]] = {
     #         "str": lambda value: str,

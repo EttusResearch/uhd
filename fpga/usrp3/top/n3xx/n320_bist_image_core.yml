@@ -3,8 +3,8 @@
 schema: rfnoc_imagebuilder_args         # Identifier for the schema used to validate this file
 copyright: 'Ettus Research, A National Instruments Brand' # Copyright information used in file headers
 license: 'SPDX-License-Identifier: LGPL-3.0-or-later' # License information used in file headers
-version: 1.0                            # File version
-rfnoc_version: 1.0                      # RFNoC protocol version
+version: '1.0'                          # File version
+rfnoc_version: '1.0'                    # RFNoC protocol version
 chdr_width: 64                          # Bitwidth of the CHDR bus for this block
 device: 'n320'
 default_target: 'N320_AA'
