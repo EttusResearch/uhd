@@ -44,8 +44,6 @@ static std::string make_border(const std::string& text)
     for (const std::string& line : lines) {
         ss << boost::format("|   %s") % line << std::endl;
     }
-    // ss << boost::format(" \\_____________________________________________________") <<
-    // std::endl;
     return ss.str();
 }
 
@@ -78,7 +76,6 @@ static std::string get_frontend_pp_string(
 {
     std::stringstream ss;
     ss << boost::format("%s Frontend: %s") % type % path.leaf() << std::endl;
-    // ss << std::endl;
 
     ss << boost::format("Name: %s") % (tree->access<std::string>(path / "name").get())
        << std::endl;
@@ -153,11 +150,13 @@ static std::string get_codec_pp_string(
 }
 
 static std::string get_dboard_pp_string(
-    const std::string& type, property_tree::sptr tree, const fs_path& path)
+    const std::string& type,
+    const std::string& name,
+    property_tree::sptr tree,
+    const fs_path& path)
 {
     std::stringstream ss;
-    ss << boost::format("%s Dboard: %s") % type % path.leaf() << std::endl;
-    // ss << std::endl;
+    ss << boost::format("%s Dboard: %s") % type % name << std::endl;
     const std::string prefix = (type == "RX") ? "rx" : "tx";
     if (tree->exists(path / (prefix + "_eeprom"))) {
         usrp::dboard_eeprom_t db_eeprom =
@@ -217,8 +216,8 @@ static std::string get_rfnoc_pp_string(
     ss << make_border(get_rfnoc_connections_pp_string(graph));
     auto radio_blocks = graph->find_blocks("Radio");
     for (std::string block : radio_blocks) {
-        ss << make_border(get_dboard_pp_string("TX", tree, "blocks" / block / "dboard"));
-        ss << make_border(get_dboard_pp_string("RX", tree, "blocks" / block / "dboard"));
+        ss << make_border(get_dboard_pp_string("TX", block, tree, "blocks" / block / "dboard"));
+        ss << make_border(get_dboard_pp_string("RX", block, tree, "blocks" / block / "dboard"));
     }
     return ss.str();
 }
@@ -285,7 +284,7 @@ static std::string get_mboard_pp_string(property_tree::sptr tree, const fs_path&
         if (tree->exists(path / "dboards")) {
             for (const std::string& name : tree->list(path / "dboards")) {
                 ss << make_border(
-                    get_dboard_pp_string("RX", tree, path / "dboards" / name));
+                    get_dboard_pp_string("RX", name, tree, path / "dboards" / name));
             }
             if (tree->exists(path / "tx_dsps")) {
                 for (const std::string& name : tree->list(path / "tx_dsps")) {
@@ -295,7 +294,7 @@ static std::string get_mboard_pp_string(property_tree::sptr tree, const fs_path&
             }
             for (const std::string& name : tree->list(path / "dboards")) {
                 ss << make_border(
-                    get_dboard_pp_string("TX", tree, path / "dboards" / name));
+                    get_dboard_pp_string("TX", name, tree, path / "dboards" / name));
             }
         }
     } catch (const uhd::lookup_error& ex) {
@@ -310,7 +309,6 @@ static std::string get_device_pp_string(property_tree::sptr tree)
     std::stringstream ss;
     ss << boost::format("Device: %s") % (tree->access<std::string>("/name").get())
        << std::endl;
-    // ss << std::endl;
     for (const std::string& name : tree->list("/mboards")) {
         ss << make_border(get_mboard_pp_string(tree, "/mboards/" + name));
     }
