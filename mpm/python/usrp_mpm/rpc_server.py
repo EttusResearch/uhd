@@ -184,7 +184,7 @@ class MPMServer(RPCServer):
                 return function(*args)
             except Exception as ex:
                 self.log.error(
-                    "Uncaught exception in method %s :%s \n %s ",
+                    "Uncaught exception in method %s: %s \n %s ",
                     command, str(ex), traceback.format_exc()
                 )
                 self._last_error = str(ex)
