@@ -80,7 +80,7 @@ static constexpr char MAGNESIUM_FPGPIO_BANK[] = "FP0";
 // RFNoC block. TODO: When we go to one radio per dboard, this comment can
 // be deleted.
 static constexpr size_t MAGNESIUM_NUM_CHANS  = 2;
-static constexpr double MAGNESIUM_RX_IF_FREQ = 2.44e9;
+static constexpr double MAGNESIUM_RX_IF_FREQ = 2.4418e9;
 static constexpr double MAGNESIUM_TX_IF_FREQ = 1.95e9;
 
 //! Max time we allow for a call to set_freq() to take
