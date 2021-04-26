@@ -56,7 +56,6 @@ double _lo_set_frequency(adf435x_iface::sptr lo_iface,
     lo_iface->set_output_power(
         adf435x_iface::RF_OUTPUT_B, adf435x_iface::OUTPUT_POWER_2DBM);
     lo_iface->set_charge_pump_current(adf435x_iface::CHARGE_PUMP_CURRENT_0_31MA);
-    lo_iface->set_tuning_mode(adf435x_iface::TUNING_MODE_LOW_SPUR);
     return actual_freq;
 }
 
@@ -255,22 +254,24 @@ double magnesium_radio_control_impl::set_tx_frequency(
     const std::string ad9371_source  = this->get_tx_lo_source(MAGNESIUM_LO1, chan);
     const std::string adf4351_source = this->get_tx_lo_source(MAGNESIUM_LO2, chan);
     UHD_ASSERT_THROW(adf4351_source == "internal");
-    double coerced_if_freq = 0;
+    double coerced_if_freq = freq;
 
     if (_map_freq_to_tx_band(_tx_band_map, freq) == tx_band::LOWBAND) {
-        _is_low_band[TX_DIRECTION] = true;
-        coerced_if_freq            = this->_set_tx_lo_freq(
-            adf4351_source, MAGNESIUM_LO2, MAGNESIUM_TX_IF_FREQ, chan);
+        _is_low_band[TX_DIRECTION]    = true;
+        const double desired_low_freq = MAGNESIUM_TX_IF_FREQ - freq;
+        coerced_if_freq =
+            this->_set_tx_lo_freq(adf4351_source, MAGNESIUM_LO2, desired_low_freq, chan)
+            + freq;
         RFNOC_LOG_TRACE("coerced_if_freq = " << coerced_if_freq);
     } else {
         _is_low_band[TX_DIRECTION] = false;
         _lo_disable(_tx_lo);
     }
     // external LO required to tune at 2xdesired_frequency.
-    const double lo1_freq =
-        (ad9371_source == "internal" ? 1 : 2) * (coerced_if_freq + freq);
+    const double desired_if_freq = (ad9371_source == "internal") ? coerced_if_freq
+                                                                 : 2 * coerced_if_freq;
 
-    this->_set_tx_lo_freq(ad9371_source, MAGNESIUM_LO1, lo1_freq, chan);
+    this->_set_tx_lo_freq(ad9371_source, MAGNESIUM_LO1, desired_if_freq, chan);
     this->_update_freq(chan, TX_DIRECTION);
     this->_update_gain(chan, TX_DIRECTION);
     return radio_control_impl::get_tx_frequency(chan);
@@ -324,22 +325,24 @@ double magnesium_radio_control_impl::set_rx_frequency(
     const std::string ad9371_source  = this->get_rx_lo_source(MAGNESIUM_LO1, chan);
     const std::string adf4351_source = this->get_rx_lo_source(MAGNESIUM_LO2, chan);
     UHD_ASSERT_THROW(adf4351_source == "internal");
-    double coerced_if_freq = 0;
+    double coerced_if_freq = freq;
 
     if (_map_freq_to_rx_band(_rx_band_map, freq) == rx_band::LOWBAND) {
-        _is_low_band[RX_DIRECTION] = true;
-        coerced_if_freq            = this->_set_rx_lo_freq(
-            adf4351_source, MAGNESIUM_LO2, MAGNESIUM_RX_IF_FREQ, chan);
+        _is_low_band[RX_DIRECTION]    = true;
+        const double desired_low_freq = MAGNESIUM_RX_IF_FREQ - freq;
+        coerced_if_freq =
+            this->_set_rx_lo_freq(adf4351_source, MAGNESIUM_LO2, desired_low_freq, chan)
+            + freq;
         RFNOC_LOG_TRACE("coerced_if_freq = " << coerced_if_freq);
     } else {
         _is_low_band[RX_DIRECTION] = false;
         _lo_disable(_rx_lo);
     }
     // external LO required to tune at 2xdesired_frequency.
-    const double lo1_freq =
-        (ad9371_source == "internal" ? 1 : 2) * (coerced_if_freq + freq);
+    const double desired_if_freq = ad9371_source == "internal" ? coerced_if_freq
+                                                               : 2 * coerced_if_freq;
 
-    this->_set_rx_lo_freq(ad9371_source, MAGNESIUM_LO1, lo1_freq, chan);
+    this->_set_rx_lo_freq(ad9371_source, MAGNESIUM_LO1, desired_if_freq, chan);
 
     this->_update_freq(chan, RX_DIRECTION);
     this->_update_gain(chan, RX_DIRECTION);
@@ -795,7 +798,7 @@ double magnesium_radio_control_impl::_set_rx_lo_freq(const std::string source,
             coerced_lo_freq            = _ad9371->set_frequency(freq, chan, RX_DIRECTION);
             _ad9371_freq[RX_DIRECTION] = coerced_lo_freq;
         } else if (name == MAGNESIUM_LO2) {
-            coerced_lo_freq = _lo_enable(_rx_lo, freq, _master_clock_rate, true);
+            coerced_lo_freq = _lo_enable(_rx_lo, freq, _master_clock_rate, false);
             _adf4351_freq[RX_DIRECTION] = coerced_lo_freq;
         } else {
             RFNOC_LOG_WARNING("There's no LO with this name of "
@@ -912,7 +915,8 @@ double magnesium_radio_control_impl::_set_tx_lo_freq(const std::string source,
             coerced_lo_freq            = _ad9371->set_frequency(freq, chan, TX_DIRECTION);
             _ad9371_freq[TX_DIRECTION] = coerced_lo_freq;
         } else if (name == MAGNESIUM_LO2) {
-            coerced_lo_freq = _lo_enable(_tx_lo, freq, _master_clock_rate, true);
+            const bool int_n_mode = false;
+            coerced_lo_freq = _lo_enable(_tx_lo, freq, _master_clock_rate, int_n_mode);
             _adf4351_freq[TX_DIRECTION] = coerced_lo_freq;
         } else {
             RFNOC_LOG_WARNING("There's no LO with this name of "
