@@ -130,8 +130,8 @@ public:
      * on this device) or if the type does not match, it will throw a uhd::lookup_error.
      *
      * \code{.cpp}
-     * // Assume DEV is a device3::sptr
-     * auto block_controller = get_block<my_noc_block>("0/MyBlock#0");
+     * // Assume DEV is an rfnoc_graph::sptr
+     * auto block_controller = DEV->get_block<my_noc_block>("0/MyBlock#0");
      * block_controller->my_own_block_method();
      * \endcode
      * \note this access is not thread safe if performed during block enumeration

@@ -26,6 +26,8 @@
 
 #include <uhd/config.hpp>
 #include <uhd/device.hpp>
+#include <uhd/rfnoc/mb_controller.hpp>
+#include <uhd/rfnoc/radio_control.hpp>
 #include <uhd/types/filters.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>
@@ -36,17 +38,12 @@
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <uhd/rfnoc/mb_controller.hpp>
-#include <uhd/rfnoc/radio_control.hpp>
 #include <complex>
 #include <memory>
 #include <string>
 #include <vector>
 
-namespace uhd {
-class device3;
-
-namespace usrp {
+namespace uhd { namespace usrp {
 
 /*!
  * The Multi-USRP device class:
@@ -1879,7 +1876,7 @@ public:
         uhd::filter_info_base::sptr filter,
         const size_t chan) = 0;
 
-     /*! Get direct access to the underlying mb_controller object.
+    /*! Get direct access to the underlying mb_controller object.
      *
      * Note: This is an advanced API, created for corner cases where the
      * application is using multi_usrp, but some special features from
@@ -1899,5 +1896,4 @@ public:
     virtual uhd::rfnoc::mb_controller& get_mb_controller(const size_t mboard = 0) = 0;
 };
 
-} // namespace usrp
-} // namespace uhd
+}} // namespace uhd::usrp
