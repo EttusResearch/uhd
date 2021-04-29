@@ -187,6 +187,9 @@ BOOST_AUTO_TEST_CASE(test_experts)
     expert_factory::add_data_node<int>(container, "F", 0);
     expert_factory::add_data_node<int>(container, "G", 0);
 
+    // B also gets a coercer. It coerces 4 to 3.
+    tree->access<int>("B").set_coercer([](const int b) { return b == 4 ? 3 : b; });
+
     // Add worker nodes to container
     expert_factory::add_worker_node<worker1_t>(container, container->node_retriever());
     expert_factory::add_worker_node<worker2_t>(container, container->node_retriever());
@@ -225,11 +228,11 @@ BOOST_AUTO_TEST_CASE(test_experts)
     BOOST_CHECK(nodeF.is_dirty());
     BOOST_CHECK(nodeG.is_dirty());
     container->resolve_all();
-    VALIDATE_ALL_DEPENDENCIES // Ensure a default resolve
+    VALIDATE_ALL_DEPENDENCIES; // Ensure a default resolve
 
-        // Ensure basic node value propagation
-        tree->access<int>("B")
-            .set(3);
+    // Ensure basic node value propagation
+    tree->access<int>("B").set(4); // Set it 4, but that will get coerced to 3
+
     BOOST_CHECK(nodeB.get() == 3); // Ensure value propagated
     BOOST_CHECK(nodeB.is_dirty()); // Ensure that nothing got resolved...
     container->resolve_all();
