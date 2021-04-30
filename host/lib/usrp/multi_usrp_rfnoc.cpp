@@ -74,7 +74,9 @@ constexpr char LOG_ID[]             = "MULTI_USRP";
 class redirector_device : public uhd::device
 {
 public:
-    redirector_device(multi_usrp* musrp_ptr) : _musrp(musrp_ptr) {}
+    redirector_device(multi_usrp* musrp_ptr) : _musrp(musrp_ptr) {
+        _tree = musrp_ptr->get_tree();
+    }
 
     rx_streamer::sptr get_rx_stream(const stream_args_t& args) override
     {
@@ -100,11 +102,6 @@ public:
             return streamer->recv_async_msg(md, timeout);
         }
         return false;
-    }
-
-    uhd::property_tree::sptr get_tree(void) const
-    {
-        return _musrp->get_tree();
     }
 
     device_filter_t get_device_type() const
