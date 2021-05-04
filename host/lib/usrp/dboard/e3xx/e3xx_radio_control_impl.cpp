@@ -14,9 +14,12 @@
 #include <uhd/utils/math.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
+#include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdlib>
 #include <sstream>
+#include <thread>
 
 using namespace uhd;
 using namespace uhd::usrp;
