@@ -84,7 +84,7 @@ std::vector<std::string> rhodium_radio_control_impl::get_rx_lo_names(
 }
 
 std::vector<std::string> rhodium_radio_control_impl::get_tx_lo_sources(
-    const std::string& name, const size_t chan) const
+    const std::string& name, const size_t chan)
 {
     RFNOC_LOG_TRACE("get_tx_lo_sources(name=" << name << ", chan=" << chan << ")");
     UHD_ASSERT_THROW(chan == 0);
@@ -384,7 +384,7 @@ bool rhodium_radio_control_impl::get_tx_lo_export_enabled(
 }
 
 bool rhodium_radio_control_impl::get_rx_lo_export_enabled(
-    const std::string& name, const size_t chan)
+    const std::string& name, const size_t chan) const
 {
     RFNOC_LOG_TRACE("get_rx_lo_export_enabled(name=" << name << ", chan=" << chan << ")");
     UHD_ASSERT_THROW(chan == 0);

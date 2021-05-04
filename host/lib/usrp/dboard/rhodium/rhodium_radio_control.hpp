@@ -107,7 +107,7 @@ public:
     double get_rx_lo_freq(const std::string& name, const size_t chan) override;
     std::vector<std::string> get_tx_lo_names(const size_t chan) const override;
     std::vector<std::string> get_tx_lo_sources(
-        const std::string& name, const size_t chan) const;
+        const std::string& name, const size_t chan) override;
     freq_range_t get_tx_lo_freq_range(
         const std::string& name, const size_t chan) override;
     void set_tx_lo_source(
@@ -123,7 +123,7 @@ public:
     void set_rx_lo_export_enabled(
         const bool enabled, const std::string& name, const size_t chan) override;
     bool get_tx_lo_export_enabled(const std::string& name, const size_t chan) override;
-    bool get_rx_lo_export_enabled(const std::string& name, const size_t chan);
+    bool get_rx_lo_export_enabled(const std::string& name, const size_t chan) const override;
 
     /**************************************************************************
      * GPIO Controls

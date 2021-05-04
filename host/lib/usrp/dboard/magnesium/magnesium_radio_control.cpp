@@ -804,7 +804,7 @@ void magnesium_radio_control_impl::set_rx_lo_source(
 
 const std::string magnesium_radio_control_impl::get_rx_lo_source(
     const std::string& name, const size_t /*chan*/
-    ) const
+    )
 {
     if (name == MAGNESIUM_LO1) {
         // TODO: should we use this from cache?
@@ -880,7 +880,7 @@ std::vector<std::string> magnesium_radio_control_impl::get_tx_lo_names(
 
 std::vector<std::string> magnesium_radio_control_impl::get_tx_lo_sources(
     const std::string& name, const size_t /*chan*/
-    ) const
+    )
 {
     if (name == MAGNESIUM_LO2) {
         return std::vector<std::string>{"internal"};
@@ -1110,7 +1110,7 @@ eeprom_map_t magnesium_radio_control_impl::get_db_eeprom()
 /**************************************************************************
  * Sensor API
  *************************************************************************/
-std::vector<std::string> magnesium_radio_control_impl::get_rx_sensor_names(size_t)
+std::vector<std::string> magnesium_radio_control_impl::get_rx_sensor_names(size_t) const
 {
     auto sensor_names = _rpcc->request_with_token<std::vector<std::string>>(
         this->_rpc_prefix + "get_sensors", "RX");
@@ -1129,7 +1129,7 @@ sensor_value_t magnesium_radio_control_impl::get_rx_sensor(
         _rpc_prefix + "get_sensor", "RX", name, chan));
 }
 
-std::vector<std::string> magnesium_radio_control_impl::get_tx_sensor_names(size_t)
+std::vector<std::string> magnesium_radio_control_impl::get_tx_sensor_names(size_t) const
 {
     auto sensor_names = _rpcc->request_with_token<std::vector<std::string>>(
         this->_rpc_prefix + "get_sensors", "TX");
