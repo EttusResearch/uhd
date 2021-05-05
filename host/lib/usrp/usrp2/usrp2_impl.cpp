@@ -20,6 +20,7 @@
 #include <boost/format.hpp>
 #include <boost/math/special_functions.hpp>
 #include <functional>
+#include <cmath>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -916,22 +917,21 @@ double usrp2_impl::set_tx_dsp_freq(const std::string& mb, const double freq_)
     const double tick_rate = _tree->access<double>("/mboards/" + mb + "/tick_rate").get();
 
     // calculate the DAC shift (multiples of rate)
-    const int sign         = boost::math::sign(new_freq);
-    const int zone         = std::min(boost::math::iround(new_freq / tick_rate), 2);
-    const double dac_shift = sign * zone * tick_rate;
+    const int zone         = std::max(std::min(std::lround(new_freq / tick_rate), 2), -2);
+    const double dac_shift = zone * tick_rate;
     new_freq -= dac_shift; // update FPGA DSP target freq
     UHD_LOG_TRACE("USRP2",
         "DSP Tuning: Requested " + std::to_string(freq_ / 1e6)
             + " MHz, Using "
               "Nyquist zone "
-            + std::to_string(sign * zone)
+            + std::to_string(zone)
             + ", leftover DSP tuning: " + std::to_string(new_freq / 1e6) + " MHz.");
 
     // set the DAC shift (modulation mode)
     if (zone == 0) {
         _mbc[mb].codec->set_tx_mod_mode(0); // no shift
     } else {
-        _mbc[mb].codec->set_tx_mod_mode(sign * 4 / zone); // DAC interp = 4
+        _mbc[mb].codec->set_tx_mod_mode(4 / zone); // DAC interp = 4
     }
 
     return _mbc[mb].tx_dsp->set_freq(new_freq) + dac_shift; // actual freq
