@@ -917,7 +917,7 @@ double usrp2_impl::set_tx_dsp_freq(const std::string& mb, const double freq_)
     const double tick_rate = _tree->access<double>("/mboards/" + mb + "/tick_rate").get();
 
     // calculate the DAC shift (multiples of rate)
-    const int zone         = std::max(std::min(std::lround(new_freq / tick_rate), 2), -2);
+    const int zone         = std::max(std::min<int>(std::lround(new_freq / tick_rate), 2), -2);
     const double dac_shift = zone * tick_rate;
     new_freq -= dac_shift; // update FPGA DSP target freq
     UHD_LOG_TRACE("USRP2",
