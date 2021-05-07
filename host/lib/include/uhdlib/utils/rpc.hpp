@@ -13,6 +13,7 @@
 #include <rpc/rpc_error.h>
 #include <boost/format.hpp>
 #include <memory>
+#include <thread>
 
 namespace {
 
