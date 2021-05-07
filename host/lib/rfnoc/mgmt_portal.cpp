@@ -15,6 +15,7 @@
 #include <cmath>
 #include <mutex>
 #include <queue>
+#include <thread>
 
 namespace uhd { namespace rfnoc { namespace mgmt {
 
@@ -941,12 +942,12 @@ private: // Functions
     {
         // Get the status of the output stream
         uint32_t ostrm_status = 0;
-        double sleep_s        = 0.05;
+        double sleep_s        = 0.001;
         for (size_t i = 0; i < size_t(std::ceil(timeout / sleep_s)); i++) {
             ostrm_status = std::get<0>(_get_ostrm_status(xport, node_addr));
             if ((ostrm_status & STRM_STATUS_SETUP_PENDING) != 0) {
                 // Wait and retry
-                std::chrono::milliseconds(static_cast<int64_t>(sleep_s * 1000));
+                std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int64_t>(sleep_s * 1000)));
             } else {
                 // Configuration is done
                 break;
