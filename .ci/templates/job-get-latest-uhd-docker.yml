@@ -6,6 +6,7 @@
 # $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImagePrefix'] ]
 # $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixLin'] ]
 # $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixWin'] ]
+# $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixUbuntuDeb'] ]
 jobs:
 - job: get_latest_uhd_docker
   displayName: Get Last Docker Build Version
@@ -22,10 +23,12 @@ jobs:
       docker_image_prefix=$(sed '2q;d' $(UHDPipelineDockerImageArtifactName)/$(UHDPipelineDockerImageArtifactName))
       docker_image_matrix_lin=$(sed '3q;d' $(UHDPipelineDockerImageArtifactName)/$(UHDPipelineDockerImageArtifactName))
       docker_image_matrix_win=$(sed '4q;d' $(UHDPipelineDockerImageArtifactName)/$(UHDPipelineDockerImageArtifactName))
+      docker_image_matrix_ubuntu_deb=$(sed '5q;d' $(UHDPipelineDockerImageArtifactName)/$(UHDPipelineDockerImageArtifactName))
       echo "##vso[task.setvariable variable=dockerBuildNumber;isOutput=true;]$docker_build_number"
       echo "##vso[task.setvariable variable=dockerImagePrefix;isOutput=true;]$docker_image_prefix"
       echo "##vso[task.setvariable variable=dockerImageMatrixLin;isOutput=true;]$docker_image_matrix_lin"
       echo "##vso[task.setvariable variable=dockerImageMatrixWin;isOutput=true;]$docker_image_matrix_win"
+      echo "##vso[task.setvariable variable=dockerImageMatrixUbuntuDeb;isOutput=true;]$docker_image_matrix_ubuntu_deb"
     name: setDockerVar
   - script: |
       echo "Docker Build Number: "
@@ -33,4 +36,5 @@ jobs:
       echo $(setDockerVar.dockerImagePrefix)
       echo $(setDockerVar.dockerImageMatrixLin)
       echo $(setDockerVar.dockerImageMatrixWin)
+      echo $(setDockerVar.dockerImageMatrixUbuntuDeb)
     name: echoDockerVar

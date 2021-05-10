@@ -34,5 +34,18 @@ RUN apt-get update && \
         python3-numpy \
         python3-pip \
         python3-requests \
+    # Install deb dependencies
+        debootstrap \
+        devscripts \
+        pbuilder \
+        debhelper \
+        libncurses5-dev \
+        python3-ruamel.yaml \
         && \
     rm -rf /var/lib/apt/lists/*
+
+# Required for running pbuilder to build debs in docker on Ubuntu 20.04
+# because of this bug: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=968927
+RUN wget https://launchpad.net/ubuntu/+archive/primary/+files/debootstrap_1.0.124_all.deb && \
+    dpkg -i debootstrap_1.0.124_all.deb && \
+    rm debootstrap_1.0.124_all.deb

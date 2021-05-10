@@ -34,5 +34,12 @@ RUN apt-get update && \
         python3-numpy \
         python3-pip \
         python3-requests \
+    # Install deb dependencies
+        debootstrap \
+        devscripts \
+        pbuilder \
+        debhelper \
+        libncurses5-dev \
+        python3-ruamel.yaml \
         && \
     rm -rf /var/lib/apt/lists/*

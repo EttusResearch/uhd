@@ -30,6 +30,12 @@ variables:
     'VS2019-x86-builder':{'dockerOSName':'win-vs19-v142-x86','dockerImageName':'uhd-builder-vs2019-v142-x86','cmakeCompiler':'Visual Studio 16 2019','cmakeArch':'Win32','vsArch':'x86','vsYear':'2019'},
     'VS2019-x64-builder':{'dockerOSName':'win-vs19-v142-x64','dockerImageName':'uhd-builder-vs2019-v142-x64','cmakeCompiler':'Visual Studio 16 2019','cmakeArch':'x64','vsArch':'x64','vsYear':'2019'}}"
 
+- name: ubuntuDebDockerImages
+  # Match with Ubuntu images in linuxDockerImages
+  value:
+    "{'Ubuntu-1804-builder':{'dockerOSName':'ubuntu1804','dockerImageName':'uhd-builder-ubuntu1804','ubuntuReleaseName':'bionic'},
+    'Ubuntu-2004-builder':{'dockerOSName':'ubuntu2004','dockerImageName':'uhd-builder-ubuntu2004','ubuntuReleaseName':'focal'}}"
+
 - name: dockerImagePrefix
   value: 'rfsdr/'
 
@@ -173,6 +179,7 @@ jobs:
       echo "${{ variables.dockerImagePrefix }}" >> $(UHDPipelineDockerImageArtifactName)
       echo "${{ variables.linuxDockerImages }}" >> $(UHDPipelineDockerImageArtifactName)
       echo "${{ variables.winDockerImages }}" >> $(UHDPipelineDockerImageArtifactName)
+      echo "${{ variables.ubuntuDebDockerImages }}" >> $(UHDPipelineDockerImageArtifactName)
     displayName: Generate created image list
   - task: PublishPipelineArtifact@1
     inputs:
