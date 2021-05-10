@@ -5,6 +5,7 @@ parameters:
   - make
   - ninja
   - msbuild
+  - ubuntu_deb
 
 jobs:
 - job: build_ctest_and_upload_uhd_${{ parameters.toolset }}
@@ -16,6 +17,7 @@ jobs:
     dockerImagePrefix: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImagePrefix'] ]
     dockerImageMatrixLin: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixLin'] ]
     dockerImageMatrixWin: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixWin'] ]
+    dockerImageMatrixUbuntuDeb: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixUbuntuDeb'] ]
   pool:
     ${{ if eq(parameters.toolset, 'msbuild') }}:
       name: de-dre-lab
@@ -32,11 +34,16 @@ jobs:
   strategy:
     ${{ if eq(parameters.toolset, 'msbuild') }}:
       matrix: $[ variables.dockerImageMatrixWin ]
-    ${{ if ne(parameters.toolset, 'msbuild') }}:
+    ${{ if or(eq(parameters.toolset, 'make'), eq(parameters.toolset, 'ninja')) }}:
       matrix: $[ variables.dockerImageMatrixLin ]
+    ${{ if eq(parameters.toolset, 'ubuntu_deb') }}:
+      matrix: $[ variables.dockerImageMatrixUbuntuDeb ]
   container:
     image: '$(dockerImagePrefix)$(DockerImageName):$(dockerBuildNumber)'
     endpoint: 'Docker / Artifactory - rnd-builds-local'
+    ${{ if eq(parameters.toolset, 'ubuntu_deb') }}:
+      #pbuilder requires access to /proc
+      options: --privileged
   steps:
   - checkout: self
     clean: true
@@ -65,6 +72,13 @@ jobs:
         vsArch: $(vsArch)
         vsYear: $(vsYear)
 
+  - ${{ if eq(parameters.toolset, 'ubuntu_deb') }}:
+    - template: steps-build-uhd-ubuntu-deb.yml
+      parameters:
+        uhdSrcDir: $(Build.SourcesDirectory)
+        uhdBuildDir: $(Build.BinariesDirectory)/uhddev
+        ubuntuReleaseName: $(ubuntuReleaseName)
+
   - task: ArchiveFiles@2
     inputs:
       rootFolderOrFile: $(Build.BinariesDirectory)
@@ -87,17 +101,18 @@ jobs:
       artifactName: '$(dockerOSName)-${{ parameters.toolset }}'
     displayName: Upload uhd build artifacts
 
-  - task: CopyFiles@2
-    inputs:
-      sourceFolder: $(Build.BinariesDirectory)/uhddev/
-      contents: build/Testing/**
-      targetFolder: $(Common.TestResultsDirectory)
-    displayName: Copy ${{ parameters.toolset }} ctest results
+  - ${{ if ne(parameters.toolset, 'ubuntu_deb') }}:
+    - task: CopyFiles@2
+      inputs:
+        sourceFolder: $(Build.BinariesDirectory)/uhddev/
+        contents: build/Testing/**
+        targetFolder: $(Common.TestResultsDirectory)
+      displayName: Copy ${{ parameters.toolset }} ctest results
 
-  - task: PublishTestResults@2
-    inputs:
-      testResultsFormat: cTest
-      testResultsFiles: $(Common.TestResultsDirectory)/build/Testing/**/Test.xml
-      failTaskOnFailedTests: true
-      testRunTitle: uhd ctest $(dockerOSName)-${{ parameters.toolset }}
-    displayName: Publish $(dockerOSName)-${{ parameters.toolset }} ctest results
+    - task: PublishTestResults@2
+      inputs:
+        testResultsFormat: cTest
+        testResultsFiles: $(Common.TestResultsDirectory)/build/Testing/**/Test.xml
+        failTaskOnFailedTests: true
+        testRunTitle: uhd ctest $(dockerOSName)-${{ parameters.toolset }}
+      displayName: Publish $(dockerOSName)-${{ parameters.toolset }} ctest results

@@ -40,6 +40,9 @@ stages:
   - template: templates/job-uhd-build-src.yml
     parameters:
       toolset: msbuild
+  - template: templates/job-uhd-build-src.yml
+    parameters:
+      toolset: ubuntu_deb
 
 - stage: test_uhd_stage
   displayName: Test UHD
