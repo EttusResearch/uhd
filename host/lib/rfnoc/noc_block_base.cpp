@@ -88,48 +88,6 @@ noc_block_base::noc_block_base(make_args_ptr make_args)
         mtu_prop_refs.insert(&prop);
         register_property(&prop);
     }
-    for (auto& prop : _mtu_props) {
-        auto prop_refs_copy = mtu_prop_refs;
-        add_property_resolver(
-            {&prop}, std::move(prop_refs_copy), [this, source_prop = &prop]() {
-                const res_source_info src_edge = source_prop->get_src_info();
-                // First, coerce the MTU to its appropriate min value
-                const size_t new_mtu = std::min(source_prop->get(), _mtu.at(src_edge));
-                source_prop->set(new_mtu);
-                _mtu.at(src_edge) = source_prop->get();
-                RFNOC_LOG_TRACE("MTU is now " << _mtu.at(src_edge) << " on edge "
-                                              << src_edge.to_string());
-                auto update_pred = [src_edge, fwd_policy = _mtu_fwd_policy](
-                                       const res_source_info& mtu_src) -> bool {
-                    switch (fwd_policy) {
-                        case forwarding_policy_t::DROP:
-                            return false;
-                        case forwarding_policy_t::ONE_TO_ONE:
-                            return res_source_info::invert_edge(mtu_src.type)
-                                       == src_edge.type
-                                   && mtu_src.instance == src_edge.instance;
-                        case forwarding_policy_t::ONE_TO_ALL:
-                            return mtu_src.type != src_edge.type && mtu_src.instance
-                                   && src_edge.instance;
-                        case forwarding_policy_t::ONE_TO_FAN:
-                            return res_source_info::invert_edge(mtu_src.type)
-                                   == src_edge.type;
-                        default:
-                            UHD_THROW_INVALID_CODE_PATH();
-                    }
-                };
-
-                for (auto& mtu_prop : _mtu_props) {
-                    if (update_pred(mtu_prop.get_src_info())
-                        && mtu_prop.get() != new_mtu) {
-                        RFNOC_LOG_TRACE("Forwarding new MTU value to edge "
-                                        << mtu_prop.get_src_info().to_string());
-                        mtu_prop.set(new_mtu);
-                        _mtu.at(mtu_prop.get_src_info()) = mtu_prop.get();
-                    }
-                }
-            });
-    }
 }
 
 noc_block_base::~noc_block_base()
@@ -205,11 +163,65 @@ void noc_block_base::set_mtu_forwarding_policy(const forwarding_policy_t policy)
         || policy == forwarding_policy_t::ONE_TO_ALL
         || policy == forwarding_policy_t::ONE_TO_FAN) {
         _mtu_fwd_policy = policy;
-        return;
+    } else {
+        RFNOC_LOG_ERROR("Setting invalid MTU forwarding policy!");
+        throw uhd::value_error("MTU forwarding policy must be either DROP, ONE_TO_ONE, "
+                               "ONE_TO_ALL, or ONE_TO_FAN!");
     }
-    RFNOC_LOG_ERROR("Setting invalid MTU forwarding policy!");
-    throw uhd::value_error("MTU forwarding policy must be either DROP, ONE_TO_ONE, "
-                           "ONE_TO_ALL, or ONE_TO_FAN!");
+
+    // Determine the set of MTU properties that should be in the output
+    // sensitivity list based on the selected MTU forwarding policy
+    for (auto& prop : _mtu_props) {
+        const res_source_info src_edge = prop.get_src_info();
+        prop_ptrs_t output_props{&prop};
+        for (auto& other_prop : _mtu_props) {
+            const res_source_info dst_edge = other_prop.get_src_info();
+            bool add_to_output_props       = false;
+            switch (_mtu_fwd_policy) {
+                case forwarding_policy_t::ONE_TO_ONE:
+                    add_to_output_props = res_source_info::invert_edge(dst_edge.type)
+                                              == src_edge.type
+                                          && dst_edge.instance == src_edge.instance;
+                    break;
+                case forwarding_policy_t::ONE_TO_ALL:
+                    add_to_output_props = dst_edge.type != src_edge.type
+                                          && dst_edge.instance != src_edge.instance;
+                    break;
+                case forwarding_policy_t::ONE_TO_FAN:
+                    add_to_output_props = res_source_info::invert_edge(dst_edge.type)
+                                          == src_edge.type;
+                    break;
+                default:
+                    UHD_THROW_INVALID_CODE_PATH();
+            }
+
+            if (add_to_output_props) {
+                output_props.insert(&other_prop);
+            }
+        }
+
+        add_property_resolver({&prop},
+            std::move(output_props),
+            [this, dst_props = output_props, source_prop = &prop]() {
+                const res_source_info src_edge = source_prop->get_src_info();
+                // First, coerce the MTU to its appropriate min value
+                const size_t new_mtu = std::min(source_prop->get(), _mtu.at(src_edge));
+                source_prop->set(new_mtu);
+                _mtu.at(src_edge) = source_prop->get();
+                RFNOC_LOG_TRACE("MTU is now " << _mtu.at(src_edge) << " on edge "
+                                              << src_edge.to_string());
+
+                // Set the new MTU on all the dependent output MTU edge props
+                for (auto& dst_prop : dst_props) {
+                    auto mtu_prop =
+                        dynamic_cast<uhd::rfnoc::property_t<size_t>*>(dst_prop);
+                    RFNOC_LOG_TRACE("Forwarding new MTU value to edge "
+                                    << mtu_prop->get_src_info().to_string());
+                    mtu_prop->set(new_mtu);
+                    _mtu.at(mtu_prop->get_src_info()) = mtu_prop->get();
+                }
+            });
+    }
 }
 
 void noc_block_base::set_mtu(const res_source_info& edge, const size_t new_mtu)

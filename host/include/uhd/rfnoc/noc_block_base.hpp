@@ -199,6 +199,12 @@ protected:
      *   split-stream block.
      *
      * The default policy is DROP.
+     *
+     * Note: The MTU forwarding policy can only be set ONCE per instance of a
+     * noc_block_base. If an RFNoC block subclassing noc_block_base wants to
+     * modify the MTU forwarding policy, it would typically call this function
+     * in its constructor. Once set, however, the MTU forwarding policy cannot
+     * be changed.
      */
     void set_mtu_forwarding_policy(const forwarding_policy_t policy);
 
