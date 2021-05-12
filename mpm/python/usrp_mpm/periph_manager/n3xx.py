@@ -662,7 +662,7 @@ class n3xx(ZynqComponents, PeriphManagerBase):
                     time_source)
                 self.log.error(error_msg)
                 raise RuntimeError(error_msg)
-            sfp_time_source_images = ('WX',)
+            sfp_time_source_images = ('WX', 'XQ')
             if self.updateable_components['fpga']['type'] not in sfp_time_source_images:
                 self.log.error("{} time source requires FPGA types {}" \
                                .format(time_source, sfp_time_source_images))
