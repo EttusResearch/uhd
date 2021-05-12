@@ -5,7 +5,10 @@
 //
 
 #include "rfnoc_graph_mock_nodes.hpp"
+#include <uhd/rfnoc/mock_block.hpp>
+#include <uhd/rfnoc/noc_block_base.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhdlib/rfnoc/clock_iface.hpp>
 #include <uhdlib/rfnoc/graph.hpp>
 #include <uhdlib/rfnoc/node_accessor.hpp>
 #include <uhdlib/rfnoc/prop_accessor.hpp>
@@ -156,6 +159,27 @@ public:
     property_t<double> _x4{"x4", 4.0, {res_source_info::USER}};
 };
 
+/*! A mock RFNoC block
+ *
+ * A mock RFNoC block deriving from noc_block_base, strictly for the purpose
+ * of testing multiple calls to set_mtu_forwarding_policy() (which is a
+ * protected member of noc_block_base, sigh)
+ */
+class mock_noc_block_t : public noc_block_base
+{
+public:
+    mock_noc_block_t(noc_block_base::make_args_ptr make_args) :
+        noc_block_base(std::move(make_args))
+    {
+    }
+
+    void set_mtu_forwarding_policy(node_t::forwarding_policy_t policy)
+    {
+        noc_block_base::set_mtu_forwarding_policy(policy);
+    }
+};
+
+
 // Do some sanity checks on the mock just so we don't get surprised later
 BOOST_AUTO_TEST_CASE(test_mock)
 {
@@ -216,6 +240,40 @@ BOOST_AUTO_TEST_CASE(test_failures)
     mock2.factor = 1.0;
     mock2.mark_in_dirty();
     BOOST_REQUIRE_THROW(node_accessor.resolve_props(&mock2), uhd::resolve_error);
+}
+
+// Redeclare this here, since it's only defined outside of UHD_API
+noc_block_base::make_args_t::~make_args_t() = default;
+
+BOOST_AUTO_TEST_CASE(test_mtu_forwarding_policy_restrictions)
+{
+    // Most of this is just dummy stuff required to correctly instantiate a
+    // noc_block_base-derived block and is inconsequential to the test itself
+    mock_block_container mbc;
+    mbc.reg_iface = std::make_shared<mock_reg_iface_t>();
+    mbc.tree      = uhd::property_tree::make();
+    mbc.make_args                   = std::make_unique<noc_block_base::make_args_t>();
+    mbc.make_args->noc_id           = 0x01020304;
+    mbc.make_args->block_id         = block_id_t("0/Dummy#0");
+    mbc.make_args->num_input_ports  = 2;
+    mbc.make_args->num_output_ports = 2;
+    mbc.make_args->mtu              = 8000;
+    mbc.make_args->reg_iface        = mbc.reg_iface;
+    mbc.make_args->tree             = mbc.tree;
+    mbc.make_args->tb_clk_iface =
+        std::make_shared<clock_iface>("dummy");
+    mbc.make_args->ctrlport_clk_iface =
+        std::make_shared<clock_iface>("dummy");
+    mbc.make_args->mb_control = nullptr;
+
+    // Construct the dummy RFNoC block
+    mock_noc_block_t mock_block(std::move(mbc.make_args));
+
+    // Set the MTU forwarding policy once; this should work
+    mock_block.set_mtu_forwarding_policy(noc_block_base::forwarding_policy_t::ONE_TO_ONE);
+
+    // And the seocnd time should generate an exception
+    BOOST_REQUIRE_THROW(mock_block.set_mtu_forwarding_policy(noc_block_base::forwarding_policy_t::ONE_TO_FAN), uhd::runtime_error);
 }
 
 BOOST_AUTO_TEST_CASE(test_graph_resolve_ddc_radio)
