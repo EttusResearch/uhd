@@ -204,7 +204,9 @@ protected:
      * noc_block_base. If an RFNoC block subclassing noc_block_base wants to
      * modify the MTU forwarding policy, it would typically call this function
      * in its constructor. Once set, however, the MTU forwarding policy cannot
-     * be changed.
+     * be changed. This represents a change in behaviour from UHD 4.0.
+     * Violations of this restriction will result in a uhd::runtime_error being
+     * thrown.
      */
     void set_mtu_forwarding_policy(const forwarding_policy_t policy);
 
@@ -293,6 +295,9 @@ private:
 
     //! Forwarding policy for the MTU properties
     forwarding_policy_t _mtu_fwd_policy = forwarding_policy_t::DROP;
+
+    //! Flag indicating if MTU forwarding property has been set yet
+    bool _mtu_fwd_policy_set = false;
 
     //! Container for the 'mtu' property. This will hold one edge property
     // for all in- and output edges.

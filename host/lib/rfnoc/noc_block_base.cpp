@@ -159,6 +159,15 @@ void noc_block_base::_set_tick_rate(const double tick_rate)
 
 void noc_block_base::set_mtu_forwarding_policy(const forwarding_policy_t policy)
 {
+    // Error if the MTU forwarding policy has already been set--it can only be
+    // set once per instance of the block
+    if (_mtu_fwd_policy_set) {
+        RFNOC_LOG_ERROR("Attempt to re-set MTU forwarding policy");
+        throw uhd::runtime_error("MTU forwarding policy can only be set once per "
+                                 "NoC block instance");
+    }
+    _mtu_fwd_policy_set = true;
+
     if (policy == forwarding_policy_t::DROP || policy == forwarding_policy_t::ONE_TO_ONE
         || policy == forwarding_policy_t::ONE_TO_ALL
         || policy == forwarding_policy_t::ONE_TO_FAN) {
