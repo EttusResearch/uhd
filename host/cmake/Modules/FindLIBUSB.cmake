@@ -3,7 +3,7 @@
 #sets LIBUSB_FOUND, LIBUSB_LIBRARIES, LIBUSB_INCLUDE_DIRS
 #override LIBUSB_LIBRARIES LIBUSB_INCLUDE_DIRS to manually set
 
-include(FindPkgConfig)
+find_package(PkgConfig QUIET)
 pkg_check_modules(PC_LIBUSB QUIET libusb-1.0)
 
 find_path(LIBUSB_INCLUDE_DIRS
