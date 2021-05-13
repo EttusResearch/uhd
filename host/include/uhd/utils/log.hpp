@@ -47,18 +47,30 @@
  * Log levels can be specified using string or numeric values of
  * uhd::log::severity_level.
  *
- * The default log level is "info", but can be overridden:
- *  - at compile time by setting the pre-processor define `-DUHD_LOG_MIN_LEVEL`.
- *  - at runtime by setting the environment variable `UHD_LOG_LEVEL`.
- *  - for console logging by setting `(-D)UHD_LOG_CONSOLE_LEVEL` at
- *    run-/compiletime
- *  - for file logging by setting `(-D)UHD_LOG_FILE_LEVEL` at run-/compiletime
+ * The minimum log level is defined by `-DUHD_LOG_MIN_LEVEL` at compile time,
+ * and this value can be increased at runtime by specifying the `UHD_LOG_LEVEL`
+ * environment variable. This minimum logging level applies to any form of
+ * runtime logging. Thus for example if this minimum is set to 3 (`info`), then
+ * during runtime no logging at levels below 3 can be provided.
  *
- * UHD_LOG_LEVEL can be the name of a verbosity enum or integer value:
+ * The following set the minimum logging level to 3 (`info`):
  *   - Example pre-processor define: `-DUHD_LOG_MIN_LEVEL=3`
  *   - Example pre-processor define: `-DUHD_LOG_MIN_LEVEL=info`
  *   - Example environment variable: `export UHD_LOG_LEVEL=3`
  *   - Example environment variable: `export UHD_LOG_LEVEL=info`
+ *
+ * The actual log level for console and file logging can be configured by
+ * setting `UHD_LOG_CONSOLE_LEVEL` or `UHD_LOG_FILE_LEVEL`, respectively. The
+ * default values for these variables can be defined using the cmake flags
+ * `-DUHD_LOG_CONSOLE_LEVEL` and `-DUHD_LOG_FILE_LEVEL`, respectively.
+ *
+ * These variables can be the name of a verbosity enum or integer value:
+ *   - Example pre-processor define: `-DUHD_LOG_CONSOLE_LEVEL=3`
+ *   - Example pre-processor define: `-DUHD_LOG_CONSOLE_LEVEL=info`
+ *   - Example environment variable: `export UHD_LOG_CONSOLE_LEVEL=3`
+ *   - Example environment variable: `export UHD_LOG_CONSOLE_LEVEL=info`
+ *
+ * The `UHD_LOG_FILE_LEVEL` variable can be used in the same way.
  *
  * \subsection loghpp_formatting Log formatting
  *
