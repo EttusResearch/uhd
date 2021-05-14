@@ -87,6 +87,8 @@ class MPMServer(RPCServer):
                 to_binary_str(device_info.get("product", "n/a"))
         self._state.dev_serial.value = \
                 to_binary_str(device_info.get("serial", "n/a"))
+        self._state.dev_fpga_type.value = \
+                to_binary_str(device_info.get("fpga", "n/a"))
         self._db_methods = []
         self._mb_methods = []
         self.claimed_methods = copy.copy(self.default_claimed_methods)
@@ -503,6 +505,10 @@ class MPMServer(RPCServer):
         # Clear the method cache in order to remove stale references to
         # methods from the old peripheral manager (the one before reset)
         self.clear_method_registry()
+        # update the FPGA type information in the state
+        device_info = self.periph_manager.get_device_info()
+        self._state.dev_fpga_type.value = \
+                to_binary_str(device_info.get("fpga", "n/a"))
 
     def reset_timer_and_mgr(self, token):
         """
