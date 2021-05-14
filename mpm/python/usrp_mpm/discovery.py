@@ -55,6 +55,7 @@ def _discovery_process(state, discovery_addr):
             [b"type="+state.dev_type.value] + \
             [b"product="+state.dev_product.value] + \
             [b"serial="+state.dev_serial.value] + \
+            [b"fpga="+state.dev_fpga_type.value] + \
             [RESPONSE_CLAIMED_KEY+to_binary_str("={}".format(state.claim_status.value))]
         )
 
