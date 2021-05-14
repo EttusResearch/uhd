@@ -30,8 +30,6 @@ def spawn_discovery_process(shared_state, discovery_addr):
     Returns a process that contains the device discovery.
 
     Arguments:
-    device_info -- A dictionary of type string -> string. All of these items
-                   will be included in the response string.
     shared_state -- Shared state of device (is it claimed, etc.). Is a
                     SharedState() object.
     discovery_addr -- Discovery will listen on this address(es)
