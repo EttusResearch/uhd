@@ -1145,8 +1145,10 @@ public:
                 }
             }
         } else {
-            throw uhd::runtime_error(
-                "This device does not support manual configuration of LOs");
+            if (not(src == "internal" and name == ALL_LOS)) {
+                throw uhd::runtime_error(
+                    "This device only supports setting internal source on all LOs");
+            }
         }
     }
 
@@ -1232,8 +1234,10 @@ public:
                 }
             }
         } else {
-            throw uhd::runtime_error(
-                "This device does not support manual configuration of LOs");
+            if (not(enabled == false and name == ALL_LOS)) {
+                throw uhd::runtime_error("This device only supports setting LO export "
+                                         "enabled to false on all LOs");
+            }
         }
     }
 
@@ -1374,8 +1378,10 @@ public:
                 }
             }
         } else {
-            throw uhd::runtime_error("This device does not support manual "
-                                     "configuration of LOs");
+            if (not(src == "internal" and name == ALL_LOS)) {
+                throw uhd::runtime_error(
+                    "This device only supports setting internal source on all LOs");
+            }
         }
     }
 
@@ -1456,8 +1462,10 @@ public:
                 }
             }
         } else {
-            throw uhd::runtime_error(
-                "This device does not support manual configuration of LOs");
+            if (not(enabled == false and name == ALL_LOS)) {
+                throw uhd::runtime_error("This device only supports setting LO export "
+                                         "enabled to false on all LOs");
+            }
         }
     }
 
