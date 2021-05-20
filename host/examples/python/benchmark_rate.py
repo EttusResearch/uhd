@@ -307,7 +307,6 @@ def benchmark_tx_rate_async_helper(tx_streamer, timer_elapsed_event, tx_async_st
     num_tx_seqerr = 0
     num_tx_underrun = 0
     num_tx_timeouts = 0  # TODO: Not populated yet
-
     try:
         while not timer_elapsed_event.is_set():
             # Receive the async metadata
@@ -317,16 +316,17 @@ def benchmark_tx_rate_async_helper(tx_streamer, timer_elapsed_event, tx_async_st
             # Handle the error codes
             if async_metadata.event_code == uhd.types.TXMetadataEventCode.burst_ack:
                 return
-            elif ((async_metadata.event_code == uhd.types.TXMetadataEventCode.underflow) or
-                  (async_metadata.event_code == uhd.types.TXMetadataEventCode.underflow_in_packet)):
-                num_tx_seqerr += 1
-            elif ((async_metadata.event_code == uhd.types.TXMetadataEventCode.seq_error) or
-                  (async_metadata.event_code == uhd.types.TXMetadataEventCode.seq_error_in_packet)):
+            if async_metadata.event_code in (
+                    uhd.types.TXMetadataEventCode.underflow,
+                    uhd.types.TXMetadataEventCode.underflow_in_packet):
                 num_tx_underrun += 1
+            elif async_metadata.event_code in (
+                    uhd.types.TXMetadataEventCode.seq_error,
+                    uhd.types.TXMetadataEventCode.seq_error_in_packet):
+                num_tx_seqerr += 1
             else:
                 logger.warning("Unexpected event on async recv (%s), continuing.",
-                                async_metadata.event_code)
-
+                               async_metadata.event_code)
     finally:
         # Write the statistics back
         tx_async_statistics["num_tx_seqerr"] = num_tx_seqerr
@@ -402,8 +402,8 @@ def main():
         # If the check returned two empty channel lists, that means something went wrong
         return False
     logger.info("Selected %s RX channels and %s TX channels",
-                 rx_channels if rx_channels else "no",
-                 tx_channels if tx_channels else "no")
+                rx_channels if rx_channels else "no",
+                tx_channels if tx_channels else "no")
 
     logger.info("Setting device timestamp to 0...")
     # If any of these conditions are met, we need to synchronize the channels
