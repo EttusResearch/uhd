@@ -88,47 +88,61 @@ noc_block_base::noc_block_base(make_args_ptr make_args)
         mtu_prop_refs.insert(&prop);
         register_property(&prop);
     }
-    for (auto& prop : _mtu_props) {
-        auto prop_refs_copy = mtu_prop_refs;
-        add_property_resolver(
-            {&prop}, std::move(prop_refs_copy), [this, source_prop = &prop]() {
-                const res_source_info src_edge = source_prop->get_src_info();
-                // First, coerce the MTU to its appropriate min value
-                const size_t new_mtu = std::min(source_prop->get(), _mtu.at(src_edge));
-                source_prop->set(new_mtu);
-                _mtu.at(src_edge) = source_prop->get();
-                RFNOC_LOG_TRACE("MTU is now " << _mtu.at(src_edge) << " on edge "
-                                              << src_edge.to_string());
-                auto update_pred = [src_edge, fwd_policy = _mtu_fwd_policy](
-                                       const res_source_info& mtu_src) -> bool {
-                    switch (fwd_policy) {
-                        case forwarding_policy_t::DROP:
-                            return false;
-                        case forwarding_policy_t::ONE_TO_ONE:
-                            return res_source_info::invert_edge(mtu_src.type)
-                                       == src_edge.type
-                                   && mtu_src.instance == src_edge.instance;
-                        case forwarding_policy_t::ONE_TO_ALL:
-                            return mtu_src.type != src_edge.type && mtu_src.instance
-                                   && src_edge.instance;
-                        case forwarding_policy_t::ONE_TO_FAN:
-                            return res_source_info::invert_edge(mtu_src.type)
-                                   == src_edge.type;
-                        default:
-                            UHD_THROW_INVALID_CODE_PATH();
-                    }
-                };
 
-                for (auto& mtu_prop : _mtu_props) {
-                    if (update_pred(mtu_prop.get_src_info())
-                        && mtu_prop.get() != new_mtu) {
-                        RFNOC_LOG_TRACE("Forwarding new MTU value to edge "
-                                        << mtu_prop.get_src_info().to_string());
-                        mtu_prop.set(new_mtu);
-                        _mtu.at(mtu_prop.get_src_info()) = mtu_prop.get();
-                    }
-                }
-            });
+    // If an MTU edge property value changes, this resolver will coerce the
+    // value to the smaller of the new value or the existing MTU value on that
+    // edge (`_mtu`). This is default behavior that *must* be present for all
+    // MTU edge properties on all NoC blocks regardless of the current MTU
+    // forwarding policy. Yes, this even happens with the default `DROP`
+    // forwarding policy.
+    //
+    // Why is this behavior implemented in its own separate resolver and not
+    // rolled into `set_mtu_forwarding_policy()`, which is responsible for
+    // registering resolvers that have accurate output sensitivity lists based
+    // on the desired MTU forwarding policy? The reason is to allow blocks to
+    // implement custom MTU forwarding policies, but to ensure that this
+    // default behavior is always present (remember, this behavior should
+    // happen regardless of the MTU forwarding policy).
+    //
+    // Let's take the DDC block for example, whose MTU forwarding policy is
+    // `ONE_TO_ONE`. When a DDC block is constructed, `noc_block_base` is
+    // constructed first because it is a superclass of the DDC block. The
+    // default MTU property resolvers are added to the list of resolvers for
+    // the block. Then the DDC block constructor runs, and calls
+    // `set_mtu_forwarding_policy(ONE_TO_ONE)`. We can't go and remove the
+    // existing MTU edge property resolvers to modify them, or even modify
+    // them in place--there's simply no way to do that given that the list of
+    // property resolvers is private to `node_t` (`noc_block_base`'s
+    // superclass), and there is no way to modify that list except to add new
+    // entries to it via `add_property_resolver()`. So calling
+    // `set_mtu_forwarding_policy()` adds a *new* set of resolvers for each MTU
+    // property that adds the *additional* behaviors dictated by the forwarding
+    // policy.
+    //
+    // This implies there is now an ordering dependency on how dirty properties
+    // are resolved. The default coercing resolver *MUST* execute first, to
+    // determine what the MTU value should be, and *THEN* any propagation of
+    // that value based on the forwarding policy can take place. UHD satisfies
+    // this ordering dependency because:
+    //   a) The list of property resolvers for a node is maintained in a
+    //      vector, and adding new resolvers is always performed by a
+    //      `push_back()` (see `node_t::add_property_resolver()`), so it is
+    //      guaranteed that the default coercing resolver is added first since
+    //      it's done in the `noc_block_base` constructor.
+    //   b) `resolve_props()` and `init_props()`, `node_t` functions which
+    //      perform property resolution, always iterate the resolver vector
+    //      in order (i.e., items 0..n-1), ensuring that the resolvers are
+    //      called in the same order in which they were added to the vector.
+    for (auto& prop : _mtu_props) {
+        add_property_resolver({&prop}, {&prop}, [this, source_prop = &prop]() {
+            const res_source_info src_edge = source_prop->get_src_info();
+            // Coerce the MTU to its appropriate min value
+            const size_t new_mtu = std::min(source_prop->get(), _mtu.at(src_edge));
+            source_prop->set(new_mtu);
+            _mtu.at(src_edge) = source_prop->get();
+            RFNOC_LOG_TRACE("MTU is now " << _mtu.at(src_edge) << " on edge "
+                                          << src_edge.to_string());
+        });
     }
 }
 
@@ -205,11 +219,72 @@ void noc_block_base::set_mtu_forwarding_policy(const forwarding_policy_t policy)
         || policy == forwarding_policy_t::ONE_TO_ALL
         || policy == forwarding_policy_t::ONE_TO_FAN) {
         _mtu_fwd_policy = policy;
+    } else {
+        RFNOC_LOG_ERROR("Setting invalid MTU forwarding policy!");
+        throw uhd::value_error("MTU forwarding policy must be either DROP, ONE_TO_ONE, "
+                               "ONE_TO_ALL, or ONE_TO_FAN!");
+    }
+
+    // The behavior for DROP is already implemented in the default resolvers
+    // that are registered in the `noc_block_base` constructor, so calling
+    // `set_mtu_forwarding_policy(DROP)` is effectively a no-op (but legal,
+    // so we should support it).
+    if (policy == forwarding_policy_t::DROP) {
         return;
     }
-    RFNOC_LOG_ERROR("Setting invalid MTU forwarding policy!");
-    throw uhd::value_error("MTU forwarding policy must be either DROP, ONE_TO_ONE, "
-                           "ONE_TO_ALL, or ONE_TO_FAN!");
+
+    // Determine the set of MTU properties that should be in the output
+    // sensitivity list based on the selected MTU forwarding policy. Note
+    // that the input property itself (`prop` in the iteration below) is
+    // not added to the output sensitivity list because it will have already
+    // been resolved by its own separate default coercing resolver which was
+    // registered at `noc_block_base` construction time. See the massive
+    // comment in the constructor for why.
+    for (auto& prop : _mtu_props) {
+        const res_source_info src_edge = prop.get_src_info();
+        prop_ptrs_t output_props{};
+        for (auto& other_prop : _mtu_props) {
+            const res_source_info dst_edge = other_prop.get_src_info();
+            bool add_to_output_props       = false;
+            switch (_mtu_fwd_policy) {
+                case forwarding_policy_t::ONE_TO_ONE:
+                    add_to_output_props = res_source_info::invert_edge(dst_edge.type)
+                                              == src_edge.type
+                                          && dst_edge.instance == src_edge.instance;
+                    break;
+                case forwarding_policy_t::ONE_TO_ALL:
+                    add_to_output_props = dst_edge.type != src_edge.type
+                                          && dst_edge.instance != src_edge.instance;
+                    break;
+                case forwarding_policy_t::ONE_TO_FAN:
+                    add_to_output_props = res_source_info::invert_edge(dst_edge.type)
+                                          == src_edge.type;
+                    break;
+                default:
+                    UHD_THROW_INVALID_CODE_PATH();
+            }
+
+            if (add_to_output_props) {
+                output_props.insert(&other_prop);
+            }
+        }
+
+        add_property_resolver({&prop},
+            std::move(output_props),
+            [this, dst_props = output_props, source_prop = &prop]() {
+                const res_source_info src_edge = source_prop->get_src_info();
+                const size_t new_mtu = std::min(source_prop->get(), _mtu.at(src_edge));
+                // Set the new MTU on all the dependent output MTU edge props
+                for (auto& dst_prop : dst_props) {
+                    auto mtu_prop =
+                        dynamic_cast<uhd::rfnoc::property_t<size_t>*>(dst_prop);
+                    RFNOC_LOG_TRACE("Forwarding new MTU value to edge "
+                                    << mtu_prop->get_src_info().to_string());
+                    mtu_prop->set(new_mtu);
+                    _mtu.at(mtu_prop->get_src_info()) = mtu_prop->get();
+                }
+            });
+    }
 }
 
 void noc_block_base::set_mtu(const res_source_info& edge, const size_t new_mtu)
