@@ -75,6 +75,30 @@ PACKAGE_MAPPING = {
                   "usrp_x310_fpga_XG.bit",
                   "usrp_x310_fpga_XG.rpt"]
     },
+    "x410": {
+        "type": "x4xx",
+        "package_name": "x4xx_x410_fpga_default-g{}.zip",
+        "files": ["usrp_x410_fpga_X4_200.bit",
+                  "usrp_x410_fpga_X4_200.bit.md5",
+                  "usrp_x410_fpga_X4_200.dts",
+                  "usrp_x410_fpga_X4_200.dts.md5"]
+    },
+    "x410_cpld": {
+        "type": "x4xx",
+        "package_name": "x4xx_x410_cpld_default-g{}.zip",
+        "files": ["usrp_x410_cpld.rpd",
+                  "usrp_x410_cpld.rpd.md5",
+                  "usrp_x410_cpld.svf",
+                  "usrp_x410_cpld.svf.md5"]
+    },
+    "zbx_cpld": {
+        "type": "x4xx",
+        "package_name": "x4xx_zbx_cpld_default-g{}.zip",
+        "files": ["usrp_zbx_cpld.rpd",
+                  "usrp_zbx_cpld.rpd.md5",
+                  "usrp_zbx_cpld.svf",
+                  "usrp_zbx_cpld.svf.md5"]
+    },
     "n310": {
         "type": "n3xx",
         "package_name": "n3xx_n310_fpga_default-g{}.zip",
