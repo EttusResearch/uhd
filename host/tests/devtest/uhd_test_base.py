@@ -56,7 +56,7 @@ def filter_stderr(stderr, run_results=None):
 #--------------------------------------------------------------------------
 # Application
 #--------------------------------------------------------------------------
-class shell_application(object):
+class shell_application:
     """
     Wrapper for applications that are in $PATH.
     Note: The CMake infrastructure makes sure all examples and utils are in $PATH.

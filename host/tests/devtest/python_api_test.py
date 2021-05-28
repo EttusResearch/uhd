@@ -7,6 +7,7 @@
 """ Test Python API """
 
 import os
+import sys
 from uhd_test_base import shell_application
 from uhd_test_base import UHDPythonTestCase
 
@@ -19,17 +20,12 @@ class uhd_python_api_test(UHDPythonTestCase):
         Run test and report results.
         """
         devtest_src_dir = os.getenv('_UHD_DEVTEST_SRC_DIR', '')
-        multi_usrp_test_path = \
-            os.path.join(devtest_src_dir, 'multi_usrp_test.py')
         args = [
+            os.path.join(devtest_src_dir, 'multi_usrp_test.py'),
             self.create_addr_args_str(),
         ]
-        app = None
-        if os.name == 'nt':
-            args.insert(0, multi_usrp_test_path)
-            app = shell_application('python')
-        else:
-            app = shell_application(multi_usrp_test_path)
+        # The 'app' we are running is just another Python process
+        app = shell_application(sys.executable)
         app.run(args)
         run_results = {
             'return_code': app.returncode,
