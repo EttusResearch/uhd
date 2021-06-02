@@ -16,9 +16,7 @@
 # code is checked out by this pipeline with the branch and version which
 # triggered this pipeline.
 #
-# The pipeline generates an artifact named "genericx86-64-feed". It contains
-# the file base-feeds.conf which contains the package feed URIs. This file can
-# be used by the opkg package manager to install the packages from this feed.
+# The pipeline generates an artifact named qemux86_64-ipks containing the IPKs.
 
 trigger:
   branches:
@@ -38,150 +36,38 @@ pr:
     - .ci
     - host
 
+resources:
+  repositories:
+    - repository: meta-ettus
+      type: github
+      name: EttusResearch/meta-ettus-dev
+      endpoint: EttusResearch
+      ref: zeus-ci
+  pipelines:
+    - pipeline: usrp-kas-pipeline
+      source: 'usrp-kas'
+
 variables:
-  SITECONF_FILE: '$(Agent.WorkFolder)/site.conf'
-  IMAGE_VERSION_SUFFIX: '-$(Build.BuildNumber)'
-  MENDER_ARTIFACT_NAME: '$(Build.BuildNumber)'
-  # The following variables need to be provided as pipeline variables:
-  # MANIFEST_URL, MANIFEST_BRANCH, MANIFEST_FILE, OE_RELEASE
+  AUTO_CONF: $(Agent.BuildDirectory)/auto.conf
 
 jobs:
-- job: 'build'
-  timeoutInMinutes: 600
-  cancelTimeoutInMinutes: 10
-  strategy:
-    matrix: {'qemux86-64': {}}
-
-  pool:
-    name: de-dre-lab
-    demands:
-    - openembedded
-    - Agent.Name -equals oss-build3
-
-  variables:
-    MENDER_ARTIFACT_NAME: '$(Build.BuildNumber)_$(System.JobName)'
-
-  steps:
-
-  - script: |
-      DEVICE=$SYSTEM_JOBNAME
-      TEMPLATECONF_DIR="meta-ettus/conf/qemux86-64"
-      BUILD_DIR="$DEVICE/build-$BUILD_BUILDNUMBER"
-      IMAGE_VERSION_SUFFIX="-$BUILD_BUILDNUMBER"
-      # set variables to be used in the pipeline
-      echo "###vso[task.setVariable variable=Device;isOutput=true]$DEVICE"
-      echo "###vso[task.setVariable variable=TemplateConf_Dir;isOutput=true]$TEMPLATECONF_DIR"
-      echo "###vso[task.setVariable variable=Build_Dir;isOutput=true]$BUILD_DIR"
-      echo "###vso[task.setVariable variable=Image_Version_Suffix;isOutput=true]$IMAGE_VERSION_SUFFIX"
-    name: config
-
-  - script: env
-    displayName: 'Print environment'
-
-  - script: ssh -T git@github.com || true
-    displayName: 'Test github authentication'
-
-  - script: |
-      cd $AGENT_BUILDDIRECTORY
-      echo repo init -u $MANIFEST_URL -b $MANIFEST_BRANCH -m $MANIFEST_FILE
-      repo init -u $MANIFEST_URL -b $MANIFEST_BRANCH -m $MANIFEST_FILE
-      mkdir -p .repo/local_manifests
-      cat > .repo/local_manifests/add-meta-yocto.xml <<EOF
-      <?xml version="1.0" encoding="UTF-8"?>
-      <manifest>
-        <project name="meta-yocto" remote="yocto" revision="$(OE_RELEASE)" />
-      </manifest>
-      EOF
-      repo forall -c git clean -fd
-      repo forall -c git reset --hard
-      repo sync --force-sync
-      if [ -x .repo/manifests/apply-patches.sh ]; then
-        .repo/manifests/apply-patches.sh
-      fi
-    displayName: 'Checkout openembedded layers'
-
-  - checkout: self
-    path: uhd
-    displayName: 'Checkout uhd'
-
-  - script: |
-      cd $AGENT_BUILDDIRECTORY
-      mkdir -p $PWD/$CONFIG_BUILD_DIR
-      export TEMPLATECONF=$PWD/$CONFIG_TEMPLATECONF_DIR
-      if [ -d $CONFIG_BUILD_DIR/conf ]; then
-        rm -rv $CONFIG_BUILD_DIR/conf
-      fi
-      source oe-core/oe-init-build-env $CONFIG_BUILD_DIR
-      echo "INHERIT += \"externalsrc\"" >> conf/local.conf
-      echo "EXTERNALSRC_pn-uhd = \"$AGENT_BUILDDIRECTORY/uhd/host\"" >> conf/local.conf
-      echo "EXTERNALSRC_pn-uhd-fpga-images = \"$AGENT_BUILDDIRECTORY/uhd/host\"" >> conf/local.conf
-      echo "EXTERNALSRC_pn-mpmd = \"$AGENT_BUILDDIRECTORY/uhd/mpm\"" >> conf/local.conf
-      if [ -n "$SITECONF_FILE" ]; then
-        cp -v $SITECONF_FILE conf/site.conf
-        DEPLOY_DIR_BASE=$(grep -e "^DEPLOY_DIR_BASE\s*=" conf/site.conf | sed "s|^.*=\s*\"\(\S*\)\"$|\1|")
-        if [ -n "$DEPLOY_DIR_BASE" ]; then
-          DEPLOY_DIR="$DEPLOY_DIR_BASE/${SYSTEM_DEFINITIONNAME}/${CONFIG_BUILD_DIR}"
-          echo "###vso[task.setVariable variable=DEPLOY_DIR]$DEPLOY_DIR"
-          echo "Setting DEPLOY_DIR to $DEPLOY_DIR"
-          echo "DEPLOY_DIR = \"$DEPLOY_DIR\"" >> conf/local.conf
-          PACKAGE_FEED_BASE_PATHS="$(realpath -m --relative-to="$DEPLOY_DIR_BASE" "$DEPLOY_DIR/ipk")"
-          echo "Setting PACKAGE_FEED_BASE_PATHS to $PACKAGE_FEED_BASE_PATHS"
-          echo "PACKAGE_FEED_BASE_PATHS = \"$PACKAGE_FEED_BASE_PATHS\"" >> conf/local.conf
-        fi
-      fi
-      for FILE in $TEMPLATECONF/multiconfig/*.sample; do
-        mkdir -p conf/multiconfig
-        cp -v $FILE conf/multiconfig/$(basename $FILE .sample)
-      done
-      echo "MENDER_ARTIFACT_NAME = \"$MENDER_ARTIFACT_NAME\"" >> conf/local.conf
-
-    displayName: 'Setup environment'
-
-  - script: |
-      cd $AGENT_BUILDDIRECTORY
-      source oe-core/oe-init-build-env $CONFIG_BUILD_DIR
-      bitbake -p || exit $?
-    displayName: 'Parse recipes'
-
-  - script: |
-      cd $AGENT_BUILDDIRECTORY
-      source oe-core/oe-init-build-env $CONFIG_BUILD_DIR
-      for RECIPE in $(Image); do
-        bitbake $RECIPE:do_package_write_ipk || exit $?
-      done
-    displayName: 'build $(Image)'
-
-  - script: |
-      cd $AGENT_BUILDDIRECTORY
-      source oe-core/oe-init-build-env $CONFIG_BUILD_DIR
-      for RECIPE in $(Image); do
-        bitbake $RECIPE || exit $?
-      done
-    displayName: 'build $(Image) with dependencies'
-
-  - script: |
-      cd $AGENT_BUILDDIRECTORY
-      source oe-core/oe-init-build-env $CONFIG_BUILD_DIR
-      bitbake package-index
-      bitbake package-feed
-      for RECIPE in $(Image); do
-          bitbake -e $RECIPE > $RECIPE.env
-          grep -e "^IMAGE_NAME=" -e "^IMAGE_LINK_NAME=" -e "^IMAGE_FSTYPES=" \
-            -e "^DEPLOY_DIR_IMAGE=" -e "^DEPLOY_DIR_IPK=" $RECIPE.env \
-             > image.variables
-          break
-      done
-      source image.variables
-      DEST=feed
-      mkdir -p $DEST
-      cp $DEPLOY_DIR_IPK/base-feeds.conf $DEST
-    displayName: 'Create Feed $(System.JobName)'
-
-  - publish: $(Agent.BuildDirectory)/$(config.Build_Dir)/feed
-    artifact: '$(System.JobName)-feed'
-    displayName: 'Publish Image feed $(System.JobName)'
-
-  - script: |
-      if [ -d $(DEPLOY_DIR) ]; then mv $(DEPLOY_DIR) $(DEPLOY_DIR)_attempt_$(System.JobAttempt); fi
-    condition: failed()
-    displayName: rename deploy dir if build failed
+  - template: .ci/templates/job_build_package.yml@meta-ettus
+    parameters:
+      machines:
+        - qemux86_64
+      targets:
+        - $(Image)
+        - package-index
+        - package-feed
+      auto_conf: $AUTO_CONF
+      prebuild_steps:
+        - script: rm -f $AUTO_CONF
+        - template: .ci/templates/oe_localconf_externalsrc.yml@meta-ettus
+          parameters:
+            conf_file: $AUTO_CONF
+            repository: self
+            package_paths:
+              - package: uhd
+                path: host
+              - package: mpmd
+                path: mpm
