@@ -381,12 +381,15 @@ class GPSDIfaceExtension:
         while True:
             gps_info = self._gpsd_iface.get_gps_info(resp_class='', timeout=15)
             self._log.trace("GPS info: {}".format(gps_info))
-            tpv_sensor_data = gps_info.get('tpv', [{}])[0]
-            sky_sensor_data = gps_info.get('sky', [{}])[0]
-            if tpv_sensor_data and \
-                    sky_sensor_data and \
-                    tpv_sensor_data.get("mode", 0) > 0:
-                break
+            # Response types are 'list of dicts', but they can be empty lists so
+            # we need to prepare for that:
+            tpv_sensor_data = gps_info.get('tpv')
+            sky_sensor_data = gps_info.get('sky')
+            if tpv_sensor_data and sky_sensor_data:
+                tpv_sensor_data = tpv_sensor_data[0]
+                sky_sensor_data = sky_sensor_data[0]
+                if tpv_sensor_data.get("mode", 0) > 0:
+                    break
         return {
             'name': 'gpgga',
             'type': 'STRING',
