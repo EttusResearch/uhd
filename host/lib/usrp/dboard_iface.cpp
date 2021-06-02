@@ -26,7 +26,7 @@ void dboard_iface::sleep(const boost::chrono::nanoseconds& time)
         if (time < boost::chrono::microseconds(1)) {
             std::this_thread::sleep_for(std::chrono::microseconds(1));
         } else {
-            std::this_thread::sleep_for(std::chrono::microseconds(time.count()));
+            std::this_thread::sleep_for(std::chrono::nanoseconds(time.count()));
         }
     }
 }
