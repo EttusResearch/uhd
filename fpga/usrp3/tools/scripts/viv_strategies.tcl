@@ -72,13 +72,13 @@ proc ::vivado_strategies::get_impl_preset {preset} {
 # ---------------------------------------------------
 proc ::vivado_strategies::implement_design {strategy} {
     variable g_viv_version
-    
+
     # Check strategy for validity and print
     vivado_strategies::check_strategy $strategy
     puts "BUILDER: Running implementation strategy with:"
     vivado_strategies::print_strategy $strategy
-    
-    # Optimize the current netlist. 
+
+    # Optimize the current netlist.
     # This will perform the retarget, propconst, sweep and bram_power_opt optimizations by default.
     if [dict get $strategy "opt_design.is_enabled"] {
         set opt_dir [dict get $strategy "opt_design.directive"]
@@ -105,6 +105,12 @@ proc ::vivado_strategies::implement_design {strategy} {
         phys_opt_design -directive $pp_physopt_dir
     }
 
+    # Option to run commands before route
+    if {[dict exist $strategy "route_design.pre_hook"]} {
+      set pre_route_cmds [dict get $strategy "route_design.pre_hook"]
+      eval $pre_route_cmds
+    }
+
     # Route the current design
     set rt_dir [dict get $strategy "route_design.directive"]
     puts "BUILDER: Choosing routing directive: $rt_dir"
@@ -128,7 +134,7 @@ proc ::vivado_strategies::implement_design {strategy} {
 # ---------------------------------------------------
 proc ::vivado_strategies::check_strategy {strategy} {
     variable g_viv_version
-    
+
     set strategy_options [dict keys $strategy]
     set required_options {\
         opt_design.is_enabled \
@@ -142,7 +148,7 @@ proc ::vivado_strategies::check_strategy {strategy} {
         post_route_phys_opt_design.is_enabled \
         post_route_phys_opt_design.directive \
     }
-    
+
     set invalid 0
     foreach req $required_options {
         if [expr [lsearch $strategy_options $req] < 0] {
