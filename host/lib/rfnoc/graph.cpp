@@ -212,6 +212,8 @@ void graph_t::disconnect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t 
         UHD_LOG_TRACE(LOG_ID,
             "Removing block " << src_node->get_unique_id() << ":" << edge_info.src_port);
         node_accessor.clear_resolve_all_callback(src_node);
+        node_accessor.set_post_action_callback(
+            src_node, [](const res_source_info&, action_info::sptr) {});
     }
 
     // Re-look up the vertex descriptor for dst_node, as the act of removing
@@ -222,6 +224,8 @@ void graph_t::disconnect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t 
         UHD_LOG_TRACE(LOG_ID,
             "Removing block " << dst_node->get_unique_id() << ":" << edge_info.dst_port);
         node_accessor.clear_resolve_all_callback(dst_node);
+        node_accessor.set_post_action_callback(
+            dst_node, [](const res_source_info&, action_info::sptr) {});
     }
 }
 
