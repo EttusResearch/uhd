@@ -62,7 +62,7 @@ REBUILD_VIVADO_IP_WITH_PATCH = \
 	echo "BUILDER: Building Patched IP $(1)"; \
 	echo "========================================================"; \
 	export XCI_FILE=$(call RESOLVE_PATH,$(5)/$(1)/$(1).xci); \
-	export PART_NAME=`python $(TOOLS_DIR)/scripts/viv_gen_part_id.py $(2)/$(3)`; \
+	export PART_NAME=`python3 $(TOOLS_DIR)/scripts/viv_gen_part_id.py $(2)/$(3)`; \
 	export GEN_EXAMPLE=$(6); \
 	export SYNTH_IP=$(SYNTH_IP); \
 	export PATCHED_FILE=$(7); \
