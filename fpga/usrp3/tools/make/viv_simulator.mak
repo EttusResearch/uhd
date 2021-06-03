@@ -21,8 +21,8 @@ ifdef SIM_COMPLIBDIR
 COMPLIBDIR = $(call RESOLVE_PATH,$(SIM_COMPLIBDIR))
 endif
 
-# Parse part name from ID
-PART_NAME=$(subst /,,$(PART_ID))
+# Get full part name, formatted for Vivado
+PART_NAME=`python3 $(TOOLS_DIR)/scripts/viv_gen_part_id.py $(ARCH)/$(PART_ID)`
 
 # Resolve path
 EXP_DESIGN_SRCS = $(call RESOLVE_PATHS,$(DESIGN_SRCS))
