@@ -94,6 +94,12 @@ std::vector<std::string> get_addrs_from_mb_args(const uhd::device_addr_t& mb_arg
         if (mb_args.has_key(SECOND_ADDR_KEY)) {
             addrs.push_back(mb_args[SECOND_ADDR_KEY]);
         }
+        if (mb_args.has_key(THIRD_ADDR_KEY)) {
+            addrs.push_back(mb_args[THIRD_ADDR_KEY]);
+        }
+        if (mb_args.has_key(FOURTH_ADDR_KEY)) {
+            addrs.push_back(mb_args[FOURTH_ADDR_KEY]);
+        }
     }
     if(addrs.empty()) {
         if (!link_info_list.empty()) {

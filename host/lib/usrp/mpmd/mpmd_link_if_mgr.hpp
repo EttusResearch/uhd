@@ -28,6 +28,10 @@ namespace uhd { namespace mpmd { namespace xport {
 const std::string FIRST_ADDR_KEY = "addr";
 //! Secondary Ethernet address for streaming and RFNoC communication
 const std::string SECOND_ADDR_KEY = "second_addr";
+//! Tertiary Ethernet address for streaming and RFNoC communication
+const std::string THIRD_ADDR_KEY = "third_addr";
+//! Quaternary Ethernet address for streaming and RFNoC communication
+const std::string FOURTH_ADDR_KEY = "fourth_addr";
 
 /*! Return filtered subset from a device_addr_t
  *
