@@ -136,7 +136,7 @@ class ${name}_t:
                 % if reg.is_array:
         self.${reg.get_name()} = [self.${reg.get_name()}_t.${reg.get_default()},] * ${reg.get_array_len()}
                 % else:
-        self.${reg.get_name()} = ${reg.get_default()}
+        self.${reg.get_name()} = self.${reg.get_name()}_t.${reg.get_default()}
                 % endif
             % else:
                 % if reg.is_array:
@@ -156,7 +156,11 @@ class ${name}_t:
         if self._state is None:
             self._state = ${name}_t()
         % for reg in regs:
+            % if reg.is_array:
+        self._state.${reg.get_name()} = self.${reg.get_name()}.copy()
+            % else:
         self._state.${reg.get_name()} = self.${reg.get_name()}
+            % endif
         % endfor
 
     def get_changed_addrs(self):

@@ -14,6 +14,44 @@ namespace {
 constexpr size_t MPMD_DEFAULT_LONG_TIMEOUT = 30000; // ms
 } // namespace
 
+mpmd_mb_controller::fpga_onload::fpga_onload()
+{}
+
+void mpmd_mb_controller::fpga_onload::onload()
+{
+    for (auto& cb : _cbs)
+    {
+        if (auto spt = cb.lock())
+        {
+            spt->onload();
+        }
+    }
+}
+
+void mpmd_mb_controller::fpga_onload::request_cb(uhd::features::fpga_load_notification_iface::sptr handler)
+{
+    _cbs.emplace_back(handler);
+}
+
+mpmd_mb_controller::ref_clk_calibration::ref_clk_calibration(uhd::usrp::mpmd_rpc_iface::sptr rpcc)
+    : _rpcc(rpcc)
+{}
+
+void mpmd_mb_controller::ref_clk_calibration::set_ref_clk_tuning_word(uint32_t tuning_word)
+{
+    _rpcc->set_ref_clk_tuning_word(tuning_word);
+}
+
+uint32_t mpmd_mb_controller::ref_clk_calibration::get_ref_clk_tuning_word()
+{
+    return _rpcc->get_ref_clk_tuning_word();
+}
+
+void mpmd_mb_controller::ref_clk_calibration::store_ref_clk_tuning_word(uint32_t tuning_word)
+{
+    _rpcc->store_ref_clk_tuning_word(tuning_word);
+}
+
 mpmd_mb_controller::mpmd_mb_controller(
     uhd::usrp::mpmd_rpc_iface::sptr rpcc, uhd::device_addr_t device_info)
     : _rpc(rpcc), _device_info(device_info)
@@ -32,6 +70,14 @@ mpmd_mb_controller::mpmd_mb_controller(
     _gpio_banks = _rpc->get_gpio_banks();
     for (const auto& bank : _gpio_banks) {
         _gpio_srcs.insert({bank, _rpc->get_gpio_srcs(bank)});
+    }
+
+    _fpga_onload = std::make_shared<fpga_onload>();
+    register_feature(_fpga_onload);
+
+    if (_rpc->supports_feature("ref_clk_calibration")) {
+        _ref_clk_cal = std::make_shared<ref_clk_calibration>(_rpc);
+        register_feature(_ref_clk_cal);
     }
 }
 
@@ -142,16 +188,22 @@ std::vector<device_addr_t> mpmd_mb_controller::get_sync_sources()
     return result;
 }
 
-void mpmd_mb_controller::set_clock_source_out(const bool /*enb*/)
+void mpmd_mb_controller::set_clock_source_out(const bool enb)
 {
-    throw uhd::not_implemented_error(
-        "set_clock_source_out() not implemented on this device!");
+    _rpc->set_clock_source_out(enb);
 }
 
-void mpmd_mb_controller::set_time_source_out(const bool /*enb*/)
+void mpmd_mb_controller::set_time_source_out(const bool enb)
 {
-    throw uhd::not_implemented_error(
-        "set_time_source_out() not implemented on this device!");
+    if (_rpc->supports_feature("time_export"))
+    {
+        _rpc->set_trigger_io(enb ? "pps_output" : "off");
+    }
+    else
+    {
+        throw uhd::not_implemented_error(
+            "set_time_source_out() not implemented on this device!");
+    }
 }
 
 sensor_value_t mpmd_mb_controller::get_sensor(const std::string& name)

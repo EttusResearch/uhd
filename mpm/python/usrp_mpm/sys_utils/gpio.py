@@ -30,6 +30,7 @@ class Gpio:
 
     INPUT = gpiod.LINE_REQ_DIR_IN
     OUTPUT = gpiod.LINE_REQ_DIR_OUT
+    FALLING_EDGE = gpiod.LINE_REQ_EV_FALLING_EDGE
 
     def __init__(self, name, direction=INPUT, default_val=None):
         self._direction = direction
@@ -58,3 +59,12 @@ class Gpio:
         with request_gpio(self._line, self._direction) as gpio:
             gpio.set_value(int(value))
             self._out_value = bool(value)
+
+    def event_wait(self):
+        """
+        Wait for an event to happen on this line
+        """
+        with request_gpio(self._line, self._direction) as gpio:
+            while True:
+                if gpio.event_wait(sec=1):
+                    return True

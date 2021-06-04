@@ -6,8 +6,11 @@
 
 #pragma once
 
+#include <uhd/features/ref_clk_calibration_iface.hpp>
 #include <uhd/rfnoc/mb_controller.hpp>
 #include <uhdlib/usrp/common/rpc.hpp>
+#include <uhdlib/features/discoverable_feature_registry.hpp>
+#include <uhdlib/features/fpga_load_notification_iface.hpp>
 #include <uhdlib/utils/rpc.hpp>
 #include <memory>
 
@@ -19,7 +22,8 @@ namespace uhd { namespace rfnoc {
  *
  * This motherboard controller abstracts out a bunch of RPC calls.
  */
-class mpmd_mb_controller : public mb_controller
+class mpmd_mb_controller : public mb_controller,
+                           public ::uhd::features::discoverable_feature_registry
 {
 public:
     using sptr = std::shared_ptr<mpmd_mb_controller>;
@@ -113,6 +117,42 @@ private:
     //! Cache of available GPIO sources
     std::vector<std::string> _gpio_banks;
     std::unordered_map<std::string, std::vector<std::string>> _gpio_srcs;
+
+public:
+    /*! When the FPGA is reloaded, pass the notification to every Radio block
+     *  Public to allow other classes to register for notifications.
+     */
+    class fpga_onload : public uhd::features::fpga_load_notification_iface {
+    public:
+        using sptr = std::shared_ptr<fpga_onload>;
+
+        fpga_onload();
+
+        void onload() override;
+
+        void request_cb(uhd::features::fpga_load_notification_iface::sptr handler);
+
+    private:
+        std::vector<std::weak_ptr<uhd::features::fpga_load_notification_iface>> _cbs;
+    };
+
+    //! Class to expose the ref_clk_calibration discoverable feature functions.
+    class ref_clk_calibration : public uhd::features::ref_clk_calibration_iface {
+    public:
+        using sptr = std::shared_ptr<ref_clk_calibration>;
+
+        ref_clk_calibration(uhd::usrp::mpmd_rpc_iface::sptr rpcc);
+
+        void set_ref_clk_tuning_word(uint32_t tuning_word) override;
+        uint32_t get_ref_clk_tuning_word() override;
+        void store_ref_clk_tuning_word(uint32_t tuning_word) override;
+
+    private:
+        uhd::usrp::mpmd_rpc_iface::sptr _rpcc;
+    };
+
+    fpga_onload::sptr _fpga_onload;
+    ref_clk_calibration::sptr _ref_clk_cal;
 };
 
 }} // namespace uhd::rfnoc

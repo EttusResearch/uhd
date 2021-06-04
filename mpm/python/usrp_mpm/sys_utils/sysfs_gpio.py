@@ -145,6 +145,7 @@ class SysFSGPIO(object):
         self._use_mask = use_mask
         self._ddr = ddr
         self._init_value = init_value
+        self._out_value = 0
         self.log.trace("Generating SysFSGPIO object for identifiers `{}'..."
                        .format(identifiers))
         self._gpio_dev, self._map_info = \
@@ -182,6 +183,8 @@ class SysFSGPIO(object):
                 open(os.path.join(GPIO_SYSFS_BASE_DIR, 'export'), 'w').write('{}'.format(gpio_num))
             ddr_str = 'out' if ddr_out else 'in'
             ddr_str = 'high' if ini_v else ddr_str
+            if ini_v and ddr_out:
+                self._out_value |= 1 << gpio_idx
             self.log.trace("On GPIO path `{}', setting DDR mode to {}.".format(gpio_path, ddr_str))
             open(os.path.join(GPIO_SYSFS_BASE_DIR, gpio_path, 'direction'), 'w').write(ddr_str)
 
@@ -196,12 +199,18 @@ class SysFSGPIO(object):
             value = 1
         assert (1<<gpio_idx) & self._use_mask
         assert (1<<gpio_idx) & self._ddr
+        assert int(value) in [0, 1]
+        value = int(value)
         gpio_num = self._base_gpio + gpio_idx
         gpio_path = os.path.join(GPIO_SYSFS_BASE_DIR, 'gpio{}'.format(gpio_num))
         value_path = os.path.join(gpio_path, GPIO_SYSFS_VALUEFILE)
         self.log.trace("Writing value `{}' to `{}'...".format(value, value_path))
         assert os.path.exists(value_path)
         open(value_path, 'w').write('{}'.format(value))
+        if value:
+            self._out_value |= 1 << gpio_idx
+        else:
+            self._out_value &= ~(1 << gpio_idx)
 
     def reset(self, gpio_idx):
         """
@@ -216,18 +225,22 @@ class SysFSGPIO(object):
         """
         Read back a GPIO at given index.
 
-        Note: The GPIO must be in the valid range, and it's DDR value must be
-        low (for "in").
+        Note: The GPIO must be in the valid range. If it's DDR value is
+        low (for "in") then the register value is read from a local variable.
         """
         assert (1<<gpio_idx) & self._use_mask
-        assert (1<<gpio_idx) & (~self._ddr)
-        gpio_num = self._base_gpio + gpio_idx
-        gpio_path = os.path.join(GPIO_SYSFS_BASE_DIR, 'gpio{}'.format(gpio_num))
-        value_path = os.path.join(gpio_path, GPIO_SYSFS_VALUEFILE)
-        assert os.path.exists(value_path)
-        read_value = int(open(value_path, 'r').read().strip())
-        self.log.trace("Reading value {} from `{}'...".format(read_value, value_path))
+        if (1<<gpio_idx) & (~self._ddr):
+            gpio_num = self._base_gpio + gpio_idx
+            gpio_path = os.path.join(GPIO_SYSFS_BASE_DIR, 'gpio{}'.format(gpio_num))
+            value_path = os.path.join(gpio_path, GPIO_SYSFS_VALUEFILE)
+            assert os.path.exists(value_path)
+            read_value = int(open(value_path, 'r').read().strip())
+            self.log.trace("Reading value {} from `{}'...".format(read_value, value_path))
+        else:
+            read_value = 1 if self._out_value & (1 << gpio_idx) else 0
+            self.log.trace("Reading value {} from local var".format(read_value))
         return read_value
+
 
 class GPIOBank:
     """

@@ -28,6 +28,32 @@ class DboardIface(object):
         if hasattr(self.mboard, 'log'):
             self.log = self.mboard.log.getChild("DboardIface")
 
+    def tear_down(self):
+        """
+        Tear down all members that need to be specially handled before
+        deconstruction.
+        """
+        # The mboard object is the periph_manager that has the dboard
+        # that in turn has this DboardIface. Breaking the reference
+        # cycle will make garbage collection easier.
+        self.mboard = None
+
+    ####################################################################
+    # Power
+    #   Enable and disable the DB's power rails
+    ####################################################################
+    def enable_daughterboard(self, enable = True):
+        """
+        Enable or disable the daughterboard.
+        """
+        raise NotImplementedError('DboardIface::enable_daughterboard() not supported!')
+
+    def check_enable_daughterboard(self):
+        """
+        Return the enable state of the daughterboard.
+        """
+        raise NotImplementedError('DboardIface::check_enable_daughterboard() not supported!')
+
     ####################################################################
     # CTRL SPI
     #   CTRL SPI lines are connected to the CPLD of the DB if it exists
@@ -40,18 +66,6 @@ class DboardIface(object):
 
     def ctrl_spi_reset(self):
         raise NotImplementedError('DboardIface::ctrl_spi_reset() not supported!')
-
-    ####################################################################
-    # GPIO
-    #   GPIO lines are used for high speed control of the DB
-    ####################################################################
-    def get_high_speed_gpio_ctrl_core(self):
-        """
-        Return a GpioAtrCore4000 instance that controls the GPIO lines
-        interfacing the MB and DB
-        """
-        raise NotImplementedError('DboardIface::get_high_speed_gpio_ctrl_core()'
-                                  ' not supported!')
 
     ####################################################################
     # Management Bus
@@ -82,20 +96,28 @@ class DboardIface(object):
         """
         raise NotImplementedError('DboardIface::set_if_freq() not supported!')
 
+    def get_if_freq(self, direction, channel):
+        """
+        Gets the IF frequency of the ADC/DAC corresponding
+        to the specified channel of the DB.
+        """
+        raise NotImplementedError('DboardIface::get_if_freq() not supported!')
+
+    def enable_iq_swap(self, enable, direction, channel):
+        """
+        Enable or disable swap of I and Q samples from the RFDCs.
+        """
+        raise NotImplementedError('DboardIface::enable_iq_swap() not supported!')
+
+    def get_sample_rate(self):
+        """
+        Gets the sample rate of the RFDCs.
+        """
+        raise NotImplementedError('DboardIface::get_sample_rate() not supported!')
+
     def get_prc_rate(self):
         """
         Returns the rate of the PLL Reference Clock (PRC) which is
         routed to the daughterboard.
         """
         raise NotImplementedError('DboardIface::get_pll_ref_clock() not supported!')
-
-    ####################################################################
-    # SPCC MPCC Control
-    ####################################################################
-    def get_protocol_cores(self):
-        """
-        Returns all discovered protocols in SPCC and MPCC blocks on the
-        Daughterboard's CPLD in the form of SpiCore4000, I2cCore4000,
-        UartCore4000, and GpioAtrCore4000
-        """
-        raise NotImplementedError('DboardIface::get_protocol_cores() not supported!')

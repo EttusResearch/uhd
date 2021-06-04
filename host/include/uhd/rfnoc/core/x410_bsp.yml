@@ -1,0 +1,57 @@
+type: x410
+type_id: A400
+family: ULTRASCALE
+transports:
+# QSFP Ethernet Ports:
+- name: eth0
+  type: 10G
+  width: 64
+- name: eth1
+  type: 10G
+  width: 64
+- name: eth2
+  type: 10G
+  width: 64
+- name: eth3
+  type: 10G
+  width: 64
+- name: eth4
+  type: 10G
+  width: 64
+# ARM CPU:
+- name: dma
+  type: dma
+  width: 64
+
+clocks:
+- name: radio
+- name: radio_2x
+
+io_ports:
+  ctrlport_radio0:
+    type: ctrl_port
+    drive: slave
+    rename:
+      pattern: (ctrlport_)(.*)
+      repl: m_\1radio0_\2
+  ctrlport_radio1:
+    type: ctrl_port
+    drive: slave
+    rename:
+      pattern: (ctrlport_)(.*)
+      repl: m_\1radio1_\2
+  time:
+    type: time_keeper
+    drive: broadcaster
+  radio0:
+    type: radio_8x32
+    drive: master
+    rename:
+      pattern: (.*)
+      repl: \1_radio0
+  radio1:
+    type: radio_8x32
+    drive: master
+    rename:
+      pattern: (.*)
+      repl: \1_radio1

@@ -7,6 +7,9 @@
 #pragma once
 
 #include <uhd/rfnoc/rf_control/core_iface.hpp>
+#include <uhd/types/direction.hpp>
+#include <uhd/types/time_spec.hpp>
+#include <uhd/types/eeprom.hpp>
 #include <uhdlib/rfnoc/rf_control/gain_profile_iface.hpp>
 #include <uhdlib/usrp/common/pwr_cal_mgr.hpp>
 #include <memory>
@@ -36,6 +39,11 @@ public:
 
     virtual std::vector<uhd::usrp::pwr_cal_mgr::sptr>& get_pwr_mgr(
         uhd::direction_t trx) = 0;
+
+    virtual uhd::eeprom_map_t get_db_eeprom() = 0;
+
+    //! See radio_control::set_command_time()
+    virtual void set_command_time(uhd::time_spec_t time, const size_t chan) = 0;
 };
 
 }}} // namespace uhd::rfnoc::rf_control

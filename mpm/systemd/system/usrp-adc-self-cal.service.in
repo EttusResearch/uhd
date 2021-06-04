@@ -1,0 +1,15 @@
+[Unit]
+Description=Boot-time self-calibration of @UHD_SELF_CAL_SERIES@ devices
+Requires=usrp-hwd.service
+After=usrp-hwd.service
+
+After=network.target
+Requires=network.target
+
+[Service]
+ExecStart=@CMAKE_INSTALL_PREFIX@/bin/uhd_adc_self_cal --args @UHD_SELF_CAL_ARGS@
+Type=simple
+User=root
+
+[Install]
+WantedBy=multi-user.target

@@ -12,5 +12,6 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/database.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/iq_cal.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/pwr_cal.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/dsa_cal.cpp
 )
 

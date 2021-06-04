@@ -72,6 +72,8 @@ static const device_type_t N300 = 0x1300;
 static const device_type_t N320 = 0x1320;
 //! X300 device family (X300, X310)
 static const device_type_t X300 = 0xA300;
+//! X400 device family
+static const device_type_t X400 = 0xA400;
 
 // block identifiers
 static const noc_id_t ADDSUB_BLOCK         = 0xADD00000;

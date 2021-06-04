@@ -128,7 +128,7 @@ if(_has_no_psabi)
     message(STATUS "Disabling psABI warnings.")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi")
 endif(_has_no_psabi)
-set(MPM_ALL_DEVICES n3xx e320 e31x sim tests)
+set(MPM_ALL_DEVICES n3xx e320 e31x x4xx sim tests)
 set(MPM_DEVICE "n3xx" CACHE STRING "Choose an MPM device to build")
 set_property(CACHE MPM_DEVICE PROPERTY STRINGS ${MPM_ALL_DEVICES})
 # Validate MPM_DEVICE
@@ -146,6 +146,9 @@ elseif(MPM_DEVICE STREQUAL "e320")
     set(ENABLE_E320 ON)
 elseif(MPM_DEVICE STREQUAL "e31x")
     set(ENABLE_E300 ON)
+elseif(MPM_DEVICE STREQUAL "x4xx")
+    set(ENABLE_X400 ON)
+    set(DEVICE_LIBRARIES "metal")
 elseif(MPM_DEVICE STREQUAL "sim")
     set(ENABLE_SIM TRUE)
     set(ENABLE_LIBMPM OFF)
@@ -157,6 +160,7 @@ MPM_REGISTER_COMPONENT("Mykonos" ENABLE_MYKONOS OFF "ENABLE_LIBMPM" OFF OFF)
 MPM_REGISTER_COMPONENT("Magnesium" ENABLE_MAGNESIUM OFF "ENABLE_MYKONOS" OFF OFF)
 MPM_REGISTER_COMPONENT("E320" ENABLE_E320 OFF "ENABLE_LIBMPM" OFF OFF)
 MPM_REGISTER_COMPONENT("E300" ENABLE_E300 OFF "ENABLE_LIBMPM" OFF OFF)
+MPM_REGISTER_COMPONENT("X400" ENABLE_X400 OFF "ENABLE_LIBMPM;ENABLE_REGMAPS" OFF OFF)
 
 if(NOT ENABLE_SIM)
     add_subdirectory(include)
@@ -173,6 +177,7 @@ if(NOT ENABLE_SIM)
     target_link_libraries(usrp-periphs
         udev
         ${Boost_LIBRARIES}
+        ${DEVICE_LIBRARIES}
     )
 
     install(TARGETS usrp-periphs LIBRARY DESTINATION ${LIBRARY_DIR} COMPONENT libraries)

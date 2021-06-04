@@ -24,6 +24,9 @@ class DboardManagerBase(object):
     # Very important: A list of PIDs that apply to the current device. Must be
     # list, even if there's only one entry.
     pids = []
+    # tuple of id and name of the first revision,
+    # id and name of revisions are consecutive (2, B), (3, C), ...
+    first_revision = (1, 'A')
     # See PeriphManager.mboard_sensor_callback_map for a description.
     rx_sensor_callback_map = {}
     # See PeriphManager.mboard_sensor_callback_map for a description.
@@ -91,12 +94,46 @@ class DboardManagerBase(object):
         """
         self.log.debug("deinit() called, but not implemented.")
 
+    def tear_down(self):
+        """
+        Tear down all members that need to be specially handled before
+        deconstruction.
+        """
+        pass
+
     def get_serial(self):
         """
         Return this daughterboard's serial number as a string. Will return an
         empty string if no serial can be found.
         """
         return self.device_info.get("serial", "")
+
+    def get_revision(self):
+        """
+        Return this daughterboard's revision number as integer. Will return 
+        -1 if no revision can be found or revision is not an integer
+        """
+        try:
+            return int(self.device_info.get('rev', '-1'))
+        except ValueError:
+            return -1
+
+    def get_revision_string(self):
+        """
+        Converts revision number to string.
+        """
+        return chr(ord(self.first_revision[1])
+                   + self.get_revision()
+                   - self.first_revision[0])
+
+    ##########################################################################
+    # Clocking
+    ##########################################################################
+    def reset_clock(self, value):
+        """
+        Called when the motherboard is reconfiguring its clocks.
+        """
+        pass
 
     def update_ref_clock_freq(self, freq, **kwargs):
         """

@@ -1,0 +1,53 @@
+--- embeddedsw/XilinxProcessorIPLib/drivers/rfdc/src/xrfdc.h    2020-07-16 16:23:14.839402600 -0500
++++ uhddev/mpm/include/mpm/rfdc/xrfdc.h 2020-08-17 12:31:24.477432400 -0500
+@@ -235,6 +235,7 @@
+
+ /***************************** Include Files *********************************/
+
++#include "rfdc_throw.h"
+ #include <stdlib.h>
+ #include <stdint.h>
+
+@@ -650,24 +651,24 @@
+
+ /***************** Macros (Inline Functions) Definitions *********************/
+
+-#ifndef __BAREMETAL__
+-#define Xil_AssertNonvoid(Expression)             \
+-{                                                  \
+-       if (!(Expression)) {                          \
+-               while (1);                                \
+-       }                                             \
+-}
+-#define Xil_AssertVoid(Expression)                \
+-{                                                  \
+-       if (!(Expression)) {                          \
+-               while (1);                                \
+-       }                                             \
+-}
+-#define Xil_AssertVoidAlways()                   \
+-{                                                  \
+-       while (1);                                       \
+-}
+-#endif
++#    ifndef __BAREMETAL__
++#        define Xil_AssertNonvoid(Expression) \
++            {                                 \
++                if (!(Expression)) {          \
++                    rfdc_throw(#Expression);  \
++                }                             \
++            }
++#        define Xil_AssertVoid(Expression)   \
++            {                                \
++                if (!(Expression)) {         \
++                    rfdc_throw(#Expression); \
++                }                            \
++            }
++#        define Xil_AssertVoidAlways()       \
++            {                                \
++                rfdc_throw("Assert false"); \
++            }
++#    endif
+
+ #define MAX(x,y)                                               (x>y)?x:y
+ #define MIN(x,y)                                               (x<y)?x:y

@@ -1,0 +1,10 @@
+--- ../embeddedsw/XilinxProcessorIPLib/drivers/rfdc/src/xrfdc_sinit.c	2021-01-14 10:22:52.195957400 -0600
++++ mpm/lib/rfdc/xrfdc_sinit.c	2021-01-14 10:24:59.611972600 -0600
+@@ -180,6 +180,7 @@
+ 				metal_device_close(DevicePtr);
+ 			}
+ 		}
++		closedir(DirPtr);
+ 	}
+ 	return Status;
+ }

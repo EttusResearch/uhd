@@ -9,6 +9,8 @@ import sys
 import traceback
 import unittest
 
+from usrp_mpm.mpmlog import get_main_logger
+from usrp_mpm.periph_manager.x4xx_periphs import MboardRegsControl
 from usrp_mpm.sys_utils.filesystem_status import *
 from usrp_mpm.sys_utils.dtoverlay import list_overlays
 from usrp_mpm.sys_utils.dtoverlay import list_available_overlays
@@ -40,13 +42,16 @@ class SimpleResult(unittest.TextTestResult):
                 % (flavour, self.getDescription(test), err))
 
 class CheckFilesystem(unittest.TestCase):
+    mboard_regs_control = None
+
     def _assert_filesystem_root_is_not_set(self):
         if self.args.filesystem_root != '/':
             raise ValueError("Changing the filesystem root is not possible for this test")
 
     def __init__(self, methodName='runTest', args=None):
         super(CheckFilesystem, self).__init__(methodName)
-        self.args=args
+        self.args = args
+        self.log = get_main_logger()
 
     def test_uhd_version(self):
         uhd_version = get_uhd_version(filesystem_root=self.args.filesystem_root)
@@ -55,6 +60,25 @@ class CheckFilesystem(unittest.TestCase):
     def test_uhd_githash(self):
         uhd_version = get_uhd_version(filesystem_root=self.args.filesystem_root)
         self.assertIn(self.args.uhd_githash, uhd_version)
+
+    def test_fpga_type(self):
+        if self.mboard_regs_control is None:
+             self.mboard_regs_control = MboardRegsControl("mboard-regs", self.log)
+        fpga_type = self.mboard_regs_control.get_fpga_type()
+        self.assertEqual(fpga_type, self.args.fpga_type)
+
+    def test_fpga_version(self):
+        if self.mboard_regs_control is None:
+             self.mboard_regs_control = MboardRegsControl("mboard-regs", self.log)
+        compat_number = self.mboard_regs_control.get_compat_number()
+        fpga_version = "{}.{}".format(*compat_number)
+        self.assertEqual(fpga_version, self.args.fpga_version)
+
+    def test_fpga_githash(self):
+        if self.mboard_regs_control is None:
+             self.mboard_regs_control = MboardRegsControl("mboard-regs", self.log)
+        fpga_githash = "{:x}.{}".format(*self.mboard_regs_control.get_git_hash())
+        self.assertEqual(fpga_githash, self.args.fpga_githash)
 
     def test_mender_artifact(self):
         mender_artifact = get_mender_artifact(filesystem_root=self.args.filesystem_root)
@@ -119,6 +143,9 @@ def args_parser(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument("--uhd-version", help="Check UHD version")
     parser.add_argument("--uhd-githash", help="Check UHD githash")
+    parser.add_argument("--fpga-type", help="Check FPGA type")
+    parser.add_argument("--fpga-version", help="Check FPGA version")
+    parser.add_argument("--fpga-githash", help="Check FPGA githash")
     parser.add_argument("--mender-artifact", help="Check mender artifact")
     parser.add_argument("--fs-version", help="Check filesystem version string")
     parser.add_argument("--opkg-status-date", help="Check package management status file date")

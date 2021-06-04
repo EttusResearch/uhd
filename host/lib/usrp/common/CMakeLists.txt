@@ -30,6 +30,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/adf435x.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/adf535x.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/lmx2592.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/lmx2572.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/apply_corrections.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/validate_subdev_spec.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/recv_packet_demuxer.cpp

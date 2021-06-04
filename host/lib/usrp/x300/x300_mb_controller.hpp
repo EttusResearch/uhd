@@ -11,6 +11,7 @@
 #include "x300_device_args.hpp"
 #include "x300_radio_mbc_iface.hpp"
 #include "x300_regs.hpp"
+#include <uhdlib/features/discoverable_feature_registry.hpp>
 #include <uhd/rfnoc/mb_controller.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/types/wb_iface.hpp>
@@ -28,7 +29,8 @@ namespace uhd { namespace rfnoc {
  * - Controlling all time- and clock-related settings
  * - Initialize and hold the GPS control
  */
-class x300_mb_controller : public mb_controller
+class x300_mb_controller : public mb_controller,
+                           public ::uhd::features::discoverable_feature_registry
 {
 public:
     /**************************************************************************

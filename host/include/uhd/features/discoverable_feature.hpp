@@ -31,6 +31,9 @@ public:
     enum feature_id_t {
         RESERVED0,
         RESERVED1,
+        FPGA_LOAD_NOTIFICATION,
+        ADC_SELF_CALIBRATION,
+        REF_CLK_CALIBRATION,
     };
 
     virtual ~discoverable_feature() = default;

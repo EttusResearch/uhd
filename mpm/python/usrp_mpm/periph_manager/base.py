@@ -170,6 +170,8 @@ class PeriphManagerBase(object):
     dboard_eeprom_symbols = "db[0,1]_eeprom"
     # symbol glob fox auxiliary boards
     auxboard_eeprom_symbols = "*aux_eeprom"
+    # List of discoverable features supported by a device.
+    discoverable_features = []
 
 
     # Disable checks for unused args in the overridables, because the default
@@ -504,7 +506,18 @@ class PeriphManagerBase(object):
         for name, path in eeprom_paths.items():
             self.log.debug("Reading EEPROM info for %s...", name)
             if not path:
-                self.log.debug("Not present. Skipping board")
+                if "db" in name:
+                    # In order to support having a single dboard in slot 1
+                    # with slot 0 empty on a x4xx, we pretend that there is
+                    # a dummy "EmptyDaughterboard" here.
+                    self.log.debug("Not present. Inserting dummy DB info")
+                    result[name] = {
+                        'eeprom_md': {'serial': 'deadbee', 'pid': 0x0},
+                        'eeprom_raw': [],
+                        'pid': 0x0
+                    }
+                else:
+                    self.log.debug("Not present. Skipping board")
                 continue
             try:
                 eeprom_md, eeprom_rawdata = self._read_dboard_eeprom_data(path)
@@ -743,7 +756,8 @@ class PeriphManagerBase(object):
                 "Cannot run deinit(), device was never fully initialized!")
             return
         self.log.trace("Mboard deinit() called.")
-        for dboard in self.dboards:
+        for slot, dboard in enumerate(self.dboards):
+            self.log.trace("call deinit() on dBoard in slot {}".format(slot))
             dboard.deinit()
 
     def tear_down(self):
@@ -752,6 +766,8 @@ class PeriphManagerBase(object):
         deconstruction.
         """
         self.log.trace("Teardown called for Peripheral Manager base.")
+        for each in self.dboards:
+            each.tear_down()
 
     ###########################################################################
     # RFNoC & Device Info
@@ -895,6 +911,7 @@ class PeriphManagerBase(object):
         assert (len(metadata_l) == len(data_l)),\
             "update_component arguments must be the same length"
         # Iterate through the components, updating each in turn
+        basepath = os.path.join(os.sep, "tmp", "uploads")
         for metadata, data in zip(metadata_l, data_l):
             id_str = metadata['id']
             filename = os.path.basename(metadata['filename'])
@@ -903,7 +920,7 @@ class PeriphManagerBase(object):
                     id_str, self.updateable_components.keys()
                 ))
                 raise KeyError("Update component not implemented for {}".format(id_str))
-            self.log.trace("Updating component: {}".format(id_str))
+            self.log.trace("Downloading component: {}".format(id_str))
             if 'md5' in metadata:
                 given_hash = metadata['md5']
                 comp_hash = md5()
@@ -920,10 +937,9 @@ class PeriphManagerBase(object):
                                        comp_hash, given_hash))
                     raise RuntimeError("Component file hash mismatch")
             else:
-                self.log.trace("Loading unverified {} image.".format(
+                self.log.trace("Downloading unhashed {} image.".format(
                     id_str
                 ))
-            basepath = os.path.join(os.sep, "tmp", "uploads")
             filepath = os.path.join(basepath, filename)
             if not os.path.isdir(basepath):
                 self.log.trace("Creating directory {}".format(basepath))
@@ -931,9 +947,15 @@ class PeriphManagerBase(object):
             self.log.trace("Writing data to {}".format(filepath))
             with open(filepath, 'wb') as comp_file:
                 comp_file.write(data)
+
+        # do the actual installation on the device
+        for metadata in metadata_l:
+            id_str = metadata['id']
+            filename = os.path.basename(metadata['filename'])
+            filepath = os.path.join(basepath, filename)
             update_func = \
                 getattr(self, self.updateable_components[id_str]['callback'])
-            self.log.info("Updating component `%s'", id_str)
+            self.log.info("Installing component `%s'", id_str)
             update_func(filepath, metadata)
         return True
 
@@ -950,7 +972,7 @@ class PeriphManagerBase(object):
             self.log.trace("Component info: {}".format(metadata))
             # Convert all values to str
             return dict([a, str(x)] for a, x in metadata.items())
-        # else:
+
         self.log.trace("Component not found in updateable components: {}"
                        .format(component_name))
         return {}
@@ -1202,3 +1224,21 @@ class PeriphManagerBase(object):
             "time_source": self.get_time_source(),
             "clock_source": self.get_clock_source(),
         }
+
+    ###########################################################################
+    # Clock/Time API
+    ###########################################################################
+    def set_clock_source_out(self, enable=True):
+        """
+        Allows routing the clock configured as source to the RefOut terminal.
+        """
+        raise NotImplementedError("set_clock_source_out() not implemented.")
+
+    #######################################################################
+    # Discoverable Features
+    #######################################################################
+    def supports_feature(self, query):
+        """
+        Returns true if the queried feature is supported by a device.
+        """
+        return query in self.discoverable_features

@@ -46,7 +46,7 @@ def setup_parser():
         help="Path to grc file to generate config from")
     parser.add_argument(
         "-F", "--fpga-dir",
-        help="Path to directory for the FPGA source tree."
+        help="Path to directory for the FPGA source tree. "
              "Defaults to the FPGA source tree of the current repo.",
         required=False,
         default=None)
@@ -79,7 +79,7 @@ def setup_parser():
         action="store_true")
     parser.add_argument(
         "-d", "--device",
-        help="Device to be programmed [x300, x310, e310, e320, n300, n310, n320]."
+        help="Device to be programmed [x300, x310, e310, e320, n300, n310, n320, x410]. "
              "Needs to be specified either here, or in the configuration file.",
         default=None)
     parser.add_argument(

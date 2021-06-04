@@ -7,6 +7,7 @@
 UHD_INSTALL(FILES
     discoverable_feature.hpp
     discoverable_feature_getter_iface.hpp
+    ref_clk_calibration_iface.hpp
     DESTINATION ${INCLUDE_DIR}/uhd/features
     COMPONENT headers
 )

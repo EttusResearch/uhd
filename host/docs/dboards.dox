@@ -467,6 +467,19 @@ Please refer to \ref e31x_dboards.
 
 Please refer to \ref n3xx_mg.
 
+\subsection dboards_zbx ZBX XCVR board
+
+Features:
+- Dual channel transceivers
+- TX/RX and RX2 antenna ports per channel
+- Frequency Range: 1 MHz to 8 GHz
+- Relative Gain Range: 0 - 60 dB (RX gain range reduced below 500 MHz)
+
+The ZBX daughterboard only works with the X410 motherboard.
+
+More information:
+\li \subpage page_zbx
+
 \subsection dboards_clock_rate Daughterboard reference clock
 
 The USRP motherboard provides a reference clock to the daughterboards, which

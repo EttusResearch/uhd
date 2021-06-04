@@ -90,6 +90,7 @@ class MockRegsIface(object):
         self.map = register_map
         self.recent_vals = {}
         self.next_vals = {}
+        self.recent_addrs = []
 
     def peek32(self, addr):
         """
@@ -110,11 +111,31 @@ class MockRegsIface(object):
         """
         self.map.set_reg(addr, value)
 
+        self.recent_addrs.append(addr)
+
         # Store written value in a list
         if addr in self.recent_vals:
             self.recent_vals[addr].append(value)
         else:
             self.recent_vals[addr] = [value]
+
+    def peek16(self, addr):
+        """
+        Pass the request to the 32 bit version
+        """
+        return self.peek32(addr) & 0xFFFF
+
+    def poke16(self, addr, value):
+        """
+        Pass the request to the 32 bit version
+        """
+        self.poke32(addr, value)
+
+    def get_recent_addrs(self):
+        return self.recent_addrs
+
+    def clear_recent_addrs(self):
+        self.recent_addrs = []
 
     def get_recent_vals(self, addr):
         """
@@ -122,6 +143,13 @@ class MockRegsIface(object):
         Useful for validating HW interaction
         """
         return self.recent_vals.get(addr, [])
+
+    def clear_recent_vals(self, addr):
+        """
+        Clears the past values written to a given address.
+        Useful for validating HW interaction
+        """
+        self.recent_vals[addr] = []
 
     def set_next_vals(self, addr, vals):
         """

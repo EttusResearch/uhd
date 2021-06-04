@@ -10,7 +10,7 @@ Common code for all MPM devices
 import datetime
 from usrp_mpm.sys_utils.uio import UIO
 
-class MboardRegsCommon(object):
+class MboardRegsCommon:
     """
     Parent class for mboard regs that are common between *all* MPM devices
     """
@@ -34,6 +34,10 @@ class MboardRegsCommon(object):
     MB_TIME_BASE_PERIOD_LO = 0x101C
     MB_TIME_BASE_PERIOD_HI = 0x1020
     MB_TIMEKEEPER_OFFSET   = 12
+    # Timekeeper control words
+    MB_TIME_SET_NOW       = 0x0001
+    MB_TIME_SET_NEXT_PPS  = 0x0002
+    MB_TIME_SET_NEXT_SYNC = 0x0004
     # Bitfield locations for the MB_RFNOC_INFO register.
     MB_RFNOC_INFO_PROTO_VER  = 0
     MB_RFNOC_INFO_CHDR_WIDTH = 16
@@ -179,12 +183,13 @@ class MboardRegsCommon(object):
         """
         addr_lo = \
             self.MB_TIME_EVENT_LO + tk_idx * self.MB_TIMEKEEPER_OFFSET
-        addr_hi = addr_lo + 4
+        addr_hi = \
+            self.MB_TIME_EVENT_HI + tk_idx * self.MB_TIMEKEEPER_OFFSET
         addr_ctrl = \
             self.MB_TIME_CTRL + tk_idx * self.MB_TIMEKEEPER_OFFSET
         time_lo = ticks & 0xFFFFFFFF
         time_hi = (ticks >> 32) & 0xFFFFFFFF
-        time_ctrl = 0x2 if next_pps else 0x1
+        time_ctrl = self.MB_TIME_SET_NEXT_PPS if next_pps else self.MB_TIME_SET_NOW
         self.log.trace("Setting time on timekeeper %d to %d %s", tk_idx, ticks,
                        ("on next pps" if next_pps else "now"))
         with self.regs:

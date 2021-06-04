@@ -52,17 +52,17 @@ data:
       mdata_sig: ~
 
 io_ports:
-  ctrl_port:
+  ctrlport:
     type: ctrl_port
     drive: master
     rename:
       pattern: (.*)
       repl: m_\1
-  time_keeper:
+  time:
     type: time_keeper
     drive: listener
-  x300_radio:
-    type: radio_1x32
+  radio:
+    type: radio_8x32
     drive: slave
 
 registers:

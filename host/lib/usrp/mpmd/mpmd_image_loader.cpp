@@ -10,10 +10,13 @@
 #include <uhd/device.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/image_loader.hpp>
+#include <uhd/rfnoc/radio_control.hpp>
+#include <uhd/rfnoc_graph.hpp>
 #include <uhd/types/component_file.hpp>
 #include <uhd/types/eeprom.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/static.hpp>
+#include <uhdlib/features/fpga_load_notification_iface.hpp>
 #include <uhdlib/utils/prefs.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/archive/iterators/binary_from_base64.hpp>
@@ -368,6 +371,19 @@ static bool mpmd_image_loader(const image_loader::image_loader_args_t& image_loa
 
     mpmd_send_fpga_to_device(image_loader_args, dev_addr);
 
+    {
+        // All MPM devices use RFNoC
+        auto graph = rfnoc::rfnoc_graph::make(find_hint);
+        for (size_t mb_index = 0; mb_index < graph->get_num_mboards(); mb_index++) {
+            auto mboard = graph->get_mb_controller(mb_index);
+            if (mboard->has_feature<uhd::features::fpga_load_notification_iface>()) {
+                auto& notifier =
+                    mboard->get_feature<uhd::features::fpga_load_notification_iface>();
+                notifier.onload();
+            }
+        }
+    }
+
     return true;
 }
 
@@ -385,4 +401,5 @@ UHD_STATIC_BLOCK(register_mpm_image_loader)
     // time being
     image_loader::register_image_loader("n3xx", mpmd_image_loader, recovery_instructions);
     image_loader::register_image_loader("e3xx", mpmd_image_loader, recovery_instructions);
+    image_loader::register_image_loader("x4xx", mpmd_image_loader, recovery_instructions);
 }

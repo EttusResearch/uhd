@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <uhd/types/device_addr.hpp>
 #include <uhd/types/ranges.hpp>
 #include <stdint.h>
 #include <string>

@@ -26,19 +26,12 @@
 
 `default_nettype none
 
-<%
-    if hasattr(config, 'image_core_name'):
-        image_core_name = config.image_core_name
-    else:
-        image_core_name = config.device.type
-%>\
-`include "${image_core_name}_rfnoc_image_core.vh"
-
 
 module rfnoc_image_core #(
-  parameter        CHDR_W   = `CHDR_WIDTH,
-  parameter        MTU      = 10,
-  parameter [15:0] PROTOVER = {8'd1, 8'd0}
+  parameter        CHDR_W     = ${config.chdr_width},
+  parameter        MTU        = 10,
+  parameter [15:0] PROTOVER   = {8'd1, 8'd0},
+  parameter        RADIO_NIPC = 1
 ) (
   // Clocks
   input  wire         chdr_aclk,
@@ -58,11 +51,6 @@ module rfnoc_image_core #(
 
   wire rfnoc_chdr_clk, rfnoc_chdr_rst;
   wire rfnoc_ctrl_clk, rfnoc_ctrl_rst;
-
-  // Check that CHDR_W parameter matches value used by RFNoC Image Builder
-  if (CHDR_W != `CHDR_WIDTH) begin
-    ERROR_CHDR_W_values_do_not_match();
-  end
 
 
   //---------------------------------------------------------------------------

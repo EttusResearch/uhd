@@ -144,15 +144,15 @@ class UIO(object):
         else:
             self.log.trace("Using UIO device by label `{0}'".format(label))
             self._path, map_info = find_uio_device(label, self.log)
+        if self._path is None or map_info is None:
+            self.log.error("Could not find a UIO device for label {0}".format(label))
+            raise RuntimeError("Could not find a UIO device for label {0}".format(label))
         # TODO If we ever support multiple maps, check if this is correct...
         offset = offset or map_info['offset']
         assert offset == 0 # ...and then remove this line
         length = length or map_info['size']
         self.log.trace("UIO device is being opened read-{0}.".format(
             "only" if read_only else "write"))
-        if self._path is None:
-            self.log.error("Could not find a UIO device for label {0}".format(label))
-            raise RuntimeError("Could not find a UIO device for label {0}".format(label))
         self._read_only = read_only
         # Our UIO objects are managed in C++ land, which gives us more granular control over
         # opening and closing

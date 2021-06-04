@@ -34,6 +34,7 @@ time_keeper:
   - name: radio_time
     width: 64
 
+# Single channel radio interface
 radio_1x32:
   type: master-slave
   ports:
@@ -56,6 +57,30 @@ radio_1x32:
     type: to-master
     width: 1
 
+# Two channel radio interface, or single channel with 2 SPC
+radio_2x32:
+  type: master-slave
+  ports:
+  - name: radio_rx_data
+    type: from-master
+    width: 64
+  - name: radio_rx_stb
+    type: from-master
+    width: 2
+  - name: radio_rx_running
+    type: to-master
+    width: 2
+  - name: radio_tx_data
+    type: to-master
+    width: 64
+  - name: radio_tx_stb
+    type: from-master
+    width: 2
+  - name: radio_tx_running
+    type: to-master
+    width: 2
+
+# Same as radio_2x32, but kept for backwards compatibility with the old name
 x300_radio:
   type: master-slave
   ports:
@@ -77,6 +102,29 @@ x300_radio:
   - name: radio_tx_running
     type: to-master
     width: 2
+
+# Eight channel radio interface, or two channels with 4 SPC
+radio_8x32:
+  type: master-slave
+  ports:
+  - name: radio_rx_data
+    type: from-master
+    width: 256
+  - name: radio_rx_stb
+    type: from-master
+    width: 8
+  - name: radio_rx_running
+    type: to-master
+    width: 8
+  - name: radio_tx_data
+    type: to-master
+    width: 256
+  - name: radio_tx_stb
+    type: from-master
+    width: 8
+  - name: radio_tx_running
+    type: to-master
+    width: 8
 
 # A 4-port AXI4 memory-mapped interface with 64-bit data, and 4 GiB address
 # space (32-bit).

@@ -42,6 +42,8 @@ DEVICE_DIR_MAP = {
     'n300': 'n3xx',
     'n310': 'n3xx',
     'n320': 'n3xx',
+    'x400': 'x400',
+    'x410': 'x400',
 }
 
 # Picks the default make target per device
@@ -522,8 +524,13 @@ def convert_to_image_config(grc, grc_config_path):
     result["stream_endpoints"] = {}
     for sep in seps.values():
         result["stream_endpoints"][sep["name"]] = {"ctrl": bool(sep["parameters"]["ctrl"]),
-                                                   "data": bool(sep["parameters"]["data"]),
-                                                   "buff_size": int(sep["parameters"]["buff_size"])}
+                                                   "data": bool(sep["parameters"]["data"])}
+        if "buff_size" in sep["parameters"]:
+            result["stream_endpoints"][sep["name"]]["buff_size"] = \
+                int(sep["parameters"]["buff_size"])
+        if "buff_size_bytes" in sep["parameters"]:
+            result["stream_endpoints"][sep["name"]]["buff_size_bytes"] = \
+                int(sep["parameters"]["buff_size_bytes"])
 
     result["noc_blocks"] = {}
     for block in blocks.values():
@@ -875,7 +882,7 @@ def build_image(config, fpga_path, config_path, device, **args):
     requested.
 
     :param config: A dictionary containing the image configuration options.
-                   This must obey the rfnoc_imagebuilder_args schema.
+                   This must obey the rfnoc_image_builder_args schema.
     :param fpga_path: A path that holds the FPGA IP sources.
     :param device: The device to build for.
     :param **args: Additional options including

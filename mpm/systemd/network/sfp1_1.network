@@ -1,0 +1,8 @@
+[Match]
+Name=sfp1_1
+
+[Network]
+Address=192.168.21.2/24
+
+[Link]
+MTUBytes=9000

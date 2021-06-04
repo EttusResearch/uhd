@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -22,6 +23,8 @@ class gain_profile_iface
 {
 public:
     using sptr = std::shared_ptr<gain_profile_iface>;
+    using subscriber_type =
+        std::function<void(const std::string& profile, const size_t chan)>;
 
     virtual ~gain_profile_iface() = default;
 
@@ -36,6 +39,13 @@ public:
     /*! Return the gain profile
      */
     virtual std::string get_gain_profile(const size_t chan) const = 0;
+
+    /*! Register a subscriber to a property tree node
+     *
+     * This is useful for all those cases where the gain profile is also a
+     * property in the tree, and setting it here requires also updating the tree.
+     */
+    virtual void add_subscriber(subscriber_type&& sub) = 0;
 };
 
 /*! "Default" implementation for gain_profile_iface
@@ -52,9 +62,11 @@ public:
 
     void set_gain_profile(const std::string& profile, const size_t chan) override;
     std::string get_gain_profile(const size_t chan) const override;
+    void add_subscriber(subscriber_type&& sub) override;
 
 private:
     static const std::string DEFAULT_GAIN_PROFILE;
+    subscriber_type _sub = nullptr;
 };
 
 /*! "Enumerated" implementation for gain_profile_iface
@@ -77,10 +89,19 @@ public:
 
     std::vector<std::string> get_gain_profile_names(const size_t) const override;
 
+    /*! Register a subscriber to a property tree node
+     *
+     * This is useful for all those cases where the gain profile is also a
+     * property in the tree, and setting it here requires also updating the tree.
+     */
+    void add_subscriber(subscriber_type&& sub) override;
+
 private:
     std::vector<std::string> _possible_profiles;
 
     std::vector<std::string> _gain_profile;
+
+    subscriber_type _sub = nullptr;
 };
 
 }}} // namespace uhd::rfnoc::rf_control

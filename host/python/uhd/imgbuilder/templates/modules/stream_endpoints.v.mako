@@ -18,15 +18,25 @@
 \
 %for i, sep in enumerate(seps):
 <%
-# If buff_size == 0, then we assume that we will never transmit through this SEP
-buff_size = seps[sep]["buff_size"]
-if buff_size > 0:
-    buff_size = int(math.ceil(math.log(buff_size, 2)))
-    # FIXME MTU assumed to be 10 here -- forcing to at least accommodate 2 pkts
-    buff_size = max(buff_size, 10+1)
+# The schema allows buff_size_bytes or buff_size, but not both.
+if "buff_size_bytes" in seps[sep]:
+  # Use buffer size in bytes
+  buff_size = "(" + str(seps[sep]["buff_size_bytes"]) + ")/(CHDR_W/8)"
+elif "buff_size" in seps[sep]:
+  # Use buffer size in CHDR words
+  buff_size = str(seps[sep]["buff_size"])
 else:
-    buff_size = 5
+  # Min SRL-based FIFO size
+  buff_size = str("32")
 %>\
+  // If requested buffer size is 0, use the minimum SRL-based FIFO size.
+  // Otherwise, make sure it's at least two MTU-sized packets.
+  localparam REQ_BUFF_SIZE_${sep.upper()} = ${buff_size};
+  localparam INGRESS_BUFF_SIZE_${sep.upper()} =
+    REQ_BUFF_SIZE_${sep.upper()} == 0         ? 5     :
+    REQ_BUFF_SIZE_${sep.upper()} < 2*(2**MTU) ? MTU+1 :
+    $clog2(REQ_BUFF_SIZE_${sep.upper()});
+
   wire [CHDR_W-1:0] ${axis_outputs[sep].format(sep,"tdata")};
   wire              ${axis_outputs[sep].format(sep,"tlast")};
   wire              ${axis_outputs[sep].format(sep,"tvalid")};
@@ -49,7 +59,7 @@ else:
     .NUM_DATA_O         (${int(seps[sep]["num_data_o"])}),
     .INST_NUM           (${i}),
     .CTRL_XBAR_PORT     (${i+1}),
-    .INGRESS_BUFF_SIZE  (${buff_size}),
+    .INGRESS_BUFF_SIZE  (INGRESS_BUFF_SIZE_${sep.upper()}),
     .MTU                (MTU),
     .REPORT_STRM_ERRS   (1)
   ) ${sep}_i (

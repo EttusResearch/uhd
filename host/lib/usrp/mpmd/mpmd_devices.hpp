@@ -19,6 +19,6 @@ static const std::vector<std::string> MPM_DEVICE_TYPES = {
     MPM_CATCHALL_DEVICE_TYPE,
     "n3xx",
     "e3xx",
-};
+    "x4xx"};
 
 #endif /* INCLUDED_MPMD_DEVICES_HPP */

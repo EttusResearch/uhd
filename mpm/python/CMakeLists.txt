@@ -55,6 +55,8 @@ elseif(MPM_DEVICE STREQUAL "e320")
     add_library(pyusrp_periphs SHARED pyusrp_periphs/e320/pyusrp_periphs.cpp)
 elseif(MPM_DEVICE STREQUAL "e31x")
     add_library(pyusrp_periphs SHARED pyusrp_periphs/e31x/pyusrp_periphs.cpp)
+elseif(MPM_DEVICE STREQUAL "x4xx")
+    add_library(pyusrp_periphs SHARED pyusrp_periphs/x4xx/pyusrp_periphs.cpp)
 endif(MPM_DEVICE STREQUAL "n3xx")
 
 if(NOT ENABLE_SIM)
@@ -112,6 +114,11 @@ if (ENABLE_MYKONOS)
 elseif (ENABLE_E320)
     install(PROGRAMS
         e320_bist
+        DESTINATION ${RUNTIME_DIR}
+    )
+elseif (ENABLE_X400)
+    install(PROGRAMS
+        x4xx_bist
         DESTINATION ${RUNTIME_DIR}
     )
 endif (ENABLE_MYKONOS)

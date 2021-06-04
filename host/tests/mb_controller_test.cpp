@@ -5,6 +5,7 @@
 //
 
 #include <uhd/rfnoc/mb_controller.hpp>
+#include <uhdlib/features/discoverable_feature_registry.hpp>
 #include <boost/test/unit_test.hpp>
 #include <iostream>
 
@@ -49,7 +50,8 @@ private:
     }
 };
 
-class mock_mb_controller : public mb_controller
+class mock_mb_controller : public mb_controller,
+                           public ::uhd::features::discoverable_feature_registry
 {
 public:
     mock_mb_controller()

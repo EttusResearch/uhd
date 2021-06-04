@@ -18,3 +18,7 @@ add_subdirectory(chips)
 add_subdirectory(dboards)
 add_subdirectory(spi)
 add_subdirectory(types)
+
+if(ENABLE_X400)
+  add_subdirectory(rfdc)
+endif(ENABLE_X400)

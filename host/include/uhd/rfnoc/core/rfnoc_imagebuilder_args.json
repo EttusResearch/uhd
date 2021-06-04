@@ -3,12 +3,13 @@
     "properties": {
         "schema":           { "const": "rfnoc_imagebuilder_args" },
         "copyright":        { "type":  "string" },
-        "version":          { "type":  "number" },
+        "version":          { "type":  "string" },
         "license":          { "type":  "string" },
         "device":           { "type":  "string" },
+        "image_core_name":  { "type":  "string" },
         "default_target":   { "type":  "string" },
-        "rfnoc_version":    { "type":  "number" },
-        "chdr_width":       { "enum":  [64, 256] },
+        "rfnoc_version":    { "type":  "string" },
+        "chdr_width":       { "enum":  [64, 128, 256, 512] },
 
         "stream_endpoints": { "$ref": "#/definitions/stream_endpoints" },
         "noc_blocks":       { "$ref": "#/definitions/noc_blocks" },
@@ -45,9 +46,15 @@
                 "data":      { "type": "boolean" },
                 "num_data_i":{ "type": "integer", "minimum": 1 },
                 "num_data_o":{ "type": "integer", "minimum": 1 },
-                "buff_size": { "type": "integer", "minimum": 0 }
+                "buff_size": { "type": "integer", "minimum": 0 },
+                "buff_size_bytes": { "type": "integer", "minimum": 0 }
             },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "not": {
+                "anyOf": [
+                    {"required": ["buff_size", "buff_size_bytes"]}
+                ]
+            }
         },
 
         "noc_block": {

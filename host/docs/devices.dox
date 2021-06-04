@@ -32,6 +32,7 @@
 ## USRP X-Series Devices
 
 \li \subpage page_usrp_x3x0
+\li \subpage page_usrp_x4xx
 
 ## USRP Legacy Series
 
@@ -49,6 +50,7 @@ unless stated otherwise, they will still work with this version of UHD.
 
 \li \subpage page_dboards
 \li \subpage page_twinrx
+\li \subpage page_zbx
 
 ## OctoClock
 

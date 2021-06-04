@@ -1,0 +1,36 @@
+//
+// Copyright 2020 Ettus Research, a National Instruments Brand
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+
+// DSA step setting table
+
+include "cal_metadata.fbs";
+
+namespace uhd.usrp.cal;
+
+// DSA step settings for a given gain in a band
+table DsaStep
+{
+    steps: [uint];
+}
+
+// DSA settings for all gains of a band
+table BandDsaMap
+{
+    max_freq: ulong (key); // max frequency for the band
+    gains: [DsaStep];      // DSA step setting for all gain values
+    name: string;          // human readable frequency band name
+}
+
+// Band settings
+table DsaCal
+{
+    metadata: Metadata;         // useful additional information
+    band_dsa_map: [BandDsaMap]; // settings for all bands
+}
+
+root_type DsaCal;
+file_identifier "dsas";
+file_extension "cal";

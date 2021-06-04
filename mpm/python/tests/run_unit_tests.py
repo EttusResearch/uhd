@@ -13,6 +13,7 @@ import argparse
 from sys_utils_tests import TestNet
 from mpm_utils_tests import TestMpmUtils
 from eeprom_tests import TestEeprom
+from usrp_mpm import __simulated__
 
 import importlib.util
 if importlib.util.find_spec("xmlrunner"):
@@ -25,7 +26,14 @@ TESTS = {
         TestEeprom,
     },
     'n3xx': set(),
+    'x4xx': set()
 }
+
+if not __simulated__:
+    from components_tests import TestZynqComponents
+    TESTS['x4xx'].update({
+        TestZynqComponents
+    })
 
 def parse_args():
     """Parse arguments when running this as a script"""

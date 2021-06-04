@@ -29,6 +29,7 @@ set(test_sources
     cal_data_iq_test.cpp
     cal_data_gain_pwr_test.cpp
     chdr_parse_test.cpp
+    cal_data_dsa_test.cpp
     chdr_test.cpp
     constrained_device_args_test.cpp
     convert_test.cpp
@@ -42,7 +43,6 @@ set(test_sources
     isatty_test.cpp
     log_test.cpp
     math_test.cpp
-    mb_controller_test.cpp
     narrow_cast_test.cpp
     property_test.cpp
     ranges_test.cpp
@@ -150,6 +150,8 @@ macro(UHD_ADD_RFNOC_BLOCK_TEST)
         EXTRA_SOURCES
         ${test_EXTRA_SOURCES}
         ${CMAKE_SOURCE_DIR}/lib/rfnoc/graph.cpp
+        INCLUDE_DIRS
+        ${test_INCLUDE_DIRS}
     )
 endmacro(UHD_ADD_RFNOC_BLOCK_TEST)
 
@@ -275,6 +277,24 @@ UHD_ADD_NONAPI_TEST(
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/client_zero.cpp
 )
 
+UHD_ADD_NONAPI_TEST(
+    TARGET zbx_cpld_test.cpp
+    EXTRA_SOURCES
+    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_cpld_ctrl.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_lo_ctrl.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/common/lmx2572.cpp
+    INCLUDE_DIRS
+    ${CMAKE_BINARY_DIR}/lib/ic_reg_maps
+)
+
+UHD_ADD_NONAPI_TEST(
+    TARGET lmx2572_test.cpp
+    EXTRA_SOURCES
+    ${CMAKE_SOURCE_DIR}/lib/usrp/common/lmx2572.cpp
+    INCLUDE_DIRS
+    ${CMAKE_BINARY_DIR}/lib/ic_reg_maps
+)
+
 set_source_files_properties(
     ${CMAKE_SOURCE_DIR}/lib/utils/system_time.cpp
     PROPERTIES COMPILE_DEFINITIONS
@@ -329,7 +349,6 @@ UHD_ADD_RFNOC_BLOCK_TEST(
     TARGET siggen_block_test.cpp
 )
 
-
 UHD_ADD_RFNOC_BLOCK_TEST(
     TARGET split_stream_block_test.cpp
 )
@@ -344,6 +363,35 @@ UHD_ADD_RFNOC_BLOCK_TEST(
 
 UHD_ADD_RFNOC_BLOCK_TEST(
     TARGET window_block_test.cpp
+)
+
+UHD_ADD_RFNOC_BLOCK_TEST(
+    TARGET x4xx_radio_block_test.cpp
+    EXTRA_SOURCES
+    ${CMAKE_SOURCE_DIR}/lib/usrp/common/lmx2572.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/common/pwr_cal_mgr.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/x400/x400_radio_control.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/x400/x400_rfdc_control.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/x400/adc_self_calibration.cpp
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/radio_control_impl.cpp
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/rf_control/gain_profile.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/mpmd/mpmd_mb_controller.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_dboard.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_dboard_init.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_lo_ctrl.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_cpld_ctrl.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_expert.cpp
+    ${CMAKE_SOURCE_DIR}/lib/utils/compat_check.cpp
+    ${CMAKE_SOURCE_DIR}/lib/features/discoverable_feature_registry.cpp
+    $<TARGET_OBJECTS:uhd_rpclib>
+    INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/lib/deps/rpclib/include
+    INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/lib/deps/flatbuffers/include
+)
+
+UHD_ADD_NONAPI_TEST(
+    TARGET "mb_controller_test.cpp"
+    EXTRA_SOURCES
+    ${CMAKE_SOURCE_DIR}/lib/features/discoverable_feature_registry.cpp
 )
 
 UHD_ADD_NONAPI_TEST(
@@ -380,6 +428,12 @@ UHD_ADD_NONAPI_TEST(
     TARGET "rf_control_gain_profile_test.cpp"
     EXTRA_SOURCES
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/rf_control/gain_profile.cpp
+)
+
+UHD_ADD_NONAPI_TEST(
+    TARGET "x400_rfdc_control_test.cpp"
+    EXTRA_SOURCES
+    ${CMAKE_SOURCE_DIR}/lib/usrp/x400/x400_rfdc_control.cpp
 )
 
 ########################################################################

@@ -10,6 +10,7 @@
 #include <uhd/cal/database.hpp>
 #include <uhd/cal/iq_cal.hpp>
 #include <uhd/cal/pwr_cal.hpp>
+#include <uhd/cal/dsa_cal.hpp>
 #include <uhd/utils/interpolation.hpp>
 #include <uhd/utils/pybind_adaptors.hpp>
 #include <pybind11/stl.h>
@@ -124,6 +125,49 @@ void export_cal(py::module& m)
             py::arg("power_dbm"),
             py::arg("freq"),
             py::arg("temperature") = boost::optional<int>());
+
+    py::class_<zbx_tx_dsa_cal, container, zbx_tx_dsa_cal::sptr>(m, "zbx_tx_dsa_cal")
+        .def(py::init([](const std::string& name,
+                          const std::string& serial,
+                          const uint64_t timestamp) {
+            return zbx_tx_dsa_cal::make(name, serial, timestamp);
+        }))
+        .def(py::init([]() { return zbx_tx_dsa_cal::make(); }))
+        .def(py::init([](const py::bytes data) {
+            return container::make<zbx_tx_dsa_cal>(pybytes_to_vector(data));
+        }))
+        .def("add_frequency_band",
+            &zbx_tx_dsa_cal::add_frequency_band,
+            py::arg("max_freq"),
+            py::arg("name"),
+            py::arg("steps"))
+        .def("clear", &zbx_tx_dsa_cal::clear)
+        .def("get_dsa_setting",
+            &zbx_tx_dsa_cal::get_dsa_setting,
+            py::arg("freq"),
+            py::arg("gain_index"));
+
+    py::class_<zbx_rx_dsa_cal, container, zbx_rx_dsa_cal::sptr>(m, "zbx_rx_dsa_cal")
+        .def(py::init([](const std::string& name,
+                          const std::string& serial,
+                          const uint64_t timestamp) {
+            return zbx_rx_dsa_cal::make(name, serial, timestamp);
+        }))
+        .def(py::init([]() { return zbx_rx_dsa_cal::make(); }))
+        .def(py::init([](const py::bytes data) {
+            return container::make<zbx_rx_dsa_cal>(pybytes_to_vector(data));
+        }))
+        .def("add_frequency_band",
+            &zbx_rx_dsa_cal::add_frequency_band,
+            py::arg("max_freq"),
+            py::arg("name"),
+            py::arg("steps"))
+        .def("clear", &zbx_rx_dsa_cal::clear)
+        .def("get_dsa_setting",
+            &zbx_rx_dsa_cal::get_dsa_setting,
+            py::arg("freq"),
+            py::arg("gain_index"));
+
 }
 
 #endif /* INCLUDED_UHD_CAL_PYTHON_HPP */

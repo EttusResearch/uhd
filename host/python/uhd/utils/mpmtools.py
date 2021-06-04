@@ -16,7 +16,7 @@ from mprpc.exceptions import RPCError
 
 MPM_RPC_PORT = 49601
 
-def _claim_loop(host, port, cmd_q, token_q):
+def _claim_loop(client, cmd_q, token_q):
     """
     Process that runs a claim loop.
 
@@ -39,7 +39,6 @@ def _claim_loop(host, port, cmd_q, token_q):
 
     signal.signal(signal.SIGTERM, _sig_term_handler)
 
-    client = RPCClient(host, port, pack_params={'use_bin_type': True})
     try:
         while not exit_loop:
             try:
@@ -84,10 +83,11 @@ class MPMClaimer:
         self.token = None
         self._cmd_q = multiprocessing.Queue()
         self._token_q = multiprocessing.Queue()
+        client = RPCClient(host, port, pack_params={'use_bin_type': True})
         self._claim_loop = multiprocessing.Process(
             target=_claim_loop,
             name="Claimer Loop",
-            args=(host, port, self._cmd_q, self._token_q)
+            args=(client, self._cmd_q, self._token_q)
         )
         self._claim_loop.daemon = True
         self._claim_loop.start()
@@ -180,6 +180,12 @@ class MPMClient:
         Use claimer (instead of RPC method) to unclaim MPM device
         """
         self._claimer.unclaim()
+
+    def exit(self):
+        """
+        Use claimer (instead of RPC method) to unclaim MPM device and exit claim loop
+        """
+        self._claimer.exit()
 
     def _add_command(self, command, docs, requires_token):
         """

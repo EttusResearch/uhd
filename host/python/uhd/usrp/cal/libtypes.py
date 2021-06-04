@@ -18,5 +18,7 @@ database = lib.cal.database
 Source = lib.cal.source
 IQCal = lib.cal.iq_cal
 PwrCal = lib.cal.pwr_cal
+ZbxTxDsaCal = lib.cal.zbx_tx_dsa_cal
+ZbxRxDsaCal = lib.cal.zbx_rx_dsa_cal
 InterpMode = lib.cal.interp_mode
 # pylint: enable=invalid-name

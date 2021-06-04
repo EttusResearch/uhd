@@ -50,5 +50,8 @@ endif(ENABLE_N300)
 if(ENABLE_E320)
     ADD_DEVTEST("e320" "e3xx" "E32x")
 endif(ENABLE_E320)
+if(ENABLE_X400)
+    ADD_DEVTEST("x4x0" "x4xx" "X4x0")
+endif(ENABLE_X400)
 # Formatting
 message(STATUS "")

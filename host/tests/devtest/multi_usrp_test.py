@@ -754,6 +754,25 @@ def get_device_config(usrp_type, device_config_path=None):
                 'get_gpio_banks',
             ],
         }
+    if usrp_type == 'x410':
+        return {
+            'skip': [
+                # No AGC on ZBX
+                'set_rx_agc',
+                # No IQ imbalance on ZBX
+                'set_rx_iq_balance',
+                'set_tx_iq_balance',
+                # No DC offset on ZBX
+                'set_rx_dc_offset',
+                'set_tx_dc_offset',
+                # No LO source control on ZBX
+                'set_rx_lo_source',
+                'set_tx_lo_source',
+                'set_rx_lo_export_enabled',
+                'set_tx_lo_export_enabled',
+            ],
+            'clock_sources': ['internal', 'mboard'],
+        }
     return {}
 
 def dump_defaults(usrp_type):

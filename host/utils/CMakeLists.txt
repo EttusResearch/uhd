@@ -16,6 +16,7 @@ set(util_runtime_sources
     uhd_cal_rx_iq_balance.cpp
     uhd_cal_tx_dc_offset.cpp
     uhd_cal_tx_iq_balance.cpp
+    uhd_adc_self_cal.cpp
 )
 
 #for each source: build an executable and install

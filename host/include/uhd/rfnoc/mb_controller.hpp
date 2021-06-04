@@ -7,6 +7,7 @@
 #pragma once
 
 #include <uhd/config.hpp>
+#include <uhd/features/discoverable_feature_getter_iface.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/types/time_spec.hpp>
@@ -21,7 +22,8 @@ namespace uhd { namespace rfnoc {
 
 /*! A default block controller for blocks that can't be found in the registry
  */
-class UHD_API mb_controller : public uhd::noncopyable
+class UHD_API mb_controller : public uhd::noncopyable,
+                              public virtual ::uhd::features::discoverable_feature_getter_iface
 {
 public:
     using sptr = std::shared_ptr<mb_controller>;

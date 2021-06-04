@@ -380,11 +380,29 @@ uint32_t get_reg(int addr){
 }
 """
 
+PY_BODY_TMPL = """\
+def get_reg(self, addr):
+    reg = 0
+    % for addr in sorted(set(map(lambda r: r.get_addr(), regs))):
+    <% if_state = 'if' if loop.index == 0 else 'elif' %>
+    ${if_state} addr == ${addr}:
+        % for reg in filter(lambda r: r.get_addr() == addr, regs):
+        % if reg.get_enums():
+        reg |= (self.${reg.get_name()}.value & ${reg.get_mask()}) << ${reg.get_shift()}
+        % else:
+        reg |= (self.${reg.get_name()} & ${reg.get_mask()}) << ${reg.get_shift()}
+        % endif
+        % endfor
+    % endfor
+    return reg
+
+"""
+
 if __name__ == '__main__':
     import common; common.generate(
         name='lmk04816_regs',
         regs_tmpl=REGS_TMPL,
         body_tmpl=BODY_TMPL,
+        py_body_tmpl=PY_BODY_TMPL,
         file=__file__,
     )
-
