@@ -1,0 +1,67 @@
+#
+# Copyright 2021 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+# Description:
+#
+#   This template is used to build the ZBX daughterboard CPLD within the uhddev
+#   repository. Exports the CPLD build results (from build directory) as
+#   artifacts 'ZBX CPLD image'.
+#
+#   See description for the parameters below.
+#
+
+parameters:
+  ### Optional parameters
+  # Set to true if the intermediate files from build-<target> directory should
+  # be exported for debugging as artifact 'ZBX CPLD build (<attempt>)'
+  - name: debug
+    type: boolean
+    default: false
+  # Checkout repository in a clean state as described in
+  # https://docs.microsoft.com/en-us/azure/devops/pipelines/yaml-schema?view=azure-devops&tabs=schema%2Cparameter-schema#checkout
+  - name: clean
+    type: boolean
+    default: true
+
+jobs:
+- job: ZBX_CPLD
+  displayName: 'Build ZBX CPLD'
+  pool:
+    name: de-dre-lab
+    demands:
+    - ettus_fpga_build
+    - quartus18.1_lite
+  timeoutInMinutes: 30
+  steps:
+    # Currently limited to be executed in same repo.
+    # Removes all unversioned files if necessary.
+    # Checkout path defined by single repository case in
+    # https://docs.microsoft.com/en-us/azure/devops/pipelines/repos/multi-repo-checkout?view=azure-devops#checkout-path
+    - checkout: self
+      clean: ${{ parameters.clean }}
+
+    # Run CPLD build
+    # Increase license server timeout as there might appear timeouts during
+    # static timing analysis which end up setting the build to fail.
+    - script: |
+        call set FLEXLM_TIMEOUT=20000000
+        call make
+      workingDirectory: $(Agent.BuildDirectory)/s/fpga/usrp3/top/x400/dboards/zbx/cpld
+      displayName: 'Build CPLD'
+
+    # Publish the final result only if all previous steps passed
+    - publish: $(Agent.BuildDirectory)/s/fpga/usrp3/top/x400/dboards/zbx/cpld/build
+      artifact: 'ZBX CPLD image'
+      displayName: 'Publish CPLD'
+
+    # Always publish intermediate files
+    - publish: $(Agent.BuildDirectory)/s/fpga/usrp3/top/x400/dboards/zbx/cpld/output_files
+      artifact: 'ZBX CPLD build ($(System.JobAttempt))'
+      condition: and(always(), eq('${{ parameters.debug }}', true))
+      displayName: 'Publish Build Directory'
+
+    # Check if FPGA build left any untracked files.
+    - ${{ if eq(parameters.debug, true) }}:
+      - template: check_clean_repo_steps.yml

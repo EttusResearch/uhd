@@ -1,0 +1,58 @@
+#
+# Copyright 2021 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+# Description:
+#
+#   Checks for a clean repository (no untracked or modified files).
+#
+
+parameters:
+  # Directory to execute the commands in
+  - name: directory
+    type: string
+    default: $(Agent.BuildDirectory)/s
+
+steps:
+# Windows based calls
+- powershell: |
+    # Using git status as a way to check for a clean repo can produce
+    # misleading results when the line endings have been modified (XmlParse has
+    # a tendency to modify line endings). "git diff" seems to produce more
+    # reliable results, and the --exit-code is useful for detecting a change/no
+    # change summary.
+
+    # Check for modified files
+    git diff --exit-code;          if (-not $?) {throw "git diff should be empty"}
+
+    # Check for modified files that are staged
+    git diff --cached --exit-code; if (-not $?) {throw "git diff of staged changes should be empty"}
+
+    # Check for untracked files
+    git add .                      # add all untracked files
+    git diff --cached --exit-code; if (-not $?) {throw "There should be no untracked files"}
+  displayName: 'Check clean repository (Windows)'
+  condition: eq( variables['Agent.OS'], 'Windows_NT' )
+  workingDirectory: ${{ parameters.directory }}
+
+# Linux based calls
+- bash: |
+    # Using git status as a way to check for a clean repo can produce
+    # misleading results when the line endings have been modified (XmlParse has
+    # a tendency to modify line endings). "git diff" seems to produce more
+    # reliable results, and the --exit-code is useful for detecting a change/no
+    # change summary.
+
+    # Check for modified files
+    git diff --exit-code          || exit 1
+
+    # Checked for modified files that are staged
+    git diff --cached --exit-code || exit 1
+
+    # Check for untracked files
+    git add .                      # add all untracked files
+    git diff --cached --exit-code || exit 1
+  displayName: 'Check clean repository (Linux)'
+  condition: eq( variables['Agent.OS'], 'Linux' )
+  workingDirectory: ${{ parameters.directory }}

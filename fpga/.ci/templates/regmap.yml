@@ -1,0 +1,60 @@
+#
+# Copyright 2021 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+# Description:
+#
+#   This template is used to build the FPGA register map within the uhddev
+#   repository. Exports the regmap as artifact 'Regmap'.
+#
+#   See description for the parameters below.
+#
+
+parameters:
+  ### Optional parameters
+  # Set to true to check existence of temporary files after job completion
+  - name: debug
+    type: boolean
+    default: false
+  # Checkout repository in a clean state as described in
+  # https://docs.microsoft.com/en-us/azure/devops/pipelines/yaml-schema?view=azure-devops&tabs=schema%2Cparameter-schema#checkout
+  - name: clean
+    type: boolean
+    default: true
+
+jobs:
+- job: Regmap
+  displayName: 'Generate Register Map'
+  pool:
+    name: de-dre-lab
+    demands:
+    - hwSetup
+  timeoutInMinutes: 30
+  steps:
+    # Currently limited to be executed in same repo.
+    # Removes all unversioned files if necessary.
+    # Checkout path defined by single repository case in
+    # https://docs.microsoft.com/en-us/azure/devops/pipelines/repos/multi-repo-checkout?view=azure-devops#checkout-path
+    - checkout: self
+      clean: ${{ parameters.clean }}
+
+    - script: |
+        call hwSetup
+        call make regmap
+      workingDirectory: $(Agent.BuildDirectory)/s/fpga/nitools/x400/fpga
+      displayName: 'XmlParse'
+
+    # Publish the final result only if all previous steps passed
+    - publish: $(Agent.BuildDirectory)/s/fpga/usrp3/top/x400/doc
+      artifact: 'FPGA regmap'
+      displayName: 'Publish Regmap'
+
+    # Check if FPGA build left any untracked files.
+    - ${{ if eq(parameters.debug, true) }}:
+      # Generated regmap has issue with line endings.
+      # Staging the files resolves these changes and still report any
+      # modifications for the check below.
+      - script: git add -A
+        displayName: 'Stage all files'
+      - template: check_clean_repo_steps.yml
