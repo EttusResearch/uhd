@@ -133,11 +133,11 @@ Your actual command may differ.
 
 You can install all the dependencies through the package manager:
 
-    sudo yum -y install boost-devel libusb1-devel doxygen python3-docutils python3-mako python3-numpy python3-requests python3-ruamel.yaml python3-setuptools cmake make gcc gcc-c++
+    sudo yum -y install boost-devel libusb1-devel doxygen python3-docutils python3-mako python3-numpy python3-requests python3-ruamel-yaml python3-setuptools cmake make gcc gcc-c++
 
 or
 
-    sudo dnf -y install boost-devel libusb1-devel doxygen python3-docutils python3-mako python3-numpy python3-requests python3-ruamel.yaml python3-setuptools cmake make gcc gcc-c++
+    sudo dnf -y install boost-devel libusb1-devel doxygen python3-docutils python3-mako python3-numpy python3-requests python3-ruamel-yaml python3-setuptools cmake make gcc gcc-c++
 
 Your actual command may differ.
 
