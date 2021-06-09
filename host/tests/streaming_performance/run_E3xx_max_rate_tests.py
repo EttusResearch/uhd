@@ -48,9 +48,19 @@ def parse_args():
         type=str,
         default = "",
         help="address of the 10 GbE interface")
+    parser.add_argument(
+        "--use_dpdk",
+        action='store_true',
+        help="enable DPDK")
+    parser.add_argument(
+        "--mgmt_addr",
+        type=str,
+        default="",
+        help="address of management interface. only needed for DPDK test cases"
+    )
     args = parser.parse_args()
 
-    return args.path, args.test_type, args.addr
+    return args.path, args.test_type, args.addr, args.use_dpdk, args.mgmt_addr
 
 def run_test(path, params, iterations, label):
     """
@@ -62,15 +72,25 @@ def run_test(path, params, iterations, label):
     stats = batch_run_benchmark_rate.calculate_stats(results)
     print(batch_run_benchmark_rate.get_summary_string(stats, iterations, params))
 
-def run_E320_tests_for_single_10G(path, addr, iterations, duration):
+
+def run_E320_tests_for_single_10G(
+        path, addr, iterations, duration, use_dpdk=False, mgmt_addr=''):
     """
     Runs tests that are in the neighborhood of max rate for 10 GbE
     """
+
     def base_params(rate):
-        return {
-            "args" : "addr={},master_clock_rate={}".format(addr, rate),
-            "duration" : duration
-        }
+        if use_dpdk == True:
+            return {
+                "args": "addr={},master_clock_rate={},use_dpdk=1,mgmt_addr={}"
+                        .format(addr, rate, mgmt_addr),
+                "duration": duration
+            }
+        else:
+            return {
+                "args": "addr={},master_clock_rate={}".format(addr, rate),
+                "duration": duration
+            }
 
     # Run RX at 61.44 Msps with one channel
     rate = "61.44e6"
@@ -118,16 +138,25 @@ def run_E320_tests_for_single_10G(path, addr, iterations, duration):
     trx_params["rx_channels"] = "0,1"
     run_test(path, trx_params, iterations, "2xTRX @{}".format(rate))
 
-def run_E320_tests_for_single_10G_long_duration(path, addr, iterations, duration):
+
+def run_E320_tests_for_single_10G_long_duration(
+        path, addr, iterations, duration, use_dpdk=False, mgmt_addr=''):
     """
     Runs tests that are in the neighborhood of max rate for 10 GbE. Only include
     a small subset of tests to run for a longer period.
     """
     def base_params(rate):
-        return {
-            "args" : "addr={},master_clock_rate={}".format(addr, rate),
-            "duration" : duration
-        }
+        if use_dpdk == True:
+            return {
+                "args": "addr={},master_clock_rate={},use_dpdk=1,mgmt_addr={}"
+                        .format(addr, rate, mgmt_addr),
+                "duration": duration
+            }
+        else:
+            return {
+                "args": "addr={},master_clock_rate={}".format(addr, rate),
+                "duration": duration
+            }
 
     # Run TRX at 61.44 Msps with two channels
     rate = "61.44e6"
@@ -139,12 +168,14 @@ def run_E320_tests_for_single_10G_long_duration(path, addr, iterations, duration
     run_test(path, trx_params, iterations, "2xTRX @{}".format(rate))
 
 def main():
-    path, test_type, addr = parse_args()
+    path, test_type, addr, use_dpdk, mgmt_addr = parse_args()
     start_time = time.time()
 
     if test_type == Test_Type_E320_XG:
-        run_E320_tests_for_single_10G(path, addr, 10, 30)
-        run_E320_tests_for_single_10G_long_duration(path, addr, 2, 600)
+        run_E320_tests_for_single_10G(
+            path, addr, 10, 30, use_dpdk, mgmt_addr)
+        run_E320_tests_for_single_10G_long_duration(
+            path, addr, 2, 600, use_dpdk, mgmt_addr)
 
     end_time = time.time()
     elapsed = end_time - start_time

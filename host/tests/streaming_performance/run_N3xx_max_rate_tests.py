@@ -61,9 +61,19 @@ def parse_args():
         type=str,
         default = "",
         help="address of second 10 GbE interface")
+    parser.add_argument(
+        "--mgmt_addr",
+        type=str,
+        default="",
+        help="address of management interface. only needed for DPDK test cases")
+    parser.add_argument(
+        "--use_dpdk",
+        action='store_true',
+        help="enable DPDK")
     args = parser.parse_args()
 
-    return args.path, args.test_type, args.addr, args.second_addr
+    return args.path, args.test_type, args.addr, args.second_addr,\
+        args.mgmt_addr, args.use_dpdk
 
 def run_test(path, params, iterations, label):
     """
@@ -75,15 +85,24 @@ def run_test(path, params, iterations, label):
     stats = batch_run_benchmark_rate.calculate_stats(results)
     print(batch_run_benchmark_rate.get_summary_string(stats, iterations, params))
 
-def run_N310_tests_for_single_10G(path, addr, iterations, duration):
+
+def run_N310_tests_for_single_10G(
+        path, addr, iterations, duration, use_dpdk=False, mgmt_addr=''):
     """
     Runs tests that are in the neighborhood of max rate for 10 GbE
     """
     def base_params(rate):
-        return {
-            "args" : "addr={},master_clock_rate={}".format(addr, rate),
-            "duration" : duration
-        }
+        if use_dpdk is True:
+            return {
+                "args": "addr={},master_clock_rate={},use_dpdk=1,mgmt_addr={},"
+                         .format(addr, rate, mgmt_addr),
+                "duration": duration
+            }
+        else:
+            return {
+                "args" : "addr={},master_clock_rate={}".format(addr, rate),
+                "duration" : duration
+            }
 
     # Run RX at 153.6 Msps with one channel
     rate = "153.6e6"
@@ -163,16 +182,25 @@ def run_N310_tests_for_single_10G(path, addr, iterations, duration):
     params["rx_channels"] = "0,1,2,3"
     run_test(path, params, iterations, "4xTRX @{}".format(rate))
 
-def run_N310_tests_for_single_10G_long_duration(path, addr, iterations, duration):
+
+def run_N310_tests_for_single_10G_long_duration(
+        path, addr, iterations, duration, use_dpdk=False, mgmt_addr=''):
     """
     Runs tests that are in the neighborhood of max rate for 10 GbE. Only include
     a small subset of tests to run for a longer period.
     """
     def base_params(rate):
-        return {
-            "args" : "addr={},master_clock_rate={}".format(addr, rate),
-            "duration" : duration
-        }
+        if use_dpdk is True:
+            return {
+                "args": "addr={},master_clock_rate={},use_dpdk=1,mgmt_addr={},"
+                        .format(addr, rate, mgmt_addr),
+                "duration": duration
+            }
+        else:
+            return {
+                "args": "addr={},master_clock_rate={}".format(addr, rate),
+                "duration": duration
+            }
 
     rate = "153.6e6"
 
@@ -194,15 +222,27 @@ def run_N310_tests_for_single_10G_long_duration(path, addr, iterations, duration
     params["rx_channels"] = "0,1,2,3"
     run_test(path, params, iterations, "4xTRX @{}".format(rate))
 
-def run_N310_tests_for_dual_10G(path, addr, second_addr, iterations, duration):
+
+def run_N310_tests_for_dual_10G(
+        path, addr, second_addr, iterations,
+        duration, use_dpdk=False, mgmt_addr=''):
     """
     Runs tests that are in the neighborhood of max rate for dual 10 GbE
     """
     def base_params(rate):
-        return {
-            "args" : "addr={},second_addr={},master_clock_rate={}".format(addr, second_addr, rate),
-            "duration" : duration
-        }
+        if use_dpdk is True:
+            return {
+                "args": ("addr={},second_addr={},master_clock_rate={},"
+                         "use_dpdk=1,mgmt_addr={}")
+                        .format(addr, second_addr, rate, mgmt_addr),
+                "duration": duration
+            }
+        else:
+            return {
+                "args": "addr={},second_addr={},master_clock_rate={}"
+                        .format(addr, second_addr, rate),
+                "duration": duration
+            }
 
     # Run RX at 153.6 Msps with two channels
     rate = "153.6e6"
@@ -273,16 +313,28 @@ def run_N310_tests_for_dual_10G(path, addr, second_addr, iterations, duration):
     params["rx_channels"] = "0,1,2,3"
     run_test(path, params, iterations, "4xTRX @{}".format(rate))
 
-def run_N310_tests_for_dual_10G_long_duration(path, addr, second_addr, iterations, duration):
+
+def run_N310_tests_for_dual_10G_long_duration(
+        path, addr, second_addr, iterations,
+        duration, use_dpdk=False, mgmt_addr=''):
     """
     Runs tests that are in the neighborhood of max rate for dual 10 GbE. Only include
     a small subset of tests to run for a longer period.
     """
     def base_params(rate):
-        return {
-            "args" : "addr={},second_addr={},master_clock_rate={}".format(addr, second_addr, rate),
-            "duration" : duration
-        }
+        if use_dpdk is True:
+            return {
+                "args": ("addr={},second_addr={},master_clock_rate={},"
+                         "use_dpdk=1,mgmt_addr={}")
+                         .format(addr, second_addr, rate, mgmt_addr),
+                "duration": duration
+            }
+        else:
+            return {
+                "args": "addr={},second_addr={},master_clock_rate={}"
+                .format(addr, second_addr, rate),
+                "duration": duration
+            }
 
     # Run TRX at 122.88 Msps with four channels
     rate = "122.88e6"
@@ -907,15 +959,24 @@ def run_N320_tests_for_Liberio_master_next(path, iterations, duration):
     params["tx_channels"] = "0,1"
     run_test(path, params, iterations, "2xTRX @{}".format(rate))
 
-def run_N320_tests_for_single_10G(path, addr, iterations, duration):
+
+def run_N320_tests_for_single_10G(
+        path, addr, iterations, duration, use_dpdk=False, mgmt_addr=''):
     """
     Runs tests that are in the neighborhood of max rate for single 10 GbE
     """
     def base_params(rate):
-        return {
-            "args" : "addr={},master_clock_rate={}".format(addr, rate),
-            "duration" : duration
-        }
+        if use_dpdk is True:
+            return {
+                "args": "addr={},master_clock_rate={},use_dpdk=1,mgmt_addr={}"
+                .format(addr, rate, mgmt_addr),
+                "duration": duration
+            }
+        else:
+            return {
+                "args": "addr={},master_clock_rate={}".format(addr, rate),
+                "duration": duration
+            }
 
     # Run RX at 250 Msps with one channel
     rate = "250e6"
@@ -940,15 +1001,27 @@ def run_N320_tests_for_single_10G(path, addr, iterations, duration):
     params["rx_channels"] = "0"
     run_test(path, params, iterations, "1xTRX @{}".format(rate))
 
-def run_N320_tests_for_dual_10G(path, addr, second_addr, iterations, duration):
+
+def run_N320_tests_for_dual_10G(
+        path, addr, second_addr, iterations,
+        duration, use_dpdk=False, mgmt_addr=''):
     """
     Runs tests that are in the neighborhood of max rate for dual 10 GbE
     """
     def base_params(rate):
-        return {
-            "args" : "addr={},second_addr={},master_clock_rate={}".format(addr, second_addr, rate),
-            "duration" : duration
-        }
+        if use_dpdk is True:
+            return {
+                "args": ("addr={},second_addr={},master_clock_rate={},"
+                        "use_dpdk=1,mgmt_addr={}")
+                        .format(addr, second_addr, rate, mgmt_addr),
+                "duration": duration
+            }
+        else:
+            return {
+                "args": "addr={},second_addr={},master_clock_rate={}"
+                .format(addr, second_addr, rate),
+                "duration": duration
+            }
 
     # Run RX at 250 Msps with two channels
     rate = "250e6"
@@ -973,16 +1046,21 @@ def run_N320_tests_for_dual_10G(path, addr, second_addr, iterations, duration):
     params["rx_channels"] = "0,1"
     run_test(path, params, iterations, "2xTRX @{}".format(rate))
 
+
 def main():
-    path, test_type, addr, second_addr = parse_args()
+    path, test_type, addr, second_addr, mgmt_addr, use_dpdk = parse_args()
     start_time = time.time()
 
     if test_type == Test_Type_N310_XG:
-        run_N310_tests_for_single_10G(path, addr, 10, 30)
-        run_N310_tests_for_dual_10G(path, addr, second_addr, 10, 30)
+        run_N310_tests_for_single_10G(
+            path, addr, 10, 30, use_dpdk, mgmt_addr)
+        run_N310_tests_for_dual_10G(
+            path, addr, second_addr, 10, 30, use_dpdk, mgmt_addr)
 
-        run_N310_tests_for_single_10G_long_duration(path, addr, 2, 600)
-        run_N310_tests_for_dual_10G_long_duration(path, addr, second_addr, 2, 600)
+        run_N310_tests_for_single_10G_long_duration(
+            path, addr, 2, 600, use_dpdk, mgmt_addr)
+        run_N310_tests_for_dual_10G_long_duration(
+            path, addr, second_addr, 2, 600, use_dpdk, mgmt_addr)
 
     if test_type == Test_Type_N310_Liberio:
         #run_N310_tests_for_Liberio_315(path, 10, 30)
@@ -993,8 +1071,10 @@ def main():
         run_N320_tests_for_Liberio_master_next(path, 10, 30)
 
     if test_type == Test_Type_N320_XG:
-        run_N320_tests_for_single_10G(path, addr, 10, 30)
-        run_N320_tests_for_dual_10G(path, addr, second_addr, 10, 30)
+        run_N320_tests_for_single_10G(
+            path, addr, 10, 30, use_dpdk, mgmt_addr)
+        run_N320_tests_for_dual_10G(
+            path, addr, second_addr, 10, 30, use_dpdk, mgmt_addr)
 
     end_time = time.time()
     elapsed = end_time - start_time

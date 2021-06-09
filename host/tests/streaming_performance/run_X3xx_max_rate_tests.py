@@ -53,9 +53,13 @@ def parse_args():
         type=str,
         default = "",
         help="address of second 10 GbE interface")
+    parser.add_argument(
+        "--use_dpdk",
+        action='store_true',
+        help="enable DPDK")
     args = parser.parse_args()
 
-    return args.path, args.test_type, args.addr, args.second_addr
+    return args.path, args.test_type, args.addr, args.second_addr, args.use_dpdk
 
 def run_test(path, params, iterations, label):
     """
@@ -67,12 +71,18 @@ def run_test(path, params, iterations, label):
     stats = batch_run_benchmark_rate.calculate_stats(results)
     print(batch_run_benchmark_rate.get_summary_string(stats, iterations, params))
 
-def run_tests_for_single_10G(path, addr, iterations, duration):
-    base_params = {
-        "args" : "addr={}".format(addr),
-        "duration" : duration
-    }
 
+def run_tests_for_single_10G(path, addr, iterations, duration, use_dpdk=False):
+    if use_dpdk == True:
+        base_params = {
+            "args": "addr={},use_dpdk=1".format(addr),
+            "duration": duration
+        }
+    else:
+        base_params = {
+            "args": "addr={}".format(addr),
+            "duration": duration
+        }
     rx_params = base_params.copy()
 
     # Run 200 Msps RX with one channel
@@ -113,11 +123,21 @@ def run_tests_for_single_10G(path, addr, iterations, duration):
     trx_params["rx_channels"] = "0,1"
     run_test(path, trx_params, iterations, "2xTRX @100Msps")
 
-def run_tests_for_dual_10G(path, addr, second_addr, iterations, duration):
-    base_params = {
-        "args" : "addr={},second_addr={},skip_dram=1,enable_tx_dual_eth=1".format(addr, second_addr),
-        "duration" : duration
-    }
+
+def run_tests_for_dual_10G(path, addr, second_addr, iterations, duration, use_dpdk=False):
+    if use_dpdk == True:
+        base_params = {
+            "args": ("addr={},second_addr={},skip_dram=1,"
+                     "enable_tx_dual_eth=1,use_dpdk=1")
+                     .format(addr, second_addr),
+            "duration": duration
+        }
+    else:
+        base_params = {
+            "args": "addr={},second_addr={},skip_dram=1,enable_tx_dual_eth=1"
+                    .format(addr, second_addr),
+            "duration": duration
+        }
 
     rx_params = base_params.copy()
 
@@ -142,11 +162,19 @@ def run_tests_for_dual_10G(path, addr, second_addr, iterations, duration):
     trx_params["rx_channels"] = "0,1"
     run_test(path, trx_params, iterations, "2xTRX @200Msps")
 
-def run_tests_for_single_10G_Twin_RX(path, addr, iterations, duration):
-    base_params = {
-        "args" : "addr={}".format(addr),
-        "duration" : duration
-    }
+
+def run_tests_for_single_10G_Twin_RX(
+        path, addr, iterations, duration, use_dpdk=False):
+    if use_dpdk == True:
+        base_params = {
+            "args": "addr={},use_dpdk=1".format(addr),
+            "duration": duration
+        }
+    else:
+        base_params = {
+            "args": "addr={}".format(addr),
+            "duration": duration
+        }
 
     rx_params = base_params.copy()
 
@@ -160,11 +188,20 @@ def run_tests_for_single_10G_Twin_RX(path, addr, iterations, duration):
     rx_params["rx_channels"] = "0,1,2,3"
     run_test(path, rx_params, iterations, "4xRX @50 Msps")
 
-def run_tests_for_dual_10G_Twin_RX(path, addr, second_addr, iterations, duration):
-    base_params = {
-        "args" : "addr={},second_addr={}".format(addr, second_addr),
-        "duration" : duration
-    }
+
+def run_tests_for_dual_10G_Twin_RX(
+        path, addr, second_addr, iterations, duration, use_dpdk=False):
+    if use_dpdk == True:
+        base_params = {
+            "args": "addr={},second_addr={},use_dpdk=1"
+                    .format(addr, second_addr),
+            "duration": duration
+        }
+    else:
+        base_params = {
+            "args": "addr={},second_addr={}".format(addr, second_addr),
+            "duration": duration
+        }
 
     rx_params = base_params.copy()
 
@@ -175,26 +212,26 @@ def run_tests_for_dual_10G_Twin_RX(path, addr, second_addr, iterations, duration
 
 
 def main():
-    path, test_type, addr, second_addr = parse_args()
+    path, test_type, addr, second_addr, use_dpdk = parse_args()
     start_time = time.time()
 
     if test_type == Test_Type_X3xx_XG:
         # Run 10 test iterations for 60 seconds each
-        run_tests_for_single_10G(path, addr, 10, 60)
-        run_tests_for_dual_10G(path, addr, second_addr, 10, 60)
+        run_tests_for_single_10G(path, addr, 10, 60, use_dpdk)
+        run_tests_for_dual_10G(path, addr, second_addr, 10, 60, use_dpdk)
 
         # Run 2 test iterations for 600 seconds each
-        run_tests_for_single_10G(path, addr, 2, 600)
-        run_tests_for_dual_10G(path, addr, second_addr, 2, 600)
+        run_tests_for_single_10G(path, addr, 2, 600, use_dpdk)
+        run_tests_for_dual_10G(path, addr, second_addr, 2, 600, use_dpdk)
 
     if test_type == Test_Type_TwinRX_XG:
         # Run 10 test iterations for 60 seconds each
-        run_tests_for_single_10G_Twin_RX(path, addr, 10, 60)
-        run_tests_for_dual_10G_Twin_RX(path, addr, second_addr, 10, 60)
+        run_tests_for_single_10G_Twin_RX(path, addr, 10, 60, use_dpdk)
+        run_tests_for_dual_10G_Twin_RX(path, addr, second_addr, 10, 60, use_dpdk)
 
         # Run 2 test iterations for 600 seconds each
-        run_tests_for_single_10G_Twin_RX(path, addr, 2, 600)
-        run_tests_for_dual_10G_Twin_RX(path, addr, second_addr, 2, 600)
+        run_tests_for_single_10G_Twin_RX(path, addr, 2, 600, use_dpdk)
+        run_tests_for_dual_10G_Twin_RX(path, addr, second_addr, 2, 600, use_dpdk)
 
     end_time = time.time()
     elapsed = end_time - start_time
