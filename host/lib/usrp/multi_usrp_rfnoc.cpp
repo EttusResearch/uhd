@@ -18,6 +18,7 @@
 #include <uhdlib/rfnoc/rfnoc_rx_streamer.hpp>
 #include <uhdlib/rfnoc/rfnoc_tx_streamer.hpp>
 #include <uhdlib/usrp/gpio_defs.hpp>
+#include <uhdlib/usrp/multi_usrp_utils.hpp>
 #include <uhdlib/utils/narrow.hpp>
 #include <unordered_set>
 #include <boost/format.hpp>
@@ -440,29 +441,6 @@ public:
         return tx_streamer;
     }
 
-
-    /***********************************************************************
-     * Helper methods
-     **********************************************************************/
-    /*! The CORDIC can be used to shift the baseband below / past the tunable
-     * limits of the actual RF front-end. The baseband filter, located on the
-     * daughterboard, however, limits the useful instantaneous bandwidth. We
-     * allow the user to tune to the edge of the filter, where the roll-off
-     * begins.  This prevents the user from tuning past the point where less
-     * than half of the spectrum would be useful.
-     */
-    static meta_range_t make_overall_tune_range(
-        const meta_range_t& fe_range, const meta_range_t& dsp_range, const double bw)
-    {
-        meta_range_t range;
-        for (const range_t& sub_range : fe_range) {
-            range.push_back(
-                range_t(sub_range.start() + std::max(dsp_range.start(), -bw / 2),
-                    sub_range.stop() + std::min(dsp_range.stop(), bw / 2),
-                    dsp_range.step()));
-        }
-        return range;
-    }
 
     dict<std::string, std::string> get_usrp_rx_info(size_t chan) override
     {
