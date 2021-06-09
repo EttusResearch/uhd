@@ -121,6 +121,16 @@ elseif (ENABLE_X400)
         x4xx_bist
         DESTINATION ${RUNTIME_DIR}
     )
+    install(PROGRAMS
+        usrp_mpm/dboard_manager/zbx_update_cpld.py
+        DESTINATION ${RUNTIME_DIR}
+        RENAME zbx_update_cpld
+    )
+    install(PROGRAMS
+        usrp_mpm/periph_manager/x4xx_update_cpld.py
+        DESTINATION ${RUNTIME_DIR}
+        RENAME x4xx_update_cpld
+    )
 endif (ENABLE_MYKONOS)
 
 if (HAVE_MPM_TEST_PREREQS)
