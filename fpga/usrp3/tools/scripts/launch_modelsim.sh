@@ -47,6 +47,13 @@ function print_color {
 # and avoids some cases where simulation mismatch could otherwise occur.
 MSIM_DEFAULT="-voptargs=+acc -quiet -L unisims_ver"
 
+# Use specified modelsim.ini, if set
+if [[ -z $MSIM_MODELSIM_INI ]]; then
+    MODELSIMINI_ARG=""
+else
+    MODELSIMINI_ARG="-modelsimini $MSIM_MODELSIM_INI"
+fi
+
 cd $MSIM_PROJ_DIR
 
 # Generate the library options string
@@ -58,14 +65,14 @@ done
 
 if [ $MSIM_MODE == "gui" ]; then
     echo "* Launching ModelSim"
-    vsim $MSIM_DEFAULT $MSIM_ARGS $MSIM_LIB_ARGS $MSIM_SIM_TOP 2>&1 | while IFS= read -r line; do
+    vsim $MSIM_DEFAULT $MODELSIMINI_ARG $MSIM_ARGS $MSIM_LIB_ARGS $MSIM_SIM_TOP 2>&1 | while IFS= read -r line; do
         print_color $line
     done
     exit_status=${PIPESTATUS[0]}
     if [ ${exit_status} -ne 0 ]; then exit ${exit_status}; fi
 elif [ $MSIM_MODE == "batch" ]; then
     echo "* Launching ModelSim"
-    vsim -batch -do "run -all; quit -f" $MSIM_DEFAULT $MSIM_ARGS $MSIM_LIB_ARGS $MSIM_SIM_TOP 2>&1 | while IFS= read -r line; do
+    vsim -batch -do "run -all; quit -f" $MODELSIMINI_ARG $MSIM_DEFAULT $MSIM_ARGS $MSIM_LIB_ARGS $MSIM_SIM_TOP 2>&1 | while IFS= read -r line; do
         print_color $line
     done
     exit_status=${PIPESTATUS[0]}

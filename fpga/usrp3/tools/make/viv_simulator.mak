@@ -68,6 +68,7 @@ SETUP_AND_LAUNCH_VLINT = \
 	export VLINT_SVLOG_ARGS="$(SVLOG_ARGS)"; \
 	export VLINT_VLOG_ARGS="$(VLOG_ARGS)"; \
 	export VLINT_VHDL_ARGS="$(VHDL_ARGS)"; \
+	export VLINT_MODELSIM_INI="$(MODELSIM_INI)"; \
 	$(TOOLS_DIR)/scripts/launch_vlint.sh
 
 # -------------------------------------------------------------------
@@ -82,6 +83,7 @@ SETUP_AND_LAUNCH_MODELSIM = \
 	export MSIM_ARGS="$(MODELSIM_ARGS)"; \
 	export MSIM_LIBS="$(MODELSIM_LIBS)"; \
 	export MSIM_MODE=$(VIVADO_MODE); \
+	export MSIM_MODELSIM_INI="$(MODELSIM_INI)"; \
 	$(TOOLS_DIR)/scripts/launch_modelsim.sh
 
 .SECONDEXPANSION:

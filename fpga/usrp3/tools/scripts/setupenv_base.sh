@@ -243,15 +243,30 @@ if [[ $VSIM_PATH ]]; then
     case $MODELSIM_VER in
         DE-64|SE-64)
             export MODELSIM_64BIT=1
-            export SIM_COMPLIBDIR=$VIVADO_PATH/modelsim64
+            if [[ -z $MSIM_VIV_COMPLIBDIR ]]; then
+                export SIM_COMPLIBDIR=$VIVADO_PATH/modelsim64
+            else
+                export SIM_COMPLIBDIR=$MSIM_VIV_COMPLIBDIR
+            fi
         ;;
         DE|SE|PE)
             export MODELSIM_64BIT=0
-            export SIM_COMPLIBDIR=$VIVADO_PATH/modelsim32
+            if [[ -z $MSIM_VIV_COMPLIBDIR ]]; then
+                export SIM_COMPLIBDIR=$VIVADO_PATH/modelsim32
+            else
+                export SIM_COMPLIBDIR=$MSIM_VIV_COMPLIBDIR
+            fi
         ;;
         *)
         ;;
     esac
+    # If MSIM_MODELSIM_INI is not defined, use the modelsim.ini in the compiled
+    # libraries directory. Otherwise use the one defined by MSIM_MODELSIM_INI.
+    # Set MSIM_MODELSIM_INI to an empty string to use the modelsim.ini in the
+    # ModelSim installation folder.
+    if [[ ! -v MSIM_MODELSIM_INI ]]; then
+        export MODELSIM_INI=$SIM_COMPLIBDIR/modelsim.ini
+    fi
 fi
 
 function build_simlibs {

@@ -58,10 +58,17 @@ function replace_dirs_with_source {
 
 WORKING_DIR=$(pwd)
 
+# Use specified modelsim.ini, if set
+if [[ -z $VLINT_MODELSIM_INI ]]; then
+    MODELSIMINI_ARG=""
+else
+    MODELSIMINI_ARG="-modelsimini $VLINT_MODELSIM_INI"
+fi
+
 # Define arguments to pass to the compile
-SVLOG_ARGS="$VLINT_SVLOG_ARGS -quiet +define+WORKING_DIR=$WORKING_DIR"
-VLOG_ARGS="$VLINT_VLOG_ARGS -quiet +define+WORKING_DIR=$WORKING_DIR"
-VHDL_ARGS="$VLINT_VHDL_ARGS -quiet"
+SVLOG_ARGS="$VLINT_SVLOG_ARGS $MODELSIMINI_ARG -quiet +define+WORKING_DIR=$WORKING_DIR"
+VLOG_ARGS="$VLINT_VLOG_ARGS $MODELSIMINI_ARG -quiet +define+WORKING_DIR=$WORKING_DIR"
+VHDL_ARGS="$VLINT_VHDL_ARGS $MODELSIMINI_ARG -quiet"
 
 # Define files in which to store all the compiler arguments
 SV_ARGS_FILE=svlogarglist.txt
