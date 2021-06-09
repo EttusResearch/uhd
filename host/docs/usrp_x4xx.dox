@@ -465,7 +465,7 @@ improperly.
 
 You can update the MB CPLD by running the following command on the X410:
 
-    python3 /usr/lib/python3.7/site-packages/usrp_mpm/periph_manager/x4xx_update_cpld.py --file=<path to cpld-x410.rpd>
+    x4xx_update_cpld --file=<path to cpld-x410.rpd>
 
 Filesystems will usually contain a compatible `cpld-x410.rpd` file at
 `/lib/firmware/ni/cpld-x410.rpd`. If you're installing a new filesystem via
@@ -479,8 +479,7 @@ order to access the new firmware:
 
 Note that the other filesystem may be either `/dev/mmcblk0p2` or `/dev/mmcblk0p3`.
 
-If the `x4xx_update_cpld.py` script returns an error, diagnose the error before
-proceeding.
+If `x4xx_update_cpld` returns an error, diagnose the error before proceeding.
 
 After updating the MB CPLD, a power cycle is required for the changes to take
 effect. Shut down the device using:
