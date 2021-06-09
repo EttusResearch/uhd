@@ -158,7 +158,7 @@ class ManualPowerGenerator(SignalGeneratorBase):
         """
         new_power = input(
             "[RX] Set your signal generator to following output power: "
-            "{:.1f} dBm, then hit Enter, or enter the closest available power: "
+            "{:.2f} dBm, then hit Enter, or enter the closest available power: "
             .format(power_dbm))
         if not new_power:
             return power_dbm
@@ -168,7 +168,7 @@ class ManualPowerGenerator(SignalGeneratorBase):
             except ValueError:
                 new_power = input(
                     "[RX] Set your signal generator to following output power: "
-                    "{:.1f} dBm, then hit Enter, or enter the closest available power: "
+                    "{:.2f} dBm, then hit Enter, or enter the closest available power: "
                     .format(power_dbm))
                 if not new_power:
                     return power_dbm
