@@ -203,6 +203,14 @@ class Max10CpldFlashCtrl():
         if not self.check_reconfig_engine_status():
             return False
 
+        self.log.debug('Checking if update is necessary...')
+        if self.verify_flash_memory(raw_data):
+            self.log.info('CPLD already programmed with specified image, not reprogramming.')
+            return True
+
+        if not self.check_reconfig_engine_status():
+            return False
+
         self.log.debug('Erasing CPLD flash memory...')
         if not (self.erase_flash_memory()
                 and self.check_reconfig_engine_status()):
