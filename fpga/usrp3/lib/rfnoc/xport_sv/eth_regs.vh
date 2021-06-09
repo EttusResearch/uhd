@@ -12,10 +12,14 @@
 //     REG_AWIDTH - How wide the register window is in bits
 //     BASE       - Base address added to the offsets here
 // REGISTER OFFSETS
-// Allocate one full page for MAC
+
+// Allocate one full page for MAC starting ox 0x0000
+// This is the location of MAC address in XGE.
+// It is shadowed in the ethifc.
 localparam [REG_AWIDTH-1:0] REG_MAC_LSB        = BASE + 'h0000;
 localparam [REG_AWIDTH-1:0] REG_MAC_MSB        = BASE + 'h0004;
 
+// UIO Registers
 // Source IP address
 localparam [REG_AWIDTH-1:0] REG_IP             = BASE + 'h1000;
 // Source UDP Port
