@@ -40,14 +40,14 @@ def parse_args():
              'to override this value.', type=float)
     parser.add_argument(
         '--step',
-        help='Frequency Step. Defaults are device-specific.'
+        help='Frequency Step. Defaults are device-specific. '
              'Note that this is only a hint for the device object, which can choose '
              'to override this value. Devices can also measure at non-regular '
              'frequencies, e.g., to more accurately cover differences between bands.',
         type=float)
     parser.add_argument(
         '--gain-step', type=float, default=1,
-        help='Gain Step (dB). Defaults to 1 dB.'
+        help='Gain Step (dB). Defaults to 1 dB. '
              'Note that this is only a hint for the device object, which can choose '
              'to override this value. Devices can also measure at non-regular '
              'gain intervals.')

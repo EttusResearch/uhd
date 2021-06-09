@@ -37,7 +37,7 @@ class ManualSwitch(SwitchBase):
     options connect call assumes there is no need to pause for connecting
     measurement device with DUT (e.g. only one path is measured).
     """
-    def __init__(self, direction, options = None):
+    def __init__(self, direction, options=None):
         self.direction = direction
         self.mode = options.get('mode', '')
 
@@ -52,8 +52,9 @@ class ManualSwitch(SwitchBase):
         """
         if self.mode == 'auto':
             return # no need to wait for manual connection
-        input("[{}] Connect your signal generator to device channel {}, "
-              "antenna {}. Then, hit Enter.".format(self.direction, chan, antenna))
+        dev_type = "signal generator" if self.direction == 'rx' else "power meter"
+        input(f"[{self.direction}] Connect your {dev_type} to device channel {chan}, "
+              f"antenna {antenna}. Then, hit Enter.")
 
 class NISwitch(SwitchBase):
     """

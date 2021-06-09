@@ -77,7 +77,7 @@ def subtract_power(p1_db, p2_db):
 ###############################################################################
 # Base Class
 ###############################################################################
-class USRPCalibratorBase(object):
+class USRPCalibratorBase:
     """
     Base class for device calibration. Every USRP that can do power calibration
     needs to implement this.
@@ -127,7 +127,7 @@ class USRPCalibratorBase(object):
     def init(self, rate, tone_freq, amplitude):
         """
         Initialize device with finalized values. Not that __init__() needs to
-        finish before the call site knows the rate, so we can' fold this into
+        finish before the call site knows the rate, so we can't fold this into
         __init__().
         """
         if self._dir == 'tx':
@@ -168,7 +168,7 @@ class USRPCalibratorBase(object):
         stop_hint = stop_hint or stop_max
         stop = min(stop_hint, stop_max)
         step = step_hint or DEFAULT_FREQ_STEP
-        return numpy.arange(start, stop + step, step)
+        return numpy.arange(start, stop + 1.0, step)
 
     def init_frequencies(self, start_hint, stop_hint, step_hint):
         """
@@ -186,7 +186,7 @@ class USRPCalibratorBase(object):
             for freq in freqs:
                 self._meas_dev.set_frequency(freq)
                 self._noise[freq] = self._meas_dev.get_power()
-                print("[TX] Noise floor: {:2} MHz => {:+6.2f} dBm"
+                print("[TX] Noise floor: {:7.2f} MHz => {:+6.2f} dBm"
                       .format(freq/1e6, self._noise[freq]))
         else: # Rx
             print("===== Measuring noise floor across frequency and gain...")
@@ -197,7 +197,7 @@ class USRPCalibratorBase(object):
                 for gain in self._gains:
                     self._usrp.set_rx_gain(gain, self._chan)
                     self._noise[freq][gain] = get_usrp_power(self._streamer)
-                    print("[RX] Noise floor: {:2} MHz / {} dB => {:+6.2f} dBFS"
+                    print("[RX] Noise floor: {:7.2f} MHz / {} dB => {:+6.2f} dBFS"
                           .format(freq/1e6, gain, self._noise[freq][gain]))
         return freqs
 
@@ -299,7 +299,7 @@ class USRPCalibratorBase(object):
             # result of the equation is in dBm again. We omit the subtract-by-zero
             # since our variables don't have units.
             results[gain] = usrp_input_power - recvd_signal_power
-            self.log("{:2} dB => {:+6.2f} dBm".format(gain, results[gain]))
+            self.log(f"{gain:4.2f} dB => {results[gain]:+6.2f} dBm")
             # If we get too close to the noise floor, we stop
             if recvd_power - self._noise[freq][gain] <= 1.5:
                 self.log("Can no longer detect input signal. Terminating.")
@@ -315,7 +315,7 @@ class USRPCalibratorBase(object):
             self._usrp.set_tx_gain(gain, self._chan)
             time.sleep(0.1) # Settling time of the USRP, highly conservative
             results[gain] = self._meas_dev.get_power()
-            self.log("{:2} dB => {:+6.2f} dBm".format(gain, results[gain]))
+            self.log(f"{gain:4.2f} dB => {results[gain]:+6.2f} dBm")
         self.results[freq] = results
 
     def store(self):
