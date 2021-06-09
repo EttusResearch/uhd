@@ -386,6 +386,17 @@ class X300Calibrator(USRPCalibratorBase):
     # calibrated.
     lo_offset = 10e6
 
+class X410Calibrator(USRPCalibratorBase):
+    """
+    X410/ZBX Calibration
+    """
+    mboard_ids = ('x410',)
+    # Choosing 3.84 MHz: It is a small rate, but carries enough bandwidth to
+    # receive a tone. It's 1/40 the default master clock rate (122.88e6), which
+    # means it'll engage max halfbands.
+    default_rate = 3.84e6
+    min_freq = 1e6
+    max_freq = 8e9
 
 ###############################################################################
 # The dispatch function
