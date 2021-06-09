@@ -25,6 +25,7 @@ include $(BASE_DIR)/../lib/fifo/Makefile.srcs
 #$(abspath ../../../build-ip/xczu28drffvg1517-1e/eth_100g_bd/eth_100g_bd/ip/eth_100g_bd_cmac_usplus_0_0/eth_100g_bd_cmac_usplus_0_0/example_design/eth_100g_bd_cmac_usplus_0_0_axis2lbus_segmented_top.v) \
 
 DESIGN_SRCS = $(abspath \
+$(abspath ../PkgEth100gLbus.sv) \
 $(abspath ../eth_100g_axis2lbus.sv) \
 $(abspath ../eth_100g_lbus2axis.sv) \
 $(FIFO_SRCS) \
@@ -41,7 +42,6 @@ TB_TOP_MODULE ?= lbus_all_tb
 SIM_TOP = $(TB_TOP_MODULE)
 
 SIM_SRCS = \
-$(abspath ../PkgEth100gLbus.sv) \
 $(abspath axi_lbus_tb.sv) \
 $(abspath lbus_axi_tb.sv) \
 $(abspath $(TB_TOP_MODULE).sv) \

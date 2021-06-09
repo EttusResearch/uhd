@@ -154,8 +154,8 @@ module x4xx_qsfp_wrapper_tb #(
 
   AxiLiteIf_v #(.DATA_WIDTH(32),.ADDR_WIDTH(40))
     s_axi_v (clk40, clk40_rst);
-  `include "../../../../../../lib/axi4lite_sv/axi_lite.vh"
-  `include "../../../../../../lib/axi4_sv/axi.vh"
+  `include "../../../../lib/axi4lite_sv/axi_lite.vh"
+  `include "../../../../lib/axi4_sv/axi.vh"
   always_comb begin
     `AXI4LITE_ASSIGN(s_axi_v,s_axi)
     axi_hp_v.arready = 1'b1;

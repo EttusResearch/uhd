@@ -7,20 +7,23 @@
 //
 // Description: Testbench for axi_remove_bytes
 //
+// Parameters:
+//
+//   TEST_NAME : Name of the test instance to run
+//   WIDTH     : Packet data width to use
+//   REM_START : REM_START parameter to pass to the DUT
+//   REM_END   : REM_END parameter to pass to the DUT
+//
 
 module axi4s_remove_bytes_tb #(
   parameter TEST_NAME = "axi_remove_bytes",
-  WIDTH=32,REM_START=0,REM_END=7
-)(
-  /* no IO */
+  parameter WIDTH     = 32,
+  parameter REM_START = 0,
+  parameter REM_END   = 7
 );
   // Include macros and time declarations for use with PkgTestExec
-  // To change the name of the TestExec object being used by the assertion
-  // macros, `define TEST_EXEC_OBJ before including this file and `undef it at
-  // the end of your testbench. Otherwise, it defaults to the shared object
-  // "PkgTestExec::test".
-  `define TEST_EXEC_OBJ test
   `include "test_exec.svh"
+
   import PkgAxiStreamBfm::*;
   import PkgTestExec::*;
   import PkgEthernet::*;
@@ -28,6 +31,7 @@ module axi4s_remove_bytes_tb #(
   //---------------------------------------------------------------------------
   // Local Parameters
   //---------------------------------------------------------------------------
+
   localparam UWIDTH = $clog2((WIDTH/8)+1);
   localparam MAX_PACKET_BYTES = 16*1024;
 
@@ -41,13 +45,13 @@ module axi4s_remove_bytes_tb #(
   bit clk;
   bit reset;
 
-  sim_clock_gen #(.PERIOD(5.0), .AUTOSTART(1))
+  sim_clock_gen #(.PERIOD(5.0), .AUTOSTART(0))
     clk_gen (.clk(clk), .rst(reset));
 
   //---------------------------------------------------------------------------
   // Bus Functional Models
   //---------------------------------------------------------------------------
-  TestExec test = new();
+
   AxiStreamIf #(.DATA_WIDTH(WIDTH),.USER_WIDTH(UWIDTH),.TKEEP(0),
                 .MAX_PACKET_BYTES(MAX_PACKET_BYTES)) 
     i (clk, reset);
@@ -191,7 +195,8 @@ module axi4s_remove_bytes_tb #(
   initial begin : tb_main
     automatic integer min_length;
 
-    test.tb_name = TEST_NAME;
+    test.start_tb(TEST_NAME);
+    clk_gen.start();
 
     if (REM_END == -1)
       min_length = REM_START-4;

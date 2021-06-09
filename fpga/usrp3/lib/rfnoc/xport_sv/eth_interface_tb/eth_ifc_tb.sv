@@ -10,15 +10,14 @@
 
 module eth_ifc_tb #(
   parameter TEST_NAME  = "eth_ifc_tb",
-  parameter SV_ETH_IFC =1,
-  parameter ENET_W     =64,
-  parameter CPU_W      =64,
-  parameter CHDR_W     =64
+  parameter SV_ETH_IFC = 1,
+  parameter ENET_W     = 64,
+  parameter CPU_W      = 64,
+  parameter CHDR_W     = 64
 )(
   /* no IO */
 );
   // Include macros and time declarations for use with PkgTestExec
-  `define TEST_EXEC_OBJ test
   `include "test_exec.svh"
   import PkgAxiStreamBfm::*;
   import PkgTestExec::*;
@@ -54,18 +53,38 @@ module eth_ifc_tb #(
   // Clocks
   //---------------------------------------------------------------------------
 
+  // ModelSim should initialize the fields of ipv4_hdr to their default values,
+  // but there's a bug where it doesn't in some cases. This constant is used to
+  // initialize them to work around the bug.
+  localparam ipv4_hdr_t DEFAULT_IPV4_HDR = '{
+    header_length : 4'd5,
+    version       : 4'd4,
+    dscp          : 6'b0000_00,
+    ecn           : 2'b00,
+    length        : 16'hXXXX,
+    identification: 16'h462E,
+    rsv_zero      : 1'b0,
+    dont_frag     : 1'b1,
+    more_frag     : 1'b0,
+    frag_offset   : 16'd0,
+    time_to_live  : 16'd64,
+    protocol      : UDP,
+    checksum      : 16'hXXXX,
+    src_ip        : DEF_SRC_IP_ADDR,
+    dest_ip       : DEF_DEST_IP_ADDR
+  };
+
   bit clk;
   bit reset;
 
-  sim_clock_gen #(.PERIOD(5.0), .AUTOSTART(1))
+  sim_clock_gen #(.PERIOD(5.0), .AUTOSTART(0))
     clk_gen (.clk(clk), .rst(reset));
-  sim_clock_gen #(.PERIOD(ETH_PERIOD), .AUTOSTART(1))
+  sim_clock_gen #(.PERIOD(ETH_PERIOD), .AUTOSTART(0))
     eth_clk_gen (.clk(eth_clk), .rst(eth_reset));
 
   //---------------------------------------------------------------------------
   // Bus Functional Models
   //---------------------------------------------------------------------------
-  TestExec test = new();
 
   localparam MAX_PACKET_BYTES = 2**16;
   AxiStreamIf #(.DATA_WIDTH(ENET_W),.USER_WIDTH(ENET_USER_W),
@@ -132,7 +151,7 @@ module eth_ifc_tb #(
      .BASE(BASE),.SYNC(SYNC),
      .ENET_W(ENET_W),.CPU_W(CPU_W),.CHDR_W(CHDR_W)
     ) eth_interface (
-     .bus_clk(clk),.bus_rst(reset),.*
+     .bus_clk(clk),.bus_rst(reset),.eth_pause_req(),.*
     );
   end else begin : gen_old_dut
     logic [63:0] eth_tx_tdata;
@@ -272,7 +291,7 @@ module eth_ifc_tb #(
   //---------------------------------------------------------------------------
 
   task test_registers();
-    test.start_test({TEST_NAME,"Test/Setup Registers"}, 10us);
+    test.start_test({TEST_NAME,"::Test/Setup Registers"}, 10us);
     // DEF_DEST_MAC/IP/UDP are defined in the
     // sim_ethernet_lib.svh, as the destination
     // addresses. Using the defaults means
@@ -341,7 +360,7 @@ module eth_ifc_tb #(
     automatic CpuXportPacket_t expected[$];
     automatic int sample_sum = 0;
 
-    test_e2c.start_test({TEST_NAME,"Ethernet to CPU"}, 60us);
+    test_e2c.start_test({TEST_NAME,"::Ethernet to CPU"}, 60us);
     // This path is
     //   eth_rx -> s_mac(eth_adapter) -> s_mac(eth_dispatch) ->
     ////   in_reg(AXI_FIFO)(SIZE=1)
@@ -355,7 +374,7 @@ module eth_ifc_tb #(
 
     foreach (num_samples[i]) begin
       automatic eth_hdr_t    eth_hdr;
-      automatic ipv4_hdr_t   ipv4_hdr;
+      automatic ipv4_hdr_t   ipv4_hdr = DEFAULT_IPV4_HDR;
       automatic udp_hdr_t    udp_hdr;
       automatic raw_pkt_t    pay,udp_raw;
       automatic int          preamble;
@@ -454,7 +473,7 @@ module eth_ifc_tb #(
     automatic raw_pkt_t        rcv_raw,rcv_pay;
     automatic udp_hdr_t        rcv_udp;
     automatic eth_hdr_t        rcv_eth;
-    automatic ipv4_hdr_t       rcv_ip;
+    automatic ipv4_hdr_t       rcv_ip = DEFAULT_IPV4_HDR;
     automatic int              try_count = 0;
 
     do begin
@@ -477,7 +496,7 @@ module eth_ifc_tb #(
     automatic EthXportPacket_t expected[$];
     automatic int sample_sum = 0;
 
-    test_c2e.start_test({TEST_NAME,"CPU to Ethernet"}, 60us);
+    test_c2e.start_test({TEST_NAME,"::CPU to Ethernet"}, 60us);
     // This path is
     //   c2e -> (eth_adapter) s_cpu ->
     ////  (ARM_DEFRAMER)(IF ARM)
@@ -487,7 +506,7 @@ module eth_ifc_tb #(
 
     foreach (num_samples[i]) begin
       automatic eth_hdr_t    eth_hdr;
-      automatic ipv4_hdr_t   ipv4_hdr;
+      automatic ipv4_hdr_t   ipv4_hdr = DEFAULT_IPV4_HDR;
       automatic udp_hdr_t    udp_hdr;
       automatic raw_pkt_t    pay,udp_raw;
       automatic int          preamble;
@@ -532,7 +551,7 @@ module eth_ifc_tb #(
           automatic raw_pkt_t        rcv_raw,rcv_pay;
           automatic udp_hdr_t        rcv_udp;
           automatic eth_hdr_t        rcv_eth;
-          automatic ipv4_hdr_t       rcv_ip;
+          automatic ipv4_hdr_t       rcv_ip = DEFAULT_IPV4_HDR;
           automatic int              try_count = 0;
 
           wait_for_udp_packets(DEF_DEST_UDP_PORT);
@@ -590,7 +609,7 @@ module eth_ifc_tb #(
     automatic ChdrXportPacket_t expected[$];
     automatic int sample_sum = 0;
 
-    test_e2v.start_test({TEST_NAME,"Ethernet to CHDR"}, 60us);
+    test_e2v.start_test({TEST_NAME,"::Ethernet to CHDR"}, 60us);
     // This path is
     //   eth_rx -> s_mac(eth_adapter) -> s_mac(eth_dispatch) ->
     ////   in_reg(AXI_FIFO)(SIZE=1)
@@ -611,7 +630,7 @@ module eth_ifc_tb #(
 
     foreach (num_samples[i]) begin
       automatic eth_hdr_t    eth_hdr;
-      automatic ipv4_hdr_t   ipv4_hdr;
+      automatic ipv4_hdr_t   ipv4_hdr = DEFAULT_IPV4_HDR;
       automatic udp_hdr_t    udp_hdr;
       automatic raw_pkt_t    pay,udp_raw,chdr_raw;
 
@@ -731,7 +750,7 @@ module eth_ifc_tb #(
     automatic EthXportPacket_t expected[$];
     automatic int sample_sum = 0;
 
-    test_v2e.start_test({TEST_NAME,"CHDR to Ethernet"}, 60us);
+    test_v2e.start_test({TEST_NAME,"::CHDR to Ethernet"}, 60us);
     // This path is
     //   v2e -> s_chdr(eth_adapter) -> s_axis_rfnoc (xport_adapter_gen) ->
     ////   axi_demux_mgmt_filter (AXI_DEMUX) (IF ALLOW_DISC) (discards discovery packets)
@@ -750,7 +769,7 @@ module eth_ifc_tb #(
 
     foreach (num_samples[i]) begin
       automatic eth_hdr_t    eth_hdr;
-      automatic ipv4_hdr_t   ipv4_hdr;
+      automatic ipv4_hdr_t   ipv4_hdr = DEFAULT_IPV4_HDR;
       automatic udp_hdr_t    udp_hdr;
       automatic raw_pkt_t    pay,udp_raw,chdr_raw;
 
@@ -831,7 +850,7 @@ module eth_ifc_tb #(
           automatic EthAxisPacket_t  actual_a;
           automatic EthXportPacket_t actual = new();
           automatic eth_hdr_t    eth_hdr;
-          automatic ipv4_hdr_t   ipv4_hdr;
+          automatic ipv4_hdr_t   ipv4_hdr = DEFAULT_IPV4_HDR;
           automatic udp_hdr_t    udp_hdr;
           automatic raw_pkt_t    chdr_raw,actual_raw;
           automatic ChdrPacket_t chdr_pkt;
@@ -874,7 +893,7 @@ module eth_ifc_tb #(
     automatic int sample_sum = 0;
 
     automatic eth_hdr_t    eth_hdr;
-    automatic ipv4_hdr_t   ipv4_hdr;
+    automatic ipv4_hdr_t   ipv4_hdr = DEFAULT_IPV4_HDR;
     automatic udp_hdr_t    udp_hdr;
     automatic raw_pkt_t    pay,udp_raw,chdr_raw;
 
@@ -890,7 +909,7 @@ module eth_ifc_tb #(
     automatic int preamble;
     localparam NODE_INST=0;
 
-    test_e2v.start_test({TEST_NAME,"ChdrEndpoint"}, 60us);
+    test_e2v.start_test({TEST_NAME,"::ChdrEndpoint"}, 60us);
 
 
     expected[0] = new;
@@ -985,7 +1004,7 @@ module eth_ifc_tb #(
           automatic EthAxisPacket_t  actual_a;
           automatic EthXportPacket_t actual = new();
           automatic eth_hdr_t    eth_hdr;
-          automatic ipv4_hdr_t   ipv4_hdr;
+          automatic ipv4_hdr_t   ipv4_hdr = DEFAULT_IPV4_HDR;
           automatic udp_hdr_t    udp_hdr;
           automatic raw_pkt_t    chdr_raw,actual_raw;
           automatic ChdrPacket_t chdr_pkt;
@@ -1022,7 +1041,12 @@ module eth_ifc_tb #(
    automatic int cpu_num_samples[$];
    automatic int expected_drops;
    localparam QUICK = 0;
-   test.start_test({TEST_NAME,"Wait for Reset"}, 10us);
+
+   test.start_tb(TEST_NAME);
+
+   test.start_test({TEST_NAME,"::Wait for Reset"}, 10us);
+   clk_gen.start();
+   eth_clk_gen.start();
    clk_gen.reset();
    eth_clk_gen.reset();
 

@@ -53,15 +53,33 @@ $(IP_AXI4_BRAM_SRCS) \
 )
 
 #-------------------------------------------------
+# ModelSim Specific
+#-------------------------------------------------
+
+MODELSIM_IP_SRCS = $(wildcard $(abspath \
+$(IP_BUILD_DIR)/fifo_short_2clk/sim/fifo_short_2clk.v \
+$(IP_BUILD_DIR)/axi4_dualport_sram/sim/axi4_dualport_sram.v \
+$(VIVADO_PATH)/data/verilog/src/glbl.v \
+))
+
+MODELSIM_LIBS += \
+fifo_generator_v13_2_4 \
+blk_mem_gen_v8_4_3 \
+
+modelsim vlint : SIM_SRCS += $(MODELSIM_IP_SRCS)
+
+MODELSIM_ARGS += glbl -t 1fs
+
+#-------------------------------------------------
 # Testbench Specific
 #-------------------------------------------------
-# Define only one toplevel module
+# Define only one top-level module
 SIM_TOP = dram_fifo_bist_tb
 
-SIM_SRCS = \
+SIM_SRCS += \
 $(abspath dram_fifo_bist_tb.sv) \
 $(abspath ../dram_fifo/axis_dram_fifo_single.sv) \
-$(IP_DDR3_32BIT_SIM_OUTS)
+$(IP_DDR3_32BIT_SIM_OUTS) \
 
 #-------------------------------------------------
 # Bottom-of-Makefile
