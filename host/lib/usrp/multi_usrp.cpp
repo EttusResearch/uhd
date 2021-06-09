@@ -21,6 +21,7 @@
 #include <uhd/utils/soft_register.hpp>
 #include <uhdlib/rfnoc/rfnoc_device.hpp>
 #include <uhdlib/usrp/gpio_defs.hpp>
+#include <uhdlib/usrp/multi_usrp_utils.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
@@ -189,25 +190,6 @@ clipped:\n" "    Target Frequency: %f MHz\n" "    Clipped Target Frequency: %f M
         UHD_LOGGER_WARNING("MULTI_USRP") << results_string ;
     }
 }*/
-
-/*! The CORDIC can be used to shift the baseband below / past the tunable
- * limits of the actual RF front-end. The baseband filter, located on the
- * daughterboard, however, limits the useful instantaneous bandwidth. We
- * allow the user to tune to the edge of the filter, where the roll-off
- * begins.  This prevents the user from tuning past the point where less
- * than half of the spectrum would be useful. */
-static meta_range_t make_overall_tune_range(
-    const meta_range_t& fe_range, const meta_range_t& dsp_range, const double bw)
-{
-    meta_range_t range;
-    for (const range_t& sub_range : fe_range) {
-        range.push_back(range_t(sub_range.start() + std::max(dsp_range.start(), -bw / 2),
-            sub_range.stop() + std::min(dsp_range.stop(), bw / 2),
-            dsp_range.step()));
-    }
-    return range;
-}
-
 
 /***********************************************************************
  * Gain helper functions
