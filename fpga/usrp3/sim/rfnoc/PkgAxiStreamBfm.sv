@@ -469,6 +469,10 @@ package PkgAxiStreamBfm;
       return slave_stall_prob;
     endfunction
 
+    // Determine if the slave interface is doing a transfer this clock
+    function logic slave_idle();
+      return !slave.tvalid;
+    endfunction
 
     // Create separate processes for driving the master and slave interfaces
     task run();
