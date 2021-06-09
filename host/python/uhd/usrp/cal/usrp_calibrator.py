@@ -87,6 +87,8 @@ class USRPCalibratorBase:
     min_detectable_signal = -70
     default_rate = DEFAULT_SAMP_RATE
     lo_offset = 0.0
+    min_freq = None
+    max_freq = None
 
     def __init__(self, usrp, meas_dev, direction, **kwargs):
         self._usrp = usrp
@@ -157,12 +159,12 @@ class USRPCalibratorBase:
         If a particular device needs to check specific frequencies, then
         override this.
         """
-        start_min = \
+        start_min = self.min_freq or \
             getattr(self._usrp, 'get_{}_freq_range'.format(self._dir))(
                 self._chan).start()
         start_hint = start_hint or start_min
         start = max(start_hint, start_min)
-        stop_max = \
+        stop_max = self.max_freq or \
             getattr(self._usrp, 'get_{}_freq_range'.format(self._dir))(
                 self._chan).stop()
         stop_hint = stop_hint or stop_max
