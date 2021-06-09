@@ -15,6 +15,7 @@ all supported simulator targets. Currently, the following targets will work:
     ipclean:    Cleanup all IP intermediate files
     clean:      Cleanup all simulator intermediate files
     cleanall:   Cleanup everything!
+    ip:         Generate the IP required for this simulation
     xsim:       Run the simulation using the Xilinx Vivado Simulator
     xclean:     Cleanup Xilinx Vivado Simulator intermediate files
     vsim:       Run the simulation using ModelSim simulator via Vivado 

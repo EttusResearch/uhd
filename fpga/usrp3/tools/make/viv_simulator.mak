@@ -86,6 +86,9 @@ SETUP_AND_LAUNCH_MODELSIM = \
 
 .SECONDEXPANSION:
 
+##ip:         Generate the IP required for this simulation
+ip: $(DESIGN_SRCS)
+
 ##xsim:       Run the simulation using the Xilinx Vivado Simulator
 xsim: .check_tool $(DESIGN_SRCS) $(SIM_SRCS) $(INC_SRCS)
 	$(call SETUP_AND_LAUNCH_SIMULATION,XSim)
@@ -111,7 +114,7 @@ modelsim: .check_tool vlint
 # NOTE: VHDL files require a correct compile order.  This script compiles files
 #       in the order they are defined in $(DESIGN_SRC), then $SIM_SRC)
 
-##vlint:      Run ModelSim compiler to lint files.
+##vlint:      Run ModelSim compiler to lint files
 vlint: .check_tool $(COMPLIBDIR) $(DESIGN_SRCS) $(SIM_SRCS) $(INC_SRCS)
 	$(call SETUP_AND_LAUNCH_VLINT)
    
@@ -127,4 +130,4 @@ clean:: xclean vclean
 help::
 	@grep -h "##" $(abspath $(lastword $(MAKEFILE_LIST))) | grep -v "\"##\"" | sed -e 's/\\$$//' | sed -e 's/##//'
 
-.PHONY: xsim xsim_hls xclean vsim vlint vclean clean help
+.PHONY: ip xsim xsim_hls xclean vsim vlint vclean clean help
