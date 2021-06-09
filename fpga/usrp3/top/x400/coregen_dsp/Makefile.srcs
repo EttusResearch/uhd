@@ -1,0 +1,22 @@
+#
+# Copyright 2021 Ettus Research, A National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+##################################################
+# Coregen Sources
+##################################################
+
+COREGEN_DSP_SRCS = $(abspath $(addprefix $(IP_DIR)/../coregen_dsp/, \
+hbdec1.v \
+hbdec1.edif \
+hbdec1_stub.v \
+hbdec2.v \
+hbdec2.edif \
+hbdec2_stub.v \
+hbdec3.v \
+hbdec3.edif \
+hbdec3_stub.v \
+))
+

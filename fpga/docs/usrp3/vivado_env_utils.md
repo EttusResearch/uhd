@@ -7,6 +7,7 @@
   + `e31x:` For USRP E310
   + `e320:` For USRP E320
   + `n3xx:` For USRP N300/N310/N320
+  + `x400:` For USRP X410
 
 - To setup up the Ettus Research Xilinx build environment run
   + `source setupenv.sh` (If Vivado is installed in the default path /opt/Xilinx/Vivado) _OR_

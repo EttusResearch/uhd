@@ -1,0 +1,28 @@
+/*
+ * Copyright 2021 Ettus Research, a National Instruments Brand
+ *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
+ */
+
+&fpga_full {
+	#address-cells = <2>;
+	#size-cells = <2>;
+	uio@1000000000 {
+		compatible = "usrp-uio";
+		reg = <0x10 0x00000000 0x0 0x1000>;
+		reg-names = "jtag-0";
+		status = "okay";
+	};
+	uio@1000080000 {
+		compatible = "usrp-uio";
+		reg = <0x10 0x00080000 0x0 0x20000>;
+		reg-names = "ctrlport-mboard-regs";
+		status = "okay";
+	};
+	uio@10000A0000 {
+		compatible = "usrp-uio";
+		reg = <0x10 0x000A0000 0x0 0x4000>;
+		reg-names = "mboard-regs";
+		status = "okay";
+	};
+};

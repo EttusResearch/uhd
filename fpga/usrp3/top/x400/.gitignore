@@ -1,0 +1,7 @@
+build
+build-*
+*.log
+*.jou
+vivado*.str
+ip/*/sim/
+dts/x410-version-info.dtsi

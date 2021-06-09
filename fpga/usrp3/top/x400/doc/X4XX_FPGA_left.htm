@@ -1,0 +1,684 @@
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+    <style type="text/css">
+
+      body {
+        margin: 5px;
+        font-family: verdana, "Trebuchet MS", arial, helvetica, sans-serif;
+        font-size: 80%;
+        line-height: 1.3;
+      }
+
+      pre, code {
+        font-family: "courier new", courier, monospace;
+        font-size: 12px;
+      }
+
+      @media print {
+        body {
+          margin: 0px;
+          font-family: arial, helvetica, sans-serif;
+          font-size: 80%;
+          line-height: 1;
+        }
+      }        div.nav {
+          font-size: 95%;
+        }
+        
+        div.sh {
+          display: none;
+          margin-left: 15px;
+        }
+        
+        div.shr {
+          display: block;
+          margin-left: 15px;
+        }
+        
+        div.nav span.pm, div.nav span.pm_2 {
+          color: black;
+          font-family: courier new, courier;
+          margin-right: 5px;
+        }
+        
+        div.nav span.pm {
+          cursor: pointer;
+        }
+        
+        div.nav p {
+          margin: 0px;
+          padding: 0px;
+          white-space: nowrap;
+        }
+        
+        div.nav span {
+          cursor: pointer;
+        }
+        
+        div.nav span.regmap {
+          color: #000080;
+        }
+        
+        div.nav span.group {
+          color: #006000;
+        }
+        
+        div.nav span.enum {
+          color: #800000;
+          margin-left: 10px;
+        }
+        
+        div.nav span.register {
+          color: #004040;
+          margin-left: 10px;
+        }      
+      </style>
+      <script type="text/javascript">
+      
+        function toggleText( id, sign ) {
+          if (sign == "nochange") return;
+          if ( document.getElementById )
+            elem = document.getElementById( id );
+          else if ( document.all )
+            elem = eval( "document.all." + id );
+          if (elem) {
+            elemStyle = elem.style;
+            if (sign=="+") {
+              elemStyle.display = "block"
+            } else {
+              elemStyle.display = "none"
+            }
+            /*if ( elemStyle.display == "block" ) {
+              elemStyle.display = "none"
+            } else {
+              elemStyle.display = "block"
+            }*/
+          }
+        }        
+          function changePm( id ) {
+            if ( document.getElementById )
+              elem = document.getElementById( id );
+            else if ( document.all )
+              elem = eval( "document.all." + id );
+            else
+              return "nochange";
+            var val = elem.innerHTML;
+            if (val == "+") {
+              elem.innerHTML = "-";
+            } else {
+              elem.innerHTML = "+";
+            }
+            return val;
+          }
+        
+          function pm( id ) {
+            var sign = changePm("pm_" + id);
+            toggleText("div_" + id, sign);
+          }
+        
+          function a( id ) {
+            var currentURL= document.URL;
+            var targetURL = currentURL.replace("_left", "_right");
+            parent.frames[1].location = targetURL + '#' + id;
+          }
+        </script>  
+  </head><body>
+                
+    <div class="nav">    
+    <p>
+      <span class="pm" id="pm_X4XX_FPGA" onclick="pm('X4XX_FPGA');">+</span>
+      <span class="regmap" id="a_X4XX_FPGA" onclick="a('X4XX_FPGA');">X4XX_FPGA</span>
+    </p>
+    <div class="sh" id="div_X4XX_FPGA">      
+      <p>        
+        <span class="pm" id="pm_P5 Content" onclick="pm('P5 Content');">+</span>      
+        <span class="group" id="a_P5 Content" onclick="a('P5 Content');">P5 Content</span>
+      </p>
+      <div class="sh" id="div_P5 Content">      
+      </div>      
+      <p>        
+        <span class="pm" id="pm_ports" onclick="pm('ports');">+</span>      
+        <span class="group" id="a_ports" onclick="a('ports');">ports</span>
+      </p>
+      <div class="sh" id="div_ports">        
+        <p><span class="register" id="a_X4XX_FPGA|ARM_M_AXI_HPM0" onclick="a('X4XX_FPGA|ARM_M_AXI_HPM0');">ARM_M_AXI_HPM0</span></p>        
+        <p><span class="register" id="a_X4XX_FPGA|ARM_S_AXI_HPC0" onclick="a('X4XX_FPGA|ARM_S_AXI_HPC0');">ARM_S_AXI_HPC0</span></p>        
+        <p><span class="register" id="a_X4XX_FPGA|ARM_S_AXI_HPC1" onclick="a('X4XX_FPGA|ARM_S_AXI_HPC1');">ARM_S_AXI_HPC1</span></p>        
+        <p><span class="register" id="a_X4XX_FPGA|ARM_SPI1_CS3" onclick="a('X4XX_FPGA|ARM_SPI1_CS3');">ARM_SPI1_CS3</span></p>      
+      </div>    
+    </div>    
+    <p>
+      <span class="pm" id="pm_AXI_HPM0_REGMAP" onclick="pm('AXI_HPM0_REGMAP');">+</span>
+      <span class="regmap" id="a_AXI_HPM0_REGMAP" onclick="a('AXI_HPM0_REGMAP');">AXI_HPM0_REGMAP</span>
+    </p>    <div class="sh" id="div_AXI_HPM0_REGMAP">      
+      <p>        
+        <span class="pm" id="pm_AXI_HPM0_REGMAP|COMMON" onclick="pm('AXI_HPM0_REGMAP|COMMON');">+</span>      
+        <span class="group" id="a_AXI_HPM0_REGMAP|COMMON" onclick="a('AXI_HPM0_REGMAP|COMMON');">COMMON</span>
+      </p>
+      <div class="sh" id="div_AXI_HPM0_REGMAP|COMMON">        
+        <p><span class="register" id="a_AXI_HPM0_REGMAP|RPU" onclick="a('AXI_HPM0_REGMAP|RPU');">RPU</span></p>        
+        <p><span class="register" id="a_AXI_HPM0_REGMAP|JTAG_ENGINE" onclick="a('AXI_HPM0_REGMAP|JTAG_ENGINE');">JTAG_ENGINE</span></p>        
+        <p><span class="register" id="a_AXI_HPM0_REGMAP|WR" onclick="a('AXI_HPM0_REGMAP|WR');">WR</span></p>        
+        <p><span class="register" id="a_AXI_HPM0_REGMAP|MPM_ENDPOINT" onclick="a('AXI_HPM0_REGMAP|MPM_ENDPOINT');">MPM_ENDPOINT</span></p>        
+        <p><span class="register" id="a_AXI_HPM0_REGMAP|CORE_REGS" onclick="a('AXI_HPM0_REGMAP|CORE_REGS');">CORE_REGS</span></p>        
+        <p><span class="register" id="a_AXI_HPM0_REGMAP|INT_ETH_DMA" onclick="a('AXI_HPM0_REGMAP|INT_ETH_DMA');">INT_ETH_DMA</span></p>        
+        <p><span class="register" id="a_AXI_HPM0_REGMAP|INT_ETH_REGS" onclick="a('AXI_HPM0_REGMAP|INT_ETH_REGS');">INT_ETH_REGS</span></p>        
+        <p><span class="register" id="a_AXI_HPM0_REGMAP|RFDC" onclick="a('AXI_HPM0_REGMAP|RFDC');">RFDC</span></p>        
+        <p><span class="register" id="a_AXI_HPM0_REGMAP|RFDC_REGS" onclick="a('AXI_HPM0_REGMAP|RFDC_REGS');">RFDC_REGS</span></p>      
+      </div>      
+      <p>        
+        <span class="pm" id="pm_AXI_HPM0_REGMAP|UHD_ONLY" onclick="pm('AXI_HPM0_REGMAP|UHD_ONLY');">+</span>      
+        <span class="group" id="a_AXI_HPM0_REGMAP|UHD_ONLY" onclick="a('AXI_HPM0_REGMAP|UHD_ONLY');">UHD_ONLY</span>
+      </p>
+      <div class="sh" id="div_AXI_HPM0_REGMAP|UHD_ONLY">        
+        <p><span class="register" id="a_AXI_HPM0_REGMAP|QSFP_0_0" onclick="a('AXI_HPM0_REGMAP|QSFP_0_0');">QSFP_0_0</span></p>        
+        <p><span class="register" id="a_AXI_HPM0_REGMAP|QSFP_0_1" onclick="a('AXI_HPM0_REGMAP|QSFP_0_1');">QSFP_0_1</span></p>        
+        <p><span class="register" id="a_AXI_HPM0_REGMAP|QSFP_0_2" onclick="a('AXI_HPM0_REGMAP|QSFP_0_2');">QSFP_0_2</span></p>        
+        <p><span class="register" id="a_AXI_HPM0_REGMAP|QSFP_0_3" onclick="a('AXI_HPM0_REGMAP|QSFP_0_3');">QSFP_0_3</span></p>        
+        <p><span class="register" id="a_AXI_HPM0_REGMAP|QSFP_1_0" onclick="a('AXI_HPM0_REGMAP|QSFP_1_0');">QSFP_1_0</span></p>        
+        <p><span class="register" id="a_AXI_HPM0_REGMAP|QSFP_1_1" onclick="a('AXI_HPM0_REGMAP|QSFP_1_1');">QSFP_1_1</span></p>        
+        <p><span class="register" id="a_AXI_HPM0_REGMAP|QSFP_1_2" onclick="a('AXI_HPM0_REGMAP|QSFP_1_2');">QSFP_1_2</span></p>        
+        <p><span class="register" id="a_AXI_HPM0_REGMAP|QSFP_1_3" onclick="a('AXI_HPM0_REGMAP|QSFP_1_3');">QSFP_1_3</span></p>      
+      </div>    
+    </div>    
+    <p>
+      <span class="pm" id="pm_MB_CPLD_PS_REGMAP" onclick="pm('MB_CPLD_PS_REGMAP');">+</span>
+      <span class="regmap" id="a_MB_CPLD_PS_REGMAP" onclick="a('MB_CPLD_PS_REGMAP');">MB_CPLD_PS_REGMAP</span>
+    </p>    <div class="sh" id="div_MB_CPLD_PS_REGMAP">      
+      <p>        
+        <span class="pm" id="pm_MB_CPLD_PS_REGMAP|MB_CPLD_PS_WINDOWS" onclick="pm('MB_CPLD_PS_REGMAP|MB_CPLD_PS_WINDOWS');">+</span>      
+        <span class="group" id="a_MB_CPLD_PS_REGMAP|MB_CPLD_PS_WINDOWS" onclick="a('MB_CPLD_PS_REGMAP|MB_CPLD_PS_WINDOWS');">MB_CPLD_PS_WINDOWS</span>
+      </p>
+      <div class="sh" id="div_MB_CPLD_PS_REGMAP|MB_CPLD_PS_WINDOWS">        
+        <p><span class="register" id="a_MB_CPLD_PS_REGMAP|PS_REGISTERS" onclick="a('MB_CPLD_PS_REGMAP|PS_REGISTERS');">PS_REGISTERS</span></p>        
+        <p><span class="register" id="a_MB_CPLD_PS_REGMAP|RECONFIG" onclick="a('MB_CPLD_PS_REGMAP|RECONFIG');">RECONFIG</span></p>        
+        <p><span class="register" id="a_MB_CPLD_PS_REGMAP|POWER_REGISTERS" onclick="a('MB_CPLD_PS_REGMAP|POWER_REGISTERS');">POWER_REGISTERS</span></p>      
+      </div>      
+      <p>        
+        <span class="pm" id="pm_MB_CPLD_PS_REGMAP|PS_SPI_ENDPOINTS" onclick="pm('MB_CPLD_PS_REGMAP|PS_SPI_ENDPOINTS');">+</span>      
+        <span class="group" id="a_MB_CPLD_PS_REGMAP|PS_SPI_ENDPOINTS" onclick="a('MB_CPLD_PS_REGMAP|PS_SPI_ENDPOINTS');">PS_SPI_ENDPOINTS</span>
+      </p>
+      <div class="sh" id="div_MB_CPLD_PS_REGMAP|PS_SPI_ENDPOINTS">        
+        <p><span class="enum" id="a_MB_CPLD_PS_REGMAP|SPI_ENDPOINT" onclick="a('MB_CPLD_PS_REGMAP|SPI_ENDPOINT');">enum SPI_ENDPOINT</span></p>      
+      </div>    
+    </div>    
+    <p>
+      <span class="pm" id="pm_CMAC_REGMAP" onclick="pm('CMAC_REGMAP');">+</span>
+      <span class="regmap" id="a_CMAC_REGMAP" onclick="a('CMAC_REGMAP');">CMAC_REGMAP</span>
+    </p>    <div class="sh" id="div_CMAC_REGMAP">      
+      <p>        
+        <span class="pm" id="pm_CMAC_REGMAP|XILINX_CMAC_REGISTERS" onclick="pm('CMAC_REGMAP|XILINX_CMAC_REGISTERS');">+</span>      
+        <span class="group" id="a_CMAC_REGMAP|XILINX_CMAC_REGISTERS" onclick="a('CMAC_REGMAP|XILINX_CMAC_REGISTERS');">XILINX_CMAC_REGISTERS</span>
+      </p>
+      <div class="sh" id="div_CMAC_REGMAP|XILINX_CMAC_REGISTERS">      
+      </div>    
+    </div>    
+    <p>
+      <span class="pm" id="pm_CONSTANTS_REGMAP" onclick="pm('CONSTANTS_REGMAP');">+</span>
+      <span class="regmap" id="a_CONSTANTS_REGMAP" onclick="a('CONSTANTS_REGMAP');">CONSTANTS_REGMAP</span>
+    </p>    <div class="sh" id="div_CONSTANTS_REGMAP">      
+      <p>        
+        <span class="pm" id="pm_CONSTANTS_REGMAP|CONSTANTS_GROUP" onclick="pm('CONSTANTS_REGMAP|CONSTANTS_GROUP');">+</span>      
+        <span class="group" id="a_CONSTANTS_REGMAP|CONSTANTS_GROUP" onclick="a('CONSTANTS_REGMAP|CONSTANTS_GROUP');">CONSTANTS_GROUP</span>
+      </p>
+      <div class="sh" id="div_CONSTANTS_REGMAP|CONSTANTS_GROUP">        
+        <p><span class="enum" id="a_CONSTANTS_REGMAP|CONSTANTS_ENUM" onclick="a('CONSTANTS_REGMAP|CONSTANTS_ENUM');">enum CONSTANTS_ENUM</span></p>      
+      </div>    
+    </div>    
+    <p>
+      <span class="pm" id="pm_CORE_REGS_REGMAP" onclick="pm('CORE_REGS_REGMAP');">+</span>
+      <span class="regmap" id="a_CORE_REGS_REGMAP" onclick="a('CORE_REGS_REGMAP');">CORE_REGS_REGMAP</span>
+    </p>    <div class="sh" id="div_CORE_REGS_REGMAP">      
+      <p>        
+        <span class="pm" id="pm_CORE_REGS_REGMAP|CORE_REGS" onclick="pm('CORE_REGS_REGMAP|CORE_REGS');">+</span>      
+        <span class="group" id="a_CORE_REGS_REGMAP|CORE_REGS" onclick="a('CORE_REGS_REGMAP|CORE_REGS');">CORE_REGS</span>
+      </p>
+      <div class="sh" id="div_CORE_REGS_REGMAP|CORE_REGS">        
+        <p><span class="register" id="a_CORE_REGS_REGMAP|GLOBAL_REGS" onclick="a('CORE_REGS_REGMAP|GLOBAL_REGS');">GLOBAL_REGS</span></p>        
+        <p><span class="register" id="a_CORE_REGS_REGMAP|VERSIONING_REGS" onclick="a('CORE_REGS_REGMAP|VERSIONING_REGS');">VERSIONING_REGS</span></p>        
+        <p><span class="register" id="a_CORE_REGS_REGMAP|TIMEKEEPER" onclick="a('CORE_REGS_REGMAP|TIMEKEEPER');">TIMEKEEPER</span></p>        
+        <p><span class="register" id="a_CORE_REGS_REGMAP|DIO" onclick="a('CORE_REGS_REGMAP|DIO');">DIO</span></p>      
+      </div>    
+    </div>    
+    <p>
+      <span class="pm" id="pm_CPLD_INTERFACE_REGMAP" onclick="pm('CPLD_INTERFACE_REGMAP');">+</span>
+      <span class="regmap" id="a_CPLD_INTERFACE_REGMAP" onclick="a('CPLD_INTERFACE_REGMAP');">CPLD_INTERFACE_REGMAP</span>
+    </p>    <div class="sh" id="div_CPLD_INTERFACE_REGMAP">      
+      <p>        
+        <span class="pm" id="pm_CPLD_INTERFACE_REGMAP|CPLD_INTERFACE_REGS" onclick="pm('CPLD_INTERFACE_REGMAP|CPLD_INTERFACE_REGS');">+</span>      
+        <span class="group" id="a_CPLD_INTERFACE_REGMAP|CPLD_INTERFACE_REGS" onclick="a('CPLD_INTERFACE_REGMAP|CPLD_INTERFACE_REGS');">CPLD_INTERFACE_REGS</span>
+      </p>
+      <div class="sh" id="div_CPLD_INTERFACE_REGMAP|CPLD_INTERFACE_REGS">        
+        <p><span class="register" id="a_CPLD_INTERFACE_REGMAP|SIGNATURE_REGISTER" onclick="a('CPLD_INTERFACE_REGMAP|SIGNATURE_REGISTER');">SIGNATURE_REGISTER</span></p>        
+        <p><span class="register" id="a_CPLD_INTERFACE_REGMAP|SCRATCH_REGISTER" onclick="a('CPLD_INTERFACE_REGMAP|SCRATCH_REGISTER');">SCRATCH_REGISTER</span></p>      
+      </div>      
+      <p>        
+        <span class="pm" id="pm_CPLD_INTERFACE_REGMAP|CPLD_SPI_CONTROL_REGS" onclick="pm('CPLD_INTERFACE_REGMAP|CPLD_SPI_CONTROL_REGS');">+</span>      
+        <span class="group" id="a_CPLD_INTERFACE_REGMAP|CPLD_SPI_CONTROL_REGS" onclick="a('CPLD_INTERFACE_REGMAP|CPLD_SPI_CONTROL_REGS');">CPLD_SPI_CONTROL_REGS</span>
+      </p>
+      <div class="sh" id="div_CPLD_INTERFACE_REGMAP|CPLD_SPI_CONTROL_REGS">        
+        <p><span class="register" id="a_CPLD_INTERFACE_REGMAP|MOTHERBOARD_CPLD_DIVIDER" onclick="a('CPLD_INTERFACE_REGMAP|MOTHERBOARD_CPLD_DIVIDER');">MOTHERBOARD_CPLD_DIVIDER</span></p>        
+        <p><span class="register" id="a_CPLD_INTERFACE_REGMAP|DAUGHTERBOARD_CPLD_DIVIDER" onclick="a('CPLD_INTERFACE_REGMAP|DAUGHTERBOARD_CPLD_DIVIDER');">DAUGHTERBOARD_CPLD_DIVIDER</span></p>      
+      </div>      
+      <p>        
+        <span class="pm" id="pm_CPLD_INTERFACE_REGMAP|IPASS_REGS" onclick="pm('CPLD_INTERFACE_REGMAP|IPASS_REGS');">+</span>      
+        <span class="group" id="a_CPLD_INTERFACE_REGMAP|IPASS_REGS" onclick="a('CPLD_INTERFACE_REGMAP|IPASS_REGS');">IPASS_REGS</span>
+      </p>
+      <div class="sh" id="div_CPLD_INTERFACE_REGMAP|IPASS_REGS">        
+        <p><span class="register" id="a_CPLD_INTERFACE_REGMAP|IPASS_CONTROL" onclick="a('CPLD_INTERFACE_REGMAP|IPASS_CONTROL');">IPASS_CONTROL</span></p>      
+      </div>    
+    </div>    
+    <p>
+      <span class="pm" id="pm_DIO_REGMAP" onclick="pm('DIO_REGMAP');">+</span>
+      <span class="regmap" id="a_DIO_REGMAP" onclick="a('DIO_REGMAP');">DIO_REGMAP</span>
+    </p>    <div class="sh" id="div_DIO_REGMAP">      
+      <p>        
+        <span class="pm" id="pm_DIO_REGMAP|DIO_REGS" onclick="pm('DIO_REGMAP|DIO_REGS');">+</span>      
+        <span class="group" id="a_DIO_REGMAP|DIO_REGS" onclick="a('DIO_REGMAP|DIO_REGS');">DIO_REGS</span>
+      </p>
+      <div class="sh" id="div_DIO_REGMAP|DIO_REGS">        
+        <p><span class="register" id="a_DIO_REGMAP|DIO_MASTER_REGISTER" onclick="a('DIO_REGMAP|DIO_MASTER_REGISTER');">DIO_MASTER_REGISTER</span></p>        
+        <p><span class="register" id="a_DIO_REGMAP|DIO_DIRECTION_REGISTER" onclick="a('DIO_REGMAP|DIO_DIRECTION_REGISTER');">DIO_DIRECTION_REGISTER</span></p>        
+        <p><span class="register" id="a_DIO_REGMAP|DIO_INPUT_REGISTER" onclick="a('DIO_REGMAP|DIO_INPUT_REGISTER');">DIO_INPUT_REGISTER</span></p>        
+        <p><span class="register" id="a_DIO_REGMAP|DIO_OUTPUT_REGISTER" onclick="a('DIO_REGMAP|DIO_OUTPUT_REGISTER');">DIO_OUTPUT_REGISTER</span></p>      
+      </div>    
+    </div>    
+    <p>
+      <span class="pm" id="pm_DMA_REGMAP" onclick="pm('DMA_REGMAP');">+</span>
+      <span class="regmap" id="a_DMA_REGMAP" onclick="a('DMA_REGMAP');">DMA_REGMAP</span>
+    </p>    <div class="sh" id="div_DMA_REGMAP">      
+      <p>        
+        <span class="pm" id="pm_DMA_REGMAP|XILINX_DMA_REGISTERS" onclick="pm('DMA_REGMAP|XILINX_DMA_REGISTERS');">+</span>      
+        <span class="group" id="a_DMA_REGMAP|XILINX_DMA_REGISTERS" onclick="a('DMA_REGMAP|XILINX_DMA_REGISTERS');">XILINX_DMA_REGISTERS</span>
+      </p>
+      <div class="sh" id="div_DMA_REGMAP|XILINX_DMA_REGISTERS">      
+      </div>    
+    </div>    
+    <p>
+      <span class="pm" id="pm_ETH_DMA_CTRL_REGMAP" onclick="pm('ETH_DMA_CTRL_REGMAP');">+</span>
+      <span class="regmap" id="a_ETH_DMA_CTRL_REGMAP" onclick="a('ETH_DMA_CTRL_REGMAP');">ETH_DMA_CTRL_REGMAP</span>
+    </p>    <div class="sh" id="div_ETH_DMA_CTRL_REGMAP">      
+      <p>        
+        <span class="pm" id="pm_ETH_DMA_CTRL_REGMAP|ETH_DMA_CTRL" onclick="pm('ETH_DMA_CTRL_REGMAP|ETH_DMA_CTRL');">+</span>      
+        <span class="group" id="a_ETH_DMA_CTRL_REGMAP|ETH_DMA_CTRL" onclick="a('ETH_DMA_CTRL_REGMAP|ETH_DMA_CTRL');">ETH_DMA_CTRL</span>
+      </p>
+      <div class="sh" id="div_ETH_DMA_CTRL_REGMAP|ETH_DMA_CTRL">        
+        <p><span class="register" id="a_ETH_DMA_CTRL_REGMAP|AXI_DMA_CTRL" onclick="a('ETH_DMA_CTRL_REGMAP|AXI_DMA_CTRL');">AXI_DMA_CTRL</span></p>        
+        <p><span class="register" id="a_ETH_DMA_CTRL_REGMAP|ETH_IO_CTRL" onclick="a('ETH_DMA_CTRL_REGMAP|ETH_IO_CTRL');">ETH_IO_CTRL</span></p>      
+      </div>    
+    </div>    
+    <p>
+      <span class="pm" id="pm_GLOBAL_REGS_REGMAP" onclick="pm('GLOBAL_REGS_REGMAP');">+</span>
+      <span class="regmap" id="a_GLOBAL_REGS_REGMAP" onclick="a('GLOBAL_REGS_REGMAP');">GLOBAL_REGS_REGMAP</span>
+    </p>    <div class="sh" id="div_GLOBAL_REGS_REGMAP">      
+      <p>        
+        <span class="pm" id="pm_GLOBAL_REGS_REGMAP|GLOBAL_REGS" onclick="pm('GLOBAL_REGS_REGMAP|GLOBAL_REGS');">+</span>      
+        <span class="group" id="a_GLOBAL_REGS_REGMAP|GLOBAL_REGS" onclick="a('GLOBAL_REGS_REGMAP|GLOBAL_REGS');">GLOBAL_REGS</span>
+      </p>
+      <div class="sh" id="div_GLOBAL_REGS_REGMAP|GLOBAL_REGS">        
+        <p><span class="register" id="a_GLOBAL_REGS_REGMAP|COMPAT_NUM_REG" onclick="a('GLOBAL_REGS_REGMAP|COMPAT_NUM_REG');">COMPAT_NUM_REG</span></p>        
+        <p><span class="register" id="a_GLOBAL_REGS_REGMAP|DATESTAMP_REG" onclick="a('GLOBAL_REGS_REGMAP|DATESTAMP_REG');">DATESTAMP_REG</span></p>        
+        <p><span class="register" id="a_GLOBAL_REGS_REGMAP|GIT_HASH_REG" onclick="a('GLOBAL_REGS_REGMAP|GIT_HASH_REG');">GIT_HASH_REG</span></p>        
+        <p><span class="register" id="a_GLOBAL_REGS_REGMAP|SCRATCH_REG" onclick="a('GLOBAL_REGS_REGMAP|SCRATCH_REG');">SCRATCH_REG</span></p>        
+        <p><span class="register" id="a_GLOBAL_REGS_REGMAP|DEVICE_ID_REG" onclick="a('GLOBAL_REGS_REGMAP|DEVICE_ID_REG');">DEVICE_ID_REG</span></p>        
+        <p><span class="register" id="a_GLOBAL_REGS_REGMAP|RFNOC_INFO_REG" onclick="a('GLOBAL_REGS_REGMAP|RFNOC_INFO_REG');">RFNOC_INFO_REG</span></p>        
+        <p><span class="register" id="a_GLOBAL_REGS_REGMAP|CLOCK_CTRL_REG" onclick="a('GLOBAL_REGS_REGMAP|CLOCK_CTRL_REG');">CLOCK_CTRL_REG</span></p>        
+        <p><span class="register" id="a_GLOBAL_REGS_REGMAP|PPS_CTRL_REG" onclick="a('GLOBAL_REGS_REGMAP|PPS_CTRL_REG');">PPS_CTRL_REG</span></p>        
+        <p><span class="register" id="a_GLOBAL_REGS_REGMAP|CHDR_CLK_RATE_REG" onclick="a('GLOBAL_REGS_REGMAP|CHDR_CLK_RATE_REG');">CHDR_CLK_RATE_REG</span></p>        
+        <p><span class="register" id="a_GLOBAL_REGS_REGMAP|CHDR_CLK_COUNT_REG" onclick="a('GLOBAL_REGS_REGMAP|CHDR_CLK_COUNT_REG');">CHDR_CLK_COUNT_REG</span></p>        
+        <p><span class="register" id="a_GLOBAL_REGS_REGMAP|GPS_CTRL_REG" onclick="a('GLOBAL_REGS_REGMAP|GPS_CTRL_REG');">GPS_CTRL_REG</span></p>        
+        <p><span class="register" id="a_GLOBAL_REGS_REGMAP|GPS_STATUS_REG" onclick="a('GLOBAL_REGS_REGMAP|GPS_STATUS_REG');">GPS_STATUS_REG</span></p>        
+        <p><span class="register" id="a_GLOBAL_REGS_REGMAP|DBOARD_CTRL_REG" onclick="a('GLOBAL_REGS_REGMAP|DBOARD_CTRL_REG');">DBOARD_CTRL_REG</span></p>        
+        <p><span class="register" id="a_GLOBAL_REGS_REGMAP|DBOARD_STATUS_REG" onclick="a('GLOBAL_REGS_REGMAP|DBOARD_STATUS_REG');">DBOARD_STATUS_REG</span></p>        
+        <p><span class="register" id="a_GLOBAL_REGS_REGMAP|NUM_TIMEKEEPERS_REG" onclick="a('GLOBAL_REGS_REGMAP|NUM_TIMEKEEPERS_REG');">NUM_TIMEKEEPERS_REG</span></p>        
+        <p><span class="register" id="a_GLOBAL_REGS_REGMAP|SERIAL_NUM_LOW_REG" onclick="a('GLOBAL_REGS_REGMAP|SERIAL_NUM_LOW_REG');">SERIAL_NUM_LOW_REG</span></p>        
+        <p><span class="register" id="a_GLOBAL_REGS_REGMAP|SERIAL_NUM_HIGH_REG" onclick="a('GLOBAL_REGS_REGMAP|SERIAL_NUM_HIGH_REG');">SERIAL_NUM_HIGH_REG</span></p>        
+        <p><span class="register" id="a_GLOBAL_REGS_REGMAP|MFG_TEST_CTRL_REG" onclick="a('GLOBAL_REGS_REGMAP|MFG_TEST_CTRL_REG');">MFG_TEST_CTRL_REG</span></p>        
+        <p><span class="register" id="a_GLOBAL_REGS_REGMAP|MFG_TEST_STATUS_REG" onclick="a('GLOBAL_REGS_REGMAP|MFG_TEST_STATUS_REG');">MFG_TEST_STATUS_REG</span></p>        
+        <p><span class="register" id="a_GLOBAL_REGS_REGMAP|QSFP_PORT_0_0_INFO_REG" onclick="a('GLOBAL_REGS_REGMAP|QSFP_PORT_0_0_INFO_REG');">QSFP_PORT_0_0_INFO_REG</span></p>        
+        <p><span class="register" id="a_GLOBAL_REGS_REGMAP|QSFP_PORT_0_1_INFO_REG" onclick="a('GLOBAL_REGS_REGMAP|QSFP_PORT_0_1_INFO_REG');">QSFP_PORT_0_1_INFO_REG</span></p>        
+        <p><span class="register" id="a_GLOBAL_REGS_REGMAP|QSFP_PORT_0_2_INFO_REG" onclick="a('GLOBAL_REGS_REGMAP|QSFP_PORT_0_2_INFO_REG');">QSFP_PORT_0_2_INFO_REG</span></p>        
+        <p><span class="register" id="a_GLOBAL_REGS_REGMAP|QSFP_PORT_0_3_INFO_REG" onclick="a('GLOBAL_REGS_REGMAP|QSFP_PORT_0_3_INFO_REG');">QSFP_PORT_0_3_INFO_REG</span></p>        
+        <p><span class="register" id="a_GLOBAL_REGS_REGMAP|QSFP_PORT_1_0_INFO_REG" onclick="a('GLOBAL_REGS_REGMAP|QSFP_PORT_1_0_INFO_REG');">QSFP_PORT_1_0_INFO_REG</span></p>        
+        <p><span class="register" id="a_GLOBAL_REGS_REGMAP|QSFP_PORT_1_1_INFO_REG" onclick="a('GLOBAL_REGS_REGMAP|QSFP_PORT_1_1_INFO_REG');">QSFP_PORT_1_1_INFO_REG</span></p>        
+        <p><span class="register" id="a_GLOBAL_REGS_REGMAP|QSFP_PORT_1_2_INFO_REG" onclick="a('GLOBAL_REGS_REGMAP|QSFP_PORT_1_2_INFO_REG');">QSFP_PORT_1_2_INFO_REG</span></p>        
+        <p><span class="register" id="a_GLOBAL_REGS_REGMAP|QSFP_PORT_1_3_INFO_REG" onclick="a('GLOBAL_REGS_REGMAP|QSFP_PORT_1_3_INFO_REG');">QSFP_PORT_1_3_INFO_REG</span></p>      
+      </div>    
+    </div>    
+    <p>
+      <span class="pm" id="pm_JTAG_REGMAP" onclick="pm('JTAG_REGMAP');">+</span>
+      <span class="regmap" id="a_JTAG_REGMAP" onclick="a('JTAG_REGMAP');">JTAG_REGMAP</span>
+    </p>    <div class="sh" id="div_JTAG_REGMAP">      
+      <p>        
+        <span class="pm" id="pm_JTAG_REGMAP|JTAG_REGS" onclick="pm('JTAG_REGMAP|JTAG_REGS');">+</span>      
+        <span class="group" id="a_JTAG_REGMAP|JTAG_REGS" onclick="a('JTAG_REGMAP|JTAG_REGS');">JTAG_REGS</span>
+      </p>
+      <div class="sh" id="div_JTAG_REGMAP|JTAG_REGS">        
+        <p><span class="register" id="a_JTAG_REGMAP|TX_DATA" onclick="a('JTAG_REGMAP|TX_DATA');">TX_DATA</span></p>        
+        <p><span class="register" id="a_JTAG_REGMAP|STB_DATA" onclick="a('JTAG_REGMAP|STB_DATA');">STB_DATA</span></p>        
+        <p><span class="register" id="a_JTAG_REGMAP|CONTROL" onclick="a('JTAG_REGMAP|CONTROL');">CONTROL</span></p>        
+        <p><span class="register" id="a_JTAG_REGMAP|RX_DATA" onclick="a('JTAG_REGMAP|RX_DATA');">RX_DATA</span></p>      
+      </div>    
+    </div>    
+    <p>
+      <span class="pm" id="pm_MB_CPLD_PL_REGMAP" onclick="pm('MB_CPLD_PL_REGMAP');">+</span>
+      <span class="regmap" id="a_MB_CPLD_PL_REGMAP" onclick="a('MB_CPLD_PL_REGMAP');">MB_CPLD_PL_REGMAP</span>
+    </p>    <div class="sh" id="div_MB_CPLD_PL_REGMAP">      
+      <p>        
+        <span class="pm" id="pm_MB_CPLD_PL_REGMAP|MB_CPLD_PL_WINDOWS" onclick="pm('MB_CPLD_PL_REGMAP|MB_CPLD_PL_WINDOWS');">+</span>      
+        <span class="group" id="a_MB_CPLD_PL_REGMAP|MB_CPLD_PL_WINDOWS" onclick="a('MB_CPLD_PL_REGMAP|MB_CPLD_PL_WINDOWS');">MB_CPLD_PL_WINDOWS</span>
+      </p>
+      <div class="sh" id="div_MB_CPLD_PL_REGMAP|MB_CPLD_PL_WINDOWS">        
+        <p><span class="register" id="a_MB_CPLD_PL_REGMAP|PL_REGISTERS" onclick="a('MB_CPLD_PL_REGMAP|PL_REGISTERS');">PL_REGISTERS</span></p>        
+        <p><span class="register" id="a_MB_CPLD_PL_REGMAP|JTAG_DB0" onclick="a('MB_CPLD_PL_REGMAP|JTAG_DB0');">JTAG_DB0</span></p>        
+        <p><span class="register" id="a_MB_CPLD_PL_REGMAP|JTAG_DB1" onclick="a('MB_CPLD_PL_REGMAP|JTAG_DB1');">JTAG_DB1</span></p>      
+      </div>    
+    </div>    
+    <p>
+      <span class="pm" id="pm_NIXGE_REGMAP" onclick="pm('NIXGE_REGMAP');">+</span>
+      <span class="regmap" id="a_NIXGE_REGMAP" onclick="a('NIXGE_REGMAP');">NIXGE_REGMAP</span>
+    </p>    <div class="sh" id="div_NIXGE_REGMAP">      
+      <p>        
+        <span class="pm" id="pm_NIXGE_REGMAP|XGE_MAC_REGS" onclick="pm('NIXGE_REGMAP|XGE_MAC_REGS');">+</span>      
+        <span class="group" id="a_NIXGE_REGMAP|XGE_MAC_REGS" onclick="a('NIXGE_REGMAP|XGE_MAC_REGS');">XGE_MAC_REGS</span>
+      </p>
+      <div class="sh" id="div_NIXGE_REGMAP|XGE_MAC_REGS">        
+        <p><span class="register" id="a_NIXGE_REGMAP|PORT_INFO" onclick="a('NIXGE_REGMAP|PORT_INFO');">PORT_INFO</span></p>        
+        <p><span class="register" id="a_NIXGE_REGMAP|MAC_CTRL_STATUS" onclick="a('NIXGE_REGMAP|MAC_CTRL_STATUS');">MAC_CTRL_STATUS</span></p>        
+        <p><span class="register" id="a_NIXGE_REGMAP|MAC_PHY_STATUS" onclick="a('NIXGE_REGMAP|MAC_PHY_STATUS');">MAC_PHY_STATUS</span></p>        
+        <p><span class="register" id="a_NIXGE_REGMAP|MAC_LED_CTL" onclick="a('NIXGE_REGMAP|MAC_LED_CTL');">MAC_LED_CTL</span></p>        
+        <p><span class="register" id="a_NIXGE_REGMAP|ETH_MDIO_BASE" onclick="a('NIXGE_REGMAP|ETH_MDIO_BASE');">ETH_MDIO_BASE</span></p>        
+        <p><span class="register" id="a_NIXGE_REGMAP|AURORA_OVERRUNS" onclick="a('NIXGE_REGMAP|AURORA_OVERRUNS');">AURORA_OVERRUNS</span></p>        
+        <p><span class="register" id="a_NIXGE_REGMAP|AURORA_CHECKSUM_ERRORS" onclick="a('NIXGE_REGMAP|AURORA_CHECKSUM_ERRORS');">AURORA_CHECKSUM_ERRORS</span></p>        
+        <p><span class="register" id="a_NIXGE_REGMAP|AURORA_BIST_CHECKER_SAMPS" onclick="a('NIXGE_REGMAP|AURORA_BIST_CHECKER_SAMPS');">AURORA_BIST_CHECKER_SAMPS</span></p>        
+        <p><span class="register" id="a_NIXGE_REGMAP|AURORA_BIST_CHECKER_ERRORS" onclick="a('NIXGE_REGMAP|AURORA_BIST_CHECKER_ERRORS');">AURORA_BIST_CHECKER_ERRORS</span></p>      
+      </div>      
+      <p>        
+        <span class="pm" id="pm_NIXGE_REGMAP|XGE_MAC_WINDOW" onclick="pm('NIXGE_REGMAP|XGE_MAC_WINDOW');">+</span>      
+        <span class="group" id="a_NIXGE_REGMAP|XGE_MAC_WINDOW" onclick="a('NIXGE_REGMAP|XGE_MAC_WINDOW');">XGE_MAC_WINDOW</span>
+      </p>
+      <div class="sh" id="div_NIXGE_REGMAP|XGE_MAC_WINDOW">        
+        <p><span class="register" id="a_NIXGE_REGMAP|XGE_MAC" onclick="a('NIXGE_REGMAP|XGE_MAC');">XGE_MAC</span></p>      
+      </div>    
+    </div>    
+    <p>
+      <span class="pm" id="pm_PL_CPLD_BASE_REGMAP" onclick="pm('PL_CPLD_BASE_REGMAP');">+</span>
+      <span class="regmap" id="a_PL_CPLD_BASE_REGMAP" onclick="a('PL_CPLD_BASE_REGMAP');">PL_CPLD_BASE_REGMAP</span>
+    </p>    <div class="sh" id="div_PL_CPLD_BASE_REGMAP">      
+      <p>        
+        <span class="pm" id="pm_PL_CPLD_BASE_REGMAP|MB_CPLD_LED_REGS" onclick="pm('PL_CPLD_BASE_REGMAP|MB_CPLD_LED_REGS');">+</span>      
+        <span class="group" id="a_PL_CPLD_BASE_REGMAP|MB_CPLD_LED_REGS" onclick="a('PL_CPLD_BASE_REGMAP|MB_CPLD_LED_REGS');">MB_CPLD_LED_REGS</span>
+      </p>
+      <div class="sh" id="div_PL_CPLD_BASE_REGMAP|MB_CPLD_LED_REGS">        
+        <p><span class="register" id="a_PL_CPLD_BASE_REGMAP|LED_REGISTER" onclick="a('PL_CPLD_BASE_REGMAP|LED_REGISTER');">LED_REGISTER</span></p>      
+      </div>      
+      <p>        
+        <span class="pm" id="pm_PL_CPLD_BASE_REGMAP|PL_CMI_REGS" onclick="pm('PL_CPLD_BASE_REGMAP|PL_CMI_REGS');">+</span>      
+        <span class="group" id="a_PL_CPLD_BASE_REGMAP|PL_CMI_REGS" onclick="a('PL_CPLD_BASE_REGMAP|PL_CMI_REGS');">PL_CMI_REGS</span>
+      </p>
+      <div class="sh" id="div_PL_CPLD_BASE_REGMAP|PL_CMI_REGS">        
+        <p><span class="register" id="a_PL_CPLD_BASE_REGMAP|CABLE_PRESENT_REG" onclick="a('PL_CPLD_BASE_REGMAP|CABLE_PRESENT_REG');">CABLE_PRESENT_REG</span></p>      
+      </div>      
+      <p>        
+        <span class="pm" id="pm_PL_CPLD_BASE_REGMAP|PL_CPLD_BASE_REGS" onclick="pm('PL_CPLD_BASE_REGMAP|PL_CPLD_BASE_REGS');">+</span>      
+        <span class="group" id="a_PL_CPLD_BASE_REGMAP|PL_CPLD_BASE_REGS" onclick="a('PL_CPLD_BASE_REGMAP|PL_CPLD_BASE_REGS');">PL_CPLD_BASE_REGS</span>
+      </p>
+      <div class="sh" id="div_PL_CPLD_BASE_REGMAP|PL_CPLD_BASE_REGS">        
+        <p><span class="register" id="a_PL_CPLD_BASE_REGMAP|SIGNATURE_REGISTER" onclick="a('PL_CPLD_BASE_REGMAP|SIGNATURE_REGISTER');">SIGNATURE_REGISTER</span></p>        
+        <p><span class="register" id="a_PL_CPLD_BASE_REGMAP|REVISION_REGISTER" onclick="a('PL_CPLD_BASE_REGMAP|REVISION_REGISTER');">REVISION_REGISTER</span></p>        
+        <p><span class="register" id="a_PL_CPLD_BASE_REGMAP|OLDEST_COMPATIBLE_REVISION_REGISTER" onclick="a('PL_CPLD_BASE_REGMAP|OLDEST_COMPATIBLE_REVISION_REGISTER');">OLDEST_COMPATIBLE_REVISION_REGISTER</span></p>        
+        <p><span class="register" id="a_PL_CPLD_BASE_REGMAP|SCRATCH_REGISTER" onclick="a('PL_CPLD_BASE_REGMAP|SCRATCH_REGISTER');">SCRATCH_REGISTER</span></p>        
+        <p><span class="register" id="a_PL_CPLD_BASE_REGMAP|GIT_HASH_REGISTER" onclick="a('PL_CPLD_BASE_REGMAP|GIT_HASH_REGISTER');">GIT_HASH_REGISTER</span></p>      
+      </div>    
+    </div>    
+    <p>
+      <span class="pm" id="pm_PL_CPLD_REGMAP" onclick="pm('PL_CPLD_REGMAP');">+</span>
+      <span class="regmap" id="a_PL_CPLD_REGMAP" onclick="a('PL_CPLD_REGMAP');">PL_CPLD_REGMAP</span>
+    </p>    <div class="sh" id="div_PL_CPLD_REGMAP">      
+      <p>        
+        <span class="pm" id="pm_PL_CPLD_REGMAP|PL_CPLD_WINDOWS" onclick="pm('PL_CPLD_REGMAP|PL_CPLD_WINDOWS');">+</span>      
+        <span class="group" id="a_PL_CPLD_REGMAP|PL_CPLD_WINDOWS" onclick="a('PL_CPLD_REGMAP|PL_CPLD_WINDOWS');">PL_CPLD_WINDOWS</span>
+      </p>
+      <div class="sh" id="div_PL_CPLD_REGMAP|PL_CPLD_WINDOWS">        
+        <p><span class="register" id="a_PL_CPLD_REGMAP|BASE" onclick="a('PL_CPLD_REGMAP|BASE');">BASE</span></p>        
+        <p><span class="register" id="a_PL_CPLD_REGMAP|MB_CPLD" onclick="a('PL_CPLD_REGMAP|MB_CPLD');">MB_CPLD</span></p>        
+        <p><span class="register" id="a_PL_CPLD_REGMAP|DB0_CPLD" onclick="a('PL_CPLD_REGMAP|DB0_CPLD');">DB0_CPLD</span></p>        
+        <p><span class="register" id="a_PL_CPLD_REGMAP|DB1_CPLD" onclick="a('PL_CPLD_REGMAP|DB1_CPLD');">DB1_CPLD</span></p>      
+      </div>    
+    </div>    
+    <p>
+      <span class="pm" id="pm_PL_DMA_MASTER_REGMAP" onclick="pm('PL_DMA_MASTER_REGMAP');">+</span>
+      <span class="regmap" id="a_PL_DMA_MASTER_REGMAP" onclick="a('PL_DMA_MASTER_REGMAP');">PL_DMA_MASTER_REGMAP</span>
+    </p>    <div class="sh" id="div_PL_DMA_MASTER_REGMAP">      
+      <p>        
+        <span class="pm" id="pm_PL_DMA_MASTER_REGMAP|HPC0_DMA" onclick="pm('PL_DMA_MASTER_REGMAP|HPC0_DMA');">+</span>      
+        <span class="group" id="a_PL_DMA_MASTER_REGMAP|HPC0_DMA" onclick="a('PL_DMA_MASTER_REGMAP|HPC0_DMA');">HPC0_DMA</span>
+      </p>
+      <div class="sh" id="div_PL_DMA_MASTER_REGMAP|HPC0_DMA">        
+        <p><span class="register" id="a_PL_DMA_MASTER_REGMAP|AXI_HPC0_WINDOW" onclick="a('PL_DMA_MASTER_REGMAP|AXI_HPC0_WINDOW');">AXI_HPC0_WINDOW</span></p>      
+      </div>      
+      <p>        
+        <span class="pm" id="pm_PL_DMA_MASTER_REGMAP|HPC1_DMA" onclick="pm('PL_DMA_MASTER_REGMAP|HPC1_DMA');">+</span>      
+        <span class="group" id="a_PL_DMA_MASTER_REGMAP|HPC1_DMA" onclick="a('PL_DMA_MASTER_REGMAP|HPC1_DMA');">HPC1_DMA</span>
+      </p>
+      <div class="sh" id="div_PL_DMA_MASTER_REGMAP|HPC1_DMA">        
+        <p><span class="register" id="a_PL_DMA_MASTER_REGMAP|AXI_HPC1_WINDOW" onclick="a('PL_DMA_MASTER_REGMAP|AXI_HPC1_WINDOW');">AXI_HPC1_WINDOW</span></p>      
+      </div>    
+    </div>    
+    <p>
+      <span class="pm" id="pm_PS_CPLD_BASE_REGMAP" onclick="pm('PS_CPLD_BASE_REGMAP');">+</span>
+      <span class="regmap" id="a_PS_CPLD_BASE_REGMAP" onclick="a('PS_CPLD_BASE_REGMAP');">PS_CPLD_BASE_REGMAP</span>
+    </p>    <div class="sh" id="div_PS_CPLD_BASE_REGMAP">      
+      <p>        
+        <span class="pm" id="pm_PS_CPLD_BASE_REGMAP|DIO_REGS" onclick="pm('PS_CPLD_BASE_REGMAP|DIO_REGS');">+</span>      
+        <span class="group" id="a_PS_CPLD_BASE_REGMAP|DIO_REGS" onclick="a('PS_CPLD_BASE_REGMAP|DIO_REGS');">DIO_REGS</span>
+      </p>
+      <div class="sh" id="div_PS_CPLD_BASE_REGMAP|DIO_REGS">        
+        <p><span class="register" id="a_PS_CPLD_BASE_REGMAP|DIO_DIRECTION_REGISTER" onclick="a('PS_CPLD_BASE_REGMAP|DIO_DIRECTION_REGISTER');">DIO_DIRECTION_REGISTER</span></p>      
+      </div>      
+      <p>        
+        <span class="pm" id="pm_PS_CPLD_BASE_REGMAP|PS_CMI_REGS" onclick="pm('PS_CPLD_BASE_REGMAP|PS_CMI_REGS');">+</span>      
+        <span class="group" id="a_PS_CPLD_BASE_REGMAP|PS_CMI_REGS" onclick="a('PS_CPLD_BASE_REGMAP|PS_CMI_REGS');">PS_CMI_REGS</span>
+      </p>
+      <div class="sh" id="div_PS_CPLD_BASE_REGMAP|PS_CMI_REGS">        
+        <p><span class="register" id="a_PS_CPLD_BASE_REGMAP|SERIAL_NUM_LOW_REG" onclick="a('PS_CPLD_BASE_REGMAP|SERIAL_NUM_LOW_REG');">SERIAL_NUM_LOW_REG</span></p>        
+        <p><span class="register" id="a_PS_CPLD_BASE_REGMAP|SERIAL_NUM_HIGH_REG" onclick="a('PS_CPLD_BASE_REGMAP|SERIAL_NUM_HIGH_REG');">SERIAL_NUM_HIGH_REG</span></p>        
+        <p><span class="register" id="a_PS_CPLD_BASE_REGMAP|CMI_CONTROL_STATUS" onclick="a('PS_CPLD_BASE_REGMAP|CMI_CONTROL_STATUS');">CMI_CONTROL_STATUS</span></p>      
+      </div>      
+      <p>        
+        <span class="pm" id="pm_PS_CPLD_BASE_REGMAP|PS_CONTROL_REGS" onclick="pm('PS_CPLD_BASE_REGMAP|PS_CONTROL_REGS');">+</span>      
+        <span class="group" id="a_PS_CPLD_BASE_REGMAP|PS_CONTROL_REGS" onclick="a('PS_CPLD_BASE_REGMAP|PS_CONTROL_REGS');">PS_CONTROL_REGS</span>
+      </p>
+      <div class="sh" id="div_PS_CPLD_BASE_REGMAP|PS_CONTROL_REGS">        
+        <p><span class="register" id="a_PS_CPLD_BASE_REGMAP|PL_DB_REGISTER" onclick="a('PS_CPLD_BASE_REGMAP|PL_DB_REGISTER');">PL_DB_REGISTER</span></p>      
+      </div>      
+      <p>        
+        <span class="pm" id="pm_PS_CPLD_BASE_REGMAP|PS_CPLD_BASE_REGS" onclick="pm('PS_CPLD_BASE_REGMAP|PS_CPLD_BASE_REGS');">+</span>      
+        <span class="group" id="a_PS_CPLD_BASE_REGMAP|PS_CPLD_BASE_REGS" onclick="a('PS_CPLD_BASE_REGMAP|PS_CPLD_BASE_REGS');">PS_CPLD_BASE_REGS</span>
+      </p>
+      <div class="sh" id="div_PS_CPLD_BASE_REGMAP|PS_CPLD_BASE_REGS">        
+        <p><span class="register" id="a_PS_CPLD_BASE_REGMAP|SIGNATURE_REGISTER" onclick="a('PS_CPLD_BASE_REGMAP|SIGNATURE_REGISTER');">SIGNATURE_REGISTER</span></p>        
+        <p><span class="register" id="a_PS_CPLD_BASE_REGMAP|REVISION_REGISTER" onclick="a('PS_CPLD_BASE_REGMAP|REVISION_REGISTER');">REVISION_REGISTER</span></p>        
+        <p><span class="register" id="a_PS_CPLD_BASE_REGMAP|OLDEST_COMPATIBLE_REVISION_REGISTER" onclick="a('PS_CPLD_BASE_REGMAP|OLDEST_COMPATIBLE_REVISION_REGISTER');">OLDEST_COMPATIBLE_REVISION_REGISTER</span></p>        
+        <p><span class="register" id="a_PS_CPLD_BASE_REGMAP|SCRATCH_REGISTER" onclick="a('PS_CPLD_BASE_REGMAP|SCRATCH_REGISTER');">SCRATCH_REGISTER</span></p>        
+        <p><span class="register" id="a_PS_CPLD_BASE_REGMAP|GIT_HASH_REGISTER" onclick="a('PS_CPLD_BASE_REGMAP|GIT_HASH_REGISTER');">GIT_HASH_REGISTER</span></p>      
+      </div>    
+    </div>    
+    <p>
+      <span class="pm" id="pm_PS_POWER_REGMAP" onclick="pm('PS_POWER_REGMAP');">+</span>
+      <span class="regmap" id="a_PS_POWER_REGMAP" onclick="a('PS_POWER_REGMAP');">PS_POWER_REGMAP</span>
+    </p>    <div class="sh" id="div_PS_POWER_REGMAP">      
+      <p>        
+        <span class="pm" id="pm_PS_POWER_REGMAP|PS_POWER_REGS" onclick="pm('PS_POWER_REGMAP|PS_POWER_REGS');">+</span>      
+        <span class="group" id="a_PS_POWER_REGMAP|PS_POWER_REGS" onclick="a('PS_POWER_REGMAP|PS_POWER_REGS');">PS_POWER_REGS</span>
+      </p>
+      <div class="sh" id="div_PS_POWER_REGMAP|PS_POWER_REGS">        
+        <p><span class="register" id="a_PS_POWER_REGMAP|IPASS_POWER_REG" onclick="a('PS_POWER_REGMAP|IPASS_POWER_REG');">IPASS_POWER_REG</span></p>        
+        <p><span class="register" id="a_PS_POWER_REGMAP|OSC_POWER_REG" onclick="a('PS_POWER_REGMAP|OSC_POWER_REG');">OSC_POWER_REG</span></p>      
+      </div>    
+    </div>    
+    <p>
+      <span class="pm" id="pm_QSFP_REGMAP" onclick="pm('QSFP_REGMAP');">+</span>
+      <span class="regmap" id="a_QSFP_REGMAP" onclick="a('QSFP_REGMAP');">QSFP_REGMAP</span>
+    </p>    <div class="sh" id="div_QSFP_REGMAP">      
+      <p>        
+        <span class="pm" id="pm_QSFP_REGMAP|QSFP_WINDOWS" onclick="pm('QSFP_REGMAP|QSFP_WINDOWS');">+</span>      
+        <span class="group" id="a_QSFP_REGMAP|QSFP_WINDOWS" onclick="a('QSFP_REGMAP|QSFP_WINDOWS');">QSFP_WINDOWS</span>
+      </p>
+      <div class="sh" id="div_QSFP_REGMAP|QSFP_WINDOWS">        
+        <p><span class="register" id="a_QSFP_REGMAP|ETH_DMA" onclick="a('QSFP_REGMAP|ETH_DMA');">ETH_DMA</span></p>        
+        <p><span class="register" id="a_QSFP_REGMAP|NIXGE" onclick="a('QSFP_REGMAP|NIXGE');">NIXGE</span></p>        
+        <p><span class="register" id="a_QSFP_REGMAP|UIO" onclick="a('QSFP_REGMAP|UIO');">UIO</span></p>        
+        <p><span class="register" id="a_QSFP_REGMAP|CMAC" onclick="a('QSFP_REGMAP|CMAC');">CMAC</span></p>      
+      </div>    
+    </div>    
+    <p>
+      <span class="pm" id="pm_RADIO_CTRLPORT_REGMAP" onclick="pm('RADIO_CTRLPORT_REGMAP');">+</span>
+      <span class="regmap" id="a_RADIO_CTRLPORT_REGMAP" onclick="a('RADIO_CTRLPORT_REGMAP');">RADIO_CTRLPORT_REGMAP</span>
+    </p>    <div class="sh" id="div_RADIO_CTRLPORT_REGMAP">      
+      <p>        
+        <span class="pm" id="pm_RADIO_CTRLPORT_REGMAP|RADIO_CTRLPORT_WINDOWS" onclick="pm('RADIO_CTRLPORT_REGMAP|RADIO_CTRLPORT_WINDOWS');">+</span>      
+        <span class="group" id="a_RADIO_CTRLPORT_REGMAP|RADIO_CTRLPORT_WINDOWS" onclick="a('RADIO_CTRLPORT_REGMAP|RADIO_CTRLPORT_WINDOWS');">RADIO_CTRLPORT_WINDOWS</span>
+      </p>
+      <div class="sh" id="div_RADIO_CTRLPORT_REGMAP|RADIO_CTRLPORT_WINDOWS">        
+        <p><span class="register" id="a_RADIO_CTRLPORT_REGMAP|DB_WINDOW" onclick="a('RADIO_CTRLPORT_REGMAP|DB_WINDOW');">DB_WINDOW</span></p>        
+        <p><span class="register" id="a_RADIO_CTRLPORT_REGMAP|RFDC_TIMING_WINDOW" onclick="a('RADIO_CTRLPORT_REGMAP|RFDC_TIMING_WINDOW');">RFDC_TIMING_WINDOW</span></p>      
+      </div>    
+    </div>    
+    <p>
+      <span class="pm" id="pm_RECONFIG_REGMAP" onclick="pm('RECONFIG_REGMAP');">+</span>
+      <span class="regmap" id="a_RECONFIG_REGMAP" onclick="a('RECONFIG_REGMAP');">RECONFIG_REGMAP</span>
+    </p>    <div class="sh" id="div_RECONFIG_REGMAP">      
+      <p>        
+        <span class="pm" id="pm_RECONFIG_REGMAP|RECONFIG_REGS" onclick="pm('RECONFIG_REGMAP|RECONFIG_REGS');">+</span>      
+        <span class="group" id="a_RECONFIG_REGMAP|RECONFIG_REGS" onclick="a('RECONFIG_REGMAP|RECONFIG_REGS');">RECONFIG_REGS</span>
+      </p>
+      <div class="sh" id="div_RECONFIG_REGMAP|RECONFIG_REGS">        
+        <p><span class="enum" id="a_RECONFIG_REGMAP|FLASH_PRIMARY_IMAGE_ADDR_ENUM" onclick="a('RECONFIG_REGMAP|FLASH_PRIMARY_IMAGE_ADDR_ENUM');">enum FLASH_PRIMARY_IMAGE_ADDR_ENUM</span></p>        
+        <p><span class="register" id="a_RECONFIG_REGMAP|FLASH_STATUS_REG" onclick="a('RECONFIG_REGMAP|FLASH_STATUS_REG');">FLASH_STATUS_REG</span></p>        
+        <p><span class="register" id="a_RECONFIG_REGMAP|FLASH_CONTROL_REG" onclick="a('RECONFIG_REGMAP|FLASH_CONTROL_REG');">FLASH_CONTROL_REG</span></p>        
+        <p><span class="register" id="a_RECONFIG_REGMAP|FLASH_ADDR_REG" onclick="a('RECONFIG_REGMAP|FLASH_ADDR_REG');">FLASH_ADDR_REG</span></p>        
+        <p><span class="register" id="a_RECONFIG_REGMAP|FLASH_WRITE_DATA_REG" onclick="a('RECONFIG_REGMAP|FLASH_WRITE_DATA_REG');">FLASH_WRITE_DATA_REG</span></p>        
+        <p><span class="register" id="a_RECONFIG_REGMAP|FLASH_READ_DATA_REG" onclick="a('RECONFIG_REGMAP|FLASH_READ_DATA_REG');">FLASH_READ_DATA_REG</span></p>        
+        <p><span class="register" id="a_RECONFIG_REGMAP|FLASH_CFM0_START_ADDR_REG" onclick="a('RECONFIG_REGMAP|FLASH_CFM0_START_ADDR_REG');">FLASH_CFM0_START_ADDR_REG</span></p>        
+        <p><span class="register" id="a_RECONFIG_REGMAP|FLASH_CFM0_END_ADDR_REG" onclick="a('RECONFIG_REGMAP|FLASH_CFM0_END_ADDR_REG');">FLASH_CFM0_END_ADDR_REG</span></p>      
+      </div>    
+    </div>    
+    <p>
+      <span class="pm" id="pm_RFDC_REGS_REGMAP" onclick="pm('RFDC_REGS_REGMAP');">+</span>
+      <span class="regmap" id="a_RFDC_REGS_REGMAP" onclick="a('RFDC_REGS_REGMAP');">RFDC_REGS_REGMAP</span>
+    </p>    <div class="sh" id="div_RFDC_REGS_REGMAP">      
+      <p>        
+        <span class="pm" id="pm_RFDC_REGS_REGMAP|RFDC_REGS" onclick="pm('RFDC_REGS_REGMAP|RFDC_REGS');">+</span>      
+        <span class="group" id="a_RFDC_REGS_REGMAP|RFDC_REGS" onclick="a('RFDC_REGS_REGMAP|RFDC_REGS');">RFDC_REGS</span>
+      </p>
+      <div class="sh" id="div_RFDC_REGS_REGMAP|RFDC_REGS">        
+        <p><span class="enum" id="a_RFDC_REGS_REGMAP|FABRIC_DSP_BW_ENUM" onclick="a('RFDC_REGS_REGMAP|FABRIC_DSP_BW_ENUM');">enum FABRIC_DSP_BW_ENUM</span></p>        
+        <p><span class="register" id="a_RFDC_REGS_REGMAP|MMCM" onclick="a('RFDC_REGS_REGMAP|MMCM');">MMCM</span></p>        
+        <p><span class="register" id="a_RFDC_REGS_REGMAP|INVERT_IQ_REG" onclick="a('RFDC_REGS_REGMAP|INVERT_IQ_REG');">INVERT_IQ_REG</span></p>        
+        <p><span class="register" id="a_RFDC_REGS_REGMAP|MMCM_RESET_REG" onclick="a('RFDC_REGS_REGMAP|MMCM_RESET_REG');">MMCM_RESET_REG</span></p>        
+        <p><span class="register" id="a_RFDC_REGS_REGMAP|RF_RESET_CONTROL_REG" onclick="a('RFDC_REGS_REGMAP|RF_RESET_CONTROL_REG');">RF_RESET_CONTROL_REG</span></p>        
+        <p><span class="register" id="a_RFDC_REGS_REGMAP|RF_RESET_STATUS_REG" onclick="a('RFDC_REGS_REGMAP|RF_RESET_STATUS_REG');">RF_RESET_STATUS_REG</span></p>        
+        <p><span class="register" id="a_RFDC_REGS_REGMAP|RF_AXI_STATUS_REG" onclick="a('RFDC_REGS_REGMAP|RF_AXI_STATUS_REG');">RF_AXI_STATUS_REG</span></p>        
+        <p><span class="register" id="a_RFDC_REGS_REGMAP|FABRIC_DSP_REG" onclick="a('RFDC_REGS_REGMAP|FABRIC_DSP_REG');">FABRIC_DSP_REG</span></p>        
+        <p><span class="register" id="a_RFDC_REGS_REGMAP|CALIBRATION_DATA" onclick="a('RFDC_REGS_REGMAP|CALIBRATION_DATA');">CALIBRATION_DATA</span></p>        
+        <p><span class="register" id="a_RFDC_REGS_REGMAP|CALIBRATION_ENABLE" onclick="a('RFDC_REGS_REGMAP|CALIBRATION_ENABLE');">CALIBRATION_ENABLE</span></p>        
+        <p><span class="register" id="a_RFDC_REGS_REGMAP|THRESHOLD_STATUS" onclick="a('RFDC_REGS_REGMAP|THRESHOLD_STATUS');">THRESHOLD_STATUS</span></p>        
+        <p><span class="register" id="a_RFDC_REGS_REGMAP|RF_PLL_CONTROL_REG" onclick="a('RFDC_REGS_REGMAP|RF_PLL_CONTROL_REG');">RF_PLL_CONTROL_REG</span></p>        
+        <p><span class="register" id="a_RFDC_REGS_REGMAP|RF_PLL_STATUS_REG" onclick="a('RFDC_REGS_REGMAP|RF_PLL_STATUS_REG');">RF_PLL_STATUS_REG</span></p>      
+      </div>    
+    </div>    
+    <p>
+      <span class="pm" id="pm_RFDC_TIMING_REGMAP" onclick="pm('RFDC_TIMING_REGMAP');">+</span>
+      <span class="regmap" id="a_RFDC_TIMING_REGMAP" onclick="a('RFDC_TIMING_REGMAP');">RFDC_TIMING_REGMAP</span>
+    </p>    <div class="sh" id="div_RFDC_TIMING_REGMAP">      
+      <p>        
+        <span class="pm" id="pm_RFDC_TIMING_REGMAP|RFDC_TIMING_REGS" onclick="pm('RFDC_TIMING_REGMAP|RFDC_TIMING_REGS');">+</span>      
+        <span class="group" id="a_RFDC_TIMING_REGMAP|RFDC_TIMING_REGS" onclick="a('RFDC_TIMING_REGMAP|RFDC_TIMING_REGS');">RFDC_TIMING_REGS</span>
+      </p>
+      <div class="sh" id="div_RFDC_TIMING_REGMAP|RFDC_TIMING_REGS">        
+        <p><span class="register" id="a_RFDC_TIMING_REGMAP|NCO_RESET_REG" onclick="a('RFDC_TIMING_REGMAP|NCO_RESET_REG');">NCO_RESET_REG</span></p>        
+        <p><span class="register" id="a_RFDC_TIMING_REGMAP|GEARBOX_RESET_REG" onclick="a('RFDC_TIMING_REGMAP|GEARBOX_RESET_REG');">GEARBOX_RESET_REG</span></p>      
+      </div>    
+    </div>    
+    <p>
+      <span class="pm" id="pm_SPI_REGMAP" onclick="pm('SPI_REGMAP');">+</span>
+      <span class="regmap" id="a_SPI_REGMAP" onclick="a('SPI_REGMAP');">SPI_REGMAP</span>
+    </p>    <div class="sh" id="div_SPI_REGMAP">      
+      <p>        
+        <span class="pm" id="pm_SPI_REGMAP|SPI_REGS" onclick="pm('SPI_REGMAP|SPI_REGS');">+</span>      
+        <span class="group" id="a_SPI_REGMAP|SPI_REGS" onclick="a('SPI_REGMAP|SPI_REGS');">SPI_REGS</span>
+      </p>
+      <div class="sh" id="div_SPI_REGMAP|SPI_REGS">        
+        <p><span class="register" id="a_SPI_REGMAP|RX_DATA_LOW" onclick="a('SPI_REGMAP|RX_DATA_LOW');">RX_DATA_LOW</span></p>        
+        <p><span class="register" id="a_SPI_REGMAP|RX_DATA_HIGH" onclick="a('SPI_REGMAP|RX_DATA_HIGH');">RX_DATA_HIGH</span></p>        
+        <p><span class="register" id="a_SPI_REGMAP|TX_DATA_LOW" onclick="a('SPI_REGMAP|TX_DATA_LOW');">TX_DATA_LOW</span></p>        
+        <p><span class="register" id="a_SPI_REGMAP|TX_DATA_HIGH" onclick="a('SPI_REGMAP|TX_DATA_HIGH');">TX_DATA_HIGH</span></p>        
+        <p><span class="register" id="a_SPI_REGMAP|CONTROL" onclick="a('SPI_REGMAP|CONTROL');">CONTROL</span></p>        
+        <p><span class="register" id="a_SPI_REGMAP|CLOCK_DIVIDER" onclick="a('SPI_REGMAP|CLOCK_DIVIDER');">CLOCK_DIVIDER</span></p>        
+        <p><span class="register" id="a_SPI_REGMAP|SLAVE_SELECT" onclick="a('SPI_REGMAP|SLAVE_SELECT');">SLAVE_SELECT</span></p>      
+      </div>    
+    </div>    
+    <p>
+      <span class="pm" id="pm_UIO_REGMAP" onclick="pm('UIO_REGMAP');">+</span>
+      <span class="regmap" id="a_UIO_REGMAP" onclick="a('UIO_REGMAP');">UIO_REGMAP</span>
+    </p>    <div class="sh" id="div_UIO_REGMAP">      
+      <p>        
+        <span class="pm" id="pm_UIO_REGMAP|UIO_REGS" onclick="pm('UIO_REGMAP|UIO_REGS');">+</span>      
+        <span class="group" id="a_UIO_REGMAP|UIO_REGS" onclick="a('UIO_REGMAP|UIO_REGS');">UIO_REGS</span>
+      </p>
+      <div class="sh" id="div_UIO_REGMAP|UIO_REGS">        
+        <p><span class="register" id="a_UIO_REGMAP|IP" onclick="a('UIO_REGMAP|IP');">IP</span></p>        
+        <p><span class="register" id="a_UIO_REGMAP|UDP" onclick="a('UIO_REGMAP|UDP');">UDP</span></p>        
+        <p><span class="register" id="a_UIO_REGMAP|BRIDGE_MAC_LSB" onclick="a('UIO_REGMAP|BRIDGE_MAC_LSB');">BRIDGE_MAC_LSB</span></p>        
+        <p><span class="register" id="a_UIO_REGMAP|BRIDGE_MAC_MSB" onclick="a('UIO_REGMAP|BRIDGE_MAC_MSB');">BRIDGE_MAC_MSB</span></p>        
+        <p><span class="register" id="a_UIO_REGMAP|BRIDGE_IP" onclick="a('UIO_REGMAP|BRIDGE_IP');">BRIDGE_IP</span></p>        
+        <p><span class="register" id="a_UIO_REGMAP|BRIDGE_UDP" onclick="a('UIO_REGMAP|BRIDGE_UDP');">BRIDGE_UDP</span></p>        
+        <p><span class="register" id="a_UIO_REGMAP|BRIDGE_ENABLE" onclick="a('UIO_REGMAP|BRIDGE_ENABLE');">BRIDGE_ENABLE</span></p>        
+        <p><span class="register" id="a_UIO_REGMAP|CHDR_DROPPED" onclick="a('UIO_REGMAP|CHDR_DROPPED');">CHDR_DROPPED</span></p>        
+        <p><span class="register" id="a_UIO_REGMAP|CPU_DROPPED" onclick="a('UIO_REGMAP|CPU_DROPPED');">CPU_DROPPED</span></p>        
+        <p><span class="register" id="a_UIO_REGMAP|PAUSE" onclick="a('UIO_REGMAP|PAUSE');">PAUSE</span></p>      
+      </div>    
+    </div>    
+    <p>
+      <span class="pm" id="pm_VERSIONING_REGS_REGMAP" onclick="pm('VERSIONING_REGS_REGMAP');">+</span>
+      <span class="regmap" id="a_VERSIONING_REGS_REGMAP" onclick="a('VERSIONING_REGS_REGMAP');">VERSIONING_REGS_REGMAP</span>
+    </p>    <div class="sh" id="div_VERSIONING_REGS_REGMAP">      
+      <p>        
+        <span class="pm" id="pm_VERSIONING_REGS_REGMAP|VERSIONING_CONSTANTS" onclick="pm('VERSIONING_REGS_REGMAP|VERSIONING_CONSTANTS');">+</span>      
+        <span class="group" id="a_VERSIONING_REGS_REGMAP|VERSIONING_CONSTANTS" onclick="a('VERSIONING_REGS_REGMAP|VERSIONING_CONSTANTS');">VERSIONING_CONSTANTS</span>
+      </p>
+      <div class="sh" id="div_VERSIONING_REGS_REGMAP|VERSIONING_CONSTANTS">        
+        <p><span class="enum" id="a_VERSIONING_REGS_REGMAP|CPLD_IFC_VERSION" onclick="a('VERSIONING_REGS_REGMAP|CPLD_IFC_VERSION');">enum CPLD_IFC_VERSION</span></p>        
+        <p><span class="enum" id="a_VERSIONING_REGS_REGMAP|DB_GPIO_IFC_VERSION" onclick="a('VERSIONING_REGS_REGMAP|DB_GPIO_IFC_VERSION');">enum DB_GPIO_IFC_VERSION</span></p>        
+        <p><span class="enum" id="a_VERSIONING_REGS_REGMAP|FPGA_VERSION" onclick="a('VERSIONING_REGS_REGMAP|FPGA_VERSION');">enum FPGA_VERSION</span></p>        
+        <p><span class="enum" id="a_VERSIONING_REGS_REGMAP|RF_CORE_100M_VERSION" onclick="a('VERSIONING_REGS_REGMAP|RF_CORE_100M_VERSION');">enum RF_CORE_100M_VERSION</span></p>        
+        <p><span class="enum" id="a_VERSIONING_REGS_REGMAP|RF_CORE_400M_VERSION" onclick="a('VERSIONING_REGS_REGMAP|RF_CORE_400M_VERSION');">enum RF_CORE_400M_VERSION</span></p>      
+      </div>      
+      <p>        
+        <span class="pm" id="pm_VERSIONING_REGS_REGMAP|VERSIONING_REGS" onclick="pm('VERSIONING_REGS_REGMAP|VERSIONING_REGS');">+</span>      
+        <span class="group" id="a_VERSIONING_REGS_REGMAP|VERSIONING_REGS" onclick="a('VERSIONING_REGS_REGMAP|VERSIONING_REGS');">VERSIONING_REGS</span>
+      </p>
+      <div class="sh" id="div_VERSIONING_REGS_REGMAP|VERSIONING_REGS">        
+        <p><span class="enum" id="a_VERSIONING_REGS_REGMAP|COMPONENTS_INDEXES" onclick="a('VERSIONING_REGS_REGMAP|COMPONENTS_INDEXES');">enum COMPONENTS_INDEXES</span></p>        
+        <p><span class="register" id="a_VERSIONING_REGS_REGMAP|CURRENT_VERSION" onclick="a('VERSIONING_REGS_REGMAP|CURRENT_VERSION');">CURRENT_VERSION</span></p>        
+        <p><span class="register" id="a_VERSIONING_REGS_REGMAP|OLDEST_COMPATIBLE_VERSION" onclick="a('VERSIONING_REGS_REGMAP|OLDEST_COMPATIBLE_VERSION');">OLDEST_COMPATIBLE_VERSION</span></p>        
+        <p><span class="register" id="a_VERSIONING_REGS_REGMAP|VERSION_LAST_MODIFIED" onclick="a('VERSIONING_REGS_REGMAP|VERSION_LAST_MODIFIED');">VERSION_LAST_MODIFIED</span></p>        
+        <p><span class="register" id="a_VERSIONING_REGS_REGMAP|RESERVED" onclick="a('VERSIONING_REGS_REGMAP|RESERVED');">RESERVED</span></p>      
+      </div>    
+    </div>    
+    <p>
+      <span class="pm" id="pm_XGE_MAC_REGMAP" onclick="pm('XGE_MAC_REGMAP');">+</span>
+      <span class="regmap" id="a_XGE_MAC_REGMAP" onclick="a('XGE_MAC_REGMAP');">XGE_MAC_REGMAP</span>
+    </p>    <div class="sh" id="div_XGE_MAC_REGMAP">      
+      <p>        
+        <span class="pm" id="pm_XGE_MAC_REGMAP|OPENCORE_XGE_REGISTERS" onclick="pm('XGE_MAC_REGMAP|OPENCORE_XGE_REGISTERS');">+</span>      
+        <span class="group" id="a_XGE_MAC_REGMAP|OPENCORE_XGE_REGISTERS" onclick="a('XGE_MAC_REGMAP|OPENCORE_XGE_REGISTERS');">OPENCORE_XGE_REGISTERS</span>
+      </p>
+      <div class="sh" id="div_XGE_MAC_REGMAP|OPENCORE_XGE_REGISTERS">      
+      </div>    
+    </div>
+    </div>
+  </body>
+</HTML>

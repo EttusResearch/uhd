@@ -28,6 +28,7 @@ The following USRPs work with the free WebPack versions:
 - USRP E320: Zynq-7000 XC7Z045 (7 Series)
 - USRP N300: Zynq-7000 XC7Z035 (7 Series)
 - USRP N310/N320: Zynq-7000 XC7Z100 (7 Series)
+- USRP X410: RFSoC XCZU28DR (UltraScale+)
 
 ### Requirements
 
@@ -87,6 +88,7 @@ The following additional packages are also required and can be selected in the G
   + `e31x:` For USRP E310
   + `e320:` For USRP E320
   + `n3xx:` For USRP N300/N310/N320
+  + `x400:` For USRP X410
 
 - To add vivado to the PATH and to setup up the Ettus Xilinx build environment run
   + `source setupenv.sh` (If Vivado is installed in the default path /opt/Xilinx/Vivado) _OR_
@@ -101,7 +103,8 @@ The following additional packages are also required and can be selected in the G
 
 ### Environment Utilities
 
-The build environment also defines many ease-of-use utilities. Please use the \subpage md_usrp3_vivado_env_utils "Vivado Utility Reference" page for
+The build environment also defines many ease-of-use utilities. Please use
+the \subpage md_usrp3_vivado_env_utils "Vivado Utility Reference" page for
 a list and usage information
 
 ## Build Instructions (Xilinx ISE only)
@@ -211,6 +214,34 @@ combination of motherboard and daughterboards.
 - N320_AA: Aurora on SFP+ Port0, Aurora on SFP+ Port1
 
 For the N320 targets see also the N320 manual page on the UHD manual.
+
+#### Outputs
+- `build/usrp_<product>_fpga.bit` : Configuration bitstream with header
+- `build/usrp_<product>_fpga.dts` : Device tree overlay
+- `build/usrp_<product>_fpga.rpt` : System, utilization and timing summary report
+
+### X4x0 Targets and Outputs
+
+#### Supported Targets
+
+Unlike the USRP X310, the target types do not only describe the connector
+configuration, but also the available master clock rates. For example, the FPGA
+target type `X4_200` is configured for a 200 MHz analog bandwidth, and can
+support a 245.76 MHz or 250 MHz master clock rate.
+
+A more detailed description of the targets can be found at \ref x4xx_updating_fpga_types.
+The following targets are available through the Makefile:
+
+- `X1_100`
+- `X4_{100, 200}`
+- `XG_{100, 200}`
+- `X4_{100, 200}`
+
+The following bitstreams can be built, but are considered experimental:
+
+- `X4C_{100, 200}`
+- `C1_400`
+- `CG_{100, 400}`
 
 #### Outputs
 - `build/usrp_<product>_fpga.bit` : Configuration bitstream with header

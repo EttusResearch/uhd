@@ -1,0 +1,134 @@
+/*
+ * Copyright 2021 Ettus Research, a National Instruments Brand
+ *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
+ */
+
+&fpga_full {
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	nixge0: ethernet@1200000000 {
+		compatible = "ni,xge-enet-3.00";
+		reg = <0x12 0x00000000 0x0 0x4000
+				 0x12 0x00008000 0x0 0x2000>;
+		reg-names = "dma", "ctrl";
+
+		interrupts = <0 108 4 0 109 4>;
+		interrupt-names = "rx", "tx";
+		interrupt-parent = <&gic>;
+
+		nvmem-cells = <&eth1_addr>;
+		nvmem-cell-names = "address";
+
+		status = "okay";
+
+		phy-mode = "xgmii";
+
+		fixed-link {
+			speed = <10000>;
+			full-duplex;
+			link-gpios = <&gpio 94 0>;
+		};
+	};
+
+	nixge0_1: ethernet@1200010000 {
+		compatible = "ni,xge-enet-3.00";
+		reg = <0x12 0x00010000 0x0 0x4000
+				 0x12 0x00018000 0x0 0x2000>;
+		reg-names = "dma", "ctrl";
+
+		interrupts = <0 108 4 0 109 4>;
+		interrupt-names = "rx", "tx";
+		interrupt-parent = <&gic>;
+
+		nvmem-cells = <&eth2_addr>;
+		nvmem-cell-names = "address";
+
+		status = "okay";
+
+		phy-mode = "xgmii";
+
+		fixed-link {
+			speed = <10000>;
+			full-duplex;
+			link-gpios = <&gpio 95 0>;
+		};
+	};
+
+	nixge0_2: ethernet@1200020000 {
+		compatible = "ni,xge-enet-3.00";
+		reg = <0x12 0x00020000 0x0 0x4000
+				 0x12 0x00028000 0x0 0x2000>;
+		reg-names = "dma", "ctrl";
+
+		interrupts = <0 108 4 0 109 4>;
+		interrupt-names = "rx", "tx";
+		interrupt-parent = <&gic>;
+
+		nvmem-cells = <&eth3_addr>;
+		nvmem-cell-names = "address";
+
+		status = "okay";
+
+		phy-mode = "xgmii";
+
+		fixed-link {
+			speed = <10000>;
+			full-duplex;
+			link-gpios = <&gpio 96 0>;
+		};
+	};
+
+	nixge0_3: ethernet@1200030000 {
+		compatible = "ni,xge-enet-3.00";
+		reg = <0x12 0x00030000 0x0 0x4000
+				 0x12 0x00038000 0x0 0x2000>;
+		reg-names = "dma", "ctrl";
+
+		interrupts = <0 108 4 0 109 4>;
+		interrupt-names = "rx", "tx";
+		interrupt-parent = <&gic>;
+
+		nvmem-cells = <&eth4_addr>;
+		nvmem-cell-names = "address";
+
+		status = "okay";
+
+		phy-mode = "xgmii";
+
+		fixed-link {
+			speed = <10000>;
+			full-duplex;
+			link-gpios = <&gpio 97 0>;
+		};
+	};
+
+	misc_enet_regs_0: uio@120000A000 {
+		status = "okay";
+		compatible = "usrp-uio";
+		reg = <0x12 0x0000A000 0x0 0x2000>;
+		reg-names = "misc-enet-regs0";
+	};
+
+	misc_enet_regs_0_1: uio@120001A000 {
+		status = "okay";
+		compatible = "usrp-uio";
+		reg = <0x12 0x0001A000 0x0 0x2000>;
+		reg-names = "misc-enet-regs0-1";
+	};
+
+	misc_enet_regs_0_2: uio@120002A000 {
+		status = "okay";
+		compatible = "usrp-uio";
+		reg = <0x12 0x0002A000 0x0 0x2000>;
+		reg-names = "misc-enet-regs0-2";
+	};
+
+	misc_enet_regs_0_3: uio@120003A000 {
+		status = "okay";
+		compatible = "usrp-uio";
+		reg = <0x12 0x0003A000 0x0 0x2000>;
+		reg-names = "misc-enet-regs0-3";
+	};
+};

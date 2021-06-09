@@ -1,0 +1,41 @@
+/*
+ * Copyright 2021 Ettus Research, a National Instruments Brand
+ *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
+ */
+
+&fpga_full {
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	nixge0: ethernet@1200000000 {
+		compatible = "ni,xge-enet-3.00";
+		reg = <0x12 0x00000000 0x0 0x4000
+				 0x12 0x00008000 0x0 0x2000>;
+		reg-names = "dma", "ctrl";
+
+		interrupts = <0 108 4 0 109 4>;
+		interrupt-names = "rx", "tx";
+		interrupt-parent = <&gic>;
+
+		nvmem-cells = <&eth1_addr>;
+		nvmem-cell-names = "address";
+
+		status = "okay";
+
+		phy-mode = "xgmii";
+
+		fixed-link {
+			speed = <10000>;
+			full-duplex;
+			link-gpios = <&gpio 94 0>;
+		};
+	};
+
+	misc_enet_regs_0: uio@120000A000 {
+		status = "okay";
+		compatible = "usrp-uio";
+		reg = <0x12 0x0000A000 0x0 0x2000>;
+		reg-names = "misc-enet-regs0";
+	};
+};

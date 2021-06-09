@@ -1,0 +1,50 @@
+/*
+ * Copyright 2021 Ettus Research, a National Instruments Brand
+ *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
+ */
+
+&fpga_full {
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	misc_clk_3: misc_clk_3 {
+		#clock-cells = <0>;
+		clock-frequency = <200000000>;
+		compatible = "fixed-clock";
+	};
+
+	// AXI DMA engine + control
+	nixge_internal: ethernet@10000A4000 {
+		compatible = "ni,xge-enet-3.00";
+		reg = <0x10 0x000A4000 0x0 0x4000
+		       0x10 0x000A8000 0x0 0x2000>;
+		reg-names = "dma", "ctrl";
+
+		clocks = <&misc_clk_3>;
+		clock-names = "bus_clk";
+
+		interrupts = <0 104 4 0 105 4>;
+		interrupt-names = "tx", "rx";
+		interrupt-parent = <&gic>;
+
+		status = "okay";
+
+		phy-mode = "internal";
+		local-mac-address = <0x00 0x01 0x02 0x03 0x04 0x05>;
+
+		fixed-link {
+			speed = <1000>;
+			full-duplex;
+		};
+	};
+
+	// Misc internal Ethernet registers
+	uio@10000AA000 {
+		compatible = "usrp-uio";
+		reg = <0x10 0x000AA000 0x0 0x2000>;
+		reg-names = "misc-enet-int-regs";
+		status = "okay";
+	};
+
+};
