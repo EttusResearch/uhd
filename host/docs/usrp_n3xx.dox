@@ -297,7 +297,7 @@ that will request a network address from your DHCP server (if available on your
 network).
 
 The SFP+ (sfp0, sfp1) ports are configured with static addresses 192.168.10.2/24
-and 192.168.20.2/24, respectively. Their default MTU value is 8000. These
+and 192.168.20.2/24, respectively. Their default MTU value is 9000. These
 settings are independent of the image type (HG vs. XG), i.e., the defaults are
 the same for 1 GigE and 10 GigE (unlike the X310!).
 
@@ -328,7 +328,7 @@ The factory settings are as follows:
         Address=192.168.10.2/24
 
         [Link]
-        MTUBytes=8000
+        MTUBytes=9000
 
     sfp1 (static):
 
@@ -339,7 +339,7 @@ The factory settings are as follows:
         Address=192.168.20.2/24
 
         [Link]
-        MTUBytes=8000
+        MTUBytes=9000
 
 
 Additional notes on networking:
@@ -803,10 +803,10 @@ incorrect values. Often, the host computer MTU is set smaller than the device
 MTU, but the MTU discovery will detect a larger MTU than the host computer MTU
 in this error case.
 
-The default MTU for the N3x0 series is 8000. The simplest solution is often to
-set the host computer MTU to 8000 as well:
+The default MTU for the N3x0 series is 9000. The simplest solution is often to
+set the host computer MTU to 9000 as well:
 
-    $ [sudo] ifconfig eth0 mtu 8000 # Replace eth0 with the device you're using
+    $ [sudo] ifconfig eth0 mtu 9000 # Replace eth0 with the device you're using
 
 Of course, you can also reduce the MTU on the device to match your host
 computer, see Section \ref n3xx_getting_started_connectivity.

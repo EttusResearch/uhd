@@ -6,4 +6,4 @@ Address=169.254.0.1/24
 IPForward=ipv4
 
 [Link]
-MTUBytes=8000
+MTUBytes=9000

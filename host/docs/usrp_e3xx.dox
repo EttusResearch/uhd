@@ -459,7 +459,7 @@ The factory settings are as follows:
         Address=192.168.10.2/24
 
         [Link]
-        MTUBytes=8000
+        MTUBytes=9000
 
 Note: Care needs to be taken when editing these files on the device, since
 vi / vim sometimes generates undo files (e.g. /etc/systemd/networkd/sfp0.network~),
