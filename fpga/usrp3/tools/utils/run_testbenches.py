@@ -210,8 +210,8 @@ def run_sim(path, simulator, basedir, setupenv):
         # Run the simulation
         return parse_output(
             subprocess.check_output(
-                'cd {workingdir}; /bin/bash -c "{setupenv} make {simulator} 2>&1"'.format(
-                    workingdir=os.path.join(basedir, path), setupenv=setupenv, simulator=simulator), shell=True))
+                'cd {workingdir}; /bin/bash -c "{setupenv} make ip 2>&1; make {simulator} 2>&1"'.format(
+                    workingdir=path, setupenv=setupenv, simulator=simulator), shell=True))
     except subprocess.CalledProcessError as e:
         return {'retcode': int(abs(e.returncode)), 'passed':False, 'stdout':e.output}
     except Exception as e:
@@ -279,9 +279,19 @@ def do_run(args):
     # Wait for build queue to become empty
     start = datetime.datetime.now()
     try:
+        sim_count = -1
         while out_queue.qsize() < num_sims:
             tdiff = str(datetime.datetime.now() - start).split('.', 2)[0]
-            print("\r>>> [%s] (%d/%d simulations completed) <<<" % (tdiff, out_queue.qsize(), num_sims), end='\r', flush=True)
+            if args.logged:
+                # Print number of TBs completed and elapsed time whenever a
+                # simulation completes.
+                if sim_count != out_queue.qsize():
+                    print(">>> [%s] (%d/%d simulations completed) <<<" % (tdiff, out_queue.qsize(), num_sims))
+                    sim_count = out_queue.qsize()
+            else:
+                # Print elapsed time and number of TBs completed once per
+                # second, overwriting the same line each time.
+                print("\r>>> [%s] (%d/%d simulations completed) <<<" % (tdiff, out_queue.qsize(), num_sims), end='\r', flush=True)
             time.sleep(1.0)
         sys.stdout.write("\n")
     except (KeyboardInterrupt):
@@ -296,8 +306,10 @@ def do_run(args):
     while not out_queue.empty():
         (name, result) = out_queue.get()
         results[name] = result
-        log_with_header(name)
+        line = "#"*70
+        sys.stdout.buffer.write(bytes('%s\n Begin TB Log: %s\n%s\n' % (line, name, line), 'utf-8'))
         sys.stdout.buffer.write(result['stdout'])
+        sys.stdout.buffer.write(bytes('%s\n End TB Log: %s\n%s\n' % (line, name, line), 'utf-8'))
         if not result['passed']:
             result_all += 1
     sys.stdout.write('\n\n\n')
@@ -370,12 +382,13 @@ def do_report(args):
 # Parse command line options
 def get_options():
     parser = argparse.ArgumentParser(description='Batch testbench execution script')
-    parser.add_argument('-d', '--basedir', default=BASE_DIR, help='Base directory for the usrp3 codebase')
+    parser.add_argument('-d', '--basedir', default=BASE_DIR, help='Base directory in which to search for testbenches')
     parser.add_argument('-s', '--simulator', choices=['xsim', 'vsim', 'modelsim'], default='xsim', help='Simulator name')
     parser.add_argument('-e', '--setupenv', default=None, help='Optional environment setup script to run for each TB')
     parser.add_argument('-r', '--report', default='testbench_report.csv', help='Name of the output report file')
-    parser.add_argument('-x', '--excludes', default=None, help='Name of the excludes file. It contains all targets to exlude.')
+    parser.add_argument('-x', '--excludes', default=None, help='Name of the excludes file. It contains all targets to exclude.')
     parser.add_argument('-j', '--jobs', default=1, help='Number of parallel simulation jobs to run')
+    parser.add_argument('-l', '--logged', action='store_true', default=False, help='Output is logged, so don\'t show per-second timer')
     parser.add_argument('action', choices=['run', 'cleanup', 'list', 'report'], default='list', help='What to do?')
     parser.add_argument('target', nargs='*', default='.*', help='Space separated simulation target regexes')
     return parser.parse_args()
