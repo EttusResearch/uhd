@@ -404,11 +404,11 @@ The "software defined" mode can be enabled for the DSA tables by using the
 If you need to update the ZBX CPLD, you can do so by running the following command
 on the device:
 
-    python3 /usr/lib/python3.?/site-packages/usrp_mpm/dboard_manager/zbx_update_cpld.py
+    zbx_update_cpld
 
-By default, the script will attempt to install an image from the default path to
-both daughterboards. To specify which file or dboards to program, use the
-following options when running the updater script:
+By default, this command will update the the CPLDs on both daughterboards with
+the image from the default path.  To specify the image or daughterboards to
+program, use the following options:
 
 - `--dboards=0,1`
 - `--file=<path_to_cpld_image>`
@@ -449,9 +449,7 @@ the daughterboard is working before attempting this.
 To specify a programming mode, use the `--updater` argument. For example, to
 force the legacy mode, use the following command:
 
-    python3 /usr/lib/python3.?/site-packages/usrp_mpm/dboard_manager/zbx_update_cpld.py \
-        --updater=legacy \
-	--file=/lib/firmware/ni/cpld-zbx.svf
+    zbx_update_cpld --updater=legacy --file=/lib/firmware/ni/cpld-zbx.svf
 
 This will program the image from the default location onto the CPLD using the
 'legacy' method.
