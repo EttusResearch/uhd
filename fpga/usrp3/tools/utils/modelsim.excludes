@@ -1,0 +1,18 @@
+#
+# Copyright 2021 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+# This file contains all testbenches to exclude from the list discovered
+# by run_testbenches.py for the ModelSim simulator.
+#
+
+top/e31x/sim/dram_test
+top/n3xx/sim/arm_to_sfp_loopback
+top/n3xx/sim/aurora_loopback
+top/n3xx/sim/one_gig_eth_loopback
+top/n3xx/sim/ten_gig_eth_loopback
+top/x300/sim/x300_pcie_int
+
+# This TB doesn't pass in ModelSim
+top/x300/sim/dram_fifo_bist
