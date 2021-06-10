@@ -78,8 +78,8 @@ VHD_ARGS_FILE=vcomarglist.txt
 # Replace any directories with the sources they contain
 SOURCES=
 SOURCES+=$(replace_dirs_with_source $VLINT_INC_SRCS)
-SOURCES+=$(replace_dirs_with_source $VLINT_SIM_SRCS)
 SOURCES+=$(replace_dirs_with_source $VLINT_DESIGN_SRCS)
+SOURCES+=$(replace_dirs_with_source $VLINT_SIM_SRCS)
 
 # Separate the files by type and determine include directories to use
 V_FILES=
