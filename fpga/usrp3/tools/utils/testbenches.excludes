@@ -1,6 +1,5 @@
-# This file contains all testbenches to exlcude from the filter
-# list discovered by run_testbenches.py
-# NOTE: Lines containing "#" are treated as a comment
+# This file contains all testbenches to exlcude from the filter list discovered
+# by run_testbenches.py with the Vivado simulator (xsim).
 
 top/e31x/sim/dram_test
 top/n3xx/sim/arm_to_sfp_loopback
@@ -15,3 +14,4 @@ lib/axi4s_sv/axi4s_add_bytes_tb
 lib/rfnoc/xport_sv/eth_interface_tb
 top/x400/sim/x4xx_qsfp_wrapper
 top/x400/ip/eth_100g_bd/lbus_tb
+top/x400/rf/sim

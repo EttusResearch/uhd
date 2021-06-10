@@ -1,0 +1,15 @@
+#
+# Copyright 2021 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+RF_100M_SRCS = $(abspath $(addprefix $(BASE_DIR)/../top/x400/rf/100m/, \
+adc_3_1_clk_converter.vhd \
+dac_1_3_clk_converter.vhd \
+dac_2_1_clk_converter.vhd \
+adc_gearbox_2x1.v \
+ddc_saturate.vhd \
+duc_saturate.vhd \
+rf_core_100m.v \
+))

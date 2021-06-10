@@ -1,0 +1,11 @@
+#
+# Copyright 2021 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+RF_200M_SRCS = $(abspath $(addprefix $(BASE_DIR)/../top/x400/rf/200m/, \
+rf_down_4to2.v \
+rf_up_2to4.v \
+rf_core_200m.v \
+))

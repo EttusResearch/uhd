@@ -1,0 +1,18 @@
+#
+# Copyright 2021 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+RF_COMMON_SRCS = $(abspath $(addprefix $(BASE_DIR)/../top/x400/rf/common/, \
+PkgRf.vhd \
+axis_mux.vhd \
+capture_sysref.v \
+clock_gates.vhd \
+gpio_to_axis_mux.vhd \
+rf_nco_reset.vhd \
+rf_reset.vhd \
+rf_reset_controller.vhd \
+scale_2x.vhd \
+sync_wrapper.v \
+))
