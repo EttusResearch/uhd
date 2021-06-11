@@ -45,7 +45,27 @@ function print_color {
 
 # Using -voptargs=+acc makes everything visible in the simulator for GUI mode
 # and avoids some cases where simulation mismatch could otherwise occur.
-MSIM_DEFAULT="-voptargs=+acc -quiet -L unisims_ver"
+# Setting -onfinish to "stop" prevents the simulator from immediately trying to
+# exit when finish() is called. This is annoying in the GUI and important for
+# error detection in batch mode.
+MSIM_DEFAULT="-voptargs=+acc -quiet -L unisims_ver -onfinish stop"
+
+# DO file to execute in batch mode. This script runs the simulation and adds
+# detection of error/failure assertions so that non-zero values are returned by
+# ModelSim when the testbench doesn't pass. Calling std.env.finish() or
+# $finish() will return 0. Detecting $fatal() requires that -onfinish be set to
+# stop so the simulator doesn't quit before the DO file finishes.
+DO_SCRIPT="\
+quietly set BreakOnAssertion 2                           ;\
+quietly set SIM_ERROR 0                                  ;\
+onbreak {                                                ;\
+    quietly set FINISH [lindex [runStatus -full] 2]      ;\
+    if {\$FINISH eq \"unknown\"} { set SIM_ERROR 255 }   ;\
+}                                                        ;\
+onerror { set SIM_ERROR 255 }                            ;\
+run -all                                                 ;\
+quit -force -code \$SIM_ERROR                            ;\
+"
 
 # Use specified modelsim.ini, if set
 if [[ -z $MSIM_MODELSIM_INI ]]; then
@@ -72,7 +92,7 @@ if [ $MSIM_MODE == "gui" ]; then
     if [ ${exit_status} -ne 0 ]; then exit ${exit_status}; fi
 elif [ $MSIM_MODE == "batch" ]; then
     echo "* Launching ModelSim"
-    vsim -batch -do "run -all; quit -f" $MODELSIMINI_ARG $MSIM_DEFAULT $MSIM_ARGS $MSIM_LIB_ARGS $MSIM_SIM_TOP 2>&1 | while IFS= read -r line; do
+    vsim -batch -do "$DO_SCRIPT" $MODELSIMINI_ARG $MSIM_DEFAULT $MSIM_ARGS $MSIM_LIB_ARGS $MSIM_SIM_TOP 2>&1 | while IFS= read -r line; do
         print_color $line
     done
     exit_status=${PIPESTATUS[0]}
