@@ -40,6 +40,29 @@ def get_rfdc_config(log):
     return rdfc_regs_control.get_rfdc_resampling_factor(0)
 
 
+def db_bist(test_fn):
+    def inner(self):
+        db_ids = [0, 1]
+
+        db_id = self.args.option.get('db_id')
+        if db_id is not None:
+            db_id = int(db_id)
+            assert db_id in [0, 1]
+            db_ids = [db_id]
+
+        test_status = True
+        test_result = {}
+        for db_id in db_ids:
+            status, result = test_fn(self, db_id)
+            test_status &= status
+            test_result[f"db{db_id}"] = result
+            if 'error_msg' in result:
+                msg = f"db{db_id}: " + result['error_msg'] + "\n"
+                test_result['error_msg'] = test_result.get('error_msg', '') + msg
+        return test_status, test_result
+    return inner
+
+
 ##############################################################################
 # Bist class
 ##############################################################################
@@ -840,7 +863,8 @@ class X4XXBIST(bist.UsrpBIST):
         if db_flash.initialized:
             raise RuntimeError()
 
-    def bist_spi_flash_integrity(self):
+    @db_bist
+    def bist_spi_flash_integrity(self, db_id):
         """
         BIST for SPI flash on DB
         Description: Performs data integrity test on a section of
@@ -856,13 +880,11 @@ class X4XXBIST(bist.UsrpBIST):
         assert 'spi_flash_integrity' in self.tests_to_run
         if self.args.dry_run:
             return True, {}
+
         import os
         from usrp_mpm.sys_utils.db_flash import DBFlash
         FIXED_MEMORY_PATTERN = 'fixed'
         RANDOM_MEMORY_PATTERN = 'random'
-
-        db_id = int(self.args.option.get('db_id', DEFAULT_DB_ID))
-        assert db_id in [0, 1]
 
         db_flash = DBFlash(db_id, log=None)
 
@@ -901,7 +923,8 @@ class X4XXBIST(bist.UsrpBIST):
 
         return data_valid, {}
 
-    def bist_spi_flash_speed(self):
+    @db_bist
+    def bist_spi_flash_speed(self, db_id):
         """
         BIST for SPI flash on DB
         Description: Performs read and write speed test on the SPI flash
@@ -917,6 +940,7 @@ class X4XXBIST(bist.UsrpBIST):
         assert 'spi_flash_speed' in self.tests_to_run
         if self.args.dry_run:
             return True, {}
+
         import os
         import re
         from usrp_mpm.sys_utils.db_flash import DBFlash
@@ -935,11 +959,8 @@ class X4XXBIST(bist.UsrpBIST):
                 raise ValueError(f"unsupported unit '{order}B/s'")
             return float(mobj.group('speed')) * scale[order]
 
-        db_id = int(self.args.option.get('db_id', DEFAULT_DB_ID))
-        assert db_id in [0, 1]
 
         db_flash = DBFlash(db_id, log=None)
-
         file_path = f'/mnt/db{db_id}_flash/test.bin'
 
         try:
@@ -1035,7 +1056,6 @@ class X4XXBIST(bist.UsrpBIST):
             "Write Test": write_test_output if write_error_msg is None else write_error_msg,
             "Read Test": read_test_output if read_error_msg is None else read_error_msg
         }
-
 
 ##############################################################################
 # main
