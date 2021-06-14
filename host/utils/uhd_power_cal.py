@@ -74,7 +74,7 @@ def parse_args():
         help="Select antenna port. A value of '*' means that the calibration "
              "will be repeated on all appropriate antenna ports.")
     parser.add_argument(
-        '--channels', default="0",
+        '--channels', default="*",
         help="Select channel. A value of '*' means that the calibration "
              "will be repeated on all appropriate channels.")
     parser.add_argument(
