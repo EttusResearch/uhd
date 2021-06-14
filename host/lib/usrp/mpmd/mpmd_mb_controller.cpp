@@ -125,6 +125,13 @@ std::string mpmd_mb_controller::get_mboard_name() const
 void mpmd_mb_controller::set_time_source(const std::string& source)
 {
     _rpc->get_raw_rpc_client()->notify_with_token(MPMD_DEFAULT_LONG_TIMEOUT, "set_time_source", source);
+    if (!_sync_source_updaters.empty()) {
+        mb_controller::sync_source_t sync_source;
+        sync_source["time_source"] = source;
+        for (const auto& updater : _sync_source_updaters) {
+            updater(sync_source);
+        }
+    }
 }
 
 std::string mpmd_mb_controller::get_time_source() const
@@ -140,6 +147,13 @@ std::vector<std::string> mpmd_mb_controller::get_time_sources() const
 void mpmd_mb_controller::set_clock_source(const std::string& source)
 {
     _rpc->get_raw_rpc_client()->notify_with_token(MPMD_DEFAULT_LONG_TIMEOUT, "set_clock_source", source);
+    if (!_sync_source_updaters.empty()) {
+        mb_controller::sync_source_t sync_source;
+        sync_source["clock_source"] = source;
+        for (const auto& updater : _sync_source_updaters) {
+            updater(sync_source);
+        }
+    }
 }
 
 std::string mpmd_mb_controller::get_clock_source() const
@@ -169,6 +183,11 @@ void mpmd_mb_controller::set_sync_source(const device_addr_t& sync_source)
     }
     _rpc->get_raw_rpc_client()->notify_with_token(
         MPMD_DEFAULT_LONG_TIMEOUT, "set_sync_source", sync_source_map);
+    if (!_sync_source_updaters.empty()) {
+        for (const auto& updater : _sync_source_updaters) {
+            updater(sync_source);
+        }
+    }
 }
 
 device_addr_t mpmd_mb_controller::get_sync_source() const
@@ -258,4 +277,10 @@ void mpmd_mb_controller::set_gpio_src(
         throw uhd::key_error(std::string("Invalid GPIO bank: ") + bank);
     }
     _rpc->set_gpio_src(bank, src);
+}
+
+void mpmd_mb_controller::register_sync_source_updater(
+    mb_controller::sync_source_updater_t callback_f)
+{
+    _sync_source_updaters.push_back(callback_f);
 }

@@ -101,6 +101,8 @@ public:
     std::vector<std::string> get_gpio_src(const std::string& bank) override;
     void set_gpio_src(
         const std::string& bank, const std::vector<std::string>& src) override;
+    void register_sync_source_updater(
+        mb_controller::sync_source_updater_t callback_f) override;
 
 private:
     /**************************************************************************
@@ -117,6 +119,8 @@ private:
     //! Cache of available GPIO sources
     std::vector<std::string> _gpio_banks;
     std::unordered_map<std::string, std::vector<std::string>> _gpio_srcs;
+
+    std::vector<mb_controller::sync_source_updater_t> _sync_source_updaters;
 
 public:
     /*! When the FPGA is reloaded, pass the notification to every Radio block

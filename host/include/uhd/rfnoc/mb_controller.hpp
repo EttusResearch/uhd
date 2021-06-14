@@ -27,6 +27,14 @@ class UHD_API mb_controller : public uhd::noncopyable,
 {
 public:
     using sptr = std::shared_ptr<mb_controller>;
+    using sync_source_t = device_addr_t;
+
+    /*! Callback function for changing sync sources
+     *
+     * When a sync source is changed, the sync source callback function is called
+     * to notify any registrants of the update
+     */
+    using sync_source_updater_t = std::function<void(const sync_source_t& sync_source)>;
 
     virtual ~mb_controller() {}
 
@@ -386,6 +394,16 @@ public:
      */
     virtual void set_gpio_src(
         const std::string& bank, const std::vector<std::string>& src);
+
+    /*! Register a callback function to update sync sources
+     *
+     * This callback alerts those registered that a change has
+     * occurred to a sync source, whether that be the clock_source,
+     * time_source, or both via sync_source.
+     *
+     * \param callback_f The function to call when a sync source is updated
+     */
+    virtual void register_sync_source_updater(sync_source_updater_t callback_f);
 
 protected:
     /*! Stash away a timekeeper. This needs to be called by the implementer of

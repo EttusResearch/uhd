@@ -191,3 +191,9 @@ void mb_controller::set_gpio_src(const std::string&, const std::vector<std::stri
 {
     throw uhd::not_implemented_error("set_gpio_src() not supported on this motherboard!");
 }
+
+void mb_controller::register_sync_source_updater(mb_controller::sync_source_updater_t)
+{
+    throw uhd::not_implemented_error(
+        "register_sync_source_updater() not supported on this motherboard!");
+}
