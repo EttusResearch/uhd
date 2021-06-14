@@ -557,6 +557,10 @@ package PkgEthernet;
     // clear bytes that aren't marked as valid by keep
     function void  clear_unused_bytes();
       keep_t last_tkeep;
+
+      // check for empty packet, in which case there's nothing to clear
+      if (this.data.size() == 0) return;
+
       last_tkeep = this.keep[$];
       // check that the last user is the same as the last keep
       assert (this.keep[$] == calc_last_tkeep(this.user[$])) else
