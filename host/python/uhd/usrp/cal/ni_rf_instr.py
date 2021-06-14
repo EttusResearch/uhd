@@ -247,7 +247,11 @@ class RFSADevice:
                 return mean_val.value
             except OSError as ex:
                 # increase ref level on ADC or DSA overload
-                if getattr(ex, 'winerror') in [373002, 373003]:
+                if getattr(ex, 'winerror') in [
+                    0x0005B10A, # DSP overflow (RFSA)
+                    0x0005B10B, # ADC overload (RFSA)
+                    0x3FFA9001, # ADC overload (mxl)
+                    ]:
                     self.set_reference_level(self.get_reference_level() + 5)
                 else:
                     raise ex
