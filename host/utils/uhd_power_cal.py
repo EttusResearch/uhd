@@ -125,7 +125,7 @@ def sanitize_args(usrp, args, default_rate):
     print("=== Calibrating for channels:", ", ".join([str(x) for x in channels]))
     available_ants = getattr(usrp, 'get_{}_antennas'.format(args.dir))()
     if args.antenna == '*':
-        invalid_antennas = ('CAL', 'LOCAL')
+        invalid_antennas = ('CAL', 'LOCAL', 'CAL_LOOPBACK', 'TERMINATION')
         antennas = [x for x in available_ants if x not in invalid_antennas]
     else:
         try:
