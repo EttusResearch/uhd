@@ -101,6 +101,8 @@ fir_filter_slice.v \
 axi_fir_filter_dec.v \
 addsub.vhd \
 dds_freq_tune.v \
+dds_freq_tune_duc.v \
 dds_timed.v \
+dds_wrapper.v \
 datapath_gatekeeper.v \
 ))
