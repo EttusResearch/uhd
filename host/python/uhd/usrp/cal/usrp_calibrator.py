@@ -42,9 +42,11 @@ def get_default_gains(direction, gain_range, gain_step):
     Create a equidistant gain range for calibration
     """
     assert direction in ('rx', 'tx')
-    if direction == 'tx':
-        return numpy.arange(0, gain_range.stop(), gain_step)
-    return numpy.arange(gain_range.stop(), 0, -gain_step)
+    result = numpy.arange(0, gain_range.stop() + gain_step, gain_step)
+    # reverse measurement points in RX so we can break cal loop once signal is too low
+    if direction == 'rx':
+        result = numpy.flip(result)
+    return result
 
 def get_usrp_power(streamer, num_samps=NUM_SAMPS_PER_EST, chan=0):
     """
@@ -159,9 +161,12 @@ class USRPCalibratorBase:
         If a particular device needs to check specific frequencies, then
         override this.
         """
+        step = step_hint or DEFAULT_FREQ_STEP
         start_min = self.min_freq or \
             getattr(self._usrp, 'get_{}_freq_range'.format(self._dir))(
                 self._chan).start()
+        if not start_hint and (start_min < step):
+            start_min = step
         start_hint = start_hint or start_min
         start = max(start_hint, start_min)
         stop_max = self.max_freq or \
@@ -169,8 +174,7 @@ class USRPCalibratorBase:
                 self._chan).stop()
         stop_hint = stop_hint or stop_max
         stop = min(stop_hint, stop_max)
-        step = step_hint or DEFAULT_FREQ_STEP
-        return numpy.arange(start, stop + 1.0, step)
+        return numpy.arange(start, stop + step, step)
 
     def init_frequencies(self, start_hint, stop_hint, step_hint):
         """
