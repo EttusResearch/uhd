@@ -411,11 +411,9 @@ def get_usrp_calibrator(usrp, meas_dev, direction, **kwargs):
         raise RuntimeError("Could not determine USRP type!")
     print("=== Detected USRP type:", usrp_type)
     for _, obj in inspect.getmembers(sys.modules[__name__]):
-        try:
-            if issubclass(obj, USRPCalibratorBase) \
-                    and usrp_type in getattr(obj, 'mboard_ids', ''):
-                return obj(usrp, meas_dev, direction, **kwargs)
-        except TypeError:
-            continue
+        if (inspect.isclass(obj) and
+            issubclass(obj, USRPCalibratorBase) and
+            usrp_type in getattr(obj, 'mboard_ids', '')):
+            return obj(usrp, meas_dev, direction, **kwargs)
     raise RuntimeError("No USRP calibrator object found for device type: {}"
                        .format(usrp_type))
