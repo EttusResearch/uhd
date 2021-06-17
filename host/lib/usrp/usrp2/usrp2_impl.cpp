@@ -15,10 +15,10 @@
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhdlib/usrp/common/apply_corrections.hpp>
-#include <boost/asio.hpp> //used for htonl and ntohl
+#include <boost/asio.hpp>
 #include <boost/asio/ip/address_v4.hpp>
 #include <boost/format.hpp>
-#include <boost/thread.hpp>
+#include <boost/math/special_functions.hpp>
 #include <functional>
 
 using namespace uhd;
