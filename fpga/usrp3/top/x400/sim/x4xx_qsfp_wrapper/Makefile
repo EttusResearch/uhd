@@ -79,6 +79,8 @@ $(IP_100G_BD_SRCS) \
 # ModelSim Specific
 #-------------------------------------------------
 
+# Note: ipshared/*/hdl/sc_util_*_rfs.sv needs to be compiled before the rest of
+# the ipshared files.
 IP_AXI_ETH_DMA_BD_HDL_SIM_SRCS = $(wildcard $(addprefix $(IP_BUILD_DIR)/axi_eth_dma_bd/axi_eth_dma_bd/, \
 sim/axi_eth_dma_bd.v \
 ip/*/sim/*.h \
@@ -89,6 +91,7 @@ ip/*/bd_0/sim/*.v \
 ip/*/bd_0/ip/ip_*/sim/*.v \
 ip/*/bd_0/ip/ip_*/sim/*.sv \
 ip/*/bd_0/ip/ip_*/sim/*.vhd \
+ipshared/*/hdl/sc_util_*_rfs.sv \
 ipshared/*/hdl/*.sv \
 ipshared/*/hdl/*.v \
 ipshared/*/simulation/*.v \
