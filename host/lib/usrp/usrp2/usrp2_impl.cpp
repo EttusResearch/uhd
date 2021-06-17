@@ -24,7 +24,6 @@
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
-namespace asio = boost::asio;
 
 // A reasonable number of frames for send/recv and async/sync
 static const size_t DEFAULT_NUM_FRAMES = 32;
@@ -75,7 +74,7 @@ device_addrs_t usrp2_find(const device_addr_t& hint_)
     if (not hint.has_key("addr")) {
         for (const if_addrs_t& if_addrs : get_if_addrs()) {
             // avoid the loopback device
-            if (if_addrs.inet == asio::ip::address_v4::loopback().to_string())
+            if (if_addrs.inet == boost::asio::ip::address_v4::loopback().to_string())
                 continue;
 
             // create a new hint with this broadcast address
@@ -98,8 +97,8 @@ device_addrs_t usrp2_find(const device_addr_t& hint_)
         udp_transport = udp_simple::make_broadcast(
             hint["addr"], BOOST_STRINGIZE(USRP2_UDP_CTRL_PORT));
     } catch (const std::exception& e) {
-        UHD_LOGGER_ERROR("USRP2") << boost::format("Cannot open UDP transport on %s\n%s")
-                                         % hint["addr"] % e.what();
+        UHD_LOGGER_ERROR("USRP2")
+            << "Cannot open UDP transport on " << hint["addr"] << ": " << e.what();
         return usrp2_addrs; // dont throw, but return empty address so caller can insert
     }
 
@@ -120,7 +119,7 @@ device_addrs_t usrp2_find(const device_addr_t& hint_)
     const usrp2_ctrl_data_t* ctrl_data_in =
         reinterpret_cast<const usrp2_ctrl_data_t*>(usrp2_ctrl_data_in_mem);
     while (true) {
-        size_t len = udp_transport->recv(asio::buffer(usrp2_ctrl_data_in_mem));
+        size_t len = udp_transport->recv(boost::asio::buffer(usrp2_ctrl_data_in_mem));
         if (len > offsetof(usrp2_ctrl_data_t, data)
             and ntohl(ctrl_data_in->id) == USRP2_CTRL_ID_WAZZUP_DUDE) {
             // make a boost asio ipv4 with the raw addr in host byte order
@@ -138,7 +137,7 @@ device_addrs_t usrp2_find(const device_addr_t& hint_)
             udp_simple::sptr ctrl_xport = udp_simple::make_connected(
                 new_addr["addr"], BOOST_STRINGIZE(USRP2_UDP_CTRL_PORT));
             ctrl_xport->send(boost::asio::buffer(&ctrl_data_out, sizeof(ctrl_data_out)));
-            size_t len = ctrl_xport->recv(asio::buffer(usrp2_ctrl_data_in_mem));
+            size_t len = ctrl_xport->recv(boost::asio::buffer(usrp2_ctrl_data_in_mem));
             if (len > offsetof(usrp2_ctrl_data_t, data)
                 and ntohl(ctrl_data_in->id) == USRP2_CTRL_ID_WAZZUP_DUDE) {
                 // found the device, open up for communication!
@@ -350,9 +349,9 @@ usrp2_impl::usrp2_impl(const device_addr_t& _device_addr)
         device_addr["send_frame_size"] = std::to_string(mtu.send_mtu);
 
         UHD_LOGGER_INFO("USRP2")
-            << boost::format("Current recv frame size: %d bytes") % mtu.recv_mtu;
+            << "Current recv frame size: " << mtu.recv_mtu << " bytes";
         UHD_LOGGER_INFO("USRP2")
-            << boost::format("Current send frame size: %d bytes") % mtu.send_mtu;
+            << "Current send frame size: " << mtu.send_mtu << " bytes";
     } catch (const uhd::not_implemented_error&) {
         // just ignore this error, makes older fw work...
     }
@@ -635,7 +634,7 @@ usrp2_impl::usrp2_impl(const device_addr_t& _device_addr)
                 .add_coerced_subscriber(std::bind(&rx_dsp_core_200::set_tick_rate,
                     _mbc[mb].rx_dsps[dspno],
                     std::placeholders::_1));
-            fs_path rx_dsp_path = mb_path / str(boost::format("rx_dsps/%u") % dspno);
+            fs_path rx_dsp_path = mb_path / "rx_dsps" / dspno;
             _tree->create<meta_range_t>(rx_dsp_path / "rate/range")
                 .set_publisher(
                     std::bind(&rx_dsp_core_200::get_host_rates, _mbc[mb].rx_dsps[dspno]));
