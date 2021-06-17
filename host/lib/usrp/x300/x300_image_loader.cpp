@@ -218,8 +218,20 @@ static void x300_setup_session(x300_session_t& session,
         session.rpc_port = args.get("rpc-port", "5444");
     }
 
+    // The product name is used for the FPGA bitfile name, but ni-2974 is actually
+    // the same as x310, so we need to sanitize that first. We also want to make
+    // sure we are using the lowercase version, whatever UHD returns, because
+    // our filenames are lowercase.
+    const std::string sanitized_product_name = [&]() -> std::string {
+        const std::string product_name = to_lower_copy(session.dev_addr["product"]);
+        if (product_name == "ni-2974") {
+            return "x310";
+        }
+        return product_name;
+    }();
+
     /*
-     * The user can specify an FPGA type (1G, HGS, XGS), rather than a filename. If the
+     * The user can specify an FPGA type (HG, XG), rather than a filename. If the
      * user does not specify one, this will default to the type currently on the device.
      * If this cannot be determined, then the user is forced to specify a filename.
      */
@@ -229,29 +241,31 @@ static void x300_setup_session(x300_session_t& session,
             throw uhd::runtime_error(
                 "Found a device but could not auto-generate an image filename.");
         } else {
-            std::string fpga_file_type = to_lower_copy(session.dev_addr["product"]);
-            if (fpga_file_type == "ni-2974") {
-                fpga_file_type = "x310";
-            }
-            session.filepath = find_image_path(str(boost::format("usrp_%s_fpga_%s.bit")
-                                                   % fpga_file_type % session.fpga_type));
+            session.filepath =
+                find_image_path("usrp" + sanitized_product_name +  
+                                "_fpga_" + session.fpga_type + ".bit");
         }
-    } else
+    } else {
+        session.fpga_type = "";
         session.filepath = filepath;
+    }
 
     /*
      * The user can specify an output image path, or UHD will use the
      * system temporary path by default
      */
     if (outpath.empty()) {
-        if (!session.dev_addr.has_key("product") or session.fpga_type.empty()) {
-            throw uhd::runtime_error(
-                "Found a device but could not auto-generate an image filename.");
+        const std::string system_type =
+            args.get("fpga", session.dev_addr.get("fpga", ""));
+        if (!session.dev_addr.has_key("product") || system_type.empty()) {
+            // Warning, not an exception: We might not even need this value later.
+            // If we do need it, we throw in x300_ethernet_read().
+            std::cout << "-- WARNING: Found a device but could not auto-generate an "
+                         "output image filename."
+                      << std::endl;
         }
-        std::string filename =
-            str(boost::format("usrp_%s_fpga_%s")
-                % (to_lower_copy(session.dev_addr["product"])) % session.fpga_type);
-
+        const std::string filename =
+            "usrp_" + sanitized_product_name + "_fpga_" + session.fpga_type;
         session.outpath = get_tmp_path() + "/" + filename;
     } else {
         session.outpath = outpath;
@@ -324,8 +338,8 @@ static void x300_ethernet_load(x300_session_t& session)
     // Each sector
     for (size_t i = 0; i < session.size; i += X300_FLASH_SECTOR_SIZE) {
         // Print progress percentage at beginning of each sector
-        std::cout << boost::format("\r-- Loading %s FPGA image: %d%% (%d/%d sectors)")
-                         % session.fpga_type
+        std::cout << boost::format("\r-- Loading %sFPGA image: %d%% (%d/%d sectors)")
+                         % (session.fpga_type.empty() ? "" : (session.fpga_type + " "))
                          % (int(double(i) / double(session.size) * 100.0))
                          % (i / X300_FLASH_SECTOR_SIZE) % sectors
                   << std::flush;
@@ -381,8 +395,9 @@ static void x300_ethernet_load(x300_session_t& session)
         image.close();
     }
 
-    std::cout << boost::format("\r-- Loading %s FPGA image: 100%% (%d/%d sectors)")
-                     % session.fpga_type % sectors % sectors
+    std::cout << boost::format("\r-- Loading %sFPGA image: 100%% (%d/%d sectors)")
+                     % (session.fpga_type.empty() ? "" : (session.fpga_type + " "))
+                     % sectors % sectors
               << std::endl;
 
     // Cleanup
@@ -416,9 +431,8 @@ static void x300_ethernet_load(x300_session_t& session)
         } else
             std::cout << "successful." << std::endl;
     }
-    std::cout << str(boost::format("Power-cycle the USRP %s to use the new image.")
-                     % session.dev_addr.get("product", ""))
-              << std::endl;
+    std::cout << "Power-cycle the USRP " << session.dev_addr.get("product", "")
+              << " to use the new image." << std::endl;
 }
 
 static void x300_ethernet_read(x300_session_t& session)
@@ -487,6 +501,10 @@ static void x300_ethernet_read(x300_session_t& session)
             extension  = std::string(".bin");
             break;
         }
+    }
+
+    if (session.outpath.empty()) {
+        throw uhd::runtime_error("No output path specified, and none could be inferred!");
     }
 
     session.outpath += extension;
@@ -573,8 +591,8 @@ static void x300_ethernet_read(x300_session_t& session)
 static void x300_pcie_load(x300_session_t& session)
 {
     std::cout << boost::format(
-                     "\r-- Loading %s FPGA image (this will take 5-10 minutes)...")
-                     % session.fpga_type
+                     "\r-- Loading %sFPGA image (this will take 5-10 minutes)...")
+                     % (session.fpga_type.empty() ? "" : (session.fpga_type + " "))
               << std::flush;
 
     nirio_status status = NiRio_Status_Success;
@@ -588,9 +606,8 @@ static void x300_pcie_load(x300_session_t& session)
             status, "NI-RIO reported the following error:");
     } else
         std::cout << "successful." << std::endl;
-    std::cout << str(boost::format("Power-cycle the USRP %s to use the new image.")
-                     % session.dev_addr.get("product", ""))
-              << std::endl;
+    std::cout << "Power-cycle the USRP " << session.dev_addr.get("product", "")
+              << " to use the new image." << std::endl;
 }
 
 static bool x300_image_loader(const image_loader::image_loader_args_t& image_loader_args)
