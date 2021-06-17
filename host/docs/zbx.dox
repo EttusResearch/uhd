@@ -41,7 +41,7 @@ amplifiers as well as DSAs). All LO synthesizers are identical (LMX2572).
 \subsection zbx_too_cpld Digital Control
 
 For digital controls, the ZBX includes a CPLD (its source code is part of the
-UHD repository, and can be found under `fpga/usrp3/top/x400/dboards/zr/cpld/`).
+UHD repository, and can be found under `fpga/usrp3/top/x400/dboards/zbx/cpld/`).
 The CPLD is controlled via registers. Its register space is exposed as a subset
 of the Radio RFNoC block register space (starting at address 0x80000). The CPLD
 is used to control all switches, DSAs, amplifiers, LEDs, LO synthesizers and
