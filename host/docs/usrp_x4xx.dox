@@ -5,16 +5,16 @@
 \section x4xx_feature_list Comparative features list
 
 - Hardware Capabilities:
-  - Dual QSFP Ports (can be used with 10 GigE)
+  - Dual QSFP28 Ports (can be used with 10 GigE)
   - External PPS input & output
-  - External 10 MHz input & output (other input reference frequencies also supported)
+  - External 10 MHz input & output
   - Internal GPSDO for timing, location, and time/frequency reference
   - External GPIO Connector (2xHDMI)
   - USB-C debug port, providing JTAG and console access
   - USB-C OTG port
-  - Xilinx RFSoC (XCZU28DR), includes quad-core ARM Cortex-A53 (1200 MHz),
+  - Xilinx Zynq Ultrascale+ RFSoC (ZU28DR), includes quad-core ARM Cortex-A53 (1200 MHz),
     dual-core ARM Cortex-R5F real-time unit, and UltraScale+ FPGA
-  - 4 GiB DDR4 RAM for Processing System, 2x4 GiB DDR4 RAM for fixed logic
+  - 4 GiB DDR4 RAM for Processing System, 2x4 GiB DDR4 RAM for Programmable Logic
   - Up to 4x400 MHz of analog bandwidth, center frequency 1 MHz - 7.2 GHz using \ref page_zbx
   - Configurable front-to-back or back-to-front airflow
 - Software Capabilities:
@@ -54,10 +54,11 @@ By default, the unit comes with the front-to-back fan assembly.
 
 \subsection x4xx_overview_rfsoc The RFSoC CPU/FPGA and host operating system
 
-The main chip (the SoC) of the X410 is a Xilinx RFSoC XCZU28DR. It contains an
-ARM quad-core Cortex A53 CPU (referred to as the "APU"), an UltraScale+ FPGA
-including peripherals such as built-in data converters and an SD-FEC core, and
-an ARM Cortex-R5F real-time processor (the "RPU").
+The main chip (the SoC) of the X410 is a Xilinx Zynq Ultrascale+ RFSoC
+(ZU28DR). It contains an ARM quad-core Cortex A53 CPU (referred to as
+the "APU"), an UltraScale+ FPGA including peripherals such as built-in data
+converters and SD-FEC cores, and an ARM Cortex-R5F real-time processor
+(the "RPU").
 
 The programmable logic (PL, or FPGA) section of the SoC is responsible for
 handling all sampling data, the high-speed network connections, and any other
@@ -67,8 +68,8 @@ responsible for all the device and peripheral management, such as running MPM,
 configuring the network interfaces, running local UHD sessions, etc.
 
 The programmable logic bitfile contains certain hard-coded configurations of the
-hardware, such as what type of connectivity the QSFP ports use, and how the RF
-data converters are configured. That means to change the QSFP from a 10 GbE to a
+hardware, such as what type of connectivity the QSFP28 ports use, and how the RF
+data converters are configured. That means to change the QSFP28 from a 10 GbE to a
 100 GbE connection requires changing out the bitfile, as well as when
 reconfiguring the data converters for different master clock rates. See
 \ref x4xx_updating_fpga_types for more information.
@@ -86,26 +87,26 @@ it.
 
 \subsection x4xx_overview_dboards Daughterboard Connectivity
 
-The USRP X410 contains two ZBX daughterboards. They come pre-assembled.
+The Ettus USRP X410 contains two ZBX daughterboards. They come pre-assembled.
 To find out more about the capabilities of these analog front-end cards, see
 \ref page_zbx.
 
 \subsection x4xx_overview_panels Front and Back Panels
 
-\image html x410_front_panel.png "X410 Front Panel" width=90%
+\image html x410_front_panel.png "Ettus USRP X410 Front Panel" width=90%
 
-The X410 front panel provides access to the RF ports of the \ref page_zbx.
+The front panel provides access to the RF ports of the \ref page_zbx.
 It also provides access to the front-panel GPIO connectors (2x HDMI) and the
 power button.
 
-\image html x410_back_panel.png "X410 Back Panel" width=90%
+\image html x410_back_panel.png "Ettus USRP X410 Back Panel" width=90%
 
 The back panel provides access to power, data connections, clocking and timing
 related connections, and some status LEDs:
 
 - The QSFP28 connectors have different configurations dependent on the FPGA
   image type (see also \ref x4xx_updating_fpga_types)
-- The zHD/iPass connectors are unsupported
+- The iPass+ zHD connectors are unsupported
 - GPS ANT, REF IN, and PPS IN allow connecting a GPS antenna, a reference clock
   (e.g., 10 MHz) and a 1 PPS signal for timing purposes
 - The TRIG IN/OUT port is not supported in default FPGA images
@@ -124,7 +125,7 @@ related connections, and some status LEDs:
 \subsection x4xx_overview_micro The STM32 microcontroller
 
 The STM32 microcontroller (also referred to as the "SCU") controls various
-low-level features of the X4X0 series motherboard: It controls the power
+low-level features of the X4x0 series motherboard: It controls the power
 sequencing, reads out fan speeds and some of the temperature sensors.
 It is connected to the RFSoC via an I2C bus. It is running software based on
 Chromium EC.
@@ -136,9 +137,7 @@ for whatever reason.
 
 \subsection x4xx_overview_rackmount Rack Mounting and Cooling
 
-TODO fill out
-- explain how to flip the fan direction
-- maybe explain how to rack-mount
+Coming soon!
 
 \subsection x4xx_overview_storage eMMC Storage
 
@@ -242,7 +241,7 @@ on the device.
 It is possible to gain access to the device using a serial terminal
 emulator. To do so, the USB debug port needs to be connected to a separate
 computer to gain access.
-Most Linux, OSX, or other Unix flavours have a tool called 'screen'
+Most Linux, OSX, or other Unix flavors have a tool called 'screen'
 which can be used for this purpose, by running the following command:
 
     $ sudo screen /dev/ttyUSB2 115200
@@ -289,13 +288,13 @@ It provides a very simple prompt. The command 'help' will list all available
 commands. A direct connection to the microcontroller can be used to hard-reset
 the device without physically accessing it (i.e., emulating a power button press)
 and other low-level diagnostics. For example, running the command `reboot` will
-reset the state of the device, and the command `powerbtn` will emulate a button
-press, turning the device back on again.
+reset the state of the device, and the command `powerbtn` will emulate a power
+button press, turning the device back on again.
 
 \subsection x4xx_getting_started_ssh SSH connection
 
-The USRP X4xx-Series devices have two network connections: The dual QSFP28
-ports, and an RJ-45 connector. The latter is by default configured by DHCP; by
+The USRP X4x0-Series devices have two network connections: The dual QSFP28
+ports, and an RJ45 connector. The latter is by default configured by DHCP; by
 plugging it into into 1 Gigabit switch on a DHCP-capable network, it will get
 assigned an IP address and thus be accessible via ssh.
 
@@ -359,7 +358,7 @@ same die as the FPGA).
 The image flavors consist of two short strings, separated by an underscore, e.g.
 `X4_200` is an image flavor which contains 4x10GbE, and can handle an analog
 bandwidth of 200 MHz. The first two characters describe the configuration of
-the QSFP ports: 'X' stands for 10 GbE, 'C' stands for 100 GbE. See the following
+the QSFP28 ports: 'X' stands for 10 GbE, 'C' stands for 100 GbE. See the following
 table for more details.
 
 |  FPGA Image Flavor  | QSFP28 Port 0 Interface | QSFP28 Port 1 Interface |
@@ -373,7 +372,7 @@ table for more details.
 | CG_{100, 400}       | 100GbE                  | 100GbE                  |
 
 The analog bandwidth determines the available master clock rates. As of UHD 4.1,
-only the X4_200 image is shipped with UHD, which allows a a 245.76 MHz or
+only the X4_200 image is shipped with UHD, which allows a 245.76 MHz or
 250 MHz master clock rate. The other images are considered experimental (unsupported).
 
 \section x4xx_updating_filesystems Updating Filesystems
@@ -632,13 +631,13 @@ For a list of which arguments can be passed into make(), see Section
 
 \subsection x4xx_usage_gps GPS
 
-The X410 includes a Jackson Labs LTE-Lite GPS module. Its antenna port is on the
-rear panel (see \ref x4xx_overview_panels). When the X410 has access to GPS
-satellite signals, it can use this module to read out the current GPS time and
-location as well as to discipline an onboard OCXO.
+The USRP X410 includes a Jackson Labs LTE-Lite GPS module. Its antenna port is
+on the rear panel (see \ref x4xx_overview_panels). When the X410 has access to
+GPS satellite signals, it can use this module to read out the current GPS time
+and location as well as to discipline an onboard OCXO.
 
 To use the GPS as a clock and time reference, simply use `gpsdo` as a clock or
-time source. Alternatively, set `gpsdo` as a synchronisation source:
+time source. Alternatively, set `gpsdo` as a synchronization source:
 
 ~~~{.cpp}
 // Set clock/time individually:
@@ -705,8 +704,8 @@ The following motherboard sensors are always available:
 - `temp_main_power`: The temperature of the PM-BUS devices which supply 0.85V
                      to the RFSoC.
 - `temp_scu_internal`: The internal temperature reading of the STM32 microcontroller.
-- `fan0`: Fan 0 speed (RPM)
-- `fan1`: Fan 1 speed (RPM)
+- `fan0`: Fan 0 speed (RPM).
+- `fan1`: Fan 1 speed (RPM).
 
 The GPS sensors will return empty values if the GPS is inactive (note it may be
 inactive when using a different clock than `gpsdo`, see also \ref x4xx_usage_gps).
@@ -715,10 +714,10 @@ and is acquired by calling into gpsd on the embedded device, which in turn
 communicates with the GPS via a serial interface. For this reason, these sensors
 can take a few seconds before returning a valid value:
 
-- `gps_time`: GPS time in seconds since the epoch
-- `gps_tpv`: A TPV report from GPSd serialized as JSON
-- `gps_sky`: A SKY report from GPSd serialized as JSON
-- `gps_gpgga`: GPGGA string
+- `gps_time`: GPS time in seconds since the epoch.
+- `gps_tpv`: A TPV report from GPSd serialized as JSON.
+- `gps_sky`: A SKY report from GPSd serialized as JSON.
+- `gps_gpgga`: GPGGA string.
 
 The seconds set of GPS sensors probes pins on the GPS module. They are all boolean
 sensors values. If the GPS is disabled, they will always return false.
@@ -771,7 +770,7 @@ on-board ARM processor (Linux).
 ### Temporarily change the LED Behavior
 
 1. Establish a connection (serial or SSH) to the X410's Linux terminal.
-2. Use the `ledctrl` utility to configure each LED based on desired supported behavior
+2. Use the `ledctrl` utility to configure each LED based on desired supported behavior:
 
         ledctrl <led> <command>
 
@@ -780,11 +779,11 @@ correspond to the rear panel labels.
 The `<command>` valid options are listed in the \ref x4xx_usage_rearpanelleds_suppbeh
 section above, with their corresponding description.
 
-Examples:
+Example:
 
     root@ni-x4xx-1111111:~# ledctrl led0 user0
 
-Sets the X410's LED 0 to be controlled via the FPGA application using "User LED 0".
+Sets the X410's `LED 0` to be controlled via the FPGA application using "User LED 0".
 
 ### Persistently change the LED
 
@@ -844,7 +843,7 @@ power-cycle and reboot the USRP. It is connected to the RFSoC using an I2C
 interface.
 
 The motherboard control CPLD performs various control tasks, such as controlling
-the clocking card and the DIO connector (note that the DIO pins are also available
+the clocking card and the GPIO connectors (note that the GPIO pins are also available
 without using the CPLD, which is the normal case when programming the pins for
 an application with higher rates and precise timing).
 The motherboard CPLD is accessible from the RFSoC through a SPI interface, and
