@@ -2,31 +2,37 @@
 
 \tableofcontents
 
-\section x4xx_feature_list Comparative features list
+\section x4xx_feature_list Comparative Features List
 
 - Hardware Capabilities:
   - Dual QSFP28 Ports (can be used with 10 GigE)
   - External PPS input & output
-  - External 10 MHz input & output
+  - External 10 MHz input
   - Internal GPSDO for timing, location, and time/frequency reference
   - External GPIO Connector (2xHDMI)
   - USB-C debug port, providing JTAG and console access
-  - USB-C OTG port
-  - Xilinx Zynq Ultrascale+ RFSoC (ZU28DR), includes quad-core ARM Cortex-A53 (1200 MHz),
-    dual-core ARM Cortex-R5F real-time unit, and UltraScale+ FPGA
+  - USB-C OTG port (USB 2.0)
+  - Xilinx Zynq Ultrascale+ RFSoC (ZU28DR), includes quad-core ARM Cortex-A53
+    (1200 MHz), dual-core ARM Cortex-R5F real-time unit, and UltraScale+ FPGA
   - 4 GiB DDR4 RAM for Processing System, 2x4 GiB DDR4 RAM for Programmable Logic
-  - Up to 4x400 MHz of analog bandwidth, center frequency 1 MHz - 7.2 GHz using \ref page_zbx
-  - Configurable front-to-back or back-to-front airflow
+  - Up to 4x400 MHz of analog bandwidth, center frequency 1 MHz - 7.2 GHz
+    (tunable to 8 GHz) using \ref page_zbx
+  - Closed-loop temperature control
+  - Default airflow: front-to-back
+  - Field replaceable fan tray
 - Software Capabilities:
-  - Full Linux system running on the ARM core
+  - Full Linux system running on the quad-core ARM Cortex-A53
   - Runs MPM (see also \ref page_mpm)
 - FPGA Capabilities:
-  - Timed commands/sampling in FPGA
+  - Timed commands in FPGA
+  - Timed sampling in FPGA
   - RFNoC capable: Supports various CHDR bus widths from 64-bits (for minimal
     footprint) up to 512 bits (for maximum throughput)
-- Rack-mountable with additional rack mount kit (2 USRPs side-by-side, or 1 USRP per 1U)
-- Stackable (with stack mount kit)
-- Front-to-back or back-to-front airflow (switchable)
+- Mechanical Capabilities:
+  - Rack-mountable with additional rack mount kit (2 USRPs side-by-side, or 1 USRP per 1U)
+  - Stackable (with stack mount kit)
+  - Airflow default direction can be changed to back-to-front with an
+    accessory, which is sold separately
 
 \section x4xx_overview Overview and Features
 
@@ -52,7 +58,7 @@ X410's cooling system uses a field replaceable fan assembly and supports two
 variants: one that pulls air front-to-back and one that pulls air back-to-front.
 By default, the unit comes with the front-to-back fan assembly.
 
-\subsection x4xx_overview_rfsoc The RFSoC CPU/FPGA and host operating system
+\subsection x4xx_overview_rfsoc The RFSoC CPU/FPGA and Host Operating System
 
 The main chip (the SoC) of the X410 is a Xilinx Zynq Ultrascale+ RFSoC
 (ZU28DR). It contains an ARM quad-core Cortex A53 CPU (referred to as
@@ -87,15 +93,14 @@ it.
 
 \subsection x4xx_overview_dboards Daughterboard Connectivity
 
-The Ettus USRP X410 contains two ZBX daughterboards. They come pre-assembled.
-To find out more about the capabilities of these analog front-end cards, see
-\ref page_zbx.
+The Ettus USRP X410 contains two ZBX daughterboards. To find out more about the
+capabilities of these analog front-end cards, see \ref page_zbx.
 
 \subsection x4xx_overview_panels Front and Back Panels
 
 \image html x410_front_panel.png "Ettus USRP X410 Front Panel" width=90%
 
-The front panel provides access to the RF ports of the \ref page_zbx.
+The front panel provides access to the RF ports and status LEDs of the \ref page_zbx.
 It also provides access to the front-panel GPIO connectors (2x HDMI) and the
 power button.
 
@@ -122,7 +127,7 @@ related connections, and some status LEDs:
   It is also possible to stream data over this interface, albeit at a slow rate
   (approx. 10 Msps).
 
-\subsection x4xx_overview_micro The STM32 microcontroller
+\subsection x4xx_overview_micro The STM32 Microcontroller
 
 The STM32 microcontroller (also referred to as the "SCU") controls various
 low-level features of the X4x0 series motherboard: It controls the power
@@ -173,7 +178,7 @@ following two sections), run the following commands:
 The device node in the mount command might differ, depending on which partition
 is currently already mounted.
 
-\section x4xx_getting_started Getting started
+\section x4xx_getting_started Getting Started
 
 Firstly, download and install UHD on a host computer following \ref page_install
 or \ref page_build_guide. The USRP X410 requires UHD version 4.1 or above.
@@ -184,7 +189,7 @@ Inside the kit you will find the X410 and an X410 power supply. Plug these in,
 connect the 1GbE RJ45 interface to your network, and power on the device by
 pressing the power button.
 
-\subsection x4xx_network_connectivity Network Connectivity
+\subsection x4xx_getting_started_network_connectivity Network Connectivity
 
 Once the X410 has booted, determine the IP address and verify network
 connectivity by running `uhd_find_devices` on the host computer:
@@ -226,7 +231,46 @@ You can now use existing UHD examples or applications (such as
 rx_sample_to_file, rx_ascii_art_dft, or tx_waveforms) or other UHD-compatible
 applications to start receiving and transmitting with the device.
 
-\subsection x4xx_getting_started_security Security-related settings
+See \ref x4xx_getting_started_network_connectivity_ifcs for further details on
+the various network interfaces available on the X410.
+
+\subsubsection x4xx_getting_started_network_connectivity_ifcs Network Interfaces
+
+The Ettus USRP X410 has various network interfaces:
+- `eth0`: RJ45 port.
+  - The RJ45 port comes up with a default configuration of DHCP, that will
+    request a network address from your DHCP server (if available on your
+    network). This interface is agnostic of FPGA image flavor.
+- `int0`: internal interface for network communication between the embedded ARM
+  processor and FPGA.
+  - The internal network interface is configured with a static address:
+    `169.254.0.1/24`. This interface is agnostic of FPGA image flavor.
+- `sfpX [, sfpX_1, sfpX_2, sfpX_3]`: QSFP28 network interface(s), up-to four
+  (one per lane) based on implemented protocol.
+  - Each QSFP28 port has four high-speed transceiver lanes. Therefore,
+    depending on the FPGA image flavor, up-to four different network interfaces
+    may exist per QSFP28 port, using the `sfpX`for the first lane, and
+    `sfpX_1-3` for the other three lanes. Each network interface has a default
+    static IP address. Note that for multi-lane protocols, such as 100GbE, a
+    single interface is used (`sfpX`).
+
+The configuration files for these network interfaces are stored in:
+`/etc/systemd/network/`.
+
+Interface Name | Description                            | Default Configuration | Configuration File | Example: X4_200 FPGA image |
+---------------|----------------------------------------|-----------------------|--------------------|----------------------------|
+`eth0`         | RJ45                                   | DHCP                  | eth0.network       | DHCP                       |
+`int0`         | Internal                               | 169.254.0.1/24        | int0.network       | 169.254.0.1/24             |
+`sfp0`         | QSFP28 0 (4-lanes interface or lane 0) | 192.168.10.2/24       | sfp0.network       | 192.168.10.2/24            |
+`sfp0_1`       | QSFP28 0 (lane 1)                      | 192.168.11.2/24       | sfp0_1.network     | 192.168.11.2/24            |
+`sfp0_2`       | QSFP28 0 (lane 2)                      | 192.168.12.2/24       | sfp0_2.network     | 192.168.12.2/24            |
+`sfp0_3`       | QSFP28 0 (lane 3)                      | 192.168.13.2/24       | sfp0_3.network     | 192.168.13.2/24            |
+`sfp1`         | QSFP28 1 (4-lanes interface or lane 0) | 192.168.20.2/24       | sfp1.network       | N/C                        |
+`sfp1_1`       | QSFP28 1 (lane 1)                      | 192.168.21.2/24       | sfp1_1.network     | N/C                        |
+`sfp1_2`       | QSFP28 1 (lane 2)                      | 192.168.22.2/24       | sfp1_2.network     | N/C                        |
+`sfp1_3`       | QSFP28 1 (lane 3)                      | 192.168.23.2/24       | sfp1_3.network     | N/C                        |
+
+\subsection x4xx_getting_started_security Security-related Settings
 
 The X410 ships without a root password set. It is possible to ssh into the
 device by simply connecting as root, and thus gaining access to all subsystems.
@@ -236,7 +280,7 @@ To set a password, run the command
 
 on the device.
 
-\subsection x4xx_getting_started_serial Serial connection
+\subsection x4xx_getting_started_serial Serial Connection
 
 It is possible to gain access to the device using a serial terminal
 emulator. To do so, the USB debug port needs to be connected to a separate
@@ -276,7 +320,7 @@ when using SSH, for example), and give access to the boot loader (U-boot
 prompt). This can be used to debug kernel or bootloader issues more efficiently
 than when logged in via SSH.
 
-\subsubsection x4xx_getting_started_serial_micro Connecting to the microcontroller
+\subsubsection x4xx_getting_started_serial_micro Connecting to the Microcontroller
 
 The microcontroller (which controls the power sequencing, among other things)
 also has a serial console available. To connect to the microcontroller, use the
@@ -286,12 +330,12 @@ other UART device. In the example above:
 
 It provides a very simple prompt. The command 'help' will list all available
 commands. A direct connection to the microcontroller can be used to hard-reset
-the device without physically accessing it (i.e., emulating a power button press)
-and other low-level diagnostics. For example, running the command `reboot` will
-reset the state of the device, and the command `powerbtn` will emulate a power
-button press, turning the device back on again.
+the device without physically accessing it and other low-level diagnostics. For
+example, running the command `reboot` will emulate a reset button press,
+resetting the state of the device, while the command `powerbtn` will emulate a
+power button press, turning the device back on again.
 
-\subsection x4xx_getting_started_ssh SSH connection
+\subsection x4xx_getting_started_ssh SSH Connection
 
 The USRP X4x0-Series devices have two network connections: The dual QSFP28
 ports, and an RJ45 connector. The latter is by default configured by DHCP; by
@@ -361,7 +405,7 @@ bandwidth of 200 MHz. The first two characters describe the configuration of
 the QSFP28 ports: 'X' stands for 10 GbE, 'C' stands for 100 GbE. See the following
 table for more details.
 
-|  FPGA Image Flavor  | QSFP28 Port 0 Interface | QSFP28 Port 1 Interface |
+| FPGA Image Flavor   | QSFP28 Port 0 Interface | QSFP28 Port 1 Interface |
 |---------------------|-------------------------|-------------------------|
 | X1_100              | 1x 10GbE (Lane 0)       | N/C                     |
 | X4_{100, 200}       | 4x 10 GbE               | N/C                     |
@@ -457,12 +501,13 @@ described in \ref x4xx_updating_filesystems, then stop the boot again and run:
 
 Otherwise, let the boot continue as normal.
 
-\subsection x4xx_updating_cpld Updating MB CPLD
+\subsection x4xx_updating_cpld Updating the Motherboard CPLD
 
-Caution! Updating the MB CPLD has the potential to brick your device if done
-improperly.
+<b>Caution! Updating the motherboard CPLD has the potential to brick your
+device if done improperly.</b>
 
-You can update the MB CPLD by running the following command on the X410:
+You can update the motherboard (MB) CPLD by running the following command on
+the X410:
 
     x4xx_update_cpld --file=<path to cpld-x410.rpd>
 
@@ -494,6 +539,20 @@ can be used to reboot the device:
     reboot
     powerbtn
 
+\subsubsection x4xx_building_cpld Building the Motherboard CPLD
+
+Read this section if you want to create your own motherboard CPLD image.
+
+The motherboard CPLD's source code can be found in the UHD source code
+repository under `fpga/usrp3/top/x400/cpld`.
+
+Building the MB CPLD requires <em>"Quartus 20.1.0 Standard Edition or
+later"</em>. To generate the MB CPLD image, navigate to
+`fpga/usrp3/top/x400/cpld` and run:
+
+    make build
+
+Read the Makefile in that directory for further details.
 
 \subsection x4xx_updating_scu Updating the SCU
 
@@ -502,7 +561,7 @@ The writable SCU image file is stored on the filesystem under
 number). To update, simply replace the `.bin` file with the updated version and
 reboot.
 
-\subsection x4xx_accessing_emmc_usb USB access to eMMC
+\subsection x4xx_accessing_emmc_usb USB Access to eMMC
 
 While Mender should be used for routine filesystem updates (see \ref
 x4xx_updating_filesystems), it is also possible to access the X410's internal
@@ -614,20 +673,20 @@ For a list of which arguments can be passed into make(), see Section
 
 \subsection x4xx_usage_args Device Arguments
 
- Key                   | Description                                                                  | Example Value
------------------------|------------------------------------------------------------------------------|---------------------
- addr                  | IPv4 address of primary SFP+ port to connect to.                             | addr=192.168.30.2
- second_addr           | IPv4 address of secondary SFP+ port to connect to.                           | second_addr=192.168.40.2
+ Key                   | Description                                                                     | Example Value
+-----------------------|---------------------------------------------------------------------------------|---------------------
+ addr                  | IPv4 address of primary SFP+ port to connect to.                                | addr=192.168.30.2
+ second_addr           | IPv4 address of secondary SFP+ port to connect to.                              | second_addr=192.168.40.2
  mgmt_addr             | IPv4 address or hostname to which to connect the RPC client. Defaults to `addr'.| mgmt_addr=ni-sulfur-311FE00
- find_all              | When using broadcast, find all devices, even if unreachable via CHDR.        | find_all=1
- master_clock_rate     | Master Clock Rate in Hz.                                                     | master_clock_rate=250e6
- serialize_init        | Force serial initialization of daughterboards.                               | serialize_init=1
- skip_init             | Skip the initialization process for the device.                              | skip_init=1
- time_source           | Specify the time (PPS) source.                                               | time_source=internal
- clock_source          | Specify the reference clock source.                                          | clock_source=internal
- ref_clk_freq          | Specify the external reference clock frequency, default is 10 MHz.           | ref_clk_freq=20e6
- discovery_port        | Override default value for MPM discovery port.                               | discovery_port=49700
- rpc_port              | Override default value for MPM RPC port.                                     | rpc_port=49701
+ find_all              | When using broadcast, find all devices, even if unreachable via CHDR.           | find_all=1
+ master_clock_rate     | Master Clock Rate in Hz.                                                        | master_clock_rate=250e6
+ serialize_init        | Force serial initialization of daughterboards.                                  | serialize_init=1
+ skip_init             | Skip the initialization process for the device.                                 | skip_init=1
+ time_source           | Specify the time (PPS) source.                                                  | time_source=internal
+ clock_source          | Specify the reference clock source.                                             | clock_source=internal
+ ref_clk_freq          | Specify the external reference clock frequency, default is 10 MHz.              | ref_clk_freq=20e6
+ discovery_port        | Override default value for MPM discovery port.                                  | discovery_port=49700
+ rpc_port              | Override default value for MPM RPC port.                                        | rpc_port=49701
 
 \subsection x4xx_usage_gps GPS
 
@@ -733,16 +792,44 @@ sensors values. If the GPS is disabled, they will always return false.
 
 \subsection x4xx_usage_rearpanelleds Rear Panel Status LEDs
 
-The USRP X410 is equipped with three user-configurable LEDs located on the
-device's rear panel: `LED 0`, `LED 1`, and `LED 2`.
+The USRP X410 is equipped with four LEDs located on the device's rear panel.
 Each LED supports four different states: Off, Green, Red, and Amber.
-Different behaviors are supported for each LED (see \ref x4xx_usage_rearpanelleds_suppbeh
-below) which are user-configurable. Refer to \ref x4xx_usage_rearpanelleds_defaults
-for default functionality.
+One LED (`PWR`) indicates the device's power state (see
+\ref x4xx_usage_rearpanelleds_power below).
+The other three LEDs (`LED 0`, `LED 1`, and `LED 2`) are user-configurable,
+different behaviors are supported for each of these LEDs (see
+\ref x4xx_usage_rearpanelleds_configurable below).
 
-<img src="x4xx_rearpanel_status_leds.png" align="right"/>
+\image html x4xx_rearpanel_status_leds.png "X4x0 Rear Panel Status LEDs" width=10%
 
-\subsubsection x4xx_usage_rearpanelleds_suppbeh Supported LED Behaviors
+\subsubsection x4xx_usage_rearpanelleds_power Power LED
+
+The USRP X410's `PWR` LED is reserved to visually indicate the user the
+device's power state. \ref x4xx_usage_rearpanelleds_power_behavior describes
+what each LED state represents.
+
+\paragraph x4xx_usage_rearpanelleds_power_behavior Power LED Behavior
+
+| `PWR` LED State | Meaning                               |
+|-----------------|---------------------------------------|
+| Off             | No power is applied                   |
+| Amber           | Power is good but X410 is powered off |
+| Green           | Power is good and X410 is powered on  |
+| Red             | Power error state                     |
+
+\subsubsection x4xx_usage_rearpanelleds_configurable User-configurable LEDs
+
+The USRP X410's user-configurable rear panel status LEDs (`LED 0`, `LED 1`, and
+`LED 2`) allow the user to have visual indication of various device conditions.
+\ref x4xx_usage_rearpanelleds_configurable_suppbeh provides a complete list of
+the supported behaviors for each user-configurable LED. By default, these LEDs are
+configured as described in \ref x4xx_usage_rearpanelleds_configurable_defaults.
+
+The user may alter the default LEDs behavior either temporarily or
+persistently, see \ref x4xx_usage_rearpanelleds_configurable_tempbeh or
+\ref x4xx_usage_rearpanelleds_configurable_persistentbeh accordingly.
+
+\paragraph x4xx_usage_rearpanelleds_configurable_suppbeh Supported LED Behaviors
 
 - `activity`: flash green LED for CPU activity
 - `emmc`: flash green LED for eMMC activity
@@ -752,11 +839,11 @@ for default functionality.
   - Where `<interface>` is the name of any network interface (e.g. `eth0`)
 - `none`: LED is constantly off
 - `panic`: red LED turns on when kernel panics
-- `user0`: off, green, red or amber LED state is controlled by FPGA application, User LED 0
-- `user1`: off, green, red or amber LED state is controlled by FPGA application, User LED 1
-- `user2`: off, green, red or amber LED state is controlled by FPGA application, User LED 2
+- `user0`: off, green, red or amber LED state is controlled by FPGA application, see \ref x4xx_usage_rearpanelleds_configurable_fpga
+- `user1`: off, green, red or amber LED state is controlled by FPGA application, see \ref x4xx_usage_rearpanelleds_configurable_fpga
+- `user2`: off, green, red or amber LED state is controlled by FPGA application, see \ref x4xx_usage_rearpanelleds_configurable_fpga
 
-\subsubsection x4xx_usage_rearpanelleds_defaults Behavior
+\paragraph x4xx_usage_rearpanelleds_configurable_defaults LEDs Default Behavior
 
 | LED Number | Default Behavior |
 |------------|------------------|
@@ -767,7 +854,7 @@ for default functionality.
 A user may change the X410 LEDs' default behavior via running a utility on the
 on-board ARM processor (Linux).
 
-### Temporarily change the LED Behavior
+\paragraph x4xx_usage_rearpanelleds_configurable_tempbeh Temporarily change the LED Behavior
 
 1. Establish a connection (serial or SSH) to the X410's Linux terminal.
 2. Use the `ledctrl` utility to configure each LED based on desired supported behavior:
@@ -775,9 +862,9 @@ on-board ARM processor (Linux).
         ledctrl <led> <command>
 
 Where `<led>` valid options are: `led0`, `led1`, and `led2`. These options
-correspond to the rear panel labels.
-The `<command>` valid options are listed in the \ref x4xx_usage_rearpanelleds_suppbeh
-section above, with their corresponding description.
+correspond to the rear panel labels. The `<command>` valid options are listed
+in the \ref x4xx_usage_rearpanelleds_configurable_suppbeh section above, with
+their corresponding description.
 
 Example:
 
@@ -785,23 +872,23 @@ Example:
 
 Sets the X410's `LED 0` to be controlled via the FPGA application using "User LED 0".
 
-### Persistently change the LED
+\paragraph x4xx_usage_rearpanelleds_configurable_persistentbeh Persistently change the LED Behavior
 
 The above method will not persist across reboots. In order to persist the
 changes, modify the ledctrl service unit files which are run by the init
 system at boot. These files can be found on a running filesystem at, e.g.,
 `/lib/systemd/system/ledctrl-led0.service`.
 
-
-### Using FPGA LED Control
+\paragraph x4xx_usage_rearpanelleds_configurable_fpga Using FPGA LED Control
 
 When selecting `user0`, `user1`, and/or `user2` as LED behavior (see
-\ref x4xx_usage_rearpanelleds_suppbeh above), the FPGA application gains control
-of that given LED. The following paragraph describes how the FPGA application can
-control the state for each setting.
+\ref x4xx_usage_rearpanelleds_configurable_suppbeh above), the FPGA application
+gains control of that given LED. The following paragraph describes how the FPGA
+application can control the state for each setting.
 
-FPGA application access to User LED 0-2 requires modification of the FPGA source
-code and is achieved directly via Verilog, using a 2-bit vector to control the state.
+FPGA application access to User LED 0-2 requires modification of the FPGA
+source code and is achieved directly via Verilog, using a 2-bit vector to
+control the state.
 
 Below is an excerpt of the FPGA source code, setting the `user0`, `user1`, and
 `user2` values to green, red, and amber respectively.
