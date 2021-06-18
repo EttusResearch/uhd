@@ -71,6 +71,22 @@ class X4xxRfdcCtrl:
         self.set_cal_frozen(1, 0, "both")
         self.set_cal_frozen(1, 1, "both")
 
+        # Stores the last set value of the nco freq for each channel
+        # Follows the below structure:
+        #   <slot_id>
+        #       'rx': [chan0_freq, chan1_freq]
+        #       'tx': [chan0_freq, chan1_freq]
+        self._rfdc_freq_cache = [
+            {
+                'rx': [0, 0],
+                'tx': [0, 0],
+            },
+            {
+                'rx': [0, 0],
+                'tx': [0, 0],
+            },
+        ]
+
     @no_rpc
     def unset_cbs(self):
         """
@@ -216,6 +232,15 @@ class X4xxRfdcCtrl:
         """
         return self._rfdc_regs.get_rfdc_resampling_factor(db_idx)
 
+    @no_rpc
+    def rfdc_restore_nco_freq(self):
+        """
+        Restores previously set RFDC NCO Frequencies
+        """
+        for slot_id, slot_info in enumerate(self._rfdc_freq_cache):
+            for direction, channel_frequencies in slot_info.items():
+                self.rfdc_set_nco_freq(direction, slot_id, 0, channel_frequencies[0])
+                self.rfdc_set_nco_freq(direction, slot_id, 1, channel_frequencies[1])
 
     ###########################################################################
     # Public APIs that get exposed as MPM RPC calls
@@ -230,6 +255,8 @@ class X4xxRfdcCtrl:
 
         if not self._rfdc_ctrl.set_if(tile_id, block_id, is_dac, freq):
             raise RuntimeError("Error setting RFDC IF Frequency")
+        self._rfdc_freq_cache[slot_id][direction][channel] = freq
+
         return self._rfdc_ctrl.get_nco_freq(tile_id, block_id, is_dac)
 
     def rfdc_get_nco_freq(self, direction, slot_id, channel):

@@ -876,6 +876,10 @@ class x4xx(ZynqComponents, PeriphManagerBase):
             # and throw an exception. We need to put the device back into a safe
             # state in that case.
             self.set_master_clock_rate(self._master_clock_rate)
+            # Restore the nco frequency to the same values as before the sync source
+            # was changed, to ensure the device transmission/acquisition continues at
+            # the requested frequency.
+            self.rfdc.rfdc_restore_nco_freq()
         except RuntimeError as ex:
             err = f"Setting clock_source={clock_source},time_source={time_source} " \
                   f"failed, falling back to {self._safe_sync_source}. Error: " \
