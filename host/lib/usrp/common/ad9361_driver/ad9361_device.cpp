@@ -5,17 +5,16 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#define _USE_MATH_DEFINES
 #include "ad9361_device.h"
 #include "ad9361_client.h"
 #include "ad9361_filter_taps.h"
 #include "ad9361_gain_tables.h"
 #include "ad9361_synth_lut.h"
-#define _USE_MATH_DEFINES
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
 #include <stdint.h>
 #include <boost/format.hpp>
-#include <boost/math/special_functions.hpp>
 #include <boost/scoped_array.hpp>
 #include <chrono>
 #include <cmath>
@@ -1237,7 +1236,7 @@ double ad9361_device_t::_tune_bbvco(const double rate)
     int nint = static_cast<int>(vcorate / fref);
     UHD_LOG_TRACE("AD936X", "[ad9361_device_t::_tune_bbvco] (nint)=" << (vcorate / fref));
     int nfrac = static_cast<int>(
-        boost::math::round(((vcorate / fref) - (double)nint) * (double)modulus));
+        std::lround(((vcorate / fref) - (double)nint) * (double)modulus));
     UHD_LOG_TRACE("AD936X",
         "[ad9361_device_t::_tune_bbvco] (nfrac)=" << ((vcorate / fref) - (double)nint)
                                                          * (double)modulus);

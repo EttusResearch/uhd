@@ -11,7 +11,7 @@
 #include <uhdlib/usrp/cores/dsp_core_utils.hpp>
 #include <uhdlib/usrp/cores/rx_frontend_core_3000.hpp>
 #include <boost/assign/list_of.hpp>
-#include <boost/math/special_functions/round.hpp>
+#include <cmath>
 #include <functional>
 
 using namespace uhd;
@@ -45,7 +45,7 @@ using namespace uhd::usrp;
 
 static uint32_t fs_to_bits(const double num, const size_t bits)
 {
-    return int32_t(boost::math::round(num * (1 << (bits - 1))));
+    return int32_t(std::lround(num * (1 << (bits - 1))));
 }
 
 rx_frontend_core_3000::~rx_frontend_core_3000(void)
@@ -151,8 +151,8 @@ public:
     std::complex<double> set_dc_offset(const std::complex<double>& off) override
     {
         static const double scaler = double(1ul << 29);
-        _i_dc_off                  = boost::math::iround(off.real() * scaler);
-        _q_dc_off                  = boost::math::iround(off.imag() * scaler);
+        _i_dc_off = static_cast<int32_t>(std::lround(off.real() * scaler));
+        _q_dc_off = static_cast<int32_t>(std::lround(off.imag() * scaler));
 
         _set_dc_offset(OFFSET_SET | OFFSET_FIXED);
 

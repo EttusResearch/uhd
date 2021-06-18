@@ -7,7 +7,7 @@
 
 #include "convert_common.hpp"
 #include <uhd/utils/byteswap.hpp>
-#include <boost/math/special_functions/round.hpp>
+#include <cmath>
 #include <vector>
 
 using namespace uhd::convert;
@@ -30,7 +30,7 @@ public:
     {
         for (size_t i = 0; i < sc16_table_len; i++) {
             const int16_t val = uint16_t(i);
-            _table[i]         = int8_t(boost::math::iround(val * scalar / 32767.));
+            _table[i]         = int8_t(std::lround(val * scalar / 32767.));
         }
     }
 
@@ -120,7 +120,7 @@ public:
     static type conv(const int8_t& num, const double scalar)
     {
         if (sizeof(type) == sizeof(s16_t)) {
-            return type(boost::math::iround(num * scalar * 32767));
+            return type(std::lround(num * scalar * 32767));
         }
         return type(num * scalar);
     }

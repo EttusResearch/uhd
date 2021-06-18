@@ -17,11 +17,11 @@
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <boost/format.hpp>
-#include <boost/math/special_functions/round.hpp>
 #include <boost/math/special_functions/sign.hpp>
 #include <boost/thread/thread.hpp>
 #include <atomic>
 #include <chrono>
+#include <cmath>
 #include <functional>
 #include <memory>
 #include <thread>
@@ -517,7 +517,7 @@ uhd::meta_range_t usrp1_impl::get_tx_dsp_host_rates(void)
 double usrp1_impl::update_rx_samp_rate(size_t dspno, const double samp_rate)
 {
     const size_t div  = this->has_rx_halfband() ? 2 : 1;
-    const size_t rate = boost::math::iround(
+    const size_t rate = std::lround(
         _master_clock_rate / this->get_rx_dsp_host_rates().clip(samp_rate, true));
 
     if (rate < 8 and this->has_rx_halfband())
@@ -548,7 +548,7 @@ double usrp1_impl::update_rx_samp_rate(size_t dspno, const double samp_rate)
 double usrp1_impl::update_tx_samp_rate(size_t dspno, const double samp_rate)
 {
     const size_t div  = this->has_tx_halfband() ? 4 : 2; // doubled for codec interp
-    const size_t rate = boost::math::iround(
+    const size_t rate = std::lround(
         _master_clock_rate / this->get_tx_dsp_host_rates().clip(samp_rate, true));
 
     if (dspno == 0) { // only care if dsp0 is set since its homogeneous
@@ -591,7 +591,7 @@ double usrp1_impl::update_rx_dsp_freq(const size_t dspno, const double freq_)
     UHD_ASSERT_THROW(std::abs(freq) <= _master_clock_rate / 2.0);
     static const double scale_factor = std::pow(2.0, 32);
     const int32_t freq_word =
-        int32_t(boost::math::round((freq / _master_clock_rate) * scale_factor));
+        int32_t(std::lround((freq / _master_clock_rate) * scale_factor));
 
     static const uint32_t dsp_index_to_reg_val[4] = {
         FR_RX_FREQ_0, FR_RX_FREQ_1, FR_RX_FREQ_2, FR_RX_FREQ_3};

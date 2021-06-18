@@ -13,7 +13,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/math.hpp>
 #include <boost/assign/list_of.hpp>
-#include <boost/math/special_functions/round.hpp>
+#include <cmath>
 
 using namespace uhd::experts;
 using namespace uhd::math;
@@ -271,7 +271,7 @@ void twinrx_chan_gain_expert::resolve()
     // Compute minimum gain. The user-specified gain value will be interpreted as
     // the gain applied on top of the minimum gain state.
     // If antennas are shared or swapped, the switch has 6dB of loss
-    size_t gain_index = std::min(static_cast<size_t>(boost::math::round(_gain.get())),
+    size_t gain_index = std::min(static_cast<size_t>(std::lround(_gain.get())),
         table.get_num_entries() - 1);
 
     // Translate gain to an index in the gain table

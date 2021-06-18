@@ -7,7 +7,7 @@
 
 #include <uhd/types/ranges.hpp>
 #include <uhdlib/usrp/cores/rx_frontend_core_200.hpp>
-#include <boost/math/special_functions/round.hpp>
+#include <cmath>
 #include <functional>
 
 using namespace uhd;
@@ -29,7 +29,7 @@ static const double DC_OFFSET_MAX = 1.0;
 
 static uint32_t fs_to_bits(const double num, const size_t bits)
 {
-    return int32_t(boost::math::round(num * (1 << (bits - 1))));
+    return int32_t(std::lround(num * (1 << (bits - 1))));
 }
 
 rx_frontend_core_200::~rx_frontend_core_200(void)
@@ -65,8 +65,8 @@ public:
     std::complex<double> set_dc_offset(const std::complex<double>& off) override
     {
         static const double scaler = double(1ul << 29);
-        _i_dc_off                  = boost::math::iround(off.real() * scaler);
-        _q_dc_off                  = boost::math::iround(off.imag() * scaler);
+        _i_dc_off = static_cast<int32_t>(std::lround(off.real() * scaler));
+        _q_dc_off = static_cast<int32_t>(std::lround(off.imag() * scaler));
 
         this->set_dc_offset(OFFSET_SET | OFFSET_FIXED);
 

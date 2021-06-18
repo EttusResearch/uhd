@@ -12,7 +12,6 @@
 #include <uhdlib/usrp/cores/dsp_core_utils.hpp>
 #include <uhdlib/usrp/cores/tx_dsp_core_3000.hpp>
 #include <boost/assign/list_of.hpp>
-#include <boost/math/special_functions/round.hpp>
 #include <algorithm>
 #include <cmath>
 #include <functional>
@@ -76,7 +75,7 @@ public:
     double set_host_rate(const double rate) override
     {
         const size_t interp_rate =
-            boost::math::iround(_tick_rate / this->get_host_rates().clip(rate, true));
+            std::lround(_tick_rate / this->get_host_rates().clip(rate, true));
         size_t interp = interp_rate;
 
         // determine which half-band filters are activated
@@ -123,7 +122,7 @@ public:
     void update_scalar(void)
     {
         const double target_scalar = (1 << 16) * _scaling_adjustment / _dsp_extra_scaling;
-        const int32_t actual_scalar = boost::math::iround(target_scalar);
+        const int32_t actual_scalar = static_cast<int32_t>(std::lround(target_scalar));
         _fxpt_scalar_correction     = target_scalar / actual_scalar; // should be small
         _iface->poke32(REG_DSP_TX_SCALE_IQ, actual_scalar);
     }

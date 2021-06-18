@@ -14,9 +14,9 @@
 #include <stdint.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
-#include <boost/math/special_functions/round.hpp>
 #include <boost/program_options.hpp>
 #include <chrono>
+#include <cmath>
 #include <csignal>
 #include <iostream>
 #include <string>
@@ -141,7 +141,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     // pre-compute the waveform values
     const wave_table_class wave_table(wave_type, ampl);
     const size_t step =
-        boost::math::iround(wave_freq / usrp->get_tx_rate() * wave_table_len);
+        std::lround(wave_freq / usrp->get_tx_rate() * wave_table_len);
     size_t index = 0;
 
     for (size_t ch = 0; ch < channel_nums.size(); ch++) {

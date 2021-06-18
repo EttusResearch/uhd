@@ -18,8 +18,8 @@
 #include <uhd/utils/safe_call.hpp>
 #include <stdint.h>
 #include <boost/assign.hpp>
-#include <boost/math/special_functions/round.hpp>
 #include <chrono>
+#include <cmath>
 #include <functional>
 #include <thread>
 #include <vector>
@@ -584,7 +584,7 @@ double max287x<max287x_regs_t>::set_frequency(
         N = int((vco_freq / pfd_freq) / fb_divisor);
 
         // Fractional-N calculation
-        FRAC = int(boost::math::round(((vco_freq / pfd_freq) / fb_divisor - N) * MOD));
+        FRAC = int(std::lround(((vco_freq / pfd_freq) / fb_divisor - N) * MOD));
 
         if (is_int_n) {
             if (FRAC

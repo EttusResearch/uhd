@@ -13,9 +13,8 @@
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhdlib/utils/narrow.hpp>
-#include <stdint.h>
-#include <boost/math/special_functions/round.hpp>
-#include <iostream>
+#include <cmath>
+#include <cstdint>
 
 using namespace uhd;
 
@@ -317,7 +316,7 @@ public:
         // offset_ns = 0.34 + (1600 - i_ramp_ua)*1e-4 + ((caps-1)/ramp)*6
         // delay_ns = offset_ns + range_ns * delay / 31
 
-        int delay_val = boost::math::iround(delay / 9.744e-9 * 31);
+        int delay_val = static_cast<int>(std::lround(delay / 9.744e-9 * 31));
 
         if (delay_val == 0) {
             switch (clk_regs.exp) {

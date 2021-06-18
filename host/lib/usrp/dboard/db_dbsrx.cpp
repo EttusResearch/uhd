@@ -21,7 +21,6 @@
 #include <uhd/utils/static.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
-#include <boost/math/special_functions/round.hpp>
 #include <chrono>
 #include <cmath>
 #include <functional>
@@ -491,11 +490,11 @@ static int gain_to_gc2_vga_reg(double& gain)
 
     // Half dB steps from 0-5dB, 1dB steps from 5-24dB
     if (gain < 5) {
-        reg  = boost::math::iround(31.0 - gain / 0.5);
-        gain = double(boost::math::iround(gain) * 0.5);
+        reg  = static_cast<int>(std::lround(31.0 - gain / 0.5));
+        gain = std::round(gain) * 0.5;
     } else {
-        reg  = boost::math::iround(22.0 - (gain - 4.0));
-        gain = double(boost::math::iround(gain));
+        reg  = static_cast<int>(std::lround(22.0 - (gain - 4.0)));
+        gain = std::round(gain);
     }
 
     UHD_LOGGER_TRACE("DBSRX") << boost::format("DBSRX GC2 Gain: %f dB, reg: %d") % gain

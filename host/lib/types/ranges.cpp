@@ -7,8 +7,8 @@
 
 #include <uhd/exception.hpp>
 #include <uhd/types/ranges.hpp>
-#include <boost/math/special_functions/round.hpp>
 #include <algorithm>
+#include <cmath>
 #include <sstream>
 
 using namespace uhd;
@@ -148,8 +148,7 @@ double meta_range_t::clip(double value, bool clip_step) const
         if (value <= r.stop()) {
             if (not clip_step or r.step() == 0)
                 return value;
-            return boost::math::round((value - r.start()) / r.step()) * r.step()
-                   + r.start();
+            return std::round((value - r.start()) / r.step()) * r.step() + r.start();
         }
         // continue on to the next range
         last_stop = r.stop();

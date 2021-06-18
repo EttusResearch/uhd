@@ -13,11 +13,12 @@
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
-#include <stdint.h>
+#include <uhdlib/utils/narrow.hpp>
+#include <cstdint>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
-#include <boost/math/special_functions/round.hpp>
 #include <boost/math/special_functions/sign.hpp>
+#include <cmath>
 #include <iomanip>
 #include <tuple>
 
@@ -257,7 +258,8 @@ void usrp1_codec_ctrl_impl::write_aux_dac(aux_dac_t which, double volts)
 {
     // special case for aux dac d (aka sigma delta word)
     if (which == AUX_DAC_D) {
-        uint16_t dac_word = uhd::clip(boost::math::iround(volts * 0xfff / 3.3), 0, 0xfff);
+        uint16_t dac_word = uhd::clip(
+            uhd::narrow_cast<int>(std::lround(volts * 0xfff / 3.3)), 0, 0xfff);
         _ad9862_regs.sig_delt_11_4 = uint8_t(dac_word >> 4);
         _ad9862_regs.sig_delt_3_0  = uint8_t(dac_word & 0xf);
         this->send_reg(42);
@@ -266,7 +268,8 @@ void usrp1_codec_ctrl_impl::write_aux_dac(aux_dac_t which, double volts)
     }
 
     // calculate the dac word for aux dac a, b, c
-    uint8_t dac_word = uhd::clip(boost::math::iround(volts * 0xff / 3.3), 0, 0xff);
+    uint8_t dac_word =
+        uhd::clip(uhd::narrow_cast<int>(std::lround(volts * 0xff / 3.3)), 0, 0xff);
 
     // setup a lookup table for the aux dac params (reg ref, reg addr)
     typedef std::tuple<uint8_t*, uint8_t> dac_params_t;
@@ -356,7 +359,7 @@ double usrp1_codec_ctrl_impl::fine_tune(double codec_rate, double target_freq)
     static const double scale_factor = std::pow(2.0, 24);
 
     uint32_t freq_word =
-        uint32_t(boost::math::round(std::abs((target_freq / codec_rate) * scale_factor)));
+        uint32_t(std::lround(std::abs((target_freq / codec_rate) * scale_factor)));
 
     double actual_freq = freq_word * codec_rate / scale_factor;
 
