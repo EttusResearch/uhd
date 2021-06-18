@@ -12,7 +12,6 @@
 #include <uhd/utils/safe_call.hpp>
 #include <uhdlib/usrp/cores/dsp_core_utils.hpp>
 #include <uhdlib/usrp/cores/rx_dsp_core_3000.hpp>
-#include <boost/assign/list_of.hpp>
 #include <algorithm>
 #include <cmath>
 #include <functional>

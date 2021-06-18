@@ -23,7 +23,6 @@
 #include <uhdlib/usrp/gpio_defs.hpp>
 #include <uhdlib/usrp/multi_usrp_utils.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <algorithm>
 #include <bitset>

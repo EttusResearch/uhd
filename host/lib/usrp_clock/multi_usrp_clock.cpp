@@ -10,7 +10,6 @@
 #include <uhd/usrp_clock/multi_usrp_clock.hpp>
 #include <uhd/usrp_clock/octoclock_eeprom.hpp>
 #include <uhd/utils/log.hpp>
-#include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 
 using namespace uhd;

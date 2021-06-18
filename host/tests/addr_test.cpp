@@ -8,7 +8,6 @@
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/mac_addr.hpp>
 #include <uhd/usrp/dboard_id.hpp>
-#include <boost/assign/list_of.hpp>
 #include <boost/test/unit_test.hpp>
 #include <algorithm>
 #include <iostream>

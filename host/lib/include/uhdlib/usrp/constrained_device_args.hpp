@@ -12,7 +12,6 @@
 #include <uhd/utils/cast.hpp>
 #include <unordered_map>
 #include <boost/algorithm/string.hpp>
-#include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <sstream>
 #include <string>

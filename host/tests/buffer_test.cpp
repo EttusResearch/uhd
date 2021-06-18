@@ -6,10 +6,8 @@
 //
 
 #include <uhd/transport/bounded_buffer.hpp>
-#include <boost/assign/list_of.hpp>
 #include <boost/test/unit_test.hpp>
 
-using namespace boost::assign;
 using namespace uhd::transport;
 
 static const double timeout = 0.01 /*secs*/;
