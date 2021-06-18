@@ -13,7 +13,6 @@
 #include <uhdlib/usrp/cores/dsp_core_utils.hpp>
 #include <uhdlib/usrp/cores/rx_dsp_core_3000.hpp>
 #include <boost/assign/list_of.hpp>
-#include <boost/math/special_functions/round.hpp>
 #include <algorithm>
 #include <cmath>
 #include <functional>
@@ -136,7 +135,7 @@ public:
     double set_host_rate(const double rate) override
     {
         const size_t decim_rate =
-            boost::math::iround(_tick_rate / this->get_host_rates().clip(rate, true));
+            std::lround(_tick_rate / this->get_host_rates().clip(rate, true));
         size_t decim = decim_rate;
 
         // determine which half-band filters are activated
@@ -228,7 +227,7 @@ public:
     {
         const double target_scalar =
             (1 << (_is_b200 ? 16 : 15)) * _scaling_adjustment / _dsp_extra_scaling;
-        const int32_t actual_scalar = boost::math::iround(target_scalar);
+        const int32_t actual_scalar = static_cast<int32_t>(std::lround(target_scalar));
         // Calculate the error introduced by using integer representation for the scalar,
         // can be corrected in host later.
         _fxpt_scalar_correction = target_scalar / actual_scalar;

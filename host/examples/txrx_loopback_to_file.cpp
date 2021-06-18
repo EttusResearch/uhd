@@ -15,9 +15,9 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
-#include <boost/math/special_functions/round.hpp>
 #include <boost/program_options.hpp>
 #include <boost/thread/thread.hpp>
+#include <cmath>
 #include <csignal>
 #include <fstream>
 #include <functional>
@@ -438,8 +438,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     // pre-compute the waveform values
     const wave_table_class wave_table(wave_type, ampl);
-    const size_t step =
-        boost::math::iround(wave_freq / tx_usrp->get_tx_rate() * wave_table_len);
+    const size_t step = std::lround(wave_freq / tx_usrp->get_tx_rate() * wave_table_len);
     size_t index = 0;
 
     // create a transmit streamer

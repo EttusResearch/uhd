@@ -9,7 +9,7 @@
 #include "x300_regs.hpp"
 #include <uhd/utils/safe_call.hpp>
 #include <boost/assign/list_of.hpp>
-#include <boost/math/special_functions/round.hpp>
+#include <cmath>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -218,7 +218,7 @@ void x300_dboard_iface::write_aux_dac(unit_t unit, aux_dac_t which, double value
     if (unit == UNIT_BOTH)
         throw uhd::runtime_error("UNIT_BOTH not supported.");
 
-    _dac_regs[unit].data = boost::math::iround(4095 * value / 3.3);
+    _dac_regs[unit].data = static_cast<int>(std::lround(4095 * value / 3.3));
     _dac_regs[unit].cmd  = ad5623_regs_t::CMD_WR_UP_DAC_CHAN_N;
 
     typedef uhd::dict<aux_dac_t, ad5623_regs_t::addr_t> aux_dac_to_addr;

@@ -19,8 +19,8 @@
 #include <uhd/utils/static.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
-#include <boost/math/special_functions/round.hpp>
 #include <boost/thread.hpp>
+#include <cmath>
 #include <functional>
 #include <utility>
 
@@ -258,7 +258,7 @@ double dbsrx2::set_lo_freq(double target_freq)
 
     N       = (target_freq * R * ext_div) / (ref_freq); // actual spec range is (19, 251)
     intdiv  = int(std::floor(N)); //  if (intdiv < 19  or intdiv > 251) continue;
-    fracdiv = boost::math::iround((N - intdiv) * double(1 << 20));
+    fracdiv = static_cast<int>(std::lround((N - intdiv) * double(1 << 20)));
 
     // calculate the actual freq from the values above
     N        = double(intdiv) + double(fracdiv) / double(1 << 20);
@@ -305,7 +305,7 @@ double dbsrx2::set_lo_freq(double target_freq)
  */
 static int gain_to_bbg_vga_reg(double& gain)
 {
-    int reg = boost::math::iround(dbsrx2_gain_ranges["BBG"].clip(gain));
+    int reg = static_cast<int>(std::lround(dbsrx2_gain_ranges["BBG"].clip(gain)));
 
     gain = double(reg);
 

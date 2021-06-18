@@ -6,12 +6,10 @@
 //
 
 #include <uhd/utils/gain_group.hpp>
-#include <boost/math/special_functions/round.hpp>
 #include <boost/test/unit_test.hpp>
+#include <cmath>
 #include <functional>
 #include <iostream>
-
-#define rint(x) boost::math::iround(x)
 
 using namespace uhd;
 
@@ -34,7 +32,7 @@ public:
     void set_value(double gain)
     {
         double step = get_range().step();
-        _gain       = step * rint(gain / step);
+        _gain       = step * std::round(gain / step);
     }
 
 private:
@@ -57,7 +55,7 @@ public:
     void set_value(double gain)
     {
         double step = get_range().step();
-        _gain       = step * rint(gain / step);
+        _gain       = step * std::round(gain / step);
     }
 
 private:

@@ -16,8 +16,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/math/special_functions/round.hpp>
 #include <chrono>
+#include <cmath>
 #include <cstdio>
 #include <functional>
 
@@ -533,8 +533,8 @@ void usrp1_impl::set_enb_rx_dc_offset(const std::string& db, const bool enb)
 std::complex<double> usrp1_impl::set_rx_dc_offset(
     const std::string& db, const std::complex<double>& offset)
 {
-    const int32_t i_off = boost::math::iround(offset.real() * (1ul << 31));
-    const int32_t q_off = boost::math::iround(offset.imag() * (1ul << 31));
+    const int32_t i_off = static_cast<int32_t>(std::lround(offset.real() * (1ul << 31)));
+    const int32_t q_off = static_cast<int32_t>(std::lround(offset.imag() * (1ul << 31)));
 
     if (db == "A") {
         _iface->poke32(FR_ADC_OFFSET_0, i_off);

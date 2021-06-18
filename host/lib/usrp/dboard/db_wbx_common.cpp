@@ -12,6 +12,7 @@
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/log.hpp>
+#include <cmath>
 #include <functional>
 
 using namespace uhd;
@@ -31,7 +32,7 @@ static int rx_pga0_gain_to_iobits(double& gain)
     double attn = wbx_rx_gain_ranges["PGA0"].stop() - gain;
 
     // calculate the attenuation
-    int attn_code = boost::math::iround(attn * 2);
+    int attn_code = static_cast<int>(std::lround(attn * 2));
     int iobits    = ((~attn_code) << RX_ATTN_SHIFT) & RX_ATTN_MASK;
 
     UHD_LOGGER_TRACE("WBX")

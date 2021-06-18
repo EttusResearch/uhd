@@ -12,7 +12,6 @@
 #include <uhd/utils/safe_call.hpp>
 #include <stdint.h>
 #include <boost/format.hpp>
-#include <boost/math/special_functions/round.hpp>
 #include <cmath>
 #include <cstdlib>
 #include <stdexcept>
@@ -315,14 +314,14 @@ public:
             // difference using analog delay. Do the best we can.
             adly_en    = true;
             adly_value = static_cast<uint8_t>(
-                boost::math::round((ADLY_MAX_NS - ADLY_MIN_NS) / ADLY_RES_NS));
+                std::lround((ADLY_MAX_NS - ADLY_MIN_NS) / ADLY_RES_NS));
             coerced_delay += ADLY_MAX_NS;
         } else if (leftover_delay >= ADLY_MIN_NS && leftover_delay <= ADLY_MAX_NS) {
             // The leftover delay can be compensated by the analog delay up to the analog
             // delay resolution
             adly_en    = true;
             adly_value = static_cast<uint8_t>(
-                boost::math::round((leftover_delay - ADLY_MIN_NS) / ADLY_RES_NS));
+                std::lround((leftover_delay - ADLY_MIN_NS) / ADLY_RES_NS));
             coerced_delay += ADLY_MIN_NS + (ADLY_RES_NS * adly_value);
         } else if (leftover_delay >= (ADLY_MIN_NS - half_vco_period_ns)
                    && leftover_delay < ADLY_MIN_NS) {
@@ -330,7 +329,7 @@ public:
             // we move the digital delay back by half a VCO cycle then it will be in the
             // range of the analog delay. So do that!
             adly_en       = true;
-            adly_value    = static_cast<uint8_t>(boost::math::round(
+            adly_value    = static_cast<uint8_t>(std::lround(
                 (leftover_delay + half_vco_period_ns - ADLY_MIN_NS) / ADLY_RES_NS));
             half_shift_en = 1;
             coerced_delay +=
@@ -513,7 +512,7 @@ private:
                 // better spur performance by balancing the predivider and the
                 // divider.
                 const int n = static_cast<int>(
-                    boost::math::round((r * try_vco_freq) / (VCXO_PLL2_N * ref)));
+                    std::lround((r * try_vco_freq) / (VCXO_PLL2_N * ref)));
 
                 const double actual_mcr = (ref * VCXO_PLL2_N * n) / (vcodiv * r);
                 const double error      = std::abs(actual_mcr - output_freq);

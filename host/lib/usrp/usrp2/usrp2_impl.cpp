@@ -18,9 +18,8 @@
 #include <boost/asio.hpp>
 #include <boost/asio/ip/address_v4.hpp>
 #include <boost/format.hpp>
-#include <boost/math/special_functions.hpp>
-#include <functional>
 #include <cmath>
+#include <functional>
 
 using namespace uhd;
 using namespace uhd::usrp;

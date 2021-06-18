@@ -54,9 +54,10 @@
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <boost/assign/list_of.hpp>
+#include <uhdlib/utils/narrow.hpp>
 #include <boost/format.hpp>
 #include <boost/array.hpp>
-#include <boost/math/special_functions/round.hpp>
+#include <cmath>
 #include <utility>
 #include <cmath>
 #include <chrono>
@@ -1966,7 +1967,8 @@ double tvrx2::set_gain(double gain, const std::string& name)
  **********************************************************************/
 static tda18272hnm_regs_t::lp_fc_t bandwidth_to_lp_fc_reg(double& bandwidth)
 {
-    int reg = uhd::clip(boost::math::iround((bandwidth - 5.0e6) / 1.0e6), 0, 4);
+    int reg =
+        uhd::clip(uhd::narrow_cast<int>(std::lround((bandwidth - 5.0e6)) / 1.0e6), 0, 4);
 
     switch (reg) {
         case 0:

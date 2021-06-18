@@ -35,7 +35,7 @@
 #include <uhd/utils/static.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
-#include <boost/math/special_functions/round.hpp>
+#include <cmath>
 #include <functional>
 
 using namespace uhd;
@@ -441,7 +441,7 @@ double rfx_xcvr::set_lo_freq(dboard_iface::unit_t unit, double target_freq)
                 // calculate B and A from N
                 double N = target_freq * R / ref_freq;
                 B        = int(std::floor(N / P));
-                A        = boost::math::iround(N - P * B);
+                A        = static_cast<int>(std::lround(N - P * B));
                 if (B < A or B > 8191 or B < 3 or A > 31) {
                     continue; // constraints on A, B
                 }

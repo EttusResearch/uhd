@@ -16,7 +16,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
-#include <boost/math/special_functions/round.hpp>
+#include <cmath>
 #include <functional>
 
 using namespace uhd;
@@ -44,7 +44,7 @@ static int tx_pga0_gain_to_iobits(double& gain)
     double attn = wbx_v3_tx_gain_ranges["PGA0"].stop() - gain;
 
     // calculate the attenuation
-    int attn_code = boost::math::iround(attn);
+    int attn_code = static_cast<int>(std::lround(attn));
     int iobits    = ((attn_code & 16 ? 0 : TX_ATTN_16) | (attn_code & 8 ? 0 : TX_ATTN_8)
                      | (attn_code & 4 ? 0 : TX_ATTN_4) | (attn_code & 2 ? 0 : TX_ATTN_2)
                      | (attn_code & 1 ? 0 : TX_ATTN_1))

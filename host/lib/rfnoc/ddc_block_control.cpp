@@ -16,7 +16,7 @@
 #include <uhdlib/usrp/cores/dsp_core_utils.hpp>
 #include <uhdlib/utils/compat_check.hpp>
 #include <uhdlib/utils/math.hpp>
-#include <boost/math/special_functions/round.hpp>
+#include <cmath>
 #include <set>
 #include <string>
 
@@ -520,7 +520,7 @@ private:
         const double compensation_factor  = 1. / dsp_gain;
         // Convert to fixpoint
         const double target_factor  = FIXPOINT_SCALING * compensation_factor;
-        const int32_t actual_factor = boost::math::iround(target_factor);
+        const int32_t actual_factor = std::lround(target_factor);
         // Write DDC with scaling correction for CIC and DDS that maximizes
         // dynamic range
         _ddc_reg_iface.poke32(SR_SCALE_IQ_ADDR, actual_factor, chan);
