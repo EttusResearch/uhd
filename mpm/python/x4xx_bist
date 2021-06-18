@@ -659,8 +659,13 @@ class X4XXBIST(bist.UsrpBIST):
                 mask = 0xDB6D
             else:
                 mask = 0xFFF
-            mpm_c.dio_set_pin_masters(inport, mask)
-            mpm_c.dio_set_pin_masters(outport, mask)
+            bank_convert = {
+                "PORTA": "GPIO0",
+                "PORTB": "GPIO1",
+            }
+            ps_control_args = ["MPM"] * 12
+            mpm_c.dio_set_gpio_src(bank_convert[inport], ps_control_args)
+            mpm_c.dio_set_gpio_src(bank_convert[outport], ps_control_args)
             mpm_c.dio_set_voltage_level(inport, voltage)
             mpm_c.dio_set_voltage_level(outport, voltage)
             mpm_c.dio_set_pin_directions(inport, 0x00000)
@@ -677,13 +682,13 @@ class X4XXBIST(bist.UsrpBIST):
         for voltage in ["1V8", "2V5", "3V3"]:
             for mode in ["DIO", "HDMI"]:
                 for pattern in [0xFFFF, 0xA5A5, 0x5A5A, 0x0000]:
-                    sys.stderr.write("test: PortA -> PortB, {}, {}, 0x{:04X}"
+                    sys.stderr.write("test: PortA -> PortB, {}, {}, 0x{:04X}\n"
                                      .format(voltage, mode, pattern))
                     status, data = _run_sub_test(
                         "PORTB", "PORTA", mode, voltage, pattern)
                     if not status:
                         return status, data
-                    sys.stderr.write("test: PortB -> PortA, {}, {}, 0x{:04X}"
+                    sys.stderr.write("test: PortB -> PortA, {}, {}, 0x{:04X}\n"
                                      .format(voltage, mode, pattern))
                     status, data = _run_sub_test(
                         "PORTA", "PORTB", mode, voltage, pattern)
