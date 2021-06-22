@@ -251,7 +251,7 @@ The Ettus USRP X410 has various network interfaces:
     depending on the FPGA image flavor, up-to four different network interfaces
     may exist per QSFP28 port, using the `sfpX`for the first lane, and
     `sfpX_1-3` for the other three lanes. Each network interface has a default
-    static IP address. Note that for multi-lane protocols, such as 100GbE, a
+    static IP address. Note that for multi-lane protocols, such as 100 GbE, a
     single interface is used (`sfpX`).
 
 The configuration files for these network interfaces are stored in:
@@ -269,6 +269,39 @@ Interface Name | Description                            | Default Configuration 
 `sfp1_1`       | QSFP28 1 (lane 1)                      | 192.168.21.2/24       | sfp1_1.network     | N/C                        |
 `sfp1_2`       | QSFP28 1 (lane 2)                      | 192.168.22.2/24       | sfp1_2.network     | N/C                        |
 `sfp1_3`       | QSFP28 1 (lane 3)                      | 192.168.23.2/24       | sfp1_3.network     | N/C                        |
+
+\subsubsection x4xx_getting_started_network_connectivity_leds Network Status LEDs
+
+The Ettus USRP X410 is equipped with status LEDs for its network-capable ports:
+RJ45 and QSFP28s,
+see \ref x4xx_getting_started_network_connectivity_leds_rj45 and
+\ref x4xx_getting_started_network_connectivity_leds_qsfp28 accordingly.
+
+\paragraph x4xx_getting_started_network_connectivity_leds_rj45 RJ45 LED Behavior
+
+The RJ45 port has two independent LEDs: green (right) and yellow (left). The
+table below summarizes the LEDs' behavior. Note that link speed indication is
+not currently supported.
+
+Link / Activity    | Green LED | Yellow LED |
+-------------------|-----------|------------|
+No Link            | Off       | Off        |
+Link / No Activity | On        | Off        |
+Link / Activity    | On        | Blinking   |
+
+\paragraph x4xx_getting_started_network_connectivity_leds_qsfp28 QSFP28 LED Behavior
+
+Each QSFP28 connector has four LEDs, one for each high-speed transceiver lane.
+The table below summarizes the LEDs' behavior, note that for multi-lane
+protocols, such as 100 GbE, the corresponding LEDs are ganged together. Within
+the same image, multiple speeds on the same port (e.g., both 10 GbE and 100
+GbE) are not supported, therefore link speed indication is not supported.
+
+Link / Activity    | QSFP28 LED (4 total) |
+-------------------|----------------------|
+No Link            | Off                  |
+Link / No Activity | Green (solid)        |
+Link / Activity    | Amber (blinking)     |
 
 \subsection x4xx_getting_started_security Security-related Settings
 
@@ -400,20 +433,20 @@ which master clock rates are available. This is because the data converter
 configuration is part of the FPGA image (the ADCs/DACs on the X410 are on the
 same die as the FPGA).
 The image flavors consist of two short strings, separated by an underscore, e.g.
-`X4_200` is an image flavor which contains 4x10GbE, and can handle an analog
+`X4_200` is an image flavor which contains 4x 10 GbE, and can handle an analog
 bandwidth of 200 MHz. The first two characters describe the configuration of
 the QSFP28 ports: 'X' stands for 10 GbE, 'C' stands for 100 GbE. See the following
 table for more details.
 
 | FPGA Image Flavor   | QSFP28 Port 0 Interface | QSFP28 Port 1 Interface |
 |---------------------|-------------------------|-------------------------|
-| X1_100              | 1x 10GbE (Lane 0)       | N/C                     |
+| X1_100              | 1x 10 GbE (Lane 0)      | N/C                     |
 | X4_{100, 200}       | 4x 10 GbE               | N/C                     |
-| XG_{100, 200}       | 1x 10GbE (Lane 0)       | 1x 10GbE (Lane 0)       |
-| X4_{100, 200}       | 4x 10GbE (All Lanes)    | N/C                     |
-| X4C_{100, 200}      | 4x 10GbE (All Lanes)    | 100GbE                  |
-| C1_400              | 100GbE                  | N/C                     |
-| CG_{100, 400}       | 100GbE                  | 100GbE                  |
+| XG_{100, 200}       | 1x 10 GbE (Lane 0)      | 1x 10 GbE (Lane 0)      |
+| X4_{100, 200}       | 4x 10 GbE (All Lanes)   | N/C                     |
+| X4C_{100, 200}      | 4x 10 GbE (All Lanes)   | 100 GbE                 |
+| C1_400              | 100 GbE                 | N/C                     |
+| CG_{100, 400}       | 100 GbE                 | 100 GbE                 |
 
 The analog bandwidth determines the available master clock rates. As of UHD 4.1,
 only the X4_200 image is shipped with UHD, which allows a 245.76 MHz or
