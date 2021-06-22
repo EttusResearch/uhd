@@ -508,10 +508,15 @@ void b200_impl::handle_overflow(const size_t radio_index)
             stream_cmd.stream_now = false;
             stream_cmd.time_spec =
                 _radio_perifs[radio_index].time64->get_time_now() + time_spec_t(0.01);
-            my_streamer->issue_stream_cmd(stream_cmd);
+            // FIXME: temporarily remove the start stream command.
+            // This will avoid an issue that gets the b210 in a bad state.
+            // my_streamer->issue_stream_cmd(stream_cmd);
         }
-    } else
-        _radio_perifs[radio_index].framer->handle_overflow();
+    } else {
+        // FIXME: temporarily remove the overflow handling that re-issues a start
+        //        command. This will avoid an issue that gets the b210 in a bad state.
+        // _radio_perifs[radio_index].framer->handle_overflow();
+    }
 }
 
 /***********************************************************************
