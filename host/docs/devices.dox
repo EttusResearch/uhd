@@ -49,8 +49,8 @@ unless stated otherwise, they will still work with this version of UHD.
 ## Daughterboards
 
 \li \subpage page_dboards
-\li \subpage page_twinrx
-\li \subpage page_zbx
+\li \ref page_twinrx
+\li \ref page_zbx
 
 ## OctoClock
 
