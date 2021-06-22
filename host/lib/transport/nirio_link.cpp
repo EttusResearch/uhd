@@ -332,8 +332,6 @@ void nirio_link::_wait_until_stream_ready()
 
     uint32_t reg_data = 0xffffffff;
     bool tx_busy = true, rx_busy = true;
-    boost::posix_time::ptime start_time;
-    boost::posix_time::time_duration elapsed;
     nirio_status status = NiRio_Status_Success;
 
     nirio_status_chain(
