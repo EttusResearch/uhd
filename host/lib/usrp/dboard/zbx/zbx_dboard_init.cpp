@@ -190,7 +190,7 @@ void zbx_dboard_impl::_init_prop_tree()
         _cpld);
 
     subtree->create<eeprom_map_t>("eeprom")
-        .add_coerced_subscriber([this](const eeprom_map_t&) {
+        .add_coerced_subscriber([](const eeprom_map_t&) {
             throw uhd::runtime_error("Attempting to update daughterboard eeprom!");
         })
         .set_publisher([this]() { return get_db_eeprom(); });
@@ -261,8 +261,7 @@ uhd::usrp::pwr_cal_mgr::sptr zbx_dboard_impl::_init_power_cal(
             return trx == TX_DIRECTION ? get_tx_frequency(chan_idx)
                                        : get_rx_frequency(chan_idx);
         },
-        [this,
-            trx_str = (trx == TX_DIRECTION ? "tx" : "rx"),
+        [trx_str = (trx == TX_DIRECTION ? "tx" : "rx"),
             fe_path,
             subtree,
             chan_str = std::to_string(chan_idx)]() -> std::string {
@@ -327,16 +326,15 @@ void zbx_dboard_impl::_init_experts(uhd::property_tree::sptr subtree,
         expert_factory::add_worker_node<zbx_rx_gain_expert>(expert,
             expert->node_retriever(),
             fe_path,
-            chan_idx,
             get_pwr_mgr(trx).at(chan_idx),
             _rx_dsa_cal);
     }
 
     expert_factory::add_worker_node<zbx_freq_be_expert>(
-        expert, expert->node_retriever(), fe_path, trx, chan_idx);
+        expert, expert->node_retriever(), fe_path);
 
     expert_factory::add_worker_node<zbx_band_inversion_expert>(
-        expert, expert->node_retriever(), fe_path, trx, chan_idx, _db_idx, _rpcc);
+        expert, expert->node_retriever(), fe_path, trx, chan_idx, _rpcc);
 
 
     // Initialize our LO Control Experts
@@ -365,8 +363,6 @@ void zbx_dboard_impl::_init_experts(uhd::property_tree::sptr subtree,
             expert_factory::add_worker_node<zbx_lo_expert>(expert,
                 expert->node_retriever(),
                 fe_path,
-                trx,
-                chan_idx,
                 lo_select,
                 lo_ctrl);
             _lo_ctrl_map.insert({lo, lo_ctrl});

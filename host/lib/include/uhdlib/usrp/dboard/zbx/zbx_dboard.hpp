@@ -171,21 +171,21 @@ public:
     }
 
     // LO Property Getters
-    std::vector<std::string> get_tx_lo_names(const size_t /*chan*/) const
+    std::vector<std::string> get_tx_lo_names(const size_t /*chan*/) const override
     {
         return ZBX_LOS;
     }
-    std::vector<std::string> get_rx_lo_names(const size_t /*chan*/) const
+    std::vector<std::string> get_rx_lo_names(const size_t /*chan*/) const override
     {
         return ZBX_LOS;
     }
     std::vector<std::string> get_tx_lo_sources(
-        const std::string& /*name*/, const size_t /*chan*/) const
+        const std::string& /*name*/, const size_t /*chan*/) const override
     {
         return std::vector<std::string>{"internal", "external"};
     }
     std::vector<std::string> get_rx_lo_sources(
-        const std::string& /*name*/, const size_t /*chan*/) const
+        const std::string& /*name*/, const size_t /*chan*/) const override
     {
         return std::vector<std::string>{"internal", "external"};
     }

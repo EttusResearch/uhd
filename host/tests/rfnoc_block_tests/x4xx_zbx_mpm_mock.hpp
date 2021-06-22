@@ -137,7 +137,7 @@ public:
     double rfdc_set_nco_freq(const std::string& trx,
         const size_t /*db_id*/,
         const size_t chan,
-        const double freq)
+        const double freq) override
     {
         BOOST_REQUIRE(trx == "rx" || trx == "tx");
         BOOST_REQUIRE(chan < uhd::usrp::zbx::ZBX_NUM_CHANS);
@@ -146,7 +146,7 @@ public:
     }
 
     double rfdc_get_nco_freq(
-        const std::string& trx, const size_t /*db_id*/, const size_t chan)
+        const std::string& trx, const size_t /*db_id*/, const size_t chan) override
     {
         BOOST_REQUIRE(trx == "rx" || trx == "tx");
         BOOST_REQUIRE(chan < uhd::usrp::zbx::ZBX_NUM_CHANS);

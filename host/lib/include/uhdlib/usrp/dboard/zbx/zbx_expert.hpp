@@ -192,13 +192,13 @@ private:
 class zbx_freq_be_expert : public uhd::experts::worker_node_t
 {
 public:
-    zbx_freq_be_expert(const uhd::experts::node_retriever_t& db,
-        const uhd::fs_path fe_path,
-        const uhd::direction_t trx,
-        const size_t chan)
+    zbx_freq_be_expert(
+        const uhd::experts::node_retriever_t& db, const uhd::fs_path fe_path)
         : uhd::experts::worker_node_t(fe_path / "zbx_freq_be_expert")
-        , _coerced_lo1_frequency(db, fe_path / "los" / ZBX_LO1 / "freq" / "value" / "coerced")
-        , _coerced_lo2_frequency(db, fe_path / "los" / ZBX_LO2 / "freq" / "value" / "coerced")
+        , _coerced_lo1_frequency(
+              db, fe_path / "los" / ZBX_LO1 / "freq" / "value" / "coerced")
+        , _coerced_lo2_frequency(
+              db, fe_path / "los" / ZBX_LO2 / "freq" / "value" / "coerced")
         , _coerced_if2_frequency(db, fe_path / "if_freq" / "coerced")
         , _is_highband(db, fe_path / "is_highband")
         , _mixer1_m(db, fe_path / "mixer1_m")
@@ -206,8 +206,6 @@ public:
         , _mixer2_m(db, fe_path / "mixer2_m")
         , _mixer2_n(db, fe_path / "mixer2_n")
         , _coerced_frequency(db, fe_path / "freq" / "coerced")
-        , _trx(trx)
-        , _chan(chan)
     {
         //  Inputs
         bind_accessor(_coerced_lo1_frequency);
@@ -240,10 +238,6 @@ private:
 
     // Output to user/API
     uhd::experts::data_writer_t<double> _coerced_frequency;
-
-    // Channel properties
-    const uhd::direction_t _trx;
-    const size_t _chan;
 };
 
 /*!---------------------------------------------------------
@@ -264,8 +258,6 @@ class zbx_lo_expert : public uhd::experts::worker_node_t
 public:
     zbx_lo_expert(const uhd::experts::node_retriever_t& db,
         const uhd::fs_path fe_path,
-        const uhd::direction_t trx,
-        const size_t chan,
         const std::string lo,
         std::shared_ptr<zbx_lo_ctrl> zbx_lo_ctrl)
         : uhd::experts::worker_node_t(fe_path / "zbx_" + lo + "_expert")
@@ -274,8 +266,6 @@ public:
         , _test_mode_enabled(db, fe_path / lo / "test_mode")
         , _coerced_lo_frequency(db, fe_path / "los" / lo / "freq" / "value" / "coerced")
         , _lo_ctrl(zbx_lo_ctrl)
-        , _trx(trx)
-        , _chan(chan)
     {
         bind_accessor(_desired_lo_frequency);
         bind_accessor(_test_mode_enabled);
@@ -296,8 +286,6 @@ private:
     uhd::experts::data_writer_t<double> _coerced_lo_frequency;
 
     std::shared_ptr<zbx_lo_ctrl> _lo_ctrl;
-    const uhd::direction_t _trx;
-    const size_t _chan;
 };
 
 
@@ -410,7 +398,6 @@ class zbx_rx_gain_expert : public uhd::experts::worker_node_t
 public:
     zbx_rx_gain_expert(const uhd::experts::node_retriever_t& db,
         const uhd::fs_path fe_path,
-        const size_t chan,
         uhd::usrp::pwr_cal_mgr::sptr power_mgr,
         uhd::usrp::cal::zbx_rx_dsa_cal::sptr dsa_cal)
         : uhd::experts::worker_node_t(fe_path / "zbx_gain_expert")
@@ -424,7 +411,6 @@ public:
         , _dsa3b(db, fe_path / "gains" / ZBX_GAIN_STAGE_DSA3B / "value" / "desired")
         , _power_mgr(power_mgr)
         , _dsa_cal(dsa_cal)
-        , _chan(chan)
     {
         bind_accessor(_gain_in);
         bind_accessor(_profile);
@@ -455,7 +441,6 @@ private:
 
     uhd::usrp::pwr_cal_mgr::sptr _power_mgr;
     uhd::usrp::cal::zbx_rx_dsa_cal::sptr _dsa_cal;
-    const size_t _chan;
 };
 
 /*!---------------------------------------------------------
@@ -660,11 +645,9 @@ public:
         const uhd::fs_path fe_path,
         const uhd::direction_t trx,
         const size_t chan,
-        const int db_idx,
         uhd::usrp::zbx_rpc_iface::sptr rpcc)
         : uhd::experts::worker_node_t(fe_path / "zbx_band_inversion_expert")
         , _is_band_inverted(db, fe_path / "band_inverted")
-        , _db_idx(db_idx)
         , _rpcc(rpcc)
         , _trx(trx)
         , _chan(chan)
@@ -678,7 +661,6 @@ private:
     // Inputs from Frequency FE expert
     uhd::experts::data_reader_t<bool> _is_band_inverted;
 
-    const size_t _db_idx;
     uhd::usrp::zbx_rpc_iface::sptr _rpcc;
     const uhd::direction_t _trx;
     const size_t _chan;

@@ -18,8 +18,7 @@ zbx_lo_ctrl::zbx_lo_ctrl(zbx_lo_t lo,
     const double default_frequency,
     const double db_prc_rate,
     const bool testing_mode_enabled)
-    : _lo(lo)
-    , _log_id(ZBX_LO_LOG_ID.at(lo))
+    : _log_id(ZBX_LO_LOG_ID.at(lo))
     , _freq(default_frequency)
     , _db_prc_rate(db_prc_rate)
     , _testing_mode_enabled(testing_mode_enabled)

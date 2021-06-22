@@ -456,6 +456,9 @@ private:
     void write_register_vector(
         const std::string& reg_addr_name, const std::vector<uint32_t>& values);
 
+    // Cached register state
+    zbx_cpld_regs_t _regs = zbx_cpld_regs_t();
+
     //! Poker object
     poke_fn_type _poke32;
 
@@ -470,9 +473,6 @@ private:
 
     // infos about the daughtherboard revision
     std::string _db_rev_info;
-
-    // Cached register state
-    zbx_cpld_regs_t _regs = zbx_cpld_regs_t();
 
     const std::string _log_id;
 };

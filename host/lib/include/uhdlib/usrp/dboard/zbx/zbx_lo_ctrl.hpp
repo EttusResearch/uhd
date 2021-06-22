@@ -62,9 +62,7 @@ private:
     // Returns the appropriate output port for given LO
     lmx2572_iface::output_t _get_output_port(bool test_port);
 
-    // Specific LO that this class was constructed for
-    const zbx_lo_t _lo;
-
+    // String prefix for log messages
     const std::string _log_id;
 
     // LMX driver set up with this object specific LO
