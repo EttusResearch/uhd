@@ -521,7 +521,7 @@ private:
 
         // DB EEPROM
         subtree->create<eeprom_map_t>("eeprom")
-            .add_coerced_subscriber([this](const eeprom_map_t&) {
+            .add_coerced_subscriber([](const eeprom_map_t&) {
                 throw uhd::runtime_error("Attempting to update daughterboard eeprom!");
             })
             .set_publisher([this]() { return get_db_eeprom(); });
