@@ -8,7 +8,7 @@ The ZBX daughterboard is a two-channel superheterodyne transceiver with a focus
 of telecommunication applications in the frequency range below 8 GHz. It supports
 analog bandwidths of up to 400 MHz.
 
-The ZBX daughterboard is designed for use with the Ettus USPR X410.
+The ZBX daughterboard is the daughterboard for the Ettus USRP X410.
 
 Feature list:
 - Frequency range (Tx and Rx): 1 MHz - 7.2 GHz (Note: Tune range extends to 8 GHz)
@@ -16,10 +16,18 @@ Feature list:
 - Gain range: 0-60 dB.
   - Note: Rx gain range is reduced to 0-38 dB for frequencies below 500 MHz.
 - On-board CPLD for high flexibility
-- Maximum output power: 5-20 dBm (depending on frequency)
-- Maximum input power limit: +15 dBm
+- Maximum output power: up to 23 dBm (depending on frequency, see
+  <em>TX Maximum Output Power</em> in
+  <a href="http://www.ni.com/pdf/manuals/378493a">specifications</a>)
+- Maximum input power: 0 dBm (operational, see
+  <a href="http://www.ni.com/pdf/manuals/378493a">specifications</a> for damage
+  levels)
 
-\section zbx_too Theory of Operations
+See the RF section in the <a href="http://www.ni.com/pdf/manuals/378493a">Ettus
+USRP X410 Specifications</a> for a comprehensive ZBX daughterboard
+specifications list.
+
+\section zbx_too Theory of Operation
 
 The ZBX daughterboard has two transceiver chains. The following simplified block
 diagram shows their structure:
@@ -102,6 +110,17 @@ Use the uhd::usrp::multi_usrp::get_rx_antennas() or uhd::usrp::multi_usrp::get_t
 API calls to enumerate the valid antenna names. When using RFNoC API, use the
 uhd::rfnoc::radio_control::get_rx_antennas() and
 uhd::rfnoc::radio_control::get_tx_antennas() calls, respectively.
+
+\subsection zbx_leds Status LEDs
+
+The ZBX daughterboard is equipped with two LEDs per channel, one for "TX/RX0"
+and one for "RX1". These LEDs behave as follows:
+
+| LED State | TX/RX0               | RX1               |
+|-----------|----------------------|-------------------|
+| Off       | Port is inactive     | Port is inactive  |
+| Green     | Port is receiving    | Port is receiving |
+| Red       | Port is transmitting | N/A               |
 
 \section zbx_phase_alignment Phase Alignment
 
