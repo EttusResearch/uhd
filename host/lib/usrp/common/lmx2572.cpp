@@ -379,9 +379,8 @@ private:
     write_fn_t _poke16;
     read_fn_t _peek16;
     sleep_fn_t _sleep;
-    lmx2572_regs_t _regs      = lmx2572_regs_t();
-    muxout_state_t _mux_state = muxout_state_t::SDO;
-    bool _sync_mode           = false;
+    lmx2572_regs_t _regs = lmx2572_regs_t();
+    bool _sync_mode      = false;
 
     /**************************************************************************
      * Private Methods
