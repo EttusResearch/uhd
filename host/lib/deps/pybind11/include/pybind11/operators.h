@@ -6,8 +6,6 @@
 */
 
 
-
-
 #pragma once
 
 #include "pybind11.h"
@@ -19,8 +17,8 @@
 #  pragma warning(disable: 4127)
 #endif
 
-NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
-NAMESPACE_BEGIN(detail)
+PYBIND11_NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
+PYBIND11_NAMESPACE_BEGIN(detail)
 
 
 enum op_id : int {
@@ -148,6 +146,9 @@ PYBIND11_INPLACE_OPERATOR(ixor,     operator^=,   l ^= r)
 PYBIND11_INPLACE_OPERATOR(ior,      operator|=,   l |= r)
 PYBIND11_UNARY_OPERATOR(neg,        operator-,    -l)
 PYBIND11_UNARY_OPERATOR(pos,        operator+,    +l)
+
+
+
 PYBIND11_UNARY_OPERATOR(abs,        abs,          std::abs(l))
 PYBIND11_UNARY_OPERATOR(hash,       hash,         std::hash<L>()(l))
 PYBIND11_UNARY_OPERATOR(invert,     operator~,    (~l))
@@ -158,11 +159,13 @@ PYBIND11_UNARY_OPERATOR(float,      float_,       (double) l)
 #undef PYBIND11_BINARY_OPERATOR
 #undef PYBIND11_INPLACE_OPERATOR
 #undef PYBIND11_UNARY_OPERATOR
-NAMESPACE_END(detail)
+PYBIND11_NAMESPACE_END(detail)
 
 using detail::self;
 
-NAMESPACE_END(PYBIND11_NAMESPACE)
+using detail::hash;
+
+PYBIND11_NAMESPACE_END(PYBIND11_NAMESPACE)
 
 #if defined(_MSC_VER)
 #  pragma warning(pop)

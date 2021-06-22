@@ -6,13 +6,11 @@
 */
 
 
-
-
 #pragma once
 
 #include "detail/common.h"
 
-NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
+PYBIND11_NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
 
 class options {
 public:
@@ -63,4 +61,4 @@ private:
     state previous_state;
 };
 
-NAMESPACE_END(PYBIND11_NAMESPACE)
+PYBIND11_NAMESPACE_END(PYBIND11_NAMESPACE)

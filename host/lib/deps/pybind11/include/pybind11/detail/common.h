@@ -6,16 +6,14 @@
 */
 
 
-
-
 #pragma once
 
-#if !defined(NAMESPACE_BEGIN)
-#  define NAMESPACE_BEGIN(name) namespace name {
-#endif
-#if !defined(NAMESPACE_END)
-#  define NAMESPACE_END(name) }
-#endif
+#define PYBIND11_VERSION_MAJOR 2
+#define PYBIND11_VERSION_MINOR 6
+#define PYBIND11_VERSION_PATCH 1
+
+#define PYBIND11_NAMESPACE_BEGIN(name) namespace name {
+#define PYBIND11_NAMESPACE_END(name) }
 
 
 
@@ -48,8 +46,8 @@
 
 
 #if defined(__INTEL_COMPILER)
-#  if __INTEL_COMPILER < 1700
-#    error pybind11 requires Intel C++ compiler v17 or newer
+#  if __INTEL_COMPILER < 1800
+#    error pybind11 requires Intel C++ compiler v18 or newer
 #  endif
 #elif defined(__clang__) && !defined(__apple_build_version__)
 #  if __clang_major__ < 3 || (__clang_major__ == 3 && __clang_minor__ < 3)
@@ -93,9 +91,18 @@
 #  define PYBIND11_DEPRECATED(reason) __attribute__((deprecated(reason)))
 #endif
 
-#define PYBIND11_VERSION_MAJOR 2
-#define PYBIND11_VERSION_MINOR 3
-#define PYBIND11_VERSION_PATCH dev0
+#if defined(PYBIND11_CPP17)
+#  define PYBIND11_MAYBE_UNUSED [[maybe_unused]]
+#elif defined(_MSC_VER) && !defined(__clang__)
+#  define PYBIND11_MAYBE_UNUSED
+#else
+#  define PYBIND11_MAYBE_UNUSED __attribute__ ((__unused__))
+#endif
+
+
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#  define HAVE_SNPRINTF 1
+#endif
 
 
 #if defined(_MSC_VER)
@@ -104,7 +111,7 @@
 #  endif
 #  pragma warning(push)
 #  pragma warning(disable: 4510 4610 4512 4005)
-#  if defined(_DEBUG)
+#  if defined(_DEBUG) && !defined(Py_DEBUG)
 #    define PYBIND11_DEBUG_MARKER
 #    undef _DEBUG
 #  endif
@@ -114,9 +121,6 @@
 #include <frameobject.h>
 #include <pythread.h>
 
-#if defined(_WIN32) && (defined(min) || defined(max))
-#  error Macro clash with min and max -- define NOMINMAX when compiling your program on Windows
-#endif
 
 #if defined(isalnum)
 #  undef isalnum
@@ -126,6 +130,10 @@
 #  undef isupper
 #  undef tolower
 #  undef toupper
+#endif
+
+#if defined(copysign)
+#  undef copysign
 #endif
 
 #if defined(_MSC_VER)
@@ -142,6 +150,7 @@
 #include <vector>
 #include <string>
 #include <stdexcept>
+#include <exception>
 #include <unordered_set>
 #include <unordered_map>
 #include <memory>
@@ -169,7 +178,11 @@
 #define PYBIND11_STR_TYPE ::pybind11::str
 #define PYBIND11_BOOL_ATTR "__bool__"
 #define PYBIND11_NB_BOOL(ptr) ((ptr)->nb_bool)
+#define PYBIND11_BUILTINS_MODULE "builtins"
+
+
 #define PYBIND11_PLUGIN_IMPL(name) \
+    extern "C" PYBIND11_MAYBE_UNUSED PYBIND11_EXPORT PyObject *PyInit_##name(); \
     extern "C" PYBIND11_EXPORT PyObject *PyInit_##name()
 
 #else
@@ -193,11 +206,15 @@
 #define PYBIND11_STR_TYPE ::pybind11::bytes
 #define PYBIND11_BOOL_ATTR "__nonzero__"
 #define PYBIND11_NB_BOOL(ptr) ((ptr)->nb_nonzero)
+#define PYBIND11_BUILTINS_MODULE "__builtin__"
+
+
 #define PYBIND11_PLUGIN_IMPL(name) \
-    static PyObject *pybind11_init_wrapper();               \
-    extern "C" PYBIND11_EXPORT void init##name() {          \
-        (void)pybind11_init_wrapper();                      \
-    }                                                       \
+    static PyObject *pybind11_init_wrapper();                           \
+    extern "C" PYBIND11_MAYBE_UNUSED PYBIND11_EXPORT void init##name(); \
+    extern "C" PYBIND11_EXPORT void init##name() {                      \
+        (void)pybind11_init_wrapper();                                  \
+    }                                                                   \
     PyObject *pybind11_init_wrapper()
 #endif
 
@@ -212,6 +229,8 @@ extern "C" {
 #define PYBIND11_STRINGIFY(x) #x
 #define PYBIND11_TOSTRING(x) PYBIND11_STRINGIFY(x)
 #define PYBIND11_CONCAT(first, second) first##second
+#define PYBIND11_ENSURE_INTERNALS_READY \
+    pybind11::detail::get_internals();
 
 #define PYBIND11_CHECK_PYTHON_VERSION \
     {                                                                          \
@@ -244,6 +263,7 @@ extern "C" {
     static PyObject *pybind11_init();                                          \
     PYBIND11_PLUGIN_IMPL(name) {                                               \
         PYBIND11_CHECK_PYTHON_VERSION                                          \
+        PYBIND11_ENSURE_INTERNALS_READY                                        \
         try {                                                                  \
             return pybind11_init();                                            \
         } PYBIND11_CATCH_INIT_EXCEPTIONS                                       \
@@ -252,19 +272,25 @@ extern "C" {
 
 
 #define PYBIND11_MODULE(name, variable)                                        \
-    static void PYBIND11_CONCAT(pybind11_init_, name)(pybind11::module &);     \
+    static ::pybind11::module_::module_def                                     \
+        PYBIND11_CONCAT(pybind11_module_def_, name) PYBIND11_MAYBE_UNUSED;     \
+    PYBIND11_MAYBE_UNUSED                                                      \
+    static void PYBIND11_CONCAT(pybind11_init_, name)(::pybind11::module_ &);  \
     PYBIND11_PLUGIN_IMPL(name) {                                               \
         PYBIND11_CHECK_PYTHON_VERSION                                          \
-        auto m = pybind11::module(PYBIND11_TOSTRING(name));                    \
+        PYBIND11_ENSURE_INTERNALS_READY                                        \
+        auto m = ::pybind11::module_::create_extension_module(                 \
+            PYBIND11_TOSTRING(name), nullptr,                                  \
+            &PYBIND11_CONCAT(pybind11_module_def_, name));                     \
         try {                                                                  \
             PYBIND11_CONCAT(pybind11_init_, name)(m);                          \
             return m.ptr();                                                    \
         } PYBIND11_CATCH_INIT_EXCEPTIONS                                       \
     }                                                                          \
-    void PYBIND11_CONCAT(pybind11_init_, name)(pybind11::module &variable)
+    void PYBIND11_CONCAT(pybind11_init_, name)(::pybind11::module_ &variable)
 
 
-NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
+PYBIND11_NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
 
 using ssize_t = Py_ssize_t;
 using size_t  = std::size_t;
@@ -293,7 +319,7 @@ enum class return_value_policy : uint8_t {
     reference_internal
 };
 
-NAMESPACE_BEGIN(detail)
+PYBIND11_NAMESPACE_BEGIN(detail)
 
 inline static constexpr int log2(size_t n, int k = 0) { return (n <= 1) ? k : log2(n >> 1, k + 1); }
 
@@ -375,7 +401,7 @@ using std::make_index_sequence;
 #else
 template<size_t ...> struct index_sequence  { };
 template<size_t N, size_t ...S> struct make_index_sequence_impl : make_index_sequence_impl <N - 1, N - 1, S...> { };
-template<size_t ...S> struct make_index_sequence_impl <0, S...> { typedef index_sequence<S...> type; };
+template<size_t ...S> struct make_index_sequence_impl <0, S...> { using type = index_sequence<S...>; };
 template<size_t N> using make_index_sequence = typename make_index_sequence_impl<N>::type;
 #endif
 
@@ -389,8 +415,16 @@ template <bool... Bs> using select_indices = typename select_indices_impl<index_
 template <bool B> using bool_constant = std::integral_constant<bool, B>;
 template <typename T> struct negation : bool_constant<!T::value> { };
 
+
+
+
+#if defined(__PGIC__) || defined(__INTEL_COMPILER)
+template<typename... > using void_t = void;
+#else
 template <typename...> struct void_t_impl { using type = void; };
 template <typename... Ts> using void_t = typename void_t_impl<Ts...>::type;
+#endif
+
 
 
 #if defined(__cpp_fold_expressions) && !(defined(_MSC_VER) && (_MSC_VER < 1916))
@@ -416,17 +450,17 @@ template <class T, template<class> class... Predicates> using satisfies_none_of 
 
 
 template <typename T> struct remove_class { };
-template <typename C, typename R, typename... A> struct remove_class<R (C::*)(A...)> { typedef R type(A...); };
-template <typename C, typename R, typename... A> struct remove_class<R (C::*)(A...) const> { typedef R type(A...); };
+template <typename C, typename R, typename... A> struct remove_class<R (C::*)(A...)> { using type = R (A...); };
+template <typename C, typename R, typename... A> struct remove_class<R (C::*)(A...) const> { using type = R (A...); };
 
 
-template <typename T> struct intrinsic_type                       { typedef T type; };
-template <typename T> struct intrinsic_type<const T>              { typedef typename intrinsic_type<T>::type type; };
-template <typename T> struct intrinsic_type<T*>                   { typedef typename intrinsic_type<T>::type type; };
-template <typename T> struct intrinsic_type<T&>                   { typedef typename intrinsic_type<T>::type type; };
-template <typename T> struct intrinsic_type<T&&>                  { typedef typename intrinsic_type<T>::type type; };
-template <typename T, size_t N> struct intrinsic_type<const T[N]> { typedef typename intrinsic_type<T>::type type; };
-template <typename T, size_t N> struct intrinsic_type<T[N]>       { typedef typename intrinsic_type<T>::type type; };
+template <typename T> struct intrinsic_type                       { using type = T; };
+template <typename T> struct intrinsic_type<const T>              { using type = typename intrinsic_type<T>::type; };
+template <typename T> struct intrinsic_type<T*>                   { using type = typename intrinsic_type<T>::type; };
+template <typename T> struct intrinsic_type<T&>                   { using type = typename intrinsic_type<T>::type; };
+template <typename T> struct intrinsic_type<T&&>                  { using type = typename intrinsic_type<T>::type; };
+template <typename T, size_t N> struct intrinsic_type<const T[N]> { using type = typename intrinsic_type<T>::type; };
+template <typename T, size_t N> struct intrinsic_type<T[N]>       { using type = typename intrinsic_type<T>::type; };
 template <typename T> using intrinsic_t = typename intrinsic_type<T>::type;
 
 
@@ -444,7 +478,7 @@ template <typename T, typename... Ts>
 constexpr size_t constexpr_sum(T n, Ts... ns) { return size_t{n} + constexpr_sum(ns...); }
 #endif
 
-NAMESPACE_BEGIN(constexpr_impl)
+PYBIND11_NAMESPACE_BEGIN(constexpr_impl)
 
 constexpr int first(int i) { return i; }
 template <typename T, typename... Ts>
@@ -453,7 +487,7 @@ constexpr int first(int i, T v, Ts... vs) { return v ? i : first(i + 1, vs...); 
 constexpr int last(int  , int result) { return result; }
 template <typename T, typename... Ts>
 constexpr int last(int i, int result, T v, Ts... vs) { return last(i + 1, v ? i : result, vs...); }
-NAMESPACE_END(constexpr_impl)
+PYBIND11_NAMESPACE_END(constexpr_impl)
 
 
 
@@ -497,8 +531,9 @@ template <typename Base, typename Derived> using is_strict_base_of = bool_consta
 
 
 
+
 template <typename Base, typename Derived> using is_accessible_base_of = bool_constant<
-    std::is_base_of<Base, Derived>::value && std::is_convertible<Derived *, Base *>::value>;
+    (std::is_same<Base, Derived>::value || std::is_base_of<Base, Derived>::value) && std::is_convertible<Derived *, Base *>::value>;
 
 template <template<typename...> class Base>
 struct is_template_base_of_impl {
@@ -564,10 +599,10 @@ inline void ignore_unused(const int *) { }
 #define PYBIND11_EXPAND_SIDE_EFFECTS(PATTERN) (((PATTERN), void()), ...)
 #else
 using expand_side_effects = bool[];
-#define PYBIND11_EXPAND_SIDE_EFFECTS(PATTERN) pybind11::detail::expand_side_effects{ ((PATTERN), void(), false)..., false }
+#define PYBIND11_EXPAND_SIDE_EFFECTS(PATTERN) (void)pybind11::detail::expand_side_effects{ ((PATTERN), void(), false)..., false }
 #endif
 
-NAMESPACE_END(detail)
+PYBIND11_NAMESPACE_END(detail)
 
 
 class builtin_exception : public std::runtime_error {
@@ -589,6 +624,8 @@ PYBIND11_RUNTIME_EXCEPTION(index_error, PyExc_IndexError)
 PYBIND11_RUNTIME_EXCEPTION(key_error, PyExc_KeyError)
 PYBIND11_RUNTIME_EXCEPTION(value_error, PyExc_ValueError)
 PYBIND11_RUNTIME_EXCEPTION(type_error, PyExc_TypeError)
+PYBIND11_RUNTIME_EXCEPTION(buffer_error, PyExc_BufferError)
+PYBIND11_RUNTIME_EXCEPTION(import_error, PyExc_ImportError)
 PYBIND11_RUNTIME_EXCEPTION(cast_error, PyExc_RuntimeError)
 PYBIND11_RUNTIME_EXCEPTION(reference_cast_error, PyExc_RuntimeError)
 
@@ -597,7 +634,7 @@ PYBIND11_RUNTIME_EXCEPTION(reference_cast_error, PyExc_RuntimeError)
 
 template <typename T, typename SFINAE = void> struct format_descriptor { };
 
-NAMESPACE_BEGIN(detail)
+PYBIND11_NAMESPACE_BEGIN(detail)
 
 
 
@@ -610,7 +647,7 @@ template <typename T> struct is_fmt_numeric<T, enable_if_t<std::is_arithmetic<T>
         std::is_integral<T>::value ? detail::log2(sizeof(T))*2 + std::is_unsigned<T>::value : 8 + (
         std::is_same<T, double>::value ? 1 : std::is_same<T, long double>::value ? 2 : 0));
 };
-NAMESPACE_END(detail)
+PYBIND11_NAMESPACE_END(detail)
 
 template <typename T> struct format_descriptor<T, detail::enable_if_t<std::is_arithmetic<T>::value>> {
     static constexpr const char c = "?bBhHiIqQfdg"[detail::is_fmt_numeric<T>::index];
@@ -635,14 +672,10 @@ struct error_scope {
 
 struct nodelete { template <typename T> void operator()(T*) { } };
 
-
-#if defined(PYBIND11_CPP14)
-#define PYBIND11_OVERLOAD_CAST 1
-
-NAMESPACE_BEGIN(detail)
+PYBIND11_NAMESPACE_BEGIN(detail)
 template <typename... Args>
 struct overload_cast_impl {
-    constexpr overload_cast_impl() {}
+    constexpr overload_cast_impl() {};
 
     template <typename Return>
     constexpr auto operator()(Return (*pf)(Args...)) const noexcept
@@ -656,28 +689,32 @@ struct overload_cast_impl {
     constexpr auto operator()(Return (Class::*pmf)(Args...) const, std::true_type) const noexcept
                               -> decltype(pmf) { return pmf; }
 };
-NAMESPACE_END(detail)
+PYBIND11_NAMESPACE_END(detail)
 
+
+#if defined(PYBIND11_CPP14)
+#define PYBIND11_OVERLOAD_CAST 1
 
 
 
 template <typename... Args>
 static constexpr detail::overload_cast_impl<Args...> overload_cast = {};
 
+#endif
 
 
 
 
 static constexpr auto const_ = std::true_type{};
 
-#else
+#if !defined(PYBIND11_CPP14)
 template <typename... Args> struct overload_cast {
     static_assert(detail::deferred_t<std::false_type, Args...>::value,
                   "pybind11::overload_cast<...> requires compiling in C++14 mode");
 };
 #endif
 
-NAMESPACE_BEGIN(detail)
+PYBIND11_NAMESPACE_BEGIN(detail)
 
 
 
@@ -716,8 +753,8 @@ public:
     const std::vector<T> *operator->() const { return &v; }
 };
 
-NAMESPACE_END(detail)
 
+std::string get_fully_qualified_tp_name(PyTypeObject*);
 
-
-NAMESPACE_END(PYBIND11_NAMESPACE)
+PYBIND11_NAMESPACE_END(detail)
+PYBIND11_NAMESPACE_END(PYBIND11_NAMESPACE)

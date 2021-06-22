@@ -6,8 +6,6 @@
 */
 
 
-
-
 #pragma once
 
 #include <cstdio>
@@ -17,8 +15,10 @@
 #include <cxxabi.h>
 #endif
 
-NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
-NAMESPACE_BEGIN(detail)
+#include "common.h"
+
+PYBIND11_NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
+PYBIND11_NAMESPACE_BEGIN(detail)
 
 inline void erase_all(std::string &string, const std::string &search) {
     for (size_t pos = 0;;) {
@@ -42,7 +42,7 @@ PYBIND11_NOINLINE inline void clean_type_id(std::string &name) {
 #endif
     detail::erase_all(name, "pybind11::");
 }
-NAMESPACE_END(detail)
+PYBIND11_NAMESPACE_END(detail)
 
 
 template <typename T> static std::string type_id() {
@@ -51,4 +51,4 @@ template <typename T> static std::string type_id() {
     return name;
 }
 
-NAMESPACE_END(PYBIND11_NAMESPACE)
+PYBIND11_NAMESPACE_END(PYBIND11_NAMESPACE)

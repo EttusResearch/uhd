@@ -1,6 +1,6 @@
 # PyBind11: Third-Party Dependency for UHD
 
-Version: 25abf7ef (post-2.2.4)
+Version: 2.6.1 (git hash: f1abf5d)
 
 PyBind11 is a replacement for Boost.Python. Unlike Boost.Python, however, we
 ship it with the UHD repository instead of relying on it to be there external to
@@ -8,6 +8,9 @@ the repository. The main reason for this is that PyBind11 is not packaged with
 most distributions at this time. It also allows us to lock down the version of
 PyBind11 used; with Boost, we often have to apply hacks to make sure UHD works
 across all of the Boost versions that we support.
+
+Note that the UHD CMake allows for using a different version of PyBind11 (e.g.,
+the one installed via package manager).
 
 ## License for PyBind11
 

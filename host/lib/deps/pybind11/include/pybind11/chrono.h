@@ -6,8 +6,6 @@
 */
 
 
-
-
 #pragma once
 
 #include "pybind11.h"
@@ -27,15 +25,15 @@
 #define PyDateTime_DELTA_GET_MICROSECONDS(o) (((PyDateTime_Delta*)o)->microseconds)
 #endif
 
-NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
-NAMESPACE_BEGIN(detail)
+PYBIND11_NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
+PYBIND11_NAMESPACE_BEGIN(detail)
 
 template <typename type> class duration_caster {
 public:
-    typedef typename type::rep rep;
-    typedef typename type::period period;
+    using rep = typename type::rep;
+    using period = typename type::period;
 
-    typedef std::chrono::duration<uint_fast32_t, std::ratio<86400>> days;
+    using days = std::chrono::duration<uint_fast32_t, std::ratio<86400>>;
 
     bool load(handle src, bool) {
         using namespace std::chrono;
@@ -98,7 +96,7 @@ public:
 
 template <typename Duration> class type_caster<std::chrono::time_point<std::chrono::system_clock, Duration>> {
 public:
-    typedef std::chrono::time_point<std::chrono::system_clock, Duration> type;
+    using type = std::chrono::time_point<std::chrono::system_clock, Duration>;
     bool load(handle src, bool) {
         using namespace std::chrono;
 
@@ -106,8 +104,11 @@ public:
         if (!PyDateTimeAPI) { PyDateTime_IMPORT; }
 
         if (!src) return false;
+
+        std::tm cal;
+        microseconds msecs;
+
         if (PyDateTime_Check(src.ptr())) {
-            std::tm cal;
             cal.tm_sec   = PyDateTime_DATE_GET_SECOND(src.ptr());
             cal.tm_min   = PyDateTime_DATE_GET_MINUTE(src.ptr());
             cal.tm_hour  = PyDateTime_DATE_GET_HOUR(src.ptr());
@@ -115,11 +116,30 @@ public:
             cal.tm_mon   = PyDateTime_GET_MONTH(src.ptr()) - 1;
             cal.tm_year  = PyDateTime_GET_YEAR(src.ptr()) - 1900;
             cal.tm_isdst = -1;
-
-            value = system_clock::from_time_t(std::mktime(&cal)) + microseconds(PyDateTime_DATE_GET_MICROSECOND(src.ptr()));
-            return true;
+            msecs        = microseconds(PyDateTime_DATE_GET_MICROSECOND(src.ptr()));
+        } else if (PyDate_Check(src.ptr())) {
+            cal.tm_sec   = 0;
+            cal.tm_min   = 0;
+            cal.tm_hour  = 0;
+            cal.tm_mday  = PyDateTime_GET_DAY(src.ptr());
+            cal.tm_mon   = PyDateTime_GET_MONTH(src.ptr()) - 1;
+            cal.tm_year  = PyDateTime_GET_YEAR(src.ptr()) - 1900;
+            cal.tm_isdst = -1;
+            msecs        = microseconds(0);
+        } else if (PyTime_Check(src.ptr())) {
+            cal.tm_sec   = PyDateTime_TIME_GET_SECOND(src.ptr());
+            cal.tm_min   = PyDateTime_TIME_GET_MINUTE(src.ptr());
+            cal.tm_hour  = PyDateTime_TIME_GET_HOUR(src.ptr());
+            cal.tm_mday  = 1;
+            cal.tm_mon   = 0;
+            cal.tm_year  = 70;
+            cal.tm_isdst = -1;
+            msecs        = microseconds(PyDateTime_TIME_GET_MICROSECOND(src.ptr()));
         }
         else return false;
+
+        value = time_point_cast<Duration>(system_clock::from_time_t(std::mktime(&cal)) + msecs);
+        return true;
     }
 
     static handle cast(const std::chrono::time_point<std::chrono::system_clock, Duration> &src, return_value_policy  , handle  ) {
@@ -128,13 +148,20 @@ public:
 
         if (!PyDateTimeAPI) { PyDateTime_IMPORT; }
 
-        std::time_t tt = system_clock::to_time_t(src);
-
-
-        std::tm localtime = *std::localtime(&tt);
 
 
         using us_t = duration<int, std::micro>;
+        auto us = duration_cast<us_t>(src.time_since_epoch() % seconds(1));
+        if (us.count() < 0)
+            us += seconds(1);
+
+
+
+
+        std::time_t tt = system_clock::to_time_t(time_point_cast<system_clock::duration>(src - us));
+
+
+        std::tm localtime = *std::localtime(&tt);
 
         return PyDateTime_FromDateAndTime(localtime.tm_year + 1900,
                                           localtime.tm_mon + 1,
@@ -142,7 +169,7 @@ public:
                                           localtime.tm_hour,
                                           localtime.tm_min,
                                           localtime.tm_sec,
-                                          (duration_cast<us_t>(src.time_since_epoch() % seconds(1))).count());
+                                          us.count());
     }
     PYBIND11_TYPE_CASTER(type, _("datetime.datetime"));
 };
@@ -158,5 +185,5 @@ template <typename Rep, typename Period> class type_caster<std::chrono::duration
 : public duration_caster<std::chrono::duration<Rep, Period>> {
 };
 
-NAMESPACE_END(detail)
-NAMESPACE_END(PYBIND11_NAMESPACE)
+PYBIND11_NAMESPACE_END(detail)
+PYBIND11_NAMESPACE_END(PYBIND11_NAMESPACE)

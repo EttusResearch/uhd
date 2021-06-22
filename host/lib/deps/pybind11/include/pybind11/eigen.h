@@ -6,8 +6,6 @@
 */
 
 
-
-
 #pragma once
 
 #include "numpy.h"
@@ -42,14 +40,14 @@
 
 static_assert(EIGEN_VERSION_AT_LEAST(3,2,7), "Eigen support in pybind11 requires Eigen >= 3.2.7");
 
-NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
+PYBIND11_NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
 
 
 using EigenDStride = Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic>;
 template <typename MatrixType> using EigenDRef = Eigen::Ref<MatrixType, 0, EigenDStride>;
 template <typename MatrixType> using EigenDMap = Eigen::Map<MatrixType, 0, EigenDStride>;
 
-NAMESPACE_BEGIN(detail)
+PYBIND11_NAMESPACE_BEGIN(detail)
 
 #if EIGEN_VERSION_AT_LEAST(3,3,0)
 using EigenIndex = Eigen::Index;
@@ -433,7 +431,7 @@ public:
         if (!need_copy) {
 
 
-            Array aref = reinterpret_borrow<Array>(src);
+            auto aref = reinterpret_borrow<Array>(src);
 
             if (aref && (!need_writeable || aref.writeable())) {
                 fits = props::conformable(aref);
@@ -540,9 +538,9 @@ public:
 
 template<typename Type>
 struct type_caster<Type, enable_if_t<is_eigen_sparse<Type>::value>> {
-    typedef typename Type::Scalar Scalar;
-    typedef remove_reference_t<decltype(*std::declval<Type>().outerIndexPtr())> StorageIndex;
-    typedef typename Type::Index Index;
+    using Scalar = typename Type::Scalar;
+    using StorageIndex = remove_reference_t<decltype(*std::declval<Type>().outerIndexPtr())>;
+    using Index = typename Type::Index;
     static constexpr bool rowMajor = Type::IsRowMajor;
 
     bool load(handle src, bool) {
@@ -550,11 +548,11 @@ struct type_caster<Type, enable_if_t<is_eigen_sparse<Type>::value>> {
             return false;
 
         auto obj = reinterpret_borrow<object>(src);
-        object sparse_module = module::import("scipy.sparse");
+        object sparse_module = module_::import("scipy.sparse");
         object matrix_type = sparse_module.attr(
             rowMajor ? "csr_matrix" : "csc_matrix");
 
-        if (!obj.get_type().is(matrix_type)) {
+        if (!type::handle_of(obj).is(matrix_type)) {
             try {
                 obj = matrix_type(obj);
             } catch (const error_already_set &) {
@@ -581,7 +579,7 @@ struct type_caster<Type, enable_if_t<is_eigen_sparse<Type>::value>> {
     static handle cast(const Type &src, return_value_policy  , handle  ) {
         const_cast<Type&>(src).makeCompressed();
 
-        object matrix_type = module::import("scipy.sparse").attr(
+        object matrix_type = module_::import("scipy.sparse").attr(
             rowMajor ? "csr_matrix" : "csc_matrix");
 
         array data(src.nonZeros(), src.valuePtr());
@@ -598,8 +596,8 @@ struct type_caster<Type, enable_if_t<is_eigen_sparse<Type>::value>> {
             + npy_format_descriptor<Scalar>::name + _("]"));
 };
 
-NAMESPACE_END(detail)
-NAMESPACE_END(PYBIND11_NAMESPACE)
+PYBIND11_NAMESPACE_END(detail)
+PYBIND11_NAMESPACE_END(PYBIND11_NAMESPACE)
 
 #if defined(__GNUG__) || defined(__clang__)
 #  pragma GCC diagnostic pop
