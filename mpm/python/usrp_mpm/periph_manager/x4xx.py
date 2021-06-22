@@ -317,6 +317,10 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         except Exception as ex:
             self.log.warning("Failed to initialize device on boot: %s", str(ex))
 
+        # Freeze the RFDC calibration by default
+        self.rfdc.set_cal_frozen(1, 1, "both")
+        self.rfdc.set_cal_frozen(1, 0, "both")
+
     # The parent class versions of these functions require access to self, but
     # these versions don't.
     # pylint: disable=no-self-use
@@ -880,6 +884,8 @@ class x4xx(ZynqComponents, PeriphManagerBase):
             # was changed, to ensure the device transmission/acquisition continues at
             # the requested frequency.
             self.rfdc.rfdc_restore_nco_freq()
+            # Do the same for the calibration freeze state
+            self.rfdc.rfdc_restore_cal_freeze()
         except RuntimeError as ex:
             err = f"Setting clock_source={clock_source},time_source={time_source} " \
                   f"failed, falling back to {self._safe_sync_source}. Error: " \

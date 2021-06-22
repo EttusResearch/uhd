@@ -68,9 +68,6 @@ class X4xxRfdcCtrl:
         self._rfdc_ctrl = lib.rfdc.rfdc_ctrl()
         self._rfdc_ctrl.init(RFDC_DEVICE_ID)
 
-        self.set_cal_frozen(1, 0, "both")
-        self.set_cal_frozen(1, 1, "both")
-
         # Stores the last set value of the nco freq for each channel
         # Follows the below structure:
         #   <slot_id>
@@ -86,6 +83,8 @@ class X4xxRfdcCtrl:
                 'tx': [0, 0],
             },
         ]
+
+        self._cal_freeze_cache = {}
 
     @no_rpc
     def unset_cbs(self):
@@ -242,6 +241,24 @@ class X4xxRfdcCtrl:
                 self.rfdc_set_nco_freq(direction, slot_id, 0, channel_frequencies[0])
                 self.rfdc_set_nco_freq(direction, slot_id, 1, channel_frequencies[1])
 
+    @no_rpc
+    def rfdc_restore_cal_freeze(self):
+        """
+        Restores the previously set calibration freeze settings
+        """
+        for slot_id in [0, 1]:
+            for tile_id, block_id, _ in self._find_converters(slot_id, "rx", "both"):
+                if (tile_id, block_id) in self._cal_freeze_cache:
+                    self._rfdc_ctrl.set_cal_frozen(
+                        tile_id, block_id, 0
+                    )
+                    self._rfdc_ctrl.set_cal_frozen(
+                        tile_id,
+                        block_id,
+                        self._cal_freeze_cache[(tile_id, block_id)]
+                    )
+
+
     ###########################################################################
     # Public APIs that get exposed as MPM RPC calls
     ###########################################################################
@@ -280,6 +297,7 @@ class X4xxRfdcCtrl:
         <frozen> should be 0 to unfreeze the calibration blocks or 1 to freeze them.
         """
         for tile_id, block_id, _ in self._find_converters(slot_id, "rx", channel):
+            self._cal_freeze_cache[(tile_id, block_id)] = frozen
             self._rfdc_ctrl.set_cal_frozen(tile_id, block_id, frozen)
 
     def get_cal_frozen(self, slot_id, channel):
