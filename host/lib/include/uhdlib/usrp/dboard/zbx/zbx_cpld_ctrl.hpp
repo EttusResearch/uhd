@@ -479,9 +479,9 @@ private:
 
 }}} // namespace uhd::usrp::zbx
 
-namespace uhd { namespace experts {
+namespace uhd { namespace usrp { namespace zbx {
 // << Operator overload for expert's node printing (zbx_lo_source_t property)
 // Any added expert nodes of type enum class will have to define this
 std::ostream& operator<<(
     std::ostream& os, const ::uhd::usrp::zbx::zbx_cpld_ctrl::atr_mode& lo_source);
-}} // namespace uhd::experts
+}}} // namespace uhd::usrp::zbx

@@ -31,7 +31,7 @@ using namespace uhd::rfnoc;
 
 // ostream << operator overloads for our enum classes, so that property nodes of that type
 // can be added to our expert graph
-namespace uhd { namespace experts {
+namespace uhd { namespace usrp { namespace zbx {
 
 std::ostream& operator<<(
     std::ostream& os, const ::uhd::usrp::zbx::zbx_lo_source_t& lo_source)
@@ -65,9 +65,6 @@ std::ostream& operator<<(
             UHD_THROW_INVALID_CODE_PATH();
     }
 }
-}} // namespace uhd::experts
-
-namespace uhd { namespace usrp { namespace zbx {
 
 void zbx_dboard_impl::_init_cpld()
 {
