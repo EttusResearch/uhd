@@ -3,6 +3,7 @@ parameters:
   type: string
   values:
   - make
+  - make_trace
   - ninja
   - msbuild
   - ubuntu_deb
@@ -34,7 +35,7 @@ jobs:
   strategy:
     ${{ if eq(parameters.toolset, 'msbuild') }}:
       matrix: $[ variables.dockerImageMatrixWin ]
-    ${{ if or(eq(parameters.toolset, 'make'), eq(parameters.toolset, 'ninja')) }}:
+    ${{ if or(eq(parameters.toolset, 'make'), eq(parameters.toolset, 'make_trace'), eq(parameters.toolset, 'ninja')) }}:
       matrix: $[ variables.dockerImageMatrixLin ]
     ${{ if eq(parameters.toolset, 'ubuntu_deb') }}:
       matrix: $[ variables.dockerImageMatrixUbuntuDeb ]
@@ -55,6 +56,13 @@ jobs:
       parameters:
         uhdSrcDir: $(Build.SourcesDirectory)
         uhdBuildDir: $(Build.BinariesDirectory)/uhddev/build
+
+  - ${{ if eq(parameters.toolset, 'make_trace') }}:
+    - template: steps-build-uhd-make.yml
+      parameters:
+        uhdSrcDir: $(Build.SourcesDirectory)
+        uhdBuildDir: $(Build.BinariesDirectory)/uhddev/build
+        uhdEnableTraceLog: true
 
   - ${{ if eq(parameters.toolset, 'ninja') }}:
     - template: steps-build-uhd-ninja.yml

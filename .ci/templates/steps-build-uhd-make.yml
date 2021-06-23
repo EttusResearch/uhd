@@ -3,13 +3,23 @@ parameters:
   type: string
 - name: uhdBuildDir
   type: string
+- name: uhdEnableTraceLog
+  type: boolean
+  default: false
 
 steps:
 - script: |
     mkdir -p ${{ parameters.uhdBuildDir }}
     cd ${{ parameters.uhdBuildDir }}
-    cmake ${{ parameters.uhdSrcDir }}/host
+    if [[ "${{ parameters.uhdEnableTraceLog }}" = "True" ]]; then
+      echo "Enabling UHD Tracing"
+      export UHD_CI_CMAKE_OPTIONS="-DUHD_LOG_MIN_LEVEL=trace $UHD_CI_CMAKE_OPTIONS"
+    fi
+    cmake \
+      $UHD_CI_CMAKE_OPTIONS \
+      ${{ parameters.uhdSrcDir }}/host
   displayName: cmake make UHD
+
 - script: |
     cd ${{ parameters.uhdBuildDir }}
     make -j$(nproc)

@@ -40,6 +40,9 @@ stages:
       toolset: make
   - template: templates/job-uhd-build-src.yml
     parameters:
+      toolset: make_trace
+  - template: templates/job-uhd-build-src.yml
+    parameters:
       toolset: ninja
   - template: templates/job-uhd-build-src.yml
     parameters:
