@@ -8,10 +8,7 @@
 // Description:
 //
 //   This module handles timed register writes for the RFDC, such as NCO reset
-//   control. It takes the CtrlPort master from each radio block and splits it
-//   into a CtrlPort bus for the associated daughter board and another CtrlPort
-//   bus for the RFDC timing control. Timed commands on the RF timing bus are
-//   handled by the ctrlport_timer module.
+//   control. Timed commands are handled by the ctrlport_timer module.
 //
 // Parameters:
 //
@@ -45,18 +42,6 @@ module rfdc_timing_control #(
   output wire [  2*NUM_DBOARDS-1:0] s_ctrlport_resp_status,
   output wire [ 32*NUM_DBOARDS-1:0] s_ctrlport_resp_data,
 
-  // CtrlPort Master (to Daughter Boards)
-  output wire [  1*NUM_DBOARDS-1:0] m_ctrlport_req_wr,
-  output wire [  1*NUM_DBOARDS-1:0] m_ctrlport_req_rd,
-  output wire [ 20*NUM_DBOARDS-1:0] m_ctrlport_req_addr,
-  output wire [ 32*NUM_DBOARDS-1:0] m_ctrlport_req_data,
-  output wire [  4*NUM_DBOARDS-1:0] m_ctrlport_req_byte_en,
-  output wire [  1*NUM_DBOARDS-1:0] m_ctrlport_req_has_time,
-  output wire [ 64*NUM_DBOARDS-1:0] m_ctrlport_req_time,
-  input  wire [  1*NUM_DBOARDS-1:0] m_ctrlport_resp_ack,
-  input  wire [  2*NUM_DBOARDS-1:0] m_ctrlport_resp_status,
-  input  wire [ 32*NUM_DBOARDS-1:0] m_ctrlport_resp_data,
-
   // RF Reset Control
   output reg  start_nco_reset,
   input  wire nco_reset_done,
@@ -64,7 +49,6 @@ module rfdc_timing_control #(
   output reg  dac_reset_pulse
 );
 
-  `include "regmap/radio_ctrlport_regmap_utils.vh"
   `include "regmap/rfdc_timing_regmap_utils.vh"
 
   // Reset registers
@@ -75,54 +59,6 @@ module rfdc_timing_control #(
   genvar db;
   generate
     for (db = 0; db < NUM_DBOARDS; db = db+1) begin : gen_db_ctrlport
-
-      //-----------------------------------------------------------------------
-      // CtrlPort Splitter
-      //-----------------------------------------------------------------------
-
-      wire [  1-1:0] rf_ctrlport_req_wr;
-      wire [  1-1:0] rf_ctrlport_req_rd;
-      wire [ 20-1:0] rf_ctrlport_req_addr;
-      wire [ 32-1:0] rf_ctrlport_req_data;
-      wire [  4-1:0] rf_ctrlport_req_byte_en;
-      wire [  1-1:0] rf_ctrlport_req_has_time;
-      wire [ 64-1:0] rf_ctrlport_req_time;
-      wire [  1-1:0] rf_ctrlport_resp_ack;
-      wire [  2-1:0] rf_ctrlport_resp_status;
-      wire [ 32-1:0] rf_ctrlport_resp_data;
-
-      localparam [31:0] RFDC_TIMING_WINDOW_SIZE_W = $clog2(RFDC_TIMING_WINDOW_SIZE);
-      localparam [31:0] DB_WINDOW_SIZE_W          = $clog2(DB_WINDOW_SIZE);
-
-      ctrlport_decoder_param #(
-        .NUM_SLAVES  (2),
-        .PORT_BASE   ({ RFDC_TIMING_WINDOW[19:0],  DB_WINDOW[19:0]  }),
-        .PORT_ADDR_W ({ RFDC_TIMING_WINDOW_SIZE_W, DB_WINDOW_SIZE_W })
-      ) ctrlport_decoder_param_i (
-        .ctrlport_clk            (clk),
-        .ctrlport_rst            (rst),
-        .s_ctrlport_req_wr       (s_ctrlport_req_wr       [ 1*db+: 1]),
-        .s_ctrlport_req_rd       (s_ctrlport_req_rd       [ 1*db+: 1]),
-        .s_ctrlport_req_addr     (s_ctrlport_req_addr     [20*db+:20]),
-        .s_ctrlport_req_data     (s_ctrlport_req_data     [32*db+:32]),
-        .s_ctrlport_req_byte_en  (s_ctrlport_req_byte_en  [ 4*db+: 4]),
-        .s_ctrlport_req_has_time (s_ctrlport_req_has_time [ 1*db+: 1]),
-        .s_ctrlport_req_time     (s_ctrlport_req_time     [64*db+:64]),
-        .s_ctrlport_resp_ack     (s_ctrlport_resp_ack     [ 1*db+: 1]),
-        .s_ctrlport_resp_status  (s_ctrlport_resp_status  [ 2*db+: 2]),
-        .s_ctrlport_resp_data    (s_ctrlport_resp_data    [32*db+:32]),
-        .m_ctrlport_req_wr       ({ rf_ctrlport_req_wr,       m_ctrlport_req_wr       [ 1*db+: 1] }),
-        .m_ctrlport_req_rd       ({ rf_ctrlport_req_rd,       m_ctrlport_req_rd       [ 1*db+: 1] }),
-        .m_ctrlport_req_addr     ({ rf_ctrlport_req_addr,     m_ctrlport_req_addr     [20*db+:20] }),
-        .m_ctrlport_req_data     ({ rf_ctrlport_req_data,     m_ctrlport_req_data     [32*db+:32] }),
-        .m_ctrlport_req_byte_en  ({ rf_ctrlport_req_byte_en,  m_ctrlport_req_byte_en  [ 4*db+: 4] }),
-        .m_ctrlport_req_has_time ({ rf_ctrlport_req_has_time, m_ctrlport_req_has_time [ 1*db+: 1] }),
-        .m_ctrlport_req_time     ({ rf_ctrlport_req_time,     m_ctrlport_req_time     [64*db+:64] }),
-        .m_ctrlport_resp_ack     ({ rf_ctrlport_resp_ack,     m_ctrlport_resp_ack     [ 1*db+: 1] }),
-        .m_ctrlport_resp_status  ({ rf_ctrlport_resp_status,  m_ctrlport_resp_status  [ 2*db+: 2] }),
-        .m_ctrlport_resp_data    ({ rf_ctrlport_resp_data,    m_ctrlport_resp_data    [32*db+:32] })
-      );
-
 
       //-----------------------------------------------------------------------
       // RF Reset Control
@@ -143,16 +79,16 @@ module rfdc_timing_control #(
         .time_now                (time_now),
         .time_now_stb            (time_now_stb),
         .time_ignore_bits        (time_ignore_bits),
-        .s_ctrlport_req_wr       (rf_ctrlport_req_wr),
-        .s_ctrlport_req_rd       (rf_ctrlport_req_rd),
-        .s_ctrlport_req_addr     (rf_ctrlport_req_addr),
-        .s_ctrlport_req_data     (rf_ctrlport_req_data),
-        .s_ctrlport_req_byte_en  (rf_ctrlport_req_byte_en),
-        .s_ctrlport_req_has_time (rf_ctrlport_req_has_time),
-        .s_ctrlport_req_time     (rf_ctrlport_req_time),
-        .s_ctrlport_resp_ack     (rf_ctrlport_resp_ack),
-        .s_ctrlport_resp_status  (rf_ctrlport_resp_status),
-        .s_ctrlport_resp_data    (rf_ctrlport_resp_data),
+        .s_ctrlport_req_wr       (s_ctrlport_req_wr       [ 1*db+: 1]),
+        .s_ctrlport_req_rd       (s_ctrlport_req_rd       [ 1*db+: 1]),
+        .s_ctrlport_req_addr     (s_ctrlport_req_addr     [20*db+:20]),
+        .s_ctrlport_req_data     (s_ctrlport_req_data     [32*db+:32]),
+        .s_ctrlport_req_byte_en  (s_ctrlport_req_byte_en  [ 4*db+: 4]),
+        .s_ctrlport_req_has_time (s_ctrlport_req_has_time [ 1*db+: 1]),
+        .s_ctrlport_req_time     (s_ctrlport_req_time     [64*db+:64]),
+        .s_ctrlport_resp_ack     (s_ctrlport_resp_ack     [ 1*db+: 1]),
+        .s_ctrlport_resp_status  (s_ctrlport_resp_status  [ 2*db+: 2]),
+        .s_ctrlport_resp_data    (s_ctrlport_resp_data    [32*db+:32]),
         .m_ctrlport_req_wr       (nco_ctrlport_req_wr),
         .m_ctrlport_req_rd       (nco_ctrlport_req_rd),
         .m_ctrlport_req_addr     (nco_ctrlport_req_addr),
@@ -239,21 +175,6 @@ endmodule
 
 
 //XmlParse xml_on
-//
-//<regmap name="RADIO_CTRLPORT_REGMAP" readablestrobes="false" generatevhdl="true" ettusguidelines="true">
-//  <group name="RADIO_CTRLPORT_WINDOWS">
-//    <info>Each radio's CtrlPort peripheral interface is divided into the
-//    following memory spaces. Note that the CtrlPort peripheral interface
-//    starts at offset 0x80000 in the RFNoC Radio block's register space.</info>
-//    <window name="DB_WINDOW"        offset="0x00000" size="0x08000">
-//      <info>Daughterboard GPIO interface. Register access within this space
-//      is directed to the associated daughterboard CPLD.</info>
-//    </window>
-//    <window name="RFDC_TIMING_WINDOW" offset="0x08000" size="0x08000" targetregmap="RFDC_TIMING_REGMAP">
-//      <info>RFDC timing control interface.</info>
-//    </window>
-//  </group>
-//</regmap>
 //
 //<regmap name="RFDC_TIMING_REGMAP" readablestrobes="false" generatevhdl="true" ettusguidelines="true">
 //  <group name="RFDC_TIMING_REGS">

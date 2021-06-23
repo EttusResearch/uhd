@@ -230,69 +230,107 @@ module x4xx_core #(
     .reset_out (ctrlport_rst)
   );
 
+  wire [  1*NUM_DBOARDS-1:0] ctrlport_radio_req_wr;
+  wire [  1*NUM_DBOARDS-1:0] ctrlport_radio_req_rd;
+  wire [ 20*NUM_DBOARDS-1:0] ctrlport_radio_req_addr;
+  wire [ 32*NUM_DBOARDS-1:0] ctrlport_radio_req_data;
+  wire [  4*NUM_DBOARDS-1:0] ctrlport_radio_req_byte_en;
+  wire [  1*NUM_DBOARDS-1:0] ctrlport_radio_req_has_time;
+  wire [ 64*NUM_DBOARDS-1:0] ctrlport_radio_req_time;
+  wire [  1*NUM_DBOARDS-1:0] ctrlport_radio_resp_ack;
+  wire [  2*NUM_DBOARDS-1:0] ctrlport_radio_resp_status;
+  wire [ 32*NUM_DBOARDS-1:0] ctrlport_radio_resp_data;
+
+
   x4xx_core_common #(
     .CHDR_CLK_RATE  (CHDR_CLK_RATE),
     .CHDR_W         (CHDR_W),
     .RFNOC_PROTOVER (RFNOC_PROTOVER),
+    .NUM_DBOARDS    (NUM_DBOARDS),
     .PCIE_PRESENT   (0)
   ) x4xx_core_common_i (
-    .radio_clk                 (radio_clk),
-    .radio_rst                 (radio_rst),
-    .rfnoc_chdr_clk            (rfnoc_chdr_clk),
-    .rfnoc_chdr_rst            (rfnoc_chdr_rst),
-    .rfnoc_ctrl_clk            (rfnoc_ctrl_clk),
-    .rfnoc_ctrl_rst            (rfnoc_ctrl_rst),
-    .ctrlport_clk              (s_axi_aclk),
-    .ctrlport_rst              (ctrlport_rst),
-    .s_ctrlport_req_wr         (ctrlport_req_wr),
-    .s_ctrlport_req_rd         (ctrlport_req_rd),
-    .s_ctrlport_req_addr       (ctrlport_req_addr),
-    .s_ctrlport_req_portid     (ctrlport_req_portid),
-    .s_ctrlport_req_rem_epid   (ctrlport_req_rem_epid),
-    .s_ctrlport_req_rem_portid (ctrlport_req_rem_portid),
-    .s_ctrlport_req_data       (ctrlport_req_data),
-    .s_ctrlport_req_byte_en    (ctrlport_req_byte_en),
-    .s_ctrlport_req_has_time   (ctrlport_req_has_time),
-    .s_ctrlport_req_time       (ctrlport_req_time),
-    .s_ctrlport_resp_ack       (ctrlport_resp_ack),
-    .s_ctrlport_resp_status    (ctrlport_resp_status),
-    .s_ctrlport_resp_data      (ctrlport_resp_data),
-    .pps_radioclk              (pps_radioclk),
-    .pps_select                (pps_select),
-    .trig_io_select            (trig_io_select),
-    .pll_sync_trigger          (pll_sync_trigger),
-    .pll_sync_delay            (pll_sync_delay),
-    .pll_sync_done             (pll_sync_done),
-    .pps_brc_delay             (pps_brc_delay),
-    .pps_prc_delay             (pps_prc_delay),
-    .prc_rc_divider            (prc_rc_divider),
-    .pps_rc_enabled            (pps_rc_enabled),
-    .radio_spc                 (RADIO_SPC),
-    .radio_time                (radio_time),
-    .sample_rx_stb             (radio_time_stb),
-    .gpio_in_a                 (gpio_in_a),
-    .gpio_in_b                 (gpio_in_b),
-    .gpio_out_a                (gpio_out_a),
-    .gpio_out_b                (gpio_out_b),
-    .gpio_en_a                 (gpio_en_a),
-    .gpio_en_b                 (gpio_en_b),
-    .gpio_in_fabric_a          (),
-    .gpio_in_fabric_b          (),
-    .gpio_out_fabric_a         (12'b0),
-    .gpio_out_fabric_b         (12'b0),
-    .qsfp_port_0_0_info        (qsfp_port_0_0_info),
-    .qsfp_port_0_1_info        (qsfp_port_0_1_info),
-    .qsfp_port_0_2_info        (qsfp_port_0_2_info),
-    .qsfp_port_0_3_info        (qsfp_port_0_3_info),
-    .qsfp_port_1_0_info        (qsfp_port_1_0_info),
-    .qsfp_port_1_1_info        (qsfp_port_1_1_info),
-    .qsfp_port_1_2_info        (qsfp_port_1_2_info),
-    .qsfp_port_1_3_info        (qsfp_port_1_3_info),
-    .device_id                 (device_id),
-    .mfg_test_en_fabric_clk    (mfg_test_en_fabric_clk),
-    .mfg_test_en_gty_rcv_clk   (mfg_test_en_gty_rcv_clk),
-    .fpga_aux_ref              (fpga_aux_ref),
-    .version_info              (version_info)
+    .radio_clk                        (radio_clk),
+    .radio_rst                        (radio_rst),
+    .rfnoc_chdr_clk                   (rfnoc_chdr_clk),
+    .rfnoc_chdr_rst                   (rfnoc_chdr_rst),
+    .rfnoc_ctrl_clk                   (rfnoc_ctrl_clk),
+    .rfnoc_ctrl_rst                   (rfnoc_ctrl_rst),
+    .ctrlport_clk                     (s_axi_aclk),
+    .ctrlport_rst                     (ctrlport_rst),
+    .s_ctrlport_req_wr                (ctrlport_req_wr),
+    .s_ctrlport_req_rd                (ctrlport_req_rd),
+    .s_ctrlport_req_addr              (ctrlport_req_addr),
+    .s_ctrlport_req_portid            (ctrlport_req_portid),
+    .s_ctrlport_req_rem_epid          (ctrlport_req_rem_epid),
+    .s_ctrlport_req_rem_portid        (ctrlport_req_rem_portid),
+    .s_ctrlport_req_data              (ctrlport_req_data),
+    .s_ctrlport_req_byte_en           (ctrlport_req_byte_en),
+    .s_ctrlport_req_has_time          (ctrlport_req_has_time),
+    .s_ctrlport_req_time              (ctrlport_req_time),
+    .s_ctrlport_resp_ack              (ctrlport_resp_ack),
+    .s_ctrlport_resp_status           (ctrlport_resp_status),
+    .s_ctrlport_resp_data             (ctrlport_resp_data),
+    .pps_radioclk                     (pps_radioclk),
+    .pps_select                       (pps_select),
+    .trig_io_select                   (trig_io_select),
+    .pll_sync_trigger                 (pll_sync_trigger),
+    .pll_sync_delay                   (pll_sync_delay),
+    .pll_sync_done                    (pll_sync_done),
+    .pps_brc_delay                    (pps_brc_delay),
+    .pps_prc_delay                    (pps_prc_delay),
+    .prc_rc_divider                   (prc_rc_divider),
+    .pps_rc_enabled                   (pps_rc_enabled),
+    .radio_spc                        (RADIO_SPC),
+    .radio_time                       (radio_time),
+    .sample_rx_stb                    (radio_time_stb),
+    .time_ignore_bits                 ($clog2(RADIO_SPC)),
+    .gpio_in_a                        (gpio_in_a),
+    .gpio_in_b                        (gpio_in_b),
+    .gpio_out_a                       (gpio_out_a),
+    .gpio_out_b                       (gpio_out_b),
+    .gpio_en_a                        (gpio_en_a),
+    .gpio_en_b                        (gpio_en_b),
+    .gpio_in_fabric_a                 (),
+    .gpio_in_fabric_b                 (),
+    .gpio_out_fabric_a                (12'b0),
+    .gpio_out_fabric_b                (12'b0),
+    .s_radio_ctrlport_req_wr          (ctrlport_radio_req_wr),
+    .s_radio_ctrlport_req_rd          (ctrlport_radio_req_rd),
+    .s_radio_ctrlport_req_addr        (ctrlport_radio_req_addr),
+    .s_radio_ctrlport_req_data        (ctrlport_radio_req_data),
+    .s_radio_ctrlport_req_byte_en     (ctrlport_radio_req_byte_en),
+    .s_radio_ctrlport_req_has_time    (ctrlport_radio_req_has_time),
+    .s_radio_ctrlport_req_time        (ctrlport_radio_req_time),
+    .s_radio_ctrlport_resp_ack        (ctrlport_radio_resp_ack),
+    .s_radio_ctrlport_resp_status     (ctrlport_radio_resp_status),
+    .s_radio_ctrlport_resp_data       (ctrlport_radio_resp_data),
+    .m_radio_ctrlport_req_wr          (m_ctrlport_radio_req_wr),
+    .m_radio_ctrlport_req_rd          (m_ctrlport_radio_req_rd),
+    .m_radio_ctrlport_req_addr        (m_ctrlport_radio_req_addr),
+    .m_radio_ctrlport_req_data        (m_ctrlport_radio_req_data),
+    .m_radio_ctrlport_req_byte_en     (m_ctrlport_radio_req_byte_en),
+    .m_radio_ctrlport_req_has_time    (m_ctrlport_radio_req_has_time),
+    .m_radio_ctrlport_req_time        (m_ctrlport_radio_req_time),
+    .m_radio_ctrlport_resp_ack        (m_ctrlport_radio_resp_ack),
+    .m_radio_ctrlport_resp_status     (m_ctrlport_radio_resp_status),
+    .m_radio_ctrlport_resp_data       (m_ctrlport_radio_resp_data),
+    .start_nco_reset                  (start_nco_reset),
+    .nco_reset_done                   (nco_reset_done),
+    .adc_reset_pulse                  (adc_reset_pulse),
+    .dac_reset_pulse                  (dac_reset_pulse),
+    .qsfp_port_0_0_info               (qsfp_port_0_0_info),
+    .qsfp_port_0_1_info               (qsfp_port_0_1_info),
+    .qsfp_port_0_2_info               (qsfp_port_0_2_info),
+    .qsfp_port_0_3_info               (qsfp_port_0_3_info),
+    .qsfp_port_1_0_info               (qsfp_port_1_0_info),
+    .qsfp_port_1_1_info               (qsfp_port_1_1_info),
+    .qsfp_port_1_2_info               (qsfp_port_1_2_info),
+    .qsfp_port_1_3_info               (qsfp_port_1_3_info),
+    .device_id                        (device_id),
+    .mfg_test_en_fabric_clk           (mfg_test_en_fabric_clk),
+    .mfg_test_en_gty_rcv_clk          (mfg_test_en_gty_rcv_clk),
+    .fpga_aux_ref                     (fpga_aux_ref),
+    .version_info                     (version_info)
   );
 
   // Provide information for ctrlport timed commands
@@ -305,17 +343,6 @@ module x4xx_core #(
 
   // Calculate how may bits wide each channel is
   localparam CHAN_W = 32 * RADIO_SPC;
-
-  wire [  1*NUM_DBOARDS-1:0] ctrlport_radio_req_wr;
-  wire [  1*NUM_DBOARDS-1:0] ctrlport_radio_req_rd;
-  wire [ 20*NUM_DBOARDS-1:0] ctrlport_radio_req_addr;
-  wire [ 32*NUM_DBOARDS-1:0] ctrlport_radio_req_data;
-  wire [  4*NUM_DBOARDS-1:0] ctrlport_radio_req_byte_en;
-  wire [  1*NUM_DBOARDS-1:0] ctrlport_radio_req_has_time;
-  wire [ 64*NUM_DBOARDS-1:0] ctrlport_radio_req_time;
-  wire [  1*NUM_DBOARDS-1:0] ctrlport_radio_resp_ack;
-  wire [  2*NUM_DBOARDS-1:0] ctrlport_radio_resp_status;
-  wire [ 32*NUM_DBOARDS-1:0] ctrlport_radio_resp_data;
 
   rfnoc_image_core #(
     .CHDR_W     (CHDR_W),
@@ -410,45 +437,6 @@ module x4xx_core #(
     .m_dma_tlast                    (dmao_tlast),
     .m_dma_tvalid                   (dmao_tvalid),
     .m_dma_tready                   (dmao_tready)
-  );
-
-
-  //-------------------------------------------------------------------------
-  // RF Timing Reset Control
-  //-------------------------------------------------------------------------
-
-  rfdc_timing_control #(
-    .NUM_DBOARDS (NUM_DBOARDS)
-  ) rfdc_timing_control_i (
-    .clk                     (radio_clk),
-    .rst                     (radio_rst),
-    .time_now                (radio_time),
-    .time_now_stb            (radio_time_stb),
-    .time_ignore_bits        ($clog2(RADIO_SPC)),
-    .s_ctrlport_req_wr       (ctrlport_radio_req_wr),
-    .s_ctrlport_req_rd       (ctrlport_radio_req_rd),
-    .s_ctrlport_req_addr     (ctrlport_radio_req_addr),
-    .s_ctrlport_req_data     (ctrlport_radio_req_data),
-    .s_ctrlport_req_byte_en  (ctrlport_radio_req_byte_en),
-    .s_ctrlport_req_has_time (ctrlport_radio_req_has_time),
-    .s_ctrlport_req_time     (ctrlport_radio_req_time),
-    .s_ctrlport_resp_ack     (ctrlport_radio_resp_ack),
-    .s_ctrlport_resp_status  (ctrlport_radio_resp_status),
-    .s_ctrlport_resp_data    (ctrlport_radio_resp_data),
-    .m_ctrlport_req_wr       (m_ctrlport_radio_req_wr),
-    .m_ctrlport_req_rd       (m_ctrlport_radio_req_rd),
-    .m_ctrlport_req_addr     (m_ctrlport_radio_req_addr),
-    .m_ctrlport_req_data     (m_ctrlport_radio_req_data),
-    .m_ctrlport_req_byte_en  (m_ctrlport_radio_req_byte_en),
-    .m_ctrlport_req_has_time (m_ctrlport_radio_req_has_time),
-    .m_ctrlport_req_time     (m_ctrlport_radio_req_time),
-    .m_ctrlport_resp_ack     (m_ctrlport_radio_resp_ack),
-    .m_ctrlport_resp_status  (m_ctrlport_radio_resp_status),
-    .m_ctrlport_resp_data    (m_ctrlport_radio_resp_data),
-    .start_nco_reset         (start_nco_reset),
-    .nco_reset_done          (nco_reset_done),
-    .adc_reset_pulse         (adc_reset_pulse),
-    .dac_reset_pulse         (dac_reset_pulse)
   );
 
 endmodule
