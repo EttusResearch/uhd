@@ -253,10 +253,6 @@ void zbx_lo_expert::resolve()
         const double clipped_lo_freq = std::max(
             LMX2572_MIN_FREQ, std::min(_desired_lo_frequency.get(), LMX2572_MAX_FREQ));
         _coerced_lo_frequency = _lo_ctrl->set_lo_freq(clipped_lo_freq);
-        UHD_LOG_TRACE(get_name(),
-            "Requested " << _get_trx_string(_trx) << _chan << " frequency "
-                         << (_desired_lo_frequency / 1e6) << "MHz was coerced to "
-                         << (_coerced_lo_frequency / 1e6) << "MHz");
     }
 }
 
