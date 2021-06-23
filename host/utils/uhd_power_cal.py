@@ -9,6 +9,7 @@ Utility to run power calibrations with USRPs
 """
 
 import sys
+import time
 import math
 import pickle
 import argparse
@@ -180,6 +181,7 @@ class CalRunner:
         print("=== Running calibration at frequency {:.3f} MHz...".format(freq / 1e6))
         tune_req = uhd.types.TuneRequest(freq, self.lo_offset)
         getattr(self.usrp, 'set_{}_freq'.format(self.dir))(tune_req, chan)
+        time.sleep(self.usrp_cal.tune_settling_time)
         actual_freq = getattr(self.usrp, 'get_{}_freq'.format(self.dir))(chan)
         if abs(actual_freq - freq) > 1.0:
             print("WARNING: Frequency was coerced from {:.2f} MHz to {:.2f} MHz!"

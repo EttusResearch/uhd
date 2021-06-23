@@ -91,6 +91,7 @@ class USRPCalibratorBase:
     lo_offset = 0.0
     min_freq = None
     max_freq = None
+    tune_settling_time = 0
 
     def __init__(self, usrp, meas_dev, direction, **kwargs):
         self._usrp = usrp
@@ -200,6 +201,7 @@ class USRPCalibratorBase:
                 self._noise[freq] = {}
                 tune_req = uhd.types.TuneRequest(freq)
                 self._usrp.set_rx_freq(tune_req, self._chan)
+                time.sleep(self.tune_settling_time)
                 for gain in self._gains:
                     self._usrp.set_rx_gain(gain, self._chan)
                     self._noise[freq][gain] = get_usrp_power(self._streamer)
@@ -401,6 +403,9 @@ class X410Calibrator(USRPCalibratorBase):
     default_rate = 3.84e6
     min_freq = 1e6
     max_freq = 8e9
+    # X410 non-timed tunes are currently very poke-intensive, so we give it some
+    # time to clear the command queue
+    tune_settling_time = .5
 
 ###############################################################################
 # The dispatch function
