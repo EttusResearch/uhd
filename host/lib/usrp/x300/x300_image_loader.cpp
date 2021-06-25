@@ -242,7 +242,7 @@ static void x300_setup_session(x300_session_t& session,
                 "Found a device but could not auto-generate an image filename.");
         } else {
             session.filepath =
-                find_image_path("usrp" + sanitized_product_name +  
+                find_image_path("usrp_" + sanitized_product_name +  
                                 "_fpga_" + session.fpga_type + ".bit");
         }
     } else {
