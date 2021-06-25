@@ -12,6 +12,7 @@ trigger:
     include:
     - host
     - .ci/uhd-pipeline.yml
+    - images/manifest.txt
 pr:
   branches:
     include:
@@ -20,6 +21,7 @@ pr:
     include:
     - host
     - .ci/uhd-pipeline.yml
+    - images/manifest.txt
 
 variables:
 - template: uhd-pipeline-vars.yml
