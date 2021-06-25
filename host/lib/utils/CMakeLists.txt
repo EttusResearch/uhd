@@ -138,7 +138,6 @@ set_source_files_properties(
 ########################################################################
 message(STATUS "")
 message(STATUS "Configuring module loading...")
-include(CheckCXXSourceCompiles)
 
 set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_DL_LIBS})
 CHECK_CXX_SOURCE_COMPILES("
