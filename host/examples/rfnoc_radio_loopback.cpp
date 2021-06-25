@@ -169,9 +169,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         if (vm.count("int-n")) {
             tune_request.args = uhd::device_addr_t("mode_n=integer");
         }
-        rx_radio_ctrl->set_tx_frequency(tx_freq, tx_chan);
+        tx_radio_ctrl->set_tx_frequency(tx_freq, tx_chan);
         std::cout << boost::format("Actual TX Freq: %f MHz...")
-                         % (rx_radio_ctrl->get_tx_frequency(tx_chan) / 1e6)
+                         % (tx_radio_ctrl->get_tx_frequency(tx_chan) / 1e6)
                   << std::endl
                   << std::endl;
     }
