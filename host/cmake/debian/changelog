@@ -1,3 +1,411 @@
+uhd (4.1.0.0-0ubuntu1) ubuntu_release; urgency=low
+
+  * adf535x
+    - Change freq_resolution to mod2
+  * b200
+    - handle overruns during continuous streaming
+  * cal
+    - ensure proper range handling
+    - Remove silent capture of TypeError
+    - Add X410 internal antenna names to invalid antenna list
+    - add more error number for ADC overload
+    - make 'calibrate all channels' default for --channels argument
+    - Add support for X410
+    - Add min_freq and max_freq attributes to USRPCalibratorBase
+    - Fix minor issues in the calibration utilities
+    - sync log output between file system and resource data
+  * chdr
+    - Fix u64_to_host vs. u64_from_host usage
+  * ci
+    - Add trace builds to pipeline
+    - Add deb build support for ubuntu 1804/2004
+    - Update docker images for Ubuntu with pbuilder
+    - Support for x3xx devtest on rhombus
+    - Install vc_buildtools instead of vc_community
+    - Build uhd with Pipelines
+    - Linux and Windows uhd build docker images
+    - Hardware pytests / devtests in AzDO for n310
+    - Add stub for python hardware tests
+  * cmake
+    - Add RegMaps build component to MPM
+    - fix cut-and-paste typo to fix SIM APPLE build
+  * convert
+    - Remove unused variables
+  * dboard
+    - magnesium: Update Rx IF Frequency Value
+  * dboard_iface
+    - Fix sleep()
+    - Modify sleep() function
+  * debian
+    - Update supported Ubuntu releases
+    - Update Python3 dependencies
+  * debug_dboard
+    - Fix compiler warning
+  * deps
+    - rpclib: Fix issue on socket closing
+  * devtest
+    - benchmark_rate: Add support for rx and tx only tests
+    - Make Python tests their own type of devtest
+    - Lower rate for rx_all_chans_fast test
+    - Allow extra device arguments when running devtests
+    - Optionally generate XML report when running devtests
+  * docs
+    - usrp_x4xx: add network leds behavior to docs
+    - devices: remove child page relation to individual dboards
+    - zbx: link docs to rf specifications
+    - zbx: address review observations in docs
+    - usrp_x4xx: address review observations in docs
+    - Fix typos
+    - Fix python3-ruamel.yaml name on RPM based OS
+    - zbx: update cpld source code location
+    - usrp_x4xx: apply minor corrections in docs
+    - zbx: improve cpld update docs
+    - usrp_x4xx: improve mb cpld update docs
+    - Fix missing section header in power level controls page
+    - Fix typo in mender section
+    - Add N320 frontend correction section
+    - Use Mathjax for equation rendering
+    - Remove reference to Python six
+    - mpm: correct ? notation to display help
+    - Update Python3 dependencies
+    - Fix sensor names for N3xx boards
+  * duc
+    - Fix incorrect DDS_GAIN
+  * examples
+    - Fix underrun/seq error reporting in benchmark_rate.py
+    - Add min dynamic range limit to ascii art DFT example
+    - Add IP to OOT RFNoC gain example
+    - Remove unused arguments for rfnoc_radio_loopback
+    - Fix PPS option in rfnoc_radio_loopback
+    - Fix --random option in benchmark_rate
+  * experts
+    - Change coercion policy for regular prop nodes
+  * fpga
+    - x400: Fix x4xx_qsfp_wrapper testbench
+    - sim: Check for empty packet in clear_unused_bytes
+    - Update testbenches to work in ModelSim
+    - x400: Add makefiles for RF testbenches
+    - tools: Detect assertions in ModelSim simulation
+    - tools: Put SIM_SRCS at end of compile order
+    - tools: Support new FPGA types in viv_simulator.mak
+    - tools: Fix python2 reference in viv_ip_builder.mak
+    - tools: Add modelsim.excludes
+    - tools: Add modelsim.ini to ModelSim calls
+    - tools: Add features to run_testbenches.py
+    - tools: Add ip target to simulation makefiles
+    - tools: Add X410 support for image packaging
+    - ci: Add build definitions for FPGA CI
+    - x400: zbx: Add support for ZBX CPLD
+    - x400: cpld: Add support for X410 motherboard CPLD
+    - x400: Add support for X410 motherboard FPGA
+    - sim: Add slave_idle() to PkgAxiStreamBfm.sv
+    - lib: Update register comments in eth_regs.vh
+    - Update rfnoc_image_core for all targets
+    - Update recommended HDL header guideline
+    - tools: Fix part selection in setupenv
+    - Change RFNoC YAML version numbers to strings
+    - lib: Add modports to SV AXI-Stream blocks
+    - lib: Add time_increment port to timekeeper
+    - lib: Pipeline ctrlport_timer
+    - lib: Add clock domain comments to interfaces
+    - lib: Add 2 to 1 gearbox module
+    - lib: Add PHASE parameter to sim_clk_gen
+    - lib: Add AXI4 (full) interface
+    - lib: add pause support to ethernet xport
+    - lib: Add eth_ipv4_internal
+    - lib: Add zynquplus family to axi_bitq
+    - tools: Add ability to run commands before route
+    - tools: Add ability to patch IP during generation
+    - tools: Add support for RFSoC
+    - lib: Minor cleanup of axi_lite.vh
+    - rfnoc: Add ability to disable output flow control
+    - lib: Add rx_front_end_gen3 testbench
+    - lib: Update round_sd to eliminate X from simulation
+    - lib: Fix simulation of axi_fir_filter
+    - docs: Improve documentation of rx_frontend_gen3
+    - lib: Fix DDS_SIN_COS_LUT outputs in makefile
+    - dsp: Fix formatting of rx_dcoffset and add docs
+    - Remove Python2 support from build system
+    - e320: Improve timing on LVDS interface
+    - lib: add glitch free mux module
+    - e31x: Add OOT sources to Makefile.e31x.inc
+    - lib: Fix axis_strm_monitor parameters
+    - lib: Fix small packets stuck in 10 GbE TX
+    - lib: Fix 10 GbE cut-through mode
+    - lib: add generic to disable bitq engine tri-stating
+  * graph
+    - Restore default resolver callback at node removal
+    - Serialize all graph-related functions
+    - Re-fetch dst_node descriptor after src_node potential removal
+  * host
+    - utils: Print block ID for RFNoC dboards
+    - Update code base using clang-tidy
+    - Update code base using clang-tidy
+  * ic_reg_map
+    - Allow registers to be arrays
+    - Remove SPCC core reg map
+    - Add SPCC reg map
+    - Add common regmap template for Python
+  * images
+    - Update manifest
+    - Add X410 series FPGA images
+    - Update manifest
+    - Update B2xx firmware
+  * installers
+    - Refactor deb script and build
+    - Resolve ubuntu linter issue
+  * lib
+    - deps: Upgrade vendor version of Pybind11 to 2.6.1
+    - Fix misssing include in e3xx_radio_control_impl
+    - rpc: Add virtual dtor to RPC iface base class
+    - Remove move-on-return for chdr_packet_writer
+    - Fix unresolved cleanup conflict (sorry!)
+    - deps: Ignore more warnings in our versions of rpclib, pybind11
+    - Use const-ref in for loops instead of const-copy
+    - Add some virtual dtors
+    - Fix warnings related to unnecessary lambda captures
+    - lmx2592: Comment out some unused constants
+    - Remove unused constants
+    - Fix missing includes in rpc.hpp
+    - Disable non pcie types in find with resource
+    - graph_utils: Error on single SEP edge
+    - graph_utils: Fix formatting and compiler warnings
+  * lmx2572
+    - Fix compiler warning
+  * mg
+    - Fix slot_idx reference
+    - Remove unused private attribute from ad9371_iface
+  * mpm
+    - Move cal freeze defaults to x4xx
+    - Restore rfdc nco frequency after setting sync source
+    - tests: Add lib/ to library load path
+    - install cpld update scripts in runtime dir
+    - x4xx_bist: run spi_flash tests on both DBs
+    - max10_cpld_flash_ctrl: only reprogram cpld if necessary
+    - Add chip driver for LMK05318 PLL
+    - gpsd_iface: Make GPGGA generation more robust
+    - sys_utils: add libgpiod-based Gpio helper
+    - Remove helper classes from RPC API
+    - systemd: Add UseDomains=true to eth0.network
+    - Fix MD5 hashing of opkg status
+    - check-filesystem: liberalize version check
+    - Add unit tests for EEPROM readers
+    - Add symbol name based EEPROM read, cleanup EEPROM handling
+    - Add tlv_eeprom
+    - gpsd_iface: Refactor class
+    - Remove unnecessary imports
+    - Add FPGA type to the info returned during discovery
+    - Remove unused argument info
+    - lmk04832: Clean up driver
+    - PeriphManagerBase: Add _add_public_methods()
+    - Fix minor log formatting issue
+    - db_flash: Check mount status before mounting
+    - sysutils: mount: Check both mount point and data path
+    - mount: Demote already-mounted warning
+    - periph_mgr: Demote "no SPI nodes" warning
+    - mg: periphs: Read lowband lo lock status from cpld
+    - Remove references to rfnoc_num_blocks
+    - Remove logging for mmap_regs_iface
+    - periph manager: Fix get_mb_eeprom() return value formatting
+    - rpc: don't expose reset_mgr call via RPC
+    - Add i2c_dev lookup using sys_name
+    - rpc: Use contextmanager for claim timeouts
+    - add helper for symbol lookup
+    - Implement 32 bit register interface with SPI
+    - Add DboardIface for MB DB driver control
+    - Add an LMK03328 base chip driver
+    - Add an LMK04832 base chip driver
+    - prevent dead lock in timer kill during unclaim
+    - Add support to safely reset peripheral manager from uhd
+    - Create Mock classes for unit testing
+    - Deduplicate dboard eeprom handling
+    - Added DBFlash class
+    - Added Mount class
+    - systemd: create udev rules files for each MPM_DEVICE
+    - filesystem_status: tolerate absence of mender
+    - Implement get_sync_source and get_sync_sources.
+    - rpc server: Fix unclaim sequence
+    - rpc server: Remove Python2 compat code
+    - rpc_server: fix get_log_buf for MPM Shell
+    - Fix issue with check-filesystem test execution
+    - Add dependency on pyusrp_periphs to MPM
+    - Cleanup rpc_server.py
+    - Use filesystem_status from sys_utils
+    - Added check-filesystem utility
+    - Add 'XQ' image as valid when using sfp0 as time_source
+  * mpmd
+    - Support four links
+    - Skip find if "resource" key is specified
+    - Add support to delay and trigger fpga/dts load after update
+    - Export RPC token and mb_args to the property tree
+    - Reduce max frame size for 10 GbE
+  * msgpack/predef
+    - Add riscV support
+  * multi_usrp
+    - Factor out make_overall_tune_range() and fix limits
+    - Fix typos in streamer destruction callback
+    - Fix streamer destruction callback
+    - Add get_mb_controller() API call
+    - Relax LO set API strictness
+  * multi_usrp_rfnoc
+    - Fix get_device()->get_tree()
+    - Serialize make_rfnoc_device
+  * n310
+    - Fix calculation of LO freq w/ext LO for RX
+  * n310/n300
+    - Allow gain coercion
+  * n320
+    - Add correction APIs to radio_control object
+    - Fix calibrations
+    - Fix IQ mapping and frontend corrections
+    - Fix available antennas
+    - Fix address for RX frontend control
+  * package
+    - Fix Python components
+  * python
+    - Add graceful exit of claim loop on SIGTERM
+    - Add rfnoc_image_core.vh generation
+    - Update RFNoC image builder to use CHDR_W parameter
+    - Add find() to the Python API
+    - multi_usrp: Add get_mpm_client() API call
+    - Add mpmtools module
+    - Make TuneRequest implicitly convertible from double
+    - multi_usrp: Let get_tree() return a raw pointer
+    - Improve access to device_addr_t
+    - multi_usrp: Fix get_radio_control()
+    - Clean up image builder generated code
+    - Add access to the property_tree from Python
+    - Move multi_usrp_python to its own module
+  * rfnoc
+    - Fix post action behavior of nodes
+    - Add image_core_name option to rfnoc_image_builder
+    - Fix MTU prop resolver refactoring
+    - noc_block_base: Throw if set_mtu_forwarding_policy() called multiply
+    - noc_block_base: Refactor MTU prop resolver
+    - Fix graph connect timeout error
+    - Add option to disable flow control on rx streaming
+    - radio: Add getter for SPC value
+    - tx_streamer: Remove EOV size attribute
+    - Update radio to support multiple SPC
+    - Make NIPC match CHDR width by default for NSS block
+    - Add accessors for item width and nipc for NSS
+    - Fix remote stream buffer format
+    - Fix time conversion in ctrlport_endpoint sleep method
+    - Handle receive of 0 samples
+    - Demoted zero sample error to warning
+    - Add Makefile.srcs to switchboard.yml
+    - Fix thread unsafe accesses in ctrlport
+    - Alphabetize sections in CMakeLists.txt
+    - Add add'l header files to CMakeLists.txt
+  * rh
+    - Remove unused constant
+    - cpld control: Comment out gain table address
+    - Remove use of magic number of identify duration
+  * rpclib
+    - Fix warning on ARM build
+  * sim
+    - Fix CHDR header stringification
+    - Ignore mender artifact file on sim devices
+    - Check for unit test prereqs and disable if unsatisfied
+    - Move SelectableQueue and SendWrapper
+    - Support Out of Tree Sources and Sinks
+    - Implement Sim > UHD Flow Control
+    - Move Hardware Specific to Config File
+    - Implement UHD > Simulator Flow Control
+    - Support Timed Streams
+    - Integrate simulator into UHD
+    - Support Configuration Files
+    - Support Streaming
+    - Clarify Naming of Streams
+    - Simulator CHDR Parsing and RFNoC Graph
+    - Embed MPM into libpyuhd
+    - Add Daughterboard Methods
+    - Lay Groundwork for Simulator
+  * test
+    - Add DPDK option for max streaming rate tests
+  * tests
+    - Make python_api_test.py always explicitly call Python
+    - Add MTU forwarding policy restriction unit test
+    - Update multi_usrp_test.py
+    - Update device identifiers for N310
+    - Fix warnings for rf_control_gain_profile_test
+    - Remove unused constants
+    - Add lib/ to LD_LIBRARY_PATH for pytests
+    - Add UT for node removal prop resol'n restoration
+    - mock_block: Allow mock blocks to carry MB controllers
+  * tlv_eeprom
+    - Add eeprom-set-autoboot helper script
+  * tools
+    - Add bool-property-set ability to rx_settling_time.py
+    - Rfnoc dissectors are now built and named based on CHDR width
+    - Update rfnoc dissector to support multiple CHDR widths.
+  * transport
+    - Fix compiler warning in nirio_link
+    - Set mtu to 9000 for all 10GbE use cases
+  * twinrx
+    - Remove frontend filter
+    - Fix missing default copy ctor
+    - Fix LO lock failure
+    - Spur cleanup
+  * types
+    - Add mm_iface structs
+  * uhd
+    - Use chain's block channel to get power ref keys
+    - Add missing channel parameter when reading power ref keys
+    - Add callback for setting sync_sources
+    - Update version
+    - x400: Honor ENABLE_X400 component flag
+    - ci: Add test definition for UHD CI
+    - Add support for the USRP X410
+    - Reword log.hpp documentation
+    - Remove references to device3
+    - Update all headers for setters on multi_usrp re coerce/throw
+    - Fix typo in has_tx_power_reference
+    - Enable vcpkg support on windows
+    - Fix radio_control-related method constness
+    - gitignore .DS_Store for our macOS friends
+    - Lambda capture the node instead of vert desc
+    - Check for overflow after timeout buff read
+    - Split radio_control into rf_control interfaces
+    - Revert "Check property type at access..."
+    - clang: Fix fallthrough attribute
+    - Throw error if edge list is empty
+    - clang-format device impl
+    - Replace default initializers with named ones
+  * uhd_image_loader
+    - Consume .lvbitx files
+  * uhd_images_downloader
+    - Add environment variable for http auth
+    - Remove unused default_no parameter
+  * usrp
+    - Remove old header file declarations
+  * usrp2
+    - Use explicit template type for std::min<T>
+    - Replace boost::math::iround/math::sign with std::lround
+    - Apply minor cleanups to Boost usage in usrp2
+    - Fix Boost headers
+  * usrprio
+    - catch exceptions if rpc data read fails
+  * utils
+    - Improve cal TX threads
+    - Remove unused constant from b2xx_fx3_utils
+    - check config file before finding devices for image loader
+    - Fix GUI argument in rfnoc_image_builder
+    - Improve NMEA string output
+    - Set rfnoc_create_verilog.py as executable
+  * x300
+    - Reduce phase noise for 184.32 MHz MCR
+  * x3xx
+    - Improve image loader
+  * x400
+    - sim: Move testbenches to sim folder
+  * zbx
+    - Fix clang compiler warnings
+    - Fix compilation on clang-10
+
+ -- Ettus Research <packages@ettus.com>  Fri, 25 Jun 2021 01:13:18 -0800
+
+
 uhd (4.0.0.0-0ubuntu1) ubuntu_release; urgency=low
 
   * b200:

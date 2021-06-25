@@ -5,11 +5,11 @@ Source: https://github.com/EttusResearch/uhd
 X-Note: The upstream package source tarball was generated from the tag:
  git archive --format=tar --prefix=uhd-3.7.3/ release_003_007_003 | xz > ../uhd_3.7.3.orig.tar.gz
 Comment: Only the host directory of the distributed source is used to build the uhd-host package for Debian main.
-Copyright: Copyright 2010-2018 Ettus Research, A National Instruments Company
+Copyright: Copyright 2010-2021 Ettus Research, A National Instruments Company
 License: GPL-3+
 
 Files: *
-Copyright: Copyright 2010-2018 Ettus Research, A National Instruments Company
+Copyright: Copyright 2010-2021 Ettus Research, A National Instruments Company
 License: GPL-3+
 
 Files: host/lib/deps/rpclib/*
@@ -35,7 +35,7 @@ Files:  images/*
         firmware/octoclock/*
         firmware/x300/*
         firmware/README.txt
-Copyright: Copyright 2010-2018 Ettus Research, A National Instruments Company
+Copyright: Copyright 2010-2021 Ettus Research, A National Instruments Company
 License: GPL-3+
 Comment: Not used for uhd-host package
 
@@ -251,7 +251,7 @@ License: RSA-BSD
 Comment: Not used for uhd-host package                                   **
 
 Files: fpga/*
-Copyright: 2008-2018 Ettus Research, A National Instruments Company
+Copyright: 2008-2021 Ettus Research, A National Instruments Company
 License: GPL-3+
 Comment: Not used for uhd-host package
 
@@ -632,7 +632,7 @@ Files:  fpga/usrp2/sdr_lib/integrate.v
  fpga/usrp2/top/N2x0/Makefile.N200R3
  fpga/usrp2/top/N2x0/Makefile.N210R4
  fpga/usrp2/top/N2x0/Makefile
-Copyright: 2008-2018 Ettus Research, A National Instruments Company
+Copyright: 2008-2021 Ettus Research, A National Instruments Company
 License: GPL-3+
 Comment: Not used for uhd-host package
 
