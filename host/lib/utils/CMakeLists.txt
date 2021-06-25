@@ -43,8 +43,6 @@ CHECK_CXX_SOURCE_COMPILES("
     " HAVE_WIN_SETTHREADPRIORITY
 )
 
-
-
 if(HAVE_PTHREAD_SETSCHEDPARAM)
     message(STATUS "  Priority scheduling supported through pthread_setschedparam.")
     list(APPEND THREAD_PRIO_DEFS HAVE_PTHREAD_SETSCHEDPARAM)
@@ -62,7 +60,6 @@ endif()
 ########################################################################
 
 set(CMAKE_REQUIRED_LIBRARIES "pthread")
-
 CHECK_CXX_SOURCE_COMPILES("
     #include <pthread.h>
     int main(){
@@ -73,6 +70,7 @@ CHECK_CXX_SOURCE_COMPILES("
     }
     " HAVE_PTHREAD_SETNAME
 )
+unset(CMAKE_REQUIRED_LIBRARIES)
 
 if(CYGWIN)
     #SCHED_RR non-operational on cygwin
@@ -92,6 +90,7 @@ endif()
 # Setup defines for thread affinitizing
 ########################################################################
 
+set(CMAKE_REQUIRED_LIBRARIES "pthread")
 CHECK_CXX_SOURCE_COMPILES("
     #include <pthread.h>
     int main(){
@@ -102,6 +101,7 @@ CHECK_CXX_SOURCE_COMPILES("
     }
     " HAVE_PTHREAD_SETAFFINITY_NP
 )
+unset(CMAKE_REQUIRED_LIBRARIES)
 
 if(CYGWIN)
     set(HAVE_PTHREAD_SETAFFINITY_NP False)
@@ -115,6 +115,7 @@ CHECK_CXX_SOURCE_COMPILES("
     }
     " HAVE_WIN_SETTHREADAFFINITYMASK
 )
+
 if(HAVE_PTHREAD_SETAFFINITY_NP)
     message(STATUS "  Setting thread affinity is supported through pthread_setaffinity_np.")
     list(APPEND THREAD_PRIO_DEFS HAVE_PTHREAD_SETAFFINITY_NP)
@@ -126,7 +127,6 @@ else()
     message(STATUS "  Setting thread affinity is not supported.")
     list(APPEND THREAD_PRIO_DEFS HAVE_THREAD_SETAFFINITY_DUMMY)
 endif()
-
 
 set_source_files_properties(
     ${CMAKE_CURRENT_SOURCE_DIR}/thread.cpp
@@ -149,7 +149,7 @@ CHECK_CXX_SOURCE_COMPILES("
     }
     " HAVE_DLOPEN
 )
-set(CMAKE_REQUIRED_LIBRARIES)
+unset(CMAKE_REQUIRED_LIBRARIES)
 
 CHECK_CXX_SOURCE_COMPILES("
     #define WIN32_LEAN_AND_MEAN
