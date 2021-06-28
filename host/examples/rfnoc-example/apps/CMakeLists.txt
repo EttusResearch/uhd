@@ -17,7 +17,7 @@ if(MSVC)
         set(BOOST_REQUIRED_COMPONENTS) #empty components list for static link
     endif(BOOST_ALL_DYN_LINK)
 endif(MSVC)
-find_package(Boost 1.58 REQUIRED ${BOOST_REQUIRED_COMPONENTS})
+find_package(Boost 1.65 REQUIRED ${BOOST_REQUIRED_COMPONENTS})
 
 include_directories(
     ${CMAKE_SOURCE_DIR}/include

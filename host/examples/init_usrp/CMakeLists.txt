@@ -23,7 +23,7 @@ endif()
 option(UHD_USE_STATIC_LIBS OFF)
 
 # To add UHD as a dependency to this project, add a line such as this:
-find_package(UHD 4.0.0 REQUIRED)
+find_package(UHD 4.1.0 REQUIRED)
 # The version in  ^^^^^  here is a minimum version.
 # To specify an exact version:
 #find_package(UHD 4.0.0 EXACT REQUIRED)
@@ -35,7 +35,7 @@ set(UHD_BOOST_REQUIRED_COMPONENTS
     system
     thread
 )
-set(BOOST_MIN_VERSION 1.58)
+set(BOOST_MIN_VERSION 1.65)
 include(UHDBoost)
 
 # need these include and link directories for the build
