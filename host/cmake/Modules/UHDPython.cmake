@@ -46,7 +46,7 @@ endif(NOT PYTHONINTERP_FOUND)
 # If that fails, try using the build-in find program routine.
 if(NOT PYTHONINTERP_FOUND)
     message(STATUS "Attempting to find Python without CMake...")
-    find_program(PYTHON_EXECUTABLE NAMES python3 python3.5 python3.6 python3.7 python3.8)
+    find_program(PYTHON_EXECUTABLE NAMES python3 python3.6 python3.7 python3.8 python3.9)
     if(PYTHON_EXECUTABLE)
         set(PYTHONINTERP_FOUND TRUE)
     endif(PYTHON_EXECUTABLE)

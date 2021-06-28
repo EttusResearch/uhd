@@ -24,17 +24,17 @@ list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake/Modules)
 # UHD Dependency Minimum Versions
 ########################################################################
 set(CMAKE_MIN_VERSION "3.8")
-set(GCC_MIN_VERSION "5.4.0")
-set(CLANG_MIN_VERSION "3.8.0")
-set(APPLECLANG_MIN_VERSION "600")
+set(GCC_MIN_VERSION "6.3.0")
+set(CLANG_MIN_VERSION "6.0.0")
+set(APPLECLANG_MIN_VERSION "800")
 # Make sure to update the next two in unison:
 set(MSVC_MIN_VERSION "1910")
 set(MSVC_MIN_VERSION_READABLE "15.0")
 # This Python version gets used for Python API (if requested) as well as
 # all the build-time Python scripts
-set(PYTHON_MIN_VERSION "3.5")
+set(PYTHON_MIN_VERSION "3.6")
 # Other deps
-set(BOOST_MIN_VERSION "1.58")
+set(BOOST_MIN_VERSION "1.65")
 set(NUMPY_MIN_VERSION "1.11")
 set(RUAMEL.YAML_MIN_VERSION "0.15")
 set(PY_MAKO_MIN_VERSION "0.4.2")
