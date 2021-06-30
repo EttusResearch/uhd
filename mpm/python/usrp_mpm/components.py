@@ -102,7 +102,8 @@ class ZynqComponents(object):
             self.log.trace("Compatibility check MPM <-> FPGA via DTS enabled")
             dtsfilepath = filebasename + '.dts'
             if not os.path.exists(dtsfilepath):
-                self._log_and_raise("DTS file not found: {}".format(dtsfilepath))
+                self.log.warning("DTS file not found: {}, cannot check version of bitfile without DTS.".format(dtsfilepath))
+                return
             self.log.trace("Parse DTS file {} for version information"\
                 .format(dtsfilepath))
             fpga_versions = self._parse_dts_version_info_from_file(dtsfilepath)
