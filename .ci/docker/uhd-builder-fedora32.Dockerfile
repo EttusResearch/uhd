@@ -7,6 +7,7 @@ LABEL maintainer="Ettus Research"
 RUN dnf install -y \
         boost-devel \
         ccache \
+        clang \
         cmake \
         doxygen \
         dpdk \

@@ -12,6 +12,7 @@ RUN apt-get update && \
     apt-get -y install -q \
         build-essential \
         ccache \
+        clang \
         curl \
         git \
         sudo \
