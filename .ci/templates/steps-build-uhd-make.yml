@@ -6,6 +6,12 @@ parameters:
 - name: uhdEnableTraceLog
   type: boolean
   default: false
+- name: uhdAllowWarnings
+  type: boolean
+  default: false
+- name: uhdCxxFlags
+  type: string
+  default: ""
 
 steps:
 - script: |
@@ -15,6 +21,11 @@ steps:
       echo "Enabling UHD Tracing"
       export UHD_CI_CMAKE_OPTIONS="-DUHD_LOG_MIN_LEVEL=trace $UHD_CI_CMAKE_OPTIONS"
     fi
+    if [[ "${{ parameters.uhdAllowWarnings }}" = "False" ]]; then
+      echo "Warnings not allowed for this build."
+      export CXXFLAGS="-Werror -Wno-error=maybe-uninitialized $CXXFLAGS"
+    fi
+    export CXXFLAGS="${{ parameters.uhdCxxFlags }} $CXXFLAGS"
     cmake \
       $UHD_CI_CMAKE_OPTIONS \
       ${{ parameters.uhdSrcDir }}/host
