@@ -11,8 +11,10 @@ trigger:
   paths:
     include:
     - host
-    - .ci/uhd-pipeline.yml
+    - .ci/
     - images/manifest.txt
+    exclude:
+    - .ci/docker
 pr:
   branches:
     include:
