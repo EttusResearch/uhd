@@ -80,6 +80,7 @@ Change Log for Releases
   - Remove unused arguments for rfnoc_radio_loopback
   - Fix PPS option in rfnoc_radio_loopback
   - Fix --random option in benchmark_rate
+  - Fix icores example to match current RFNoC specs
 * experts
   - Change coercion policy for regular prop nodes
 * fpga
