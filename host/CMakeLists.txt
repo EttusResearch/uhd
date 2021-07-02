@@ -18,7 +18,7 @@ project(UHD CXX C)
 enable_testing()
 
 #make sure our local CMake Modules path comes first
-list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake/Modules)
+list(INSERT CMAKE_MODULE_PATH 0 ${UHD_SOURCE_DIR}/cmake/Modules)
 
 ########################################################################
 # UHD Dependency Minimum Versions
@@ -171,8 +171,8 @@ endif(DEFINED UHD_IMAGES_DIR_WINREG_KEY)
 ########################################################################
 # Local Include Dir
 ########################################################################
-include_directories(${CMAKE_BINARY_DIR}/include)
-include_directories(${CMAKE_SOURCE_DIR}/include)
+include_directories(${UHD_BINARY_DIR}/include)
+include_directories(${UHD_SOURCE_DIR}/include)
 
 ########################################################################
 # Static Lib Configuration
@@ -250,7 +250,7 @@ if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" OR
 endif()
 
 if(MSVC)
-    include_directories(${CMAKE_SOURCE_DIR}/cmake/msvc)
+    include_directories(${UHD_SOURCE_DIR}/cmake/msvc)
     add_definitions( #stop all kinds of compatibility warnings
         -DWIN32_LEAN_AND_MEAN
         -DVC_EXTRALEAN
@@ -339,7 +339,7 @@ PYTHON_CHECK_MODULE(
 # Create Uninstall Target
 ########################################################################
 configure_file(
-    ${CMAKE_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in
+    ${UHD_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake
 @ONLY)
 
@@ -376,7 +376,7 @@ LIBUHD_REGISTER_COMPONENT("Tests" ENABLE_TESTS ON "ENABLE_LIBUHD" OFF OFF)
 ########################################################################
 set(HAS_FPGA_SUBMODULE FALSE)
 execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import os; print(os.path.abspath(os.path.join('${CMAKE_SOURCE_DIR}', '..', 'fpga-src')))"
+    COMMAND ${PYTHON_EXECUTABLE} -c "import os; print(os.path.abspath(os.path.join('${UHD_SOURCE_DIR}', '..', 'fpga-src')))"
     OUTPUT_VARIABLE FPGA_SUBMODULE_DIR
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
@@ -472,20 +472,20 @@ else()
 endif(ENABLE_RFNOC)
 
 configure_file(
-    ${CMAKE_SOURCE_DIR}/cmake/Modules/UHDConfigVersion.cmake.in
-    ${CMAKE_BINARY_DIR}/cmake/Modules/UHDConfigVersion.cmake
+    ${UHD_SOURCE_DIR}/cmake/Modules/UHDConfigVersion.cmake.in
+    ${UHD_BINARY_DIR}/cmake/Modules/UHDConfigVersion.cmake
     @ONLY
 )
 configure_file(
-    ${CMAKE_SOURCE_DIR}/cmake/Modules/UHDConfig.cmake.in
-    ${CMAKE_BINARY_DIR}/cmake/Modules/UHDConfig.cmake
+    ${UHD_SOURCE_DIR}/cmake/Modules/UHDConfig.cmake.in
+    ${UHD_BINARY_DIR}/cmake/Modules/UHDConfig.cmake
     @ONLY
 )
 
 set(uhd_cmake_scripts
-    ${CMAKE_BINARY_DIR}/cmake/Modules/UHDConfig.cmake
-    ${CMAKE_BINARY_DIR}/cmake/Modules/UHDConfigVersion.cmake
-    ${CMAKE_SOURCE_DIR}/cmake/Modules/UHDBoost.cmake
+    ${UHD_BINARY_DIR}/cmake/Modules/UHDConfig.cmake
+    ${UHD_BINARY_DIR}/cmake/Modules/UHDConfigVersion.cmake
+    ${UHD_SOURCE_DIR}/cmake/Modules/UHDBoost.cmake
 )
 
 UHD_INSTALL(

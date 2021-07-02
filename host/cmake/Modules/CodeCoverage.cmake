@@ -71,7 +71,7 @@
 find_program( GCOV_PATH gcov )
 find_program( LCOV_PATH lcov )
 find_program( GENHTML_PATH genhtml )
-find_program( GCOVR_PATH gcovr PATHS ${CMAKE_SOURCE_DIR}/tests)
+find_program( GCOVR_PATH gcovr PATHS ${UHD_SOURCE_DIR}/tests)
 
 if(NOT GCOV_PATH)
 	message(FATAL_ERROR "gcov not found! Aborting...")
@@ -130,7 +130,7 @@ function(SETUP_TARGET_FOR_COVERAGE _targetname _testrunner _outputname)
 		message(FATAL_ERROR "genhtml not found! Aborting...")
 	endif() # NOT GENHTML_PATH
 
-	set(coverage_info "${CMAKE_BINARY_DIR}/${_outputname}.info")
+	set(coverage_info "${UHD_BINARY_DIR}/${_outputname}.info")
 	set(coverage_cleaned "${coverage_info}.cleaned")
 
 	separate_arguments(test_command UNIX_COMMAND "${_testrunner}")
@@ -150,7 +150,7 @@ function(SETUP_TARGET_FOR_COVERAGE _targetname _testrunner _outputname)
 		COMMAND ${GENHTML_PATH} -o ${_outputname} ${coverage_cleaned}
 		COMMAND ${CMAKE_COMMAND} -E remove ${coverage_info} ${coverage_cleaned}
 
-		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+		WORKING_DIRECTORY ${UHD_BINARY_DIR}
 		COMMENT "Resetting code coverage counters to zero.\nProcessing code coverage counters and generating report."
 	)
 
@@ -183,8 +183,8 @@ function(SETUP_TARGET_FOR_COVERAGE_COBERTURA _targetname _testrunner _outputname
 		${_testrunner} ${ARGV3}
 
 		# Running gcovr
-		COMMAND ${GCOVR_PATH} -x -r ${CMAKE_SOURCE_DIR} -e '${CMAKE_SOURCE_DIR}/tests/'  -o ${_outputname}.xml
-		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+		COMMAND ${GCOVR_PATH} -x -r ${UHD_SOURCE_DIR} -e '${UHD_SOURCE_DIR}/tests/'  -o ${_outputname}.xml
+		WORKING_DIRECTORY ${UHD_BINARY_DIR}
 		COMMENT "Running gcovr to produce Cobertura code coverage report."
 	)
 

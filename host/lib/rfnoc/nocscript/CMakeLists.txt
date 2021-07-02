@@ -15,7 +15,7 @@ LIBUHD_PYTHON_GEN_SOURCE(
 if(ENABLE_MANUAL)
     LIBUHD_PYTHON_GEN_SOURCE(
         ${CMAKE_CURRENT_SOURCE_DIR}/gen_basic_funcs.py
-        ${CMAKE_BINARY_DIR}/docs/nocscript_functions.dox
+        ${UHD_BINARY_DIR}/docs/nocscript_functions.dox
     )
 endif(ENABLE_MANUAL)
 

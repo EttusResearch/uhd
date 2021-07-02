@@ -12,7 +12,7 @@ macro(LIBUHD_LVBITX_GEN_SOURCE_AND_BITSTREAM lvbitx binfile)
         set( GEN_OPTIONS )
         message( STATUS "  Using ${lvbitx} for codegen" )
     else( ${binfile} STREQUAL "OFF" )
-        set( GEN_OPTIONS --merge-bin=${CMAKE_SOURCE_DIR}/../binaries/${binfile} --output-lvbitx-path=${CMAKE_SOURCE_DIR}/../binaries )
+        set( GEN_OPTIONS --merge-bin=${UHD_SOURCE_DIR}/../binaries/${binfile} --output-lvbitx-path=${UHD_SOURCE_DIR}/../binaries )
         message( STATUS "  Merging ${lvbitx} with ${binfile} for codegen" )
     endif( ${binfile} STREQUAL "OFF" )
 

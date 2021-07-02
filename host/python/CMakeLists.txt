@@ -17,7 +17,7 @@ PYTHON_CHECK_MODULE(
 # Get include dirs
 include_directories(${PYTHON_INCLUDE_DIRS})
 set(PYBIND11_INCLUDE_DIR
-    "${CMAKE_SOURCE_DIR}/lib/deps/pybind11/include"
+    "${UHD_SOURCE_DIR}/lib/deps/pybind11/include"
     CACHE
     STRING
     "Location of PyBind11 includes"
@@ -47,7 +47,7 @@ else()
 endif(WIN32)
 target_include_directories(pyuhd PUBLIC
     ${PYTHON_NUMPY_INCLUDE_DIR}
-    ${CMAKE_SOURCE_DIR}/lib
+    ${UHD_SOURCE_DIR}/lib
     ${PYBIND11_INCLUDE_DIR}
 )
 

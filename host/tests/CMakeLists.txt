@@ -85,7 +85,7 @@ if(ENABLE_C_API)
     )
 endif(ENABLE_C_API)
 
-include_directories("${CMAKE_SOURCE_DIR}/lib/include")
+include_directories("${UHD_SOURCE_DIR}/lib/include")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/common")
 
 #for each source: build an executable, register it as a test
@@ -133,15 +133,15 @@ if(ENABLE_DPDK)
     UHD_ADD_NONAPI_TEST(
         TARGET "dpdk_test.cpp"
         EXTRA_SOURCES
-        ${CMAKE_SOURCE_DIR}/lib/utils/config_parser.cpp
-        ${CMAKE_SOURCE_DIR}/lib/utils/paths.cpp
-        ${CMAKE_SOURCE_DIR}/lib/utils/pathslib.cpp
-        ${CMAKE_SOURCE_DIR}/lib/utils/prefs.cpp
-        ${CMAKE_SOURCE_DIR}/lib/transport/dpdk_zero_copy.cpp
+        ${UHD_SOURCE_DIR}/lib/utils/config_parser.cpp
+        ${UHD_SOURCE_DIR}/lib/utils/paths.cpp
+        ${UHD_SOURCE_DIR}/lib/utils/pathslib.cpp
+        ${UHD_SOURCE_DIR}/lib/utils/prefs.cpp
+        ${UHD_SOURCE_DIR}/lib/transport/dpdk_zero_copy.cpp
         INCLUDE_DIRS
         ${DPDK_INCLUDE_DIR}
-        ${CMAKE_BINARY_DIR}/lib/transport/
-        ${CMAKE_SOURCE_DIR}/lib/transport/
+        ${UHD_BINARY_DIR}/lib/transport/
+        ${UHD_SOURCE_DIR}/lib/transport/
         EXTRA_LIBS ${DPDK_LIBRARIES}
         NOAUTORUN # Don't register for auto-run, it requires special config
     )
@@ -150,36 +150,36 @@ ENDIF(ENABLE_DPDK)
 UHD_ADD_NONAPI_TEST(
     TARGET "nocscript_expr_test.cpp"
     EXTRA_SOURCES
-    "${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/expression.cpp"
+    "${UHD_SOURCE_DIR}/lib/rfnoc/nocscript/expression.cpp"
     INCLUDE_DIRS
-    ${CMAKE_BINARY_DIR}/lib/rfnoc/nocscript/
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/
+    ${UHD_BINARY_DIR}/lib/rfnoc/nocscript/
+    ${UHD_SOURCE_DIR}/lib/rfnoc/nocscript/
 )
 
 UHD_ADD_NONAPI_TEST(
     TARGET "nocscript_ftable_test.cpp"
     EXTRA_SOURCES
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/function_table.cpp
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/expression.cpp
+    ${UHD_SOURCE_DIR}/lib/rfnoc/nocscript/function_table.cpp
+    ${UHD_SOURCE_DIR}/lib/rfnoc/nocscript/expression.cpp
     INCLUDE_DIRS
-    ${CMAKE_BINARY_DIR}/lib/rfnoc/nocscript/
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/
+    ${UHD_BINARY_DIR}/lib/rfnoc/nocscript/
+    ${UHD_SOURCE_DIR}/lib/rfnoc/nocscript/
 )
 
 UHD_ADD_NONAPI_TEST(
     TARGET "nocscript_parser_test.cpp"
     EXTRA_SOURCES
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/parser.cpp
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/function_table.cpp
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/expression.cpp
+    ${UHD_SOURCE_DIR}/lib/rfnoc/nocscript/parser.cpp
+    ${UHD_SOURCE_DIR}/lib/rfnoc/nocscript/function_table.cpp
+    ${UHD_SOURCE_DIR}/lib/rfnoc/nocscript/expression.cpp
     INCLUDE_DIRS
-    ${CMAKE_BINARY_DIR}/lib/rfnoc/nocscript/
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/
+    ${UHD_BINARY_DIR}/lib/rfnoc/nocscript/
+    ${UHD_SOURCE_DIR}/lib/rfnoc/nocscript/
 )
 
 UHD_ADD_NONAPI_TEST(
     TARGET "config_parser_test.cpp"
-    EXTRA_SOURCES ${CMAKE_SOURCE_DIR}/lib/utils/config_parser.cpp
+    EXTRA_SOURCES ${UHD_SOURCE_DIR}/lib/utils/config_parser.cpp
 )
 
 # Careful: This is to satisfy the out-of-library build of paths.cpp. This is
@@ -189,14 +189,14 @@ set(UHD_LIB_DIR "lib")
 file(TO_NATIVE_PATH "${CMAKE_INSTALL_PREFIX}" UHD_PKG_PATH)
 string(REPLACE "\\" "\\\\" UHD_PKG_PATH "${UHD_PKG_PATH}")
 set_source_files_properties(
-    ${CMAKE_SOURCE_DIR}/lib/utils/paths.cpp
+    ${UHD_SOURCE_DIR}/lib/utils/paths.cpp
     PROPERTIES COMPILE_DEFINITIONS
     "UHD_PKG_PATH=\"${UHD_PKG_PATH}\";UHD_LIB_DIR=\"${UHD_LIB_DIR}\""
 )
 UHD_ADD_NONAPI_TEST(
     TARGET "paths_test.cpp"
     EXTRA_SOURCES
-    ${CMAKE_SOURCE_DIR}/lib/utils/pathslib.cpp
+    ${UHD_SOURCE_DIR}/lib/utils/pathslib.cpp
 )
 
 ########################################################################
