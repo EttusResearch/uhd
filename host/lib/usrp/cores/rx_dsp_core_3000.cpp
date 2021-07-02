@@ -8,7 +8,6 @@
 #include <uhd/exception.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhd/utils/math.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhdlib/usrp/cores/dsp_core_utils.hpp>
 #include <uhdlib/usrp/cores/rx_dsp_core_3000.hpp>
@@ -81,19 +80,21 @@ public:
         _iface->poke32(REG_DSP_RX_MUX, reg_val);
 
         if (fe_conn.get_sampling_mode() == uhd::usrp::fe_connection_t::HETERODYNE) {
-            // 1. Remember the sign of the IF frequency.
-            //   It will be discarded in the next step
-            int if_freq_sign = boost::math::sign(fe_conn.get_if_freq());
+            // 1. Remember the IF frequency
+            const double fe_if_freq = fe_conn.get_if_freq();
             // 2. Map IF frequency to the range [0, _tick_rate)
-            double if_freq = std::abs(std::fmod(fe_conn.get_if_freq(), _tick_rate));
-            // 3. Map IF frequency to the range [-_tick_rate/2, _tick_rate/2)
+            double if_freq = std::abs(std::fmod(fe_if_freq, _tick_rate));
+            // 3. Map IF frequency to the range [-_tick_rate/2, _tick_rate/2]
             //   This is the aliased frequency
             if (if_freq > (_tick_rate / 2.0)) {
                 if_freq -= _tick_rate;
             }
             // 4. Set DSP offset to spin the signal in the opposite
             //   direction as the aliased frequency
-            _dsp_freq_offset = if_freq * (-if_freq_sign);
+            if (!std::signbit(fe_if_freq)) {
+                if_freq *= -1.0;
+            }
+            _dsp_freq_offset = if_freq;
         } else {
             _dsp_freq_offset = 0.0;
         }
