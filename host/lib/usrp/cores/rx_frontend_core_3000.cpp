@@ -119,19 +119,21 @@ public:
 
         UHD_ASSERT_THROW(_adc_rate != 0.0)
         if (fe_conn.get_sampling_mode() == fe_connection_t::HETERODYNE) {
-            // 1. Remember the sign of the IF frequency.
-            //   It will be discarded in the next step
-            const int if_freq_sign = boost::math::sign(fe_conn.get_if_freq());
+            // 1. Remember the IF frequency
+            const double fe_if_freq = fe_conn.get_if_freq();
             // 2. Map IF frequency to the range [0, _adc_rate)
-            double if_freq = std::abs(std::fmod(fe_conn.get_if_freq(), _adc_rate));
-            // 3. Map IF frequency to the range [-_adc_rate/2, _adc_rate/2)
+            double if_freq = std::abs(std::fmod(fe_if_freq, _adc_rate));
+            // 3. Map IF frequency to the range [-_adc_rate/2, _adc_rate/2]
             //   This is the aliased frequency
             if (if_freq > (_adc_rate / 2.0)) {
                 if_freq -= _adc_rate;
             }
             // 4. Set DSP offset to spin the signal in the opposite
             //   direction as the aliased frequency
-            const double cordic_freq = if_freq * (-if_freq_sign);
+            if (!std::signbit(fe_if_freq)) {
+                if_freq *= -1.0;
+            }
+            const double cordic_freq = if_freq;
             UHD_ASSERT_THROW(uhd::math::fp_compare::fp_compare_epsilon<double>(4.0)
                              == std::abs(_adc_rate / cordic_freq));
 
