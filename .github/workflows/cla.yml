@@ -19,7 +19,7 @@ jobs:
           PERSONAL_ACCESS_TOKEN : ${{ secrets.CLA_ASSISTANT_UHD }}
         with:
           path-to-signatures: 'signatures/version1/cla.json'
-          path-to-document: 'https://github.com/EttusResearch/blob/master/uhd/.github/workflows/blob/master/EttusCLA.md'
+          path-to-document: 'https://github.com/EttusResearch/uhd/blob/master/.github/workflows/EttusCLA.md'
           # branch should not be protected
           branch: 'main'
           allowlist: user1,bot*
