@@ -147,9 +147,6 @@ class Max10CpldFlashCtrl():
     def verify_flash_memory(self, raw_data):
         # read words one at a time
         for i, data in enumerate(raw_data):
-            # status display
-            if (i%1000 == 0):
-                self.log.debug('%d%% done', i*4/self.file_size*100)
             # write address
             self.poke32(self.FLASH_ADDR_REG, self.cpld_start_address+i)
             # start read operation
@@ -162,10 +159,13 @@ class Max10CpldFlashCtrl():
             # read data from device
             device_data = self.peek32(self.FLASH_READ_DATA_REG)
             if (data != device_data):
-                self.log.error("Data mismatch! address %d, expected value 0x%08X,"
+                self.log.debug("CPLD image mismatch! address %d, expected value 0x%08X,"
                                " read value 0x%08X" %
                                (i+self.cpld_start_address, data, device_data))
                 return False
+            # status display
+            if (i%1000 == 0):
+                self.log.debug('%d%% verified', i*4/self.file_size*100)
         return True
 
     def reverse_bits_in_byte(self, n):
