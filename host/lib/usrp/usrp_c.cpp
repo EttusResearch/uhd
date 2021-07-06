@@ -12,8 +12,8 @@
 #include <uhd/usrp/usrp.h>
 #include <uhd/utils/static.hpp>
 #include <string.h>
-#include <boost/thread/mutex.hpp>
 #include <map>
+#include <mutex>
 
 /****************************************************************************
  * Helpers
@@ -86,17 +86,17 @@ UHD_SINGLETON_FCN(usrp_ptrs, get_usrp_ptrs);
 /****************************************************************************
  * RX Streamer
  ***************************************************************************/
-static boost::mutex _rx_streamer_make_mutex;
+static std::mutex _rx_streamer_make_mutex;
 uhd_error uhd_rx_streamer_make(uhd_rx_streamer_handle* h)
 {
-    UHD_SAFE_C(boost::mutex::scoped_lock lock(_rx_streamer_make_mutex);
+    UHD_SAFE_C(std::lock_guard<std::mutex> lock(_rx_streamer_make_mutex);
                (*h) = new uhd_rx_streamer;)
 }
 
-static boost::mutex _rx_streamer_free_mutex;
+static std::mutex _rx_streamer_free_mutex;
 uhd_error uhd_rx_streamer_free(uhd_rx_streamer_handle* h)
 {
-    UHD_SAFE_C(boost::mutex::scoped_lock lock(_rx_streamer_free_mutex); delete (*h);
+    UHD_SAFE_C(std::lock_guard<std::mutex> lock(_rx_streamer_free_mutex); delete (*h);
                (*h) = NULL;)
 }
 
@@ -142,17 +142,17 @@ uhd_error uhd_rx_streamer_last_error(
 /****************************************************************************
  * TX Streamer
  ***************************************************************************/
-static boost::mutex _tx_streamer_make_mutex;
+static std::mutex _tx_streamer_make_mutex;
 uhd_error uhd_tx_streamer_make(uhd_tx_streamer_handle* h)
 {
-    UHD_SAFE_C(boost::mutex::scoped_lock lock(_tx_streamer_make_mutex);
+    UHD_SAFE_C(std::lock_guard<std::mutex> lock(_tx_streamer_make_mutex);
                (*h) = new uhd_tx_streamer;)
 }
 
-static boost::mutex _tx_streamer_free_mutex;
+static std::mutex _tx_streamer_free_mutex;
 uhd_error uhd_tx_streamer_free(uhd_tx_streamer_handle* h)
 {
-    UHD_SAFE_C(boost::mutex::scoped_lock lock(_tx_streamer_free_mutex); delete *h;
+    UHD_SAFE_C(std::lock_guard<std::mutex> lock(_tx_streamer_free_mutex); delete *h;
                *h = NULL;)
 }
 
@@ -199,11 +199,11 @@ uhd_error uhd_tx_streamer_last_error(
 /****************************************************************************
  * Generate / Destroy API calls
  ***************************************************************************/
-static boost::mutex _usrp_find_mutex;
+static std::mutex _usrp_find_mutex;
 uhd_error uhd_usrp_find(const char* args, uhd_string_vector_handle* strings_out)
 {
     UHD_SAFE_C(
-        boost::mutex::scoped_lock _lock(_usrp_find_mutex);
+        std::lock_guard<std::mutex> _lock(_usrp_find_mutex);
 
         uhd::device_addrs_t devs =
             uhd::device::find(std::string(args), uhd::device::USRP);
@@ -212,10 +212,10 @@ uhd_error uhd_usrp_find(const char* args, uhd_string_vector_handle* strings_out)
              : devs) { (*strings_out)->string_vector_cpp.push_back(dev.to_string()); })
 }
 
-static boost::mutex _usrp_make_mutex;
+static std::mutex _usrp_make_mutex;
 uhd_error uhd_usrp_make(uhd_usrp_handle* h, const char* args)
 {
-    UHD_SAFE_C(boost::mutex::scoped_lock lock(_usrp_make_mutex);
+    UHD_SAFE_C(std::lock_guard<std::mutex> lock(_usrp_make_mutex);
 
                size_t usrp_count = usrp_ptr::usrp_counter;
                usrp_ptr::usrp_counter++;
@@ -233,11 +233,11 @@ uhd_error uhd_usrp_make(uhd_usrp_handle* h, const char* args)
                (*h)->usrp_index = usrp_count;)
 }
 
-static boost::mutex _usrp_free_mutex;
+static std::mutex _usrp_free_mutex;
 uhd_error uhd_usrp_free(uhd_usrp_handle* h)
 {
     UHD_SAFE_C(
-        boost::mutex::scoped_lock lock(_usrp_free_mutex);
+        std::lock_guard<std::mutex> lock(_usrp_free_mutex);
 
         if (!get_usrp_ptrs().count((*h)->usrp_index)) { return UHD_ERROR_INVALID_DEVICE; }
 
@@ -253,12 +253,12 @@ uhd_error uhd_usrp_last_error(uhd_usrp_handle h, char* error_out, size_t strbuff
                strncpy(error_out, h->last_error.c_str(), strbuffer_len);)
 }
 
-static boost::mutex _usrp_get_rx_stream_mutex;
+static std::mutex _usrp_get_rx_stream_mutex;
 uhd_error uhd_usrp_get_rx_stream(
     uhd_usrp_handle h_u, uhd_stream_args_t* stream_args, uhd_rx_streamer_handle h_s)
 {
     UHD_SAFE_C_SAVE_ERROR(
-        h_s, boost::mutex::scoped_lock lock(_usrp_get_rx_stream_mutex);
+        h_s, std::lock_guard<std::mutex> lock(_usrp_get_rx_stream_mutex);
 
         if (!get_usrp_ptrs().count(h_u->usrp_index)) {
             h_s->last_error = "Streamer's device is invalid or expired.";
@@ -270,12 +270,12 @@ uhd_error uhd_usrp_get_rx_stream(
         h_s->usrp_index = h_u->usrp_index;)
 }
 
-static boost::mutex _usrp_get_tx_stream_mutex;
+static std::mutex _usrp_get_tx_stream_mutex;
 uhd_error uhd_usrp_get_tx_stream(
     uhd_usrp_handle h_u, uhd_stream_args_t* stream_args, uhd_tx_streamer_handle h_s)
 {
     UHD_SAFE_C_SAVE_ERROR(
-        h_s, boost::mutex::scoped_lock lock(_usrp_get_tx_stream_mutex);
+        h_s, std::lock_guard<std::mutex> lock(_usrp_get_tx_stream_mutex);
 
         if (!get_usrp_ptrs().count(h_u->usrp_index)) {
             h_s->last_error = "Streamer's device is invalid or expired.";

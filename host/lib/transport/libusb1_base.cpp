@@ -11,7 +11,6 @@
 #include <uhd/types/serial.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/tasks.hpp>
-#include <boost/thread/mutex.hpp>
 #include <cstdlib>
 #include <functional>
 #include <iostream>
@@ -353,8 +352,8 @@ libusb::device_handle::sptr libusb::device_handle::get_cached_handle(device::spt
     static uhd::dict<libusb_device*, std::weak_ptr<device_handle>> handles;
 
     // lock for atomic access to static table above
-    static boost::mutex mutex;
-    boost::mutex::scoped_lock lock(mutex);
+    static std::mutex mutex;
+    std::lock_guard<std::mutex> lock(mutex);
 
     // not expired -> get existing handle
     if (handles.has_key(dev->get()) and not handles[dev->get()].expired()) {

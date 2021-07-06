@@ -11,8 +11,8 @@
 #include <uhd/usrp_clock/usrp_clock.h>
 #include <uhd/utils/static.hpp>
 #include <string.h>
-#include <boost/thread/mutex.hpp>
 #include <map>
+#include <mutex>
 
 /****************************************************************************
  * Registry / Pointer Management
@@ -42,11 +42,11 @@ UHD_SINGLETON_FCN(usrp_clock_ptrs, get_usrp_clock_ptrs);
 /****************************************************************************
  * Generate / Destroy API calls
  ***************************************************************************/
-static boost::mutex _usrp_clock_find_mutex;
+static std::mutex _usrp_clock_find_mutex;
 uhd_error uhd_usrp_clock_find(const char* args, uhd_string_vector_t* devices_out)
 {
     UHD_SAFE_C(
-        boost::mutex::scoped_lock lock(_usrp_clock_find_mutex);
+        std::lock_guard<std::mutex> lock(_usrp_clock_find_mutex);
 
         uhd::device_addrs_t devs =
             uhd::device::find(std::string(args), uhd::device::CLOCK);
@@ -55,10 +55,10 @@ uhd_error uhd_usrp_clock_find(const char* args, uhd_string_vector_t* devices_out
              : devs) { devices_out->string_vector_cpp.push_back(dev.to_string()); })
 }
 
-static boost::mutex _usrp_clock_make_mutex;
+static std::mutex _usrp_clock_make_mutex;
 uhd_error uhd_usrp_clock_make(uhd_usrp_clock_handle* h, const char* args)
 {
-    UHD_SAFE_C(boost::mutex::scoped_lock lock(_usrp_clock_make_mutex);
+    UHD_SAFE_C(std::lock_guard<std::mutex> lock(_usrp_clock_make_mutex);
 
                size_t usrp_clock_count = usrp_clock_ptr::usrp_clock_counter;
                usrp_clock_ptr::usrp_clock_counter++;
@@ -76,10 +76,10 @@ uhd_error uhd_usrp_clock_make(uhd_usrp_clock_handle* h, const char* args)
                (*h)->usrp_clock_index = usrp_clock_count;)
 }
 
-static boost::mutex _usrp_clock_free_mutex;
+static std::mutex _usrp_clock_free_mutex;
 uhd_error uhd_usrp_clock_free(uhd_usrp_clock_handle* h)
 {
-    UHD_SAFE_C(boost::mutex::scoped_lock lock(_usrp_clock_free_mutex);
+    UHD_SAFE_C(std::lock_guard<std::mutex> lock(_usrp_clock_free_mutex);
 
                if (!get_usrp_clock_ptrs().count((*h)->usrp_clock_index)) {
                    return UHD_ERROR_INVALID_DEVICE;

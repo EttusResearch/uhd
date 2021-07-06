@@ -7,7 +7,7 @@
 
 #include <uhd/exception.hpp>
 #include <uhdlib/usrp/cores/user_settings_core_3000.hpp>
-#include <boost/thread/thread.hpp>
+#include <mutex>
 
 using namespace uhd;
 
@@ -38,7 +38,7 @@ public:
         if (offset % sizeof(uint64_t) != 0)
             throw uhd::value_error("peek64: Incorrect address alignment");
 
-        boost::unique_lock<boost::mutex> lock(_mutex);
+        std::unique_lock<std::mutex> lock(_mutex);
         _iface->poke32(
             REG_USER_RB_ADDR, offset >> 3); // Translate byte offset to 64-bit offset
         return _iface->peek64(_rb_reg_addr);
@@ -49,7 +49,7 @@ public:
         if (offset % sizeof(uint32_t) != 0)
             throw uhd::value_error("poke32: Incorrect address alignment");
 
-        boost::unique_lock<boost::mutex> lock(_mutex);
+        std::unique_lock<std::mutex> lock(_mutex);
         _iface->poke32(
             REG_USER_SR_ADDR, offset >> 2); // Translate byte offset to 64-bit offset
         _iface->poke32(REG_USER_SR_DATA, value);
@@ -72,7 +72,7 @@ private:
     wb_iface::sptr _iface;
     const wb_addr_type _sr_base_addr;
     const wb_addr_type _rb_reg_addr;
-    boost::mutex _mutex;
+    std::mutex _mutex;
 };
 
 wb_iface::sptr user_settings_core_3000::make(

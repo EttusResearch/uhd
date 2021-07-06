@@ -17,8 +17,8 @@
 #include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/usrp_clock/octoclock_eeprom.hpp>
-#include <boost/thread.hpp>
 #include <memory>
+#include <mutex>
 
 uhd::device_addrs_t octoclock_find(const uhd::device_addr_t& hint);
 
@@ -73,7 +73,7 @@ private:
 
     std::string _get_images_help_message(const std::string& addr);
 
-    boost::mutex _device_mutex;
+    std::mutex _device_mutex;
 };
 
 #endif /* INCLUDED_OCTOCLOCK_IMPL_HPP */

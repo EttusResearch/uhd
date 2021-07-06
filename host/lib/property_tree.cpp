@@ -8,9 +8,8 @@
 
 #include <uhd/property_tree.hpp>
 #include <uhd/types/dict.hpp>
-#include <boost/thread/mutex.hpp>
-#include <iostream>
 #include <memory>
+#include <mutex>
 
 using namespace uhd;
 
@@ -79,7 +78,7 @@ public:
     sptr subtree(const fs_path& path_) const override
     {
         const fs_path path = _root / path_;
-        boost::mutex::scoped_lock lock(_guts->mutex);
+        std::lock_guard<std::mutex> lock(_guts->mutex);
 
         property_tree_impl* subtree = new property_tree_impl(path);
         subtree->_guts              = this->_guts; // copy the guts sptr
@@ -89,7 +88,7 @@ public:
     void remove(const fs_path& path_) override
     {
         const fs_path path = _root / path_;
-        boost::mutex::scoped_lock lock(_guts->mutex);
+        std::lock_guard<std::mutex> lock(_guts->mutex);
 
         node_type* parent = NULL;
         node_type* node   = &_guts->root;
@@ -107,7 +106,7 @@ public:
     bool exists(const fs_path& path_) const override
     {
         const fs_path path = _root / path_;
-        boost::mutex::scoped_lock lock(_guts->mutex);
+        std::lock_guard<std::mutex> lock(_guts->mutex);
 
         node_type* node = &_guts->root;
         for (const std::string& name : path_tokenizer(path)) {
@@ -121,7 +120,7 @@ public:
     std::vector<std::string> list(const fs_path& path_) const override
     {
         const fs_path path = _root / path_;
-        boost::mutex::scoped_lock lock(_guts->mutex);
+        std::lock_guard<std::mutex> lock(_guts->mutex);
 
         node_type* node = &_guts->root;
         for (const std::string& name : path_tokenizer(path)) {
@@ -136,7 +135,7 @@ public:
     std::shared_ptr<void> _pop(const fs_path& path_) override
     {
         const fs_path path = _root / path_;
-        boost::mutex::scoped_lock lock(_guts->mutex);
+        std::lock_guard<std::mutex> lock(_guts->mutex);
 
         node_type* parent = NULL;
         node_type* node   = &_guts->root;
@@ -159,7 +158,7 @@ public:
     void _create(const fs_path& path_, const std::shared_ptr<void>& prop) override
     {
         const fs_path path = _root / path_;
-        boost::mutex::scoped_lock lock(_guts->mutex);
+        std::lock_guard<std::mutex> lock(_guts->mutex);
 
         node_type* node = &_guts->root;
         for (const std::string& name : path_tokenizer(path)) {
@@ -176,7 +175,7 @@ public:
     std::shared_ptr<void>& _access(const fs_path& path_) const override
     {
         const fs_path path = _root / path_;
-        boost::mutex::scoped_lock lock(_guts->mutex);
+        std::lock_guard<std::mutex> lock(_guts->mutex);
 
         node_type* node = &_guts->root;
         for (const std::string& name : path_tokenizer(path)) {
@@ -205,7 +204,7 @@ private:
     struct tree_guts_type
     {
         node_type root;
-        boost::mutex mutex;
+        std::mutex mutex;
     };
 
     // members, the tree and root prefix

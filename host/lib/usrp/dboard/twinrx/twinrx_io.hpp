@@ -12,7 +12,7 @@
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/utils/soft_register.hpp>
 #include <uhdlib/usrp/cores/gpio_atr_3000.hpp>
-#include <boost/thread.hpp>
+#include <boost/chrono.hpp>
 
 namespace uhd { namespace usrp { namespace dboard { namespace twinrx {
 
@@ -95,7 +95,7 @@ public:
 
     void set_field(const uhd::soft_reg_field_t field, const uint32_t value)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         using namespace soft_reg_field;
 
         _db_iface->set_gpio_out(
@@ -104,7 +104,7 @@ public:
 
     uint32_t get_field(const uhd::soft_reg_field_t field)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         using namespace soft_reg_field;
         return (_db_iface->read_gpio(dboard_iface::UNIT_BOTH) & mask<uint32_t>(field))
                >> shift(field);
@@ -113,7 +113,7 @@ public:
     // CPLD register write-only interface
     void poke32(const wb_addr_type addr, const uint32_t data) override
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         using namespace soft_reg_field;
 
         // Step 1: Write the reg offset and data to the GPIO bus and de-assert all enables
@@ -140,7 +140,7 @@ private: // Members/definitions
 
     // Members
     dboard_iface::sptr _db_iface;
-    boost::mutex _mutex;
+    std::mutex _mutex;
 };
 
 class twinrx_cpld_regmap : public uhd::soft_regmap_t

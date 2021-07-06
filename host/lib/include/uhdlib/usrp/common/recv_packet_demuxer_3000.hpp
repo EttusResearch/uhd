@@ -13,10 +13,10 @@
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/log.hpp>
 #include <stdint.h>
-#include <boost/thread.hpp>
 #include <chrono>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <queue>
 
 namespace uhd { namespace usrp {
@@ -62,7 +62,7 @@ struct recv_packet_demuxer_3000 : std::enable_shared_from_this<recv_packet_demux
         //-- Check the queue to see if we already have a buffer
         //----------------------------------------------------------
         {
-            boost::mutex::scoped_lock l(mutex);
+            std::lock_guard<std::mutex> l(mutex);
             queue_type_t& queue = _queues[sid];
             if (not queue.empty()) {
                 buff = queue.front();
@@ -76,7 +76,7 @@ struct recv_packet_demuxer_3000 : std::enable_shared_from_this<recv_packet_demux
             if (buff) {
                 const uint32_t new_sid = uhd::wtohx(buff->cast<const uint32_t*>()[1]);
                 if (new_sid != sid) {
-                    boost::mutex::scoped_lock l(mutex);
+                    std::lock_guard<std::mutex> l(mutex);
                     if (_queues.count(new_sid) == 0)
                         UHD_LOGGER_ERROR("STREAMER")
                             << "recv packet demuxer unexpected sid 0x" << std::hex
@@ -92,7 +92,7 @@ struct recv_packet_demuxer_3000 : std::enable_shared_from_this<recv_packet_demux
 
     void realloc_sid(const uint32_t sid)
     {
-        boost::mutex::scoped_lock l(mutex);
+        std::lock_guard<std::mutex> l(mutex);
         while (not _queues[sid].empty()) // allocated and clears if already allocated
         {
             _queues[sid].pop();
@@ -104,7 +104,7 @@ struct recv_packet_demuxer_3000 : std::enable_shared_from_this<recv_packet_demux
     typedef std::queue<transport::managed_recv_buffer::sptr> queue_type_t;
     std::map<uint32_t, queue_type_t> _queues;
     transport::zero_copy_if::sptr _xport;
-    boost::mutex mutex;
+    std::mutex mutex;
 };
 
 struct recv_packet_demuxer_proxy_3000 : transport::zero_copy_if

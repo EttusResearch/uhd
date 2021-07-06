@@ -26,6 +26,7 @@
 #include <chrono>
 #include <functional>
 #include <iostream>
+#include <mutex>
 #include <thread>
 
 using namespace uhd;
@@ -268,7 +269,7 @@ public:
         uint32_t lo = USRP2_FW_COMPAT_NUM,
         uint32_t hi = USRP2_FW_COMPAT_NUM)
     {
-        boost::mutex::scoped_lock lock(_ctrl_mutex);
+        std::lock_guard<std::mutex> lock(_ctrl_mutex);
 
         for (size_t i = 0; i < CTRL_RECV_RETRIES; i++) {
             try {
@@ -472,7 +473,7 @@ private:
     udp_simple::sptr _ctrl_transport;
 
     // used in send/recv
-    boost::mutex _ctrl_mutex;
+    std::mutex _ctrl_mutex;
     uint32_t _ctrl_seq_num;
     uint32_t _protocol_compat;
 

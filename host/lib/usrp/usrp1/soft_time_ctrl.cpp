@@ -8,8 +8,8 @@
 #include "soft_time_ctrl.hpp"
 #include <uhd/utils/tasks.hpp>
 #include <uhdlib/utils/system_time.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/thread/condition_variable.hpp>
+#include <boost/thread/condition.hpp>
+#include <chrono>
 #include <functional>
 #include <iostream>
 #include <memory>
@@ -52,13 +52,13 @@ public:
      ******************************************************************/
     void set_time(const time_spec_t& time) override
     {
-        boost::mutex::scoped_lock lock(_update_mutex);
+        std::lock_guard<std::mutex> lock(_update_mutex);
         _time_offset = uhd::get_system_time() - time;
     }
 
     time_spec_t get_time(void) override
     {
-        boost::mutex::scoped_lock lock(_update_mutex);
+        std::lock_guard<std::mutex> lock(_update_mutex);
         return time_now();
     }
 
@@ -69,11 +69,11 @@ public:
     }
 
     UHD_INLINE void sleep_until_time(
-        boost::mutex::scoped_lock& lock, const time_spec_t& time)
+        std::unique_lock<std::mutex>& lock, const time_spec_t& time)
     {
-        boost::condition_variable cond;
+        boost::condition cond;
         // use a condition variable to unlock, sleep, lock
-        double seconds_to_sleep = (time - time_now()).get_real_secs();
+        const double seconds_to_sleep = (time - time_now()).get_real_secs();
         cond.timed_wait(lock, pt::microseconds(long(seconds_to_sleep * 1e6)));
     }
 
@@ -82,7 +82,7 @@ public:
      ******************************************************************/
     size_t recv_post(rx_metadata_t& md, const size_t nsamps) override
     {
-        boost::mutex::scoped_lock lock(_update_mutex);
+        std::lock_guard<std::mutex> lock(_update_mutex);
 
         // Since it timed out on the receive, check for inline messages...
         // Must do a post check because recv() will not wake up for a message.
@@ -144,7 +144,7 @@ public:
         if (not md.has_time_spec)
             return;
 
-        boost::mutex::scoped_lock lock(_update_mutex);
+        std::unique_lock<std::mutex> lock(_update_mutex);
 
         time_spec_t time_at(md.time_spec - TWIDDLE);
 
@@ -168,7 +168,7 @@ public:
      ******************************************************************/
     void recv_cmd_handle_cmd(const stream_cmd_t& cmd)
     {
-        boost::mutex::scoped_lock lock(_update_mutex);
+        std::unique_lock<std::mutex> lock(_update_mutex);
 
         // handle the stream at time by sleeping
         if (not cmd.stream_now) {
@@ -227,7 +227,7 @@ public:
     }
 
 private:
-    boost::mutex _update_mutex;
+    std::mutex _update_mutex;
     size_t _nsamps_remaining;
     stream_cmd_t::stream_mode_t _stream_mode;
     time_spec_t _time_offset;

@@ -11,9 +11,9 @@
 #include <uhd/utils/noncopyable.hpp>
 #include <boost/circular_buffer.hpp>
 #include <boost/thread/condition.hpp>
-#include <boost/thread/locks.hpp>
 #include <boost/utility.hpp>
 #include <functional>
+#include <mutex>
 
 namespace uhd{ namespace transport{
 
@@ -30,9 +30,8 @@ namespace uhd{ namespace transport{
 
         UHD_INLINE bool push_with_haste(const elem_type &elem)
         {
-            boost::mutex::scoped_lock lock(_mutex);
-            if (_buffer.full())
-            {
+            std::unique_lock<std::mutex> lock(_mutex);
+            if (_buffer.full()) {
                 return false;
             }
             _buffer.push_front(elem);
@@ -42,15 +41,13 @@ namespace uhd{ namespace transport{
 
         UHD_INLINE bool push_with_pop_on_full(const elem_type &elem)
         {
-            boost::mutex::scoped_lock lock(_mutex);
-            if (_buffer.full())
-            {
+            std::lock_guard<std::mutex> lock(_mutex);
+            if (_buffer.full()) {
                 _buffer.pop_back();
                 _buffer.push_front(elem);
                 _empty_cond.notify_one();
                 return false;
-            }
-            else {
+            } else {
                 _buffer.push_front(elem);
                 _empty_cond.notify_one();
                 return true;
@@ -59,7 +56,7 @@ namespace uhd{ namespace transport{
 
         UHD_INLINE void push_with_wait(const elem_type &elem)
         {
-            boost::mutex::scoped_lock lock(_mutex);
+            std::unique_lock<std::mutex> lock(_mutex);
             if (_buffer.full())
             {
                 _full_cond.wait(lock, _not_full_fcn);
@@ -70,7 +67,7 @@ namespace uhd{ namespace transport{
 
         UHD_INLINE bool push_with_timed_wait(const elem_type &elem, double timeout)
         {
-            boost::mutex::scoped_lock lock(_mutex);
+            std::unique_lock<std::mutex> lock(_mutex);
             if (_buffer.full())
             {
                 if (not _full_cond.timed_wait(lock,
@@ -86,9 +83,8 @@ namespace uhd{ namespace transport{
 
         UHD_INLINE bool pop_with_haste(elem_type &elem)
         {
-            boost::mutex::scoped_lock lock(_mutex);
-            if (_buffer.empty()) 
-            {
+            std::unique_lock<std::mutex> lock(_mutex);
+            if (_buffer.empty()) {
                 return false;
             }
             this->pop_back(elem);
@@ -98,7 +94,7 @@ namespace uhd{ namespace transport{
 
         UHD_INLINE void pop_with_wait(elem_type &elem)
         {
-            boost::mutex::scoped_lock lock(_mutex);
+            std::unique_lock<std::mutex> lock(_mutex);
             if (_buffer.empty())
             {
                 _empty_cond.wait(lock, _not_empty_fcn);
@@ -109,9 +105,8 @@ namespace uhd{ namespace transport{
 
         UHD_INLINE bool pop_with_timed_wait(elem_type &elem, double timeout)
         {
-            boost::mutex::scoped_lock lock(_mutex);
-            if (_buffer.empty()) 
-            {
+            std::unique_lock<std::mutex> lock(_mutex);
+            if (_buffer.empty()) {
                 if (not _empty_cond.timed_wait(lock, to_time_dur(timeout),
                     _not_empty_fcn))
                 {
@@ -124,7 +119,7 @@ namespace uhd{ namespace transport{
         }
 
     private:
-        boost::mutex _mutex;
+        std::mutex _mutex;
         boost::condition _empty_cond, _full_cond;
         boost::circular_buffer<elem_type> _buffer;
 
