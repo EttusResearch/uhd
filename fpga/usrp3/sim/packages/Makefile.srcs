@@ -1,0 +1,11 @@
+#
+# Copyright 2021 Ettus Research, A National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+SIM_PACKAGES_SRCS = $(abspath $(addprefix $(BASE_DIR)/../sim/packages/, \
+PkgMath.sv \
+PkgComplex.sv \
+PkgRandom.sv \
+))
