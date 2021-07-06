@@ -30,12 +30,14 @@ include $(BASE_DIR)/../sim/general/Makefile.srcs
 include $(BASE_DIR)/../sim/axi/Makefile.srcs
 include $(BASE_DIR)/../sim/control/Makefile.srcs
 include $(BASE_DIR)/../sim/rfnoc/Makefile.srcs
+include $(BASE_DIR)/../sim/packages/Makefile.srcs
 
 INC_SRCS = $(abspath \
 $(SIM_GENERAL_SRCS) \
 $(SIM_AXI_SRCS) \
 $(SIM_CONTROL_SRCS) \
 $(SIM_RFNOC_SRCS) \
+$(SIM_PACKAGES_SRCS) \
 )
 
 # Predeclare RFNOC_OOT_SRCS to make sure it's not recursively expanded
