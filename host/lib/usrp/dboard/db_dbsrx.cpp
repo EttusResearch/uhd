@@ -272,7 +272,8 @@ double dbsrx::set_lo_freq(double target_freq)
     std::vector<double> clock_rates =
         this->get_iface()->get_clock_rates(dboard_iface::UNIT_RX);
     const double max_clock_rate = uhd::sorted(clock_rates).back();
-    for (auto ref_clock : uhd::reversed(uhd::sorted(clock_rates))) {
+    for (auto ref_clock_it : uhd::reversed(uhd::sorted(clock_rates))) {
+        ref_clock = ref_clock_it;
         // USRP1 feeds the DBSRX clock from a FPGA GPIO line.
         // make sure that this clock does not exceed rate limit.
         if (this->get_iface()->get_special_props().soft_clock_divider) {
@@ -298,10 +299,10 @@ double dbsrx::set_lo_freq(double target_freq)
             continue;
 
         // choose R
-        for (auto r = 0; r <= 6; r += 1) {
+        for (r = 0; r <= 6; r += 1) {
             // compute divider from setting
             R = 1 << (r + 1);
-            UHD_LOGGER_TRACE("DBSRX") << boost::format("DBSRX R:%d\n") % R;
+            UHD_LOGGER_TRACE("DBSRX") << "DBSRX R:" << R << "\n";
 
             // compute PFD compare frequency = ref_clock/R
             pfd_freq = ref_clock / R;
