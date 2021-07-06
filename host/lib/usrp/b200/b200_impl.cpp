@@ -501,7 +501,7 @@ b200_impl::b200_impl(
     ////////////////////////////////////////////////////////////////////
     // Local control endpoint
     ////////////////////////////////////////////////////////////////////
-    _local_ctrl = radio_ctrl_core_3000::make(false /*lilE*/,
+    _local_ctrl = b200_radio_ctrl_core::make(false /*lilE*/,
         _ctrl_transport,
         zero_copy_if::sptr() /*null*/,
         B200_LOCAL_CTRL_SID);
@@ -868,16 +868,16 @@ void b200_impl::setup_radio(const size_t dspno)
     ////////////////////////////////////////////////////////////////////
     // radio control
     ////////////////////////////////////////////////////////////////////
-    perif.ctrl = radio_ctrl_core_3000::make(
+    perif.ctrl = b200_radio_ctrl_core::make(
         false /*lilE*/, _ctrl_transport, zero_copy_if::sptr() /*null*/, sid);
     perif.ctrl->hold_task(_async_task);
     _async_task_data->radio_ctrl[dspno] = perif.ctrl; // weak
     _tree->access<time_spec_t>(mb_path / "time" / "cmd")
         .add_coerced_subscriber(std::bind(
-            &radio_ctrl_core_3000::set_time, perif.ctrl, std::placeholders::_1));
+            &b200_radio_ctrl_core::set_time, perif.ctrl, std::placeholders::_1));
     _tree->access<double>(mb_path / "tick_rate")
         .add_coerced_subscriber(std::bind(
-            &radio_ctrl_core_3000::set_tick_rate, perif.ctrl, std::placeholders::_1));
+            &b200_radio_ctrl_core::set_tick_rate, perif.ctrl, std::placeholders::_1));
     this->register_loopback_self_test(perif.ctrl);
 
     ////////////////////////////////////////////////////////////////////

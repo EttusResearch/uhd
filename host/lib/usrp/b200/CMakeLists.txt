@@ -21,5 +21,6 @@ if(ENABLE_B200)
         ${CMAKE_CURRENT_SOURCE_DIR}/b200_uart.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/b200_cores.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/b200_mb_eeprom.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/b200_radio_ctrl_core.cpp
     )
 endif(ENABLE_B200)

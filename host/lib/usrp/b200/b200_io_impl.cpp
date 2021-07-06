@@ -327,7 +327,7 @@ boost::optional<uhd::msg_task::msg_type_t> b200_impl::handle_async_task(
         case B200_RESP0_MSG_SID:
         case B200_RESP1_MSG_SID:
         case B200_LOCAL_RESP_SID: {
-            radio_ctrl_core_3000::sptr ctrl;
+            b200_radio_ctrl_core::sptr ctrl;
             if (sid == B200_RESP0_MSG_SID)
                 ctrl = data->radio_ctrl[0].lock();
             if (sid == B200_RESP1_MSG_SID)
