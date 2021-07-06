@@ -11,19 +11,18 @@
 #include <uhd/types/time_spec.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/utils/msg_task.hpp>
-#include <boost/utility.hpp>
 #include <memory>
 #include <string>
 
 /*!
  * Provide access to peek, poke for the radio ctrl module
  */
-class radio_ctrl_core_3000 : public uhd::timed_wb_iface
+class b200_radio_ctrl_core : public uhd::timed_wb_iface
 {
 public:
-    typedef std::shared_ptr<radio_ctrl_core_3000> sptr;
+    typedef std::shared_ptr<b200_radio_ctrl_core> sptr;
 
-    ~radio_ctrl_core_3000(void) override = 0;
+    ~b200_radio_ctrl_core(void) override = 0;
 
     //! Make a new control object
     static sptr make(const bool big_endian,

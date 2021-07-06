@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include "b200_radio_ctrl_core.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
@@ -12,7 +13,6 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhdlib/usrp/common/async_packet_handler.hpp>
-#include <uhdlib/usrp/cores/radio_ctrl_core_3000.hpp>
 #include <boost/format.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
@@ -25,17 +25,17 @@ using namespace uhd::transport;
 
 static const double ACK_TIMEOUT     = 2.0; // supposed to be worst case practical timeout
 static const double MASSIVE_TIMEOUT = 10.0; // for when we wait on a timed command
-static const size_t SR_READBACK = 32;
+static const size_t SR_READBACK     = 32;
 
-radio_ctrl_core_3000::~radio_ctrl_core_3000(void)
+b200_radio_ctrl_core::~b200_radio_ctrl_core(void)
 {
     /* NOP */
 }
 
-class radio_ctrl_core_3000_impl : public radio_ctrl_core_3000
+class b200_radio_ctrl_core_impl : public b200_radio_ctrl_core
 {
 public:
-    radio_ctrl_core_3000_impl(const bool big_endian,
+    b200_radio_ctrl_core_impl(const bool big_endian,
         uhd::transport::zero_copy_if::sptr ctrl_xport,
         uhd::transport::zero_copy_if::sptr resp_xport,
         const uint32_t sid,
@@ -60,7 +60,7 @@ public:
         this->set_tick_rate(1.0); // something possible but bogus
     }
 
-    ~radio_ctrl_core_3000_impl(void) override
+    ~b200_radio_ctrl_core_impl(void) override
     {
         _timeout = ACK_TIMEOUT; // reset timeout to something small
         UHD_SAFE_CALL(
@@ -338,12 +338,12 @@ private:
     const size_t _resp_queue_size;
 };
 
-radio_ctrl_core_3000::sptr radio_ctrl_core_3000::make(const bool big_endian,
+b200_radio_ctrl_core::sptr b200_radio_ctrl_core::make(const bool big_endian,
     zero_copy_if::sptr ctrl_xport,
     zero_copy_if::sptr resp_xport,
     const uint32_t sid,
     const std::string& name)
 {
     return sptr(
-        new radio_ctrl_core_3000_impl(big_endian, ctrl_xport, resp_xport, sid, name));
+        new b200_radio_ctrl_core_impl(big_endian, ctrl_xport, resp_xport, sid, name));
 }
