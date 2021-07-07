@@ -539,10 +539,21 @@ Otherwise, let the boot continue as normal.
 <b>Caution! Updating the motherboard CPLD has the potential to brick your
 device if done improperly.</b>
 
+After updating the filesystem, you may have to update your motherboard CPLD. If
+you forget to update the CPLD, MPM will fail to fully initialize and emit a
+warning. This is not critical, and the CPLD update can be performed later by
+following these same steps, but the device will not be usable until then.
+
+Even though the CPLD may not require updating, it is recommended to always run
+these steps for a consistent update procedure.
+
 You can update the motherboard (MB) CPLD by running the following command on
 the X410:
 
     x4xx_update_cpld --file=<path to cpld-x410.rpd>
+
+Note: Old filesystems may not contain this command. If you are performing a
+mender update, simply run these commands after the update.
 
 Filesystems will usually contain a compatible `cpld-x410.rpd` file at
 `/lib/firmware/ni/cpld-x410.rpd`. If you're installing a new filesystem via
