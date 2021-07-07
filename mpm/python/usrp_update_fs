@@ -8,13 +8,12 @@
 Embedded USRP filesystem update utility
 """
 
-from __future__ import print_function
+import sys
 import os
 import time
 import subprocess
 import argparse
 import tempfile
-from builtins import input
 import requests
 
 MPM_DEVICE = None # This is the default value
@@ -26,10 +25,15 @@ except ImportError:
 DEFAULT_IMAGES_INSTALL_LOCATION = '/usr/share/uhd/images/'
 DEFAULT_REMOTE_MANIFEST_URL =\
     'https://raw.githubusercontent.com/EttusResearch/uhd/{tag}/images/manifest.txt'
-DEFAULT_FS_IMAGE = {'n3xx': 'usrp_n3xx_fs.mender', 'e320': 'usrp_e320_fs.mender'}
+DEFAULT_FS_IMAGE = {
+    'n3xx': 'usrp_n3xx_fs.mender',
+    'e320': 'usrp_e320_fs.mender',
+    'x4xx': 'usrp_x4xx_fs.mender',
+}
 DEFAULT_MENDER_TARGET = {
     'n3xx': 'n3xx_...._mender_default',
     'e320': 'e320_...._mender_default',
+    'x4xx': 'x4xx_common_mender_default',
 }
 
 def parse_args():
@@ -92,7 +96,7 @@ def prepare_manifest(manifest):
     manifest = manifest.strip()
     if os.path.isfile(manifest):
         return manifest
-    elif manifest.strip().startswith('http'):
+    if manifest.strip().startswith('http'):
         manifest = manifest.strip()
         temp_dir = tempfile.mkdtemp()
         print("Downloading manifest file from {}...".format(
@@ -103,10 +107,11 @@ def prepare_manifest(manifest):
         # This will leave a stray file in /tmp but that's OK... we're blowing
         # away the FS anyway
         return manifest_path
+    raise RuntimeError("Unknown manifest location type: " + manifest)
 
 def get_manifest_from_tag(git_tag):
     """Turn a git tag or branch into a URL to a valid manifest"""
-    manifest_url = DEFAULT_REMOTE_MANIFEST_URL.format(git_tag)
+    manifest_url = DEFAULT_REMOTE_MANIFEST_URL.format(tag=git_tag)
     return prepare_manifest(manifest_url)
 
 def prepare_image(device_type, args):
@@ -136,7 +141,7 @@ def prepare_image(device_type, args):
 
 def apply_image(mender_image):
     """Actually run mender to inject the mender_image"""
-    subprocess.check_call(['mender', '-rootfs', mender_image])
+    subprocess.check_call(['mender', 'install', mender_image])
 
 def reboot():
     """
@@ -161,7 +166,7 @@ def run():
     apply_image(mender_image)
     print("Applied image. After reboot, check if everything works, and then "
           "run the command '$ mender -commit' to confirm (otherwise, this "
-          "update will be undone.")
+          "update will be undone).")
     print("Note: Any data stored in this partition will be not accessible "
           "after reboot.")
     if args.yes:
@@ -191,4 +196,4 @@ def main():
     return False
 
 if __name__ == '__main__':
-    exit(not main())
+    sys.exit(not main())
