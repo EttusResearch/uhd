@@ -28,7 +28,6 @@ def parse_encoded_git_hash(encoded):
     dirtiness_qualifier = 'dirty' if tree_dirty else 'clean'
     return (git_hash, dirtiness_qualifier)
 
-
 # pylint: disable=too-few-public-methods
 class EepromTagMap:
     """
@@ -67,10 +66,24 @@ class ZBX(DboardManagerBase):
     }
     ### End of overridables #################################################
 
-    # Daughterboard required rev_compat value, this is compared against
-    # rev_compat in the eeprom
-    # Change only on breaking changes
-    DBOARD_REQUIRED_COMPAT_REV = 0x1
+    ### Daughterboard driver/hardware compatibility value
+    # The ZBX has a field in its EEPROM which stores a rev_compat value. This
+    # tells us which other revisions of the ZBX this revision is compatible with.
+    #
+    # In theory, we could make the revision compatibility check a simple "less
+    # or equal than comparison", i.e., we can support a certain revision and all
+    # previous revisions. However, we deliberately don't support Revision A (0x1),
+    # and we prefer to explicitly list the valid compat revision numbers we
+    # know exist. No matter how, we need to change this line everytime we add a
+    # new revision that is incompatible with the previous.
+    #
+    # In the EEPROM, we only change this number for hardware revisions that are
+    # not compatible with this software version. Note the CPLD image has its own
+    # compat number (see below).
+    #
+    # RevB and all compatible revisions are supported (that includes RevC). RevA
+    # is not supported.
+    DBOARD_SUPPORTED_COMPAT_REVS = (0x2,)
 
     # CPLD compatibility revision
     # Change this revision only on breaking changes.
@@ -97,12 +110,7 @@ class ZBX(DboardManagerBase):
 
         self.eeprom_symbol = f"db{slot_idx}_eeprom"
         eeprom = self._get_eeprom()
-        if eeprom["rev_compat"] != self.DBOARD_REQUIRED_COMPAT_REV:
-            err = f"Found ZBX rev_compat 0x{eeprom['rev_compat']:02x}," \
-                f" required is 0x{self.DBOARD_REQUIRED_COMPAT_REV:02x}"
-            self.log.error(err)
-            raise RuntimeError(err)
-
+        self._assert_rev_compatibility(eeprom["rev_compat"])
         # Initialize daughterboard CPLD control
         self.poke_cpld = self.db_iface.poke_db_cpld
         self.peek_cpld = self.db_iface.peek_db_cpld
@@ -125,6 +133,22 @@ class ZBX(DboardManagerBase):
         path = get_eeprom_paths_by_symbol(self.eeprom_symbol)[self.eeprom_symbol]
         eeprom, _ = tlv_eeprom.read_eeprom(path, EepromTagMap.tagmap, EepromTagMap.magic, None)
         return eeprom
+
+    def _assert_rev_compatibility(self, rev_compat):
+        """
+        Check the ZBX hardware revision compatibility with this driver.
+
+        Throws a RuntimeError() if this version of MPM does not recognize the
+        hardware.
+
+        Note: The CPLD image version is checked separately.
+        """
+        if rev_compat not in self.DBOARD_SUPPORTED_COMPAT_REVS:
+            err = "This MPM version is not compatible with this ZBX daughterboard. " \
+                f"Found rev_compat value: 0x{rev_compat:02x}. " \
+                "Please update your MPM version to support this daughterboard revision."
+            self.log.error(err)
+            raise RuntimeError(err)
 
     def _enable_base_power(self, enable=True):
         """
