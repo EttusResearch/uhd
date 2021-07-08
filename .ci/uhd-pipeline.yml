@@ -7,7 +7,7 @@
 trigger:
   branches:
     include:
-    - master
+    - UHD-4.1
   paths:
     include:
     - host
@@ -16,7 +16,7 @@ trigger:
 pr:
   branches:
     include:
-    - master
+    - UHD-4.1
   paths:
     include:
     - host
@@ -30,7 +30,7 @@ resources:
   pipelines:
   - pipeline: uhd_build_docker_container
     source: 'uhddev Build Docker Containers'
-    branch: master
+    branch: UHD-4.1
 stages:
 - stage: build_uhd_stage
   displayName: Build UHD

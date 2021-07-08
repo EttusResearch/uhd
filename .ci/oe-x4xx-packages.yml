@@ -17,7 +17,7 @@
 trigger:
   branches:
     include:
-    - master
+    - UHD-4.1
   paths:
     include:
       - .ci
@@ -28,7 +28,7 @@ trigger:
 pr:
   branches:
     include:
-    - master
+    - UHD-4.1
   paths:
     include:
       - .ci

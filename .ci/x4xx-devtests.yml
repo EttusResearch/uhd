@@ -22,7 +22,7 @@ resources:
   pipelines:
   - pipeline: 'x4xx-uhddev-oe-for-host-artifacts'
     source: 'x4xx-uhddev-oe-for-host'
-    branch: master
+    branch: UHD-4.1
     trigger:
       # workaround if no additional branch filter is specified
       enabled: True
