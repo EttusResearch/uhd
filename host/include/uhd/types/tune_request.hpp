@@ -15,7 +15,7 @@ namespace uhd {
 /*!
  * A tune request instructs the implementation how to tune the RF chain.
  * The policies can be used to select automatic tuning or
- * fined control over the daughterboard IF and DSP tuning.
+ * fine control over the daughterboard IF and DSP tuning.
  * Not all combinations of policies are applicable.
  * Convenience constructors are supplied for most use cases.
  *
