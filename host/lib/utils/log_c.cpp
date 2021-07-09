@@ -48,7 +48,7 @@ void UHD_API _uhd_log(const uhd_log_severity_level_t log_level,
             filename,
             unsigned(lineno),
             component,
-            boost::this_thread::get_id())
+            std::this_thread::get_id())
             << c_str;
     } catch (...) {
     }

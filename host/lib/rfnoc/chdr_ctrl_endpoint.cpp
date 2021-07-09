@@ -12,6 +12,7 @@
 #include <uhdlib/rfnoc/chdr_ctrl_endpoint.hpp>
 #include <uhdlib/rfnoc/chdr_packet_writer.hpp>
 #include <boost/format.hpp>
+#include <boost/thread.hpp>
 #include <atomic>
 #include <mutex>
 #include <thread>
