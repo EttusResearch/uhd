@@ -7,6 +7,7 @@
 #include "lmx2592_regs.hpp"
 #include <uhdlib/usrp/common/lmx2592.hpp>
 #include <uhdlib/utils/narrow.hpp>
+#include <array>
 #include <chrono>
 #include <iomanip>
 
