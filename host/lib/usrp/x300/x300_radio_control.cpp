@@ -821,7 +821,7 @@ public:
         } else {
             RFNOC_LOG_WARNING(
                 "This device does not support querying the TX DC offset range.");
-            return meta_range_t(0, 0);
+            return meta_range_t(0.0, 0.0);
         }
     }
 
@@ -864,7 +864,7 @@ public:
         } else {
             RFNOC_LOG_WARNING(
                 "This device does not support querying the rx DC offset range.");
-            return meta_range_t(0, 0);
+            return meta_range_t(0.0, 0.0);
         }
     }
 

@@ -1209,7 +1209,7 @@ public:
             rx_chain.radio->get_rx_frequency_range(rx_chain.block_chan);
         freq_range_t dsp_range =
             (rx_chain.ddc) ? rx_chain.ddc->get_frequency_range(rx_chain.block_chan)
-                           : meta_range_t(0, 0);
+                           : meta_range_t(0.0, 0.0);
         // Create lambdas to feed to tune_xx_subdev_and_dsp()
         // Note: If there is no DDC present, register empty lambdas for the DSP functions
         auto set_rf_freq = [rx_chain](double freq) {
@@ -1840,7 +1840,7 @@ public:
             tx_chain.radio->get_tx_frequency_range(tx_chain.block_chan);
         freq_range_t dsp_range =
             (tx_chain.duc) ? tx_chain.duc->get_frequency_range(tx_chain.block_chan)
-                           : meta_range_t(0, 0);
+                           : meta_range_t(0.0, 0.0);
         // Create lambdas to feed to tune_xx_subdev_and_dsp()
         // Note: If there is no DDC present, register empty lambdas for the DSP functions
         auto set_rf_freq = [tx_chain](double freq) {

@@ -767,7 +767,7 @@ void radio_control_impl::set_tx_dc_offset(const std::complex<double>&, size_t)
 
 uhd::meta_range_t radio_control_impl::get_tx_dc_offset_range(size_t) const
 {
-    return uhd::meta_range_t(0, 0);
+    return uhd::meta_range_t(0.0, 0.0);
 }
 
 void radio_control_impl::set_tx_iq_balance(const std::complex<double>&, size_t)
@@ -792,7 +792,7 @@ void radio_control_impl::set_rx_dc_offset(const std::complex<double>&, size_t)
 
 uhd::meta_range_t radio_control_impl::get_rx_dc_offset_range(size_t) const
 {
-    return uhd::meta_range_t(0, 0);
+    return uhd::meta_range_t(0.0, 0.0);
 }
 
 void radio_control_impl::set_rx_iq_balance(const bool enb, size_t)
