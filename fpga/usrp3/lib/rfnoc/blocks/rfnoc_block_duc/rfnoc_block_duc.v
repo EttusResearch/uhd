@@ -1,6 +1,5 @@
 //
-// Copyright 2019 Ettus Research, a National Instruments Company
-// Copyright 2020 Ettus Research, a National Instruments Brand
+// Copyright 2021 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -18,6 +17,10 @@
 //   NUM_HB         : Number of half-band filter blocks to include (0-3)
 //   CIC_MAX_INTERP : Maximum interpolation to support in the CIC filter
 //
+
+`default_nettype none
+
+
 
 module rfnoc_block_duc #(
   parameter THIS_PORTID    = 0,
@@ -276,14 +279,9 @@ module rfnoc_block_duc #(
         endcase
       end
 
-      ////////////////////////////////////////////////////////////
-      //
-      // Timed CORDIC
-      // - Implements timed cordic tunes. Placed between AXI Wrapper
-      //   and AXI Rate Change due to it needing access to the
-      //   vita time of the samples.
-      //
-      ////////////////////////////////////////////////////////////
+      //-------------------------------
+      // Timed DDS + Complex Multiplier
+      //-------------------------------
       wire [31:0]  m_axis_rc_tdata;
       wire         m_axis_rc_tlast;
       wire         m_axis_rc_tvalid;
@@ -303,11 +301,9 @@ module rfnoc_block_duc #(
         .o_tdata(s_axis_data_tdata[ITEM_W*i+:ITEM_W]), .o_tlast(s_axis_data_tlast[i]), .o_tvalid(s_axis_data_tvalid[i]),
         .o_tready(s_axis_data_tready[i]), .o_tuser(s_axis_data_tuser[128*i+:128]));
 
-      ////////////////////////////////////////////////////////////
-      //
+      //-------------------------------
       // Increase Rate
-      //
-      ////////////////////////////////////////////////////////////
+      //-------------------------------
       wire [31:0] sample_tdata, sample_duc_tdata;
       wire sample_tvalid, sample_tready;
       wire sample_duc_tvalid, sample_duc_tready;
@@ -333,11 +329,9 @@ module rfnoc_block_duc #(
         .s_axis_data_tready(sample_duc_tready),
         .warning_long_throttle(), .error_extra_outputs(), .error_drop_pkt_lockup());
 
-      ////////////////////////////////////////////////////////////
-      //
+      //-------------------------------
       // Digital Up Converter
-      //
-      ////////////////////////////////////////////////////////////
+      //-------------------------------
       duc #(
         .SR_INTERP_ADDR(SR_INTERP_ADDR),
         .NUM_HB(NUM_HB),
@@ -352,3 +346,6 @@ module rfnoc_block_duc #(
   endgenerate
 
 endmodule
+
+
+`default_nettype wire
