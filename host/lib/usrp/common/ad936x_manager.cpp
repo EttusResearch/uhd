@@ -10,7 +10,9 @@
 #include <boost/functional/hash.hpp>
 #include <chrono>
 #include <cmath>
+#include <list>
 #include <memory>
+#include <string>
 #include <thread>
 
 using namespace uhd;
