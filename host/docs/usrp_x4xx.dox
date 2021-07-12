@@ -832,10 +832,35 @@ GPS lock is reported.
 \subsection x4xx_usage_gpio Front-Panel Programmable GPIOs
 
 The USRP X410 has two HDMI front-panel connectors, which are connected to the
-FPGA.
+FPGA. For a description of the GPIO control API, see \ref x4x0gpio_fpanel.
 
-Support for using these with UHD is not yet available.
+There are multiple sources that can control the state of the GPIO lines.
+UHD has the capability of controlling which source each pin is driven from.
+The source control block is located in the X4x0 core logic block in the FPGA, and is also accessible
+via MPM. There are also local registers in the source control block that control the state
+of GPIOs manually if none of the additionally supported control schemes are required.
 
+Source selection is performed via an array of muxes, each accessible via an independent register.
+The diagram below indicates the arrangement of muxes controlling GPIO source selection.
+\image html x4xx_dio_source_muxes.svg "X4x0 GPIO Source Control" width=60%
+
+UHD has access to all radio-controlled blocks. In the diagram above, this includes
+one ATR DIO control block and one digital interface block for each radio.
+
+When ATR control is selected as the source, it uses the Daughterboard state to determine
+the behavior of the GPIOs. The Daughterboard state is the concatenation of the
+transmission state of all channels in the daughterboard.
+
+The Digital Interface Block currently supports a variable rate SPI bus. Having
+one of these blocks for each radio grants the ability to have two SPI engines
+running simultaneously. Each engine has the ability to service multiple slaves,
+but transactions can only be issued to one slave at a time. Slaves are customizable,
+and clock rate, instruction length, edge polarity are accommodated for based on the
+currently selected slave. Mapping of SPI signals to DIO port pins is also customizable.
+See \ref x4x0_spi_iface.
+
+Mapping from any source to the front-panel connectors is performed in a per-pin basis,
+allowing the user to interact with each connector pin from any radio.
 
 \subsection x4xx_usage_subdevspec Subdev Specifications
 

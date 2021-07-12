@@ -2225,7 +2225,7 @@ endmodule
 //      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_MAJOR" integer="7"/>
 //      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_MINOR" integer="0"/>
 //      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_BUILD" integer="0"/>
-//      <value name="FPGA_VERSION_LAST_MODIFIED_TIME"      integer="0x21081116"/>
+//      <value name="FPGA_VERSION_LAST_MODIFIED_TIME"      integer="0x21091513"/>
 //    </enumeratedtype>
 //  </group>
 //</regmap>

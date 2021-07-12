@@ -38,4 +38,4 @@
 
   // DIO Window (from x4xx_core_common.v)
   localparam DIO = 'h2000; // Window Offset
-  localparam DIO_SIZE = 'h20;  // size in bytes
+  localparam DIO_SIZE = 'h40;  // size in bytes

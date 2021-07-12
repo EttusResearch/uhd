@@ -10,6 +10,11 @@
 //   This module contains the common core infrastructure for RFNoC, such as the
 //   motherboard registers and timekeeper, as well as distribution of the
 //   CtrlPort buses from each radio block.
+//   This module contains blocks that respond to the AXI ctrlport interface,
+//   the ctrlport interfaces in the radios, or a mix of both. A visual
+//   representation of how the AXI Ctrlport interface and the
+//   Ctrlport of each radio interact with the different blocks in this module
+//   can be found in ./doc/x4xx_core_common_buses.svg
 //
 // Parameters:
 //
@@ -93,6 +98,14 @@ module x4xx_core_common #(
   input  wire [11:0] gpio_out_fabric_a,
   input  wire [11:0] gpio_out_fabric_b,
 
+  // PS GPIO Control
+  input  wire [11:0] ps_gpio_out_a,
+  output wire [11:0] ps_gpio_in_a,
+  input  wire [11:0] ps_gpio_ddr_a,
+  input  wire [11:0] ps_gpio_out_b,
+  output wire [11:0] ps_gpio_in_b,
+  input  wire [11:0] ps_gpio_ddr_b,
+
   // CtrlPort Slave (from RFNoC Radio Blocks; Domain: radio_clk)
   input  wire [  1*NUM_DBOARDS-1:0] s_radio_ctrlport_req_wr,
   input  wire [  1*NUM_DBOARDS-1:0] s_radio_ctrlport_req_rd,
@@ -123,6 +136,10 @@ module x4xx_core_common #(
   output wire adc_reset_pulse,
   output wire dac_reset_pulse,
 
+  // Radio state for ATR control
+  input wire [NUM_DBOARDS*2-1:0] tx_running,
+  input wire [NUM_DBOARDS*2-1:0] rx_running,
+
   // Misc (Domain: rfnoc_ctrl_clk)
   input  wire [31:0] qsfp_port_0_0_info,
   input  wire [31:0] qsfp_port_0_1_info,
@@ -146,6 +163,7 @@ module x4xx_core_common #(
   `include "regmap/radio_ctrlport_regmap_utils.vh"
   `include "../../lib/rfnoc/core/ctrlport.vh"
   `include "regmap/core_regs_regmap_utils.vh"
+  `include "regmap/radio_dio_regmap_utils.vh"
 
   //---------------------------------------------------------------------------
   // AXI4-Lite to ctrlport
@@ -342,37 +360,69 @@ module x4xx_core_common #(
   wire [  2*NUM_DBOARDS-1:0] rf_ctrlport_resp_status;
   wire [ 32*NUM_DBOARDS-1:0] rf_ctrlport_resp_data;
 
-  wire [  1*NUM_DBOARDS-1:0] dio_radio_ctrlport_req_wr;
-  wire [  1*NUM_DBOARDS-1:0] dio_radio_ctrlport_req_rd;
-  wire [ 20*NUM_DBOARDS-1:0] dio_radio_ctrlport_req_addr;
-  wire [ 32*NUM_DBOARDS-1:0] dio_radio_ctrlport_req_data;
-  wire [  4*NUM_DBOARDS-1:0] dio_radio_ctrlport_req_byte_en;
-  wire [  1*NUM_DBOARDS-1:0] dio_radio_ctrlport_req_has_time;
-  wire [ 64*NUM_DBOARDS-1:0] dio_radio_ctrlport_req_time;
-  wire [  1*NUM_DBOARDS-1:0] dio_radio_ctrlport_resp_ack;
-  wire [  2*NUM_DBOARDS-1:0] dio_radio_ctrlport_resp_status;
-  wire [ 32*NUM_DBOARDS-1:0] dio_radio_ctrlport_resp_data;
+  wire [  1*NUM_DBOARDS-1:0] radio_dio_req_wr;
+  wire [  1*NUM_DBOARDS-1:0] radio_dio_req_rd;
+  wire [ 20*NUM_DBOARDS-1:0] radio_dio_req_addr;
+  wire [ 32*NUM_DBOARDS-1:0] radio_dio_req_data;
+  wire [  4*NUM_DBOARDS-1:0] radio_dio_req_byte_en;
+  wire [  1*NUM_DBOARDS-1:0] radio_dio_req_has_time;
+  wire [ 64*NUM_DBOARDS-1:0] radio_dio_req_time;
+  wire [  1*NUM_DBOARDS-1:0] radio_dio_resp_ack;
+  wire [  2*NUM_DBOARDS-1:0] radio_dio_resp_status;
+  wire [ 32*NUM_DBOARDS-1:0] radio_dio_resp_data;
+
+  wire [NUM_DBOARDS*32-1:0] atr_gpio_out;
+  wire [NUM_DBOARDS*32-1:0] atr_gpio_ddr;
 
   genvar db;
   generate
     for (db = 0; db < NUM_DBOARDS; db = db+1) begin : gen_radio_ctrlport
 
       //-----------------------------------------------------------------------
-      // CtrlPort Splitter
+      // Radio Block CtrlPort Splitter
       //-----------------------------------------------------------------------
 
       //   This section takes the CtrlPort master from each radio block and splits it
       //   into a CtrlPort bus for the associated daughter(m_radio_ctrlport_*), the
-      //   RFDC timing control (rf_ctrlport_*) and DIO control(dio_radio_ctrlport_*).
+      //   RFDC timing control (rf_ctrlport_*), the ATR GPIO control for the DB state
+      //   the current radio(db) and DIO main control block(x4xx_dio).
+      //   Refer to diagram in the RADIO_CTRLPORT_REGMAP Register map for a
+      //   visual representation on how these interfaces are distributed.
 
-      localparam [31:0] DIO_WINDOW_SIZE_W         = $clog2(DIO_WINDOW_SIZE);
+      // Register space offset calculation
+      localparam [19:0] DIO_SOURCE_CONTROL_OFFSET = DIO_WINDOW + DIO_SOURCE_CONTROL;
+      localparam [19:0] RADIO_GPIO_ATR_OFFSET = DIO_WINDOW + RADIO_GPIO_ATR_REGS;
+
+      // Register space size calculation
       localparam [31:0] RFDC_TIMING_WINDOW_SIZE_W = $clog2(RFDC_TIMING_WINDOW_SIZE);
       localparam [31:0] DB_WINDOW_SIZE_W          = $clog2(DB_WINDOW_SIZE);
+      localparam [31:0] DIO_SOURCE_CONTROL_SIZE_W = $clog2(DIO_SOURCE_CONTROL_SIZE);
+      localparam [31:0] RADIO_GPIO_ATR_SIZE_W     = $clog2(RADIO_GPIO_ATR_REGS_SIZE);
+
+      wire        gpio_atr_ctrlport_req_wr;
+      wire        gpio_atr_ctrlport_req_rd;
+      wire [19:0] gpio_atr_ctrlport_req_addr;
+      wire [31:0] gpio_atr_ctrlport_req_data;
+      wire [ 3:0] gpio_atr_ctrlport_req_byte_en;
+      wire        gpio_atr_ctrlport_req_has_time;
+      wire [63:0] gpio_atr_ctrlport_req_time;
+      wire        gpio_atr_ctrlport_resp_ack;
+      wire [ 1:0] gpio_atr_ctrlport_resp_status;
+      wire [31:0] gpio_atr_ctrlport_resp_data;
+
 
       ctrlport_decoder_param #(
-        .NUM_SLAVES  (3),
-        .PORT_BASE   ({ DIO_WINDOW[19:0],  RFDC_TIMING_WINDOW[19:0],  DB_WINDOW[19:0]  }),
-        .PORT_ADDR_W ({ DIO_WINDOW_SIZE_W, RFDC_TIMING_WINDOW_SIZE_W, DB_WINDOW_SIZE_W })
+        .NUM_SLAVES  (4),
+        .PORT_BASE   ({ DIO_SOURCE_CONTROL_OFFSET,
+                        RADIO_GPIO_ATR_OFFSET,
+                        RFDC_TIMING_WINDOW[19:0],
+                        DB_WINDOW[19:0]
+                      }),
+        .PORT_ADDR_W ({ DIO_SOURCE_CONTROL_SIZE_W,
+                        RADIO_GPIO_ATR_SIZE_W,
+                        RFDC_TIMING_WINDOW_SIZE_W,
+                        DB_WINDOW_SIZE_W
+                      })
       ) ctrlport_decoder_param_i (
         .ctrlport_clk            (radio_clk),
         .ctrlport_rst            (radio_rst),
@@ -386,16 +436,40 @@ module x4xx_core_common #(
         .s_ctrlport_resp_ack     (s_radio_ctrlport_resp_ack     [ 1*db+: 1]),
         .s_ctrlport_resp_status  (s_radio_ctrlport_resp_status  [ 2*db+: 2]),
         .s_ctrlport_resp_data    (s_radio_ctrlport_resp_data    [32*db+:32]),
-        .m_ctrlport_req_wr       ({ dio_radio_ctrlport_req_wr       [ 1*db+: 1], rf_ctrlport_req_wr       [ 1*db+: 1], m_radio_ctrlport_req_wr       [ 1*db+: 1] }),
-        .m_ctrlport_req_rd       ({ dio_radio_ctrlport_req_rd       [ 1*db+: 1], rf_ctrlport_req_rd       [ 1*db+: 1], m_radio_ctrlport_req_rd       [ 1*db+: 1] }),
-        .m_ctrlport_req_addr     ({ dio_radio_ctrlport_req_addr     [20*db+:20], rf_ctrlport_req_addr     [20*db+:20], m_radio_ctrlport_req_addr     [20*db+:20] }),
-        .m_ctrlport_req_data     ({ dio_radio_ctrlport_req_data     [32*db+:32], rf_ctrlport_req_data     [32*db+:32], m_radio_ctrlport_req_data     [32*db+:32] }),
-        .m_ctrlport_req_byte_en  ({ dio_radio_ctrlport_req_byte_en  [ 4*db+: 4], rf_ctrlport_req_byte_en  [ 4*db+: 4], m_radio_ctrlport_req_byte_en  [ 4*db+: 4] }),
-        .m_ctrlport_req_has_time ({ dio_radio_ctrlport_req_has_time [ 1*db+: 1], rf_ctrlport_req_has_time [ 1*db+: 1], m_radio_ctrlport_req_has_time [ 1*db+: 1] }),
-        .m_ctrlport_req_time     ({ dio_radio_ctrlport_req_time     [64*db+:64], rf_ctrlport_req_time     [64*db+:64], m_radio_ctrlport_req_time     [64*db+:64] }),
-        .m_ctrlport_resp_ack     ({ dio_radio_ctrlport_resp_ack     [ 1*db+: 1], rf_ctrlport_resp_ack     [ 1*db+: 1], m_radio_ctrlport_resp_ack     [ 1*db+: 1] }),
-        .m_ctrlport_resp_status  ({ dio_radio_ctrlport_resp_status  [ 2*db+: 2], rf_ctrlport_resp_status  [ 2*db+: 2], m_radio_ctrlport_resp_status  [ 2*db+: 2] }),
-        .m_ctrlport_resp_data    ({ dio_radio_ctrlport_resp_data    [32*db+:32], rf_ctrlport_resp_data    [32*db+:32], m_radio_ctrlport_resp_data    [32*db+:32] })
+        .m_ctrlport_req_wr       ({ radio_dio_req_wr       [ 1*db+: 1], gpio_atr_ctrlport_req_wr,        rf_ctrlport_req_wr       [ 1*db+: 1], m_radio_ctrlport_req_wr       [ 1*db+: 1] }),
+        .m_ctrlport_req_rd       ({ radio_dio_req_rd       [ 1*db+: 1], gpio_atr_ctrlport_req_rd,        rf_ctrlport_req_rd       [ 1*db+: 1], m_radio_ctrlport_req_rd       [ 1*db+: 1] }),
+        .m_ctrlport_req_addr     ({ radio_dio_req_addr     [20*db+:20], gpio_atr_ctrlport_req_addr,      rf_ctrlport_req_addr     [20*db+:20], m_radio_ctrlport_req_addr     [20*db+:20] }),
+        .m_ctrlport_req_data     ({ radio_dio_req_data     [32*db+:32], gpio_atr_ctrlport_req_data,      rf_ctrlport_req_data     [32*db+:32], m_radio_ctrlport_req_data     [32*db+:32] }),
+        .m_ctrlport_req_byte_en  ({ radio_dio_req_byte_en  [ 4*db+: 4], gpio_atr_ctrlport_req_byte_en,   rf_ctrlport_req_byte_en  [ 4*db+: 4], m_radio_ctrlport_req_byte_en  [ 4*db+: 4] }),
+        .m_ctrlport_req_has_time ({ radio_dio_req_has_time [ 1*db+: 1], gpio_atr_ctrlport_req_has_time,  rf_ctrlport_req_has_time [ 1*db+: 1], m_radio_ctrlport_req_has_time [ 1*db+: 1] }),
+        .m_ctrlport_req_time     ({ radio_dio_req_time     [64*db+:64], gpio_atr_ctrlport_req_time,      rf_ctrlport_req_time     [64*db+:64], m_radio_ctrlport_req_time     [64*db+:64] }),
+        .m_ctrlport_resp_ack     ({ radio_dio_resp_ack     [ 1*db+: 1], gpio_atr_ctrlport_resp_ack,      rf_ctrlport_resp_ack     [ 1*db+: 1], m_radio_ctrlport_resp_ack     [ 1*db+: 1] }),
+        .m_ctrlport_resp_status  ({ radio_dio_resp_status  [ 2*db+: 2], gpio_atr_ctrlport_resp_status,   rf_ctrlport_resp_status  [ 2*db+: 2], m_radio_ctrlport_resp_status  [ 2*db+: 2] }),
+        .m_ctrlport_resp_data    ({ radio_dio_resp_data    [32*db+:32], gpio_atr_ctrlport_resp_data,     rf_ctrlport_resp_data    [32*db+:32], m_radio_ctrlport_resp_data    [32*db+:32] })
+      );
+
+      // Compute ATR state for this radio
+      wire [ 3:0] db_state;
+
+      assign db_state = { tx_running[2*db + 1], rx_running[2*db + 1],
+                          tx_running[2*db + 0], rx_running[2*db + 0]};
+
+      x4xx_gpio_atr #(
+        .REG_SIZE (RADIO_GPIO_ATR_REGS_SIZE)
+      ) x4xx_gpio_atr_i (
+        .ctrlport_clk             (radio_clk),
+        .ctrlport_rst             (radio_rst),
+        .s_ctrlport_req_wr        (gpio_atr_ctrlport_req_wr),
+        .s_ctrlport_req_rd        (gpio_atr_ctrlport_req_rd),
+        .s_ctrlport_req_addr      (gpio_atr_ctrlport_req_addr),
+        .s_ctrlport_req_data      (gpio_atr_ctrlport_req_data),
+        .s_ctrlport_resp_ack      (gpio_atr_ctrlport_resp_ack),
+        .s_ctrlport_resp_status   (gpio_atr_ctrlport_resp_status),
+        .s_ctrlport_resp_data     (gpio_atr_ctrlport_resp_data),
+        .db_state                 (db_state),
+        .gpio_in                  ({4'b0, gpio_in_b, 4'b0, gpio_in_a}),
+        .gpio_out                 (atr_gpio_out[db*32+: 32]),
+        .gpio_ddr                 (atr_gpio_ddr[db*32+: 32])
       );
 
     end
@@ -513,16 +587,16 @@ module x4xx_core_common #(
   wire [ 1:0] windowed_mpm_dio_resp_status;
   wire [31:0] windowed_mpm_dio_resp_data;
 
-  ctrlport_window #(
-    .BASE_ADDRESS  (DIO),
-    .WINDOW_SIZE   (DIO_SIZE)
-  ) ctrlport_window_dio (
+  ctrlport_decoder_param #(
+    .NUM_SLAVES   (1),
+    .PORT_BASE    ({DIO[19:0]}),
+    .PORT_ADDR_W  ({$clog2(DIO_SIZE)})
+  ) ctrlport_decoder_dio_window (
+    .ctrlport_clk               (radio_clk),
+    .ctrlport_rst               (radio_rst),
     .s_ctrlport_req_wr          (mpm_dio_req_wr),
     .s_ctrlport_req_rd          (mpm_dio_req_rd),
     .s_ctrlport_req_addr        (mpm_dio_req_addr),
-    .s_ctrlport_req_portid      (10'b0),
-    .s_ctrlport_req_rem_epid    (16'b0),
-    .s_ctrlport_req_rem_portid  (10'b0),
     .s_ctrlport_req_data        (mpm_dio_req_data),
     .s_ctrlport_req_byte_en     (4'hF),
     .s_ctrlport_req_has_time    (1'b0),
@@ -530,23 +604,20 @@ module x4xx_core_common #(
     .s_ctrlport_resp_ack        (mpm_dio_resp_ack),
     .s_ctrlport_resp_status     (mpm_dio_resp_status),
     .s_ctrlport_resp_data       (mpm_dio_resp_data),
-    .m_ctrlport_req_wr          (windowed_mpm_dio_req_wr),
-    .m_ctrlport_req_rd          (windowed_mpm_dio_req_rd),
-    .m_ctrlport_req_addr        (windowed_mpm_dio_req_addr),
-    .m_ctrlport_req_portid      (),
-    .m_ctrlport_req_rem_epid    (),
-    .m_ctrlport_req_rem_portid  (),
-    .m_ctrlport_req_data        (windowed_mpm_dio_req_data),
+    .m_ctrlport_req_wr          ({windowed_mpm_dio_req_wr}),
+    .m_ctrlport_req_rd          ({windowed_mpm_dio_req_rd}),
+    .m_ctrlport_req_addr        ({windowed_mpm_dio_req_addr}),
+    .m_ctrlport_req_data        ({windowed_mpm_dio_req_data}),
     .m_ctrlport_req_byte_en     (),
     .m_ctrlport_req_has_time    (),
     .m_ctrlport_req_time        (),
-    .m_ctrlport_resp_ack        (windowed_mpm_dio_resp_ack),
-    .m_ctrlport_resp_status     (windowed_mpm_dio_resp_status),
-    .m_ctrlport_resp_data       (windowed_mpm_dio_resp_data)
+    .m_ctrlport_resp_ack        ({windowed_mpm_dio_resp_ack}),
+    .m_ctrlport_resp_status     ({windowed_mpm_dio_resp_status}),
+    .m_ctrlport_resp_data       ({windowed_mpm_dio_resp_data})
   );
 
 
-  // Combined ctrlport signals
+  // Combined dio ctrlport signals
   wire        dio_ctrlport_req_wr;
   wire        dio_ctrlport_req_rd;
   wire [19:0] dio_ctrlport_req_addr;
@@ -564,19 +635,19 @@ module x4xx_core_common #(
   ) ctrlport_combiner_dio (
     .ctrlport_clk               (radio_clk),
     .ctrlport_rst               (radio_rst),
-    .s_ctrlport_req_wr          ({dio_radio_ctrlport_req_wr,      windowed_mpm_dio_req_wr}),
-    .s_ctrlport_req_rd          ({dio_radio_ctrlport_req_rd,      windowed_mpm_dio_req_rd}),
-    .s_ctrlport_req_addr        ({dio_radio_ctrlport_req_addr,    windowed_mpm_dio_req_addr}),
+    .s_ctrlport_req_wr          ({radio_dio_req_wr,      windowed_mpm_dio_req_wr}),
+    .s_ctrlport_req_rd          ({radio_dio_req_rd,      windowed_mpm_dio_req_rd}),
+    .s_ctrlport_req_addr        ({radio_dio_req_addr,    windowed_mpm_dio_req_addr}),
     .s_ctrlport_req_portid      ({(NUM_DBOARDS+1){10'b0}}),
     .s_ctrlport_req_rem_epid    ({(NUM_DBOARDS+1){16'b0}}),
     .s_ctrlport_req_rem_portid  ({(NUM_DBOARDS+1){10'b0}}),
-    .s_ctrlport_req_data        ({dio_radio_ctrlport_req_data,    windowed_mpm_dio_req_data}),
+    .s_ctrlport_req_data        ({radio_dio_req_data,    windowed_mpm_dio_req_data}),
     .s_ctrlport_req_byte_en     ({(NUM_DBOARDS+1){4'hF}}),
     .s_ctrlport_req_has_time    ({(NUM_DBOARDS+1){1'b0}}),
     .s_ctrlport_req_time        ({(NUM_DBOARDS+1){64'b0}}),
-    .s_ctrlport_resp_ack        ({dio_radio_ctrlport_resp_ack,    windowed_mpm_dio_resp_ack}),
-    .s_ctrlport_resp_status     ({dio_radio_ctrlport_resp_status, windowed_mpm_dio_resp_status}),
-    .s_ctrlport_resp_data       ({dio_radio_ctrlport_resp_data,   windowed_mpm_dio_resp_data}),
+    .s_ctrlport_resp_ack        ({radio_dio_resp_ack,    windowed_mpm_dio_resp_ack}),
+    .s_ctrlport_resp_status     ({radio_dio_resp_status, windowed_mpm_dio_resp_status}),
+    .s_ctrlport_resp_data       ({radio_dio_resp_data,   windowed_mpm_dio_resp_data}),
     .m_ctrlport_req_wr          (dio_ctrlport_req_wr),
     .m_ctrlport_req_rd          (dio_ctrlport_req_rd),
     .m_ctrlport_req_addr        (dio_ctrlport_req_addr),
@@ -593,29 +664,40 @@ module x4xx_core_common #(
   );
 
   x4xx_dio #(
-    .REG_BASE (DIO),
-    .REG_SIZE (DIO_SIZE)
+    .REG_SIZE    (DIO_SIZE),
+    .NUM_DBOARDS (NUM_DBOARDS)
   ) x4xx_dio_i (
-    .ctrlport_clk           (radio_clk),
-    .ctrlport_rst           (radio_rst),
-    .s_ctrlport_req_wr      (dio_ctrlport_req_wr),
-    .s_ctrlport_req_rd      (dio_ctrlport_req_rd),
-    .s_ctrlport_req_addr    (dio_ctrlport_req_addr),
-    .s_ctrlport_req_data    (dio_ctrlport_req_data),
-    .s_ctrlport_resp_ack    (dio_ctrlport_resp_ack),
-    .s_ctrlport_resp_status (dio_ctrlport_resp_status),
-    .s_ctrlport_resp_data   (dio_ctrlport_resp_data),
-    .gpio_in_a              (gpio_in_a),
-    .gpio_in_b              (gpio_in_b),
-    .gpio_out_a             (gpio_out_a),
-    .gpio_out_b             (gpio_out_b),
-    .gpio_en_a              (gpio_en_a),
-    .gpio_en_b              (gpio_en_b),
-    .gpio_in_fabric_a       (gpio_in_fabric_a),
-    .gpio_in_fabric_b       (gpio_in_fabric_b),
-    .gpio_out_fabric_a      (gpio_out_fabric_a),
-    .gpio_out_fabric_b      (gpio_out_fabric_b)
+    .ctrlport_clk                 (radio_clk),
+    .ctrlport_rst                 (radio_rst),
+    .s_ctrlport_req_wr            (dio_ctrlport_req_wr),
+    .s_ctrlport_req_rd            (dio_ctrlport_req_rd),
+    .s_ctrlport_req_addr          (dio_ctrlport_req_addr),
+    .s_ctrlport_req_data          (dio_ctrlport_req_data),
+    .s_ctrlport_resp_ack          (dio_ctrlport_resp_ack),
+    .s_ctrlport_resp_status       (dio_ctrlport_resp_status),
+    .s_ctrlport_resp_data         (dio_ctrlport_resp_data),
+    .gpio_in_a                    (gpio_in_a),
+    .gpio_in_b                    (gpio_in_b),
+    .gpio_out_a                   (gpio_out_a),
+    .gpio_out_b                   (gpio_out_b),
+    .gpio_en_a                    (gpio_en_a),
+    .gpio_en_b                    (gpio_en_b),
+    .atr_gpio_out                 (atr_gpio_out),
+    .atr_gpio_ddr                 (atr_gpio_ddr),
+    .ps_gpio_out                  ({4'b0, ps_gpio_out_b, 4'b0, ps_gpio_out_a}),
+    .ps_gpio_ddr                  ({4'b0, ps_gpio_ddr_b, 4'b0, ps_gpio_ddr_a}),
+    .digital_ifc_gpio_out_radio0  (32'b0),
+    .digital_ifc_gpio_ddr_radio0  (32'b0),
+    .digital_ifc_gpio_out_radio1  (32'b0),
+    .digital_ifc_gpio_ddr_radio1  (32'b0),
+    .user_app_in_a                (gpio_in_fabric_a),
+    .user_app_in_b                (gpio_in_fabric_b),
+    .user_app_out_a               (gpio_out_fabric_a),
+    .user_app_out_b               (gpio_out_fabric_b)
   );
+
+  assign ps_gpio_in_a = gpio_in_fabric_a;
+  assign ps_gpio_in_b = gpio_in_fabric_b;
 
 endmodule
 
@@ -629,7 +711,11 @@ endmodule
 //  <group name="RADIO_CTRLPORT_WINDOWS">
 //    <info>Each radio's CtrlPort peripheral interface is divided into the
 //    following memory spaces. Note that the CtrlPort peripheral interface
-//    starts at offset 0x80000 in the RFNoC Radio block's register space.</info>
+//    starts at offset 0x80000 in the RFNoC Radio block's register space.
+//    The following diagram displays the distribution of the CtrlPort
+//    interface to the different modules it interacts with.
+//    <img src = "x4xx_core_common_buses.svg"
+// </info>
 //    <window name="DB_WINDOW"        offset="0x00000" size="0x08000">
 //      <info>Daughterboard GPIO interface. Register access within this space
 //      is directed to the associated daughterboard CPLD.</info>
@@ -637,8 +723,9 @@ endmodule
 //    <window name="RFDC_TIMING_WINDOW" offset="0x08000" size="0x04000" targetregmap="RFDC_TIMING_REGMAP">
 //      <info>RFDC timing control interface.</info>
 //    </window>
-//    <window name="DIO_WINDOW" offset="0x0C000" size="0x04000" targetregmap="DIO_REGMAP">
-//      <info>DIO control interface</info>
+//    <window name="DIO_WINDOW" offset="0x0C000" size="0x04000" targetregmap="RADIO_DIO_REGMAP">
+//      <info>DIO control interface. Interacts with the DIO source selection
+//            block, ATR-based DIO control and the DIO digital interface</info>
 //    </window>
 //  </group>
 //</regmap>
@@ -651,6 +738,10 @@ endmodule
 //    The registers contained here conform the mboard-regs node that MPM uses
 //    to manage general FPGA control/status calls, such as versioning,
 //    timekeeper, GPIO, etc.
+//
+//    The following diagram shows how the communication bus interacts with the
+//    modules in CORE_REGS.
+//    <img src = "x4xx_core_common_buses.svg"
 //  </info>
 //  <group name="CORE_REGS">
 //    <window name="GLOBAL_REGS"     offset="0x0"   size="0xC00"  targetregmap="GLOBAL_REGS_REGMAP">
@@ -662,9 +753,25 @@ endmodule
 //    <window name="TIMEKEEPER"      offset="0x1000" size="0x20">
 //      <info>Window to access the timekeeper register map.</info>
 //    </window>
-//    <window name="DIO"             offset="0x2000" size="0x20"  targetregmap="DIO_REGMAP">
+//    <window name="DIO"             offset="0x2000" size="0x40"  targetregmap="DIO_REGMAP">
 //      <info>Window to access the DIO register map.</info>
 //    </window>
 //  </group>
 //</regmap>
+
+//<regmap name="RADIO_DIO_REGMAP" readablestrobes="false" generatevhdl="true" ettusguidelines="true">
+//  <info>
+//    This map contains register windows for controlling the different sources
+//    that drive the state of DIO lines.
+//  </info>
+//  <group name="DIO_SOURCES">
+//    <window name="RADIO_GPIO_ATR_REGS"     offset="0x0"    size="0x1000" targetregmap="GPIO_ATR_REGMAP">
+//      <info>Contains controls for DIO behavior based on the ATR state of the accessed radio</info>
+//    </window>
+//    <window name="DIO_SOURCE_CONTROL"      offset="0x1000" size="0x1000" targetregmap="DIO_REGMAP">
+//      <info>Window to access the DIO register map through the control port from the radio blocks.</info>
+//    </window>
+//  </group>
+//</regmap>
+
 //XmlParse xml_off

@@ -73,6 +73,7 @@ x4xx_core_common.v \
 x4xx_global_regs.v \
 x4xx_versioning_regs.v \
 x4xx_dio.v \
+x4xx_gpio_atr.v \
 rf/100m/rf_core_100m.v \
 rf/200m/rf_core_200m.v \
 rf/200m/rf_down_4to2.v \

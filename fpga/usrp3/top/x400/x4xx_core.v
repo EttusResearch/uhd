@@ -241,7 +241,6 @@ module x4xx_core #(
   wire [  2*NUM_DBOARDS-1:0] ctrlport_radio_resp_status;
   wire [ 32*NUM_DBOARDS-1:0] ctrlport_radio_resp_data;
 
-
   x4xx_core_common #(
     .CHDR_CLK_RATE  (CHDR_CLK_RATE),
     .CHDR_W         (CHDR_W),
@@ -318,6 +317,8 @@ module x4xx_core #(
     .nco_reset_done                   (nco_reset_done),
     .adc_reset_pulse                  (adc_reset_pulse),
     .dac_reset_pulse                  (dac_reset_pulse),
+    .tx_running                       (tx_running),
+    .rx_running                       (rx_running),
     .qsfp_port_0_0_info               (qsfp_port_0_0_info),
     .qsfp_port_0_1_info               (qsfp_port_0_1_info),
     .qsfp_port_0_2_info               (qsfp_port_0_2_info),
