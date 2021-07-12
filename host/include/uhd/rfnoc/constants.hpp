@@ -83,9 +83,6 @@ static const uhd::dict<std::string, uint32_t> DEFAULT_NAMED_SR =
     boost::assign::map_list_of("AXIS_CONFIG_BUS", AXIS_CONFIG_BUS)(
         "AXIS_CONFIG_BUS_TLAST", AXIS_CONFIG_BUS_TLAST);
 
-// Blocks
-static const size_t MAX_NUM_BLOCKS = 16;
-
 // Block ports
 static const size_t ANY_PORT      = size_t(~0);
 static const size_t MAX_NUM_PORTS = 16;
