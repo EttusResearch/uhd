@@ -454,6 +454,22 @@ only the X4_200 image is shipped with UHD, which allows a 245.76 MHz or
 
 \section x4xx_updating_filesystems Updating Filesystems
 
+The easiest way to update the filesystem is directly from the X410 via the
+built-in `usrp_update_fs` utility.
+
+To perform a filesystem "factory-reset", run:
+
+    $ usrp_update_fs
+
+To update to the most-recent filesystem, run:
+
+    $ usrp_update_fs -t master
+
+Note: Old filesystems may not support this utility. Alternatively, one may use
+Mender to update the filesystem. See \ref x4xx_updating_filesystems_mender.
+
+\subsection x4xx_updating_filesystems_mender Updating the Filesystem Using Mender
+
 Mender is a third-party software that enables remote updating of the root file
 system without physically accessing the device (see also the [Mender
 website](https://mender.io)). Mender can be executed locally on the device, or a
@@ -473,9 +489,11 @@ update was originally launched (which presumably is in a working state). Another
 update can be launched now to correct the previous, failed update, until it
 works.
 
-To initiate an update from the device itself, download a Mender artifact
+\subsubsection x4xx_updating_filesystems_mender_artifact Downloading a Mender Artifact
+
+To initiate an update directly from the X410 device, download a Mender artifact
 containing the update itself. These are files with a `.mender` suffix. They can
-be downloaded by using the uhd_images_downloader utility:
+be downloaded by using the `uhd_images_downloader` utility:
 
     $ uhd_images_downloader -t mender -t x4xx
 
@@ -483,11 +501,30 @@ Append the `-l` switch to print out the URLs only:
 
     $ uhd_images_downloader -t mender -t x4xx -l
 
-Then run mender on the command line:
+By default, this utility will download the `.mender` artifact to
+`/usr/share/uhd/images`.
+
+Note: `uhd_images_downloader` will only download the artifacts released with
+the currently installed filesystem version (factory-reset). To install the
+latest released filesystem version instead, first download the most-recent
+manifest from the UHD Github repository:
+
+    $ wget https://raw.githubusercontent.com/EttusResearch/uhd/master/images/manifest.txt
+
+Second, use the `-m` switch to use the new manifest file:
+
+    $ uhd_images_downloader -t mender -t x4xx -m manifest.txt
+
+\subsubsection x4xx_updating_filesystems_mender_install Installing the Mender Artifact
+
+Once a Mender artifact is downloaded to the X410 (see
+\ref x4xx_updating_filesystems_mender_artifact), install it by running mender
+on the command line:
 
     $ mender install /path/to/latest.mender
 
-The artifact can also be stored on a remote server:
+Alternatively, Mender may be used to download and install an artifact that is
+stored on a remote server, all in one step:
 
     $ mender install http://server.name/path/to/latest.mender
 
