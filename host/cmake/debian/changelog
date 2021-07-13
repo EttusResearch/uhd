@@ -1,3 +1,23 @@
+uhd (4.1.0.1-0ubuntu1) ubuntu_release; urgency=low
+
+  * cmake
+    - remove redundant include
+    - correctly set and unset any CMAKE_REQUIRED variables
+    - fix finding PkgConfig to work robustly (without CMake warnings)
+  * core
+    - remove boost::math in favor of std cmath
+  * docs
+    - x4xx: Update information on CPLD updating
+    - usrp_x4xx: improve filesystem update instructions
+  * mpm
+    - zbx: Fix revision compat check
+    - Update usrp_update_fs to support X410
+    - max10_cpld_flash_ctrl: improve programming log
+    - Skip DTS compatibility check if DTS is not being updated
+
+ -- Ettus Research <packages@ettus.com>  Mon, 12 Jul 2021 04:29:39 -0800
+
+
 uhd (4.1.0.0-0ubuntu1) ubuntu_release; urgency=low
 
   * adf535x

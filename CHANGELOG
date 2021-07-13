@@ -1,6 +1,22 @@
 Change Log for Releases
 ==============================
 
+## 004.001.000.001
+* cmake
+  - remove redundant include
+  - correctly set and unset any CMAKE_REQUIRED variables
+  - fix finding PkgConfig to work robustly (without CMake warnings)
+* core
+  - remove boost::math in favor of std cmath
+* docs
+  - x4xx: Update information on CPLD updating
+  - usrp_x4xx: improve filesystem update instructions
+* mpm
+  - zbx: Fix revision compat check
+  - Update usrp_update_fs to support X410
+  - max10_cpld_flash_ctrl: improve programming log
+  - Skip DTS compatibility check if DTS is not being updated
+
 ## 004.001.000.000
 * adf535x
   - Change freq_resolution to mod2
