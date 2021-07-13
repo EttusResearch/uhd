@@ -29,6 +29,7 @@ BOOST_AUTO_TEST_CASE(test_block_id)
     BOOST_CHECK(block_id_t::is_valid_block_id("0/Filter_Foo#1"));
     BOOST_CHECK(not block_id_t::is_valid_block_id("x/FilterFoo#1"));
     BOOST_CHECK(not block_id_t::is_valid_block_id("0/FilterFoo#x"));
+    BOOST_CHECK(not block_id_t::is_valid_block_id("0/#1"));
 
     BOOST_REQUIRE_THROW(block_id_t invalid_block_id("0Filter/1"), uhd::value_error);
 
