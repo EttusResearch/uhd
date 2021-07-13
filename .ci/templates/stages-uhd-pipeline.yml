@@ -1,0 +1,44 @@
+#
+# Copyright 2021 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+variables:
+- template: ../uhd-pipeline-vars.yml
+
+resources:
+  pipelines:
+  - pipeline: uhd_build_docker_container
+    source: 'uhddev Build Docker Containers'
+    branch: master
+stages:
+- stage: build_uhd_stage
+  displayName: Build UHD
+  jobs:
+  - template: job-get-latest-uhd-docker.yml
+
+  - template: job-uhd-build-src.yml
+    parameters:
+      toolset: make
+  - template: job-uhd-build-src.yml
+    parameters:
+      toolset: make_trace
+  - template: job-uhd-build-src.yml
+    parameters:
+      toolset: ninja
+  - template: job-uhd-build-src.yml
+    parameters:
+      toolset: msbuild
+  - template: job-uhd-build-src.yml
+    parameters:
+      toolset: ubuntu_deb
+
+- stage: test_uhd_stage
+  displayName: Test UHD
+  dependsOn: build_uhd_stage
+  jobs:
+  - template: job-uhd-devtest-rhombus.yml
+    parameters:
+      testOS: ubuntu2004
+      uhdSrcDir: $(Build.SourcesDirectory)

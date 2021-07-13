@@ -4,7 +4,9 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 #
 
-trigger:
+trigger: none
+
+pr:
   branches:
     include:
     - master
@@ -15,8 +17,6 @@ trigger:
     - images/manifest.txt
     exclude:
     - .ci/docker
-
-pr: none
 
 extends:
   template: templates/stages-uhd-pipeline.yml
