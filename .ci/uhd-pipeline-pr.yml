@@ -4,6 +4,14 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 #
 
+parameters:
+- name: custom_boost_version
+  type: boolean
+  default: false
+- name: custom_boost_version_url
+  type: string
+  default: 'https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.bz2'
+
 trigger: none
 
 pr:
@@ -23,3 +31,6 @@ pr:
 
 extends:
   template: templates/stages-uhd-pipeline.yml
+  parameters:
+    custom_boost_version: ${{ parameters.custom_boost_version }}
+    custom_boost_version_url: ${{ parameters.custom_boost_version_url }}
