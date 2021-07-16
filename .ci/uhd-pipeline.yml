@@ -16,6 +16,9 @@ trigger:
     - images/manifest.txt
     exclude:
     - .ci/docker
+    - host/docs
+    - host/LICENSE
+    - host/README.md
 
 pr: none
 
