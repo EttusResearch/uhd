@@ -12,8 +12,43 @@ parameters:
 - name: uhdCxxFlags
   type: string
   default: ""
+- name: uhdCustomBoostPackage
+  type: boolean
+  default: false
+- name: uhdCustomBoostPackageURL
+  type: string
+  default: 'https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.bz2'
+
 
 steps:
+# If we are requested to use a custom Boost package, then we download and build
+# it first
+- ${{ if parameters.uhdCustomBoostPackage }}:
+  - bash: |
+      cd $(Pipeline.Workspace)
+      echo "Entering workspace directory:"
+      pwd
+      rm -rf boost
+      mkdir boost
+      cd boost
+      # We reimplement tar's -a flag here so we can pipe from curl straight to tar
+      if [[ "${{ parameters.uhdCustomBoostPackageURL }}" =~ bz2$ ]]; then
+          export TAR_EXTRACT_FLAG="j"
+      elif [[ "${{ parameters.uhdCustomBoostPackageURL }}" =~ gz2$ ]]; then
+          export TAR_EXTRACT_FLAG="x"
+      elif [[ "${{ parameters.uhdCustomBoostPackageURL }}" =~ xz$ ]]; then
+          export TAR_EXTRACT_FLAG="J"
+      fi
+      curl -L ${{ parameters.uhdCustomBoostPackageURL }} | tar -x -$TAR_EXTRACT_FLAG
+      export BOOST_DIR=`pwd`/`ls | head -1`
+      echo "Using Boost directory: $BOOST_DIR"
+      echo "##vso[task.setvariable variable=CustomBoostPath;isOutput=true;]$BOOST_DIR"
+      cd $BOOST_DIR
+      ./bootstrap.sh
+      ./b2 -j$(nproc)
+    displayName: "Build Custom Boost Version"
+    name: build_boost_step
+
 - script: |
     mkdir -p ${{ parameters.uhdBuildDir }}
     cd ${{ parameters.uhdBuildDir }}
@@ -26,6 +61,10 @@ steps:
       export CXXFLAGS="-Werror -Wno-error=maybe-uninitialized $CXXFLAGS"
     fi
     export CXXFLAGS="${{ parameters.uhdCxxFlags }} $CXXFLAGS"
+    if [[ "${{ parameters.uhdCustomBoostPackage }}" = "True" ]]; then
+      export BOOST_CMAKE_DIR=$(dirname `find $(build_boost_step.CustomBoostPath)/stage/lib -name BoostConfig.cmake`)
+      export UHD_CI_CMAKE_OPTIONS="-DBoost_INCLUDE_DIR=$(build_boost_step.CustomBoostPath) -DBoost_DIR=$BOOST_CMAKE_DIR -DBoost_LIBRARY_DIRS=$(build_boost_step.CustomBoostPath)/stage/lib $UHD_CI_CMAKE_OPTIONS"
+    fi
     cmake \
       $UHD_CI_CMAKE_OPTIONS \
       ${{ parameters.uhdSrcDir }}/host
