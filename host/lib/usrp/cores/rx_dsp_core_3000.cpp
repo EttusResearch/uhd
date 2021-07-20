@@ -260,7 +260,7 @@ public:
     uhd::meta_range_t get_freq_range(void) override
     {
         // Too keep the DSP range symmetric about 0, we use abs(_dsp_freq_offset)
-        const double offset = std::abs<double>(_dsp_freq_offset);
+        const double offset = std::abs(_dsp_freq_offset);
         return uhd::meta_range_t(-(_tick_rate - offset) / 2,
             +(_tick_rate - offset) / 2,
             _tick_rate / std::pow(2.0, 32));
