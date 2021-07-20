@@ -896,8 +896,8 @@ BOOST_FIXTURE_TEST_CASE(zbx_tx_power_api, x400_radio_fixture)
             test_radio->set_tx_frequency(freq, chan);
             // If the tracking mode is properly set, we should not deviate much
             // regarding power
-            const double pow_diff = std::abs<double>(
-                tx_given_power - test_radio->get_tx_power_reference(chan));
+            const double pow_diff =
+                std::abs(tx_given_power - test_radio->get_tx_power_reference(chan));
             BOOST_CHECK_MESSAGE(pow_diff < 3.0, "power differential is too large: " << pow_diff);
 
             // Back to gain mode
@@ -928,7 +928,7 @@ BOOST_FIXTURE_TEST_CASE(zbx_rx_power_api, x400_radio_fixture)
             // If the tracking mode is properly set, we should match our expected criteria
             // for power reference levels
             const double actual_power = test_radio->get_rx_power_reference(chan);
-            const double pow_diff     = std::abs<double>(rx_given_power - actual_power);
+            const double pow_diff     = std::abs(rx_given_power - actual_power);
             BOOST_CHECK_MESSAGE(pow_diff < 3.0,
                 "power differential is too large ("
                     << pow_diff << "): Expected close to: " << rx_given_power
