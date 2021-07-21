@@ -115,7 +115,7 @@ module axi4s_width_conv #(
   end
 
   logic s0_ready, s1_valid, s1_last;
-  logic [s1.DATA_WIDTH-1:0] s1_data;
+  logic [OWIDTH-1:0] s1_data;
   always_comb s0.tready = s0_ready;
   always_comb s1.tvalid = s1_valid;
   always_comb s1.tlast  = s1_last;
