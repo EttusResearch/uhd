@@ -60,6 +60,8 @@ jobs:
         - uhd:do_package_write_ipk
         - uhd:do_run_tests
         - mpmd:do_package_write_ipk
+        - gnuradio:do_package_write_ipk
+        - gr-ettus:do_package_write_ipk
       auto_conf: $AUTO_CONF
       prebuild_steps:
         - script: rm -f $AUTO_CONF
