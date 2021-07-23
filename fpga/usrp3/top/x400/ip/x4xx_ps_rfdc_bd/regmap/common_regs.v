@@ -83,8 +83,8 @@
 //    <window name="JTAG_ENGINE"  offset="0x1000000000" size="0x1000">
 //      <info>Register space for the JTAG engine for MB CPLD programming.</info>
 //    </window>
-//    <window name="WR"           offset="0x100003F000" size="0x1000">
-//      <info>NOT IMPLEMENTED YET! Register space reserved for White Rabbit.</info>
+//    <window name="RESERVED"     offset="0x100003F000" size="0x1000">
+//      <info>Register space reserved for future use.</info>
 //    </window>
 //    <window name="MPM_ENDPOINT" offset="0x1000080000" size="0x20000"
 //                                targetregmap="PL_CPLD_REGMAP">
