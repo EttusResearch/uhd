@@ -55,6 +55,7 @@ jobs:
     parameters:
       machines:
         - x4xx
+      checkout_meta_ettus: true
       targets:
         - uhd:do_package_write_ipk
         - uhd:do_run_tests

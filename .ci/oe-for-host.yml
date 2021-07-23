@@ -55,6 +55,7 @@ jobs:
     parameters:
       machines:
         - qemux86_64
+      checkout_meta_ettus: true
       targets:
         - $(Image)
         - package-index
