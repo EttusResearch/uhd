@@ -416,6 +416,8 @@ endgenerate
    wire [31:0] 	  rx_sid;
    wire [11:0] 	  rx_seqnum;
    wire [63:0] rx_tdata_i; wire rx_tlast_i, rx_tvalid_i, rx_tready_i;
+   reg  [1:0]       rx_err_delay_cnt = 2'd0;
+   reg              rx_err_gate = 0;
 
    wire [31:0] debug_rx_framer;
    new_rx_framer #(.BASE(SR_RX_CTRL+4),.SAMPLE_FIFO_SIZE(SAMPLE_FIFO_SIZE)) new_rx_framer
@@ -434,7 +436,7 @@ endgenerate
       .vita_time(vita_time),
       .strobe(strobe_rx), .run(run_rx), .eob(eob_rx), .full(full),
       .sid(rx_sid), .seqnum(rx_seqnum),
-      .err_tdata(rx_err_tdata_r), .err_tlast(rx_err_tlast_r), .err_tvalid(rx_err_tvalid_r), .err_tready(rx_err_tready_r),
+      .err_tdata(rx_err_tdata_r), .err_tlast(rx_err_tlast_r), .err_tvalid(rx_err_tvalid_r), .err_tready(rx_err_gate & rx_err_tready_r),
       .ibs_state(ibs_state),
       .debug(debug_rx_control));
 
@@ -466,10 +468,34 @@ endgenerate
    // /////////////////////////////////////////////////////////////////////////////////
    //  RX Channel Muxing
 
+   // The RX framer and converters can add up to 3 bubble cycles on the data path.
+   // Delay any error packets so errors are back in band with the data packets.
+   always @(posedge radio_clk) begin
+      if (radio_rst) begin
+         rx_err_delay_cnt <= 2'd0;
+         rx_err_gate <= 0;
+      end else begin
+         if (rx_err_gate) begin
+            if (rx_err_tvalid_r & rx_err_tready_r & rx_err_tlast_r) begin
+               rx_err_delay_cnt <= 2'd0;
+               rx_err_gate <= 0;
+            end
+         end else begin
+            if (rx_postfc_tvalid_r) begin
+               rx_err_delay_cnt <= 2'd0;
+            end else if (rx_err_delay_cnt == 2'd3) begin
+               rx_err_gate <= 1;
+            end else if (rx_err_tvalid_r) begin
+               rx_err_delay_cnt <= rx_err_delay_cnt + 2'd1;
+            end
+         end
+      end
+   end
+
    axi_mux4 #(.PRIO(1), .WIDTH(64), .BUFFER(1)) rx_mux
      (.clk(radio_clk), .reset(radio_rst), .clear(1'b0),
       .i0_tdata(rx_postfc_tdata_r), .i0_tlast(rx_postfc_tlast_r), .i0_tvalid(rx_postfc_tvalid_r), .i0_tready(rx_postfc_tready_r),
-      .i1_tdata(rx_err_tdata_r), .i1_tlast(rx_err_tlast_r), .i1_tvalid(rx_err_tvalid_r), .i1_tready(rx_err_tready_r),
+      .i1_tdata(rx_err_tdata_r), .i1_tlast(rx_err_gate & rx_err_tlast_r), .i1_tvalid(rx_err_gate & rx_err_tvalid_r), .i1_tready(rx_err_tready_r),
       .i2_tdata(64'h0), .i2_tlast(1'b0), .i2_tvalid(1'b0), .i2_tready(),
       .i3_tdata(64'h0), .i3_tlast(1'b0), .i3_tvalid(1'b0), .i3_tready(),
       .o_tdata(rx_tdata_r), .o_tlast(rx_tlast_r), .o_tvalid(rx_tvalid_r), .o_tready(rx_tready_r));
