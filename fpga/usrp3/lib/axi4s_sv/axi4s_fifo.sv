@@ -58,8 +58,11 @@ module axi4s_fifo #(
     `AXI4S_ASSIGN(o,s1)
   end
 
-  logic [s0.PACKED_WIDTH-1:0] s0_data;
-  logic [s1.PACKED_WIDTH-1:0] s1_data;
+  //MODELSIM pe seemed to need some help here
+  // Using s0.packedwidth set PACKED_WIDTH to 0
+  localparam PACKED_WIDTH = i.PACKED_WIDTH;
+  logic [PACKED_WIDTH-1:0] s0_data;
+  logic [PACKED_WIDTH-1:0] s1_data;
   always_comb s0_data = s0.pack();
   always_comb s1.unpack(s1_data);
 
