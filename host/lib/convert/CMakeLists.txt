@@ -80,6 +80,7 @@ if(NEON_SIMD_ENABLE AND HAVE_ARM_NEON_H AND
         ${CMAKE_CURRENT_SOURCE_DIR}/convert_with_neon.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/convert_neon.S
     )
+    SET ( CMAKE_CXX_FLAGS "-mfpu=neon" )
 endif()
 
 ########################################################################
