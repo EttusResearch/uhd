@@ -12,7 +12,6 @@
 #include <string>
 #include <vector>
 
-static constexpr size_t FPGPIO_MASTER_RADIO     = 0;
 static constexpr size_t TOTAL_RADIO_PORTS       = 4;
 static constexpr double AD9371_RX_MIN_BANDWIDTH = 20.0e6; // HZ
 static constexpr double AD9371_RX_MAX_BANDWIDTH = 100.0e6; // HZ
