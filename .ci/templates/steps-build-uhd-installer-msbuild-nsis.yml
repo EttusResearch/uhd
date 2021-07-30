@@ -1,0 +1,29 @@
+parameters:
+- name: uhdSrcDir
+  type: string
+- name: uhdBuildDir
+  type: string
+- name: uhdInstallerDir
+  type: string
+- name: cmakeCompiler
+  type: string
+- name: cmakeArch
+  type: string
+- name: vsArch
+  type: string
+- name: vsYear
+  type: string
+
+steps:
+- script: |
+    cd ${{ parameters.uhdBuildDir }}
+    call "C:\Program Files (x86)\Microsoft Visual Studio\$(vsYear)\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
+    msbuild.exe package.vcxproj /p:configuration=release
+  displayName: msbuild package
+- task: CopyFiles@2
+  inputs:
+    sourceFolder: ${{ parameters.uhdBuildDir }}
+    contents: 'uhd_*.exe'
+    targetFolder: ${{ parameters.uhdInstallerDir }}
+    cleanTargetFolder: true
+  displayName: Copy msbuild installer
