@@ -536,7 +536,7 @@ UHD_INSTALL(
 ########################################################################
 if(DEFINED UHD_IMAGES_SRC_DIR AND EXISTS "${UHD_IMAGES_SRC_DIR}")
     message(STATUS "Reading images from directory `${UHD_IMAGES_SRC_DIR}'")
-    file(GLOB_RECURSE _image_files "${UHD_IMAGES_SRC_DIR}/*")
+    file(GLOB_RECURSE _image_files RELATIVE "${CMAKE_SOURCE_DIR}" "${UHD_IMAGES_SRC_DIR}/*")
     message(STATUS "These images files will be installed/packaged:")
     foreach(_img ${_image_files})
         message(STATUS "  ${_img}")
