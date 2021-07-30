@@ -4,6 +4,11 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 #
 
+parameters:
+- name: release_binaries
+  type: boolean
+  default: false
+
 trigger:
   batch: true
   branches:
@@ -24,3 +29,5 @@ pr: none
 
 extends:
   template: templates/stages-uhd-pipeline.yml
+  parameters:
+    release_binaries: ${{ parameters.release_binaries }}

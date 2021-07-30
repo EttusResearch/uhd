@@ -7,11 +7,12 @@ parameters:
   - make_trace
   - ninja
   - msbuild
-  - ubuntu_deb
 - name: 'custom_boost_version_url'
   type: string
   default: 'https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.bz2'
-
+- name: release_binaries
+  type: boolean
+  default: false
 
 jobs:
 - job: build_ctest_and_upload_uhd_${{ parameters.toolset }}
@@ -42,14 +43,9 @@ jobs:
       matrix: $[ variables.dockerImageMatrixWin ]
     ${{ if or(eq(parameters.toolset, 'make'), eq(parameters.toolset, 'make_trace'), eq(parameters.toolset, 'ninja'), eq(parameters.toolset, 'make_custom_boost_version')) }}:
       matrix: $[ variables.dockerImageMatrixLin ]
-    ${{ if eq(parameters.toolset, 'ubuntu_deb') }}:
-      matrix: $[ variables.dockerImageMatrixUbuntuDeb ]
   container:
     image: '$(dockerImagePrefix)$(DockerImageName):$(dockerBuildNumber)'
     endpoint: 'Docker / Artifactory - rnd-builds-local'
-    ${{ if eq(parameters.toolset, 'ubuntu_deb') }}:
-      #pbuilder requires access to /proc
-      options: --privileged
   steps:
   - checkout: self
     clean: true
@@ -59,38 +55,33 @@ jobs:
   - ${{ if eq(parameters.toolset, 'make') }}:
     - template: steps-build-uhd-make.yml
       parameters:
-        uhdSrcDir: $(Build.SourcesDirectory)
+        uhdSrcDir: ../../../s
         uhdBuildDir: $(Build.BinariesDirectory)/uhddev/build
 
   - ${{ if eq(parameters.toolset, 'make_trace') }}:
     - template: steps-build-uhd-make.yml
       parameters:
-        uhdSrcDir: $(Build.SourcesDirectory)
+        uhdSrcDir: ../../../s
         uhdBuildDir: $(Build.BinariesDirectory)/uhddev/build
         uhdEnableTraceLog: true
 
   - ${{ if eq(parameters.toolset, 'ninja') }}:
     - template: steps-build-uhd-ninja.yml
       parameters:
-        uhdSrcDir: $(Build.SourcesDirectory)
+        uhdSrcDir: ../../../s
         uhdBuildDir: $(Build.BinariesDirectory)/uhddev/build
 
   - ${{ if eq(parameters.toolset, 'msbuild') }}:
     - template: steps-build-uhd-msbuild.yml
       parameters:
-        uhdSrcDir: $(Build.SourcesDirectory)
-        uhdBuildDir: $(Build.BinariesDirectory)\uhddev\build
+        uhdSrcDir: ../../../s
+        uhdBuildDir: $(Build.BinariesDirectory)\\uhddev\\build
+        uhdImageDir: $(Build.BinariesDirectory)\\uhd-images
+        uhdReleaseBinaries: ${{ parameters.release_binaries }}
         cmakeCompiler: $(cmakeCompiler)
         cmakeArch: $(cmakeArch)
         vsArch: $(vsArch)
         vsYear: $(vsYear)
-
-  - ${{ if eq(parameters.toolset, 'ubuntu_deb') }}:
-    - template: steps-build-uhd-ubuntu-deb.yml
-      parameters:
-        uhdSrcDir: $(Build.SourcesDirectory)
-        uhdBuildDir: $(Build.BinariesDirectory)/uhddev
-        ubuntuReleaseName: $(ubuntuReleaseName)
 
   - ${{ if eq(parameters.toolset, 'make_custom_boost_version') }}:
     - template: steps-build-uhd-make.yml
@@ -122,18 +113,17 @@ jobs:
       artifactName: '$(dockerOSName)-${{ parameters.toolset }}'
     displayName: Upload uhd build artifacts
 
-  - ${{ if ne(parameters.toolset, 'ubuntu_deb') }}:
-    - task: CopyFiles@2
-      inputs:
-        sourceFolder: $(Build.BinariesDirectory)/uhddev/
-        contents: build/Testing/**
-        targetFolder: $(Common.TestResultsDirectory)
-      displayName: Copy ${{ parameters.toolset }} ctest results
+  - task: CopyFiles@2
+    inputs:
+      sourceFolder: $(Build.BinariesDirectory)/uhddev/
+      contents: build/Testing/**
+      targetFolder: $(Common.TestResultsDirectory)
+    displayName: Copy ${{ parameters.toolset }} ctest results
 
-    - task: PublishTestResults@2
-      inputs:
-        testResultsFormat: cTest
-        testResultsFiles: $(Common.TestResultsDirectory)/build/Testing/**/Test.xml
-        failTaskOnFailedTests: true
-        testRunTitle: uhd ctest $(dockerOSName)-${{ parameters.toolset }}
-      displayName: Publish $(dockerOSName)-${{ parameters.toolset }} ctest results
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: cTest
+      testResultsFiles: $(Common.TestResultsDirectory)/build/Testing/**/Test.xml
+      failTaskOnFailedTests: true
+      testRunTitle: uhd ctest $(dockerOSName)-${{ parameters.toolset }}
+    displayName: Publish $(dockerOSName)-${{ parameters.toolset }} ctest results

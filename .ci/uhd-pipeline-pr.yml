@@ -11,6 +11,9 @@ parameters:
 - name: custom_boost_version_url
   type: string
   default: 'https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.bz2'
+- name: release_binaries
+  type: boolean
+  default: false
 
 trigger: none
 
@@ -34,3 +37,4 @@ extends:
   parameters:
     custom_boost_version: ${{ parameters.custom_boost_version }}
     custom_boost_version_url: ${{ parameters.custom_boost_version_url }}
+    release_binaries: ${{ parameters.release_binaries }}

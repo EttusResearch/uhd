@@ -11,6 +11,9 @@ parameters:
 - name: custom_boost_version_url
   type: string
   default: 'https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.bz2'
+- name: release_binaries
+  type: boolean
+  default: false
 
 variables:
 - template: ../uhd-pipeline-vars.yml
@@ -38,15 +41,27 @@ stages:
   - template: job-uhd-build-src.yml
     parameters:
       toolset: msbuild
-  - template: job-uhd-build-src.yml
-    parameters:
-      toolset: ubuntu_deb
+      release_binaries: ${{ parameters.release_binaries }}
+
   - ${{ if parameters.custom_boost_version }}:
     - template: job-uhd-build-src.yml
       parameters:
         toolset: make_custom_boost_version
         custom_boost_version_url: ${{ parameters.custom_boost_version_url }}
 
+- stage: build_uhd_installer_stage
+  displayName: Build UHD Installers
+  dependsOn: build_uhd_stage
+  jobs:
+    - template: job-get-latest-uhd-docker.yml
+    - template: job-uhd-build-installer.yml
+      parameters:
+        toolset: ubuntu_deb
+        installer: deb
+    - template: job-uhd-build-installer.yml
+      parameters:
+        toolset: msbuild
+        installer: nsis
 
 - stage: test_uhd_stage
   displayName: Test UHD
