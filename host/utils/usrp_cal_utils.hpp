@@ -357,7 +357,7 @@ static void tx_thread(std::atomic_flag* transmit,
     const double tx_wave_ampl)
 {
     // increase thread priority for TX to prevent underruns
-    uhd::set_thread_priority();
+    uhd::set_thread_priority_safe();
 
     // set max TX gain
     usrp->set_tx_gain(usrp->get_tx_gain_range().stop());
