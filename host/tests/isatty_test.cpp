@@ -5,7 +5,7 @@
 //
 
 #include <uhdlib/utils/isatty.hpp>
-#include <stdio.h>
+#include <cstdio>
 #include <boost/test/unit_test.hpp>
 #include <iostream>
 
@@ -18,12 +18,11 @@ BOOST_AUTO_TEST_CASE(test_isatty)
     } else {
         std::cout << "stderr is not a TTY" << std::endl;
     }
-
-    FILE* tmp_file = std::tmpfile();
+    auto tmp_file = std::unique_ptr<std::FILE, decltype(&std::fclose)>(std::tmpfile(), &std::fclose);
 #ifdef UHD_PLATFORM_WIN32
-    BOOST_REQUIRE(!uhd::is_a_tty(_fileno(tmp_file)));
+    BOOST_REQUIRE(!uhd::is_a_tty(_fileno(tmp_file.get())));
 #elif _POSIX_C_SOURCE >= _200112L
-    BOOST_REQUIRE(!uhd::is_a_tty(fileno(tmp_file)));
+    BOOST_REQUIRE(!uhd::is_a_tty(fileno(tmp_file.get())));
 #else
     // I got 99 problems but dealing with portability ain't one
     BOOST_REQUIRE(!uhd::is_a_tty(99));
