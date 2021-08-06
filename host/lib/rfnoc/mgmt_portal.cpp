@@ -10,6 +10,7 @@
 #include <uhdlib/rfnoc/chdr_ctrl_xport.hpp>
 #include <uhdlib/rfnoc/chdr_packet_writer.hpp>
 #include <uhdlib/rfnoc/mgmt_portal.hpp>
+#include <uhdlib/utils/narrow.hpp>
 #include <unordered_set>
 #include <boost/format.hpp>
 #include <cmath>
@@ -1042,11 +1043,11 @@ private: // Functions
         chdr_header header;
         header.set_pkt_type(PKT_TYPE_MGMT);
         header.set_num_mdata(0);
-        header.set_seq_num(_send_seqnum++);
-        header.set_length(payload.get_size_bytes() + (chdr_w_to_bits(_chdr_w) / 8));
+        header.set_seq_num(static_cast<uint16_t>(_send_seqnum++));
+        header.set_length(uhd::narrow_cast<uint16_t>(payload.get_size_bytes() + (chdr_w_to_bits(_chdr_w) / 8)));
         header.set_dst_epid(0);
 
-        auto send_buff = xport.get_send_buff(timeout * 1000);
+        auto send_buff = xport.get_send_buff(static_cast<int32_t>(timeout * 1000));
         if (not send_buff) {
             UHD_LOG_ERROR(
                 "RFNOC::MGMT", "Timed out getting send buff for management transaction");
@@ -1072,7 +1073,7 @@ private: // Functions
         // Send the transaction over the wire
         _send_mgmt_transaction(xport, send);
 
-        auto mgmt_buff = xport.get_mgmt_buff(timeout * 1000);
+        auto mgmt_buff = xport.get_mgmt_buff(static_cast<int32_t>(timeout * 1000));
         if (not mgmt_buff) {
             throw uhd::io_error("Timed out getting recv buff for management transaction");
         }
