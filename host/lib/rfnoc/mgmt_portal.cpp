@@ -69,7 +69,7 @@ constexpr uint32_t STRM_STATUS_SETUP_PENDING = 0x20000000;
 
 
 //! The type of a node in the data-flow graph
-enum node_type {
+enum class node_type {
     //! Invalid type. The FPGA will never have a node with type = 0
     NODE_TYPE_INVALID = 0,
     //! CHDR Crossbar
@@ -86,7 +86,7 @@ struct node_id_t
     //! A unique ID for device that houses this node
     device_id_t device_id = NULL_DEVICE_ID;
     //! The type of this node
-    node_type type = NODE_TYPE_INVALID;
+    node_type type = node_type::NODE_TYPE_INVALID;
     //! The instance number of this node in the device
     sep_inst_t inst = 0;
     //! Extended info about node (not used for comparisons)
@@ -108,7 +108,7 @@ struct node_id_t
     }
     node_id_t(const sep_addr_t& sep_addr)
         : device_id(sep_addr.first)
-        , type(NODE_TYPE_STRM_EP)
+        , type(node_type::NODE_TYPE_STRM_EP)
         , inst(sep_addr.second)
         , extended_info(0)
     {
@@ -122,10 +122,10 @@ struct node_id_t
     inline std::string to_string() const
     {
         static const std::map<node_type, std::string> NODE_STR = {
-            {NODE_TYPE_INVALID, "unknown"},
-            {NODE_TYPE_XBAR, "xbar"},
-            {NODE_TYPE_STRM_EP, "sep"},
-            {NODE_TYPE_XPORT, "xport"}};
+            {node_type::NODE_TYPE_INVALID, "unknown"},
+            {node_type::NODE_TYPE_XBAR, "xbar"},
+            {node_type::NODE_TYPE_STRM_EP, "sep"},
+            {node_type::NODE_TYPE_XPORT, "xport"}};
         return str(
             boost::format("device:%d/%s:%d") % device_id % NODE_STR.at(type) % inst);
     }
@@ -184,7 +184,7 @@ public:
         : _protover(pkt_factory.get_protover())
         , _chdr_w(pkt_factory.get_chdr_w())
         , _endianness(pkt_factory.get_endianness())
-        , _my_node_id(my_sep_addr.first, NODE_TYPE_STRM_EP, xport.get_epid())
+        , _my_node_id(my_sep_addr.first, node_type::NODE_TYPE_STRM_EP, xport.get_epid())
         , _send_seqnum(0)
         , _send_pkt(pkt_factory.make_mgmt())
         , _recv_pkt(pkt_factory.make_mgmt())
@@ -213,7 +213,7 @@ public:
         auto my_epid = xport.get_epid();
 
         // Create a node ID from lookup info
-        node_id_t lookup_node(addr.first, NODE_TYPE_STRM_EP, addr.second);
+        node_id_t lookup_node(addr.first, node_type::NODE_TYPE_STRM_EP, addr.second);
         if (_node_addr_map.count(lookup_node) == 0) {
             throw uhd::lookup_error(
                 "initialize_endpoint(): Cannot reach node with specified address.");
@@ -246,7 +246,7 @@ public:
             return;
         }
         // Create a node ID from lookup info
-        node_id_t lookup_node(addr.first, NODE_TYPE_STRM_EP, addr.second);
+        node_id_t lookup_node(addr.first, node_type::NODE_TYPE_STRM_EP, addr.second);
         if (_node_addr_map.count(lookup_node) == 0) {
             throw uhd::lookup_error(
                 "initialize_endpoint(): Cannot reach node with specified address.");
@@ -326,7 +326,7 @@ public:
             const next_dest_t& curr_dest = addr_pair.second;
             mgmt_hop_t curr_cfg_hop;
             switch (curr_node.type) {
-                case NODE_TYPE_XBAR: {
+                case node_type::NODE_TYPE_XBAR: {
                     // Configure the routing table to route all packets going to dst_epid
                     // to the port with index next_dest_t
                     curr_cfg_hop.add_op(mgmt_op_t(mgmt_op_t::MGMT_OP_CFG_WR_REQ,
@@ -334,7 +334,7 @@ public:
                     curr_cfg_hop.add_op(mgmt_op_t(mgmt_op_t::MGMT_OP_SEL_DEST,
                         mgmt_op_t::sel_dest_payload(static_cast<uint16_t>(curr_dest))));
                 } break;
-                case NODE_TYPE_XPORT: {
+                case node_type::NODE_TYPE_XPORT: {
                     uint8_t node_subtype =
                         static_cast<uint8_t>(curr_node.extended_info & 0xFF);
                     // Run a hop configuration function for custom transports
@@ -347,7 +347,7 @@ public:
                         curr_cfg_hop.add_op(mgmt_op_t(mgmt_op_t::MGMT_OP_NOP));
                     }
                 } break;
-                case NODE_TYPE_STRM_EP: {
+                case node_type::NODE_TYPE_STRM_EP: {
                     // Stream are not involved in routing, so do nothing
                 } break;
                 default: {
@@ -371,7 +371,7 @@ public:
         // Send the transaction and validate that we saw a stream endpoint
         const mgmt_payload sep_info_xact = _send_recv_mgmt_transaction(xport, cfg_xact);
         const node_id_t sep_node         = _pop_node_discovery_hop(sep_info_xact);
-        if (sep_node.type != NODE_TYPE_STRM_EP) {
+        if (sep_node.type != node_type::NODE_TYPE_STRM_EP) {
             throw uhd::routing_error(
                 "Route setup failed. Could not confirm terminal stream endpoint");
         }
@@ -406,7 +406,8 @@ public:
         // Find a common parent (could be faster than n^2 but meh, this is easier)
         for (const auto& dnode : dst_node_addr) {
             for (const auto& snode : src_node_addr) {
-                if (dnode.first == snode.first && dnode.first.type == NODE_TYPE_XBAR) {
+                if (dnode.first == snode.first
+                    && dnode.first.type == node_type::NODE_TYPE_XBAR) {
                     return true;
                 }
             }
@@ -762,7 +763,7 @@ private: // Functions
                 // path. If not, then check all ports downstream of the new node and add
                 // them to pending_paths for further traversal
                 switch (new_node.type) {
-                    case NODE_TYPE_XBAR: {
+                    case node_type::NODE_TYPE_XBAR: {
                         // Total ports on this crossbar
                         size_t nports =
                             static_cast<size_t>(new_node.extended_info & 0xFF);
@@ -787,13 +788,13 @@ private: // Functions
                                  << " transports and we are hooked up on port "
                                  << new_node.inst);
                     } break;
-                    case NODE_TYPE_STRM_EP: {
+                    case node_type::NODE_TYPE_STRM_EP: {
                         // Stop searching when we find a stream endpoint
                         // Add the endpoint to the discovered endpoint vector
                         _discovered_ep_set.insert(
                             sep_addr_t(new_node.device_id, new_node.inst));
                     } break;
-                    case NODE_TYPE_XPORT: {
+                    case node_type::NODE_TYPE_XPORT: {
                         // A transport has only one output. We don't need to take
                         // any action to reach
                         pending_paths.push(std::make_pair(new_node, -1));
@@ -813,9 +814,10 @@ private: // Functions
         for (const auto& addr_pair : node_addr) {
             const node_id_t& curr_node   = addr_pair.first;
             const next_dest_t& curr_dest = addr_pair.second;
-            if (curr_node.type != NODE_TYPE_STRM_EP) {
+            if (curr_node.type != node_type::NODE_TYPE_STRM_EP) {
                 // If a node is a crossbar, then it have have a non-negative destination
-                UHD_ASSERT_THROW((curr_node.type != NODE_TYPE_XBAR || curr_dest >= 0));
+                UHD_ASSERT_THROW(
+                    (curr_node.type != node_type::NODE_TYPE_XBAR || curr_dest >= 0));
                 _push_advance_hop(transaction, curr_dest);
             } else {
                 // This is a stream endpoint. Nothing needs to be done to advance
@@ -993,18 +995,18 @@ private: // Functions
     {
         mgmt_hop_t init_hop;
         switch (node.type) {
-            case NODE_TYPE_XBAR: {
+            case node_type::NODE_TYPE_XBAR: {
                 // Configure the routing table to route all packets going to my_epid back
                 // to the port where the packet is entering
                 // The address for the transaction is the EPID and the data is the port #
                 init_hop.add_op(mgmt_op_t(mgmt_op_t::MGMT_OP_CFG_WR_REQ,
                     mgmt_op_t::cfg_payload(my_epid, node.inst)));
             } break;
-            case NODE_TYPE_STRM_EP: {
+            case node_type::NODE_TYPE_STRM_EP: {
                 // Do nothing
                 init_hop.add_op(mgmt_op_t(mgmt_op_t::MGMT_OP_NOP));
             } break;
-            case NODE_TYPE_XPORT: {
+            case node_type::NODE_TYPE_XPORT: {
                 uint8_t node_subtype = static_cast<uint8_t>(node.extended_info & 0xFF);
                 // Run a hop configuration function for custom transports
                 if (_rtcfg_cfg_fns.count(node_subtype)) {
