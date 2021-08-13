@@ -216,8 +216,8 @@ class LMK04828Rh(LMK04828):
             (0x159, (self.pll1_n_divider & 0x3F00) >> 8), # PLL1 N divider [13:8], default = d6
             (0x15A, (self.pll1_n_divider & 0x00FF) >> 0), # PLL1 N divider [7:0], default = d0
             (0x15B, 0xC7), # PLL1 PFD: negative slope for active filter / CP = 750 uA
-            (0x15C, 0x27), # PLL1 DLD Count [13:8]
-            (0x15D, 0x10), # PLL1 DLD Count [7:0]
+            (0x15C, 0x0F), # PLL1 DLD Count [13:8]
+            (0x15D, 0xA0), # PLL1 DLD Count [7:0]
             (0x15E, 0x00), # PLL1 R/N delay, defaults = 0
             (0x15F, 0x0B), # Status LD1 pin = PLL1 LD, push-pull output
             (0x160, (self.pll2_r_divider & 0x0F00) >> 8), # PLL2 R divider [11:8];
@@ -242,11 +242,11 @@ class LMK04828Rh(LMK04828):
             (0x173, 0x00), # Do not power down PLL2 or prescaler
         ))
 
-        # Poll for PLL1/2 lock. Total time = 10 * 100 ms = 1000 ms max.
+        # Poll for PLL1/2 lock. Total time = 100 * 10 ms = 1000 ms max.
         self.log.trace("Polling for PLL lock...")
         locked = False
-        for _ in range(10):
-            time.sleep(0.100)
+        for _ in range(100):
+            time.sleep(0.01)
             # Clear stickies
             self.pokes8((
                 (0x182, 0x1), # Clear Lock Detect Sticky
