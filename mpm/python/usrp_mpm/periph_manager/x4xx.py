@@ -1184,6 +1184,15 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         """ Poke the PS portion of the MB CPLD """
         self.cpld_control.poke32(addr, val)
 
+    def peek_mb(self, addr):
+        """ Peek the MB Regs """
+        return '0x{:X}'.format(
+            self.mboard_regs_control.peek32(addr))
+
+    def poke_mb(self, addr, val):
+        """ Poke the MB CPLD """
+        self.mboard_regs_control.poke32(addr, val)
+
     def peek_db(self, db_id, addr):
         """ Peek the DB CPLD, even if the DB is not discovered by MPM """
         assert db_id in (0, 1)
