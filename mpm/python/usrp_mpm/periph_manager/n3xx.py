@@ -126,7 +126,7 @@ class n3xx(ZynqComponents, PeriphManagerBase):
     mboard_eeprom_offset = 0
     mboard_eeprom_max_len = 256
     mboard_info = {"type": "n3xx"}
-    mboard_max_rev = 9 # latest HW revision that this version of MPM is aware of
+    mboard_max_rev = 10 # latest HW revision that this version of MPM is aware of
     mboard_sensor_callback_map = {
         'ref_locked': 'get_ref_lock_sensor',
         'gps_locked': 'get_gps_lock_sensor',
