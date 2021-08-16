@@ -27,7 +27,7 @@ rpc_client::rpc_client(const std::string& server,
     const std::string& port,
     uint32_t process_id,
     uint32_t host_id)
-    : _socket(_io_service)
+    : _socket(_io_service), _hshake_args_server()
 {
     // Fill in handshake info
     _hshake_args_client.version             = CURRENT_VERSION;
