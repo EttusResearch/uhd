@@ -1,42 +1,71 @@
 //
-// Copyright 2018 Ettus Research, A National Instruments Company
+// Copyright 2021 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
 // Module: axis_switch
+//
 // Description:
-//   Implementation of a M-input, N-output AXI-Stream switch.
-//   One of the M input ports is allocated based on the s_axis_alloc signal
-//   and the packet on that port is sent to one of the N output ports based
-//   on the tdest signal
+//
+//   Implementation of a M-input, N-output AXI-Stream switch. One of the M
+//   input ports is allocated based on the s_axis_alloc signal and the packet
+//   on that port is sent to one of the N output ports based on the tdest
+//   signal.
+//
+// Parameters:
+//
+//   DATA_W    : tdata width
+//   DEST_W    : Output tdest width
+//   IN_PORTS  : Number of input ports
+//   OUT_PORTS : Number of output ports
+//   PIPELINE  : Instantiate output pipeline stage?
+//   ALLOC_W   : PRIVATE. Do not modify.
+//
+// Ports:
+//
+//   clk           : Switch clock
+//   reset         : Reset
+//   s_axis_tdata  : Input data
+//   s_axis_tdest  : Input destination
+//   s_axis_tlast  : Input EOP (last)
+//   s_axis_tvalid : Input valid
+//   s_axis_tready : Input ready
+//   s_axis_alloc  : Input port allocation for switch
+//   m_axis_tdata  : Output data
+//   m_axis_tdest  : Output destination
+//   m_axis_tlast  : Output EOP (last)
+//   m_axis_tvalid : Output valid
+//   m_axis_tready : Output ready
+//
+
+`default_nettype none
+
 
 module axis_switch #(
-  parameter DATA_W     = 64,    // tdata width
-  parameter DEST_W     = 1,     // Output tdest width
-  parameter IN_PORTS   = 3,     // Number of input ports
-  parameter OUT_PORTS  = 3,     // Number of output ports
-  parameter PIPELINE   = 1,     // Instantiate output pipeline stage?
-  parameter ALLOC_W    = (IN_PORTS == 1) ? 1 : $clog2(IN_PORTS) //PRIVATE
+  parameter DATA_W    = 64,
+  parameter DEST_W    = 1,
+  parameter IN_PORTS  = 3,
+  parameter OUT_PORTS = 3,
+  parameter PIPELINE  = 1,
+  parameter ALLOC_W   = (IN_PORTS == 1) ? 1 : $clog2(IN_PORTS)
 ) (
   // Clocks and resets
-  input  wire                                             clk,            // Switch clock
-  input  wire                                             reset,          // Reset
+  input  wire                                             clk,
+  input  wire                                             reset,
   // Input ports
-  input  wire [(DATA_W*IN_PORTS)-1:0]                     s_axis_tdata,   // Input data
-  input  wire [((DEST_W+$clog2(OUT_PORTS))*IN_PORTS)-1:0] s_axis_tdest,   // Input destination
-  input  wire [IN_PORTS-1:0]                              s_axis_tlast,   // Input EOP (last)
-  input  wire [IN_PORTS-1:0]                              s_axis_tvalid,  // Input valid
-  output wire [IN_PORTS-1:0]                              s_axis_tready,  // Input ready
-  input  wire [ALLOC_W-1:0]                               s_axis_alloc,   // Input port allocation for switch
+  input  wire [(DATA_W*IN_PORTS)-1:0]                     s_axis_tdata,
+  input  wire [((DEST_W+$clog2(OUT_PORTS))*IN_PORTS)-1:0] s_axis_tdest,
+  input  wire [IN_PORTS-1:0]                              s_axis_tlast,
+  input  wire [IN_PORTS-1:0]                              s_axis_tvalid,
+  output wire [IN_PORTS-1:0]                              s_axis_tready,
+  input  wire [ALLOC_W-1:0]                               s_axis_alloc,
   // Output ports
-  output wire [(DATA_W*OUT_PORTS)-1:0]                    m_axis_tdata,   // Output data       
-  output wire [(DEST_W*OUT_PORTS)-1:0]                    m_axis_tdest,   // Output destination
-  output wire [OUT_PORTS-1:0]                             m_axis_tlast,   // Output EOP (last) 
-  output wire [OUT_PORTS-1:0]                             m_axis_tvalid,  // Output valid      
-  input  wire [OUT_PORTS-1:0]                             m_axis_tready   // Output ready      
+  output wire [(DATA_W*OUT_PORTS)-1:0]                    m_axis_tdata,
+  output wire [(DEST_W*OUT_PORTS)-1:0]                    m_axis_tdest,
+  output wire [OUT_PORTS-1:0]                             m_axis_tlast,
+  output wire [OUT_PORTS-1:0]                             m_axis_tvalid,
+  input  wire [OUT_PORTS-1:0]                             m_axis_tready
 );
-  // PRIVATE: Vivado synthesizer workaround (cannot be localparam)
-  localparam CLOG2_IN_PORTS = $clog2(IN_PORTS);
   localparam CLOG2_OUT_PORTS = $clog2(OUT_PORTS);
 
   //---------------------------------------------------------
@@ -63,11 +92,11 @@ module axis_switch #(
       assign i_tvalid     [i] = s_axis_tvalid[i];
       assign s_axis_tready[i] = i_tready     [i];
     end
-    assign i_alloc = s_axis_alloc;   //i_alloc has to be delay matched to valid
+    assign i_alloc = s_axis_alloc;  // i_alloc has to be delay-matched to valid
 
-    for (o = 0; o < OUT_PORTS; o = o + 1) begin
-      if (PIPELINE == 1) begin
-        axi_fifo_flop2 #(.WIDTH(DEST_W+1+DATA_W)) out_pipe_i (
+    for (o = 0; o < OUT_PORTS; o = o + 1) begin : gen_for_pipeline
+      if (PIPELINE == 1) begin : gen_pipeline
+        axi_fifo_flop2 #(.WIDTH(DEST_W+1+DATA_W)) axi_fifo_flop2_i (
           .clk(clk), .reset(reset), .clear(1'b0),
           .i_tdata({o_tdest[o], o_tlast[o], o_tdata[o]}),
           .i_tvalid(o_tvalid[o]), .i_tready(o_tready[o]),
@@ -75,7 +104,7 @@ module axis_switch #(
           .o_tvalid(m_axis_tvalid[o]), .o_tready(m_axis_tready[o]),
           .space(), .occupied()
         );
-      end else begin
+      end else begin : gen_no_pipeline
         assign m_axis_tdata [(o*DATA_W)+:DATA_W] = o_tdata      [o];
         assign m_axis_tdest [(o*DEST_W)+:DEST_W] = o_tdest      [o];
         assign m_axis_tlast [o]                  = o_tlast      [o];
@@ -95,7 +124,7 @@ module axis_switch #(
   wire                                master_tvalid;
   wire                                master_tready;
 
-  generate if (IN_PORTS > 1) begin
+  generate if (IN_PORTS > 1) begin : gen_mult_in_ports
     reg [IN_PORTS-1:0] ialloc_oh;
     reg [$clog2(IN_PORTS)-1:0] alloc_reg;
     always @(posedge clk) begin
@@ -119,7 +148,7 @@ module axis_switch #(
     assign master_tlast   = i_tlast[alloc_reg];
     assign master_tvalid  = |(i_tvalid & ialloc_oh);
     assign i_tready       = i_tvalid & ialloc_oh & {IN_PORTS{master_tready}};
-  end else begin
+  end else begin : gen_single_in_port
     // Special case: One input port
     assign master_tdata   = i_tdata[0];
     assign master_tdest   = i_tdest[0];
@@ -131,7 +160,7 @@ module axis_switch #(
   //---------------------------------------------------------
   // Router
   //---------------------------------------------------------
-  generate if (OUT_PORTS > 1) begin
+  generate if (OUT_PORTS > 1) begin : gen_mult_out_ports
     reg [OUT_PORTS-1:0] odst_oh;
     always @(posedge clk) begin
       if (reset) begin
@@ -148,13 +177,13 @@ module axis_switch #(
     end
     assign master_tready = |(o_tready & odst_oh);
     assign o_tvalid = {OUT_PORTS{master_tvalid}} & odst_oh;
-  end else begin
+  end else begin : gen_single_out_port
     // Special case: One output port
     assign master_tready = o_tready[0];
     assign o_tvalid[0] = master_tvalid;
   end endgenerate
 
-  generate for (o = 0; o < OUT_PORTS; o = o + 1) begin
+  generate for (o = 0; o < OUT_PORTS; o = o + 1) begin : gen_outputs
     assign o_tdata[o] = master_tdata;
     assign o_tdest[o] = master_tdest[DEST_W+CLOG2_OUT_PORTS-1:CLOG2_OUT_PORTS];
     assign o_tlast[o] = master_tlast;
@@ -162,3 +191,5 @@ module axis_switch #(
 
 endmodule
 
+
+`default_nettype wire
