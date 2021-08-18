@@ -196,7 +196,7 @@ eth_manager::eth_manager(
     // Initially store only the first address provided to setup communication
     // Once we read the EEPROM, we use it to map IP to its interface
     // In discover_eth(), we'll check and enable the other IP address, if given
-    x300_eth_conn_t init;
+    x300_eth_conn_t init = x300_eth_conn_t();
     init.addr      = args.get_first_addr();
     auto device_id = allocate_device_id();
     _local_device_ids.push_back(device_id);
