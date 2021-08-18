@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
 // Module: axis_width_conv
-// Description: 
+// Description:
 //   An AXI-Stream width conversion module that can convert from
 //   an arbitrary input width to an arbitrary output width. The
 //   module also supports an optional clock crossing. Data bits
@@ -17,7 +17,7 @@
 //         the AXI standard where the bits are "byte qualifiers". In
 //         this module, tkeep is a "word qualifier" where the width
 //         of a word can be arbitrary. If WORD_W = 8, the behavior
-//         of this module is identical to an AXI width converter. 
+//         of this module is identical to an AXI width converter.
 //
 // Parameters:
 //   - WORD_W: Bitwidth of a word
@@ -35,9 +35,10 @@ module axis_width_conv #(
   parameter IN_WORDS  = 4,
   parameter OUT_WORDS = 6,
   parameter SYNC_CLKS = 0,
+  parameter FIFO_SIZE = 1,
   parameter PIPELINE  = "NONE"
 )(
-  // Data In (AXI-Stream)                
+  // Data In (AXI-Stream)
   input  wire                          s_axis_aclk,    // Input stream Clock
   input  wire                          s_axis_rst,     // Input stream Reset
   input  wire [(IN_WORDS*WORD_W)-1:0]  s_axis_tdata,   // Input stream tdata
@@ -45,7 +46,7 @@ module axis_width_conv #(
   input  wire                          s_axis_tlast,   // Input stream tlast
   input  wire                          s_axis_tvalid,  // Input stream tvalid
   output wire                          s_axis_tready,  // Input stream tready
-  // Data Out (AXI-Stream)             
+  // Data Out (AXI-Stream)
   input  wire                          m_axis_aclk,    // Output stream Clock
   input  wire                          m_axis_rst,     // Output stream Reset
   output wire [(OUT_WORDS*WORD_W)-1:0] m_axis_tdata,   // Output stream tdata
@@ -118,13 +119,13 @@ module axis_width_conv #(
     y = b;
     while (!done) begin
       if (x < y) begin
-        swap = x; 
-        x = y; 
-        y = swap; 
+        swap = x;
+        x = y;
+        y = swap;
       end else if (y != 0) begin
         x = x - y;
       end else begin
-        done = 1'b1; 
+        done = 1'b1;
       end
     end
     // x is the greatest common divisor
@@ -152,7 +153,6 @@ module axis_width_conv #(
       ((PIPELINE == "IN"  || PIPELINE == "INOUT") && (UPSIZE_RATIO == 1)) ||
       ((PIPELINE == "OUT" || PIPELINE == "INOUT") && (DOWNSIZE_RATIO == 1))
     );
-  localparam FIFO_SIZE = 1;
 
   //----------------------------------------------
   // In => Upsizer => FIFO => Downsizer => Out
