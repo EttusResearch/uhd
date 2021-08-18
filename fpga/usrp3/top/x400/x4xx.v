@@ -278,10 +278,23 @@ module x4xx (
     localparam RADIO_SPC    = 1;    // Number of samples per cycle
   `endif
 
+  // Set the width for each transport adapter. All ports within a single QSFP
+  // will have the same width.
+  localparam [31:0] QSFP0_W = `CHDR_WIDTH;
+  localparam [31:0] QSFP1_W = `CHDR_WIDTH;
+  // Width of the signals used to connect the Ethernet transport adapters to
+  // RFNoC. Set this to the width of the widest port.
+  localparam [31:0] ENET_W = (QSFP0_W > QSFP1_W) ? QSFP0_W : QSFP1_W;
+  // Actual width of each SFP port's transport adapter interface. Each port of
+  // the same QSFP must have the same width.
+  localparam [8*32-1:0] ENET_WIDTHS = {{4{QSFP1_W}}, {4{QSFP0_W}}};
+
   // See global_regs_regmap_utils.vh for definition of CHDR_CLK_VALUE.
   localparam CHDR_CLK_RATE  = CHDR_CLK_VALUE[CHDR_CLK_SIZE-1:0];
   localparam RFNOC_PROTOVER = `RFNOC_PROTOVER;
+  localparam NET_CHDR_W     = ENET_W;
   localparam CHDR_W         = `CHDR_WIDTH;
+  localparam DMA_W          = `CHDR_WIDTH;
   localparam CPU_W          = 64;
 
   localparam REG_AWIDTH     = 15;
@@ -1539,15 +1552,15 @@ module x4xx (
   wire [15:0] device_id;
   wire        rx_rec_clk_out1; // output GTY on QSFP1
 
-  // e2v and v2e are flattened arrays, where e2v_tdata[CHDR_W*N +: CHDR_W] is
+  // e2v and v2e are flattened arrays, where e2v_tdata[ENET_W*N +: ENET_W] is
   // the data for RFNoC port N. RFNoC ports 0-3 map to QSFP0 and ports 4-7 map
-  // to QSFP1.
-  wire [CHDR_W*8-1:0] e2v_tdata;
+  // to QSFP1. Note that each port might use less than ENET_W bits.
+  wire [ENET_W*8-1:0] e2v_tdata;
   wire [       8-1:0] e2v_tlast;
   wire [       8-1:0] e2v_tready;
   wire [       8-1:0] e2v_tvalid;
 
-  wire [CHDR_W*8-1:0] v2e_tdata;
+  wire [ENET_W*8-1:0] v2e_tdata;
   wire [       8-1:0] v2e_tlast;
   wire [       8-1:0] v2e_tready;
   wire [       8-1:0] v2e_tvalid;
@@ -1640,7 +1653,8 @@ module x4xx (
     .PROTOCOL3      (`QSFP0_3),
     `endif
     .CPU_W          (CPU_W),
-    .CHDR_W         (CHDR_W),
+    .CHDR_W         (QSFP0_W),
+    .NET_CHDR_W     (NET_CHDR_W),
     .BYTE_MTU       (BYTE_MTU),
     .PORTNUM        (0),
     .NODE_INST      (0),
@@ -1712,16 +1726,21 @@ module x4xx (
     .rx_p           (qsfp0_rx_p),
     .rx_n           (qsfp0_rx_n),
     // Ethernet to CHDR
-    .e2v_tdata      (e2v_tdata  [0*CHDR_W*4 +: CHDR_W*4]),
-    .e2v_tlast      (e2v_tlast  [0*       4 +:        4]),
-    .e2v_tvalid     (e2v_tvalid [0*       4 +:        4]),
-    .e2v_tready     (e2v_tready [0*       4 +:        4]),
+    .e2v_tdata      ({ e2v_tdata [3*ENET_W +: QSFP0_W],
+                       e2v_tdata [2*ENET_W +: QSFP0_W],
+                       e2v_tdata [1*ENET_W +: QSFP0_W],
+                       e2v_tdata [0*ENET_W +: QSFP0_W] }),
+    .e2v_tlast      (e2v_tlast [0 +: 4]),
+    .e2v_tvalid     (e2v_tvalid[0 +: 4]),
+    .e2v_tready     (e2v_tready[0 +: 4]),
     // CHDR to Ethernet
-    .v2e_tdata      (v2e_tdata  [0*CHDR_W*4 +: CHDR_W*4]),
-    .v2e_tlast      (v2e_tlast  [0*       4 +:        4]),
-    .v2e_tvalid     (v2e_tvalid [0*       4 +:        4]),
-    .v2e_tready     (v2e_tready [0*       4 +:        4]),
-
+    .v2e_tdata      ({ v2e_tdata[3*ENET_W +: QSFP0_W],
+                       v2e_tdata[2*ENET_W +: QSFP0_W],
+                       v2e_tdata[1*ENET_W +: QSFP0_W],
+                       v2e_tdata[0*ENET_W +: QSFP0_W] }),
+    .v2e_tlast      (v2e_tlast [0 +: 4]),
+    .v2e_tvalid     (v2e_tvalid[0 +: 4]),
+    .v2e_tready     (v2e_tready[0 +: 4]),
     // Misc
     .eth_rx_irq     (eth0_rx_irq),
     .eth_tx_irq     (eth0_tx_irq),
@@ -1750,7 +1769,8 @@ module x4xx (
     .PROTOCOL3      (`QSFP1_3),
     `endif
     .CPU_W          (CPU_W),
-    .CHDR_W         (CHDR_W),
+    .CHDR_W         (QSFP1_W),
+    .NET_CHDR_W     (NET_CHDR_W),
     .BYTE_MTU       (BYTE_MTU),
     .PORTNUM        (1),
     .NODE_INST      (4),
@@ -1822,15 +1842,21 @@ module x4xx (
     .rx_p           (qsfp1_rx_p),
     .rx_n           (qsfp1_rx_n),
     // Ethernet to CHDR
-    .e2v_tdata      (e2v_tdata  [1*CHDR_W*4 +: CHDR_W*4]),
-    .e2v_tlast      (e2v_tlast  [1*       4 +:        4]),
-    .e2v_tvalid     (e2v_tvalid [1*       4 +:        4]),
-    .e2v_tready     (e2v_tready [1*       4 +:        4]),
+    .e2v_tdata      ({ e2v_tdata[4*ENET_W + 3*ENET_W +: QSFP1_W],
+                       e2v_tdata[4*ENET_W + 2*ENET_W +: QSFP1_W],
+                       e2v_tdata[4*ENET_W + 1*ENET_W +: QSFP1_W],
+                       e2v_tdata[4*ENET_W + 0*ENET_W +: QSFP1_W] }),
+    .e2v_tlast      (e2v_tlast [4 +: 4]),
+    .e2v_tvalid     (e2v_tvalid[4 +: 4]),
+    .e2v_tready     (e2v_tready[4 +: 4]),
     // CHDR to Ethernet
-    .v2e_tdata      (v2e_tdata  [1*CHDR_W*4 +: CHDR_W*4]),
-    .v2e_tlast      (v2e_tlast  [1*       4 +:        4]),
-    .v2e_tvalid     (v2e_tvalid [1*       4 +:        4]),
-    .v2e_tready     (v2e_tready [1*       4 +:        4]),
+    .v2e_tdata      ({ v2e_tdata[4*ENET_W + 3*ENET_W +: QSFP1_W],
+                       v2e_tdata[4*ENET_W + 2*ENET_W +: QSFP1_W],
+                       v2e_tdata[4*ENET_W + 1*ENET_W +: QSFP1_W],
+                       v2e_tdata[4*ENET_W + 0*ENET_W +: QSFP1_W] }),
+    .v2e_tlast      (v2e_tlast [4 +: 4]),
+    .v2e_tvalid     (v2e_tvalid[4 +: 4]),
+    .v2e_tready     (v2e_tready[4 +: 4]),
     // Misc
     .eth_rx_irq     (eth1_rx_irq),
     .eth_tx_irq     (eth1_tx_irq),
@@ -1850,17 +1876,18 @@ module x4xx (
   //---------------------------------------------------------------------------
 
   // CHDR DMA bus (clk200 domain)
-  wire [CHDR_W-1:0] e2v_dma_tdata;
-  wire              e2v_dma_tlast;
-  wire              e2v_dma_tready;
-  wire              e2v_dma_tvalid;
-  wire [CHDR_W-1:0] v2e_dma_tdata;
-  wire              v2e_dma_tlast;
-  wire              v2e_dma_tready;
-  wire              v2e_dma_tvalid;
+  wire [DMA_W-1:0] e2v_dma_tdata;
+  wire             e2v_dma_tlast;
+  wire             e2v_dma_tready;
+  wire             e2v_dma_tvalid;
+  wire [DMA_W-1:0] v2e_dma_tdata;
+  wire             v2e_dma_tlast;
+  wire             v2e_dma_tready;
+  wire             v2e_dma_tvalid;
 
   eth_ipv4_internal #(
-    .CHDR_W         (CHDR_W),
+    .CHDR_W         (DMA_W),
+    .NET_CHDR_W     (NET_CHDR_W),
     .BYTE_MTU       (BYTE_MTU),
     .DWIDTH         (REG_DWIDTH),
     .AWIDTH         (REG_AWIDTH),
@@ -2055,6 +2082,10 @@ module x4xx (
     .CHDR_CLK_RATE  (CHDR_CLK_RATE),
     .NUM_CHANNELS   (NUM_CHANNELS),
     .CHDR_W         (CHDR_W),
+    .DMA_W          (DMA_W),
+    .NET_CHDR_W     (NET_CHDR_W),
+    .ENET_W         (ENET_W),
+    .ENET_WIDTHS    (ENET_WIDTHS),
     .MTU            (CHDR_MTU),
     .RFNOC_PROTOVER (RFNOC_PROTOVER),
     .RADIO_SPC      (RADIO_SPC),

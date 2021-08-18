@@ -18,6 +18,13 @@
 //   CHDR_CLK_RATE  : rfnoc_chdr_clk rate in Hz
 //   NUM_CHANNELS   : Total number of channels
 //   CHDR_W         : CHDR width used by RFNoC
+//   DMA_W          : Width of the DMA port interface
+//   NET_CHDR_W     : CHDR width used by the network interface ports
+//   ENET_W         : Width of the Ethernet buses (each port may have a unique
+//                    width, but all signals have equal width for simplicity).
+//   ENET_WIDTHS    : Actual width of each Ethernet port's interface. This is a
+//                    packed array of 32-bit integers with port 0 in the
+//                    right-most position.
 //   MTU            : Log2 of maximum transmission unit in CHDR_W sized words
 //   RFNOC_PROTOVER : RFNoC protocol version (major[7:0], minor[7:0])
 //   RADIO_SPC      : Number of samples per radio clock cycle
@@ -26,16 +33,20 @@
 
 
 module x4xx_core #(
-  parameter NUM_DBOARDS    = 2,
-  parameter REG_DWIDTH     = 32,
-  parameter REG_AWIDTH     = 32,
-  parameter CHDR_CLK_RATE  = 200000000,
-  parameter NUM_CHANNELS   = 4,
-  parameter CHDR_W         = 64,
-  parameter MTU            = $clog2(8192 / (CHDR_W/8)),
-  parameter RFNOC_PROTOVER = {8'd1, 8'd0},
-  parameter RADIO_SPC      = 1,
-  parameter RF_BANDWIDTH   = 200
+  parameter            NUM_DBOARDS    = 2,
+  parameter            REG_DWIDTH     = 32,
+  parameter            REG_AWIDTH     = 32,
+  parameter            CHDR_CLK_RATE  = 200000000,
+  parameter            NUM_CHANNELS   = 4,
+  parameter            CHDR_W         = 64,
+  parameter            DMA_W          = 64,
+  parameter            NET_CHDR_W     = 64,
+  parameter [    31:0] ENET_W         = 64,
+  parameter [32*8-1:0] ENET_WIDTHS    = {8{ENET_W}},
+  parameter            MTU            = $clog2(8192 / (CHDR_W/8)),
+  parameter            RFNOC_PROTOVER = {8'd1, 8'd0},
+  parameter            RADIO_SPC      = 1,
+  parameter            RF_BANDWIDTH   = 200
 ) (
   // Clocks and resets
   input wire radio_clk,
@@ -126,23 +137,23 @@ module x4xx_core #(
   output [             NUM_CHANNELS-1:0] tx_running,
 
   // DMA
-  output [CHDR_W-1:0] dmao_tdata,
-  output              dmao_tlast,
-  output              dmao_tvalid,
-  input               dmao_tready,
+  output [DMA_W-1:0] dmao_tdata,
+  output             dmao_tlast,
+  output             dmao_tvalid,
+  input              dmao_tready,
 
-  input  [CHDR_W-1:0] dmai_tdata,
-  input               dmai_tlast,
-  input               dmai_tvalid,
-  output              dmai_tready,
+  input  [DMA_W-1:0] dmai_tdata,
+  input              dmai_tlast,
+  input              dmai_tvalid,
+  output             dmai_tready,
 
   // e2v (Ethernet to CHDR)
-  output [CHDR_W*8-1:0] v2e_tdata,
+  output [ENET_W*8-1:0] v2e_tdata,
   output [       8-1:0] v2e_tvalid,
   output [       8-1:0] v2e_tlast,
   input  [       8-1:0] v2e_tready,
   // v2e (CHDR to Ethernet)
-  input  [CHDR_W*8-1:0] e2v_tdata,
+  input  [ENET_W*8-1:0] e2v_tdata,
   input  [       8-1:0] e2v_tlast,
   input  [       8-1:0] e2v_tvalid,
   output [       8-1:0] e2v_tready,
@@ -285,7 +296,7 @@ module x4xx_core #(
 
   x4xx_core_common #(
     .CHDR_CLK_RATE  (CHDR_CLK_RATE),
-    .CHDR_W         (CHDR_W),
+    .CHDR_W         (NET_CHDR_W),
     .RFNOC_PROTOVER (RFNOC_PROTOVER),
     .NUM_DBOARDS    (NUM_DBOARDS),
     .PCIE_PRESENT   (0)
@@ -540,8 +551,22 @@ module x4xx_core #(
   // Calculate how may bits wide each channel is
   localparam CHAN_W = 32 * RADIO_SPC;
 
+  localparam PORT_W  = 512;  // Set to max value; unused bits will be ignored.
+  localparam ENET0_W = ENET_WIDTHS[32*0 +: 32];
+  localparam ENET1_W = ENET_WIDTHS[32*1 +: 32];
+  localparam ENET2_W = ENET_WIDTHS[32*2 +: 32];
+  localparam ENET3_W = ENET_WIDTHS[32*3 +: 32];
+  localparam ENET4_W = ENET_WIDTHS[32*4 +: 32];
+
   rfnoc_image_core #(
     .CHDR_W     (CHDR_W),
+    .PORT_W     (PORT_W),
+    .ETH0_W     (ENET0_W),
+    .ETH1_W     (ENET1_W),
+    .ETH2_W     (ENET2_W),
+    .ETH3_W     (ENET3_W),
+    .ETH4_W     (ENET4_W),
+    .DMA_W      (DMA_W),
     .MTU        (MTU),
     .PROTOVER   (RFNOC_PROTOVER),
     .RADIO_NIPC (RADIO_SPC)
@@ -631,46 +656,46 @@ module x4xx_core #(
     .m_axi_ruser                    (0),
     .m_axi_rvalid                   (dram_axi_rvalid),
     .m_axi_rready                   (dram_axi_rready),
-    .s_eth0_tdata                   (e2v_tdata  [0*CHDR_W +: CHDR_W]),
-    .s_eth0_tlast                   (e2v_tlast  [0*     1 +:      1]),
-    .s_eth0_tvalid                  (e2v_tvalid [0*     1 +:      1]),
-    .s_eth0_tready                  (e2v_tready [0*     1 +:      1]),
-    .m_eth0_tdata                   (v2e_tdata  [0*CHDR_W +: CHDR_W]),
-    .m_eth0_tlast                   (v2e_tlast  [0*     1 +:      1]),
-    .m_eth0_tvalid                  (v2e_tvalid [0*     1 +:      1]),
-    .m_eth0_tready                  (v2e_tready [0*     1 +:      1]),
-    .s_eth1_tdata                   (e2v_tdata  [1*CHDR_W +: CHDR_W]),
-    .s_eth1_tlast                   (e2v_tlast  [1*     1 +:      1]),
-    .s_eth1_tvalid                  (e2v_tvalid [1*     1 +:      1]),
-    .s_eth1_tready                  (e2v_tready [1*     1 +:      1]),
-    .m_eth1_tdata                   (v2e_tdata  [1*CHDR_W +: CHDR_W]),
-    .m_eth1_tlast                   (v2e_tlast  [1*     1 +:      1]),
-    .m_eth1_tvalid                  (v2e_tvalid [1*     1 +:      1]),
-    .m_eth1_tready                  (v2e_tready [1*     1 +:      1]),
-    .s_eth2_tdata                   (e2v_tdata  [2*CHDR_W +: CHDR_W]),
-    .s_eth2_tlast                   (e2v_tlast  [2*     1 +:      1]),
-    .s_eth2_tvalid                  (e2v_tvalid [2*     1 +:      1]),
-    .s_eth2_tready                  (e2v_tready [2*     1 +:      1]),
-    .m_eth2_tdata                   (v2e_tdata  [2*CHDR_W +: CHDR_W]),
-    .m_eth2_tlast                   (v2e_tlast  [2*     1 +:      1]),
-    .m_eth2_tvalid                  (v2e_tvalid [2*     1 +:      1]),
-    .m_eth2_tready                  (v2e_tready [2*     1 +:      1]),
-    .s_eth3_tdata                   (e2v_tdata  [3*CHDR_W +: CHDR_W]),
-    .s_eth3_tlast                   (e2v_tlast  [3*     1 +:      1]),
-    .s_eth3_tvalid                  (e2v_tvalid [3*     1 +:      1]),
-    .s_eth3_tready                  (e2v_tready [3*     1 +:      1]),
-    .m_eth3_tdata                   (v2e_tdata  [3*CHDR_W +: CHDR_W]),
-    .m_eth3_tlast                   (v2e_tlast  [3*     1 +:      1]),
-    .m_eth3_tvalid                  (v2e_tvalid [3*     1 +:      1]),
-    .m_eth3_tready                  (v2e_tready [3*     1 +:      1]),
-    .s_eth4_tdata                   (e2v_tdata  [4*CHDR_W +: CHDR_W]),
-    .s_eth4_tlast                   (e2v_tlast  [4*     1 +:      1]),
-    .s_eth4_tvalid                  (e2v_tvalid [4*     1 +:      1]),
-    .s_eth4_tready                  (e2v_tready [4*     1 +:      1]),
-    .m_eth4_tdata                   (v2e_tdata  [4*CHDR_W +: CHDR_W]),
-    .m_eth4_tlast                   (v2e_tlast  [4*     1 +:      1]),
-    .m_eth4_tvalid                  (v2e_tvalid [4*     1 +:      1]),
-    .m_eth4_tready                  (v2e_tready [4*     1 +:      1]),
+    .s_eth0_tdata                   (e2v_tdata  [0*ENET_W +: ENET0_W]),
+    .s_eth0_tlast                   (e2v_tlast  [0*     1 +:       1]),
+    .s_eth0_tvalid                  (e2v_tvalid [0*     1 +:       1]),
+    .s_eth0_tready                  (e2v_tready [0*     1 +:       1]),
+    .m_eth0_tdata                   (v2e_tdata  [0*ENET_W +: ENET0_W]),
+    .m_eth0_tlast                   (v2e_tlast  [0*     1 +:       1]),
+    .m_eth0_tvalid                  (v2e_tvalid [0*     1 +:       1]),
+    .m_eth0_tready                  (v2e_tready [0*     1 +:       1]),
+    .s_eth1_tdata                   (e2v_tdata  [1*ENET_W +: ENET1_W]),
+    .s_eth1_tlast                   (e2v_tlast  [1*     1 +:       1]),
+    .s_eth1_tvalid                  (e2v_tvalid [1*     1 +:       1]),
+    .s_eth1_tready                  (e2v_tready [1*     1 +:       1]),
+    .m_eth1_tdata                   (v2e_tdata  [1*ENET_W +: ENET1_W]),
+    .m_eth1_tlast                   (v2e_tlast  [1*     1 +:       1]),
+    .m_eth1_tvalid                  (v2e_tvalid [1*     1 +:       1]),
+    .m_eth1_tready                  (v2e_tready [1*     1 +:       1]),
+    .s_eth2_tdata                   (e2v_tdata  [2*ENET_W +: ENET2_W]),
+    .s_eth2_tlast                   (e2v_tlast  [2*     1 +:       1]),
+    .s_eth2_tvalid                  (e2v_tvalid [2*     1 +:       1]),
+    .s_eth2_tready                  (e2v_tready [2*     1 +:       1]),
+    .m_eth2_tdata                   (v2e_tdata  [2*ENET_W +: ENET2_W]),
+    .m_eth2_tlast                   (v2e_tlast  [2*     1 +:       1]),
+    .m_eth2_tvalid                  (v2e_tvalid [2*     1 +:       1]),
+    .m_eth2_tready                  (v2e_tready [2*     1 +:       1]),
+    .s_eth3_tdata                   (e2v_tdata  [3*ENET_W +: ENET3_W]),
+    .s_eth3_tlast                   (e2v_tlast  [3*     1 +:       1]),
+    .s_eth3_tvalid                  (e2v_tvalid [3*     1 +:       1]),
+    .s_eth3_tready                  (e2v_tready [3*     1 +:       1]),
+    .m_eth3_tdata                   (v2e_tdata  [3*ENET_W +: ENET3_W]),
+    .m_eth3_tlast                   (v2e_tlast  [3*     1 +:       1]),
+    .m_eth3_tvalid                  (v2e_tvalid [3*     1 +:       1]),
+    .m_eth3_tready                  (v2e_tready [3*     1 +:       1]),
+    .s_eth4_tdata                   (e2v_tdata  [4*ENET_W +: ENET4_W]),
+    .s_eth4_tlast                   (e2v_tlast  [4*     1 +:       1]),
+    .s_eth4_tvalid                  (e2v_tvalid [4*     1 +:       1]),
+    .s_eth4_tready                  (e2v_tready [4*     1 +:       1]),
+    .m_eth4_tdata                   (v2e_tdata  [4*ENET_W +: ENET4_W]),
+    .m_eth4_tlast                   (v2e_tlast  [4*     1 +:       1]),
+    .m_eth4_tvalid                  (v2e_tvalid [4*     1 +:       1]),
+    .m_eth4_tready                  (v2e_tready [4*     1 +:       1]),
     .s_dma_tdata                    (dmai_tdata),
     .s_dma_tlast                    (dmai_tlast),
     .s_dma_tvalid                   (dmai_tvalid),
