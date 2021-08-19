@@ -52,6 +52,28 @@ void mpmd_mb_controller::ref_clk_calibration::store_ref_clk_tuning_word(uint32_t
     _rpcc->store_ref_clk_tuning_word(tuning_word);
 }
 
+mpmd_mb_controller::trig_io_mode::trig_io_mode(uhd::usrp::mpmd_rpc_iface::sptr rpcc)
+    : _rpcc(rpcc)
+{
+}
+
+void mpmd_mb_controller::trig_io_mode::set_trig_io_mode(const uhd::trig_io_mode_t mode)
+{
+    switch (mode) {
+        case uhd::trig_io_mode_t::PPS_OUTPUT:
+            _rpcc->set_trigger_io("pps_output");
+            break;
+        case uhd::trig_io_mode_t::INPUT:
+            _rpcc->set_trigger_io("input");
+            break;
+        case uhd::trig_io_mode_t::OFF:
+            _rpcc->set_trigger_io("off");
+            break;
+        default:
+            throw uhd::value_error("set_trig_io_mode: Requested mode is invalid.");
+    }
+}
+
 mpmd_mb_controller::mpmd_mb_controller(
     uhd::usrp::mpmd_rpc_iface::sptr rpcc, uhd::device_addr_t device_info)
     : _rpc(rpcc), _device_info(device_info)
@@ -78,6 +100,11 @@ mpmd_mb_controller::mpmd_mb_controller(
     if (_rpc->supports_feature("ref_clk_calibration")) {
         _ref_clk_cal = std::make_shared<ref_clk_calibration>(_rpc);
         register_feature(_ref_clk_cal);
+    }
+
+    if (_rpc->supports_feature("trig_io_mode")) {
+        _trig_io_mode = std::make_shared<trig_io_mode>(_rpc);
+        register_feature(_trig_io_mode);
     }
 }
 
