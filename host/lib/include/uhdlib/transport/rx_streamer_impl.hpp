@@ -257,6 +257,38 @@ private:
         const int32_t timeout_ms,
         const size_t buffer_offset_bytes = 0)
     {
+        // A request to read zero samples should effectively be a no-op.
+        // However, in 2af10ee9, a change was made to increase the probability
+        // but not guarantee that calling recv() after a radio overflow event
+        // would return the overflow condition to the user. That change
+        // introduced a side effect that a read of zero samples (assuming there
+        // were no samples available) would block for the entirety of the
+        // timeout period and then return ERROR_CODE_TIMEOUT in the RX metadata
+        // for the read. (Prior to this change, there was an explicit check for
+        // a read of zero samples, which would return to the caller
+        // immediately.) This of course is undesirable--a request to read zero
+        // samples should always be fulfilled immediately, regardless of the
+        // availability of samples. Furthermore, reading zero samples is
+        // conventionally used to surface any stream errors, and it's that
+        // behavior we would like to preserve.
+        //
+        // This change to call get_recv_buffs() with a zero timeout when
+        // nsamps_per_buff is zero is an attempt to achieve the best of both
+        // worlds. The call to get_recv_buffs() will surface any stream errors,
+        // but using a timeout of 0 means that we'll return as quickly as
+        // possible (with a maximum latency of 1ms; see
+        // rx_streamer_zero_copy.hpp, line 219 or so). If there's any stream
+        // error, it'll be returned in the metadata. However, if the stream
+        // error is ERROR_CODE_TIMEOUT, we'll simply swallow the error, thus
+        // preserving the old behavior.
+        if (nsamps_per_buff == 0) {
+            _zero_copy_streamer.get_recv_buffs(_in_buffs, metadata, eov_positions, 0);
+            if (metadata.error_code == rx_metadata_t::ERROR_CODE_TIMEOUT) {
+                metadata.error_code = rx_metadata_t::ERROR_CODE_NONE;
+            }
+            return 0;
+        }
+
         if (_buff_samps_remaining == 0) {
             // Current set of buffers has expired, get the next one
             _buff_samps_remaining = _zero_copy_streamer.get_recv_buffs(
