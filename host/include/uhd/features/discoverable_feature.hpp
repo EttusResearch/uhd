@@ -34,6 +34,7 @@ public:
         FPGA_LOAD_NOTIFICATION,
         ADC_SELF_CALIBRATION,
         REF_CLK_CALIBRATION,
+        TRIG_IO_MODE,
     };
 
     virtual ~discoverable_feature() = default;

@@ -7,10 +7,11 @@
 #pragma once
 
 #include <uhd/features/ref_clk_calibration_iface.hpp>
+#include <uhd/features/trig_io_mode_iface.hpp>
 #include <uhd/rfnoc/mb_controller.hpp>
-#include <uhdlib/usrp/common/rpc.hpp>
 #include <uhdlib/features/discoverable_feature_registry.hpp>
 #include <uhdlib/features/fpga_load_notification_iface.hpp>
+#include <uhdlib/usrp/common/rpc.hpp>
 #include <uhdlib/utils/rpc.hpp>
 #include <memory>
 
@@ -155,8 +156,22 @@ public:
         uhd::usrp::mpmd_rpc_iface::sptr _rpcc;
     };
 
+    class trig_io_mode : public uhd::features::trig_io_mode_iface
+    {
+    public:
+        using sptr = std::shared_ptr<trig_io_mode>;
+
+        trig_io_mode(uhd::usrp::mpmd_rpc_iface::sptr rpcc);
+
+        void set_trig_io_mode(const uhd::trig_io_mode_t mode) override;
+
+    private:
+        uhd::usrp::mpmd_rpc_iface::sptr _rpcc;
+    };
+
     fpga_onload::sptr _fpga_onload;
     ref_clk_calibration::sptr _ref_clk_cal;
+    trig_io_mode::sptr _trig_io_mode;
 };
 
 }} // namespace uhd::rfnoc
