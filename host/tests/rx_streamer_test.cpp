@@ -9,6 +9,7 @@
 #include <boost/test/unit_test.hpp>
 #include <iostream>
 #include <memory>
+#include <thread>
 
 namespace uhd { namespace transport {
 
@@ -53,6 +54,16 @@ public:
         const int32_t timeout_ms)
     {
         frame_buff::uptr buff = _recv_link->get_recv_buff(timeout_ms);
+        if(buff.get() == nullptr) {
+            // No samples available - simulate a timeout for the duration,
+            // then return a nullptr for the buffer. This will ultimately
+            // return an TIMEOUT to the upper-level receive layers.
+            std::this_thread::sleep_for(std::chrono::milliseconds(timeout_ms));
+            return std::make_tuple(
+                nullptr,
+                packet_info_t{},
+                false);
+        }
         mock_header_t header  = *(reinterpret_cast<mock_header_t*>(buff->data()));
 
         packet_info_t info;
@@ -849,4 +860,33 @@ BOOST_AUTO_TEST_CASE(test_recv_two_channel_aggregate_eov)
     for (size_t i = 0; i < metadata.eov_positions_count; i++) {
         BOOST_CHECK_EQUAL(expected_eov_offsets[i], metadata.eov_positions[i]);
     }
+}
+
+// A call to `recv()` of zero samples should return immediately, regardless of
+// the timeout parameter, and not return a timeout error despite the potential
+// absence of a packet on the wire.
+BOOST_AUTO_TEST_CASE(test_recv_zero_samples)
+{
+    const std::string format("fc64");
+
+    auto recv_links = make_links(1);
+    auto streamer   = make_rx_streamer(recv_links, format);
+
+    std::vector<std::complex<double>> buff(1);
+    uhd::rx_metadata_t metadata;
+
+    const auto start_time = std::chrono::steady_clock::now();
+
+    const size_t num_samps_ret =
+        streamer->recv(buff.data(), 0, metadata, 10.0, false);
+
+    const auto end_time = std::chrono::steady_clock::now();
+    const std::chrono::duration<double> elapsed_time(end_time - start_time);
+
+    BOOST_CHECK_EQUAL(num_samps_ret, 0);
+    BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_NONE);
+
+    // Ensure that the `recv()` of zero samples didn't wait the requested
+    // timeout period of 10 seconds.
+    BOOST_CHECK_LE(elapsed_time.count(), 0.5);
 }
