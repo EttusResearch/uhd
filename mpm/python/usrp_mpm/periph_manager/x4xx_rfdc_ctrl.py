@@ -56,6 +56,7 @@ class X4xxRfdcCtrl:
         122.88e6*4:    (2.94912e9, 2, False, False), # RF (1M-8G)
         122.88e6*2:    (2.94912e9, 2, False, True),  # RF (1M-8G)
         122.88e6*1:    (2.94912e9, 8, False, False), # RF (1M-8G)
+        125e6*2:       (3.00000e9, 2, False, True),  # RF (1M-8G)
         125e6*4:       (3.00000e9, 2, False, False), # RF (1M-8G)
         200e6:         (3.00000e9, 4, True,  False), # RF (Legacy Mode)
     })
