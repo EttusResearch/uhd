@@ -38,8 +38,8 @@ variables:
 - template: uhd-pipeline-vars.yml
 - name: linuxDockerImages
   value:
-    "{'Fedora-32-builder':{'dockerOSName':'fedora32','dockerImageName':'uhd-builder-fedora32'},
-    'Fedora-33-builder':{'dockerOSName':'fedora33','dockerImageName':'uhd-builder-fedora33'},
+    "{'Fedora-33-builder':{'dockerOSName':'fedora33','dockerImageName':'uhd-builder-fedora33'},
+    'Fedora-34-builder':{'dockerOSName':'fedora34','dockerImageName':'uhd-builder-fedora34'},
     'Ubuntu-1804-builder':{'dockerOSName':'ubuntu1804','dockerImageName':'uhd-builder-ubuntu1804'},
     'Ubuntu-2004-builder':{'dockerOSName':'ubuntu2004','dockerImageName':'uhd-builder-ubuntu2004'}}"
 - name: winDockerImages
