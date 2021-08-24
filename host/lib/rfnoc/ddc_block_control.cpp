@@ -126,8 +126,7 @@ public:
 
     uhd::freq_range_t get_frequency_range(const size_t chan) const override
     {
-        const double input_rate =
-            _samp_rate_in.at(chan).is_valid() ? _samp_rate_in.at(chan).get() : 1.0;
+        const double input_rate = get_input_rate(chan);
         // TODO add steps
         return uhd::freq_range_t(-input_rate / 2, input_rate / 2);
     }
