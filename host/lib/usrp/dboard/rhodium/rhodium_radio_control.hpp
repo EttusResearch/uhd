@@ -170,7 +170,6 @@ public:
     void set_rx_dc_offset(const bool enb, size_t chan = ALL_CHANS) override;
     void set_rx_dc_offset(const std::complex<double>& offset, size_t chan) override;
     meta_range_t get_rx_dc_offset_range(size_t chan) const override;
-    void set_rx_iq_balance(const bool enb, size_t chan) override;
     void set_rx_iq_balance(const std::complex<double>& correction, size_t chan) override;
 
     /************************************************************************
