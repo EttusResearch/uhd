@@ -620,7 +620,7 @@ void rhodium_radio_control_impl::set_tx_iq_balance(
 
 void rhodium_radio_control_impl::set_rx_dc_offset(const bool enb, size_t)
 {
-    _rx_fe_core->set_dc_offset(enb);
+    _rx_fe_core->set_dc_offset_auto(enb);
 }
 
 void rhodium_radio_control_impl::set_rx_dc_offset(
@@ -634,11 +634,6 @@ meta_range_t rhodium_radio_control_impl::get_rx_dc_offset_range(size_t) const
     return get_tree()
         ->access<meta_range_t>(FE_PATH / "rx_fe_corrections" / 0 / "dc_offset/range")
         .get();
-}
-
-void rhodium_radio_control_impl::set_rx_iq_balance(const bool enb, size_t)
-{
-    _rx_fe_core->set_iq_balance(enb);
 }
 
 void rhodium_radio_control_impl::set_rx_iq_balance(
