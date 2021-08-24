@@ -781,13 +781,14 @@ void radio_control_impl::set_rx_dc_offset(const bool enb, size_t)
     RFNOC_LOG_DEBUG("set_rx_dc_offset() has no effect on this radio");
     if (enb) {
         throw uhd::not_implemented_error(
-            "set_rx_dc_offset() is not supported on this radio");
+            "set_rx_dc_offset(bool) is not supported on this radio");
     }
 }
 
 void radio_control_impl::set_rx_dc_offset(const std::complex<double>&, size_t)
 {
-    throw uhd::not_implemented_error("set_rx_dc_offset() is not supported on this radio");
+    throw uhd::not_implemented_error(
+        "set_rx_dc_offset(complex) is not supported on this radio");
 }
 
 uhd::meta_range_t radio_control_impl::get_rx_dc_offset_range(size_t) const
@@ -800,7 +801,7 @@ void radio_control_impl::set_rx_iq_balance(const bool enb, size_t)
     RFNOC_LOG_DEBUG("set_rx_iq_balance() has no effect on this radio");
     if (enb) {
         throw uhd::not_implemented_error(
-            "set_rx_iq_balance() is not supported on this radio");
+            "set_rx_iq_balance(bool) is not supported on this radio");
     }
 }
 
