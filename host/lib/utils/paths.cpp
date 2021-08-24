@@ -7,21 +7,19 @@
 
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
-#include <uhd/utils/paths.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhd/utils/paths.hpp>
 #include <uhdlib/utils/paths.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/version.hpp>
-#include <functional>
-#if BOOST_VERSION >= 106100
-#    include <boost/dll/runtime_symbol_info.hpp>
-#endif
+#include <boost/dll/runtime_symbol_info.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/tokenizer.hpp>
+#include <boost/version.hpp>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <regex>
 #include <streambuf>
@@ -283,7 +281,6 @@ std::string uhd::get_appdata_path(void)
 }
 
 
-#if BOOST_VERSION >= 106100
 std::string uhd::get_pkg_path(void)
 {
     fs::path pkg_path = fs::path(uhd::get_lib_path()).parent_path().lexically_normal();
@@ -297,18 +294,6 @@ std::string uhd::get_lib_path(void)
     fs::path lib_path = runtime_libfile_path.lexically_normal().parent_path();
     return lib_path.string();
 }
-#else
-std::string uhd::get_pkg_path(void)
-{
-    return get_env_var("UHD_PKG_PATH", UHD_PKG_PATH);
-}
-
-std::string uhd::get_lib_path(void)
-{
-    fs::path lib_path = fs::path(uhd::get_pkg_path()) / UHD_LIB_DIR;
-    return lib_path.string();
-}
-#endif
 
 std::string uhd::get_cal_data_path(void)
 {
