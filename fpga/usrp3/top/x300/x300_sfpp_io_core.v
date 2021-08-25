@@ -75,7 +75,7 @@ module x300_sfpp_io_core #(
     wire             c2mac_tready;
 
     axis_packet_flush #(
-       .WIDTH(64+3), // tdata + tuser
+       .WIDTH(64+4), // tdata + tuser
        .TIMEOUT_W(1), // Not using timeout
        .FLUSH_PARTIAL_PKTS(0),
        .PIPELINE("NONE")
