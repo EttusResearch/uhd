@@ -424,6 +424,14 @@ void export_rfnoc(py::module& m)
             py::arg("timeout"),
             py::arg("time"),
             py::arg("ack") = false)
+        .def("get_src_epid",
+            [](noc_block_base& self) {
+                return self.regs().get_src_epid();
+            })
+        .def("get_port_num",
+            [](noc_block_base& self) {
+                return self.regs().get_port_num();
+            })
         .def("__repr__",
             [](noc_block_base& self) {
                 return "<NocBlock for block ID '" + self.get_unique_id() + "'>";
