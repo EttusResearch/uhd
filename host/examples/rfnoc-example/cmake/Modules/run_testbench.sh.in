@@ -39,6 +39,9 @@ fi
 if [ $device_dir == "e310" ]; then
 	device_dir=e31x
 fi
+if [ $device_dir == "x410" ]; then
+	device_dir=x400
+fi
 
 # Now check the paths are valid
 if [ ! -r $uhd_fpga_dir_top/Makefile.common ]; then
