@@ -178,6 +178,21 @@ set_source_files_properties(
 )
 
 ########################################################################
+# Check if we dynamically need to link against libatomic
+# "Guerney, deploy the family atomics!"
+########################################################################
+message(STATUS "")
+message(STATUS "Configuring atomics support...")
+include(UHDAtomics)
+CHECK_ATOMICS_LIB_REQUIRED(NEED_LIBATOMIC)
+if(NEED_LIBATOMIC)
+    message(STATUS "  Atomics support is provided by separate libatomic.")
+    LIBUHD_APPEND_LIBS("atomic")
+else()
+    message(STATUS "  Atomics support is built-in, no linking required.")
+endif()
+
+########################################################################
 # Define UHD_PKG_DATA_PATH for paths.cpp
 ########################################################################
 file(TO_NATIVE_PATH "${CMAKE_INSTALL_PREFIX}" UHD_PKG_PATH)
