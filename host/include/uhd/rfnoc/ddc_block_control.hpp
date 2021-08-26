@@ -79,6 +79,13 @@ public:
 
     /*! Return the range of frequencies that \p chan can be set to.
      *
+     * The frequency shifter is the first component in the DDC, and thus can
+     * shift frequencies (digitally) between -get_input_rate()/2
+     * and +get_input_rate()/2.
+     *
+     * The returned values are in Hz (not normalized frequencies) and are valid
+     * inputs for set_freq().
+     *
      * \return The range of frequencies that the DDC can shift the input by
      */
     virtual uhd::freq_range_t get_frequency_range(const size_t chan) const = 0;

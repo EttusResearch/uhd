@@ -36,6 +36,7 @@ BOOST_AUTO_TEST_CASE(test_ddc_block)
     constexpr size_t num_chans = 4;
     constexpr noc_id_t noc_id  = DDC_BLOCK;
     constexpr int TEST_DECIM   = 20;
+    constexpr double DEFAULT_RATE = 200e6; // Matches typical MCR of X310
 
     auto block_container =
         get_mock_block(noc_id, num_chans, num_chans, uhd::device_addr_t("foo=bar"));
@@ -74,10 +75,16 @@ BOOST_AUTO_TEST_CASE(test_ddc_block)
     mock_source_term.set_edge_property<double>(
         "scaling", 1.0, {res_source_info::OUTPUT_EDGE, 0});
     mock_source_term.set_edge_property<double>(
-        "samp_rate", 1.0, {res_source_info::OUTPUT_EDGE, 0});
+        "samp_rate", DEFAULT_RATE, {res_source_info::OUTPUT_EDGE, 0});
     constexpr size_t NEW_MTU = 4000;
     mock_source_term.set_edge_property<size_t>(
         "mtu", NEW_MTU, {res_source_info::OUTPUT_EDGE, 0});
+
+#define CHECK_INPUT_RATE(req_rate)                                           \
+    BOOST_REQUIRE_CLOSE(mock_source_term.get_edge_property<double>(          \
+                            "samp_rate", {res_source_info::OUTPUT_EDGE, 0}), \
+        req_rate,                                                            \
+        1e-6);
 
     UHD_LOG_INFO("TEST", "Creating graph...");
     graph.connect(&mock_source_term, test_ddc.get(), edge_info);
@@ -85,6 +92,7 @@ BOOST_AUTO_TEST_CASE(test_ddc_block)
     UHD_LOG_INFO("TEST", "Committing graph...");
     graph.commit();
     UHD_LOG_INFO("TEST", "Commit complete.");
+    CHECK_INPUT_RATE(DEFAULT_RATE);
     // We need to set the decimation again, because the rates will screw it
     // change it w.r.t. to the previous setting
     test_ddc->set_property<int>("decim", TEST_DECIM, 0);
@@ -94,20 +102,26 @@ BOOST_AUTO_TEST_CASE(test_ddc_block)
                 == mock_sink_term.get_edge_property<double>(
                        "samp_rate", {res_source_info::INPUT_EDGE, 0})
                        * TEST_DECIM);
+    // Input rate should remain unchanged
+    CHECK_INPUT_RATE(DEFAULT_RATE);
     BOOST_CHECK(mock_sink_term.get_edge_property<double>(
                     "scaling", {res_source_info::INPUT_EDGE, 0})
                 != 1.0);
 
-    UHD_LOG_INFO("TEST", "Setting freq to 1/8 of input rate");
-    constexpr double TEST_FREQ = 1.0 / 8;
+    BOOST_CHECK_CLOSE(test_ddc->get_frequency_range(0).start(), -DEFAULT_RATE / 2, 1e-6);
+    BOOST_CHECK_CLOSE(test_ddc->get_frequency_range(0).stop(), DEFAULT_RATE / 2, 1e-6);
+    UHD_LOG_INFO("TEST",
+        "Setting freq to 1/8 of input rate (to " << (DEFAULT_RATE / 8) / 1e6 << " MHz)");
+    constexpr double TEST_FREQ = DEFAULT_RATE / 8;
     test_ddc->set_property<double>("freq", TEST_FREQ, 0);
     const uint32_t freq_word_1 =
         ddc_reg_iface->write_memory.at(ddc_block_control::SR_FREQ_ADDR);
     BOOST_REQUIRE(freq_word_1 != 0);
-    UHD_LOG_INFO("TEST", "Doubling input rate (to 2.0)");
+    UHD_LOG_INFO(
+        "TEST", "Doubling input rate (to " << (DEFAULT_RATE / 4) / 1e6 << " MHz)");
     // Now this should change the freq word, but not the absolute frequency
     mock_source_term.set_edge_property<double>(
-        "samp_rate", 2.0, {res_source_info::OUTPUT_EDGE, 0});
+        "samp_rate", DEFAULT_RATE * 2, {res_source_info::OUTPUT_EDGE, 0});
     const double freq_word_2 =
         ddc_reg_iface->write_memory.at(ddc_block_control::SR_FREQ_ADDR);
     // The frequency word is the phase increment, which will halve. We skirt
