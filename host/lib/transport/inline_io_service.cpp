@@ -444,17 +444,17 @@ void inline_io_service::connect_receiver(
 
 void inline_io_service::disconnect_receiver(recv_link_if* link, inline_recv_cb* cb)
 {
-    inline_recv_mux* mux;
-    inline_recv_cb* rcvr;
-    std::tie(mux, rcvr) = _recv_tbl.at(link);
-    if (mux) {
-        mux->disconnect(cb);
-        if (mux->is_empty()) {
-            delete mux;
-            mux = nullptr;
+    inline_recv_mux* mux = nullptr;
+    inline_recv_cb* rcvr = nullptr;
+    if (_recv_tbl.count(link)) {
+        std::tie(mux, rcvr) = _recv_tbl.at(link);
+        if (mux) {
+            mux->disconnect(cb);
+            if (mux->is_empty()) {
+                delete mux;
+                mux = nullptr;
+            }
         }
-    } else {
-        rcvr = nullptr;
     }
     _recv_tbl[link] = std::make_tuple(mux, rcvr);
 }
