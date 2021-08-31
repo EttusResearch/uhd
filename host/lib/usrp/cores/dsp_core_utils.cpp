@@ -10,9 +10,10 @@
 #include <uhdlib/usrp/cores/dsp_core_utils.hpp>
 #include <boost/math/special_functions/sign.hpp>
 #include <cmath>
+#include <limits>
 
-static const int32_t MAX_FREQ_WORD = boost::numeric::bounds<int32_t>::highest();
-static const int32_t MIN_FREQ_WORD = boost::numeric::bounds<int32_t>::lowest();
+static const int32_t MAX_FREQ_WORD = std::numeric_limits<int32_t>::max();
+static const int32_t MIN_FREQ_WORD = std::numeric_limits<int32_t>::min();
 
 void get_freq_and_freq_word(const double requested_freq,
     const double tick_rate,
