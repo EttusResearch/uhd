@@ -17,3 +17,10 @@ BOOST_AUTO_TEST_CASE(test_gcd)
 {
     BOOST_CHECK_EQUAL(uhd::math::gcd<int>(6, 15), 3);
 }
+
+BOOST_AUTO_TEST_CASE(test_sign)
+{
+    BOOST_CHECK_EQUAL(uhd::math::sign(2.3), +1);
+    BOOST_CHECK_EQUAL(uhd::math::sign(-2.3), -1);
+    BOOST_CHECK_EQUAL(uhd::math::sign(0.0), 0);
+}
