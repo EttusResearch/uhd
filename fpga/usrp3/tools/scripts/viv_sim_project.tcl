@@ -14,6 +14,7 @@ set part_name       $::env(VIV_PART_NAME)
 set sim_runtime     $::env(VIV_SIM_RUNTIME)
 set sim_fast        $::env(VIV_SIM_FAST)
 set vivado_mode     $::env(VIV_MODE)
+set verilog_defs    $::env(VIV_VERILOG_DEFS)
 set working_dir     [pwd]
 
 set sim_fileset "sim_1"
@@ -104,10 +105,13 @@ set_property target_simulator $simulator [current_project]
 
 # Vivado quirk when passing options to external simulators
 if [expr [string equal $simulator "XSim"] == 1] {
-    set_property verilog_define "WORKING_DIR=\"$working_dir\"" [get_filesets $sim_fileset]
+    append verilog_defs " WORKING_DIR=\"$working_dir\""
 } else {
-    set_property verilog_define "WORKING_DIR=$working_dir" [get_filesets $sim_fileset]
+    append verilog_defs " WORKING_DIR=$working_dir"
 }
+
+# Pass Verilog definitions to simulation for all files
+set_property verilog_define $verilog_defs [get_filesets $sim_fileset]
 
 # XSim specific settings
 set_property xsim.simulate.runtime "${sim_runtime}us" -objects [get_filesets $sim_fileset]
