@@ -52,6 +52,7 @@ SETUP_AND_LAUNCH_SIMULATION = \
 	export VIV_SIM_USER_DO=$(MODELSIM_USER_DO); \
 	export VIV_MODE=$(VIVADO_MODE); \
 	export VIV_SIM_64BIT=$(MODELSIM_64BIT); \
+	export VIV_VERILOG_DEFS="UHD_FPGA_DIR=$(BASE_DIR)/../.."; \
 	$(TOOLS_DIR)/scripts/launch_vivado.sh -mode $(VIVADO_MODE) -source $(call RESOLVE_PATH,$(TOOLS_DIR)/scripts/viv_sim_project.tcl) -log xsim.log -nojournal
 
 # -------------------------------------------------------------------
@@ -65,8 +66,8 @@ SETUP_AND_LAUNCH_VLINT = \
 	export VLINT_DESIGN_SRCS=$(EXP_DESIGN_SRCS); \
 	export VLINT_SIM_SRCS=$(EXP_SIM_SRCS); \
 	export VLINT_INC_SRCS=$(EXP_INC_SRCS); \
-	export VLINT_SVLOG_ARGS="$(SVLOG_ARGS)"; \
-	export VLINT_VLOG_ARGS="$(VLOG_ARGS)"; \
+	export VLINT_SVLOG_ARGS="$(SVLOG_ARGS) +define+UHD_FPGA_DIR=$(BASE_DIR)/../.."; \
+	export VLINT_VLOG_ARGS="$(VLOG_ARGS) +define+UHD_FPGA_DIR=$(BASE_DIR)/../.."; \
 	export VLINT_VHDL_ARGS="$(VHDL_ARGS)"; \
 	$(TOOLS_DIR)/scripts/launch_vlint.sh
 
