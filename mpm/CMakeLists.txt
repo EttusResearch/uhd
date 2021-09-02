@@ -18,8 +18,8 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
 list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake/Modules)
-set(UHD_HOST_ROOT ${CMAKE_SOURCE_DIR}/../host)
-list(INSERT CMAKE_MODULE_PATH 0 ${UHD_HOST_ROOT}/cmake/Modules)
+set(UHD_SOURCE_DIR ${CMAKE_SOURCE_DIR}/../host)
+list(INSERT CMAKE_MODULE_PATH 0 ${UHD_SOURCE_DIR}/cmake/Modules)
 ########################################################################
 # Setup Python API
 ########################################################################
@@ -167,7 +167,7 @@ if(NOT ENABLE_SIM)
     include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_BINARY_DIR}/include
-        ${UHD_HOST_ROOT}/include
+        ${UHD_SOURCE_DIR}/include
     )
 
     add_subdirectory(lib)

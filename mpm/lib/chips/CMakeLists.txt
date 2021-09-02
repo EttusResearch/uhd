@@ -27,9 +27,9 @@
 ####################################################
 
 # Register definitions need to be generated
-#set(UHD_HOST_ROOT ${CMAKE_SOURCE_DIR}/../host)
-#message("uhd host root: ${UHD_HOST_ROOT}")
-#set(UHD_IC_REG_MAP_PATH ${UHD_HOST_ROOT}/lib/ic_reg_maps)
+#set(UHD_SOURCE_DIR ${CMAKE_SOURCE_DIR}/../host)
+#message("uhd host root: ${UHD_SOURCE_DIR}")
+#set(UHD_IC_REG_MAP_PATH ${UHD_SOURCE_DIR}/lib/ic_reg_maps)
 
 #set(ETTUS_PYTHON_GEN_SOURCE_DEPS ${UHD_IC_REG_MAP_PATH}/common.py)
 #ETTUS_PYTHON_GEN_SOURCE(

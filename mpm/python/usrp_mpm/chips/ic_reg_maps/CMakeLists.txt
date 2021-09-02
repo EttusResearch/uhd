@@ -27,19 +27,19 @@ endmacro(REG_MAPS_GEN_SOURCE)
 
 if(ENABLE_REGMAPS)
     # designate the file which will be used to generate all reg maps
-    set(REG_MAPS_GEN_SOURCE_DEPS ${UHD_HOST_ROOT}/lib/ic_reg_maps/common.py)
+    set(REG_MAPS_GEN_SOURCE_DEPS ${UHD_SOURCE_DIR}/lib/ic_reg_maps/common.py)
 
     # specify all reg maps you wish to generate
     REG_MAPS_GEN_SOURCE(
-        ${UHD_HOST_ROOT}/lib/ic_reg_maps/gen_lmk04816_regs.py
+        ${UHD_SOURCE_DIR}/lib/ic_reg_maps/gen_lmk04816_regs.py
         ${CMAKE_CURRENT_BINARY_DIR}/lmk04816_regs.py
     )
     REG_MAPS_GEN_SOURCE(
-        ${UHD_HOST_ROOT}/lib/ic_reg_maps/gen_lmx2572_regs.py
+        ${UHD_SOURCE_DIR}/lib/ic_reg_maps/gen_lmx2572_regs.py
         ${CMAKE_CURRENT_BINARY_DIR}/lmx2572_regs.py
     )
     REG_MAPS_GEN_SOURCE(
-        ${UHD_HOST_ROOT}/lib/ic_reg_maps/gen_zbx_cpld_regs.py
+        ${UHD_SOURCE_DIR}/lib/ic_reg_maps/gen_zbx_cpld_regs.py
         ${CMAKE_CURRENT_BINARY_DIR}/zbx_cpld_regs.py
     )
 
