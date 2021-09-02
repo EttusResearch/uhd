@@ -36,8 +36,8 @@ def jtag_x3xx(jtag_args, redis_server):
             jtag_host.run(vivado_program_jtag + " " +
                           os.path.join(remote_working_dir, os.path.basename(fpga_path)) +
                           " " + jtag_serial)
-    print("Waiting 15 seconds for device to come back up", flush=True)
-    time.sleep(15)
+        print("Waiting 15 seconds for device to come back up and for Vivado to close", flush=True)
+        time.sleep(15)
 
 
 def main(args):
