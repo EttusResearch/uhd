@@ -9,6 +9,7 @@
 #include <boost/test/unit_test.hpp>
 #include <iostream>
 #include <memory>
+#include <thread>
 
 namespace uhd { namespace transport {
 
