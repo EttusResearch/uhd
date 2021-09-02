@@ -121,6 +121,12 @@ void mpmd_impl::init_property_tree(
         .set(mb->device_info.get("fpga_version_hash", "UNKNOWN"));
     tree->create<std::string>(mb_path / "token").set(mb->get_token());
     tree->create<uhd::device_addr_t>(mb_path / "args").set(mb->mb_args);
+    tree->create<std::string>(mb_path / "mender_artifact")
+        .set(mb->device_info.get("mender_artifact", "UNKNOWN"));
+    tree->create<std::string>(mb_path / "mpm_sw_version")
+        .set(mb->device_info.get("mpm_sw_version", "UNKNOWN"));
+    tree->create<std::string>(mb_path / "fs_version")
+        .set(mb->device_info.get("fs_version", "UNKNOWN"));
 
     /*** Clocking *******************************************************/
     tree->create<std::string>(mb_path / "clock_source/value")
