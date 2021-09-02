@@ -20,7 +20,7 @@ endif(MSVC)
 find_package(Boost 1.65 REQUIRED ${BOOST_REQUIRED_COMPONENTS})
 
 include_directories(
-    ${CMAKE_SOURCE_DIR}/include
+    ${UHD_SOURCE_DIR}/include
 )
 
 add_executable(init_gain_block

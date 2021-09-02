@@ -17,7 +17,7 @@ PYTHON_CHECK_MODULE(
 # Get include dirs
 include_directories(${PYTHON_INCLUDE_DIRS})
 set(PYBIND11_INCLUDE_DIR
-    "${CMAKE_SOURCE_DIR}/lib/deps/pybind11/include"
+    "${UHD_SOURCE_DIR}/lib/deps/pybind11/include"
     CACHE
     STRING
     "Location of PyBind11 includes"
@@ -31,9 +31,9 @@ execute_process(
 # Build pyuhd library
 add_library(pyuhd SHARED
     pyuhd.cpp
-    ${CMAKE_SOURCE_DIR}/lib/property_tree_python.cpp
-    ${CMAKE_SOURCE_DIR}/lib/device_python.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/multi_usrp_python.cpp
+    ${UHD_SOURCE_DIR}/lib/property_tree_python.cpp
+    ${UHD_SOURCE_DIR}/lib/device_python.cpp
+    ${UHD_SOURCE_DIR}/lib/usrp/multi_usrp_python.cpp
 )
 # python expects extension modules with a particular suffix
 if(WIN32)
@@ -56,7 +56,7 @@ else()
 endif(WIN32)
 target_include_directories(pyuhd PUBLIC
     ${PYTHON_NUMPY_INCLUDE_DIR}
-    ${CMAKE_SOURCE_DIR}/lib
+    ${UHD_SOURCE_DIR}/lib
     ${PYBIND11_INCLUDE_DIR}
 )
 
@@ -91,7 +91,7 @@ configure_file(${SETUP_PY_IN} ${SETUP_PY})
 
 if(ENABLE_SIM)
     set(MPM_DEVICE "sim")
-    add_subdirectory(${CMAKE_SOURCE_DIR}/../mpm/python simulator)
+    add_subdirectory(${UHD_SOURCE_DIR}/../mpm/python simulator)
     # simulator/usrp_mpm needs to be copied to usrp_mpm because setuptools only detects import packages in the working directory
     add_custom_target(copy_mpm_packages ALL DEPENDS usrp_mpm)
     add_custom_command(TARGET copy_mpm_packages
@@ -142,7 +142,7 @@ if(ENABLE_SIM)
                        ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/__init__.py
                        ${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm)
     # Move usrp_hwd.py into usrp_mpm so that it is included in the package
-    configure_file(${CMAKE_SOURCE_DIR}/../mpm/python/usrp_hwd.py
+    configure_file(${UHD_SOURCE_DIR}/../mpm/python/usrp_hwd.py
                    ${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm/usrp_hwd.py COPYONLY)
     set(PYUHD_FILES ${PYUHD_FILES} copy_mpm_packages)
 endif(ENABLE_SIM)

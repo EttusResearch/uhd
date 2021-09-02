@@ -23,10 +23,10 @@ endif()
 # Setup the include and linker paths
 ########################################################################
 include_directories(
-    ${CMAKE_SOURCE_DIR}/lib
-    ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_BINARY_DIR}/lib
-    ${CMAKE_BINARY_DIR}/include
+    ${UHD_SOURCE_DIR}/lib
+    ${UHD_SOURCE_DIR}/include
+    ${UHD_BINARY_DIR}/lib
+    ${UHD_BINARY_DIR}/include
     ${UHD_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIR}
 )
