@@ -110,8 +110,8 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Ettus Research - USRP Hardware Driver")
 set(CPACK_PACKAGE_VENDOR              "Ettus Research (National Instruments)")
 set(CPACK_PACKAGE_CONTACT             "Ettus Research <support@ettus.com>")
 set(CPACK_PACKAGE_VERSION "${UHD_VERSION}")
-set(CPACK_RESOURCE_FILE_WELCOME ${CMAKE_SOURCE_DIR}/README.md)
-set(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_SOURCE_DIR}/LICENSE)
+set(CPACK_RESOURCE_FILE_WELCOME ${UHD_SOURCE_DIR}/README.md)
+set(CPACK_RESOURCE_FILE_LICENSE ${UHD_SOURCE_DIR}/LICENSE)
 
 ########################################################################
 # Setup CPack Source
@@ -165,16 +165,16 @@ set(CPACK_COMPONENTS_ALL libraries pythonapi headers utilities examples manual d
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-all-dev, python3-requests")
 set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "python3, python3-tk")
 foreach(filename preinst postinst prerm postrm)
-    list(APPEND CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA ${CMAKE_BINARY_DIR}/debian/${filename})
-    file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/debian)
+    list(APPEND CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA ${UHD_BINARY_DIR}/debian/${filename})
+    file(MAKE_DIRECTORY ${UHD_BINARY_DIR}/debian)
     configure_file(
-        ${CMAKE_SOURCE_DIR}/cmake/debian/${filename}.in
-        ${CMAKE_BINARY_DIR}/debian/${filename}
+        ${UHD_SOURCE_DIR}/cmake/debian/${filename}.in
+        ${UHD_BINARY_DIR}/debian/${filename}
     @ONLY)
 endforeach(filename)
 configure_file(
-    ${CMAKE_SOURCE_DIR}/cmake/debian/watch
-    ${CMAKE_BINARY_DIR}/debian/watch
+    ${UHD_SOURCE_DIR}/cmake/debian/watch
+    ${UHD_BINARY_DIR}/debian/watch
 @ONLY)
 
 ########################################################################
@@ -185,11 +185,11 @@ set(CPACK_RPM_PACKAGE_REQUIRES "boost-devel, python3-requests")
 set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION "/usr/share/man;/usr/share/man/man1;/usr/lib64/pkgconfig;/usr/lib64/cmake;/usr/lib64/python2.7;/usr/lib64/python2.7/site-packages")
 foreach(filename post_install post_uninstall pre_install pre_uninstall)
     string(TOUPPER ${filename} filename_upper)
-    list(APPEND CPACK_RPM_${filename_upper}_SCRIPT_FILE ${CMAKE_BINARY_DIR}/redhat/${filename})
-    file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/redhat)
+    list(APPEND CPACK_RPM_${filename_upper}_SCRIPT_FILE ${UHD_BINARY_DIR}/redhat/${filename})
+    file(MAKE_DIRECTORY ${UHD_BINARY_DIR}/redhat)
     configure_file(
-        ${CMAKE_SOURCE_DIR}/cmake/redhat/${filename}.in
-        ${CMAKE_BINARY_DIR}/redhat/${filename}
+        ${UHD_SOURCE_DIR}/cmake/redhat/${filename}.in
+        ${UHD_BINARY_DIR}/redhat/${filename}
     @ONLY)
 endforeach(filename)
 

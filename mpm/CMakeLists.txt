@@ -18,8 +18,8 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
 list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake/Modules)
-set(UHD_HOST_ROOT ${CMAKE_SOURCE_DIR}/../host)
-list(INSERT CMAKE_MODULE_PATH 0 ${UHD_HOST_ROOT}/cmake/Modules)
+set(UHD_SOURCE_DIR ${CMAKE_SOURCE_DIR}/../host)
+list(INSERT CMAKE_MODULE_PATH 0 ${UHD_SOURCE_DIR}/cmake/Modules)
 ########################################################################
 # Setup Python API
 ########################################################################
