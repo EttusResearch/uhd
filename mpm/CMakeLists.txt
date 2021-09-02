@@ -18,7 +18,7 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
 list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake/Modules)
-set(UHD_HOST_ROOT ${CMAKE_SOURCE_DIR}/../host)
+set(UHD_SOURCE_DIR ${CMAKE_SOURCE_DIR}/../host)
 ########################################################################
 # Setup Python API
 ########################################################################
@@ -34,7 +34,7 @@ set(PYTHON_ADDITIONAL_VERSIONS ${MPM_PYTHON_VERSION})
 find_package(PythonInterp ${MPM_PYTHON_VERSION} REQUIRED)
 find_package(PythonLibs ${MPM_PYTHON_VERSION} REQUIRED)
 # Now, we can also include CMake modules from UHD:
-list(INSERT CMAKE_MODULE_PATH 0 ${UHD_HOST_ROOT}/cmake/Modules)
+list(INSERT CMAKE_MODULE_PATH 0 ${UHD_SOURCE_DIR}/cmake/Modules)
 
 
 ########################################################################
@@ -154,7 +154,7 @@ add_subdirectory(include)
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_BINARY_DIR}/include
-    ${UHD_HOST_ROOT}/include
+    ${UHD_SOURCE_DIR}/include
 )
 
 add_subdirectory(lib)

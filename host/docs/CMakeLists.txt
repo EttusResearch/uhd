@@ -32,13 +32,13 @@ if(ENABLE_MANUAL)
     # First: Set up UHD manual only
     file(GLOB manual_sources "*.dox")
     set(DOXYGEN_DEPENDENCIES ${manual_sources})
-    set(DOXYGEN_INPUT_DIRS "${CMAKE_SOURCE_DIR}/docs ${CMAKE_CURRENT_BINARY_DIR}")
+    set(DOXYGEN_INPUT_DIRS "${UHD_SOURCE_DIR}/docs ${CMAKE_CURRENT_BINARY_DIR}")
     set(DOXYGEN_DEP_COMPONENT "manual")
     set(DOXYGEN_FPGA_MANUAL_REFERENCE "<a href=\"http://files.ettus.com/manual/md_fpga.html\">Part III: FPGA Manual</a>")
     set(DOXYGEN_STRIP_EXTRA "")
     set(DOXYGEN_EXCLUDE_DIRS "")
     if(NOT ENABLE_RFNOC)
-        set(DOXYGEN_EXCLUDE_DIRS "${DOXYGEN_EXCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/include/uhd/rfnoc")
+        set(DOXYGEN_EXCLUDE_DIRS "${DOXYGEN_EXCLUDE_DIRS} ${UHD_SOURCE_DIR}/include/uhd/rfnoc")
     endif(NOT ENABLE_RFNOC)
     # Now, check if we have the FPGA sources as well.
     # If so, pull them in:
@@ -70,14 +70,14 @@ endif(LIBUHDDEV_PKG)
 if(ENABLE_DOXYGEN)
     set(ENABLE_MANUAL_OR_DOXYGEN true)
     #make doxygen directory depend on the header files
-    file(GLOB_RECURSE header_files ${CMAKE_SOURCE_DIR}/include/*.hpp)
-    file(GLOB_RECURSE h_files ${CMAKE_SOURCE_DIR}/include/*.h)
+    file(GLOB_RECURSE header_files ${UHD_SOURCE_DIR}/include/*.hpp)
+    file(GLOB_RECURSE h_files ${UHD_SOURCE_DIR}/include/*.h)
     list(APPEND header_files ${h_files})
-    set(DOXYGEN_DEPENDENCIES ${DOXYGEN_DEPENDENCIES} ${header_files} "${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/gen_basic_funcs.py")
+    set(DOXYGEN_DEPENDENCIES ${DOXYGEN_DEPENDENCIES} ${header_files} "${UHD_SOURCE_DIR}/lib/rfnoc/nocscript/gen_basic_funcs.py")
     if(ENABLE_DOXYGEN_FULL)
-        set(DOXYGEN_INPUT_DIRS "${DOXYGEN_INPUT_DIRS} ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/lib ${CMAKE_SOURCE_DIR}/python")
+        set(DOXYGEN_INPUT_DIRS "${DOXYGEN_INPUT_DIRS} ${UHD_SOURCE_DIR}/include ${UHD_SOURCE_DIR}/lib ${UHD_SOURCE_DIR}/python")
     else(ENABLE_DOXYGEN_FULL)
-        set(DOXYGEN_INPUT_DIRS "${DOXYGEN_INPUT_DIRS} ${CMAKE_SOURCE_DIR}/include")
+        set(DOXYGEN_INPUT_DIRS "${DOXYGEN_INPUT_DIRS} ${UHD_SOURCE_DIR}/include")
     endif(ENABLE_DOXYGEN_FULL)
 
     set(DOXYGEN_DEP_COMPONENT "doxygen")
@@ -110,7 +110,7 @@ if(ENABLE_MANUAL_OR_DOXYGEN)
     @ONLY)
 
     #make doxygen directory depend on the header files
-    file(GLOB_RECURSE header_files ${CMAKE_SOURCE_DIR}/include/*.hpp)
+    file(GLOB_RECURSE header_files ${UHD_SOURCE_DIR}/include/*.hpp)
     add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN} DEPENDS ${DOXYGEN_DEPENDENCIES}
         COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
