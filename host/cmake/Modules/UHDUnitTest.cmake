@@ -133,9 +133,12 @@ function(UHD_ADD_PYTEST test_name)
     # Include ${CMAKE_BINARY_DIR}/utils/ for testing the python utils
     if(APPLE)
         set_tests_properties(${test_name} PROPERTIES
-            ENVIRONMENT "DYLD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/lib/;PYTHONPATH=${CMAKE_SOURCE_DIR}/tests/common:${CMAKE_BINARY_DIR}/utils/")
+            ENVIRONMENT
+            "DYLD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/lib/;PYTHONPATH=${UHD_BINARY_DIR}/python:${CMAKE_SOURCE_DIR}/tests/common:${CMAKE_BINARY_DIR}/utils/")
     else()
         set_tests_properties(${test_name} PROPERTIES
-            ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/lib/;PYTHONPATH=${CMAKE_SOURCE_DIR}/tests/common:${CMAKE_BINARY_DIR}/utils/")
+            ENVIRONMENT
+            "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/lib/;PYTHONPATH=${UHD_BINARY_DIR}/python:${CMAKE_SOURCE_DIR}/tests/common:${CMAKE_BINARY_DIR}/utils/"
+            )
     endif()
 endfunction(UHD_ADD_PYTEST)
