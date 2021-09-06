@@ -226,18 +226,10 @@ both_links_t eth_manager::get_links(link_type_t link_type,
     // a DMA FIFO, which is a device-specific thing. So punt on that for now.
 
     x300_eth_conn_t conn = eth_conns[local_device_id];
-    zero_copy_xport_params default_buff_args;
 
     const bool enable_fc = not link_args.has_key("enable_fc")
                            || uhd::cast::from_str<bool>(link_args.get("enable_fc"));
     const bool lossy_xport = enable_fc;
-
-    const size_t send_mtu = get_mtu(uhd::TX_DIRECTION);
-    const size_t recv_mtu = get_mtu(uhd::RX_DIRECTION);
-
-    // Set size and number of frames
-    default_buff_args.send_frame_size = std::min(send_mtu, ETH_MSG_FRAME_SIZE);
-    default_buff_args.recv_frame_size = std::min(recv_mtu, ETH_MSG_FRAME_SIZE);
 
     // Buffering is done in the socket buffers, so size them relative to
     // the link rate
