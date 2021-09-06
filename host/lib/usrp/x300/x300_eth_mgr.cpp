@@ -62,7 +62,7 @@ constexpr size_t MAX_RATE_10GIGE    = (size_t)( // bytes/s
         / float(x300::DATA_FRAME_MAX_SIZE
                 + 8 /* UDP header */ + 20 /* Ethernet header length */)));
 constexpr size_t MAX_RATE_1GIGE     = (size_t)( // bytes/s
-    10e9 / 8 * // wire speed multiplied by percentage of packets that is sample data
+    1e9 / 8 * // wire speed multiplied by percentage of packets that is sample data
     (float(GE_DATA_FRAME_RECV_SIZE - CHDR_MAX_LEN_HDR)
         / float(GE_DATA_FRAME_RECV_SIZE
                 + 8 /* UDP header */ + 20 /* Ethernet header length */)));
