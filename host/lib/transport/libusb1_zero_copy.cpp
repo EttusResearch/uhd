@@ -108,6 +108,11 @@ static void LIBUSB_CALL libusb_async_cb(libusb_transfer* lut)
  * Reusable managed buffer:
  *  - Associated with a particular libusb transfer struct.
  *  - Submits the transfer to libusb in the release method.
+ *
+ * A note on the USB context: None of the libusb calls made in this class
+ * require passing in a USB context. The context is implied by virtue of the
+ * libusb_transfer struct we pass in, which contains a device handle, which
+ * contains a context.
  **********************************************************************/
 class libusb_zero_copy_mb : public managed_buffer
 {
@@ -120,7 +125,6 @@ public:
         : _release_cb(release_cb)
         , _is_recv(is_recv)
         , _name(name)
-        , _ctx(libusb::session::get_global_session()->get_context())
         , _lut(lut)
         , _frame_size(frame_size)
     { /* NOP */
@@ -194,7 +198,6 @@ private:
     std::function<void(libusb_zero_copy_mb*)> _release_cb;
     const bool _is_recv;
     const std::string _name;
-    libusb_context* _ctx;
     libusb_transfer* _lut;
     const size_t _frame_size;
 };
