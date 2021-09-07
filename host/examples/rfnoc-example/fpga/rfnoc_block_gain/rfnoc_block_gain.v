@@ -61,6 +61,23 @@ module rfnoc_block_gain #(
   input  wire                   m_rfnoc_ctrl_tready
 );
 
+  // These are examples of how to include an in-tree header file. UHD_FPGA_DIR
+  // is defined automatically and can be referenced as needed. Tools vary
+  // somewhat in how they support using macros in `include statements.
+  //
+  // This works in Vivado:
+  //
+  //   `include `"`UHD_FPGA_DIR/usrp3/lib/rfnoc/core/rfnoc_chdr_utils.vh`"
+  //
+  // Some tools allow this:
+  //
+  //   `define INCLUDE_UHD_FILE(REL_PATH) `"`UHD_FPGA_DIR/REL_PATH`"
+  //   `include `INCLUDE_UHD_FILE(usrp3/lib/rfnoc/core/rfnoc_chdr_utils.vh)
+  //
+  // This should work in most tools:
+  `define RFNOC_CHDR_UTILS_PATH `"`UHD_FPGA_DIR/usrp3/lib/rfnoc/core/rfnoc_chdr_utils.vh`"
+  `include `RFNOC_CHDR_UTILS_PATH
+
   //---------------------------------------------------------------------------
   // Signal Declarations
   //---------------------------------------------------------------------------
