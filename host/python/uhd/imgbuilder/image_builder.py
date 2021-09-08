@@ -780,6 +780,8 @@ def build(fpga_path, device, image_core_path, edge_file, **args):
     logging.debug("Temporarily changing working directory to %s", build_dir)
     os.chdir(build_dir)
     make_cmd = ". ./setupenv.sh "
+    if "vivado_path" in args and args["vivado_path"]:
+        make_cmd = make_cmd + "--vivado-path=" + args["vivado_path"] + " "
     if "clean_all" in args and args["clean_all"]:
         make_cmd = make_cmd + "&& make cleanall "
     target = args["target"] if "target" in args else ""
