@@ -638,7 +638,8 @@ private:
         } else {
             throw uhd::runtime_error(
                 str(boost::format("Invalid system reference rate: %.2f MHz.\nValid "
-                                  "reference frequencies are: 10 MHz, 30.72 MHz.")
+                                  "reference frequencies are: 10 MHz, 11.52 MHz, "
+                                  "23.04 MHz, 30.72 MHz.")
                     % (_system_ref_rate / 1e6)));
         }
         UHD_ASSERT_THROW(clocking_mode != INVALID);
