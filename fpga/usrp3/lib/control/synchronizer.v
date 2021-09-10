@@ -1,8 +1,46 @@
 //
-// Copyright 2014 Ettus Research LLC
-// Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2021 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
+//
+// Module: synchronizer.v
+//
+// Description:
+//
+//   This is a double-synchronizer module. However, it can can implement a
+//   synchronizer of any depth (double, triple, etc.) and width.
+//
+//   A double synchronizer is typically used to cross a single-bit glitch-free
+//   signal from one clock domain to another.
+//
+//   *WARNING*: The input signal must be glitch-free. In other words, it should
+//              be driven by a register and NOT combinational logic. Otherwise
+//              you could capture a glitch instead of the intended signal.
+//
+//   *WARNING*: When WIDTH is not 1, the multiple bits are not guaranteed to be
+//              coherent. In other words, they can arrive on the output at
+//              different times. This module should not usually be used to
+//              cross a multi-bit signal. Consider using the handshake module
+//              instead.
+//
+//   When crossing between unrelated clock domains, we typically don't want the
+//   timing analyzer to consider the path between clock domains. To make
+//   writing this constraint easier, the FALSE_PATH_TO_IN parameter controls
+//   the name of the synchronizer_impl instance. The following XDC constraint
+//   is used to ignore all instances of this false path.
+//
+//     set_false_path -to [get_pins -hierarchical -filter \
+//       {NAME =~ */synchronizer_false_path/stages[0].value_reg[0][*]/D}]
+//
+// Parameters:
+//
+//   WIDTH            : Width of the synchronizer (1 by default).
+//   STAGES           : Number of synchronizer stages (2 by default, for a
+//                      standard double-synchronizer).
+//   INITIAL_VAL      : Initial value of the output register (0 by default).
+//   FALSE_PATH_TO_IN : Set to 1 if the input should be considered a false path
+//                      and ignored by the timing analyzer. Set to 0 to let the
+//                      tool analyze this path.
 //
 
 module synchronizer #(
@@ -16,22 +54,6 @@ module synchronizer #(
    input  [WIDTH-1:0] in,
    output [WIDTH-1:0] out
 );
-
-   //Q: Why do we have a separate impl and instantiate
-   //it with a different instance name based on this
-   //arbitrary parameter FALSE_PATH_TO_IN?
-   //A: To make constraining these synchronizers easier.
-   //We would like to write a single false path constraint
-   //for all synchronizers when the input is truly async.
-   //However other cases might require constraining the input
-   //of this module.
-   //To enable this, all clients that hook up async signals to
-   //the "in" port can set FALSE_PATH_TO_IN=1 (or use the default)
-   //and all clients that want the "in" delay to be constrained can
-   //set FALSE_PATH_TO_IN=0.
-   //In the XDC we can write the following async constraint:
-   //set_false_path -to [get_pins */synchronizer_false_path/stages[0].value_reg[0]/D]
-   //and this will take care of all instances of this module with FALSE_PATH_TO_IN==1
 
    generate if (FALSE_PATH_TO_IN == 1) begin
       synchronizer_impl #(
