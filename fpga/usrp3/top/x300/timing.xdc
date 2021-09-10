@@ -596,7 +596,7 @@ set_max_delay -to [get_pins {radio_reset_sync/reset_int*/PRE}]      10.000
 #*******************************************************************************
 ## Asynchronous paths
 
-set_false_path -to   [get_pins -hier -filter {NAME =~ */synchronizer_false_path/stages[0].value_reg[*]/D}]
+set_false_path -to   [get_pins -hierarchical -filter {NAME =~ */synchronizer_false_path/stages[0].value_reg[0][*]/D}]
 set_false_path -to   [get_ports LED_*]
 set_false_path -to   [get_ports {SFPP*_RS0 SFPP*_RS1 SFPP*_SCL SFPP*_SDA SFPP*_TxDisable}]
 set_false_path -from [get_ports {SFPP*_ModAbs SFPP*_RxLOS SFPP*_SCL SFPP*_SDA SFPP*_TxFault}]
