@@ -106,6 +106,5 @@ set_max_delay -from $PORT_LIST 50.000
 set_min_delay -from $PORT_LIST 0.000
 
 #******************************************************************************
-## Reset Sync False Path
-set_false_path -to [get_pins */synchronizer_false_path/stages[0].value_reg[0]/D]
-set_false_path -to [get_pins */synchronizer_false_path/stages[0].value_reg[0]/C]
+## Synchronizer false paths
+set_false_path -to [get_pins -hierarchical -filter {NAME =~ */synchronizer_false_path/stages[0].value_reg[0][*]/D}]
