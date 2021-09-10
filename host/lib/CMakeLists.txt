@@ -134,6 +134,7 @@ endif(ENABLE_C_API)
 # Add common resource compiler subdirectory
 ########################################################################
 add_subdirectory(rc)
+LIBUHD_APPEND_LIBS(uhd_rc)
 
 ########################################################################
 # Add DLL resource file to Windows build
@@ -177,7 +178,7 @@ if(ENABLE_MPMD)
     list(APPEND libuhd_sources $<TARGET_OBJECTS:uhd_rpclib>)
 endif()
 add_library(uhd SHARED ${libuhd_sources})
-target_link_libraries(uhd ${Boost_LIBRARIES} ${libuhd_libs} uhd_rc)
+target_link_libraries(uhd ${Boost_LIBRARIES} ${libuhd_libs})
 set_target_properties(uhd PROPERTIES DEFINE_SYMBOL "UHD_DLL_EXPORTS")
 if(NOT LIBUHDDEV_PKG)
     set_target_properties(uhd PROPERTIES SOVERSION "${UHD_ABI_VERSION}")
@@ -199,9 +200,10 @@ endif(NOT UHDHOST_PKG)
 # Setup libuhd library (static)
 #######################################################
 if(ENABLE_STATIC_LIBS)
-    add_library(uhd_static STATIC ${libuhd_sources})
+    add_library(uhd_static STATIC ${libuhd_sources} $<TARGET_OBJECTS:uhd_rc>)
     set_target_properties(uhd_static PROPERTIES OUTPUT_NAME uhd)
     set_target_properties(uhd_static PROPERTIES COMPILE_DEFINITIONS UHD_STATIC_LIB)
+    target_link_libraries(uhd_static uhd_rc)
     install(TARGETS uhd_static
         ARCHIVE DESTINATION lib${LIB_SUFFIX} # .lib or .a file
     )
