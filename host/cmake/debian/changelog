@@ -1,3 +1,29 @@
+uhd (4.1.0.2-0ubuntu1) ubuntu_release; urgency=low
+
+  * b200
+    -  Fix overflow handling
+  * fpga
+    -  Re-order error and data packets
+    -  Fix sc16 to sc12 converter
+  * host
+    -  Add static_assert to prevent meta_range_t(0,0)
+  * mpm
+    -  x4xx: update mboard_max_rev
+  * mpmd
+    -  Add discoverable feature for trig i/o mode
+  * sim
+    -  Update chdr_16sc_to_sc12 testbench
+  * tests
+    -  Add recv(0) case to rx_streamer_test
+  * uhd
+    -  transport: Avoid exceptions in disconnect_receiver()
+    -  streamer: Restore original recv(0) semantics
+  * x4xx_bist
+    -  use get_mpm_client in gpio bist
+
+ -- Ettus Research <packages@ettus.com>  Fri, 10 Sep 2021 12:59:22 -0800
+
+
 uhd (4.1.0.1-0ubuntu1) ubuntu_release; urgency=low
 
   * cmake

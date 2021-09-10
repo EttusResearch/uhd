@@ -1,6 +1,28 @@
 Change Log for Releases
 ==============================
 
+## 004.001.000.002
+* b200
+  -  Fix overflow handling
+* fpga
+  -  Re-order error and data packets
+  -  Fix sc16 to sc12 converter
+* host
+  -  Add static_assert to prevent meta_range_t(0,0)
+* mpm
+  -  x4xx: update mboard_max_rev
+* mpmd
+  -  Add discoverable feature for trig i/o mode
+* sim
+  -  Update chdr_16sc_to_sc12 testbench
+* tests
+  -  Add recv(0) case to rx_streamer_test
+* uhd
+  -  transport: Avoid exceptions in disconnect_receiver()
+  -  streamer: Restore original recv(0) semantics
+* x4xx_bist
+  -  use get_mpm_client in gpio bist
+
 ## 004.001.000.001
 * cmake
   - remove redundant include
