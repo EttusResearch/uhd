@@ -77,6 +77,26 @@ BOOST_FIXTURE_TEST_CASE(zbx_cpld_ctrl_test, zbx_cpld_fixture)
     BOOST_CHECK_EQUAL(mock_reg_iface.memory[0x1024], 0x100);
 }
 
+BOOST_FIXTURE_TEST_CASE(zbx_tx_ant_override_rx_test, zbx_cpld_fixture)
+{
+    cpld.set_rx_antenna_switches(
+        0, uhd::usrp::zbx::ATR_ADDR_RX, uhd::usrp::zbx::ANTENNA_TXRX);
+
+    cpld.set_tx_antenna_switches(
+        0, ATR_ADDR_0X, uhd::usrp::zbx::ANTENNA_TXRX, tx_amp::HIGHBAND);
+    cpld.set_tx_antenna_switches(
+        0, ATR_ADDR_RX, uhd::usrp::zbx::ANTENNA_TXRX, tx_amp::HIGHBAND);
+    cpld.set_tx_antenna_switches(
+        0, ATR_ADDR_TX, uhd::usrp::zbx::ANTENNA_TXRX, tx_amp::HIGHBAND);
+    cpld.set_tx_antenna_switches(
+        0, ATR_ADDR_XX, uhd::usrp::zbx::ANTENNA_TXRX, tx_amp::HIGHBAND);
+
+    // Make sure that configuring the TX antenna switches didn't disconnect the RX
+    // from the TX/RX port.
+    BOOST_CHECK_EQUAL(
+        (mock_reg_iface.memory[0x2000 + 4 * uhd::usrp::zbx::ATR_ADDR_RX] >> 20) & 0x3, 0);
+}
+
 BOOST_FIXTURE_TEST_CASE(zbx_tx_amp_test, zbx_cpld_fixture)
 {
     cpld.set_tx_antenna_switches(
