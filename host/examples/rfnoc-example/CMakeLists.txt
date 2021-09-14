@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 3.8)
 project(rfnoc-example CXX C)
 
 #make sure our local CMake Modules path comes first
-#list(INSERT CMAKE_MODULE_PATH 0 ${UHD_SOURCE_DIR}/cmake/Modules)
+#list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
 #install to PyBOMBS target prefix if defined
 #if(DEFINED ENV{PYBOMBS_PREFIX})
@@ -37,8 +37,8 @@ find_package(UnixCommands)
 if(BASH)
     message(STATUS "Found bash interpreter: ${BASH}")
     configure_file(
-        ${UHD_SOURCE_DIR}/cmake/Modules/run_testbench.sh.in
-        ${UHD_BINARY_DIR}/cmake/Modules/run_testbench.sh
+        ${CMAKE_SOURCE_DIR}/cmake/Modules/run_testbench.sh.in
+        ${CMAKE_BINARY_DIR}/cmake/Modules/run_testbench.sh
         @ONLY
     )
 else()
@@ -98,7 +98,7 @@ macro(RFNOC_ADD_TB_DIR)
         set(_target_name "${_tb_dir}_tb")
         message(STATUS "Adding testbench target: ${_target_name}")
         add_custom_target(${_target_name}
-            COMMAND ${UHD_BINARY_DIR}/cmake/Modules/run_testbench.sh ${UHD_FPGA_DIR} ${UHD_FPGA_DEFAULT_DEVICE} ${CMAKE_CURRENT_SOURCE_DIR} xsim
+            COMMAND ${CMAKE_BINARY_DIR}/cmake/Modules/run_testbench.sh ${UHD_FPGA_DIR} ${UHD_FPGA_DEFAULT_DEVICE} ${CMAKE_CURRENT_SOURCE_DIR} xsim
         )
         add_dependencies(testbenches ${_target_name})
     endif()
@@ -138,7 +138,7 @@ macro(RFNOC_REGISTER_IMAGE_CORE)
     if (_rfnoc_image_builder_exe)
         message(STATUS "Adding image core target: ${_target_name}")
         add_custom_target(${_target_name}
-            COMMAND ${_rfnoc_image_builder_exe} -F ${UHD_FPGA_DIR} -y ${CMAKE_CURRENT_SOURCE_DIR}/${_rfnoc_image_core_SRC} -I ${UHD_SOURCE_DIR}
+            COMMAND ${_rfnoc_image_builder_exe} -F ${UHD_FPGA_DIR} -y ${CMAKE_CURRENT_SOURCE_DIR}/${_rfnoc_image_core_SRC} -I ${CMAKE_SOURCE_DIR}
         )
     endif()
 endmacro()
@@ -147,7 +147,7 @@ endmacro()
 # Create uninstall target
 ########################################################################
 configure_file(
-    ${UHD_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in
+    ${CMAKE_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake
 @ONLY)
 add_custom_target(uninstall
