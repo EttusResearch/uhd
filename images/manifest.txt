@@ -25,9 +25,9 @@ e3xx_e320_mender_default      meta-ettus-v3.15.0.0  e3xx/meta-ettus-v3.15.0.0/e3
 e3xx_e320_sdimg_default       meta-ettus-v3.15.0.0  e3xx/meta-ettus-v3.15.0.0/e3xx_e320_sdimg_default-v3.15.0.0.zip     0
 
 # N300-Series
-n3xx_n310_fpga_default          fpga-9ba275de0b       n3xx/fpga-9ba275de0b/n3xx_n310_fpga_default-g9ba275de.zip                 3f2f182e46fde15ef0eb006427e34c19cfcd66dcd137dd8f2019b89955ec55b3
-n3xx_n300_fpga_default          fpga-9ba275de0b       n3xx/fpga-9ba275de0b/n3xx_n300_fpga_default-g9ba275de.zip                 98dc6ca22268a78420ccd27b976d7584b9cb61ea5869492c64989e357463b8f5
-n3xx_n320_fpga_default          fpga-9ba275de0b        n3xx/fpga-9ba275de0b/n3xx_n320_fpga_default-g9ba275de.zip                cab469d33437e8b236793413a14912da82bfd2f69eea4f8e7ddb3205ddbbce77
+n3xx_n310_fpga_default          fpga-11752c50b       n3xx/fpga-11752c50b/n3xx_n310_fpga_default-g11752c5.zip                 53e4202de9b95c512be261cf076d2fb00384953dde93d4b288c13b7868b55789
+n3xx_n300_fpga_default          fpga-11752c50b       n3xx/fpga-11752c50b/n3xx_n300_fpga_default-g11752c5.zip                 603124cf15e900db39dce0218647dcb2daca3e1a7a96be2ae991669fb561c7ee
+n3xx_n320_fpga_default          fpga-11752c50b        n3xx/fpga-11752c50b/n3xx_n320_fpga_default-g11752c5.zip                8403f318d8090dd6c98423990731514791e903dc0ef87d12a50d6df1ee5acea4
 n3xx_n310_cpld_default          fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n310_cpld_default-g6bea23d.zip                ef128dcd265ee8615b673021d4ee84c39357012ffe8b28c8ad7f893f9dcb94cb
 n3xx_n320_cpld_default          fpga-4bc2c6f       n3xx/fpga-4bc2c6f/n3xx_n320_cpld_default-g4bc2c6f.zip              6680a9363efc5fa8b5a68beb3dff44f2e314b94e716e3a1751aba0fed1f384da
 # N3XX Mykonos firmware
