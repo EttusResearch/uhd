@@ -1817,6 +1817,10 @@ void ad9361_device_t::initialize()
 
     /* Set TXers & RXers on (only works in FDD mode) */
     _io_iface->poke8(0x014, 0x21);
+
+    /* We won't be using immediate-Tx-attenuation, so we de-assert "Mask Clr
+     * Atten Update". */
+    _io_iface->poke8(0x077, 0x00);
 }
 
 void ad9361_device_t::set_io_iface(ad9361_io::sptr io_iface)
@@ -2203,11 +2207,6 @@ double ad9361_device_t::set_gain(direction_t direction, chain_t chain, const dou
 
         return gain_index;
     } else {
-        /* Setting the below bits causes a change in the TX attenuation word
-         * to immediately take effect. */
-        _io_iface->poke8(0x077, 0x40);
-        _io_iface->poke8(0x07c, 0x40);
-
         /* Each gain step is -0.25dB. Calculate the attenuation necessary
          * for the requested gain, convert it into gain steps, then write
          * the attenuation word. Max gain (so zero attenuation) is 89.75.
@@ -2215,8 +2214,8 @@ double ad9361_device_t::set_gain(direction_t direction, chain_t chain, const dou
          * "value" is out of bounds, so range checking must be performed
          * outside this function.
          */
-        double atten      = AD9361_MAX_GAIN - value;
-        uint32_t attenreg = uint32_t(atten * 4);
+        const double atten      = AD9361_MAX_GAIN - value;
+        const uint32_t attenreg = uint32_t(atten * 4);
         if (chain == CHAIN_1) {
             _tx1_gain = value;
             _io_iface->poke8(0x073, attenreg & 0xFF);
@@ -2226,6 +2225,13 @@ double ad9361_device_t::set_gain(direction_t direction, chain_t chain, const dou
             _io_iface->poke8(0x075, attenreg & 0xFF);
             _io_iface->poke8(0x076, (attenreg >> 8) & 0x01);
         }
+
+        /* After we've set both registers for the new gain, we apply it (assert
+         * "Immediately Update TPC Atten"). This avoids the attenuation from
+         * intermediately becoming very small (i.e., high output power) during
+         * the set-gain cycle.
+         */
+        _io_iface->poke8(0x07c, 0x40);
         return AD9361_MAX_GAIN - ((double)(attenreg) / 4);
     }
 }
