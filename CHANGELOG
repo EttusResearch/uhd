@@ -1,6 +1,10 @@
 Change Log for Releases
 ==============================
 
+## 004.001.000.003
+* uhd
+  - zbx: Prevent TX antenna config from disrupting RX
+
 ## 004.001.000.002
 * b200
   -  Fix overflow handling
