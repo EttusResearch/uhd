@@ -210,16 +210,18 @@ def benchmark_rx_rate(usrp, rx_streamer, random, timer_elapsed_event, rx_statist
             # Reset the overflow flag
             if had_an_overflow:
                 had_an_overflow = False
-                num_rx_dropped += uhd.types.TimeSpec(
-                    metadata.time_spec.get_real_secs() - last_overflow.get_real_secs()
-                ).to_ticks(rate)
+                num_rx_dropped += (metadata.time_spec - last_overflow).to_ticks(rate)
         elif metadata.error_code == uhd.types.RXMetadataErrorCode.overflow:
             had_an_overflow = True
-            last_overflow = metadata.time_spec
+            # Need to make sure that last_overflow is a new TimeSpec object, not
+            # a reference to metadata.time_spec, or it would not be useful
+            # further up.
+            last_overflow = uhd.types.TimeSpec(
+                metadata.time_spec.get_full_secs(),
+                metadata.time_spec.get_frac_secs())
             # If we had a sequence error, record it
             if metadata.out_of_sequence:
                 num_rx_seqerr += 1
-                logger.warning("Detected RX sequence error.")
             # Otherwise just count the overrun
             else:
                 num_rx_overruns += 1
