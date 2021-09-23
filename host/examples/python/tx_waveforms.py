@@ -12,9 +12,9 @@ import argparse
 import numpy as np
 import uhd
 
-waveforms = {
+WAVEFORMS = {
     "sine": lambda n, tone_offset, rate: np.exp(n * 2j * np.pi * tone_offset / rate),
-    "square": lambda n, tone_offset, rate: np.sign(waveforms["sine"](n, tone_offset, rate)),
+    "square": lambda n, tone_offset, rate: np.sign(WAVEFORMS["sine"](n, tone_offset, rate)),
     "const": lambda n, tone_offset, rate: 1 + 1j,
     "ramp": lambda n, tone_offset, rate:
             2*(n*(tone_offset/rate) - np.floor(float(0.5 + n*(tone_offset/rate))))
@@ -26,7 +26,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-a", "--args", default="", type=str)
     parser.add_argument(
-        "-w", "--waveform", default="sine", choices=waveforms.keys(), type=str)
+        "-w", "--waveform", default="sine", choices=WAVEFORMS.keys(), type=str)
     parser.add_argument("-f", "--freq", type=float, required=True)
     parser.add_argument("-r", "--rate", default=1e6, type=float)
     parser.add_argument("-d", "--duration", default=5.0, type=float)
@@ -44,10 +44,10 @@ def main():
     if not isinstance(args.channels, list):
         args.channels = [args.channels]
     data = np.array(
-        list(map(lambda n: args.wave_ampl * waveforms[args.waveform](n, args.wave_freq, args.rate),
-            np.arange(
-                int(10 * np.floor(args.rate / args.wave_freq)),
-                dtype=np.complex64))),
+        list(map(lambda n: args.wave_ampl * WAVEFORMS[args.waveform](n, args.wave_freq, args.rate),
+                 np.arange(
+                     int(10 * np.floor(args.rate / args.wave_freq)),
+                     dtype=np.complex64))),
         dtype=np.complex64)  # One period
 
     usrp.send_waveform(data, args.duration, args.freq, args.rate,
