@@ -1242,7 +1242,11 @@ double ad9361_device_t::_tune_bbvco(const double rate)
                                                          * (double)modulus);
     UHD_LOG_TRACE("AD936X",
         boost::format("[ad9361_device_t::_tune_bbvco] nint=%d nfrac=%d") % nint % nfrac);
-    double actual_vcorate = fref * ((double)nint + ((double)nfrac / (double)modulus));
+    const double actual_vcorate =
+        fref * ((double)nint + ((double)nfrac / (double)modulus));
+    UHD_LOG_TRACE("AD936X",
+        boost::format("[ad9361_device_t::_tune_bbvco] actual vcorate=%.10f")
+            % actual_vcorate);
 
     /* Scale CP current according to VCO rate */
     const double icp_baseline  = 150e-6;
@@ -1507,14 +1511,30 @@ double ad9361_device_t::_setup_rates(const double rate)
     const double adcclk = _tune_bbvco(rate * divfactor);
     double dacclk       = adcclk;
 
-    /* The DAC clock must be <= 336e6, and is either the ADC clock or 1/2 the
-     * ADC clock.*/
+    // We keep the DAC clock <= 336 MHz, either the ADC clock or 1/2 the ADC
+    // clock.
+    // Note that current recommendations from ADI are 640 MHz for the ADC and
+    // 320 MHz for the DAC. We are thus overclocking the AD9361, since we are
+    // using these no longer valid recommendations, but they seem to work and we
+    // consider the risk of changing these higher than the benefit. We will add
+    // a log statement, though, so we can track back suboptimal RF performance
+    // to overclocked settings.
     if (adcclk > 336e6) {
         /* Make the DAC clock = ADC/2 */
         _regs.bbpll = _regs.bbpll | 0x08;
         dacclk      = adcclk / 2.0;
     } else {
         _regs.bbpll = _regs.bbpll & 0xF7;
+    }
+    if (dacclk > 320e6) {
+        UHD_LOG_DEBUG("AD936X",
+            "[ad9361_device_t::_setup_rates] DAC rate is overclocked! dacclk="
+                << (dacclk / 1e6) << " MHz.");
+    }
+    if (dacclk > 640e6) {
+        UHD_LOG_DEBUG("AD936X",
+            "[ad9361_device_t::_setup_rates] ADC rate is overclocked! adcclk="
+                << (adcclk / 1e6) << " MHz.");
     }
 
     /* Set the dividers / interpolators in AD9361. */
