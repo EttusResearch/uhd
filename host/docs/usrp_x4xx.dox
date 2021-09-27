@@ -701,10 +701,14 @@ found.
 
 Run:
 
-    sudo bmaptool /path/to/usrp_x4xx_fs.sdimg.bz2 /dev/sdX
+    sudo bmaptool copy /path/to/usrp_x4xx_fs.sdimg.bz2 /dev/sdX
 
 to flash the eMMC with this image (replacing /dev/sdX with the block device
 of the X410's eMMC as indicated by your kernel log).
+
+When bmaptool has indicated that copying has completed, hit Ctrl-C on the U-boot
+prompt to terminate the mass storage mode. Then, power-cycle the device to load
+the new filesystem.
 
 \subsection x4xx_jtag_boot Booting X410 over JTAG
 
