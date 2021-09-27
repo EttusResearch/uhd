@@ -117,6 +117,13 @@ module x4xx_core #(
   input  wire [11:0] gpio_in_b,
   output wire [11:0] gpio_out_a,
   output wire [11:0] gpio_out_b,
+  // PS GPIO Control
+  input  wire [11:0] ps_gpio_out_a,
+  output wire [11:0] ps_gpio_in_a,
+  input  wire [11:0] ps_gpio_ddr_a,
+  input  wire [11:0] ps_gpio_out_b,
+  output wire [11:0] ps_gpio_in_b,
+  input  wire [11:0] ps_gpio_ddr_b,
 
   // Misc
   input  [31:0] qsfp_port_0_0_info,
@@ -294,6 +301,12 @@ module x4xx_core #(
     .gpio_in_fabric_b                 (),
     .gpio_out_fabric_a                (12'b0),
     .gpio_out_fabric_b                (12'b0),
+    .ps_gpio_out_a                    (ps_gpio_out_a),
+    .ps_gpio_in_a                     (ps_gpio_in_a),
+    .ps_gpio_ddr_a                    (ps_gpio_ddr_a),
+    .ps_gpio_out_b                    (ps_gpio_out_b),
+    .ps_gpio_in_b                     (ps_gpio_in_b),
+    .ps_gpio_ddr_b                    (ps_gpio_ddr_b),
     .s_radio_ctrlport_req_wr          (ctrlport_radio_req_wr),
     .s_radio_ctrlport_req_rd          (ctrlport_radio_req_rd),
     .s_radio_ctrlport_req_addr        (ctrlport_radio_req_addr),

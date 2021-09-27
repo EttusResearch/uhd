@@ -557,8 +557,9 @@ module x4xx (
   wire [3:0]  eth0_link_up, eth0_activity;
   wire [3:0]  eth1_link_up, eth1_activity;
 
-  wire [31:0] gpio_0_tri_i;
-  wire [31:0] gpio_0_tri_o;
+  wire [63:0] gpio_0_tri_i;
+  wire [63:0] gpio_0_tri_o;
+  wire [63:0] gpio_0_tri_t;
 
   // RFDC AXI4-Stream interfaces
   //
@@ -707,8 +708,20 @@ module x4xx (
   assign pl_ps_irq1[6] = eth1_rx_irq[0] || eth1_rx_irq[1] || eth1_rx_irq[2] || eth1_rx_irq[3];
   assign pl_ps_irq1[7] = eth1_tx_irq[0] || eth1_tx_irq[1] || eth1_tx_irq[2] || eth1_tx_irq[3];
 
-  // GPIO inputs (assigned from 31 decreasing)
+  // BD DIO signals
+  wire [11:0] ps_gpio_out_a;
+  wire [11:0] ps_gpio_in_a;
+  wire [11:0] ps_gpio_ddr_a;
+  wire [11:0] ps_gpio_out_b;
+  wire [11:0] ps_gpio_in_b;
+  wire [11:0] ps_gpio_ddr_b;
+
+  // GPIO inputs (assigned from 63 decreasing)
   //
+  // DIO Control
+  assign gpio_0_tri_i[63:56] = 8'b0;
+  assign gpio_0_tri_i[55:44] = ps_gpio_in_b;
+  assign gpio_0_tri_i[43:32] = ps_gpio_in_a;
   // Make the current PPS signal available to the PS.
   assign gpio_0_tri_i[31]    = pps_refclk;
   assign gpio_0_tri_i[30]    = 0; //unused
@@ -737,6 +750,13 @@ module x4xx (
   assign CPLD_JTAG_OE_n = gpio_0_tri_o[0];
   // Drive the CPLD JTAG enable line (active high) with GPIO[1] from the PS.
   assign PL_CPLD_JTAGEN = gpio_0_tri_o[1];
+
+  // propagate db GPIO direction and output control
+  assign ps_gpio_ddr_a = gpio_0_tri_t[43:32];
+  assign ps_gpio_out_a = gpio_0_tri_o[43:32];
+
+  assign ps_gpio_ddr_b = gpio_0_tri_t[55:44];
+  assign ps_gpio_out_b = gpio_0_tri_o[55:44];
 
   x4xx_ps_rfdc_bd x4xx_ps_rfdc_bd_i (
     .adc_data_out_resetn_dclk      (adc_data_out_resetn_dclk),
@@ -943,7 +963,7 @@ module x4xx (
     .dac1_clk_clk_p                (DAC_CLK_P[1]),
     .gpio_0_tri_i                  (gpio_0_tri_i),
     .gpio_0_tri_o                  (gpio_0_tri_o),
-    .gpio_0_tri_t                  (),
+    .gpio_0_tri_t                  (gpio_0_tri_t),
     .m_axi_eth_internal_awaddr     (axi_eth_internal_awaddr),
     .m_axi_eth_internal_awprot     (),
     .m_axi_eth_internal_awvalid    (axi_eth_internal_awvalid),
@@ -2099,6 +2119,12 @@ module x4xx (
     .gpio_out_b                    (gpio_out_b),
     .gpio_en_a                     (gpio_en_a),
     .gpio_en_b                     (gpio_en_b),
+    .ps_gpio_out_a                 (ps_gpio_out_a),
+    .ps_gpio_in_a                  (ps_gpio_in_a),
+    .ps_gpio_ddr_a                 (ps_gpio_ddr_a),
+    .ps_gpio_out_b                 (ps_gpio_out_b),
+    .ps_gpio_in_b                  (ps_gpio_in_b),
+    .ps_gpio_ddr_b                 (ps_gpio_ddr_b),
     .qsfp_port_0_0_info            (qsfp_port_0_0_info),
     .qsfp_port_0_1_info            (qsfp_port_0_1_info),
     .qsfp_port_0_2_info            (qsfp_port_0_2_info),
@@ -2220,12 +2246,12 @@ endmodule
 //        <li> Version last modified: @.VERSIONING_REGS_REGMAP..VERSION_LAST_MODIFIED
 //      </info>
 //      <value name="FPGA_CURRENT_VERSION_MAJOR"           integer="7"/>
-//      <value name="FPGA_CURRENT_VERSION_MINOR"           integer="4"/>
+//      <value name="FPGA_CURRENT_VERSION_MINOR"           integer="5"/>
 //      <value name="FPGA_CURRENT_VERSION_BUILD"           integer="0"/>
 //      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_MAJOR" integer="7"/>
 //      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_MINOR" integer="0"/>
 //      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_BUILD" integer="0"/>
-//      <value name="FPGA_VERSION_LAST_MODIFIED_TIME"      integer="0x21091513"/>
+//      <value name="FPGA_VERSION_LAST_MODIFIED_TIME"      integer="0x21111210"/>
 //    </enumeratedtype>
 //  </group>
 //</regmap>

@@ -3,7 +3,7 @@
 -- File: x4xx_ps_rfdc_bd.vhd
 -- Author: niBlockDesign::niBdExportStub
 -- Original Project: HwBuildTools
--- Date: 03 February 2021
+-- Date: 27 September 2021
 --
 ------------------------------------------------------------------------------------------
 -- (c) Copyright National Instruments Corporation
@@ -226,9 +226,9 @@ port (
     dac0_clk_clk_p : in STD_LOGIC;
     dac1_clk_clk_n : in STD_LOGIC;
     dac1_clk_clk_p : in STD_LOGIC;
-    gpio_0_tri_i : in STD_LOGIC_VECTOR ( 31 downto 0 );
-    gpio_0_tri_o : out STD_LOGIC_VECTOR ( 31 downto 0 );
-    gpio_0_tri_t : out STD_LOGIC_VECTOR ( 31 downto 0 );
+    gpio_0_tri_i : in STD_LOGIC_VECTOR ( 63 downto 0 );
+    gpio_0_tri_o : out STD_LOGIC_VECTOR ( 63 downto 0 );
+    gpio_0_tri_t : out STD_LOGIC_VECTOR ( 63 downto 0 );
     m_axi_eth_internal_awaddr : out STD_LOGIC_VECTOR ( 39 downto 0 );
     m_axi_eth_internal_awprot : out STD_LOGIC_VECTOR ( 2 downto 0 );
     m_axi_eth_internal_awvalid : out STD_LOGIC_VECTOR ( 0 to 0 );

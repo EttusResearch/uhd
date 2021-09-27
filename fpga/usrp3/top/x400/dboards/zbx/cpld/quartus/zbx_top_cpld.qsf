@@ -854,7 +854,7 @@ set_global_assignment -name VERILOG_INCLUDE_FILE ../../../../../../lib/control/r
 set_global_assignment -name VERILOG_FILE ../../../../../../lib/control/ram_2port.v
 set_global_assignment -name VERILOG_FILE ../../../../../../lib/control/handshake.v
 set_global_assignment -name VERILOG_FILE ../../../../../../lib/control/pulse_synchronizer.v
-set_global_assignment -name VERILOG_FILE ../ctrlport_window.v
+set_global_assignment -name VERILOG_FILE ../../../../../../lib/rfnoc/utils/ctrlport_window.v
 
 set_global_assignment -name QSYS_FILE ../ip/on_chip_flash/on_chip_flash.qsys
 set_global_assignment -name QSYS_FILE ../ip/osc/osc.qsys
