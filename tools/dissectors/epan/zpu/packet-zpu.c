@@ -18,6 +18,7 @@
  *  uint32_t data;
  */
 
+#include <glib.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -26,7 +27,6 @@ extern "C" {
 #include "config.h"
 #endif
 
-#include <glib.h>
 #include <epan/packet.h>
 
 #ifdef __cplusplus
