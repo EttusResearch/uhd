@@ -20,69 +20,69 @@ set(PLUGIN_C_GENERATOR ${CMAKE_SOURCE_DIR}/make-plugin-reg.py)
 macro(register_plugin_files _outputfile _registertype)
 
     add_custom_command(
-            OUTPUT ${_outputfile}
-	    DEPENDS ${ARGN} ${PLUGIN_C_GENERATOR}
-	    COMMAND ${PYTHON_EXECUTABLE}
-	        ${PLUGIN_C_GENERATOR}
-		${CMAKE_CURRENT_SOURCE_DIR}
-		${_registertype}
-		${ARGN}
-            COMMENT "Generating ${_outputfile}"
+        OUTPUT ${_outputfile}
+        DEPENDS ${ARGN} ${PLUGIN_C_GENERATOR}
+        COMMAND ${PYTHON_EXECUTABLE}
+        ${PLUGIN_C_GENERATOR}
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${_registertype}
+        ${ARGN}
+        COMMENT "Generating ${_outputfile}"
     )
 
 endmacro(register_plugin_files)
 
 # Plugin name and version info (major minor micro extra)
 macro(SET_MODULE_INFO _plugin _ver_major _ver_minor _ver_micro _ver_extra)
-	if(WIN32)
-		# Create the Windows .rc file for the plugin.
-		set(MODULE_NAME ${_plugin})
-		set(MODULE_VERSION_MAJOR ${_ver_major})
-		set(MODULE_VERSION_MINOR ${_ver_minor})
-		set(MODULE_VERSION_MICRO ${_ver_micro})
-		set(MODULE_VERSION_EXTRA ${_ver_extra})
-		set(MODULE_VERSION "${MODULE_VERSION_MAJOR}.${MODULE_VERSION_MINOR}.${MODULE_VERSION_MICRO}.${MODULE_VERSION_EXTRA}")
-		set(RC_MODULE_VERSION "${MODULE_VERSION_MAJOR},${MODULE_VERSION_MINOR},${MODULE_VERSION_MICRO},${MODULE_VERSION_EXTRA}")
+    if(WIN32)
+        # Create the Windows .rc file for the plugin.
+        set(MODULE_NAME ${_plugin})
+        set(MODULE_VERSION_MAJOR ${_ver_major})
+        set(MODULE_VERSION_MINOR ${_ver_minor})
+        set(MODULE_VERSION_MICRO ${_ver_micro})
+        set(MODULE_VERSION_EXTRA ${_ver_extra})
+        set(MODULE_VERSION "${MODULE_VERSION_MAJOR}.${MODULE_VERSION_MINOR}.${MODULE_VERSION_MICRO}.${MODULE_VERSION_EXTRA}")
+        set(RC_MODULE_VERSION "${MODULE_VERSION_MAJOR},${MODULE_VERSION_MINOR},${MODULE_VERSION_MICRO},${MODULE_VERSION_EXTRA}")
 
-		set(MSVC_VARIANT "${CMAKE_GENERATOR}")
+        set(MSVC_VARIANT "${CMAKE_GENERATOR}")
 
-		# Create the plugin.rc file from the template
-		set(_plugin_rc_in ${CMAKE_CURRENT_SOURCE_DIR}/plugin.rc.in)
-		configure_file(${_plugin_rc_in} plugin.rc @ONLY)
-		set(PLUGIN_RC_FILE ${CMAKE_CURRENT_BINARY_DIR}/plugin.rc)
-	endif()
+        # Create the plugin.rc file from the template
+        set(_plugin_rc_in ${CMAKE_CURRENT_SOURCE_DIR}/plugin.rc.in)
+        configure_file(${_plugin_rc_in} plugin.rc @ONLY)
+        set(PLUGIN_RC_FILE ${CMAKE_CURRENT_BINARY_DIR}/plugin.rc)
+    endif()
 
-	set(PLUGIN_VERSION "${_ver_major}.${_ver_minor}.${_ver_micro}")
-	add_definitions(-DPLUGIN_VERSION=\"${PLUGIN_VERSION}\")
-	add_definitions(-DVERSION_MAJOR=${Wireshark_VERSION_MAJOR})
-	add_definitions(-DVERSION_MINOR=${Wireshark_VERSION_MINOR})
+    set(PLUGIN_VERSION "${_ver_major}.${_ver_minor}.${_ver_micro}")
+    add_definitions(-DPLUGIN_VERSION=\"${PLUGIN_VERSION}\")
+    add_definitions(-DVERSION_MAJOR=${Wireshark_VERSION_MAJOR})
+    add_definitions(-DVERSION_MINOR=${Wireshark_VERSION_MINOR})
 endmacro()
 
 macro(ADD_PLUGIN_LIBRARY _plugin _subfolder)
-	add_library(${_plugin} MODULE
-		${PLUGIN_FILES}
-		${PLUGIN_RC_FILE}
-	)
+    add_library(${_plugin} MODULE
+        ${PLUGIN_FILES}
+        ${PLUGIN_RC_FILE}
+    )
 
-	set_target_properties(${_plugin} PROPERTIES
-		PREFIX ""
-		LINK_FLAGS "${WS_LINK_FLAGS}"
-		FOLDER "Plugins"
-	)
+    set_target_properties(${_plugin} PROPERTIES
+        PREFIX ""
+        LINK_FLAGS "${WS_LINK_FLAGS}"
+        FOLDER "Plugins"
+    )
 
-	set_target_properties(${_plugin} PROPERTIES
-		LIBRARY_OUTPUT_DIRECTORY ${_subfolder}
-		INSTALL_RPATH ""
-	)
+    set_target_properties(${_plugin} PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY ${_subfolder}
+        INSTALL_RPATH ""
+    )
 endmacro()
 
 macro(INSTALL_PLUGIN _plugin _subfolder)
     install(TARGETS ${_plugin}
         LIBRARY DESTINATION ${_subfolder} NAMELINK_SKIP
     )
-        #LIBRARY DESTINATION ${Wireshark_PLUGIN_INSTALL_DIR}/${_subfolder} NAMELINK_SKIP
-        #RUNTIME DESTINATION ${Wireshark_PLUGIN_INSTALL_DIR}
-        #ARCHIVE DESTINATION ${Wireshark_PLUGIN_INSTALL_DIR}
+    #LIBRARY DESTINATION ${Wireshark_PLUGIN_INSTALL_DIR}/${_subfolder} NAMELINK_SKIP
+    #RUNTIME DESTINATION ${Wireshark_PLUGIN_INSTALL_DIR}
+    #ARCHIVE DESTINATION ${Wireshark_PLUGIN_INSTALL_DIR}
 endmacro()
 
 
@@ -90,7 +90,7 @@ find_package(Wireshark CONFIG REQUIRED)
 find_package(GLIB2)
 
 if(NOT Wireshark_PLUGINS_ENABLED)
-	message(FATAL_ERROR "Wireshark was compiled without support for plugins")
+    message(FATAL_ERROR "Wireshark was compiled without support for plugins")
 endif()
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
@@ -134,5 +134,3 @@ if(ENABLE_ZPU)
 endif(ENABLE_ZPU)
 
 WS_PRINT_COMPONENT_SUMMARY()
-
-
