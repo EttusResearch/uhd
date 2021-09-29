@@ -1,3 +1,11 @@
+uhd (4.1.0.4-0ubuntu1) ubuntu_release; urgency=low
+
+  * uhd
+    - Update version in UHDVersion.cmake
+
+ -- Ettus Research <packages@ettus.com>  Wed, 29 Sep 2021 09:25:20 -0800
+
+
 uhd (4.1.0.3-0ubuntu1) ubuntu_release; urgency=low
 
   * uhd

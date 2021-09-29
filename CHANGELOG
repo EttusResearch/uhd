@@ -1,6 +1,10 @@
 Change Log for Releases
 ==============================
 
+## 004.001.000.004
+* uhd
+  - Update version in UHDVersion.cmake
+
 ## 004.001.000.003
 * uhd
   - zbx: Prevent TX antenna config from disrupting RX
