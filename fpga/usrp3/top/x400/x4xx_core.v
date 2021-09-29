@@ -249,6 +249,7 @@ module x4xx_core #(
     .PCIE_PRESENT   (0)
   ) x4xx_core_common_i (
     .radio_clk                        (radio_clk),
+    .radio_clk_2x                     (radio_clk_2x),
     .radio_rst                        (radio_rst),
     .rfnoc_chdr_clk                   (rfnoc_chdr_clk),
     .rfnoc_chdr_rst                   (rfnoc_chdr_rst),

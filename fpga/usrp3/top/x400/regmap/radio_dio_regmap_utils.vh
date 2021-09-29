@@ -13,6 +13,7 @@
 
   // RADIO_GPIO_ATR_REGS : 0x0 (x4xx_core_common.v)
   // DIO_SOURCE_CONTROL  : 0x1000 (x4xx_core_common.v)
+  // DIGITAL_IFC_REGS    : 0x2000 (x4xx_core_common.v)
 
 //===============================================================================
 // RegTypes
@@ -29,3 +30,7 @@
   // DIO_SOURCE_CONTROL Window (from x4xx_core_common.v)
   localparam DIO_SOURCE_CONTROL = 'h1000; // Window Offset
   localparam DIO_SOURCE_CONTROL_SIZE = 'h1000;  // size in bytes
+
+  // DIGITAL_IFC_REGS Window (from x4xx_core_common.v)
+  localparam DIGITAL_IFC_REGS = 'h2000; // Window Offset
+  localparam DIGITAL_IFC_REGS_SIZE = 'h1000;  // size in bytes

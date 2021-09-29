@@ -312,13 +312,13 @@ endmodule
 //      <info>
 //        Controls whether GPIO lines use the TX and RX state of an RF channel
 //        (Classic ATR) or the daughterboard state the selector for the
-//        @.GPIO_ATR_STATE.
+//        @.ATR_STATE.
 //      </info>
 //      <bitfield name="ATR_OPTION" range="0" initialvalue="0">
 //        <info>
 //          Sets the scheme in which RF states in the radio will control GPIO
 //          lines. 0 = DB state is used. RF states are combined and the
-//          GPIO state is driven based on all 16 @.GPIO_ATR_STATE registers.
+//          GPIO state is driven based on all 16 @.ATR_STATE registers.
 //          1 = Each RF channel has its separate ATR state(Classic ATR).
 //          Use register @.CLASSIC_ATR_CONFIG to indicate the RF channel
 //          to which each GPIO line responds to.

@@ -38,6 +38,7 @@ module x4xx_core_common #(
 ) (
   // Clocks and resets
   input wire radio_clk,
+  input wire radio_clk_2x,
   input wire radio_rst,
 
   input wire rfnoc_chdr_clk,
@@ -234,16 +235,16 @@ module x4xx_core_common #(
     .s_ctrlport_resp_ack     (m_resp_ack),
     .s_ctrlport_resp_status  (m_resp_status),
     .s_ctrlport_resp_data    (m_resp_data),
-    .m_ctrlport_req_wr       ({timekeeper_req_wr, versioning_req_wr, global_regs_req_wr, dio_req_wr}),
-    .m_ctrlport_req_rd       ({timekeeper_req_rd, versioning_req_rd, global_regs_req_rd, dio_req_rd}),
-    .m_ctrlport_req_addr     ({timekeeper_req_addr, versioning_req_addr, global_regs_req_addr, dio_req_addr}),
-    .m_ctrlport_req_data     ({timekeeper_req_data, versioning_req_data, global_regs_req_data, dio_req_data}),
+    .m_ctrlport_req_wr       ({timekeeper_req_wr,      versioning_req_wr,      global_regs_req_wr,      dio_req_wr}),
+    .m_ctrlport_req_rd       ({timekeeper_req_rd,      versioning_req_rd,      global_regs_req_rd,      dio_req_rd}),
+    .m_ctrlport_req_addr     ({timekeeper_req_addr,    versioning_req_addr,    global_regs_req_addr,    dio_req_addr}),
+    .m_ctrlport_req_data     ({timekeeper_req_data,    versioning_req_data,    global_regs_req_data,    dio_req_data}),
     .m_ctrlport_req_byte_en  (),
     .m_ctrlport_req_has_time (),
     .m_ctrlport_req_time     (),
-    .m_ctrlport_resp_ack     ({timekeeper_resp_ack, versioning_resp_ack, global_regs_resp_ack, dio_resp_ack}),
+    .m_ctrlport_resp_ack     ({timekeeper_resp_ack,    versioning_resp_ack,    global_regs_resp_ack,    dio_resp_ack}),
     .m_ctrlport_resp_status  ({timekeeper_resp_status, versioning_resp_status, global_regs_resp_status, dio_resp_status}),
-    .m_ctrlport_resp_data    ({timekeeper_resp_data, versioning_resp_data, global_regs_resp_data, dio_resp_data})
+    .m_ctrlport_resp_data    ({timekeeper_resp_data,   versioning_resp_data,   global_regs_resp_data,   dio_resp_data})
   );
 
 
@@ -349,6 +350,7 @@ module x4xx_core_common #(
   // Radio CtrlPort Splitter
   //-----------------------------------------------------------------------
 
+  // Radio CtrlPort endpoints
   wire [  1*NUM_DBOARDS-1:0] rf_ctrlport_req_wr;
   wire [  1*NUM_DBOARDS-1:0] rf_ctrlport_req_rd;
   wire [ 20*NUM_DBOARDS-1:0] rf_ctrlport_req_addr;
@@ -371,8 +373,35 @@ module x4xx_core_common #(
   wire [  2*NUM_DBOARDS-1:0] radio_dio_resp_status;
   wire [ 32*NUM_DBOARDS-1:0] radio_dio_resp_data;
 
+  wire [  1*NUM_DBOARDS-1:0] gpio_atr_ctrlport_req_wr;
+  wire [  1*NUM_DBOARDS-1:0] gpio_atr_ctrlport_req_rd;
+  wire [ 20*NUM_DBOARDS-1:0] gpio_atr_ctrlport_req_addr;
+  wire [ 32*NUM_DBOARDS-1:0] gpio_atr_ctrlport_req_data;
+  wire [  4*NUM_DBOARDS-1:0] gpio_atr_ctrlport_req_byte_en;
+  wire [  1*NUM_DBOARDS-1:0] gpio_atr_ctrlport_req_has_time;
+  wire [ 64*NUM_DBOARDS-1:0] gpio_atr_ctrlport_req_time;
+  wire [  1*NUM_DBOARDS-1:0] gpio_atr_ctrlport_resp_ack;
+  wire [  2*NUM_DBOARDS-1:0] gpio_atr_ctrlport_resp_status;
+  wire [ 32*NUM_DBOARDS-1:0] gpio_atr_ctrlport_resp_data;
+
+  wire [  1*NUM_DBOARDS-1:0] gpio_spi_ctrlport_req_wr;
+  wire [  1*NUM_DBOARDS-1:0] gpio_spi_ctrlport_req_rd;
+  wire [ 20*NUM_DBOARDS-1:0] gpio_spi_ctrlport_req_addr;
+  wire [ 32*NUM_DBOARDS-1:0] gpio_spi_ctrlport_req_data;
+  wire [  4*NUM_DBOARDS-1:0] gpio_spi_ctrlport_req_byte_en;
+  wire [  1*NUM_DBOARDS-1:0] gpio_spi_ctrlport_req_has_time;
+  wire [ 64*NUM_DBOARDS-1:0] gpio_spi_ctrlport_req_time;
+  wire [  1*NUM_DBOARDS-1:0] gpio_spi_ctrlport_resp_ack;
+  wire [  2*NUM_DBOARDS-1:0] gpio_spi_ctrlport_resp_status;
+  wire [ 32*NUM_DBOARDS-1:0] gpio_spi_ctrlport_resp_data;
+
+  // GPIO control signals from radio ctrlport endpoints to
+  // x4xx_dio.
   wire [NUM_DBOARDS*32-1:0] atr_gpio_out;
   wire [NUM_DBOARDS*32-1:0] atr_gpio_ddr;
+
+  wire [NUM_DBOARDS*32-1:0] spi_gpio_out;
+  wire [NUM_DBOARDS*32-1:0] spi_gpio_ddr;
 
   genvar db;
   generate
@@ -385,67 +414,100 @@ module x4xx_core_common #(
       //   This section takes the CtrlPort master from each radio block and splits it
       //   into a CtrlPort bus for the associated daughter(m_radio_ctrlport_*), the
       //   RFDC timing control (rf_ctrlport_*), the ATR GPIO control for the DB state
-      //   the current radio(db) and DIO main control block(x4xx_dio).
+      //   the current radio(db), the SPI controller of the radio, and DIO main
+      //   control block(x4xx_dio).
       //   Refer to diagram in the RADIO_CTRLPORT_REGMAP Register map for a
       //   visual representation on how these interfaces are distributed.
 
       // Register space offset calculation
       localparam [19:0] DIO_SOURCE_CONTROL_OFFSET = DIO_WINDOW + DIO_SOURCE_CONTROL;
       localparam [19:0] RADIO_GPIO_ATR_OFFSET = DIO_WINDOW + RADIO_GPIO_ATR_REGS;
+      localparam [19:0] DIGITAL_IFC_OFFSET = DIO_WINDOW + DIGITAL_IFC_REGS;
 
       // Register space size calculation
       localparam [31:0] RFDC_TIMING_WINDOW_SIZE_W = $clog2(RFDC_TIMING_WINDOW_SIZE);
       localparam [31:0] DB_WINDOW_SIZE_W          = $clog2(DB_WINDOW_SIZE);
       localparam [31:0] DIO_SOURCE_CONTROL_SIZE_W = $clog2(DIO_SOURCE_CONTROL_SIZE);
       localparam [31:0] RADIO_GPIO_ATR_SIZE_W     = $clog2(RADIO_GPIO_ATR_REGS_SIZE);
-
-      wire        gpio_atr_ctrlport_req_wr;
-      wire        gpio_atr_ctrlport_req_rd;
-      wire [19:0] gpio_atr_ctrlport_req_addr;
-      wire [31:0] gpio_atr_ctrlport_req_data;
-      wire [ 3:0] gpio_atr_ctrlport_req_byte_en;
-      wire        gpio_atr_ctrlport_req_has_time;
-      wire [63:0] gpio_atr_ctrlport_req_time;
-      wire        gpio_atr_ctrlport_resp_ack;
-      wire [ 1:0] gpio_atr_ctrlport_resp_status;
-      wire [31:0] gpio_atr_ctrlport_resp_data;
-
+      localparam [31:0] DIGITAL_IFC_REGS_SIZE_W   = $clog2(DIGITAL_IFC_REGS_SIZE);
 
       ctrlport_decoder_param #(
-        .NUM_SLAVES  (4),
-        .PORT_BASE   ({ DIO_SOURCE_CONTROL_OFFSET,
+        .NUM_SLAVES  (5),
+        .PORT_BASE   ({ DIGITAL_IFC_OFFSET,
+                        DIO_SOURCE_CONTROL_OFFSET,
                         RADIO_GPIO_ATR_OFFSET,
                         RFDC_TIMING_WINDOW[19:0],
                         DB_WINDOW[19:0]
                       }),
-        .PORT_ADDR_W ({ DIO_SOURCE_CONTROL_SIZE_W,
+        .PORT_ADDR_W ({ DIGITAL_IFC_REGS_SIZE_W,
+                        DIO_SOURCE_CONTROL_SIZE_W,
                         RADIO_GPIO_ATR_SIZE_W,
                         RFDC_TIMING_WINDOW_SIZE_W,
                         DB_WINDOW_SIZE_W
                       })
       ) ctrlport_decoder_param_i (
-        .ctrlport_clk            (radio_clk),
-        .ctrlport_rst            (radio_rst),
-        .s_ctrlport_req_wr       (s_radio_ctrlport_req_wr       [ 1*db+: 1]),
-        .s_ctrlport_req_rd       (s_radio_ctrlport_req_rd       [ 1*db+: 1]),
-        .s_ctrlport_req_addr     (s_radio_ctrlport_req_addr     [20*db+:20]),
-        .s_ctrlport_req_data     (s_radio_ctrlport_req_data     [32*db+:32]),
-        .s_ctrlport_req_byte_en  (s_radio_ctrlport_req_byte_en  [ 4*db+: 4]),
-        .s_ctrlport_req_has_time (s_radio_ctrlport_req_has_time [ 1*db+: 1]),
-        .s_ctrlport_req_time     (s_radio_ctrlport_req_time     [64*db+:64]),
-        .s_ctrlport_resp_ack     (s_radio_ctrlport_resp_ack     [ 1*db+: 1]),
-        .s_ctrlport_resp_status  (s_radio_ctrlport_resp_status  [ 2*db+: 2]),
-        .s_ctrlport_resp_data    (s_radio_ctrlport_resp_data    [32*db+:32]),
-        .m_ctrlport_req_wr       ({ radio_dio_req_wr       [ 1*db+: 1], gpio_atr_ctrlport_req_wr,        rf_ctrlport_req_wr       [ 1*db+: 1], m_radio_ctrlport_req_wr       [ 1*db+: 1] }),
-        .m_ctrlport_req_rd       ({ radio_dio_req_rd       [ 1*db+: 1], gpio_atr_ctrlport_req_rd,        rf_ctrlport_req_rd       [ 1*db+: 1], m_radio_ctrlport_req_rd       [ 1*db+: 1] }),
-        .m_ctrlport_req_addr     ({ radio_dio_req_addr     [20*db+:20], gpio_atr_ctrlport_req_addr,      rf_ctrlport_req_addr     [20*db+:20], m_radio_ctrlport_req_addr     [20*db+:20] }),
-        .m_ctrlport_req_data     ({ radio_dio_req_data     [32*db+:32], gpio_atr_ctrlport_req_data,      rf_ctrlport_req_data     [32*db+:32], m_radio_ctrlport_req_data     [32*db+:32] }),
-        .m_ctrlport_req_byte_en  ({ radio_dio_req_byte_en  [ 4*db+: 4], gpio_atr_ctrlport_req_byte_en,   rf_ctrlport_req_byte_en  [ 4*db+: 4], m_radio_ctrlport_req_byte_en  [ 4*db+: 4] }),
-        .m_ctrlport_req_has_time ({ radio_dio_req_has_time [ 1*db+: 1], gpio_atr_ctrlport_req_has_time,  rf_ctrlport_req_has_time [ 1*db+: 1], m_radio_ctrlport_req_has_time [ 1*db+: 1] }),
-        .m_ctrlport_req_time     ({ radio_dio_req_time     [64*db+:64], gpio_atr_ctrlport_req_time,      rf_ctrlport_req_time     [64*db+:64], m_radio_ctrlport_req_time     [64*db+:64] }),
-        .m_ctrlport_resp_ack     ({ radio_dio_resp_ack     [ 1*db+: 1], gpio_atr_ctrlport_resp_ack,      rf_ctrlport_resp_ack     [ 1*db+: 1], m_radio_ctrlport_resp_ack     [ 1*db+: 1] }),
-        .m_ctrlport_resp_status  ({ radio_dio_resp_status  [ 2*db+: 2], gpio_atr_ctrlport_resp_status,   rf_ctrlport_resp_status  [ 2*db+: 2], m_radio_ctrlport_resp_status  [ 2*db+: 2] }),
-        .m_ctrlport_resp_data    ({ radio_dio_resp_data    [32*db+:32], gpio_atr_ctrlport_resp_data,     rf_ctrlport_resp_data    [32*db+:32], m_radio_ctrlport_resp_data    [32*db+:32] })
+        .ctrlport_clk            (  radio_clk ),
+        .ctrlport_rst            (  radio_rst ),
+        .s_ctrlport_req_wr       (  s_radio_ctrlport_req_wr         [ 1*db+: 1] ),
+        .s_ctrlport_req_rd       (  s_radio_ctrlport_req_rd         [ 1*db+: 1] ),
+        .s_ctrlport_req_addr     (  s_radio_ctrlport_req_addr       [20*db+:20] ),
+        .s_ctrlport_req_data     (  s_radio_ctrlport_req_data       [32*db+:32] ),
+        .s_ctrlport_req_byte_en  (  s_radio_ctrlport_req_byte_en    [ 4*db+: 4] ),
+        .s_ctrlport_req_has_time (  s_radio_ctrlport_req_has_time   [ 1*db+: 1] ),
+        .s_ctrlport_req_time     (  s_radio_ctrlport_req_time       [64*db+:64] ),
+        .s_ctrlport_resp_ack     (  s_radio_ctrlport_resp_ack       [ 1*db+: 1] ),
+        .s_ctrlport_resp_status  (  s_radio_ctrlport_resp_status    [ 2*db+: 2] ),
+        .s_ctrlport_resp_data    (  s_radio_ctrlport_resp_data      [32*db+:32] ),
+        .m_ctrlport_req_wr       ({ gpio_spi_ctrlport_req_wr        [ 1*db+: 1],
+                                    radio_dio_req_wr                [ 1*db+: 1],
+                                    gpio_atr_ctrlport_req_wr        [ 1*db+: 1],
+                                    rf_ctrlport_req_wr              [ 1*db+: 1],
+                                    m_radio_ctrlport_req_wr         [ 1*db+: 1] }),
+        .m_ctrlport_req_rd       ({ gpio_spi_ctrlport_req_rd        [ 1*db+: 1],
+                                    radio_dio_req_rd                [ 1*db+: 1],
+                                    gpio_atr_ctrlport_req_rd        [ 1*db+: 1],
+                                    rf_ctrlport_req_rd              [ 1*db+: 1],
+                                    m_radio_ctrlport_req_rd         [ 1*db+: 1] }),
+        .m_ctrlport_req_addr     ({ gpio_spi_ctrlport_req_addr      [20*db+:20],
+                                    radio_dio_req_addr              [20*db+:20],
+                                    gpio_atr_ctrlport_req_addr      [20*db+:20],
+                                    rf_ctrlport_req_addr            [20*db+:20],
+                                    m_radio_ctrlport_req_addr       [20*db+:20] }),
+        .m_ctrlport_req_data     ({ gpio_spi_ctrlport_req_data      [32*db+:32],
+                                    radio_dio_req_data              [32*db+:32],
+                                    gpio_atr_ctrlport_req_data      [32*db+:32],
+                                    rf_ctrlport_req_data            [32*db+:32],
+                                    m_radio_ctrlport_req_data       [32*db+:32] }),
+        .m_ctrlport_req_byte_en  ({ gpio_spi_ctrlport_req_byte_en   [ 4*db+: 4],
+                                    radio_dio_req_byte_en           [ 4*db+: 4],
+                                    gpio_atr_ctrlport_req_byte_en   [ 4*db+: 4],
+                                    rf_ctrlport_req_byte_en         [ 4*db+: 4],
+                                    m_radio_ctrlport_req_byte_en    [ 4*db+: 4] }),
+        .m_ctrlport_req_has_time ({ gpio_spi_ctrlport_req_has_time  [ 1*db+: 1],
+                                    radio_dio_req_has_time          [ 1*db+: 1],
+                                    gpio_atr_ctrlport_req_has_time  [ 1*db+: 1],
+                                    rf_ctrlport_req_has_time        [ 1*db+: 1],
+                                    m_radio_ctrlport_req_has_time   [ 1*db+: 1] }),
+        .m_ctrlport_req_time     ({ gpio_spi_ctrlport_req_time      [64*db+:64],
+                                    radio_dio_req_time              [64*db+:64],
+                                    gpio_atr_ctrlport_req_time      [64*db+:64],
+                                    rf_ctrlport_req_time            [64*db+:64],
+                                    m_radio_ctrlport_req_time       [64*db+:64] }),
+        .m_ctrlport_resp_ack     ({ gpio_spi_ctrlport_resp_ack      [ 1*db+: 1],
+                                    radio_dio_resp_ack              [ 1*db+: 1],
+                                    gpio_atr_ctrlport_resp_ack      [ 1*db+: 1],
+                                    rf_ctrlport_resp_ack            [ 1*db+: 1],
+                                    m_radio_ctrlport_resp_ack       [ 1*db+: 1] }),
+        .m_ctrlport_resp_status  ({ gpio_spi_ctrlport_resp_status   [ 2*db+: 2],
+                                    radio_dio_resp_status           [ 2*db+: 2],
+                                    gpio_atr_ctrlport_resp_status   [ 2*db+: 2],
+                                    rf_ctrlport_resp_status         [ 2*db+: 2],
+                                    m_radio_ctrlport_resp_status    [ 2*db+: 2] }),
+        .m_ctrlport_resp_data    ({ gpio_spi_ctrlport_resp_data     [32*db+:32],
+                                    radio_dio_resp_data             [32*db+:32],
+                                    gpio_atr_ctrlport_resp_data     [32*db+:32],
+                                    rf_ctrlport_resp_data           [32*db+:32],
+                                    m_radio_ctrlport_resp_data      [32*db+:32] })
       );
 
       // Compute ATR state for this radio
@@ -459,17 +521,35 @@ module x4xx_core_common #(
       ) x4xx_gpio_atr_i (
         .ctrlport_clk             (radio_clk),
         .ctrlport_rst             (radio_rst),
-        .s_ctrlport_req_wr        (gpio_atr_ctrlport_req_wr),
-        .s_ctrlport_req_rd        (gpio_atr_ctrlport_req_rd),
-        .s_ctrlport_req_addr      (gpio_atr_ctrlport_req_addr),
-        .s_ctrlport_req_data      (gpio_atr_ctrlport_req_data),
-        .s_ctrlport_resp_ack      (gpio_atr_ctrlport_resp_ack),
-        .s_ctrlport_resp_status   (gpio_atr_ctrlport_resp_status),
-        .s_ctrlport_resp_data     (gpio_atr_ctrlport_resp_data),
+        .s_ctrlport_req_wr        (gpio_atr_ctrlport_req_wr       [ 1*db+: 1]),
+        .s_ctrlport_req_rd        (gpio_atr_ctrlport_req_rd       [ 1*db+: 1]),
+        .s_ctrlport_req_addr      (gpio_atr_ctrlport_req_addr     [20*db+:20]),
+        .s_ctrlport_req_data      (gpio_atr_ctrlport_req_data     [32*db+:32]),
+        .s_ctrlport_resp_ack      (gpio_atr_ctrlport_resp_ack     [ 1*db+: 1]),
+        .s_ctrlport_resp_status   (gpio_atr_ctrlport_resp_status  [ 2*db+: 2]),
+        .s_ctrlport_resp_data     (gpio_atr_ctrlport_resp_data    [32*db+:32]),
         .db_state                 (db_state),
         .gpio_in                  ({4'b0, gpio_in_b, 4'b0, gpio_in_a}),
         .gpio_out                 (atr_gpio_out[db*32+: 32]),
         .gpio_ddr                 (atr_gpio_ddr[db*32+: 32])
+      );
+
+      x4xx_gpio_spi #(
+        .NUM_SLAVES (2)
+      ) x4xx_gpio_spi_i(
+        .ctrlport_clk             (radio_clk),
+        .ctrlport_clk_2x          (radio_clk_2x),
+        .ctrlport_rst             (radio_rst),
+        .s_ctrlport_req_wr        (gpio_spi_ctrlport_req_wr       [ 1*db+: 1]),
+        .s_ctrlport_req_rd        (gpio_spi_ctrlport_req_rd       [ 1*db+: 1]),
+        .s_ctrlport_req_addr      (gpio_spi_ctrlport_req_addr     [20*db+:20]),
+        .s_ctrlport_req_data      (gpio_spi_ctrlport_req_data     [32*db+:32]),
+        .s_ctrlport_resp_ack      (gpio_spi_ctrlport_resp_ack     [ 1*db+: 1]),
+        .s_ctrlport_resp_status   (gpio_spi_ctrlport_resp_status  [ 2*db+: 2]),
+        .s_ctrlport_resp_data     (gpio_spi_ctrlport_resp_data    [32*db+:32]),
+        .gpio_out                 (spi_gpio_out[db*32+: 32]),
+        .gpio_ddr                 (spi_gpio_ddr[db*32+: 32]),
+        .gpio_in                  ({4'b0, gpio_in_b, 4'b0, gpio_in_a})
       );
 
     end
@@ -686,10 +766,10 @@ module x4xx_core_common #(
     .atr_gpio_ddr                 (atr_gpio_ddr),
     .ps_gpio_out                  ({4'b0, ps_gpio_out_b, 4'b0, ps_gpio_out_a}),
     .ps_gpio_ddr                  ({4'b0, ps_gpio_ddr_b, 4'b0, ps_gpio_ddr_a}),
-    .digital_ifc_gpio_out_radio0  (32'b0),
-    .digital_ifc_gpio_ddr_radio0  (32'b0),
-    .digital_ifc_gpio_out_radio1  (32'b0),
-    .digital_ifc_gpio_ddr_radio1  (32'b0),
+    .digital_ifc_gpio_out_radio0  (spi_gpio_out[31:0]),
+    .digital_ifc_gpio_ddr_radio0  (spi_gpio_ddr[31:0]),
+    .digital_ifc_gpio_out_radio1  (spi_gpio_out[63:32]),
+    .digital_ifc_gpio_ddr_radio1  (spi_gpio_ddr[63:32]),
     .user_app_in_a                (gpio_in_fabric_a),
     .user_app_in_b                (gpio_in_fabric_b),
     .user_app_out_a               (gpio_out_fabric_a),
@@ -770,6 +850,10 @@ endmodule
 //    </window>
 //    <window name="DIO_SOURCE_CONTROL"      offset="0x1000" size="0x1000" targetregmap="DIO_REGMAP">
 //      <info>Window to access the DIO register map through the control port from the radio blocks.</info>
+//    </window>
+//    <window name="DIGITAL_IFC_REGS"      offset="0x2000" size="0x1000" targetregmap="DIG_IFC_REGMAP">
+//      <info>Register space reserved for configuring a digital interface over the GPIO lines.
+//            Currently, SPI is the only supported protocol.</info>
 //    </window>
 //  </group>
 //</regmap>
