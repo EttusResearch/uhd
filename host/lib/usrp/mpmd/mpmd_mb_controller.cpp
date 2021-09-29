@@ -124,7 +124,7 @@ void mpmd_mb_controller::set_sync_source(const device_addr_t& sync_source)
         sync_source_map[key] = sync_source.get(key);
     }
     _rpc->notify_with_token(
-        MPMD_DEFAULT_LONG_TIMEOUT, "set_clock_source", sync_source_map);
+        MPMD_DEFAULT_LONG_TIMEOUT, "set_sync_source", sync_source_map);
 }
 
 device_addr_t mpmd_mb_controller::get_sync_source() const
