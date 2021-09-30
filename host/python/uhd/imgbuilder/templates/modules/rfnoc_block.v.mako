@@ -25,17 +25,17 @@
 
 %for clock in block.clocks:
   %if not clock["name"] in ["rfnoc_chdr", "rfnoc_ctrl"]:
-  wire              ${block_name}_${clock["name"]}_clk;
+  wire                    ${block_name}_${clock["name"]}_clk;
   %endif
 %endfor
-  wire [CHDR_W-1:0] ${axis_inputs.format("s", "tdata ")};
-  wire              ${axis_inputs.format("s", "tlast ")};
-  wire              ${axis_inputs.format("s", "tvalid")};
-  wire              ${axis_inputs.format("s", "tready")};
-  wire [CHDR_W-1:0] ${axis_outputs.format("m", "tdata ")};
-  wire              ${axis_outputs.format("m", "tlast ")};
-  wire              ${axis_outputs.format("m", "tvalid")};
-  wire              ${axis_outputs.format("m", "tready")};
+  wire [BLOCK_CHDR_W-1:0] ${axis_inputs.format("s", "tdata ")};
+  wire                    ${axis_inputs.format("s", "tlast ")};
+  wire                    ${axis_inputs.format("s", "tvalid")};
+  wire                    ${axis_inputs.format("s", "tready")};
+  wire [BLOCK_CHDR_W-1:0] ${axis_outputs.format("m", "tdata ")};
+  wire                    ${axis_outputs.format("m", "tlast ")};
+  wire                    ${axis_outputs.format("m", "tvalid")};
+  wire                    ${axis_outputs.format("m", "tready")};
 
 %if hasattr(block, "io_ports"):
   %for name, io_port in block.io_ports.items():
@@ -48,11 +48,11 @@
 %endif
   rfnoc_block_${block.module_name} #(
     .THIS_PORTID         (${block_id}),
-    .CHDR_W              (CHDR_W),
+    .CHDR_W              (BLOCK_CHDR_W),
 %for name, value in block_params.items():
     .${"%-20s" % name}(${value}),
 %endfor
-    .MTU                 (MTU)
+    .MTU                 (BLOCK_MTU)
   ) b_${block_name}_${block_number} (
     .rfnoc_chdr_clk      (rfnoc_chdr_clk),
     .rfnoc_ctrl_clk      (rfnoc_ctrl_clk),

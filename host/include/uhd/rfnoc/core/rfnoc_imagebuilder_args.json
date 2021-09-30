@@ -10,7 +10,8 @@
         "default_target":   { "type":  "string" },
         "rfnoc_version":    { "type":  "string" },
         "chdr_width":       { "enum":  [64, 128, 256, 512] },
-
+        "block_chdr_width": { "enum":  [64, 128, 256, 512] },
+        "crossbar_routes":  { "type":  "array" },
         "stream_endpoints": { "$ref": "#/definitions/stream_endpoints" },
         "noc_blocks":       { "$ref": "#/definitions/noc_blocks" },
         "clk_domains":      { "type": "array",
@@ -42,6 +43,7 @@
         "stream_endpoint": {
             "type": "object",
             "properties": {
+                "chdr_width":{ "enum":  [64, 128, 256, 512] },
                 "ctrl":      { "type": "boolean" },
                 "data":      { "type": "boolean" },
                 "num_data_i":{ "type": "integer", "minimum": 1 },

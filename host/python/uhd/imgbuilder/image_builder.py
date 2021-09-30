@@ -14,6 +14,7 @@ import logging
 import os
 import re
 import sys
+import numpy as np
 
 import mako.lookup
 import mako.template
@@ -219,9 +220,9 @@ class ImageBuilderConfig:
         self.__dict__.update(**config)
         self.blocks = blocks
         self.device = device
+        self._update_sep_defaults()
         self._check_configuration()
         self._check_deprecated_signatures()
-        self._update_sep_defaults()
         self._set_indices()
         self._collect_noc_ports()
         self._collect_io_ports()
@@ -288,6 +289,48 @@ class ImageBuilderConfig:
                 + requested_version
             )
         self.rfnoc_version = RFNOC_PROTO_VERSION
+        # Give block_chdr_width a default value
+        if not hasattr(self, "block_chdr_width"):
+            self.block_chdr_width = self.chdr_width
+        # Check crossbar_routes
+        num_tas = len(self.device.transports)
+        num_seps = len(self.stream_endpoints)
+        num_ports = num_tas + num_seps
+        if hasattr(self, "crossbar_routes"):
+            # Check that crossbar_routes is an NxN array of ones and zeros
+            routes = np.array(self.crossbar_routes)
+            num_rows = routes.shape[0]
+            num_cols = routes.shape[1]
+            num_digits = np.count_nonzero(routes == 0) + np.count_nonzero(routes == 1)
+            if routes.shape != (num_ports, num_ports) or num_digits != num_ports**2:
+                failure = (
+                    "crossbar_routes must be a "
+                    + str(num_ports)
+                    + " by "
+                    + str(num_ports)
+                    + " binary array"
+                )
+        else:
+            # Give crossbar_routes a default value
+            routes = np.ones([num_ports, num_ports])
+            # Disable all TA to TA paths, except loopback (required for discovery)
+            for i in range(0, num_tas):
+                routes[i, 0:num_tas] = 0
+                routes[i, i] = 1
+            self.crossbar_routes = routes.tolist()
+        # Check SEP has buff_size and buff_size_bytes parameters
+        for sep_name in self.stream_endpoints:
+            sep = self.stream_endpoints[sep_name]
+            if "buff_size" not in sep and "buff_size_bytes" not in sep:
+                failure = (
+                    f"You must specify buff_size or buff_size_bytes for {sep_name}"
+                )
+            # Initialize the one not set by user (schema doesn't allow both)
+            if "buff_size_bytes" in sep:
+                sep["buff_size"] = sep["buff_size_bytes"] // (sep["chdr_width"] // 8)
+            elif "buff_size" in sep:
+                sep["buff_size_bytes"] = sep["buff_size"] * (sep["chdr_width"] // 8)
+        # Handle any errors
         if failure:
             logging.error(failure)
             raise ValueError(failure)
@@ -301,6 +344,8 @@ class ImageBuilderConfig:
                 self.stream_endpoints[sep]["num_data_i"] = 1
             if "num_data_o" not in self.stream_endpoints[sep]:
                 self.stream_endpoints[sep]["num_data_o"] = 1
+            if "chdr_width" not in self.stream_endpoints[sep]:
+                self.stream_endpoints[sep]["chdr_width"] = self.chdr_width
 
     def _set_indices(self):
         """

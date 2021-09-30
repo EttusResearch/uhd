@@ -35,7 +35,11 @@
 
 
 module rfnoc_image_core #(
-  parameter        CHDR_W     = ${config.chdr_width},
+  parameter [31:0] CHDR_W     = ${config.chdr_width},
+  parameter [31:0] PORT_W     = ${config.chdr_width},
+%for port in config.device.transports:
+  parameter [31:0] ${'{:<10}'.format(port["name"].upper() + "_W")} = ${port["width"]},
+%endfor
   parameter        MTU        = 10,
   parameter [15:0] PROTOVER   = {8'd${protover_major}, 8'd${protover_minor}},
   parameter        RADIO_NIPC = 1
@@ -55,6 +59,16 @@ module rfnoc_image_core #(
 );
 
   localparam EDGE_TBL_FILE = `"`RFNOC_EDGE_TBL_FILE`";
+  localparam BLOCK_CHDR_W  = ${config.block_chdr_width};
+  localparam BYTE_MTU      = MTU + $clog2(CHDR_W/8);
+  localparam BLOCK_MTU     = BYTE_MTU - $clog2(BLOCK_CHDR_W/8);
+%for i, sep in enumerate(config.stream_endpoints):
+<%
+  ep_name = sep.upper()
+%>\
+  localparam ${ep_name + "_W"}   = ${config.stream_endpoints[sep]['chdr_width']};
+  localparam ${ep_name + "_MTU"} = BYTE_MTU - $clog2(${ep_name + "_W"}/8);
+%endfor
 
   wire rfnoc_chdr_clk, rfnoc_chdr_rst;
   wire rfnoc_ctrl_clk, rfnoc_ctrl_rst;
@@ -65,23 +79,47 @@ module rfnoc_image_core #(
   //---------------------------------------------------------------------------
 
 <%include file="/modules/sep_xb_wires.v.mako" args="seps=config.stream_endpoints"/>\
+<%
+  import numpy as np
+  # Generate the list of CHDR widths for the crossbar ports
+  cb_port_widths = "{"
+  for sep in reversed(config.stream_endpoints):
+    cb_port_widths += sep.upper() + "_W, "
+  for transport in reversed(config.device.transports):
+    cb_port_widths += transport["name"].upper() + "_W, "
+  cb_port_widths = cb_port_widths[:-2] + "}"
+  num_ports = len(config.stream_endpoints) + len(config.device.transports)
+  # Convert the crossbar routes to a Verilog bit vector
+  routes = np.flip(np.array(config.crossbar_routes).astype(int))
+  routes_vector = "{ "
+  indent = ""
+  for row in range(num_ports):
+    row_bits = "".join(str(b) for b in routes[row])
+    routes_vector += f"{indent}{num_ports}'b{row_bits}"
+    indent = 23*' '
+    if row < num_ports-1:
+      routes_vector += ",\n"
+  routes_vector += " }"
+%>\
 
   chdr_crossbar_nxn #(
-    .CHDR_W         (CHDR_W),
-    .NPORTS         (${len(config.stream_endpoints) + len(config.device.transports)}),
+    .PORT_W         (PORT_W),
+    .NPORTS         (${num_ports}),
+    .CHDR_WIDTHS    (${cb_port_widths}),
     .DEFAULT_PORT   (0),
-    .MTU            (MTU),
+    .ROUTES         (${routes_vector}),
+    .BYTE_MTU       (BYTE_MTU),
     .ROUTE_TBL_SIZE (6),
     .MUX_ALLOC      ("ROUND-ROBIN"),
     .OPTIMIZE       ("AREA"),
     .NPORTS_MGMT    (${len(config.device.transports)}),
     .EXT_RTCFG_PORT (0),
     .PROTOVER       (PROTOVER)
-  ) chdr_xb_i (
+  ) chdr_crossbar_nxn_i (
     .clk            (rfnoc_chdr_clk),
     .reset          (rfnoc_chdr_rst),
     .device_id      (device_id),
-<%include file="/modules/chdr_xb_sep_transport.v.mako" args="seps=config.stream_endpoints, transports=config.device.transports"/>\
+<%include file="/modules/chdr_xb_sep_transport.v.mako" args="seps=config.stream_endpoints, transports=config.device.transports, routes=routes"/>\
     .ext_rtcfg_stb  (1'h0),
     .ext_rtcfg_addr (16'h0),
     .ext_rtcfg_data (32'h0),
