@@ -17,7 +17,13 @@ from usrp_mpm.sys_utils.udev import get_eeprom_paths_by_symbol
 from usrp_mpm.sys_utils import i2c_dev
 from usrp_mpm.chips import LMK05318
 
-X400_CLKAUX_DEFAULT_TUNING_WORD = 0x200 # 1.65V which would be a DAC value of 512
+# DAC AD5338R provides V_out = V_ref * gain (tune_word / 2^N)
+# We have gain pin enabled (2) and N = 10 for the AD5338 models
+# to provide 1.65V to the OCXO we need:
+# tune_word = 1.65V / (2.5V * 2) * 2^10
+# Note: V_vdd = 3.3V so V_out will saturate at 3.3V (it won't reach 5V)
+#       the tuning word is therefore limited to 0x2A4
+X400_CLKAUX_DEFAULT_TUNING_WORD = 0x152
 X400_CLKAUX_DEFAULT_REVISION = 0x1
 X400_CLKAUX_I2C_LABEL = 'clkaux_i2c'
 X400_CLKAUX_SPI_LABEL = 'clkaux_spi'
