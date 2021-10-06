@@ -132,12 +132,17 @@ package PkgAxiLiteBfm;
 
     // Each submitted transaction is given an id.  The id is used when
     // waiting for the response
-    local int id=0;
+    local int rd_id=0;
+    local int wr_id=0;
 
     // submit/completion id's are used to enforce rd/wr ordering
     local int wr_submit_id=0;
+    local int wr_req_id=0;
+    local int wr_resp_id=0;
     local int wr_complete_id=0;
     local int rd_submit_id=0;
+    local int rd_req_id=0;
+    local int rd_resp_id=0;
     local int rd_complete_id=0;
 
     // Queues to store the bus transactions
@@ -211,13 +216,14 @@ package PkgAxiLiteBfm;
       xaction.addr  = addr;
       xaction.data  = data;
       xaction.strb  = strb;
-      xaction.id    = ++this.id;
+      xaction.id    = ++this.wr_id;
       wr_submit_id = xaction.id;
 
       if (wrs_wait_for_rds) begin
         // wait for any reads that may of been submitted before
         // this write to complete before exectuing
-        while (rd_complete_id-rd_submit_id_at_start < 0) begin
+        while ((rd_complete_id-rd_submit_id_at_start < 0) &&
+               (wr_complete_id != xaction.id-1)) begin
           @(posedge master.clk);
           if (master.rst) break;
         end
@@ -244,7 +250,9 @@ package PkgAxiLiteBfm;
         end
       end
       get_wr(xaction);
-      wr_complete_id = xaction.id;
+      // only move the id up, because xactions can be pushed out of order
+      // when forked threads throw in many parallel writes
+      if (xaction.id > wr_complete_id) wr_complete_id = xaction.id;
     endtask :get_wr_response
 
     // Simple blocking write
@@ -276,13 +284,20 @@ package PkgAxiLiteBfm;
       int wr_submit_id_at_start = wr_submit_id;
       xaction.xtype = READ;
       xaction.addr  = addr;
-      xaction.id    = ++this.id;
+
+      xaction.id    = ++this.rd_id;
       rd_submit_id = xaction.id;
+
+      // When many xactions are waiting to be posted, this wait
+      // can cause xaction to be reordered in the xaction buffer.
+      // This in turn causes rds to complete out of order. which
+      // can mess up the write ordering
 
       // wait for any writes that may have been
       // submitted before this read to complete
       if (rds_wait_for_wrs) begin
-        while (wr_complete_id-wr_submit_id_at_start < 0) begin
+        while ((wr_complete_id-wr_submit_id_at_start < 0) &&
+               (rd_complete_id != xaction.id-1)) begin
           @(posedge master.clk);
           if (master.rst) break;
         end
@@ -308,7 +323,9 @@ package PkgAxiLiteBfm;
         end
       end
       get_rd(xaction);
-      rd_complete_id  = xaction.id;
+      // only move the id up, because xactions can be pushed out of order
+      // when forked threads throw in many reads
+      if (xaction.id > rd_complete_id) rd_complete_id = xaction.id;
     endtask : get_rd_response
 
     // Simple blocking read
@@ -528,7 +545,7 @@ package PkgAxiLiteBfm;
             master_wait(inter_xaction_gap);
 
             if (master_wr_req_xactions.try_get(xaction)) begin : req_transaction
-
+              wr_req_id = xaction.id;
               //drive the write address+data channel
               fork
                 begin
@@ -561,6 +578,7 @@ package PkgAxiLiteBfm;
 
 
             end else begin : no_req_transaction
+              wr_req_id = -1;
               @(posedge master.clk);
               if (master.rst) continue;
             end : no_req_transaction;
@@ -574,6 +592,8 @@ package PkgAxiLiteBfm;
           forever begin
 
             if (master_wr_inflight_xactions.try_get(xaction)) begin : resp_transaction
+              wr_resp_id = xaction.id;
+                        
               // wait for a little bit of time and assert ready
               if ($urandom_range(99) < 50) begin
                 if (master.bready == 0) begin
@@ -613,6 +633,7 @@ package PkgAxiLiteBfm;
               master.bready = ready_idle_state;
 
             end else begin : no_resp_transaction
+              wr_resp_id = -1;
               @(posedge master.clk);
               if (master.rst) continue;
             end
@@ -628,6 +649,7 @@ package PkgAxiLiteBfm;
             master_wait(inter_xaction_gap);
 
             if (master_rd_req_xactions.try_get(xaction)) begin : req_transaction
+              rd_req_id = xaction.id;            
               // randomly delay driving
               master_stall(stall_prob);
 
@@ -645,6 +667,7 @@ package PkgAxiLiteBfm;
 
 
             end else begin : no_req_transaction
+              rd_req_id = -1;            
               @(posedge master.clk);
               if (master.rst) continue;
             end
@@ -658,6 +681,7 @@ package PkgAxiLiteBfm;
           forever begin
 
             if (master_rd_inflight_xactions.try_get(xaction)) begin : resp_transaction
+              rd_resp_id = xaction.id;                 
               if ($urandom_range(99) < 50) begin
                 if (master.rready == 0) begin
                   // randomly delay ready
@@ -696,6 +720,7 @@ package PkgAxiLiteBfm;
               master.rready = ready_idle_state;
 
             end else begin : no_resp_transaction
+              rd_resp_id = -1;                 
               @(posedge master.clk);
               if (master.rst) continue;
             end
