@@ -123,7 +123,7 @@ def main():
     while RUN:
         try:
             power_dbfs = uhd.dsp.signals.get_usrp_power(
-                streamer, num_samps=int(args.samps_per_est), chan=chan)
+                streamer, num_samps=int(args.samps_per_est))
         except RuntimeError:
             # This is a hack b/c the signal handler is not gracefully handling
             # SIGINT
