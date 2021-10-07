@@ -88,11 +88,13 @@ class X4xxRfdcCtrl:
         self._cal_freeze_cache = {}
 
     @no_rpc
-    def unset_cbs(self):
+    def tear_down(self):
         """
-        Removes any stored references to our owning X4xx class instance
+        Removes any stored references to our owning X4xx class instance and
+        destructs anything that must happen at teardown
         """
         self._get_spll_freq = None
+        del self._rfdc_ctrl
 
     ###########################################################################
     # Public APIs (not available as MPM RPC calls)

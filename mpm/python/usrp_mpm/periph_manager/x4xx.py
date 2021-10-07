@@ -696,7 +696,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         super(x4xx, self).tear_down()
         if self.dio_control is not None:
             self.dio_control.tear_down()
-        self.rfdc.unset_cbs()
+        self.rfdc.tear_down()
         self._clk_mgr.unset_cbs()
         # remove x4xx overlay
         active_overlays = self.list_active_overlays()
