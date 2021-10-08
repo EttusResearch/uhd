@@ -350,15 +350,26 @@ localparam [2:0] CHDR_MGMT_WIDTH_128 = 3'd1;
 localparam [2:0] CHDR_MGMT_WIDTH_256 = 3'd2;
 localparam [2:0] CHDR_MGMT_WIDTH_512 = 3'd3;
 
-function [2:0] chdr_w_to_enum(input integer bits);
-  if (bits == 512)
+function [2:0] chdr_w_to_enum(input integer chdr_w);
+  if (chdr_w == 512)
     chdr_w_to_enum = CHDR_MGMT_WIDTH_512;
-  else if (bits == 256)
+  else if (chdr_w == 256)
     chdr_w_to_enum = CHDR_MGMT_WIDTH_256;
-  else if (bits == 128)
+  else if (chdr_w == 128)
     chdr_w_to_enum = CHDR_MGMT_WIDTH_128;
   else
     chdr_w_to_enum = CHDR_MGMT_WIDTH_64;
+endfunction
+
+function [2:0] enum_to_chdr_w(input integer bits);
+  if (bits == CHDR_MGMT_WIDTH_512)
+    enum_to_chdr_w = 3;
+  else if (bits == CHDR_MGMT_WIDTH_256)
+    enum_to_chdr_w = 2;
+  else if (bits == CHDR_MGMT_WIDTH_128)
+    enum_to_chdr_w = 1;
+  else // CHDR_MGMT_WIDTH_64
+    enum_to_chdr_w = 0;
 endfunction
 
 localparam [7:0] CHDR_MGMT_OP_NOP         = 8'd0;
@@ -397,6 +408,76 @@ endfunction
 
 function [7:0] chdr_mgmt_get_ops_pending(input [63:0] header);
   chdr_mgmt_get_ops_pending = header[7:0];
+endfunction
+
+function [63:0] chdr_mgmt_set_proto_ver(
+  input [63:0] base_hdr,
+  input [15:0] ver
+);
+  begin
+    chdr_mgmt_set_proto_ver = base_hdr;
+    chdr_mgmt_set_proto_ver[63:48] = ver;
+  end
+endfunction
+
+function [63:0] chdr_mgmt_set_chdr_w(
+  input [63:0] base_hdr,
+  input [ 2:0] chdr_w
+);
+  begin
+    chdr_mgmt_set_chdr_w = base_hdr;
+    chdr_mgmt_set_chdr_w[47:45] = chdr_w;
+  end
+endfunction
+
+function [63:0] chdr_mgmt_set_num_hops(
+  input [63:0] base_hdr,
+  input [ 9:0] num_hops
+);
+  begin
+    chdr_mgmt_set_num_hops = base_hdr;
+    chdr_mgmt_set_num_hops[25:16] = num_hops;
+  end
+endfunction
+
+function [63:0] chdr_mgmt_set_src_epid(
+  input [63:0] base_hdr,
+  input [15:0] src_epid
+);
+  begin
+    chdr_mgmt_set_src_epid = base_hdr;
+    chdr_mgmt_set_src_epid[15:0] = src_epid;
+  end
+endfunction
+
+function [63:0] chdr_mgmt_set_op_payload(
+  input [63:0] base_hdr,
+  input [47:0] op_payload
+);
+  begin
+    chdr_mgmt_set_op_payload = base_hdr;
+    chdr_mgmt_set_op_payload[63:16] = op_payload;
+  end
+endfunction
+
+function [63:0] chdr_mgmt_set_op_code(
+  input [63:0] base_hdr,
+  input [ 7:0] op_code
+);
+  begin
+    chdr_mgmt_set_op_code = base_hdr;
+    chdr_mgmt_set_op_code[15:8] = op_code;
+  end
+endfunction
+
+function [63:0] chdr_mgmt_set_ops_pending(
+  input [63:0] base_hdr,
+  input [ 7:0] ops_pending
+);
+  begin
+    chdr_mgmt_set_ops_pending = base_hdr;
+    chdr_mgmt_set_ops_pending[7:0] = ops_pending;
+  end
 endfunction
 
 function [63:0] chdr_mgmt_build_hdr(
