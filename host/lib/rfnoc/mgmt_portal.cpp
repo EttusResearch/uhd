@@ -312,8 +312,9 @@ public:
             mgmt_payload init_req_xact;
             _traverse_to_node(init_req_xact, route_addr);
             _push_node_init_hop(init_req_xact, addr_pair.first, my_epid);
-            const mgmt_payload resp_xact =
-                _send_recv_mgmt_transaction(xport, init_req_xact);
+            // Send the transaction and receive a response.
+            // We don't care about the contents of the response.
+            _send_recv_mgmt_transaction(xport, init_req_xact);
             route_addr.push_back(addr_pair);
         }
 
@@ -756,8 +757,9 @@ private: // Functions
                 // Initialize the node (first time config)
                 mgmt_payload init_req_xact(route_xact);
                 _push_node_init_hop(init_req_xact, new_node, my_epid);
-                const mgmt_payload init_resp_xact =
-                    _send_recv_mgmt_transaction(xport, init_req_xact);
+                // Send the transaction and receive a response.
+                // We don't care about the contents of the response.
+                _send_recv_mgmt_transaction(xport, init_req_xact);
                 UHD_LOG_DEBUG("RFNOC::MGMT", "Initialized node " << new_node.to_string());
 
                 // If the new node is a stream endpoint then we are done traversing this
