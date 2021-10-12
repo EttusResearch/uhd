@@ -311,19 +311,19 @@ include(UHDPython)
 
 PYTHON_CHECK_MODULE(
     "Python version ${PYTHON_MIN_VERSION} or greater"
-    "platform" "platform.python_version() >= '${PYTHON_MIN_VERSION}'"
+    "platform" "LooseVersion(platform.python_version()) >= LooseVersion('${PYTHON_MIN_VERSION}')"
     HAVE_PYTHON_PLAT_MIN_VERSION
 )
 
 PYTHON_CHECK_MODULE(
     "Mako templates ${PY_MAKO_MIN_VERSION} or greater"
-    "mako" "mako.__version__ >= '${PY_MAKO_MIN_VERSION}'"
+    "mako" "LooseVersion(mako.__version__) >= LooseVersion('${PY_MAKO_MIN_VERSION}')"
     HAVE_PYTHON_MODULE_MAKO
 )
 
 PYTHON_CHECK_MODULE(
     "requests ${PY_REQUESTS_MIN_VERSION} or greater"
-    "requests" "requests.__version__ >= '${PY_REQUESTS_MIN_VERSION}'"
+    "requests" "LooseVersion(requests.__version__) >= LooseVersion('${PY_REQUESTS_MIN_VERSION}')"
     HAVE_PYTHON_MODULE_REQUESTS
 )
 
