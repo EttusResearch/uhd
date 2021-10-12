@@ -24,6 +24,7 @@
 //   - NODE_INST: The node type to return for a node-info discovery
 //   - ALLOW_DISC: Controls if the external transport network should be
 //                 discoverable by management packets from RFNoC side.
+//   - NET_CHDR_W: CHDR width used over the network connection
 //
 // Signals:
 //   - device_id : The ID of the device that has instantiated this module
@@ -43,8 +44,9 @@ module chdr_xport_adapter #(
   int          TBL_SIZE     = 6,
   logic [7:0]  NODE_SUBTYPE = NODE_SUBTYPE_XPORT_IPV4_CHDR64,
   int          NODE_INST    = 0,
-  bit          ALLOW_DISC   = 1
-)(
+  bit          ALLOW_DISC   = 1,
+  int          NET_CHDR_W   = 64
+) (
   // Device info (domain: eth_rx.clk)
   input  logic [15:0] device_id,
   // Device addresses (domain: eth_rx.clk)
@@ -90,6 +92,8 @@ module chdr_xport_adapter #(
   // tUser={udp_src_port,ipv4_src_addr,eth_src_addr}
   AxiStreamIf #(.DATA_WIDTH(eth_rx.DATA_WIDTH),.USER_WIDTH(USER_META_W),.TKEEP(0))
     e2d(eth_rx.clk,eth_rx.rst);// Eth => Demux
+  AxiStreamIf #(.DATA_WIDTH(eth_rx.DATA_WIDTH),.USER_WIDTH(USER_META_W),.TKEEP(0))
+    e2v_resize(eth_rx.clk,eth_rx.rst);// RX Resize => Management packet handler
   logic [1:0]                  e2d_tid;
   // tUser={udp_src_port,ipv4_src_addr,eth_src_addr}
   AxiStreamIf #(.DATA_WIDTH(eth_rx.DATA_WIDTH),.USER_WIDTH(USER_META_W),.TKEEP(0))
@@ -155,9 +159,40 @@ module chdr_xport_adapter #(
     .m_axis_tlast(ru4.tlast), .m_axis_tvalid(ru4.tvalid), .m_axis_tready(ru4.tready)
   );
 
-  // Pay close attention to when ph.tuser swtiches versus when it is needed!
+  // Pay close attention to when ph.tuser switches versus when it is needed!
   always_comb begin : assign_ph
     `AXI4S_ASSIGN(ph,ru4)
+  end
+
+  // ---------------------------------------------------
+  // Rewrite packets from network to use FPGA CHDR_W
+  // ---------------------------------------------------
+  if (NET_CHDR_W != eth_rx.DATA_WIDTH) begin : gen_chdr_resize_e2v
+    chdr_resize #(
+      .I_CHDR_W (NET_CHDR_W),
+      .O_CHDR_W (eth_rx.DATA_WIDTH),
+      .I_DATA_W (eth_rx.DATA_WIDTH),
+      .O_DATA_W (eth_rx.DATA_WIDTH),
+      .USER_W   (USER_META_W),
+      .PIPELINE ("IN")
+    ) chdr_resize_e2v (
+      .clk           (eth_rx.clk),
+      .rst           (eth_rx.rst),
+      .i_chdr_tdata  (ph.tdata),
+      .i_chdr_tuser  (ph.tuser),
+      .i_chdr_tlast  (ph.tlast),
+      .i_chdr_tvalid (ph.tvalid),
+      .i_chdr_tready (ph.tready),
+      .o_chdr_tdata  (e2v_resize.tdata),
+      .o_chdr_tuser  (e2v_resize.tuser),
+      .o_chdr_tlast  (e2v_resize.tlast),
+      .o_chdr_tvalid (e2v_resize.tvalid),
+      .o_chdr_tready (e2v_resize.tready)
+    );
+  end else begin : gen_no_chdr_resize_e2v
+    always_comb begin
+      `AXI4S_ASSIGN(e2v_resize, ph);
+    end
   end
 
   // ---------------------------------------------------
@@ -181,9 +216,9 @@ module chdr_xport_adapter #(
     .clk(eth_rx.clk), .rst(eth_rx.rst),
     .node_info(node_info),
     //ph in
-    .s_axis_chdr_tdata(ph.tdata), .s_axis_chdr_tlast(ph.tlast),
-    .s_axis_chdr_tvalid(ph.tvalid), .s_axis_chdr_tready(ph.tready),
-    .s_axis_chdr_tuser(ph.tuser),
+    .s_axis_chdr_tdata(e2v_resize.tdata), .s_axis_chdr_tlast(e2v_resize.tlast),
+    .s_axis_chdr_tvalid(e2v_resize.tvalid), .s_axis_chdr_tready(e2v_resize.tready),
+    .s_axis_chdr_tuser(e2v_resize.tuser),
     //e2d out
     .m_axis_chdr_tdata(e2d.tdata), .m_axis_chdr_tlast(e2d.tlast),
     .m_axis_chdr_tdest(/* unused */), .m_axis_chdr_tid(e2d_tid),
@@ -335,7 +370,9 @@ module chdr_xport_adapter #(
   // one packet per lookup after the lookup is complete.
 
   AxiStreamIf #(.DATA_WIDTH(eth_rx.DATA_WIDTH),.TUSER(0),.TKEEP(0))
-    data_fifo_o(eth_rx.clk,eth_rx.rst);
+    resize_v2e(eth_rx.clk,eth_rx.rst);
+  AxiStreamIf #(.DATA_WIDTH(eth_rx.DATA_WIDTH),.USER_WIDTH(0),.TKEEP(0))
+    data_fifo_o(eth_rx.clk,eth_rx.rst);// TX Resize => Management packet handler
   AxiStreamIf #(.DATA_WIDTH(eth_rx.DATA_WIDTH),.TUSER(0),.TKEEP(0))
     data_fifo_i(eth_rx.clk,eth_rx.rst);
 
@@ -348,7 +385,7 @@ module chdr_xport_adapter #(
   logic [USER_META_W-1:0] lookup_fifo_tuser;
   logic [      15:0] lookup_fifo_tepid;
   logic              non_lookup_done_stb;
-  logic              data_fifo_o_hdr = 1'b1;
+  logic              resize_v2e_hdr = 1'b1;
   logic              pass_packet;
   logic [USER_META_W-1:0] result_tuser;
   logic              result_tuser_valid;
@@ -388,6 +425,37 @@ module chdr_xport_adapter #(
     .space    (),
     .occupied ()
   );
+
+  // ---------------------------------------------------
+  // Rewrite packets from FPGA to use network CHDR_W
+  // ---------------------------------------------------
+  if (NET_CHDR_W != eth_rx.DATA_WIDTH) begin : gen_chdr_resize_v2e
+    chdr_resize #(
+      .I_CHDR_W (eth_rx.DATA_WIDTH),
+      .O_CHDR_W (NET_CHDR_W),
+      .I_DATA_W (eth_rx.DATA_WIDTH),
+      .O_DATA_W (eth_rx.DATA_WIDTH),
+      .USER_W   (1),
+      .PIPELINE ("OUT")
+    ) chdr_resize_v2e (
+      .clk           (eth_rx.clk),
+      .rst           (eth_rx.rst),
+      .i_chdr_tdata  (data_fifo_o.tdata),
+      .i_chdr_tuser  (1'b0),
+      .i_chdr_tlast  (data_fifo_o.tlast),
+      .i_chdr_tvalid (data_fifo_o.tvalid),
+      .i_chdr_tready (data_fifo_o.tready),
+      .o_chdr_tdata  (resize_v2e.tdata),
+      .o_chdr_tuser  (),
+      .o_chdr_tlast  (resize_v2e.tlast),
+      .o_chdr_tvalid (resize_v2e.tvalid),
+      .o_chdr_tready (resize_v2e.tready)
+    );
+  end else begin : gen_no_chdr_resize_v2e
+    always_comb begin
+      `AXI4S_ASSIGN(resize_v2e, data_fifo_o);
+    end
+  end
 
   // The lookup FIFO only takes the header routing info (tdest, tuser, epid).
   // We use axi_fifo_short since it can tolerate tvalid going low before a
@@ -443,12 +511,12 @@ module chdr_xport_adapter #(
   // Pop the routing info off of the lookup_fifo if we've started its lookup
   always_comb lookup_fifo_o.tready = lookup_stb || non_lookup_done_stb;
 
-  // Track when the next data_fifo_o word is the start of a new packet
-  always_ff @(posedge eth_rx.clk) begin : data_fifo_o_hdr_ff
+  // Track when the next resize_v2e word is the start of a new packet
+  always_ff @(posedge eth_rx.clk) begin : resize_v2e_hdr_ff
     if (eth_rx.rst)
-      data_fifo_o_hdr <= 1'b1;
-    else if (data_fifo_o.tvalid && data_fifo_o.tready && pass_packet)
-      data_fifo_o_hdr <= data_fifo_o.tlast;
+      resize_v2e_hdr <= 1'b1;
+    else if (resize_v2e.tvalid && resize_v2e.tready && pass_packet)
+      resize_v2e_hdr <= resize_v2e.tlast;
   end
 
   // Store the lookup result in a holding register. This can come from the KV
@@ -460,7 +528,7 @@ module chdr_xport_adapter #(
     end else begin
       // The tuser holding register becomes available as soon as we start
       // transmitting the corresponding packet.
-      if (data_fifo_o.tvalid && data_fifo_o.tready && data_fifo_o_hdr && pass_packet) begin
+      if (resize_v2e.tvalid && resize_v2e.tready && resize_v2e_hdr && pass_packet) begin
         result_tuser_valid <= 1'b0;
       end
 
@@ -483,13 +551,13 @@ module chdr_xport_adapter #(
       reg_o_tuser <= {USER_META_W{1'bX}};    // Don't care
     end else begin
       // We're done passing through a packet when tlast goes out
-      if (data_fifo_o.tvalid && data_fifo_o.tready && data_fifo_o.tlast && pass_packet) begin
+      if (resize_v2e.tvalid && resize_v2e.tready && resize_v2e.tlast && pass_packet) begin
         pass_packet <= 1'b0;
       end
 
       // We can pass the next packet through when we're at the start of a
       // packet and we have the tuser value waiting in the holding register.
-      if (data_fifo_o_hdr && result_tuser_valid && !pass_packet) begin
+      if (resize_v2e_hdr && result_tuser_valid && !pass_packet) begin
         reg_o_tuser <= result_tuser;
         pass_packet <= 1'b1;
       end
@@ -505,10 +573,10 @@ module chdr_xport_adapter #(
     au(eth_rx.clk,eth_rx.rst);// Add UDP input
   always_comb begin
     {au_udp_dst,au_ip_dst,au_mac_dst} = reg_o_tuser;
-    au.tdata  = data_fifo_o.tdata;
-    au.tlast  = data_fifo_o.tlast;
-    au.tvalid = data_fifo_o.tvalid & pass_packet;
-    data_fifo_o.tready  = au.tready & pass_packet;
+    au.tdata  = resize_v2e.tdata;
+    au.tlast  = resize_v2e.tlast;
+    au.tvalid = resize_v2e.tvalid & pass_packet;
+    resize_v2e.tready  = au.tready & pass_packet;
   end
 
   // Clock Crossing to the ethernet clock domain

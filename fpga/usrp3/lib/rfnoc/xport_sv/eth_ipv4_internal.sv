@@ -5,7 +5,7 @@
 //
 // Module: eth_ipv4_internal
 //
-// Description: 
+// Description:
 //
 //   This internal Ethernet port is responsible for routing CHDR data between
 //   the ARM CPU and RFNoC. Treating the RFNoC interface to the CPU like an
@@ -24,7 +24,8 @@
 //
 // Parameters:
 //
-//    CHDR_W         : CHDR width
+//    CHDR_W         : CHDR width used by RFNoC on the FPGA
+//    NET_CHDR_W     : CHDR width used over the network connection
 //    BYTE_MTU       : Sets the MTU to 2^BYTE_MTU bytes
 //    DWIDTH         : Data width for AXI-Lite interface (32 or 64)
 //    AWIDTH         : Address width for AXI-Lite interface
@@ -37,6 +38,7 @@
 
 module eth_ipv4_internal #(
   parameter        CHDR_W         = 64,
+  parameter        NET_CHDR_W     = CHDR_W,
   parameter        BYTE_MTU       = 10,
   parameter        DWIDTH         = 32,
   parameter        AWIDTH         = 14,
@@ -286,7 +288,7 @@ module eth_ipv4_internal #(
   logic        c2e_tvalid;
   logic        c2e_tready;
 
-  localparam CPU_USER_W = $clog2(CPU_W/8)+1;  // SOF + trailing bytes 
+  localparam CPU_USER_W = $clog2(CPU_W/8)+1;  // SOF + trailing bytes
 
   // Host DMA interfaces
   AxiStreamIf #(.DATA_WIDTH(CPU_W), .USER_WIDTH(CPU_USER_W), .TUSER(1), .TKEEP(0))
@@ -353,7 +355,8 @@ module eth_ipv4_internal #(
     .ADD_SOF        (1),
     .ENET_W         (CPU_W),
     .CPU_W          (CPU_W),
-    .CHDR_W         (CHDR_W)
+    .CHDR_W         (CHDR_W),
+    .NET_CHDR_W     (NET_CHDR_W)
   ) eth_ipv4_interface_i (
     .bus_clk          (bus_clk),
     .bus_rst          (bus_rst),
@@ -383,7 +386,7 @@ module eth_ipv4_internal #(
   //---------------------------------------------------------------------------
   //
   // This block sends replies to ARP IPv4 frames.
-  // 
+  //
   //---------------------------------------------------------------------------
 
   arp_responder arp_responder_i (
@@ -414,7 +417,7 @@ module eth_ipv4_internal #(
   // our internal Ethernet port. Only the NIXGE_REG_LED_CTL register is
   // actually used, but the internal adapter doesn't need LED control. So all
   // registers read as 0 and all writes are ignored.
-  // 
+  //
   //---------------------------------------------------------------------------
 
   // NIXGE Registers

@@ -23,7 +23,8 @@
 //           Ethernet clock domain (eth_rx, eth_tx).
 //   - ENET_W: Width of the link to the Ethernet MAC
 //   - CPU_W: Width of the CPU interface
-//   - CHDR_W: Width of the CHDR interface
+//   - CHDR_W: CHDR width used by RFNoC on the FPGA
+//   - NET_CHDR_W: CHDR width used over the network connection
 //
 
 module eth_ipv4_interface #(
@@ -42,7 +43,8 @@ module eth_ipv4_interface #(
   bit          PAUSE_EN         = 0,
   int          ENET_W           = 64,
   int          CPU_W            = 64,
-  int          CHDR_W           = 64
+  int          CHDR_W           = 64,
+  int          NET_CHDR_W       = CHDR_W
 ) (
   input logic        bus_clk,
   input logic        bus_rst,
@@ -283,7 +285,8 @@ module eth_ipv4_interface #(
     .SYNC            (SYNC),
     .ENET_W          (ENET_W),
     .CPU_W           (CPU_W),
-    .CHDR_W          (CHDR_W)
+    .CHDR_W          (CHDR_W),
+    .NET_CHDR_W      (NET_CHDR_W)
   ) eth_adapter_i (
     .eth_pause_req   (eth_pause_req),
     .eth_rx          (eth_rx   ),

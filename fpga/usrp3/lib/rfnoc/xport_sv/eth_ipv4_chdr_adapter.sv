@@ -29,7 +29,8 @@
 //           Ethernet clock domain (eth_rx, eth_tx).
 //   - ENET_W: Width of the link to the Ethernet MAC
 //   - CPU_W: Width of the CPU interface
-//   - CHDR_W: Width of the CHDR interface
+//   - CHDR_W: CHDR width used by RFNoC on the FPGA
+//   - NET_CHDR_W: CHDR width used over the network connection
 //
 // Signals:
 //   - device_id : The ID of the device that has instantiated this module
@@ -57,7 +58,8 @@ module eth_ipv4_chdr_adapter #(
   bit          SYNC             = 0,
   int          ENET_W           = 64,
   int          CPU_W            = 64,
-  int          CHDR_W           = 64
+  int          CHDR_W           = 64,
+  int          NET_CHDR_W       = CHDR_W
 )(
 
   // Device info
@@ -80,7 +82,7 @@ module eth_ipv4_chdr_adapter #(
   // CHDR router interface (eth_rx.clk)
   AxiStreamIf.master e2v, // tUser = {*not used*};
   AxiStreamIf.slave  v2e, // tUser = {*not used*};
-  
+
   // CPU DMA
   // (domain: e2c.clk if SYNC=0, else eth_rx.clk)
   AxiStreamIf.master e2c, // tUser = {sof,trailing bytes};
@@ -137,13 +139,13 @@ module eth_ipv4_chdr_adapter #(
   // Ethernet sink. Inspects packet and dispatches
   // to the correct port.
   eth_ipv4_chdr_dispatch #(
-    .CPU_FIFO_SIZE(CPU_FIFO_SIZE),
-    .CHDR_FIFO_SIZE(CHDR_FIFO_SIZE),
-    .PREAMBLE_BYTES(PREAMBLE_BYTES),
-    .MAX_PACKET_BYTES(MAX_PACKET_BYTES),
-    .DROP_UNKNOWN_MAC(DROP_UNKNOWN_MAC),
-    .DROP_MIN_PACKET(DROP_MIN_PACKET),
-    .ENET_W(ENET_W)
+    .CPU_FIFO_SIZE    (CPU_FIFO_SIZE),
+    .CHDR_FIFO_SIZE   (CHDR_FIFO_SIZE),
+    .PREAMBLE_BYTES   (PREAMBLE_BYTES),
+    .MAX_PACKET_BYTES (MAX_PACKET_BYTES),
+    .DROP_UNKNOWN_MAC (DROP_UNKNOWN_MAC),
+    .DROP_MIN_PACKET  (DROP_MIN_PACKET),
+    .ENET_W           (ENET_W)
   ) eth_dispatch_i (
     .eth_pause_req    (eth_pause_req),
     .eth_rx           (eth_rx1),
@@ -229,21 +231,21 @@ module eth_ipv4_chdr_adapter #(
   chdr_xport_adapter #(
     .PREAMBLE_BYTES   (PREAMBLE_BYTES),
     .MAX_PACKET_BYTES (MAX_PACKET_BYTES),
-    .PROTOVER     (PROTOVER),
-    .TBL_SIZE     (RT_TBL_SIZE),
-    .NODE_INST    (NODE_INST),
-    .ALLOW_DISC   (1)
+    .PROTOVER         (PROTOVER),
+    .TBL_SIZE         (RT_TBL_SIZE),
+    .NODE_INST        (NODE_INST),
+    .ALLOW_DISC       (1),
+    .NET_CHDR_W       (NET_CHDR_W)
   ) xport_adapter_gen_i (
-    .device_id           (device_id),
-    .my_mac              (my_mac),
-    .my_ip               (my_ip),
-    .my_udp_chdr_port    (my_udp_chdr_port),
-
-    .eth_rx     (e2v2), // from ethernet
-    .e2v        (e2v3), // to   CHDR
-    // optional loop from ethernet to ethernet to talk to node
-    .v2e        (v2e),  // from CHDR
-    .eth_tx     (v2e1D)  // to   ethernet
+    .device_id        (device_id),
+    .my_mac           (my_mac),
+    .my_ip            (my_ip),
+    .my_udp_chdr_port (my_udp_chdr_port),
+    .eth_rx           (e2v2),              // from Ethernet
+    .e2v              (e2v3),              // to   CHDR
+    // Optional loop from Ethernet to Ethernet to talk to node
+    .v2e              (v2e),               // from CHDR
+    .eth_tx           (v2e1D)              // to   Ethernet
   );
 
   if (DEBUG) begin
@@ -317,7 +319,7 @@ module eth_ipv4_chdr_adapter #(
 
     if (ENET_W > CPU_W || !SYNC) begin : gen_c2e_packet_gate
       // Adding so packet will be contiguous going out
-      // I think the MAC needs bandwdith feeding it to
+      // I think the MAC needs bandwidth feeding it to
       // be greater than the line rate
       axi4s_packet_gate #(.SIZE(17-$clog2(ENET_W)), .USE_AS_BUFF(0))
        c2e_gate_i (.clear(1'b0),.error(1'b0),.i(c2e1_0),.o(c2e1));
