@@ -86,9 +86,10 @@ void e3xx_radio_control_impl::_init_peripherals()
         // Note: The register offset is baked into the different _wb_iface
         // objects!
         _db_gpio.emplace_back(
-            usrp::gpio_atr::gpio_atr_3000::make_write_only(_wb_ifaces.at(radio_idx),
-                e3xx_regs::SR_DB_GPIO + (radio_idx * e3xx_regs::PERIPH_REG_CHAN_OFFSET),
-                e3xx_regs::PERIPH_REG_OFFSET));
+            usrp::gpio_atr::gpio_atr_3000::make(_wb_ifaces.at(radio_idx),
+                usrp::gpio_atr::gpio_atr_offsets::make_write_only(
+                    e3xx_regs::SR_DB_GPIO + (radio_idx * e3xx_regs::PERIPH_REG_CHAN_OFFSET),
+                    e3xx_regs::PERIPH_REG_OFFSET)));
         _db_gpio[radio_idx]->set_atr_mode(
             usrp::gpio_atr::MODE_ATR, usrp::gpio_atr::gpio_atr_3000::MASK_SET_ALL);
     }
@@ -96,17 +97,19 @@ void e3xx_radio_control_impl::_init_peripherals()
     for (size_t radio_idx = 0; radio_idx < E3XX_NUM_CHANS; radio_idx++) {
         RFNOC_LOG_TRACE("Initializing LED GPIOs for channel " << radio_idx);
         _leds_gpio.emplace_back(
-            usrp::gpio_atr::gpio_atr_3000::make_write_only(_wb_ifaces.at(radio_idx),
-                e3xx_regs::SR_LEDS + (radio_idx * e3xx_regs::PERIPH_REG_CHAN_OFFSET),
-                e3xx_regs::PERIPH_REG_OFFSET));
+            usrp::gpio_atr::gpio_atr_3000::make(_wb_ifaces.at(radio_idx),
+                usrp::gpio_atr::gpio_atr_offsets::make_write_only(
+                    e3xx_regs::SR_LEDS + (radio_idx * e3xx_regs::PERIPH_REG_CHAN_OFFSET),
+                    e3xx_regs::PERIPH_REG_OFFSET)));
         _leds_gpio[radio_idx]->set_atr_mode(
             usrp::gpio_atr::MODE_ATR, usrp::gpio_atr::gpio_atr_3000::MASK_SET_ALL);
     }
     RFNOC_LOG_TRACE("Initializing front-panel GPIO control...")
     _fp_gpio = usrp::gpio_atr::gpio_atr_3000::make(_wb_ifaces.at(0),
-        e3xx_regs::SR_FP_GPIO,
-        e3xx_regs::RB_FP_GPIO,
-        e3xx_regs::PERIPH_REG_OFFSET);
+        usrp::gpio_atr::gpio_atr_offsets::make_default(
+            e3xx_regs::SR_FP_GPIO,
+            e3xx_regs::RB_FP_GPIO,
+            e3xx_regs::PERIPH_REG_OFFSET));
 
 
     auto block_args = get_block_args();
