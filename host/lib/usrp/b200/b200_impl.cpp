@@ -749,7 +749,8 @@ b200_impl::b200_impl(
     // front panel gpio
     ////////////////////////////////////////////////////////////////////
     _radio_perifs[0].fp_gpio =
-        gpio_atr_3000::make(_radio_perifs[0].ctrl, TOREG(SR_FP_GPIO), RB32_FP_GPIO);
+        gpio_atr_3000::make(_radio_perifs[0].ctrl,
+            gpio_atr_offsets::make_default(TOREG(SR_FP_GPIO), RB32_FP_GPIO));
     for (const auto& attr : gpio_attr_map) {
         switch (attr.first) {
             case usrp::gpio_atr::GPIO_SRC:
@@ -883,7 +884,7 @@ void b200_impl::setup_radio(const size_t dspno)
     ////////////////////////////////////////////////////////////////////
     // Set up peripherals
     ////////////////////////////////////////////////////////////////////
-    perif.atr = gpio_atr_3000::make_write_only(perif.ctrl, TOREG(SR_ATR));
+    perif.atr = gpio_atr_3000::make(perif.ctrl, gpio_atr_offsets::make_write_only(TOREG(SR_ATR)));
     perif.atr->set_atr_mode(MODE_ATR, 0xFFFFFFFF);
     // create rx dsp control objects
     perif.framer = rx_vita_core_3000::make(perif.ctrl, TOREG(SR_RX_CTRL));

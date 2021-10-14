@@ -17,13 +17,6 @@ using namespace usrp;
 // gpio_atr_3000
 //-------------------------------------------------------------
 
-#define REG_ATR_IDLE_OFFSET (base + reg_offset * 0)
-#define REG_ATR_RX_OFFSET (base + reg_offset * 1)
-#define REG_ATR_TX_OFFSET (base + reg_offset * 2)
-#define REG_ATR_FDX_OFFSET (base + reg_offset * 3)
-#define REG_DDR_OFFSET (base + reg_offset * 4)
-#define REG_ATR_DISABLE_OFFSET (base + reg_offset * 5)
-
 namespace {
 // Special RB addr value to indicate no readback
 // This value is invalid as a real address because it is not a multiple of 4
@@ -32,21 +25,48 @@ static constexpr wb_iface::wb_addr_type READBACK_DISABLED = 0xFFFFFFFF;
 
 namespace uhd { namespace usrp { namespace gpio_atr {
 
+bool gpio_atr_offsets::is_writeonly() const
+{
+    return readback == READBACK_DISABLED;
+}
+
+gpio_atr_offsets gpio_atr_offsets::make_default(
+    const uhd::wb_iface::wb_addr_type base,
+    const uhd::wb_iface::wb_addr_type rb_addr,
+    const size_t stride)
+{
+    gpio_atr_offsets offsets {
+        base, // Idle
+        static_cast<uhd::wb_iface::wb_addr_type>(base + stride), // RX
+        static_cast<uhd::wb_iface::wb_addr_type>(base + stride * 2), // TX
+        static_cast<uhd::wb_iface::wb_addr_type>(base + stride * 3), // Full Duplex
+        static_cast<uhd::wb_iface::wb_addr_type>(base + stride * 4), // DDR
+        static_cast<uhd::wb_iface::wb_addr_type>(base + stride * 5), // Disabled
+        rb_addr, // Readback
+    };
+    return offsets;
+}
+
+gpio_atr_offsets gpio_atr_offsets::make_write_only(
+    const uhd::wb_iface::wb_addr_type base,
+    const size_t stride)
+{
+    return make_default(base, READBACK_DISABLED, stride);
+}
+
 class gpio_atr_3000_impl : public gpio_atr_3000
 {
 public:
     gpio_atr_3000_impl(wb_iface::sptr iface,
-        const wb_iface::wb_addr_type base,
-        const wb_iface::wb_addr_type rb_addr,
-        const size_t reg_offset)
+        const gpio_atr_offsets registers)
         : _iface(iface)
-        , _rb_addr(rb_addr)
-        , _atr_idle_reg(REG_ATR_IDLE_OFFSET, _atr_disable_reg)
-        , _atr_rx_reg(REG_ATR_RX_OFFSET)
-        , _atr_tx_reg(REG_ATR_TX_OFFSET)
-        , _atr_fdx_reg(REG_ATR_FDX_OFFSET)
-        , _ddr_reg(REG_DDR_OFFSET)
-        , _atr_disable_reg(REG_ATR_DISABLE_OFFSET)
+        , _rb_addr(registers.readback)
+        , _atr_idle_reg(registers.idle, _atr_disable_reg)
+        , _atr_rx_reg(registers.rx)
+        , _atr_tx_reg(registers.tx)
+        , _atr_fdx_reg(registers.duplex)
+        , _ddr_reg(registers.ddr)
+        , _atr_disable_reg(registers.disable)
     {
         _atr_idle_reg.initialize(*_iface, true);
         _atr_rx_reg.initialize(*_iface, true);
@@ -311,19 +331,13 @@ protected:
     }
 };
 
-gpio_atr_3000::sptr gpio_atr_3000::make(wb_iface::sptr iface,
-    const wb_iface::wb_addr_type base,
-    const wb_iface::wb_addr_type rb_addr,
-    const size_t reg_offset)
+gpio_atr_3000::sptr gpio_atr_3000::make(wb_iface::sptr iface, gpio_atr_offsets registers)
 {
-    return sptr(new gpio_atr_3000_impl(iface, base, rb_addr, reg_offset));
-}
-
-gpio_atr_3000::sptr gpio_atr_3000::make_write_only(
-    wb_iface::sptr iface, const wb_iface::wb_addr_type base, const size_t reg_offset)
-{
-    gpio_atr_3000::sptr gpio_iface(
-        new gpio_atr_3000_impl(iface, base, READBACK_DISABLED, reg_offset));
+    gpio_atr_3000::sptr gpio_iface = std::make_shared<gpio_atr_3000_impl>(
+        iface, registers);
+    if (registers.is_writeonly()) {
+        gpio_iface->set_gpio_ddr(DDR_OUTPUT, MASK_SET_ALL);
+    }
     gpio_iface->set_gpio_ddr(DDR_OUTPUT, MASK_SET_ALL);
     return gpio_iface;
 }
@@ -335,11 +349,8 @@ gpio_atr_3000::sptr gpio_atr_3000::make_write_only(
 class db_gpio_atr_3000_impl : public gpio_atr_3000_impl, public db_gpio_atr_3000
 {
 public:
-    db_gpio_atr_3000_impl(wb_iface::sptr iface,
-        const wb_iface::wb_addr_type base,
-        const wb_iface::wb_addr_type rb_addr,
-        const size_t reg_offset)
-        : gpio_atr_3000_impl(iface, base, rb_addr, reg_offset)
+    db_gpio_atr_3000_impl(wb_iface::sptr iface, const gpio_atr_offsets registers)
+        : gpio_atr_3000_impl(iface, registers)
     { /* NOP */
     }
 
@@ -443,12 +454,9 @@ private:
     }
 };
 
-db_gpio_atr_3000::sptr db_gpio_atr_3000::make(wb_iface::sptr iface,
-    const wb_iface::wb_addr_type base,
-    const wb_iface::wb_addr_type rb_addr,
-    const size_t reg_offset)
+db_gpio_atr_3000::sptr db_gpio_atr_3000::make(wb_iface::sptr iface, gpio_atr_offsets registers)
 {
-    return sptr(new db_gpio_atr_3000_impl(iface, base, rb_addr, reg_offset));
+    return std::make_shared<db_gpio_atr_3000_impl>(iface, registers);
 }
 
 }}} // namespace uhd::usrp::gpio_atr
