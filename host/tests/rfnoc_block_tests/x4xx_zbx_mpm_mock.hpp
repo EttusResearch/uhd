@@ -315,6 +315,21 @@ public:
         // nop
     }
 
+    void dio_set_voltage_level(const std::string&, const std::string&) override
+    {
+        // nop
+    }
+
+    void dio_set_port_mapping(const std::string&) override
+    {
+        // nop
+    }
+
+    void dio_set_pin_directions(const std::string&, uint32_t) override
+    {
+        // nop
+    }
+
     ///////////////////////////////////////////////////////////////////////////
     // Public attributes for easy inspection
     //
