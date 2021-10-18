@@ -14,6 +14,7 @@
 if(ENABLE_X400)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/adc_self_calibration.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/x400_gpio_control.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/x400_radio_control.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/x400_rfdc_control.cpp
     )
