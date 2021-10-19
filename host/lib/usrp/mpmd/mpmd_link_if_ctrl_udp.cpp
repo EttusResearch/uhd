@@ -29,14 +29,24 @@ using namespace uhd::mpmd::xport;
 
 namespace {
 
-//! Maximum CHDR packet size in bytes
-const size_t MPMD_10GE_DATA_FRAME_MAX_SIZE    = 7972;
-const size_t MPMD_1GE_DATA_FRAME_MAX_SIZE     = 1472;
+//! Maximum CHDR packet size in bytes.
+// Our 10GbE connections use custom FPGA code which caps frames at 8192 bytes.
+// However, we artificially limit this to a smaller frame size, which gives us
+// a safety margin.
+const size_t MPMD_10GE_DATA_FRAME_MAX_SIZE = 8016;
+// For 1 GbE, we either go through our on-chip PHY/MAC, which also caps at 8192
+// bytes, or we go through the RJ45, and then the DMA to the chip, which can go
+// higher. We thus choose the same value as for 10 GbE.
+// Note that for 1 GbE, we almost always have an MTU of 1500, so we will rarely
+// meet this frame size, but MTU discovery will take care of that. This is just
+// a cap to make sure we never try CHDR packets that will clog our fabric.
+const size_t MPMD_1GE_DATA_FRAME_MAX_SIZE = 8016;
 
 //! Number of send/recv frames
 const size_t MPMD_ETH_NUM_FRAMES = 32;
 
-//!
+//! Buffer depth in seconds. We use the link rate to determine how large buffers
+// must be to store this many seconds worth of data.
 const double MPMD_BUFFER_DEPTH = 20.0e-3; // s
 //! For MTU discovery, the time we wait for a packet before calling it
 // oversized (seconds).
