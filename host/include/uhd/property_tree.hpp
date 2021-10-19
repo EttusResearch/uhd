@@ -73,7 +73,7 @@ public:
     typedef boost::function<T(void)> publisher_type;
     typedef boost::function<T(const T&)> coercer_type;
 
-    virtual ~property<T>(void) = 0;
+    virtual ~property(void) = 0;
 
     /*!
      * Register a coercer into the property.
