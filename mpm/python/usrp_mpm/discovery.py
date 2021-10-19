@@ -16,9 +16,9 @@ from usrp_mpm.mpmutils import to_binary_str
 RESPONSE_PREAMBLE = b"USRP-MPM"
 RESPONSE_SEP = b";"
 RESPONSE_CLAIMED_KEY = b"claimed"
-# "Max MTU" is not a redundant name. We don't know the total path MTU, but we
-# can say for sure that it won't exceed a certain value, and that's the max MTU
-MAX_MTU = 8000
+# A buffer size large enough to capture any UDP packet we receive on the
+# discovery socket
+MAX_SOCK_BUFSIZ = 9000
 # For setsockopt
 IP_MTU_DISCOVER = 10
 IP_PMTUDISC_DO = 2
@@ -71,7 +71,7 @@ def _discovery_process(state, discovery_addr):
 
     try:
         while True:
-            data, sender = sock.recvfrom(MAX_MTU)
+            data, sender = sock.recvfrom(MAX_SOCK_BUFSIZ)
             log.debug("Got poked by: %s", sender[0])
             # TODO this is still part of the awful subnet identification
             if not sender[0].startswith(discovery_addr_prefix):
