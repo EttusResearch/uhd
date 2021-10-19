@@ -93,7 +93,7 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
     if (_radio_type == PRIMARY) {
         _fp_gpio = gpio_atr::gpio_atr_3000::make(
             ctrl, regs::sr_addr(regs::FP_GPIO), regs::rb_addr(regs::RB_FP_GPIO));
-        for (const gpio_atr::gpio_attr_map_t::value_type attr : gpio_atr::gpio_attr_map) {
+        for (const gpio_atr::gpio_attr_map_t::value_type& attr : gpio_atr::gpio_attr_map) {
             switch (attr.first) {
                 case usrp::gpio_atr::GPIO_SRC:
                     _tree

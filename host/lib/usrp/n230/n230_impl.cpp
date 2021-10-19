@@ -426,7 +426,7 @@ void n230_impl::_initialize_property_tree(const fs_path& mb_path)
     //------------------------------------------------------------------
     // MiniSAS GPIO
     //------------------------------------------------------------------
-    for (const usrp::gpio_atr::gpio_attr_map_t::value_type attr :
+    for (const usrp::gpio_atr::gpio_attr_map_t::value_type& attr :
         usrp::gpio_atr::gpio_attr_map) {
         switch (attr.first) {
             case usrp::gpio_atr::GPIO_SRC:

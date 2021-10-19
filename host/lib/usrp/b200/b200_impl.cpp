@@ -742,7 +742,7 @@ b200_impl::b200_impl(
     ////////////////////////////////////////////////////////////////////
     _radio_perifs[0].fp_gpio =
         gpio_atr_3000::make(_radio_perifs[0].ctrl, TOREG(SR_FP_GPIO), RB32_FP_GPIO);
-    for (const gpio_attr_map_t::value_type attr : gpio_attr_map) {
+    for (const gpio_attr_map_t::value_type& attr : gpio_attr_map) {
         switch (attr.first) {
             case usrp::gpio_atr::GPIO_SRC:
                 _tree
