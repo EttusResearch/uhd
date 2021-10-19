@@ -182,6 +182,7 @@ private:
     void update_subdev_spec(const std::string& tx_rx, const uhd::usrp::subdev_spec_t&);
     void update_time_source(const std::string&);
     void set_time(const uhd::time_spec_t&);
+    void set_time_next_pps(const uhd::time_spec_t&);
     void sync_times(void);
     void update_clock_source(const std::string&);
     void update_bandsel(const std::string& which, double freq);
@@ -248,6 +249,7 @@ private:
         NONE     = 3,
         UNKNOWN  = 4
     } _time_source;
+    bool _time_set_with_pps;
 
     void update_gpio_state(void);
 
