@@ -24,7 +24,7 @@ BOOST_AUTO_TEST_CASE(test_lookup)
         {0x5CC0000000000000, "SchmidlCox"}};
     std::cout << blocknames.size() << std::endl;
 
-    for (const auto block : blocknames) {
+    for (const auto& block : blocknames) {
         std::cout << "Testing " << block.second << " => "
                   << str(boost::format("%016X") % block.first) << std::endl;
         auto block_definition = blockdef::make_from_noc_id(block.first);
