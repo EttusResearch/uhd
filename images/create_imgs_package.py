@@ -19,7 +19,6 @@
 Command-line utility to create a .zip-file with the current image set.
 """
 
-from __future__ import print_function
 import re
 import os
 import subprocess
@@ -49,7 +48,7 @@ def get_version():
     """
     try:
         git_cmd = ['git', 'describe', '--abbrev=0', '--tags']
-        git_output = subprocess.check_output(git_cmd)
+        git_output = subprocess.check_output(git_cmd).decode('UTF-8')
     except subprocess.CalledProcessError as ex:
         print(ex.output)
         exit(1)
@@ -64,8 +63,8 @@ def main():
     """ Go, go, go! """
     args = parse_args()
     img_root_dir = os.path.join(uhdimgs.get_images_dir(), 'images')
-    print("== Clearing out the images directory...")
-    shutil.rmtree(img_root_dir)
+    print("== Clearing out the images directory at {}, if present...".format(img_root_dir))
+    shutil.rmtree(img_root_dir, ignore_errors=True)
     print("== Downloading images...")
     download_images(img_root_dir)
     print("== Determining version...")
