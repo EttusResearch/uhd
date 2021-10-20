@@ -125,7 +125,7 @@ void ihex_reader::read(ihex_reader::record_handle_type record_handler)
 
             if (ret < 0) {
                 throw uhd::io_error(
-                    "ihex_reader::read(): record hander returned failure code");
+                    "ihex_reader::read(): record handler returned failure code");
             }
         }
 
