@@ -56,7 +56,7 @@ void Responder::register_stop_signal_handler()
 // For ncurses. Print everything in stream to screen
 void Responder::FLUSH_SCREEN()
 {
-    printw(_ss.str().c_str());
+    printw("%s", _ss.str().c_str());
     refresh();
     _ss.str("");
 }
