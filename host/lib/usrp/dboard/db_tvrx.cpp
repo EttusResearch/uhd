@@ -156,7 +156,7 @@ static const boost::array<double, 17> tvrx_gains_volts = {{0.8,
 static uhd::dict<std::string, gain_range_t> get_tvrx_gain_ranges(void)
 {
     double rfmax = 0.0, rfmin = FLT_MAX;
-    for (const std::string range : tvrx_rf_gains_db.keys()) {
+    for (const std::string& range : tvrx_rf_gains_db.keys()) {
         double my_max = tvrx_rf_gains_db[range].back(); // we're assuming it's monotonic
         double my_min =
             tvrx_rf_gains_db[range].front(); // if it's not this is wrong wrong wrong

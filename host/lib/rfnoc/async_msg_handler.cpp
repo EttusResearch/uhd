@@ -56,7 +56,7 @@ public:
     {
         std::lock_guard<std::mutex> lock(_mutex);
 
-        for (auto const event_handler : _event_handlers) {
+        for (const auto& event_handler : _event_handlers) {
             // If the event code in the message matches the event code used at
             // registration time, call the event handler
             if ((metadata.event_code & event_handler.first) == event_handler.first) {
