@@ -30,7 +30,7 @@ public:
         }
     }
 
-    ~property_impl<T>(void)
+    ~property_impl(void)
     {
         /* NOP */
     }
