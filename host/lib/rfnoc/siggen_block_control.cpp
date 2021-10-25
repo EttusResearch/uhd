@@ -307,16 +307,16 @@ private:
         // The rotator that rotates the phasor to generate the sinusoidal
         // data has an initial phase offset which is impossible to predict.
         // Thus, the Cartesian parameter is largely immaterial, as long as
-        // the phasor's amplitude matchines with the client has specified.
+        // the phasor's amplitude matches what the client has specified.
         // For simplicity, the Cartesian parameter is chosen to have a real
-        // (X) component of 0.0 and an imaginary (Y) component of the desired
-        // amplitude.
-        const int16_t cartesian_i_fp = clamp<int16_t>(amplitude * 32767.0);
+        // (X) component of the desired amplitude and an imaginary (Y)
+        // component of 0.0.
+        const int16_t cartesian_x_fp = clamp<int16_t>(amplitude * 32767.0);
 
-        // Bits 31:16 represent the imaginary component (the pre-scaled
-        // fixed point amplitude), while bits 15:0 represents the real
-        // component (which are zeroed).
-        const uint32_t cartesian_reg_value = (uint32_t(cartesian_i_fp) << 16);
+        // Bits 31:16 represent the real component (the pre-scaled fixed-point
+        // amplitude), while bits 15:0 represent the imaginary component (which
+        // is zeroed).
+        const uint32_t cartesian_reg_value = (uint32_t(cartesian_x_fp) << 16);
         _siggen_reg_iface.poke32(REG_CARTESIAN_OFFSET, cartesian_reg_value, port);
     }
 
