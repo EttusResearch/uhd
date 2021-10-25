@@ -14,6 +14,8 @@
 #include <uhd/rfnoc/noc_block_base.hpp>
 #include <uhd/rfnoc/register_iface.hpp>
 #include <uhd/rfnoc/res_source_info.hpp>
+#include <uhd/features/discoverable_feature.hpp>
+#include <uhd/features/gpio_power_iface.hpp>
 #include <uhd/rfnoc_graph.hpp>
 #include <uhd/transport/adapter_id.hpp>
 #include <uhd/types/device_addr.hpp>
@@ -223,6 +225,13 @@ void export_rfnoc(py::module& m)
         .def("synchronize_devices", &rfnoc_graph::synchronize_devices)
         .def("get_tree", &rfnoc_graph::get_tree);
 
+    py::class_<uhd::features::gpio_power_iface>(m, "gpio_power")
+        .def("get_supported_voltages", &uhd::features::gpio_power_iface::get_supported_voltages)
+        .def("set_port_voltage", &uhd::features::gpio_power_iface::set_port_voltage)
+        .def("get_port_voltage", &uhd::features::gpio_power_iface::get_port_voltage)
+        .def("set_external_power", &uhd::features::gpio_power_iface::set_external_power)
+        .def("get_external_power_status", &uhd::features::gpio_power_iface::get_external_power_status);
+
     py::class_<mb_controller, mb_controller::sptr>(m, "mb_controller")
         .def("get_num_timekeepers", &mb_controller::get_num_timekeepers)
         .def("get_timekeeper", &mb_controller::get_timekeeper)
@@ -250,7 +259,8 @@ void export_rfnoc(py::module& m)
         .def("get_gpio_banks", &mb_controller::get_gpio_banks)
         .def("get_gpio_srcs", &mb_controller::get_gpio_srcs)
         .def("get_gpio_src", &mb_controller::get_gpio_src)
-        .def("set_gpio_src", &mb_controller::set_gpio_src);
+        .def("set_gpio_src", &mb_controller::set_gpio_src)
+        .def("get_gpio_power", [](mb_controller& self){ return &self.get_feature<uhd::features::gpio_power_iface>(); }, py::return_value_policy::reference_internal);
 
     py::class_<timekeeper, PyTimekeeper, timekeeper::sptr>(m, "timekeeper")
         // Methods
