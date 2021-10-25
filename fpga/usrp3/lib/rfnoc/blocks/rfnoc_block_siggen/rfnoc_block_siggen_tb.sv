@@ -54,7 +54,7 @@ module rfnoc_block_siggen_tb #(
 
   // Maximum real (floating point) values allowed for the different fixed
   // point formats (for range checking). All of the fixed point values are
-  // signed 16-bit. 
+  // signed 16-bit.
   localparam real MAX_GAIN_R  =  (2.0**15-1) / (2.0**GAIN_FRAC);
   localparam real MIN_GAIN_R  = -(2.0**15)   / (2.0**GAIN_FRAC);
   localparam real MAX_CONST_R =  (2.0**15-1) / (2.0**CONST_FRAC);
@@ -242,7 +242,9 @@ module rfnoc_block_siggen_tb #(
   endfunction : fixed_to_real
 
 
-  // Compute the next sine value we expect based on the previous
+  // Compute the next sine value we expect based on the previous. This should
+  // be a point (X,Y) rotated counter-clockwise around the origin, where X is
+  // in the MSBs and Y is in the LSBs.
   function automatic logic [31:0] next_sine_value(
     logic [31:0] sample,
     logic [15:0] phase_inc
@@ -252,10 +254,10 @@ module rfnoc_block_siggen_tb #(
     y        = fixed_to_real(sample[15: 0], CART_FRAC);
     phase    = fixed_to_real(phase_inc, PHASE_FRAC) * PI;
 
-    // Compute the rotated coordinates
-    new_x =  x*$cos(phase) + y*$sin(phase);
-    new_y = -x*$sin(phase) + y*$cos(phase);
-    
+    // Compute the counter-clockwise rotated coordinates
+    new_x = x*$cos(phase) - y*$sin(phase);
+    new_y = x*$sin(phase) + y*$cos(phase);
+
     return { real_to_fixed(new_x, CART_FRAC), real_to_fixed(new_y, CART_FRAC) };
   endfunction : next_sine_value
 
@@ -320,7 +322,7 @@ module rfnoc_block_siggen_tb #(
     end
 
     // Dump all the packets that were received
-    while (blk_ctrl.num_received(port)) begin 
+    while (blk_ctrl.num_received(port)) begin
       blk_ctrl.recv_items(port, items);
     end
   endtask : flush_output
@@ -376,7 +378,7 @@ module rfnoc_block_siggen_tb #(
     int                 spp         = SPP,
     logic signed [15:0] const_re    = 16'h7FFF,  // 0.99997
     logic signed [15:0] const_im    = 16'h7FFF,  // 0.99997
-    logic signed [15:0] phase_inc   = real_to_fixed(0.5, 13), //real_to_fixed(2.0/16, 13), // 2*pi/16 radians
+    logic signed [15:0] phase_inc   = real_to_fixed(2.0/16, 13), // 2*pi/16 radians
     logic signed [15:0] cart_x      = real_to_fixed(1.0, 14),
     logic signed [15:0] cart_y      = real_to_fixed(0.0, 14)
   );
@@ -387,7 +389,7 @@ module rfnoc_block_siggen_tb #(
       write_reg(port, REG_CONSTANT, {const_re, const_im});
     end else if (mode == WAVE_SINE) begin
       write_reg(port, REG_PHASE_INC, phase_inc);
-      write_reg(port, REG_CARTESIAN, {cart_y, cart_x});
+      write_reg(port, REG_CARTESIAN, {cart_x, cart_y});
     end
     write_reg(port, REG_ENABLE, 1);
 
@@ -400,7 +402,7 @@ module rfnoc_block_siggen_tb #(
 
       // Verify the length
       `ASSERT_ERROR(
-        items.size() == spp, 
+        items.size() == spp,
         "Packet length didn't match configured SPP"
       );
 
@@ -447,7 +449,7 @@ module rfnoc_block_siggen_tb #(
             );
           end
         end
-       
+
       end
     end
 
@@ -596,7 +598,7 @@ module rfnoc_block_siggen_tb #(
 
     max_val = 16'sh7FFF;
     min_val = 16'sh8000;
-    
+
     // Test max gain with min and max sample values
     run_waveform(.port(port), .mode(WAVE_CONST), .gain(max_val),
       .const_re(max_val), .const_im(min_val));
@@ -610,7 +612,7 @@ module rfnoc_block_siggen_tb #(
     run_waveform(
       .port(port),
       .mode(WAVE_CONST),
-      .const_re(real_to_fixed(0.5, CONST_FRAC)),  
+      .const_re(real_to_fixed(0.5, CONST_FRAC)),
       .const_im(real_to_fixed(0.25, CONST_FRAC)),
       .gain(real_to_fixed(0.5, GAIN_FRAC))
       );

@@ -21,7 +21,7 @@ module rfnoc_block_siggen_all_tb;
   rfnoc_block_siggen_tb #(.CHDR_W(64),  .NUM_PORTS(3))  test_siggen_2();
   rfnoc_block_siggen_tb #(.CHDR_W(128), .NUM_PORTS(2))  test_siggen_3();
   rfnoc_block_siggen_tb #(.CHDR_W(256), .NUM_PORTS(1))  test_siggen_4();
-  
+
 endmodule : rfnoc_block_siggen_all_tb
 
 
