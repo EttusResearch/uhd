@@ -11,7 +11,7 @@ import re
 import time
 import signal
 import struct
-from multiprocessing import Process, Event
+from multiprocessing import Process, Event, Value
 from statistics import mean
 from usrp_mpm import lib  # Pulls in everything from C++-land
 from usrp_mpm.sys_utils import i2c_dev
@@ -243,13 +243,17 @@ class DioControl:
         self.set_port_mapping(self.HDMI_MAP_NAME)
         self.log.trace("Spawning DIO fault monitors...")
         self._tear_down_monitor = Event()
+        self._dio_fault = {
+            "PORTA": Value('b', 0),
+            "PORTB": Value('b', 0),
+        }
         self._dio0_fault_monitor = Process(
             target=self._monitor_dio_fault,
-            args=('A', "DIO_INT0", self._tear_down_monitor)
+            args=('A', "DIO_INT0", self._tear_down_monitor, self._dio_fault["PORTA"])
         )
         self._dio1_fault_monitor = Process(
             target=self._monitor_dio_fault,
-            args=('B', "DIO_INT1", self._tear_down_monitor)
+            args=('B', "DIO_INT1", self._tear_down_monitor, self._dio_fault["PORTB"])
         )
         signal.signal(signal.SIGINT, self._monitor_int_handler)
         self._dio0_fault_monitor.start()
@@ -268,7 +272,14 @@ class DioControl:
 
         self.log.debug(f"Found the following GPIO sources: {', '.join(gpio_srcs)}")
 
-    def _monitor_dio_fault(self, dio_port, fault, tear_down):
+        self._current_voltage_level = {
+            "PORTA": "3V3",
+            "PORTB": "3V3",
+        }
+        self.set_voltage_level("PORTA", "3V3")
+        self.set_voltage_level("PORTB", "3V3")
+
+    def _monitor_dio_fault(self, dio_port, fault, tear_down, fault_state):
         """
         Monitor the DIO_INT lines to detect an external power fault.
         If there is a fault, turn off external power.
@@ -282,6 +293,7 @@ class DioControl:
                     self.log.warning("DIO fault occurred on port {} - turning off external power"
                                      .format(dio_port))
                     self.set_external_power(dio_port, 0)
+                    fault_state.value = 1
             # If the event wait gets interrupted because we are trying to tear down then stop
             # the monitoring process. If not, keep monitoring
             except InterruptedError:
@@ -781,6 +793,8 @@ class DioControl:
         assert level in self.DIO_VOLTAGE_LEVELS
         port_control = self.port_control[port]
 
+        self._current_voltage_level[port] = level
+
         port_control.enable.set(0)
         port_control.en_2v5.set(0)
         port_control.en_3v3.set(0)
@@ -797,6 +811,14 @@ class DioControl:
                 raise RuntimeError(
                     "Power good pin did not go high after power up")
 
+    def get_voltage_level(self, port):
+        """
+        Returns the current GPIO voltage level as set by set_voltage_level
+        """
+        port = self._normalize_port_name(port)
+        assert port in self.DIO_PORTS
+        return self._current_voltage_level[port]
+
     def set_external_power(self, port, value):
         """
         Change EN_EXT_PWR_<port> to value.
@@ -809,6 +831,30 @@ class DioControl:
         assert value in (0, 1)
         assert port in self.DIO_PORTS
         self.port_control[port].ext_pwr.set(value)
+        self._dio_fault[port].value = 0
+
+    def get_external_power_state(self, port):
+        """
+        Returns the current state of the external power supply.
+
+        Usage:
+        > get_external_power_state PORTA
+        """
+        port = self._normalize_port_name(port)
+        if self._dio_fault[port].value == 1:
+            return "FAULT"
+        if self.port_control[port].ext_pwr.get() == 1:
+            return "ON"
+        return "OFF"
+
+    def get_supported_voltage_levels(self, port):
+        """
+        Returns the list of all supported voltage levels for the given port.
+        Note that, currently, all ports support all voltage levels, so we
+        simply validate that the given port name is valid.
+        """
+        _ = self._normalize_port_name(port)
+        return ["OFF", "1V8", "2V5", "3V3"]
 
     def status(self):
         """

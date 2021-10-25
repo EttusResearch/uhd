@@ -214,7 +214,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
             'reset': False,
         },
     }
-    discoverable_features = ["ref_clk_calibration", "time_export", "trig_io_mode"]
+    discoverable_features = ["ref_clk_calibration", "time_export", "trig_io_mode", "gpio_power"]
     #
     # End of overridables from PeriphManagerBase
     ###########################################################################
