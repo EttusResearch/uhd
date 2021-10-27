@@ -1025,7 +1025,7 @@ endmodule
 //      </info>
 //      <value name="PS_CPLD_SIGNATURE"     integer="0x0A522D27"/>
 //      <value name="PL_CPLD_SIGNATURE"     integer="0x3FDC5C47"/>
-//      <value name="CPLD_REVISION"         integer="0x21012015"/>
+//      <value name="CPLD_REVISION"         integer="0x21111614"/>
 //      <value name="OLDEST_CPLD_REVISION"  integer="0x20122114"/>
 //    </enumeratedtype>
 //  </group>

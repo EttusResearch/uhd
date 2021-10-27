@@ -73,6 +73,29 @@ module reconfig_engine #(
   `include "regmap/reconfig_regmap_utils.vh"
   `include "../../../lib/rfnoc/core/ctrlport.vh"
 
+  // Check MAX10 variant target (10M04 or 10M08)
+  `ifdef VARIANT_10M04
+    localparam FLASH_PRIMARY_IMAGE_START_ADDR_MEM_INIT = FLASH_PRIMARY_IMAGE_START_ADDR_MEM_INIT_10M04;
+    localparam FLASH_PRIMARY_IMAGE_START_ADDR          = FLASH_PRIMARY_IMAGE_START_ADDR_10M04;
+    localparam FLASH_PRIMARY_IMAGE_END_ADDR            = FLASH_PRIMARY_IMAGE_END_ADDR_10M04;
+    localparam CFM0_WP_OFFSET_MSB                      = 26; // From Max 10 Flash Memory User Guide.
+    localparam CFM0_WP_OFFSET_LSB                      = 24; // From Max 10 Flash Memory User Guide.
+  `elsif VARIANT_10M08
+    localparam FLASH_PRIMARY_IMAGE_START_ADDR_MEM_INIT = FLASH_PRIMARY_IMAGE_START_ADDR_MEM_INIT_10M08;
+    localparam FLASH_PRIMARY_IMAGE_START_ADDR          = FLASH_PRIMARY_IMAGE_START_ADDR_10M08;
+    localparam FLASH_PRIMARY_IMAGE_END_ADDR            = FLASH_PRIMARY_IMAGE_END_ADDR_10M08;
+    localparam CFM0_WP_OFFSET_MSB                      = 27; // From Max 10 Flash Memory User Guide.
+    localparam CFM0_WP_OFFSET_LSB                      = 25; // From Max 10 Flash Memory User Guide.
+  `else
+    ERROR_MAX10_variant_must_be_defined();
+    localparam FLASH_PRIMARY_IMAGE_START_ADDR_MEM_INIT = FLASH_PRIMARY_IMAGE_START_ADDR_MEM_INIT_10M04;
+    localparam FLASH_PRIMARY_IMAGE_START_ADDR          = FLASH_PRIMARY_IMAGE_START_ADDR_10M04;
+    localparam FLASH_PRIMARY_IMAGE_END_ADDR            = FLASH_PRIMARY_IMAGE_END_ADDR_10M04;
+    localparam CFM0_WP_OFFSET_MSB                      = 26; // From Max 10 Flash Memory User Guide.
+    localparam CFM0_WP_OFFSET_LSB                      = 24; // From Max 10 Flash Memory User Guide.
+  `endif
+
+
   //----------------------------------------------------------
   //  Flash Interface between Registers and State Machine
   //----------------------------------------------------------
@@ -264,8 +287,7 @@ module reconfig_engine #(
   localparam CONTROL_REG_ADDR        = 1'b1;
   localparam   SECTOR_ERASE_ADDR_MSB = 22;
   localparam   SECTOR_ERASE_ADDR_LSB = 20;
-  localparam   CFM0_WP_OFFSET_MSB    = 26;
-  localparam   CFM0_WP_OFFSET_LSB    = 24;
+  // CFM0_WP_OFFSET_MSB and CFM0_WP_OFFSET_LSB are MAX10 variant dependent.
   localparam     ENABLE_WP           = MEM_INIT ? 3'b111 : 3'b100;
   localparam     DISABLE_WP          = 3'b000;
 
@@ -742,17 +764,26 @@ endmodule
 //    </info>
 //    <enumeratedtype name="FLASH_PRIMARY_IMAGE_ADDR_ENUM" showhexvalue="true">
 //      <info>
-//        Those values are the start and end address of the CFM image flash
-//        sector from Intel's On-Chip Flash IP Generator. Note that the values
-//        given in the IP generator are byte based where the values of this enum
-//        are U32 based (divided by 4).
+//        These values are the start and end address of the CFM image flash
+//        sector from Intel's On-Chip Flash IP Generator.
+//        Be aware that three different values exist per each of the two
+//        supported MAX10 variants: 10M04 and 10M08
+//        Note that the values given in the IP generator are byte based where
+//        the values of this enum are U32 based (divided by 4).
 //      </info>
-//      <value name="FLASH_PRIMARY_IMAGE_START_ADDR_MEM_INIT"
+//      <value name="FLASH_PRIMARY_IMAGE_START_ADDR_MEM_INIT_10M04"
 //        integer="4096"/>
-//      <value name="FLASH_PRIMARY_IMAGE_START_ADDR"
+//      <value name="FLASH_PRIMARY_IMAGE_START_ADDR_10M04"
 //        integer="39936"/>
-//      <value name="FLASH_PRIMARY_IMAGE_END_ADDR"
+//      <value name="FLASH_PRIMARY_IMAGE_END_ADDR_10M04"
 //        integer="75775"/>
+//
+//      <value name="FLASH_PRIMARY_IMAGE_START_ADDR_MEM_INIT_10M08"
+//        integer="8192"/>
+//      <value name="FLASH_PRIMARY_IMAGE_START_ADDR_10M08"
+//        integer="44032"/>
+//      <value name="FLASH_PRIMARY_IMAGE_END_ADDR_10M08"
+//        integer="79871"/>
 //    </enumeratedtype>
 //    <register name="FLASH_STATUS_REG" offset="0x000" size="32"
 //     attributes="Readable">
@@ -948,9 +979,12 @@ endmodule
 //          Defines the sector to be erased. Has to be set latest with the
 //          write access which starts the erase operation by strobing
 //          @.FLASH_ERASE_STB.{br}
-//          If the flash is configured to support memory initialization (see
-//          @.FLASH_MEM_INIT_ENABLED flag) the sectors 2 to 4 have to be erased.
-//          If the flag is not asserted only sector 4 has to be erased.
+//          With 10M04 variants, if the flash is configured to support memory
+//          initialization (see @.FLASH_MEM_INIT_ENABLED flag) the sectors 2
+//          to 4 have to be erased. If the flag is not asserted only sector 4
+//          has to be erased.
+//          With 10M08 variants, the sectors to be erased are 3 to 5 when
+//          using memory initialization or only sector 5 otherwise.
 //        </info>
 //      </bitfield>
 //      <bitfield name="CLEAR_FLASH_READ_ERROR_STB" range="8"

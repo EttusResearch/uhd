@@ -4,87 +4,98 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 #
 
-GIT_HASH = $(shell ../../../../../tools/scripts/git-hash.sh)
+# NOTE: All comments prefixed with a "##" will be displayed as a part of the "make help" target
+##-------------------
+##USRP ZBX CPLD Help
+##-------------------
+##Usage:
+## make <Targets> <Options>
+##
+##Output:
+## build/<device-id>/usrp_zbx_cpld.pof:            Bitstream to use with JTAG programmer
+## build/<device-id>/usrp_zbx_cpld.svf:            Bitstream to use with PS JTAG engine (background programming)
+## build/<device-id>/usrp_zbx_cpld.rpd:            Bitstream to use via reconfig engine
+## build/<device-id>/usrp_zbx_cpld_isp_off.svf:    Bitstream to use with JTAG test points (initial programming)
 
-build: cpld_defaults ip
-	@echo -ne "\n---- Make: Synthesis ...\n\n";
-	@quartus_map zbx_top_cpld --verilog_macro="GIT_HASH=32'h$(GIT_HASH)";
-	@echo -ne "\n\n---- Make: Implementation ...\n\n";
-	@quartus_fit zbx_top_cpld;
-	@echo -ne "\n\n---- Make: Analyzing timing ...\n\n";
-	@quartus_sta zbx_top_cpld;
-	@# grep for unconstrained path warning
-	@grep "332102" output_files/zbx_top_cpld.sta.rpt; \
-		if [ $$? -eq 0 ]; then false; else true; fi
-	@# grep for timing closure critical warning
-	@grep "332148" output_files/zbx_top_cpld.sta.rpt; \
-		if [ $$? -eq 0 ]; then false; else true; fi
-	@# expect no warnings
-	@grep -iw "warning" output_files/zbx_top_cpld.sta.rpt; \
-		if [ $$? -eq 0 ]; then false; else true; fi
-	@# expect no critical warning except "review power analyzer report file"
-	@grep -i "critical warning" output_files/* | grep -v 16562; \
-		if [ $$? -eq 0 ]; then false; else true; fi
-	@echo -ne "\n\n---- Make: Generating bitfile...\n\n";
-	@quartus_asm zbx_top_cpld;
-	@echo -ne "\n\n---- Make: Converting bitfile to svf format (ISP enabled)...\n\n";
-	@quartus_cpf --convert \
-	  --frequency 12.5MHz \
-	  --voltage 2.5       \
-	  --operation p       \
-	  ./output_files/zbx_top_cpld.pof ./output_files/zbx_top_cpld_isp_on.svf -o background_programming=on;
-	@echo -ne "\n\n---- Make: Converting bitfile to svf format (ISP disabled)...\n\n";
-	@quartus_cpf --convert \
-	  --frequency 12.5MHz \
-	  --voltage 2.5       \
-	  --operation p       \
-	  ./output_files/zbx_top_cpld.pof ./output_files/zbx_top_cpld_isp_off.svf;
-	@echo -ne "\n\n---- Make: Converting bitfile to rdp format...\n\n";
-	@quartus_cpf -c raw_conversion.cof
-	@echo -ne "\n\n---- Make: Copy final files...\n\n";
-	@mkdir -p build
-	@cp output_files/zbx_top_cpld.pof                     build/usrp_zbx_cpld.pof
-	@cp output_files/zbx_top_cpld_isp_off.svf             build/usrp_zbx_cpld.svf
-	@cp output_files/zbx_top_cpld_isp_on.svf              build/usrp_zbx_cpld_isp_on.svf
-	@cp output_files/zbx_top_cpld_converted_cfm0_auto.rpd build/usrp_zbx_cpld.rpd
-	@echo -ne "\n\n---- Make: ZBX CPLD ready!\n";
-	@echo -ne "     Use build/usrp_zbx_cpld.pof via JTAG programmer or\n"
-	@echo -ne "         build/usrp_zbx_cpld.svf (ISP off) via MB CPLD JTAG engine or\n"
-	@echo -ne "         build/usrp_zbx_cpld.rpd via reconfig engine or\n"
-	@echo -ne "         build/usrp_zbx_cpld_isp_on.rpd via MB CPLD JTAG engine.\n"
+# Definitions
+10M04_ID = "10M04SAU324I7G"
 
-clean:
-	@echo -ne "\nCleaning ZBX CPLD...\n";
-	@git clean -Xdf
-
-QSYS_PATH=$(subst \,/,$(QUARTUS_ROOTDIR))/sopc_builder/bin
-
-ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
-
-REGS_PY_FILE=$(ROOT_DIR)/../../../../../../../host/lib/ic_reg_maps/gen_zbx_cpld_regs.py
-REGS_PY_MODULE=register_endpoints/memory_init_files/zbx_cpld_regs_t.py
-
-$(REGS_PY_MODULE): $(REGS_PY_FILE)
-	    @python3 $(REGS_PY_FILE) $(REGS_PY_MODULE)
+# Target specific variables
+ZBX_CPLD_10M04: DEFS = VARIANT_`echo $(10M04_ID) | cut -c1-5`=1
 
 # Using one of the files as a dependency (all files are generated at the same time)
-INIT_FILES := $(ROOT_DIR)/register_endpoints/memory_init_files/rx0_path_defaults.hex
+INIT_FILES := register_endpoints/memory_init_files/rx0_path_defaults.hex
 
-$(INIT_FILES): register_endpoints/memory_init_files/gen_defaults.py $(REGS_PY_MODULE)
-	@python3 $(ROOT_DIR)/register_endpoints/memory_init_files/gen_defaults.py
+TARGET = bin
+TOP ?= zbx_top_cpld
 
-cpld_defaults: $(INIT_FILES)
+# pre_build()
+pre_build = @\
+	mkdir -p build-$@/register_endpoints/memory_init_files/; \
+	cp -rf register_endpoints/memory_init_files/*.hex build-$@/register_endpoints/memory_init_files/
 
-ip: ip/flash/on_chip_flash/simulation/on_chip_flash.v \
-    ip/osc/osc/simulation/osc.v
-	@make -C ../../../cpld ip
+# quartus_build($1=Device, $2=Definitions)
+quartus_build = make -f Makefile.zbx_cpld.inc $(TARGET) NAME=$@ ARCH="MAX10" PART_ID="$1" $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2" POST_STA_TCL="ps_cs_analysis.tcl"
 
-ip/flash/on_chip_flash/simulation/on_chip_flash.v:
-	$(QSYS_PATH)/qsys-generate ip/flash/on_chip_flash.qsys --simulation=VERILOG
+# quartus_ip($1=Device, $2=Definitions)
+quartus_ip = make -f Makefile.zbx_cpld.inc quar_ip NAME=$@ ARCH="MAX10" PART_ID="$1" $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2"
 
-ip/osc/osc/simulation/osc.v:
-	$(QSYS_PATH)/qsys-generate ip/osc/osc.qsys --simulation=VERILOG
+# post_build($1=Artifact Name)
+ifeq ($(TARGET),bin)
+	post_build = @\
+		mkdir -p build/; \
+		echo "Exporting bitstream files..."; \
+		cp build-$@/output_files/$(TOP).pof                      build/$(1).pof; \
+		cp build-$@/output_files/$(TOP)_isp_off.svf              build/$(1)_isp_off.svf; \
+		cp build-$@/output_files/$(TOP)_isp_on.svf               build/$(1).svf; \
+		cp build-$@/output_files/$(TOP)_converted_cfm0_auto.rpd  build/$(1).rpd; \
+		echo -ne "\n\n---- Make: MB CPLD ready!\n"; \
+		echo -ne "     Use build/$(1).pof via JTAG programmer or\n"; \
+		echo -ne "         build/$(1).svf (ISP on) via PS JTAG-engine (background programming) or\n"; \
+		echo -ne "         build/$(1).rpd via reconfig engine or\n"; \
+		echo -ne "         build/$(1)_isp_off.svf via JTAG test points (initial programming)\n";
+else
+	post_build = @echo "Skipping bitfile export."
+endif
 
-all: build
+##
+##Supported Targets
+##-----------------
+
+all:              ZBX_CPLD_10M04 ##(Default target)
+
+##ZBX_CPLD_10M04:   ZBX CPLD targeted to 10M04SAU169I7G.
+ZBX_CPLD_10M04: $(INIT_FILES)
+	$(call pre_build)
+	$(call quartus_build,$(10M04_ID),$(DEFS))
+	$(call post_build,"usrp_zbx_cpld")
+
+ZBX_CPLD_IP:      ##Build IPs only, needed for simulation.
+	@# Building only ZBX_CPLD_10M04 IP
+	$(call quartus_ip,$(10M04_ID),$(DEFS))
+
+$(INIT_FILES):
+	make -f Makefile.zbx_cpld.inc cpld_defaults
+
+clean:            ##Clean up all target build outputs.
+	@echo -ne "\nCleaning targets and git repo...\n";
+	@rm -rf build-ZBX_CPLD*
+	@rm -rf build
+	@git clean -Xdf
+
+cleanall:         ##Clean up all target and ip build outputs.
+	@echo -ne "\nCleaning targets, IP, and git repo...\n";
+	@rm -rf build-ZBX_CPLD*
+	@rm -rf build
+	@rm -rf build-ip
+	@git clean -Xdf
+
+help:             ##Show this help message.
+	@grep -h "##" Makefile | grep -v "\"##\"" | sed -e 's/\\$$//' | sed -e 's/##//'
+
+##
+##Supported Options
+##-----------------
+##
 
 .PHONY: all build clean ip

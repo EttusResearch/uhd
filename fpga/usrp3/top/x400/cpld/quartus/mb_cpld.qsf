@@ -391,41 +391,42 @@ set_global_assignment -name INTERNAL_FLASH_UPDATE_MODE "SINGLE COMP IMAGE"
 set_global_assignment -name EN_USER_IO_WEAK_PULLUP OFF
 set_global_assignment -name EN_SPI_IO_WEAK_PULLUP OFF
 
-set_global_assignment -name VHDL_FILE ip/cmi/PcieCmiWrapper.vhd
-set_global_assignment -name VHDL_FILE ip/cmi/PcieCmi.vhd
-set_global_assignment -name QSYS_FILE ip/clkctrl/clkctrl.qsys
-set_global_assignment -name QSYS_FILE ip/flash/on_chip_flash.qsys
-set_global_assignment -name SDC_FILE db_spi_shared_constants.sdc
-set_global_assignment -name SDC_FILE mb_cpld.sdc
-set_global_assignment -name VERILOG_FILE reconfig_engine.v
-set_global_assignment -name VERILOG_FILE mb_cpld.v
-set_global_assignment -name VERILOG_FILE ctrlport_to_spi.v
-set_global_assignment -name VERILOG_FILE ctrlport_to_jtag.v
-set_global_assignment -name VERILOG_FILE pl_cpld_regs.v
-set_global_assignment -name VERILOG_FILE pwr_supply_clk_gen.v
-set_global_assignment -name VERILOG_FILE ps_cpld_regs.v
-set_global_assignment -name VERILOG_FILE reset_generator.v
-set_global_assignment -name VERILOG_FILE spi_slave_to_ctrlport_master.v
-set_global_assignment -name VERILOG_FILE spi_slave.v
-set_global_assignment -name QIP_FILE ip/pll/pll.qip
-set_global_assignment -name VERILOG_FILE ../../../lib/control/synchronizer_impl.v
-set_global_assignment -name VERILOG_FILE ../../../lib/control/synchronizer.v
-set_global_assignment -name VERILOG_FILE ../../../lib/rfnoc/utils/ctrlport_splitter.v
-set_global_assignment -name VERILOG_FILE ../../../lib/rfnoc/utils/ctrlport_terminator.v
-set_global_assignment -name VERILOG_FILE ../../../lib/wb_spi/rtl/verilog/spi_top.v
-set_global_assignment -name VERILOG_FILE ../../../lib/wb_spi/rtl/verilog/spi_shift.v
-set_global_assignment -name VERILOG_FILE ../../../lib/wb_spi/rtl/verilog/spi_defines.v
-set_global_assignment -name VERILOG_FILE ../../../lib/wb_spi/rtl/verilog/spi_clgen.v
-set_global_assignment -name VERILOG_FILE ../../../lib/control/pulse_synchronizer.v
-set_global_assignment -name VERILOG_FILE ../../../lib/control/handshake.v
-set_global_assignment -name VHDL_FILE ../../../lib/vivado_ipi/axi_bitq/bitq_fsm.vhd
-set_global_assignment -name VHDL_FILE ../../../lib/vivado_ipi/axi_bitq/axi_bitq.vhd
-set_global_assignment -name QIP_FILE ip/oddr/oddr.qip
+set_global_assignment -name VHDL_FILE ../ip/cmi/PcieCmiWrapper.vhd
+set_global_assignment -name VHDL_FILE ../ip/cmi/PcieCmi.vhd
+set_global_assignment -name QSYS_FILE ../ip/clkctrl/clkctrl.qsys
+set_global_assignment -name QSYS_FILE ../ip/on_chip_flash/on_chip_flash.qsys
+set_global_assignment -name SDC_FILE ../db_spi_shared_constants.sdc
+set_global_assignment -name SDC_FILE ../mb_cpld.sdc
+set_global_assignment -name VERILOG_FILE ../reconfig_engine.v
+set_global_assignment -name VERILOG_FILE ../mb_cpld.v
+set_global_assignment -name VERILOG_FILE ../ctrlport_to_spi.v
+set_global_assignment -name VERILOG_FILE ../ctrlport_to_jtag.v
+set_global_assignment -name VERILOG_FILE ../pl_cpld_regs.v
+set_global_assignment -name VERILOG_FILE ../pwr_supply_clk_gen.v
+set_global_assignment -name VERILOG_FILE ../ps_cpld_regs.v
+set_global_assignment -name VERILOG_FILE ../ps_power_regs.v
+set_global_assignment -name VERILOG_FILE ../reset_generator.v
+set_global_assignment -name VERILOG_FILE ../spi_slave_to_ctrlport_master.v
+set_global_assignment -name VERILOG_FILE ../spi_slave.v
+set_global_assignment -name QIP_FILE ../ip/pll/pll.qip
+set_global_assignment -name VERILOG_FILE ../../../../lib/control/synchronizer_impl.v
+set_global_assignment -name VERILOG_FILE ../../../../lib/control/synchronizer.v
+set_global_assignment -name VERILOG_FILE ../../../../lib/rfnoc/utils/ctrlport_splitter.v
+set_global_assignment -name VERILOG_FILE ../../../../lib/rfnoc/utils/ctrlport_terminator.v
+set_global_assignment -name VERILOG_FILE ../../../../lib/wb_spi/rtl/verilog/spi_top.v
+set_global_assignment -name VERILOG_FILE ../../../../lib/wb_spi/rtl/verilog/spi_shift.v
+set_global_assignment -name VERILOG_FILE ../../../../lib/wb_spi/rtl/verilog/spi_defines.v
+set_global_assignment -name VERILOG_FILE ../../../../lib/wb_spi/rtl/verilog/spi_clgen.v
+set_global_assignment -name VERILOG_FILE ../../../../lib/control/pulse_synchronizer.v
+set_global_assignment -name VERILOG_FILE ../../../../lib/control/handshake.v
+set_global_assignment -name VHDL_FILE ../../../../lib/vivado_ipi/axi_bitq/bitq_fsm.vhd
+set_global_assignment -name VHDL_FILE ../../../../lib/vivado_ipi/axi_bitq/axi_bitq.vhd
+set_global_assignment -name QIP_FILE ../ip/oddr/oddr.qip
 set_global_assignment -name SOURCE_FILE db/mb_cpld.cmp.rdb
 set_global_assignment -name PARTITION_NETLIST_TYPE POST_FIT -section_id "PcieCmi:PcieCmix"
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id "PcieCmi:PcieCmix"
 set_global_assignment -name PARTITION_COLOR 52377 -section_id "PcieCmi:PcieCmix"
-set_global_assignment -name PARTITION_IMPORT_FILE ip/cmi/PcieCmi.qxp -section_id "PcieCmi:PcieCmix"
+set_global_assignment -name PARTITION_IMPORT_FILE ../ip/cmi/PcieCmi.qxp -section_id "PcieCmi:PcieCmix"
 set_global_assignment -name PARTITION_LAST_IMPORTED_FILE ip/cmi/PcieCmi.qxp -section_id "PcieCmi:PcieCmix"
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
 set_instance_assignment -name PARTITION_HIERARCHY pciec_5b6b1 -to "PcieCmiWrapper:pcie_cmi_inst|PcieCmi:PcieCmix" -section_id "PcieCmi:PcieCmix"
