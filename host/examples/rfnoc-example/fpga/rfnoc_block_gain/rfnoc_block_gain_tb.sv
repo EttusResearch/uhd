@@ -1,5 +1,5 @@
 //
-// Copyright 2019 Ettus Research, A National Instruments Company
+// Copyright 2021 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -11,7 +11,9 @@
 `default_nettype none
 
 
-module rfnoc_block_gain_tb;
+module rfnoc_block_gain_tb #(
+  string IP_OPTION = "HDL_IP"
+);
 
   `include "test_exec.svh"
 
@@ -44,8 +46,10 @@ module rfnoc_block_gain_tb;
   bit rfnoc_chdr_clk;
   bit rfnoc_ctrl_clk;
 
-  sim_clock_gen #(CHDR_CLK_PER) rfnoc_chdr_clk_gen (.clk(rfnoc_chdr_clk), .rst());
-  sim_clock_gen #(CTRL_CLK_PER) rfnoc_ctrl_clk_gen (.clk(rfnoc_ctrl_clk), .rst());
+  sim_clock_gen #(.PERIOD(CHDR_CLK_PER), .AUTOSTART(0))
+    rfnoc_chdr_clk_gen (.clk(rfnoc_chdr_clk), .rst());
+  sim_clock_gen #(.PERIOD(CTRL_CLK_PER), .AUTOSTART(0))
+    rfnoc_ctrl_clk_gen (.clk(rfnoc_ctrl_clk), .rst());
 
   //---------------------------------------------------------------------------
   // Bus Functional Models
@@ -118,7 +122,8 @@ module rfnoc_block_gain_tb;
   rfnoc_block_gain #(
     .THIS_PORTID         (THIS_PORTID),
     .CHDR_W              (CHDR_W),
-    .MTU                 (MTU)
+    .MTU                 (MTU),
+    .IP_OPTION           (IP_OPTION)
   ) dut (
     .rfnoc_chdr_clk      (rfnoc_chdr_clk),
     .rfnoc_ctrl_clk      (rfnoc_ctrl_clk),
@@ -165,12 +170,20 @@ module rfnoc_block_gain_tb;
   localparam int REG_GAIN_ADDR = dut.REG_GAIN_ADDR;
 
   initial begin : tb_main
+    string tb_name;
+    tb_name = $sformatf("chdr_crossbar_nxn: IP_OPTION = %s", IP_OPTION);
 
     // Initialize the test exec object for this testbench
-    test.start_tb("rfnoc_block_gain_tb");
+    test.start_tb(tb_name);
 
     // Start the BFMs running
     blk_ctrl.run();
+
+    // Start the clocks running. We wait to start them until this testbench
+    // runs because we don't want to waste the simulator's CPU time by
+    // simulating idle clock cycles.
+    rfnoc_chdr_clk_gen.start();
+    rfnoc_ctrl_clk_gen.start();
 
     //--------------------------------
     // Reset
@@ -209,7 +222,7 @@ module rfnoc_block_gain_tb;
       blk_ctrl.reg_read(REG_GAIN_ADDR, val32);
       `ASSERT_ERROR(
         val32 == 32'h8765, "Initial value for REG_GAIN_ADDR is not correct");
-      
+
       test.end_test();
     end
 
@@ -217,14 +230,14 @@ module rfnoc_block_gain_tb;
       // Iterate through a series of gain values to test.
       localparam shortint MAX_TEST_VAL =  255;
       localparam shortint MIN_TEST_VAL = -255;
-      static logic [15:0] test_gains[$] = { 
+      static logic [15:0] test_gains[$] = {
         1,     // Make sure unity gain leaves data unmodified
         -1,    // Make sure -1 negates data
         0,     // Make sure 0 gain results in 0
         37,    // Make sure a normal gain computes correctly
         -22,   // Make sure a normal gain computes correctly
         256    // Make sure a large gain causes clipping
-        }; 
+      };
 
       foreach (test_gains[gain_index]) begin
         shortint     gain;
@@ -255,7 +268,7 @@ module rfnoc_block_gain_tb;
         blk_ctrl.recv_items(0, recv_samples);
 
         // Check the resulting payload size
-        `ASSERT_ERROR(recv_samples.size() == SPP, 
+        `ASSERT_ERROR(recv_samples.size() == SPP,
           "Received payload didn't match size of payload sent");
 
         // Check the resulting samples
@@ -272,7 +285,7 @@ module rfnoc_block_gain_tb;
 
           `ASSERT_ERROR(
             sample_out == expected,
-            $sformatf("For sample %0d, gain %0d, input 0x%X, received 0x%X, expected 0x%X", 
+            $sformatf("For sample %0d, gain %0d, input 0x%X, received 0x%X, expected 0x%X",
                       i, gain, sample_in, sample_out, expected));
         end
 
@@ -284,8 +297,14 @@ module rfnoc_block_gain_tb;
     // Finish Up
     //--------------------------------
 
-    // Display final statistics and results
-    test.end_tb();
+    // Display final statistics and results. End the TB, but don't $finish,
+    // since we don't want to kill other instances of this testbench that may
+    // be running.
+    test.end_tb(.finish(0));
+
+    // Kill the clocks to end this instance of the testbench
+    rfnoc_chdr_clk_gen.kill();
+    rfnoc_ctrl_clk_gen.kill();
   end : tb_main
 
 endmodule : rfnoc_block_gain_tb
