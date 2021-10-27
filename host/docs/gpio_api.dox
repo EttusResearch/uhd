@@ -11,6 +11,8 @@ by an ATR (Automatic Transmit / Receive). This allows them to be toggled
 simultaneously with other radio-level changes (e.g., enabling or
 disabling a TX or RX mixer).
 
+For information on the X410 GPIO, see \ref page_x400_gpio_api
+
 \subsection xgpio_fpanel_gpio X3x0 Front Panel GPIO
 
 The GPIO port is not meant to drive big loads. You should not try to source more than 5mA per pin.

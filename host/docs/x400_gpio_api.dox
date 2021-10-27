@@ -1,0 +1,134 @@
+/*! \page page_x400_gpio_api X4x0 GPIO API
+
+\tableofcontents
+
+\section x4x0gpio_fpanel The X4x0 Front Panel GPIO
+
+Like other USRP devices (e.g., E310, X310), the X4x0 devices expose auxiliary
+GPIO connections through the motherboard. These GPIO pins can be controlled from
+either the user application in the FPGA or from the radio blocks.
+
+There are 24 GPIO pins in total, split between two HDMI connectors (labelled
+GPIO0 and GPIO1) which each expose 12 pins.
+
+Additionally, the X4x0 GPIO lines include a 3.3V power supply which is disabled
+by default, which can provide up to 450mA with overcurrent protection. See
+\ref x4x0_gpio_power
+
+\subsection x4x0gpio_fpanel_gpio X4x0 Front Panel GPIO
+
+The GPIO port is not meant to drive big loads.
+
+\subsubsection x4x0gpio_fpanel_conn Connector
+
+\image html HDMI_Connector_Pinout.svg HDMI pinout
+
+\subsubsection x4x0gpio_fpanel_pins Pin Mapping
+
+-   Pin 1: Data[0]
+-   Pin 2: 0V
+-   Pin 3: Data[1]
+-   Pin 4: Data[2]
+-   Pin 5: 0V
+-   Pin 6: Data[3]
+-   Pin 7: Data[4]
+-   Pin 8: 0V
+-   Pin 9: Data[5]
+-   Pin 10: Data[6]
+-   Pin 11: 0V
+-   Pin 12: Data[7]
+-   Pin 13: Data[8]
+-   Pin 14: N/C
+-   Pin 15: Data[9]
+-   Pin 16: Data[10]
+-   Pin 17: 0V
+-   Pin 18: +3.3V (see \ref x4x0_gpio_power)
+-   Pin 19: Data[11]
+
+\subsection x4x0_gpio_output Setting GPIO Output
+
+The GPIO lines can be configured according to the
+uhd::usrp::multi_usrp::set_gpio_attr() API, like can be seen at \ref
+xgpio_fpanel_atr.
+
+The major difference is that in order to use that API, the GPIO source must be
+correctly configured. The source can be configured using
+uhd::usrp::multi_usrp::set_gpio_src(), which takes two arguments: A "bank" and a
+"src". The `bank` argument specifies the GPIO port to configure, and the `src`
+argument is a vector of twelve elements, each specifying the source for the
+given GPIO pin.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.py}
+# Set every pin on GPIO0 to be controlled by DB1_RF0
+usrp.set_gpio_src("GPIO0", ["DB1_RF0"]*12)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The bank can be either "GPIO0" or "GPIO1", and the sources can be any
+combination of:
+-   <b>DBx_RFy</b>: Controlled by the slot-x radio block via the set_gpio_attr
+    API, with ATR states derived from channel y on that slot if CTRL is set to 1. If
+    CTRL is set to 0, y is ignored and can be either 0 or 1.
+-   <b>DBx_SPI</b>: Controlled via the digital interface block in the slot-x
+    radio block.
+-   <b>PS</b>: Controlled directly via the Linux GPIO API on the embedded
+    processor.
+-   <b>USER_APP</b>: Controlled via user logic in the FPGA. Note that this only
+    works with custom modifications to the FPGA codebase, and not with standard UHD
+    FPGA images.
+
+Once the source is set, using the GPIO proceeds identically to the usage on
+other devices. Note that the values and masks for the
+uhd::usrp::multi_usrp::set_gpio_attr() API combines all 24 pins, with bits
+[23:12] representing the GPIO1 port and bits [11:0] representing the GPIO0 port.
+For example, to configure the 4th bit on GPIO1 (HDMI pin number 7) as a high
+output, one would run:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.py}
+pin_mask = 1 << (12 + 4) # 12 for GPIO1, 4 for the bit on that port
+usrp.set_gpio_attr("GPIOA", "CTRL", 0, pin_mask) # Non-ATR mode
+usrp.set_gpio_attr("GPIOA", "DDR", pin_mask, pin_mask) # Output
+
+usrp.set_gpio_attr("GPIOA", "OUT", pin_mask, pin_mask) # Set value high
+usrp.set_gpio_attr("GPIOA", "OUT", 0, pin_mask) # Set value low
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+\subsection x4x0_gpio_power Configuring External Power Supply
+
+The X410's GPIO ports each have 3.3V power supply pins, which is disabled by
+default. The GPIO lines will function correctly without the external power
+supply enabled, and the voltage of the power supply is independent of the
+selected GPIO line voltage. To enable the power supply, call the
+uhd::features::gpio_power_iface::set_external_power() method on the gpio_power
+discoverable feature attached to the mb_controller:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+auto usrp = uhd::usrp::multi_usrp::make("type=x4xx");
+
+auto gpio = usrp->get_mb_controller().get_feature<uhd::rfnoc::discoverable_feature::GPIO_POWER>();
+gpio->set_external_power("GPIO1", true); // Enable external power on GPIO1
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The status of the external power supply can be queried using
+uhd::features::gpio_power_iface::get_external_power_status(), which will return
+one of the following values:
+-   <b>OFF</b>: Power supply is disabled (the default).
+-   <b>ON</b>: Power supply is operating normally.
+-   <b>FAULT</b>: Power supply has encountered a fault and disabled itself. This
+    condition can be cleared by calling
+    uhd::features::gpio_power_iface::set_external_power().
+
+\subsection x4x0_gpio_voltage Configuring GPIO Voltage
+
+The voltage level of the I/O lines can be selected as any of 1.8V, 2.5V, or 3.3V
+voltage levels on a per-bank basis. To do this use the
+uhd::features::gpio_power_iface::set_port_voltage() API:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+auto usrp = uhd::usrp::multi_usrp::make("type=x4xx");
+
+auto gpio = usrp->get_mb_controller().get_feature<uhd::rfnoc::discoverable_feature::GPIO_POWER>();
+gpio->set_port_voltage("GPIO0", "2V5"); // Set GPIO0 voltage to 2.5V
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Valid values can be enumerated with the
+uhd::features::gpio_power_iface::supported_voltages() call, and are "1V8",
+"2V5", and "3V3".
+
+*/
+// vim:ft=doxygen:
