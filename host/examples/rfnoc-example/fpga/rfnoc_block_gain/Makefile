@@ -1,5 +1,5 @@
 #
-# Copyright 2019 Ettus Research, A National Instruments Brand
+# Copyright 2021 Ettus Research, a National Instruments Brand
 #
 # SPDX-License-Identifier: LGPL-3.0-or-later
 #
@@ -47,11 +47,12 @@ $(LIB_IP_COMPLEX_MULTIPLIER_SRCS) \
 #-------------------------------------------------
 # Testbench Specific
 #-------------------------------------------------
-SIM_TOP = rfnoc_block_gain_tb glbl
+SIM_TOP = rfnoc_block_gain_all_tb glbl
 SIM_SRCS = \
 $(abspath $(IP_BUILD_DIR)/cmplx_mul/sim/cmplx_mul.vhd) \
 $(abspath $(IP_BUILD_DIR)/complex_multiplier/sim/complex_multiplier.vhd) \
 $(abspath rfnoc_block_gain_tb.sv) \
+$(abspath rfnoc_block_gain_all_tb.sv) \
 $(VIVADO_PATH)/data/verilog/src/glbl.v \
 
 #-------------------------------------------------
