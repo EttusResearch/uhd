@@ -248,8 +248,11 @@ inline link_params_t calculate_udp_link_params(
     if (link_type == link_type_t::CTRL) {
         // Control links typically do not allow the number of frames to be
         // configured.
+        // Keep the default_link_params value if it is higher to handle
+        // high speed DPDK links
         link_params.num_recv_frames =
-            uhd::rfnoc::CMD_FIFO_SIZE / uhd::rfnoc::MAX_CMD_PKT_SIZE;
+            std::max(uhd::rfnoc::CMD_FIFO_SIZE / uhd::rfnoc::MAX_CMD_PKT_SIZE,
+                link_params.num_recv_frames);
     } else if (link_type == link_type_t::TX_DATA) {
         // Note that the send frame size will be capped to the Tx MTU.
         link_params.send_frame_size = link_args.cast<size_t>("send_frame_size",
