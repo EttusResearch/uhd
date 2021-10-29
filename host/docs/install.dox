@@ -50,7 +50,7 @@ Most distributions provide UHD as part of their package management.
 On Debian and Ubuntu systems, this will install the base UHD library, all headers
 and build-specific files, as well as utilities:
 
-    sudo apt-get install libuhd-dev libuhd003 uhd-host
+    sudo apt-get install libuhd-dev libuhd3.15.0 uhd-host
 
 On Fedora systems, an equivalent command would be:
 
@@ -72,7 +72,7 @@ Copy and paste these commands into your terminal. This will install UHD software
 
     sudo add-apt-repository ppa:ettusresearch/uhd
     sudo apt-get update
-    sudo apt-get install libuhd-dev libuhd003 uhd-host
+    sudo apt-get install libuhd-dev libuhd4.1.0 uhd-host
 
 \subsubsection install_linux_ourbins_fedora Fedora
 

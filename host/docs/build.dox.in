@@ -125,8 +125,11 @@ or install msysGit from http://code.google.com/p/msysgit/downloads/list.
 
 You can install all the dependencies through the package manager:
 
-    sudo apt-get install libboost-all-dev libusb-1.0-0-dev doxygen python3-docutils python3-mako python3-numpy python3-requests python3-ruamel.yaml python3-setuptools cmake build-essential
-
+    sudo apt-get install autoconf automake build-essential ccache cmake cpufrequtils doxygen ethtool \
+    g++ git inetutils-tools libboost-all-dev libncurses5 libncurses5-dev libusb-1.0-0 libusb-1.0-0-dev \
+    libusb-dev python3-dev python3-mako python3-numpy python3-requests python3-scipy python3-setuptools \
+    python3-ruamel.yaml 
+    
 Your actual command may differ.
 
 \subsection build_dependencies_fedora Setting up the dependencies on Fedora
