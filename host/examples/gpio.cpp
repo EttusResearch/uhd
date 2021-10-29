@@ -117,7 +117,8 @@ std::string to_bit_string(uint32_t val, const size_t num_bits)
     return out;
 }
 
-void output_reg_values(const std::string bank,
+void output_reg_values(const std::string& bank,
+    const std::string& port,
     const uhd::usrp::multi_usrp::sptr& usrp,
     const size_t num_bits)
 {
@@ -136,7 +137,7 @@ void output_reg_values(const std::string bank,
 
     // GPIO Src - get_gpio_src() not supported for all devices
     try {
-        const auto gpio_src = usrp->get_gpio_src(bank);
+        const auto gpio_src = usrp->get_gpio_src(port);
         std::cout << boost::format("%10s:") % "SRC";
         for (auto src : gpio_src) {
             std::cout << " " << src;
@@ -156,6 +157,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     std::string cpu, otw;
     double rx_rate, tx_rate, dwell;
     std::string gpio;
+    std::string port;
     size_t num_bits;
     std::string src_str;
     std::string ctrl_str;
@@ -180,6 +182,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("tx_rate", po::value<double>(&tx_rate)->default_value(GPIO_DEFAULT_TX_RATE), "tx sample rate")
         ("dwell", po::value<double>(&dwell)->default_value(GPIO_DEFAULT_DWELL_TIME), "dwell time in seconds for each test case")
         ("bank", po::value<std::string>(&gpio)->default_value(GPIO_DEFAULT_GPIO), "name of gpio bank")
+        ("port", po::value<std::string>(&port)->default_value(""), "name of gpio port. If not specified, defaults to the GPIO bank")
         ("bits", po::value<size_t>(&num_bits)->default_value(GPIO_DEFAULT_NUM_BITS), "number of bits in gpio bank")
         ("bitbang", "single test case where user sets values for CTRL, DDR, and OUT registers")
         ("src", po::value<std::string>(&src_str), "GPIO SRC reg value")
@@ -195,6 +198,11 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     if (vm.count("help")) {
         std::cout << boost::format("gpio %s") % desc << std::endl;
         return ~0;
+    }
+
+    // Handle if the port is unspecified
+    if (port.empty()) {
+        port = gpio;
     }
 
     // create a usrp device
@@ -227,7 +235,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     // print out initial unconfigured state of GPIO
     std::cout << "Initial GPIO values:" << std::endl;
-    output_reg_values(gpio, usrp, num_bits);
+    output_reg_values(gpio, port, usrp, num_bits);
 
     // configure GPIO registers
     uint32_t ddr        = strtoul(ddr_str.c_str(), NULL, 0);
@@ -271,7 +279,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         typedef boost::char_separator<char> separator;
         boost::tokenizer<separator> tokens(src_str, separator(" "));
         std::copy(tokens.begin(), tokens.end(), std::back_inserter(gpio_src));
-        usrp->set_gpio_src(gpio, gpio_src);
+        usrp->set_gpio_src(port, gpio_src);
     }
 
     // set data direction register (DDR)
@@ -291,7 +299,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     // print out initial state of FP GPIO
     std::cout << "\nConfigured GPIO values:" << std::endl;
-    output_reg_values(gpio, usrp, num_bits);
+    output_reg_values(gpio, port, usrp, num_bits);
     std::cout << std::endl;
 
     // set up streams
@@ -353,7 +361,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             std::cout << "pass:" << std::endl;
         else
             std::cout << "fail:" << std::endl;
-        output_reg_values(gpio, usrp, num_bits);
+        output_reg_values(gpio, port, usrp, num_bits);
         // restore DDR value
         usrp->set_gpio_attr(gpio, "DDR", ddr, mask);
     }
@@ -396,7 +404,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             } else {
                 std::cout << "pass:" << std::endl;
             }
-            output_reg_values(gpio, usrp, num_bits);
+            output_reg_values(gpio, port, usrp, num_bits);
             usrp->set_gpio_attr(gpio, "OUT", 0, GPIO_BIT(4));
             if (stop_signal_called)
                 break;
@@ -423,7 +431,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                 } else {
                     std::cout << "pass:" << std::endl;
                 }
-                output_reg_values(gpio, usrp, num_bits);
+                output_reg_values(gpio, port, usrp, num_bits);
                 rx_stream->issue_stream_cmd(
                     uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
                 // clear out any data left in the rx stream
@@ -458,7 +466,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                 } else {
                     std::cout << "pass:" << std::endl;
                 }
-                output_reg_values(gpio, usrp, num_bits);
+                output_reg_values(gpio, port, usrp, num_bits);
                 tx_md.end_of_burst = true;
                 try {
                     tx_stream->send(tx_buffs, nsamps_per_buff, tx_md, timeout);
@@ -513,7 +521,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                 } else {
                     std::cout << "pass:" << std::endl;
                 }
-                output_reg_values(gpio, usrp, num_bits);
+                output_reg_values(gpio, port, usrp, num_bits);
             }
 
             std::cout << std::endl;
