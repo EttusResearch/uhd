@@ -148,6 +148,8 @@ class DioControl:
     FPGA_DIO_OVERRIDE_REGISTER = FPGA_DIO_REGISTER_BASE + 0x1C
     FPGA_DIO_SW_DIO_CONTROL_REGISTER = FPGA_DIO_REGISTER_BASE + 0x20
 
+    FULL_DIO_FPGA_COMPAT = (7, 5)
+
     # DIO register addresses
     RADIO_DIO_REGISTER_BASE = 0x8C000
     RADIO_DIO_CLASSIC_ATR_CONFIG_REGISTER = RADIO_DIO_REGISTER_BASE + 0x40
@@ -484,12 +486,18 @@ class DioControl:
         """
         Returns a list of GPIO banks over which MPM has any control
         """
+        if self.mboard_regs.get_compat_number() < self.FULL_DIO_FPGA_COMPAT:
+            return []
+
         return self.X4XX_GPIO_BANKS
 
     def get_gpio_srcs(self, bank: str):
         """
         Return a list of valid GPIO sources for a given bank
         """
+        if self.mboard_regs.get_compat_number() < self.FULL_DIO_FPGA_COMPAT:
+            return ["MPM"]
+
         assert bank in self.get_gpio_banks(), f"Invalid GPIO bank: {bank}"
         return self._gpio_srcs[bank]
 
@@ -501,6 +509,9 @@ class DioControl:
         source that can be used in custom FPGA designs (e.g. LabView binary uses
         this pin source).
         """
+        if self.mboard_regs.get_compat_number() < self.FULL_DIO_FPGA_COMPAT:
+            return []
+
         assert bank in self.get_gpio_banks(), f"Invalid GPIO bank: {bank}"
 
         master_reg = self._GpioReg(self, bank, self.FPGA_DIO_MASTER_REGISTER)
@@ -542,6 +553,17 @@ class DioControl:
         > set_gpio_src <bank> <srcs>
         > set_gpio_src GPIO0 PS DB1_RF0 PS PS MPM PS PS PS MPM USER_APP PS
         """
+        if self.mboard_regs.get_compat_number() < self.FULL_DIO_FPGA_COMPAT:
+            # Older FPGAs only have a single GPIO source selector
+            master_reg = self._GpioReg(self, bank, self.FPGA_DIO_MASTER_REGISTER)
+            for pin_index, src_name in enumerate(src):
+                if src_name == "MPM":
+                    master_reg.set_pin(pin_index, 1)
+                else:
+                    master_reg.set_pin(pin_index, 0)
+            master_reg.save()
+            return
+
         assert bank in self.get_gpio_banks(), f"Invalid GPIO bank: {bank}"
         assert len(src) == self.X4XX_GPIO_WIDTH, f"Invalid number of GPIO sources! Expecting {self.X4XX_GPIO_WIDTH}, but got {len(src)}."
 
