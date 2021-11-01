@@ -447,37 +447,6 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     std::cout << "Using streamer args: " << stream_args.args.to_string() << std::endl;
     uhd::rx_streamer::sptr rx_stream = graph->create_rx_streamer(1, stream_args);
 
-    // Set the stream args on the radio:
-    // if (block_id.empty()) {
-    //    // If no extra block is required, connect to the radio:
-    //    streamer_args["block_id"]   = radio_ctrl_id.to_string();
-    //    streamer_args["block_port"] = str(boost::format("%d") % radio_chan);
-    //} else {
-    //    // Otherwise, see if the requested block exists and connect it to the radio:
-    //    if (not usrp->has_block(block_id)) {
-    //        std::cout << "Block does not exist on current device: " << block_id
-    //                  << std::endl;
-    //        return EXIT_FAILURE;
-    //    }
-
-    //    uhd::rfnoc::source_block_ctrl_base::sptr blk_ctrl =
-    //        usrp->get_block_ctrl<uhd::rfnoc::source_block_ctrl_base>(block_id);
-
-    //    if (not block_args.empty()) {
-    //        // Set the block args on the other block:
-    //        blk_ctrl->set_args(uhd::device_addr_t(block_args));
-    //    }
-    //    // Connect:
-    //    std::cout << "Connecting " << radio_ctrl_id << " ==> " <<
-    //    blk_ctrl->get_block_id()
-    //              << std::endl;
-    //    rx_graph->connect(
-    //        radio_ctrl_id, radio_chan, blk_ctrl->get_block_id(), uhd::rfnoc::ANY_PORT);
-    //    streamer_args["block_id"] = blk_ctrl->get_block_id().to_string();
-
-    //    spp = blk_ctrl->get_args().cast<size_t>("spp", spp);
-    //}
-
     // Connect blocks and commit the graph
     for (auto& edge : chain) {
         if (uhd::rfnoc::block_id_t(edge.dst_blockid).match(uhd::rfnoc::NODE_ID_SEP)) {

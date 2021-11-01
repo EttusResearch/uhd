@@ -11,12 +11,16 @@
 #include <uhdlib/rfnoc/chdr_packet_writer.hpp>
 #include <uhdlib/rfnoc/mgmt_portal.hpp>
 #include <uhdlib/utils/narrow.hpp>
-#include <unordered_set>
 #include <boost/format.hpp>
+#include <chrono>
 #include <cmath>
+#include <map>
 #include <mutex>
 #include <queue>
+#include <string>
 #include <thread>
+#include <tuple>
+#include <vector>
 
 namespace uhd { namespace rfnoc { namespace mgmt {
 
