@@ -124,7 +124,7 @@ public:
             _replay_reg_iface.poke64(
                 REG_PLAY_BUFFER_SIZE_LO_ADDR, _play_size.at(port).get(), port);
             _replay_reg_iface.poke32(REG_PLAY_WORDS_PER_PKT_ADDR,
-                (_packet_size.at(port).get() - CHDR_MAX_LEN_HDR) / _word_size,
+                (_packet_size.at(port).get() - get_chdr_hdr_len()) / _word_size,
                 port);
         }
     }
@@ -226,7 +226,7 @@ public:
 
     uint32_t get_max_items_per_packet(const size_t port) const override
     {
-        return (_packet_size.at(port).get() - CHDR_MAX_LEN_HDR)
+        return (_packet_size.at(port).get() - get_chdr_hdr_len())
                / get_play_item_size(port);
     }
 
@@ -274,7 +274,7 @@ public:
 
     void set_max_items_per_packet(const uint32_t ipp, const size_t port) override
     {
-        set_max_packet_size(CHDR_MAX_LEN_HDR + ipp * get_play_item_size(port), port);
+        set_max_packet_size(get_chdr_hdr_len() + ipp * get_play_item_size(port), port);
     }
 
     void set_max_packet_size(const uint32_t size, const size_t port) override
@@ -460,17 +460,26 @@ private:
 
     void _set_packet_size(const uint32_t packet_size, const size_t port)
     {
-        // MTU is max payload size, header with timestamp is already accounted for
         const size_t mtu               = get_mtu({res_source_info::OUTPUT_EDGE, port});
-        const uint32_t item_size       = get_play_item_size(port);
-        const uint32_t mtu_payload     = mtu - CHDR_MAX_LEN_HDR;
-        const uint32_t mtu_items       = mtu_payload / item_size;
-        const uint32_t ipc             = _word_size / item_size; // items per cycle
-        const uint32_t max_ipp_per_mtu = mtu_items - (mtu_items % ipc);
-        const uint32_t payload_size    = packet_size - CHDR_MAX_LEN_HDR;
-        uint32_t ipp                   = payload_size / item_size;
-        if (ipp > max_ipp_per_mtu) {
-            ipp = max_ipp_per_mtu;
+        uint32_t requested_packet_size = packet_size;
+        if (requested_packet_size > mtu) {
+            requested_packet_size = mtu;
+            RFNOC_LOG_WARNING("Requested packet size exceeds MTU! Coercing to "
+                              << requested_packet_size);
+        }
+        const size_t max_payload_bytes =
+            get_max_payload_size({res_source_info::OUTPUT_EDGE, port});
+        const uint32_t item_size = get_play_item_size(port);
+        const uint32_t ipc       = _word_size / item_size; // items per cycle
+        const uint32_t max_items = max_payload_bytes / item_size;
+        const uint32_t max_ipp   = max_items - (max_items % ipc);
+        const uint32_t requested_payload_size =
+            requested_packet_size - (mtu - max_payload_bytes);
+        uint32_t ipp = requested_payload_size / item_size;
+        if (ipp > max_ipp) {
+            RFNOC_LOG_DEBUG("ipp value " << ipp << " exceeds MTU of " << mtu
+                                         << "! Coercing to " << max_ipp);
+            ipp = max_ipp;
         }
         if ((ipp % ipc) != 0) {
             ipp = ipp - (ipp % ipc);
@@ -478,7 +487,7 @@ private:
                 "ipp must be a multiple of the block bus width! Coercing to " << ipp);
         }
         if (ipp <= 0) {
-            ipp = DEFAULT_SPP;
+            ipp = max_ipp;
             RFNOC_LOG_WARNING("ipp must be greater than zero! Coercing to " << ipp);
         }
         // Packet size must be a multiple of word size

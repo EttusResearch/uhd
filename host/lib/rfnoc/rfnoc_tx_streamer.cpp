@@ -125,9 +125,8 @@ void rfnoc_tx_streamer::connect_channel(
 {
     UHD_ASSERT_THROW(channel < _mtu_out.size());
 
-    // Update MTU property based on xport limits
-    const size_t mtu = xport->get_max_payload_size();
-    set_property<size_t>(PROP_KEY_MTU, mtu, {res_source_info::OUTPUT_EDGE, channel});
+    // Stash away the MTU before we lose access to xports
+    const size_t mtu = xport->get_mtu();
 
     xport->set_enqueue_async_msg_fn(
         [this, channel](
@@ -145,6 +144,11 @@ void rfnoc_tx_streamer::connect_channel(
         });
 
     tx_streamer_impl<chdr_tx_data_xport>::connect_channel(channel, std::move(xport));
+
+    // Update MTU property based on xport limits. We need to do this after
+    // connect_channel(), because that's where the chdr_tx_data_xport object
+    // learns its header size.
+    set_property<size_t>(PROP_KEY_MTU, mtu, {res_source_info::OUTPUT_EDGE, channel});
 }
 
 bool rfnoc_tx_streamer::recv_async_msg(

@@ -115,6 +115,10 @@ public:
 
     /*! Return the current MTU on a given edge
      *
+     * Note: The MTU is the maximum size of a CHDR packet, including header. In
+     * order to find out the maximum payload size, calling get_max_payload_size()
+     * is the recommended alternative.
+     *
      * The MTU is determined by the block itself (i.e., how big of a packet can
      * this block handle on this edge), but also the neighboring block, and
      * possibly the transport medium between the blocks. This value can thus be
@@ -126,6 +130,51 @@ public:
      * \throws uhd::value_error if edge is not referring to a valid edge
      */
     size_t get_mtu(const res_source_info& edge);
+
+    /*! Return the size of a CHDR packet header, in bytes.
+     *
+     * This helper function factors in the CHDR width for this block.
+     *
+     * \param account_for_ts If true (default), the assumption is that we reserve
+     *                       space for a timestamp. It is possible to increase
+     *                       the payload if no timestamp is used (only for 64
+     *                       bit CHDR widths!), however, this is advanced usage
+     *                       and should only be used in special circumstances,
+     *                       as downstream blocks might not be able to handle
+     *                       such packets.
+     * \returns the length of a CHDR header in bytes
+     */
+    size_t get_chdr_hdr_len(const bool account_for_ts = true) const;
+
+    /*! Return the maximum usable payload size on a given edge, in bytes.
+     *
+     * This is very similar to get_mtu(), except it also accounts for the
+     * header.
+     *
+     * Example: Say the MTU on a given edge is 8192 bytes. The CHDR width is
+     * 64 bits. If we wanted to add a timestamp, we would thus require 16 bytes
+     * for the total header, leaving only 8192-16=8176 bytes for a payload,
+     * which is what this function would return.
+     * The same MTU, with a CHDR width of 512 bits however, would require leaving
+     * 64 bytes for the header (regardless of whether or not a timestamp is
+     * included). In that case, this function would return 8192-64=8128 bytes
+     * max payload size.
+     *
+     * \param edge The edge on which the max payload size is queried. edge.type
+     *             must be INPUT_EDGE or OUTPUT_EDGE! See also get_mtu().
+     * \param account_for_ts If true (default), the assumption is that we reserve
+     *                       space for a timestamp. It is possible to increase
+     *                       the payload if no timestamp is used (only for 64
+     *                       bit CHDR widths!), however, this is advanced usage
+     *                       and should only be used in special circumstances,
+     *                       as downstream blocks might not be able to handle
+     *                       such packets.
+     * \returns the max payload size as determined by the overall graph on this
+     *          edge, as well as the CHDR width.
+     * \throws uhd::value_error if edge is not referring to a valid edge
+     */
+    size_t get_max_payload_size(
+        const res_source_info& edge, const bool account_for_ts = true);
 
     /*! Return the arguments that were passed into this block from the framework
      */

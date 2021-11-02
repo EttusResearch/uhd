@@ -297,7 +297,8 @@ public:
 
     /*! Set the maximum size of a packet
      *
-     * Sets the maximum packet size, inclusive of headers and payload.
+     * Sets the maximum packet size, inclusive of headers and payload. Cannot
+     * exceed the MTU for this block.
      *
      * \param size The size of the packet
      * \param port Which output port of the replay block to use

@@ -356,6 +356,15 @@ private:
         const std::vector<uint32_t>& data,
         boost::optional<uint64_t> timestamp);
 
+    //! Return the maximum samples per packet of size \p bytes
+    //
+    // Given a packet of size \p bytes, how many samples can we fit in there?
+    // This gives the answer, factoring in item size and samples per clock.
+    //
+    // \param bytes Number of bytes we can fill with samples (excluding bytes
+    //              required for CHDR headers!)
+    int get_max_spp(const size_t bytes);
+
     //! FPGA compat number
     const uint32_t _fpga_compat;
 

@@ -316,6 +316,21 @@ size_t noc_block_base::get_mtu(const res_source_info& edge)
     return _mtu.at(edge);
 }
 
+size_t noc_block_base::get_chdr_hdr_len(const bool account_for_ts) const
+{
+    const size_t header_len_bytes = chdr_w_to_bits(_chdr_w) / 8;
+    // 64-bit CHDR requires two lines for the header if we use a timestamp,
+    // everything else requires one line
+    const size_t num_hdr_lines = (account_for_ts && _chdr_w == CHDR_W_64) ? 2 : 1;
+    return header_len_bytes * num_hdr_lines;
+}
+
+size_t noc_block_base::get_max_payload_size(
+    const res_source_info& edge, const bool account_for_ts)
+{
+    return get_mtu(edge) - get_chdr_hdr_len(account_for_ts);
+}
+
 property_base_t* noc_block_base::get_mtu_prop_ref(const res_source_info& edge)
 {
     for (size_t mtu_prop_idx = 0; mtu_prop_idx < _mtu_props.size(); mtu_prop_idx++) {
