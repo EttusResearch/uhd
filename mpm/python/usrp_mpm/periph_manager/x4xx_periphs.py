@@ -400,10 +400,12 @@ class DioControl:
         :raises RuntimeError: name could not be normalized
         """
         assert isinstance(name, str)
-        if not name.upper() in self.DIO_PORTS + ("A", "B"):
+        gpio0_names = (self.DIO_PORTS[0], self.X4XX_GPIO_BANKS[0], "A")
+        gpio1_names = (self.DIO_PORTS[1], self.X4XX_GPIO_BANKS[1], "B")
+        if name.upper() not in gpio0_names + gpio1_names:
             raise RuntimeError("Could not map %s to port name" % name)
-        return self.DIO_PORTS[0] if name.upper() in (self.DIO_PORTS[0], "A") \
-                                    else self.DIO_PORTS[1]
+        return self.DIO_PORTS[0] if name.upper() in gpio0_names \
+            else self.DIO_PORTS[1]
 
     # --------------------------------------------------------------------------
     # Helper to format status output
