@@ -19,8 +19,9 @@ enum class fosphor_waterfall_predivision_ratio {
     RATIO_1_256
 };
 
-/*!
- * Fosphor Control Class
+/*! Fosphor Control Class
+ *
+ * \ingroup rfnoc_blocks
  *
  * The Fosphor Block is an RFNoC block that accepts FFT data as signed
  * complex 16-bit data and produces two streams of eight-bit data, a

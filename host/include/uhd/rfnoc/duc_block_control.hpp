@@ -16,6 +16,8 @@ namespace uhd { namespace rfnoc {
 
 /*! DUC Block Control Class
  *
+ * \ingroup rfnoc_blocks
+ *
  * The DUC Block is a multi-channel digital upconverter (DUC) with built-in
  * frequency shift. The number of channels as well as the maximum interpolation
  * is configurable in the FPGA, the block controller will read out registers to

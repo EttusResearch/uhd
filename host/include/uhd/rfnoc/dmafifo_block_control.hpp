@@ -12,6 +12,8 @@
 namespace uhd { namespace rfnoc {
 
 /*! DMA FIFO Block Control Class
+ *
+ * \ingroup rfnoc_blocks
  */
 class UHD_API dmafifo_block_control : public noc_block_base
 {

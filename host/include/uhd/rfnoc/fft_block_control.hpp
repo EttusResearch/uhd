@@ -24,6 +24,8 @@ static const std::string PROP_KEY_SHIFT_CONFIG = "shift_config";
 
 /*! FFT Block Control Class
  *
+ * \ingroup rfnoc_blocks
+ *
  * The FFT block is an RFNoC block that accepts signed complex 16-bit data
  * at its input and computes the forward or reverse FFT of the input data,
  * outputting signed complex 16-bit data at its output. The output data

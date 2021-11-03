@@ -12,6 +12,8 @@
 namespace uhd { namespace rfnoc {
 
 /*! A default block controller for blocks that can't be found in the registry
+ *
+ * \ingroup rfnoc_blocks
  */
 class UHD_API block_control : public noc_block_base
 {

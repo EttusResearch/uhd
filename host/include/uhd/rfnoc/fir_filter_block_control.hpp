@@ -14,6 +14,8 @@ namespace uhd { namespace rfnoc {
 
 /*! FIR Filter Block Control Class
  *
+ * \ingroup rfnoc_blocks
+ *
  * The FIR Filter Block is a finite impulse response filter block for RFNoC.
  *
  * The RFNoC FIR block supports one input and output port of sc16 data

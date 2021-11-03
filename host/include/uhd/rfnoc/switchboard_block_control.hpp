@@ -13,6 +13,8 @@ namespace uhd { namespace rfnoc {
 
 /*! Switchboard Block Control Class
  *
+ * \ingroup rfnoc_blocks
+ *
  * The Switchboard Block is an RFNoC block that routes any single input to any
  * single output. Routing is 1 to 1, that is, an input port can only be connected
  * to one output port, and vice versa.
