@@ -13,6 +13,8 @@ namespace uhd { namespace rfnoc {
 
 /*! Replay Block Control CLass
  *
+ * \ingroup rfnoc_blocks
+ *
  * The Replay block records data to memory and plays back data from memory.
  *
  * It is the responsibility of the user to manage the memory. Care must be taken to avoid

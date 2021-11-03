@@ -21,6 +21,8 @@
 namespace uhd { namespace rfnoc {
 
 /*! Parent class for radio block controllers
+ *
+ * \ingroup rfnoc_blocks
  */
 class radio_control : public noc_block_base,
                       public rf_control::core_iface,

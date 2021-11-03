@@ -15,6 +15,8 @@ namespace uhd { namespace rfnoc {
 
 /*! DDC Block Control Class
  *
+ * \ingroup rfnoc_blocks
+ *
  * The DDC Block is a multi-channel digital downconverter (DDC) with built-in
  * frequency shift. The number of channels as well as the maximum decimation is
  * configurable in the FPGA, the block controller will read out registers to
