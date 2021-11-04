@@ -106,4 +106,3 @@ public:
 };
 
 }} // namespace uhd::rfnoc
-
