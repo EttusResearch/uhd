@@ -6,6 +6,7 @@
 
 #include <uhd/property_tree.hpp>
 #include <uhd/rfnoc/defaults.hpp>
+#include <uhd/rfnoc/rfnoc_types.hpp>
 #include <uhd/rfnoc/mock_block.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhdlib/rfnoc/clock_iface.hpp>
@@ -36,6 +37,7 @@ uhd::rfnoc::mock_block_container uhd::rfnoc::get_mock_block(const noc_id_t noc_i
     ret_val.make_args->num_input_ports  = num_inputs;
     ret_val.make_args->num_output_ports = num_outputs;
     ret_val.make_args->mtu              = mtu;
+    ret_val.make_args->chdr_w           = CHDR_W_64;
     ret_val.make_args->reg_iface        = ret_val.reg_iface;
     ret_val.make_args->tree             = ret_val.tree;
     ret_val.make_args->args             = args;

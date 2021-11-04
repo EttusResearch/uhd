@@ -12,6 +12,7 @@
 #include <uhd/rfnoc/defaults.hpp>
 #include <uhd/rfnoc/node.hpp>
 #include <uhd/rfnoc/register_iface_holder.hpp>
+#include <uhd/rfnoc/rfnoc_types.hpp>
 #include <uhd/types/device_addr.hpp>
 
 //! Shorthand for block constructor
@@ -305,6 +306,9 @@ private:
 
     //! The actual MTU value
     std::unordered_map<res_source_info, size_t> _mtu;
+
+    //! CHDR width of this block
+    chdr_w_t _chdr_w;
 
     //! Reference to the ctrlport clock_iface object shared with the register_iface
     std::shared_ptr<clock_iface> _ctrlport_clock_iface;
