@@ -199,6 +199,10 @@ public:
         size_t musrp_tx_channel = 0;
         for (auto radio_id : radio_blk_ids) {
             auto radio_blk = _graph->get_block<uhd::rfnoc::radio_control>(radio_id);
+
+            // Store radio blocks per mboard for quick retrieval
+            _radios[radio_id.get_device_no()].push_back(radio_blk);
+
             for (size_t block_chan = 0; block_chan < radio_blk->get_num_output_ports();
                  ++block_chan) {
                 // Create the RX chan
@@ -717,7 +721,7 @@ public:
 
     time_spec_t get_time_now(size_t mboard = 0) override
     {
-        return _get_mbc(mboard)->get_timekeeper(0)->get_time_now();
+        return _radios[mboard][0]->get_time_now();
     }
 
     time_spec_t get_time_last_pps(size_t mboard = 0) override
@@ -2097,10 +2101,7 @@ public:
         }
 
         uhd::rfnoc::radio_control::sptr radio = [bank, mboard, slot_name, this]() {
-            auto radio_blocks = _graph->find_blocks<uhd::rfnoc::radio_control>(
-                std::to_string(mboard) + "/Radio");
-            for (auto radio_id : radio_blocks) {
-                auto radio = _graph->get_block<uhd::rfnoc::radio_control>(radio_id);
+            for (const auto& radio : _radios[mboard]) {
                 if (slot_name.empty() || radio->get_slot_name() == slot_name) {
                     return radio;
                 }
@@ -2125,11 +2126,8 @@ public:
 
     std::vector<std::string> get_gpio_banks(const size_t mboard) override
     {
-        auto radio_blocks = _graph->find_blocks<uhd::rfnoc::radio_control>(
-            std::to_string(mboard) + "/Radio");
         std::vector<std::string> gpio_banks;
-        for (auto radio_id : radio_blocks) {
-            auto radio       = _graph->get_block<uhd::rfnoc::radio_control>(radio_id);
+        for (const auto& radio : _radios[mboard]) {
             auto radio_banks = radio->get_gpio_banks();
             for (const auto& bank : radio_banks) {
                 gpio_banks.push_back(bank + radio->get_slot_name());
@@ -2520,6 +2518,8 @@ private:
     rfnoc_graph::sptr _graph;
     //! Reference to the prop tree
     property_tree::sptr _tree;
+    //! Mapping between device number and the radio blocks
+    std::unordered_map<size_t, std::vector<uhd::rfnoc::radio_control::sptr>> _radios;
     //! Mapping between channel number and the RFNoC blocks in that RX chain
     std::unordered_map<size_t, rx_chan_t> _rx_chans;
     //! Mapping between channel number and the RFNoC blocks in that TX chain

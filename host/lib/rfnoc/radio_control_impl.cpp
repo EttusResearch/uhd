@@ -302,7 +302,7 @@ uint64_t radio_control_impl::get_ticks_now()
 {
     // Time registers added in 0.1
     if (_fpga_compat < 1) {
-        throw uhd::not_implemented_error("Radio does not support time readback");
+        return get_mb_controller()->get_timekeeper(0)->get_ticks_now();
     }
     return regs().peek64(regmap::REG_TIME_LO);
 }
