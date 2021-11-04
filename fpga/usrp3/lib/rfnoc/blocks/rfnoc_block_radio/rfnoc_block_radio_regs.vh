@@ -17,7 +17,9 @@
 localparam SHARED_BASE_ADDR = 20'h00;  // Base address for shared radio registers
 localparam SHARED_ADDR_W    = 4;       // Address space size for shared registers
 
-localparam REG_COMPAT_NUM = 'h00;  // Compatibility number register offset
+localparam REG_COMPAT_NUM   = 'h00;  // Compatibility number register offset
+localparam REG_TIME_LO      = 'h04;  // Timestamp lower 32 bits
+localparam REG_TIME_HI      = 'h08;  // Timestamp upper 32 bits
 
 
 //-----------------------------------------------------------------------------
