@@ -12,9 +12,6 @@
 
 namespace uhd { namespace rfnoc {
 
-// FIXME come up with a better place for this
-static const size_t CHDR_MAX_LEN_HDR = 16;
-
 static const std::string CLOCK_KEY_GRAPH("__graph__");
 
 static const std::string PROP_KEY_DECIM("decim");
