@@ -566,6 +566,8 @@ module rfnoc_block_radio_tb #(
 
   task automatic test_shared_registers();
     logic [31:0] val;
+    logic [63:0] time1;
+    logic [63:0] time2;
     test.start_test("Shared Registers", 10us);
 
     // Compatibility number
@@ -576,6 +578,14 @@ module rfnoc_block_radio_tb #(
         rfnoc_block_radio_i.compat_minor
       },
       "REG_COMPAT_NUM didn't read correctly"
+    );
+    read_shared(REG_TIME_LO, time1[31:0]);
+    read_shared(REG_TIME_HI, time1[63:32]);
+    read_shared(REG_TIME_LO, time2[31:0]);
+    read_shared(REG_TIME_HI, time2[63:32]);
+    `ASSERT_ERROR(
+      time2 > time1,
+      "Time did not increment in REG_TIME_HI and REG_TIME_LO"
     );
     test.end_test();
   endtask : test_shared_registers

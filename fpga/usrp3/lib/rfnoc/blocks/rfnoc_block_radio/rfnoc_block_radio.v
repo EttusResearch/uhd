@@ -430,12 +430,15 @@ module rfnoc_block_radio #(
   //---------------------------------------------------------------------------
 
   localparam [15:0] compat_major = 16'd0;
-  localparam [15:0] compat_minor = 16'd0;
+  localparam [15:0] compat_minor = 16'd1;
+
+  reg [31:0] radio_time_hi;
 
   always @(posedge radio_clk) begin
     if (radio_rst) begin
       ctrlport_shared_resp_ack  <= 0;
       ctrlport_shared_resp_data <= 0;
+      radio_time_hi <= 32'h0;
     end else begin
       // Default assignments
       ctrlport_shared_resp_ack  <= 0;
@@ -447,6 +450,15 @@ module rfnoc_block_radio #(
           REG_COMPAT_NUM: begin
             ctrlport_shared_resp_ack  <= 1;
             ctrlport_shared_resp_data <= { compat_major, compat_minor };
+          end
+          REG_TIME_LO: begin
+            ctrlport_shared_resp_ack  <= 1;
+            ctrlport_shared_resp_data <= radio_time[31:0];
+            radio_time_hi <= radio_time[63:32];
+          end
+          REG_TIME_HI: begin
+            ctrlport_shared_resp_ack  <= 1;
+            ctrlport_shared_resp_data <= radio_time_hi;
           end
         endcase
       end
