@@ -7,6 +7,7 @@
 #pragma once
 
 #include <uhd/transport/frame_buff.hpp>
+#include <cassert>
 #include <chrono>
 #include <thread>
 
