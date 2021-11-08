@@ -378,6 +378,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("tx_delay", po::value<double>(&tx_delay)->default_value(0.25), "delay before starting TX in seconds")
         ("rx_delay", po::value<double>(&rx_delay)->default_value(0.05), "delay before starting RX in seconds")
         ("priority", po::value<std::string>(&priority)->default_value("normal"), "thread priority (normal, high)")
+        ("multi_streamer", "Create a separate streamer per channel")
     ;
     // clang-format on
     po::variables_map vm;
@@ -540,54 +541,113 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             std::cout << boost::format("Setting RX spp to %u\n") % rx_spp;
             usrp->set_rx_spp(rx_spp);
         }
-        // create a receive streamer
-        uhd::stream_args_t stream_args(rx_cpu, rx_otw);
-        stream_args.channels             = rx_channel_nums;
-        stream_args.args                 = uhd::device_addr_t(rx_stream_args);
-        uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
-        auto rx_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
-            benchmark_rx_rate(usrp,
-                rx_cpu,
-                rx_stream,
-                random_nsamps,
-                start_time,
-                burst_timer_elapsed,
-                elevate_priority,
-                rx_delay);
-        });
-        uhd::set_thread_name(rx_thread, "bmark_rx_stream");
+        if (vm.count("multi_streamer")) {
+            for (size_t count = 0; count < rx_channel_nums.size(); count++) {
+                std::vector<size_t> this_streamer_channels{rx_channel_nums[count]};
+                 // create a receive streamer
+                uhd::stream_args_t stream_args(rx_cpu, rx_otw);
+                stream_args.channels             = this_streamer_channels;
+                stream_args.args                 = uhd::device_addr_t(rx_stream_args);
+                uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
+                auto rx_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
+                    benchmark_rx_rate(usrp,
+                        rx_cpu,
+                        rx_stream,
+                        random_nsamps,
+                        start_time,
+                        burst_timer_elapsed,
+                        elevate_priority,
+                        rx_delay);
+                });
+                uhd::set_thread_name(rx_thread, "bmark_rx_strm" + std::to_string(count));
+            }
+        }
+        else {
+            // create a receive streamer
+            uhd::stream_args_t stream_args(rx_cpu, rx_otw);
+            stream_args.channels             = rx_channel_nums;
+            stream_args.args                 = uhd::device_addr_t(rx_stream_args);
+            uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
+            auto rx_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
+                benchmark_rx_rate(usrp,
+                    rx_cpu,
+                    rx_stream,
+                    random_nsamps,
+                    start_time,
+                    burst_timer_elapsed,
+                    elevate_priority,
+                    rx_delay);
+            });
+            uhd::set_thread_name(rx_thread, "bmark_rx_stream");
+        }
     }
 
     // spawn the transmit test thread
     if (vm.count("tx_rate")) {
         usrp->set_tx_rate(tx_rate);
-        // create a transmit streamer
-        uhd::stream_args_t stream_args(tx_cpu, tx_otw);
-        stream_args.channels             = tx_channel_nums;
-        stream_args.args                 = uhd::device_addr_t(tx_stream_args);
-        uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
-        const size_t max_spp             = tx_stream->get_max_num_samps();
-        size_t spp                       = max_spp;
-        if (vm.count("tx_spp")) {
-            spp = std::min(spp, tx_spp);
-        }
-        std::cout << boost::format("Setting TX spp to %u\n") % spp;
-        auto tx_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
-            benchmark_tx_rate(usrp,
-                tx_cpu,
-                tx_stream,
-                burst_timer_elapsed,
-                start_time,
-                spp,
-                elevate_priority,
-                tx_delay,
-                random_nsamps);
-        });
-        uhd::set_thread_name(tx_thread, "bmark_tx_stream");
-        auto tx_async_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
-            benchmark_tx_rate_async_helper(tx_stream, start_time, burst_timer_elapsed);
-        });
-        uhd::set_thread_name(tx_async_thread, "bmark_tx_helper");
+
+	if (vm.count("multi_streamer")) {
+            for (size_t count = 0; count < tx_channel_nums.size(); count++) {
+                std::vector<size_t> this_streamer_channels{tx_channel_nums[count]};
+
+		// create a transmit streamer
+		uhd::stream_args_t stream_args(tx_cpu, tx_otw);
+		stream_args.channels             = this_streamer_channels;
+		stream_args.args                 = uhd::device_addr_t(tx_stream_args);
+		uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
+		const size_t max_spp             = tx_stream->get_max_num_samps();
+		size_t spp                       = max_spp;
+		if (vm.count("tx_spp")) {
+		    spp = std::min(spp, tx_spp);
+		}
+		std::cout << boost::format("Setting TX spp to %u\n") % spp;
+		auto tx_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
+		    benchmark_tx_rate(usrp,
+			tx_cpu,
+			tx_stream,
+			burst_timer_elapsed,
+			start_time,
+			spp,
+			elevate_priority,
+			tx_delay,
+			random_nsamps);
+		});
+		uhd::set_thread_name(tx_thread, "bmark_tx_strm" + std::to_string(count));
+		auto tx_async_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
+		    benchmark_tx_rate_async_helper(tx_stream, start_time, burst_timer_elapsed);
+		});
+		uhd::set_thread_name(tx_async_thread, "bmark_tx_hlpr" + std::to_string(count));
+	    }
+	}
+	else {
+		// create a transmit streamer
+		uhd::stream_args_t stream_args(tx_cpu, tx_otw);
+		stream_args.channels             = tx_channel_nums;
+		stream_args.args                 = uhd::device_addr_t(tx_stream_args);
+		uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
+		const size_t max_spp             = tx_stream->get_max_num_samps();
+		size_t spp                       = max_spp;
+		if (vm.count("tx_spp")) {
+		    spp = std::min(spp, tx_spp);
+		}
+		std::cout << boost::format("Setting TX spp to %u\n") % spp;
+		auto tx_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
+		    benchmark_tx_rate(usrp,
+			tx_cpu,
+			tx_stream,
+			burst_timer_elapsed,
+			start_time,
+			spp,
+			elevate_priority,
+			tx_delay,
+			random_nsamps);
+		});
+		uhd::set_thread_name(tx_thread, "bmark_tx_stream");
+		auto tx_async_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
+		    benchmark_tx_rate_async_helper(tx_stream, start_time, burst_timer_elapsed);
+		});
+		uhd::set_thread_name(tx_async_thread, "bmark_tx_helper");
+	}
     }
 
     // sleep for the required duration (add any initial delay)
