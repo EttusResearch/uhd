@@ -255,7 +255,7 @@ The Ettus USRP X410 has various network interfaces:
     single interface is used (`sfpX`).
 
 The configuration files for these network interfaces are stored in:
-`/etc/systemd/network/`.
+`/data/network/<interface>.network`.
 
 Interface Name | Description                            | Default Configuration | Configuration File | Example: X4_200 FPGA image |
 ---------------|----------------------------------------|-----------------------|--------------------|----------------------------|
@@ -269,6 +269,33 @@ Interface Name | Description                            | Default Configuration 
 `sfp1_1`       | QSFP28 1 (lane 1)                      | 192.168.21.2/24       | sfp1_1.network     | N/C                        |
 `sfp1_2`       | QSFP28 1 (lane 2)                      | 192.168.22.2/24       | sfp1_2.network     | N/C                        |
 `sfp1_3`       | QSFP28 1 (lane 3)                      | 192.168.23.2/24       | sfp1_3.network     | N/C                        |
+
+For example, `/data/network/eth0.network` by default looks like:
+```
+[Match]
+Name=eth0
+KernelCommandLine=!nfsroot
+
+[Network]
+DHCP=ipv4
+IPForward=ipv4
+
+[DHCP]
+UseHostname=true
+ClientIdentifier=mac
+```
+
+In order to change the eth0 interface from using DHCP to using a static IP, you
+can edit `/data/network/eth0.network` to be like:
+```
+[Match]
+Name=eth0
+KernelCommandLine=!nfsroot
+
+[Network]
+Address=192.168.1.123/24
+```
+replacing the IP address with the IP of your choice.
 
 \subsubsection x4xx_getting_started_network_connectivity_leds Network Status LEDs
 
