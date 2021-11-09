@@ -572,7 +572,7 @@ int dpdk_io_service::_service_arp_request(dpdk::wait_req* req)
 {
     int status               = 0;
     auto arp_req_data        = (struct dpdk::arp_request*)req->data;
-    dpdk::ipv4_addr dst_addr = arp_req_data->tpa;
+    dpdk::rte_ipv4_addr dst_addr = arp_req_data->tpa;
     auto ctx_sptr            = _ctx.lock();
     UHD_ASSERT_THROW(ctx_sptr);
     dpdk::dpdk_port* port = ctx_sptr->get_port(arp_req_data->port);
@@ -595,7 +595,7 @@ int dpdk_io_service::_service_arp_request(dpdk::wait_req* req)
         _send_arp_request(port, 0, arp_req_data->tpa);
     } else {
         entry = port->_arp_table.at(dst_addr);
-        if (is_zero_ether_addr(&entry->mac_addr)) {
+        if (rte_is_zero_ether_addr(&entry->mac_addr)) {
             UHD_LOG_TRACE("DPDK::IO_SERVICE",
                 "ARP: Address in table, but not populated yet. Resending ARP request.");
             port->_arp_table.at(dst_addr)->reqs.push_back(req);
@@ -603,7 +603,7 @@ int dpdk_io_service::_service_arp_request(dpdk::wait_req* req)
             _send_arp_request(port, 0, arp_req_data->tpa);
         } else {
             UHD_LOG_TRACE("DPDK::IO_SERVICE", "ARP: Address in table.");
-            ether_addr_copy(&entry->mac_addr, &arp_req_data->tha);
+            rte_ether_addr_copy(&entry->mac_addr, &arp_req_data->tha);
             status = 0;
         }
     }
@@ -613,11 +613,11 @@ arp_end:
 }
 
 int dpdk_io_service::_send_arp_request(
-    dpdk::dpdk_port* port, dpdk::queue_id_t queue, dpdk::ipv4_addr ip)
+    dpdk::dpdk_port* port, dpdk::queue_id_t queue, dpdk::rte_ipv4_addr ip)
 {
     struct rte_mbuf* mbuf;
-    struct ether_hdr* hdr;
-    struct arp_hdr* arp_frame;
+    struct rte_ether_hdr* hdr;
+    struct rte_arp_hdr* arp_frame;
 
     mbuf = rte_pktmbuf_alloc(port->get_tx_pktbuf_pool());
     if (unlikely(mbuf == NULL)) {
@@ -626,21 +626,21 @@ int dpdk_io_service::_send_arp_request(
         return -ENOMEM;
     }
 
-    hdr       = rte_pktmbuf_mtod(mbuf, struct ether_hdr*);
-    arp_frame = (struct arp_hdr*)&hdr[1];
+    hdr       = rte_pktmbuf_mtod(mbuf, struct rte_ether_hdr*);
+    arp_frame = (struct rte_arp_hdr*)&hdr[1];
 
-    memset(hdr->d_addr.addr_bytes, 0xFF, ETHER_ADDR_LEN);
+    memset(hdr->d_addr.addr_bytes, 0xFF, RTE_ETHER_ADDR_LEN);
     hdr->s_addr     = port->get_mac_addr();
-    hdr->ether_type = rte_cpu_to_be_16(ETHER_TYPE_ARP);
+    hdr->ether_type = rte_cpu_to_be_16(RTE_ETHER_TYPE_ARP);
 
-    arp_frame->arp_hrd          = rte_cpu_to_be_16(ARP_HRD_ETHER);
-    arp_frame->arp_pro          = rte_cpu_to_be_16(ETHER_TYPE_IPv4);
-    arp_frame->arp_hln          = 6;
-    arp_frame->arp_pln          = 4;
-    arp_frame->arp_op           = rte_cpu_to_be_16(ARP_OP_REQUEST);
+    arp_frame->arp_hardware          = rte_cpu_to_be_16(RTE_ARP_HRD_ETHER);
+    arp_frame->arp_protocol          = rte_cpu_to_be_16(RTE_ETHER_TYPE_IPV4);
+    arp_frame->arp_hlen          = 6;
+    arp_frame->arp_plen          = 4;
+    arp_frame->arp_opcode           = rte_cpu_to_be_16(RTE_ARP_OP_REQUEST);
     arp_frame->arp_data.arp_sha = port->get_mac_addr();
     arp_frame->arp_data.arp_sip = port->get_ipv4();
-    memset(arp_frame->arp_data.arp_tha.addr_bytes, 0x00, ETHER_ADDR_LEN);
+    memset(arp_frame->arp_data.arp_tha.addr_bytes, 0x00, RTE_ETHER_ADDR_LEN);
     arp_frame->arp_data.arp_tip = ip;
 
     mbuf->pkt_len  = 42;
@@ -657,7 +657,7 @@ int dpdk_io_service::_send_arp_request(
 /* Do a burst of RX on port */
 int dpdk_io_service::_rx_burst(dpdk::dpdk_port* port, dpdk::queue_id_t queue)
 {
-    struct ether_hdr* hdr;
+    struct rte_ether_hdr* hdr;
     char* l2_data;
     struct rte_mbuf* bufs[RX_BURST_SIZE];
     const uint16_t num_rx =
@@ -668,20 +668,20 @@ int dpdk_io_service::_rx_burst(dpdk::dpdk_port* port, dpdk::queue_id_t queue)
 
     for (int buf = 0; buf < num_rx; buf++) {
         uint64_t ol_flags = bufs[buf]->ol_flags;
-        hdr               = rte_pktmbuf_mtod(bufs[buf], struct ether_hdr*);
+        hdr               = rte_pktmbuf_mtod(bufs[buf], struct rte_ether_hdr*);
         l2_data           = (char*)&hdr[1];
         switch (rte_be_to_cpu_16(hdr->ether_type)) {
-            case ETHER_TYPE_ARP:
-                _process_arp(port, queue, (struct arp_hdr*)l2_data);
+            case RTE_ETHER_TYPE_ARP:
+                _process_arp(port, queue, (struct rte_arp_hdr*)l2_data);
                 rte_pktmbuf_free(bufs[buf]);
                 break;
-            case ETHER_TYPE_IPv4:
+            case RTE_ETHER_TYPE_IPV4:
                 if ((ol_flags & PKT_RX_IP_CKSUM_MASK) == PKT_RX_IP_CKSUM_BAD) {
                     UHD_LOG_WARNING("DPDK::IO_SERVICE", "RX packet has bad IP cksum");
                 } else if ((ol_flags & PKT_RX_IP_CKSUM_MASK) == PKT_RX_IP_CKSUM_NONE) {
                     UHD_LOG_WARNING("DPDK::IO_SERVICE", "RX packet missing IP cksum");
                 } else {
-                    _process_ipv4(port, bufs[buf], (struct ipv4_hdr*)l2_data);
+                    _process_ipv4(port, bufs[buf], (struct rte_ipv4_hdr*)l2_data);
                 }
                 break;
             default:
@@ -693,10 +693,10 @@ int dpdk_io_service::_rx_burst(dpdk::dpdk_port* port, dpdk::queue_id_t queue)
 }
 
 int dpdk_io_service::_process_arp(
-    dpdk::dpdk_port* port, dpdk::queue_id_t queue_id, struct arp_hdr* arp_frame)
+    dpdk::dpdk_port* port, dpdk::queue_id_t queue_id, struct rte_arp_hdr* arp_frame)
 {
     uint32_t dest_ip            = arp_frame->arp_data.arp_sip;
-    struct ether_addr dest_addr = arp_frame->arp_data.arp_sha;
+    struct rte_ether_addr dest_addr = arp_frame->arp_data.arp_sha;
     UHD_LOG_TRACE("DPDK::IO_SERVICE",
         "Processing ARP packet: " << dpdk::ipv4_num_to_str(dest_ip) << " -> "
                                   << dpdk::eth_addr_to_string(dest_addr));
@@ -709,14 +709,14 @@ int dpdk_io_service::_process_arp(
             return -ENOMEM;
         }
         entry = new (entry) dpdk::arp_entry();
-        ether_addr_copy(&dest_addr, &entry->mac_addr);
+        rte_ether_addr_copy(&dest_addr, &entry->mac_addr);
         port->_arp_table[dest_ip] = entry;
     } else {
         entry = port->_arp_table.at(dest_ip);
-        ether_addr_copy(&dest_addr, &entry->mac_addr);
+        rte_ether_addr_copy(&dest_addr, &entry->mac_addr);
         for (auto req : entry->reqs) {
             auto arp_data = (struct dpdk::arp_request*)req->data;
-            ether_addr_copy(&dest_addr, &arp_data->tha);
+            rte_ether_addr_copy(&dest_addr, &arp_data->tha);
             while (_servq.complete(req) == -ENOBUFS)
                 ;
         }
@@ -725,7 +725,7 @@ int dpdk_io_service::_process_arp(
     rte_spinlock_unlock(&port->_spinlock);
 
     /* Respond if this was an ARP request */
-    if (arp_frame->arp_op == rte_cpu_to_be_16(ARP_OP_REQUEST)
+    if (arp_frame->arp_opcode == rte_cpu_to_be_16(RTE_ARP_OP_REQUEST)
         && arp_frame->arp_data.arp_tip == port->get_ipv4()) {
         UHD_LOG_TRACE("DPDK::IO_SERVICE", "Sending ARP reply.");
         port->_arp_reply(queue_id, arp_frame);
@@ -735,7 +735,7 @@ int dpdk_io_service::_process_arp(
 }
 
 int dpdk_io_service::_process_ipv4(
-    dpdk::dpdk_port* port, struct rte_mbuf* mbuf, struct ipv4_hdr* pkt)
+    dpdk::dpdk_port* port, struct rte_mbuf* mbuf, struct rte_ipv4_hdr* pkt)
 {
     bool bcast = port->dst_is_broadcast(pkt->dst_addr);
     if (pkt->dst_addr != port->get_ipv4() && !bcast) {
@@ -743,7 +743,7 @@ int dpdk_io_service::_process_ipv4(
         return -ENODEV;
     }
     if (pkt->next_proto_id == IPPROTO_UDP) {
-        return _process_udp(port, mbuf, (struct udp_hdr*)&pkt[1], bcast);
+        return _process_udp(port, mbuf, (struct rte_udp_hdr*)&pkt[1], bcast);
     }
     rte_pktmbuf_free(mbuf);
     return -EINVAL;
@@ -751,7 +751,7 @@ int dpdk_io_service::_process_ipv4(
 
 
 int dpdk_io_service::_process_udp(
-    dpdk::dpdk_port* port, struct rte_mbuf* mbuf, struct udp_hdr* pkt, bool /*bcast*/)
+    dpdk::dpdk_port* port, struct rte_mbuf* mbuf, struct rte_udp_hdr* pkt, bool /*bcast*/)
 {
     // Get the link
     struct dpdk::ipv4_5tuple ht_key = {.flow_type = dpdk::flow_type::FLOW_TYPE_UDP,

@@ -37,7 +37,7 @@ struct arp_entry;
 
 using queue_id_t = uint16_t;
 using port_id_t  = uint16_t;
-using ipv4_addr  = uint32_t;
+using rte_ipv4_addr  = uint32_t;
 
 class dpdk_adapter_info : public adapter_info
 {
@@ -143,7 +143,7 @@ public:
      * \param num_desc The number of descriptors per DMA queue
      * \param rx_pktbuf_pool A pointer to the port's RX packet buffer pool
      * \param tx_pktbuf_pool A pointer to the port's TX packet buffer pool
-     * \param ipv4_address The IPv4 network address (w/ netmask)
+     * \param rte_ipv4_address The IPv4 network address (w/ netmask)
      * \return A unique_ptr to a dpdk_port object
      */
     static dpdk_port::uptr make(port_id_t port,
@@ -152,7 +152,7 @@ public:
         uint16_t num_desc,
         struct rte_mempool* rx_pktbuf_pool,
         struct rte_mempool* tx_pktbuf_pool,
-        std::string ipv4_address);
+        std::string rte_ipv4_address);
 
     dpdk_port(port_id_t port,
         size_t mtu,
@@ -160,7 +160,7 @@ public:
         uint16_t num_desc,
         struct rte_mempool* rx_pktbuf_pool,
         struct rte_mempool* tx_pktbuf_pool,
-        std::string ipv4_address);
+        std::string rte_ipv4_address);
 
     ~dpdk_port();
 
@@ -180,7 +180,7 @@ public:
     /*! Getter for this port's MAC address
      * \return this port's MAC address
      */
-    inline ether_addr get_mac_addr() const
+    inline rte_ether_addr get_mac_addr() const
     {
         return _mac_addr;
     }
@@ -196,7 +196,7 @@ public:
     /*! Getter for this port's IPv4 address
      * \return this port's IPv4 address (in network order)
      */
-    inline ipv4_addr get_ipv4() const
+    inline rte_ipv4_addr get_ipv4() const
     {
         return _ipv4;
     }
@@ -204,7 +204,7 @@ public:
     /*! Getter for this port's subnet mask
      * \return this port's subnet mask (in network order)
      */
-    inline ipv4_addr get_netmask() const
+    inline rte_ipv4_addr get_netmask() const
     {
         return _netmask;
     }
@@ -238,12 +238,12 @@ public:
     }
 
     /*! Determine if the destination address is a broadcast address for this port
-     * \param dst_ipv4_addr The destination IPv4 address (in network order)
+     * \param dst_rte_ipv4_addr The destination IPv4 address (in network order)
      * \return whether the destination address matches this port's broadcast address
      */
-    inline bool dst_is_broadcast(const ipv4_addr dst_ipv4_addr) const
+    inline bool dst_is_broadcast(const rte_ipv4_addr dst_rte_ipv4_addr) const
     {
-        uint32_t network = _netmask | ((~_netmask) & dst_ipv4_addr);
+        uint32_t network = _netmask | ((~_netmask) & dst_rte_ipv4_addr);
         return (network == 0xffffffff);
     }
 
@@ -261,16 +261,16 @@ private:
     /*!
      * Construct and transmit an ARP reply (for the given ARP request)
      */
-    int _arp_reply(queue_id_t queue_id, struct arp_hdr* arp_req);
+    int _arp_reply(queue_id_t queue_id, struct rte_arp_hdr* arp_req);
 
     port_id_t _port;
     size_t _mtu;
     size_t _num_queues;
     struct rte_mempool* _rx_pktbuf_pool;
     struct rte_mempool* _tx_pktbuf_pool;
-    struct ether_addr _mac_addr;
-    ipv4_addr _ipv4;
-    ipv4_addr _netmask;
+    struct rte_ether_addr _mac_addr;
+    rte_ipv4_addr _ipv4;
+    rte_ipv4_addr _netmask;
 
     // Structures protected by mutex
     std::mutex _mutex;
@@ -279,7 +279,7 @@ private:
 
     // Structures protected by spin lock
     rte_spinlock_t _spinlock = RTE_SPINLOCK_INITIALIZER;
-    std::unordered_map<ipv4_addr, struct arp_entry*> _arp_table;
+    std::unordered_map<rte_ipv4_addr, struct arp_entry*> _arp_table;
 };
 
 
@@ -317,7 +317,7 @@ public:
      * \param mac_addr MAC address
      * \return pointer to port if match found, else nullptr
      */
-    dpdk_port* get_port(struct ether_addr mac_addr) const;
+    dpdk_port* get_port(struct rte_ether_addr mac_addr) const;
 
     /*!
      * Get port structure from provided port ID
