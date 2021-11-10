@@ -13,6 +13,11 @@
 #include <arpa/inet.h>
 #include <memory>
 
+// The DPDK function rte_mbuf_to_priv() is experimental and generates a warning.
+// This pragma disables that warning since it is expected
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 using namespace uhd::transport;
 using namespace uhd::transport::dpdk;
 
@@ -196,3 +201,4 @@ void udp_dpdk_link::release_send_buff(frame_buff::uptr buff)
         rte_pktmbuf_free(mbuf);
     }
 }
+#pragma GCC diagnostic pop
