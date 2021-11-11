@@ -918,7 +918,7 @@ private: // Functions
             throw uhd::op_failed("Management operation failed. Incorrect format (hops).");
         }
         const mgmt_hop_t& rhop = resp_xact.get_hop(0);
-        if (rhop.get_num_ops() <= 1
+        if (rhop.get_num_ops() < 2
             || rhop.get_op(0).get_op_code() != mgmt_op_t::MGMT_OP_NOP) {
             throw uhd::op_failed(
                 "Management operation failed. Incorrect format (operations).");
@@ -982,9 +982,13 @@ private: // Functions
             throw uhd::op_failed("Management operation failed. Incorrect format (hops).");
         }
         const mgmt_hop_t& rhop     = transaction.get_hop(0);
+        if (rhop.get_num_ops() < 2) {
+            throw uhd::op_failed(
+                "Management operation failed. Incorrect number of operations.");
+        }
         const mgmt_op_t& nop_resp  = rhop.get_op(0);
         const mgmt_op_t& info_resp = rhop.get_op(1);
-        if (rhop.get_num_ops() <= 1 || nop_resp.get_op_code() != mgmt_op_t::MGMT_OP_NOP
+        if (nop_resp.get_op_code() != mgmt_op_t::MGMT_OP_NOP
             || info_resp.get_op_code() != mgmt_op_t::MGMT_OP_INFO_RESP) {
             throw uhd::op_failed(
                 "Management operation failed. Incorrect format (operations).");
