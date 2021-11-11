@@ -97,7 +97,7 @@ public:
                 if (stream_mode == uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS) {
                     UHD_LOG_INFO(get_unique_id(), "Starting Stream!");
                 } else if (stream_mode
-                           == uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS) {
+                           == uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS) {
                     UHD_LOG_INFO(get_unique_id(), "Stopping Stream!");
                 } else {
                     this->last_num_samps = stream_cmd_action->stream_cmd.num_samps;
