@@ -317,32 +317,29 @@ module rfnoc_block_gain #(
       );
 
     end else if (IP_OPTION == "IN_TREE_IP") begin : gen_in_tree_ip
-      // Use the in-tree "complex_multiplier" IP, which is a Xilinx Complex
-      // Multiplier LogiCORE IP located in the UHD repository in
-      // fpga/usrp3/lib/ip/.
+      // Use the "cmul" module, which uses the in-tree "complex_multiplier" IP.
+      // This is a Xilinx Complex Multiplier LogiCORE IP located in the UHD
+      // repository in fpga/usrp3/lib/ip/.
 
       // The LSB of the output is clipped in this IP, so double the gain to
       // compensate. This limits the maximum gain in this version.
       wire [15:0] gain = 2*reg_gain;
 
-      complex_multiplier complex_multiplier (
-        .aclk               (axis_data_clk),
-        .aresetn            (~axis_data_rst),
-        .s_axis_a_tdata     ({16'b0, gain}),
-        .s_axis_a_tlast     (m_in_payload_tlast),
-        .s_axis_a_tvalid    (m_in_payload_tvalid),
-        .s_axis_a_tready    (),
-        .s_axis_b_tdata     (m_in_payload_tdata),
-        .s_axis_b_tlast     (m_in_payload_tlast),
-        .s_axis_b_tvalid    (m_in_payload_tvalid),
-        .s_axis_b_tready    (m_in_payload_tready),
-        .s_axis_ctrl_tdata  (8'd0),
-        .s_axis_ctrl_tvalid (1'b1),
-        .s_axis_ctrl_tready (),
-        .m_axis_dout_tdata  (mult_tdata),
-        .m_axis_dout_tlast  (mult_tlast),
-        .m_axis_dout_tvalid (mult_tvalid),
-        .m_axis_dout_tready (mult_tready)
+      cmul cmul_i (
+        .clk      (axis_data_clk),
+        .reset    (axis_data_rst),
+        .a_tdata  ({gain, 16'b0}),
+        .a_tlast  (m_in_payload_tlast ),
+        .a_tvalid (m_in_payload_tvalid),
+        .a_tready (),
+        .b_tdata  (m_in_payload_tdata ),
+        .b_tlast  (m_in_payload_tlast ),
+        .b_tvalid (m_in_payload_tvalid),
+        .b_tready (m_in_payload_tready),
+        .o_tdata  (mult_tdata),
+        .o_tlast  (mult_tlast),
+        .o_tvalid (mult_tvalid),
+        .o_tready (mult_tready)
       );
 
     end else if (IP_OPTION == "OUT_OF_TREE_IP") begin : gen_oot_ip
