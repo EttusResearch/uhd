@@ -792,7 +792,7 @@ For a list of which arguments can be passed into make(), see Section
  mgmt_addr             | IPv4 address or hostname to which to connect the RPC client. Defaults to `addr'.| mgmt_addr=ni-sulfur-311FE00
  find_all              | When using broadcast, find all devices, even if unreachable via CHDR.           | find_all=1
  master_clock_rate     | Master Clock Rate in Hz.                                                        | master_clock_rate=250e6
- serialize_init        | Force serial initialization of daughterboards.                                  | serialize_init=1
+ serialize_init        | Force serial initialization of motherboards (default is parallel)               | serialize_init=1
  skip_init             | Skip the initialization process for the device.                                 | skip_init=1
  time_source           | Specify the time (PPS) source.                                                  | time_source=internal
  clock_source          | Specify the reference clock source.                                             | clock_source=internal

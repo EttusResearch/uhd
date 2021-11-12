@@ -35,7 +35,7 @@ and possible more options.
  self_cal_adc_delay  | Run ADC transfer delay self-calibration.                                     | X3x0               | self_cal_adc_delay=1
  ext_adc_self_test   | Run an extended ADC self test (more than the usual)                          | X3x0               | ext_adc_self_test=1
  recover_mb_eeprom   | Disable version checks. Can damage hardware. Only recommended for recovering devices with corrupted EEPROMs. | X3x0 | recover_mb_eeprom=1
- skip_dram           | Ignore DRAM FIFO block. Connect TX streamers straight into DUC or radio.     | X3x0, N3xx         | skip_dram=1
+ serialize_init      | Force serial initialization of motherboards (default is parallel)            | X3x0, all MPM devices | serialize_init=1
 
 In addition, many of the streaming-related options can be set per-device at configuration time.
 See \ref config_stream_args and \ref page_transport for more details.

@@ -11,6 +11,8 @@ Currently, the following devices support this capability:
 
 - USRP2 / N2x0 Series
 - X3x0 Series
+- N3x0 Series
+- X4x0 Series
 
 Note that only USRPs of the same type can be combined.
 
