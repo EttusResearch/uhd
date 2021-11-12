@@ -105,6 +105,41 @@ When your FPGA is up to date, power-cycle the device and re-run `uhd_usrp_probe`
 be no more warnings at this point, and all components should be correctly detected. Your USRP is now
 ready for development!
 
+
+\section x3x0_usage Using an X3X0 USRP from UHD
+
+Like any other USRP, all X3X0 USRPs are controlled by the UHD software. To
+integrate a USRP X3X0 into your C++ application, you would generate a UHD
+device in the same way you would for any other USRP:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+auto usrp = uhd::usrp::multi_usrp::make("type=x300");
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For a list of which arguments can be passed into make(), see Section
+\ref x3x0_usage_device_args.
+
+\subsection x3x0_usage_device_args Device arguments
+
+ Key                   | Description                                                      |  Example Value
+-----------------------|------------------------------------------------------------------|----------------------
+ addr                  | IPv4 address of primary SFP+ port to connect to                  |  addr=192.168.30.2
+ second_addr           | IPv4 address of secondary SFP+ port to connect to                |  second_addr=192.168.40.2
+ resource              | NI-RIO resource                                                  |  resource=RIO0
+ master_clock_rate     | Master Clock Rate in Hz (see \ref x3x0_set_clocking_mboard)      |  master_clock_rate=184.32e6
+ dboard_clock_rate     | Daughterboard Clock Rate in Hz                                   |  dboard_clock_rate=50e6
+ system_ref_rate       | Frequency of external reference/clock signal in Hz (see \ref x3x0_hw_x3x0_hw_ref10M) |  system_ref_rate=30.72e6
+ serialize_init        | Force serial initialization of motherboards (default: initialize in parallel) |  serialize_init=1
+ time_source           | Specify the time (PPS) source                                    |  time_source=external
+ clock_source          | Specify the reference clock source                               |  clock_source=external
+ self_cal_adc_delay    | Run ADC transfer delay self-calibration routine                  |  self_cal_adc_delay=1
+ ext_adc_self_test     | Run extended ADC self-test (excludes self_cal_adc_delay)         |  ext_adc_self_test=1
+ ext_adc_self_test_duration | Duration of extended ADC self-test (default: 30s)           |  ext_adc_self_test_duration=60
+ recover_mb_eeprom     | Enable EEPROM recovery, disable HW revision checks (see \ref x3x0_corrupt_eeprom) | recover_mb_eeprom=1
+ use_dpdk              | Use DPDK (see \ref page_dpdk)                                    |  use_dpdk=1
+ fpga                  | Choose FPGA image to run (only works over PCIe)                  |  fpga=/path/to/bitfile.lvbitx
+ fw                    | Load custom firmware image                                       |  fw=/path/to/hw.bin
+
 \section x3x0_hw Hardware Setup
 
 \subsection x3x0_hw_1gige Gigabit Ethernet (1 GigE)
@@ -452,7 +487,8 @@ available to the application can be 200 Msps, 100 Msps, 66.6 Msps, 50 Msps, and
 so on.
 
 The X300 series support a 200 MHz and a 184.32 MHz master clock rate, with
-200 MHz being the default. To specify a master clock rate, use the
+200 MHz being the default (when using TwinRX, only 200 MHz is available). To
+specify a master clock rate, use the
 `master_clock_rate` device arg at initialization time. Example:
 ~~~{.cpp}
 auto usrp = uhd::usrp::multi_usrp::make("type=x300,master_clock_rate=184.32e6");
