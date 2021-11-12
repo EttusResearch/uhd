@@ -116,7 +116,7 @@ uhd::rfnoc::chdr_ctrl_xport::sptr x300_impl::x300_mb_iface::make_ctrl_transport(
     auto io_srv =
         get_io_srv_mgr()->connect_links(recv_link, send_link, link_type_t::CTRL);
     auto io_srv_mgr = this->get_io_srv_mgr();
-    auto xport = chdr_ctrl_xport::make(io_srv,
+    auto xport      = chdr_ctrl_xport::make(io_srv,
         send_link,
         recv_link,
         _pkt_factory,

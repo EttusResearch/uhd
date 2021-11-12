@@ -45,11 +45,11 @@ namespace asio = boost::asio;
 
 namespace {
 
-constexpr size_t XGE_DATA_FRAME_SEND_SIZE           = x300::DATA_FRAME_MAX_SIZE;
-constexpr size_t XGE_DATA_FRAME_RECV_SIZE           = x300::DATA_FRAME_MAX_SIZE;
-constexpr size_t GE_DATA_FRAME_SEND_SIZE            = 1472;
-constexpr size_t GE_DATA_FRAME_RECV_SIZE            = 1472;
-constexpr size_t ETH_MSG_NUM_FRAMES                 = 64;
+constexpr size_t XGE_DATA_FRAME_SEND_SIZE = x300::DATA_FRAME_MAX_SIZE;
+constexpr size_t XGE_DATA_FRAME_RECV_SIZE = x300::DATA_FRAME_MAX_SIZE;
+constexpr size_t GE_DATA_FRAME_SEND_SIZE  = 1472;
+constexpr size_t GE_DATA_FRAME_RECV_SIZE  = 1472;
+constexpr size_t ETH_MSG_NUM_FRAMES       = 64;
 
 // Default for num data frames is set to a value that will work well when send
 // or recv offload is enabled, or when using DPDK.
@@ -197,8 +197,8 @@ eth_manager::eth_manager(
     // Once we read the EEPROM, we use it to map IP to its interface
     // In discover_eth(), we'll check and enable the other IP address, if given
     x300_eth_conn_t init = x300_eth_conn_t();
-    init.addr      = args.get_first_addr();
-    auto device_id = allocate_device_id();
+    init.addr            = args.get_first_addr();
+    auto device_id       = allocate_device_id();
     _local_device_ids.push_back(device_id);
     eth_conns[device_id] = init;
 
@@ -242,15 +242,15 @@ both_links_t eth_manager::get_links(link_type_t link_type,
     default_link_params.recv_frame_size = conn.link_rate == MAX_RATE_1GIGE
                                               ? GE_DATA_FRAME_RECV_SIZE
                                               : XGE_DATA_FRAME_RECV_SIZE;
-    default_link_params.send_buff_size = conn.link_rate / 50;
-    default_link_params.recv_buff_size = std::max(conn.link_rate / 50,
+    default_link_params.send_buff_size  = conn.link_rate / 50;
+    default_link_params.recv_buff_size  = std::max(conn.link_rate / 50,
         ETH_MSG_NUM_FRAMES * ETH_MSG_FRAME_SIZE); // enough to hold greater of 20 ms or
                                                   // number of msg frames
 
 #ifdef HAVE_DPDK
-    if(_args.get_use_dpdk()) {
-        default_link_params.num_recv_frames = default_link_params.recv_buff_size /
-            default_link_params.recv_frame_size;
+    if (_args.get_use_dpdk()) {
+        default_link_params.num_recv_frames =
+            default_link_params.recv_buff_size / default_link_params.recv_frame_size;
     }
 #endif
 

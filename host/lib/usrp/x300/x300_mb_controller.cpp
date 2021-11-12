@@ -634,7 +634,7 @@ bool x300_mb_controller::is_pps_present()
         std::this_thread::sleep_for(100ms);
         if (pps_detect
             != _fw_regmap->clock_status_reg.read(
-                   fw_regmap_t::clk_status_reg_t::PPS_DETECT))
+                fw_regmap_t::clk_status_reg_t::PPS_DETECT))
             return true;
     }
     return false;
@@ -647,10 +647,10 @@ bool x300_mb_controller::get_ref_locked()
                == 1)
            && (_fw_regmap->clock_status_reg.get(
                    fw_regmap_t::clk_status_reg_t::RADIO_CLK_LOCK)
-                  == 1)
+               == 1)
            && (_fw_regmap->clock_status_reg.get(
                    fw_regmap_t::clk_status_reg_t::IDELAYCTRL_LOCK)
-                  == 1);
+               == 1);
 }
 
 void x300_mb_controller::self_cal_adc_xfer_delay(bool apply_delay)

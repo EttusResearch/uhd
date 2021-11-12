@@ -11,11 +11,11 @@
 #include "x300_device_args.hpp"
 #include "x300_radio_mbc_iface.hpp"
 #include "x300_regs.hpp"
-#include <uhdlib/features/discoverable_feature_registry.hpp>
 #include <uhd/rfnoc/mb_controller.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/usrp/gps_ctrl.hpp>
+#include <uhdlib/features/discoverable_feature_registry.hpp>
 #include <unordered_set>
 
 namespace uhd { namespace rfnoc {
