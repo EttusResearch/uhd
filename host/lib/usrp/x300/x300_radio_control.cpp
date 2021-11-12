@@ -77,7 +77,7 @@ size_t _get_chan_from_map(std::unordered_map<size_t, map_type> map, const std::s
         str(boost::format("Invalid daughterboard frontend name: %s") % fe));
 }
 
-constexpr double DEFAULT_RATE = 200e6;
+constexpr double DEFAULT_RATE  = 200e6;
 constexpr char HW_GAIN_STAGE[] = "hw";
 
 } // namespace
@@ -151,8 +151,7 @@ public:
         // FP-GPIO (the gpio_atr_3000 ctor will initialize default values)
         RFNOC_LOG_TRACE("Creating FP-GPIO interface...");
         _fp_gpio = gpio_atr::gpio_atr_3000::make(_wb_iface,
-            gpio_atr::gpio_atr_offsets::make_default(
-                x300_regs::SR_FP_GPIO,
+            gpio_atr::gpio_atr_offsets::make_default(x300_regs::SR_FP_GPIO,
                 x300_regs::RB_FP_GPIO,
                 x300_regs::PERIPH_REG_OFFSET));
         // Create the GPIO banks and attributes, and populate them with some default
@@ -174,7 +173,7 @@ public:
 
         // LEDs are technically valid for both RX and TX, but let's put them
         // here
-        _leds = gpio_atr::gpio_atr_3000::make(_wb_iface, 
+        _leds = gpio_atr::gpio_atr_3000::make(_wb_iface,
             gpio_atr::gpio_atr_offsets::make_write_only(
                 x300_regs::SR_LEDS, x300_regs::PERIPH_REG_OFFSET));
         _leds->set_atr_mode(
@@ -909,7 +908,7 @@ public:
             const std::string name          = bank.substr(2);
             const dboard_iface::unit_t unit = (bank[0] == 'R') ? dboard_iface::UNIT_RX
                                                                : dboard_iface::UNIT_TX;
-            constexpr uint16_t mask = 0xFFFF;
+            constexpr uint16_t mask         = 0xFFFF;
             if (attr == "CTRL") {
                 _db_iface->set_pin_ctrl(unit, value, mask);
             } else if (attr == "DDR") {
@@ -1522,8 +1521,7 @@ private:
         // create a new dboard interface
         x300_dboard_iface_config_t db_config;
         db_config.gpio           = gpio_atr::db_gpio_atr_3000::make(_wb_iface,
-            gpio_atr::gpio_atr_offsets::make_default(
-                x300_regs::SR_DB_GPIO,
+            gpio_atr::gpio_atr_offsets::make_default(x300_regs::SR_DB_GPIO,
                 x300_regs::RB_DB_GPIO,
                 x300_regs::PERIPH_REG_OFFSET));
         db_config.spi            = _spi;
@@ -1532,11 +1530,11 @@ private:
         db_config.i2c            = zpu_i2c;
         db_config.clock          = clock;
         db_config.which_rx_clk   = (_radio_type == PRIMARY) ? X300_CLOCK_WHICH_DB0_RX
-                                                          : X300_CLOCK_WHICH_DB1_RX;
-        db_config.which_tx_clk = (_radio_type == PRIMARY) ? X300_CLOCK_WHICH_DB0_TX
-                                                          : X300_CLOCK_WHICH_DB1_TX;
-        db_config.dboard_slot   = (_radio_type == PRIMARY) ? 0 : 1;
-        db_config.cmd_time_ctrl = _wb_iface;
+                                                            : X300_CLOCK_WHICH_DB1_RX;
+        db_config.which_tx_clk   = (_radio_type == PRIMARY) ? X300_CLOCK_WHICH_DB0_TX
+                                                            : X300_CLOCK_WHICH_DB1_TX;
+        db_config.dboard_slot    = (_radio_type == PRIMARY) ? 0 : 1;
+        db_config.cmd_time_ctrl  = _wb_iface;
 
         // create a new dboard manager
         RFNOC_LOG_TRACE("Creating DB interface...");
@@ -1576,8 +1574,8 @@ private:
         // here.
         if (num_rx_frontends == 2
             && boost::starts_with(
-                   get_tree()->access<std::string>(DB_PATH / "rx_frontends/0/name").get(),
-                   "TwinRX")) {
+                get_tree()->access<std::string>(DB_PATH / "rx_frontends/0/name").get(),
+                "TwinRX")) {
             _twinrx = true;
             set_num_input_ports(0);
         }
@@ -1775,9 +1773,12 @@ private:
         // The "RX1" port is used by TwinRX and the "TX/RX" port is used by all
         // other full-duplex dboards. We need to handle both here.
         const bool is_txrx = (rx_ant == "TX/RX" or rx_ant == "RX1");
-        const int TXRX_RX  = (1 << 0);
-        const int TXRX_TX  = (1 << 1);
-        const int RX2_RX   = (1 << 2);
+        // Green LED on TX/RX port (left SMA)
+        constexpr int TXRX_RX = (1 << 0);
+        // Red LED on TX/RX port (left SMA)
+        constexpr int TXRX_TX = (1 << 1);
+        // Green LED on RX2 port (right SMA)
+        constexpr int RX2_RX = (1 << 2);
         _leds->set_atr_reg(gpio_atr::ATR_REG_IDLE, 0);
         _leds->set_atr_reg(gpio_atr::ATR_REG_RX_ONLY, is_txrx ? TXRX_RX : RX2_RX);
         _leds->set_atr_reg(gpio_atr::ATR_REG_TX_ONLY, TXRX_TX);
@@ -1988,7 +1989,7 @@ private:
 
     bool _basic_lf_rx = false;
     bool _basic_lf_tx = false;
-    bool _twinrx = false;
+    bool _twinrx      = false;
 
     std::unordered_map<size_t, rx_fe_perif> _rx_fe_map;
     std::unordered_map<size_t, tx_fe_perif> _tx_fe_map;

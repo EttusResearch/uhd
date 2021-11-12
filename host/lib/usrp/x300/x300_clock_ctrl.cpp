@@ -207,7 +207,7 @@ public:
             case X300_CLOCK_WHICH_DB0_RX:
                 if (enable
                     != (_lmk04816_regs.CLKout2_TYPE
-                           == lmk04816_regs_t::CLKOUT2_TYPE_LVPECL_700MVPP)) {
+                        == lmk04816_regs_t::CLKOUT2_TYPE_LVPECL_700MVPP)) {
                     _lmk04816_regs.CLKout2_TYPE =
                         enable ? lmk04816_regs_t::CLKOUT2_TYPE_LVPECL_700MVPP
                                : lmk04816_regs_t::CLKOUT2_TYPE_P_DOWN;
@@ -217,7 +217,7 @@ public:
             case X300_CLOCK_WHICH_DB1_RX:
                 if (enable
                     != (_lmk04816_regs.CLKout3_TYPE
-                           == lmk04816_regs_t::CLKOUT3_TYPE_LVPECL_700MVPP)) {
+                        == lmk04816_regs_t::CLKOUT3_TYPE_LVPECL_700MVPP)) {
                     _lmk04816_regs.CLKout3_TYPE =
                         enable ? lmk04816_regs_t::CLKOUT3_TYPE_LVPECL_700MVPP
                                : lmk04816_regs_t::CLKOUT3_TYPE_P_DOWN;
@@ -227,7 +227,7 @@ public:
             case X300_CLOCK_WHICH_DB0_TX:
                 if (enable
                     != (_lmk04816_regs.CLKout5_TYPE
-                           == lmk04816_regs_t::CLKOUT5_TYPE_LVPECL_700MVPP)) {
+                        == lmk04816_regs_t::CLKOUT5_TYPE_LVPECL_700MVPP)) {
                     _lmk04816_regs.CLKout5_TYPE =
                         enable ? lmk04816_regs_t::CLKOUT5_TYPE_LVPECL_700MVPP
                                : lmk04816_regs_t::CLKOUT5_TYPE_P_DOWN;
@@ -237,7 +237,7 @@ public:
             case X300_CLOCK_WHICH_DB1_TX:
                 if (enable
                     != (_lmk04816_regs.CLKout4_TYPE
-                           == lmk04816_regs_t::CLKOUT4_TYPE_LVPECL_700MVPP)) {
+                        == lmk04816_regs_t::CLKOUT4_TYPE_LVPECL_700MVPP)) {
                     _lmk04816_regs.CLKout4_TYPE =
                         enable ? lmk04816_regs_t::CLKOUT4_TYPE_LVPECL_700MVPP
                                : lmk04816_regs_t::CLKOUT4_TYPE_P_DOWN;
@@ -698,8 +698,8 @@ private:
                 _lmk04816_regs.MODE = lmk04816_regs_t::MODE_DUAL_INT;
 
                 // PLL1 - 2 MHz compare frequency
-                _lmk04816_regs.PLL1_N_28       = 48;
-                _lmk04816_regs.PLL1_R_27       = 5;
+                _lmk04816_regs.PLL1_N_28 = 48;
+                _lmk04816_regs.PLL1_R_27 = 5;
                 // Since this is not a zero-dealy mode, it is not intended for phase
                 // synchronization.  The charge pump current for PLL1 is lowered to
                 // reduce phase noise.

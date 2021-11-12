@@ -124,7 +124,7 @@ void uhd::usrp::x300::set_mb_eeprom(
     if (check_for_duplicates<uhd::mac_addr_t>(
             "X300", mb_eeprom, curr_eeprom, "MAC address", mac_keys)
         or check_for_duplicates<boost::asio::ip::address_v4>(
-               "X300", mb_eeprom, curr_eeprom, "IP address", ip_keys)) {
+            "X300", mb_eeprom, curr_eeprom, "IP address", ip_keys)) {
         throw uhd::value_error(
             "Duplicate values not permitted - write to EEPROM aborted");
     }
