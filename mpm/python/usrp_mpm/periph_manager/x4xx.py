@@ -162,7 +162,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
     mboard_eeprom_max_len = 256
     mboard_eeprom_magic = eeprom_magic
     mboard_info = {"type": "x4xx"}
-    mboard_max_rev = 6  # RevF
+    mboard_max_rev = 7  # RevG
     max_num_dboards = 2
     mboard_sensor_callback_map = {
         # List of motherboard sensors that are always available. There are also
