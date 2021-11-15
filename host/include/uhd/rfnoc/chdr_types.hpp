@@ -700,11 +700,18 @@ public:
         }
     };
 
-    mgmt_op_t(const op_code_t op_code, const payload_t op_payload = 0)
-        : _op_code(op_code), _op_payload(op_payload)
+    mgmt_op_t(const op_code_t op_code, const payload_t op_payload = 0,
+        const uint8_t ops_pending = 0)
+        : _op_code(op_code), _op_payload(op_payload), _ops_pending(ops_pending)
     {
     }
     mgmt_op_t(const mgmt_op_t& rhs) = default;
+
+    //! Get the ops pending for this transaction
+    inline uint8_t get_ops_pending() const
+    {
+        return _ops_pending;
+    }
 
     //! Get the op-code for this transaction
     inline op_code_t get_op_code() const
@@ -730,6 +737,7 @@ public:
 private:
     op_code_t _op_code;
     payload_t _op_payload;
+    uint8_t _ops_pending;
 };
 
 //! A class that represents a single management hop
