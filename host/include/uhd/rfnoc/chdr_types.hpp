@@ -708,6 +708,9 @@ public:
     mgmt_op_t(const mgmt_op_t& rhs) = default;
 
     //! Get the ops pending for this transaction
+    //  Note that ops_pending is not used by UHD, since it can infer this value
+    //  from the ops vector in mgmt_hop_t. It is needed only by the CHDR
+    //  dissector.
     inline uint8_t get_ops_pending() const
     {
         return _ops_pending;
