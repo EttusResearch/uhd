@@ -1,0 +1,25 @@
+parameters:
+- name: testOS
+  type: string
+  values:
+    - ubuntu2004
+- name: uhdSrcDir
+  type: string
+- name: testLength
+  type: string
+
+jobs:
+- template: job-uhd-streaming-tests.yml
+  parameters:
+    suiteName: 'beauty'
+    testOS: '${{ parameters.testOS }}'
+    testLength: '${{ parameters.testLength }}'
+    toolset: 'make'
+    uhdSrcDir: '${{ parameters.uhdSrcDir }}'
+    dutMatrix:
+      beauty-N320-0 XG:
+        dutName: 'beauty-N320-0'
+        dutType: 'N320'
+        dutAddr: '192.168.10.2'
+        dutSecondAddr: '192.168.20.2'
+        dutMgmtAddr: '10.0.57.13'
