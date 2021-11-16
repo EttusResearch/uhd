@@ -22,8 +22,9 @@
 10M08_ID = "10M08SAU169I7G"
 
 # Target specific variables
-X410_CPLD_10M04: DEFS = VARIANT_`echo $(10M04_ID) | cut -c1-5`=1
-X410_CPLD_10M08: DEFS = VARIANT_`echo $(10M08_ID) | cut -c1-5`=1
+X410_CPLD_10M04:     DEFS = VARIANT_`echo $(10M04_ID) | cut -c1-5`=1
+X410_CPLD_10M08:     DEFS = VARIANT_`echo $(10M08_ID) | cut -c1-5`=1
+X410_CPLD_MFG_10M08: DEFS = VARIANT_`echo $(10M08_ID) | cut -c1-5`=1  MFG_SUPPORT=1
 
 TARGET = bin
 TOP ?= mb_cpld
@@ -68,10 +69,14 @@ X410_CPLD_10M08:
 	$(call quartus_build,$(10M08_ID),$(DEFS))
 	$(call post_build,"usrp_x410_cpld_`echo $(10M08_ID) | cut -c1-5 | tr A-Z a-z`")
 
-
 X410_CPLD_IP:     ##Build IPs only, needed for simulation.
 	@# Building only X410_CPLD_10M04 IP
 	$(call quartus_ip,$(10M04_ID),$(DEFS))
+
+# Internal manufacturing test image.
+X410_CPLD_MFG_10M08:
+	$(call quartus_build,$(10M08_ID),$(DEFS))
+	$(call post_build,"usrp_x410_cpld_mfg_`echo $(10M08_ID) | cut -c1-5 | tr A-Z a-z`")
 
 clean:            ##Clean up all target build outputs.
 	@echo -ne "\nCleaning targets and git repo...\n";

@@ -252,6 +252,19 @@ module mb_cpld #(
   // Power Supply Clock
   //---------------------------------------------------------------------------
 
+`ifdef MFG_SUPPORT
+
+  assign PWR_SUPPLY_CLK_CORE   = 1'b0;
+  assign PWR_SUPPLY_CLK_DDR4_S = 1'b0;
+  assign PWR_SUPPLY_CLK_DDR4_N = 1'b0;
+  assign PWR_SUPPLY_CLK_0P9V   = 1'b0;
+  assign PWR_SUPPLY_CLK_1P8V   = 1'b0;
+  assign PWR_SUPPLY_CLK_2P5V   = 1'b0;
+  assign PWR_SUPPLY_CLK_3P3V   = 1'b0;
+  assign PWR_SUPPLY_CLK_3P6V   = 1'b0;
+
+`else
+
   // Frequency definitions
   localparam SOUCE_CLOCK_FREQUENCY = 100_000_000;
   localparam TARGET_FREQUENCY_350k =     350_000;
@@ -322,6 +335,8 @@ module mb_cpld #(
 
   assign PWR_SUPPLY_CLK_3P3V = pwr_supply_clk_1M;
   assign PWR_SUPPLY_CLK_3P6V = pwr_supply_clk_1M;
+
+`endif
 
   //---------------------------------------------------------------------------
   // PL Interfaces
@@ -1025,7 +1040,7 @@ endmodule
 //      </info>
 //      <value name="PS_CPLD_SIGNATURE"     integer="0x0A522D27"/>
 //      <value name="PL_CPLD_SIGNATURE"     integer="0x3FDC5C47"/>
-//      <value name="CPLD_REVISION"         integer="0x21111614"/>
+//      <value name="CPLD_REVISION"         integer="0x21111615"/>
 //      <value name="OLDEST_CPLD_REVISION"  integer="0x20122114"/>
 //    </enumeratedtype>
 //  </group>
