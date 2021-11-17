@@ -286,14 +286,15 @@ set_global_assignment -name FLOW_ENABLE_POWER_ANALYZER ON
 set_global_assignment -name POWER_DEFAULT_INPUT_IO_TOGGLE_RATE "12.5 %"
 set_global_assignment -name EDA_RUN_TOOL_AUTOMATICALLY OFF -section_id eda_simulation
 set_global_assignment -name OPTIMIZATION_MODE "HIGH PERFORMANCE EFFORT"
-set_global_assignment -name VERILOG_FILE rhodium_top.v
-set_global_assignment -name VERILOG_FILE rhodium_gain_ctrl.v
-set_global_assignment -name VERILOG_FILE rhodium_gain_table.v
-set_global_assignment -name VERILOG_FILE rhodium_lo_gain.v
-set_global_assignment -name VERILOG_FILE rh_tb.v
-set_global_assignment -name EDA_TEST_BENCH_FILE rh_tb.v -section_id rh_tb
+set_global_assignment -name VERILOG_FILE ../rhodium_top.v
+set_global_assignment -name VERILOG_FILE ../rhodium_gain_ctrl.v
+set_global_assignment -name VERILOG_FILE ../rhodium_gain_table.v
+set_global_assignment -name VERILOG_FILE ../rhodium_lo_gain.v
+set_global_assignment -name VERILOG_FILE ../rh_tb.v
+set_global_assignment -name EDA_TEST_BENCH_FILE ../rh_tb.v -section_id rh_tb
+set_global_assignment -name SDC_FILE ../rhodium_top.sdc
 
-
+set_global_assignment -name NUM_PARALLEL_PROCESSORS 2
 set_global_assignment -name ENABLE_OCT_DONE OFF
 set_global_assignment -name STRATIXV_CONFIGURATION_SCHEME "PASSIVE SERIAL"
 set_global_assignment -name USE_CONFIGURATION_DEVICE ON
