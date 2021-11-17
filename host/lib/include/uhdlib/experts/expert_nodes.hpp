@@ -394,7 +394,7 @@ public:
 };
 
 /*!---------------------------------------------------------
- * class data_reader_t
+ * class data_writer_t
  *
  * Accessor to read and write the value of a data node and
  * to establish a worker node => data node dependency

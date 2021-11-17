@@ -11,6 +11,7 @@
 #include <uhd/property_tree.hpp>
 #include <uhd/types/eeprom.hpp>
 #include <uhdlib/rfnoc/rf_control/dboard_iface.hpp>
+#include <uhdlib/usrp/common/mpmd_mb_controller.hpp>
 #include <string>
 
 #define UHD_LOG_SKIP_CFG() \

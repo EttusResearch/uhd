@@ -9,6 +9,7 @@
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/ranges.hpp>
 #include <stdint.h>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -24,6 +25,8 @@ namespace uhd { namespace rfnoc { namespace rf_control {
 class core_iface
 {
 public:
+    using sptr = std::shared_ptr<core_iface>;
+
     virtual ~core_iface() = default;
 
     /*! Return the selected TX antenna for channel \p chan.
@@ -38,7 +41,7 @@ public:
      */
     virtual std::vector<std::string> get_tx_antennas(const size_t chan) const = 0;
 
-    /*! Select RX antenna \p for channel \p chan.
+    /*! Select TX antenna \p for channel \p chan.
      *
      * \throws uhd::value_error if \p ant is not a valid value.
      */
