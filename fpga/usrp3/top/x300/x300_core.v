@@ -555,6 +555,13 @@ module x300_core #(
    //------------------------------------
    // Daughterboard Control
    // -----------------------------------
+   // Note: We have one db_control per slot, even though we can have up to 2
+   // channels. In practice, this only affects TwinRX (and maybe some of the
+   // Basic- and LF-boards, depending how they're used).
+   // The main disadvantage in these cases is that individual channels cannot
+   // individually trigger GPIOs based on ATR state (i.e., we cannot tell if
+   // channel 0 or 1 are in a TX/RX state, we can only say that one of them is
+   // in such a state).
 
    localparam [7:0] SR_DB_BASE = 8'd160;
    localparam [7:0] RB_DB_BASE = 8'd16;
@@ -570,7 +577,9 @@ module x300_core #(
          .clk(radio_clk), .reset(radio_rst),
          .set_stb(db_fe_set_stb[i]), .set_addr(db_fe_set_addr[i]), .set_data(db_fe_set_data[i]),
          .rb_stb(db_fe_rb_stb[i]), .rb_addr(db_fe_rb_addr[i]), .rb_data(db_fe_rb_data[i]),
-         .run_rx(rx_running[i*2]), .run_tx(tx_running[i*2]),
+         // We OR the ATR indicators from both channels
+         .run_rx(|{rx_running[i*2], rx_running[i*2+1]}),
+         .run_tx(|{tx_running[i*2], tx_running[i*2+1]}),
          .misc_ins(misc_ins[i]), .misc_outs(misc_outs[i]),
          .fp_gpio_in(fp_gpio_r_in[i]), .fp_gpio_out(fp_gpio_r_out[i]), .fp_gpio_ddr(fp_gpio_r_ddr[i]), .fp_gpio_fab(),
          .db_gpio_in(db_gpio_in[i]), .db_gpio_out(db_gpio_out[i]), .db_gpio_ddr(db_gpio_ddr[i]), .db_gpio_fab(),
