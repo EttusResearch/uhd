@@ -107,11 +107,27 @@ class Max10CpldFlashCtrl():
 
     def erase_flash_memory(self):
         with self:
+            # determine M04 or M08 variant based on
+            # value encoded in the FLASH_CFM0_START_ADDR_REG
+            # register
+            start_addr = self.get_start_addr()
+            if start_addr == 0x9C00:
+                self.max10_variant = "m04"
+            elif start_addr == 0xAC00:
+                self.max10_variant = "m08"
+            else:
+                raise RuntimeError('Unknown MAX10 variant (FLASH_CFM0_START_ADDR_REG=0x{:04X})'.format(start_addr))
             # check for sectors to be erased:
             if self.is_memory_initialization_enabled():
-                sectors = [2, 3, 4]
+                if self.max10_variant == "m04":
+                    sectors = [2, 3, 4]
+                else:
+                    sectors = [3, 4, 5]
             else:
-                sectors = [4]
+                if self.max10_variant == "m04":
+                    sectors = [4]
+                else:
+                    sectors = [5]
             # erase each sector individually
             for sector in sectors:
                 # start erase
