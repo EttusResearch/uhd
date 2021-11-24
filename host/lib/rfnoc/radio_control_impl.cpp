@@ -105,7 +105,7 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
                 return;
             }
             const size_t port = src.instance;
-            if (port > get_num_output_ports()) {
+            if (port >= get_num_output_ports()) {
                 RFNOC_LOG_WARNING("Received stream command to invalid output port!");
                 return;
             }
@@ -126,7 +126,7 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
                 get_mb_controller()->get_timekeeper(0)->get_time_now()
                 + uhd::time_spec_t(OVERRUN_RESTART_DELAY);
             const size_t port = src.instance;
-            if (port > get_num_output_ports()) {
+            if (port >= get_num_output_ports()) {
                 RFNOC_LOG_WARNING("Received stream command to invalid output port!");
                 return;
             }
@@ -216,7 +216,7 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
     RFNOC_LOG_TRACE("Sending async messages to EPID "
                     << regs().get_src_epid() << ", remote port " << regs().get_port_num()
                     << ", xbar port " << xbar_port);
-    for (size_t tx_chan = 0; tx_chan < get_num_output_ports(); tx_chan++) {
+    for (size_t tx_chan = 0; tx_chan < get_num_input_ports(); tx_chan++) {
         // Set the EPID and port of our regs() object (all async messages go to
         // the same location)
         _radio_reg_iface.poke32(
@@ -230,7 +230,7 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
             regmap::SWREG_TX_ERR + regmap::SWREG_CHAN_OFFSET * tx_chan,
             tx_chan);
     }
-    for (size_t rx_chan = 0; rx_chan < get_num_input_ports(); rx_chan++) {
+    for (size_t rx_chan = 0; rx_chan < get_num_output_ports(); rx_chan++) {
         // Set the EPID and port of our regs() object (all async messages go to
         // the same location)
         _radio_reg_iface.poke32(
@@ -973,7 +973,7 @@ bool radio_control_impl::async_message_validator(
         return false;
     }
     if (addr_base == regmap::SWREG_RX_ERR) {
-        if (chan > get_num_output_ports()) {
+        if (chan >= get_num_output_ports()) {
             return false;
         }
         switch (code) {
@@ -986,7 +986,7 @@ bool radio_control_impl::async_message_validator(
         }
     }
     if (addr_base == regmap::SWREG_TX_ERR) {
-        if (chan > get_num_input_ports()) {
+        if (chan >= get_num_input_ports()) {
             return false;
         }
         switch (code) {
@@ -1039,7 +1039,7 @@ void radio_control_impl::async_message_handler(
     }
     switch (addr_base + addr_offset) {
         case regmap::SWREG_TX_ERR: {
-            if (chan > get_num_input_ports()) {
+            if (chan >= get_num_input_ports()) {
                 RFNOC_LOG_WARNING(
                     "Cannot process TX-related async message to invalid chan " << chan);
                 return;
@@ -1075,7 +1075,7 @@ void radio_control_impl::async_message_handler(
             break;
         }
         case regmap::SWREG_RX_ERR: {
-            if (chan > get_num_input_ports()) {
+            if (chan >= get_num_output_ports()) {
                 RFNOC_LOG_WARNING(
                     "Cannot process RX-related async message to invalid chan " << chan);
                 return;
