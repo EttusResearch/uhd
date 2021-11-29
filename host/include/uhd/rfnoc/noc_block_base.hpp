@@ -272,6 +272,9 @@ protected:
      * This can be used to make the MTU an input to a property resolver. For
      * example, blocks that have an spp property, such as the radio, can now
      * trigger a property resolver based on the MTU.
+     *
+     * The reference is guaranteed to remain valid for the lifetime of this
+     * block.
      */
     property_base_t* get_mtu_prop_ref(const res_source_info& edge);
 
