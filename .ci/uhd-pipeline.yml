@@ -14,6 +14,7 @@ parameters:
   - 'smoke'
   - 'full'
   - 'stress'
+  default: 'smoke'
 - name: run_streaming_tests
   type: boolean
   default: False
