@@ -549,9 +549,7 @@ For a list of which arguments can be passed into make(), see Section
 
 \subsection e3xx_usage_sensors The sensor API
 
-\subsubsection e310_sensors E31X Sensors
-
-Like other USRPs, the E310 series has RF and motherboard sensors.
+Like other USRPs, the E3x0 series has RF and motherboard sensors.
 When using uhd::usrp::multi_usrp, the following API calls are relevant to
 interact with the sensor API:
 
@@ -561,6 +559,8 @@ interact with the sensor API:
 - uhd::usrp::multi_usrp::get_rx_sensor_names()
 - uhd::usrp::multi_usrp::get_tx_sensor()
 - uhd::usrp::multi_usrp::get_rx_sensor()
+
+\subsubsection e310_sensors E31X Sensors
 
 The following motherboard sensors are always available:
 - `temp_fpga`: temperature (in Celsius) of the FPGA die
@@ -568,18 +568,14 @@ The following motherboard sensors are always available:
 - `ref_locked`: This will check that all the daughter boards have locked to the
 reference clock.
 
+The following daughterboard sensors are always available:
+- `lo_locked`: Boolean sensor value to check if the AD9361 LO has locked to its
+   reference
+- `lo_lock`: Alias to `lo_locked` (for backward compatibility reasons)
+- `ad9361_temperature`: Temperature sensor of the RFIC die
+- `rssi`: RSSI value as returned from the AD9361 (RX only)
+
 \subsubsection e320_sensors E320 Sensors
-
-Like other USRPs, the E320 series has RF and motherboard sensors.
-When using uhd::usrp::multi_usrp, the following API calls are relevant to
-interact with the sensor API:
-
-- uhd::usrp::multi_usrp::get_mboard_sensor_names()
-- uhd::usrp::multi_usrp::get_mboard_sensor()
-- uhd::usrp::multi_usrp::get_tx_sensor_names()
-- uhd::usrp::multi_usrp::get_rx_sensor_names()
-- uhd::usrp::multi_usrp::get_tx_sensor()
-- uhd::usrp::multi_usrp::get_rx_sensor()
 
 The following motherboard sensors are always available:
 - `temp_internal`: temperature (in Celsius) of Temperature Sensor on board
@@ -594,6 +590,13 @@ The following motherboard sensors are always available:
 - `ref_locked`: This will check that all the daughter boards have locked to the
 external/internal reference clock.
 - `fan`: get fan speed (in rpm)
+
+The following daughterboard sensors are always available:
+- `lo_locked`: Boolean sensor value to check if the AD9361 LO has locked to its
+   reference
+- `lo_lock`: Alias to `lo_locked` (for backward compatibility reasons)
+- `ad9361_temperature`: Temperature sensor of the RFIC die
+- `rssi`: RSSI value as returned from the AD9361 (RX only)
 
 \section e3xx_rasm Remote Management
 

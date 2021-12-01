@@ -36,10 +36,17 @@ class Neon(DboardManagerBase):
     rx_sensor_callback_map = {
         'ad9361_temperature': 'get_catalina_temp_sensor',
         'rssi' : 'get_rssi_sensor',
+        # For backward compatibility reasons we have the same sensor with two
+        # different names
         'lo_lock' : 'get_lo_lock_sensor',
+        'lo_locked' : 'get_lo_lock_sensor',
     }
     tx_sensor_callback_map = {
         'ad9361_temperature': 'get_catalina_temp_sensor',
+        # For backward compatibility reasons we have the same sensor with two
+        # different names
+        'lo_lock' : 'get_lo_lock_sensor',
+        'lo_locked' : 'get_lo_lock_sensor',
     }
     # Maps the chipselects to the corresponding devices:
     spi_chipselect = {"catalina": 0,
@@ -266,13 +273,13 @@ class Neon(DboardManagerBase):
         Return LO lock status (Boolean!) of AD9361. 'which' must be
         either 'tx' or 'rx'
         """
-        self.mboard_regs_label = "mboard-regs"
-        self.mboard_regs_control = MboardRegsControl(
-            self.mboard_regs_label, self.log)
+        mboard_regs_label = "mboard-regs"
+        mboard_regs_control = MboardRegsControl(
+            mboard_regs_label, self.log)
         if which == "tx":
-            locked = self. mboard_regs_control.get_ad9361_tx_lo_lock()
+            locked = mboard_regs_control.get_ad9361_tx_lo_lock()
         elif which == "rx":
-            locked = self. mboard_regs_control.get_ad9361_rx_lo_lock()
+            locked = mboard_regs_control.get_ad9361_rx_lo_lock()
         else:
             locked = False
         return locked
