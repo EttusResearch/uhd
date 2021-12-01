@@ -34,10 +34,17 @@ class E31x_db(DboardManagerBase):
     rx_sensor_callback_map = {
         'ad9361_temperature': 'get_catalina_temp_sensor',
         'rssi' : 'get_rssi_sensor',
+        # For backward compatibility reasons we have the same sensor with two
+        # different names
         'lo_lock' : 'get_lo_lock_sensor',
+        'lo_locked' : 'get_lo_lock_sensor',
     }
     tx_sensor_callback_map = {
         'ad9361_temperature': 'get_catalina_temp_sensor',
+        # For backward compatibility reasons we have the same sensor with two
+        # different names
+        'lo_lock' : 'get_lo_lock_sensor',
+        'lo_locked' : 'get_lo_lock_sensor',
     }
     # Maps the chipselects to the corresponding devices:
     spi_chipselect = {"catalina": 0}
@@ -154,7 +161,7 @@ class E31x_db(DboardManagerBase):
             MboardRegsControl(self.mboard_regs_label, self.log)
         if which == "tx":
             return mboard_regs_control.get_ad9361_tx_lo_lock()
-        elif which == "rx":
+        if which == "rx":
             return mboard_regs_control.get_ad9361_rx_lo_lock()
         self.log.warning("get_ad9361_lo_lock(): Invalid which param `{}'"
                          .format(which))
