@@ -669,6 +669,13 @@ bool graph_t::_assert_edge_props_consistent(rfnoc_graph_t::edge_descriptor edge)
     for (auto src_prop_it = src_prop_map.begin(); src_prop_it != src_prop_map.end();
          ++src_prop_it) {
         auto src_prop = src_prop_it->second;
+        if (dst_prop_map.count(src_prop->get_id()) == 0) {
+            UHD_LOG_DEBUG(LOG_ID,
+                "On back-edge "
+                    << edge_info.to_string() << ", source block has edge property `"
+                    << src_prop->get_id() << "', but destination block does not.");
+            continue;
+        }
         auto dst_prop = dst_prop_map.at(src_prop->get_id());
         if (!src_prop->equal(dst_prop)) {
             UHD_LOG_ERROR(LOG_ID,
