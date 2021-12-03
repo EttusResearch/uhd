@@ -32,7 +32,6 @@ E320_DEFAULT_TIME_SOURCE = 'internal'
 E320_DEFAULT_ENABLE_GPS = True
 E320_DEFAULT_ENABLE_FPGPIO = True
 E320_FPGA_COMPAT = (6, 0)
-E320_MONITOR_THREAD_INTERVAL = 1.0 # seconds
 E320_DBOARD_SLOT_IDX = 0
 E320_GPIO_BANKS = ["FP0",]
 E320_GPIO_SRC_PS = "PS"
@@ -149,7 +148,6 @@ class e320(ZynqComponents, PeriphManagerBase):
             # Don't try and figure out what's going on. Just give up.
             return
         self._tear_down = False
-        self._status_monitor_thread = None
         self._ext_clock_freq = E320_DEFAULT_EXT_CLOCK_FREQ
         self._clock_source = None
         self._time_source = None
@@ -241,26 +239,6 @@ class e320(ZynqComponents, PeriphManagerBase):
                 default_args.get('time_source', E320_DEFAULT_TIME_SOURCE)
             )
 
-    def _monitor_status(self):
-        """
-        Status monitoring thread: This should be executed in a thread. It will
-        continuously monitor status of the following peripherals:
-
-        - GPS lock
-        """
-        self.log.trace("Launching monitor loop...")
-        cond = threading.Condition()
-        cond.acquire()
-        while not self._tear_down:
-            gps_locked = self.get_gps_lock_sensor()['value'] == 'true'
-            # Now wait
-            if cond.wait_for(
-                    lambda: self._tear_down,
-                    E320_MONITOR_THREAD_INTERVAL):
-                break
-        cond.release()
-        self.log.trace("Terminating monitor loop.")
-
     def _init_peripherals(self, args):
         """
         Turn on all peripherals. This may throw an error on failure, so make
@@ -296,14 +274,6 @@ class e320(ZynqComponents, PeriphManagerBase):
         self._xport_mgrs = {
             'udp': E320XportMgrUDP(self.log, args)
         }
-        # Spawn status monitoring thread
-        self.log.trace("Spawning status monitor thread...")
-        self._status_monitor_thread = threading.Thread(
-            target=self._monitor_status,
-            name="E320StatusMonitorThread",
-            daemon=True,
-        )
-        self._status_monitor_thread.start()
         # Init complete.
         self.log.debug("mboard info: {}".format(self.mboard_info))
 
@@ -364,10 +334,6 @@ class e320(ZynqComponents, PeriphManagerBase):
         """
         self.log.trace("Tearing down E320 device...")
         self._tear_down = True
-        if self._device_initialized:
-            self._status_monitor_thread.join(3 * E320_MONITOR_THREAD_INTERVAL)
-            if self._status_monitor_thread.is_alive():
-                self.log.error("Could not terminate monitor thread! This could result in resource leaks.")
         active_overlays = self.list_active_overlays()
         self.log.trace("E320 has active device tree overlays: {}".format(
             active_overlays
