@@ -59,12 +59,6 @@ public:
     size_t get_spc() const override;
 
     /**************************************************************************
-     * Time-Related API Calls
-     *************************************************************************/
-    uint64_t get_ticks_now() override;
-    uhd::time_spec_t get_time_now() override;
-
-    /**************************************************************************
      * RF-specific API calls
      *************************************************************************/
     // Setters
@@ -215,10 +209,6 @@ public:
     {
         static const uint32_t REG_COMPAT_NUM =
             0x00; // Compatibility number register offset
-        static const uint32_t REG_TIME_LO =
-            0x04; // Time lower bits
-        static const uint32_t REG_TIME_HI =
-            0x08; // Time upper bits
         static const uint32_t REG_RADIO_WIDTH =
             0x1000 + 0x04; // Upper 16 bits is sample width, lower 16 bits is NSPC
 

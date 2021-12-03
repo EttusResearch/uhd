@@ -26,7 +26,7 @@ const std::string radio_control::ALL_LOS   = "all";
 const std::string radio_control::ALL_GAINS = "";
 
 const uint16_t radio_control_impl::MAJOR_COMPAT = 0;
-const uint16_t radio_control_impl::MINOR_COMPAT = 1;
+const uint16_t radio_control_impl::MINOR_COMPAT = 0;
 
 const uint32_t radio_control_impl::regmap::REG_COMPAT_NUM;
 const uint32_t radio_control_impl::regmap::REG_RADIO_WIDTH;
@@ -292,24 +292,6 @@ uhd::meta_range_t radio_control_impl::get_rate_range() const
 size_t radio_control_impl::get_spc() const
 {
     return _spc;
-}
-
-
-/******************************************************************************
- * Time-Related API Calls
- *****************************************************************************/
-uint64_t radio_control_impl::get_ticks_now()
-{
-    // Time registers added in 0.1
-    if (_fpga_compat < 1) {
-        throw uhd::not_implemented_error("Radio does not support time readback");
-    }
-    return regs().peek64(regmap::REG_TIME_LO);
-}
-
-uhd::time_spec_t radio_control_impl::get_time_now()
-{
-    return uhd::time_spec_t::from_ticks(get_ticks_now(), get_rate());
 }
 
 /****************************************************************************
