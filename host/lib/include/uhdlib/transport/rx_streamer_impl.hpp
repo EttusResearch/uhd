@@ -208,6 +208,12 @@ protected:
         _converters[chan]->set_scalar(scale_factor);
     }
 
+    //! set maximum number of sample (per packet)
+    void set_max_num_samps(const size_t value)
+    {
+        _spp = value;
+    }
+
     //! Returns the maximum payload size
     size_t get_mtu() const
     {

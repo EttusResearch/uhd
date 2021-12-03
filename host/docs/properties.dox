@@ -400,6 +400,16 @@ Edge Properties:
   much they have affected the amplitude. The TX and RX streamer objects can then
   apply the inverse of this scaling factor to correct for the scaling before
   returning the signal to the user.
+- `atomic_item_size`: Blocks (e.g. uhd::rfnoc::radio_control) might need a 
+  non-dividable amount of data per clock cycle, e.g. the radio block needs
+  `sample_per_cycle` times the size of the type bytes of data in each cycle.
+  This property allows a block to specify this amount of data per cycle which
+  allows other blocks or the streamer objects to adapt the samples per packet
+  accordingly.
+  Note: Because all blocks in a graph must agree on one value for this property
+  the blocks have to calculate the `atomic_item_size` as the least common
+  multiple of their own `atomic_item_size` and the edge property to accommodate 
+  for other blocks up- or downstream.
 
 User properties:
 - `spp`: Blocks that produce data in chunks of samples can use this to describe

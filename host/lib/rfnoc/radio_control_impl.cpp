@@ -9,6 +9,7 @@
 #include <uhd/rfnoc/multichan_register_iface.hpp>
 #include <uhd/rfnoc/register_iface.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhd/utils/math.hpp>
 #include <uhdlib/rfnoc/radio_control_impl.hpp>
 #include <uhdlib/utils/compat_check.hpp>
 #include <map>
@@ -106,6 +107,8 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
         });
     // Register spp properties and resolvers
     _spp_prop.reserve(get_num_output_ports());
+    _atomic_item_size_in.reserve(get_num_input_ports());
+    _atomic_item_size_out.reserve(get_num_output_ports());
     _samp_rate_in.reserve(get_num_input_ports());
     _samp_rate_out.reserve(get_num_output_ports());
     _type_in.reserve(get_num_input_ports());
@@ -116,6 +119,14 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
             get_max_spp(get_max_payload_size({res_source_info::OUTPUT_EDGE, chan}));
         _spp_prop.push_back(
             property_t<int>(PROP_KEY_SPP, default_spp, {res_source_info::USER, chan}));
+        _atomic_item_size_in.push_back(
+            property_t<size_t>(PROP_KEY_ATOMIC_ITEM_SIZE,
+            get_atomic_item_size(),
+            {res_source_info::INPUT_EDGE, chan}));
+        _atomic_item_size_out.push_back(
+            property_t<size_t>(PROP_KEY_ATOMIC_ITEM_SIZE,
+            get_atomic_item_size(),
+            {res_source_info::OUTPUT_EDGE, chan}));
         _samp_rate_in.push_back(property_t<double>(
             PROP_KEY_SAMP_RATE, get_tick_rate(), {res_source_info::INPUT_EDGE, chan}));
         _samp_rate_out.push_back(property_t<double>(
@@ -132,6 +143,8 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
             _radio_reg_iface.poke32(
                 regmap::REG_RX_MAX_WORDS_PER_PKT, words_per_pkt, chan);
         });
+        register_property(&_atomic_item_size_in.back());
+        register_property(&_atomic_item_size_out.back());
         register_property(&_samp_rate_in.back());
         register_property(&_samp_rate_out.back());
         register_property(&_type_in.back());
@@ -162,6 +175,30 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
                     RFNOC_LOG_WARNING(
                         "spp must be greater than zero! Coercing to " << spp.get());
                 }
+            });
+        add_property_resolver({&_atomic_item_size_in.back(),
+            get_mtu_prop_ref({res_source_info::INPUT_EDGE, chan})},
+            {&_atomic_item_size_in.back()},
+            [this, chan,
+                &ais_in = _atomic_item_size_in.back()]() {
+                ais_in = uhd::math::lcm<size_t>(ais_in, get_atomic_item_size());
+                ais_in = std::min<size_t>(ais_in, get_mtu({res_source_info::INPUT_EDGE, chan}));
+                if (ais_in.get() % get_atomic_item_size() > 0) {
+                    ais_in = ais_in - (ais_in.get() % get_atomic_item_size());
+                }
+                RFNOC_LOG_TRACE("Resolve atomic item size in to " << ais_in);
+            });
+        add_property_resolver({&_atomic_item_size_out.back(),
+            get_mtu_prop_ref({res_source_info::OUTPUT_EDGE, chan})},
+            {&_atomic_item_size_out.back()},
+            [this, chan,
+                &ais_out = _atomic_item_size_out.back()]() {
+                ais_out = uhd::math::lcm<size_t>(ais_out, get_atomic_item_size());
+                ais_out = std::min<size_t>(ais_out, get_mtu({res_source_info::OUTPUT_EDGE, chan}));
+                if (ais_out.get() % get_atomic_item_size() > 0) {
+                    ais_out = ais_out - (ais_out.get() % get_atomic_item_size());
+                }
+                RFNOC_LOG_TRACE("Resolve atomic item size out to " << ais_out);
             });
         // Note: The following resolver calls coerce_rate(), which is virtual.
         // At run time, it will use the implementation by the child class.

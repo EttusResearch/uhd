@@ -316,6 +316,112 @@ BOOST_FIXTURE_TEST_CASE(x400_radio_test_graph, x400_radio_fixture)
     UHD_LOG_INFO("TEST", "Commit complete.");
 }
 
+/******************************************************************************
+ * RFNoC atomic item size property test
+ *
+ * This test case ensures that the radio block propagates atomic item size correct
+ *****************************************************************************/
+BOOST_FIXTURE_TEST_CASE(x400_radio_test_prop_prop, x400_radio_fixture)
+{
+    detail::graph_t graph{};
+    detail::graph_t::graph_edge_t edge_port_info0;
+    edge_port_info0.src_port                    = 0;
+    edge_port_info0.dst_port                    = 0;
+    edge_port_info0.property_propagation_active = true;
+    edge_port_info0.edge                        = detail::graph_t::graph_edge_t::DYNAMIC;
+    detail::graph_t::graph_edge_t edge_port_info1;
+    edge_port_info1.src_port                    = 1;
+    edge_port_info1.dst_port                    = 1;
+    edge_port_info1.property_propagation_active = true;
+    edge_port_info1.edge                        = detail::graph_t::graph_edge_t::DYNAMIC;
+
+    mock_terminator_t mock_sink_term(2, {}, "MOCK_SINK");
+    mock_terminator_t mock_source_term(2, {}, "MOCK_SOURCE");
+
+    UHD_LOG_INFO("TEST", "Priming mock block properties");
+    mock_source_term.set_edge_property<size_t>(
+        "atomic_item_size", 1, {res_source_info::OUTPUT_EDGE, 0});
+    mock_source_term.set_edge_property<size_t>(
+        "atomic_item_size", 1, {res_source_info::OUTPUT_EDGE, 1});
+    mock_source_term.set_edge_property<size_t>(
+        "mtu", 99, {res_source_info::OUTPUT_EDGE, 0});
+    mock_sink_term.set_edge_property<size_t>(
+        "atomic_item_size", 999, {res_source_info::INPUT_EDGE, 0});
+    mock_sink_term.set_edge_property<size_t>(
+        "atomic_item_size", 999, {res_source_info::INPUT_EDGE, 1});
+
+    UHD_LOG_INFO("TEST", "Creating graph...");
+    graph.connect(&mock_source_term, test_radio.get(), edge_port_info0);
+    graph.connect(&mock_source_term, test_radio.get(), edge_port_info1);
+    graph.connect(test_radio.get(), &mock_sink_term, edge_port_info0);
+    graph.connect(test_radio.get(), &mock_sink_term, edge_port_info1);
+    UHD_LOG_INFO("TEST", "Committing graph...");
+    graph.commit();
+
+    UHD_LOG_INFO("TEST", "Testing atomic item size propagation...");
+
+    // radio has a sample width of 32 bits (sc16) and spc of 1 by default
+    // this results in a atomic item size of 4 for the radio
+    // because property gets propagated immediately after setting in
+    // the committed graph we can check the result of the propagation
+    // at the mock edges
+
+    mock_source_term.set_edge_property<size_t>(
+        "atomic_item_size", 1, {res_source_info::OUTPUT_EDGE, 0});
+    BOOST_CHECK_EQUAL(mock_source_term.get_edge_property<size_t>(
+        "atomic_item_size", {res_source_info::OUTPUT_EDGE, 0}), 4);
+
+    mock_source_term.set_edge_property<size_t>(
+        "atomic_item_size", 4, {res_source_info::OUTPUT_EDGE, 1});
+    BOOST_CHECK_EQUAL(mock_source_term.get_edge_property<size_t>
+        ("atomic_item_size", {res_source_info::OUTPUT_EDGE, 1}), 4);
+
+    mock_source_term.set_edge_property<size_t>(
+        "atomic_item_size", 9, {res_source_info::OUTPUT_EDGE, 0});
+    BOOST_CHECK_EQUAL(mock_source_term.get_edge_property<size_t>(
+        "atomic_item_size", {res_source_info::OUTPUT_EDGE, 0}), 36);
+
+    mock_source_term.set_edge_property<size_t>(
+        "atomic_item_size", 10, {res_source_info::OUTPUT_EDGE, 1});
+    BOOST_CHECK_EQUAL(mock_source_term.get_edge_property<size_t>(
+        "atomic_item_size", {res_source_info::OUTPUT_EDGE, 1}), 20);
+
+    mock_source_term.set_edge_property<size_t>(
+        "mtu", 99, {res_source_info::OUTPUT_EDGE, 0});
+    mock_source_term.set_edge_property<size_t>(
+        "atomic_item_size", 25, {res_source_info::OUTPUT_EDGE, 0});
+    BOOST_CHECK_EQUAL(mock_source_term.get_edge_property<size_t>(
+        "atomic_item_size", {res_source_info::OUTPUT_EDGE, 0}), 96);
+
+    //repeat for sink
+    mock_sink_term.set_edge_property<size_t>(
+        "atomic_item_size", 1, {res_source_info::INPUT_EDGE, 0});
+    BOOST_CHECK_EQUAL(mock_sink_term.get_edge_property<size_t>(
+        "atomic_item_size", {res_source_info::INPUT_EDGE, 0}), 4);
+
+    mock_sink_term.set_edge_property<size_t>(
+        "atomic_item_size", 4, {res_source_info::INPUT_EDGE, 1});
+    BOOST_CHECK_EQUAL(mock_sink_term.get_edge_property<size_t>
+        ("atomic_item_size", {res_source_info::INPUT_EDGE, 1}), 4);
+
+    mock_sink_term.set_edge_property<size_t>(
+        "atomic_item_size", 7, {res_source_info::INPUT_EDGE, 0});
+    BOOST_CHECK_EQUAL(mock_sink_term.get_edge_property<size_t>(
+        "atomic_item_size", {res_source_info::INPUT_EDGE, 0}), 28);
+
+    mock_sink_term.set_edge_property<size_t>(
+        "atomic_item_size", 22, {res_source_info::INPUT_EDGE, 1});
+    BOOST_CHECK_EQUAL(mock_sink_term.get_edge_property<size_t>(
+        "atomic_item_size", {res_source_info::INPUT_EDGE, 1}), 44);
+
+    mock_sink_term.set_edge_property<size_t>(
+        "mtu", 179, {res_source_info::INPUT_EDGE, 0});
+    mock_sink_term.set_edge_property<size_t>(
+        "atomic_item_size", 47, {res_source_info::INPUT_EDGE, 0});
+    BOOST_CHECK_EQUAL(mock_sink_term.get_edge_property<size_t>(
+        "atomic_item_size", {res_source_info::INPUT_EDGE, 0}), 176);
+}
+
 BOOST_FIXTURE_TEST_CASE(zbx_api_freq_tx_test, x400_radio_fixture)
 {
     const std::string log = "ZBX_API_TX_FREQUENCY_TEST";

@@ -323,6 +323,13 @@ protected:
         return _rate;
     }
 
+    /*
+     * Returns the number of bytes to be processed in each clock cycle.
+     */
+    size_t get_atomic_item_size() const
+    {
+        return (_samp_width / 8) * _spc;
+    }
     //! Properties for samp_rate (one per port)
     std::vector<property_t<double>> _samp_rate_in;
     //! Properties for samp_rate (one per port)
@@ -380,6 +387,8 @@ private:
     const uint32_t _spc;
 
     std::vector<property_t<int>> _spp_prop;
+    std::vector<property_t<size_t>> _atomic_item_size_in;
+    std::vector<property_t<size_t>> _atomic_item_size_out;
     //! Properties for type_in (one per port)
     std::vector<property_t<io_type_t>> _type_in;
     //! Properties for type_out (one per port)
