@@ -1,11 +1,11 @@
 //
-// Copyright 2020 Ettus Research, a National Instruments Brand
+// Copyright 2021 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
 // Module: noc_shell_replay
 //
-// Description: 
+// Description:
 //
 //   This is a tool-generated NoC-shell for the replay block.
 //   See the RFNoC specification for more information about NoC shells.
@@ -97,7 +97,7 @@ module noc_shell_replay #(
   output wire [NUM_PORTS*16-1:0]     m_in_axis_tlength,
   output wire [NUM_PORTS-1:0]        m_in_axis_teov,
   output wire [NUM_PORTS-1:0]        m_in_axis_teob,
-  // Data Stream to User Logic: out
+  // Data Stream from User Logic: out
   input  wire [NUM_PORTS*32*MEM_DATA_W/32-1:0]   s_out_axis_tdata,
   input  wire [NUM_PORTS*MEM_DATA_W/32-1:0]      s_out_axis_tkeep,
   input  wire [NUM_PORTS-1:0]        s_out_axis_tlast,
@@ -221,7 +221,7 @@ module noc_shell_replay #(
 
   assign axis_data_clk = mem_clk;
   assign axis_data_rst = mem_rst;
-  
+
   //---------------------
   // Input Data Paths
   //---------------------

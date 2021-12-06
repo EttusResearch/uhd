@@ -53,7 +53,7 @@
   num_ports = 1 if 'num_ports' not in port_info else port_info['num_ports']
 %>\
 %if num_ports != 1:
-  // Data Stream to User Logic: ${port_name}
+  // Data Stream from User Logic: ${port_name}
   ${in_wire}wire [${num_ports}*${port_info['item_width']}*${port_info['nipc']}-1:0]   ${sl_pre}${port_name}_axis_tdata${term}
   ${in_wire}wire [${num_ports}*${port_info['nipc']}-1:0]      ${sl_pre}${port_name}_axis_tkeep${term}
   ${in_wire}wire [${num_ports}-1:0]        ${sl_pre}${port_name}_axis_tlast${term}

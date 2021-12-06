@@ -1,5 +1,5 @@
 //
-// Copyright 2020 Ettus Research, a National Instruments Brand
+// Copyright 2021 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -23,8 +23,8 @@
 module noc_shell_keep_one_in_n #(
   parameter [9:0] THIS_PORTID     = 10'd0,
   parameter       CHDR_W          = 64,
-  parameter       NUM_PORTS       = 1,
-  parameter [5:0] MTU             = 10
+  parameter [5:0] MTU             = 10,
+  parameter       NUM_PORTS       = 1
 ) (
   //---------------------
   // Framework Interface
@@ -95,7 +95,7 @@ module noc_shell_keep_one_in_n #(
   output wire [NUM_PORTS*16-1:0]     m_in_axis_tlength,
   output wire [NUM_PORTS-1:0]        m_in_axis_teov,
   output wire [NUM_PORTS-1:0]        m_in_axis_teob,
-  // Data Stream to User Logic: out
+  // Data Stream from User Logic: out
   input  wire [NUM_PORTS*32*1-1:0]   s_out_axis_tdata,
   input  wire [NUM_PORTS*1-1:0]      s_out_axis_tkeep,
   input  wire [NUM_PORTS-1:0]        s_out_axis_tlast,

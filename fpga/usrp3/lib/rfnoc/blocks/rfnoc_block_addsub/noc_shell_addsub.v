@@ -1,5 +1,5 @@
 //
-// Copyright 2020 Ettus Research, a National Instruments Brand
+// Copyright 2021 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -25,7 +25,6 @@ module noc_shell_addsub #(
   parameter       CHDR_W          = 64,
   parameter [5:0] MTU             = 10,
   parameter       USE_IMPL        = "Verilog"
-
 ) (
   //---------------------
   // Framework Interface

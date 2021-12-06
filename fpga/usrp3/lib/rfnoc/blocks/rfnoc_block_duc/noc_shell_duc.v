@@ -1,11 +1,11 @@
 //
-// Copyright 2019 Ettus Research, A National Instruments Brand
+// Copyright 2021 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
 // Module: noc_shell_duc
 //
-// Description: 
+// Description:
 //
 //   This is a tool-generated NoC-shell for the duc block.
 //   See the RFNoC specification for more information about NoC shells.
@@ -99,7 +99,7 @@ module noc_shell_duc #(
   output wire [NUM_PORTS*16-1:0]     m_in_axis_tlength,
   output wire [NUM_PORTS-1:0]        m_in_axis_teov,
   output wire [NUM_PORTS-1:0]        m_in_axis_teob,
-  // Data Stream to User Logic: out
+  // Data Stream from User Logic: out
   input  wire [NUM_PORTS*32*1-1:0]   s_out_axis_tdata,
   input  wire [NUM_PORTS*1-1:0]      s_out_axis_tkeep,
   input  wire [NUM_PORTS-1:0]        s_out_axis_tlast,
@@ -222,7 +222,7 @@ module noc_shell_duc #(
 
   assign axis_data_clk = ce_clk;
   assign axis_data_rst = ce_rst;
-  
+
   //---------------------
   // Input Data Paths
   //---------------------
@@ -251,7 +251,7 @@ module noc_shell_duc #(
       .m_axis_tready      (m_in_axis_tready[i]),
       .m_axis_ttimestamp  (m_in_axis_ttimestamp[64*i+:64]),
       .m_axis_thas_time   (m_in_axis_thas_time[i]),
-      .m_axis_tlength     (m_in_axis_tlength[i*16+:16]),
+      .m_axis_tlength     (m_in_axis_tlength[16*i+:16]),
       .m_axis_teov        (m_in_axis_teov[i]),
       .m_axis_teob        (m_in_axis_teob[i]),
       .flush_en           (data_i_flush_en),
@@ -267,13 +267,14 @@ module noc_shell_duc #(
 
   for (i = 0; i < NUM_PORTS; i = i + 1) begin: gen_output_out
     axis_data_to_chdr #(
-      .CHDR_W         (CHDR_W),
-      .ITEM_W         (32),
-      .NIPC           (1),
-      .SYNC_CLKS      (0),
-      .INFO_FIFO_SIZE ($clog2(32)),
-      .PYLD_FIFO_SIZE ($clog2(MTU)),
-      .MTU            (MTU)
+      .CHDR_W          (CHDR_W),
+      .ITEM_W          (32),
+      .NIPC            (1),
+      .SYNC_CLKS       (0),
+      .INFO_FIFO_SIZE  ($clog2(32)),
+      .PYLD_FIFO_SIZE  ($clog2(MTU)),
+      .MTU             (MTU),
+      .SIDEBAND_AT_END (1)
     ) axis_data_to_chdr_out_out (
       .axis_chdr_clk      (rfnoc_chdr_clk),
       .axis_chdr_rst      (rfnoc_chdr_rst),
@@ -290,6 +291,7 @@ module noc_shell_duc #(
       .s_axis_tready      (s_out_axis_tready[i]),
       .s_axis_ttimestamp  (s_out_axis_ttimestamp[64*i+:64]),
       .s_axis_thas_time   (s_out_axis_thas_time[i]),
+      .s_axis_tlength     (16'd0),
       .s_axis_teov        (s_out_axis_teov[i]),
       .s_axis_teob        (s_out_axis_teob[i]),
       .flush_en           (data_o_flush_en),

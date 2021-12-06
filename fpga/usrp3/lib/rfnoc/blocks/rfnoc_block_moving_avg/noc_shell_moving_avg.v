@@ -1,5 +1,5 @@
 //
-// Copyright 2020 Ettus Research, a National Instruments Brand
+// Copyright 2021 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -96,13 +96,13 @@ module noc_shell_moving_avg #(
   output wire [NUM_PORTS-1:0]        m_in_context_tlast,
   output wire [NUM_PORTS-1:0]        m_in_context_tvalid,
   input  wire [NUM_PORTS-1:0]        m_in_context_tready,
-  // Payload Stream to User Logic: out
+  // Payload Stream from User Logic: out
   input  wire [NUM_PORTS*32*1-1:0]   s_out_payload_tdata,
   input  wire [NUM_PORTS*1-1:0]      s_out_payload_tkeep,
   input  wire [NUM_PORTS-1:0]        s_out_payload_tlast,
   input  wire [NUM_PORTS-1:0]        s_out_payload_tvalid,
   output wire [NUM_PORTS-1:0]        s_out_payload_tready,
-  // Context Stream to User Logic: out
+  // Context Stream from User Logic: out
   input  wire [NUM_PORTS*CHDR_W-1:0] s_out_context_tdata,
   input  wire [NUM_PORTS*4-1:0]      s_out_context_tuser,
   input  wire [NUM_PORTS-1:0]        s_out_context_tlast,

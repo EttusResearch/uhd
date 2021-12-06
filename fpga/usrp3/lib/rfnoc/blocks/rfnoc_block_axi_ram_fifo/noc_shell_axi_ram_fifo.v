@@ -1,11 +1,11 @@
 //
-// Copyright 2019 Ettus Research, A National Instruments Brand
+// Copyright 2021 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
 // Module: noc_shell_axi_ram_fifo
 //
-// Description: 
+// Description:
 //
 //   This is a tool-generated NoC-shell for the axi_ram_fifo block.
 //   See the RFNoC specification for more information about NoC shells.
@@ -212,7 +212,7 @@ module noc_shell_axi_ram_fifo #(
 
   assign axis_chdr_clk = rfnoc_chdr_clk;
   assign axis_chdr_rst = rfnoc_chdr_rst;
-  
+
   //---------------------
   // Input Data Paths
   //---------------------

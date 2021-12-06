@@ -1,5 +1,5 @@
 //
-// Copyright 2020 Ettus Research, a National Instruments Brand
+// Copyright 2021 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -84,7 +84,7 @@ module noc_shell_siggen #(
   // AXI-Stream Data Clock and Reset
   output wire               axis_data_clk,
   output wire               axis_data_rst,
-  // Data Stream to User Logic: out
+  // Data Stream from User Logic: out
   input  wire [NUM_PORTS*32*1-1:0]   s_out_axis_tdata,
   input  wire [NUM_PORTS*1-1:0]      s_out_axis_tkeep,
   input  wire [NUM_PORTS-1:0]        s_out_axis_tlast,
