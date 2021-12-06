@@ -562,7 +562,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         self._status_monitor_thread.start()
         # Init complete.
         self.log.debug("Device info: {}".format(self.device_info))
-        
+
     def _init_dio_control(self, _):
         """
         Turn on gpio peripherals. This may throw an error on failure, so make
@@ -1029,19 +1029,22 @@ class x4xx(ZynqComponents, PeriphManagerBase):
     ###########################################################################
     # GPIO API
     ###########################################################################
-    
     def get_gpio_banks(self):
         """
         Returns a list of GPIO banks over which MPM has any control
         """
+        if self.dio_control is None:
+            return []
         return self.dio_control.get_gpio_banks()
-    
+
     def get_gpio_srcs(self, bank: str):
         """
         Return a list of valid GPIO sources for a given bank
         """
+        if self.dio_control is None:
+            return []
         return self.dio_control.get_gpio_srcs(bank)
-    
+
     def get_gpio_src(self, bank: str):
         """
         Return the currently selected GPIO source for a given bank. The return
@@ -1049,8 +1052,10 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         the number of controllable GPIO pins on this bank. CUSTOM is for
         miscellaneous pin source, and USER_APP is for LabView pin source.
         """
+        if self.dio_control is None:
+            raise RuntimeError("Unable to query GPIO source: No valid DIO board installed.")
         return self.dio_control.get_gpio_src(bank)
-    
+
     def set_gpio_src(self, bank: str, *src):
         """
         Set the GPIO source for a given bank.
@@ -1059,6 +1064,8 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         > set_gpio_src <bank> <srcs>
         > set_gpio_src GPIO0 PS DB1_RF1 PS PS MPM PS PS PS MPM USER_APP PS
         """
+        if self.dio_control is None:
+            raise RuntimeError("Unable to set GPIO source: No valid DIO board installed.")
         self.dio_control.set_gpio_src(bank, *src)
 
     ###########################################################################
