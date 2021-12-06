@@ -12,7 +12,6 @@ import copy
 from time import sleep
 from os import path
 from collections import namedtuple
-from pyudev import DeviceNotFoundByNameError
 from usrp_mpm import lib # Pulls in everything from C++-land
 from usrp_mpm import tlv_eeprom
 from usrp_mpm.cores import WhiteRabbitRegsControl
