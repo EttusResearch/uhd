@@ -229,7 +229,8 @@ class DioControl:
         self.port_control = {port: self._PortControl(port) for port in self.DIO_PORTS}
         self.mboard_regs = mboard_regs
         self.mboard_cpld = mboard_cpld
-
+        if self.mboard_regs.get_compat_number() < self.FULL_DIO_FPGA_COMPAT:
+            self.log.warning("DIO board does not support the full feature set.")
         # initialize port mapping for HDMI and DIO
         self.port_mappings = {}
         self.mapping = None
