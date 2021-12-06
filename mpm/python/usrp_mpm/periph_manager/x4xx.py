@@ -27,7 +27,7 @@ from usrp_mpm.periph_manager import PeriphManagerBase
 from usrp_mpm.xports import XportMgrUDP
 from usrp_mpm.periph_manager.x4xx_periphs import MboardRegsControl
 from usrp_mpm.periph_manager.x4xx_periphs import CtrlportRegs
-from usrp_mpm.periph_manager.x4xx_periphs import DioControl
+from usrp_mpm.periph_manager.x4xx_dio_control import DioControl
 from usrp_mpm.periph_manager.x4xx_periphs import QSFPModule
 from usrp_mpm.periph_manager.x4xx_periphs import get_temp_sensor
 from usrp_mpm.periph_manager.x4xx_mb_cpld import MboardCPLD
