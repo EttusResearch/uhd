@@ -106,6 +106,7 @@ Change Log for Releases
   -  x4xx: update mboard_max_rev
   -  x4xx: Allow GPIO0 and GPIO1 as port names
   -  x4xx: add DIO GPIO API configuration methods
+  -  mpm: x4xx: Add checks before accessing self.dio_control
   -  Fix handling of rfic_digital_loopback argument
   -  rfdc: Tear down RFDC on teardown
   -  add X410 support for 250e6 master clock rate
