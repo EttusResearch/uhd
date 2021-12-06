@@ -28,34 +28,6 @@ const std::string radio_control::ALL_GAINS = "";
 const uint16_t radio_control_impl::MAJOR_COMPAT = 0;
 const uint16_t radio_control_impl::MINOR_COMPAT = 1;
 
-const uint32_t radio_control_impl::regmap::REG_COMPAT_NUM;
-const uint32_t radio_control_impl::regmap::REG_RADIO_WIDTH;
-const uint32_t radio_control_impl::regmap::RADIO_BASE_ADDR;
-const uint32_t radio_control_impl::regmap::REG_CHAN_OFFSET;
-const uint32_t radio_control_impl::regmap::RADIO_ADDR_W;
-const uint32_t radio_control_impl::regmap::REG_LOOPBACK_EN;
-const uint32_t radio_control_impl::regmap::REG_RX_STATUS;
-const uint32_t radio_control_impl::regmap::REG_RX_CMD;
-const uint32_t radio_control_impl::regmap::REG_RX_CMD_NUM_WORDS_LO;
-const uint32_t radio_control_impl::regmap::REG_RX_CMD_NUM_WORDS_HI;
-const uint32_t radio_control_impl::regmap::REG_RX_CMD_TIME_LO;
-const uint32_t radio_control_impl::regmap::REG_RX_CMD_TIME_HI;
-const uint32_t radio_control_impl::regmap::REG_RX_MAX_WORDS_PER_PKT;
-const uint32_t radio_control_impl::regmap::REG_RX_ERR_PORT;
-const uint32_t radio_control_impl::regmap::REG_RX_ERR_REM_PORT;
-const uint32_t radio_control_impl::regmap::REG_RX_ERR_REM_EPID;
-const uint32_t radio_control_impl::regmap::REG_RX_ERR_ADDR;
-const uint32_t radio_control_impl::regmap::REG_TX_IDLE_VALUE;
-const uint32_t radio_control_impl::regmap::REG_TX_ERROR_POLICY;
-const uint32_t radio_control_impl::regmap::REG_TX_ERR_PORT;
-const uint32_t radio_control_impl::regmap::REG_TX_ERR_REM_PORT;
-const uint32_t radio_control_impl::regmap::REG_TX_ERR_REM_EPID;
-const uint32_t radio_control_impl::regmap::REG_TX_ERR_ADDR;
-const uint32_t radio_control_impl::regmap::RX_CMD_STOP;
-const uint32_t radio_control_impl::regmap::RX_CMD_FINITE;
-const uint32_t radio_control_impl::regmap::RX_CMD_CONTINUOUS;
-const uint32_t radio_control_impl::regmap::RX_CMD_TIMED_POS;
-
 const uhd::fs_path radio_control_impl::DB_PATH("dboard");
 const uhd::fs_path radio_control_impl::FE_PATH("frontends");
 

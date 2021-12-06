@@ -213,90 +213,92 @@ public:
      */
     struct regmap
     {
-        static const uint32_t REG_COMPAT_NUM =
-            0x00; // Compatibility number register offset
-        static const uint32_t REG_TIME_LO =
-            0x04; // Time lower bits
-        static const uint32_t REG_TIME_HI =
-            0x08; // Time upper bits
-        static const uint32_t REG_RADIO_WIDTH =
-            0x1000 + 0x04; // Upper 16 bits is sample width, lower 16 bits is NSPC
+        enum
+        {
+            REG_COMPAT_NUM = 0x00, // Compatibility number register offset
+            REG_TIME_LO    = 0x04, // Time lower bits
+            REG_TIME_HI    = 0x08, // Time upper bits
+            REG_RADIO_WIDTH =
+                0x1000 + 0x04, // Upper 16 bits is sample width, lower 16 bits is NSPC
 
-        static const uint32_t RADIO_BASE_ADDR = 0x1000;
-        static const uint32_t REG_CHAN_OFFSET = 128;
-        static const uint32_t RADIO_ADDR_W    = 7; // Address space size per radio
+            RADIO_BASE_ADDR = 0x1000,
+            REG_CHAN_OFFSET = 128,
+            RADIO_ADDR_W    = 7, // Address space size per radio
 
-        // General Radio Registers
-        static const uint32_t REG_LOOPBACK_EN =
-            0x00; // Loopback enable (connect Tx output to Rx input)
+            // General Radio Registers
+            REG_LOOPBACK_EN = 0x00, // Loopback enable (connect Tx output to Rx input)
 
-        // Note on the RX and TX Control Registers: These are per-channel,
-        // which means the values here are offsets. The base address per
-        // channel is RADIO_BASE_ADDR + i * REG_CHAN_OFFSET, where i is the
-        // channel index.
+            // Note on the RX and TX Control Registers: These are per-channel,
+            // which means the values here are offsets. The base address per
+            // channel is RADIO_BASE_ADDR + i * REG_CHAN_OFFSET, where i is the
+            // channel index.
 
-        // RX Control Registers
-        static const uint32_t REG_RX_STATUS = 0x10; // Status of Rx radio
-        static const uint32_t REG_RX_CMD    = 0x14; // The next radio command to execute
-        static const uint32_t REG_RX_CMD_NUM_WORDS_LO =
-            0x18; // Number of radio words for the next command (low word)
-        static const uint32_t REG_RX_CMD_NUM_WORDS_HI =
-            0x1C; // Number of radio words for the next command (high word)
-        static const uint32_t REG_RX_CMD_TIME_LO =
-            0x20; // Time for the next command (low word)
-        static const uint32_t REG_RX_CMD_TIME_HI =
-            0x24; // Time for the next command (high word)
-        static const uint32_t REG_RX_MAX_WORDS_PER_PKT =
-            0x28; // Maximum packet length to build from Rx data
-        static const uint32_t REG_RX_ERR_PORT = 0x2C; // Port ID for error reporting
-        static const uint32_t REG_RX_ERR_REM_PORT =
-            0x30; // Remote port ID for error reporting
-        static const uint32_t REG_RX_ERR_REM_EPID =
-            0x34; // Remote EPID (endpoint ID) for error reporting
-        static const uint32_t REG_RX_ERR_ADDR =
-            0x38; // Offset to which to write error code (ADDR+0) and time (ADDR+8)
-        static const uint32_t REG_RX_DATA = 0x3C;
-        static const uint32_t REG_RX_HAS_TIME =
-            0x70; // Set to one if radio output packets should have timestamps
+            // RX Control Registers
+            REG_RX_STATUS = 0x10, // Status of Rx radio
+            REG_RX_CMD    = 0x14, // The next radio command to execute
+            REG_RX_CMD_NUM_WORDS_LO =
+                0x18, // Number of radio words for the next command (low word)
+            REG_RX_CMD_NUM_WORDS_HI =
+                0x1C, // Number of radio words for the next command (high word)
+            REG_RX_CMD_TIME_LO =
+                0x20, // Time for the next command (low word)
+            REG_RX_CMD_TIME_HI =
+                0x24, // Time for the next command (high word)
+            REG_RX_MAX_WORDS_PER_PKT =
+                0x28, // Maximum packet length to build from Rx data
+            REG_RX_ERR_PORT = 0x2C, // Port ID for error reporting
+            REG_RX_ERR_REM_PORT =
+                0x30, // Remote port ID for error reporting
+            REG_RX_ERR_REM_EPID =
+                0x34, // Remote EPID (endpoint ID) for error reporting
+            REG_RX_ERR_ADDR =
+                0x38, // Offset to which to write error code (ADDR+0) and time (ADDR+8)
+            REG_RX_DATA = 0x3C,
+            REG_RX_HAS_TIME =
+                0x70, // Set to one if radio output packets should have timestamps
 
-        // TX Control Registers
-        static const uint32_t REG_TX_IDLE_VALUE =
-            0x40; // Value to output when transmitter is idle
-        static const uint32_t REG_TX_ERROR_POLICY = 0x44; // Tx error policy
-        static const uint32_t REG_TX_ERR_PORT     = 0x48; // Port ID for error reporting
-        static const uint32_t REG_TX_ERR_REM_PORT =
-            0x4C; // Remote port ID for error reporting
-        static const uint32_t REG_TX_ERR_REM_EPID =
-            0x50; // Remote EPID (endpoint ID) for error reporting
-        static const uint32_t REG_TX_ERR_ADDR =
-            0x54; // Offset to which to write error code (ADDR+0) and time (ADDR+8)
+            // TX Control Registers
+            REG_TX_IDLE_VALUE =
+                0x40, // Value to output when transmitter is idle
+            REG_TX_ERROR_POLICY = 0x44, // Tx error policy
+            REG_TX_ERR_PORT     = 0x48, // Port ID for error reporting
+            REG_TX_ERR_REM_PORT =
+                0x4C, // Remote port ID for error reporting
+            REG_TX_ERR_REM_EPID =
+                0x50, // Remote EPID (endpoint ID) for error reporting
+            REG_TX_ERR_ADDR =
+                0x54, // Offset to which to write error code (ADDR+0) and time (ADDR+8)
 
-        static const uint32_t RX_CMD_STOP   = 0; // Stop acquiring at end of next packet
-        static const uint32_t RX_CMD_FINITE = 1; // Acquire NUM_SAMPS then stop
-        static const uint32_t RX_CMD_CONTINUOUS = 2; // Acquire until stopped
+            RX_CMD_STOP   = 0, // Stop acquiring at end of next packet
+            RX_CMD_FINITE = 1, // Acquire NUM_SAMPS then stop
+            RX_CMD_CONTINUOUS = 2, // Acquire until stopped
 
-        static const uint32_t RX_CMD_TIMED_POS = 31;
+            RX_CMD_TIMED_POS = 31,
 
-        static const uint32_t PERIPH_BASE       = 0x80000;
-        static const uint32_t PERIPH_REG_OFFSET = 8;
+            PERIPH_BASE       = 0x80000,
+            PERIPH_REG_OFFSET = 8,
 
-        static const uint32_t SWREG_TX_ERR      = 0x0000;
-        static const uint32_t SWREG_RX_ERR      = 0x1000;
-        static const uint32_t SWREG_CHAN_OFFSET = 64;
+            SWREG_TX_ERR      = 0x0000,
+            SWREG_RX_ERR      = 0x1000,
+            SWREG_CHAN_OFFSET = 64
+        };
     };
 
     struct err_codes
     {
-        //! Late command (stream command arrived after indicated time)
-        static const uint32_t ERR_RX_LATE_CMD = 1;
-        //! FIFO overflow
-        static const uint32_t ERR_RX_OVERRUN = 2;
-        // FIFO underrun (data not available when needed)
-        static const uint32_t ERR_TX_UNDERRUN = 1;
-        //! Late data (arrived after indicated time)
-        static const uint32_t ERR_TX_LATE_DATA = 2;
-        //! Acknowledge a TX burst with an EOB
-        static const uint32_t EVENT_TX_BURST_ACK = 3;
+        enum
+        {
+            //! Late command (stream command arrived after indicated time)
+            ERR_RX_LATE_CMD = 1,
+            //! FIFO overflow
+            ERR_RX_OVERRUN = 2,
+            // FIFO underrun (data not available when needed)
+            ERR_TX_UNDERRUN = 1,
+            //! Late data (arrived after indicated time)
+            ERR_TX_LATE_DATA = 2,
+            //! Acknowledge a TX burst with an EOB
+            EVENT_TX_BURST_ACK = 3
+        };
     };
 
     //! Tree path to the dboard-specific properties
