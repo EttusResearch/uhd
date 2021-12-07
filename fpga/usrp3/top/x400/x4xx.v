@@ -186,48 +186,53 @@ module x4xx (
   inout  wire        TRIG_IO,
   output wire        PL_CPLD_JTAGEN,
   output wire        PL_CPLD_CS0_n,    // Dual-purpose CPLD JTAG TMS
-  output wire        PL_CPLD_CS1_n
+  output wire        PL_CPLD_CS1_n,
+
+
+  //-----------------------------------
+  // DRAM
+  //-----------------------------------
+
+  // DRAM Bank 0
+  input  wire        DRAM0_REFCLK_P,
+  input  wire        DRAM0_REFCLK_N,
+  output wire        DRAM0_ACT_n,
+  output wire [16:0] DRAM0_ADDR,
+  output wire [ 1:0] DRAM0_BA,
+  output wire [ 0:0] DRAM0_BG,
+  output wire [ 0:0] DRAM0_CKE,
+  output wire [ 0:0] DRAM0_ODT,
+  output wire [ 0:0] DRAM0_CS_n,
+  output wire [ 0:0] DRAM0_CLK_P,
+  output wire [ 0:0] DRAM0_CLK_N,
+  output wire        DRAM0_RESET_n,
+  inout  wire [ 7:0] DRAM0_DM_n,
+  inout  wire [63:0] DRAM0_DQ,
+  inout  wire [ 7:0] DRAM0_DQS_p,
+  inout  wire [ 7:0] DRAM0_DQS_n,
+
+  // DRAM Bank 1
+  input  wire        DRAM1_REFCLK_P,
+  input  wire        DRAM1_REFCLK_N,
+  output wire        DRAM1_ACT_n,
+  output wire [16:0] DRAM1_ADDR,
+  output wire [ 1:0] DRAM1_BA,
+  output wire [ 0:0] DRAM1_BG,
+  output wire [ 0:0] DRAM1_CKE,
+  output wire [ 0:0] DRAM1_ODT,
+  output wire [ 0:0] DRAM1_CS_n,
+  output wire [ 0:0] DRAM1_CLK_P,
+  output wire [ 0:0] DRAM1_CLK_N,
+  output wire        DRAM1_RESET_n,
+  inout  wire [ 7:0] DRAM1_DM_n,
+  inout  wire [63:0] DRAM1_DQ,
+  inout  wire [ 7:0] DRAM1_DQS_p,
+  inout  wire [ 7:0] DRAM1_DQS_n
 
 
   //-----------------------------------
   // Unused pins
   //-----------------------------------
-
-  // DRAM Controller 0
-  // input  wire        DRAM0_REFCLK_P,
-  // input  wire        DRAM0_REFCLK_N,
-  // output wire        DRAM0_ACT_n,
-  // output wire [16:0] DRAM0_ADDR,
-  // output wire [ 1:0] DRAM0_BA,
-  // output wire [ 0:0] DRAM0_BG,
-  // output wire [ 0:0] DRAM0_CKE,
-  // output wire [ 0:0] DRAM0_ODT,
-  // output wire [ 0:0] DRAM0_CS_n,
-  // output wire [ 0:0] DRAM0_CLK_P,
-  // output wire [ 0:0] DRAM0_CLK_N,
-  // output wire        DRAM0_RESET_n,
-  // inout  wire [ 7:0] DRAM0_DM_n,
-  // inout  wire [63:0] DRAM0_DQ,
-  // inout  wire [ 7:0] DRAM0_DQS_p,
-  // inout  wire [ 7:0] DRAM0_DQS_n,
-
-  // DRAM Controller 1
-  // input  wire        DRAM1_REFCLK_P,
-  // input  wire        DRAM1_REFCLK_N,
-  // output wire        DRAM1_ACT_n,
-  // output wire [16:0] DRAM1_ADDR,
-  // output wire [ 1:0] DRAM1_BA,
-  // output wire [ 0:0] DRAM1_BG,
-  // output wire [ 0:0] DRAM1_CKE,
-  // output wire [ 0:0] DRAM1_ODT,
-  // output wire [ 0:0] DRAM1_CS_n,
-  // output wire [ 0:0] DRAM1_CLK_P,
-  // output wire [ 0:0] DRAM1_CLK_N,
-  // output wire        DRAM1_RESET_n,
-  // inout  wire [ 7:0] DRAM1_DM_n,
-  // inout  wire [63:0] DRAM1_DQ,
-  // inout  wire [ 7:0] DRAM1_DQS_p,
-  // inout  wire [ 7:0] DRAM1_DQS_n,
 
   // input  wire [1:0] IPASS_SIDEBAND,
   // input  wire       PCIE_RESET,
@@ -2053,7 +2058,8 @@ module x4xx (
     .CHDR_W         (CHDR_W),
     .MTU            (CHDR_MTU),
     .RFNOC_PROTOVER (RFNOC_PROTOVER),
-    .RADIO_SPC      (RADIO_SPC)
+    .RADIO_SPC      (RADIO_SPC),
+    .RF_BANDWIDTH   (RF_BANDWIDTH)
   ) x4xx_core_i (
     .radio_clk                     (radio_clk),
     .radio_rst                     (radio_rst),
@@ -2062,6 +2068,38 @@ module x4xx (
     .rfnoc_chdr_rst                (clk200_rst),
     .rfnoc_ctrl_clk                (clk40),
     .rfnoc_ctrl_rst                (clk40_rst),
+    .dram0_sys_clk_p               (DRAM0_REFCLK_P),
+    .dram0_sys_clk_n               (DRAM0_REFCLK_N),
+    .dram0_ck_t                    (DRAM0_CLK_P),
+    .dram0_ck_c                    (DRAM0_CLK_N),
+    .dram0_cs_n                    (DRAM0_CS_n),
+    .dram0_act_n                   (DRAM0_ACT_n),
+    .dram0_adr                     (DRAM0_ADDR),
+    .dram0_ba                      (DRAM0_BA),
+    .dram0_bg                      (DRAM0_BG),
+    .dram0_cke                     (DRAM0_CKE),
+    .dram0_odt                     (DRAM0_ODT),
+    .dram0_reset_n                 (DRAM0_RESET_n),
+    .dram0_dm_dbi_n                (DRAM0_DM_n),
+    .dram0_dq                      (DRAM0_DQ),
+    .dram0_dqs_t                   (DRAM0_DQS_p),
+    .dram0_dqs_c                   (DRAM0_DQS_n),
+    .dram1_sys_clk_p               (DRAM1_REFCLK_P),
+    .dram1_sys_clk_n               (DRAM1_REFCLK_N),
+    .dram1_ck_t                    (DRAM1_CLK_P),
+    .dram1_ck_c                    (DRAM1_CLK_N),
+    .dram1_cs_n                    (DRAM1_CS_n),
+    .dram1_act_n                   (DRAM1_ACT_n),
+    .dram1_adr                     (DRAM1_ADDR),
+    .dram1_ba                      (DRAM1_BA),
+    .dram1_bg                      (DRAM1_BG),
+    .dram1_cke                     (DRAM1_CKE),
+    .dram1_odt                     (DRAM1_ODT),
+    .dram1_reset_n                 (DRAM1_RESET_n),
+    .dram1_dm_dbi_n                (DRAM1_DM_n),
+    .dram1_dq                      (DRAM1_DQ),
+    .dram1_dqs_t                   (DRAM1_DQS_p),
+    .dram1_dqs_c                   (DRAM1_DQS_n),
     .s_axi_aclk                    (clk40),
     .s_axi_aresetn                 (clk40_rstn),
     .s_axi_awaddr                  (axi_core_awaddr[REG_AWIDTH-1:0]),

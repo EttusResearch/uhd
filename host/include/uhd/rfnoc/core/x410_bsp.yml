@@ -26,6 +26,7 @@ transports:
 clocks:
 - name: radio
 - name: radio_2x
+- name: dram
 
 io_ports:
   ctrlport_radio0:
@@ -55,3 +56,6 @@ io_ports:
     rename:
       pattern: (.*)
       repl: \1_radio1
+  dram:
+    type: axi4_mm
+    drive: slave
