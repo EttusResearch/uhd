@@ -734,6 +734,16 @@ BOOST_FIXTURE_TEST_CASE(zbx_ant_test, x400_radio_fixture)
             BOOST_CHECK_EQUAL(iter, ret_ant);
         }
     }
+    for (size_t chan = 0; chan < 2; chan++) {
+        for (auto iter : RX_ANTENNAS) {
+            UHD_LOG_INFO(log, "Testing Antenna: " << iter);
+
+            test_radio->set_rx_antenna(iter, chan);
+
+            std::string ret_ant = test_radio->get_rx_antenna(chan);
+            BOOST_CHECK_EQUAL(iter, ret_ant);
+        }
+    }
     log = "ZBX TX ANTENNA TEST";
     for (auto fe_path :
         {fs_path("dboard/tx_frontends/0"), fs_path("dboard/tx_frontends/1")}) {
@@ -745,6 +755,16 @@ BOOST_FIXTURE_TEST_CASE(zbx_ant_test, x400_radio_fixture)
 
             std::string ret_ant =
                 tree->access<std::string>(fe_path / "antenna/value").get();
+            BOOST_CHECK_EQUAL(iter, ret_ant);
+        }
+    }
+    for (size_t chan = 0; chan < 2; chan++) {
+        for (auto iter : TX_ANTENNAS) {
+            UHD_LOG_INFO(log, "Testing Antenna: " << iter);
+
+            test_radio->set_tx_antenna(iter, chan);
+
+            std::string ret_ant = test_radio->get_tx_antenna(chan);
             BOOST_CHECK_EQUAL(iter, ret_ant);
         }
     }
