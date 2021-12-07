@@ -9,5 +9,6 @@
 ########################################################################
 
 LIBUHD_APPEND_SOURCES(
+    ${CMAKE_CURRENT_SOURCE_DIR}/antenna.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/gain_profile.cpp
 )

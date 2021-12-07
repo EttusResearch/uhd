@@ -48,6 +48,17 @@ zbx_dboard_impl::zbx_dboard_impl(register_iface& reg_iface,
     RFNOC_LOG_TRACE("Entering zbx_dboard_impl ctor...");
     RFNOC_LOG_TRACE("Radio slot: " << _radio_slot);
 
+    _rx_antenna = std::make_shared<uhd::rfnoc::rf_control::enumerated_antenna>(tree,
+        [this](size_t chan) {
+            return this->_get_frontend_path(RX_DIRECTION, chan) / "antenna" / "value";
+        },
+        RX_ANTENNAS, RX_ANTENNA_NAME_COMPAT_MAP);
+    _tx_antenna = std::make_shared<uhd::rfnoc::rf_control::enumerated_antenna>(tree,
+        [this](size_t chan) {
+            return this->_get_frontend_path(TX_DIRECTION, chan) / "antenna" / "value";
+        },
+        TX_ANTENNAS, TX_ANTENNA_NAME_COMPAT_MAP);
+
     _tx_gain_profile_api = std::make_shared<rf_control::enumerated_gain_profile>(
         ZBX_GAIN_PROFILES, ZBX_GAIN_PROFILE_DEFAULT, ZBX_NUM_CHANS);
     _rx_gain_profile_api = std::make_shared<rf_control::enumerated_gain_profile>(
@@ -89,29 +100,6 @@ std::string zbx_dboard_impl::get_unique_id() const
 /******************************************************************************
  * API Calls
  *****************************************************************************/
-void zbx_dboard_impl::set_tx_antenna(const std::string& ant, const size_t chan)
-{
-    RFNOC_LOG_TRACE("Setting TX antenna to " << ant << " for chan " << chan);
-    if (!TX_ANTENNA_NAME_COMPAT_MAP.count(ant)) {
-        assert_has(TX_ANTENNAS, ant, "tx antenna");
-    }
-    const fs_path fe_path = _get_frontend_path(TX_DIRECTION, chan);
-
-    _tree->access<std::string>(fe_path / "antenna" / "value").set(ant);
-}
-
-void zbx_dboard_impl::set_rx_antenna(const std::string& ant, const size_t chan)
-{
-    RFNOC_LOG_TRACE("Setting RX antenna to " << ant << " for chan " << chan);
-    if (!RX_ANTENNA_NAME_COMPAT_MAP.count(ant)) {
-        assert_has(RX_ANTENNAS, ant, "rx antenna");
-    }
-
-    const fs_path fe_path = _get_frontend_path(RX_DIRECTION, chan);
-
-    _tree->access<std::string>(fe_path / "antenna" / "value").set(ant);
-}
-
 double zbx_dboard_impl::set_tx_frequency(const double req_freq, const size_t chan)
 {
     const fs_path fe_path = _get_frontend_path(TX_DIRECTION, chan);
@@ -590,18 +578,6 @@ double zbx_dboard_impl::get_rx_lo_freq(const std::string& name, size_t chan)
     assert_has(ZBX_LOS, name);
 
     return _tree->access<double>(fe_path / "los" / name / "freq" / "value").get();
-}
-
-std::string zbx_dboard_impl::get_tx_antenna(size_t chan) const
-{
-    const fs_path fe_path = _get_frontend_path(TX_DIRECTION, chan);
-    return _tree->access<std::string>(fe_path / "antenna" / "value").get();
-}
-
-std::string zbx_dboard_impl::get_rx_antenna(size_t chan) const
-{
-    const fs_path fe_path = _get_frontend_path(RX_DIRECTION, chan);
-    return _tree->access<std::string>(fe_path / "antenna" / "value").get();
 }
 
 double zbx_dboard_impl::get_tx_frequency(size_t chan)
