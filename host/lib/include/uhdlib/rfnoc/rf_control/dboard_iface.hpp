@@ -23,7 +23,7 @@ namespace uhd { namespace rfnoc { namespace rf_control {
  * just includes accessors to objects which implement the required functionality.
  * This class also directly implements core_iface for the remainder.
  */
-class dboard_iface : public core_iface
+class dboard_iface : virtual public core_iface
 {
 public:
     using sptr = std::shared_ptr<dboard_iface>;
