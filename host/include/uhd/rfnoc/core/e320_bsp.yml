@@ -27,5 +27,5 @@ io_ports:
     type: x300_radio
     drive: master
   dram:
-    type: axi4_mm_4x64_4g
+    type: axi4_mm
     drive: slave

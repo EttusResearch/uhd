@@ -126,9 +126,8 @@ radio_8x32:
     type: to-master
     width: 8
 
-# A 4-port AXI4 memory-mapped interface with 64-bit data, and 4 GiB address
-# space (32-bit).
-axi4_mm_4x64_4g:
+# AXI4 memory-mapped interface (up to 4 x 512-bit data and 48-bit address)
+axi4_mm:
   type: master-slave
   ports:
   - name: axi_rst
@@ -139,7 +138,7 @@ axi4_mm_4x64_4g:
     width: 4
   - name: m_axi_awaddr
     type: from-master
-    width: 128
+    width: 192
   - name: m_axi_awlen
     type: from-master
     width: 32
@@ -175,10 +174,10 @@ axi4_mm_4x64_4g:
     width: 4
   - name: m_axi_wdata
     type: from-master
-    width: 256
+    width: 2048
   - name: m_axi_wstrb
     type: from-master
-    width: 32
+    width: 256
   - name: m_axi_wlast
     type: from-master
     width: 4
@@ -211,7 +210,7 @@ axi4_mm_4x64_4g:
     width: 4
   - name: m_axi_araddr
     type: from-master
-    width: 128
+    width: 192
   - name: m_axi_arlen
     type: from-master
     width: 32
@@ -250,7 +249,7 @@ axi4_mm_4x64_4g:
     width: 4
   - name: m_axi_rdata
     type: to-master
-    width: 256
+    width: 2048
   - name: m_axi_rresp
     type: to-master
     width: 8

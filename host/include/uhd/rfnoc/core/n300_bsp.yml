@@ -33,5 +33,5 @@ io_ports:
       pattern: (.*)
       repl: \1_radio0
   dram:
-    type: axi4_mm_4x64_4g
+    type: axi4_mm
     drive: slave

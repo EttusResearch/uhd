@@ -80,7 +80,7 @@ data:
 
 io_ports:
   axi_ram:
-    type: axi4_mm_4x64_4g
+    type: axi4_mm
     drive: master
 
 registers:
