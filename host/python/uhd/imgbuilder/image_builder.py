@@ -222,7 +222,7 @@ class ImageBuilderConfig:
                 setattr(desc, "parameters", {})
             if "parameters" not in block:
                 block["parameters"] = OrderedDict()
-            for key in block["parameters"].keys():
+            for key in list(block["parameters"].keys()):
                 if key not in desc.parameters:
                     logging.error("Unknown parameter %s for block %s", key, name)
                     del block["parameters"][key]
