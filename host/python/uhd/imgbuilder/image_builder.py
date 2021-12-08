@@ -550,6 +550,10 @@ def convert_to_image_config(grc, grc_config_path):
         result["noc_blocks"][block["name"]] = {
             "block_desc": block["parameters"]["desc"]
         }
+        if "nports" in block["parameters"]:
+            result["noc_blocks"][block["name"]]["parameters"] = {
+                "NUM_PORTS": block["parameters"]["nports"]
+            }
 
     device_clocks = {
         port["id"]: port for port in grc_blocks[device['id']]["outputs"]
