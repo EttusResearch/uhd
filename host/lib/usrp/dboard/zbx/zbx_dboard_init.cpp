@@ -245,8 +245,8 @@ uhd::usrp::pwr_cal_mgr::sptr zbx_dboard_impl::_init_power_cal(
                                            : get_rx_gain(ZBX_GAIN_STAGE_ALL, chan_idx);
             },
             [this, trx, chan_idx](const double gain) {
-                trx == TX_DIRECTION ? set_tx_gain(gain, chan_idx)
-                                    : set_rx_gain(gain, chan_idx);
+                trx == TX_DIRECTION ? this->set_tx_gain(gain, chan_idx)
+                                    : this->set_rx_gain(gain, chan_idx);
             }},
         10 /* High priority */);
     /* If we had a digital (baseband) gain, we would register it here,*/

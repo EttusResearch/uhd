@@ -31,7 +31,22 @@ zbx_dboard_impl::zbx_dboard_impl(register_iface& reg_iface,
     uhd::usrp::zbx_rpc_iface::sptr rpcc,
     uhd::rfnoc::x400::rfdc_control::sptr rfdcc,
     uhd::property_tree::sptr tree)
-    : _unique_id(unique_id)
+    : nameless_gain_mixin([this](const uhd::direction_t trx, size_t chan) {
+        const auto gain_profile = trx == TX_DIRECTION ?
+            _tx_gain_profile_api->get_gain_profile(chan) :
+            _rx_gain_profile_api->get_gain_profile(chan);
+        if (gain_profile == ZBX_GAIN_PROFILE_MANUAL) {
+            const std::string err_msg = "When using 'manual' gain mode, a gain name is required!";
+            RFNOC_LOG_ERROR(err_msg);
+            throw uhd::runtime_error(err_msg);
+        }
+        if (gain_profile == ZBX_GAIN_PROFILE_CPLD
+            || gain_profile == ZBX_GAIN_PROFILE_CPLD_NOATR) {
+            return ZBX_GAIN_STAGE_TABLE;
+        }
+        return ZBX_GAIN_STAGE_ALL;
+    })
+    , _unique_id(unique_id)
     , _regs(reg_iface)
     , _reg_base_address(reg_base_address)
     , _time_accessor(time_accessor)
@@ -261,66 +276,6 @@ double zbx_dboard_impl::set_rx_gain(
         throw uhd::key_error("Invalid RX gain stage: " + name);
     }
     return _tree->access<double>(gains_path / name / "value").set(gain).get();
-}
-
-double zbx_dboard_impl::set_tx_gain(const double gain, const size_t chan)
-{
-    const auto gain_profile = _tx_gain_profile_api->get_gain_profile(chan);
-    if (gain_profile == ZBX_GAIN_PROFILE_MANUAL) {
-        const std::string err_msg = "When using 'manual' gain mode, calling "
-                                    "set_tx_gain() without a gain name is not allowed!";
-        RFNOC_LOG_ERROR(err_msg);
-        throw uhd::runtime_error(err_msg);
-    }
-    if (gain_profile == ZBX_GAIN_PROFILE_CPLD
-        || gain_profile == ZBX_GAIN_PROFILE_CPLD_NOATR) {
-        return set_tx_gain(gain, ZBX_GAIN_STAGE_TABLE, chan);
-    }
-    return set_tx_gain(gain, ZBX_GAIN_STAGE_ALL, chan);
-}
-
-double zbx_dboard_impl::set_rx_gain(const double gain, const size_t chan)
-{
-    const auto gain_profile = _rx_gain_profile_api->get_gain_profile(chan);
-    if (gain_profile == ZBX_GAIN_PROFILE_MANUAL) {
-        const std::string err_msg = "When using 'manual' gain mode, calling "
-                                    "set_rx_gain() without a gain name is not allowed!";
-        RFNOC_LOG_ERROR(err_msg);
-        throw uhd::runtime_error(err_msg);
-    }
-    if (gain_profile == ZBX_GAIN_PROFILE_CPLD
-        || gain_profile == ZBX_GAIN_PROFILE_CPLD_NOATR) {
-        return set_rx_gain(gain, ZBX_GAIN_STAGE_TABLE, chan);
-    }
-    return set_rx_gain(gain, ZBX_GAIN_STAGE_ALL, chan);
-}
-
-double zbx_dboard_impl::get_tx_gain(const size_t chan)
-{
-    const auto gain_profile = _tx_gain_profile_api->get_gain_profile(chan);
-    if (gain_profile == ZBX_GAIN_PROFILE_CPLD
-        || gain_profile == ZBX_GAIN_PROFILE_CPLD_NOATR) {
-        return get_tx_gain(ZBX_GAIN_STAGE_TABLE, chan);
-    }
-    if (gain_profile == ZBX_GAIN_PROFILE_DEFAULT) {
-        return get_tx_gain(ZBX_GAIN_STAGE_ALL, chan);
-    }
-    throw uhd::runtime_error(
-        "get_tx_gain(): When in 'manual' gain profile, a gain name is required!");
-}
-
-double zbx_dboard_impl::get_rx_gain(const size_t chan)
-{
-    const auto gain_profile = _rx_gain_profile_api->get_gain_profile(chan);
-    if (gain_profile == ZBX_GAIN_PROFILE_CPLD
-        || gain_profile == ZBX_GAIN_PROFILE_CPLD_NOATR) {
-        return get_rx_gain(ZBX_GAIN_STAGE_TABLE, chan);
-    }
-    if (gain_profile == ZBX_GAIN_PROFILE_DEFAULT) {
-        return get_rx_gain(ZBX_GAIN_STAGE_ALL, chan);
-    }
-    throw uhd::runtime_error(
-        "get_rx_gain(): When in 'manual' gain profile, a gain name is required!");
 }
 
 double zbx_dboard_impl::get_tx_gain(const std::string& name_, const size_t chan)
@@ -608,7 +563,7 @@ void zbx_dboard_impl::set_rx_agc(const bool, const size_t)
 }
 
 uhd::gain_range_t zbx_dboard_impl::get_tx_gain_range(
-    const std::string& name, const size_t chan) const
+    const std::string& name, const size_t) const
 {
     // We have to accept the empty string for "all", because that's widely used
     // (e.g. by multi_usrp)
@@ -616,11 +571,11 @@ uhd::gain_range_t zbx_dboard_impl::get_tx_gain_range(
         throw uhd::value_error(
             std::string("get_tx_gain_range(): Unknown gain name '") + name + "'!");
     }
-    return get_tx_gain_range(chan);
+    return ZBX_TX_GAIN_RANGE;
 }
 
 uhd::gain_range_t zbx_dboard_impl::get_rx_gain_range(
-    const std::string& name, const size_t chan) const
+    const std::string& name, const size_t) const
 {
     // We have to accept the empty string for "all", because that's widely used
     // (e.g. by multi_usrp)
@@ -628,7 +583,10 @@ uhd::gain_range_t zbx_dboard_impl::get_rx_gain_range(
         throw uhd::value_error(
             std::string("get_rx_gain_range(): Unknown gain name '") + name + "'!");
     }
-    return get_rx_gain_range(chan);
+
+    // FIXME This should return a ZBX_RX_LOW_FREQ_GAIN_RANGE when freq is
+    // low, but this function is const
+    return ZBX_RX_GAIN_RANGE;
 }
 
 void zbx_dboard_impl::set_rx_lo_export_enabled(bool, const std::string&, const size_t)
