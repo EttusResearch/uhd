@@ -7,6 +7,7 @@
 #include "../rfnoc_graph_mock_nodes.hpp"
 #include <uhd/convert.hpp>
 #include <uhd/rfnoc/actions.hpp>
+#include <uhd/rfnoc/ddc_block_control.hpp>
 #include <uhd/rfnoc/defaults.hpp>
 #include <uhd/rfnoc/mock_block.hpp>
 #include <uhd/rfnoc/replay_block_control.hpp>
@@ -755,6 +756,49 @@ BOOST_FIXTURE_TEST_CASE(replay_test_graph, replay_block_fixture)
     graph.connect(&mock_radio_block, &mock_ddc_block, edge_port_info);
     graph.connect(&mock_ddc_block, test_replay.get(), edge_port_info);
     graph.connect(test_replay.get(), &mock_sink_term, edge_port_info);
+    UHD_LOG_INFO("TEST", "Committing graph...");
+    graph.commit();
+    UHD_LOG_INFO("TEST", "Commit complete.");
+}
+
+/*
+ * This test case ensures that the Replay Block can be added to an RFNoC graph
+ * in a loop.
+ */
+BOOST_FIXTURE_TEST_CASE(replay_test_graph_loop, replay_block_fixture)
+{
+    detail::graph_t graph{};
+    detail::graph_t::graph_edge_t edge_port_info;
+    edge_port_info.src_port                    = 0;
+    edge_port_info.dst_port                    = 0;
+    edge_port_info.property_propagation_active = false;
+    edge_port_info.edge                        = detail::graph_t::graph_edge_t::DYNAMIC;
+
+    // Now create a DDC block
+    UHD_LOG_DEBUG("TEST", "Making DDC block control....");
+    node_accessor_t node_accessor{};
+    constexpr uint32_t num_hb  = 2;
+    constexpr uint32_t max_cic = 128;
+    constexpr size_t num_chans = 1;
+    constexpr noc_id_t noc_id  = DDC_BLOCK;
+    auto block_container =
+        get_mock_block(noc_id, num_chans, num_chans, uhd::device_addr_t(""));
+    auto& ddc_reg_iface = block_container.reg_iface;
+    ddc_reg_iface->read_memory[ddc_block_control::RB_COMPAT_NUM] =
+        (ddc_block_control::MAJOR_COMPAT << 16) | ddc_block_control::MINOR_COMPAT;
+    ddc_reg_iface->read_memory[ddc_block_control::RB_NUM_HB]        = num_hb;
+    ddc_reg_iface->read_memory[ddc_block_control::RB_CIC_MAX_DECIM] = max_cic;
+    auto test_ddc = block_container.get_block<ddc_block_control>();
+
+    node_accessor.init_props(test_ddc.get());
+    UHD_LOG_DEBUG("TEST", "DDC done.");
+
+    UHD_LOG_INFO("TEST", "Creating graph...");
+    graph.connect(test_ddc.get(), test_replay.get(), edge_port_info);
+    // Graph must be DAG, disable prop prop on back-edge (normally,
+    // rfnoc_graph::connect() would do this for us if we declare a back-edge
+    edge_port_info.property_propagation_active = true;
+    graph.connect(test_replay.get(), test_ddc.get(), edge_port_info);
     UHD_LOG_INFO("TEST", "Committing graph...");
     graph.commit();
     UHD_LOG_INFO("TEST", "Commit complete.");
