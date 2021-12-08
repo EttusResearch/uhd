@@ -107,7 +107,6 @@ endif(ENABLE_MANUAL_OR_DOXYGEN)
 ########################################################################
 
 set(man_page_sources
-    octoclock_firmware_burner.1
     uhd_cal_rx_iq_balance.1
     uhd_cal_tx_dc_offset.1
     uhd_cal_tx_iq_balance.1
@@ -117,7 +116,6 @@ set(man_page_sources
     uhd_images_downloader.1
     uhd_usrp_probe.1
     usrp_n2xx_simple_net_burner.1
-    usrp_x3xx_fpga_burner.1
     usrp2_card_burner.1
 )
 
