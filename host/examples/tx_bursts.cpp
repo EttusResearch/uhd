@@ -111,9 +111,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         return ~0;
     }
 
-    std::cout << boost::format("Setting TX Freq: %f MHz...") % (freq / 1e6) << std::endl;
-    std::cout << boost::format("Setting TX LO Offset: %f MHz...") % (lo_offset / 1e6)
-              << std::endl;
+    std::cout << "Requesting TX Freq: " << freq / 1e6 << " MHz..." << std::endl;
+    std::cout << "Requesting TX LO Offset: " << lo_offset / 1e6 << " MHz..." << std::endl;
 
     for (size_t i = 0; i < channel_nums.size(); i++) {
         uhd::tune_request_t tune_request;
@@ -123,24 +122,23 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             tune_request.args = uhd::device_addr_t("mode_n=integer");
         usrp->set_tx_freq(tune_request, channel_nums[i]);
     }
-    std::cout << boost::format("Actual TX Freq: %f MHz...") % (usrp->get_tx_freq() / 1e6)
-              << std::endl
+    std::cout << "Actual TX Freq: " << (usrp->get_tx_freq(channel_nums.front()) / 1e6)
+              << " MHz..." << std::endl
               << std::endl;
 
-    std::cout << boost::format("Setting TX Gain: %f...") % (gain) << std::endl;
+    std::cout << "Requesting TX Gain: " << gain << " dB ..." << std::endl;
     for (size_t i = 0; i < channel_nums.size(); i++)
         usrp->set_tx_gain(gain, channel_nums[i]);
-    std::cout << boost::format("Actual TX Gain: %f...") % (usrp->get_tx_gain())
+    std::cout << "Actual TX Gain: " << (usrp->get_tx_gain(channel_nums.front())) << "..."
               << std::endl
               << std::endl;
 
     // set the analog frontend filter bandwidth
     if (vm.count("bw")) {
-        std::cout << boost::format("Setting TX Bandwidth: %f MHz...") % (bw / 1e6)
-                  << std::endl;
+        std::cout << "Requesting TX Bandwidth: " << (bw / 1e6) << " MHz..." << std::endl;
         usrp->set_tx_bandwidth(bw);
-        std::cout << boost::format("Actual TX Bandwidth: %f MHz...")
-                         % (usrp->get_tx_bandwidth() / 1e6)
+        std::cout << "Actual TX Bandwidth: "
+                  << usrp->get_tx_bandwidth(channel_nums.front()) / 1e6 << " MHz..."
                   << std::endl
                   << std::endl;
     }
