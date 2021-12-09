@@ -172,8 +172,9 @@ module bus_int #(
    localparam RB_XADC_VALS       = 8'd11;
    localparam RB_NUM_TIMEKEEPERS = 8'd12;
    localparam RB_FP_GPIO_SRC     = 8'd13;
+   localparam RB_DEVICE_ID       = 8'd14;
 
-   localparam COMPAT_MAJOR       = 16'h0026;
+   localparam COMPAT_MAJOR       = 16'h0027;
    localparam COMPAT_MINOR       = 16'h0000;
    localparam NUM_TIMEKEEPERS    = 1;
 
@@ -408,7 +409,8 @@ module bus_int #(
      radio_time_hi_ld          = 1'b0;
      radio_time_last_pps_hi_ld = 1'b0;
      casex (rb_addr)
-       RB_RFNOC_INFO: rb_data = {device_id, RFNOC_PROTOVER[15:0]};
+       RB_RFNOC_INFO: rb_data = {CHDR_W[15:0], RFNOC_PROTOVER[15:0]};
+       RB_DEVICE_ID: rb_data = {16'd0, device_id};
        RB_COMPAT_NUM: rb_data = {COMPAT_MAJOR[15:0], COMPAT_MINOR[15:0]};
        RB_COUNTER: rb_data = counter;
        RB_SPI_RDY: rb_data = {31'b0, spi_ready};

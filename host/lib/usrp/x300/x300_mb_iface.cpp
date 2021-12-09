@@ -21,6 +21,7 @@ static uhd::usrp::io_service_args_t get_default_io_srv_args()
 }
 
 x300_impl::x300_mb_iface::x300_mb_iface(uhd::usrp::x300::conn_manager::sptr conn_mgr,
+    uhd::wb_iface::sptr zpu_ctrl,
     const double radio_clk_freq,
     const uhd::rfnoc::device_id_t remote_dev_id)
     : _remote_dev_id(remote_dev_id)
@@ -29,6 +30,7 @@ x300_impl::x300_mb_iface::x300_mb_iface(uhd::usrp::x300::conn_manager::sptr conn
     , _radio_clk(
           std::make_shared<uhd::rfnoc::clock_iface>("radio_clk", radio_clk_freq, false))
     , _conn_mgr(conn_mgr)
+    , _zpu_ctrl(zpu_ctrl)
 {
     UHD_ASSERT_THROW(_conn_mgr);
     _bus_clk->set_running(true);
@@ -39,14 +41,15 @@ x300_impl::x300_mb_iface::~x300_mb_iface() = default;
 
 uint16_t x300_impl::x300_mb_iface::get_proto_ver()
 {
-    // TODO: Get from from a hardware register
-    return 0x0100;
+    const uint32_t rfnoc_info = _zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_RFNOC_INFO));
+    return ZPU_RB_RFNOC_INFO_PROTOVER(rfnoc_info);
 }
 
 uhd::rfnoc::chdr_w_t x300_impl::x300_mb_iface::get_chdr_w()
 {
-    // TODO: Get from from a hardware register
-    return uhd::rfnoc::CHDR_W_64;
+    const uint32_t rfnoc_info = _zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_RFNOC_INFO));
+    const size_t chdr_width = ZPU_RB_RFNOC_INFO_CHDR_WIDTH(rfnoc_info);
+    return bits_to_chdr_w(chdr_width);
 }
 
 uhd::endianness_t x300_impl::x300_mb_iface::get_endianness(

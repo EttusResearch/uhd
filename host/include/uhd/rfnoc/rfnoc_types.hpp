@@ -17,6 +17,7 @@ namespace uhd { namespace rfnoc {
 
 //! Type that indicates the CHDR Width in bits
 enum chdr_w_t { CHDR_W_64 = 0, CHDR_W_128 = 1, CHDR_W_256 = 2, CHDR_W_512 = 3 };
+
 //! Conversion from chdr_w_t to a number of bits
 constexpr size_t chdr_w_to_bits(chdr_w_t chdr_w)
 {
@@ -46,6 +47,19 @@ constexpr size_t chdr_w_to_bits(chdr_w_t chdr_w)
         chdr_w == CHDR_W_256 ? 256 :
         chdr_w == CHDR_W_512 ? 512 :
         /* default */            0 ;
+    // clang-format on
+}
+
+//! Conversion from number of bits to chdr_w_t
+constexpr chdr_w_t bits_to_chdr_w(size_t bits)
+{
+    // clang-format off
+    return
+        bits == 64  ? CHDR_W_64  :
+        bits == 128 ? CHDR_W_128 :
+        bits == 256 ? CHDR_W_256 :
+        bits == 512 ? CHDR_W_512 :
+        /* default */ CHDR_W_64  ;
     // clang-format on
 }
 

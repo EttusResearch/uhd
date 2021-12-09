@@ -23,7 +23,8 @@ extern "C" {
 #define X300_REVISION_MIN    2
 #define X300_FW_COMPAT_MAJOR 6
 #define X300_FW_COMPAT_MINOR 0
-#define X300_FPGA_COMPAT_MAJOR 0x26
+#define X300_FPGA_COMPAT_MAJOR 0x27
+#define X300_FPGA_COMPAT_MINOR 0x00
 
 //shared memory sections - in between the stack and the program space
 #define X300_FW_SHMEM_BASE 0x6000
