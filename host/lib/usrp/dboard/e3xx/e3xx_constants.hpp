@@ -45,8 +45,6 @@ static constexpr char E3XX_DEFAULT_TX_ANTENNA[] = "TX/RX";
 static const std::vector<std::string> E3XX_RX_ANTENNAS = {
     E3XX_DEFAULT_RX_ANTENNA, E3XX_DEFAULT_TX_ANTENNA};
 
-static constexpr char E3XX_GPIO_BANK[] = "INT0";
-
 static constexpr size_t E3XX_NUM_CHANS = 2;
 
 static constexpr char TIMING_MODE_2R2T[] = "2R2T";
