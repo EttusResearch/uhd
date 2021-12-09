@@ -26,7 +26,7 @@ module e31x_core #(
   parameter NUM_CHANNELS_PER_DBOARD = 2,
   parameter FP_GPIO_WIDTH = 8,  // Front panel GPIO width
   parameter DB_GPIO_WIDTH = 16,  // Daughterboard GPIO width
-  parameter CHDR_WIDTH  = 16'd64 ,
+  parameter CHDR_W = 64,
   parameter RFNOC_PROTOVER  = {8'd1, 8'd0}
 )(
   // Clocks and resets
@@ -414,7 +414,7 @@ module e31x_core #(
             cp_glob_resp_data <= {16'd0, device_id};
 
           REG_RFNOC_INFO:
-            cp_glob_resp_data <= {CHDR_WIDTH[15:0], RFNOC_PROTOVER[15:0]};
+            cp_glob_resp_data <= {CHDR_W[15:0], RFNOC_PROTOVER[15:0]};
 
           REG_COMPAT_NUM:
             cp_glob_resp_data <= {COMPAT_MAJOR[15:0], COMPAT_MINOR[15:0]};
@@ -812,7 +812,8 @@ module e31x_core #(
   /////////////////////////////////////////////////////////////////////////////
 
   rfnoc_image_core #(
-    .PROTOVER(RFNOC_PROTOVER)
+    .CHDR_W   (CHDR_W),
+    .PROTOVER (RFNOC_PROTOVER)
   ) rfnoc_image_core_i (
     .chdr_aclk               (bus_clk    ),
     .ctrl_aclk               (clk40      ),

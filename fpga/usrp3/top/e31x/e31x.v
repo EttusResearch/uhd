@@ -136,6 +136,22 @@ module e31x (
   inout [5:0]   PL_GPIO
 );
 
+  // Include the RFNoC image core header file
+  `ifdef RFNOC_IMAGE_CORE_HDR
+    `include `"`RFNOC_IMAGE_CORE_HDR`"
+  `else
+    ERROR_RFNOC_IMAGE_CORE_HDR_not_defined();
+    `define CHDR_WIDTH     64
+    `define RFNOC_PROTOVER { 8'd1, 8'd0 }
+  `endif
+  localparam CHDR_W         = `CHDR_WIDTH;
+  localparam RFNOC_PROTOVER = `RFNOC_PROTOVER;
+
+  // This USRP currently only supports 64-bit CHDR width
+  if (CHDR_W != 64) begin : gen_chdr_w_error
+    CHDR_W_must_be_64_for_this_USRP();
+  end
+
   // Constants
   localparam REG_AWIDTH = 14; // log2(0x4000)
   localparam REG_DWIDTH = 32;
@@ -846,7 +862,9 @@ module e31x (
     .NUM_DBOARDS(NUM_DBOARDS),
     .NUM_CHANNELS_PER_DBOARD(NUM_CHANNELS_PER_RADIO),
     .FP_GPIO_WIDTH(FP_GPIO_WIDTH),
-    .DB_GPIO_WIDTH(DB_GPIO_WIDTH)
+    .DB_GPIO_WIDTH(DB_GPIO_WIDTH),
+    .CHDR_W(CHDR_W),
+    .RFNOC_PROTOVER(RFNOC_PROTOVER)
   ) e31x_core_inst (
 
     //Clocks and resets
