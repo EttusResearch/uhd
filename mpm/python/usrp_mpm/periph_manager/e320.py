@@ -7,11 +7,10 @@
 E320 implementation module
 """
 
-from __future__ import print_function
 import bisect
 import copy
 import re
-import threading
+from functools import partial
 from six import iteritems, itervalues
 from usrp_mpm.components import ZynqComponents
 from usrp_mpm.dboard_manager import Neon
@@ -153,7 +152,6 @@ class e320(ZynqComponents, PeriphManagerBase):
         self._time_source = None
         self._gpsd = None
         self.dboard = self.dboards[E320_DBOARD_SLOT_IDX]
-        from functools import partial
         for sensor_name, sensor_cb_name in self.mboard_sensor_callback_map.items():
             if sensor_name[:5] == 'temp_':
                 setattr(self, sensor_cb_name, partial(self.get_temp_sensor, sensor_name))
@@ -372,8 +370,8 @@ class e320(ZynqComponents, PeriphManagerBase):
         if xport_type == "udp":
             return self._xport_mgrs[xport_type].get_chdr_link_options(
                 self.mboard_info['rpc_connection'])
-        else:
-            return self._xport_mgrs[xport_type].get_chdr_link_options()
+        # else:
+        return self._xport_mgrs[xport_type].get_chdr_link_options()
 
     ###########################################################################
     # Device info
@@ -455,7 +453,7 @@ class e320(ZynqComponents, PeriphManagerBase):
     def get_ref_clock_freq(self):
         " Returns the currently active reference clock frequency"
         clock_source = self.get_clock_source()
-        if clock_source == "internal" or clock_source == "gpsdo":
+        if clock_source in ("internal", "gpsdo"):
             return E320_DEFAULT_INT_CLOCK_FREQ
         # elif clock_source == "external":
         return self._ext_clock_freq

@@ -8,7 +8,6 @@
 E310 implementation module
 """
 
-from __future__ import print_function
 import copy
 import re
 from six import itervalues
@@ -411,9 +410,9 @@ class e31x(ZynqComponents, PeriphManagerBase):
         Load all overlays required to go into idle power savings mode.
         """
         idle_overlay = self.get_idle_dt_overlay(self.device_info)
-        self.log.debug("Motherboard requests device tree overlay for Idle power savings mode: {}".format(
-            idle_overlay
-        ))
+        self.log.debug(
+            "Motherboard requests device tree overlay for Idle power savings mode: {}"
+            .format(idle_overlay))
         dtoverlay.apply_overlay_safe(idle_overlay)
 
     def remove_idle_overlay(self):
@@ -504,8 +503,8 @@ class e31x(ZynqComponents, PeriphManagerBase):
         if xport_type == "udp":
             return self._xport_mgrs[xport_type].get_chdr_link_options(
                 self.mboard_info['rpc_connection'])
-        else:
-            return self._xport_mgrs[xport_type].get_chdr_link_options()
+        # else:
+        return self._xport_mgrs[xport_type].get_chdr_link_options()
 
     ###########################################################################
     # Device info
@@ -727,7 +726,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
         """
         return self.mboard_info
 
-    def set_mb_eeprom(self, eeprom_vals):
+    def set_mb_eeprom(self, _eeprom_vals):
         """
         See PeriphManagerBase.set_mb_eeprom() for docs.
         """
@@ -743,7 +742,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
         db_eeprom_data = copy.copy(self.dboard.device_info)
         return db_eeprom_data
 
-    def set_db_eeprom(self, dboard_idx, eeprom_data):
+    def set_db_eeprom(self, _dboard_idx, _eeprom_data):
         """
         See PeriphManagerBase.set_db_eeprom() for docs.
         """
