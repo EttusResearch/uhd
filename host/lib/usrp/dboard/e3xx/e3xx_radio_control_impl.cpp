@@ -224,7 +224,12 @@ double e3xx_radio_control_impl::set_tx_frequency(const double freq, const size_t
 
     double coerced_freq =
         _ad9361->tune(get_which_ad9361_chain(TX_DIRECTION, chan, _fe_swap), clipped_freq);
-    radio_control_impl::set_tx_frequency(coerced_freq, chan);
+    // The E3xx devices have one LO for TX, so if we change one channel's
+    // frequency, we change the other, too
+    for (size_t chan_idx = 0; chan_idx < E3XX_NUM_CHANS; ++chan_idx) {
+        radio_control_impl::set_tx_frequency(coerced_freq, chan_idx);
+    }
+
     // Front-end switching
     _set_atr_bits(chan);
 
@@ -240,7 +245,11 @@ double e3xx_radio_control_impl::set_rx_frequency(const double freq, const size_t
 
     double coerced_freq =
         _ad9361->tune(get_which_ad9361_chain(RX_DIRECTION, chan, _fe_swap), clipped_freq);
-    radio_control_impl::set_rx_frequency(coerced_freq, chan);
+    // The E3xx devices have one LO for RX, so if we change one channel's
+    // frequency, we change the other, too
+    for (size_t chan_idx = 0; chan_idx < E3XX_NUM_CHANS; ++chan_idx) {
+        radio_control_impl::set_rx_frequency(coerced_freq, chan_idx);
+    }
     // Front-end switching
     _set_atr_bits(chan);
 
