@@ -8,22 +8,19 @@ E320 dboard (RF and control) implementation module
 """
 
 import threading
-import time
-from six import iterkeys, iteritems
 from usrp_mpm import lib # Pulls in everything from C++-land
 from usrp_mpm.bfrfs import BufferFS
 from usrp_mpm.chips import ADF400x
-from usrp_mpm.dboard_manager import DboardManagerBase
+from usrp_mpm.dboard_manager import DboardManagerBase, AD936xDboard
 from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.sys_utils.udev import get_eeprom_paths
-from usrp_mpm.sys_utils.uio import UIO
 from usrp_mpm.periph_manager.e320_periphs import MboardRegsControl
-from usrp_mpm.mpmutils import async_exec
 
+DEFAULT_MASTER_CLOCK_RATE = 16e6
 ###############################################################################
 # Main dboard control class
 ###############################################################################
-class Neon(DboardManagerBase):
+class Neon(DboardManagerBase, AD936xDboard):
     """
     Holds all dboard specific information and methods of the neon dboard
     """
@@ -52,6 +49,8 @@ class Neon(DboardManagerBase):
     spi_chipselect = {"catalina": 0,
                       "adf4002": 1}
     ### End of overridables #################################################
+    # MB regs label: Needed to access the lock bit
+    mboard_regs_label = "mboard-regs"
     # This map describes how the user data is stored in EEPROM. If a dboard rev
     # changes the way the EEPROM is used, we add a new entry. If a dboard rev
     # is not found in the map, then we go backward until we find a suitable rev
@@ -64,12 +63,10 @@ class Neon(DboardManagerBase):
         },
     }
 
-    default_master_clock_rate = 16e6
-    MIN_MASTER_CLK_RATE = 220e3
-    MAX_MASTER_CLK_RATE = 61.44e6
-
     def __init__(self, slot_idx, **kwargs):
-        super(Neon, self).__init__(slot_idx, **kwargs)
+        DboardManagerBase.__init__(self, slot_idx, **kwargs)
+        AD936xDboard.__init__(
+            self, lambda: MboardRegsControl(self.mboard_regs_label, self.log))
         self.log = get_logger("Neon-{}".format(slot_idx))
         self.log.trace("Initializing Neon daughterboard, slot index %d",
                        self.slot_idx)
@@ -78,7 +75,6 @@ class Neon(DboardManagerBase):
         # These will get updated during init()
         self.master_clock_rate = None
         # Predeclare some attributes to make linter happy:
-        self.catalina = None
         self.eeprom_fs = None
         self.eeprom_path = None
         # Now initialize all peripherals. If that doesn't work, put this class
@@ -88,8 +84,7 @@ class Neon(DboardManagerBase):
             self._init_periphs()
             self._periphs_initialized = True
         except Exception as ex:
-            self.log.error("Failed to initialize peripherals: %s",
-                           str(ex))
+            self.log.error("Failed to initialize peripherals: %s", str(ex))
             self._periphs_initialized = False
 
     def _init_periphs(self):
@@ -108,37 +103,38 @@ class Neon(DboardManagerBase):
         self.adf4002 = ADF400x(adf4002_spi,
                                freq=E320_DEFAULT_INT_CLOCK_FREQ,
                                parent_log=self.log)
-        # Setup Catalina / the Neon Manager
-        self._device = lib.dboards.neon_manager(
-            self._spi_nodes['catalina']
-        )
-        self.catalina = self._device.get_radio_ctrl()
+        # Set up AD9361 / the Neon Manager
+        self._device = lib.dboards.neon_manager(self._spi_nodes['catalina'])
+        ad936x_rfic = self._device.get_radio_ctrl()
         self.log.trace("Loaded C++ drivers.")
-        self._init_cat_api(self.catalina)
+        self._init_cat_api(ad936x_rfic)
         self.eeprom_fs, self.eeprom_path = self._init_user_eeprom(
             self._get_user_eeprom_info(self.rev)
         )
 
-    def _init_cat_api(self, cat):
+    def init(self, args):
         """
-        Propagate the C++ Catalina API into Python land.
+        Initialize the RFIC portion of the E320 (rest happens in e320.init())
         """
-        def export_method(obj, method):
-            " Export a method object, including docstring "
-            meth_obj = getattr(obj, method)
-            def func(*args):
-                " Functor for storing docstring too "
-                return meth_obj(*args)
-            func.__doc__ = meth_obj.__doc__
-            return func
-        self.log.trace("Forwarding AD9361 methods to Neon class...")
-        for method in [
-                x for x in dir(self.catalina)
-                if not x.startswith("_") and \
-                        callable(getattr(self.catalina, x))]:
-            self.log.trace("adding {}".format(method))
-            setattr(self, method, export_method(cat, method))
+        if not self._periphs_initialized:
+            error_msg = "Cannot run init(), peripherals are not initialized!"
+            self.log.error(error_msg)
+            raise RuntimeError(error_msg)
+        master_clock_rate = \
+            float(args.get('master_clock_rate', DEFAULT_MASTER_CLOCK_RATE))
+        self.init_rfic(master_clock_rate)
+        return True
 
+    ###########################################################################
+    # Clocking
+    ###########################################################################
+    def update_ref_clock_freq(self, freq):
+        """Update the reference clock frequency"""
+        self.adf4002.set_ref_freq(freq)
+
+    ###########################################################################
+    # EEPROM Control
+    ###########################################################################
     def _get_user_eeprom_info(self, rev):
         """
         Return an EEPROM access map (from self.user_eeprom) based on the rev.
@@ -146,8 +142,8 @@ class Neon(DboardManagerBase):
         rev_for_lookup = rev
         while rev_for_lookup not in self.user_eeprom:
             if rev_for_lookup < 0:
-                raise RuntimeError("Could not find a user EEPROM map for "
-                                   "revision %d!", rev)
+                raise RuntimeError(
+                    f"Could not find a user EEPROM map for revision {rev}!")
             rev_for_lookup -= 1
         assert rev_for_lookup in self.user_eeprom, \
                 "Invalid EEPROM lookup rev!"
@@ -174,36 +170,13 @@ class Neon(DboardManagerBase):
             log=self.log
         ), eeprom_path
 
-    def init(self, args):
-        if not self._periphs_initialized:
-            error_msg = "Cannot run init(), peripherals are not initialized!"
-            self.log.error(error_msg)
-            raise RuntimeError(error_msg)
-        master_clock_rate = \
-            float(args.get('master_clock_rate',
-                           self.default_master_clock_rate))
-        assert self.MIN_MASTER_CLK_RATE <= master_clock_rate <= self.MAX_MASTER_CLK_RATE, \
-            "Invalid master clock rate: {:.02f} MHz".format(
-                master_clock_rate / 1e6)
-        master_clock_rate_changed = master_clock_rate != self.master_clock_rate
-        if master_clock_rate_changed:
-            self.master_clock_rate = master_clock_rate
-            self.log.debug("Updating master clock rate to {:.02f} MHz!".format(
-                self.master_clock_rate / 1e6
-            ))
-        # Some default chains on -- needed for setup purposes
-        self.catalina.set_active_chains(True, False, True, False)
-        self.set_catalina_clock_rate(self.master_clock_rate)
-
-        return True
-
     def get_user_eeprom_data(self):
         """
         Return a dict of blobs stored in the user data section of the EEPROM.
         """
         return {
             blob_id: self.eeprom_fs.get_blob(blob_id)
-            for blob_id in iterkeys(self.eeprom_fs.entries)
+            for blob_id in self.eeprom_fs.entries.keys()
         }
 
     def set_user_eeprom_data(self, eeprom_data):
@@ -218,7 +191,7 @@ class Neon(DboardManagerBase):
         However, get_user_eeprom_data() will immediately return the correct
         data after this method returns.
         """
-        for blob_id, blob in iteritems(eeprom_data):
+        for blob_id, blob in eeprom_data.items():
             self.eeprom_fs.set_blob(blob_id, blob)
         self.log.trace("Writing EEPROM info to `{}'".format(self.eeprom_path))
         eeprom_offset = self.user_eeprom[self.rev]['offset']
@@ -256,102 +229,3 @@ class Neon(DboardManagerBase):
         # and MPM won't terminate this process until the thread is complete.
         # This does not stop anyone from killing this process (and the thread)
         # while the EEPROM write is happening, though.
-
-    def get_master_clock_rate(self):
-        " Return master clock rate (== sampling rate) "
-        return self.master_clock_rate
-
-    def update_ref_clock_freq(self, freq):
-        """Update the reference clock frequency"""
-        self.adf4002.set_ref_freq(freq)
-
-    ##########################################################################
-    # Sensors
-    ##########################################################################
-    def get_ad9361_lo_lock(self, which):
-        """
-        Return LO lock status (Boolean!) of AD9361. 'which' must be
-        either 'tx' or 'rx'
-        """
-        assert which in ('rx', 'tx')
-        mboard_regs_label = "mboard-regs"
-        mboard_regs_control = MboardRegsControl(
-            mboard_regs_label, self.log)
-        if which == "tx":
-            locked = mboard_regs_control.get_ad9361_tx_lo_lock()
-        else:
-            locked = mboard_regs_control.get_ad9361_rx_lo_lock()
-        return locked
-
-    def get_lo_lock_sensor(self, which):
-        """
-        Get sensor dict with LO lock status
-        """
-        assert which in ('rx', 'tx')
-        self.log.trace("Reading LO Lock.")
-        lo_locked = self.get_ad9361_lo_lock(which)
-        return {
-            'name': 'ad9361_lock',
-            'type': 'BOOLEAN',
-            'unit': 'locked' if lo_locked else 'unlocked',
-            'value': str(lo_locked).lower(),
-        }
-
-    def get_rx_lo_lock_sensor(self, _chan):
-        """
-        RX-specific version of get_lo_lock_sensor() (for UHD API)
-        """
-        return self.get_lo_lock_sensor('rx')
-
-    def get_tx_lo_lock_sensor(self, _chan):
-        """
-        TX-specific version of get_lo_lock_sensor() (for UHD API)
-        """
-        return self.get_lo_lock_sensor('tx')
-
-    def get_catalina_temp_sensor(self, _):
-        """
-        Get temperature sensor reading of Catalina.
-        """
-        # Note: the unused argument is channel
-        self.log.trace("Reading Catalina temperature.")
-        return {
-            'name': 'ad9361_temperature',
-            'type': 'REALNUM',
-            'unit': 'C',
-            'value': str(self.catalina.get_temperature())
-        }
-
-    def get_rssi_val(self, which):
-        """
-        Return the current RSSI of `which` chain in Catalina
-        """
-        return self.catalina.get_rssi(which)
-
-    def get_rssi_sensor(self, chan):
-        """
-        Return a sensor dictionary containing the current RSSI of `which` chain in Catalina
-        """
-        which = 'RX' + str(chan+1)
-        return {
-            'name': 'rssi',
-            'type': 'REALNUM',
-            'unit': 'dB',
-            'value': str(self.get_rssi_val(which)),
-        }
-
-    def set_catalina_clock_rate(self, rate):
-        """
-        Async call to catalina set_clock_rate
-        """
-        self.log.trace("Setting Clock rate to {}".format(rate))
-        async_exec(lib.ad9361, "set_clock_rate", self.catalina, rate)
-        return rate
-
-    def catalina_tune(self, which, freq):
-        """
-        Async call to catalina tune
-        """
-        self.log.trace("Tuning {} {}".format(which, freq))
-        async_exec(lib.ad9361, "tune", self.catalina, which, freq)
-        return self.catalina.get_freq(which)

@@ -11,6 +11,7 @@ from usrp_mpm import __simulated__
 if not __simulated__:
     from .magnesium import Magnesium
     from .rhodium import Rhodium
+    from .ad936x_db import AD936xDboard
     from .neon import Neon
     from .e31x_db import E31x_db
     from .empty_slot import EmptySlot
