@@ -17,7 +17,8 @@ static const int32_t MIN_FREQ_WORD = std::numeric_limits<int32_t>::min();
 void get_freq_and_freq_word(const double requested_freq,
     const double tick_rate,
     double& actual_freq,
-    int32_t& freq_word)
+    int32_t& freq_word,
+    int word_width)
 {
     const double freq = uhd::math::wrap_frequency(requested_freq, tick_rate);
 
@@ -33,7 +34,7 @@ void get_freq_and_freq_word(const double requested_freq,
      */
     freq_word = 0;
 
-    static const double scale_factor = std::pow(2.0, 32);
+    static const double scale_factor = std::pow(2.0, word_width);
     if ((freq / tick_rate) >= (MAX_FREQ_WORD / scale_factor)) {
         /* Operation would have caused a positive overflow of int32. */
         freq_word = MAX_FREQ_WORD;
@@ -51,10 +52,10 @@ void get_freq_and_freq_word(const double requested_freq,
 }
 
 std::tuple<double, int> get_freq_and_freq_word(
-    const double requested_freq, const double tick_rate)
+    const double requested_freq, const double tick_rate, int word_width)
 {
     double actual_freq;
     int32_t freq_word;
-    get_freq_and_freq_word(requested_freq, tick_rate, actual_freq, freq_word);
+    get_freq_and_freq_word(requested_freq, tick_rate, actual_freq, freq_word, word_width);
     return std::make_tuple(actual_freq, freq_word);
 }
