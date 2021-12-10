@@ -6,6 +6,7 @@
 //
 
 #include <uhd/exception.hpp>
+#include <uhd/property_tree.hpp>
 #include <uhd/rfnoc/block_id.hpp>
 #include <boost/test/unit_test.hpp>
 #include <iostream>
@@ -29,6 +30,7 @@ BOOST_AUTO_TEST_CASE(test_block_id)
     BOOST_CHECK_EQUAL(block_id.get_device_no(), 0);
     BOOST_CHECK_EQUAL(block_id.get_block_name(), "FFT");
     BOOST_CHECK_EQUAL(block_id.get_block_count(), 1);
+    BOOST_CHECK_EQUAL(block_id.get_tree_root(), "/blocks/0/FFT#1");
 
     block_id.set_device_no(17);
     BOOST_CHECK_EQUAL(block_id.get_device_no(), 17);

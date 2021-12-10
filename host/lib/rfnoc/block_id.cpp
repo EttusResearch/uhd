@@ -59,7 +59,7 @@ std::string block_id_t::get_local() const
 
 uhd::fs_path block_id_t::get_tree_root() const
 {
-    return str(boost::format("/mboards/%d/xbar/%s") % get_device_no() % get_local());
+    return uhd::fs_path("/blocks") / to_string();
 }
 
 bool block_id_t::match(const std::string& block_str)
