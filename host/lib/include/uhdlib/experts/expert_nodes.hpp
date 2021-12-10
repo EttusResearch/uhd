@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include <boost/core/demangle.hpp>
 #include <functional>
+#include <iostream>
 #include <list>
 #include <memory>
 #include <mutex>
@@ -390,6 +391,12 @@ public:
     inline bool operator!=(const data_t& rhs)
     {
         return !(get() == rhs);
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const data_reader_t& reader)
+    {
+        os << reader.get();
+        return os;
     }
 };
 
