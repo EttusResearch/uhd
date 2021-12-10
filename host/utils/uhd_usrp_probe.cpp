@@ -254,7 +254,7 @@ static std::string get_mboard_pp_string(property_tree::sptr tree, const fs_path&
         ss << "FPGA git hash: "
            << tree->access<std::string>(path / "fpga_version_hash").get() << std::endl;
     }
-    if (tree->exists(path / "xbar")) {
+    if (tree->exists("/blocks")) {
         ss << "RFNoC capable: Yes" << std::endl;
     }
     ss << std::endl;
