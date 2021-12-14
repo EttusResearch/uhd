@@ -52,6 +52,7 @@ Change Log for Releases
   -  sync: Update page on synchronization
   -  Fix typo in ZBX Block Diagram
   -  x4xx: Document configuring eth0 static IP
+  -  Remove bmaptool instructions for writing filesystems
 * examples
   -  Use cmul for gain block in-tree IP example
   -  Test all variants in gain testbench
