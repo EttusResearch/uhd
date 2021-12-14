@@ -718,7 +718,7 @@ stopped by hitting Ctrl-C at the APU serial console.
 \subsubsection x4xx_flash_emmc Flashing eMMC
 
 Once the X410's eMMC is accessible over USB, it's possible to write the
-filesystem image using `bmaptool`. You can obtain the latest filesystem image by
+filesystem image using `dd`. You can obtain the latest filesystem image by
 running:
 
     uhd_images_downloader -t sdimg -t x4xx
@@ -728,12 +728,12 @@ found.
 
 Run:
 
-    sudo bmaptool copy /path/to/usrp_x4xx_fs.sdimg.bz2 /dev/sdX
+    sudo dd if=/path/to/usrp_x4xx_fs.sdimg of=/dev/sdX bs=1M
 
 to flash the eMMC with this image (replacing /dev/sdX with the block device
 of the X410's eMMC as indicated by your kernel log).
 
-When bmaptool has indicated that copying has completed, hit Ctrl-C on the U-boot
+When copying has completed, hit Ctrl-C on the U-boot
 prompt to terminate the mass storage mode. Then, power-cycle the device to load
 the new filesystem.
 
