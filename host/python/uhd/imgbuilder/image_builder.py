@@ -177,6 +177,7 @@ class ImageBuilderConfig:
         self.__dict__.update(**config)
         self.blocks = blocks
         self.device = device
+        self._check_configuration()
         self._update_sep_defaults()
         self._set_indices()
         self._collect_noc_ports()
@@ -184,6 +185,18 @@ class ImageBuilderConfig:
         self._collect_clocks()
         self.pick_connections()
         self.pick_clk_domains()
+
+    def _check_configuration(self):
+        """
+        Do plausibility checks on the current configuration
+        """
+        logging.info("Plausibility checks on the current configuration")
+        failure = None
+        if not any([bool(sep["ctrl"]) for sep in self.stream_endpoints.values()]):
+            failure = "At least one streaming endpoint needs to have ctrl enabled"
+        if failure:
+            logging.error(failure)
+            raise ValueError(failure)
 
     def _update_sep_defaults(self):
         """
