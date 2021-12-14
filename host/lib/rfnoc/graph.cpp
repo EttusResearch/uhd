@@ -709,11 +709,48 @@ void graph_t::_check_topology()
         }
 
         if (!node_accessor.check_topology(node, connected_inputs, connected_outputs)) {
+            std::ostringstream input_topology;
+            input_topology << " requested inputs: (";
+            for (auto connected_input : connected_inputs) {
+                input_topology << connected_input;
+                if (connected_input != connected_inputs.back()) {
+                    input_topology << ", ";
+                }
+            }
+            input_topology << ")";
+            input_topology << " valid inputs: (";
+            for (size_t expected_input = 0; expected_input < node->get_num_input_ports();
+                 expected_input++) {
+                input_topology << expected_input;
+                if (expected_input < node->get_num_input_ports() - 1) {
+                    input_topology << ", ";
+                }
+            }
+            input_topology << ")";
+
+            std::ostringstream output_topology;
+            output_topology << " requested outputs: (";
+            for (auto connected_output : connected_outputs) {
+                output_topology << connected_output;
+                if (connected_output != connected_outputs.back()) {
+                    output_topology << ", ";
+                }
+            }
+            output_topology << ")";
+            output_topology << " valid outputs: (";
+            for (size_t expected_output = 0;
+                 expected_output < node->get_num_output_ports();
+                 expected_output++) {
+                output_topology << expected_output;
+                if (expected_output < node->get_num_output_ports() - 1) {
+                    output_topology << ", ";
+                }
+            }
+            output_topology << ")";
+
             UHD_LOG_ERROR(LOG_ID,
-                "Node " << node->get_unique_id()
-                        << "cannot handle its current topology! ("
-                        << connected_inputs.size() << "inputs, "
-                        << connected_outputs.size() << " outputs)");
+                "Node " << node->get_unique_id() << " using invalid inputs or outputs! "
+                        << input_topology.str() << ", " << output_topology.str());
             topo_ok = false;
         }
     }
