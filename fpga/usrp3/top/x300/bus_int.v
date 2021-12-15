@@ -439,12 +439,12 @@ module bus_int #(
        RB_FP_GPIO_SRC: rb_data = fp_gpio_src;
        SR_BASE_TIME: begin
                        rb_data = radio_time[31:0];
-                       radio_time_hi_ld = 1'b1;
+                       radio_time_hi_ld = rb_rd_stb;
                      end
        SR_BASE_TIME + 'h04: rb_data = radio_time_hi;
        SR_BASE_TIME + 'h14: begin
                            rb_data = radio_time_last_pps[31:0];
-                           radio_time_last_pps_hi_ld = 1'b1;
+                           radio_time_last_pps_hi_ld = rb_rd_stb;
                          end
        SR_BASE_TIME + 'h18: rb_data = radio_time_last_pps_hi;
        SR_BASE_TIME + 'h1C: rb_data = period_ns_q32_tb[31:0];
