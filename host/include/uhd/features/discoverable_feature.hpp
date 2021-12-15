@@ -36,6 +36,7 @@ public:
         REF_CLK_CALIBRATION,
         TRIG_IO_MODE,
         GPIO_POWER,
+        SPI_GETTER_IFACE
     };
 
     virtual ~discoverable_feature() = default;

@@ -6,8 +6,9 @@
 
 #pragma once
 
-#include <uhdlib/usrp/cores/gpio_atr_3000.hpp>
 #include <uhdlib/usrp/common/rpc.hpp>
+#include <uhdlib/usrp/cores/gpio_atr_3000.hpp>
+#include <uhdlib/usrp/cores/gpio_port_mapper.hpp>
 #include <vector>
 
 namespace uhd { namespace rfnoc { namespace x400 {
@@ -32,7 +33,8 @@ extern const char* GPIO_BANK_NAME;
  * internal radio control registers, as well as in MPM to configure the DIO
  * board.
  */
-class gpio_control {
+class gpio_control
+{
 public:
     using sptr = std::shared_ptr<gpio_control>;
 
@@ -79,4 +81,13 @@ private:
     std::vector<usrp::gpio_atr::gpio_atr_3000::sptr> _gpios;
 };
 
+class x400_gpio_port_mapping : public uhd::mapper::gpio_port_mapper
+{
+public:
+    x400_gpio_port_mapping(){};
+
+    uint32_t map_value(const uint32_t& value) override;
+
+    uint32_t unmap_value(const uint32_t& value) override;
+};
 }}} // namespace uhd::rfnoc::x400

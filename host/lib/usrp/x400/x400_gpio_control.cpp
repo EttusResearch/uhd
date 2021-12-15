@@ -6,6 +6,7 @@
 
 #include "x400_gpio_control.hpp"
 
+
 using namespace uhd::rfnoc::x400;
 
 namespace {
@@ -33,6 +34,9 @@ constexpr uint32_t DIO_DIRECTION_REG = 0x4;
 // There are two ports, each with 12 pins
 constexpr size_t NUM_PINS_PER_PORT = 12;
 
+// Start of Port B pin numbers relative to Port A:
+constexpr size_t PORT_NUMBER_OFFSET = 16;
+
 // These values should match the values in MPM's x4xx_periphs.py "DIO_PORT_MAP"
 constexpr uint32_t PORTA_MAPPING[12] = {1, 0, 2, 3, 5, 4, 6, 7, 9, 8, 10, 11};
 constexpr uint32_t PORTB_MAPPING[12] = {10, 11, 9, 8, 6, 7, 5, 4, 2, 3, 1, 0};
@@ -40,7 +44,8 @@ constexpr uint32_t PORTB_MAPPING[12] = {10, 11, 9, 8, 6, 7, 5, 4, 2, 3, 1, 0};
 
 const char* uhd::rfnoc::x400::GPIO_BANK_NAME = "GPIO";
 
-gpio_control::gpio_control(uhd::usrp::x400_rpc_iface::sptr rpcc, uhd::wb_iface::sptr iface)
+gpio_control::gpio_control(
+    uhd::usrp::x400_rpc_iface::sptr rpcc, uhd::wb_iface::sptr iface)
     : _rpcc(rpcc), _regs(iface)
 {
     _rpcc->dio_set_port_mapping("DIO");
@@ -87,8 +92,10 @@ void gpio_control::set_gpio_attr(
 
 bool gpio_control::is_atr_attr(const uhd::usrp::gpio_atr::gpio_attr_t attr)
 {
-    return attr == uhd::usrp::gpio_atr::GPIO_ATR_0X || attr == uhd::usrp::gpio_atr::GPIO_ATR_RX
-           || attr == uhd::usrp::gpio_atr::GPIO_ATR_TX || attr == uhd::usrp::gpio_atr::GPIO_ATR_XX;
+    return attr == uhd::usrp::gpio_atr::GPIO_ATR_0X
+           || attr == uhd::usrp::gpio_atr::GPIO_ATR_RX
+           || attr == uhd::usrp::gpio_atr::GPIO_ATR_TX
+           || attr == uhd::usrp::gpio_atr::GPIO_ATR_XX;
 }
 
 uint32_t gpio_control::internalize_value(const uint32_t value)
@@ -124,4 +131,28 @@ uint32_t gpio_control::get_gpio_attr(const uhd::usrp::gpio_atr::gpio_attr_t attr
     }
 
     return publicize_value(_gpios[0]->get_attr_reg(attr));
+}
+
+uint32_t uhd::rfnoc::x400::x400_gpio_port_mapping::map_value(const uint32_t& value)
+{
+    const uint32_t bank           = value >= NUM_PINS_PER_PORT ? 1 : 0;
+    uint32_t pin_intern           = value % NUM_PINS_PER_PORT;
+    const uint32_t* const mapping = bank == 1 ? PORTB_MAPPING : PORTA_MAPPING;
+    for (size_t i = 0; i < NUM_PINS_PER_PORT; i++) {
+        if (mapping[i] == pin_intern) {
+            return i + (bank * PORT_NUMBER_OFFSET);
+        }
+    }
+    throw uhd::lookup_error(
+        "Could not find corresponding GPIO pin number for given SPI pin " + value);
+    return 0;
+}
+
+uint32_t uhd::rfnoc::x400::x400_gpio_port_mapping::unmap_value(const uint32_t& value)
+{
+    const uint32_t bank           = value >= PORT_NUMBER_OFFSET ? 1 : 0;
+    uint32_t pin_number           = value % PORT_NUMBER_OFFSET;
+    const uint32_t* const mapping = bank == 1 ? PORTB_MAPPING : PORTA_MAPPING;
+    UHD_ASSERT_THROW(pin_number < NUM_PINS_PER_PORT);
+    return mapping[pin_number] + (bank * NUM_PINS_PER_PORT);
 }
