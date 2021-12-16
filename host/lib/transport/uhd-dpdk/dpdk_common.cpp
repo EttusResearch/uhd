@@ -90,7 +90,7 @@ dpdk_port::dpdk_port(port_id_t port,
             << boost::format("Port %d: Could not set mtu to %d") % _port % _mtu;
         rte_eth_dev_get_mtu(_port, &actual_mtu);
         UHD_LOGGER_WARNING("DPDK")
-            << boost::format("Port %d: Current mtu=%d") % _port % _mtu;
+            << boost::format("Port %d: Current mtu=%d") % _port % actual_mtu;
         _mtu = actual_mtu;
     }
 
