@@ -259,7 +259,7 @@ public:
         const std::string& which, const int8_t gain, const std::vector<int16_t>& fir) = 0;
 
     //! get the FIR filter for the frontend which
-    virtual std::vector<int16_t> get_fir(const std::string& which, int8_t& gain) = 0;
+    virtual std::pair<int8_t, std::vector<int16_t>> get_fir(const std::string& which) = 0;
 
     // TODO: update docstring with temperature unit and calibration information
     //! get the device temperature

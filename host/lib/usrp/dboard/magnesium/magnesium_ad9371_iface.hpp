@@ -37,6 +37,11 @@ public:
 
     std::string get_lo_source(const uhd::direction_t dir);
 
+    void set_fir(
+        const std::string& name, const int8_t gain, const std::vector<int16_t>& coeffs);
+
+    std::pair<int8_t, std::vector<int16_t>> get_fir(const std::string& name);
+
 private:
     /*! Shorthand to perform an RPC request. Saves some typing.
      */

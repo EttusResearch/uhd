@@ -1175,6 +1175,145 @@ sensor_value_t magnesium_radio_control_impl::get_tx_sensor(
 }
 
 /**************************************************************************
+ * Filter API
+ *************************************************************************/
+std::vector<std::string> magnesium_radio_control_impl::get_rx_filter_names(
+    const size_t chan) const
+{
+    UHD_ASSERT_THROW(chan < TOTAL_RADIO_PORTS);
+    if (chan % 2 == 0) {
+        return {"RX1_FIR", "RX1RX2_FIR"};
+    } else {
+        return {"RX2_FIR", "RX1RX2_FIR"};
+    }
+}
+
+uhd::filter_info_base::sptr magnesium_radio_control_impl::get_rx_filter(
+    const std::string& name, const size_t)
+{
+    if (_mpm_compat_num[0] < 4 || (_mpm_compat_num[0] == 4 && _mpm_compat_num[1] < 2)) {
+        RFNOC_LOG_WARNING("Getting rx filter not supported. Please upgrade MPM to a "
+                          "minimum version of 4.2.");
+        return std::make_shared<uhd::digital_filter_fir<int16_t>>(
+            uhd::filter_info_base::filter_type::DIGITAL_FIR_I16,
+            false,
+            0,
+            1.0,
+            1,
+            1,
+            32767,
+            AD9371_RX_MAX_FIR_TAPS,
+            std::vector<int16_t>(AD9371_RX_MAX_FIR_TAPS, 0));
+    }
+
+    const auto rv     = _ad9371->get_fir(name);
+    const auto coeffs = rv.second;
+    // TODO: Put gain in the digital_filter_fir
+    return std::make_shared<uhd::digital_filter_fir<int16_t>>(
+        uhd::filter_info_base::filter_type::DIGITAL_FIR_I16,
+        false,
+        0,
+        1.0,
+        1,
+        1,
+        32767,
+        AD9371_RX_MAX_FIR_TAPS,
+        coeffs);
+}
+
+void magnesium_radio_control_impl::set_rx_filter(
+    const std::string& name, uhd::filter_info_base::sptr filter, const size_t)
+{
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
+
+    if (_mpm_compat_num[0] < 4 || (_mpm_compat_num[0] == 4 && _mpm_compat_num[1] < 2)) {
+        RFNOC_LOG_WARNING("Setting rx filter not supported. Please upgrade MPM to a "
+                          "minimum version of 4.2.");
+        return;
+    }
+
+    auto fir = std::dynamic_pointer_cast<uhd::digital_filter_fir<int16_t>>(filter);
+    if (fir == nullptr) {
+        throw uhd::runtime_error("Invalid Filter Type for RX Filter");
+    }
+    if (fir->get_taps().size() != AD9371_RX_MAX_FIR_TAPS) {
+        throw uhd::runtime_error("AD937x RX Filter Taps must be "
+                                 + std::to_string(AD9371_RX_MAX_FIR_TAPS)
+                                 + " taps long!");
+    }
+    // TODO: Use gain in the digital_filter_fir
+    _ad9371->set_fir(name, 6, fir->get_taps());
+}
+
+std::vector<std::string> magnesium_radio_control_impl::get_tx_filter_names(
+    const size_t chan) const
+{
+    UHD_ASSERT_THROW(chan < TOTAL_RADIO_PORTS);
+    if (chan % 2 == 0) {
+        return {"TX1_FIR", "TX1TX2_FIR"};
+    } else {
+        return {"TX2_FIR", "TX1TX2_FIR"};
+    }
+}
+
+uhd::filter_info_base::sptr magnesium_radio_control_impl::get_tx_filter(
+    const std::string& name, const size_t)
+{
+    if (_mpm_compat_num[0] < 4 || (_mpm_compat_num[0] == 4 && _mpm_compat_num[1] < 2)) {
+        RFNOC_LOG_WARNING("Getting tx filter not supported. Please upgrade MPM to a "
+                          "minimum version of 4.2.");
+        return std::make_shared<uhd::digital_filter_fir<int16_t>>(
+            uhd::filter_info_base::filter_type::DIGITAL_FIR_I16,
+            false,
+            0,
+            1.0,
+            1,
+            1,
+            32767,
+            AD9371_TX_MAX_FIR_TAPS,
+            std::vector<int16_t>(AD9371_TX_MAX_FIR_TAPS, 0));
+    }
+
+    const auto rv   = _ad9371->get_fir(name);
+    const auto taps = rv.second;
+    // TODO: Use gain in the digital_filter_fir
+    return std::make_shared<uhd::digital_filter_fir<int16_t>>(
+        uhd::filter_info_base::filter_type::DIGITAL_FIR_I16,
+        false,
+        0,
+        1.0,
+        1,
+        1,
+        32767,
+        AD9371_TX_MAX_FIR_TAPS,
+        taps);
+}
+
+void magnesium_radio_control_impl::set_tx_filter(
+    const std::string& name, uhd::filter_info_base::sptr filter, const size_t)
+{
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
+
+    if (_mpm_compat_num[0] < 4 || (_mpm_compat_num[0] == 4 && _mpm_compat_num[1] < 2)) {
+        RFNOC_LOG_WARNING("Setting tx filter not supported. Please upgrade MPM to a "
+                          "minimum version of 4.2.");
+        return;
+    }
+
+    auto fir = std::dynamic_pointer_cast<uhd::digital_filter_fir<int16_t>>(filter);
+    if (fir == nullptr) {
+        throw uhd::runtime_error("Invalid Filter Type for TX Filter");
+    }
+    if (fir->get_taps().size() != AD9371_TX_MAX_FIR_TAPS) {
+        throw uhd::runtime_error("AD937x TX Filter Taps must be "
+                                 + std::to_string(AD9371_TX_MAX_FIR_TAPS)
+                                 + " taps long!");
+    }
+    // TODO: Use gain in the digital_filter_fir
+    _ad9371->set_fir(name, 6, fir->get_taps());
+}
+
+/**************************************************************************
  * Radio Identification API Calls
  *************************************************************************/
 size_t magnesium_radio_control_impl::get_chan_from_dboard_fe(

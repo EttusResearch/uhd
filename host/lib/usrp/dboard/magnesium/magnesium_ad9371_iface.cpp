@@ -135,3 +135,15 @@ std::string magnesium_ad9371_iface::get_lo_source(const uhd::direction_t dir)
     UHD_LOG_TRACE(_log_prefix, _rpc_prefix << "get_lo_source returned " << retval);
     return retval;
 }
+
+void magnesium_ad9371_iface::set_fir(
+    const std::string& name, const int8_t gain, const std::vector<int16_t>& coeffs)
+{
+    request<void>("set_fir", name, gain, coeffs);
+}
+
+std::pair<int8_t, std::vector<int16_t>> magnesium_ad9371_iface::get_fir(
+    const std::string& name)
+{
+    return request<std::pair<int8_t, std::vector<int16_t>>>("get_fir", name);
+}

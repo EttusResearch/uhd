@@ -430,7 +430,6 @@ public:
     virtual void set_fir(
         const std::string& which, const int8_t gain, const std::vector<int16_t>& fir)
     {
-        const auto dir     = _get_direction_from_antenna(which);
         const auto lengths = _get_valid_fir_lengths(which);
 
         if (std::find(lengths.begin(), lengths.end(), fir.size()) == lengths.end()) {
@@ -438,15 +437,13 @@ public:
         }
 
         std::lock_guard<std::mutex> lock(*spi_mutex);
-        device.set_fir(dir, gain, fir);
+        device.set_fir(which, gain, fir);
     }
 
-    virtual std::vector<int16_t> get_fir(const std::string& which, int8_t& gain)
+    virtual std::pair<int8_t, std::vector<int16_t>> get_fir(const std::string& which)
     {
-        auto dir = _get_direction_from_antenna(which);
-
         std::lock_guard<std::mutex> lock(*spi_mutex);
-        return device.get_fir(dir, gain);
+        return device.get_fir(which);
     }
 
     virtual int16_t get_temperature()

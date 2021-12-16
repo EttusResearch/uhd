@@ -10,6 +10,7 @@
 #include "adi/mykonos_gpio.h"
 #include "config/ad937x_config_t.hpp"
 #include "config/ad937x_default_config.hpp"
+#include "mpm/ad937x/ad937x_ctrl.hpp"
 #include <uhd/utils/algorithm.hpp>
 #include <boost/format.hpp>
 #include <cmath>
@@ -20,6 +21,7 @@
 
 using namespace mpm::ad937x::device;
 using namespace mpm::ad937x::gpio;
+using namespace mpm::chips;
 using namespace uhd;
 
 const double ad937x_device::MIN_FREQ     = 300e6;
@@ -58,6 +60,20 @@ static constexpr double AD9371_TX_DAC_FILT_MIN_CORNER = 92.0e6; // Hz
 static constexpr double AD9371_TX_DAC_FILT_MAX_CORNER = 187.0e6; // Hz
 
 static const uint32_t PLL_LOCK_TIMEOUT_MS = 200;
+
+const std::map<std::string, mykonosfirName_t> ad937x_device::_tx_filter_map{
+    {"TX1_FIR", TX1_FIR},
+    {"TX2_FIR", TX2_FIR},
+    {"TX1TX2_FIR", TX1TX2_FIR},
+};
+
+const std::map<std::string, mykonosfirName_t> ad937x_device::_rx_filter_map{
+    {"RX1_FIR", RX1_FIR},
+    {"RX2_FIR", RX2_FIR},
+    {"RX1RX2_FIR", RX1RX2_FIR},
+    {"OBSRX_A_FIR", OBSRX_A_FIR},
+    {"OBSRX_B_FIR", OBSRX_B_FIR},
+};
 
 // Amount of time to average samples for RX DC offset
 // A larger averaging window will result in:
@@ -667,6 +683,28 @@ void ad937x_device::set_agc_mode(const direction_t direction, const gain_mode_t 
 }
 
 void ad937x_device::set_fir(
+    const std::string& name, int8_t gain, const std::vector<int16_t>& fir)
+{
+    mykonosfirName_t filter_name;
+    if (_rx_filter_map.count(name) == 1) {
+        filter_name = _rx_filter_map.at(name);
+        mykonos_config.rx_fir_config.set_fir(gain, fir);
+    } else if (_tx_filter_map.count(name) == 1) {
+        filter_name = _tx_filter_map.at(name);
+        mykonos_config.tx_fir_config.set_fir(gain, fir);
+    } else {
+        throw mpm::runtime_error("set_fir invalid name: " + name);
+    }
+    mykonosFir_t filter{.gain_dB = gain,
+        .numFirCoefs             = static_cast<uint8_t>(fir.size()),
+        .coefs                   = const_cast<int16_t*>(fir.data())};
+    const auto state = _move_to_config_state();
+    CALL_API(MYKONOS_programFir(mykonos_config.device, filter_name, &filter));
+    _restore_from_config_state(state);
+}
+
+
+void ad937x_device::set_fir(
     const direction_t direction, int8_t gain, const std::vector<int16_t>& fir)
 {
     switch (direction) {
@@ -679,8 +717,13 @@ void ad937x_device::set_fir(
         default:
             MPM_THROW_INVALID_CODE_PATH();
     }
-
-    // TODO: reload this on device
+    mykonosfirName_t filter_name = (direction == TX_DIRECTION) ? TX1TX2_FIR : RX1RX2_FIR;
+    mykonosFir_t filter{.gain_dB = gain,
+        .numFirCoefs             = static_cast<uint8_t>(fir.size()),
+        .coefs                   = const_cast<int16_t*>(fir.data())};
+    const auto state = _move_to_config_state();
+    CALL_API(MYKONOS_programFir(mykonos_config.device, filter_name, &filter));
+    _restore_from_config_state(state);
 }
 
 void ad937x_device::set_gain_pin_step_sizes(const direction_t direction,
@@ -795,16 +838,24 @@ double ad937x_device::get_gain(const direction_t direction, const chain_t chain)
     }
 }
 
-std::vector<int16_t> ad937x_device::get_fir(const direction_t direction, int8_t& gain)
+std::pair<int8_t, std::vector<int16_t>> ad937x_device::get_fir(const std::string& name)
 {
-    switch (direction) {
-        case TX_DIRECTION:
-            return mykonos_config.tx_fir_config.get_fir(gain);
-        case RX_DIRECTION:
-            return mykonos_config.rx_fir_config.get_fir(gain);
-        default:
-            MPM_THROW_INVALID_CODE_PATH();
+    mykonosfirName_t filter_name;
+    if (_rx_filter_map.count(name) == 1) {
+        filter_name = _rx_filter_map.at(name);
+    } else if (_tx_filter_map.count(name) == 1) {
+        filter_name = _tx_filter_map.at(name);
+    } else {
+        throw mpm::runtime_error("get_fir invalid name: " + name);
     }
+    mykonosFir_t fir;
+    std::vector<int16_t> rv(96, 0);
+    fir.coefs        = rv.data();
+    const auto state = _move_to_config_state();
+    CALL_API(MYKONOS_readFir(mykonos_config.device, filter_name, &fir));
+    _restore_from_config_state(state);
+    rv.resize(fir.numFirCoefs);
+    return std::pair<int8_t, std::vector<int16_t>>(fir.gain_dB, rv);
 }
 
 int16_t ad937x_device::get_temperature()

@@ -493,6 +493,15 @@ class Magnesium(BfrfsEEPROM, DboardManagerBase):
         self._reinit(self.master_clock_rate)
         return bw
 
+    def set_fir(self, name, gain, coeffs):
+        self.log.debug("ad9371 set_fir name: {} gain: {} coeffs: {}".format(name, gain, coeffs))
+        self.mykonos.set_fir(name, gain, coeffs)
+        return
+
+    def get_fir(self, name):
+        self.log.debug("ad9371 get_fir name: {}".format(name))
+        return self.mykonos.get_fir(name)
+
     ##########################################################################
     # Debug
     ##########################################################################

@@ -22,6 +22,9 @@ static constexpr double AD9371_TX_MAX_BANDWIDTH = 100.0e6; // HZ
 static constexpr double AD9371_MIN_FREQ = 300.0e6; // Hz
 static constexpr double AD9371_MAX_FREQ = 6.0e9; // Hz
 
+static constexpr size_t AD9371_RX_MAX_FIR_TAPS = 48; // Coefficients
+static constexpr size_t AD9371_TX_MAX_FIR_TAPS = 32; // Coefficients
+
 static constexpr double ADF4351_MIN_FREQ = 35.0e6;
 static constexpr double ADF4351_MAX_FREQ = 4.4e9;
 

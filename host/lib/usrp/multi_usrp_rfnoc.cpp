@@ -17,6 +17,7 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/utils/graph_utils.hpp>
 #include <uhd/utils/math.hpp>
+#include <uhd/utils/string.hpp>
 #include <uhdlib/rfnoc/rfnoc_device.hpp>
 #include <uhdlib/rfnoc/rfnoc_rx_streamer.hpp>
 #include <uhdlib/rfnoc/rfnoc_tx_streamer.hpp>
@@ -2229,11 +2230,13 @@ public:
         const std::string& name, const size_t chan) override
     {
         try {
+            // Get the blockid and filtername separated from the name string
+            const auto names        = string::split(name, ":");
+            const auto& blockid     = names.first;
+            const auto& filter_name = names.second;
             // The block_id_t constructor is pretty smart; let it handle the parsing.
-            block_id_t block_id(name);
-            auto rx_chan = _get_rx_chan(chan);
-            // The filter name is the `name` after the BLOCK_ID and a `:`
-            std::string filter_name = name.substr(block_id.to_string().size() + 1);
+            block_id_t block_id(blockid);
+            const auto rx_chan = _get_rx_chan(chan);
             // Try to dynamic cast either the radio or the DDC to a filter_node, and call
             // its filter function
             auto block_ctrl = [rx_chan, block_id, chan]() -> noc_block_base::sptr {
@@ -2270,11 +2273,12 @@ public:
     {
         MUX_RX_API_CALL(set_rx_filter, name, filter);
         try {
+            const auto names        = string::split(name, ":");
+            const auto& blockid     = names.first;
+            const auto& filter_name = names.second;
             // The block_id_t constructor is pretty smart; let it handle the parsing.
-            block_id_t block_id(name);
-            auto rx_chan = _get_rx_chan(chan);
-            // The filter name is the `name` after the BLOCK_ID and a `:`
-            std::string filter_name = name.substr(block_id.to_string().size() + 1);
+            block_id_t block_id(blockid);
+            const auto rx_chan = _get_rx_chan(chan);
             // Try to dynamic cast either the radio or the DDC to a filter_node, and call
             // its filter function
             auto block_ctrl = [rx_chan, block_id, chan]() -> noc_block_base::sptr {
@@ -2352,11 +2356,12 @@ public:
         const std::string& name, const size_t chan) override
     {
         try {
+            const auto names        = string::split(name, ":");
+            const auto& blockid     = names.first;
+            const auto& filter_name = names.second;
             // The block_id_t constructor is pretty smart; let it handle the parsing.
-            block_id_t block_id(name);
-            auto tx_chan = _get_tx_chan(chan);
-            // The filter name is the `name` after the BLOCK_ID and a `:`
-            std::string filter_name = name.substr(block_id.to_string().size() + 1);
+            block_id_t block_id(blockid);
+            const auto tx_chan = _get_tx_chan(chan);
             // Try to dynamic cast either the radio or the DUC to a filter_node, and call
             // its filter function
             auto block_ctrl = [tx_chan, block_id, chan]() -> noc_block_base::sptr {
@@ -2393,11 +2398,12 @@ public:
     {
         MUX_TX_API_CALL(set_tx_filter, name, filter);
         try {
+            const auto names        = string::split(name, ":");
+            const auto& blockid     = names.first;
+            const auto& filter_name = names.second;
             // The block_id_t constructor is pretty smart; let it handle the parsing.
-            block_id_t block_id(name);
-            auto tx_chan = _get_tx_chan(chan);
-            // The filter name is the `name` after the BLOCK_ID and a `:`
-            std::string filter_name = name.substr(block_id.to_string().size() + 1);
+            block_id_t block_id(blockid);
+            const auto tx_chan = _get_tx_chan(chan);
             // Try to dynamic cast either the radio or the DUC to a filter_node, and call
             // its filter function
             auto block_ctrl = [tx_chan, block_id, chan]() -> noc_block_base::sptr {
