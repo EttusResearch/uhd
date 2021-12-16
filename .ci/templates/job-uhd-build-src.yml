@@ -7,6 +7,7 @@ parameters:
   - make_trace
   - ninja
   - msbuild
+  - make_homebrew_macos
 - name: 'custom_boost_version_url'
   type: string
   default: 'https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.bz2'
@@ -25,17 +26,23 @@ jobs:
     dockerImageMatrixLin: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixLin'] ]
     dockerImageMatrixWin: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixWin'] ]
     dockerImageMatrixUbuntuDeb: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixUbuntuDeb'] ]
+    macOSBuilders: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.macOSBuilders'] ]
   pool:
     ${{ if eq(parameters.toolset, 'msbuild') }}:
       name: de-dre-lab
     ${{ if ne(parameters.toolset, 'msbuild') }}:
       name: Drivers-NIBuildFarm-RFMIBUILD
     demands:
-      - docker
       - ${{ if eq(parameters.toolset, 'msbuild') }}:
+        - docker
         - Agent.OS -equals Windows_NT
-      - ${{ if ne(parameters.toolset, 'msbuild') }}:
+      - ${{ if or(eq(parameters.toolset, 'make'), eq(parameters.toolset, 'make_trace'), eq(parameters.toolset, 'ninja'), eq(parameters.toolset, 'make_custom_boost_version')) }}:
+        - docker
         - Agent.OS -equals Linux
+      - ${{ if eq(parameters.toolset, 'make_homebrew_macos') }}:
+        - Agent.OS -equals Darwin
+        - Agent.OSVersion -equals $(macOSVersionDemand)
+        - Agent.OSArchitecture -equals $(macOSArchDemand)
   workspace:
     clean: outputs
   strategy:
@@ -43,9 +50,12 @@ jobs:
       matrix: $[ variables.dockerImageMatrixWin ]
     ${{ if or(eq(parameters.toolset, 'make'), eq(parameters.toolset, 'make_trace'), eq(parameters.toolset, 'ninja'), eq(parameters.toolset, 'make_custom_boost_version')) }}:
       matrix: $[ variables.dockerImageMatrixLin ]
-  container:
-    image: '$(dockerImagePrefix)$(DockerImageName):$(dockerBuildNumber)'
-    endpoint: 'Docker / Artifactory - rnd-builds-local'
+    ${{ if eq(parameters.toolset, 'make_homebrew_macos') }}:
+      matrix: $[ variables.macOSBuilders ]
+  ${{ if ne(parameters.toolset, 'make_homebrew_macos') }}:
+    container:
+      image: '$(dockerImagePrefix)$(DockerImageName):$(dockerBuildNumber)'
+      endpoint: 'Docker / Artifactory - rnd-builds-local'
   steps:
   - checkout: self
     clean: true
@@ -64,6 +74,12 @@ jobs:
         uhdSrcDir: ../../../s
         uhdBuildDir: $(Build.BinariesDirectory)/uhddev/build
         uhdEnableTraceLog: true
+
+  - ${{ if eq(parameters.toolset, 'make_homebrew_macos') }}:
+    - template: steps-build-uhd-make-homebrew-macos.yml
+      parameters:
+        uhdSrcDir: ../../../s
+        uhdBuildDir: $(Build.BinariesDirectory)/uhddev/build
 
   - ${{ if eq(parameters.toolset, 'ninja') }}:
     - template: steps-build-uhd-ninja.yml
@@ -118,6 +134,7 @@ jobs:
       sourceFolder: $(Build.BinariesDirectory)/uhddev/
       contents: build/Testing/**
       targetFolder: $(Common.TestResultsDirectory)
+    condition: and(succeeded(), ne('${{ parameters.toolset }}', 'make_homebrew_macos'))
     displayName: Copy ${{ parameters.toolset }} ctest results
 
   - task: PublishTestResults@2
@@ -125,5 +142,6 @@ jobs:
       testResultsFormat: cTest
       testResultsFiles: $(Common.TestResultsDirectory)/build/Testing/**/Test.xml
       failTaskOnFailedTests: true
-      testRunTitle: uhd ctest $(dockerOSName)-${{ parameters.toolset }}
-    displayName: Publish $(dockerOSName)-${{ parameters.toolset }} ctest results
+      testRunTitle: uhd ctest $(buildOSName)-${{ parameters.toolset }}
+    condition: and(succeeded(), ne('${{ parameters.toolset }}', 'make_homebrew_macos'))
+    displayName: Publish $(buildOSName)-${{ parameters.toolset }} ctest results
