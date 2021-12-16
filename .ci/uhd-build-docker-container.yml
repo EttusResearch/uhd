@@ -55,6 +55,10 @@ variables:
     "{'Ubuntu-1804-builder':{'dockerOSName':'ubuntu1804','dockerImageName':'uhd-builder-ubuntu1804','ubuntuReleaseName':'bionic'},
     'Ubuntu-2004-builder':{'dockerOSName':'ubuntu2004','dockerImageName':'uhd-builder-ubuntu2004','ubuntuReleaseName':'focal'}}"
 
+- name: macOSBuilders
+  value:
+    "{'macOS-1014-x64':{'buildOSName':'macOS-1014-x64', 'macOSVersionDemand':'10.14', 'macOSArchDemand': 'X64'}}"
+
 - name: dockerImagePrefix
   value: 'rfsdr/'
 
@@ -199,6 +203,7 @@ jobs:
       echo "${{ variables.linuxDockerImages }}" >> $(UHDPipelineDockerImageArtifactName)
       echo "${{ variables.winDockerImages }}" >> $(UHDPipelineDockerImageArtifactName)
       echo "${{ variables.ubuntuDebDockerImages }}" >> $(UHDPipelineDockerImageArtifactName)
+      echo "${{ variables.macOSBuilders }}" >> $(UHDPipelineDockerImageArtifactName)
     displayName: Generate created image list
   - task: PublishPipelineArtifact@1
     inputs:

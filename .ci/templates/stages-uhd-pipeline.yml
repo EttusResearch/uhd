@@ -42,6 +42,9 @@ stages:
     parameters:
       toolset: msbuild
       release_binaries: ${{ parameters.release_binaries }}
+  - template: job-uhd-build-src.yml
+    parameters:
+      toolset: make_homebrew_macos
 
   - ${{ if parameters.custom_boost_version }}:
     - template: job-uhd-build-src.yml
