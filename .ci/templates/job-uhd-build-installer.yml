@@ -63,11 +63,11 @@ jobs:
         ubuntuReleaseName: $(ubuntuReleaseName)
   - ${{ if ne(parameters.toolset, 'ubuntu_deb') }}:
     - download: current
-      artifact: $(dockerOSName)-${{ parameters.toolset }}
-      displayName: Download pipeline artifact $(dockerOSName)-${{ parameters.toolset }}
+      artifact: $(buildOSName)-${{ parameters.toolset }}
+      displayName: Download pipeline artifact $(buildOSName)-${{ parameters.toolset }}
     - task: ExtractFiles@1
       inputs:
-        archiveFilePatterns: $(Pipeline.Workspace)/$(dockerOSName)-${{ parameters.toolset }}/$(dockerOSName)-${{ parameters.toolset }}.tar.gz
+        archiveFilePatterns: $(Pipeline.Workspace)/$(buildOSName)-${{ parameters.toolset }}/$(buildOSName)-${{ parameters.toolset }}.tar.gz
         destinationFolder: $(Build.BinariesDirectory)
         cleanDestinationFolder: true
   - ${{ if and(eq(parameters.toolset, 'msbuild'), eq(parameters.installer, 'nsis')) }}:
@@ -83,5 +83,5 @@ jobs:
   - task: PublishPipelineArtifact@1
     inputs:
       targetPath: '$(Build.BinariesDirectory)/uhddev-installer'
-      artifactName: '$(dockerOSName)-${{ parameters.toolset }}-${{ parameters.installer }}-installer'
+      artifactName: '$(buildOSName)-${{ parameters.toolset }}-${{ parameters.installer }}-installer'
     displayName: Upload uhd installer artifact
