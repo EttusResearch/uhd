@@ -1389,6 +1389,97 @@ tx_band_map=0.0;723.18e6;1623.18e6;3323.18e6
 ~~~
 
 In this example, the second Rx band would start at 431 MHz.
+=======
+\subsection n3xx_filter_api Filter API
+
+The N300/N310 utilize the Analog Devices AD9371 AFE which contain programmable
+FIR filters in both the transmit and receive paths for each of the RF channels.
+These filters are available using the Digital Filter API in UHD.
+
+| Filter Name | AD9371 Channel | Max Taps |
+|-------------|----------------|----------|
+| RX1_FIR     | 1              | 48       |
+| RX2_FIR     | 2              | 48       |
+| RX1RX2_FIR  | 1 and 2        | 48       |
+| TX1_FIR     | 1              | 32       |
+| TX2_FIR     | 2              | 32       |
+| TX1TX2_FIR  | 1 and 2        | 32       |
+
+Each filter is applied at 2x the `master_clock_rate`, or 250 MHz by default.
+
+The Filter API also allows to set some 3 dB analog filters on the AD9371 through
+the `set_tx_bandwidth` and `set_rx_bandwidth` UHD functions.
+
+This is a small example on how to set the TX FIR and TX bandwidth.
+~~~{.cpp}
+// Create my USRP object
+auto usrp = uhd::usrp::multi_usrp::make(args);
+
+// Set to use channel 3
+auto chan = 3;
+
+// Set the Analog Bandwidth to be 20 MHz wide
+auto bw = 20e6;
+
+// Get the names of the filters
+auto tx_names = usrp->get_tx_filter_names(chan);
+
+// Get the first filter and print out the filter properties
+auto filt = usrp->get_tx_filter(tx_names[0], chan);
+
+// Some taps for our coefficients
+const std::vector<int16_t> taps{
+           0,
+          42,
+         169,
+         374,
+         650,
+         987,
+        1371,
+        1786,
+        2215,
+        2641,
+        3045,
+        3412,
+        3726,
+        3973,
+        4144,
+        4232,
+        4232,
+        4144,
+        3973,
+        3726,
+        3412,
+        3045,
+        2641,
+        2215,
+        1786,
+        1371,
+         987,
+         650,
+         374,
+         169,
+          42,
+           0
+};
+
+// Create a custom filter with taps as our coefficients
+auto filter(std::make_shared<uhd::digital_filter_fir<int16_t>>(
+     uhd::filter_info_base::filter_type::DIGITAL_FIR_I16,
+     false,
+     0,
+     1.0,
+     1,
+     1,
+     32767,
+     32,
+     taps)
+);
+
+// Apply the filter to the channel
+usrp->set_tx_bandwidth(bw, chan);
+usrp->set_tx_filter(tx_names[0], filter, chan);
+~~~
 
 \section n3xx_rh N32x-specific Features
 
