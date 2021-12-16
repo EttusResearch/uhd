@@ -64,7 +64,7 @@ public:
 
     std::vector<std::string> get_gpio_banks() override
     {
-        return {};
+        return {"GPIO0", "GPIO1"};
     }
 
     bool supports_feature(const std::string& feature) override
