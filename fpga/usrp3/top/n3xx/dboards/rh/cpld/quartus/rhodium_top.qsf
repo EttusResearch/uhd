@@ -42,7 +42,7 @@ set_global_assignment -name DEVICE 10M04SAU169I7G
 set_global_assignment -name TOP_LEVEL_ENTITY rhodium_top
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION 17.0.2
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "08:22:34  SEPTEMBER 13, 2017"
-set_global_assignment -name LAST_QUARTUS_VERSION "18.1.0 Lite Edition"
+set_global_assignment -name LAST_QUARTUS_VERSION "20.1.0 Standard Edition"
 set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
 set_global_assignment -name MIN_CORE_JUNCTION_TEMP "-40"
 set_global_assignment -name MAX_CORE_JUNCTION_TEMP 100
