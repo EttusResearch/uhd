@@ -10,8 +10,10 @@
 #include <uhd/convert.hpp>
 #include <uhd/stream.hpp>
 #include <uhd/types/metadata.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhdlib/transport/tx_streamer_zero_copy.hpp>
+#include <algorithm>
 #include <limits>
 #include <vector>
 
@@ -105,6 +107,7 @@ public:
         : _zero_copy_streamer(num_chans)
         , _zero_buffs(num_chans, &_zero)
         , _out_buffs(num_chans)
+        , _chans_connected(num_chans, false)
     {
         _setup_converters(num_chans, stream_args);
         _zero_copy_streamer.set_bytes_per_item(_convert_info.bytes_per_otw_item);
@@ -119,6 +122,11 @@ public:
     {
         const size_t mtu = xport->get_max_payload_size();
         _zero_copy_streamer.connect_channel(channel, std::move(xport));
+        // Note: The previous call also checks if the channel index was valid.
+        _chans_connected[channel] = true;
+        _all_chans_connected      = std::all_of(_chans_connected.cbegin(),
+            _chans_connected.cend(),
+            [](const bool connected) { return connected; });
 
         if (mtu < _mtu) {
             set_mtu(mtu);
@@ -148,6 +156,10 @@ public:
         const uhd::tx_metadata_t& metadata_,
         const double timeout) override
     {
+        if (!_all_chans_connected) {
+            throw uhd::runtime_error("[tx_stream] Attempting to call send() before all "
+                                     "channels are connected!");
+        }
         uhd::tx_metadata_t metadata(metadata_);
 
         if (nsamps_per_buff == 0 && metadata.start_of_burst) {
@@ -449,6 +461,13 @@ private:
 
     // Metadata cache for send calls with no data
     detail::tx_metadata_cache _metadata_cache;
+
+    // Store a list of channels that are already connected
+    std::vector<bool> _chans_connected;
+
+    // Flag to store if all channels are connected. This is to speed up the lookup
+    // of all channels' connected-status.
+    bool _all_chans_connected = false;
 };
 
 }} // namespace uhd::transport

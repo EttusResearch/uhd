@@ -13,6 +13,7 @@
 #include <uhd/types/endianness.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/transport/rx_streamer_zero_copy.hpp>
+#include <algorithm>
 #include <limits>
 #include <vector>
 
@@ -74,7 +75,9 @@ class rx_streamer_impl : public rx_streamer
 public:
     //! Constructor
     rx_streamer_impl(const size_t num_ports, const uhd::stream_args_t stream_args)
-        : _zero_copy_streamer(num_ports), _in_buffs(num_ports)
+        : _zero_copy_streamer(num_ports)
+        , _in_buffs(num_ports)
+        , _chans_connected(num_ports, false)
     {
         if (stream_args.cpu_format.empty()) {
             throw uhd::value_error("[rx_stream] Must provide a cpu_format!");
@@ -99,6 +102,11 @@ public:
     {
         const size_t mtu = xport->get_max_payload_size();
         _zero_copy_streamer.connect_channel(channel, std::move(xport));
+        // Note: The previous call also checks if the channel index was valid.
+        _chans_connected[channel] = true;
+        _all_chans_connected      = std::all_of(_chans_connected.cbegin(),
+            _chans_connected.cend(),
+            [](const bool connected) { return connected; });
 
         if (mtu < _mtu) {
             set_mtu(mtu);
@@ -132,6 +140,11 @@ public:
         const double timeout,
         const bool one_packet) override
     {
+        if (!_all_chans_connected) {
+            throw uhd::runtime_error("[rx_stream] Attempting to call recv() before all "
+                                     "channels are connected!");
+        }
+
         if (_error_metadata_cache.check(metadata)) {
             return 0;
         }
@@ -413,6 +426,13 @@ private:
     // Fragment (partially read packet) information
     size_t _fragment_offset_in_samps = 0;
     rx_metadata_t _last_fragment_metadata;
+
+    // Store a list of channels that are already connected
+    std::vector<bool> _chans_connected;
+
+    // Flag to store if all channels are connected. This is to speed up the lookup
+    // of all channels' connected-status.
+    bool _all_chans_connected = false;
 };
 
 }} // namespace uhd::transport
