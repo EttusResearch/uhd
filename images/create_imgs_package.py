@@ -19,12 +19,13 @@
 Command-line utility to create a .zip-file with the current image set.
 """
 
+import sys
 import re
 import os
 import subprocess
 import argparse
 import shutil
-import uhdimgs
+import populate_images
 
 def parse_args():
     """ Parse args, duh """
@@ -39,7 +40,6 @@ def download_images(img_root_dir):
     """
     Run the images downloader
     """
-    import populate_images
     populate_images.download_images(img_root_dir)
 
 def get_version():
@@ -51,18 +51,18 @@ def get_version():
         git_output = subprocess.check_output(git_cmd).decode('UTF-8')
     except subprocess.CalledProcessError as ex:
         print(ex.output)
-        exit(1)
+        sys.exit(1)
     print("Detected tag: {}".format(git_output))
     version_mobj = re.search(r'[0-9]+\.[0-9]+\.[0-9]+\.[0-9]', git_output)
     if version_mobj is None:
         print("Error: Failure to resolve version from tag!")
-        exit(1)
+        sys.exit(1)
     return version_mobj.group(0)
 
 def main():
     """ Go, go, go! """
     args = parse_args()
-    img_root_dir = os.path.join(uhdimgs.get_images_dir(), 'images')
+    img_root_dir = os.path.join(populate_images.get_images_dir(), 'images')
     print("== Clearing out the images directory at {}, if present...".format(img_root_dir))
     shutil.rmtree(img_root_dir, ignore_errors=True)
     print("== Downloading images...")
@@ -76,7 +76,7 @@ def main():
         subprocess.call(archive_cmd)
     except subprocess.CalledProcessError as ex:
         print(ex.output)
-        exit(1)
+        sys.exit(1)
     print("== Done!")
 
 if __name__ == "__main__":
