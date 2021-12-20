@@ -17,7 +17,6 @@
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/transport/udp_constants.hpp>
 #include <uhd/transport/udp_simple.hpp>
-#include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/cast.hpp>
