@@ -16,7 +16,6 @@ UHD_INSTALL(FILES
     udp_constants.hpp
     udp_simple.hpp
     udp_zero_copy.hpp
-    tcp_zero_copy.hpp
     usb_control.hpp
     usb_zero_copy.hpp
     usb_device_handle.hpp
