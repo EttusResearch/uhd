@@ -195,6 +195,19 @@ public:
         return _tree;
     }
 
+    /*! Get access to the motherboard controller for this block's motherboard
+     *
+     * This will return a nullptr if this block doesn't have access to the
+     * motherboard. In order to gain access to the motherboard, the block needs
+     * to have requested access to the motherboard during the registration
+     * procedure. See also registry.hpp.
+     *
+     * Even if this block requested access to the motherboard controller, there
+     * is no guarantee that UHD will honour that request. It is therefore
+     * important to verify that the returned pointer is valid.
+     */
+    std::shared_ptr<mb_controller> get_mb_controller();
+
 protected:
     noc_block_base(make_args_ptr make_args);
 
@@ -277,19 +290,6 @@ protected:
      * block.
      */
     property_base_t* get_mtu_prop_ref(const res_source_info& edge);
-
-    /*! Get access to the motherboard controller for this block's motherboard
-     *
-     * This will return a nullptr if this block doesn't have access to the
-     * motherboard. In order to gain access to the motherboard, the block needs
-     * to have requested access to the motherboard during the registration
-     * procedure. See also registry.hpp.
-     *
-     * Even if this block requested access to the motherboard controller, there
-     * is no guarantee that UHD will honour that request. It is therefore
-     * important to verify that the returned pointer is valid.
-     */
-    std::shared_ptr<mb_controller> get_mb_controller();
 
     /*! Safely de-initialize the block
      *
