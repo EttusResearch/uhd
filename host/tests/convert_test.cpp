@@ -6,8 +6,14 @@
 //
 
 #include <uhd/convert.hpp>
+#include <uhd/exception.hpp>
 #include <stdint.h>
+// NOTE: <list> MUST be included before <boost/test/data/test_case.hpp> to
+// work around a bug in Boost 1.65.
+#include <list>
+#include <boost/test/data/test_case.hpp>
 #include <boost/test/unit_test.hpp>
+#include <array>
 #include <complex>
 #include <cstdlib>
 #include <iostream>
@@ -19,6 +25,25 @@ using namespace uhd;
 typedef std::complex<int16_t> sc16_t;
 typedef std::complex<float> fc32_t;
 typedef std::complex<double> fc64_t;
+
+// List of priority types. This must be manually kept in sync with whatever is
+// defined in convert_common.hpp
+const std::array<uhd::convert::priority_type, 5> CONV_PRIO_TYPES{-1, 0, 1, 2, 3};
+
+// Use this to create a converter with fixed prio in a test case. If prio does
+// not exist, we simply exit the test case. That's normal.
+#define GET_CONVERTER_SAFE(conv_name, id, prio)         \
+    convert::converter::sptr conv_name;                 \
+    try {                                               \
+        conv_name = convert::get_converter(id, prio)(); \
+    } catch (uhd::key_error&) {                         \
+        return;                                         \
+    }
+
+// Shorthand for defining a test case that tests all prios. Creates a variable
+// 'conv_prio_type'
+#define MULTI_CONVERTER_TEST_CASE(test_name) \
+    BOOST_DATA_TEST_CASE(test_name, CONV_PRIO_TYPES, conv_prio_type)
 
 #define MY_CHECK_CLOSE(a, b, f)                                                     \
     {                                                                               \
@@ -52,8 +77,8 @@ static void loopback(size_t nsamps,
     convert::id_type& out_id,
     const Range& input,
     Range& output,
-    const int prio_in  = -1,
-    const int prio_out = -1)
+    const int prio_in,
+    const int prio_out)
 {
     // make this buffer large enough for all test types
     std::vector<uint64_t> interm(nsamps);
@@ -72,11 +97,23 @@ static void loopback(size_t nsamps,
     c1->conv(input1, output1, nsamps);
 }
 
+// Use this to call the loopback runner from a test so that missing prio won't
+// become an issue
+#define CALL_LOOPBACK_SAFE(...) \
+    try {                       \
+        loopback(__VA_ARGS__);  \
+    } catch (uhd::key_error&) { \
+        return;                 \
+    }
+
 /***********************************************************************
  * Test short conversion
  **********************************************************************/
-static void test_convert_types_sc16(
-    size_t nsamps, convert::id_type& id, const int extra_div = 1, int mask = 0xffff)
+static void test_convert_types_sc16(size_t nsamps,
+    convert::id_type& id,
+    uhd::convert::priority_type prio,
+    const int extra_div = 1,
+    int mask            = 0xffff)
 {
     // fill the input samples
     std::vector<sc16_t> input(nsamps), output(nsamps);
@@ -92,12 +129,12 @@ static void test_convert_types_sc16(
     // run the loopback and test
     convert::id_type in_id  = id;
     convert::id_type out_id = reverse_converter(id);
-    loopback(nsamps, in_id, out_id, input, output);
+    CALL_LOOPBACK_SAFE(nsamps, in_id, out_id, input, output, prio, prio);
     BOOST_CHECK_EQUAL_COLLECTIONS(
         input.begin(), input.end(), output.begin(), output.end());
 }
 
-BOOST_AUTO_TEST_CASE(test_convert_types_be_sc16)
+MULTI_CONVERTER_TEST_CASE(test_convert_types_be_sc16)
 {
     convert::id_type id;
     id.input_format  = "sc16";
@@ -107,11 +144,11 @@ BOOST_AUTO_TEST_CASE(test_convert_types_be_sc16)
 
     // try various lengths to test edge cases
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
-        test_convert_types_sc16(nsamps, id);
+        test_convert_types_sc16(nsamps, id, conv_prio_type);
     }
 }
 
-BOOST_AUTO_TEST_CASE(test_convert_types_le_sc16)
+MULTI_CONVERTER_TEST_CASE(test_convert_types_le_sc16)
 {
     convert::id_type id;
     id.input_format  = "sc16";
@@ -121,11 +158,11 @@ BOOST_AUTO_TEST_CASE(test_convert_types_le_sc16)
 
     // try various lengths to test edge cases
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
-        test_convert_types_sc16(nsamps, id);
+        test_convert_types_sc16(nsamps, id, conv_prio_type);
     }
 }
 
-BOOST_AUTO_TEST_CASE(test_convert_types_chdr_sc16)
+MULTI_CONVERTER_TEST_CASE(test_convert_types_chdr_sc16)
 {
     convert::id_type id;
     id.input_format  = "sc16";
@@ -135,7 +172,7 @@ BOOST_AUTO_TEST_CASE(test_convert_types_chdr_sc16)
 
     // try various lengths to test edge cases
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
-        test_convert_types_sc16(nsamps, id);
+        test_convert_types_sc16(nsamps, id, conv_prio_type);
     }
 }
 
@@ -143,8 +180,9 @@ BOOST_AUTO_TEST_CASE(test_convert_types_chdr_sc16)
  * Test float conversion
  **********************************************************************/
 template <typename data_type>
-static void test_convert_types_for_floats(
-    size_t nsamps, convert::id_type& id, const double extra_scale = 1.0)
+static void test_convert_types_for_floats(size_t nsamps,
+    convert::id_type& id,
+    const double extra_scale = 1.0)
 {
     typedef typename data_type::value_type value_type;
 
@@ -168,7 +206,7 @@ static void test_convert_types_for_floats(
 
     // loopback foreach prio combo (generic vs best)
     for (const auto& prio : prios) {
-        loopback(nsamps, in_id, out_id, input, output, prio.first, prio.second);
+        CALL_LOOPBACK_SAFE(nsamps, in_id, out_id, input, output, prio.first, prio.second);
         for (size_t i = 0; i < nsamps; i++) {
             MY_CHECK_CLOSE(input[i].real(), output[i].real(), value_type(1. / (1 << 14)));
             MY_CHECK_CLOSE(input[i].imag(), output[i].imag(), value_type(1. / (1 << 14)));
@@ -292,7 +330,7 @@ BOOST_AUTO_TEST_CASE(test_convert_types_be_sc12_with_fc32)
     }
 }
 
-BOOST_AUTO_TEST_CASE(test_convert_types_le_sc16_and_sc12)
+MULTI_CONVERTER_TEST_CASE(test_convert_types_le_sc16_and_sc12)
 {
     convert::id_type id;
     id.input_format = "sc16";
@@ -302,11 +340,11 @@ BOOST_AUTO_TEST_CASE(test_convert_types_le_sc16_and_sc12)
     // try various lengths to test edge cases
     id.output_format = "sc12_item32_le";
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
-        test_convert_types_sc16(nsamps, id, 1, 0xfff0);
+        test_convert_types_sc16(nsamps, id, conv_prio_type, 1, 0xfff0);
     }
 }
 
-BOOST_AUTO_TEST_CASE(test_convert_types_be_sc16_and_sc12)
+MULTI_CONVERTER_TEST_CASE(test_convert_types_be_sc16_and_sc12)
 {
     convert::id_type id;
     id.input_format = "sc16";
@@ -315,7 +353,7 @@ BOOST_AUTO_TEST_CASE(test_convert_types_be_sc16_and_sc12)
 
     id.output_format = "sc12_item32_be";
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
-        test_convert_types_sc16(nsamps, id, 1, 0xfff0);
+        test_convert_types_sc16(nsamps, id, conv_prio_type, 1, 0xfff0);
     }
 }
 
@@ -408,7 +446,7 @@ BOOST_AUTO_TEST_CASE(test_convert_types_fc32_and_sc8)
     }
 }
 
-BOOST_AUTO_TEST_CASE(test_convert_types_sc16_and_sc8)
+MULTI_CONVERTER_TEST_CASE(test_convert_types_sc16_and_sc8)
 {
     convert::id_type id;
     id.input_format = "sc16";
@@ -418,20 +456,21 @@ BOOST_AUTO_TEST_CASE(test_convert_types_sc16_and_sc8)
     // try various lengths to test edge cases
     id.output_format = "sc8_item32_le";
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
-        test_convert_types_sc16(nsamps, id, 256);
+        test_convert_types_sc16(nsamps, id, conv_prio_type, 256);
     }
 
     // try various lengths to test edge cases
     id.output_format = "sc8_item32_be";
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
-        test_convert_types_sc16(nsamps, id, 256);
+        test_convert_types_sc16(nsamps, id, conv_prio_type, 256);
     }
 }
 
 /***********************************************************************
  * Test u8 conversion
  **********************************************************************/
-static void test_convert_types_u8(size_t nsamps, convert::id_type& id)
+static void test_convert_types_u8(
+    size_t nsamps, convert::id_type& id, uhd::convert::priority_type prio)
 {
     // fill the input samples
     std::vector<uint8_t> input(nsamps), output(nsamps);
@@ -444,12 +483,12 @@ static void test_convert_types_u8(size_t nsamps, convert::id_type& id)
     // run the loopback and test
     convert::id_type in_id  = id;
     convert::id_type out_id = reverse_converter(id);
-    loopback(nsamps, in_id, out_id, input, output);
+    CALL_LOOPBACK_SAFE(nsamps, in_id, out_id, input, output, prio, prio);
     BOOST_CHECK_EQUAL_COLLECTIONS(
         input.begin(), input.end(), output.begin(), output.end());
 }
 
-BOOST_AUTO_TEST_CASE(test_convert_types_u8_and_u8)
+MULTI_CONVERTER_TEST_CASE(test_convert_types_u8_and_u8)
 {
     convert::id_type id;
     id.input_format = "u8";
@@ -459,17 +498,17 @@ BOOST_AUTO_TEST_CASE(test_convert_types_u8_and_u8)
     // try various lengths to test edge cases
     id.output_format = "u8_item32_le";
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
-        test_convert_types_u8(nsamps, id);
+        test_convert_types_u8(nsamps, id, conv_prio_type);
     }
 
     // try various lengths to test edge cases
     id.output_format = "u8_item32_be";
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
-        test_convert_types_u8(nsamps, id);
+        test_convert_types_u8(nsamps, id, conv_prio_type);
     }
 }
 
-BOOST_AUTO_TEST_CASE(test_convert_types_u8_and_u8_chdr)
+MULTI_CONVERTER_TEST_CASE(test_convert_types_u8_and_u8_chdr)
 {
     convert::id_type id;
     id.input_format  = "u8";
@@ -479,14 +518,15 @@ BOOST_AUTO_TEST_CASE(test_convert_types_u8_and_u8_chdr)
 
     // try various lengths to test edge cases
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
-        test_convert_types_u8(nsamps, id);
+        test_convert_types_u8(nsamps, id, conv_prio_type);
     }
 }
 
 /***********************************************************************
  * Test s8 conversion
  **********************************************************************/
-static void test_convert_types_s8(size_t nsamps, convert::id_type& id)
+static void test_convert_types_s8(
+    size_t nsamps, convert::id_type& id, uhd::convert::priority_type prio)
 {
     // fill the input samples
     std::vector<int8_t> input(nsamps), output(nsamps);
@@ -497,12 +537,12 @@ static void test_convert_types_s8(size_t nsamps, convert::id_type& id)
     // run the loopback and test
     convert::id_type in_id  = id;
     convert::id_type out_id = reverse_converter(id);
-    loopback(nsamps, in_id, out_id, input, output);
+    CALL_LOOPBACK_SAFE(nsamps, in_id, out_id, input, output, prio, prio);
     BOOST_CHECK_EQUAL_COLLECTIONS(
         input.begin(), input.end(), output.begin(), output.end());
 }
 
-BOOST_AUTO_TEST_CASE(test_convert_types_s8_and_s8)
+MULTI_CONVERTER_TEST_CASE(test_convert_types_s8_and_s8)
 {
     convert::id_type id;
     id.input_format = "s8";
@@ -512,17 +552,17 @@ BOOST_AUTO_TEST_CASE(test_convert_types_s8_and_s8)
     // try various lengths to test edge cases
     id.output_format = "s8_item32_le";
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
-        test_convert_types_s8(nsamps, id);
+        test_convert_types_s8(nsamps, id, conv_prio_type);
     }
 
     // try various lengths to test edge cases
     id.output_format = "s8_item32_be";
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
-        test_convert_types_s8(nsamps, id);
+        test_convert_types_s8(nsamps, id, conv_prio_type);
     }
 }
 
-BOOST_AUTO_TEST_CASE(test_convert_types_s8_and_s8_chdr)
+MULTI_CONVERTER_TEST_CASE(test_convert_types_s8_and_s8_chdr)
 {
     convert::id_type id;
     id.input_format  = "s8";
@@ -532,14 +572,15 @@ BOOST_AUTO_TEST_CASE(test_convert_types_s8_and_s8_chdr)
 
     // try various lengths to test edge cases
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
-        test_convert_types_s8(nsamps, id);
+        test_convert_types_s8(nsamps, id, conv_prio_type);
     }
 }
 
 /***********************************************************************
  * Test s16 conversion
  **********************************************************************/
-static void test_convert_types_s16(size_t nsamps, convert::id_type& id)
+static void test_convert_types_s16(
+    size_t nsamps, convert::id_type& id, uhd::convert::priority_type prio)
 {
     // fill the input samples
     std::vector<int16_t> input(nsamps), output(nsamps);
@@ -550,12 +591,12 @@ static void test_convert_types_s16(size_t nsamps, convert::id_type& id)
     // run the loopback and test
     convert::id_type in_id  = id;
     convert::id_type out_id = reverse_converter(id);
-    loopback(nsamps, in_id, out_id, input, output);
+    CALL_LOOPBACK_SAFE(nsamps, in_id, out_id, input, output, prio, prio);
     BOOST_CHECK_EQUAL_COLLECTIONS(
         input.begin(), input.end(), output.begin(), output.end());
 }
 
-BOOST_AUTO_TEST_CASE(test_convert_types_s16_and_s16)
+MULTI_CONVERTER_TEST_CASE(test_convert_types_s16_and_s16)
 {
     convert::id_type id;
     id.input_format = "s16";
@@ -565,17 +606,17 @@ BOOST_AUTO_TEST_CASE(test_convert_types_s16_and_s16)
     // try various lengths to test edge cases
     id.output_format = "s16_item32_le";
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
-        test_convert_types_s16(nsamps, id);
+        test_convert_types_s16(nsamps, id, conv_prio_type);
     }
 
     // try various lengths to test edge cases
     id.output_format = "s16_item32_be";
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
-        test_convert_types_s16(nsamps, id);
+        test_convert_types_s16(nsamps, id, conv_prio_type);
     }
 }
 
-BOOST_AUTO_TEST_CASE(test_convert_types_s16_and_s16_chdr)
+MULTI_CONVERTER_TEST_CASE(test_convert_types_s16_and_s16_chdr)
 {
     convert::id_type id;
     id.input_format  = "s16";
@@ -585,14 +626,15 @@ BOOST_AUTO_TEST_CASE(test_convert_types_s16_and_s16_chdr)
 
     // try various lengths to test edge cases
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
-        test_convert_types_s16(nsamps, id);
+        test_convert_types_s16(nsamps, id, conv_prio_type);
     }
 }
 
 /***********************************************************************
  * Test fc32 -> fc32 conversion
  **********************************************************************/
-static void test_convert_types_fc32(size_t nsamps, convert::id_type& id)
+static void test_convert_types_fc32(
+    size_t nsamps, convert::id_type& id, uhd::convert::priority_type prio)
 {
     // fill the input samples
     std::vector<std::complex<float>> input(nsamps), output(nsamps);
@@ -605,14 +647,14 @@ static void test_convert_types_fc32(size_t nsamps, convert::id_type& id)
     // run the loopback and test
     convert::id_type in_id  = id;
     convert::id_type out_id = reverse_converter(id);
-    loopback(nsamps, in_id, out_id, input, output);
+    CALL_LOOPBACK_SAFE(nsamps, in_id, out_id, input, output, prio, prio);
     for (size_t i = 0; i < nsamps; i++) {
         MY_CHECK_CLOSE(input[i].real(), output[i].real(), float(1. / (1 << 16)));
         MY_CHECK_CLOSE(input[i].imag(), output[i].imag(), float(1. / (1 << 16)));
     }
 }
 
-BOOST_AUTO_TEST_CASE(test_convert_types_fc32_and_fc32)
+MULTI_CONVERTER_TEST_CASE(test_convert_types_fc32_and_fc32)
 {
     convert::id_type id;
     id.input_format = "fc32";
@@ -622,17 +664,17 @@ BOOST_AUTO_TEST_CASE(test_convert_types_fc32_and_fc32)
     // try various lengths to test edge cases
     id.output_format = "fc32_item32_le";
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
-        test_convert_types_fc32(nsamps, id);
+        test_convert_types_fc32(nsamps, id, conv_prio_type);
     }
 
     // try various lengths to test edge cases
     id.output_format = "fc32_item32_be";
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
-        test_convert_types_fc32(nsamps, id);
+        test_convert_types_fc32(nsamps, id, conv_prio_type);
     }
 }
 
-BOOST_AUTO_TEST_CASE(test_convert_types_fc32_and_fc32_chdr)
+MULTI_CONVERTER_TEST_CASE(test_convert_types_fc32_and_fc32_chdr)
 {
     convert::id_type id;
     id.input_format  = "fc32";
@@ -642,6 +684,6 @@ BOOST_AUTO_TEST_CASE(test_convert_types_fc32_and_fc32_chdr)
 
     // try various lengths to test edge cases
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
-        test_convert_types_fc32(nsamps, id);
+        test_convert_types_fc32(nsamps, id, conv_prio_type);
     }
 }
