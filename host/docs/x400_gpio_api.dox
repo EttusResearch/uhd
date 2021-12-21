@@ -102,8 +102,8 @@ discoverable feature attached to the mb_controller:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
 auto usrp = uhd::usrp::multi_usrp::make("type=x4xx");
 
-auto gpio = usrp->get_mb_controller().get_feature<uhd::rfnoc::discoverable_feature::GPIO_POWER>();
-gpio->set_external_power("GPIO1", true); // Enable external power on GPIO1
+auto& gpio = usrp->get_mb_controller().get_feature<uhd::features::gpio_power_iface>();
+gpio.set_external_power("GPIO1", true); // Enable external power on GPIO1
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The status of the external power supply can be queried using
@@ -123,8 +123,8 @@ uhd::features::gpio_power_iface::set_port_voltage() API:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
 auto usrp = uhd::usrp::multi_usrp::make("type=x4xx");
 
-auto gpio = usrp->get_mb_controller().get_feature<uhd::rfnoc::discoverable_feature::GPIO_POWER>();
-gpio->set_port_voltage("GPIO0", "2V5"); // Set GPIO0 voltage to 2.5V
+auto& gpio = usrp->get_mb_controller().get_feature<uhd::features::gpio_power_iface>();
+gpio.set_port_voltage("GPIO0", "2V5"); // Set GPIO0 voltage to 2.5V
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Valid values can be enumerated with the
 uhd::features::gpio_power_iface::supported_voltages() call, and are "1V8",
