@@ -1061,54 +1061,11 @@ public:
     void set_rx_subdev_spec(
         const uhd::usrp::subdev_spec_t& spec, size_t mboard = ALL_MBOARDS) override
     {
-        // First, generate a vector of the RX channels that we need to register
-        auto new_rx_chans = [this, spec, mboard]() {
-            /* When setting the subdev spec in multiple mboard scenarios, there are two
-             * cases we need to handle:
-             * 1. Setting all mboard to the same subdev spec. This is the easy case.
-             * 2. Setting a single mboard's subdev spec. In this case, we need to update
-             * the requested mboard's subdev spec, and keep the old subdev spec for the
-             * other mboards.
-             */
-            std::vector<rx_chan_t> new_rx_chans;
-            for (size_t current_mboard = 0; current_mboard < get_num_mboards();
-                 ++current_mboard) {
-                auto current_spec = [this, spec, mboard, current_mboard]() {
-                    if (mboard == ALL_MBOARDS || mboard == current_mboard) {
-                        // Update all mboards to the same subdev spec OR
-                        // only update this mboard to the new subdev spec
-                        return spec;
-                    } else {
-                        // Keep the old subdev spec for this mboard
-                        return get_rx_subdev_spec(current_mboard);
-                    }
-                }();
-                auto new_mboard_chans =
-                    _generate_mboard_rx_chans(current_spec, current_mboard);
-                new_rx_chans.insert(
-                    new_rx_chans.end(), new_mboard_chans.begin(), new_mboard_chans.end());
-            }
-            return new_rx_chans;
-        }();
-
-        // Disconnect and clear the existing chains
-        UHD_LOG_TRACE("MULTI_USRP", "Disconnecting RX chains");
-        for (auto entry : _rx_chans) {
-            for (auto edge : entry.second.edge_list) {
-                if (block_id_t(edge.dst_blockid).match(NODE_ID_SEP)) {
-                    break;
-                }
-                _graph->disconnect(
-                    edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
-            }
-        }
-        _rx_chans.clear();
-
-        // Register the new chains
-        size_t musrp_rx_channel = 0;
-        for (auto rx_chan : new_rx_chans) {
-            _rx_chans.emplace(musrp_rx_channel++, rx_chan);
-        }
+        _set_subdev_spec(_rx_chans, [this](size_t current_mboard) {
+            return this->get_rx_subdev_spec(current_mboard);
+        }, [this](uhd::usrp::subdev_spec_t current_spec, size_t current_mboard) {
+            return this->_generate_mboard_rx_chans(current_spec, current_mboard);
+        }, spec, mboard);
     }
 
     uhd::usrp::subdev_spec_t get_rx_subdev_spec(size_t mboard = 0) override
@@ -1701,57 +1658,11 @@ public:
     void set_tx_subdev_spec(
         const uhd::usrp::subdev_spec_t& spec, size_t mboard = ALL_MBOARDS) override
     {
-        /* TODO: Refactor with get_rx_subdev_spec- the algorithms are the same, just the
-         * types are different
-         */
-        // First, generate a vector of the tx channels that we need to register
-        auto new_tx_chans = [this, spec, mboard]() {
-            /* When setting the subdev spec in multiple mboard scenarios, there are two
-             * cases we need to handle:
-             * 1. Setting all mboard to the same subdev spec. This is the easy case.
-             * 2. Setting a single mboard's subdev spec. In this case, we need to update
-             * the requested mboard's subdev spec, and keep the old subdev spec for the
-             * other mboards.
-             */
-            std::vector<tx_chan_t> new_tx_chans;
-            for (size_t current_mboard = 0; current_mboard < get_num_mboards();
-                 ++current_mboard) {
-                auto current_spec = [this, spec, mboard, current_mboard]() {
-                    if (mboard == ALL_MBOARDS || mboard == current_mboard) {
-                        // Update all mboards to the same subdev spec OR
-                        // only update this mboard to the new subdev spec
-                        return spec;
-                    } else {
-                        // Keep the old subdev spec for this mboard
-                        return get_tx_subdev_spec(current_mboard);
-                    }
-                }();
-                auto new_mboard_chans =
-                    _generate_mboard_tx_chans(current_spec, current_mboard);
-                new_tx_chans.insert(
-                    new_tx_chans.end(), new_mboard_chans.begin(), new_mboard_chans.end());
-            }
-            return new_tx_chans;
-        }();
-
-        // Disconnect and clear existing chains
-        UHD_LOG_TRACE("MULTI_USRP", "Disconnecting TX chains");
-        for (auto entry : _tx_chans) {
-            for (auto edge : entry.second.edge_list) {
-                if (block_id_t(edge.src_blockid).match(NODE_ID_SEP)) {
-                    break;
-                }
-                _graph->disconnect(
-                    edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
-            }
-        }
-        _tx_chans.clear();
-
-        // Register new chains
-        size_t musrp_tx_channel = 0;
-        for (auto tx_chan : new_tx_chans) {
-            _tx_chans.emplace(musrp_tx_channel++, tx_chan);
-        }
+        _set_subdev_spec(_tx_chans, [this](size_t current_mboard) {
+            return this->get_tx_subdev_spec(current_mboard);
+        }, [this](uhd::usrp::subdev_spec_t current_spec, size_t current_mboard) {
+            return this->_generate_mboard_tx_chans(current_spec, current_mboard);
+        }, spec, mboard);
     }
 
     uhd::usrp::subdev_spec_t get_tx_subdev_spec(size_t mboard = 0) override
@@ -2507,6 +2418,63 @@ private:
             }
         }
         return edges;
+    }
+
+    template<typename ChanType, typename GetSubdevSpecFn, typename GenChansFn>
+    void _set_subdev_spec(
+        std::unordered_map<size_t, ChanType> chans,
+        GetSubdevSpecFn&& get_subdev_spec,
+        GenChansFn&& generate_chans,
+        const uhd::usrp::subdev_spec_t& spec,
+        size_t mboard)
+    {
+        // First, generate a vector of the channels that we need to register
+        auto new_chans = [&]() {
+            /* When setting the subdev spec in multiple mboard scenarios, there are two
+             * cases we need to handle:
+             * 1. Setting all mboard to the same subdev spec. This is the easy case.
+             * 2. Setting a single mboard's subdev spec. In this case, we need to update
+             * the requested mboard's subdev spec, and keep the old subdev spec for the
+             * other mboards.
+             */
+            std::vector<ChanType> new_chans;
+            for (size_t current_mboard = 0; current_mboard < get_num_mboards();
+                 ++current_mboard) {
+                auto current_spec = [&]() {
+                    if (mboard == ALL_MBOARDS || mboard == current_mboard) {
+                        // Update all mboards to the same subdev spec OR
+                        // only update this mboard to the new subdev spec
+                        return spec;
+                    } else {
+                        // Keep the old subdev spec for this mboard
+                        return get_subdev_spec(current_mboard);
+                    }
+                }();
+                auto new_mboard_chans = generate_chans(current_spec, current_mboard);
+                new_chans.insert(
+                    new_chans.end(), new_mboard_chans.begin(), new_mboard_chans.end());
+            }
+            return new_chans;
+        }();
+
+        // Disconnect and clear existing chains
+        UHD_LOG_TRACE("MULTI_USRP", "Disconnecting chains");
+        for (auto entry : chans) {
+            for (auto edge : entry.second.edge_list) {
+                if (block_id_t(edge.src_blockid).match(NODE_ID_SEP)) {
+                    break;
+                }
+                _graph->disconnect(
+                    edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
+            }
+        }
+        chans.clear();
+
+        // Register new chains
+        size_t musrp_channel = 0;
+        for (auto chan : new_chans) {
+            chans.emplace(musrp_channel++, chan);
+        }
     }
 
     /**************************************************************************
