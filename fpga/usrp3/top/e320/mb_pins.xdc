@@ -57,15 +57,6 @@ set_property IOSTANDARD    LVCMOS33         [get_ports {LED_LINK1}]
 set_property PACKAGE_PIN   AB16             [get_ports {LED_ACT1}]
 set_property IOSTANDARD    LVCMOS33         [get_ports {LED_ACT1}]
 
-## Used with N310 hardware
-#set_property PACKAGE_PIN   U25              [get_ports PANEL_LED_GPS]
-#set_property PACKAGE_PIN   T25              [get_ports PANEL_LED_LINK]
-#set_property PACKAGE_PIN   W29              [get_ports PANEL_LED_PPS]
-#set_property PACKAGE_PIN   V24              [get_ports PANEL_LED_REF]
-#set_property IOSTANDARD    LVCMOS33         [get_ports PANEL_LED_*]
-#set_property DRIVE         4                [get_ports PANEL_LED_*]
-#set_property SLEW          SLOW             [get_ports PANEL_LED_*]
-
 ## XCVR ####################################################################
 ## Catalina AD9361 Connections
 ##   -- Data Buses
