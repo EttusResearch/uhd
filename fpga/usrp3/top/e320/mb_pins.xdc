@@ -154,6 +154,13 @@ set_property IOSTANDARD    LVCMOS18         [get_ports {XCVR_CTRL_OUT[*]}]
 set_property PULLUP        TRUE             [get_ports {XCVR_CTRL_OUT[6]}]
 set_property PULLUP        TRUE             [get_ports {XCVR_CTRL_OUT[7]}]
 
+# CTRL_IN, Bank 13, 1.8 V
+set_property PACKAGE_PIN   U24              [get_ports {XCVR_CTRL_IN[0]}]
+set_property PACKAGE_PIN   V24              [get_ports {XCVR_CTRL_IN[1]}]
+set_property PACKAGE_PIN   V23              [get_ports {XCVR_CTRL_IN[2]}]
+set_property PACKAGE_PIN   W24              [get_ports {XCVR_CTRL_IN[3]}]
+set_property IOSTANDARD    LVCMOS18         [get_ports {XCVR_CTRL_IN[*]}]
+
 ## RX/TX LEDs, Bank 10, 3.3 V
 set_property PACKAGE_PIN   AG14             [get_ports {RX1_GRN_ENA}]
 set_property PACKAGE_PIN   AG17             [get_ports {RX2_GRN_ENA}]
