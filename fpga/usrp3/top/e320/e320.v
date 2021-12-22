@@ -156,7 +156,8 @@ module e320 (
   output wire XCVR_TXNRX,
   output wire XCVR_ENA_AGC,
   output wire XCVR_RESET_N,
-  input wire [7:0] XCVR_CTRL_OUT,
+  input  wire [7:0] XCVR_CTRL_OUT,
+  output wire [3:0] XCVR_CTRL_IN,
 
   // Amplifiers
   output wire TX_HFAMP1_ENA,
@@ -1843,6 +1844,9 @@ module e320 (
     .dboard_ctrl(dboard_ctrl),
     .device_id(device_id)
   );
+
+  // Control pins to AD9361 will lay low for now
+  assign XCVR_CTRL_IN = 4'h0;
 
 endmodule // e320
 `default_nettype wire
