@@ -120,6 +120,7 @@ def assert_compat_number(
         "(major, minor) or (major, minor, build)")
     log_err = lambda msg: log.error(msg) if log is not None else None
     log_warn = lambda msg: log.warning(msg) if log is not None else None
+    log_debug = lambda msg: log.debug(msg) if log is not None else None
     expected_actual_str = "Expected: {:d}.{:d} Actual: {:d}.{:d}".format(
         expected_compat[0], expected_compat[1],
         actual_compat[0], actual_compat[1],
@@ -134,7 +135,7 @@ def assert_compat_number(
         log_err(err_msg)
         raise RuntimeError(err_msg)
     if actual_compat[1] > expected_compat[1]:
-        log_warn("Minor compat ahead of expected compat{}. {}".format(
+        log_debug("Minor compat ahead of expected compat{}. {}".format(
             component_str, expected_actual_str
         ))
     if actual_compat[1] < expected_compat[1]:
