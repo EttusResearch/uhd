@@ -65,7 +65,7 @@ namespace uhd {
  * - T must have an assignment operator
  */
 template <typename T>
-class property : uhd::noncopyable
+class UHD_API_HEADER property : uhd::noncopyable
 {
 public:
     typedef std::function<void(const T&)> subscriber_type;
