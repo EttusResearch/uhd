@@ -18,6 +18,15 @@
 namespace uhd {
 
 /*!
+ * A non-templated class which exists solely so we can
+ * dynamic_cast between properties.
+ */
+class UHD_API property_iface {
+public:
+    virtual ~property_iface() = default;
+};
+
+/*!
  * A templated property interface for holding the state
  * associated with a property in a uhd::property_tree
  * and registering callbacks when that value changes.
@@ -65,7 +74,7 @@ namespace uhd {
  * - T must have an assignment operator
  */
 template <typename T>
-class UHD_API_HEADER property : uhd::noncopyable
+class UHD_API_HEADER property : uhd::noncopyable, public property_iface
 {
 public:
     typedef std::function<void(const T&)> subscriber_type;
@@ -245,14 +254,14 @@ public:
 
 private:
     //! Internal pop function
-    virtual std::shared_ptr<void> _pop(const fs_path& path) = 0;
+    virtual std::shared_ptr<property_iface> _pop(const fs_path& path) = 0;
 
     //! Internal create property with wild-card type
     virtual void _create(const fs_path& path,
-        const std::shared_ptr<void>& prop) = 0;
+        const std::shared_ptr<property_iface>& prop) = 0;
 
     //! Internal access property with wild-card type
-    virtual std::shared_ptr<void>& _access(const fs_path& path) const = 0;
+    virtual std::shared_ptr<property_iface>& _access(const fs_path& path) const = 0;
 };
 
 } // namespace uhd

@@ -138,7 +138,7 @@ public:
         return node->keys();
     }
 
-    std::shared_ptr<void> _pop(const fs_path& path_) override
+    std::shared_ptr<property_iface> _pop(const fs_path& path_) override
     {
         const fs_path path = _root / path_;
         std::lock_guard<std::mutex> lock(_guts->mutex);
@@ -164,7 +164,7 @@ public:
         return prop;
     }
 
-    void _create(const fs_path& path_, const std::shared_ptr<void>& prop) override
+    void _create(const fs_path& path_, const std::shared_ptr<property_iface>& prop) override
     {
         const fs_path path = _root / path_;
         std::lock_guard<std::mutex> lock(_guts->mutex);
@@ -183,7 +183,7 @@ public:
         node->prop = prop;
     }
 
-    std::shared_ptr<void>& _access(const fs_path& path_) const override
+    std::shared_ptr<property_iface>& _access(const fs_path& path_) const override
     {
         const fs_path path = _root / path_;
         std::lock_guard<std::mutex> lock(_guts->mutex);
@@ -210,7 +210,7 @@ private:
     // basic structural node element
     struct node_type : uhd::dict<std::string, node_type>
     {
-        std::shared_ptr<void> prop;
+        std::shared_ptr<property_iface> prop;
     };
 
     // tree guts which may be referenced in a subtree
