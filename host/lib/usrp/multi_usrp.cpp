@@ -64,7 +64,7 @@ UHD_INLINE std::string string_vector_to_string(
     throw uhd::exception::runtime_error(                                         \
         (boost::format(                                                          \
              "%s: gain \"%s\" not found for channel %d.\nAvailable gains: %s\n") \
-            % __FUNCTION__ % name % chan                                         \
+            % UHD_FUNCTION % name % chan                                         \
             % string_vector_to_string(get_##dir##_gain_names(chan)))             \
             .str());
 

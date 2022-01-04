@@ -56,6 +56,8 @@ typedef SSIZE_T ssize_t;
 #    define UHD_ALIGNED(x) __declspec(align(x))
 #    define UHD_UNUSED(x) x
 #    define UHD_FALLTHROUGH
+#    define UHD_FUNCTION __FUNCTION__
+#    define UHD_PRETTY_FUNCTION __FUNCSIG__
 #elif defined(__MINGW32__)
 #    define UHD_EXPORT __declspec(dllexport)
 #    define UHD_IMPORT __declspec(dllimport)
@@ -65,6 +67,8 @@ typedef SSIZE_T ssize_t;
 #    define UHD_ALIGNED(x) __declspec(align(x))
 #    define UHD_UNUSED(x) x __attribute__((unused))
 #    define UHD_FALLTHROUGH
+#    define UHD_FUNCTION __func__
+#    define UHD_PRETTY_FUNCTION __PRETTY_FUNCTION__
 #elif defined(__GNUG__) && __GNUG__ >= 4
 #    define UHD_EXPORT __attribute__((visibility("default")))
 #    define UHD_IMPORT __attribute__((visibility("default")))
@@ -78,6 +82,8 @@ typedef SSIZE_T ssize_t;
 #    else
 #        define UHD_FALLTHROUGH
 #    endif
+#    define UHD_FUNCTION __func__
+#    define UHD_PRETTY_FUNCTION __PRETTY_FUNCTION__
 #elif defined(__clang__)
 #    define UHD_EXPORT __attribute__((visibility("default")))
 #    define UHD_IMPORT __attribute__((visibility("default")))
@@ -91,6 +97,8 @@ typedef SSIZE_T ssize_t;
 #    else
 #        define UHD_FALLTHROUGH
 #    endif
+#    define UHD_FUNCTION __func__
+#    define UHD_PRETTY_FUNCTION __PRETTY_FUNCTION__
 #else
 #    define UHD_EXPORT
 #    define UHD_IMPORT
@@ -100,6 +108,8 @@ typedef SSIZE_T ssize_t;
 #    define UHD_ALIGNED(x)
 #    define UHD_UNUSED(x) x
 #    define UHD_FALLTHROUGH
+#    define UHD_FUNCTION __func__
+#    define UHD_PRETTY_FUNCTION __func__
 #endif
 
 // Define API declaration macro
