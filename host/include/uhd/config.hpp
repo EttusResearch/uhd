@@ -50,6 +50,8 @@ typedef SSIZE_T ssize_t;
 #if defined(BOOST_MSVC)
 #    define UHD_EXPORT __declspec(dllexport)
 #    define UHD_IMPORT __declspec(dllimport)
+#    define UHD_EXPORT_HEADER
+#    define UHD_IMPORT_HEADER
 #    define UHD_INLINE __forceinline
 #    define UHD_FORCE_INLINE __forceinline
 #    define UHD_DEPRECATED __declspec(deprecated)
@@ -59,6 +61,8 @@ typedef SSIZE_T ssize_t;
 #elif defined(__MINGW32__)
 #    define UHD_EXPORT __declspec(dllexport)
 #    define UHD_IMPORT __declspec(dllimport)
+#    define UHD_EXPORT_HEADER
+#    define UHD_IMPORT_HEADER
 #    define UHD_INLINE inline
 #    define UHD_FORCE_INLINE inline
 #    define UHD_DEPRECATED __declspec(deprecated)
@@ -68,6 +72,8 @@ typedef SSIZE_T ssize_t;
 #elif defined(__GNUG__) && __GNUG__ >= 4
 #    define UHD_EXPORT __attribute__((visibility("default")))
 #    define UHD_IMPORT __attribute__((visibility("default")))
+#    define UHD_EXPORT_HEADER __attribute__((visibility("default")))
+#    define UHD_IMPORT_HEADER __attribute__((visibility("default")))
 #    define UHD_INLINE inline __attribute__((always_inline))
 #    define UHD_FORCE_INLINE inline __attribute__((always_inline))
 #    define UHD_DEPRECATED __attribute__((deprecated))
@@ -81,6 +87,8 @@ typedef SSIZE_T ssize_t;
 #elif defined(__clang__)
 #    define UHD_EXPORT __attribute__((visibility("default")))
 #    define UHD_IMPORT __attribute__((visibility("default")))
+#    define UHD_EXPORT_HEADER __attribute__((visibility("default")))
+#    define UHD_IMPORT_HEADER __attribute__((visibility("default")))
 #    define UHD_INLINE inline __attribute__((always_inline))
 #    define UHD_FORCE_INLINE inline __attribute__((always_inline))
 #    define UHD_DEPRECATED __attribute__((deprecated))
@@ -94,6 +102,8 @@ typedef SSIZE_T ssize_t;
 #else
 #    define UHD_EXPORT
 #    define UHD_IMPORT
+#    define UHD_EXPORT_HEADER
+#    define UHD_IMPORT_HEADER
 #    define UHD_INLINE inline
 #    define UHD_FORCE_INLINE inline
 #    define UHD_DEPRECATED
@@ -103,13 +113,23 @@ typedef SSIZE_T ssize_t;
 #endif
 
 // Define API declaration macro
+//
+// UHD_API should be used for classes/structs that
+// have a direct cpp implementations that get directly
+// built into a so/dylib/dll.
+//
+// UHD_API_HEADER should be used for classes/structs
+// that are implemented in header only like hpp/ipp.
 #ifdef UHD_STATIC_LIB
 #    define UHD_API
+#    define UHD_API_HEADER
 #else
 #    ifdef UHD_DLL_EXPORTS
 #        define UHD_API UHD_EXPORT
+#        define UHD_API_HEADER UHD_EXPORT_HEADER
 #    else
 #        define UHD_API UHD_IMPORT
+#        define UHD_API_HEADER UHD_IMPORT_HEADER
 #    endif // UHD_DLL_EXPORTS
 #endif // UHD_STATIC_LIB
 
