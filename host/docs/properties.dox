@@ -20,7 +20,7 @@ the incoming signal is shifted in frequency. The decimation is the integer
 value by which the incoming sampling rate is divided. Put differently, the user
 properties control the behaviour of the DDC block.
 
-On top of that, the DDC block also has an edge property for the sampling rate
+On top of that, the DDC block also has an *edge property* for the sampling rate
 on both the outgoing edge and the incoming edge. This property describes
 something about the data on this graph edge.
 
@@ -28,7 +28,7 @@ something about the data on this graph edge.
            ┌──────────────┐
            │  DDC Block   │
  samp_rate │              │ samp_rate
-───────────> - freq       ├─────────>
+───────────> - freq       ├───────────>
            │ - decim      │
            │              │
            └──────────────┘
@@ -276,6 +276,7 @@ add_property_resolver(
     [this, &fft_size]() {
     	fft_size = coerce_to_power_of_2(fft_size.get());
 	if (fft_size.is_dirty()) {
+	    // FFT_SIZE_REG stores address of FFT size register
 	    this->regs().poke32(FFT_SIZE_REG, log2(fft_size.get()));
 	}
     });
@@ -285,7 +286,7 @@ Alternatively, we poke the register as part of cleaning the property:
 ~~~{.cpp}
 register_property(
     &fft_size,
-    [this, &fft_size](){ this->regs().poke32(FFT_SIZE_REG, log2(FFT_SIZE.get()); }
+    [this, &fft_size](){ this->regs().poke32(FFT_SIZE_REG, log2(fft_size.get()); }
 );
 add_property_resolver(
     {&fft_size},
@@ -302,11 +303,15 @@ The differences are subtle:
 - In the first approach, the register is poked as soon as the new value is
   known. In the second approach, the poke happens only after the resolution is
   complete.
+- The manual step of checking the clean/dirty flag is used to avoid unnecessary
+  writes to hardware in the first approach. It is not required in the second
+  approach, because the write to hardware is coupled with the act of cleaning
+  the variable.
 
 In this particular instance, the second approach is the more readable and is
-recommended. However, not always do properties map to poking registers (or other
-actions) in a clean, one-to-one manner, which is when the first approach is
-better suited.
+recommended. However, not always does changing properties map to poking
+registers (or other actions) in a clean, one-to-one manner, which is when the
+first approach may be better suited.
 
 
 \section props_graph_resolution Graph Property Resolution
@@ -425,13 +430,13 @@ the framework.
 There is a small number of edge properties that treated differently by the RFNoC
 framework.
 
-\section props_special_props_tickrate Tick Rate
+\section props_special_props_tickrate Tick Rate (`tick_rate`)
 
 The "tick rate" is the rate that is used for converting floating point timestamps
 into integer ticks. The tick rate has the additional constraint that within a
 graph, the tick rate must be the same for all blocks. Therefore, the tick rate
 is defined by the framework for all blocks that derive from uhd::rfnoc::noc_block_base,
-and block authors cannot register properties with that name.
+and block authors cannot register properties named `tick_rate`.
 
 The tick rate property is propagated to all edges to enforce all blocks having
 the same tick rate. Some blocks (like the radio blocks) set the tick rate via
@@ -443,12 +448,13 @@ Within a block implementation, the uhd::rfnoc::noc_block_base::set_tick_rate()
 API call can be used to update the tick rate (most blocks do not have to do
 this).
 
-\section props_special_props_mtu MTU
+\section props_special_props_mtu MTU (`mtu`)
 
-Because the MTU is part of the RFNoC framework (it is constrained by the buffer
-size chosen between blocks, and is thus read back from a register in the FPGA),
-its property is also created by the RFNoC framework for all blocks, and block
-authors cannot use the name `mtu` for their properties.
+Because the maximum transmission unit (MTU) is part of the RFNoC framework (it
+is constrained by the buffer size chosen between blocks, and is thus read back
+from a register in the FPGA), its property is also created by the RFNoC
+framework for all blocks, and block authors cannot use the name `mtu` for their
+properties.
 
 However, MTUs can differ within a graph, and blocks might have additional
 constraints on MTU. For this reason, accessing the MTU properties directly is
