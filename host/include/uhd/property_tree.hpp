@@ -191,11 +191,8 @@ property<T>::~property(void)
 /*!
  * FS Path: A glorified string with path manipulations.
  * Inspired by boost filesystem path, but without the dependency.
- *
- * Notice: we do not declare UHD_API on the whole structure
- * because MSVC will do weird things with std::string and linking.
  */
-struct fs_path : std::string
+struct UHD_API_HEADER fs_path : std::string
 {
     UHD_API fs_path(void);
     UHD_API fs_path(const char*);
