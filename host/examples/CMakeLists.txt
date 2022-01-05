@@ -27,6 +27,7 @@ set(example_sources
     usrp_list_sensors.cpp
     latency_test.cpp
     gpio.cpp
+    spi.cpp
     sync_to_gps.cpp
     rfnoc_nullsource_ce_rx.cpp
     rfnoc_rx_to_file.cpp
