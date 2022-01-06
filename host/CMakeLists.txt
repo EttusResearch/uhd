@@ -34,6 +34,7 @@ set(MSVC_MIN_VERSION_READABLE "15.0")
 # all the build-time Python scripts
 set(PYTHON_MIN_VERSION "3.6")
 # Other deps
+set(SETUPTOOLS_MIN_VERSION "40.0")
 set(BOOST_MIN_VERSION "1.65")
 set(NUMPY_MIN_VERSION "1.11")
 set(RUAMEL.YAML_MIN_VERSION "0.15")
@@ -310,33 +311,43 @@ include(UHDLog)
 ########################################################################
 include(UHDPython)
 
-PYTHON_CHECK_MODULE(
-    "Python version ${PYTHON_MIN_VERSION} or greater"
-    "platform" "LooseVersion(platform.python_version()) >= LooseVersion('${PYTHON_MIN_VERSION}')"
+PYTHON_CHECK_MODULE_VERSION(
+    "compatible Python version"
+    "platform"
+    "platform.python_version()"
+    ${PYTHON_MIN_VERSION}
     HAVE_PYTHON_PLAT_MIN_VERSION
 )
 
-PYTHON_CHECK_MODULE(
-    "Mako templates ${PY_MAKO_MIN_VERSION} or greater"
-    "mako" "LooseVersion(mako.__version__) >= LooseVersion('${PY_MAKO_MIN_VERSION}')"
+PYTHON_CHECK_MODULE_VERSION(
+    "Mako templates module"
+    "mako"
+    "mako.__version__"
+    ${PY_MAKO_MIN_VERSION}
     HAVE_PYTHON_MODULE_MAKO
 )
 
-PYTHON_CHECK_MODULE(
-    "requests ${PY_REQUESTS_MIN_VERSION} or greater"
-    "requests" "LooseVersion(requests.__version__) >= LooseVersion('${PY_REQUESTS_MIN_VERSION}')"
+PYTHON_CHECK_MODULE_VERSION(
+    "requests module"
+    "requests"
+    "requests.__version__"
+    ${PY_REQUESTS_MIN_VERSION}
     HAVE_PYTHON_MODULE_REQUESTS
 )
 
-PYTHON_CHECK_MODULE(
-    "numpy ${NUMPY_MIN_VERSION} or greater"
-    "numpy" "LooseVersion(numpy.__version__) >= LooseVersion('${NUMPY_MIN_VERSION}')"
+PYTHON_CHECK_MODULE_VERSION(
+    "numpy module"
+    "numpy"
+    "numpy.__version__"
+    ${NUMPY_MIN_VERSION}
     HAVE_PYTHON_MODULE_NUMPY
 )
 
-PYTHON_CHECK_MODULE(
-    "ruamel.yaml ${RUAMEL.YAML_MIN_VERSION} or greater"
-    "ruamel.yaml" "LooseVersion(ruamel.yaml.__version__) >= LooseVersion('${RUAMEL.YAML_MIN_VERSION}')"
+PYTHON_CHECK_MODULE_VERSION(
+    "ruamel.yaml module"
+    "ruamel.yaml"
+    "ruamel.yaml.__version__"
+    ${RUAMEL.YAML_MIN_VERSION}
     HAVE_PYTHON_MODULE_YAML
 )
 

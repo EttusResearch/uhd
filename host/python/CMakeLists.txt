@@ -10,7 +10,8 @@
 
 PYTHON_CHECK_MODULE(
     "virtualenv"
-    "sys" "hasattr(sys, 'real_prefix')"
+    "sys"
+    "hasattr(sys, 'real_prefix')"
     HAVE_PYTHON_VIRTUALENV
 )
 
