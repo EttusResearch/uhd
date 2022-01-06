@@ -101,7 +101,10 @@ add_custom_command(OUTPUT ${OUTPUT}
 add_custom_target(usrp_mpm ALL DEPENDS ${OUTPUT} pyusrp_periphs)
 
 execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
-    "from __future__ import print_function; from distutils import sysconfig; print(sysconfig.get_python_lib(plat_specific=True, prefix=''))"
+    "import sysconfig;\
+    platlib = sysconfig.get_path(name='platlib');\
+    base = sysconfig.get_config_var('base');\
+    print(platlib.replace(base, '').lstrip('/\\\\'))"
     OUTPUT_VARIABLE USRP_MPM_PYTHON_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/build/lib/usrp_mpm DESTINATION ${USRP_MPM_PYTHON_DIR})
