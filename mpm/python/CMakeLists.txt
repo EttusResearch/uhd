@@ -12,31 +12,37 @@
 set(GEVENT_MIN_VERSION "1.4.0")
 set(PYUDEV_MIN_VERSION "0.21.0")
 
-PYTHON_CHECK_MODULE(
-    "gevent ${GEVENT_MIN_VERSION} or greater"
-    "gevent" "LooseVersion(gevent.__version__) >= LooseVersion('${GEVENT_MIN_VERSION}')"
+PYTHON_CHECK_MODULE_VERSION(
+    "gevent module"
+    "gevent"
+    "gevent.__version__"
+    ${GEVENT_MIN_VERSION}
     HAVE_PYTHON_MODULE_GEVENT
 )
 
 # mprpc does not expose a __version__ attribute, so merely check for its
-# presence.
+# presence
 PYTHON_CHECK_MODULE(
+    "mprpc module"
     "mprpc"
-    "mprpc" "True"
+    "True"
     HAVE_PYTHON_MODULE_MPRPC
 )
 
-PYTHON_CHECK_MODULE(
-    "pyudev ${PYUDEV_MIN_VERSION} or greater"
-    "pyudev" "LooseVersion(pyudev.__version__) >= LooseVersion('${PYUDEV_MIN_VERSION}')"
+PYTHON_CHECK_MODULE_VERSION(
+    "pyudev module"
+    "pyudev" 
+    "pyudev.__version__"
+    ${PYUDEV_MIN_VERSION}
     HAVE_PYTHON_MODULE_PYUDEV
 )
 
 # Older versions of pyroute2 (e.g. 0.5.2) do not expose a __version__
 # attribute, so merely check for its presence.
 PYTHON_CHECK_MODULE(
-    "pyroute2"
-    "pyroute2" "True"
+    "pyroute2 module"
+    "pyroute2" 
+    "True"
     HAVE_PYTHON_MODULE_PYROUTE2
 )
 

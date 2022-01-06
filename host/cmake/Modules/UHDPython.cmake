@@ -119,35 +119,115 @@ set(RUNTIME_PYTHON_EXECUTABLE ${RUNTIME_PYTHON_EXECUTABLE} CACHE FILEPATH
 message(STATUS "Python runtime interpreter: ${RUNTIME_PYTHON_EXECUTABLE} Version: ${RUNTIME_PYTHON_VERSION}")
 message(STATUS "Override with: -DRUNTIME_PYTHON_EXECUTABLE=<path-to-python>")
 
-macro(PYTHON_CHECK_MODULE desc mod cmd have)
+###############################################################################
+# Determine if a Python module is installed, or, more generally, determine
+# if some condition that Python can report through a Boolean expression is
+# met. This macro allows one or more modules to be imported and a Python
+# Boolean expression to be evaluated.
+#
+# - desc:
+#    Description of what's being checked (for user feedback)
+# - module:
+#    The module(s) to be passed to the `import` command
+# - bool_expr:
+#    A Python expression to be evaluated that returns True or False based on
+#    the presence or absence of the module (or in the general case, the
+#    condition being checked)
+# - have_ver:
+#    The variable name to be set to TRUE if the Python expression returns True,
+#    or FALSE otherwise
+macro(PYTHON_CHECK_MODULE desc module bool_expr have_var)
     message(STATUS "")
     message(STATUS "Python checking for ${desc}")
     execute_process(
         COMMAND ${PYTHON_EXECUTABLE} -c "
 #########################################
-from distutils.version import LooseVersion
-try: import ${mod}
-except: exit(1)
-try: assert ${cmd}
-except: exit(2)
+try:
+    import ${module}
+except:
+    exit(1)
+try:
+    assert ${bool_expr}
+except:
+    exit(2)
 exit(0)
 #########################################"
-        RESULT_VARIABLE ${have}
+        RESULT_VARIABLE python_result
     )
-    if(${have} EQUAL 0)
+    if(python_result EQUAL 0)
         message(STATUS "Python checking for ${desc} - found")
-        set(${have} TRUE)
-    elseif(${have} EQUAL 1)
-        message(STATUS "Python checking for ${desc} - \"import ${mod}\" failed")
-        set(${have} FALSE)
-    elseif(${have} EQUAL 2)
-        message(STATUS "Python checking for ${desc} - \"assert ${cmd}\" failed")
-        set(${have} FALSE)
+        set(${have_var} TRUE)
+    elseif(python_result EQUAL 1)
+        message(STATUS "Python checking for ${desc} - \"import ${module}\" failed (is it installed?)")
+        set(${have_var} FALSE)
+    elseif(python_result EQUAL 2)
+        message(STATUS "Python checking for ${desc} - \"assert ${bool_expr}\" failed")
+        set(${have_var} FALSE)
     else()
         message(STATUS "Python checking for ${desc} - unknown error")
-        set(${have} FALSE)
+        set(${have_var} FALSE)
     endif()
 endmacro(PYTHON_CHECK_MODULE)
+
+
+###############################################################################
+# Determine if a Python module is installed and if it meets a minimum required
+# version.
+#
+# - desc:
+#    Description of what's being checked (for user feedback)
+# - module:
+#    The module to be `import`ed
+# - module_version_expr:
+#    A Python expression to be evaluated that returns the module version string
+#    (usually "module_name.__version__", but may be tailored for non-conformant
+#    modules, or other custom use cases)
+# - min_module_version:
+#    The minimum version required of the module as a canonical Python version
+#    string ("major.minor.micro") as defined in PEP 440
+# - have_ver:
+#    The variable name to be set to TRUE if the module is present and meets
+#    the minimum version requirement or FALSE otherwise
+macro(PYTHON_CHECK_MODULE_VERSION desc module module_version_expr min_module_version have_var)
+    message(STATUS "")
+    message(STATUS "Python checking for ${desc}")
+    execute_process(
+        COMMAND ${PYTHON_EXECUTABLE} -c "
+#########################################
+try:
+    import ${module}
+except:
+    exit(1)
+try:
+    version = ${module_version_expr}
+    print(version)
+except:
+    exit(2)
+exit(0)
+#########################################"
+        RESULT_VARIABLE python_result
+        OUTPUT_VARIABLE version_output
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if(python_result EQUAL 0)
+        if(${version_output} VERSION_GREATER_EQUAL ${min_module_version})
+            message(STATUS "Python checking for ${desc} - ${version_output} satisifes minimum required version ${min_module_version}")
+            set(${have_var} TRUE)
+        else()
+            message(STATUS "Python checking for ${desc} - ${version_output} does not satisfy minimum required version ${min_module_version}")
+            set(${have_var} FALSE)
+        endif()
+    elseif(python_result EQUAL 1)
+        message(STATUS "Python checking for ${desc} - \"import ${module}\" failed (is it installed?)")
+        set(${have_var} FALSE)
+    elseif(python_result EQUAL 2)
+        message(STATUS "Python checking for ${desc} - evaluation of \"${module_version_expr}\" failed")
+        set(${have_var} FALSE)
+    else()
+        message(STATUS "Python checking for ${desc} - unknown error")
+        set(${have_var} FALSE)
+    endif()
+endmacro(PYTHON_CHECK_MODULE_VERSION)
 
 ###############################################################################
 # Part 2: Python Libraries
