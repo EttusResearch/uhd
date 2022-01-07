@@ -991,7 +991,7 @@ void radio_control_impl::async_message_handler(
     }
     // Reminder: The address is calculated as:
     // BASE + 64 * chan + addr_offset
-    // BASE == 0x0000 for RX, 0x1000 for TX
+    // BASE == 0x0000 for TX, 0x1000 for RX
     const uint32_t addr_base = (addr >= regmap::SWREG_RX_ERR) ? regmap::SWREG_RX_ERR
                                                               : regmap::SWREG_TX_ERR;
     const uint32_t chan = (addr - addr_base) / regmap::SWREG_CHAN_OFFSET;
