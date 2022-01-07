@@ -337,8 +337,7 @@ private:
         return nsamps_per_buff;
     }
 
-    /*! Run the conversion from the internal buffers to the user's input
-     *  buffer.
+    /*! Run the conversion from the user's buffers to the internal buffer.
      *
      * - Calls the converter
      * - Releases internal data buffers
