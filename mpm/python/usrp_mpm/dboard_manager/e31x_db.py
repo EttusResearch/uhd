@@ -36,15 +36,15 @@ class E31x_db(DboardManagerBase):
         'rssi' : 'get_rssi_sensor',
         # For backward compatibility reasons we have the same sensor with two
         # different names
-        'lo_lock' : 'get_lo_lock_sensor',
-        'lo_locked' : 'get_lo_lock_sensor',
+        'lo_lock' : 'get_rx_lo_lock_sensor',
+        'lo_locked' : 'get_rx_lo_lock_sensor',
     }
     tx_sensor_callback_map = {
         'ad9361_temperature': 'get_catalina_temp_sensor',
         # For backward compatibility reasons we have the same sensor with two
         # different names
-        'lo_lock' : 'get_lo_lock_sensor',
-        'lo_locked' : 'get_lo_lock_sensor',
+        'lo_lock' : 'get_tx_lo_lock_sensor',
+        'lo_locked' : 'get_tx_lo_lock_sensor',
     }
     # Maps the chipselects to the corresponding devices:
     spi_chipselect = {"catalina": 0}
@@ -157,20 +157,19 @@ class E31x_db(DboardManagerBase):
         Return LO lock status (Boolean!) of AD9361. 'which' must be
         either 'tx' or 'rx'
         """
+        assert which in ('rx', 'tx')
         mboard_regs_control = \
             MboardRegsControl(self.mboard_regs_label, self.log)
         if which == "tx":
             return mboard_regs_control.get_ad9361_tx_lo_lock()
-        if which == "rx":
-            return mboard_regs_control.get_ad9361_rx_lo_lock()
-        self.log.warning("get_ad9361_lo_lock(): Invalid which param `{}'"
-                         .format(which))
-        return False
+        # else:
+        return mboard_regs_control.get_ad9361_rx_lo_lock()
 
     def get_lo_lock_sensor(self, which):
         """
         Get sensor dict with LO lock status
         """
+        assert which in ('rx', 'tx')
         self.log.trace("Reading LO Lock.")
         lo_locked = self.get_ad9361_lo_lock(which)
         return {
@@ -179,6 +178,18 @@ class E31x_db(DboardManagerBase):
             'unit': 'locked' if lo_locked else 'unlocked',
             'value': str(lo_locked).lower(),
         }
+
+    def get_rx_lo_lock_sensor(self, _chan):
+        """
+        RX-specific version of get_lo_lock_sensor() (for UHD API)
+        """
+        return self.get_lo_lock_sensor('rx')
+
+    def get_tx_lo_lock_sensor(self, _chan):
+        """
+        TX-specific version of get_lo_lock_sensor() (for UHD API)
+        """
+        return self.get_lo_lock_sensor('tx')
 
     def get_catalina_temp_sensor(self, _):
         """
