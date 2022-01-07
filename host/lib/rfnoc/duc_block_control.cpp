@@ -523,12 +523,12 @@ private:
 
     //! Set the DDS frequency shift the signal to \p requested_freq
     double _set_freq(
-        const double requested_freq, const double input_rate, const size_t chan)
+        const double requested_freq, const double dds_rate, const size_t chan)
     {
         double actual_freq;
         int32_t freq_word;
         std::tie(actual_freq, freq_word) =
-            get_freq_and_freq_word(requested_freq, input_rate);
+            get_freq_and_freq_word(requested_freq, dds_rate);
         _duc_reg_iface.poke32(
             SR_FREQ_ADDR, uint32_t(freq_word), chan, get_command_time(chan));
         return actual_freq;
