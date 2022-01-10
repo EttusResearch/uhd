@@ -36,6 +36,6 @@ foreach src_file $hls_ip_srcs {
     }
 }
 csynth_design
-export_design -format ip_catalog
-
+puts "BUILDER: Setting IP export version to 1.0.0 to workaround Y2K22 bug (AR 76960)"
+export_design -format ip_catalog -version 1.0.0
 exit
