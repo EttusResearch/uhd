@@ -52,6 +52,7 @@ x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
 
     UHD_ASSERT_THROW(get_mb_controller());
     _mb_control = std::dynamic_pointer_cast<mpmd_mb_controller>(get_mb_controller());
+    UHD_ASSERT_THROW(_mb_control)
 
     _x4xx_timekeeper = std::dynamic_pointer_cast<mpmd_mb_controller::mpmd_timekeeper>(
         _mb_control->get_timekeeper(0));
