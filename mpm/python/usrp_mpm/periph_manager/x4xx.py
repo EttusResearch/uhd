@@ -1335,7 +1335,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
 
     def get_gps_sensor_status(self):
         """
-        Get all status of GPS as sensor dict
+        Get all status info of GPS in a single string. This is a debugging API.
         """
         assert self._gps_mgr
         self.log.trace("Reading all GPS status pins")

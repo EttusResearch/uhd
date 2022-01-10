@@ -145,7 +145,7 @@ class X4xxGPSMgr:
 
     def get_gps_time_sensor(self):
         """
-
+        Get GPS time in integer seconds as a sensor dict
         """
         if not self.is_gps_enabled():
             return {
