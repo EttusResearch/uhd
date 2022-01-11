@@ -10,7 +10,7 @@
 #include <uhdlib/rfnoc/chdr_packet_writer.hpp>
 #include <uhdlib/rfnoc/ctrlport_endpoint.hpp>
 #include <condition_variable>
-#include <boost/format.hpp>
+#include <boost/optional.hpp>
 #include <deque>
 #include <mutex>
 #include <numeric>
@@ -67,9 +67,8 @@ public:
         // Send request
         auto request = send_request_packet(OP_WRITE, addr, {data}, timestamp);
         // Optionally wait for an ACK
-        if (ack || _policy.force_acks) {
-            wait_for_ack(request);
-        }
+        const bool require_ack = ack || _policy.force_acks;
+        wait_for_ack(request, require_ack);
     }
 
     void multi_poke32(const std::vector<uint32_t> addrs,
@@ -104,9 +103,8 @@ public:
         // Send request
         auto request = send_request_packet(OP_BLOCK_WRITE, first_addr, data, timestamp);
         // Optionally wait for an ACK
-        if (ack || _policy.force_acks) {
-            wait_for_ack(request);
-        }
+        const bool require_ack = ack || _policy.force_acks;
+        wait_for_ack(request, require_ack);
         */
     }
 
@@ -117,7 +115,7 @@ public:
         auto request = send_request_packet(OP_READ, addr, {uint32_t(0)}, timestamp);
 
         // Wait for an ACK
-        auto response = wait_for_ack(request);
+        auto response = wait_for_ack(request, true).get();
         return response.data_vtr[0];
     }
 
@@ -140,7 +138,7 @@ public:
             timestamp);
 
         // Wait for an ACK
-        auto response = wait_for_ack(request);
+        auto response = wait_for_ack(request, true).get();
         return response.data_vtr;
         */
     }
@@ -164,9 +162,8 @@ public:
             timestamp);
 
         // Optionally wait for an ACK
-        if (ack || _policy.force_acks) {
-            wait_for_ack(request);
-        }
+        const bool require_ack = ack || _policy.force_acks;
+        wait_for_ack(request, require_ack);
     }
 
     void sleep(uhd::time_spec_t duration, bool ack = false) override
@@ -178,9 +175,8 @@ public:
             uhd::time_spec_t::ASAP);
 
         // Optionally wait for an ACK
-        if (ack || _policy.force_acks) {
-            wait_for_ack(request);
-        }
+        const bool require_ack = ack || _policy.force_acks;
+        wait_for_ack(request, require_ack);
     }
 
     void register_async_msg_validator(async_msg_validator_t callback_f) override
@@ -415,13 +411,30 @@ private:
     }
 
     //! Waits for and returns the ACK for the specified request
-    const ctrl_payload wait_for_ack(const ctrl_payload& request)
+    //
+    // \param request The request for which we are awaiting the response
+    // \param require_ack A Boolean flag which indicates if we really need that
+    //                    response. If false, we reduce the timeout to zero
+    //                    and return an empty control payload if we can't find
+    //                    the relevant ACK. This can be used to help clear the
+    //                    response queue without waiting.
+    // \returns The response payload corresponding to \p requst. If \p require_ack
+    //          is false, this may also be an empty ctrl_payload object with no
+    //          meaningful content.
+    // \throws uhd::op_timeout if require_ack is true, and we exceed the timeout
+    //         set by the current policy. Throws various other uhd::rfnoc_error
+    //         when there was a communication issue (see the code for details).
+    const boost::optional<ctrl_payload> wait_for_ack(
+        const ctrl_payload& request, const bool require_ack)
     {
         auto resp_ready = [this]() -> bool { return !_resp_queue.empty(); };
         while (true) {
             std::unique_lock<std::mutex> lock(_mutex);
             // Wait until there is a response in the response queue
             if (!resp_ready()) {
+                if (!require_ack) {
+                    return {};
+                }
                 // If we're waiting for a timed command or if we have a
                 // command in the queue, use the MASSIVE_TIMEOUT instead
                 auto timeout_time = start_timeout(
