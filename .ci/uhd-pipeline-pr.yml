@@ -5,6 +5,15 @@
 #
 
 parameters:
+- name: build_linux
+  type: boolean
+  default: true
+- name: build_mac
+  type: boolean
+  default: true
+- name: build_win
+  type: boolean
+  default: true
 - name: custom_boost_version
   type: boolean
   default: false
@@ -35,6 +44,9 @@ pr:
 extends:
   template: templates/stages-uhd-pipeline.yml
   parameters:
+    build_linux: ${{ parameters.build_linux }}
+    build_mac: ${{ parameters.build_mac }}
+    build_win: ${{ parameters.build_win }}
     custom_boost_version: ${{ parameters.custom_boost_version }}
     custom_boost_version_url: ${{ parameters.custom_boost_version_url }}
     release_binaries: ${{ parameters.release_binaries }}

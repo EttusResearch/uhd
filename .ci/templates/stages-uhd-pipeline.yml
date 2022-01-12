@@ -5,6 +5,15 @@
 #
 
 parameters:
+- name: build_linux
+  type: boolean
+  default: true
+- name: build_mac
+  type: boolean
+  default: true
+- name: build_win
+  type: boolean
+  default: true
 - name: custom_boost_version
   type: boolean
   default: false
@@ -23,12 +32,14 @@ resources:
   - pipeline: uhd_build_docker_container
     source: 'uhddev Build Docker Containers'
     branch: master
+
 stages:
-- stage: build_uhd_stage
-  displayName: Build UHD
+- stage: build_uhd_stage_linux
+  displayName: Build UHD Linux
+  dependsOn: []
+  condition: and(succeeded(), ${{ parameters.build_linux }})
   jobs:
   - template: job-get-latest-uhd-docker.yml
-
   - template: job-uhd-build-src.yml
     parameters:
       toolset: make
@@ -38,29 +49,48 @@ stages:
   - template: job-uhd-build-src.yml
     parameters:
       toolset: ninja
-  - template: job-uhd-build-src.yml
-    parameters:
-      toolset: msbuild
-      release_binaries: ${{ parameters.release_binaries }}
-  - template: job-uhd-build-src.yml
-    parameters:
-      toolset: make_homebrew_macos
-
   - ${{ if parameters.custom_boost_version }}:
     - template: job-uhd-build-src.yml
       parameters:
         toolset: make_custom_boost_version
         custom_boost_version_url: ${{ parameters.custom_boost_version_url }}
 
-- stage: build_uhd_installer_stage
-  displayName: Build UHD Installers
-  dependsOn: build_uhd_stage
+- stage: build_uhd_stage_win
+  displayName: Build UHD Windows
+  dependsOn: []
+  condition: and(succeeded(), ${{ parameters.build_win }})
+  jobs:
+  - template: job-get-latest-uhd-docker.yml
+  - template: job-uhd-build-src.yml
+    parameters:
+      toolset: msbuild
+      release_binaries: ${{ parameters.release_binaries }}
+
+- stage: build_uhd_stage_mac
+  displayName: Build UHD macOS
+  dependsOn: []
+  condition: and(succeeded(), ${{ parameters.build_mac }})
+  jobs:
+  - template: job-get-latest-uhd-docker.yml
+  - template: job-uhd-build-src.yml
+    parameters:
+      toolset: make_homebrew_macos
+
+- stage: build_uhd_installer_stage_linux
+  displayName: Build UHD Installers Linux
+  dependsOn: build_uhd_stage_linux
   jobs:
     - template: job-get-latest-uhd-docker.yml
     - template: job-uhd-build-installer.yml
       parameters:
         toolset: ubuntu_deb
         installer: deb
+
+- stage: build_uhd_installer_stage_win
+  displayName: Build UHD Installers Windows
+  dependsOn: build_uhd_stage_win
+  jobs:
+    - template: job-get-latest-uhd-docker.yml
     - template: job-uhd-build-installer.yml
       parameters:
         toolset: msbuild
@@ -68,9 +98,20 @@ stages:
 
 - stage: test_uhd_stage
   displayName: Test UHD
-  dependsOn: build_uhd_stage
+  dependsOn: build_uhd_stage_linux
   jobs:
   - template: job-uhd-devtest-rhombus.yml
     parameters:
       testOS: ubuntu2004
       uhdSrcDir: $(Build.SourcesDirectory)
+
+- stage: test_streaming_stage
+  displayName: Test UHD Streaming
+  dependsOn: build_uhd_stage_linux
+  condition: and(succeeded('build_uhd_stage_linux'), ${{ parameters.run_streaming_tests }})
+  jobs:
+  - template: job-uhd-streaming-tests-beauty.yml
+    parameters:
+      testOS: ubuntu2004
+      uhdSrcDir: $(Build.SourcesDirectory)
+      testLength: ${{ parameters.testLength }}
