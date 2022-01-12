@@ -75,6 +75,8 @@ BOOST_AUTO_TEST_CASE(float_equality_operators)
         fp_compare_epsilon<float>(alpha._value + uhd::math::SINGLE_PRECISION_EPSILON);
     BOOST_CHECK(not(alpha == charlie));
     BOOST_CHECK(not(alpha == float(alpha._value + uhd::math::SINGLE_PRECISION_EPSILON)));
+
+    BOOST_CHECK(fp_compare_epsilon<float>(0.0) == 0.0);
 }
 
 BOOST_AUTO_TEST_CASE(double_equality_operators)
@@ -90,6 +92,8 @@ BOOST_AUTO_TEST_CASE(double_equality_operators)
         fp_compare_epsilon<double>(alpha._value + uhd::math::DOUBLE_PRECISION_EPSILON);
     BOOST_CHECK(not(alpha == charlie));
     BOOST_CHECK(not(alpha == double(alpha._value + uhd::math::DOUBLE_PRECISION_EPSILON)));
+
+    BOOST_CHECK(fp_compare_epsilon<double>(0.0) == 0.0);
 }
 
 BOOST_AUTO_TEST_CASE(float_inequality_operators)
@@ -126,6 +130,8 @@ BOOST_AUTO_TEST_CASE(float_lessthan_operators)
 
     BOOST_CHECK(not(alpha < charlie));
     BOOST_CHECK(not(alpha < float(alpha._value - 1.2f)));
+
+    BOOST_CHECK(fp_compare_epsilon<float>(-0.1) < 0.0f);
 }
 
 BOOST_AUTO_TEST_CASE(double_lessthan_operators)
@@ -143,6 +149,11 @@ BOOST_AUTO_TEST_CASE(double_lessthan_operators)
 
     BOOST_CHECK(not(alpha < charlie));
     BOOST_CHECK(not(alpha < double(alpha._value - 1.0012)));
+
+    fp_compare_epsilon<double> foxtrot(1.0, 0.001);
+    BOOST_CHECK(foxtrot < 1.0015);
+
+    BOOST_CHECK(fp_compare_epsilon<double>(-0.1) < 0.0);
 }
 
 BOOST_AUTO_TEST_CASE(float_lessthanequals_operators)
@@ -159,6 +170,8 @@ BOOST_AUTO_TEST_CASE(float_lessthanequals_operators)
 
     BOOST_CHECK(charlie <= alpha);
     BOOST_CHECK(float(alpha._value - 1.2) <= alpha);
+
+    BOOST_CHECK(fp_compare_epsilon<double>(-0.01) < 0.0);
 }
 
 BOOST_AUTO_TEST_CASE(double_lessthanequals_operators)
@@ -209,6 +222,8 @@ BOOST_AUTO_TEST_CASE(double_greaterthan_operators)
 
     BOOST_CHECK(not(alpha > charlie));
     BOOST_CHECK(not(alpha > double(alpha._value + 0.0012)));
+
+    BOOST_CHECK(fp_compare_epsilon<double>(0.01) > 0.0);
 }
 
 BOOST_AUTO_TEST_CASE(float_greaterthanequals_operators)

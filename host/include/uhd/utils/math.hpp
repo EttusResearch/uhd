@@ -85,10 +85,10 @@ public:
  * There are obviously a lot of strategies for defining floating point
  * equality, and in the end it all comes down to the domain at hand. UHD's
  * floating-point-with-epsilon comparison algorithm is based on the method
- * presented in Knuth's "The Art of Computer Science" called "very close
+ * presented in Knuth's "The Art of Computer Science" called "close enough
  * with tolerance epsilon".
  *
- *      [(|u - v| / |u|) <= e] && [(|u - v| / |v|) <= e]
+ *      [(|u - v| / |u|) <= e] || [(|u - v| / |v|) <= e]
  *
  * UHD's modification to this algorithm is using the denominator's epsilon
  * value (since each float_t object has its own epsilon) for each
