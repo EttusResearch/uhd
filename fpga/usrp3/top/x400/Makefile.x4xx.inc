@@ -170,7 +170,7 @@ $(WB_SPI_SRCS) $(RFNOC_XPORT_SV_SRCS) \
 # Pass the edge table and image core header files required by RFNoC
 # to Vivado as Verilog definitions.
 EDGE_TBL_DEF="RFNOC_EDGE_TBL_FILE=$(call RESOLVE_PATH,$(EDGE_FILE))"
-IMAGE_CORE_DEF="RFNOC_IMAGE_CORE_HDR=$(DEFAULT_RFNOC_IMAGE_CORE_FILE:.v=.vh)"
+IMAGE_CORE_DEF="RFNOC_IMAGE_CORE_HDR=$(call RESOLVE_PATH,$(IMAGE_CORE:.v=.vh))"
 
 ##################################################
 # Dependency Targets
