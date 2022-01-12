@@ -5,6 +5,15 @@
 #
 
 parameters:
+- name: build_linux
+  type: boolean
+  default: true
+- name: build_mac
+  type: boolean
+  default: true
+- name: build_win
+  type: boolean
+  default: true
 - name: release_binaries
   type: boolean
   default: false
@@ -40,6 +49,9 @@ pr: none
 extends:
   template: templates/stages-uhd-pipeline.yml
   parameters:
+    build_linux: ${{ parameters.build_linux }}
+    build_mac: ${{ parameters.build_mac }}
+    build_win: ${{ parameters.build_win }}
     release_binaries: ${{ parameters.release_binaries }}
     testLength: ${{ parameters.testLength }}
     run_streaming_tests: ${{ parameters.run_streaming_tests }}
