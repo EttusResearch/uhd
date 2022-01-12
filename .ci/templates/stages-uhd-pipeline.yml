@@ -23,6 +23,32 @@ parameters:
 - name: release_binaries
   type: boolean
   default: false
+- name: testLength
+  type: string
+- name: run_streaming_tests
+  type: boolean
+  default: false
+- name: build_sdk
+  type: boolean
+  default: false
+- name: cache_sstate
+  type: boolean
+  default: true
+- name: build_e310_sg1
+  type: boolean
+  default: true
+- name: build_e310_sg3
+  type: boolean
+  default: true
+- name: build_e320
+  type: boolean
+  default: true
+- name: build_n3xx
+  type: boolean
+  default: true
+- name: build_x4xx
+  type: boolean
+  default: true
 
 variables:
 - template: ../uhd-pipeline-vars.yml
@@ -32,6 +58,15 @@ resources:
   - pipeline: uhd_build_docker_container
     source: 'uhddev Build Docker Containers'
     branch: master
+  - pipeline: usrp-kas-pipeline
+    source: 'usrp-kas'
+    branch: zeus-ci
+  repositories:
+  - repository: meta-ettus
+    type: github
+    name: EttusResearch/meta-ettus-dev
+    endpoint: EttusResearch
+    ref: zeus-ci
 
 stages:
 - stage: build_uhd_stage_linux
@@ -75,6 +110,50 @@ stages:
   - template: job-uhd-build-src.yml
     parameters:
       toolset: make_homebrew_macos
+
+- stage: build_uhd_embedded_system_images
+  displayName: Build UHD Embedded System Images
+  dependsOn: []
+  variables:
+    AUTO_CONF: $(Agent.BuildDirectory)/auto.conf
+  jobs:
+    - template: .ci/templates/job_build_filesystem.yml@meta-ettus
+      parameters:
+        build_sdk: ${{ parameters.build_sdk }}
+        cache_sstate: ${{ parameters.cache_sstate }}
+        cache_downloads: False
+        machines:
+          - ${{ if parameters.build_e310_sg1 }}:
+            - e310_sg1
+          - ${{ if parameters.build_e310_sg3 }}:
+            - e310_sg3
+          - ${{ if parameters.build_e320 }}:
+            - e320
+          - ${{ if parameters.build_n3xx }}:
+            - n3xx
+          - ${{ if parameters.build_x4xx }}:
+            - x4xx
+        auto_conf: $AUTO_CONF
+        run_from_external_repo: true
+        prebuild_steps:
+        - script: |
+            rm $(AUTO_CONF)
+            touch $(AUTO_CONF)
+          displayName: create auto.conf
+        - template: .ci/templates/oe_localconf_externalsrc.yml@meta-ettus
+          parameters:
+            conf_file: $AUTO_CONF
+            repository: self
+            package_paths:
+              - package: uhd
+                path: host
+              - package: mpmd
+                path: mpm
+        postbuild_steps:
+        - script: |
+            rm $(AUTO_CONF)
+          displayName: delete auto.conf
+          condition: always()
 
 - stage: build_uhd_installer_stage_linux
   displayName: Build UHD Installers Linux

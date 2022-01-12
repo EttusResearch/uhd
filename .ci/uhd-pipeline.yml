@@ -17,6 +17,44 @@ parameters:
 - name: release_binaries
   type: boolean
   default: false
+- name: testLength
+  type: string
+  values:
+  - 'smoke'
+  - 'full'
+  - 'stress'
+  default: 'smoke'
+- name: run_streaming_tests
+  type: boolean
+  default: False
+- name: build_sdk
+  type: boolean
+  displayName: Build embedded image SDKs
+  default: false
+- name: cache_sstate
+  type: boolean
+  displayName: Use sstate cache for embedded builds
+  default: true
+- name: build_e310_sg1
+  type: boolean
+  displayName: Build e310_sg1 image
+  default: true
+- name: build_e310_sg3
+  type: boolean
+  displayName: Build e310_sg3 image
+  default: true
+- name: build_e320
+  type: boolean
+  displayName: Build e320 image
+  default: true
+- name: build_n3xx
+  type: boolean
+  displayName: Build n3xx image
+  default: true
+- name: build_x4xx
+  type: boolean
+  displayName: Build x4xx image
+  default: true
 
 trigger:
   batch: true
@@ -43,3 +81,12 @@ extends:
     build_mac: ${{ parameters.build_mac }}
     build_win: ${{ parameters.build_win }}
     release_binaries: ${{ parameters.release_binaries }}
+    testLength: ${{ parameters.testLength }}
+    run_streaming_tests: ${{ parameters.run_streaming_tests }}
+    build_sdk: ${{ parameters.build_sdk }}
+    cache_sstate: ${{ parameters.cache_sstate }}
+    build_e310_sg1: ${{ parameters.build_e310_sg1 }}
+    build_e310_sg3: ${{ parameters.build_e310_sg3 }}
+    build_e320: ${{ parameters.build_e320 }}
+    build_n3xx: ${{ parameters.build_n3xx }}
+    build_x4xx: ${{ parameters.build_x4xx }}
