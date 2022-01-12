@@ -299,8 +299,8 @@ void magnesium_radio_control_impl::_update_freq(
                                              : ad9371_freq;
 
     RFNOC_LOG_TRACE("RF freq = " << rf_freq);
-    UHD_ASSERT_THROW(fp_compare_epsilon<double>(rf_freq) >= 0);
-    UHD_ASSERT_THROW(fp_compare_epsilon<double>(std::abs(rf_freq - _desired_rf_freq[dir]))
+    UHD_ASSERT_THROW(freq_compare_epsilon(rf_freq) >= 0);
+    UHD_ASSERT_THROW(freq_compare_epsilon(std::abs(rf_freq - _desired_rf_freq[dir]))
                      <= _master_clock_rate / 2);
     if (dir == RX_DIRECTION) {
         radio_control_impl::set_rx_frequency(rf_freq, chan);

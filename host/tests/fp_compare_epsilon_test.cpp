@@ -258,3 +258,13 @@ BOOST_AUTO_TEST_CASE(double_greaterthanequals_operators)
     BOOST_CHECK(charlie >= alpha);
     BOOST_CHECK(double(alpha._value + 3.0008) >= alpha);
 }
+
+BOOST_AUTO_TEST_CASE(frequency_comparison)
+{
+    // Delta comparison
+    BOOST_CHECK(uhd::math::frequencies_are_equal(
+        1e9, 1e9 + uhd::math::FREQ_COMPARISON_DELTA_HZ / 10));
+    // Epsilon comparison below 1 mHz
+    BOOST_CHECK(
+        freq_compare_epsilon(1e9) == (1e9 + uhd::math::FREQ_COMPARE_EPSILON / 10));
+}

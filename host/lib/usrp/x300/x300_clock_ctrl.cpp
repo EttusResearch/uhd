@@ -585,9 +585,11 @@ private:
             } else if (math::frequencies_are_equal(_master_clock_rate, 120e6)) {
                 /* 10MHz reference, 120 MHz master clock rate, Zero Delay */
                 clocking_mode = m10M_120M_ZDEL;
-            } else if (fp_compare_epsilon<double>(_master_clock_rate)
+            } else if (fp_compare_delta<double>(
+                           _master_clock_rate, math::FREQ_COMPARISON_DELTA_HZ)
                            >= uhd::usrp::x300::MIN_TICK_RATE
-                       && fp_compare_epsilon<double>(_master_clock_rate)
+                       && fp_compare_delta<double>(
+                              _master_clock_rate, math::FREQ_COMPARISON_DELTA_HZ)
                               <= uhd::usrp::x300::MAX_TICK_RATE) {
                 /* 10MHz reference, attempt to automatically configure PLL
                  * for arbitrary master clock rate, Zero Delay */

@@ -69,7 +69,7 @@ constexpr double RHODIUM_TX_BAND7_MIN_FREQ = 4100e6;
 rhodium_radio_control_impl::rx_band rhodium_radio_control_impl::_map_freq_to_rx_band(
     const double freq)
 {
-    auto freq_compare = fp_compare_epsilon<double>(freq, RHODIUM_FREQ_COMPARE_EPSILON);
+    const auto freq_compare = freq_compare_epsilon(freq);
 
     if (freq_compare < RHODIUM_RX_BAND0_MIN_FREQ) {
         return rx_band::RX_BAND_INVALID;
@@ -97,7 +97,7 @@ rhodium_radio_control_impl::rx_band rhodium_radio_control_impl::_map_freq_to_rx_
 rhodium_radio_control_impl::tx_band rhodium_radio_control_impl::_map_freq_to_tx_band(
     const double freq)
 {
-    auto freq_compare = fp_compare_epsilon<double>(freq, RHODIUM_FREQ_COMPARE_EPSILON);
+    const auto freq_compare = freq_compare_epsilon(freq);
 
     if (freq_compare < RHODIUM_TX_BAND0_MIN_FREQ) {
         return tx_band::TX_BAND_INVALID;

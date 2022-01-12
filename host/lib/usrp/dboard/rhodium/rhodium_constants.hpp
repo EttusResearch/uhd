@@ -12,8 +12,6 @@
 #include <string>
 #include <vector>
 
-static constexpr double RHODIUM_FREQ_COMPARE_EPSILON = 1e-5;
-
 static constexpr size_t NUM_RHODIUM_RADIO_RATES = 3;
 
 static constexpr std::array<double, NUM_RHODIUM_RADIO_RATES> RHODIUM_RADIO_RATES = {

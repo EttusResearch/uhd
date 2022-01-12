@@ -263,7 +263,7 @@ void rhodium_cpld_ctrl::set_rx_lo_path(const double freq, const bool defer_commi
     UHD_LOG_TRACE("RH_CPLD", "Configuring RX LO filter and settings. freq=" << freq);
     std::lock_guard<std::mutex> l(_set_mutex);
 
-    auto freq_compare = fp_compare_epsilon<double>(freq, RHODIUM_FREQ_COMPARE_EPSILON);
+    const auto freq_compare = freq_compare_epsilon(freq);
 
     if (freq_compare < RX_DEMOD_ADJ_1500OHM_THRESHOLD) {
         _regs.rx_demod_adj =
@@ -296,7 +296,7 @@ void rhodium_cpld_ctrl::set_tx_lo_path(const double freq, const bool defer_commi
     UHD_LOG_TRACE("RH_CPLD", "Configuring TX LO filter and settings. freq=" << freq);
     std::lock_guard<std::mutex> l(_set_mutex);
 
-    auto freq_compare = fp_compare_epsilon<double>(freq, RHODIUM_FREQ_COMPARE_EPSILON);
+    const auto freq_compare = freq_compare_epsilon(freq);
 
     if (freq_compare < RHODIUM_LO_0_9_GHZ_LPF_THRESHOLD_FREQ) {
         _regs.tx_lo_filter_sel =
