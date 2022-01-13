@@ -123,6 +123,12 @@ set(man_page_sources
     usrp2_card_burner.1
 )
 
+if (ENABLE_PYTHON_API)
+    set(man_page_sources
+        usrpctl.1
+    )
+endif(ENABLE_PYTHON_API)
+
 ########################################################################
 # Setup man pages
 ########################################################################

@@ -1,0 +1,72 @@
+/*! \page page_usrpctl Usrpctl
+
+\tableofcontents
+
+\section usrpctl_description Description
+
+usrpctl is the central and universal tool to 
+query, update or configure USRP devices. The command structure is:
+
+    usrpctl $ID $COMMAND $OPTIONS
+
+`usrpctl` will run $COMMAND on the devices identified by $ID. $OPTIONS
+is dependend on the chosen command.
+
+\section usrpctl_id $ID
+
+$ID is the optional device argument. It is used to define a set
+of USRP devices that `$COMMAND` should be applied to. If `$ID` is omitted
+$COMMAND is applied to all reachable devices.
+
+`usrpctl` understands the device args argument used by other UHD
+tools like `uhd_find_devices`.
+
+\section usrpctl_command $COMMAND
+Is the action the tool is to take. Every command can be either applied to a
+single device or a group of devices. Commands that run on a group of
+devices repeat the command for every device.
+
+- Single device commands:
+    - `config`: Read/write configuration variables (e.g., IP address)
+    - `probe`: reads extended information about the USRP
+- Multi device commands:
+    - `update`: Update binaries (e.g., FPGA image)
+    - `reset`: Reset the device or parts thereof (e.g., only reset MPM)
+    - `find`: finds all available USRPs in this network
+
+\section usrpctl_options $OPTIONS
+
+The options depend on the chosen command. Optional arguments are prepended
+with a dash, mandatory are not.
+
+\section usrpctl_commands Available commands
+
+\section usrpctl_find find
+
+The find command takes no further options. If `$ID` is not given it scans the
+system for available, supported devices and prints a list of discovered devices.
+The print out is compatible to \ref id_identifying_cmdline "`uhd_find_devices`".
+`$ID` can be used to narrow down the list of discovered devices.
+
+Examples:
+
+- `usrpctl find` find all supported devices
+- `usrpctl type=x300,product=X310 find` find all x310 devices
+- `usrpctl name=my_usrp find` find a device named my_usrp
+- `usrpctl addr=192.168.10.2 find` find a device with the given IP.
+
+\subsection usrpctl_probe probe
+Arguments:
+-`-tree`: print a list of the device property tree
+ 
+The probe command can only be applied to a single device so make sure that
+$ID identifies exactly one device. Without arguments it displays detailed
+information about the device such as name, serial, revision numbers, 
+firmware version sensor information on attached motherboard and daughterboards.
+
+Examples:
+- `usrpctl addr=192.168.10.2 probe` display device information for USRP with the given ID
+- `usprctl name=my_usrp probe -tree` display property tree of device with the name my_usrp
+
+*/
+// vim:ft=doxygen:
