@@ -66,7 +66,7 @@ class ToneGenerator(WaveformGenerator):
     """
     Class that can output a tone based on WaveformGenerator
     """
-    def __init__(rate, freq, ampl, streamer=None):
+    def __init__(self, rate, freq, ampl, streamer=None):
         super().__init__(
             uhd.dsp.signals.get_continuous_tone(rate, freq, ampl),
             streamer)
