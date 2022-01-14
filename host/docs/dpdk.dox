@@ -26,7 +26,7 @@ computer.
 \subsection dpdk_installation DPDK Installation Instructions
 
 As a new and developing technology, the DPDK APIs are unstable. UHD requires
-version 19.11 or 20.11.
+version 19.11, 20.11 or 21.11.
 
 On Ubuntu 20.04, Fedora 33-36, or Debian Bullseye/Buster (via backports),
 DPDK is available in your distribution's repositories. For example, on Debian
@@ -35,8 +35,8 @@ systems, it can be obtained with the following command:
     sudo apt install dpdk dpdk-dev
 
 Otherwise, you'll need to follow the build guide at
-https://doc.dpdk.org/guides-20.11/linux_gsg/build_dpdk.html . The software
-releases can be found at https://core.dpdk.org/download/. Version 20.11 builds
+https://doc.dpdk.org/guides-21.11/linux_gsg/build_dpdk.html . The software
+releases can be found at https://core.dpdk.org/download/. Version >=20.11 builds
 with appropriate options when using the default build procedure.
 
 Note that if you are using a Mellanox NIC, the MLNX-OFED drivers available from
@@ -61,7 +61,7 @@ following line:
 \subsection dpdk_system_configuration System Configuration
 
 The official documentation regarding system configuration can be found at
-https://doc.dpdk.org/guides-20.11/linux_gsg/sys_reqs.html.
+https://doc.dpdk.org/guides-21.11/linux_gsg/sys_reqs.html.
 
 First, you'll need to enable the IOMMU and set up some hugepages. DPDK will
 completely take over all available hugepages, so don't allocate all your memory
@@ -107,7 +107,7 @@ If successful, the script might provide an updated status like this:
     [...]
 
 
-See https://doc.dpdk.org/guides-20.11/linux_gsg/linux_drivers.html#binding-and-unbinding-network-ports-to-from-the-kernel-modules
+See https://doc.dpdk.org/guides-21.11/linux_gsg/linux_drivers.html#binding-and-unbinding-network-ports-to-from-the-kernel-modules
 for more details.
 
 With the hugepages, IOMMU, and drivers set up, the system is ready for DPDK to
@@ -141,7 +141,7 @@ options:
     ;create a separate folder with symlinks to the librte_pmd_* and librte_mempool_* libraries.
     dpdk_driver=/usr/local/lib/x86_64-linux-gnu/dpdk/pmds-21.0/
     ;dpdk_corelist is the -l flag for the DPDK EAL. See more at the link
-    ; https://doc.dpdk.org/guides-20.11/linux_gsg/build_sample_apps.html#running-a-sample-application
+    ; https://doc.dpdk.org/guides-21.11/linux_gsg/build_sample_apps.html#running-a-sample-application
     dpdk_corelist=0,1
     ;dpdk_num_mbufs is the total number of packet buffers allocated
     ;to each direction's packet buffer pool
