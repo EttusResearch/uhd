@@ -629,8 +629,13 @@ int dpdk_io_service::_send_arp_request(
     hdr       = rte_pktmbuf_mtod(mbuf, struct rte_ether_hdr*);
     arp_frame = (struct rte_arp_hdr*)&hdr[1];
 
+#if RTE_VER_YEAR > 21 || (RTE_VER_YEAR == 21 && RTE_VER_MONTH == 11)
+    memset(hdr->dst_addr.addr_bytes, 0xFF, RTE_ETHER_ADDR_LEN);
+    hdr->src_addr   = port->get_mac_addr();
+#else
     memset(hdr->d_addr.addr_bytes, 0xFF, RTE_ETHER_ADDR_LEN);
     hdr->s_addr     = port->get_mac_addr();
+#endif
     hdr->ether_type = rte_cpu_to_be_16(RTE_ETHER_TYPE_ARP);
 
     arp_frame->arp_hardware          = rte_cpu_to_be_16(RTE_ARP_HRD_ETHER);

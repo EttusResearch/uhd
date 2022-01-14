@@ -122,8 +122,16 @@ dpdk_port::dpdk_port(port_id_t port,
     }
 
     struct rte_eth_conf port_conf   = {};
+#ifdef DEV_RX_OFFLOAD_JUMBO_FRAME
     port_conf.rxmode.offloads       = rx_offloads | DEV_RX_OFFLOAD_JUMBO_FRAME;
+#else
+    port_conf.rxmode.offloads       = rx_offloads;
+#endif
+#if RTE_VER_YEAR > 21 || (RTE_VER_YEAR == 21 && RTE_VER_MONTH == 11)
+    port_conf.rxmode.mtu            = _mtu;
+#else
     port_conf.rxmode.max_rx_pkt_len = _mtu;
+#endif
     port_conf.txmode.offloads       = tx_offloads;
     port_conf.intr_conf.lsc         = 1;
 
@@ -266,8 +274,13 @@ int dpdk_port::_arp_reply(queue_id_t queue_id, struct rte_arp_hdr* arp_req)
     hdr       = rte_pktmbuf_mtod(mbuf, struct rte_ether_hdr*);
     arp_frame = (struct rte_arp_hdr*)&hdr[1];
 
+#if RTE_VER_YEAR > 21 || (RTE_VER_YEAR == 21 && RTE_VER_MONTH == 11)
+    rte_ether_addr_copy(&arp_req->arp_data.arp_sha, &hdr->dst_addr);
+    rte_ether_addr_copy(&_mac_addr, &hdr->src_addr);
+#else
     rte_ether_addr_copy(&arp_req->arp_data.arp_sha, &hdr->d_addr);
     rte_ether_addr_copy(&_mac_addr, &hdr->s_addr);
+#endif
     hdr->ether_type = rte_cpu_to_be_16(RTE_ETHER_TYPE_ARP);
 
     arp_frame->arp_hardware = rte_cpu_to_be_16(RTE_ARP_HRD_ETHER);
@@ -277,7 +290,11 @@ int dpdk_port::_arp_reply(queue_id_t queue_id, struct rte_arp_hdr* arp_req)
     arp_frame->arp_opcode  = rte_cpu_to_be_16(RTE_ARP_OP_REPLY);
     rte_ether_addr_copy(&_mac_addr, &arp_frame->arp_data.arp_sha);
     arp_frame->arp_data.arp_sip = _ipv4;
+#if RTE_VER_YEAR > 21 || (RTE_VER_YEAR == 21 && RTE_VER_MONTH == 11)
+    rte_ether_addr_copy(&hdr->dst_addr, &arp_frame->arp_data.arp_tha);
+#else
     rte_ether_addr_copy(&hdr->d_addr, &arp_frame->arp_data.arp_tha);
+#endif
     arp_frame->arp_data.arp_tip = arp_req->arp_data.arp_sip;
 
     mbuf->pkt_len  = 42;
