@@ -87,7 +87,7 @@ def build_eeprom_image (filename, rev):
         0x00
         ]
 
-    image = rom_header + code_header + [ord(c) for c in out_bytes] + trailer
+    image = bytes(rom_header + code_header + [c for c in out_bytes] + trailer)
 
     assert (len (image) <= 256)
     return image 
@@ -109,8 +109,8 @@ if __name__ == '__main__':
     infile = args[0]
     outfile = args[1]
 
-    image = "".join(chr(c) for c in build_eeprom_image(infile, options.rev))
+    image = build_eeprom_image(infile, options.rev)
 
     # Opening in binary mode -> why converting image to str
     with open(outfile, 'wb') as f:
-        f.write( str(image) )
+        f.write( image )

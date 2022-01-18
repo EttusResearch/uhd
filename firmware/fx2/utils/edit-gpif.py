@@ -27,7 +27,6 @@
 # uses.
 
 import re
-import string
 import sys
 
 def check_flow_state (line, flow_state_dict):
@@ -93,7 +92,7 @@ def edit_gpif (input_name, output_name, inline_name):
     
     while 1:
         line = input.readline ()
-        line = string.replace (line, '\r','')
+        line.replace ('\r','')
         line = re.sub (r' *$', r'', line)
 
         check_flow_state (line, flow_state_dict)
