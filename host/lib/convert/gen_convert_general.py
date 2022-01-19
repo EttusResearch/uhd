@@ -43,8 +43,9 @@ DECLARE_CONVERTER({fctype}, 1, sc16_chdr, 1, PRIORITY_GENERAL) {{
     int16_t* output = reinterpret_cast<int16_t*>(outputs[0]);
 
     for (size_t i = 0; i < nsamps * 2; i += 2) {{
-        output[i]   = static_cast<int16_t>(input[i]   * {fptype}(scale_factor));
-        output[i+1] = static_cast<int16_t>(input[i+1] * {fptype}(scale_factor));
+        output[i]   = clamp<int16_t>(input[i] * {fptype}(scale_factor));
+        output[i+1] = clamp<int16_t>(input[i + 1] * {fptype}(scale_factor));
+
     }}
 }}
 

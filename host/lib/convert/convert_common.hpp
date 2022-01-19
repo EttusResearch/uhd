@@ -11,6 +11,7 @@
 #include <uhd/convert.hpp>
 #include <uhd/utils/static.hpp>
 #include <stdint.h>
+#include <limits>
 #include <complex>
 
 #define _DECLARE_CONVERTER(name, in_form, num_in, out_form, num_out, prio)    \
@@ -96,6 +97,14 @@ typedef uint32_t item32_t;
 
 typedef item32_t (*xtox_t)(item32_t);
 
+template <class T, class U>
+const T clamp(const U v)
+{
+    constexpr T min_t = std::numeric_limits<T>::min();
+    constexpr T max_t = std::numeric_limits<T>::max();
+    return (v < min_t) ? min_t : (v > max_t) ? max_t : T(v);
+}
+
 /***********************************************************************
  * Convert xx to items32 sc16 buffer
  **********************************************************************/
@@ -103,8 +112,8 @@ template <typename T>
 UHD_INLINE item32_t xx_to_item32_sc16_x1(
     const std::complex<T>& num, const double scale_factor)
 {
-    uint16_t real = int16_t(num.real() * float(scale_factor));
-    uint16_t imag = int16_t(num.imag() * float(scale_factor));
+    uint16_t real = clamp<int16_t>(num.real() * float(scale_factor));
+    uint16_t imag = clamp<int16_t>(num.imag() * float(scale_factor));
     return (item32_t(real) << 16) | (item32_t(imag) << 0);
 }
 
@@ -132,8 +141,8 @@ template <typename T>
 UHD_FORCE_INLINE sc16_t xx_to_sc16_x1(
     const std::complex<T>& num, const double scale_factor)
 {
-    uint16_t real = int16_t(num.real() * T(scale_factor));
-    uint16_t imag = int16_t(num.imag() * T(scale_factor));
+    uint16_t real = clamp<int16_t>(num.real() * float(scale_factor));
+    uint16_t imag = clamp<int16_t>(num.imag() * float(scale_factor));
     return sc16_t(real, imag);
 }
 
@@ -203,10 +212,10 @@ template <typename T>
 UHD_INLINE item32_t xx_to_item32_sc8_x1(
     const std::complex<T>& in0, const std::complex<T>& in1, const double scale_factor)
 {
-    uint8_t real1 = int8_t(in0.real() * float(scale_factor));
-    uint8_t imag1 = int8_t(in0.imag() * float(scale_factor));
-    uint8_t real0 = int8_t(in1.real() * float(scale_factor));
-    uint8_t imag0 = int8_t(in1.imag() * float(scale_factor));
+    uint8_t real1 = clamp<int8_t>(in0.real() * float(scale_factor));
+    uint8_t imag1 = clamp<int8_t>(in0.imag() * float(scale_factor));
+    uint8_t real0 = clamp<int8_t>(in1.real() * float(scale_factor));
+    uint8_t imag0 = clamp<int8_t>(in1.imag() * float(scale_factor));
     return (item32_t(real0) << 8) | (item32_t(imag0) << 0) | (item32_t(real1) << 24)
            | (item32_t(imag1) << 16);
 }
@@ -215,10 +224,10 @@ template <>
 UHD_INLINE item32_t xx_to_item32_sc8_x1(
     const sc16_t& in0, const sc16_t& in1, const double)
 {
-    uint8_t real1 = int8_t(in0.real());
-    uint8_t imag1 = int8_t(in0.imag());
-    uint8_t real0 = int8_t(in1.real());
-    uint8_t imag0 = int8_t(in1.imag());
+    uint8_t real1 = clamp<int8_t>(in0.real());
+    uint8_t imag1 = clamp<int8_t>(in0.imag());
+    uint8_t real0 = clamp<int8_t>(in1.real());
+    uint8_t imag0 = clamp<int8_t>(in1.imag());
     return (item32_t(real0) << 8) | (item32_t(imag0) << 0) | (item32_t(real1) << 24)
            | (item32_t(imag1) << 16);
 }
