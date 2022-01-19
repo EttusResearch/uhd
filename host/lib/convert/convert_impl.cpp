@@ -83,7 +83,7 @@ convert::function_type convert::get_converter(const id_type& id, const priority_
             //----------------------------------------------------------------//
             UHD_LOGGER_DEBUG("CONVERT")
                 << "get_converter: For converter ID: " << id.to_pp_string()
-                << " Using prio: " << prio;
+                << " Found exact match for prio: " << prio;
             ;
             //----------------------------------------------------------------//
             return get_table()[id][prio];
@@ -99,7 +99,7 @@ convert::function_type convert::get_converter(const id_type& id, const priority_
     //----------------------------------------------------------------//
     UHD_LOGGER_DEBUG("CONVERT")
         << "get_converter: For converter ID: " << id.to_pp_string()
-        << " Using prio: " << best_prio;
+        << " Using best available prio: " << best_prio;
     //----------------------------------------------------------------//
 
     // otherwise, return best prio
