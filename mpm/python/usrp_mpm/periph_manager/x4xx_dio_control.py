@@ -314,7 +314,7 @@ class DioControl:
     # --------------------------------------------------------------------------
     # Helper methods
     # --------------------------------------------------------------------------
-    def _map_to_register_bit(self, port, pin):
+    def _map_to_register_bit(self, port, pin, lift_portb = True):
         """
         Maps a pin denoted in current mapping scheme to a corresponding bit in
         the register map.
@@ -340,8 +340,9 @@ class DioControl:
 
         # map pin back to register bit
         bit = port_map.index(pin)
-        # lift register bit up by PORT_BIT_SIZE for port b
-        bit = bit if port == self.DIO_PORTS[0] else bit + self.PORT_BIT_SIZE
+        if lift_portb:
+            # lift register bit up by PORT_BIT_SIZE for port b
+            bit = bit if port == self.DIO_PORTS[0] else bit + self.PORT_BIT_SIZE
         return bit
 
     def _calc_register_value(self, register, port, pin, value):
@@ -564,7 +565,7 @@ class DioControl:
                 else:
                     return self.X4XX_GPIO_SRC_USER_APP
 
-        return [get_gpio_src_i(i) for i in range(self.X4XX_GPIO_WIDTH)]
+        return [get_gpio_src_i(self._map_to_register_bit(bank, i, False)) for i in range(self.X4XX_GPIO_WIDTH)]
 
     def set_gpio_src(self, bank: str, src):
         """
@@ -605,6 +606,7 @@ class DioControl:
             self, bank, self.RADIO_DIO_CLASSIC_ATR_CONFIG_REGISTER)
 
         for pin_index, src_name in enumerate(src):
+            pin_index = self._map_to_register_bit(bank, pin_index, False)
             radio_srcs = [
                 item for sublist in self.X4XX_GPIO_SRC_RADIO for item in sublist]
             if src_name in radio_srcs:
