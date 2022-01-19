@@ -7,15 +7,19 @@
 parameters:
 - name: build_linux
   type: boolean
+  displayName: Build Linux
   default: true
 - name: build_mac
   type: boolean
+  displayName: Build macOS
   default: true
 - name: build_win
   type: boolean
+  displayName: Build Windows
   default: true
 - name: release_binaries
   type: boolean
+  displayName: Set release mode for installers
   default: false
 - name: testLength
   type: string
@@ -23,9 +27,11 @@ parameters:
   - 'smoke'
   - 'full'
   - 'stress'
+  displayName: Test Length
   default: 'smoke'
 - name: run_streaming_tests
   type: boolean
+  displayName: Run Streaming Tests
   default: False
 - name: build_sdk
   type: boolean
