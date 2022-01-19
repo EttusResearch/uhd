@@ -16,6 +16,16 @@ namespace uhd { namespace rfnoc { namespace x400 {
 // The name of the X400's GPIO bank
 extern const char* GPIO_BANK_NAME;
 
+class x400_gpio_port_mapping : public uhd::mapper::gpio_port_mapper
+{
+public:
+    x400_gpio_port_mapping(){};
+
+    uint32_t map_value(const uint32_t& value) override;
+
+    uint32_t unmap_value(const uint32_t& value) override;
+};
+
 /*! Abstract X400's GPIO control to match the "gpio_attr" control scheme.
  *
  * The front panel has two ports on it, labelled GPIO0 and GPIO1. The registers
@@ -55,20 +65,15 @@ public:
     uint32_t get_gpio_attr(const usrp::gpio_atr::gpio_attr_t attr);
 
 private:
-    /*! Converts from the public-facing [23:0] format to the internal [31:16],
-     * [11:0] format.
-     */
-    static uint32_t internalize_value(const uint32_t value);
-
-    /*! Converts from the internal [31:16], [11:0] format to the public-facing
-     * [23:0] format.
-     */
-    static uint32_t publicize_value(const uint32_t value);
-
     /*! Convert from the internal FPGA pin mapping to the "DIO" mapping. This
      * matches the "DIO_PORT_MAP" field in MPM's x4xx_periphs.py file.
      */
-    static uint32_t unmap_dio(const uint32_t bank, const uint32_t raw_form);
+    uint32_t unmap_dio(const uint32_t raw_form);
+
+    /*! Convert from the "DIO" mapping to the internal FPGA pin mapping. This
+     * matches the "DIO_PORT_MAP" field in MPM's x4xx_periphs.py file.
+     */
+    uint32_t map_dio(const uint32_t user_form);
 
     /*! Returns whether the given attribute is setting one of the ATR entries.
      */
@@ -79,15 +84,8 @@ private:
 
     // There are two GPIOs, one for each channel. These two are set in unison.
     std::vector<usrp::gpio_atr::gpio_atr_3000::sptr> _gpios;
+
+    x400_gpio_port_mapping _mapper;
 };
 
-class x400_gpio_port_mapping : public uhd::mapper::gpio_port_mapper
-{
-public:
-    x400_gpio_port_mapping(){};
-
-    uint32_t map_value(const uint32_t& value) override;
-
-    uint32_t unmap_value(const uint32_t& value) override;
-};
 }}} // namespace uhd::rfnoc::x400

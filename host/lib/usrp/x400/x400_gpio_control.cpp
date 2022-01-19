@@ -32,6 +32,7 @@ constexpr uint32_t DIO_DIRECTION_REG = 0x4;
 } // namespace gpio_regmap
 
 // There are two ports, each with 12 pins
+constexpr size_t NUM_PORTS = 2;
 constexpr size_t NUM_PINS_PER_PORT = 12;
 
 // Start of Port B pin numbers relative to Port A:
@@ -84,9 +85,10 @@ void gpio_control::set_gpio_attr(
         _rpcc->dio_set_pin_directions("PORTB", value >> 12);
     }
 
-    _gpios[0]->set_gpio_attr(attr, internalize_value(value));
+    const uint32_t internal_value = map_dio(value);
+    _gpios[0]->set_gpio_attr(attr, internal_value);
     if (is_atr_attr(attr)) {
-        _gpios[1]->set_gpio_attr(attr, internalize_value(value));
+        _gpios[1]->set_gpio_attr(attr, internal_value);
     }
 }
 
@@ -98,23 +100,28 @@ bool gpio_control::is_atr_attr(const uhd::usrp::gpio_atr::gpio_attr_t attr)
            || attr == uhd::usrp::gpio_atr::GPIO_ATR_XX;
 }
 
-uint32_t gpio_control::internalize_value(const uint32_t value)
+uint32_t gpio_control::unmap_dio(const uint32_t raw_form)
 {
-    return (value & 0xFFF) | ((value & 0x00FFF000) << 4);
-}
-
-uint32_t gpio_control::publicize_value(const uint32_t value)
-{
-    return (value & 0xFFF) | ((value & 0x0FFF0000) >> 4);
-}
-
-uint32_t gpio_control::unmap_dio(const uint32_t bank, const uint32_t raw_form)
-{
-    const uint32_t* const mapping = bank == 1 ? PORTB_MAPPING : PORTA_MAPPING;
-    uint32_t result               = 0;
+    uint32_t result = 0;
     for (size_t i = 0; i < NUM_PINS_PER_PORT; i++) {
         if ((raw_form & (1 << i)) != 0) {
-            result |= 1 << mapping[i];
+            result |= 1 << _mapper.unmap_value(i);
+        }
+    }
+    for (size_t i = PORT_NUMBER_OFFSET; i < PORT_NUMBER_OFFSET + NUM_PINS_PER_PORT; i++) {
+        if ((raw_form & (1 << i)) != 0) {
+            result |= 1 << _mapper.unmap_value(i);
+        }
+    }
+    return result;
+}
+
+uint32_t gpio_control::map_dio(const uint32_t user_form)
+{
+    uint32_t result = 0;
+    for (size_t i = 0; i < NUM_PORTS * NUM_PINS_PER_PORT; i++) {
+        if ((user_form & (1 << i)) != 0) {
+            result |= 1 << _mapper.map_value(i);
         }
     }
     return result;
@@ -126,11 +133,11 @@ uint32_t gpio_control::get_gpio_attr(const uhd::usrp::gpio_atr::gpio_attr_t attr
         // Retrieve the actual state from the FPGA mirror of the CPLD state
         const uint32_t raw_value = _regs->peek32(
             gpio_regmap::DIO_MIRROR_WINDOW + gpio_regmap::DIO_DIRECTION_REG);
-        return (unmap_dio(1, raw_value >> 16) << NUM_PINS_PER_PORT)
-               | unmap_dio(0, raw_value & 0xFFFF);
+        return unmap_dio(raw_value);
     }
 
-    return publicize_value(_gpios[0]->get_attr_reg(attr));
+    const uint32_t raw_value = _gpios[0]->get_attr_reg(attr);
+    return unmap_dio(raw_value);
 }
 
 uint32_t uhd::rfnoc::x400::x400_gpio_port_mapping::map_value(const uint32_t& value)
