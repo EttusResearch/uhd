@@ -31,7 +31,7 @@ PYTHON_CHECK_MODULE(
 
 PYTHON_CHECK_MODULE_VERSION(
     "pyudev module"
-    "pyudev" 
+    "pyudev"
     "pyudev.__version__"
     ${PYUDEV_MIN_VERSION}
     HAVE_PYTHON_MODULE_PYUDEV
@@ -41,7 +41,7 @@ PYTHON_CHECK_MODULE_VERSION(
 # attribute, so merely check for its presence.
 PYTHON_CHECK_MODULE(
     "pyroute2 module"
-    "pyroute2" 
+    "pyroute2"
     "True"
     HAVE_PYTHON_MODULE_PYROUTE2
 )
@@ -101,10 +101,10 @@ add_custom_command(OUTPUT ${OUTPUT}
 add_custom_target(usrp_mpm ALL DEPENDS ${OUTPUT} pyusrp_periphs)
 
 execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
-    "import sysconfig;\
+    "import os,sysconfig;\
     platlib = sysconfig.get_path(name='platlib');\
-    base = sysconfig.get_config_var('base');\
-    print(platlib.replace(base, '').lstrip('/\\\\'))"
+    prefix = sysconfig.get_config_var('prefix');\
+    print(os.path.relpath(platlib, prefix));"
     OUTPUT_VARIABLE USRP_MPM_PYTHON_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/build/lib/usrp_mpm DESTINATION ${USRP_MPM_PYTHON_DIR})

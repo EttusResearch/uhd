@@ -104,13 +104,13 @@ endmacro(GR_PYTHON_CHECK_MODULE)
 # Sets the python installation directory GR_PYTHON_DIR
 ########################################################################
 if(NOT DEFINED GR_PYTHON_DIR)
-execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "
-import sysconfig
-platlib = sysconfig.get_path(name='platlib')
-base = sysconfig.get_config_var('base')
-print(platlib.replace(base, '').lstrip('/\\\\'))
-" OUTPUT_VARIABLE GR_PYTHON_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+    execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
+        "import os,sysconfig;\
+        platlib = sysconfig.get_path(name='platlib');\
+        prefix = sysconfig.get_config_var('prefix');\
+        print(os.path.relpath(platlib, prefix));"
+        OUTPUT_VARIABLE GR_PYTHON_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
 endif()
 file(TO_CMAKE_PATH ${GR_PYTHON_DIR} GR_PYTHON_DIR)
 

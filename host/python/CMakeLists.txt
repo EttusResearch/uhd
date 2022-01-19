@@ -162,31 +162,17 @@ else()
     # Otherwise, use sysconfig to determine the correct relative path for Python
     # packages, and install to our prefix
     if(NOT DEFINED UHD_PYTHON_DIR)
-        if(WIN32)
-            # CPack with NSIS generates an error when using install()
-            # with a DESTINATION that is an absolute path. Thus, specify
-            # a blank prefix, which returns only the Python library relative
-            # path, and use that in the install step below.
-            execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
-                "import sysconfig;\
-                platlib = sysconfig.get_path(name='platlib');\
-                base = sysconfig.get_config_var('base');\
-                print(platlib.replace(base, '').lstrip('\\\\'));"
-                OUTPUT_VARIABLE UHD_PYTHON_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
-            )
-        else()
-            execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
-                "import sysconfig; import os.path; \
-                platlib = sysconfig.get_path(name='platlib');\
-                base = sysconfig.get_config_var('base');\
-                print(os.path.join('${CMAKE_INSTALL_PREFIX}', platlib.replace(base, '').lstrip('/')));"
-                OUTPUT_VARIABLE UHD_PYTHON_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
-            )
-        endif(WIN32)
+        execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
+            "import os,sysconfig;\
+            platlib = sysconfig.get_path(name='platlib');\
+            prefix = sysconfig.get_config_var('prefix');\
+            print(os.path.relpath(platlib, prefix));"
+            OUTPUT_VARIABLE UHD_PYTHON_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
     endif(NOT DEFINED UHD_PYTHON_DIR)
     file(TO_CMAKE_PATH ${UHD_PYTHON_DIR} UHD_PYTHON_DIR)
 
-    message(STATUS "Utilizing the python install directory: ${UHD_PYTHON_DIR}")
+    message(STATUS "Utilizing the python install directory: ${CMAKE_INSTALL_PREFIX}/${UHD_PYTHON_DIR}")
     # CMake will create an up-to-date copy of the entire Python module within
     # the build directory. Use sysconfig (above) to figure out the destination
     # path, and then we simply copy this module recursively into its final
