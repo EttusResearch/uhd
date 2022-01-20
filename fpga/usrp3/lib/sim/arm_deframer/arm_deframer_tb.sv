@@ -14,8 +14,8 @@
 `define NUM_TEST_CASES 3
 `include "sim_axis_lib.svh"
 `include "sim_exec_report.vh"
-`include "sim_rfnoc_lib.svh"
 `include "sim_set_rb_lib.svh"
+`include "sim_clks_rsts.vh"
 
 // NOTE: The tesbench is not self-checking
 module arm_deframer_tb();
