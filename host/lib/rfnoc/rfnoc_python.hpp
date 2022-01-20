@@ -452,6 +452,66 @@ void export_rfnoc(py::module& m)
         .def("set_properties",
             &node_t::set_properties,
             py::arg("props"),
+            py::arg("instance") = 0)
+        .def(
+            "get_string_property",
+            [](noc_block_base& self, const std::string& id, const size_t instance) {
+                return self.get_property<std::string>(id, instance);
+            },
+            py::arg("id"),
+            py::arg("instance") = 0)
+        .def(
+            "get_bool_property",
+            [](noc_block_base& self, const std::string& id, const size_t instance) {
+                return self.get_property<bool>(id, instance);
+            },
+            py::arg("id"),
+            py::arg("instance") = 0)
+        .def(
+            "get_int_property",
+            [](noc_block_base& self, const std::string& id, const size_t instance) -> uint64_t {
+                // Try all integer types until we find the right one
+                try {
+                    int value = self.get_property<int>(id, instance);
+                    return (uint64_t)value;
+                } catch(const uhd::type_error&) {
+                    try {
+                        size_t value = self.get_property<size_t>(id, instance);
+                        return (uint64_t)value;
+                    } catch(const uhd::type_error&) {
+                        try {
+                            uint32_t value = self.get_property<uint32_t>(id, instance);
+                            return (uint64_t)value;
+                        } catch(const uhd::type_error&) {
+                            try {
+                                uint64_t value = self.get_property<uint64_t>(id, instance);
+                                return (uint64_t)value;
+                            } catch(...) {
+                                 throw;
+                            }
+                        }
+                    }
+                }
+            },
+            py::arg("id"),
+            py::arg("instance") = 0)
+        .def(
+            "get_float_property",
+            [](noc_block_base& self, const std::string& id, const size_t instance) -> double {
+                // Try both float types
+                try {
+                   int value = self.get_property<double>(id, instance);
+                   return (double)value;
+                } catch(const uhd::type_error&) {
+                   try {
+                      size_t value = self.get_property<float>(id, instance);
+                      return (double)value;
+                   } catch(...) {
+                      throw;
+                   }
+                }
+            },
+            py::arg("id"),
             py::arg("instance") = 0);
 }
 
