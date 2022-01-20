@@ -41,7 +41,8 @@ variables:
     "{'Fedora-34-builder':{'buildOSName':'fedora34','dockerImageName':'uhd-builder-fedora34'},
     'Fedora-35-builder':{'buildOSName':'fedora35','dockerImageName':'uhd-builder-fedora35'},
     'Ubuntu-1804-builder':{'buildOSName':'ubuntu1804','dockerImageName':'uhd-builder-ubuntu1804'},
-    'Ubuntu-2004-builder':{'buildOSName':'ubuntu2004','dockerImageName':'uhd-builder-ubuntu2004'}}"
+    'Ubuntu-2004-builder':{'buildOSName':'ubuntu2004','dockerImageName':'uhd-builder-ubuntu2004'},
+    'Ubuntu-2204-builder':{'buildOSName':'ubuntu2204','dockerImageName':'uhd-builder-ubuntu2204'}}"
 - name: winDockerImages
   value:
     "{'VS2017-x86-builder':{'buildOSName':'win-vs17-v141-x86','dockerImageName':'uhd-builder-vs2017-v141-x86','cmakeCompiler':'Visual Studio 15 2017','cmakeArch':'Win32','vsArch':'x86','vsYear':'2017'},
@@ -53,7 +54,8 @@ variables:
   # Match with Ubuntu images in linuxDockerImages
   value:
     "{'Ubuntu-1804-builder':{'buildOSName':'ubuntu1804','dockerImageName':'uhd-builder-ubuntu1804','ubuntuReleaseName':'bionic'},
-    'Ubuntu-2004-builder':{'buildOSName':'ubuntu2004','dockerImageName':'uhd-builder-ubuntu2004','ubuntuReleaseName':'focal'}}"
+    'Ubuntu-2004-builder':{'buildOSName':'ubuntu2004','dockerImageName':'uhd-builder-ubuntu2004','ubuntuReleaseName':'focal'},
+    'Ubuntu-2204-builder':{'buildOSName':'ubuntu2204','dockerImageName':'uhd-builder-ubuntu2204','ubuntuReleaseName':'jammy'}}"
 
 - name: macOSBuilders
   value:
