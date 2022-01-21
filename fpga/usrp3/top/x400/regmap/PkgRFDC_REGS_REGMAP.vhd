@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------
 --
--- Copyright 2021 Ettus Research, A National Instruments Brand
+-- Copyright 2022 Ettus Research, A National Instruments Brand
 -- SPDX-License-Identifier: LGPL-3.0-or-later
 --
 -- Module: PkgRFDC_REGS_REGMAP.vhd

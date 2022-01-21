@@ -1,5 +1,5 @@
 //
-// Copyright 2021 Ettus Research, A National Instruments Company
+// Copyright 2022 Ettus Research, A National Instruments Company
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
