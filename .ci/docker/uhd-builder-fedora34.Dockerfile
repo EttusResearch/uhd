@@ -32,5 +32,27 @@ RUN dnf install -y \
         rsync \
         tar \
         xz \
+    # Install GNURadio dependencies
+        python3-sphinx \
+        python3-lxml \
+        SDL-devel \
+        gsl-devel \
+        qwt-qt5-devel \
+        qt5-qtbase-devel \
+        gmp-devel \
+        fftw-devel \
+        swig \
+        gtk3-devel \
+        pango-devel \
+        PyQt5 \
+        log4cpp-devel \
+        zeromq-devel \
+        cppzmq-devel \
+        python3-yaml \
+        python3-click \
+        python3-click-plugins \
+        python3-zmq \
+        python3-scipy \
+        python3-cairo-devel \
         && \
     dnf clean all
