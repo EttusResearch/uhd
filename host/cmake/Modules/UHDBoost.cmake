@@ -65,7 +65,7 @@ unset(Boost_LIBRARIES)
 
 # check whether to set REQUIRED or not
 # if not set, default is to require Boost
-if(NOT UHD_BOOST_REQUIRED)
+if(NOT DEFINED UHD_BOOST_REQUIRED)
     # UHD_BOOST_REQUIRED is not set; use the default
     set(UHD_BOOST_REQUIRED "REQUIRED")
 elseif(UHD_BOOST_REQUIRED)
