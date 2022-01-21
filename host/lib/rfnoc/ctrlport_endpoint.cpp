@@ -453,6 +453,14 @@ private:
             // Filter by op_code, address and seq_num
             if (rx_ctrl.seq_num == request.seq_num && rx_ctrl.op_code == request.op_code
                 && rx_ctrl.address == request.address) {
+                // If we find the response for our request, and the client
+                // has not requested acknowledgements, then simply return,
+                // ignoring any error status in the response. This restores
+                // the pre-0caed5529 behavior.
+                if (!require_ack) {
+                    return {};
+                }
+
                 // Validate transaction status
                 if (rx_ctrl.status == CMD_CMDERR) {
                     throw uhd::op_failed("Control operation returned a failing status");
