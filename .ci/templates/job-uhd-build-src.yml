@@ -67,6 +67,7 @@ jobs:
       parameters:
         uhdSrcDir: ../../../s
         uhdBuildDir: $(Build.BinariesDirectory)/uhddev/build
+        uhdGenerateTestBinaries: true
 
   - ${{ if eq(parameters.toolset, 'make_trace') }}:
     - template: steps-build-uhd-make.yml

@@ -18,7 +18,9 @@ parameters:
 - name: uhdCustomBoostPackageURL
   type: string
   default: 'https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.bz2'
-
+- name: uhdGenerateTestBinaries
+  type: boolean
+  default: false
 
 steps:
 # If we are requested to use a custom Boost package, then we download and build
@@ -65,6 +67,11 @@ steps:
       export BOOST_CMAKE_DIR=$(dirname `find $(build_boost_step.CustomBoostPath)/stage/lib -name BoostConfig.cmake`)
       export UHD_CI_CMAKE_OPTIONS="-DBoost_INCLUDE_DIR=$(build_boost_step.CustomBoostPath) -DBoost_DIR=$BOOST_CMAKE_DIR -DBoost_LIBRARY_DIRS=$(build_boost_step.CustomBoostPath)/stage/lib $UHD_CI_CMAKE_OPTIONS"
     fi
+    if [[ "${{ parameters.uhdGenerateTestBinaries }}" = "True" ]]; then
+      mkdir -p ${{ parameters.uhdBuildDir }}-installed
+      echo "Setting CMAKE_INSTALL_PREFIX to ${{ parameters.uhdBuildDir }}-installed"
+      export UHD_CI_CMAKE_OPTIONS="-DCMAKE_INSTALL_PREFIX=${{ parameters.uhdBuildDir }}-installed"
+    fi
     cmake \
       $UHD_CI_CMAKE_OPTIONS \
       ${{ parameters.uhdSrcDir }}/host
@@ -79,3 +86,9 @@ steps:
     ctest --no-compress-output --output-on-failure -T test
   continueOnError: true
   displayName: ctest make UHD
+
+- script: |
+    cd ${{ parameters.uhdBuildDir }}
+    make install
+  displayName: Install uhd to uhdBuildDir-installed
+  condition: and(succeeded(), ${{ parameters.uhdGenerateTestBinaries }})
