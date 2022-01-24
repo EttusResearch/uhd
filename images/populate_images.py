@@ -19,7 +19,7 @@ def get_images_dir():
     Returns the absolute position of the images/ subdir
     in the UHD source tree.
     """
-    return os.path.dirname(__file__)
+    return os.path.dirname(os.path.abspath(__file__))
 
 def download_images(img_root_dir=None):
     " Go, go, go! "
