@@ -114,7 +114,7 @@ jobs:
       includeRootFolder: false
       archiveType: tar
       tarCompression: gz
-      archiveFile: $(Build.ArtifactStagingDirectory)/$(buildOSName)-${{ parameters.toolset }}.tar.gz
+      archiveFile: $(Build.ArtifactStagingDirectory)/uhddev-$(buildOSName)-${{ parameters.toolset }}.tar.gz
       replaceExistingArchive: true
     displayName: Compress build files
 
@@ -127,7 +127,7 @@ jobs:
   - task: PublishPipelineArtifact@1
     inputs:
       targetPath: '$(Build.ArtifactStagingDirectory)'
-      artifactName: '$(buildOSName)-${{ parameters.toolset }}'
+      artifactName: 'uhddev-$(buildOSName)-${{ parameters.toolset }}'
     displayName: Upload uhd build artifacts
 
   - task: CopyFiles@2

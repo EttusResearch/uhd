@@ -1,0 +1,32 @@
+parameters:
+- name: gnuradioSrcDir
+  type: string
+- name: gnuradioBuildDir
+  type: string
+- name: gnuradioInstallPath
+  type: string
+- name: uhdInstalledArtifactPath
+  type: string
+
+steps:
+- script: |
+    mkdir -p ${{ parameters.gnuradioBuildDir }}
+    cd ${{ parameters.gnuradioBuildDir }}
+    mkdir -p ${{ parameters.gnuradioInstallPath }}
+    echo "Setting CMAKE_INSTALL_PREFIX to ${{ parameters.gnuradioInstallPath }}"
+    export UHD_CI_CMAKE_OPTIONS="-DCMAKE_INSTALL_PREFIX=${{ parameters.gnuradioInstallPath }}"
+    cmake \
+      $UHD_CI_CMAKE_OPTIONS \
+      -DCMAKE_PREFIX_PATH="${{ parameters.uhdInstalledArtifactPath }}" \
+      ${{ parameters.gnuradioSrcDir }}
+  displayName: cmake make gnuradio
+
+- script: |
+    cd ${{ parameters.gnuradioBuildDir }}
+    make -j$(nproc) -k
+  displayName: make gnuradio
+
+- script: |
+    cd ${{ parameters.gnuradioBuildDir }}
+    make install
+  displayName: Install gnuradio to gnuradioInstallPath
