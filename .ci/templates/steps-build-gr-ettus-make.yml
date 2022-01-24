@@ -1,0 +1,34 @@
+parameters:
+- name: grettusSrcDir
+  type: string
+- name: grettusBuildDir
+  type: string
+- name: grettusInstallPath
+  type: string
+- name: uhdInstalledArtifactPath
+  type: string
+- name: gnuradioInstalledArtifactPath
+  type: string
+
+steps:
+- script: |
+    mkdir -p ${{ parameters.grettusBuildDir }}
+    cd ${{ parameters.grettusBuildDir }}
+    mkdir -p ${{ parameters.grettusInstallPath }}
+    echo "Setting CMAKE_INSTALL_PREFIX to ${{ parameters.grettusInstallPath }}"
+    export UHD_CI_CMAKE_OPTIONS="-DCMAKE_INSTALL_PREFIX=${{ parameters.grettusInstallPath }}"
+    cmake \
+      $UHD_CI_CMAKE_OPTIONS \
+      -DCMAKE_PREFIX_PATH="${{ parameters.uhdInstalledArtifactPath }};${{ parameters.gnuradioInstalledArtifactPath }}" \
+      ${{ parameters.grettusSrcDir }}
+  displayName: cmake make gr-ettus
+
+- script: |
+    cd ${{ parameters.grettusBuildDir }}
+    make -j$(nproc) -k
+  displayName: make gr-ettus
+
+- script: |
+    cd ${{ parameters.grettusBuildDir }}
+    make install
+  displayName: Install gr-ettus to grettusInstallPath

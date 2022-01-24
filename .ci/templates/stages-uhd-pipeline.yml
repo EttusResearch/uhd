@@ -67,6 +67,16 @@ resources:
     name: EttusResearch/meta-ettus-dev
     endpoint: EttusResearch
     ref: zeus-ci
+  - repository: gnuradio
+    type: github
+    name: gnuradio/gnuradio
+    endpoint: EttusResearch
+    ref: maint-3.8
+  - repository: gr-ettus
+    type: github
+    name: EttusResearch/gr-ettusdev
+    endpoint: EttusResearch
+    ref: maint-3.8-uhd4.0
 
 stages:
 - stage: build_uhd_stage_linux
@@ -154,6 +164,15 @@ stages:
             rm $(AUTO_CONF)
           displayName: delete auto.conf
           condition: always()
+
+- stage: build_gnuradio_stage_linux
+  displayName: Build gnuradio Linux
+  dependsOn: build_uhd_stage_linux
+  jobs:
+  - template: job-get-latest-uhd-docker.yml
+  - template: job-gnuradio-grettus-build-src.yml
+    parameters:
+      toolset: make
 
 - stage: build_uhd_installer_stage_linux
   displayName: Build UHD Installers Linux
