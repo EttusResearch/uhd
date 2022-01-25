@@ -77,6 +77,11 @@ resources:
     name: EttusResearch/gr-ettusdev
     endpoint: EttusResearch
     ref: maint-3.8-uhd4.0
+  - repository: ettus-rts
+    type: github
+    endpoint: EttusResearch
+    name: EttusResearch/ettus-rts
+    ref: master
 
 stages:
 - stage: build_uhd_stage_linux
@@ -202,6 +207,20 @@ stages:
     parameters:
       testOS: ubuntu2004
       uhdSrcDir: $(Build.SourcesDirectory)
+
+- stage: test_uhd_embedded_devices_stage
+  displayName: Test UHD Embedded Devices
+  dependsOn:
+  - build_uhd_stage_linux
+  - build_uhd_embedded_system_images
+  - build_gnuradio_stage_linux
+  jobs:
+  - template: tests/job-uhd-x4xx-hardware-tests-sdr-test0.yml
+    parameters:
+      testOS: ubuntu1804
+  - template: tests/job-uhd-x4xx-hardware-tests-pebbles.yml
+    parameters:
+      testOS: ubuntu1804
 
 - stage: test_streaming_stage
   displayName: Test UHD Streaming
