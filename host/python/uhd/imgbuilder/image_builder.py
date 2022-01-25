@@ -32,6 +32,9 @@ RFNOC_CORE_DIR = os.path.join('rfnoc', 'core')
 # Path to the system's bash executable
 BASH_EXECUTABLE = '/bin/bash' # FIXME this should come from somewhere
 
+# Supported protocol version
+RFNOC_PROTO_VERSION = "1.0"
+
 # Map device names to the corresponding directory under usrp3/top
 DEVICE_DIR_MAP = {
     'x300': 'x300',
@@ -262,6 +265,29 @@ class ImageBuilderConfig:
         failure = None
         if not any([bool(sep["ctrl"]) for sep in self.stream_endpoints.values()]):
             failure = "At least one streaming endpoint needs to have ctrl enabled"
+        # Check RFNoC protocol version. Use latest if it was not specified.
+        requested_version = (
+            self.rfnoc_version
+            if hasattr(self, "rfnoc_version")
+            else RFNOC_PROTO_VERSION
+        )
+        [requsted_major, requested_minor, *_] = requested_version.split('.')
+        [supported_major, supported_minor, *_] = RFNOC_PROTO_VERSION.split('.')
+        if requsted_major != supported_major or requested_minor > supported_minor:
+            failure = (
+                "Requested RFNoC protocol version (rfnoc_version) " +
+                requested_version +
+                " is ahead of latest version "
+                + RFNOC_PROTO_VERSION
+            )
+        elif requested_version != RFNOC_PROTO_VERSION:
+            logging.warning(
+                "Generating code for latest RFNoC protocol version "
+                + RFNOC_PROTO_VERSION
+                + " instead of requested "
+                + requested_version
+            )
+        self.rfnoc_version = RFNOC_PROTO_VERSION
         if failure:
             logging.error(failure)
             raise ValueError(failure)
