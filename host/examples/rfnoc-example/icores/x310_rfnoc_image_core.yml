@@ -6,7 +6,6 @@ copyright: >-                           # Copyright information used in file hea
 license: >-                             # License information used in file headers
   SPDX-License-Identifier: LGPL-3.0-or-later
 version: '1.0'                          # File version (must be string so we can distinguish 1.1 and 1.10)
-rfnoc_version: '1.0'                    # RFNoC protocol version
 chdr_width: 64                          # Bit width of the CHDR bus for this image
 device: 'x310'
 default_target: 'X310_HG'
