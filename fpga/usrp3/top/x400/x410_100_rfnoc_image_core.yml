@@ -6,7 +6,6 @@ copyright: >-                           # Copyright information used in file hea
 license: >-                             # License information used in file headers
   SPDX-License-Identifier: LGPL-3.0-or-later
 version: '1.0'                          # File version
-rfnoc_version: '1.0'                    # RFNoC protocol version
 chdr_width: 64                          # Bit width of the CHDR bus for this image
 device: 'x410'                          # USRP type
 image_core_name: 'x410_100'             # Name to use for the RFNoC Image Core files
