@@ -1,5 +1,6 @@
 <%
     import datetime
+    [protover_major, protover_minor, *_] = config.rfnoc_version.split('.')
 %>//
 // Copyright ${datetime.datetime.now().year} ${config.copyright}
 //
@@ -30,7 +31,7 @@
 module rfnoc_image_core #(
   parameter        CHDR_W     = ${config.chdr_width},
   parameter        MTU        = 10,
-  parameter [15:0] PROTOVER   = {8'd1, 8'd0},
+  parameter [15:0] PROTOVER   = {8'd${protover_major}, 8'd${protover_minor}},
   parameter        RADIO_NIPC = 1
 ) (
   // Clocks
