@@ -352,7 +352,12 @@ void noc_block_base::shutdown()
 
 void noc_block_base::post_init()
 {
-    // nop
+    // Verify the block set its MTU forwarding policy. If not, set it to the
+    // default value.
+    if (!_mtu_fwd_policy_set) {
+        RFNOC_LOG_INFO("Setting default MTU forward policy.");
+        set_mtu_forwarding_policy(_mtu_fwd_policy);
+    }
 }
 
 std::shared_ptr<mb_controller> noc_block_base::get_mb_controller()

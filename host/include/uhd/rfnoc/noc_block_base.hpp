@@ -261,15 +261,15 @@ protected:
      *   all opposite side ports. This is an appropriate policy for the
      *   split-stream block.
      *
-     * The default policy is DROP.
+     * The default policy is ONE_TO_ONE.
      *
-     * Note: The MTU forwarding policy can only be set ONCE per instance of a
-     * noc_block_base. If an RFNoC block subclassing noc_block_base wants to
-     * modify the MTU forwarding policy, it would typically call this function
-     * in its constructor. Once set, however, the MTU forwarding policy cannot
-     * be changed. This represents a change in behaviour from UHD 4.0.
-     * Violations of this restriction will result in a uhd::runtime_error being
-     * thrown.
+     * Note: The MTU forwarding policy can only be set once, and only during
+     * construction of a noc_block_base. If an RFNoC block subclassing
+     * noc_block_base wants to modify the MTU forwarding policy, it must call
+     * this function in its constructor. Once set, however, the MTU forwarding
+     * policy cannot be changed. This represents a change in behaviour from UHD
+     * 4.0.  Violations of this restriction will result in a uhd::runtime_error
+     * being thrown.
      */
     void set_mtu_forwarding_policy(const forwarding_policy_t policy);
 
@@ -358,7 +358,7 @@ private:
     std::vector<property_t<double>> _tick_rate_props;
 
     //! Forwarding policy for the MTU properties
-    forwarding_policy_t _mtu_fwd_policy = forwarding_policy_t::DROP;
+    forwarding_policy_t _mtu_fwd_policy = forwarding_policy_t::ONE_TO_ONE;
 
     //! Flag indicating if MTU forwarding property has been set yet
     bool _mtu_fwd_policy_set = false;
