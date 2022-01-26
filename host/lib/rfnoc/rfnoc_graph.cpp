@@ -58,7 +58,24 @@ struct route_info_t
     graph_edge_t src_static_edge;
     graph_edge_t dst_static_edge;
 };
+
 } // namespace
+
+// Define an attorney to limit access to noc_block_base internals
+class rfnoc_graph_impl;
+namespace uhd { namespace rfnoc {
+
+class block_initializer
+{
+    static void post_init(noc_block_base::sptr block)
+    {
+        block->post_init();
+    }
+    friend rfnoc_graph_impl;
+};
+
+}} // namespace uhd::rfnoc
+
 
 class rfnoc_graph_impl : public rfnoc_graph
 {
@@ -731,6 +748,7 @@ private:
             try {
                 _block_registry->register_block(
                     block_factory_info.factory_fn(std::move(make_args_uptr)));
+                block_initializer::post_init(_block_registry->get_block(block_id));
             } catch (...) {
                 UHD_LOG_ERROR(
                     LOG_ID, "Error during initialization of block " << block_id << "!");

@@ -350,6 +350,11 @@ void noc_block_base::shutdown()
     update_reg_iface();
 }
 
+void noc_block_base::post_init()
+{
+    // nop
+}
+
 std::shared_ptr<mb_controller> noc_block_base::get_mb_controller()
 {
     return _mb_controller;

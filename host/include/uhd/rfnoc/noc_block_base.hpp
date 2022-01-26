@@ -311,6 +311,8 @@ protected:
     virtual void deinit();
 
 private:
+    friend struct block_initializer;
+
     /*! Update the tick rate of this block
      *
      * This will make sure that the underlying register_iface is notified of the
@@ -324,6 +326,15 @@ private:
      * - Invalidate regs()
      */
     void shutdown() override;
+
+    /*! Run post-init tasks, i.e., after the constructor concludes.
+     *
+     * The purpose of this method is to make sure the block is in a good state
+     * after the block controller's ctor has concluded. This allows checking
+     * that block configurations follow certain rules, even though they may not
+     * even be part of UHD.
+     */
+    void post_init();
 
     /**************************************************************************
      * Attributes
