@@ -36,7 +36,7 @@ jobs:
     target: X410_XG_100
     debug: true  # to be able to debug any failed attempts
     clean: false # for speedup of PR testing
-    timeout: 360
+    timeout: 480
 
 # -------------------------------------------------------------------
 # Build X4 FPGA (200 MHz)
@@ -46,7 +46,7 @@ jobs:
     target: X410_X4_200
     debug: true  # to be able to debug any failed attempts
     clean: false # for speedup of PR testing
-    timeout: 360
+    timeout: 480
 
 # -------------------------------------------------------------------
 # Build C1 FPGA (400 MHz)
@@ -56,7 +56,7 @@ jobs:
     target: X410_C1_400
     debug: true  # to be able to debug any failed attempts
     clean: false # for speedup of PR testing
-    timeout: 360
+    timeout: 480
 
 # -------------------------------------------------------------------
 # Make CPLD
