@@ -74,6 +74,8 @@ public:
                                             << " halfbands and "
                                                "max CIC decimation "
                                             << _cic_max_decim);
+        // This line is not strictly necessary, as ONE_TO_ONE is the default.
+        // We set it make it explicit how this block works.
         set_mtu_forwarding_policy(forwarding_policy_t::ONE_TO_ONE);
         // Load list of valid decimation values
         std::set<size_t> decims{1}; // 1 is always a valid decimation

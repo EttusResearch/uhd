@@ -87,6 +87,13 @@ public:
             get_unique_id(),
             false /* Let it slide if minors mismatch */
         );
+        // Properties and actions can't propagate through this block, as we
+        // treat source and sink of this block like the radio (they terminate
+        // the graph).
+        set_prop_forwarding_policy(forwarding_policy_t::DROP);
+        set_action_forwarding_policy(forwarding_policy_t::DROP);
+        // Same for MTU
+        set_mtu_forwarding_policy(forwarding_policy_t::DROP);
 
         // Initialize record properties
         _record_type.reserve(_num_input_ports);

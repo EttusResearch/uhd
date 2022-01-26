@@ -37,6 +37,9 @@ public:
         // opposite side from which they are received.
         set_prop_forwarding_policy(forwarding_policy_t::ONE_TO_FAN);
         set_action_forwarding_policy(forwarding_policy_t::ONE_TO_FAN);
+        // MTU is also fanned out the same way as we produce output packets the
+        // same size as input packets.
+        set_mtu_forwarding_policy(forwarding_policy_t::ONE_TO_FAN);
 
         // Register the block's edge type properties.
         register_property(&_prop_type_in_a);
