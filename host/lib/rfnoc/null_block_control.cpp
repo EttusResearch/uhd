@@ -40,6 +40,9 @@ class null_block_control_impl : public null_block_control
 public:
     RFNOC_BLOCK_CONSTRUCTOR(null_block_control)
     {
+        // This block doesn't pass through packets, so the MTU can differ on
+        // input and output.
+        set_mtu_forwarding_policy(forwarding_policy_t::DROP);
         uint32_t initial_state = regs().peek32(REG_CTRL_STATUS);
         _streaming             = initial_state & 0x2;
         _nipc                  = (initial_state >> 24) & 0xFF;

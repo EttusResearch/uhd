@@ -72,6 +72,10 @@ public:
                                             << " halfbands and "
                                                "max CIC interpolation "
                                             << _cic_max_interp);
+        // This line is not strictly necessary, as ONE_TO_ONE is the default.
+        // We set it make it explicit how this block works. Output packets have
+        // the same size as the input packet.
+        set_mtu_forwarding_policy(forwarding_policy_t::ONE_TO_ONE);
         // Load list of valid interpolation values
         std::set<size_t> interps{1}; // 1 is always a valid interpolation
         for (size_t hb = 0; hb < _num_halfbands; hb++) {
