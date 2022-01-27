@@ -305,7 +305,7 @@ def test_ddr3_with_usrp_probe(extra_args=None):
         }
     mobj = re.search(r"Throughput: (?P<thrup>[0-9.]+)\s?MB", output)
     if mobj is not None:
-        return {'throughput': float(mobj.group('thrup')) * 1000}
+        return {'throughput': float(mobj.group('thrup')) * 1e6}
     else:
         return {
             'throughput': 0,

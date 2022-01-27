@@ -153,7 +153,7 @@ class N3XXBIST(bist.UsrpBIST):
         # the current result.
         if ('error_msg' not in result) \
                 or self.args.option.get('skip_load_fpga', False):
-            return result.get('throughput', 0) > 1000e3, result
+            return result.get('throughput', 0) > 1000e6, result
         # Otherwise, we load the AA FPGA image, because that's one image where
         # we think the DmaFIFO block is actually instantiated.
         self.reload_fpga_image = True
@@ -169,7 +169,7 @@ class N3XXBIST(bist.UsrpBIST):
                 'error_msg': "Failed to load AA image: {}".format(str(ex)),
             }
         result = bist.test_ddr3_with_usrp_probe()
-        return result.get('throughput', 0) > 1000e3, result
+        return result.get('throughput', 0) > 1000e6, result
 
     def bist_gpsdo(self):
         """
