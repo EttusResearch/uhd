@@ -9,6 +9,7 @@ include $(IP_DIR)/x4xx_ps_rfdc_bd/Makefile.inc
 include $(IP_DIR)/axi_interconnect_app_bd/Makefile.inc
 include $(IP_DIR)/axi_interconnect_eth_bd/Makefile.inc
 include $(IP_DIR)/axi_interconnect_dma_bd/Makefile.inc
+include $(IP_DIR)/axi_inter_4x64_512_bd/Makefile.inc
 include $(IP_DIR)/axi_inter_2x128_512_bd/Makefile.inc
 include $(IP_DIR)/ddr4_64bits/Makefile.inc
 include $(IP_DIR)/adc_100m_bd/Makefile.inc
@@ -31,6 +32,7 @@ $(IP_AXI_INTERCONNECT_ETH_BD_SRCS) \
 $(IP_AXI_INTERCONNECT_ETH_HDL_SRCS) \
 $(IP_AXI_INTERCONNECT_DMA_BD_SRCS) \
 $(IP_AXI_INTERCONNECT_DMA_HDL_SRCS) \
+$(IP_AXI_INTER_4X64_512_BD_SRCS) \
 $(IP_AXI_INTER_2X128_512_BD_SRCS) \
 $(IP_ADC_100M_BD_SRCS) \
 $(IP_ADC_100M_HDL_SRCS) \
@@ -59,6 +61,7 @@ $(BD_X4XX_PS_RFDC_BD_OUTS) \
 $(BD_AXI_INTERCONNECT_APP_BD_OUTS) \
 $(BD_AXI_INTERCONNECT_ETH_BD_OUTS) \
 $(BD_AXI_INTERCONNECT_DMA_BD_OUTS) \
+$(BD_AXI_INTER_4x64_512_BD_OUTS) \
 $(BD_AXI_INTER_2X128_512_BD_OUTS) \
 $(BD_ADC_100M_BD_OUTS) \
 $(BD_ADC_400M_BD_OUTS)  \
