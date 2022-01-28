@@ -276,7 +276,7 @@ def test_ddr3_with_usrp_probe(extra_args=None):
     reporting a good throughput. This is a bit of a roundabout way of testing
     the DDR3, but it uses existing software and also tests the RFNoC pathways.
     """
-    dflt_args = {'addr':'127.0.0.1', 'rfnoc_num_blocks':1}
+    dflt_args = {'addr':'127.0.0.1'}
     extra_args = extra_args or {}
     # merge args dicts, extra_args overrides dflt_args if keys exists in both dicts
     args = {**dflt_args, **extra_args}
