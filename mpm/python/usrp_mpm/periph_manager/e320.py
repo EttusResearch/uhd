@@ -87,6 +87,11 @@ class e320(ZynqComponents, PeriphManagerBase):
     mboard_info = {"type": "e3xx",
                    "product": "e320"
                   }
+    # This is the latest HW revision that his version of MPM is aware of. This
+    # version of MPM will be able to run with any hardware which has a rev_compat
+    # field that is equal or less than this value.
+    # Note: If the hardware is revved in a non-compatible way, eeprom-init.c
+    # must also be updated (derive_rev_compat).
     mboard_max_rev = 4  # rev E
     mboard_sensor_callback_map = {
         'ref_locked': 'get_ref_lock_sensor',
