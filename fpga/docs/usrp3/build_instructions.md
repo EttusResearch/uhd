@@ -6,24 +6,26 @@
 
 The USRP FPGA build system requires a UNIX-like environment with the following dependencies
 
-- [Xilinx Vivado 2019.1](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/2019-1.html) (For 7 Series FPGAs)
-- [Xilinx ISE 14.7](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/archive-ise.html) (For all other FPGAs)
+- [Xilinx Vivado Design Suite HLx Editions 2019.1](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/archive.html) (For 7 Series and UltraScale+ FPGAs)
+- [Xilinx ISE Design Suite 14.7](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/archive-ise.html) (For all other FPGAs)
 - [GNU Make 3.6+](https://www.gnu.org/software/make/)
 - [GNU Bash 4.0+](https://www.gnu.org/software/bash/)
 - [Python 3.5](https://www.python.org/)
 - [Doxygen](https://www.doxygen.nl/index.html) (Optional: To build the manual)
 - [ModelSim](https://www.mentor.com/products/fv/modelsim/) (Optional: For simulation)
 
-The following USRPs work with the free WebPack versions:
-- USRP E310/E312/E313
+The following USRPs work with the free WebPACK versions:
+- USRP B200/B200mini (ISE)
+- USRP E310/E312/E313 (Vivado)
 
 ### What FPGA does my USRP have?
 
-- USRP B200: Spartan 6 XC6SLX75
-- USRP B200mini: Spartan 6 XC6SLX75
-- USRP B210: Spartan 6 XC6SLX150
-- USRP X300: Kintex 7 XC7K325T (7 Series)
-- USRP X310: Kintex 7 XC7K410T (7 Series)
+- USRP B200: Spartan-6 XC6SLX75
+- USRP B210: Spartan-6 XC6SLX150
+- USRP B200mini: Spartan-6 XC6SLX75
+- USRP B205mini: Spartan-6 XC6SLX150
+- USRP X300: Kintex-7 XC7K325T (7 Series)
+- USRP X310: Kintex-7 XC7K410T (7 Series)
 - USRP E310: Zynq-7000 XC7Z020 (7 Series)
 - USRP E320: Zynq-7000 XC7Z045 (7 Series)
 - USRP N300: Zynq-7000 XC7Z035 (7 Series)
