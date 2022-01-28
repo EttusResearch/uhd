@@ -9,12 +9,10 @@ EEPROM management code
 
 import struct
 import zlib
-from builtins import zip
-from builtins import object
 
 EEPROM_DEFAULT_HEADER = struct.Struct("!I I")
 
-class MboardEEPROM(object):
+class MboardEEPROM:
     """
     Given a nvmem path, read out EEPROM values from the motherboard's EEPROM.
     The format of data in the EEPROM must follow the following standard:
@@ -74,9 +72,12 @@ class MboardEEPROM(object):
     # Create one of these for every version of the EEPROM format:
     eeprom_header_format = (
         None, # For laziness, we start at version 1 and thus index 0 stays empty
-        "!I I 16s  H H 7s 1x 24s I", # Version 1
-        "!I I 16s  H H 7s 1x 6s H 6s H 6s 2x I", # Version 2 (Ignore the extra fields, it doesn't matter to MPM)
-        "!I I 16s  H H 7s 1x 6s H 6s H 6s H I", # Version 3 (Ignore the extra fields, it doesn't matter to MPM)
+        # Version 1
+        "!I I 16s  H H 7s 1x 24s I",
+        # Version 2 (Ignore the extra fields, it doesn't matter to MPM)
+        "!I I 16s  H H 7s 1x 6s H 6s H 6s 2x I",
+        # Version 3 (Ignore the extra fields, it doesn't matter to MPM)
+        "!I I 16s  H H 7s 1x 6s H 6s H 6s H I",
     )
     eeprom_header_keys = (
         None, # For laziness, we start at version 1 and thus index 0 stays empty
@@ -85,7 +86,7 @@ class MboardEEPROM(object):
         ('magic', 'eeprom_version', 'mcu_flags', 'pid', 'rev', 'serial', 'mac_eth0', 'dt_compat', 'mac_eth1', 'ec_compat', 'mac_eth2', 'rev_compat', 'CRC'),  # Version 3
     )
 
-class DboardEEPROM(object):
+class DboardEEPROM:
     """
     Given a nvmem path, read out EEPROM values from the daughterboard's EEPROM.
     The format of data in the EEPROM must follow the following standard:
@@ -123,8 +124,10 @@ class DboardEEPROM(object):
     )
     eeprom_header_keys = (
         None, # For laziness, we start at version 1 and thus index 0 stays empty
-        ('magic', 'eeprom_version', 'pid', 'rev', 'serial', 'CRC'), # Version 1
-        ('magic', 'eeprom_version', 'pid', 'rev', 'serial', 'CRC'), # Version 2 (Ignore the extra field, it doesn't matter to MPM)
+        # Version 1
+        ('magic', 'eeprom_version', 'pid', 'rev', 'serial', 'CRC'),
+        # Version 2 (Ignore the extra field, it doesn't matter to MPM)
+        ('magic', 'eeprom_version', 'pid', 'rev', 'serial', 'CRC'),
     )
 
 
@@ -182,5 +185,3 @@ def read_eeprom(
     if eeprom_version >= len(eeprom_header_format):
         raise RuntimeError("Unexpected EEPROM version: `{}'".format(eeprom_version))
     return (_parse_eeprom_data(data, eeprom_version), data)
-
-
