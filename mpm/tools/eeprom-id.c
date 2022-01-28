@@ -8,10 +8,7 @@
 #include <stdlib.h>
 #include <arpa/inet.h>
 #include "eeprom.h"
-
-#define N310_PID 0x4242
-#define N300_PID 0x4240
-#define E320_PID 0xe320
+#include "eeprom-pids.h"
 
 static void usrp_sulfur_eeprom_print_id(struct usrp_sulfur_eeprom *ep)
 {

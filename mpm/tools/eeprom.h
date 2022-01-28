@@ -21,6 +21,8 @@ typedef uint8_t u8;
 #define NVMEM_PATH_SLOT_B "/sys/bus/nvmem/devices/10-00500/nvmem"
 #define NVMEM_PATH_MB "/sys/bus/nvmem/devices/2-00500/nvmem"
 
+/* Despite the "sulfur" name, this also applies for E320 ("neon")
+ */
 struct usrp_sulfur_eeprom {
 	u32 magic;
 	u32 version;
