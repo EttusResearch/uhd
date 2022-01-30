@@ -8,6 +8,7 @@ transports:
 
 clocks:
   - name: radio
+  - name: dram
 
 io_ports:
   ctrlport_radio:
@@ -22,3 +23,6 @@ io_ports:
   x300_radio:
     type: x300_radio
     drive: master
+  dram:
+    type: axi4_mm
+    drive: slave

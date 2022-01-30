@@ -6,7 +6,7 @@
   <spirit:version>1.0</spirit:version>
   <spirit:componentInstances>
     <spirit:componentInstance>
-      <spirit:instanceName>mig_7series_0</spirit:instanceName>
+      <spirit:instanceName>ddr3_16bit</spirit:instanceName>
       <spirit:componentRef spirit:vendor="xilinx.com" spirit:library="ip" spirit:name="mig_7series" spirit:version="4.2"/>
       <spirit:configurableElementValues>
         <spirit:configurableElementValue spirit:referenceId="BUSIFPARAM_VALUE.ARESETN.INSERT_VIP">0</spirit:configurableElementValue>
@@ -2300,7 +2300,7 @@
         <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.UI_EXTRA_CLOCKS">FALSE</spirit:configurableElementValue>
         <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.USE_AXI">1</spirit:configurableElementValue>
         <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.BOARD_MIG_PARAM">Custom</spirit:configurableElementValue>
-        <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.Component_Name">mig_7series_0</spirit:configurableElementValue>
+        <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.Component_Name">ddr3_16bit</spirit:configurableElementValue>
         <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.MIG_DONT_TOUCH_PARAM">Custom</spirit:configurableElementValue>
         <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.RESET_BOARD_INTERFACE">Custom</spirit:configurableElementValue>
         <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.XML_INPUT_FILE">mig_a.prj</spirit:configurableElementValue>
@@ -2646,3 +2646,4 @@
     </spirit:componentInstance>
   </spirit:componentInstances>
 </spirit:design>
+
