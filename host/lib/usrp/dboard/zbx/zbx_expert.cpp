@@ -28,11 +28,10 @@ bool _is_band_highband(const tune_map_item_t tune_setting)
     return tune_setting.rf_fir == 0;
 }
 
-tune_map_item_t _get_tune_settings(const double freq, const uhd::direction_t trx)
+tune_map_item_t _get_tune_settings(const double freq, const std::vector<tune_map_item_t>& tune_map)
 {
-    auto tune_setting = trx == RX_DIRECTION ? rx_tune_map.begin() : tx_tune_map.begin();
-
-    auto tune_settings_end = trx == RX_DIRECTION ? rx_tune_map.end() : tx_tune_map.end();
+    auto tune_setting = tune_map.begin();
+    auto tune_settings_end = tune_map.end();
 
     for (; tune_setting != tune_settings_end; ++tune_setting) {
         if (tune_setting->max_band_freq >= freq) {
@@ -147,7 +146,7 @@ void zbx_scheduling_expert::resolve()
 void zbx_freq_fe_expert::resolve()
 {
     const double tune_freq = ZBX_FREQ_RANGE.clip(_desired_frequency);
-    _tune_settings         = _get_tune_settings(tune_freq, _trx);
+    _tune_settings         = _get_tune_settings(tune_freq, _tune_table.get());
 
     // Set mixer values so the backend expert knows how to calculate final frequency
     _mixer1_m  = _tune_settings.mix1_m;

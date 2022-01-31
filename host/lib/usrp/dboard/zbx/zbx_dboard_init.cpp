@@ -66,6 +66,13 @@ std::ostream& operator<<(
     }
 }
 
+std::ostream& operator<<(
+    std::ostream& os, const std::vector<::uhd::usrp::zbx::tune_map_item_t>& tune_map)
+{
+    os << "Tune map with " << tune_map.size() << " entries";
+    return os;
+}
+
 void zbx_dboard_impl::_init_cpld()
 {
     // CPLD
@@ -573,6 +580,13 @@ void zbx_dboard_impl::_init_lo_prop_tree(uhd::property_tree::sptr subtree,
     const size_t chan_idx,
     const fs_path fe_path)
 {
+    // Tuning table
+    expert_factory::add_prop_node<std::vector<tune_map_item_t>>(expert,
+        subtree,
+        fe_path / "tune_table",
+        trx == RX_DIRECTION ? rx_tune_map : tx_tune_map,
+        AUTO_RESOLVE_ON_WRITE);
+
     // Analog LO Specific
     for (const std::string lo : {ZBX_LO1, ZBX_LO2}) {
         expert_factory::add_prop_node<zbx_lo_source_t>(expert,

@@ -103,6 +103,7 @@ public:
         const double lo_step_size)
         : experts::worker_node_t(fe_path / "zbx_freq_fe_expert")
         , _desired_frequency(db, fe_path / "freq" / "desired")
+        , _tune_table(db, fe_path / "tune_table")
         , _desired_lo1_frequency(db, fe_path / "los" / ZBX_LO1 / "freq" / "value" / "desired")
         , _desired_lo2_frequency(db, fe_path / "los" / ZBX_LO2 / "freq" / "value" / "desired")
         , _lo1_enabled(db, fe_path / ZBX_LO1 / "enabled")
@@ -124,6 +125,7 @@ public:
     {
         //  Inputs
         bind_accessor(_desired_frequency);
+        bind_accessor(_tune_table);
 
         //  Outputs
         bind_accessor(_desired_lo1_frequency);
@@ -147,6 +149,7 @@ private:
 
     // Inputs from user/API
     uhd::experts::data_reader_t<double> _desired_frequency;
+    uhd::experts::data_reader_t<std::vector<tune_map_item_t>> _tune_table;
 
     // Outputs
     // From calculation, to LO expert

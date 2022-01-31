@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <array>
 #include <cstddef>
+#include <cstring>
 #include <list>
 #include <map>
 #include <string>
@@ -199,6 +200,10 @@ struct tune_map_item_t
     double if1_freq_max;
     double if2_freq_min;
     double if2_freq_max;
+
+    bool operator==(const tune_map_item_t& other) const {
+        return std::memcmp(this, &other, sizeof(tune_map_item_t)) == 0;
+    }
 };
 
 // These are addresses for the various table-based registers
@@ -266,4 +271,6 @@ namespace uhd { namespace usrp { namespace zbx {
 // Any added expert nodes of type enum class will have to define this
 std::ostream& operator<<(
     std::ostream& os, const ::uhd::usrp::zbx::zbx_lo_source_t& lo_source);
+std::ostream& operator<<(
+    std::ostream& os, const std::vector<::uhd::usrp::zbx::tune_map_item_t>& tune_map);
 }}} // namespace uhd::usrp::zbx
