@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VIVADO_VER=2019.1
+VIVADO_VER=2021.1
 DISPLAY_NAME="USRP-X3x0"
 REPO_BASE_PATH=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 

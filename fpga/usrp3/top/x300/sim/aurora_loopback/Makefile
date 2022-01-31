@@ -69,7 +69,7 @@ MODELSIM_LIBS += \
 unisims_ver \
 unimacro_ver \
 secureip \
-fifo_generator_v13_2_4 \
+fifo_generator_v13_2_5 \
 
 
 MODELSIM_ARGS += glbl -t 1fs
