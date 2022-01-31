@@ -33,6 +33,16 @@ function(CHECK_WORKING_CXX_ATOMICS64 varname)
         " ${varname})
 endfunction(CHECK_WORKING_CXX_ATOMICS64)
 
+function(CHECK_WORKING_CXX_BOOST_ATOMICS varname)
+    CHECK_CXX_SOURCE_COMPILES("
+        #include <boost/lockfree/queue.hpp>
+        boost::lockfree::queue<int> queue(1);
+        int main() {
+        return queue.is_lock_free();
+        }
+        " ${varname})
+endfunction(CHECK_WORKING_CXX_BOOST_ATOMICS)
+
 macro(CHECK_ATOMICS_LIB_REQUIRED required_var)
     set(${required_var} FALSE)
     if(MSVC)
@@ -74,6 +84,25 @@ macro(CHECK_ATOMICS_LIB_REQUIRED required_var)
                 message(
                     FATAL_ERROR
                     "Host compiler appears to require libatomic for 64-bit operations, but cannot find it.")
+            endif()
+        endif()
+        # Check whether boost requires atomic.
+        CHECK_WORKING_CXX_BOOST_ATOMICS(HAVE_CXX_BOOST_ATOMICS_WITHOUT_LIB)
+        # If not, check if the library exists, and atomics work with it.
+        if(NOT HAVE_CXX_BOOST_ATOMICS_WITHOUT_LIB)
+            check_library_exists(atomic __atomic_fetch_add_4 "" HAVE_LIBATOMIC)
+            if(HAVE_LIBATOMIC)
+                set(${required_var} TRUE)
+                set(CMAKE_REQUIRED_LIBRARIES "atomic")
+                CHECK_WORKING_CXX_BOOST_ATOMICS(HAVE_CXX_BOOST_ATOMICS_WITH_LIB)
+                unset(CMAKE_REQUIRED_LIBRARIES)
+                if (NOT HAVE_CXX_BOOST_ATOMICS_WITH_LIB)
+                    message(FATAL_ERROR "Host compiler must support std::atomic!")
+                endif()
+            else()
+                message(
+                    FATAL_ERROR
+                    "Host compiler appears to require libatomic, but cannot find it.")
             endif()
         endif()
     endif()
