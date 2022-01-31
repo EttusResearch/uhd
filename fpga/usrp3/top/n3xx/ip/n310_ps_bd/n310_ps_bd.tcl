@@ -20,12 +20,12 @@ set script_folder [_tcl::get_script_folder]
 ################################################################
 # Check if script is running in correct Vivado version.
 ################################################################
-set scripts_vivado_version 2019.1
+set scripts_vivado_version 2021.1
 set current_vivado_version [version -short]
 
 if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
    puts ""
-   catch {common::send_msg_id "BD_TCL-109" "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
+   catch {common::send_gid_msg -ssname BD::TCL -id 2041 -severity "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
 
    return 1
 }
@@ -76,10 +76,10 @@ if { ${design_name} eq "" } {
    #    4): Current design opened AND is empty AND names diff; design_name exists in project.
 
    if { $cur_design ne $design_name } {
-      common::send_msg_id "BD_TCL-001" "INFO" "Changing value of <design_name> from <$design_name> to <$cur_design> since current design is empty."
+      common::send_gid_msg -ssname BD::TCL -id 2001 -severity "INFO" "Changing value of <design_name> from <$design_name> to <$cur_design> since current design is empty."
       set design_name [get_property NAME $cur_design]
    }
-   common::send_msg_id "BD_TCL-002" "INFO" "Constructing design in IPI design <$cur_design>..."
+   common::send_gid_msg -ssname BD::TCL -id 2002 -severity "INFO" "Constructing design in IPI design <$cur_design>..."
 
 } elseif { ${cur_design} ne "" && $list_cells ne "" && $cur_design eq $design_name } {
    # USE CASES:
@@ -100,19 +100,19 @@ if { ${design_name} eq "" } {
    #    8) No opened design, design_name not in project.
    #    9) Current opened design, has components, but diff names, design_name not in project.
 
-   common::send_msg_id "BD_TCL-003" "INFO" "Currently there is no design <$design_name> in project, so creating one..."
+   common::send_gid_msg -ssname BD::TCL -id 2003 -severity "INFO" "Currently there is no design <$design_name> in project, so creating one..."
 
    create_bd_design $design_name
 
-   common::send_msg_id "BD_TCL-004" "INFO" "Making design <$design_name> as current_bd_design."
+   common::send_gid_msg -ssname BD::TCL -id 2004 -severity "INFO" "Making design <$design_name> as current_bd_design."
    current_bd_design $design_name
 
 }
 
-common::send_msg_id "BD_TCL-005" "INFO" "Currently the variable <design_name> is equal to \"$design_name\"."
+common::send_gid_msg -ssname BD::TCL -id 2005 -severity "INFO" "Currently the variable <design_name> is equal to \"$design_name\"."
 
 if { $nRet != 0 } {
-   catch {common::send_msg_id "BD_TCL-114" "ERROR" $errMsg}
+   catch {common::send_gid_msg -ssname BD::TCL -id 2006 -severity "ERROR" $errMsg}
    return $nRet
 }
 
@@ -123,7 +123,7 @@ set bCheckIPsPassed 1
 set bCheckIPs 1
 if { $bCheckIPs == 1 } {
    set list_check_ips "\ 
-xilinx.com:ip:axi_iic:2.0\
+xilinx.com:ip:axi_iic:2.1\
 xilinx.com:ip:axi_uartlite:2.0\
 ettus.com:ip:axi_bitq:1.0\
 xilinx.com:ip:processing_system7:5.5\
@@ -134,7 +134,7 @@ xilinx.com:ip:axi_protocol_converter:2.1\
 "
 
    set list_ips_missing ""
-   common::send_msg_id "BD_TCL-006" "INFO" "Checking if the following IPs exist in the project's IP catalog: $list_check_ips ."
+   common::send_gid_msg -ssname BD::TCL -id 2011 -severity "INFO" "Checking if the following IPs exist in the project's IP catalog: $list_check_ips ."
 
    foreach ip_vlnv $list_check_ips {
       set ip_obj [get_ipdefs -all $ip_vlnv]
@@ -144,14 +144,14 @@ xilinx.com:ip:axi_protocol_converter:2.1\
    }
 
    if { $list_ips_missing ne "" } {
-      catch {common::send_msg_id "BD_TCL-115" "ERROR" "The following IPs are not found in the IP Catalog:\n  $list_ips_missing\n\nResolution: Please add the repository containing the IP(s) to the project." }
+      catch {common::send_gid_msg -ssname BD::TCL -id 2012 -severity "ERROR" "The following IPs are not found in the IP Catalog:\n  $list_ips_missing\n\nResolution: Please add the repository containing the IP(s) to the project." }
       set bCheckIPsPassed 0
    }
 
 }
 
 if { $bCheckIPsPassed != 1 } {
-  common::send_msg_id "BD_TCL-1003" "WARNING" "Will not continue with creation of design due to the error(s) above."
+  common::send_gid_msg -ssname BD::TCL -id 2023 -severity "WARNING" "Will not continue with creation of design due to the error(s) above."
   return 3
 }
 
@@ -166,21 +166,21 @@ proc create_hier_cell_dma { parentCell nameHier } {
   variable script_folder
 
   if { $parentCell eq "" || $nameHier eq "" } {
-     catch {common::send_msg_id "BD_TCL-102" "ERROR" "create_hier_cell_dma() - Empty argument(s)!"}
+     catch {common::send_gid_msg -ssname BD::TCL -id 2092 -severity "ERROR" "create_hier_cell_dma() - Empty argument(s)!"}
      return
   }
 
   # Get object for parentCell
   set parentObj [get_bd_cells $parentCell]
   if { $parentObj == "" } {
-     catch {common::send_msg_id "BD_TCL-100" "ERROR" "Unable to find parent cell <$parentCell>!"}
+     catch {common::send_gid_msg -ssname BD::TCL -id 2090 -severity "ERROR" "Unable to find parent cell <$parentCell>!"}
      return
   }
 
   # Make sure parentObj is hier blk
   set parentType [get_property TYPE $parentObj]
   if { $parentType ne "hier" } {
-     catch {common::send_msg_id "BD_TCL-101" "ERROR" "Parent <$parentObj> has TYPE = <$parentType>. Expected to be <hier>."}
+     catch {common::send_gid_msg -ssname BD::TCL -id 2091 -severity "ERROR" "Parent <$parentObj> has TYPE = <$parentType>. Expected to be <hier>."}
      return
   }
 
@@ -288,14 +288,14 @@ proc create_root_design { parentCell } {
   # Get object for parentCell
   set parentObj [get_bd_cells $parentCell]
   if { $parentObj == "" } {
-     catch {common::send_msg_id "BD_TCL-100" "ERROR" "Unable to find parent cell <$parentCell>!"}
+     catch {common::send_gid_msg -ssname BD::TCL -id 2090 -severity "ERROR" "Unable to find parent cell <$parentCell>!"}
      return
   }
 
   # Make sure parentObj is hier blk
   set parentType [get_property TYPE $parentObj]
   if { $parentType ne "hier" } {
-     catch {common::send_msg_id "BD_TCL-101" "ERROR" "Parent <$parentObj> has TYPE = <$parentType>. Expected to be <hier>."}
+     catch {common::send_gid_msg -ssname BD::TCL -id 2091 -severity "ERROR" "Parent <$parentObj> has TYPE = <$parentType>. Expected to be <hier>."}
      return
   }
 
@@ -650,11 +650,10 @@ proc create_root_design { parentCell } {
   set JTAG1_TDO [ create_bd_port -dir I JTAG1_TDO ]
   set JTAG1_TMS [ create_bd_port -dir IO JTAG1_TMS ]
   set MIO [ create_bd_port -dir IO -from 53 -to 0 MIO ]
-  set M_AXI_WR_CLK [ create_bd_port -dir I -type clk M_AXI_WR_CLK ]
+  set M_AXI_WR_CLK [ create_bd_port -dir I -type clk -freq_hz 62500000 M_AXI_WR_CLK ]
   set_property -dict [ list \
    CONFIG.ASSOCIATED_BUSIF {M_AXI_WR} \
    CONFIG.ASSOCIATED_RESET {M_AXI_WR_RSTn} \
-   CONFIG.FREQ_HZ {62500000} \
  ] $M_AXI_WR_CLK
   set M_AXI_WR_RSTn [ create_bd_port -dir I -type rst M_AXI_WR_RSTn ]
   set PS_CLK [ create_bd_port -dir IO PS_CLK ]
@@ -688,41 +687,33 @@ proc create_root_design { parentCell } {
   set SPI1_SS_I [ create_bd_port -dir I SPI1_SS_I ]
   set SPI1_SS_O [ create_bd_port -dir O SPI1_SS_O ]
   set SPI1_SS_T [ create_bd_port -dir O SPI1_SS_T ]
-  set S_AXI_GP0_ACLK [ create_bd_port -dir I -type clk S_AXI_GP0_ACLK ]
+  set S_AXI_GP0_ACLK [ create_bd_port -dir I -type clk -freq_hz 40000000 S_AXI_GP0_ACLK ]
   set_property -dict [ list \
    CONFIG.ASSOCIATED_RESET {S_AXI_GP0_ARESETN} \
-   CONFIG.FREQ_HZ {40000000} \
  ] $S_AXI_GP0_ACLK
   set S_AXI_GP0_ARESETN [ create_bd_port -dir I -type rst S_AXI_GP0_ARESETN ]
-  set S_AXI_GP1_ACLK [ create_bd_port -dir I -type clk S_AXI_GP1_ACLK ]
+  set S_AXI_GP1_ACLK [ create_bd_port -dir I -type clk -freq_hz 40000000 S_AXI_GP1_ACLK ]
   set_property -dict [ list \
    CONFIG.ASSOCIATED_RESET {S_AXI_GP1_ARESETN} \
-   CONFIG.FREQ_HZ {40000000} \
  ] $S_AXI_GP1_ACLK
   set S_AXI_GP1_ARESETN [ create_bd_port -dir I -type rst S_AXI_GP1_ARESETN ]
-  set S_AXI_HP0_ACLK [ create_bd_port -dir I -type clk S_AXI_HP0_ACLK ]
-  set_property -dict [ list \
-   CONFIG.FREQ_HZ {40000000} \
- ] $S_AXI_HP0_ACLK
+  set S_AXI_HP0_ACLK [ create_bd_port -dir I -type clk -freq_hz 40000000 S_AXI_HP0_ACLK ]
   set S_AXI_HP0_ARESETN [ create_bd_port -dir I -type rst S_AXI_HP0_ARESETN ]
-  set S_AXI_HP1_ACLK [ create_bd_port -dir I -type clk S_AXI_HP1_ACLK ]
+  set S_AXI_HP1_ACLK [ create_bd_port -dir I -type clk -freq_hz 40000000 S_AXI_HP1_ACLK ]
   set_property -dict [ list \
    CONFIG.ASSOCIATED_RESET {S_AXI_HP1_ARESETN} \
-   CONFIG.FREQ_HZ {40000000} \
  ] $S_AXI_HP1_ACLK
   set S_AXI_HP1_ARESETN [ create_bd_port -dir I -type rst S_AXI_HP1_ARESETN ]
-  set bus_clk [ create_bd_port -dir I -type clk bus_clk ]
+  set bus_clk [ create_bd_port -dir I -type clk -freq_hz 200000000 bus_clk ]
   set_property -dict [ list \
    CONFIG.ASSOCIATED_BUSIF {m_axis_dma:s_axis_dma} \
    CONFIG.ASSOCIATED_RESET {bus_rstn} \
-   CONFIG.FREQ_HZ {200000000} \
  ] $bus_clk
   set bus_rstn [ create_bd_port -dir I -type rst bus_rstn ]
-  set clk40 [ create_bd_port -dir I -type clk clk40 ]
+  set clk40 [ create_bd_port -dir I -type clk -freq_hz 40000000 clk40 ]
   set_property -dict [ list \
-   CONFIG.ASSOCIATED_BUSIF {M_AXI_NET0:M_AXI_NET1:M_AXI_XBAR:M_AXI_JESD0:M_AXI_JESD1:M_AXI_ETH_DMA0:M_AXI_ETH_DMA1:M_AXI_NET2} \
+   CONFIG.ASSOCIATED_BUSIF {M_AXI_NET0:M_AXI_NET1:M_AXI_XBAR:M_AXI_JESD0:M_AXI_JESD1:M_AXI_ETH_DMA0:M_AXI_ETH_DMA1:M_AXI_NET2:m_axi_eth_internal} \
    CONFIG.ASSOCIATED_RESET {clk40_rstn} \
-   CONFIG.FREQ_HZ {40000000} \
  ] $clk40
   set clk40_rstn [ create_bd_port -dir I -type rst clk40_rstn ]
   set qsfp_scl_i [ create_bd_port -dir I qsfp_scl_i ]
@@ -733,7 +724,7 @@ proc create_root_design { parentCell } {
   set qsfp_sda_t [ create_bd_port -dir O qsfp_sda_t ]
 
   # Create instance: axi_iic_0, and set properties
-  set axi_iic_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_iic:2.0 axi_iic_0 ]
+  set axi_iic_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_iic:2.1 axi_iic_0 ]
 
   # Create instance: axi_interconnect_0, and set properties
   set axi_interconnect_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_0 ]
@@ -762,6 +753,7 @@ proc create_root_design { parentCell } {
   set axi_uartlite_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_uartlite:2.0 axi_uartlite_0 ]
   set_property -dict [ list \
    CONFIG.C_BAUDRATE {115200} \
+   CONFIG.C_S_AXI_ACLK_FREQ_HZ {40000000} \
  ] $axi_uartlite_0
 
   # Create instance: dma
@@ -1102,8 +1094,12 @@ proc create_root_design { parentCell } {
    CONFIG.PCW_MIO_9_IOTYPE {LVCMOS 1.8V} \
    CONFIG.PCW_MIO_9_PULLUP {enabled} \
    CONFIG.PCW_MIO_9_SLEW {slow} \
-   CONFIG.PCW_MIO_TREE_PERIPHERALS {GPIO#GPIO#GPIO#I2C Reset#GPIO#GPIO#ENET Reset#USB Reset#UART 1#UART 1#PJTAG#PJTAG#PJTAG#PJTAG#UART 0#UART 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#SD 0#SD 0#SD 0#SD 0#SD 0#SD 0#GPIO#GPIO#GPIO#GPIO#I2C 0#I2C 0#GPIO#GPIO} \
-   CONFIG.PCW_MIO_TREE_SIGNALS {gpio[0]#gpio[1]#gpio[2]#reset#gpio[4]#gpio[5]#reset#reset#tx#rx#tdi#tdo#tck#tms#rx#tx#tx_clk#txd[0]#txd[1]#txd[2]#txd[3]#tx_ctl#rx_clk#rxd[0]#rxd[1]#rxd[2]#rxd[3]#rx_ctl#data[4]#dir#stp#nxt#data[0]#data[1]#data[2]#data[3]#clk#data[5]#data[6]#data[7]#clk#cmd#data[0]#data[1]#data[2]#data[3]#gpio[46]#gpio[47]#gpio[48]#gpio[49]#scl#sda#gpio[52]#gpio[53]} \
+   CONFIG.PCW_MIO_TREE_PERIPHERALS {GPIO#GPIO#GPIO#I2C Reset#GPIO#GPIO#ENET Reset#USB Reset#UART 1#UART\
+1#PJTAG#PJTAG#PJTAG#PJTAG#UART 0#UART 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet\
+0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB\
+0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#SD 0#SD 0#SD 0#SD 0#SD 0#SD\
+0#GPIO#GPIO#GPIO#GPIO#I2C 0#I2C 0#GPIO#GPIO}\
+   CONFIG.PCW_MIO_TREE_SIGNALS {gpio[0]#gpio[1]#gpio[2]#reset#gpio[4]#gpio[5]#reset#reset#tx#rx#tdi#tdo#tck#tms#rx#tx#tx_clk#txd[0]#txd[1]#txd[2]#txd[3]#tx_ctl#rx_clk#rxd[0]#rxd[1]#rxd[2]#rxd[3]#rx_ctl#data[4]#dir#stp#nxt#data[0]#data[1]#data[2]#data[3]#clk#data[5]#data[6]#data[7]#clk#cmd#data[0]#data[1]#data[2]#data[3]#gpio[46]#gpio[47]#gpio[48]#gpio[49]#scl#sda#gpio[52]#gpio[53]}\
    CONFIG.PCW_PCAP_PERIPHERAL_DIVISOR0 {5} \
    CONFIG.PCW_PJTAG_PERIPHERAL_ENABLE {1} \
    CONFIG.PCW_PJTAG_PJTAG_IO {MIO 10 .. 13} \
@@ -1313,28 +1309,28 @@ proc create_root_design { parentCell } {
   connect_bd_net -net xlslice_2_Dout [get_bd_pins xlconcat_0/In0] [get_bd_pins xlslice_2/Dout]
 
   # Create address segments
-  create_bd_addr_seg -range 0x00004000 -offset 0x40000000 [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs M_AXI_ETH_DMA0/Reg] SEG_M_AXI_ETH_DMA0_Reg
-  create_bd_addr_seg -range 0x00004000 -offset 0x40008000 [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs M_AXI_ETH_DMA1/Reg] SEG_M_AXI_ETH_DMA1_Reg
-  create_bd_addr_seg -range 0x00004000 -offset 0x40014000 [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs M_AXI_JESD0/Reg] SEG_M_AXI_JESD0_Reg
-  create_bd_addr_seg -range 0x00004000 -offset 0x40018000 [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs M_AXI_JESD1/Reg] SEG_M_AXI_JESD1_Reg
-  create_bd_addr_seg -range 0x00004000 -offset 0x40004000 [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs M_AXI_NET0/Reg] SEG_M_AXI_NET0_Reg
-  create_bd_addr_seg -range 0x00004000 -offset 0x4000C000 [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs M_AXI_NET1/Reg] SEG_M_AXI_NET1_Reg
-  create_bd_addr_seg -range 0x00020000 -offset 0x40020000 [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs M_AXI_NET2/Reg] SEG_M_AXI_NET2_Reg
-  create_bd_addr_seg -range 0x00040000 -offset 0x43D40000 [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs M_AXI_WR/Reg] SEG_M_AXI_WR_Reg
-  create_bd_addr_seg -range 0x00004000 -offset 0x40010000 [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs M_AXI_XBAR/Reg] SEG_M_AXI_XBAR_Reg
-  create_bd_addr_seg -range 0x00001000 -offset 0x42C00000 [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs axi_uartlite_0/S_AXI/Reg] SEG_WR_UART_Reg
-  create_bd_addr_seg -range 0x00004000 -offset 0x40040000 [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs dma/axi_dma_eth_internal/S_AXI_LITE/Reg] SEG_axi_dma_eth_internal_Reg
-  create_bd_addr_seg -range 0x00010000 -offset 0x43D80000 [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs axi_iic_0/S_AXI/Reg] SEG_axi_iic_0_Reg
-  create_bd_addr_seg -range 0x00001000 -offset 0x42100000 [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs jtag_0/S_AXI/reg0] SEG_jtag_0_reg0
-  create_bd_addr_seg -range 0x00001000 -offset 0x42200000 [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs jtag_1/S_AXI/reg0] SEG_jtag_1_reg0
-  create_bd_addr_seg -range 0x00004000 -offset 0x40050000 [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs m_axi_eth_internal/Reg] SEG_m_axi_eth_internal_Reg
-  create_bd_addr_seg -range 0x40000000 -offset 0x00000000 [get_bd_addr_spaces dma/axi_dma_eth_internal/Data_SG] [get_bd_addr_segs processing_system7_0/S_AXI_HP0/HP0_DDR_LOWOCM] SEG_processing_system7_0_HP0_DDR_LOWOCM
-  create_bd_addr_seg -range 0x40000000 -offset 0x00000000 [get_bd_addr_spaces dma/axi_dma_eth_internal/Data_S2MM] [get_bd_addr_segs processing_system7_0/S_AXI_HP2/HP2_DDR_LOWOCM] SEG_processing_system7_0_HP2_DDR_LOWOCM
-  create_bd_addr_seg -range 0x40000000 -offset 0x00000000 [get_bd_addr_spaces dma/axi_dma_eth_internal/Data_MM2S] [get_bd_addr_segs processing_system7_0/S_AXI_HP3/HP3_DDR_LOWOCM] SEG_processing_system7_0_HP3_DDR_LOWOCM
-  create_bd_addr_seg -range 0x40000000 -offset 0x00000000 [get_bd_addr_spaces S_AXI_GP0] [get_bd_addr_segs processing_system7_0/S_AXI_HP0/HP0_DDR_LOWOCM] SEG_processing_system7_0_GP0_DDR_LOWOCM
-  create_bd_addr_seg -range 0x40000000 -offset 0x00000000 [get_bd_addr_spaces S_AXI_GP1] [get_bd_addr_segs processing_system7_0/S_AXI_HP1/HP1_DDR_LOWOCM] SEG_processing_system7_0_GP1_DDR_LOWOCM
-  create_bd_addr_seg -range 0x40000000 -offset 0x00000000 [get_bd_addr_spaces S_AXI_HP0] [get_bd_addr_segs processing_system7_0/S_AXI_HP0/HP0_DDR_LOWOCM] SEG_processing_system7_0_HP0_DDR_LOWOCM
-  create_bd_addr_seg -range 0x40000000 -offset 0x00000000 [get_bd_addr_spaces S_AXI_HP1] [get_bd_addr_segs processing_system7_0/S_AXI_HP1/HP1_DDR_LOWOCM] SEG_processing_system7_0_HP1_DDR_LOWOCM
+  assign_bd_address -offset 0x40000000 -range 0x00004000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs M_AXI_ETH_DMA0/Reg] -force
+  assign_bd_address -offset 0x40008000 -range 0x00004000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs M_AXI_ETH_DMA1/Reg] -force
+  assign_bd_address -offset 0x40014000 -range 0x00004000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs M_AXI_JESD0/Reg] -force
+  assign_bd_address -offset 0x40018000 -range 0x00004000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs M_AXI_JESD1/Reg] -force
+  assign_bd_address -offset 0x40004000 -range 0x00004000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs M_AXI_NET0/Reg] -force
+  assign_bd_address -offset 0x4000C000 -range 0x00004000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs M_AXI_NET1/Reg] -force
+  assign_bd_address -offset 0x40020000 -range 0x00020000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs M_AXI_NET2/Reg] -force
+  assign_bd_address -offset 0x43D40000 -range 0x00040000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs M_AXI_WR/Reg] -force
+  assign_bd_address -offset 0x40010000 -range 0x00004000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs M_AXI_XBAR/Reg] -force
+  assign_bd_address -offset 0x40040000 -range 0x00004000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs dma/axi_dma_eth_internal/S_AXI_LITE/Reg] -force
+  assign_bd_address -offset 0x43D80000 -range 0x00010000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs axi_iic_0/S_AXI/Reg] -force
+  assign_bd_address -offset 0x42C00000 -range 0x00001000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs axi_uartlite_0/S_AXI/Reg] -force
+  assign_bd_address -offset 0x42100000 -range 0x00001000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs jtag_0/S_AXI/reg0] -force
+  assign_bd_address -offset 0x42200000 -range 0x00001000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs jtag_1/S_AXI/reg0] -force
+  assign_bd_address -offset 0x40050000 -range 0x00004000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs m_axi_eth_internal/Reg] -force
+  assign_bd_address -offset 0x00000000 -range 0x40000000 -target_address_space [get_bd_addr_spaces dma/axi_dma_eth_internal/Data_SG] [get_bd_addr_segs processing_system7_0/S_AXI_HP0/HP0_DDR_LOWOCM] -force
+  assign_bd_address -offset 0x00000000 -range 0x40000000 -target_address_space [get_bd_addr_spaces dma/axi_dma_eth_internal/Data_S2MM] [get_bd_addr_segs processing_system7_0/S_AXI_HP2/HP2_DDR_LOWOCM] -force
+  assign_bd_address -offset 0x00000000 -range 0x40000000 -target_address_space [get_bd_addr_spaces dma/axi_dma_eth_internal/Data_MM2S] [get_bd_addr_segs processing_system7_0/S_AXI_HP3/HP3_DDR_LOWOCM] -force
+  assign_bd_address -offset 0x00000000 -range 0x40000000 -target_address_space [get_bd_addr_spaces S_AXI_GP0] [get_bd_addr_segs processing_system7_0/S_AXI_HP0/HP0_DDR_LOWOCM] -force
+  assign_bd_address -offset 0x00000000 -range 0x40000000 -target_address_space [get_bd_addr_spaces S_AXI_HP0] [get_bd_addr_segs processing_system7_0/S_AXI_HP0/HP0_DDR_LOWOCM] -force
+  assign_bd_address -offset 0x00000000 -range 0x40000000 -target_address_space [get_bd_addr_spaces S_AXI_GP1] [get_bd_addr_segs processing_system7_0/S_AXI_HP1/HP1_DDR_LOWOCM] -force
+  assign_bd_address -offset 0x00000000 -range 0x40000000 -target_address_space [get_bd_addr_spaces S_AXI_HP1] [get_bd_addr_segs processing_system7_0/S_AXI_HP1/HP1_DDR_LOWOCM] -force
 
 
   # Restore current instance
@@ -1351,4 +1347,5 @@ proc create_root_design { parentCell } {
 ##################################################################
 
 create_root_design ""
+
 
