@@ -92,3 +92,25 @@ steps:
     make install
   displayName: Install uhd to uhdBuildDir-installed
   condition: and(succeeded(), ${{ parameters.uhdGenerateTestBinaries }})
+
+# init_usrp is an example for how to write third-party apps using CMake that
+# link against UHD. This will test the UHDConfig.cmake (and related) CMake
+# files, as well as the example. We can only do this if UHD was previously
+# installed.
+# We need to match the install prefix with the previous step in order to find
+# UHDConfig.cmake.
+- script: |
+    export EXAMPLE_BUILD_DIR="${{ parameters.uhdBuildDir }}/build_init_usrp"
+    export EXAMPLE_SRC_DIR="${{ parameters.uhdSrcDir }}/host/examples/init_usrp"
+    mkdir -p $EXAMPLE_BUILD_DIR
+    cd $EXAMPLE_BUILD_DIR
+    if [[ "${{ parameters.uhdCustomBoostPackage }}" = "True" ]]; then
+      export BOOST_CMAKE_DIR=$(dirname `find $(build_boost_step.CustomBoostPath)/stage/lib -name BoostConfig.cmake`)
+      export EXAMPLE_CMAKE_OPTIONS="-DBoost_INCLUDE_DIR=$(build_boost_step.CustomBoostPath) -DBoost_DIR=$BOOST_CMAKE_DIR -DBoost_LIBRARY_DIRS=$(build_boost_step.CustomBoostPath)/stage/lib $EXAMPLE_CMAKE_OPTIONS"
+    fi
+    cmake \
+      -DCMAKE_INSTALL_PREFIX=${{ parameters.uhdBuildDir }}-installed \
+      $EXAMPLE_CMAKE_OPTIONS $EXAMPLE_SRC_DIR && \
+      make -j$(nproc) -k
+  displayName: Build init_usrp
+  condition: and(succeeded(), ${{ parameters.uhdGenerateTestBinaries }})
