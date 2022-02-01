@@ -1061,6 +1061,8 @@ public:
             return this->get_rx_subdev_spec(current_mboard);
         }, [this](uhd::usrp::subdev_spec_t current_spec, size_t current_mboard) {
             return this->_generate_mboard_rx_chans(current_spec, current_mboard);
+        }, [](uhd::rfnoc::graph_edge_t edge) {
+            return block_id_t(edge.dst_blockid).match(NODE_ID_SEP);
         }, spec, mboard);
     }
 
@@ -1658,6 +1660,8 @@ public:
             return this->get_tx_subdev_spec(current_mboard);
         }, [this](uhd::usrp::subdev_spec_t current_spec, size_t current_mboard) {
             return this->_generate_mboard_tx_chans(current_spec, current_mboard);
+        }, [](uhd::rfnoc::graph_edge_t edge) {
+            return block_id_t(edge.src_blockid).match(NODE_ID_SEP);
         }, spec, mboard);
     }
 
@@ -2422,11 +2426,12 @@ private:
         return edges;
     }
 
-    template<typename ChanType, typename GetSubdevSpecFn, typename GenChansFn>
+    template<typename ChanType, typename GetSubdevSpecFn, typename GenChansFn, typename CheckEdgeForSepFn>
     void _set_subdev_spec(
-        std::unordered_map<size_t, ChanType> chans,
+        std::unordered_map<size_t, ChanType>& chans,
         GetSubdevSpecFn&& get_subdev_spec,
         GenChansFn&& generate_chans,
+        CheckEdgeForSepFn&& check_edge_for_sep,
         const uhd::usrp::subdev_spec_t& spec,
         size_t mboard)
     {
@@ -2463,7 +2468,7 @@ private:
         UHD_LOG_TRACE("MULTI_USRP", "Disconnecting chains");
         for (auto entry : chans) {
             for (auto edge : entry.second.edge_list) {
-                if (block_id_t(edge.src_blockid).match(NODE_ID_SEP)) {
+                if (check_edge_for_sep(edge)) {
                     break;
                 }
                 _graph->disconnect(
