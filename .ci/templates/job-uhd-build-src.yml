@@ -65,33 +65,33 @@ jobs:
   - ${{ if eq(parameters.toolset, 'make') }}:
     - template: steps-build-uhd-make.yml
       parameters:
-        uhdSrcDir: ../../../s
+        uhdSrcDir: $(Build.SourcesDirectory)
         uhdBuildDir: $(Build.BinariesDirectory)/uhddev/build
         uhdGenerateTestBinaries: true
 
   - ${{ if eq(parameters.toolset, 'make_trace') }}:
     - template: steps-build-uhd-make.yml
       parameters:
-        uhdSrcDir: ../../../s
+        uhdSrcDir: $(Build.SourcesDirectory)
         uhdBuildDir: $(Build.BinariesDirectory)/uhddev/build
         uhdEnableTraceLog: true
 
   - ${{ if eq(parameters.toolset, 'make_homebrew_macos') }}:
     - template: steps-build-uhd-make-homebrew-macos.yml
       parameters:
-        uhdSrcDir: ../../../s
+        uhdSrcDir: $(Build.SourcesDirectory)
         uhdBuildDir: $(Build.BinariesDirectory)/uhddev/build
 
   - ${{ if eq(parameters.toolset, 'ninja') }}:
     - template: steps-build-uhd-ninja.yml
       parameters:
-        uhdSrcDir: ../../../s
+        uhdSrcDir: $(Build.SourcesDirectory)
         uhdBuildDir: $(Build.BinariesDirectory)/uhddev/build
 
   - ${{ if eq(parameters.toolset, 'msbuild') }}:
     - template: steps-build-uhd-msbuild.yml
       parameters:
-        uhdSrcDir: ../../../s
+        uhdSrcDir: $(Build.SourcesDirectory)
         uhdBuildDir: $(Build.BinariesDirectory)\\uhddev\\build
         uhdImageDir: $(Build.BinariesDirectory)\\uhd-images
         uhdReleaseBinaries: ${{ parameters.release_binaries }}
