@@ -54,7 +54,7 @@ $(IP_FIFO_SHORT_2CLK_SRCS) \
 include $(BASE_DIR)/../sim/general/Makefile.srcs
 include $(BASE_DIR)/../sim/axi/Makefile.srcs
 
-MODELSIM_LIBS += unisims_ver secureip fifo_generator_v13_2_4
+MODELSIM_LIBS += unisims_ver secureip fifo_generator_v13_2_5
 
 # Define only one top-level module
 SIM_TOP = cat_io_lvds_dual_mode_tb glbl

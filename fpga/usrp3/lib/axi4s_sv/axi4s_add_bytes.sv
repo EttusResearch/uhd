@@ -83,11 +83,11 @@ module axi4s_add_bytes #(
   logic reached_start;
   logic reached_end;
   logic byte_overflow;
-  logic [s0.DATA_WIDTH-1:0] zero_data;
-  logic [s0.DATA_WIDTH-1:0] last_tdata;
-  logic [s0.DATA_WIDTH-1:0] remaining_shift_data;
-  logic [s0.DATA_WIDTH-1:0] last_shift_data;
-  logic [s0.DATA_WIDTH-1:0] first_shifted_data;
+  logic [i.DATA_WIDTH-1:0] zero_data;
+  logic [i.DATA_WIDTH-1:0] last_tdata;
+  logic [i.DATA_WIDTH-1:0] remaining_shift_data;
+  logic [i.DATA_WIDTH-1:0] last_shift_data;
+  logic [i.DATA_WIDTH-1:0] first_shifted_data;
 
   logic error_bit, error_bit_old;
 

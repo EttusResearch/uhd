@@ -17,7 +17,7 @@
 
 
 module rfnoc_block_addsub_tb #(
-  parameter string USE_IMPL = "Verilog"
+  parameter USE_IMPL = "Verilog"
 );
 
   `include "test_exec.svh"
