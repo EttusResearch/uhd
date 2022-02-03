@@ -8,7 +8,7 @@ steps:
 - script: |
     pyenv exec python3 -m venv ${{ parameters.uhdBuildDir }}/pyenv
     source ${{ parameters.uhdBuildDir }}/pyenv/bin/activate
-    python3 -m pip install mako
+    python3 -m pip install mako numpy requests ruamel.yaml
   displayName: Install python UHD deps
 
 - script: |
