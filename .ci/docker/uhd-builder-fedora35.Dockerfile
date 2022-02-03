@@ -48,7 +48,7 @@ RUN dnf install -y \
         log4cpp-devel \
         zeromq-devel \
         cppzmq-devel \
-        python3-yaml \
+        python3-ruamel-yaml \
         python3-click \
         python3-click-plugins \
         python3-zmq \
