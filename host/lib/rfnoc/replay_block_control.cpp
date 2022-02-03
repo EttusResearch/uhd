@@ -129,6 +129,7 @@ public:
         _record_type.reserve(_num_input_ports);
         _record_offset.reserve(_num_input_ports);
         _record_size.reserve(_num_input_ports);
+        _atomic_item_size_in.reserve(_num_input_ports);
         for (size_t port = 0; port < _num_input_ports; port++) {
             _register_input_props(port);
             _replay_reg_iface.poke64(
@@ -137,11 +138,13 @@ public:
                 REG_REC_BUFFER_SIZE_LO_ADDR, _record_size.at(port).get(), port);
         }
 
+
         // Initialize playback properties
         _play_type.reserve(_num_output_ports);
         _play_offset.reserve(_num_output_ports);
         _play_size.reserve(_num_output_ports);
         _packet_size.reserve(_num_output_ports);
+        _atomic_item_size_out.reserve(_num_output_ports);
         for (size_t port = 0; port < _num_output_ports; port++) {
             _register_output_props(port);
             _replay_reg_iface.poke32(REG_PLAY_ITEM_SIZE_ADDR,
@@ -374,14 +377,18 @@ private:
             PROP_KEY_RECORD_OFFSET, record_offset, {res_source_info::USER, port}));
         _record_size.push_back(property_t<uint64_t>(
             PROP_KEY_RECORD_SIZE, record_size, {res_source_info::USER, port}));
+        _atomic_item_size_in.push_back(property_t<size_t>(
+            PROP_KEY_ATOMIC_ITEM_SIZE, _word_size, {res_source_info::INPUT_EDGE, port}));
         UHD_ASSERT_THROW(_record_type.size() == port + 1);
         UHD_ASSERT_THROW(_record_offset.size() == port + 1);
         UHD_ASSERT_THROW(_record_size.size() == port + 1);
+        UHD_ASSERT_THROW(_atomic_item_size_in.size() == port + 1);
 
         // Register user properties
         register_property(&_record_type.at(port));
         register_property(&_record_offset.at(port));
         register_property(&_record_size.at(port));
+        register_property(&_atomic_item_size_in.at(port));
 
         // Add property resolvers
         add_property_resolver({&_record_offset.at(port)}, {}, [this, port]() {
@@ -390,6 +397,18 @@ private:
         add_property_resolver({&_record_size.at(port)},
             {&_record_size.at(port)},
             [this, port]() { _set_record_size(_record_size.at(port).get(), port); });
+        add_property_resolver({&_atomic_item_size_in.back(),
+                                  get_mtu_prop_ref({res_source_info::INPUT_EDGE, port})},
+            {&_atomic_item_size_in.back()},
+            [this, port, &ais_in = _atomic_item_size_in.back()]() {
+                ais_in = uhd::math::lcm<size_t>(ais_in, get_word_size());
+                ais_in = std::min<size_t>(
+                    ais_in, get_mtu({res_source_info::INPUT_EDGE, port}));
+                if (ais_in.get() % get_word_size() > 0) {
+                    ais_in = ais_in - (ais_in.get() % get_word_size());
+                }
+                RFNOC_LOG_TRACE("Resolve atomic item size in to " << ais_in);
+            });
     }
 
     void _register_output_props(const size_t port)
@@ -409,16 +428,20 @@ private:
             PROP_KEY_PLAY_SIZE, play_size, {res_source_info::USER, port}));
         _packet_size.push_back(property_t<uint32_t>(
             PROP_KEY_PKT_SIZE, packet_size, {res_source_info::USER, port}));
+        _atomic_item_size_out.push_back(property_t<size_t>(
+            PROP_KEY_ATOMIC_ITEM_SIZE, _word_size, {res_source_info::OUTPUT_EDGE, port}));
         UHD_ASSERT_THROW(_play_type.size() == port + 1);
         UHD_ASSERT_THROW(_play_offset.size() == port + 1);
         UHD_ASSERT_THROW(_play_size.size() == port + 1);
         UHD_ASSERT_THROW(_packet_size.size() == port + 1);
+        UHD_ASSERT_THROW(_atomic_item_size_out.size() == port + 1);
 
         // Register user properties
         register_property(&_play_type.at(port));
         register_property(&_play_offset.at(port));
         register_property(&_play_size.at(port));
         register_property(&_packet_size.at(port));
+        register_property(&_atomic_item_size_out.at(port));
 
         // Add property resolvers
         add_property_resolver({&_play_type.at(port)}, {}, [this, port]() {
@@ -434,6 +457,18 @@ private:
                                   get_mtu_prop_ref({res_source_info::OUTPUT_EDGE, port})},
             {},
             [this, port]() { _set_packet_size(_packet_size.at(port).get(), port); });
+        add_property_resolver({&_atomic_item_size_out.back(),
+                                  get_mtu_prop_ref({res_source_info::OUTPUT_EDGE, port})},
+            {&_atomic_item_size_out.back()},
+            [this, port, &ais_out = _atomic_item_size_out.back()]() {
+                ais_out = uhd::math::lcm<size_t>(ais_out, get_word_size());
+                ais_out = std::min<size_t>(
+                    ais_out, get_mtu({res_source_info::OUTPUT_EDGE, port}));
+                if (ais_out.get() % get_word_size() > 0) {
+                    ais_out = ais_out - (ais_out.get() % get_word_size());
+                }
+                RFNOC_LOG_TRACE("Resolve atomic item size out to " << ais_out);
+            });
     }
 
     void _set_play_type(const io_type_t type, const size_t port)
@@ -568,6 +603,8 @@ private:
     std::vector<property_t<uint64_t>> _play_offset;
     std::vector<property_t<uint64_t>> _play_size;
     std::vector<property_t<uint32_t>> _packet_size;
+    std::vector<property_t<size_t>> _atomic_item_size_in;
+    std::vector<property_t<size_t>> _atomic_item_size_out;
 };
 
 UHD_RFNOC_BLOCK_REGISTER_DIRECT(
