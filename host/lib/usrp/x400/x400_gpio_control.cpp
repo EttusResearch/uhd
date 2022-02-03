@@ -151,8 +151,7 @@ uint32_t uhd::rfnoc::x400::x400_gpio_port_mapping::map_value(const uint32_t& val
         }
     }
     throw uhd::lookup_error(
-        "Could not find corresponding GPIO pin number for given SPI pin " + value);
-    return 0;
+        std::string("Could not find corresponding GPIO pin number for given SPI pin ") + std::to_string(value));
 }
 
 uint32_t uhd::rfnoc::x400::x400_gpio_port_mapping::unmap_value(const uint32_t& value)

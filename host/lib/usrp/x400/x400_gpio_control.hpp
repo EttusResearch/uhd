@@ -21,6 +21,8 @@ class x400_gpio_port_mapping : public uhd::mapper::gpio_port_mapper
 public:
     x400_gpio_port_mapping(){};
 
+    virtual ~x400_gpio_port_mapping() = default;
+
     uint32_t map_value(const uint32_t& value) override;
 
     uint32_t unmap_value(const uint32_t& value) override;
