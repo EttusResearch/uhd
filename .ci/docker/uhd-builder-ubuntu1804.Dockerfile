@@ -57,7 +57,7 @@ RUN apt-get update && \
         python3-pyqt5 \
         liblog4cpp5-dev \
         libzmq3-dev \
-        python3-yaml \
+        python3-ruamel.yaml \
         python3-click \
         python3-click-plugins \
         python3-zmq \
