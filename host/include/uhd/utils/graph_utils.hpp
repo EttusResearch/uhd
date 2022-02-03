@@ -53,13 +53,20 @@ std::vector<graph_edge_t> UHD_API get_block_chain(const rfnoc_graph::sptr graph,
 
 /*! Connect desired blocks by whatever path that can be found
  *
+ * This will find the most direct path from a source block to a destination
+ * block. If these blocks are statically connected it will simply call connect()
+ * on all intermediate connections. If not, it will create a dynamic connection
+ * between stream endpoints. If this is not possible, an exception is thrown.
+ *
  *  \param graph The rfnoc_graph that is being examined
  *  \param src_blk Source block's ID
  *  \param src_port Block port where the path starts
  *  \param dst_blk Destination block's ID
  *  \param dst_port Block port where the path ends
+ *
+ *  \return The edge list representing the data path requested
  */
-void UHD_API connect_through_blocks(rfnoc_graph::sptr graph,
+std::vector<graph_edge_t> UHD_API connect_through_blocks(rfnoc_graph::sptr graph,
     const block_id_t src_blk,
     const size_t src_port,
     const block_id_t dst_blk,

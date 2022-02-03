@@ -83,7 +83,7 @@ std::vector<graph_edge_t> get_block_chain(const rfnoc_graph::sptr graph,
 }
 
 
-void connect_through_blocks(rfnoc_graph::sptr graph,
+std::vector<graph_edge_t> connect_through_blocks(rfnoc_graph::sptr graph,
     const block_id_t src_blk,
     const size_t src_port,
     const block_id_t dst_blk,
@@ -159,6 +159,7 @@ void connect_through_blocks(rfnoc_graph::sptr graph,
         UHD_LOG_TRACE("GRAPH_UTILS", err_msg);
         throw uhd::runtime_error("[graph_utils] " + err_msg);
     }
+    return block_chain;
 }
 
 }} // namespace uhd::rfnoc
