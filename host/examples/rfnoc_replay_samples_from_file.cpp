@@ -31,7 +31,7 @@ namespace po = boost::program_options;
 
 using std::cout;
 using std::endl;
-
+using namespace std::chrono_literals;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -50,11 +50,6 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     // and is not aware of the CPU or wire format.
     std::string wire_format("sc16");
     std::string cpu_format("sc16");
-
-    // Constants related to the Replay block
-    const size_t replay_word_size = 8; // Size of words used by replay block
-    const size_t sample_size      = 4; // Complex signed 16-bit is 32 bits per sample
-    const size_t samples_per_word = 2; // Number of sc16 samples per word
 
     /************************************************************************
      * Set up the program options
@@ -103,46 +98,62 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
      ***********************************************************************/
     std::cout << std::endl;
     std::cout << "Creating the RFNoC graph with args: " << args << "..." << std::endl;
-    uhd::rfnoc::rfnoc_graph::sptr graph = uhd::rfnoc::rfnoc_graph::make(args);
+    auto graph = uhd::rfnoc::rfnoc_graph::make(args);
 
     // Create handle for radio object
     uhd::rfnoc::block_id_t radio_ctrl_id(0, "Radio", radio_id);
-    uhd::rfnoc::radio_control::sptr radio_ctrl;
-    radio_ctrl = graph->get_block<uhd::rfnoc::radio_control>(radio_ctrl_id);
-    std::cout << "Using radio " << radio_ctrl_id << ", channel " << radio_chan
-              << std::endl;
-
-    // Check for a duc connected to the radio
-    auto edges            = graph->enumerate_static_connections();
-    std::string dst_block = radio_ctrl->get_block_id();
-    size_t dst_port       = radio_chan;
-    uhd::rfnoc::duc_block_control::sptr duc_ctrl;
-    size_t duc_chan = 0;
-    for (auto& edge : edges) {
-        if (edge.dst_blockid == dst_block && edge.dst_port == dst_port) {
-            auto blockid = uhd::rfnoc::block_id_t(edge.src_blockid);
-            if (blockid.match("DUC")) {
-                duc_ctrl = graph->get_block<uhd::rfnoc::duc_block_control>(blockid);
-                duc_chan = edge.src_port;
-            }
-            break;
-        }
-    }
-    if (duc_ctrl) {
-        std::cout << "Using duc " << duc_ctrl->get_block_id() << ", channel " << duc_chan
-                  << std::endl;
-    }
+    auto radio_ctrl = graph->get_block<uhd::rfnoc::radio_control>(radio_ctrl_id);
 
     // Check if the replay block exists on this device
     uhd::rfnoc::block_id_t replay_ctrl_id(0, "Replay", replay_id);
-    uhd::rfnoc::replay_block_control::sptr replay_ctrl;
     if (!graph->has_block(replay_ctrl_id)) {
         cout << "Unable to find block \"" << replay_ctrl_id << "\"" << endl;
         return EXIT_FAILURE;
     }
-    replay_ctrl = graph->get_block<uhd::rfnoc::replay_block_control>(replay_ctrl_id);
-    std::cout << "Using replay " << replay_ctrl_id << ", channel " << replay_chan
+    auto replay_ctrl = graph->get_block<uhd::rfnoc::replay_block_control>(replay_ctrl_id);
+
+    // Connect replay to radio
+    auto edges = uhd::rfnoc::connect_through_blocks(
+        graph, replay_ctrl_id, replay_chan, radio_ctrl_id, radio_chan);
+
+    // Check for a DUC connected to the radio
+    uhd::rfnoc::duc_block_control::sptr duc_ctrl;
+    size_t duc_chan = 0;
+    for (auto& edge : edges) {
+        auto blockid = uhd::rfnoc::block_id_t(edge.dst_blockid);
+        if (blockid.match("DUC")) {
+            duc_ctrl = graph->get_block<uhd::rfnoc::duc_block_control>(blockid);
+            duc_chan = edge.dst_port;
+            break;
+        }
+    }
+
+    // Report blocks
+    std::cout << "Using Radio Block:  " << radio_ctrl_id << ", channel " << radio_chan
               << std::endl;
+    std::cout << "Using Replay Block: " << replay_ctrl_id << ", channel " << replay_chan
+              << std::endl;
+    if (duc_ctrl) {
+        std::cout << "Using DUC Block:    " << duc_ctrl->get_block_id() << ", channel "
+                  << duc_chan << std::endl;
+    }
+
+
+    /************************************************************************
+     * Set up streamer to Replay block and commit graph
+     ***********************************************************************/
+    uhd::device_addr_t streamer_args;
+    uhd::stream_args_t stream_args(cpu_format, wire_format);
+    uhd::tx_streamer::sptr tx_stream;
+    uhd::tx_metadata_t tx_md;
+
+    streamer_args["block_id"]   = replay_ctrl->get_block_id().to_string();
+    streamer_args["block_port"] = std::to_string(replay_chan);
+    stream_args.args            = streamer_args;
+    stream_args.channels        = {replay_chan};
+    tx_stream = graph->create_tx_streamer(stream_args.channels.size(), stream_args);
+    graph->connect(tx_stream, 0, replay_ctrl->get_block_id(), replay_chan);
+    graph->commit();
 
     /************************************************************************
      * Set up radio
@@ -161,13 +172,12 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     }
 
     // Set the center frequency
-    if (not vm.count("freq")) {
+    if (!vm.count("freq")) {
         std::cerr << "Please specify the center frequency with --freq" << std::endl;
         return EXIT_FAILURE;
     }
     std::cout << std::fixed;
-    std::cout << "Setting TX Freq: " << std::fixed << (freq / 1e6) << " MHz..."
-              << std::endl;
+    std::cout << "Requesting TX Freq: " << (freq / 1e6) << " MHz..." << std::endl;
     radio_ctrl->set_tx_frequency(freq, radio_chan);
     std::cout << "Actual TX Freq: " << (radio_ctrl->get_tx_frequency(radio_chan) / 1e6)
               << " MHz..." << std::endl
@@ -177,12 +187,11 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     // Set the sample rate
     if (vm.count("rate")) {
         std::cout << std::fixed;
-        std::cout << "Setting TX Rate: " << (rate / 1e6) << " Msps..." << std::endl;
+        std::cout << "Requesting TX Rate: " << (rate / 1e6) << " Msps..." << std::endl;
         if (duc_ctrl) {
             std::cout << "DUC block found." << std::endl;
             duc_ctrl->set_input_rate(rate, duc_chan);
-            duc_ctrl->set_output_rate(radio_ctrl->get_rate(), duc_chan);
-            std::cout << "Interpolation value is "
+            std::cout << "  Interpolation value is "
                       << duc_ctrl->get_property<int>("interp", duc_chan) << std::endl;
             rate = duc_ctrl->get_input_rate(duc_chan);
         } else {
@@ -196,7 +205,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     // Set the RF gain
     if (vm.count("gain")) {
         std::cout << std::fixed;
-        std::cout << "Setting TX Gain: " << gain << " dB..." << std::endl;
+        std::cout << "Requesting TX Gain: " << gain << " dB..." << std::endl;
         radio_ctrl->set_tx_gain(gain, radio_chan);
         std::cout << "Actual TX Gain: " << radio_ctrl->get_tx_gain(radio_chan) << " dB..."
                   << std::endl
@@ -207,7 +216,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     // Set the analog front-end filter bandwidth
     if (vm.count("bw")) {
         std::cout << std::fixed;
-        std::cout << "Setting TX Bandwidth: " << (bw / 1e6) << " MHz..." << std::endl;
+        std::cout << "Requesting TX Bandwidth: " << (bw / 1e6) << " MHz..." << std::endl;
         radio_ctrl->set_tx_bandwidth(bw, radio_chan);
         std::cout << "Actual TX Bandwidth: "
                   << (radio_ctrl->get_tx_bandwidth(radio_chan) / 1e6) << " MHz..."
@@ -222,62 +231,19 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     }
 
     // Allow for some setup time
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
-
-    /************************************************************************
-     * Connect Replay block to Radio
-     ***********************************************************************/
-    UHD_LOG_INFO("TEST", "Creating graph...");
-    if (duc_ctrl) {
-        graph->connect(
-            duc_ctrl->get_block_id(), duc_chan, radio_ctrl->get_block_id(), radio_chan);
-        graph->connect(
-            replay_ctrl->get_block_id(), replay_chan, duc_ctrl->get_block_id(), duc_chan);
-    } else {
-        graph->connect(replay_ctrl->get_block_id(),
-            replay_chan,
-            radio_ctrl->get_block_id(),
-            radio_chan);
-    }
-    UHD_LOG_INFO("TEST", "Committing graph...");
-    graph->commit();
-    UHD_LOG_INFO("TEST", "Commit complete.");
-
-
-    /************************************************************************
-     * Set up streamer to Replay block
-     ***********************************************************************/
-    uhd::device_addr_t streamer_args;
-    uhd::stream_args_t stream_args(cpu_format, wire_format);
-    uhd::tx_streamer::sptr tx_stream;
-    uhd::tx_metadata_t tx_md;
-
-    streamer_args["block_id"]   = replay_ctrl->get_block_id().to_string();
-    streamer_args["block_port"] = std::to_string(replay_chan);
-    stream_args.args            = streamer_args;
-    stream_args.channels        = {replay_chan};
-    tx_stream = graph->create_tx_streamer(stream_args.channels.size(), stream_args);
-    graph->connect(tx_stream, 0, replay_ctrl->get_block_id(), replay_chan);
-    graph->commit();
-
-    // Make sure that streamer SPP is a multiple of the Replay block word size
-    size_t tx_spp = tx_stream->get_max_num_samps();
-    if (tx_spp % samples_per_word != 0) {
-        // Round SPP down to a multiple of the word size
-        tx_spp = (tx_spp / samples_per_word) * samples_per_word;
-        tx_stream.reset();
-        streamer_args["spp"] = std::to_string(tx_spp);
-        stream_args.args     = streamer_args;
-        tx_stream = graph->create_tx_streamer(stream_args.channels.size(), stream_args);
-        graph->connect(tx_stream, replay_chan, replay_ctrl->get_block_id(), replay_chan);
-        graph->commit();
-    }
 
 
     /************************************************************************
      * Read the data to replay
      ***********************************************************************/
+    // Constants related to the Replay block
+    const size_t replay_word_size =
+        replay_ctrl->get_word_size(); // Size of words used by replay block
+    const size_t sample_size = 4; // Complex signed 16-bit is 32 bits per sample
+
+
     // Open the file
     std::ifstream infile(file.c_str(), std::ifstream::binary);
     if (!infile.is_open()) {
@@ -331,35 +297,33 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     uint32_t fullness;
     cout << "Emptying record buffer..." << endl;
     do {
-        std::chrono::system_clock::time_point start_time;
-        std::chrono::system_clock::duration time_diff;
-
         replay_ctrl->record_restart(replay_chan);
 
         // Make sure the record buffer doesn't start to fill again
-        start_time = std::chrono::system_clock::now();
+        auto start_time = std::chrono::steady_clock::now();
         do {
             fullness = replay_ctrl->get_record_fullness(replay_chan);
             if (fullness != 0)
                 break;
-            time_diff = std::chrono::system_clock::now() - start_time;
-            time_diff = std::chrono::duration_cast<std::chrono::milliseconds>(time_diff);
-        } while (time_diff.count() < 250);
+        } while (start_time + 250ms > std::chrono::steady_clock::now());
     } while (fullness);
     cout << "Record fullness:      " << replay_ctrl->get_record_fullness(replay_chan)
          << " bytes" << endl
          << endl;
 
     /************************************************************************
-     * Send data to replay (record the data)
+     * Send data to replay (== record the data)
      ***********************************************************************/
     cout << "Sending data to be recorded..." << endl;
     tx_md.start_of_burst = true;
     tx_md.end_of_burst   = true;
-    size_t num_tx_samps  = tx_stream->send(tx_buf_ptr, samples_to_replay, tx_md);
-
+    // We use a very big timeout here, any network buffering issue etc. is not
+    // a problem for this application, and we want to upload all the data in one
+    // send() call.
+    size_t num_tx_samps = tx_stream->send(tx_buf_ptr, samples_to_replay, tx_md, 5.0);
     if (num_tx_samps != samples_to_replay) {
-        cout << "ERROR: Unable to send " << samples_to_replay << " samples" << endl;
+        cout << "ERROR: Unable to send " << samples_to_replay << " samples (sent "
+             << num_tx_samps << ")" << endl;
         return EXIT_FAILURE;
     }
 
@@ -367,8 +331,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
      * Wait for data to be stored in on-board memory
      ***********************************************************************/
     cout << "Waiting for recording to complete..." << endl;
-    while (replay_ctrl->get_record_fullness(replay_chan) < replay_buff_size)
-        ;
+    while (replay_ctrl->get_record_fullness(replay_chan) < replay_buff_size) {
+        std::this_thread::sleep_for(50ms);
+    }
     cout << "Record fullness:      " << replay_ctrl->get_record_fullness(replay_chan)
          << " bytes" << endl
          << endl;
@@ -379,12 +344,25 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
      ***********************************************************************/
     if (nsamps <= 0) {
         // Replay the entire buffer over and over
-        bool repeat = true;
+        const bool repeat = true;
         cout << "Issuing replay command for " << samples_to_replay
              << " samps in continuous mode..." << endl;
         uhd::time_spec_t time_spec = uhd::time_spec_t(0.0);
         replay_ctrl->play(
             replay_buff_addr, replay_buff_size, replay_chan, time_spec, repeat);
+        /** Wait until user says to stop **/
+        // Setup SIGINT handler (Ctrl+C)
+        std::signal(SIGINT, &sig_int_handler);
+        cout << "Replaying data (Press Ctrl+C to stop)..." << endl;
+        while (not stop_signal_called) {
+            std::this_thread::sleep_for(100ms);
+        }
+        // Remove SIGINT handler
+        std::signal(SIGINT, SIG_DFL);
+        cout << endl << "Stopping replay..." << endl;
+        replay_ctrl->stop(replay_chan);
+        std::cout << "Letting device settle..." << std::endl;
+        std::this_thread::sleep_for(1s);
     } else {
         // Replay nsamps, wrapping back to the start of the buffer if nsamps is
         // larger than the buffer size.
@@ -394,30 +372,12 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         cout << "Issuing replay command for " << nsamps << " samps..." << endl;
         stream_cmd.stream_now = true;
         replay_ctrl->issue_stream_cmd(stream_cmd, replay_chan);
+        std::cout << "Waiting until replay buffer is clear..." << std::endl;
+        const double stream_duration = static_cast<double>(nsamps) / rate;
+        std::this_thread::sleep_for(
+            std::chrono::milliseconds(static_cast<int64_t>(stream_duration * 1000))
+            + 500ms); // Slop factor
     }
-
-
-    /************************************************************************
-     * Wait until user says to stop
-     ***********************************************************************/
-    // Setup SIGINT handler (Ctrl+C)
-    std::signal(SIGINT, &sig_int_handler);
-    cout << "Replaying data (Press Ctrl+C to stop)..." << endl;
-
-    while (not stop_signal_called)
-        ;
-
-    // Remove SIGINT handler
-    std::signal(SIGINT, SIG_DFL);
-
-
-    /************************************************************************
-     * Issue stop command
-     ***********************************************************************/
-    cout << endl << "Stopping replay..." << endl;
-    replay_ctrl->stop(replay_chan);
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     return EXIT_SUCCESS;
 }
