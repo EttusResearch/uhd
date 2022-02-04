@@ -47,7 +47,7 @@ endfunction(CHECK_WORKING_CXX_BOOST_ATOMICS)
 
 macro(CHECK_ATOMICS_LIB_REQUIRED required_var)
     set(${required_var} FALSE)
-    if(MSVC)
+    if(APPLE OR MSVC)
         set(${required_var} FALSE)
     else()
         # First check if atomics work without the library.
