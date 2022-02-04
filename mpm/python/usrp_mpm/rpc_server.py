@@ -87,6 +87,8 @@ class MPMServer(RPCServer):
                 to_binary_str(device_info.get("product", "n/a"))
         self._state.dev_serial.value = \
                 to_binary_str(device_info.get("serial", "n/a"))
+        self._state.dev_name.value = \
+                to_binary_str(device_info.get("name", "n/a"))
         self._state.dev_fpga_type.value = \
                 to_binary_str(device_info.get("fpga", "n/a"))
         self._db_methods = []
