@@ -61,8 +61,7 @@ def _discovery_process(state, discovery_addr):
     # FIXME really, we should only bind to the subnet but I haven't gotten that
     # working yet
     sock.bind((("0.0.0.0", MPM_DISCOVERY_PORT)))
-    send_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    send_sock.setsockopt(socket.IPPROTO_IP, IP_MTU_DISCOVER, IP_PMTUDISC_DO)
+    sock.setsockopt(socket.IPPROTO_IP, IP_MTU_DISCOVER, IP_PMTUDISC_DO)
 
     # TODO yeah I know that's not how you do this
     discovery_addr_prefix = discovery_addr.replace('.255', '')
@@ -82,17 +81,16 @@ def _discovery_process(state, discovery_addr):
                 resp_str = create_response_string(state)
                 send_data = resp_str
                 log.trace("Return data: %s", send_data)
-                send_sock.sendto(send_data, sender)
+                sock.sendto(send_data, sender)
             elif data.strip(b"\0").startswith(b"MPM-ECHO"):
                 log.debug("Received echo request from {sender}"
                           .format(sender=sender[0]))
                 send_data = data
                 try:
-                    send_sock.sendto(send_data, sender)
+                    sock.sendto(send_data, sender)
                 except OSError as ex:
                     log.warning("ECHO send error: %s", str(ex))
     except Exception as err:
         log.error("Unexpected error: `%s' Type: `%s'", str(err), type(err))
         sock.close()
-        send_sock.close()
         exit(1)
