@@ -79,6 +79,7 @@ pr:
   paths:
     include:
     - host
+    - mpm
     - .ci
     - images/manifest.txt
     exclude:
