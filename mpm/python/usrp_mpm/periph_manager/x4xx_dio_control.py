@@ -314,6 +314,20 @@ class DioControl:
     # --------------------------------------------------------------------------
     # Helper methods
     # --------------------------------------------------------------------------
+    def _delinearize_pin(self, port, pin):
+        """
+        Converts a pin from the compacted range [0-11] to the expanded range
+        given by the current mapping (0-19 for HDMI, 0-11 for DIO). Note that
+        this does not perform the mapping to the register bit, that is
+        handled by _map_to_register_bit.
+        :param port: port to delinearize
+        :param pin: pin (in compacted [0-11] form)
+        :return: pin in appropriate range for the current mapping
+        """
+        port = self._normalize_port_name(port)
+        pins = sorted(self.mapping.map[port])
+        return pins[pin]
+
     def _map_to_register_bit(self, port, pin, lift_portb = True):
         """
         Maps a pin denoted in current mapping scheme to a corresponding bit in
@@ -565,7 +579,16 @@ class DioControl:
                 else:
                     return self.X4XX_GPIO_SRC_USER_APP
 
-        return [get_gpio_src_i(self._map_to_register_bit(bank, i, False)) for i in range(self.X4XX_GPIO_WIDTH)]
+        return [
+            get_gpio_src_i(
+                self._map_to_register_bit(
+                    bank,
+                    self._delinearize_pin(bank, i),
+                    False
+                )
+            )
+            for i in range(self.X4XX_GPIO_WIDTH)
+        ]
 
     def set_gpio_src(self, bank: str, src):
         """
@@ -606,7 +629,11 @@ class DioControl:
             self, bank, self.RADIO_DIO_CLASSIC_ATR_CONFIG_REGISTER)
 
         for pin_index, src_name in enumerate(src):
-            pin_index = self._map_to_register_bit(bank, pin_index, False)
+            pin_index = self._map_to_register_bit(
+                bank,
+                self._delinearize_pin(bank, pin_index),
+                False
+            )
             radio_srcs = [
                 item for sublist in self.X4XX_GPIO_SRC_RADIO for item in sublist]
             if src_name in radio_srcs:
