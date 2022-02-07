@@ -25,7 +25,7 @@ def get_usrp_list(device_filter=None, env=None):
     for uhd_string in uhd_strings:
         if not re.match("Device Address", uhd_string):
             continue
-        this_result = {k: v for k, v in re.findall("    ([a-z]+): (.*)", uhd_string)}
+        this_result = {k: v for k, v in re.findall("    ([a-z_]+): (.*)", uhd_string)}
         if this_result.get('reachable') == "No":
             continue
         args_string = ""
