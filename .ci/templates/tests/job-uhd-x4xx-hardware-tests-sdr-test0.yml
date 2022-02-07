@@ -23,6 +23,7 @@ jobs:
         dutName: 'sdr-test0-x410-0'
         dutType: 'x4xx'
         devtestPattern: 'x4x0'
+        dutFPGA: 'X4_200'
         dutEmbeddedImagesArtifact: 'x4xx-images'
         uartSerial: '2516351FE64E'
         pipelineAgent: sdr-test0
