@@ -126,8 +126,19 @@ jobs:
   # required to make the test runtimes to look sane.
   - script: |
       export HOST_TIME_ZONE=$(cat /etc/timezone)
+      ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "timedatectl set-timezone $HOST_TIME_ZONE"
     displayName: Set timezone to Host
+
+  - script: |
+        sleep 60
+    displayName: Wait for device to finish booting
+
+  - script: |
+        ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
+        ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "uhd_image_loader --args addr=localhost,type=$(dutType),fpga=$(dutFPGA)"
+        sleep 60
+    displayName: Flash FPGA $(dutFPGA)
 
   - script: |
       source $USRP_EMB_VENV/bin/activate
@@ -139,9 +150,6 @@ jobs:
     displayName: Set sfp0 IP
     condition: and(succeeded(), ${{ parameters.runPyTest }})
 
-  - script: |
-        sleep 60
-    displayName: Wait for device to finish booting
 
   - script: |
       mkdir -p $(Common.TestResultsDirectory)/sysimg_tests/sysimg_subsystem_tests
@@ -216,6 +224,7 @@ jobs:
   - script: |
       mkdir -p $(Common.TestResultsDirectory)/pytest/embedded
       cd $(Common.TestResultsDirectory)/pytest/embedded
+      ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "pip3 install --upgrade pytest pytest-helpers-namespace pytest-tempdir pytest-salt"
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "rm -rf ~/usrp_pytest && mkdir -p ~/usrp_pytest"
       scp -o StrictHostKeyChecking=no -r $(Build.SourcesDirectory)/ettus-rts/config/remote/ root@$USRP_EMB_TARGET_IP:~/usrp_pytest
