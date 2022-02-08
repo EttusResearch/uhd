@@ -135,7 +135,6 @@ jobs:
       sourceFolder: $(Build.BinariesDirectory)/uhddev/
       contents: build/Testing/**
       targetFolder: $(Common.TestResultsDirectory)
-    condition: and(succeeded(), ne('${{ parameters.toolset }}', 'make_homebrew_macos'))
     displayName: Copy ${{ parameters.toolset }} ctest results
 
   - task: PublishTestResults@2
@@ -144,5 +143,4 @@ jobs:
       testResultsFiles: $(Common.TestResultsDirectory)/build/Testing/**/Test.xml
       failTaskOnFailedTests: true
       testRunTitle: uhd ctest $(buildOSName)-${{ parameters.toolset }}
-    condition: and(succeeded(), ne('${{ parameters.toolset }}', 'make_homebrew_macos'))
     displayName: Publish $(buildOSName)-${{ parameters.toolset }} ctest results

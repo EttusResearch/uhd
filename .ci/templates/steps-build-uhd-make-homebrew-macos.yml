@@ -25,5 +25,11 @@ steps:
   displayName: make homebrew macOS UHD
 
 - script: |
+    cd ${{ parameters.uhdBuildDir }}
+    ctest --no-compress-output --output-on-failure -T test
+  continueOnError: true
+  displayName: ctest make homebrew macOS UHD
+
+- script: |
     rm -rf ${{ parameters.uhdBuildDir }}/pyenv
   displayName: Delete venv
