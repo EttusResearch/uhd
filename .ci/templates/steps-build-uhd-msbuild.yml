@@ -24,9 +24,14 @@ steps:
       -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALL_DIR%/scripts/buildsystems/vcpkg.cmake
     mkdir ${{ parameters.uhdImageDir }}
     python ${{ parameters.uhdBuildDir }}/utils/uhd_images_downloader.py -i ${{ parameters.uhdImageDir }}
+  displayName: Download uhd-images
+  timeoutInMinutes: 30
+
+- script: |
     cd $(Pipeline.Workspace)
     rmdir ${{ parameters.uhdBuildDir }} /s /q
-  displayName: Download uhd-images
+  displayName: Clean build directory
+
 - script: |
     mkdir ${{ parameters.uhdBuildDir }}
     cd ${{ parameters.uhdBuildDir }}
@@ -44,11 +49,13 @@ steps:
       %UHD_CI_CMAKE_OPTIONS% ^
       -G "$(cmakeCompiler)" -A $(cmakeArch)
   displayName: cmake msbuild UHD
+
 - script: |
     cd ${{ parameters.uhdBuildDir }}
     call "C:\Program Files (x86)\Microsoft Visual Studio\$(vsYear)\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
     msbuild.exe ALL_BUILD.vcxproj /p:configuration=release
   displayName: msbuild UHD
+
 - script: |
     cd ${{ parameters.uhdBuildDir }}
     ctest --no-compress-output --output-on-failure -T test
