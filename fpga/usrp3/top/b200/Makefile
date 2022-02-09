@@ -12,21 +12,22 @@
 ##Output:
 ## build/usrp_<product>_fpga.bit:    Configuration bitstream with header
 ## build/usrp_<product>_fpga.bin:    Configuration bitstream without header
-## build/usrp_<product>_fpga.syr:    Xilinx system report
+## build/usrp_<product>_fpga.syr:    Xilinx synthesis report
 ## build/usrp_<product>_fpga.twr:    Xilinx timing report
+## build/usrp_<product>_fpga.rpt:    Utilization and timing summary report
 
 # Build USRP B2x0 design with a debug UART on J400
 ifeq ($(DEBUG_UART),1)
 OPTIONS += DEBUG_UART=1
 endif
 
-print_report = \
-	echo "========================================================================"; \
-	cat $(1)/b200.syr | grep "Device utilization summary:" -A 30; \
-	echo "========================================================================"; \
-	echo "Timing Summary:\n"; \
-	cat $(1)/b200.twr | grep constraint | grep met | grep -v "*"; \
-	echo "========================================================================";
+export_report = \
+	echo "========================================================================" > $(2); \
+	cat $(1)/b200.syr | grep "Device utilization summary:" -A 31 >> $(2); \
+	echo "========================================================================" >> $(2); \
+	echo "Timing Summary:\n" >> $(2); \
+	cat $(1)/b200.twr | grep constraint | grep met | grep -v "*" >> $(2); \
+	echo "========================================================================" >> $(2);
 
 # pre_build($1=Device)
 ifeq ($(EXPORT_ONLY),1)
@@ -51,7 +52,8 @@ ifeq ($(PROJECT_ONLY),1)
 		echo "\nProject Generation DONE ... $(1)\n";
 else
 	post_build = \
-		@$(call print_report,build-$(1)) \
+		@$(call export_report,build-$(1),build-$(1)/b200.rpt) \
+		cat build-$(1)/b200.rpt; \
 		mkdir -p build; \
 		echo "Exporting bitstream files..."; \
 		cp build-$(1)/b200.bin build/usrp_`echo $(1) | tr A-Z a-z`_fpga.bin; \
@@ -59,6 +61,7 @@ else
 		echo "Exporting logs..."; \
 		cp build-$(1)/b200.syr build/usrp_`echo $(1) | tr A-Z a-z`_fpga.syr; \
 		cp build-$(1)/b200.twr build/usrp_`echo $(1) | tr A-Z a-z`_fpga.twr; \
+		cp build-$(1)/b200.rpt build/usrp_`echo $(1) | tr A-Z a-z`_fpga.rpt; \
 		echo "\nBuild DONE ... $(1)\n";
 endif
 
