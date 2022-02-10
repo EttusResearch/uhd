@@ -234,22 +234,26 @@ PACKAGE_MAPPING = {
     'b200': {
         'type': 'b2xx',
         'package_name': 'b2xx_b200_fpga_default-g{}.zip',
-        'files': ["usrp_b200_fpga.bin"],
+        'files': ["usrp_b200_fpga.bin",
+                  "usrp_b200_fpga.rpt",],
     },
     'b200mini': {
         'type': 'b2xx',
         'package_name': 'b2xx_b200mini_fpga_default-g{}.zip',
-        'files': ["usrp_b200mini_fpga.bin"],
+        'files': ["usrp_b200mini_fpga.bin",
+                  "usrp_b200mini_fpga.rpt",],
     },
     'b205mini': {
         'type': 'b2xx',
         'package_name': 'b2xx_b205mini_fpga_default-g{}.zip',
-        'files': ["usrp_b205mini_fpga.bin"],
+        'files': ["usrp_b205mini_fpga.bin",
+                  "usrp_b205mini_fpga.rpt",],
     },
     'b210': {
         'type': 'b2xx',
         'package_name': 'b2xx_b210_fpga_default-g{}.zip',
-        'files': ["usrp_b210_fpga.bin"],
+        'files': ["usrp_b210_fpga.bin",
+                  "usrp_b210_fpga.rpt",],
     },
     'b2xx_fw': {
         'type': 'b2xx',
