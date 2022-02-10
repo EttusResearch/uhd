@@ -261,13 +261,6 @@ PACKAGE_MAPPING = {
         'files': ["usrp_b200_fw.hex",
                   "usrp_b200_bl.img"],
     },
-    'n230': {
-        'type': 'n230',
-        'package_name': 'n230_n230_fpga_default-g{}.zip',
-        'files': ["usrp_n230_fpga.bin",
-                  "usrp_n230_fpga.bit",
-                  "usrp_n230_fpga.rpt"],
-    },
     'b100': {
         'type': 'usrp1',
         'package_name': 'usrp1_b100_fpga_default-g{}.zip',
