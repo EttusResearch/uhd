@@ -32,23 +32,28 @@ jobs:
     matrix: ${{ parameters.dutMatrix }}
   workspace:
     clean: outputs
+
   steps:
   - checkout: self
     clean: true
+
   - task: InstallSSHKey@0
     displayName: 'Install Ettus SSH key'
     inputs:
       knownHostsEntry: '${{ parameters.knownHost }}'
       sshPublicKey: '$(ettus_ssh_pubkey)'
       sshKeySecureFile: 'id_rsa.ettus'
+
   - download: current
     artifact: uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
     displayName: Download pipeline artifact ${{ parameters.testOS }}-${{ parameters.toolset }}
+
   - task: ExtractFiles@1
     inputs:
       archiveFilePatterns: $(Pipeline.Workspace)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}.tar.gz
       destinationFolder: $(Build.BinariesDirectory)
       cleanDestinationFolder: true
+
   - script: |
       cd $(Build.BinariesDirectory)/uhddev/build
       mkdir -p fpga_images
@@ -56,6 +61,7 @@ jobs:
       python3 utils/uhd_images_downloader.py -t $(devModel) -i fpga_images \
         -b $(sdr-fileserver)
     displayName: Download FPGA Images
+
   - script: |
       mkdir -p $(Common.TestResultsDirectory)/devtest
       cd $(Common.TestResultsDirectory)/devtest
@@ -73,6 +79,13 @@ jobs:
     continueOnError: true
     condition: and(succeeded(), eq(variables.devType, 'x300'), eq(variables.devBus, 'ip'))
     displayName: Run devtest on $(devName) $(devFpga)
+
+  - script: |
+      cat $(Common.TestResultsDirectory)/devtest/log*.log
+      echo ""
+    displayName: cat devtest log
+    condition: always()
+
   - script: |
       cd $(Common.TestResultsDirectory)/devtest
       python3 ${{ parameters.uhdSrcDir }}/.ci/utils/format_devtest_junitxml.py \
@@ -80,6 +93,13 @@ jobs:
         $(Common.TestResultsDirectory)/devtest/devtestresults.xml
     continueOnError: true
     displayName: Format devtest xml
+    condition: always()
+
+  - publish: $(Common.TestResultsDirectory)
+    artifact: test-logs-devtest-$(devName)-$(devFpga)-run$(System.JobAttempt)
+    displayName: Upload Test Logs
+    condition: always()
+
   - task: PublishTestResults@2
     inputs:
       testResultsFormat: 'JUnit'
@@ -89,3 +109,4 @@ jobs:
       mergeTestResults: true
       failTaskOnFailedTests: true
     displayName: Upload devtest results
+    condition: always()
