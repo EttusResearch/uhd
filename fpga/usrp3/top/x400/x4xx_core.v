@@ -394,6 +394,10 @@ module x4xx_core #(
   // DRAM
   //---------------------------------------------------------------------------
 
+  `ifndef ENABLE_DRAM
+    `define ENABLE_DRAM 0
+  `endif
+
   // Only the 100 and 200 MHz images currently support DRAM due to FPGA
   // resource limitations. For 200 MHz and below, a 64-bit interface provides
   // sufficient bandwidth.
