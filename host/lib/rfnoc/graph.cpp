@@ -442,7 +442,7 @@ void graph_t::resolve_all_properties(
     }
     if (!back_edges_valid) {
         throw uhd::resolve_error(
-            "Error during property resultion: Back-edges inconsistent!");
+            "Error during property resolution: Back-edges inconsistent!");
     }
 }
 
