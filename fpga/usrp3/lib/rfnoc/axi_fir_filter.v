@@ -23,7 +23,7 @@
 //   COEFFS_VEC               - Vector of NUM_COEFFS values each of width COEFF_WIDTH to
 //                              initialize coeffs. Defaults to an impulse.
 //   RELOADABLE_COEFFS        - Enable (1) or disable (0) reloading coefficients at runtime (via reload bus)
-//   BLANK_OUTPUT             - Disable (1) or enable (0) output when filling internal pipeline
+//   BLANK_OUTPUT             - Disable (1) or enable (0) output when initially filling internal pipeline
 //   SYMMETRIC_COEFFS         - Reduce multiplier usage by approx half if coefficients are symmetric
 //   SKIP_ZERO_COEFFS         - Reduce multiplier usage by assuming zero valued coefficients in
 //                              DEFAULT_COEFFS are always zero. Useful for halfband filters.

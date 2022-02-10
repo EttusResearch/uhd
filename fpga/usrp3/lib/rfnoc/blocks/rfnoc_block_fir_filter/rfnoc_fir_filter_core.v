@@ -17,7 +17,7 @@
 //
 //   BASE_ADDR                : Control port base address to which this block
 //                              responds.
-// 
+//
 //   COEFF_WIDTH              : Coefficient width
 //
 //   NUM_COEFFS               : Number of coefficients / filter taps
@@ -28,6 +28,9 @@
 //
 //   RELOADABLE_COEFFS        : Enable (1) or disable (0) reloading
 //                              coefficients at runtime
+//
+//   BLANK_OUTPUT             : Disable (1) or enable (0) output when initially
+//                              filling internal pipeline
 //
 //   SYMMETRIC_COEFFS         : Reduce multiplier usage by approximately half
 //                              if coefficients are symmetric
@@ -41,7 +44,7 @@
 //                              streaming will cause temporary output
 //                              corruption!
 //
-//   Note: If using USE_EMBEDDED_REGS_COEFFS, coefficients must be written at 
+//   Note: If using USE_EMBEDDED_REGS_COEFFS, coefficients must be written at
 //   least once since COEFFS_VEC is ignored!
 
 
@@ -53,11 +56,12 @@ module rfnoc_fir_filter_core #(
   parameter COEFF_WIDTH              = 16,
   parameter NUM_COEFFS               = 41,
   parameter [NUM_COEFFS*COEFF_WIDTH-1:0] COEFFS_VEC = // Make impulse by default
-    { 
+    {
       {1'b0, {(COEFF_WIDTH-1){1'b1}} },        // Max positive value
       {(COEFF_WIDTH*(NUM_COEFFS-1)){1'b0}}     // Zero for remaining coefficients
     },
   parameter RELOADABLE_COEFFS        = 1,
+  parameter BLANK_OUTPUT             = 1,
   parameter SYMMETRIC_COEFFS         = 0,
   parameter SKIP_ZERO_COEFFS         = 0,
   parameter USE_EMBEDDED_REGS_COEFFS = 1
@@ -171,7 +175,7 @@ module rfnoc_fir_filter_core #(
     .NUM_COEFFS               (NUM_COEFFS),
     .COEFFS_VEC               (COEFFS_VEC),
     .RELOADABLE_COEFFS        (RELOADABLE_COEFFS),
-    .BLANK_OUTPUT             (1),
+    .BLANK_OUTPUT             (BLANK_OUTPUT),
     // Optional optimizations
     .SYMMETRIC_COEFFS         (SYMMETRIC_COEFFS),
     .SKIP_ZERO_COEFFS         (SKIP_ZERO_COEFFS),
@@ -202,7 +206,7 @@ module rfnoc_fir_filter_core #(
     .NUM_COEFFS               (NUM_COEFFS),
     .COEFFS_VEC               (COEFFS_VEC),
     .RELOADABLE_COEFFS        (RELOADABLE_COEFFS),
-    .BLANK_OUTPUT             (1),
+    .BLANK_OUTPUT             (BLANK_OUTPUT),
     // Optional optimizations
     .SYMMETRIC_COEFFS         (SYMMETRIC_COEFFS),
     .SKIP_ZERO_COEFFS         (SKIP_ZERO_COEFFS),
