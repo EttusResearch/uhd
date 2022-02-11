@@ -118,6 +118,10 @@ private:
         _window_reg_iface.poke32(REG_WINDOW_LOAD_COEFF_LAST_OFFSET,
             static_cast<uint32_t>(_coeffs.at(chan).at(num_coeffs - 1)),
             chan);
+        // Set window size
+        _window_reg_iface.poke32(REG_WINDOW_LEN_OFFSET,
+            static_cast<uint32_t>(num_coeffs),
+            chan);
     }
 
     //! Maximum length of window
