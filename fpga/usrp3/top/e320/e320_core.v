@@ -427,16 +427,16 @@ module e320_core #(
         case (cp_glob_req_addr[REG_GLOB_ADDR_W-1:0])
           REG_DEVICE_ID:
             device_id <= cp_glob_req_data[15:0];
-          
+
           REG_FP_GPIO_MASTER:
             fp_gpio_master_reg <= cp_glob_req_data;
-          
+
           REG_FP_GPIO_RADIO_SRC:
             fp_gpio_src_reg <= cp_glob_req_data;
-          
+
           REG_SCRATCH:
             scratch_reg <= cp_glob_req_data;
-          
+
           REG_CLOCK_CTRL: begin
             cp_glob_resp_data      <= 32'b0;
             pps_select  <= cp_glob_req_data[1:0];
@@ -445,10 +445,10 @@ module e320_core #(
 
           REG_FP_GPIO_CTRL:
             fp_gpio_ctrl <= cp_glob_req_data;
-          
+
           REG_GPS_CTRL:
             gps_ctrl    <= cp_glob_req_data;
-          
+
           REG_DBOARD_CTRL:
             dboard_ctrl <= cp_glob_req_data;
 
@@ -546,12 +546,12 @@ module e320_core #(
 
 
   /////////////////////////////////////////////////////////////////////////////
-  // 
+  //
   // DRAM
   //
   /////////////////////////////////////////////////////////////////////////////
 
-  localparam NUM_DRAM_FIFOS = 2;
+  localparam DRAM_NUM_PORTS = 4;
 
   wire ddr3_dma_rst;
 
@@ -562,50 +562,50 @@ module e320_core #(
   );
 
   // AXI4 MM buses
-  wire [0:0]  dram_axi_awid     [0:NUM_DRAM_FIFOS-1];
-  wire [30:0] dram_axi_awaddr   [0:NUM_DRAM_FIFOS-1];
-  wire [7:0]  dram_axi_awlen    [0:NUM_DRAM_FIFOS-1];
-  wire [2:0]  dram_axi_awsize   [0:NUM_DRAM_FIFOS-1];
-  wire [1:0]  dram_axi_awburst  [0:NUM_DRAM_FIFOS-1];
-  wire [0:0]  dram_axi_awlock   [0:NUM_DRAM_FIFOS-1];
-  wire [3:0]  dram_axi_awcache  [0:NUM_DRAM_FIFOS-1];
-  wire [2:0]  dram_axi_awprot   [0:NUM_DRAM_FIFOS-1];
-  wire [3:0]  dram_axi_awqos    [0:NUM_DRAM_FIFOS-1];
-  wire [3:0]  dram_axi_awregion [0:NUM_DRAM_FIFOS-1];
-  wire [0:0]  dram_axi_awuser   [0:NUM_DRAM_FIFOS-1];
-  wire        dram_axi_awvalid  [0:NUM_DRAM_FIFOS-1];
-  wire        dram_axi_awready  [0:NUM_DRAM_FIFOS-1];
-  wire [63:0] dram_axi_wdata    [0:NUM_DRAM_FIFOS-1];
-  wire [7:0]  dram_axi_wstrb    [0:NUM_DRAM_FIFOS-1];
-  wire        dram_axi_wlast    [0:NUM_DRAM_FIFOS-1];
-  wire [0:0]  dram_axi_wuser    [0:NUM_DRAM_FIFOS-1];
-  wire        dram_axi_wvalid   [0:NUM_DRAM_FIFOS-1];
-  wire        dram_axi_wready   [0:NUM_DRAM_FIFOS-1];
-  wire [0:0]  dram_axi_bid      [0:NUM_DRAM_FIFOS-1];
-  wire [1:0]  dram_axi_bresp    [0:NUM_DRAM_FIFOS-1];
-  wire [0:0]  dram_axi_buser    [0:NUM_DRAM_FIFOS-1];
-  wire        dram_axi_bvalid   [0:NUM_DRAM_FIFOS-1];
-  wire        dram_axi_bready   [0:NUM_DRAM_FIFOS-1];
-  wire [0:0]  dram_axi_arid     [0:NUM_DRAM_FIFOS-1];
-  wire [30:0] dram_axi_araddr   [0:NUM_DRAM_FIFOS-1];
-  wire [7:0]  dram_axi_arlen    [0:NUM_DRAM_FIFOS-1];
-  wire [2:0]  dram_axi_arsize   [0:NUM_DRAM_FIFOS-1];
-  wire [1:0]  dram_axi_arburst  [0:NUM_DRAM_FIFOS-1];
-  wire [0:0]  dram_axi_arlock   [0:NUM_DRAM_FIFOS-1];
-  wire [3:0]  dram_axi_arcache  [0:NUM_DRAM_FIFOS-1];
-  wire [2:0]  dram_axi_arprot   [0:NUM_DRAM_FIFOS-1];
-  wire [3:0]  dram_axi_arqos    [0:NUM_DRAM_FIFOS-1];
-  wire [3:0]  dram_axi_arregion [0:NUM_DRAM_FIFOS-1];
-  wire [0:0]  dram_axi_aruser   [0:NUM_DRAM_FIFOS-1];
-  wire        dram_axi_arvalid  [0:NUM_DRAM_FIFOS-1];
-  wire        dram_axi_arready  [0:NUM_DRAM_FIFOS-1];
-  wire [0:0]  dram_axi_rid      [0:NUM_DRAM_FIFOS-1];
-  wire [63:0] dram_axi_rdata    [0:NUM_DRAM_FIFOS-1];
-  wire [1:0]  dram_axi_rresp    [0:NUM_DRAM_FIFOS-1];
-  wire        dram_axi_rlast    [0:NUM_DRAM_FIFOS-1];
-  wire [0:0]  dram_axi_ruser    [0:NUM_DRAM_FIFOS-1];
-  wire        dram_axi_rvalid   [0:NUM_DRAM_FIFOS-1];
-  wire        dram_axi_rready   [0:NUM_DRAM_FIFOS-1];
+  wire [0:0]  dram_axi_awid     [0:DRAM_NUM_PORTS-1];
+  wire [30:0] dram_axi_awaddr   [0:DRAM_NUM_PORTS-1];
+  wire [7:0]  dram_axi_awlen    [0:DRAM_NUM_PORTS-1];
+  wire [2:0]  dram_axi_awsize   [0:DRAM_NUM_PORTS-1];
+  wire [1:0]  dram_axi_awburst  [0:DRAM_NUM_PORTS-1];
+  wire [0:0]  dram_axi_awlock   [0:DRAM_NUM_PORTS-1];
+  wire [3:0]  dram_axi_awcache  [0:DRAM_NUM_PORTS-1];
+  wire [2:0]  dram_axi_awprot   [0:DRAM_NUM_PORTS-1];
+  wire [3:0]  dram_axi_awqos    [0:DRAM_NUM_PORTS-1];
+  wire [3:0]  dram_axi_awregion [0:DRAM_NUM_PORTS-1];
+  wire [0:0]  dram_axi_awuser   [0:DRAM_NUM_PORTS-1];
+  wire        dram_axi_awvalid  [0:DRAM_NUM_PORTS-1];
+  wire        dram_axi_awready  [0:DRAM_NUM_PORTS-1];
+  wire [63:0] dram_axi_wdata    [0:DRAM_NUM_PORTS-1];
+  wire [7:0]  dram_axi_wstrb    [0:DRAM_NUM_PORTS-1];
+  wire        dram_axi_wlast    [0:DRAM_NUM_PORTS-1];
+  wire [0:0]  dram_axi_wuser    [0:DRAM_NUM_PORTS-1];
+  wire        dram_axi_wvalid   [0:DRAM_NUM_PORTS-1];
+  wire        dram_axi_wready   [0:DRAM_NUM_PORTS-1];
+  wire [0:0]  dram_axi_bid      [0:DRAM_NUM_PORTS-1];
+  wire [1:0]  dram_axi_bresp    [0:DRAM_NUM_PORTS-1];
+  wire [0:0]  dram_axi_buser    [0:DRAM_NUM_PORTS-1];
+  wire        dram_axi_bvalid   [0:DRAM_NUM_PORTS-1];
+  wire        dram_axi_bready   [0:DRAM_NUM_PORTS-1];
+  wire [0:0]  dram_axi_arid     [0:DRAM_NUM_PORTS-1];
+  wire [30:0] dram_axi_araddr   [0:DRAM_NUM_PORTS-1];
+  wire [7:0]  dram_axi_arlen    [0:DRAM_NUM_PORTS-1];
+  wire [2:0]  dram_axi_arsize   [0:DRAM_NUM_PORTS-1];
+  wire [1:0]  dram_axi_arburst  [0:DRAM_NUM_PORTS-1];
+  wire [0:0]  dram_axi_arlock   [0:DRAM_NUM_PORTS-1];
+  wire [3:0]  dram_axi_arcache  [0:DRAM_NUM_PORTS-1];
+  wire [2:0]  dram_axi_arprot   [0:DRAM_NUM_PORTS-1];
+  wire [3:0]  dram_axi_arqos    [0:DRAM_NUM_PORTS-1];
+  wire [3:0]  dram_axi_arregion [0:DRAM_NUM_PORTS-1];
+  wire [0:0]  dram_axi_aruser   [0:DRAM_NUM_PORTS-1];
+  wire        dram_axi_arvalid  [0:DRAM_NUM_PORTS-1];
+  wire        dram_axi_arready  [0:DRAM_NUM_PORTS-1];
+  wire [0:0]  dram_axi_rid      [0:DRAM_NUM_PORTS-1];
+  wire [63:0] dram_axi_rdata    [0:DRAM_NUM_PORTS-1];
+  wire [1:0]  dram_axi_rresp    [0:DRAM_NUM_PORTS-1];
+  wire        dram_axi_rlast    [0:DRAM_NUM_PORTS-1];
+  wire [0:0]  dram_axi_ruser    [0:DRAM_NUM_PORTS-1];
+  wire        dram_axi_rvalid   [0:DRAM_NUM_PORTS-1];
+  wire        dram_axi_rready   [0:DRAM_NUM_PORTS-1];
 
   axi_intercon_4x64_256_bd_wrapper axi_intercon_2x64_256_bd_i (
     .S00_AXI_ACLK     (ddr3_dma_clk        ),
@@ -1022,7 +1022,7 @@ module e320_core #(
   /////////////////////////////////////////////////////////////////////////////
 
   // Unused memory AXI ports
-  for (i = 0; i < NUM_DRAM_FIFOS; i = i+1) begin : gen_unused_ram_signals
+  for (i = 0; i < DRAM_NUM_PORTS; i = i+1) begin : gen_unused_ram_signals
     assign dram_axi_buser[i] = 4'b0;
     assign dram_axi_ruser[i] = 4'b0;
   end
@@ -1047,50 +1047,50 @@ module e320_core #(
     .m_ctrlport_resp_status  (2'b0),
     .m_ctrlport_resp_data    (m_ctrlport_resp_data   ),
     .axi_rst                 (ddr3_dma_rst),
-    .m_axi_awid              ({dram_axi_awid    [1], dram_axi_awid    [0]}),
-    .m_axi_awaddr            ({dram_axi_awaddr  [1], dram_axi_awaddr  [0]}),
-    .m_axi_awlen             ({dram_axi_awlen   [1], dram_axi_awlen   [0]}),
-    .m_axi_awsize            ({dram_axi_awsize  [1], dram_axi_awsize  [0]}),
-    .m_axi_awburst           ({dram_axi_awburst [1], dram_axi_awburst [0]}),
-    .m_axi_awlock            ({dram_axi_awlock  [1], dram_axi_awlock  [0]}),
-    .m_axi_awcache           ({dram_axi_awcache [1], dram_axi_awcache [0]}),
-    .m_axi_awprot            ({dram_axi_awprot  [1], dram_axi_awprot  [0]}),
-    .m_axi_awqos             ({dram_axi_awqos   [1], dram_axi_awqos   [0]}),
-    .m_axi_awregion          ({dram_axi_awregion[1], dram_axi_awregion[0]}),
-    .m_axi_awuser            ({dram_axi_awuser  [1], dram_axi_awuser  [0]}),
-    .m_axi_awvalid           ({dram_axi_awvalid [1], dram_axi_awvalid [0]}),
-    .m_axi_awready           ({dram_axi_awready [1], dram_axi_awready [0]}),
-    .m_axi_wdata             ({dram_axi_wdata   [1], dram_axi_wdata   [0]}),
-    .m_axi_wstrb             ({dram_axi_wstrb   [1], dram_axi_wstrb   [0]}),
-    .m_axi_wlast             ({dram_axi_wlast   [1], dram_axi_wlast   [0]}),
-    .m_axi_wuser             ({dram_axi_wuser   [1], dram_axi_wuser   [0]}),
-    .m_axi_wvalid            ({dram_axi_wvalid  [1], dram_axi_wvalid  [0]}),
-    .m_axi_wready            ({dram_axi_wready  [1], dram_axi_wready  [0]}),
-    .m_axi_bid               ({dram_axi_bid     [1], dram_axi_bid     [0]}),
-    .m_axi_bresp             ({dram_axi_bresp   [1], dram_axi_bresp   [0]}),
-    .m_axi_buser             ({dram_axi_buser   [1], dram_axi_buser   [0]}),
-    .m_axi_bvalid            ({dram_axi_bvalid  [1], dram_axi_bvalid  [0]}),
-    .m_axi_bready            ({dram_axi_bready  [1], dram_axi_bready  [0]}),
-    .m_axi_arid              ({dram_axi_arid    [1], dram_axi_arid    [0]}),
-    .m_axi_araddr            ({dram_axi_araddr  [1], dram_axi_araddr  [0]}),
-    .m_axi_arlen             ({dram_axi_arlen   [1], dram_axi_arlen   [0]}),
-    .m_axi_arsize            ({dram_axi_arsize  [1], dram_axi_arsize  [0]}),
-    .m_axi_arburst           ({dram_axi_arburst [1], dram_axi_arburst [0]}),
-    .m_axi_arlock            ({dram_axi_arlock  [1], dram_axi_arlock  [0]}),
-    .m_axi_arcache           ({dram_axi_arcache [1], dram_axi_arcache [0]}),
-    .m_axi_arprot            ({dram_axi_arprot  [1], dram_axi_arprot  [0]}),
-    .m_axi_arqos             ({dram_axi_arqos   [1], dram_axi_arqos   [0]}),
-    .m_axi_arregion          ({dram_axi_arregion[1], dram_axi_arregion[0]}),
-    .m_axi_aruser            ({dram_axi_aruser  [1], dram_axi_aruser  [0]}),
-    .m_axi_arvalid           ({dram_axi_arvalid [1], dram_axi_arvalid [0]}),
-    .m_axi_arready           ({dram_axi_arready [1], dram_axi_arready [0]}),
-    .m_axi_rid               ({dram_axi_rid     [1], dram_axi_rid     [0]}),
-    .m_axi_rdata             ({dram_axi_rdata   [1], dram_axi_rdata   [0]}),
-    .m_axi_rresp             ({dram_axi_rresp   [1], dram_axi_rresp   [0]}),
-    .m_axi_rlast             ({dram_axi_rlast   [1], dram_axi_rlast   [0]}),
-    .m_axi_ruser             ({dram_axi_ruser   [1], dram_axi_ruser   [0]}),
-    .m_axi_rvalid            ({dram_axi_rvalid  [1], dram_axi_rvalid  [0]}),
-    .m_axi_rready            ({dram_axi_rready  [1], dram_axi_rready  [0]}),
+    .m_axi_awid              ({dram_axi_awid    [3], dram_axi_awid    [2], dram_axi_awid    [1], dram_axi_awid    [0]}),
+    .m_axi_awaddr            ({dram_axi_awaddr  [3], dram_axi_awaddr  [2], dram_axi_awaddr  [1], dram_axi_awaddr  [0]}),
+    .m_axi_awlen             ({dram_axi_awlen   [3], dram_axi_awlen   [2], dram_axi_awlen   [1], dram_axi_awlen   [0]}),
+    .m_axi_awsize            ({dram_axi_awsize  [3], dram_axi_awsize  [2], dram_axi_awsize  [1], dram_axi_awsize  [0]}),
+    .m_axi_awburst           ({dram_axi_awburst [3], dram_axi_awburst [2], dram_axi_awburst [1], dram_axi_awburst [0]}),
+    .m_axi_awlock            ({dram_axi_awlock  [3], dram_axi_awlock  [2], dram_axi_awlock  [1], dram_axi_awlock  [0]}),
+    .m_axi_awcache           ({dram_axi_awcache [3], dram_axi_awcache [2], dram_axi_awcache [1], dram_axi_awcache [0]}),
+    .m_axi_awprot            ({dram_axi_awprot  [3], dram_axi_awprot  [2], dram_axi_awprot  [1], dram_axi_awprot  [0]}),
+    .m_axi_awqos             ({dram_axi_awqos   [3], dram_axi_awqos   [2], dram_axi_awqos   [1], dram_axi_awqos   [0]}),
+    .m_axi_awregion          ({dram_axi_awregion[3], dram_axi_awregion[2], dram_axi_awregion[1], dram_axi_awregion[0]}),
+    .m_axi_awuser            ({dram_axi_awuser  [3], dram_axi_awuser  [2], dram_axi_awuser  [1], dram_axi_awuser  [0]}),
+    .m_axi_awvalid           ({dram_axi_awvalid [3], dram_axi_awvalid [2], dram_axi_awvalid [1], dram_axi_awvalid [0]}),
+    .m_axi_awready           ({dram_axi_awready [3], dram_axi_awready [2], dram_axi_awready [1], dram_axi_awready [0]}),
+    .m_axi_wdata             ({dram_axi_wdata   [3], dram_axi_wdata   [2], dram_axi_wdata   [1], dram_axi_wdata   [0]}),
+    .m_axi_wstrb             ({dram_axi_wstrb   [3], dram_axi_wstrb   [2], dram_axi_wstrb   [1], dram_axi_wstrb   [0]}),
+    .m_axi_wlast             ({dram_axi_wlast   [3], dram_axi_wlast   [2], dram_axi_wlast   [1], dram_axi_wlast   [0]}),
+    .m_axi_wuser             ({dram_axi_wuser   [3], dram_axi_wuser   [2], dram_axi_wuser   [1], dram_axi_wuser   [0]}),
+    .m_axi_wvalid            ({dram_axi_wvalid  [3], dram_axi_wvalid  [2], dram_axi_wvalid  [1], dram_axi_wvalid  [0]}),
+    .m_axi_wready            ({dram_axi_wready  [3], dram_axi_wready  [2], dram_axi_wready  [1], dram_axi_wready  [0]}),
+    .m_axi_bid               ({dram_axi_bid     [3], dram_axi_bid     [2], dram_axi_bid     [1], dram_axi_bid     [0]}),
+    .m_axi_bresp             ({dram_axi_bresp   [3], dram_axi_bresp   [2], dram_axi_bresp   [1], dram_axi_bresp   [0]}),
+    .m_axi_buser             ({dram_axi_buser   [3], dram_axi_buser   [2], dram_axi_buser   [1], dram_axi_buser   [0]}),
+    .m_axi_bvalid            ({dram_axi_bvalid  [3], dram_axi_bvalid  [2], dram_axi_bvalid  [1], dram_axi_bvalid  [0]}),
+    .m_axi_bready            ({dram_axi_bready  [3], dram_axi_bready  [2], dram_axi_bready  [1], dram_axi_bready  [0]}),
+    .m_axi_arid              ({dram_axi_arid    [3], dram_axi_arid    [2], dram_axi_arid    [1], dram_axi_arid    [0]}),
+    .m_axi_araddr            ({dram_axi_araddr  [3], dram_axi_araddr  [2], dram_axi_araddr  [1], dram_axi_araddr  [0]}),
+    .m_axi_arlen             ({dram_axi_arlen   [3], dram_axi_arlen   [2], dram_axi_arlen   [1], dram_axi_arlen   [0]}),
+    .m_axi_arsize            ({dram_axi_arsize  [3], dram_axi_arsize  [2], dram_axi_arsize  [1], dram_axi_arsize  [0]}),
+    .m_axi_arburst           ({dram_axi_arburst [3], dram_axi_arburst [2], dram_axi_arburst [1], dram_axi_arburst [0]}),
+    .m_axi_arlock            ({dram_axi_arlock  [3], dram_axi_arlock  [2], dram_axi_arlock  [1], dram_axi_arlock  [0]}),
+    .m_axi_arcache           ({dram_axi_arcache [3], dram_axi_arcache [2], dram_axi_arcache [1], dram_axi_arcache [0]}),
+    .m_axi_arprot            ({dram_axi_arprot  [3], dram_axi_arprot  [2], dram_axi_arprot  [1], dram_axi_arprot  [0]}),
+    .m_axi_arqos             ({dram_axi_arqos   [3], dram_axi_arqos   [2], dram_axi_arqos   [1], dram_axi_arqos   [0]}),
+    .m_axi_arregion          ({dram_axi_arregion[3], dram_axi_arregion[2], dram_axi_arregion[1], dram_axi_arregion[0]}),
+    .m_axi_aruser            ({dram_axi_aruser  [3], dram_axi_aruser  [2], dram_axi_aruser  [1], dram_axi_aruser  [0]}),
+    .m_axi_arvalid           ({dram_axi_arvalid [3], dram_axi_arvalid [2], dram_axi_arvalid [1], dram_axi_arvalid [0]}),
+    .m_axi_arready           ({dram_axi_arready [3], dram_axi_arready [2], dram_axi_arready [1], dram_axi_arready [0]}),
+    .m_axi_rid               ({dram_axi_rid     [3], dram_axi_rid     [2], dram_axi_rid     [1], dram_axi_rid     [0]}),
+    .m_axi_rdata             ({dram_axi_rdata   [3], dram_axi_rdata   [2], dram_axi_rdata   [1], dram_axi_rdata   [0]}),
+    .m_axi_rresp             ({dram_axi_rresp   [3], dram_axi_rresp   [2], dram_axi_rresp   [1], dram_axi_rresp   [0]}),
+    .m_axi_rlast             ({dram_axi_rlast   [3], dram_axi_rlast   [2], dram_axi_rlast   [1], dram_axi_rlast   [0]}),
+    .m_axi_ruser             ({dram_axi_ruser   [3], dram_axi_ruser   [2], dram_axi_ruser   [1], dram_axi_ruser   [0]}),
+    .m_axi_rvalid            ({dram_axi_rvalid  [3], dram_axi_rvalid  [2], dram_axi_rvalid  [1], dram_axi_rvalid  [0]}),
+    .m_axi_rready            ({dram_axi_rready  [3], dram_axi_rready  [2], dram_axi_rready  [1], dram_axi_rready  [0]}),
     .radio_time              (radio_time             ),
     .radio_rx_stb            ({rx_stb[1],     rx_stb[0]    }),
     .radio_rx_data           ({rx_data[1],    rx_data[0]   }),
