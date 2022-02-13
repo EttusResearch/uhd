@@ -7,8 +7,8 @@
 #include "../rfnoc_graph_mock_nodes.hpp"
 #include <uhd/rfnoc/actions.hpp>
 #include <uhd/rfnoc/defaults.hpp>
-#include <uhd/rfnoc/fir_filter_block_control.hpp>
 #include <uhd/rfnoc/mock_block.hpp>
+#include <uhd/rfnoc/fir_filter_block_control.hpp>
 #include <uhdlib/rfnoc/graph.hpp>
 #include <uhdlib/rfnoc/node_accessor.hpp>
 #include <uhdlib/utils/narrow.hpp>
@@ -33,20 +33,31 @@ noc_block_base::make_args_t::~make_args_t() = default;
 class fir_filter_mock_reg_iface_t : public mock_reg_iface_t
 {
 public:
-    fir_filter_mock_reg_iface_t(size_t max_num_coeffs) : _max_num_coeffs(max_num_coeffs)
+    fir_filter_mock_reg_iface_t(size_t num_chans, std::vector<size_t> max_num_coeffs)
+        : last_coeff_write_pos(num_chans, 0)
+        , coeffs(num_chans)
+        , _num_chans(num_chans)
+        , _max_num_coeffs(max_num_coeffs)
     {
+        reset();
     }
 
     void _poke_cb(
         uint32_t addr, uint32_t data, uhd::time_spec_t /*time*/, bool /*ack*/) override
     {
-        if (addr == fir_filter_block_control::REG_FIR_MAX_NUM_COEFFS_ADDR) {
+        size_t chan   = addr / fir_filter_block_control::REG_FIR_BLOCK_SIZE;
+        size_t offset = addr % fir_filter_block_control::REG_FIR_BLOCK_SIZE;
+        if (chan >= _num_chans) {
+            throw uhd::assertion_error("Invalid channel index");
+        }
+
+        if (offset == fir_filter_block_control::REG_FIR_MAX_NUM_COEFFS_ADDR) {
             throw uhd::assertion_error("Invalid write to read-only register");
-        } else if (addr == fir_filter_block_control::REG_FIR_LOAD_COEFF_ADDR) {
-            coeffs.push_back(uhd::narrow_cast<int16_t>(data));
-        } else if (addr == fir_filter_block_control::REG_FIR_LOAD_COEFF_LAST_ADDR) {
-            last_coeff_write_pos = coeffs.size();
-            coeffs.push_back(uhd::narrow_cast<int16_t>(data));
+        } else if (offset == fir_filter_block_control::REG_FIR_LOAD_COEFF_ADDR) {
+            coeffs.at(chan).push_back(uhd::narrow_cast<int16_t>(data));
+        } else if (offset == fir_filter_block_control::REG_FIR_LOAD_COEFF_LAST_ADDR) {
+            last_coeff_write_pos[chan] = coeffs.at(chan).size();
+            coeffs.at(chan).push_back(uhd::narrow_cast<int16_t>(data));
         } else {
             throw uhd::assertion_error("Invalid write to out of bounds address");
         }
@@ -54,8 +65,14 @@ public:
 
     void _peek_cb(uint32_t addr, uhd::time_spec_t /*time*/) override
     {
-        if (addr == fir_filter_block_control::REG_FIR_MAX_NUM_COEFFS_ADDR) {
-            read_memory[addr] = uhd::narrow_cast<int32_t>(_max_num_coeffs);
+        size_t chan   = addr / fir_filter_block_control::REG_FIR_BLOCK_SIZE;
+        size_t offset = addr % fir_filter_block_control::REG_FIR_BLOCK_SIZE;
+        if (chan >= _num_chans) {
+            throw uhd::assertion_error("Invalid channel index");
+        }
+
+        if (offset == fir_filter_block_control::REG_FIR_MAX_NUM_COEFFS_ADDR) {
+            read_memory[addr] = uhd::narrow_cast<int32_t>(_max_num_coeffs.at(chan));
         } else {
             throw uhd::assertion_error("Invalid read from out of bounds address");
         }
@@ -63,15 +80,18 @@ public:
 
     void reset()
     {
-        last_coeff_write_pos = 0;
-        coeffs.clear();
+        for (size_t chan = 0; chan < _num_chans; chan++) {
+            last_coeff_write_pos[chan] = 0;
+            coeffs.at(chan).clear();
+        }
     }
 
-    size_t last_coeff_write_pos = 0;
-    std::vector<int16_t> coeffs{};
+    std::vector<size_t> last_coeff_write_pos;
+    std::vector<std::vector<int16_t>> coeffs;
 
 private:
-    const size_t _max_num_coeffs;
+    const size_t _num_chans;
+    const std::vector<size_t> _max_num_coeffs;
 };
 
 
@@ -81,16 +101,17 @@ private:
  * case. The instance of the object is destroyed at the end of each test
  * case.
  */
-constexpr size_t MAX_NUM_COEFFS = 3000;
-constexpr size_t DEFAULT_MTU    = 8000;
+constexpr size_t DEFAULT_MTU = 8000;
+constexpr size_t NUM_CHANS   = 4;
+static const std::vector<size_t> MAX_NUM_COEFFS{1, 2, 1337, 65537};
 
 struct fir_filter_block_fixture
 {
     fir_filter_block_fixture()
-        : reg_iface(std::make_shared<fir_filter_mock_reg_iface_t>(MAX_NUM_COEFFS))
+        : reg_iface(std::make_shared<fir_filter_mock_reg_iface_t>(NUM_CHANS, MAX_NUM_COEFFS))
         , block_container(get_mock_block(FIR_FILTER_BLOCK,
-              1,
-              2,
+              NUM_CHANS,
+              NUM_CHANS,
               uhd::device_addr_t(),
               DEFAULT_MTU,
               ANY_DEVICE,
@@ -112,17 +133,21 @@ struct fir_filter_block_fixture
  */
 BOOST_FIXTURE_TEST_CASE(fir_filter_test_construction, fir_filter_block_fixture)
 {
-    // Check that the number of coefficients is expected
-    BOOST_CHECK_EQUAL(reg_iface->coeffs.size(), MAX_NUM_COEFFS);
-    // Check that the first coefficient is the only non-zero value
-    // (impulse response)
-    BOOST_CHECK_NE(reg_iface->coeffs.at(0), 0);
-    for (size_t i = 1; i < reg_iface->coeffs.size(); i++) {
-        BOOST_CHECK_EQUAL(reg_iface->coeffs.at(i), 0);
+    for (size_t chan = 0; chan < NUM_CHANS; chan++) {
+        // Check that the number of coefficients is expected
+        BOOST_CHECK_EQUAL(reg_iface->coeffs.at(chan).size(), MAX_NUM_COEFFS.at(chan));
+        // Check that the first coefficient is the maximum positive int16_t
+        // value and then all other values are 0 (i.e. impulse)
+        BOOST_CHECK_EQUAL(
+            reg_iface->coeffs.at(chan).at(0), std::numeric_limits<int16_t>::max());
+        for (size_t i = 1; i < reg_iface->coeffs.at(chan).size(); i++) {
+            BOOST_CHECK_EQUAL(reg_iface->coeffs.at(chan).at(i), 0);
+        }
+        // Check that the LOAD_COEFF_LAST register was written at the right
+        // time (i.e. with the last value)
+        BOOST_CHECK_EQUAL(
+            reg_iface->last_coeff_write_pos.at(chan), MAX_NUM_COEFFS.at(chan) - 1);
     }
-    // Check that the LOAD_COEFF_LAST register was written at the right
-    // time (i.e. with the last value)
-    BOOST_CHECK_EQUAL(reg_iface->last_coeff_write_pos, MAX_NUM_COEFFS - 1);
 }
 
 /*
@@ -130,7 +155,9 @@ BOOST_FIXTURE_TEST_CASE(fir_filter_test_construction, fir_filter_block_fixture)
  */
 BOOST_FIXTURE_TEST_CASE(fir_filter_test_max_num_coeffs, fir_filter_block_fixture)
 {
-    BOOST_CHECK_EQUAL(test_fir_filter->get_max_num_coefficients(), MAX_NUM_COEFFS);
+    for (size_t chan = 0; chan < NUM_CHANS; chan++) {
+        BOOST_CHECK_EQUAL(test_fir_filter->get_max_num_coefficients(chan), MAX_NUM_COEFFS.at(chan));
+    }
 }
 
 /*
@@ -143,58 +170,50 @@ BOOST_FIXTURE_TEST_CASE(fir_filter_test_set_get_coefficients, fir_filter_block_f
     // Reset state of mock FIR filter register interface
     reg_iface->reset();
 
-    // First test: 10 coefficients
-    std::vector<int16_t> coeffs1{1, 2, 3, 4, 5, -1, -2, -3, -4, -5};
-    test_fir_filter->set_coefficients(coeffs1);
+    for (size_t chan = 0; chan < NUM_CHANS; chan++) {
+        // Generate some dummy coefficients
+        const size_t num_coeffs = test_fir_filter->get_max_num_coefficients(chan);
+        const std::vector<int16_t> coeffs(num_coeffs, chan);
+        test_fir_filter->set_coefficients(coeffs, chan);
 
-    // Check that all coefficients were written
-    BOOST_CHECK_EQUAL(reg_iface->coeffs.size(), MAX_NUM_COEFFS);
+        // Check that all coefficients were written
+        BOOST_CHECK_EQUAL(reg_iface->coeffs.at(chan).size(), num_coeffs);
 
-    // Check correctness of coefficients
-    for (size_t i = 0; i < coeffs1.size(); i++) {
-        BOOST_CHECK_EQUAL(reg_iface->coeffs.at(i), coeffs1.at(i));
+        // Check correctness of coefficients
+        for (size_t i = 0; i < coeffs.size(); i++) {
+            BOOST_CHECK_EQUAL(reg_iface->coeffs.at(chan).at(i), chan);
+        }
+        // Check that the LOAD_COEFF_LAST register was written at the right
+        // time (i.e. with the last value)
+        BOOST_CHECK_EQUAL(reg_iface->last_coeff_write_pos.at(chan), num_coeffs - 1);
+
+        // Verify that get_coefficients() returns what we expect
+        const std::vector<int16_t> received_coeffs = test_fir_filter->get_coefficients(chan);
+
+        BOOST_CHECK_EQUAL(received_coeffs.size(), num_coeffs);
+
+        // Check correctness of returned coefficients
+        for (size_t i = 0; i < coeffs.size(); i++) {
+            BOOST_CHECK_EQUAL(received_coeffs.at(i), coeffs.at(i));
+        }
+
+        // Now send only one coefficent and ensure the rest are zero padded
+        const std::vector<int16_t> coeffs2{std::numeric_limits<int16_t>::max()};
+
+        // Reset recorded coefficients in mock reg iface
+        reg_iface->reset();
+
+        test_fir_filter->set_coefficients(coeffs2, chan);
+
+        // Verify that get_coefficients() returns what we expect
+        const std::vector<int16_t> received_coeffs2 = test_fir_filter->get_coefficients(chan);
+        BOOST_CHECK_EQUAL(received_coeffs2.at(0), coeffs2.at(0));
+        for (size_t i = 1; i < num_coeffs; i++) {
+            BOOST_CHECK_EQUAL(received_coeffs2.at(i), 0);
+        }
+        // Check that the LOAD_COEFF_LAST register was written at the right time
+        BOOST_CHECK_EQUAL(reg_iface->last_coeff_write_pos.at(chan), num_coeffs - 1);
     }
-    for (size_t i = coeffs1.size(); i < MAX_NUM_COEFFS; i++) {
-        BOOST_CHECK_EQUAL(reg_iface->coeffs.at(i), 0);
-    }
-    // Check that the LOAD_COEFF_LAST register was written at the right
-    // time (i.e. with the last value)
-    BOOST_CHECK_EQUAL(reg_iface->last_coeff_write_pos, MAX_NUM_COEFFS - 1);
-
-    // Verify that get_coefficients() returns what we expect. Note that
-    // get_coefficients() returns the padded set of coefficients.
-    std::vector<int16_t> received_coeffs = test_fir_filter->get_coefficients();
-
-    BOOST_CHECK_EQUAL(received_coeffs.size(), MAX_NUM_COEFFS);
-
-    // Check correctness of returned coefficients
-    for (size_t i = 0; i < coeffs1.size(); i++) {
-        BOOST_CHECK_EQUAL(received_coeffs.at(i), coeffs1.at(i));
-    }
-    for (size_t i = coeffs1.size(); i < MAX_NUM_COEFFS; i++) {
-        BOOST_CHECK_EQUAL(received_coeffs.at(i), 0);
-    }
-
-    reg_iface->reset();
-
-    // Now update the coefficients with a smaller set, and ensure that
-    // the hardware gets the correct coefficients
-    std::vector<int16_t> coeffs2{1, 3, 5, 7};
-    test_fir_filter->set_coefficients(coeffs2);
-
-    // Check that all coefficients were written
-    BOOST_CHECK_EQUAL(reg_iface->coeffs.size(), MAX_NUM_COEFFS);
-
-    // Check correctness of coefficients
-    for (size_t i = 0; i < coeffs2.size(); i++) {
-        BOOST_CHECK_EQUAL(reg_iface->coeffs.at(i), coeffs2.at(i));
-    }
-    for (size_t i = coeffs2.size(); i < MAX_NUM_COEFFS; i++) {
-        BOOST_CHECK_EQUAL(reg_iface->coeffs.at(i), 0);
-    }
-    // Check that the LOAD_COEFF_LAST register was written at the right
-    // time (i.e. with the last value)
-    BOOST_CHECK_EQUAL(reg_iface->last_coeff_write_pos, MAX_NUM_COEFFS - 1);
 }
 
 /*
@@ -203,9 +222,11 @@ BOOST_FIXTURE_TEST_CASE(fir_filter_test_set_get_coefficients, fir_filter_block_f
  */
 BOOST_FIXTURE_TEST_CASE(fir_filter_test_length_error, fir_filter_block_fixture)
 {
-    size_t num_coeffs = test_fir_filter->get_max_num_coefficients();
-    std::vector<int16_t> coeffs(num_coeffs * 2);
-    BOOST_CHECK_THROW(test_fir_filter->set_coefficients(coeffs), uhd::value_error);
+    for (size_t chan = 0; chan < NUM_CHANS; chan++) {
+        const size_t num_coeffs = test_fir_filter->get_max_num_coefficients(chan);
+        const std::vector<int16_t> coeffs(num_coeffs * 2);
+        BOOST_CHECK_THROW(test_fir_filter->set_coefficients(coeffs, chan), uhd::value_error);
+    }
 }
 
 /*
