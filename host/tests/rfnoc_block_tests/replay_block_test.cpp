@@ -22,6 +22,8 @@ using namespace uhd::rfnoc;
 // Redeclare this here, since it's only defined outside of UHD_API
 noc_block_base::make_args_t::~make_args_t() = default;
 
+static const size_t CMD_Q_MAX = 32;
+
 /*
  * This class extends mock_reg_iface_t by adding a constructor that initializes some of
  * the read memory to contain the memory size for the replay block. This is important,
@@ -37,24 +39,29 @@ public:
     replay_mock_reg_iface_t(size_t mem_addr_size, size_t word_size, size_t num_channels)
     {
         for (size_t chan = 0; chan < num_channels; chan++) {
-            const uint32_t reg_compat =
-                replay_block_control::REG_COMPAT_ADDR
-                + chan * replay_block_control::REPLAY_BLOCK_OFFSET;
+            const uint32_t base = chan * replay_block_control::REPLAY_BLOCK_OFFSET;
+            const uint32_t reg_compat = base +
+                replay_block_control::REG_COMPAT_ADDR;
+            const uint32_t reg_mem_size = base +
+                replay_block_control::REG_MEM_SIZE_ADDR;
+            const uint32_t reg_rec_fullness = base +
+                replay_block_control::REG_REC_FULLNESS_LO_ADDR;
+            const uint32_t reg_rec_position = base +
+                replay_block_control::REG_REC_POS_LO_ADDR;
+            const uint32_t reg_play_position = base +
+                replay_block_control::REG_PLAY_POS_LO_ADDR;
+            const uint32_t reg_play_fifo_space = base +
+                replay_block_control::REG_PLAY_CMD_FIFO_SPACE_ADDR;
             read_memory[reg_compat] = (replay_block_control::MINOR_COMPAT
                                        | (replay_block_control::MAJOR_COMPAT << 16));
-        }
-        for (size_t chan = 0; chan < num_channels; chan++) {
-            const uint32_t reg_mem_size =
-                replay_block_control::REG_MEM_SIZE_ADDR
-                + chan * replay_block_control::REPLAY_BLOCK_OFFSET;
             read_memory[reg_mem_size] = (mem_addr_size | (word_size << 16));
-        }
-        for (size_t chan = 0; chan < num_channels; chan++) {
-            const uint32_t reg_rec_fullness =
-                replay_block_control::REG_REC_FULLNESS_LO_ADDR
-                + chan * replay_block_control::REPLAY_BLOCK_OFFSET;
-            read_memory[reg_rec_fullness]     = 0x0010;
-            read_memory[reg_rec_fullness + 4] = 0x0000;
+            read_memory[reg_rec_fullness]      = 0x0010;
+            read_memory[reg_rec_fullness + 4]  = 0x0000;
+            read_memory[reg_rec_position]      = 0xBEEF;
+            read_memory[reg_rec_position + 4]  = 0xDEAD;
+            read_memory[reg_play_position]     = 0xCAFE;
+            read_memory[reg_play_position + 4] = 0xFEED;
+            read_memory[reg_play_fifo_space]   = CMD_Q_MAX;
         }
     }
 };
@@ -279,6 +286,20 @@ BOOST_FIXTURE_TEST_CASE(replay_test_record, replay_block_fixture)
             test_replay->record(max_buffer_size, buffer_size, port), uhd::value_error);
         BOOST_CHECK_THROW(
             test_replay->record(base_addr, max_buffer_size, port), uhd::value_error);
+    }
+}
+
+/*
+ * This test case checks the record position.
+ */
+BOOST_FIXTURE_TEST_CASE(replay_test_record_position, replay_block_fixture)
+{
+    for (size_t port = 0; port < num_input_ports; port++) {
+        const uint32_t reg_rec_position =
+            get_addr(replay_block_control::REG_REC_POS_LO_ADDR, port);
+        uint64_t rec_pos = reg_iface->read_memory[reg_rec_position] |
+            (uint64_t(reg_iface->read_memory[reg_rec_position + 4]) << 32);
+        BOOST_CHECK_EQUAL(test_replay->get_record_position(port), rec_pos);
     }
 }
 
@@ -725,6 +746,55 @@ BOOST_FIXTURE_TEST_CASE(replay_test_play, replay_block_fixture)
         BOOST_CHECK_EQUAL(reg_iface->write_memory[reg_cmd_time], num_ticks & 0xFFFFFFFF);
         BOOST_CHECK_EQUAL(
             reg_iface->write_memory[reg_cmd_time + 4], (num_ticks >> 32) & 0xFFFFFFFF);
+    }
+}
+
+/*
+ * This test case checks the play position.
+ */
+BOOST_FIXTURE_TEST_CASE(replay_test_play_position, replay_block_fixture)
+{
+    for (size_t port = 0; port < num_input_ports; port++) {
+        const uint32_t reg_play_position =
+            get_addr(replay_block_control::REG_PLAY_POS_LO_ADDR, port);
+        uint64_t play_pos = reg_iface->read_memory[reg_play_position] |
+            (uint64_t(reg_iface->read_memory[reg_play_position + 4]) << 32);
+        BOOST_CHECK_EQUAL(test_replay->get_play_position(port), play_pos);
+    }
+}
+
+/*
+ * This test case checks to make sure play commands throw an error if the
+ * command queue is full.
+ */
+BOOST_FIXTURE_TEST_CASE(replay_test_play_cmd_limit, replay_block_fixture)
+{
+    for (size_t port = 0; port < num_input_ports; port++) {
+        const uint32_t reg_play_cmd_fifo_space =
+            get_addr(replay_block_control::REG_PLAY_CMD_FIFO_SPACE_ADDR, port);
+
+        // Issue stop to clear command queue
+        test_replay->stop(port);
+
+        // Fill the command queue
+        for (size_t i = 0; i < CMD_Q_MAX; i++) {
+            test_replay->play(0, 0, port);
+        }
+        reg_iface->read_memory[reg_play_cmd_fifo_space] = 0;
+
+        // Make sure the next command throws
+        BOOST_CHECK_THROW(test_replay->play(0, 0, port), uhd::op_failed);
+
+        reg_iface->read_memory[reg_play_cmd_fifo_space] = CMD_Q_MAX;
+
+        // Issue stop to clear the queue and reset
+        test_replay->stop(port);
+
+        // Run once more to confirm no error is thrown
+        test_replay->play(0, 0, port);
+
+        // Issue stop to clear the queue and reset
+        test_replay->stop(port);
     }
 }
 

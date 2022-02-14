@@ -21,7 +21,7 @@
 using namespace uhd::rfnoc;
 
 // Block compatability version
-const uint16_t replay_block_control::MINOR_COMPAT = 0;
+const uint16_t replay_block_control::MINOR_COMPAT = 1;
 const uint16_t replay_block_control::MAJOR_COMPAT = 1;
 
 // NoC block address space
@@ -50,6 +50,11 @@ const uint32_t replay_block_control::REG_PLAY_CMD_TIME_HI_ADDR      = 0x44;
 const uint32_t replay_block_control::REG_PLAY_CMD_ADDR              = 0x48;
 const uint32_t replay_block_control::REG_PLAY_WORDS_PER_PKT_ADDR    = 0x4C;
 const uint32_t replay_block_control::REG_PLAY_ITEM_SIZE_ADDR        = 0x50;
+const uint32_t replay_block_control::REG_REC_POS_LO_ADDR            = 0x54;
+const uint32_t replay_block_control::REG_REC_POS_HI_ADDR            = 0x58;
+const uint32_t replay_block_control::REG_PLAY_POS_LO_ADDR           = 0x5C;
+const uint32_t replay_block_control::REG_PLAY_POS_HI_ADDR           = 0x60;
+const uint32_t replay_block_control::REG_PLAY_CMD_FIFO_SPACE_ADDR   = 0x64;
 
 // Stream commands
 const uint32_t replay_block_control::PLAY_CMD_STOP       = 0;
@@ -81,7 +86,8 @@ public:
         _fpga_compat(_replay_reg_iface.peek32(REG_COMPAT_ADDR)),
         _word_size(
             uint16_t((_replay_reg_iface.peek32(REG_MEM_SIZE_ADDR) >> 16) & 0xFFFF) / 8),
-        _mem_size(uint64_t(1ULL << (_replay_reg_iface.peek32(REG_MEM_SIZE_ADDR) & 0xFFFF)))
+        _mem_size(
+            uint64_t(1ULL << (_replay_reg_iface.peek32(REG_MEM_SIZE_ADDR) & 0xFFFF)))
     {
         if (get_num_input_ports() != get_num_output_ports()) {
             throw uhd::assertion_error(
@@ -169,6 +175,7 @@ public:
         _play_size.reserve(_num_output_ports);
         _packet_size.reserve(_num_output_ports);
         _atomic_item_size_out.reserve(_num_output_ports);
+        _cmd_fifo_spaces.reserve(_num_output_ports);
         for (size_t port = 0; port < _num_output_ports; port++) {
             _register_output_props(port);
             _replay_reg_iface.poke32(REG_PLAY_ITEM_SIZE_ADDR,
@@ -181,6 +188,11 @@ public:
             _replay_reg_iface.poke32(REG_PLAY_WORDS_PER_PKT_ADDR,
                 (_packet_size.at(port).get() - get_chdr_hdr_len()) / _word_size,
                 port);
+            // The register to get the command FIFO space was added in v1.1
+            if (_fpga_compat >= 0x00010001) {
+                _cmd_fifo_spaces[port] = _replay_reg_iface.peek32(
+                    REG_PLAY_CMD_FIFO_SPACE_ADDR, port);
+            }
         }
     }
 
@@ -256,6 +268,16 @@ public:
         return _replay_reg_iface.peek64(REG_REC_FULLNESS_LO_ADDR, port);
     }
 
+    uint64_t get_record_position(const size_t port) override
+    {
+        if (_fpga_compat < 0x00010001) {
+            throw uhd::not_implemented_error("Replay block version 1.1 or "
+                "greater required to get record position.  "
+                "Update the FPGA image to get this feature.");
+        }
+        return _replay_reg_iface.peek64(REG_REC_POS_LO_ADDR, port);
+    }
+
     io_type_t get_record_type(const size_t port) const override
     {
         return _record_type.at(port).get();
@@ -283,6 +305,16 @@ public:
     uint64_t get_play_size(const size_t port) const override
     {
         return _play_size.at(port).get();
+    }
+
+    uint64_t get_play_position(const size_t port) override
+    {
+        if (_fpga_compat < 0x00010001) {
+            throw uhd::not_implemented_error(
+                "Replay block version 1.1 or greater required to get play position.  "
+                "Update the FPGA image to get this feature.");
+        }
+        return _replay_reg_iface.peek64(REG_PLAY_POS_LO_ADDR, port);
     }
 
     uint32_t get_max_items_per_packet(const size_t port) const override
@@ -371,6 +403,18 @@ public:
             }
         }();
 
+        // The register to get the command FIFO space was added in v1.1
+        if (_fpga_compat >= 0x00010001) {
+            // Make sure the command queue has space.  Allow stop commands to pass.
+            if (not play_cmd == PLAY_CMD_STOP and _cmd_fifo_spaces[port] == 0) {
+                _cmd_fifo_spaces[port] = _replay_reg_iface.peek32(
+                    REG_PLAY_CMD_FIFO_SPACE_ADDR, port);
+                if (_cmd_fifo_spaces[port] == 0) {
+                    throw uhd::op_failed("[Replay] Play command queue is full");
+                }
+            }
+        }
+
         // Calculate the number of words to transfer in NUM_SAMPS mode
         if (play_cmd == PLAY_CMD_FINITE) {
             uint64_t num_words =
@@ -391,6 +435,17 @@ public:
         // Issue the stream command
         uint32_t command_word = (play_cmd & PLAY_COMMAND_MASK) | timed_flag;
         _replay_reg_iface.poke32(REG_PLAY_CMD_ADDR, command_word, port);
+
+        // The register to get the command FIFO space was added in v1.1
+        if (_fpga_compat >= 0x00010001) {
+            if (play_cmd == PLAY_CMD_STOP) {
+                // The stop command will clear the FIFO, so reset the space value
+                _cmd_fifo_spaces[port] = _replay_reg_iface.peek32(
+                    REG_PLAY_CMD_FIFO_SPACE_ADDR, port);
+            } else {
+                _cmd_fifo_spaces[port]--;
+            }
+        }
     }
 
 protected:
@@ -671,6 +726,8 @@ private:
     std::vector<property_t<uint32_t>> _packet_size;
     std::vector<property_t<size_t>> _atomic_item_size_in;
     std::vector<property_t<size_t>> _atomic_item_size_out;
+
+    std::vector<size_t> _cmd_fifo_spaces;
 
     // Message queues for async data
     uhd::transport::bounded_buffer<uhd::async_metadata_t> _playback_msg_queue{
