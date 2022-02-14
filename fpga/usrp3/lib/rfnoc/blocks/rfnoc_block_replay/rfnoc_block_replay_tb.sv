@@ -476,6 +476,30 @@ module rfnoc_block_replay_tb#(
   endtask : wait_record_fullness
 
 
+  // Validate record position
+  task automatic validate_record_position(
+    input int     port,
+    input longint position
+  );
+    logic [63:0] value;
+
+    read_reg_64(port, REG_REC_POS_LO, value);
+    `ASSERT_ERROR(value == position, $sformatf("Record position expected at 0x%h, but at 0x%h", position, value));
+  endtask : validate_record_position
+
+
+  // Validate record position
+  task automatic validate_play_position(
+    input int     port,
+    input longint position
+  );
+    logic [63:0] value;
+
+    read_reg_64(port, REG_PLAY_POS_LO, value);
+    `ASSERT_ERROR(value == position, $sformatf("Play position expected at 0x%h, but at 0x%h", position, value));
+  endtask : validate_play_position
+
+
   // Make sure nothing is received until the timeout has elapsed
   task automatic check_rx_idle(
     input int  port,
@@ -863,6 +887,10 @@ module rfnoc_block_replay_tb#(
         (32'(MEM_ADDR_W) <<  REG_ADDR_SIZE_POS)
       );
       test_read_reg(port, REG_REC_FULLNESS_LO, 64);
+      test_read_reg(port, REG_PLAY_ITEM_SIZE, 32, 4);
+      test_read_reg(port, REG_REC_POS_LO, 64);
+      test_read_reg(port, REG_PLAY_POS_LO, 64);
+      test_read_reg(port, REG_PLAY_CMD_FIFO_SPACE, 32, 32);
 
       // The following registers are write only and aren't tested here.
       // REG_REC_RESTART - Tested during every record operation
@@ -1640,6 +1668,109 @@ module rfnoc_block_replay_tb#(
 
 
   //---------------------------------------------------------------------------
+  // Test Record and Play position
+  //---------------------------------------------------------------------------
+  //
+  // Test record and play positions advance properly.  Checks position after
+  // recording and playing each packet and checks proper position during wraps.
+  //
+  //---------------------------------------------------------------------------
+
+  task test_position(int port = 0);
+    item_t           send_items[$];
+    item_t           recv_items[$];
+    int              num_items, num_packets;
+    longint unsigned mem_size;
+    logic [63:0]     val64;
+
+    test.start_test("Test record and play positions", 2ms);
+
+    mem_size    = 2**MEM_ADDR_W;    // Memory size in bytes
+    num_items   = 2**$clog2(SPP);   // Pick a power of 2 near SPP
+    num_packets = 5;
+
+    // Set up the record buffer
+    write_reg_64(port, REG_REC_BASE_ADDR_LO,    0);
+    write_reg_64(port, REG_REC_BUFFER_SIZE_LO,  num_packets*num_items*ITEM_SIZE);
+    write_reg   (port, REG_REC_RESTART,         0);
+
+    // Fill the buffer and validate the record position after each packet.
+    for (int i = 0; i < num_packets; i++) begin
+      // Send a different random sequence for each packet
+      send_items = gen_test_data(num_items, i*num_items);
+      blk_ctrl.send_items(port, send_items);
+      wait_record_fullness(port, (i+1)*num_items*ITEM_SIZE);
+      validate_record_position(port, ((i+1)*num_items*ITEM_SIZE));
+    end
+
+    // Send one additional packet to ensure the position does not advance
+    send_items = gen_test_data(num_items, num_packets*num_items);
+    blk_ctrl.send_items(port, send_items);
+  
+    // Give extra time for the last packet
+    #(CHDR_CLK_PER * num_items * 20);
+
+    // Make sure the position has not advanced and the fullness has not changed
+    validate_record_position(port, num_packets*num_items*ITEM_SIZE);
+    read_reg_64(port, REG_REC_FULLNESS_LO, val64);
+    `ASSERT_ERROR(val64 == num_packets*num_items*ITEM_SIZE, "Memory fullness is not correct");
+
+    // Play back the data one packet at a time and validate play position
+    write_reg(port, REG_PLAY_WORDS_PER_PKT, num_items*ITEM_SIZE/MEM_WORD_SIZE);
+    write_reg_64(port, REG_PLAY_CMD_NUM_WORDS_LO, num_items*ITEM_SIZE/MEM_WORD_SIZE);
+    write_reg_64(port, REG_PLAY_BUFFER_SIZE_LO, num_items*ITEM_SIZE);
+    for (int i = 0; i < num_packets; i++) begin
+      write_reg_64(port, REG_PLAY_BASE_ADDR_LO, i*num_items*ITEM_SIZE);
+      write_reg(port, REG_PLAY_CMD, PLAY_CMD_FINITE);
+      send_items = gen_test_data(num_items, i*num_items);
+      blk_ctrl.recv_items(port, recv_items);
+      `ASSERT_ERROR(
+        ChdrData#(CHDR_W, ITEM_W)::item_equal(send_items, recv_items),
+        "Playback data did not match"
+      );
+      validate_play_position(port, ((i+1)*num_items*ITEM_SIZE));
+    end
+
+    // Restart recording to get the extra packet we sent at the beginning
+    // to validate the record position wraps.
+    write_reg(port, REG_REC_RESTART, 0);
+    wait_record_fullness(port, num_items*ITEM_SIZE);
+    validate_record_position(port, num_items*ITEM_SIZE);
+
+    // Playback the new data, which should continue the values from the last
+    // record operation.
+    write_reg_64(port, REG_PLAY_BASE_ADDR_LO, 0);
+    write_reg_64(port, REG_PLAY_BUFFER_SIZE_LO, num_items*ITEM_SIZE);
+    write_reg_64(port, REG_PLAY_CMD_NUM_WORDS_LO, num_items*ITEM_SIZE/MEM_WORD_SIZE);
+    write_reg(port, REG_PLAY_CMD, PLAY_CMD_FINITE);
+    send_items = gen_test_data(num_items, num_packets*num_items);
+    blk_ctrl.recv_items(port, recv_items);
+    `ASSERT_ERROR(
+      ChdrData#(CHDR_W, ITEM_W)::item_equal(send_items, recv_items),
+      "Playback data did not match"
+    );
+    validate_play_position(port, num_items*ITEM_SIZE);
+
+    // Test the play wrap.  Play num_packets plus one and validate position.
+    // This is done at the end of the memory space to test the wrap within the
+    // buffer space as well as the wrap at the end of the memory space.
+    write_reg_64(port, REG_PLAY_BASE_ADDR_LO, mem_size-(num_packets*num_items*ITEM_SIZE));
+    write_reg_64(port, REG_PLAY_BUFFER_SIZE_LO, num_packets*num_items*ITEM_SIZE);
+    write_reg_64(port, REG_PLAY_CMD_NUM_WORDS_LO, (num_packets+1)*num_items*ITEM_SIZE/MEM_WORD_SIZE);
+    write_reg(port, REG_PLAY_CMD, PLAY_CMD_FINITE);
+    for (int i = 0; i < num_packets+1; i++) begin
+      blk_ctrl.recv_items(port, recv_items);
+    end
+    validate_play_position(port, mem_size-((num_packets-1)*num_items*ITEM_SIZE));
+
+    // Make sure there are no more packets
+    check_rx_idle(port);
+
+    test.end_test();
+  endtask : test_position
+
+
+  //---------------------------------------------------------------------------
   // Test Filling the memory
   //---------------------------------------------------------------------------
   //
@@ -1795,6 +1926,7 @@ module rfnoc_block_replay_tb#(
     test_4k_boundary();
     test_small_packet();
     test_timed_playback();
+    test_position();
     test_full_memory();
 
     //--------------------------------

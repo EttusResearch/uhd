@@ -32,7 +32,8 @@
 //   writing a command to the REG_PLAY_CMD register. The play command indicates
 //   if it should play a fixed number of words then stop (PLAY_CMD_FINITE),
 //   playback forever (PLAY_CMD_CONTINUOUS), or stop playback (PLAY_CMD_STOP).
-//   The number of words to play back with PLAY_CMD_FINITE is set by first
+//   The beginning of the playback is set by first writing to
+//   REG_PLAY_BASE_ADDR. The number of words to play back is set by first
 //   writing to REG_PLAY_CMD_NUM_WORDS.
 //
 //   The length of the packets generated during playback is configured by the
@@ -40,9 +41,7 @@
 //
 //   A timestamp for playback can also be specified by setting
 //   REG_PLAY_CMD_TIME and setting the REG_PLAY_TIMED_POS bit as part of the
-//   command write. The timestamp will then be included in all output packets,
-//   starting with the provided timestamp value and auto-incrementing by one
-//   for every REG_ITEM_SIZE bytes of data in each packet.
+//   command write. The timestamp will be included in the first output packet.
 //
 //   When playback reaches the end of the configured playback buffer, if more
 //   words were requested, it will loop back to the beginning of the buffer to
@@ -150,7 +149,7 @@ module axis_replay #(
   //---------------------------------------------------------------------------
 
   localparam [REG_MAJOR_LEN-1:0] COMPAT_MAJOR = 1;
-  localparam [REG_MINOR_LEN-1:0] COMPAT_MINOR = 0;
+  localparam [REG_MINOR_LEN-1:0] COMPAT_MINOR = 1;
 
   localparam [REG_ITEM_SIZE_LEN-1:0] DEFAULT_ITEM_SIZE = 4;  // 4 bytes for sc16
 
@@ -240,20 +239,26 @@ module axis_replay #(
   reg        [MEM_ADDR_W-1:0] reg_rec_base_addr;
   reg        [MEM_SIZE_W-1:0] reg_rec_buffer_size;
   reg                  [31:0] reg_rec_fullness_hi;
+  reg                  [31:0] reg_rec_pos_hi;
   reg                         rec_restart;
   reg        [MEM_ADDR_W-1:0] reg_play_base_addr;
   reg        [MEM_SIZE_W-1:0] reg_play_buffer_size;
+  reg                  [31:0] reg_play_pos_hi;
   reg       [NUM_WORDS_W-1:0] reg_play_cmd_num_words;
   reg            [TIME_W-1:0] reg_play_cmd_time;
   reg             [CMD_W-1:0] reg_play_cmd;
   reg                         reg_play_cmd_timed;
   reg                         reg_play_cmd_valid;
+  wire                        reg_play_cmd_ready;
   reg                         play_cmd_stop;
   reg                         clear_cmd_fifo;
   reg             [WPP_W-1:0] reg_play_words_per_pkt = REG_PLAY_WORDS_PER_PKT_INIT;
   reg [REG_ITEM_SIZE_LEN-1:0] reg_item_size = DEFAULT_ITEM_SIZE;
+  wire                  [5:0] reg_cmd_fifo_space;
 
   wire [63:0] reg_rec_fullness;
+  wire [63:0] reg_rec_pos;
+  wire [63:0] reg_play_pos;
   reg         rec_restart_clear;
   reg         play_cmd_stop_ack;
 
@@ -275,8 +280,10 @@ module axis_replay #(
       reg_rec_base_addr      <= 0;
       reg_rec_buffer_size    <= 0;
       reg_rec_fullness_hi    <= 'bX;
+      reg_rec_pos_hi         <= 'bX;
       reg_play_base_addr     <= 0;
       reg_play_buffer_size   <= 0;
+      reg_play_pos_hi        <= 'bX;
       reg_play_cmd_num_words <= 0;
       reg_play_cmd_time      <= 0;
       reg_play_words_per_pkt <= REG_PLAY_WORDS_PER_PKT_INIT;
@@ -379,13 +386,46 @@ module axis_replay #(
           REG_PLAY_ITEM_SIZE :
             s_ctrlport_resp_data[REG_ITEM_SIZE_POS+:REG_ITEM_SIZE_LEN]
               <= reg_item_size;
+          REG_REC_POS_LO : begin
+            s_ctrlport_resp_data <= reg_rec_pos[31:0];
+            if (MEM_SIZE_W > 32) begin
+              // The LO register must be read first. Save HI part now to
+              // guarantee coherence when HI register is read.
+              reg_rec_pos_hi <= 0;
+              reg_rec_pos_hi[0 +: max(MEM_SIZE_W-32, 1)]
+                <= reg_rec_pos[32 +: max(MEM_SIZE_W-32, 1)];
+            end
+          end
+          REG_REC_POS_HI :
+            if (MEM_SIZE_W > 32) begin
+              // Return the saved value to guarantee coherence
+              s_ctrlport_resp_data <= reg_rec_pos_hi;
+            end
+          REG_PLAY_POS_LO : begin
+            s_ctrlport_resp_data <= reg_play_pos[31:0];
+            if (MEM_SIZE_W > 32) begin
+              // The LO register must be read first. Save HI part now to
+              // guarantee coherence when HI register is read.
+              reg_play_pos_hi <= 0;
+              reg_play_pos_hi[0 +: max(MEM_SIZE_W-32, 1)]
+                <= reg_play_pos[32 +: max(MEM_SIZE_W-32, 1)];
+            end
+          end
+          REG_PLAY_POS_HI :
+            if (MEM_SIZE_W > 32) begin
+              // Return the saved value to guarantee coherence
+              s_ctrlport_resp_data <= reg_play_pos_hi;
+            end
+          REG_PLAY_CMD_FIFO_SPACE :
+            s_ctrlport_resp_data[5:0] <= reg_cmd_fifo_space;
         endcase
+      end
 
       //-----------------------------------------
       // Register Writes
       //-----------------------------------------
 
-      end else if (s_ctrlport_req_wr) begin
+      if (s_ctrlport_req_wr) begin
         s_ctrlport_resp_ack  <= 1;
         case (s_ctrlport_req_addr)
           REG_REC_BASE_ADDR_LO :
@@ -473,23 +513,25 @@ module axis_replay #(
   wire                   cmd_timed_cf;
   wire [NUM_WORDS_W-1:0] cmd_num_words_cf;
   wire      [TIME_W-1:0] cmd_time_cf;
+  wire  [MEM_ADDR_W-1:0] cmd_base_addr_cf;
+  wire  [MEM_SIZE_W-1:0] cmd_buffer_size_cf;
   wire                   cmd_fifo_valid;
   reg                    cmd_fifo_ready;
 
   axi_fifo_short #(
-    .WIDTH (1 + CMD_W + NUM_WORDS_W + TIME_W)
+    .WIDTH (MEM_ADDR_W + MEM_SIZE_W + 1 + CMD_W + NUM_WORDS_W + TIME_W)
   ) command_fifo (
     .clk      (clk),
     .reset    (rst),
     .clear    (clear_cmd_fifo),
-    .i_tdata  ({reg_play_cmd_timed, reg_play_cmd, reg_play_cmd_num_words, reg_play_cmd_time}),
+    .i_tdata  ({play_base_addr_sr, play_buffer_size_sr, reg_play_cmd_timed, reg_play_cmd, reg_play_cmd_num_words, reg_play_cmd_time}),
     .i_tvalid (reg_play_cmd_valid),
-    .i_tready (),
-    .o_tdata  ({cmd_timed_cf, cmd_cf, cmd_num_words_cf, cmd_time_cf}),
+    .i_tready (reg_play_cmd_ready),
+    .o_tdata  ({cmd_base_addr_cf, cmd_buffer_size_cf, cmd_timed_cf, cmd_cf, cmd_num_words_cf, cmd_time_cf}),
     .o_tvalid (cmd_fifo_valid),
     .o_tready (cmd_fifo_ready),
     .occupied (),
-    .space    ()
+    .space    (reg_cmd_fifo_space)
   );
 
 
@@ -553,6 +595,7 @@ module axis_replay #(
   reg                                   rec_wait_timeout;
 
   assign reg_rec_fullness = rec_buffer_used * BYTES_PER_WORD;
+  assign reg_rec_pos = rec_addr;
 
   always @(posedge clk) begin
     if (rst) begin
@@ -564,7 +607,7 @@ module axis_replay #(
       rec_buffer_used  <= 0;
 
       // Don't care:
-      rec_addr    <= {MEM_ADDR_W{1'bX}};
+      rec_addr    <= {MEM_ADDR_W{1'b0}};
       rec_size_0  <= {MEM_ADDR_W{1'bX}};
       rec_size    <= {MEM_ADDR_W{1'bX}};
       write_count <= {MEM_COUNT_W{1'bX}};
@@ -706,16 +749,17 @@ module axis_replay #(
 
   // FSM States
   localparam PLAY_IDLE            = 0;
-  localparam PLAY_WAIT_DATA_READY = 1;
-  localparam PLAY_CHECK_ALIGN     = 2;
-  localparam PLAY_SIZE_CALC       = 3;
-  localparam PLAY_MEM_REQ         = 4;
-  localparam PLAY_WAIT_MEM_START  = 5;
-  localparam PLAY_WAIT_MEM_COMMIT = 6;
-  localparam PLAY_DONE_CHECK      = 7;
+  localparam PLAY_CHECK_SIZES     = 1;
+  localparam PLAY_WAIT_DATA_READY = 2;
+  localparam PLAY_CHECK_ALIGN     = 3;
+  localparam PLAY_SIZE_CALC       = 4;
+  localparam PLAY_MEM_REQ         = 5;
+  localparam PLAY_WAIT_MEM_START  = 6;
+  localparam PLAY_WAIT_MEM_COMMIT = 7;
+  localparam PLAY_DONE_CHECK      = 8;
 
   // State Signals
-  reg [2:0] play_state;
+  reg [3:0] play_state;
 
   // Registers
   reg [MEM_ADDR_W-1:0] play_addr;         // Current byte offset into record buffer
@@ -729,13 +773,14 @@ module axis_replay #(
   //
   reg [NUM_WORDS_W-1:0] play_words_remaining; // Number of words left for playback command
   reg       [CMD_W-1:0] cmd;                  // Copy of cmd_cf from last command
-  reg                   cmd_timed;            // Copy of cmd_timed_cf from last command
-  reg      [TIME_W-1:0] cmd_time;             // Copy of cmd_time_cf from last command
+  reg  [MEM_ADDR_W-1:0] cmd_base_addr;        // Copy of cmd_base_addr_cf from last command
+  reg  [MEM_SIZE_W-1:0] cmd_buffer_size;      // Copy of cmd_buffer_size_cf from last command
   reg                   last_trans;           // Is this the last read transaction for the command?
 
   reg play_full_burst_avail;      // True if we there's a full burst to read
-  reg play_buffer_avail_nonzero;  // True if play_buffer_avail > 0
   reg next_read_size_ok;          // True if it's OK to read next_read_size
+  reg play_buffer_zero;           // True if play buffer size is zero
+  reg num_words_zero;             // True if number of words to play is zero
 
   reg [MEM_ADDR_W-1:0] next_read_size_m1;       // next_read_size - 1
   reg [MEM_ADDR_W-1:0] play_words_remaining_m1; // play_words_remaining - 1
@@ -745,21 +790,23 @@ module axis_replay #(
 
   reg pause_data_transfer;
 
+  assign reg_play_pos = play_addr;
+
   always @(posedge clk)
   begin
     if (rst) begin
       play_state     <= PLAY_IDLE;
       cmd_fifo_ready <= 1'b0;
+      play_addr      <= {MEM_ADDR_W{1'b0}};
+      last_trans     <= 1'b0;
 
       // Don't care:
       play_full_burst_avail     <= 1'bX;
-      play_buffer_avail_nonzero <= 1'bX;
       play_buffer_end           <= {MEM_SIZE_W{1'bX}};
       read_ctrl_valid           <= 1'bX;
-      play_addr                 <= {MEM_ADDR_W{1'bX}};
       cmd                       <= {CMD_W{1'bX}};
-      cmd_time                  <= {TIME_W{1'bX}};
-      cmd_timed                 <= 1'bX;
+      cmd_base_addr             <= {MEM_ADDR_W{1'bX}};
+      cmd_buffer_size           <= {MEM_SIZE_W{1'bX}};
       play_buffer_avail         <= {MEM_SIZE_W{1'bX}};
       play_size_aligned         <= {MEM_SIZE_W{1'bX}};
       play_words_remaining      <= {NUM_WORDS_W{1'bX}};
@@ -773,14 +820,13 @@ module axis_replay #(
       play_addr_0               <= {MEM_ADDR_W+1{1'bX}};
       play_buffer_avail_0       <= {MEM_SIZE_W{1'bX}};
       play_addr_1               <= {MEM_ADDR_W{1'bX}};
-      last_trans                <= 1'b0;
+      play_buffer_zero          <= 1'bX;
+      num_words_zero            <= 1'bX;
 
     end else begin
 
       // Calculate how many words are left to read from the record buffer
       play_full_burst_avail     <= (play_buffer_avail >= MEM_BURST_LEN);
-      play_buffer_avail_nonzero <= (play_buffer_avail > 0);
-      play_buffer_end           <= play_base_addr_sr + play_buffer_size_sr;
 
       play_size_aligned <= AXI_ALIGNMENT - ((play_addr/BYTES_PER_WORD) & (AXI_ALIGNMENT-1));
 
@@ -794,28 +840,43 @@ module axis_replay #(
       //
       case (play_state)
         PLAY_IDLE : begin
-          // Always start reading at the start of the record buffer
-          play_addr <= play_base_addr_sr;
+          // Save needed command info
+          cmd             <= cmd_cf;
+          cmd_base_addr   <= cmd_base_addr_cf;
+          cmd_buffer_size <= cmd_buffer_size_cf  / BYTES_PER_WORD;
 
-          // Save off command info
-          if (cmd_cf == PLAY_CMD_CONTINUOUS)
+          // Initialize the play variables
+          if (cmd_cf == PLAY_CMD_CONTINUOUS) begin
             play_words_remaining <= MEM_BURST_LEN;
-          else
+            num_words_zero <= 0;
+          end else begin
             play_words_remaining <= cmd_num_words_cf;
-          cmd_timed  <= cmd_timed_cf;
-          cmd_time   <= cmd_time_cf;
-          cmd        <= cmd_cf;
+            num_words_zero <= (cmd_num_words_cf == 0);
+          end
+          play_buffer_avail     <= cmd_buffer_size_cf / BYTES_PER_WORD;
+          play_buffer_end       <= {1'b0, cmd_base_addr_cf} + cmd_buffer_size_cf;
+          play_buffer_zero      <= (cmd_buffer_size_cf == 0);
 
-          // Save the buffer info so it doesn't update during playback
-          play_buffer_avail <= play_buffer_size_sr / BYTES_PER_WORD;
-
-          // Wait until we receive a command and we have enough data recorded
-          // to honor it.
+          // Wait until we receive a command
           if (play_cmd_stop) begin
             play_cmd_stop_ack <= 1'b1;
-          end else if (cmd_fifo_valid && play_buffer_avail_nonzero) begin
+          end else if (cmd_fifo_valid) begin
+            // Only update the play address when valid so readback is accurate
+            play_addr <= cmd_base_addr_cf;
+
             // Dequeue the command from the FIFO
             cmd_fifo_ready <= 1'b1;
+
+            play_state <= PLAY_CHECK_SIZES;
+          end
+        end
+
+        PLAY_CHECK_SIZES : begin
+          // Check buffer and num_word sizes and allow propagation of
+          // play_full_burst_avail.
+          if (play_buffer_zero | num_words_zero) begin
+            play_state <= PLAY_IDLE;
+          end else begin
             play_state <= PLAY_WAIT_DATA_READY;
           end
         end
@@ -902,17 +963,20 @@ module axis_replay #(
           // signals that the interface has received a response for the whole
           // read transaction.
           if (read_ctrl_ready) begin
+            // Check if this is the last transaction.
+            if (last_trans) begin
+              play_addr_1       <= play_addr_0[MEM_ADDR_W-1:0];
+              play_buffer_avail <= 0;
+
             // Check if we need to wrap the address for the next transaction.
-            if (play_addr_0 >= play_buffer_end) begin
-              play_addr_1       <= play_base_addr_sr;
-              play_buffer_avail <= play_buffer_size_sr / BYTES_PER_WORD;
+            end else if (play_addr_0 >= play_buffer_end) begin
+              play_addr_1       <= cmd_base_addr;
+              play_buffer_avail <= cmd_buffer_size;
+
             end else begin
               play_addr_1       <= play_addr_0[MEM_ADDR_W-1:0];
               play_buffer_avail <= play_buffer_avail_0;
             end
-
-            // Update the time for the first word of the next transaction
-            cmd_time <= cmd_time + (read_count + 1) * (MEM_DATA_W/32);
 
             play_state <= PLAY_DONE_CHECK;
           end
