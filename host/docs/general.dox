@@ -189,6 +189,18 @@ Underflow occurs when the host does not produce data fast enough. When
 UHD software detects the underflow, it prints a "U" to stdout, and
 pushes a message packet into the async message stream.
 
+Some underruns may be mitigated by buffering data in DRAM using the Replay
+block.  The Replay block is only available in devices that support RFNoC.  Some
+RFNoC devices include the Replay block in the default FPGA image.  Use the
+'uhd_usrp_probe' utility and look for the "RFNoC blocks on this device:"
+section of the output to check if the Replay block is present.  If using
+the multi_usrp API, simply add the stream argument "streamer=replay_buffered"
+to enable the buffering.  This buffering adds latency and will likely not work
+at the highest streaming rates.  A limited number of buffers can be stored
+in the Replay block, so larger buffers supplied to the tx_streamer::send()
+call will produce the best results.  Buffers that are too small will result
+in gaps in the transmitted signal.
+
 <b>Note:</b> "O" and "U" message are generally harmless, and just mean the host
 machine can't keep up with the requested rates.
 

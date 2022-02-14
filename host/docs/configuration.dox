@@ -212,6 +212,10 @@ The following parameters are supported:
 - `noclear` (applies to B100 and N2xx only)
 - `port` and `addr` (N2xx only) These settings specify an alternate receiver
   streamer destination.
+- `streamer` Specify the type of streamer to use.  "replay_buffered" (applies
+  to RFNoC enabled devices with a Replay block in the FPGA image) Adds data
+  buffering in DRAM using the Replay block for TX streamers when using the
+  multi_usrp API.
 
 \subsubsection config_stream_args_transport Transport-related Stream Arguments
 
