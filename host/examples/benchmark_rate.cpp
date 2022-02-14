@@ -70,6 +70,7 @@ inline std::string time_delta_str(const start_time_type& ref_time)
 void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp,
     const std::string& rx_cpu,
     uhd::rx_streamer::sptr rx_stream,
+    size_t spb,
     bool random_nsamps,
     const start_time_type& start_time,
     std::atomic<bool>& burst_timer_elapsed,
@@ -89,9 +90,10 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp,
 
     // setup variables and allocate buffer
     uhd::rx_metadata_t md;
-    const size_t max_samps_per_packet = rx_stream->get_max_num_samps();
-    std::vector<char> buff(
-        max_samps_per_packet * uhd::convert::get_bytes_per_item(rx_cpu));
+    if (spb == 0) {
+        spb = rx_stream->get_max_num_samps();
+    }
+    std::vector<char> buff(spb * uhd::convert::get_bytes_per_item(rx_cpu));
     std::vector<void*> buffs;
     for (size_t ch = 0; ch < rx_stream->get_num_channels(); ch++)
         buffs.push_back(&buff.front()); // same buffer for each channel
@@ -100,18 +102,23 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp,
     const double rate = usrp->get_rx_rate();
 
     uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
-    cmd.num_samps = max_samps_per_packet;
+    cmd.num_samps = spb;
     if (random_nsamps) {
         cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE;
-        cmd.num_samps = (rand() % max_samps_per_packet) + 1;
+        cmd.num_samps = (rand() % spb) + 1;
     }
-    cmd.time_spec  = usrp->get_time_now() + uhd::time_spec_t(rx_delay);
-    cmd.stream_now = (buffs.size() == 1);
+    // Multiple channels must be time aligned, so a default delay is set if
+    // not specified.
+    cmd.time_spec  = usrp->get_time_now() + uhd::time_spec_t(
+                     rx_delay == 0.0 ? 0.05 : rx_delay);
+    // Streaming can only start immediately if there is a single channel
+    // and the user has not requested a delay.
+    cmd.stream_now = (rx_delay == 0.0 and buffs.size() == 1);
     rx_stream->issue_stream_cmd(cmd);
 
     const float burst_pkt_time =
-        std::max<float>(0.100f, (2 * max_samps_per_packet / rate));
-    float recv_timeout = burst_pkt_time + rx_delay;
+        std::max<float>(0.100f, (2 * spb / rate));
+    float recv_timeout = burst_pkt_time + (rx_delay == 0.0 ? 0.05 : rx_delay);
 
     bool stop_called = false;
     while (true) {
@@ -121,7 +128,7 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp,
         }
         if (random_nsamps) {
             cmd.time_spec  = usrp->get_time_now() + uhd::time_spec_t(rx_delay);
-            cmd.num_samps = (rand() % max_samps_per_packet) + 1;
+            cmd.num_samps = (rand() % spb) + 1;
             rx_stream->issue_stream_cmd(cmd);
         }
         try {
@@ -209,7 +216,7 @@ void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp,
     uhd::tx_streamer::sptr tx_stream,
     std::atomic<bool>& burst_timer_elapsed,
     const start_time_type& start_time,
-    const size_t spp,
+    const size_t spb,
     bool elevate_priority,
     double tx_delay,
     bool random_nsamps = false)
@@ -220,44 +227,49 @@ void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp,
 
     // print pre-test summary
     auto time_stamp   = NOW();
-    auto tx_rate      = usrp->get_tx_rate() / 1e6;
+    auto tx_rate      = usrp->get_tx_rate();
     auto num_channels = tx_stream->get_num_channels();
     std::cout << boost::format("[%s] Testing transmit rate %f Msps on %u channels\n")
-                     % time_stamp % tx_rate % num_channels;
+                     % time_stamp % (tx_rate / 1e6) % num_channels;
 
     // setup variables and allocate buffer
-    const size_t max_samps_per_packet = tx_stream->get_max_num_samps();
     std::vector<char> buff(
-        max_samps_per_packet * uhd::convert::get_bytes_per_item(tx_cpu));
+        spb * uhd::convert::get_bytes_per_item(tx_cpu));
     std::vector<const void*> buffs;
     for (size_t ch = 0; ch < tx_stream->get_num_channels(); ch++)
         buffs.push_back(&buff.front()); // same buffer for each channel
     // Create the metadata, and populate the time spec at the latest possible moment
     uhd::tx_metadata_t md;
-    md.has_time_spec = (buffs.size() != 1);
-    md.time_spec     = usrp->get_time_now() + uhd::time_spec_t(tx_delay);
+    // A time_spec is needed to time align multiple channels or if the user specifies
+    // a delay.
+    md.has_time_spec = (tx_delay != 0.0 or num_channels > 1);
+    // Multiple channels must be time aligned, so a default delay is set if
+    // not specified.  It is only used if has_time_spec is true.
+    md.time_spec     = usrp->get_time_now() + uhd::time_spec_t(
+                       tx_delay == 0.0 ? 0.25 : tx_delay);
 
-    const float timeout = 1.0;
+    // Calculate timeout time
+    // The timeout time cannot be reduced after the first packet as is done for
+    // TX because the delay will only happen after the TX buffers in the FPGA
+    // are full and that is dependent on several factors such as the device,
+    // FPGA configuration, and device arguments.  The extra 100ms is to account
+    // for overhead of the send() call (enough).
+    const double burst_pkt_time =
+        std::max<double>(0.1, (2.0 * spb / tx_rate));
+    double timeout = burst_pkt_time + (tx_delay == 0.0 ? 0.25 : tx_delay);
 
     if (random_nsamps) {
         std::srand((unsigned int)time(NULL));
         while (not burst_timer_elapsed) {
-            size_t total_num_samps = (rand() % max_samps_per_packet) + 1;
-            size_t num_acc_samps   = 0;
-
-            while (num_acc_samps < total_num_samps) {
-                // send a single packet
-                num_tx_samps += tx_stream->send(buffs, spp, md, timeout)
-                                * tx_stream->get_num_channels();
-                num_acc_samps += std::min(
-                    total_num_samps - num_acc_samps, max_samps_per_packet);
-            }
+            size_t num_samps = (rand() % spb) + 1;
+            num_tx_samps += tx_stream->send(buffs, num_samps, md, timeout)
+                            * tx_stream->get_num_channels();
             md.has_time_spec = false;
         }
     } else {
         while (not burst_timer_elapsed) {
             const size_t num_tx_samps_sent_now =
-                tx_stream->send(buffs, spp, md, timeout) * tx_stream->get_num_channels();
+                tx_stream->send(buffs, spb, md, timeout) * tx_stream->get_num_channels();
             num_tx_samps += num_tx_samps_sent_now;
             if (num_tx_samps_sent_now == 0) {
                 num_timeouts_tx++;
@@ -336,7 +348,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     bool random_nsamps = false;
     std::atomic<bool> burst_timer_elapsed(false);
     size_t overrun_threshold, underrun_threshold, drop_threshold, seq_threshold;
-    size_t rx_spp, tx_spp;
+    size_t rx_spp, tx_spp, rx_spb, tx_spb;
     double tx_delay, rx_delay;
     std::string priority;
     bool elevate_priority = false;
@@ -356,6 +368,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("tx_rate", po::value<double>(&tx_rate), "specify to perform a TX rate test (sps)")
         ("rx_spp", po::value<size_t>(&rx_spp), "samples/packet value for RX")
         ("tx_spp", po::value<size_t>(&tx_spp), "samples/packet value for TX")
+        ("rx_spb", po::value<size_t>(&rx_spb), "samples/buffer value for RX")
+        ("tx_spb", po::value<size_t>(&tx_spb), "samples/buffer value for TX")
         ("rx_otw", po::value<std::string>(&rx_otw)->default_value("sc16"), "specify the over-the-wire sample mode for RX")
         ("tx_otw", po::value<std::string>(&tx_otw)->default_value("sc16"), "specify the over-the-wire sample mode for TX")
         ("rx_cpu", po::value<std::string>(&rx_cpu)->default_value("fc32"), "specify the host/cpu sample mode for RX")
@@ -375,8 +389,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("seq-threshold", po::value<size_t>(&seq_threshold),
          "Number of dropped packets (D) which will declare the benchmark a failure.")
         // NOTE: TX delay defaults to 0.25 seconds to allow the buffer on the device to fill completely
-        ("tx_delay", po::value<double>(&tx_delay)->default_value(0.25), "delay before starting TX in seconds")
-        ("rx_delay", po::value<double>(&rx_delay)->default_value(0.05), "delay before starting RX in seconds")
+        ("tx_delay", po::value<double>(&tx_delay)->default_value(0.0), "delay before starting TX in seconds")
+        ("rx_delay", po::value<double>(&rx_delay)->default_value(0.0), "delay before starting RX in seconds")
         ("priority", po::value<std::string>(&priority)->default_value("normal"), "thread priority (normal, high)")
         ("multi_streamer", "Create a separate streamer per channel")
     ;
@@ -537,9 +551,15 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     // spawn the receive test thread
     if (vm.count("rx_rate")) {
         usrp->set_rx_rate(rx_rate);
+
+        size_t spb = 0;
         if (vm.count("rx_spp")) {
             std::cout << boost::format("Setting RX spp to %u\n") % rx_spp;
             usrp->set_rx_spp(rx_spp);
+            spb = rx_spp;
+        }
+        if (vm.count("rx_spb")) {
+            spb = rx_spb;
         }
         if (vm.count("multi_streamer")) {
             for (size_t count = 0; count < rx_channel_nums.size(); count++) {
@@ -553,6 +573,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                     benchmark_rx_rate(usrp,
                         rx_cpu,
                         rx_stream,
+                        spb,
                         random_nsamps,
                         start_time,
                         burst_timer_elapsed,
@@ -572,6 +593,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                 benchmark_rx_rate(usrp,
                     rx_cpu,
                     rx_stream,
+                    spb,
                     random_nsamps,
                     start_time,
                     burst_timer_elapsed,
@@ -586,68 +608,75 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     if (vm.count("tx_rate")) {
         usrp->set_tx_rate(tx_rate);
 
-	if (vm.count("multi_streamer")) {
-            for (size_t count = 0; count < tx_channel_nums.size(); count++) {
-                std::vector<size_t> this_streamer_channels{tx_channel_nums[count]};
+        if (vm.count("multi_streamer")) {
+                for (size_t count = 0; count < tx_channel_nums.size(); count++) {
+                    std::vector<size_t> this_streamer_channels{tx_channel_nums[count]};
 
-		// create a transmit streamer
-		uhd::stream_args_t stream_args(tx_cpu, tx_otw);
-		stream_args.channels             = this_streamer_channels;
-		stream_args.args                 = uhd::device_addr_t(tx_stream_args);
-		uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
-		const size_t max_spp             = tx_stream->get_max_num_samps();
-		size_t spp                       = max_spp;
-		if (vm.count("tx_spp")) {
-		    spp = std::min(spp, tx_spp);
-		}
-		std::cout << boost::format("Setting TX spp to %u\n") % spp;
-		auto tx_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
-		    benchmark_tx_rate(usrp,
-			tx_cpu,
-			tx_stream,
-			burst_timer_elapsed,
-			start_time,
-			spp,
-			elevate_priority,
-			tx_delay,
-			random_nsamps);
-		});
-		uhd::set_thread_name(tx_thread, "bmark_tx_strm" + std::to_string(count));
-		auto tx_async_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
-		    benchmark_tx_rate_async_helper(tx_stream, start_time, burst_timer_elapsed);
-		});
-		uhd::set_thread_name(tx_async_thread, "bmark_tx_hlpr" + std::to_string(count));
-	    }
-	}
-	else {
-		// create a transmit streamer
-		uhd::stream_args_t stream_args(tx_cpu, tx_otw);
-		stream_args.channels             = tx_channel_nums;
-		stream_args.args                 = uhd::device_addr_t(tx_stream_args);
-		uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
-		const size_t max_spp             = tx_stream->get_max_num_samps();
-		size_t spp                       = max_spp;
-		if (vm.count("tx_spp")) {
-		    spp = std::min(spp, tx_spp);
-		}
-		std::cout << boost::format("Setting TX spp to %u\n") % spp;
-		auto tx_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
-		    benchmark_tx_rate(usrp,
-			tx_cpu,
-			tx_stream,
-			burst_timer_elapsed,
-			start_time,
-			spp,
-			elevate_priority,
-			tx_delay,
-			random_nsamps);
-		});
-		uhd::set_thread_name(tx_thread, "bmark_tx_stream");
-		auto tx_async_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
-		    benchmark_tx_rate_async_helper(tx_stream, start_time, burst_timer_elapsed);
-		});
-		uhd::set_thread_name(tx_async_thread, "bmark_tx_helper");
-	}
+            // create a transmit streamer
+            uhd::stream_args_t stream_args(tx_cpu, tx_otw);
+            stream_args.channels             = this_streamer_channels;
+            stream_args.args                 = uhd::device_addr_t(tx_stream_args);
+            uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
+            const size_t max_spp             = tx_stream->get_max_num_samps();
+            size_t spp                       = max_spp;
+            if (vm.count("tx_spp")) {
+                spp = std::min(spp, tx_spp);
+            }
+            size_t spb                       = spp;
+            if (vm.count("tx_spb")) {
+                spb = tx_spb;
+            }
+            std::cout << boost::format("Setting TX spb to %u\n") % spb;
+            auto tx_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
+                benchmark_tx_rate(usrp,
+                tx_cpu,
+                tx_stream,
+                burst_timer_elapsed,
+                start_time,
+                spb,
+                elevate_priority,
+                tx_delay,
+                random_nsamps);
+            });
+            uhd::set_thread_name(tx_thread, "bmark_tx_strm" + std::to_string(count));
+            auto tx_async_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
+                benchmark_tx_rate_async_helper(tx_stream, start_time, burst_timer_elapsed);
+            });
+            uhd::set_thread_name(tx_async_thread, "bmark_tx_hlpr" + std::to_string(count));
+            }
+        } else {
+            // create a transmit streamer
+            uhd::stream_args_t stream_args(tx_cpu, tx_otw);
+            stream_args.channels             = tx_channel_nums;
+            stream_args.args                 = uhd::device_addr_t(tx_stream_args);
+            uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
+            const size_t max_spp             = tx_stream->get_max_num_samps();
+            size_t spp                       = max_spp;
+            if (vm.count("tx_spp")) {
+                spp = std::min(spp, tx_spp);
+            }
+            size_t spb                       = spp;
+            if (vm.count("tx_spb")) {
+                spb = tx_spb;
+            }
+            std::cout << boost::format("Setting TX spp to %u\n") % spp;
+            auto tx_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
+                benchmark_tx_rate(usrp,
+                tx_cpu,
+                tx_stream,
+                burst_timer_elapsed,
+                start_time,
+                spb,
+                elevate_priority,
+                tx_delay,
+                random_nsamps);
+            });
+            uhd::set_thread_name(tx_thread, "bmark_tx_stream");
+            auto tx_async_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
+                benchmark_tx_rate_async_helper(tx_stream, start_time, burst_timer_elapsed);
+            });
+            uhd::set_thread_name(tx_async_thread, "bmark_tx_helper");
+        }
     }
 
     // sleep for the required duration (add any initial delay)
