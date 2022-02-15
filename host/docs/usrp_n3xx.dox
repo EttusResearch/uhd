@@ -33,8 +33,10 @@ variants of the N3XX series:
 \image html N310isoExplode.png N310 Exploded View
 
 - Supported master clock rates: 122.88 MHz, 125 MHz, 153.6 MHz
-- Tuning range: 10 MHz to 6 GHz (below 300 MHz, additional LOs and mixer stages
-  are used to shift the signal into the frequency range of the AD9371)
+- Tuning range: 10 MHz to 6 GHz
+    - Below 300 MHz, additional LOs and mixer stages
+    are used to shift the signal into the frequency range of the AD9371
+    - Tunable down to 1 MHz in UHD however performance is not guaranteed
 - Support for external LOs
 - 4 RX DDC chains in FPGA (2 for N300)
 - 4 TX DUC chain in FPGA (2 for N300)
@@ -53,8 +55,10 @@ FPGA (XCZ035). Also, it does not have connectors for external LOs.
 \subsection n3xx_feature_list_rh N320/N321 2-channel Transceiver
 
 - Supported master clock rates: 200 MHz, 245.76 MHz, 250 MHz
-- Tuning range: 1 MHz to 6 GHz (below 450 MHz, an additional LO and mixer stage
-  is used to shift the signal into the range of the main LO stage)
+- Tuning range: 3 MHz to 6 GHz
+    - Below 450 MHz, an additional LO and mixer stage
+    is used to shift the signal into the range of the main LO stage
+    - Tunable down to 1 MHz in UHD however performance is not guaranteed
 - Support for external LOs
 - 2 RX DDC chains in FPGA
 - 2 TX DUC chain in FPGA
