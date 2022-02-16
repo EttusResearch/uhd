@@ -728,4 +728,17 @@ class EISCAT(DboardManagerBase):
                 freq
             ))
 
+    def get_ref_lock(self):
+        """
+        Returns True if the LMK reference is locked.
 
+        Note: This does not return a sensor dict. The sensor API call is
+        in the motherboard class.
+        """
+        if self.lmk is None:
+            self.log.trace("LMK object not yet initialized, defaulting to " \
+                           "no ref locked!")
+            return False
+        lmk_lock_status = self.lmk.check_plls_locked()
+        self.log.trace("LMK lock status is: {}".format(lmk_lock_status))
+        return lmk_lock_status

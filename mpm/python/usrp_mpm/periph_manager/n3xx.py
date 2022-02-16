@@ -881,8 +881,7 @@ class n3xx(ZynqComponents, PeriphManagerBase):
             len(self.dboards)
         )
         lock_status = all([
-            not hasattr(db, 'get_ref_lock') or db.get_ref_lock()
-            for db in self.dboards
+            db.get_ref_lock() for db in self.dboards
         ])
         return {
             'name': 'ref_locked',
