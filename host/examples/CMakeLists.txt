@@ -51,6 +51,7 @@ endforeach(example_source)
 ########################################################################
 # ASCII Art DFT - requires curses, so this part is optional
 ########################################################################
+set(CURSES_NEED_NCURSES 1)
 find_package(Curses)
 
 if(CURSES_FOUND)
