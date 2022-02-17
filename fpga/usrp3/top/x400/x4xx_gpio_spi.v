@@ -342,13 +342,18 @@ module x4xx_gpio_spi #(
 
   //  Register set_stb for use in 2x domain.
   reg set_stb_2x = 1'b0;
-  reg ctrlport_clk_phase = 1'b0;
+  reg ctrlport_clk_phase = 1'b1;
 
   always @ (posedge ctrlport_clk_2x) begin
-    // Assert strobe only during a single 2x cycle of the
-    // 1x pulse.
-    set_stb_2x         <= ctrlport_clk_phase & set_stb;
-    ctrlport_clk_phase <= ~ctrlport_clk_phase;
+    if (ctrlport_rst) begin
+      ctrlport_clk_phase <= 1'b1;
+      set_stb_2x         <= 1'b0;
+    end else begin
+      // Assert strobe only during a single 2x cycle of the
+      // 1x pulse, when 1x clock is low.
+      set_stb_2x         <= ctrlport_clk_phase & set_stb;
+      ctrlport_clk_phase <= ~ctrlport_clk_phase;
+    end
   end
 
   simple_spi_core #(
