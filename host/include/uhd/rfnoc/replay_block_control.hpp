@@ -11,6 +11,8 @@
 
 namespace uhd { namespace rfnoc {
 
+// doxygen tables need long long lines
+// clang-format off
 /*! Replay Block Control CLass
  *
  * \ingroup rfnoc_blocks
@@ -59,7 +61,42 @@ namespace uhd { namespace rfnoc {
  * |------:|-------------------------------------------------------------------
  * | type  | Data type. On the input, it set by the upstream block (see get_record_type()). For output, it should be provided by set_play_type().
  *
+ * \section rfnoc_block_replay_record Recording Data
+ *
+ * Before streaming data to the replay block, it must be configured to record
+ * by calling record(), which will also configure the size of the record buffer
+ * for the indicated input port.  After calling this method, the block will accept
+ * incoming data until its record buffer is full (use the get_record_fullness()
+ * method to query the fullness). Unlike the radio, the replay block does not
+ * care about end-of-burst flags, and will not report underruns if subsequent
+ * packets are not streamed to this block back-to-back.
+ *
+ * Once the record buffer is full, the block will no longer accept incoming data
+ * and will back-pressure. If, for example, the radio block is connected to the replay
+ * block, the radio could overrun in this scenario. By calling record() again,
+ * the write-pointer of the block is reset, and it will accept new data. To
+ * reset the write-pointer and buffer size to the same values as before, it is
+ * sufficient to call record_restart().
+ *
+ * \section rfnoc_block_replay_playback Playing back Data
+ *
+ * To playback data from a given port, there are two options with basically the
+ * same functionality: Either call config_play() to configure the playback
+ * region on memory, and then call issue_stream_cmd() to start streaming.
+ *
+ * A shorthand version of this is to call play(), which is equivalent to
+ * calling config_play() and issue_stream_cmd() together.
+ *
+ * In either case, the replay block will start streaming the requested number of
+ * samples, or until it is stopped. If a specific number of samples is requested,
+ * then it will tag the last outgoing packet with an end-of-burst flag. If more
+ * samples were requested than stored in the playback buffer, it will wrap
+ * around.
+ *
+ * To stop a continuous playback, either call stop(), or issue a stream command
+ * with uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS.
  */
+// clang-format on
 class UHD_API replay_block_control : public noc_block_base
 {
 public:
@@ -113,37 +150,57 @@ public:
      * memory word and get_item_size() to get the item size.  A value of 0 means
      * to use all available space.
      * \param port Which input port of the replay block to use
+     * \throws uhd::value_error if offset+size exceeds the available memory.
      */
     virtual void record(
         const uint64_t offset, const uint64_t size, const size_t port = 0) = 0;
 
     /*! Restarts recording from the record offset
      *
+     * This is a shortcut for calling record() again with the same arguments.
+     *
      * \param port Which input port of the replay block to use
      */
     virtual void record_restart(const size_t port = 0) = 0;
 
-    /*! Play
+    /*! Play back data.
      *
-     * Play back data. The offset and size define what data is played back on an output
-     * port. The data can be played once or repeated continuously until a stop command is
-     * issued. If a time_spec is supplied, it will be placed in the header of the first
-     * packet. Typically, this is used to tell a downstream Radio block when to start
-     * transmitting the data. If the data type on the output port is not defined, this
-     * function will throw an error.
+     * The offset and size define what data is played back on an output port.
+     * It will stream out \p size bytes of data, starting at memory offset
+     * \p offset.
+     *
+     * The data can be played once or repeated continuously until a stop
+     * command is issued. If a time_spec is supplied, it will be placed in the
+     * header of the first packet. Typically, this is used to tell a downstream
+     * Radio block when to start transmitting the data.
+     *
+     * If the data type on the output port is not defined, this function will
+     * throw an error.
+     *
+     * This is equivalent to calling config_play() with the same arguments for
+     * \p offset, \p size, and \p port, and then calling issue_stream_cmd() with
+     * the same time spec, and either continuous streaming (if \p repeat is true)
+     * or STREAM_MODE_START_NUM_SAMPS_AND_DONE if it is not.
      *
      * \param offset Memory offset of the data to be played. This value must be
-     * aligned to the size of the word in memory. Use get_word_size() to get the
-     * memory word size.
+     *               aligned to the size of the word in memory. Use get_word_size()
+     *               to get the memory word size.
      * \param size Size of data to play back. This value must be aligned to the
-     * size of the memory word and item size. Use get_word_size() to get the
-     * memory word size and get_output_item_size() to get the item size.
+     *             size of the memory word and item size. Use get_word_size() to
+     *             get the memory word size and get_output_item_size() to get
+     *             the item size. This value will be used for the num_samps
+     *             component of the underlying stream command.
      * \param port Which output port of the replay block to use
-     * \param time_spec Set the time for the first item. Any non-zero value is used to
-     * set the time in the header of the first packet. Most commonly, this is used to
-     * set the start time of a transmission.
+     * \param time_spec Set the time for the first item. Any non-zero value is
+     *                  used to set the time in the header of the first packet.
+     *                  Most commonly, this is used to set the start time of a
+     *                  transmission. Note that this block will not wait for a
+     *                  time to occur, rather, it will tag the first outgoing
+     *                  packet with this time stamp.
      * \param repeat Determines whether the data should be played repeatedly or
-     * just once. If set to true, stop() must be called to stop the play back.
+     *               just once. If set to true, stop() must be called to stop
+     *               the play back.
+     * \throws uhd::value_error if offset+size exceeds the available memory.
      */
     virtual void play(const uint64_t offset,
         const uint64_t size,
@@ -290,6 +347,7 @@ public:
      * size of the memory word and item size. Use get_word_size() to get the
      * memory word size and get_output_item_size() to get the item size.
      * \param port Which output port of the replay block to use
+     * \throws uhd::value_error if offset+size exceeds the available memory.
      */
     virtual void config_play(
         const uint64_t offset, const uint64_t size, const size_t port = 0) = 0;
