@@ -137,8 +137,42 @@ static void loopback(size_t nsamps,
         return;                 \
     }
 
+// Iterates over a collection of individual benchmark results, collecting
+// the results from multiple runs with the same converter ID and priority
+// and prints out the results
+static void collate_benchmark_results(std::vector<benchmark_result> benchmarks)
+{
+    while(!benchmarks.empty())
+    {
+        // Get the first entry from the per-iteration runs
+        struct benchmark_result result = *(benchmarks.begin());
+        // Remove that entry from the list, and look for other entries in
+        // the list that have the same converter and priority
+        auto b_iter = benchmarks.erase(benchmarks.begin());
+        while(b_iter != benchmarks.end())
+        {
+            if(b_iter->id == result.id && b_iter->prio == result.prio) {
+                // If a match is found, accumulate the elapsed time and
+                // number of samples
+                result.elapsed_ns += b_iter->elapsed_ns;
+                result.nsamps += b_iter->nsamps;
+                // And then remove it from the list
+                b_iter = benchmarks.erase(b_iter);
+            } else {
+                // Not a match; move on
+                b_iter++;
+            }
+        }
+        double ns_per_sample = result.elapsed_ns / result.nsamps;
+        std::cout << "For converter " << result.id.to_string() << " prio " << result.prio << ": " <<
+            ns_per_sample << " ns/sample" << std::endl;
+    }
+}
+
 /***********************************************************************
  * Run converter test code under a benchmark
+ * This overload takes a prio, for the MULTI_CONVERTER_TEST_CASES which
+ * receive it as a parameter
  **********************************************************************/
 template <typename ConverterFunction>
 static void benchmark_converter(
@@ -160,33 +194,34 @@ static void benchmark_converter(
         // Save the results for this iteration
         std::copy(benchmarks_iter.begin(), benchmarks_iter.end(), std::back_inserter(benchmarks));
     }
+    collate_benchmark_results(benchmarks);
+}
 
-    // Now collate and print the results
-    while(!benchmarks.empty())
+/***********************************************************************
+ * Run converter test code under a benchmark
+ * This overload does not take a prio, for the converter functions which
+ * iterate them automatically (the test_convert_types_for_floats variant)
+ **********************************************************************/
+template <typename ConverterFunction>
+static void benchmark_converter(
+    convert::id_type id,
+    ConverterFunction&& converter_fn)
+{
+    std::vector<benchmark_result> benchmarks;
+    for(size_t iter = 0; iter < BENCHMARK_NITERS; iter++)
     {
-        // Get the first entry from the per-iteration runs
-        struct benchmark_data bd = *(benchmarks.begin());
-        // Remove that entry from the list, and look for other entries in
-        // the list that have the same converter and priority
-        auto b_iter = benchmarks.erase(benchmarks.begin());
-        while(b_iter != benchmarks.end())
-        {
-            if(b_iter->id == bd.id && b_iter->prio == bd.prio) {
-                // If a match is found, accumulate the elapsed time and
-                // number of samples
-                bd.elapsed_ns += b_iter->elapsed_ns;
-                bd.nsamps += b_iter->nsamps;
-                // And then remove it from the list
-                b_iter = benchmarks.erase(b_iter);
-            } else {
-                // Not a match; move on
-                b_iter++;
-            }
+        std::vector<benchmark_result> benchmarks_iter;
+        converter_fn(BENCHMARK_NSAMPS, id, &benchmarks_iter);
+        // Detect if the benchmark didn't run because the converter type
+        // with the given priority wasn't found; if that's the case, bail
+        // on the test case
+        if(benchmarks_iter.empty()) {
+            return;
         }
-        double ns_per_sample = bd.elapsed_ns / bd.nsamps;
-        std::cout << "For converter " << bd.id.to_string() << " prio " << prio << ": " <<
-            ns_per_sample << " ns/sample" << std::endl;
+        // Save the results for this iteration
+        std::copy(benchmarks_iter.begin(), benchmarks_iter.end(), std::back_inserter(benchmarks));
     }
+    collate_benchmark_results(benchmarks);
 }
 
 /***********************************************************************
@@ -234,6 +269,22 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_be_sc16)
     }
 }
 
+BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
+MULTI_CONVERTER_TEST_CASE(benchmark_convert_types_be_sc16)
+{
+    convert::id_type id;
+    id.input_format  = "sc16";
+    id.num_inputs    = 1;
+    id.output_format = "sc16_item32_be";
+    id.num_outputs   = 1;
+
+    benchmark_converter(id, conv_prio_type, 
+        [](size_t nsamps, convert::id_type id, uhd::convert::priority_type prio, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_sc16(nsamps, id, prio, 1, 0xffff, benchmarks);
+        });
+}
+
 MULTI_CONVERTER_TEST_CASE(test_convert_types_le_sc16)
 {
     convert::id_type id;
@@ -248,6 +299,22 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_le_sc16)
     }
 }
 
+BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
+MULTI_CONVERTER_TEST_CASE(benchmark_convert_types_le_sc16)
+{
+    convert::id_type id;
+    id.input_format  = "sc16";
+    id.num_inputs    = 1;
+    id.output_format = "sc16_item32_le";
+    id.num_outputs   = 1;
+
+    benchmark_converter(id, conv_prio_type, 
+        [](size_t nsamps, convert::id_type id, uhd::convert::priority_type prio, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_sc16(nsamps, id, prio, 1, 0xffff, benchmarks);
+        });
+}
+
 MULTI_CONVERTER_TEST_CASE(test_convert_types_chdr_sc16)
 {
     convert::id_type id;
@@ -260,6 +327,22 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_chdr_sc16)
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
         test_convert_types_sc16(nsamps, id, conv_prio_type);
     }
+}
+
+BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
+MULTI_CONVERTER_TEST_CASE(benchmark_convert_types_chdr_sc16)
+{
+    convert::id_type id;
+    id.input_format  = "sc16";
+    id.num_inputs    = 1;
+    id.output_format = "sc16_chdr";
+    id.num_outputs   = 1;
+
+    benchmark_converter(id, conv_prio_type, 
+        [](size_t nsamps, convert::id_type id, uhd::convert::priority_type prio, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_sc16(nsamps, id, prio, 1, 0xffff, benchmarks);
+        });
 }
 
 /***********************************************************************
@@ -315,6 +398,22 @@ BOOST_AUTO_TEST_CASE(test_convert_types_be_fc32)
     }
 }
 
+BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
+BOOST_AUTO_TEST_CASE(benchmark_convert_types_be_fc32)
+{
+    convert::id_type id;
+    id.input_format  = "fc32";
+    id.num_inputs    = 1;
+    id.output_format = "sc16_item32_be";
+    id.num_outputs   = 1;
+
+    benchmark_converter(id,
+        [](size_t nsamps, convert::id_type id, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_for_floats<fc32_t>(nsamps, id, 1.0, benchmarks);
+        });
+}
+
 BOOST_AUTO_TEST_CASE(test_convert_types_le_fc32)
 {
     convert::id_type id;
@@ -327,6 +426,22 @@ BOOST_AUTO_TEST_CASE(test_convert_types_le_fc32)
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
         test_convert_types_for_floats<fc32_t>(nsamps, id);
     }
+}
+
+BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
+BOOST_AUTO_TEST_CASE(benchmark_convert_types_le_fc32)
+{
+    convert::id_type id;
+    id.input_format  = "fc32";
+    id.num_inputs    = 1;
+    id.output_format = "sc16_item32_le";
+    id.num_outputs   = 1;
+
+    benchmark_converter(id,
+        [](size_t nsamps, convert::id_type id, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_for_floats<fc32_t>(nsamps, id, 1.0, benchmarks);
+        });
 }
 
 BOOST_AUTO_TEST_CASE(test_convert_types_chdr_fc32)
@@ -343,6 +458,22 @@ BOOST_AUTO_TEST_CASE(test_convert_types_chdr_fc32)
     }
 }
 
+BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
+BOOST_AUTO_TEST_CASE(benchmark_convert_types_chdr_fc32)
+{
+    convert::id_type id;
+    id.input_format  = "fc32";
+    id.num_inputs    = 1;
+    id.output_format = "sc16_chdr";
+    id.num_outputs   = 1;
+
+    benchmark_converter(id,
+        [](size_t nsamps, convert::id_type id, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_for_floats<fc32_t>(nsamps, id, 1.0, benchmarks);
+        });
+}
+
 BOOST_AUTO_TEST_CASE(test_convert_types_be_fc64)
 {
     convert::id_type id;
@@ -355,6 +486,22 @@ BOOST_AUTO_TEST_CASE(test_convert_types_be_fc64)
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
         test_convert_types_for_floats<fc64_t>(nsamps, id);
     }
+}
+
+BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
+BOOST_AUTO_TEST_CASE(benchmark_convert_types_be_fc64)
+{
+    convert::id_type id;
+    id.input_format  = "fc64";
+    id.num_inputs    = 1;
+    id.output_format = "sc16_item32_be";
+    id.num_outputs   = 1;
+
+    benchmark_converter(id,
+        [](size_t nsamps, convert::id_type id, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_for_floats<fc64_t>(nsamps, id, 1.0, benchmarks);
+        });
 }
 
 BOOST_AUTO_TEST_CASE(test_convert_types_le_fc64)
@@ -371,6 +518,22 @@ BOOST_AUTO_TEST_CASE(test_convert_types_le_fc64)
     }
 }
 
+BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
+BOOST_AUTO_TEST_CASE(benchmark_convert_types_le_fc64)
+{
+    convert::id_type id;
+    id.input_format  = "fc64";
+    id.num_inputs    = 1;
+    id.output_format = "sc16_item32_le";
+    id.num_outputs   = 1;
+
+    benchmark_converter(id,
+        [](size_t nsamps, convert::id_type id, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_for_floats<fc64_t>(nsamps, id, 1.0, benchmarks);
+        });
+}
+
 BOOST_AUTO_TEST_CASE(test_convert_types_chdr_fc64)
 {
     convert::id_type id;
@@ -383,6 +546,22 @@ BOOST_AUTO_TEST_CASE(test_convert_types_chdr_fc64)
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
         test_convert_types_for_floats<fc64_t>(nsamps, id);
     }
+}
+
+BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
+BOOST_AUTO_TEST_CASE(benchmark_convert_types_chdr_fc64)
+{
+    convert::id_type id;
+    id.input_format  = "fc64";
+    id.num_inputs    = 1;
+    id.output_format = "sc16_chdr";
+    id.num_outputs   = 1;
+
+    benchmark_converter(id,
+        [](size_t nsamps, convert::id_type id, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_for_floats<fc64_t>(nsamps, id, 1.0, benchmarks);
+        });
 }
 
 /***********************************************************************
@@ -403,6 +582,22 @@ BOOST_AUTO_TEST_CASE(test_convert_types_le_sc12_with_fc32)
     }
 }
 
+BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
+BOOST_AUTO_TEST_CASE(benchmark_convert_types_le_sc12_with_fc32)
+{
+    convert::id_type id;
+    id.input_format  = "fc32";
+    id.num_inputs    = 1;
+    id.output_format = "sc12_item32_le";
+    id.num_outputs   = 1;
+
+    benchmark_converter(id,
+        [](size_t nsamps, convert::id_type id, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_for_floats<fc32_t>(nsamps, id, 1. / 16, benchmarks);
+        });
+}
+
 BOOST_AUTO_TEST_CASE(test_convert_types_be_sc12_with_fc32)
 {
     convert::id_type id;
@@ -415,6 +610,22 @@ BOOST_AUTO_TEST_CASE(test_convert_types_be_sc12_with_fc32)
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
         test_convert_types_for_floats<fc32_t>(nsamps, id, 1. / 16);
     }
+}
+
+BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
+BOOST_AUTO_TEST_CASE(benchmark_convert_types_be_sc12_with_fc32)
+{
+    convert::id_type id;
+    id.input_format  = "fc32";
+    id.num_inputs    = 1;
+    id.output_format = "sc12_item32_be";
+    id.num_outputs   = 1;
+
+    benchmark_converter(id,
+        [](size_t nsamps, convert::id_type id, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_for_floats<fc32_t>(nsamps, id, 1. / 16, benchmarks);
+        });
 }
 
 MULTI_CONVERTER_TEST_CASE(test_convert_types_le_sc16_and_sc12)
@@ -431,6 +642,23 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_le_sc16_and_sc12)
     }
 }
 
+BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
+MULTI_CONVERTER_TEST_CASE(benchmark_convert_types_le_sc16_and_sc12)
+{
+    convert::id_type id;
+    id.input_format = "sc16";
+    id.num_inputs   = 1;
+    id.num_outputs  = 1;
+
+    // try various lengths to test edge cases
+    id.output_format = "sc12_item32_le";
+    benchmark_converter(id, conv_prio_type, 
+        [](size_t nsamps, convert::id_type id, uhd::convert::priority_type prio, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_sc16(nsamps, id, prio, 1, 0xfff0, benchmarks);
+        });
+}
+
 MULTI_CONVERTER_TEST_CASE(test_convert_types_be_sc16_and_sc12)
 {
     convert::id_type id;
@@ -442,6 +670,22 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_be_sc16_and_sc12)
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
         test_convert_types_sc16(nsamps, id, conv_prio_type, 1, 0xfff0);
     }
+}
+
+BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
+MULTI_CONVERTER_TEST_CASE(benchmark_convert_types_be_sc16_and_sc12)
+{
+    convert::id_type id;
+    id.input_format = "sc16";
+    id.num_inputs   = 1;
+    id.num_outputs  = 1;
+
+    id.output_format = "sc12_item32_be";
+    benchmark_converter(id, conv_prio_type, 
+        [](size_t nsamps, convert::id_type id, uhd::convert::priority_type prio, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_sc16(nsamps, id, prio, 1, 0xfff0, benchmarks);
+        });
 }
 
 /***********************************************************************
@@ -462,6 +706,22 @@ BOOST_AUTO_TEST_CASE(test_convert_types_le_fc32_with_fc32)
     }
 }
 
+BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
+BOOST_AUTO_TEST_CASE(benchmark_convert_types_le_fc32_with_fc32)
+{
+    convert::id_type id;
+    id.input_format  = "fc32";
+    id.num_inputs    = 1;
+    id.output_format = "fc32_item32_le";
+    id.num_outputs   = 1;
+
+    benchmark_converter(id,
+        [](size_t nsamps, convert::id_type id, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_for_floats<fc32_t>(nsamps, id, 1.0, benchmarks);
+        });
+}
+
 BOOST_AUTO_TEST_CASE(test_convert_types_be_fc32_with_fc32)
 {
     convert::id_type id;
@@ -476,6 +736,22 @@ BOOST_AUTO_TEST_CASE(test_convert_types_be_fc32_with_fc32)
     }
 }
 
+BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
+BOOST_AUTO_TEST_CASE(benchmark_convert_types_be_fc32_with_fc32)
+{
+    convert::id_type id;
+    id.input_format  = "fc32";
+    id.num_inputs    = 1;
+    id.output_format = "fc32_item32_be";
+    id.num_outputs   = 1;
+
+    benchmark_converter(id,
+        [](size_t nsamps, convert::id_type id, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_for_floats<fc32_t>(nsamps, id, 1.0, benchmarks);
+        });
+}
+
 BOOST_AUTO_TEST_CASE(test_convert_types_fc32_with_fc32_chdr)
 {
     convert::id_type id;
@@ -488,6 +764,22 @@ BOOST_AUTO_TEST_CASE(test_convert_types_fc32_with_fc32_chdr)
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
         test_convert_types_for_floats<fc32_t>(nsamps, id);
     }
+}
+
+BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
+BOOST_AUTO_TEST_CASE(benchmark_convert_types_fc32_with_fc32_chdr)
+{
+    convert::id_type id;
+    id.input_format  = "fc32";
+    id.num_inputs    = 1;
+    id.output_format = "fc32_chdr";
+    id.num_outputs   = 1;
+
+    benchmark_converter(id,
+        [](size_t nsamps, convert::id_type id, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_for_floats<fc32_t>(nsamps, id, 1.0, benchmarks);
+        });
 }
 
 /***********************************************************************
@@ -513,6 +805,29 @@ BOOST_AUTO_TEST_CASE(test_convert_types_fc64_and_sc8)
     }
 }
 
+BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
+BOOST_AUTO_TEST_CASE(benchmark_convert_types_fc64_and_sc8)
+{
+    convert::id_type id;
+    id.input_format = "fc64";
+    id.num_inputs   = 1;
+    id.num_outputs  = 1;
+
+    id.output_format = "sc8_item32_le";
+    benchmark_converter(id,
+        [](size_t nsamps, convert::id_type id, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_for_floats<fc64_t>(nsamps, id, 1. / 256, benchmarks);
+        });
+
+    id.output_format = "sc8_item32_be";
+    benchmark_converter(id,
+        [](size_t nsamps, convert::id_type id, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_for_floats<fc64_t>(nsamps, id, 1. / 256, benchmarks);
+        });
+}
+
 BOOST_AUTO_TEST_CASE(test_convert_types_fc32_and_sc8)
 {
     convert::id_type id;
@@ -531,6 +846,30 @@ BOOST_AUTO_TEST_CASE(test_convert_types_fc32_and_sc8)
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
         test_convert_types_for_floats<fc32_t>(nsamps, id, 1. / 256);
     }
+}
+
+BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
+BOOST_AUTO_TEST_CASE(benchmark_convert_types_fc32_and_sc8)
+{
+    convert::id_type id;
+    id.input_format = "fc32";
+    id.num_inputs   = 1;
+    id.num_outputs  = 1;
+
+    id.output_format = "sc8_item32_le";
+    benchmark_converter(id,
+        [](size_t nsamps, convert::id_type id, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_for_floats<fc32_t>(nsamps, id, 1. / 256, benchmarks);
+        });
+
+    // try various lengths to test edge cases
+    id.output_format = "sc8_item32_be";
+    benchmark_converter(id,
+        [](size_t nsamps, convert::id_type id, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_for_floats<fc32_t>(nsamps, id, 1. / 256, benchmarks);
+        });
 }
 
 MULTI_CONVERTER_TEST_CASE(test_convert_types_sc16_and_sc8)
@@ -553,11 +892,35 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_sc16_and_sc8)
     }
 }
 
+BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
+MULTI_CONVERTER_TEST_CASE(benchmark_convert_types_sc16_and_sc8)
+{
+    convert::id_type id;
+    id.input_format = "sc16";
+    id.num_inputs   = 1;
+    id.num_outputs  = 1;
+
+    id.output_format = "sc8_item32_le";
+    benchmark_converter(id, conv_prio_type, 
+        [](size_t nsamps, convert::id_type id, uhd::convert::priority_type prio, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_sc16(nsamps, id, prio, 256, 0xffff, benchmarks);
+        });
+
+    id.output_format = "sc8_item32_be";
+    benchmark_converter(id, conv_prio_type, 
+        [](size_t nsamps, convert::id_type id, uhd::convert::priority_type prio, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_sc16(nsamps, id, prio, 256, 0xffff, benchmarks);
+        });
+}
+
 /***********************************************************************
  * Test u8 conversion
  **********************************************************************/
 static void test_convert_types_u8(
-    size_t nsamps, convert::id_type& id, uhd::convert::priority_type prio)
+    size_t nsamps, convert::id_type& id, uhd::convert::priority_type prio,
+    std::vector<benchmark_result>* benchmark_data = nullptr)
 {
     // fill the input samples
     std::vector<uint8_t> input(nsamps), output(nsamps);
@@ -570,9 +933,11 @@ static void test_convert_types_u8(
     // run the loopback and test
     convert::id_type in_id  = id;
     convert::id_type out_id = reverse_converter(id);
-    CALL_LOOPBACK_SAFE(nsamps, in_id, out_id, input, output, prio, prio);
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        input.begin(), input.end(), output.begin(), output.end());
+    CALL_LOOPBACK_SAFE(nsamps, in_id, out_id, input, output, prio, prio, benchmark_data);
+    if(!benchmark_data) {
+        BOOST_CHECK_EQUAL_COLLECTIONS(
+            input.begin(), input.end(), output.begin(), output.end());
+    }
 }
 
 MULTI_CONVERTER_TEST_CASE(test_convert_types_u8_and_u8)
@@ -595,6 +960,30 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_u8_and_u8)
     }
 }
 
+BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
+MULTI_CONVERTER_TEST_CASE(benchmark_convert_types_u8_and_u8)
+{
+    convert::id_type id;
+    id.input_format = "u8";
+    id.num_inputs   = 1;
+    id.num_outputs  = 1;
+
+    id.output_format = "u8_item32_le";
+    benchmark_converter(id, conv_prio_type, 
+        [](size_t nsamps, convert::id_type id, uhd::convert::priority_type prio, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_u8(nsamps, id, prio, benchmarks);
+        });
+
+    // try various lengths to test edge cases
+    id.output_format = "u8_item32_be";
+    benchmark_converter(id, conv_prio_type, 
+        [](size_t nsamps, convert::id_type id, uhd::convert::priority_type prio, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_u8(nsamps, id, prio, benchmarks);
+        });
+}
+
 MULTI_CONVERTER_TEST_CASE(test_convert_types_u8_and_u8_chdr)
 {
     convert::id_type id;
@@ -609,11 +998,28 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_u8_and_u8_chdr)
     }
 }
 
+BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
+MULTI_CONVERTER_TEST_CASE(benchmark_convert_types_u8_and_u8_chdr)
+{
+    convert::id_type id;
+    id.input_format  = "u8";
+    id.output_format = "u8_chdr";
+    id.num_inputs    = 1;
+    id.num_outputs   = 1;
+
+    benchmark_converter(id, conv_prio_type, 
+        [](size_t nsamps, convert::id_type id, uhd::convert::priority_type prio, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_u8(nsamps, id, prio, benchmarks);
+        });
+}
+
 /***********************************************************************
  * Test s8 conversion
  **********************************************************************/
 static void test_convert_types_s8(
-    size_t nsamps, convert::id_type& id, uhd::convert::priority_type prio)
+    size_t nsamps, convert::id_type& id, uhd::convert::priority_type prio,
+    std::vector<benchmark_result>* benchmark_data = nullptr)
 {
     // fill the input samples
     std::vector<int8_t> input(nsamps), output(nsamps);
@@ -624,9 +1030,11 @@ static void test_convert_types_s8(
     // run the loopback and test
     convert::id_type in_id  = id;
     convert::id_type out_id = reverse_converter(id);
-    CALL_LOOPBACK_SAFE(nsamps, in_id, out_id, input, output, prio, prio);
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        input.begin(), input.end(), output.begin(), output.end());
+    CALL_LOOPBACK_SAFE(nsamps, in_id, out_id, input, output, prio, prio, benchmark_data);
+    if(!benchmark_data) {
+        BOOST_CHECK_EQUAL_COLLECTIONS(
+            input.begin(), input.end(), output.begin(), output.end());
+    }        
 }
 
 MULTI_CONVERTER_TEST_CASE(test_convert_types_s8_and_s8)
@@ -649,6 +1057,31 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_s8_and_s8)
     }
 }
 
+BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
+MULTI_CONVERTER_TEST_CASE(benchmark_convert_types_s8_and_s8)
+{
+    convert::id_type id;
+    id.input_format = "s8";
+    id.num_inputs   = 1;
+    id.num_outputs  = 1;
+
+    // try various lengths to test edge cases
+    id.output_format = "s8_item32_le";
+    benchmark_converter(id, conv_prio_type, 
+        [](size_t nsamps, convert::id_type id, uhd::convert::priority_type prio, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_s8(nsamps, id, prio, benchmarks);
+        });
+
+    // try various lengths to test edge cases
+    id.output_format = "s8_item32_be";
+    benchmark_converter(id, conv_prio_type, 
+        [](size_t nsamps, convert::id_type id, uhd::convert::priority_type prio, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_s8(nsamps, id, prio, benchmarks);
+        });
+}
+
 MULTI_CONVERTER_TEST_CASE(test_convert_types_s8_and_s8_chdr)
 {
     convert::id_type id;
@@ -663,11 +1096,28 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_s8_and_s8_chdr)
     }
 }
 
+BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
+MULTI_CONVERTER_TEST_CASE(benchmark_convert_types_s8_and_s8_chdr)
+{
+    convert::id_type id;
+    id.input_format  = "s8";
+    id.output_format = "s8_chdr";
+    id.num_inputs    = 1;
+    id.num_outputs   = 1;
+
+    benchmark_converter(id, conv_prio_type, 
+        [](size_t nsamps, convert::id_type id, uhd::convert::priority_type prio, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_s8(nsamps, id, prio, benchmarks);
+        });
+}
+
 /***********************************************************************
  * Test s16 conversion
  **********************************************************************/
 static void test_convert_types_s16(
-    size_t nsamps, convert::id_type& id, uhd::convert::priority_type prio)
+    size_t nsamps, convert::id_type& id, uhd::convert::priority_type prio,
+    std::vector<benchmark_result>* benchmark_data = nullptr)
 {
     // fill the input samples
     std::vector<int16_t> input(nsamps), output(nsamps);
@@ -678,9 +1128,11 @@ static void test_convert_types_s16(
     // run the loopback and test
     convert::id_type in_id  = id;
     convert::id_type out_id = reverse_converter(id);
-    CALL_LOOPBACK_SAFE(nsamps, in_id, out_id, input, output, prio, prio);
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        input.begin(), input.end(), output.begin(), output.end());
+    CALL_LOOPBACK_SAFE(nsamps, in_id, out_id, input, output, prio, prio, benchmark_data);
+    if(!benchmark_data) {
+        BOOST_CHECK_EQUAL_COLLECTIONS(
+            input.begin(), input.end(), output.begin(), output.end());
+    }
 }
 
 MULTI_CONVERTER_TEST_CASE(test_convert_types_s16_and_s16)
@@ -703,6 +1155,30 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_s16_and_s16)
     }
 }
 
+BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
+MULTI_CONVERTER_TEST_CASE(benchmark_convert_types_s16_and_s16)
+{
+    convert::id_type id;
+    id.input_format = "s16";
+    id.num_inputs   = 1;
+    id.num_outputs  = 1;
+
+    id.output_format = "s16_item32_le";
+    benchmark_converter(id, conv_prio_type, 
+        [](size_t nsamps, convert::id_type id, uhd::convert::priority_type prio, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_s16(nsamps, id, prio, benchmarks);
+        });
+
+    // try various lengths to test edge cases
+    id.output_format = "s16_item32_be";
+    benchmark_converter(id, conv_prio_type, 
+        [](size_t nsamps, convert::id_type id, uhd::convert::priority_type prio, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_s16(nsamps, id, prio, benchmarks);
+        });
+}
+
 MULTI_CONVERTER_TEST_CASE(test_convert_types_s16_and_s16_chdr)
 {
     convert::id_type id;
@@ -717,11 +1193,28 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_s16_and_s16_chdr)
     }
 }
 
+BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
+MULTI_CONVERTER_TEST_CASE(benchmark_convert_types_s16_and_s16_chdr)
+{
+    convert::id_type id;
+    id.input_format  = "s16";
+    id.output_format = "s16_chdr";
+    id.num_inputs    = 1;
+    id.num_outputs   = 1;
+
+    benchmark_converter(id, conv_prio_type, 
+        [](size_t nsamps, convert::id_type id, uhd::convert::priority_type prio, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_s16(nsamps, id, prio, benchmarks);
+        });
+}
+
 /***********************************************************************
  * Test fc32 -> fc32 conversion
  **********************************************************************/
 static void test_convert_types_fc32(
-    size_t nsamps, convert::id_type& id, uhd::convert::priority_type prio)
+    size_t nsamps, convert::id_type& id, uhd::convert::priority_type prio,
+    std::vector<benchmark_result>* benchmark_data = nullptr)
 {
     // fill the input samples
     std::vector<std::complex<float>> input(nsamps), output(nsamps);
@@ -734,8 +1227,8 @@ static void test_convert_types_fc32(
     // run the loopback and test
     convert::id_type in_id  = id;
     convert::id_type out_id = reverse_converter(id);
-    CALL_LOOPBACK_SAFE(nsamps, in_id, out_id, input, output, prio, prio);
-    for (size_t i = 0; i < nsamps; i++) {
+    CALL_LOOPBACK_SAFE(nsamps, in_id, out_id, input, output, prio, prio, benchmark_data);
+    for (size_t i = 0; i < nsamps && (!benchmark_data); i++) {
         MY_CHECK_CLOSE(input[i].real(), output[i].real(), float(1. / (1 << 16)));
         MY_CHECK_CLOSE(input[i].imag(), output[i].imag(), float(1. / (1 << 16)));
     }
@@ -761,6 +1254,29 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_fc32_and_fc32)
     }
 }
 
+BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
+MULTI_CONVERTER_TEST_CASE(benchmark_convert_types_fc32_and_fc32)
+{
+    convert::id_type id;
+    id.input_format = "fc32";
+    id.num_inputs   = 1;
+    id.num_outputs  = 1;
+
+    id.output_format = "fc32_item32_le";
+    benchmark_converter(id, conv_prio_type, 
+        [](size_t nsamps, convert::id_type id, uhd::convert::priority_type prio, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_fc32(nsamps, id, prio, benchmarks);
+        });
+
+    id.output_format = "fc32_item32_be";
+    benchmark_converter(id, conv_prio_type, 
+        [](size_t nsamps, convert::id_type id, uhd::convert::priority_type prio, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_fc32(nsamps, id, prio, benchmarks);
+        });
+}
+
 MULTI_CONVERTER_TEST_CASE(test_convert_types_fc32_and_fc32_chdr)
 {
     convert::id_type id;
@@ -773,4 +1289,21 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_fc32_and_fc32_chdr)
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
         test_convert_types_fc32(nsamps, id, conv_prio_type);
     }
+}
+
+BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
+MULTI_CONVERTER_TEST_CASE(benchmark_convert_types_fc32_and_fc32_chdr)
+{
+    convert::id_type id;
+    id.input_format  = "fc32";
+    id.output_format = "fc32_chdr";
+    id.num_inputs    = 1;
+    id.num_outputs   = 1;
+
+    id.output_format = "fc32_item32_be";
+    benchmark_converter(id, conv_prio_type, 
+        [](size_t nsamps, convert::id_type id, uhd::convert::priority_type prio, std::vector<benchmark_result>* benchmarks) 
+        {
+            test_convert_types_fc32(nsamps, id, prio, benchmarks);
+        });
 }
