@@ -36,6 +36,9 @@ class x4xx_radio_mock_reg_iface_t : public mock_reg_iface_t
     static constexpr uint32_t spi_offset =
         radio_control_impl::regmap::PERIPH_BASE
         + 0xC000 /*DIO Window*/ + 0x2000 /*DIO Regmap*/;
+    static constexpr uint32_t gpio_offset =
+        radio_control_impl::regmap::PERIPH_BASE
+        + 0xC000 /*DIO Window*/ + 0x1000 /*GPIO Regmap*/;
 
 public:
     x4xx_radio_mock_reg_iface_t(size_t num_channels)
@@ -51,6 +54,9 @@ public:
             (32 /* bits per sample */ << 16) | 1 /* sample per clock */;
         // Ensure that the SPI Status is always SPI_READY
         read_memory[spi_offset + 0x18] |= 1 << 24;
+
+        // Setup the GPIO addresses
+        read_memory[gpio_offset + 0x4] = 0;
     }
 
     void _poke_cb(uint32_t addr, uint32_t data, uhd::time_spec_t, bool) override
