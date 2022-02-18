@@ -14,6 +14,7 @@
 #include <boost/test/data/test_case.hpp>
 #include <boost/test/unit_test.hpp>
 #include <array>
+#include <chrono>
 #include <complex>
 #include <cstdlib>
 #include <iostream>
@@ -25,6 +26,18 @@ using namespace uhd;
 typedef std::complex<int16_t> sc16_t;
 typedef std::complex<float> fc32_t;
 typedef std::complex<double> fc64_t;
+
+static constexpr size_t BENCHMARK_NSAMPS = 8 * 1024 * 1024;
+static constexpr size_t BENCHMARK_NITERS = 4;
+
+// Holds performance information about a conversion run
+struct benchmark_result
+{
+    convert::id_type id;
+    uhd::convert::priority_type prio;
+    double elapsed_ns;
+    size_t nsamps;
+};
 
 // List of priority types. This must be manually kept in sync with whatever is
 // defined in convert_common.hpp
@@ -70,6 +83,7 @@ static convert::id_type reverse_converter(const convert::id_type& in)
  * Loopback runner:
  *    convert input buffer into intermediate buffer
  *    convert intermediate buffer into output buffer
+ *    optionally collect benchmark data
  **********************************************************************/
 template <typename Range>
 static void loopback(size_t nsamps,
@@ -78,7 +92,8 @@ static void loopback(size_t nsamps,
     const Range& input,
     Range& output,
     const int prio_in,
-    const int prio_out)
+    const int prio_out,
+    std::vector<benchmark_result>* benchmark_data = nullptr)
 {
     // make this buffer large enough for all test types
     std::vector<uint64_t> interm(nsamps);
@@ -89,12 +104,28 @@ static void loopback(size_t nsamps,
     // convert to intermediate type
     convert::converter::sptr c0 = convert::get_converter(in_id, prio_in)();
     c0->set_scalar(32767.);
-    c0->conv(input0, output0, nsamps);
+    if(benchmark_data) {
+        const auto start_time = std::chrono::steady_clock::now(); 
+        c0->conv(input0, output0, nsamps);
+        const auto end_time = std::chrono::steady_clock::now();
+        const std::chrono::duration<double, std::nano> elapsed_in2out = end_time - start_time;
+        benchmark_data->push_back({in_id, prio_in, elapsed_in2out.count(), nsamps});
+    } else {
+        c0->conv(input0, output0, nsamps);
+    }
 
     // convert back to host type
     convert::converter::sptr c1 = convert::get_converter(out_id, prio_out)();
     c1->set_scalar(1 / 32767.);
-    c1->conv(input1, output1, nsamps);
+    if(benchmark_data) {
+        const auto start_time = std::chrono::steady_clock::now(); 
+        c1->conv(input1, output1, nsamps);
+        const auto end_time = std::chrono::steady_clock::now();
+        const std::chrono::duration<double, std::nano> elapsed_out2in = end_time - start_time;
+        benchmark_data->push_back({out_id, prio_out, elapsed_out2in.count(), nsamps});
+    } else {
+        c1->conv(input1, output1, nsamps);
+    }
 }
 
 // Use this to call the loopback runner from a test so that missing prio won't
@@ -107,13 +138,66 @@ static void loopback(size_t nsamps,
     }
 
 /***********************************************************************
+ * Run converter test code under a benchmark
+ **********************************************************************/
+template <typename ConverterFunction>
+static void benchmark_converter(
+    convert::id_type id,
+    uhd::convert::priority_type prio,
+    ConverterFunction&& converter_fn)
+{
+    std::vector<benchmark_result> benchmarks;
+    for(size_t iter = 0; iter < BENCHMARK_NITERS; iter++)
+    {
+        std::vector<benchmark_result> benchmarks_iter;
+        converter_fn(BENCHMARK_NSAMPS, id, prio, &benchmarks_iter);
+        // Detect if the benchmark didn't run because the converter type
+        // with the given priority wasn't found; if that's the case, bail
+        // on the test case
+        if(benchmarks_iter.empty()) {
+            return;
+        }
+        // Save the results for this iteration
+        std::copy(benchmarks_iter.begin(), benchmarks_iter.end(), std::back_inserter(benchmarks));
+    }
+
+    // Now collate and print the results
+    while(!benchmarks.empty())
+    {
+        // Get the first entry from the per-iteration runs
+        struct benchmark_data bd = *(benchmarks.begin());
+        // Remove that entry from the list, and look for other entries in
+        // the list that have the same converter and priority
+        auto b_iter = benchmarks.erase(benchmarks.begin());
+        while(b_iter != benchmarks.end())
+        {
+            if(b_iter->id == bd.id && b_iter->prio == bd.prio) {
+                // If a match is found, accumulate the elapsed time and
+                // number of samples
+                bd.elapsed_ns += b_iter->elapsed_ns;
+                bd.nsamps += b_iter->nsamps;
+                // And then remove it from the list
+                b_iter = benchmarks.erase(b_iter);
+            } else {
+                // Not a match; move on
+                b_iter++;
+            }
+        }
+        double ns_per_sample = bd.elapsed_ns / bd.nsamps;
+        std::cout << "For converter " << bd.id.to_string() << " prio " << prio << ": " <<
+            ns_per_sample << " ns/sample" << std::endl;
+    }
+}
+
+/***********************************************************************
  * Test short conversion
  **********************************************************************/
 static void test_convert_types_sc16(size_t nsamps,
     convert::id_type& id,
     uhd::convert::priority_type prio,
     const int extra_div = 1,
-    int mask            = 0xffff)
+    int mask            = 0xffff,
+    std::vector<benchmark_result>* benchmark_data = nullptr)
 {
     // fill the input samples
     std::vector<sc16_t> input(nsamps), output(nsamps);
@@ -129,9 +213,11 @@ static void test_convert_types_sc16(size_t nsamps,
     // run the loopback and test
     convert::id_type in_id  = id;
     convert::id_type out_id = reverse_converter(id);
-    CALL_LOOPBACK_SAFE(nsamps, in_id, out_id, input, output, prio, prio);
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        input.begin(), input.end(), output.begin(), output.end());
+    CALL_LOOPBACK_SAFE(nsamps, in_id, out_id, input, output, prio, prio, benchmark_data);
+    if(!benchmark_data) {
+        BOOST_CHECK_EQUAL_COLLECTIONS(
+            input.begin(), input.end(), output.begin(), output.end());
+    }
 }
 
 MULTI_CONVERTER_TEST_CASE(test_convert_types_be_sc16)
@@ -182,7 +268,8 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_chdr_sc16)
 template <typename data_type>
 static void test_convert_types_for_floats(size_t nsamps,
     convert::id_type& id,
-    const double extra_scale = 1.0)
+    const double extra_scale = 1.0,
+    std::vector<benchmark_result>* benchmark_data = nullptr)
 {
     typedef typename data_type::value_type value_type;
 
@@ -206,8 +293,8 @@ static void test_convert_types_for_floats(size_t nsamps,
 
     // loopback foreach prio combo (generic vs best)
     for (const auto& prio : prios) {
-        CALL_LOOPBACK_SAFE(nsamps, in_id, out_id, input, output, prio.first, prio.second);
-        for (size_t i = 0; i < nsamps; i++) {
+        CALL_LOOPBACK_SAFE(nsamps, in_id, out_id, input, output, prio.first, prio.second, benchmark_data);
+        for (size_t i = 0; i < nsamps && (!benchmark_data); i++) {
             MY_CHECK_CLOSE(input[i].real(), output[i].real(), value_type(1. / (1 << 14)));
             MY_CHECK_CLOSE(input[i].imag(), output[i].imag(), value_type(1. / (1 << 14)));
         }
