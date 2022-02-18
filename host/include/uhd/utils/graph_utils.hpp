@@ -63,6 +63,10 @@ std::vector<graph_edge_t> UHD_API get_block_chain(const rfnoc_graph::sptr graph,
  *  \param src_port Block port where the path starts
  *  \param dst_blk Destination block's ID
  *  \param dst_port Block port where the path ends
+ *  \param skip_property_propagation Declare back-edge
+ *                                   (see also uhd::rfnoc::rfnoc_graph::connect())
+ *                                   If true, it will declare only the first
+ *                                   connection in this chain as a back-edge.
  *
  *  \return The edge list representing the data path requested
  */
@@ -70,6 +74,7 @@ std::vector<graph_edge_t> UHD_API connect_through_blocks(rfnoc_graph::sptr graph
     const block_id_t src_blk,
     const size_t src_port,
     const block_id_t dst_blk,
-    const size_t dst_port);
+    const size_t dst_port,
+    const bool skip_property_propagation = false);
 
 }} // namespace uhd::rfnoc
