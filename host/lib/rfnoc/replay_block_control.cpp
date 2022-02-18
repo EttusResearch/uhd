@@ -91,6 +91,8 @@ public:
             get_unique_id(),
             false /* Let it slide if minors mismatch */
         );
+        RFNOC_LOG_TRACE(
+            "Initializing replay block with num ports=" << get_num_input_ports());
         // Properties and actions can't propagate through this block, as we
         // treat source and sink of this block like the radio (they terminate
         // the graph).
@@ -98,6 +100,30 @@ public:
         set_action_forwarding_policy(forwarding_policy_t::DROP);
         // Same for MTU
         set_mtu_forwarding_policy(forwarding_policy_t::DROP);
+        // Register action handler
+        register_action_handler(ACTION_KEY_STREAM_CMD,
+            [this](const res_source_info& src, action_info::sptr action) {
+                stream_cmd_action_info::sptr stream_cmd_action =
+                    std::dynamic_pointer_cast<stream_cmd_action_info>(action);
+                if (!stream_cmd_action) {
+                    RFNOC_LOG_WARNING("Received invalid stream command action!");
+                    return;
+                }
+                RFNOC_LOG_TRACE("Received stream command: "
+                                << stream_cmd_action->stream_cmd.stream_mode << " to "
+                                << src.to_string());
+                if (src.type != res_source_info::OUTPUT_EDGE) {
+                    RFNOC_LOG_WARNING(
+                        "Received stream command, but not to output port! Ignoring.");
+                    return;
+                }
+                const size_t port = src.instance;
+                if (port >= get_num_output_ports()) {
+                    RFNOC_LOG_WARNING("Received stream command to invalid output port!");
+                    return;
+                }
+                issue_stream_cmd(stream_cmd_action->stream_cmd, port);
+            });
 
         // Initialize record properties
         _record_type.reserve(_num_input_ports);
