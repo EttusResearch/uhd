@@ -8,17 +8,18 @@
 #define INCLUDED_UHD_RFNOC_PYTHON_HPP
 
 #include "../stream_python.hpp"
+#include <uhd/features/discoverable_feature.hpp>
+#include <uhd/features/gpio_power_iface.hpp>
 #include <uhd/rfnoc/block_id.hpp>
 #include <uhd/rfnoc/graph_edge.hpp>
 #include <uhd/rfnoc/mb_controller.hpp>
 #include <uhd/rfnoc/noc_block_base.hpp>
 #include <uhd/rfnoc/register_iface.hpp>
 #include <uhd/rfnoc/res_source_info.hpp>
-#include <uhd/features/discoverable_feature.hpp>
-#include <uhd/features/gpio_power_iface.hpp>
 #include <uhd/rfnoc_graph.hpp>
 #include <uhd/transport/adapter_id.hpp>
 #include <uhd/types/device_addr.hpp>
+#include <uhd/utils/graph_utils.hpp>
 #include <pybind11/operators.h>
 #include <pybind11/stl.h>
 #include <memory>
@@ -513,6 +514,16 @@ void export_rfnoc(py::module& m)
             },
             py::arg("id"),
             py::arg("instance") = 0);
+
+    m.def("get_block_chain", &uhd::rfnoc::get_block_chain);
+    m.def("connect_through_blocks",
+        &uhd::rfnoc::connect_through_blocks,
+        py::arg("graph"),
+        py::arg("src_blk"),
+        py::arg("src_port"),
+        py::arg("dst_blk"),
+        py::arg("dst_port"),
+        py::arg("skip_property_propagation") = false);
 }
 
 #endif /* INCLUDED_UHD_RFNOC_PYTHON_HPP */
