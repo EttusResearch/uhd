@@ -42,6 +42,10 @@ LIBUHD_REGISTER_COMPONENT("API/Doxygen" ENABLE_DOXYGEN ON "DOXYGEN_FOUND" OFF OF
 option(ENABLE_DOXYGEN_FULL "Use Doxygen to document the entire source tree (not just API)" OFF)
 option(ENABLE_DOXYGEN_DOT "Let Doxygen use dot (requires graphviz)" OFF)
 option(ENABLE_DOXYGEN_SHORTNAMES "Let Doxygen use shorter filenames (helps on Windows)" OFF)
+set(
+    MATHJAX_RELPATH https://cdn.jsdelivr.net/npm/mathjax@2/
+    CACHE STRING "MATHJAX_RELPATH option for Doxygen")
+mark_as_advanced(MATHJAX_RELPATH)
 
 if(LIBUHDDEV_PKG)
     set(PKG_DOC_DIR share/doc/libuhd-dev)
