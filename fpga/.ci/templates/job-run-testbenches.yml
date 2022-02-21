@@ -1,0 +1,40 @@
+#
+# Copyright 2022 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+# Description:
+#
+#   This template is used to run all the testbenches using ModelSim.
+#
+
+
+jobs:
+- job:
+  displayName: "ModelSim Simulation"
+  timeoutInMinutes: 360
+  pool:
+    name: Hardware
+  variables:
+  - group: sdr-pipeline-vars
+  steps:
+    - checkout: self
+      clean: true
+      persistCredentials: true
+
+    - checkout: hwtools
+      clean: true
+      path: s/hwtools/head
+      persistCredentials: true
+
+    - bash: |
+        source $(Build.SourcesDirectory)/uhddev/fpga/.ci/scripts/run_setup.sh ./top/x300
+
+        echo "---- Run testbenches ----"
+        pushd ./tools/utils
+        python3 ./run_testbenches.py --logged --simulator modelsim --excludes=modelsim.excludes -j2 run
+        popd
+      workingDirectory: uhddev/fpga/usrp3
+      env:
+        PATCHES_PATH: $(sdr-vivado-patches)
+      displayName: "Run Testbenches"
