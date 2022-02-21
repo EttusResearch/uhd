@@ -237,10 +237,16 @@ module n3xx_clocking (
   //  ____________|              PPS              |
   // |   Clocks   | External | FPGA  | GPSDO | WR |
   // |--------------------------------------------|
-  // |External 10 |    x     |  x    |       |    |
+  // |External 10 |    x     |  x    |  (x)  |    |
   // |Internal 25 |          |  x    |       | x  |
   // |GPSDO    20 |          |       |   x   |    |
   // |--------------------------------------------|
+  //
+  // A note on external clock + GPSDO timing: The hardware doesn't prohibit this
+  // use case, but GPSDO and external clock are guaranteed to be not matched, so
+  // this will certainly cause a non-deterministic time alignment between devices.
+  // Using this combination will still allow receiving samples, but there is no
+  // guarantee regarding phase/time alignment whatsoever.
   //
   ///////////////////////////////////////////////////////////////////////////////////////
 
