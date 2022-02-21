@@ -14,6 +14,8 @@ set_clock_groups -asynchronous -group [get_clocks clk100       -include_generate
 set_clock_groups -asynchronous -group [get_clocks clk40        -include_generated_clocks]
 set_clock_groups -asynchronous -group [get_clocks bus_clk      -include_generated_clocks]
 set_clock_groups -asynchronous -group [get_clocks meas_clk_ref -include_generated_clocks]
+set_clock_groups -asynchronous -group [get_clocks async_in_clk]
+set_clock_groups -asynchronous -group [get_clocks async_out_clk]
 
 
 
