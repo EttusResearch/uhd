@@ -251,14 +251,16 @@ class XportMgrUDP:
 
         int_iface = internal_ifaces[0]
         internal_ip_addr = self.get_fpga_internal_ip_address(int_iface)
-        prerouting_arguments = ['PREROUTING',
+        prerouting_arguments = [
+            'PREROUTING',
             '-t', 'nat',
             '-i', iface,
             '-p', 'udp',
             '--dport', str(self.chdr_port),
             '-j', 'DNAT',
-            '--to', internal_ip_addr]
-        forward_arguments = ['FORWARD',
+            '--to-destination', internal_ip_addr]
+        forward_arguments = [
+            'FORWARD',
             '-p', 'udp',
             '-d', internal_ip_addr,
             '--dport', str(self.chdr_port),
