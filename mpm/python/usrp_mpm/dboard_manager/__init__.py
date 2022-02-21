@@ -13,7 +13,6 @@ if not __simulated__:
     from .rhodium import Rhodium
     from .neon import Neon
     from .e31x_db import E31x_db
-    from .eiscat import EISCAT
     from .empty_slot import EmptySlot
     from .zbx import ZBX
     from .test import test

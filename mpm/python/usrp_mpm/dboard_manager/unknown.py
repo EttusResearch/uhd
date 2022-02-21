@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 """
-EISCAT rx board implementation module
+Dummy rx board implementation module
 """
 from usrp_mpm.dboard_manager import DboardManagerBase
 
