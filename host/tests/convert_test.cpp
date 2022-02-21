@@ -384,6 +384,59 @@ static void test_convert_types_for_floats(size_t nsamps,
     }
 }
 
+template <typename data_type>
+static void test_convert_types_for_floats_with_saturation(size_t nsamps,
+    convert::id_type& id,
+    const double extra_scale = 1.0)
+{
+    typedef typename data_type::value_type value_type;
+
+    // fill the input samples
+    std::vector<data_type> input(nsamps), output(nsamps), expected_output(nsamps);
+    for (size_t sample_count = 0; sample_count < nsamps; sample_count++)
+    {
+        value_type real_data = ((std::rand() / (value_type(RAND_MAX) / 2)) - 1) * float(extra_scale);
+        value_type imag_data = ((std::rand() / (value_type(RAND_MAX) / 2)) - 1) * float(extra_scale);
+        value_type expected_real_data = real_data;
+        value_type expected_imag_data = imag_data;
+        if(sample_count & 1)
+        {
+            // To ensure that some samples are out of range and thus should be
+            // saturated, every alternating sample's real and imaginary values
+            // are pushed outside of the [-1..1] range.
+            real_data = (real_data < 0.0) ? real_data - 1.0 : real_data + 1.0;
+            imag_data = (imag_data < 0.0) ? imag_data - 1.0 : imag_data + 1.0;
+
+            // The expected output values after loopback for these samples are
+            // -1.0 or 1.0.
+            expected_real_data = (real_data < 0.0) ? -1.0 : 1.0;
+            expected_imag_data = (imag_data < 0.0) ? -1.0 : 1.0;
+        }
+        input[sample_count] = data_type(real_data, imag_data);
+        expected_output[sample_count] = data_type(expected_real_data, expected_imag_data);
+    }
+
+    // run the loopback and test
+    convert::id_type in_id  = id;
+    convert::id_type out_id = id;
+    std::swap(out_id.input_format, out_id.output_format);
+    std::swap(out_id.num_inputs, out_id.num_outputs);
+
+    // make a list of all prio: best/generic combos
+    typedef std::pair<int, int> int_pair_t;
+    const std::vector<int_pair_t> prios{
+        int_pair_t(0, 0), int_pair_t(-1, 0), int_pair_t(0, -1), int_pair_t(-1, -1)};
+
+    // loopback foreach prio combo (generic vs best)
+    for (const auto& prio : prios) {
+        CALL_LOOPBACK_SAFE(nsamps, in_id, out_id, input, output, prio.first, prio.second);
+        for (size_t i = 0; i < nsamps; i++) {
+            MY_CHECK_CLOSE(expected_output[i].real(), output[i].real(), value_type(1. / (1 << 14)));
+            MY_CHECK_CLOSE(expected_output[i].imag(), output[i].imag(), value_type(1. / (1 << 14)));
+        }
+    }
+}
+
 BOOST_AUTO_TEST_CASE(test_convert_types_be_fc32)
 {
     convert::id_type id;
@@ -395,6 +448,20 @@ BOOST_AUTO_TEST_CASE(test_convert_types_be_fc32)
     // try various lengths to test edge cases
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
         test_convert_types_for_floats<fc32_t>(nsamps, id);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(test_convert_types_be_fc32_with_saturation)
+{
+    convert::id_type id;
+    id.input_format  = "fc32";
+    id.num_inputs    = 1;
+    id.output_format = "sc16_item32_be";
+    id.num_outputs   = 1;
+
+    // try various lengths to test edge cases
+    for (size_t nsamps = 1; nsamps < 16; nsamps++) {
+        test_convert_types_for_floats_with_saturation<fc32_t>(nsamps, id);
     }
 }
 
@@ -428,6 +495,20 @@ BOOST_AUTO_TEST_CASE(test_convert_types_le_fc32)
     }
 }
 
+BOOST_AUTO_TEST_CASE(test_convert_types_le_fc32_with_saturation)
+{
+    convert::id_type id;
+    id.input_format  = "fc32";
+    id.num_inputs    = 1;
+    id.output_format = "sc16_item32_le";
+    id.num_outputs   = 1;
+
+    // try various lengths to test edge cases
+    for (size_t nsamps = 1; nsamps < 16; nsamps++) {
+        test_convert_types_for_floats_with_saturation<fc32_t>(nsamps, id);
+    }
+}
+
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 BOOST_AUTO_TEST_CASE(benchmark_convert_types_le_fc32)
 {
@@ -455,6 +536,20 @@ BOOST_AUTO_TEST_CASE(test_convert_types_chdr_fc32)
     // try various lengths to test edge cases
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
         test_convert_types_for_floats<fc32_t>(nsamps, id);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(test_convert_types_chdr_fc32_with_saturation)
+{
+    convert::id_type id;
+    id.input_format  = "fc32";
+    id.num_inputs    = 1;
+    id.output_format = "sc16_chdr";
+    id.num_outputs   = 1;
+
+    // try various lengths to test edge cases
+    for (size_t nsamps = 1; nsamps < 16; nsamps++) {
+        test_convert_types_for_floats_with_saturation<fc32_t>(nsamps, id);
     }
 }
 
@@ -488,6 +583,20 @@ BOOST_AUTO_TEST_CASE(test_convert_types_be_fc64)
     }
 }
 
+BOOST_AUTO_TEST_CASE(test_convert_types_be_fc64_with_saturation)
+{
+    convert::id_type id;
+    id.input_format  = "fc64";
+    id.num_inputs    = 1;
+    id.output_format = "sc16_item32_be";
+    id.num_outputs   = 1;
+
+    // try various lengths to test edge cases
+    for (size_t nsamps = 1; nsamps < 16; nsamps++) {
+        test_convert_types_for_floats_with_saturation<fc64_t>(nsamps, id);
+    }
+}
+
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 BOOST_AUTO_TEST_CASE(benchmark_convert_types_be_fc64)
 {
@@ -518,6 +627,20 @@ BOOST_AUTO_TEST_CASE(test_convert_types_le_fc64)
     }
 }
 
+BOOST_AUTO_TEST_CASE(test_convert_types_le_fc64_with_saturation)
+{
+    convert::id_type id;
+    id.input_format  = "fc64";
+    id.num_inputs    = 1;
+    id.output_format = "sc16_item32_le";
+    id.num_outputs   = 1;
+
+    // try various lengths to test edge cases
+    for (size_t nsamps = 1; nsamps < 16; nsamps++) {
+        test_convert_types_for_floats_with_saturation<fc64_t>(nsamps, id);
+    }
+}
+
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 BOOST_AUTO_TEST_CASE(benchmark_convert_types_le_fc64)
 {
@@ -545,6 +668,20 @@ BOOST_AUTO_TEST_CASE(test_convert_types_chdr_fc64)
     // try various lengths to test edge cases
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
         test_convert_types_for_floats<fc64_t>(nsamps, id);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(test_convert_types_chdr_fc64_with_saturation)
+{
+    convert::id_type id;
+    id.input_format  = "fc64";
+    id.num_inputs    = 1;
+    id.output_format = "sc16_chdr";
+    id.num_outputs   = 1;
+
+    // try various lengths to test edge cases
+    for (size_t nsamps = 1; nsamps < 16; nsamps++) {
+        test_convert_types_for_floats_with_saturation<fc64_t>(nsamps, id);
     }
 }
 
