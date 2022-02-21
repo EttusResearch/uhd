@@ -1,0 +1,71 @@
+#
+# Copyright 2022 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+# Description:
+#
+#   This template shall be used to package images.
+#
+#   See description for the parameters below.
+#
+
+parameters:
+### Required parameters
+# Package name for identification purposes
+- name: package_name
+  type: string
+# FPGA artifacts to be downloaded to "build_directory"
+# Note that the value for each key is not used in this job.
+# E.g.
+#   targets_matrix:
+#     X410_XG_100:
+#       target: X410_XG_100
+#       timeout: 480
+#     X410_X4_200:
+#       target: X410_X4_200
+#       timeout: 480
+- name: artifacts_matrix
+  type: object
+# PATH to device's build directory (where artifacts will be copied and
+# packaging utility will be run)
+- name: build_directory
+  type: string
+
+
+jobs:
+- job: ${{ parameters.package_name }}
+  displayName: 'Create ${{ parameters.package_name }}'
+  timeoutInMinutes: 10
+  pool:
+    name: hardware
+  steps:
+    - checkout: self
+      clean: true
+
+    - ${{ each artifact in parameters.artifacts_matrix }}:
+      - download: current
+        artifact: ${{ artifact.key }}
+        displayName: 'Download ${{ artifact.key }}'
+
+    - ${{ each artifact in parameters.artifacts_matrix }}:
+      - bash: |
+          mkdir -p ${{ parameters.build_directory }}
+          cp $(Pipeline.Workspace)/${{ artifact.key }}/* \
+             ${{ parameters.build_directory }}/
+          rm -rf $(Pipeline.Workspace)/${{ artifact.key }}/
+        displayName: 'Populate ${{ artifact.key }} artifacts'
+
+    - bash: |
+        OSS_REPO_HASH="$(git rev-parse --verify HEAD --short=7 2>/dev/null)"
+        echo "##vso[task.setvariable variable=OSS_REPO_HASH]$OSS_REPO_HASH"
+        echo "OSS Repo hash: $OSS_REPO_HASH"
+        python3 $(Build.SourcesDirectory)/fpga/usrp3/tools/utils/package_images.py --githash "uhd-$OSS_REPO_HASH"
+        rm -f *.bit *.dts *.rpt *.md5
+      workingDirectory: ${{ parameters.build_directory }}
+      displayName: 'Run package_images.py'
+
+    # Publish the final result only if all previous steps passed
+    - publish: ${{ parameters.build_directory }}
+      artifact: '${{ parameters.package_name }}-g$(OSS_REPO_HASH)'
+      displayName: 'Publish package'
