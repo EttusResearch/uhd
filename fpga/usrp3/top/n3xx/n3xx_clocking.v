@@ -154,7 +154,7 @@ module n3xx_clocking (
   //  ____________|              PPS              |
   // |   Clocks   | External | FPGA  | GPSDO | WR |
   // |--------------------------------------------|
-  // |External 10 |    x     |  x    |       |    |
+  // |External 10 |    x     |  x    |   x   |    |
   // |Internal 25 |          |  x    |       | x  |
   // |GPSDO    20 |          |       |   x   |    |
   // |--------------------------------------------|
