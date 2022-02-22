@@ -442,7 +442,7 @@ void rhodium_radio_control_impl::_init_frontend_subtree(uhd::property_tree::sptr
         .set_coercer(
             [this](double freq) { return this->set_tx_lo_freq(freq, RHODIUM_LO1, 0); });
     subtree->create<meta_range_t>(tx_fe_path / "los" / RHODIUM_LO1 / "freq/range")
-        .set_publisher([this]() { return this->get_rx_lo_freq_range(RHODIUM_LO1, 0); });
+        .set_publisher([this]() { return this->get_tx_lo_freq_range(RHODIUM_LO1, 0); });
     // TX LO1 Source
     subtree
         ->create<std::vector<std::string>>(

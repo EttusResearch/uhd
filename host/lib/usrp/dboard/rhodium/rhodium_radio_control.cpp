@@ -729,9 +729,9 @@ std::vector<std::string> rhodium_radio_control_impl::get_tx_sensor_names(size_t)
 sensor_value_t rhodium_radio_control_impl::get_tx_sensor(
     const std::string& name, size_t chan)
 {
-    if (!uhd::has(_rx_sensor_names, name)) {
-        RFNOC_LOG_ERROR("Invalid RX sensor name: " << name);
-        throw uhd::key_error("Invalid RX sensor name!");
+    if (!uhd::has(_tx_sensor_names, name)) {
+        RFNOC_LOG_ERROR("Invalid TX sensor name: " << name);
+        throw uhd::key_error("Invalid TX sensor name!");
     }
     if (name == "lo_locked") {
         return sensor_value_t(
