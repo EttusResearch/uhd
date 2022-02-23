@@ -17,7 +17,6 @@ clocks:
     freq: "[]"
 
 control:
-  sw_iface: nocscript
   fpga_iface: ctrlport
   interface_direction: remote_master_slave
   fifo_depth: 512
