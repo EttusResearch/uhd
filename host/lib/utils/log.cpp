@@ -100,6 +100,35 @@ inline std::string path_to_filename(std::string path)
 
 } // namespace
 
+namespace uhd { namespace log {
+
+boost::optional<uhd::log::severity_level> parse_log_level_from_string(
+    const std::string& log_level_str)
+{
+    if (std::isdigit(log_level_str[0])) {
+        const uhd::log::severity_level log_level_num =
+            uhd::log::severity_level(std::stoi(log_level_str));
+        if (log_level_num >= uhd::log::trace && log_level_num <= uhd::log::fatal) {
+            return log_level_num;
+        } else {
+            std::cerr << "[LOG] Failed to set log level to: " << log_level_str;
+            return boost::none;
+        }
+    }
+
+#define if_loglevel_equal(name) else if (log_level_str == #name) return uhd::log::name
+    if_loglevel_equal(trace);
+    if_loglevel_equal(debug);
+    if_loglevel_equal(info);
+    if_loglevel_equal(warning);
+    if_loglevel_equal(error);
+    if_loglevel_equal(fatal);
+    if_loglevel_equal(off);
+    return boost::none;
+}
+
+}}
+
 /***********************************************************************
  * Logger backends
  **********************************************************************/
@@ -407,26 +436,13 @@ private:
     uhd::log::severity_level _get_log_level(
         const std::string& log_level_str, const uhd::log::severity_level& previous_level)
     {
-        if (std::isdigit(log_level_str[0])) {
-            const uhd::log::severity_level log_level_num =
-                uhd::log::severity_level(std::stoi(log_level_str));
-            if (log_level_num >= uhd::log::trace and log_level_num <= uhd::log::fatal) {
-                return log_level_num;
-            } else {
-                std::cerr << "[LOG] Failed to set log level to: " << log_level_str;
-                return previous_level;
-            }
+        boost::optional<uhd::log::severity_level> parsed_level =
+            uhd::log::parse_log_level_from_string(log_level_str);
+        if (parsed_level) {
+            return *parsed_level;
+        } else {
+            return previous_level;
         }
-
-#define if_loglevel_equal(name) else if (log_level_str == #name) return uhd::log::name
-        if_loglevel_equal(trace);
-        if_loglevel_equal(debug);
-        if_loglevel_equal(info);
-        if_loglevel_equal(warning);
-        if_loglevel_equal(error);
-        if_loglevel_equal(fatal);
-        if_loglevel_equal(off);
-        return previous_level;
     }
 
     void _setup_console_logging()

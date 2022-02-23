@@ -211,12 +211,23 @@ public:
  */
 constexpr size_t DEFAULT_MTU = 8000;
 
-//! Helper class to make sure we get the most logging regardless of environment
-// settings
+//! Helper class to make sure we get the most logging. The logging level can be
+// overridden using a special test-specific environment variable,
+// `UHD_UNITTEST_LOG_LEVEL`.
 struct uhd_log_enabler
 {
     uhd_log_enabler(uhd::log::severity_level level)
     {
+        const char* env_p = std::getenv("UHD_UNITTEST_LOG_LEVEL");
+        if (env_p) {
+            auto parsed_level = uhd::log::parse_log_level_from_string(env_p);
+            if (parsed_level) {
+                level = *parsed_level;
+            } else {
+                std::cout << "Unable to parse UHD_UNITTEST_LOG_LEVEL " << env_p << std::endl;
+            }
+        }
+
         std::cout << "Setting log level to " << level << "..." << std::endl;
         uhd::log::set_log_level(level);
         uhd::log::set_console_level(level);
