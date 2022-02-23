@@ -134,4 +134,3 @@ endmacro(GEN_OUTPUTS)
 ########################################################################
 add_subdirectory(lib)
 add_subdirectory(x300)
-add_subdirectory(n230)
