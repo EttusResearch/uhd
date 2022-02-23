@@ -10,6 +10,8 @@
 -- (c) 2013 Copyright National Instruments Corporation
 -- All Rights Reserved
 -- National Instruments Internal Information
+--
+-- SPDX-License-Identifier: LGPL-3.0-or-later
 -------------------------------------------------------------------------------
 */
 
