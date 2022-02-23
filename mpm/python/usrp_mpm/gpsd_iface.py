@@ -129,6 +129,7 @@ class GPSDIface:
             self.log = get_main_logger('GPSDIface')
         # Make a socket to connect to GPSD
         self.gpsd_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.gpsd_sockfile = self.gpsd_socket.makefile(encoding='ascii')
 
     def __enter__(self):
         self.open()
@@ -187,23 +188,18 @@ class GPSDIface:
         query_cmd = b'?WATCH={"enable":false};'
         self.gpsd_socket.sendall(query_cmd)
 
-    def socket_read_line(self, timeout=60, interval=0):
+    def socket_read_line(self, timeout=60):
         """
         Read from a socket until newline. If there was no newline until the timeout
         occurs, raise an error. Otherwise, return the line.
         """
-        line = b''
-        end_time = time.time() + timeout
-        while time.time() < end_time:
-            socket_ready = select.select([self.gpsd_socket], [], [], 0)[0]
-            if socket_ready:
-                next_char = self.gpsd_socket.recv(1)
-                if next_char == b'\n':
-                    return line.decode('ascii')
-                line += next_char
-            else:
-                time.sleep(interval)
-        raise socket.timeout
+        old_timeout = self.gpsd_socket.gettimeout()
+        self.gpsd_socket.settimeout(timeout)
+        try:
+            # get a file interface to socket, read until newline, and trim it
+            return self.gpsd_sockfile.readline().strip()
+        finally:
+            self.gpsd_socket.settimeout(old_timeout)
 
     def read_class(self, class_name, socket_timeout=60):
         """return json data for spcecfic key of 'class'
