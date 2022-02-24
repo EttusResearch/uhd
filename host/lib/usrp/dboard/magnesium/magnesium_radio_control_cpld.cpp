@@ -294,3 +294,26 @@ void magnesium_radio_control_impl::_update_tx_freq_switches(const double freq,
         enable_lowband_mixer,
         magnesium_cpld_ctrl::ON);
 }
+
+void magnesium_radio_control_impl::_reset_tx_frontend(
+    const magnesium_cpld_ctrl::chan_sel_t chan_sel)
+{
+    RFNOC_LOG_TRACE("magnesium_radio_control_impl::_reset_tx_frontend()");
+
+    // Deactivate idle state frontend components
+    _cpld->set_tx_switches(chan_sel,
+        magnesium_cpld_ctrl::TX_SW1_SHUTDOWNTXSW1,
+        magnesium_cpld_ctrl::TX_SW2_TOTXFILTERLP3400MHZ,
+        magnesium_cpld_ctrl::TX_SW3_BYPASSPATHTOTRXSW,
+        magnesium_cpld_ctrl::LOWBAND_MIXER_PATH_SEL_BYPASS,
+        false, // disable lowband mixer
+        magnesium_cpld_ctrl::IDLE,
+        true);
+    _cpld->set_tx_atr_bits(chan_sel,
+        magnesium_cpld_ctrl::IDLE,
+        false, // disable LED
+        false, // disable PA
+        false, // disable AMP
+        true // enable Mykonos
+    );
+}

@@ -67,6 +67,9 @@ public:
      * Structors
      ***********************************************************************/
     magnesium_radio_control_impl(make_args_ptr make_args);
+
+    void deinit() override;
+
     ~magnesium_radio_control_impl() override;
 
     /************************************************************************
@@ -269,6 +272,9 @@ private:
         const std::string name,
         const double freq,
         const size_t chan);
+
+    //! Deactivate idle-state TX frontend components
+    void _reset_tx_frontend(const magnesium_cpld_ctrl::chan_sel_t chan_sel);
 
     /**************************************************************************
      * Private attributes

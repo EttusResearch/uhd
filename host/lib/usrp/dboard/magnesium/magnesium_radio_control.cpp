@@ -129,6 +129,12 @@ magnesium_radio_control_impl::magnesium_radio_control_impl(make_args_ptr make_ar
     _init_prop_tree();
 }
 
+void magnesium_radio_control_impl::deinit()
+{
+    RFNOC_LOG_TRACE("magnesium_radio_control_impl::deinit()");
+    _reset_tx_frontend(magnesium_cpld_ctrl::BOTH);
+}
+
 magnesium_radio_control_impl::~magnesium_radio_control_impl()
 {
     RFNOC_LOG_TRACE("magnesium_radio_control_impl::dtor() ");
