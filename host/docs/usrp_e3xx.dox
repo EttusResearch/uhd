@@ -100,7 +100,7 @@ This makes it easier to identify devices. You can change the hostname by modifyi
 `/etc/hostname` file and rebooting.
 
 2. "product" name:
-The "product" name for E310 is now "e310_<speedgrade>" i.e. e310_sg1 and e310_sg3 for speed grade 1
+The "product" name for E310 is now "e310_$speedgrade" i.e. e310_sg1 and e310_sg3 for speed grade 1
 and 3 respectively. Note that the "type" for e310 remains the same as before i.e. "e3xx".
 
 3. FPGA bit/bin/rpt file name and image target:
@@ -114,9 +114,9 @@ and 3 respectively. Note that the "type" for e310 remains the same as before i.e
     The names of the FPGA build targets have been modified but the old FPGA targets would continue to
     work as before. The generated bit files names in the build directory will be new as
     mentioned above.
-    - E310_<speedgrade> for default image
-    - E310_<speedgrade>_RFNOC for RFNOC image (contains a few blocks)
-    - E310_<speedgrade>_IDLE to build idle image (Doesn't need to modified for most cases)
+    - E310_$speedgrade for default image
+    - E310_$speedgrade_RFNOC for RFNOC image (contains a few blocks)
+    - E310_$speedgrade_IDLE to build idle image (Doesn't need to modified for most cases)
 
 4. Loading FPGA image:
 The device arg "fpga=" can now only be used in the uhd_image_loader; it can no longer be used to
