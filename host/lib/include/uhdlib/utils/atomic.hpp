@@ -11,6 +11,7 @@
 #include <uhd/types/time_spec.hpp>
 #include <atomic>
 #include <chrono>
+#include <thread>
 
 namespace uhd {
 
