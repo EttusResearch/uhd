@@ -109,10 +109,6 @@ if { ${design_name} eq "" } {
 
 }
 
-  # Add USER_COMMENTS on $design_name
-  set_property USER_COMMENTS.comment_0 "Note 1: The ID width of the AXI interconnect (xbar) master changes depending on the axi_interconnect optimization strategy. It will be zero for 'minimize area' and non-zero for 'maximize performance'.
-Note 2: I have explicitly set ID width to 1 on the input ports to match our AXI master and to 4 on the output block to match the DRAM slave." [get_bd_designs $design_name]
-
 common::send_msg_id "BD_TCL-005" "INFO" "Currently the variable <design_name> is equal to \"$design_name\"."
 
 if { $nRet != 0 } {
@@ -127,9 +123,6 @@ set bCheckIPsPassed 1
 set bCheckIPs 1
 if { $bCheckIPs == 1 } {
    set list_check_ips "\ 
-xilinx.com:ip:axi_crossbar:2.1\
-xilinx.com:ip:axi_dwidth_converter:2.1\
-xilinx.com:ip:axi_register_slice:2.1\
 "
 
    set list_ips_missing ""
@@ -284,116 +277,34 @@ proc create_root_design { parentCell } {
   set S0_AXI_ACLK [ create_bd_port -dir I -type clk S0_AXI_ACLK ]
   set_property -dict [ list \
    CONFIG.ASSOCIATED_BUSIF {S0_AXI:S1_AXI} \
-   CONFIG.ASSOCIATED_RESET {S0_AXI_ARESETN} \
+   CONFIG.ASSOCIATED_RESET {S0_AXI_ARESETN:S0_AXI_ARESETN} \
    CONFIG.FREQ_HZ {350000000} \
  ] $S0_AXI_ACLK
   set S0_AXI_ARESETN [ create_bd_port -dir I -type rst S0_AXI_ARESETN ]
 
-  # Create instance: axi_crossbar_0, and set properties
-  set axi_crossbar_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_crossbar:2.1 axi_crossbar_0 ]
+  # Create instance: axi_interconnect_0, and set properties
+  set axi_interconnect_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_0 ]
   set_property -dict [ list \
+   CONFIG.ENABLE_ADVANCED_OPTIONS {1} \
+   CONFIG.M00_HAS_REGSLICE {4} \
    CONFIG.NUM_MI {1} \
    CONFIG.NUM_SI {2} \
- ] $axi_crossbar_0
-
-  # Create instance: axi_dwidth_converter_0, and set properties
-  set axi_dwidth_converter_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dwidth_converter:2.1 axi_dwidth_converter_0 ]
-  set_property -dict [ list \
-   CONFIG.FIFO_MODE {1} \
-   CONFIG.MI_DATA_WIDTH {256} \
-   CONFIG.SI_DATA_WIDTH {128} \
-   CONFIG.SYNCHRONIZATION_STAGES {3} \
- ] $axi_dwidth_converter_0
-
-  # Create instance: axi_dwidth_converter_1, and set properties
-  set axi_dwidth_converter_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dwidth_converter:2.1 axi_dwidth_converter_1 ]
-  set_property -dict [ list \
-   CONFIG.FIFO_MODE {1} \
-   CONFIG.MI_DATA_WIDTH {256} \
-   CONFIG.SI_DATA_WIDTH {128} \
-   CONFIG.SYNCHRONIZATION_STAGES {3} \
- ] $axi_dwidth_converter_1
-
-  # Create instance: axi_dwidth_converter_2, and set properties
-  set axi_dwidth_converter_2 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dwidth_converter:2.1 axi_dwidth_converter_2 ]
-  set_property -dict [ list \
-   CONFIG.ACLK_ASYNC {1} \
-   CONFIG.FIFO_MODE {2} \
-   CONFIG.MI_DATA_WIDTH {512} \
-   CONFIG.SI_DATA_WIDTH {256} \
-   CONFIG.SYNCHRONIZATION_STAGES {2} \
- ] $axi_dwidth_converter_2
-
-  # Create instance: axi_register_slice_0, and set properties
-  set axi_register_slice_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_register_slice:2.1 axi_register_slice_0 ]
-  set_property -dict [ list \
-   CONFIG.REG_AR {1} \
-   CONFIG.REG_AW {1} \
-   CONFIG.REG_B {1} \
- ] $axi_register_slice_0
-
-  # Create instance: axi_register_slice_1, and set properties
-  set axi_register_slice_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_register_slice:2.1 axi_register_slice_1 ]
-  set_property -dict [ list \
-   CONFIG.REG_AR {1} \
-   CONFIG.REG_AW {1} \
-   CONFIG.REG_B {1} \
- ] $axi_register_slice_1
-
-  # Create instance: axi_register_slice_2, and set properties
-  set axi_register_slice_2 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_register_slice:2.1 axi_register_slice_2 ]
-  set_property -dict [ list \
-   CONFIG.REG_AR {1} \
-   CONFIG.REG_AW {1} \
-   CONFIG.REG_B {1} \
- ] $axi_register_slice_2
-
-  # Create instance: axi_register_slice_3, and set properties
-  set axi_register_slice_3 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_register_slice:2.1 axi_register_slice_3 ]
-  set_property -dict [ list \
-   CONFIG.ID_WIDTH {1} \
-   CONFIG.REG_AR {1} \
-   CONFIG.REG_AW {1} \
-   CONFIG.REG_B {1} \
- ] $axi_register_slice_3
-
-  # Create instance: axi_register_slice_4, and set properties
-  set axi_register_slice_4 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_register_slice:2.1 axi_register_slice_4 ]
-  set_property -dict [ list \
-   CONFIG.ID_WIDTH {1} \
-   CONFIG.REG_AR {1} \
-   CONFIG.REG_AW {1} \
-   CONFIG.REG_B {1} \
- ] $axi_register_slice_4
-
-  # Create instance: axi_register_slice_5, and set properties
-  set axi_register_slice_5 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_register_slice:2.1 axi_register_slice_5 ]
-  set_property -dict [ list \
-   CONFIG.ID_WIDTH {4} \
-   CONFIG.REG_AR {1} \
-   CONFIG.REG_AW {1} \
-   CONFIG.REG_B {1} \
- ] $axi_register_slice_5
+   CONFIG.S00_HAS_DATA_FIFO {2} \
+   CONFIG.S00_HAS_REGSLICE {4} \
+   CONFIG.S01_HAS_DATA_FIFO {2} \
+   CONFIG.S01_HAS_REGSLICE {4} \
+ ] $axi_interconnect_0
 
   # Create interface connections
-  connect_bd_intf_net -intf_net S0_AXI_1 [get_bd_intf_ports S0_AXI] [get_bd_intf_pins axi_register_slice_0/S_AXI]
-  connect_bd_intf_net -intf_net S1_AXI_1 [get_bd_intf_ports S1_AXI] [get_bd_intf_pins axi_register_slice_1/S_AXI]
-  connect_bd_intf_net -intf_net axi_crossbar_0_M00_AXI [get_bd_intf_pins axi_crossbar_0/M00_AXI] [get_bd_intf_pins axi_register_slice_2/S_AXI]
-  connect_bd_intf_net -intf_net axi_dwidth_converter_0_M_AXI [get_bd_intf_pins axi_dwidth_converter_0/M_AXI] [get_bd_intf_pins axi_register_slice_3/S_AXI]
-  connect_bd_intf_net -intf_net axi_dwidth_converter_1_M_AXI [get_bd_intf_pins axi_dwidth_converter_1/M_AXI] [get_bd_intf_pins axi_register_slice_4/S_AXI]
-  connect_bd_intf_net -intf_net axi_dwidth_converter_2_M_AXI [get_bd_intf_pins axi_dwidth_converter_2/M_AXI] [get_bd_intf_pins axi_register_slice_5/S_AXI]
-  connect_bd_intf_net -intf_net axi_register_slice_0_M_AXI [get_bd_intf_pins axi_dwidth_converter_0/S_AXI] [get_bd_intf_pins axi_register_slice_0/M_AXI]
-  connect_bd_intf_net -intf_net axi_register_slice_1_M_AXI [get_bd_intf_pins axi_dwidth_converter_1/S_AXI] [get_bd_intf_pins axi_register_slice_1/M_AXI]
-  connect_bd_intf_net -intf_net axi_register_slice_2_M_AXI [get_bd_intf_pins axi_dwidth_converter_2/S_AXI] [get_bd_intf_pins axi_register_slice_2/M_AXI]
-  connect_bd_intf_net -intf_net axi_register_slice_3_M_AXI [get_bd_intf_pins axi_crossbar_0/S00_AXI] [get_bd_intf_pins axi_register_slice_3/M_AXI]
-  connect_bd_intf_net -intf_net axi_register_slice_4_M_AXI [get_bd_intf_pins axi_crossbar_0/S01_AXI] [get_bd_intf_pins axi_register_slice_4/M_AXI]
-  connect_bd_intf_net -intf_net axi_register_slice_5_M_AXI [get_bd_intf_ports M0_AXI] [get_bd_intf_pins axi_register_slice_5/M_AXI]
+  connect_bd_intf_net -intf_net S0_AXI_1 [get_bd_intf_ports S0_AXI] [get_bd_intf_pins axi_interconnect_0/S00_AXI]
+  connect_bd_intf_net -intf_net S1_AXI_1 [get_bd_intf_ports S1_AXI] [get_bd_intf_pins axi_interconnect_0/S01_AXI]
+  connect_bd_intf_net -intf_net axi_interconnect_0_M00_AXI [get_bd_intf_ports M0_AXI] [get_bd_intf_pins axi_interconnect_0/M00_AXI]
 
   # Create port connections
-  connect_bd_net -net M0_AXI_ACLK_1 [get_bd_ports M0_AXI_ACLK] [get_bd_pins axi_dwidth_converter_2/m_axi_aclk] [get_bd_pins axi_register_slice_5/aclk]
-  connect_bd_net -net M0_AXI_ARESETN_1 [get_bd_ports M0_AXI_ARESETN] [get_bd_pins axi_dwidth_converter_2/m_axi_aresetn] [get_bd_pins axi_register_slice_5/aresetn]
-  connect_bd_net -net S0_AXI_ACLK_1 [get_bd_ports S0_AXI_ACLK] [get_bd_pins axi_crossbar_0/aclk] [get_bd_pins axi_dwidth_converter_0/s_axi_aclk] [get_bd_pins axi_dwidth_converter_1/s_axi_aclk] [get_bd_pins axi_dwidth_converter_2/s_axi_aclk] [get_bd_pins axi_register_slice_0/aclk] [get_bd_pins axi_register_slice_1/aclk] [get_bd_pins axi_register_slice_2/aclk] [get_bd_pins axi_register_slice_3/aclk] [get_bd_pins axi_register_slice_4/aclk]
-  connect_bd_net -net S0_AXI_ARESETN_1 [get_bd_ports S0_AXI_ARESETN] [get_bd_pins axi_crossbar_0/aresetn] [get_bd_pins axi_dwidth_converter_0/s_axi_aresetn] [get_bd_pins axi_dwidth_converter_1/s_axi_aresetn] [get_bd_pins axi_dwidth_converter_2/s_axi_aresetn] [get_bd_pins axi_register_slice_0/aresetn] [get_bd_pins axi_register_slice_1/aresetn] [get_bd_pins axi_register_slice_2/aresetn] [get_bd_pins axi_register_slice_3/aresetn] [get_bd_pins axi_register_slice_4/aresetn]
+  connect_bd_net -net M0_AXI_ACLK_1 [get_bd_ports M0_AXI_ACLK] [get_bd_pins axi_interconnect_0/ACLK] [get_bd_pins axi_interconnect_0/M00_ACLK]
+  connect_bd_net -net M0_AXI_ARESETN_1 [get_bd_ports M0_AXI_ARESETN] [get_bd_pins axi_interconnect_0/ARESETN] [get_bd_pins axi_interconnect_0/M00_ARESETN]
+  connect_bd_net -net S0_AXI_ACLK_1 [get_bd_ports S0_AXI_ACLK] [get_bd_pins axi_interconnect_0/S00_ACLK] [get_bd_pins axi_interconnect_0/S01_ACLK]
+  connect_bd_net -net S0_AXI_ARESETN_1 [get_bd_ports S0_AXI_ARESETN] [get_bd_pins axi_interconnect_0/S00_ARESETN] [get_bd_pins axi_interconnect_0/S01_ARESETN]
 
   # Create address segments
   create_bd_addr_seg -range 0x000100000000 -offset 0x00000000 [get_bd_addr_spaces S0_AXI] [get_bd_addr_segs M0_AXI/Reg] SEG_M00_AXI_Reg
