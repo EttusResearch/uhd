@@ -177,9 +177,9 @@ module axis_replay #(
   // Log base 2 of the depth of the input and output FIFOs to use. The FIFOs
   // should be large enough to store more than a complete burst
   // (MEM_BURST_LEN). A size of 9 (512 64-bit words) is one 36-kbit BRAM.
-  localparam REC_FIFO_ADDR_WIDTH  = 9;  // Log2 of input/record FIFO size
-  localparam PLAY_FIFO_ADDR_WIDTH = 9;  // Log2 of output/playback FIFO size
-  localparam HDR_FIFO_ADDR_WIDTH  = 5;  // Log2 of output/time FIFO size
+  localparam REC_FIFO_ADDR_WIDTH  = MEM_COUNT_W+1;  // Log2 of input/record FIFO size
+  localparam PLAY_FIFO_ADDR_WIDTH = MEM_COUNT_W+1;  // Log2 of output/playback FIFO size
+  localparam HDR_FIFO_ADDR_WIDTH  = 5;              // Log2 of output/time FIFO size
   //
   // Amount of data to buffer before writing to RAM. It must not exceed
   // 2**MEM_COUNT_W (the maximum count allowed by an AXI master).

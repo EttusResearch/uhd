@@ -322,8 +322,12 @@ module rfnoc_block_replay #(
   // Replay Block Instances
   //---------------------------------------------------------------------------
 
-  // Width of memory transfer count. Always 8 for AXI4.
-  localparam MEM_COUNT_W = 8;
+  // Width of memory transfer count. This controls the maximum burst length
+  // supported by the Replay block. For AXI compatibility, it must be 8 or less
+  // and should not represent more than 4 KiB. Here we set it to 2 KiB by
+  // default.
+  localparam MEM_COUNT_W = (MEM_DATA_W <= 64) ? 8 :        // Max width allowed
+                           $clog2(2048 / (MEM_DATA_W/8));  // 2 KiB
 
   genvar i;
   generate
@@ -417,6 +421,10 @@ module rfnoc_block_replay #(
       //
       //-----------------------------------------------------------------------
 
+      // Resize the count signals, in case they are not 8 bit.
+      wire [7:0] write_count_8 = write_count;
+      wire [7:0] read_count_8  = read_count;
+
       axi_dma_master #(
         .AWIDTH (MEM_ADDR_W),
         .DWIDTH (MEM_DATA_W)
@@ -485,7 +493,7 @@ module rfnoc_block_replay #(
         // Interface for Write transactions
         //
         .write_addr       (write_addr),
-        .write_count      (write_count),
+        .write_count      (write_count_8),
         .write_ctrl_valid (write_ctrl_valid),
         .write_ctrl_ready (write_ctrl_ready),
         .write_data       (write_data),
@@ -496,7 +504,7 @@ module rfnoc_block_replay #(
         // Interface for Read transactions
         //
         .read_addr       (read_addr),
-        .read_count      (read_count),
+        .read_count      (read_count_8),
         .read_ctrl_valid (read_ctrl_valid),
         .read_ctrl_ready (read_ctrl_ready),
         .read_data       (read_data),
