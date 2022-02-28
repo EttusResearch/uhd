@@ -45,7 +45,7 @@ data:
       nipc: 1
       info_fifo_depth: 32
       payload_fifo_depth: 32
-      sideband_at_end: 0
+      sideband_at_end: False
       format: sc16
       mdata_sig: ~
 
