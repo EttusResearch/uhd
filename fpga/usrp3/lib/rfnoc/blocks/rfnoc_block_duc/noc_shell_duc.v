@@ -1,5 +1,5 @@
 //
-// Copyright 2021 Ettus Research, a National Instruments Brand
+// Copyright 2022 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -15,6 +15,7 @@
 //   THIS_PORTID : Control crossbar port to which this block is connected
 //   CHDR_W      : AXIS-CHDR data bus width
 //   MTU         : Maximum transmission unit (i.e., maximum packet size in
+//                 CHDR words is 2**MTU).
 //
 
 `default_nettype none
@@ -234,7 +235,7 @@ module noc_shell_duc #(
       .NIPC           (1),
       .SYNC_CLKS      (0),
       .INFO_FIFO_SIZE ($clog2(32)),
-      .PYLD_FIFO_SIZE ($clog2(MTU))
+      .PYLD_FIFO_SIZE ($clog2(32))
     ) chdr_to_axis_data_in_in (
       .axis_chdr_clk      (rfnoc_chdr_clk),
       .axis_chdr_rst      (rfnoc_chdr_rst),
@@ -272,7 +273,7 @@ module noc_shell_duc #(
       .NIPC            (1),
       .SYNC_CLKS       (0),
       .INFO_FIFO_SIZE  ($clog2(32)),
-      .PYLD_FIFO_SIZE  ($clog2(MTU)),
+      .PYLD_FIFO_SIZE  ($clog2(2**MTU)),
       .MTU             (MTU),
       .SIDEBAND_AT_END (1)
     ) axis_data_to_chdr_out_out (
