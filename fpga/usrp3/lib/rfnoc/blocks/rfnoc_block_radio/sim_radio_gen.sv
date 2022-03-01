@@ -1,14 +1,14 @@
 //
-// Copyright 2019 Ettus Research, A National Instruments Company
+// Copyright 2022 Ettus Research, A National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
 // Module: sim_radio_gen
 //
-// Description: Generate radio data for simulation purposes. The strobe pattern 
-// is random, which is not like a normal radio but covers every possibility. 
-// The data pattern is an incrementing sequence of samples, with each channel 
-// starting at a different value to differentiate them. Strobe and time are 
+// Description: Generate radio data for simulation purposes. The strobe pattern
+// is random, which is not like a normal radio but covers every possibility.
+// The data pattern is an incrementing sequence of samples, with each channel
+// starting at a different value to differentiate them. Strobe and time are
 // common between channels.
 //
 
@@ -39,7 +39,7 @@ module sim_radio_gen #(
   // Generate an initial value all radio channels
   function radio_t [NUM_CHANNELS-1:0] radio_init();
     radio_t [NUM_CHANNELS-1:0] ret_val;
-   
+
     for (int n = 0; n < NUM_CHANNELS; n++) begin
       sample_t sample;
 
@@ -70,7 +70,7 @@ module sim_radio_gen #(
       radio_rx_stb <= '0;
     end else begin
       radio_rx_stb <= '0;
-      if ($urandom_range(100) < STB_PROB) begin
+      if ($urandom_range(99) < STB_PROB) begin
         for (int n = 0; n < NUM_CHANNELS; n++) begin
           for (int s = 0; s < NSPC; s++) begin
             data[n][s*SAMP_W +: SAMP_W] <= data[n][s*SAMP_W +: SAMP_W] + NSPC;
