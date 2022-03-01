@@ -61,6 +61,7 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
                                   << ", num_outputs=" << get_num_output_ports());
     set_prop_forwarding_policy(forwarding_policy_t::DROP);
     set_action_forwarding_policy(forwarding_policy_t::DROP);
+    set_mtu_forwarding_policy(forwarding_policy_t::DROP);
     register_action_handler(ACTION_KEY_STREAM_CMD,
         [this](const res_source_info& src, action_info::sptr action) {
             stream_cmd_action_info::sptr stream_cmd_action =
