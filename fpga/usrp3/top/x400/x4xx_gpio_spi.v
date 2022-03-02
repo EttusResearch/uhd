@@ -228,6 +228,10 @@ module x4xx_gpio_spi #(
             s_ctrlport_resp_data[SPI_RESPONSE_MSB:SPI_RESPONSE] <= readback[SPI_RESPONSE_MSB:SPI_RESPONSE];
           end
 
+          BASE_ADDRESS + CONTROLLER_INFO: begin
+            s_ctrlport_resp_data[SLAVE_COUNT_MSB:SLAVE_COUNT] <= NUM_SLAVES;
+          end
+
           // No register implementation for provided address
           default: begin
             // Acknowledge and provide error status if address is in range
@@ -532,6 +536,14 @@ endmodule
 //      </bitfield>
 //      <bitfield name="SPI_RESPONSE"     range="0..23"  initialvalue="0">
 //        <info> Records the response of the last completed SPI transaction. </info>
+//      </bitfield>
+//    </register>
+//    <register name="CONTROLLER_INFO" offset="0x1C" size="32" writable="false">
+//      <info>
+//        Contains information pertaining this SPI controller block.
+//      </info>
+//      <bitfield name="SLAVE_COUNT"     range="3..0">
+//        <info> Indicates the number SPI slaves configurable by the controller. </info>
 //      </bitfield>
 //    </register>
 //  </group>

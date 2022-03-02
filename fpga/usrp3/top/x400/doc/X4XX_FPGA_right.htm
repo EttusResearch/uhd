@@ -3713,6 +3713,129 @@ Contains the status of the SPI engine.
 
 </div>
 
+            <div class="register">
+              <a name="DIG_IFC_REGMAP|CONTROLLER_INFO"></a>
+            
+<h3 class="register">Offset 0x001C: CONTROLLER_INFO Register (R)</h3>
+
+                 <a class="sh_addrs" href="javascript:sa('DIG_IFC_REGMAP|CONTROLLER_INFO_in')">(<span id="show_DIG_IFC_REGMAP|CONTROLLER_INFO_in">show</span> extended info)</a>
+                 <div class="sh_addrs" id="div_DIG_IFC_REGMAP|CONTROLLER_INFO_in">
+                 
+                <table class="extended_info">
+                
+<tr>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_CTRLPORT_REGMAP|DIO_WINDOW">RADIO_CTRLPORT_REGMAP|DIO_WINDOW</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x00C000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_DIO_REGMAP|DIGITAL_IFC_REGS">RADIO_DIO_REGMAP|DIGITAL_IFC_REGS</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x002000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right">CONTROLLER_INFO</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x001C</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x00E01C
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+</table><p/>
+
+<p class="reg_info">Initial Value not specified
+</p>
+
+<p class="reg_info">This register is defined in HDL source file x4xx_gpio_spi.v.</p>
+
+</div>
+
+<div class="info">
+
+Contains information pertaining this SPI controller block.
+
+</div>
+
+                <table class="bitfields" border="0" cellspacing="0" cellpadding="0">
+                  <tr class="header"><td class="bits">Bits</td><td>Name</td></tr>
+                
+            <tr  valign="top">
+              <td class="bits">31..24</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr class='byte' valign="top">
+              <td class="bits">23..16</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr class='byte' valign="top">
+              <td class="bits">15..8</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr class='byte' valign="top">
+              <td class="bits">7..4</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">3..0</td>
+              <td>
+                <p><span class="name"><a name="DIG_IFC_REGMAP|CONTROLLER_INFO|SLAVE_COUNT"></a>SLAVE_COUNT</span><span class="attr"> </span></p>
+                <p>Indicates the number SPI slaves configurable by the controller.</p>
+            
+              </td>
+            </tr>
+            
+</table>
+
+</div>
+
 </div>
 
 </div>
@@ -24092,12 +24215,12 @@ FPGA version.<BR/>
 
 <tr valign="top">
 
-                        <td class='value'>6</td>
+                        <td class='value'>7</td>
                         
-                            <td class='l'>0x00000006</td>
+                            <td class='l'>0x00000007</td>
                             
                             <td class="l" style="text-align: left;">
-                              <p class="name"><a name='VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_CURRENT_VERSION_MINOR'></a>FPGA_CURRENT_VERSION_MINOR</p>
+                              <p class="name"><a name='VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_CURRENT_VERSION_MAJOR'></a>FPGA_CURRENT_VERSION_MAJOR</p>
                             
 </td>
 
@@ -24110,7 +24233,7 @@ FPGA version.<BR/>
                             <td class='l'>0x00000007</td>
                             
                             <td class="l" style="text-align: left;">
-                              <p class="name"><a name='VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_CURRENT_VERSION_MAJOR'></a>FPGA_CURRENT_VERSION_MAJOR</p>
+                              <p class="name"><a name='VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_CURRENT_VERSION_MINOR'></a>FPGA_CURRENT_VERSION_MINOR</p>
                             
 </td>
 
@@ -24131,9 +24254,9 @@ FPGA version.<BR/>
 
 <tr valign="top">
 
-                        <td class='value'>570565649</td>
+                        <td class='value'>570622482</td>
                         
-                            <td class='l'>0x22022411</td>
+                            <td class='l'>0x22030212</td>
                             
                             <td class="l" style="text-align: left;">
                               <p class="name"><a name='VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_VERSION_LAST_MODIFIED_TIME'></a>FPGA_VERSION_LAST_MODIFIED_TIME</p>

@@ -15,6 +15,7 @@
   // SPI_TRANSACTION_CONFIG : 0x10 (x4xx_gpio_spi.v)
   // SPI_TRANSACTION_GO     : 0x14 (x4xx_gpio_spi.v)
   // SPI_STATUS             : 0x18 (x4xx_gpio_spi.v)
+  // CONTROLLER_INFO        : 0x1C (x4xx_gpio_spi.v)
 
 //===============================================================================
 // RegTypes
@@ -81,6 +82,14 @@
   localparam SPI_READY_SIZE =  1;  //SPI_STATUS:SPI_READY
   localparam SPI_READY_MSB  = 24;  //SPI_STATUS:SPI_READY
   localparam SPI_READY      = 24;  //SPI_STATUS:SPI_READY
+
+  // CONTROLLER_INFO Register (from x4xx_gpio_spi.v)
+  localparam CONTROLLER_INFO = 'h1C; // Register Offset
+  localparam CONTROLLER_INFO_SIZE = 32;  // register width in bits
+  localparam CONTROLLER_INFO_MASK = 32'hF;
+  localparam SLAVE_COUNT_SIZE = 4;  //CONTROLLER_INFO:SLAVE_COUNT
+  localparam SLAVE_COUNT_MSB  = 3;  //CONTROLLER_INFO:SLAVE_COUNT
+  localparam SLAVE_COUNT      = 0;  //CONTROLLER_INFO:SLAVE_COUNT
 
   // Return the offset of an element of register array SPI_SLAVE_CONFIG
   function integer SPI_SLAVE_CONFIG (input integer i);
