@@ -12,7 +12,7 @@
   - External GPIO Connector (2xHDMI)
   - USB-C debug port, providing JTAG and console access
   - USB-C OTG port (USB 2.0)
-  - Xilinx Zynq Ultrascale+ RFSoC (ZU28DR), includes quad-core ARM Cortex-A53
+  - Xilinx Zynq UltraScale+ RFSoC (ZU28DR), includes quad-core ARM Cortex-A53
     (1200 MHz), dual-core ARM Cortex-R5F real-time unit, and UltraScale+ FPGA
   - 4 GiB DDR4 RAM for Processing System, 2x4 GiB DDR4 RAM for Programmable Logic
   - Up to 4x400 MHz of analog bandwidth, center frequency 1 MHz - 7.2 GHz
@@ -60,7 +60,7 @@ By default, the unit comes with the front-to-back fan assembly.
 
 \subsection x4xx_overview_rfsoc The RFSoC CPU/FPGA and Host Operating System
 
-The main chip (the SoC) of the X410 is a Xilinx Zynq Ultrascale+ RFSoC
+The main chip (the SoC) of the X410 is a Xilinx Zynq UltraScale+ RFSoC
 (ZU28DR). It contains an ARM quad-core Cortex A53 CPU (referred to as
 the "APU"), an UltraScale+ FPGA including peripherals such as built-in data
 converters and SD-FEC cores, and an ARM Cortex-R5F real-time processor
@@ -459,25 +459,49 @@ flavors do not only encode how the QSFP28 connectors are configured, but also
 which master clock rates are available. This is because the data converter
 configuration is part of the FPGA image (the ADCs/DACs on the X410 are on the
 same die as the FPGA).
+
 The image flavors consist of two short strings, separated by an underscore, e.g.
 `X4_200` is an image flavor which contains 4x 10 GbE, and can handle an analog
-bandwidth of 200 MHz. The first two characters describe the configuration of
-the QSFP28 ports: 'X' stands for 10 GbE, 'C' stands for 100 GbE. See the following
-table for more details.
+bandwidth of 200 MHz. The first few characters describe the configuration of
+the QSFP28 ports: 'X' stands for 10 GbE, 'C' stands for 100 GbE. The second
+group of characters indicates the analog bandwidth.
 
-| FPGA Image Flavor   | QSFP28 Port 0 Interface | QSFP28 Port 1 Interface |
-|---------------------|-------------------------|-------------------------|
-| X1_100              | 1x 10 GbE (Lane 0)      | N/C                     |
-| X4_{100, 200}       | 4x 10 GbE               | N/C                     |
-| XG_{100, 200}       | 1x 10 GbE (Lane 0)      | 1x 10 GbE (Lane 0)      |
-| X4_{100, 200}       | 4x 10 GbE (All Lanes)   | N/C                     |
-| X4C_{100, 200}      | 4x 10 GbE (All Lanes)   | 100 GbE                 |
-| C1_400              | 100 GbE                 | N/C                     |
-| CG_{100, 400}       | 100 GbE                 | 100 GbE                 |
+As of UHD 4.2, the following images flavors are shipped with UHD:
 
-The analog bandwidth determines the available master clock rates. As of UHD 4.1,
-only the X4_200 image is shipped with UHD, which allows a 245.76 MHz or
-250 MHz master clock rate. The other images are considered experimental (unsupported).
+| FPGA Image Flavor | Bandwidth | QSFP28 Port 0 Interface | QSFP28 Port 1 Interface | DDC/DUC | DRAM               |
+|-------------------|-----------|-------------------------|-------------------------|---------|--------------------|
+| X4_200            | 200 MHz   | 4x 10 GbE (All Lanes)   | N/C                     | Yes     | Yes (4-Ch Replay)  |
+| CG_400            | 400 MHz   | 100 GbE                 | 100 GbE                 | No      | No                 |
+
+Run `make help` in the `fpga/usrp3/top/x400` directory of the UHD repository to
+see a complete list of FPGA images that can be built, some of which are
+experimental (unsupported).
+
+The analog bandwidth determines the available master clock rates. The 200 MHz
+images allow master clock rates of 245.76 MHz or 250 MHz. The 400 MHz images
+allow master clock rates of 491.52 MHz or 500 MHz.
+
+Applications that require more than 200 MHz bandwidth should use the full rate
+of the 400 MHz images. Applications that require 200 MHz bandwidth or less
+should use the 200 MHz images and make use the DDC/DUC for lower rates.
+
+\subsubsection x4xx_pl_dram DDR4 Memory for Programmable Logic
+
+The USRP X410 has two banks of DDR4 memory available for use by the
+programmable logic in the FPGA. Each bank has a 4 GiB capacity. The DRAM can be
+run at up to 2.4 GT/s but is clocked at 2.0 GT/s by default to ease FPGA timing
+closure.
+
+The FPGA memory controller exposes each bank of DRAM as a 512-bit interface
+clocked at 250 MHz. This interface is then presented to RFNoC as up to 4 AXI
+interfaces. For 200 MHz images, each AXI interface is 64-bit at 250 MHz. For
+400 MHz images, each AXI interface is 128-bit at 250 MHz. This allows for the
+maximum sample rate to be read and written to DRAM for up to 4 channels
+simultaneously.
+
+The default use for the DRAM is the Replay RFnoC block, which supports
+recording and playback of data in real time. See section \ref
+x4xx_updating_fpga_types for a list of which images have DRAM by default.
 
 \section x4xx_updating_filesystems Updating Filesystems
 
@@ -925,7 +949,7 @@ sensors values. If the GPS is disabled, they will always return false.
                    warmup phase, can be high for minutes after enabling GPS.
 - `gps_survey`: Returns the state of the 'SURVEY_ACTIVE' pin. Indicates state of
                 auto survey process. Indicates that module is locked to GPS, and
-		that there are no events on the GPS module pending.
+    that there are no events on the GPS module pending.
 
 \subsection x4xx_usage_rearpanelleds Rear Panel Status LEDs
 
