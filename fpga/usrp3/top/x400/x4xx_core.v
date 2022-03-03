@@ -394,16 +394,16 @@ module x4xx_core #(
   // DRAM
   //---------------------------------------------------------------------------
 
-  `ifndef ENABLE_DRAM
-    `define ENABLE_DRAM 0
+  `ifndef DRAM_CH
+    `define DRAM_CH 0
+  `endif
+  `ifndef DRAM_W
+    `define DRAM_W 64
   `endif
 
-  // Only the 100 and 200 MHz images currently support DRAM due to FPGA
-  // resource limitations. For 200 MHz and below, a 64-bit interface provides
-  // sufficient bandwidth.
-  localparam ENABLE_DRAM     = (`ENABLE_DRAM) && (RF_BANDWIDTH <= 200);
-  localparam DRAM_NUM_PORTS  = 4;
-  localparam DRAM_AXI_DWIDTH = (RF_BANDWIDTH <= 200) ? 64 : 128;
+  localparam DRAM_AXI_DWIDTH = `DRAM_W;
+  localparam ENABLE_DRAM     = (`DRAM_CH > 0);
+  localparam DRAM_NUM_PORTS  = `DRAM_CH;
 
   wire dram0_ui_clk;
   wire dram0_ui_clk_sync_rst;
