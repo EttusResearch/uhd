@@ -32,16 +32,16 @@ using start_time_type = std::chrono::time_point<std::chrono::steady_clock>;
 /***********************************************************************
  * Test result variables
  **********************************************************************/
-unsigned long long num_overruns      = 0;
-unsigned long long num_underruns     = 0;
-unsigned long long num_rx_samps      = 0;
-unsigned long long num_tx_samps      = 0;
-unsigned long long num_dropped_samps = 0;
-unsigned long long num_seq_errors    = 0;
-unsigned long long num_seqrx_errors  = 0; // "D"s
-unsigned long long num_late_commands = 0;
-unsigned long long num_timeouts_rx   = 0;
-unsigned long long num_timeouts_tx   = 0;
+std::atomic_ullong num_overruns{0};
+std::atomic_ullong num_underruns{0};
+std::atomic_ullong num_rx_samps{0};
+std::atomic_ullong num_tx_samps{0};
+std::atomic_ullong num_dropped_samps{0};
+std::atomic_ullong num_seq_errors{0};
+std::atomic_ullong num_seqrx_errors{0}; // "D"s
+std::atomic_ullong num_late_commands{0};
+std::atomic_ullong num_timeouts_rx{0};
+std::atomic_ullong num_timeouts_tx{0};
 
 inline auto time_delta(const start_time_type& ref_time)
 {
