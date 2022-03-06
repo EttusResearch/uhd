@@ -211,6 +211,9 @@ private:
     //  tx_band::INVALID_BAND if the frequency is out of range.
     tx_band _map_freq_to_tx_band(const band_map_t band_map, const double freq);
 
+    // Returns fre frequency AD9371 will actually tune to according to documentation
+    double _predict_actual_lo_freq(double ret_freq);
+
     /**************************************************************************
      * Sensors
      *************************************************************************/

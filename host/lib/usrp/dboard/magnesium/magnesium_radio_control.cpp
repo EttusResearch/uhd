@@ -796,6 +796,7 @@ double magnesium_radio_control_impl::_set_rx_lo_freq(const std::string source,
     } else {
         if (name == MAGNESIUM_LO1) {
             coerced_lo_freq            = _ad9371->set_frequency(freq, chan, RX_DIRECTION);
+            coerced_lo_freq = _predict_actual_lo_freq(coerced_lo_freq);
             _ad9371_freq[RX_DIRECTION] = coerced_lo_freq;
         } else if (name == MAGNESIUM_LO2) {
             coerced_lo_freq = _lo_enable(_rx_lo, freq, _master_clock_rate, false);
@@ -913,6 +914,7 @@ double magnesium_radio_control_impl::_set_tx_lo_freq(const std::string source,
     } else {
         if (name == MAGNESIUM_LO1) {
             coerced_lo_freq            = _ad9371->set_frequency(freq, chan, TX_DIRECTION);
+            coerced_lo_freq = _predict_actual_lo_freq(coerced_lo_freq);
             _ad9371_freq[TX_DIRECTION] = coerced_lo_freq;
         } else if (name == MAGNESIUM_LO2) {
             const bool int_n_mode = false;
@@ -1016,6 +1018,39 @@ bool magnesium_radio_control_impl::get_lo_lock_status(const direction_t dir)
     }
 
     return lo_lock;
+}
+
+double magnesium_radio_control_impl::_predict_actual_lo_freq(double ret_freq){
+    // The frequency returned here is a lie. MYKONOS_setRfPllFrequency accepts integers only
+    // I'm doing my best here to get the actual frequency based on the info on
+    // AD9371-9375-User-Guide-UG-992.pdf and experimental data
+    //
+    // Depending on the frequency range, ad9371 adopts a set denominator
+    // for the fractional N PLL:
+    // From 400MHz to 750MHz   : divide by 16
+    // From 750MHz to 1500MHz  : divide by 8
+    // From 1500MHz to 3000MHz : divide by 4
+    // From 3000MHz to 6000MHz : divide by 2
+    // This table comes straight from the user guide, from section
+    // RF PLL FREQUENCY CHANGE PROCEDURE.
+    // Now, from the the table in section RF PLL RESOLUTION LIMITATIONS,
+    // we have some frequency steps depending on the master clock rate
+    // Dividing the master clock rate by the frequency steps, and combining
+    // with some experimental data analyzing the possible frequency steps,
+    // we arrive at the formula for frequency_step below
+    // Any requested frequency will be truncated to this step.
+    unsigned denominator = 10000;
+    if (ret_freq > 400e6 && ret_freq <= 750e6){
+        denominator = 16;
+    }else if(ret_freq > 750e6 && ret_freq <= 1500e6){
+        denominator = 8;
+    }else if(ret_freq > 1500e6 && ret_freq <= 3000e6){
+        denominator = 4;
+    }else if(ret_freq > 3000e6 && ret_freq <= 6000e6){
+        denominator = 2;
+    }
+    double frequency_step = (double)2 * _master_clock_rate / 33546240.0 / denominator;
+    return std::round(ret_freq/ frequency_step) * frequency_step;
 }
 
 /**************************************************************************
