@@ -314,7 +314,9 @@ uint64_t radio_control_impl::get_ticks_now()
     if (_fpga_compat < 1) {
         return get_mb_controller()->get_timekeeper(0)->get_ticks_now();
     }
-    return regs().peek64(regmap::REG_TIME_LO);
+    // Applying the command time here allows for testing of timed commands,
+    // but all register accesses should use the command time by default.
+    return regs().peek64(regmap::REG_TIME_LO, get_command_time(0));
 }
 
 uhd::time_spec_t radio_control_impl::get_time_now()

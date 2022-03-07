@@ -262,8 +262,8 @@ module rfnoc_block_radio #(
   wire [ 3:0] ctrlport_shared_req_byte_en;
   wire        ctrlport_shared_req_has_time;
   wire [63:0] ctrlport_shared_req_time;
-  reg         ctrlport_shared_resp_ack  = 1'b0;
-  reg  [31:0] ctrlport_shared_resp_data = 0;
+  wire        ctrlport_shared_resp_ack;
+  wire [31:0] ctrlport_shared_resp_data;
 
   wire        ctrlport_core_req_wr;
   wire        ctrlport_core_req_rd;
@@ -422,6 +422,54 @@ module rfnoc_block_radio #(
 
 
   //---------------------------------------------------------------------------
+  // Control Port Timer for Shared Registers
+  //---------------------------------------------------------------------------
+  //
+  // Makes sure shared register access waits for the time if one is provided.
+  // This allows timed command packets to be tested by reading the time using
+  // command packets with a time supplied.
+  //
+  //---------------------------------------------------------------------------
+
+  wire        ctrlport_timer_req_rd;
+  wire [19:0] ctrlport_timer_req_addr;
+  reg         ctrlport_timer_resp_ack     = 1'b0;
+  reg  [31:0] ctrlport_timer_resp_data    = 0;
+
+  ctrlport_timer ctrlport_timer_i (
+    // Clocks and Resets
+    .clk(radio_clk),
+    .rst(radio_rst),
+    // Timestamp (synchronous to radio_clk)
+    .time_now(radio_time),
+    .time_now_stb(1'b1),
+    .time_ignore_bits($clog2(NIPC)),
+    // Control Port Master (Request)
+    .s_ctrlport_req_wr(ctrlport_shared_req_wr),
+    .s_ctrlport_req_rd(ctrlport_shared_req_rd),
+    .s_ctrlport_req_addr(ctrlport_shared_req_addr),
+    .s_ctrlport_req_data(ctrlport_shared_req_data),
+    .s_ctrlport_req_byte_en(ctrlport_shared_req_byte_en),
+    .s_ctrlport_req_has_time(ctrlport_shared_req_has_time),
+    .s_ctrlport_req_time(ctrlport_shared_req_time),
+    // Control Port Slave (Response)
+    .s_ctrlport_resp_ack(ctrlport_shared_resp_ack),
+    .s_ctrlport_resp_status(),
+    .s_ctrlport_resp_data(ctrlport_shared_resp_data),
+    // Control Port Master (Request)
+    .m_ctrlport_req_wr(),
+    .m_ctrlport_req_rd(ctrlport_timer_req_rd),
+    .m_ctrlport_req_addr(ctrlport_timer_req_addr),
+    .m_ctrlport_req_data(),
+    .m_ctrlport_req_byte_en(),
+    // Control Port Master (Response)
+    .m_ctrlport_resp_ack(ctrlport_timer_resp_ack),
+    .m_ctrlport_resp_status(2'b00),
+    .m_ctrlport_resp_data(ctrlport_timer_resp_data)
+  );
+
+
+  //---------------------------------------------------------------------------
   // Shared Registers
   //---------------------------------------------------------------------------
   //
@@ -436,29 +484,27 @@ module rfnoc_block_radio #(
 
   always @(posedge radio_clk) begin
     if (radio_rst) begin
-      ctrlport_shared_resp_ack  <= 0;
-      ctrlport_shared_resp_data <= 0;
-      radio_time_hi <= 32'h0;
+      ctrlport_timer_resp_ack   <= 0;
+      ctrlport_timer_resp_data  <= 0;
+      radio_time_hi             <= 32'h0;
     end else begin
       // Default assignments
-      ctrlport_shared_resp_ack  <= 0;
-      ctrlport_shared_resp_data <= 0;
+      ctrlport_timer_resp_ack  <= 0;
+      ctrlport_timer_resp_data <= 0;
 
       // Handle register reads
-      if (ctrlport_shared_req_rd) begin
-        case (ctrlport_shared_req_addr)
+      if (ctrlport_timer_req_rd) begin
+        ctrlport_timer_resp_ack  <= 1;
+        case (ctrlport_timer_req_addr)
           REG_COMPAT_NUM: begin
-            ctrlport_shared_resp_ack  <= 1;
-            ctrlport_shared_resp_data <= { compat_major, compat_minor };
+            ctrlport_timer_resp_data <= { compat_major, compat_minor };
           end
           REG_TIME_LO: begin
-            ctrlport_shared_resp_ack  <= 1;
-            ctrlport_shared_resp_data <= radio_time[31:0];
-            radio_time_hi <= radio_time[63:32];
+            ctrlport_timer_resp_data  <= radio_time[31:0];
+            radio_time_hi             <= radio_time[63:32];
           end
           REG_TIME_HI: begin
-            ctrlport_shared_resp_ack  <= 1;
-            ctrlport_shared_resp_data <= radio_time_hi;
+            ctrlport_timer_resp_data <= radio_time_hi;
           end
         endcase
       end
