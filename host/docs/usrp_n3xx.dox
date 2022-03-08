@@ -455,6 +455,10 @@ For a list of which arguments can be passed into make(), see Section
  rx_lo_source          | Initialize the source for the RX LO.                                         | N310              | rx_lo_source=external
  tx_lo_source          | Initialize the source for the TX LO.                                         | N310              | tx_lo_source=external
  rfic_digital_loopback | Digital data loopback inside the RFIC.                                       | N310              | rfic_digital_loopback=1
+ tx_gain_profile       | Initialize device with a specific TX gain profile.                           | N310              | tx_gain_profile=manual
+ rx_gain_profile       | Initialize device with a specific RX gain profile.                           | N310              | rx_gain_profile=manual
+ tx_band_map           | Semicolon-separated list of TX band edges.                                   | N310              | tx_band_map=0.0;723.18e6;1623.18e6;3323.18e6
+ rx_band_map           | Semicolon-separated list of RX band edges.                                   | N310              | rx_band_map=0.0;431e6;601e6;1051e6;1601e6;2101e6;2701e6
 
 \subsection n3xx_usage_init Device Initialization
 
@@ -1344,6 +1348,47 @@ where FLAGS is the hex number that you can construct with the following table of
 For example, to set your device to auto-boot, with TPM, the flag value is 0x1, so
 
     $ eeprom-set-flags 0x1
+
+\subsection n3xx_mg_gain_profiles Gain Profiles
+
+The N310 supports four gain profiles: `default`, `manual`,
+`default_rf_filter_bypass_always_on`, and `default_rf_filter_bypass_always_off`.
+
+Usually, UHD will program individual gain components to create an overall gain
+that is selected. The N310 daughterboards have three gain stages per path (two
+digital step attenuators (DSAs), and one amplifier).  When using the `manual`
+profile, the DSAs and amplifiers can be programmed directly. In the other gain
+profiles, a single, overall gain can be given, and UHD will attempt to program
+the gain stages based on hard-coded gain tables. The difference between the
+three "default" profiles is how the amplifier is used: Either it is always on,
+always off, or it is switched on and off to optimize linearity.
+
+\subsection n3xx_mg_custom_band_edges Custom Band Edges
+
+\b Note: This is a highly advanced feature. Most users will not have to use this!
+
+The N310 daughterboard splits the TX and RX paths into 4 and 7 different bands,
+respectively, to hardware-optimize the RF fidelity at all available frequencies.
+
+See the [schematics](https://kb.ettus.com/N300/N310#Schematics) for more details.
+
+Using the `rx_band_map` and `tx_band_map` device args, it is possible to move
+the band edges in software. This may be useful if the hardware was modified to
+use different filters, for example, because a signal of interest always falls
+onto a band edge. Using the `tx_band_map` or `rx_band_map` device arguments,
+you can provide a list of lower band edges for every band. Make sure to provide
+4 (for Tx) or 7 (for Rx) floating-point values. The first value should always be
+zero (0.0). It may make sense to encode these values in your `uhd.conf` file:
+
+~~~{.ini}
+[type=n3xx]
+rx_gain_profile=default_rf_filter_bypass_always_off
+tx_gain_profile=default_rf_filter_bypass_always_on
+rx_band_map=0.0;431e6;601e6;1051e6;1601e6;2101e6;2701e6
+tx_band_map=0.0;723.18e6;1623.18e6;3323.18e6
+~~~
+
+In this example, the second Rx band would start at 431 MHz.
 
 \section n3xx_rh N32x-specific Features
 
