@@ -2,7 +2,7 @@
 # Target    hash    url     SHA256
 
 # X410-Series
-x4xx_x410_fpga_default          uhd-439770b       x4xx/uhd-439770b/x4xx_x410_fpga_default-g439770b.zip       6be1c4ae50841b857bcc294b0f7029e0ae27574b703498e5d9562d3c8b6d2b0b
+x4xx_x410_fpga_default          uhd-739b37b       x4xx/uhd-739b37b/x4xx_x410_fpga_default-g739b37b.zip       c1e97652e6a5a1c8662f2ad1bc61728c181223b6cbf355f96e96de8cec6b5826
 x4xx_x410_cpld_default          uhd-6fd9f37       x4xx/uhd-6fd9f37/x4xx_x410_cpld_default-g6fd9f37.zip       74e09bedda84105258484217d4dbf68860ce2079d27cf8352952fe8e4d727e93
 x4xx_zbx_cpld_default           uhd-d5c2750       x4xx/uhd-d5c2750/x4xx_zbx_cpld_default-gd5c2750.zip        f4e2fce5a57052b0efd9b4b247dd816d842de63b03091bd4f030dc01fd5a3fd0
 # X410-Series Filesystems
