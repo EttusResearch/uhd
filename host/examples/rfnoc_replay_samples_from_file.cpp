@@ -147,10 +147,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     uhd::tx_streamer::sptr tx_stream;
     uhd::tx_metadata_t tx_md;
 
-    streamer_args["block_id"]   = replay_ctrl->get_block_id().to_string();
-    streamer_args["block_port"] = std::to_string(replay_chan);
     stream_args.args            = streamer_args;
-    stream_args.channels        = {replay_chan};
     tx_stream = graph->create_tx_streamer(stream_args.channels.size(), stream_args);
     graph->connect(tx_stream, 0, replay_ctrl->get_block_id(), replay_chan);
     graph->commit();

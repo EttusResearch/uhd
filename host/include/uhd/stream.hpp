@@ -43,17 +43,6 @@ namespace uhd {
  *
  * \b Note: Not all combinations of CPU and OTW format have conversion support.
  * You may however write and register your own conversion routines.
- *
- * If you are creating stream args to connect to an RFNoC block, then you might
- * want to specify block ID and port, too:
- * \code{.cpp}
- * stream_args.args["block_id0"] = "0/Radio_0";
- * stream_args.args["block_id1"] = "0/Radio_1";
- * stream_args.args["block_id2"] = "0/Radio_1"; // Chan 1 and 2 go to the same radio
- * stream_args.args["block_port0"] = "0";
- * stream_args.args["block_port1"] = "0";
- * stream_args.args["block_port2"] = "1";
- * \endcode
  */
 struct UHD_API stream_args_t
 {
