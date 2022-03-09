@@ -90,3 +90,23 @@ BOOST_AUTO_TEST_CASE(test_ranges_compare)
     BOOST_CHECK(range == n_range);
     BOOST_CHECK(range != d_range);
 }
+
+BOOST_AUTO_TEST_CASE(test_meta_range_monotonize)
+{
+    // This meta_range is both not sorted and contains overlapping (and
+    // fully contained) sub-ranges.
+    meta_range_t mr;
+    mr.push_back(range_t(3.0, 4.0));
+    mr.push_back(range_t(1.0, 2.0));
+    mr.push_back(range_t(2.1, 3.1));
+    mr.push_back(range_t(1.4, 1.6));
+
+    meta_range_t monotonic_mr = mr.as_monotonic();
+    BOOST_CHECK(monotonic_mr.start() == 1.0);
+    BOOST_CHECK(monotonic_mr.stop() == 4.0);
+
+    BOOST_CHECK_CLOSE(monotonic_mr.at(0).start(), 1.0, tolerance);
+    BOOST_CHECK_CLOSE(monotonic_mr.at(0).stop(), 2.0, tolerance);
+    BOOST_CHECK_CLOSE(monotonic_mr.at(1).start(), 2.1, tolerance);
+    BOOST_CHECK_CLOSE(monotonic_mr.at(1).stop(), 4.0, tolerance);
+}
