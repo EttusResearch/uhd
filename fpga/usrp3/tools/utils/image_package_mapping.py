@@ -83,6 +83,11 @@ PACKAGE_MAPPING = {
                   "usrp_x410_fpga_X4_200.dts",
                   "usrp_x410_fpga_X4_200.dts.md5",
                   "usrp_x410_fpga_X4_200.rpt",
+                  "usrp_x410_fpga_CG_400.bit",
+                  "usrp_x410_fpga_CG_400.bit.md5",
+                  "usrp_x410_fpga_CG_400.dts",
+                  "usrp_x410_fpga_CG_400.dts.md5",
+                  "usrp_x410_fpga_CG_400.rpt",
                  ]
     },
     "x410_cpld": {
