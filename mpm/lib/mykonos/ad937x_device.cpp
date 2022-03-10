@@ -759,6 +759,57 @@ void ad937x_device::set_enable_gain_pins(
 /******************************************************
 Get configuration functions
 ******************************************************/
+
+/* Convert from the value returned by MYKONOS_getRfPllFrequency into the actual
+ * frequency.
+ *
+ * Note that MYKONOS_setRfPllFrequency() and MYKONOS_getRfPllFrequency() only
+ * deal in integers, and thus will end up with sub-Hz errors.
+ *
+ * Depending on the frequency range, ad9371 adopts a set denominator for the
+ * fractional N PLL:
+ * From 400MHz to 750MHz   : divide by 16
+ * From 750MHz to 1500MHz  : divide by 8
+ * From 1500MHz to 3000MHz : divide by 4
+ * From 3000MHz to 6000MHz : divide by 2
+ * This table comes straight from the user guide, from section
+ * RF PLL FREQUENCY CHANGE PROCEDURE.
+ *
+ * From the the table in section RF PLL RESOLUTION LIMITATIONS,
+ * we have some frequency steps depending on the master clock rate (aka device
+ * clock, or DEV_CLK).
+ * Dividing the master clock rate by the frequency steps, and combining
+ * with some experimental data analyzing the possible frequency steps,
+ * we arrive at the formula for frequency_step below
+ *
+ */
+double _get_actual_pll_freq(const double coerced_pll_freq, const double dev_clk)
+{
+    const unsigned denominator = [&]() {
+        // This first band is in the datasheet as from 400 MHz to 750 MHz, but
+        // we'll leave it open-ended.
+        if (coerced_pll_freq <= 750e6) {
+            return 16;
+        } else if (coerced_pll_freq <= 1500e6) {
+            return 8;
+        } else if (coerced_pll_freq <= 3000e6) {
+            return 4;
+            // This last band is in the datasheet as from 3000 MHz to 6000 MHz, but
+            // we'll leave it open-ended.
+        } else {
+            return 2;
+        }
+    }();
+    // Note: This value is not listed in the data sheet, but can be derived by
+    // dividing the master clock rate by the frequency steps from Table 97,
+    // and verifying with experimental results (see comment above).
+    constexpr double pll_den_base = 33546240.0;
+    const double frequency_step = 2.0 * dev_clk / pll_den_base / denominator;
+
+    return std::round(coerced_pll_freq / frequency_step) * frequency_step;
+}
+
+
 double ad937x_device::get_freq(const direction_t direction)
 {
     mykonosRfPllName_t pll;
@@ -773,10 +824,10 @@ double ad937x_device::get_freq(const direction_t direction)
             MPM_THROW_INVALID_CODE_PATH();
     }
 
-    // TODO: because coerced_pll is returned as an integer, it's not accurate
     uint64_t coerced_pll;
     CALL_API(MYKONOS_getRfPllFrequency(mykonos_config.device, pll, &coerced_pll));
-    return static_cast<double>(coerced_pll);
+    return _get_actual_pll_freq(static_cast<double>(coerced_pll),
+        mykonos_config.device->clocks->deviceClock_kHz * 1000.0);
 }
 
 bool ad937x_device::get_pll_lock_status(const uint8_t pll, const bool wait_for_lock)
