@@ -473,6 +473,20 @@ As of UHD 4.2, the following images flavors are shipped with UHD:
 | X4_200            | 200 MHz   | 4x 10 GbE (All Lanes)   | N/C                     | Yes     | Yes (4-Ch Replay)  |
 | CG_400            | 400 MHz   | 100 GbE                 | 100 GbE                 | No      | No                 |
 
+The following list shows some potential use-cases for different FPGA images:
+
+- `X4_200`: 200 MHz analog bandwidth, or below (using RFNoC DDC/DUCs),
+  streaming between the X410 and an external host computer, or streaming
+  to/from on-board DRAM using the RFNoC Record/Replay block.
+- `CG_400`: Full-rate (400 MHz analog bandwidth) streaming between the X410 and
+  an external host computer. The current implementation requires dual 100 GbE
+  connections for 4 full-duplex channels or a single 100 GbE connection for 2
+  full-duplex channels.
+- `X4_400`: Full-rate (400 MHz analog bandwidth) streaming to/from on-board
+  DRAM using the RFNoC Record/Replay block. Up to 4 x 10 GbE connections may be
+  used to access the DRAM from an external host computer. Note that 10 GbE is
+  not fast enough for continuous full-rate streaming at this rate.
+
 Run `make help` in the `fpga/usrp3/top/x400` directory of the UHD repository to
 see a complete list of FPGA images that can be built, some of which are
 experimental (unsupported).

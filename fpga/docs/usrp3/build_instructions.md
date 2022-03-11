@@ -232,18 +232,8 @@ target type `X4_200` is configured for a 200 MHz analog bandwidth, and can
 support a 245.76 MHz or 250 MHz master clock rate.
 
 A more detailed description of the targets can be found at \ref x4xx_updating_fpga_types.
-The following targets are available through the Makefile:
-
-- `X1_100`
-- `X4_{100, 200}`
-- `XG_{100, 200}`
-- `X4_{100, 200}`
-
-The following bitstreams can be built, but are considered experimental:
-
-- `X4C_{100, 200}`
-- `C1_400`
-- `CG_{100, 400}`
+Run `make help` in the `<repo>/fpga/usrp3/top/x400/` directory to see
+the complete list of targets available.
 
 #### Outputs
 - `build/usrp_<product>_fpga.bit` : Configuration bitstream with header
@@ -252,10 +242,10 @@ The following bitstreams can be built, but are considered experimental:
 
 ### Additional Build Options
 
-It is possible to make a target and specify additional options in the form VAR=VALUE in
+It is possible to make a target and specify additional options in the form `VAR=VALUE` in
 the command. For example:
 
-$ make X310 GUI=1
+    $ make X310 GUI=1
 
 The options available are described in the following subsections.
 
