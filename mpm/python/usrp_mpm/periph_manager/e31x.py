@@ -523,7 +523,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
     def get_clock_sources(self):
         " Lists all available clock sources. "
         self.log.trace("Listing available clock sources...")
-        return ('internal',)
+        return (E310_DEFAULT_CLOCK_SOURCE,)
 
     def get_clock_source(self):
         " Returns the currently selected clock source "
@@ -555,6 +555,15 @@ class e31x(ZynqComponents, PeriphManagerBase):
             return
         self._time_source = time_source
         self.mboard_regs_control.set_time_source(time_source)
+
+    def get_sync_sources(self):
+        """
+        List sync sources.
+        """
+        return [{
+            "time_source": time_source,
+            "clock_source": E310_DEFAULT_CLOCK_SOURCE
+        } for time_source in self.get_time_sources()]
 
     ###########################################################################
     # GPIO API

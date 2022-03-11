@@ -463,6 +463,25 @@ class e320(ZynqComponents, PeriphManagerBase):
         self._time_source = time_source
         self.mboard_regs_control.set_time_source(time_source, self.get_ref_clock_freq())
 
+    def get_sync_sources(self):
+        """
+        List sync sources.
+        """
+        valid_sync_sources = {
+            # clock, time. Reminder: 'internal' is an alias for 'gpsdo'
+            # pylint: disable=bad-whitespace
+            ('internal', 'internal'),
+            ('external', 'internal'),
+            ('external', 'external'),
+            ('gpsdo',    'gpsdo'   ),
+            ('gpsdo',    'internal'),
+            # pylint: enable=bad-whitespace
+        }
+        return [{
+            "time_source": time_source,
+            "clock_source": clock_source
+        } for (clock_source, time_source) in valid_sync_sources]
+
     ###########################################################################
     # GPIO API
     ###########################################################################

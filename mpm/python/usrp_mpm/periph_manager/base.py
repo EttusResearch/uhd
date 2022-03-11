@@ -1278,7 +1278,7 @@ class PeriphManagerBase(object):
             sync_args_str = \
                 ','.join([str(k) + '=' + str(v) for k, v in sync_args.items()])
             self.log.warn(
-                f"Attempting to set unrecognized Sync source {sync_args_str}!")
+                f"Attempting to set unrecognized Sync source `{sync_args_str}'!")
         clock_source = sync_args.get('clock_source', self.get_clock_source())
         time_source = sync_args.get('time_source', self.get_time_source())
         self.set_clock_source(clock_source)
