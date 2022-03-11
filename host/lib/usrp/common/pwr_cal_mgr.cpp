@@ -99,7 +99,7 @@ public:
         _load_cal_data(key);
         UHD_ASSERT_THROW(_cal_data.count(key));
         _desired_power      = power_dbm;
-        const uint64_t freq = static_cast<uint64_t>(_get_freq());
+        const uint64_t freq = static_cast<uint64_t>(std::round(_get_freq()));
         auto& cal_data = _cal_data.at(key);
         if (!cal_data) {
             const std::string err_msg = std::string("Attempting to set power for key ")
@@ -141,7 +141,7 @@ public:
             throw uhd::runtime_error(err_msg);
         }
 
-        const uint64_t freq    = static_cast<uint64_t>(_get_freq());
+        const uint64_t freq    = static_cast<uint64_t>(std::round(_get_freq()));
         const double hw_gain = _gain_group->get_value(_hw_gain_name);
         const double hw_power = cal_data->get_power(hw_gain, freq);
         // We directly scale the power with the residual gain
@@ -167,7 +167,7 @@ public:
             UHD_LOG_ERROR(_log_id, err_msg);
             throw uhd::runtime_error(err_msg);
         }
-        const uint64_t freq = static_cast<uint64_t>(_get_freq());
+        const uint64_t freq = static_cast<uint64_t>(std::round(_get_freq()));
         return cal_data->get_power_limits(freq);
     }
 
