@@ -548,7 +548,6 @@ Note: On TX tests, initial Us within the first 5 seconds can be ignored and do n
 | 4x RX & 4x TX | 153e6             | 76.8e6                  | 600      | Drop to 2 channels for N300
 | 4x RX & 4x TX | 125e6             | 125e6 RX, 62.5e6 TX     | 60       | Use dual 10GigE, N310 XG only
 | 4x RX & 4x TX | 122.88e6          | 122.88e6 RX, 61.44e6 TX | 60       | Use dual 10GigE, N310 XG only
-| 4x RX & 4x TX | 153e6             | 153e6 RX, 76.8e6 TX     | 60       | Use dual 10GigE, N310 XG only
 | 2x RX & 2x TX | 125e6             | 125e6 RX, 62.5e6 TX     | 60       | Use dual 10GigE, N300 XG only
 | 2x RX & 2x TX | 122.88e6          | 122.88e6 RX, 61.44e6 TX | 60       | Use dual 10GigE, N300 XG only
 | 2x RX & 2x TX | 153e6             | 153e6 RX, 76.8e6 TX     | 60       | Use dual 10GigE, N300 XG only
