@@ -1039,7 +1039,7 @@ GPS-disciplined oscillator (GPSDO) on the board, the value "gpsdo" was named
 such for better compatibility with code written for other devices.
 
 The device provides a 3.3V supply voltage to an external antenna connected to the *GPS* port
-of your device. Note that this supply voltage is turned off in order to safe power upon destruction of the software object.
+of your device. Note that this supply voltage is turned off in order to save power upon destruction of the software object.
 
 \subsection e31x_hw_gpio Internal GPIO
 
@@ -1300,6 +1300,15 @@ input, 10 MHz external clock reference.
 The connectors are labeled RF A and RF B and are powered by the two channels of
 AD9361 RFIC.
 
+\subsection e320_hw_sync Clock and Time Synchronization
+
+Unlike the E31x, but like most other USRPs, the USRP E320 has separate inputs for
+clock and time reference. There is no separate internal 10 MHz oscillator, when
+selecting an 'internal' reference, the GPSDO is used to create reference signals.
+
+The values 'internal' and 'gpsdo' are thus interchangeable and mean the same
+thing.
+
 \subsection e320_gpio Front Panel GPIO
 
 ### Front Panel GPIO Connections
@@ -1333,6 +1342,11 @@ where FLAGS is the hex number that you can construct with the following table of
 For example, to set your device to auto-boot, with TPM, and with fans, the flag value is 0x3, so
 
     $ eeprom-set-flags 0x3
+
+The enclosure flag is typically set during the manufacturing process, and can be
+used to identify if the board has an enclosure is used. The firmware and thermal
+subsystems of this device also use this flag to load different default thermal
+settings (see the [SCU firmware code](https://github.com/EttusResearch/usrp-firmware/blob/a190641b349b1bfdbdd9f471f82613971e50e375/board/neon/board.c#L191-L205)).
 
 \section e3xx_regmap E3XX FPGA Register Map
 
