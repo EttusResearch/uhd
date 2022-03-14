@@ -11,6 +11,7 @@
 #include <uhd/features/discoverable_feature.hpp>
 #include <uhd/features/gpio_power_iface.hpp>
 #include <uhd/rfnoc/block_id.hpp>
+#include <uhd/rfnoc/filter_node.hpp>
 #include <uhd/rfnoc/graph_edge.hpp>
 #include <uhd/rfnoc/mb_controller.hpp>
 #include <uhd/rfnoc/noc_block_base.hpp>
@@ -232,6 +233,14 @@ void export_rfnoc(py::module& m)
         .def("get_port_voltage", &uhd::features::gpio_power_iface::get_port_voltage)
         .def("set_external_power", &uhd::features::gpio_power_iface::set_external_power)
         .def("get_external_power_status", &uhd::features::gpio_power_iface::get_external_power_status);
+
+    py::class_<detail::filter_node>(m, "filter_node")
+        .def("get_rx_filter_names", &detail::filter_node::get_rx_filter_names)
+        .def("get_rx_filter", &detail::filter_node::get_rx_filter)
+        .def("set_rx_filter", &detail::filter_node::set_rx_filter)
+        .def("get_tx_filter_names", &detail::filter_node::get_tx_filter_names)
+        .def("get_tx_filter", &detail::filter_node::get_tx_filter)
+        .def("set_tx_filter", &detail::filter_node::set_tx_filter);
 
     py::class_<mb_controller, mb_controller::sptr>(m, "mb_controller")
         .def("get_num_timekeepers", &mb_controller::get_num_timekeepers)
