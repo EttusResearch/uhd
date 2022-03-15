@@ -41,7 +41,7 @@ jobs:
         - Agent.OS -equals Linux
       - ${{ if eq(parameters.toolset, 'make_homebrew_macos') }}:
         - Agent.OS -equals Darwin
-        - Agent.OSVersion -equals $(macOSVersionDemand)
+        - MACOS_MAJOR_VERSION -equals $(macOSVersionDemand)
         - Agent.OSArchitecture -equals $(macOSArchDemand)
   workspace:
     clean: outputs

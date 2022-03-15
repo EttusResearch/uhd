@@ -59,7 +59,7 @@ variables:
 
 - name: macOSBuilders
   value:
-    "{'macOS-1014-x64':{'buildOSName':'macOS-1014-x64', 'macOSVersionDemand':'10.14', 'macOSArchDemand': 'X64'}}"
+    "{'macOS-12-x64':{'buildOSName':'macOS-12-x64', 'macOSVersionDemand':'12', 'macOSArchDemand': 'X64'}}"
 
 - name: dockerImagePrefix
   value: 'rfsdr/'
