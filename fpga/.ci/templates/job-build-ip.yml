@@ -57,13 +57,15 @@ jobs:
     # for subsequent runs.
     # Further details on "Pipeline caching" available online:
     #   https://docs.microsoft.com/en-us/azure/devops/pipelines/release/caching?view=azure-devops
-    - ${{ if eq(parameters.clean_build, false) }}:
-      - task: Cache@2
-        inputs:
-          key: "uhddev-fpga-${{ parameters.ip_target }}"
-          path: ${{ parameters.directory }}/build-ip
-          cacheHitVar: CACHE_RESTORED
-        displayName: Cache IP
+    # We always allow the Cache task to run, even in clean builds. This way
+    # when in a cache miss, the IP build from that run will be saved as an
+    # artifact for subsequent CI and PR runs to fetch.
+    - task: Cache@2
+      inputs:
+        key: "uhddev-fpga-${{ parameters.ip_target }}"
+        path: ${{ parameters.directory }}/build-ip
+        cacheHitVar: CACHE_RESTORED
+      displayName: Cache IP
 
     - bash: |
         BUILD_IP_CACHE_HASH=`cat build-ip/.ci/build-hash`
@@ -72,8 +74,18 @@ jobs:
         bash $(Build.SourcesDirectory)/uhddev/fpga/.ci/scripts/refresh_ip.sh \
           `realpath build-ip/` $BUILD_IP_CACHE_HASH
       workingDirectory: ${{ parameters.directory }}
-      condition: eq(variables.CACHE_RESTORED, 'true')
+      # Refresh IP when caching is allowed (clean_build = false) and a cache
+      # artifact was fetched.
+      condition: and(eq('${{ parameters.clean_build }}', 'false'), eq(variables.CACHE_RESTORED, 'true'))
       displayName: "Refresh IP"
+
+    - bash: |
+        echo "Clean IP build requested, removing existing build-ip"
+        rm -rf build-ip
+      workingDirectory: ${{ parameters.directory }}
+      # Remove build-ip directory whenever a clean IP build is requested.
+      condition: eq('${{ parameters.clean_build }}', 'true')
+      displayName: "Prune IP"
 
     - bash: |
         source $(Build.SourcesDirectory)/uhddev/fpga/.ci/scripts/run_setup.sh ./
