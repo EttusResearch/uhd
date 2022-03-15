@@ -53,6 +53,14 @@ pr:
     - fpga/usrp3/top/x400
     - fpga/.ci
 
+schedules:
+- cron: "0 18 * * Sun"
+  displayName: Weekly FPGA Build master branch
+  branches:
+    include:
+    - master
+  always: true
+
 extends:
   template: templates/stages-fpga-pipeline.yml
   parameters:
