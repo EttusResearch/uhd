@@ -749,8 +749,6 @@ BOOST_FIXTURE_TEST_CASE(replay_test_graph, replay_block_fixture)
     node_accessor.init_props(&mock_ddc_block);
     mock_sink_term.set_edge_property<std::string>(
         "type", "sc16", {res_source_info::INPUT_EDGE, 0});
-    mock_sink_term.set_edge_property<std::string>(
-        "type", "sc16", {res_source_info::INPUT_EDGE, 1});
 
     UHD_LOG_INFO("TEST", "Creating graph...");
     graph.connect(&mock_radio_block, &mock_ddc_block, edge_port_info);
@@ -758,7 +756,22 @@ BOOST_FIXTURE_TEST_CASE(replay_test_graph, replay_block_fixture)
     graph.connect(test_replay.get(), &mock_sink_term, edge_port_info);
     UHD_LOG_INFO("TEST", "Committing graph...");
     graph.commit();
+    mock_sink_term.set_edge_property<double>(
+        "tick_rate", 1.0, {res_source_info::INPUT_EDGE, 0});
     UHD_LOG_INFO("TEST", "Commit complete.");
+
+    mock_radio_block.generate_overrun(0);
+    uhd::rx_metadata_t rx_md;
+    BOOST_REQUIRE(test_replay->get_record_async_metadata(rx_md, 1.0));
+    BOOST_CHECK(rx_md.error_code == uhd::rx_metadata_t::ERROR_CODE_OVERFLOW);
+
+    mock_sink_term.post_action(res_source_info{res_source_info::INPUT_EDGE, 0},
+        tx_event_action_info::make(uhd::async_metadata_t::EVENT_CODE_UNDERFLOW, 1234ul));
+    uhd::async_metadata_t tx_md;
+    BOOST_REQUIRE(test_replay->get_play_async_metadata(tx_md, 1.0));
+    BOOST_CHECK(tx_md.event_code == uhd::async_metadata_t::EVENT_CODE_UNDERFLOW);
+    BOOST_CHECK(tx_md.has_time_spec);
+    BOOST_CHECK(tx_md.time_spec == 1234.0);
 }
 
 /*
