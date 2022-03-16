@@ -72,18 +72,20 @@ def parse(result_str):
     rx_rate = 0.0
     num_rx_channels = 0
     expr = "Testing receive rate ([0-9]+\.[0-9]+) Msps on (\d+) channels"
-    match = re.search(expr, result_str)
-    if match is not None:
-        rx_rate = float(match.group(1)) * 1.0e6
-        num_rx_channels = int(match.group(2))
+    matches = re.findall(expr, result_str)
+    if matches:
+        rx_rate = float(matches[0][0]) * 1.0e6
+        for match in matches:
+            num_rx_channels += int(match[1])
 
     tx_rate = 0.0
     num_tx_channels = 0
     expr = "Testing transmit rate ([0-9]+\.[0-9]+) Msps on (\d+) channels"
-    match = re.search(expr, result_str)
-    if match is not None:
-        tx_rate = float(match.group(1)) * 1.0e6
-        num_tx_channels = int(match.group(2))
+    matches = re.findall(expr, result_str)
+    if matches:
+        tx_rate = float(matches[0][0]) * 1.0e6
+        for match in matches:
+            num_tx_channels += int(match[1])
 
     # Parse results
     expr = "Benchmark rate summary:"

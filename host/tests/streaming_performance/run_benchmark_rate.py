@@ -40,6 +40,8 @@ def create_parser():
     parser.add_argument("--random", type=str, help="Run with random values of samples in send() and recv()")
     parser.add_argument("--rx_channels", type=str, help="which RX channel(s) to use")
     parser.add_argument("--tx_channels", type=str, help="which TX channel(s) to use")
+    parser.add_argument("--priority", type=str, help="thread priority (normal, high)")
+    parser.add_argument("--multi_streamer", action="count", help="create a separate streamer per channel")
     return parser
 
 def parse_args():
