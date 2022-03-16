@@ -126,6 +126,22 @@ public:
         return 1;
     }
 
+    // Mock overrun
+    void generate_overrun(const size_t chan)
+    {
+        auto rx_event_action =
+            rx_event_action_info::make(uhd::rx_metadata_t::ERROR_CODE_OVERFLOW);
+        post_action(res_source_info{res_source_info::OUTPUT_EDGE, chan}, rx_event_action);
+    }
+
+    // Mock underrun (note: we use tick rate 1.0 for calculating ticks from time!)
+    void generate_underrun(const size_t chan, uhd::time_spec_t time_spec)
+    {
+        auto tx_event_action = tx_event_action_info::make(
+            uhd::async_metadata_t::EVENT_CODE_UNDERFLOW, time_spec.to_ticks(1.0));
+        post_action(res_source_info{res_source_info::INPUT_EDGE, chan}, tx_event_action);
+    }
+
     // Some public attributes that help debugging
     size_t rssi_resolver_count     = 0;
     bool disable_samp_out_resolver = false;
@@ -414,6 +430,11 @@ public:
         UHD_ASSERT_THROW(edge_info.type == res_source_info::INPUT_EDGE
                          || edge_info.type == res_source_info::OUTPUT_EDGE);
         return get_property<data_t>(id, edge_info);
+    }
+
+    void post_action(const res_source_info& edge_info, action_info::sptr action)
+    {
+        node_t::post_action(edge_info, action);
     }
 
     std::list<action_info::sptr> received_actions;
