@@ -73,23 +73,6 @@ typedef SSIZE_T ssize_t;
 #    define UHD_FALLTHROUGH
 #    define UHD_FUNCTION __func__
 #    define UHD_PRETTY_FUNCTION __PRETTY_FUNCTION__
-#elif defined(__GNUG__) && __GNUG__ >= 4
-#    define UHD_EXPORT __attribute__((visibility("default")))
-#    define UHD_IMPORT __attribute__((visibility("default")))
-#    define UHD_EXPORT_HEADER __attribute__((visibility("default")))
-#    define UHD_IMPORT_HEADER __attribute__((visibility("default")))
-#    define UHD_INLINE inline __attribute__((always_inline))
-#    define UHD_FORCE_INLINE inline __attribute__((always_inline))
-#    define UHD_DEPRECATED __attribute__((deprecated))
-#    define UHD_ALIGNED(x) __attribute__((aligned(x)))
-#    define UHD_UNUSED(x) x __attribute__((unused))
-#    if __GNUG__ >= 7
-#        define UHD_FALLTHROUGH __attribute__((fallthrough));
-#    else
-#        define UHD_FALLTHROUGH
-#    endif
-#    define UHD_FUNCTION __func__
-#    define UHD_PRETTY_FUNCTION __PRETTY_FUNCTION__
 #elif defined(__clang__)
 #    define UHD_EXPORT __attribute__((visibility("default")))
 #    define UHD_IMPORT __attribute__((visibility("default")))
@@ -102,6 +85,23 @@ typedef SSIZE_T ssize_t;
 #    define UHD_UNUSED(x) x __attribute__((unused))
 #    if __clang_major__ > 3 || (__clang_major__ == 3 && __clang_minor__ >= 8)
 #        define UHD_FALLTHROUGH [[clang:fallthrough]];
+#    else
+#        define UHD_FALLTHROUGH
+#    endif
+#    define UHD_FUNCTION __func__
+#    define UHD_PRETTY_FUNCTION __PRETTY_FUNCTION__
+#elif defined(__GNUG__) && __GNUG__ >= 4
+#    define UHD_EXPORT __attribute__((visibility("default")))
+#    define UHD_IMPORT __attribute__((visibility("default")))
+#    define UHD_EXPORT_HEADER __attribute__((visibility("default")))
+#    define UHD_IMPORT_HEADER __attribute__((visibility("default")))
+#    define UHD_INLINE inline __attribute__((always_inline))
+#    define UHD_FORCE_INLINE inline __attribute__((always_inline))
+#    define UHD_DEPRECATED __attribute__((deprecated))
+#    define UHD_ALIGNED(x) __attribute__((aligned(x)))
+#    define UHD_UNUSED(x) x __attribute__((unused))
+#    if __GNUG__ >= 7
+#        define UHD_FALLTHROUGH __attribute__((fallthrough));
 #    else
 #        define UHD_FALLTHROUGH
 #    endif

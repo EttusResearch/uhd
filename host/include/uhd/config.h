@@ -39,7 +39,7 @@ typedef SSIZE_T ssize_t;
     #define UHD_DEPRECATED     __declspec(deprecated)
     #define UHD_ALIGNED(x)     __declspec(align(x))
     #define UHD_UNUSED(x)      x __attribute__((unused))
-#elif defined(__GNUC__) && __GNUC__ >= 4
+#elif defined(__clang__)
     #define UHD_EXPORT         __attribute__((visibility("default")))
     #define UHD_IMPORT         __attribute__((visibility("default")))
     #define UHD_EXPORT_HEADER  __attribute__((visibility("default")))
@@ -48,7 +48,7 @@ typedef SSIZE_T ssize_t;
     #define UHD_DEPRECATED     __attribute__((deprecated))
     #define UHD_ALIGNED(x)     __attribute__((aligned(x)))
     #define UHD_UNUSED(x)      x __attribute__((unused))
-#elif defined(__clang__)
+#elif defined(__GNUC__) && (__GNUC__ >= 4)
     #define UHD_EXPORT         __attribute__((visibility("default")))
     #define UHD_IMPORT         __attribute__((visibility("default")))
     #define UHD_EXPORT_HEADER  __attribute__((visibility("default")))
