@@ -595,7 +595,10 @@ class N3XXBIST(bist.UsrpBIST):
 ##############################################################################
 def main():
     " Go, go, go! "
-    return N3XXBIST().run()
+    result = N3XXBIST().run()
+    print("BIST complete. It is strongly recommended that you reboot your USRP ")
+    print("before returning to regular operation.")
+    return result
 
 if __name__ == '__main__':
     exit(not main())
