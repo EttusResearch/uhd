@@ -35,6 +35,7 @@ public:
         const size_t spi_transaction_cfg,
         const size_t spi_transaction_go,
         const size_t spi_status,
+        const size_t spi_controller_info,
         const mapper_sptr port_mapper);
 
     //! Configures the SPI transaction. The vector index refers to the slave number.
@@ -43,4 +44,3 @@ public:
 };
 
 }} // namespace uhd::cores
-

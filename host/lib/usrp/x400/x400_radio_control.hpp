@@ -54,6 +54,9 @@ constexpr uint32_t SPI_TRANSACTION_GO_REG = SPI_SLAVE_CFG + 0x0014;
 //! Base address for SPI_STATUS Register
 constexpr uint32_t SPI_STATUS_REG = SPI_SLAVE_CFG + 0x0018;
 
+//! Base address for SPI_CONTROLLER_INFO Register
+constexpr uint32_t SPI_CONTROLLER_INFO_REG = SPI_SLAVE_CFG + 0x001C;
+
 } // namespace x400_regs
 
 class x400_radio_control_impl : public radio_control_impl

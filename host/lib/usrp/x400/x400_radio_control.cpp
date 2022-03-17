@@ -191,20 +191,32 @@ x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
 
         auto gpio_port_mapper = std::shared_ptr<uhd::mapper::gpio_port_mapper>(
             new uhd::rfnoc::x400::x400_gpio_port_mapping);
-        auto spicore = uhd::cores::spi_core_4000::make(
-            [this](const uint32_t addr, const uint32_t data) {
-                regs().poke32(addr, data, get_command_time(0));
-            },
-            [this](
-                const uint32_t addr) { return regs().peek32(addr, get_command_time(0)); },
-            x400_regs::SPI_SLAVE_CFG,
-            x400_regs::SPI_TRANSACTION_CFG_REG,
-            x400_regs::SPI_TRANSACTION_GO_REG,
-            x400_regs::SPI_STATUS_REG,
-            gpio_port_mapper);
 
-        _spi_getter_iface = std::make_shared<x400_spi_getter>(spicore);
-        register_feature(_spi_getter_iface);
+        // Check if SPI is available as GPIO source, otherwise don't register
+        // SPI_GETTER_IFace
+        auto gpio_srcs = _mb_control->get_gpio_srcs("GPIO0");
+        if (std::count(gpio_srcs.begin(), gpio_srcs.end(), "DB0_SPI") > 0) {
+            auto spicore = uhd::cores::spi_core_4000::make(
+                [this](const uint32_t addr, const uint32_t data) {
+                    regs().poke32(addr, data, get_command_time(0));
+                },
+                [this](const uint32_t addr) {
+                    return regs().peek32(addr, get_command_time(0));
+                },
+                x400_regs::SPI_SLAVE_CFG,
+                x400_regs::SPI_TRANSACTION_CFG_REG,
+                x400_regs::SPI_TRANSACTION_GO_REG,
+                x400_regs::SPI_STATUS_REG,
+                x400_regs::SPI_CONTROLLER_INFO_REG,
+                gpio_port_mapper);
+
+            _spi_getter_iface = std::make_shared<x400_spi_getter>(spicore);
+            register_feature(_spi_getter_iface);
+        } else {
+            UHD_LOG_INFO("x400_radio_control",
+                "SPI functionality not available in this FPGA image. Please update to at "
+                "least version 7.7 to use SPI.");
+        }
     }
 }
 
@@ -816,5 +828,4 @@ std::string x400_radio_control_impl::get_dboard_fe_from_chan(
 
 UHD_RFNOC_BLOCK_REGISTER_FOR_DEVICE_DIRECT(
     x400_radio_control, RADIO_BLOCK, X400, "Radio", true, "radio_clk", "ctrl_clk")
-
 }} // namespace uhd::rfnoc

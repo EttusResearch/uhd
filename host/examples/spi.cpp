@@ -68,8 +68,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     // create a usrp device
     std::cout << std::endl;
-    std::cout << "Creating the usrp device with: " << args << "..."
-              << std::endl;
+    std::cout << "Creating the usrp device with: " << args << "..." << std::endl;
     auto usrp = uhd::usrp::multi_usrp::make(args);
 
     if (vm.count("list-banks")) {
@@ -80,7 +79,12 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         }
     }
 
-    // Get the SPI getter interface from where we'll get
+    // Get the SPI getter interface from where we'll get the SPI interface itself
+    if (!usrp->get_radio_control().has_feature<uhd::features::spi_getter_iface>()) {
+        std::cout << "Error: Could not find SPI_Getter_Iface. Please check if your FPGA "
+                     "image is up to date.\n";
+        return EXIT_FAILURE;
+    }
     auto& spi_getter_iface =
         usrp->get_radio_control().get_feature<uhd::features::spi_getter_iface>();
 

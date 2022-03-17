@@ -25,6 +25,7 @@ public:
         const size_t spi_transaction_cfg,
         const size_t spi_transaction_go,
         const size_t spi_status,
+        const size_t spi_controller_info,
         const mapper_sptr port_mapper)
         : _poke32(std::move(poke32_fn))
         , _peek32(std::move(peek32_fn))
@@ -32,6 +33,7 @@ public:
         , _spi_transaction_cfg(spi_transaction_cfg)
         , _spi_transaction_go(spi_transaction_go)
         , _spi_status(spi_status)
+        , _spi_ctrl_info(spi_controller_info)
         , _port_mapper(port_mapper)
     {
     }
@@ -39,12 +41,17 @@ public:
     void set_spi_slave_config(
         const std::vector<uhd::features::spi_slave_config_t>& ssc) override
     {
-        if (ssc.size() > 4) {
-            throw uhd::value_error(
-                "Passed more than 4 SPI slaves. Maximum number of SPI slaves is 4.");
+        const size_t num_slaves_allowed = _peek32(_spi_ctrl_info) & 0xF;
+        if (ssc.size() > num_slaves_allowed) {
+            throw uhd::value_error("Number of configurations passed ("
+                                   + std::to_string(ssc.size())
+                                   + ") exceeds the maximum number allowed by "
+                                     "the bitfile per radio block. Maximum number: "
+                                   + std::to_string(num_slaves_allowed));
         }
 
         _spi_slave_config = ssc;
+        _slave_ctrl_cache.assign(_spi_slave_config.size(), 0);
     }
 
     uint32_t transact_spi(const int which_slave,
@@ -135,8 +142,9 @@ private:
     const size_t _spi_transaction_cfg;
     const size_t _spi_transaction_go;
     const size_t _spi_status;
+    const size_t _spi_ctrl_info;
     const mapper_sptr _port_mapper;
-    std::vector<uint32_t> _slave_ctrl_cache{0, 0, 0, 0};
+    std::vector<uint32_t> _slave_ctrl_cache;
     uint32_t _transaction_cfg_cache = 0;
     std::mutex _mutex;
     std::vector<uhd::features::spi_slave_config_t> _spi_slave_config;
@@ -161,6 +169,7 @@ spi_core_4000::sptr spi_core_4000::make(spi_core_4000::poke32_fn_t&& poke32_fn,
     const size_t spi_transaction_cfg,
     const size_t spi_transaction_go,
     const size_t spi_status,
+    const size_t spi_controller_info,
     const mapper_sptr port_mapper)
 {
     return std::make_shared<spi_core_4000_impl>(std::move(poke32_fn),
@@ -169,6 +178,7 @@ spi_core_4000::sptr spi_core_4000::make(spi_core_4000::poke32_fn_t&& poke32_fn,
         spi_transaction_cfg,
         spi_transaction_go,
         spi_status,
+        spi_controller_info,
         port_mapper);
 }
 

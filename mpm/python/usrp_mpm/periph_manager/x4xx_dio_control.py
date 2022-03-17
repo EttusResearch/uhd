@@ -147,6 +147,7 @@ class DioControl:
     FPGA_DIO_SW_DIO_CONTROL_REGISTER       = FPGA_DIO_REGISTER_BASE + 0x20
 
     FULL_DIO_FPGA_COMPAT = (7, 5)
+    FULL_SPI_FPGA_COMPAT = (7, 7)
 
     # DIO registers addresses in CPLD
     CPLD_DIO_DIRECTION_REGISTER = 0x30
@@ -157,9 +158,10 @@ class DioControl:
     X4XX_GPIO_SRC_MPM      = "MPM"
     X4XX_GPIO_SRC_USER_APP = "USER_APP"
     X4XX_GPIO_SRC_RADIO = [
-        ["DB0_RF0", "DB0_RF1", "DB0_SPI"],
-        ["DB1_RF0", "DB1_RF1", "DB1_SPI"]
+        ["DB0_RF0", "DB0_RF1"],
+        ["DB1_RF0", "DB1_RF1"]
     ]
+    X4XX_GPIO_SPI_SRC_RADIO = [["DB0_SPI"], ["DB1_SPI"]]
     X4XX_GPIO_WIDTH = 12
     # pylint: enable=bad-whitespace
 
@@ -227,6 +229,8 @@ class DioControl:
         self.mboard_cpld = mboard_cpld
         if self.mboard_regs.get_compat_number() < self.FULL_DIO_FPGA_COMPAT:
             self.log.warning("DIO board does not support the full feature set.")
+        if self.mboard_regs.get_compat_number() < self.FULL_SPI_FPGA_COMPAT:
+            self.log.warning("DIO board does not support SPI.")
         # initialize port mapping for HDMI and DIO
         self.port_mappings = {}
         self.mapping = None
@@ -263,6 +267,9 @@ class DioControl:
         ]
         for dboard in dboards:
             gpio_srcs.extend(self.X4XX_GPIO_SRC_RADIO[dboard.slot_idx])
+            # Only add SPI if FPGA version is high enough
+            if self.mboard_regs.get_compat_number() >= self.FULL_SPI_FPGA_COMPAT:
+                gpio_srcs.extend(self.X4XX_GPIO_SPI_SRC_RADIO[dboard.slot_idx])
 
         self._gpio_srcs = {
             gpio_bank : gpio_srcs for gpio_bank in self.X4XX_GPIO_BANKS
@@ -895,10 +902,10 @@ class DioControl:
         :return: board status
         """
         result = "\n" \
-               + self._format_row(["%s mapping" % self.mapping.name, self.DIO_PORTS[0], self.DIO_PORTS[1]]) \
-               + self._format_row(["", "", ""], "-", "+") \
-               + self._format_row(["voltage"] + self._get_voltage()) \
-               + self._format_row(["", "", ""], "-", "+")
+            + self._format_row(["%s mapping" % self.mapping.name, self.DIO_PORTS[0], self.DIO_PORTS[1]]) \
+            + self._format_row(["", "", ""], "-", "+") \
+            + self._format_row(["voltage"] + self._get_voltage()) \
+            + self._format_row(["", "", ""], "-", "+")
 
         register = self.mboard_regs.peek32(self.FPGA_DIO_MASTER_REGISTER)
         result += self._format_row(["master"] + self._format_registers(register))
