@@ -1467,17 +1467,11 @@ module x4xx (
         .radio_clk               (radio_clk),
         .pll_ref_clk             (pll_ref_clk),
         .db_state                (db_state[dboard_num]),
-        .radio_time              (radio_time),
-        .radio_time_stb          (radio_time_stb),
-        .time_ignore_bits        (time_ignore_bits),
         .ctrlport_rst            (radio_rst),
         .s_ctrlport_req_wr       (db_ctrlport_req_wr[dboard_num]),
         .s_ctrlport_req_rd       (db_ctrlport_req_rd[dboard_num]),
         .s_ctrlport_req_addr     (db_ctrlport_req_addr[dboard_num]),
         .s_ctrlport_req_data     (db_ctrlport_req_data[dboard_num]),
-        .s_ctrlport_req_byte_en  (db_ctrlport_req_byte_en[dboard_num]),
-        .s_ctrlport_req_has_time (db_ctrlport_req_has_time[dboard_num]),
-        .s_ctrlport_req_time     (db_ctrlport_req_time[dboard_num]),
         .s_ctrlport_resp_ack     (db_ctrlport_resp_ack[dboard_num]),
         .s_ctrlport_resp_status  (db_ctrlport_resp_status[dboard_num]),
         .s_ctrlport_resp_data    (db_ctrlport_resp_data[dboard_num]),
@@ -2181,9 +2175,6 @@ module x4xx (
     .m_ctrlport_radio_req_rd       ({ db_ctrlport_req_rd       [1], db_ctrlport_req_rd       [0] }),
     .m_ctrlport_radio_req_addr     ({ db_ctrlport_req_addr     [1], db_ctrlport_req_addr     [0] }),
     .m_ctrlport_radio_req_data     ({ db_ctrlport_req_data     [1], db_ctrlport_req_data     [0] }),
-    .m_ctrlport_radio_req_byte_en  ({ db_ctrlport_req_byte_en  [1], db_ctrlport_req_byte_en  [0] }),
-    .m_ctrlport_radio_req_has_time ({ db_ctrlport_req_has_time [1], db_ctrlport_req_has_time [0] }),
-    .m_ctrlport_radio_req_time     ({ db_ctrlport_req_time     [1], db_ctrlport_req_time     [0] }),
     .m_ctrlport_radio_resp_ack     ({ db_ctrlport_resp_ack     [1], db_ctrlport_resp_ack     [0] }),
     .m_ctrlport_radio_resp_status  ({ db_ctrlport_resp_status  [1], db_ctrlport_resp_status  [0] }),
     .m_ctrlport_radio_resp_data    ({ db_ctrlport_resp_data    [1], db_ctrlport_resp_data    [0] }),
@@ -2284,12 +2275,12 @@ endmodule
 //        <li> Version last modified: @.VERSIONING_REGS_REGMAP..VERSION_LAST_MODIFIED
 //      </info>
 //      <value name="FPGA_CURRENT_VERSION_MAJOR"           integer="7"/>
-//      <value name="FPGA_CURRENT_VERSION_MINOR"           integer="7"/>
+//      <value name="FPGA_CURRENT_VERSION_MINOR"           integer="8"/>
 //      <value name="FPGA_CURRENT_VERSION_BUILD"           integer="0"/>
 //      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_MAJOR" integer="7"/>
 //      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_MINOR" integer="0"/>
 //      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_BUILD" integer="0"/>
-//      <value name="FPGA_VERSION_LAST_MODIFIED_TIME"      integer="0x22030212"/>
+//      <value name="FPGA_VERSION_LAST_MODIFIED_TIME"      integer="0x22031714"/>
 //    </enumeratedtype>
 //  </group>
 //</regmap>

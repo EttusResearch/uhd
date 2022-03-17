@@ -25,19 +25,11 @@ module rfdc_timing_control #(
   input wire clk,
   input wire rst,
 
-  // Time
-  input wire [63:0] time_now,
-  input wire        time_now_stb,
-  input wire [ 3:0] time_ignore_bits,
-
   // CtrlPort Slave (from RFNoC Radio Block)
   input  wire [  1*NUM_DBOARDS-1:0] s_ctrlport_req_wr,
   input  wire [  1*NUM_DBOARDS-1:0] s_ctrlport_req_rd,
   input  wire [ 20*NUM_DBOARDS-1:0] s_ctrlport_req_addr,
   input  wire [ 32*NUM_DBOARDS-1:0] s_ctrlport_req_data,
-  input  wire [  4*NUM_DBOARDS-1:0] s_ctrlport_req_byte_en,
-  input  wire [  1*NUM_DBOARDS-1:0] s_ctrlport_req_has_time,
-  input  wire [ 64*NUM_DBOARDS-1:0] s_ctrlport_req_time,
   output wire [  1*NUM_DBOARDS-1:0] s_ctrlport_resp_ack,
   output wire [  2*NUM_DBOARDS-1:0] s_ctrlport_resp_status,
   output wire [ 32*NUM_DBOARDS-1:0] s_ctrlport_resp_data,
@@ -61,43 +53,29 @@ module rfdc_timing_control #(
     for (db = 0; db < NUM_DBOARDS; db = db+1) begin : gen_db_ctrlport
 
       //-----------------------------------------------------------------------
-      // RF Reset Control
+      // CtrlPort Breakdown
       //-----------------------------------------------------------------------
 
-      wire [  1-1:0] nco_ctrlport_req_wr;
-      wire [  1-1:0] nco_ctrlport_req_rd;
-      wire [ 20-1:0] nco_ctrlport_req_addr;
-      wire [ 32-1:0] nco_ctrlport_req_data;
-      reg  [  1-1:0] nco_ctrlport_resp_ack;
-      reg  [ 32-1:0] nco_ctrlport_resp_data;
+      wire         nco_ctrlport_req_wr;
+      wire         nco_ctrlport_req_rd;
+      wire [ 19:0] nco_ctrlport_req_addr;
+      wire [ 31:0] nco_ctrlport_req_data;
+      reg          nco_ctrlport_resp_ack;
+      reg  [ 31:0] nco_ctrlport_resp_data;
+      wire [  1:0] nco_ctrlport_resp_status = 2'b0;
 
-      ctrlport_timer #(
-        .EXEC_LATE_CMDS (1)
-      ) ctrlport_timer_nco (
-        .clk                     (clk),
-        .rst                     (rst),
-        .time_now                (time_now),
-        .time_now_stb            (time_now_stb),
-        .time_ignore_bits        (time_ignore_bits),
-        .s_ctrlport_req_wr       (s_ctrlport_req_wr       [ 1*db+: 1]),
-        .s_ctrlport_req_rd       (s_ctrlport_req_rd       [ 1*db+: 1]),
-        .s_ctrlport_req_addr     (s_ctrlport_req_addr     [20*db+:20]),
-        .s_ctrlport_req_data     (s_ctrlport_req_data     [32*db+:32]),
-        .s_ctrlport_req_byte_en  (s_ctrlport_req_byte_en  [ 4*db+: 4]),
-        .s_ctrlport_req_has_time (s_ctrlport_req_has_time [ 1*db+: 1]),
-        .s_ctrlport_req_time     (s_ctrlport_req_time     [64*db+:64]),
-        .s_ctrlport_resp_ack     (s_ctrlport_resp_ack     [ 1*db+: 1]),
-        .s_ctrlport_resp_status  (s_ctrlport_resp_status  [ 2*db+: 2]),
-        .s_ctrlport_resp_data    (s_ctrlport_resp_data    [32*db+:32]),
-        .m_ctrlport_req_wr       (nco_ctrlport_req_wr),
-        .m_ctrlport_req_rd       (nco_ctrlport_req_rd),
-        .m_ctrlport_req_addr     (nco_ctrlport_req_addr),
-        .m_ctrlport_req_data     (nco_ctrlport_req_data),
-        .m_ctrlport_req_byte_en  (),
-        .m_ctrlport_resp_ack     (nco_ctrlport_resp_ack),
-        .m_ctrlport_resp_status  (2'b0),
-        .m_ctrlport_resp_data    (nco_ctrlport_resp_data)
-      );
+      assign nco_ctrlport_req_wr    = s_ctrlport_req_wr   [ 1*db+: 1];
+      assign nco_ctrlport_req_rd    = s_ctrlport_req_rd   [ 1*db+: 1];
+      assign nco_ctrlport_req_addr  = s_ctrlport_req_addr [20*db+:20];
+      assign nco_ctrlport_req_data  = s_ctrlport_req_data [32*db+:32];
+
+      assign s_ctrlport_resp_ack     [ 1*db+: 1] = nco_ctrlport_resp_ack;
+      assign s_ctrlport_resp_status  [ 2*db+: 2] = nco_ctrlport_resp_data;
+      assign s_ctrlport_resp_data    [32*db+:32] = nco_ctrlport_resp_status;
+
+      //-----------------------------------------------------------------------
+      // RF Reset Control
+      //-----------------------------------------------------------------------
 
       always @(posedge clk) begin
         if (rst) begin
