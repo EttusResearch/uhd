@@ -334,7 +334,11 @@ std::vector<std::string> mpmd_mb_controller::get_gpio_src(const std::string& ban
         UHD_LOG_ERROR("MPMD", "Invalid GPIO bank: `" << bank << "'");
         throw uhd::key_error(std::string("Invalid GPIO bank: ") + bank);
     }
-    return _rpc->get_gpio_src(bank);
+    if (_current_gpio_src.count(bank)) {
+        return _current_gpio_src[bank];
+    } else {
+        return _rpc->get_gpio_src(bank);
+    }
 }
 
 void mpmd_mb_controller::set_gpio_src(
@@ -345,6 +349,7 @@ void mpmd_mb_controller::set_gpio_src(
         throw uhd::key_error(std::string("Invalid GPIO bank: ") + bank);
     }
     _rpc->set_gpio_src(bank, src);
+    _current_gpio_src[bank] = src;
 }
 
 void mpmd_mb_controller::register_sync_source_updater(
