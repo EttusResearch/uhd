@@ -187,7 +187,7 @@ x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
     auto mpm_rpc = _mb_control->dynamic_cast_rpc_as<uhd::usrp::mpmd_rpc_iface>();
     if (mpm_rpc->get_gpio_banks().size() > 0) {
         _gpios = std::make_shared<x400::gpio_control>(
-            _rpcc, RFNOC_MAKE_WB_IFACE(regmap::PERIPH_BASE + 0xC000, 0));
+            _rpcc, _mb_control, RFNOC_MAKE_WB_IFACE(regmap::PERIPH_BASE + 0xC000, 0));
 
         auto gpio_port_mapper = std::shared_ptr<uhd::mapper::gpio_port_mapper>(
             new uhd::rfnoc::x400::x400_gpio_port_mapping);

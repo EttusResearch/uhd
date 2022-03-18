@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <uhdlib/usrp/common/mpmd_mb_controller.hpp>
 #include <uhdlib/usrp/common/rpc.hpp>
 #include <uhdlib/usrp/cores/gpio_atr_3000.hpp>
 #include <uhdlib/usrp/cores/gpio_port_mapper.hpp>
@@ -56,7 +57,7 @@ public:
      * \param rpcc RPC object to talk to MPM
      * \param iface wb_iface to talk to the radio registers
      */
-    gpio_control(uhd::usrp::x400_rpc_iface::sptr rpcc, wb_iface::sptr iface);
+    gpio_control(uhd::usrp::x400_rpc_iface::sptr rpcc, uhd::rfnoc::mpmd_mb_controller::sptr mb_control, wb_iface::sptr iface);
 
     /*! Set the given GPIO attribute. See gpio_atr_3000 for details.
      */
@@ -77,11 +78,22 @@ private:
      */
     uint32_t map_dio(const uint32_t user_form);
 
+    /*! Builds the mask of which pins are currently assigned to the DBx_RF1
+     * source. Returns the pins in "unmapped" form.
+     */
+    uint32_t build_rf1_mask();
+
+    /*! Returns the numeric index of the given ATR attribute in the array of
+     * ATR value registers.
+     */
+    static size_t atr_attr_index(const uhd::usrp::gpio_atr::gpio_attr_t attr);
+
     /*! Returns whether the given attribute is setting one of the ATR entries.
      */
     static bool is_atr_attr(const usrp::gpio_atr::gpio_attr_t attr);
 
     uhd::usrp::x400_rpc_iface::sptr _rpcc;
+    uhd::rfnoc::mpmd_mb_controller::sptr _mb_control;
     wb_iface::sptr _regs;
 
     // There are two GPIOs, one for each channel. These two are set in unison.
