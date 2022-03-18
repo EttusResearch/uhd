@@ -298,10 +298,9 @@ class e320(ZynqComponents, PeriphManagerBase):
             self.log.warning(
                 "Cannot run init(), device was never fully initialized!")
             return False
-        if args.get("clock_source", "") != "":
-            self.set_clock_source(args.get("clock_source"))
-        if args.get("time_source", "") != "":
-            self.set_time_source(args.get("time_source"))
+        args = self._update_default_args(args)
+        self.set_clock_source(args.get("clock_source", E320_DEFAULT_CLOCK_SOURCE))
+        self.set_time_source(args.get("time_source", E320_DEFAULT_TIME_SOURCE))
         result = super(e320, self).init(args)
         for xport_mgr in itervalues(self._xport_mgrs):
             xport_mgr.init(args)

@@ -420,6 +420,7 @@ class n3xx(ZynqComponents, PeriphManagerBase):
             self.log.error(
                 "Cannot run init(), device was never fully initialized!")
             return False
+        args = self._update_default_args(args)
         # We need to disable the PPS out during clock and dboard initialization in order
         # to avoid glitches.
         self.enable_pps_out(False)
@@ -429,8 +430,8 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         # properties should have been set to either the default values (first time
         # init() is run); or to the previous configured values (updated after a
         # successful clocking configuration).
-        args['clock_source'] = args.get('clock_source', self._clock_source)
-        args['time_source'] = args.get('time_source', self._time_source)
+        args['clock_source'] = args.get('clock_source', N3XX_DEFAULT_CLOCK_SOURCE)
+        args['time_source'] = args.get('time_source', N3XX_DEFAULT_TIME_SOURCE)
         self.set_sync_source(args)
         # Uh oh, some hard coded product-related info: The N300 has no LO
         # source connectors on the front panel, so we assume that if this was

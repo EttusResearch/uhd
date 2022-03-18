@@ -386,10 +386,9 @@ class e31x(ZynqComponents, PeriphManagerBase):
             self.log.warning(
                 "Cannot run init(), device was never fully initialized!")
             return False
-        if args.get("clock_source", "") != "":
-            self.set_clock_source(args.get("clock_source"))
-        if args.get("time_source", "") != "":
-            self.set_time_source(args.get("time_source"))
+        args = self._update_default_args(args)
+        self.set_clock_source(args.get("clock_source", E310_DEFAULT_CLOCK_SOURCE))
+        self.set_time_source(args.get("time_source", E310_DEFAULT_TIME_SOURCE))
         if "no_reload_fpga" in args:
             self._do_not_reload = \
                 str2bool(args.get("no_reload_fpga")) or args.get("no_reload_fpga") == ""

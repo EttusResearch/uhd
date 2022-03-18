@@ -631,6 +631,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
             self.log.warning(
                 "Cannot run init(), device was never fully initialized!")
             return False
+        args = self._update_default_args(args)
 
         # We need to disable the PPS out during clock and dboard initialization in order
         # to avoid glitches.
@@ -638,9 +639,9 @@ class x4xx(ZynqComponents, PeriphManagerBase):
             self._clocking_auxbrd.set_trig(False)
 
         # If the caller has not specified clock_source or time_source, set them
-        # to the values currently configured.
-        args['clock_source'] = args.get('clock_source', self._clk_mgr.get_clock_source())
-        args['time_source'] = args.get('time_source', self._clk_mgr.get_time_source())
+        # to the default values.
+        args['clock_source'] = args.get('clock_source', X400_DEFAULT_CLOCK_SOURCE)
+        args['time_source'] = args.get('time_source', X400_DEFAULT_TIME_SOURCE)
         self.set_sync_source(args)
 
         # If a Master Clock Rate was specified,
