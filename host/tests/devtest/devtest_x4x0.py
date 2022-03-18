@@ -71,5 +71,13 @@ from test_pps_test import uhd_test_pps_test
 # from gpio_test import gpio_test
 # from bitbang_test import bitbang_test
 
+from gpio_test import gpio_atr_readback_test
+gpio_atr_readback_test.test_params = [
+    ("GPIOA", "DB0_RF0"),
+    ("GPIOA", "DB0_RF1"),
+    ("GPIOB", "DB1_RF0"),
+    ("GPIOB", "DB1_RF1"),
+]
+
 from list_sensors_test import list_sensors_test
 from python_api_test import uhd_python_api_test
