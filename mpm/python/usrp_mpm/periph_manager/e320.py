@@ -164,16 +164,19 @@ class e320(ZynqComponents, PeriphManagerBase):
 
     def _init_dboards(self, _, override_dboard_pids, default_args):
         """
-        Initialize all the daughterboards
+        Initialize all the daughterboards.
+
+        Note: This gets called by PeriphManagerBase.init_dboards(). We override
+        the base class's implementation in order to avoid initializing our one
+        "dboard" in the same way that, for example, N310's dboards are initialized.
+        Specifically,
+        - skip dboard EEPROM setup (we don't have one)
+        - change the way we handle SPI devices
 
         (dboard_infos) -- N/A
         override_dboard_pids -- List of dboard PIDs to force
         default_args -- Default args
         """
-        # Override the base class's implementation in order to avoid initializing our one "dboard"
-        # in the same way that, for example, N310's dboards are initialized. Specifically,
-        # - skip dboard EEPROM setup (we don't have one)
-        # - change the way we handle SPI devices
         if override_dboard_pids:
             self.log.warning("Overriding daughterboard PIDs with: {}"
                              .format(override_dboard_pids))
@@ -198,7 +201,7 @@ class e320(ZynqComponents, PeriphManagerBase):
         }
         # This will actually instantiate the dboard class:
         self.dboards.append(Neon(E320_DBOARD_SLOT_IDX, **dboard_info))
-        self.log.info("Found %d daughterboard(s).", len(self.dboards))
+        assert len(self.dboards) == 1
 
     def _check_fpga_compat(self):
         " Throw an exception if the compat numbers don't match up "
@@ -222,20 +225,12 @@ class e320(ZynqComponents, PeriphManagerBase):
         self._ext_clock_freq = float(
             default_args.get('ext_clock_freq', E320_DEFAULT_EXT_CLOCK_FREQ)
         )
-        if not self.dboards:
-            self.log.warning(
-                "No dboards found, skipping setting clock and time source "
-                "configuration."
-            )
-            self._clock_source = E320_DEFAULT_CLOCK_SOURCE
-            self._time_source = E320_DEFAULT_TIME_SOURCE
-        else:
-            self.set_clock_source(
-                default_args.get('clock_source', E320_DEFAULT_CLOCK_SOURCE)
-            )
-            self.set_time_source(
-                default_args.get('time_source', E320_DEFAULT_TIME_SOURCE)
-            )
+        self.set_clock_source(
+            default_args.get('clock_source', E320_DEFAULT_CLOCK_SOURCE)
+        )
+        self.set_time_source(
+            default_args.get('time_source', E320_DEFAULT_TIME_SOURCE)
+        )
 
     def _init_peripherals(self, args):
         """
@@ -441,14 +436,8 @@ class e320(ZynqComponents, PeriphManagerBase):
             return
         self._ext_clock_freq = freq
         if self.get_clock_source() == 'external':
-            for slot, dboard in enumerate(self.dboards):
-                if hasattr(dboard, 'update_ref_clock_freq'):
-                    self.log.trace(
-                        "Updating reference clock on dboard %d to %f MHz...",
-                        slot, freq/1e6
-                    )
-                    dboard.update_ref_clock_freq(freq)
-
+            self.log.trace(f"Updating reference clock to {freq/1e6} MHz...")
+            self.dboard.update_ref_clock_freq(freq)
 
     def get_ref_clock_freq(self):
         " Returns the currently active reference clock frequency"

@@ -271,7 +271,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
             'default_args': default_args,
         })
         self.dboards.append(E31x_db(E310_DBOARD_SLOT_IDX, **dboard_info))
-        self.log.info("Found %d daughterboard(s).", len(self.dboards))
+        assert len(self.dboards) == 1
 
     def _check_fpga_compat(self):
         " Throw an exception if the compat numbers don't match up "
@@ -292,19 +292,12 @@ class e31x(ZynqComponents, PeriphManagerBase):
         Initialize clock and time sources. After this function returns, the
         reference signals going to the FPGA are valid.
         """
-        if not self.dboards:
-            self.log.warning(
-                "No dboards found, skipping setting clock and time source "
-                "configuration."
-            )
-            self._time_source = E310_DEFAULT_TIME_SOURCE
-        else:
-            self.set_clock_source(
-                default_args.get('clock_source', E310_DEFAULT_CLOCK_SOURCE)
-            )
-            self.set_time_source(
-                default_args.get('time_source', E310_DEFAULT_TIME_SOURCE)
-            )
+        self.set_clock_source(
+            default_args.get('clock_source', E310_DEFAULT_CLOCK_SOURCE)
+        )
+        self.set_time_source(
+            default_args.get('time_source', E310_DEFAULT_TIME_SOURCE)
+        )
 
     def _init_peripherals(self, args):
         """
