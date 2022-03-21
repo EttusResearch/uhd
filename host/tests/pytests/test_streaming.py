@@ -4,7 +4,7 @@ import batch_run_benchmark_rate
 import test_length_utils
 from test_length_utils import Test_Length_Smoke, Test_Length_Full, Test_Length_Stress
 
-ARGNAMES_DUAL_10G = ["dual_10G", "rate", "rx_rate", "rx_channels", "tx_rate", "tx_channels"]
+ARGNAMES_DUAL_SFP = ["dual_SFP", "rate", "rx_rate", "rx_channels", "tx_rate", "tx_channels"]
 ARGNAMES =                      ["rate", "rx_rate", "rx_channels", "tx_rate", "tx_channels"]
 
 def parametrize_test_length(metafunc, test_length, fast_params, stress_params):
@@ -29,7 +29,7 @@ def parametrize_test_length(metafunc, test_length, fast_params, stress_params):
 
 def generate_N310_test_cases(metafunc, test_length):
     test_cases = [
-        # Test Lengths                                         dual_10G  rate     rx_rate  rx_channels tx_rate  tx_channels  test case ID
+        # Test Lengths                                         dual_SFP  rate     rx_rate  rx_channels tx_rate  tx_channels  test case ID
         # ----------------------------------------------------------------------------------------------------------------------------------------------
         [{},                                      pytest.param(False,    153.6e6, 153.6e6, "0",        0,       "",          id="1x10GbE-1xRX@153.6e6")],
         [{},                                      pytest.param(False,    153.6e6, 153.6e6, "0,1",      0,       "",          id="1x10GbE-2xRX@153.6e6")],
@@ -53,7 +53,7 @@ def generate_N310_test_cases(metafunc, test_length):
     ]
 
     argvalues = test_length_utils.select_test_cases_by_length(test_length, test_cases)
-    metafunc.parametrize(ARGNAMES_DUAL_10G, argvalues)
+    metafunc.parametrize(ARGNAMES_DUAL_SFP, argvalues)
 
     fast_params = test_length_utils.test_length_params(iterations=10, duration=30)
     stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
@@ -62,7 +62,7 @@ def generate_N310_test_cases(metafunc, test_length):
 
 def generate_N320_test_cases(metafunc, test_length):
     test_cases = [
-        # Test Lengths                                         dual_10G  rate     rx_rate  rx_channels tx_rate  tx_channels  test case ID
+        # Test Lengths                                         dual_SFP  rate     rx_rate  rx_channels tx_rate  tx_channels  test case ID
         # ---------------------------------------------------------------------------------------------------------------------------------------------
         [{},                                      pytest.param(False,    250e6,   250e6,   "0",        0,       "",          id="1x10GbE-1xRX@250e6")],
         [{},                                      pytest.param(False,    250e6,   0,       "",         250e6,   "0",         id="1x10GbE-1xTX@250e6")],
@@ -73,7 +73,7 @@ def generate_N320_test_cases(metafunc, test_length):
     ]
 
     argvalues = test_length_utils.select_test_cases_by_length(test_length, test_cases)
-    metafunc.parametrize(ARGNAMES_DUAL_10G, argvalues)
+    metafunc.parametrize(ARGNAMES_DUAL_SFP, argvalues)
 
     fast_params = test_length_utils.test_length_params(iterations=10, duration=30)
     stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
@@ -122,7 +122,7 @@ def generate_E320_test_cases(metafunc, test_length):
 
 def generate_X310_test_cases(metafunc, test_length):
     test_cases = [
-        # Test Lengths                                         dual_10G  rate     rx_rate  rx_channels tx_rate  tx_channels  test case ID
+        # Test Lengths                                         dual_SFP  rate     rx_rate  rx_channels tx_rate  tx_channels  test case ID
         # ---------------------------------------------------------------------------------------------------------------------------------------------
         [{},                                      pytest.param(False,    200e6,   200e6,   "0",        0,       "",          id="1x10GbE-1xRX@200e6")],
         [{},                                      pytest.param(False,    100e6,   100e6,   "0,1",      0,       "",          id="1x10GbE-2xRX@100e6")],
@@ -136,7 +136,7 @@ def generate_X310_test_cases(metafunc, test_length):
     ]
 
     argvalues = test_length_utils.select_test_cases_by_length(test_length, test_cases)
-    metafunc.parametrize(ARGNAMES_DUAL_10G, argvalues)
+    metafunc.parametrize(ARGNAMES_DUAL_SFP, argvalues)
 
     fast_params = test_length_utils.test_length_params(iterations=10, duration=60)
     stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
@@ -144,7 +144,7 @@ def generate_X310_test_cases(metafunc, test_length):
 
 def generate_X310_TwinRx_test_cases(metafunc, test_length):
     test_cases = [
-        # Test Lengths                                         dual_10G  rate     rx_rate  rx_channels tx_rate  tx_channels  test case ID
+        # Test Lengths                                         dual_SFP  rate     rx_rate  rx_channels tx_rate  tx_channels  test case ID
         # --------------------------------------------------------------------------------------------------------------------------------------------
         [{},                                      pytest.param(False,    100e6,   100e6,   "0,1,2",    0,       "",          id="1x10GbE-3xRX@100e6")],
         [{},                                      pytest.param(False,    50e6,    50e6,    "0,1,2,4",  0,       "",          id="1x10GbE-4xRX@50e6")],
@@ -152,7 +152,7 @@ def generate_X310_TwinRx_test_cases(metafunc, test_length):
     ]
 
     argvalues = test_length_utils.select_test_cases_by_length(test_length, test_cases)
-    metafunc.parametrize(ARGNAMES_DUAL_10G, argvalues)
+    metafunc.parametrize(ARGNAMES_DUAL_SFP, argvalues)
 
     fast_params = test_length_utils.test_length_params(iterations=10, duration=30)
     stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
@@ -160,23 +160,29 @@ def generate_X310_TwinRx_test_cases(metafunc, test_length):
 
 def generate_X410_test_cases(metafunc, test_length):
     test_cases = [
-        # Test Lengths                                         dual_10G  rate     rx_rate  rx_channels tx_rate  tx_channels  test case ID
+        # Test Lengths                                         dual_SFP  rate     rx_rate  rx_channels tx_rate  tx_channels  test case ID
         # ------------------------------------------------------------------------------------------------------------------------------
-        [{},                                      pytest.param(False,    200e6,   200e6,   "0",        0,       "",          id="1x10GbE-1xRX@200e6")],
-        [{},                                      pytest.param(False,    200e6,   100e6,   "0,1",      0,       "",          id="1x10GbE-2xRX@100e6")],
-        [{},                                      pytest.param(False,    200e6,   0,       "",         200e6,   "0",         id="1x10GbE-1xTX@200e6")],
-        [{},                                      pytest.param(False,    200e6,   0,       "",         100e6,   "0,1",       id="1x10GbE-2xTX@100e6")],
-        [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,    200e6,   200e6,   "0",        200e6,   "0",         id="1x10GbE-1xTRX@200e6")],
-        [{},                                      pytest.param(False,    200e6,   100e6,   "0,1",      100e6,   "0,1",       id="1x10GbE-2xTRX@100e6")],
-        [{},                                      pytest.param(True,     200e6,   200e6,   "0,1",      0,       "",          id="2x10GbE-2xRX@200e6")],
-        [{},                                      pytest.param(True,     200e6,   0,       "",         200e6,   "0,1",       id="2x10GbE-2xTX@200e6")],
-        [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(True,     200e6,   100e6,   "0,1",      100e6,   "0,1",       id="2x10GbE-2xTRX@100e6")],
+        #[{},                                      pytest.param(False,    200e6,   200e6,   "0",        0,       "",          id="1x10GbE-1xRX@200e6")],
+        #[{},                                      pytest.param(False,    200e6,   100e6,   "0,1",      0,       "",          id="1x10GbE-2xRX@100e6")],
+        #[{},                                      pytest.param(False,    200e6,   0,       "",         200e6,   "0",         id="1x10GbE-1xTX@200e6")],
+        #[{},                                      pytest.param(False,    200e6,   0,       "",         100e6,   "0,1",       id="1x10GbE-2xTX@100e6")],
+        #[{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,    200e6,   200e6,   "0",        200e6,   "0",         id="1x10GbE-1xTRX@200e6")],
+        #[{},                                      pytest.param(False,    200e6,   100e6,   "0,1",      100e6,   "0,1",       id="1x10GbE-2xTRX@100e6")],
+        #[{},                                      pytest.param(True,     200e6,   200e6,   "0,1",      0,       "",          id="2x10GbE-2xRX@200e6")],
+        #[{},                                      pytest.param(True,     200e6,   0,       "",         200e6,   "0,1",       id="2x10GbE-2xTX@200e6")],
+        #[{Test_Length_Stress, Test_Length_Smoke}, pytest.param(True,     200e6,   100e6,   "0,1",      100e6,   "0,1",       id="2x10GbE-2xTRX@100e6")],
+        [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,     491.52e6, 491.52e6, "0,1",    491.52e6, "0,1",       id="1x100GbE-2xTRX@491.52e6")],
+        [{},                                      pytest.param(False,     491.52e6, 0,      "",         491.52e6, "0,1",       id="1x100GbE-2xTX@491.52e6")],
+        [{},                                      pytest.param(False,     491.52e6, 491.52e6, "0,1",     0,        "",         id="1x100GbE-2xRX@491.52e6")],
+        [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(True,      491.52e6, 491.52e6, "0,1,2,3", 491.52e6, "0,1,2,3",  id="2x100GbE-4xTRX@491.52e6", marks=pytest.mark.xfail)],
+        [{},                                      pytest.param(True,      491.52e6, 0,       "",         491.52e6, "0,1,2,3",  id="2x100GbE-4xTX@491.52e6")],
+        [{},                                      pytest.param(True,      491.52e6, 491.52e6, "0,1,2,3", 0,        "",         id="2x100GbE-4xRX@491.52e6")],
     ]
 
     argvalues = test_length_utils.select_test_cases_by_length(test_length, test_cases)
-    metafunc.parametrize(ARGNAMES_DUAL_10G, argvalues)
+    metafunc.parametrize(ARGNAMES_DUAL_SFP, argvalues)
 
-    fast_params = test_length_utils.test_length_params(iterations=10, duration=60)
+    fast_params = test_length_utils.test_length_params(iterations=10, duration=30)
     stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
     parametrize_test_length(metafunc, test_length, fast_params, stress_params)
 
@@ -211,7 +217,7 @@ def pytest_generate_tests(metafunc):
         generate_X410_test_cases(metafunc, test_length)
 
 
-def test_streaming(pytestconfig, dut_type, use_dpdk, dual_10G, rate, rx_rate, rx_channels,
+def test_streaming(pytestconfig, dut_type, use_dpdk, dual_SFP, rate, rx_rate, rx_channels,
                    tx_rate, tx_channels, iterations, duration):
 
     benchmark_rate_path = Path(pytestconfig.getoption('uhd_build_dir')) / 'examples/benchmark_rate'
@@ -224,7 +230,7 @@ def test_streaming(pytestconfig, dut_type, use_dpdk, dual_10G, rate, rx_rate, rx
     else:
         device_args += f"addr={pytestconfig.getoption('addr')},"
 
-    if dual_10G:
+    if dual_SFP:
         device_args += f"second_addr={pytestconfig.getoption('second_addr')},"
 
     if use_dpdk:
