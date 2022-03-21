@@ -12,7 +12,7 @@ ddr3_16bit/user_design/rtl/ddr3_16bit.v \
 ddr3_16bit/user_design/rtl/ddr3_16bit_mig.v \
 )
 
-IP_MIG_7SERIES_TG_SRCS = $(addprefix $(IP_BUILD_DIR)/ddr3_16bit/, \
+IP_DDR3_16BIT_TG_SRCS = $(addprefix $(IP_BUILD_DIR)/ddr3_16bit/, \
 ddr3_16bit/example_design/rtl/example_top.v \
 ddr3_16bit/example_design/rtl/traffic_gen/mig_7series_v4_2_axi4_tg.v \
 ddr3_16bit/example_design/rtl/traffic_gen/mig_7series_v4_2_axi4_wrapper.v \
