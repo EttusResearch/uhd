@@ -37,11 +37,29 @@ IP_DIR = ../../ip
 
 # Include makefiles and sources for all IP components
 # *after* defining the IP_DIR
-include $(IP_DIR)/mig_7series_0/Makefile.inc
+include $(IP_DIR)/ddr3_16bit/Makefile.inc
 
 DESIGN_SRCS += $(abspath \
-$(IP_MIG_7SERIES_0_SRCS) \
+$(IP_DDR3_16BIT_SRCS) \
 )
+
+#-------------------------------------------------
+# ModelSim Specific
+#-------------------------------------------------
+
+MODELSIM_IP_SRCS = $(wildcard $(abspath \
+$(IP_BUILD_DIR)/ddr3_16bit/ddr3_16bit/user_design/rtl/ddr3_16bit.v \
+$(IP_BUILD_DIR)/ddr3_16bit/ddr3_16bit/user_design/rtl/ddr3_16bit_mig_sim.v \
+$(IP_BUILD_DIR)/ddr3_16bit/ddr3_16bit/user_design/rtl/*/*.v \
+$(VIVADO_PATH)/data/verilog/src/glbl.v \
+))
+
+MODELSIM_LIBS += \
+secureip \
+
+modelsim vlint : SIM_SRCS += $(MODELSIM_IP_SRCS)
+
+MODELSIM_ARGS = glbl -t 1fs
 
 #-------------------------------------------------
 # Testbench Specific
@@ -51,8 +69,8 @@ SIM_TOP = dram_test_tb
 
 SIM_SRCS = \
 $(abspath dram_test_tb.sv) \
-$(IP_MIG_7SERIES_0_SIM_OUTS) \
-$(IP_MIG_7SERIES_TG_SRCS) \
+$(IP_DDR3_16BIT_SIM_OUTS) \
+$(IP_DDR3_16BIT_TG_SRCS) \
 $(SIM_GENERAL_SRCS) \
 $(SIM_AXI_SRCS)
 
