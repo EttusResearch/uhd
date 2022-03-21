@@ -31,13 +31,6 @@ pushd $BUILD_SOURCESDIRECTORY/uhddev/fpga/.ci/hwtools
 source hwsetup.sh
 popd
 
-echo "---- Install Vivado patches ----"
-pushd $BUILD_SOURCESDIRECTORY
-wget -q $PATCHES_PATH/2019.1/AR73068_Vivado_2019_1_preliminary_rev1.zip -O ./AR73068_Vivado_2019_1_preliminary_rev1.zip
-unzip -q -o AR73068_Vivado_2019_1_preliminary_rev1.zip -d ./patch/
-export XILINX_PATH=$PWD/patch/vivado
-popd
-
 echo "---- Run setupenv ----"
-export MSIM_VIV_COMPLIBDIR=$LIB_BASE_PATH/vivado/2019.1.1/modelsim_SE-64_2020
+export MSIM_VIV_COMPLIBDIR=$LIB_BASE_PATH/vivado/2021.1/modelsim_SE-64_2020
 source $1/setupenv.sh --vivado-path $(dirname $XILINX_VIVADO) --modelsim-path $(dirname $MODELSIM)

@@ -19,7 +19,7 @@ def do_setup():
     rootapi.set_major_version("1")
 
     rootapi.add_tool(name="hwtools", version="head")
-    rootapi.add_tool(name="Vivado",   version="2019.1", allowlater=False)
+    rootapi.add_tool(name="Vivado",   version="2021.1", allowlater=False)
     rootapi.add_tool(name="modelsim", version="2020.4", allowlater=True)
 
 def do_finish():
