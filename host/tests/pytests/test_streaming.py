@@ -244,6 +244,12 @@ def test_streaming(pytestconfig, dut_type, use_dpdk, dual_10G, rate, rx_rate, rx
         benchmark_rate_params["tx_rate"] = tx_rate
         benchmark_rate_params["tx_channels"] = tx_channels
 
+    # Run X410 streaming tests in multi_streamer mode and high thread priority
+    # since those settings allow for best performance.
+    if dut_type.lower() == "x410":
+        benchmark_rate_params["multi_streamer"] = 1
+        benchmark_rate_params["priority"] = "high"
+
     # run benchmark rate
     print()
     results = batch_run_benchmark_rate.run(benchmark_rate_path, iterations, benchmark_rate_params)
