@@ -305,7 +305,7 @@ and 192.168.20.2/24, respectively. Their default MTU value is 9000. These
 settings are independent of the image type (HG vs. XG), i.e., the defaults are
 the same for 1 GigE and 10 GigE (unlike the X310!).
 
-The configuration for the sfpX port is stored in /etc/systemd/network/sfpX.network.
+The configuration for the `sfpX` port is stored in `/data/network/sfpX.network`.
 
 For configuration please refer to the
 <a href=https://www.freedesktop.org/software/systemd/man/systemd.network.html>systemd-networkd manual pages</a>
@@ -350,7 +350,7 @@ Additional notes on networking:
 
 - Care needs to be taken when editing these files on the device, since
   vi / vim sometimes generates undo files (e.g.
-  `/etc/systemd/network/sfp0.network~`), that systemd-networkd might
+  `/data/network/sfp0.network~`), that systemd-networkd might
   accidentally pick up.
 - Temporarily setting the IP addresses or MTU sizes via `ifconfig` or other
   command line tools will only change the value until the next reboot or reload

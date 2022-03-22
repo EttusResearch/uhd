@@ -443,7 +443,7 @@ The factory settings are as follows:
         UseHostname=false
 
 E320 has an extra SFP+ (sfp0) port which is configured with static address 192.168.10.2/24.
-The configuration for the sfp0 port is stored in /etc/systemd/networkd/sfp0.network.
+The configuration for the `sfp0` port is stored in `/data/network/sfp0.network`.
 
 For configuration please refer to the
 <a href=https://www.freedesktop.org/software/systemd/man/systemd.network.html>systemd-networkd manual pages</a>
@@ -462,7 +462,7 @@ The factory settings are as follows:
         MTUBytes=9000
 
 Note: Care needs to be taken when editing these files on the device, since
-vi / vim sometimes generates undo files (e.g. /etc/systemd/networkd/sfp0.network~),
+vi / vim sometimes generates undo files (e.g. `/data/network/sfp0.network~`),
 that systemd-networkd might accidentally pick up.
 
 Note: Temporarily setting the IP addresses via ifconfig etc will only change the
