@@ -418,8 +418,8 @@ Of course, you can also connect to the IP address directly if you know it (or
 set it manually using the serial console).
 
 Note: The device's hostname is derived from its serial number by default
-(`ni-x4xx-$SERIAL`). You can change the hostname by modifying the `/etc/hostname`
-file and rebooting.
+(`ni-x4xx-$SERIAL`). You can change the hostname by creating the file
+`/data/network/hostname`, saving the desired hostname in it, then rebooting.
 
 On Microsoft Windows, the connection can be established using a tool such as
 PuTTY, by selecting a username of root without password.

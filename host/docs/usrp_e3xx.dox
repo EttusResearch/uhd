@@ -91,13 +91,13 @@ respectively, for more details.
 
 Once you are logged in on the device, you should be able to run uhd_usrp_probe or other UHD examples.
 
-Here is a list of a changes with the latest E310 filesystem (UHD v3.15.0.0) that can affect customer usage
-and applications:
+Here is a list of a changes with the latest E310 filesystem (UHD v3.15.0.0 and
+later) that can affect customer usage and applications:
 
-1. Hostname:
-The hostname for the devices have changed from ni-e3xx(-sg3) to `ni-e31x-$serial`.
-This makes it easier to identify devices. You can change the hostname by modifying the
-`/etc/hostname` file and rebooting.
+1. Hostname: The hostname for the devices have changed from ni-e3xx(-sg3) to
+`ni-e31x-$serial`. This makes it easier to identify devices. You can change
+the hostname You can change the hostname by creating the file
+`/data/network/hostname`, saving the desired hostname in it, then rebooting.
 
 2. "product" name:
 The "product" name for E310 is now "e310_$speedgrade" i.e. e310_sg1 and e310_sg3 for speed grade 1
@@ -412,8 +412,8 @@ Of course, you can also connect to the IP address directly if you know it (or
 set it manually using the serial console).
 
 Note: The device's hostname is derived from its serial number by default
-(`ni-<e31x/e320>-<SERIAL>`). You can change the hostname by modifying the `/etc/hostname`
-file and rebooting.
+(`ni-<e31x/e320>-<SERIAL>`). You can change the hostname by creating the file
+`/data/network/hostname`, saving the desired hostname in it, then rebooting.
 
 On Microsoft Windows, the connection can be established using a tool such as
 Putty, by selecting a username of root without password.
