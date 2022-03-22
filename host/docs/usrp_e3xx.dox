@@ -96,8 +96,8 @@ later) that can affect customer usage and applications:
 
 1. Hostname: The hostname for the devices have changed from ni-e3xx(-sg3) to
 `ni-e31x-$serial`. This makes it easier to identify devices. You can change
-the hostname You can change the hostname by creating the file
-`/data/network/hostname`, saving the desired hostname in it, then rebooting.
+the hostname by creating the file `/data/network/hostname`, saving the
+desired hostname in it, then rebooting.
 
 2. "product" name:
 The "product" name for E310 is now "e310_$speedgrade" i.e. e310_sg1 and e310_sg3 for speed grade 1
