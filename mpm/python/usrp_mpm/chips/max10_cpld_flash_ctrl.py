@@ -111,9 +111,11 @@ class Max10CpldFlashCtrl():
             # value encoded in the FLASH_CFM0_START_ADDR_REG
             # register
             start_addr = self.get_start_addr()
-            if start_addr == 0x9C00:
+            # 0x9C00 -> X410 MB, 0x1000  -> ZBX DB
+            if start_addr in [0x9C00, 0x1000]:
                 self.max10_variant = "m04"
-            elif start_addr == 0xAC00:
+            # 0xAC00 -> X410 MB, 0x2000  -> ZBX DB
+            elif start_addr in [0xAC00, 0x2000]:
                 self.max10_variant = "m08"
             else:
                 raise RuntimeError('Unknown MAX10 variant (FLASH_CFM0_START_ADDR_REG=0x{:04X})'.format(start_addr))
