@@ -658,7 +658,7 @@ void proto_register_rfnoc(void)
                 NULL, HFILL }
         },
         { &hf_rfnoc_ctrl_byte_enable,
-            { "Address", "rfnoc.ctrl.byte_enable",
+            { "Byte Enable", "rfnoc.ctrl.byte_enable",
                 FT_UINT8, BASE_HEX,
                 NULL, 0x00,
                 NULL, HFILL }
