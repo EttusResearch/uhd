@@ -1209,9 +1209,5 @@ Note that this section does not cover every single clock signal present on the
 X410, but mainly those clock signals relevant for the operation of the RF
 components. Refer to the schematic for more details.
 
-\section x4xx_gpio GPIO
-
-See \subpage page_x400_gpio_api
-
 */
 // vim:ft=doxygen:
