@@ -1,23 +1,59 @@
 #!/usr/bin/make -f
+include /usr/share/dpkg/pkg-info.mk
 DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
 export DEB_HOST_MULTIARCH
+DEB_NEON_SIMD_OPTION=$(shell if [ $(DEB_BUILD_ARCH) = armhf ]; then echo "-DNEON_SIMD_ENABLE=OFF" ; else echo "" ; fi)
+DEB_MIPSEL_PYTHON_API_OPTION=$(shell if [ $(DEB_BUILD_ARCH) = mipsel ]; then echo "-DENABLE_PYTHON_API=OFF" ; else echo "" ; fi)
+DEB_UHD_PACKAGE_CONFIGURATION=$(shell echo "-DCMAKE_BUILD_TYPE=RelWithDebInfo -DLIB_SUFFIX="/$(DEB_HOST_MULTIARCH)" \
+					-DENABLE_STATIC_LIBS=OFF \
+					-DUHD_VERSION=$(DEB_VERSION) \
+					-DENABLE_PYTHON_API=ON \
+					-DPYTHON_EXECUTABLE:FILEPATH=/usr/bin/python3 \
+					-DPKG_LIB_DIR="/usr/lib/uhd" \
+					-DDOXYGEN_HAVE_DOT=True \
+					-DUHD_PYTHON_DIR="lib/python3/dist-packages" \
+					-DUSRP_MPM_PYTHON_DIR="lib/python3/dist-packages" \
+					-DUHD_RELEASE_MODE="release" \
+					-DMATHJAX_RELPATH="/usr/share/javascript/mathjax" \
+					$(DEB_NEON_SIMD_OPTION) $(DEB_MIPSEL_PYTHON_API_OPTION)")
 
 %:
 	dh $@ --parallel --sourcedirectory=host --builddirectory=build
 
 override_dh_auto_configure:
-	dh_auto_configure -- -DLIB_SUFFIX="/$(DEB_HOST_MULTIARCH)" -DPKG_LIB_DIR="/usr/lib/uhd" -DUHD_RELEASE_MODE="release"
+	dh_auto_configure -- $(DEB_UHD_PACKAGE_CONFIGURATION)
 
 # The test suite for this package is busted on powerpc.
 override_dh_auto_test:
 	- if [ $(DEB_BUILD_ARCH) != powerpc ]; then dh_auto_test; fi
 
-override_dh_auto_install:
+override_dh_auto_install-indep:
+	dh_auto_install
+	rm -rf debian/tmp/usr/share/man
+	rm -rf debian/tmp/usr/share/doc/uhd/LICENSE
+	rm -rf debian/tmp/usr/share/doc/uhd/README.md
+# Remove source files used to generate documentation
+	rm -rf debian/tmp/usr/share/doc/uhd/doxygen/latex
+
+override_dh_auto_install-arch:
 	cp debian/uhd-host.limits debian/uhd-host/etc/security/limits.d/uhd.conf
 	cp debian/uhd-host.sysctl debian/uhd-host/etc/sysctl.d/uhd-usrp2.conf
 	dh_auto_install
-	- rm -f debian/tmp/usr/share/doc/uhd/doxygen/html/jquery.js
-	ln -s /usr/share/javascript/jquery/jquery.js debian/tmp/usr/share/doc/uhd/doxygen/html/jquery.js
+	chmod -x debian/tmp/usr/lib/uhd/tests/devtest/*.py
+	chmod -x debian/tmp/usr/lib/uhd/tests/streaming_performance/parse_benchmark_rate.py
+	chmod -x debian/tmp/usr/lib/uhd/tests/streaming_performance/run_benchmark_rate.py
+	rm -rf debian/tmp/usr/share/man
+	rm -rf debian/tmp/usr/share/doc/uhd/LICENSE
+	rm -rf debian/tmp/usr/share/doc/uhd/README.md
+# Remove source files used to generate documentation
+	rm -rf debian/tmp/usr/share/doc/uhd/doxygen/latex
+
+override_dh_acc:
+	- dh_acc $@
+	- cat logs/libuhd-dev/*/log.txt
 
 override_dh_shlibdeps:
-	dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info
+	dh_shlibdeps --package=uhd-host --libpackage=libuhd4.2.0
+	dh_shlibdeps --package=libuhd4.2.0 --libpackage=libuhd4.2.0
+	dh_shlibdeps --package=libuhd-dev --libpackage=libuhd4.2.0
+	dh_shlibdeps --package=python3-uhd --libpackage=libuhd4.2.0

@@ -3,42 +3,40 @@ Section: science
 Priority: optional
 Maintainer: Ettus Research <packages@ettus.com>
 Uploaders: Aaron Rossetto <aaron.rossetto@ni.com>
-Build-Depends:  cmake,
-                debhelper (>= 9),
-                doxygen,
-                libboost-date-time-dev,
-                libboost-dev,
-                libboost-filesystem-dev,
-                libboost-program-options-dev,
-                libboost-serialization-dev,
-                libboost-system-dev,
-                libboost-test-dev,
-                libboost-thread-dev,
-                libncurses5-dev,
-                libusb-1.0-0-dev [linux-any],
-                libusb2-dev [kfreebsd-any],
-                pkg-config,
-                python3-dev,
-                python3-mako,
-                python3-numpy,
-                python3-requests,
-                python3-ruamel.yaml,
-                python3-setuptools
-Standards-Version: 3.9.7
+Build-Depends: cmake,
+               debhelper (>= 9),
+               libboost-date-time-dev,
+               libboost-dev,
+               libboost-filesystem-dev,
+               libboost-program-options-dev,
+               libboost-serialization-dev,
+               libboost-system-dev,
+               libboost-test-dev,
+               libboost-thread-dev,
+               libncurses5-dev,
+               libusb-1.0-0-dev [linux-any hurd-i386],
+               libusb2-dev [kfreebsd-any],
+               pkg-config,
+               python3-dev,
+               python3-mako,
+               python3-numpy,
+               python3-requests,
+               python3-ruamel.yaml,
+               python3-setuptools
+Build-Depends-Indep: doxygen,
+              	     doxygen-latex,
+               	     graphviz [!powerpcspe]
+Standards-Version: 4.6.0
 Homepage: https://www.ettus.com
 Vcs-Git: https://github.com/EttusResearch/uhd.git
 
 Package: uhd-host
 Architecture: any
-Depends: adduser,
-         libuhd4.1.0 (= ${binary:Version}),
-         python3,
-         python3-mako,
-         python3-numpy,
+Depends: libuhd4.1.0 (= ${binary:Version}),
          python3-requests,
          python3-ruamel.yaml,
-         python3-setuptools,
          ${misc:Depends},
+         ${python3:Depends},
          ${shlibs:Depends}
 Recommends: curl, procps
 Suggests: gnuradio
@@ -72,16 +70,9 @@ Description: hardware driver for Ettus Research products
 Package: libuhd-dev
 Architecture: any
 Section: libdevel
-Depends: libuhd4.1.0 (= ${binary:Version}),
-         python3,
-         python3-mako,
-         python3-numpy,
-         python3-requests,
-         python3-ruamel.yaml,
-         python3-setuptools,
-         ${misc:Depends},
-         ${shlibs:Depends}
-Suggests: gnuradio
+Depends: libuhd4.1.0 (= ${binary:Version}), ${misc:Depends}, ${shlibs:Depends}
+Recommends: gnuradio-dev
+Suggests: uhd-doc
 Description: universal hardware driver for Ettus Research products
  Host library for the USRP Hardware Driver for Ettus Research products.
  .
@@ -89,5 +80,36 @@ Description: universal hardware driver for Ettus Research products
  along with digital interfaces for getting signals to and from a software
  defined radio running on the host computer.
  .
- This package contains the header files and documentation for
- developing with libuhd.
+ This package contains the header files for developing with libuhd.
+ Doxygen generated documentation is in the uhd-host package.
+
+Package: python3-uhd
+Architecture: alpha amd64 arm64 armel armhf hppa i386 ia64 m68k mips64el ppc64 ppc64el riscv64 s390x sparc64 x32
+Section: libdevel
+Depends: libuhd4.1.0 (= ${binary:Version}),
+         python3-ruamel.yaml,
+         python3-numpy,
+         ${misc:Depends},
+         ${python3:Depends},
+         ${shlibs:Depends}
+Recommends: gnuradio
+Suggests: uhd-doc
+Conflicts: uhd-host (<= 4.2.0.4-6)
+Description: universal hardware driver for Ettus Research products - Python3
+ Host library for the Universal Hardware Driver for Ettus Research products.
+ .
+ The supported devices provide analog radio receiver and transmitter hardware
+ along with digital interfaces for getting signals to and from a software
+ defined radio running on the host computer.
+ .
+ This package contains the Python API support for Python3.
+
+Package: uhd-doc
+Architecture: all
+Depends: ${misc:Depends}, libjs-mathjax
+Breaks: uhd-host (<< 4.0.0.0-3)
+Replaces: uhd-host (<< 4.0.0.0)
+Description: universal hardware driver for Ettus Research products - doc
+ Detailed documentation for the Universal Hardware Driver.
+ .
+ This package includes the Doxygen generated documentation.

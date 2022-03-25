@@ -2,14 +2,16 @@ Format: http://dep.debian.net/deps/dep5/
 Upstream-Name: UHD
 Upstream-Contact: http://www.ettus.com/contact
 Source: https://github.com/EttusResearch/uhd
-X-Note: The upstream package source tarball was generated from the tag:
- git archive --format=tar --prefix=uhd-3.7.3/ release_003_007_003 | xz > ../uhd_3.7.3.orig.tar.gz
-Comment: Only the host directory of the distributed source is used to build the uhd-host package for Debian main.
-Copyright: Copyright 2010-2021 Ettus Research, A National Instruments Company
+Comment: Only the host directory of the distributed source is used
+ to build the uhd-host package for Debian main.
+Copyright: Copyright 2010-2022 Ettus Research, a National Instruments Brand
 License: GPL-3+
+Files-Excluded: host/cmake/msvc
+ fpga/usrp3/top/b200/planahead/planahead.runs/impl_1/rundef.js
+ fpga/usrp3/top/x400/doc/X4XX_FPGA_right.htm
 
 Files: *
-Copyright: Copyright 2010-2021 Ettus Research, A National Instruments Company
+Copyright: Copyright 2010-2022 Ettus Research, A National Instruments Brand
 License: GPL-3+
 
 Files: host/lib/deps/rpclib/*

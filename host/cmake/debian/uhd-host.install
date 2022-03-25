@@ -1,4 +1,13 @@
-usr/bin
-usr/lib/uhd
-usr/share/doc/uhd/doxygen /usr/share/doc/uhd-host/
-debian/NetworkManager-USRP /etc/NetworkManager/system-connections/USRP
+debian/NetworkManager-USRP /etc/NetworkManager/system-connections/
+usr/lib/uhd* /usr/lib/
+usr/bin/rfnoc_image_builder
+usr/bin/uhd_adc_self_cal
+usr/bin/uhd_cal_rx_iq_balance
+usr/bin/uhd_cal_tx_dc_offset
+usr/bin/uhd_cal_tx_iq_balance
+usr/bin/uhd_config_info
+usr/bin/uhd_find_devices
+usr/bin/uhd_image_loader
+usr/bin/uhd_images_downloader
+usr/bin/uhd_usrp_probe
+usr/bin/usrp2_card_burner

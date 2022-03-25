@@ -100,13 +100,16 @@ add_custom_command(OUTPUT ${OUTPUT}
      DEPENDS ${USRP_MPM_FILES} pyusrp_periphs)
 add_custom_target(usrp_mpm ALL DEPENDS ${OUTPUT} pyusrp_periphs)
 
-execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
-    "import os,sysconfig;\
-    platlib = sysconfig.get_path(name='platlib');\
-    prefix = sysconfig.get_config_var('prefix');\
-    print(os.path.relpath(platlib, prefix));"
-    OUTPUT_VARIABLE USRP_MPM_PYTHON_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+if(NOT DEFINED USRP_MPM_PYTHON_DIR)
+    execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
+        "import os,sysconfig;\
+        platlib = sysconfig.get_path(name='platlib');\
+        prefix = sysconfig.get_config_var('prefix');\
+        print(os.path.relpath(platlib, prefix));"
+        OUTPUT_VARIABLE USRP_MPM_PYTHON_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+endif(NOT DEFINED USRP_MPM_PYTHON_DIR)
+
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/build/lib/usrp_mpm DESTINATION ${USRP_MPM_PYTHON_DIR})
 install(PROGRAMS
     usrp_hwd.py
