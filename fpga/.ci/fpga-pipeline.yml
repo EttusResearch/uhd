@@ -20,13 +20,13 @@ parameters:
   type: boolean
   displayName: Clean IP Build
   default: true
-- name: build_x410
-  type: boolean
-  displayName: Build X410
-  default: true
 - name: package_images
   type: boolean
   displayName: Package Images
+  default: true
+- name: build_x410
+  type: boolean
+  displayName: Build X410
   default: true
 
 trigger:
@@ -42,19 +42,18 @@ trigger:
 
 pr: none
 
+schedules:
+- cron: "0 18 * * Sun"
+  displayName: Weekly FPGA CI Build master branch
+  branches:
+    include:
+    - master
+  always: true
+
 extends:
   template: templates/stages-fpga-pipeline.yml
   parameters:
     run_testbenches: ${{ parameters.run_testbenches }}
+    clean_ip_build: ${{ parameters.clean_ip_build }}
     package_images: ${{ parameters.package_images }}
     build_x410: ${{ parameters.build_x410 }}
-    # These targets are shipped and included in the binaries package.
-    x410_targets_matrix:
-      X410_X4_200:
-        target_name: X410_X4_200
-        timeout: 480
-      X410_CG_400:
-        target_name: X410_CG_400
-        timeout: 480
-    publish_int_files: false
-    clean_ip_build: ${{ parameters.clean_ip_build }}

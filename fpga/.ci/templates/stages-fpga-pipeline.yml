@@ -22,6 +22,14 @@ parameters:
 - name: clean_ip_build
   type: boolean
   default: false
+# Option to publish intermediate files
+- name: publish_int_files
+  type: boolean
+  default: false
+# Create images package
+- name: package_images
+  type: boolean
+  default: false
 # Build X410 FPGA targets
 - name: build_x410
   type: boolean
@@ -33,14 +41,12 @@ parameters:
     X410_X4_200:
       target_name: X410_X4_200
       timeout: 480
-# Option to publish intermediate files
-- name: publish_int_files
-  type: boolean
-  default: false
-# Create images package
-- name: package_images
-  type: boolean
-  default: false
+    X410_X4_400:
+      target_name: X410_X4_400
+      timeout: 480
+    X410_CG_400:
+      target_name: X410_CG_400
+      timeout: 480
 
 
 resources:
@@ -81,7 +87,7 @@ stages:
 - stage: build_x410_targets_stage
   displayName: Build X410 FPGA Targets
   dependsOn: build_x410_ip_stage
-  condition: and(succeeded('build_x410_ip_stage'), eq('${{ parameters.build_x410 }}', 'true'))
+  condition: succeeded('build_x410_ip_stage')
   jobs:
   - template: job-build-fpga.yml
     parameters:
