@@ -54,6 +54,7 @@ public:
      * a `uhd::value_error` is thrown.
      *
      * \param coeffs A vector of integer coefficients for the FIR filter
+     * \param chan Channel index
      */
     virtual void set_coefficients(const std::vector<int16_t>& coeffs, const size_t chan = 0) = 0;
 
