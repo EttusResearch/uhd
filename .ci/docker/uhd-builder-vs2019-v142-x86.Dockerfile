@@ -15,7 +15,7 @@ RUN @"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" \
     -Command "[System.Net.ServicePointManager]::SecurityProtocol = 3072; \
     iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))" && \
     SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
-RUN choco install -y cmake.install --installargs 'ADD_CMAKE_TO_PATH=System' --version=3.19.6
+RUN choco install -y cmake.install --installargs 'ADD_CMAKE_TO_PATH=System' --version=3.22.3
 RUN choco install -y doxygen.install --version=1.9.1
 RUN choco install -y git
 RUN choco install -y NSIS --version=3.06.1
@@ -33,9 +33,9 @@ RUN "%TEMP%\vs_buildtools.exe"  --quiet --wait --norestart --noUpdateInstaller \
 RUN setx VCPKG_INSTALL_DIR "c:\\vcpkg" /m
 RUN git clone https://github.com/microsoft/vcpkg %VCPKG_INSTALL_DIR% && \
     cd %VCPKG_INSTALL_DIR% && \
-    # The vcpkg git commit sets the toolchain dependenices
-    # This commit uses Boost 1.75 and libusb 1.0.24
-    git checkout 3426db05b996481ca31e95fff3734cf23e0f51bc && \
+    # The vcpkg git tag sets the toolchain dependenices
+    # This commit uses Boost 1.78 and libusb 1.0.24
+    git checkout 2022.03.10 && \
     bootstrap-vcpkg.bat
     # Add custom UHD vcpkg triplet
 COPY host/cmake/vcpkg/* c:/vcpkg/triplets/
