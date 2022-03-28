@@ -27,7 +27,7 @@ parameters:
   type: string
 - name: run_streaming_tests
   type: boolean
-  default: false
+  default: true
 - name: build_sdk
   type: boolean
   default: false

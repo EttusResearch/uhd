@@ -40,7 +40,7 @@ parameters:
 - name: run_streaming_tests
   type: boolean
   displayName: Run Streaming Tests
-  default: False
+  default: true
 - name: build_sdk
   type: boolean
   displayName: Build embedded image SDKs

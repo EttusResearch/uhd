@@ -17,9 +17,15 @@ jobs:
     toolset: 'make'
     uhdSrcDir: '${{ parameters.uhdSrcDir }}'
     dutMatrix:
-      beauty-N320-0 XG:
-        dutName: 'beauty-N320-0'
-        dutType: 'N320'
+     # beauty-N320-0 XG:
+     #   dutName: 'beauty-N320-0'
+     #   dutType: 'N320'
+     #   dutAddr: '192.168.10.2'
+     #   dutSecondAddr: '192.168.20.2'
+     #   dutMgmtAddr: '10.0.57.13'
+      beauty-X410-0 CG_400:
+        dutName: 'beauty-X410-0'
+        dutType: 'X410'
         dutAddr: '192.168.10.2'
         dutSecondAddr: '192.168.20.2'
-        dutMgmtAddr: '10.0.57.13'
+        dutMgmtAddr: '10.0.57.29'

@@ -43,20 +43,20 @@ jobs:
       archiveFilePatterns: $(Pipeline.Workspace)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}.tar.gz
       destinationFolder: $(Build.BinariesDirectory)
       cleanDestinationFolder: true
-  - script: |
-      cd ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
-      sudo ./setup.sh --auto
-      sleep 5
-    displayName: setup interfaces for use without DPDK
-  - script: |
-      set -x
-      export PYTHONPATH=${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
-      cd ${{ parameters.uhdSrcDir }}/host/tests/pytests
-      python3 -m pytest -s test_streaming.py -m "not dpdk" --dut_type $(dutType) --test_length ${{ parameters.testLength }} \
-        --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $(dutMgmtAddr) \
-        --uhd_build_dir $(Build.BinariesDirectory)/uhddev/build --junitxml $(Common.TestResultsDirectory)/TEST-$(dutName).xml
-    continueOnError: true
-    displayName: Run streaming tests on $(dutName)
+  # - script: |
+  #     cd ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
+  #     sudo ./setup.sh --auto
+  #     sleep 5
+  #   displayName: setup interfaces for use without DPDK
+  # - script: |
+  #     set -x
+  #     export PYTHONPATH=${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
+  #     cd ${{ parameters.uhdSrcDir }}/host/tests/pytests
+  #     sudo python3 -m pytest -s test_streaming.py -m "not dpdk" --dut_type $(dutType) --test_length ${{ parameters.testLength }} \
+  #       --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $(dutMgmtAddr) \
+  #       --uhd_build_dir $(Build.BinariesDirectory)/uhddev/build --junitxml $(Common.TestResultsDirectory)/TEST-$(dutName).xml
+  #   continueOnError: true
+  #   displayName: Run streaming tests on $(dutName)
   - script: |
       cd ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
       sudo ./setup.sh --auto --dpdk
@@ -66,7 +66,9 @@ jobs:
       set -x
       export PYTHONPATH=${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
       cd ${{ parameters.uhdSrcDir }}/host/tests/pytests
-      sudo --preserve-env=PYTHONPATH python3 -m pytest -s test_streaming.py -m "dpdk" --dut_type $(dutType) --test_length ${{ parameters.testLength }} \
+      # Disable creation of __pycache__ files using -B to avoid errors on clean up during next run
+      # as using sudo below creates them with root priveleges.
+      sudo --preserve-env=PYTHONPATH python3 -B -m pytest -s test_streaming.py -m "dpdk" --dut_type $(dutType) --test_length ${{ parameters.testLength }} \
         --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $(dutMgmtAddr) \
         --uhd_build_dir $(Build.BinariesDirectory)/uhddev/build --junitxml $(Common.TestResultsDirectory)/TEST-$(dutName)-dpdk.xml
     continueOnError: true
