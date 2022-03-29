@@ -7,6 +7,7 @@
 #include "../common/mock_link.hpp"
 #include <uhdlib/transport/rx_streamer_impl.hpp>
 #include <boost/test/unit_test.hpp>
+#include <complex>
 #include <iostream>
 #include <memory>
 
