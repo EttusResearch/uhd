@@ -54,8 +54,16 @@ udp_dpdk_link::udp_dpdk_link(dpdk::port_id_t port_id,
 
     // Validate params
     const size_t max_frame_size = _port->get_mtu() - dpdk::HDR_SIZE_UDP_IPV4;
-    UHD_ASSERT_THROW(params.send_frame_size <= max_frame_size);
-    UHD_ASSERT_THROW(params.recv_frame_size <= max_frame_size);
+    if (params.send_frame_size > max_frame_size ||
+        params.recv_frame_size > max_frame_size) {
+        UHD_LOGGER_ERROR("DPDK")
+            << boost::format("recv_frame_size=%d, send_frame_size=%d, max_frame_size=%d, "
+                             "HDR_SIZE_UDP_IPV4=%d")
+                   % params.recv_frame_size % params.send_frame_size % max_frame_size
+                   % dpdk::HDR_SIZE_UDP_IPV4;
+        throw uhd::assertion_error(
+            "{ send_frame_size, recv_frame_size } > max_frame_size");
+    }
 
     // Register the adapter
     auto info      = _port->get_adapter_info();
