@@ -26,6 +26,38 @@
 
 /* NOTE: There are changes to all the network standard fields in 19.x */
 
+/*
+ * Substituting old values to support DPDK 18.11 with the API changes in DPDK 19.
+ * There were no functional changes in the DPDK calls utilized by UHD between
+ * these two API versions.
+ */
+#if RTE_VER_YEAR < 19 || (RTE_VER_YEAR == 19 && RTE_VER_MONTH < 8)
+// 18.11 data types
+#define rte_ether_addr ether_addr
+#define rte_ether_hdr  ether_hdr
+#define rte_arp_hdr    arp_hdr
+#define arp_hardware   arp_hrd
+#define arp_protocol   arp_pro
+#define arp_hlen       arp_hln
+#define arp_plen       arp_pln
+#define arp_opcode     arp_op
+#define rte_ipv4_hdr   ipv4_hdr
+#define rte_udp_hdr    udp_hdr
+// 18.11 constants
+#define RTE_ETHER_TYPE_IPV4  ETHER_TYPE_IPv4
+#define RTE_ETHER_TYPE_ARP   ETHER_TYPE_ARP
+#define RTE_ETHER_ADDR_LEN   ETHER_ADDR_LEN
+#define RTE_ETHER_CRC_LEN    ETHER_CRC_LEN
+#define RTE_ETHER_HDR_LEN    ETHER_HDR_LEN
+#define RTE_IPV4_HDR_DF_FLAG IPV4_HDR_DF_FLAG
+#define RTE_ARP_HRD_ETHER    ARP_HRD_ETHER
+#define RTE_ARP_OP_REPLY     ARP_OP_REPLY
+#define RTE_ARP_OP_REQUEST   ARP_OP_REQUEST
+// 18.11 functions
+#define rte_ether_addr_copy    ether_addr_copy
+#define rte_ether_format_addr  ether_format_addr
+#define rte_is_zero_ether_addr is_zero_ether_addr
+#endif
 
 namespace uhd { namespace transport {
 

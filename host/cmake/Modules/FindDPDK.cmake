@@ -39,7 +39,7 @@ else()
 endif()
 
 find_package(PkgConfig)
-PKG_CHECK_MODULES(PC_DPDK QUIET libdpdk>=19.11)
+PKG_CHECK_MODULES(PC_DPDK QUIET libdpdk>=18.11)
 
 find_path (DPDK_VERSION_INCLUDE_DIR rte_version.h
     HINTS ${PC_DPDK_INCLUDE_DIRS}

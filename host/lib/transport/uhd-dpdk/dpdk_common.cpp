@@ -413,6 +413,14 @@ void dpdk_ctx::init(const device_addr_t& user_args)
     unsigned int i;
     std::lock_guard<std::mutex> lock(_init_mutex);
     if (!_init_done) {
+#if RTE_VER_YEAR < 19 || (RTE_VER_YEAR == 19 && RTE_VER_MONTH < 11)
+        UHD_LOG_WARNING("DPDK",
+            "Deprecated DPDK version "
+                << RTE_VER_YEAR << "." << RTE_VER_MONTH
+                << " detected. Consider upgrading DPDK. Recommended versions are 19.11, "
+                   "20.11, and 21.11.");
+#endif
+
         /* Gather global config, build args for EAL, and init UHD-DPDK */
         const device_addr_t dpdk_args = uhd::prefs::get_dpdk_args(user_args);
         UHD_LOG_TRACE("DPDK", "Configuration:" << std::endl << dpdk_args.to_pp_string());
