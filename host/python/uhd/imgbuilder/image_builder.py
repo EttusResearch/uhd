@@ -178,6 +178,7 @@ class ImageBuilderConfig:
         self.blocks = blocks
         self.device = device
         self._check_configuration()
+        self._check_deprecated_signatures()
         self._update_sep_defaults()
         self._set_indices()
         self._collect_noc_ports()
@@ -185,6 +186,54 @@ class ImageBuilderConfig:
         self._collect_clocks()
         self.pick_connections()
         self.pick_clk_domains()
+
+    def _check_deprecated_signatures(self):
+        """
+        Check if the configuration uses deprecated IO signatures or block
+        descriptions.
+        """
+        # List of blocks that have been replaced (old name : new name)
+        block_yml_map = {
+            "radio_1x64.yml"        : "radio.yml",
+            "radio_2x64.yml"        : "radio.yml",
+            "axi_ram_fifo_2x64.yml" : "axi_ram_fifo.yml",
+            "axi_ram_fifo_4x64.yml" : "axi_ram_fifo.yml",
+        }
+        # List of port names that have been replaced (old name : new name)
+        port_name_map = {
+            "x300_radio"     : "radio",
+            "radio_iface"    : "radio",
+            "x300_radio0"    : "radio0",
+            "x300_radio1"    : "radio1",
+            "radio_ch0"      : "radio0",
+            "radio_ch1"      : "radio1",
+            "ctrl_port"      : "ctrlport",
+            "ctrlport_radio" : "ctrlport",
+            "timekeeper"     : "time",
+            "time_keeper"    : "time",
+        }
+        # Go through blocks and look for any deprecated descriptions
+        for name, block in self.noc_blocks.items():
+            desc = block['block_desc']
+            if desc in block_yml_map:
+                logging.warning(
+                    "The block description '" + desc +
+                    "' has been deprecated. Please update your image to use '" +
+                    block_yml_map[desc] + "'."
+                )
+                # Override the block with the new version
+                block['block_desc'] = block_yml_map[desc]
+        # Go through port connections and look for deprecated names
+        for con in self.connections:
+            for port in ('srcport', 'dstport'):
+                if con[port] in port_name_map:
+                    logging.warning(
+                        "The port name '" + con[port] + "' has been deprecated. "
+                        "Please update your image to use '" +
+                        port_name_map[con[port]] + "'."
+                    )
+                    # Override the name with the new version
+                    con[port] = port_name_map[con[port]]
 
     def _check_configuration(self):
         """
@@ -606,7 +655,7 @@ def collect_module_paths(config_path, include_paths):
 
 def read_block_descriptions(signatures, *paths):
     """
-    Recursive search all pathes for block definitions.
+    Recursive search all paths for block definitions.
     :param signatures: signature passed to IOConfig initialization
     :param paths: paths to be searched
     :return: dictionary of noc blocks. Key is filename of the block, value
