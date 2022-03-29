@@ -1,8 +1,10 @@
 # General parameters
 # -----------------------------------------
 schema: rfnoc_imagebuilder_args         # Identifier for the schema used to validate this file
-copyright: 'Ettus Research, A National Instruments Brand' # Copyright information used in file headers
-license: 'SPDX-License-Identifier: LGPL-3.0-or-later' # License information used in file headers
+copyright: >-                           # Copyright information used in file headers
+  Ettus Research, A National Instruments Brand
+license: >-                             # License information used in file headers
+  SPDX-License-Identifier: LGPL-3.0-or-later
 version: '1.0'                          # File version (must be string so we can distinguish 1.1 and 1.10)
 rfnoc_version: '1.0'                    # RFNoC protocol version
 chdr_width: 64                          # Bit width of the CHDR bus for this image
@@ -12,32 +14,32 @@ default_target: 'X310_HG'
 # A list of all stream endpoints in design
 # ----------------------------------------
 stream_endpoints:
-  ep0:                       # Stream endpoint name
-    ctrl: True                      # Endpoint passes control traffic
-    data: True                      # Endpoint passes data traffic
-    buff_size: 32768                # Ingress buffer size for data
-  ep1:                       # Stream endpoint name
-    ctrl: False                     # Endpoint passes control traffic
-    data: True                      # Endpoint passes data traffic
-    buff_size: 0                    # Ingress buffer size for data
-  ep2:                       # Stream endpoint name
-    ctrl: False                     # Endpoint passes control traffic
-    data: True                      # Endpoint passes data traffic
-    buff_size: 32768                # Ingress buffer size for data
-  ep3:                       # Stream endpoint name
-    ctrl: False                     # Endpoint passes control traffic
-    data: True                      # Endpoint passes data traffic
-    buff_size: 0                    # Ingress buffer size for data
-  ep4:                       # Stream endpoint name
-    ctrl: False                     # Endpoint passes control traffic
-    data: True                      # Endpoint passes data traffic
-    buff_size: 32768                # Ingress buffer size for data
+  ep0:                                  # Stream endpoint name
+    ctrl: True                          # Endpoint passes control traffic
+    data: True                          # Endpoint passes data traffic
+    buff_size: 32768                    # Ingress buffer size for data
+  ep1:
+    ctrl: False
+    data: True
+    buff_size: 0
+  ep2:
+    ctrl: False
+    data: True
+    buff_size: 32768
+  ep3:
+    ctrl: False
+    data: True
+    buff_size: 0
+  ep4:
+    ctrl: False
+    data: True
+    buff_size: 32768
 
 # A list of all NoC blocks in design
 # ----------------------------------
 noc_blocks:
-  duc0:                      # NoC block name
-    block_desc: 'duc.yml'    # Block device descriptor file
+  duc0:                                 # NoC block name
+    block_desc: 'duc.yml'               # Block device descriptor file
     parameters:
       NUM_PORTS: 1
   ddc0:
@@ -45,7 +47,9 @@ noc_blocks:
     parameters:
       NUM_PORTS: 2
   radio0:
-    block_desc: 'radio_2x64.yml'
+    block_desc: 'radio.yml'
+    parameters:
+      NUM_PORTS: 2
   duc1:
     block_desc: 'duc.yml'
     parameters:
@@ -55,7 +59,9 @@ noc_blocks:
     parameters:
       NUM_PORTS: 2
   radio1:
-    block_desc: 'radio_2x64.yml'
+    block_desc: 'radio.yml'
+    parameters:
+      NUM_PORTS: 2
   # Here's our new block:
   gain0:
     block_desc: 'gain.yml'
@@ -63,47 +69,50 @@ noc_blocks:
 # A list of all static connections in design
 # ------------------------------------------
 # Format: A list of connection maps (list of key-value pairs) with the following keys
-#         - srcblk  = Source block to connect
-#         - srcport = Port on the source block to connect
-#         - dstblk  = Destination block to connect
-#         - dstport = Port on the destination block to connect
+#   - srcblk  = Source block to connect
+#   - srcport = Port on the source block to connect
+#   - dstblk  = Destination block to connect
+#   - dstport = Port on the destination block to connect
 connections:
-  # ep0 to radio0(0) - RFA TX
+  # RF A TX
   - { srcblk: ep0,    srcport: out0,  dstblk: duc0,   dstport: in_0 }
   - { srcblk: duc0,   srcport: out_0, dstblk: radio0, dstport: in_0 }
-  # radio0(0) to ep0 - RFA RX
+  # RF A RX
   - { srcblk: radio0, srcport: out_0, dstblk: ddc0,   dstport: in_0 }
   - { srcblk: ddc0,   srcport: out_0, dstblk: ep0,    dstport: in0  }
-  # radio0(1) to ep1 - RFA RX
+  # RF A RX
   - { srcblk: radio0, srcport: out_1, dstblk: ddc0,   dstport: in_1 }
   - { srcblk: ddc0,   srcport: out_1, dstblk: ep1,    dstport: in0  }
-  # ep2 to radio1(0) - RFB TX
+  #
+  # RF B TX
   - { srcblk: ep2,    srcport: out0,  dstblk: duc1,   dstport: in_0 }
   - { srcblk: duc1,   srcport: out_0, dstblk: radio1, dstport: in_0 }
-  # radio1(0) to ep2 - RFB RX
+  # RF B RX
   - { srcblk: radio1, srcport: out_0, dstblk: ddc1,   dstport: in_0 }
   - { srcblk: ddc1,   srcport: out_0, dstblk: ep2,    dstport: in0  }
-  # radio1(1) to ep3 - RFB RX
+  # RF B RX
   - { srcblk: radio1, srcport: out_1, dstblk: ddc1,   dstport: in_1 }
   - { srcblk: ddc1,   srcport: out_1, dstblk: ep3,    dstport: in0  }
-  # ep4 to gain0 and gain0 to ep4
-  - { srcblk: ep4,    srcport: out0,  dstblk: gain0,  dstport: in   }
-  - { srcblk: gain0,  srcport: out,   dstblk: ep4,    dstport: in0  }
+  #
+  # Gain Block Connections
+  - { srcblk: ep4,   srcport: out0, dstblk: gain0, dstport: in  }
+  - { srcblk: gain0, srcport: out,  dstblk: ep4,   dstport: in0 }
+  #
   # BSP Connections
-  - { srcblk: radio0, srcport: ctrl_port, dstblk: _device_, dstport: ctrlport_radio0 }
-  - { srcblk: radio1, srcport: ctrl_port, dstblk: _device_, dstport: ctrlport_radio1 }
-  - { srcblk: _device_, srcport: x300_radio0, dstblk: radio0, dstport: x300_radio }
-  - { srcblk: _device_, srcport: x300_radio1, dstblk: radio1, dstport: x300_radio }
-  - { srcblk: _device_, srcport: time_keeper, dstblk: radio0, dstport: time_keeper }
-  - { srcblk: _device_, srcport: time_keeper, dstblk: radio1, dstport: time_keeper }
+  - { srcblk: radio0,   srcport: ctrlport, dstblk: _device_, dstport: ctrlport_radio0 }
+  - { srcblk: radio1,   srcport: ctrlport, dstblk: _device_, dstport: ctrlport_radio1 }
+  - { srcblk: _device_, srcport: radio0,   dstblk: radio0,   dstport: radio           }
+  - { srcblk: _device_, srcport: radio1,   dstblk: radio1,   dstport: radio           }
+  - { srcblk: _device_, srcport: time,     dstblk: radio0,   dstport: time            }
+  - { srcblk: _device_, srcport: time,     dstblk: radio1,   dstport: time            }
 
 # A list of all clock domain connections in design
-# ------------------------------------------
+# ------------------------------------------------
 # Format: A list of connection maps (list of key-value pairs) with the following keys
-#         - srcblk  = Source block to connect (Always "_device"_)
-#         - srcport = Clock domain on the source block to connect
-#         - dstblk  = Destination block to connect
-#         - dstport = Clock domain on the destination block to connect
+#   - srcblk  = Source block to connect (Always "_device"_)
+#   - srcport = Clock domain on the source block to connect
+#   - dstblk  = Destination block to connect
+#   - dstport = Clock domain on the destination block to connect
 clk_domains:
     - { srcblk: _device_, srcport: radio, dstblk: radio0, dstport: radio }
     - { srcblk: _device_, srcport: ce,    dstblk: ddc0,   dstport: ce    }

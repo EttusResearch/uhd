@@ -1,8 +1,10 @@
 # General parameters
 # -----------------------------------------
 schema: rfnoc_imagebuilder_args         # Identifier for the schema used to validate this file
-copyright: 'Ettus Research, A National Instruments Brand' # Copyright information used in file headers
-license: 'SPDX-License-Identifier: LGPL-3.0-or-later' # License information used in file headers
+copyright: >-                           # Copyright information used in file headers
+  Ettus Research, A National Instruments Brand
+license: >-                             # License information used in file headers
+  SPDX-License-Identifier: LGPL-3.0-or-later
 version: '1.0'                          # File version
 rfnoc_version: '1.0'                    # RFNoC protocol version
 chdr_width: 64                          # Bit width of the CHDR bus for this image
@@ -13,43 +15,51 @@ default_target: 'E310_SG3'
 # A list of all stream endpoints in design
 # ----------------------------------------
 stream_endpoints:
-  ep0:                       # Stream endpoint name
-    ctrl: True                      # Endpoint passes control traffic
-    data: True                      # Endpoint passes data traffic
-    buff_size: 16384                # Ingress buffer size for data
-  ep1:                       # Stream endpoint name
-    ctrl: False                     # Endpoint passes control traffic
-    data: True                      # Endpoint passes data traffic
-    buff_size: 16384                # Ingress buffer size for data
+  ep0:                                  # Stream endpoint name
+    ctrl: True                          # Endpoint passes control traffic
+    data: True                          # Endpoint passes data traffic
+    buff_size: 16384                    # Ingress buffer size for data
+  ep1:
+    ctrl: False
+    data: True
+    buff_size: 16384
 
 # A list of all NoC blocks in design
 # ----------------------------------
 noc_blocks:
-  radio0:                            # NoC block name
-    block_desc: 'radio_2x64.yml'     # Block device descriptor
+  radio0:                               # NoC block name
+    block_desc: 'radio.yml'             # Block device descriptor
+    parameters:
+      NUM_PORTS: 2
 
 # A list of all static connections in design
 # ------------------------------------------
 # Format: A list of connection maps (list of key-value pairs) with the following keys
-#         - srcblk  = Source block to connect
-#         - srcport = Port on the source block to connect
-#         - dstblk  = Destination block to connect
-#         - dstport = Port on the destination block to connect
+#   - srcblk  = Source block to connect
+#   - srcport = Port on the source block to connect
+#   - dstblk  = Destination block to connect
+#   - dstport = Port on the destination block to connect
 connections:
+  # TX A
   - { srcblk: ep0,    srcport: out0,  dstblk: radio0, dstport: in_0 }
-  - { srcblk: ep1,    srcport: out0,  dstblk: radio0, dstport: in_1 }
+  # RX A
   - { srcblk: radio0, srcport: out_0, dstblk: ep0,    dstport: in0  }
+  # TX B
+  - { srcblk: ep1,    srcport: out0,  dstblk: radio0, dstport: in_1 }
+  # RX B
   - { srcblk: radio0, srcport: out_1, dstblk: ep1,    dstport: in0  }
-  - { srcblk: radio0, srcport: ctrl_port, dstblk: _device_, dstport: ctrlport_radio }
-  - { srcblk: _device_, srcport: x300_radio, dstblk: radio0, dstport: x300_radio }
-  - { srcblk: _device_, srcport: time_keeper, dstblk: radio0, dstport: time_keeper }
+  #
+  # BSP Connections
+  - { srcblk: radio0,   srcport: ctrlport, dstblk: _device_, dstport: ctrlport }
+  - { srcblk: _device_, srcport: radio,    dstblk: radio0,   dstport: radio    }
+  - { srcblk: _device_, srcport: time,     dstblk: radio0,   dstport: time     }
 
 # A list of all clock domain connections in design
 # ------------------------------------------------
 # Format: A list of connection maps (list of key-value pairs) with the following keys
-#         - srcblk  = Source block to connect (Always "_device"_)
-#         - srcport = Clock domain on the source block to connect
-#         - dstblk  = Destination block to connect
-#         - dstport = Clock domain on the destination block to connect
+#   - srcblk  = Source block to connect (Always "_device"_)
+#   - srcport = Clock domain on the source block to connect
+#   - dstblk  = Destination block to connect
+#   - dstport = Clock domain on the destination block to connect
 clk_domains:
   - { srcblk: _device_, srcport: radio, dstblk: radio0, dstport: radio }
