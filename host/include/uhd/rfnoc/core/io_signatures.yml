@@ -1,4 +1,4 @@
-ctrl_port:
+ctrlport:
   type: master-slave
   ports:
   - name: ctrlport_req_wr
@@ -28,83 +28,14 @@ ctrl_port:
     type: to-master
     width: 32
 
-time_keeper:
+timekeeper:
   type: broadcaster-listener
   ports:
   - name: radio_time
     width: 64
 
-# Single channel radio interface
-radio_1x32:
-  type: master-slave
-  ports:
-  - name: radio_rx_data
-    type: from-master
-    width: 32
-  - name: radio_rx_stb
-    type: from-master
-    width: 1
-  - name: radio_rx_running
-    type: to-master
-    width: 1
-  - name: radio_tx_data
-    type: to-master
-    width: 32
-  - name: radio_tx_stb
-    type: from-master
-    width: 1
-  - name: radio_tx_running
-    type: to-master
-    width: 1
-
-# Two channel radio interface, or single channel with 2 SPC
-radio_2x32:
-  type: master-slave
-  ports:
-  - name: radio_rx_data
-    type: from-master
-    width: 64
-  - name: radio_rx_stb
-    type: from-master
-    width: 2
-  - name: radio_rx_running
-    type: to-master
-    width: 2
-  - name: radio_tx_data
-    type: to-master
-    width: 64
-  - name: radio_tx_stb
-    type: from-master
-    width: 2
-  - name: radio_tx_running
-    type: to-master
-    width: 2
-
-# Same as radio_2x32, but kept for backwards compatibility with the old name
-x300_radio:
-  type: master-slave
-  ports:
-  - name: radio_rx_data
-    type: from-master
-    width: 64
-  - name: radio_rx_stb
-    type: from-master
-    width: 2
-  - name: radio_rx_running
-    type: to-master
-    width: 2
-  - name: radio_tx_data
-    type: to-master
-    width: 64
-  - name: radio_tx_stb
-    type: from-master
-    width: 2
-  - name: radio_tx_running
-    type: to-master
-    width: 2
-
-# Eight channel radio interface, or two channels with 4 SPC
-radio_8x32:
+# Radio interface (up to eight channels or eight samples per clock)
+radio:
   type: master-slave
   ports:
   - name: radio_rx_data

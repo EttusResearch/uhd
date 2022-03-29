@@ -18,28 +18,28 @@ clocks:
 
 io_ports:
   ctrlport_radio0:
-    type: ctrl_port
+    type: ctrlport
     drive: slave
     rename:
       pattern: (ctrlport_)(.*)
       repl: m_\1radio0_\2
   ctrlport_radio1:
-    type: ctrl_port
+    type: ctrlport
     drive: slave
     rename:
       pattern: (ctrlport_)(.*)
       repl: m_\1radio1_\2
-  time_keeper:
-    type: time_keeper
+  time:
+    type: timekeeper
     drive: broadcaster
-  radio_ch0:
-    type: radio_1x32
+  radio0:
+    type: radio
     drive: master
     rename:
       pattern: (.*)
       repl: \1_radio0
-  radio_ch1:
-    type: radio_1x32
+  radio1:
+    type: radio
     drive: master
     rename:
       pattern: (.*)

@@ -53,16 +53,16 @@ data:
 
 io_ports:
   ctrlport:
-    type: ctrl_port
+    type: ctrlport
     drive: master
     rename:
       pattern: (.*)
       repl: m_\1
   time:
-    type: time_keeper
+    type: timekeeper
     drive: listener
   radio:
-    type: radio_8x32
+    type: radio
     drive: slave
 
 registers:

@@ -14,17 +14,17 @@ clocks:
   - name: dram
 
 io_ports:
-  ctrl_port:
-    type: ctrl_port
+  ctrlport:
+    type: ctrlport
     drive: slave
     rename:
       pattern: (ctrlport_)(.*)
       repl: m_\1\2
-  time_keeper:
-    type: time_keeper
+  time:
+    type: timekeeper
     drive: broadcaster
-  x300_radio:
-    type: x300_radio
+  radio:
+    type: radio
     drive: master
   dram:
     type: axi4_mm
