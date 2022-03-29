@@ -37,6 +37,7 @@ UHD_INSTALL(FILES
     tasks.hpp
     thread_priority.hpp
     thread.hpp
+    x300_fw_reset.hpp
     DESTINATION ${INCLUDE_DIR}/uhd/utils
     COMPONENT headers
 )

@@ -235,6 +235,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/system_time.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/tasks.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/thread.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/x300_fw_reset.cpp
 )
 
 if(ENABLE_C_API)

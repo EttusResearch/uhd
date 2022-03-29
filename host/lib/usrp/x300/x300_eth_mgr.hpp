@@ -20,6 +20,9 @@
 #include <map>
 #include <vector>
 
+uhd::wb_iface::sptr x300_make_ctrl_iface_enet(
+    uhd::transport::udp_simple::sptr udp, bool enable_errors = true);
+
 namespace uhd { namespace usrp { namespace x300 {
 
 /*! Helper class to manage the eth connections

@@ -32,9 +32,6 @@
 #include <boost/asio.hpp>
 #include <string>
 
-uhd::wb_iface::sptr x300_make_ctrl_iface_enet(
-    uhd::transport::udp_simple::sptr udp, bool enable_errors = true);
-
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::rfnoc;
