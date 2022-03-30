@@ -20,12 +20,12 @@ set script_folder [_tcl::get_script_folder]
 ################################################################
 # Check if script is running in correct Vivado version.
 ################################################################
-set scripts_vivado_version 2019.1
+set scripts_vivado_version 2021.1
 set current_vivado_version [version -short]
 
 if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
    puts ""
-   catch {common::send_msg_id "BD_TCL-109" "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
+   catch {common::send_gid_msg -ssname BD::TCL -id 2041 -severity "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
 
    return 1
 }
@@ -83,10 +83,10 @@ if { ${design_name} eq "" } {
    #    4): Current design opened AND is empty AND names diff; design_name exists in project.
 
    if { $cur_design ne $design_name } {
-      common::send_msg_id "BD_TCL-001" "INFO" "Changing value of <design_name> from <$design_name> to <$cur_design> since current design is empty."
+      common::send_gid_msg -ssname BD::TCL -id 2001 -severity "INFO" "Changing value of <design_name> from <$design_name> to <$cur_design> since current design is empty."
       set design_name [get_property NAME $cur_design]
    }
-   common::send_msg_id "BD_TCL-002" "INFO" "Constructing design in IPI design <$cur_design>..."
+   common::send_gid_msg -ssname BD::TCL -id 2002 -severity "INFO" "Constructing design in IPI design <$cur_design>..."
 
 } elseif { ${cur_design} ne "" && $list_cells ne "" && $cur_design eq $design_name } {
    # USE CASES:
@@ -107,19 +107,19 @@ if { ${design_name} eq "" } {
    #    8) No opened design, design_name not in project.
    #    9) Current opened design, has components, but diff names, design_name not in project.
 
-   common::send_msg_id "BD_TCL-003" "INFO" "Currently there is no design <$design_name> in project, so creating one..."
+   common::send_gid_msg -ssname BD::TCL -id 2003 -severity "INFO" "Currently there is no design <$design_name> in project, so creating one..."
 
    create_bd_design $design_name
 
-   common::send_msg_id "BD_TCL-004" "INFO" "Making design <$design_name> as current_bd_design."
+   common::send_gid_msg -ssname BD::TCL -id 2004 -severity "INFO" "Making design <$design_name> as current_bd_design."
    current_bd_design $design_name
 
 }
 
-common::send_msg_id "BD_TCL-005" "INFO" "Currently the variable <design_name> is equal to \"$design_name\"."
+common::send_gid_msg -ssname BD::TCL -id 2005 -severity "INFO" "Currently the variable <design_name> is equal to \"$design_name\"."
 
 if { $nRet != 0 } {
-   catch {common::send_msg_id "BD_TCL-114" "ERROR" $errMsg}
+   catch {common::send_gid_msg -ssname BD::TCL -id 2006 -severity "ERROR" $errMsg}
    return $nRet
 }
 
@@ -134,7 +134,7 @@ xilinx.com:ip:fir_compiler:7.2\
 "
 
    set list_ips_missing ""
-   common::send_msg_id "BD_TCL-006" "INFO" "Checking if the following IPs exist in the project's IP catalog: $list_check_ips ."
+   common::send_gid_msg -ssname BD::TCL -id 2011 -severity "INFO" "Checking if the following IPs exist in the project's IP catalog: $list_check_ips ."
 
    foreach ip_vlnv $list_check_ips {
       set ip_obj [get_ipdefs -all $ip_vlnv]
@@ -144,7 +144,7 @@ xilinx.com:ip:fir_compiler:7.2\
    }
 
    if { $list_ips_missing ne "" } {
-      catch {common::send_msg_id "BD_TCL-115" "ERROR" "The following IPs are not found in the IP Catalog:\n  $list_ips_missing\n\nResolution: Please add the repository containing the IP(s) to the project." }
+      catch {common::send_gid_msg -ssname BD::TCL -id 2012 -severity "ERROR" "The following IPs are not found in the IP Catalog:\n  $list_ips_missing\n\nResolution: Please add the repository containing the IP(s) to the project." }
       set bCheckIPsPassed 0
    }
 
@@ -162,7 +162,7 @@ duc_400m_saturate\
 "
 
    set list_mods_missing ""
-   common::send_msg_id "BD_TCL-006" "INFO" "Checking if the following modules exist in the project's sources: $list_check_mods ."
+   common::send_gid_msg -ssname BD::TCL -id 2020 -severity "INFO" "Checking if the following modules exist in the project's sources: $list_check_mods ."
 
    foreach mod_vlnv $list_check_mods {
       if { [can_resolve_reference $mod_vlnv] == 0 } {
@@ -171,14 +171,14 @@ duc_400m_saturate\
    }
 
    if { $list_mods_missing ne "" } {
-      catch {common::send_msg_id "BD_TCL-115" "ERROR" "The following module(s) are not found in the project: $list_mods_missing" }
-      common::send_msg_id "BD_TCL-008" "INFO" "Please add source files for the missing module(s) above."
+      catch {common::send_gid_msg -ssname BD::TCL -id 2021 -severity "ERROR" "The following module(s) are not found in the project: $list_mods_missing" }
+      common::send_gid_msg -ssname BD::TCL -id 2022 -severity "INFO" "Please add source files for the missing module(s) above."
       set bCheckIPsPassed 0
    }
 }
 
 if { $bCheckIPsPassed != 1 } {
-  common::send_msg_id "BD_TCL-1003" "WARNING" "Will not continue with creation of design due to the error(s) above."
+  common::send_gid_msg -ssname BD::TCL -id 2023 -severity "WARNING" "Will not continue with creation of design due to the error(s) above."
   return 3
 }
 
@@ -202,14 +202,14 @@ proc create_root_design { parentCell } {
   # Get object for parentCell
   set parentObj [get_bd_cells $parentCell]
   if { $parentObj == "" } {
-     catch {common::send_msg_id "BD_TCL-100" "ERROR" "Unable to find parent cell <$parentCell>!"}
+     catch {common::send_gid_msg -ssname BD::TCL -id 2090 -severity "ERROR" "Unable to find parent cell <$parentCell>!"}
      return
   }
 
   # Make sure parentObj is hier blk
   set parentType [get_property TYPE $parentObj]
   if { $parentType ne "hier" } {
-     catch {common::send_msg_id "BD_TCL-101" "ERROR" "Parent <$parentObj> has TYPE = <$parentType>. Expected to be <hier>."}
+     catch {common::send_gid_msg -ssname BD::TCL -id 2091 -severity "ERROR" "Parent <$parentObj> has TYPE = <$parentType>. Expected to be <hier>."}
      return
   }
 
@@ -232,28 +232,21 @@ proc create_root_design { parentCell } {
   set dac_data_out_tdata [ create_bd_port -dir O -from 255 -to 0 -type data dac_data_out_tdata ]
   set dac_data_out_tready [ create_bd_port -dir I -type data dac_data_out_tready ]
   set dac_data_out_tvalid [ create_bd_port -dir O -type data dac_data_out_tvalid ]
-  set data_clk [ create_bd_port -dir I -type clk data_clk ]
-  set_property -dict [ list \
-   CONFIG.FREQ_HZ {122880000} \
- ] $data_clk
-  set data_clk_2x [ create_bd_port -dir I -type clk data_clk_2x ]
+  set data_clk [ create_bd_port -dir I -type clk -freq_hz 122880000 data_clk ]
+  set data_clk_2x [ create_bd_port -dir I -type clk -freq_hz 245760000 data_clk_2x ]
   set_property -dict [ list \
    CONFIG.ASSOCIATED_RESET {dac_data_in_resetn_dclk2x} \
-   CONFIG.FREQ_HZ {245760000} \
  ] $data_clk_2x
-  set rfdc_clk [ create_bd_port -dir I -type clk rfdc_clk ]
-  set_property -dict [ list \
-   CONFIG.FREQ_HZ {184320000} \
- ] $rfdc_clk
+  set rfdc_clk [ create_bd_port -dir I -type clk -freq_hz 184320000 rfdc_clk ]
 
   # Create instance: dac_gearbox_4x2_0, and set properties
   set block_name dac_gearbox_4x2
   set block_cell_name dac_gearbox_4x2_0
   if { [catch {set dac_gearbox_4x2_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
-     catch {common::send_msg_id "BD_TCL-105" "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     catch {common::send_gid_msg -ssname BD::TCL -id 2095 -severity "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
    } elseif { $dac_gearbox_4x2_0 eq "" } {
-     catch {common::send_msg_id "BD_TCL-106" "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     catch {common::send_gid_msg -ssname BD::TCL -id 2096 -severity "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
    }
   
@@ -261,10 +254,10 @@ proc create_root_design { parentCell } {
   set block_name dac_gearbox_6x8
   set block_cell_name dac_gearbox_6x8_0
   if { [catch {set dac_gearbox_6x8_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
-     catch {common::send_msg_id "BD_TCL-105" "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     catch {common::send_gid_msg -ssname BD::TCL -id 2095 -severity "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
    } elseif { $dac_gearbox_6x8_0 eq "" } {
-     catch {common::send_msg_id "BD_TCL-106" "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     catch {common::send_gid_msg -ssname BD::TCL -id 2096 -severity "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
    }
   
@@ -272,13 +265,13 @@ proc create_root_design { parentCell } {
   set dac_interpolator [ create_bd_cell -type ip -vlnv xilinx.com:ip:fir_compiler:7.2 dac_interpolator ]
   set_property -dict [ list \
    CONFIG.Clock_Frequency {245.76} \
-   CONFIG.CoefficientVector {-7,0,24,37,0,-78,-107,0,189,244,0,-389,-484,0,723,873,0,-1245,-1473,0,2029,2364,0,-3177,-3668,0,4862,5592,0,-7418,-8579,0,11675,13820,0,-20461,-26115,0,53699,108144,131069,108144,53699,0,-26115,-20461,0,13820,11675,0,-8579,-7418,0,5592,4862,0,-3668,-3177,0,2364,2029,0,-1473,-1245,0,873,723,0,-484,-389,0,244,189,0,-107,-78,0,37,24,0,-7} \
+   CONFIG.CoefficientVector {-7,0,24,37,0,-78,-107,0,189,244,0,-389,-484,0,723,873,0,-1245,-1473,0,2029,2364,0,-3177,-3668,0,4862,5592,0,-7418,-8579,0,11675,13820,0,-20461,-26115,0,53699,108144,131069,108144,53699,0,-26115,-20461,0,13820,11675,0,-8579,-7418,0,5592,4862,0,-3668,-3177,0,2364,2029,0,-1473,-1245,0,873,723,0,-484,-389,0,244,189,0,-107,-78,0,37,24,0,-7}\
    CONFIG.Coefficient_Fractional_Bits {0} \
    CONFIG.Coefficient_Sets {1} \
    CONFIG.Coefficient_Sign {Signed} \
    CONFIG.Coefficient_Structure {Inferred} \
    CONFIG.Coefficient_Width {18} \
-   CONFIG.ColumnConfig {27} \
+   CONFIG.ColumnConfig {14} \
    CONFIG.Decimation_Rate {1} \
    CONFIG.Filter_Architecture {Systolic_Multiply_Accumulate} \
    CONFIG.Filter_Type {Interpolation} \
@@ -300,10 +293,10 @@ proc create_root_design { parentCell } {
   set block_name duc_400m_saturate
   set block_cell_name duc_400m_saturate_0
   if { [catch {set duc_400m_saturate_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
-     catch {common::send_msg_id "BD_TCL-105" "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     catch {common::send_gid_msg -ssname BD::TCL -id 2095 -severity "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
    } elseif { $duc_400m_saturate_0 eq "" } {
-     catch {common::send_msg_id "BD_TCL-106" "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     catch {common::send_gid_msg -ssname BD::TCL -id 2096 -severity "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
    }
   

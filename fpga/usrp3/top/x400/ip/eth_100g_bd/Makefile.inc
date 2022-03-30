@@ -21,7 +21,7 @@ sim/eth_100g_bd.v\
 ip/*/ip_0/sim/*.v\
 ip/*/sim/*.h\
 ip/*/sim/*.v\
-ip/eth_100g_bd_cmac_usplus_0_0/cmac_usplus_v2_6_1/*.v\
+ip/eth_100g_bd_cmac_usplus_0_0/cmac_usplus_v3_1_4/*.v\
 ip/eth_100g_bd_cmac_usplus_0_0/eth_100g_bd_cmac_usplus_0_0/example_design/*.v\
 ip/eth_100g_bd_cmac_usplus_0_0/eth_100g_bd_cmac_usplus_0_0/header_files/*.h\
 ip/eth_100g_bd_cmac_usplus_0_0/eth_100g_bd_cmac_usplus_0_0.v\

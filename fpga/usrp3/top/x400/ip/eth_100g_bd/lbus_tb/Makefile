@@ -35,7 +35,7 @@ $(AXI4S_SV_SRCS) \
 #-------------------------------------------------
 # Testbench Specific
 #-------------------------------------------------
-MODELSIM_LIBS += secureip unimacro_ver unisims_ver xilinx_vip xpm fifo_generator_v13_2_4
+MODELSIM_LIBS += secureip unimacro_ver unisims_ver xilinx_vip xpm fifo_generator_v13_2_5
 MODELSIM_ARGS += glbl -t 1fs
 # Define toplevel module
 TB_TOP_MODULE ?= lbus_all_tb
@@ -50,8 +50,8 @@ $(VIVADO_PATH)/data/verilog/src/glbl.v \
 # Suppressing the following worthless reminder.
 #* Warning: M:/usrp4-hw/oss-repo/fpga/usrp3/lib/axi4s_sv/axi4s_remove_bytes.sv(228): (vlog-2583) [SVCHK] -
 # Extra checking for conflicts with always_comb and always_latch variables is done at vopt time
-SVLOG_ARGS = -suppress 2583 -keep_delta  
-VLOG_ARGS = -keep_delta  
+SVLOG_ARGS = -suppress 2583 -keep_delta
+VLOG_ARGS = -keep_delta
 
 #-------------------------------------------------
 # Bottom-of-Makefile

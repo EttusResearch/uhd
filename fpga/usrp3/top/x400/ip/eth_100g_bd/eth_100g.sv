@@ -80,6 +80,7 @@ module eth_100g #(
     end
   end
 
+  // synthesis translate_off
   //extra simulation checks
   localparam USE_MAC_CHECKS = 1;
   if (USE_MAC_CHECKS) begin
@@ -124,6 +125,7 @@ module eth_100g #(
     assert (mgt_rx.TLAST == 1) else
      $fatal(1, "mgt_rx.TLAST must be enabled");
   end
+  // synthesis translate_on
 
   AxiStreamIf #(.DATA_WIDTH(512),.TUSER(0),.TKEEP(0))
     eth100g_tx(mgt_clk,mgt_rst);
@@ -1130,23 +1132,11 @@ module eth_100g #(
   eth_100g_bd eth_100g_bd_i (
     .refclk_clk_n(refclk_n),
     .refclk_clk_p(refclk_p),
-    .gt_rx_gt_port_0_n(rx_n[0]),
-    .gt_rx_gt_port_0_p(rx_p[0]),
-    .gt_rx_gt_port_1_n(rx_n[1]),
-    .gt_rx_gt_port_1_p(rx_p[1]),
-    .gt_rx_gt_port_2_n(rx_n[2]),
-    .gt_rx_gt_port_2_p(rx_p[2]),
-    .gt_rx_gt_port_3_n(rx_n[3]),
-    .gt_rx_gt_port_3_p(rx_p[3]),
+    .gt_serial_port_0_grx_n(rx_n),
+    .gt_serial_port_0_grx_p(rx_p),
+    .gt_serial_port_0_gtx_n(tx_n),
+    .gt_serial_port_0_gtx_p(tx_p),
     .init_clk(clk100),
-    .gt_tx_gt_port_0_n(tx_n[0]),
-    .gt_tx_gt_port_0_p(tx_p[0]),
-    .gt_tx_gt_port_1_n(tx_n[1]),
-    .gt_tx_gt_port_1_p(tx_p[1]),
-    .gt_tx_gt_port_2_n(tx_n[2]),
-    .gt_tx_gt_port_2_p(tx_p[2]),
-    .gt_tx_gt_port_3_n(tx_n[3]),
-    .gt_tx_gt_port_3_p(tx_p[3]),
     .sys_reset(areset),
     .usr_rx_reset(usr_rx_reset),
     .usr_tx_reset(usr_tx_reset),

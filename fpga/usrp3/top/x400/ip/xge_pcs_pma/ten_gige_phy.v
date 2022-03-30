@@ -55,11 +55,10 @@ module ten_gige_phy (
   wire a_gt_reset_tx_done, gt_reset_tx_done;
   wire a_gt_reset_rx_done, gt_reset_rx_done;
 
-  wire stat_rx_status_tmp;
-  reg  stat_rx_status;
+  wire stat_rx_status;
 
-  reg [RX_RST_COUNT_W-1:0] rst_count;
-  reg                      gt_rx_reset_in;
+  // reg [RX_RST_COUNT_W-1:0] rst_count;
+  // reg                      gt_rx_reset_in;
 
   //---------------------------------------------------------------------------
   // Xilinx 10G/25G IP High Speed Ethernet Subsystem Instance
@@ -141,7 +140,7 @@ module ten_gige_phy (
     .gt_reset_rx_done_out_0              (a_gt_reset_rx_done),
     .gt_reset_all_in_0                   (areset),
     .gt_tx_reset_in_0                    (1'b0),
-    .gt_rx_reset_in_0                    (gt_rx_reset_in),
+    .gt_rx_reset_in_0                    (1'b0),
     .rx_reset_0                          (rx_reset),
     .rx_mii_d_0                          (xgmii_rxd),
     .rx_mii_c_0                          (xgmii_rxc),
@@ -154,7 +153,7 @@ module ten_gige_phy (
     .stat_rx_local_fault_0               (),
     .stat_rx_block_lock_0                (),
     .stat_rx_valid_ctrl_code_0           (),
-    .stat_rx_status_0                    (stat_rx_status_tmp),  // rx_core_clk_0 domain
+    .stat_rx_status_0                    (stat_rx_status),  // rx_core_clk_0 domain
     .stat_rx_hi_ber_0                    (),
     .stat_rx_bad_code_0                  (),
     .stat_rx_bad_code_valid_0            (),
@@ -172,7 +171,9 @@ module ten_gige_phy (
     .ctl_tx_test_pattern_seed_a_0        (58'b0),
     .ctl_tx_test_pattern_seed_b_0        (58'b0),
     .ctl_tx_prbs31_test_pattern_enable_0 (1'b0),
-    .gt_loopback_in_0                    (3'b0)
+    .gt_loopback_in_0                    (3'b0),
+    .gt_txelecidle_0                     (1'b0),
+    .gt_drprst_0                         (1'b0)
   );
 
 
@@ -232,43 +233,5 @@ module ten_gige_phy (
     .in  (~a_gt_reset_rx_done),
     .out (rx_reset)
   );
-
-  // This state machine resets the RX GT part of the core periodically when
-  // the link is down. This is necessary due to a bug in the Xilinx IP.
-  always @(posedge xgmii_clk, posedge areset) begin
-      if (areset) begin
-        gt_rx_reset_in <= 0;
-        rst_count      <= 0;
-        stat_rx_status <= 0;
-      end else begin
-        stat_rx_status <= stat_rx_status_tmp;
-
-        // Periodically reset until link is up
-        if (!stat_rx_status) begin
-          rst_count <= rst_count + 1;
-
-          if (!gt_rx_reset_in) begin
-            // We're not in reset. Wait until RX_RST_WAIT cycles have elapsed,
-            // then reset.
-            if (rst_count == RX_RST_WAIT-1) begin
-              rst_count     <= 0;
-              gt_rx_reset_in <= 1;
-            end
-          end else begin
-            // We're in reset. Wait until RX_RST_DURATION cycles have elapsed
-            // before deasserting reset.
-            if (rst_count == RX_RST_DURATION-1) begin
-              rst_count      <= 0;
-              gt_rx_reset_in <= 0;
-            end
-          end
-
-        // Currently linked, so all is well
-        end else begin
-          rst_count      <= 0;
-          gt_rx_reset_in <= 0;
-        end
-      end
-    end
 
 endmodule

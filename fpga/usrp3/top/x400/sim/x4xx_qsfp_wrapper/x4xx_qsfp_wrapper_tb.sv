@@ -579,7 +579,7 @@ module x4xx_qsfp_wrapper_tb #(
     end
     repeat (4) axi.rd(LANE_BASE+REG_MAC_LSB,data);
 
-    if (MGT_PROTOCOL == `MGT_100GbE && !USE_MAC) begin
+    if ((MGT_PROTOCOL == `MGT_100GbE && !USE_MAC) || (MGT_PROTOCOL == `MGT_10GbE && USE_MAC)) begin
       reg_link_up = 1;
     end
 
@@ -592,7 +592,8 @@ module x4xx_qsfp_wrapper_tb #(
       else         axi.rd(LANE_BASE+REG_MAC_CTRL_STATUS,32'h0000_0080);
     else assert(1);
 
-    axi.rd(LANE_BASE+REG_PHY_CTRL_STATUS,0);
+
+    axi.rd(LANE_BASE+REG_PHY_CTRL_STATUS,(MGT_PROTOCOL == `MGT_10GbE && USE_MAC) ? reg_link_up : 0);
     // en 0 / value 1
     axi.rd(LANE_BASE+REG_MAC_LED_CTL,0);
     // enabled with value 0

@@ -20,12 +20,12 @@ set script_folder [_tcl::get_script_folder]
 ################################################################
 # Check if script is running in correct Vivado version.
 ################################################################
-set scripts_vivado_version 2019.1
+set scripts_vivado_version 2021.1
 set current_vivado_version [version -short]
 
 if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
    puts ""
-   catch {common::send_msg_id "BD_TCL-109" "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
+   catch {common::send_gid_msg -ssname BD::TCL -id 2041 -severity "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
 
    return 1
 }
@@ -83,10 +83,10 @@ if { ${design_name} eq "" } {
    #    4): Current design opened AND is empty AND names diff; design_name exists in project.
 
    if { $cur_design ne $design_name } {
-      common::send_msg_id "BD_TCL-001" "INFO" "Changing value of <design_name> from <$design_name> to <$cur_design> since current design is empty."
+      common::send_gid_msg -ssname BD::TCL -id 2001 -severity "INFO" "Changing value of <design_name> from <$design_name> to <$cur_design> since current design is empty."
       set design_name [get_property NAME $cur_design]
    }
-   common::send_msg_id "BD_TCL-002" "INFO" "Constructing design in IPI design <$cur_design>..."
+   common::send_gid_msg -ssname BD::TCL -id 2002 -severity "INFO" "Constructing design in IPI design <$cur_design>..."
 
 } elseif { ${cur_design} ne "" && $list_cells ne "" && $cur_design eq $design_name } {
    # USE CASES:
@@ -107,11 +107,11 @@ if { ${design_name} eq "" } {
    #    8) No opened design, design_name not in project.
    #    9) Current opened design, has components, but diff names, design_name not in project.
 
-   common::send_msg_id "BD_TCL-003" "INFO" "Currently there is no design <$design_name> in project, so creating one..."
+   common::send_gid_msg -ssname BD::TCL -id 2003 -severity "INFO" "Currently there is no design <$design_name> in project, so creating one..."
 
    create_bd_design $design_name
 
-   common::send_msg_id "BD_TCL-004" "INFO" "Making design <$design_name> as current_bd_design."
+   common::send_gid_msg -ssname BD::TCL -id 2004 -severity "INFO" "Making design <$design_name> as current_bd_design."
    current_bd_design $design_name
 
 }
@@ -119,10 +119,10 @@ if { ${design_name} eq "" } {
   # Add USER_COMMENTS on $design_name
   set_property USER_COMMENTS.comment_0 "Scale_2x is a simple shift to left by 2 logic and does not need any pipeline stage" [get_bd_designs $design_name]
 
-common::send_msg_id "BD_TCL-005" "INFO" "Currently the variable <design_name> is equal to \"$design_name\"."
+common::send_gid_msg -ssname BD::TCL -id 2005 -severity "INFO" "Currently the variable <design_name> is equal to \"$design_name\"."
 
 if { $nRet != 0 } {
-   catch {common::send_msg_id "BD_TCL-114" "ERROR" $errMsg}
+   catch {common::send_gid_msg -ssname BD::TCL -id 2006 -severity "ERROR" $errMsg}
    return $nRet
 }
 
@@ -139,7 +139,7 @@ xilinx.com:ip:fir_compiler:7.2\
 "
 
    set list_ips_missing ""
-   common::send_msg_id "BD_TCL-006" "INFO" "Checking if the following IPs exist in the project's IP catalog: $list_check_ips ."
+   common::send_gid_msg -ssname BD::TCL -id 2011 -severity "INFO" "Checking if the following IPs exist in the project's IP catalog: $list_check_ips ."
 
    foreach ip_vlnv $list_check_ips {
       set ip_obj [get_ipdefs -all $ip_vlnv]
@@ -149,7 +149,7 @@ xilinx.com:ip:fir_compiler:7.2\
    }
 
    if { $list_ips_missing ne "" } {
-      catch {common::send_msg_id "BD_TCL-115" "ERROR" "The following IPs are not found in the IP Catalog:\n  $list_ips_missing\n\nResolution: Please add the repository containing the IP(s) to the project." }
+      catch {common::send_gid_msg -ssname BD::TCL -id 2012 -severity "ERROR" "The following IPs are not found in the IP Catalog:\n  $list_ips_missing\n\nResolution: Please add the repository containing the IP(s) to the project." }
       set bCheckIPsPassed 0
    }
 
@@ -168,7 +168,7 @@ scale_2x\
 "
 
    set list_mods_missing ""
-   common::send_msg_id "BD_TCL-006" "INFO" "Checking if the following modules exist in the project's sources: $list_check_mods ."
+   common::send_gid_msg -ssname BD::TCL -id 2020 -severity "INFO" "Checking if the following modules exist in the project's sources: $list_check_mods ."
 
    foreach mod_vlnv $list_check_mods {
       if { [can_resolve_reference $mod_vlnv] == 0 } {
@@ -177,14 +177,14 @@ scale_2x\
    }
 
    if { $list_mods_missing ne "" } {
-      catch {common::send_msg_id "BD_TCL-115" "ERROR" "The following module(s) are not found in the project: $list_mods_missing" }
-      common::send_msg_id "BD_TCL-008" "INFO" "Please add source files for the missing module(s) above."
+      catch {common::send_gid_msg -ssname BD::TCL -id 2021 -severity "ERROR" "The following module(s) are not found in the project: $list_mods_missing" }
+      common::send_gid_msg -ssname BD::TCL -id 2022 -severity "INFO" "Please add source files for the missing module(s) above."
       set bCheckIPsPassed 0
    }
 }
 
 if { $bCheckIPsPassed != 1 } {
-  common::send_msg_id "BD_TCL-1003" "WARNING" "Will not continue with creation of design due to the error(s) above."
+  common::send_gid_msg -ssname BD::TCL -id 2023 -severity "WARNING" "Will not continue with creation of design due to the error(s) above."
   return 3
 }
 
@@ -208,14 +208,14 @@ proc create_root_design { parentCell } {
   # Get object for parentCell
   set parentObj [get_bd_cells $parentCell]
   if { $parentObj == "" } {
-     catch {common::send_msg_id "BD_TCL-100" "ERROR" "Unable to find parent cell <$parentCell>!"}
+     catch {common::send_gid_msg -ssname BD::TCL -id 2090 -severity "ERROR" "Unable to find parent cell <$parentCell>!"}
      return
   }
 
   # Make sure parentObj is hier blk
   set parentType [get_property TYPE $parentObj]
   if { $parentType ne "hier" } {
-     catch {common::send_msg_id "BD_TCL-101" "ERROR" "Parent <$parentObj> has TYPE = <$parentType>. Expected to be <hier>."}
+     catch {common::send_gid_msg -ssname BD::TCL -id 2091 -severity "ERROR" "Parent <$parentObj> has TYPE = <$parentType>. Expected to be <hier>."}
      return
   }
 
@@ -263,34 +263,29 @@ proc create_root_design { parentCell } {
 
   # Create ports
   set adc_data_out_resetn_dclk [ create_bd_port -dir I -type rst adc_data_out_resetn_dclk ]
-  set data_clk [ create_bd_port -dir I -type clk data_clk ]
+  set data_clk [ create_bd_port -dir I -type clk -freq_hz 122880000 data_clk ]
   set_property -dict [ list \
    CONFIG.ASSOCIATED_BUSIF {adc_data_out} \
-   CONFIG.FREQ_HZ {122880000} \
  ] $data_clk
   set enable_data_to_fir_rclk [ create_bd_port -dir I enable_data_to_fir_rclk ]
   set fir_resetn_rclk2x [ create_bd_port -dir I -type rst fir_resetn_rclk2x ]
   set rfdc_adc_axi_resetn_rclk [ create_bd_port -dir I -type rst rfdc_adc_axi_resetn_rclk ]
-  set rfdc_clk [ create_bd_port -dir I -type clk rfdc_clk ]
+  set rfdc_clk [ create_bd_port -dir I -type clk -freq_hz 184320000 rfdc_clk ]
   set_property -dict [ list \
    CONFIG.ASSOCIATED_BUSIF {adc_i_data_in:adc_q_data_in} \
    CONFIG.ASSOCIATED_RESET {adc_gearbox_resetn_rclk:rfdc_adc_axi_resetn_rclk} \
-   CONFIG.FREQ_HZ {184320000} \
  ] $rfdc_clk
-  set rfdc_clk_2x [ create_bd_port -dir I -type clk rfdc_clk_2x ]
-  set_property -dict [ list \
-   CONFIG.FREQ_HZ {368640000} \
- ] $rfdc_clk_2x
+  set rfdc_clk_2x [ create_bd_port -dir I -type clk -freq_hz 368640000 rfdc_clk_2x ]
   set swap_iq_2x [ create_bd_port -dir I swap_iq_2x ]
 
   # Create instance: adc_3_1_clk_converter_0, and set properties
   set block_name adc_3_1_clk_converter
   set block_cell_name adc_3_1_clk_converter_0
   if { [catch {set adc_3_1_clk_converter_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
-     catch {common::send_msg_id "BD_TCL-105" "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     catch {common::send_gid_msg -ssname BD::TCL -id 2095 -severity "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
    } elseif { $adc_3_1_clk_converter_0 eq "" } {
-     catch {common::send_msg_id "BD_TCL-106" "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     catch {common::send_gid_msg -ssname BD::TCL -id 2096 -severity "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
    }
   
@@ -306,10 +301,10 @@ proc create_root_design { parentCell } {
   set block_name adc_gearbox_2x1
   set block_cell_name adc_gearbox_2x1_0
   if { [catch {set adc_gearbox_2x1_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
-     catch {common::send_msg_id "BD_TCL-105" "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     catch {common::send_gid_msg -ssname BD::TCL -id 2095 -severity "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
    } elseif { $adc_gearbox_2x1_0 eq "" } {
-     catch {common::send_msg_id "BD_TCL-106" "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     catch {common::send_gid_msg -ssname BD::TCL -id 2096 -severity "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
    }
   
@@ -334,10 +329,10 @@ proc create_root_design { parentCell } {
   set block_name ddc_saturate
   set block_cell_name ddc_saturate
   if { [catch {set ddc_saturate [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
-     catch {common::send_msg_id "BD_TCL-105" "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     catch {common::send_gid_msg -ssname BD::TCL -id 2095 -severity "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
    } elseif { $ddc_saturate eq "" } {
-     catch {common::send_msg_id "BD_TCL-106" "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     catch {common::send_gid_msg -ssname BD::TCL -id 2096 -severity "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
    }
   
@@ -345,7 +340,7 @@ proc create_root_design { parentCell } {
   set fir_compiler_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:fir_compiler:7.2 fir_compiler_0 ]
   set_property -dict [ list \
    CONFIG.Clock_Frequency {384} \
-   CONFIG.CoefficientVector {-2,0,8,12,0,-26,-36,0,63,81,0,-130,-161,0,241,291,0,-415,-491,0,676,788,0,-1059,-1223,0,1621,1864,0,-2473,-2860,0,3892,4607,0,-6820,-8705,0,17900,36048,43690,36048,17900,0,-8705,-6820,0,4607,3892,0,-2860,-2473,0,1864,1621,0,-1223,-1059,0,788,676,0,-491,-415,0,291,241,0,-161,-130,0,81,63,0,-36,-26,0,12,8,0,-2} \
+   CONFIG.CoefficientVector {-2,0,8,12,0,-26,-36,0,63,81,0,-130,-161,0,241,291,0,-415,-491,0,676,788,0,-1059,-1223,0,1621,1864,0,-2473,-2860,0,3892,4607,0,-6820,-8705,0,17900,36048,43690,36048,17900,0,-8705,-6820,0,4607,3892,0,-2860,-2473,0,1864,1621,0,-1223,-1059,0,788,676,0,-491,-415,0,291,241,0,-161,-130,0,81,63,0,-36,-26,0,12,8,0,-2}\
    CONFIG.Coefficient_Fractional_Bits {0} \
    CONFIG.Coefficient_Sets {1} \
    CONFIG.Coefficient_Sign {Signed} \
@@ -376,10 +371,10 @@ proc create_root_design { parentCell } {
   set block_name scale_2x
   set block_cell_name scale_2x_0
   if { [catch {set scale_2x_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
-     catch {common::send_msg_id "BD_TCL-105" "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     catch {common::send_gid_msg -ssname BD::TCL -id 2095 -severity "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
    } elseif { $scale_2x_0 eq "" } {
-     catch {common::send_msg_id "BD_TCL-106" "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     catch {common::send_gid_msg -ssname BD::TCL -id 2096 -severity "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
    }
     set_property -dict [ list \

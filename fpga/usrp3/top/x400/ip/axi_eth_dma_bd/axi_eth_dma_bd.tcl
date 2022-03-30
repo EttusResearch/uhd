@@ -20,12 +20,12 @@ set script_folder [_tcl::get_script_folder]
 ################################################################
 # Check if script is running in correct Vivado version.
 ################################################################
-set scripts_vivado_version 2019.1
+set scripts_vivado_version 2021.1
 set current_vivado_version [version -short]
 
 if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
    puts ""
-   catch {common::send_msg_id "BD_TCL-109" "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
+   catch {common::send_gid_msg -ssname BD::TCL -id 2041 -severity "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
 
    return 1
 }
@@ -76,10 +76,10 @@ if { ${design_name} eq "" } {
    #    4): Current design opened AND is empty AND names diff; design_name exists in project.
 
    if { $cur_design ne $design_name } {
-      common::send_msg_id "BD_TCL-001" "INFO" "Changing value of <design_name> from <$design_name> to <$cur_design> since current design is empty."
+      common::send_gid_msg -ssname BD::TCL -id 2001 -severity "INFO" "Changing value of <design_name> from <$design_name> to <$cur_design> since current design is empty."
       set design_name [get_property NAME $cur_design]
    }
-   common::send_msg_id "BD_TCL-002" "INFO" "Constructing design in IPI design <$cur_design>..."
+   common::send_gid_msg -ssname BD::TCL -id 2002 -severity "INFO" "Constructing design in IPI design <$cur_design>..."
 
 } elseif { ${cur_design} ne "" && $list_cells ne "" && $cur_design eq $design_name } {
    # USE CASES:
@@ -100,19 +100,19 @@ if { ${design_name} eq "" } {
    #    8) No opened design, design_name not in project.
    #    9) Current opened design, has components, but diff names, design_name not in project.
 
-   common::send_msg_id "BD_TCL-003" "INFO" "Currently there is no design <$design_name> in project, so creating one..."
+   common::send_gid_msg -ssname BD::TCL -id 2003 -severity "INFO" "Currently there is no design <$design_name> in project, so creating one..."
 
    create_bd_design $design_name
 
-   common::send_msg_id "BD_TCL-004" "INFO" "Making design <$design_name> as current_bd_design."
+   common::send_gid_msg -ssname BD::TCL -id 2004 -severity "INFO" "Making design <$design_name> as current_bd_design."
    current_bd_design $design_name
 
 }
 
-common::send_msg_id "BD_TCL-005" "INFO" "Currently the variable <design_name> is equal to \"$design_name\"."
+common::send_gid_msg -ssname BD::TCL -id 2005 -severity "INFO" "Currently the variable <design_name> is equal to \"$design_name\"."
 
 if { $nRet != 0 } {
-   catch {common::send_msg_id "BD_TCL-114" "ERROR" $errMsg}
+   catch {common::send_gid_msg -ssname BD::TCL -id 2006 -severity "ERROR" $errMsg}
    return $nRet
 }
 
@@ -128,7 +128,7 @@ xilinx.com:ip:smartconnect:1.0\
 "
 
    set list_ips_missing ""
-   common::send_msg_id "BD_TCL-006" "INFO" "Checking if the following IPs exist in the project's IP catalog: $list_check_ips ."
+   common::send_gid_msg -ssname BD::TCL -id 2011 -severity "INFO" "Checking if the following IPs exist in the project's IP catalog: $list_check_ips ."
 
    foreach ip_vlnv $list_check_ips {
       set ip_obj [get_ipdefs -all $ip_vlnv]
@@ -138,14 +138,14 @@ xilinx.com:ip:smartconnect:1.0\
    }
 
    if { $list_ips_missing ne "" } {
-      catch {common::send_msg_id "BD_TCL-115" "ERROR" "The following IPs are not found in the IP Catalog:\n  $list_ips_missing\n\nResolution: Please add the repository containing the IP(s) to the project." }
+      catch {common::send_gid_msg -ssname BD::TCL -id 2012 -severity "ERROR" "The following IPs are not found in the IP Catalog:\n  $list_ips_missing\n\nResolution: Please add the repository containing the IP(s) to the project." }
       set bCheckIPsPassed 0
    }
 
 }
 
 if { $bCheckIPsPassed != 1 } {
-  common::send_msg_id "BD_TCL-1003" "WARNING" "Will not continue with creation of design due to the error(s) above."
+  common::send_gid_msg -ssname BD::TCL -id 2023 -severity "WARNING" "Will not continue with creation of design due to the error(s) above."
   return 3
 }
 
@@ -169,14 +169,14 @@ proc create_root_design { parentCell } {
   # Get object for parentCell
   set parentObj [get_bd_cells $parentCell]
   if { $parentObj == "" } {
-     catch {common::send_msg_id "BD_TCL-100" "ERROR" "Unable to find parent cell <$parentCell>!"}
+     catch {common::send_gid_msg -ssname BD::TCL -id 2090 -severity "ERROR" "Unable to find parent cell <$parentCell>!"}
      return
   }
 
   # Make sure parentObj is hier blk
   set parentType [get_property TYPE $parentObj]
   if { $parentType ne "hier" } {
-     catch {common::send_msg_id "BD_TCL-101" "ERROR" "Parent <$parentObj> has TYPE = <$parentType>. Expected to be <hier>."}
+     catch {common::send_gid_msg -ssname BD::TCL -id 2091 -severity "ERROR" "Parent <$parentObj> has TYPE = <$parentType>. Expected to be <hier>."}
      return
   }
 
@@ -252,11 +252,10 @@ proc create_root_design { parentCell } {
 
 
   # Create ports
-  set clk40 [ create_bd_port -dir I -type clk clk40 ]
+  set clk40 [ create_bd_port -dir I -type clk -freq_hz 40000000 clk40 ]
   set_property -dict [ list \
    CONFIG.ASSOCIATED_BUSIF {e2c:axi_eth_dma:axi_hp:c2e} \
    CONFIG.ASSOCIATED_RESET {clk40_rstn} \
-   CONFIG.FREQ_HZ {40000000} \
  ] $clk40
   set clk40_rstn [ create_bd_port -dir I -type rst clk40_rstn ]
   set eth_rx_irq [ create_bd_port -dir O -type intr eth_rx_irq ]
@@ -301,10 +300,10 @@ proc create_root_design { parentCell } {
   connect_bd_net -net clk40_rstn [get_bd_ports clk40_rstn] [get_bd_pins axi_eth_dma/axi_resetn] [get_bd_pins smartconnect_eth_dma/aresetn]
 
   # Create address segments
-  create_bd_addr_seg -range 0x001000000000 -offset 0x00000000 [get_bd_addr_spaces axi_eth_dma/Data_SG] [get_bd_addr_segs axi_hp/Reg] SEG_m_axi_to_ps_Reg
-  create_bd_addr_seg -range 0x001000000000 -offset 0x00000000 [get_bd_addr_spaces axi_eth_dma/Data_MM2S] [get_bd_addr_segs axi_hp/Reg] SEG_m_axi_to_ps_Reg
-  create_bd_addr_seg -range 0x001000000000 -offset 0x00000000 [get_bd_addr_spaces axi_eth_dma/Data_S2MM] [get_bd_addr_segs axi_hp/Reg] SEG_m_axi_to_ps_Reg
-  create_bd_addr_seg -range 0x010000000000 -offset 0x00000000 [get_bd_addr_spaces axi_eth_dma] [get_bd_addr_segs axi_eth_dma/S_AXI_LITE/Reg] SEG_axi_eth_dma_Reg
+  assign_bd_address -offset 0x00000000 -range 0x001000000000 -target_address_space [get_bd_addr_spaces axi_eth_dma/Data_SG] [get_bd_addr_segs axi_hp/Reg] -force
+  assign_bd_address -offset 0x00000000 -range 0x001000000000 -target_address_space [get_bd_addr_spaces axi_eth_dma/Data_MM2S] [get_bd_addr_segs axi_hp/Reg] -force
+  assign_bd_address -offset 0x00000000 -range 0x001000000000 -target_address_space [get_bd_addr_spaces axi_eth_dma/Data_S2MM] [get_bd_addr_segs axi_hp/Reg] -force
+  assign_bd_address -offset 0x00000000 -range 0x010000000000 -target_address_space [get_bd_addr_spaces axi_eth_dma] [get_bd_addr_segs axi_eth_dma/S_AXI_LITE/Reg] -force
 
 
   # Restore current instance

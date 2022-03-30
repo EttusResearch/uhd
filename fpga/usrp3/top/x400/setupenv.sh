@@ -5,8 +5,8 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 #
 
-VIVADO_VER=2019.1
-VIVADO_VER_FULL=2019.1.1_AR73068
+VIVADO_VER=2021.1
+VIVADO_VER_FULL=2021.1
 DISPLAY_NAME="USRP-X4xx"
 REPO_BASE_PATH=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 
