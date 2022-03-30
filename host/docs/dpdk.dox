@@ -142,6 +142,9 @@ options:
     dpdk_driver=/usr/local/lib/x86_64-linux-gnu/dpdk/pmds-21.0/
     ;dpdk_corelist is the -l flag for the DPDK EAL. See more at the link
     ; https://doc.dpdk.org/guides-21.11/linux_gsg/build_sample_apps.html#running-a-sample-application
+    ;Note if you use multiple SFP ports in a streaming application simultaneously,
+    ;you can specify multiple cores in the core list (e.g. 0, 1, 2) and then assign
+    ;them each to the separate SFP port/NIC.
     dpdk_corelist=0,1
     ;dpdk_num_mbufs is the total number of packet buffers allocated
     ;to each direction's packet buffer pool
@@ -161,9 +164,11 @@ case, and octets must be separated by colons. Here is an example:
     [dpdk_mac=3c:fd:fe:a2:a9:09]
     ;dpdk_lcore selects the lcore that this NIC's driver will run on
     ;Multiple NICs may occupy one lcore, but the I/O thread will completely
-    ;consume that lcore's CPU. Also, 0 is reserved for the master thread (i.e.
-    ;the initial UHD thread that calls init() for DPDK). Attempting to
-    ;use it as an I/O thread will only result in hanging.
+    ;consume that lcore's CPU. When using dual SFP configuration, using a
+    ;different dpdk_lcore value for each SFP connection is recommended and
+    ;will result in better streaming performance. Also, 0 is reserved for
+    ;the master thread (i.e.the initial UHD thread that calls init() for DPDK).
+    ;Attempting to use it as an I/O thread will only result in hanging.
     ;Note also that by default, the lcore ID will be the same as the CPU ID.
     dpdk_lcore = 1
     ;dpdk_ipv4 specifies the IPv4 address, and both the address and
@@ -176,6 +181,8 @@ case, and octets must be separated by colons. Here is an example:
     dpdk_num_desc=4096
 
     [dpdk_mac=3c:fd:fe:a2:a9:0a]
+    ;Using a separate dpdk_lcore value for each SFP connection/MAC entry
+    ;can possibly result in improved streaming performance. E.g. dpdk_lcore = 2.
     dpdk_lcore = 1
     dpdk_ipv4 = 192.168.20.1/24
 

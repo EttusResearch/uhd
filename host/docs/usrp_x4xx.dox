@@ -5,7 +5,7 @@
 \section x4xx_feature_list Comparative Features List
 
 - Hardware Capabilities:
-  - Dual QSFP28 Ports (can be used with 10 GigE)
+  - Dual QSFP28 Ports (can be used with 10 GigE or 100 GigE)
   - External PPS input & output
   - External 10 MHz input
   - Internal GPSDO for timing, location, and time/frequency reference
@@ -827,7 +827,7 @@ For a list of which arguments can be passed into make(), see Section
 -----------------------|---------------------------------------------------------------------------------|---------------------
  addr                  | IPv4 address of primary SFP+ port to connect to.                                | addr=192.168.30.2
  second_addr           | IPv4 address of secondary SFP+ port to connect to.                              | second_addr=192.168.40.2
- mgmt_addr             | IPv4 address or hostname to which to connect the RPC client. Defaults to `addr'.| mgmt_addr=ni-sulfur-311FE00
+ mgmt_addr             | IPv4 address or hostname to which to connect the RPC client. Defaults to `addr'.| mgmt_addr=ni-x4xx-311FE00
  find_all              | When using broadcast, find all devices, even if unreachable via CHDR.           | find_all=1
  master_clock_rate     | Master Clock Rate in Hz.                                                        | master_clock_rate=250e6
  serialize_init        | Force serial initialization of motherboards (default is parallel)               | serialize_init=1
