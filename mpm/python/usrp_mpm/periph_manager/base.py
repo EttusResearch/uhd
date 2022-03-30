@@ -659,7 +659,7 @@ class PeriphManagerBase(object):
             self.dboards.append(db_class(dboard_idx, **dboard_info))
         self.log.info("Initialized %d daughterboard(s).", len(self.dboards))
 
-    def _add_public_methods(self, src, prefix="", filter_cb=None):
+    def _add_public_methods(self, src, prefix="", filter_cb=None, allow_overwrite=False):
         """
         Add public methods (=API) of src to self. To avoid naming conflicts and
         make relations clear, all added method names are prefixed with 'prefix'.
@@ -677,6 +677,8 @@ class PeriphManagerBase(object):
         :param prefix: method names in dest will be prefixed with prefix
         :param filter_cb: A callback that returns true if the method should be
                           added. Defaults to always returning True
+        :param allow_overwrite: If True, then methods from src will overwrite
+                                existing methods on self. Use with care.
         """
         filter_cb = filter_cb or (lambda *args: True)
         assert callable(filter_cb)
@@ -691,7 +693,7 @@ class PeriphManagerBase(object):
                      and filter_cb(name, getattr(src, name))
                      ]:
             destname = prefix + name
-            if hasattr(self, destname):
+            if hasattr(self, destname) and not allow_overwrite:
                 self.log.warn("Cannot add method {} because it would "
                               "overwrite existing method.".format(destname))
             else:

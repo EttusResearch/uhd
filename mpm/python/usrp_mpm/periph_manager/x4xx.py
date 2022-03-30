@@ -484,7 +484,8 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         self._add_public_methods(
             self._clk_mgr,
             prefix="",
-            filter_cb=lambda name, method: not hasattr(method, '_norpc')
+            filter_cb=lambda name, method: not hasattr(method, '_norpc'),
+            allow_overwrite=True
         )
 
         # Overlay must be applied after clocks have been configured
