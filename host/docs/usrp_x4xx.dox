@@ -870,7 +870,7 @@ GPS lock is reported.
 \subsection x4xx_usage_gpio Front-Panel Programmable GPIOs
 
 The USRP X410 has two HDMI front-panel connectors, which are connected to the
-FPGA. For a description of the GPIO control API, see \ref x4x0gpio_fpanel.
+FPGA. For a description of the GPIO control API, see \subpage page_x400_gpio_api.
 
 There are multiple sources that can control the state of the GPIO lines.
 UHD has the capability of controlling which source each pin is driven from.
