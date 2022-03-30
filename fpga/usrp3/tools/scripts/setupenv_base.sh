@@ -267,7 +267,7 @@ if [[ $VSIM_PATH ]]; then
     # Set MSIM_MODELSIM_INI to an empty string to use the modelsim.ini in the
     # ModelSim installation folder.
     if [[ ! -v MSIM_MODELSIM_INI ]]; then
-        export MODELSIM_INI=$SIM_COMPLIBDIR/modelsim.ini
+        export MODELSIM_INI=$(resolve_viv_path $SIM_COMPLIBDIR/modelsim.ini)
     fi
 fi
 
@@ -276,9 +276,9 @@ function build_simlibs {
     pushd $SIM_COMPLIBDIR
     CMD_PATH=`mktemp XXXXXXXX.vivado_simgen.tcl`
     if [[ $MODELSIM_64BIT -eq 1 ]]; then
-        echo "compile_simlib -force -simulator modelsim -family all -language all -library all -directory $SIM_COMPLIBDIR" > $CMD_PATH
+        echo "compile_simlib -force -simulator modelsim -family all -language all -library all -directory ." > $CMD_PATH
     else
-        echo "compile_simlib -force -simulator modelsim -family all -language all -library all -32 -directory $SIM_COMPLIBDIR" > $CMD_PATH
+        echo "compile_simlib -force -simulator modelsim -family all -language all -library all -32bit -directory ." > $CMD_PATH
     fi
     $VIVADO_EXEC -mode batch -source $(resolve_viv_path $CMD_PATH) -nolog -nojournal
     rm -f $CMD_PATH
@@ -426,6 +426,40 @@ function viv_modify_tcl_bd {
         $VIVADO_EXEC -mode gui -source $(resolve_viv_path $VIV_IP_UTILS) -nolog -nojournal -tclargs modify_bdtcl $part_name $(resolve_viv_path $src_path) $(resolve_viv_path $bd_ip_repo)
         echo "INFO: Vivado BD was closed, writing source TCL..."
         $VIVADO_EXEC -mode batch -source $(resolve_viv_path $VIV_IP_UTILS) -nolog -nojournal -tclargs write_bdtcl $part_name $(resolve_viv_path $src_path)
+    else
+        echo "ERROR: IP $src_path not found."
+        return 1
+    fi
+}
+
+function viv_upgrade_tcl_bd {
+    if [[ -z $1 || -z $2 || -z $3 ]]; then
+        echo "Upgrade an existing Vivado TCL-based Block Design instance to a newer Vivado version."
+        echo ""
+        echo "Usage: viv_modify_bd_tcl <TCL Path> <Product> <Old Vivado Path> <Mode>"
+        echo "- <TCL Path>: Path to the TCL source file."
+        echo "- <Product> : Product to generate IP for. Choose from: ${!PRODUCT_ID_MAP[@]}"
+        echo "- <Old Vivado Path> : Path to the old vivado executable, e.g. /opt/Xilinx/Vivado/2021.1/bin/vivado"
+        echo "- <Mode> : (optional) if gui, will launch old vivado in gui mode (defaults to batch)"
+        return 1
+    fi
+
+    viv_mode="batch"
+    if [ "$4" == "gui" ]; then
+        viv_mode="gui"
+    fi
+
+    src_path=$(readlink -f $1)
+    part_name=$(python3 $REPO_BASE_PATH/tools/scripts/viv_gen_part_id.py "${PRODUCT_ID_MAP[$2]}")
+    if [[ $? -ne 0 ]]; then
+        echo "ERROR: Invalid product name $2. Supported: ${!PRODUCT_ID_MAP[@]}"
+        return 1
+    fi
+    bd_ip_repo="${src_path%/top*}/lib/vivado_ipi"
+    if [[ -f $src_path ]]; then
+        $3 -mode $viv_mode -source $(resolve_viv_path $VIV_IP_UTILS) -nolog -nojournal -tclargs modify_bdtcl $part_name $(resolve_viv_path $src_path) $(resolve_viv_path $bd_ip_repo)
+        echo "INFO: Vivado BD loaded, writing updated source TCL..."
+        $VIVADO_EXEC -mode $viv_mode -source $(resolve_viv_path $VIV_IP_UTILS) -nolog -nojournal -tclargs write_bdtcl $part_name $(resolve_viv_path $src_path) upgrade
     else
         echo "ERROR: IP $src_path not found."
         return 1

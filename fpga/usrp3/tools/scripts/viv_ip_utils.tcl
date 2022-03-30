@@ -120,6 +120,11 @@ if { [string compare $cmd "create"] == 0 } {
             # Open project and BD design
             open_project "$tmp_bddir/tmp_bd.xpr"
             open_bd_design [get_files "$src_rootname.bd"]
+            if [expr $argc > 3 && [string equal [lindex $argv 3] "upgrade"]] {
+                puts "INFO: Upgrading IP"
+                upgrade_ip [get_ips *]
+                validate_bd_design
+            }
             # Rewrite TCL BD file
             write_bd_tcl -make_local -force "$src_dir/$src_rootname.tcl"
             puts "INFO: BD TCL source updated: $src_dir/$src_rootname.tcl"
