@@ -21,6 +21,9 @@
 #include <memory>
 #include <mutex>
 #include <thread>
+#ifdef HAVE_DPDK
+#include <uhdlib/transport/dpdk/common.hpp>
+#endif
 
 namespace pt = boost::posix_time;
 
@@ -243,8 +246,11 @@ public:
         {
             std::ostringstream sys_info;
             sys_info << BOOST_PLATFORM << "; " << BOOST_COMPILER << "; "
-                     << "Boost_" << BOOST_VERSION << "; " << uhd::get_component() << "_"
-                     << uhd::get_version_string();
+                     << "Boost_" << BOOST_VERSION << "; "
+#ifdef HAVE_DPDK
+                     << "DPDK_" << RTE_VER_YEAR << "." << RTE_VER_MONTH << "; "
+#endif
+                     << uhd::get_component() << "_" << uhd::get_version_string();
             _publish_log_msg(sys_info.str(), uhd::log::info, "UHD");
         }
 
