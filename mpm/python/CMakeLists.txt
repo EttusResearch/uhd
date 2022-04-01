@@ -109,38 +109,44 @@ execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
 )
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/build/lib/usrp_mpm DESTINATION ${USRP_MPM_PYTHON_DIR})
 install(PROGRAMS
-    aurora_bist_test.py
-    usrp_update_fs
     usrp_hwd.py
     DESTINATION ${RUNTIME_DIR}
 )
 
-if (ENABLE_MYKONOS)
+if(NOT ENABLE_SIM)
     install(PROGRAMS
-        n3xx_bist
+        aurora_bist_test.py
+        usrp_update_fs
         DESTINATION ${RUNTIME_DIR}
     )
-elseif (ENABLE_E320)
-    install(PROGRAMS
-        e320_bist
-        DESTINATION ${RUNTIME_DIR}
-    )
-elseif (ENABLE_X400)
-    install(PROGRAMS
-        x4xx_bist
-        DESTINATION ${RUNTIME_DIR}
-    )
-    install(PROGRAMS
-        usrp_mpm/dboard_manager/zbx_update_cpld.py
-        DESTINATION ${RUNTIME_DIR}
-        RENAME zbx_update_cpld
-    )
-    install(PROGRAMS
-        usrp_mpm/periph_manager/x4xx_update_cpld.py
-        DESTINATION ${RUNTIME_DIR}
-        RENAME x4xx_update_cpld
-    )
-endif (ENABLE_MYKONOS)
+
+    if (ENABLE_MYKONOS)
+        install(PROGRAMS
+            n3xx_bist
+            DESTINATION ${RUNTIME_DIR}
+        )
+    elseif (ENABLE_E320)
+        install(PROGRAMS
+            e320_bist
+            DESTINATION ${RUNTIME_DIR}
+        )
+    elseif (ENABLE_X400)
+        install(PROGRAMS
+            x4xx_bist
+            DESTINATION ${RUNTIME_DIR}
+        )
+        install(PROGRAMS
+            usrp_mpm/dboard_manager/zbx_update_cpld.py
+            DESTINATION ${RUNTIME_DIR}
+            RENAME zbx_update_cpld
+        )
+        install(PROGRAMS
+            usrp_mpm/periph_manager/x4xx_update_cpld.py
+            DESTINATION ${RUNTIME_DIR}
+            RENAME x4xx_update_cpld
+        )
+    endif (ENABLE_MYKONOS)
+endif()
 
 if (HAVE_MPM_TEST_PREREQS)
     add_subdirectory(tests)
