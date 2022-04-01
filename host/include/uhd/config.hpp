@@ -84,7 +84,7 @@ typedef SSIZE_T ssize_t;
 #    define UHD_ALIGNED(x) __attribute__((aligned(x)))
 #    define UHD_UNUSED(x) x __attribute__((unused))
 #    if __clang_major__ > 3 || (__clang_major__ == 3 && __clang_minor__ >= 8)
-#        define UHD_FALLTHROUGH [[clang:fallthrough]];
+#        define UHD_FALLTHROUGH [[clang::fallthrough]];
 #    else
 #        define UHD_FALLTHROUGH
 #    endif
