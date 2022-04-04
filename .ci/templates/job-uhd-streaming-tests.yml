@@ -43,6 +43,17 @@ jobs:
       archiveFilePatterns: $(Pipeline.Workspace)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}.tar.gz
       destinationFolder: $(Build.BinariesDirectory)
       cleanDestinationFolder: true
+  - script: |
+        ssh-keygen -f ~/.ssh/known_hosts -R $(dutMgmtAddr)
+        ssh -o StrictHostKeyChecking=no -tt root@$(dutMgmtAddr) "uhd_image_loader --args addr=localhost,type=$(dutType),fpga=$(dutFPGA)"
+        sleep 60
+    displayName: Flash FPGA $(dutFPGA)
+  - script: |
+      ssh-keygen -f ~/.ssh/known_hosts -R $(dutMgmtAddr)
+      ssh -o StrictHostKeyChecking=no -tt root@$(dutMgmtAddr) "ethtool -A sfp0 tx on"
+      ssh -o StrictHostKeyChecking=no -tt root@$(dutMgmtAddr) "ethtool -A sfp1 tx on"
+    displayName: Enable Tx Pause Frames on sfp0 and sfp1
+    condition: and(succeeded(), eq(variables.dutType, 'x4xx'), eq(variables.dutFPGA, 'CG_400'))
   # - script: |
   #     cd ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
   #     sudo ./setup.sh --auto

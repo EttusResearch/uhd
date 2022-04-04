@@ -7,7 +7,7 @@ dut_type_list = [
    "E320",
    "X310",
    "X310_TwinRx",
-   "X410"
+   "x4xx"
 ]
 
 
