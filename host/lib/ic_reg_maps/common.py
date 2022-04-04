@@ -65,6 +65,22 @@ public:
         % endfor
     }
 
+    % for reg in regs:
+        % if reg.is_array:
+    std::vector<${reg.get_type()}> get_state_${reg.get_name()}(void){
+        if (_state == NULL) throw uhd::runtime_error("no saved state");
+        return _state->${reg.get_name()};
+    }
+
+        % else:
+    ${reg.get_type()} get_state_${reg.get_name()}(void){
+        if (_state == NULL) throw uhd::runtime_error("no saved state");
+        return _state->${reg.get_name()};
+    }
+
+        % endif
+    % endfor
+
     template<typename T> std::set<T> get_changed_addrs(void){
         if (_state == NULL) throw uhd::runtime_error("no saved state");
         //check each register for changes
@@ -162,6 +178,14 @@ class ${name}_t:
         self._state.${reg.get_name()} = self.${reg.get_name()}
             % endif
         % endfor
+
+    % for reg in regs:
+    def get_state_${reg.get_name()}(self):
+        if self._state is None:
+            raise RuntimeError("No saved state")
+        return self._state.${reg.get_name()}
+
+    %endfor
 
     def get_changed_addrs(self):
         if self._state is None:
