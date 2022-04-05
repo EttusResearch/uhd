@@ -19,6 +19,11 @@ parameters:
     - 'smoke'
     - 'full'
     - 'stress'
+- name: uhdArtifactSource
+  type: string
+  default: current
+- name: xilinxLocation
+  type: string
 
 jobs:
 - job: uhd_streaming_tests_${{ parameters.suiteName }}
@@ -35,23 +40,93 @@ jobs:
   steps:
   - checkout: self
     clean: true
-  - download: current
+
+  - checkout: meta-ettus
+    clean: true
+
+  - script: |
+      if [ "${{ parameters.uhdArtifactSource }}" = "current" ]; then
+        echo '##vso[task.setvariable variable=uhd_artifact_directory]'$(Agent.BuildDirectory)
+      else
+        echo '##vso[task.setvariable variable=uhd_artifact_directory]'$(Agent.BuildDirectory)/${{ parameters.uhdArtifactSource }}
+      fi
+    displayName: Set uhddev pipeline artifact location
+
+  - script: |
+      rm -rf $(uhd_artifact_directory)/$(dutEmbeddedImagesArtifact)
+      rm -rf $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
+    displayName: Cleanup from prior run
+
+  - download: ${{ parameters.uhdArtifactSource }}
+    artifact: $(dutEmbeddedImagesArtifact)
+    displayName: Download $(dutEmbeddedImagesArtifact)
+
+  - task: ExtractFiles@1
+    inputs:
+      archiveFilePatterns: $(uhd_artifact_directory)/$(dutEmbeddedImagesArtifact)/u-boot-jtag-files.zip
+      destinationFolder: $(uhd_artifact_directory)/$(dutEmbeddedImagesArtifact)
+      cleanDestinationFolder: false
+      overwriteExistingFiles: true
+    displayName: Extract JTAG artifact
+
+  - download: ${{ parameters.uhdArtifactSource }}
     artifact: uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
-    displayName: download pipeline artifact ${{ parameters.testOS }}-${{ parameters.toolset }}
+    displayName: Download uhddev-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+
   - task: ExtractFiles@1
     inputs:
       archiveFilePatterns: $(Pipeline.Workspace)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}.tar.gz
       destinationFolder: $(Build.BinariesDirectory)
       cleanDestinationFolder: true
+    displayName: Extract uhddev-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+
   - script: |
-        ssh-keygen -f ~/.ssh/known_hosts -R $(dutMgmtAddr)
-        ssh -o StrictHostKeyChecking=no -tt root@$(dutMgmtAddr) "uhd_image_loader --args addr=localhost,type=$(dutType),fpga=$(dutFPGA)"
+      cd $(Agent.TempDirectory)
+      python3 -m venv venv
+      source venv/bin/activate
+      echo '##vso[task.setvariable variable=USRP_EMB_VENV]'$(realpath venv)
+      echo '##vso[task.setvariable variable=USRP_EMB_IMAGE_PATH]'$(uhd_artifact_directory)/$(dutEmbeddedImagesArtifact)
+      echo '##vso[task.setvariable variable=USRP_EMB_FTDI_SERIAL]'$(uartSerial)
+      python3 -m pip install -U pip
+      pip3 install wheel
+      pip3 install --upgrade $(Build.SourcesDirectory)/meta-ettus-dev/contrib/test/usrp_emb
+    displayName: Create usrp_emb venv
+
+  - script: |
+      source ${{ parameters.xilinxLocation }}/settings64.sh
+      source $USRP_EMB_VENV/bin/activate
+      usrp_emb_x4xx_mender_update
+    displayName: Update device using Mender
+
+  - script: |
+      source $USRP_EMB_VENV/bin/activate
+      USRP_EMB_TARGET_IP=$(usrp_emb_x4xx_boot_linux)
+      echo Target IP is $USRP_EMB_TARGET_IP
+      echo '##vso[task.setvariable variable=USRP_EMB_TARGET_IP]'$USRP_EMB_TARGET_IP
+    displayName: Boot target, get mgmt IP
+
+  # Setting the timezone on the embedded device is
+  # required to make the test runtimes to look sane.
+  - script: |
+      export HOST_TIME_ZONE=$(cat /etc/timezone)
+      ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "timedatectl set-timezone $HOST_TIME_ZONE"
+    displayName: Set timezone to Host
+
+  - script: |
+        sleep 60
+    displayName: Wait for device to finish booting
+
+  - script: |
+        ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
+        ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "uhd_image_loader --args addr=localhost,type=$(dutType),fpga=$(dutFPGA)"
         sleep 60
     displayName: Flash FPGA $(dutFPGA)
+
   - script: |
-      ssh-keygen -f ~/.ssh/known_hosts -R $(dutMgmtAddr)
-      ssh -o StrictHostKeyChecking=no -tt root@$(dutMgmtAddr) "ethtool -A sfp0 tx on"
-      ssh -o StrictHostKeyChecking=no -tt root@$(dutMgmtAddr) "ethtool -A sfp1 tx on"
+      ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ethtool -A sfp0 tx on"
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ethtool -A sfp1 tx on"
     displayName: Enable Tx Pause Frames on sfp0 and sfp1
     condition: and(succeeded(), eq(variables.dutType, 'x4xx'), eq(variables.dutFPGA, 'CG_400'))
   # - script: |
@@ -64,7 +139,7 @@ jobs:
   #     export PYTHONPATH=${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
   #     cd ${{ parameters.uhdSrcDir }}/host/tests/pytests
   #     sudo python3 -m pytest -s test_streaming.py -m "not dpdk" --dut_type $(dutType) --test_length ${{ parameters.testLength }} \
-  #       --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $(dutMgmtAddr) \
+  #       --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $USRP_EMB_TARGET_IP \
   #       --uhd_build_dir $(Build.BinariesDirectory)/uhddev/build --junitxml $(Common.TestResultsDirectory)/TEST-$(dutName).xml
   #   continueOnError: true
   #   displayName: Run streaming tests on $(dutName)
@@ -80,7 +155,7 @@ jobs:
       # Disable creation of __pycache__ files using -B to avoid errors on clean up during next run
       # as using sudo below creates them with root priveleges.
       sudo --preserve-env=PYTHONPATH python3 -B -m pytest -s test_streaming.py -m "dpdk" --dut_type $(dutType) --test_length ${{ parameters.testLength }} \
-        --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $(dutMgmtAddr) \
+        --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $USRP_EMB_TARGET_IP \
         --uhd_build_dir $(Build.BinariesDirectory)/uhddev/build --junitxml $(Common.TestResultsDirectory)/TEST-$(dutName)-dpdk.xml
     continueOnError: true
     displayName: Run streaming tests with DPDK on $(dutName)
