@@ -32,7 +32,7 @@ Vcs-Git: https://github.com/EttusResearch/uhd.git
 
 Package: uhd-host
 Architecture: any
-Depends: libuhd4.1.0 (= ${binary:Version}),
+Depends: libuhd4.2.0 (= ${binary:Version}),
          python3-requests,
          python3-ruamel.yaml,
          ${misc:Depends},
@@ -52,7 +52,7 @@ Description: hardware driver for Ettus Research products - host apps
  display hardware configuration information, and Doxygen generated
  documentation.
 
-Package: libuhd4.1.0
+Package: libuhd4.2.0
 Architecture: any
 Section: libs
 Pre-Depends: ${misc:Pre-Depends}
@@ -70,7 +70,7 @@ Description: hardware driver for Ettus Research products
 Package: libuhd-dev
 Architecture: any
 Section: libdevel
-Depends: libuhd4.1.0 (= ${binary:Version}), ${misc:Depends}, ${shlibs:Depends}
+Depends: libuhd4.2.0 (= ${binary:Version}), ${misc:Depends}, ${shlibs:Depends}
 Recommends: gnuradio-dev
 Suggests: uhd-doc
 Description: universal hardware driver for Ettus Research products
@@ -86,7 +86,7 @@ Description: universal hardware driver for Ettus Research products
 Package: python3-uhd
 Architecture: alpha amd64 arm64 armel armhf hppa i386 ia64 m68k mips64el ppc64 ppc64el riscv64 s390x sparc64 x32
 Section: libdevel
-Depends: libuhd4.1.0 (= ${binary:Version}),
+Depends: libuhd4.2.0 (= ${binary:Version}),
          python3-ruamel.yaml,
          python3-numpy,
          ${misc:Depends},
@@ -94,7 +94,7 @@ Depends: libuhd4.1.0 (= ${binary:Version}),
          ${shlibs:Depends}
 Recommends: gnuradio
 Suggests: uhd-doc
-Conflicts: uhd-host (<= 4.2.0.4-6)
+Conflicts: uhd-host (<= 4.1.0.4-0)
 Description: universal hardware driver for Ettus Research products - Python3
  Host library for the Universal Hardware Driver for Ettus Research products.
  .
@@ -107,8 +107,8 @@ Description: universal hardware driver for Ettus Research products - Python3
 Package: uhd-doc
 Architecture: all
 Depends: ${misc:Depends}, libjs-mathjax
-Breaks: uhd-host (<< 4.0.0.0-3)
-Replaces: uhd-host (<< 4.0.0.0)
+Breaks: uhd-host (<< 4.1.0.4-0)
+Replaces: uhd-host (<< 4.1.0.4)
 Description: universal hardware driver for Ettus Research products - doc
  Detailed documentation for the Universal Hardware Driver.
  .
