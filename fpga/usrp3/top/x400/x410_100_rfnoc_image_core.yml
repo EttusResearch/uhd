@@ -34,19 +34,19 @@ stream_endpoints:
   ep4:
     ctrl: False
     data: True
-    buff_size_bytes: 16384
+    buff_size_bytes: 32768
   ep5:
     ctrl: False
     data: True
-    buff_size_bytes: 16384
+    buff_size_bytes: 32768
   ep6:
     ctrl: False
     data: True
-    buff_size_bytes: 16384
+    buff_size_bytes: 32768
   ep7:
     ctrl: False
     data: True
-    buff_size_bytes: 16384
+    buff_size_bytes: 32768
 
 # A list of all NoC blocks in design
 # ----------------------------------
