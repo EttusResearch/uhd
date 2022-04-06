@@ -263,8 +263,9 @@ private:
     /*! Forward all edge properties from this node (\p origin) to the
      * neighbouring ones
      *
+     * \param forward true for forward edges, false for back-edges
      */
-    void _forward_edge_props(rfnoc_graph_t::vertex_descriptor origin);
+    void _forward_edge_props(rfnoc_graph_t::vertex_descriptor origin, const bool forward);
 
     /*! Check that the edge properties on both sides of the edge are equal
      *

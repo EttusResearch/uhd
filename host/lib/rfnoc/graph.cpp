@@ -364,7 +364,7 @@ void graph_t::resolve_all_properties(
         //  Forward all edge props in all directions from current node. We make
         //  sure to skip properties if the edge is flagged as
         //  !property_propagation_active
-        _forward_edge_props(*node_it);
+        _forward_edge_props(*node_it, true);
 
         // Now mark all properties on this node as clean
         node_accessor.clean_props(current_node);
@@ -604,7 +604,8 @@ void graph_t::_remove_node(node_ref_t node)
 }
 
 
-void graph_t::_forward_edge_props(graph_t::rfnoc_graph_t::vertex_descriptor origin)
+void graph_t::_forward_edge_props(
+    graph_t::rfnoc_graph_t::vertex_descriptor origin, const bool forward)
 {
     node_accessor_t node_accessor{};
     node_ref_t origin_node = boost::get(vertex_property_t(), _graph, origin);
@@ -615,12 +616,13 @@ void graph_t::_forward_edge_props(graph_t::rfnoc_graph_t::vertex_descriptor orig
     });
     UHD_LOG_TRACE(LOG_ID,
         "Forwarding up to " << edge_props.size() << " edge properties from node "
-                            << origin_node->get_unique_id());
+                            << origin_node->get_unique_id() << " along "
+                            << (forward ? "forward" : "back") << " edges.");
 
     for (auto prop : edge_props) {
         auto neighbour_node_info = _find_neighbour(origin, prop->get_src_info());
         if (neighbour_node_info.first != nullptr
-            && neighbour_node_info.second.property_propagation_active) {
+            && neighbour_node_info.second.property_propagation_active == forward) {
             const size_t neighbour_port = prop->get_src_info().type
                                                   == res_source_info::INPUT_EDGE
                                               ? neighbour_node_info.second.src_port
