@@ -279,6 +279,9 @@ private:
     /**************************************************************************
      * Private attributes
      *************************************************************************/
+    //! MPM Compatibility number {MAJOR, MINOR}
+    std::vector<size_t> _mpm_compat_num;
+
     //! Locks access to setter APIs
     std::recursive_mutex _set_lock;
 
@@ -345,6 +348,7 @@ private:
     //! Low band enable
     std::map<direction_t, bool> _is_low_band = {
         {RX_DIRECTION, false}, {TX_DIRECTION, false}};
+
     //! AD9371 gain
     double _ad9371_rx_gain                    = 0.0;
     double _ad9371_tx_gain                    = 0.0;

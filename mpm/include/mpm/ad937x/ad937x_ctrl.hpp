@@ -184,7 +184,12 @@ public:
      */
     virtual std::string get_arm_version() = 0;
 
-    //! set the BW filter for the frontend which
+    /*! \brief set the BW filter for the frontend which
+     *
+     * \param which frontend string (rx, tx, dx)
+     * \param value target rf bandwidth value
+     * return actual rf bandwidth value
+     */
     virtual double set_bw_filter(const std::string& which, const double value) = 0;
 
     /*! \brief set the gain for the frontend which

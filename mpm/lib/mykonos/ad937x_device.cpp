@@ -10,6 +10,7 @@
 #include "adi/mykonos_gpio.h"
 #include "config/ad937x_config_t.hpp"
 #include "config/ad937x_default_config.hpp"
+#include <uhd/utils/algorithm.hpp>
 #include <boost/format.hpp>
 #include <cmath>
 #include <fstream>
@@ -38,6 +39,23 @@ static const double TX_DEFAULT_GAIN = 0;
 static const uint32_t AD9371_PRODUCT_ID      = 0x3;
 static const uint32_t AD9371_XBCZ_PRODUCT_ID = 0x1;
 static const size_t ARM_BINARY_SIZE          = 98304;
+
+/* Values derived from AD937x filter wizard tool
+ * https://github.com/analogdevicesinc/ad937x-filter-wizard/blob/
+ *      3e407b059be92fe65c4a32d5368fe4cdc491b1a1/profilegen/generate_RxORxPFIR.m#L130
+ * https://github.com/analogdevicesinc/ad937x-filter-wizard/blob/
+ *      3e407b059be92fe65c4a32d5368fe4cdc491b1a1/profilegen/generate_TxPFIR.m#L42
+ */
+static constexpr double AD9371_RX_MIN_BANDWIDTH       = 8e6; // Hz
+static constexpr double AD9371_RX_MAX_BANDWIDTH       = 100e6; // Hz
+static constexpr double AD9371_RX_BBF_MIN_CORNER      = 20e6; // Hz
+static constexpr double AD9371_RX_BBF_MAX_CORNER      = 100e6; // Hz
+static constexpr double AD9371_TX_MIN_BANDWIDTH       = 20e6; // Hz
+static constexpr double AD9371_TX_MAX_BANDWIDTH       = 125e6; // Hz
+static constexpr double AD9371_TX_BBF_MIN_CORNER      = 20e6; // Hz
+static constexpr double AD9371_TX_BBF_MAX_CORNER      = 125e6; // Hz
+static constexpr double AD9371_TX_DAC_FILT_MIN_CORNER = 92.0e6; // Hz
+static constexpr double AD9371_TX_DAC_FILT_MAX_CORNER = 187.0e6; // Hz
 
 static const uint32_t PLL_LOCK_TIMEOUT_MS = 200;
 
@@ -548,25 +566,30 @@ double ad937x_device::tune(
 
 double ad937x_device::set_bw_filter(const direction_t direction, const double value)
 {
+    auto bw = value;
     switch (direction) {
         case TX_DIRECTION: {
-            mykonos_config.device->tx->txProfile->rfBandwidth_Hz     = value;
-            mykonos_config.device->tx->txProfile->txBbf3dBCorner_kHz = value / 1000;
-            mykonos_config.device->tx->txProfile->txDac3dBCorner_kHz = value / 1000;
+            bw = uhd::clip(value, AD9371_TX_MIN_BANDWIDTH, AD9371_TX_MAX_BANDWIDTH);
+            const auto bbf =
+                uhd::clip(bw, AD9371_TX_BBF_MIN_CORNER, AD9371_TX_BBF_MAX_CORNER);
+            mykonos_config.device->tx->txProfile->rfBandwidth_Hz     = bw;
+            mykonos_config.device->tx->txProfile->txBbf3dBCorner_kHz = bbf / 1000;
+            const auto dacCorner                                     = uhd::clip(
+                bw, AD9371_TX_DAC_FILT_MIN_CORNER, AD9371_TX_DAC_FILT_MAX_CORNER);
+            mykonos_config.device->tx->txProfile->txDac3dBCorner_kHz = dacCorner / 1000;
             break;
         }
         case RX_DIRECTION: {
-            mykonos_config.device->rx->rxProfile->rfBandwidth_Hz     = value;
-            mykonos_config.device->rx->rxProfile->rxBbf3dBCorner_kHz = value / 1000;
+            bw = uhd::clip(value, AD9371_RX_MIN_BANDWIDTH, AD9371_RX_MAX_BANDWIDTH);
+            const auto bbf =
+                uhd::clip(bw, AD9371_RX_BBF_MIN_CORNER, AD9371_RX_BBF_MAX_CORNER);
+            mykonos_config.device->rx->rxProfile->rfBandwidth_Hz     = bw;
+            mykonos_config.device->rx->rxProfile->rxBbf3dBCorner_kHz = bbf / 1000;
             break;
         }
     }
-    const auto state = _move_to_config_state();
-    CALL_API(MYKONOS_writeArmProfile(mykonos_config.device));
-    _restore_from_config_state(state);
-    return value; // TODO: what is coercer value?
+    return bw;
 }
-
 
 double ad937x_device::set_gain(
     const direction_t direction, const chain_t chain, const double value)

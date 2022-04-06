@@ -464,6 +464,10 @@ class MagnesiumInitManager(object):
         jesdcore.send_sysref_pulse()
         time.sleep(0.001) # 17us... ish.
         jesdcore.send_sysref_pulse()
+        if args.get('tx_bw'):
+            self.mykonos.set_bw_filter('TX', args.get('tx_bw'))
+        if args.get('rx_bw'):
+            self.mykonos.set_bw_filter('RX', args.get('rx_bw'))
         async_exec(self.mykonos, "finish_initialization")
         # According to the AD9371 user guide, p.57, the RF cal must come before
         # the framer/deframer init. We tried otherwise, and failed. So don't

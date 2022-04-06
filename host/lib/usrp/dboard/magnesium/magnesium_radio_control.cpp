@@ -122,6 +122,8 @@ magnesium_radio_control_impl::magnesium_radio_control_impl(make_args_ptr make_ar
     UHD_ASSERT_THROW(_n3xx_timekeeper);
     _rpcc = _n310_mb_control->get_rpc_client();
     UHD_ASSERT_THROW(_rpcc);
+    _mpm_compat_num = _rpcc->request<std::vector<size_t>>("get_mpm_compat_num");
+    UHD_ASSERT_THROW(_mpm_compat_num.size() == 2);
 
     _init_defaults();
     _init_mpm();
@@ -356,28 +358,79 @@ double magnesium_radio_control_impl::set_rx_frequency(
     return radio_control_impl::get_rx_frequency(chan);
 }
 
-double magnesium_radio_control_impl::set_rx_bandwidth(
-    const double bandwidth, const size_t chan)
-{
-    std::lock_guard<std::recursive_mutex> l(_set_lock);
-    _ad9371->set_bandwidth(bandwidth, chan, RX_DIRECTION);
-    // FIXME: setting analog bandwidth on AD9371 take no effect.
-    // Remove this warning when ADI can confirm that it works.
-    RFNOC_LOG_WARNING("set_rx_bandwidth take no effect on AD9371. "
-                      "Default analog bandwidth is 100MHz");
-    return AD9371_RX_MAX_BANDWIDTH;
-}
-
 double magnesium_radio_control_impl::set_tx_bandwidth(
     const double bandwidth, const size_t chan)
 {
     std::lock_guard<std::recursive_mutex> l(_set_lock);
-    _ad9371->set_bandwidth(bandwidth, chan, TX_DIRECTION);
-    // FIXME: setting analog bandwidth on AD9371 take no effect.
-    // Remove this warning when ADI can confirm that it works.
-    RFNOC_LOG_WARNING("set_tx_bandwidth take no effect on AD9371. "
-                      "Default analog bandwidth is 100MHz");
-    return AD9371_TX_MAX_BANDWIDTH;
+
+    if (_mpm_compat_num[0] < 4 || (_mpm_compat_num[0] == 4 && _mpm_compat_num[1] < 1)) {
+        RFNOC_LOG_WARNING("Setting tx bandwidth not supported. Please upgrade MPM to a "
+                          "minimum version of 4.1.");
+        radio_control_impl::set_tx_bandwidth(bandwidth, 1 - chan);
+        return radio_control_impl::set_tx_bandwidth(bandwidth, chan);
+    }
+
+    const auto curr_bw = get_tx_bandwidth(chan);
+    if (fp_compare_epsilon<double>(curr_bw) == bandwidth) {
+        return curr_bw;
+    }
+
+    // TX frontend components should be deactivated before running init_cals
+    const auto tx_atr_bits =
+        _cpld->get_tx_atr_bits(magnesium_cpld_ctrl::BOTH, magnesium_cpld_ctrl::IDLE);
+    _reset_tx_frontend(magnesium_cpld_ctrl::BOTH);
+
+    RFNOC_LOG_INFO(
+        "Re-initializing dboard to apply bandwidth settings. This may take some time.");
+    const auto ret = _ad9371->set_bandwidth(bandwidth, chan, TX_DIRECTION);
+    RFNOC_LOG_INFO("Bandwidth settings applied: " + std::to_string(ret));
+
+    // Restore TX frontend components to previous state
+    _cpld->set_tx_atr_bits(
+        magnesium_cpld_ctrl::BOTH, magnesium_cpld_ctrl::IDLE, tx_atr_bits);
+
+    // Save the updated bandwidth settings for both channels
+    radio_control_impl::set_tx_bandwidth(bandwidth, 1 - chan);
+    return radio_control_impl::set_tx_bandwidth(ret, chan);
+}
+
+double magnesium_radio_control_impl::set_rx_bandwidth(
+    const double bandwidth, const size_t chan)
+{
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
+
+    if (_mpm_compat_num[0] < 4 || (_mpm_compat_num[0] == 4 && _mpm_compat_num[1] < 1)) {
+        RFNOC_LOG_WARNING("Setting rx bandwidth not supported. Please upgrade MPM to a "
+                          "minimum version of 4.1.");
+        radio_control_impl::set_rx_bandwidth(bandwidth, 1 - chan);
+        return radio_control_impl::set_rx_bandwidth(bandwidth, chan);
+    }
+
+    const auto curr_bw = get_rx_bandwidth(chan);
+    if (fp_compare_epsilon<double>(curr_bw) == bandwidth) {
+        return curr_bw;
+    }
+
+    // TX frontend components should be deactivated before running init_cals
+    //
+    // We want to avoid any TX signals coming out of the frontend. This is
+    // necessary even during RX calibration.
+    const auto tx_atr_bits =
+        _cpld->get_tx_atr_bits(magnesium_cpld_ctrl::BOTH, magnesium_cpld_ctrl::IDLE);
+    _reset_tx_frontend(magnesium_cpld_ctrl::BOTH);
+
+    RFNOC_LOG_INFO(
+        "Re-initializing dboard to apply bandwidth settings. This may take some time.");
+    const auto ret = _ad9371->set_bandwidth(bandwidth, chan, RX_DIRECTION);
+    RFNOC_LOG_INFO("Bandwidth settings applied: " + std::to_string(ret));
+
+    // Restore TX frontend components to previous state
+    _cpld->set_tx_atr_bits(
+        magnesium_cpld_ctrl::BOTH, magnesium_cpld_ctrl::IDLE, tx_atr_bits);
+
+    // Save the updated bandwidth settings for both channels
+    radio_control_impl::set_rx_bandwidth(bandwidth, 1 - chan);
+    return radio_control_impl::set_rx_bandwidth(ret, chan);
 }
 
 double magnesium_radio_control_impl::set_tx_gain(const double gain, const size_t chan)
