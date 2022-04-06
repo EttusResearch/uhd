@@ -385,8 +385,9 @@ BOOST_AUTO_TEST_CASE(test_graph_ro_prop)
     const size_t rx_rssi_resolver_count = mock_rx_radio.rssi_resolver_count;
     UHD_LOG_INFO("TEST", "Now testing mock RSSI resolver/get prop");
     UHD_LOG_DEBUG("TEST", "RX RSSI: " << mock_rx_radio.get_property<double>("rssi"));
-    // The next value must match the value in graph.cpp
-    BOOST_CHECK_EQUAL(rx_rssi_resolver_count + 1, mock_rx_radio.rssi_resolver_count);
+    // The next value must match the value in graph.cpp. We have one additional
+    // backward- and forward resolution.
+    BOOST_CHECK_EQUAL(rx_rssi_resolver_count + 2, mock_rx_radio.rssi_resolver_count);
 }
 
 BOOST_AUTO_TEST_CASE(test_graph_double_connect)

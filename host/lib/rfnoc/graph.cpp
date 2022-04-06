@@ -287,7 +287,6 @@ void graph_t::resolve_all_properties(
         return;
     }
 
-    node_accessor_t node_accessor{};
     // We can't release during property propagation, so we lock this entire
     // method to make sure that a) different threads can't interfere with each
     // other, and b) that we don't release the graph while this method is still
@@ -297,6 +296,7 @@ void graph_t::resolve_all_properties(
         return;
     }
     if (_release_count) {
+        node_accessor_t node_accessor{};
         node_ref_t current_node = boost::get(vertex_property_t(), _graph, initial_node);
         UHD_LOG_TRACE(LOG_ID,
             "Only resolving node " << current_node->get_unique_id()
@@ -307,6 +307,19 @@ void graph_t::resolve_all_properties(
         node_accessor.clean_props(current_node);
         return;
     }
+
+    UHD_LOG_TRACE(LOG_ID, "Running forward edge property propagation...");
+    _resolve_all_properties(context, initial_node, true);
+    UHD_LOG_TRACE(LOG_ID, "Running backward edge property propagation...");
+    _resolve_all_properties(context, initial_node, false);
+}
+
+
+void graph_t::_resolve_all_properties(resolve_context context,
+    rfnoc_graph_t::vertex_descriptor initial_node,
+    const bool forward)
+{
+    node_accessor_t node_accessor{};
 
     // First, find the node on which we'll start.
     auto initial_dirty_nodes = _find_dirty_nodes();
@@ -364,7 +377,7 @@ void graph_t::resolve_all_properties(
         //  Forward all edge props in all directions from current node. We make
         //  sure to skip properties if the edge is flagged as
         //  !property_propagation_active
-        _forward_edge_props(*node_it, true);
+        _forward_edge_props(*node_it, forward);
 
         // Now mark all properties on this node as clean
         node_accessor.clean_props(current_node);
@@ -412,7 +425,7 @@ void graph_t::resolve_all_properties(
     }
 
     // Post-iteration sanity checks:
-    // First, we make sure that there are no dirty properties left. If there are,
+    // Make sure that there are no dirty properties left. If there are,
     // that means our algorithm couldn't converge and we have a problem.
     auto remaining_dirty_nodes = _find_dirty_nodes();
     if (!remaining_dirty_nodes.empty()) {
@@ -428,21 +441,6 @@ void graph_t::resolve_all_properties(
             }
         }
         throw uhd::resolve_error("Could not resolve properties.");
-    }
-
-    // Second, go through edges marked !property_propagation_active and make
-    // sure that they match up
-    BackEdgePredicate back_edge_filter(_graph);
-    auto e_iterators =
-        boost::edges(boost::filtered_graph<rfnoc_graph_t, BackEdgePredicate>(
-            _graph, back_edge_filter));
-    bool back_edges_valid = true;
-    for (auto e_it = e_iterators.first; e_it != e_iterators.second; ++e_it) {
-        back_edges_valid = back_edges_valid && _assert_edge_props_consistent(*e_it);
-    }
-    if (!back_edges_valid) {
-        throw uhd::resolve_error(
-            "Error during property resolution: Back-edges inconsistent!");
     }
 }
 

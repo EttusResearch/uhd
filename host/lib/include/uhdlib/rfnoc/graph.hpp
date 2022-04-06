@@ -166,13 +166,20 @@ private:
     /**************************************************************************
      * The Algorithm
      *************************************************************************/
-    /*! Implementation of the property propagation algorithm
-     */
     void resolve_all_properties(uhd::rfnoc::resolve_context context,
         rfnoc_graph_t::vertex_descriptor initial_node);
 
     void resolve_all_properties(uhd::rfnoc::resolve_context context,
         node_ref_t initial_node);
+
+    /*! This is the real implementation of the property propagation algorithm.
+     *
+     * This method must only be called from resolve_all_properties(). It assumes
+     * that sanity checks have run, and that the graph mutex is being held.
+     */
+    void _resolve_all_properties(uhd::rfnoc::resolve_context context,
+        rfnoc_graph_t::vertex_descriptor initial_node,
+        const bool forward);
 
     /**************************************************************************
      * Action API

@@ -345,24 +345,28 @@ Consider the following graph:
 In this application, we receive a signal, use the DDC block to correct a
 frequency offset digitally, and then apply some custom DSP before transmitting
 the signal again, using the same radio block. In order to create a valid graph
-that UHD can handle, one of the edges needs to be declared a back edge.
+that UHD can handle, one of the edges needs to be declared a back-edge.
 
-Edge properties are not propagated across back edges. However, they must still
-match up after property resolution is done. For example, if the DDC were to be
+When declaring an edge as a back-edge, this signals to UHD that this edge should
+not be used for viewing the graph as a directed, acyclic graph (DAG), which is
+important during property propagation. In the graph above, UHD would sort blocks
+topologically (Radio Block, DDC Block, Custom DSP Block) by ignoring back-edges.
+Then, properties are forwarded in topological order first across forward edges,
+then across back edges.
+
+This can lead to resolution errors.  For example, if the DDC were to be
 configured to decimate the sampling rate, and the custom DSP block would not
 correct for that, the output edge property `samp_rate` of the custom DSP block
 would be mismatched compared to the input edge property `samp_rate` of the radio.
-In that case, UHD will throw an exception when trying to resolve properties,
-even if it is declared a back-edge.
+This could either re-trigger a new cascade of property settings, which means
+the algorithm can't converge, and UHD would detect that and throw an exception.
+Or the radio block might not accept a sample rate update on its input port,
+which would also trigger an exception.
 
-Note that property propagation along edges is required for certain operations.
-Therefore, it is highly recommended to not declare edges as back-edges unless
+It is highly recommended to not declare edges as back-edges unless
 necessary. In the graph above, any of the three edges could have been declared
 a back-edge to result in a topologically valid graph that can still resolve its
-properties, but the one chosen is the most intuitive selection. If any *two*
-edges were declared back-edges, at least one of the DDC or Custom DSP blocks
-might cease to function, e.g., because it doesn't have access to the tick rate
-property.
+properties, but the one chosen is the most intuitive selection.
 
 \section props_unknown Handling unknown properties
 
