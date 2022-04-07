@@ -15,6 +15,7 @@
 #include <uhdlib/rfnoc/prop_accessor.hpp>
 #include <boost/test/unit_test.hpp>
 #include <iostream>
+#include <algorithm>
 
 /*! Mock invalid node
  *
@@ -653,4 +654,113 @@ BOOST_AUTO_TEST_CASE(test_graph_node_deletion_resolver_fix)
     mock_ddc.set_property<int>("decim", disconnected_interp_ratio, 0);
     BOOST_CHECK_EQUAL(mock_ddc._samp_rate_in.get() / disconnected_interp_ratio,
         mock_ddc._samp_rate_out.get());
+}
+
+
+BOOST_AUTO_TEST_CASE(test_graph_node_loop_resolve)
+{
+    // Mock the radio with only the AIS property. It will keep AIS at a multiple
+    // of 4.
+    class mock_radio_ais_node_t : public node_t
+    {
+    public:
+        mock_radio_ais_node_t()
+        {
+            register_property(&_ais_in);
+            register_property(&_ais_out);
+
+            add_property_resolver({&_ais_in}, {&_ais_in}, [this]() {
+                _ais_in = std::max<size_t>(4, (_ais_in.get() / 4) * 4);
+            });
+            add_property_resolver({&_ais_out}, {&_ais_out}, [this]() {
+                _ais_out = std::max<size_t>(4, (_ais_out.get() / 4) * 4);
+            });
+        }
+
+        std::string get_unique_id() const override
+        {
+            return "MOCK_RADIO_AIS_NODE";
+        }
+
+        size_t get_num_input_ports() const override
+        {
+            return 1;
+        }
+
+        size_t get_num_output_ports() const override
+        {
+            return 1;
+        }
+
+    private:
+        property_t<size_t> _ais_in{
+            PROP_KEY_ATOMIC_ITEM_SIZE, 4, {res_source_info::INPUT_EDGE}};
+        property_t<size_t> _ais_out{
+            PROP_KEY_ATOMIC_ITEM_SIZE, 8, {res_source_info::OUTPUT_EDGE}};
+    };
+
+    // Mock the replay with only the AIS property. It will keep AIS at exactly 8.
+    class mock_replay_ais_node_t : public node_t
+    {
+    public:
+        mock_replay_ais_node_t()
+        {
+            register_property(&_ais_in);
+            register_property(&_ais_out);
+
+            add_property_resolver({&_ais_in}, {&_ais_in}, [this]() {
+                _ais_in = 8;
+            });
+            add_property_resolver({&_ais_out}, {&_ais_out}, [this]() {
+                _ais_out = 8;
+            });
+        }
+
+        std::string get_unique_id() const override
+        {
+            return "MOCK_REPLAY_AIS_NODE";
+        }
+
+        size_t get_num_input_ports() const override
+        {
+            return 1;
+        }
+
+        size_t get_num_output_ports() const override
+        {
+            return 1;
+        }
+
+    private:
+        property_t<size_t> _ais_in{
+            PROP_KEY_ATOMIC_ITEM_SIZE, 4, {res_source_info::INPUT_EDGE}};
+        property_t<size_t> _ais_out{
+            PROP_KEY_ATOMIC_ITEM_SIZE, 8, {res_source_info::OUTPUT_EDGE}};
+    };
+
+    // Now let's define things
+    node_accessor_t node_accessor{};
+    uhd::rfnoc::detail::graph_t graph{};
+
+    // Create mock blocks
+    mock_radio_ais_node_t mock_radio_ais_node{};
+    mock_replay_ais_node_t mock_replay_ais_node{};
+
+    // These init calls would normally be done by the framework
+    node_accessor.init_props(&mock_radio_ais_node);
+    node_accessor.init_props(&mock_replay_ais_node);
+
+    // Connect the radio to the replay in a simple graph
+    uhd::rfnoc::detail::graph_t::graph_edge_t edge_info;
+    edge_info.src_port                    = 0;
+    edge_info.dst_port                    = 0;
+    edge_info.property_propagation_active = true;
+    edge_info.edge = uhd::rfnoc::detail::graph_t::graph_edge_t::DYNAMIC;
+
+    graph.connect(&mock_radio_ais_node, &mock_replay_ais_node, edge_info);
+    // Declare back-edge
+    edge_info.property_propagation_active = false;
+    graph.connect(&mock_replay_ais_node, &mock_radio_ais_node, edge_info);
+    UHD_LOG_INFO("TEST", "Committing replay/radio loop graph");
+    BOOST_CHECK_NO_THROW(graph.commit(););
 }
