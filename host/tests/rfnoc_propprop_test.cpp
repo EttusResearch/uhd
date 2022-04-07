@@ -298,10 +298,10 @@ BOOST_AUTO_TEST_CASE(test_graph_resolve_ddc_radio)
     // In this simple graph, all connections are identical from an edge info
     // perspective, so we're lazy and share an edge_info object:
     uhd::rfnoc::detail::graph_t::graph_edge_t edge_info;
-    edge_info.src_port                    = 0;
-    edge_info.dst_port                    = 0;
-    edge_info.property_propagation_active = true;
-    edge_info.edge = uhd::rfnoc::detail::graph_t::graph_edge_t::DYNAMIC;
+    edge_info.src_port        = 0;
+    edge_info.dst_port        = 0;
+    edge_info.is_forward_edge = true;
+    edge_info.edge            = uhd::rfnoc::detail::graph_t::graph_edge_t::DYNAMIC;
 
     // Now create the graph and commit:
     graph.connect(&mock_rx_radio, &mock_ddc, edge_info);
@@ -344,10 +344,10 @@ BOOST_AUTO_TEST_CASE(test_graph_catch_invalid_graph)
     // In this simple graph, all connections are identical from an edge info
     // perspective, so we're lazy and share an edge_info object:
     uhd::rfnoc::detail::graph_t::graph_edge_t edge_info;
-    edge_info.src_port                    = 0;
-    edge_info.dst_port                    = 0;
-    edge_info.property_propagation_active = true;
-    edge_info.edge = uhd::rfnoc::detail::graph_t::graph_edge_t::DYNAMIC;
+    edge_info.src_port        = 0;
+    edge_info.dst_port        = 0;
+    edge_info.is_forward_edge = true;
+    edge_info.edge            = uhd::rfnoc::detail::graph_t::graph_edge_t::DYNAMIC;
 
     // Now create the graph and commit:
     graph.connect(&mock_rx_radio, &mock_tx_radio, edge_info);
@@ -374,10 +374,10 @@ BOOST_AUTO_TEST_CASE(test_graph_ro_prop)
     // In this simple graph, all connections are identical from an edge info
     // perspective, so we're lazy and share an edge_info object:
     uhd::rfnoc::detail::graph_t::graph_edge_t edge_info;
-    edge_info.src_port                    = 0;
-    edge_info.dst_port                    = 0;
-    edge_info.property_propagation_active = true;
-    edge_info.edge = uhd::rfnoc::detail::graph_t::graph_edge_t::DYNAMIC;
+    edge_info.src_port        = 0;
+    edge_info.dst_port        = 0;
+    edge_info.is_forward_edge = true;
+    edge_info.edge            = uhd::rfnoc::detail::graph_t::graph_edge_t::DYNAMIC;
 
     // Now create the graph and commit:
     graph.connect(&mock_rx_radio, &mock_tx_radio, edge_info);
@@ -626,10 +626,10 @@ BOOST_AUTO_TEST_CASE(test_graph_node_deletion_resolver_fix)
 
     // Connect the radio to the DDC in a simple graph
     uhd::rfnoc::detail::graph_t::graph_edge_t edge_info;
-    edge_info.src_port                    = 0;
-    edge_info.dst_port                    = 0;
-    edge_info.property_propagation_active = true;
-    edge_info.edge = uhd::rfnoc::detail::graph_t::graph_edge_t::DYNAMIC;
+    edge_info.src_port        = 0;
+    edge_info.dst_port        = 0;
+    edge_info.is_forward_edge = true;
+    edge_info.edge            = uhd::rfnoc::detail::graph_t::graph_edge_t::DYNAMIC;
 
     graph.connect(&mock_rx_radio, &mock_ddc, edge_info);
     BOOST_CHECK_EQUAL(mock_ddc._decim.get(), new_interp_ratio);
@@ -752,14 +752,14 @@ BOOST_AUTO_TEST_CASE(test_graph_node_loop_resolve)
 
     // Connect the radio to the replay in a simple graph
     uhd::rfnoc::detail::graph_t::graph_edge_t edge_info;
-    edge_info.src_port                    = 0;
-    edge_info.dst_port                    = 0;
-    edge_info.property_propagation_active = true;
-    edge_info.edge = uhd::rfnoc::detail::graph_t::graph_edge_t::DYNAMIC;
+    edge_info.src_port        = 0;
+    edge_info.dst_port        = 0;
+    edge_info.is_forward_edge = true;
+    edge_info.edge            = uhd::rfnoc::detail::graph_t::graph_edge_t::DYNAMIC;
 
     graph.connect(&mock_radio_ais_node, &mock_replay_ais_node, edge_info);
     // Declare back-edge
-    edge_info.property_propagation_active = false;
+    edge_info.is_forward_edge = false;
     graph.connect(&mock_replay_ais_node, &mock_radio_ais_node, edge_info);
     UHD_LOG_INFO("TEST", "Committing replay/radio loop graph");
     BOOST_CHECK_NO_THROW(graph.commit(););

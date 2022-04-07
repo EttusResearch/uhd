@@ -31,15 +31,15 @@ BOOST_FIXTURE_TEST_CASE(x400_radio_test_graph, x400_radio_fixture)
 {
     detail::graph_t graph{};
     detail::graph_t::graph_edge_t edge_port_info0;
-    edge_port_info0.src_port                    = 0;
-    edge_port_info0.dst_port                    = 0;
-    edge_port_info0.property_propagation_active = true;
-    edge_port_info0.edge                        = detail::graph_t::graph_edge_t::DYNAMIC;
+    edge_port_info0.src_port        = 0;
+    edge_port_info0.dst_port        = 0;
+    edge_port_info0.is_forward_edge = true;
+    edge_port_info0.edge            = detail::graph_t::graph_edge_t::DYNAMIC;
     detail::graph_t::graph_edge_t edge_port_info1;
-    edge_port_info1.src_port                    = 1;
-    edge_port_info1.dst_port                    = 1;
-    edge_port_info1.property_propagation_active = true;
-    edge_port_info1.edge                        = detail::graph_t::graph_edge_t::DYNAMIC;
+    edge_port_info1.src_port        = 1;
+    edge_port_info1.dst_port        = 1;
+    edge_port_info1.is_forward_edge = true;
+    edge_port_info1.edge            = detail::graph_t::graph_edge_t::DYNAMIC;
 
     mock_radio_node_t mock_radio_block{0};
     mock_terminator_t mock_sink_term(2, {}, "MOCK_SINK");
@@ -75,15 +75,15 @@ BOOST_FIXTURE_TEST_CASE(x400_radio_test_prop_prop, x400_radio_fixture)
 {
     detail::graph_t graph{};
     detail::graph_t::graph_edge_t edge_port_info0;
-    edge_port_info0.src_port                    = 0;
-    edge_port_info0.dst_port                    = 0;
-    edge_port_info0.property_propagation_active = true;
-    edge_port_info0.edge                        = detail::graph_t::graph_edge_t::DYNAMIC;
+    edge_port_info0.src_port        = 0;
+    edge_port_info0.dst_port        = 0;
+    edge_port_info0.is_forward_edge = true;
+    edge_port_info0.edge            = detail::graph_t::graph_edge_t::DYNAMIC;
     detail::graph_t::graph_edge_t edge_port_info1;
-    edge_port_info1.src_port                    = 1;
-    edge_port_info1.dst_port                    = 1;
-    edge_port_info1.property_propagation_active = true;
-    edge_port_info1.edge                        = detail::graph_t::graph_edge_t::DYNAMIC;
+    edge_port_info1.src_port        = 1;
+    edge_port_info1.dst_port        = 1;
+    edge_port_info1.is_forward_edge = true;
+    edge_port_info1.edge            = detail::graph_t::graph_edge_t::DYNAMIC;
 
     mock_terminator_t mock_sink_term(2, {}, "MOCK_SINK");
     mock_terminator_t mock_source_term(2, {}, "MOCK_SOURCE");

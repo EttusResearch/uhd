@@ -322,14 +322,14 @@ BOOST_FIXTURE_TEST_CASE(fosphor_test_graph, fosphor_block_fixture)
 {
     detail::graph_t graph{};
     detail::graph_t::graph_edge_t edge_port0_info, edge_port1_info;
-    edge_port0_info.src_port                    = 0;
-    edge_port0_info.dst_port                    = 0;
-    edge_port0_info.property_propagation_active = true;
-    edge_port0_info.edge                        = detail::graph_t::graph_edge_t::DYNAMIC;
-    edge_port1_info.src_port                    = 1;
-    edge_port1_info.dst_port                    = 1;
-    edge_port1_info.property_propagation_active = true;
-    edge_port1_info.edge                        = detail::graph_t::graph_edge_t::DYNAMIC;
+    edge_port0_info.src_port        = 0;
+    edge_port0_info.dst_port        = 0;
+    edge_port0_info.is_forward_edge = true;
+    edge_port0_info.edge            = detail::graph_t::graph_edge_t::DYNAMIC;
+    edge_port1_info.src_port        = 1;
+    edge_port1_info.dst_port        = 1;
+    edge_port1_info.is_forward_edge = true;
+    edge_port1_info.edge            = detail::graph_t::graph_edge_t::DYNAMIC;
 
     mock_radio_node_t mock_radio_block{0};
     mock_ddc_node_t mock_ddc_block{};

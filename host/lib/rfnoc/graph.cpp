@@ -170,11 +170,11 @@ void graph_t::connect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t edg
             "Adding edge " << src_node->get_unique_id() << ":" << edge_info.src_port
                            << " -> " << dst_node->get_unique_id() << ":"
                            << edge_info.dst_port
-                           << " without disabling property_propagation_active will lead "
+                           << " without disabling is_forward_edge will lead "
                               "to unresolvable graph!");
         boost::remove_edge(edge_descriptor.first, _graph);
         throw uhd::rfnoc_error(
-            "Adding edge without disabling property_propagation_active will lead "
+            "Adding edge without disabling is_forward_edge will lead "
             "to unresolvable graph!");
     }
 }
@@ -374,9 +374,9 @@ void graph_t::_resolve_all_properties(resolve_context context,
             throw;
         }
 
-        //  Forward all edge props in all directions from current node. We make
-        //  sure to skip properties if the edge is flagged as
-        //  !property_propagation_active
+        //  Forward all edge props in all directions from current node. We only
+        //  forward properties across edges that either forward- or back-edges,
+        //  depending on `forward`.
         _forward_edge_props(*node_it, forward);
 
         // Now mark all properties on this node as clean
@@ -620,7 +620,7 @@ void graph_t::_forward_edge_props(
     for (auto prop : edge_props) {
         auto neighbour_node_info = _find_neighbour(origin, prop->get_src_info());
         if (neighbour_node_info.first != nullptr
-            && neighbour_node_info.second.property_propagation_active == forward) {
+            && neighbour_node_info.second.is_forward_edge == forward) {
             const size_t neighbour_port = prop->get_src_info().type
                                                   == res_source_info::INPUT_EDGE
                                               ? neighbour_node_info.second.src_port

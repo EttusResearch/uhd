@@ -33,11 +33,11 @@ struct UHD_API graph_edge_t
     graph_edge_t(const size_t src_port_,
         const size_t dst_port_,
         const edge_t edge_,
-        const bool ppa)
+        const bool fwd_edge)
         : src_port(src_port_)
         , dst_port(dst_port_)
         , edge(edge_)
-        , property_propagation_active(ppa)
+        , is_forward_edge(fwd_edge)
     {
     }
 
@@ -51,8 +51,9 @@ struct UHD_API graph_edge_t
     size_t dst_port = 0;
     //! The type of edge
     edge_t edge = DYNAMIC;
-    //! When true, the framework will use this edge for property propagation
-    bool property_propagation_active = true;
+    //! When false, the framework will assume this is a back-edge. Back-edges
+    //are not used for sorting the graph as a DAG.
+    bool is_forward_edge = true;
 
     bool operator==(const graph_edge_t& rhs) const
     {
@@ -61,13 +62,13 @@ struct UHD_API graph_edge_t
                    dst_blockid,
                    dst_port,
                    edge,
-                   property_propagation_active)
+                   is_forward_edge)
                == std::tie(rhs.src_blockid,
                       rhs.src_port,
                       rhs.dst_blockid,
                       rhs.dst_port,
                       rhs.edge,
-                      rhs.property_propagation_active);
+                      rhs.is_forward_edge);
     }
 
     //! Return a string representation of the connection

@@ -227,10 +227,10 @@ BOOST_FIXTURE_TEST_CASE(window_test_graph, window_block_fixture)
 {
     detail::graph_t graph{};
     detail::graph_t::graph_edge_t edge_port_info;
-    edge_port_info.src_port                    = 0;
-    edge_port_info.dst_port                    = 0;
-    edge_port_info.property_propagation_active = true;
-    edge_port_info.edge                        = detail::graph_t::graph_edge_t::DYNAMIC;
+    edge_port_info.src_port        = 0;
+    edge_port_info.dst_port        = 0;
+    edge_port_info.is_forward_edge = true;
+    edge_port_info.edge            = detail::graph_t::graph_edge_t::DYNAMIC;
 
     mock_radio_node_t mock_radio_block{0};
     mock_ddc_node_t mock_ddc_block{};

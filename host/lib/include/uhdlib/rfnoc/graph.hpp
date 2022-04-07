@@ -140,7 +140,7 @@ private:
         bool operator()(const Edge& e) const
         {
             graph_edge_t edge_info = boost::get(edge_property_t(), *_graph, e);
-            return edge_info.property_propagation_active == forward_edges_only;
+            return edge_info.is_forward_edge == forward_edges_only;
         }
 
     private:

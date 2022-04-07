@@ -132,7 +132,7 @@ void export_rfnoc(py::module& m)
         .def_readwrite("dst_port", &graph_edge_t::dst_port)
         .def_readwrite("edge", &graph_edge_t::edge)
         .def_readwrite(
-            "property_propagation_active", &graph_edge_t::property_propagation_active)
+            "is_forward_edge", &graph_edge_t::is_forward_edge)
 
         // Methods
         .def("__str__", &graph_edge_t::to_string)

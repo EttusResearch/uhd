@@ -57,10 +57,10 @@ BOOST_AUTO_TEST_CASE(test_duc_block)
     // Now plop it in a graph
     detail::graph_t graph{};
     detail::graph_t::graph_edge_t edge_info;
-    edge_info.src_port                    = 0;
-    edge_info.dst_port                    = 0;
-    edge_info.property_propagation_active = true;
-    edge_info.edge                        = detail::graph_t::graph_edge_t::DYNAMIC;
+    edge_info.src_port        = 0;
+    edge_info.dst_port        = 0;
+    edge_info.is_forward_edge = true;
+    edge_info.edge            = detail::graph_t::graph_edge_t::DYNAMIC;
 
     mock_terminator_t mock_source_term(1, {ACTION_KEY_STREAM_CMD});
     mock_terminator_t mock_sink_term(1, {ACTION_KEY_STREAM_CMD});
