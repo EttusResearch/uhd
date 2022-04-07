@@ -900,7 +900,7 @@ void zbx_cpld_ctrl::commit(const chan_t chan, const bool save_all)
     UHD_LOG_TRACE(_log_id,
         "Storing register cache " << (save_all ? "completely" : "selectively")
                                   << " to CPLD...");
-    const auto changed_addrs = save_all ? _regs.get_all_addrs()
+    const auto changed_addrs = save_all ? _regs.get_all_addrs<size_t>()
                                         : _regs.get_changed_addrs<size_t>();
     for (const auto addr : changed_addrs) {
         _poke32(addr, _regs.get_reg(addr), save_all ? NO_CHAN : chan);
