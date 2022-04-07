@@ -18,24 +18,24 @@ REGS_TMPL = """\
 ########################################################################
 ## SLAVE SETUP
 ########################################################################
-BOARD_ID                    0x0000[0:15]            0
-REVISION                    0x0004[0:31]            0
-OLDEST_COMPAT_REVISION      0x0008[0:31]            0
+BOARD_ID                    0x0000[0:15]            ro
+REVISION                    0x0004[0:31]            ro
+OLDEST_COMPAT_REVISION      0x0008[0:31]            ro
 SCRATCH                     0x000C[0:31]            0
-GIT_HASH                    0x0010[0:31]            0
-ENABLE_TX_POS_7V0           0x0040[0]               0   disable, enable
-ENABLE_RX_POS_7V0           0x0040[1]               0   disable, enable
-ENABLE_POS_3V3              0x0040[2]               0   disable, enable
-P7V_B_STATUS                0x0044[0]               0
-P7V_A_STATUS                0x0044[1]               0
-PLL_REF_CLOCK_ENABLE        0x0048[0]               0   disable, enable
+GIT_HASH                    0x0010[0:31]            ro
+ENABLE_TX_POS_7V0           0x0040[0]               scope=mpm   disable, enable
+ENABLE_RX_POS_7V0           0x0040[1]               scope=mpm   disable, enable
+ENABLE_POS_3V3              0x0040[2]               scope=mpm   disable, enable
+P7V_B_STATUS                0x0044[0]               scope=mpm,ro
+P7V_A_STATUS                0x0044[1]               scope=mpm,ro
+PLL_REF_CLOCK_ENABLE        0x0048[0]               scope=mpm   disable, enable
 ########################################################################
 ## ATR
 ########################################################################
-CURRENT_RF0_CONFIG          0x1000[0:7]             1
-CURRENT_RF1_CONFIG          0x1000[8:15]            1
-CURRENT_RF0_DSA_CONFIG      0x1000[23:16]           1
-CURRENT_RF1_DSA_CONFIG      0x1000[31:24]           1
+CURRENT_RF0_CONFIG          0x1000[0:7]             ro
+CURRENT_RF1_CONFIG          0x1000[8:15]            ro
+CURRENT_RF0_DSA_CONFIG      0x1000[23:16]           ro
+CURRENT_RF1_DSA_CONFIG      0x1000[31:24]           ro
 RF0_OPTION                  0x1004[0:1]             0   sw_defined, classic_atr, fpga_state
 RF1_OPTION                  0x1004[8:9]             0   sw_defined, classic_atr, fpga_state
 RF0_DSA_OPTION              0x1004[17:16]           0   sw_defined, classic_atr, fpga_state
@@ -52,8 +52,8 @@ ADDRESS                     0x1020[16:22]           0
 READ_FLAG                   0x1020[23]              1   write, read
 LO_SELECT                   0x1020[24:26]           0   TX0_LO1, TX0_LO2, TX1_LO1, TX1_LO2, RX0_LO1, RX0_LO2, RX1_LO1, RX1_LO2
 START_TRANSACTION           0x1020[28]              0   disable, enable
-SPI_READY                   0x1020[30]              0
-DATA_VALID                  0x1020[31]              0
+SPI_READY                   0x1020[30]              ro
+DATA_VALID                  0x1020[31]              ro
 ########################################################################
 ## LO SYNC
 ########################################################################
@@ -301,7 +301,7 @@ uint32_t get_field(zbx_cpld_field_t field, const size_t idx) {
 void set_field(zbx_cpld_field_t field, uint32_t value) {
     switch(field) {
     % for addr in sorted(set([r.get_addr() for r in regs if not r.is_array])):
-        % for reg in filter(lambda r: r.get_addr() == addr, regs):
+        % for reg in filter(lambda r: r.get_addr() == addr and not r.is_readonly(), regs):
     case zbx_cpld_field_t::${reg.get_name()}:
         ${reg.get_name()} = static_cast<${reg.get_type()}>(value);
         break;
@@ -399,17 +399,19 @@ void set_reg(uint16_t addr, uint32_t val)
     }
 }
 
-<%
-    all_addrs = set()
-    for reg in regs:
-        for index in range(reg.get_array_len() if reg.is_array else 1):
-            all_addrs.add(reg.get_addr() + index * reg.get_addr_step_size())
-%>
-std::set<size_t> get_all_addrs()
+template<typename T> std::set<T> get_all_addrs(bool include_ro = false)
 {
-    std::set<size_t> addrs;
-    % for addr in sorted(all_addrs):
-    addrs.insert(${addr});
+    std::set<T> addrs;
+    % for reg in filter(all_addr_filter, regs):
+        % if reg.is_readonly():
+    if (include_ro) {
+        % else:
+    {
+        % endif
+        % for index in range(reg.get_array_len() if reg.is_array else 1):
+        addrs.insert(${reg.get_addr() + index * reg.get_addr_step_size()});
+        % endfor
+    }
     % endfor
     return addrs;
 }
@@ -440,11 +442,18 @@ uint16_t get_addr(const std::string& reg_name)
 """
 
 if __name__ == '__main__':
+    import sys
     import common
+    outfile=sys.argv[1]
+    if outfile.endswith(".hpp"):
+        all_addr_filter = lambda reg: "mpm" not in reg.options.get("scope", "")
+    else:
+        all_addr_filter = lambda reg: True
     common.generate(
         name='zbx_cpld_regs',
         regs_tmpl=REGS_TMPL,
         body_tmpl=BODY_TMPL,
         py_body_tmpl=PY_BODY_TMPL,
         file=__file__,
+        all_addr_filter=all_addr_filter
     )
