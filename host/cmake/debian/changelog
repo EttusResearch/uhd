@@ -1,3 +1,590 @@
+uhd (4.2.0.0-0ubuntu1) ubuntu_release; urgency=low
+
+  * b200
+    -  Re-sync times
+    -  Fix overflow handling
+    -  Move the B200 radio control core into usrp/b200/
+  * cal
+    -  Use safe version of set_thread_priority()
+    -  Fix handling of discontinuities in power calibration data
+  * chdr
+    -  Rename var max_size_bytes to avoid confusion
+  * ci
+    -  Update builds to macOS 12 Monterey
+    -  Update commit vcpkg and CMake version
+    -  Set continue on error and reduce timeout to 60
+    -  Remove obsolete x4xx pipelines
+    -  Upload devtest logs as artifact
+    -  Propagate downloader errors and lower timeout
+    -  Enable ctest on macOS builds
+    -  Flash fpga on x410 ATS runs
+    -  Add mpm folder to triggers
+    -  Change yaml dependency to ruamel
+    -  Add support for Ubuntu 22.04
+    -  Remove Fedora 33 and add Fedora 35
+    -  Add libuhd python dependencies to macOS
+    -  Add x410 test to mono pipeline
+    -  Enable building of init_usrp
+    -  Make uhdSrcDir directly reference Build.SourcesDirectory
+    -  Build gnuradio and gr-ettus
+    -  Add gnuradio deps to images
+    -  Generate installed binaries for downstream use
+    -  Add displayNames to parameters
+    -  Add embedded builds to uhd mono pipeline
+    -  Separate pipeline builds for different os
+    -  Refactor dockerOSName to buildOSName
+    -  Build on macOS
+    -  Device wait to redlock scope for Vivado close
+    -  Add Fedora 34 and remove Fedora 32
+    -  rebuild docker images weekly
+    -  Refactor installers and add Windows support
+    -  Add gnuradio gr-ettus to oe builds
+    -  Update template to use checkout_meta_ettus
+    -  Add custom boost version support
+    -  Remove documentation-only changes from pipeline runs
+    -  Enable batch CI
+    -  Split CI and PR pipelines for mono pipeline
+    -  Enable custom CXX flags, enable -Werror
+    -  Let make keep building upon failure
+    -  Add clang as a compiler to all Fedora and Ubuntu containers
+    -  Add CLA assistant
+  * cmake
+    -  mpm: Skip installing binaries for SIM
+    -  doxygen: Make MATHJAX_RELPATH configurable via CMake
+    -  ncurses: fix building with split tinfo
+    -  Remove libatomic check on macOS
+    -  Added libatomic check for boost/lockfree/queue.hpp
+    -  uhdboost: Fix check for UHD_BOOST_REQUIRED being set
+    -  Replace distutils.sysconfig with sysconfig
+    -  Replace distutils with CMake for version checks
+    -  Set debug to -Og for Clang builds
+    -  tests: Conditionally compile tests for X400
+    -  Use LooseVersion to ensure correct version comparisons
+    -  Fix rfnoc-example (CMake paths)
+    -  Fix issues with static builds and CMRC
+    -  Replace CMAKE_{SOURCE,BINARY}_DIR with UHD_*_DIR
+    -  tests: Add build-python path to PYTHONPATH
+    -  Add check for libatomic linking requirement
+    -  Remove duplicate entry in LIBUHD_PYTHON_GEN_SOURCE
+    -  Fix VS names and use relative for images
+    -  remove redundant include
+    -  Correctly set and unset any CMAKE_REQUIRED variables
+    -  Fix finding PkgConfig to work robustly (without CMake warnings)
+  * config
+    -  Fix clang fallthrough syntax
+  * conversion
+    -  Saturate transmit IQ levels on NEON architectures.
+  * convert
+    -  Make narrowing conversions saturate
+    -  Add benchmarking abilities
+    -  Minor cleanup
+  * core
+    -  Remove boost::math in favor of std cmath
+  * dbsrx
+    -  Fix issue with loop variable
+  * debian
+    -  Update version number to 4.2.0
+    -  Update control and package building
+  * debs
+    -  Update upload_debs script
+  * deps
+    -  rpclib: Replace distutils.dir_util with shutil
+  * devtest
+    -  Clarify data type in multi_usrp_test::send_waveform()
+    -  Add receive stability test to B2xx devtest
+    -  Add receive stability test
+  * dissectors
+    -  Fix whitespace formatting in CMake files
+    -  Fix inclusion of glib.h and Python version
+  * docs
+    -  x4xx: Document configuring eth0 static IP
+    -  n310: Add Filter API section
+    -  e31x: Update information on GPIO pin header
+    -  Add 100GigE documentation
+    -  Move X4x0 GPIO API to be subpage
+    -  Update E320 docs
+    -  x4xx: Remove redundant GPIO section
+    -  rfnoc: Add doxygen tag for missing parameter
+    -  Improve table on 'identification'
+    -  Update instructions for changing hostname
+    -  Update sfp port config location
+    -  Update manual for new X410 default targets
+    -  Fix Doxygen warnings
+    -  Fix reference to RFNoC documentation
+    -  rdtesting: Remove invalid rate configuration
+    -  stream_args: Clarify usage of stream_args_t::channels
+    -  n3xx: Add info on customizable band edges and gain profiles
+    -  x4xx: Add new FPGA image descriptions
+    -  Improve documentation for replay block
+    -  Remove superfluous stylesheet
+    -  x310: Remove reference to ORC
+    -  Update n3xx tuning notes
+    -  Remove full path names from Doxygen generation
+    -  Add shim Sphinx config for readthedocs
+    -  Improve page on RFNoC block properties
+    -  Fix page on GPIO
+    -  Fix MathJax formulae rendering
+    -  Amend page on RFNoC properties
+    -  Remove bmaptool instructions for writing filesystems
+    -  Remove obsolete man pages
+    -  Update DPDK documentation
+    -  Improve documentation for properties and -propagation
+    -  Several minor manual improvements
+    -  x410: Document GPIO API and capabilities
+    -  Collect all RFNoC block controllers in a module in the manual
+    -  Align dependencies and bump deb package versions
+    -  Clarify set/get_gpio_attr() and GPIO banks
+    -  Fix GPIO documentation example
+    -  x410: Fix info on loading SD card images with bmaptool
+    -  Improve docs for rx_streamer::recv() on overruns
+    -  sync: Update page on synchronization
+    -  Fix typo in ZBX Block Diagram
+    -  usrp_x4xx: improve filesystem update instructions
+    -  x4xx: Update information on CPLD updating
+  * dpdk
+    -  Add support for DPDK 18.11 API
+    -  Correct MTU warning message
+    -  Support new MTU discovery
+    -  Disable warnings for using an experimental feature
+    -  Upgrade to DPDK 19.11 API
+  * e31x/e320
+    -  Amend LO-locked sensor names
+  * e320
+    -  mpm: Remove monitor thread
+  * e3xx
+    -  Fix frequency querying
+    -  Remove unused constant
+  * examples
+    -  gpio: Separate bank and port arguments
+    -  Fix channel indexing when reading USRP power
+    -  Fix gain testbench name
+    -  Add replay_capture.py
+    -  benchmark_rate improvements
+    -  replay: Improve rfnoc_replay_samples_from_file
+    -  Support multiple streamers in benchmark_rate
+    -  Fix tx_bursts bandwidth/freq/gain reporting
+    -  Improve rfnoc_rx_to_file
+    -  Use cmul for gain block in-tree IP example
+    -  Test all variants in gain testbench
+    -  Make IQ order clear in gain RFNoC block
+    -  Improve txrx_loopback_to_file (late recv, Boost, timing)
+    -  Show how to use in-tree Verilog header
+    -  Add x400/x410 target to RFNoC example
+  * fgpa
+    -  rfnoc: Set Replay memory transactions to 2 KiB
+  * firmware
+    -  Remove N230 firmware
+  * fpga
+    -  x400: Increase replay SEP buffer sizes
+    -  x400: Add timed commands support for all radio ctrlport endpoints
+    -  Replay block version 1.1
+    -  Update all RFNoC images
+    -  ci: Add X4_400 to CI targets default list
+    -  n3xx: Add missing BIST image core headers
+    -  Use PROTOVER and CHDR_W from RFNoC image builder
+    -  n3xx: Fix clock frequency comments
+    -  e31x: Update DRAM IP simulation
+    -  e31x: Fix DRAM traffic gen IP name
+    -  ci: Schedule weekly FPGA pipeline run
+    -  ci: Improve IP build caching
+    -  ci: Add stages-based pipeline
+    -  ci: Ignore objects in hwtools
+    -  tools: Add CG_400 image to X410 binaries package
+    -  x400: Add x410_400_128_rfnoc_image_core
+    -  rfnoc: Fix PPS edge detection
+    -  rfnoc: Make Replay packet length independent of burst size
+    -  Add SPDX license identifier
+    -  x400: Cleanup FPGA Makefile
+    -  x400: Add support for DRAM with 400 MHz BW
+    -  x400: Change AXI XB for DRAM to 512-bit
+    -  rfnoc: Fix strobe probability in radio simulator
+    -  rfnoc: Regenerate noc_shells
+    -  x400: Add SPI Controller Info register
+    -  x400: Adjust SPI engine strobes alignment
+    -  x400: Set replay SEP buffers to twice MTU
+    -  Add SPDX license identifier
+    -  e320: Add DRAM ports
+    -  n3xx: Fix DRAM FIFO address alignment
+    -  rfnoc: Change AWIDTH default for axi_ram_fifo
+    -  e31x: Add DRAM support
+    -  rfnoc: Add BLANK_OUTPUT to FIR filter block's parameters
+    -  x400: Add DRAM enable macro
+    -  b2xx: Generate utilization report files
+    -  x400: zbx: cpld: Bump ZBX regmap copyright
+    -  x400: cpld: Bump CMI wrapper copyright
+    -  ci: Increase PR pipeline timeout
+    -  x400: Bump minor version
+    -  x400: Update rfnoc_image_core files
+    -  x400: Add Replay to 100 and 200 MHz images
+    -  x400: Add DRAM support
+    -  x400: Set DRAM speed to 2.0 GT/s
+    -  x400: Add axi_inter_4x64_512_bd IP
+    -  x400: Add axi_inter_2x128_512_bd IP
+    -  docs: Add B205mini FPGA info
+    -  n3xx: rh: cpld: Refactor CPLD build process
+    -  Remove noc_shell_regs.vh and sim_rfnoc_lib.svh
+    -  x400: cpld: Bump copyright
+    -  x400: Bump copyright
+    -  x400: Expand PS GPIO port for DIO control
+    -  x400: Add SPI bus support for GPIO ports
+    -  x400: Add GPIO control via ATR and DB state
+    -  x400: Connect Radio Blocks to DIO
+    -  tools: Fix adding directories for HDL source
+    -  hls: Add version to generated HLS IP
+    -  x400: Fix rfnoc_image_core.vh path
+    -  e320: Connect CTRL_IN pins to FPGA
+    -  e320: Remove copy/paste from N310 code
+    -  x300: Fix time register readback
+    -  usrp2: update build tools to use python3
+    -  tools: Update Vivado scripts to use python3
+    -  x300: OR ATR signals going into db_control
+    -  x400: cpld: Add manufacturing support
+    -  x400: Refactor CPLDs build process
+    -  tools: Add Quartus build utilities
+    -  Add ability to get time from Radio block
+    -  rfnoc: Add RFNoC CHDR resize module
+    -  rfnoc: Add CHDR management util functions
+    -  lib: Clean up axi_mux
+    -  rfnoc: Add labels to axi_switch generate blocks
+    -  rfnoc: Add labels to chdr_mgmt_pkt_handler
+    -  rfnoc: Add documentation to chdr_xb_routing_table
+    -  Shorten line length for Launchpad linter
+    -  x300: Update synchronizer constraint
+    -  n3xx: Update synchronizer constraint
+    -  lib: Update example constraint in synchronizer
+    -  Update help message for setupenv.sh
+    -  Remove stale references to UHD_FPGA_DIR
+    -  tools: Add UHD_FPGA_DIR definition to synthesis
+    -  Set default part for sim in setupenv.sh
+    -  Fix Xilinx bitfile parser for Python 3
+    -  Re-order error and data packets
+    -  Fix sc16 to sc12 converter
+    -  rfnoc: Fix EOB loss in DUC
+    -  sim: Add PkgComplex, PkgMath, and PkgRandom
+    -  lib: Clean up and document lib files
+    -  x400: Remove stale information in register map
+    -  ci: Add testbench pipeline
+  * github
+    -  Amend PR template with a checkbox for compat numbers
+  * host
+    -  SPI: Read number of supported SPI slaves from device
+    -  devtest: Allow getting mgmt_addr in tests
+    -  devtest: Add GPIO tests for reading back ATR settings
+    -  x410: Emulate GPIO classic ATR mode using new mode
+    -  x410: Cache GPIO source in mb_controller
+    -  Add power_reference_iface::sptr declaration
+    -  Create meta_range_t::as_monotonic
+    -  test: Add UHD_UNITTEST_LOG_LEVEL override
+    -  test: Add GPIO DDR register to x4xx mock
+    -  Throw exception when accessing properties with incorrect type
+    -  Minor cleanups in property_tree code
+    -  x4xx: Fix some warnings on mac OS
+    -  zbx: Expose tuning table on property tree
+    -  x4xx: gpio: Properly unmap FPGA GPIO values
+    -  fix build with DPDK v21.11 LTS
+    -  Implement nameless_gain_mixin
+    -  Make get_mb_controller public
+    -  tests: Make x4xx unit test support GPIO
+    -  multi_usrp: Merge set_tx_subdev_spec and set_rx_subdev_spec
+    -  Add divider constructor to spi_config_t
+    -  rf_control: Add internal antenna API abstraction.
+    -  tests: Add unit test for ZBX antenna API
+    -  Make core_iface inheritence virtual
+    -  Implement operator<< for data_reader_t
+    -  docs: Fix incorrect usage in GPIO docs
+    -  Add char* overload for device_addr_t
+    -  Make radio_control constants an enum
+    -  Fix typos and small things
+    -  Add ability to get time from Radio block
+    -  python: Add gpio_voltage python API
+    -  Add gpio_voltage discoverable feature
+    -  Add RPC calls for GPIO voltage
+    -  python: Return mb_controller with reference_internal
+    -  x4xx: Implement GPIO API
+    -  Add GPIO functions to MPM RPC shim
+    -  gpio: Create gpio_atr_offsets to store GPIO registers
+    -  Add static_assert to prevent meta_range_t(0,0)
+  * ic_reg_maps
+    -  Generate save state read functions
+  * images
+    -  Remove references to N230
+    -  Add utilization report files to B2xx image files
+    -  Revert x4xx manifest and FPGA compat update
+    -  Update N32x CPLD manifest
+    -  Make get_images_dir return absolute path
+    -  Clear out code from days of yore
+    -  Add the utilization report for X410 images (X4_200)
+    -  Update image packager script for Python 3
+    -  Update manifest
+  * lib
+    -  Set dynamic_lookup and flat_namespace
+    -  Make simple_claimer atomic
+    -  SSPH: Fix comment for convert_to_in_buff()
+    -  Remove superfluous includes of udp_zero_copy.hpp
+    -  Remove all remaining usage of boost::numeric::bounds<>
+    -  transport: Mark typecast as intended
+    -  transport: Initialize _hshake_args_server
+    -  rfnoc: Make implicit typecasts explicit
+    -  rfnoc: Change enum node_type to enum class
+    -  Add various missing includes
+  * libusb
+    -  Remove unused context variable
+  * log
+    -  Add DPDK version to system info
+  * math
+    -  fp_compare: Adapt fp_compare_epsilon API to actual use
+  * max287x
+    -  Fix key in table of freq ranges
+  * mpm
+    -  x4xx: Fix clock/time source API
+    -  e3xx: Fix get_sync_sources() API
+    -  PeriphManagerBase: List all sync-related methods
+    -  Make default clock/time source values state-less
+    -  e3xx: Simplify code referring to self.dboards
+    -  speed up reading gps mboard sensors
+    -  n3xx: Recommend reboot USRP after BIST
+    -  x4xx: Remove GPIO classic mode register
+    -  Factor out common code between E31x_db and Neon classes
+    -  e3xx: Fix Pylint warnings in periph_mgr classes
+    -  fix ref_locked sensor on n320
+    -  rh: Minor linter cleanup
+    -  Use receiving socket for sending response
+    -  eeprom: Fix default values in EEPROM utilities
+    -  xportmgr_udp: Match DNAT arguments to manpage
+    -  eeprom: Improve E320 and N3x0 EEPROM code/comments
+    -  cmake: Remove installation of non-relevant EEPROM tools
+    -  x4xx: Add function to map from gpio src list indices
+    -  Add device name to discovery process
+    -  x4xx: Update FPGA minor compat number
+    -  Add x4xx DRAM BIST
+    -  Fix units for DRAM BIST
+    -  Remove further references to rfnoc_num_blocks
+    -  x4xx: Align get/set_gpio_src mappings with HDMI pinouts
+    -  Demote WARNING on minor compat mismatch to DEBUG
+    -  X410: Set correct tuning word
+    -  x410: Fix docstrings related to GPS sensors
+    -  e320/e31x: Fix lo-lock sensors
+    -  x4xx: Add log message for older DIO boards
+    -  x4xx: Move DioControl into its own module
+    -  x4xx: Add checks before accessing self.dio_control
+    -  x4xx: Remove superfluous import
+    -  x4xx: update mboard_max_rev
+    -  x4xx: Allow retrieving external power state
+    -  x4xx: Allow GPIO0 and GPIO1 as port names
+    -  x4xx: add DIO GPIO API configuration methods
+    -  Fix handling of rfic_digital_loopback argument
+    -  rfdc: Tear down RFDC on teardown
+    -  x4xx: update mboard_max_rev
+    -  add X410 support for 250e6 master clock rate
+    -  Expose motherboard regs for debugging
+    -  Skip DTS compatibility check if DTS is not being updated.
+    -  zbx: Fix revision compat check
+    -  Update usrp_update_fs to support X410
+    -  max10_cpld_flash_ctrl: improve programming log
+  * mpmd
+    -  Add MTU plausibility check
+    -  Increase UHD-side MTU cap for 10 GbE and 1 GbE
+    -  Add discoverable feature for trig i/o mode
+  * multi_usrp_rfnoc
+    -  Add TX buffering using Replay
+    -  Reduce latency of get_time_now()
+  * n310
+    -  Add Filter API to n310
+    -  Add frontend bandwidth control
+    -  cpld: Get and set TX ATR bits
+    -  Deactivate frontend components on radio shutdown
+  * n320
+    -  Fix issue that occasionally prevents lo_locked upon first set_freq
+    -  Reduce PLL lock time
+  * n3x0/e3x0
+    -  Remove reference to "master FP-GPIO radio"
+  * n3xx
+    -  Add support for rev 10
+    -  Fix White Rabbit
+  * python
+    -  rfnoc: Add new replay block APIs to Python API
+    -  Add __init__ to uhd.utils
+    -  rfnoc: Add connect_through_blocks() and get_block_chain()
+    -  Read number of ports from grc file in image builder
+    -  Fix RuntimeError: dictionary changed size during iteration
+    -  rfnoc: Add get_property bindings
+    -  Use setup from setuptools
+    -  multi_usrp: Add set_rx_spp()
+    -  multi_usrp: Fix issues in send_waveform()
+    -  multi_usrp: Fix issues with recv_num_samps()
+    -  Fix dropped-sample calculation in benchmark_rate.py
+    -  multi_usrp: Fix overloaded function definition
+    -  Add new method bindings to noc_block_base
+    -  rfnoc: Change reference type for noc_block_base export
+  * radio
+    -  Improve log messages for non-implemented corrections
+  * responder
+    -  Fix printw function arguments
+  * rfnoc
+    -  Add filter_node python bindings
+    -  Modify prop. propagation algorithm (back-edge resolution)
+    -  graph: Allow property forwarding on back-edges
+    -  Fix test_timed_commands for RFNoC devices
+    -  Remove redundant RFNoC block descriptions
+    -  Update device port names in image core YAML
+    -  Update image builder to check for deprecated port names
+    -  Make RFNoC device port names consistent
+    -  replay: Add ability to capture and read async info
+    -  fir filter: Add support for multiple channels to block controller
+    -  Remove UHD3-API usages
+    -  radio: Explicitly set MTU forwarding policy to DROP
+    -  Fix block buffer sizes referring to MTU
+    -  Refactor ctrlport_endpoint; fix MT issues
+    -  window: Set window size register after loading coefficients
+    -  replay: Add atomic item size property
+    -  replay: Add action handler for stream commands
+    -  graph_utils: Add ability to declare back-edges
+    -  Remove references to nocscript from YAML files
+    -  Fix spelling in property resolution error message
+    -  Expose buffer parameters for DRAM FIFO block
+    -  Rename and enlarge axi4_mm IO signature
+    -  Update the MTU forwarding property for some blocks
+    -  Set the default MTU forwarding policy to ONE_TO_ONE.
+    -  Add post_init() method to noc_block_base
+    -  Fix _set_subdev_spec() helper function
+    -  set UHD_API_HEADER on property_t
+    -  Cache and re-use host endpoints
+    -  Ignore errors in ctrlport response packets if ACKs not wanted
+    -  Always clear response queue in ctrlport_endpoint
+    -  Fix DSP frequency accuracy
+    -  Add atomic item size property for RFNoC blocks
+    -  transport: Check if streamers are connected in send() and recv()
+    -  ddc/duc: Improve variable name for _set_freq()
+    -  radio: Fix comment in radio_control_impl
+    -  graph: make topology failure more descriptive
+    -  Fix block_id::get_tree_root()
+    -  Fix back-edge consistency check
+    -  Add ops pending to management op
+    -  Fix noc_shell direction comments
+    -  Enable drop counter on chdr_ctrl_endpoint
+    -  Change default block behaviour
+    -  Clarify usage of MTU vs. max payload size, remove DEFAULT_SPP
+    -  replay block: Disable prop and action propagation
+    -  Add more comments to rfnoc_graph
+    -  Fix issue in uhd::rfnoc::connect_through_blocks()
+    -  radio: Fix async message handling channel checks
+    -  mgmt_portal: Fix order of validity checks
+    -  Add CHDR width to make args
+    -  Make chdr_w_to_bits() C++11-compatible
+    -  blocks: Minor cleanup (whitespace, typos)
+    -  Remove cruft from UHD 3 (constants)
+    -  mgmt_portal: Remove two unused variables
+    -  Add vivado-path to rfnoc_image_builder
+    -  ddc: Improve unit tests and documentation
+    -  duc: Fix frequency range for DUC block
+    -  duc: Remove stale references to CORDIC
+    -  Allow find_blocks to search by device number or block count.
+    -  Fix block id check to allow underscore
+    -  Remove obsolete constant
+  * rh
+    -  Fix auto DC-offset correction and auto-IQ balance APIs
+  * siggen
+    -  Fix direction of rotation
+  * sim
+    -  Update chdr_16sc_to_sc12 testbench
+  * spi
+    -  Add SPI example
+    -  Implement SPI engine for x410
+  * systemd
+    -  Enable tx flow control automatically
+  * tests
+    -  x410: Add GPIO tests to X410 devtest
+    -  add support for new benchmark_rate args
+    -  Fix potential resource leak
+    -  Build uhd_test library as static when `-DBUILD_SHARED_LIBS=ON`
+    -  rfnoc: Add another loop graph test
+    -  Streaming tests setup
+    -  Enable automated streaming tests on X410
+    -  Add X410 100GbE tests
+    -  rfnoc: Amend mock nodes with action support
+    -  Add complex include to resolve build
+    -  Use new args for x410 streaming tests
+    -  Apply clang-format to convert_test
+    -  Fix converter benchmark disable on Boost <1.68
+    -  Atomicize counters in benchmark_rate
+    -  Add saturating test cases
+    -  Add conversion benchmarking tests
+    -  Force converter tests to be run with all available prios
+    -  Modularize x4xx_radio_mock to use it in other tests
+    -  Disable x4xx_radio_block_test on macOS
+    -  Add replay-back-edge test
+    -  Remove non-functional DPDK test
+    -  Add default length for automated streaming tests
+    -  Add automated streaming tests
+    -  Add streaming setup script for performance enhancements
+    -  Remove skip_dram from streaming performance test script
+    -  Fix rfnoc_graph mock nodes stop-stream command
+    -  Use reference type to prevent copy
+    -  Fix check in link_test
+    -  Add recv(0) case to rx_streamer_test
+    -  Add missing header, required by some compilers
+  * tools
+    -  uhd_ubuntu_deb: Require --buildpath
+    -  Fix control packet byte enable in CHDR dissector
+    -  Add general purpose tool for USRP configuration
+    -  Add check for SEP with ctrl enabled to rfnoc_image_builder
+    -  Add missing fields to CHDR dissector
+    -  Fix rfnoc dissector build
+  * uhd
+    -  Replay block version 1.1
+    -  Fix compiler macro ordering
+    -  Fix negligible copy/paste typos in rhodium radio control
+    -  Harmonize fuzzy frequency comparisons
+    -  Remove FSRU-related files
+    -  rfnoc: Let connect_through_blocks() return edge list
+    -  Expose uhd::dict and fs_path with UHD_API_HEADER
+    -  Demote WARNING on minor compat mismatch to DEBUG
+    -  Fix non-standard function name macros
+    -  Update git://github.com references to https
+    -  Allow pass raw IQ data array to tone generator
+    -  Remove tcp_zero_copy
+    -  nsis: Remove broken shortcuts in Windows installer
+    -  Fix RFNoC-capable detection in uhd_usrp_probe
+    -  Remove superfluous boost/bind.hpp includes
+    -  Add support for max10 variants
+    -  Update manifest for x410 cpld
+    -  Update num_recv_frames calculation for ctrl links
+    -  Remove spurious template from property dtor
+    -  Fix spelling errors
+    -  math: Replace wrap-frequency math with a single function
+    -  math: Add a sign() function
+    -  Replace Boost mutexes and locks with standard options
+    -  zbx: Prevent TX antenna config from disrupting RX
+    -  mpm: Expose filesystem version information on MPM tree
+    -  transport: Avoid exceptions in disconnect_receiver()
+    -  Remove Boost version checks for Boost 1.61
+    -  streamer: Restore original recv(0) semantics
+    -  Fix usage of std::abs with template parameters
+    -  Update version, manifest, and changelogs
+    -  Replace boost::thread::id with std::thread::id
+  * utils
+    -  string: Add split string utility function
+    -  Add comment re overclocking
+    -  Modify set-tx-gain procedure to update gain in one go
+    -  Fix comment in noc_shell Mako template
+    -  Add space to rfnoc_image_builder help
+    -  Get signal above noise floor when finding optimal gain
+  * x300
+    -  Fix LED configuration for TwinRX
+    -  Remove usage of CHDR_MAX_LEN_HDR
+    -  Fix error message for wrong reference frequency
+    -  Remove unused variables in x300_eth_mgr.cpp
+    -  Fix MAX_RATE_1GIGE value
+    -  Fix sfpp_io_core tuser width
+    -  Initialize struct variable before using it
+  * x410
+    -  Correct 100GbE link speed
+  * x4xx_bist
+    -  Use get_mpm_client in gpio bist
+
+ -- Ettus Research <packages@ettus.com>  Thu, 07 Apr 2022 03:50:50 -0800
+
+
 uhd (4.1.0.1-0ubuntu1) ubuntu_release; urgency=low
 
   * cmake
