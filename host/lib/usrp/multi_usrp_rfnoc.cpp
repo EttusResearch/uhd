@@ -1718,7 +1718,7 @@ public:
                         // Get the next Replay port
                         replay_port++;
                     } else {
-                        tx_chan.replay.ctrl == nullptr;
+                        tx_chan.replay.ctrl = nullptr;
                     }
 
                     new_chans.push_back(tx_chan);
