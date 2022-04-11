@@ -33,6 +33,12 @@ schedules:
     include:
     - UHD-4.1
   always: true
+- cron: "0 2 * * SUN"
+  displayName: Weekly Docker Build UHD-4.2 branch
+  branches:
+    include:
+    - UHD-4.2
+  always: true
 
 variables:
 - template: uhd-pipeline-vars.yml
