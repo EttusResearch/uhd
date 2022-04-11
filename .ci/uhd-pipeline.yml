@@ -66,7 +66,7 @@ trigger:
   batch: true
   branches:
     include:
-    - master
+    - UHD-4.2
   paths:
     include:
     - host

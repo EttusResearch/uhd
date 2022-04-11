@@ -6,7 +6,7 @@
 trigger:
   branches:
     include:
-    - master
+    - UHD-4.2
   paths:
     include:
     - .ci/docker
@@ -14,7 +14,7 @@ trigger:
 pr:
   branches:
     include:
-    - master
+    - UHD-4.2
   paths:
     include:
     - .ci/docker

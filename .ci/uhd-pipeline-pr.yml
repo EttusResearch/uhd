@@ -75,7 +75,7 @@ trigger: none
 pr:
   branches:
     include:
-    - master
+    - UHD-4.2
   paths:
     include:
     - host
