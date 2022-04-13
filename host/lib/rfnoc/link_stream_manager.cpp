@@ -5,7 +5,6 @@
 //
 
 #include <uhd/exception.hpp>
-#include <uhd/transport/muxed_zero_copy_if.hpp>
 #include <uhdlib/rfnoc/chdr_ctrl_endpoint.hpp>
 #include <uhdlib/rfnoc/link_stream_manager.hpp>
 #include <uhdlib/rfnoc/mgmt_portal.hpp>
@@ -63,7 +62,6 @@ public:
         // Create a muxed transport to share between the mgmt_portal and
         // chdr_ctrl_endpoint. We have to use the same base transport here to ensure that
         // the route setup logic in the FPGA transport works correctly.
-        // TODO: This needs to be cleaned up. A muxed_zero_copy_if is excessive here
         _ctrl_xport = _mb_iface.make_ctrl_transport(_my_device_id, _my_mgmt_ctrl_epid);
 
         _my_adapter_id = _mb_iface.get_adapter_id(_my_device_id);
