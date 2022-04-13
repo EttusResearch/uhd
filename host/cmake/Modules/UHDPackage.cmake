@@ -17,10 +17,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(LINUX TRUE)
 endif()
 
-if(NOT CMAKE_CROSSCOMPILING AND LINUX AND EXISTS "/etc/debian_version")
-    set(DEBIAN TRUE)
-endif()
-
 if(NOT CMAKE_CROSSCOMPILING AND LINUX AND EXISTS "/etc/redhat-release")
     set(REDHAT TRUE)
 endif()
@@ -34,8 +30,6 @@ elseif(APPLE)
     set(CPACK_GENERATOR PackageMaker)
 elseif(WIN32)
     set(CPACK_GENERATOR NSIS)
-elseif(DEBIAN)
-    set(CPACK_GENERATOR DEB)
 elseif(REDHAT)
     set(CPACK_GENERATOR RPM)
 else()
@@ -45,32 +39,24 @@ endif()
 ########################################################################
 # Setup package file name
 ########################################################################
-if(DEBIAN AND LIBUHD_PKG)
-    set(CPACK_PACKAGE_FILE_NAME "libuhd${UHD_VERSION_MAJOR}_${UHD_VERSION}_${CMAKE_SYSTEM_PROCESSOR}" CACHE INTERNAL "")
-elseif(DEBIAN AND LIBUHDDEV_PKG)
-    set(CPACK_PACKAGE_FILE_NAME "libuhd-dev_${UHD_VERSION}_${CMAKE_SYSTEM_PROCESSOR}" CACHE INTERNAL "")
-elseif(DEBIAN AND UHDHOST_PKG)
-    set(CPACK_PACKAGE_FILE_NAME "uhd-host_${UHD_VERSION}_${CMAKE_SYSTEM_PROCESSOR}" CACHE INTERNAL "")
-else()
-    if(DEBIAN OR REDHAT)
-        find_program(LSB_RELEASE_EXECUTABLE lsb_release)
+if(REDHAT)
+    find_program(LSB_RELEASE_EXECUTABLE lsb_release)
 
-        if(LSB_RELEASE_EXECUTABLE)
-            #extract system information by executing the commands
-            execute_process(
-                COMMAND ${LSB_RELEASE_EXECUTABLE} --short --id
-                OUTPUT_VARIABLE LSB_ID OUTPUT_STRIP_TRAILING_WHITESPACE
-            )
-            execute_process(
-                COMMAND ${LSB_RELEASE_EXECUTABLE} --short --release
-                OUTPUT_VARIABLE LSB_RELEASE OUTPUT_STRIP_TRAILING_WHITESPACE
-            )
+    if(LSB_RELEASE_EXECUTABLE)
+        #extract system information by executing the commands
+        execute_process(
+            COMMAND ${LSB_RELEASE_EXECUTABLE} --short --id
+            OUTPUT_VARIABLE LSB_ID OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        execute_process(
+            COMMAND ${LSB_RELEASE_EXECUTABLE} --short --release
+            OUTPUT_VARIABLE LSB_RELEASE OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
 
-            #set a more sensible package name for this system
-            set(CPACK_PACKAGE_FILE_NAME "uhd_${UHD_VERSION}_${LSB_ID}-${LSB_RELEASE}-${CMAKE_SYSTEM_PROCESSOR}" CACHE INTERNAL "")
-        endif(LSB_RELEASE_EXECUTABLE)
-    endif(DEBIAN OR REDHAT)
-endif(DEBIAN AND LIBUHD_PKG)
+        #set a more sensible package name for this system
+        set(CPACK_PACKAGE_FILE_NAME "uhd_${UHD_VERSION}_${LSB_ID}-${LSB_RELEASE}-${CMAKE_SYSTEM_PROCESSOR}" CACHE INTERNAL "")
+    endif(LSB_RELEASE_EXECUTABLE)
+endif(REDHAT)
 
 if(${CPACK_GENERATOR} STREQUAL NSIS)
 
@@ -159,23 +145,6 @@ set(CPACK_COMPONENT_EXAMPLES_DEPENDS libraries)
 set(CPACK_COMPONENT_TESTS_DEPENDS libraries)
 
 set(CPACK_COMPONENTS_ALL libraries pythonapi headers utilities examples manual doxygen readme images)
-########################################################################
-# Setup CPack Debian
-########################################################################
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-all-dev, python3-requests")
-set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "python3, python3-tk")
-foreach(filename preinst postinst prerm postrm)
-    list(APPEND CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA ${UHD_BINARY_DIR}/debian/${filename})
-    file(MAKE_DIRECTORY ${UHD_BINARY_DIR}/debian)
-    configure_file(
-        ${UHD_SOURCE_DIR}/cmake/debian/${filename}.in
-        ${UHD_BINARY_DIR}/debian/${filename}
-    @ONLY)
-endforeach(filename)
-configure_file(
-    ${UHD_SOURCE_DIR}/cmake/debian/watch
-    ${UHD_BINARY_DIR}/debian/watch
-@ONLY)
 
 ########################################################################
 # Setup CPack RPM
