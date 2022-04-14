@@ -913,7 +913,7 @@ public:
     /*** GPIO API ************************************************************/
     std::vector<std::string> get_gpio_banks() const override
     {
-        return {"RX", "TX", "FP0"};
+        return {"FP0", "RX", "TX"};
     }
 
     void set_gpio_attr(
