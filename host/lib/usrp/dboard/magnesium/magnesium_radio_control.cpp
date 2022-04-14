@@ -812,18 +812,25 @@ freq_range_t magnesium_radio_control_impl::get_rx_lo_freq_range(
 }
 
 void magnesium_radio_control_impl::set_rx_lo_source(
-    const std::string& src, const std::string& name, const size_t /*chan*/
-)
+    const std::string& src, const std::string& name, const size_t chan)
 {
-    // TODO: checking what options are there
-    std::lock_guard<std::recursive_mutex> l(_set_lock);
     RFNOC_LOG_TRACE("Setting RX LO " << name << " to " << src);
-
-    if (name == MAGNESIUM_LO1) {
-        _ad9371->set_lo_source(src, RX_DIRECTION);
+    if (name == radio_control::ALL_LOS) {
+        const auto rx_lo_names = get_rx_lo_names(chan);
+        for (auto rx_lo_name : rx_lo_names) {
+            set_rx_lo_source(src, rx_lo_name, chan);
+        }
     } else {
-        RFNOC_LOG_ERROR(
-            "RX LO " << name << " does not support setting source to " << src);
+        std::lock_guard<std::recursive_mutex> l(_set_lock);
+        if (name == MAGNESIUM_LO1) {
+            _ad9371->set_lo_source(src, RX_DIRECTION);
+        } else if (name == MAGNESIUM_LO2 && src == "internal") {
+            // LO2 only supports internal source on this device
+            return;
+        } else {
+            RFNOC_LOG_ERROR(
+                "RX LO " << name << " does not support setting source to " << src);
+        }
     }
 }
 
@@ -834,8 +841,11 @@ const std::string magnesium_radio_control_impl::get_rx_lo_source(
     if (name == MAGNESIUM_LO1) {
         // TODO: should we use this from cache?
         return _ad9371->get_lo_source(RX_DIRECTION);
+    } else if (name == MAGNESIUM_LO2) {
+        return "internal";
+    } else {
+        throw uhd::value_error("Could not find LO stage " + name);
     }
-    return "internal";
 }
 
 double magnesium_radio_control_impl::_set_rx_lo_freq(const std::string source,
@@ -930,17 +940,25 @@ freq_range_t magnesium_radio_control_impl::get_tx_lo_freq_range(
 }
 
 void magnesium_radio_control_impl::set_tx_lo_source(
-    const std::string& src, const std::string& name, const size_t /*chan*/
-)
+    const std::string& src, const std::string& name, const size_t chan)
 {
-    // TODO: checking what options are there
-    std::lock_guard<std::recursive_mutex> l(_set_lock);
     RFNOC_LOG_TRACE("set_tx_lo_source(name=" << name << ", src=" << src << ")");
-    if (name == MAGNESIUM_LO1) {
-        _ad9371->set_lo_source(src, TX_DIRECTION);
+    if (name == radio_control::ALL_LOS) {
+        const auto tx_lo_names = get_tx_lo_names(chan);
+        for (auto tx_lo_name : tx_lo_names) {
+            set_tx_lo_source(src, tx_lo_name, chan);
+        }
     } else {
-        RFNOC_LOG_ERROR(
-            "TX LO " << name << " does not support setting source to " << src);
+        std::lock_guard<std::recursive_mutex> l(_set_lock);
+        if (name == MAGNESIUM_LO1) {
+            _ad9371->set_lo_source(src, TX_DIRECTION);
+        } else if (name == MAGNESIUM_LO2 && src == "internal") {
+            // LO2 only supports internal source on this device
+            return;
+        } else {
+            RFNOC_LOG_ERROR(
+                "TX LO " << name << " does not support setting source to " << src);
+        }
     }
 }
 
@@ -951,8 +969,11 @@ const std::string magnesium_radio_control_impl::get_tx_lo_source(
     if (name == MAGNESIUM_LO1) {
         // TODO: should we use this from cache?
         return _ad9371->get_lo_source(TX_DIRECTION);
+    } else if (name == MAGNESIUM_LO2) {
+        return "internal";
+    } else {
+        throw uhd::value_error("Could not find LO stage " + name);
     }
-    return "internal";
 }
 
 double magnesium_radio_control_impl::_set_tx_lo_freq(const std::string source,
