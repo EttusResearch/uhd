@@ -2128,8 +2128,10 @@ public:
         std::vector<std::string> gpio_banks;
         for (const auto& radio : _radios[mboard]) {
             auto radio_banks = radio->get_gpio_banks();
+            const std::string suffix =
+                _radios[mboard].size() == 1 ? "" : radio->get_slot_name();
             for (const auto& bank : radio_banks) {
-                gpio_banks.push_back(bank + radio->get_slot_name());
+                gpio_banks.push_back(bank + suffix);
             }
         }
 
