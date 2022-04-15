@@ -85,7 +85,7 @@ def parse_args():
                         help="specify a minimum frequency")
     parser.add_argument("--stop-freq", type=float, required=True,
                         help="specify a maximum frequency")
-    parser.add_argument("--freq-bands", type=float, required=True,
+    parser.add_argument("--freq-bands", type=int, required=True,
                         help="specify the number of frequency bands to test")
     parser.add_argument("--start-power", type=float, default=-30,
                         help="specify a starting output power for the siggen (dBm)")
@@ -175,14 +175,25 @@ class LogFormatter(logging.Formatter):
 
 def setup_ref(usrp, ref, num_mboards):
     """Setup the reference clock"""
-    if ref == "mimo":
-        if num_mboards != 2:
-            logger.error("ref = \"mimo\" implies 2 motherboards; "
-                         "your system has %d boards", num_mboards)
-            return False
-        usrp.set_clock_source("mimo", 1)
+    sources = [x.strip() for x in ref.split(",")]
+    if len(sources) == 1:
+        if ref == "mimo":
+            # mimo is a special case requiring the master to be external and
+            # the slave to be mimo
+            if num_mboards != 2:
+                logger.error("ref = \"mimo\" implies 2 motherboards; "
+                            "your system has %d boards", num_mboards)
+                return False
+            usrp.set_clock_source("external", 0)
+            usrp.set_clock_source("mimo", 1)
+        else:
+            usrp.set_clock_source(ref)
     else:
-        usrp.set_clock_source(ref)
+        if num_mboards != len(sources):
+            logger.error("number of clock sources does not match number of devices")
+            return False
+        for mboard in range(num_mboards):
+            usrp.set_clock_source(sources[mboard], mboard)
 
     # Lock onto clock signals for all mboards
     if ref != "internal":
@@ -203,15 +214,27 @@ def setup_ref(usrp, ref, num_mboards):
 
 def setup_pps(usrp, pps, num_mboards):
     """Setup the PPS source"""
-    if pps == "mimo":
-        if num_mboards != 2:
-            logger.error("ref = \"mimo\" implies 2 motherboards; "
-                         "your system has %d boards", num_mboards)
-            return False
-        # make mboard 1 a slave over the MIMO Cable
-        usrp.set_time_source("mimo", 1)
+    sources = [x.strip() for x in pps.split(",")]
+    if len(sources) == 1:
+        # Single argument means use the same source for all mboards
+        if pps == "mimo":
+            # mimo is a special case requiring the master to be external and
+            # the slave to be mimo
+            if num_mboards != 2:
+                logger.error("ref = \"mimo\" implies 2 motherboards; "
+                            "your system has %d boards", num_mboards)
+                return False
+            usrp.set_time_source("external", 0)
+            usrp.set_time_source("mimo", 1)
+        else:
+            usrp.set_time_source(pps)
     else:
-        usrp.set_time_source(pps)
+        # Multiple arguments means different sources for each mboards
+        if len(sources) != num_mboards:
+            logger.error("number of clock sources does not match number of devices")
+            return False
+        for mboard in range(num_mboards):
+            usrp.set_time_source(sources[mboard], mboard)
     return True
 
 
@@ -329,11 +352,13 @@ def tune_usrp(usrp, freq, channels, lo_source, delay=CMD_DELAY):
        Then all channels are synchronously tuned."""
 
     treq = uhd.types.TuneRequest(freq)
-    lo_source_channel = -1
-    for chan, lo in zip(channels, lo_source):
-        if lo == "internal":
-            lo_source_channel = chan
-    if lo_source_channel != -1:
+    lo_source_channel = None
+    if lo_source != None:
+        for chan, lo in zip(channels, lo_source):
+            if lo == "internal":
+                lo_source_channel = chan
+    usrp.set_command_time(generate_time_spec(usrp, time_delta=delay))
+    if lo_source_channel != None:
         treq.dsp_freq = (usrp.set_rx_freq(uhd.types.TuneRequest(freq), lo_source_channel)).actual_dsp_freq
         treq.target_freq = freq
         treq.rf_freq = freq
@@ -343,9 +368,9 @@ def tune_usrp(usrp, freq, channels, lo_source, delay=CMD_DELAY):
             if lo_source == "internal":
                 continue
             usrp.set_rx_freq(treq, chan)
-    usrp.set_command_time(generate_time_spec(usrp, time_delta=delay))
-    for chan in channels:
-        usrp.set_rx_freq(treq, chan)
+    else:
+        for chan in channels:
+            usrp.set_rx_freq(treq, chan)
     usrp.clear_command_time()
     time.sleep(delay)
 
