@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include <uhd/build_info.hpp>
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
@@ -290,7 +291,7 @@ std::string uhd::get_pkg_path(void)
 std::string uhd::get_lib_path(void)
 {
     fs::path runtime_libfile_path = boost::dll::this_line_location();
-    //Normalize before decomposing path so result is reliable
+    // Normalize before decomposing path so result is reliable
     fs::path lib_path = runtime_libfile_path.lexically_normal().parent_path();
     return lib_path.string();
 }
@@ -464,14 +465,16 @@ std::string uhd::get_images_dir(const std::string& search_paths)
         }
     }
 
-    /* Finally, check for the default UHD images installation path. */
-    fs::path pkg_path = fs::path(uhd::get_pkg_path()) / "share" / "uhd" / "images";
-    if (fs::is_directory(pkg_path)) {
-        return pkg_path.string();
-    } else {
-        /* No luck. Return an empty string. */
-        return std::string("");
+    /* Finally, check for the default UHD images installation paths */
+    for (auto& prefix : {uhd::get_pkg_path(), uhd::build_info::install_prefix()}) {
+        fs::path default_images_path = fs::path(prefix) / "share" / "uhd" / "images";
+        if (fs::is_directory(default_images_path)) {
+            return default_images_path.string();
+        }
     }
+
+    /* No luck. Return an empty string. */
+    return std::string("");
 }
 
 std::string uhd::find_image_path(
