@@ -11,6 +11,7 @@ def get_options():
     parser.add_argument('action', type=str, default=None, help='Action to perform')
     parser.add_argument('xci_filepath', type=str, default=None, help='Name for the IP core')
     parser.add_argument('--target', type=str, default=None, help='Input value for target. Must be of the form <arch>/<device>/<package>/<speedgrade>/<silicon revision>')
+    parser.add_argument('--name', type=str, default=None, help='Input value for new IP name')
     parser.add_argument("--output_dir", type=str, default='.', help="Build directory for IP")
     args = parser.parse_args()
     if not args.action:
@@ -27,6 +28,8 @@ def get_options():
         sys.exit(1)
     return args
 
+def get_top_level_match_str(tag_text):
+    return '(.*\<' + tag_text + '\>)(.+)(\</' + tag_text + '\>)'
 def get_match_str(item):
     return '(.*\<spirit:configurableElementValue spirit:referenceId=\".*\.' + item + '\"\>)(.+)(\</spirit:configurableElementValue\>)'
 def get_empty_match_str(item):
@@ -93,6 +96,35 @@ def main():
                     m = re.search(get_empty_match_str('(' + '|'.join(list(replace_dict.keys())) + ')'), r_line)
                     if m is not None:
                         w_line = m.group(1) + '>' + replace_dict[m.group(2)] + '</spirit:configurableElementValue>\n'
+                out_file.write(w_line)
+    elif args.action == 'rename':
+        # Write a new XCI file with a new name
+        if not os.path.isdir(args.output_dir):
+            print('ERROR: IP Build directory ' + args.output_dir + ' could not be accessed or is not a directory.')
+            sys.exit(1)
+        if not args.name:
+            print('ERROR: No name specified.')
+            sys.exit(1)
+        new_name = args.name
+
+        replace_dict = {'Component_Name': new_name}
+        replace_top_level = ('spirit:instanceName', new_name)
+        out_xci_filename = os.path.join(os.path.abspath(args.output_dir), new_name + '.xci')
+
+        with open(out_xci_filename, 'w') as out_file:
+            for r_line in xci_lines:
+                w_line = r_line
+                m = re.search(get_match_str('(' + '|'.join(list(replace_dict.keys())) + ')'), r_line)
+                if m is not None:
+                    w_line = m.group(1) + replace_dict[m.group(2)] + m.group(4) +'\n'
+                else:
+                    m = re.search(get_empty_match_str('(' + '|'.join(list(replace_dict.keys())) + ')'), r_line)
+                    if m is not None:
+                        w_line = m.group(1) + '>' + replace_dict[m.group(2)] + '</spirit:configurableElementValue>\n'
+                    else:
+                        m = re.search(get_top_level_match_str(replace_top_level[0]), r_line)
+                        if m is not None:
+                            w_line = m.group(1) + replace_top_level[1] + m.group(3) + '\n'
                 out_file.write(w_line)
 
 
