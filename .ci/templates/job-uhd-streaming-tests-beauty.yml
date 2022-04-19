@@ -29,6 +29,7 @@ jobs:
       #   dutSecondAddr: '192.168.20.4'
       #   dutMgmtAddr: '10.0.57.13'
       #   dutFPGA: 'XG'
+      #   dutNameId: ''
       beauty-X310-0:
         dutName: 'beauty-X310-0'
         dutType: 'X310'
@@ -36,6 +37,7 @@ jobs:
         dutSecondAddr: '192.168.20.3'
         dutMgmtAddr: ''
         dutFPGA: 'XG'
+        dutNameId: ''
       # beauty-X410-0 X4_200:
       #   dutName: 'beauty-X410-0'
       #   dutType: 'x4xx'
@@ -43,6 +45,7 @@ jobs:
       #   dutSecondAddr: '192.168.20.2'
       #   dutMgmtAddr: '10.0.57.29'
       #   dutFPGA:'X4_200'
+      #   dutNameId: ''
       beauty-X410-0 CG_400:
         dutName: 'beauty-X410-0'
         dutType: 'x4xx'
@@ -50,6 +53,7 @@ jobs:
         dutSecondAddr: '192.168.20.2'
         dutMgmtAddr: '10.0.57.29'
         dutFPGA: 'CG_400'
+        dutNameId: ''
         dutEmbeddedImagesArtifact: 'x4xx-images'
         uartSerial: '2516351E2C9A'
       # beauty-E320-0:
@@ -59,6 +63,7 @@ jobs:
       #   dutSecondAddr: ''
       #   dutMgmtAddr: '10.0.57.38'
       #   dutFPGA: 'XG'
+      #   dutNameId: ''
       # beauty-N310-0:
       #   dutName: 'beauty-N310-0'
       #   dutType: 'N310'
@@ -66,6 +71,7 @@ jobs:
       #   dutSecondAddr: '192.168.20.6'
       #   dutMgmtAddr: '10.0.57.31'
       #   dutFPGA: 'XG'
+      #   dutNameId: ''
       # beauty-X310_TwinRx-0:
       #   dutName: 'beauty-X310_TwinRx-0'
       #   dutType: 'X310_TwinRx'
@@ -73,3 +79,13 @@ jobs:
       #   dutSecondAddr: '192.168.20.7'
       #   dutMgmtAddr: ''
       #   dutFPGA: 'XG'
+      #   dutNameId: ''
+      beauty-B210-0:
+        dutName: 'beauty-B210-0'
+        dutType: 'B210'
+        dutAddr: ''
+        dutSecondAddr: ''
+        dutMgmtAddr: ''
+        dutFPGA: ''
+        dutNameId: 'MyB210'
+
