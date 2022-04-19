@@ -395,19 +395,19 @@ def download(
     if resp.status_code != 200:
         raise RuntimeError("URL does not exist: {}".format(images_url))
     filesize = float(resp.headers.get('content-length', -1))
+    base_filename = os.path.basename(filename)
     if filesize > download_limit:
         if not ask_permission(
-                "The file size for this target ({:.1f} MiB) exceeds the "
+                "The file size for {} ({:.1f} MiB) exceeds the "
                 "download limit ({:.1f} MiB). Continue downloading?".format(
-                    filesize/1024**2, download_limit/1024**2)):
+                    base_filename, filesize/1024**2, download_limit/1024**2)):
             return 0, 0, ""
     if filesize == -1:
         if not ask_permission(
-                "The file size for this target could not be determined. "
-                "Continue downloading?"):
+                "The file size for {} could not be determined. "
+                "Continue downloading?".format(base_filename)):
             return 0, 0, ""
     filesize_dl = 0
-    base_filename = os.path.basename(filename)
     if print_progress and not sys.stdout.isatty():
         print_progress = False
         log("INFO", "Downloading {}, total size: {} kB".format(
