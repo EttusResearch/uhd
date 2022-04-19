@@ -127,7 +127,7 @@ def generate_X310_test_cases(metafunc, test_length):
         [{},                                      pytest.param(False,    200e6,   0,       "",         200e6,   "0",         id="1x10GbE-1xTX@200e6")],
         [{},                                      pytest.param(False,    100e6,   0,       "",         100e6,   "0,1",       id="1x10GbE-2xTX@100e6")],
         [{},                                      pytest.param(False,    200e6,   200e6,   "0",        200e6,   "0",         id="1x10GbE-1xTRX@200e6")],
-        [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,    100e6,   100e6,   "0,1",      100e6,   "0",         id="1x10GbE-2xTRX@100e6")],
+        [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,    100e6,   100e6,   "0,1",      100e6,   "0,1",       id="1x10GbE-2xTRX@100e6")],
         [{},                                      pytest.param(True,     200e6,   200e6,   "0,1",      0,       "",          id="2x10GbE-2xRX@200e6")],
         [{},                                      pytest.param(True,     200e6,   0,       "",         200e6,   "0,1",       id="2x10GbE-2xTX@200e6")],
         [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(True,     200e6,   200e6,   "0,1",      200e6,   "0,1",       id="2x10GbE-2xTRX@200e6")],
@@ -145,8 +145,8 @@ def generate_X310_TwinRx_test_cases(metafunc, test_length):
         # Test Lengths                                         dual_SFP  rate     rx_rate  rx_channels tx_rate  tx_channels  test case ID
         # --------------------------------------------------------------------------------------------------------------------------------------------
         [{},                                      pytest.param(False,    100e6,   100e6,   "0,1,2",    0,       "",          id="1x10GbE-3xRX@100e6")],
-        [{},                                      pytest.param(False,    50e6,    50e6,    "0,1,2,4",  0,       "",          id="1x10GbE-4xRX@50e6")],
-        [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(True,     100e6,   100e6,   "0,1,2,4",  0,       "",          id="2x10GbE-4xRX@100e6")],
+        [{},                                      pytest.param(False,    50e6,    50e6,    "0,1,2,3",  0,       "",          id="1x10GbE-4xRX@50e6")],
+        [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(True,     100e6,   100e6,   "0,1,2,3",  0,       "",          id="2x10GbE-4xRX@100e6")],
     ]
 
     argvalues = test_length_utils.select_test_cases_by_length(test_length, test_cases)
