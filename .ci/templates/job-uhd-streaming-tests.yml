@@ -167,9 +167,12 @@ jobs:
       sudo ./setup.sh --auto --dpdk
       sleep 5
     displayName: setup interfaces for use with DPDK
+    condition: and(succeeded(), not(eq(variables.dutType, 'B210')))
   - script: |
       set -x
       export PYTHONPATH=${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
+      export LD_LIBRARY_PATH=$(Build.BinariesDirectory)/uhddev/build/lib:$LD_LIBRARY_PATH
+      export UHD_IMAGES_DIR=$(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images
       cd ${{ parameters.uhdSrcDir }}/host/tests/pytests
       # Disable creation of __pycache__ files using -B to avoid errors on clean up during next run
       # as using sudo below creates them with root priveleges.
@@ -184,6 +187,7 @@ jobs:
 
     continueOnError: true
     displayName: Run streaming tests with DPDK on $(dutName)
+    condition: and(succeeded(), not(eq(variables.dutType, 'B210')))
   - task: PublishTestResults@2
     inputs:
       testResultsFormat: 'JUnit'

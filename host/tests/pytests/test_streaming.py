@@ -191,13 +191,18 @@ def pytest_generate_tests(metafunc):
 
     metafunc.parametrize("dut_type", [dut_type])
 
-    if dut_type.lower() != "b210":
+    if dut_type.lower() == "b210":
+        argvalues_DPDK = [
+            #            use_dpdk  test case ID  marks
+            pytest.param(False,    id="NO DPDK",)
+        ]
+    else:
         argvalues_DPDK = [
             #            use_dpdk  test case ID  marks
             pytest.param(True,     id="DPDK",    marks=pytest.mark.dpdk),
             pytest.param(False,    id="NO DPDK",)
         ]
-        metafunc.parametrize("use_dpdk", argvalues_DPDK)
+    metafunc.parametrize("use_dpdk", argvalues_DPDK)
 
     if dut_type.lower() == 'n310':
         generate_N310_test_cases(metafunc, test_length)
