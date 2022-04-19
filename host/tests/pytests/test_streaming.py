@@ -225,8 +225,11 @@ def test_streaming(pytestconfig, dut_type, use_dpdk, dual_SFP, rate, rx_rate, rx
 
     benchmark_rate_path = Path(pytestconfig.getoption('uhd_build_dir')) / 'examples/benchmark_rate'
 
+    device_args = ""
+
     # construct device args string
-    device_args = f"master_clock_rate={rate},"
+    if dut_type.lower() in ['n310', 'n320', 'e320', 'b210']:
+        device_args += f"master_clock_rate={rate},"
 
     if dut_type == "B210":
         device_args += f"name={pytestconfig.getoption('name')},"
@@ -237,7 +240,7 @@ def test_streaming(pytestconfig, dut_type, use_dpdk, dual_SFP, rate, rx_rate, rx
         device_args += f"second_addr={pytestconfig.getoption('second_addr')},"
 
     if use_dpdk:
-        device_args += f"use_dpdk=1,mgmt_addr={pytestconfig.getoption('mgmt_addr')}"
+        device_args += f"use_dpdk=1,mgmt_addr={pytestconfig.getoption('mgmt_addr')},"
 
     # construct benchmark_rate params dictionary
     benchmark_rate_params = {
