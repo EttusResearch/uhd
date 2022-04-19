@@ -5,7 +5,6 @@ import test_length_utils
 from test_length_utils import Test_Length_Smoke, Test_Length_Full, Test_Length_Stress
 
 ARGNAMES_DUAL_SFP = ["dual_SFP", "rate", "rx_rate", "rx_channels", "tx_rate", "tx_channels"]
-ARGNAMES =                      ["rate", "rx_rate", "rx_channels", "tx_rate", "tx_channels"]
 
 def parametrize_test_length(metafunc, test_length, fast_params, stress_params):
     argnames = ["iterations", "duration"]
@@ -82,18 +81,18 @@ def generate_N320_test_cases(metafunc, test_length):
 
 def generate_B210_test_cases(metafunc, test_length):
     test_cases = [
-        # Test Lengths                                         rate     rx_rate  rx_channels tx_rate  tx_channels  test case ID
-        # ------------------------------------------------------------------------------------------------------------------------------
-        [{},                                      pytest.param(61.44e6, 61.44e6, "0",        0,       "",          id="1xRX@61.44e6")],
-        [{},                                      pytest.param(30.72e6, 30.72e6, "0,1",      0,       "",          id="2xRX@30.72e6")],
-        [{},                                      pytest.param(61.44e6, 0,       "",         61.44e6, "0",         id="1xTX@61.44e6")],
-        [{},                                      pytest.param(30.72e6, 0,       "",         30.72e6, "0,1",       id="2xTX@30.72e6")],
-        [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(30.72e6, 30.72e6, "0",        30.72e6, "0",         id="1xTRX@30.72e6")],
-        [{},                                      pytest.param(15.36e6, 15.36e6, "0,1",      15.36e6, "0,1",       id="2xTRX@15.36e6")],
+        # Test Lengths                                         dual_SFP  rate     rx_rate  rx_channels tx_rate  tx_channels  test case ID
+        # ----------------------------------------------------------------------------------------------------------------------------------------
+        [{},                                      pytest.param(False,    61.44e6, 61.44e6, "0",        0,       "",          id="1xRX@61.44e6")],
+        [{},                                      pytest.param(False,    30.72e6, 30.72e6, "0,1",      0,       "",          id="2xRX@30.72e6")],
+        [{},                                      pytest.param(False,    61.44e6, 0,       "",         61.44e6, "0",         id="1xTX@61.44e6")],
+        [{},                                      pytest.param(False,    30.72e6, 0,       "",         30.72e6, "0,1",       id="2xTX@30.72e6")],
+        [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,    30.72e6, 30.72e6, "0",        30.72e6, "0",         id="1xTRX@30.72e6")],
+        [{},                                      pytest.param(False,    15.36e6, 15.36e6, "0,1",      15.36e6, "0,1",       id="2xTRX@15.36e6")],
     ]
 
     argvalues = test_length_utils.select_test_cases_by_length(test_length, test_cases)
-    metafunc.parametrize(ARGNAMES, argvalues)
+    metafunc.parametrize(ARGNAMES_DUAL_SFP, argvalues)
 
     fast_params = test_length_utils.test_length_params(iterations=10, duration=30)
     stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
@@ -102,19 +101,18 @@ def generate_B210_test_cases(metafunc, test_length):
 
 def generate_E320_test_cases(metafunc, test_length):
     test_cases = [
-        # Test Lengths                                         rate     rx_rate  rx_channels tx_rate  tx_channels  test case ID
-        # ------------------------------------------------------------------------------------------------------------------------------
-        [{},                                      pytest.param(61.44e6, 61.44e6, "0",        0,       "",          id="1xRX@61.44e6")],
-        [{},                                      pytest.param(61.44e6, 61.44e6, "0,1",      0,       "",          id="2xRX@61.44e6")],
-        [{},                                      pytest.param(61.44e6, 0,       "",         61.44e6, "0",         id="1xTX@61.44e6")],
-        [{},                                      pytest.param(61.44e6, 0,       "",         61.44e6, "0,1",       id="2xTX@61.44e6")],
-        [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(61.44e6, 61.44e6, "0",        61.44e6, "0",         id="1xTRX@61.44e6")],
-        [{},                                      pytest.param(61.44e6, 61.44e6, "0,1",      61.44e6, "0,1",       id="2xTRX@61.44e6")],
-
+        # Test Lengths                                         dual_SFP  rate     rx_rate  rx_channels tx_rate  tx_channels  test case ID
+        # -------------------------------------------------------------- -------------------------------------------------------------------------
+        [{},                                      pytest.param(False,    61.44e6, 61.44e6, "0",        0,       "",          id="1xRX@61.44e6")],
+        [{},                                      pytest.param(False,    61.44e6, 61.44e6, "0,1",      0,       "",          id="2xRX@61.44e6")],
+        [{},                                      pytest.param(False,    61.44e6, 0,       "",         61.44e6, "0",         id="1xTX@61.44e6")],
+        [{},                                      pytest.param(False,    61.44e6, 0,       "",         61.44e6, "0,1",       id="2xTX@61.44e6")],
+        [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,    61.44e6, 61.44e6, "0",        61.44e6, "0",         id="1xTRX@61.44e6")],
+        [{},                                      pytest.param(False,    61.44e6, 61.44e6, "0,1",      61.44e6, "0,1",       id="2xTRX@61.44e6")],
     ]
 
     argvalues = test_length_utils.select_test_cases_by_length(test_length, test_cases)
-    metafunc.parametrize(ARGNAMES, argvalues)
+    metafunc.parametrize(ARGNAMES_DUAL_SFP, argvalues)
 
     fast_params = test_length_utils.test_length_params(iterations=10, duration=30)
     stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
