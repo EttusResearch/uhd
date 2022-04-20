@@ -6,9 +6,6 @@ Comment: Only the host directory of the distributed source is used
  to build the uhd-host package for Debian main.
 Copyright: Copyright 2010-2022 Ettus Research, a National Instruments Brand
 License: GPL-3+
-Files-Excluded: host/cmake/msvc
- fpga/usrp3/top/b200/planahead/planahead.runs/impl_1/rundef.js
- fpga/usrp3/top/x400/doc/X4XX_FPGA_right.htm
 
 Files: *
 Copyright: Copyright 2010-2022 Ettus Research, A National Instruments Brand
