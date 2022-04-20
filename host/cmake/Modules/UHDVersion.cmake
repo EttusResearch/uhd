@@ -20,10 +20,10 @@ find_package(Git QUIET)
 #  - set UHD_VERSION_DEVEL to true for master and development branches
 ########################################################################
 set(UHD_VERSION_MAJOR 4)
-set(UHD_VERSION_API   2)
+set(UHD_VERSION_API   3)
 set(UHD_VERSION_ABI   0)
 set(UHD_VERSION_PATCH 0)
-set(UHD_VERSION_DEVEL FALSE)
+set(UHD_VERSION_DEVEL TRUE)
 
 ########################################################################
 # If we're on a development branch, we skip the patch version
