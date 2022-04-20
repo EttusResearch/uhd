@@ -16,8 +16,26 @@ namespace uhd { namespace rfnoc {
 
 /*! A software interface that represents a CHDR control endpoint
  *
+ * This object is assigned an endpoint ID (EPID) and is responsible for sending/
+ * receiving CHDR control packets, typically from a single device (in other
+ * words, we spawn one of these for every USRP in our UHD session).
+ *
+ * All the RFNoC blocks on this device (as well as client zero) can create a
+ * ctrlport_endpoint interface from this object (the ctrlport_endpoint object
+ * is the thing that can do the actual peek/poke operations). This class will
+ * handle the packaging and addressing of CHDR packets.
+ *
+ * The only place where we create a chdr_ctrl_endpoint (outside of tests) is
+ * in link_stream_manager.cpp.
+ *
+ * Incoming packets (that originate from the device and reach this chdr_ctrl_endpoint)
+ * are mapped to their intended destination (the desired ctrlport_endpoint
+ * instance) by their source EPID and the destination control crossbar port.
+ *
  *  The endpoint is capable of sending/receiving CHDR packets
  *  and creating multiple ctrlport_endpoint interfaces
+ *
+ *  Typically, there is one chdr_ctrl_endpoint for every device.
  */
 class chdr_ctrl_endpoint
 {
@@ -28,11 +46,13 @@ public:
 
     //! Creates a new register interface for the specified port
     //
-    // \param port The port number on the control crossbar
+    // \param dst_epid The endpoint ID of the remote block for which this
+    //                 controlport endpoint object is designed for
+    // \param dst_port The port number on the control crossbar
     // \param buff_capacity The buffer capacity of the downstream buff in 32-bit words
     // \param max_outstanding_async_msgs Max outstanding async messages allowed
-    // \param ctrl_clk_freq Frequency of the clock driving the ctrlport logic
-    // \param timebase_freq Frequency of the timebase (for timed commands)
+    // \param client_clk Frequency of the clock driving the ctrlport logic
+    // \param timebase_clk Frequency of the timebase (for timed commands)
     //
     virtual ctrlport_endpoint::sptr get_ctrlport_ep(sep_id_t dst_epid,
         uint16_t dst_port,
