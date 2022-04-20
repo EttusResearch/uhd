@@ -165,6 +165,9 @@ static std::string get_dboard_pp_string(
             ss << boost::format("ID: %s") % db_eeprom.id.to_pp_string() << std::endl;
         if (not db_eeprom.serial.empty())
             ss << boost::format("Serial: %s") % db_eeprom.serial << std::endl;
+        if (not db_eeprom.revision.empty()) {
+            ss << "Revision: " << db_eeprom.revision << std::endl;
+        }
         if (type == "TX" and tree->exists(path / "gdb_eeprom")) {
             usrp::dboard_eeprom_t gdb_eeprom =
                 tree->access<usrp::dboard_eeprom_t>(path / "gdb_eeprom").get();
@@ -172,6 +175,9 @@ static std::string get_dboard_pp_string(
                 ss << boost::format("ID: %s") % gdb_eeprom.id.to_pp_string() << std::endl;
             if (not gdb_eeprom.serial.empty())
                 ss << boost::format("Serial: %s") % gdb_eeprom.serial << std::endl;
+            if (not gdb_eeprom.revision.empty()) {
+                ss << "Revision: " << gdb_eeprom.revision << std::endl;
+            }
         }
     }
     if (tree->exists(path / (prefix + "_frontends"))) {
