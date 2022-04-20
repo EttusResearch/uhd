@@ -18,8 +18,7 @@
 
 # This program is derived from uhd/firmware/usrp3/x300/x300_debug.py.
 
-import optparse
-import math
+import argparse
 import socket
 import struct
 import sys
@@ -80,30 +79,32 @@ class ctrl_socket(object):
     def send(self,pkt):
         self._sock.send(pkt)
 
-    def poke(self,poke_addr,poke_data):
-        out_pkt = pack_reg_peek_poke_fmt(X300_FW_COMMS_FLAGS_POKE32|X300_FW_COMMS_FLAGS_ACK, seq(), poke_addr, poke_data)
+    def poke(self, poke_addr, poke_data):
+        out_pkt = pack_reg_peek_poke_fmt(
+            X300_FW_COMMS_FLAGS_POKE32|X300_FW_COMMS_FLAGS_ACK,
+            seq(), poke_addr, poke_data)
         self.send(out_pkt)
 
 ########################################################################
 # command line options
 ########################################################################
-def get_options():
-    parser = optparse.OptionParser()
-    parser.add_option("--addr", type="string", help="X300 device address", default='')
-    (options, args) = parser.parse_args()
-    return options
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--addr", help="X300 device address", default='')
+    return parser.parse_args()
 
 ########################################################################
 # main
 ########################################################################
 if __name__=='__main__':
-    options = get_options()
+    args = get_args()
 
-    if not options.addr: raise Exception('no address specified')
+    if not args.addr:
+        raise Exception('no address specified')
 
-    status = ctrl_socket(addr=options.addr)
+    status = ctrl_socket(addr=args.addr)
 
     sys.stdout.write("Sending reset command...")
     sys.stdout.flush()
-    status.poke(X300_FW_RESET_REG,X300_FW_RESET_DATA)
-    print "Done."
+    status.poke(X300_FW_RESET_REG, X300_FW_RESET_DATA)
+    print("Done.")
