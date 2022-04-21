@@ -151,14 +151,19 @@ jobs:
     displayName: setup interfaces for use without DPDK
     condition: and(succeeded(), not(eq(variables.dutType, 'x4xx')))
   - script: |
+      echo "##[group]Printing Environment"
+      printenv
+      echo "##[endgroup]"
       set -x
-      export PYTHONPATH=${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
-      export LD_LIBRARY_PATH=$(Build.BinariesDirectory)/uhddev/build/lib:$LD_LIBRARY_PATH
-      export UHD_IMAGES_DIR=$(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images
       cd ${{ parameters.uhdSrcDir }}/host/tests/pytests
       python3 -B -m pytest -s test_streaming.py -m "not dpdk" --dut_type $(dutType) --test_length ${{ parameters.testLength }} \
         --uhd_build_dir $(Build.BinariesDirectory)/uhddev/build --junitxml $(Common.TestResultsDirectory)/TEST-$(dutName).xml \
         --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $(dutMgmtAddr) --name $(dutNameId)
+    env:
+      UHD_CONFIG_FILE: $(config_file)
+      PYTHONPATH: ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
+      LD_LIBRARY_PATH: $(Build.BinariesDirectory)/uhddev/build-installed/lib
+      UHD_IMAGES_DIR: $(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images
     continueOnError: true
     displayName: Run streaming tests on $(dutName)
     condition: and(succeeded(), not(eq(variables.dutType, 'x4xx')))
@@ -169,10 +174,19 @@ jobs:
     displayName: setup interfaces for use with DPDK
     condition: and(succeeded(), not(eq(variables.dutType, 'B210')))
   - script: |
+      if [ "$(dutFPGA)" = "CG_400" ]; then
+        echo "##vso[task.setvariable variable=config_file]${{ parameters.uhdSrcDir }}/host/tests/pytests/uhd_configs/uhd_dpdk_100GbE.conf"
+        echo "Using 100 GbE UHD Config File"
+      else
+        echo "##vso[task.setvariable variable=config_file]${{ parameters.uhdSrcDir }}/host/tests/pytests/uhd_configs/uhd_dpdk_10GbE.conf"
+        echo "Using 10 GbE UHD Config File"
+      fi
+    displayName: select UHD config file for DPDK
+  - script: |
+      echo "##[group]Printing Environment"
+      printenv
+      echo "##[endgroup]"
       set -x
-      export PYTHONPATH=${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
-      export LD_LIBRARY_PATH=$(Build.BinariesDirectory)/uhddev/build/lib:$LD_LIBRARY_PATH
-      export UHD_IMAGES_DIR=$(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images
       cd ${{ parameters.uhdSrcDir }}/host/tests/pytests
       # Disable creation of __pycache__ files using -B to avoid errors on clean up during next run
       # as using sudo below creates them with root priveleges.
@@ -181,10 +195,10 @@ jobs:
         --uhd_build_dir $(Build.BinariesDirectory)/uhddev/build --junitxml $(Common.TestResultsDirectory)/TEST-$(dutName)-dpdk.xml \
         --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $(dutMgmtAddr) --name $(dutNameId)
     env:
+      UHD_CONFIG_FILE: $(config_file)
       PYTHONPATH: ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
       LD_LIBRARY_PATH: $(Build.BinariesDirectory)/uhddev/build-installed/lib
       UHD_IMAGES_DIR: $(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images
-
     continueOnError: true
     displayName: Run streaming tests with DPDK on $(dutName)
     condition: and(succeeded(), not(eq(variables.dutType, 'B210')))
