@@ -1,0 +1,56 @@
+parameters:
+- name: 'toolset'
+  type: string
+  values:
+  - msbuild
+- name: 'installer'
+  type: string
+  values:
+  - nsis # msbuild
+
+jobs:
+- job: build_uhd_installer_signing_${{ parameters.toolset }}
+  displayName: ${{ parameters.toolset }} UHD installer signing
+  dependsOn:
+  - get_latest_uhd_docker
+  - build_uhd_installer_${{ parameters.toolset }}
+  variables:
+    - group: sdr-pipeline-vars
+    # Docker vars from job-get-latest-uhd-docker.yml
+    - name: dockerImageMatrixWin
+      value: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixWin'] ]
+  pool:
+    ${{ if eq(parameters.toolset, 'msbuild') }}:
+      name: Drivers-NIBuildFarm-RFMIBUILD
+    demands:
+      - ${{ if eq(parameters.toolset, 'msbuild') }}:
+        - Agent.OS -equals Windows_NT
+  workspace:
+    clean: all
+  strategy:
+    ${{ if and(eq(parameters.toolset, 'msbuild'), eq(parameters.installer, 'nsis')) }}:
+      matrix: $[ variables.dockerImageMatrixWin ]
+  steps:
+  - checkout: none
+
+  - download: current
+    artifact: 'uhddev-$(buildOSName)-${{ parameters.toolset }}-${{ parameters.installer }}-installer'
+    displayName: Download unsigned installer
+
+  - powershell: |
+      cd $(Agent.BuildDirectory)\uhddev-$(buildOSName)-${{ parameters.toolset }}-${{ parameters.installer }}-installer
+      p4 sync $(signtool-p4-path)
+      $p4where=p4 -Ztag where $(signtool-p4-path)
+      # Parses p4 where output to find local path
+      $LocalSignToolPath=($p4where[2] -split "... path ")[1]
+      # Finds the installer binary name
+      $InstallerName=(Get-ChildItem "uhd_*.exe").Name
+      & $LocalSignToolPath $InstallerName $(Build.ArtifactStagingDirectory)/$InstallerName
+    displayName: Sign Windows Installer
+    timeoutInMinutes: 30
+
+  - task: PublishPipelineArtifact@1
+    inputs:
+      targetPath: '$(Build.ArtifactStagingDirectory)'
+      artifactName: 'uhddev-$(buildOSName)-${{ parameters.toolset }}-${{ parameters.installer }}-installer-signed'
+    displayName: Upload uhd signed installer artifact

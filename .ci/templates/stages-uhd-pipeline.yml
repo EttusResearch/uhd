@@ -198,6 +198,11 @@ stages:
       parameters:
         toolset: msbuild
         installer: nsis
+    - ${{ if parameters.release_binaries }}:
+      - template: job-uhd-build-installer-signing.yml
+        parameters:
+          toolset: msbuild
+          installer: nsis
 
 - stage: test_uhd_stage
   displayName: Test UHD
