@@ -1,0 +1,77 @@
+parameters:
+- name: uhdSrcDir
+  type: string
+- name: uhdBuildDir
+  type: string
+- name: release_binaries
+  type: boolean
+  default: false
+
+jobs:
+- job: uhd_package_src
+  displayName: UHD Package Source
+  dependsOn: get_latest_uhd_docker
+  variables:
+    # Docker vars from job-get-latest-uhd-docker.yml
+    dockerBuildNumber: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerBuildNumber'] ]
+    dockerImagePrefix: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImagePrefix'] ]
+    dockerImageMatrixLin: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixLin'] ]
+    dockerImageMatrixWin: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixWin'] ]
+    dockerImageMatrixUbuntuDeb: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixUbuntuDeb'] ]
+    macOSBuilders: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.macOSBuilders'] ]
+    dockerImageMatrixSourcePackageBuilders: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixSourcePackageBuilders'] ]
+  pool:
+    name: Drivers-NIBuildFarm-RFMIBUILD
+    demands:
+    - docker
+    - Agent.OS -equals Linux
+  strategy:
+    matrix: $[ variables.dockerImageMatrixSourcePackageBuilders ]
+  workspace:
+    clean: all
+  container:
+    image: '$(dockerImagePrefix)$(DockerImageName):$(dockerBuildNumber)'
+    endpoint: 'Docker / Artifactory - rnd-builds-local'
+  steps:
+  - checkout: self
+    clean: true
+
+  - script: |
+      mkdir -p ${{ parameters.uhdBuildDir }}
+      cd ${{ parameters.uhdBuildDir }}
+      if [[ "${{ parameters.release_binaries }}" = "True" ]]; then
+        echo "Setting UHD_RELEASE_MODE to release"
+        export UHD_CI_CMAKE_OPTIONS="-DUHD_RELEASE_MODE=release $UHD_CI_CMAKE_OPTIONS"
+      fi
+      cmake \
+        $UHD_CI_CMAKE_OPTIONS \
+      ${{ parameters.uhdSrcDir }}/host
+
+      # Finds UHD_VERSION String from CMake Output
+      uhd_version_str=$(grep UHD_VERSION:STRING= CMakeCache.txt)
+
+      # Strip variable prefix
+      uhd_version_str=${uhd_version_str#"UHD_VERSION:STRING="}
+
+      echo "##vso[task.setvariable variable=uhdVersionStr;isOutput=true;]$uhd_version_str"
+    name: get_uhd_version
+    displayName: Determine UHD Version Name
+
+  - script: |
+      cd ${{ parameters.uhdSrcDir }}/tools
+      ./package_source.sh -n "uhd_$(get_uhd_version.uhdVersionStr)" -f "uhd_fpga_$(get_uhd_version.uhdVersionStr)"
+    displayName: Run package_source.sh
+
+  - script: |
+      rm -rf ${{ parameters.uhdSrcDir }}/build/root
+    displayName: Delete build root folder
+
+  - task: PublishPipelineArtifact@1
+    inputs:
+      targetPath: '${{ parameters.uhdSrcDir }}/build'
+      artifactName: 'uhddev-package-src'
+    displayName: Upload uhd source packages
+
+  - script: |
+      rm -rf ${{ parameters.uhdSrcDir }}/build
+    displayName: Delete Build folder
