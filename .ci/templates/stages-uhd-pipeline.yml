@@ -170,6 +170,17 @@ stages:
           displayName: delete auto.conf
           condition: always()
 
+- stage: package_uhd_src
+  displayName: Package UHD Source
+  dependsOn: []
+  jobs:
+  - template: job-get-latest-uhd-docker.yml
+  - template: job-uhd-package-src.yml
+    parameters:
+      uhdSrcDir: $(Build.SourcesDirectory)
+      uhdBuildDir: $(Build.BinariesDirectory)/uhddev/build
+      release_binaries: ${{ parameters.release_binaries }}
+
 - stage: build_gnuradio_stage_linux
   displayName: Build gnuradio Linux
   dependsOn: build_uhd_stage_linux
