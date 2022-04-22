@@ -67,6 +67,11 @@ variables:
   value:
     "{'macOS-12-x64':{'buildOSName':'macOS-12-x64', 'macOSVersionDemand':'12', 'macOSArchDemand': 'X64'}}"
 
+- name: sourcePackageBuilders
+  # Match with one of the Ubuntu images in linuxDockerImages
+  value:
+    "{'Ubuntu-2004-builder':{'buildOSName':'ubuntu2004','dockerImageName':'uhd-builder-ubuntu2004','ubuntuReleaseName':'focal'}}"
+
 - name: dockerImagePrefix
   value: 'rfsdr/'
 
@@ -212,6 +217,7 @@ jobs:
       echo "${{ variables.winDockerImages }}" >> $(UHDPipelineDockerImageArtifactName)
       echo "${{ variables.ubuntuDebDockerImages }}" >> $(UHDPipelineDockerImageArtifactName)
       echo "${{ variables.macOSBuilders }}" >> $(UHDPipelineDockerImageArtifactName)
+      echo "${{ variables.sourcePackageBuilders }}" >> $(UHDPipelineDockerImageArtifactName)
     displayName: Generate created image list
   - task: PublishPipelineArtifact@1
     inputs:
