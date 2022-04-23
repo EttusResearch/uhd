@@ -15,7 +15,7 @@ echo_help () {
     echo "-f/--fpganame Specifies fpga package name. If unspecified, '_fpga' gets appended to provided name"
 }
 
-while [[ $# -gt 0 ]]
+while [ $# -gt 0 ]
 do
 key="$1"
 
@@ -46,17 +46,17 @@ case $key in
 esac
 done
 
-if [[ -z "$UHD_ROOTDIR" ]]; then
+if [ -z "$UHD_ROOTDIR" ]; then
     UHD_ROOTDIR='..'
 fi
 echo "Root Dir: "$UHD_ROOTDIR
 
-if [[ -z "$UHD_TARNAME" ]]; then
+if [ -z "$UHD_TARNAME" ]; then
     echo_help
     exit 1
 fi
 
-if [[ -z "$UHD_TARFPGANAME" ]]; then
+if [ -z "$UHD_TARFPGANAME" ]; then
     UHD_TARFPGANAME="${UHD_TARNAME}_fpga"
 fi
 
