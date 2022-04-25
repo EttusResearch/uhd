@@ -634,7 +634,7 @@ class DioControl:
                 False
             )
             radio_srcs = [
-                item for sublist in self.X4XX_GPIO_SRC_RADIO for item in sublist]
+                item for sublist in (self.X4XX_GPIO_SRC_RADIO + self.X4XX_GPIO_SPI_SRC_RADIO) for item in sublist]
             if src_name in radio_srcs:
                 source_reg.set_pin(pin_index, 1)
                 slot = int(src_name[2])
