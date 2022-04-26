@@ -2,6 +2,22 @@ trigger: none
 
 pr: none
 
+parameters:
+- name: run_hardware_tests
+  type: boolean
+  displayName: Run Hardware Tests
+  default: false
+- name: run_streaming_tests
+  type: boolean
+  displayName: Run Streaming Tests
+  default: false
+- name: testLength
+  type: string
+  values:
+  - 'smoke'
+  - 'full'
+  - 'stress'
+
 resources:
   pipelines:
   - pipeline: uhd_mono_pipeline
@@ -30,6 +46,8 @@ resources:
 stages:
 - stage: test_uhd_embedded_stage
   displayName: Test Embedded UHD
+  dependsOn: []
+  condition: ${{ parameters.run_hardware_tests }}
   jobs:
   - template: templates/tests/job-uhd-x4xx-hardware-tests-sdr-test0.yml
     parameters:
@@ -39,3 +57,15 @@ stages:
     parameters:
       testOS: ubuntu1804
       uhdArtifactSource: uhd_mono_pipeline
+- stage: test_streaming_stage
+  displayName: Test UHD Streaming
+  dependsOn: []
+  condition: ${{ parameters.run_streaming_tests }}
+  jobs:
+  - template: templates/job-uhd-streaming-tests-beauty.yml
+    parameters:
+      testOS: ubuntu2004
+      uhdSrcDir: $(Build.SourcesDirectory)/uhddev
+      uhdArtifactSource: uhd_mono_pipeline
+      testLength: ${{ parameters.testLength }}
+

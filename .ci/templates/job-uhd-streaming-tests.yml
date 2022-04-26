@@ -75,7 +75,7 @@ jobs:
 
   - task: ExtractFiles@1
     inputs:
-      archiveFilePatterns: $(Pipeline.Workspace)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}.tar.gz
+      archiveFilePatterns: $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}.tar.gz
       destinationFolder: $(Build.BinariesDirectory)
       cleanDestinationFolder: true
     displayName: Extract uhddev-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
