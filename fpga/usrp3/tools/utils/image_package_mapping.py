@@ -105,10 +105,12 @@ PACKAGE_MAPPING = {
     "zbx_cpld": {
         "type": "x4xx",
         "package_name": "x4xx_zbx_cpld_default-g{}.zip",
-        "files": ["usrp_zbx_cpld.rpd",
-                  "usrp_zbx_cpld.rpd.md5",
-                  "usrp_zbx_cpld.svf",
-                  "usrp_zbx_cpld.svf.md5"]
+        "files": ["usrp_zbx_cpld_10m04.rpd",
+                  "usrp_zbx_cpld_10m04.rpd.md5",
+                  "usrp_zbx_cpld_10m04.svf",
+                  "usrp_zbx_cpld_10m04.svf.md5",
+                  "usrp_zbx_cpld_xo3lf.svf",
+                  "usrp_zbx_cpld_xo3lf.svf.md5"]
     },
     "n310": {
         "type": "n3xx",
