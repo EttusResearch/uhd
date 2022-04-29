@@ -69,7 +69,7 @@ _DEFAULT_BASE_URL         = "https://files.ettus.com/binaries/cache/"
 _INVENTORY_FILENAME       = "inventory.json"
 _CONTACT                  = "support@ettus.com"
 _DEFAULT_BUFFER_SIZE      = 8192
-_DEFAULT_DOWNLOAD_LIMIT   = 100 * 1024 * 1024 # Bytes
+_DEFAULT_DOWNLOAD_LIMIT   = 1024 * 1024 * 1024 # Bytes
 _ARCHIVE_DEFAULT_TYPE     = "zip"
 _UHD_VERSION              = "@UHD_VERSION@"
 _LOG_LEVELS = {
@@ -398,14 +398,13 @@ def download(
     base_filename = os.path.basename(filename)
     if filesize > download_limit:
         if not ask_permission(
-                "The file size for {} ({:.1f} MiB) exceeds the "
-                "download limit ({:.1f} MiB). Continue downloading?".format(
-                    base_filename, filesize/1024**2, download_limit/1024**2)):
+                "{} is a large file ({:.1f} GiB). Proceed with download?".format(
+                    base_filename, filesize/1024**3)):
             return 0, 0, ""
     if filesize == -1:
         if not ask_permission(
                 "The file size for {} could not be determined. "
-                "Continue downloading?".format(base_filename)):
+                "Proceed with download?".format(base_filename)):
             return 0, 0, ""
     filesize_dl = 0
     if print_progress and not sys.stdout.isatty():
