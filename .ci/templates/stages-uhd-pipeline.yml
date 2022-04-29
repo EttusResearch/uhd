@@ -190,8 +190,8 @@ stages:
     parameters:
       toolset: make
 
-- stage: build_uhd_installer_stage_linux
-  displayName: Build UHD Installers Linux
+- stage: build_uhd_installer_stage_ubuntu
+  displayName: Build UHD Installers Ubuntu
   dependsOn: build_uhd_stage_linux
   jobs:
     - template: job-get-latest-uhd-docker.yml
@@ -199,6 +199,17 @@ stages:
       parameters:
         toolset: ubuntu_deb
         installer: deb
+
+- stage: build_uhd_installer_stage_fedora
+  displayName: Build UHD Installers Fedora
+  dependsOn: build_uhd_stage_linux
+  jobs:
+    - template: job-get-latest-uhd-docker.yml
+    - template: job-uhd-build-installer.yml
+      parameters:
+        toolset: fedora_rpm
+        installer: rpm
+        releaseBinaries: ${{ parameters.release_binaries }}
 
 - stage: build_uhd_installer_stage_win
   displayName: Build UHD Installers Windows
