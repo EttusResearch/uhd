@@ -98,6 +98,7 @@ endif()
 # Packaging Variables
 ########################################################################
 
+option(UNDERSCORE_UHD_VERSION "Replace dashes in uhd version with underscores" OFF)
 set(LIBUHD_PKG ${LIBUHD_PKG} CACHE BOOL "Build Debian libuhd003 package")
 set(LIBUHDDEV_PKG ${LIBUHDDEV_PKG} CACHE BOOL "Build Debian libuhd-dev package")
 set(UHDHOST_PKG ${UHDPOST_PKG} CACHE BOOL "Build Debian uhd-host package")

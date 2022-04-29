@@ -40,22 +40,23 @@ endif()
 # Setup package file name
 ########################################################################
 if(REDHAT)
-    find_program(LSB_RELEASE_EXECUTABLE lsb_release)
+    #extract system information by executing the commands
+    execute_process(
+        COMMAND bash -c "source /etc/os-release && echo $ID"
+        OUTPUT_VARIABLE OS_ID OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    execute_process(
+        COMMAND bash -c "source /etc/os-release && echo $VERSION_ID"
+        OUTPUT_VARIABLE VERSION_ID OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
 
-    if(LSB_RELEASE_EXECUTABLE)
-        #extract system information by executing the commands
-        execute_process(
-            COMMAND ${LSB_RELEASE_EXECUTABLE} --short --id
-            OUTPUT_VARIABLE LSB_ID OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
-        execute_process(
-            COMMAND ${LSB_RELEASE_EXECUTABLE} --short --release
-            OUTPUT_VARIABLE LSB_RELEASE OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
-
-        #set a more sensible package name for this system
-        set(CPACK_PACKAGE_FILE_NAME "uhd_${UHD_VERSION}_${LSB_ID}-${LSB_RELEASE}-${CMAKE_SYSTEM_PROCESSOR}" CACHE INTERNAL "")
-    endif(LSB_RELEASE_EXECUTABLE)
+    #set a more sensible package name for this system
+    if(UHD_RELEASE_MODE)
+        string(REGEX REPLACE "(.release)$" "" uhd_vers_pretty ${UHD_VERSION})
+        set(CPACK_PACKAGE_FILE_NAME "uhd-${uhd_vers_pretty}-${OS_ID}${VERSION_ID}" CACHE INTERNAL "")
+    else()
+        set(CPACK_PACKAGE_FILE_NAME "uhd-${UHD_VERSION}-${OS_ID}${VERSION_ID}" CACHE INTERNAL "")
+    endif()
 endif(REDHAT)
 
 if(${CPACK_GENERATOR} STREQUAL NSIS)
@@ -152,6 +153,7 @@ set(CPACK_COMPONENTS_ALL libraries pythonapi headers utilities examples manual d
 set(CPACK_RPM_SPEC_MORE_DEFINE "%global __python %{__python3}")
 set(CPACK_RPM_PACKAGE_REQUIRES "boost-devel, python3-requests")
 set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION "/usr/share/man;/usr/share/man/man1;/usr/lib64/pkgconfig;/usr/lib64/cmake;/usr/lib64/python2.7;/usr/lib64/python2.7/site-packages")
+set(CPACK_RPM_FILE_NAME "$CACHE{CPACK_PACKAGE_FILE_NAME}.rpm")
 foreach(filename post_install post_uninstall pre_install pre_uninstall)
     string(TOUPPER ${filename} filename_upper)
     list(APPEND CPACK_RPM_${filename_upper}_SCRIPT_FILE ${UHD_BINARY_DIR}/redhat/${filename})

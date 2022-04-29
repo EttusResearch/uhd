@@ -148,4 +148,9 @@ else()
     set(UHD_ABI_VERSION "${UHD_VERSION_MAJOR}.${UHD_VERSION_API}.${UHD_VERSION_ABI}")
 endif()
 
+if(UNDERSCORE_UHD_VERSION)
+    string(REPLACE "-" "_" _uhd_version $CACHE{UHD_VERSION})
+    set(UHD_VERSION "${_uhd_version}" CACHE STRING "" FORCE)
+endif()
+
 set(UHD_COMPONENT "UHD")
