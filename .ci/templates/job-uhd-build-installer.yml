@@ -2,16 +2,20 @@ parameters:
 - name: 'toolset'
   type: string
   values:
+  - fedora_rpm
   - make
   - msbuild
   - ubuntu_deb
 - name: 'installer'
   type: string
   values:
-  - rpm # make
+  - rpm # fedora_rpm
   - tar # make
   - nsis # msbuild
   - deb # ubuntu_deb
+- name: releaseBinaries
+  type: boolean
+  default: false
 
 jobs:
 - job: build_uhd_installer_${{ parameters.toolset }}
@@ -26,6 +30,7 @@ jobs:
     dockerImageMatrixUbuntuDeb: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixUbuntuDeb'] ]
     macOSBuilders: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.macOSBuilders'] ]
     dockerImageMatrixSourcePackageBuilders: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixSourcePackageBuilders'] ]
+    dockerImageMatrixFedoraRpm: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixFedoraRpm'] ]
   pool:
     ${{ if eq(parameters.toolset, 'msbuild') }}:
       name: de-dre-lab
@@ -46,6 +51,8 @@ jobs:
       matrix: $[ variables.dockerImageMatrixWin ]
     ${{ if and(eq(parameters.toolset, 'ubuntu_deb'), eq(parameters.installer, 'deb')) }}:
       matrix: $[ variables.dockerImageMatrixUbuntuDeb ]
+    ${{ if and(eq(parameters.toolset, 'fedora_rpm'), eq(parameters.installer, 'rpm')) }}:
+      matrix: $[ variables.dockerImageMatrixFedoraRpm ]
   container:
     image: '$(dockerImagePrefix)$(DockerImageName):$(dockerBuildNumber)'
     endpoint: 'Docker / Artifactory - rnd-builds-local'
@@ -57,13 +64,20 @@ jobs:
     clean: true
 
   - download: uhd_build_docker_container
+  - ${{ if eq(parameters.toolset, 'fedora_rpm') }}:
+    - template: steps-build-uhd-installer-fedora-rpm.yml
+      parameters:
+        uhdSrcDir: $(Build.SourcesDirectory)
+        uhdInstallerDir: $(Build.BinariesDirectory)/uhddev-installer
+        fedoraReleaseName: $(fedoraReleaseName)
+        releaseBinaries: ${{ parameters.releaseBinaries }}
   - ${{ if eq(parameters.toolset, 'ubuntu_deb') }}:
     - template: steps-build-uhd-installer-ubuntu-deb.yml
       parameters:
         uhdSrcDir: $(Build.SourcesDirectory)
         uhdInstallerDir: $(Build.BinariesDirectory)/uhddev-installer
         ubuntuReleaseName: $(ubuntuReleaseName)
-  - ${{ if ne(parameters.toolset, 'ubuntu_deb') }}:
+  - ${{ if and(ne(parameters.toolset, 'ubuntu_deb'), ne(parameters.toolset, 'fedora_rpm')) }}:
     - download: current
       artifact: uhddev-$(buildOSName)-${{ parameters.toolset }}
       displayName: Download pipeline artifact uhddev-$(buildOSName)-${{ parameters.toolset }}

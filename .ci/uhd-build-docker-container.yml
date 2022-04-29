@@ -63,6 +63,12 @@ variables:
     'Ubuntu-2004-builder':{'buildOSName':'ubuntu2004','dockerImageName':'uhd-builder-ubuntu2004','ubuntuReleaseName':'focal'},
     'Ubuntu-2204-builder':{'buildOSName':'ubuntu2204','dockerImageName':'uhd-builder-ubuntu2204','ubuntuReleaseName':'jammy'}}"
 
+- name: fedoraRpmDockerImages
+  # Match with Fedora images in linuxDockerImages
+  value:
+    "{'Fedora-34-builder':{'buildOSName':'fedora34','dockerImageName':'uhd-builder-fedora34','fedoraReleaseName':'34'},
+    'Fedora-35-builder':{'buildOSName':'fedora35','dockerImageName':'uhd-builder-fedora35','fedoraReleaseName':'35'}}"
+
 - name: macOSBuilders
   value:
     "{'macOS-12-x64':{'buildOSName':'macOS-12-x64', 'macOSVersionDemand':'12', 'macOSArchDemand': 'X64'}}"
@@ -218,6 +224,7 @@ jobs:
       echo "${{ variables.ubuntuDebDockerImages }}" >> $(UHDPipelineDockerImageArtifactName)
       echo "${{ variables.macOSBuilders }}" >> $(UHDPipelineDockerImageArtifactName)
       echo "${{ variables.sourcePackageBuilders }}" >> $(UHDPipelineDockerImageArtifactName)
+      echo "${{ variables.fedoraRpmDockerImages }}" >> $(UHDPipelineDockerImageArtifactName)
     displayName: Generate created image list
   - task: PublishPipelineArtifact@1
     inputs:
