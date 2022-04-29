@@ -1,0 +1,32 @@
+parameters:
+- name: uhdSrcDir
+  type: string
+- name: uhdInstallerDir
+  type: string
+- name: fedoraReleaseName
+  type: string
+- name: releaseBinaries
+  type: boolean
+  default: false
+
+steps:
+- script: |
+    mkdir -p ${{ parameters.uhdInstallerDir }}
+    cd ${{ parameters.uhdInstallerDir}}
+    if [[ "${{ parameters.releaseBinaries }}" = "True" ]]; then
+      echo "Setting UHD_RELEASE_MODE to release"
+      export UHD_CI_CMAKE_OPTIONS="-DUHD_RELEASE_MODE=release $UHD_CI_CMAKE_OPTIONS"
+    fi
+    cmake \
+      -DCMAKE_INSTALL_PREFIX=/usr \
+      $UHD_CI_CMAKE_OPTIONS \
+      -DUNDERSCORE_UHD_VERSION=ON \
+      -DENABLE_DPDK=OFF \
+      -G "Unix Makefiles" \
+      ${{ parameters.uhdSrcDir }}/host
+  displayName: cmake rpm
+
+- script: |
+    cd ${{ parameters.uhdInstallerDir}}
+    make package -j$(nproc)
+  displayName: make package rpm
