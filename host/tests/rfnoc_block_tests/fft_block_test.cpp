@@ -178,6 +178,8 @@ BOOST_FIXTURE_TEST_CASE(fft_test_graph, fft_block_fixture)
     node_accessor.init_props(&mock_ddc_block);
     mock_sink_term.set_edge_property<std::string>(
         "type", "sc16", {res_source_info::INPUT_EDGE, 0});
+    mock_sink_term.set_edge_property<size_t>(
+        PROP_KEY_ATOMIC_ITEM_SIZE, 1234, {res_source_info::INPUT_EDGE, 0});
 
     UHD_LOG_INFO("TEST", "Creating graph...");
     graph.connect(&mock_radio_block, &mock_ddc_block, edge_info);
@@ -186,4 +188,13 @@ BOOST_FIXTURE_TEST_CASE(fft_test_graph, fft_block_fixture)
     UHD_LOG_INFO("TEST", "Committing graph...");
     graph.commit();
     UHD_LOG_INFO("TEST", "Commit complete.");
+
+    UHD_LOG_INFO("TEST", "Testing atomic item size manipulation...");
+    // Try setting the atomic item size to some other value, it should bounce
+    // back
+    mock_sink_term.set_edge_property<size_t>(
+        PROP_KEY_ATOMIC_ITEM_SIZE, 1996, {res_source_info::INPUT_EDGE, 0});
+    BOOST_CHECK_EQUAL(test_fft->get_length() * 4,
+        mock_sink_term.get_edge_property<size_t>(
+            PROP_KEY_ATOMIC_ITEM_SIZE, {res_source_info::INPUT_EDGE, 0}));
 }

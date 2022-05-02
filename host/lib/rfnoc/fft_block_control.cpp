@@ -24,7 +24,11 @@ constexpr int DEFAULT_FFT_SCALING         = 1706; // Conservative 1/N scaling
 constexpr int MIN_FFT_LENGTH = 8;
 constexpr int MAX_FFT_LENGTH = 1024;
 
+
 const uhd::rfnoc::io_type_t DEFAULT_TYPE = uhd::rfnoc::IO_TYPE_SC16;
+// As long as we can only do sc16 in this block, we skip deriving the
+// byte-per-sample value from elsewhere
+constexpr size_t BYTES_PER_SAMPLE = 4;
 
 } // namespace
 
@@ -133,6 +137,7 @@ private:
                                   << coerced_length);
                 this->_length.set(coerced_length);
             }
+            RFNOC_LOG_TRACE("Setting FFT length to " << coerced_length);
             this->regs().poke32(REG_LENGTH_LOG2_ADDR, uint32_t(length_log2));
         });
 
@@ -168,10 +173,25 @@ private:
             this->regs().poke32(REG_SHIFT_CONFIG_ADDR, uint32_t(shift));
         });
 
+        // Add resolvers & properties for atomic item size
+        register_property(&_atomic_item_size_in);
+        register_property(&_atomic_item_size_out);
+        add_property_resolver(
+            {&_length, &_atomic_item_size_in}, {&_atomic_item_size_in}, [this]() {
+                _atomic_item_size_in = _length.get() * BYTES_PER_SAMPLE;
+                RFNOC_LOG_TRACE(
+                    "Setting atomic item size in to " << _atomic_item_size_in.get());
+            });
+        add_property_resolver(
+            {&_length, &_atomic_item_size_out}, {&_atomic_item_size_out}, [this]() {
+                _atomic_item_size_out = _length.get() * BYTES_PER_SAMPLE;
+                RFNOC_LOG_TRACE(
+                    "Setting atomic item size out to " << _atomic_item_size_out.get());
+            });
+
         // register edge properties
         register_property(&_type_in);
         register_property(&_type_out);
-
         // add resolvers for type (keeps it constant)
         add_property_resolver({&_type_in}, {&_type_in}, [& type_in = _type_in]() {
             type_in.set(IO_TYPE_SC16);
@@ -191,6 +211,15 @@ private:
     property_t<int> _shift = property_t<int>{
         PROP_KEY_SHIFT_CONFIG, static_cast<int>(DEFAULT_SHIFT), {res_source_info::USER}};
 
+    // clang-format off
+    // (clang-format messes up the asterisks)
+    property_t<size_t> _atomic_item_size_in{PROP_KEY_ATOMIC_ITEM_SIZE,
+        DEFAULT_LENGTH * BYTES_PER_SAMPLE,
+        {res_source_info::INPUT_EDGE}};
+    property_t<size_t> _atomic_item_size_out{PROP_KEY_ATOMIC_ITEM_SIZE,
+        DEFAULT_LENGTH * BYTES_PER_SAMPLE,
+        {res_source_info::OUTPUT_EDGE}};
+    // clang-format on
     property_t<std::string> _type_in = property_t<std::string>{
         PROP_KEY_TYPE, IO_TYPE_SC16, {res_source_info::INPUT_EDGE}};
     property_t<std::string> _type_out = property_t<std::string>{
