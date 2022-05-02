@@ -154,9 +154,14 @@ jobs:
       cd ${{ parameters.uhdSrcDir }}/host/tests/pytests
       # Disable creation of __pycache__ files using -B to avoid errors on clean up during next run
       # as using sudo below creates them with root priveleges.
-      sudo --preserve-env=PYTHONPATH python3 -B -m pytest -s test_streaming.py -m "dpdk" --dut_type $(dutType) --test_length ${{ parameters.testLength }} \
-        --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $USRP_EMB_TARGET_IP \
-        --uhd_build_dir $(Build.BinariesDirectory)/uhddev/build --junitxml $(Common.TestResultsDirectory)/TEST-$(dutName)-dpdk.xml
+      sudo -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONPATH=$PYTHONPATH python3 -B -m pytest -s test_streaming.py -m "dpdk" \
+        --dut_type $(dutType) --test_length ${{ parameters.testLength }} \
+        --uhd_build_dir $(Build.BinariesDirectory)/uhddev/build --junitxml $(Common.TestResultsDirectory)/TEST-$(dutName)-dpdk.xml \
+        --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $(dutMgmtAddr)
+    env:
+      PYTHONPATH: ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
+      LD_LIBRARY_PATH: $(Build.BinariesDirectory)/uhddev/build-installed/lib
+      UHD_IMAGES_DIR: $(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images
     continueOnError: true
     displayName: Run streaming tests with DPDK on $(dutName)
   - task: PublishTestResults@2
