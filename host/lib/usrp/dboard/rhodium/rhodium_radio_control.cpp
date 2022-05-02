@@ -450,8 +450,8 @@ void rhodium_radio_control_impl::_update_corrections(
 
     if (enable) {
         const std::vector<uint8_t> db_serial_u8 = get_db_eeprom().count("serial")
-                                                      ? std::vector<uint8_t>()
-                                                      : get_db_eeprom().at("serial");
+                                                      ? get_db_eeprom().at("serial")
+                                                      : std::vector<uint8_t>();
         const std::string db_serial =
             db_serial_u8.empty() ? "unknown"
                                  : std::string(db_serial_u8.begin(), db_serial_u8.end());
