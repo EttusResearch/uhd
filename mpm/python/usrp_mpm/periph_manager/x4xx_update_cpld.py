@@ -208,8 +208,8 @@ def get_mb_compat_rev():
 
 def get_default_cpld_image_names(compat_rev):
     """Determine the default CPLD image name based on the compat_rev"""
-    default_cpld_image_10m04 = ['cpld-x410-10m04.rpd', 'x4xx_x410_cpld_default_10m04.rpd']
-    default_cpld_image_10m08 = ['cpld-x410-10m08.rpd', 'x4xx_x410_cpld_default_10m08.rpd']
+    default_cpld_image_10m04 = ['cpld-x410-10m04.rpd', 'usrp_x410_cpld_10m04.rpd']
+    default_cpld_image_10m08 = ['cpld-x410-10m08.rpd', 'usrp_x410_cpld_10m08.rpd']
     default_image_name_mapping = {
         1: default_cpld_image_10m04,
         2: default_cpld_image_10m04,
