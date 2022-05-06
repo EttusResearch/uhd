@@ -218,11 +218,6 @@ UHD_ADD_NONAPI_TEST(
 )
 
 UHD_ADD_NONAPI_TEST(
-    TARGET "packet_handler_benchmark.cpp"
-    NOAUTORUN
-)
-
-UHD_ADD_NONAPI_TEST(
     TARGET "config_parser_test.cpp"
     EXTRA_SOURCES ${UHD_SOURCE_DIR}/lib/utils/config_parser.cpp
 )
