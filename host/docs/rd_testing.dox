@@ -493,7 +493,7 @@ Note: On TX tests, initial Us within the first 5 seconds can be ignored and do n
 - Required images to test: HG
 - Note: On TX tests, initial Us within the first 5 seconds can be ignored and do not fail the test
 
-<!--Note: If you change this table, also change tools/gr-usrptest/apps/usrp_fpga_funcverif.py!-->
+<!--Note: If you change this table, also change tools/usrptest/usrp_fpga_funcverif.py!-->
 | Channels      | Master Clock Rate | Sample Rates            | Duration | Notes                             |
 |---------------|-------------------|-------------------------|----------|-----------------------------------|
 | 1x RX         | 125e6             | 1.25e6                  | 60       | One test each for all 4 channels  |
@@ -517,7 +517,7 @@ Note: On TX tests, initial Us within the first 5 seconds can be ignored and do n
 - Required images to test: N310 HG + XG
 - Note: On TX tests, initial Us within the first 5 seconds can be ignored and do not fail the test
 
-<!--Note: If you change this table, also change tools/gr-usrptest/apps/usrp_fpga_funcverif.py!-->
+<!--Note: If you change this table, also change tools/usrptest/usrp_fpga_funcverif.py!-->
 | Channels      | Master Clock Rate | Sample Rates            | Duration | Notes                             |
 |---------------|-------------------|-------------------------|----------|-----------------------------------|
 | 1x RX         | 125e6             | 1.25e6, 125e6           | 60       | One test each for all 4 channels  |
@@ -558,7 +558,7 @@ Note: On TX tests, initial Us within the first 5 seconds can be ignored and do n
 - Note: On TX tests, initial Us within the first 5 seconds can be ignored and do not fail the test
 - Note: The following tests need to be completed only on either N320 OR N321
 
-<!--Note: If you change this table, also change tools/gr-usrptest/apps/usrp_fpga_funcverif.py!-->
+<!--Note: If you change this table, also change tools/usrptest/usrp_fpga_funcverif.py!-->
 | Channels      | Master Clock Rate | Sample Rates            | Duration | Notes                             |
 |---------------|-------------------|-------------------------|----------|-----------------------------------|
 | 1x RX         | 250e6             | 2.5e6                   | 60       | One test each for both channels   |
@@ -583,7 +583,7 @@ Note: On TX tests, initial Us within the first 5 seconds can be ignored and do n
 - Note: On TX tests, initial Us within the first 5 seconds can be ignored and do not fail the test
 - Note: The following tests need to be completed only on either N320 OR N321
 
-<!--Note: If you change this table, also change tools/gr-usrptest/apps/usrp_fpga_funcverif.py!-->
+<!--Note: If you change this table, also change tools/usrptest/usrp_fpga_funcverif.py!-->
 | Channels      | Master Clock Rate | Sample Rates            | Duration | Notes                             |
 |---------------|-------------------|-------------------------|----------|-----------------------------------|
 | 1x RX         | 250e6             | 2.5e6 , 125e6           | 60       | One test each for both channels   |
@@ -764,7 +764,7 @@ The E320 tests depend on the FPGA image to be tested.
 | UBX-{160, 40} | 10 - 6000 MHz           |      12         |
 | SBX-{120, 40} | 400 - 4400 MHz          |      7          |
 
-Phase alignment testing is necessary to verify device synchronization across multiple daughter- and motherboards is working as expected for CBX, SBX and UBX daughterboards. To enable efficient Phase alignment testing a GNU Radio Out-of-Tree module gr-usrptest exists in tools/gr-usrptest. It is required for testing RX testcases and later may be required to perform TX testcases.
+Phase alignment testing is necessary to verify device synchronization across multiple daughter- and motherboards is working as expected for CBX, SBX and UBX daughterboards. To enable efficient Phase alignment testing a python based test script exists tools/usrptest. It is required for testing RX testcases and later may be required to perform TX testcases.
 
 To test phase alignment we measure phase offset between DUTs at an offset of 2 MHz offset from the selected center frequency. The phase difference for a given center frequency has to stay the same across retunes and power cycles of the DUT.
 
@@ -780,8 +780,6 @@ Equipment Required
 
 Software Required
 - UHD
-- gnuradio
-- gr-usrptest
 
 \subsection rdtesting_phase_rx_X3x0_twinrx X3x0 with TwinRX
 1.  Make sure correct FPGA image is loaded on X3x0.
@@ -793,7 +791,7 @@ Software Required
 7.  Set Signal Generator output power at -30 dBm.
 8.  From the top of the UHD source, run the command:
 
-  -  `./tools/gr-usrptest/apps/usrp_phasealignment.py --spec "A:0 A:1 B:0 B:1" --channels 0,1,2,3 --sync pps --time-source external --clock-source external -s 5e6 -g 75 -f 10e6 --freq-bands 12 --start-freq 10e6 --stop-freq 6e9 --duration 2.0 --auto --lo-export True,False,False,False --lo-source internal,companion,external,external`
+  -  `./tools/usrptest/uhd_phase_alignment.py --spec "A:0 A:1 B:0 B:1" --channels 0,1,2,3 --sync pps --time-source external --clock-source external -s 5e6 -g 75 -f 10e6 --freq-bands 12 --start-freq 10e6 --stop-freq 6e9 --duration 2.0 --auto --lo-export True,False,False,False --lo-source internal,companion,external,external`
 
 9.  At each frequency step, tune Signal Generator to the displayed frequency + 1 MHz and increase output power by 3 dB.
 10.  Analyze terminal output.  The "run avg" across all runs should not deviate more than 1 degree and the "stddev" for any run should not deviate more than 1 degree.
@@ -807,7 +805,7 @@ Software Required
 6.  Set Signal Generator output power at -35 dBm for UBX and -29 dBm for SBX.
 7.  From the top of the UHD source, run the command:
 
-  -  `./tools/gr-usrptest/apps/usrp_phasealignment.py --args "addr0=<first X3x0 IP addr>,addr1=<second X3x0 IP addr>,dboard_clock_rate=20e6" --clock-source external --time-source external --sync pps --spec "A:0" --channels 0,1 -s 10e6 -g \<33 if UBX 37.5 if SBX\> -f \<lowest DB freq\> --freq-bands \<# frequency bands\> --start-freq \<lowest freq\> --stop-freq \<highest freq\> --duration 2.0 --auto`
+  -  `./tools/usrptest/uhd_phase_alignment.py --args "addr0=<first X3x0 IP addr>,addr1=<second X3x0 IP addr>,dboard_clock_rate=20e6" --clock-source external --time-source external --sync pps --spec "A:0" --channels 0,1 -s 10e6 -g \<33 if UBX 37.5 if SBX\> -f \<lowest DB freq\> --freq-bands \<# frequency bands\> --start-freq \<lowest freq\> --stop-freq \<highest freq\> --duration 2.0 --auto`
 
 8.  At each frequency step, tune Signal Generator to the displayed frequency + 1 MHz and increase output power by 1dB.
 9.  Analyze terminal output.  The "run avg" across all runs should not deviate more than 2 degrees and the "stddev" for any run should not deviate more than 2 degrees.
@@ -821,7 +819,7 @@ Software Required
 6.  Set Signal Generator output power at -36 dBm.
 7.  From the top of the UHD source, run the command:
 
-  -  `./tools/gr-usrptest/apps/usrp_phasealignment.py --args "addr0=<IP address of master>,addr1=<IP address of slave>" --clock-source external,mimo --time-source external,mimo --sync default --channels 0,1 -s 10e6 -f 400e6 -g 31.5 --freq-bands 7 --start-freq 400e6 --stop-freq 4400e6 --duration 2.0 --auto`
+  -  `./tools/usrptest/usrp_phase_alignment.py --args "addr0=<IP address of master>,addr1=<IP address of slave>" --clock-source external,mimo --time-source external,mimo --sync default --channels 0,1 -s 10e6 -f 400e6 -g 31.5 --freq-bands 7 --start-freq 400e6 --stop-freq 4400e6 --duration 2.0 --auto`
 
 8.  At each frequency step, tune Signal Generator to the displayed frequency + 1 MHz and increase output power by 2 dB.
 9.  Analyze terminal output.  The "run avg" across all runs should not deviate more than 2 degrees and the "stddev" for any run should not deviate more than 5 degrees.
