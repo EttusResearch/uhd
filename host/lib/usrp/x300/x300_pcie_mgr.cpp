@@ -29,11 +29,6 @@ using namespace uhd::niusrprio;
 
 namespace {
 
-// uint32_t extract_sid_from_pkt(void* pkt, size_t)
-//{
-// return uhd::sid_t(uhd::wtohx(static_cast<const uint32_t*>(pkt)[1])).get_dst();
-//}
-
 constexpr uint32_t RADIO_DEST_PREFIX_TX = 0;
 
 // The FIFO closest to the DMA controller is 1023 elements deep for RX and 1029 elements
