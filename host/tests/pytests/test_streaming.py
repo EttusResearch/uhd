@@ -289,10 +289,6 @@ def test_streaming(pytestconfig, dut_type, use_dpdk, dual_SFP, rate, rx_rate, rx
             f"""Number of dropped samples exceeded threshold.
                 Expected dropped samples: <= {dropped_samps_threshold}
                 Actual dropped samples:      {stats.avg_vals.dropped_samps}"""
-        assert stats.avg_vals.overruns <= overruns_threshold, \
-            f"""Number of overruns exceeded threshold.
-                Expected overruns: <= {overruns_threshold}
-                Actual overruns:      {stats.avg_vals.overruns}"""
         assert stats.avg_vals.rx_timeouts <= rx_timeouts_threshold, \
             f"""Number of rx timeouts exceeded threshold.
                 Expected rx timeouts: <= {rx_timeouts_threshold}
@@ -301,12 +297,18 @@ def test_streaming(pytestconfig, dut_type, use_dpdk, dual_SFP, rate, rx_rate, rx
             f"""Number of rx sequence errors exceeded threshold.
                 Expected rx sequence errors: <= {rx_seq_err_threshold}
                 Actual rx sequence errors:      {stats.avg_vals.rx_seq_errs}"""
+        if not stats.avg_vals.overruns <= overruns_threshold:
+            overrun_error_text = (
+                f"Number of overruns exceeded threshold.\n"
+                f"Expected overruns: <= {overruns_threshold}\n"
+                f"Actual overruns:      {stats.avg_vals.overruns}\n"
+                )
+            if not use_dpdk:
+                pytest.xfail(overrun_error_text)
+            else:
+                pytest.fail(overrun_error_text)
 
     if tx_channels:
-        assert stats.avg_vals.underruns <= underruns_threshold, \
-            f"""Number of underruns exceeded threshold.
-                Expected underruns: <= {underruns_threshold}
-                Actual underruns:      {stats.avg_vals.underruns}"""
         assert stats.avg_vals.tx_timeouts <= tx_timeouts_threshold, \
             f"""Number of tx timeouts exceeded threshold.
                 Expected tx timeouts: <= {tx_timeouts_threshold}
@@ -315,6 +317,16 @@ def test_streaming(pytestconfig, dut_type, use_dpdk, dual_SFP, rate, rx_rate, rx
             f"""Number of tx sequence errors exceeded threshold.
                 Expected tx sequence errors: <= {tx_seq_err_threshold}
                 Actual tx sequence errors:      {stats.avg_vals.tx_seq_errs}"""
+        if not stats.avg_vals.underruns <= underruns_threshold:
+            underrun_error_text = (
+                f"Number of underruns exceeded threshold.\n"
+                f"Expected underruns: <= {underruns_threshold}\n"
+                f"Actual underruns:      {stats.avg_vals.underruns}\n"
+            )
+            if not use_dpdk:
+                pytest.xfail(underrun_error_text)
+            else:
+                pytest.fail(underrun_error_text)
 
     assert stats.avg_vals.late_cmds <= late_cmds_threshold, \
         f"""Number of late commands exceeded threshold.
