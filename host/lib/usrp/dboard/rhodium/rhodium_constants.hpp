@@ -27,10 +27,6 @@ static constexpr double RHODIUM_LO1_REF_FREQ = 122.88e6; // Hz
 static constexpr double RHODIUM_LO_0_9_GHZ_LPF_THRESHOLD_FREQ  = 0.975e9; // Hz
 static constexpr double RHODIUM_LO_2_25_GHZ_LPF_THRESHOLD_FREQ = 2.3e9; // Hz
 
-static constexpr double RHODIUM_LOWBAND_FREQ = 450e6; // Hz
-static constexpr double RHODIUM_RX_IF_FREQ   = 2.44e9; // Hz
-static constexpr double RHODIUM_TX_IF_FREQ   = 1.95e9; // Hz
-
 static constexpr double RX_MIN_GAIN  = 0.0;
 static constexpr double RX_MAX_GAIN  = 60.0;
 static constexpr double RX_GAIN_STEP = 1.0;
