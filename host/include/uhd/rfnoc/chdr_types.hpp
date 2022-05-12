@@ -610,6 +610,9 @@ class UHD_API mgmt_op_t
 {
 public:
     // Operation code
+    // Note that a management packet has 8 bits available for op codes. The
+    // values for these enums are used to construct the packets, so these values
+    // must match the values in rfnoc_chdr_internal_utils.vh.
     enum op_code_t {
         //! Do nothing
         MGMT_OP_NOP = 0,

@@ -19,7 +19,8 @@ namespace uhd { namespace rfnoc { namespace mgmt {
 //! A portal to perform low-level management operations from an endpoint
 //
 // This object provides an interface to send management commands from a software stream
-// endpoint. There must one instance of this object per software stream endpoint.
+// endpoint. There must one instance of this object per software stream endpoint
+// (i.e., every link_stream_manager owns one of these).
 // The management portal is capable of discovering all endpoints reachable from the
 // transport associated with it. It can then setup routes and configure stream endpoints
 // downstream.
