@@ -239,6 +239,17 @@ public:
     }
 
 private:
+    //! Return the local device ID over which we can reach a destination
+    //
+    // \param dst_addr The destination address (device/instance pair) for which
+    //                 we are finding a local device ID
+    // \param adapter If provided (i.e., if not NULL_ADAPTER_ID) then only this
+    //                adapter index is used to find local device IDs. If it is
+    //                not given (i.e. if equal to NULL_ADAPTER_ID), then this
+    //                function will use heuristics to choose an adapter.
+    // \param link_type The type of link for which we're finding a local device
+    //                  ID. When \p adapter is NULL_ADAPTER_ID, then we use this
+    //                  in our heuristics for choosing an adapter.
     device_id_t _check_dst_and_find_src(sep_addr_t dst_addr,
         uhd::transport::adapter_id_t adapter,
         uhd::transport::link_type_t link_type) const

@@ -9,18 +9,31 @@
 #include <uhd/rfnoc/defaults.hpp>
 #include <uhd/rfnoc/rfnoc_types.hpp>
 #include <memory>
+#include <utility>
 
 namespace uhd { namespace rfnoc {
 
-//----------------------------------------------
-// Types
-//----------------------------------------------
+//-----------------------------------------------------------------------------
+// Types that are private to UHD
+// (there are more in rfnoc_types.hpp that are public)
+//-----------------------------------------------------------------------------
 
 //! Device ID Type
+// Every USRP in the RFNoC graph will have *one* device_id. It is programmed
+// into the device during initialization through a non-RFNoC mechanism (e.g.,
+// via MPM or the ZPU).
 using device_id_t = uint16_t;
 //! Stream Endpoint Instance Number Type
+// These instance numbers are unique within a device (they are simply counted
+// up), but are not unique in a graph (every USRP will have its own set of SEPs).
 using sep_inst_t = uint16_t;
 //! Stream Endpoint Physical Address Type
+// This combination of device ID and SEP instance is unique in a graph. Note
+// that for the most part, we map an sep_addr_t to a sep_id_t. This limits us to
+// 2**16 combinations of device IDs and SEP instances, but that is more than
+// enough for all practical applications. We use sep_id_t when we need a compact
+// 16-bit address (e.g., in a CHDR header). We use a sep_addr_t when we need to
+// know which device this endpoint belongs to.
 using sep_addr_t = std::pair<device_id_t, sep_inst_t>;
 //! Stream Endpoint Physical Address Type (first = source, second = destination)
 using sep_addr_pair_t = std::pair<sep_addr_t, sep_addr_t>;
