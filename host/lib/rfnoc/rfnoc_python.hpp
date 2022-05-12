@@ -510,12 +510,11 @@ void export_rfnoc(py::module& m)
             [](noc_block_base& self, const std::string& id, const size_t instance) -> double {
                 // Try both float types
                 try {
-                   int value = self.get_property<double>(id, instance);
-                   return (double)value;
+                   return self.get_property<double>(id, instance);
                 } catch(const uhd::type_error&) {
                    try {
-                      size_t value = self.get_property<float>(id, instance);
-                      return (double)value;
+                      float value = self.get_property<float>(id, instance);
+                      return static_cast<double>(value);
                    } catch(...) {
                       throw;
                    }
