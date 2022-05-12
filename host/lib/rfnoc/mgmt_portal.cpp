@@ -1031,8 +1031,8 @@ private: // Functions
             case node_type::NODE_TYPE_XPORT: {
                 uint8_t node_subtype = static_cast<uint8_t>(node.extended_info & 0xFF);
                 // Run a hop configuration function for custom transports
-                if (_rtcfg_cfg_fns.count(node_subtype)) {
-                    _rtcfg_cfg_fns.at(node_subtype)(
+                if (_init_cfg_fns.count(node_subtype)) {
+                    _init_cfg_fns.at(node_subtype)(
                         node.device_id, node.inst, node_subtype, init_hop);
                 } else {
                     // For a generic transport, just advertise the transaction to the
