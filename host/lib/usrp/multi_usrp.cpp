@@ -2306,7 +2306,7 @@ public:
     std::vector<std::string> get_tx_sensor_names(size_t chan) override
     {
         std::vector<std::string> sensor_names;
-        if (_tree->exists(rx_rf_fe_root(chan) / "sensors")) {
+        if (_tree->exists(tx_rf_fe_root(chan) / "sensors")) {
             sensor_names = _tree->list(tx_rf_fe_root(chan) / "sensors");
         }
         return sensor_names;
