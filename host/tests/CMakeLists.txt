@@ -251,6 +251,12 @@ UHD_ADD_NONAPI_TEST(
 )
 
 UHD_ADD_NONAPI_TEST(
+    TARGET rfnoc_topograph_test.cpp
+    EXTRA_SOURCES
+    ${UHD_SOURCE_DIR}/lib/rfnoc/topo_graph.cpp
+)
+
+UHD_ADD_NONAPI_TEST(
     TARGET actions_test.cpp
     EXTRA_SOURCES
     ${UHD_SOURCE_DIR}/lib/rfnoc/graph.cpp
