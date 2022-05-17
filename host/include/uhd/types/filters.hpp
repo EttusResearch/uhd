@@ -55,7 +55,7 @@ protected:
     size_t _position_index;
 };
 
-UHD_API std::ostream& operator<<(std::ostream& os, filter_info_base& f);
+UHD_API_HEADER std::ostream& operator<<(std::ostream& os, filter_info_base& f);
 
 class UHD_API analog_filter_base : public filter_info_base
 {
@@ -119,7 +119,7 @@ public:
 };
 
 template <typename tap_t>
-class UHD_API digital_filter_base : public filter_info_base
+class UHD_API_HEADER digital_filter_base : public filter_info_base
 {
 protected:
     double _rate;
@@ -205,7 +205,7 @@ public:
 };
 
 template <typename tap_t>
-class UHD_API digital_filter_fir : public digital_filter_base<tap_t>
+class UHD_API_HEADER digital_filter_fir : public digital_filter_base<tap_t>
 {
 public:
     typedef std::shared_ptr<digital_filter_fir<tap_t>> sptr;
