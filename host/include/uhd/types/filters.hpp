@@ -135,10 +135,10 @@ public:
         bool bypass,
         size_t position_index,
         double rate,
-        size_t interpolation,
-        size_t decimation,
-        double tap_full_scale,
-        size_t max_num_taps,
+        uint32_t interpolation,
+        uint32_t decimation,
+        tap_t tap_full_scale,
+        uint32_t max_num_taps,
         const std::vector<tap_t>& taps)
         : filter_info_base(type, bypass, position_index)
         , _rate(rate)
@@ -161,17 +161,17 @@ public:
         return _rate;
     }
 
-    UHD_INLINE double get_interpolation()
+    UHD_INLINE uint32_t get_interpolation()
     {
         return _interpolation;
     }
 
-    UHD_INLINE double get_decimation()
+    UHD_INLINE uint32_t get_decimation()
     {
         return _decimation;
     }
 
-    UHD_INLINE double get_tap_full_scale()
+    UHD_INLINE uint32_t get_tap_full_scale()
     {
         return _tap_full_scale;
     }
@@ -214,10 +214,10 @@ public:
         bool bypass,
         size_t position_index,
         double rate,
-        size_t interpolation,
-        size_t decimation,
-        size_t tap_bit_width,
-        size_t max_num_taps,
+        uint32_t interpolation,
+        uint32_t decimation,
+        tap_t tap_bit_width,
+        uint32_t max_num_taps,
         const std::vector<tap_t>& taps)
         : digital_filter_base<tap_t>(type,
               bypass,
