@@ -10,7 +10,6 @@ UDP Transport manager
 
 import importlib
 import subprocess
-from six import iteritems, itervalues
 from usrp_mpm import prefs
 from usrp_mpm.sys_utils import net
 
@@ -23,7 +22,7 @@ class XportMgrUDP:
     # The interface configuration describes how the Ethernet interfaces are
     # hooked up to the crossbar and the FPGA. It could look like this:
     # iface_config = {
-    #     'eth1': { # Add key for every Ethernet iface connected to the FPGA
+    #     'sfp0': { # Add key for every Ethernet iface connected to the FPGA
     #         'label': 'misc-enet-regs0', # UIO label for the Eth table
     #     },
     # }
@@ -36,7 +35,7 @@ class XportMgrUDP:
         assert self.iface_config
         assert all((
             all((key in x for key in ('label',)))
-            for x in itervalues(self.iface_config)
+            for x in self.iface_config.values()
         ))
         self.log = log.getChild('UDP')
         self.log.trace("Initializing UDP xport manager...")
@@ -111,7 +110,7 @@ class XportMgrUDP:
                 x: self.eth_dispatcher_cls(self.iface_config[x]['label'])
                 for x in self.bridges[bridge_iface]
             }
-            for dispatcher, table in iteritems(self._eth_dispatchers):
+            for dispatcher, table in self._eth_dispatchers.items():
                 self.log.info("this dispatcher: {}".format(dispatcher))
                 table.set_ipv4_addr(
                     self._chdr_ifaces[bridge_iface]['ip_addr'],
@@ -141,7 +140,9 @@ class XportMgrUDP:
                 if self.iface_config[iface]['type'] == 'internal':
                     #TODO: Get MAC address from EEPROM
                     internal_ip_addr = self.get_fpga_internal_ip_address(iface)
-                    self._eth_dispatchers[iface].setup_internal_interface(self.get_fpga_int_mac_address(iface), internal_ip_addr)
+                    self._eth_dispatchers[iface].setup_internal_interface(
+                        self.get_fpga_int_mac_address(iface),
+                        internal_ip_addr)
 
     def init(self, args):
         """
@@ -152,10 +153,10 @@ class XportMgrUDP:
             self._bridge_mode = args.get("bridge_mode")
         self._update_dispatchers()
         if self._bridge_mode:
-            for _, table in iteritems(self._eth_dispatchers):
+            for _, table in self._eth_dispatchers.items():
                 table.set_forward_policy(True, False)
         elif 'forward_eth' in args or 'forward_bcast' in args:
-            for _, table in iteritems(self._eth_dispatchers):
+            for _, table in self._eth_dispatchers.items():
                 table.set_forward_policy(
                     args.get('forward_eth', False),
                     args.get('forward_bcast', False)
@@ -203,15 +204,15 @@ class XportMgrUDP:
         # fourth_addr is the lowest priority for mpmd interface selection
         external_ip_dict = dict(zip(
             ("addr", "second_addr", "third_addr"),
-            (x['ip_addr'] for x in itervalues(external_chdr_interfaces))
+            (x['ip_addr'] for x in external_chdr_interfaces.values())
         ))
         forward_ip_dict = dict(zip(
             ("fourth_addr",),
-            (x['ip_addr'] for x in itervalues(forward_chdr_interfaces))
+            (x['ip_addr'] for x in forward_chdr_interfaces.values())
         ))
         return {**external_ip_dict, **forward_ip_dict}
 
-    def get_chdr_link_options(self, host_location = 'all'):
+    def get_chdr_link_options(self, host_location='all'):
         """
         Returns a list of dictionaries for returning by
         PeriphManagerBase.get_chdr_link_options().
@@ -223,17 +224,22 @@ class XportMgrUDP:
 
         return [
             {
-                'ipv4': str(iface_info['ip_addr']) if (self.iface_config[iface_name]['type'] != 'internal')
+                'ipv4': str(iface_info['ip_addr']) \
+                    if (self.iface_config[iface_name]['type'] != 'internal') \
                     else str(self.get_fpga_internal_ip_address(iface_name)),
                 'port': str(self.chdr_port),
                 'link_rate': str(int(iface_info['link_speed'] * 1e6 / 8)),
                 'type': str(self.iface_config[iface_name]['type']),
                 'mtu': str(iface_info['mtu'])
             }
-            for iface_name, iface_info in iteritems(self._chdr_ifaces)
-            if((self.iface_config[iface_name]['type'] == 'internal' and host_location == 'local') or
-                (self.iface_config[iface_name]['type'] != 'internal' and host_location == 'remote') or
-                host_location == 'all')
+            for iface_name, iface_info in self._chdr_ifaces.items()
+            if (
+                (self.iface_config[iface_name]['type'] == 'internal' and
+                 host_location == 'local') or
+                (self.iface_config[iface_name]['type'] != 'internal' and
+                 host_location == 'remote') or
+                host_location == 'all'
+            )
         ]
 
     def _setup_forwarding(self, iface):
@@ -242,11 +248,12 @@ class XportMgrUDP:
         to an internal interface.
         """
         internal_ifaces = list(
-            filter(lambda int_iface: self.iface_config[int_iface]['type'] == 'internal', self._chdr_ifaces))
+            filter(
+                lambda int_iface: self.iface_config[int_iface]['type'] == 'internal',
+                self._chdr_ifaces))
         if len(internal_ifaces) == 0:
             self.log.warning(
-                'No internal interface to forward CHDR packets to from {}.'
-                    .format(iface))
+                f'No internal interface to forward CHDR packets to from {iface}.')
             return
 
         int_iface = internal_ifaces[0]
@@ -299,6 +306,9 @@ class XportMgrUDP:
 
     @staticmethod
     def get_fpga_int_mac_address(iface):
+        """
+        Return the MAC address for the internal network connection
+        """
         return prefs.get_prefs().get(
             iface,
             'fpga_int_mac_address',

@@ -7,27 +7,26 @@
 Ethernet dispatcher table control
 """
 
-from builtins import str
-from builtins import object
 import netaddr
 from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.sys_utils.uio import UIO
 
-
-class EthDispatcherCtrl(object):
+class EthDispatcherCtrl:
     """
     Controls an Ethernet dispatcher.
     """
     DEFAULT_VITA_PORT = (49153, 49154)
     # Address offsets:
-    ETH_IP_OFFSET = 0x0000
-    ETH_PORT_OFFSET = 0x0004
-    FORWARD_ETH_BCAST_OFFSET = 0x0008
+    # pylint: disable=bad-whitespace
+    ETH_IP_OFFSET                 = 0x0000
+    ETH_PORT_OFFSET               = 0x0004
+    FORWARD_ETH_BCAST_OFFSET      = 0x0008
     BRIDGE_INTERNAL_MAC_LO_OFFSET = 0x0010
     BRIDGE_INTERNAL_MAC_HI_OFFSET = 0x0014
-    BRIDGE_INTERNAL_IP_OFFSET = 0x0018
-    BRIDGE_INTERNAL_PORT_OFFSET = 0x001c
+    BRIDGE_INTERNAL_IP_OFFSET     = 0x0018
+    BRIDGE_INTERNAL_PORT_OFFSET   = 0x001c
     BRIDGE_INTERNAL_ENABLE_OFFSET = 0x0020
+    # pylint: enable=bad-whitespace
 
 
     def __init__(self, label):
