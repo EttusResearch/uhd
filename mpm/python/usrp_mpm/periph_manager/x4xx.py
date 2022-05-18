@@ -718,13 +718,12 @@ class x4xx(ZynqComponents, PeriphManagerBase):
     ###########################################################################
     # Transport API
     ###########################################################################
-    # pylint: disable=no-self-use
     def get_chdr_link_types(self):
         """
-        This will only ever return a single item (udp).
+        Return a list of ways how UHD can connect to the X4xx. See
+        PeriphManagerBase.get_chdr_link_types() for more docs.
         """
-        return ["udp"]
-    # pylint: enable=no-self-use
+        return list(self._xport_mgrs.keys())
 
     def get_chdr_link_options(self, xport_type):
         """
