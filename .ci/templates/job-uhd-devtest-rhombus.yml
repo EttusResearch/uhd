@@ -60,16 +60,27 @@ jobs:
         devtestPattern: 'x3x0'
         jtagSerial: '2516350C5BFF'
         jtagServer: 'nitest@sdr-rhombus'
-      rhombus-x310-SBX-0 XG:
+      rhombus-x310-TWINRX-0 XG:
         devType: 'x300'
         devModel: 'x310'
-        devName: rhombus-x310-SBX-0
+        devName: rhombus-x310-TWINRX-0
         devSerial: 'F43D13'
         devBus: 'ip'
         devAddr: '192.168.40.6'
         devFpga: 'XG'
         devtestPattern: 'x3x0'
         jtagSerial: '251635F43D13'
+        jtagServer: 'nitest@sdr-rhombus'
+      rhombus-x300-SBX-0 XG:
+        devType: 'x300'
+        devModel: 'x300'
+        devName: rhombus-x300-SBX-0
+        devSerial: '32244AD'
+        devBus: 'ip'
+        devAddr: '192.168.40.7'
+        devFpga: 'XG'
+        devtestPattern: 'x3x0'
+        jtagSerial: '2516352244AD'
         jtagServer: 'nitest@sdr-rhombus'
       rhombus-x300-UBX-0 HG:
         devType: 'x300'
@@ -115,14 +126,25 @@ jobs:
         devtestPattern: 'x3x0'
         jtagSerial: '2516350C5BFF'
         jtagServer: 'nitest@sdr-rhombus'
-      rhombus-x310-SBX-0 HG:
+      rhombus-x310-TWINRX-0 HG:
         devType: 'x300'
         devModel: 'x310'
-        devName: rhombus-x310-SBX-0
+        devName: rhombus-x310-TWINRX-0
         devSerial: 'F43D13'
         devBus: 'ip'
         devAddr: '192.168.40.6'
         devFpga: 'HG'
         devtestPattern: 'x3x0'
         jtagSerial: '251635F43D13'
+        jtagServer: 'nitest@sdr-rhombus'
+      rhombus-x300-SBX-0 HG:
+        devType: 'x300'
+        devModel: 'x300'
+        devName: rhombus-x300-SBX-0
+        devSerial: '32244AD'
+        devBus: 'ip'
+        devAddr: '192.168.40.7'
+        devFpga: 'HG'
+        devtestPattern: 'x3x0'
+        jtagSerial: '2516352244AD'
         jtagServer: 'nitest@sdr-rhombus'
