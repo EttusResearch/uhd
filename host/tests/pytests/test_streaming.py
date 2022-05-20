@@ -306,7 +306,7 @@ def test_streaming(pytestconfig, dut_type, use_dpdk, dual_SFP, rate, rx_rate, rx
             if not use_dpdk:
                 pytest.xfail(overrun_error_text)
             else:
-                pytest.fail(overrun_error_text)
+                assert False, overrun_error_text
 
     if tx_channels:
         assert stats.avg_vals.tx_timeouts <= tx_timeouts_threshold, \
@@ -326,7 +326,7 @@ def test_streaming(pytestconfig, dut_type, use_dpdk, dual_SFP, rate, rx_rate, rx
             if not use_dpdk:
                 pytest.xfail(underrun_error_text)
             else:
-                pytest.fail(underrun_error_text)
+                assert False, underrun_error_text
 
     assert stats.avg_vals.late_cmds <= late_cmds_threshold, \
         f"""Number of late commands exceeded threshold.
