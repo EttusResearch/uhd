@@ -137,6 +137,8 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
         _type_out.push_back(property_t<io_type_t>(
             PROP_KEY_TYPE, IO_TYPE_SC16, {res_source_info::OUTPUT_EDGE, chan}));
 
+        register_property(&_atomic_item_size_in.back());
+        register_property(&_atomic_item_size_out.back());
         register_property(&_spp_prop.back(), [this, chan, &spp = _spp_prop.back()]() {
             const uint32_t words_per_pkt = spp.get() / _spc;
             RFNOC_LOG_TRACE(
@@ -144,16 +146,44 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
             _radio_reg_iface.poke32(
                 regmap::REG_RX_MAX_WORDS_PER_PKT, words_per_pkt, chan);
         });
-        register_property(&_atomic_item_size_in.back());
-        register_property(&_atomic_item_size_out.back());
         register_property(&_samp_rate_in.back());
         register_property(&_samp_rate_out.back());
         register_property(&_type_in.back());
         register_property(&_type_out.back());
-        add_property_resolver(
-            {&_spp_prop.back(), get_mtu_prop_ref({res_source_info::OUTPUT_EDGE, chan})},
+        // Add AIS resolvers first, they are used as inputs to other resolvers
+        add_property_resolver({&_atomic_item_size_in.back(),
+            get_mtu_prop_ref({res_source_info::INPUT_EDGE, chan})},
+            {&_atomic_item_size_in.back()},
+            [this, chan,
+                &ais_in = _atomic_item_size_in.back()]() {
+                RFNOC_LOG_TRACE("Calling resolver for atomic_item_size in@" << chan);
+                ais_in = uhd::math::lcm<size_t>(ais_in, get_atomic_item_size());
+                ais_in = std::min<size_t>(ais_in, get_mtu({res_source_info::INPUT_EDGE, chan}));
+                if ((ais_in % get_atomic_item_size()) > 0) {
+                    ais_in = ais_in - (ais_in % get_atomic_item_size());
+                }
+                RFNOC_LOG_TRACE("Resolving_atomic_item size in to " << ais_in);
+            });
+        add_property_resolver({&_atomic_item_size_out.back(),
+                                  get_mtu_prop_ref({res_source_info::OUTPUT_EDGE, chan})},
+            {&_atomic_item_size_out.back()},
+            [this, chan, &ais_out = _atomic_item_size_out.back()]() {
+                RFNOC_LOG_TRACE("Calling resolver for atomic_item_size out@" << chan);
+                ais_out = uhd::math::lcm<size_t>(ais_out, get_atomic_item_size());
+                ais_out = std::min<size_t>(ais_out, get_mtu({res_source_info::OUTPUT_EDGE, chan}));
+                if ((ais_out % get_atomic_item_size()) > 0) {
+                    ais_out = ais_out - (ais_out % get_atomic_item_size());
+                }
+                RFNOC_LOG_TRACE("Resolving atomic_item_size out to " << ais_out);
+            });
+        add_property_resolver({&_spp_prop.back(),
+                                  &_atomic_item_size_out.back(),
+                                  get_mtu_prop_ref({res_source_info::OUTPUT_EDGE, chan})},
             {&_spp_prop.back()},
-            [this, chan, &spp = _spp_prop.back()]() {
+            [this,
+                chan,
+                &spp     = _spp_prop.back(),
+                &ais_out = _atomic_item_size_out.back()]() {
                 RFNOC_LOG_TRACE("Calling resolver for spp@" << chan);
                 const size_t max_pyld =
                     get_max_payload_size({res_source_info::OUTPUT_EDGE, chan});
@@ -165,41 +195,31 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
                                     << "! Coercing to " << max_spp);
                     spp = max_spp;
                 }
-                if (spp.get() % _spc) {
-                    spp = spp.get() - (spp.get() % _spc);
-                    RFNOC_LOG_WARNING(
-                        "spp must be a multiple of the block bus width! Coercing to "
-                        << spp.get());
-                }
                 if (spp.get() <= 0) {
                     spp = max_spp;
                     RFNOC_LOG_WARNING(
                         "spp must be greater than zero! Coercing to " << spp.get());
                 }
-            });
-        add_property_resolver({&_atomic_item_size_in.back(),
-            get_mtu_prop_ref({res_source_info::INPUT_EDGE, chan})},
-            {&_atomic_item_size_in.back()},
-            [this, chan,
-                &ais_in = _atomic_item_size_in.back()]() {
-                ais_in = uhd::math::lcm<size_t>(ais_in, get_atomic_item_size());
-                ais_in = std::min<size_t>(ais_in, get_mtu({res_source_info::INPUT_EDGE, chan}));
-                if (ais_in.get() % get_atomic_item_size() > 0) {
-                    ais_in = ais_in - (ais_in.get() % get_atomic_item_size());
+
+                // spp must be a multiple of the output atomic item size divided
+                // by bytes-per-sample
+                const int spp_multiple = ais_out.get() / (_samp_width / 8);
+                if (spp_multiple > max_spp) {
+                    RFNOC_LOG_ERROR("Cannot resolve spp! Must be a multiple of "
+                                    << spp_multiple << " but max value is " << max_spp);
+                    throw uhd::resolve_error("Cannot resolve spp!");
                 }
-                RFNOC_LOG_TRACE("Resolve atomic item size in to " << ais_in);
-            });
-        add_property_resolver({&_atomic_item_size_out.back(),
-            get_mtu_prop_ref({res_source_info::OUTPUT_EDGE, chan})},
-            {&_atomic_item_size_out.back()},
-            [this, chan,
-                &ais_out = _atomic_item_size_out.back()]() {
-                ais_out = uhd::math::lcm<size_t>(ais_out, get_atomic_item_size());
-                ais_out = std::min<size_t>(ais_out, get_mtu({res_source_info::OUTPUT_EDGE, chan}));
-                if (ais_out.get() % get_atomic_item_size() > 0) {
-                    ais_out = ais_out - (ais_out.get() % get_atomic_item_size());
+                if (spp.get() % spp_multiple) {
+                    if (spp.get() < spp_multiple) {
+                        spp = spp_multiple;
+                    } else {
+                        spp = spp.get() - (spp.get() % spp_multiple);
+                    }
+                    RFNOC_LOG_WARNING("spp must be a multiple of "
+                                      << spp_multiple << "! Coercing to " << spp.get());
                 }
-                RFNOC_LOG_TRACE("Resolve atomic item size out to " << ais_out);
+                RFNOC_LOG_TRACE("Exiting resolver for spp@"
+                                << chan << " (new value: " << spp.get() << ")");
             });
         // Note: The following resolver calls coerce_rate(), which is virtual.
         // At run time, it will use the implementation by the child class.

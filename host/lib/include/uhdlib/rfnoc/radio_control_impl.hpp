@@ -386,9 +386,9 @@ private:
     //! Samples per cycle
     const uint32_t _spc;
 
-    std::vector<property_t<int>> _spp_prop;
     std::vector<property_t<size_t>> _atomic_item_size_in;
     std::vector<property_t<size_t>> _atomic_item_size_out;
+    std::vector<property_t<int>> _spp_prop;
     //! Properties for type_in (one per port)
     std::vector<property_t<io_type_t>> _type_in;
     //! Properties for type_out (one per port)
