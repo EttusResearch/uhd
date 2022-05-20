@@ -5,6 +5,7 @@
 //
 
 #include <uhd/rfnoc/defaults.hpp>
+#include <uhd/utils/math.hpp>
 #include <uhdlib/rfnoc/node_accessor.hpp>
 #include <uhdlib/rfnoc/rfnoc_tx_streamer.hpp>
 #include <atomic>
@@ -218,22 +219,24 @@ void rfnoc_tx_streamer::_register_props(const size_t chan, const std::string& ot
                 this->set_tick_rate(tick_rate_out.get());
             }
         });
-    add_property_resolver({atomic_item_size_out, mtu_out},
+    add_property_resolver({atomic_item_size_out, mtu_out, type_out},
         {},
-        [&ais = *atomic_item_size_out, chan, this]() {
+        [&ais = *atomic_item_size_out, &type = *type_out, chan, this]() {
             const auto UHD_UNUSED(log_chan) = chan;
             RFNOC_LOG_TRACE("Calling resolver for `atomic_item_size'@" << chan);
             if (ais.is_valid()) {
-                const auto spp = this->tx_streamer_impl::get_max_num_samps();
-                if (spp < ais.get()) {
+                const size_t bpi          = convert::get_bytes_per_item(type.get());
+                const size_t spp          = this->tx_streamer_impl::get_max_num_samps();
+                const size_t spp_multiple = uhd::math::lcm<size_t>(ais.get(), bpi) / bpi;
+                if (spp < spp_multiple) {
+                    RFNOC_LOG_ERROR("Cannot resolve spp! Must be a multiple of "
+                                    << spp_multiple << " but max value is " << spp);
                     throw uhd::value_error(
-                        "samples per package must not be smaller than atomic item size");
+                        "Samples per packet is incompatible with atomic item size!");
                 }
-                const auto misalignment = spp % ais.get();
-                RFNOC_LOG_TRACE(
-                    "Check atomic item size " << ais.get() << " divides spp " << spp);
+                const auto misalignment = spp % spp_multiple;
                 if (misalignment > 0) {
-                    RFNOC_LOG_TRACE("Reduce spp by "
+                    RFNOC_LOG_TRACE("Reducing spp by "
                                     << misalignment << " to align with atomic item size");
                     this->tx_streamer_impl::set_max_num_samps(spp - misalignment);
                 }
