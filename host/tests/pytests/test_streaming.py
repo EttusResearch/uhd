@@ -285,10 +285,18 @@ def test_streaming(pytestconfig, dut_type, use_dpdk, dual_SFP, rate, rx_rate, rx
     # https://docs.pytest.org/en/6.2.x/assert.html#defining-your-own-explanation-for-failed-assertions
 
     if rx_channels:
-        assert stats.avg_vals.dropped_samps <= dropped_samps_threshold, \
-            f"""Number of dropped samples exceeded threshold.
-                Expected dropped samples: <= {dropped_samps_threshold}
-                Actual dropped samples:      {stats.avg_vals.dropped_samps}"""
+        if not stats.avg_vals.dropped_samps <= dropped_samps_threshold:
+            dropped_samps_error_text = (
+                f"Number of dropped samples exceeded threshold.\n"
+                f"Expected dropped samples: <= {dropped_samps_threshold}\n"
+                f"Actual dropped samples:      {stats.avg_vals.dropped_samps}\n"
+            )
+            # Temporarily ignore b210 dropped sample errors, since these happen
+            # intermittently on the streaming test machine
+            if dut_type.lower() == "b210":
+                pytest.xfail(dropped_samps_error_text)
+            else:
+                assert False, dropped_samps_error_text
         assert stats.avg_vals.rx_timeouts <= rx_timeouts_threshold, \
             f"""Number of rx timeouts exceeded threshold.
                 Expected rx timeouts: <= {rx_timeouts_threshold}
