@@ -87,7 +87,8 @@ public:
         _word_size(
             uint16_t((_replay_reg_iface.peek32(REG_MEM_SIZE_ADDR) >> 16) & 0xFFFF) / 8),
         _mem_size(
-            uint64_t(1ULL << (_replay_reg_iface.peek32(REG_MEM_SIZE_ADDR) & 0xFFFF)))
+            uint64_t(1ULL << (_replay_reg_iface.peek32(REG_MEM_SIZE_ADDR) & 0xFFFF))),
+        _cmd_fifo_spaces(_num_output_ports)
     {
         if (get_num_input_ports() != get_num_output_ports()) {
             throw uhd::assertion_error(
@@ -175,7 +176,6 @@ public:
         _play_size.reserve(_num_output_ports);
         _packet_size.reserve(_num_output_ports);
         _atomic_item_size_out.reserve(_num_output_ports);
-        _cmd_fifo_spaces.reserve(_num_output_ports);
         for (size_t port = 0; port < _num_output_ports; port++) {
             _register_output_props(port);
             _replay_reg_iface.poke32(REG_PLAY_ITEM_SIZE_ADDR,
