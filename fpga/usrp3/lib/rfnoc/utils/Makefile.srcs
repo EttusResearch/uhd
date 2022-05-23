@@ -30,4 +30,5 @@ ctrlport_to_settings_bus.v \
 noc_shell_generic_ctrlport_pyld_chdr.v \
 timekeeper.v \
 ctrlport_terminator.v \
+chdr_strip_header.sv \
 ))
