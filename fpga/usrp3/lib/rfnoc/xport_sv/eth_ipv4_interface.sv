@@ -2,30 +2,39 @@
 // Copyright 2020 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
+//
 // Module: eth_ipv4_interface
 //
 // Description:
-//   Adapts from internal CHDR to UDP/IPV4 Ethernet packets.
-//   Packets not specifically addressed to CHDR are routed
-//   to the CPU
+//
+//   Wraps the UDP/IP/Ethernet transport adapter for RFNoC and adds registers
+//   for this network port (MAC, IP, and UDP information) and its included
+//   transport adapter.
 //
 // Parameters:
-//   - PROTOVER: RFNoC protocol version {8'd<major>, 8'd<minor>}
-//   - CPU_FIFO_SIZE: Log2 of the FIFO depth (in bytes) for the CPU egress path
-//   - CHDR_FIFO_SIZE: Log2 of the FIFO depth (in bytes) for the CHDR egress path
-//   - RT_TBL_SIZE: Log2 of the depth of the return-address routing table
-//   - NODE_INST: The node type to return for a node-info discovery
-//   - DROP_UNKNOWN_MAC: Drop packets not addressed to us?
-//   - DROP_MIN_PACKET: Drop packets smaller than 64 bytes?
-//   - PREAMBLE_BYTES: Number of bytes of Preamble expected
-//   - ADD_SOF: Add a SOF indication into the tuser field of e2c
-//   - SYNC: Set if the CPU clock domain (c2e, e2c) is not the same as the
-//           Ethernet clock domain (eth_rx, eth_tx).
-//   - ENET_W: Width of the link to the Ethernet MAC
-//   - CPU_W: Width of the CPU interface
-//   - CHDR_W: CHDR width used by RFNoC on the FPGA
-//   - NET_CHDR_W: CHDR width used over the network connection
 //
+//   PROTOVER         : RFNoC protocol version {8'd<major>, 8'd<minor>}
+//   CPU_FIFO_SIZE    : Log2 of the FIFO depth (in bytes) for the CPU egress path
+//   CHDR_FIFO_SIZE   : Log2 of the FIFO depth (in bytes) for the CHDR egress path
+//   RT_TBL_SIZE      : Log2 of the depth of the return-address routing table
+//   NODE_INST        : The node type to return for a node-info discovery
+//   DROP_UNKNOWN_MAC : Drop packets not addressed to us?
+//   DROP_MIN_PACKET  : Drop packets smaller than 64 bytes?
+//   PREAMBLE_BYTES   : Number of bytes of Preamble expected
+//   ADD_SOF          : Add a SOF indication into the tuser field of e2c
+//   SYNC             : Set to 1 if the c2e/e2c, v2e/e2v, and eth_rx/eth_tx are
+//                      synchronous to each other. Set to 0 to insert clock
+//                      crossing logic.
+//   ENET_W           : Width of the link to the Ethernet MAC
+//   CPU_W            : Width of the CPU interface
+//   CHDR_W           : CHDR width used by RFNoC on the FPGA
+//   NET_CHDR_W       : CHDR width used over the network connection
+//   EN_RX_KV_MAP_CFG : Enable the RX key-value map configuration port
+//   EN_RX_RAW_PYLD   : Enable CHDR header removal (raw payload) on RX path
+//
+
+`default_nettype none
+
 
 module eth_ipv4_interface #(
   logic [15:0] PROTOVER         = {8'd1, 8'd0},
@@ -44,22 +53,24 @@ module eth_ipv4_interface #(
   int          ENET_W           = 64,
   int          CPU_W            = 64,
   int          CHDR_W           = 64,
-  int          NET_CHDR_W       = CHDR_W
+  int          NET_CHDR_W       = CHDR_W,
+  bit          EN_RX_KV_MAP_CFG = 1,
+  bit          EN_RX_RAW_PYLD   = 1
 ) (
-  input logic        bus_clk,
-  input logic        bus_rst,
-  input logic [15:0] device_id,
+  input wire         bus_clk,
+  input wire         bus_rst,
+  input wire  [15:0] device_id,
 
   // Register port: Write port (domain: bus_clk)
-  input logic                  reg_wr_req,
-  input logic [REG_AWIDTH-1:0] reg_wr_addr,
-  input logic [31:0]           reg_wr_data,
+  input wire                   reg_wr_req,
+  input wire  [REG_AWIDTH-1:0] reg_wr_addr,
+  input wire  [          31:0] reg_wr_data,
 
   // Register port: Read port (domain: bus_clk)
-  input  logic                  reg_rd_req,
-  input  logic [REG_AWIDTH-1:0] reg_rd_addr,
+  input  wire                   reg_rd_req,
+  input  wire  [REG_AWIDTH-1:0] reg_rd_addr,
   output logic                  reg_rd_resp,
-  output logic     [31:0]       reg_rd_data,
+  output logic [          31:0] reg_rd_data,
 
   // Status ports (domain: bus_clk)
   output logic [47:0] my_mac,
@@ -89,6 +100,9 @@ module eth_ipv4_interface #(
   localparam [15:0] DEFAULT_PAUSE_SET   = 16'd00040;
   localparam [15:0] DEFAULT_PAUSE_CLEAR = 16'd00020;
 
+  localparam [7:0] COMPAT_MAJOR = 8'd1;
+  localparam [7:0] COMPAT_MINOR = 8'd0;
+
   //---------------------------------------------------------
   // Registers
   //---------------------------------------------------------
@@ -116,6 +130,16 @@ module eth_ipv4_interface #(
   logic [15:0] my_pause_set    = DEFAULT_PAUSE_SET;
   logic [15:0] my_pause_clear  = DEFAULT_PAUSE_CLEAR;
 
+  // KV map configuration registers. Make them default to 0 so that the extra
+  // logic for this configuration interface gets optimized out when not used.
+  logic        kv_stb      = 0;
+  logic [47:0] kv_mac_addr = 0;
+  logic [31:0] kv_ip_addr  = 0;
+  logic [15:0] kv_udp_port = 0;
+  logic [15:0] kv_dst_epid = 0;
+  logic        kv_raw_udp  = 0;
+  logic        kv_busy;
+
   always_comb begin : bridge_mux
     my_mac            = bridge_en ? bridge_mac_reg : mac_reg;
     my_ip             = bridge_en ? bridge_ip_reg : ip_reg;
@@ -133,8 +157,9 @@ module eth_ipv4_interface #(
       bridge_udp_port <= DEFAULT_UDP_PORT;
       my_pause_set    <= DEFAULT_PAUSE_SET;
       my_pause_clear  <= DEFAULT_PAUSE_CLEAR;
-    end
-    else begin
+      kv_stb          <= 0;
+    end else begin
+      kv_stb <= 0;
       if (reg_wr_req)
         case (reg_wr_addr)
 
@@ -166,13 +191,38 @@ module eth_ipv4_interface #(
           bridge_en             <= reg_wr_data[0];
 
         REG_PAUSE:
-          begin
-            if (PAUSE_EN) begin
-              my_pause_set        <= reg_wr_data[15:0];
-              my_pause_clear      <= reg_wr_data[31:16];
-            end
+          if (PAUSE_EN) begin
+            my_pause_set        <= reg_wr_data[15:0];
+            my_pause_clear      <= reg_wr_data[31:16];
           end
-        endcase
+
+        REG_XPORT_KV_MAC_LO:
+          if (EN_RX_KV_MAP_CFG) begin
+            kv_mac_addr[31:0]   <= reg_wr_data;
+          end
+
+        REG_XPORT_KV_MAC_HI:
+          if (EN_RX_KV_MAP_CFG) begin
+            kv_mac_addr[47:32]  <= reg_wr_data[15:0];
+          end
+
+        REG_XPORT_KV_IP:
+          if (EN_RX_KV_MAP_CFG) begin
+            kv_ip_addr          <= reg_wr_data[31:0];
+          end
+
+        REG_XPORT_KV_UDP:
+          if (EN_RX_KV_MAP_CFG) begin
+            kv_udp_port         <= reg_wr_data[15:0];
+          end
+
+        REG_XPORT_KV_CFG:
+          if (EN_RX_KV_MAP_CFG) begin
+            kv_dst_epid         <= reg_wr_data[15:0];
+            kv_raw_udp          <= reg_wr_data[16];
+            kv_stb              <= 1;
+          end
+      endcase
     end
   end
 
@@ -220,6 +270,7 @@ module eth_ipv4_interface #(
 
           REG_BRIDGE_ENABLE:
             reg_rd_data <= {31'b0,bridge_en};
+
           // Drop counts are used to debug situations
           // Where the incoming data goes faster than
           // chdr can consume it
@@ -228,6 +279,7 @@ module eth_ipv4_interface #(
               reg_rd_data <= chdr_drop_count;
               chdr_drop_count <= 0; // clear when read
             end
+
           REG_CPU_DROPPED:
             begin
               reg_rd_data <= cpu_drop_count;
@@ -241,6 +293,24 @@ module eth_ipv4_interface #(
                 reg_rd_data[31:16] <= my_pause_clear;
               end
             end
+
+          REG_XPORT_COMPAT:
+            reg_rd_data <= { COMPAT_MAJOR, COMPAT_MINOR };
+
+          REG_XPORT_INFO:
+            reg_rd_data <= {30'd0, EN_RX_RAW_PYLD, EN_RX_KV_MAP_CFG};
+
+          REG_XPORT_NODE_INST:
+            reg_rd_data <= NODE_INST;
+
+          REG_XPORT_KV_CFG:
+            begin
+              reg_rd_data <= 32'b0;
+              if (EN_RX_KV_MAP_CFG) begin
+                reg_rd_data[31] <= kv_busy;
+              end
+            end
+
          default:
             reg_rd_resp <= 1'b0;
          endcase
@@ -273,37 +343,47 @@ module eth_ipv4_interface #(
   end
 
   eth_ipv4_chdr_adapter #(
-    .PROTOVER        (PROTOVER),
-    .CPU_FIFO_SIZE   (CPU_FIFO_SIZE),
-    .CHDR_FIFO_SIZE  (CHDR_FIFO_SIZE),
-    .RT_TBL_SIZE     (RT_TBL_SIZE),
-    .NODE_INST       (NODE_INST),
+    .PROTOVER        (PROTOVER        ),
+    .CPU_FIFO_SIZE   (CPU_FIFO_SIZE   ),
+    .CHDR_FIFO_SIZE  (CHDR_FIFO_SIZE  ),
+    .RT_TBL_SIZE     (RT_TBL_SIZE     ),
+    .NODE_INST       (NODE_INST       ),
     .DROP_UNKNOWN_MAC(DROP_UNKNOWN_MAC),
-    .DROP_MIN_PACKET (DROP_MIN_PACKET),
-    .PREAMBLE_BYTES  (PREAMBLE_BYTES),
-    .ADD_SOF         (ADD_SOF),
-    .SYNC            (SYNC),
-    .ENET_W          (ENET_W),
-    .CPU_W           (CPU_W),
-    .CHDR_W          (CHDR_W),
-    .NET_CHDR_W      (NET_CHDR_W)
-  ) eth_adapter_i (
-    .eth_pause_req   (eth_pause_req),
-    .eth_rx          (eth_rx   ),
-    .eth_tx          (eth_tx   ),
-    .v2e             (v2e      ),
-    .e2v             (e2v      ),
-    .c2e             (c2e      ),
-    .e2c             (e2c      ),
-    .device_id       (device_id),
-    .my_mac          (my_mac   ),
-    .my_ip           (my_ip    ),
+    .DROP_MIN_PACKET (DROP_MIN_PACKET ),
+    .PREAMBLE_BYTES  (PREAMBLE_BYTES  ),
+    .ADD_SOF         (ADD_SOF         ),
+    .SYNC            (SYNC            ),
+    .ENET_W          (ENET_W          ),
+    .CPU_W           (CPU_W           ),
+    .CHDR_W          (CHDR_W          ),
+    .NET_CHDR_W      (NET_CHDR_W      ),
+    .EN_RX_RAW_PYLD  (EN_RX_RAW_PYLD  )
+  ) eth_ipv4_chdr_adapter_i (
+    .device_id       (device_id       ),
+    .my_mac          (my_mac          ),
+    .my_ip           (my_ip           ),
     .my_udp_chdr_port(my_udp_chdr_port),
-    .my_pause_set    (my_pause_set),
-    .my_pause_clear  (my_pause_clear),
-    .chdr_dropped    (e_chdr_dropped),
-    .cpu_dropped     (e_cpu_dropped)
+    .my_pause_set    (my_pause_set    ),
+    .my_pause_clear  (my_pause_clear  ),
+    .kv_stb          (kv_stb          ),
+    .kv_busy         (kv_busy         ),
+    .kv_mac_addr     (kv_mac_addr     ),
+    .kv_ip_addr      (kv_ip_addr      ),
+    .kv_udp_port     (kv_udp_port     ),
+    .kv_dst_epid     (kv_dst_epid     ),
+    .kv_raw_udp      (kv_raw_udp      ),
+    .chdr_dropped    (e_chdr_dropped  ),
+    .cpu_dropped     (e_cpu_dropped   ),
+    .eth_pause_req   (eth_pause_req   ),
+    .eth_tx          (eth_tx          ),
+    .eth_rx          (eth_rx          ),
+    .e2v             (e2v             ),
+    .v2e             (v2e             ),
+    .e2c             (e2c             ),
+    .c2e             (c2e             )
   );
 
-
 endmodule : eth_ipv4_interface
+
+
+`default_nettype wire
