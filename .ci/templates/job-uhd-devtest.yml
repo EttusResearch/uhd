@@ -60,7 +60,30 @@ jobs:
       rm -rf fpga_images/*
       python3 utils/uhd_images_downloader.py -t $(devModel) -i fpga_images \
         -b $(sdr-fileserver)
+      if [ "$(devType)" = "b200" ]; then
+        python3 utils/uhd_images_downloader.py -t b2xx_common -i fpga_images \
+          -b $(sdr-fileserver)
+      fi
     displayName: Download FPGA Images
+
+  - script: |
+      mkdir -p $(Common.TestResultsDirectory)/devtest
+      cd $(Common.TestResultsDirectory)/devtest
+      export PATH=$(Build.BinariesDirectory)/uhddev/build/utils:$(Build.BinariesDirectory)/uhddev/build/examples:$PATH
+      export LD_LIBRARY_PATH=$(Build.BinariesDirectory)/uhddev/build/lib:$LD_LIBRARY_PATH
+      export UHD_IMAGES_DIR=$(Build.BinariesDirectory)/uhddev/build/fpga_images
+      python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
+        ${{ parameters.redisHost }} $(devName) \
+        "$(Build.BinariesDirectory)/uhddev/build/utils/uhd_usrp_probe --args serial=$(devSerial)" \
+        "$(Build.BinariesDirectory)/uhddev/build/utils/uhd_image_loader --args serial=$(devSerial),type=$(devType)" \
+        "python3 ${{ parameters.uhdSrcDir }}/host/tests/devtest/run_testsuite.py \
+          --src-dir ${{ parameters.uhdSrcDir }}/host/tests/devtest \
+          --devtest-pattern $(devtestPattern) --args serial=$(devSerial),type=$(devType) \
+          --build-type Release --build-dir $(Build.BinariesDirectory)/uhddev/build \
+          --python-interp python3 --xml"
+    continueOnError: true
+    condition: and(succeeded(), eq(variables.devType, 'b200'), eq(variables.devBus, 'usb'))
+    displayName: Run b2xx devtest on $(devName)
 
   - script: |
       mkdir -p $(Common.TestResultsDirectory)/devtest
@@ -78,7 +101,7 @@ jobs:
           --python-interp python3 --xml"
     continueOnError: true
     condition: and(succeeded(), eq(variables.devType, 'x300'), eq(variables.devBus, 'ip'))
-    displayName: Run devtest on $(devName) $(devFpga)
+    displayName: Run x3xx devtest on $(devName) $(devFpga)
 
   - script: |
       cat $(Common.TestResultsDirectory)/devtest/log*.log

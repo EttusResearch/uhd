@@ -148,3 +148,11 @@ jobs:
         devtestPattern: 'x3x0'
         jtagSerial: '2516352244AD'
         jtagServer: 'nitest@sdr-rhombus'
+
+      rhombus-b210-0:
+        devType: 'b200'
+        devModel: 'b210'
+        devName: rhombus-b210-0
+        devSerial: '3218D0E'
+        devBus: 'usb'
+        devtestPattern: 'b2xx'
