@@ -240,7 +240,13 @@ def test_streaming(pytestconfig, dut_type, use_dpdk, dual_SFP, rate, rx_rate, rx
         device_args += f"second_addr={pytestconfig.getoption('second_addr')},"
 
     if use_dpdk:
-        device_args += f"use_dpdk=1,mgmt_addr={pytestconfig.getoption('mgmt_addr')},"
+        device_args += f"use_dpdk=1,"
+        try:
+            mgmt_addr = pytestconfig.getoption('mgmt_addr')
+            if mgmt_addr:
+                device_args += f"mgmt_addr={mgmt_addr},"
+        except Exception:
+            pass
 
     try:
         num_recv_frames = pytestconfig.getoption('num_recv_frames')
