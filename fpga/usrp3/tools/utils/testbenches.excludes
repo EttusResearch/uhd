@@ -12,6 +12,7 @@ top/x300/sim/x300_pcie_int
 lib/axi4s_sv/axi4s_remove_bytes_tb
 lib/axi4s_sv/axi4s_add_bytes_tb
 lib/rfnoc/xport_sv/eth_interface_tb
+lib/rfnoc/sim/eth_ipv4_interface_tb
 top/x400/sim/x4xx_qsfp_wrapper
 top/x400/ip/eth_100g_bd/lbus_tb
 top/x400/rf/sim
