@@ -30,6 +30,8 @@ jobs:
       #   dutMgmtAddr: '10.0.57.13'
       #   dutFPGA: 'XG'
       #   dutNameId: ''
+      #   dutNumRecvFrames: ''
+      #   dutNumSendFrames: ''
       beauty-X310-0:
         dutName: 'beauty-X310-0'
         dutType: 'X310'
@@ -38,6 +40,8 @@ jobs:
         dutMgmtAddr: ''
         dutFPGA: 'XG'
         dutNameId: ''
+        dutNumRecvFrames: ''
+        dutNumSendFrames: ''
       # beauty-X410-0 X4_200:
       #   dutName: 'beauty-X410-0'
       #   dutType: 'x4xx'
@@ -46,6 +50,8 @@ jobs:
       #   dutMgmtAddr: '10.0.57.29'
       #   dutFPGA:'X4_200'
       #   dutNameId: ''
+      #   dutNumRecvFrames: ''
+      #   dutNumSendFrames: ''
       beauty-X410-0 CG_400:
         dutName: 'beauty-X410-0'
         dutType: 'x4xx'
@@ -56,6 +62,8 @@ jobs:
         dutNameId: ''
         dutEmbeddedImagesArtifact: 'x4xx-images'
         uartSerial: '2516351E2C9A'
+        dutNumRecvFrames: ''
+        dutNumSendFrames: ''
       # beauty-E320-0:
       #   dutName: 'beauty-E320-0'
       #   dutType: 'E320'
@@ -64,6 +72,8 @@ jobs:
       #   dutMgmtAddr: '10.0.57.38'
       #   dutFPGA: 'XG'
       #   dutNameId: ''
+      #   dutNumRecvFrames: ''
+      #   dutNumSendFrames: ''
       # beauty-N310-0:
       #   dutName: 'beauty-N310-0'
       #   dutType: 'N310'
@@ -72,6 +82,8 @@ jobs:
       #   dutMgmtAddr: '10.0.57.31'
       #   dutFPGA: 'XG'
       #   dutNameId: ''
+      #   dutNumRecvFrames: ''
+      #   dutNumSendFrames: ''
       # beauty-X310_TwinRx-0:
       #   dutName: 'beauty-X310_TwinRx-0'
       #   dutType: 'X310_TwinRx'
@@ -80,6 +92,8 @@ jobs:
       #   dutMgmtAddr: ''
       #   dutFPGA: 'XG'
       #   dutNameId: ''
+      #   dutNumRecvFrames: ''
+      #   dutNumSendFrames: ''
       beauty-B210-0:
         dutName: 'beauty-B210-0'
         dutType: 'B210'
@@ -88,4 +102,6 @@ jobs:
         dutMgmtAddr: ''
         dutFPGA: ''
         dutNameId: 'MyB210'
+        dutNumRecvFrames: '256'
+        dutNumSendFrames: '256'
 

@@ -56,7 +56,16 @@ def pytest_addoption(parser):
         required=True,
         type=str,
         help="")
-
+    parser.addoption(
+        "--num_recv_frames",
+        type=str,
+        nargs='?',
+        help="configures num_recv_frames parameter")
+    parser.addoption(
+        "--num_send_frames",
+        type=str,
+        nargs='?',
+        help="configures num_send_frames parameter")
 
 def pytest_configure(config):
     # register additional markers

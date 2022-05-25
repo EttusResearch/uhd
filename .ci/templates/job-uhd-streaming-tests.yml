@@ -158,7 +158,8 @@ jobs:
       cd ${{ parameters.uhdSrcDir }}/host/tests/pytests
       python3 -B -m pytest -s test_streaming.py -m "not dpdk" --dut_type $(dutType) --test_length ${{ parameters.testLength }} \
         --uhd_build_dir $(Build.BinariesDirectory)/uhddev/build --junitxml $(Common.TestResultsDirectory)/TEST-$(dutName).xml \
-        --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $(dutMgmtAddr) --name $(dutNameId)
+        --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $(dutMgmtAddr) --name $(dutNameId) \
+        --num_recv_frames $(dutNumRecvFrames) --num_send_frames $(dutNumSendFrames)
     env:
       UHD_CONFIG_FILE: $(config_file)
       PYTHONPATH: ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
