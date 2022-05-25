@@ -242,6 +242,22 @@ def test_streaming(pytestconfig, dut_type, use_dpdk, dual_SFP, rate, rx_rate, rx
     if use_dpdk:
         device_args += f"use_dpdk=1,mgmt_addr={pytestconfig.getoption('mgmt_addr')},"
 
+    try:
+        num_recv_frames = pytestconfig.getoption('num_recv_frames')
+        if num_recv_frames:
+            device_args += f"num_recv_frames={num_recv_frames},"
+    except Exception:
+        pass
+
+    try:
+        num_send_frames = pytestconfig.getoption('num_send_frames')
+        if num_send_frames:
+            device_args += f"num_send_frames={num_send_frames},"
+    except Exception:
+        pass
+
+    print("Constructed device_args: " + device_args)
+
     # construct benchmark_rate params dictionary
     benchmark_rate_params = {
         "args": device_args,
