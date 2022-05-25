@@ -13,5 +13,6 @@ eth_ipv4_add_udp.sv \
 eth_ipv4_chdr_adapter.sv \
 eth_ipv4_chdr_dispatch.sv \
 eth_ipv4_interface.sv \
+eth_ipv4_interface_wrapper.sv \
 eth_ipv4_internal.sv \
 ))
