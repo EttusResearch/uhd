@@ -246,6 +246,7 @@ def test_streaming(pytestconfig, dut_type, use_dpdk, dual_SFP, rate, rx_rate, rx
     benchmark_rate_params = {
         "args": device_args,
         "duration": duration,
+        "priority": "high",
     }
 
     if rx_channels:
