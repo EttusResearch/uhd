@@ -186,7 +186,7 @@ interface AxiStreamPacketIf #(
       end
     end
   end
-  
+
   //---------------------------------------
   // Packing functions
   //---------------------------------------
@@ -292,9 +292,9 @@ interface AxiStreamPacketIf #(
     localparam USER_TRAILING_WIDTH =
       USER_WIDTH >= TRAILING_WIDTH ? TRAILING_WIDTH : USER_WIDTH;
     assert (TUSER) else
-      $fatal("Can't get trailing if TUSER doesn't exist");
+      $fatal(1, "Can't get trailing if TUSER doesn't exist");
     assert (USER_WIDTH >= TRAILING_WIDTH) else
-      $fatal("USER_WIDTH is to narrow to contain trailing");
+      $fatal(1, "USER_WIDTH is to narrow to contain trailing");
     return trailing2keep(tuser[USER_TRAILING_WIDTH-1:0]);
   endfunction : get_trailing_bytes
 
@@ -302,9 +302,9 @@ interface AxiStreamPacketIf #(
     localparam USER_TRAILING_WIDTH =
       USER_WIDTH >= TRAILING_WIDTH ? TRAILING_WIDTH : USER_WIDTH;
     assert (TUSER) else
-      $fatal("Can't set trailing if TUSER doesn't exist");
+      $fatal(1, "Can't set trailing if TUSER doesn't exist");
     assert (USER_WIDTH >= TRAILING_WIDTH) else
-      $fatal("USER_WIDTH is to narrow to set trailing");
+      $fatal(1, "USER_WIDTH is to narrow to set trailing");
     tuser[USER_TRAILING_WIDTH-1:0] = keep2trailing(keep);
   endtask : set_trailing_bytes
 
