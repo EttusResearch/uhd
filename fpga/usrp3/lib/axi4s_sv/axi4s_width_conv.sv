@@ -37,34 +37,34 @@ module axi4s_width_conv #(
   initial begin
     if(i.TKEEP) begin
       assert (!I_USER_TRAILING_BYTES) else
-        $fatal("I_USER_TRAILING_BYTE set at the same time as TKEEP");
+        $fatal(1, "I_USER_TRAILING_BYTE set at the same time as TKEEP");
       assert (!i.TUSER) else
-        $fatal("i.TUSER set- This module does not pass user");
+        $fatal(1, "i.TUSER set- This module does not pass user");
     end else if(I_USER_TRAILING_BYTES) begin
       assert (i.USER_WIDTH >= i.TRAILING_WIDTH ) else
-        $fatal("i.USER_WIDTH does not match TRAILING_WIDTH");
+        $fatal(1, "i.USER_WIDTH does not match TRAILING_WIDTH");
     end else begin
       assert (!i.TUSER) else
-        $fatal("This module does not pass generic user_data");
+        $fatal(1, "This module does not pass generic user_data");
     end
 
     if(o.TKEEP) begin
       assert (!O_USER_TRAILING_BYTES) else
-        $fatal("O_USER_TRAILING_BYTE set at the same time as TKEEP");
+        $fatal(1, "O_USER_TRAILING_BYTE set at the same time as TKEEP");
       assert (!o.TUSER) else
-        $fatal("O.TUSER set- This module does not pass user");
+        $fatal(1, "O.TUSER set- This module does not pass user");
     end else if(O_USER_TRAILING_BYTES) begin
       assert (o.USER_WIDTH >= o.TRAILING_WIDTH) else
-        $fatal("o.USER_WIDTH does not match TRAILING_WIDTH");
+        $fatal(1, "o.USER_WIDTH does not match TRAILING_WIDTH");
     end else begin
       assert (!o.TUSER) else
-        $fatal("This module does not pass generic user_data");
+        $fatal(1, "This module does not pass generic user_data");
     end
 
     assert (i.TLAST == 1) else
-      $fatal("i.TLAST not present");
+      $fatal(1, "i.TLAST not present");
     assert (o.TLAST == 1) else
-      $fatal("o.TLAST not present");
+      $fatal(1, "o.TLAST not present");
   end
 
   AxiStreamPacketIf #(.DATA_WIDTH(i.DATA_WIDTH),.USER_WIDTH(i.USER_WIDTH),
@@ -105,7 +105,7 @@ module axi4s_width_conv #(
     always_comb  s1.tkeep = 'X;
     always_comb begin : assign_s1_tuser
       s1.tuser = 0;
-      // MODELSIM_BUG - deleting the s1_bytes assignment causes modelsim failures.
+      // MODELSIM_BUG - deleting the s1_bytes assignment causes ModelSim failures.
       s1_bytes = s1.keep2trailing(s1_tkeep);
       s1.set_trailing_bytes(s1_tkeep);
     end

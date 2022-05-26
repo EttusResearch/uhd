@@ -42,7 +42,7 @@ module eth_ifc_tb #(
   localparam        SYNC = (ENET_W==512) ? 0:1;
   localparam        ETH_PERIOD = (ENET_W==512) ? 3.1:5.0;
   // can set PREAMBLE_BYTES to 0 or 6 if SV_ETH_IFC, but otherwise
-  // it's hardcoded to 6. (0 is normal for 100G)(6 is normal for old Xge)
+  // it's hard-coded to 6. (0 is normal for 100G)(6 is normal for old Xge)
   localparam PREAMBLE_BYTES = SV_ETH_IFC ? 0 : 6;
   // Include for register offsets
   `include "../eth_regs.vh"
@@ -381,7 +381,7 @@ module eth_ifc_tb #(
 
       if      (PREAMBLE_BYTES == 6) preamble = NORMAL_PREAMBLE;
       else if (PREAMBLE_BYTES == 0) preamble = NO_PREAMBLE;
-      else    $fatal("Invalid PREAMBLE_BYTES");
+      else    $fatal(1, "Invalid PREAMBLE_BYTES");
 
       expected[i] = new;
       send[i] = new;
@@ -516,7 +516,7 @@ module eth_ifc_tb #(
 
       if      (PREAMBLE_BYTES == 6) preamble = ZERO_PREAMBLE;
       else if (PREAMBLE_BYTES == 0) preamble = NO_PREAMBLE;
-      else    $fatal("Invalid PREAMBLE_BYTES");
+      else    $fatal(1, "Invalid PREAMBLE_BYTES");
 
       get_ramp_raw_pkt(.num_samps(num_samples[i]),.ramp_start((sample_sum)%256),
                        .ramp_inc(1),.pkt(pay),.SWIDTH(8));
@@ -646,7 +646,7 @@ module eth_ifc_tb #(
 
       if      (PREAMBLE_BYTES == 6) preamble = NORMAL_PREAMBLE;
       else if (PREAMBLE_BYTES == 0) preamble = NO_PREAMBLE;
-      else    $fatal("Invalid PREAMBLE_BYTES");
+      else    $fatal(1, "Invalid PREAMBLE_BYTES");
 
       // build a payload
       get_ramp_raw_pkt(.num_samps(num_samples[i]),.ramp_start((sample_sum)%256),
@@ -715,7 +715,7 @@ module eth_ifc_tb #(
               void'(expected.pop_front());
               ++drop_count;
               ++pkt_num;
-               $display("Droped packet %d",pkt_num);
+               $display("Dropped packet %d",pkt_num);
               `ASSERT_ERROR(drop_count < EXPECT_DROPS,"Exceeded anticipated number of dropped packets e2v");
             end
             if (expected.size() > 0) begin
@@ -785,7 +785,7 @@ module eth_ifc_tb #(
 
       if      (PREAMBLE_BYTES == 6) preamble = ZERO_PREAMBLE;
       else if (PREAMBLE_BYTES == 0) preamble = NO_PREAMBLE;
-      else    $fatal("Invalid PREAMBLE_BYTES");
+      else    $fatal(1, "Invalid PREAMBLE_BYTES");
 
       // build a payload
       get_ramp_raw_pkt(.num_samps(num_samples[i]),.ramp_start((sample_sum)%256),
@@ -917,7 +917,7 @@ module eth_ifc_tb #(
 
     if      (PREAMBLE_BYTES == 6) preamble = NORMAL_PREAMBLE;
     else if (PREAMBLE_BYTES == 0) preamble = NO_PREAMBLE;
-    else    $fatal("Invalid PREAMBLE_BYTES");
+    else    $fatal(1, "Invalid PREAMBLE_BYTES");
 
     // Generic management header
     mgmt_pl.header = '{
@@ -947,7 +947,7 @@ module eth_ifc_tb #(
    // Generic management header
     if      (PREAMBLE_BYTES == 6) preamble = ZERO_PREAMBLE;
     else if (PREAMBLE_BYTES == 0) preamble = NO_PREAMBLE;
-    else    $fatal("Invalid PREAMBLE_BYTES");
+    else    $fatal(1, "Invalid PREAMBLE_BYTES");
 
     mgmt_pl.header = '{
       default:'0, prot_ver:PROTOVER, chdr_width:translate_chdr_w(CHDR_W), src_epid:0
@@ -1065,7 +1065,7 @@ module eth_ifc_tb #(
    // This can happen in matched bandwidth cases
    // if there is hold off from upstream
    // Dropped packets exceed the drop count cause an error
-   // The actual droped count is compared versus the real count
+   // The actual dropped count is compared versus the real count
    test.start_test({TEST_NAME,"::Input overrun"}, 200us);
 
    eth.set_master_stall_prob(0);
@@ -1081,10 +1081,10 @@ module eth_ifc_tb #(
    // The actual number of expected drops depends on the
    // bus width difference between ENET_W and CHDR/CPU_W
 
-   // in this SIM unlimited etherent bandwidth is coming in at over 300 MHZ
+   // in this SIM unlimited Ethernet bandwidth is coming in at over 300 MHZ
    // and output runs at 200 MHZ.  This causes excess BW on transmitter even when matched.
    expected_drops = 9;
-   
+
    test_ethchdr(num_samples,.EXPECT_DROPS(expected_drops),.ERROR_PROB(0));
    test_ethcpu(num_samples,.EXPECT_DROPS(expected_drops),.ERROR_PROB(0));
    test.end_test();

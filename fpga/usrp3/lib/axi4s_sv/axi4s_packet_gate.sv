@@ -35,19 +35,19 @@ module axi4s_packet_gate #(
   // Parameter Checks
   initial begin
     assert (i.DATA_WIDTH == o.DATA_WIDTH) else
-      $fatal("DATA_WIDTH mismatch");
+      $fatal(1, "DATA_WIDTH mismatch");
     assert (i.USER_WIDTH == o.USER_WIDTH) else
-      $fatal("USER_WIDTH mismatch");
+      $fatal(1, "USER_WIDTH mismatch");
     assert (i.TDATA == o.TDATA) else
-      $fatal("TDATA present mismatch");
+      $fatal(1, "TDATA present mismatch");
     assert (i.TUSER == o.TUSER) else
-      $fatal("TUSER present mismatch");
+      $fatal(1, "TUSER present mismatch");
     assert (i.TKEEP == o.TKEEP) else
-      $fatal("TKEEP present mismatch");
+      $fatal(1, "TKEEP present mismatch");
     assert (i.TLAST == 1) else
-      $fatal("i.TLAST not present");
+      $fatal(1, "i.TLAST not present");
     assert (o.TLAST == 1) else
-      $fatal("o.TLAST not present");
+      $fatal(1, "o.TLAST not present");
   end
 
   localparam WIDTH = i.DWIDTH + i.UWIDTH + i.KWIDTH;

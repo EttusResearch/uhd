@@ -27,17 +27,17 @@ module axi4s_fifo #(
   // Parameter Checks
   initial begin
     assert (i.DATA_WIDTH == o.DATA_WIDTH) else
-     $fatal("DATA_WIDTH mismatch");
+      $fatal(1, "DATA_WIDTH mismatch");
     assert (i.USER_WIDTH == o.USER_WIDTH) else
-      $fatal("USER_WIDTH mismatch");
+      $fatal(1, "USER_WIDTH mismatch");
     assert (i.TDATA == o.TDATA) else
-      $fatal("TDATA present mismatch");
+      $fatal(1, "TDATA present mismatch");
     assert (i.TUSER == o.TUSER) else
-      $fatal("TUSER present mismatch");
+      $fatal(1, "TUSER present mismatch");
     assert (i.TKEEP == o.TKEEP) else
-      $fatal("TKEEP present mismatch");
+      $fatal(1, "TKEEP present mismatch");
     assert (i.TLAST == o.TLAST) else
-      $fatal("TLAST present mismatch");
+      $fatal(1, "TLAST present mismatch");
   end
 
   AxiStreamPacketIf #(.DATA_WIDTH(i.DATA_WIDTH),.USER_WIDTH(i.USER_WIDTH),

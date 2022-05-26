@@ -69,7 +69,7 @@ package PkgAxiStreamBfm;
     bit queue_match;
     queue_match = 1;
     // check each element of the queue and clear queue_match if they don't match.
-    // workaround for vivado bug - could be a==b
+    // workaround for Vivado bug - could be a==b
     foreach(a[i]) queue_match = queue_match && a[i] == b[i];
     return ((a.size() == b.size()) && queue_match);
 
@@ -242,7 +242,7 @@ package PkgAxiStreamBfm;
       keep_t    my_keep;
       raw_pkt_t raw;
       assert (data.size == keep.size) else
-         $fatal("data and keep have different sizes!");
+         $fatal(1, "data and keep have different sizes!");
       foreach (data[i]) begin
          my_keep = this.keep[i];
          word    = this.data[i];
@@ -312,7 +312,7 @@ package PkgAxiStreamBfm;
     protected int master_stall_prob = DEF_STALL_PROB;
     protected int slave_stall_prob  = DEF_STALL_PROB;
 
-    // Number of clocks betwen packets
+    // Number of clocks between packets
     int inter_packet_gap = 0;
 
     //---------
