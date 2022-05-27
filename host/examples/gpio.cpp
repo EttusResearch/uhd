@@ -185,7 +185,8 @@ void run_bitbang_test(uhd::usrp::multi_usrp::sptr usrp,
     const uint32_t out,
     const uint32_t mask,
     const uint32_t num_bits,
-    const std::chrono::milliseconds dwell_time)
+    const std::chrono::milliseconds dwell_time,
+    const bool repeat)
 {
     // Set all pins to "GPIO", and DDR/OUT to whatever the user requested
     usrp->set_gpio_attr(gpio_bank, "CTRL", 0, mask);
@@ -198,7 +199,7 @@ void run_bitbang_test(uhd::usrp::multi_usrp::sptr usrp,
     std::cout << std::endl;
     std::signal(SIGINT, &sig_int_handler);
 
-    while (not stop_signal_called) {
+    do {
         // dwell and continuously read back GPIO values
         auto stop_time = std::chrono::steady_clock::now() + dwell_time;
         while (not stop_signal_called and std::chrono::steady_clock::now() < stop_time) {
@@ -208,7 +209,7 @@ void run_bitbang_test(uhd::usrp::multi_usrp::sptr usrp,
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
         std::cout << std::endl;
-    }
+    } while (repeat && !stop_signal_called);
 }
 
 
@@ -468,7 +469,15 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     // The bitbang test is its own thing
     if (vm.count("bitbang")) {
-        run_bitbang_test(usrp, gpio_bank, port, ddr, out, mask, num_bits, dwell_time);
+        run_bitbang_test(usrp,
+            gpio_bank,
+            port,
+            ddr,
+            out,
+            mask,
+            num_bits,
+            dwell_time,
+            bool(vm.count("repeat")));
         return EXIT_SUCCESS;
     }
 
