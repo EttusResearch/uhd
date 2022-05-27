@@ -247,7 +247,7 @@ package PkgAxiStreamBfm;
          my_keep = this.keep[i];
          word    = this.data[i];
          for (int j = 0; j < DATA_WIDTH/8 ; j++) begin
-            if (my_keep[j]) raw.push_back(word[j*8 +: 8]);
+            if (my_keep[j] !== 1'b0) raw.push_back(word[j*8 +: 8]);
          end;
       end
       return raw;
