@@ -1,28 +1,34 @@
 //
-// Copyright 2020 Ettus Research, A National Instruments Brand
+// Copyright 2020 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
 // Module: eth_ipv4_add_udp.sv
+//
 // Description: Add a UDP header onto an incoming CHDR stream
 //
 // Parameters:
-//   - PREAMBLE_BYTES: Number of bytes of Preamble expected
-//   - MAX_PACKET_BYTES: Maximum expected packet size
-//   Constant fields in the added packet header
-//   - ETH_TYPE: EthType in Ethernet Frame header
-//   - MISC_IP: IP version / IP header Length / DSCP and ECN in IpV4 header
-//   - FLAG_FRAG: Identification in IPv4 header
-//   - TTL_PROT: Time to Live / Protocol in IPv4 header
+//
+//   PREAMBLE_BYTES   : Number of bytes of preamble expected
+//   MAX_PACKET_BYTES : Maximum expected packet size
+//   ETH_TYPE         : EthType in Ethernet frame header
+//   MISC_IP          : Version, header length, DSCP, and ECN in IPv4 header
+//   FLAG_FRAG        : Flags and fragment offset in IPv4 header
+//   TTL_PROT         : Time to live and protocol in IPv4 header
+//   LENGTH_IN_TUSER  : Use length in i.TUSER when true. Otherwise, assume
+//                      there's a CHDR header with the length.
+//
+
 
 module eth_ipv4_add_udp #(
   int          PREAMBLE_BYTES   = 6,
   int          MAX_PACKET_BYTES = 2**16,
-  logic [15:0] ETH_TYPE = 16'h0800,  // IPv4
-  logic [15:0] MISC_IP = { 4'd4 /* IPv4 */, 4'd5 /* IP HDR Len */, 8'h00 /* DSCP and ECN */},
-  logic [15:0] IDENT = 16'h0,
-  logic [15:0] FLAG_FRAG = { 3'b010 /* don't fragment */, 13'h0 },
-  logic [15:0] TTL_PROT = { 8'h10 /* TTL */, 8'h11 /* UDP */ }
+  logic [15:0] ETH_TYPE         = 16'h0800,  // IPv4
+  logic [15:0] MISC_IP          = { 4'd4 /* IPv4 */, 4'd5 /* HDR Len */, 8'h00 /* DSCP and ECN */},
+  logic [15:0] IDENT            = 16'h0,
+  logic [15:0] FLAG_FRAG        = { 3'b010 /* don't fragment */, 13'h0 },
+  logic [15:0] TTL_PROT         = { 8'h10 /* TTL */, 8'h11 /* UDP */ },
+  bit          LENGTH_IN_TUSER  = 0
 )(
   // Clock domain: i.clk (o_.clk is unused)
 
@@ -36,8 +42,8 @@ module eth_ipv4_add_udp #(
   input  logic [15:0] udp_dst,
 
   // Ethernet Stream - CHDR ONLY
-  AxiStreamIf.slave  i, // tUser = {*not used*}
-  AxiStreamIf.master o  // tUser = {1'b0,trailing bytes};
+  AxiStreamIf.slave  i, // tUser = {Incoming packet length if LENGTH_IN_TUSER = 1}
+  AxiStreamIf.master o  // tUser = {1'b0, trailing bytes};
 
 );
 
@@ -72,6 +78,7 @@ module eth_ipv4_add_udp #(
   //---------------------------------------
   // Ethernet Framer
   //---------------------------------------
+  logic        sop; // Start of packet
   logic [15:0] chdr_len_new, chdr_len_old, chdr_len_reg;
 
   logic [15:0] ip_len, ip_len_reg;
@@ -84,7 +91,7 @@ module eth_ipv4_add_udp #(
 
   always_comb begin : s0_assign
     `AXI4S_ASSIGN(s0,i)
-    s0.tuser  = 0; // all full words going in
+    s0.tuser = 0; // all full words going in
   end
 
   localparam BYTES_TO_ADD = UDP_END+1+PREAMBLE_BYTES;
@@ -93,23 +100,28 @@ module eth_ipv4_add_udp #(
    .i(s0), .o(s1)
   );
 
-  // try to calculate what tuser should be on the final word
-  logic [15:0] total_len;
-  logic [15:0] rem_bytes;
-
   always_ff @(posedge i.clk) begin : chdr_len_ff
     if (i.rst) begin
-      chdr_len_old  <= '0;
+      sop          <= 1;
+      chdr_len_old <= '0;
     end else begin
-      if (s0.tvalid && s0.tready) begin
-         chdr_len_old  <= chdr_len_new;
+      if (i.tvalid && i.tready) begin
+        chdr_len_old <= chdr_len_new;
+        sop <= i.tlast;
       end
     end
   end
 
   always_comb begin : calc_length_fields
-    // exract fields
-    chdr_len_new  = s0.get_packet_field16(chdr_len_old,CHDR_LENGTH_BYTE);
+    if (LENGTH_IN_TUSER) begin
+      if (i.tvalid && sop) begin
+        chdr_len_new = i.tuser;
+      end else begin
+        chdr_len_new = chdr_len_old;
+      end
+    end else begin
+      chdr_len_new  = s0.get_packet_field16(chdr_len_old,CHDR_LENGTH_BYTE);
+    end
     ip_len  = (16'd28 + chdr_len_new);  // 20 for IP, 8 for UDP
     udp_len = (16'd8 + chdr_len_new);
   end
@@ -118,7 +130,7 @@ module eth_ipv4_add_udp #(
 
   always_comb begin : pack_unpack_header_info
     `AXI4S_ASSIGN(s2,s1)
-    s2.tuser  = { udp_len, ip_len, chdr_len_new, udp_dst, ip_dst, mac_dst, s1.tuser};
+    s2.tuser = { udp_len, ip_len, chdr_len_new, udp_dst, ip_dst, mac_dst, s1.tuser};
     { udp_len_reg, ip_len_reg, chdr_len_reg, udp_dst_reg, ip_dst_reg,
       mac_dst_reg,trailing_bytes} = s3.tuser;
   end
@@ -135,12 +147,12 @@ module eth_ipv4_add_udp #(
   // track when we cut off the outgoing packet
   always_ff @(posedge i.clk) begin : chdr_end_early_ff
     if (i.rst) begin
-      chdr_end_early  <= 0;
+      chdr_end_early <= 0;
     end else begin
       if (s3.tvalid && s3.tready && s3.tlast)
-        chdr_end_early  <= 0;
+        chdr_end_early <= 0;
       else if (s4.tvalid && s4.tready &&s4.tlast)
-        chdr_end_early  <= 1;
+        chdr_end_early <= 1;
     end
   end
 
@@ -155,19 +167,23 @@ module eth_ipv4_add_udp #(
     .out(iphdr_checksum)
   );
 
+  // calculate what tuser should be on the final word
+  logic [15:0] total_len;
+  logic [15:0] rem_bytes;
+
   always_comb begin : calc_rem_bytes
     total_len = (BYTES_TO_ADD + chdr_len_reg);
     rem_bytes = total_len - s4.word_count*i.DATA_WIDTH/8;
   end
 
   // zero value fields are commented out because the fill goes to zero
-  // if those fields become non zero uncomment them
+  // if those fields become non zero, uncomment them
   always_comb begin : set_header_fields
     // assign bus
     s4.tvalid = s3.tvalid && !chdr_end_early;
     s3.tready = s4.tready || chdr_end_early;
     if (rem_bytes > i.DATA_WIDTH/8 || chdr_end_early) begin
-      s4.tlast = s3.tvalid && s3.tlast; // s0metimes packets end early
+      s4.tlast = s3.tvalid && s3.tlast; // sometimes packets end early
       s4.tuser = 0;
     end else if (rem_bytes == i.DATA_WIDTH/8) begin
       s4.tlast = s3.tvalid;
@@ -199,4 +215,4 @@ module eth_ipv4_add_udp #(
     `AXI4S_ASSIGN(o,s4)
   end
 
-endmodule // eth_ipv4_add_udp
+endmodule : eth_ipv4_add_udp
