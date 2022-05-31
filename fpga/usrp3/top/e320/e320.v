@@ -1075,44 +1075,25 @@ module e320 (
   //
   /////////////////////////////////////////////////////////////////////
 
-  n3xx_sfp_wrapper #(
+  e320_sfp_wrapper #(
     .PROTOCOL(PROTOCOL),
-    .MDIO_EN(MDIO_EN),
-    .MDIO_PHYADDR(MDIO_PHYADDR),
     .DWIDTH(REG_DWIDTH),     // Width of the AXI4-Lite data bus (must be 32 or 64)
     .AWIDTH(REG_AWIDTH),     // Width of the address bus
-    .PORTNUM(SFP_PORTNUM)
+    .PORTNUM(SFP_PORTNUM),
+    .MDIO_EN(MDIO_EN),
+    .MDIO_PHYADDR(MDIO_PHYADDR),
+    .RFNOC_PROTOVER(RFNOC_PROTOVER),
+    .NODE_INST(0)
   ) sfp_wrapper_i (
+    // Resets
     .areset(bus_rst),
+    .bus_rst(bus_rst),
+    // Clocks
     .gt_refclk(sfp_gt_refclk),
     .gb_refclk(sfp_gb_refclk),
     .misc_clk(sfp_misc_clk),
-
-    .bus_rst(bus_rst),
     .bus_clk(bus_clk),
-    .user_clk(),
-    .sync_clk(),
-
-    // GT_COMMON
-    .qpllreset(),
-    .qplllock(1'b0),
-    .qplloutclk(1'b0),
-    .qplloutrefclk(1'b0),
-    .qpllrefclklost(),
-
-    .mmcm_locked(1'b0),
-    .gt_pll_lock(),
-
-    .txp(SFP1_TX_P),
-    .txn(SFP1_TX_N),
-    .rxp(SFP1_RX_P),
-    .rxn(SFP1_RX_N),
-
-    .sfpp_rxlos(SFP1_RXLOS),
-    .sfpp_tx_fault(SFP1_TXFAULT),
-    .sfpp_tx_disable(SFP1_TXDISABLE),
-
-    // Clock and reset
+    // AXI4-Lite: Clock and reset
     .s_axi_aclk(reg_clk),
     .s_axi_aresetn(reg_rstn),
     // AXI4-Lite: Write address port (domain: s_axi_aclk)
@@ -1137,37 +1118,50 @@ module e320 (
     .s_axi_rresp(m_axi_net_rresp),
     .s_axi_rvalid(m_axi_net_rvalid),
     .s_axi_rready(m_axi_net_rready),
-
-    // Ethernet to Vita
+    // SFP high-speed IO
+    .txp(SFP1_TX_P),
+    .txn(SFP1_TX_N),
+    .rxp(SFP1_RX_P),
+    .rxn(SFP1_RX_N),
+    // SFP low-speed IO
+    .sfpp_present_n(1'b0),
+    .sfpp_rxlos(SFP1_RXLOS),
+    .sfpp_tx_fault(SFP1_TXFAULT),
+    .sfpp_tx_disable(SFP1_TXDISABLE),
+    // GT Common
+    .qpllrefclklost(),
+    .qplllock(1'b0),
+    .qplloutclk(1'b0),
+    .qplloutrefclk(1'b0),
+    .qpllreset(),
+    // Aurora MMCM
+    .mmcm_locked(1'b0),
+    .gt_pll_lock(),
+    // Ethernet to RFNoC
     .e2v_tdata(e2v_tdata),
     .e2v_tlast(e2v_tlast),
     .e2v_tvalid(e2v_tvalid),
     .e2v_tready(e2v_tready),
-
-    // Vita to Ethernet
+    // RFNoC to Ethernet
     .v2e_tdata(v2e_tdata),
     .v2e_tlast(v2e_tlast),
     .v2e_tvalid(v2e_tvalid),
     .v2e_tready(v2e_tready),
-
     // Ethernet to CPU
     .e2c_tdata(arm_eth_rx_tdata_b),
     .e2c_tkeep(arm_eth_rx_tkeep_b),
     .e2c_tlast(arm_eth_rx_tlast_b),
     .e2c_tvalid(arm_eth_rx_tvalid_b),
     .e2c_tready(arm_eth_rx_tready_b),
-
     // CPU to Ethernet
     .c2e_tdata(arm_eth_tx_tdata_b),
     .c2e_tkeep(arm_eth_tx_tkeep_b),
     .c2e_tlast(arm_eth_tx_tlast_b),
     .c2e_tvalid(arm_eth_tx_tvalid_b),
     .c2e_tready(arm_eth_tx_tready_b),
-
     // Misc
     .port_info(sfp_port_info),
     .device_id(device_id),
-
     // LED
     .link_up(sfp_link_up),
     .activity(LED_ACT1)
@@ -1325,9 +1319,11 @@ module e320 (
   //
   //////////////////////////////////////////////////////////////////////
   eth_internal #(
-    .DWIDTH(REG_DWIDTH),
-    .AWIDTH(REG_AWIDTH),
-    .PORTNUM(8'd1)
+    .DWIDTH         (REG_DWIDTH),
+    .AWIDTH         (REG_AWIDTH),
+    .PORTNUM        (8'd1),
+    .RFNOC_PROTOVER (RFNOC_PROTOVER),
+    .NODE_INST      (1)
   ) eth_internal_i (
     // Resets
     .bus_rst (bus_rst),

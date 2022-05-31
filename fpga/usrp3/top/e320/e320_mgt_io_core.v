@@ -11,7 +11,7 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-module n3xx_mgt_io_core #(
+module e320_mgt_io_core #(
   parameter        PROTOCOL     = "10GbE",    // Must be {10GbE, 1GbE, Aurora, Disabled}
   parameter [13:0] REG_BASE     = 14'h0,
   parameter        REG_DWIDTH   = 32,
