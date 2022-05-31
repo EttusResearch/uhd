@@ -1,27 +1,44 @@
-///////////////////////////////////////////////////////////////////
 //
-// Copyright 2018 Ettus Research, A National Instruments Company
+// Copyright 2018 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
 // Module: n3xx_mgt_channel_wrapper
+//
 // Description:
+//
 //   Aurora/10 GbE wrapper for up to 4 QSFP lanes  -or-
 //   Aurora/1 GbE/10 GbE/White Rabbit wrapper for 1 SFP+ lane
 //
-//////////////////////////////////////////////////////////////////////
+// Parameters:
+//
+//   PROTOCOL         : Must be {10GbE, Aurora, Disabled}
+//   LANES            : Number of lanes of to instantiate (1, 2, 3, or 4)
+//   REG_BASE         : Base register address
+//   PORTNUM_BASE     : Base port number for discovery
+//   MDIO_EN          : Enable MDIO port
+//   MDIO_PHYADDR     : MDIO address to use
+//   REG_DWIDTH       : Width of regport address bus
+//   REG_AWIDTH       : Width of regport data bus
+//   GT_COMMON        : Use GT Common ports on MGT
+//   RFNOC_PROTOVER   : RFNoC protocol version to be reported by transport
+//                      adapters.
+//   NODE_INST        : RFNoC transport adapter node instance for this port
+//
 
 `default_nettype none
 module n3xx_mgt_channel_wrapper #(
-  parameter PROTOCOL     = "10GbE",// Must be {10GbE, Aurora, Disabled}
-  parameter LANES        = 2,      // Number of lanes of to instantiate (Supported = {1,2,3,4})
-  parameter REG_BASE     = 32'h0,  // Base register address
-  parameter PORTNUM_BASE = 4,      // Base port number for discovery
-  parameter MDIO_EN      = 1,      // Enable MDIO port
-  parameter [4:0] MDIO_PHYADDR = 5'd0,   // Enable MDIO port
-  parameter REG_DWIDTH   = 32,     // Width of regport address bus
-  parameter REG_AWIDTH   = 14,     // Width of regport data bus
-  parameter GT_COMMON    = 1
+  parameter        PROTOCOL         = "10GbE",
+  parameter        LANES            = 2,
+  parameter        REG_BASE         = 32'h0,
+  parameter        PORTNUM_BASE     = 4,
+  parameter        MDIO_EN          = 1,
+  parameter [ 4:0] MDIO_PHYADDR     = 5'd0,
+  parameter        REG_DWIDTH       = 32,
+  parameter        REG_AWIDTH       = 14,
+  parameter        GT_COMMON        = 1,
+  parameter [15:0] RFNOC_PROTOVER   = {8'd1, 8'd0},
+  parameter        NODE_INST_BASE   = 0
 )(
   // Resets
   input  wire                    areset,
@@ -268,14 +285,15 @@ module n3xx_mgt_channel_wrapper #(
   generate
     for (l = 0; l < LANES; l = l + 1) begin: lanes
       n3xx_mgt_wrapper #(
-        .PROTOCOL       (PROTOCOL),
-        .REG_BASE       (REG_BASE + (REG_BLOCK_SIZE * l)),
-        .REG_DWIDTH     (REG_DWIDTH),   // Width of the AXI4-Lite data bus (must be 32 or 64)
-        .REG_AWIDTH     (REG_AWIDTH),   // Width of the address bus
-        .GT_COMMON      (GT_COMMON),
-        .MDIO_EN        (MDIO_EN),
-        .MDIO_PHYADDR   (MDIO_PHYADDR),
-        .PORTNUM        (PORTNUM_BASE + l)
+        .PROTOCOL         (PROTOCOL),
+        .REG_BASE         (REG_BASE + (REG_BLOCK_SIZE * l)),
+        .REG_DWIDTH       (REG_DWIDTH),   // Width of the AXI4-Lite data bus (must be 32 or 64)
+        .REG_AWIDTH       (REG_AWIDTH),   // Width of the address bus
+        .GT_COMMON        (GT_COMMON),
+        .MDIO_EN          (MDIO_EN),
+        .MDIO_PHYADDR     (MDIO_PHYADDR),
+        .PORTNUM          (PORTNUM_BASE + l),
+        .NODE_INST        (NODE_INST_BASE + l)
       ) lane_i (
         //must reset all channels on quad when sfp1 gtx core is reset
         .areset         (areset),

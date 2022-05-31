@@ -1,27 +1,48 @@
-///////////////////////////////////////////////////////////////////
 //
-// Copyright 2018 Ettus Research, A National Instruments Company
+// Copyright 2018 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
 // Module: n3xx_mgt_wrapper
-// Description:
-//   Provides wrapper for just the pieces specific to an MGT lane
-//   (for easy use with generate)
 //
-//////////////////////////////////////////////////////////////////////
+// Description:
+//
+//   Wrapper for single MGT, including support for Aurora, WhiteRabbit, 10 GbE,
+//   and 1 GbE.
+//
+// Parameters:
+//
+//   PROTOCOL         : Must be "10GbE", "1GbE", "Aurora", or "Disabled".
+//   REG_DWIDTH       : Data width of the AXI-Lite interface and RegPort
+//   REG_AWIDTH       : Address width of the AXI-Lite interface and RegPort\
+//   GT_COMMON        : Use GT Common ports on MGT
+//   PORTNUM          : Port number
+//   MDIO_EN          : Enables internal MDIO master
+//   MDIO_PHYADDR     : Address to use for the MDIO
+//   RFNOC_PROTOVER   : RFNoC protocol version to be reported by transport
+//                      adapters.
+//   NODE_INST        : RFNoC transport adapter node instance for this port
+//   EN_RX_KV_MAP_CFG : Enable KV-map configuration port on transport adapter
+//   EN_RX_RAW_PYLD   : Enable raw UDP support on transport adapter
+//
 
 `default_nettype none
+
+
 module n3xx_mgt_wrapper #(
-  parameter       PROTOCOL     = "10GbE",    // Must be {10GbE, Aurora, Disabled}
-  parameter       REG_DWIDTH   = 32,
-  parameter       REG_AWIDTH   = 14,
-  parameter       GT_COMMON    = 1,
-  parameter [7:0] PORTNUM      = 8'd0,
-  parameter       MDIO_EN      = 0,
-  parameter [4:0] MDIO_PHYADDR = 5'd0,
-  parameter       REG_BASE     = 16'h0000
-)(
+  parameter        PROTOCOL         = "10GbE",
+  parameter        REG_DWIDTH       = 32,
+  parameter        REG_AWIDTH       = 14,
+  parameter        REG_BASE         = 16'h0000,
+  parameter        GT_COMMON        = 1,
+  parameter [ 7:0] PORTNUM          = 8'd0,
+  parameter        MDIO_EN          = 0,
+  parameter [ 4:0] MDIO_PHYADDR     = 5'd0,
+  parameter [15:0] RFNOC_PROTOVER   = {8'd1, 8'd0},
+  parameter        NODE_INST        = 0,
+  parameter        EN_RX_KV_MAP_CFG = 1,
+  parameter        EN_RX_RAW_PYLD   = 1
+) (
   // Resets
   input  wire        areset,
   input  wire        bus_rst,
@@ -378,13 +399,13 @@ module n3xx_mgt_wrapper #(
 
       // Converting tuser to tkeep for ingress packets
       assign e2c_tkeep = ~e2c_tlast ? 8'b1111_1111
-                       : (e2c_tuser == 4'd0) ? 8'b1111_1111
-                       : (e2c_tuser == 4'd1) ? 8'b0000_0001
-                       : (e2c_tuser == 4'd2) ? 8'b0000_0011
-                       : (e2c_tuser == 4'd3) ? 8'b0000_0111
-                       : (e2c_tuser == 4'd4) ? 8'b0000_1111
-                       : (e2c_tuser == 4'd5) ? 8'b0001_1111
-                       : (e2c_tuser == 4'd6) ? 8'b0011_1111
+                       : (e2c_tuser[2:0] == 3'd0) ? 8'b1111_1111
+                       : (e2c_tuser[2:0] == 3'd1) ? 8'b0000_0001
+                       : (e2c_tuser[2:0] == 3'd2) ? 8'b0000_0011
+                       : (e2c_tuser[2:0] == 3'd3) ? 8'b0000_0111
+                       : (e2c_tuser[2:0] == 3'd4) ? 8'b0000_1111
+                       : (e2c_tuser[2:0] == 3'd5) ? 8'b0001_1111
+                       : (e2c_tuser[2:0] == 3'd6) ? 8'b0011_1111
                        : 8'b0111_1111;
 
       // Converting tkeep to tuser for egress packets
@@ -399,58 +420,120 @@ module n3xx_mgt_wrapper #(
                        : (c2e_tkeep == 8'b0000_0001) ? 4'd1
                        : 4'd0;
 
-      eth_interface #(
-        .PROTOVER   ({8'd1,8'd0}),         //FIXME. This should come from outside
-        .MTU        (10),
-        .NODE_INST  (0),
-        .REG_AWIDTH (REG_AWIDTH),
-        .BASE       (REG_BASE_ETH_SWITCH)
-      ) eth_interface (
-        .clk           (bus_clk),
-        .reset         (bus_rst),
-        .device_id     (device_id),
-        .reg_wr_req    (reg_wr_req),
-        .reg_wr_addr   (reg_wr_addr),
-        .reg_wr_data   (reg_wr_data),
-        .reg_rd_req    (reg_rd_req),
-        .reg_rd_addr   (reg_rd_addr),
-        .reg_rd_resp   (reg_rd_resp_eth_if),
-        .reg_rd_data   (reg_rd_data_eth_if),
-        .my_mac        (),
-        .my_ip         (),
-        .my_udp_port   (),
-        .eth_tx_tdata  (mgti_tdata),
-        .eth_tx_tuser  (mgti_tuser),
-        .eth_tx_tlast  (mgti_tlast),
-        .eth_tx_tvalid (mgti_tvalid),
-        .eth_tx_tready (mgti_tready),
-        .eth_rx_tdata  (mgto_tdata),
-        .eth_rx_tuser  (mgto_tuser),
-        .eth_rx_tlast  (mgto_tlast),
-        .eth_rx_tvalid (mgto_tvalid),
-        .eth_rx_tready (mgto_tready),
-        .e2v_tdata     (e2v_tdata),
-        .e2v_tlast     (e2v_tlast),
-        .e2v_tvalid    (e2v_tvalid),
-        .e2v_tready    (e2v_tready),
-        .v2e_tdata     (v2e_tdata),
-        .v2e_tlast     (v2e_tlast),
-        .v2e_tvalid    (v2e_tvalid),
-        .v2e_tready    (v2e_tready),
-        .e2c_tdata     (e2c_tdata),
-        .e2c_tuser     (e2c_tuser),
-        .e2c_tlast     (e2c_tlast),
-        .e2c_tvalid    (e2c_tvalid),
-        .e2c_tready    (e2c_tready),
-        .c2e_tdata     (c2e_tdata),
-        .c2e_tuser     (c2e_tuser),
-        .c2e_tlast     (c2e_tlast),
-        .c2e_tvalid    (c2e_tvalid),
-        .c2e_tready    (c2e_tready)
-      );
-
+      if (EN_RX_KV_MAP_CFG || EN_RX_RAW_PYLD) begin : gen_eth_ipv4_interface_wrapper
+        eth_ipv4_interface_wrapper #(
+          .PROTOVER         (RFNOC_PROTOVER),
+          .NODE_INST        (NODE_INST),
+          .REG_AWIDTH       (REG_AWIDTH),
+          .BASE             (REG_BASE_ETH_SWITCH),
+          .SYNC             (1),
+          .EN_RX_KV_MAP_CFG (EN_RX_KV_MAP_CFG),
+          .EN_RX_RAW_PYLD   (EN_RX_RAW_PYLD)
+        ) eth_ipv4_interface_wrapper_i (
+          .bus_clk          (bus_clk),
+          .bus_rst          (bus_rst),
+          .device_id        (device_id),
+          .reg_wr_req       (reg_wr_req),
+          .reg_wr_addr      (reg_wr_addr),
+          .reg_wr_data      (reg_wr_data),
+          .reg_rd_req       (reg_rd_req),
+          .reg_rd_addr      (reg_rd_addr),
+          .reg_rd_resp      (reg_rd_resp_eth_if),
+          .reg_rd_data      (reg_rd_data_eth_if),
+          .my_mac           (),
+          .my_ip            (),
+          .my_udp_chdr_port (),
+          .eth_clk          (bus_clk),
+          .eth_rst          (bus_rst),
+          .eth_pause_req    (),
+          .eth_tx_tdata     (mgti_tdata),
+          .eth_tx_tuser     (mgti_tuser),
+          .eth_tx_tkeep     (),
+          .eth_tx_tlast     (mgti_tlast),
+          .eth_tx_tvalid    (mgti_tvalid),
+          .eth_tx_tready    (mgti_tready),
+          .eth_rx_tdata     (mgto_tdata),
+          .eth_rx_tuser     (mgto_tuser),
+          .eth_rx_tlast     (mgto_tlast),
+          .eth_rx_tvalid    (mgto_tvalid),
+          .eth_rx_tready    (mgto_tready),
+          .e2v_tdata        (e2v_tdata),
+          .e2v_tlast        (e2v_tlast),
+          .e2v_tvalid       (e2v_tvalid),
+          .e2v_tready       (e2v_tready),
+          .v2e_tdata        (v2e_tdata),
+          .v2e_tlast        (v2e_tlast),
+          .v2e_tvalid       (v2e_tvalid),
+          .v2e_tready       (v2e_tready),
+          .cpu_clk          (bus_clk),
+          .cpu_rst          (bus_rst),
+          .e2c_tdata        (e2c_tdata),
+          .e2c_tuser        (e2c_tuser),
+          .e2c_tlast        (e2c_tlast),
+          .e2c_tvalid       (e2c_tvalid),
+          .e2c_tready       (e2c_tready),
+          .c2e_tdata        (c2e_tdata),
+          .c2e_tuser        (c2e_tuser),
+          .c2e_tlast        (c2e_tlast),
+          .c2e_tvalid       (c2e_tvalid),
+          .c2e_tready       (c2e_tready)
+        );
+      end // gen_eth_ipv4_interface_wrapper
+      else begin : gen_eth_interface
+        eth_interface #(
+          .PROTOVER   (RFNOC_PROTOVER),
+          .MTU        (10),
+          .NODE_INST  (NODE_INST),
+          .REG_AWIDTH (REG_AWIDTH),
+          .BASE       (REG_BASE_ETH_SWITCH)
+        ) eth_interface (
+          .clk           (bus_clk),
+          .reset         (bus_rst),
+          .device_id     (device_id),
+          .reg_wr_req    (reg_wr_req),
+          .reg_wr_addr   (reg_wr_addr),
+          .reg_wr_data   (reg_wr_data),
+          .reg_rd_req    (reg_rd_req),
+          .reg_rd_addr   (reg_rd_addr),
+          .reg_rd_resp   (reg_rd_resp_eth_if),
+          .reg_rd_data   (reg_rd_data_eth_if),
+          .my_mac        (),
+          .my_ip         (),
+          .my_udp_port   (),
+          .eth_tx_tdata  (mgti_tdata),
+          .eth_tx_tuser  (mgti_tuser),
+          .eth_tx_tlast  (mgti_tlast),
+          .eth_tx_tvalid (mgti_tvalid),
+          .eth_tx_tready (mgti_tready),
+          .eth_rx_tdata  (mgto_tdata),
+          .eth_rx_tuser  (mgto_tuser),
+          .eth_rx_tlast  (mgto_tlast),
+          .eth_rx_tvalid (mgto_tvalid),
+          .eth_rx_tready (mgto_tready),
+          .e2v_tdata     (e2v_tdata),
+          .e2v_tlast     (e2v_tlast),
+          .e2v_tvalid    (e2v_tvalid),
+          .e2v_tready    (e2v_tready),
+          .v2e_tdata     (v2e_tdata),
+          .v2e_tlast     (v2e_tlast),
+          .v2e_tvalid    (v2e_tvalid),
+          .v2e_tready    (v2e_tready),
+          .e2c_tdata     (e2c_tdata),
+          .e2c_tuser     (e2c_tuser),
+          .e2c_tlast     (e2c_tlast),
+          .e2c_tvalid    (e2c_tvalid),
+          .e2c_tready    (e2c_tready),
+          .c2e_tdata     (c2e_tdata),
+          .c2e_tuser     (c2e_tuser),
+          .c2e_tlast     (c2e_tlast),
+          .c2e_tvalid    (c2e_tvalid),
+          .c2e_tready    (c2e_tready)
+        );
+      end // gen_eth_interface
     end
   endgenerate
 
 endmodule // n3xx_mgt_wrapper
+
+
 `default_nettype wire
