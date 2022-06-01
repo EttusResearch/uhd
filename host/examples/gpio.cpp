@@ -120,7 +120,8 @@ std::string to_bit_string(uint32_t val, const size_t num_bits)
 void output_reg_values(const std::string& bank,
     const std::string& port,
     const uhd::usrp::multi_usrp::sptr& usrp,
-    const size_t num_bits)
+    const size_t num_bits,
+    const bool has_src_api)
 {
     const std::vector<std::string> attrs = {
         "CTRL", "DDR", "ATR_0X", "ATR_RX", "ATR_TX", "ATR_XX", "OUT", "READBACK"};
@@ -133,6 +134,10 @@ void output_reg_values(const std::string& bank,
         std::cout << (boost::format("%10s:%s") % attr
                       % to_bit_string(gpio_bits, num_bits))
                   << std::endl;
+    }
+
+    if (!has_src_api) {
+        return;
     }
 
     // GPIO Src - get_gpio_src() not supported for all devices
@@ -186,7 +191,8 @@ void run_bitbang_test(uhd::usrp::multi_usrp::sptr usrp,
     const uint32_t mask,
     const uint32_t num_bits,
     const std::chrono::milliseconds dwell_time,
-    const bool repeat)
+    const bool repeat,
+    const bool has_src_api)
 {
     // Set all pins to "GPIO", and DDR/OUT to whatever the user requested
     usrp->set_gpio_attr(gpio_bank, "CTRL", 0, mask);
@@ -195,7 +201,7 @@ void run_bitbang_test(uhd::usrp::multi_usrp::sptr usrp,
 
     // print out initial state of GPIO
     std::cout << "\nConfigured GPIO values:" << std::endl;
-    output_reg_values(gpio_bank, port, usrp, num_bits);
+    output_reg_values(gpio_bank, port, usrp, num_bits, has_src_api);
     std::cout << std::endl;
     std::signal(SIGINT, &sig_int_handler);
 
@@ -379,7 +385,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("bits", po::value<size_t>(&num_bits)->default_value(GPIO_DEFAULT_NUM_BITS), "number of bits in gpio bank")
         ("bitbang", "single test case where user sets values for CTRL, DDR, and OUT registers")
         ("check_loopback", "check that lower half of pins is looped back onto upper half")
-        ("src", po::value<std::string>(&src_str), "GPIO SRC reg value")
+        ("src", po::value<std::string>(&src_str), "GPIO source value (not available on all USRPs)")
         ("ddr", po::value<std::string>(&ddr_str)->default_value(GPIO_DEFAULT_DDR), "GPIO DDR reg value")
         ("out", po::value<std::string>(&out_str)->default_value(GPIO_DEFAULT_OUT), "GPIO OUT reg value")
     ;
@@ -418,14 +424,21 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     std::cout << "Creating the usrp device with: " << args << "..." << std::endl;
     auto usrp = uhd::usrp::multi_usrp::make(args);
     std::cout << "Using Device: " << usrp->get_pp_string() << std::endl;
+    bool has_src_api = true;
     // Handle if the port is unspecified
     if (port.empty()) {
-        port = usrp->get_gpio_src_banks(0).front();
+        try {
+            port = usrp->get_gpio_src_banks(0).front();
+        } catch (const uhd::not_implemented_error&) {
+            has_src_api = false;
+        }
     }
     if (gpio_bank.empty()) {
         gpio_bank = usrp->get_gpio_banks(0).front();
     }
-    std::cout << "Using GPIO connector: " << port << std::endl;
+    if (has_src_api) {
+        std::cout << "Using GPIO connector: " << port << std::endl;
+    }
 
     if (vm.count("list_banks")) {
         std::cout << "Available GPIO banks: " << std::endl;
@@ -450,12 +463,16 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         typedef boost::char_separator<char> separator;
         boost::tokenizer<separator> tokens(src_str, separator(" "));
         std::copy(tokens.begin(), tokens.end(), std::back_inserter(gpio_src));
+        // If someone provides --src, this will throw an exception
+        // on devices that don't have the source API. That's OK, because we
+        // have no way of honoring the caller's request, and the exception
+        // thrown is a good way to communicate that back to the call site.
         usrp->set_gpio_src(port, gpio_src);
     }
 
     // print out initial unconfigured state of GPIO
     std::cout << "Initial GPIO values:" << std::endl;
-    output_reg_values(gpio_bank, port, usrp, num_bits);
+    output_reg_values(gpio_bank, port, usrp, num_bits, has_src_api);
 
     // configure GPIO registers
     uint32_t ddr        = strtoul(ddr_str.c_str(), NULL, 0);
@@ -477,7 +494,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             mask,
             num_bits,
             dwell_time,
-            bool(vm.count("repeat")));
+            bool(vm.count("repeat")),
+            has_src_api);
         return EXIT_SUCCESS;
     }
 
@@ -522,7 +540,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     // print out initial state of FP GPIO
     std::cout << "\nConfigured GPIO values:" << std::endl;
-    output_reg_values(gpio_bank, port, usrp, num_bits);
+    output_reg_values(gpio_bank, port, usrp, num_bits, has_src_api);
     std::cout << std::endl;
 
     // set up streams
@@ -544,7 +562,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     failures += int(!check_rb_values(usrp->get_gpio_attr(gpio_bank, "DDR") & mask,
         ddr | GPIO_BIT(num_bits - 1),
         num_bits, 0));
-    output_reg_values(gpio_bank, port, usrp, num_bits);
+    output_reg_values(gpio_bank, port, usrp, num_bits, has_src_api);
     // restore DDR value
     usrp->set_gpio_attr(gpio_bank, "DDR", ddr, mask);
 
@@ -566,7 +584,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         failures += int(!check_rb_values(usrp->get_gpio_attr(gpio_bank, "READBACK"),
             GPIO_BIT(4) | GPIO_BIT(0),
             num_bits, loopback_num_bits));
-        output_reg_values(gpio_bank, port, usrp, num_bits);
+        output_reg_values(gpio_bank, port, usrp, num_bits, has_src_api);
         usrp->set_gpio_attr(gpio_bank, "OUT", 0, GPIO_BIT(4));
         if (stop_signal_called)
             break;
@@ -579,7 +597,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             failures += int(!check_rb_values(usrp->get_gpio_attr(gpio_bank, "READBACK"),
                 GPIO_BIT(1),
                 num_bits, loopback_num_bits));
-            output_reg_values(gpio_bank, port, usrp, num_bits);
+            output_reg_values(gpio_bank, port, usrp, num_bits, has_src_api);
             stream_helper.stop_stream(false, true);
         }
         if (stop_signal_called)
@@ -593,7 +611,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             failures += int(!check_rb_values(usrp->get_gpio_attr(gpio_bank, "READBACK"),
                 GPIO_BIT(2),
                 num_bits, loopback_num_bits));
-            output_reg_values(gpio_bank, port, usrp, num_bits);
+            output_reg_values(gpio_bank, port, usrp, num_bits, has_src_api);
             stream_helper.stop_stream(true, false);
         }
         if (stop_signal_called)
@@ -608,7 +626,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                 GPIO_BIT(3),
                 num_bits, loopback_num_bits));
             stream_helper.stop_stream(true, true);
-            output_reg_values(gpio_bank, port, usrp, num_bits);
+            output_reg_values(gpio_bank, port, usrp, num_bits, has_src_api);
         }
 
         std::cout << std::endl;
