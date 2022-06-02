@@ -12,13 +12,14 @@
 //
 // Parameters:
 //
-//     PROTOCOL       : Indicates the protocol to use for each of the 4 QSFP
-//                      lanes. See x4xx_mgt_types.vh for possible values.
-//     CPU_W          : Width of CPU interface
-//     CHDR_W         : CHDR bus width
-//     BYTE_MTU       : Transport MTU in bytes
-//     PORTNUM        : Port number to distinguish multiple QSFP ports
-//     RFNOC_PROTOVER : RFNoC protocol version for IPv4 interface
+//   PROTOCOL       : Indicates the protocol to use for each of the 4 QSFP
+//                    lanes. See x4xx_mgt_types.vh for possible values.
+//   CPU_W          : Width of CPU interface
+//   CHDR_W         : CHDR bus width
+//   BYTE_MTU       : Transport MTU in bytes
+//   PORTNUM        : Port number to distinguish multiple QSFP ports
+//   NODE_INST      : RFNoC transport adapter node instance for the first port
+//   RFNOC_PROTOVER : RFNoC protocol version for IPv4 interface
 //
 
 `include "./x4xx_mgt_types.vh"
@@ -34,6 +35,7 @@ module x4xx_qsfp_wrapper #(
   parameter         CHDR_W         = 64,
   parameter         BYTE_MTU       = $clog2(8*1024),
   parameter  [ 7:0] PORTNUM        = 8'd0,
+  parameter         NODE_INST      = 0,
   parameter  [15:0] RFNOC_PROTOVER = {8'd1, 8'd0}
 )(
   // Resets
@@ -440,7 +442,7 @@ module x4xx_qsfp_wrapper #(
             .PROTOVER       (RFNOC_PROTOVER),
             .CPU_FIFO_SIZE  (BYTE_MTU),
             .CHDR_FIFO_SIZE (CHDR_FIFO_SIZE),
-            .NODE_INST      (0),
+            .NODE_INST      (NODE_INST+lane),
             .BASE           (REG_BASE_ETH_SWITCH),
             .PREAMBLE_BYTES (0),
             .ADD_SOF        (0),

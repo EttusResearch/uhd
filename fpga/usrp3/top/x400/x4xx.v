@@ -1642,7 +1642,8 @@ module x4xx (
     .CPU_W     (CPU_W),
     .CHDR_W    (CHDR_W),
     .BYTE_MTU  (BYTE_MTU),
-    .PORTNUM   (0)
+    .PORTNUM   (0),
+    .NODE_INST (0)
   ) x4xx_qsfp_wrapper_0 (
     .areset         (areset),
     .refclk_p       (MGT_REFCLK_LMK0_P),
@@ -1750,7 +1751,8 @@ module x4xx (
     .CPU_W     (CPU_W),
     .CHDR_W    (CHDR_W),
     .BYTE_MTU  (BYTE_MTU),
-    .PORTNUM   (1)
+    .PORTNUM   (1),
+    .NODE_INST (4)
   ) x4xx_qsfp_wrapper_1 (
     .areset         (areset),
     .refclk_p       (MGT_REFCLK_LMK3_P),
@@ -1861,7 +1863,8 @@ module x4xx (
     .DWIDTH         (REG_DWIDTH),
     .AWIDTH         (REG_AWIDTH),
     .PORTNUM        (8'd0),
-    .RFNOC_PROTOVER (RFNOC_PROTOVER)
+    .RFNOC_PROTOVER (RFNOC_PROTOVER),
+    .NODE_INST      (5)
   ) eth_ipv4_internal_i (
     .bus_clk       (clk200),
     .bus_rst       (clk200_rst),
