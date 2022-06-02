@@ -43,6 +43,7 @@ module eth_ipv4_internal #(
   parameter        DWIDTH         = 32,
   parameter        AWIDTH         = 14,
   parameter [ 7:0] PORTNUM        = 0,
+  parameter        NODE_INST      = 0,
   parameter [15:0] RFNOC_PROTOVER = {8'd1, 8'd0}
 ) (
   input wire bus_clk,
@@ -349,7 +350,7 @@ module eth_ipv4_internal #(
     .PROTOVER       (RFNOC_PROTOVER),
     .CPU_FIFO_SIZE  (BYTE_MTU),
     .CHDR_FIFO_SIZE (BYTE_MTU),
-    .NODE_INST      (0),
+    .NODE_INST      (NODE_INST),
     .BASE           (REG_BASE_ETH_SWITCH),
     .PREAMBLE_BYTES (6),
     .ADD_SOF        (1),
