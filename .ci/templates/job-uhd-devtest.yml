@@ -101,7 +101,8 @@ jobs:
       export PATH=$(Build.BinariesDirectory)/uhddev/build/utils:$(Build.BinariesDirectory)/uhddev/build/examples:$PATH
       export LD_LIBRARY_PATH=$(Build.BinariesDirectory)/uhddev/build/lib:$LD_LIBRARY_PATH
       python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
-        --jtag_x3xx $(jtagServer),$(jtagSerial),$(Build.BinariesDirectory)/uhddev/build/fpga_images/usrp_$(devModel)_fpga_$(devFpga).bit \
+        --jtag_x3xx $(jtagServer),$(jtagSerial),$(devModel),$(Build.BinariesDirectory)/uhddev/build/fpga_images/ \
+        --fpgas $(devFpga) \
         ${{ parameters.redisHost }} $(devName) \
         "$(Build.BinariesDirectory)/uhddev/build/utils/uhd_usrp_probe --args addr=$(devAddr)" \
         "python3 ${{ parameters.uhdSrcDir }}/host/tests/devtest/run_testsuite.py \
@@ -126,7 +127,17 @@ jobs:
         $(Common.TestResultsDirectory)/devtest/devtestresults.xml
     continueOnError: true
     displayName: Format devtest xml
-    condition: always()
+    condition: and(always(), eq(variables.devType, 'b200'))
+
+  - script: |
+      cd $(Common.TestResultsDirectory)/devtest
+      python3 ${{ parameters.uhdSrcDir }}/.ci/utils/format_devtest_junitxml.py \
+        --fpgas $(devFpga) \
+        $(Common.TestResultsDirectory)/devtest \
+        $(Common.TestResultsDirectory)/devtest/devtestresults.xml
+    continueOnError: true
+    displayName: Format devtest xml
+    condition: and(always(), ne(variables.devType, 'b200'))
 
   - publish: $(Common.TestResultsDirectory)
     artifact: test-logs-devtest-$(devName)-$(devFpga)-run$(System.JobAttempt)
@@ -137,7 +148,7 @@ jobs:
     inputs:
       testResultsFormat: 'JUnit'
       testResultsFiles: '$(Common.TestResultsDirectory)/devtest/devtestresults.xml'
-      testRunTitle: $(devName) $(devFpga) devtest
+      testRunTitle: $(devName) devtest
       buildConfiguration: 'Release'
       mergeTestResults: true
       failTaskOnFailedTests: true
