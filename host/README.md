@@ -14,8 +14,8 @@ For technical documentation related to our devices and UHD check out the
 [UHD and USRP Manual](http://files.ettus.com/manual/).
 
 Additionally, be sure to check out the Ettus Research
-[FAQ](http://www.ettus.com/kb/detail/frequently-asked-questions), and the
-[Knowledge Base](http://www.ettus.com/kb) for useful application notes and
+[FAQ](https://kb.ettus.com/Technical_FAQ), and the
+[Knowledge Base](http://kb.ettus.com) for useful application notes and
 tutorials.
 
 ## Support
