@@ -97,3 +97,10 @@ jobs:
       mergeTestResults: true
     condition: and(succeeded(), eq('${{ parameters.runPyTest }}', true), eq(variables['deviceEnabled'], 'true'))
     displayName: Upload pytest results
+
+  - script: |
+      echo "A previous step failed. See steps with warnings."
+      echo "Marking the overall build status as a failure."
+      exit 1
+    condition: in(variables['Agent.JobStatus'],  'SucceededWithIssues')
+    displayName: Mark build as failure
