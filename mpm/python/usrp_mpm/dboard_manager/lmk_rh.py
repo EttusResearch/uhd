@@ -216,8 +216,8 @@ class LMK04828Rh(LMK04828):
             (0x159, (self.pll1_n_divider & 0x3F00) >> 8), # PLL1 N divider [13:8], default = d6
             (0x15A, (self.pll1_n_divider & 0x00FF) >> 0), # PLL1 N divider [7:0], default = d0
             (0x15B, 0xC7), # PLL1 PFD: negative slope for active filter / CP = 750 uA
-            (0x15C, 0x0F), # PLL1 DLD Count [13:8]
-            (0x15D, 0xA0), # PLL1 DLD Count [7:0]
+            (0x15C, 0x27), # PLL1 DLD Count [13:8]
+            (0x15D, 0x10), # PLL1 DLD Count [7:0]
             (0x15E, 0x00), # PLL1 R/N delay, defaults = 0
             (0x15F, 0x0B), # Status LD1 pin = PLL1 LD, push-pull output
             (0x160, (self.pll2_r_divider & 0x0F00) >> 8), # PLL2 R divider [11:8];
