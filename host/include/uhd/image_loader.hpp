@@ -19,7 +19,7 @@ namespace uhd {
 class UHD_API image_loader : uhd::noncopyable
 {
 public:
-    typedef struct
+    struct image_loader_args_t
     {
         uhd::device_addr_t args;
         bool load_firmware;
@@ -33,7 +33,7 @@ public:
         uhd::dict<std::string, std::string> metadata;
         bool delay_reload = false;
         bool just_reload  = false;
-    } image_loader_args_t;
+    };
 
     //! Signature of an image loading function
     /*!
