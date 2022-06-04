@@ -289,7 +289,7 @@ public:
     }
 
     bool get_record_async_metadata(
-        uhd::rx_metadata_t& metadata, const double timeout = 0.0)
+        uhd::rx_metadata_t& metadata, const double timeout = 0.0) override
     {
         return _record_msg_queue.pop_with_timed_wait(metadata, timeout);
     }
@@ -338,7 +338,8 @@ public:
         return uhd::convert::get_bytes_per_item(get_play_type(port));
     }
 
-    bool get_play_async_metadata(uhd::async_metadata_t& metadata, const double timeout)
+    bool get_play_async_metadata(
+        uhd::async_metadata_t& metadata, const double timeout) override
     {
         return _playback_msg_queue.pop_with_timed_wait(metadata, timeout);
     }
@@ -406,7 +407,7 @@ public:
         // The register to get the command FIFO space was added in v1.1
         if (_fpga_compat >= 0x00010001) {
             // Make sure the command queue has space.  Allow stop commands to pass.
-            if (not play_cmd == PLAY_CMD_STOP and _cmd_fifo_spaces[port] == 0) {
+            if (play_cmd != PLAY_CMD_STOP and _cmd_fifo_spaces[port] == 0) {
                 _cmd_fifo_spaces[port] = _replay_reg_iface.peek32(
                     REG_PLAY_CMD_FIFO_SPACE_ADDR, port);
                 if (_cmd_fifo_spaces[port] == 0) {
