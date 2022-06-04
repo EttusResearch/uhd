@@ -311,7 +311,7 @@ protected:
     virtual void deinit();
 
 private:
-    friend struct block_initializer;
+    friend class block_initializer;
 
     /*! Update the tick rate of this block
      *
