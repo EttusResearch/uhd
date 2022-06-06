@@ -503,7 +503,7 @@ std::vector<std::string> x300_mb_controller::get_gpio_srcs(const std::string& ba
             "Invalid GPIO source bank: " << bank << ". Only supported bank is "
                                          << GPIO_SRC_BANK);
         throw uhd::runtime_error(
-            std::string("Invalid GPIO source bank: ") + GPIO_SRC_BANK);
+            std::string("Invalid GPIO source bank: ") + bank);
     }
     return {GPIO_SRC_RFA, GPIO_SRC_RFB};
 }
@@ -515,7 +515,7 @@ std::vector<std::string> x300_mb_controller::get_gpio_src(const std::string& ban
             "Invalid GPIO source bank: " << bank << ". Only supported bank is "
                                          << GPIO_SRC_BANK);
         throw uhd::runtime_error(
-            std::string("Invalid GPIO source bank: ") + GPIO_SRC_BANK);
+            std::string("Invalid GPIO source bank: ") + bank);
     }
     uint32_t fp_gpio_src = _zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_FP_GPIO_SRC));
     const auto gpio_srcs = get_gpio_srcs(bank);
