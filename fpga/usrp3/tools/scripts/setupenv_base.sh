@@ -170,6 +170,7 @@ if [[ ${VIVADO_VER^^} = "CMDLINE_ARG" ]]; then
     fi
 fi
 export VIVADO_PATH=$VIVADO_BASE_PATH/$VIVADO_VER
+export VIVADO_HLS_PATH=$VIVADO_BASE_PATH/../Vitis_HLS/$VIVADO_VER
 
 echo "Setting up a ${BITNESS}-bit FPGA build environment for the ${DISPLAY_NAME}..."
 #----------------------------------------------------------------------------
@@ -193,6 +194,9 @@ if [[ -e $VIVADO_PATH/.settings${BITNESS}-Vivado_Lab.sh ]]; then
     $VIVADO_PATH/.settings${BITNESS}-Vivado_Lab.sh
 else
     $VIVADO_PATH/.settings${BITNESS}-Vivado.sh
+fi
+if [[ -e $(readlink -f $VIVADO_HLS_PATH)/.settings${BITNESS}-Vitis_HLS.sh ]]; then
+    $(readlink -f $VIVADO_HLS_PATH)/.settings${BITNESS}-Vitis_HLS.sh
 fi
 if [[ -e $(readlink -f $VIVADO_BASE_PATH/..)/DocNav/.settings${BITNESS}-DocNav.sh ]]; then
     $(readlink -f $VIVADO_BASE_PATH/..)/DocNav/.settings${BITNESS}-DocNav.sh

@@ -40,22 +40,12 @@ function print_color {
 # Functions
 #------------------------------------------
 
-export VLINT_PLATFORM=$(uname -o)
-function resolve_vlint_path {
-    if [[ $VLINT_PLATFORM = "Cygwin" ]]; then
-        echo $(cygpath -am $1)
-    else
-        echo $1
-    fi
-}
-
 # Replace any directories with the files they include
 function replace_dirs_with_source {
     for file in "$@"
     do
         if [ -d $file ]; then
-            # Quotes so that resolve_vlint_path converts all paths
-            echo "$(resolve_vlint_path "$(realpath $(find $file -maxdepth 1 -type f))") "
+            echo "resolve_viv_path $(realpath $(find $file -maxdepth 1 -type f)) "
         else
             echo "$file "
         fi
