@@ -183,7 +183,12 @@ void export_rfnoc(py::module& m)
         .def("is_connectable", &rfnoc_graph::is_connectable)
         .def("connect",
             py::overload_cast<const block_id_t&, size_t, const block_id_t&, size_t, bool>(
-                &rfnoc_graph::connect))
+                &rfnoc_graph::connect),
+            py::arg("src_blk"),
+            py::arg("src_port"),
+            py::arg("dst_blk"),
+            py::arg("dst_port"),
+            py::arg("is_back_edge") = false)
         .def("connect",
             py::overload_cast<uhd::tx_streamer::sptr,
                 size_t,
