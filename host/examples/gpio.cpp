@@ -625,8 +625,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             failures += int(!check_rb_values(usrp->get_gpio_attr(gpio_bank, "READBACK"),
                 GPIO_BIT(3),
                 num_bits, loopback_num_bits));
-            stream_helper.stop_stream(true, true);
             output_reg_values(gpio_bank, port, usrp, num_bits, has_src_api);
+            stream_helper.stop_stream(true, true);
         }
 
         std::cout << std::endl;
