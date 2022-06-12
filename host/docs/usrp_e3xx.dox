@@ -598,6 +598,15 @@ The following daughterboard sensors are always available:
 - `ad9361_temperature`: Temperature sensor of the RFIC die
 - `rssi`: RSSI value as returned from the AD9361 (RX only)
 
+\subsection e3xx_power_api Power API
+
+The E3xx series support the UHD power calibration API (see: \ref page_power).
+The TX path and the two RX paths per channel each have their own calibration
+data, resulting in 6 sets of calibration data per E3xx device.
+
+Devices have to be manually calibrated using a calibrated power meter or
+signal generator.
+
 \section e3xx_rasm Remote Management
 
 \subsection e3xx_rasm_mender Mender: Remote update capability

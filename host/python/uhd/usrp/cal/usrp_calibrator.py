@@ -407,6 +407,41 @@ class X410Calibrator(USRPCalibratorBase):
     # time to clear the command queue
     tune_settling_time = .5
 
+class E3XXCalibrator(USRPCalibratorBase):
+    """
+    E3XX calibration
+    """
+    mboard_ids = ('e320','e310','e31x','e3xx')
+    # Choosing 4 MHz: It is a small rate, but carries enough bandwidth to receive
+    # a tone. Compatible with the default MCR of 16 MHz.
+    default_rate = 4e6
+    # Choosing an LO offset of 8 MHz: At 4 Msps, the LO will never be within
+    # our estimate. E3XX generally has good DC offset / IQ balance performance,
+    # but we still try and avoid DC as much as possible.
+    lo_offset = 8e6
+    tune_settling_time = .01 # Probably not needed??
+
+    def __init__(self, usrp, meas_dev, direction, **kwargs):
+        super().__init__(usrp, meas_dev, direction, **kwargs)
+        self._start_temp = None
+        self._stop_temp = None
+
+    def start(self):
+        # query and remember starting temperature
+        get_sensor_fn = getattr(self._usrp, 'get_{}_sensor'.format(self._dir))
+        self._start_temp = get_sensor_fn("ad9361_temperature").to_real()
+        super().start()
+
+    def stop(self, store=True):
+        # save average temperature over the calibration cycle
+        get_sensor_fn = getattr(self._usrp, 'get_{}_sensor'.format(self._dir))
+        self._stop_temp = get_sensor_fn("ad9361_temperature").to_real()
+        print("===== Temperature range was {:.1f} to {:.1f} C"
+                .format(self._start_temp, self._stop_temp))
+        self.temp = round((self._start_temp + self._stop_temp) / 2)
+        super().stop(store)
+
+
 ###############################################################################
 # The dispatch function
 ###############################################################################
