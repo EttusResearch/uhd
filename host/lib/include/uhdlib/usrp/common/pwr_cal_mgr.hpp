@@ -134,6 +134,10 @@ public:
      */
     virtual void set_tracking_mode(const tracking_mode) = 0;
 
+    /*! Get the current power tracking mode
+     */
+    virtual tracking_mode get_tracking_mode() = 0;
+
     //! Return the currently active calibration data key
     virtual std::string get_key() = 0;
 
