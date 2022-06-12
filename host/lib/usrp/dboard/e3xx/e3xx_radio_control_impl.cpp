@@ -215,6 +215,9 @@ void e3xx_radio_control_impl::set_rx_antenna(const std::string& ant, const size_
 
     radio_control_impl::set_rx_antenna(ant, chan);
     _set_atr_bits(chan);
+
+    // Upon changing antenna, update gain setting if in power tracking mode
+    _rx_pwr_mgr.at(chan)->update_power();
 }
 
 double e3xx_radio_control_impl::set_tx_frequency(const double freq, const size_t chan)
@@ -230,6 +233,8 @@ double e3xx_radio_control_impl::set_tx_frequency(const double freq, const size_t
     // frequency, we change the other, too
     for (size_t chan_idx = 0; chan_idx < E3XX_NUM_CHANS; ++chan_idx) {
         radio_control_impl::set_tx_frequency(coerced_freq, chan_idx);
+        // Upon retune, update gain setting if in power tracking mode
+        _tx_pwr_mgr.at(chan_idx)->update_power();
     }
 
     // Front-end switching
@@ -251,6 +256,8 @@ double e3xx_radio_control_impl::set_rx_frequency(const double freq, const size_t
     // frequency, we change the other, too
     for (size_t chan_idx = 0; chan_idx < E3XX_NUM_CHANS; ++chan_idx) {
         radio_control_impl::set_rx_frequency(coerced_freq, chan_idx);
+        // Upon retune, update gain setting if in power tracking mode
+        _rx_pwr_mgr.at(chan_idx)->update_power();
     }
     // Front-end switching
     _set_atr_bits(chan);
@@ -263,6 +270,10 @@ void e3xx_radio_control_impl::set_rx_agc(const bool enb, const size_t chan)
     std::lock_guard<std::recursive_mutex> l(_set_lock);
     RFNOC_LOG_TRACE("set_rx_agc(enb=" << enb << ", chan=" << chan << ")");
     const std::string rx_fe = get_which_ad9361_chain(RX_DIRECTION, chan);
+    // Upon enabling AGC, stop tracking by power
+    if (enb) {
+        _rx_pwr_mgr.at(chan)->set_tracking_mode(pwr_cal_mgr::tracking_mode::TRACK_GAIN);
+    }
     _ad9361->set_agc(rx_fe, enb);
 }
 
@@ -291,6 +302,9 @@ double e3xx_radio_control_impl::set_tx_gain(const double gain, const size_t chan
     double clip_gain = uhd::clip(gain, AD9361_MIN_TX_GAIN, AD9361_MAX_TX_GAIN);
     _ad9361->set_gain(get_which_ad9361_chain(TX_DIRECTION, chan, _fe_swap), clip_gain);
     radio_control_impl::set_tx_gain(clip_gain, chan);
+    // Upon setting gain, stop tracking by power. Power manager also invokes
+    // this function and will clobber its mode, but then restores TRACK_POWER
+    _tx_pwr_mgr.at(chan)->set_tracking_mode(pwr_cal_mgr::tracking_mode::TRACK_GAIN);
     return clip_gain;
 }
 
@@ -302,6 +316,9 @@ double e3xx_radio_control_impl::set_rx_gain(const double gain, const size_t chan
     double clip_gain = uhd::clip(gain, AD9361_MIN_RX_GAIN, AD9361_MAX_RX_GAIN);
     _ad9361->set_gain(get_which_ad9361_chain(RX_DIRECTION, chan, _fe_swap), clip_gain);
     radio_control_impl::set_rx_gain(clip_gain, chan);
+    // Upon setting gain, stop tracking by power. Power manager also invokes
+    // this function and will clobber its mode, but then restores TRACK_POWER
+    _rx_pwr_mgr.at(chan)->set_tracking_mode(pwr_cal_mgr::tracking_mode::TRACK_GAIN);
     return clip_gain;
 }
 
