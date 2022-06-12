@@ -251,7 +251,7 @@ private:
      * Private attributes
      *************************************************************************/
     //! Locks access to setter APIs
-    mutable std::mutex _set_lock;
+    mutable std::recursive_mutex _set_lock;
 
     //! Prepended for all dboard RPC calls
     std::string _rpc_prefix = "db_0_";

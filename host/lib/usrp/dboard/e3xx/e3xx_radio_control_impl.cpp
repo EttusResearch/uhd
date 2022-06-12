@@ -170,7 +170,7 @@ void e3xx_radio_control_impl::set_channel_mode(const std::string& channel_mode)
 
 double e3xx_radio_control_impl::set_rate(const double rate)
 {
-    std::lock_guard<std::mutex> l(_set_lock);
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
     RFNOC_LOG_DEBUG("Asking for clock rate " << rate / 1e6 << " MHz\n");
     // On E3XX, tick rate and samp rate are always the same
     double actual_tick_rate = _ad9361->set_clock_rate(rate);
@@ -191,6 +191,7 @@ uhd::meta_range_t e3xx_radio_control_impl::get_rate_range() const
  *****************************************************************************/
 void e3xx_radio_control_impl::set_tx_antenna(const std::string& ant, const size_t chan)
 {
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
     if (ant != get_tx_antenna(chan)) {
         throw uhd::value_error(
             str(boost::format("[%s] Requesting invalid TX antenna value: %s")
@@ -203,6 +204,7 @@ void e3xx_radio_control_impl::set_tx_antenna(const std::string& ant, const size_
 void e3xx_radio_control_impl::set_rx_antenna(const std::string& ant, const size_t chan)
 {
     UHD_ASSERT_THROW(chan <= E3XX_NUM_CHANS);
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
     if (std::find(E3XX_RX_ANTENNAS.begin(), E3XX_RX_ANTENNAS.end(), ant)
         == E3XX_RX_ANTENNAS.end()) {
         throw uhd::value_error(
@@ -218,7 +220,7 @@ void e3xx_radio_control_impl::set_rx_antenna(const std::string& ant, const size_
 double e3xx_radio_control_impl::set_tx_frequency(const double freq, const size_t chan)
 {
     RFNOC_LOG_TRACE("set_tx_frequency(f=" << freq << ", chan=" << chan << ")");
-    std::lock_guard<std::mutex> l(_set_lock);
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
 
     double clipped_freq = uhd::clip(freq, AD9361_TX_MIN_FREQ, AD9361_TX_MAX_FREQ);
 
@@ -239,7 +241,7 @@ double e3xx_radio_control_impl::set_tx_frequency(const double freq, const size_t
 double e3xx_radio_control_impl::set_rx_frequency(const double freq, const size_t chan)
 {
     RFNOC_LOG_TRACE("set_rx_frequency(f=" << freq << ", chan=" << chan << ")");
-    std::lock_guard<std::mutex> l(_set_lock);
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
 
     double clipped_freq = uhd::clip(freq, AD9361_RX_MIN_FREQ, AD9361_RX_MAX_FREQ);
 
@@ -258,7 +260,7 @@ double e3xx_radio_control_impl::set_rx_frequency(const double freq, const size_t
 
 void e3xx_radio_control_impl::set_rx_agc(const bool enb, const size_t chan)
 {
-    std::lock_guard<std::mutex> l(_set_lock);
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
     RFNOC_LOG_TRACE("set_rx_agc(enb=" << enb << ", chan=" << chan << ")");
     const std::string rx_fe = get_which_ad9361_chain(RX_DIRECTION, chan);
     _ad9361->set_agc(rx_fe, enb);
@@ -267,7 +269,7 @@ void e3xx_radio_control_impl::set_rx_agc(const bool enb, const size_t chan)
 double e3xx_radio_control_impl::set_rx_bandwidth(
     const double bandwidth, const size_t chan)
 {
-    std::lock_guard<std::mutex> l(_set_lock);
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
     double clipped_bw = _ad9361->set_bw_filter(
         get_which_ad9361_chain(RX_DIRECTION, chan, _fe_swap), bandwidth);
     return radio_control_impl::set_rx_bandwidth(clipped_bw, chan);
@@ -276,7 +278,7 @@ double e3xx_radio_control_impl::set_rx_bandwidth(
 double e3xx_radio_control_impl::set_tx_bandwidth(
     const double bandwidth, const size_t chan)
 {
-    std::lock_guard<std::mutex> l(_set_lock);
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
     double clipped_bw = _ad9361->set_bw_filter(
         get_which_ad9361_chain(TX_DIRECTION, chan, _fe_swap), bandwidth);
     return radio_control_impl::set_tx_bandwidth(clipped_bw, chan);
@@ -284,7 +286,7 @@ double e3xx_radio_control_impl::set_tx_bandwidth(
 
 double e3xx_radio_control_impl::set_tx_gain(const double gain, const size_t chan)
 {
-    std::lock_guard<std::mutex> l(_set_lock);
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
     RFNOC_LOG_TRACE("set_tx_gain(gain=" << gain << ", chan=" << chan << ")");
     double clip_gain = uhd::clip(gain, AD9361_MIN_TX_GAIN, AD9361_MAX_TX_GAIN);
     _ad9361->set_gain(get_which_ad9361_chain(TX_DIRECTION, chan, _fe_swap), clip_gain);
@@ -294,7 +296,7 @@ double e3xx_radio_control_impl::set_tx_gain(const double gain, const size_t chan
 
 double e3xx_radio_control_impl::set_rx_gain(const double gain, const size_t chan)
 {
-    std::lock_guard<std::mutex> l(_set_lock);
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
     UHD_ASSERT_THROW(chan < get_num_output_ports());
     RFNOC_LOG_TRACE("set_rx_gain(gain=" << gain << ", chan=" << chan << ")");
     double clip_gain = uhd::clip(gain, AD9361_MIN_RX_GAIN, AD9361_MAX_RX_GAIN);
@@ -348,7 +350,7 @@ meta_range_t e3xx_radio_control_impl::get_rx_bandwidth_range(size_t) const
  *************************************************************************/
 void e3xx_radio_control_impl::set_rx_dc_offset(const bool enb, size_t chan)
 {
-    std::lock_guard<std::mutex> l(_set_lock);
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
     RFNOC_LOG_TRACE("set_rx_dc_offset(enb=" << enb << ", chan=" << chan << ")");
     const std::string rx_fe = get_which_ad9361_chain(RX_DIRECTION, chan);
     _ad9361->set_dc_offset_auto(rx_fe, enb);
@@ -356,7 +358,7 @@ void e3xx_radio_control_impl::set_rx_dc_offset(const bool enb, size_t chan)
 
 void e3xx_radio_control_impl::set_rx_iq_balance(const bool enb, size_t chan)
 {
-    std::lock_guard<std::mutex> l(_set_lock);
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
     RFNOC_LOG_TRACE("set_rx_iq_balance(enb=" << enb << ", chan=" << chan << ")");
     const std::string rx_fe = get_which_ad9361_chain(RX_DIRECTION, chan);
     _ad9361->set_iq_balance_auto(rx_fe, enb);
