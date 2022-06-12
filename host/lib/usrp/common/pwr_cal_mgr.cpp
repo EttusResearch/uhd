@@ -185,6 +185,11 @@ public:
         _mode = mode;
     }
 
+    tracking_mode get_tracking_mode() override
+    {
+        return _mode;
+    }
+
     void set_serial(const std::string& serial) override
     {
         if (serial == _serial || serial.empty()) {
