@@ -17,6 +17,8 @@ public:
     test_node_t(size_t num_inputs, size_t num_outputs)
         : _num_input_ports(num_inputs), _num_output_ports(num_outputs)
     {
+        // Intentionally register props in a different order than they are
+        // declared to verify order of filter_props() is what we want it to be
         register_property(&_double_prop_user, [this]() {
             std::cout << "Calling clean callback for user prop" << std::endl;
             this->user_prop_cb_called = true;
@@ -77,7 +79,6 @@ public:
     bool user_prop_cb_called = false;
 
 private:
-    property_t<double> _double_prop_user{"double_prop", 0.0, {res_source_info::USER}};
     property_t<double> _double_prop_in{
         "double_prop", 0.0, {res_source_info::INPUT_EDGE, 0}};
     property_t<double> _double_prop_out{
@@ -86,6 +87,7 @@ private:
         "multi_instance_prop", 0.0, {res_source_info::USER, 0}};
     property_t<double> multi_instance_prop_1{
         "multi_instance_prop", 0.0, {res_source_info::USER, 1}};
+    property_t<double> _double_prop_user{"double_prop", 0.0, {res_source_info::USER}};
 
     const size_t _num_input_ports;
     const size_t _num_output_ports;
@@ -152,6 +154,12 @@ BOOST_AUTO_TEST_CASE(test_node_accessor)
     });
 
     BOOST_CHECK_EQUAL(user_props.size(), 3);
+    // We choose an iterator here so we can verify the order of user_props
+    // independent of the data type being used underneath
+    auto upit = user_props.begin();
+    BOOST_CHECK_EQUAL((*upit++)->get_id(), "double_prop");
+    BOOST_CHECK_EQUAL((*upit++)->get_id(), "multi_instance_prop");
+    BOOST_CHECK_EQUAL((*upit++)->get_id(), "multi_instance_prop");
     std::map<std::string, int> prop_count;
     for (const auto& prop : user_props) {
         prop_count[prop->get_id()]++;

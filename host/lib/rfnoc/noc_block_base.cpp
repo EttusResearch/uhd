@@ -52,7 +52,7 @@ noc_block_base::noc_block_base(make_args_ptr make_args)
     prop_ptrs_t tick_rate_prop_refs;
     tick_rate_prop_refs.reserve(_tick_rate_props.size());
     for (auto& prop : _tick_rate_props) {
-        tick_rate_prop_refs.insert(&prop);
+        tick_rate_prop_refs.push_back(&prop);
         register_property(&prop);
     }
     for (auto& prop : _tick_rate_props) {
@@ -86,7 +86,7 @@ noc_block_base::noc_block_base(make_args_ptr make_args)
     prop_ptrs_t mtu_prop_refs;
     mtu_prop_refs.reserve(_mtu_props.size());
     for (auto& prop : _mtu_props) {
-        mtu_prop_refs.insert(&prop);
+        mtu_prop_refs.push_back(&prop);
         register_property(&prop);
     }
     // If an MTU edge property value changes, this resolver will coerce the
@@ -252,6 +252,7 @@ void noc_block_base::set_mtu_forwarding_policy(const forwarding_policy_t policy)
     for (auto& prop : _mtu_props) {
         const res_source_info src_edge = prop.get_src_info();
         prop_ptrs_t output_props{};
+        output_props.reserve(_mtu_props.size());
         for (auto& other_prop : _mtu_props) {
             const res_source_info dst_edge = other_prop.get_src_info();
             bool add_to_output_props       = false;
@@ -274,7 +275,7 @@ void noc_block_base::set_mtu_forwarding_policy(const forwarding_policy_t policy)
             }
 
             if (add_to_output_props) {
-                output_props.insert(&other_prop);
+                output_props.push_back(&other_prop);
             }
         }
 

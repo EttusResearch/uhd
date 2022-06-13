@@ -67,8 +67,9 @@ rfnoc_rx_streamer::rfnoc_rx_streamer(const size_t num_chans,
 
     for (size_t i = 0; i < num_chans; i++) {
         prop_ptrs_t mtu_resolver_out;
+        mtu_resolver_out.reserve(_mtu_in.size());
         for (auto& mtu_prop : _mtu_in) {
-            mtu_resolver_out.insert(&mtu_prop);
+            mtu_resolver_out.push_back(&mtu_prop);
         }
 
         add_property_resolver({&_mtu_in[i]},
