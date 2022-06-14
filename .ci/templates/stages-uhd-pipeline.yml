@@ -226,17 +226,31 @@ stages:
           toolset: msbuild
           installer: nsis
 
-- stage: test_uhd_stage
-  displayName: Test UHD
-  dependsOn: build_uhd_stage_linux
+- stage: devtest_uhd_x3xx_b2xx_stage
+  displayName: devtest UHD x3xx b2xx
+  dependsOn:
+  - build_uhd_stage_linux
   jobs:
   - template: job-uhd-devtest-rhombus.yml
     parameters:
       testOS: ubuntu2004
       uhdSrcDir: $(Build.SourcesDirectory)
+      testDevices: 'x3xx,b2xx'
 
-- stage: test_uhd_embedded_devices_stage
-  displayName: Test UHD Embedded Devices
+- stage: devtest_uhd_n3xx_stage
+  displayName: devtest UHD n3xx
+  dependsOn:
+  - build_uhd_stage_linux
+  - build_uhd_embedded_system_images
+  jobs:
+  - template: job-uhd-devtest-rhombus.yml
+    parameters:
+      testOS: ubuntu2004
+      uhdSrcDir: $(Build.SourcesDirectory)
+      testDevices: 'n3xx'
+
+- stage: test_uhd_x4xx_stage
+  displayName: Test UHD x4xx
   dependsOn:
   - build_uhd_stage_linux
   - build_uhd_embedded_system_images
