@@ -11,8 +11,8 @@ x4xx_common_mender_default      meta-ettus-v4.2.0.0  x4xx/meta-ettus-v4.2.0.0/x4
 x4xx_common_sdimg_default       meta-ettus-v4.2.0.0  x4xx/meta-ettus-v4.2.0.0/x4xx_common_sdimg_default-v4.2.0.0.zip     0
 
 # X300-Series
-x3xx_x310_fpga_default          uhd-8daa80c       x3xx/uhd-8daa80c/x3xx_x310_fpga_default-g8daa80c.zip                  b8b123408b41ecabbc6dd1e52724d095716642d55c59592a55497ce82a026e19
-x3xx_x300_fpga_default          uhd-8daa80c       x3xx/uhd-8daa80c/x3xx_x300_fpga_default-g8daa80c.zip                  d946784bb28f7d19a5313262e061605abb9f21d9c65c4ee6badceade0e9410d6
+x3xx_x310_fpga_default          uhd-ec74e70       x3xx/uhd-ec74e70/x3xx_x310_fpga_default-gec74e70.zip                  fe732f2cd6b598432f12a316f16af7453ce1ca23e6edd7f15b78fbe3b7ce0611
+x3xx_x300_fpga_default          uhd-ec74e70       x3xx/uhd-ec74e70/x3xx_x300_fpga_default-gec74e70.zip                  2fc7fc4644a392feb38fcfead934248a38f894ccd7ac8644aab934e5ad157278
 # Example daughterboard targets (none currently exist)
 #x3xx_twinrx_cpld_default   example_target
 #dboard_ubx_cpld_default    example_target
