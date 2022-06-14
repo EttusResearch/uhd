@@ -10,6 +10,7 @@ USRP MPM Python Unit testing framework
 import unittest
 import sys
 import argparse
+from compatnum_tests import TestCompatNum
 from sys_utils_tests import TestNet
 from mpm_utils_tests import TestMpmUtils
 from eeprom_tests import TestEeprom
@@ -24,6 +25,7 @@ TESTS = {
         TestNet,
         TestMpmUtils,
         TestEeprom,
+        TestCompatNum,
     },
     'n3xx': set(),
     'x4xx': set()
