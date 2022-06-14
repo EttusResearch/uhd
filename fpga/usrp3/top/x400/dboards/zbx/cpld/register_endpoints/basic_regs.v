@@ -38,6 +38,12 @@ module basic_regs #(
   //----------------------------------------------------------
   reg [SCRATCH_REG_SIZE-1:0]  scratch_reg = {SCRATCH_REG_SIZE   {1'b0}};
 
+`ifdef VARIANT_XO3
+  localparam VARIANT_ID = VARIANT_ID_XO3;
+`else
+  localparam VARIANT_ID = VARIANT_ID_MAX10;
+`endif
+
   //----------------------------------------------------------
   // Handling of CtrlPort
   //----------------------------------------------------------
@@ -105,13 +111,17 @@ module basic_regs #(
             s_ctrlport_resp_data[SCRATCH_REG_MSB : SCRATCH_REG] <= scratch_reg;
           end
 
-
           BASE_ADDRESS + GIT_HASH_REGISTER: begin
             `ifdef GIT_HASH
               s_ctrlport_resp_data <= `GIT_HASH;
             `else
               s_ctrlport_resp_data <= 32'hDEADBEEF;
             `endif
+          end
+
+          BASE_ADDRESS + SLAVE_VARIANT: begin
+            s_ctrlport_resp_data[VARIANT_REG_MSB : VARIANT_REG]
+                                    <= VARIANT_ID[VARIANT_REG_SIZE-1:0];
           end
 
           // error on undefined address
@@ -150,8 +160,10 @@ endmodule
 //        This enum is used to create the constants held in the basic registers in both verilog and vhdl.
 //      </info>
 //      <value name="BOARD_ID_VALUE"        integer="0x4002"/>
-//      <value name="CPLD_REVISION"         integer="0x21111614"/>
+//      <value name="CPLD_REVISION"         integer="0x22031611"/>
 //      <value name="OLDEST_CPLD_REVISION"  integer="0x20110611"/>
+//      <value name="VARIANT_ID_XO3"        integer="0x584F33"/>
+//      <value name="VARIANT_ID_MAX10"      integer="0x4D4158"/>
 //    </enumeratedtype>
 //
 //   <register name="SLAVE_SIGNATURE" size="32" offset="0x00" attributes="Readable">
@@ -214,6 +226,19 @@ endmodule
 //        <info>7 hex digit hash code of the commit</info>
 //      </bitfield>
 //    </register>
+//
+//   <register name="SLAVE_VARIANT" size="32" offset="0x14" writable="false">
+//     <info>
+//       Contains information pertaining the variant of the programmable.
+//     </info>
+//     <bitfield name="VARIANT_REG" range="31..0" initialvalue="0">
+//       <info>
+//         Returns the variant of the programmable based on the part vendor.
+//         MAX10 variants return 0x583033(ASCII for MAX), while the XO3 variant
+//         returns 0x584F33 (ASCII for XO3)
+//       </info>
+//     </bitfield>
+//   </register>
 //  </group>
 //</regmap>
 //XmlParse xml_off
