@@ -33,6 +33,7 @@ jobs:
       macos_builders=$(sed '6q;d' $(UHDPipelineDockerImageArtifactName)/$(UHDPipelineDockerImageArtifactName))
       docker_image_matrix_source_package=$(sed '7q;d' $(UHDPipelineDockerImageArtifactName)/$(UHDPipelineDockerImageArtifactName))
       docker_image_matrix_fedora_rpm=$(sed '8q;d' $(UHDPipelineDockerImageArtifactName)/$(UHDPipelineDockerImageArtifactName))
+      docker_image_matrix_windows_python_build=$(sed '9q;d' $(UHDPipelineDockerImageArtifactName)/$(UHDPipelineDockerImageArtifactName))
 
       echo "##vso[task.setvariable variable=dockerBuildNumber;isOutput=true;]$docker_build_number"
       echo "##vso[task.setvariable variable=dockerImagePrefix;isOutput=true;]$docker_image_prefix"
@@ -42,6 +43,7 @@ jobs:
       echo "##vso[task.setvariable variable=macOSBuilders;isOutput=true;]$macos_builders"
       echo "##vso[task.setvariable variable=dockerImageMatrixSourcePackageBuilders;isOutput=true;]$docker_image_matrix_source_package"
       echo "##vso[task.setvariable variable=dockerImageMatrixFedoraRpm;isOutput=true;]$docker_image_matrix_fedora_rpm"
+      echo "##vso[task.setvariable variable=dockerImageMatrixWinPythonBuild;isOutput=true;]$docker_image_matrix_windows_python_build"
     name: setDockerVar
   - script: |
       echo "Docker Build Number: "
@@ -53,4 +55,5 @@ jobs:
       echo $(setDockerVar.macOSBuilders)
       echo $(setDockerVar.dockerImageMatrixSourcePackageBuilders)
       echo $(setDockerVar.dockerImageMatrixFedoraRpm)
+      echo $(setDockerVar.dockerImageMatrixWinPythonBuild)
     name: echoDockerVar

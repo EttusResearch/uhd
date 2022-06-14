@@ -63,12 +63,6 @@ variables:
     'Ubuntu-2004-builder':{'buildOSName':'ubuntu2004','dockerImageName':'uhd-builder-ubuntu2004','ubuntuReleaseName':'focal'},
     'Ubuntu-2204-builder':{'buildOSName':'ubuntu2204','dockerImageName':'uhd-builder-ubuntu2204','ubuntuReleaseName':'jammy'}}"
 
-- name: fedoraRpmDockerImages
-  # Match with Fedora images in linuxDockerImages
-  value:
-    "{'Fedora-34-builder':{'buildOSName':'fedora34','dockerImageName':'uhd-builder-fedora34','fedoraReleaseName':'34'},
-    'Fedora-35-builder':{'buildOSName':'fedora35','dockerImageName':'uhd-builder-fedora35','fedoraReleaseName':'35'}}"
-
 - name: macOSBuilders
   value:
     "{'macOS-12-x64':{'buildOSName':'macOS-12-x64', 'macOSVersionDemand':'12', 'macOSArchDemand': 'X64'}}"
@@ -77,6 +71,17 @@ variables:
   # Match with one of the Ubuntu images in linuxDockerImages
   value:
     "{'Ubuntu-2004-builder':{'buildOSName':'ubuntu2004','dockerImageName':'uhd-builder-ubuntu2004','ubuntuReleaseName':'focal'}}"
+
+- name: fedoraRpmDockerImages
+  # Match with Fedora images in linuxDockerImages
+  value:
+    "{'Fedora-34-builder':{'buildOSName':'fedora34','dockerImageName':'uhd-builder-fedora34','fedoraReleaseName':'34'},
+    'Fedora-35-builder':{'buildOSName':'fedora35','dockerImageName':'uhd-builder-fedora35','fedoraReleaseName':'35'}}"
+
+- name: winDockerImagesPythonBuild
+  # Match with one of the images in winDockerImages
+  value:
+    "{'VS2019-x64-builder':{'buildOSName':'win-vs19-v142-x64','dockerImageName':'uhd-builder-vs2019-v142-x64','cmakeCompiler':'Visual Studio 16 2019','cmakeArch':'x64','vsArch':'x64','vsYear':'2019'}}"
 
 - name: dockerImagePrefix
   value: 'rfsdr/'
@@ -225,6 +230,7 @@ jobs:
       echo "${{ variables.macOSBuilders }}" >> $(UHDPipelineDockerImageArtifactName)
       echo "${{ variables.sourcePackageBuilders }}" >> $(UHDPipelineDockerImageArtifactName)
       echo "${{ variables.fedoraRpmDockerImages }}" >> $(UHDPipelineDockerImageArtifactName)
+      echo "${{ variables.winDockerImagesPythonBuild }}" >> $(UHDPipelineDockerImageArtifactName)
     displayName: Generate created image list
   - task: PublishPipelineArtifact@1
     inputs:

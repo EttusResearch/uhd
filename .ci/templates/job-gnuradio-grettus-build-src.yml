@@ -18,6 +18,7 @@ jobs:
     macOSBuilders: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.macOSBuilders'] ]
     dockerImageMatrixSourcePackageBuilders: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixSourcePackageBuilders'] ]
     dockerImageMatrixFedoraRpm: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixFedoraRpm'] ]
+    dockerImageMatrixWinPythonBuild: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixWinPythonBuild'] ]
   pool:
     ${{ if eq(parameters.toolset, 'msbuild') }}:
       name: de-dre-lab

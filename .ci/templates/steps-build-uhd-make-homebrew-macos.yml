@@ -24,10 +24,11 @@ steps:
       mkdir -p ${{ parameters.uhdBuildDir }}-installed
       echo "Setting CMAKE_INSTALL_PREFIX to ${{ parameters.uhdBuildDir }}-installed"
       export UHD_CI_CMAKE_OPTIONS="-DCMAKE_INSTALL_PREFIX=${{ parameters.uhdBuildDir }}-installed"
+      export UHD_CI_CMAKE_SIM="-DENABLE_SIM=OFF"
     fi
     cmake \
       $UHD_CI_CMAKE_OPTIONS \
-      -DENABLE_SIM=OFF \
+      $UHD_CI_CMAKE_SIM \
       ${{ parameters.uhdSrcDir }}/host
   displayName: cmake homebrew macOS UHD
 
@@ -63,7 +64,7 @@ steps:
     cd $EXAMPLE_BUILD_DIR
     source ${{ parameters.uhdBuildDir }}/pyenv/bin/activate
     cmake \
-      -DENABLE_SIM=OFF \
+      $UHD_CI_CMAKE_SIM \
       -DCMAKE_INSTALL_PREFIX=${{ parameters.uhdBuildDir }}-installed \
       -DCMAKE_PREFIX_PATH=${{ parameters.uhdBuildDir }}-installed \
       $EXAMPLE_SRC_DIR && \

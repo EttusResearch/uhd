@@ -115,6 +115,10 @@ stages:
     parameters:
       toolset: msbuild
       release_binaries: ${{ parameters.release_binaries }}
+  - template: job-uhd-build-src.yml
+    parameters:
+      toolset: msbuild_python
+      release_binaries: ${{ parameters.release_binaries }}
 
 - stage: build_uhd_stage_mac
   displayName: Build UHD macOS
@@ -221,6 +225,10 @@ stages:
         toolset: msbuild
         installer: nsis
         releaseBinaries: ${{ parameters.release_binaries }}
+    - template: job-uhd-build-installer.yml
+      parameters:
+        toolset: msbuild_python
+        installer: nsis
     - ${{ if parameters.release_binaries }}:
       - template: job-uhd-build-installer-signing.yml
         parameters:

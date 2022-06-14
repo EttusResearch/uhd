@@ -4,6 +4,11 @@ parameters:
 - name: uhdBuildDir
   type: string
 - name: uhdReleaseBinaries
+  type: boolean
+  default: false
+- name: uhdBuildPythonAPI
+  type: boolean
+  default: false
 - name: cmakeCompiler
   type: string
 - name: cmakeArch
@@ -22,11 +27,17 @@ steps:
     cd ${{ parameters.uhdBuildDir }}
     if "${{ parameters.uhdReleaseBinaries }}" == "True" (
       echo "Setting Release Mode"
-      SET UHD_CI_CMAKE_OPTIONS="-DUHD_RELEASE_MODE=release %UHD_CI_CMAKE_OPTIONS%"
+      SET UHD_CI_CMAKE_RELEASE_MODE="-DUHD_RELEASE_MODE=release"
     )
     if "${{ parameters.uhdGenerateTestBinaries}}" == "True" (
       echo "Setting CMAKE_INSTALL_PREFIX to ${{ parameters.uhdBuildDir }}-installed"
       SET UHD_CI_CMAKE_OPTIONS="-DCMAKE_INSTALL_PREFIX=${{ parameters.uhdBuildDir }}-installed %UHD_CI_CMAKE_OPTIONS%"
+      SET UHD_CI_CMAKE_SIM="-DENABLE_SIM=OFF"
+    )
+    if "${{ parameters.uhdBuildPythonAPI }}" == "True" (
+      echo "Setting Python API Build"
+      SET UHD_CI_CMAKE_PYTHON="-DENABLE_PYTHON_API=ON"
+      SET UHD_CI_CMAKE_SIM="-DENABLE_SIM=OFF"
     )
     cmake ${{ parameters.uhdSrcDir }}/host ^
       -DVCPKG_TARGET_TRIPLET=uhd-$(vsArch)-windows-static-md ^
@@ -34,25 +45,28 @@ steps:
       -DSPECIFY_MSVC_VERSION=ON ^
       -DENABLE_DOXYGEN_SHORTNAMES=ON ^
       %UHD_CI_CMAKE_OPTIONS% ^
+      %UHD_CI_CMAKE_RELEASE_MODE% ^
+      %UHD_CI_CMAKE_PYTHON% ^
+      %UHD_CI_CMAKE_SIM% ^
       -G "$(cmakeCompiler)" -A $(cmakeArch)
   displayName: cmake msbuild UHD
 
 - script: |
     cd ${{ parameters.uhdBuildDir }}
     call "C:\Program Files (x86)\Microsoft Visual Studio\$(vsYear)\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
-    msbuild.exe ALL_BUILD.vcxproj /p:configuration=release
+    msbuild.exe ALL_BUILD.vcxproj -maxCpuCount -p:configuration=release
   displayName: msbuild UHD
 
 - script: |
     cd ${{ parameters.uhdBuildDir }}
-    ctest --no-compress-output --output-on-failure -T test
+    ctest --no-compress-output --output-on-failure -T test -C Release
   continueOnError: true
   displayName: ctest msbuild UHD
 
 - script: |
     cd ${{ parameters.uhdBuildDir }}
     call "C:\Program Files (x86)\Microsoft Visual Studio\$(vsYear)\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
-    msbuild.exe INSTALL.vcxproj /p:configuration=release
+    msbuild.exe INSTALL.vcxproj -maxCpuCount -p:configuration=release
   displayName: Install uhd to uhdBuildDir-installed
   condition: and(succeeded(), ${{ parameters.uhdGenerateTestBinaries }})
 
@@ -69,12 +83,18 @@ steps:
     cd %EXAMPLE_BUILD_DIR%
     cmake ^
       %EXAMPLE_SRC_DIR% ^
-      -DVCPKG_TARGET_TRIPLET=uhd-$(vsArch)-windows-static-md ^
-      -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALL_DIR%/scripts/buildsystems/vcpkg.cmake ^
       -DCMAKE_INSTALL_PREFIX=${{ parameters.uhdBuildDir }}-installed ^
       -DCMAKE_PREFIX_PATH=${{ parameters.uhdBuildDir }}-installed ^
+      -DVCPKG_TARGET_TRIPLET=uhd-$(vsArch)-windows-static-md ^
+      -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALL_DIR%/scripts/buildsystems/vcpkg.cmake ^
+      -DSPECIFY_MSVC_VERSION=ON ^
+      -DENABLE_DOXYGEN_SHORTNAMES=ON ^
+      %UHD_CI_CMAKE_OPTIONS% ^
+      %UHD_CI_CMAKE_RELEASE_MODE% ^
+      %UHD_CI_CMAKE_PYTHON% ^
+      %UHD_CI_CMAKE_SIM% ^
       -G "$(cmakeCompiler)" -A $(cmakeArch)
     call "C:\Program Files (x86)\Microsoft Visual Studio\$(vsYear)\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
-    msbuild.exe ALL_BUILD.vcxproj /p:configuration=release
+    msbuild.exe ALL_BUILD.vcxproj -maxCpuCount -p:configuration=release
   displayName: Build init_usrp
   condition: and(succeeded(), ${{ parameters.uhdGenerateTestBinaries }})

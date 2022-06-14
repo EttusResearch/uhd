@@ -135,6 +135,13 @@ function(UHD_ADD_PYTEST test_name)
         set_tests_properties(${test_name} PROPERTIES
             ENVIRONMENT
             "DYLD_LIBRARY_PATH=${UHD_BINARY_DIR}/lib/;PYTHONPATH=${UHD_BINARY_DIR}/python:${UHD_SOURCE_DIR}/tests/common:${UHD_BINARY_DIR}/utils/")
+    elseif(MSVC)
+        string(REPLACE ";" "\\;" WIN_PATH "$ENV{PATH}")
+    # MSVC is a multi-config generator in CMake, so we must specify the config value
+        set_tests_properties(${test_name} PROPERTIES
+            ENVIRONMENT
+            "PATH=${WIN_PATH}\\;${UHD_BINARY_DIR}\\lib\\$<CONFIG>;PYTHONPATH=${UHD_BINARY_DIR}\\python\\$<CONFIG>\\;${UHD_SOURCE_DIR}\\tests\\common\\;${UHD_BINARY_DIR}\\utils"
+            )
     else()
         set_tests_properties(${test_name} PROPERTIES
             ENVIRONMENT

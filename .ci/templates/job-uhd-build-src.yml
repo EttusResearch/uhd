@@ -7,6 +7,7 @@ parameters:
   - make_trace
   - ninja
   - msbuild
+  - msbuild_python
   - make_homebrew_macos
 - name: 'custom_boost_version_url'
   type: string
@@ -26,16 +27,17 @@ jobs:
     dockerImageMatrixLin: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixLin'] ]
     dockerImageMatrixWin: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixWin'] ]
     dockerImageMatrixUbuntuDeb: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixUbuntuDeb'] ]
-    dockerImageMatrixFedoraRpm: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixFedoraRpm'] ]
     macOSBuilders: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.macOSBuilders'] ]
     dockerImageMatrixSourcePackageBuilders: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixSourcePackageBuilders'] ]
+    dockerImageMatrixFedoraRpm: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixFedoraRpm'] ]
+    dockerImageMatrixWinPythonBuild: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixWinPythonBuild'] ]
   pool:
-    ${{ if eq(parameters.toolset, 'msbuild') }}:
+    ${{ if contains(parameters.toolset, 'msbuild') }}:
       name: de-dre-lab
-    ${{ if ne(parameters.toolset, 'msbuild') }}:
+    ${{ if not(contains(parameters.toolset, 'msbuild')) }}:
       name: Drivers-NIBuildFarm-RFMIBUILD
     demands:
-      - ${{ if eq(parameters.toolset, 'msbuild') }}:
+      - ${{ if contains(parameters.toolset, 'msbuild') }}:
         - docker
         - Agent.OS -equals Windows_NT
       - ${{ if or(eq(parameters.toolset, 'make'), eq(parameters.toolset, 'make_trace'), eq(parameters.toolset, 'ninja'), eq(parameters.toolset, 'make_custom_boost_version')) }}:
@@ -50,6 +52,8 @@ jobs:
   strategy:
     ${{ if eq(parameters.toolset, 'msbuild') }}:
       matrix: $[ variables.dockerImageMatrixWin ]
+    ${{ if eq(parameters.toolset, 'msbuild_python') }}:
+      matrix: $[ variables.dockerImageMatrixWinPythonBuild ]
     ${{ if or(eq(parameters.toolset, 'make'), eq(parameters.toolset, 'make_trace'), eq(parameters.toolset, 'ninja'), eq(parameters.toolset, 'make_custom_boost_version')) }}:
       matrix: $[ variables.dockerImageMatrixLin ]
     ${{ if eq(parameters.toolset, 'make_homebrew_macos') }}:
@@ -97,6 +101,20 @@ jobs:
         uhdSrcDir: $(Build.SourcesDirectory)
         uhdBuildDir: $(Build.BinariesDirectory)\\uhddev\\build
         uhdReleaseBinaries: ${{ parameters.release_binaries }}
+        uhdBuildPythonAPI: false
+        cmakeCompiler: $(cmakeCompiler)
+        cmakeArch: $(cmakeArch)
+        vsArch: $(vsArch)
+        vsYear: $(vsYear)
+        uhdGenerateTestBinaries: true
+
+  - ${{ if eq(parameters.toolset, 'msbuild_python') }}:
+    - template: steps-build-uhd-msbuild.yml
+      parameters:
+        uhdSrcDir: $(Build.SourcesDirectory)
+        uhdBuildDir: $(Build.BinariesDirectory)\\uhddev\\build
+        uhdReleaseBinaries: ${{ parameters.release_binaries }}
+        uhdBuildPythonAPI: true
         cmakeCompiler: $(cmakeCompiler)
         cmakeArch: $(cmakeArch)
         vsArch: $(vsArch)
