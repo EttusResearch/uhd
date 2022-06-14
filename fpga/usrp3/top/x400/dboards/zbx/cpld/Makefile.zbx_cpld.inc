@@ -20,6 +20,7 @@ PROJECT_DIR = $(abspath .)
 BASE_DIR = $(abspath ../../../../)
 IP_DIR = $(abspath ./ip)
 include $(BASE_DIR)/../tools/make/quartus_design_builder.mak
+include $(BASE_DIR)/../tools/make/diamond_design_builder.mak
 
 # Include IP directory
 include $(IP_DIR)/Makefile.inc
@@ -66,3 +67,7 @@ bin: .prereqs
 
 quar_ip: .prereqs ip
 	@echo "IP Build DONE ..."
+
+dmd_build : .diamond_prereqs
+	$(call BUILD_DIAMOND_DESIGN,$(TOP_MODULE),$(PART_ID),$(PROJECT_DIR),$(BUILD_DIR),$(IMPL))
+

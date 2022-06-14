@@ -1473,6 +1473,32 @@ This enum is used to create the constants held in the basic registers in both ve
 
 <tr valign="top">
 
+                        <td class='value'>5063000</td>
+                        
+                            <td class='l'>0x004D4158</td>
+                            
+                            <td class="l" style="text-align: left;">
+                              <p class="name"><a name='BASIC_REGS_REGMAP|BASIC_REGISTERS_VALUES|VARIANT_ID_MAX10'></a>VARIANT_ID_MAX10</p>
+                            
+</td>
+
+</tr>
+
+<tr valign="top">
+
+                        <td class='value'>5787443</td>
+                        
+                            <td class='l'>0x00584F33</td>
+                            
+                            <td class="l" style="text-align: left;">
+                              <p class="name"><a name='BASIC_REGS_REGMAP|BASIC_REGISTERS_VALUES|VARIANT_ID_XO3'></a>VARIANT_ID_XO3</p>
+                            
+</td>
+
+</tr>
+
+<tr valign="top">
+
                         <td class='value'>537986577</td>
                         
                             <td class='l'>0x20110611</td>
@@ -1486,9 +1512,9 @@ This enum is used to create the constants held in the basic registers in both ve
 
 <tr valign="top">
 
-                        <td class='value'>554767892</td>
+                        <td class='value'>570627601</td>
                         
-                            <td class='l'>0x21111614</td>
+                            <td class='l'>0x22031611</td>
                             
                             <td class="l" style="text-align: left;">
                               <p class="name"><a name='BASIC_REGS_REGMAP|BASIC_REGISTERS_VALUES|CPLD_REVISION'></a>CPLD_REVISION</p>
@@ -2137,6 +2163,130 @@ Git hash of commit used to build this image.<br>
               <td>
                 <p><span class="name"><a name="BASIC_REGS_REGMAP|GIT_HASH_REGISTER|GIT_HASH"></a>GIT_HASH</span><span class="attr"> </span></p>
                 <p>7 hex digit hash code of the commit</p>
+            
+              </td>
+            </tr>
+            
+</table>
+
+</div>
+
+            <div class="register">
+              <a name="BASIC_REGS_REGMAP|SLAVE_VARIANT"></a>
+            
+<h3 class="register">Offset 0x0014: SLAVE_VARIANT Register (R)</h3>
+
+                 <a class="sh_addrs" href="javascript:sa('BASIC_REGS_REGMAP|SLAVE_VARIANT_in')">(<span id="show_BASIC_REGS_REGMAP|SLAVE_VARIANT_in">show</span> extended info)</a>
+                 <div class="sh_addrs" id="div_BASIC_REGS_REGMAP|SLAVE_VARIANT_in">
+                 
+                <table class="extended_info">
+                
+<tr>
+
+<td class="outercell" rowspan="1">
+
+                  <table border="0" cellspacing="0" cellpadding="0">
+                    <tr><td class="offset_info" align="right">Port <a href="#ZBX_CPLD|GPIO">GPIO</a></td></tr>
+                  </table>
+               
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#GPIO_REGMAP|BASE_WINDOW_GPIO">GPIO_REGMAP|BASE_WINDOW_GPIO</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x000000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="2">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right">SLAVE_VARIANT</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x0014</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x000014
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+<tr>
+
+<td class="outercell" rowspan="1">
+
+                  <table border="0" cellspacing="0" cellpadding="0">
+                    <tr><td class="offset_info" align="right">Port <a href="#ZBX_CPLD|SPI">SPI</a></td></tr>
+                  </table>
+               
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#SPI_REGMAP|BASE_WINDOW_SPI">SPI_REGMAP|BASE_WINDOW_SPI</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x000000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x000014
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+</table><p/>
+
+<p class="reg_info">Initial Value = 0x00000000
+</p>
+
+<p class="reg_info">This register is defined in HDL source file basic_regs.v.</p>
+
+</div>
+
+<div class="info">
+
+Contains information pertaining the variant of the programmable.
+
+</div>
+
+                <table class="bitfields" border="0" cellspacing="0" cellpadding="0">
+                  <tr class="header"><td class="bits">Bits</td><td>Name</td></tr>
+                
+            <tr  valign="top">
+              <td class="bits">31..0</td>
+              <td>
+                <p><span class="name"><a name="BASIC_REGS_REGMAP|SLAVE_VARIANT|VARIANT_REG"></a>VARIANT_REG</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p>Returns the variant of the programmable based on the part vendor.
+         MAX10 variants return 0x583033(ASCII for MAX), while the XO3 variant
+         returns 0x584F33(ASCII for XO3)</p>
             
               </td>
             </tr>

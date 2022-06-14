@@ -16,6 +16,7 @@
   // SLAVE_OLDEST_REVISION : 0x8 (basic_regs.v)
   // SLAVE_SCRATCH         : 0xC (basic_regs.v)
   // GIT_HASH_REGISTER     : 0x10 (basic_regs.v)
+  // SLAVE_VARIANT         : 0x14 (basic_regs.v)
 
 //===============================================================================
 // RegTypes
@@ -26,10 +27,12 @@
 //===============================================================================
 
   // Enumerated type BASIC_REGISTERS_VALUES
-  localparam BASIC_REGISTERS_VALUES_SIZE = 3;
+  localparam BASIC_REGISTERS_VALUES_SIZE = 5;
   localparam BOARD_ID_VALUE        = 'h4002;  // BASIC_REGISTERS_VALUES:BOARD_ID_VALUE
+  localparam VARIANT_ID_MAX10      = 'h4D4158;  // BASIC_REGISTERS_VALUES:VARIANT_ID_MAX10
+  localparam VARIANT_ID_XO3        = 'h584F33;  // BASIC_REGISTERS_VALUES:VARIANT_ID_XO3
   localparam OLDEST_CPLD_REVISION  = 'h20110611;  // BASIC_REGISTERS_VALUES:OLDEST_CPLD_REVISION
-  localparam CPLD_REVISION         = 'h21111614;  // BASIC_REGISTERS_VALUES:CPLD_REVISION
+  localparam CPLD_REVISION         = 'h22031611;  // BASIC_REGISTERS_VALUES:CPLD_REVISION
 
   // SLAVE_SIGNATURE Register (from basic_regs.v)
   localparam SLAVE_SIGNATURE = 'h0; // Register Offset
@@ -73,3 +76,11 @@
   localparam GIT_CLEAN_SIZE =  4;  //GIT_HASH_REGISTER:GIT_CLEAN
   localparam GIT_CLEAN_MSB  = 31;  //GIT_HASH_REGISTER:GIT_CLEAN
   localparam GIT_CLEAN      = 28;  //GIT_HASH_REGISTER:GIT_CLEAN
+
+  // SLAVE_VARIANT Register (from basic_regs.v)
+  localparam SLAVE_VARIANT = 'h14; // Register Offset
+  localparam SLAVE_VARIANT_SIZE = 32;  // register width in bits
+  localparam SLAVE_VARIANT_MASK = 32'hFFFFFFFF;
+  localparam VARIANT_REG_SIZE = 32;  //SLAVE_VARIANT:VARIANT_REG
+  localparam VARIANT_REG_MSB  = 31;  //SLAVE_VARIANT:VARIANT_REG
+  localparam VARIANT_REG      =  0;  //SLAVE_VARIANT:VARIANT_REG

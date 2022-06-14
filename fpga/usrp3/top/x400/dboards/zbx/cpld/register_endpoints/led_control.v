@@ -163,10 +163,17 @@ module led_control #(
     ch1_rx_led  <= ram_ch1_dob[CH1_TRX1_LED_EN + 0];
   end
 
+`ifdef VARIANT_XO3
+  localparam RAM_RW_MODE = "B-READ-ONLY" ;
+`else
+  localparam RAM_RW_MODE = "READ-FIRST" ;
+`endif
+
+
   ram_2port #(
     .DWIDTH     (32),
     .AWIDTH     (8),
-    .RW_MODE    ("READ-FIRST"),
+    .RW_MODE    (RAM_RW_MODE),
     .RAM_TYPE   ("AUTOMATIC"),
     .OUT_REG    (0),
     .INIT_FILE  ("")
@@ -188,7 +195,7 @@ module led_control #(
   ram_2port #(
     .DWIDTH     (32),
     .AWIDTH     (8),
-    .RW_MODE    ("READ-FIRST"),
+    .RW_MODE    (RAM_RW_MODE),
     .RAM_TYPE   ("AUTOMATIC"),
     .OUT_REG    (0),
     .INIT_FILE  ("")

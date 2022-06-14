@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BaliProject version="3.2" title="zbx_top_cpld" device="LCMXO3LF-9400C-6BG256I" default_implementation="impl1">
+    <Options/>
+    <Implementation title="impl1" dir="impl1" description="impl1" synthesis="synplify" default_strategy="zbx_cpld_strat">
+        <Options VERILOG_DIRECTIVES="VARIANT_XO3" def_top="zbx_top_cpld" top="zbx_top_cpld"/>
+        <Source name="../zbx_cpld_core.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../zbx_top_cpld.v" type="Verilog" type_short="Verilog">
+            <Options top_module="zbx_top_cpld"/>
+        </Source>
+        <Source name="../../../../../../lib/control/handshake.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../../../../../../lib/control/pulse_synchronizer.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../../../../../../lib/control/ram_2port.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../../../../../../lib/control/reset_sync.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../../../../../../lib/control/synchronizer.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../../../../../../lib/control/synchronizer_impl.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../../../../cpld/reconfig_engine.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../../../ctrlport_byte_deserializer.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../../../../../../lib/rfnoc/utils/ctrlport_splitter.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../../../../../../lib/wb_spi/rtl/verilog/spi_clgen.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../../../../../../lib/wb_spi/rtl/verilog/spi_shift.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../../../../../../lib/wb_spi/rtl/verilog/spi_top.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../../../../cpld/spi_slave.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../../../../cpld/spi_slave_to_ctrlport_master.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../../../../../../lib/rfnoc/utils/ctrlport_window.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../register_endpoints/atr_controller.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../register_endpoints/basic_regs.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../register_endpoints/dsa_control.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../register_endpoints/led_control.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../register_endpoints/lo_control.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../register_endpoints/power_regs.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../register_endpoints/switch_control.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../../../../../../lib/rfnoc/utils/ctrlport_clk_cross.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../../../../../../lib/rfnoc/utils/ctrlport_combiner.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="ip/pll/pll.ipx" type="IPX_Module" type_short="IPX">
+            <Options/>
+        </Source>
+        <Source name="zbx_top_cpld.lpf" type="Logic Preference" type_short="LPF">
+            <Options/>
+        </Source>
+        <Source name="../zbx_top_cpld_gpio.ldc" type="LSE Design Constraints File" type_short="LDC" excluded="TRUE">
+            <Options/>
+        </Source>
+    </Implementation>
+    <Strategy name="zbx_cpld_strat" file="zbx_top_cpld.sty"/>
+</BaliProject>

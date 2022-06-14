@@ -19,7 +19,9 @@ module zbx_top_cpld (
   input  wire MB_SYNTH_SYNC,
 
   //Clk and reset for control registers
+`ifndef VARIANT_XO3
   input  wire CTRL_REG_CLK,
+`endif
   input  wire CTRL_REG_ARST,
 
   //SPI in
@@ -66,13 +68,19 @@ module zbx_top_cpld (
   input  wire TX0_LO1_MUXOUT,
   output wire TX0_LO1_CSB,
   output wire TX0_LO1_SCK,
-  output wire TX0_LO1_SDI,
 
   output wire TX0_LO2_SYNC,
   input  wire TX0_LO2_MUXOUT,
   output wire TX0_LO2_CSB,
   output wire TX0_LO2_SCK,
+
+  // XO3 variant of this programmable drives all SDI lines from a single pin.
+`ifndef VARIANT_XO3
+  output wire TX0_LO1_SDI,
   output wire TX0_LO2_SDI,
+`else
+  output wire RX_TX_LO_SDI,
+`endif
 
   //Tx0 Switch control
   output wire TX0_SW1_SW2_CTRL,
@@ -111,13 +119,16 @@ module zbx_top_cpld (
   input  wire TX1_LO1_MUXOUT,
   output wire TX1_LO1_CSB,
   output wire TX1_LO1_SCK,
-  output wire TX1_LO1_SDI,
 
   output wire TX1_LO2_SYNC,
   input  wire TX1_LO2_MUXOUT,
   output wire TX1_LO2_CSB,
   output wire TX1_LO2_SCK,
+
+`ifndef VARIANT_XO3
+  output wire TX1_LO1_SDI,
   output wire TX1_LO2_SDI,
+`endif
 
   //Tx1 Switch control
   output wire TX1_SW1_SW2_CTRL,
@@ -156,13 +167,16 @@ module zbx_top_cpld (
   input  wire RX0_LO1_MUXOUT,
   output wire RX0_LO1_CSB,
   output wire RX0_LO1_SCK,
-  output wire RX0_LO1_SDI,
 
   output wire RX0_LO2_SYNC,
   input  wire RX0_LO2_MUXOUT,
   output wire RX0_LO2_CSB,
   output wire RX0_LO2_SCK,
+
+`ifndef VARIANT_XO3
+  output wire RX0_LO1_SDI,
   output wire RX0_LO2_SDI,
+`endif
 
   //Rx0 Switch control
   output wire RX0_SW1_A,
@@ -198,13 +212,16 @@ module zbx_top_cpld (
   input  wire RX1_LO1_MUXOUT,
   output wire RX1_LO1_CSB,
   output wire RX1_LO1_SCK,
-  output wire RX1_LO1_SDI,
 
   output wire RX1_LO2_SYNC,
   input  wire RX1_LO2_MUXOUT,
   output wire RX1_LO2_CSB,
   output wire RX1_LO2_SCK,
+
+`ifndef VARIANT_XO3
+  output wire RX1_LO1_SDI,
   output wire RX1_LO2_SDI,
+`endif
 
   //Rx1 Switch Control
   output wire RX1_SW1_A,
@@ -254,6 +271,66 @@ module zbx_top_cpld (
   `include "regmap/spi_regmap_utils.vh"
   `include "regmap/gpio_regmap_utils.vh"
 
+  // Bring pll_ref_clk enable signal to the same clock domain.
+  wire pll_ref_clk_enable_osc, pll_ref_clk_enable_prc;
+  wire pll_ref_clk;
+
+  // Clock used to drive reconfiguration register space.
+  wire config_ref_clk;
+
+
+  // Part-dependent clock generation and gating.
+`ifdef VARIANT_XO3
+
+  // Internal oscillator
+  wire clk_int_osc;
+  defparam OSCH_inst.NOM_FREQ = "66.5";
+  OSCH OSCH_inst (
+    .STDBY    (1'b0), // 0=Enabled, 1=Disabled
+    .OSC      (clk_int_osc),
+    .SEDSTDBY ()
+  );
+
+  wire pll_ref_clk_freerun;
+
+  DCCA pll_clk_buffer (
+    .CLKI (CPLD_REFCLK),
+    .CE   (1'b1),
+    .CLKO (pll_ref_clk_freerun)
+  );
+
+  // Bring pll_ref_clk enable signal to the same clock domain.
+  synchronizer #(
+    .WIDTH             (1),
+    .STAGES            (2),
+    .INITIAL_VAL       (1'b1),
+    .FALSE_PATH_TO_IN  (1)
+  ) pll_ref_clk_enable_sync_i (
+    .clk  (pll_ref_clk_freerun),
+    .rst  (1'b0),
+    .in   (pll_ref_clk_enable_osc),
+    .out  (pll_ref_clk_enable_prc)
+  );
+
+  // PLL configure to output two clocks, both at the same frequency as the source.
+  // One clock is phase-aligned with the reference clock, while the second clock
+  // is shifted by 240 degrees. The shifted clock is used to ease timing on
+  // output signals with tight setup margins.
+  wire pll_ref_clk_adjusted;
+
+  pll pll_ref_clk_pll (
+    .CLKI(pll_ref_clk_freerun),
+    .ENCLKOP(pll_ref_clk_enable_prc),
+    .ENCLKOS(pll_ref_clk_enable_prc),
+    .CLKOP(pll_ref_clk),
+    .CLKOS(pll_ref_clk_adjusted),
+    .LOCK()
+  );
+
+  assign config_ref_clk = clk_int_osc;
+
+`else
+
   // Internal oscillator
   // In the used MAX10 device this oscillator produces a clock anywhere in the
   // range of 55 to 116 MHz. It drives all logic required for identification and
@@ -274,8 +351,6 @@ module zbx_top_cpld (
   );
 
   // Bring pll_ref_clk enable signal to the same clock domain.
-  wire pll_ref_clk_enable_osc, pll_ref_clk_enable_prc;
-
   synchronizer #(
     .WIDTH             (1),
     .STAGES            (2),
@@ -290,12 +365,16 @@ module zbx_top_cpld (
 
   // Add clock buffer with option to enable PLL reference clock during SPLL
   // reconfiguration
-  wire pll_ref_clk;
   clkctrl pll_ref_clk_ctrl_i (
     .inclk  (CPLD_REFCLK),
     .ena    (pll_ref_clk_enable_prc),
     .outclk (pll_ref_clk)
   );
+
+  assign config_ref_clk = CTRL_REG_CLK;
+
+`endif
+
 
   // Generate synchronous resets
   wire ctrlport_rst_osc;
@@ -315,7 +394,7 @@ module zbx_top_cpld (
   );
 
   reset_sync reset_sync_crc_i (
-    .clk        (CTRL_REG_CLK),
+    .clk        (config_ref_clk),
     .reset_in   (CTRL_REG_ARST),
     .reset_out  (ctrlport_rst_crc)
   );
@@ -375,6 +454,11 @@ module zbx_top_cpld (
 
   ctrlport_byte_deserializer ctrlport_byte_deserializer_i (
     .ctrlport_clk              (pll_ref_clk),
+  `ifdef VARIANT_XO3
+    .ctrlport_clk_adjusted   (pll_ref_clk_adjusted),
+  `else
+    .ctrlport_clk_adjusted   (pll_ref_clk),
+  `endif
     .ctrlport_rst              (ctrlport_rst_prc),
     .m_ctrlport_req_wr         (gpio_ctrlport_req_wr),
     .m_ctrlport_req_rd         (gpio_ctrlport_req_rd),
@@ -420,7 +504,7 @@ module zbx_top_cpld (
   // Requests targeting the reconfig engine are filtered because the reconfig
   // engine clock is disabled when unused.
   //
-  //                       X--------> RECONFIG (CTRL_REG_CLK)
+  //                       X--------> RECONFIG (config_ref_clk)
   //                       |
   //                       F -------> POWER_REGS_REGMAP (clk_int_osc)
   //                       |/
@@ -840,7 +924,7 @@ module zbx_top_cpld (
     .s_ctrlport_resp_ack        (reconfig_ctrlport_resp_ack_filtered_osc),
     .s_ctrlport_resp_status     (reconfig_ctrlport_resp_status_filtered_osc),
     .s_ctrlport_resp_data       (reconfig_ctrlport_resp_data_filtered_osc),
-    .m_ctrlport_clk             (CTRL_REG_CLK),
+    .m_ctrlport_clk             (config_ref_clk),
     .m_ctrlport_req_wr          (reconfig_ctrlport_req_wr_crc),
     .m_ctrlport_req_rd          (reconfig_ctrlport_req_rd_crc),
     .m_ctrlport_req_addr        (reconfig_ctrlport_req_addr_crc),
@@ -1158,8 +1242,9 @@ module zbx_top_cpld (
 
   assign ctrlport_rst_crc_n = ~ctrlport_rst_crc;
 
+`ifndef VARIANT_XO3
   on_chip_flash flash_i (
-    .clock                    (CTRL_REG_CLK),
+    .clock                    (config_ref_clk),
     .avmm_csr_addr            (csr_addr),
     .avmm_csr_read            (csr_read),
     .avmm_csr_writedata       (csr_writedata),
@@ -1175,13 +1260,14 @@ module zbx_top_cpld (
     .avmm_data_burstcount     (4'b0001),
     .reset_n                  (ctrlport_rst_crc_n)
   );
+`endif
 
   reconfig_engine #(
     .BASE_ADDRESS   (RECONFIG),
     .NUM_ADDRESSES  (RECONFIG_SIZE),
     .MEM_INIT       (1)
   ) reconfig_engine_i (
-    .ctrlport_clk            (CTRL_REG_CLK),
+    .ctrlport_clk            (config_ref_clk),
     .ctrlport_rst            (ctrlport_rst_crc),
     .s_ctrlport_req_wr       (reconfig_ctrlport_req_wr_crc),
     .s_ctrlport_req_rd       (reconfig_ctrlport_req_rd_crc),
@@ -1208,45 +1294,52 @@ module zbx_top_cpld (
   // LO SPI Break-Out
   /////////////////////////////////////////////////////////////////////////////
 
-  assign TX0_LO1_SCK      = lo_sclk;
+  // SDI breakout
+`ifdef VARIANT_XO3
+  assign RX_TX_LO_SDI     = lo_mosi;
+`else
   assign TX0_LO1_SDI      = lo_mosi;
+  assign TX0_LO2_SDI      = lo_mosi;
+  assign TX1_LO1_SDI      = lo_mosi;
+  assign TX1_LO2_SDI      = lo_mosi;
+  assign RX0_LO1_SDI      = lo_mosi;
+  assign RX0_LO2_SDI      = lo_mosi;
+  assign RX1_LO1_SDI      = lo_mosi;
+  assign RX1_LO2_SDI      = lo_mosi;
+`endif
+
+  assign TX0_LO1_SCK      = lo_sclk;
   assign TX0_LO1_CSB      = lo_csb[TX0_LO1];
   assign lo_miso[TX0_LO1] = TX0_LO1_MUXOUT;
 
   assign TX0_LO2_SCK      = lo_sclk;
-  assign TX0_LO2_SDI      = lo_mosi;
   assign TX0_LO2_CSB      = lo_csb[TX0_LO2];
   assign lo_miso[TX0_LO2] = TX0_LO2_MUXOUT;
 
   assign TX1_LO1_SCK      = lo_sclk;
-  assign TX1_LO1_SDI      = lo_mosi;
   assign TX1_LO1_CSB      = lo_csb[TX1_LO1];
   assign lo_miso[TX1_LO1] = TX1_LO1_MUXOUT;
 
   assign TX1_LO2_SCK      = lo_sclk;
-  assign TX1_LO2_SDI      = lo_mosi;
   assign TX1_LO2_CSB      = lo_csb[TX1_LO2];
   assign lo_miso[TX1_LO2] = TX1_LO2_MUXOUT;
 
   assign RX0_LO1_SCK      = lo_sclk;
-  assign RX0_LO1_SDI      = lo_mosi;
   assign RX0_LO1_CSB      = lo_csb[RX0_LO1];
   assign lo_miso[RX0_LO1] = RX0_LO1_MUXOUT;
 
   assign RX0_LO2_SCK      = lo_sclk;
-  assign RX0_LO2_SDI      = lo_mosi;
   assign RX0_LO2_CSB      = lo_csb[RX0_LO2];
   assign lo_miso[RX0_LO2] = RX0_LO2_MUXOUT;
 
   assign RX1_LO1_SCK      = lo_sclk;
-  assign RX1_LO1_SDI      = lo_mosi;
   assign RX1_LO1_CSB      = lo_csb[RX1_LO1];
   assign lo_miso[RX1_LO1] = RX1_LO1_MUXOUT;
 
   assign RX1_LO2_SCK      = lo_sclk;
-  assign RX1_LO2_SDI      = lo_mosi;
   assign RX1_LO2_CSB      = lo_csb[RX1_LO2];
   assign lo_miso[RX1_LO2] = RX1_LO2_MUXOUT;
+
 
 endmodule
 
