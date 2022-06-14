@@ -23,6 +23,7 @@ parameters:
 jobs:
 - job: uhd_devtest_${{ parameters.suiteName }}_${{ parameters.testOS }}
   displayName:  uhd devtest ${{ parameters.suiteName }} ${{ parameters.testOS }}
+  timeoutInMinutes: 90
   pool:
     name: de-dre-lab
     demands:
