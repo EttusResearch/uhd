@@ -1,0 +1,26 @@
+version: '3.3'
+services:
+  coordinator:
+    image: "labgrid-coordinator"
+    volumes:
+      - "./crossbar:/home/root/crossbar:Z"
+    tty: true
+    network_mode: "host"
+    restart: unless-stopped
+    command: bash -c "cp /home/root/crossbar/places.yaml /opt/crossbar/places.yaml &&
+      crossbar start --config /opt/labgrid/.crossbar/config.yaml"
+  exporter:
+    image: "labgrid-exporter"
+    volumes:
+      - "./exporter-conf:/opt/conf:Z"
+      - "/run/udev:/run/udev:ro"
+      - "/dev:/dev"
+    depends_on:
+      - coordinator
+    tty: true
+    network_mode: "host"
+    restart: unless-stopped
+    stdin_open: true
+    privileged: true
+    command: bash -c "set -e &&
+      /opt/wait-for-it/wait-for-it.sh 127.0.0.1:20408 -- labgrid-exporter /opt/conf/exporter.yaml"
