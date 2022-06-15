@@ -96,12 +96,12 @@ jobs:
       parameters:
         uhdSrcDir: $(Build.SourcesDirectory)
         uhdBuildDir: $(Build.BinariesDirectory)\\uhddev\\build
-        uhdImageDir: $(Build.BinariesDirectory)\\uhd-images
         uhdReleaseBinaries: ${{ parameters.release_binaries }}
         cmakeCompiler: $(cmakeCompiler)
         cmakeArch: $(cmakeArch)
         vsArch: $(vsArch)
         vsYear: $(vsYear)
+        uhdGenerateTestBinaries: true
 
   - ${{ if eq(parameters.toolset, 'make_custom_boost_version') }}:
     - template: steps-build-uhd-make.yml
