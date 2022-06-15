@@ -269,9 +269,9 @@ proc create_root_design { parentCell } {
    CONFIG.Coefficient_Fractional_Bits {0} \
    CONFIG.Coefficient_Sets {1} \
    CONFIG.Coefficient_Sign {Signed} \
-   CONFIG.Coefficient_Structure {Inferred} \
+   CONFIG.Coefficient_Structure {Non_Symmetric} \
    CONFIG.Coefficient_Width {18} \
-   CONFIG.ColumnConfig {14} \
+   CONFIG.ColumnConfig {27} \
    CONFIG.Decimation_Rate {1} \
    CONFIG.Filter_Architecture {Systolic_Multiply_Accumulate} \
    CONFIG.Filter_Type {Interpolation} \

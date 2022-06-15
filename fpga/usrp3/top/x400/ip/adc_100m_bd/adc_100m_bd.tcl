@@ -344,9 +344,9 @@ proc create_root_design { parentCell } {
    CONFIG.Coefficient_Fractional_Bits {0} \
    CONFIG.Coefficient_Sets {1} \
    CONFIG.Coefficient_Sign {Signed} \
-   CONFIG.Coefficient_Structure {Non_Symmetric} \
+   CONFIG.Coefficient_Structure {Inferred} \
    CONFIG.Coefficient_Width {18} \
-   CONFIG.ColumnConfig {27} \
+   CONFIG.ColumnConfig {14} \
    CONFIG.Data_Fractional_Bits {0} \
    CONFIG.Data_Width {16} \
    CONFIG.Decimation_Rate {3} \
