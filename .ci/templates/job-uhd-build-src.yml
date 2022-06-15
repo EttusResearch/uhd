@@ -83,6 +83,7 @@ jobs:
       parameters:
         uhdSrcDir: $(Build.SourcesDirectory)
         uhdBuildDir: $(Build.BinariesDirectory)/uhddev/build
+        uhdGenerateTestBinaries: true
 
   - ${{ if eq(parameters.toolset, 'ninja') }}:
     - template: steps-build-uhd-ninja.yml
