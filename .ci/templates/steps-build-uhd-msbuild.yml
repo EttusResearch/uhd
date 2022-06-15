@@ -3,8 +3,6 @@ parameters:
   type: string
 - name: uhdBuildDir
   type: string
-- name: uhdImageDir
-  type: string
 - name: uhdReleaseBinaries
 - name: cmakeCompiler
   type: string
@@ -14,24 +12,11 @@ parameters:
   type: string
 - name: vsYear
   type: string
+- name: uhdGenerateTestBinaries
+  type: boolean
+  default: false
 
 steps:
-- script: |
-    mkdir ${{ parameters.uhdBuildDir }}
-    cd ${{ parameters.uhdBuildDir }}
-    cmake ${{ parameters.uhdSrcDir }}/host ^
-      -DVCPKG_TARGET_TRIPLET=uhd-$(vsArch)-windows-static-md ^
-      -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALL_DIR%/scripts/buildsystems/vcpkg.cmake
-    mkdir ${{ parameters.uhdImageDir }}
-    python ${{ parameters.uhdBuildDir }}/utils/uhd_images_downloader.py -i ${{ parameters.uhdImageDir }}
-  displayName: Download uhd-images
-  timeoutInMinutes: 30
-
-- script: |
-    cd $(Pipeline.Workspace)
-    rmdir ${{ parameters.uhdBuildDir }} /s /q
-  displayName: Clean build directory
-
 - script: |
     mkdir ${{ parameters.uhdBuildDir }}
     cd ${{ parameters.uhdBuildDir }}
@@ -39,11 +24,13 @@ steps:
       echo "Setting Release Mode"
       SET UHD_CI_CMAKE_OPTIONS="-DUHD_RELEASE_MODE=release %UHD_CI_CMAKE_OPTIONS%"
     )
+    if "${{ parameters.uhdGenerateTestBinaries}}" == "True" (
+      echo "Setting CMAKE_INSTALL_PREFIX to ${{ parameters.uhdBuildDir }}-installed"
+      SET UHD_CI_CMAKE_OPTIONS="-DCMAKE_INSTALL_PREFIX=${{ parameters.uhdBuildDir }}-installed %UHD_CI_CMAKE_OPTIONS%"
+    )
     cmake ${{ parameters.uhdSrcDir }}/host ^
       -DVCPKG_TARGET_TRIPLET=uhd-$(vsArch)-windows-static-md ^
       -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALL_DIR%/scripts/buildsystems/vcpkg.cmake ^
-      -DUHD_IMAGES_SRC_DIR="${{ parameters.uhdImageDir }}" ^
-      -DUHD_IMAGES_DIR="C:\\Program Files (x86)\\UHD\\share\\uhd\\images,C:\\Program Files\\UHD\\share\\uhd\\images" ^
       -DSPECIFY_MSVC_VERSION=ON ^
       -DENABLE_DOXYGEN_SHORTNAMES=ON ^
       %UHD_CI_CMAKE_OPTIONS% ^
@@ -61,3 +48,33 @@ steps:
     ctest --no-compress-output --output-on-failure -T test
   continueOnError: true
   displayName: ctest msbuild UHD
+
+- script: |
+    cd ${{ parameters.uhdBuildDir }}
+    call "C:\Program Files (x86)\Microsoft Visual Studio\$(vsYear)\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
+    msbuild.exe INSTALL.vcxproj /p:configuration=release
+  displayName: Install uhd to uhdBuildDir-installed
+  condition: and(succeeded(), ${{ parameters.uhdGenerateTestBinaries }})
+
+# init_usrp is an example for how to write third-party apps using CMake that
+# link against UHD. This will test the UHDConfig.cmake (and related) CMake
+# files, as well as the example. We can only do this if UHD was previously
+# installed.
+# We need to match the install prefix with the previous step in order to find
+# UHDConfig.cmake.
+- script: |
+    SET EXAMPLE_BUILD_DIR="${{ parameters.uhdBuildDir }}/build_init_usrp"
+    SET EXAMPLE_SRC_DIR="${{ parameters.uhdSrcDir }}/host/examples/init_usrp"
+    mkdir -p %EXAMPLE_BUILD_DIR%
+    cd %EXAMPLE_BUILD_DIR%
+    cmake ^
+      %EXAMPLE_SRC_DIR% ^
+      -DVCPKG_TARGET_TRIPLET=uhd-$(vsArch)-windows-static-md ^
+      -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALL_DIR%/scripts/buildsystems/vcpkg.cmake ^
+      -DCMAKE_INSTALL_PREFIX=${{ parameters.uhdBuildDir }}-installed ^
+      -DCMAKE_PREFIX_PATH=${{ parameters.uhdBuildDir }}-installed ^
+      -G "$(cmakeCompiler)" -A $(cmakeArch)
+    call "C:\Program Files (x86)\Microsoft Visual Studio\$(vsYear)\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
+    msbuild.exe ALL_BUILD.vcxproj /p:configuration=release
+  displayName: Build init_usrp
+  condition: and(succeeded(), ${{ parameters.uhdGenerateTestBinaries }})
