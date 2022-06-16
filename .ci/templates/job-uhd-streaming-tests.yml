@@ -138,6 +138,18 @@ jobs:
       $(Build.BinariesDirectory)/uhddev/build-installed/bin/uhd_images_downloader -t b210 -t fpga
     displayName: Download B210 images
     condition: and(succeeded(), eq(variables.dutType, 'B210'))
+
+  - script: |
+      export UHD_IMAGES_DIR=$(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images
+      $(Build.BinariesDirectory)/uhddev/build-installed/bin/uhd_images_downloader -t x310
+      openFPGALoader -c digilent --ftdi-serial $(jtagSerial) --ftdi-channel 0 $UHD_IMAGES_DIR/usrp_x310_fpga_$(dutFPGA).bit
+      EXITCODE=$?
+      echo "Waiting for device to boot"
+      sleep 30
+      exit $EXITCODE
+    displayName: Download and update X310 fpga
+    condition: and(succeeded(), eq(variables.dutType, 'X310'))
+
   - script: |
       ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ethtool -A sfp0 tx on"
