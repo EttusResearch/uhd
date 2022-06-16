@@ -305,6 +305,7 @@ module ctrlport_endpoint_tb;
     };
     op_word = '{
       default      : '0,
+      status       : CTRL_STS_OKAY,
       op_code      : ctrl_opcode_t'(opcode),
       byte_enable  : byte_en,
       address      : addr

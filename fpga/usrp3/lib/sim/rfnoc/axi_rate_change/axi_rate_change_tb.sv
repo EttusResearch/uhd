@@ -153,7 +153,7 @@ module axi_rate_change_tb();
 
         while (words_left_to_send > 0) begin
           // Setup header
-          send_header = '{default:0};
+          send_header = '0;
           send_header.has_time = 1;
           send_header.timestamp = longint'(timestamp);
           send_header.eob = (words_left_to_send <= spp);

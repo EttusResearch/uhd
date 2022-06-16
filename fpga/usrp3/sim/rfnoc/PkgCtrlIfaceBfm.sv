@@ -61,8 +61,9 @@ package PkgCtrlIfaceBfm;
         default  : 0
       };
       ctrl_packet.op_word = '{
+        status      : CTRL_STS_OKAY,
         op_code     : CTRL_OP_READ,
-        byte_enable : ~0,
+        byte_enable : '1,
         address     : addr,
         default     : 0
       };
@@ -101,8 +102,9 @@ package PkgCtrlIfaceBfm;
         default  : 0
       };
       ctrl_packet.op_word = '{
+        status      : CTRL_STS_OKAY,
         op_code     : CTRL_OP_WRITE,
-        byte_enable : ~0,
+        byte_enable : '1,
         address     : addr,
         default     : 0
       };
