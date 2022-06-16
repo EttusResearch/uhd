@@ -42,6 +42,7 @@ jobs:
         dutNameId: ''
         dutNumRecvFrames: ''
         dutNumSendFrames: ''
+        jtagSerial: '251635138E94'
       # beauty-X410-0 X4_200:
       #   dutName: 'beauty-X410-0'
       #   dutType: 'x4xx'
