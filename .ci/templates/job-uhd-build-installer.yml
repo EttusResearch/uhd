@@ -68,6 +68,7 @@ jobs:
     - template: steps-build-uhd-installer-fedora-rpm.yml
       parameters:
         uhdSrcDir: $(Build.SourcesDirectory)
+        uhdBuildDir: $(Build.BinariesDirectory)/uhddev/build
         uhdInstallerDir: $(Build.BinariesDirectory)/uhddev-installer
         fedoraReleaseName: $(fedoraReleaseName)
         releaseBinaries: ${{ parameters.releaseBinaries }}
