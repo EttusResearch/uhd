@@ -78,21 +78,14 @@ jobs:
         uhdSrcDir: $(Build.SourcesDirectory)
         uhdInstallerDir: $(Build.BinariesDirectory)/uhddev-installer
         ubuntuReleaseName: $(ubuntuReleaseName)
-  - ${{ if and(ne(parameters.toolset, 'ubuntu_deb'), ne(parameters.toolset, 'fedora_rpm')) }}:
-    - download: current
-      artifact: uhddev-$(buildOSName)-${{ parameters.toolset }}
-      displayName: Download pipeline artifact uhddev-$(buildOSName)-${{ parameters.toolset }}
-    - task: ExtractFiles@1
-      inputs:
-        archiveFilePatterns: $(Pipeline.Workspace)/uhddev-$(buildOSName)-${{ parameters.toolset }}/uhddev-$(buildOSName)-${{ parameters.toolset }}.tar.gz
-        destinationFolder: $(Build.BinariesDirectory)
-        cleanDestinationFolder: true
   - ${{ if and(eq(parameters.toolset, 'msbuild'), eq(parameters.installer, 'nsis')) }}:
     - template: steps-build-uhd-installer-msbuild-nsis.yml
       parameters:
         uhdSrcDir: $(Build.SourcesDirectory)
         uhdBuildDir: $(Build.BinariesDirectory)\\uhddev\\build
         uhdInstallerDir: $(Build.BinariesDirectory)\\uhddev-installer
+        uhdImageDir: $(Build.BinariesDirectory)\\uhd-images
+        uhdReleaseBinaries: ${{ parameters.releaseBinaries }}
         cmakeCompiler: $(cmakeCompiler)
         cmakeArch: $(cmakeArch)
         vsArch: $(vsArch)
