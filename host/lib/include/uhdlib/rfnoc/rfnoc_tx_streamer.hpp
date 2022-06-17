@@ -7,14 +7,10 @@
 #pragma once
 
 #include <uhd/rfnoc/node.hpp>
-#include <uhd/rfnoc/property.hpp>
-#include <uhd/stream.hpp>
 #include <uhdlib/rfnoc/chdr_tx_data_xport.hpp>
 #include <uhdlib/rfnoc/tx_async_msg_queue.hpp>
 #include <uhdlib/transport/tx_streamer_impl.hpp>
-#include <functional>
 #include <string>
-#include <vector>
 
 namespace uhd { namespace rfnoc {
 
