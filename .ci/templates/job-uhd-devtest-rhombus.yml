@@ -114,3 +114,16 @@ jobs:
           devtestPattern: 'n3x0'
           devSDImage: gnuradio-image-ni-sulfur-rev11-mender.sdimg.bz2
           devLabgridConfig: .ci/templates/tests/rhombus-labgrid/device-configs/rhombus-n310-0.yml
+        rhombus-n321-0:
+          devType: 'n3xx'
+          devModel: 'n320'
+          devName: rhombus-n321-0
+          devSerial: '3166646'
+          devHostname: 'ni-n3xx-3166646'
+          devBus: 'ip'
+          devAddr: '192.168.20.8'
+          sfpAddrs: '192.168.10.8,192.168.20.8'
+          devFpga: 'HG,XG'
+          devtestPattern: 'n3x0'
+          devSDImage: gnuradio-image-ni-sulfur-rev11-mender.sdimg.bz2
+          devLabgridConfig: .ci/templates/tests/rhombus-labgrid/device-configs/rhombus-n321-0.yml
