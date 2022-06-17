@@ -399,19 +399,28 @@ void set_reg(uint16_t addr, uint32_t val)
     }
 }
 
+<%
+    ro_regs = set()
+    for reg in filter(lambda reg: reg.is_readonly(), filter(all_addr_filter, regs)):
+        for index in range(reg.get_array_len() if reg.is_array else 1):
+            ro_regs.add(reg.get_addr() + index * reg.get_addr_step_size())
+
+    rw_regs = set()
+    for reg in filter(lambda reg: not reg.is_readonly(), filter(all_addr_filter, regs)):
+        for index in range(reg.get_array_len() if reg.is_array else 1):
+            rw_regs.add(reg.get_addr() + index * reg.get_addr_step_size())
+%>
+
 template<typename T> std::set<T> get_all_addrs(bool include_ro = false)
 {
     std::set<T> addrs;
-    % for reg in filter(all_addr_filter, regs):
-        % if reg.is_readonly():
     if (include_ro) {
-        % else:
-    {
-        % endif
-        % for index in range(reg.get_array_len() if reg.is_array else 1):
-        addrs.insert(${reg.get_addr() + index * reg.get_addr_step_size()});
-        % endfor
+    % for reg in sorted(ro_regs):
+        addrs.insert(${reg});
+    % endfor
     }
+    % for reg in sorted(rw_regs):
+    addrs.insert(${reg});
     % endfor
     return addrs;
 }
