@@ -45,6 +45,7 @@ def set_sfp_addrs(mgmt_addr, sfp_addrs):
     with Connection(host=mgmt_addr,user='root',connect_kwargs={"password":"", "timeout":120, "banner_timeout":120, "auth_timeout":120}) as dut:
         for idx, sfp_addr in enumerate(sfp_addrs):
             dut.run(f"ip link set sfp{idx} down")
+            dut.run(f"ip addr flush dev sfp{idx}")
             dut.run(f"ip addr add {sfp_addr}/24 dev sfp{idx}")
             dut.run(f"ip link set sfp{idx} up")
     time.sleep(30)
