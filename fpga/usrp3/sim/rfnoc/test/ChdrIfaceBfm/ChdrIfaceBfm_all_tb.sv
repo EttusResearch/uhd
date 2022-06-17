@@ -1,5 +1,5 @@
 //
-// Copyright 2020 Ettus Research, A National Instruments Company
+// Copyright 2022 Ettus Research, A National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -44,10 +44,19 @@ module ChdrIfaceBfm_all_tb();
 
   genvar i;
   for (i = 0; i < NUM_TESTS; i++) begin : gen_test_config
+    // There is an internal bug in Vivado 2021.1 that prevents all the tests to
+    // run at the same time. Therefore, we are splitting the ADV tests and
+    // running them separately.
     ChdrIfaceBfm_tb #(
       .CHDR_W (tests[i].CHDR_W),
-      .ITEM_W (tests[i].ITEM_W)
+      .ITEM_W (tests[i].ITEM_W),
+      .ADV    (0)
     ) ChdrIfaceBfm_tb_i ();
+    ChdrIfaceBfm_tb #(
+      .CHDR_W (tests[i].CHDR_W),
+      .ITEM_W (tests[i].ITEM_W),
+      .ADV    (1)
+    ) ChdrIfaceBfm_tb_adv_i ();
   end : gen_test_config
 
 endmodule : ChdrIfaceBfm_all_tb

@@ -1,5 +1,5 @@
 //
-// Copyright 2020 Ettus Research, A National Instruments Company
+// Copyright 2022 Ettus Research, A National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -11,7 +11,8 @@
 module ChdrIfaceBfm_tb #(
   parameter int CHDR_W   = 64,
   parameter int ITEM_W   = 32,
-  parameter int SPP      = 64
+  parameter int SPP      = 64,
+  parameter bit ADV      = 0
 );
 
   `include "test_exec.svh"
@@ -75,8 +76,8 @@ module ChdrIfaceBfm_tb #(
     packet_info_t pkt_info;
   } packet_t;
 
-  typedef enum int { 
-    TEST_RECV, TEST_RECV_ADV, TEST_NUM_ITEMS, TEST_EOB, TEST_EOV 
+  typedef enum int {
+    TEST_RECV, TEST_RECV_ADV, TEST_NUM_ITEMS, TEST_EOB, TEST_EOV
   } test_variant_t;
 
 
@@ -87,7 +88,7 @@ module ChdrIfaceBfm_tb #(
   // Rand#(WIDTH)::rand_logic() returns a WIDTH-bit random number. We avoid
   // std::randomize() due to license requirements and limited tool support.
   class Rand #(WIDTH = 32);
-    
+
     static function logic [WIDTH-1:0] rand_logic();
       logic [WIDTH-1:0] result;
       int num_rand32 = (WIDTH + 31) / 32;
@@ -154,7 +155,7 @@ module ChdrIfaceBfm_tb #(
     // Generate a random packet
     send_pkt = rand_pkt(0, 0);
     if (VERBOSE) begin
-      $display("test_send:  data_bytes = %04d, num_mdata = %02d, pkt_info = %p", 
+      $display("test_send:  data_bytes = %04d, num_mdata = %02d, pkt_info = %p",
         send_pkt.data_bytes, send_pkt.metadata.size(), send_pkt.pkt_info);
     end
 
@@ -184,7 +185,7 @@ module ChdrIfaceBfm_tb #(
     // Generate a random packet
     send_pkt = rand_pkt(0, 1);
     if (VERBOSE) begin
-      $display("test_send_items:  data_bytes = %04d, num_mdata = %02d, pkt_info = %p", 
+      $display("test_send_items:  data_bytes = %04d, num_mdata = %02d, pkt_info = %p",
         send_pkt.data_bytes, send_pkt.metadata.size(), send_pkt.pkt_info);
     end
 
@@ -209,7 +210,7 @@ module ChdrIfaceBfm_tb #(
     // Generate a random packet
     send_pkt = rand_pkt(1, 0);
     if (VERBOSE) begin
-      $display("test_send_packets:  data_bytes = %04d, num_mdata = %02d, pkt_info = %p", 
+      $display("test_send_packets:  data_bytes = %04d, num_mdata = %02d, pkt_info = %p",
         send_pkt.data_bytes, send_pkt.metadata.size(), send_pkt.pkt_info);
     end
 
@@ -248,9 +249,9 @@ module ChdrIfaceBfm_tb #(
 
       // Check the data length of the received packet
       `ASSERT_ERROR(
-        exp_byte_length == recv_pkt.data_bytes, 
+        exp_byte_length == recv_pkt.data_bytes,
         $sformatf(
-          "Length of packet %0d didn't match (received %0d, expected %0d)", 
+          "Length of packet %0d didn't match (received %0d, expected %0d)",
           pkt_count, recv_pkt.data_bytes, exp_byte_length
         )
       );
@@ -275,7 +276,7 @@ module ChdrIfaceBfm_tb #(
       if (pkt_count < num_packets-1) begin
         // Not the last packet
         `ASSERT_ERROR(
-          pkt_info == recv_pkt.pkt_info, 
+          pkt_info == recv_pkt.pkt_info,
           $sformatf("Packet info did not match on packet %0d", pkt_count)
         );
       end else begin
@@ -283,7 +284,7 @@ module ChdrIfaceBfm_tb #(
         pkt_info.eob = send_pkt.pkt_info.eob;
         pkt_info.eov = send_pkt.pkt_info.eov;
         `ASSERT_ERROR(
-          pkt_info == recv_pkt.pkt_info, 
+          pkt_info == recv_pkt.pkt_info,
           $sformatf("Packet info did not match on packet %0d (last packet)", pkt_count)
         );
       end
@@ -307,7 +308,7 @@ module ChdrIfaceBfm_tb #(
     // Generate a random packet
     send_pkt = rand_pkt(1, 1);
     if (VERBOSE) begin
-      $display("test_send_packets_items:  data_bytes = %04d, num_mdata = %02d, pkt_info = %p", 
+      $display("test_send_packets_items:  data_bytes = %04d, num_mdata = %02d, pkt_info = %p",
         send_pkt.data_bytes, send_pkt.metadata.size(), send_pkt.pkt_info);
     end
 
@@ -349,9 +350,9 @@ module ChdrIfaceBfm_tb #(
 
       // Check the data length of the received packet
       `ASSERT_ERROR(
-        exp_byte_length == recv_pkt.data_bytes, 
+        exp_byte_length == recv_pkt.data_bytes,
         $sformatf(
-          "Length of packet %0d didn't match (received %0d, expected %0d)", 
+          "Length of packet %0d didn't match (received %0d, expected %0d)",
           pkt_count, recv_pkt.data_bytes, exp_byte_length
         )
       );
@@ -376,7 +377,7 @@ module ChdrIfaceBfm_tb #(
       if (pkt_count < num_packets-1) begin
         // Not the last packet
         `ASSERT_ERROR(
-          pkt_info == recv_pkt.pkt_info, 
+          pkt_info == recv_pkt.pkt_info,
           $sformatf("Packet info did not match on packet %0d", pkt_count)
         );
       end else begin
@@ -384,7 +385,7 @@ module ChdrIfaceBfm_tb #(
         pkt_info.eob = send_pkt.pkt_info.eob;
         pkt_info.eov = send_pkt.pkt_info.eov;
         `ASSERT_ERROR(
-          pkt_info == recv_pkt.pkt_info, 
+          pkt_info == recv_pkt.pkt_info,
           $sformatf("Packet info did not match on packet %0d (last packet)", pkt_count)
         );
       end
@@ -406,7 +407,7 @@ module ChdrIfaceBfm_tb #(
     // Generate a random packet
     send_pkt = rand_pkt(1, 1);
     if (VERBOSE) begin
-      $display("test_recv_packets_items:  data_bytes = %04d, num_mdata = %02d, pkt_info = %p", 
+      $display("test_recv_packets_items:  data_bytes = %04d, num_mdata = %02d, pkt_info = %p",
         send_pkt.data_bytes, send_pkt.metadata.size(), send_pkt.pkt_info);
     end
 
@@ -449,7 +450,7 @@ module ChdrIfaceBfm_tb #(
     // Generate a random packet
     send_pkt = rand_pkt(1, 1);
     if (VERBOSE) begin
-      $display("test_recv_packets_items_adv:  data_bytes = %04d, num_mdata = %02d, pkt_info = %p", 
+      $display("test_recv_packets_items_adv:  data_bytes = %04d, num_mdata = %02d, pkt_info = %p",
         send_pkt.data_bytes, send_pkt.metadata.size(), send_pkt.pkt_info);
     end
 
@@ -518,49 +519,59 @@ module ChdrIfaceBfm_tb #(
     // Test Sequences
     //-------------------------------------------------------------------------
 
-    test.start_test("Test send() / recv()", 10ms);
-    for (int i = 0; i < 1000; i++) test_send(TEST_RECV);
-    test.end_test();
+    // There is an internal bug in Vivado 2021.1 that prevents all of these
+    // tests to run at the same time. Therefore, we are splitting the *_adv
+    // tests and running them separately in the *all_tb file.
+    if (ADV) begin
+      test.start_test("Test send_packets_items() / recv_packets_items_adv(num_items)", 10ms);
+      for (int i = 0; i < 1000; i++) test_recv_packets_items_adv(TEST_NUM_ITEMS);
+      test.end_test();
 
-    test.start_test("Test send() / recv_adv()", 10ms);
-    for (int i = 0; i < 1000; i++) test_send(TEST_RECV_ADV);
-    test.end_test();
+      test.start_test("Test send_packets_items() / recv_packets_items_adv(num_items)", 10ms);
+      for (int i = 0; i < 1000; i++) test_recv_packets_items_adv(TEST_NUM_ITEMS);
+      test.end_test();
 
-    test.start_test("Test send_items() / recv_items_adv()", 10ms);
-    for (int i = 0; i < 1000; i++) test_send_items();
-    test.end_test();
+      test.start_test("Test send_packets_items() / recv_packets_items_adv(eob)", 10ms);
+      for (int i = 0; i < 1000; i++) test_recv_packets_items_adv(TEST_EOB);
+      test.end_test();
 
-    test.start_test("Test send_packets() / recv_adv()", 10ms);
-    for (int i = 0; i < 1000; i++) test_send_packets();
-    test.end_test();
+      test.start_test("Test send_packets_items() / recv_packets_items_adv(eov)", 10ms);
+      for (int i = 0; i < 1000; i++) test_recv_packets_items_adv(TEST_EOV);
+      test.end_test();
 
-    test.start_test("Test send_packets_items() / recv_items_adv()", 10ms);
-    for (int i = 0; i < 1000; i++) test_send_packets_items();
-    test.end_test();
+    end else begin
+      test.start_test("Test send() / recv()", 10ms);
+      for (int i = 0; i < 1000; i++) test_send(TEST_RECV);
+      test.end_test();
 
-    test.start_test("Test send_packets_items() / recv_packets_items(num_items)", 10ms);
-    for (int i = 0; i < 1000; i++) test_recv_packets_items(TEST_NUM_ITEMS);
-    test.end_test();
-    
-    test.start_test("Test send_packets_items() / recv_packets_items(eob)", 10ms);
-    for (int i = 0; i < 1000; i++) test_recv_packets_items(TEST_EOB);
-    test.end_test();
+      test.start_test("Test send() / recv_adv()", 10ms);
+      for (int i = 0; i < 1000; i++) test_send(TEST_RECV_ADV);
+      test.end_test();
 
-    test.start_test("Test send_packets_items() / recv_packets_items(eov)", 10ms);
-    for (int i = 0; i < 1000; i++) test_recv_packets_items(TEST_EOV);
-    test.end_test();
+      test.start_test("Test send_items() / recv_items_adv()", 10ms);
+      for (int i = 0; i < 1000; i++) test_send_items();
+      test.end_test();
 
-    test.start_test("Test send_packets_items() / recv_packets_items_adv(num_items)", 10ms);
-    for (int i = 0; i < 1000; i++) test_recv_packets_items_adv(TEST_NUM_ITEMS);
-    test.end_test();
-    
-    test.start_test("Test send_packets_items() / recv_packets_items_adv(eob)", 10ms);
-    for (int i = 0; i < 1000; i++) test_recv_packets_items_adv(TEST_EOB);
-    test.end_test();
+      test.start_test("Test send_packets() / recv_adv()", 10ms);
+      for (int i = 0; i < 1000; i++) test_send_packets();
+      test.end_test();
 
-    test.start_test("Test send_packets_items() / recv_packets_items_adv(eov)", 10ms);
-    for (int i = 0; i < 1000; i++) test_recv_packets_items_adv(TEST_EOV);
-    test.end_test();
+      test.start_test("Test send_packets_items() / recv_items_adv()", 10ms);
+      for (int i = 0; i < 1000; i++) test_send_packets_items();
+      test.end_test();
+
+      test.start_test("Test send_packets_items() / recv_packets_items(num_items)", 10ms);
+      for (int i = 0; i < 1000; i++) test_recv_packets_items(TEST_NUM_ITEMS);
+      test.end_test();
+
+      test.start_test("Test send_packets_items() / recv_packets_items(eob)", 10ms);
+      for (int i = 0; i < 1000; i++) test_recv_packets_items(TEST_EOB);
+      test.end_test();
+
+      test.start_test("Test send_packets_items() / recv_packets_items(eov)", 10ms);
+      for (int i = 0; i < 1000; i++) test_recv_packets_items(TEST_EOV);
+      test.end_test();
+    end
 
     // Make sure we don't get any more packets. Wait for more than a packet of
     // worth of time the check if we've received anything.
@@ -573,7 +584,7 @@ module ChdrIfaceBfm_tb #(
 
     // Kill the clocks to end this instance of the testbench
     rfnoc_chdr_clk_gen.kill();
-    
+
   end
 
 endmodule : ChdrIfaceBfm_tb
