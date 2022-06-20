@@ -67,18 +67,30 @@ jobs:
       cleanDestinationFolder: true
 
   - download: ${{ parameters.uhdArtifactSource }}
-    artifact: $(devType)-images
+    artifact: n3xx-images
     # Only sync the bz2 sdimg since the bmap
     # is incompatible with mender
-    patterns: '**/*.bz2'
+    patterns: |
+      **/*.bz2
+      fitImage-manufacturing
     displayName: Download $(devType)-images artifact
     condition: and(succeeded(), eq(variables.devType, 'n3xx'))
+
+  - download: ${{ parameters.uhdArtifactSource }}
+    artifact: e320-images
+    # Only sync the bz2 sdimg since the bmap
+    # is incompatible with mender
+    patterns: |
+      **/*.bz2
+      fitImage-manufacturing
+    displayName: Download $(devType)-images artifact
+    condition: and(succeeded(), eq(variables.devModel, 'e320'))
 
   - script: |
       cd $(Build.BinariesDirectory)/uhddev/build
       mkdir -p fpga_images
       rm -rf fpga_images/*
-      python3 utils/uhd_images_downloader.py -t $(devModel) -i fpga_images \
+      python3 utils/uhd_images_downloader.py -t $(devModel)_fpga -i fpga_images \
         -b $(sdr-fileserver)
       if [ "$(devType)" = "b200" ]; then
         python3 utils/uhd_images_downloader.py -t b2xx_common -i fpga_images \
@@ -93,7 +105,7 @@ jobs:
       export LD_LIBRARY_PATH=$(Build.BinariesDirectory)/uhddev/build/lib:$LD_LIBRARY_PATH
       export UHD_IMAGES_DIR=$(Build.BinariesDirectory)/uhddev/build/fpga_images
       python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
-        --sdimage $(devType),$(devModel),$(uhd_artifact_directory)/$(devType)-images/$(devSDImage),${{ parameters.uhdSrcDir }}/$(devLabgridConfig),$(devHostname) \
+        --sdimage_sdmux $(devType),$(devModel),$(uhd_artifact_directory)/$(devType)-images/$(devSDImage),${{ parameters.uhdSrcDir }}/$(devLabgridConfig),$(devHostname) \
         --fpgas $(devFpga) \
         --sfp_addrs $(sfpAddrs) \
         ${{ parameters.redisHost }} $(devName) \
@@ -106,6 +118,27 @@ jobs:
     continueOnError: true
     condition: and(succeeded(), eq(variables.devType, 'n3xx'), eq(variables.devBus, 'ip'))
     displayName: Run n3xx devtest on $(devName)
+
+  - script: |
+      mkdir -p $(Common.TestResultsDirectory)/devtest
+      cd $(Common.TestResultsDirectory)/devtest
+      export PATH=$(Build.BinariesDirectory)/uhddev/build/utils:$(Build.BinariesDirectory)/uhddev/build/examples:$PATH
+      export LD_LIBRARY_PATH=$(Build.BinariesDirectory)/uhddev/build/lib:$LD_LIBRARY_PATH
+      export UHD_IMAGES_DIR=$(Build.BinariesDirectory)/uhddev/build/fpga_images
+      python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
+        --sdimage_tftp $(devType),$(devModel),$(uhd_artifact_directory)/e320-images/$(devSDImage),$(uhd_artifact_directory)/e320-images/$(devInitramfsImage),${{ parameters.uhdSrcDir }}/$(devLabgridConfig) \
+        --fpgas $(devFpga) \
+        --sfp_addrs $(sfpAddrs) \
+        ${{ parameters.redisHost }} $(devName) \
+        "$(Build.BinariesDirectory)/uhddev/build/utils/uhd_usrp_probe --args addr=$(devAddr)" \
+        "python3 ${{ parameters.uhdSrcDir }}/host/tests/devtest/run_testsuite.py \
+          --src-dir ${{ parameters.uhdSrcDir }}/host/tests/devtest \
+          --devtest-pattern $(devtestPattern) --args addr=$(devAddr),type=$(devType) \
+          --build-type Release --build-dir $(Build.BinariesDirectory)/uhddev/build \
+          --python-interp python3 --xml"
+    continueOnError: true
+    condition: and(succeeded(), eq(variables.devModel, 'e320'), eq(variables.devBus, 'ip'))
+    displayName: Run e320 devtest on $(devName)
 
   - script: |
       mkdir -p $(Common.TestResultsDirectory)/devtest

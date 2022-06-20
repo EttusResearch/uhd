@@ -1,0 +1,14 @@
+targets:
+  main:
+    resources:
+      RemotePlace:
+        name: 'rhombus-e320-0'
+    drivers:
+    - SerialDriver:
+        name: 'linux_serial_driver'
+        bindings:
+          port: 'console-linux'
+    - SerialDriver:
+        name: 'scu_serial_driver'
+        bindings:
+          port: 'console-scu'
