@@ -10,7 +10,7 @@ parameters:
   default: current
 - name: testDevices
   type: string
-  default: 'x3xx,b2xx,n3xx'
+  default: 'x3xx,b2xx,n3xx,e320'
 
 jobs:
 - template: job-uhd-devtest.yml
@@ -136,3 +136,20 @@ jobs:
           devtestPattern: 'n3x0'
           devSDImage: gnuradio-image-ni-sulfur-rev11-mender.sdimg.bz2
           devLabgridConfig: .ci/templates/tests/rhombus-labgrid/device-configs/rhombus-n321-0.yml
+
+      ${{ if contains(parameters.testDevices, 'e320') }}:
+        rhombus-e320-0:
+          devAgent: rhombus-e320-0
+          devType: 'e3xx'
+          devModel: 'e320'
+          devName: rhombus-e320-0
+          devSerial: '31A8171'
+          devHostname: 'ni-e320-31a8171'
+          devBus: 'ip'
+          devAddr: '192.168.20.7'
+          sfpAddrs: '192.168.20.7'
+          devFpga: 'XG'
+          devtestPattern: 'e320'
+          devInitramfsImage: fitImage-manufacturing
+          devSDImage: gnuradio-image-ni-neon-rev2-mender.sdimg.bz2
+          devLabgridConfig: .ci/templates/tests/rhombus-labgrid/device-configs/rhombus-e320-0.yml

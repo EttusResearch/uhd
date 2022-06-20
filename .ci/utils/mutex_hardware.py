@@ -8,17 +8,22 @@ import labgrid
 import os
 import pathlib
 import shlex
+import socket
 import subprocess
 import sys
 import time
 
 from fabric import Connection
+from httpd import HTTPServer
 from pottery import Redlock
 from redis import Redis
+from tftp import TFTPServer
 
 bitfile_name = "usrp_{}_fpga_{}.bit"
 
 def jtag_x3xx(dev_type, dev_model, jtag_server, jtag_serial, fpga_folder, fpga, redis_server):
+    if dev_model not in ["x300", "x310"]:
+        raise RuntimeError(f'{dev_type} not supported with jtag_x3xx')
     remote_working_dir = "pipeline_fpga"
     vivado_program_jtag = "/opt/Xilinx/Vivado_Lab/2020.1/bin/vivado_lab -mode batch -source {}/viv_hardware_utils.tcl -nolog -nojournal -tclargs program".format(
         remote_working_dir)
@@ -50,7 +55,12 @@ def set_sfp_addrs(mgmt_addr, sfp_addrs):
             dut.run(f"ip link set sfp{idx} up")
     time.sleep(30)
 
-def flash_sdimage(dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr, sfp_addrs):
+def flash_sdimage_sdmux(dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr, sfp_addrs):
+    """ This method uses an sdmux (https://linux-automation.com/en/products/usb-sd-mux.html)
+    to reimage the sd card.
+    """
+    if dev_model not in ["n300", "n310", "n320", "n321"]:
+        raise RuntimeError(f'{dev_model} not supported with sdimage_sdmux')
     subprocess.run(shlex.split(f"labgrid-client -c {labgrid_device_yaml} release --kick"))
     subprocess.run(shlex.split(f"labgrid-client -c {labgrid_device_yaml} acquire"))
     env = labgrid.Environment(labgrid_device_yaml)
@@ -101,6 +111,97 @@ def flash_sdimage(dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr, sfp_a
 
     subprocess.run(shlex.split(f"labgrid-client -c {labgrid_device_yaml} release"))
 
+def flash_sdimage_tftp(dev_model, sdimage_path, initramfs_path, labgrid_device_yaml, sfp_addrs, redis_server):
+    """ This method uses tftp to boot the device into a small Linux envionment to
+    write to the device's sd card. This method is used on the E320 since it has
+    a hardware incompatibility with sdmuxes.
+    """
+    if dev_model not in ["e320"]:
+        raise RuntimeError(f'{dev_model} not supported with sdimage_tftp')
+
+    if dev_model == "e320":
+        dev_ram_address = '0x20000000'
+        dev_bootm_config = 'conf@zynq-ni-${mboard}.dtb'
+
+    subprocess.run(shlex.split(f"labgrid-client -c {labgrid_device_yaml} release --kick"))
+    subprocess.run(shlex.split(f"labgrid-client -c {labgrid_device_yaml} acquire"))
+    env = labgrid.Environment(labgrid_device_yaml)
+    target = env.get_target()
+
+    cp_scu = target.get_driver(labgrid.protocol.ConsoleProtocol, name="scu_serial_driver")
+    cp_linux = target.get_driver(labgrid.protocol.ConsoleProtocol, name="linux_serial_driver")
+
+    print("Powering down DUT", flush=True)
+    cp_scu.write("\napshutdown\n".encode())
+    time.sleep(10)
+
+    print("Powering on DUT", flush=True)
+    cp_scu.write("\npowerbtn\n".encode())
+    # Sometimes it requires multiple powerbtn calls to turn on device
+    try:
+        cp_linux.expect("Enter 'noautoboot' to enter prompt without timeout", timeout=5)
+    except Exception:
+        print("Device didn't power on with first attempt. Trying again...", flush=True)
+        cp_scu.write("\npowerbtn\n".encode())
+        cp_linux.expect("Enter 'noautoboot' to enter prompt without timeout", timeout=5)
+
+    print("Attempting to get into uboot console", flush=True)
+    cp_linux.write("noautoboot".encode())
+    # Handle if the watchdog triggers
+    try:
+        cp_linux.expect("Enter 'noautoboot' to enter prompt without timeout", timeout=30)
+        cp_linux.write("noautoboot".encode())
+    except Exception:
+        pass
+    cp_linux.expect("uboot>")
+    print("Waiting for NIC to come up", flush=True)
+    time.sleep(10)
+    cp_linux.write(f"setenv autoload no; dhcp;\n".encode())
+    cp_linux.expect("DHCP client bound to address")
+    expect_index, expect_before, expect_match , expect_after = cp_linux.expect(r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b")
+    mgmt_addr = expect_match[0].decode()
+    print(f"Dev got IP Address {mgmt_addr}")
+
+    with TFTPServer(initramfs_path, mgmt_addr) as server:
+        time.sleep(10)
+        cp_linux.expect("uboot>")
+        cp_linux.write(f"setenv tftpdstp {server.port}\n".encode())
+        cp_linux.expect("uboot>")
+        print("TFTPing initramfs image", flush=True)
+        cp_linux.write(f"tftpboot {dev_ram_address} {server.ip}:{os.path.basename(initramfs_path)}\n".encode())
+        cp_linux.expect("uboot>", timeout=120)
+        print("Booting into initramfs", flush=True)
+        cp_linux.write(f"bootm {dev_ram_address}#{dev_bootm_config}\n".encode())
+        cp_linux.expect("mender login:", timeout=120)
+        print("Logging into Linux", flush=True)
+        cp_linux.write("root\n".encode())
+        cp_linux.expect("mender:~#")
+        print("Waiting for NIC to DHCP", flush=True)
+        time.sleep(10)
+
+    with HTTPServer(os.path.dirname(sdimage_path), mgmt_addr) as server:
+        print(f"Writing SD Card using {sdimage_path}", flush=True)
+        print("Running bmaptool... This will take awhile", flush=True)
+        cp_linux.write(f"bmaptool copy --nobmap {server.get_url(os.path.basename(sdimage_path))} /dev/mmcblk0\n".encode())
+        cp_linux.expect("mender:~#", timeout=1800)
+        cp_linux.write("echo bmaptool exit code: $?\n".encode())
+        cp_linux.expect("bmaptool exit code: 0", timeout=10)
+        time.sleep(10)
+        print("Rebooting into new image from sd card", flush=True)
+        cp_linux.write("reboot\n".encode())
+
+    print("Waiting 2 minutes for device to boot", flush=True)
+    time.sleep(120)
+    cp_linux.expect("login:", timeout=30)
+    known_hosts_path = os.path.expanduser("~/.ssh/known_hosts")
+    subprocess.run(shlex.split(f"ssh-keygen -f \"{known_hosts_path}\" -R \"{mgmt_addr}\""))
+
+    if sfp_addrs:
+        set_sfp_addrs(mgmt_addr, sfp_addrs)
+
+    subprocess.run(shlex.split(f"labgrid-client -c {labgrid_device_yaml} release"))
+    return mgmt_addr
+
 def main(args):
     redis_server = {Redis.from_url(
         "redis://{}:6379/0".format(args.redis_server))}
@@ -108,13 +209,21 @@ def main(args):
     with Redlock(key=args.dut_name, masters=redis_server, auto_release_time=1000 * 60 * args.dut_timeout):
         print("Got mutex for {}".format(args.dut_name), flush=True)
 
-        if args.sdimage:
-            dev_type, dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr = args.sdimage.split(',')
+        if args.sdimage_sdmux:
+            dev_type, dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr = args.sdimage_sdmux.split(',')
             if args.sfp_addrs:
                 sfp_addrs = args.sfp_addrs.split(',')
             else:
                 sfp_addrs = None
-            flash_sdimage(dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr, sfp_addrs)
+            flash_sdimage_sdmux(dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr, sfp_addrs)
+
+        if args.sdimage_tftp:
+            dev_type, dev_model, sdimage_path, initramfs_path, labgrid_device_yaml = args.sdimage_tftp.split(',')
+            if args.sfp_addrs:
+                sfp_addrs = args.sfp_addrs.split(',')
+            else:
+                sfp_addrs = None
+            mgmt_addr = flash_sdimage_tftp(dev_model, sdimage_path, initramfs_path, labgrid_device_yaml, sfp_addrs, redis_server)
 
         if args.fpgas:
             working_dir = os.getcwd()
@@ -146,14 +255,17 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    group = parser.add_mutually_exclusive_group()
     # jtag_x3xx will flash the fpga for a given jtag_serial using
     # Vivado on jtag_server. It uses SSH to control jtag_server.
     # Provide fpga_path as a local path and it will be copied
     # to jtag_server.
-    parser.add_argument("--jtag_x3xx", type=str,
+    group.add_argument("--jtag_x3xx", type=str,
                         help="dev_type,dev_model,user@jtag_server,jtag_serial,fpga_folder")
-    parser.add_argument("--sdimage", type=str,
+    group.add_argument("--sdimage_sdmux", type=str,
                         help="dev_type,dev_model,sdimg_path,labgrid_device_yaml,mgmt_addr")
+    group.add_argument("--sdimage_tftp", type=str,
+                        help="dev_type,dev_model,sdimg_path,initramfs_path,labgrid_device_yaml")
     parser.add_argument("--sfp_addrs", type=str,
                         help="sfp0ip,sfp1ip,...")
     parser.add_argument("--fpgas", type=str,

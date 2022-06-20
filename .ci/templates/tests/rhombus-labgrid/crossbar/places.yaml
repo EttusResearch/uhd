@@ -32,3 +32,19 @@ rhombus-n321-0:
   reservation: null
   tags: {}
 
+rhombus-e320-0:
+  acquired: null
+  acquired_resources: []
+  aliases: []
+  allowed: []
+  changed: 1654034475.1935894
+  comment: ''
+  created: 1654034136.0077882
+  matches:
+  - cls: '*'
+    exporter: '*'
+    group: rhombus-e320-0-group
+    name: null
+    rename: null
+  reservation: null
+  tags: {}
