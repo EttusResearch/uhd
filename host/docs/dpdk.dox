@@ -227,12 +227,28 @@ arguments, where N is the desired timeout time in <b>milliseconds</b>, or
 by adding a `dpdk_link_timeout` entry to the
 \ref page_configfiles "UHD configuration file".
 
-\subsection dpdk_notes DPDK performance dpdk_notes
+\subsection dpdk_troubleshooting Troubleshooting
 
-With Linux kernel 5.11 on Ubuntu 20.04, we have observed periodic underruns
-on systems that otherwise have no issues. The behavior does not reproduce on
-the 5.4 kernel that is also available for Ubuntu 20.04, so that version can 
-be used as a workaround.
+With Linux kernels 5.10 and beyond, we have observed periodic underruns on systems
+that otherwise have no issues. These Linux kernel versions are the default for Ubuntu
+20.04.3 LTS and later. The underrun issue is due to the RT_RUNTIME_SHARE feature
+being disabled by default in newer versions of the Linux kernel. The following
+procedure can be used to enable RT_RUNTIME_SHARE. Note, this process was tested on
+Linux kernel version 5.13. The procedure may be slightly different on other kernel
+versions. To determine the Linux kernel version of your system, in a terminal issue
+the command `uname -r`.
+
+    sudo -s
+
+    cd /sys/kernel/debug/sched/
+
+    cat features
+        GENTLE_FAIR_SLEEPERS START_DEBIT NO_NEXT_BUDDY LAST_BUDDY CACHE_HOT_BUDDY WAKEUP_PREEMPTION NO_HRTICK NO_HRTICK_DL NO_DOUBLE_TICK NONTASK_CAPACITY TTWU_QUEUE SIS_PROP NO_WARN_DOUBLE_CLOCK RT_PUSH_IPI **NO_RT_RUNTIME_SHARE** NO_LB_MIN ATTACH_AGE_LOAD WA_IDLE WA_WEIGHT WA_BIAS UTIL_EST UTIL_EST_FASTUP NO_LATENCY_WARN ALT_PERIOD BASE_SLICE
+
+    echo RT_RUNTIME_SHARE > features
+
+    cat features
+        GENTLE_FAIR_SLEEPERS START_DEBIT NO_NEXT_BUDDY LAST_BUDDY CACHE_HOT_BUDDY WAKEUP_PREEMPTION NO_HRTICK NO_HRTICK_DL NO_DOUBLE_TICK NONTASK_CAPACITY TTWU_QUEUE SIS_PROP NO_WARN_DOUBLE_CLOCK RT_PUSH_IPI **RT_RUNTIME_SHARE** NO_LB_MIN ATTACH_AGE_LOAD WA_IDLE WA_WEIGHT WA_BIAS UTIL_EST UTIL_EST_FASTUP NO_LATENCY_WARN ALT_PERIOD BASE_SLICE
 
 */
 // vim:ft=doxygen:
