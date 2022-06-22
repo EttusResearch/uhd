@@ -1628,22 +1628,23 @@ module x4xx (
 
   x4xx_qsfp_wrapper_temp #(
     `ifdef QSFP0_0
-    .PROTOCOL0 (`QSFP0_0),
+    .PROTOCOL0      (`QSFP0_0),
     `endif
     `ifdef QSFP0_1
-    .PROTOCOL1 (`QSFP0_1),
+    .PROTOCOL1      (`QSFP0_1),
     `endif
     `ifdef QSFP0_2
-    .PROTOCOL2 (`QSFP0_2),
+    .PROTOCOL2      (`QSFP0_2),
     `endif
     `ifdef QSFP0_3
-    .PROTOCOL3 (`QSFP0_3),
+    .PROTOCOL3      (`QSFP0_3),
     `endif
-    .CPU_W     (CPU_W),
-    .CHDR_W    (CHDR_W),
-    .BYTE_MTU  (BYTE_MTU),
-    .PORTNUM   (0),
-    .NODE_INST (0)
+    .CPU_W          (CPU_W),
+    .CHDR_W         (CHDR_W),
+    .BYTE_MTU       (BYTE_MTU),
+    .PORTNUM        (0),
+    .NODE_INST      (0),
+    .RFNOC_PROTOVER (RFNOC_PROTOVER)
   ) x4xx_qsfp_wrapper_0 (
     .areset         (areset),
     .refclk_p       (MGT_REFCLK_LMK0_P),
@@ -1737,22 +1738,23 @@ module x4xx (
 
   x4xx_qsfp_wrapper_temp #(
     `ifdef QSFP1_0
-    .PROTOCOL0 (`QSFP1_0),
+    .PROTOCOL0      (`QSFP1_0),
     `endif
     `ifdef QSFP1_1
-    .PROTOCOL1 (`QSFP1_1),
+    .PROTOCOL1      (`QSFP1_1),
     `endif
     `ifdef QSFP1_2
-    .PROTOCOL2 (`QSFP1_2),
+    .PROTOCOL2      (`QSFP1_2),
     `endif
     `ifdef QSFP1_3
-    .PROTOCOL3 (`QSFP1_3),
+    .PROTOCOL3      (`QSFP1_3),
     `endif
-    .CPU_W     (CPU_W),
-    .CHDR_W    (CHDR_W),
-    .BYTE_MTU  (BYTE_MTU),
-    .PORTNUM   (1),
-    .NODE_INST (4)
+    .CPU_W          (CPU_W),
+    .CHDR_W         (CHDR_W),
+    .BYTE_MTU       (BYTE_MTU),
+    .PORTNUM        (1),
+    .NODE_INST      (4),
+    .RFNOC_PROTOVER (RFNOC_PROTOVER)
   ) x4xx_qsfp_wrapper_1 (
     .areset         (areset),
     .refclk_p       (MGT_REFCLK_LMK3_P),
