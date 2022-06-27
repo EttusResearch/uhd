@@ -184,3 +184,10 @@ jobs:
       failTaskOnFailedTests: true
     displayName: Upload devtest results
     condition: always()
+
+  - script: |
+      echo "A previous step failed. See steps with warnings."
+      echo "Marking the overall build status as a failure."
+      exit 1
+    condition: in(variables['Agent.JobStatus'],  'SucceededWithIssues')
+    displayName: Mark build as failure
