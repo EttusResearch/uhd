@@ -224,6 +224,7 @@ class XportMgrUDP:
 
         return [
             {
+                'iface': iface_name,
                 'ipv4': str(iface_info['ip_addr']) \
                     if (self.iface_config[iface_name]['type'] != 'internal') \
                     else str(self.get_fpga_internal_ip_address(iface_name)),
