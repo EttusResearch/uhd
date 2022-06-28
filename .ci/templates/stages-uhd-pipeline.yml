@@ -76,7 +76,7 @@ resources:
     type: github
     name: EttusResearch/gr-ettusdev
     endpoint: EttusResearch
-    ref: maint-3.8-uhd4.0
+    ref: master
   - repository: ettus-rts
     type: github
     endpoint: EttusResearch
