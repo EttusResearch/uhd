@@ -147,8 +147,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     uhd::tx_streamer::sptr tx_stream;
     uhd::tx_metadata_t tx_md;
 
-    stream_args.args            = streamer_args;
-    tx_stream = graph->create_tx_streamer(stream_args.channels.size(), stream_args);
+    stream_args.args = streamer_args;
+    tx_stream        = graph->create_tx_streamer(1, stream_args);
     graph->connect(tx_stream, 0, replay_ctrl->get_block_id(), replay_chan);
     graph->commit();
 
