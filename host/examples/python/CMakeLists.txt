@@ -11,6 +11,7 @@ set(python_examples
     curses_fft.py
     benchmark_rate.py
     usrp_power_meter.py
+    remote_rx.py
 )
 
 UHD_INSTALL(PROGRAMS ${python_examples}
