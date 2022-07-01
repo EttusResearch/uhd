@@ -242,6 +242,11 @@ class PeriphManagerBase(object):
         assert self.pids
         assert self.mboard_eeprom_magic is not None
         self.dboards = []
+        # fpga_features is a set of features the FPGA provides. It can be filled
+        # with arbitrary strings by the device classes. The usual way to fill
+        # this is to compare the FPGA compat number with a given compat number
+        # that added a feature.
+        self.fpga_features = set()
         self._default_args = ""
         # Set up logging
         self.log = get_logger('PeriphManager')
