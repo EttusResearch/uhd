@@ -8,14 +8,11 @@
 Mboard implementation base class
 """
 
-from __future__ import print_function
 import os
 from enum import Enum
 from hashlib import md5
 from time import sleep
 from concurrent import futures
-from builtins import str
-from builtins import object
 from six import iteritems, itervalues
 from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.sys_utils.filesystem_status import get_fs_version
@@ -51,7 +48,7 @@ def get_dboard_class_from_pid(pid):
 # pylint: disable=no-self-use
 # pylint: disable=too-many-public-methods
 # pylint: disable=too-many-instance-attributes
-class PeriphManagerBase(object):
+class PeriphManagerBase:
     """"
     Base class for all motherboards. Common function and API calls should
     be implemented here. Motherboard specific information can be stored in
@@ -248,6 +245,9 @@ class PeriphManagerBase(object):
         # that added a feature.
         self.fpga_features = set()
         self._default_args = ""
+        # CHDR transport managers. These need to be instantiated by the child
+        # classes.
+        self._xport_mgrs = {}
         # Set up logging
         self.log = get_logger('PeriphManager')
         self.claimed = False
@@ -735,6 +735,8 @@ class PeriphManagerBase(object):
             self.log.error(
                 "Cannot run init(), device was never fully initialized!")
             return False
+        for xport_mgr in self._xport_mgrs.values():
+            xport_mgr.init(args)
         if not self.dboards:
             return True
         if args.get("serialize_init", False):
@@ -766,6 +768,8 @@ class PeriphManagerBase(object):
         for slot, dboard in enumerate(self.dboards):
             self.log.trace("call deinit() on dBoard in slot {}".format(slot))
             dboard.deinit()
+        for xport_mgr in self._xport_mgrs.values():
+            xport_mgr.deinit()
 
     def tear_down(self):
         """
@@ -1095,7 +1099,7 @@ class PeriphManagerBase(object):
         the keys returned from this function can be used with
         get_chdr_link_options().
         """
-        raise NotImplementedError("get_chdr_link_types() not implemented.")
+        return list(self._xport_mgrs.keys())
 
     def get_chdr_link_options(self, xport_type):
         """
@@ -1111,7 +1115,15 @@ class PeriphManagerBase(object):
         - link_rate (bps of the link, e.g. 10e9 for 10GigE)
 
         """
-        raise NotImplementedError("get_chdr_link_options() not implemented.")
+        if xport_type not in self._xport_mgrs:
+            self.log.warning(
+                f"Can't get link options for unknown link type: `{xport_type}'.")
+            return []
+        if xport_type == "udp":
+            return self._xport_mgrs[xport_type].get_chdr_link_options(
+                self.mboard_info['rpc_connection'])
+        # else:
+        return self._xport_mgrs[xport_type].get_chdr_link_options()
 
     #######################################################################
     # Claimer API
