@@ -158,22 +158,22 @@ GPIO1 again to use that port with SPI, too.
 
 \subsection x4x0_spi_cfg Configuration of SPI lines
 
-The x4x0 SPI mode supports up to 4 slaves. All of these slaves may have a different SPI pin 
+The x4x0 SPI mode supports up to 4 peripherals. All of these peripherals may have a different SPI pin 
 configuration. The pins available for the usage with SPI are listed in \ref x4x0gpio_fpanel_pins.
 For GPIO0 the available pins are enumerated from 0 through 11, for GPIO1 the available pins are 
 from 12 through 23.
-The vector of slave configurations is passed to the spi_iface_getter to get the reference:
+The vector of peripheral configurations is passed to the spi_iface_getter to get the reference:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
-    uhd::features::spi_slave_config_t slave_cfg;
-    slave_cfg.slave_clk  = 0;
-    slave_cfg.slave_miso = 1;
-    slave_cfg.slave_mosi = 2;
-    slave_cfg.slave_ss   = 3;
-    std::vector<uhd::features::spi_slave_config_t> slave_cfgs;
-    slave_cfgs.push_back(slave_cfg);
-    auto spi_ref = spi_getter_iface.get_spi_ref(slave_cfgs);
+    uhd::features::spi_periph_config_t periph_cfg;
+    periph_cfg.periph_clk = 0;
+    periph_cfg.periph_sdi = 1;
+    periph_cfg.periph_sdo = 2;
+    periph_cfg.periph_cs  = 3;
+    std::vector<uhd::features::spi_periph_config_t> periph_cfgs;
+    periph_cfgs.push_back(periph_cfg);
+    auto spi_ref = spi_getter_iface.get_spi_ref(periph_cfgs);
 
-    // Set data direction register (set all to outgoing except for MISO)
+    // Set data direction register (set all to outgoing except for SDI)
     usrp->set_gpio_attr("GPIOA", "DDR", 0xD, 0xF);
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -189,6 +189,11 @@ some characteristics of the SPI need to be configured:
    spi_ref->write_spi(0, config, 0xFEFE, 32);
    uint32_t read_data = spi_ref->read_spi(0, config, 0xFEFE, 32);
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The terms 'MISO' and 'MOSI' in the spi_config_t struct map to 'SDI' and 'SDO' respectively. 
+They are legacy terms which will not be used in new code anymore following the resolution
+to redefine SPI signal names by the Open Source Hardware Association: 
+<https://www.oshwa.org/a-resolution-to-redefine-spi-signal-names/>
+
 The SPI clock \f$SCLK\f$ is derived from the Radio clock and the SPI clock divider as follows: 
 
 \f[SCLK = \frac{Radio\_Clk}{SPI\_CLK\_DIV + 1}\f]

@@ -18,8 +18,8 @@
 
 static const std::string SPI_DEFAULT_GPIO      = "GPIOA";
 static const size_t SPI_DEFAULT_CLK_PIN        = 0;
-static const size_t SPI_DEFAULT_MISO_PIN       = 1;
-static const size_t SPI_DEFAULT_MOSI_PIN       = 2;
+static const size_t SPI_DEFAULT_SDI_PIN        = 1;
+static const size_t SPI_DEFAULT_SDO_PIN        = 2;
 static const size_t SPI_DEFAULT_CS_PIN         = 3;
 static const size_t SPI_DEFAULT_PAYLOAD_LENGTH = 32;
 static const std::string SPI_DEFAULT_PAYLOAD   = "0xfefe";
@@ -32,8 +32,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     // variables to be set by po
     std::string args;
     size_t clk;
-    size_t miso;
-    size_t mosi;
+    size_t sdi;
+    size_t sdo;
     size_t cs;
     size_t payload_length;
     size_t clk_divider;
@@ -48,8 +48,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("args", po::value<std::string>(&args)->default_value(""), "multi uhd device address args")
         ("list-banks", "print list of banks before running tests")
         ("clk", po::value<size_t>(&clk)->default_value(SPI_DEFAULT_CLK_PIN), "number of pin for SPI clock")
-        ("mosi", po::value<size_t>(&mosi)->default_value(SPI_DEFAULT_MOSI_PIN), "number of pin for MOSI")
-        ("miso", po::value<size_t>(&miso)->default_value(SPI_DEFAULT_MISO_PIN), "number of pin for MISO")
+        ("sdo", po::value<size_t>(&sdo)->default_value(SPI_DEFAULT_SDO_PIN), "number of pin for serial data out")
+        ("sdi", po::value<size_t>(&sdi)->default_value(SPI_DEFAULT_SDI_PIN), "number of pin for serial data in")
         ("cs", po::value<size_t>(&cs)->default_value(SPI_DEFAULT_CS_PIN), "number of pin for chip select")
         ("payload", po::value<std::string>(&payload_str)->default_value(SPI_DEFAULT_PAYLOAD), "payload as integer value")
         ("length", po::value<size_t>(&payload_length)->default_value(SPI_DEFAULT_PAYLOAD_LENGTH), "payload length in bits")
@@ -93,37 +93,36 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     usrp->set_gpio_src("GPIO0", sources);
     usrp->set_gpio_src("GPIO1", sources);
 
-    // Create slave configuration per slave
-    uhd::features::spi_slave_config_t slave_cfg;
-    slave_cfg.slave_clk  = clk;
-    slave_cfg.slave_miso = miso;
-    slave_cfg.slave_mosi = mosi;
-    slave_cfg.slave_ss   = cs;
+    // Create peripheral configuration per peripheral
+    uhd::features::spi_periph_config_t periph_cfg;
+    periph_cfg.periph_clk = clk;
+    periph_cfg.periph_sdi = sdi;
+    periph_cfg.periph_sdo = sdo;
+    periph_cfg.periph_cs  = cs;
 
-    // The vector holds the slave configs with index=slave number
-    std::vector<uhd::features::spi_slave_config_t> slave_cfgs;
-    slave_cfgs.push_back(slave_cfg);
+    // The vector holds the peripheral configs with index=peripheral number
+    std::vector<uhd::features::spi_periph_config_t> periph_cfgs;
+    periph_cfgs.push_back(periph_cfg);
 
     // Set the data direction register
     uint32_t outputs = 0x0;
-    outputs |= 1 << slave_cfg.slave_clk;
-    outputs |= 1 << slave_cfg.slave_mosi;
-    outputs |= 1 << slave_cfg.slave_ss;
+    outputs |= 1 << periph_cfg.periph_clk;
+    outputs |= 1 << periph_cfg.periph_sdo;
+    outputs |= 1 << periph_cfg.periph_cs;
     usrp->set_gpio_attr("GPIOA", "DDR", outputs & 0xFFFFFF);
-    auto spi_ref = spi_getter_iface.get_spi_ref(slave_cfgs);
+    auto spi_ref = spi_getter_iface.get_spi_ref(periph_cfgs);
 
     std::cout << "Using pins: " << std::endl
-              << "  Clock = " << (int)(slave_cfg.slave_clk) << std::endl
-              << "  MOSI  = " << (int)(slave_cfg.slave_mosi) << std::endl
-              << "  MISO  = " << (int)(slave_cfg.slave_miso) << std::endl
-              << "  CS    = " << (int)(slave_cfg.slave_ss) << std::endl
+              << "  Clock = " << (int)(periph_cfg.periph_clk) << std::endl
+              << "  SDO   = " << (int)(periph_cfg.periph_sdo) << std::endl
+              << "  SDI   = " << (int)(periph_cfg.periph_sdi) << std::endl
+              << "  CS    = " << (int)(periph_cfg.periph_cs) << std::endl
               << std::endl;
 
     payload = strtoul(payload_str.c_str(), NULL, 0);
     std::cout << "Writing payload: 0x" << std::hex << payload << " with length "
               << std::dec << payload_length << " bits" << std::endl;
-    // The spi_config_t holds items like the clock divider and the MISO
-    // and MOSI edges
+    // The spi_config_t holds items like the clock divider and the SDI and SDO edges
     uhd::spi_config_t config;
     config.divider            = clk_divider;
     config.use_custom_divider = true;

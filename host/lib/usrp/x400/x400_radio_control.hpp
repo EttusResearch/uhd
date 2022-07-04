@@ -42,20 +42,20 @@ constexpr uint32_t DIO_REGMAP_OFFSET = 0x2000;
 constexpr uint32_t DIO_WINDOW_OFFSET = 0xC000;
 
 // SPI control registers
-constexpr uint32_t SPI_SLAVE_CFG =
+constexpr uint32_t SPI_PERIPH_CFG =
     DIO_REGMAP_OFFSET + DIO_WINDOW_OFFSET + radio_control_impl::regmap::PERIPH_BASE;
 
 //! Base address for SPI_TRANSACTION_CONFIG Register
-constexpr uint32_t SPI_TRANSACTION_CFG_REG = SPI_SLAVE_CFG + 0x0010;
+constexpr uint32_t SPI_TRANSACTION_CFG_REG = SPI_PERIPH_CFG + 0x0010;
 
 //! Base address for SPI_TRANSACTION_GO Register
-constexpr uint32_t SPI_TRANSACTION_GO_REG = SPI_SLAVE_CFG + 0x0014;
+constexpr uint32_t SPI_TRANSACTION_GO_REG = SPI_PERIPH_CFG + 0x0014;
 
 //! Base address for SPI_STATUS Register
-constexpr uint32_t SPI_STATUS_REG = SPI_SLAVE_CFG + 0x0018;
+constexpr uint32_t SPI_STATUS_REG = SPI_PERIPH_CFG + 0x0018;
 
 //! Base address for SPI_CONTROLLER_INFO Register
-constexpr uint32_t SPI_CONTROLLER_INFO_REG = SPI_SLAVE_CFG + 0x001C;
+constexpr uint32_t SPI_CONTROLLER_INFO_REG = SPI_PERIPH_CFG + 0x001C;
 
 } // namespace x400_regs
 
@@ -236,10 +236,10 @@ private:
         x400_spi_getter(uhd::cores::spi_core_4000::sptr _spi) : _spicore(_spi) {}
 
         uhd::spi_iface::sptr get_spi_ref(
-            const std::vector<uhd::features::spi_slave_config_t>& spi_slave_config)
+            const std::vector<uhd::features::spi_periph_config_t>& spi_periph_config)
             const override
         {
-            _spicore->set_spi_slave_config(spi_slave_config);
+            _spicore->set_spi_periph_config(spi_periph_config);
             return _spicore;
         }
 

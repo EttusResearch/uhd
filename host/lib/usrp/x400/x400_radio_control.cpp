@@ -203,7 +203,7 @@ x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
                 [this](const uint32_t addr) {
                     return regs().peek32(addr, get_command_time(0));
                 },
-                x400_regs::SPI_SLAVE_CFG,
+                x400_regs::SPI_PERIPH_CFG,
                 x400_regs::SPI_TRANSACTION_CFG_REG,
                 x400_regs::SPI_TRANSACTION_GO_REG,
                 x400_regs::SPI_STATUS_REG,
