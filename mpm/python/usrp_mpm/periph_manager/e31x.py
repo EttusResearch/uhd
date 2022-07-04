@@ -393,8 +393,6 @@ class e31x(ZynqComponents, PeriphManagerBase):
             self._do_not_reload = \
                 str2bool(args.get("no_reload_fpga")) or args.get("no_reload_fpga") == ""
         result = super(e31x, self).init(args)
-        for xport_mgr in itervalues(self._xport_mgrs):
-            xport_mgr.init(args)
         return result
 
     def apply_idle_overlay(self):
@@ -434,8 +432,6 @@ class e31x(ZynqComponents, PeriphManagerBase):
                 "Cannot run deinit(), device was never fully initialized!")
             return
         super(e31x, self).deinit()
-        for xport_mgr in itervalues(self._xport_mgrs):
-            xport_mgr.deinit()
         if not self._do_not_reload:
             self.tear_down()
         # Reset back to value from _default_args (mpm.conf)
@@ -472,31 +468,6 @@ class e31x(ZynqComponents, PeriphManagerBase):
         if is_idle:
             self.log.trace("Found idle overlay: %s", idle_overlay)
         return is_idle
-
-
-    ###########################################################################
-    # Transport API
-    ###########################################################################
-    def get_chdr_link_types(self):
-        """
-        See PeriphManagerBase.get_chdr_link_types() for docs.
-        """
-        assert self.mboard_info['rpc_connection'] in ('remote', 'local')
-        return ["udp"]
-
-    def get_chdr_link_options(self, xport_type):
-        """
-        See PeriphManagerBase.get_chdr_link_options() for docs.
-        """
-        if xport_type not in self._xport_mgrs:
-            self.log.warning("Can't get link options for unknown link type: `{}'."
-                             .format(xport_type))
-            return []
-        if xport_type == "udp":
-            return self._xport_mgrs[xport_type].get_chdr_link_options(
-                self.mboard_info['rpc_connection'])
-        # else:
-        return self._xport_mgrs[xport_type].get_chdr_link_options()
 
     ###########################################################################
     # Device info

@@ -302,21 +302,7 @@ class e320(ZynqComponents, PeriphManagerBase):
         self.set_clock_source(args.get("clock_source", E320_DEFAULT_CLOCK_SOURCE))
         self.set_time_source(args.get("time_source", E320_DEFAULT_TIME_SOURCE))
         result = super(e320, self).init(args)
-        for xport_mgr in itervalues(self._xport_mgrs):
-            xport_mgr.init(args)
         return result
-
-    def deinit(self):
-        """
-        Clean up after a UHD session terminates.
-        """
-        if not self._device_initialized:
-            self.log.warning(
-                "Cannot run deinit(), device was never fully initialized!")
-            return
-        super(e320, self).deinit()
-        for xport_mgr in itervalues(self._xport_mgrs):
-            xport_mgr.deinit()
 
     def tear_down(self):
         """
@@ -332,40 +318,6 @@ class e320(ZynqComponents, PeriphManagerBase):
         ))
         for overlay in active_overlays:
             dtoverlay.rm_overlay(overlay)
-
-    ###########################################################################
-    # Transport API
-    ###########################################################################
-    def get_chdr_link_types(self):
-        """
-        This will only ever return a single item (udp).
-        """
-        assert self.mboard_info['rpc_connection'] in ('remote', 'local')
-        return ["udp"]
-
-    def get_chdr_link_options(self, xport_type):
-        """
-        Returns a list of dictionaries. Every dictionary contains information
-        about one way to connect to this device in order to initiate CHDR
-        traffic.
-
-        The interpretation of the return value is very highly dependant on the
-        transport type (xport_type).
-        For UDP, the every entry of the list has the following keys:
-        - ipv4 (IP Address)
-        - port (UDP port)
-        - link_rate (bps of the link, e.g. 10e9 for 10GigE)
-
-        """
-        if xport_type not in self._xport_mgrs:
-            self.log.warning("Can't get link options for unknown link type: `{}'."
-                             .format(xport_type))
-            return []
-        if xport_type == "udp":
-            return self._xport_mgrs[xport_type].get_chdr_link_options(
-                self.mboard_info['rpc_connection'])
-        # else:
-        return self._xport_mgrs[xport_type].get_chdr_link_options()
 
     ###########################################################################
     # Device info

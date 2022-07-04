@@ -664,8 +664,6 @@ class x4xx(ZynqComponents, PeriphManagerBase):
                 args.get('trig_direction', X400_DEFAULT_TRIG_DIRECTION)
                 )
 
-        for xport_mgr in self._xport_mgrs.values():
-            xport_mgr.init(args)
         return result
 
     def deinit(self):
@@ -685,8 +683,6 @@ class x4xx(ZynqComponents, PeriphManagerBase):
             self.set_sync_source(source)
         super(x4xx, self).deinit()
         self.ctrlport_regs.deinit()
-        for xport_mgr in self._xport_mgrs.values():
-            xport_mgr.deinit()
 
     def tear_down(self):
         """
@@ -714,39 +710,6 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         ))
         for overlay in active_overlays:
             dtoverlay.rm_overlay(overlay)
-
-    ###########################################################################
-    # Transport API
-    ###########################################################################
-    def get_chdr_link_types(self):
-        """
-        Return a list of ways how UHD can connect to the X4xx. See
-        PeriphManagerBase.get_chdr_link_types() for more docs.
-        """
-        return list(self._xport_mgrs.keys())
-
-    def get_chdr_link_options(self, xport_type):
-        """
-        Returns a list of dictionaries. Every dictionary contains information
-        about one way to connect to this device in order to initiate CHDR
-        traffic.
-
-        The interpretation of the return value is very highly dependant on the
-        transport type (xport_type).
-        For UDP, the every entry of the list has the following keys:
-        - ipv4 (IP Address)
-        - port (UDP port)
-        - link_rate (bps of the link, e.g. 10e9 for 10GigE)
-        """
-        if xport_type not in self._xport_mgrs:
-            self.log.warning("Can't get link options for unknown link type: `{}'.")
-            return []
-        if xport_type == "udp":
-            return self._xport_mgrs[xport_type].get_chdr_link_options(
-                self.mboard_info['rpc_connection'])
-        # else:
-        return self._xport_mgrs[xport_type].get_chdr_link_options()
-
     ###########################################################################
     # Device info
     ###########################################################################
