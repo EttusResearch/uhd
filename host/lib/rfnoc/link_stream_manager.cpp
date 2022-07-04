@@ -18,10 +18,16 @@ using namespace uhd::rfnoc::chdr;
 using namespace uhd::rfnoc::mgmt;
 using namespace uhd::rfnoc::detail;
 
+namespace {
+
 constexpr sep_inst_t SEP_INST_MGMT_CTRL = 0;
 constexpr sep_inst_t SEP_INST_DATA_BASE = 1;
 
 constexpr double STREAM_SETUP_TIMEOUT = 0.2;
+
+constexpr char LOG_ID[] = "RFNOC::LSM";
+
+}
 
 link_stream_manager::~link_stream_manager() = default;
 
@@ -31,12 +37,14 @@ public:
     link_stream_manager_impl(const chdr::chdr_packet_factory& pkt_factory,
         mb_iface& mb_if,
         const epid_allocator::sptr& epid_alloc,
-        device_id_t device_id)
+        device_id_t device_id,
+        topo_graph_t::sptr topo_graph)
         : _pkt_factory(pkt_factory)
         , _my_device_id(device_id)
         , _mb_iface(mb_if)
         , _epid_alloc(epid_alloc)
         , _data_ep_inst(0)
+        , _tgraph(std::move(topo_graph))
     {
         // Sanity check if we can access our device ID from this motherboard
         const auto& mb_devs = _mb_iface.get_local_device_ids();
@@ -66,9 +74,50 @@ public:
 
         _my_adapter_id = _mb_iface.get_adapter_id(_my_device_id);
 
-        // Create management portal using one of the child transports
-        _mgmt_portal = mgmt_portal::make(
-            *_ctrl_xport, _pkt_factory, sep_addr_t(_my_device_id, SEP_INST_MGMT_CTRL));
+        // Create management portal using one of the child transports. This also
+        // runs the topology discovery.
+        _mgmt_portal = mgmt_portal::make(*_ctrl_xport,
+            _pkt_factory,
+            sep_addr_t(_my_device_id, SEP_INST_MGMT_CTRL),
+            _tgraph);
+
+        // Topology discovery can't detect transport adapters that are not also
+        // connected to UHD, but we might need those for remote streams. We
+        // therefore query a list of available transport adapters we need to
+        // know about and slot them into the graph using some knowledge we have
+        // of RFNoC internals. This is not an ideal and super-robust solution,
+        // but it is backward-compatible. Future updates to RFNoC might remove
+        // the need to do things this way.
+        const device_id_t mb_dev_id = _mb_iface.get_remote_device_id();
+        for (auto& ta : _mb_iface.get_chdr_xport_adapters()) {
+            const sep_inst_t ta_inst = ta.second.cast<sep_inst_t>("ta_inst", -1);
+            detail::topo_node_t ta_node(
+                mb_dev_id, detail::topo_node_t::node_type::XPORT, ta_inst, 0);
+            if (_tgraph->add_node(ta_node)) {
+                UHD_LOG_DEBUG(LOG_ID,
+                    "Adding node " << ta_node.to_string()
+                                   << " to topology graph outside of discovery.");
+                const auto xbar_nodes = _tgraph->get_nodes([&](const topo_node_t& node) {
+                    return node.type == detail::topo_node_t::node_type::XBAR
+                           && node.device_id == mb_dev_id;
+                });
+                UHD_ASSERT_THROW(xbar_nodes.size() < 2);
+                if (xbar_nodes.empty()) {
+                    UHD_LOG_DEBUG("RFNOC", "Cannot link transport adapter node "
+                            << ta_node.to_string() << " to topology.");
+                    continue;
+                }
+                detail::topo_edge_t edge;
+                edge.type = detail::topo_edge_t::edge_type::ON_CHIP;
+                // This equality is just something we happen to do in the HDL,
+                // but it's the only way to slot in these transport adapters
+                // without a better topology discovery.
+                edge.src_port = ta_node.inst;
+                UHD_LOG_DEBUG(
+                    LOG_ID, "Adding transport adapter on xbar port " << edge.src_port);
+                _tgraph->add_edge(xbar_nodes.front(), ta_node, edge);
+            }
+        }
     }
 
     ~link_stream_manager_impl() override
@@ -88,8 +137,9 @@ public:
         return _my_adapter_id;
     }
 
-    const std::set<sep_addr_t>& get_reachable_endpoints() const override
+    std::set<sep_addr_t> get_reachable_endpoints() const override
     {
+        // FIXME this becomes a graph lookup
         return _mgmt_portal->get_reachable_endpoints();
     }
 
@@ -340,14 +390,19 @@ private:
     // in the FPGA is limited in how many entries can be made.
     std::map<sep_addr_t, sep_inst_t> _data_src_ep_map;
     std::map<sep_addr_t, sep_inst_t> _data_dst_ep_map;
+
+    // Reference to the topology graph. Note that this is owned by
+    // graph_stream_manager_impl, but we get a reference for convenience sake.
+    topo_graph_t::sptr _tgraph;
 };
 
 link_stream_manager::uptr link_stream_manager::make(
     const chdr::chdr_packet_factory& pkt_factory,
     mb_iface& mb_if,
     const epid_allocator::sptr& epid_alloc,
-    device_id_t device_id)
+    device_id_t device_id,
+    topo_graph_t::sptr topo_graph)
 {
     return std::make_unique<link_stream_manager_impl>(
-        pkt_factory, mb_if, epid_alloc, device_id);
+        pkt_factory, mb_if, epid_alloc, device_id, std::move(topo_graph));
 }

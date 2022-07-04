@@ -40,12 +40,6 @@ public:
      */
     virtual std::vector<device_id_t> get_local_devices() const = 0;
 
-    /*! \brief Get all the endpoints reachable from this graph
-     *
-     * \return A set of addresses for all reachable endpoints
-     */
-    virtual const std::set<sep_addr_t>& get_reachable_endpoints() const = 0;
-
     /*! \brief Connect the host to the specified destination and create a control stream
      *
      * \param dst_addr The physical address of the destination endpoint
