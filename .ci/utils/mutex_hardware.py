@@ -56,9 +56,11 @@ def flash_sdimage(dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr, sfp_a
     env = labgrid.Environment(labgrid_device_yaml)
     target = env.get_target()
 
+    cp_scu = target.get_driver(labgrid.protocol.ConsoleProtocol, name="scu_serial_driver")
+    cp_linux = target.get_driver(labgrid.protocol.ConsoleProtocol, name="linux_serial_driver")
+
     print("Powering down DUT", flush=True)
-    cp = target.get_driver(labgrid.protocol.ConsoleProtocol, name="scu_serial_driver")
-    cp.write("\napshutdown\n".encode())
+    cp_scu.write("\napshutdown\n".encode())
 
     print("Switching SDMux to Host", flush=True)
     sdmux = target.get_driver(labgrid.driver.USBSDMuxDriver)
@@ -78,10 +80,19 @@ def flash_sdimage(dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr, sfp_a
     time.sleep(30)
 
     print("Powering on DUT", flush=True)
-    cp.write("\npowerbtn\n".encode())
+    cp_scu.write("\npowerbtn\n".encode())
+
+    try:
+        cp_linux.expect("Enter 'noautoboot' to enter prompt without timeout", timeout=5)
+    except Exception:
+        # Sometimes it requires multiple powerbtn calls to turn on device
+        print("Device didn't power on with first attempt. Trying again...")
+        cp_scu.write("\npowerbtn\n".encode())
+        cp_linux.expect("Enter 'noautoboot' to enter prompt without timeout", timeout=5)
 
     print("Waiting 2 minutes for device to boot", flush=True)
     time.sleep(120)
+    cp_linux.expect("login:", timeout=5)
     known_hosts_path = os.path.expanduser("~/.ssh/known_hosts")
     subprocess.run(shlex.split(f"ssh-keygen -f \"{known_hosts_path}\" -R \"{mgmt_addr}\""))
 
