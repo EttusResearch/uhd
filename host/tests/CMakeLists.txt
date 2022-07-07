@@ -453,6 +453,12 @@ UHD_ADD_NONAPI_TEST(
     ${UHD_SOURCE_DIR}/lib/utils/compat_check.cpp
 )
 
+UHD_ADD_NONAPI_TEST(
+    TARGET "xport_adapter_ctrl_test.cpp"
+    EXTRA_SOURCES
+    ${UHD_SOURCE_DIR}/lib/usrp/cores/xport_adapter_ctrl.cpp
+)
+
 ########################################################################
 # demo of a loadable module
 ########################################################################
