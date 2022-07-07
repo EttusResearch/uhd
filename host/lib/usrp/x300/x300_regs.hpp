@@ -35,6 +35,22 @@ static const int ZPU_SR_SPI         = 32;
 static const int ZPU_SR_ETHINT0     = 40;
 static const int ZPU_SR_ETHINT1     = 56;
 static const int ZPU_SR_FP_GPIO_SRC = 72;
+// Base addresses for transport adapter info registers (see below for offsets)
+static const int ZPU_SR_SFP0_ADAPTER = 144;
+static const int ZPU_SR_SFP1_ADAPTER = 160;
+
+// Offsets for transport adapter controls. The values aren't used in UHD
+// anywhere, but since this files mirrors x300_defs.h in all the other parts,
+// we keep these lines in here for reference.
+//static const int TA_COMPAT_NUM    = 0; // 8 bits major, 8 bits minor
+//static const int TA_INFO          = 1;
+//static const int TA_NODE_INST     = 2; // read-only
+//static const int TA_KV_MAC_LO     = 3;
+//static const int TA_KV_MAC_HI     = 4;
+//static const int TA_KV_IPV4       = 5;
+//static const int TA_KV_UDP_PORT   = 6;
+//static const int TA_KV_CFG        = 7;
+//static const int TA_KV_IPV4_W_ARP = 8; // not a true SR!
 
 // reset bits
 #define ZPU_SR_SW_RST_ETH_PHY (1 << 0)

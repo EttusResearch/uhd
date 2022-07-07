@@ -32,6 +32,9 @@
 #include <uhdlib/transport/links.hpp>
 #include <uhdlib/usrp/cores/i2c_core_100_wb32.hpp>
 #include <uhdlib/usrp/cores/spi_core_3000.hpp>
+#include <uhdlib/usrp/cores/xport_adapter_ctrl.hpp>
+#include <uhdlib/utils/compat_check.hpp>
+#include <unordered_set>
 #include <atomic>
 #include <functional>
 #include <memory>
@@ -101,7 +104,10 @@ private:
         x300_mb_iface(uhd::usrp::x300::conn_manager::sptr conn_mgr,
             uhd::wb_iface::sptr zpu_ctrl,
             const double radio_clk_freq,
-            const uhd::rfnoc::device_id_t remote_dev_id);
+            const uhd::rfnoc::device_id_t remote_dev_id,
+            const uhd::compat_num32 fpga_compat,
+            const uhd::compat_num32 fw_compat);
+
         ~x300_mb_iface() override;
         uint16_t get_proto_ver() override;
         uhd::rfnoc::chdr_w_t get_chdr_w() override;
@@ -138,21 +144,36 @@ private:
             const uhd::rfnoc::sep_id_t epid,
             const uhd::device_addr_t& route_args) override;
 
+        //! X300-specific post-ctor initialization
+        //
+        // We add this because X300s should be initialized in parallel, so we
+        // don't want to add slow, I/O bound functions in the constructor.
+        void init();
+
     private:
         const uhd::rfnoc::device_id_t _remote_dev_id;
+        uhd::compat_num32 _fpga_compat;
+        uhd::compat_num32 _fw_compat;
         std::unordered_map<uhd::rfnoc::device_id_t, uhd::transport::adapter_id_t>
             _adapter_map;
         uhd::rfnoc::clock_iface::sptr _bus_clk;
         uhd::rfnoc::clock_iface::sptr _radio_clk;
         uhd::usrp::x300::conn_manager::sptr _conn_mgr;
         uhd::wb_iface::sptr _zpu_ctrl;
+
+        uint16_t _rfnoc_proto_ver;
+        uhd::rfnoc::chdr_w_t _chdr_width;
+
+        std::unordered_map<std::string, uhd::usrp::xport_adapter_ctrl> _sfp_adapter_ctrl;
     };
 
     /**************************************************************************
      * Private Methods
      *************************************************************************/
-    void check_fw_compat(const uhd::fs_path& mb_path, const mboard_members_t& members);
-    void check_fpga_compat(const uhd::fs_path& mb_path, const mboard_members_t& members);
+    uhd::compat_num32 check_fw_compat(
+        const uhd::fs_path& mb_path, const mboard_members_t& members);
+    uhd::compat_num32 check_fpga_compat(
+        const uhd::fs_path& mb_path, const mboard_members_t& members);
 
     /**************************************************************************
      * Private Attributes
