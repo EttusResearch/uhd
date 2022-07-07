@@ -233,6 +233,14 @@ UHD_API void set_logger_level(const std::string& logger, uhd::log::severity_leve
 #    define UHD_LOG_ERROR(component, message)
 #endif
 
+#define UHD_LOG_THROW(exception_type, component, message) \
+    {                                                     \
+        std::ostringstream __ss;                          \
+        __ss << message;                                  \
+        UHD_LOG_ERROR(component, __ss.str());             \
+        throw exception_type(__ss.str());                 \
+    }
+
 #if UHD_LOG_MIN_LEVEL < 6
 #    define UHD_LOG_FATAL(component, message) \
         _UHD_LOG_INTERNAL(component, uhd::log::fatal) << message;
