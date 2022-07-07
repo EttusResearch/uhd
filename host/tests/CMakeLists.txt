@@ -442,6 +442,12 @@ UHD_ADD_NONAPI_TEST(
     ${UHD_SOURCE_DIR}/lib/rfnoc/rf_control/gain_profile.cpp
 )
 
+UHD_ADD_NONAPI_TEST(
+    TARGET "compat_test.cpp"
+    EXTRA_SOURCES
+    ${UHD_SOURCE_DIR}/lib/utils/compat_check.cpp
+)
+
 ########################################################################
 # demo of a loadable module
 ########################################################################
