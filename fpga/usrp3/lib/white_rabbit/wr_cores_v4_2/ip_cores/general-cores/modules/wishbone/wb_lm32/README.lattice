@@ -1,0 +1,19 @@
+The files in this directory and its associated subdirectories bearing Lattice
+Semiconductor's copyright notice were sourced from the `general-cores` module of
+the Open Hardware Repository[1]. Specifically, these files were taken from the
+portion of the repository[2] that provides support for Lattice Semiconductor's
+open-source LatticeMico (LM32) CPU core and some associated IP for use with the
+White Rabbit project.
+
+The README.txt file[3] in the LM32 portion of the repository acknowledges
+Lattice Semiconductor for making the LM32 core open-source, but there is no
+license information provided with these files in that repository. However,
+m-labs' GitHub repository[4] maintains a fork of the version of the LM32 core
+and associated IP, which contains the original license file from Lattice[5].
+
+
+[1] https://ohwr.org
+[2] https://ohwr.org/project/general-cores/blob/master/modules/wishbone/wb_lm32
+[3] https://ohwr.org/project/general-cores/blob/master/modules/wishbone/wb_lm32/README.txt
+[4] https://github.com/m-labs
+[5] https://github.com/m-labs/lm32/blob/master/LICENSE.LATTICE
