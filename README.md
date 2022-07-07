@@ -41,13 +41,14 @@ UHD can be used to build stand-alone applications with USRP™ hardware, or with
 third-party applications. Some common toolkits / frameworks are:
 
 * [GNU Radio](http://gnuradio.org/)
-* [NI LabVIEW](http://www.ni.com/download/ni-usrp-1.3/4711/en/)
-* [MathWorks Simulink](http://www.mathworks.com/discovery/sdr/usrp.html)
+* [NI LabVIEW](https://www.ni.com/download/ni-usrp-1.3/4711/en/)
+* [MathWorks Matlab and Simulink](https://www.mathworks.com/discovery/sdr/usrp.html)
 * [REDHAWK](https://redhawksdr.org/)
 * [OpenBTS GSM](http://openbts.org)
-* [Osmocom GSM](http://osmocom.org)
-* [Amarisoft LTE](http://www.amarisoft.com/products-lte-ue-ots-sdr-pcie)
-* [Software Radio Systems LTE](http://www.softwareradiosystems.com/products)
+* [Osmocom GSM](https://osmocom.org)
+* [Amarisoft LTE](https://www.amarisoft.com/products-lte-ue-ots-sdr-pcie)
+* [Software Radio Systems srsRAN](https://www.softwareradiosystems.com/products)
+* [Eurecom OpenAirInterface](https://gitlab.eurecom.fr/oai/openairinterface5g)
 
 ## Directories
 
