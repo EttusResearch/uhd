@@ -4,7 +4,7 @@
 # X410-Series
 x4xx_x410_fpga_default          uhd-8bef9bf       x4xx/uhd-8bef9bf/x4xx_x410_fpga_default-g8bef9bf.zip       12961769ae3873fbbe93d35c8c2042a52d1f06f994ac856ecfffb8afca2dc297
 x4xx_x410_cpld_default          uhd-6fd9f37       x4xx/uhd-6fd9f37/x4xx_x410_cpld_default-g6fd9f37.zip       74e09bedda84105258484217d4dbf68860ce2079d27cf8352952fe8e4d727e93
-x4xx_zbx_cpld_default           uhd-615c9cf       x4xx/uhd-615c9cf/x4xx_zbx_cpld_default-g615c9cf.zip        e8baa8d49e0bfda50dfea497e51f77fe8a8cf38c618660b9aa7f88bed6132c6f
+x4xx_zbx_cpld_default           uhd-780c921       x4xx/uhd-780c921/x4xx_zbx_cpld_default-g780c921.zip        2ea491fafdb05adc52ee35f02c1047e0d430b02e2529a51162bcb4d5e049abfd
 # X410-Series Filesystems
 x4xx_common_sdk_default         meta-ettus-v4.1.0.5  x4xx/meta-ettus-v4.1.0.5/x4xx_common_sdk_default-v4.1.0.5.zip       0
 x4xx_common_mender_default      meta-ettus-v4.1.0.5  x4xx/meta-ettus-v4.1.0.5/x4xx_common_mender_default-v4.1.0.5.zip    0
