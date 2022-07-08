@@ -149,8 +149,8 @@ module `RAM_MOD_NAME #(
       end
     end
 
-  end else begin
-    ERROR_Invalid_RW_MODE_selection();
+  end else begin : gen_error
+    ERROR_Invalid_RW_MODE_selection ERROR();
   end endgenerate
 
 endmodule
