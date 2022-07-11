@@ -134,6 +134,10 @@ protected:
         UHD_ASSERT_THROW(reply.sequence == request.sequence);
         UHD_ASSERT_THROW(reply.addr == request.addr);
         UHD_ASSERT_THROW(reply.data == request.data);
+
+        if (flags & X300_FW_COMMS_FLAGS_ARP_FAIL) {
+            throw uhd::lookup_error("Device failed to look up IP address.");
+        }
     }
 
     uint32_t __peek32(const wb_addr_type addr) override
