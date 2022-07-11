@@ -374,9 +374,7 @@ IF(ENABLE_X400)
             ${UHD_SOURCE_DIR}/lib/usrp/x400/x400_rfdc_control.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/x400/adc_self_calibration.cpp
             ${UHD_SOURCE_DIR}/lib/rfnoc/radio_control_impl.cpp
-            ${UHD_SOURCE_DIR}/lib/rfnoc/rf_control/antenna.cpp
             ${UHD_SOURCE_DIR}/lib/rfnoc/rf_control/gain_profile.cpp
-            ${UHD_SOURCE_DIR}/lib/rfnoc/rf_control/nameless_gain_mixin.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/mpmd/mpmd_mb_controller.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_dboard.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_dboard_init.cpp

@@ -5,7 +5,7 @@
 //
 
 #include <uhd/property_tree.hpp>
-#include <uhdlib/rfnoc/rf_control/nameless_gain_mixin.hpp>
+#include <uhd/rfnoc/rf_control/nameless_gain_mixin.hpp>
 #include <unordered_map>
 #include <functional>
 #include <memory>

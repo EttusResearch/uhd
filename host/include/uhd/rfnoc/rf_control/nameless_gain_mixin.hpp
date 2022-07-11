@@ -19,7 +19,7 @@ namespace uhd { namespace rfnoc { namespace rf_control {
 
 /*! Partially implements core_iface for the gain functions which take no name parameter
  */
-class nameless_gain_mixin : virtual public core_iface
+class UHD_API nameless_gain_mixin : virtual public core_iface
 {
 public:
     using name_selector =

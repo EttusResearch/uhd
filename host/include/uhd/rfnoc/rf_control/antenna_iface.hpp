@@ -18,7 +18,7 @@ namespace uhd { namespace rfnoc { namespace rf_control {
 
 /*! Interface for setting and getting the current antenna.
  */
-class antenna_iface
+class UHD_API antenna_iface
 {
 public:
     using sptr = std::shared_ptr<antenna_iface>;
@@ -47,7 +47,7 @@ public:
 /*! Class for getting and setting antennas out of an enumerated set, where
  * the API calls for the antenna actually map to property nodes.
  */
-class enumerated_antenna : public antenna_iface
+class UHD_API enumerated_antenna : public antenna_iface
 {
 public:
     using prop_path = std::function<fs_path(const size_t chan)>;
@@ -82,7 +82,7 @@ private:
 /*! Partially implements core_iface for antenna, redirecting to one of two
  * subobjects for RX or TX.
  */
-class antenna_radio_control_mixin : virtual public core_iface
+class UHD_API antenna_radio_control_mixin : virtual public core_iface
 {
 public:
     virtual ~antenna_radio_control_mixin() = default;

@@ -5,9 +5,9 @@
 //
 
 #include <uhd/exception.hpp>
+#include <uhd/rfnoc/rf_control/antenna_iface.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhdlib/rfnoc/rf_control/antenna_iface.hpp>
 #include <stddef.h>
 #include <string>
 #include <vector>

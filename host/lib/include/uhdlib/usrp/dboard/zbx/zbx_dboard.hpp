@@ -14,6 +14,8 @@
 #include <uhd/property_tree.hpp>
 #include <uhd/rfnoc/register_iface.hpp>
 #include <uhd/rfnoc/registry.hpp>
+#include <uhd/rfnoc/rf_control/antenna_iface.hpp>
+#include <uhd/rfnoc/rf_control/nameless_gain_mixin.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/direction.hpp>
 #include <uhd/types/eeprom.hpp>
@@ -21,8 +23,6 @@
 #include <uhd/types/wb_iface.hpp>
 #include <uhdlib/experts/expert_factory.hpp>
 #include <uhdlib/rfnoc/rf_control/dboard_iface.hpp>
-#include <uhdlib/rfnoc/rf_control/antenna_iface.hpp>
-#include <uhdlib/rfnoc/rf_control/nameless_gain_mixin.hpp>
 #include <uhdlib/usrp/common/mpmd_mb_controller.hpp>
 #include <uhdlib/usrp/common/pwr_cal_mgr.hpp>
 #include <uhdlib/usrp/common/rpc.hpp>
@@ -42,10 +42,9 @@ const static uint16_t ZBX_PID = 0x4002;
 
 /*! Provide access to a ZBX radio.
  */
-class zbx_dboard_impl :
-    public uhd::usrp::x400::x400_dboard_iface,
-    public uhd::rfnoc::rf_control::antenna_radio_control_mixin,
-    public uhd::rfnoc::rf_control::nameless_gain_mixin
+class zbx_dboard_impl : public uhd::usrp::x400::x400_dboard_iface,
+                        public uhd::rfnoc::rf_control::antenna_radio_control_mixin,
+                        public uhd::rfnoc::rf_control::nameless_gain_mixin
 {
 public:
     using sptr                  = std::shared_ptr<zbx_dboard_impl>;
@@ -88,12 +87,13 @@ public:
         return true;
     }
 
-    uhd::usrp::x400::adc_self_cal_params_t get_adc_self_cal_params(const double tone_freq) override
+    uhd::usrp::x400::adc_self_cal_params_t get_adc_self_cal_params(
+        const double tone_freq) override
     {
         // This is chosen such that the IF2 frequency is 1.06G
-        const double rx_freq = 4.7e9 - 5.12e6;
+        const double rx_freq  = 4.7e9 - 5.12e6;
         const double if2_freq = 1.06e9;
-        const double offset = tone_freq - if2_freq;
+        const double offset   = tone_freq - if2_freq;
 
         // Minus because this zone is inverted
         const double tx_freq = rx_freq - offset;
@@ -142,12 +142,12 @@ public:
             .get();
     }
 
-    using core_iface::set_tx_gain;
-    using core_iface::get_tx_gain;
-    using core_iface::set_rx_gain;
     using core_iface::get_rx_gain;
-    using core_iface::get_tx_gain_range;
     using core_iface::get_rx_gain_range;
+    using core_iface::get_tx_gain;
+    using core_iface::get_tx_gain_range;
+    using core_iface::set_rx_gain;
+    using core_iface::set_tx_gain;
 
     double set_tx_gain(
         const double gain, const std::string& name, const size_t chan) override;
@@ -209,8 +209,7 @@ public:
 
     void set_rx_lo_export_enabled(
         const bool enabled, const std::string& name, const size_t chan) override;
-    bool get_rx_lo_export_enabled(
-        const std::string& name, const size_t chan) override;
+    bool get_rx_lo_export_enabled(const std::string& name, const size_t chan) override;
     void set_tx_lo_export_enabled(
         const bool enabled, const std::string& name, const size_t chan) override;
     bool get_tx_lo_export_enabled(const std::string& name, const size_t chan) override;
