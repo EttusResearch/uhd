@@ -62,8 +62,8 @@ static void init_network(x300_eeprom_map_t *eeprom_map)
     wb_i2c_read(I2C1_BASE, MBOARD_EEPROM_ADDR, (uint8_t *)(eeprom_map), sizeof(x300_eeprom_map_t));
 
     //determine interface number
-    const size_t eth0no = wb_peek32(SR_ADDR(RB0_BASE, RB_SFP0_TYPE))? 2 : 0;
-    const size_t eth1no = wb_peek32(SR_ADDR(RB0_BASE, RB_SFP1_TYPE))? 3 : 1;
+    const size_t eth0no = wb_peek32(SR_ADDR(RB0_BASE, RB_SFP0_TYPE)) ? 2 : 0;
+    const size_t eth1no = wb_peek32(SR_ADDR(RB0_BASE, RB_SFP1_TYPE)) ? 3 : 1;
 
     //pick the address from eeprom or default
     const eth_mac_addr_t *my_mac0 = (const eth_mac_addr_t *)pick_inited_field(&eeprom_map->mac_addr0, &default_map.mac_addr0, 6);
@@ -78,16 +78,14 @@ static void init_network(x300_eeprom_map_t *eeprom_map)
     wb_poke32(SR_ADDR(SET0_BASE, SR_ETHINT0 + 8 + 0), (my_mac0->addr[5] << 0) | (my_mac0->addr[4] << 8) | (my_mac0->addr[3] << 16) | (my_mac0->addr[2] << 24));
     wb_poke32(SR_ADDR(SET0_BASE, SR_ETHINT0 + 8 + 1), (my_mac0->addr[1] << 0) | (my_mac0->addr[0] << 8));
     wb_poke32(SR_ADDR(SET0_BASE, SR_ETHINT0 + 8 + 2), my_ip0->addr);
-    wb_poke32(SR_ADDR(SET0_BASE, SR_ETHINT0 + 8 + 4), 0/*nofwd*/);
-    wb_poke32(SR_ADDR(SET0_BASE, SR_ETHINT0 + 8 + 5), (ICMP_IRQ << 8) | 0); //no fwd: type, code
+    wb_poke32(SR_ADDR(SET0_BASE, SR_ETHINT0 + 8 + 3), X300_VITA_UDP_PORT);
 
     //init eth1
     u3_net_stack_init_eth(1, my_mac1, my_ip1, subnet1);
     wb_poke32(SR_ADDR(SET0_BASE, SR_ETHINT1 + 8 + 0), (my_mac1->addr[5] << 0) | (my_mac1->addr[4] << 8) | (my_mac1->addr[3] << 16) | (my_mac1->addr[2] << 24));
     wb_poke32(SR_ADDR(SET0_BASE, SR_ETHINT1 + 8 + 1), (my_mac1->addr[1] << 0) | (my_mac1->addr[0] << 8));
     wb_poke32(SR_ADDR(SET0_BASE, SR_ETHINT1 + 8 + 2), my_ip1->addr);
-    wb_poke32(SR_ADDR(SET0_BASE, SR_ETHINT1 + 8 + 4), 0/*nofwd*/);
-    wb_poke32(SR_ADDR(SET0_BASE, SR_ETHINT1 + 8 + 5), (ICMP_IRQ << 8) | 0); //no fwd: type, code
+    wb_poke32(SR_ADDR(SET0_BASE, SR_ETHINT1 + 8 + 3), X300_VITA_UDP_PORT);
 }
 
 static void putc(void *p, char c)

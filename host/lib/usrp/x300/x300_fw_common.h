@@ -22,7 +22,7 @@ extern "C" {
 #define X300_REVISION_COMPAT 7
 #define X300_REVISION_MIN    2
 #define X300_FW_COMPAT_MAJOR 6
-#define X300_FW_COMPAT_MINOR 0
+#define X300_FW_COMPAT_MINOR 1
 #define X300_FPGA_COMPAT_MAJOR 0x27
 #define X300_FPGA_COMPAT_MINOR 0x00
 
@@ -73,6 +73,7 @@ extern "C" {
 #define X300_FW_COMMS_FLAGS_ERROR      (1 << 1)
 #define X300_FW_COMMS_FLAGS_POKE32     (1 << 2)
 #define X300_FW_COMMS_FLAGS_PEEK32     (1 << 3)
+#define X300_FW_COMMS_FLAGS_ARP_FAIL   (1 << 8)
 
 #define X300_FPGA_PROG_FLAGS_ACK       (1 << 0)
 #define X300_FPGA_PROG_FLAGS_ERROR     (1 << 1)
