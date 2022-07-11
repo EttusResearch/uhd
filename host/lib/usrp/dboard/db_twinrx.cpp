@@ -10,6 +10,7 @@
 #include "twinrx/twinrx_experts.hpp"
 #include "twinrx/twinrx_ids.hpp"
 #include "twinrx/twinrx_io.hpp"
+#include <uhd/experts/expert_factory.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>
@@ -17,7 +18,6 @@
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
-#include <uhdlib/experts/expert_factory.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
 #include <memory>

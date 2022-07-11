@@ -11,6 +11,7 @@
 #include "zbx_expert.hpp"
 #include "zbx_lo_ctrl.hpp"
 #include <uhd/cal/dsa_cal.hpp>
+#include <uhd/experts/expert_factory.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/rfnoc/register_iface.hpp>
 #include <uhd/rfnoc/registry.hpp>
@@ -21,7 +22,6 @@
 #include <uhd/types/eeprom.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/wb_iface.hpp>
-#include <uhdlib/experts/expert_factory.hpp>
 #include <uhdlib/rfnoc/rf_control/dboard_iface.hpp>
 #include <uhdlib/usrp/common/mpmd_mb_controller.hpp>
 #include <uhdlib/usrp/common/pwr_cal_mgr.hpp>

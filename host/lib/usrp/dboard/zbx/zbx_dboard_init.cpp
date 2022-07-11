@@ -6,6 +6,8 @@
 
 #include <uhd/cal/database.hpp>
 #include <uhd/exception.hpp>
+#include <uhd/experts/expert_container.hpp>
+#include <uhd/experts/expert_factory.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/property_tree.ipp>
 #include <uhd/rfnoc/register_iface.hpp>
@@ -14,8 +16,6 @@
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhdlib/experts/expert_container.hpp>
-#include <uhdlib/experts/expert_factory.hpp>
 #include <uhdlib/rfnoc/reg_iface_adapter.hpp>
 #include <uhdlib/usrp/dboard/zbx/zbx_constants.hpp>
 #include <uhdlib/usrp/dboard/zbx/zbx_dboard.hpp>
@@ -79,11 +79,9 @@ void zbx_dboard_impl::_init_cpld()
     _cpld = std::make_shared<zbx_cpld_ctrl>(
         [this](
             const uint32_t addr, const uint32_t data, const zbx_cpld_ctrl::chan_t chan) {
-            const auto time_spec = (chan == zbx_cpld_ctrl::NO_CHAN)
-                                       ? time_spec_t::ASAP
-                                       : (chan == zbx_cpld_ctrl::CHAN1)
-                                             ? _time_accessor(1)
-                                             : _time_accessor(0);
+            const auto time_spec = (chan == zbx_cpld_ctrl::NO_CHAN) ? time_spec_t::ASAP
+                                   : (chan == zbx_cpld_ctrl::CHAN1) ? _time_accessor(1)
+                                                                    : _time_accessor(0);
             _regs.poke32(_reg_base_address + addr, data, time_spec);
         },
         [this](const uint32_t addr) {
@@ -366,11 +364,8 @@ void zbx_dboard_impl::_init_experts(uhd::property_tree::sptr subtree,
                 LMX2572_DEFAULT_FREQ,
                 _prc_rate,
                 false);
-            expert_factory::add_worker_node<zbx_lo_expert>(expert,
-                expert->node_retriever(),
-                fe_path,
-                lo_select,
-                lo_ctrl);
+            expert_factory::add_worker_node<zbx_lo_expert>(
+                expert, expert->node_retriever(), fe_path, lo_select, lo_ctrl);
             _lo_ctrl_map.insert({lo, lo_ctrl});
         }
     }
@@ -497,10 +492,10 @@ void zbx_dboard_impl::_init_gain_prop_tree(uhd::property_tree::sptr subtree,
         gain_profile_path,
         ZBX_GAIN_PROFILE_DEFAULT,
         AUTO_RESOLVE_ON_WRITE);
-    auto& gain_profile = (trx == TX_DIRECTION) ? _tx_gain_profile_api
-                                               : _rx_gain_profile_api;
-    auto& other_dir_gp = (trx == TX_DIRECTION) ? _rx_gain_profile_api
-                                               : _tx_gain_profile_api;
+    auto& gain_profile           = (trx == TX_DIRECTION) ? _tx_gain_profile_api
+                                                         : _rx_gain_profile_api;
+    auto& other_dir_gp           = (trx == TX_DIRECTION) ? _rx_gain_profile_api
+                                                         : _tx_gain_profile_api;
     auto gain_profile_subscriber = [this, other_dir_gp, trx](
                                        const std::string& profile, const size_t chan) {
         // Upon changing the gain profile, we need to import the new value into

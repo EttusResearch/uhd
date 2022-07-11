@@ -8,8 +8,8 @@
 #pragma once
 
 #include <uhd/config.hpp>
+#include <uhd/experts/expert_nodes.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <uhdlib/experts/expert_nodes.hpp>
 #include <memory>
 #include <mutex>
 

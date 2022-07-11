@@ -8,9 +8,9 @@
 #pragma once
 
 #include <uhd/config.hpp>
+#include <uhd/experts/expert_container.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <uhdlib/experts/expert_container.hpp>
 #include <functional>
 #include <memory>
 
@@ -138,7 +138,7 @@ public:
      * \param subtree A shared pointer to subtree to add the property to
      * \param path The path of the property in the subtree
      * \param desired_name The name of the desired data node in the expert graph
-     * \param desired_name The name of the coerced data node in the expert graph
+     * \param coerced_name The name of the coerced data node in the expert graph
      * \param init_val The initial value of both the data nodes
      * \param mode The auto resolve mode
      *
@@ -237,7 +237,6 @@ public:
      * \param container A shared pointer to the container to add the node to
      * \param arg1 First arg to ctor
      * \param ...
-     * \param argN Nth arg to ctor
      *
      */
     template <typename worker_t, typename arg1_t>

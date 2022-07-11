@@ -11,9 +11,9 @@
 #include "zbx_lo_ctrl.hpp"
 #include <uhd/cal/container.hpp>
 #include <uhd/cal/dsa_cal.hpp>
+#include <uhd/experts/expert_nodes.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/types/ranges.hpp>
-#include <uhdlib/experts/expert_nodes.hpp>
 #include <uhdlib/rfnoc/rf_control/gain_profile_iface.hpp>
 #include <uhdlib/usrp/common/pwr_cal_mgr.hpp>
 #include <uhdlib/usrp/common/rpc.hpp>
@@ -104,8 +104,10 @@ public:
         : experts::worker_node_t(fe_path / "zbx_freq_fe_expert")
         , _desired_frequency(db, fe_path / "freq" / "desired")
         , _tune_table(db, fe_path / "tune_table")
-        , _desired_lo1_frequency(db, fe_path / "los" / ZBX_LO1 / "freq" / "value" / "desired")
-        , _desired_lo2_frequency(db, fe_path / "los" / ZBX_LO2 / "freq" / "value" / "desired")
+        , _desired_lo1_frequency(
+              db, fe_path / "los" / ZBX_LO1 / "freq" / "value" / "desired")
+        , _desired_lo2_frequency(
+              db, fe_path / "los" / ZBX_LO2 / "freq" / "value" / "desired")
         , _lo1_enabled(db, fe_path / ZBX_LO1 / "enabled")
         , _lo2_enabled(db, fe_path / ZBX_LO2 / "enabled")
         , _desired_if2_frequency(db, fe_path / "if_freq" / "desired")
@@ -756,7 +758,9 @@ public:
         : uhd::experts::worker_node_t("zbx_sync_expert")
         , _fe_time{{db, rx_fe_path / 0 / "time/fe"}, {db, rx_fe_path / 1 / "time/fe"}}
         , _lo_freqs{{zbx_lo_t::RX0_LO1,
-                        {db, rx_fe_path / 0 / "los" / ZBX_LO1 / "freq" / "value" / "coerced"}},
+                        {db,
+                            rx_fe_path / 0 / "los" / ZBX_LO1 / "freq" / "value"
+                                / "coerced"}},
               {zbx_lo_t::RX0_LO2,
                   {db, rx_fe_path / 0 / "los" / ZBX_LO2 / "freq" / "value" / "coerced"}},
               {zbx_lo_t::TX0_LO1,

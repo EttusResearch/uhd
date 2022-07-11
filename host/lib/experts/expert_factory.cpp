@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhdlib/experts/expert_factory.hpp>
+#include <uhd/experts/expert_factory.hpp>
 
 namespace uhd { namespace experts {
 
