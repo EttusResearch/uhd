@@ -130,6 +130,7 @@ if(ENABLE_SIM)
                        ${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm/xports
 
                        COMMAND ${CMAKE_COMMAND} -E copy
+                       ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/compat_num.py
                        ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/discovery.py
                        ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/eeprom.py
                        ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/ethdispatch.py
