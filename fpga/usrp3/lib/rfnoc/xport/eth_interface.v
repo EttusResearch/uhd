@@ -76,21 +76,7 @@ module eth_interface #(
   // Registers
   //---------------------------------------------------------
 
-  // Allocate one full page for MAC
-  localparam [REG_AWIDTH-1:0] REG_MAC_LSB        = BASE + 'h0000;
-  localparam [REG_AWIDTH-1:0] REG_MAC_MSB        = BASE + 'h0004;
-
-  // Source IP address
-  localparam [REG_AWIDTH-1:0] REG_IP             = BASE + 'h1000;
-  // Source UDP Port
-  localparam [REG_AWIDTH-1:0] REG_UDP            = BASE + 'h1004;
-
-  // Registers for Internal/Bridge Network Mode in CPU
-  localparam [REG_AWIDTH-1:0] REG_BRIDGE_MAC_LSB = BASE + 'h1010;
-  localparam [REG_AWIDTH-1:0] REG_BRIDGE_MAC_MSB = BASE + 'h1014;
-  localparam [REG_AWIDTH-1:0] REG_BRIDGE_IP      = BASE + 'h1018;
-  localparam [REG_AWIDTH-1:0] REG_BRIDGE_UDP     = BASE + 'h101c;
-  localparam [REG_AWIDTH-1:0] REG_BRIDGE_ENABLE  = BASE + 'h1020;
+  `include "../xport_sv/eth_regs.vh"
 
   // MAC address for the dispatcher module.
   // This value is used to determine if the packet is meant
@@ -188,6 +174,17 @@ module eth_interface #(
         REG_BRIDGE_ENABLE:
           reg_rd_data <= {31'b0,bridge_en};
 
+        REG_XPORT_COMPAT:
+          // Return compat of 0 to indicate this is the old transport adapter
+          reg_rd_data <= 32'b0;
+
+        REG_XPORT_INFO:
+          // This TA has no advanced capabilities (e.g., raw UDP)
+          reg_rd_data <= 32'b0;
+
+        REG_XPORT_NODE_INST:
+          reg_rd_data <= NODE_INST;
+
         default:
           reg_rd_resp <= 1'b0;
       endcase
@@ -201,7 +198,7 @@ module eth_interface #(
   // In AXI Stream, tkeep is the byte qualifier that indicates
   // whether the content of the associated byte
   // of TDATA is processed as part of the data stream.
-  // tuser as used in eth_switch is the numbier of valid bytes
+  // tuser as used in eth_switch is the number of valid bytes
 
   eth_ipv4_chdr64_adapter #(
     .PROTOVER        (PROTOVER),
