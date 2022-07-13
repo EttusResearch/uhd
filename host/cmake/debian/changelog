@@ -1,3 +1,18 @@
+uhd (4.1.0.6-0ubuntu1) ubuntu_release; urgency=low
+
+  * mpm
+    - add support for lattice zbx cpld
+  * N320
+    -  Revert PLL lock time reduction
+  * images
+    -  Update manifest with latest cpld firmware
+    -  zbx lattice cpld image manifest
+  * uhd
+    - fixup! add support for max10 variants
+
+ -- Ettus Research <packages@ettus.com>  Wed, 13 Jul 2022 01:56:31 -0800
+
+
 uhd (4.1.0.5-0ubuntu1) ubuntu_release; urgency=low
 
   * ad9361

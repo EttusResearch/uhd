@@ -1,6 +1,17 @@
 Change Log for Releases
 ==============================
 
+## 004.001.000.006
+* mpm
+  - add support for lattice zbx cpld
+* N320
+  -  Revert PLL lock time reduction
+* images
+  -  Update manifest with latest cpld firmware
+  -  zbx lattice cpld image manifest
+* uhd
+  - fixup! add support for max10 variants
+
 ## 004.001.000.005
 * ad9361
   -  Add comment re overclocking
