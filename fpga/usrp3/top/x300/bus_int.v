@@ -157,6 +157,8 @@ module bus_int #(
    localparam SR_ETHINT1         = 8'd56;
    localparam SR_FP_GPIO_SRC     = 8'd72;
    localparam SR_BASE_TIME       = 8'd100;
+   localparam SR_TA_SFP0_BASE    = 8'd144;
+   localparam SR_TA_SFP1_BASE    = 8'd160;
 
    localparam RB_COUNTER         = 8'd00;
    localparam RB_SPI_RDY         = 8'd01;
@@ -173,6 +175,8 @@ module bus_int #(
    localparam RB_NUM_TIMEKEEPERS = 8'd12;
    localparam RB_FP_GPIO_SRC     = 8'd13;
    localparam RB_DEVICE_ID       = 8'd14;
+   localparam RB_TA_SFP0_BASE    = SR_TA_SFP0_BASE;
+   localparam RB_TA_SFP1_BASE    = SR_TA_SFP1_BASE;
 
    localparam COMPAT_MAJOR       = 16'h0027;
    localparam COMPAT_MINOR       = 16'h0000;
@@ -201,9 +205,9 @@ module bus_int #(
    wire [7:0] 	        set_addr;
    reg  [31:0] 	        rb_data;
    wire [RB_AWIDTH-1:0] rb_addr;
-   wire 		        rb_rd_stb;
+   wire                 rb_rd_stb;
    wire                 set_stb;
-   wire 	            spi_ready;
+   wire                 spi_ready;
    wire [31:0] 	        rb_spi_data;
    wire [15:0]          device_id;
 
@@ -410,6 +414,7 @@ module bus_int #(
    reg radio_time_hi_ld;
    reg radio_time_last_pps_hi_ld;
 
+   wire [31:0] rb_ta_sfp0_data, rb_ta_sfp1_data;
 
    always @(posedge clk) counter <= counter + 1;
 
@@ -470,7 +475,8 @@ module bus_int #(
        SR_BASE_TIME + 'h20: rb_data = period_ns_q32_tb[63:32];
 
        default: begin
-         rb_data                   = 32'h0;
+         // Allow read-back of Ethernet transport adapter regs
+         rb_data = rb_ta_sfp0_data | rb_ta_sfp1_data;
        end
      endcase // case (rb_addr)
    end
@@ -644,11 +650,13 @@ module bus_int #(
    assign {zpui0_tdata, zpui0_tlast, zpui0_tvalid, zpuo0_tready} = {64'h0, 1'b0, 1'b0, 1'b1};
 `else
    x300_eth_interface #(
-      .PROTOVER(RFNOC_PROTOVER), .MTU(BYTE_MTU-3), .NODE_INST(0), .BASE(SR_ETHINT0)
+      .PROTOVER(RFNOC_PROTOVER), .MTU(BYTE_MTU-3), .NODE_INST(0),
+      .ETH_BASE(SR_ETHINT0), .TA_BASE(SR_TA_SFP0_BASE)
    ) eth_interface0 (
       .clk(clk), .reset(reset),
       .device_id(device_id),
       .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
+      .rb_addr(rb_addr), .rb_data(rb_ta_sfp0_data),
       .eth_tx_tdata(sfp0_tx_tdata), .eth_tx_tuser(sfp0_tx_tuser), .eth_tx_tlast(sfp0_tx_tlast),
       .eth_tx_tvalid(sfp0_tx_tvalid), .eth_tx_tready(sfp0_tx_tready),
       .eth_rx_tdata(sfp0_rx_tdata), .eth_rx_tuser(sfp0_rx_tuser), .eth_rx_tlast(sfp0_rx_tlast),
@@ -667,11 +675,13 @@ module bus_int #(
    assign {zpui1_tdata, zpui1_tlast, zpui1_tvalid, zpuo1_tready} = {64'h0, 1'b0, 1'b0, 1'b1};
 `else
    x300_eth_interface #(
-      .PROTOVER(RFNOC_PROTOVER), .MTU(BYTE_MTU-3), .NODE_INST(1), .BASE(SR_ETHINT1)
+      .PROTOVER(RFNOC_PROTOVER), .MTU(BYTE_MTU-3), .NODE_INST(1),
+      .ETH_BASE(SR_ETHINT1), .TA_BASE(SR_TA_SFP1_BASE)
    ) eth_interface1 (
       .clk(clk), .reset(reset),
       .device_id(device_id),
       .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
+      .rb_addr(rb_addr), .rb_data(rb_ta_sfp1_data),
       .eth_tx_tdata(sfp1_tx_tdata), .eth_tx_tuser(sfp1_tx_tuser), .eth_tx_tlast(sfp1_tx_tlast),
       .eth_tx_tvalid(sfp1_tx_tvalid), .eth_tx_tready(sfp1_tx_tready),
       .eth_rx_tdata(sfp1_rx_tdata), .eth_rx_tuser(sfp1_rx_tuser), .eth_rx_tlast(sfp1_rx_tlast),
