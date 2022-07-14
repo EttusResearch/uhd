@@ -179,7 +179,7 @@ module bus_int #(
    localparam RB_TA_SFP1_BASE    = SR_TA_SFP1_BASE;
 
    localparam COMPAT_MAJOR       = 16'h0027;
-   localparam COMPAT_MINOR       = 16'h0000;
+   localparam COMPAT_MINOR       = 16'h0001;
    localparam NUM_TIMEKEEPERS    = 1;
 
    // Include the RFNoC image core header file
