@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <uhd/config.hpp>
 #include <uhd/features/discoverable_feature.hpp>
 #include <memory>
 
@@ -16,7 +17,7 @@ namespace uhd { namespace features {
  *  source on supported devices. Currently, only the X4xx series of devices
  *  supports this.
  */
-class ref_clk_calibration_iface : public discoverable_feature
+class UHD_API ref_clk_calibration_iface : public discoverable_feature
 {
 public:
     using sptr = std::shared_ptr<ref_clk_calibration_iface>;

@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <uhd/config.hpp>
 #include <uhd/features/discoverable_feature.hpp>
 #include <memory>
 
@@ -15,7 +16,7 @@ namespace uhd { namespace features {
  *  Currently, only the X4xx series of devices supports calibrating the
  *  internal ADCs.
  */
-class adc_self_calibration_iface : public discoverable_feature
+class UHD_API adc_self_calibration_iface : public discoverable_feature
 {
 public:
     using sptr = std::shared_ptr<adc_self_calibration_iface>;

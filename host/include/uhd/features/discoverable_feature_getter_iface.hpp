@@ -14,7 +14,7 @@ namespace uhd { namespace features {
 
 /*! Interface for discovering and accessing discoverable features.
  */
-class discoverable_feature_getter_iface
+class UHD_API discoverable_feature_getter_iface
 {
 public:
     virtual ~discoverable_feature_getter_iface() = default;

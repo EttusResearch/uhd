@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <uhd/config.hpp>
 #include <uhd/features/discoverable_feature.hpp>
 #include <memory>
 #include <string>
@@ -16,7 +17,7 @@ namespace uhd { namespace features {
 /*! Interface to provide access to configuring the voltage level and external
  * power export configurations of GPIO banks.
  */
-class gpio_power_iface : public discoverable_feature
+class UHD_API gpio_power_iface : public discoverable_feature
 {
 public:
     using sptr = std::shared_ptr<gpio_power_iface>;

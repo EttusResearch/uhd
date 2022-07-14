@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <uhd/config.hpp>
 #include <uhd/features/discoverable_feature.hpp>
 #include <uhd/types/trig_io_mode.hpp>
 #include <memory>
@@ -16,7 +17,7 @@ namespace uhd { namespace features {
 /*! Interface to provide access to set the mode of the Trig In/Out port.
  *  Currently, only the X4xx series of devices supports this.
  */
-class trig_io_mode_iface : public discoverable_feature
+class UHD_API trig_io_mode_iface : public discoverable_feature
 {
 public:
     using sptr = std::shared_ptr<trig_io_mode_iface>;

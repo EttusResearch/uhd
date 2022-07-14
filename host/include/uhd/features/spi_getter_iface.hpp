@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <uhd/config.hpp>
 #include <uhd/features/discoverable_feature.hpp>
 #include <uhd/types/serial.hpp>
 #include <memory>
@@ -16,7 +17,7 @@ namespace uhd { namespace features {
  * The SPI peripheral configuration struct:
  * Used to configure the GPIO lines for SPI transactions
  */
-struct spi_periph_config_t
+struct UHD_API spi_periph_config_t
 {
     //! Indicates which GPIO line to use for the CS signal.
     uint8_t periph_cs;
@@ -33,7 +34,7 @@ struct spi_periph_config_t
 
 /*! Interface to provide access to SPI Interface.
  */
-class spi_getter_iface : public discoverable_feature
+class UHD_API spi_getter_iface : public discoverable_feature
 {
 public:
     using sptr = std::shared_ptr<spi_getter_iface>;

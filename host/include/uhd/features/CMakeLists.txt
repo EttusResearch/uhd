@@ -5,9 +5,13 @@
 #
 
 UHD_INSTALL(FILES
-    discoverable_feature.hpp
+    adc_self_calibration_iface.hpp
     discoverable_feature_getter_iface.hpp
+    discoverable_feature.hpp
+    gpio_power_iface.hpp
     ref_clk_calibration_iface.hpp
+    spi_getter_iface.hpp
+    trig_io_mode_iface.hpp
     DESTINATION ${INCLUDE_DIR}/uhd/features
     COMPONENT headers
 )
