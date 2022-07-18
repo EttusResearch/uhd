@@ -269,8 +269,8 @@ class reg:
         which retains the previous behaviour.
         """
         if is_int(optionstr):
-            # convert number into option list for backward compability
-            optionstr = f"default={optionstr},rw"
+            # convert number into option list for backward compatibility
+            optionstr = "default={},rw".format(optionstr)
         options = [option.partition("=") for option in optionstr.split(",")]
         result = { item[0] : item[2] or None for item in options }
         return result
