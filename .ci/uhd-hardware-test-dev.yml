@@ -35,7 +35,7 @@ resources:
     type: github
     name: EttusResearch/meta-ettus-dev
     endpoint: EttusResearch
-    ref: refs/tags/v4.2.0.0
+    ref: zeus-ci
   - repository: gr-ettus
     type: github
     name: EttusResearch/gr-ettusdev
