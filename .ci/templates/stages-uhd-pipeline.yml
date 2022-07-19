@@ -272,6 +272,19 @@ stages:
     parameters:
       testOS: ubuntu1804
 
+- stage: test_uhd_rf_test_stage
+  displayName: Run rf tests n3xx
+  dependsOn:
+  - build_uhd_stage_linux
+  - build_uhd_embedded_system_images
+  - build_gnuradio_stage_linux
+  jobs:
+  - template: job-uhd-rf-tests-pebbles.yml
+    parameters:
+      uhdSrcDir: $(Build.SourcesDirectory)/uhddev
+      testOS: ubuntu1804
+      testDevices: 'n3xx'
+
 - stage: test_streaming_stage
   displayName: Test UHD Streaming
   dependsOn:

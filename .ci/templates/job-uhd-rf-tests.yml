@@ -1,0 +1,164 @@
+parameters:
+- name: suiteName
+  type: string
+- name: testOS
+  type: string
+  values:
+    - ubuntu1804
+- name: toolset
+  type: string
+  values:
+    - make
+- name: uhdSrcDir
+  type: string
+- name: uhdArtifactSource
+  type: string
+- name: redisHost
+  type: string
+- name: dutMatrix
+  type: object
+
+jobs:
+- job: build_uhd_run_hardware_test
+  displayName: Build uhd and run hardware test
+  timeoutInMinutes: 90
+  strategy:
+    matrix: ${{ parameters.dutMatrix }}
+  pool:
+    name: 'de-dre-lab'
+    demands:
+    - suiteName -equals ${{ parameters.suiteName }}
+    - testOS -equals ${{ parameters.testOS }}
+  variables:
+  - group: sdr-pipeline-vars
+  workspace:
+    clean: outputs
+
+  steps:
+  - checkout: ettus-rts
+    clean: true
+
+  - checkout: self
+    clean: true
+
+  - script: |
+      if [ "${{ parameters.uhdArtifactSource }}" = "current" ]; then
+        echo '##vso[task.setvariable variable=uhd_artifact_directory]'$(Agent.BuildDirectory)
+      else
+        echo '##vso[task.setvariable variable=uhd_artifact_directory]'$(Agent.BuildDirectory)/${{ parameters.uhdArtifactSource }}
+      fi
+    displayName: Set uhddev pipeline artifact location
+
+  - download: ${{ parameters.uhdArtifactSource }}
+    artifact: uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
+    displayName: Download uhddev-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+
+  - download: ${{ parameters.uhdArtifactSource }}
+    artifact: uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
+    displayName: Download uhddev-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+
+  - task: ExtractFiles@1
+    inputs:
+      archiveFilePatterns: $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}.tar.gz
+      destinationFolder: $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
+      cleanDestinationFolder: false
+      overwriteExistingFiles: true
+    displayName: Extract uhddev-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+
+  - download: ${{ parameters.uhdArtifactSource }}
+    artifact: gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}
+    displayName: Download gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+
+  - task: ExtractFiles@1
+    inputs:
+      archiveFilePatterns: $(uhd_artifact_directory)/gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}/gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}.tar.gz
+      destinationFolder: $(uhd_artifact_directory)/gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}
+      cleanDestinationFolder: false
+      overwriteExistingFiles: true
+    displayName: Extract gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+
+  - download: ${{ parameters.uhdArtifactSource }}
+    artifact: $(devType)-images
+    # Only sync the bz2 sdimg since the bmap
+    # is incompatible with mender
+    patterns: |
+      **/*.bz2
+      fitImage-manufacturing
+    displayName: Download $(devType)-images artifact
+    condition: and(succeeded(), eq(variables.devType, 'n3xx'))
+
+  - script: |
+      mkdir -p $(Build.BinariesDirectory)/uhddev/build/fpga_images
+      cd $(Build.BinariesDirectory)/uhddev/build
+      rm -rf fpga_images/*
+      python3 $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev/build/utils/uhd_images_downloader.py -t $(devModel) -i fpga_images \
+        -b $(sdr-fileserver)
+      if [ "$(devType)" = "b200" ]; then
+        python3 $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev/utils/uhd_images_downloader.py -t b2xx_common -i fpga_images \
+          -b $(sdr-fileserver)
+      fi
+    displayName: Download FPGA Images
+
+  - script: |
+      mkdir -p $(Common.TestResultsDirectory)/pytest
+      cd $(Common.TestResultsDirectory)/pytest
+
+      export UHD_INSTALL_PATH=$(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev/build-installed
+      export GNURADIO_GRETTUS_INSTALL_PATH=$(uhd_artifact_directory)/gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}/gnuradio/build-installed
+      export PATH=$UHD_INSTALL_PATH/bin:$PATH
+      export PATH=$GNURADIO_GRETTUS_INSTALL_PATH/bin:$PATH
+      export PYTHON_VERSION=$(python3 -c "import sys; print('python'+str(sys.version_info.major) + '.' + str(sys.version_info.minor))")
+      export UHD_IMAGES_DIR=$(Build.BinariesDirectory)/uhddev/build/fpga_images
+
+      if [ -d "$UHD_INSTALL_PATH/lib64" ]; then
+        export PATH=$UHD_INSTALL_PATH/lib64/uhd/examples:$PATH
+        export LD_LIBRARY_PATH=$UHD_INSTALL_PATH/lib64:$LD_LIBRARY_PATH
+        export LD_LIBRARY_PATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib64:$LD_LIBRARY_PATH
+        export PYTHONPATH=$UHD_INSTALL_PATH/lib64/$PYTHON_VERSION/site-packages:$PYTHONPATH
+        export PYTHONPATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib64/python3/dist-packages:$PYTHONPATH
+      else
+        export PATH=$UHD_INSTALL_PATH/lib/uhd/examples:$PATH
+        export LD_LIBRARY_PATH=$UHD_INSTALL_PATH/lib:$LD_LIBRARY_PATH
+        export LD_LIBRARY_PATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib:$LD_LIBRARY_PATH
+        export PYTHONPATH=$UHD_INSTALL_PATH/lib/$PYTHON_VERSION/site-packages:$PYTHONPATH
+        export PYTHONPATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib/python3/dist-packages:$PYTHONPATH
+      fi
+
+      python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
+        --sdimage_sdmux $(devType),$(devModel),$(uhd_artifact_directory)/$(devType)-images/$(devSDImage),${{ parameters.uhdSrcDir }}/$(devLabgridConfig),$(devHostname) \
+        --fpgas $(devFpga) \
+        --sfp_addrs $(sfpAddrs) \
+        ${{ parameters.redisHost }} $(devName) \
+        "uhd_usrp_probe --args addr=$(devAddr)" \
+        "python3 $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) \
+          --results_path $(Common.TestResultsDirectory)/pytest/{fpga}"
+    continueOnError: true
+    condition: and(succeeded(), eq(variables.devType, 'n3xx'), eq(variables.devBus, 'ip'))
+    displayName: Run pytests on $(devName)
+
+  - script: |
+      cd $(Common.TestResultsDirectory)/devtest
+      python3 ${{ parameters.uhdSrcDir }}/.ci/utils/format_devtest_junitxml.py \
+        --fpgas $(devFpga) \
+        $(Common.TestResultsDirectory)/pytest \
+        $(Common.TestResultsDirectory)/pytest/pytestresults.xml
+    continueOnError: true
+    displayName: Format devtest xml
+    condition: and(always(), eq(variables.devType, 'n3xx'))
+
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: '$(Common.TestResultsDirectory)/pytest/pytestresults.xml'
+      testRunTitle: $(devName) pytest
+      buildConfiguration: 'Release'
+      mergeTestResults: true
+    condition: always()
+    displayName: Upload pytest results
+
+  - script: |
+      echo "A previous step failed. See steps with warnings."
+      echo "Marking the overall build status as a failure."
+      exit 1
+    condition: in(variables['Agent.JobStatus'],  'SucceededWithIssues')
+    displayName: Mark build as failure

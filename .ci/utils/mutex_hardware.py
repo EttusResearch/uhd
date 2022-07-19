@@ -242,7 +242,7 @@ def main(args):
                         set_sfp_addrs(mgmt_addr, sfp_addrs)
 
                 for command in args.test_commands:
-                    result = subprocess.run(shlex.split(command))
+                    result = subprocess.run(shlex.split(command.format(fpga=fpga)))
                     if(return_code == 0):
                         return_code = result.returncode
             sys.exit(return_code)

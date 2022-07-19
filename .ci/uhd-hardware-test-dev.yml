@@ -15,6 +15,10 @@ parameters:
   type: boolean
   displayName: Run devtests
   default: false
+- name: run_rf_tests
+  type: boolean
+  displayName: Run rf tests
+  default: false
 - name: testLength
   type: string
   values:
@@ -83,4 +87,15 @@ stages:
     parameters:
       testOS: ubuntu2004
       uhdSrcDir: $(Build.SourcesDirectory)
+      uhdArtifactSource: uhd_mono_pipeline
+
+- stage: test_rf_tests
+  displayName: Run rf tests
+  dependsOn: []
+  condition: ${{ parameters.run_rf_tests }}
+  jobs:
+  - template: templates/job-uhd-rf-tests-pebbles.yml
+    parameters:
+      testOS: ubuntu1804
+      uhdSrcDir: $(Build.SourcesDirectory)/uhddev
       uhdArtifactSource: uhd_mono_pipeline

@@ -21,7 +21,8 @@ if args.fpgas:
             for case in suite:
                 classname_case = ClassNameTestCase.fromelem(case)
                 if classname_case.name == 'test_all':
-                        classname_case.name = fpga + " " + classname_case.classname
+                    classname_case.name = classname_case.classname
+                classname_case.name = fpga + " " + classname_case.name
         return_xml += xml
     return_xml.write(args.output_name)
 
@@ -34,6 +35,6 @@ else:
         for case in suite:
             classname_case = ClassNameTestCase.fromelem(case)
             if classname_case.name == 'test_all':
-                    classname_case.name = classname_case.classname
+                classname_case.name = classname_case.classname
 
     return_xml.write(args.output_name)

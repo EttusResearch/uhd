@@ -1,0 +1,17 @@
+pebbles-n310-0:
+  acquired: null
+  acquired_resources: []
+  aliases: []
+  allowed: []
+  changed: 1654034475.1935894
+  comment: ''
+  created: 1654034136.0077882
+  matches:
+  - cls: '*'
+    exporter: '*'
+    group: pebbles-n310-0-group
+    name: null
+    rename: null
+  reservation: null
+  tags: {}
+
