@@ -44,8 +44,8 @@ variables:
 - template: uhd-pipeline-vars.yml
 - name: linuxDockerImages
   value:
-    "{'Fedora-34-builder':{'buildOSName':'fedora34','dockerImageName':'uhd-builder-fedora34'},
-    'Fedora-35-builder':{'buildOSName':'fedora35','dockerImageName':'uhd-builder-fedora35'},
+    "{'Fedora-35-builder':{'buildOSName':'fedora35','dockerImageName':'uhd-builder-fedora35'},
+    'Fedora-36-builder':{'buildOSName':'fedora36','dockerImageName':'uhd-builder-fedora36'},
     'Ubuntu-1804-builder':{'buildOSName':'ubuntu1804','dockerImageName':'uhd-builder-ubuntu1804'},
     'Ubuntu-2004-builder':{'buildOSName':'ubuntu2004','dockerImageName':'uhd-builder-ubuntu2004'},
     'Ubuntu-2204-builder':{'buildOSName':'ubuntu2204','dockerImageName':'uhd-builder-ubuntu2204'}}"
@@ -75,8 +75,8 @@ variables:
 - name: fedoraRpmDockerImages
   # Match with Fedora images in linuxDockerImages
   value:
-    "{'Fedora-34-builder':{'buildOSName':'fedora34','dockerImageName':'uhd-builder-fedora34','fedoraReleaseName':'34'},
-    'Fedora-35-builder':{'buildOSName':'fedora35','dockerImageName':'uhd-builder-fedora35','fedoraReleaseName':'35'}}"
+    "{'Fedora-35-builder':{'buildOSName':'fedora35','dockerImageName':'uhd-builder-fedora35','fedoraReleaseName':'35'},
+    'Fedora-36-builder':{'buildOSName':'fedora36','dockerImageName':'uhd-builder-fedora36','fedoraReleaseName':'36'}}"
 
 - name: winDockerImagesPythonBuild
   # Match with one of the images in winDockerImages

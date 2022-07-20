@@ -1,7 +1,7 @@
 # please follow docker best practices
 # https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/
 
-FROM fedora:34
+FROM fedora:36
 LABEL maintainer="Ettus Research"
 
 RUN dnf install -y \
@@ -54,5 +54,6 @@ RUN dnf install -y \
         python3-zmq \
         python3-scipy \
         python3-cairo-devel \
+        python3-gobject \
         && \
     dnf clean all
