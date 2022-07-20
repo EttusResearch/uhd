@@ -1,3 +1,134 @@
+uhd (4.2.0.1-0ubuntu1) ubuntu_release; urgency=low
+
+  * cal
+    - add method to get the current power cal tracking mode
+  * ci
+    - Add b210 hardware to rhombus
+    - add devtest e320 support
+    - Add devtests to hardware-test-dev
+    - Add fedora rpm installer build
+    - Add n310 into devtests
+    - Add n321 to devtest
+    - Add new x3xx hardware to rhombus
+    - Add package builder container entry
+    - Add package source support to pipelines
+    - Add recv and send frame tuning for streaming
+    - Add Windows installer signing
+    - Build init_usrp example for macOS
+    - Build init_usrp example for Windows
+    - call powerbtn multiple times to power on
+    - change gr-ettus ref to master
+    - devtests: fix knownhost entry
+    - Enable root privileges for non-DPDK streaming tests
+    - Fix mgmt_addr=None entry for X310 DPDK case
+    - Increase devtest job timeout to 90 minutes
+    - Make Windows installer job self-contained
+    - Mark devtest as failure on SucceededWithIssues
+    - Only include rpm files in the Fedora installer artifacts
+    - Point meta-ettus repo ref to v4.2.0.0
+    - Run multiple fpgas per job
+    - set benchmark rate priority to high
+    - set meta-ettus-dev repo to zeus-ci
+    - Set n310 and n321 to specific agents
+    - streaming: flash x310 fpga
+    - Update branches to UHD-4.2
+  * cmake
+    - Add support for fedora rpm versioning
+    - Cache UHD_VERSION in all cases
+    - Drop .deb generation via cpack in favour of better tools
+  * debian
+    - Change jellyfish to jammy
+    - Remove hirsute; add jellyfish support
+    - Resolve lintian issues
+  * doc
+    - Fix generation of man pages
+    - Remove ZBX phase sync documentation
+  * docs
+    - DPDK Linux kernel underruns solution
+    - Update section on radio transport protocols
+  * e3xx
+    - change radio_control_impl mutex to be a recursive_mutex
+  * examples
+    - Fix rfnoc_replay_samples_from_file
+    - gpio: output before end of stream
+    - gpio: Refactor example
+  * fpga
+    - Add READMEs describing Lattice and ADI IP sourcing
+    - Fix first arg in calls to $fatal()
+    - lib: Add read-only strategy for port B in 2-port RAM
+    - lib: Update error call for undefined RW mode
+    - rfnoc: Remove rfnoc_version from target YAML
+    - x400: Fix AXI/LBUS testbench names
+    - x400: zbx: Add support for XO3 CPLD variant.
+  * host/README.md
+    - Fix links to knowledge base
+  * images
+    - Update manifest with latest cpld firmware
+  * lib
+    - Add missing include to offload_io_service_client.hpp
+    - Remove stray file async_msg.hpp
+  * mpm
+    - add support for lattice zbx cpld
+    - Factor out transport API into PeriphManagerBase
+    - Fix expected CPLD filename for x4xx
+    - udp: Fix Pylint warnings in UDP-related files
+    - x4xx: Make get_chdr_link_types() more generic
+    - xportmgr_udp: Include iface name in info
+  * n310
+    - Improve LO source control options for ALL and LO2 cases
+  * n320
+    - Fix reading DB serial in applying corrections
+    - Improve comments regarding low band
+    - Revert PLL lock time reduction
+  * python
+    - Check rfnoc_version in rfnoc_image_builder
+    - cmake: Detect python virtual environments
+  * rfnoc
+    - Add atomic_item_size property to FFT block
+    - Add LUA based dissector
+    - fix double conversions
+    - Fix register_xport_hop_cfg_fns() usage
+    - Fix vector use in replay_block_control_impl
+    - Fix warnings in replay_block_control
+    - Improve comments regarding streaming and mgmt. code
+    - Improve documentation for chdr_ctrl_endpoint
+  * tests
+    - mark test jobs as an overall failure if there is a test failure
+    - Remove packet_handler_benchmark
+    - streaming: add option to run streaming tests in dev pipeline
+    - streaming: add support for B210 DUTs
+    - streaming: add support for more DUTs
+    - streaming: don't set master clock rate on x310
+    - streaming: fix x310 test case values
+    - streaming: include dual_SFP parameter for all cases
+    - streaming: mark non-dpdk failures as xfails
+    - streaming: pass the correct LD_LIBRARY_PATH to pytest
+    - streaming: select appropriate uhd config file before test runs
+    - streaming: temporarily mark b210 dropped samples as an xfail
+    - streaming: use assert instead of pytest.fail for underruns/overruns
+  * tools
+    - package_source remove double bracket
+  * uhd
+    - change default into option flag in register definition
+    - fix minor typo when querying tx sensors property tree
+    - refactor get_all_addrs to remove duplicates
+  * usrp2
+    - Remove unused code segments
+  * utils
+    - Remove usrp_e3x0_network_mode
+    - uhd_images_downloader: Increase default image download size limit
+    - uhd_images_downloader: Print name of file that exceeds limit
+    - uhd_usrp_probe: Add DB rev to output
+    - x300_reset: Make py3k-ready
+  * x300
+    - Change order of GPIO banks
+    - Fix invalid GPIO source bank error message
+  * zbx
+    - Remove stray include
+
+ -- Ettus Research <packages@ettus.com>  Wed, 20 Jul 2022 05:33:58 -0800
+
+
 uhd (4.2.0.0-0ubuntu1) ubuntu_release; urgency=low
 
   * b200
