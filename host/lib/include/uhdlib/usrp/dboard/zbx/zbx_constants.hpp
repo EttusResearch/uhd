@@ -7,6 +7,7 @@
 
 #include <uhd/exception.hpp>
 #include <uhd/types/ranges.hpp>
+#include <uhd/usrp/zbx_tune_map_item.hpp>
 #include <unordered_map>
 #include <array>
 #include <cstddef>
@@ -74,11 +75,11 @@ static constexpr uint32_t ZBX_LO_LOCK_TIMEOUT_MS = 20; // milliseconds
 // This is the step size for the LO tuning relative to the PRC rate:
 static constexpr int ZBX_RELATIVE_LO_STEP_SIZE = 6;
 
-static constexpr double ZBX_MIN_FREQ           = 1e6; // Hz
-static constexpr double ZBX_MAX_FREQ           = 8e9; // Hz
-static constexpr double ZBX_DEFAULT_FREQ       = 1e9; // Hz
+static constexpr double ZBX_MIN_FREQ     = 1e6; // Hz
+static constexpr double ZBX_MAX_FREQ     = 8e9; // Hz
+static constexpr double ZBX_DEFAULT_FREQ = 1e9; // Hz
 static const uhd::freq_range_t ZBX_FREQ_RANGE(ZBX_MIN_FREQ, ZBX_MAX_FREQ);
-static constexpr double ZBX_LOWBAND_FREQ       = 3e9; // Hz
+static constexpr double ZBX_LOWBAND_FREQ = 3e9; // Hz
 
 constexpr char HW_GAIN_STAGE[] = "hw";
 
@@ -182,30 +183,6 @@ static constexpr std::array<size_t, 2> ZBX_CHANNELS{0, 1};
 
 static constexpr double ZBX_MIX1_MN_THRESHOLD = 4e9;
 
-// Struct for holding band information, used by zbx_radio_control_impl.
-// This information should be selected base on requested tune frequency, and should not be
-// changed once initialized.
-struct tune_map_item_t
-{
-    double min_band_freq;
-    double max_band_freq;
-    uint8_t rf_fir;
-    uint8_t if1_fir;
-    uint8_t if2_fir;
-    int mix1_m;
-    int mix1_n;
-    int mix2_m;
-    int mix2_n;
-    double if1_freq_min;
-    double if1_freq_max;
-    double if2_freq_min;
-    double if2_freq_max;
-
-    bool operator==(const tune_map_item_t& other) const {
-        return std::memcmp(this, &other, sizeof(tune_map_item_t)) == 0;
-    }
-};
-
 // These are addresses for the various table-based registers
 static constexpr uint32_t ATR_ADDR_0X = 0;
 static constexpr uint32_t ATR_ADDR_RX = 1;
@@ -216,48 +193,48 @@ static constexpr std::array<uint32_t, 4> ATR_ADDRS{0, 1, 2, 3};
 
 // Turn clang-formatting off so it doesn't compress these tables into a mess.
 // clang-format off
-static const std::vector<tune_map_item_t> rx_tune_map = {
-//  | min_band_freq | max_band_freq | rf_fir | if1_fir | if2_fir | mix1 m, n | mix2 m, n | if1_freq_min | if1_freq_max | if2_freq_min | if2_freq_max |
-    {      1e6,          200e6,          1,       1,        2,      -1,  1,     -1,  1,       4100e6,        4100e6,        1850e6,        1850e6    },
-    {    200e6,          400e6,          1,       1,        2,      -1,  1,     -1,  1,       4100e6,        4100e6,        1850e6,        1850e6    },
-    {    400e6,          500e6,          1,       1,        2,      -1,  1,     -1,  1,       4100e6,        4100e6,        1850e6,        1850e6    },
-    {    500e6,          900e6,          1,       1,        2,      -1,  1,     -1,  1,       4100e6,        4100e6,        1850e6,        1850e6    },
-    {    900e6,         1800e6,          1,       1,        2,      -1,  1,     -1,  1,       4100e6,        4100e6,        2150e6,        2150e6    },
-    {   1800e6,         2300e6,          2,       1,        1,      -1,  1,     -1,  1,       4100e6,        4100e6,        1060e6,        1060e6    },
-    {   2300e6,         2700e6,          3,       1,        1,      -1,  1,     -1,  1,       4100e6,        3700e6,        1060e6,        1060e6    },
-    {   2700e6,         3000e6,          3,       4,        2,       1, -1,      1, -1,       7000e6,        7100e6,        2050e6,        2080e6    },
-    {   3000e6,         4200e6,          0,       1,        2,       0,  0,     -1,  1,            0,             0,        1850e6,        1850e6    },
-    {   4200e6,         4500e6,          0,       2,        2,       0,  0,     -1,  1,            0,             0,        1850e6,        1850e6    },
-    {   4500e6,         4700e6,          0,       2,        1,       0,  0,     -1,  1,            0,             0,        1060e6,        1060e6    },
-    {   4700e6,         5300e6,          0,       2,        1,       0,  0,     -1,  1,            0,             0,        1060e6,        1060e6    },
-    {   5300e6,         5600e6,          0,       2,        1,       0,  0,      1, -1,            0,             0,        1060e6,        1060e6    },
-    {   5600e6,         6800e6,          0,       3,        1,       0,  0,      1, -1,            0,             0,        1060e6,        1060e6    },
-    {   6800e6,         7400e6,          0,       4,        1,       0,  0,      1, -1,            0,             0,        1060e6,        1060e6    },
-    {   7400e6,         8000e6,          0,       4,        2,       0,  0,      1, -1,            0,             0,        1850e6,        1850e6    },
+static const std::vector<zbx_tune_map_item_t> rx_tune_map = {
+//  | min_band_freq | max_band_freq | rf_fltr | if1_fltr | if2_fltr | lo1_inj_side | lo2_inj_side | if1_freq_min | if1_freq_max | if2_freq_min | if2_freq_max |
+    {      1e6,          200e6,           1,        1,         2,       HIGH,         HIGH,          4100e6,        4100e6,        1850e6,        1850e6    },
+    {    200e6,          400e6,           1,        1,         2,       HIGH,         HIGH,          4100e6,        4100e6,        1850e6,        1850e6    },
+    {    400e6,          500e6,           1,        1,         2,       HIGH,         HIGH,          4100e6,        4100e6,        1850e6,        1850e6    },
+    {    500e6,          900e6,           1,        1,         2,       HIGH,         HIGH,          4100e6,        4100e6,        1850e6,        1850e6    },
+    {    900e6,         1800e6,           1,        1,         2,       HIGH,         HIGH,          4100e6,        4100e6,        2150e6,        2150e6    },
+    {   1800e6,         2300e6,           2,        1,         1,       HIGH,         HIGH,          4100e6,        4100e6,        1060e6,        1060e6    },
+    {   2300e6,         2700e6,           3,        1,         1,       HIGH,         HIGH,          4100e6,        3700e6,        1060e6,        1060e6    },
+    {   2700e6,         3000e6,           3,        4,         2,        LOW,          LOW,          7000e6,        7100e6,        2050e6,        2080e6    },
+    {   3000e6,         4200e6,           0,        1,         2,       NONE,         HIGH,               0,             0,        1850e6,        1850e6    },
+    {   4200e6,         4500e6,           0,        2,         2,       NONE,         HIGH,               0,             0,        1850e6,        1850e6    },
+    {   4500e6,         4700e6,           0,        2,         1,       NONE,         HIGH,               0,             0,        1060e6,        1060e6    },
+    {   4700e6,         5300e6,           0,        2,         1,       NONE,         HIGH,               0,             0,        1060e6,        1060e6    },
+    {   5300e6,         5600e6,           0,        2,         1,       NONE,          LOW,               0,             0,        1060e6,        1060e6    },
+    {   5600e6,         6800e6,           0,        3,         1,       NONE,          LOW,               0,             0,        1060e6,        1060e6    },
+    {   6800e6,         7400e6,           0,        4,         1,       NONE,          LOW,               0,             0,        1060e6,        1060e6    },
+    {   7400e6,         8000e6,           0,        4,         2,       NONE,          LOW,               0,             0,        1850e6,        1850e6    },
 };
 
-static const std::vector<tune_map_item_t> tx_tune_map = {
-//  | min_band_freq | max_band_freq | rf_fir | if1_fir | if2_fir | mix1 m, n | mix2 m, n | if1_freq_min | if1_freq_max | if2_freq_min | if2_freq_max |
-    {      1e6,          200e6,          1,       2,        1,      -1,  1,      1, -1,       4600e6,        4600e6,        1060e6,        1060e6    },
-    {    200e6,          300e6,          1,       2,        1,      -1,  1,      1, -1,       4600e6,        4600e6,        1060e6,        1060e6    },
-    {    300e6,          400e6,          1,       2,        1,      -1,  1,      1, -1,       4600e6,        4600e6,        1060e6,        1060e6    },
-    {    400e6,          600e6,          1,       2,        1,      -1,  1,      1, -1,       4600e6,        4600e6,        1060e6,        1060e6    },
-    {    600e6,          800e6,          1,       2,        1,      -1,  1,      1, -1,       4600e6,        4600e6,        1060e6,        1060e6    },
-    {    800e6,         1300e6,          1,       2,        1,      -1,  1,      1, -1,       4600e6,        4600e6,        1060e6,        1060e6    },
-    {   1300e6,         1800e6,          1,       2,        1,      -1,  1,      1, -1,       4600e6,        4600e6,        1060e6,        1060e6    },
-    {   1800e6,         2300e6,          2,       1,        1,      -1,  1,     -1,  1,       4100e6,        4100e6,        1060e6,        1060e6    },
-    {   2300e6,         2700e6,          3,       1,        2,      -1,  1,     -1,  1,       3700e6,        3700e6,        2070e6,        2200e6    },
-    {   2700e6,         3000e6,          3,       5,        2,       1, -1,      1, -1,       6800e6,        7100e6,        2000e6,        2000e6    },
-    {   3000e6,         4030e6,          0,       1,        2,       0,  0,     -1,  1,            0,             0,        2050e6,        2370e6    },
-    {   4030e6,         4500e6,          0,       1,        1,       0,  0,     -1,  1,            0,             0,        1060e6,        1060e6    },
-    {   4500e6,         4900e6,          0,       2,        1,       0,  0,      1, -1,            0,             0,        1060e6,        1060e6    },
-    {   4900e6,         5100e6,          0,       2,        1,       0,  0,      1, -1,            0,             0,        1060e6,        1060e6    },
-    {   5100e6,         5700e6,          0,       3,        2,       0,  0,      1, -1,            0,             0,        1900e6,        2300e6    },
-    {   5700e6,         6100e6,          0,       4,        2,       0,  0,      1, -1,            0,             0,        2300e6,        2500e6    },
-    {   6100e6,         6400e6,          0,       4,        2,       0,  0,      1, -1,            0,             0,        2400e6,        2500e6    },
-    {   6400e6,         7000e6,          0,       5,        2,       0,  0,      1, -1,            0,             0,        1900e6,        1950e6    },
-    {   7000e6,         7400e6,          0,       6,        1,       0,  0,      1, -1,            0,             0,        1060e6,        1060e6    },
-    {   7400e6,         8000e6,          0,       6,        2,       0,  0,      1, -1,            0,             0,        1950e6,        2050e6    },
+static const std::vector<zbx_tune_map_item_t> tx_tune_map = {
+//  | min_band_freq | max_band_freq | rf_fltr | if1_fltr | if2_fltr | lo1_inj_side | lo2_inj_side | if1_freq_min | if1_freq_max | if2_freq_min | if2_freq_max |
+    {      1e6,          200e6,           1,        2,         1,          HIGH,           LOW,       4600e6,        4600e6,        1060e6,        1060e6    },
+    {    200e6,          300e6,           1,        2,         1,          HIGH,           LOW,       4600e6,        4600e6,        1060e6,        1060e6    },
+    {    300e6,          400e6,           1,        2,         1,          HIGH,           LOW,       4600e6,        4600e6,        1060e6,        1060e6    },
+    {    400e6,          600e6,           1,        2,         1,          HIGH,           LOW,       4600e6,        4600e6,        1060e6,        1060e6    },
+    {    600e6,          800e6,           1,        2,         1,          HIGH,           LOW,       4600e6,        4600e6,        1060e6,        1060e6    },
+    {    800e6,         1300e6,           1,        2,         1,          HIGH,           LOW,       4600e6,        4600e6,        1060e6,        1060e6    },
+    {   1300e6,         1800e6,           1,        2,         1,          HIGH,           LOW,       4600e6,        4600e6,        1060e6,        1060e6    },
+    {   1800e6,         2300e6,           2,        1,         1,          HIGH,          HIGH,       4100e6,        4100e6,        1060e6,        1060e6    },
+    {   2300e6,         2700e6,           3,        1,         2,          HIGH,          HIGH,       3700e6,        3700e6,        2070e6,        2200e6    },
+    {   2700e6,         3000e6,           3,        5,         2,           LOW,           LOW,       6800e6,        7100e6,        2000e6,        2000e6    },
+    {   3000e6,         4030e6,           0,        1,         2,          NONE,          HIGH,            0,             0,        2050e6,        2370e6    },
+    {   4030e6,         4500e6,           0,        1,         1,          NONE,          HIGH,            0,             0,        1060e6,        1060e6    },
+    {   4500e6,         4900e6,           0,        2,         1,          NONE,           LOW,            0,             0,        1060e6,        1060e6    },
+    {   4900e6,         5100e6,           0,        2,         1,          NONE,           LOW,            0,             0,        1060e6,        1060e6    },
+    {   5100e6,         5700e6,           0,        3,         2,          NONE,           LOW,            0,             0,        1900e6,        2300e6    },
+    {   5700e6,         6100e6,           0,        4,         2,          NONE,           LOW,            0,             0,        2300e6,        2500e6    },
+    {   6100e6,         6400e6,           0,        4,         2,          NONE,           LOW,            0,             0,        2400e6,        2500e6    },
+    {   6400e6,         7000e6,           0,        5,         2,          NONE,           LOW,            0,             0,        1900e6,        1950e6    },
+    {   7000e6,         7400e6,           0,        6,         1,          NONE,           LOW,            0,             0,        1060e6,        1060e6    },
+    {   7400e6,         8000e6,           0,        6,         2,          NONE,           LOW,            0,             0,        1950e6,        2050e6    },
 };
 
 // Turn clang-format back on just for posterity
@@ -272,5 +249,5 @@ namespace uhd { namespace usrp { namespace zbx {
 std::ostream& operator<<(
     std::ostream& os, const ::uhd::usrp::zbx::zbx_lo_source_t& lo_source);
 std::ostream& operator<<(
-    std::ostream& os, const std::vector<::uhd::usrp::zbx::tune_map_item_t>& tune_map);
+    std::ostream& os, const std::vector<::uhd::usrp::zbx::zbx_tune_map_item_t>& tune_map);
 }}} // namespace uhd::usrp::zbx

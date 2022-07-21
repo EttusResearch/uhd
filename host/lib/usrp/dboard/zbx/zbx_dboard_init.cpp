@@ -15,6 +15,7 @@
 #include <uhd/types/eeprom.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>
+#include <uhd/usrp/zbx_tune_map_item.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/reg_iface_adapter.hpp>
 #include <uhdlib/usrp/dboard/zbx/zbx_constants.hpp>
@@ -66,7 +67,7 @@ std::ostream& operator<<(
 }
 
 std::ostream& operator<<(
-    std::ostream& os, const std::vector<::uhd::usrp::zbx::tune_map_item_t>& tune_map)
+    std::ostream& os, const std::vector<::uhd::usrp::zbx::zbx_tune_map_item_t>& tune_map)
 {
     os << "Tune map with " << tune_map.size() << " entries";
     return os;
@@ -391,14 +392,10 @@ void zbx_dboard_impl::_init_frequency_prop_tree(uhd::property_tree::sptr subtree
     expert_factory::add_dual_prop_node<double>(
         expert, subtree, fe_path / "if_freq", 0.0, AUTO_RESOLVE_ON_WRITE);
     expert_factory::add_data_node<bool>(expert, fe_path / "is_highband", false);
-    expert_factory::add_data_node<int>(
-        expert, fe_path / "mixer1_m", 0, AUTO_RESOLVE_ON_WRITE);
-    expert_factory::add_data_node<int>(
-        expert, fe_path / "mixer1_n", 0, AUTO_RESOLVE_ON_WRITE);
-    expert_factory::add_data_node<int>(
-        expert, fe_path / "mixer2_m", 0, AUTO_RESOLVE_ON_WRITE);
-    expert_factory::add_data_node<int>(
-        expert, fe_path / "mixer2_n", 0, AUTO_RESOLVE_ON_WRITE);
+    expert_factory::add_data_node<lo_inj_side_t>(
+        expert, fe_path / "lo1_inj_side", NONE, AUTO_RESOLVE_ON_WRITE);
+    expert_factory::add_data_node<lo_inj_side_t>(
+        expert, fe_path / "lo2_inj_side", NONE, AUTO_RESOLVE_ON_WRITE);
     expert_factory::add_data_node<bool>(
         expert, fe_path / "band_inverted", false, AUTO_RESOLVE_ON_WRITE);
 
@@ -575,7 +572,7 @@ void zbx_dboard_impl::_init_lo_prop_tree(uhd::property_tree::sptr subtree,
     const fs_path fe_path)
 {
     // Tuning table
-    expert_factory::add_prop_node<std::vector<tune_map_item_t>>(expert,
+    expert_factory::add_prop_node<std::vector<zbx_tune_map_item_t>>(expert,
         subtree,
         fe_path / "tune_table",
         trx == RX_DIRECTION ? rx_tune_map : tx_tune_map,

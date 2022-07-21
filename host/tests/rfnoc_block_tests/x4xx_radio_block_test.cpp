@@ -612,15 +612,15 @@ BOOST_FIXTURE_TEST_CASE(zbx_custom_tx_tune_table_test, x400_radio_fixture)
     // that band is 10MHz lower (chosen arbitrarily)
     // Turn clang-formatting off so it doesn't compress these tables into a mess.
     // clang-format off
-    static const std::vector<tune_map_item_t> alternate_tx_tune_map = {
-    //  | min_band_freq | max_band_freq | rf_fir | if1_fir | if2_fir | mix1 m, n | mix2 m, n | if1_freq_min | if1_freq_max | if2_freq_min | if2_freq_max |
-        {   4030e6,         4500e6,          0,       1,        1,       0,  0,     -1,  1,            0,             0,        1050e6,        1050e6    },
+    static const std::vector<zbx_tune_map_item_t> alternate_tx_tune_map = {
+    //  | min_band_freq | max_band_freq | rf_fir | if1_fir | if2_fir | lo1_inj_side | lo2_inj_side | if1_freq_min | if1_freq_max | if2_freq_min | if2_freq_max |
+        {   4030e6,         4500e6,          0,       1,        1,      NONE,               HIGH,          0,             0,        1050e6,        1050e6    },
     };
 
     // Turn clang-format back on just for posterity
     // clang-format on
 
-    tree->access<std::vector<uhd::usrp::zbx::tune_map_item_t>>(
+    tree->access<std::vector<uhd::usrp::zbx::zbx_tune_map_item_t>>(
             "dboard/tx_frontends/0/tune_table")
         .set(alternate_tx_tune_map);
 
@@ -642,15 +642,15 @@ BOOST_FIXTURE_TEST_CASE(zbx_custom_rx_tune_table_test, x400_radio_fixture)
     // that band is 10MHz lower (chosen arbitrarily)
     // Turn clang-formatting off so it doesn't compress these tables into a mess.
     // clang-format off
-    static const std::vector<tune_map_item_t> alternate_rx_tune_map = {
-    //  | min_band_freq | max_band_freq | rf_fir | if1_fir | if2_fir | mix1 m, n | mix2 m, n | if1_freq_min | if1_freq_max | if2_freq_min | if2_freq_max |
-        {   4200e6,         4500e6,          0,       2,        2,       0,  0,     -1,  1,            0,             0,        1840e6,        1840e6    },
+    static const std::vector<zbx_tune_map_item_t> alternate_rx_tune_map = {
+    //  | min_band_freq | max_band_freq | rf_fir | if1_fir | if2_fir | lo1_inj_side | lo2_inj_side | if1_freq_min | if1_freq_max | if2_freq_min | if2_freq_max |
+        {   4200e6,         4500e6,          0,       2,        2,     NONE,                 HIGH,          0,             0,        1840e6,        1840e6    },
     };
 
     // Turn clang-format back on just for posterity
     // clang-format on
 
-    tree->access<std::vector<uhd::usrp::zbx::tune_map_item_t>>(
+    tree->access<std::vector<uhd::usrp::zbx::zbx_tune_map_item_t>>(
             "dboard/rx_frontends/0/tune_table")
         .set(alternate_rx_tune_map);
 

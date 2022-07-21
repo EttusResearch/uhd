@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include <uhd/usrp/zbx_tune_map_item.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/math.hpp>
@@ -22,15 +23,16 @@ namespace {
 /*********************************************************************
  *   Misc/calculative helper functions
  **********************************************************************/
-bool _is_band_highband(const tune_map_item_t tune_setting)
+bool _is_band_highband(const zbx_tune_map_item_t tune_setting)
 {
     // Lowband frequency paths do not utilize an RF filter
-    return tune_setting.rf_fir == 0;
+    return tune_setting.rf_fltr == 0;
 }
 
-tune_map_item_t _get_tune_settings(const double freq, const std::vector<tune_map_item_t>& tune_map)
+zbx_tune_map_item_t _get_tune_settings(
+    const double freq, const std::vector<zbx_tune_map_item_t>& tune_map)
 {
-    auto tune_setting = tune_map.begin();
+    auto tune_setting      = tune_map.begin();
     auto tune_settings_end = tune_map.end();
 
     for (; tune_setting != tune_settings_end; ++tune_setting) {
@@ -38,15 +40,15 @@ tune_map_item_t _get_tune_settings(const double freq, const std::vector<tune_map
             return *tune_setting;
         }
     }
-    // Didn't find a tune setting.  This frequency should have been clipped, this is an
-    // internal error.
+    // Didn't find a tune setting.  This frequency should have been clipped, this is
+    // an internal error.
     UHD_THROW_INVALID_CODE_PATH();
 }
 
 bool _is_band_inverted(const uhd::direction_t trx,
     const double if2_freq,
     const double rfdc_rate,
-    const tune_map_item_t tune_setting)
+    const zbx_tune_map_item_t tune_setting)
 {
     const bool is_if2_nyquist2 = if2_freq > (rfdc_rate / 2);
 
@@ -56,9 +58,9 @@ bool _is_band_inverted(const uhd::direction_t trx,
         // If we're in the second Nyquist zone, we're inverted
         int(is_if2_nyquist2) +
         // LO2 mixer may invert
-        int(tune_setting.mix2_m == -1) +
+        int(tune_setting.lo2_inj_side == HIGH) +
         // LO1 mixer can only invert in the lowband
-        int(!_is_band_highband(tune_setting) && tune_setting.mix1_m == -1);
+        int(!_is_band_highband(tune_setting) && tune_setting.lo1_inj_side == HIGH);
 
     // In the RX direction, an extra inversion is needed
     // TODO: We don't know where this is coming from
@@ -71,15 +73,14 @@ bool _is_band_inverted(const uhd::direction_t trx,
 }
 
 double _calc_lo2_freq(
-    const double if1_freq, const double if2_freq, const int mix2_m, const int mix2_n)
+    const double if1_freq, const double if2_freq, const lo_inj_side_t lo2_inj_side)
 {
-    return (if2_freq - (mix2_m * if1_freq)) / mix2_n;
+    return if1_freq - lo2_inj_side * if2_freq;
 }
 
-double _calc_if2_freq(
-    const double if1_freq, const double lo2_freq, const int mix2_m, const int mix2_n)
+double _calc_if2_freq(const double if1_freq, const double lo2_freq)
 {
-    return mix2_n * lo2_freq + mix2_m * if1_freq;
+    return abs(if1_freq - lo2_freq);
 }
 
 std::string _get_trx_string(const direction_t dir)
@@ -94,12 +95,12 @@ std::string _get_trx_string(const direction_t dir)
 }
 
 // For various RF performance considerations (such as spur reduction), different bands
-// vary between using fixed IF1 and/or IF2 or using variable IF1 and/or IF2. Bands with a
-// fixed IF1/IF2 have ifX_freq_min == IFX_freq_max, and _calc_ifX_freq() will return that
-// single value. Bands with variable IF1/IF2 will shift the IFX based on where in the RF
-// band we are tuning by using linear interpolation. (if1 calculation takes place only if
-// tune frequency is lowband)
-double _calc_if1_freq(const double tune_freq, const tune_map_item_t tune_setting)
+// vary between using fixed IF1 and/or IF2 or using variable IF1 and/or IF2. Bands
+// with a fixed IF1/IF2 have ifX_freq_min == IFX_freq_max, and _calc_ifX_freq() will
+// return that single value. Bands with variable IF1/IF2 will shift the IFX based on
+// where in the RF band we are tuning by using linear interpolation. (if1 calculation
+// takes place only if tune frequency is lowband)
+double _calc_if1_freq(const double tune_freq, const zbx_tune_map_item_t tune_setting)
 {
     if (tune_setting.if1_freq_min == tune_setting.if1_freq_max) {
         return tune_setting.if1_freq_min;
@@ -112,7 +113,8 @@ double _calc_if1_freq(const double tune_freq, const tune_map_item_t tune_setting
         tune_setting.if1_freq_max);
 }
 
-double _calc_ideal_if2_freq(const double tune_freq, const tune_map_item_t tune_setting)
+double _calc_ideal_if2_freq(
+    const double tune_freq, const zbx_tune_map_item_t tune_setting)
 {
     // linear_interp() wants to interpolate and will throw if these are identical:
     if (tune_setting.if2_freq_min == tune_setting.if2_freq_max) {
@@ -149,10 +151,8 @@ void zbx_freq_fe_expert::resolve()
     _tune_settings         = _get_tune_settings(tune_freq, _tune_table.get());
 
     // Set mixer values so the backend expert knows how to calculate final frequency
-    _mixer1_m  = _tune_settings.mix1_m;
-    _mixer1_n  = _tune_settings.mix1_n;
-    _mixer2_m  = _tune_settings.mix2_m;
-    _mixer2_n  = _tune_settings.mix2_n;
+    _lo1_inj_side = _tune_settings.lo1_inj_side;
+    _lo2_inj_side = _tune_settings.lo2_inj_side;
 
     _is_highband = _is_band_highband(_tune_settings);
     _lo1_enabled = !_is_highband.get();
@@ -171,21 +171,21 @@ void zbx_freq_fe_expert::resolve()
         // desired IF, and then applying an offset such that CH0 and CH1 tune to distinct
         // LO1 frequencies: This is done to prevent the LO's from interfering with each
         // other in a phenomenon known as injection locking.
-        const double lo1_freq =
-            if1_freq + (_tune_settings.mix1_n * tune_freq) + (lo_offset_sign * lo_step);
+        const double lo1_freq = if1_freq - (_tune_settings.lo1_inj_side * tune_freq)
+                                + (lo_offset_sign * lo_step);
         // Now, quantize the LO frequency to the nearest valid value:
         _desired_lo1_frequency = _lo_freq_range.clip(lo1_freq, true);
         // Because LO1 frequency probably changed during quantization, we simply
         // re-calculate the now-valid IF1 (the following equation is the same as
         // the LO1 frequency calculation, but solved for if1_freq):
-        if1_freq = _desired_lo1_frequency - (_tune_settings.mix1_n * tune_freq);
+        if1_freq = _desired_lo1_frequency + (_tune_settings.lo1_inj_side * tune_freq);
     }
 
     _lo2_enabled = true;
     // Calculate ideal IF2 frequency:
     const double if2_freq = _calc_ideal_if2_freq(tune_freq, _tune_settings);
     // Calculate LO2 frequency from that:
-    _desired_lo2_frequency = _calc_lo2_freq(if1_freq, if2_freq, _mixer2_m, _mixer2_n);
+    _desired_lo2_frequency = _calc_lo2_freq(if1_freq, if2_freq, _lo2_inj_side);
     // Similar to LO1, apply an offset such that CH0 and CH1 tune to distinct LO2
     // frequencies to prevent potential interference between CH0 and CH1 LO2's from
     // injection locking: In highband (LO1 disabled), this must explicitly be done below.
@@ -201,13 +201,12 @@ void zbx_freq_fe_expert::resolve()
     // Now, quantize the LO frequency to the nearest valid value:
     _desired_lo2_frequency = _lo_freq_range.clip(_desired_lo2_frequency, true);
     // Calculate actual IF2 frequency from LO2 and IF1 frequencies:
-    _desired_if2_frequency =
-        _calc_if2_freq(if1_freq, _desired_lo2_frequency, _mixer2_m, _mixer2_n);
+    _desired_if2_frequency = _calc_if2_freq(if1_freq, _desired_lo2_frequency);
 
     // If the frequency is in a different tuning band, we need to switch filters
-    _rf_filter  = _tune_settings.rf_fir;
-    _if1_filter = _tune_settings.if1_fir;
-    _if2_filter = _tune_settings.if2_fir;
+    _rf_filter  = _tune_settings.rf_fltr;
+    _if1_filter = _tune_settings.if1_fltr;
+    _if2_filter = _tune_settings.if2_fltr;
     _band_inverted =
         _is_band_inverted(_trx, _desired_if2_frequency, _rfdc_rate, _tune_settings);
 }
@@ -215,15 +214,12 @@ void zbx_freq_fe_expert::resolve()
 
 void zbx_freq_be_expert::resolve()
 {
+    const double coerced_if1_freq =
+        _coerced_lo2_frequency + (_coerced_if2_frequency * _lo2_inj_side);
     if (_is_highband) {
-        _coerced_frequency =
-            ((_coerced_if2_frequency - (_coerced_lo2_frequency * _mixer2_n)) / _mixer2_m);
+        _coerced_frequency = coerced_if1_freq;
     } else {
-        _coerced_frequency =
-            (_coerced_lo1_frequency
-                + ((_coerced_lo2_frequency * _mixer2_n - _coerced_if2_frequency)
-                    / _mixer2_m))
-            / _mixer1_n;
+        _coerced_frequency = std::abs(coerced_if1_freq - _coerced_lo1_frequency);
     }
 
     // Users may change individual settings (LO frequencies, if2 frequencies) and throw
