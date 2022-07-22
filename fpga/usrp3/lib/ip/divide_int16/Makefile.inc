@@ -12,7 +12,11 @@ LIB_IP_DIVIDE_INT16_SRCS = $(IP_BUILD_DIR)/divide_int16/divide_int16.xci
 LIB_IP_DIVIDE_INT16_OUTS = $(addprefix $(IP_BUILD_DIR)/divide_int16/, \
 divide_int16.xci.out \
 synth/divide_int16.vhd \
-) 
+)
 
-$(LIB_IP_DIVIDE_INT16_SRCS) $(LIB_IP_DIVIDE_INT16_OUTS) : $(LIB_IP_DIR)/divide_int16/divide_int16.xci
+.INTERMEDIATE: LIB_IP_DIVIDE_INT16_TRGT
+$(LIB_IP_DIVIDE_INT16_SRCS) $(LIB_IP_DIVIDE_INT16_OUTS): LIB_IP_DIVIDE_INT16_TRGT
+	@:
+
+LIB_IP_DIVIDE_INT16_TRGT: $(LIB_IP_DIR)/divide_int16/divide_int16.xci
 	$(call BUILD_VIVADO_IP,divide_int16,$(ARCH),$(PART_ID),$(LIB_IP_DIR),$(IP_BUILD_DIR),0)

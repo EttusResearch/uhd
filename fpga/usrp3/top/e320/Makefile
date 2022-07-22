@@ -35,6 +35,7 @@ DEFAULT_EDGE_FILE_E320=$(abspath e320_static_router.hex)
 
 # vivado_build($1=Device, $2=Definitions)
 vivado_build = make -f Makefile.e320.inc $(TARGET) NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2" DEFAULT_RFNOC_IMAGE_CORE_FILE=$(DEFAULT_IMAGE_CORE_FILE_$1) DEFAULT_EDGE_FILE=$(DEFAULT_EDGE_FILE_$1)
+vivado_ip    = make -f Makefile.e320.inc viv_ip    NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2" DEFAULT_RFNOC_IMAGE_CORE_FILE=$(DEFAULT_IMAGE_CORE_FILE_$1) DEFAULT_EDGE_FILE=$(DEFAULT_EDGE_FILE_$1)
 
 # post_build($1=Device, $2=Option)
 ifeq ($(TARGET),bin)
@@ -55,18 +56,22 @@ endif
 
 all:      E320_1G E320_XG ##(Default target)
 
+##E320_IP:  Build IP for E320 only.
+E320_IP:
+	+$(call vivado_ip,E320,$(XG_DEFS) E320=1)
+
 ##E320_1G:  1GigE on SFP+ Port.
-E320_1G:  build/usrp_e320_fpga_1G.dts
+E320_1G: E320_IP build/usrp_e320_fpga_1G.dts
 	$(call vivado_build,E320,$(1G_DEFS) E320=1)
 	$(call post_build,E320,1G)
 
 ##E320_XG:  10GigE on SFP+ Port.
-E320_XG: build/usrp_e320_fpga_XG.dts
+E320_XG: E320_IP build/usrp_e320_fpga_XG.dts
 	$(call vivado_build,E320,$(XG_DEFS) E320=1)
 	$(call post_build,E320,XG)
 
 ##E320_AA:  Aurora on SFP+ Port.
-E320_AA: build/usrp_e320_fpga_AA.dts
+E320_AA: E320_IP build/usrp_e320_fpga_AA.dts
 	$(call vivado_build,E320,$(AA_DEFS) E320=1)
 	$(call post_build,E320,AA)
 

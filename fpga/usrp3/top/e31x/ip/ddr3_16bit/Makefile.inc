@@ -26,7 +26,11 @@ ddr3_16bit/example_design/sim/ddr3_model.sv \
 ddr3_16bit/example_design/sim/ddr3_model_parameters.vh \
 )
 
-$(IP_DDR3_16BIT_SRCS) $(IP_DDR3_16BIT_OUTS) : $(IP_DIR)/ddr3_16bit/ddr3_16bit.xci $(IP_DIR)/ddr3_16bit/mig_*.prj
+.INTERMEDIATE: IP_DDR3_16BIT_TRGT
+$(IP_DDR3_16BIT_SRCS) $(IP_DDR3_16BIT_OUTS): IP_DDR3_16BIT_TRGT
+	@:
+
+IP_DDR3_16BIT_TRGT: $(IP_DIR)/ddr3_16bit/ddr3_16bit.xci $(IP_DIR)/ddr3_16bit/mig_*.prj
 	cp -f $(IP_DIR)/ddr3_16bit/mig_$(subst /,,$(PART_ID)).prj $(IP_DIR)/ddr3_16bit/mig_a.prj # Note: This won't allow parallel IP builds
 	$(call BUILD_VIVADO_IP,ddr3_16bit,$(ARCH),$(PART_ID),$(IP_DIR),$(IP_BUILD_DIR),0)
 	rm -f $(IP_DIR)/ddr3_16bit/mig_a.prj

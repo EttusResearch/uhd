@@ -46,6 +46,7 @@ DEFAULT_EDGE_FILE_X310=$(abspath x310_static_router.hex)
 
 # vivado_build($1=Device, $2=Definitions)
 vivado_build = make -f Makefile.x300.inc $(TARGET) NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2" DEFAULT_RFNOC_IMAGE_CORE_FILE=$(DEFAULT_IMAGE_CORE_FILE_$1) DEFAULT_EDGE_FILE=$(DEFAULT_EDGE_FILE_$1)
+vivado_ip    = make -f Makefile.x300.inc viv_ip    NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2" DEFAULT_RFNOC_IMAGE_CORE_FILE=$(DEFAULT_IMAGE_CORE_FILE_$1) DEFAULT_EDGE_FILE=$(DEFAULT_EDGE_FILE_$1)
 
 # post_build($1=Device, $2=Option)
 ifeq ($(TARGET),bin)
@@ -70,53 +71,61 @@ endif
 ##all:      X300_HG X310_HG X300_XG X310_XG (Default target)
 all:      X300_HG X310_HG X300_XG X310_XG
 
+##X300_IP:  Build IP for X300 only.
+X300_IP:
+	+$(call vivado_ip,X300,$(HG_DEFS) X300=1)
+
+##X310_IP:  Build IP for X310 only.
+X310_IP:
+	+$(call vivado_ip,X310,$(HG_DEFS) X310=1)
+
 ##X310_1G:  1GigE on both SFP+ ports.
-X310_1G:
+X310_1G: X310_IP
 	$(call vivado_build,X310,$(GIGE_DEFS) X310=1)
 	$(call post_build,X310,1G)
 
 ##X300_1G:  1GigE on both SFP+ ports.
-X300_1G:
+X300_1G: X300_IP
 	$(call vivado_build,X300,$(GIGE_DEFS) X300=1)
 	$(call post_build,X300,1G)
 
 ##X310_HG:  1GigE on SFP+ Port0, 10Gig on SFP+ Port1.
-X310_HG:
+X310_HG: X310_IP
 	$(call vivado_build,X310,$(HG_DEFS) X310=1)
 	$(call post_build,X310,HG)
 
 ##X300_HG:  1GigE on SFP+ Port0, 10Gig on SFP+ Port1.
-X300_HG:
+X300_HG: X300_IP
 	$(call vivado_build,X300,$(HG_DEFS) X300=1)
 	$(call post_build,X300,HG)
 
 ##X310_XG:  10GigE on both SFP+ ports.
-X310_XG:
+X310_XG: X310_IP
 	$(call vivado_build,X310,$(XG_DEFS) X310=1)
 	$(call post_build,X310,XG)
 
 ##X300_XG:  10GigE on both SFP+ ports.
-X300_XG:
+X300_XG: X300_IP
 	$(call vivado_build,X300,$(XG_DEFS) X300=1)
 	$(call post_build,X300,XG)
 
 ##X310_HA:  1Gig on SFP+ Port0, Aurora on SFP+ Port1.
-X310_HA:
+X310_HA: X310_IP
 	$(call vivado_build,X310,$(HA_DEFS) X310=1)
 	$(call post_build,X310,HA)
 
 ##X300_HA:  1Gig on SFP+ Port0, Aurora on SFP+ Port1.
-X300_HA:
+X300_HA: X300_IP
 	$(call vivado_build,X300,$(HA_DEFS) X300=1)
 	$(call post_build,X300,HA)
 
 ##X310_XA:  10Gig on SFP+ Port0, Aurora on SFP+ Port1.
-X310_XA:
+X310_XA: X310_IP
 	$(call vivado_build,X310,$(XA_DEFS) X310=1)
 	$(call post_build,X310,XA)
 
 ##X300_XA:  10Gig on SFP+ Port0, Aurora on SFP+ Port1.
-X300_XA:
+X300_XA: X300_IP
 	$(call vivado_build,X300,$(XA_DEFS) X300=1)
 	$(call post_build,X300,XA)
 

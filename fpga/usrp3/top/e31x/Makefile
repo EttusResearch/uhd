@@ -31,6 +31,7 @@ DEFAULT_EDGE_FILE_E31X=$(abspath e310_static_router.hex)
 
 # vivado_build($1=Device, $2=Definitions)
 vivado_build = make -f Makefile.e31x.inc $(TARGET) NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2" DEFAULT_RFNOC_IMAGE_CORE_FILE=$(DEFAULT_IMAGE_CORE_FILE_E31X) DEFAULT_EDGE_FILE=$(DEFAULT_EDGE_FILE_E31X)
+vivado_ip    = make -f Makefile.e31x.inc viv_ip    NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2" DEFAULT_RFNOC_IMAGE_CORE_FILE=$(DEFAULT_IMAGE_CORE_FILE_E31X) DEFAULT_EDGE_FILE=$(DEFAULT_EDGE_FILE_E31X)
 
 # post_build($1=Device, $2=Option)
 ifeq ($(TARGET),bin)
@@ -51,23 +52,27 @@ endif
 
 all:            E310_SG1_IDLE E310_SG3_IDLE E310_SG1 E310_SG3 E310_SG1_RFNOC E310_SG3_RFNOC ##(Default target)
 
+##E310_IP:        Build IP for E310 only.
+E310_IP:
+	+$(call vivado_ip,E310_SG3,E310_SG3=1)
+
 ##E310_SG1_IDLE:  Build USRP E3XX idle design (Speed Grade 1).
-E310_SG1_IDLE E3XX_idle:  build/usrp_e310_sg1_idle_fpga.dts
+E310_SG1_IDLE E3XX_idle: E310_IP build/usrp_e310_sg1_idle_fpga.dts
 	$(call vivado_build,E310_SG1, E310_IDLE_IMAGE=1 E310_SG1=1)
 	$(call post_build,$@,E310_SG1_IDLE)
 
 ##E310_SG3_IDLE:  Build USRP E3XX idle design (Speed Grade 3).
-E310_SG3_IDLE E3XX_idle_sg3:  build/usrp_e310_sg3_idle_fpga.dts
+E310_SG3_IDLE E3XX_idle_sg3: E310_IP build/usrp_e310_sg3_idle_fpga.dts
 	$(call vivado_build,E310_SG3, E310_IDLE_IMAGE=1 E310_SG3=1)
 	$(call post_build,$@,E310_SG3_IDLE)
 
 ##E310_SG1:       Build USRP E3XX (Speed Grade 1).
-E310_SG1 E310:  build/usrp_e310_sg1_fpga.dts
+E310_SG1 E310: E310_IP build/usrp_e310_sg1_fpga.dts
 	$(call vivado_build,E310_SG1, E310_SG1=1 $(if $(DRAM),ENABLE_DRAM=1,))
 	$(call post_build,$@,E310_SG1)
 
 ##E310_SG3:       Build USRP E3XX (Speed Grade 3).
-E310_SG3 E310_sg3:  build/usrp_e310_sg3_fpga.dts
+E310_SG3 E310_sg3: E310_IP build/usrp_e310_sg3_fpga.dts
 	$(call vivado_build,E310_SG3, E310_SG3=1 $(if $(DRAM),ENABLE_DRAM=1,))
 	$(call post_build,$@,E310_SG3)
 

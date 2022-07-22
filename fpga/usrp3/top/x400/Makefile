@@ -84,8 +84,9 @@ ifndef TARGET
 endif
 TOP ?= x4xx
 
-# vivado_build($1=Device, $2=Definitions)
+# vivado_build($1=Device, $2=Definitions, $3=Defaults)
 vivado_build = make -f Makefile.x4xx.inc $(TARGET) NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2" $3
+vivado_ip    = make -f Makefile.x4xx.inc viv_ip    NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2" $3
 
 # vivado_build($1=Device, $2=Option)
 ifeq ($(TARGET),bin)
@@ -99,9 +100,6 @@ ifeq ($(TARGET),bin)
 else
 	post_build = @echo "Skipping bitfile export."
 endif
-
-# vivado_ip($1=Device, $2=Definitions)
-vivado_ip = make -f Makefile.x4xx.inc viv_ip NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2"
 
 ##
 ##Available Targets
@@ -121,47 +119,47 @@ vivado_ip = make -f Makefile.x4xx.inc viv_ip NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID
 ##X410_CG_400 | 400 MHz   | 100 GbE         | 100 GbE         | None
 ##* Note: Not all targets are shipped with UHD
 
-X410_X1_100: build/usrp_x410_fpga_X1_100.dts
+X410_X1_100: X410_IP build/usrp_x410_fpga_X1_100.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_100_DEFAULTS))
 	$(call post_build,X410,X1_100)
 
-X410_XG_100: build/usrp_x410_fpga_XG_100.dts
+X410_XG_100: X410_IP build/usrp_x410_fpga_XG_100.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_100_DEFAULTS))
 	$(call post_build,X410,XG_100)
 
-X410_X4_100: build/usrp_x410_fpga_X4_100.dts
+X410_X4_100: X410_IP build/usrp_x410_fpga_X4_100.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_100_DEFAULTS))
 	$(call post_build,X410,X4_100)
 
-X410_X1_200: build/usrp_x410_fpga_X1_200.dts
+X410_X1_200: X410_IP build/usrp_x410_fpga_X1_200.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_200_DEFAULTS))
 	$(call post_build,X410,X1_200)
 
-X410_XG_200: build/usrp_x410_fpga_XG_200.dts
+X410_XG_200: X410_IP build/usrp_x410_fpga_XG_200.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_200_DEFAULTS))
 	$(call post_build,X410,XG_200)
 
-X410_X4_200: build/usrp_x410_fpga_X4_200.dts
+X410_X4_200: X410_IP build/usrp_x410_fpga_X4_200.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_200_DEFAULTS))
 	$(call post_build,X410,X4_200)
 
-X410_X1_400: build/usrp_x410_fpga_X1_400.dts
+X410_X1_400: X410_IP build/usrp_x410_fpga_X1_400.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_400_128_DEFAULTS))
 	$(call post_build,X410,X1_400)
 
-X410_XG_400: build/usrp_x410_fpga_XG_400.dts
+X410_XG_400: X410_IP build/usrp_x410_fpga_XG_400.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_400_128_DEFAULTS))
 	$(call post_build,X410,XG_400)
 
-X410_X4_400: build/usrp_x410_fpga_X4_400.dts
+X410_X4_400: X410_IP build/usrp_x410_fpga_X4_400.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_400_128_DEFAULTS))
 	$(call post_build,X410,X4_400)
 
-X410_C1_400: build/usrp_x410_fpga_C1_400.dts
+X410_C1_400: X410_IP build/usrp_x410_fpga_C1_400.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_400_DEFAULTS))
 	$(call post_build,X410,C1_400)
 
-X410_CG_400: build/usrp_x410_fpga_CG_400.dts
+X410_CG_400: X410_IP build/usrp_x410_fpga_CG_400.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_400_DEFAULTS))
 	$(call post_build,X410,CG_400)
 
@@ -175,19 +173,19 @@ X410_CG_400: build/usrp_x410_fpga_CG_400.dts
 ##X410_X4C_200 | 200       | 4 x 10 GbE     | 100GbE         | None
 ##X410_C1_200  | 200       | 100 GbE        | None           | 64b x 4 Ch
 
-X410_X4C_100: build/usrp_x410_fpga_X4C_100.dts
+X410_X4C_100: X410_IP build/usrp_x410_fpga_X4C_100.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_100_DEFAULTS))
 	$(call post_build,X410,X4C_100)
 
-X410_C1_100: build/usrp_x410_fpga_CG_100.dts
+X410_C1_100: X410_IP build/usrp_x410_fpga_CG_100.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_100_DEFAULTS))
 	$(call post_build,X410,CG_100)
 
-X410_C1_200: build/usrp_x410_fpga_CG_200.dts
+X410_C1_200: X410_IP build/usrp_x410_fpga_CG_200.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_200_DEFAULTS))
 	$(call post_build,X410,CG_200)
 
-X410_X4C_200: build/usrp_x410_fpga_X4C_200.dts
+X410_X4C_200: X410_IP build/usrp_x410_fpga_X4C_200.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_200_DEFAULTS))
 	$(call post_build,X410,X4C_200)
 
@@ -200,7 +198,7 @@ X410_X4C_200: build/usrp_x410_fpga_X4C_200.dts
 all:          X410_X4_200 X410_CG_400 ##(Default targets)
 
 X410_IP:      ##Build IP only.
-	$(call vivado_ip,X410,$(DEFS) X410=1)
+	+$(call vivado_ip,X410,$(DEFS) X410=1)
 
 build/%.dts: dts/*.dts dts/*.dtsi
 	-mkdir -p build

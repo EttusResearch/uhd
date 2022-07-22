@@ -10,5 +10,9 @@ IP_AXI_ETH_DMA_OUTS = $(addprefix $(IP_BUILD_DIR)/axi_eth_dma/, \
 axi_eth_dma.xci.out \
 )
 
-$(IP_AXI_ETH_DMA_SRCS) $(IP_AXI_ETH_DMA_OUTS) : $(IP_DIR)/axi_eth_dma/axi_eth_dma.xci
+.INTERMEDIATE: IP_AXI_ETH_DMA_TRGT
+$(IP_AXI_ETH_DMA_SRCS) $(IP_AXI_ETH_DMA_OUTS) : IP_AXI_ETH_DMA_TRGT
+	@:
+
+IP_AXI_ETH_DMA_TRGT: $(IP_DIR)/axi_eth_dma/axi_eth_dma.xci
 	$(call BUILD_VIVADO_IP,axi_eth_dma,$(ARCH),$(PART_ID),$(IP_DIR),$(IP_BUILD_DIR),0)

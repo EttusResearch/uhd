@@ -37,6 +37,9 @@ synth/ten_gig_eth_pcs_pma.xdc \
 
 $(IP_TEN_GIG_ETH_PCS_PMA_EXAMPLE_SRCS) : $(IP_TEN_GIG_ETH_PCS_PMA_OUTS)
 
-$(IP_TEN_GIG_ETH_PCS_PMA_SRCS) $(IP_TEN_GIG_ETH_PCS_PMA_OUTS) : $(IP_DIR)/ten_gig_eth_pcs_pma/ten_gig_eth_pcs_pma.xci
-	$(call BUILD_VIVADO_IP,ten_gig_eth_pcs_pma,$(ARCH),$(PART_ID),$(IP_DIR),$(IP_BUILD_DIR),1)
+.INTERMEDIATE: IP_TEN_GIG_ETH_PCS_PMA_TRGT
+$(IP_TEN_GIG_ETH_PCS_PMA_SRCS) $(IP_TEN_GIG_ETH_PCS_PMA_OUTS): IP_TEN_GIG_ETH_PCS_PMA_TRGT
+	@:
 
+IP_TEN_GIG_ETH_PCS_PMA_TRGT: $(IP_DIR)/ten_gig_eth_pcs_pma/ten_gig_eth_pcs_pma.xci
+	$(call BUILD_VIVADO_IP,ten_gig_eth_pcs_pma,$(ARCH),$(PART_ID),$(IP_DIR),$(IP_BUILD_DIR),1)

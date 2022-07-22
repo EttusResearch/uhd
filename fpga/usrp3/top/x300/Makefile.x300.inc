@@ -124,13 +124,16 @@ IMAGE_CORE_DEF="RFNOC_IMAGE_CORE_HDR=$(DEFAULT_RFNOC_IMAGE_CORE_FILE:.v=.vh)"
 VERILOG_DEFS=$(EXTRA_DEFS) $(CUSTOM_DEFS) $(GIT_HASH_VERILOG_DEF) $(EDGE_TBL_DEF) $(IMAGE_CORE_DEF)
 
 # DESIGN_SRCS and VERILOG_DEFS must be defined
-bin: .prereqs $$(DESIGN_SRCS) ip
+bin: .prereqs $$(DESIGN_SRCS)
 	$(call BUILD_VIVADO_DESIGN,$(abspath ./build_x300.tcl),$(TOP_MODULE),$(ARCH),$(PART_ID))
 
-synth: .prereqs $$(DESIGN_SRCS) ip
+synth: .prereqs $$(DESIGN_SRCS)
 	$(call BUILD_VIVADO_DESIGN,$(TOOLS_DIR)/scripts/viv_synth.tcl,$(TOP_MODULE),$(ARCH),$(PART_ID))
 
-rtl: .prereqs $$(DESIGN_SRCS) ip
+rtl: .prereqs $$(DESIGN_SRCS)
 	$(call CHECK_VIVADO_DESIGN,$(TOOLS_DIR)/scripts/viv_check_syntax.tcl,$(TOP_MODULE),$(ARCH),$(PART_ID))
+
+viv_ip: .prereqs $$(DESIGN_SRCS) ip
+	@echo "IP build for $(NAME) DONE . . ."
 
 .PHONY: bin rtl

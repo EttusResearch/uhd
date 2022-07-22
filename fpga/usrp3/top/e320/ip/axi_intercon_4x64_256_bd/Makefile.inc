@@ -13,5 +13,9 @@ axi_intercon_4x64_256_bd.bd.out \
 axi_intercon_4x64_256_bd_ooc.xdc \
 )
 
-$(IP_AXI_INTERCON_4X64_256_BD_SRCS) $(IP_AXI_INTERCON_4X64_256_BD_OUTS) : $(IP_DIR)/axi_intercon_4x64_256_bd/axi_intercon_4x64_256_bd.bd
+.INTERMEDIATE: IP_AXI_INTERCON_4X64_256_BD_TRGT
+$(IP_AXI_INTERCON_4X64_256_BD_SRCS) $(IP_AXI_INTERCON_4X64_256_BD_OUTS): IP_AXI_INTERCON_4X64_256_BD_TRGT
+	@:
+
+IP_AXI_INTERCON_4X64_256_BD_TRGT: $(IP_DIR)/axi_intercon_4x64_256_bd/axi_intercon_4x64_256_bd.bd
 	$(call BUILD_VIVADO_BD,axi_intercon_4x64_256_bd,$(ARCH),$(PART_ID),$(IP_DIR),$(IP_BUILD_DIR))

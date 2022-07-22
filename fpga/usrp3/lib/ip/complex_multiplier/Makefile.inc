@@ -12,7 +12,11 @@ LIB_IP_COMPLEX_MULTIPLIER_SRCS = $(IP_BUILD_DIR)/complex_multiplier/complex_mult
 LIB_IP_COMPLEX_MULTIPLIER_OUTS = $(addprefix $(IP_BUILD_DIR)/complex_multiplier/, \
 complex_multiplier.xci.out \
 synth/complex_multiplier.vhd \
-) 
+)
 
-$(LIB_IP_COMPLEX_MULTIPLIER_SRCS) $(LIB_IP_COMPLEX_MULTIPLIER_OUTS) : $(LIB_IP_DIR)/complex_multiplier/complex_multiplier.xci
+.INTERMEDIATE: LIB_IP_COMPLEX_MULTIPLIER_TRGT
+$(LIB_IP_COMPLEX_MULTIPLIER_SRCS) $(LIB_IP_COMPLEX_MULTIPLIER_OUTS): LIB_IP_COMPLEX_MULTIPLIER_TRGT
+	@:
+
+LIB_IP_COMPLEX_MULTIPLIER_TRGT: $(LIB_IP_DIR)/complex_multiplier/complex_multiplier.xci
 	$(call BUILD_VIVADO_IP,complex_multiplier,$(ARCH),$(PART_ID),$(LIB_IP_DIR),$(IP_BUILD_DIR),0)

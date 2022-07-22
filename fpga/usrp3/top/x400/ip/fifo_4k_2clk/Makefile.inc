@@ -17,5 +17,9 @@ fifo_4k_2clk.xci.out \
 synth/fifo_4k_2clk.vhd \
 )
 
-$(IP_FIFO_4K_2CLK_SRCS) $(IP_FIFO_4K_2CLK_OUTS) : $(IP_DIR)/fifo_4k_2clk/fifo_4k_2clk.xci
+.INTERMEDIATE: IP_FIFO_4K_2CLK_TRGT
+$(IP_FIFO_4K_2CLK_SRCS) $(IP_FIFO_4K_2CLK_OUTS): IP_FIFO_4K_2CLK_TRGT
+	@:
+
+IP_FIFO_4K_2CLK_TRGT: $(IP_DIR)/fifo_4k_2clk/fifo_4k_2clk.xci
 	$(call BUILD_VIVADO_IP,fifo_4k_2clk,$(ARCH),$(PART_ID),$(IP_DIR),$(IP_BUILD_DIR),0)

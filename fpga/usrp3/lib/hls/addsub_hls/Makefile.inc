@@ -14,6 +14,10 @@ addsub_hls.tcl \
 # will glob all the files in this directory, including *.dat files.
 HLS_IP_ADDSUB_HLS_OUTS = $(IP_BUILD_DIR)/addsub_hls/solution/impl/ip/hdl/verilog
 
+.INTERMEDIATE: HLS_IP_ADDSUB_HLS_TRGT
+$(HLS_IP_ADDSUB_HLS_OUTS): HLS_IP_ADDSUB_HLS_TRGT
+	@:
+
 # Build with HLS
-$(HLS_IP_ADDSUB_HLS_OUTS) : $(HLS_IP_ADDSUB_HLS_LIB_SRCS)
+HLS_IP_ADDSUB_HLS_TRGT: $(HLS_IP_ADDSUB_HLS_LIB_SRCS)
 	$(call BUILD_VIVADO_HLS_IP,addsub_hls,$(PART_ID),$(HLS_IP_ADDSUB_HLS_LIB_SRCS),$(HLS_IP_DIR),$(IP_BUILD_DIR),)
