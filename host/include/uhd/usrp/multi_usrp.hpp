@@ -26,6 +26,7 @@
 
 #include <uhd/config.hpp>
 #include <uhd/device.hpp>
+#include <uhd/extension/extension.hpp>
 #include <uhd/rfnoc/mb_controller.hpp>
 #include <uhd/rfnoc/radio_control.hpp>
 #include <uhd/types/filters.hpp>
@@ -616,6 +617,31 @@ public:
      * \throws uhd::not_implemented_error if not on an RFNoC device.
      */
     virtual uhd::rfnoc::radio_control& get_radio_control(const size_t chan = 0) = 0;
+
+    /*! Get a handle to any RF extension objects which may exist.
+     *
+     * \param trx The TX/RX direction
+     * \param chan The channel index
+     * \returns A pointer to the extension matching the given trx/channel or a nullptr if
+     * the extension is not found.
+     */
+    virtual uhd::extension::extension::sptr get_extension(
+        const direction_t trx, const size_t chan) = 0;
+
+    /*! Get a handle to a RF extension object
+     *
+     * This function retrieves a handle to a RF extension object and casts it to
+     * the given type, which must be a derived class of uhd::extension::extension.
+     *
+     * \param trx The TX/RX direction
+     * \param chan The channel index
+     * \returns A pointer to the extension matching the given trx/channel
+     */
+    template <typename T>
+    typename T::sptr get_extension(const direction_t trx, const size_t chan)
+    {
+        return std::dynamic_pointer_cast<T>(get_extension(trx, chan));
+    }
 
     /*******************************************************************
      * RX methods

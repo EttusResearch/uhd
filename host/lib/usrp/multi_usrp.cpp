@@ -324,7 +324,8 @@ public:
         }
         if (_tree->exists(rx_rf_fe_root(chan) / "ref_power/serial")) {
             usrp_info["rx_ref_power_serial"] =
-                _tree->access<std::string>(rx_rf_fe_root(chan) / "ref_power/serial").get();
+                _tree->access<std::string>(rx_rf_fe_root(chan) / "ref_power/serial")
+                    .get();
         }
         return usrp_info;
     }
@@ -363,7 +364,8 @@ public:
         }
         if (_tree->exists(tx_rf_fe_root(chan) / "ref_power/serial")) {
             usrp_info["tx_ref_power_serial"] =
-                _tree->access<std::string>(tx_rf_fe_root(chan) / "ref_power/serial").get();
+                _tree->access<std::string>(tx_rf_fe_root(chan) / "ref_power/serial")
+                    .get();
         }
         return usrp_info;
     }
@@ -829,6 +831,12 @@ public:
     {
         throw uhd::not_implemented_error(
             "get_radio_control() not supported on this device!");
+    }
+
+    uhd::extension::extension::sptr get_extension(
+        const direction_t, const size_t) override
+    {
+        throw uhd::not_implemented_error("get_extension() not supported on this device!");
     }
 
     /*******************************************************************
@@ -1632,8 +1640,7 @@ public:
                 "get_rx_power_range() not available for this device and channel");
         }
         return _tree->access<meta_range_t>(power_ref_path).get();
-
-    }
+        }
 
     void set_rx_antenna(const std::string& ant, size_t chan) override
     {
@@ -2331,7 +2338,7 @@ public:
             const std::string name          = bank.substr(2);
             const dboard_iface::unit_t unit = (bank[0] == 'R') ? dboard_iface::UNIT_RX
                                                                : dboard_iface::UNIT_TX;
-            auto iface = _tree
+            auto iface                      = _tree
                              ->access<dboard_iface::sptr>(
                                  mb_root(mboard) / "dboards" / name / "iface")
                              .get();
@@ -2405,7 +2412,7 @@ public:
             const std::string name          = bank.substr(2);
             const dboard_iface::unit_t unit = (bank[0] == 'R') ? dboard_iface::UNIT_RX
                                                                : dboard_iface::UNIT_TX;
-            auto iface = _tree
+            auto iface                      = _tree
                              ->access<dboard_iface::sptr>(
                                  mb_root(mboard) / "dboards" / name / "iface")
                              .get();

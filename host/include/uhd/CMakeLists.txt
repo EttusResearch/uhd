@@ -8,6 +8,7 @@
 
 add_subdirectory(cal)
 add_subdirectory(experts)
+add_subdirectory(extension)
 add_subdirectory(features)
 add_subdirectory(rfnoc)
 add_subdirectory(transport)

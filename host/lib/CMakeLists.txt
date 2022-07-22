@@ -92,6 +92,7 @@ INCLUDE_SUBDIRECTORY(usrp)
 INCLUDE_SUBDIRECTORY(usrp_clock)
 INCLUDE_SUBDIRECTORY(utils)
 INCLUDE_SUBDIRECTORY(experts)
+INCLUDE_SUBDIRECTORY(extension)
 INCLUDE_SUBDIRECTORY(transport)
 
 ########################################################################
