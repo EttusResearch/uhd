@@ -46,6 +46,11 @@ def pytest_addoption(parser):
         choices=dut_type_list,
         help="")
     parser.addoption(
+        "--dut_fpga",
+        type=str,
+        required=False,
+        help="")
+    parser.addoption(
         "--test_length",
         type=str,
         default=test_length_utils.Test_Length_Full,
