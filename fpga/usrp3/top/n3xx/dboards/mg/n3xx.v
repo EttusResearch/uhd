@@ -3369,6 +3369,16 @@ module n3xx (
   wire [16*NUM_CHANNELS-1:0] db_gpio_in;
   wire [16*NUM_CHANNELS-1:0] db_gpio_fab;
 
+  // Vivado has demonstrated difficulty meeting timing with the spi0_mosi split.
+  // To improve the chances of meeting timing, we are routing this signal
+  // through a BUFG.
+
+  wire spi0_mosi_buf;
+  BUFG bufg_spi0_mosi (
+   .O (spi0_mosi_buf),
+   .I (spi0_mosi)
+  );
+
   // DB A SPI Connections
   wire cpld_a_cs_n;
   wire lmk_a_cs_n;
@@ -3377,10 +3387,10 @@ module n3xx (
 
   // Split out the SCLK and MOSI data to Mykonos and the CPLD.
   assign DBA_CPLD_PS_SPI_SCLK = spi0_sclk;
-  assign DBA_CPLD_PS_SPI_SDI  = spi0_mosi;
+  assign DBA_CPLD_PS_SPI_SDI  = spi0_mosi_buf;
 
   assign DBA_MYK_SPI_SCLK     = spi0_sclk;
-  assign DBA_MYK_SPI_SDIO     = spi0_mosi;
+  assign DBA_MYK_SPI_SDIO     = spi0_mosi_buf;
   // Assign individual chip selects from PS SPI MASTER 0.
   assign cpld_a_cs_n = spi0_ss0;
   assign lmk_a_cs_n  = spi0_ss1;
