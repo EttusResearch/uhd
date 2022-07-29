@@ -4,19 +4,94 @@
 
 \section stream_intro Introduction to Streaming
 
-The concept of streaming refers to the transportation of samples between
-host and device. A stream is an object that facilitates streaming
-between host application and device. An RX stream allows the user to
-receive samples from the device. A TX stream allows the user to transmit
-samples to the device.
+The concept of streaming refers to the transportation of samples or other data
+between host and device. A streamer is an object that facilitates such streaming.
+An RX streamer (uhd::rx_streamer) allows the user to
+receive data from the device. A TX streamer (uhd::tx_streamer) allows the user to transmit
+data to the device.
+
+For RX streaming, the following actions need to be taken:
+
+- A streamer needs to be created (e.g., using multi_usrp::get_rx_stream() or
+  rfnoc_graph::get_rx_stream(), depending on what API is being used). Upon
+  creation of the streamer, typically all connections between the host and the
+  device are configured (e.g., how to send UDP data packets).
+  - When using the RFNoC API, it is necessary to manually connect the streamer
+    to the desired endpoint.
+  - When using the multi_usrp API, the RX streamer is automatically connected
+    to the radio/DSP chain.
+  - When creating an RX streamer, a uhd::stream_args_t object must be passed in
+    to configure the data types used on the link layer and in the host software,
+    as well as any other configurations that are required.
+- To initiate streaming, typically a stream command needs to be issued to the
+  device to indicate that the host application is ready to receive samples. The
+  uhd::rx_streamer::issue_stream_cmd() API call can typically be used for this.
+- As soon as streaming starts, the uhd::rx_streamer::recv() call needs to be
+  called regularly to accept the incoming data. If recv() is not called often
+  enough, the device can overrun and stop streaming.
+
+In Python, the steps could look like this:
+
+~~~{.py}
+import uhd
+import numpy as np
+usrp = uhd.usrp.MultiUSRP("type=x300")
+stream_args = uhd.usrp.StreamArgs("fc32", "sc16")
+stream_args.args = "spp=200" # Note this setting is not valid for all USRPs
+rx_streamer = usrp.get_rx_stream(stream_args)
+rx_metadata = uhd.types.RXMetadata()
+recv_buffer = np.zeros(rx_streamer.get_max_num_samps(), dtype=np.complex64)
+stream_cmd = uhd.types.StreamCMD(uhd.types.StreamMode.start_cont)
+stream_cmd.stream_now = True
+rx_streamer.issue_stream_cmd(stream_cmd)
+while run_condition:
+    samps = rx_streamer.recv(recv_buffer, rx_metadata)
+stream_cmd = uhd.types.StreamCMD(uhd.types.StreamMode.stop_cont)
+rx_streamer.issue_stream_cmd(stream_cmd)
+~~~
+
+For TX streaming, the following actions need to be taken:
+
+- A streamer needs to be created (e.g., using multi_usrp::get_tx_stream() or
+  rfnoc_graph::get_tx_stream(), depending on what API is being used). Upon
+  creation of the streamer, typically all connections between the host and the
+  device are configured (e.g., how to send UDP data packets).
+  - When using the RFNoC API, it is necessary to manually connect the streamer
+    to the desired endpoint.
+  - When using the multi_usrp API, the TX streamer is automatically connected
+    to the radio/DSP chain.
+  - When creating an TX streamer, a uhd::stream_args_t object must be passed in
+    to configure the data types used on the link layer and in the host software,
+    as well as any other configurations that are required.
+- To initiate streaming, use the uhd::tx_streamer::send() API call to pass data
+  to UHD for transmission to the device.
+- It is up to the host application to call send() often enough to keep up with
+  the device. If the device runs out of data from the host, it will underrun.
+
+In Python, the steps could look like this:
+
+~~~{.py}
+import uhd
+import numpy as np
+usrp = uhd.usrp.MultiUSRP("type=x300")
+stream_args = uhd.usrp.StreamArgs("fc32", "sc16")
+stream_args.args = "spp=200" # Note this setting is not valid for all USRPs
+tx_streamer = usrp.get_tx_stream(stream_args)
+tx_metadata = uhd.types.TXMetadata()
+tx_buffer = np.zeros(1000000, dtype=np.complex64)
+while True:
+    samps = tx_streamer.send(tx_buffer, tx_metadata)
+~~~
+
+For more details on configuring streamers, cf. \ref config_stream_args.
+
+For more details on overruns/underruns, cf. \ref general_ounotes.
+
 
 \section stream_lle Link Layer Encapsulation
 
-The VITA49 standard provides encapsulation for sample data across a link
-layer. On all second generation hardware (and later), samples are
-encapsulated into VRT IF data packets. These packets also provide sample
-decoration such as stream time and burst flags. Sample decoration is
-exposed to the user in the form of RX and TX metadata structs.
+Between the host and the device, data (such as I/Q samples) are packetized and
+encapsulated. Refer to \ref page_rtp for more details on the protocols used.
 
 The length of an IF data packet can be limited by several factors:
 
@@ -26,10 +101,11 @@ The length of an IF data packet can be limited by several factors:
 
 \section stream_datatypes Data Types
 
-There are two important data types to consider when streaming:
+There are two important data types to consider when streaming. They are referred
+to as arguments in the uhd::stream_args_t object:
 
--   The data type of the samples used on the host for processing
--   The data type of the samples sent through the link-layer
+- The data type of the samples used on the host for processing (`cpu` argument)
+- The data type of the samples sent through the link-layer (`otw` argument)
 
 \subsection stream_datatypes_cpu The host/CPU data type
 
@@ -50,6 +126,121 @@ The user may request arbitrary combinations of host and link data types;
 however, not all combinations are supported. The user may register
 custom data type formats and conversion routines. See
 convert.hpp and \ref page_converters for further documentation.
+
+
+\section stream_remote Remote streaming
+
+Ethernet-based devices allow sending data to an alternative destination instead
+of back to the controlling UHD session.
+
+\subsection stream_remote_rfnoc RFNoC Devices (X410, N3xx Series, E320)
+
+Starting with UHD 4.3, these devices allow streaming data to alternative
+locations from their QSFP/SFP connectors (streaming data to alternative locations
+from the RJ45 connector is not possible).
+
+To enable remote streaming, create a regular RX streamer. This will work as a
+proxy for UHD, and an object that will accept stream commands.
+
+Consider the following example: A UHD host controller is running on a computer
+with IP address 192.168.40.1. It is opening a session with a USRP with IP
+address 192.168.40.2. It configures the USRP, sets the desired frequency and
+gain, and any other settings that might be required. Then, it initiates a data
+stream from the USRP to another computer with IP address 192.168.40.5.
+
+```
+
+ ┌─────────────┐           ┌──────────────┐
+ │             │           │              │
+ │             <───────────┤ UHD Host     │
+ │ USRP        │           │ 192.168.40.1 │
+ │ 192.168.40.2│           └──────────────┘
+ │             ├─────┐
+ └─────────────┘     │     ┌──────────────┐
+                     │     │              │
+                     │     │ Remote       │
+                     └─────> Streaming    │
+                           │ Destination  │
+                           │ 192.168.40.5 │
+                           │              │
+                           └──────────────┘
+```
+
+The sequence of events to enable this feature is illustrated with the following
+Python snippet:
+
+~~~{.py}
+import uhd
+import numpy as np
+usrp = uhd.usrp.MultiUSRP("type=x4xx")
+stream_args = uhd.usrp.StreamArgs("fc32", "sc16")
+# Here, we program the remote computer's IP address and a destination UDP port:
+stream_args.args = "dest_addr=192.168.40.5,dest_port=1234"
+rx_streamer = usrp.get_rx_stream(stream_args)
+rx_metadata = uhd.types.RXMetadata()
+stream_cmd = uhd.types.StreamCMD(uhd.types.StreamMode.start_cont)
+stream_cmd.stream_now = True
+rx_streamer.issue_stream_cmd(stream_cmd)
+# Calling recv() now will do nothing and return a timeout, because samples have
+# been diverted to the remote destination:
+recv_buffer = np.zeros(rx_streamer.get_max_num_samps(), dtype=np.complex64)
+samps = rx_streamer.recv(recv_buffer, rx_metadata)
+assert samps == 0
+# However, we can still use the streamer to stop the stream:
+stream_cmd = uhd.types.StreamCMD(uhd.types.StreamMode.stop_cont)
+rx_streamer.issue_stream_cmd(stream_cmd)
+~~~
+
+The ability to call recv() without a fatal error condition allows using this API
+with some preexisting applications.
+
+The streamer objects accepts the following arguments:
+
+- `dest_addr`, `dest_port`: The remote destination IP address and port. Both must be
+  provided.
+- `dest_mac_addr`: If provided, this value is used as a MAC address. Must be in
+  AA:BB:CC:DD:EE:FF format. If not provided, the device uses ARP to identify the
+  MAC address based on the IP address. When given, there are no further checks
+  that the IP address matches the MAC address.
+- `adapter`: The adapter that is used to stream data out of. The adapter names
+  match the interface names as listed on the command line (e.g., `sfp0`, `sfp1`).
+  This allows connecting to one interface and streaming out of another. It also
+  allows running UHD on the device itself (for MPM devices, i.e. X410, E320,
+  N3xx series) and streaming to a remote destination at a high rate.
+- `stream_mode`: This key allows two options: `raw_payload` (the default) and
+  `full_packet`. When `full_packet` is selected, the full CHDR packet is streamed
+  and the remote destination needs to dissect or remove the header. With
+  `raw_payload`, only the data is sent as a UDP packet (e.g., only IQ samples).
+  See \ref page_rtp for more details on CHDR.
+- `enable_fc`: Either "0" (default) or "1". Set to "1" to enable flow control.
+  In that case, `stream_mode` must also be set to `full_packet` in order to be
+  able to handle flow control responses. See the following section for more
+  information.
+
+\subsubsection stream_remote_rfnoc_fc Flow Control
+
+By default, the USRP will stream data to the remote streaming destination at
+whatever data rate it is set to, and there are no checks to ensure the destination
+can keep up. This is different from streaming to UHD, where flow control is used
+to match rates between device and host computer.
+
+If flow control is desired, then using `enable_fc=1` as a stream argument will
+enable flow control. However, the remote destination must now unpack the data
+packets and send flow control responses to the USRP in order for it to keep
+streaming. Refer to the RFNoC specification for how to format flow control
+response packets.
+
+\subsection stream_remote_usrp2 USRP N200/N210/USRP2
+
+The N200 Series of USRPs supports alternative stream destinations starting with
+UHD 3.5.
+
+The sequence to activate remote destination streaming is identical to that in Section
+\ref stream_remote_rfnoc, with the following differences:
+
+- Only the `addr` and `port` arguments are supported.
+- Data is always sent in the device's VITA49 format (see \ref page_rtp).
+- Flow control management is always required.
 
 */
 // vim:ft=doxygen:
