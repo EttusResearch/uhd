@@ -160,7 +160,7 @@ endmodule
 //        This enum is used to create the constants held in the basic registers in both verilog and vhdl.
 //      </info>
 //      <value name="BOARD_ID_VALUE"        integer="0x4002"/>
-//      <value name="CPLD_REVISION"         integer="0x22031611"/>
+//      <value name="CPLD_REVISION"         integer="0x22082233"/>
 //      <value name="OLDEST_CPLD_REVISION"  integer="0x20110611"/>
 //      <value name="VARIANT_ID_XO3"        integer="0x584F33"/>
 //      <value name="VARIANT_ID_MAX10"      integer="0x4D4158"/>
