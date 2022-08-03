@@ -24,6 +24,11 @@ BUILD_DIAMOND_DESIGN = \
 	echo "========================================================"; \
 	echo "BUILDER: Staging Diamond sources in build directory..."; \
 	cp -rf $(3)/lattice/* $(4)/;\
+	echo "BUILDER: Updating environment..."; \
+	export DMD_GIT_HASH=$(GIT_HASH_VERILOG_DEF); \
+	export DMD_PROJECT_FILE="$(1).ldf"; \
+	export DMD_IMPL=$(5); \
+	cp $(TOOLS_DIR)/scripts/dmd_design_build.tcl $(4)/build.tcl; \
 	cd $(4); \
 	echo "BUILDER: Implementating design..."; \
 	pnmainc build.tcl > $(1)_log.txt ; \
