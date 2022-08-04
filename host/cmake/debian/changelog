@@ -6,11 +6,12 @@ uhd (4.1.0.6-0ubuntu1) ubuntu_release; urgency=low
     -  Revert PLL lock time reduction
   * images
     -  Update manifest with latest cpld firmware
+    -  Update ZBX CPLD image in manifest
     -  zbx lattice cpld image manifest
   * uhd
     - fixup! add support for max10 variants
 
- -- Ettus Research <packages@ettus.com>  Wed, 13 Jul 2022 01:56:31 -0800
+ -- Ettus Research <packages@ettus.com>  Thu, 04 Aug 2022 09:43:17 -0800
 
 
 uhd (4.1.0.5-0ubuntu1) ubuntu_release; urgency=low
