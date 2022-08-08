@@ -20,7 +20,10 @@
 //   NODE_INST        : The node type to return for a node-info discovery
 //   DROP_UNKNOWN_MAC : Drop packets not addressed to us?
 //   DROP_MIN_PACKET  : Drop packets smaller than 64 bytes?
-//   PREAMBLE_BYTES   : Number of bytes of Preamble expected
+//   PREAMBLE_BYTES   : Number of bytes of preamble on Ethernet interface
+//   CPU_PREAMBLE     : Set to 1 to use PREAMBLE_BYTES on CPU interface
+//                      (for ZPU) or set to 0 to remove preamble on CPU
+//                      interface (for ARM CPU).
 //   ADD_SOF          : Add a SOF indication into the tuser field of e2c
 //   SYNC             : Set to 1 if the c2e/e2c, v2e/e2v, and eth_rx/eth_tx are
 //                      synchronous to each other. Set to 0 to insert clock
@@ -47,6 +50,7 @@ module eth_ipv4_interface #(
   bit          DROP_UNKNOWN_MAC = 0,
   bit          DROP_MIN_PACKET  = 0,
   int          PREAMBLE_BYTES   = 6,
+  bit          CPU_PREAMBLE     = 0,
   bit          ADD_SOF          = 1,
   bit          SYNC             = 0,
   bit          PAUSE_EN         = 0,
@@ -351,6 +355,7 @@ module eth_ipv4_interface #(
     .DROP_UNKNOWN_MAC(DROP_UNKNOWN_MAC),
     .DROP_MIN_PACKET (DROP_MIN_PACKET ),
     .PREAMBLE_BYTES  (PREAMBLE_BYTES  ),
+    .CPU_PREAMBLE    (CPU_PREAMBLE    ),
     .ADD_SOF         (ADD_SOF         ),
     .SYNC            (SYNC            ),
     .ENET_W          (ENET_W          ),

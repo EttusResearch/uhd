@@ -42,7 +42,10 @@
 //   NODE_INST        : The node type to return for a node-info discovery
 //   DROP_UNKNOWN_MAC : Drop packets not addressed to us?
 //   DROP_MIN_PACKET  : Drop packets smaller than 64 bytes?
-//   PREAMBLE_BYTES   : Number of bytes of Preamble expected
+//   PREAMBLE_BYTES   : Number of bytes of preamble on Ethernet interface
+//   CPU_PREAMBLE     : Set to 1 to use PREAMBLE_BYTES on CPU interface
+//                      (for ZPU) or set to 0 to remove preamble on CPU
+//                      interface (for ARM CPU).
 //   ADD_SOF          : Add a SOF indication into the tuser field of the e2c
 //                      path. If false use TKEEP instead of USER.
 //   SYNC             : Set to 1 if the c2e/e2c, v2e/e2v, and eth_rx/eth_tx are
@@ -80,6 +83,7 @@ module eth_ipv4_chdr_adapter #(
   bit          DROP_UNKNOWN_MAC = 0,
   bit          DROP_MIN_PACKET  = 0,
   int          PREAMBLE_BYTES   = 6,
+  bit          CPU_PREAMBLE     = 0,
   bit          ADD_SOF          = 1,
   bit          SYNC             = 0,
   int          ENET_W           = 64,
@@ -180,11 +184,12 @@ module eth_ipv4_chdr_adapter #(
     .CPU_FIFO_SIZE    (CPU_FIFO_SIZE),
     .CHDR_FIFO_SIZE   (CHDR_FIFO_SIZE),
     .PREAMBLE_BYTES   (PREAMBLE_BYTES),
+    .CPU_PREAMBLE     (CPU_PREAMBLE),
     .MAX_PACKET_BYTES (MAX_PACKET_BYTES),
     .DROP_UNKNOWN_MAC (DROP_UNKNOWN_MAC),
     .DROP_MIN_PACKET  (DROP_MIN_PACKET),
     .ENET_W           (ENET_W)
-  ) eth_dispatch_i (
+  ) eth_ipv4_chdr_dispatch_i (
     .eth_pause_req    (eth_pause_req),
     .eth_rx           (eth_rx1),
     .e2v              (e2v1),
@@ -379,17 +384,17 @@ module eth_ipv4_chdr_adapter #(
     end
   end
 
-  if (PREAMBLE_BYTES > 0) begin : gen_add_preamble
+  if (PREAMBLE_BYTES > 0 && !CPU_PREAMBLE) begin : gen_c2e_add_preamble
     // Add pad of PREAMBLE_BYTES empty bytes to the ethernet packet going
     // from the CPU to the SFP. This padding added before MAC addresses
     // aligns the source and destination IP addresses, UDP headers etc.
     // Note that the xge_mac_wrapper strips this padding to recreate the
     // ethernet packet.
     axi4s_add_bytes #(.ADD_START(0),.ADD_BYTES(PREAMBLE_BYTES)
-    ) add_header (
+    ) axi4s_add_bytes_c2e (
      .i(c2e1), .o(c2e2)
     );
-  end else begin : gen_no_preamble
+  end else begin : gen_c2e_no_preamble
     always_comb begin : c2e2_assign
       `AXI4S_ASSIGN(c2e2,c2e1)
     end

@@ -19,7 +19,10 @@
 // Parameters:
 //  - CPU_FIFO_SIZE: Log2 of the FIFO depth (in bytes) for the CPU egress path
 //  - CHDR_FIFO_SIZE: Log2 of the FIFO depth (in bytes) for the CHDR egress path
-//  - PREAMBLE_BYTES: Number of bytes in the Preamble
+//  - PREAMBLE_BYTES: Number of bytes of preamble on Ethernet interface
+//  - CPU_PREAMBLE:   Set to 1 to use PREAMBLE_BYTES on CPU interface (for ZPU)
+//                    or set to 0 to remove preamble on CPU interface (for ARM
+//                    CPU).
 //  - DROP_UNKNOWN_MAC: Drop packets not addressed to us?
 //  - DROP_MIN_PACKET: Drop packets smaller than 64 bytes?
 //  - ENET_W: Width of AXI bus going to Ethernet Mac
@@ -42,13 +45,14 @@ module eth_ipv4_chdr_dispatch #(
   int CPU_FIFO_SIZE    = $clog2(8*1024),
   int CHDR_FIFO_SIZE   = $clog2(8*1024),
   int PREAMBLE_BYTES   = 6,
+  int CPU_PREAMBLE     = 0,
   int MAX_PACKET_BYTES = 2**16-1,
   bit DROP_UNKNOWN_MAC = 0,
   bit DROP_MIN_PACKET  = 0,
   int ENET_W           = 64
 )(
   // Clock domain: eth_rx.clk (other interface clocks are unused)
-  
+
   // AXI-Stream interfaces
   output logic        eth_pause_req,
   AxiStreamIf.slave   eth_rx, // tUser={error,trailing bytes};
@@ -133,14 +137,17 @@ module eth_ipv4_chdr_dispatch #(
   //   tUser = {not used};
   AxiStreamIf #(.DATA_WIDTH(ENET_W),.TKEEP(0),.TUSER(0))
     chdr1(eth_rx.clk,eth_rx.rst);
+  //   tUser = {not used};
+  AxiStreamIf #(.DATA_WIDTH(ENET_W),.TKEEP(0),.TUSER(0),.MAX_PACKET_BYTES(MAX_PACKET_BYTES))
+    chdr2(eth_rx.clk,eth_rx.rst);
   // chdr_out_fifo
   // e2v(OUTPUT)
 
   //---------------------------------------
-  // Strip Bytes
+  // Strip Preamble Bytes
   //---------------------------------------
-  if (PREAMBLE_BYTES > 0) begin : gen_strip_preamble
-    // Strip the preamble
+  if (PREAMBLE_BYTES > 0 && !CPU_PREAMBLE) begin : gen_strip_preamble
+    // Keep the preamble since the CPU expects it.
     always_comb begin
       `AXI4S_ASSIGN(inp,eth_rx);
     end
@@ -148,7 +155,8 @@ module eth_ipv4_chdr_dispatch #(
     ) strip_preamble (
       .i(inp),.o(in0)
     );
-  end else begin : gen_no_preamble
+  end else begin : gen_no_strip_preamble
+    // Remove the preamble since CHDR and CPU don't expect it.
     always_comb begin
       `AXI4S_ASSIGN(in0,eth_rx);
     end
@@ -220,12 +228,12 @@ module eth_ipv4_chdr_dispatch #(
       reached_min_packet_old <= 1'b0;
 
       // Statemachine Decisions
-      eth_dst_is_broadcast <=1'b0;
-      eth_dst_is_me        <=1'b0;
-      udp_dst_is_me        <=1'b0;
-      ipv4_dst_is_me       <=1'b0;
-      ipv4_protocol_is_udp <=1'b0;
-      eth_type_is_ipv4     <=1'b0;
+      eth_dst_is_broadcast <= 1'b0;
+      eth_dst_is_me        <= 1'b0;
+      udp_dst_is_me        <= 1'b0;
+      ipv4_dst_is_me       <= 1'b0;
+      ipv4_protocol_is_udp <= 1'b0;
+      eth_type_is_ipv4     <= 1'b0;
     end else begin
       eth_dst_addr_old  <= eth_dst_addr_new;
       eth_src_addr_old  <= eth_src_addr_new;
@@ -248,22 +256,24 @@ module eth_ipv4_chdr_dispatch #(
     end
   end
 
- // get the fields - don't use assign. assign will not activate with changes to in0.
+  // Get the fields - don't use assign. assign will not activate with changes
+  // to in0.
+  localparam int OFFSET = CPU_PREAMBLE ? PREAMBLE_BYTES : 0;
   always_comb begin  : get_fields
-    eth_dst_addr_new  = in0.get_packet_field48(eth_dst_addr_old,DST_MAC_BYTE,.NETWORK_ORDER(1));
-    eth_src_addr_new  = in0.get_packet_field48(eth_src_addr_old,SRC_MAC_BYTE,.NETWORK_ORDER(1));
-    ip_version_new    = in0.get_packet_byte(ip_version_old,IP_VERSION_BYTE);
-    ip_protocol_new   = in0.get_packet_byte(ip_protocol_old,PROTOCOL_BYTE);
-    ipv4_src_addr_new = in0.get_packet_field32(ipv4_src_addr_old,SRC_IP_BYTE,.NETWORK_ORDER(1));
-    ipv4_dst_addr_new = in0.get_packet_field32(ipv4_dst_addr_old,DST_IP_BYTE,.NETWORK_ORDER(1));
-    udp_src_port_new  = in0.get_packet_field16(udp_src_port_old,SRC_PORT_BYTE,.NETWORK_ORDER(1));
-    udp_dst_port_new  = in0.get_packet_field16(udp_dst_port_old,DST_PORT_BYTE,.NETWORK_ORDER(1));
-    eth_type_new      = in0.get_packet_field16(eth_type_old,ETH_TYPE_BYTE,.NETWORK_ORDER(1));
+    eth_dst_addr_new  = in0.get_packet_field48(eth_dst_addr_old,  OFFSET+DST_MAC_BYTE,  .NETWORK_ORDER(1));
+    eth_src_addr_new  = in0.get_packet_field48(eth_src_addr_old,  OFFSET+SRC_MAC_BYTE,  .NETWORK_ORDER(1));
+    ip_version_new    = in0.get_packet_byte   (ip_version_old,    OFFSET+IP_VERSION_BYTE);
+    ip_protocol_new   = in0.get_packet_byte   (ip_protocol_old,   OFFSET+PROTOCOL_BYTE  );
+    ipv4_src_addr_new = in0.get_packet_field32(ipv4_src_addr_old, OFFSET+SRC_IP_BYTE,   .NETWORK_ORDER(1));
+    ipv4_dst_addr_new = in0.get_packet_field32(ipv4_dst_addr_old, OFFSET+DST_IP_BYTE,   .NETWORK_ORDER(1));
+    udp_src_port_new  = in0.get_packet_field16(udp_src_port_old,  OFFSET+SRC_PORT_BYTE, .NETWORK_ORDER(1));
+    udp_dst_port_new  = in0.get_packet_field16(udp_dst_port_old,  OFFSET+DST_PORT_BYTE, .NETWORK_ORDER(1));
+    eth_type_new      = in0.get_packet_field16(eth_type_old,      OFFSET+ETH_TYPE_BYTE, .NETWORK_ORDER(1));
   end
 
   always_comb begin  : reached_bytes
-    reached_min_packet_new = in1.reached_packet_byte(MIN_PACKET_SIZE_BYTE);
-    reached_end_of_udp     = in1.reached_packet_byte(DST_PORT_BYTE+3);// we have enough to decide
+    reached_min_packet_new = in1.reached_packet_byte(OFFSET+MIN_PACKET_SIZE_BYTE);
+    reached_end_of_udp     = in1.reached_packet_byte(OFFSET+DST_PORT_BYTE+3);// we have enough to decide
   end
 
   // calculate error conditions
@@ -498,7 +508,7 @@ module eth_ipv4_chdr_dispatch #(
     .i(cpu0),.o(cpu1)
   );
 
-  // The CPU can be slow to respond (relative to packet wirespeed) so
+  // The CPU can be slow to respond (relative to packet wire speed) so
   // extra buffer for packets destined there so it doesn't back up.
   axi4s_fifo #(
     .SIZE(CPU_FIFO_SIZE-$clog2(ENET_W/8))
@@ -521,9 +531,9 @@ module eth_ipv4_chdr_dispatch #(
   );
 
   // The transport should hook up to a crossbar downstream, which
-  // may backpressure this module because it is in the middle of
+  // may back-pressure this module because it is in the middle of
   // transferring a packet. To ensure that upstream logic is not
-  // blocked, we instantiate at laeast one packet of buffering here.
+  // blocked, we instantiate at least one packet of buffering here.
   // The actual size is set by CHDR_FIFO_SIZE.
   logic [15:0] chdr_occupied;
   logic [15:0] chdr_occupied_q;
@@ -532,11 +542,25 @@ module eth_ipv4_chdr_dispatch #(
     .SIZE(CHDR_FIFO_WORD_SIZE)
   ) chdr_fifo_i (
     .clear(1'b0),.space(),.occupied(chdr_occupied),
-    .i(chdr1),.o(e2v)
+    .i(chdr1),.o(chdr2)
   );
 
-  // documentation requires pause requests to be set for a minimum of 16 clocks.
-  // I'm providing the same gauranteed min time in the set and clear direction
+  // Remove the preamble on the CHDR path if it was not already removed.
+  if (PREAMBLE_BYTES > 0 && CPU_PREAMBLE) begin : gen_strip_chdr_preamble
+    axi4s_remove_bytes #(
+      .REM_START(0), .REM_END(PREAMBLE_BYTES-1)
+    ) strip_preamble (
+      .i(chdr2), .o(e2v)
+    );
+  end else begin : gen_no_strip_chdr_preamble
+    always_comb begin
+      `AXI4S_ASSIGN(e2v, chdr2);
+    end
+  end
+
+  // Documentation requires pause requests to be set for a minimum of 16
+  // clocks. I'm providing the same guaranteed min time in the set and clear
+  // direction.
   logic [3:0] pause_timer;
   typedef enum logic [1:0] {
       ST_IDLE           = 2'd0,
