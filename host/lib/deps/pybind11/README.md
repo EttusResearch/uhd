@@ -1,6 +1,6 @@
 # PyBind11: Third-Party Dependency for UHD
 
-Version: 2.6.1 (git hash: f1abf5d)
+Version: 2.10.0 (git hash: aa304c9)
 
 PyBind11 is a replacement for Boost.Python. Unlike Boost.Python, however, we
 ship it with the UHD repository instead of relying on it to be there external to

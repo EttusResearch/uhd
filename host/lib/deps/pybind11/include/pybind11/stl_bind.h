@@ -18,254 +18,273 @@ PYBIND11_NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
 PYBIND11_NAMESPACE_BEGIN(detail)
 
 
-template <typename T>  struct container_traits {
-    template <typename T2> static std::true_type test_comparable(decltype(std::declval<const T2 &>() == std::declval<const T2 &>())*);
-    template <typename T2> static std::false_type test_comparable(...);
-    template <typename T2> static std::true_type test_value(typename T2::value_type *);
-    template <typename T2> static std::false_type test_value(...);
-    template <typename T2> static std::true_type test_pair(typename T2::first_type *, typename T2::second_type *);
-    template <typename T2> static std::false_type test_pair(...);
+template <typename T>
+struct container_traits {
+    template <typename T2>
+    static std::true_type
+    test_comparable(decltype(std::declval<const T2 &>() == std::declval<const T2 &>()) *);
+    template <typename T2>
+    static std::false_type test_comparable(...);
+    template <typename T2>
+    static std::true_type test_value(typename T2::value_type *);
+    template <typename T2>
+    static std::false_type test_value(...);
+    template <typename T2>
+    static std::true_type test_pair(typename T2::first_type *, typename T2::second_type *);
+    template <typename T2>
+    static std::false_type test_pair(...);
 
-    static constexpr const bool is_comparable = std::is_same<std::true_type, decltype(test_comparable<T>(nullptr))>::value;
-    static constexpr const bool is_pair = std::is_same<std::true_type, decltype(test_pair<T>(nullptr, nullptr))>::value;
-    static constexpr const bool is_vector = std::is_same<std::true_type, decltype(test_value<T>(nullptr))>::value;
+    static constexpr const bool is_comparable
+        = std::is_same<std::true_type, decltype(test_comparable<T>(nullptr))>::value;
+    static constexpr const bool is_pair
+        = std::is_same<std::true_type, decltype(test_pair<T>(nullptr, nullptr))>::value;
+    static constexpr const bool is_vector
+        = std::is_same<std::true_type, decltype(test_value<T>(nullptr))>::value;
     static constexpr const bool is_element = !is_pair && !is_vector;
 };
 
 
 template <typename T, typename SFINAE = void>
-struct is_comparable : std::false_type { };
+struct is_comparable : std::false_type {};
 
 
 template <typename T>
 struct is_comparable<
-    T, enable_if_t<container_traits<T>::is_element &&
-                   container_traits<T>::is_comparable>>
-    : std::true_type { };
+    T,
+    enable_if_t<container_traits<T>::is_element && container_traits<T>::is_comparable>>
+    : std::true_type {};
 
 
 template <typename T>
 struct is_comparable<T, enable_if_t<container_traits<T>::is_vector>> {
-    static constexpr const bool value =
-        is_comparable<typename T::value_type>::value;
+    static constexpr const bool value = is_comparable<typename T::value_type>::value;
 };
 
 
 template <typename T>
 struct is_comparable<T, enable_if_t<container_traits<T>::is_pair>> {
-    static constexpr const bool value =
-        is_comparable<typename T::first_type>::value &&
-        is_comparable<typename T::second_type>::value;
+    static constexpr const bool value = is_comparable<typename T::first_type>::value
+                                        && is_comparable<typename T::second_type>::value;
 };
 
 
-template <typename, typename, typename... Args> void vector_if_copy_constructible(const Args &...) { }
-template <typename, typename, typename... Args> void vector_if_equal_operator(const Args &...) { }
-template <typename, typename, typename... Args> void vector_if_insertion_operator(const Args &...) { }
-template <typename, typename, typename... Args> void vector_modifiers(const Args &...) { }
+template <typename, typename, typename... Args>
+void vector_if_copy_constructible(const Args &...) {}
+template <typename, typename, typename... Args>
+void vector_if_equal_operator(const Args &...) {}
+template <typename, typename, typename... Args>
+void vector_if_insertion_operator(const Args &...) {}
+template <typename, typename, typename... Args>
+void vector_modifiers(const Args &...) {}
 
-template<typename Vector, typename Class_>
+template <typename Vector, typename Class_>
 void vector_if_copy_constructible(enable_if_t<is_copy_constructible<Vector>::value, Class_> &cl) {
     cl.def(init<const Vector &>(), "Copy constructor");
 }
 
-template<typename Vector, typename Class_>
+template <typename Vector, typename Class_>
 void vector_if_equal_operator(enable_if_t<is_comparable<Vector>::value, Class_> &cl) {
     using T = typename Vector::value_type;
 
     cl.def(self == self);
     cl.def(self != self);
 
-    cl.def("count",
-        [](const Vector &v, const T &x) {
-            return std::count(v.begin(), v.end(), x);
-        },
+    cl.def(
+        "count",
+        [](const Vector &v, const T &x) { return std::count(v.begin(), v.end(), x); },
         arg("x"),
-        "Return the number of times ``x`` appears in the list"
-    );
+        "Return the number of times ``x`` appears in the list");
 
-    cl.def("remove", [](Vector &v, const T &x) {
+    cl.def(
+        "remove",
+        [](Vector &v, const T &x) {
             auto p = std::find(v.begin(), v.end(), x);
-            if (p != v.end())
+            if (p != v.end()) {
                 v.erase(p);
-            else
+            } else {
                 throw value_error();
+            }
         },
         arg("x"),
         "Remove the first item from the list whose value is x. "
-        "It is an error if there is no such item."
-    );
+        "It is an error if there is no such item.");
 
-    cl.def("__contains__",
-        [](const Vector &v, const T &x) {
-            return std::find(v.begin(), v.end(), x) != v.end();
-        },
+    cl.def(
+        "__contains__",
+        [](const Vector &v, const T &x) { return std::find(v.begin(), v.end(), x) != v.end(); },
         arg("x"),
-        "Return true the container contains ``x``"
-    );
+        "Return true the container contains ``x``");
 }
 
 
 
 
 template <typename Vector, typename Class_>
-void vector_modifiers(enable_if_t<is_copy_constructible<typename Vector::value_type>::value, Class_> &cl) {
+void vector_modifiers(
+    enable_if_t<is_copy_constructible<typename Vector::value_type>::value, Class_> &cl) {
     using T = typename Vector::value_type;
     using SizeType = typename Vector::size_type;
     using DiffType = typename Vector::difference_type;
 
     auto wrap_i = [](DiffType i, SizeType n) {
-        if (i < 0)
+        if (i < 0) {
             i += n;
-        if (i < 0 || (SizeType)i >= n)
+        }
+        if (i < 0 || (SizeType) i >= n) {
             throw index_error();
+        }
         return i;
     };
 
-    cl.def("append",
-           [](Vector &v, const T &value) { v.push_back(value); },
-           arg("x"),
-           "Add an item to the end of the list");
+    cl.def(
+        "append",
+        [](Vector &v, const T &value) { v.push_back(value); },
+        arg("x"),
+        "Add an item to the end of the list");
 
-    cl.def(init([](iterable it) {
+    cl.def(init([](const iterable &it) {
         auto v = std::unique_ptr<Vector>(new Vector());
         v->reserve(len_hint(it));
-        for (handle h : it)
-           v->push_back(h.cast<T>());
+        for (handle h : it) {
+            v->push_back(h.cast<T>());
+        }
         return v.release();
     }));
 
-    cl.def("clear",
-        [](Vector &v) {
-            v.clear();
+    cl.def(
+        "clear", [](Vector &v) { v.clear(); }, "Clear the contents");
+
+    cl.def(
+        "extend",
+        [](Vector &v, const Vector &src) { v.insert(v.end(), src.begin(), src.end()); },
+        arg("L"),
+        "Extend the list by appending all the items in the given list");
+
+    cl.def(
+        "extend",
+        [](Vector &v, const iterable &it) {
+            const size_t old_size = v.size();
+            v.reserve(old_size + len_hint(it));
+            try {
+                for (handle h : it) {
+                    v.push_back(h.cast<T>());
+                }
+            } catch (const cast_error &) {
+                v.erase(v.begin() + static_cast<typename Vector::difference_type>(old_size),
+                        v.end());
+                try {
+                    v.shrink_to_fit();
+                } catch (const std::exception &) {
+
+                }
+                throw;
+            }
         },
-        "Clear the contents"
-    );
+        arg("L"),
+        "Extend the list by appending all the items in the given list");
 
-    cl.def("extend",
-       [](Vector &v, const Vector &src) {
-           v.insert(v.end(), src.begin(), src.end());
-       },
-       arg("L"),
-       "Extend the list by appending all the items in the given list"
-    );
-
-    cl.def("extend",
-       [](Vector &v, iterable it) {
-           const size_t old_size = v.size();
-           v.reserve(old_size + len_hint(it));
-           try {
-               for (handle h : it) {
-                   v.push_back(h.cast<T>());
-               }
-           } catch (const cast_error &) {
-               v.erase(v.begin() + static_cast<typename Vector::difference_type>(old_size), v.end());
-               try {
-                   v.shrink_to_fit();
-               } catch (const std::exception &) {
-
-               }
-               throw;
-           }
-       },
-       arg("L"),
-       "Extend the list by appending all the items in the given list"
-    );
-
-    cl.def("insert",
+    cl.def(
+        "insert",
         [](Vector &v, DiffType i, const T &x) {
 
-            if (i < 0)
+            if (i < 0) {
                 i += v.size();
-            if (i < 0 || (SizeType)i > v.size())
+            }
+            if (i < 0 || (SizeType) i > v.size()) {
                 throw index_error();
+            }
             v.insert(v.begin() + i, x);
         },
-        arg("i") , arg("x"),
-        "Insert an item at a given position."
-    );
+        arg("i"),
+        arg("x"),
+        "Insert an item at a given position.");
 
-    cl.def("pop",
+    cl.def(
+        "pop",
         [](Vector &v) {
-            if (v.empty())
+            if (v.empty()) {
                 throw index_error();
-            T t = v.back();
+            }
+            T t = std::move(v.back());
             v.pop_back();
             return t;
         },
-        "Remove and return the last item"
-    );
+        "Remove and return the last item");
 
-    cl.def("pop",
+    cl.def(
+        "pop",
         [wrap_i](Vector &v, DiffType i) {
             i = wrap_i(i, v.size());
-            T t = v[(SizeType) i];
-            v.erase(v.begin() + i);
+            T t = std::move(v[(SizeType) i]);
+            v.erase(std::next(v.begin(), i));
             return t;
         },
         arg("i"),
-        "Remove and return the item at index ``i``"
-    );
+        "Remove and return the item at index ``i``");
 
-    cl.def("__setitem__",
-        [wrap_i](Vector &v, DiffType i, const T &t) {
-            i = wrap_i(i, v.size());
-            v[(SizeType)i] = t;
-        }
-    );
+    cl.def("__setitem__", [wrap_i](Vector &v, DiffType i, const T &t) {
+        i = wrap_i(i, v.size());
+        v[(SizeType) i] = t;
+    });
 
 
-    cl.def("__getitem__",
-        [](const Vector &v, slice slice) -> Vector * {
-            size_t start, stop, step, slicelength;
+    cl.def(
+        "__getitem__",
+        [](const Vector &v, const slice &slice) -> Vector * {
+            size_t start = 0, stop = 0, step = 0, slicelength = 0;
 
-            if (!slice.compute(v.size(), &start, &stop, &step, &slicelength))
+            if (!slice.compute(v.size(), &start, &stop, &step, &slicelength)) {
                 throw error_already_set();
+            }
 
             auto *seq = new Vector();
             seq->reserve((size_t) slicelength);
 
-            for (size_t i=0; i<slicelength; ++i) {
+            for (size_t i = 0; i < slicelength; ++i) {
                 seq->push_back(v[start]);
                 start += step;
             }
             return seq;
         },
         arg("s"),
-        "Retrieve list elements using a slice object"
-    );
+        "Retrieve list elements using a slice object");
 
-    cl.def("__setitem__",
-        [](Vector &v, slice slice,  const Vector &value) {
-            size_t start, stop, step, slicelength;
-            if (!slice.compute(v.size(), &start, &stop, &step, &slicelength))
+    cl.def(
+        "__setitem__",
+        [](Vector &v, const slice &slice, const Vector &value) {
+            size_t start = 0, stop = 0, step = 0, slicelength = 0;
+            if (!slice.compute(v.size(), &start, &stop, &step, &slicelength)) {
                 throw error_already_set();
+            }
 
-            if (slicelength != value.size())
-                throw std::runtime_error("Left and right hand size of slice assignment have different sizes!");
+            if (slicelength != value.size()) {
+                throw std::runtime_error(
+                    "Left and right hand size of slice assignment have different sizes!");
+            }
 
-            for (size_t i=0; i<slicelength; ++i) {
+            for (size_t i = 0; i < slicelength; ++i) {
                 v[start] = value[i];
                 start += step;
             }
         },
-        "Assign list elements using a slice object"
-    );
+        "Assign list elements using a slice object");
 
-    cl.def("__delitem__",
+    cl.def(
+        "__delitem__",
         [wrap_i](Vector &v, DiffType i) {
             i = wrap_i(i, v.size());
             v.erase(v.begin() + i);
         },
-        "Delete the list elements at index ``i``"
-    );
+        "Delete the list elements at index ``i``");
 
-    cl.def("__delitem__",
-        [](Vector &v, slice slice) {
-            size_t start, stop, step, slicelength;
+    cl.def(
+        "__delitem__",
+        [](Vector &v, const slice &slice) {
+            size_t start = 0, stop = 0, step = 0, slicelength = 0;
 
-            if (!slice.compute(v.size(), &start, &stop, &step, &slicelength))
+            if (!slice.compute(v.size(), &start, &stop, &step, &slicelength)) {
                 throw error_already_set();
+            }
 
             if (step == 1 && false) {
                 v.erase(v.begin() + (DiffType) start, v.begin() + DiffType(start + slicelength));
@@ -276,15 +295,15 @@ void vector_modifiers(enable_if_t<is_copy_constructible<typename Vector::value_t
                 }
             }
         },
-        "Delete list elements using a slice object"
-    );
-
+        "Delete list elements using a slice object");
 }
 
 
 
-template <typename Vector> using vector_needs_copy = negation<
-    std::is_same<decltype(std::declval<Vector>()[typename Vector::size_type()]), typename Vector::value_type &>>;
+template <typename Vector>
+using vector_needs_copy
+    = negation<std::is_same<decltype(std::declval<Vector>()[typename Vector::size_type()]),
+                            typename Vector::value_type &>>;
 
 
 template <typename Vector, typename Class_>
@@ -292,31 +311,34 @@ void vector_accessor(enable_if_t<!vector_needs_copy<Vector>::value, Class_> &cl)
     using T = typename Vector::value_type;
     using SizeType = typename Vector::size_type;
     using DiffType = typename Vector::difference_type;
-    using ItType   = typename Vector::iterator;
+    using ItType = typename Vector::iterator;
 
     auto wrap_i = [](DiffType i, SizeType n) {
-        if (i < 0)
+        if (i < 0) {
             i += n;
-        if (i < 0 || (SizeType)i >= n)
+        }
+        if (i < 0 || (SizeType) i >= n) {
             throw index_error();
+        }
         return i;
     };
 
-    cl.def("__getitem__",
+    cl.def(
+        "__getitem__",
         [wrap_i](Vector &v, DiffType i) -> T & {
             i = wrap_i(i, v.size());
-            return v[(SizeType)i];
+            return v[(SizeType) i];
         },
         return_value_policy::reference_internal
     );
 
-    cl.def("__iter__",
-           [](Vector &v) {
-               return make_iterator<
-                   return_value_policy::reference_internal, ItType, ItType, T&>(
-                   v.begin(), v.end());
-           },
-           keep_alive<0, 1>()
+    cl.def(
+        "__iter__",
+        [](Vector &v) {
+            return make_iterator<return_value_policy::reference_internal, ItType, ItType, T &>(
+                v.begin(), v.end());
+        },
+        keep_alive<0, 1>()
     );
 }
 
@@ -326,96 +348,129 @@ void vector_accessor(enable_if_t<vector_needs_copy<Vector>::value, Class_> &cl) 
     using T = typename Vector::value_type;
     using SizeType = typename Vector::size_type;
     using DiffType = typename Vector::difference_type;
-    using ItType   = typename Vector::iterator;
-    cl.def("__getitem__",
-        [](const Vector &v, DiffType i) -> T {
-            if (i < 0 && (i += v.size()) < 0)
-                throw index_error();
-            if ((SizeType)i >= v.size())
-                throw index_error();
-            return v[(SizeType)i];
+    using ItType = typename Vector::iterator;
+    cl.def("__getitem__", [](const Vector &v, DiffType i) -> T {
+        if (i < 0 && (i += v.size()) < 0) {
+            throw index_error();
         }
-    );
+        if ((SizeType) i >= v.size()) {
+            throw index_error();
+        }
+        return v[(SizeType) i];
+    });
 
-    cl.def("__iter__",
-           [](Vector &v) {
-               return make_iterator<
-                   return_value_policy::copy, ItType, ItType, T>(
-                   v.begin(), v.end());
-           },
-           keep_alive<0, 1>()
+    cl.def(
+        "__iter__",
+        [](Vector &v) {
+            return make_iterator<return_value_policy::copy, ItType, ItType, T>(v.begin(), v.end());
+        },
+        keep_alive<0, 1>()
     );
 }
 
-template <typename Vector, typename Class_> auto vector_if_insertion_operator(Class_ &cl, std::string const &name)
-    -> decltype(std::declval<std::ostream&>() << std::declval<typename Vector::value_type>(), void()) {
+template <typename Vector, typename Class_>
+auto vector_if_insertion_operator(Class_ &cl, std::string const &name)
+    -> decltype(std::declval<std::ostream &>() << std::declval<typename Vector::value_type>(),
+                void()) {
     using size_type = typename Vector::size_type;
 
-    cl.def("__repr__",
-           [name](Vector &v) {
+    cl.def(
+        "__repr__",
+        [name](Vector &v) {
             std::ostringstream s;
             s << name << '[';
-            for (size_type i=0; i < v.size(); ++i) {
+            for (size_type i = 0; i < v.size(); ++i) {
                 s << v[i];
-                if (i != v.size() - 1)
+                if (i != v.size() - 1) {
                     s << ", ";
+                }
             }
             s << ']';
             return s.str();
         },
-        "Return the canonical string representation of this list."
-    );
+        "Return the canonical string representation of this list.");
 }
+
 
 
 
 template <typename Vector, typename = void>
 struct vector_has_data_and_format : std::false_type {};
 template <typename Vector>
-struct vector_has_data_and_format<Vector, enable_if_t<std::is_same<decltype(format_descriptor<typename Vector::value_type>::format(), std::declval<Vector>().data()), typename Vector::value_type*>::value>> : std::true_type {};
+struct vector_has_data_and_format<
+    Vector,
+    enable_if_t<std::is_same<decltype(format_descriptor<typename Vector::value_type>::format(),
+                                      std::declval<Vector>().data()),
+                             typename Vector::value_type *>::value>> : std::true_type {};
+
+
+
+
+template <typename... Args>
+constexpr bool args_any_are_buffer() {
+    return detail::any_of<std::is_same<Args, buffer_protocol>...>::value;
+}
+
+
+
 
 
 template <typename Vector, typename Class_, typename... Args>
-enable_if_t<detail::any_of<std::is_same<Args, buffer_protocol>...>::value>
-vector_buffer(Class_& cl) {
+void vector_buffer_impl(Class_ &cl, std::true_type) {
     using T = typename Vector::value_type;
 
-    static_assert(vector_has_data_and_format<Vector>::value, "There is not an appropriate format descriptor for this vector");
+    static_assert(vector_has_data_and_format<Vector>::value,
+                  "There is not an appropriate format descriptor for this vector");
+
 
 
     format_descriptor<T>::format();
 
-    cl.def_buffer([](Vector& v) -> buffer_info {
-        return buffer_info(v.data(), static_cast<ssize_t>(sizeof(T)), format_descriptor<T>::format(), 1, {v.size()}, {sizeof(T)});
+    cl.def_buffer([](Vector &v) -> buffer_info {
+        return buffer_info(v.data(),
+                           static_cast<ssize_t>(sizeof(T)),
+                           format_descriptor<T>::format(),
+                           1,
+                           {v.size()},
+                           {sizeof(T)});
     });
 
-    cl.def(init([](buffer buf) {
+    cl.def(init([](const buffer &buf) {
         auto info = buf.request();
-        if (info.ndim != 1 || info.strides[0] % static_cast<ssize_t>(sizeof(T)))
+        if (info.ndim != 1 || info.strides[0] % static_cast<ssize_t>(sizeof(T))) {
             throw type_error("Only valid 1D buffers can be copied to a vector");
-        if (!detail::compare_buffer_info<T>::compare(info) || (ssize_t) sizeof(T) != info.itemsize)
-            throw type_error("Format mismatch (Python: " + info.format + " C++: " + format_descriptor<T>::format() + ")");
+        }
+        if (!detail::compare_buffer_info<T>::compare(info)
+            || (ssize_t) sizeof(T) != info.itemsize) {
+            throw type_error("Format mismatch (Python: " + info.format
+                             + " C++: " + format_descriptor<T>::format() + ")");
+        }
 
-        T *p = static_cast<T*>(info.ptr);
+        T *p = static_cast<T *>(info.ptr);
         ssize_t step = info.strides[0] / static_cast<ssize_t>(sizeof(T));
         T *end = p + info.shape[0] * step;
         if (step == 1) {
             return Vector(p, end);
         }
-        else {
-            Vector vec;
-            vec.reserve((size_t) info.shape[0]);
-            for (; p != end; p += step)
-                vec.push_back(*p);
-            return vec;
+        Vector vec;
+        vec.reserve((size_t) info.shape[0]);
+        for (; p != end; p += step) {
+            vec.push_back(*p);
         }
+        return vec;
     }));
 
     return;
 }
 
 template <typename Vector, typename Class_, typename... Args>
-enable_if_t<!detail::any_of<std::is_same<Args, buffer_protocol>...>::value> vector_buffer(Class_&) {}
+void vector_buffer_impl(Class_ &, std::false_type) {}
+
+template <typename Vector, typename Class_, typename... Args>
+void vector_buffer(Class_ &cl) {
+    vector_buffer_impl<Vector, Class_, Args...>(
+        cl, detail::any_of<std::is_same<Args, buffer_protocol>...>{});
+}
 
 PYBIND11_NAMESPACE_END(detail)
 
@@ -423,13 +478,13 @@ PYBIND11_NAMESPACE_END(detail)
 
 
 template <typename Vector, typename holder_type = std::unique_ptr<Vector>, typename... Args>
-class_<Vector, holder_type> bind_vector(handle scope, std::string const &name, Args&&... args) {
+class_<Vector, holder_type> bind_vector(handle scope, std::string const &name, Args &&...args) {
     using Class_ = class_<Vector, holder_type>;
 
 
 
     using vtype = typename Vector::value_type;
-    auto vtype_info = detail::get_type_info(typeid(vtype));
+    auto *vtype_info = detail::get_type_info(typeid(vtype));
     bool local = !vtype_info || vtype_info->module_local;
 
     Class_ cl(scope, name.c_str(), pybind11::module_local(local), std::forward<Args>(args)...);
@@ -454,17 +509,12 @@ class_<Vector, holder_type> bind_vector(handle scope, std::string const &name, A
 
     detail::vector_accessor<Vector, Class_>(cl);
 
-    cl.def("__bool__",
-        [](const Vector &v) -> bool {
-            return !v.empty();
-        },
-        "Check whether the list is nonempty"
-    );
+    cl.def(
+        "__bool__",
+        [](const Vector &v) -> bool { return !v.empty(); },
+        "Check whether the list is nonempty");
 
     cl.def("__len__", &Vector::size);
-
-
-
 
 #if 0
 
@@ -513,86 +563,107 @@ class_<Vector, holder_type> bind_vector(handle scope, std::string const &name, A
 
 
 
-
-
 PYBIND11_NAMESPACE_BEGIN(detail)
 
 
-template <typename, typename, typename... Args> void map_if_insertion_operator(const Args &...) { }
-template <typename, typename, typename... Args> void map_assignment(const Args &...) { }
+template <typename, typename, typename... Args>
+void map_if_insertion_operator(const Args &...) {}
+template <typename, typename, typename... Args>
+void map_assignment(const Args &...) {}
 
 
 template <typename Map, typename Class_>
-void map_assignment(enable_if_t<is_copy_assignable<typename Map::mapped_type>::value, Class_> &cl) {
+void map_assignment(
+    enable_if_t<is_copy_assignable<typename Map::mapped_type>::value, Class_> &cl) {
     using KeyType = typename Map::key_type;
     using MappedType = typename Map::mapped_type;
 
-    cl.def("__setitem__",
-           [](Map &m, const KeyType &k, const MappedType &v) {
-               auto it = m.find(k);
-               if (it != m.end()) it->second = v;
-               else m.emplace(k, v);
-           }
-    );
+    cl.def("__setitem__", [](Map &m, const KeyType &k, const MappedType &v) {
+        auto it = m.find(k);
+        if (it != m.end()) {
+            it->second = v;
+        } else {
+            m.emplace(k, v);
+        }
+    });
 }
 
 
-template<typename Map, typename Class_>
-void map_assignment(enable_if_t<
-        !is_copy_assignable<typename Map::mapped_type>::value &&
-        is_copy_constructible<typename Map::mapped_type>::value,
-        Class_> &cl) {
+
+template <typename Map, typename Class_>
+void map_assignment(enable_if_t<!is_copy_assignable<typename Map::mapped_type>::value
+                                    && is_copy_constructible<typename Map::mapped_type>::value,
+                                Class_> &cl) {
     using KeyType = typename Map::key_type;
     using MappedType = typename Map::mapped_type;
 
-    cl.def("__setitem__",
-           [](Map &m, const KeyType &k, const MappedType &v) {
+    cl.def("__setitem__", [](Map &m, const KeyType &k, const MappedType &v) {
 
-               auto r = m.emplace(k, v);
-               if (!r.second) {
+        auto r = m.emplace(k, v);
+        if (!r.second) {
 
-                   m.erase(r.first);
-                   m.emplace(k, v);
-               }
-           }
-    );
+
+            m.erase(r.first);
+            m.emplace(k, v);
+        }
+    });
 }
 
+template <typename Map, typename Class_>
+auto map_if_insertion_operator(Class_ &cl, std::string const &name)
+    -> decltype(std::declval<std::ostream &>() << std::declval<typename Map::key_type>()
+                                               << std::declval<typename Map::mapped_type>(),
+                void()) {
 
-template <typename Map, typename Class_> auto map_if_insertion_operator(Class_ &cl, std::string const &name)
--> decltype(std::declval<std::ostream&>() << std::declval<typename Map::key_type>() << std::declval<typename Map::mapped_type>(), void()) {
-
-    cl.def("__repr__",
-           [name](Map &m) {
+    cl.def(
+        "__repr__",
+        [name](Map &m) {
             std::ostringstream s;
             s << name << '{';
             bool f = false;
             for (auto const &kv : m) {
-                if (f)
+                if (f) {
                     s << ", ";
+                }
                 s << kv.first << ": " << kv.second;
                 f = true;
             }
             s << '}';
             return s.str();
         },
-        "Return the canonical string representation of this map."
-    );
+        "Return the canonical string representation of this map.");
 }
 
+template <typename Map>
+struct keys_view {
+    Map &map;
+};
+
+template <typename Map>
+struct values_view {
+    Map &map;
+};
+
+template <typename Map>
+struct items_view {
+    Map &map;
+};
 
 PYBIND11_NAMESPACE_END(detail)
 
 template <typename Map, typename holder_type = std::unique_ptr<Map>, typename... Args>
-class_<Map, holder_type> bind_map(handle scope, const std::string &name, Args&&... args) {
+class_<Map, holder_type> bind_map(handle scope, const std::string &name, Args &&...args) {
     using KeyType = typename Map::key_type;
     using MappedType = typename Map::mapped_type;
+    using KeysView = detail::keys_view<Map>;
+    using ValuesView = detail::values_view<Map>;
+    using ItemsView = detail::items_view<Map>;
     using Class_ = class_<Map, holder_type>;
 
 
 
 
-    auto tinfo = detail::get_type_info(typeid(MappedType));
+    auto *tinfo = detail::get_type_info(typeid(MappedType));
     bool local = !tinfo || tinfo->module_local;
     if (local) {
         tinfo = detail::get_type_info(typeid(KeyType));
@@ -600,59 +671,111 @@ class_<Map, holder_type> bind_map(handle scope, const std::string &name, Args&&.
     }
 
     Class_ cl(scope, name.c_str(), pybind11::module_local(local), std::forward<Args>(args)...);
+    class_<KeysView> keys_view(
+        scope, ("KeysView[" + name + "]").c_str(), pybind11::module_local(local));
+    class_<ValuesView> values_view(
+        scope, ("ValuesView[" + name + "]").c_str(), pybind11::module_local(local));
+    class_<ItemsView> items_view(
+        scope, ("ItemsView[" + name + "]").c_str(), pybind11::module_local(local));
 
     cl.def(init<>());
 
 
     detail::map_if_insertion_operator<Map, Class_>(cl, name);
 
-    cl.def("__bool__",
+    cl.def(
+        "__bool__",
         [](const Map &m) -> bool { return !m.empty(); },
-        "Check whether the map is nonempty"
+        "Check whether the map is nonempty");
+
+    cl.def(
+        "__iter__",
+        [](Map &m) { return make_key_iterator(m.begin(), m.end()); },
+        keep_alive<0, 1>()
     );
 
-    cl.def("__iter__",
-           [](Map &m) { return make_key_iterator(m.begin(), m.end()); },
-           keep_alive<0, 1>()
+    cl.def(
+        "keys",
+        [](Map &m) { return KeysView{m}; },
+        keep_alive<0, 1>()
     );
 
-    cl.def("items",
-           [](Map &m) { return make_iterator(m.begin(), m.end()); },
-           keep_alive<0, 1>()
+    cl.def(
+        "values",
+        [](Map &m) { return ValuesView{m}; },
+        keep_alive<0, 1>()
     );
 
-    cl.def("__getitem__",
+    cl.def(
+        "items",
+        [](Map &m) { return ItemsView{m}; },
+        keep_alive<0, 1>()
+    );
+
+    cl.def(
+        "__getitem__",
         [](Map &m, const KeyType &k) -> MappedType & {
             auto it = m.find(k);
-            if (it == m.end())
-              throw key_error();
-           return it->second;
+            if (it == m.end()) {
+                throw key_error();
+            }
+            return it->second;
         },
         return_value_policy::reference_internal
     );
 
-    cl.def("__contains__",
-        [](Map &m, const KeyType &k) -> bool {
-            auto it = m.find(k);
-            if (it == m.end())
-              return false;
-           return true;
+    cl.def("__contains__", [](Map &m, const KeyType &k) -> bool {
+        auto it = m.find(k);
+        if (it == m.end()) {
+            return false;
         }
-    );
+        return true;
+    });
+
+    cl.def("__contains__", [](Map &, const object &) -> bool { return false; });
 
 
     detail::map_assignment<Map, Class_>(cl);
 
-    cl.def("__delitem__",
-           [](Map &m, const KeyType &k) {
-               auto it = m.find(k);
-               if (it == m.end())
-                   throw key_error();
-               m.erase(it);
-           }
-    );
+    cl.def("__delitem__", [](Map &m, const KeyType &k) {
+        auto it = m.find(k);
+        if (it == m.end()) {
+            throw key_error();
+        }
+        m.erase(it);
+    });
 
     cl.def("__len__", &Map::size);
+
+    keys_view.def("__len__", [](KeysView &view) { return view.map.size(); });
+    keys_view.def(
+        "__iter__",
+        [](KeysView &view) { return make_key_iterator(view.map.begin(), view.map.end()); },
+        keep_alive<0, 1>()
+    );
+    keys_view.def("__contains__", [](KeysView &view, const KeyType &k) -> bool {
+        auto it = view.map.find(k);
+        if (it == view.map.end()) {
+            return false;
+        }
+        return true;
+    });
+
+    keys_view.def("__contains__", [](KeysView &, const object &) -> bool { return false; });
+
+    values_view.def("__len__", [](ValuesView &view) { return view.map.size(); });
+    values_view.def(
+        "__iter__",
+        [](ValuesView &view) { return make_value_iterator(view.map.begin(), view.map.end()); },
+        keep_alive<0, 1>()
+    );
+
+    items_view.def("__len__", [](ItemsView &view) { return view.map.size(); });
+    items_view.def(
+        "__iter__",
+        [](ItemsView &view) { return make_iterator(view.map.begin(), view.map.end()); },
+        keep_alive<0, 1>()
+    );
 
     return cl;
 }
