@@ -7,13 +7,14 @@
 //
 // Description:
 //
-// Add zero filled bytes to a packet.
-//   tUser = {error,trailing bytes};
+//   Add zero filled bytes to a packet. TKEEP is ignored. TUSER should have the
+//   format {error, trailing bytes};
 //
 //  LIMITATIONS
 //    The block only adds bytes to the beginning of a word.
 //
 // Parameters:
+//
 //   ADD_START  - Add bytes before this point (0 means start)
 //                0 is the only supported value right now
 //   ADD_BYTES  - Number of bytes to add
@@ -23,6 +24,7 @@
 //                it means the extra space may be added before
 //                we setup the values we want to overwrite onto
 //                that space.
+//
 
 module axi4s_add_bytes #(
   int ADD_START = 0,
