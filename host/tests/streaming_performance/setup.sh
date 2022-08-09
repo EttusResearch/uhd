@@ -168,7 +168,7 @@ get_mac_addrs
 
 log ""
 log "SETTING CPU GOVERNORS"
-for ((i=0;i<$(nproc);i++)); do
+for ((i=0;i<$(nproc --all);i++)); do
   log "setting core $i to performance"
   cpufreq-set -c $i -r -g performance;
 done
