@@ -5,7 +5,7 @@
 FROM fedora:34
 ========
 FROM fedora:35
->>>>>>>> master:.ci/docker/uhd-builder-fedora35.Dockerfile
+>>>>>>>> origin/master:.ci/docker/uhd-builder-fedora35.Dockerfile
 LABEL maintainer="Ettus Research"
 
 RUN dnf install -y \
