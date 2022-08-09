@@ -19,7 +19,6 @@ clocks:
     freq: "[]"
 
 control:
-  sw_iface: nocscript
   fpga_iface: ctrlport
   interface_direction: slave
   fifo_depth: 32
@@ -47,7 +46,7 @@ data:
       item_width: 32
       nipc: 1
       info_fifo_depth: 32
-      payload_fifo_depth: MTU
+      payload_fifo_depth: 2**MTU
       format: int32
       mdata_sig: ~
 

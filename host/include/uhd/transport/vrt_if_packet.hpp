@@ -68,7 +68,7 @@ struct UHD_API if_packet_info_t
     bool fc_ack;
 
     // optional fields
-    //! Stream ID (SID). See uhd::sid_t
+    //! Stream ID (SID).
     bool has_sid;
     uint32_t sid;
     //! Class ID.

@@ -11,9 +11,10 @@
 #include "zbx_lo_ctrl.hpp"
 #include <uhd/cal/container.hpp>
 #include <uhd/cal/dsa_cal.hpp>
+#include <uhd/experts/expert_nodes.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/types/ranges.hpp>
-#include <uhdlib/experts/expert_nodes.hpp>
+#include <uhd/usrp/zbx_tune_map_item.hpp>
 #include <uhdlib/rfnoc/rf_control/gain_profile_iface.hpp>
 #include <uhdlib/usrp/common/pwr_cal_mgr.hpp>
 #include <uhdlib/usrp/common/rpc.hpp>
@@ -103,17 +104,18 @@ public:
         const double lo_step_size)
         : experts::worker_node_t(fe_path / "zbx_freq_fe_expert")
         , _desired_frequency(db, fe_path / "freq" / "desired")
-        , _desired_lo1_frequency(db, fe_path / "los" / ZBX_LO1 / "freq" / "value" / "desired")
-        , _desired_lo2_frequency(db, fe_path / "los" / ZBX_LO2 / "freq" / "value" / "desired")
+        , _tune_table(db, fe_path / "tune_table")
+        , _desired_lo1_frequency(
+              db, fe_path / "los" / ZBX_LO1 / "freq" / "value" / "desired")
+        , _desired_lo2_frequency(
+              db, fe_path / "los" / ZBX_LO2 / "freq" / "value" / "desired")
         , _lo1_enabled(db, fe_path / ZBX_LO1 / "enabled")
         , _lo2_enabled(db, fe_path / ZBX_LO2 / "enabled")
         , _desired_if2_frequency(db, fe_path / "if_freq" / "desired")
         , _band_inverted(db, fe_path / "band_inverted")
         , _is_highband(db, fe_path / "is_highband")
-        , _mixer1_m(db, fe_path / "mixer1_m")
-        , _mixer1_n(db, fe_path / "mixer1_n")
-        , _mixer2_m(db, fe_path / "mixer2_m")
-        , _mixer2_n(db, fe_path / "mixer2_n")
+        , _lo1_inj_side(db, fe_path / "lo1_inj_side")
+        , _lo2_inj_side(db, fe_path / "lo2_inj_side")
         , _rf_filter(db, fe_path / "rf" / "filter")
         , _if1_filter(db, fe_path / "if1" / "filter")
         , _if2_filter(db, fe_path / "if2" / "filter")
@@ -124,6 +126,7 @@ public:
     {
         //  Inputs
         bind_accessor(_desired_frequency);
+        bind_accessor(_tune_table);
 
         //  Outputs
         bind_accessor(_desired_lo1_frequency);
@@ -133,10 +136,8 @@ public:
         bind_accessor(_desired_if2_frequency);
         bind_accessor(_band_inverted);
         bind_accessor(_is_highband);
-        bind_accessor(_mixer1_m);
-        bind_accessor(_mixer1_n);
-        bind_accessor(_mixer2_m);
-        bind_accessor(_mixer2_n);
+        bind_accessor(_lo1_inj_side);
+        bind_accessor(_lo2_inj_side);
         bind_accessor(_rf_filter);
         bind_accessor(_if1_filter);
         bind_accessor(_if2_filter);
@@ -147,6 +148,7 @@ private:
 
     // Inputs from user/API
     uhd::experts::data_reader_t<double> _desired_frequency;
+    uhd::experts::data_reader_t<std::vector<zbx_tune_map_item_t>> _tune_table;
 
     // Outputs
     // From calculation, to LO expert
@@ -159,10 +161,8 @@ private:
     uhd::experts::data_writer_t<bool> _band_inverted;
     // From calculation, to Frequency Backend expert
     uhd::experts::data_writer_t<bool> _is_highband;
-    uhd::experts::data_writer_t<int> _mixer1_m;
-    uhd::experts::data_writer_t<int> _mixer1_n;
-    uhd::experts::data_writer_t<int> _mixer2_m;
-    uhd::experts::data_writer_t<int> _mixer2_n;
+    uhd::experts::data_writer_t<lo_inj_side_t> _lo1_inj_side;
+    uhd::experts::data_writer_t<lo_inj_side_t> _lo2_inj_side;
     // From calculation, to CPLD Programming expert
     uhd::experts::data_writer_t<int> _rf_filter;
     uhd::experts::data_writer_t<int> _if1_filter;
@@ -170,7 +170,7 @@ private:
 
     const double _rfdc_rate;
     const uhd::freq_range_t _lo_freq_range;
-    tune_map_item_t _tune_settings;
+    zbx_tune_map_item_t _tune_settings;
     // Channel properties
     const uhd::direction_t _trx;
     const size_t _chan;
@@ -201,10 +201,8 @@ public:
               db, fe_path / "los" / ZBX_LO2 / "freq" / "value" / "coerced")
         , _coerced_if2_frequency(db, fe_path / "if_freq" / "coerced")
         , _is_highband(db, fe_path / "is_highband")
-        , _mixer1_m(db, fe_path / "mixer1_m")
-        , _mixer1_n(db, fe_path / "mixer1_n")
-        , _mixer2_m(db, fe_path / "mixer2_m")
-        , _mixer2_n(db, fe_path / "mixer2_n")
+        , _lo1_inj_side(db, fe_path / "lo1_inj_side")
+        , _lo2_inj_side(db, fe_path / "lo2_inj_side")
         , _coerced_frequency(db, fe_path / "freq" / "coerced")
     {
         //  Inputs
@@ -212,10 +210,8 @@ public:
         bind_accessor(_coerced_lo2_frequency);
         bind_accessor(_coerced_if2_frequency);
         bind_accessor(_is_highband);
-        bind_accessor(_mixer1_m);
-        bind_accessor(_mixer1_n);
-        bind_accessor(_mixer2_m);
-        bind_accessor(_mixer2_n);
+        bind_accessor(_lo1_inj_side);
+        bind_accessor(_lo2_inj_side);
 
         //  Outputs
         bind_accessor(_coerced_frequency);
@@ -231,10 +227,8 @@ private:
     uhd::experts::data_reader_t<double> _coerced_if2_frequency;
     uhd::experts::data_reader_t<bool> _is_highband;
     // Input from Frequency FE
-    uhd::experts::data_reader_t<int> _mixer1_m;
-    uhd::experts::data_reader_t<int> _mixer1_n;
-    uhd::experts::data_reader_t<int> _mixer2_m;
-    uhd::experts::data_reader_t<int> _mixer2_n;
+    uhd::experts::data_reader_t<lo_inj_side_t> _lo1_inj_side;
+    uhd::experts::data_reader_t<lo_inj_side_t> _lo2_inj_side;
 
     // Output to user/API
     uhd::experts::data_writer_t<double> _coerced_frequency;
@@ -753,7 +747,9 @@ public:
         : uhd::experts::worker_node_t("zbx_sync_expert")
         , _fe_time{{db, rx_fe_path / 0 / "time/fe"}, {db, rx_fe_path / 1 / "time/fe"}}
         , _lo_freqs{{zbx_lo_t::RX0_LO1,
-                        {db, rx_fe_path / 0 / "los" / ZBX_LO1 / "freq" / "value" / "coerced"}},
+                        {db,
+                            rx_fe_path / 0 / "los" / ZBX_LO1 / "freq" / "value"
+                                / "coerced"}},
               {zbx_lo_t::RX0_LO2,
                   {db, rx_fe_path / 0 / "los" / ZBX_LO2 / "freq" / "value" / "coerced"}},
               {zbx_lo_t::TX0_LO1,

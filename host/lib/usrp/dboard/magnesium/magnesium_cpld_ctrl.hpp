@@ -15,6 +15,17 @@
 #include <memory>
 #include <mutex>
 
+//! Structs for interfacing with the cpld register state
+// TODO: add structs and supporting function calls for other parts of the
+//       magnesium cpld reg interface
+struct tx_atr_bits_t
+{
+    bool tx_led    = false;
+    bool tx_pa_en  = false;
+    bool tx_amp_en = false;
+    bool tx_myk_en = false;
+};
+
 //! Controls the CPLD on a Magnesium daughterboard
 //
 // Setters are thread-safe through lock guards. This lets a CPLD control object
@@ -214,6 +225,13 @@ public:
         const bool tx_amp_enb,
         const bool tx_myk_enb,
         const bool defer_commit = false);
+
+    void set_tx_atr_bits(const chan_sel_t chan,
+        const atr_state_t atr_state,
+        const tx_atr_bits_t atr_bits,
+        const bool defer_commit = false);
+
+    tx_atr_bits_t get_tx_atr_bits(const chan_sel_t chan, const atr_state_t atr_state);
 
     /*! ATR settings: TRX switch
      *

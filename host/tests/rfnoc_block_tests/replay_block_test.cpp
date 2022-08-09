@@ -7,6 +7,7 @@
 #include "../rfnoc_graph_mock_nodes.hpp"
 #include <uhd/convert.hpp>
 #include <uhd/rfnoc/actions.hpp>
+#include <uhd/rfnoc/ddc_block_control.hpp>
 #include <uhd/rfnoc/defaults.hpp>
 #include <uhd/rfnoc/mock_block.hpp>
 #include <uhd/rfnoc/replay_block_control.hpp>
@@ -20,6 +21,8 @@ using namespace uhd::rfnoc;
 
 // Redeclare this here, since it's only defined outside of UHD_API
 noc_block_base::make_args_t::~make_args_t() = default;
+
+static const size_t CMD_Q_MAX = 32;
 
 /*
  * This class extends mock_reg_iface_t by adding a constructor that initializes some of
@@ -36,24 +39,29 @@ public:
     replay_mock_reg_iface_t(size_t mem_addr_size, size_t word_size, size_t num_channels)
     {
         for (size_t chan = 0; chan < num_channels; chan++) {
-            const uint32_t reg_compat =
-                replay_block_control::REG_COMPAT_ADDR
-                + chan * replay_block_control::REPLAY_BLOCK_OFFSET;
+            const uint32_t base = chan * replay_block_control::REPLAY_BLOCK_OFFSET;
+            const uint32_t reg_compat = base +
+                replay_block_control::REG_COMPAT_ADDR;
+            const uint32_t reg_mem_size = base +
+                replay_block_control::REG_MEM_SIZE_ADDR;
+            const uint32_t reg_rec_fullness = base +
+                replay_block_control::REG_REC_FULLNESS_LO_ADDR;
+            const uint32_t reg_rec_position = base +
+                replay_block_control::REG_REC_POS_LO_ADDR;
+            const uint32_t reg_play_position = base +
+                replay_block_control::REG_PLAY_POS_LO_ADDR;
+            const uint32_t reg_play_fifo_space = base +
+                replay_block_control::REG_PLAY_CMD_FIFO_SPACE_ADDR;
             read_memory[reg_compat] = (replay_block_control::MINOR_COMPAT
                                        | (replay_block_control::MAJOR_COMPAT << 16));
-        }
-        for (size_t chan = 0; chan < num_channels; chan++) {
-            const uint32_t reg_mem_size =
-                replay_block_control::REG_MEM_SIZE_ADDR
-                + chan * replay_block_control::REPLAY_BLOCK_OFFSET;
             read_memory[reg_mem_size] = (mem_addr_size | (word_size << 16));
-        }
-        for (size_t chan = 0; chan < num_channels; chan++) {
-            const uint32_t reg_rec_fullness =
-                replay_block_control::REG_REC_FULLNESS_LO_ADDR
-                + chan * replay_block_control::REPLAY_BLOCK_OFFSET;
-            read_memory[reg_rec_fullness]     = 0x0010;
-            read_memory[reg_rec_fullness + 4] = 0x0000;
+            read_memory[reg_rec_fullness]      = 0x0010;
+            read_memory[reg_rec_fullness + 4]  = 0x0000;
+            read_memory[reg_rec_position]      = 0xBEEF;
+            read_memory[reg_rec_position + 4]  = 0xDEAD;
+            read_memory[reg_play_position]     = 0xCAFE;
+            read_memory[reg_play_position + 4] = 0xFEED;
+            read_memory[reg_play_fifo_space]   = CMD_Q_MAX;
         }
     }
 };
@@ -278,6 +286,20 @@ BOOST_FIXTURE_TEST_CASE(replay_test_record, replay_block_fixture)
             test_replay->record(max_buffer_size, buffer_size, port), uhd::value_error);
         BOOST_CHECK_THROW(
             test_replay->record(base_addr, max_buffer_size, port), uhd::value_error);
+    }
+}
+
+/*
+ * This test case checks the record position.
+ */
+BOOST_FIXTURE_TEST_CASE(replay_test_record_position, replay_block_fixture)
+{
+    for (size_t port = 0; port < num_input_ports; port++) {
+        const uint32_t reg_rec_position =
+            get_addr(replay_block_control::REG_REC_POS_LO_ADDR, port);
+        uint64_t rec_pos = reg_iface->read_memory[reg_rec_position] |
+            (uint64_t(reg_iface->read_memory[reg_rec_position + 4]) << 32);
+        BOOST_CHECK_EQUAL(test_replay->get_record_position(port), rec_pos);
     }
 }
 
@@ -728,16 +750,65 @@ BOOST_FIXTURE_TEST_CASE(replay_test_play, replay_block_fixture)
 }
 
 /*
+ * This test case checks the play position.
+ */
+BOOST_FIXTURE_TEST_CASE(replay_test_play_position, replay_block_fixture)
+{
+    for (size_t port = 0; port < num_input_ports; port++) {
+        const uint32_t reg_play_position =
+            get_addr(replay_block_control::REG_PLAY_POS_LO_ADDR, port);
+        uint64_t play_pos = reg_iface->read_memory[reg_play_position] |
+            (uint64_t(reg_iface->read_memory[reg_play_position + 4]) << 32);
+        BOOST_CHECK_EQUAL(test_replay->get_play_position(port), play_pos);
+    }
+}
+
+/*
+ * This test case checks to make sure play commands throw an error if the
+ * command queue is full.
+ */
+BOOST_FIXTURE_TEST_CASE(replay_test_play_cmd_limit, replay_block_fixture)
+{
+    for (size_t port = 0; port < num_input_ports; port++) {
+        const uint32_t reg_play_cmd_fifo_space =
+            get_addr(replay_block_control::REG_PLAY_CMD_FIFO_SPACE_ADDR, port);
+
+        // Issue stop to clear command queue
+        test_replay->stop(port);
+
+        // Fill the command queue
+        for (size_t i = 0; i < CMD_Q_MAX; i++) {
+            test_replay->play(0, 0, port);
+        }
+        reg_iface->read_memory[reg_play_cmd_fifo_space] = 0;
+
+        // Make sure the next command throws
+        BOOST_CHECK_THROW(test_replay->play(0, 0, port), uhd::op_failed);
+
+        reg_iface->read_memory[reg_play_cmd_fifo_space] = CMD_Q_MAX;
+
+        // Issue stop to clear the queue and reset
+        test_replay->stop(port);
+
+        // Run once more to confirm no error is thrown
+        test_replay->play(0, 0, port);
+
+        // Issue stop to clear the queue and reset
+        test_replay->stop(port);
+    }
+}
+
+/*
  * This test case ensures that the Replay Block can be added to an RFNoC graph.
  */
 BOOST_FIXTURE_TEST_CASE(replay_test_graph, replay_block_fixture)
 {
     detail::graph_t graph{};
     detail::graph_t::graph_edge_t edge_port_info;
-    edge_port_info.src_port                    = 0;
-    edge_port_info.dst_port                    = 0;
-    edge_port_info.property_propagation_active = true;
-    edge_port_info.edge                        = detail::graph_t::graph_edge_t::DYNAMIC;
+    edge_port_info.src_port        = 0;
+    edge_port_info.dst_port        = 0;
+    edge_port_info.is_forward_edge = true;
+    edge_port_info.edge            = detail::graph_t::graph_edge_t::DYNAMIC;
 
     mock_radio_node_t mock_radio_block{0};
     mock_ddc_node_t mock_ddc_block{};
@@ -748,13 +819,69 @@ BOOST_FIXTURE_TEST_CASE(replay_test_graph, replay_block_fixture)
     node_accessor.init_props(&mock_ddc_block);
     mock_sink_term.set_edge_property<std::string>(
         "type", "sc16", {res_source_info::INPUT_EDGE, 0});
-    mock_sink_term.set_edge_property<std::string>(
-        "type", "sc16", {res_source_info::INPUT_EDGE, 1});
 
     UHD_LOG_INFO("TEST", "Creating graph...");
     graph.connect(&mock_radio_block, &mock_ddc_block, edge_port_info);
     graph.connect(&mock_ddc_block, test_replay.get(), edge_port_info);
     graph.connect(test_replay.get(), &mock_sink_term, edge_port_info);
+    UHD_LOG_INFO("TEST", "Committing graph...");
+    graph.commit();
+    mock_sink_term.set_edge_property<double>(
+        "tick_rate", 1.0, {res_source_info::INPUT_EDGE, 0});
+    UHD_LOG_INFO("TEST", "Commit complete.");
+
+    mock_radio_block.generate_overrun(0);
+    uhd::rx_metadata_t rx_md;
+    BOOST_REQUIRE(test_replay->get_record_async_metadata(rx_md, 1.0));
+    BOOST_CHECK(rx_md.error_code == uhd::rx_metadata_t::ERROR_CODE_OVERFLOW);
+
+    mock_sink_term.post_action(res_source_info{res_source_info::INPUT_EDGE, 0},
+        tx_event_action_info::make(uhd::async_metadata_t::EVENT_CODE_UNDERFLOW, 1234ul));
+    uhd::async_metadata_t tx_md;
+    BOOST_REQUIRE(test_replay->get_play_async_metadata(tx_md, 1.0));
+    BOOST_CHECK(tx_md.event_code == uhd::async_metadata_t::EVENT_CODE_UNDERFLOW);
+    BOOST_CHECK(tx_md.has_time_spec);
+    BOOST_CHECK(tx_md.time_spec == 1234.0);
+}
+
+/*
+ * This test case ensures that the Replay Block can be added to an RFNoC graph
+ * in a loop.
+ */
+BOOST_FIXTURE_TEST_CASE(replay_test_graph_loop, replay_block_fixture)
+{
+    detail::graph_t graph{};
+    detail::graph_t::graph_edge_t edge_port_info;
+    edge_port_info.src_port        = 0;
+    edge_port_info.dst_port        = 0;
+    edge_port_info.is_forward_edge = false;
+    edge_port_info.edge            = detail::graph_t::graph_edge_t::DYNAMIC;
+
+    // Now create a DDC block
+    UHD_LOG_DEBUG("TEST", "Making DDC block control....");
+    node_accessor_t node_accessor{};
+    constexpr uint32_t num_hb  = 2;
+    constexpr uint32_t max_cic = 128;
+    constexpr size_t num_chans = 1;
+    constexpr noc_id_t noc_id  = DDC_BLOCK;
+    auto block_container =
+        get_mock_block(noc_id, num_chans, num_chans, uhd::device_addr_t(""));
+    auto& ddc_reg_iface = block_container.reg_iface;
+    ddc_reg_iface->read_memory[ddc_block_control::RB_COMPAT_NUM] =
+        (ddc_block_control::MAJOR_COMPAT << 16) | ddc_block_control::MINOR_COMPAT;
+    ddc_reg_iface->read_memory[ddc_block_control::RB_NUM_HB]        = num_hb;
+    ddc_reg_iface->read_memory[ddc_block_control::RB_CIC_MAX_DECIM] = max_cic;
+    auto test_ddc = block_container.get_block<ddc_block_control>();
+
+    node_accessor.init_props(test_ddc.get());
+    UHD_LOG_DEBUG("TEST", "DDC done.");
+
+    UHD_LOG_INFO("TEST", "Creating graph...");
+    graph.connect(test_ddc.get(), test_replay.get(), edge_port_info);
+    // Graph must be DAG, disable prop prop on back-edge (normally,
+    // rfnoc_graph::connect() would do this for us if we declare a back-edge
+    edge_port_info.is_forward_edge = true;
+    graph.connect(test_replay.get(), test_ddc.get(), edge_port_info);
     UHD_LOG_INFO("TEST", "Committing graph...");
     graph.commit();
     UHD_LOG_INFO("TEST", "Commit complete.");

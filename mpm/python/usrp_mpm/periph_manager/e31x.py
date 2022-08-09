@@ -8,7 +8,6 @@
 E310 implementation module
 """
 
-from __future__ import print_function
 import copy
 import re
 from six import itervalues
@@ -272,7 +271,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
             'default_args': default_args,
         })
         self.dboards.append(E31x_db(E310_DBOARD_SLOT_IDX, **dboard_info))
-        self.log.info("Found %d daughterboard(s).", len(self.dboards))
+        assert len(self.dboards) == 1
 
     def _check_fpga_compat(self):
         " Throw an exception if the compat numbers don't match up "
@@ -293,19 +292,12 @@ class e31x(ZynqComponents, PeriphManagerBase):
         Initialize clock and time sources. After this function returns, the
         reference signals going to the FPGA are valid.
         """
-        if not self.dboards:
-            self.log.warning(
-                "No dboards found, skipping setting clock and time source "
-                "configuration."
-            )
-            self._time_source = E310_DEFAULT_TIME_SOURCE
-        else:
-            self.set_clock_source(
-                default_args.get('clock_source', E310_DEFAULT_CLOCK_SOURCE)
-            )
-            self.set_time_source(
-                default_args.get('time_source', E310_DEFAULT_TIME_SOURCE)
-            )
+        self.set_clock_source(
+            default_args.get('clock_source', E310_DEFAULT_CLOCK_SOURCE)
+        )
+        self.set_time_source(
+            default_args.get('time_source', E310_DEFAULT_TIME_SOURCE)
+        )
 
     def _init_peripherals(self, args):
         """
@@ -394,16 +386,13 @@ class e31x(ZynqComponents, PeriphManagerBase):
             self.log.warning(
                 "Cannot run init(), device was never fully initialized!")
             return False
-        if args.get("clock_source", "") != "":
-            self.set_clock_source(args.get("clock_source"))
-        if args.get("time_source", "") != "":
-            self.set_time_source(args.get("time_source"))
+        args = self._update_default_args(args)
+        self.set_clock_source(args.get("clock_source", E310_DEFAULT_CLOCK_SOURCE))
+        self.set_time_source(args.get("time_source", E310_DEFAULT_TIME_SOURCE))
         if "no_reload_fpga" in args:
             self._do_not_reload = \
                 str2bool(args.get("no_reload_fpga")) or args.get("no_reload_fpga") == ""
         result = super(e31x, self).init(args)
-        for xport_mgr in itervalues(self._xport_mgrs):
-            xport_mgr.init(args)
         return result
 
     def apply_idle_overlay(self):
@@ -411,9 +400,9 @@ class e31x(ZynqComponents, PeriphManagerBase):
         Load all overlays required to go into idle power savings mode.
         """
         idle_overlay = self.get_idle_dt_overlay(self.device_info)
-        self.log.debug("Motherboard requests device tree overlay for Idle power savings mode: {}".format(
-            idle_overlay
-        ))
+        self.log.debug(
+            "Motherboard requests device tree overlay for Idle power savings mode: {}"
+            .format(idle_overlay))
         dtoverlay.apply_overlay_safe(idle_overlay)
 
     def remove_idle_overlay(self):
@@ -443,8 +432,6 @@ class e31x(ZynqComponents, PeriphManagerBase):
                 "Cannot run deinit(), device was never fully initialized!")
             return
         super(e31x, self).deinit()
-        for xport_mgr in itervalues(self._xport_mgrs):
-            xport_mgr.deinit()
         if not self._do_not_reload:
             self.tear_down()
         # Reset back to value from _default_args (mpm.conf)
@@ -482,31 +469,6 @@ class e31x(ZynqComponents, PeriphManagerBase):
             self.log.trace("Found idle overlay: %s", idle_overlay)
         return is_idle
 
-
-    ###########################################################################
-    # Transport API
-    ###########################################################################
-    def get_chdr_link_types(self):
-        """
-        See PeriphManagerBase.get_chdr_link_types() for docs.
-        """
-        assert self.mboard_info['rpc_connection'] in ('remote', 'local')
-        return ["udp"]
-
-    def get_chdr_link_options(self, xport_type):
-        """
-        See PeriphManagerBase.get_chdr_link_options() for docs.
-        """
-        if xport_type not in self._xport_mgrs:
-            self.log.warning("Can't get link options for unknown link type: `{}'."
-                             .format(xport_type))
-            return []
-        if xport_type == "udp":
-            return self._xport_mgrs[xport_type].get_chdr_link_options(
-                self.mboard_info['rpc_connection'])
-        else:
-            return self._xport_mgrs[xport_type].get_chdr_link_options()
-
     ###########################################################################
     # Device info
     ###########################################################################
@@ -532,7 +494,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
     def get_clock_sources(self):
         " Lists all available clock sources. "
         self.log.trace("Listing available clock sources...")
-        return ('internal',)
+        return (E310_DEFAULT_CLOCK_SOURCE,)
 
     def get_clock_source(self):
         " Returns the currently selected clock source "
@@ -564,6 +526,15 @@ class e31x(ZynqComponents, PeriphManagerBase):
             return
         self._time_source = time_source
         self.mboard_regs_control.set_time_source(time_source)
+
+    def get_sync_sources(self):
+        """
+        List sync sources.
+        """
+        return [{
+            "time_source": time_source,
+            "clock_source": E310_DEFAULT_CLOCK_SOURCE
+        } for time_source in self.get_time_sources()]
 
     ###########################################################################
     # GPIO API
@@ -727,7 +698,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
         """
         return self.mboard_info
 
-    def set_mb_eeprom(self, eeprom_vals):
+    def set_mb_eeprom(self, _eeprom_vals):
         """
         See PeriphManagerBase.set_mb_eeprom() for docs.
         """
@@ -743,7 +714,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
         db_eeprom_data = copy.copy(self.dboard.device_info)
         return db_eeprom_data
 
-    def set_db_eeprom(self, dboard_idx, eeprom_data):
+    def set_db_eeprom(self, _dboard_idx, _eeprom_data):
         """
         See PeriphManagerBase.set_db_eeprom() for docs.
         """

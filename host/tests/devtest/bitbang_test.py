@@ -11,7 +11,9 @@ from uhd_test_base import uhd_example_test_case
 
 class bitbang_test(uhd_example_test_case):
     """ Run gpio --bitbang. """
-    tests = {'default': {},}
+    tests = {'default': {
+        'addl_args': [],
+    },}
 
     def setup_example(self):
         """
@@ -27,6 +29,7 @@ class bitbang_test(uhd_example_test_case):
             self.create_addr_args_str(),
             '--bitbang',
         ]
+        args += test_args['addl_args']
         (app, run_results) = self.run_example('gpio', args)
         # Evaluate pass/fail:
         run_results['passed'] = all([
@@ -35,4 +38,3 @@ class bitbang_test(uhd_example_test_case):
         ])
         self.report_example_results(test_name, run_results)
         return run_results
-

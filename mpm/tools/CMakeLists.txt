@@ -44,4 +44,6 @@ foreach(eeprom_tool_source ${eeprom_tool_sources})
     install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/${eeprom_tool} DESTINATION ${RUNTIME_DIR})
 endforeach(eeprom_tool_source ${eeprom_tool_sources})
 
-add_subdirectory(tlv_eeprom)
+if(ENABLE_LIBMPM AND ENABLE_X400)
+    add_subdirectory(tlv_eeprom)
+endif(ENABLE_LIBMPM AND ENABLE_X400)

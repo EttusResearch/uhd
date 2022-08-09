@@ -34,6 +34,7 @@ set(MSVC_MIN_VERSION_READABLE "15.0")
 # all the build-time Python scripts
 set(PYTHON_MIN_VERSION "3.6")
 # Other deps
+set(SETUPTOOLS_MIN_VERSION "40.0")
 set(BOOST_MIN_VERSION "1.65")
 set(NUMPY_MIN_VERSION "1.11")
 set(RUAMEL.YAML_MIN_VERSION "0.15")
@@ -79,6 +80,7 @@ elseif(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
     else()
         message(WARNING "\nCannot determine the version of the compiler selected to build UHD (${APPLE_STR}Clang : ${CMAKE_CXX_COMPILER}). This build may or not work. We highly recommend using Apple Clang version ${APPLECLANG_MIN_VERSION} or more recent, or Clang version ${CLANG_MIN_VERSION} or more recent.")
     endif()
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og")
 elseif(MSVC)
     if(${MSVC_VERSION} VERSION_LESS ${MSVC_MIN_VERSION})
 	message(FATAL_ERROR "\nMSVC version is less than the required minimum. Required: ${MSVC_MIN_VERSION_READABLE}")
@@ -96,6 +98,7 @@ endif()
 # Packaging Variables
 ########################################################################
 
+option(UNDERSCORE_UHD_VERSION "Replace dashes in uhd version with underscores" OFF)
 set(LIBUHD_PKG ${LIBUHD_PKG} CACHE BOOL "Build Debian libuhd003 package")
 set(LIBUHDDEV_PKG ${LIBUHDDEV_PKG} CACHE BOOL "Build Debian libuhd-dev package")
 set(UHDHOST_PKG ${UHDPOST_PKG} CACHE BOOL "Build Debian uhd-host package")
@@ -309,33 +312,43 @@ include(UHDLog)
 ########################################################################
 include(UHDPython)
 
-PYTHON_CHECK_MODULE(
-    "Python version ${PYTHON_MIN_VERSION} or greater"
-    "platform" "LooseVersion(platform.python_version()) >= LooseVersion('${PYTHON_MIN_VERSION}')"
+PYTHON_CHECK_MODULE_VERSION(
+    "compatible Python version"
+    "platform"
+    "platform.python_version()"
+    ${PYTHON_MIN_VERSION}
     HAVE_PYTHON_PLAT_MIN_VERSION
 )
 
-PYTHON_CHECK_MODULE(
-    "Mako templates ${PY_MAKO_MIN_VERSION} or greater"
-    "mako" "LooseVersion(mako.__version__) >= LooseVersion('${PY_MAKO_MIN_VERSION}')"
+PYTHON_CHECK_MODULE_VERSION(
+    "Mako templates module"
+    "mako"
+    "mako.__version__"
+    ${PY_MAKO_MIN_VERSION}
     HAVE_PYTHON_MODULE_MAKO
 )
 
-PYTHON_CHECK_MODULE(
-    "requests ${PY_REQUESTS_MIN_VERSION} or greater"
-    "requests" "LooseVersion(requests.__version__) >= LooseVersion('${PY_REQUESTS_MIN_VERSION}')"
+PYTHON_CHECK_MODULE_VERSION(
+    "requests module"
+    "requests"
+    "requests.__version__"
+    ${PY_REQUESTS_MIN_VERSION}
     HAVE_PYTHON_MODULE_REQUESTS
 )
 
-PYTHON_CHECK_MODULE(
-    "numpy ${NUMPY_MIN_VERSION} or greater"
-    "numpy" "LooseVersion(numpy.__version__) >= LooseVersion('${NUMPY_MIN_VERSION}')"
+PYTHON_CHECK_MODULE_VERSION(
+    "numpy module"
+    "numpy"
+    "numpy.__version__"
+    ${NUMPY_MIN_VERSION}
     HAVE_PYTHON_MODULE_NUMPY
 )
 
-PYTHON_CHECK_MODULE(
-    "ruamel.yaml ${RUAMEL.YAML_MIN_VERSION} or greater"
-    "ruamel.yaml" "LooseVersion(ruamel.yaml.__version__) >= LooseVersion('${RUAMEL.YAML_MIN_VERSION}')"
+PYTHON_CHECK_MODULE_VERSION(
+    "ruamel.yaml module"
+    "ruamel.yaml"
+    "ruamel.yaml.__version__"
+    ${RUAMEL.YAML_MIN_VERSION}
     HAVE_PYTHON_MODULE_YAML
 )
 

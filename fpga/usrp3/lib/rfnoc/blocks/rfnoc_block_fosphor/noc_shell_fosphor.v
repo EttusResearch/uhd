@@ -1,11 +1,11 @@
 //
-// Copyright 2020 Ettus Research, A National Instruments Brand
+// Copyright 2022 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
 // Module: noc_shell_fosphor
 //
-// Description: 
+// Description:
 //
 //   This is a tool-generated NoC-shell for the fosphor block.
 //   See the RFNoC specification for more information about NoC shells.
@@ -15,6 +15,7 @@
 //   THIS_PORTID : Control crossbar port to which this block is connected
 //   CHDR_W      : AXIS-CHDR data bus width
 //   MTU         : Maximum transmission unit (i.e., maximum packet size in
+//                 CHDR words is 2**MTU).
 //
 
 `default_nettype none
@@ -229,7 +230,7 @@ module noc_shell_fosphor #(
 
   assign axis_data_clk = ce_clk;
   assign axis_data_rst = ce_rst;
-  
+
   //---------------------
   // Input Data Paths
   //---------------------

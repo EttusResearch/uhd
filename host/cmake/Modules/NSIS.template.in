@@ -693,8 +693,6 @@ Section "-Core installation"
 @CPACK_NSIS_CREATE_ICONS@
 @CPACK_NSIS_CREATE_ICONS_EXTRA@
   CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Uninstall.lnk" "$INSTDIR\Uninstall.exe"
-  CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\USRP2 Card Burner.lnk" "$INSTDIR\lib\uhd\utils\usrp2_card_burner_gui.py" "" "" "" SW_SHOWMINIMIZED
-  CreateShortcut "$SMPROGRAMS\$STARTMENU_FOLDER\USRP-N2XX Net Burner.lnk" "$INSTDIR\lib\uhd\utils\usrp_n2xx_net_burner_gui.py" "" "" "" SW_SHOWMINIMIZED
   CreateShortcut "$SMPROGRAMS\$STARTMENU_FOLDER\UHD Images Downloader.lnk" "$INSTDIR\lib\uhd\utils\uhd_images_downloader.py"
   CreateShortcut "$SMPROGRAMS\$STARTMENU_FOLDER\UHD Documentation.lnk" "$INSTDIR\share\doc\uhd\doxygen\html\index.html"
 
@@ -870,8 +868,6 @@ Section "Uninstall"
   ; try to fix it.
   StrCpy $MUI_TEMP "$START_MENU"
   Delete "$SMPROGRAMS\$MUI_TEMP\Uninstall.lnk"
-  Delete "$SMPROGRAMS\$MUI_TEMP\USRP2 Card Burner.lnk"
-  Delete "$SMPROGRAMS\$MUI_TEMP\USRP-N2XX Net Burner.lnk"
   Delete "$SMPROGRAMS\$MUI_TEMP\UHD Images Downloader.lnk"
   Delete "$SMPROGRAMS\$MUI_TEMP\UHD Documentation.lnk"
 @CPACK_NSIS_DELETE_ICONS_EXTRA@

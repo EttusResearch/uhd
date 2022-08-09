@@ -57,15 +57,15 @@ module axi4s_add_bytes #(
   // Parameter Checks
   initial begin
     assert (i.DATA_WIDTH == o.DATA_WIDTH) else
-      $fatal("DATA_WIDTH mismatch");
+      $fatal(1, "DATA_WIDTH mismatch");
     assert (i.USER_WIDTH == o.USER_WIDTH) else
-      $fatal("USER_WIDTH mismatch");
+      $fatal(1, "USER_WIDTH mismatch");
     assert (i.USER_WIDTH >= UWIDTH) else
-      $fatal("i.USER_WIDTH is to small");
+      $fatal(1, "i.USER_WIDTH is to small");
     assert (o.USER_WIDTH >= UWIDTH) else
-      $fatal("o.USER_WIDTH is to small");
+      $fatal(1, "o.USER_WIDTH is to small");
     assert (ADD_START == 0) else
-      $fatal("Only tested for ADD_START = 0");
+      $fatal(1, "Only tested for ADD_START = 0");
   end
 
   AxiStreamPacketIf #(.DATA_WIDTH(i.DATA_WIDTH),.USER_WIDTH(i.USER_WIDTH),

@@ -67,9 +67,37 @@ from rx_samples_to_file_test import rx_samples_to_file_test
 from tx_bursts_test import uhd_tx_bursts_test
 from test_pps_test import uhd_test_pps_test
 
-# Enable these when GPIO API is enabled
-# from gpio_test import gpio_test
-# from bitbang_test import bitbang_test
+from gpio_test import gpio_test
+gpio_test.tests = {}
+for port in ["GPIO0", "GPIO1"]:
+    for bank,driver in [("GPIOA", "DB0_RF0")]:
+        gpio_test.tests[f"{port}_{driver}"] = {
+            "addl_args": ["--src", " ".join([driver]*12), "--bank", bank, "--port", port, "--bits", "12"],
+        }
+
+from gpio_test import gpio_x410_set_get_source_test
+gpio_x410_set_get_source_test.test_params = {
+    "possible_sources": ["PS", "MPM", "USER_APP", "DB0_RF0", "DB0_RF1", "DB0_SPI", "DB1_RF0", "DB1_RF1", "DB1_SPI"],
+    "num_pins": 12,
+}
+
+from gpio_test import x410_gpio_power_test
+
+from bitbang_test import bitbang_test
+bitbang_test.tests = {}
+for port in ["GPIO0", "GPIO1"]:
+    for bank,driver in [("GPIOA", "DB0_RF0"), ("GPIOB", "DB1_RF0")]:
+        bitbang_test.tests[f"{port}_{driver}"] = {
+            "addl_args": ["--bank", bank, "--port", port, "--src", " ".join([driver]*12)]
+        }
+
+from gpio_test import gpio_atr_readback_test
+gpio_atr_readback_test.test_params = [
+    ("GPIOA", "DB0_RF0"),
+    ("GPIOA", "DB0_RF1"),
+    ("GPIOB", "DB1_RF0"),
+    ("GPIOB", "DB1_RF1"),
+]
 
 from list_sensors_test import list_sensors_test
 from python_api_test import uhd_python_api_test

@@ -34,10 +34,3 @@ PkgCtrlIfaceBfm.sv \
 PkgChdrIfaceBfm.sv \
 PkgRfnocBlockCtrlBfm.sv \
 ))
-
-##################################################
-# Proto-RFNoC simlib still used in some places
-##################################################
-SIM_PROTORFNOC_SRCS = $(abspath $(addprefix $(BASE_DIR)/../sim/rfnoc/, \
-sim_rfnoc_lib.svh \
-))

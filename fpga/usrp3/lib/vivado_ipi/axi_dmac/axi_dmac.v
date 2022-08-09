@@ -35,7 +35,7 @@
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // ***************************************************************************
 // ***************************************************************************
-// Source: git://github.com/analogdevicesinc/hdl.git
+// Source: https://github.com/analogdevicesinc/hdl.git
 // Commit hash: 04843795d8d6a496c00ee91b437d57924bc1cbf1
 
 module axi_dmac (

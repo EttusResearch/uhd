@@ -35,6 +35,7 @@ class window_mock_reg_iface_t : public mock_reg_iface_t
 public:
     window_mock_reg_iface_t(size_t num_chans, std::vector<size_t> max_num_coeffs)
         : last_coeff_write_pos(num_chans, 0)
+        , num_coeffs(num_chans)
         , coeffs(num_chans)
         , _num_chans(num_chans)
         , _max_num_coeffs(max_num_coeffs)
@@ -58,6 +59,8 @@ public:
         } else if (offset == window_block_control::REG_WINDOW_LOAD_COEFF_LAST_OFFSET) {
             last_coeff_write_pos[chan] = coeffs.at(chan).size();
             coeffs.at(chan).push_back(uhd::narrow_cast<int16_t>(data));
+        } else if (offset == window_block_control::REG_WINDOW_LEN_OFFSET) {
+            num_coeffs[chan] = uhd::narrow_cast<int16_t>(data);
         } else {
             throw uhd::assertion_error("Invalid write to out of bounds offset");
         }
@@ -87,6 +90,7 @@ public:
     }
 
     std::vector<size_t> last_coeff_write_pos;
+    std::vector<size_t> num_coeffs;
     std::vector<std::vector<int16_t>> coeffs;
 
 private:
@@ -179,6 +183,9 @@ BOOST_FIXTURE_TEST_CASE(window_test_set_get_coefficients, window_block_fixture)
         // Check that all coefficients were written
         BOOST_CHECK_EQUAL(reg_iface->coeffs.at(chan).size(), num_coeffs_chan);
 
+        // Check correct window length was written
+        BOOST_CHECK_EQUAL(reg_iface->num_coeffs.at(chan), num_coeffs_chan);
+
         // Check correctness of coefficients
         for (size_t i = 0; i < coeffs.size(); i++) {
             BOOST_CHECK_EQUAL(reg_iface->coeffs.at(chan).at(i), chan);
@@ -220,10 +227,10 @@ BOOST_FIXTURE_TEST_CASE(window_test_graph, window_block_fixture)
 {
     detail::graph_t graph{};
     detail::graph_t::graph_edge_t edge_port_info;
-    edge_port_info.src_port                    = 0;
-    edge_port_info.dst_port                    = 0;
-    edge_port_info.property_propagation_active = true;
-    edge_port_info.edge                        = detail::graph_t::graph_edge_t::DYNAMIC;
+    edge_port_info.src_port        = 0;
+    edge_port_info.dst_port        = 0;
+    edge_port_info.is_forward_edge = true;
+    edge_port_info.edge            = detail::graph_t::graph_edge_t::DYNAMIC;
 
     mock_radio_node_t mock_radio_block{0};
     mock_ddc_node_t mock_ddc_block{};

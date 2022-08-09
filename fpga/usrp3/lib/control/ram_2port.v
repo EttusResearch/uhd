@@ -54,7 +54,7 @@
 module ram_2port #(
   parameter DWIDTH    = 32,           // Width of the memory block
   parameter AWIDTH    = 9,            // log2 of the depth of the memory block
-  parameter RW_MODE   = "READ-FIRST", // Read-write mode {READ-FIRST, WRITE-FIRST, NO-CHANGE}
+  parameter RW_MODE   = "READ-FIRST", // Read-write mode {READ-FIRST, WRITE-FIRST, NO-CHANGE, B-READ-ONLY}
   parameter RAM_TYPE  = "AUTOMATIC",  // Type of RAM to infer {AUTOMATIC, REG, LUTRAM, BRAM, URAM}
   parameter OUT_REG   = 0,            // Instantiate an output register? (+1 cycle of read latency)
   parameter INIT_FILE = ""            // Optionally initialize memory with this file

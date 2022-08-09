@@ -370,10 +370,16 @@ module switch_control #(
     rx1_switch_11_reg  <= ram_rx1_dob[RX_SWITCH_11_MSB: RX_SWITCH_11];
   end
 
+`ifdef VARIANT_XO3
+  localparam RAM_RW_MODE = "B-READ-ONLY" ;
+`else
+  localparam RAM_RW_MODE = "READ-FIRST" ;
+`endif
+
   ram_2port #(
     .DWIDTH     (32),
     .AWIDTH     (8),
-    .RW_MODE    ("READ-FIRST"),
+    .RW_MODE    (RAM_RW_MODE),
     .RAM_TYPE   ("AUTOMATIC"),
     .OUT_REG    (0),
     .INIT_FILE  ("register_endpoints/memory_init_files/tx0_path_defaults.hex")
@@ -394,7 +400,7 @@ module switch_control #(
   ram_2port #(
     .DWIDTH     (32),
     .AWIDTH     (8),
-    .RW_MODE    ("READ-FIRST"),
+    .RW_MODE    (RAM_RW_MODE),
     .RAM_TYPE   ("AUTOMATIC"),
     .OUT_REG    (0),
     .INIT_FILE  ("register_endpoints/memory_init_files/tx1_path_defaults.hex")
@@ -415,7 +421,7 @@ module switch_control #(
   ram_2port #(
     .DWIDTH     (32),
     .AWIDTH     (8),
-    .RW_MODE    ("READ-FIRST"),
+    .RW_MODE    (RAM_RW_MODE),
     .RAM_TYPE   ("AUTOMATIC"),
     .OUT_REG    (0),
     .INIT_FILE  ("register_endpoints/memory_init_files/rx0_path_defaults.hex")
@@ -436,7 +442,7 @@ module switch_control #(
   ram_2port #(
     .DWIDTH     (32),
     .AWIDTH     (8),
-    .RW_MODE    ("READ-FIRST"),
+    .RW_MODE    (RAM_RW_MODE),
     .RAM_TYPE   ("AUTOMATIC"),
     .OUT_REG    (0),
     .INIT_FILE  ("register_endpoints/memory_init_files/rx1_path_defaults.hex")

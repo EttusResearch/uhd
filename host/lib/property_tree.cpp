@@ -30,16 +30,18 @@ fs_path::fs_path(const std::string& p) : std::string(p) {}
 std::string fs_path::leaf(void) const
 {
     const size_t pos = this->rfind("/");
-    if (pos == std::string::npos)
+    if (pos == std::string::npos) {
         return *this;
+    }
     return this->substr(pos + 1);
 }
 
 fs_path fs_path::branch_path(void) const
 {
     const size_t pos = this->rfind("/");
-    if (pos == std::string::npos)
+    if (pos == std::string::npos) {
         return *this;
+    }
     return fs_path(this->substr(0, pos));
 }
 
@@ -93,13 +95,15 @@ public:
         node_type* parent = NULL;
         node_type* node   = &_guts->root;
         for (const std::string& name : path_tokenizer(path)) {
-            if (not node->has_key(name))
+            if (not node->has_key(name)) {
                 throw_path_not_found(path);
+            }
             parent = node;
             node   = &(*node)[name];
         }
-        if (parent == NULL)
+        if (parent == NULL) {
             throw uhd::runtime_error("Cannot uproot");
+        }
         parent->pop(fs_path(path.leaf()));
     }
 
@@ -110,8 +114,9 @@ public:
 
         node_type* node = &_guts->root;
         for (const std::string& name : path_tokenizer(path)) {
-            if (not node->has_key(name))
+            if (not node->has_key(name)) {
                 return false;
+            }
             node = &(*node)[name];
         }
         return true;
@@ -124,15 +129,16 @@ public:
 
         node_type* node = &_guts->root;
         for (const std::string& name : path_tokenizer(path)) {
-            if (not node->has_key(name))
+            if (not node->has_key(name)) {
                 throw_path_not_found(path);
+            }
             node = &(*node)[name];
         }
 
         return node->keys();
     }
 
-    std::shared_ptr<void> _pop(const fs_path& path_) override
+    std::shared_ptr<property_iface> _pop(const fs_path& path_) override
     {
         const fs_path path = _root / path_;
         std::lock_guard<std::mutex> lock(_guts->mutex);
@@ -140,51 +146,58 @@ public:
         node_type* parent = NULL;
         node_type* node   = &_guts->root;
         for (const std::string& name : path_tokenizer(path)) {
-            if (not node->has_key(name))
+            if (not node->has_key(name)) {
                 throw_path_not_found(path);
+            }
             parent = node;
             node   = &(*node)[name];
         }
 
-        if (node->prop.get() == NULL)
+        if (node->prop.get() == NULL) {
             throw uhd::runtime_error("Cannot access! Property uninitialized at: " + path);
-        if (parent == NULL)
+        }
+        if (parent == NULL) {
             throw uhd::runtime_error("Cannot pop");
+        }
         auto prop = node->prop;
         parent->pop(fs_path(path.leaf()));
         return prop;
     }
 
-    void _create(const fs_path& path_, const std::shared_ptr<void>& prop) override
+    void _create(const fs_path& path_, const std::shared_ptr<property_iface>& prop) override
     {
         const fs_path path = _root / path_;
         std::lock_guard<std::mutex> lock(_guts->mutex);
 
         node_type* node = &_guts->root;
         for (const std::string& name : path_tokenizer(path)) {
-            if (not node->has_key(name))
+            if (not node->has_key(name)) {
                 (*node)[name] = node_type();
+            }
             node = &(*node)[name];
         }
-        if (node->prop.get() != NULL)
+        if (node->prop.get() != NULL) {
             throw uhd::runtime_error(
                 "Cannot create! Property already exists at: " + path);
-        node->prop           = prop;
+        }
+        node->prop = prop;
     }
 
-    std::shared_ptr<void>& _access(const fs_path& path_) const override
+    std::shared_ptr<property_iface>& _access(const fs_path& path_) const override
     {
         const fs_path path = _root / path_;
         std::lock_guard<std::mutex> lock(_guts->mutex);
 
         node_type* node = &_guts->root;
         for (const std::string& name : path_tokenizer(path)) {
-            if (not node->has_key(name))
+            if (not node->has_key(name)) {
                 throw_path_not_found(path);
+            }
             node = &(*node)[name];
         }
-        if (node->prop.get() == NULL)
+        if (node->prop.get() == NULL) {
             throw uhd::runtime_error("Cannot access! Property uninitialized at: " + path);
+        }
         return node->prop;
     }
 
@@ -197,7 +210,7 @@ private:
     // basic structural node element
     struct node_type : uhd::dict<std::string, node_type>
     {
-        std::shared_ptr<void> prop;
+        std::shared_ptr<property_iface> prop;
     };
 
     // tree guts which may be referenced in a subtree
@@ -222,5 +235,5 @@ property_tree::~property_tree(void)
  **********************************************************************/
 uhd::property_tree::sptr uhd::property_tree::make(void)
 {
-    return sptr(new property_tree_impl());
+    return std::make_shared<property_tree_impl>();
 }

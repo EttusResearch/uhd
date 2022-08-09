@@ -113,6 +113,7 @@ private:
     std::vector<property_t<double>> _tick_rate_out;
     std::vector<property_t<std::string>> _type_out;
     std::vector<property_t<size_t>> _mtu_out;
+    std::vector<property_t<size_t>> _atomic_item_size_out;
 
     // Streamer unique ID
     const std::string _unique_id;

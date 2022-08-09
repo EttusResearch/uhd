@@ -9,8 +9,8 @@
 #pragma once
 
 #include <uhd/exception.hpp>
-#include <vector>
 #include <memory>
+#include <vector>
 
 /***********************************************************************
  * Implement templated property impl
@@ -21,7 +21,7 @@ template <typename T>
 class property_impl : public property<T>
 {
 public:
-    property_impl<T>(property_tree::coerce_mode_t mode) : _coerce_mode(mode)
+    property_impl(property_tree::coerce_mode_t mode) : _coerce_mode(mode)
     {
         if (_coerce_mode == property_tree::AUTO_COERCE) {
             _coercer = DEFAULT_COERCER;
@@ -179,22 +179,28 @@ namespace uhd {
 template <typename T>
 property<T>& property_tree::create(const fs_path& path, coerce_mode_t coerce_mode)
 {
-    this->_create(path,
-        typename std::shared_ptr<property<T> >(new property_impl<T>(coerce_mode)));
+    this->_create(path, std::make_shared<property_impl<T>>(coerce_mode));
     return this->access<T>(path);
 }
 
 template <typename T>
 property<T>& property_tree::access(const fs_path& path)
 {
-    return *std::static_pointer_cast<property<T> >(
-        this->_access(path));
+    auto ptr = std::dynamic_pointer_cast<property<T>>(this->_access(path));
+    if (!ptr) {
+        throw uhd::type_error("Property " + path + " exists, but was accessed with wrong type");
+    }
+    return *ptr;
 }
 
 template <typename T>
-typename std::shared_ptr<property<T> > property_tree::pop(const fs_path& path)
+typename std::shared_ptr<property<T>> property_tree::pop(const fs_path& path)
 {
-    return std::static_pointer_cast<property<T> >(this->_pop(path));
+    auto ptr = std::dynamic_pointer_cast<property<T>>(this->_pop(path));
+    if (!ptr) {
+        throw uhd::type_error("Property " + path + " exists, but was accessed with wrong type");
+    }
+    return ptr;
 }
 
 } // namespace uhd

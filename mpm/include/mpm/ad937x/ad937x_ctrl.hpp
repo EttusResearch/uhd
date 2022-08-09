@@ -184,7 +184,12 @@ public:
      */
     virtual std::string get_arm_version() = 0;
 
-    //! set the BW filter for the frontend which
+    /*! \brief set the BW filter for the frontend which
+     *
+     * \param which frontend string (rx, tx, dx)
+     * \param value target rf bandwidth value
+     * return actual rf bandwidth value
+     */
     virtual double set_bw_filter(const std::string& which, const double value) = 0;
 
     /*! \brief set the gain for the frontend which
@@ -254,7 +259,7 @@ public:
         const std::string& which, const int8_t gain, const std::vector<int16_t>& fir) = 0;
 
     //! get the FIR filter for the frontend which
-    virtual std::vector<int16_t> get_fir(const std::string& which, int8_t& gain) = 0;
+    virtual std::pair<int8_t, std::vector<int16_t>> get_fir(const std::string& which) = 0;
 
     // TODO: update docstring with temperature unit and calibration information
     //! get the device temperature

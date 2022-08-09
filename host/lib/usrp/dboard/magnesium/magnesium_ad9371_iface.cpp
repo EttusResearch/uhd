@@ -17,9 +17,23 @@ namespace {
  */
 std::string _get_which(const direction_t dir, const size_t chan)
 {
-    UHD_ASSERT_THROW(dir == RX_DIRECTION or dir == TX_DIRECTION);
-    UHD_ASSERT_THROW(chan == 0 or chan == 1);
-    return str(boost::format("%s%d") % (dir == RX_DIRECTION ? "RX" : "TX") % (chan + 1));
+    UHD_ASSERT_THROW(dir == RX_DIRECTION || dir == TX_DIRECTION);
+    UHD_ASSERT_THROW(chan == 0 || chan == 1);
+    return (dir == RX_DIRECTION ? "RX" : "TX") + std::to_string(chan + 1);
+}
+
+/*! Return a valid 'which' string for use with AD9371 API duplex calls
+ *
+ * Extends _get_which by additionally allowing duplex values
+ */
+std::string _get_which_duplex(const direction_t dir, const size_t chan)
+{
+    if (dir == RX_DIRECTION || dir == TX_DIRECTION) {
+        return _get_which(dir, chan);
+    }
+    UHD_ASSERT_THROW(dir == DX_DIRECTION);
+    UHD_ASSERT_THROW(chan == 0 || chan == 1);
+    return "DX" + std::to_string(chan + 1);
 }
 } // namespace
 
@@ -59,12 +73,23 @@ double magnesium_ad9371_iface::set_gain(
     // return 0.0;
 }
 
+/*! brief Sets the frontend bandwidth settings for the dboard. Requires
+ * re-initializing the dboard, so it may take a significant amount of time.
+ *
+ * \param bandwidth target rf bandwidth value
+ * \param chan -not important- the bandwidth settings affect both channels on
+ *        the dboard
+ * \param dir specifies which path to set the bandwidth filters for. Supports
+ *        rx, tx, or dx for both
+ * \return actual rf bandwidth value
+ */
 double magnesium_ad9371_iface::set_bandwidth(
     const double bandwidth, const size_t chan, const direction_t dir)
 {
-    auto const which = _get_which(dir, chan);
-    auto retval      = request<double>("set_bw_filter", which, bandwidth);
-    UHD_LOG_TRACE(_log_prefix, _rpc_prefix << "set_bw_filter returned " << retval);
+    const auto which = _get_which_duplex(dir, chan);
+    const auto retval =
+        request<double>(MAGNESIUM_TUNE_TIMEOUT, "set_bandwidth", which, bandwidth);
+    UHD_LOG_TRACE(_log_prefix, _rpc_prefix << "set_bandwidth returned " << retval);
     return retval;
 }
 
@@ -84,12 +109,12 @@ double magnesium_ad9371_iface::get_gain(const size_t chan, const direction_t dir
     return retval;
 }
 
-double magnesium_ad9371_iface::get_bandwidth(
-    const size_t /*chan*/, const direction_t /*dir*/)
+double magnesium_ad9371_iface::get_bandwidth(const size_t chan, const direction_t dir)
 {
-    // TODO: implement
-    UHD_LOG_WARNING(_log_prefix, "Ignoring attempt to get bandwidth");
-    return 0.0;
+    const auto which  = _get_which(dir, chan);
+    const auto retval = request<double>("get_bandwidth", which);
+    UHD_LOG_TRACE(_log_prefix, _rpc_prefix << "get_bandwidth returned " << retval);
+    return retval;
 }
 
 std::string magnesium_ad9371_iface::set_lo_source(
@@ -109,4 +134,16 @@ std::string magnesium_ad9371_iface::get_lo_source(const uhd::direction_t dir)
     auto retval = request<std::string>("get_lo_source", which);
     UHD_LOG_TRACE(_log_prefix, _rpc_prefix << "get_lo_source returned " << retval);
     return retval;
+}
+
+void magnesium_ad9371_iface::set_fir(
+    const std::string& name, const int8_t gain, const std::vector<int16_t>& coeffs)
+{
+    request<void>("set_fir", name, gain, coeffs);
+}
+
+std::pair<int8_t, std::vector<int16_t>> magnesium_ad9371_iface::get_fir(
+    const std::string& name)
+{
+    return request<std::pair<int8_t, std::vector<int16_t>>>("get_fir", name);
 }

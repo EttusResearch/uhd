@@ -36,14 +36,15 @@ public:
     property_base_t(const std::string& id, const res_source_info& source_info)
         : _id(id), _source_info(source_info)
     {
-        if(_id.find(':') != std::string::npos) {
-            throw uhd::value_error("Property ID `" + _id + "' contains invalid character!");
+        if (_id.find(':') != std::string::npos) {
+            throw uhd::value_error(
+                "Property ID `" + _id + "' contains invalid character!");
         }
     }
 
     virtual ~property_base_t()
     {
-        //nop
+        // nop
     }
 
     //! Gets the ID (name) of this property
@@ -146,7 +147,7 @@ private:
  * An encapsulation class for a block property.
  */
 template <typename data_t>
-class property_t : public property_base_t
+class UHD_API_HEADER property_t : public property_base_t
 {
 public:
     //! We want to be good C++ citizens

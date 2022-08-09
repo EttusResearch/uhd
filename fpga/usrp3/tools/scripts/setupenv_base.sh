@@ -342,7 +342,7 @@ function viv_create_ip {
     ip_name=$1
     ip_dir=$(readlink -f $2)
     ip_vlnv=$3
-    part_name=$(python $REPO_BASE_PATH/tools/scripts/viv_gen_part_id.py "${PRODUCT_ID_MAP[$4]}")
+    part_name=$(python3 $REPO_BASE_PATH/tools/scripts/viv_gen_part_id.py "${PRODUCT_ID_MAP[$4]}")
     if [[ $? -ne 0 ]]; then
         echo "ERROR: Invalid product name $4. Supported: ${!PRODUCT_ID_MAP[@]}"
         return 1
@@ -392,7 +392,7 @@ function viv_modify_bd {
     fi
 
     bd_path=$(readlink -f $1)
-    part_name=$(python $REPO_BASE_PATH/tools/scripts/viv_gen_part_id.py "${PRODUCT_ID_MAP[$2]}")
+    part_name=$(python3 $REPO_BASE_PATH/tools/scripts/viv_gen_part_id.py "${PRODUCT_ID_MAP[$2]}")
     if [[ $? -ne 0 ]]; then
         echo "ERROR: Invalid product name $2. Supported: ${!PRODUCT_ID_MAP[@]}"
         return 1
@@ -416,7 +416,7 @@ function viv_modify_tcl_bd {
     fi
 
     src_path=$(readlink -f $1)
-    part_name=$(python $REPO_BASE_PATH/tools/scripts/viv_gen_part_id.py "${PRODUCT_ID_MAP[$2]}")
+    part_name=$(python3 $REPO_BASE_PATH/tools/scripts/viv_gen_part_id.py "${PRODUCT_ID_MAP[$2]}")
     if [[ $? -ne 0 ]]; then
         echo "ERROR: Invalid product name $2. Supported: ${!PRODUCT_ID_MAP[@]}"
         return 1
@@ -441,7 +441,7 @@ function viv_ls_ip {
         return 1
     fi
 
-    part_name=$(python $REPO_BASE_PATH/tools/scripts/viv_gen_part_id.py "${PRODUCT_ID_MAP[$1]}")
+    part_name=$(python3 $REPO_BASE_PATH/tools/scripts/viv_gen_part_id.py "${PRODUCT_ID_MAP[$1]}")
     if [[ $? -ne 0 ]]; then
         echo "ERROR: Invalid product name $1. Supported: ${!PRODUCT_ID_MAP[@]}"
         return 1

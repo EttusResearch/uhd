@@ -2946,7 +2946,7 @@ filter_info_base::sptr ad9361_device_t::_get_filter_fir(
     max_num_taps = _get_num_fir_taps(direction);
 
     filter_info_base::sptr fir(
-        new digital_filter_fir<int16_t>(filter_info_base::DIGITAL_FIR_I16,
+        std::make_shared<digital_filter_fir<int16_t>>(filter_info_base::DIGITAL_FIR_I16,
             (enable == 0) ? true : false,
             5,
             rate,

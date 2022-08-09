@@ -58,17 +58,19 @@ static int hf_rfnoc_hdr_seqnum = -1;
 static int hf_rfnoc_hdr_len = -1;
 static int hf_rfnoc_hdr_dst_epid = -1;
 static int hf_rfnoc_timestamp = -1;
+static int hf_rfnoc_metadata = -1;
+static int hf_rfnoc_payload = -1;
 static int hf_rfnoc_src_epid = -1;
 static int hf_rfnoc_ctrl = -1;
 static int hf_rfnoc_ctrl_dst_port = -1;
 static int hf_rfnoc_ctrl_src_port = -1;
 static int hf_rfnoc_ctrl_num_data = -1;
 static int hf_rfnoc_ctrl_seqnum = -1;
+static int hf_rfnoc_ctrl_has_time = -1;
 static int hf_rfnoc_ctrl_is_ack = -1;
 static int hf_rfnoc_ctrl_address = -1;
-static int hf_rfnoc_ctrl_data0 = -1;
-static int hf_rfnoc_ctrl_data = -1; // TODO: Figure out what to do here
 static int hf_rfnoc_ctrl_byte_enable = -1;
+static int hf_rfnoc_ctrl_data = -1;
 static int hf_rfnoc_ctrl_opcode = -1;
 static int hf_rfnoc_ctrl_status = -1;
 static int hf_rfnoc_strs = -1;
@@ -90,15 +92,26 @@ static int hf_rfnoc_mgmt_chdr_w = -1;
 static int hf_rfnoc_mgmt_num_hops = -1;
 static int hf_rfnoc_mgmt_hop = -1;
 static int hf_rfnoc_mgmt_op = -1;
+static int hf_rfnoc_mgmt_op_ops_pending = -1;
 static int hf_rfnoc_mgmt_op_code = -1;
 static int hf_rfnoc_mgmt_op_dest = -1;
 static int hf_rfnoc_mgmt_op_device_id = -1;
 static int hf_rfnoc_mgmt_op_node_type = -1;
 static int hf_rfnoc_mgmt_op_node_inst = -1;
+static int hf_rfnoc_mgmt_op_ext_info = -1;
 static int hf_rfnoc_mgmt_op_cfg_address = -1;
 static int hf_rfnoc_mgmt_op_cfg_data = -1;
 
 static const value_string RFNOC_PACKET_TYPES[] = {
+    { uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_MGMT, "Management (0)" },
+    { uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_STRS, "Stream Status (1)" },
+    { uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_STRC, "Stream Command (2)" },
+    { uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_CTRL, "Control (4)" },
+    { uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_DATA_NO_TS, "Data (6)" },
+    { uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_DATA_WITH_TS, "Data with Timestamp (7)" },
+};
+
+static const value_string RFNOC_PACKET_TYPES_SHORT[] = {
     { uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_MGMT, "Management" },
     { uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_STRS, "Stream Status" },
     { uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_STRC, "Stream Command" },
@@ -107,63 +120,55 @@ static const value_string RFNOC_PACKET_TYPES[] = {
     { uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_DATA_WITH_TS, "Data with Timestamp" },
 };
 
-static const value_string RFNOC_PACKET_TYPES_SHORT[] = {
-    { uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_MGMT, "mgmt" },
-    { uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_STRS, "strs" },
-    { uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_STRC, "strc" },
-    { uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_CTRL, "ctrl" },
-    { uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_DATA_NO_TS, "data" },
-    { uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_DATA_WITH_TS, "data" },
-};
-
 static const value_string RFNOC_CTRL_STATUS[] = {
-    { uhd::rfnoc::chdr::ctrl_status_t::CMD_OKAY, "OK" },
-    { uhd::rfnoc::chdr::ctrl_status_t::CMD_CMDERR, "CMDERR" },
-    { uhd::rfnoc::chdr::ctrl_status_t::CMD_TSERR, "TSERR" },
-    { uhd::rfnoc::chdr::ctrl_status_t::CMD_WARNING, "WARNING" },
+    { uhd::rfnoc::chdr::ctrl_status_t::CMD_OKAY, "OK (0)" },
+    { uhd::rfnoc::chdr::ctrl_status_t::CMD_CMDERR, "CMDERR (1)" },
+    { uhd::rfnoc::chdr::ctrl_status_t::CMD_TSERR, "TSERR (2)" },
+    { uhd::rfnoc::chdr::ctrl_status_t::CMD_WARNING, "WARNING (3)" },
 };
 
 static const value_string RFNOC_CTRL_OPCODES[] = {
-    { uhd::rfnoc::chdr::ctrl_opcode_t::OP_SLEEP, "sleep" },
-    { uhd::rfnoc::chdr::ctrl_opcode_t::OP_WRITE, "write" },
-    { uhd::rfnoc::chdr::ctrl_opcode_t::OP_READ, "read" },
-    { uhd::rfnoc::chdr::ctrl_opcode_t::OP_READ_WRITE, "r/w" },
-    { uhd::rfnoc::chdr::ctrl_opcode_t::OP_BLOCK_WRITE, "block write" },
-    { uhd::rfnoc::chdr::ctrl_opcode_t::OP_BLOCK_READ, "block read" },
-    { uhd::rfnoc::chdr::ctrl_opcode_t::OP_POLL, "poll" },
-    { uhd::rfnoc::chdr::ctrl_opcode_t::OP_USER1, "user1" },
-    { uhd::rfnoc::chdr::ctrl_opcode_t::OP_USER2, "user2" },
-    { uhd::rfnoc::chdr::ctrl_opcode_t::OP_USER3, "user3" },
-    { uhd::rfnoc::chdr::ctrl_opcode_t::OP_USER4, "user4" },
-    { uhd::rfnoc::chdr::ctrl_opcode_t::OP_USER5, "user5" },
-    { uhd::rfnoc::chdr::ctrl_opcode_t::OP_USER6, "user6" },
+    { uhd::rfnoc::chdr::ctrl_opcode_t::OP_SLEEP, "Sleep (0)" },
+    { uhd::rfnoc::chdr::ctrl_opcode_t::OP_WRITE, "Write (1)" },
+    { uhd::rfnoc::chdr::ctrl_opcode_t::OP_READ, "Read (2)" },
+    { uhd::rfnoc::chdr::ctrl_opcode_t::OP_READ_WRITE, "Read then Write (3)" },
+    { uhd::rfnoc::chdr::ctrl_opcode_t::OP_BLOCK_WRITE, "Block Write (4)" },
+    { uhd::rfnoc::chdr::ctrl_opcode_t::OP_BLOCK_READ, "Block Read (5)" },
+    { uhd::rfnoc::chdr::ctrl_opcode_t::OP_POLL, "Poll (6)" },
+    { uhd::rfnoc::chdr::ctrl_opcode_t::OP_USER1, "User Defined (0xA)" },
+    { uhd::rfnoc::chdr::ctrl_opcode_t::OP_USER2, "User Defined (0xB)" },
+    { uhd::rfnoc::chdr::ctrl_opcode_t::OP_USER3, "User Defined (0xC)" },
+    { uhd::rfnoc::chdr::ctrl_opcode_t::OP_USER4, "User Defined (0xD)" },
+    { uhd::rfnoc::chdr::ctrl_opcode_t::OP_USER5, "User Defined (0xE)" },
+    { uhd::rfnoc::chdr::ctrl_opcode_t::OP_USER6, "User Defined (0xF)" },
 };
 
 static const value_string RFNOC_STRS_STATUS[] = {
-    { uhd::rfnoc::chdr::strs_status_t::STRS_OKAY, "OK" },
-    { uhd::rfnoc::chdr::strs_status_t::STRS_CMDERR, "CMDERR" },
-    { uhd::rfnoc::chdr::strs_status_t::STRS_SEQERR, "SEQERR" },
-    { uhd::rfnoc::chdr::strs_status_t::STRS_DATAERR, "DATAERR" },
-    { uhd::rfnoc::chdr::strs_status_t::STRS_RTERR, "RTERR" },
+    { uhd::rfnoc::chdr::strs_status_t::STRS_OKAY, "Okay (0)" },
+    { uhd::rfnoc::chdr::strs_status_t::STRS_CMDERR, "Command Error (1)" },
+    { uhd::rfnoc::chdr::strs_status_t::STRS_SEQERR, "Sequence Error (2)" },
+    { uhd::rfnoc::chdr::strs_status_t::STRS_DATAERR, "Data Error (3)" },
+    { uhd::rfnoc::chdr::strs_status_t::STRS_RTERR, "Routing Error (4)" },
 };
 
 static const value_string RFNOC_STRC_OPCODES[] = {
-    { uhd::rfnoc::chdr::strc_op_code_t::STRC_INIT, "init" },
-    { uhd::rfnoc::chdr::strc_op_code_t::STRC_PING, "ping" },
-    { uhd::rfnoc::chdr::strc_op_code_t::STRC_RESYNC, "resync" },
+    { uhd::rfnoc::chdr::strc_op_code_t::STRC_INIT, "Initialize Stream (0)" },
+    { uhd::rfnoc::chdr::strc_op_code_t::STRC_PING, "Ping (1)" },
+    { uhd::rfnoc::chdr::strc_op_code_t::STRC_RESYNC, "Resynchronize Flow Control (2)" },
 };
 
 static const value_string RFNOC_MGMT_OPCODES[] = {
-    { uhd::rfnoc::chdr::mgmt_op_t::op_code_t::MGMT_OP_NOP, "nop" },
-    { uhd::rfnoc::chdr::mgmt_op_t::op_code_t::MGMT_OP_ADVERTISE, "advertise" },
-    { uhd::rfnoc::chdr::mgmt_op_t::op_code_t::MGMT_OP_SEL_DEST, "select_dest" },
-    { uhd::rfnoc::chdr::mgmt_op_t::op_code_t::MGMT_OP_RETURN, "return_to_sender" },
-    { uhd::rfnoc::chdr::mgmt_op_t::op_code_t::MGMT_OP_INFO_REQ, "node_info_req" },
-    { uhd::rfnoc::chdr::mgmt_op_t::op_code_t::MGMT_OP_INFO_RESP, "node_info_resp" },
-    { uhd::rfnoc::chdr::mgmt_op_t::op_code_t::MGMT_OP_CFG_WR_REQ, "cfg_wr_req" },
-    { uhd::rfnoc::chdr::mgmt_op_t::op_code_t::MGMT_OP_CFG_RD_REQ, "cfg_rd_req" },
-    { uhd::rfnoc::chdr::mgmt_op_t::op_code_t::MGMT_OP_CFG_RD_RESP, "cfg_rd_resp" },
+    { uhd::rfnoc::chdr::mgmt_op_t::op_code_t::MGMT_OP_NOP, "No-op (0)" },
+    { uhd::rfnoc::chdr::mgmt_op_t::op_code_t::MGMT_OP_ADVERTISE, "Advertise (1)" },
+    { uhd::rfnoc::chdr::mgmt_op_t::op_code_t::MGMT_OP_SEL_DEST, "Select Destination (2)" },
+    { uhd::rfnoc::chdr::mgmt_op_t::op_code_t::MGMT_OP_RETURN, "Return to Sender (3)" },
+    { uhd::rfnoc::chdr::mgmt_op_t::op_code_t::MGMT_OP_INFO_REQ, "Node Info Request (4)" },
+    { uhd::rfnoc::chdr::mgmt_op_t::op_code_t::MGMT_OP_INFO_RESP, "Node Info Response (5)" },
+    { uhd::rfnoc::chdr::mgmt_op_t::op_code_t::MGMT_OP_CFG_WR_REQ, "Config Write (6)" },
+    { uhd::rfnoc::chdr::mgmt_op_t::op_code_t::MGMT_OP_CFG_RD_REQ, "Config Read Request (7)" },
+    { uhd::rfnoc::chdr::mgmt_op_t::op_code_t::MGMT_OP_CFG_RD_RESP, "Config Read Response (8)" },
 };
+
 
 /* the heuristic dissector is called on every packet with payload.
  * The warning printed for this should only be printed once.
@@ -241,11 +246,11 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
 
         if (len >= 4) {
             rfnoc_tree = proto_item_add_subtree(item, ett_rfnoc);
-            proto_item_append_text(item, ", Packet type: %s, Dst EPID: %d",
-                val_to_str(chdr_hdr.get_pkt_type(), RFNOC_PACKET_TYPES, "Unknown (0x%x)"), chdr_hdr.get_dst_epid()
+            proto_item_append_text(item, ", Packet type: %s, Dst EPID: 0x%02x",
+                val_to_str(chdr_hdr.get_pkt_type(), RFNOC_PACKET_TYPES_SHORT, "Unknown (0x%x)"), chdr_hdr.get_dst_epid()
             );
             col_add_fstr(pinfo->cinfo, COL_INFO, "%s dst_epid=%d",
-                val_to_str(chdr_hdr.get_pkt_type(), RFNOC_PACKET_TYPES_SHORT, "Unknown (0x%x)"), chdr_hdr.get_dst_epid()
+                val_to_str(chdr_hdr.get_pkt_type(), RFNOC_PACKET_TYPES, "Unknown (0x%x)"), chdr_hdr.get_dst_epid()
             );
 
             /* Header info. First, a top-level header tree item: */
@@ -254,27 +259,42 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
             /* Let us query hdr.type */
             proto_tree_add_string(
                 header_tree, hf_rfnoc_hdr_pkttype, tvb, offset+6, 1,
-                val_to_str(chdr_hdr.get_pkt_type(), RFNOC_PACKET_TYPES_SHORT, "invalid")
+                val_to_str(chdr_hdr.get_pkt_type(), RFNOC_PACKET_TYPES, "invalid")
             );
 
             /* Add Dst EPID */
-            proto_item_append_text(header_item, ", Dst EPID: %02x", chdr_hdr.get_dst_epid());
+            proto_item_append_text(header_item, ", Dst EPID: 0x%02x", chdr_hdr.get_dst_epid());
             proto_tree_add_uint(header_tree, hf_rfnoc_hdr_dst_epid, tvb, offset, 2, chdr_hdr.get_dst_epid());
             /* Add length */
             proto_tree_add_uint(header_tree, hf_rfnoc_hdr_len, tvb, offset+2, 2, chdr_hdr.get_length());
             /* Add sequence number */
             proto_tree_add_uint(header_tree, hf_rfnoc_hdr_seqnum, tvb, offset+4, 2, chdr_hdr.get_seq_num());
+            /* Add eov */
+            proto_tree_add_boolean(header_tree, hf_rfnoc_hdr_eob, tvb, offset + 7, 1, chdr_hdr.get_eob());
+            /* Add eob */
+            proto_tree_add_boolean(header_tree, hf_rfnoc_hdr_eov, tvb, offset + 7, 1, chdr_hdr.get_eov());
+            /* Add vc */
+            proto_tree_add_uint(header_tree, hf_rfnoc_hdr_vc, tvb, offset + 7, 1, chdr_hdr.get_vc());
 
-            if (chdr_hdr.get_num_mdata()) {
-                /* Can't decode packets with metadata */
-                return len;
-            }
-
-            /* TODO: Update offsets if there is a timestamp. Also update lengths */
             /* Add subtree based on packet type */
             uhd::rfnoc::chdr::packet_type_t pkttype = chdr_hdr.get_pkt_type();
-            offset += chdr_w_bytes;
             try {
+                /* Adjust offset to point to first CHDR word after header and timestamp */
+                if (pkttype == uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_DATA_WITH_TS && chdr_w_bytes == 8) {
+                    /* Header and timestamp are in separate CHDR words */
+                    offset += 2*chdr_w_bytes;
+                } else {
+                    /* Header and timestamp in a single CHDR word, or there's no timestamp */
+                    offset += chdr_w_bytes;
+                }
+
+                /* Add metadata */
+                if (chdr_hdr.get_num_mdata()) {
+                    size_t mdata_size = chdr_hdr.get_num_mdata() * chdr_w_bytes;
+                    proto_tree_add_item(rfnoc_tree, hf_rfnoc_metadata, tvb, offset, mdata_size, endianness);
+                    offset += mdata_size;
+                }
+
                 if (pkttype == uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_CTRL) {
                     ctrl_item = proto_tree_add_item(rfnoc_tree, hf_rfnoc_ctrl, tvb, offset, chdr_len-chdr_w_bytes, endianness);
                     ctrl_tree = proto_item_add_subtree(ctrl_item, ett_rfnoc_ctrl);
@@ -294,12 +314,13 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
                     proto_tree_add_boolean(ctrl_tree, hf_rfnoc_ctrl_is_ack, tvb, offset+3, 1, payload.is_ack);
                     /* Add sequence number */
                     proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_seqnum, tvb, offset+3, 1, payload.seq_num);
-                    if (payload.timestamp) {
+                    /* Add timestamp */
+                    if (payload.has_timestamp()) {
                         proto_tree_add_uint64(ctrl_tree, hf_rfnoc_timestamp, tvb, offset+8, 8, *payload.timestamp);
                         offset += 8;
+                    } else {
+                        proto_tree_add_boolean(ctrl_tree, hf_rfnoc_ctrl_has_time, tvb, offset+3, 1, payload.has_timestamp());
                     }
-                    /* Add data0 */
-                    proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_data0, tvb, offset+12, 4, payload.data_vtr[0]);
                     /* Add op code */
                     proto_tree_add_string(
                         ctrl_tree, hf_rfnoc_ctrl_opcode, tvb, offset+11, 1,
@@ -307,11 +328,17 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
                     );
                     /* Add address */
                     proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_address, tvb, offset+8, 3, payload.address);
+                    /* Add byte enable */
+                    proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_byte_enable, tvb, offset+10, 1, payload.byte_enable);
                     /* Add status */
                     proto_tree_add_string(
                         ctrl_tree, hf_rfnoc_ctrl_status, tvb, offset+11, 1,
                         val_to_str(payload.status, RFNOC_CTRL_STATUS, "reserved")
                     );
+                    /* Add data */
+                    for (int i=0; i < payload.data_vtr.size(); i++) {
+                        proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_data, tvb, offset+12+i*4, 4, payload.data_vtr[i]);
+                    }
                 }
 
                 if (pkttype == uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_STRS) {
@@ -370,14 +397,18 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
                         auto hop = payload.get_hop(hop_id);
                         size_t num_ops = hop.get_num_ops();
                         hop_item = proto_tree_add_item(mgmt_tree, hf_rfnoc_mgmt_hop, tvb, offset, num_ops*chdr_w_bytes, endianness);
+                        proto_item_append_text(hop_item, " %ld", hop_id);
                         hop_tree = proto_item_add_subtree(hop_item, ett_rfnoc_mgmt_hop);
                         for (size_t op_id = 0; op_id < num_ops; op_id++) {
                             auto op = hop.get_op(op_id);
+                            auto ops_pending = op.get_ops_pending();
                             auto opcode = op.get_op_code();
                             mgmt_op_item = proto_tree_add_item(hop_tree, hf_rfnoc_mgmt_op, tvb, offset, chdr_w_bytes, endianness);
+                            proto_item_append_text(mgmt_op_item, " %ld", op_id);
                             mgmt_op_tree = proto_item_add_subtree(mgmt_op_item, ett_rfnoc_mgmt_hop_op);
 
-                            /* Add op code */
+                            /* Add ops pending and op code */
+                            proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_ops_pending, tvb, offset+0, 1, ops_pending);
                             proto_tree_add_string(
                                 mgmt_op_tree, hf_rfnoc_mgmt_op_code, tvb, offset+1, 1,
                                 val_to_str(opcode, RFNOC_MGMT_OPCODES, "invalid")
@@ -391,46 +422,95 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
                             } else if (opcode == uhd::rfnoc::chdr::mgmt_op_t::op_code_t::MGMT_OP_INFO_RESP) {
                                 auto opdata = uhd::rfnoc::chdr::mgmt_op_t::node_info_payload(
                                     op.get_op_payload());
-                                proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_device_id, tvb, offset+2, 6, opdata.device_id);
-                                proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_node_type, tvb, offset+2, 6, opdata.node_type);
-                                proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_node_inst, tvb, offset+2, 6, opdata.node_inst);
+                                proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_device_id, tvb, offset+2, 2, opdata.device_id);
+                                proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_node_inst, tvb, offset+4, 2, opdata.node_inst);
+                                /* Add node type and extended info */
+                                auto ei = opdata.ext_info;
+                                switch (opdata.node_type) {
+                                    case 1:
+                                        /* Crossbar */
+                                        proto_tree_add_string_format_value(
+                                            mgmt_op_tree, hf_rfnoc_mgmt_op_node_type, tvb, offset+4, 1,
+                                            "", "Crossbar (1)"
+                                        );
+                                        proto_tree_add_string_format_value(
+                                            mgmt_op_tree, hf_rfnoc_mgmt_op_ext_info, tvb, offset+5, 3,
+                                            "", "NPORTS=%d, NPORTS_MGMT=%d, EXT_RTCFG_PORT=%d (0x%05X)",
+                                            ei & 0xFF, (ei >> 8) & 0xFF,  (ei >> 16) & 1, ei
+                                        );
+                                        break;
+                                    case 2:
+                                        /* Stream Endpoint */
+                                        proto_tree_add_string_format_value(
+                                            mgmt_op_tree, hf_rfnoc_mgmt_op_node_type, tvb, offset+4, 1,
+                                            "", "Stream Endpoint (2)"
+                                       );
+                                        proto_tree_add_string_format_value(
+                                            mgmt_op_tree, hf_rfnoc_mgmt_op_ext_info, tvb, offset+5, 3,
+                                            "", "AXIS_CTRL_EN=%d, AXIS_DATA_EN=%d, NUM_DATA_I=%d NUM_DATA_O=%d, REPORT_STREAM_ERRS=%d (0x%05X)",
+                                            ei & 1, (ei >> 1) & 1, (ei >> 2) & 0x3F,
+                                            (ei >> 8) & 0x3F, (ei >> 14) & 1, ei
+                                        );
+                                        break;
+                                    case 3:
+                                        /* Transport Adapter */
+                                        proto_tree_add_string_format_value(
+                                            mgmt_op_tree, hf_rfnoc_mgmt_op_node_type, tvb, offset+4, 1,
+                                            "", "Transport Adapter (3)"
+                                        );
+                                        proto_tree_add_string_format_value(
+                                            mgmt_op_tree, hf_rfnoc_mgmt_op_ext_info, tvb, offset+5, 3,
+                                            "", "NODE_SUBTYPE=%d (0x%05X)", ei & 0xFF, ei
+                                        );
+                                        break;
+                                    default:
+                                        /* Invalid */
+                                        proto_tree_add_string_format_value(
+                                            mgmt_op_tree, hf_rfnoc_mgmt_op_node_type, tvb, offset+4, 1,
+                                            "", "Invalid (%d)", opdata.node_type
+                                        );
+                                        proto_tree_add_string_format_value(
+                                            mgmt_op_tree, hf_rfnoc_mgmt_op_ext_info, tvb, offset+5, 3,
+                                            "", "0x%05X", ei
+                                        );
+                                        break;
+                                }
                             } else if (opcode == uhd::rfnoc::chdr::mgmt_op_t::op_code_t::MGMT_OP_CFG_WR_REQ) {
                                 auto opdata = uhd::rfnoc::chdr::mgmt_op_t::cfg_payload(
                                     op.get_op_payload());
-                                proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_cfg_address, tvb, offset+2, 6, opdata.addr);
-                                proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_cfg_data, tvb, offset+2, 6, opdata.data);
+                                proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_cfg_address, tvb, offset+2, 2, opdata.addr);
+                                proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_cfg_data, tvb, offset+4, 4, opdata.data);
                             } else if (opcode == uhd::rfnoc::chdr::mgmt_op_t::op_code_t::MGMT_OP_CFG_RD_REQ) {
                                 auto opdata = uhd::rfnoc::chdr::mgmt_op_t::cfg_payload(
                                     op.get_op_payload());
-                                proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_cfg_address, tvb, offset+2, 6, opdata.addr);
+                                proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_cfg_address, tvb, offset+2, 2, opdata.addr);
                             } else if (opcode == uhd::rfnoc::chdr::mgmt_op_t::op_code_t::MGMT_OP_CFG_RD_RESP) {
                                 auto opdata = uhd::rfnoc::chdr::mgmt_op_t::cfg_payload(
                                     op.get_op_payload());
-                                proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_cfg_address, tvb, offset+2, 6, opdata.addr);
-                                proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_cfg_data, tvb, offset+2, 6, opdata.data);
+                                proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_cfg_address, tvb, offset+2, 2, opdata.addr);
+                                proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_cfg_data, tvb, offset+4, 4, opdata.data);
                             }
                             offset += chdr_w_bytes;
                         }
                     }
                 }
-                if (pkttype == uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_DATA_NO_TS
-                    || pkttype == uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_DATA_WITH_TS) {
-                    is_eob = chdr_hdr.get_eob();
-                    is_eov = chdr_hdr.get_eov();
-                    proto_tree_add_boolean(
-                        rfnoc_tree, hf_rfnoc_hdr_eob, tvb, offset + 7, 1, is_eob);
-                    proto_tree_add_boolean(
-                        rfnoc_tree, hf_rfnoc_hdr_eov, tvb, offset + 7, 1, is_eov);
-                }
-                if (pkttype == uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_DATA_WITH_TS) {
-                    size_t timestamp_offset = offset+8;
-                    if (chdr_w_bytes > 8) {
-                        // The timestamp is in the same block as the header or CHDR widths above 64 bits
-                        timestamp_offset =- chdr_w_bytes;
-                    }
+
+                if (pkttype == uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_DATA_NO_TS) {
                     auto pkt = pkt_factory.make_generic();
                     pkt->refresh(tvb_get_ptr(tvb, 0, chdr_len));
+                    /* Add payload */
+                    proto_tree_add_item(rfnoc_tree, hf_rfnoc_payload, tvb, offset, pkt->get_payload_size(), endianness);
+                }
+
+                if (pkttype == uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_DATA_WITH_TS) {
+                    /* Timestamp is always immediately after the 64-bit header */
+                    const size_t timestamp_offset = 8;
+                    auto pkt = pkt_factory.make_generic();
+                    pkt->refresh(tvb_get_ptr(tvb, 0, chdr_len));
+                    /* Add timestamp */
                     proto_tree_add_uint64(rfnoc_tree, hf_rfnoc_timestamp, tvb, timestamp_offset, 8, *(pkt->get_timestamp()));
+                    /* Add payload */
+                    proto_tree_add_item(rfnoc_tree, hf_rfnoc_payload, tvb, offset, pkt->get_payload_size(), endianness);
                 }
             } catch (uhd::assertion_error& e) {
                 std::cout << "Cannot dissect. Try using a different RFNoC width." << std::endl;
@@ -505,8 +585,20 @@ void proto_register_rfnoc(void)
                 NULL, 0x00,
                 NULL, HFILL }
         },
+        { &hf_rfnoc_metadata,
+            { "Metadata", "rfnoc.metadata",
+                FT_NONE, BASE_NONE,
+                NULL, 0x00,
+                NULL, HFILL }
+        },
+        { &hf_rfnoc_payload,
+            { "Payload", "rfnoc.payload",
+                FT_NONE, BASE_NONE,
+                NULL, 0x00,
+                NULL, HFILL }
+        },
         { &hf_rfnoc_ctrl,
-            { "CTRL Payload", "rfnoc.ctrl",
+            { "Control Payload", "rfnoc.ctrl",
                 FT_NONE, BASE_NONE,
                 NULL, 0x00,
                 NULL, HFILL }
@@ -529,8 +621,8 @@ void proto_register_rfnoc(void)
                 NULL, 0x00,
                 NULL, HFILL }
         },
-        { &hf_rfnoc_ctrl_data0,
-            { "Data0", "rfnoc.ctrl.data0",
+        { &hf_rfnoc_ctrl_data,
+            { "Data", "rfnoc.ctrl.data",
                 FT_UINT32, BASE_HEX,
                 NULL, 0x00,
                 NULL, HFILL }
@@ -539,6 +631,12 @@ void proto_register_rfnoc(void)
             { "Seq Num", "rfnoc.ctrl.seqnum",
                 FT_UINT8, BASE_DEC,
                 NULL, 0x00,
+                NULL, HFILL }
+        },
+        { &hf_rfnoc_ctrl_has_time,
+            { "Has Time", "rfnoc.ctrl.has_time",
+                FT_BOOLEAN, BASE_NONE,
+                NULL, 0x0,
                 NULL, HFILL }
         },
         { &hf_rfnoc_ctrl_is_ack,
@@ -559,6 +657,12 @@ void proto_register_rfnoc(void)
                 NULL, 0x00,
                 NULL, HFILL }
         },
+        { &hf_rfnoc_ctrl_byte_enable,
+            { "Byte Enable", "rfnoc.ctrl.byte_enable",
+                FT_UINT8, BASE_HEX,
+                NULL, 0x00,
+                NULL, HFILL }
+        },
         { &hf_rfnoc_ctrl_opcode,
             { "Op Code", "rfnoc.ctrl.opcode",
                 FT_STRINGZ, BASE_NONE,
@@ -572,7 +676,7 @@ void proto_register_rfnoc(void)
                 NULL, HFILL }
         },
         { &hf_rfnoc_strs,
-            { "Stream Status", "rfnoc.strs",
+            { "Stream Status Payload", "rfnoc.strs",
                 FT_NONE, BASE_NONE,
                 NULL, 0x00,
                 NULL, HFILL }
@@ -608,7 +712,7 @@ void proto_register_rfnoc(void)
                 NULL, HFILL }
         },
         { &hf_rfnoc_strc,
-            { "Stream Command", "rfnoc.strc",
+            { "Stream Command Payload", "rfnoc.strc",
                 FT_NONE, BASE_NONE,
                 NULL, 0x00,
                 NULL, HFILL }
@@ -632,7 +736,7 @@ void proto_register_rfnoc(void)
                 NULL, HFILL }
         },
         { &hf_rfnoc_mgmt,
-            { "Mgmt Xact", "rfnoc.mgmt",
+            { "Management Payload", "rfnoc.mgmt",
                 FT_NONE, BASE_NONE,
                 NULL, 0x00,
                 NULL, HFILL }
@@ -667,6 +771,12 @@ void proto_register_rfnoc(void)
                 NULL, 0x00,
                 NULL, HFILL }
         },
+        { &hf_rfnoc_mgmt_op_ops_pending,
+            { "Ops Pending", "rfnoc.mgmt.op.ops_pending",
+                FT_UINT8, BASE_DEC,
+                NULL, 0x00,
+                NULL, HFILL }
+        },
         { &hf_rfnoc_mgmt_op_code,
             { "Opcode", "rfnoc.mgmt.op.op_code",
                 FT_STRINGZ, BASE_NONE,
@@ -687,13 +797,19 @@ void proto_register_rfnoc(void)
         },
         { &hf_rfnoc_mgmt_op_node_type,
             { "Node Type", "rfnoc.mgmt.op.node_type",
-                FT_UINT8, BASE_DEC,
+                FT_STRINGZ, BASE_NONE,
                 NULL, 0x00,
                 NULL, HFILL }
         },
         { &hf_rfnoc_mgmt_op_node_inst,
             { "Node Instance", "rfnoc.mgmt.op.node_inst",
                 FT_UINT16, BASE_DEC,
+                NULL, 0x00,
+                NULL, HFILL }
+        },
+        { &hf_rfnoc_mgmt_op_ext_info,
+            { "Extended Info", "rfnoc.mgmt.op.ext_info",
+                FT_STRINGZ, BASE_NONE,
                 NULL, 0x00,
                 NULL, HFILL }
         },

@@ -7,7 +7,7 @@ dut_type_list = [
    "E320",
    "X310",
    "X310_TwinRx",
-   "X410"
+   "x4xx"
 ]
 
 
@@ -22,18 +22,22 @@ def pytest_addoption(parser):
     parser.addoption(
         "--addr",
         type=str,
+        nargs='?',
         help="address of first 10 GbE interface",)
     parser.addoption(
         "--second_addr",
         type=str,
+        nargs='?',
         help="address of second 10 GbE interface")
     parser.addoption(
         "--name",
         type=str,
+        nargs='?',
         help="name of B2xx device")
     parser.addoption(
         "--mgmt_addr",
         type=str,
+        nargs='?',
         help="address of management interface. only needed for DPDK test cases")
     parser.addoption(
         "--dut_type",
@@ -52,7 +56,16 @@ def pytest_addoption(parser):
         required=True,
         type=str,
         help="")
-
+    parser.addoption(
+        "--num_recv_frames",
+        type=str,
+        nargs='?',
+        help="configures num_recv_frames parameter")
+    parser.addoption(
+        "--num_send_frames",
+        type=str,
+        nargs='?',
+        help="configures num_send_frames parameter")
 
 def pytest_configure(config):
     # register additional markers

@@ -77,7 +77,7 @@ size_t _get_chan_from_map(std::unordered_map<size_t, map_type> map, const std::s
         str(boost::format("Invalid daughterboard frontend name: %s") % fe));
 }
 
-constexpr double DEFAULT_RATE = 200e6;
+constexpr double DEFAULT_RATE  = 200e6;
 constexpr char HW_GAIN_STAGE[] = "hw";
 
 } // namespace
@@ -93,6 +93,14 @@ static constexpr uint32_t SR_SPI       = PERIPH_BASE + 168 * PERIPH_REG_OFFSET;
 static constexpr uint32_t SR_LEDS      = PERIPH_BASE + 176 * PERIPH_REG_OFFSET;
 static constexpr uint32_t SR_FP_GPIO   = PERIPH_BASE + 184 * PERIPH_REG_OFFSET;
 static constexpr uint32_t SR_DB_GPIO   = PERIPH_BASE + 192 * PERIPH_REG_OFFSET;
+
+// LED bit positions
+// Green LED on TX/RX port (left SMA)
+static constexpr int SR_LED_TXRX_RX = (1 << 0);
+// Red LED on TX/RX port (left SMA)
+static constexpr int SR_LED_TXRX_TX = (1 << 1);
+// Green LED on RX2 port (right SMA)
+static constexpr int SR_LED_RX2_RX = (1 << 2);
 
 static constexpr uint32_t RB_MISC_IO = PERIPH_BASE + 16 * PERIPH_REG_OFFSET;
 static constexpr uint32_t RB_SPI     = PERIPH_BASE + 17 * PERIPH_REG_OFFSET;
@@ -174,11 +182,22 @@ public:
 
         // LEDs are technically valid for both RX and TX, but let's put them
         // here
-        _leds = gpio_atr::gpio_atr_3000::make(_wb_iface, 
+        _leds = gpio_atr::gpio_atr_3000::make(_wb_iface,
             gpio_atr::gpio_atr_offsets::make_write_only(
                 x300_regs::SR_LEDS, x300_regs::PERIPH_REG_OFFSET));
         _leds->set_atr_mode(
             usrp::gpio_atr::MODE_ATR, usrp::gpio_atr::gpio_atr_3000::MASK_SET_ALL);
+        // Set LEDs to default setting: RX2 LED on RX, TX/RX red LED on TX. The
+        // actual setting depends on the antenna choice and is handled in
+        // _update_atr_leds().
+        _leds->set_atr_reg(gpio_atr::ATR_REG_IDLE, 0);
+        _leds->set_atr_reg(gpio_atr::ATR_REG_RX_ONLY, x300_regs::SR_LED_RX2_RX);
+        _leds->set_atr_reg(gpio_atr::ATR_REG_TX_ONLY, x300_regs::SR_LED_TXRX_TX);
+        // We choose to light both LEDs on full duplex, regardless of the
+        // antenna selection, because the single multi-color LED on the TX/RX
+        // side does not provide useful visual feedback by itself.
+        _leds->set_atr_reg(gpio_atr::ATR_REG_FULL_DUPLEX,
+            x300_regs::SR_LED_RX2_RX | x300_regs::SR_LED_TXRX_TX);
         // We always want to initialize at least one frontend core for both TX and RX
         // RX periphs
         for (size_t i = 0; i < std::max<size_t>(get_num_output_ports(), 1); i++) {
@@ -895,7 +914,7 @@ public:
     /*** GPIO API ************************************************************/
     std::vector<std::string> get_gpio_banks() const override
     {
-        return {"RX", "TX", "FP0"};
+        return {"FP0", "RX", "TX"};
     }
 
     void set_gpio_attr(
@@ -909,7 +928,7 @@ public:
             const std::string name          = bank.substr(2);
             const dboard_iface::unit_t unit = (bank[0] == 'R') ? dboard_iface::UNIT_RX
                                                                : dboard_iface::UNIT_TX;
-            constexpr uint16_t mask = 0xFFFF;
+            constexpr uint16_t mask         = 0xFFFF;
             if (attr == "CTRL") {
                 _db_iface->set_pin_ctrl(unit, value, mask);
             } else if (attr == "DDR") {
@@ -1532,11 +1551,11 @@ private:
         db_config.i2c            = zpu_i2c;
         db_config.clock          = clock;
         db_config.which_rx_clk   = (_radio_type == PRIMARY) ? X300_CLOCK_WHICH_DB0_RX
-                                                          : X300_CLOCK_WHICH_DB1_RX;
-        db_config.which_tx_clk = (_radio_type == PRIMARY) ? X300_CLOCK_WHICH_DB0_TX
-                                                          : X300_CLOCK_WHICH_DB1_TX;
-        db_config.dboard_slot   = (_radio_type == PRIMARY) ? 0 : 1;
-        db_config.cmd_time_ctrl = _wb_iface;
+                                                            : X300_CLOCK_WHICH_DB1_RX;
+        db_config.which_tx_clk   = (_radio_type == PRIMARY) ? X300_CLOCK_WHICH_DB0_TX
+                                                            : X300_CLOCK_WHICH_DB1_TX;
+        db_config.dboard_slot    = (_radio_type == PRIMARY) ? 0 : 1;
+        db_config.cmd_time_ctrl  = _wb_iface;
 
         // create a new dboard manager
         RFNOC_LOG_TRACE("Creating DB interface...");
@@ -1576,8 +1595,8 @@ private:
         // here.
         if (num_rx_frontends == 2
             && boost::starts_with(
-                   get_tree()->access<std::string>(DB_PATH / "rx_frontends/0/name").get(),
-                   "TwinRX")) {
+                get_tree()->access<std::string>(DB_PATH / "rx_frontends/0/name").get(),
+                "TwinRX")) {
             _twinrx = true;
             set_num_input_ports(0);
         }
@@ -1770,18 +1789,36 @@ private:
         _db_eeproms[addr] = db_eeprom;
     }
 
+    // A note on updating the LED ATR register: There is a single ATR register
+    // for the radio block, despite there being 2 channels. For most (1-channel)
+    // daughterboards, the rules are simple: When transmitting, the red LED turns
+    // on. When receiving, either the green LED under the RX2 or on the TX/RX
+    // port turn, depending on if the user has selected a TX/RX antenna or not.
+    // For TwinRX, we have additional rules. The board has two channels, but
+    // either of them can used with any SMA port. We therefore have to check
+    // which channels are active (0, 1, or both) and on the active channels,
+    // which set of antenna ports is used (RX1 aka TX/RX, RX2). All active RX
+    // ports shall then be added the the RX ATR register.
     void _update_atr_leds(const std::string& rx_ant, const size_t /*chan*/)
     {
-        // The "RX1" port is used by TwinRX and the "TX/RX" port is used by all
-        // other full-duplex dboards. We need to handle both here.
-        const bool is_txrx = (rx_ant == "TX/RX" or rx_ant == "RX1");
-        const int TXRX_RX  = (1 << 0);
-        const int TXRX_TX  = (1 << 1);
-        const int RX2_RX   = (1 << 2);
-        _leds->set_atr_reg(gpio_atr::ATR_REG_IDLE, 0);
-        _leds->set_atr_reg(gpio_atr::ATR_REG_RX_ONLY, is_txrx ? TXRX_RX : RX2_RX);
-        _leds->set_atr_reg(gpio_atr::ATR_REG_TX_ONLY, TXRX_TX);
-        _leds->set_atr_reg(gpio_atr::ATR_REG_FULL_DUPLEX, RX2_RX | TXRX_TX);
+        uint32_t rx_led_atr_state = 0;
+        if (_twinrx) {
+            for (size_t chan = 0; chan < get_num_output_ports(); chan++) {
+                const auto fe_enable_path = get_db_path("rx", chan) / "enabled";
+                if (get_tree()->access<bool>(fe_enable_path).get()) {
+                    if (get_rx_antenna(chan) == "RX1") {
+                        rx_led_atr_state |= x300_regs::SR_LED_TXRX_RX;
+                    }
+                    if (get_rx_antenna(chan) == "RX2") {
+                        rx_led_atr_state |= x300_regs::SR_LED_RX2_RX;
+                    }
+                }
+            }
+        } else {
+            rx_led_atr_state = rx_ant == "TX/RX" ? x300_regs::SR_LED_TXRX_RX
+                                                 : x300_regs::SR_LED_RX2_RX;
+        }
+        _leds->set_atr_reg(gpio_atr::ATR_REG_RX_ONLY, rx_led_atr_state);
     }
 
     void _set_rx_fe(const std::string& fe, const size_t chan)
@@ -1887,6 +1924,12 @@ private:
                     "Enabling RX chan " << chan << ": " << (chan_active ? "Yes" : "No"));
                 get_tree()->access<bool>(fe_enable_path).set(chan_active);
             }
+            // Modifying the number of active channels can affect how the
+            // front-panel LEDs get configured for TwinRX boards. Worst case,
+            // this is a no-op since we call it with the same argument as it was
+            // called before. Note this must be called after the 'enable'
+            // property is set.
+            _update_atr_leds(get_rx_antenna(chan), chan);
         }
 
         return true;
@@ -1988,7 +2031,7 @@ private:
 
     bool _basic_lf_rx = false;
     bool _basic_lf_tx = false;
-    bool _twinrx = false;
+    bool _twinrx      = false;
 
     std::unordered_map<size_t, rx_fe_perif> _rx_fe_map;
     std::unordered_map<size_t, tx_fe_perif> _tx_fe_map;

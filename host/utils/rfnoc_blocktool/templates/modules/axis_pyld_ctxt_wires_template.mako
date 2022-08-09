@@ -55,13 +55,13 @@
   num_ports = 1 if 'num_ports' not in port_info else port_info['num_ports']
 %>\
 %if num_ports != 1:
-  // Payload Stream to User Logic: ${port}
+  // Payload Stream from User Logic: ${port}
   ${in_wire}wire [${num_ports}*${port_info['item_width']}*${port_info['nipc']}-1:0]   ${sl_pre}${port}_payload_tdata${term}
   ${in_wire}wire [${num_ports}*${port_info['nipc']}-1:0]      ${sl_pre}${port}_payload_tkeep${term}
   ${in_wire}wire [${num_ports}-1:0]        ${sl_pre}${port}_payload_tlast${term}
   ${in_wire}wire [${num_ports}-1:0]        ${sl_pre}${port}_payload_tvalid${term}
   ${out_wire}wire [${num_ports}-1:0]        ${sl_pre}${port}_payload_tready${term}
-  // Context Stream to User Logic: ${port}
+  // Context Stream from User Logic: ${port}
   ${in_wire}wire [${num_ports}*CHDR_W-1:0] ${sl_pre}${port}_context_tdata${term}
   ${in_wire}wire [${num_ports}*4-1:0]      ${sl_pre}${port}_context_tuser${term}
   ${in_wire}wire [${num_ports}-1:0]        ${sl_pre}${port}_context_tlast${term}

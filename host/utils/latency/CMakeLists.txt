@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
+set(CURSES_NEED_NCURSES 1)
 find_package(Curses)
 
 if(CURSES_FOUND)

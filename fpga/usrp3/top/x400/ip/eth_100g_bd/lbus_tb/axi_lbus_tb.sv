@@ -7,7 +7,7 @@
 //
 // Description:
 //
-//   Testbench for eth_interface
+//   Testbench for eth_100g_axi2lbus.
 //
 
 module axi_lbus_tb #(

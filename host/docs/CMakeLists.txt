@@ -42,6 +42,10 @@ LIBUHD_REGISTER_COMPONENT("API/Doxygen" ENABLE_DOXYGEN ON "DOXYGEN_FOUND" OFF OF
 option(ENABLE_DOXYGEN_FULL "Use Doxygen to document the entire source tree (not just API)" OFF)
 option(ENABLE_DOXYGEN_DOT "Let Doxygen use dot (requires graphviz)" OFF)
 option(ENABLE_DOXYGEN_SHORTNAMES "Let Doxygen use shorter filenames (helps on Windows)" OFF)
+set(
+    MATHJAX_RELPATH https://cdn.jsdelivr.net/npm/mathjax@2/
+    CACHE STRING "MATHJAX_RELPATH option for Doxygen")
+mark_as_advanced(MATHJAX_RELPATH)
 
 if(LIBUHDDEV_PKG)
     set(PKG_DOC_DIR share/doc/libuhd-dev)
@@ -107,7 +111,6 @@ endif(ENABLE_MANUAL_OR_DOXYGEN)
 ########################################################################
 
 set(man_page_sources
-    octoclock_firmware_burner.1
     uhd_cal_rx_iq_balance.1
     uhd_cal_tx_dc_offset.1
     uhd_cal_tx_iq_balance.1
@@ -117,9 +120,14 @@ set(man_page_sources
     uhd_images_downloader.1
     uhd_usrp_probe.1
     usrp_n2xx_simple_net_burner.1
-    usrp_x3xx_fpga_burner.1
     usrp2_card_burner.1
 )
+
+if (ENABLE_PYTHON_API)
+    list(APPEND man_page_sources
+        usrpctl.1
+    )
+endif(ENABLE_PYTHON_API)
 
 ########################################################################
 # Setup man pages

@@ -1,11 +1,11 @@
 //
-// Copyright 2019 Ettus Research, A National Instruments Brand
+// Copyright 2022 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
 // Module: noc_shell_null_src_sink
 //
-// Description: 
+// Description:
 //
 //   This is a tool-generated NoC-shell for the null_src_sink block.
 //   See the RFNoC specification for more information about NoC shells.
@@ -15,6 +15,7 @@
 //   THIS_PORTID : Control crossbar port to which this block is connected
 //   CHDR_W      : AXIS-CHDR data bus width
 //   MTU         : Maximum transmission unit (i.e., maximum packet size in
+//                 CHDR words is 2**MTU).
 //
 
 `default_nettype none
@@ -23,9 +24,9 @@
 module noc_shell_null_src_sink #(
   parameter [9:0] THIS_PORTID     = 10'd0,
   parameter       CHDR_W          = 64,
-  parameter       ITEM_W          = 32,
-  parameter       NIPC            = 2,
-  parameter [5:0] MTU             = 10
+  parameter [5:0] MTU             = 10,
+  parameter       NIPC            = CHDR_W/32,
+  parameter       ITEM_W          = 32
 ) (
   //---------------------
   // Framework Interface

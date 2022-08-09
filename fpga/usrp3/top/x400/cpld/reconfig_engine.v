@@ -73,7 +73,7 @@ module reconfig_engine #(
   `include "regmap/reconfig_regmap_utils.vh"
   `include "../../../lib/rfnoc/core/ctrlport.vh"
 
-  // Check MAX10 variant target (10M04 or 10M08)
+  // Check MAX10 variant target (10M04, 10M08 or XO3)
   `ifdef VARIANT_10M04
     localparam FLASH_PRIMARY_IMAGE_START_ADDR_MEM_INIT = FLASH_PRIMARY_IMAGE_START_ADDR_MEM_INIT_10M04;
     localparam FLASH_PRIMARY_IMAGE_START_ADDR          = FLASH_PRIMARY_IMAGE_START_ADDR_10M04;
@@ -86,6 +86,13 @@ module reconfig_engine #(
     localparam FLASH_PRIMARY_IMAGE_END_ADDR            = FLASH_PRIMARY_IMAGE_END_ADDR_10M08;
     localparam CFM0_WP_OFFSET_MSB                      = 27; // From Max 10 Flash Memory User Guide.
     localparam CFM0_WP_OFFSET_LSB                      = 25; // From Max 10 Flash Memory User Guide.
+  // The reconfiguration engine via flash is not supported in the XO3 variant.
+  `elsif VARIANT_XO3
+    localparam FLASH_PRIMARY_IMAGE_START_ADDR_MEM_INIT = 0;
+    localparam FLASH_PRIMARY_IMAGE_START_ADDR          = 0;
+    localparam FLASH_PRIMARY_IMAGE_END_ADDR            = 0;
+    localparam CFM0_WP_OFFSET_MSB                      = 0;
+    localparam CFM0_WP_OFFSET_LSB                      = 0;
   `else
     ERROR_MAX10_variant_must_be_defined();
     localparam FLASH_PRIMARY_IMAGE_START_ADDR_MEM_INIT = FLASH_PRIMARY_IMAGE_START_ADDR_MEM_INIT_10M04;

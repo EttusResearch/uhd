@@ -236,6 +236,54 @@ void magnesium_cpld_ctrl::set_tx_atr_bits(const chan_sel_t chan,
     }
 }
 
+void magnesium_cpld_ctrl::set_tx_atr_bits(const chan_sel_t chan,
+    const atr_state_t atr_state,
+    const tx_atr_bits_t atr_bits,
+    const bool defer_commit)
+{
+    set_tx_atr_bits(chan,
+        atr_state,
+        atr_bits.tx_led,
+        atr_bits.tx_pa_en,
+        atr_bits.tx_amp_en,
+        atr_bits.tx_myk_en,
+        defer_commit);
+}
+
+
+tx_atr_bits_t magnesium_cpld_ctrl::get_tx_atr_bits(
+    const chan_sel_t chan, const atr_state_t atr_state)
+{
+    std::lock_guard<std::mutex> l(_set_mutex);
+    tx_atr_bits_t retval;
+    if (chan == CHAN1 or chan == BOTH) {
+        if (atr_state == IDLE or atr_state == ANY) {
+            retval.tx_led    = bool(_regs.get_state_ch1_idle_tx_led());
+            retval.tx_pa_en  = bool(_regs.get_state_ch1_idle_tx_pa_en());
+            retval.tx_amp_en = bool(_regs.get_state_ch1_idle_tx_amp_en());
+            retval.tx_myk_en = bool(_regs.get_state_ch1_idle_tx_myk_en());
+        } else {
+            retval.tx_led    = bool(_regs.get_state_ch1_on_tx_led());
+            retval.tx_pa_en  = bool(_regs.get_state_ch1_on_tx_pa_en());
+            retval.tx_amp_en = bool(_regs.get_state_ch1_on_tx_amp_en());
+            retval.tx_myk_en = bool(_regs.get_state_ch1_on_tx_myk_en());
+        }
+    } else {
+        if (atr_state == IDLE or atr_state == ANY) {
+            retval.tx_led    = bool(_regs.get_state_ch2_idle_tx_led());
+            retval.tx_pa_en  = bool(_regs.get_state_ch2_idle_tx_pa_en());
+            retval.tx_amp_en = bool(_regs.get_state_ch2_idle_tx_amp_en());
+            retval.tx_myk_en = bool(_regs.get_state_ch2_idle_tx_myk_en());
+        } else {
+            retval.tx_led    = bool(_regs.get_state_ch2_on_tx_led());
+            retval.tx_pa_en  = bool(_regs.get_state_ch2_on_tx_pa_en());
+            retval.tx_amp_en = bool(_regs.get_state_ch2_on_tx_amp_en());
+            retval.tx_myk_en = bool(_regs.get_state_ch2_on_tx_myk_en());
+        }
+    }
+    return retval;
+}
+
 void magnesium_cpld_ctrl::set_trx_sw_atr_bits(const chan_sel_t chan,
     const atr_state_t atr_state,
     const sw_trx_t trx_sw,

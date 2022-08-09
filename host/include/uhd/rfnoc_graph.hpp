@@ -179,7 +179,7 @@ public:
      * \param src_port The port of the source block to connect.
      * \param dst_blk The block ID of the destination block to connect to.
      * \param dst_port The port of the destination block to connect to.
-     * \param skip_property_propagation Skip property propagation for this edge.
+     * \param is_back_edge Flag this edge as a back-edge.
      *        See also \ref props_graph_resolution_back_edges.
      *
      * \throws uhd::routing_error if the source or destination ports are
@@ -189,7 +189,7 @@ public:
         size_t src_port,
         const block_id_t& dst_blk,
         size_t dst_port,
-        bool skip_property_propagation = false) = 0;
+        bool is_back_edge = false) = 0;
 
     /*! Connect TX streamer to an input of an NoC block
      *

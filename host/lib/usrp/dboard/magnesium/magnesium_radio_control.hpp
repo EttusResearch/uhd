@@ -14,6 +14,7 @@
 #include "magnesium_ad9371_iface.hpp"
 #include "magnesium_cpld_ctrl.hpp"
 #include "magnesium_cpld_regs.hpp"
+#include <uhd/rfnoc/filter_node.hpp>
 #include <uhd/types/eeprom.hpp>
 #include <uhd/types/serial.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
@@ -31,7 +32,8 @@ namespace uhd { namespace rfnoc {
  *
  * This daughterboard is used on the USRP N310 and N300.
  */
-class magnesium_radio_control_impl : public radio_control_impl
+class magnesium_radio_control_impl : public radio_control_impl,
+                                     public uhd::rfnoc::detail::filter_node
 {
 public:
     //! Frequency bands for RX. Bands are a function of the analog filter banks
@@ -67,6 +69,9 @@ public:
      * Structors
      ***********************************************************************/
     magnesium_radio_control_impl(make_args_ptr make_args);
+
+    void deinit() override;
+
     ~magnesium_radio_control_impl() override;
 
     /************************************************************************
@@ -170,6 +175,23 @@ public:
     std::string get_fe_name(
         const size_t chan, const uhd::direction_t direction) const override;
 
+    /**************************************************************************
+     * Filter API
+     *************************************************************************/
+    std::vector<std::string> get_rx_filter_names(const size_t chan) const override;
+    uhd::filter_info_base::sptr get_rx_filter(
+        const std::string& name, const size_t chan) override;
+    void set_rx_filter(const std::string& name,
+        uhd::filter_info_base::sptr filter,
+        const size_t chan) override;
+
+    std::vector<std::string> get_tx_filter_names(const size_t chan) const override;
+    uhd::filter_info_base::sptr get_tx_filter(
+        const std::string& name, const size_t chan) override;
+    void set_tx_filter(const std::string& name,
+        uhd::filter_info_base::sptr filter,
+        const size_t chan) override;
+
 private:
     /**************************************************************************
      * Helpers
@@ -270,9 +292,15 @@ private:
         const double freq,
         const size_t chan);
 
+    //! Deactivate idle-state TX frontend components
+    void _reset_tx_frontend(const magnesium_cpld_ctrl::chan_sel_t chan_sel);
+
     /**************************************************************************
      * Private attributes
      *************************************************************************/
+    //! MPM Compatibility number {MAJOR, MINOR}
+    std::vector<size_t> _mpm_compat_num;
+
     //! Locks access to setter APIs
     std::recursive_mutex _set_lock;
 
@@ -339,6 +367,7 @@ private:
     //! Low band enable
     std::map<direction_t, bool> _is_low_band = {
         {RX_DIRECTION, false}, {TX_DIRECTION, false}};
+
     //! AD9371 gain
     double _ad9371_rx_gain                    = 0.0;
     double _ad9371_tx_gain                    = 0.0;

@@ -98,23 +98,23 @@ magnesium_radio_control_impl::rx_band magnesium_radio_control_impl::_map_freq_to
 {
     magnesium_radio_control_impl::rx_band band;
 
-    if (fp_compare_epsilon<double>(freq) < MAGNESIUM_MIN_FREQ) {
+    if (freq_compare_epsilon(freq) < MAGNESIUM_MIN_FREQ) {
         band = rx_band::INVALID_BAND;
-    } else if (fp_compare_epsilon<double>(freq) < MAGNESIUM_LOWBAND_FREQ) {
+    } else if (freq_compare_epsilon(freq) < MAGNESIUM_LOWBAND_FREQ) {
         band = rx_band::LOWBAND;
-    } else if (fp_compare_epsilon<double>(freq) < band_map.at(1)) {
+    } else if (freq_compare_epsilon(freq) < band_map.at(1)) {
         band = rx_band::BAND0;
-    } else if (fp_compare_epsilon<double>(freq) < band_map.at(2)) {
+    } else if (freq_compare_epsilon(freq) < band_map.at(2)) {
         band = rx_band::BAND1;
-    } else if (fp_compare_epsilon<double>(freq) < band_map.at(3)) {
+    } else if (freq_compare_epsilon(freq) < band_map.at(3)) {
         band = rx_band::BAND2;
-    } else if (fp_compare_epsilon<double>(freq) < band_map.at(4)) {
+    } else if (freq_compare_epsilon(freq) < band_map.at(4)) {
         band = rx_band::BAND3;
-    } else if (fp_compare_epsilon<double>(freq) < band_map.at(5)) {
+    } else if (freq_compare_epsilon(freq) < band_map.at(5)) {
         band = rx_band::BAND4;
-    } else if (fp_compare_epsilon<double>(freq) < band_map.at(6)) {
+    } else if (freq_compare_epsilon(freq) < band_map.at(6)) {
         band = rx_band::BAND5;
-    } else if (fp_compare_epsilon<double>(freq) <= MAGNESIUM_MAX_FREQ) {
+    } else if (freq_compare_epsilon(freq) <= MAGNESIUM_MAX_FREQ) {
         band = rx_band::BAND6;
     } else {
         band = rx_band::INVALID_BAND;
@@ -128,17 +128,17 @@ magnesium_radio_control_impl::tx_band magnesium_radio_control_impl::_map_freq_to
 {
     magnesium_radio_control_impl::tx_band band;
 
-    if (fp_compare_epsilon<double>(freq) < MAGNESIUM_MIN_FREQ) {
+    if (freq_compare_epsilon(freq) < MAGNESIUM_MIN_FREQ) {
         band = tx_band::INVALID_BAND;
-    } else if (fp_compare_epsilon<double>(freq) < MAGNESIUM_LOWBAND_FREQ) {
+    } else if (freq_compare_epsilon(freq) < MAGNESIUM_LOWBAND_FREQ) {
         band = tx_band::LOWBAND;
-    } else if (fp_compare_epsilon<double>(freq) < band_map.at(1)) {
+    } else if (freq_compare_epsilon(freq) < band_map.at(1)) {
         band = tx_band::BAND0;
-    } else if (fp_compare_epsilon<double>(freq) < band_map.at(2)) {
+    } else if (freq_compare_epsilon(freq) < band_map.at(2)) {
         band = tx_band::BAND1;
-    } else if (fp_compare_epsilon<double>(freq) < band_map.at(3)) {
+    } else if (freq_compare_epsilon(freq) < band_map.at(3)) {
         band = tx_band::BAND2;
-    } else if (fp_compare_epsilon<double>(freq) <= MAGNESIUM_MAX_FREQ) {
+    } else if (freq_compare_epsilon(freq) <= MAGNESIUM_MAX_FREQ) {
         band = tx_band::BAND3;
     } else {
         band = tx_band::INVALID_BAND;

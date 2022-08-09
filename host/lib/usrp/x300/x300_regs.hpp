@@ -30,7 +30,7 @@ static const int BL_DATA    = 1;
 static const int ZPU_SR_LEDS        = 00;
 static const int ZPU_SR_SW_RST      = 01;
 static const int ZPU_SR_CLOCK_CTRL  = 02;
-static const int ZPU_SR_XB_LOCAL    = 03;
+static const int ZPU_SR_DEVICE_ID   = 03;
 static const int ZPU_SR_REF_FREQ    = 04;
 static const int ZPU_SR_SPI         = 32;
 static const int ZPU_SR_ETHINT0     = 40;
@@ -46,15 +46,20 @@ static const int ZPU_SR_FP_GPIO_SRC = 72;
 static const int ZPU_RB_SPI         = 2;
 static const int ZPU_RB_CLK_STATUS  = 3;
 static const int ZPU_RB_COMPAT_NUM  = 6;
-static const int ZPU_RB_NUM_CE      = 7;
+static const int ZPU_RB_RFNOC_INFO  = 7;
 static const int ZPU_RB_GIT_HASH    = 10;
 static const int ZPU_RB_SFP0_TYPE   = 4;
 static const int ZPU_RB_SFP1_TYPE   = 5;
 static const int ZPU_RB_FP_GPIO_SRC = 13;
+static const int ZPU_RB_DEVICE_ID   = 14;
 
 static const uint32_t RB_SFP_1G_ETH  = 0;
 static const uint32_t RB_SFP_10G_ETH = 1;
 static const uint32_t RB_SFP_AURORA  = 2;
+
+// RFNoC info bits
+#define ZPU_RB_RFNOC_INFO_PROTOVER(X)   (((X) >>  0) & 0xFFFF)
+#define ZPU_RB_RFNOC_INFO_CHDR_WIDTH(X) (((X) >> 16) & 0xFFFF)
 
 // spi slaves on radio
 #define DB_DAC_SEN (1 << 7)

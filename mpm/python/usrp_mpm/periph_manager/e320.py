@@ -7,11 +7,10 @@
 E320 implementation module
 """
 
-from __future__ import print_function
 import bisect
 import copy
 import re
-import threading
+from functools import partial
 from six import iteritems, itervalues
 from usrp_mpm.components import ZynqComponents
 from usrp_mpm.dboard_manager import Neon
@@ -32,7 +31,6 @@ E320_DEFAULT_TIME_SOURCE = 'internal'
 E320_DEFAULT_ENABLE_GPS = True
 E320_DEFAULT_ENABLE_FPGPIO = True
 E320_FPGA_COMPAT = (6, 0)
-E320_MONITOR_THREAD_INTERVAL = 1.0 # seconds
 E320_DBOARD_SLOT_IDX = 0
 E320_GPIO_BANKS = ["FP0",]
 E320_GPIO_SRC_PS = "PS"
@@ -87,6 +85,11 @@ class e320(ZynqComponents, PeriphManagerBase):
     mboard_info = {"type": "e3xx",
                    "product": "e320"
                   }
+    # This is the latest HW revision that his version of MPM is aware of. This
+    # version of MPM will be able to run with any hardware which has a rev_compat
+    # field that is equal or less than this value.
+    # Note: If the hardware is revved in a non-compatible way, eeprom-init.c
+    # must also be updated (derive_rev_compat).
     mboard_max_rev = 4  # rev E
     mboard_sensor_callback_map = {
         'ref_locked': 'get_ref_lock_sensor',
@@ -144,13 +147,11 @@ class e320(ZynqComponents, PeriphManagerBase):
             # Don't try and figure out what's going on. Just give up.
             return
         self._tear_down = False
-        self._status_monitor_thread = None
         self._ext_clock_freq = E320_DEFAULT_EXT_CLOCK_FREQ
         self._clock_source = None
         self._time_source = None
         self._gpsd = None
         self.dboard = self.dboards[E320_DBOARD_SLOT_IDX]
-        from functools import partial
         for sensor_name, sensor_cb_name in self.mboard_sensor_callback_map.items():
             if sensor_name[:5] == 'temp_':
                 setattr(self, sensor_cb_name, partial(self.get_temp_sensor, sensor_name))
@@ -163,16 +164,19 @@ class e320(ZynqComponents, PeriphManagerBase):
 
     def _init_dboards(self, _, override_dboard_pids, default_args):
         """
-        Initialize all the daughterboards
+        Initialize all the daughterboards.
+
+        Note: This gets called by PeriphManagerBase.init_dboards(). We override
+        the base class's implementation in order to avoid initializing our one
+        "dboard" in the same way that, for example, N310's dboards are initialized.
+        Specifically,
+        - skip dboard EEPROM setup (we don't have one)
+        - change the way we handle SPI devices
 
         (dboard_infos) -- N/A
         override_dboard_pids -- List of dboard PIDs to force
         default_args -- Default args
         """
-        # Override the base class's implementation in order to avoid initializing our one "dboard"
-        # in the same way that, for example, N310's dboards are initialized. Specifically,
-        # - skip dboard EEPROM setup (we don't have one)
-        # - change the way we handle SPI devices
         if override_dboard_pids:
             self.log.warning("Overriding daughterboard PIDs with: {}"
                              .format(override_dboard_pids))
@@ -197,7 +201,7 @@ class e320(ZynqComponents, PeriphManagerBase):
         }
         # This will actually instantiate the dboard class:
         self.dboards.append(Neon(E320_DBOARD_SLOT_IDX, **dboard_info))
-        self.log.info("Found %d daughterboard(s).", len(self.dboards))
+        assert len(self.dboards) == 1
 
     def _check_fpga_compat(self):
         " Throw an exception if the compat numbers don't match up "
@@ -221,40 +225,12 @@ class e320(ZynqComponents, PeriphManagerBase):
         self._ext_clock_freq = float(
             default_args.get('ext_clock_freq', E320_DEFAULT_EXT_CLOCK_FREQ)
         )
-        if not self.dboards:
-            self.log.warning(
-                "No dboards found, skipping setting clock and time source "
-                "configuration."
-            )
-            self._clock_source = E320_DEFAULT_CLOCK_SOURCE
-            self._time_source = E320_DEFAULT_TIME_SOURCE
-        else:
-            self.set_clock_source(
-                default_args.get('clock_source', E320_DEFAULT_CLOCK_SOURCE)
-            )
-            self.set_time_source(
-                default_args.get('time_source', E320_DEFAULT_TIME_SOURCE)
-            )
-
-    def _monitor_status(self):
-        """
-        Status monitoring thread: This should be executed in a thread. It will
-        continuously monitor status of the following peripherals:
-
-        - GPS lock
-        """
-        self.log.trace("Launching monitor loop...")
-        cond = threading.Condition()
-        cond.acquire()
-        while not self._tear_down:
-            gps_locked = self.get_gps_lock_sensor()['value'] == 'true'
-            # Now wait
-            if cond.wait_for(
-                    lambda: self._tear_down,
-                    E320_MONITOR_THREAD_INTERVAL):
-                break
-        cond.release()
-        self.log.trace("Terminating monitor loop.")
+        self.set_clock_source(
+            default_args.get('clock_source', E320_DEFAULT_CLOCK_SOURCE)
+        )
+        self.set_time_source(
+            default_args.get('time_source', E320_DEFAULT_TIME_SOURCE)
+        )
 
     def _init_peripherals(self, args):
         """
@@ -291,14 +267,6 @@ class e320(ZynqComponents, PeriphManagerBase):
         self._xport_mgrs = {
             'udp': E320XportMgrUDP(self.log, args)
         }
-        # Spawn status monitoring thread
-        self.log.trace("Spawning status monitor thread...")
-        self._status_monitor_thread = threading.Thread(
-            target=self._monitor_status,
-            name="E320StatusMonitorThread",
-            daemon=True,
-        )
-        self._status_monitor_thread.start()
         # Init complete.
         self.log.debug("mboard info: {}".format(self.mboard_info))
 
@@ -330,26 +298,11 @@ class e320(ZynqComponents, PeriphManagerBase):
             self.log.warning(
                 "Cannot run init(), device was never fully initialized!")
             return False
-        if args.get("clock_source", "") != "":
-            self.set_clock_source(args.get("clock_source"))
-        if args.get("time_source", "") != "":
-            self.set_time_source(args.get("time_source"))
+        args = self._update_default_args(args)
+        self.set_clock_source(args.get("clock_source", E320_DEFAULT_CLOCK_SOURCE))
+        self.set_time_source(args.get("time_source", E320_DEFAULT_TIME_SOURCE))
         result = super(e320, self).init(args)
-        for xport_mgr in itervalues(self._xport_mgrs):
-            xport_mgr.init(args)
         return result
-
-    def deinit(self):
-        """
-        Clean up after a UHD session terminates.
-        """
-        if not self._device_initialized:
-            self.log.warning(
-                "Cannot run deinit(), device was never fully initialized!")
-            return
-        super(e320, self).deinit()
-        for xport_mgr in itervalues(self._xport_mgrs):
-            xport_mgr.deinit()
 
     def tear_down(self):
         """
@@ -359,50 +312,12 @@ class e320(ZynqComponents, PeriphManagerBase):
         """
         self.log.trace("Tearing down E320 device...")
         self._tear_down = True
-        if self._device_initialized:
-            self._status_monitor_thread.join(3 * E320_MONITOR_THREAD_INTERVAL)
-            if self._status_monitor_thread.is_alive():
-                self.log.error("Could not terminate monitor thread! This could result in resource leaks.")
         active_overlays = self.list_active_overlays()
         self.log.trace("E320 has active device tree overlays: {}".format(
             active_overlays
         ))
         for overlay in active_overlays:
             dtoverlay.rm_overlay(overlay)
-
-    ###########################################################################
-    # Transport API
-    ###########################################################################
-    def get_chdr_link_types(self):
-        """
-        This will only ever return a single item (udp).
-        """
-        assert self.mboard_info['rpc_connection'] in ('remote', 'local')
-        return ["udp"]
-
-    def get_chdr_link_options(self, xport_type):
-        """
-        Returns a list of dictionaries. Every dictionary contains information
-        about one way to connect to this device in order to initiate CHDR
-        traffic.
-
-        The interpretation of the return value is very highly dependant on the
-        transport type (xport_type).
-        For UDP, the every entry of the list has the following keys:
-        - ipv4 (IP Address)
-        - port (UDP port)
-        - link_rate (bps of the link, e.g. 10e9 for 10GigE)
-
-        """
-        if xport_type not in self._xport_mgrs:
-            self.log.warning("Can't get link options for unknown link type: `{}'."
-                             .format(xport_type))
-            return []
-        if xport_type == "udp":
-            return self._xport_mgrs[xport_type].get_chdr_link_options(
-                self.mboard_info['rpc_connection'])
-        else:
-            return self._xport_mgrs[xport_type].get_chdr_link_options()
 
     ###########################################################################
     # Device info
@@ -472,19 +387,13 @@ class e320(ZynqComponents, PeriphManagerBase):
             return
         self._ext_clock_freq = freq
         if self.get_clock_source() == 'external':
-            for slot, dboard in enumerate(self.dboards):
-                if hasattr(dboard, 'update_ref_clock_freq'):
-                    self.log.trace(
-                        "Updating reference clock on dboard %d to %f MHz...",
-                        slot, freq/1e6
-                    )
-                    dboard.update_ref_clock_freq(freq)
-
+            self.log.trace(f"Updating reference clock to {freq/1e6} MHz...")
+            self.dboard.update_ref_clock_freq(freq)
 
     def get_ref_clock_freq(self):
         " Returns the currently active reference clock frequency"
         clock_source = self.get_clock_source()
-        if clock_source == "internal" or clock_source == "gpsdo":
+        if clock_source in ("internal", "gpsdo"):
             return E320_DEFAULT_INT_CLOCK_FREQ
         # elif clock_source == "external":
         return self._ext_clock_freq
@@ -505,6 +414,25 @@ class e320(ZynqComponents, PeriphManagerBase):
             return
         self._time_source = time_source
         self.mboard_regs_control.set_time_source(time_source, self.get_ref_clock_freq())
+
+    def get_sync_sources(self):
+        """
+        List sync sources.
+        """
+        valid_sync_sources = {
+            # clock, time. Reminder: 'internal' is an alias for 'gpsdo'
+            # pylint: disable=bad-whitespace
+            ('internal', 'internal'),
+            ('external', 'internal'),
+            ('external', 'external'),
+            ('gpsdo',    'gpsdo'   ),
+            ('gpsdo',    'internal'),
+            # pylint: enable=bad-whitespace
+        }
+        return [{
+            "time_source": time_source,
+            "clock_source": clock_source
+        } for (clock_source, time_source) in valid_sync_sources]
 
     ###########################################################################
     # GPIO API

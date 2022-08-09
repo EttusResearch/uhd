@@ -12,7 +12,6 @@
 #include <uhdlib/usrp/common/adf435x.hpp>
 #include <uhdlib/usrp/common/adf535x.hpp>
 #include <uhdlib/utils/narrow.hpp>
-#include <boost/chrono.hpp>
 #include <boost/format.hpp>
 #include <chrono>
 #include <cmath>
@@ -122,7 +121,7 @@ public:
                         _write_lo_spi(dboard_iface::UNIT_TX, regs);
                     },
                     [this](uint32_t microseconds) {
-                        _db_iface->sleep(boost::chrono::microseconds(microseconds));
+                        _db_iface->sleep(std::chrono::microseconds(microseconds));
                     });
                 _lo1_pfd_freq = TWINRX_REV_C_PFD_FREQ;
             } else {
@@ -131,7 +130,7 @@ public:
                         _write_lo_spi(dboard_iface::UNIT_TX, regs);
                     },
                     [this](uint32_t microseconds) {
-                        _db_iface->sleep(boost::chrono::microseconds(microseconds));
+                        _db_iface->sleep(std::chrono::microseconds(microseconds));
                     });
                 _lo1_pfd_freq = TWINRX_REV_AB_PFD_FREQ;
             }

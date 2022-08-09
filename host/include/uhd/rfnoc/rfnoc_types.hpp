@@ -11,12 +11,13 @@
 
 namespace uhd { namespace rfnoc {
 
-//----------------------------------------------
-// Types
-//----------------------------------------------
+//-----------------------------------------------------------------------------
+// Types (note: internal types are defined in rfnoc_common.hpp)
+//-----------------------------------------------------------------------------
 
 //! Type that indicates the CHDR Width in bits
 enum chdr_w_t { CHDR_W_64 = 0, CHDR_W_128 = 1, CHDR_W_256 = 2, CHDR_W_512 = 3 };
+
 //! Conversion from chdr_w_t to a number of bits
 constexpr size_t chdr_w_to_bits(chdr_w_t chdr_w)
 {
@@ -49,7 +50,26 @@ constexpr size_t chdr_w_to_bits(chdr_w_t chdr_w)
     // clang-format on
 }
 
+//! Conversion from number of bits to chdr_w_t
+constexpr chdr_w_t bits_to_chdr_w(size_t bits)
+{
+    // clang-format off
+    return
+        bits == 64  ? CHDR_W_64  :
+        bits == 128 ? CHDR_W_128 :
+        bits == 256 ? CHDR_W_256 :
+        bits == 512 ? CHDR_W_512 :
+        /* default */ CHDR_W_64  ;
+    // clang-format on
+}
+
 //! Stream Endpoint ID Type
+// Stream endpoints within a graph are unique. They are assigned dynamically
+// during runtime when needed. Stream endpoints exist both in the host as well
+// as in the devices. See also sep_addr_t. The value of any sep_id_t is
+// meaningless, it provides no information on where the SEP is physically
+// located. In comments and variables, it is often abbreviated as "EPID"
+// ("endpoint ID").
 using sep_id_t = uint16_t;
 
 }} // namespace uhd::rfnoc

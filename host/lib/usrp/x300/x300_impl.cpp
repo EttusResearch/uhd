@@ -422,7 +422,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t& dev_addr)
     // RFNoC Stuff
     ////////////////////////////////////////////////////////////////////
     // Set the remote device ID
-    mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, ZPU_SR_XB_LOCAL), mb.device_id);
+    mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, ZPU_SR_DEVICE_ID), mb.device_id);
     // Configure the CHDR port number in the dispatcher
     mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, (ZPU_SR_ETHINT0 + 8 + 3)), X300_VITA_UDP_PORT);
     mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, (ZPU_SR_ETHINT1 + 8 + 3)), X300_VITA_UDP_PORT);
@@ -433,7 +433,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t& dev_addr)
       // parallel
         std::lock_guard<std::mutex> l(_mb_iface_mutex);
         _mb_ifaces.insert({mb_i,
-            x300_mb_iface(mb.conn_mgr, mb.clock->get_master_clock_rate(), mb.device_id)});
+            x300_mb_iface(mb.conn_mgr, mb.zpu_ctrl, mb.clock->get_master_clock_rate(), mb.device_id)});
         UHD_LOG_DEBUG("X300", "Motherboard " << mb_i << " has local device IDs: ");
         for (const auto local_dev_id : _mb_ifaces.at(mb_i).get_local_device_ids()) {
             UHD_LOG_DEBUG("X300", "* " << local_dev_id);
@@ -504,9 +504,9 @@ void x300_impl::check_fpga_compat(const fs_path& mb_path, const mboard_members_t
 {
     uint32_t compat_num = members.zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_COMPAT_NUM));
     uint32_t compat_major = (compat_num >> 16);
-    uint32_t compat_minor = (compat_num & 0xffff);
+    int64_t  compat_minor = (compat_num & 0xffff);
 
-    if (compat_major != X300_FPGA_COMPAT_MAJOR) {
+    if (compat_major != X300_FPGA_COMPAT_MAJOR || compat_minor < X300_FPGA_COMPAT_MINOR) {
         std::string image_loader_path =
             (fs::path(uhd::get_pkg_path()) / "bin" / "uhd_image_loader").string();
         std::string image_loader_cmd = str(
@@ -517,7 +517,7 @@ void x300_impl::check_fpga_compat(const fs_path& mb_path, const mboard_members_t
 
         throw uhd::runtime_error(
             str(boost::format(
-                    "Expected FPGA compatibility number %d, but got %d:\n"
+                    "Expected FPGA compatibility number %d.%d, but got %d.%d:\n"
                     "The FPGA image on your device is not compatible with this host code "
                     "build.\n"
                     "Download the appropriate FPGA images for this version of UHD.\n"
@@ -527,7 +527,8 @@ void x300_impl::check_fpga_compat(const fs_path& mb_path, const mboard_members_t
                     "command:\n\n%s\n\n"
                     "For more information, refer to the UHD manual:\n\n"
                     " http://files.ettus.com/manual/page_usrp_x3x0.html#x3x0_flash")
-                % int(X300_FPGA_COMPAT_MAJOR) % compat_major
+                % int(X300_FPGA_COMPAT_MAJOR) % int(X300_FPGA_COMPAT_MINOR)
+                % int(compat_major) % int(compat_minor)
                 % print_utility_error("uhd_images_downloader.py") % image_loader_cmd));
     }
     _tree->create<std::string>(mb_path / "fpga_version")

@@ -1,11 +1,11 @@
 //
-// Copyright 2020 Ettus Research, a National Instruments Brand
+// Copyright 2022 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
 // Module: noc_shell_replay
 //
-// Description: 
+// Description:
 //
 //   This is a tool-generated NoC-shell for the replay block.
 //   See the RFNoC specification for more information about NoC shells.
@@ -15,6 +15,7 @@
 //   THIS_PORTID : Control crossbar port to which this block is connected
 //   CHDR_W      : AXIS-CHDR data bus width
 //   MTU         : Maximum transmission unit (i.e., maximum packet size in
+//                 CHDR words is 2**MTU).
 //
 
 `default_nettype none
@@ -97,7 +98,7 @@ module noc_shell_replay #(
   output wire [NUM_PORTS*16-1:0]     m_in_axis_tlength,
   output wire [NUM_PORTS-1:0]        m_in_axis_teov,
   output wire [NUM_PORTS-1:0]        m_in_axis_teob,
-  // Data Stream to User Logic: out
+  // Data Stream from User Logic: out
   input  wire [NUM_PORTS*32*MEM_DATA_W/32-1:0]   s_out_axis_tdata,
   input  wire [NUM_PORTS*MEM_DATA_W/32-1:0]      s_out_axis_tkeep,
   input  wire [NUM_PORTS-1:0]        s_out_axis_tlast,
@@ -221,7 +222,7 @@ module noc_shell_replay #(
 
   assign axis_data_clk = mem_clk;
   assign axis_data_rst = mem_rst;
-  
+
   //---------------------
   // Input Data Paths
   //---------------------
@@ -233,7 +234,7 @@ module noc_shell_replay #(
       .NIPC           (MEM_DATA_W/32),
       .SYNC_CLKS      (0),
       .INFO_FIFO_SIZE ($clog2(32)),
-      .PYLD_FIFO_SIZE ($clog2(MTU))
+      .PYLD_FIFO_SIZE ($clog2(32))
     ) chdr_to_axis_data_in_in (
       .axis_chdr_clk      (rfnoc_chdr_clk),
       .axis_chdr_rst      (rfnoc_chdr_rst),
@@ -271,7 +272,7 @@ module noc_shell_replay #(
       .NIPC            (MEM_DATA_W/32),
       .SYNC_CLKS       (0),
       .INFO_FIFO_SIZE  ($clog2(32)),
-      .PYLD_FIFO_SIZE  ($clog2(MTU)),
+      .PYLD_FIFO_SIZE  ($clog2(2**MTU)),
       .MTU             (MTU),
       .SIDEBAND_AT_END (1)
     ) axis_data_to_chdr_out_out (

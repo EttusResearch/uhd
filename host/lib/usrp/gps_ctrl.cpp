@@ -154,7 +154,7 @@ private:
 
             if (msg.length() < 6) {
                 UHD_LOGGER_WARNING("GPS")
-                    << __FUNCTION__ << ": Short GPSDO string: " << msg;
+                    << UHD_FUNCTION << "(): Short GPSDO string: " << msg;
                 continue;
             }
 
@@ -166,7 +166,7 @@ private:
                 msgs[msg.substr(1, 5)] = msg;
             } else {
                 UHD_LOGGER_WARNING("GPS")
-                    << __FUNCTION__ << ": Malformed GPSDO string: " << msg;
+                    << UHD_FUNCTION << "(): Malformed GPSDO string: " << msg;
             }
         }
 

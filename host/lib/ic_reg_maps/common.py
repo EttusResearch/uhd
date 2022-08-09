@@ -65,6 +65,22 @@ public:
         % endfor
     }
 
+    % for reg in regs:
+        % if reg.is_array:
+    std::vector<${reg.get_type()}> get_state_${reg.get_name()}(void){
+        if (_state == NULL) throw uhd::runtime_error("no saved state");
+        return _state->${reg.get_name()};
+    }
+
+        % else:
+    ${reg.get_type()} get_state_${reg.get_name()}(void){
+        if (_state == NULL) throw uhd::runtime_error("no saved state");
+        return _state->${reg.get_name()};
+    }
+
+        % endif
+    % endfor
+
     template<typename T> std::set<T> get_changed_addrs(void){
         if (_state == NULL) throw uhd::runtime_error("no saved state");
         //check each register for changes
@@ -163,6 +179,14 @@ class ${name}_t:
             % endif
         % endfor
 
+    % for reg in regs:
+    def get_state_${reg.get_name()}(self):
+        if self._state is None:
+            raise RuntimeError("No saved state")
+        return self._state.${reg.get_name()}
+
+    %endfor
+
     def get_changed_addrs(self):
         if self._state is None:
             raise RuntimeError("No saved state")
@@ -211,6 +235,18 @@ def to_num(arg):
     """
     return int(eval(arg))
 
+def is_int(arg):
+    """
+    check whether arg is convertable to an integer
+    (including non-decimal representation)
+    """
+    try:
+        to_num(arg)
+        return True
+    except:
+        return False
+
+
 class reg:
     def __init__(self, reg_des):
         self.is_array = False
@@ -222,6 +258,22 @@ class reg:
             raise Exception(
                 'Error parsing register description: "{}"\nWhat: {}'
                 .format(reg_des, e))
+
+    def _parse_options(self, optionstr):
+        """
+        `optionstr` contains additional register information in a
+        comma-separated list as key=value pairs.
+
+        For backward compability a number <x> is converted to
+        `default=<x>,rw`
+        which retains the previous behaviour.
+        """
+        if is_int(optionstr):
+            # convert number into option list for backward compatibility
+            optionstr = "default={},rw".format(optionstr)
+        options = [option.partition("=") for option in optionstr.split(",")]
+        result = { item[0] : item[2] or None for item in options }
+        return result
 
     def parse(self, reg_des):
         """
@@ -244,15 +296,15 @@ class reg:
         initialized to 0. duper_reg is an array of length 128, of 32-bit registers.
         """
         x = re.match(
-            r'^(\w*)(\[([0-9:]*)\])?\s*(\w*)\[(.*)\]\s*(\w*)\s*(.*)$',
+            r'^(\w*)(\[([0-9:]*)\])?\s*(\w*)\[(.*)\]\s*([=,\w]*)\s*(.*)$',
             reg_des)
-        name, _, addr_range, addr, bit_range, default, enums = x.groups()
+        name, _, addr_range, addr, bit_range, options, enums = x.groups()
         #store variables
         self._name = name
         self._addr = to_num(addr)
         if ':' in bit_range: self._addr_spec = sorted(map(int, bit_range.split(':')))
         else: self._addr_spec = int(bit_range), int(bit_range)
-        self._default = to_num(default)
+        self.options = self._parse_options(options)
         #extract enum
         self._enums = list()
         if enums:
@@ -289,9 +341,10 @@ class reg:
     def get_enums(self): return self._enums
     def get_name(self): return self._name
     def get_default(self):
+        default_val = to_num(self.options.get("default", "0"))
         for key, val in self.get_enums():
-            if val == self._default: return ('%s_%s'%(self.get_name(), key)).upper()
-        return self._default
+            if val == default_val: return ('%s_%s'%(self.get_name(), key)).upper()
+        return default_val
     def get_type(self):
         if self.get_enums(): return '%s_t'%self.get_name()
         return 'uint%d_t'%max(2**math.ceil(math.log(self.get_bit_width(), 2)), 8)
@@ -310,6 +363,11 @@ class reg:
         Return the step size for register arrays
         """
         return self._addr_step
+    def is_readonly(self):
+        """
+        Check whether register is marked as readonly via option string
+        """
+        return "ro" in self.options
 
 class mreg:
     def __init__(self, mreg_des, regs):
@@ -329,7 +387,7 @@ class mreg:
     def get_type(self):
         return 'uint%d_t'%max(2**math.ceil(math.log(self.get_bit_width(), 2)), 8)
 
-def generate(name, regs_tmpl, body_tmpl='', py_body_tmpl='', file=__file__, append=False):
+def generate(name, regs_tmpl, body_tmpl='', py_body_tmpl='', file=__file__, append=False, **kwargs):
     # determine if the destination file is a Python or C++ header file
     out_file = sys.argv[1]
     if out_file.endswith('.py'): # Write a Python file
@@ -349,15 +407,17 @@ def generate(name, regs_tmpl, body_tmpl='', py_body_tmpl='', file=__file__, appe
             regs.append(reg(entry))
 
     #evaluate the body template with the list of registers
-    body = '\n    '.join(parse_tmpl(body_template, regs=regs).splitlines())
+    body = '\n    '.join(parse_tmpl(body_template, **dict(kwargs, regs=regs)).splitlines())
 
     #evaluate the code template with the parsed registers and arguments
     code = parse_tmpl(template,
+        **dict(kwargs,
         name=name,
         regs=regs,
         mregs=mregs,
         body=body,
         file=file,
+        )
     )
 
     #write the generated code to file specified by argv1

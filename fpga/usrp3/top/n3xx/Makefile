@@ -34,12 +34,12 @@ XQ_DEFS=SFP0_WR=1     QSFP_10GBE=1  USE_REPLAY=1   BUILD_WR=1     BUILD_10G=1   
 AQ_DEFS=SFP0_10GBE=1  SFP1_10GBE=1  QSFP_AURORA=1  USE_REPLAY=1   BUILD_10G=1    BUILD_AURORA=1    QSFP_LANES=4 $(OPTIONS)
 
 # Defaults specific to the various targets:
-N300_DEFAULTS:=DEFAULT_RFNOC_IMAGE_CORE_FILE=n300_rfnoc_image_core.v DEFAULT_EDGE_FILE=$(abspath n300_static_router.hex)
-N310_DEFAULTS:=DEFAULT_RFNOC_IMAGE_CORE_FILE=n310_rfnoc_image_core.v DEFAULT_EDGE_FILE=$(abspath n310_static_router.hex)
-N320_DEFAULTS:=DEFAULT_RFNOC_IMAGE_CORE_FILE=n320_rfnoc_image_core.v DEFAULT_EDGE_FILE=$(abspath n320_static_router.hex)
-N300AA_DEFAULTS:=DEFAULT_RFNOC_IMAGE_CORE_FILE=n300_bist_image_core.v DEFAULT_EDGE_FILE=$(abspath n300_bist_static_router.hex)
-N310AA_DEFAULTS:=DEFAULT_RFNOC_IMAGE_CORE_FILE=n310_bist_image_core.v DEFAULT_EDGE_FILE=$(abspath n310_bist_static_router.hex)
-N320AA_DEFAULTS:=DEFAULT_RFNOC_IMAGE_CORE_FILE=n320_bist_image_core.v DEFAULT_EDGE_FILE=$(abspath n320_bist_static_router.hex)
+N300_DEFAULTS:=DEFAULT_RFNOC_IMAGE_CORE_FILE=$(abspath n300_rfnoc_image_core.v) DEFAULT_EDGE_FILE=$(abspath n300_static_router.hex)
+N310_DEFAULTS:=DEFAULT_RFNOC_IMAGE_CORE_FILE=$(abspath n310_rfnoc_image_core.v) DEFAULT_EDGE_FILE=$(abspath n310_static_router.hex)
+N320_DEFAULTS:=DEFAULT_RFNOC_IMAGE_CORE_FILE=$(abspath n320_rfnoc_image_core.v) DEFAULT_EDGE_FILE=$(abspath n320_static_router.hex)
+N300AA_DEFAULTS:=DEFAULT_RFNOC_IMAGE_CORE_FILE=$(abspath n300_bist_image_core.v) DEFAULT_EDGE_FILE=$(abspath n300_bist_static_router.hex)
+N310AA_DEFAULTS:=DEFAULT_RFNOC_IMAGE_CORE_FILE=$(abspath n310_bist_image_core.v) DEFAULT_EDGE_FILE=$(abspath n310_bist_static_router.hex)
+N320AA_DEFAULTS:=DEFAULT_RFNOC_IMAGE_CORE_FILE=$(abspath n320_bist_image_core.v) DEFAULT_EDGE_FILE=$(abspath n320_bist_static_router.hex)
 
 # Set build option (check RTL, run synthesis, or do a full build)
 ifndef TARGET

@@ -91,16 +91,16 @@ respectively, for more details.
 
 Once you are logged in on the device, you should be able to run uhd_usrp_probe or other UHD examples.
 
-Here is a list of a changes with the latest E310 filesystem (UHD v3.15.0.0) that can affect customer usage
-and applications:
+Here is a list of a changes with the latest E310 filesystem (UHD v3.15.0.0 and
+later) that can affect customer usage and applications:
 
-1. Hostname:
-The hostname for the devices have changed from ni-e3xx(-sg3) to `ni-e31x-$serial`.
-This makes it easier to identify devices. You can change the hostname by modifying the
-`/etc/hostname` file and rebooting.
+1. Hostname: The hostname for the devices have changed from ni-e3xx(-sg3) to
+`ni-e31x-$serial`. This makes it easier to identify devices. You can change
+the hostname by creating the file `/data/network/hostname`, saving the
+desired hostname in it, then rebooting.
 
 2. "product" name:
-The "product" name for E310 is now "e310_<speedgrade>" i.e. e310_sg1 and e310_sg3 for speed grade 1
+The "product" name for E310 is now "e310_$speedgrade" i.e. e310_sg1 and e310_sg3 for speed grade 1
 and 3 respectively. Note that the "type" for e310 remains the same as before i.e. "e3xx".
 
 3. FPGA bit/bin/rpt file name and image target:
@@ -114,9 +114,9 @@ and 3 respectively. Note that the "type" for e310 remains the same as before i.e
     The names of the FPGA build targets have been modified but the old FPGA targets would continue to
     work as before. The generated bit files names in the build directory will be new as
     mentioned above.
-    - E310_<speedgrade> for default image
-    - E310_<speedgrade>_RFNOC for RFNOC image (contains a few blocks)
-    - E310_<speedgrade>_IDLE to build idle image (Doesn't need to modified for most cases)
+    - E310_$speedgrade for default image
+    - E310_$speedgrade_RFNOC for RFNOC image (contains a few blocks)
+    - E310_$speedgrade_IDLE to build idle image (Doesn't need to modified for most cases)
 
 4. Loading FPGA image:
 The device arg "fpga=" can now only be used in the uhd_image_loader; it can no longer be used to
@@ -412,8 +412,8 @@ Of course, you can also connect to the IP address directly if you know it (or
 set it manually using the serial console).
 
 Note: The device's hostname is derived from its serial number by default
-(`ni-<e31x/e320>-<SERIAL>`). You can change the hostname by modifying the `/etc/hostname`
-file and rebooting.
+(`ni-<e31x/e320>-<SERIAL>`). You can change the hostname by creating the file
+`/data/network/hostname`, saving the desired hostname in it, then rebooting.
 
 On Microsoft Windows, the connection can be established using a tool such as
 Putty, by selecting a username of root without password.
@@ -443,7 +443,7 @@ The factory settings are as follows:
         UseHostname=false
 
 E320 has an extra SFP+ (sfp0) port which is configured with static address 192.168.10.2/24.
-The configuration for the sfp0 port is stored in /etc/systemd/networkd/sfp0.network.
+The configuration for the `sfp0` port is stored in `/data/network/sfp0.network`.
 
 For configuration please refer to the
 <a href=https://www.freedesktop.org/software/systemd/man/systemd.network.html>systemd-networkd manual pages</a>
@@ -462,7 +462,7 @@ The factory settings are as follows:
         MTUBytes=9000
 
 Note: Care needs to be taken when editing these files on the device, since
-vi / vim sometimes generates undo files (e.g. /etc/systemd/networkd/sfp0.network~),
+vi / vim sometimes generates undo files (e.g. `/data/network/sfp0.network~`),
 that systemd-networkd might accidentally pick up.
 
 Note: Temporarily setting the IP addresses via ifconfig etc will only change the
@@ -549,9 +549,7 @@ For a list of which arguments can be passed into make(), see Section
 
 \subsection e3xx_usage_sensors The sensor API
 
-\subsubsection e310_sensors E31X Sensors
-
-Like other USRPs, the E310 series has RF and motherboard sensors.
+Like other USRPs, the E3x0 series has RF and motherboard sensors.
 When using uhd::usrp::multi_usrp, the following API calls are relevant to
 interact with the sensor API:
 
@@ -561,6 +559,8 @@ interact with the sensor API:
 - uhd::usrp::multi_usrp::get_rx_sensor_names()
 - uhd::usrp::multi_usrp::get_tx_sensor()
 - uhd::usrp::multi_usrp::get_rx_sensor()
+
+\subsubsection e310_sensors E31X Sensors
 
 The following motherboard sensors are always available:
 - `temp_fpga`: temperature (in Celsius) of the FPGA die
@@ -568,18 +568,14 @@ The following motherboard sensors are always available:
 - `ref_locked`: This will check that all the daughter boards have locked to the
 reference clock.
 
+The following daughterboard sensors are always available:
+- `lo_locked`: Boolean sensor value to check if the AD9361 LO has locked to its
+   reference
+- `lo_lock`: Alias to `lo_locked` (for backward compatibility reasons)
+- `ad9361_temperature`: Temperature sensor of the RFIC die
+- `rssi`: RSSI value as returned from the AD9361 (RX only)
+
 \subsubsection e320_sensors E320 Sensors
-
-Like other USRPs, the E320 series has RF and motherboard sensors.
-When using uhd::usrp::multi_usrp, the following API calls are relevant to
-interact with the sensor API:
-
-- uhd::usrp::multi_usrp::get_mboard_sensor_names()
-- uhd::usrp::multi_usrp::get_mboard_sensor()
-- uhd::usrp::multi_usrp::get_tx_sensor_names()
-- uhd::usrp::multi_usrp::get_rx_sensor_names()
-- uhd::usrp::multi_usrp::get_tx_sensor()
-- uhd::usrp::multi_usrp::get_rx_sensor()
 
 The following motherboard sensors are always available:
 - `temp_internal`: temperature (in Celsius) of Temperature Sensor on board
@@ -594,6 +590,13 @@ The following motherboard sensors are always available:
 - `ref_locked`: This will check that all the daughter boards have locked to the
 external/internal reference clock.
 - `fan`: get fan speed (in rpm)
+
+The following daughterboard sensors are always available:
+- `lo_locked`: Boolean sensor value to check if the AD9361 LO has locked to its
+   reference
+- `lo_lock`: Alias to `lo_locked` (for backward compatibility reasons)
+- `ad9361_temperature`: Temperature sensor of the RFIC die
+- `rssi`: RSSI value as returned from the AD9361 (RX only)
 
 \section e3xx_rasm Remote Management
 
@@ -720,14 +723,14 @@ will look like this:
     # [...]
 \endcode
 
-\section e3xx_gpio The Front-Panel GPIO
+\section e3xx_gpio Internal or Front-Panel GPIO
 
 \b Note: Do not source high currents (more than 5 mA) per pin. The GPIOs are not
 designed to drive high loads!
 
-\b Note: Unlike the X300 series, the E3XX series does not have user-programmable
-daughterboard GPIOs. The front-panel GPIOs can still be used to track the ATR
-state of the radios, though (see below).
+\b Note: Unlike the X300 series, the E3XX series does not have
+user-programmable daughterboard GPIOs. The front-panel (or internal) GPIOs can
+still be used to track the ATR state of the radios, though (see below).
 
 The USRP E310 has 6 programmable GPIO pins, accessible through an internal
 connector (see also \ref e31x_hw_gpio). The E320 has 8 GPIO pins, accessible
@@ -1036,26 +1039,31 @@ GPS-disciplined oscillator (GPSDO) on the board, the value "gpsdo" was named
 such for better compatibility with code written for other devices.
 
 The device provides a 3.3V supply voltage to an external antenna connected to the *GPS* port
-of your device. Note that this supply voltage is turned off in order to safe power upon destruction of the software object.
+of your device. Note that this supply voltage is turned off in order to save power upon destruction of the software object.
 
 \subsection e31x_hw_gpio Internal GPIO
 
 ### Connector
 
-\image html e3x0_gpio_conn.png "E3xx GPIO Connector"
+\image html e3x0_gpio_conn.png "E31x GPIO Connector"
 
 ### Pin Mapping
 
 - Pin 1:   +3.3V
-- Pin 2:   Reserved
+- Pin 2:   I2C SCL (3.3 V)
 - Pin 3:   Data[5]
-- Pin 4:   Reserved
+- Pin 4:   I2C SDA (3.3 V)
 - Pin 5:   Data[4]
 - Pin 6:   Data[0]
 - Pin 7:   Data[3]
 - Pin 8:   Data[1]
 - Pin 9:   0V
 - Pin 10:  Data[2]
+
+Pin 1 is connected to the shared +3.3V power rail and can be used to draw power.
+The maximum current depends on the power used by the rest of the device, but
+300-500 mA is generally safe. It is recommended to monitor the rail voltage
+when drawing power from this pin.
 
 Please see the \ref page_gpio_api for information on configuring and using the GPIO bus.
 
@@ -1297,6 +1305,15 @@ input, 10 MHz external clock reference.
 The connectors are labeled RF A and RF B and are powered by the two channels of
 AD9361 RFIC.
 
+\subsection e320_hw_sync Clock and Time Synchronization
+
+Unlike the E31x, but like most other USRPs, the USRP E320 has separate inputs for
+clock and time reference. There is no separate internal 10 MHz oscillator, when
+selecting an 'internal' reference, the GPSDO is used to create reference signals.
+
+The values 'internal' and 'gpsdo' are thus interchangeable and mean the same
+thing.
+
 \subsection e320_gpio Front Panel GPIO
 
 ### Front Panel GPIO Connections
@@ -1330,6 +1347,11 @@ where FLAGS is the hex number that you can construct with the following table of
 For example, to set your device to auto-boot, with TPM, and with fans, the flag value is 0x3, so
 
     $ eeprom-set-flags 0x3
+
+The enclosure flag is typically set during the manufacturing process, and can be
+used to identify if the board has an enclosure is used. The firmware and thermal
+subsystems of this device also use this flag to load different default thermal
+settings (see the [SCU firmware code](https://github.com/EttusResearch/usrp-firmware/blob/a190641b349b1bfdbdd9f471f82613971e50e375/board/neon/board.c#L191-L205)).
 
 \section e3xx_regmap E3XX FPGA Register Map
 

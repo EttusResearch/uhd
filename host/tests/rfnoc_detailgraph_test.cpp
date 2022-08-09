@@ -84,10 +84,10 @@ BOOST_AUTO_TEST_CASE(test_graph)
     // In this simple graph, all connections are identical from an edge info
     // perspective, so we're lazy and share an edge_info object:
     uhd::rfnoc::detail::graph_t::graph_edge_t edge_info;
-    edge_info.src_port                    = 0;
-    edge_info.dst_port                    = 0;
-    edge_info.property_propagation_active = true;
-    edge_info.edge = uhd::rfnoc::detail::graph_t::graph_edge_t::DYNAMIC;
+    edge_info.src_port        = 0;
+    edge_info.dst_port        = 0;
+    edge_info.is_forward_edge = true;
+    edge_info.edge            = uhd::rfnoc::detail::graph_t::graph_edge_t::DYNAMIC;
 
     // Now create the graph:
     graph.connect(&mock_rx_radio, &mock_tx_radio, edge_info);
@@ -110,24 +110,22 @@ BOOST_AUTO_TEST_CASE(test_graph)
     BOOST_REQUIRE(rx_neighbour_info.first);
     BOOST_CHECK_EQUAL(
         rx_neighbour_info.first->get_unique_id(), mock_tx_radio.get_unique_id());
-    BOOST_CHECK(std::tie(rx_neighbour_info.second.src_port,
-                    rx_neighbour_info.second.dst_port,
-                    rx_neighbour_info.second.property_propagation_active)
-                == std::tie(edge_info.src_port,
-                       edge_info.dst_port,
-                       edge_info.property_propagation_active));
+    BOOST_CHECK(
+        std::tie(rx_neighbour_info.second.src_port,
+            rx_neighbour_info.second.dst_port,
+            rx_neighbour_info.second.is_forward_edge)
+        == std::tie(edge_info.src_port, edge_info.dst_port, edge_info.is_forward_edge));
 
     auto tx_neighbour_info =
         graph_accessor.find_neighbour(tx_descriptor, {res_source_info::INPUT_EDGE, 0});
     BOOST_REQUIRE(tx_neighbour_info.first);
     BOOST_CHECK_EQUAL(
         tx_neighbour_info.first->get_unique_id(), mock_rx_radio.get_unique_id());
-    BOOST_CHECK(std::tie(tx_neighbour_info.second.src_port,
-                    tx_neighbour_info.second.dst_port,
-                    tx_neighbour_info.second.property_propagation_active)
-                == std::tie(edge_info.src_port,
-                       edge_info.dst_port,
-                       edge_info.property_propagation_active));
+    BOOST_CHECK(
+        std::tie(tx_neighbour_info.second.src_port,
+            tx_neighbour_info.second.dst_port,
+            tx_neighbour_info.second.is_forward_edge)
+        == std::tie(edge_info.src_port, edge_info.dst_port, edge_info.is_forward_edge));
 
     auto rx_upstream_neighbour_info =
         graph_accessor.find_neighbour(rx_descriptor, {res_source_info::INPUT_EDGE, 0});
@@ -173,9 +171,9 @@ BOOST_AUTO_TEST_CASE(test_graph)
     edge_info.dst_port = 1;
     BOOST_REQUIRE_THROW(
         graph.connect(&mock_rx_radio, &mock_tx_radio, edge_info), uhd::rfnoc_error);
-    edge_info.src_port                    = 0;
-    edge_info.dst_port                    = 0;
-    edge_info.property_propagation_active = false;
+    edge_info.src_port        = 0;
+    edge_info.dst_port        = 0;
+    edge_info.is_forward_edge = false;
     BOOST_REQUIRE_THROW(
         graph.connect(&mock_rx_radio, &mock_tx_radio, edge_info), uhd::rfnoc_error);
     BOOST_CHECK_EQUAL(graph.enumerate_edges().size(), 1);
@@ -210,9 +208,9 @@ BOOST_AUTO_TEST_CASE(test_graph_unresolvable)
         uhd::resolve_error);
 
     // Now we add a back-edge
-    edge_info.src_port                    = 0;
-    edge_info.dst_port                    = 0;
-    edge_info.property_propagation_active = false;
+    edge_info.src_port        = 0;
+    edge_info.dst_port        = 0;
+    edge_info.is_forward_edge = false;
     graph.connect(&mock_tx_radio, &mock_rx_radio, edge_info);
     UHD_LOG_INFO("TEST", "Testing back edge error path");
     mock_tx_radio.disable_samp_out_resolver = true;

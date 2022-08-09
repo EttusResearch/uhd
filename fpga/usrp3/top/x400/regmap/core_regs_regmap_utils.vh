@@ -1,5 +1,5 @@
 //
-// Copyright 2021 Ettus Research, A National Instruments Company
+// Copyright 2022 Ettus Research, A National Instruments Company
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -38,4 +38,4 @@
 
   // DIO Window (from x4xx_core_common.v)
   localparam DIO = 'h2000; // Window Offset
-  localparam DIO_SIZE = 'h20;  // size in bytes
+  localparam DIO_SIZE = 'h40;  // size in bytes

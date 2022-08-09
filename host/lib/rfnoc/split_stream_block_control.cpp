@@ -41,6 +41,10 @@ public:
         // the split stream block.
         set_prop_forwarding_policy(forwarding_policy_t::USE_MAP);
         set_action_forwarding_policy(forwarding_policy_t::USE_MAP);
+        // MTU forwarding doesn't allow for USE_MAP, but we assume that packets
+        // coming in may potentially go to any output port. We thus fan out the
+        // MTU propagation.
+        set_mtu_forwarding_policy(forwarding_policy_t::ONE_TO_FAN);
 
         // Property propagation scheme (X --> Y means 'Properties received on
         // X propagate to Y'):

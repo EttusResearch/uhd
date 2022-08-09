@@ -46,6 +46,8 @@ module rfnoc_block_replay_tb#(
 
   `include "rfnoc_block_replay_regs.vh"
 
+  `define MIN(X,Y) ((X)<(Y)?(X):(Y))
+
 
   //---------------------------------------------------------------------------
   // Testbench Configuration
@@ -474,6 +476,30 @@ module rfnoc_block_replay_tb#(
   endtask : wait_record_fullness
 
 
+  // Validate record position
+  task automatic validate_record_position(
+    input int     port,
+    input longint position
+  );
+    logic [63:0] value;
+
+    read_reg_64(port, REG_REC_POS_LO, value);
+    `ASSERT_ERROR(value == position, $sformatf("Record position expected at 0x%h, but at 0x%h", position, value));
+  endtask : validate_record_position
+
+
+  // Validate record position
+  task automatic validate_play_position(
+    input int     port,
+    input longint position
+  );
+    logic [63:0] value;
+
+    read_reg_64(port, REG_PLAY_POS_LO, value);
+    `ASSERT_ERROR(value == position, $sformatf("Play position expected at 0x%h, but at 0x%h", position, value));
+  endtask : validate_play_position
+
+
   // Make sure nothing is received until the timeout has elapsed
   task automatic check_rx_idle(
     input int  port,
@@ -535,6 +561,8 @@ module rfnoc_block_replay_tb#(
       "Buffer size extends beyond available memory");
     `ASSERT_FATAL(spp * ITEM_SIZE % MEM_WORD_SIZE == 0,
       "Requested SPP must be a multiple of the memory word size");
+    `ASSERT_FATAL(spp <= 2**MTU,
+      "Requested SPP exceeds MTU");
 
     // Update record buffer settings
     write_reg_64(port, REG_REC_BASE_ADDR_LO,    base_addr);
@@ -583,6 +611,7 @@ module rfnoc_block_replay_tb#(
   //  exp_items : Queue of the items you expect to receive
   //  eob       : Indicates if we expect EOB to be set for the last item (set
   //              to 1'bX to skip this check)
+  //  spp       : Samples per packet to expect. Set to 0 to skip this check.
   // timestamp  : The timestamp we expect to receive for the first item (set to
   //              'X to skip timestamp checking)
   //
@@ -591,6 +620,7 @@ module rfnoc_block_replay_tb#(
     output string       error_msg,
     input item_t        exp_items[$],
     input logic         eob       = 1'b1,
+    input int           spp       = SPP,
     input logic [63:0]  timestamp = 64'bX
   );
     item_t           recv_items[$];
@@ -614,9 +644,9 @@ module rfnoc_block_replay_tb#(
       // Check the packet length
       if (item_count + recv_items.size() > exp_items.size()) begin
         $sformat(error_msg,
-                 "On packet %0d, size exceeds expected by %0d items",
-                 packet_count,
-                 (item_count + recv_items.size()) - exp_items.size());
+          "On packet %0d, size is %0d items, which exceeds expected by %0d items.",
+          packet_count, recv_items.size(),
+          (item_count + recv_items.size()) - exp_items.size());
         return;
       end
 
@@ -645,8 +675,27 @@ module rfnoc_block_replay_tb#(
         end
       end
 
-      // Check the timestamp
-      if (timestamp !== 64'bX) begin
+      // Check the payload length against expected SPP
+      if (spp > 0) begin
+        // If this is NOT the last packet, then its length should match the SPP.
+        // If it is the last packet, then it can be shorter than SPP.
+        if (!pkt_info.eob) begin
+          if (recv_items.size() != spp) begin
+            $sformat(error_msg,
+              "On packet %0d, expected SPP of %0d but packet has %0d items",
+              packet_count, spp, recv_items.size());
+          end
+        end else begin
+          if (recv_items.size() > spp) begin
+            $sformat(error_msg,
+              "On packet %0d (EOB), expected SPP of %0d or less but packet has %0d items",
+              packet_count, spp, recv_items.size());
+          end
+        end
+      end
+
+      // Check the timestamp (only first packet should have a timestamp)
+      if (timestamp !== 64'bX && packet_count == 0) begin
         if (!pkt_info.timestamp) begin
           $sformat(error_msg,
                    "On packet %0d, timestamp is missing",
@@ -838,6 +887,10 @@ module rfnoc_block_replay_tb#(
         (32'(MEM_ADDR_W) <<  REG_ADDR_SIZE_POS)
       );
       test_read_reg(port, REG_REC_FULLNESS_LO, 64);
+      test_read_reg(port, REG_PLAY_ITEM_SIZE, 32, 4);
+      test_read_reg(port, REG_REC_POS_LO, 64);
+      test_read_reg(port, REG_PLAY_POS_LO, 64);
+      test_read_reg(port, REG_PLAY_CMD_FIFO_SPACE, 32, 32);
 
       // The following registers are write only and aren't tested here.
       // REG_REC_RESTART - Tested during every record operation
@@ -925,37 +978,40 @@ module rfnoc_block_replay_tb#(
     // For each test below, we record two memory bursts and playback two memory
     // bursts. Each time we change the playback packet size to test boundary
     // conditions.
+    //
+    // Note that we can't let the SPP exceed the MTU, so if the burst size is
+    // too large, we won't be testing the full size.
 
     // Test packet size equals burst size
-    spp = MEM_BURST_LEN * MEM_WORD_SIZE / ITEM_SIZE;
+    spp = `MIN(MEM_BURST_LEN * MEM_WORD_SIZE / ITEM_SIZE, 2**MTU);
     start_replay(port, send_items, buffer_size, num_items, spp);
-    verify_rx_data(port, error_string, send_items, 1);
+    verify_rx_data(port, error_string, send_items, 1, spp);
     `ASSERT_ERROR(error_string == "", error_string);
 
     // Test packet is one less than burst size
-    spp = (MEM_BURST_LEN-1) * MEM_WORD_SIZE / ITEM_SIZE;
+    spp = `MIN((MEM_BURST_LEN-1) * MEM_WORD_SIZE / ITEM_SIZE, 2**MTU-(MEM_WORD_SIZE / ITEM_SIZE));
     start_replay(port, send_items, buffer_size, num_items, spp);
-    verify_rx_data(port, error_string, send_items, 1);
+    verify_rx_data(port, error_string, send_items, 1, spp);
     `ASSERT_ERROR(error_string == "", error_string);
 
     // Test packet is one more than burst size
-    spp = (MEM_BURST_LEN+1) * MEM_WORD_SIZE / ITEM_SIZE;
+    spp = `MIN((MEM_BURST_LEN+1) * MEM_WORD_SIZE / ITEM_SIZE, 2**MTU);
     start_replay(port, send_items, buffer_size, num_items, spp);
-    verify_rx_data(port, error_string, send_items, 1);
+    verify_rx_data(port, error_string, send_items, 1, spp);
     `ASSERT_ERROR(error_string == "", error_string);
 
     // For each test below, we record two memory bursts and playback one memory
     // burst plus or minus one word, keeping the packet size the same.
-    spp = MEM_BURST_LEN * MEM_WORD_SIZE / ITEM_SIZE;
+    spp = `MIN(MEM_BURST_LEN * MEM_WORD_SIZE / ITEM_SIZE, 2**MTU);
 
     // Playback one less than burst/packet size
     start_replay(port, send_items, buffer_size, spp-MEM_WORD_SIZE/ITEM_SIZE, spp);
-    verify_rx_data(port, error_string, send_items[0:spp-1-MEM_WORD_SIZE/ITEM_SIZE], 1);
+    verify_rx_data(port, error_string, send_items[0:spp-1-MEM_WORD_SIZE/ITEM_SIZE], 1, spp);
     `ASSERT_ERROR(error_string == "", error_string);
 
     // Playback one more than burst/packet size
     start_replay(port, send_items, buffer_size, spp+MEM_WORD_SIZE/ITEM_SIZE, spp);
-    verify_rx_data(port, error_string, send_items[0:spp-1+MEM_WORD_SIZE/ITEM_SIZE], 1);
+    verify_rx_data(port, error_string, send_items[0:spp-1+MEM_WORD_SIZE/ITEM_SIZE], 1, spp);
     `ASSERT_ERROR(error_string == "", error_string);
 
     // Make sure there are no more packets
@@ -1016,8 +1072,8 @@ module rfnoc_block_replay_tb#(
 
     // Set number of words to test
     buffer_size    = (3 * MEM_BURST_LEN) / 2 * MEM_WORD_SIZE; // 1.5 memory bursts in size (in bytes)
-    num_items_rec  = buffer_size / ITEM_SIZE;                 // 1.5 memory bursts in size (in CHDR words)
-    num_items_play = 2 * MEM_BURST_LEN * MEM_WORD_SIZE /      // 2 memory bursts in size (in CHDR words)
+    num_items_rec  = buffer_size / ITEM_SIZE;                 // 1.5 memory bursts in size (in samples)
+    num_items_play = 2 * MEM_BURST_LEN * MEM_WORD_SIZE /      // 2 memory bursts in size (in samples)
                      ITEM_SIZE;
 
     // Start playback of data
@@ -1045,19 +1101,25 @@ module rfnoc_block_replay_tb#(
     item_t       send_items[$];
     string       error_string;
     logic [31:0] cmd;
-    int          num_items, mem_words;
+    int          num_items, mem_words, spp;
 
     test.start_test("Test continuous mode", TEST_TIMEOUT);
 
     mem_words = 70;
     num_items = mem_words * MEM_WORD_SIZE / ITEM_SIZE;
 
+    // Make sure the spp evenly divides our test size, or else we'll end a
+    // check mid packet, which verify_rx_data doesn't support.
+    spp = num_items / 2;
+    `ASSERT_ERROR(num_items % spp == 0,
+      "num_items should be a multiple of spp for this test");
+
     // Update record buffer settings
     write_reg_64(port, REG_REC_BASE_ADDR_LO,    0);
     write_reg_64(port, REG_REC_BUFFER_SIZE_LO,  num_items*ITEM_SIZE);
     write_reg_64(port, REG_PLAY_BASE_ADDR_LO,   0);
     write_reg_64(port, REG_PLAY_BUFFER_SIZE_LO, num_items*ITEM_SIZE);
-    write_reg   (port, REG_PLAY_WORDS_PER_PKT,  SPP * ITEM_SIZE/MEM_WORD_SIZE);
+    write_reg   (port, REG_PLAY_WORDS_PER_PKT,  spp * ITEM_SIZE/MEM_WORD_SIZE);
 
     // Restart the record buffer
     write_reg(port, REG_REC_RESTART, 0);
@@ -1071,16 +1133,15 @@ module rfnoc_block_replay_tb#(
 
     // Make sure the REG_PLAY_CMD_NUM_WORDS value is ignored by setting it to
     // something smaller than what we receive.
-    write_reg_64(port, REG_PLAY_CMD_NUM_WORDS_LO, mem_words);
+    write_reg_64(port, REG_PLAY_CMD_NUM_WORDS_LO, 0);
 
     // Send command for continuous playback
     cmd = PLAY_CMD_CONTINUOUS;
-    write_reg_64(port, REG_PLAY_CMD_NUM_WORDS_LO, mem_words);
     write_reg(port, REG_PLAY_CMD, cmd);
 
     // Check the output, looking for the full set of data, multiple times
     repeat (5) begin
-      verify_rx_data(port, error_string, send_items, 0);
+      verify_rx_data(port, error_string, send_items, 0, spp);
       `ASSERT_ERROR(error_string == "", error_string);
     end
 
@@ -1153,6 +1214,7 @@ module rfnoc_block_replay_tb#(
 
     // Check the result
     verify_rx_data(port, error_string, send_items, 1);
+    `ASSERT_ERROR(error_string == "", error_string);
 
     // Check the fullness
     read_reg_64(port, REG_REC_FULLNESS_LO, val64);
@@ -1264,15 +1326,21 @@ module rfnoc_block_replay_tb#(
     item_t       send_items[$];
     item_t       exp_items[$];
     string       error_string;
-    int          num_items, mem_words;
+    int          num_items, spp;
     int          num_items_buf;
     logic [63:0] val64;
 
     test.start_test("Test overfilled record buffer", TEST_TIMEOUT);
 
     // Choose the sizes we want to use for this test
-    num_items     = 97*MEM_WORD_SIZE/ITEM_SIZE;    // Number of items to record
-    num_items_buf = 43*MEM_WORD_SIZE/ITEM_SIZE;    // Size of buffer to use in items
+    num_items     = 98*MEM_WORD_SIZE/ITEM_SIZE;    // Number of items to record
+    num_items_buf = 44*MEM_WORD_SIZE/ITEM_SIZE;    // Size of buffer to use in items
+
+    // Make sure the spp evenly divides our test size, or else we'll end a
+    // check mid packet, which verify_rx_data doesn't support.
+    spp = num_items_buf / 4;
+    `ASSERT_ERROR(num_items_buf % spp == 0,
+      "num_items_buf should be a multiple of spp for this test");
 
     // Restart the record buffer
     write_reg(port, REG_REC_RESTART, 0);
@@ -1281,17 +1349,17 @@ module rfnoc_block_replay_tb#(
     send_items = gen_test_data(num_items);
 
     // Start playback of the larger size
-    start_replay(port, send_items, num_items_buf*ITEM_SIZE, num_items);
+    start_replay(port, send_items, num_items_buf*ITEM_SIZE, num_items, spp);
 
     // We should get two frames of num_items_buf, then one smaller frame to
     // bring us up to num_items total.
     exp_items = send_items[0 : num_items_buf-1];
     for (int i = 0; i < 2; i ++) begin
-      verify_rx_data(port, error_string, exp_items, 0);
+      verify_rx_data(port, error_string, exp_items, 0, spp);
       `ASSERT_ERROR(error_string == "", error_string);
     end
     exp_items = exp_items[0 : (num_items % num_items_buf)-1];
-    verify_rx_data(port, error_string, exp_items, 1);
+    verify_rx_data(port, error_string, exp_items, 1, spp);
     `ASSERT_ERROR(error_string == "", error_string);
 
     // Make sure REG_REC_FULLNESS didn't keep increasing
@@ -1447,12 +1515,11 @@ module rfnoc_block_replay_tb#(
     send_items = gen_test_data(num_items);
     start_replay(port, send_items, buffer_size, num_items, pkt_size_items);
 
-    // We should get 8 small packets instead of 2 large ones, with EOB set on
-    // the last packet.
+    // We should get 8 small packets with EOB set on the last packet.
     for (int k = 0; k < 8; k ++) begin
       verify_rx_data(port, error_string,
                      send_items[pkt_size_items*k : pkt_size_items*(k+1)-1],
-                     (k == 7 ? 1 : 0));
+                     (k == 7 ? 1 : 0), pkt_size_items);
       `ASSERT_ERROR(error_string == "", error_string);
     end
 
@@ -1473,7 +1540,7 @@ module rfnoc_block_replay_tb#(
     // with EOB set on the last packet.
     for (int i=0; i < num_items; i += pkt_size_items) begin
       verify_rx_data(port, error_string, send_items[i:i+pkt_size_items-1],
-        i == num_items-pkt_size_items ? 1 : 0);
+        i == num_items-pkt_size_items ? 1 : 0, pkt_size_items);
       `ASSERT_FATAL(error_string == "", error_string);
     end
 
@@ -1507,7 +1574,7 @@ module rfnoc_block_replay_tb#(
     send_items = gen_test_data(num_items);
     start_replay(port, send_items, buffer_size, num_items, spp, 0, 0, timestamp);
 
-    verify_rx_data(port, error_string, send_items, 1, timestamp);
+    verify_rx_data(port, error_string, send_items, 1, spp, timestamp);
     `ASSERT_ERROR(error_string == "", error_string);
 
     test.end_test();
@@ -1581,6 +1648,8 @@ module rfnoc_block_replay_tb#(
       blk_ctrl.send_items(port+1, port1_data);
 
       // Play back on each port
+      write_reg(port+0, REG_PLAY_WORDS_PER_PKT, SPP*ITEM_SIZE/MEM_WORD_SIZE);
+      write_reg(port+1, REG_PLAY_WORDS_PER_PKT, SPP*ITEM_SIZE/MEM_WORD_SIZE);
       write_reg_64(port+0, REG_PLAY_CMD_NUM_WORDS_LO, mem_words);
       write_reg_64(port+1, REG_PLAY_CMD_NUM_WORDS_LO, mem_words);
       write_reg(port+0, REG_PLAY_CMD, PLAY_CMD_FINITE);
@@ -1596,6 +1665,109 @@ module rfnoc_block_replay_tb#(
     end
 
   endtask : test_multiple_ports
+
+
+  //---------------------------------------------------------------------------
+  // Test Record and Play position
+  //---------------------------------------------------------------------------
+  //
+  // Test record and play positions advance properly.  Checks position after
+  // recording and playing each packet and checks proper position during wraps.
+  //
+  //---------------------------------------------------------------------------
+
+  task test_position(int port = 0);
+    item_t           send_items[$];
+    item_t           recv_items[$];
+    int              num_items, num_packets;
+    longint unsigned mem_size;
+    logic [63:0]     val64;
+
+    test.start_test("Test record and play positions", 2ms);
+
+    mem_size    = 2**MEM_ADDR_W;    // Memory size in bytes
+    num_items   = 2**$clog2(SPP);   // Pick a power of 2 near SPP
+    num_packets = 5;
+
+    // Set up the record buffer
+    write_reg_64(port, REG_REC_BASE_ADDR_LO,    0);
+    write_reg_64(port, REG_REC_BUFFER_SIZE_LO,  num_packets*num_items*ITEM_SIZE);
+    write_reg   (port, REG_REC_RESTART,         0);
+
+    // Fill the buffer and validate the record position after each packet.
+    for (int i = 0; i < num_packets; i++) begin
+      // Send a different random sequence for each packet
+      send_items = gen_test_data(num_items, i*num_items);
+      blk_ctrl.send_items(port, send_items);
+      wait_record_fullness(port, (i+1)*num_items*ITEM_SIZE);
+      validate_record_position(port, ((i+1)*num_items*ITEM_SIZE));
+    end
+
+    // Send one additional packet to ensure the position does not advance
+    send_items = gen_test_data(num_items, num_packets*num_items);
+    blk_ctrl.send_items(port, send_items);
+  
+    // Give extra time for the last packet
+    #(CHDR_CLK_PER * num_items * 20);
+
+    // Make sure the position has not advanced and the fullness has not changed
+    validate_record_position(port, num_packets*num_items*ITEM_SIZE);
+    read_reg_64(port, REG_REC_FULLNESS_LO, val64);
+    `ASSERT_ERROR(val64 == num_packets*num_items*ITEM_SIZE, "Memory fullness is not correct");
+
+    // Play back the data one packet at a time and validate play position
+    write_reg(port, REG_PLAY_WORDS_PER_PKT, num_items*ITEM_SIZE/MEM_WORD_SIZE);
+    write_reg_64(port, REG_PLAY_CMD_NUM_WORDS_LO, num_items*ITEM_SIZE/MEM_WORD_SIZE);
+    write_reg_64(port, REG_PLAY_BUFFER_SIZE_LO, num_items*ITEM_SIZE);
+    for (int i = 0; i < num_packets; i++) begin
+      write_reg_64(port, REG_PLAY_BASE_ADDR_LO, i*num_items*ITEM_SIZE);
+      write_reg(port, REG_PLAY_CMD, PLAY_CMD_FINITE);
+      send_items = gen_test_data(num_items, i*num_items);
+      blk_ctrl.recv_items(port, recv_items);
+      `ASSERT_ERROR(
+        ChdrData#(CHDR_W, ITEM_W)::item_equal(send_items, recv_items),
+        "Playback data did not match"
+      );
+      validate_play_position(port, ((i+1)*num_items*ITEM_SIZE));
+    end
+
+    // Restart recording to get the extra packet we sent at the beginning
+    // to validate the record position wraps.
+    write_reg(port, REG_REC_RESTART, 0);
+    wait_record_fullness(port, num_items*ITEM_SIZE);
+    validate_record_position(port, num_items*ITEM_SIZE);
+
+    // Playback the new data, which should continue the values from the last
+    // record operation.
+    write_reg_64(port, REG_PLAY_BASE_ADDR_LO, 0);
+    write_reg_64(port, REG_PLAY_BUFFER_SIZE_LO, num_items*ITEM_SIZE);
+    write_reg_64(port, REG_PLAY_CMD_NUM_WORDS_LO, num_items*ITEM_SIZE/MEM_WORD_SIZE);
+    write_reg(port, REG_PLAY_CMD, PLAY_CMD_FINITE);
+    send_items = gen_test_data(num_items, num_packets*num_items);
+    blk_ctrl.recv_items(port, recv_items);
+    `ASSERT_ERROR(
+      ChdrData#(CHDR_W, ITEM_W)::item_equal(send_items, recv_items),
+      "Playback data did not match"
+    );
+    validate_play_position(port, num_items*ITEM_SIZE);
+
+    // Test the play wrap.  Play num_packets plus one and validate position.
+    // This is done at the end of the memory space to test the wrap within the
+    // buffer space as well as the wrap at the end of the memory space.
+    write_reg_64(port, REG_PLAY_BASE_ADDR_LO, mem_size-(num_packets*num_items*ITEM_SIZE));
+    write_reg_64(port, REG_PLAY_BUFFER_SIZE_LO, num_packets*num_items*ITEM_SIZE);
+    write_reg_64(port, REG_PLAY_CMD_NUM_WORDS_LO, (num_packets+1)*num_items*ITEM_SIZE/MEM_WORD_SIZE);
+    write_reg(port, REG_PLAY_CMD, PLAY_CMD_FINITE);
+    for (int i = 0; i < num_packets+1; i++) begin
+      blk_ctrl.recv_items(port, recv_items);
+    end
+    validate_play_position(port, mem_size-((num_packets-1)*num_items*ITEM_SIZE));
+
+    // Make sure there are no more packets
+    check_rx_idle(port);
+
+    test.end_test();
+  endtask : test_position
 
 
   //---------------------------------------------------------------------------
@@ -1704,7 +1876,7 @@ module rfnoc_block_replay_tb#(
     // Generate a string for the name of this instance of the testbench
     tb_name = $sformatf( {
       "rfnoc_block_replay_tb\n",
-      "CHDR_W     = %03d, ITEM_W     = %02d, NUM_PORTS = %d,\n",
+      "CHDR_W     = %03d, ITEM_W     = %02d, NUM_PORTS = %0d,\n",
       "MEM_DATA_W = %03d, MEM_ADDR_W = %02d,\n",
       "TEST_REGS  = %03d, TEST_FULL  = %02d,\n",
       "STALL_PROB = %03d" },
@@ -1754,6 +1926,7 @@ module rfnoc_block_replay_tb#(
     test_4k_boundary();
     test_small_packet();
     test_timed_playback();
+    test_position();
     test_full_memory();
 
     //--------------------------------

@@ -32,7 +32,8 @@
 //   writing a command to the REG_PLAY_CMD register. The play command indicates
 //   if it should play a fixed number of words then stop (PLAY_CMD_FINITE),
 //   playback forever (PLAY_CMD_CONTINUOUS), or stop playback (PLAY_CMD_STOP).
-//   The number of words to play back with PLAY_CMD_FINITE is set by first
+//   The beginning of the playback is set by first writing to
+//   REG_PLAY_BASE_ADDR. The number of words to play back is set by first
 //   writing to REG_PLAY_CMD_NUM_WORDS.
 //
 //   The length of the packets generated during playback is configured by the
@@ -40,9 +41,7 @@
 //
 //   A timestamp for playback can also be specified by setting
 //   REG_PLAY_CMD_TIME and setting the REG_PLAY_TIMED_POS bit as part of the
-//   command write. The timestamp will then be included in all output packets,
-//   starting with the provided timestamp value and auto-incrementing by one
-//   for every REG_ITEM_SIZE bytes of data in each packet.
+//   command write. The timestamp will be included in the first output packet.
 //
 //   When playback reaches the end of the configured playback buffer, if more
 //   words were requested, it will loop back to the beginning of the buffer to
@@ -150,7 +149,7 @@ module axis_replay #(
   //---------------------------------------------------------------------------
 
   localparam [REG_MAJOR_LEN-1:0] COMPAT_MAJOR = 1;
-  localparam [REG_MINOR_LEN-1:0] COMPAT_MINOR = 0;
+  localparam [REG_MINOR_LEN-1:0] COMPAT_MINOR = 1;
 
   localparam [REG_ITEM_SIZE_LEN-1:0] DEFAULT_ITEM_SIZE = 4;  // 4 bytes for sc16
 
@@ -177,9 +176,9 @@ module axis_replay #(
   // Log base 2 of the depth of the input and output FIFOs to use. The FIFOs
   // should be large enough to store more than a complete burst
   // (MEM_BURST_LEN). A size of 9 (512 64-bit words) is one 36-kbit BRAM.
-  localparam REC_FIFO_ADDR_WIDTH  = 9;  // Log2 of input/record FIFO size
-  localparam PLAY_FIFO_ADDR_WIDTH = 9;  // Log2 of output/playback FIFO size
-  localparam HDR_FIFO_ADDR_WIDTH  = 5;  // Log2 of output/time FIFO size
+  localparam REC_FIFO_ADDR_WIDTH  = MEM_COUNT_W+1;  // Log2 of input/record FIFO size
+  localparam PLAY_FIFO_ADDR_WIDTH = MEM_COUNT_W+1;  // Log2 of output/playback FIFO size
+  localparam HDR_FIFO_ADDR_WIDTH  = 5;              // Log2 of output/time FIFO size
   //
   // Amount of data to buffer before writing to RAM. It must not exceed
   // 2**MEM_COUNT_W (the maximum count allowed by an AXI master).
@@ -240,20 +239,26 @@ module axis_replay #(
   reg        [MEM_ADDR_W-1:0] reg_rec_base_addr;
   reg        [MEM_SIZE_W-1:0] reg_rec_buffer_size;
   reg                  [31:0] reg_rec_fullness_hi;
+  reg                  [31:0] reg_rec_pos_hi;
   reg                         rec_restart;
   reg        [MEM_ADDR_W-1:0] reg_play_base_addr;
   reg        [MEM_SIZE_W-1:0] reg_play_buffer_size;
+  reg                  [31:0] reg_play_pos_hi;
   reg       [NUM_WORDS_W-1:0] reg_play_cmd_num_words;
   reg            [TIME_W-1:0] reg_play_cmd_time;
   reg             [CMD_W-1:0] reg_play_cmd;
   reg                         reg_play_cmd_timed;
   reg                         reg_play_cmd_valid;
+  wire                        reg_play_cmd_ready;
   reg                         play_cmd_stop;
   reg                         clear_cmd_fifo;
   reg             [WPP_W-1:0] reg_play_words_per_pkt = REG_PLAY_WORDS_PER_PKT_INIT;
   reg [REG_ITEM_SIZE_LEN-1:0] reg_item_size = DEFAULT_ITEM_SIZE;
+  wire                  [5:0] reg_cmd_fifo_space;
 
   wire [63:0] reg_rec_fullness;
+  wire [63:0] reg_rec_pos;
+  wire [63:0] reg_play_pos;
   reg         rec_restart_clear;
   reg         play_cmd_stop_ack;
 
@@ -275,13 +280,15 @@ module axis_replay #(
       reg_rec_base_addr      <= 0;
       reg_rec_buffer_size    <= 0;
       reg_rec_fullness_hi    <= 'bX;
+      reg_rec_pos_hi         <= 'bX;
       reg_play_base_addr     <= 0;
       reg_play_buffer_size   <= 0;
+      reg_play_pos_hi        <= 'bX;
       reg_play_cmd_num_words <= 0;
       reg_play_cmd_time      <= 0;
       reg_play_words_per_pkt <= REG_PLAY_WORDS_PER_PKT_INIT;
       reg_item_size          <= DEFAULT_ITEM_SIZE;
-      items_per_word          <= 'bX;
+      items_per_word         <= 'bX;
       rec_restart            <= 0;
       play_cmd_stop          <= 0;
       clear_cmd_fifo         <= 0;
@@ -379,13 +386,46 @@ module axis_replay #(
           REG_PLAY_ITEM_SIZE :
             s_ctrlport_resp_data[REG_ITEM_SIZE_POS+:REG_ITEM_SIZE_LEN]
               <= reg_item_size;
+          REG_REC_POS_LO : begin
+            s_ctrlport_resp_data <= reg_rec_pos[31:0];
+            if (MEM_SIZE_W > 32) begin
+              // The LO register must be read first. Save HI part now to
+              // guarantee coherence when HI register is read.
+              reg_rec_pos_hi <= 0;
+              reg_rec_pos_hi[0 +: max(MEM_SIZE_W-32, 1)]
+                <= reg_rec_pos[32 +: max(MEM_SIZE_W-32, 1)];
+            end
+          end
+          REG_REC_POS_HI :
+            if (MEM_SIZE_W > 32) begin
+              // Return the saved value to guarantee coherence
+              s_ctrlport_resp_data <= reg_rec_pos_hi;
+            end
+          REG_PLAY_POS_LO : begin
+            s_ctrlport_resp_data <= reg_play_pos[31:0];
+            if (MEM_SIZE_W > 32) begin
+              // The LO register must be read first. Save HI part now to
+              // guarantee coherence when HI register is read.
+              reg_play_pos_hi <= 0;
+              reg_play_pos_hi[0 +: max(MEM_SIZE_W-32, 1)]
+                <= reg_play_pos[32 +: max(MEM_SIZE_W-32, 1)];
+            end
+          end
+          REG_PLAY_POS_HI :
+            if (MEM_SIZE_W > 32) begin
+              // Return the saved value to guarantee coherence
+              s_ctrlport_resp_data <= reg_play_pos_hi;
+            end
+          REG_PLAY_CMD_FIFO_SPACE :
+            s_ctrlport_resp_data[5:0] <= reg_cmd_fifo_space;
         endcase
+      end
 
       //-----------------------------------------
       // Register Writes
       //-----------------------------------------
 
-      end else if (s_ctrlport_req_wr) begin
+      if (s_ctrlport_req_wr) begin
         s_ctrlport_resp_ack  <= 1;
         case (s_ctrlport_req_addr)
           REG_REC_BASE_ADDR_LO :
@@ -473,23 +513,25 @@ module axis_replay #(
   wire                   cmd_timed_cf;
   wire [NUM_WORDS_W-1:0] cmd_num_words_cf;
   wire      [TIME_W-1:0] cmd_time_cf;
+  wire  [MEM_ADDR_W-1:0] cmd_base_addr_cf;
+  wire  [MEM_SIZE_W-1:0] cmd_buffer_size_cf;
   wire                   cmd_fifo_valid;
   reg                    cmd_fifo_ready;
 
   axi_fifo_short #(
-    .WIDTH (1 + CMD_W + NUM_WORDS_W + TIME_W)
+    .WIDTH (MEM_ADDR_W + MEM_SIZE_W + 1 + CMD_W + NUM_WORDS_W + TIME_W)
   ) command_fifo (
     .clk      (clk),
     .reset    (rst),
     .clear    (clear_cmd_fifo),
-    .i_tdata  ({reg_play_cmd_timed, reg_play_cmd, reg_play_cmd_num_words, reg_play_cmd_time}),
+    .i_tdata  ({play_base_addr_sr, play_buffer_size_sr, reg_play_cmd_timed, reg_play_cmd, reg_play_cmd_num_words, reg_play_cmd_time}),
     .i_tvalid (reg_play_cmd_valid),
-    .i_tready (),
-    .o_tdata  ({cmd_timed_cf, cmd_cf, cmd_num_words_cf, cmd_time_cf}),
+    .i_tready (reg_play_cmd_ready),
+    .o_tdata  ({cmd_base_addr_cf, cmd_buffer_size_cf, cmd_timed_cf, cmd_cf, cmd_num_words_cf, cmd_time_cf}),
     .o_tvalid (cmd_fifo_valid),
     .o_tready (cmd_fifo_ready),
     .occupied (),
-    .space    ()
+    .space    (reg_cmd_fifo_space)
   );
 
 
@@ -553,6 +595,7 @@ module axis_replay #(
   reg                                   rec_wait_timeout;
 
   assign reg_rec_fullness = rec_buffer_used * BYTES_PER_WORD;
+  assign reg_rec_pos = rec_addr;
 
   always @(posedge clk) begin
     if (rst) begin
@@ -564,7 +607,7 @@ module axis_replay #(
       rec_buffer_used  <= 0;
 
       // Don't care:
-      rec_addr    <= {MEM_ADDR_W{1'bX}};
+      rec_addr    <= {MEM_ADDR_W{1'b0}};
       rec_size_0  <= {MEM_ADDR_W{1'bX}};
       rec_size    <= {MEM_ADDR_W{1'bX}};
       write_count <= {MEM_COUNT_W{1'bX}};
@@ -576,7 +619,7 @@ module axis_replay #(
       rec_restart_clear <= 1'b0;
 
       // Update wait timer
-      if (i_tvalid || !rec_fifo_occupied) begin
+      if ((i_tvalid && i_tready) || !rec_fifo_occupied) begin
         // If a new word is presented to the input FIFO, or the FIFO is empty,
         // then reset the timer.
         rec_wait_timer   <= 0;
@@ -706,16 +749,17 @@ module axis_replay #(
 
   // FSM States
   localparam PLAY_IDLE            = 0;
-  localparam PLAY_WAIT_DATA_READY = 1;
-  localparam PLAY_CHECK_ALIGN     = 2;
-  localparam PLAY_SIZE_CALC       = 3;
-  localparam PLAY_MEM_REQ         = 4;
-  localparam PLAY_WAIT_MEM_START  = 5;
-  localparam PLAY_WAIT_MEM_COMMIT = 6;
-  localparam PLAY_DONE_CHECK      = 7;
+  localparam PLAY_CHECK_SIZES     = 1;
+  localparam PLAY_WAIT_DATA_READY = 2;
+  localparam PLAY_CHECK_ALIGN     = 3;
+  localparam PLAY_SIZE_CALC       = 4;
+  localparam PLAY_MEM_REQ         = 5;
+  localparam PLAY_WAIT_MEM_START  = 6;
+  localparam PLAY_WAIT_MEM_COMMIT = 7;
+  localparam PLAY_DONE_CHECK      = 8;
 
   // State Signals
-  reg [2:0] play_state;
+  reg [3:0] play_state;
 
   // Registers
   reg [MEM_ADDR_W-1:0] play_addr;         // Current byte offset into record buffer
@@ -729,13 +773,14 @@ module axis_replay #(
   //
   reg [NUM_WORDS_W-1:0] play_words_remaining; // Number of words left for playback command
   reg       [CMD_W-1:0] cmd;                  // Copy of cmd_cf from last command
-  reg                   cmd_timed;            // Copy of cmd_timed_cf from last command
-  reg      [TIME_W-1:0] cmd_time;             // Copy of cmd_time_cf from last command
+  reg  [MEM_ADDR_W-1:0] cmd_base_addr;        // Copy of cmd_base_addr_cf from last command
+  reg  [MEM_SIZE_W-1:0] cmd_buffer_size;      // Copy of cmd_buffer_size_cf from last command
   reg                   last_trans;           // Is this the last read transaction for the command?
 
   reg play_full_burst_avail;      // True if we there's a full burst to read
-  reg play_buffer_avail_nonzero;  // True if play_buffer_avail > 0
   reg next_read_size_ok;          // True if it's OK to read next_read_size
+  reg play_buffer_zero;           // True if play buffer size is zero
+  reg num_words_zero;             // True if number of words to play is zero
 
   reg [MEM_ADDR_W-1:0] next_read_size_m1;       // next_read_size - 1
   reg [MEM_ADDR_W-1:0] play_words_remaining_m1; // play_words_remaining - 1
@@ -745,21 +790,23 @@ module axis_replay #(
 
   reg pause_data_transfer;
 
+  assign reg_play_pos = play_addr;
+
   always @(posedge clk)
   begin
     if (rst) begin
       play_state     <= PLAY_IDLE;
       cmd_fifo_ready <= 1'b0;
+      play_addr      <= {MEM_ADDR_W{1'b0}};
+      last_trans     <= 1'b0;
 
       // Don't care:
       play_full_burst_avail     <= 1'bX;
-      play_buffer_avail_nonzero <= 1'bX;
       play_buffer_end           <= {MEM_SIZE_W{1'bX}};
       read_ctrl_valid           <= 1'bX;
-      play_addr                 <= {MEM_ADDR_W{1'bX}};
       cmd                       <= {CMD_W{1'bX}};
-      cmd_time                  <= {TIME_W{1'bX}};
-      cmd_timed                 <= 1'bX;
+      cmd_base_addr             <= {MEM_ADDR_W{1'bX}};
+      cmd_buffer_size           <= {MEM_SIZE_W{1'bX}};
       play_buffer_avail         <= {MEM_SIZE_W{1'bX}};
       play_size_aligned         <= {MEM_SIZE_W{1'bX}};
       play_words_remaining      <= {NUM_WORDS_W{1'bX}};
@@ -773,14 +820,13 @@ module axis_replay #(
       play_addr_0               <= {MEM_ADDR_W+1{1'bX}};
       play_buffer_avail_0       <= {MEM_SIZE_W{1'bX}};
       play_addr_1               <= {MEM_ADDR_W{1'bX}};
-      last_trans                <= 1'b0;
+      play_buffer_zero          <= 1'bX;
+      num_words_zero            <= 1'bX;
 
     end else begin
 
       // Calculate how many words are left to read from the record buffer
       play_full_burst_avail     <= (play_buffer_avail >= MEM_BURST_LEN);
-      play_buffer_avail_nonzero <= (play_buffer_avail > 0);
-      play_buffer_end           <= play_base_addr_sr + play_buffer_size_sr;
 
       play_size_aligned <= AXI_ALIGNMENT - ((play_addr/BYTES_PER_WORD) & (AXI_ALIGNMENT-1));
 
@@ -794,28 +840,43 @@ module axis_replay #(
       //
       case (play_state)
         PLAY_IDLE : begin
-          // Always start reading at the start of the record buffer
-          play_addr <= play_base_addr_sr;
+          // Save needed command info
+          cmd             <= cmd_cf;
+          cmd_base_addr   <= cmd_base_addr_cf;
+          cmd_buffer_size <= cmd_buffer_size_cf  / BYTES_PER_WORD;
 
-          // Save off command info
-          if (cmd_cf == PLAY_CMD_CONTINUOUS)
+          // Initialize the play variables
+          if (cmd_cf == PLAY_CMD_CONTINUOUS) begin
             play_words_remaining <= MEM_BURST_LEN;
-          else
+            num_words_zero <= 0;
+          end else begin
             play_words_remaining <= cmd_num_words_cf;
-          cmd_timed  <= cmd_timed_cf;
-          cmd_time   <= cmd_time_cf;
-          cmd        <= cmd_cf;
+            num_words_zero <= (cmd_num_words_cf == 0);
+          end
+          play_buffer_avail     <= cmd_buffer_size_cf / BYTES_PER_WORD;
+          play_buffer_end       <= {1'b0, cmd_base_addr_cf} + cmd_buffer_size_cf;
+          play_buffer_zero      <= (cmd_buffer_size_cf == 0);
 
-          // Save the buffer info so it doesn't update during playback
-          play_buffer_avail <= play_buffer_size_sr / BYTES_PER_WORD;
-
-          // Wait until we receive a command and we have enough data recorded
-          // to honor it.
+          // Wait until we receive a command
           if (play_cmd_stop) begin
             play_cmd_stop_ack <= 1'b1;
-          end else if (cmd_fifo_valid && play_buffer_avail_nonzero) begin
+          end else if (cmd_fifo_valid) begin
+            // Only update the play address when valid so readback is accurate
+            play_addr <= cmd_base_addr_cf;
+
             // Dequeue the command from the FIFO
             cmd_fifo_ready <= 1'b1;
+
+            play_state <= PLAY_CHECK_SIZES;
+          end
+        end
+
+        PLAY_CHECK_SIZES : begin
+          // Check buffer and num_word sizes and allow propagation of
+          // play_full_burst_avail.
+          if (play_buffer_zero | num_words_zero) begin
+            play_state <= PLAY_IDLE;
+          end else begin
             play_state <= PLAY_WAIT_DATA_READY;
           end
         end
@@ -902,17 +963,20 @@ module axis_replay #(
           // signals that the interface has received a response for the whole
           // read transaction.
           if (read_ctrl_ready) begin
+            // Check if this is the last transaction.
+            if (last_trans) begin
+              play_addr_1       <= play_addr_0[MEM_ADDR_W-1:0];
+              play_buffer_avail <= 0;
+
             // Check if we need to wrap the address for the next transaction.
-            if (play_addr_0 >= play_buffer_end) begin
-              play_addr_1       <= play_base_addr_sr;
-              play_buffer_avail <= play_buffer_size_sr / BYTES_PER_WORD;
+            end else if (play_addr_0 >= play_buffer_end) begin
+              play_addr_1       <= cmd_base_addr;
+              play_buffer_avail <= cmd_buffer_size;
+
             end else begin
               play_addr_1       <= play_addr_0[MEM_ADDR_W-1:0];
               play_buffer_avail <= play_buffer_avail_0;
             end
-
-            // Update the time for the first word of the next transaction
-            cmd_time <= cmd_time + (read_count + 1) * (MEM_DATA_W/32);
 
             play_state <= PLAY_DONE_CHECK;
           end
@@ -943,78 +1007,91 @@ module axis_replay #(
   //
   // This section monitors the signals to/from the memory interface and
   // generates the TLAST and sideband signals. We assert TLAST at the end of
-  // every read transaction and after every reg_play_words_per_pkt words, so
+  // every reg_play_words_per_pkt words and at the end of the last packet, so
   // that no packets are longer than the length indicated by the
   // REG_PLAY_WORDS_PER_PKT register.
   //
-  // The sideband signals consist of the timestamp, has_time flag, and eob
-  // flag. These are generated by the playback logic for each memory
-  // transaction.
+  // The sideband signals consist of the timestamp, has-time flag, and EOB (end
+  // of burst) flag. Timestamp and has_time are set for the first packet of
+  // each playback. EOB applies to each packet but is only set to 1 for the
+  // last packet of a playback.
   //
-  // The timing of this block relies on the fact that read_ctrl_ready is not
-  // reasserted by the memory interface until after TLAST gets asserted.
+  // The timing of this section relies on the fact axi_dma_master doesn't allow
+  // overlapping read transactions. This means that the next read_ctrl_ready
+  // won't be asserted until after previous memory transaction finishes being
+  // read out.
   //
   //---------------------------------------------------------------------------
 
-  reg [MEM_COUNT_W-1:0] read_counter;
-  reg [      WPP_W-1:0] length_counter;
-  reg [     TIME_W-1:0] time_counter;
-  reg                   play_fifo_i_tlast;
-  reg                   has_time;
-  reg                   eob;
+  reg [MEM_COUNT_W-1:0] read_counter;      // Track outstanding words to read
+  reg [      WPP_W-1:0] length_counter;    // Track packet length
+  reg [     TIME_W-1:0] timestamp;         // Timestamp for the current burst
+  reg                   has_time;          // Is current burst timed?
+  reg                   eob;               // End of burst
+  reg                   play_fifo_i_tlast; // End of packet
 
   always @(posedge clk)
   begin
-    if (rst) begin
-      play_fifo_i_tlast <= 1'b0;
-      // Don't care:
-      read_counter      <= {MEM_COUNT_W{1'bX}};
-      length_counter    <= {MEM_COUNT_W+1{1'bX}};
-      time_counter      <= {TIME_W{1'bX}};
-      has_time          <= 1'bX;
-      eob               <= 1'bX;
-    end else begin
-      // Check if we're requesting a read transaction
-      if (read_ctrl_valid && read_ctrl_ready) begin
-        // Initialize read_counter for new transaction
-        read_counter   <= read_count;
+    // synthesis translate_off
+    //
+    // Check our assumption about non-overlapping read transactions.
+    if (read_ctrl_ready && play_fifo_i_tvalid) begin
+      $fatal(1, "New read transaction started before the previous one completed!");
+    end
+    // synthesis translate_on
+
+    if (read_ctrl_valid && read_ctrl_ready) begin
+      read_counter <= read_count;
+
+      // If read_count is 0, then the next word is also the last word
+      if (read_count == 0) begin
+        play_fifo_i_tlast <= 1'b1;
+        eob               <= last_trans;
+      end
+    end
+
+    if (play_fifo_i_tvalid && play_fifo_i_tready) begin
+      read_counter   <= read_counter - 1;
+      length_counter <= length_counter - 1;
+
+      // Check if the current word is the last of the packet
+      if (play_fifo_i_tlast) begin
         length_counter <= reg_play_words_per_pkt;
-        time_counter   <= cmd_time;
-        has_time       <= cmd_timed;
-        eob            <= last_trans && (read_count < reg_play_words_per_pkt);
 
-        // If read_count is 0, then the first word is also the last word
-        if (read_count == 0) begin
-          play_fifo_i_tlast <= 1'b1;
+        // Clear tlast, unless the first word of the next packet is also the
+        // last word of the next packet.
+        if (!(last_trans && read_counter == 1)) begin
+          play_fifo_i_tlast <= 1'b0;
         end
 
-      // Track the number of words read out by memory interface
-      end else if (read_data_valid && read_data_ready) begin
-        read_counter   <= read_counter - 1;
-        length_counter <= length_counter - 1;
-        time_counter   <= time_counter + items_per_word;
-
-        // Check if the word currently being output is the last word of a
-        // packet, which means we need to clear tlast.
-        if (play_fifo_i_tlast) begin
-          // But make sure that the next word isn't also the last of a memory
-          // burst, for which we will need to keep tlast asserted.
-          if (read_counter != 1) begin
-            play_fifo_i_tlast <= 1'b0;
-          end
-
-          // Restart length counter
-          length_counter <= reg_play_words_per_pkt;
-
-          // Check if next packet is the end of the burst (EOB)
-          eob <= last_trans && (read_counter <= reg_play_words_per_pkt);
-
-        // Check if the next word to be output should be the last of a packet.
-        end else if (read_counter == 1 || length_counter == 2) begin
-          play_fifo_i_tlast <= 1'b1;
-        end
+        // The timestamp only applies to the first packet, so disable for
+        // subsequent packets.
+        has_time <= 1'b0;
       end
 
+      // Check if the next word will be the last of the packet.
+      //
+      // First, check if the next word is the last word of playback, in which
+      // case it's both the last word of the packet and the end of the burst.
+      if (last_trans && read_counter == 1) begin
+        play_fifo_i_tlast <= 1'b1;
+        eob <= 1;
+
+      // Next, check if this is the last word of the packet according to packet
+      // length. But note that the next word won't be the last if we're already
+      // outputting the last word of a burst on the current cycle.
+      end else if (length_counter == 2 && !(eob && play_fifo_i_tlast)) begin
+        play_fifo_i_tlast <= 1'b1;
+      end
+    end
+
+    if (play_state == PLAY_IDLE) begin
+      // Reset signals for the next playback
+      length_counter    <= reg_play_words_per_pkt;
+      timestamp         <= cmd_time_cf;
+      has_time          <= cmd_timed_cf;
+      eob               <= 0;
+      play_fifo_i_tlast <= 1'b0;
     end
   end
 
@@ -1053,20 +1130,6 @@ module axis_replay #(
     .occupied ()
   );
 
-  reg play_fifo_i_sop = 1'b1;
-
-  // Make play_fifo_i_sop true whenever the next play_fifo_i word is the start
-  // of a packet.
-  always @(posedge clk) begin
-    if (rst) begin
-      play_fifo_i_sop <= 1'b1;
-    end else begin
-      if (play_fifo_i_tvalid & play_fifo_i_tready) begin
-        play_fifo_i_sop <= play_fifo_i_tlast;
-      end
-    end
-  end
-
 
   //---------------------------------------------------------------------------
   // Header Info FIFO
@@ -1080,6 +1143,7 @@ module axis_replay #(
   wire [(TIME_W+2)-1:0] hdr_fifo_i_tdata;
   wire                  hdr_fifo_i_tvalid;
   wire [(TIME_W+2)-1:0] hdr_fifo_o_tdata;
+  wire                  hdr_fifo_o_tvalid;
   wire                  hdr_fifo_o_tready;
 
   wire [15:0] hdr_fifo_space;
@@ -1097,20 +1161,31 @@ module axis_replay #(
     .i_tready (),
     //
     .o_tdata  (hdr_fifo_o_tdata),
-    .o_tvalid (),
+    .o_tvalid (hdr_fifo_o_tvalid),
     .o_tready (hdr_fifo_o_tready),
     //
     .space    (hdr_fifo_space),
     .occupied ()
   );
 
-  assign hdr_fifo_i_tdata = {has_time, eob, time_counter};
+  // synthesis translate_off
+  //
+  // The FIFO code above assumes the header info will always be available when
+  // the last word of the payload FIFO is read out. Check that assumption here.
+  always @(posedge clk) begin
+    if (hdr_fifo_o_tready && !hdr_fifo_o_tvalid) begin
+      $fatal(1, "Header FIFO read without valid data!");
+    end
+  end
+  // synthesis translate_on
+
+  assign hdr_fifo_i_tdata = {has_time, eob, timestamp };
 
   // Pop the timestamp whenever we finish reading out a data packet
   assign hdr_fifo_o_tready = o_tvalid & o_tready & o_tlast;
 
   // Write the timestamp at the start of each packet
-  assign hdr_fifo_i_tvalid = play_fifo_i_tvalid & play_fifo_i_tready & play_fifo_i_sop;
+  assign hdr_fifo_i_tvalid = play_fifo_i_tvalid & play_fifo_i_tready & play_fifo_i_tlast;
 
   assign { o_thas_time, o_teob, o_ttimestamp } = hdr_fifo_o_tdata;
 

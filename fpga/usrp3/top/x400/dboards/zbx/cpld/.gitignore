@@ -5,3 +5,11 @@ doc/*.xml
 incremental_db/
 output_files/
 *.sopcinfo
+# Ignore Diamond generated files.
+lattice/impl1/
+lattice/zbx_*.dir/
+lattice/*_log.txt
+lattice/*.xml
+lattice/*.html
+lattice/*.ini
+lattice/*.recovery

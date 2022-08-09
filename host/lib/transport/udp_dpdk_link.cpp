@@ -175,8 +175,13 @@ void udp_dpdk_link::release_send_buff(frame_buff::uptr buff)
         // Fill in L2 header
         auto local_mac           = _port->get_mac_addr();
         struct rte_ether_hdr* l2_hdr = rte_pktmbuf_mtod(mbuf, struct rte_ether_hdr*);
+#if RTE_VER_YEAR > 21 || (RTE_VER_YEAR == 21 && RTE_VER_MONTH == 11)
+        rte_ether_addr_copy(&_remote_mac, &l2_hdr->dst_addr);
+        rte_ether_addr_copy(&local_mac, &l2_hdr->src_addr);
+#else
         rte_ether_addr_copy(&_remote_mac, &l2_hdr->d_addr);
         rte_ether_addr_copy(&local_mac, &l2_hdr->s_addr);
+#endif
         l2_hdr->ether_type = rte_cpu_to_be_16(RTE_ETHER_TYPE_IPV4);
         // Fill in L3 and L4 headers
         dpdk::fill_rte_udp_hdr(mbuf,

@@ -10,7 +10,7 @@
 module `RAM_MOD_NAME #(
   parameter DWIDTH    = 32,           // Width of the memory block
   parameter AWIDTH    = 9,            // log2 of the depth of the memory block
-  parameter RW_MODE   = "READ-FIRST", // Read-write mode {READ-FIRST, WRITE-FIRST, NO-CHANGE}
+  parameter RW_MODE   = "READ-FIRST", // Read-write mode {READ-FIRST, WRITE-FIRST, NO-CHANGE, B-READ-ONLY}
   parameter OUT_REG   = 0,            // Instantiate an output register? (+1 cycle of read latency)
   parameter INIT_FILE = ""            // Optionally initialize memory with this file
 ) (
@@ -33,13 +33,16 @@ module `RAM_MOD_NAME #(
 
   // Initialize ram to a specified file or to all zeros to match hardware
   generate if (INIT_FILE != "") begin
-    initial
+    initial begin
       $readmemh(INIT_FILE, ram, 0, (1<<AWIDTH)-1);
+    end
   end else begin
     integer i;
-    initial
-      for (i = 0; i < (1<<AWIDTH); i = i + 1)
+    initial begin
+      for (i = 0; i < (1<<AWIDTH); i = i + 1) begin
         ram[i] = {DWIDTH{1'b0}};
+      end
+    end
   end endgenerate
 
   reg [DWIDTH-1:0] doa_r = 'h0, dob_r = 'h0;
@@ -48,12 +51,14 @@ module `RAM_MOD_NAME #(
     reg [DWIDTH-1:0] doa_rr = 'h0, dob_rr = 'h0;
 
     always @(posedge clka)
-      if (ena)
+      if (ena) begin
         doa_rr <= doa_r;
+      end
 
     always @(posedge clkb)
-      if (enb)
+      if (enb) begin
         dob_rr <= dob_r;
+      end
 
     assign doa = doa_rr;
     assign dob = dob_rr;
@@ -68,15 +73,17 @@ module `RAM_MOD_NAME #(
     // address are presented on the output port.
     always @(posedge clka) begin
       if (ena) begin
-        if (wea)
+        if (wea) begin
           ram[addra] <= dia;
+        end
         doa_r <= ram[addra];
       end
     end
     always @(posedge clkb) begin
       if (enb) begin
-        if (web)
+        if (web) begin
           ram[addrb] <= dib;
+        end
         dob_r <= ram[addrb];
       end
     end
@@ -104,26 +111,46 @@ module `RAM_MOD_NAME #(
       end
     end
 
-  end else begin
+  end else if (RW_MODE == "NO-CHANGE") begin
     // This is a no change RAM which retains the last read value on the output during writes
     // which is the most power efficient mode.
     always @(posedge clka) begin
       if (ena) begin
-        if (wea)
+        if (wea) begin
           ram[addra] <= dia;
-        else
+        end else begin
           doa_r <= ram[addra];
+        end
       end
     end
     always @(posedge clkb) begin
       if (enb) begin
-        if (web)
+        if (web) begin
           ram[addrb] <= dib;
-        else
+        end else begin
           dob_r <= ram[addrb];
+        end
       end
     end
 
+  end else if (RW_MODE == "B-READ-ONLY") begin
+    // This is a RAM where port A is using READ-FIRST strategy and port B supports read only.
+    always @(posedge clka) begin
+      if (ena) begin
+        if (wea) begin
+          ram[addra] <= dia;
+        end
+        doa_r <= ram[addra];
+      end
+    end
+    always @(posedge clkb) begin
+      if (enb) begin
+        dob_r <= ram[addrb];
+      end
+    end
+
+  end else begin : gen_error
+    ERROR_Invalid_RW_MODE_selection ERROR();
   end endgenerate
 
 endmodule

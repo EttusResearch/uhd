@@ -26,7 +26,8 @@ computer.
 \subsection dpdk_installation DPDK Installation Instructions
 
 As a new and developing technology, the DPDK APIs are unstable. UHD requires
-version 19.11 or 20.11.
+version 18.11(deprecated), 19.11, 20.11 or 21.11. Adjacent non-LTS releases of
+DPDK may work, but are not recommended.
 
 On Ubuntu 20.04, Fedora 33-36, or Debian Bullseye/Buster (via backports),
 DPDK is available in your distribution's repositories. For example, on Debian
@@ -35,8 +36,8 @@ systems, it can be obtained with the following command:
     sudo apt install dpdk dpdk-dev
 
 Otherwise, you'll need to follow the build guide at
-https://doc.dpdk.org/guides-20.11/linux_gsg/build_dpdk.html . The software
-releases can be found at https://core.dpdk.org/download/. Version 20.11 builds
+https://doc.dpdk.org/guides-21.11/linux_gsg/build_dpdk.html . The software
+releases can be found at https://core.dpdk.org/download/. Version >=20.11 builds
 with appropriate options when using the default build procedure.
 
 Note that if you are using a Mellanox NIC, the MLNX-OFED drivers available from
@@ -61,7 +62,7 @@ following line:
 \subsection dpdk_system_configuration System Configuration
 
 The official documentation regarding system configuration can be found at
-https://doc.dpdk.org/guides-20.11/linux_gsg/sys_reqs.html.
+https://doc.dpdk.org/guides-21.11/linux_gsg/sys_reqs.html.
 
 First, you'll need to enable the IOMMU and set up some hugepages. DPDK will
 completely take over all available hugepages, so don't allocate all your memory
@@ -107,7 +108,7 @@ If successful, the script might provide an updated status like this:
     [...]
 
 
-See https://doc.dpdk.org/guides-20.11/linux_gsg/linux_drivers.html#binding-and-unbinding-network-ports-to-from-the-kernel-modules
+See https://doc.dpdk.org/guides-21.11/linux_gsg/linux_drivers.html#binding-and-unbinding-network-ports-to-from-the-kernel-modules
 for more details.
 
 With the hugepages, IOMMU, and drivers set up, the system is ready for DPDK to
@@ -141,7 +142,10 @@ options:
     ;create a separate folder with symlinks to the librte_pmd_* and librte_mempool_* libraries.
     dpdk_driver=/usr/local/lib/x86_64-linux-gnu/dpdk/pmds-21.0/
     ;dpdk_corelist is the -l flag for the DPDK EAL. See more at the link
-    ; https://doc.dpdk.org/guides-20.11/linux_gsg/build_sample_apps.html#running-a-sample-application
+    ; https://doc.dpdk.org/guides-21.11/linux_gsg/build_sample_apps.html#running-a-sample-application
+    ;Note if you use multiple SFP ports in a streaming application simultaneously,
+    ;you can specify multiple cores in the core list (e.g. 0, 1, 2) and then assign
+    ;them each to the separate SFP port/NIC.
     dpdk_corelist=0,1
     ;dpdk_num_mbufs is the total number of packet buffers allocated
     ;to each direction's packet buffer pool
@@ -161,9 +165,11 @@ case, and octets must be separated by colons. Here is an example:
     [dpdk_mac=3c:fd:fe:a2:a9:09]
     ;dpdk_lcore selects the lcore that this NIC's driver will run on
     ;Multiple NICs may occupy one lcore, but the I/O thread will completely
-    ;consume that lcore's CPU. Also, 0 is reserved for the master thread (i.e.
-    ;the initial UHD thread that calls init() for DPDK). Attempting to
-    ;use it as an I/O thread will only result in hanging.
+    ;consume that lcore's CPU. When using dual SFP configuration, using a
+    ;different dpdk_lcore value for each SFP connection is recommended and
+    ;will result in better streaming performance. Also, 0 is reserved for
+    ;the master thread (i.e.the initial UHD thread that calls init() for DPDK).
+    ;Attempting to use it as an I/O thread will only result in hanging.
     ;Note also that by default, the lcore ID will be the same as the CPU ID.
     dpdk_lcore = 1
     ;dpdk_ipv4 specifies the IPv4 address, and both the address and
@@ -176,6 +182,8 @@ case, and octets must be separated by colons. Here is an example:
     dpdk_num_desc=4096
 
     [dpdk_mac=3c:fd:fe:a2:a9:0a]
+    ;Using a separate dpdk_lcore value for each SFP connection/MAC entry
+    ;can possibly result in improved streaming performance. E.g. dpdk_lcore = 2.
     dpdk_lcore = 1
     dpdk_ipv4 = 192.168.20.1/24
 
@@ -219,12 +227,28 @@ arguments, where N is the desired timeout time in <b>milliseconds</b>, or
 by adding a `dpdk_link_timeout` entry to the
 \ref page_configfiles "UHD configuration file".
 
-\subsection dpdk_notes DPDK performance dpdk_notes
+\subsection dpdk_troubleshooting Troubleshooting
 
-With Linux kernel 5.11 on Ubuntu 20.04, we have observed periodic underruns
-on systems that otherwise have no issues. The behavior does not reproduce on
-the 5.4 kernel that is also available for Ubuntu 20.04, so that version can 
-be used as a workaround.
+With Linux kernels 5.10 and beyond, we have observed periodic underruns on systems
+that otherwise have no issues. These Linux kernel versions are the default for Ubuntu
+20.04.3 LTS and later. The underrun issue is due to the RT_RUNTIME_SHARE feature
+being disabled by default in newer versions of the Linux kernel. The following
+procedure can be used to enable RT_RUNTIME_SHARE. Note, this process was tested on
+Linux kernel version 5.13. The procedure may be slightly different on other kernel
+versions. To determine the Linux kernel version of your system, in a terminal issue
+the command `uname -r`.
+
+    sudo -s
+
+    cd /sys/kernel/debug/sched/
+
+    cat features
+        GENTLE_FAIR_SLEEPERS START_DEBIT NO_NEXT_BUDDY LAST_BUDDY CACHE_HOT_BUDDY WAKEUP_PREEMPTION NO_HRTICK NO_HRTICK_DL NO_DOUBLE_TICK NONTASK_CAPACITY TTWU_QUEUE SIS_PROP NO_WARN_DOUBLE_CLOCK RT_PUSH_IPI **NO_RT_RUNTIME_SHARE** NO_LB_MIN ATTACH_AGE_LOAD WA_IDLE WA_WEIGHT WA_BIAS UTIL_EST UTIL_EST_FASTUP NO_LATENCY_WARN ALT_PERIOD BASE_SLICE
+
+    echo RT_RUNTIME_SHARE > features
+
+    cat features
+        GENTLE_FAIR_SLEEPERS START_DEBIT NO_NEXT_BUDDY LAST_BUDDY CACHE_HOT_BUDDY WAKEUP_PREEMPTION NO_HRTICK NO_HRTICK_DL NO_DOUBLE_TICK NONTASK_CAPACITY TTWU_QUEUE SIS_PROP NO_WARN_DOUBLE_CLOCK RT_PUSH_IPI **RT_RUNTIME_SHARE** NO_LB_MIN ATTACH_AGE_LOAD WA_IDLE WA_WEIGHT WA_BIAS UTIL_EST UTIL_EST_FASTUP NO_LATENCY_WARN ALT_PERIOD BASE_SLICE
 
 */
 // vim:ft=doxygen:

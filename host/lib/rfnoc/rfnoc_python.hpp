@@ -8,7 +8,10 @@
 #define INCLUDED_UHD_RFNOC_PYTHON_HPP
 
 #include "../stream_python.hpp"
+#include <uhd/features/discoverable_feature.hpp>
+#include <uhd/features/gpio_power_iface.hpp>
 #include <uhd/rfnoc/block_id.hpp>
+#include <uhd/rfnoc/filter_node.hpp>
 #include <uhd/rfnoc/graph_edge.hpp>
 #include <uhd/rfnoc/mb_controller.hpp>
 #include <uhd/rfnoc/noc_block_base.hpp>
@@ -19,6 +22,7 @@
 #include <uhd/rfnoc_graph.hpp>
 #include <uhd/transport/adapter_id.hpp>
 #include <uhd/types/device_addr.hpp>
+#include <uhd/utils/graph_utils.hpp>
 #include <pybind11/operators.h>
 #include <pybind11/stl.h>
 #include <memory>
@@ -130,7 +134,7 @@ void export_rfnoc(py::module& m)
         .def_readwrite("dst_port", &graph_edge_t::dst_port)
         .def_readwrite("edge", &graph_edge_t::edge)
         .def_readwrite(
-            "property_propagation_active", &graph_edge_t::property_propagation_active)
+            "is_forward_edge", &graph_edge_t::is_forward_edge)
 
         // Methods
         .def("__str__", &graph_edge_t::to_string)
@@ -181,7 +185,12 @@ void export_rfnoc(py::module& m)
         .def("is_connectable", &rfnoc_graph::is_connectable)
         .def("connect",
             py::overload_cast<const block_id_t&, size_t, const block_id_t&, size_t, bool>(
-                &rfnoc_graph::connect))
+                &rfnoc_graph::connect),
+            py::arg("src_blk"),
+            py::arg("src_port"),
+            py::arg("dst_blk"),
+            py::arg("dst_port"),
+            py::arg("is_back_edge") = false)
         .def("connect",
             py::overload_cast<uhd::tx_streamer::sptr,
                 size_t,
@@ -231,6 +240,14 @@ void export_rfnoc(py::module& m)
         .def("get_port_voltage", &uhd::features::gpio_power_iface::get_port_voltage)
         .def("set_external_power", &uhd::features::gpio_power_iface::set_external_power)
         .def("get_external_power_status", &uhd::features::gpio_power_iface::get_external_power_status);
+
+    py::class_<detail::filter_node>(m, "filter_node")
+        .def("get_rx_filter_names", &detail::filter_node::get_rx_filter_names)
+        .def("get_rx_filter", &detail::filter_node::get_rx_filter)
+        .def("set_rx_filter", &detail::filter_node::set_rx_filter)
+        .def("get_tx_filter_names", &detail::filter_node::get_tx_filter_names)
+        .def("get_tx_filter", &detail::filter_node::get_tx_filter)
+        .def("set_tx_filter", &detail::filter_node::set_tx_filter);
 
     py::class_<mb_controller, mb_controller::sptr>(m, "mb_controller")
         .def("get_num_timekeepers", &mb_controller::get_num_timekeepers)
@@ -452,7 +469,76 @@ void export_rfnoc(py::module& m)
         .def("set_properties",
             &node_t::set_properties,
             py::arg("props"),
+            py::arg("instance") = 0)
+        .def(
+            "get_string_property",
+            [](noc_block_base& self, const std::string& id, const size_t instance) {
+                return self.get_property<std::string>(id, instance);
+            },
+            py::arg("id"),
+            py::arg("instance") = 0)
+        .def(
+            "get_bool_property",
+            [](noc_block_base& self, const std::string& id, const size_t instance) {
+                return self.get_property<bool>(id, instance);
+            },
+            py::arg("id"),
+            py::arg("instance") = 0)
+        .def(
+            "get_int_property",
+            [](noc_block_base& self, const std::string& id, const size_t instance) -> uint64_t {
+                // Try all integer types until we find the right one
+                try {
+                    int value = self.get_property<int>(id, instance);
+                    return (uint64_t)value;
+                } catch(const uhd::type_error&) {
+                    try {
+                        size_t value = self.get_property<size_t>(id, instance);
+                        return (uint64_t)value;
+                    } catch(const uhd::type_error&) {
+                        try {
+                            uint32_t value = self.get_property<uint32_t>(id, instance);
+                            return (uint64_t)value;
+                        } catch(const uhd::type_error&) {
+                            try {
+                                uint64_t value = self.get_property<uint64_t>(id, instance);
+                                return (uint64_t)value;
+                            } catch(...) {
+                                 throw;
+                            }
+                        }
+                    }
+                }
+            },
+            py::arg("id"),
+            py::arg("instance") = 0)
+        .def(
+            "get_float_property",
+            [](noc_block_base& self, const std::string& id, const size_t instance) -> double {
+                // Try both float types
+                try {
+                   return self.get_property<double>(id, instance);
+                } catch(const uhd::type_error&) {
+                   try {
+                      float value = self.get_property<float>(id, instance);
+                      return static_cast<double>(value);
+                   } catch(...) {
+                      throw;
+                   }
+                }
+            },
+            py::arg("id"),
             py::arg("instance") = 0);
+
+    m.def("get_block_chain", &uhd::rfnoc::get_block_chain);
+    m.def("connect_through_blocks",
+        &uhd::rfnoc::connect_through_blocks,
+        py::arg("graph"),
+        py::arg("src_blk"),
+        py::arg("src_port"),
+        py::arg("dst_blk"),
+        py::arg("dst_port"),
+        py::arg("skip_property_propagation") = false);
 }
 
 #endif /* INCLUDED_UHD_RFNOC_PYTHON_HPP */

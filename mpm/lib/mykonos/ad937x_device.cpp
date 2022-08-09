@@ -10,6 +10,8 @@
 #include "adi/mykonos_gpio.h"
 #include "config/ad937x_config_t.hpp"
 #include "config/ad937x_default_config.hpp"
+#include "mpm/ad937x/ad937x_ctrl.hpp"
+#include <uhd/utils/algorithm.hpp>
 #include <boost/format.hpp>
 #include <cmath>
 #include <fstream>
@@ -19,6 +21,7 @@
 
 using namespace mpm::ad937x::device;
 using namespace mpm::ad937x::gpio;
+using namespace mpm::chips;
 using namespace uhd;
 
 const double ad937x_device::MIN_FREQ     = 300e6;
@@ -39,7 +42,38 @@ static const uint32_t AD9371_PRODUCT_ID      = 0x3;
 static const uint32_t AD9371_XBCZ_PRODUCT_ID = 0x1;
 static const size_t ARM_BINARY_SIZE          = 98304;
 
+/* Values derived from AD937x filter wizard tool
+ * https://github.com/analogdevicesinc/ad937x-filter-wizard/blob/
+ *      3e407b059be92fe65c4a32d5368fe4cdc491b1a1/profilegen/generate_RxORxPFIR.m#L130
+ * https://github.com/analogdevicesinc/ad937x-filter-wizard/blob/
+ *      3e407b059be92fe65c4a32d5368fe4cdc491b1a1/profilegen/generate_TxPFIR.m#L42
+ */
+static constexpr double AD9371_RX_MIN_BANDWIDTH       = 8e6; // Hz
+static constexpr double AD9371_RX_MAX_BANDWIDTH       = 100e6; // Hz
+static constexpr double AD9371_RX_BBF_MIN_CORNER      = 20e6; // Hz
+static constexpr double AD9371_RX_BBF_MAX_CORNER      = 100e6; // Hz
+static constexpr double AD9371_TX_MIN_BANDWIDTH       = 20e6; // Hz
+static constexpr double AD9371_TX_MAX_BANDWIDTH       = 125e6; // Hz
+static constexpr double AD9371_TX_BBF_MIN_CORNER      = 20e6; // Hz
+static constexpr double AD9371_TX_BBF_MAX_CORNER      = 125e6; // Hz
+static constexpr double AD9371_TX_DAC_FILT_MIN_CORNER = 92.0e6; // Hz
+static constexpr double AD9371_TX_DAC_FILT_MAX_CORNER = 187.0e6; // Hz
+
 static const uint32_t PLL_LOCK_TIMEOUT_MS = 200;
+
+const std::map<std::string, mykonosfirName_t> ad937x_device::_tx_filter_map{
+    {"TX1_FIR", TX1_FIR},
+    {"TX2_FIR", TX2_FIR},
+    {"TX1TX2_FIR", TX1TX2_FIR},
+};
+
+const std::map<std::string, mykonosfirName_t> ad937x_device::_rx_filter_map{
+    {"RX1_FIR", RX1_FIR},
+    {"RX2_FIR", RX2_FIR},
+    {"RX1RX2_FIR", RX1RX2_FIR},
+    {"OBSRX_A_FIR", OBSRX_A_FIR},
+    {"OBSRX_B_FIR", OBSRX_B_FIR},
+};
 
 // Amount of time to average samples for RX DC offset
 // A larger averaging window will result in:
@@ -548,25 +582,30 @@ double ad937x_device::tune(
 
 double ad937x_device::set_bw_filter(const direction_t direction, const double value)
 {
+    auto bw = value;
     switch (direction) {
         case TX_DIRECTION: {
-            mykonos_config.device->tx->txProfile->rfBandwidth_Hz     = value;
-            mykonos_config.device->tx->txProfile->txBbf3dBCorner_kHz = value / 1000;
-            mykonos_config.device->tx->txProfile->txDac3dBCorner_kHz = value / 1000;
+            bw = uhd::clip(value, AD9371_TX_MIN_BANDWIDTH, AD9371_TX_MAX_BANDWIDTH);
+            const auto bbf =
+                uhd::clip(bw, AD9371_TX_BBF_MIN_CORNER, AD9371_TX_BBF_MAX_CORNER);
+            mykonos_config.device->tx->txProfile->rfBandwidth_Hz     = bw;
+            mykonos_config.device->tx->txProfile->txBbf3dBCorner_kHz = bbf / 1000;
+            const auto dacCorner                                     = uhd::clip(
+                bw, AD9371_TX_DAC_FILT_MIN_CORNER, AD9371_TX_DAC_FILT_MAX_CORNER);
+            mykonos_config.device->tx->txProfile->txDac3dBCorner_kHz = dacCorner / 1000;
             break;
         }
         case RX_DIRECTION: {
-            mykonos_config.device->rx->rxProfile->rfBandwidth_Hz     = value;
-            mykonos_config.device->rx->rxProfile->rxBbf3dBCorner_kHz = value / 1000;
+            bw = uhd::clip(value, AD9371_RX_MIN_BANDWIDTH, AD9371_RX_MAX_BANDWIDTH);
+            const auto bbf =
+                uhd::clip(bw, AD9371_RX_BBF_MIN_CORNER, AD9371_RX_BBF_MAX_CORNER);
+            mykonos_config.device->rx->rxProfile->rfBandwidth_Hz     = bw;
+            mykonos_config.device->rx->rxProfile->rxBbf3dBCorner_kHz = bbf / 1000;
             break;
         }
     }
-    const auto state = _move_to_config_state();
-    CALL_API(MYKONOS_writeArmProfile(mykonos_config.device));
-    _restore_from_config_state(state);
-    return value; // TODO: what is coercer value?
+    return bw;
 }
-
 
 double ad937x_device::set_gain(
     const direction_t direction, const chain_t chain, const double value)
@@ -644,6 +683,28 @@ void ad937x_device::set_agc_mode(const direction_t direction, const gain_mode_t 
 }
 
 void ad937x_device::set_fir(
+    const std::string& name, int8_t gain, const std::vector<int16_t>& fir)
+{
+    mykonosfirName_t filter_name;
+    if (_rx_filter_map.count(name) == 1) {
+        filter_name = _rx_filter_map.at(name);
+        mykonos_config.rx_fir_config.set_fir(gain, fir);
+    } else if (_tx_filter_map.count(name) == 1) {
+        filter_name = _tx_filter_map.at(name);
+        mykonos_config.tx_fir_config.set_fir(gain, fir);
+    } else {
+        throw mpm::runtime_error("set_fir invalid name: " + name);
+    }
+    mykonosFir_t filter{.gain_dB = gain,
+        .numFirCoefs             = static_cast<uint8_t>(fir.size()),
+        .coefs                   = const_cast<int16_t*>(fir.data())};
+    const auto state = _move_to_config_state();
+    CALL_API(MYKONOS_programFir(mykonos_config.device, filter_name, &filter));
+    _restore_from_config_state(state);
+}
+
+
+void ad937x_device::set_fir(
     const direction_t direction, int8_t gain, const std::vector<int16_t>& fir)
 {
     switch (direction) {
@@ -656,8 +717,13 @@ void ad937x_device::set_fir(
         default:
             MPM_THROW_INVALID_CODE_PATH();
     }
-
-    // TODO: reload this on device
+    mykonosfirName_t filter_name = (direction == TX_DIRECTION) ? TX1TX2_FIR : RX1RX2_FIR;
+    mykonosFir_t filter{.gain_dB = gain,
+        .numFirCoefs             = static_cast<uint8_t>(fir.size()),
+        .coefs                   = const_cast<int16_t*>(fir.data())};
+    const auto state = _move_to_config_state();
+    CALL_API(MYKONOS_programFir(mykonos_config.device, filter_name, &filter));
+    _restore_from_config_state(state);
 }
 
 void ad937x_device::set_gain_pin_step_sizes(const direction_t direction,
@@ -693,6 +759,57 @@ void ad937x_device::set_enable_gain_pins(
 /******************************************************
 Get configuration functions
 ******************************************************/
+
+/* Convert from the value returned by MYKONOS_getRfPllFrequency into the actual
+ * frequency.
+ *
+ * Note that MYKONOS_setRfPllFrequency() and MYKONOS_getRfPllFrequency() only
+ * deal in integers, and thus will end up with sub-Hz errors.
+ *
+ * Depending on the frequency range, ad9371 adopts a set denominator for the
+ * fractional N PLL:
+ * From 400MHz to 750MHz   : divide by 16
+ * From 750MHz to 1500MHz  : divide by 8
+ * From 1500MHz to 3000MHz : divide by 4
+ * From 3000MHz to 6000MHz : divide by 2
+ * This table comes straight from the user guide, from section
+ * RF PLL FREQUENCY CHANGE PROCEDURE.
+ *
+ * From the the table in section RF PLL RESOLUTION LIMITATIONS,
+ * we have some frequency steps depending on the master clock rate (aka device
+ * clock, or DEV_CLK).
+ * Dividing the master clock rate by the frequency steps, and combining
+ * with some experimental data analyzing the possible frequency steps,
+ * we arrive at the formula for frequency_step below
+ *
+ */
+double _get_actual_pll_freq(const double coerced_pll_freq, const double dev_clk)
+{
+    const unsigned denominator = [&]() {
+        // This first band is in the datasheet as from 400 MHz to 750 MHz, but
+        // we'll leave it open-ended.
+        if (coerced_pll_freq <= 750e6) {
+            return 16;
+        } else if (coerced_pll_freq <= 1500e6) {
+            return 8;
+        } else if (coerced_pll_freq <= 3000e6) {
+            return 4;
+            // This last band is in the datasheet as from 3000 MHz to 6000 MHz, but
+            // we'll leave it open-ended.
+        } else {
+            return 2;
+        }
+    }();
+    // Note: This value is not listed in the data sheet, but can be derived by
+    // dividing the master clock rate by the frequency steps from Table 97,
+    // and verifying with experimental results (see comment above).
+    constexpr double pll_den_base = 33546240.0;
+    const double frequency_step = 2.0 * dev_clk / pll_den_base / denominator;
+
+    return std::round(coerced_pll_freq / frequency_step) * frequency_step;
+}
+
+
 double ad937x_device::get_freq(const direction_t direction)
 {
     mykonosRfPllName_t pll;
@@ -707,10 +824,10 @@ double ad937x_device::get_freq(const direction_t direction)
             MPM_THROW_INVALID_CODE_PATH();
     }
 
-    // TODO: because coerced_pll is returned as an integer, it's not accurate
     uint64_t coerced_pll;
     CALL_API(MYKONOS_getRfPllFrequency(mykonos_config.device, pll, &coerced_pll));
-    return static_cast<double>(coerced_pll);
+    return _get_actual_pll_freq(static_cast<double>(coerced_pll),
+        mykonos_config.device->clocks->deviceClock_kHz * 1000.0);
 }
 
 bool ad937x_device::get_pll_lock_status(const uint8_t pll, const bool wait_for_lock)
@@ -772,16 +889,24 @@ double ad937x_device::get_gain(const direction_t direction, const chain_t chain)
     }
 }
 
-std::vector<int16_t> ad937x_device::get_fir(const direction_t direction, int8_t& gain)
+std::pair<int8_t, std::vector<int16_t>> ad937x_device::get_fir(const std::string& name)
 {
-    switch (direction) {
-        case TX_DIRECTION:
-            return mykonos_config.tx_fir_config.get_fir(gain);
-        case RX_DIRECTION:
-            return mykonos_config.rx_fir_config.get_fir(gain);
-        default:
-            MPM_THROW_INVALID_CODE_PATH();
+    mykonosfirName_t filter_name;
+    if (_rx_filter_map.count(name) == 1) {
+        filter_name = _rx_filter_map.at(name);
+    } else if (_tx_filter_map.count(name) == 1) {
+        filter_name = _tx_filter_map.at(name);
+    } else {
+        throw mpm::runtime_error("get_fir invalid name: " + name);
     }
+    mykonosFir_t fir;
+    std::vector<int16_t> rv(96, 0);
+    fir.coefs        = rv.data();
+    const auto state = _move_to_config_state();
+    CALL_API(MYKONOS_readFir(mykonos_config.device, filter_name, &fir));
+    _restore_from_config_state(state);
+    rv.resize(fir.numFirCoefs);
+    return std::pair<int8_t, std::vector<int16_t>>(fir.gain_dB, rv);
 }
 
 int16_t ad937x_device::get_temperature()

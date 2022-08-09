@@ -7,15 +7,17 @@
 #pragma once
 
 #include "x400_dboard_iface.hpp"
+#include <uhd/config.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/types/eeprom.hpp>
 #include <uhdlib/rfnoc/rf_control/dboard_iface.hpp>
+#include <uhdlib/usrp/common/mpmd_mb_controller.hpp>
 #include <string>
 
 #define UHD_LOG_SKIP_CFG() \
     UHD_LOG_TRACE(         \
-        "RFNOC::DEBUG_DB", "Skipping unsupported debug db config for " << __FUNCTION__);
+        "RFNOC::DEBUG_DB", "Skipping unsupported debug db config for " << UHD_FUNCTION);
 
 namespace uhd { namespace rfnoc {
 
@@ -396,7 +398,7 @@ public:
         , _mb_control(mb_controller)
         , _tree(tree)
     {
-        RFNOC_LOG_TRACE("Entering " << __FUNCTION__);
+        RFNOC_LOG_TRACE("Entering " << UHD_FUNCTION);
         RFNOC_LOG_TRACE("DB ID: " << _db_idx);
         UHD_ASSERT_THROW(_mb_control);
         _rpcc = _mb_control->get_rpc_client();
@@ -406,7 +408,7 @@ public:
 
     ~if_test_dboard_impl()
     {
-        RFNOC_LOG_TRACE(__FUNCTION__);
+        RFNOC_LOG_TRACE(UHD_FUNCTION);
     }
 
     // The IF Test dboard muxes a single SMA port (for each of RX and TX) like so:

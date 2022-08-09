@@ -14,7 +14,7 @@
 #include <uhd/usrp/gpio_defs.hpp>
 #include <uhd/utils/pimpl.hpp>
 #include <stdint.h>
-#include <boost/thread/thread.hpp>
+#include <chrono>
 #include <memory>
 #include <string>
 #include <vector>
@@ -280,7 +280,7 @@ public:
      * Sleep for a set time
      * \param time time to sleep in nanoseconds
      */
-    virtual void sleep(const boost::chrono::nanoseconds& time);
+    virtual void sleep(const std::chrono::nanoseconds& time);
 };
 
 }} // namespace uhd::usrp

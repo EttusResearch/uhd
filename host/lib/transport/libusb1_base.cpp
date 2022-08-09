@@ -6,6 +6,7 @@
 //
 
 #include "libusb1_base.hpp"
+#include <uhd/config.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/types/serial.hpp>
@@ -77,7 +78,7 @@ private:
                 throw uhd::io_error(libusb_strerror(LIBUSB_ERROR_NO_DEVICE));
             default:
                 UHD_LOGGER_ERROR("USB")
-                    << __FUNCTION__ << ": " << libusb_strerror((libusb_error)ret);
+                    << UHD_FUNCTION << ": " << libusb_strerror((libusb_error)ret);
                 break;
         }
     }

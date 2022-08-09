@@ -6,14 +6,28 @@
 
 #pragma once
 
-#include <uhdlib/usrp/cores/gpio_atr_3000.hpp>
+#include <uhdlib/usrp/common/mpmd_mb_controller.hpp>
 #include <uhdlib/usrp/common/rpc.hpp>
+#include <uhdlib/usrp/cores/gpio_atr_3000.hpp>
+#include <uhdlib/usrp/cores/gpio_port_mapper.hpp>
 #include <vector>
 
 namespace uhd { namespace rfnoc { namespace x400 {
 
 // The name of the X400's GPIO bank
 extern const char* GPIO_BANK_NAME;
+
+class x400_gpio_port_mapping : public uhd::mapper::gpio_port_mapper
+{
+public:
+    x400_gpio_port_mapping(){};
+
+    virtual ~x400_gpio_port_mapping() = default;
+
+    uint32_t map_value(const uint32_t& value) override;
+
+    uint32_t unmap_value(const uint32_t& value) override;
+};
 
 /*! Abstract X400's GPIO control to match the "gpio_attr" control scheme.
  *
@@ -32,7 +46,8 @@ extern const char* GPIO_BANK_NAME;
  * internal radio control registers, as well as in MPM to configure the DIO
  * board.
  */
-class gpio_control {
+class gpio_control
+{
 public:
     using sptr = std::shared_ptr<gpio_control>;
 
@@ -42,7 +57,7 @@ public:
      * \param rpcc RPC object to talk to MPM
      * \param iface wb_iface to talk to the radio registers
      */
-    gpio_control(uhd::usrp::x400_rpc_iface::sptr rpcc, wb_iface::sptr iface);
+    gpio_control(uhd::usrp::x400_rpc_iface::sptr rpcc, uhd::rfnoc::mpmd_mb_controller::sptr mb_control, wb_iface::sptr iface);
 
     /*! Set the given GPIO attribute. See gpio_atr_3000 for details.
      */
@@ -53,30 +68,38 @@ public:
     uint32_t get_gpio_attr(const usrp::gpio_atr::gpio_attr_t attr);
 
 private:
-    /*! Converts from the public-facing [23:0] format to the internal [31:16],
-     * [11:0] format.
-     */
-    static uint32_t internalize_value(const uint32_t value);
-
-    /*! Converts from the internal [31:16], [11:0] format to the public-facing
-     * [23:0] format.
-     */
-    static uint32_t publicize_value(const uint32_t value);
-
     /*! Convert from the internal FPGA pin mapping to the "DIO" mapping. This
      * matches the "DIO_PORT_MAP" field in MPM's x4xx_periphs.py file.
      */
-    static uint32_t unmap_dio(const uint32_t bank, const uint32_t raw_form);
+    uint32_t unmap_dio(const uint32_t raw_form);
+
+    /*! Convert from the "DIO" mapping to the internal FPGA pin mapping. This
+     * matches the "DIO_PORT_MAP" field in MPM's x4xx_periphs.py file.
+     */
+    uint32_t map_dio(const uint32_t user_form);
+
+    /*! Builds the mask of which pins are currently assigned to the DBx_RF1
+     * source. Returns the pins in "unmapped" form.
+     */
+    uint32_t build_rf1_mask();
+
+    /*! Returns the numeric index of the given ATR attribute in the array of
+     * ATR value registers.
+     */
+    static size_t atr_attr_index(const uhd::usrp::gpio_atr::gpio_attr_t attr);
 
     /*! Returns whether the given attribute is setting one of the ATR entries.
      */
     static bool is_atr_attr(const usrp::gpio_atr::gpio_attr_t attr);
 
     uhd::usrp::x400_rpc_iface::sptr _rpcc;
+    uhd::rfnoc::mpmd_mb_controller::sptr _mb_control;
     wb_iface::sptr _regs;
 
     // There are two GPIOs, one for each channel. These two are set in unison.
     std::vector<usrp::gpio_atr::gpio_atr_3000::sptr> _gpios;
+
+    x400_gpio_port_mapping _mapper;
 };
 
 }}} // namespace uhd::rfnoc::x400

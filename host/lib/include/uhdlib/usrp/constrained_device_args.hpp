@@ -244,12 +244,6 @@ public: // Methods
     constrained_device_args_t() {}
     virtual ~constrained_device_args_t() {}
 
-    void parse(const std::string& str_args)
-    {
-        device_addr_t dev_args(str_args);
-        _parse(dev_args);
-    }
-
     void parse(const device_addr_t& dev_args)
     {
         _parse(dev_args);

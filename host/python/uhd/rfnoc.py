@@ -32,3 +32,6 @@ SiggenBlockControl = lib.rfnoc.siggen_block_control
 SwitchboardBlockControl = lib.rfnoc.switchboard_block_control
 VectorIirBlockControl = lib.rfnoc.vector_iir_block_control
 WindowBlockControl = lib.rfnoc.window_block_control
+
+connect_through_blocks = lib.rfnoc.connect_through_blocks
+get_block_chain = lib.rfnoc.get_block_chain

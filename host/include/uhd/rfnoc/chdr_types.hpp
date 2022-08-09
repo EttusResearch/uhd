@@ -610,6 +610,9 @@ class UHD_API mgmt_op_t
 {
 public:
     // Operation code
+    // Note that a management packet has 8 bits available for op codes. The
+    // values for these enums are used to construct the packets, so these values
+    // must match the values in rfnoc_chdr_internal_utils.vh.
     enum op_code_t {
         //! Do nothing
         MGMT_OP_NOP = 0,
@@ -700,11 +703,21 @@ public:
         }
     };
 
-    mgmt_op_t(const op_code_t op_code, const payload_t op_payload = 0)
-        : _op_code(op_code), _op_payload(op_payload)
+    mgmt_op_t(const op_code_t op_code, const payload_t op_payload = 0,
+        const uint8_t ops_pending = 0)
+        : _op_code(op_code), _op_payload(op_payload), _ops_pending(ops_pending)
     {
     }
     mgmt_op_t(const mgmt_op_t& rhs) = default;
+
+    //! Get the ops pending for this transaction
+    //  Note that ops_pending is not used by UHD, since it can infer this value
+    //  from the ops vector in mgmt_hop_t. It is needed only by the CHDR
+    //  dissector.
+    inline uint8_t get_ops_pending() const
+    {
+        return _ops_pending;
+    }
 
     //! Get the op-code for this transaction
     inline op_code_t get_op_code() const
@@ -730,6 +743,7 @@ public:
 private:
     op_code_t _op_code;
     payload_t _op_payload;
+    uint8_t _ops_pending;
 };
 
 //! A class that represents a single management hop

@@ -5,6 +5,15 @@
 #
 
 parameters:
+- name: build_linux
+  type: boolean
+  default: true
+- name: build_mac
+  type: boolean
+  default: true
+- name: build_win
+  type: boolean
+  default: true
 - name: custom_boost_version
   type: boolean
   default: false
@@ -18,7 +27,28 @@ parameters:
   type: string
 - name: run_streaming_tests
   type: boolean
+  default: true
+- name: build_sdk
+  type: boolean
   default: false
+- name: cache_sstate
+  type: boolean
+  default: true
+- name: build_e310_sg1
+  type: boolean
+  default: true
+- name: build_e310_sg3
+  type: boolean
+  default: true
+- name: build_e320
+  type: boolean
+  default: true
+- name: build_n3xx
+  type: boolean
+  default: true
+- name: build_x4xx
+  type: boolean
+  default: true
 
 variables:
 - template: ../uhd-pipeline-vars.yml
@@ -28,12 +58,38 @@ resources:
   - pipeline: uhd_build_docker_container
     source: 'uhddev Build Docker Containers'
     branch: master
+  - pipeline: usrp-kas-pipeline
+    source: 'usrp-kas'
+    branch: zeus-ci
+  repositories:
+  - repository: meta-ettus
+    type: github
+    name: EttusResearch/meta-ettus-dev
+    endpoint: EttusResearch
+    ref: zeus-ci
+  - repository: gnuradio
+    type: github
+    name: gnuradio/gnuradio
+    endpoint: EttusResearch
+    ref: maint-3.8
+  - repository: gr-ettus
+    type: github
+    name: EttusResearch/gr-ettusdev
+    endpoint: EttusResearch
+    ref: master
+  - repository: ettus-rts
+    type: github
+    endpoint: EttusResearch
+    name: EttusResearch/ettus-rts
+    ref: master
+
 stages:
-- stage: build_uhd_stage
-  displayName: Build UHD
+- stage: build_uhd_stage_linux
+  displayName: Build UHD Linux
+  dependsOn: []
+  condition: and(succeeded(), ${{ parameters.build_linux }})
   jobs:
   - template: job-get-latest-uhd-docker.yml
-
   - template: job-uhd-build-src.yml
     parameters:
       toolset: make
@@ -43,47 +99,201 @@ stages:
   - template: job-uhd-build-src.yml
     parameters:
       toolset: ninja
-  - template: job-uhd-build-src.yml
-    parameters:
-      toolset: msbuild
-      release_binaries: ${{ parameters.release_binaries }}
-
   - ${{ if parameters.custom_boost_version }}:
     - template: job-uhd-build-src.yml
       parameters:
         toolset: make_custom_boost_version
         custom_boost_version_url: ${{ parameters.custom_boost_version_url }}
 
-- stage: build_uhd_installer_stage
-  displayName: Build UHD Installers
-  dependsOn: build_uhd_stage
+- stage: build_uhd_stage_win
+  displayName: Build UHD Windows
+  dependsOn: []
+  condition: and(succeeded(), ${{ parameters.build_win }})
+  jobs:
+  - template: job-get-latest-uhd-docker.yml
+  - template: job-uhd-build-src.yml
+    parameters:
+      toolset: msbuild
+      release_binaries: ${{ parameters.release_binaries }}
+  - template: job-uhd-build-src.yml
+    parameters:
+      toolset: msbuild_python
+      release_binaries: ${{ parameters.release_binaries }}
+
+- stage: build_uhd_stage_mac
+  displayName: Build UHD macOS
+  dependsOn: []
+  condition: and(succeeded(), ${{ parameters.build_mac }})
+  jobs:
+  - template: job-get-latest-uhd-docker.yml
+  - template: job-uhd-build-src.yml
+    parameters:
+      toolset: make_homebrew_macos
+
+- stage: build_uhd_embedded_system_images
+  displayName: Build UHD Embedded System Images
+  dependsOn: []
+  variables:
+    AUTO_CONF: $(Agent.BuildDirectory)/auto.conf
+  jobs:
+    - template: .ci/templates/job_build_filesystem.yml@meta-ettus
+      parameters:
+        build_sdk: ${{ parameters.build_sdk }}
+        cache_sstate: ${{ parameters.cache_sstate }}
+        cache_downloads: False
+        machines:
+          - ${{ if parameters.build_e310_sg1 }}:
+            - e310_sg1
+          - ${{ if parameters.build_e310_sg3 }}:
+            - e310_sg3
+          - ${{ if parameters.build_e320 }}:
+            - e320
+          - ${{ if parameters.build_n3xx }}:
+            - n3xx
+          - ${{ if parameters.build_x4xx }}:
+            - x4xx
+        auto_conf: $AUTO_CONF
+        run_from_external_repo: true
+        prebuild_steps:
+        - script: |
+            rm $(AUTO_CONF)
+            touch $(AUTO_CONF)
+          displayName: create auto.conf
+        - template: .ci/templates/oe_localconf_externalsrc.yml@meta-ettus
+          parameters:
+            conf_file: $AUTO_CONF
+            repository: self
+            package_paths:
+              - package: uhd
+                path: host
+              - package: mpmd
+                path: mpm
+        postbuild_steps:
+        - script: |
+            rm $(AUTO_CONF)
+          displayName: delete auto.conf
+          condition: always()
+
+- stage: package_uhd_src
+  displayName: Package UHD Source
+  dependsOn: []
+  jobs:
+  - template: job-get-latest-uhd-docker.yml
+  - template: job-uhd-package-src.yml
+    parameters:
+      uhdSrcDir: $(Build.SourcesDirectory)
+      uhdBuildDir: $(Build.BinariesDirectory)/uhddev/build
+      release_binaries: ${{ parameters.release_binaries }}
+
+- stage: build_gnuradio_stage_linux
+  displayName: Build gnuradio Linux
+  dependsOn: build_uhd_stage_linux
+  jobs:
+  - template: job-get-latest-uhd-docker.yml
+  - template: job-gnuradio-grettus-build-src.yml
+    parameters:
+      toolset: make
+
+- stage: build_uhd_installer_stage_ubuntu
+  displayName: Build UHD Installers Ubuntu
+  dependsOn: build_uhd_stage_linux
   jobs:
     - template: job-get-latest-uhd-docker.yml
     - template: job-uhd-build-installer.yml
       parameters:
         toolset: ubuntu_deb
         installer: deb
+
+- stage: build_uhd_installer_stage_fedora
+  displayName: Build UHD Installers Fedora
+  dependsOn: build_uhd_stage_linux
+  jobs:
+    - template: job-get-latest-uhd-docker.yml
+    - template: job-uhd-build-installer.yml
+      parameters:
+        toolset: fedora_rpm
+        installer: rpm
+        releaseBinaries: ${{ parameters.release_binaries }}
+
+- stage: build_uhd_installer_stage_win
+  displayName: Build UHD Installers Windows
+  dependsOn: build_uhd_stage_win
+  jobs:
+    - template: job-get-latest-uhd-docker.yml
     - template: job-uhd-build-installer.yml
       parameters:
         toolset: msbuild
         installer: nsis
+        releaseBinaries: ${{ parameters.release_binaries }}
+    - template: job-uhd-build-installer.yml
+      parameters:
+        toolset: msbuild_python
+        installer: nsis
+    - ${{ if parameters.release_binaries }}:
+      - template: job-uhd-build-installer-signing.yml
+        parameters:
+          toolset: msbuild
+          installer: nsis
 
-- stage: test_uhd_stage
-  displayName: Test UHD
-  dependsOn: build_uhd_stage
+- stage: devtest_uhd_x3xx_b2xx_stage
+  displayName: devtest UHD x3xx b2xx
+  dependsOn:
+  - build_uhd_stage_linux
   jobs:
   - template: job-uhd-devtest-rhombus.yml
     parameters:
       testOS: ubuntu2004
       uhdSrcDir: $(Build.SourcesDirectory)
+      testDevices: 'x3xx,b2xx'
+
+- stage: devtest_uhd_n3xx_e320_stage
+  displayName: devtest UHD n3xx e320
+  dependsOn:
+  - build_uhd_stage_linux
+  - build_uhd_embedded_system_images
+  jobs:
+  - template: job-uhd-devtest-rhombus.yml
+    parameters:
+      testOS: ubuntu2004
+      uhdSrcDir: $(Build.SourcesDirectory)
+      testDevices: 'n3xx,e320'
+
+- stage: test_uhd_x4xx_stage
+  displayName: Test UHD x4xx
+  dependsOn:
+  - build_uhd_stage_linux
+  - build_uhd_embedded_system_images
+  - build_gnuradio_stage_linux
+  jobs:
+  - template: tests/job-uhd-x4xx-hardware-tests-sdr-test0.yml
+    parameters:
+      testOS: ubuntu1804
+  - template: tests/job-uhd-x4xx-hardware-tests-pebbles.yml
+    parameters:
+      testOS: ubuntu1804
+
+- stage: test_uhd_rf_test_stage
+  displayName: Run rf tests n3xx
+  dependsOn:
+  - build_uhd_stage_linux
+  - build_uhd_embedded_system_images
+  - build_gnuradio_stage_linux
+  jobs:
+  - template: job-uhd-rf-tests-pebbles.yml
+    parameters:
+      uhdSrcDir: $(Build.SourcesDirectory)/uhddev
+      testOS: ubuntu1804
+      testDevices: 'n3xx'
 
 - stage: test_streaming_stage
   displayName: Test UHD Streaming
-  dependsOn: build_uhd_stage
-  condition: and(succeeded('build_uhd_stage'), ${{ parameters.run_streaming_tests }})
+  dependsOn:
+  - build_uhd_stage_linux
+  - build_uhd_embedded_system_images
+  condition: and(succeeded('build_uhd_stage_linux'), succeeded('build_uhd_embedded_system_images'), ${{ parameters.run_streaming_tests }})
   jobs:
   - template: job-uhd-streaming-tests-beauty.yml
     parameters:
       testOS: ubuntu2004
-      uhdSrcDir: $(Build.SourcesDirectory)
+      uhdSrcDir: $(Build.SourcesDirectory)/uhddev
       testLength: ${{ parameters.testLength }}

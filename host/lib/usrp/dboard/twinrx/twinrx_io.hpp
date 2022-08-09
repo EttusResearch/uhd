@@ -12,7 +12,7 @@
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/utils/soft_register.hpp>
 #include <uhdlib/usrp/cores/gpio_atr_3000.hpp>
-#include <boost/chrono.hpp>
+#include <chrono>
 
 namespace uhd { namespace usrp { namespace dboard { namespace twinrx {
 
@@ -122,7 +122,7 @@ public:
             mask<uint32_t>(CPLD_FULL_ADDR) | mask<uint32_t>(CPLD_DATA));
         // Sleep for 166ns to ensure that we don't toggle the enables too quickly
         // The underlying sleep function rounds to microsecond precision.
-        _db_iface->sleep(boost::chrono::nanoseconds(166));
+        _db_iface->sleep(std::chrono::nanoseconds(166));
         // Step 2: Write the reg offset and data, and assert the necessary enable
         _db_iface->set_gpio_out(dboard_iface::UNIT_BOTH,
             (static_cast<uint32_t>(addr) << shift(CPLD_FULL_ADDR))

@@ -152,7 +152,7 @@ class E320BIST(bist.UsrpBIST):
         if self.args.dry_run:
             return True, {'throughput': 1250e6}
         result = bist.test_ddr3_with_usrp_probe()
-        return result.get('throughput', 0) > 1000e3, result
+        return result.get('throughput', 0) > 1000e6, result
 
     def bist_gpsdo(self):
         """

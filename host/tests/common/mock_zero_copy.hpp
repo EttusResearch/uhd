@@ -8,7 +8,6 @@
 #define INCLUDED_MOCK_XPORT_HPP
 
 #include <uhd/exception.hpp>
-#include <uhd/transport/chdr.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #include <uhd/types/endianness.hpp>
@@ -118,12 +117,6 @@ public:
         uhd::transport::vrt::if_packet_info_t& ifpi, const uint32_t message);
 
     template <uhd::endianness_t endianness = uhd::ENDIANNESS_BIG>
-    void push_back_flow_ctrl_packet(
-        uhd::transport::vrt::if_packet_info_t::packet_type_t type,
-        uint32_t packet_count,
-        uint32_t byte_count);
-
-    template <uhd::endianness_t endianness = uhd::ENDIANNESS_BIG>
     void pop_send_packet(uhd::transport::vrt::if_packet_info_t& ifpi);
 
 private:
@@ -155,10 +148,7 @@ void mock_zero_copy::push_back_recv_packet(
     UHD_ASSERT_THROW(
         ifpi.num_payload_words32 * sizeof(uint32_t) == otw_data.size() * sizeof(T));
 
-    const size_t max_hdr_len =
-        _link_type == vrt::if_packet_info_t::LINK_TYPE_CHDR
-            ? vrt::chdr::max_if_hdr_words64 * sizeof(uint64_t)
-            : (vrt::max_if_hdr_words32 + 1 /*tlr*/) * sizeof(uint32_t);
+    const size_t max_hdr_len = (vrt::max_if_hdr_words32 + 1 /*tlr*/) * sizeof(uint32_t);
 
     const size_t max_pkt_len = ifpi.num_payload_words32 * sizeof(uint32_t) + max_hdr_len;
 
@@ -170,17 +160,9 @@ void mock_zero_copy::push_back_recv_packet(
 
     // Copy header
     if (endianness == uhd::ENDIANNESS_BIG) {
-        if (_link_type == vrt::if_packet_info_t::LINK_TYPE_CHDR) {
-            uhd::transport::vrt::chdr::if_hdr_pack_be(rx_buff_ptr, ifpi);
-        } else {
-            uhd::transport::vrt::if_hdr_pack_be(rx_buff_ptr, ifpi);
-        }
+        uhd::transport::vrt::if_hdr_pack_be(rx_buff_ptr, ifpi);
     } else {
-        if (_link_type == vrt::if_packet_info_t::LINK_TYPE_CHDR) {
-            uhd::transport::vrt::chdr::if_hdr_pack_le(rx_buff_ptr, ifpi);
-        } else {
-            uhd::transport::vrt::if_hdr_pack_le(rx_buff_ptr, ifpi);
-        }
+        uhd::transport::vrt::if_hdr_pack_le(rx_buff_ptr, ifpi);
     }
 
     // Copy data
@@ -208,55 +190,12 @@ void mock_zero_copy::pop_send_packet(uhd::transport::vrt::if_packet_info_t& ifpi
     uint32_t* tx_buff_ptr = reinterpret_cast<uint32_t*>(_tx_mems.front().get());
 
     if (endianness == uhd::ENDIANNESS_BIG) {
-        if (_link_type == vrt::if_packet_info_t::LINK_TYPE_CHDR) {
-            uhd::transport::vrt::chdr::if_hdr_unpack_be(tx_buff_ptr, ifpi);
-        } else {
-            uhd::transport::vrt::if_hdr_unpack_be(tx_buff_ptr, ifpi);
-        }
+        uhd::transport::vrt::if_hdr_unpack_be(tx_buff_ptr, ifpi);
     } else {
-        if (_link_type == vrt::if_packet_info_t::LINK_TYPE_CHDR) {
-            uhd::transport::vrt::chdr::if_hdr_unpack_le(tx_buff_ptr, ifpi);
-        } else {
-            uhd::transport::vrt::if_hdr_unpack_le(tx_buff_ptr, ifpi);
-        }
+        uhd::transport::vrt::if_hdr_unpack_le(tx_buff_ptr, ifpi);
     }
     _tx_mems.pop_front();
     _tx_lens.pop_front();
-}
-
-template <uhd::endianness_t endianness>
-void mock_zero_copy::push_back_flow_ctrl_packet(
-    uhd::transport::vrt::if_packet_info_t::packet_type_t type,
-    uint32_t packet_count,
-    uint32_t byte_count)
-{
-    using namespace uhd::transport;
-
-    UHD_ASSERT_THROW(type == vrt::if_packet_info_t::PACKET_TYPE_FC
-                     or type == vrt::if_packet_info_t::PACKET_TYPE_ACK);
-
-    // Only implemented for chdr packets currently
-    UHD_ASSERT_THROW(_link_type == vrt::if_packet_info_t::LINK_TYPE_CHDR);
-
-    const size_t packet_len_in_words32 = 2;
-
-    vrt::if_packet_info_t ifpi;
-    ifpi.packet_type         = type;
-    ifpi.num_payload_words32 = packet_len_in_words32;
-    ifpi.num_payload_bytes   = ifpi.num_payload_words32 * sizeof(uint32_t);
-    ifpi.has_tsf             = false;
-
-    std::vector<uint32_t> data(packet_len_in_words32, 0);
-
-    if (endianness == uhd::ENDIANNESS_BIG) {
-        data[0] = uhd::ntohx(packet_count);
-        data[1] = uhd::ntohx(byte_count);
-    } else {
-        data[0] = uhd::wtohx(packet_count);
-        data[1] = uhd::wtohx(byte_count);
-    }
-
-    push_back_recv_packet<uint32_t, endianness>(ifpi, data);
 }
 
 #endif /*INCLUDED_MOCK_XPORT_HPP*/

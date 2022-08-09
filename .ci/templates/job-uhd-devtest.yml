@@ -13,6 +13,8 @@ parameters:
     - make
 - name: uhdSrcDir
   type: string
+- name: uhdArtifactSource
+  type: string
 - name: redisHost
   type: string
 - name: dutMatrix
@@ -21,48 +23,150 @@ parameters:
 jobs:
 - job: uhd_devtest_${{ parameters.suiteName }}_${{ parameters.testOS }}
   displayName:  uhd devtest ${{ parameters.suiteName }} ${{ parameters.testOS }}
+  timeoutInMinutes: 90
   pool:
     name: de-dre-lab
     demands:
     - suiteName -equals ${{ parameters.suiteName }}
     - testOS -equals ${{ parameters.testOS }}
+    - device -equals $(devAgent)
   variables:
   - group: sdr-pipeline-vars
   strategy:
     matrix: ${{ parameters.dutMatrix }}
   workspace:
     clean: outputs
+
   steps:
   - checkout: self
     clean: true
+
   - task: InstallSSHKey@0
     displayName: 'Install Ettus SSH key'
     inputs:
       knownHostsEntry: '${{ parameters.knownHost }}'
       sshPublicKey: '$(ettus_ssh_pubkey)'
       sshKeySecureFile: 'id_rsa.ettus'
-  - download: current
-    artifact: ${{ parameters.testOS }}-${{ parameters.toolset }}
-    displayName: Download pipeline artifact ${{ parameters.testOS }}-${{ parameters.toolset }}
+
+  - script: |
+      if [ "${{ parameters.uhdArtifactSource }}" = "current" ]; then
+        echo '##vso[task.setvariable variable=uhd_artifact_directory]'$(Agent.BuildDirectory)
+      else
+        echo '##vso[task.setvariable variable=uhd_artifact_directory]'$(Agent.BuildDirectory)/${{ parameters.uhdArtifactSource }}
+      fi
+    displayName: Set uhddev pipeline artifact location
+
+  - download: ${{ parameters.uhdArtifactSource }}
+    artifact: uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
+    displayName: Download uhddev-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+
   - task: ExtractFiles@1
     inputs:
-      archiveFilePatterns: $(Pipeline.Workspace)/${{ parameters.testOS }}-${{ parameters.toolset }}/${{ parameters.testOS }}-${{ parameters.toolset }}.tar.gz
+      archiveFilePatterns: $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}.tar.gz
       destinationFolder: $(Build.BinariesDirectory)
       cleanDestinationFolder: true
+
+  - download: ${{ parameters.uhdArtifactSource }}
+    artifact: n3xx-images
+    # Only sync the bz2 sdimg since the bmap
+    # is incompatible with mender
+    patterns: |
+      **/*.bz2
+      fitImage-manufacturing
+    displayName: Download $(devType)-images artifact
+    condition: and(succeeded(), eq(variables.devType, 'n3xx'))
+
+  - download: ${{ parameters.uhdArtifactSource }}
+    artifact: e320-images
+    # Only sync the bz2 sdimg since the bmap
+    # is incompatible with mender
+    patterns: |
+      **/*.bz2
+      fitImage-manufacturing
+    displayName: Download $(devType)-images artifact
+    condition: and(succeeded(), eq(variables.devModel, 'e320'))
+
   - script: |
       cd $(Build.BinariesDirectory)/uhddev/build
       mkdir -p fpga_images
       rm -rf fpga_images/*
-      python3 utils/uhd_images_downloader.py -t $(devModel) -i fpga_images \
+      python3 utils/uhd_images_downloader.py -t $(devModel)_fpga -i fpga_images \
         -b $(sdr-fileserver)
+      if [ "$(devType)" = "b200" ]; then
+        python3 utils/uhd_images_downloader.py -t b2xx_common -i fpga_images \
+          -b $(sdr-fileserver)
+      fi
     displayName: Download FPGA Images
+
+  - script: |
+      mkdir -p $(Common.TestResultsDirectory)/devtest
+      cd $(Common.TestResultsDirectory)/devtest
+      export PATH=$(Build.BinariesDirectory)/uhddev/build/utils:$(Build.BinariesDirectory)/uhddev/build/examples:$PATH
+      export LD_LIBRARY_PATH=$(Build.BinariesDirectory)/uhddev/build/lib:$LD_LIBRARY_PATH
+      export UHD_IMAGES_DIR=$(Build.BinariesDirectory)/uhddev/build/fpga_images
+      python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
+        --sdimage_sdmux $(devType),$(devModel),$(uhd_artifact_directory)/$(devType)-images/$(devSDImage),${{ parameters.uhdSrcDir }}/$(devLabgridConfig),$(devHostname) \
+        --fpgas $(devFpga) \
+        --sfp_addrs $(sfpAddrs) \
+        ${{ parameters.redisHost }} $(devName) \
+        "$(Build.BinariesDirectory)/uhddev/build/utils/uhd_usrp_probe --args addr=$(devAddr)" \
+        "python3 ${{ parameters.uhdSrcDir }}/host/tests/devtest/run_testsuite.py \
+          --src-dir ${{ parameters.uhdSrcDir }}/host/tests/devtest \
+          --devtest-pattern $(devtestPattern) --args addr=$(devAddr),type=$(devType) \
+          --build-type Release --build-dir $(Build.BinariesDirectory)/uhddev/build \
+          --python-interp python3 --xml"
+    continueOnError: true
+    condition: and(succeeded(), eq(variables.devType, 'n3xx'), eq(variables.devBus, 'ip'))
+    displayName: Run n3xx devtest on $(devName)
+
+  - script: |
+      mkdir -p $(Common.TestResultsDirectory)/devtest
+      cd $(Common.TestResultsDirectory)/devtest
+      export PATH=$(Build.BinariesDirectory)/uhddev/build/utils:$(Build.BinariesDirectory)/uhddev/build/examples:$PATH
+      export LD_LIBRARY_PATH=$(Build.BinariesDirectory)/uhddev/build/lib:$LD_LIBRARY_PATH
+      export UHD_IMAGES_DIR=$(Build.BinariesDirectory)/uhddev/build/fpga_images
+      python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
+        --sdimage_tftp $(devType),$(devModel),$(uhd_artifact_directory)/e320-images/$(devSDImage),$(uhd_artifact_directory)/e320-images/$(devInitramfsImage),${{ parameters.uhdSrcDir }}/$(devLabgridConfig) \
+        --fpgas $(devFpga) \
+        --sfp_addrs $(sfpAddrs) \
+        ${{ parameters.redisHost }} $(devName) \
+        "$(Build.BinariesDirectory)/uhddev/build/utils/uhd_usrp_probe --args addr=$(devAddr)" \
+        "python3 ${{ parameters.uhdSrcDir }}/host/tests/devtest/run_testsuite.py \
+          --src-dir ${{ parameters.uhdSrcDir }}/host/tests/devtest \
+          --devtest-pattern $(devtestPattern) --args addr=$(devAddr),type=$(devType) \
+          --build-type Release --build-dir $(Build.BinariesDirectory)/uhddev/build \
+          --python-interp python3 --xml"
+    continueOnError: true
+    condition: and(succeeded(), eq(variables.devModel, 'e320'), eq(variables.devBus, 'ip'))
+    displayName: Run e320 devtest on $(devName)
+
+  - script: |
+      mkdir -p $(Common.TestResultsDirectory)/devtest
+      cd $(Common.TestResultsDirectory)/devtest
+      export PATH=$(Build.BinariesDirectory)/uhddev/build/utils:$(Build.BinariesDirectory)/uhddev/build/examples:$PATH
+      export LD_LIBRARY_PATH=$(Build.BinariesDirectory)/uhddev/build/lib:$LD_LIBRARY_PATH
+      export UHD_IMAGES_DIR=$(Build.BinariesDirectory)/uhddev/build/fpga_images
+      python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
+        ${{ parameters.redisHost }} $(devName) \
+        "$(Build.BinariesDirectory)/uhddev/build/utils/uhd_usrp_probe --args serial=$(devSerial)" \
+        "$(Build.BinariesDirectory)/uhddev/build/utils/uhd_image_loader --args serial=$(devSerial),type=$(devType)" \
+        "python3 ${{ parameters.uhdSrcDir }}/host/tests/devtest/run_testsuite.py \
+          --src-dir ${{ parameters.uhdSrcDir }}/host/tests/devtest \
+          --devtest-pattern $(devtestPattern) --args serial=$(devSerial),type=$(devType) \
+          --build-type Release --build-dir $(Build.BinariesDirectory)/uhddev/build \
+          --python-interp python3 --xml"
+    continueOnError: true
+    condition: and(succeeded(), eq(variables.devType, 'b200'), eq(variables.devBus, 'usb'))
+    displayName: Run b2xx devtest on $(devName)
+
   - script: |
       mkdir -p $(Common.TestResultsDirectory)/devtest
       cd $(Common.TestResultsDirectory)/devtest
       export PATH=$(Build.BinariesDirectory)/uhddev/build/utils:$(Build.BinariesDirectory)/uhddev/build/examples:$PATH
       export LD_LIBRARY_PATH=$(Build.BinariesDirectory)/uhddev/build/lib:$LD_LIBRARY_PATH
       python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
-        --jtag_x3xx $(jtagServer),$(jtagSerial),$(Build.BinariesDirectory)/uhddev/build/fpga_images/usrp_$(devModel)_fpga_$(devFpga).bit \
+        --jtag_x3xx $(devType),$(devModel),$(jtagServer),$(jtagSerial),$(Build.BinariesDirectory)/uhddev/build/fpga_images/ \
+        --fpgas $(devFpga) \
         ${{ parameters.redisHost }} $(devName) \
         "$(Build.BinariesDirectory)/uhddev/build/utils/uhd_usrp_probe --args addr=$(devAddr)" \
         "python3 ${{ parameters.uhdSrcDir }}/host/tests/devtest/run_testsuite.py \
@@ -72,7 +176,14 @@ jobs:
           --python-interp python3 --xml"
     continueOnError: true
     condition: and(succeeded(), eq(variables.devType, 'x300'), eq(variables.devBus, 'ip'))
-    displayName: Run devtest on $(devName) $(devFpga)
+    displayName: Run x3xx devtest on $(devName) $(devFpga)
+
+  - script: |
+      cat $(Common.TestResultsDirectory)/devtest/log*.log
+      echo ""
+    displayName: cat devtest log
+    condition: always()
+
   - script: |
       cd $(Common.TestResultsDirectory)/devtest
       python3 ${{ parameters.uhdSrcDir }}/.ci/utils/format_devtest_junitxml.py \
@@ -80,12 +191,37 @@ jobs:
         $(Common.TestResultsDirectory)/devtest/devtestresults.xml
     continueOnError: true
     displayName: Format devtest xml
+    condition: and(always(), eq(variables.devType, 'b200'))
+
+  - script: |
+      cd $(Common.TestResultsDirectory)/devtest
+      python3 ${{ parameters.uhdSrcDir }}/.ci/utils/format_devtest_junitxml.py \
+        --fpgas $(devFpga) \
+        $(Common.TestResultsDirectory)/devtest \
+        $(Common.TestResultsDirectory)/devtest/devtestresults.xml
+    continueOnError: true
+    displayName: Format devtest xml
+    condition: and(always(), ne(variables.devType, 'b200'))
+
+  - publish: $(Common.TestResultsDirectory)
+    artifact: test-logs-devtest-$(devName)-$(devFpga)-run$(System.JobAttempt)
+    displayName: Upload Test Logs
+    condition: always()
+
   - task: PublishTestResults@2
     inputs:
       testResultsFormat: 'JUnit'
       testResultsFiles: '$(Common.TestResultsDirectory)/devtest/devtestresults.xml'
-      testRunTitle: $(devName) $(devFpga) devtest
+      testRunTitle: $(devName) devtest
       buildConfiguration: 'Release'
       mergeTestResults: true
       failTaskOnFailedTests: true
     displayName: Upload devtest results
+    condition: always()
+
+  - script: |
+      echo "A previous step failed. See steps with warnings."
+      echo "Marking the overall build status as a failure."
+      exit 1
+    condition: in(variables['Agent.JobStatus'],  'SucceededWithIssues')
+    displayName: Mark build as failure

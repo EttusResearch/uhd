@@ -9,8 +9,9 @@
 ########################################################################
 
 PYTHON_CHECK_MODULE(
-    "virtualenv"
-    "sys" "hasattr(sys, 'real_prefix')"
+    "virtual environment"
+    "sys"
+    "sys.prefix != sys.base_prefix"
     HAVE_PYTHON_VIRTUALENV
 )
 
@@ -41,7 +42,7 @@ if(WIN32)
 else()
     execute_process(
         COMMAND "${PYTHON_EXECUTABLE}" -c
-        "from distutils.sysconfig import get_config_var; print(get_config_var('EXT_SUFFIX'))"
+        "from sysconfig import get_config_var; print(get_config_var('EXT_SUFFIX'))"
         OUTPUT_VARIABLE PYTHON_EXTENSION_SUFFIX
     )
     string(STRIP ${PYTHON_EXTENSION_SUFFIX} PYTHON_EXTENSION_SUFFIX)
@@ -129,6 +130,7 @@ if(ENABLE_SIM)
                        ${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm/xports
 
                        COMMAND ${CMAKE_COMMAND} -E copy
+                       ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/compat_num.py
                        ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/discovery.py
                        ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/eeprom.py
                        ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/ethdispatch.py
@@ -155,37 +157,28 @@ add_custom_command(OUTPUT ${TIMESTAMP_FILE}
 
 add_custom_target(pyuhd_library ALL DEPENDS ${TIMESTAMP_FILE} pyuhd)
 if(HAVE_PYTHON_VIRTUALENV)
+    message(STATUS "python virtual environment detected.")
     # In virtualenvs, let setuptools do its thing
     install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} -q install --force)")
 else()
-    # Otherwise, use distutils to determine the correct relative path for Python
+    # Otherwise, use sysconfig to determine the correct relative path for Python
     # packages, and install to our prefix
     if(NOT DEFINED UHD_PYTHON_DIR)
-        if(WIN32)
-            # CPack with NSIS generates an error when using install()
-            # with a DESTINATION that is an absolute path. Thus, specify
-            # a blank prefix, which returns only the Python library relative
-            # path, and use that in the install step below.
-            execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
-                "from distutils import sysconfig;\
-                print(sysconfig.get_python_lib(plat_specific=True, prefix=''));"
-                OUTPUT_VARIABLE UHD_PYTHON_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
-            )
-        else()
-            execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
-                "from distutils import sysconfig;\
-                print(sysconfig.get_python_lib(plat_specific=True, prefix='${CMAKE_INSTALL_PREFIX}'));"
-                OUTPUT_VARIABLE UHD_PYTHON_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
-            )
-        endif(WIN32)
+        execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
+            "import os,sysconfig;\
+            platlib = sysconfig.get_path(name='platlib');\
+            prefix = sysconfig.get_config_var('prefix');\
+            print(os.path.relpath(platlib, prefix));"
+            OUTPUT_VARIABLE UHD_PYTHON_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
     endif(NOT DEFINED UHD_PYTHON_DIR)
     file(TO_CMAKE_PATH ${UHD_PYTHON_DIR} UHD_PYTHON_DIR)
 
-    message(STATUS "Utilizing the python install directory: ${UHD_PYTHON_DIR}")
+    message(STATUS "Utilizing the python install directory: ${CMAKE_INSTALL_PREFIX}/${UHD_PYTHON_DIR}")
     # CMake will create an up-to-date copy of the entire Python module within
-    # the build directory. Instead of using setuptools, we use distutils (above)
-    # to figure out the destination path, and then we simply copy this module
-    # recursively into its final destination.
+    # the build directory. Use sysconfig (above) to figure out the destination
+    # path, and then we simply copy this module recursively into its final
+    # destination.
     install(DIRECTORY
         ${CMAKE_CURRENT_BINARY_DIR}/uhd
         DESTINATION ${UHD_PYTHON_DIR}

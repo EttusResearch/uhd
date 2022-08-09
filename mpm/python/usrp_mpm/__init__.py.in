@@ -11,6 +11,7 @@ __simulated__ = ("${MPM_DEVICE}" == "sim")
 
 from .discovery import spawn_discovery_process
 from .rpc_server import spawn_rpc_process
+from . import compat_num
 from . import mpmtypes
 from . import gpsd_iface
 from .mpmlog import get_main_logger

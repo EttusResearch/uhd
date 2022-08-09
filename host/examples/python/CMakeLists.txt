@@ -5,6 +5,7 @@
 #
 
 set(python_examples
+    replay_capture.py
     rx_to_file.py
     tx_waveforms.py
     curses_fft.py

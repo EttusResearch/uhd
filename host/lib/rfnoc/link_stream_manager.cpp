@@ -5,11 +5,11 @@
 //
 
 #include <uhd/exception.hpp>
-#include <uhd/transport/muxed_zero_copy_if.hpp>
 #include <uhdlib/rfnoc/chdr_ctrl_endpoint.hpp>
 #include <uhdlib/rfnoc/link_stream_manager.hpp>
 #include <uhdlib/rfnoc/mgmt_portal.hpp>
 #include <boost/format.hpp>
+#include <map>
 
 using namespace uhd;
 using namespace uhd::rfnoc;
@@ -62,7 +62,6 @@ public:
         // Create a muxed transport to share between the mgmt_portal and
         // chdr_ctrl_endpoint. We have to use the same base transport here to ensure that
         // the route setup logic in the FPGA transport works correctly.
-        // TODO: This needs to be cleaned up. A muxed_zero_copy_if is excessive here
         _ctrl_xport = _mb_iface.make_ctrl_transport(_my_device_id, _my_mgmt_ctrl_epid);
 
         _my_adapter_id = _mb_iface.get_adapter_id(_my_device_id);
@@ -226,16 +225,22 @@ public:
         _ensure_ep_is_reachable(dst_addr);
 
         // Generate a new destination (device) EPID instance
-        sep_id_t dst_epid =
+        const sep_id_t dst_epid =
             _epid_alloc->allocate_epid(dst_addr, *_mgmt_portal, *_ctrl_xport);
 
         if (!_mgmt_portal->get_endpoint_info(dst_epid).has_data) {
             throw uhd::rfnoc_error("Downstream endpoint does not support data traffic");
         }
 
-        // Create a new destination (host) endpoint and EPID
-        sep_addr_t sw_epid_addr(_my_device_id, SEP_INST_DATA_BASE + (_data_ep_inst++));
-        sep_id_t src_epid = _epid_alloc->allocate_epid(sw_epid_addr);
+        // Create a new source (host) endpoint and EPID
+        {
+            std::lock_guard<std::mutex> ep_lock(_data_ep_lock);
+            if (_data_src_ep_map.count(dst_addr) == 0) {
+                _data_src_ep_map[dst_addr] = SEP_INST_DATA_BASE + _data_ep_inst++;
+            }
+        }
+        const sep_addr_t sw_epid_addr(_my_device_id, _data_src_ep_map[dst_addr]);
+        const sep_id_t src_epid = _epid_alloc->allocate_epid(sw_epid_addr);
         _allocated_epids.insert(src_epid);
 
         return _mb_iface.make_tx_data_transport(*_mgmt_portal,
@@ -256,7 +261,7 @@ public:
         _ensure_ep_is_reachable(src_addr);
 
         // Generate a new source (device) EPID instance
-        sep_id_t src_epid =
+        const sep_id_t src_epid =
             _epid_alloc->allocate_epid(src_addr, *_mgmt_portal, *_ctrl_xport);
 
         if (!_mgmt_portal->get_endpoint_info(src_epid).has_data) {
@@ -264,8 +269,14 @@ public:
         }
 
         // Create a new destination (host) endpoint and EPID
-        sep_addr_t sw_epid_addr(_my_device_id, SEP_INST_DATA_BASE + (_data_ep_inst++));
-        sep_id_t dst_epid = _epid_alloc->allocate_epid(sw_epid_addr);
+        {
+            std::lock_guard<std::mutex> ep_lock(_data_ep_lock);
+            if (_data_dst_ep_map.count(src_addr) == 0) {
+                _data_dst_ep_map[src_addr] = SEP_INST_DATA_BASE + _data_ep_inst++;
+            }
+        }
+        const sep_addr_t sw_epid_addr(_my_device_id, _data_dst_ep_map[src_addr]);
+        const sep_id_t dst_epid = _epid_alloc->allocate_epid(sw_epid_addr);
         _allocated_epids.insert(dst_epid);
 
         return _mb_iface.make_rx_data_transport(*_mgmt_portal,
@@ -317,8 +328,18 @@ private:
     chdr_ctrl_endpoint::uptr _ctrl_ep;
     // A map of all client zero instances indexed by the destination
     std::map<sep_id_t, client_zero::sptr> _client_zero_map;
+
+    // Data endpoint mutex
+    std::mutex _data_ep_lock;
     // Data endpoint instance
     sep_inst_t _data_ep_inst;
+
+    // Maps to cache local data endpoints for re-use.  Assumes each connection
+    // between the host and a stream endpoint on a given device is unique for
+    // each direction.  Re-using enpdoints is needed because the routing table
+    // in the FPGA is limited in how many entries can be made.
+    std::map<sep_addr_t, sep_inst_t> _data_src_ep_map;
+    std::map<sep_addr_t, sep_inst_t> _data_dst_ep_map;
 };
 
 link_stream_manager::uptr link_stream_manager::make(

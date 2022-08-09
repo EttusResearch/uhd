@@ -14,6 +14,7 @@ set(USRP_MPM_TOP_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/bfrfs.py
     ${CMAKE_CURRENT_SOURCE_DIR}/bist.py
     ${CMAKE_CURRENT_SOURCE_DIR}/components.py
+    ${CMAKE_CURRENT_SOURCE_DIR}/compat_num.py
     ${CMAKE_CURRENT_SOURCE_DIR}/discovery.py
     ${CMAKE_CURRENT_SOURCE_DIR}/eeprom.py
     ${CMAKE_CURRENT_SOURCE_DIR}/e31x_legacy_eeprom.py

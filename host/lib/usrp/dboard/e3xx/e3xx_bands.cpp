@@ -146,21 +146,21 @@ e3xx_radio_control_impl::rx_band e3xx_radio_control_impl::map_freq_to_rx_band(
 {
     e3xx_radio_control_impl::rx_band band;
 
-    if (fp_compare_epsilon<double>(freq) < AD9361_RX_MIN_FREQ) {
+    if (freq_compare_epsilon(freq) < AD9361_RX_MIN_FREQ) {
         band = rx_band::INVALID_BAND;
-    } else if (fp_compare_epsilon<double>(freq) < E3XX_RX_LB_BAND3_MIN_FREQ) {
+    } else if (freq_compare_epsilon(freq) < E3XX_RX_LB_BAND3_MIN_FREQ) {
         band = rx_band::LB_B2;
-    } else if (fp_compare_epsilon<double>(freq) < E3XX_RX_LB_BAND4_MIN_FREQ) {
+    } else if (freq_compare_epsilon(freq) < E3XX_RX_LB_BAND4_MIN_FREQ) {
         band = rx_band::LB_B3;
-    } else if (fp_compare_epsilon<double>(freq) < E3XX_RX_LB_BAND5_MIN_FREQ) {
+    } else if (freq_compare_epsilon(freq) < E3XX_RX_LB_BAND5_MIN_FREQ) {
         band = rx_band::LB_B4;
-    } else if (fp_compare_epsilon<double>(freq) < E3XX_RX_LB_BAND6_MIN_FREQ) {
+    } else if (freq_compare_epsilon(freq) < E3XX_RX_LB_BAND6_MIN_FREQ) {
         band = rx_band::LB_B5;
-    } else if (fp_compare_epsilon<double>(freq) < E3XX_RX_LB_BAND7_MIN_FREQ) {
+    } else if (freq_compare_epsilon(freq) < E3XX_RX_LB_BAND7_MIN_FREQ) {
         band = rx_band::LB_B6;
-    } else if (fp_compare_epsilon<double>(freq) < E3XX_RX_HB_MIN_FREQ) {
+    } else if (freq_compare_epsilon(freq) < E3XX_RX_HB_MIN_FREQ) {
         band = rx_band::LB_B7;
-    } else if (fp_compare_epsilon<double>(freq) <= AD9361_RX_MAX_FREQ) {
+    } else if (freq_compare_epsilon(freq) <= AD9361_RX_MAX_FREQ) {
         band = rx_band::HB;
     } else {
         band = rx_band::INVALID_BAND;
@@ -174,25 +174,25 @@ e3xx_radio_control_impl::tx_band e3xx_radio_control_impl::map_freq_to_tx_band(
 {
     e3xx_radio_control_impl::tx_band band;
 
-    if (fp_compare_epsilon<double>(freq) < AD9361_TX_MIN_FREQ) {
+    if (freq_compare_epsilon(freq) < AD9361_TX_MIN_FREQ) {
         band = tx_band::INVALID_BAND;
-    } else if (fp_compare_epsilon<double>(freq) < E3XX_TX_LB_160_MIN_FREQ) {
+    } else if (freq_compare_epsilon(freq) < E3XX_TX_LB_160_MIN_FREQ) {
         band = tx_band::LB_80;
-    } else if (fp_compare_epsilon<double>(freq) < E3XX_TX_LB_225_MIN_FREQ) {
+    } else if (freq_compare_epsilon(freq) < E3XX_TX_LB_225_MIN_FREQ) {
         band = tx_band::LB_160;
-    } else if (fp_compare_epsilon<double>(freq) < E3XX_TX_LB_400_MIN_FREQ) {
+    } else if (freq_compare_epsilon(freq) < E3XX_TX_LB_400_MIN_FREQ) {
         band = tx_band::LB_225;
-    } else if (fp_compare_epsilon<double>(freq) < E3XX_TX_LB_575_MIN_FREQ) {
+    } else if (freq_compare_epsilon(freq) < E3XX_TX_LB_575_MIN_FREQ) {
         band = tx_band::LB_400;
-    } else if (fp_compare_epsilon<double>(freq) < E3XX_TX_LB_1000_MIN_FREQ) {
+    } else if (freq_compare_epsilon(freq) < E3XX_TX_LB_1000_MIN_FREQ) {
         band = tx_band::LB_575;
-    } else if (fp_compare_epsilon<double>(freq) < E3XX_TX_LB_1700_MIN_FREQ) {
+    } else if (freq_compare_epsilon(freq) < E3XX_TX_LB_1700_MIN_FREQ) {
         band = tx_band::LB_1000;
-    } else if (fp_compare_epsilon<double>(freq) < E3XX_TX_LB_2750_MIN_FREQ) {
+    } else if (freq_compare_epsilon(freq) < E3XX_TX_LB_2750_MIN_FREQ) {
         band = tx_band::LB_1700;
-    } else if (fp_compare_epsilon<double>(freq) < E3XX_TX_HB_MIN_FREQ) {
+    } else if (freq_compare_epsilon(freq) < E3XX_TX_HB_MIN_FREQ) {
         band = tx_band::LB_2750;
-    } else if (fp_compare_epsilon<double>(freq) <= AD9361_TX_MAX_FREQ) {
+    } else if (freq_compare_epsilon(freq) <= AD9361_TX_MAX_FREQ) {
         band = tx_band::HB;
     } else {
         band = tx_band::INVALID_BAND;

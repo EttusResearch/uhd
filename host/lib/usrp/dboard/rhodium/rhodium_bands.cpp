@@ -20,6 +20,9 @@ namespace {
  * The RX path has 8 bands, which we call BAND0 through BAND7. BAND0 is the
  * lowest frequency band. BAND7 is the highest frequency band.
  *
+ * BAND0 is also identical with the "low band", i.e., the frequency range in
+ * which we shift the signal up to an IF before mixing it back down to DC.
+ *
  * The following constants define lower cutoff frequencies for each band.
  * RHODIUM_RX_BAND1_MIN_FREQ is the cutover frequency for switching from
  * BAND0 to BAND1, and so on.
@@ -45,6 +48,9 @@ constexpr double RHODIUM_RX_BAND7_MIN_FREQ = 4500e6;
  * The TX path has 8 bands, which we call BAND0 through BAND7. BAND0 is the
  * lowest frequency band. BAND7 is the highest frequency band.
  *
+ * BAND0 is also identical with the "low band", i.e., the frequency range in
+ * which we shift the signal up to an IF before mixing it back down to DC.
+ *
  * The following constants define lower cutoff frequencies for each band.
  * RHODIUM_TX_BAND1_MIN_FREQ is the cutover frequency for switching from
  * BAND0 to BAND1, and so on.
@@ -69,7 +75,7 @@ constexpr double RHODIUM_TX_BAND7_MIN_FREQ = 4100e6;
 rhodium_radio_control_impl::rx_band rhodium_radio_control_impl::_map_freq_to_rx_band(
     const double freq)
 {
-    auto freq_compare = fp_compare_epsilon<double>(freq, RHODIUM_FREQ_COMPARE_EPSILON);
+    const auto freq_compare = freq_compare_epsilon(freq);
 
     if (freq_compare < RHODIUM_RX_BAND0_MIN_FREQ) {
         return rx_band::RX_BAND_INVALID;
@@ -97,7 +103,7 @@ rhodium_radio_control_impl::rx_band rhodium_radio_control_impl::_map_freq_to_rx_
 rhodium_radio_control_impl::tx_band rhodium_radio_control_impl::_map_freq_to_tx_band(
     const double freq)
 {
-    auto freq_compare = fp_compare_epsilon<double>(freq, RHODIUM_FREQ_COMPARE_EPSILON);
+    const auto freq_compare = freq_compare_epsilon(freq);
 
     if (freq_compare < RHODIUM_TX_BAND0_MIN_FREQ) {
         return tx_band::TX_BAND_INVALID;

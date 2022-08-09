@@ -11,7 +11,6 @@
 # See here for more on pbuilder: https://wiki.ubuntu.com/PbuilderHowto
 
 import argparse
-import glob
 import os
 import pathlib
 import re
@@ -21,7 +20,7 @@ import subprocess
 import sys
 import tarfile
 
-supported_ubuntu_releases = ["bionic", "focal"]
+supported_ubuntu_releases = ["bionic", "focal", "jammy"]
 tar_command = "tar --exclude='.git*' --exclude='./debian' --exclude='*.swp' --exclude='fpga' --exclude='build' --exclude='./images/*.pyc' --exclude='./images/uhd-*' --exclude='tags' --exclude='.ci' --exclude='.clang*' -cJf {}/uhd_{}.orig.tar.xz ."
 debuild_command = "debuild -S -i -sa"
 debuild_nosign = " -uc -us"
@@ -136,8 +135,9 @@ if __name__ == "__main__":
                         help="Uploads to launchpad. Requires--sign")
     parser.add_argument("--nobuild", action='store_true',
                         help="Disables building using pbuilder")
-    parser.add_argument("--buildpath", type=str,
-                        help="Output path for build files", default="..")
+    parser.add_argument("--buildpath", type=str, required=True,
+                        help="Output path for build files. "
+                             "Will get nuked before creating packages.")
     parser.add_argument("release", type=str,
                         help="Ubuntu release version. This must match pbuilder create --distribution if building.")
     args = parser.parse_args()

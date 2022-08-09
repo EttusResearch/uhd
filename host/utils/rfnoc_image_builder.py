@@ -84,7 +84,7 @@ def setup_parser():
         default=None)
     parser.add_argument(
         "-n", "--image_core_name",
-        help="Name to use for the RFNoC image core."
+        help="Name to use for the RFNoC image core. "
              "Defaults to the device name.",
         default=None)
     parser.add_argument(

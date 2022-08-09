@@ -20,7 +20,6 @@ clocks:
     freq: "[]"
 
 control:
-  sw_iface: nocscript
   fpga_iface: ctrlport
   interface_direction: slave
   fifo_depth: 32
@@ -39,7 +38,7 @@ data:
       item_width: 32
       nipc: MEM_DATA_W/32
       info_fifo_depth: 32
-      payload_fifo_depth: MTU
+      payload_fifo_depth: 32
       format: int32
       mdata_sig: ~
   outputs:
@@ -48,14 +47,14 @@ data:
       item_width: 32
       nipc: MEM_DATA_W/32
       info_fifo_depth: 32
-      payload_fifo_depth: MTU
-      sideband_at_end: 1
+      payload_fifo_depth: 2**MTU
+      sideband_at_end: True
       format: int32
       mdata_sig: ~
 
 io_ports:
   axi_ram:
-    type: axi4_mm_4x64_4g
+    type: axi4_mm
     drive: master
 
 registers:

@@ -44,6 +44,12 @@ device_addr_t::device_addr_t(const std::string& args)
     }
 }
 
+device_addr_t::device_addr_t(const char* args) :
+    device_addr_t(std::string(args))
+{
+    // No additional construction is necessary
+}
+
 device_addr_t::device_addr_t(const std::map<std::string, std::string>& info)
 {
     for (auto& t : info) {

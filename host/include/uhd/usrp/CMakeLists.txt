@@ -14,6 +14,7 @@ UHD_INSTALL(FILES
     dboard_id.hpp
     dboard_iface.hpp
     dboard_manager.hpp
+    zbx_tune_map_item.hpp
 
     ### utilities ###
     gps_ctrl.hpp

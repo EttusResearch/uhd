@@ -716,7 +716,7 @@ Prism.languages.vhdl={comment:/--.+/,"vhdl-vectors":{pattern:/\b[oxb]"[\da-f_]+"
             <p>The top is defined in HDL source file common_regs.v, x4xx.v.</p>
             <div class="group"><a name="P5 Content"></a><h2 class="group">P5 Content</h2>
             <div class="register"><h3 class="register">Register map supplied for open-source projects</h3>
-            <i><BR/><BR/>"All content provided is Copyright 2021 National Instruments Corporation.
+            <i><BR/><BR/>"All content provided is Copyright 2022 National Instruments Corporation.
 For information on NI trademark guidelines, please see <a href="http://www.ni.com/legal/trademarks/">http://www.ni.com/legal/trademarks/</a>. For the NI Patent Notice, please see <a href="http://www.ni.com/legal/patents/">http://www.ni.com/legal/patents/</a>."
             </i></div><BR/>
 </div>
@@ -2383,6 +2383,10 @@ This enumeration is used to create the constants held in the basic registers.
     The registers contained here conform the mboard-regs node that MPM uses
     to manage general FPGA control/status calls, such as versioning,
     timekeeper, GPIO, etc.
+
+    The following diagram shows how the communication bus interacts with the
+    modules in CORE_REGS.
+    <img src = "x4xx_core_common_buses.svg"
             <div class="group"><a name="CORE_REGS_REGMAP|CORE_REGS"></a><h2 class="group">CORE_REGS</h2>
             
             <div class="register">
@@ -2629,7 +2633,7 @@ Window to access the timekeeper register map.
 <table border="0" cellspacing="0" cellpadding="0">
   <tr><td class="offset_info" align="right">DIO</td></tr>
   <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x2000</td></tr>
-  <tr><td class="offset_info" align="right">&nbsp;&nbsp;size=0x20 (32 bytes)</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;size=0x40 (64 bytes)</td></tr>
 </table>
 
 </td>
@@ -3228,14 +3232,628 @@ Total Offset =</td></tr>
 </div>
 
             <div class="regmap">
+              <a name="DIG_IFC_REGMAP"></a>
+              <h1 class="regmap">DIG_IFC_REGMAP</h1>
+            
+            <div class="group"><a name="DIG_IFC_REGMAP|SPI_OVER_GPIO_REGS"></a><h2 class="group">SPI_OVER_GPIO_REGS</h2>
+            
+            <div class="register">
+              <a name="DIG_IFC_REGMAP|SPI_SLAVE_CONFIG"></a>
+            
+<h3 class="register">Offset 0x0000: SPI_SLAVE_CONFIG(3:0) Register Array (R|W)</h3>
+
+                 <a class="sh_addrs" href="javascript:sa('DIG_IFC_REGMAP|SPI_SLAVE_CONFIG_in')">(<span id="show_DIG_IFC_REGMAP|SPI_SLAVE_CONFIG_in">show</span> extended info)</a>
+                 <div class="sh_addrs" id="div_DIG_IFC_REGMAP|SPI_SLAVE_CONFIG_in">
+                 
+                <table class="extended_info">
+                
+<tr>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_CTRLPORT_REGMAP|DIO_WINDOW">RADIO_CTRLPORT_REGMAP|DIO_WINDOW</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x00C000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_DIO_REGMAP|DIGITAL_IFC_REGS">RADIO_DIO_REGMAP|DIGITAL_IFC_REGS</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x002000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right">SPI_SLAVE_CONFIG</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x0000 + i*4</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Cannot determine accessibility through this path</td></tr>
+<tr><td class="offset_info">
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x00E000 + i*4
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+</table><p/>
+
+<p class="reg_info"><B>Initial Values</B><BR/>
+<table>
+  <tr><td>default</td><td>=&gt;</td><td>0x00000000</td></tr>
+</table>
+</p>
+
+<p class="reg_info">This register is defined in HDL source file x4xx_gpio_spi.v.<BR/>
+It uses RegType <b>SPI_SETUP</b> which is defined in HDL source file x4xx_gpio_spi.v.</p>
+
+</div>
+
+<div class="info">
+
+Controls SPI Transaction<BR/>
+Set of configuration registers for the supported slaves.
+
+</div>
+
+                <table class="bitfields" border="0" cellspacing="0" cellpadding="0">
+                  <tr class="header"><td class="bits">Bits</td><td>Name</td></tr>
+                
+            <tr  valign="top">
+              <td class="bits">31..28</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">27</td>
+              <td>
+                <p><span class="name"><a name="DIG_IFC_REGMAP|SPI_SLAVE_CONFIG|MOSI_EDGE"></a>MOSI_EDGE</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p>Controls the edge in which the MOSI line is updated.</br>
+            0 =  falling edge of SCLK.</br>
+            1 =  rising edge of SCLK.</p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">26</td>
+              <td>
+                <p><span class="name"><a name="DIG_IFC_REGMAP|SPI_SLAVE_CONFIG|MISO_EDGE"></a>MISO_EDGE</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p>Controls the edge in which the MISO line is latched.</br>
+            0 =  falling edge of SCLK.</br>
+            1 =  rising edge of SCLK.</p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">25..20</td>
+              <td>
+                <p><span class="name"><a name="DIG_IFC_REGMAP|SPI_SLAVE_CONFIG|SPI_LENGTH"></a>SPI_LENGTH</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p>Indicates the length of SPI transactions to this slave.</p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">19..15</td>
+              <td>
+                <p><span class="name"><a name="DIG_IFC_REGMAP|SPI_SLAVE_CONFIG|SLAVE_CS"></a>SLAVE_CS</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p>Indicates which GPIO line to use for the CS signal.</br>
+            0-11 : Port A GPIO</br>
+            16-27: Port B GPIO</p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">14..10</td>
+              <td>
+                <p><span class="name"><a name="DIG_IFC_REGMAP|SPI_SLAVE_CONFIG|SLAVE_MISO"></a>SLAVE_MISO</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p>Indicates which GPIO line to use for the MISO signal.</br>
+            0-11 : Port A GPIO</br>
+            16-27: Port B GPIO</p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">9..5</td>
+              <td>
+                <p><span class="name"><a name="DIG_IFC_REGMAP|SPI_SLAVE_CONFIG|SLAVE_MOSI"></a>SLAVE_MOSI</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p>Indicates which GPIO line to use for the MOSI signal.</br>
+            0-11 : Port A GPIO</br>
+            16-27: Port B GPIO</p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">4..0</td>
+              <td>
+                <p><span class="name"><a name="DIG_IFC_REGMAP|SPI_SLAVE_CONFIG|SLAVE_CLK"></a>SLAVE_CLK</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p>Indicates which GPIO line to use for the SCLK signal.</br>
+            0-11 : Port A GPIO</br>
+            16-27: Port B GPIO</p>
+            
+              </td>
+            </tr>
+            
+</table>
+
+</div>
+
+            <div class="register">
+              <a name="DIG_IFC_REGMAP|SPI_TRANSACTION_CONFIG"></a>
+            
+<h3 class="register">Offset 0x0010: SPI_TRANSACTION_CONFIG Register (R|W)</h3>
+
+                 <a class="sh_addrs" href="javascript:sa('DIG_IFC_REGMAP|SPI_TRANSACTION_CONFIG_in')">(<span id="show_DIG_IFC_REGMAP|SPI_TRANSACTION_CONFIG_in">show</span> extended info)</a>
+                 <div class="sh_addrs" id="div_DIG_IFC_REGMAP|SPI_TRANSACTION_CONFIG_in">
+                 
+                <table class="extended_info">
+                
+<tr>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_CTRLPORT_REGMAP|DIO_WINDOW">RADIO_CTRLPORT_REGMAP|DIO_WINDOW</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x00C000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_DIO_REGMAP|DIGITAL_IFC_REGS">RADIO_DIO_REGMAP|DIGITAL_IFC_REGS</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x002000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right">SPI_TRANSACTION_CONFIG</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x0010</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x00E010
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+</table><p/>
+
+<p class="reg_info">Initial Value = 0x00000000
+</p>
+
+<p class="reg_info">This register is defined in HDL source file x4xx_gpio_spi.v.</p>
+
+</div>
+
+<div class="info">
+
+Controls clock rate and target for subsequent SPI transactions.
+
+</div>
+
+                <table class="bitfields" border="0" cellspacing="0" cellpadding="0">
+                  <tr class="header"><td class="bits">Bits</td><td>Name</td></tr>
+                
+            <tr  valign="top">
+              <td class="bits">31..24</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr class='byte' valign="top">
+              <td class="bits">23..18</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">17..16</td>
+              <td>
+                <p><span class="name"><a name="DIG_IFC_REGMAP|SPI_TRANSACTION_CONFIG|SPI_SLAVE_SELECT"></a>SPI_SLAVE_SELECT</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr class='byte' valign="top">
+              <td class="bits">15..0</td>
+              <td>
+                <p><span class="name"><a name="DIG_IFC_REGMAP|SPI_TRANSACTION_CONFIG|SPI_CLK_DIV"></a>SPI_CLK_DIV</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p>Controls the rate for subsequent SPI transactions. SCLK = DataClk/[(SPI_CLK_DIV+1)]</p>
+            
+              </td>
+            </tr>
+            
+</table>
+
+</div>
+
+            <div class="register">
+              <a name="DIG_IFC_REGMAP|SPI_TRANSACTION_GO"></a>
+            
+<h3 class="register">Offset 0x0014: SPI_TRANSACTION_GO Register (W)</h3>
+
+                 <a class="sh_addrs" href="javascript:sa('DIG_IFC_REGMAP|SPI_TRANSACTION_GO_in')">(<span id="show_DIG_IFC_REGMAP|SPI_TRANSACTION_GO_in">show</span> extended info)</a>
+                 <div class="sh_addrs" id="div_DIG_IFC_REGMAP|SPI_TRANSACTION_GO_in">
+                 
+                <table class="extended_info">
+                
+<tr>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_CTRLPORT_REGMAP|DIO_WINDOW">RADIO_CTRLPORT_REGMAP|DIO_WINDOW</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x00C000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_DIO_REGMAP|DIGITAL_IFC_REGS">RADIO_DIO_REGMAP|DIGITAL_IFC_REGS</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x002000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right">SPI_TRANSACTION_GO</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x0014</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x00E014
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+</table><p/>
+
+<p class="reg_info">Initial Value = 0x00000000
+</p>
+
+<p class="reg_info">This register is defined in HDL source file x4xx_gpio_spi.v.</p>
+
+</div>
+
+<div class="info">
+
+Starts a SPI transaction
+
+</div>
+
+                <table class="bitfields" border="0" cellspacing="0" cellpadding="0">
+                  <tr class="header"><td class="bits">Bits</td><td>Name</td></tr>
+                
+            <tr  valign="top">
+              <td class="bits">31..0w</td>
+              <td>
+                <p><span class="name"><a name="DIG_IFC_REGMAP|SPI_TRANSACTION_GO|SPI_DATA"></a>SPI_DATA</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p>Payload to be sent for the SPI transaction. If the payload is shorter than 32 bits,
+               it must be aligned to the MSbs in this field. LSbs are ignored in this scenario.</p>
+            
+              </td>
+            </tr>
+            
+</table>
+
+</div>
+
+            <div class="register">
+              <a name="DIG_IFC_REGMAP|SPI_STATUS"></a>
+            
+<h3 class="register">Offset 0x0018: SPI_STATUS Register (R)</h3>
+
+                 <a class="sh_addrs" href="javascript:sa('DIG_IFC_REGMAP|SPI_STATUS_in')">(<span id="show_DIG_IFC_REGMAP|SPI_STATUS_in">show</span> extended info)</a>
+                 <div class="sh_addrs" id="div_DIG_IFC_REGMAP|SPI_STATUS_in">
+                 
+                <table class="extended_info">
+                
+<tr>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_CTRLPORT_REGMAP|DIO_WINDOW">RADIO_CTRLPORT_REGMAP|DIO_WINDOW</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x00C000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_DIO_REGMAP|DIGITAL_IFC_REGS">RADIO_DIO_REGMAP|DIGITAL_IFC_REGS</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x002000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right">SPI_STATUS</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x0018</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x00E018
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+</table><p/>
+
+<p class="reg_info">Initial Value = 0x00000000
+</p>
+
+<p class="reg_info">This register is defined in HDL source file x4xx_gpio_spi.v.</p>
+
+</div>
+
+<div class="info">
+
+Contains the status of the SPI engine.
+
+</div>
+
+                <table class="bitfields" border="0" cellspacing="0" cellpadding="0">
+                  <tr class="header"><td class="bits">Bits</td><td>Name</td></tr>
+                
+            <tr  valign="top">
+              <td class="bits">31..25</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">24</td>
+              <td>
+                <p><span class="name"><a name="DIG_IFC_REGMAP|SPI_STATUS|SPI_READY"></a>SPI_READY</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p>Indicates the SPI engine is ready to start a new SPI transaction.</p>
+            
+              </td>
+            </tr>
+            
+            <tr class='byte' valign="top">
+              <td class="bits">23..0</td>
+              <td>
+                <p><span class="name"><a name="DIG_IFC_REGMAP|SPI_STATUS|SPI_RESPONSE"></a>SPI_RESPONSE</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p>Records the response of the last completed SPI transaction.</p>
+            
+              </td>
+            </tr>
+            
+</table>
+
+</div>
+
+            <div class="register">
+              <a name="DIG_IFC_REGMAP|CONTROLLER_INFO"></a>
+            
+<h3 class="register">Offset 0x001C: CONTROLLER_INFO Register (R)</h3>
+
+                 <a class="sh_addrs" href="javascript:sa('DIG_IFC_REGMAP|CONTROLLER_INFO_in')">(<span id="show_DIG_IFC_REGMAP|CONTROLLER_INFO_in">show</span> extended info)</a>
+                 <div class="sh_addrs" id="div_DIG_IFC_REGMAP|CONTROLLER_INFO_in">
+                 
+                <table class="extended_info">
+                
+<tr>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_CTRLPORT_REGMAP|DIO_WINDOW">RADIO_CTRLPORT_REGMAP|DIO_WINDOW</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x00C000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_DIO_REGMAP|DIGITAL_IFC_REGS">RADIO_DIO_REGMAP|DIGITAL_IFC_REGS</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x002000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right">CONTROLLER_INFO</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x001C</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x00E01C
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+</table><p/>
+
+<p class="reg_info">Initial Value not specified
+</p>
+
+<p class="reg_info">This register is defined in HDL source file x4xx_gpio_spi.v.</p>
+
+</div>
+
+<div class="info">
+
+Contains information pertaining this SPI controller block.
+
+</div>
+
+                <table class="bitfields" border="0" cellspacing="0" cellpadding="0">
+                  <tr class="header"><td class="bits">Bits</td><td>Name</td></tr>
+                
+            <tr  valign="top">
+              <td class="bits">31..24</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr class='byte' valign="top">
+              <td class="bits">23..16</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr class='byte' valign="top">
+              <td class="bits">15..8</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr class='byte' valign="top">
+              <td class="bits">7..4</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">3..0</td>
+              <td>
+                <p><span class="name"><a name="DIG_IFC_REGMAP|CONTROLLER_INFO|SLAVE_COUNT"></a>SLAVE_COUNT</span><span class="attr"> </span></p>
+                <p>Indicates the number SPI slaves configurable by the controller.</p>
+            
+              </td>
+            </tr>
+            
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+            <div class="regmap">
               <a name="DIO_REGMAP"></a>
               <h1 class="regmap">DIO_REGMAP</h1>
             
             <div class="group"><a name="DIO_REGMAP|DIO_REGS"></a><h2 class="group">DIO_REGS</h2>
-            Registers to control the GPIO buffer direction on the FPGA connected to the DIO board.
-      Further registers enable the PS to control and read the GPIO lines as master.
-      Make sure the GPIO lines between FPGA and GPIO board are not driven by two drivers.
-      Set the DIO registers in <a href="#PS_CPLD_BASE_REGMAP">PS_CPLD_BASE_REGMAP</a> appropriately.
+            Registers to control the GPIO buffer direction on the FPGA connected to
+      the DIO board. Further registers enable different sources to control and
+      read the GPIO lines as master. The following diagram shows how source
+      selection multiplexers are arranged, as well as an indicator for the
+      register that control them. </br>
+      <img src = "..\..\..\..\..\host\docs\res\x4xx_dio_source_muxes.svg"
+          alt="Front-Panel Programmable GPIOs"/></br>
+      Make sure the GPIO lines between FPGA and GPIO board are not driven by
+      two drivers. Set the DIO registers in <a href="#PS_CPLD_BASE_REGMAP">PS_CPLD_BASE_REGMAP</a> appropriately.
             <div class="register">
               <a name="DIO_REGMAP|DIO_MASTER_REGISTER"></a>
             
@@ -3274,7 +3892,7 @@ Total Offset =</td></tr>
 
 </td>
 
-<td class="outercell" rowspan="1">
+<td class="outercell" rowspan="2">
 
 <table border="0" cellspacing="0" cellpadding="0">
   <tr><td class="offset_info" align="right">DIO_MASTER_REGISTER</td></tr>
@@ -3300,19 +3918,61 @@ Total Offset =</td></tr>
 
 </tr>
 
+<tr>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_CTRLPORT_REGMAP|DIO_WINDOW">RADIO_CTRLPORT_REGMAP|DIO_WINDOW</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x00C000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_DIO_REGMAP|DIO_SOURCE_CONTROL">RADIO_DIO_REGMAP|DIO_SOURCE_CONTROL</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x001000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1"></td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x00D000
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
 </table><p/>
 
 <p class="reg_info">Initial Value = 0x00000000
 </p>
 
-<p class="reg_info">This register is defined in HDL source file x4xx_dio.v.</p>
+<p class="reg_info">This register is defined in HDL source file x4xx_dio.v.<BR/>
+It uses RegType <b>DIO_CONTROL_REG</b> which is defined in HDL source file x4xx_dio.v.</p>
 
 </div>
 
 <div class="info">
 
-Sets whether the DIO signal line is driven by this register interface or the user application.<br/>
-        0 = user application is master, 1 = PS is master
+Holds a single bit setting for DIO lines in both ports. One bit per pin.<BR/>
+Sets whether the DIO signal line is driven by this register interface
+        or the user application.<br/>
+        0 = user application is master, 1 = output of <a href="#DIO_REGMAP|SW_DIO_CONTROL">SW_DIO_CONTROL</a> is master
 
 </div>
 
@@ -3331,7 +3991,7 @@ Sets whether the DIO signal line is driven by this register interface or the use
             <tr  valign="top">
               <td class="bits">27..16</td>
               <td>
-                <p><span class="name"><a name="DIO_REGMAP|DIO_MASTER_REGISTER|DIO_MASTER_B"></a>DIO_MASTER_B</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p><span class="name"><a name="DIO_REGMAP|DIO_MASTER_REGISTER|DIO_PORT_B"></a>DIO_PORT_B</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
                 <p></p>
             
               </td>
@@ -3349,7 +4009,7 @@ Sets whether the DIO signal line is driven by this register interface or the use
             <tr  valign="top">
               <td class="bits">11..0</td>
               <td>
-                <p><span class="name"><a name="DIO_REGMAP|DIO_MASTER_REGISTER|DIO_MASTER_A"></a>DIO_MASTER_A</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p><span class="name"><a name="DIO_REGMAP|DIO_MASTER_REGISTER|DIO_PORT_A"></a>DIO_PORT_A</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
                 <p></p>
             
               </td>
@@ -3397,7 +4057,7 @@ Sets whether the DIO signal line is driven by this register interface or the use
 
 </td>
 
-<td class="outercell" rowspan="1">
+<td class="outercell" rowspan="2">
 
 <table border="0" cellspacing="0" cellpadding="0">
   <tr><td class="offset_info" align="right">DIO_DIRECTION_REGISTER</td></tr>
@@ -3423,19 +4083,61 @@ Total Offset =</td></tr>
 
 </tr>
 
+<tr>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_CTRLPORT_REGMAP|DIO_WINDOW">RADIO_CTRLPORT_REGMAP|DIO_WINDOW</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x00C000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_DIO_REGMAP|DIO_SOURCE_CONTROL">RADIO_DIO_REGMAP|DIO_SOURCE_CONTROL</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x001000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1"></td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x00D004
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
 </table><p/>
 
 <p class="reg_info">Initial Value = 0x00000000
 </p>
 
-<p class="reg_info">This register is defined in HDL source file x4xx_dio.v.</p>
+<p class="reg_info">This register is defined in HDL source file x4xx_dio.v.<BR/>
+It uses RegType <b>DIO_CONTROL_REG</b> which is defined in HDL source file x4xx_dio.v.</p>
 
 </div>
 
 <div class="info">
 
+Holds a single bit setting for DIO lines in both ports. One bit per pin.<BR/>
 Set the direction of FPGA buffer connected to DIO ports on the DIO board.<br/>
-        Each bit represents one signal line. 0 = line is an input to the FPGA, 1 = line is an output driven by the FPGA.
+        Each bit represents one signal line. 0 = line is an input to the FPGA,
+        1 = line is an output driven by the FPGA.
 
 </div>
 
@@ -3454,7 +4156,7 @@ Set the direction of FPGA buffer connected to DIO ports on the DIO board.<br/>
             <tr  valign="top">
               <td class="bits">27..16</td>
               <td>
-                <p><span class="name"><a name="DIO_REGMAP|DIO_DIRECTION_REGISTER|DIO_DIRECTION_B"></a>DIO_DIRECTION_B</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p><span class="name"><a name="DIO_REGMAP|DIO_DIRECTION_REGISTER|DIO_PORT_B"></a>DIO_PORT_B</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
                 <p></p>
             
               </td>
@@ -3472,7 +4174,7 @@ Set the direction of FPGA buffer connected to DIO ports on the DIO board.<br/>
             <tr  valign="top">
               <td class="bits">11..0</td>
               <td>
-                <p><span class="name"><a name="DIO_REGMAP|DIO_DIRECTION_REGISTER|DIO_DIRECTION_A"></a>DIO_DIRECTION_A</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p><span class="name"><a name="DIO_REGMAP|DIO_DIRECTION_REGISTER|DIO_PORT_A"></a>DIO_PORT_A</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
                 <p></p>
             
               </td>
@@ -3520,7 +4222,7 @@ Set the direction of FPGA buffer connected to DIO ports on the DIO board.<br/>
 
 </td>
 
-<td class="outercell" rowspan="1">
+<td class="outercell" rowspan="2">
 
 <table border="0" cellspacing="0" cellpadding="0">
   <tr><td class="offset_info" align="right">DIO_INPUT_REGISTER</td></tr>
@@ -3546,17 +4248,58 @@ Total Offset =</td></tr>
 
 </tr>
 
+<tr>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_CTRLPORT_REGMAP|DIO_WINDOW">RADIO_CTRLPORT_REGMAP|DIO_WINDOW</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x00C000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_DIO_REGMAP|DIO_SOURCE_CONTROL">RADIO_DIO_REGMAP|DIO_SOURCE_CONTROL</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x001000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1"></td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x00D008
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
 </table><p/>
 
-<p class="reg_info">Initial Value not specified
+<p class="reg_info">Initial Value = 0x00000000
 </p>
 
-<p class="reg_info">This register is defined in HDL source file x4xx_dio.v.</p>
+<p class="reg_info">This register is defined in HDL source file x4xx_dio.v.<BR/>
+It uses RegType <b>DIO_CONTROL_REG</b> which is defined in HDL source file x4xx_dio.v.</p>
 
 </div>
 
 <div class="info">
 
+Holds a single bit setting for DIO lines in both ports. One bit per pin.<BR/>
 Status of each bit at the FPGA input.
 
 </div>
@@ -3576,7 +4319,7 @@ Status of each bit at the FPGA input.
             <tr  valign="top">
               <td class="bits">27..16</td>
               <td>
-                <p><span class="name"><a name="DIO_REGMAP|DIO_INPUT_REGISTER|DIO_INPUT_B"></a>DIO_INPUT_B</span><span class="attr"> </span></p>
+                <p><span class="name"><a name="DIO_REGMAP|DIO_INPUT_REGISTER|DIO_PORT_B"></a>DIO_PORT_B</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
                 <p></p>
             
               </td>
@@ -3594,7 +4337,7 @@ Status of each bit at the FPGA input.
             <tr  valign="top">
               <td class="bits">11..0</td>
               <td>
-                <p><span class="name"><a name="DIO_REGMAP|DIO_INPUT_REGISTER|DIO_INPUT_A"></a>DIO_INPUT_A</span><span class="attr"> </span></p>
+                <p><span class="name"><a name="DIO_REGMAP|DIO_INPUT_REGISTER|DIO_PORT_A"></a>DIO_PORT_A</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
                 <p></p>
             
               </td>
@@ -3642,7 +4385,7 @@ Status of each bit at the FPGA input.
 
 </td>
 
-<td class="outercell" rowspan="1">
+<td class="outercell" rowspan="2">
 
 <table border="0" cellspacing="0" cellpadding="0">
   <tr><td class="offset_info" align="right">DIO_OUTPUT_REGISTER</td></tr>
@@ -3668,18 +4411,60 @@ Total Offset =</td></tr>
 
 </tr>
 
+<tr>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_CTRLPORT_REGMAP|DIO_WINDOW">RADIO_CTRLPORT_REGMAP|DIO_WINDOW</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x00C000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_DIO_REGMAP|DIO_SOURCE_CONTROL">RADIO_DIO_REGMAP|DIO_SOURCE_CONTROL</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x001000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1"></td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x00D00C
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
 </table><p/>
 
 <p class="reg_info">Initial Value = 0x00000000
 </p>
 
-<p class="reg_info">This register is defined in HDL source file x4xx_dio.v.</p>
+<p class="reg_info">This register is defined in HDL source file x4xx_dio.v.<BR/>
+It uses RegType <b>DIO_CONTROL_REG</b> which is defined in HDL source file x4xx_dio.v.</p>
 
 </div>
 
 <div class="info">
 
-Controls the values on each DIO signal line in case the line master is set to PS in <a href="#DIO_REGMAP|DIO_MASTER_REGISTER">DIO_MASTER_REGISTER</a>.
+Holds a single bit setting for DIO lines in both ports. One bit per pin.<BR/>
+Controls the values on each DIO signal line in case the line master is
+        set to PS in <a href="#DIO_REGMAP|DIO_MASTER_REGISTER">DIO_MASTER_REGISTER</a>.
 
 </div>
 
@@ -3698,7 +4483,7 @@ Controls the values on each DIO signal line in case the line master is set to PS
             <tr  valign="top">
               <td class="bits">27..16</td>
               <td>
-                <p><span class="name"><a name="DIO_REGMAP|DIO_OUTPUT_REGISTER|DIO_OUTPUT_B"></a>DIO_OUTPUT_B</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p><span class="name"><a name="DIO_REGMAP|DIO_OUTPUT_REGISTER|DIO_PORT_B"></a>DIO_PORT_B</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
                 <p></p>
             
               </td>
@@ -3716,7 +4501,835 @@ Controls the values on each DIO signal line in case the line master is set to PS
             <tr  valign="top">
               <td class="bits">11..0</td>
               <td>
-                <p><span class="name"><a name="DIO_REGMAP|DIO_OUTPUT_REGISTER|DIO_OUTPUT_A"></a>DIO_OUTPUT_A</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p><span class="name"><a name="DIO_REGMAP|DIO_OUTPUT_REGISTER|DIO_PORT_A"></a>DIO_PORT_A</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+</table>
+
+</div>
+
+            <div class="register">
+              <a name="DIO_REGMAP|DIO_SOURCE_REGISTER"></a>
+            
+<h3 class="register">Offset 0x0010: DIO_SOURCE_REGISTER Register (R|W)</h3>
+
+                 <a class="sh_addrs" href="javascript:sa('DIO_REGMAP|DIO_SOURCE_REGISTER_in')">(<span id="show_DIO_REGMAP|DIO_SOURCE_REGISTER_in">show</span> extended info)</a>
+                 <div class="sh_addrs" id="div_DIO_REGMAP|DIO_SOURCE_REGISTER_in">
+                 
+                <table class="extended_info">
+                
+<tr>
+
+<td class="outercell" rowspan="1">
+
+                  <table border="0" cellspacing="0" cellpadding="0">
+                    <tr><td class="offset_info" align="right">Port <a href="#X4XX_FPGA|ARM_M_AXI_HPM0">ARM_M_AXI_HPM0</a></td></tr>
+                  </table>
+               
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#AXI_HPM0_REGMAP|CORE_REGS">AXI_HPM0_REGMAP|CORE_REGS</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x10000A0000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#CORE_REGS_REGMAP|DIO">CORE_REGS_REGMAP|DIO</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x002000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="2">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right">DIO_SOURCE_REGISTER</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x0010</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x10000A2010
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+<tr>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_CTRLPORT_REGMAP|DIO_WINDOW">RADIO_CTRLPORT_REGMAP|DIO_WINDOW</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x00C000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_DIO_REGMAP|DIO_SOURCE_CONTROL">RADIO_DIO_REGMAP|DIO_SOURCE_CONTROL</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x001000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1"></td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x00D010
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+</table><p/>
+
+<p class="reg_info">Initial Value = 0x00000000
+</p>
+
+<p class="reg_info">This register is defined in HDL source file x4xx_dio.v.<BR/>
+It uses RegType <b>DIO_CONTROL_REG</b> which is defined in HDL source file x4xx_dio.v.</p>
+
+</div>
+
+<div class="info">
+
+Holds a single bit setting for DIO lines in both ports. One bit per pin.<BR/>
+Controls whether the DIO lines reflect the state of <a href="#DIO_REGMAP|DIO_MASTER_REGISTER">DIO_MASTER_REGISTER</a>
+        or the radio blocks. 0 = <a href="#DIO_REGMAP|DIO_MASTER_REGISTER">DIO_MASTER_REGISTER</a>,
+        1 = Radio block output(<a href="#DIO_REGMAP|DIO_OVERRIDE">DIO_OVERRIDE</a>)
+
+</div>
+
+                <table class="bitfields" border="0" cellspacing="0" cellpadding="0">
+                  <tr class="header"><td class="bits">Bits</td><td>Name</td></tr>
+                
+            <tr  valign="top">
+              <td class="bits">31..28</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">27..16</td>
+              <td>
+                <p><span class="name"><a name="DIO_REGMAP|DIO_SOURCE_REGISTER|DIO_PORT_B"></a>DIO_PORT_B</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr class='byte' valign="top">
+              <td class="bits">15..12</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">11..0</td>
+              <td>
+                <p><span class="name"><a name="DIO_REGMAP|DIO_SOURCE_REGISTER|DIO_PORT_A"></a>DIO_PORT_A</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+</table>
+
+</div>
+
+            <div class="register">
+              <a name="DIO_REGMAP|RADIO_SOURCE_REGISTER"></a>
+            
+<h3 class="register">Offset 0x0014: RADIO_SOURCE_REGISTER Register (R|W)</h3>
+
+                 <a class="sh_addrs" href="javascript:sa('DIO_REGMAP|RADIO_SOURCE_REGISTER_in')">(<span id="show_DIO_REGMAP|RADIO_SOURCE_REGISTER_in">show</span> extended info)</a>
+                 <div class="sh_addrs" id="div_DIO_REGMAP|RADIO_SOURCE_REGISTER_in">
+                 
+                <table class="extended_info">
+                
+<tr>
+
+<td class="outercell" rowspan="1">
+
+                  <table border="0" cellspacing="0" cellpadding="0">
+                    <tr><td class="offset_info" align="right">Port <a href="#X4XX_FPGA|ARM_M_AXI_HPM0">ARM_M_AXI_HPM0</a></td></tr>
+                  </table>
+               
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#AXI_HPM0_REGMAP|CORE_REGS">AXI_HPM0_REGMAP|CORE_REGS</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x10000A0000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#CORE_REGS_REGMAP|DIO">CORE_REGS_REGMAP|DIO</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x002000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="2">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right">RADIO_SOURCE_REGISTER</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x0014</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x10000A2014
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+<tr>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_CTRLPORT_REGMAP|DIO_WINDOW">RADIO_CTRLPORT_REGMAP|DIO_WINDOW</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x00C000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_DIO_REGMAP|DIO_SOURCE_CONTROL">RADIO_DIO_REGMAP|DIO_SOURCE_CONTROL</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x001000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1"></td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x00D014
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+</table><p/>
+
+<p class="reg_info">Initial Value = 0x00000000
+</p>
+
+<p class="reg_info">This register is defined in HDL source file x4xx_dio.v.<BR/>
+It uses RegType <b>DIO_CONTROL_REG</b> which is defined in HDL source file x4xx_dio.v.</p>
+
+</div>
+
+<div class="info">
+
+Holds a single bit setting for DIO lines in both ports. One bit per pin.<BR/>
+Controls which radio block to use the ATR state from to determine the
+        state of the DIO lines.
+        0 = Radio#0
+        1 = Radio#1
+
+</div>
+
+                <table class="bitfields" border="0" cellspacing="0" cellpadding="0">
+                  <tr class="header"><td class="bits">Bits</td><td>Name</td></tr>
+                
+            <tr  valign="top">
+              <td class="bits">31..28</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">27..16</td>
+              <td>
+                <p><span class="name"><a name="DIO_REGMAP|RADIO_SOURCE_REGISTER|DIO_PORT_B"></a>DIO_PORT_B</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr class='byte' valign="top">
+              <td class="bits">15..12</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">11..0</td>
+              <td>
+                <p><span class="name"><a name="DIO_REGMAP|RADIO_SOURCE_REGISTER|DIO_PORT_A"></a>DIO_PORT_A</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+</table>
+
+</div>
+
+            <div class="register">
+              <a name="DIO_REGMAP|INTERFACE_DIO_SELECT"></a>
+            
+<h3 class="register">Offset 0x0018: INTERFACE_DIO_SELECT Register (R|W)</h3>
+
+                 <a class="sh_addrs" href="javascript:sa('DIO_REGMAP|INTERFACE_DIO_SELECT_in')">(<span id="show_DIO_REGMAP|INTERFACE_DIO_SELECT_in">show</span> extended info)</a>
+                 <div class="sh_addrs" id="div_DIO_REGMAP|INTERFACE_DIO_SELECT_in">
+                 
+                <table class="extended_info">
+                
+<tr>
+
+<td class="outercell" rowspan="1">
+
+                  <table border="0" cellspacing="0" cellpadding="0">
+                    <tr><td class="offset_info" align="right">Port <a href="#X4XX_FPGA|ARM_M_AXI_HPM0">ARM_M_AXI_HPM0</a></td></tr>
+                  </table>
+               
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#AXI_HPM0_REGMAP|CORE_REGS">AXI_HPM0_REGMAP|CORE_REGS</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x10000A0000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#CORE_REGS_REGMAP|DIO">CORE_REGS_REGMAP|DIO</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x002000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="2">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right">INTERFACE_DIO_SELECT</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x0018</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x10000A2018
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+<tr>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_CTRLPORT_REGMAP|DIO_WINDOW">RADIO_CTRLPORT_REGMAP|DIO_WINDOW</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x00C000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_DIO_REGMAP|DIO_SOURCE_CONTROL">RADIO_DIO_REGMAP|DIO_SOURCE_CONTROL</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x001000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1"></td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x00D018
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+</table><p/>
+
+<p class="reg_info">Initial Value = 0x00000000
+</p>
+
+<p class="reg_info">This register is defined in HDL source file x4xx_dio.v.<BR/>
+It uses RegType <b>DIO_CONTROL_REG</b> which is defined in HDL source file x4xx_dio.v.</p>
+
+</div>
+
+<div class="info">
+
+Holds a single bit setting for DIO lines in both ports. One bit per pin.<BR/>
+Controls which of the two available digital interfaces controls the DIO lines.
+        0 = Digital interface from Radio#0,
+        1 = Digital Interface from Radio#1.
+
+</div>
+
+                <table class="bitfields" border="0" cellspacing="0" cellpadding="0">
+                  <tr class="header"><td class="bits">Bits</td><td>Name</td></tr>
+                
+            <tr  valign="top">
+              <td class="bits">31..28</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">27..16</td>
+              <td>
+                <p><span class="name"><a name="DIO_REGMAP|INTERFACE_DIO_SELECT|DIO_PORT_B"></a>DIO_PORT_B</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr class='byte' valign="top">
+              <td class="bits">15..12</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">11..0</td>
+              <td>
+                <p><span class="name"><a name="DIO_REGMAP|INTERFACE_DIO_SELECT|DIO_PORT_A"></a>DIO_PORT_A</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+</table>
+
+</div>
+
+            <div class="register">
+              <a name="DIO_REGMAP|DIO_OVERRIDE"></a>
+            
+<h3 class="register">Offset 0x001C: DIO_OVERRIDE Register (R|W)</h3>
+
+                 <a class="sh_addrs" href="javascript:sa('DIO_REGMAP|DIO_OVERRIDE_in')">(<span id="show_DIO_REGMAP|DIO_OVERRIDE_in">show</span> extended info)</a>
+                 <div class="sh_addrs" id="div_DIO_REGMAP|DIO_OVERRIDE_in">
+                 
+                <table class="extended_info">
+                
+<tr>
+
+<td class="outercell" rowspan="1">
+
+                  <table border="0" cellspacing="0" cellpadding="0">
+                    <tr><td class="offset_info" align="right">Port <a href="#X4XX_FPGA|ARM_M_AXI_HPM0">ARM_M_AXI_HPM0</a></td></tr>
+                  </table>
+               
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#AXI_HPM0_REGMAP|CORE_REGS">AXI_HPM0_REGMAP|CORE_REGS</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x10000A0000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#CORE_REGS_REGMAP|DIO">CORE_REGS_REGMAP|DIO</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x002000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="2">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right">DIO_OVERRIDE</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x001C</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x10000A201C
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+<tr>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_CTRLPORT_REGMAP|DIO_WINDOW">RADIO_CTRLPORT_REGMAP|DIO_WINDOW</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x00C000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_DIO_REGMAP|DIO_SOURCE_CONTROL">RADIO_DIO_REGMAP|DIO_SOURCE_CONTROL</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x001000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1"></td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x00D01C
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+</table><p/>
+
+<p class="reg_info">Initial Value = 0x00000000
+</p>
+
+<p class="reg_info">This register is defined in HDL source file x4xx_dio.v.<BR/>
+It uses RegType <b>DIO_CONTROL_REG</b> which is defined in HDL source file x4xx_dio.v.</p>
+
+</div>
+
+<div class="info">
+
+Holds a single bit setting for DIO lines in both ports. One bit per pin.<BR/>
+Controls whether the radio input to the <a href="#DIO_REGMAP|DIO_SOURCE_REGISTER">DIO_SOURCE_REGISTER</a> mux
+        connects to the ATR control or a Digital interface block. The output
+        of the mux controlled by this bit goes to <a href="#DIO_REGMAP|DIO_SOURCE_REGISTER">DIO_SOURCE_REGISTER</a>.
+        0 = Drive the ATR state(<a href="#DIO_REGMAP|RADIO_SOURCE_REGISTER">RADIO_SOURCE_REGISTER</a>), 1 = Drive
+        Digital interface block(Output of <a href="#DIO_REGMAP|INTERFACE_DIO_SELECT">INTERFACE_DIO_SELECT</a>).
+
+</div>
+
+                <table class="bitfields" border="0" cellspacing="0" cellpadding="0">
+                  <tr class="header"><td class="bits">Bits</td><td>Name</td></tr>
+                
+            <tr  valign="top">
+              <td class="bits">31..28</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">27..16</td>
+              <td>
+                <p><span class="name"><a name="DIO_REGMAP|DIO_OVERRIDE|DIO_PORT_B"></a>DIO_PORT_B</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr class='byte' valign="top">
+              <td class="bits">15..12</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">11..0</td>
+              <td>
+                <p><span class="name"><a name="DIO_REGMAP|DIO_OVERRIDE|DIO_PORT_A"></a>DIO_PORT_A</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+</table>
+
+</div>
+
+            <div class="register">
+              <a name="DIO_REGMAP|SW_DIO_CONTROL"></a>
+            
+<h3 class="register">Offset 0x0020: SW_DIO_CONTROL Register (R|W)</h3>
+
+                 <a class="sh_addrs" href="javascript:sa('DIO_REGMAP|SW_DIO_CONTROL_in')">(<span id="show_DIO_REGMAP|SW_DIO_CONTROL_in">show</span> extended info)</a>
+                 <div class="sh_addrs" id="div_DIO_REGMAP|SW_DIO_CONTROL_in">
+                 
+                <table class="extended_info">
+                
+<tr>
+
+<td class="outercell" rowspan="1">
+
+                  <table border="0" cellspacing="0" cellpadding="0">
+                    <tr><td class="offset_info" align="right">Port <a href="#X4XX_FPGA|ARM_M_AXI_HPM0">ARM_M_AXI_HPM0</a></td></tr>
+                  </table>
+               
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#AXI_HPM0_REGMAP|CORE_REGS">AXI_HPM0_REGMAP|CORE_REGS</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x10000A0000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#CORE_REGS_REGMAP|DIO">CORE_REGS_REGMAP|DIO</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x002000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="2">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right">SW_DIO_CONTROL</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x0020</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x10000A2020
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+<tr>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_CTRLPORT_REGMAP|DIO_WINDOW">RADIO_CTRLPORT_REGMAP|DIO_WINDOW</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x00C000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_DIO_REGMAP|DIO_SOURCE_CONTROL">RADIO_DIO_REGMAP|DIO_SOURCE_CONTROL</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x001000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1"></td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x00D020
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+</table><p/>
+
+<p class="reg_info">Initial Value = 0x00000000
+</p>
+
+<p class="reg_info">This register is defined in HDL source file x4xx_dio.v.<BR/>
+It uses RegType <b>DIO_CONTROL_REG</b> which is defined in HDL source file x4xx_dio.v.</p>
+
+</div>
+
+<div class="info">
+
+Holds a single bit setting for DIO lines in both ports. One bit per pin.<BR/>
+Controls which source is forwarded to the <a href="#DIO_REGMAP|DIO_MASTER_REGISTER">DIO_MASTER_REGISTER</a> mux.
+        This configuration is applied independently for each DIO line.
+        0 = MPM Ctrlport endpoint, 1 = PS Netlist DIO signal.
+
+</div>
+
+                <table class="bitfields" border="0" cellspacing="0" cellpadding="0">
+                  <tr class="header"><td class="bits">Bits</td><td>Name</td></tr>
+                
+            <tr  valign="top">
+              <td class="bits">31..28</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">27..16</td>
+              <td>
+                <p><span class="name"><a name="DIO_REGMAP|SW_DIO_CONTROL|DIO_PORT_B"></a>DIO_PORT_B</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr class='byte' valign="top">
+              <td class="bits">15..12</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">11..0</td>
+              <td>
+                <p><span class="name"><a name="DIO_REGMAP|SW_DIO_CONTROL|DIO_PORT_A"></a>DIO_PORT_A</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
                 <p></p>
             
               </td>
@@ -6682,6 +8295,741 @@ Total Offset =</td></tr>
 Returns information from the QSFP1 Lane3.
 
 </div>
+
+</div>
+
+</div>
+
+</div>
+
+            <div class="regmap">
+              <a name="GPIO_ATR_REGMAP"></a>
+              <h1 class="regmap">GPIO_ATR_REGMAP</h1>
+            
+            <div class="group"><a name="GPIO_ATR_REGMAP|GPIO_ATR_REGS"></a><h2 class="group">GPIO_ATR_REGS</h2>
+            Describes the behavior of GPIO lines when controlled by the ATR state.
+            <div class="register">
+              <a name="GPIO_ATR_REGMAP|ATR_STATE"></a>
+            
+<h3 class="register">Offset 0x0000: ATR_STATE(15:0) Register Array (R|W)</h3>
+
+                 <a class="sh_addrs" href="javascript:sa('GPIO_ATR_REGMAP|ATR_STATE_in')">(<span id="show_GPIO_ATR_REGMAP|ATR_STATE_in">show</span> extended info)</a>
+                 <div class="sh_addrs" id="div_GPIO_ATR_REGMAP|ATR_STATE_in">
+                 
+                <table class="extended_info">
+                
+<tr>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_CTRLPORT_REGMAP|DIO_WINDOW">RADIO_CTRLPORT_REGMAP|DIO_WINDOW</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x00C000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_DIO_REGMAP|RADIO_GPIO_ATR_REGS">RADIO_DIO_REGMAP|RADIO_GPIO_ATR_REGS</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x000000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right">ATR_STATE</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x0000 + i*4</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Cannot determine accessibility through this path</td></tr>
+<tr><td class="offset_info">
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x00C000 + i*4
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+</table><p/>
+
+<p class="reg_info"><B>Initial Values</B><BR/>
+<table>
+  <tr><td>default</td><td>=&gt;</td><td>0x00000000</td></tr>
+</table>
+</p>
+
+<p class="reg_info">This register is defined in HDL source file x4xx_gpio_atr.v.<BR/>
+It uses RegType <b>GPIO_ATR_STATE</b> which is defined in HDL source file x4xx_gpio_atr.v.</p>
+
+</div>
+
+<div class="info">
+
+Holds a single bit setting for GPIO lines in both ports for a particular ATR sate<BR/>
+Describes GPIO behavior for the different ATR states. When <a href="#GPIO_ATR_REGMAP|ATR_OPTION_REGISTRER|ATR_OPTION">ATR_OPTION</a>
+        is set to use the DB states, TX and RX states for RF0 and RF1 are
+        combined to create a single vector. This creates 16 different
+        combinations, each with its own register. When <a href="#GPIO_ATR_REGMAP|ATR_OPTION_REGISTRER|ATR_OPTION">ATR_OPTION</a> is set to
+        classic ATR, offsets 0x00-0x03 in this register group will be driven
+        in accordance with the state of RF0, and offsets 0x04-0x07 will be
+        driven in accordance with the state of RF1.
+        CLASSIC ATR MAPPING: Idle[RF0:0x00; RF1:0x04], RX[RF0:0x01; RF1:0x05],
+        TX[RF0:0x02; RF1:0x06], FDX[RF0:0x03; RF1:0x07]
+
+</div>
+
+                <table class="bitfields" border="0" cellspacing="0" cellpadding="0">
+                  <tr class="header"><td class="bits">Bits</td><td>Name</td></tr>
+                
+            <tr  valign="top">
+              <td class="bits">31..28</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">27..16</td>
+              <td>
+                <p><span class="name"><a name="GPIO_ATR_REGMAP|ATR_STATE|GPIO_STATE_B"></a>GPIO_STATE_B</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr class='byte' valign="top">
+              <td class="bits">15..12</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">11..0</td>
+              <td>
+                <p><span class="name"><a name="GPIO_ATR_REGMAP|ATR_STATE|GPIO_STATE_A"></a>GPIO_STATE_A</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+</table>
+
+</div>
+
+            <div class="register">
+              <a name="GPIO_ATR_REGMAP|CLASSIC_ATR_CONFIG"></a>
+            
+<h3 class="register">Offset 0x0040: CLASSIC_ATR_CONFIG Register (R|W)</h3>
+
+                 <a class="sh_addrs" href="javascript:sa('GPIO_ATR_REGMAP|CLASSIC_ATR_CONFIG_in')">(<span id="show_GPIO_ATR_REGMAP|CLASSIC_ATR_CONFIG_in">show</span> extended info)</a>
+                 <div class="sh_addrs" id="div_GPIO_ATR_REGMAP|CLASSIC_ATR_CONFIG_in">
+                 
+                <table class="extended_info">
+                
+<tr>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_CTRLPORT_REGMAP|DIO_WINDOW">RADIO_CTRLPORT_REGMAP|DIO_WINDOW</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x00C000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_DIO_REGMAP|RADIO_GPIO_ATR_REGS">RADIO_DIO_REGMAP|RADIO_GPIO_ATR_REGS</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x000000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right">CLASSIC_ATR_CONFIG</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x0040</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x00C040
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+</table><p/>
+
+<p class="reg_info">Initial Value = 0x00000000
+</p>
+
+<p class="reg_info">This register is defined in HDL source file x4xx_gpio_atr.v.</p>
+
+</div>
+
+<div class="info">
+
+Controls the RF state mapping of each GPIO line when classic
+        ATR mode is active.
+
+</div>
+
+                <table class="bitfields" border="0" cellspacing="0" cellpadding="0">
+                  <tr class="header"><td class="bits">Bits</td><td>Name</td></tr>
+                
+            <tr  valign="top">
+              <td class="bits">31..28</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">27..16</td>
+              <td>
+                <p><span class="name"><a name="GPIO_ATR_REGMAP|CLASSIC_ATR_CONFIG|RF_SELECT_B"></a>RF_SELECT_B</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p>Set which RF channel's state to reflect in the pins of
+          HDMI connector B when <a href="#GPIO_ATR_REGMAP|ATR_OPTION_REGISTRER|ATR_OPTION">ATR_OPTION</a> is set to classic ATR.
+          Controlled in a per-pin basis.
+            0 = RF0 State(GPIO_ATR_STATE 0x00-0x03)
+            1 = RF1 State(GPIO_ATR_STATE 0x04-0x07)</p>
+            
+              </td>
+            </tr>
+            
+            <tr class='byte' valign="top">
+              <td class="bits">15..12</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">11..0</td>
+              <td>
+                <p><span class="name"><a name="GPIO_ATR_REGMAP|CLASSIC_ATR_CONFIG|RF_SELECT_A"></a>RF_SELECT_A</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p>Set which RF channel's state to reflect in the pins for
+          HDMI connector A when <a href="#GPIO_ATR_REGMAP|ATR_OPTION_REGISTRER|ATR_OPTION">ATR_OPTION</a> is set to classic ATR.
+          Controlled in a per-pin basis.
+            0 = RF0 State(GPIO_ATR_STATE 0x00-0x03)
+            1 = RF1 State(GPIO_ATR_STATE 0x04-0x07)</p>
+            
+              </td>
+            </tr>
+            
+</table>
+
+</div>
+
+            <div class="register">
+              <a name="GPIO_ATR_REGMAP|ATR_OPTION_REGISTRER"></a>
+            
+<h3 class="register">Offset 0x0044: ATR_OPTION_REGISTRER Register (R|W)</h3>
+
+                 <a class="sh_addrs" href="javascript:sa('GPIO_ATR_REGMAP|ATR_OPTION_REGISTRER_in')">(<span id="show_GPIO_ATR_REGMAP|ATR_OPTION_REGISTRER_in">show</span> extended info)</a>
+                 <div class="sh_addrs" id="div_GPIO_ATR_REGMAP|ATR_OPTION_REGISTRER_in">
+                 
+                <table class="extended_info">
+                
+<tr>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_CTRLPORT_REGMAP|DIO_WINDOW">RADIO_CTRLPORT_REGMAP|DIO_WINDOW</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x00C000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_DIO_REGMAP|RADIO_GPIO_ATR_REGS">RADIO_DIO_REGMAP|RADIO_GPIO_ATR_REGS</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x000000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right">ATR_OPTION_REGISTRER</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x0044</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x00C044
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+</table><p/>
+
+<p class="reg_info">Initial Value = 0x00000000
+</p>
+
+<p class="reg_info">This register is defined in HDL source file x4xx_gpio_atr.v.</p>
+
+</div>
+
+<div class="info">
+
+Controls whether GPIO lines use the TX and RX state of an RF channel
+        (Classic ATR) or the daughterboard state the selector for the
+        <a href="#GPIO_ATR_REGMAP|ATR_STATE">ATR_STATE</a>.
+
+</div>
+
+                <table class="bitfields" border="0" cellspacing="0" cellpadding="0">
+                  <tr class="header"><td class="bits">Bits</td><td>Name</td></tr>
+                
+            <tr  valign="top">
+              <td class="bits">31..24</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr class='byte' valign="top">
+              <td class="bits">23..16</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr class='byte' valign="top">
+              <td class="bits">15..8</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr class='byte' valign="top">
+              <td class="bits">7..1</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">0</td>
+              <td>
+                <p><span class="name"><a name="GPIO_ATR_REGMAP|ATR_OPTION_REGISTRER|ATR_OPTION"></a>ATR_OPTION</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p>Sets the scheme in which RF states in the radio will control GPIO
+          lines. 0 = DB state is used. RF states are combined and the
+          GPIO state is driven based on all 16 <a href="#GPIO_ATR_REGMAP|ATR_STATE">ATR_STATE</a> registers.
+          1 = Each RF channel has its separate ATR state(Classic ATR).
+          Use register <a href="#GPIO_ATR_REGMAP|CLASSIC_ATR_CONFIG">CLASSIC_ATR_CONFIG</a> to indicate the RF channel
+          to which each GPIO line responds to.</p>
+            
+              </td>
+            </tr>
+            
+</table>
+
+</div>
+
+            <div class="register">
+              <a name="GPIO_ATR_REGMAP|GPIO_DIR"></a>
+            
+<h3 class="register">Offset 0x0048: GPIO_DIR Register (R|W)</h3>
+
+                 <a class="sh_addrs" href="javascript:sa('GPIO_ATR_REGMAP|GPIO_DIR_in')">(<span id="show_GPIO_ATR_REGMAP|GPIO_DIR_in">show</span> extended info)</a>
+                 <div class="sh_addrs" id="div_GPIO_ATR_REGMAP|GPIO_DIR_in">
+                 
+                <table class="extended_info">
+                
+<tr>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_CTRLPORT_REGMAP|DIO_WINDOW">RADIO_CTRLPORT_REGMAP|DIO_WINDOW</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x00C000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_DIO_REGMAP|RADIO_GPIO_ATR_REGS">RADIO_DIO_REGMAP|RADIO_GPIO_ATR_REGS</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x000000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right">GPIO_DIR</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x0048</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x00C048
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+</table><p/>
+
+<p class="reg_info">Initial Value = 0x00000000
+</p>
+
+<p class="reg_info">This register is defined in HDL source file x4xx_gpio_atr.v.</p>
+
+</div>
+
+<div class="info">
+
+Controls the direction of each GPIO signal when controlled by the radio state.
+        0 = GPIO pin set to input. 1 = GPIO pin set to output
+
+</div>
+
+                <table class="bitfields" border="0" cellspacing="0" cellpadding="0">
+                  <tr class="header"><td class="bits">Bits</td><td>Name</td></tr>
+                
+            <tr  valign="top">
+              <td class="bits">31..28</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">27..16</td>
+              <td>
+                <p><span class="name"><a name="GPIO_ATR_REGMAP|GPIO_DIR|GPIO_DIR_B"></a>GPIO_DIR_B</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr class='byte' valign="top">
+              <td class="bits">15..12</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">11..0</td>
+              <td>
+                <p><span class="name"><a name="GPIO_ATR_REGMAP|GPIO_DIR|GPIO_DIR_A"></a>GPIO_DIR_A</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+</table>
+
+</div>
+
+            <div class="register">
+              <a name="GPIO_ATR_REGMAP|GPIO_DISABLED"></a>
+            
+<h3 class="register">Offset 0x004C: GPIO_DISABLED Register (R|W)</h3>
+
+                 <a class="sh_addrs" href="javascript:sa('GPIO_ATR_REGMAP|GPIO_DISABLED_in')">(<span id="show_GPIO_ATR_REGMAP|GPIO_DISABLED_in">show</span> extended info)</a>
+                 <div class="sh_addrs" id="div_GPIO_ATR_REGMAP|GPIO_DISABLED_in">
+                 
+                <table class="extended_info">
+                
+<tr>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_CTRLPORT_REGMAP|DIO_WINDOW">RADIO_CTRLPORT_REGMAP|DIO_WINDOW</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x00C000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_DIO_REGMAP|RADIO_GPIO_ATR_REGS">RADIO_DIO_REGMAP|RADIO_GPIO_ATR_REGS</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x000000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right">GPIO_DISABLED</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x004C</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x00C04C
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+</table><p/>
+
+<p class="reg_info">Initial Value = 0x00000000
+</p>
+
+<p class="reg_info">This register is defined in HDL source file x4xx_gpio_atr.v.</p>
+
+</div>
+
+<div class="info">
+
+Disable ATR Control. DB state 0 will be reflected regardless of the ATR state.
+
+</div>
+
+                <table class="bitfields" border="0" cellspacing="0" cellpadding="0">
+                  <tr class="header"><td class="bits">Bits</td><td>Name</td></tr>
+                
+            <tr  valign="top">
+              <td class="bits">31..28</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">27..16</td>
+              <td>
+                <p><span class="name"><a name="GPIO_ATR_REGMAP|GPIO_DISABLED|GPIO_DISABLED_B"></a>GPIO_DISABLED_B</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr class='byte' valign="top">
+              <td class="bits">15..12</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">11..0</td>
+              <td>
+                <p><span class="name"><a name="GPIO_ATR_REGMAP|GPIO_DISABLED|GPIO_DISABLED_A"></a>GPIO_DISABLED_A</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+</table>
+
+</div>
+
+            <div class="register">
+              <a name="GPIO_ATR_REGMAP|GPIO_IN"></a>
+            
+<h3 class="register">Offset 0x0050: GPIO_IN Register (R|W)</h3>
+
+                 <a class="sh_addrs" href="javascript:sa('GPIO_ATR_REGMAP|GPIO_IN_in')">(<span id="show_GPIO_ATR_REGMAP|GPIO_IN_in">show</span> extended info)</a>
+                 <div class="sh_addrs" id="div_GPIO_ATR_REGMAP|GPIO_IN_in">
+                 
+                <table class="extended_info">
+                
+<tr>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_CTRLPORT_REGMAP|DIO_WINDOW">RADIO_CTRLPORT_REGMAP|DIO_WINDOW</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x00C000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_DIO_REGMAP|RADIO_GPIO_ATR_REGS">RADIO_DIO_REGMAP|RADIO_GPIO_ATR_REGS</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x000000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right">GPIO_IN</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x0050</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x00C050
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+</table><p/>
+
+<p class="reg_info">Initial Value = 0x00000000
+</p>
+
+<p class="reg_info">This register is defined in HDL source file x4xx_gpio_atr.v.</p>
+
+</div>
+
+<div class="info">
+
+Reflects the logic state of each GPIO input.
+
+</div>
+
+                <table class="bitfields" border="0" cellspacing="0" cellpadding="0">
+                  <tr class="header"><td class="bits">Bits</td><td>Name</td></tr>
+                
+            <tr  valign="top">
+              <td class="bits">31..28</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">27..16</td>
+              <td>
+                <p><span class="name"><a name="GPIO_ATR_REGMAP|GPIO_IN|GPIO_IN_B"></a>GPIO_IN_B</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr class='byte' valign="top">
+              <td class="bits">15..12</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">11..0</td>
+              <td>
+                <p><span class="name"><a name="GPIO_ATR_REGMAP|GPIO_IN|GPIO_IN_A"></a>GPIO_IN_A</span><span class="attr"> &nbsp;&nbsp;(initialvalue=0)</span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+</table>
 
 </div>
 
@@ -14331,6 +16679,9 @@ Total Offset =</td></tr>
             Each radio's CtrlPort peripheral interface is divided into the
     following memory spaces. Note that the CtrlPort peripheral interface
     starts at offset 0x80000 in the RFNoC Radio block's register space.
+    The following diagram displays the distribution of the CtrlPort
+    interface to the different modules it interacts with.
+    <img src = "x4xx_core_common_buses.svg"
             <div class="register">
               <a name="RADIO_CTRLPORT_REGMAP|DB_WINDOW"></a>
             
@@ -14357,7 +16708,7 @@ Total Offset =</td></tr>
 
 </table><p/>
 
-<p class="reg_info">This window is defined in HDL source file rfdc_timing_control.v.</p>
+<p class="reg_info">This window is defined in HDL source file x4xx_core_common.v.</p>
 
 </div>
 
@@ -14387,7 +16738,7 @@ Daughterboard GPIO interface. Register access within this space
 <table border="0" cellspacing="0" cellpadding="0">
   <tr><td class="offset_info" align="right">RFDC_TIMING_WINDOW</td></tr>
   <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x8000</td></tr>
-  <tr><td class="offset_info" align="right">&nbsp;&nbsp;size=0x8000 (32 Kbytes)</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;size=0x4000 (16 Kbytes)</td></tr>
 </table>
 
 </td>
@@ -14396,13 +16747,250 @@ Daughterboard GPIO interface. Register access within this space
 
 </table><p/>
 
-<p class="reg_info">This window is defined in HDL source file rfdc_timing_control.v.</p>
+<p class="reg_info">This window is defined in HDL source file x4xx_core_common.v.</p>
 
 </div>
 
 <div class="info">
 
 RFDC timing control interface.
+
+</div>
+
+</div>
+
+            <div class="register">
+              <a name="RADIO_CTRLPORT_REGMAP|DIO_WINDOW"></a>
+            
+<h3 class="register">Offset 0xC000: DIO_WINDOW Window (R|W)</h3>
+<p class="offset_info">&nbsp;&nbsp;Target regmap = <a href="#RADIO_DIO_REGMAP">RADIO_DIO_REGMAP</a></p>
+                 <a class="sh_addrs" href="javascript:sa('RADIO_CTRLPORT_REGMAP|DIO_WINDOW_in')">(<span id="show_RADIO_CTRLPORT_REGMAP|DIO_WINDOW_in">show</span> extended info)</a>
+                 <div class="sh_addrs" id="div_RADIO_CTRLPORT_REGMAP|DIO_WINDOW_in">
+                 
+                <table class="extended_info">
+                
+<tr>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right">DIO_WINDOW</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0xC000</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;size=0x4000 (16 Kbytes)</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+</table><p/>
+
+<p class="reg_info">This window is defined in HDL source file x4xx_core_common.v.</p>
+
+</div>
+
+<div class="info">
+
+DIO control interface. Interacts with the DIO source selection
+            block, ATR-based DIO control and the DIO digital interface
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+            <div class="regmap">
+              <a name="RADIO_DIO_REGMAP"></a>
+              <h1 class="regmap">RADIO_DIO_REGMAP</h1>
+            This map contains register windows for controlling the different sources
+    that drive the state of DIO lines.
+            <div class="group"><a name="RADIO_DIO_REGMAP|DIO_SOURCES"></a><h2 class="group">DIO_SOURCES</h2>
+            
+            <div class="register">
+              <a name="RADIO_DIO_REGMAP|RADIO_GPIO_ATR_REGS"></a>
+            
+<h3 class="register">Offset 0x0000: RADIO_GPIO_ATR_REGS Window (R|W)</h3>
+<p class="offset_info">&nbsp;&nbsp;Target regmap = <a href="#GPIO_ATR_REGMAP">GPIO_ATR_REGMAP</a></p>
+                 <a class="sh_addrs" href="javascript:sa('RADIO_DIO_REGMAP|RADIO_GPIO_ATR_REGS_in')">(<span id="show_RADIO_DIO_REGMAP|RADIO_GPIO_ATR_REGS_in">show</span> extended info)</a>
+                 <div class="sh_addrs" id="div_RADIO_DIO_REGMAP|RADIO_GPIO_ATR_REGS_in">
+                 
+                <table class="extended_info">
+                
+<tr>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_CTRLPORT_REGMAP|DIO_WINDOW">RADIO_CTRLPORT_REGMAP|DIO_WINDOW</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x00C000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right">RADIO_GPIO_ATR_REGS</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x0000</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;size=0x1000 (4 Kbytes)</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x00C000
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+</table><p/>
+
+<p class="reg_info">This window is defined in HDL source file x4xx_core_common.v.</p>
+
+</div>
+
+<div class="info">
+
+Contains controls for DIO behavior based on the ATR state of the accessed radio
+
+</div>
+
+</div>
+
+            <div class="register">
+              <a name="RADIO_DIO_REGMAP|DIO_SOURCE_CONTROL"></a>
+            
+<h3 class="register">Offset 0x1000: DIO_SOURCE_CONTROL Window (R|W)</h3>
+<p class="offset_info">&nbsp;&nbsp;Target regmap = <a href="#DIO_REGMAP">DIO_REGMAP</a></p>
+                 <a class="sh_addrs" href="javascript:sa('RADIO_DIO_REGMAP|DIO_SOURCE_CONTROL_in')">(<span id="show_RADIO_DIO_REGMAP|DIO_SOURCE_CONTROL_in">show</span> extended info)</a>
+                 <div class="sh_addrs" id="div_RADIO_DIO_REGMAP|DIO_SOURCE_CONTROL_in">
+                 
+                <table class="extended_info">
+                
+<tr>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_CTRLPORT_REGMAP|DIO_WINDOW">RADIO_CTRLPORT_REGMAP|DIO_WINDOW</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x00C000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right">DIO_SOURCE_CONTROL</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x1000</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;size=0x1000 (4 Kbytes)</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x00D000
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+</table><p/>
+
+<p class="reg_info">This window is defined in HDL source file x4xx_core_common.v.</p>
+
+</div>
+
+<div class="info">
+
+Window to access the DIO register map through the control port from the radio blocks.
+
+</div>
+
+</div>
+
+            <div class="register">
+              <a name="RADIO_DIO_REGMAP|DIGITAL_IFC_REGS"></a>
+            
+<h3 class="register">Offset 0x2000: DIGITAL_IFC_REGS Window (R|W)</h3>
+<p class="offset_info">&nbsp;&nbsp;Target regmap = <a href="#DIG_IFC_REGMAP">DIG_IFC_REGMAP</a></p>
+                 <a class="sh_addrs" href="javascript:sa('RADIO_DIO_REGMAP|DIGITAL_IFC_REGS_in')">(<span id="show_RADIO_DIO_REGMAP|DIGITAL_IFC_REGS_in">show</span> extended info)</a>
+                 <div class="sh_addrs" id="div_RADIO_DIO_REGMAP|DIGITAL_IFC_REGS_in">
+                 
+                <table class="extended_info">
+                
+<tr>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_CTRLPORT_REGMAP|DIO_WINDOW">RADIO_CTRLPORT_REGMAP|DIO_WINDOW</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x00C000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right">DIGITAL_IFC_REGS</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x2000</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;size=0x1000 (4 Kbytes)</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x00E000
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+</table><p/>
+
+<p class="reg_info">This window is defined in HDL source file x4xx_core_common.v.</p>
+
+</div>
+
+<div class="info">
+
+Register space reserved for configuring a digital interface over the GPIO lines.
+            Currently, SPI is the only supported protocol.
 
 </div>
 
@@ -21627,19 +24215,6 @@ FPGA version.<BR/>
 
 <tr valign="top">
 
-                        <td class='value'>3</td>
-                        
-                            <td class='l'>0x00000003</td>
-                            
-                            <td class="l" style="text-align: left;">
-                              <p class="name"><a name='VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_CURRENT_VERSION_MINOR'></a>FPGA_CURRENT_VERSION_MINOR</p>
-                            
-</td>
-
-</tr>
-
-<tr valign="top">
-
                         <td class='value'>7</td>
                         
                             <td class='l'>0x00000007</td>
@@ -21666,9 +24241,22 @@ FPGA version.<BR/>
 
 <tr valign="top">
 
-                        <td class='value'>553915926</td>
+                        <td class='value'>8</td>
                         
-                            <td class='l'>0x21041616</td>
+                            <td class='l'>0x00000008</td>
+                            
+                            <td class="l" style="text-align: left;">
+                              <p class="name"><a name='VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_CURRENT_VERSION_MINOR'></a>FPGA_CURRENT_VERSION_MINOR</p>
+                            
+</td>
+
+</tr>
+
+<tr valign="top">
+
+                        <td class='value'>570627860</td>
+                        
+                            <td class='l'>0x22031714</td>
                             
                             <td class="l" style="text-align: left;">
                               <p class="name"><a name='VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_VERSION_LAST_MODIFIED_TIME'></a>FPGA_VERSION_LAST_MODIFIED_TIME</p>

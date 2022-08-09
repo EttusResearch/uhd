@@ -25,21 +25,23 @@ Settings will not take effect until the user has logged in and out.
 Multiple packages
 -----------------
 
-uhd-host:
- The uhd-host package contains the uhd_find_devices and
- uhd_usrp_probe commands for locating and examining USRP devices
- available to the host system.
-
- Also, under /usr/lib/uhd/ are examples, tests and utils
- directories. The utils include tools for managing the
- flash memory or EEPROM configuration of various USRPs.
-
-libuhd4.1.0:
+libuhd4.2.0:
  Small package just for the library itself.
 
 libuhd-dev:
  Small package just for developing applications
  using the library itself.
+
+uhd-host:
+ The uhd-host package contains utilities such as the uhd_find_devices and
+ uhd_usrp_probe commands for locating and examining USRP devices,  as well
+ as other utilities.
+
+ Also, under /usr/lib/uhd/ are examples, tests and utils
+ directories. The utils include tools for managing the
+ flash memory or EEPROM configuration of various USRPs.
+
+
 
 UHD Firmware / FPGA images
 --------------------------

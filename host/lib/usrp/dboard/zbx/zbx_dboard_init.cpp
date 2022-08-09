@@ -6,17 +6,17 @@
 
 #include <uhd/cal/database.hpp>
 #include <uhd/exception.hpp>
+#include <uhd/experts/expert_container.hpp>
+#include <uhd/experts/expert_factory.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/property_tree.ipp>
 #include <uhd/rfnoc/register_iface.hpp>
-#include <uhd/transport/chdr.hpp>
 #include <uhd/types/direction.hpp>
 #include <uhd/types/eeprom.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>
+#include <uhd/usrp/zbx_tune_map_item.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhdlib/experts/expert_container.hpp>
-#include <uhdlib/experts/expert_factory.hpp>
 #include <uhdlib/rfnoc/reg_iface_adapter.hpp>
 #include <uhdlib/usrp/dboard/zbx/zbx_constants.hpp>
 #include <uhdlib/usrp/dboard/zbx/zbx_dboard.hpp>
@@ -66,6 +66,13 @@ std::ostream& operator<<(
     }
 }
 
+std::ostream& operator<<(
+    std::ostream& os, const std::vector<::uhd::usrp::zbx::zbx_tune_map_item_t>& tune_map)
+{
+    os << "Tune map with " << tune_map.size() << " entries";
+    return os;
+}
+
 void zbx_dboard_impl::_init_cpld()
 {
     // CPLD
@@ -73,11 +80,9 @@ void zbx_dboard_impl::_init_cpld()
     _cpld = std::make_shared<zbx_cpld_ctrl>(
         [this](
             const uint32_t addr, const uint32_t data, const zbx_cpld_ctrl::chan_t chan) {
-            const auto time_spec = (chan == zbx_cpld_ctrl::NO_CHAN)
-                                       ? time_spec_t::ASAP
-                                       : (chan == zbx_cpld_ctrl::CHAN1)
-                                             ? _time_accessor(1)
-                                             : _time_accessor(0);
+            const auto time_spec = (chan == zbx_cpld_ctrl::NO_CHAN) ? time_spec_t::ASAP
+                                   : (chan == zbx_cpld_ctrl::CHAN1) ? _time_accessor(1)
+                                                                    : _time_accessor(0);
             _regs.poke32(_reg_base_address + addr, data, time_spec);
         },
         [this](const uint32_t addr) {
@@ -245,8 +250,8 @@ uhd::usrp::pwr_cal_mgr::sptr zbx_dboard_impl::_init_power_cal(
                                            : get_rx_gain(ZBX_GAIN_STAGE_ALL, chan_idx);
             },
             [this, trx, chan_idx](const double gain) {
-                trx == TX_DIRECTION ? set_tx_gain(gain, chan_idx)
-                                    : set_rx_gain(gain, chan_idx);
+                trx == TX_DIRECTION ? this->set_tx_gain(gain, chan_idx)
+                                    : this->set_rx_gain(gain, chan_idx);
             }},
         10 /* High priority */);
     /* If we had a digital (baseband) gain, we would register it here,*/
@@ -360,11 +365,8 @@ void zbx_dboard_impl::_init_experts(uhd::property_tree::sptr subtree,
                 LMX2572_DEFAULT_FREQ,
                 _prc_rate,
                 false);
-            expert_factory::add_worker_node<zbx_lo_expert>(expert,
-                expert->node_retriever(),
-                fe_path,
-                lo_select,
-                lo_ctrl);
+            expert_factory::add_worker_node<zbx_lo_expert>(
+                expert, expert->node_retriever(), fe_path, lo_select, lo_ctrl);
             _lo_ctrl_map.insert({lo, lo_ctrl});
         }
     }
@@ -390,14 +392,10 @@ void zbx_dboard_impl::_init_frequency_prop_tree(uhd::property_tree::sptr subtree
     expert_factory::add_dual_prop_node<double>(
         expert, subtree, fe_path / "if_freq", 0.0, AUTO_RESOLVE_ON_WRITE);
     expert_factory::add_data_node<bool>(expert, fe_path / "is_highband", false);
-    expert_factory::add_data_node<int>(
-        expert, fe_path / "mixer1_m", 0, AUTO_RESOLVE_ON_WRITE);
-    expert_factory::add_data_node<int>(
-        expert, fe_path / "mixer1_n", 0, AUTO_RESOLVE_ON_WRITE);
-    expert_factory::add_data_node<int>(
-        expert, fe_path / "mixer2_m", 0, AUTO_RESOLVE_ON_WRITE);
-    expert_factory::add_data_node<int>(
-        expert, fe_path / "mixer2_n", 0, AUTO_RESOLVE_ON_WRITE);
+    expert_factory::add_data_node<lo_inj_side_t>(
+        expert, fe_path / "lo1_inj_side", NONE, AUTO_RESOLVE_ON_WRITE);
+    expert_factory::add_data_node<lo_inj_side_t>(
+        expert, fe_path / "lo2_inj_side", NONE, AUTO_RESOLVE_ON_WRITE);
     expert_factory::add_data_node<bool>(
         expert, fe_path / "band_inverted", false, AUTO_RESOLVE_ON_WRITE);
 
@@ -491,10 +489,10 @@ void zbx_dboard_impl::_init_gain_prop_tree(uhd::property_tree::sptr subtree,
         gain_profile_path,
         ZBX_GAIN_PROFILE_DEFAULT,
         AUTO_RESOLVE_ON_WRITE);
-    auto& gain_profile = (trx == TX_DIRECTION) ? _tx_gain_profile_api
-                                               : _rx_gain_profile_api;
-    auto& other_dir_gp = (trx == TX_DIRECTION) ? _rx_gain_profile_api
-                                               : _tx_gain_profile_api;
+    auto& gain_profile           = (trx == TX_DIRECTION) ? _tx_gain_profile_api
+                                                         : _rx_gain_profile_api;
+    auto& other_dir_gp           = (trx == TX_DIRECTION) ? _rx_gain_profile_api
+                                                         : _tx_gain_profile_api;
     auto gain_profile_subscriber = [this, other_dir_gp, trx](
                                        const std::string& profile, const size_t chan) {
         // Upon changing the gain profile, we need to import the new value into
@@ -573,6 +571,13 @@ void zbx_dboard_impl::_init_lo_prop_tree(uhd::property_tree::sptr subtree,
     const size_t chan_idx,
     const fs_path fe_path)
 {
+    // Tuning table
+    expert_factory::add_prop_node<std::vector<zbx_tune_map_item_t>>(expert,
+        subtree,
+        fe_path / "tune_table",
+        trx == RX_DIRECTION ? rx_tune_map : tx_tune_map,
+        AUTO_RESOLVE_ON_WRITE);
+
     // Analog LO Specific
     for (const std::string lo : {ZBX_LO1, ZBX_LO2}) {
         expert_factory::add_prop_node<zbx_lo_source_t>(expert,

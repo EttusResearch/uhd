@@ -6,24 +6,26 @@
 
 The USRP FPGA build system requires a UNIX-like environment with the following dependencies
 
-- [Xilinx Vivado 2019.1](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/2019-1.html) (For 7 Series FPGAs)
-- [Xilinx ISE 14.7](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/archive-ise.html) (For all other FPGAs)
+- [Xilinx Vivado Design Suite HLx Editions 2019.1](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/archive.html) (For 7 Series and UltraScale+ FPGAs)
+- [Xilinx ISE Design Suite 14.7](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/archive-ise.html) (For all other FPGAs)
 - [GNU Make 3.6+](https://www.gnu.org/software/make/)
 - [GNU Bash 4.0+](https://www.gnu.org/software/bash/)
 - [Python 3.5](https://www.python.org/)
 - [Doxygen](https://www.doxygen.nl/index.html) (Optional: To build the manual)
 - [ModelSim](https://www.mentor.com/products/fv/modelsim/) (Optional: For simulation)
 
-The following USRPs work with the free WebPack versions:
-- USRP E310/E312/E313
+The following USRPs work with the free WebPACK versions:
+- USRP B200/B200mini (ISE)
+- USRP E310/E312/E313 (Vivado)
 
 ### What FPGA does my USRP have?
 
-- USRP B200: Spartan 6 XC6SLX75
-- USRP B200mini: Spartan 6 XC6SLX75
-- USRP B210: Spartan 6 XC6SLX150
-- USRP X300: Kintex 7 XC7K325T (7 Series)
-- USRP X310: Kintex 7 XC7K410T (7 Series)
+- USRP B200: Spartan-6 XC6SLX75
+- USRP B210: Spartan-6 XC6SLX150
+- USRP B200mini: Spartan-6 XC6SLX75
+- USRP B205mini: Spartan-6 XC6SLX150
+- USRP X300: Kintex-7 XC7K325T (7 Series)
+- USRP X310: Kintex-7 XC7K410T (7 Series)
 - USRP E310: Zynq-7000 XC7Z020 (7 Series)
 - USRP E320: Zynq-7000 XC7Z045 (7 Series)
 - USRP N300: Zynq-7000 XC7Z035 (7 Series)
@@ -230,18 +232,8 @@ target type `X4_200` is configured for a 200 MHz analog bandwidth, and can
 support a 245.76 MHz or 250 MHz master clock rate.
 
 A more detailed description of the targets can be found at \ref x4xx_updating_fpga_types.
-The following targets are available through the Makefile:
-
-- `X1_100`
-- `X4_{100, 200}`
-- `XG_{100, 200}`
-- `X4_{100, 200}`
-
-The following bitstreams can be built, but are considered experimental:
-
-- `X4C_{100, 200}`
-- `C1_400`
-- `CG_{100, 400}`
+Run `make help` in the `<repo>/fpga/usrp3/top/x400/` directory to see
+the complete list of targets available.
 
 #### Outputs
 - `build/usrp_<product>_fpga.bit` : Configuration bitstream with header
@@ -250,10 +242,10 @@ The following bitstreams can be built, but are considered experimental:
 
 ### Additional Build Options
 
-It is possible to make a target and specify additional options in the form VAR=VALUE in
+It is possible to make a target and specify additional options in the form `VAR=VALUE` in
 the command. For example:
 
-$ make X310 GUI=1
+    $ make X310 GUI=1
 
 The options available are described in the following subsections.
 

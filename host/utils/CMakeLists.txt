@@ -38,6 +38,16 @@ UHD_INSTALL(PROGRAMS
     DESTINATION ${RUNTIME_DIR}
     COMPONENT utilities
 )
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/usrpctl.py"
+    "${CMAKE_CURRENT_BINARY_DIR}/usrpctl"
+)
+UHD_INSTALL(PROGRAMS
+    ${CMAKE_CURRENT_BINARY_DIR}/usrpctl
+    RENAME usrpctl
+    DESTINATION ${RUNTIME_DIR}
+    COMPONENT utilities
+)
 
 ########################################################################
 # Utilities that get installed into the share path

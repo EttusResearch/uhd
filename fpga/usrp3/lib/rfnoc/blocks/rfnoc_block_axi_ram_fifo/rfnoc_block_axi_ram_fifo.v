@@ -66,7 +66,7 @@ module rfnoc_block_axi_ram_fifo #(
   parameter                            MTU            = 10,
   parameter                            MEM_DATA_W     = CHDR_W,
   parameter                            MEM_ADDR_W     = 32,
-  parameter                            AWIDTH         = 32,
+  parameter                            AWIDTH         = MEM_ADDR_W,
   parameter [NUM_PORTS*MEM_ADDR_W-1:0] FIFO_ADDR_BASE = {NUM_PORTS{ {MEM_ADDR_W{1'b0}} }},
   parameter [NUM_PORTS*MEM_ADDR_W-1:0] FIFO_ADDR_MASK = {NUM_PORTS{ {(MEM_ADDR_W-$clog2(NUM_PORTS)){1'b1}} }},
   parameter [        NUM_PORTS*32-1:0] BURST_TIMEOUT  = {NUM_PORTS{ 32'd256 }},

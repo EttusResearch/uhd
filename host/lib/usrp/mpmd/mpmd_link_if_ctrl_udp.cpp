@@ -11,7 +11,6 @@
 #include <uhd/rfnoc/constants.hpp>
 #include <uhd/transport/udp_constants.hpp>
 #include <uhd/transport/udp_simple.hpp>
-#include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/utils/cast.hpp>
 #include <uhdlib/rfnoc/rfnoc_common.hpp>
 #include <uhdlib/transport/udp_boost_asio_link.hpp>

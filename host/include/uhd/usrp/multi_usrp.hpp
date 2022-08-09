@@ -1795,7 +1795,10 @@ public:
      *
      * This is a different set of banks than those returned from get_gpio_banks().
      * Here, we return a list of banks that can be used as arguments for
-     * get_gpio_src(), get_gpio_srcs(), and set_gpio_src().
+     * get_gpio_src(), get_gpio_srcs(), and set_gpio_src(). These return values
+     * correspond to the physical connectors of the USRP, e.g., for X410, it
+     * will return "GPIO0" and "GPIO1" (see also \ref page_x400_gpio_api). On
+     * X310, it will return a single value, "FP0" (see also \ref xgpio_fpanel_gpio).
      *
      * Some motherboards have GPIO banks that can be driven from different
      * sources, e.g., the N310 can have any radio channel drive the FP-GPIOs,
@@ -1811,8 +1814,8 @@ public:
      * Each of the pins in the chosen bank can be driven from one of the
      * returned sources.
      *
-     * \param bank the name of a GPIO bank. Valid values can be obtained by
-     *        calling get_gpio_src_banks().
+     * \param bank the name of a GPIO bank (connector). Valid values can be
+     *             obtained by calling get_gpio_src_banks().
      * \param mboard the motherboard index 0 to M-1
      * \return a list of strings with each valid source for the chosen bank
      */
@@ -1821,8 +1824,8 @@ public:
 
     /*! Get the current source for each pin in a GPIO bank.
      *
-     * \param bank the name of a GPIO bank. Valid values can be obtained by
-     *        calling get_gpio_src_banks().
+     * \param bank the name of a GPIO bank (connector). Valid values can be
+     *             obtained by calling get_gpio_src_banks().
      * \param mboard the motherboard index 0 to M-1
      * \return a list of strings for current source of each GPIO pin in the
      *         chosen bank. The length of the return value matches the number of
@@ -1836,8 +1839,8 @@ public:
      * Note: The length of the vector must be identical to the number of
      * programmable GPIO pins.
      *
-     * \param bank the name of a GPIO bank. Valid values can be obtained by
-     *        calling get_gpio_src_banks().
+     * \param bank the name of a GPIO bank (connector). Valid values can be
+     *             obtained by calling get_gpio_src_banks().
      * \param src a list of strings specifying the source of each pin in a GPIO bank
      * \param mboard the motherboard index 0 to M-1
      * \throws uhd::key_error if the bank does not exist

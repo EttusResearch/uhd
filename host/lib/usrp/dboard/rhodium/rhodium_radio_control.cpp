@@ -450,8 +450,8 @@ void rhodium_radio_control_impl::_update_corrections(
 
     if (enable) {
         const std::vector<uint8_t> db_serial_u8 = get_db_eeprom().count("serial")
-                                                      ? std::vector<uint8_t>()
-                                                      : get_db_eeprom().at("serial");
+                                                      ? get_db_eeprom().at("serial")
+                                                      : std::vector<uint8_t>();
         const std::string db_serial =
             db_serial_u8.empty() ? "unknown"
                                  : std::string(db_serial_u8.begin(), db_serial_u8.end());
@@ -729,9 +729,9 @@ std::vector<std::string> rhodium_radio_control_impl::get_tx_sensor_names(size_t)
 sensor_value_t rhodium_radio_control_impl::get_tx_sensor(
     const std::string& name, size_t chan)
 {
-    if (!uhd::has(_rx_sensor_names, name)) {
-        RFNOC_LOG_ERROR("Invalid RX sensor name: " << name);
-        throw uhd::key_error("Invalid RX sensor name!");
+    if (!uhd::has(_tx_sensor_names, name)) {
+        RFNOC_LOG_ERROR("Invalid TX sensor name: " << name);
+        throw uhd::key_error("Invalid TX sensor name!");
     }
     if (name == "lo_locked") {
         return sensor_value_t(

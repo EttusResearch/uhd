@@ -54,7 +54,7 @@ module eth_100g #(
   logic  usr_tx_reset;
   logic  usr_rx_reset;
 
-  // Heirarchical refference (xilinx says it will synthesize)
+  // Hierarchical reference (Xilinx says it will synthesize)
   // eth_100g_bd_i/cmac_usplus_0/gt_rxrecclkout}
   assign rx_rec_clk_out = eth_100g_bd_i.cmac_usplus_0.gt_rxrecclkout[0];
   //status registers
@@ -98,31 +98,31 @@ module eth_100g #(
 
   initial begin
     assert (mgt_tx.DATA_WIDTH == 512) else
-     $fatal("mgt_rx.DATA_WIDTH must be 512");
+     $fatal(1, "mgt_rx.DATA_WIDTH must be 512");
     // $clog2(512/8)+1
     assert (mgt_rx.USER_WIDTH == 7) else
-     $fatal("mgt_rx.USER_WIDTH must be 7");
+     $fatal(1, "mgt_rx.USER_WIDTH must be 7");
     assert (mgt_tx.TDATA == 1) else
-     $fatal("mgt_tx.TDATA must be enabled");
+     $fatal(1, "mgt_tx.TDATA must be enabled");
     assert (mgt_tx.TUSER == 1) else
-     $fatal("mgt_tx.TUSER must be enabled");
+     $fatal(1, "mgt_tx.TUSER must be enabled");
     assert (mgt_tx.TKEEP == 1) else
-     $fatal("mgt_tx.TKEEP must be enabled");
+     $fatal(1, "mgt_tx.TKEEP must be enabled");
     assert (mgt_tx.TLAST == 1) else
-     $fatal("mgt_tx.TLAST must be enabled");
+     $fatal(1, "mgt_tx.TLAST must be enabled");
     assert (mgt_rx.DATA_WIDTH == 512) else
-     $fatal("mgt_rx.DATA_WIDTH must be 512");
+     $fatal(1, "mgt_rx.DATA_WIDTH must be 512");
     // $clog2(512/8)+1
     assert (mgt_rx.USER_WIDTH == 7) else
-     $fatal("mgt_rx.DATA_WIDTH must be 7");
+     $fatal(1, "mgt_rx.DATA_WIDTH must be 7");
     assert (mgt_rx.TDATA == 1) else
-     $fatal("mgt_rx.TDATA must be enabled");
+     $fatal(1, "mgt_rx.TDATA must be enabled");
     assert (mgt_rx.TUSER == 1) else
-     $fatal("mgt_rx.TUSER must be enabled");
+     $fatal(1, "mgt_rx.TUSER must be enabled");
     assert (mgt_rx.TKEEP == 0) else
-     $fatal("mgt_rx.TKEEP must not be enabled");
+     $fatal(1, "mgt_rx.TKEEP must not be enabled");
     assert (mgt_rx.TLAST == 1) else
-     $fatal("mgt_rx.TLAST must be enabled");
+     $fatal(1, "mgt_rx.TLAST must be enabled");
   end
 
   AxiStreamIf #(.DATA_WIDTH(512),.TUSER(0),.TKEEP(0))
@@ -166,7 +166,7 @@ module eth_100g #(
   // 0-7 map to PCP codes 0-7.  8 is a global pause request
   logic [8:0] stat_rx_pause_req ;
   logic [8:0] ctl_tx_pause_req ; // drive for at least 16 clocks
-  logic       ctl_tx_resend_pause; // resend the pause request (tieing this high forces a spam of resend requests)
+  logic       ctl_tx_resend_pause; // resend the pause request (tying this high forces a spam of resend requests)
 
   // QuantaPeriod is 512 bit times or 5.12 ns
   // resend pause requests so (quanta*QuantaPeriod)/(refresh*QuantaPeriod) is the percentage of BW that gets through.
@@ -243,7 +243,7 @@ module eth_100g #(
   // The sequence of writes was taken from the CMAC example, without any deep knowledge
   // of what the standard Ethernet connection protocol is.
 
-  // Inject writes to perform connection inbetween other SW writes to read the mac.
+  // Inject writes to perform connection in between other SW writes to read the mac.
   if (AUTO_CONNECT) begin : yes_auto_connect
     // defined in https://www.xilinx.com/support/documentation/ip_documentation/cmac_usplus/v2_4/pg203-cmac-usplus.pdf
     // pg 187

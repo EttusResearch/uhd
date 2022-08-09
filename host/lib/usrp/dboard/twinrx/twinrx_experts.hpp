@@ -9,8 +9,8 @@
 #define INCLUDED_DBOARD_TWINRX_EXPERTS_HPP
 
 #include "twinrx_ctrl.hpp"
+#include <uhd/experts/expert_nodes.hpp>
 #include <uhd/utils/math.hpp>
-#include <uhdlib/experts/expert_nodes.hpp>
 
 namespace uhd { namespace usrp { namespace dboard { namespace twinrx {
 
@@ -222,7 +222,7 @@ class twinrx_lo_mapping_expert : public experts::worker_node_t
 public:
     twinrx_lo_mapping_expert(const experts::node_retriever_t& db, lo_stage_t stage)
         : experts::worker_node_t(
-              "twinrx_" + lo_stage_str(stage, true) + "_mapping_expert")
+            "twinrx_" + lo_stage_str(stage, true) + "_mapping_expert")
         , _lox_src_ch0(db, prepend_ch("ch/" + lo_stage_str(stage) + "/source", "0"))
         , _lox_src_ch1(db, prepend_ch("ch/" + lo_stage_str(stage) + "/source", "1"))
         , _lox_mapping_synth0(

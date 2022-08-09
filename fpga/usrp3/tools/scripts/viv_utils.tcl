@@ -64,7 +64,7 @@ proc ::vivado_utils::initialize_project { {save_to_disk 0} } {
         if [expr [file isdirectory $src_file] == 1] {
             puts "BUILDER: Expanding Directory : $src_file"
             set dir_contents [glob $src_file/*.*]
-            append design_srcs " " $dir_contents
+            append g_source_files " " $dir_contents
         }
     }
 

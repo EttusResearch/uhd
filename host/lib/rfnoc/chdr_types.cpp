@@ -450,7 +450,8 @@ void mgmt_hop_t::deserialize(std::list<uint64_t>& src,
         uint64_t op_word = conv_byte_order(src.front());
         ops_remaining    = static_cast<size_t>(op_word & 0xFF);
         mgmt_op_t op(static_cast<mgmt_op_t::op_code_t>((op_word >> 8) & 0xFF),
-            static_cast<uint64_t>((op_word >> 16)));
+            static_cast<uint64_t>((op_word >> 16)),
+            static_cast<uint8_t>(op_word & 0xFF));
         _ops.push_back(op);
         src.pop_front();
         for (size_t i = 0; i < padding_size; i++) {

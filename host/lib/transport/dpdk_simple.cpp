@@ -162,12 +162,12 @@ private:
     link_params_t _get_default_link_params()
     {
         link_params_t link_params;
-        link_params.recv_frame_size = 8000;
-        link_params.send_frame_size = 8000;
+        link_params.recv_frame_size = 8016;
+        link_params.send_frame_size = 8016;
         link_params.num_recv_frames = 1;
         link_params.num_send_frames = 1;
-        link_params.recv_buff_size  = 8000;
-        link_params.send_buff_size  = 8000;
+        link_params.recv_buff_size  = 8016;
+        link_params.send_buff_size  = 8016;
         return link_params;
     }
 

@@ -58,7 +58,24 @@ struct route_info_t
     graph_edge_t src_static_edge;
     graph_edge_t dst_static_edge;
 };
+
 } // namespace
+
+// Define an attorney to limit access to noc_block_base internals
+class rfnoc_graph_impl;
+namespace uhd { namespace rfnoc {
+
+class block_initializer
+{
+    static void post_init(noc_block_base::sptr block)
+    {
+        block->post_init();
+    }
+    friend rfnoc_graph_impl;
+};
+
+}} // namespace uhd::rfnoc
+
 
 class rfnoc_graph_impl : public rfnoc_graph
 {
@@ -211,7 +228,7 @@ public:
         size_t src_port,
         const block_id_t& dst_blk,
         size_t dst_port,
-        bool skip_property_propagation) override
+        bool is_back_edge) override
     {
         if (!has_block(src_blk)) {
             throw uhd::lookup_error(
@@ -229,7 +246,7 @@ public:
             get_block(dst_blk),
             dst_port,
             edge_type,
-            skip_property_propagation);
+            is_back_edge);
     }
 
     void disconnect(const block_id_t& src_blk,
@@ -731,6 +748,7 @@ private:
             try {
                 _block_registry->register_block(
                     block_factory_info.factory_fn(std::move(make_args_uptr)));
+                block_initializer::post_init(_block_registry->get_block(block_id));
             } catch (...) {
                 UHD_LOG_ERROR(
                     LOG_ID, "Error during initialization of block " << block_id << "!");
@@ -805,10 +823,10 @@ private:
         std::shared_ptr<node_t> dst_blk,
         size_t dst_port,
         graph_edge_t::edge_t edge_type,
-        bool skip_property_propagation)
+        bool is_back_edge)
     {
         graph_edge_t edge_info(
-            src_port, dst_port, edge_type, not skip_property_propagation);
+            src_port, dst_port, edge_type, not is_back_edge);
         edge_info.src_blockid = src_blk->get_unique_id();
         edge_info.dst_blockid = dst_blk->get_unique_id();
         _graph->connect(src_blk.get(), dst_blk.get(), edge_info);

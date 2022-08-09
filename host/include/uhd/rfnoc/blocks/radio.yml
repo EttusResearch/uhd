@@ -19,7 +19,6 @@ clocks:
     freq: "[]"
 
 control:
-  sw_iface: nocscript
   fpga_iface: ctrlport
   interface_direction: remote_master_slave
   fifo_depth: 512
@@ -38,7 +37,7 @@ data:
       item_width: ITEM_W
       nipc: NIPC
       info_fifo_depth: 32
-      payload_fifo_depth: MTU
+      payload_fifo_depth: 2**MTU
       format: sc16
       mdata_sig: ~
   outputs:
@@ -47,22 +46,23 @@ data:
       item_width: ITEM_W
       nipc: NIPC
       info_fifo_depth: 32
-      payload_fifo_depth: MTU
+      payload_fifo_depth: 2**(MTU+1)
+      sideband_at_end: True
       format: sc16
       mdata_sig: ~
 
 io_ports:
   ctrlport:
-    type: ctrl_port
+    type: ctrlport
     drive: master
     rename:
       pattern: (.*)
       repl: m_\1
   time:
-    type: time_keeper
+    type: timekeeper
     drive: listener
   radio:
-    type: radio_8x32
+    type: radio
     drive: slave
 
 registers:

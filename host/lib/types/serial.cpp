@@ -33,6 +33,15 @@ spi_config_t::spi_config_t(edge_t edge) : mosi_edge(edge), miso_edge(edge)
     use_custom_divider = false;
 }
 
+spi_config_t::spi_config_t(edge_t edge, size_t divider) :
+    mosi_edge(edge),
+    miso_edge(edge),
+    use_custom_divider(true),
+    divider(divider)
+{
+    // empty
+}
+
 void i2c_iface::write_eeprom(uint16_t addr, uint16_t offset, const byte_vector_t& bytes)
 {
     for (size_t i = 0; i < bytes.size(); i++) {

@@ -11,6 +11,8 @@ parameters:
   MEM_ADDR_W: 30
   FIFO_ADDR_BASE: "{30'h02000000, 30'h00000000}"
   FIFO_ADDR_MASK: "{30'h01FFFFFF, 30'h01FFFFFF}"
+  IN_FIFO_SIZE: ""
+  OUT_FIFO_SIZE: ""
   MEM_CLK_RATE: "300e6"
 
 clocks:
@@ -22,7 +24,6 @@ clocks:
     freq: "[]"
 
 control:
-  sw_iface: nocscript
   fpga_iface: ctrlport
   interface_direction: slave
   fifo_depth: 32
@@ -44,7 +45,7 @@ data:
 
 io_ports:
   axi_ram:
-    type: axi4_mm_4x64_4g
+    type: axi4_mm
     drive: master
 
 registers:

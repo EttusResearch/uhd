@@ -9,7 +9,6 @@ Tool to import external dependency rpclib into UHD tree
 """
 
 import argparse
-from distutils.dir_util import copy_tree
 import os
 import re
 import shutil
@@ -73,7 +72,7 @@ def copy_important_files(target_root, rpclib_root):
     for rpc_file in os.listdir(rpclib_root):
         if rpc_file in IMPORTANT_FILES:
             if os.path.isdir(os.path.join(rpclib_root, rpc_file)):
-                copy_tree(
+                shutil.copytree(
                     os.path.join(rpclib_root, rpc_file),
                     os.path.join(target_root, rpc_file)
                 )

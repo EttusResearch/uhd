@@ -36,22 +36,24 @@ module e31x (
   inout         DDR_VRP,
   inout         DDR_VRN,
 
-  // PL DDR
-  //input         PL_DDR3_SYSCLK,
-  //output        PL_DDR3_RESET_N,
-  //inout [15:0]  PL_DDR3_DQ,
-  //inout [1:0]   PL_DDR3_DQS_N,
-  //inout [1:0]   PL_DDR3_DQS_P,
-  //output [14:0] PL_DDR3_ADDR,
-  //output [2:0]  PL_DDR3_BA,
-  //output        PL_DDR3_RAS_N,
-  //output        PL_DDR3_CAS_N,
-  //output        PL_DDR3_WE_N,
-  //output [0:0]  PL_DDR3_CK_P,
-  //output [0:0]  PL_DDR3_CK_N,
-  //output [0:0]  PL_DDR3_CKE,
-  //output [1:0]  PL_DDR3_DM,
-  //output [0:0]  PL_DDR3_ODT,
+  // PL DRAM
+`ifdef ENABLE_DRAM
+  input         PL_DDR3_SYSCLK,
+  output        PL_DDR3_RESET_N,
+  inout  [15:0] PL_DDR3_DQ,
+  inout  [ 1:0] PL_DDR3_DQS_N,
+  inout  [ 1:0] PL_DDR3_DQS_P,
+  output [14:0] PL_DDR3_ADDR,
+  output [ 2:0] PL_DDR3_BA,
+  output        PL_DDR3_RAS_N,
+  output        PL_DDR3_CAS_N,
+  output        PL_DDR3_WE_N,
+  output [ 0:0] PL_DDR3_CK_P,
+  output [ 0:0] PL_DDR3_CK_N,
+  output [ 0:0] PL_DDR3_CKE,
+  output [ 1:0] PL_DDR3_DM,
+  output [ 0:0] PL_DDR3_ODT,
+`endif
 
   //AVR SPI IO
   input         AVR_CS_R,
@@ -134,6 +136,22 @@ module e31x (
   inout [5:0]   PL_GPIO
 );
 
+  // Include the RFNoC image core header file
+  `ifdef RFNOC_IMAGE_CORE_HDR
+    `include `"`RFNOC_IMAGE_CORE_HDR`"
+  `else
+    ERROR_RFNOC_IMAGE_CORE_HDR_not_defined();
+    `define CHDR_WIDTH     64
+    `define RFNOC_PROTOVER { 8'd1, 8'd0 }
+  `endif
+  localparam CHDR_W         = `CHDR_WIDTH;
+  localparam RFNOC_PROTOVER = `RFNOC_PROTOVER;
+
+  // This USRP currently only supports 64-bit CHDR width
+  if (CHDR_W != 64) begin : gen_chdr_w_error
+    CHDR_W_must_be_64_for_this_USRP();
+  end
+
   // Constants
   localparam REG_AWIDTH = 14; // log2(0x4000)
   localparam REG_DWIDTH = 32;
@@ -154,6 +172,8 @@ module e31x (
   wire radio_clk;
   wire reg_clk;
   wire clk40;
+  wire clk166;
+  wire clk200;
   wire FCLK_CLK0;
   wire FCLK_CLK1;
   wire FCLK_CLK2;
@@ -307,9 +327,10 @@ module e31x (
 
   wire [1:0] pps_select;
 
-  assign clk40   = FCLK_CLK1;   // 40 MHz
   assign bus_clk = FCLK_CLK0;   // 100 MHz
-  //assign bus_clk = FCLK_CLK3;   // 200 MHz
+  assign clk40   = FCLK_CLK1;   // 40 MHz
+  assign clk166  = FCLK_CLK2;   // 166.666 MHz
+  assign clk200  = FCLK_CLK3;   // 200 MHz
   assign reg_clk = clk40;
 
   wire pps;
@@ -802,7 +823,7 @@ module e31x (
   // when only using radio core 1.
   assign TX_BANDSEL = TX1_BANDSEL | TX2_BANDSEL;
 
-    /////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////
   //
   // Front-Panel GPIO
   //
@@ -841,7 +862,9 @@ module e31x (
     .NUM_DBOARDS(NUM_DBOARDS),
     .NUM_CHANNELS_PER_DBOARD(NUM_CHANNELS_PER_RADIO),
     .FP_GPIO_WIDTH(FP_GPIO_WIDTH),
-    .DB_GPIO_WIDTH(DB_GPIO_WIDTH)
+    .DB_GPIO_WIDTH(DB_GPIO_WIDTH),
+    .CHDR_W(CHDR_W),
+    .RFNOC_PROTOVER(RFNOC_PROTOVER)
   ) e31x_core_inst (
 
     //Clocks and resets
@@ -850,6 +873,7 @@ module e31x (
     .bus_clk(bus_clk),
     .bus_rst(bus_rst),
     .clk40(clk40),
+    .clk200(clk200),
 
     // Clocking and PPS Controls/Indicators
     .pps_refclk(pps),
@@ -912,6 +936,25 @@ module e31x (
     .rx(rx_flat),
     .tx(tx_flat),
 
+    // DRAM Controller Clock
+    .ddr3_sys_clk(PL_DDR3_SYSCLK),
+
+    // DRAM Chip Interface
+    .ddr3_addr(PL_DDR3_ADDR),
+    .ddr3_ba(PL_DDR3_BA),
+    .ddr3_cas_n(PL_DDR3_CAS_N),
+    .ddr3_ck_n(PL_DDR3_CK_N),
+    .ddr3_ck_p(PL_DDR3_CK_P),
+    .ddr3_cke(PL_DDR3_CKE),
+    .ddr3_ras_n(PL_DDR3_RAS_N),
+    .ddr3_reset_n(PL_DDR3_RESET_N),
+    .ddr3_we_n(PL_DDR3_WE_N),
+    .ddr3_dq(PL_DDR3_DQ),
+    .ddr3_dqs_n(PL_DDR3_DQS_N),
+    .ddr3_dqs_p(PL_DDR3_DQS_P),
+    .ddr3_dm(PL_DDR3_DM),
+    .ddr3_odt(PL_DDR3_ODT),
+
     // Internal DMA to PS
     .m_dma_tdata(s_axis_dma_tdata),
     .m_dma_tlast(s_axis_dma_tlast),
@@ -931,38 +974,6 @@ module e31x (
     .dboard_ctrl(dboard_ctrl),
     .device_id(device_id)
   );
-
-  /////////////////////////////////////////////////////////////////////
-  //
-  // PL DDR3 Memory Interface
-  //
-  /////////////////////////////////////////////////////////////////////
-
-  //wire pl_dram_clk = FCLK_CLK3;
-  //wire pl_dram_rst = ~FCLK_RESET0_N;
-
-  //example_top inst_example_top
-  //(
-  //  .ddr3_dq                       (PL_DDR3_DQ),
-  //  .ddr3_dqs_n                    (PL_DDR3_DQS_N),
-  //  .ddr3_dqs_p                    (PL_DDR3_DQS_P),
-  //  .ddr3_addr                     (PL_DDR3_ADDR),
-  //  .ddr3_ba                       (PL_DDR3_BA),
-  //  .ddr3_ras_n                    (PL_DDR3_RAS_N),
-  //  .ddr3_cas_n                    (PL_DDR3_CAS_N),
-  //  .ddr3_we_n                     (PL_DDR3_WE_N),
-  //  .ddr3_reset_n                  (PL_DDR3_RESET_N),
-  //  .ddr3_ck_p                     (PL_DDR3_CK_P),
-  //  .ddr3_ck_n                     (PL_DDR3_CK_N),
-  //  .ddr3_cke                      (PL_DDR3_CKE),
-  //  .ddr3_dm                       (PL_DDR3_DM),
-  //  .ddr3_odt                      (PL_DDR3_ODT),
-  //  .sys_clk_i                     (PL_DDR3_SYSCLK),
-  //  .clk_ref_i                     (pl_dram_clk),
-  //  .tg_compare_error              (),
-  //  .init_calib_complete           (),
-  //  .sys_rst                       (pl_dram_rst)
-  //);
 
   // PMU
   axi_pmu inst_axi_pmu (

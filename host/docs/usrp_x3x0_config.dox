@@ -16,7 +16,7 @@ These are:
 -   Network Configuration
 -   Power Management Configuration
 -   Real-Time & Priority Scheduling
--   Building with ORC & Volk
+-   Building with VOLK (if using GNU Radio)
 
 These items are covered in more detail, below.
 

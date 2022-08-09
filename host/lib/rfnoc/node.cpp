@@ -6,6 +6,7 @@
 
 #include <uhd/exception.hpp>
 #include <uhd/rfnoc/node.hpp>
+#include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/prop_accessor.hpp>
 #include <boost/format.hpp>
@@ -432,8 +433,8 @@ void node_t::resolve_props()
         filter_props([](property_base_t* prop) { return prop->is_dirty(); });
     std::list<property_base_t*> all_dirty_props(
         initial_dirty_props.cbegin(), initial_dirty_props.cend());
-    prop_ptrs_t processed_props{};
-    prop_ptrs_t written_props{};
+    std::unordered_set<property_base_t*> processed_props{};
+    std::unordered_set<property_base_t*> written_props{};
     RFNOC_LOG_TRACE("Locally resolving " << all_dirty_props.size()
                                          << " dirty properties plus dependencies.");
 
@@ -448,7 +449,7 @@ void node_t::resolve_props()
         for (auto& resolver_tuple : _prop_resolvers) {
             auto& inputs  = std::get<0>(resolver_tuple);
             auto& outputs = std::get<1>(resolver_tuple);
-            if (!inputs.count(current_input_prop)) {
+            if (!uhd::has(inputs, current_input_prop)) {
                 continue;
             }
 
@@ -524,10 +525,10 @@ void node_t::forward_edge_property(
     // of incoming_prop)
     const auto prop_src_type =
         res_source_info::invert_edge(incoming_prop->get_src_info().type);
-    // Set of local properties that match incoming_prop. It can be an empty set,
-    // or, if the node is misconfigured, a set with more than one entry. Or, if
-    // all is as expected, it's a set with a single entry.
-    auto local_prop_set = filter_props(
+    // List of local properties that match incoming_prop. It can be an empty list,
+    // or, if the node is misconfigured, have more than one entry. Or, if
+    // all is as expected, it's a list with a single entry.
+    auto local_prop_list = filter_props(
         [prop_src_type, incoming_prop, incoming_port](property_base_t* prop) -> bool {
             return prop->get_src_info().type == prop_src_type
                    && prop->get_src_info().instance == incoming_port
@@ -535,16 +536,16 @@ void node_t::forward_edge_property(
         });
 
     // If there is no such property, we're forwarding a new property
-    if (local_prop_set.empty()) {
+    if (local_prop_list.empty()) {
         RFNOC_LOG_TRACE(
             "Received unknown incoming edge prop: " << incoming_prop->get_id());
-        local_prop_set.emplace(
+        local_prop_list.push_back(
             inject_edge_property(incoming_prop, {prop_src_type, incoming_port}));
     }
     // There must be either zero results, or one
-    UHD_ASSERT_THROW(local_prop_set.size() == 1);
+    UHD_ASSERT_THROW(local_prop_list.size() == 1);
 
-    auto local_prop = *local_prop_set.begin();
+    auto local_prop = *local_prop_list.begin();
 
     prop_accessor_t prop_accessor{};
     prop_accessor.forward<false>(incoming_prop, local_prop);

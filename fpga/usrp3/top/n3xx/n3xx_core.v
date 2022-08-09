@@ -26,8 +26,8 @@ module n3xx_core #(
   parameter USE_CORRECTION = 0,
   parameter USE_REPLAY = 0,     // 1 for Replay block instead of DMA FIFO
   parameter FP_GPIO_WIDTH = 12, // Front panel GPIO width
-  parameter RFNOC_PROTOVER  = {8'd1, 8'd0},
-  parameter CHDR_WIDTH  = 16'd64
+  parameter CHDR_W = 64,
+  parameter RFNOC_PROTOVER = {8'd1, 8'd0}
 )(
   // Clocks and resets
   input         radio_clk,
@@ -535,7 +535,7 @@ module n3xx_core #(
             cp_glob_resp_data <= {16'd0, device_id};
 
           REG_RFNOC_INFO:
-            cp_glob_resp_data <= {CHDR_WIDTH[15:0], RFNOC_PROTOVER[15:0]};
+            cp_glob_resp_data <= {CHDR_W[15:0], RFNOC_PROTOVER[15:0]};
 
           REG_COMPAT_NUM:
             cp_glob_resp_data <= {COMPAT_MAJOR, COMPAT_MINOR};
@@ -1118,7 +1118,8 @@ module n3xx_core #(
 
 
   rfnoc_image_core #(
-    .PROTOVER(RFNOC_PROTOVER)
+    .CHDR_W   (CHDR_W),
+    .PROTOVER (RFNOC_PROTOVER)
   ) rfnoc_sandbox_i (
     .chdr_aclk               (bus_clk    ),
     .ctrl_aclk               (clk40      ),

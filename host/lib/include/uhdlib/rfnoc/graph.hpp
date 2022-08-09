@@ -140,7 +140,7 @@ private:
         bool operator()(const Edge& e) const
         {
             graph_edge_t edge_info = boost::get(edge_property_t(), *_graph, e);
-            return edge_info.property_propagation_active == forward_edges_only;
+            return edge_info.is_forward_edge == forward_edges_only;
         }
 
     private:
@@ -166,13 +166,20 @@ private:
     /**************************************************************************
      * The Algorithm
      *************************************************************************/
-    /*! Implementation of the property propagation algorithm
-     */
     void resolve_all_properties(uhd::rfnoc::resolve_context context,
         rfnoc_graph_t::vertex_descriptor initial_node);
 
     void resolve_all_properties(uhd::rfnoc::resolve_context context,
         node_ref_t initial_node);
+
+    /*! This is the real implementation of the property propagation algorithm.
+     *
+     * This method must only be called from resolve_all_properties(). It assumes
+     * that sanity checks have run, and that the graph mutex is being held.
+     */
+    void _resolve_all_properties(uhd::rfnoc::resolve_context context,
+        rfnoc_graph_t::vertex_descriptor initial_node,
+        const bool forward);
 
     /**************************************************************************
      * Action API
@@ -263,8 +270,9 @@ private:
     /*! Forward all edge properties from this node (\p origin) to the
      * neighbouring ones
      *
+     * \param forward true for forward edges, false for back-edges
      */
-    void _forward_edge_props(rfnoc_graph_t::vertex_descriptor origin);
+    void _forward_edge_props(rfnoc_graph_t::vertex_descriptor origin, const bool forward);
 
     /*! Check that the edge properties on both sides of the edge are equal
      *

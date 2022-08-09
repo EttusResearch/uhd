@@ -12,7 +12,6 @@ import copy
 from time import sleep
 from os import path
 from collections import namedtuple
-from pyudev import DeviceNotFoundByNameError
 from usrp_mpm import lib # Pulls in everything from C++-land
 from usrp_mpm import tlv_eeprom
 from usrp_mpm.cores import WhiteRabbitRegsControl
@@ -28,7 +27,7 @@ from usrp_mpm.periph_manager import PeriphManagerBase
 from usrp_mpm.xports import XportMgrUDP
 from usrp_mpm.periph_manager.x4xx_periphs import MboardRegsControl
 from usrp_mpm.periph_manager.x4xx_periphs import CtrlportRegs
-from usrp_mpm.periph_manager.x4xx_periphs import DioControl
+from usrp_mpm.periph_manager.x4xx_dio_control import DioControl
 from usrp_mpm.periph_manager.x4xx_periphs import QSFPModule
 from usrp_mpm.periph_manager.x4xx_periphs import get_temp_sensor
 from usrp_mpm.periph_manager.x4xx_mb_cpld import MboardCPLD
@@ -45,7 +44,7 @@ X400_DEFAULT_MASTER_CLOCK_RATE = 122.88e6
 X400_DEFAULT_TIME_SOURCE = X4xxClockMgr.TIME_SOURCE_INTERNAL
 X400_DEFAULT_CLOCK_SOURCE = X4xxClockMgr.CLOCK_SOURCE_INTERNAL
 X400_DEFAULT_ENABLE_PPS_EXPORT = True
-X400_FPGA_COMPAT = (7, 3)
+X400_FPGA_COMPAT = (7, 7)
 X400_DEFAULT_TRIG_DIRECTION = ClockingAuxBrdControl.DIRECTION_OUTPUT
 X400_MONITOR_THREAD_INTERVAL = 1.0 # seconds
 QSFPModuleConfig = namedtuple("QSFPModuleConfig", "modprs modsel devsymbol")
@@ -214,7 +213,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
             'reset': False,
         },
     }
-    discoverable_features = ["ref_clk_calibration", "time_export", "trig_io_mode"]
+    discoverable_features = ["ref_clk_calibration", "time_export", "trig_io_mode", "gpio_power"]
     #
     # End of overridables from PeriphManagerBase
     ###########################################################################
@@ -485,7 +484,8 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         self._add_public_methods(
             self._clk_mgr,
             prefix="",
-            filter_cb=lambda name, method: not hasattr(method, '_norpc')
+            filter_cb=lambda name, method: not hasattr(method, '_norpc'),
+            allow_overwrite=True
         )
 
         # Overlay must be applied after clocks have been configured
@@ -632,6 +632,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
             self.log.warning(
                 "Cannot run init(), device was never fully initialized!")
             return False
+        args = self._update_default_args(args)
 
         # We need to disable the PPS out during clock and dboard initialization in order
         # to avoid glitches.
@@ -639,9 +640,9 @@ class x4xx(ZynqComponents, PeriphManagerBase):
             self._clocking_auxbrd.set_trig(False)
 
         # If the caller has not specified clock_source or time_source, set them
-        # to the values currently configured.
-        args['clock_source'] = args.get('clock_source', self._clk_mgr.get_clock_source())
-        args['time_source'] = args.get('time_source', self._clk_mgr.get_time_source())
+        # to the default values.
+        args['clock_source'] = args.get('clock_source', X400_DEFAULT_CLOCK_SOURCE)
+        args['time_source'] = args.get('time_source', X400_DEFAULT_TIME_SOURCE)
         self.set_sync_source(args)
 
         # If a Master Clock Rate was specified,
@@ -663,8 +664,6 @@ class x4xx(ZynqComponents, PeriphManagerBase):
                 args.get('trig_direction', X400_DEFAULT_TRIG_DIRECTION)
                 )
 
-        for xport_mgr in self._xport_mgrs.values():
-            xport_mgr.init(args)
         return result
 
     def deinit(self):
@@ -684,8 +683,6 @@ class x4xx(ZynqComponents, PeriphManagerBase):
             self.set_sync_source(source)
         super(x4xx, self).deinit()
         self.ctrlport_regs.deinit()
-        for xport_mgr in self._xport_mgrs.values():
-            xport_mgr.deinit()
 
     def tear_down(self):
         """
@@ -713,40 +710,6 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         ))
         for overlay in active_overlays:
             dtoverlay.rm_overlay(overlay)
-
-    ###########################################################################
-    # Transport API
-    ###########################################################################
-    # pylint: disable=no-self-use
-    def get_chdr_link_types(self):
-        """
-        This will only ever return a single item (udp).
-        """
-        return ["udp"]
-    # pylint: enable=no-self-use
-
-    def get_chdr_link_options(self, xport_type):
-        """
-        Returns a list of dictionaries. Every dictionary contains information
-        about one way to connect to this device in order to initiate CHDR
-        traffic.
-
-        The interpretation of the return value is very highly dependant on the
-        transport type (xport_type).
-        For UDP, the every entry of the list has the following keys:
-        - ipv4 (IP Address)
-        - port (UDP port)
-        - link_rate (bps of the link, e.g. 10e9 for 10GigE)
-        """
-        if xport_type not in self._xport_mgrs:
-            self.log.warning("Can't get link options for unknown link type: `{}'.")
-            return []
-        if xport_type == "udp":
-            return self._xport_mgrs[xport_type].get_chdr_link_options(
-                self.mboard_info['rpc_connection'])
-        # else:
-        return self._xport_mgrs[xport_type].get_chdr_link_options()
-
     ###########################################################################
     # Device info
     ###########################################################################
@@ -1335,7 +1298,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
 
     def get_gps_sensor_status(self):
         """
-        Get all status of GPS as sensor dict
+        Get all status info of GPS in a single string. This is a debugging API.
         """
         assert self._gps_mgr
         self.log.trace("Reading all GPS status pins")

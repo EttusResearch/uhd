@@ -6,8 +6,8 @@
 //
 
 #include <uhd/exception.hpp>
+#include <uhd/experts/expert_container.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhdlib/experts/expert_container.hpp>
 #include <boost/format.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/depth_first_search.hpp>

@@ -32,21 +32,21 @@ the device arguments for the transport associated with the stream.
 - `send_frame_size`
   - Default value (X3x0):
        1472 (if link rate is GigE) or
-       4000 (if link rate is 10GigE)
+       8000 (if link rate is 10GigE)
   - Default value (MPMD):
        1472 (if link rate is GigE);
-       8000 (if link rate is 10GigE);
+       8000 (if link rate is 10GigE or 100GigE);
        TX MTU (other link rates)
   - <b>Note:</b> Value will be capped at the link's send MTU
 - `recv_frame_size`
   - Default value (X3x0 and MPMD):
        1472 (if link rate is GigE);
-       8000 (if link rate is 10GigE);
+       8000 (if link rate is 10GigE or 100GigE);
        RX MTU (other link rates)
   - <b>Note:</b> Value will be capped at the link's receive MTU
 - `send_buff_size`
   - Default value (X3x0 and MPMD):
-       20 ms of data at the link rate (2.5 MB for 1GigE, 25 MB for 10GigE)
+       20 ms of data at the link rate (2.5 MB for 1GigE, 25 MB for 10GigE, 250 MB for 100GigE)
 - `recv_buff_size`
   - Default value (X3x0 and MPMD):
        20 ms of data at the link rate
@@ -155,6 +155,29 @@ To change the number of TX/RX descriptors, run the following command:
 One can query the maximums and current settings with the following command:
 
     ethtool -g <interface>
+
+Tx pause frame support must be enabled when using 100GigE with X410 to ensure proper streaming performance.
+
+To enable Tx pause frames run the following command on the device in a Linux prompt.
+
+    ethtool -A <interface> tx on
+
+If you are using both SFP ports, you will need to run the above command separately on both of them.
+
+One can query the the current enable status of TX pause frames by running the following command on the X410 device in a Linux prompt.
+
+    ethtool -a <interface>
+
+The above changes will be volatile and will need to be re-applied every time the device boots or the SFP ports are reconfigured,
+e.g. after a fpga image load.
+
+ Automatic enable of TX pause frames will be possible in the future when systemd v2.4.6 or higher is used on the device.
+ This will be done by using the `TxFlowControl` parameter in the `.network` files(s) used for configuring the SFP port(s) being used.
+ E.g. When using sfp0 port, add a line `TxFlowControl=1` as shown below to the `/data/network/sfp0.network` file.
+```
+    [Link]
+    TxFlowControl=1
+```
 
 \subsection transport_udp_windows Windows specific notes
 

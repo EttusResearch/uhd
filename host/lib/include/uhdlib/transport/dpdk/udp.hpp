@@ -15,7 +15,8 @@
 namespace uhd { namespace transport { namespace dpdk {
 
 constexpr size_t HDR_SIZE_UDP_IPV4 =
-    (sizeof(struct rte_ether_hdr) + sizeof(struct rte_ipv4_hdr) + sizeof(struct rte_udp_hdr));
+    (sizeof(struct rte_ether_hdr) + sizeof(struct rte_ipv4_hdr)
+        + sizeof(struct rte_udp_hdr));
 
 /*!
  * An enumerated type representing the type of flow for an IPv4 client
@@ -57,12 +58,17 @@ inline void fill_rte_ipv4_hdr(struct rte_mbuf* mbuf,
     ip_hdr->hdr_checksum    = 0; // Require HW offload
     ip_hdr->src_addr        = port->get_ipv4();
     ip_hdr->dst_addr        = dst_rte_ipv4_addr;
-
+#if RTE_VER_YEAR > 21 || (RTE_VER_YEAR == 21 && RTE_VER_MONTH == 11)
+    mbuf->ol_flags = RTE_MBUF_F_TX_IP_CKSUM | RTE_MBUF_F_TX_IPV4;
+#else
     mbuf->ol_flags = PKT_TX_IP_CKSUM | PKT_TX_IPV4;
-    mbuf->l2_len   = sizeof(struct rte_ether_hdr);
-    mbuf->l3_len   = sizeof(struct rte_ipv4_hdr);
-    mbuf->pkt_len  = sizeof(struct rte_ether_hdr) + sizeof(struct rte_ipv4_hdr) + payload_len;
-    mbuf->data_len = sizeof(struct rte_ether_hdr) + sizeof(struct rte_ipv4_hdr) + payload_len;
+#endif
+    mbuf->l2_len = sizeof(struct rte_ether_hdr);
+    mbuf->l3_len = sizeof(struct rte_ipv4_hdr);
+    mbuf->pkt_len =
+        sizeof(struct rte_ether_hdr) + sizeof(struct rte_ipv4_hdr) + payload_len;
+    mbuf->data_len =
+        sizeof(struct rte_ether_hdr) + sizeof(struct rte_ipv4_hdr) + payload_len;
 }
 
 /* All values except payload length must be in network order */
@@ -77,8 +83,11 @@ inline void fill_rte_udp_hdr(struct rte_mbuf* mbuf,
     struct rte_ipv4_hdr* ip_hdr;
     struct rte_udp_hdr* tx_hdr;
 
-    fill_rte_ipv4_hdr(
-        mbuf, port, dst_rte_ipv4_addr, IPPROTO_UDP, sizeof(struct rte_udp_hdr) + payload_len);
+    fill_rte_ipv4_hdr(mbuf,
+        port,
+        dst_rte_ipv4_addr,
+        IPPROTO_UDP,
+        sizeof(struct rte_udp_hdr) + payload_len);
 
     eth_hdr = rte_pktmbuf_mtod(mbuf, struct rte_ether_hdr*);
     ip_hdr  = (struct rte_ipv4_hdr*)&eth_hdr[1];

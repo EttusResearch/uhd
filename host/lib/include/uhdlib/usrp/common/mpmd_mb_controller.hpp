@@ -123,6 +123,9 @@ private:
     std::vector<std::string> _gpio_banks;
     std::unordered_map<std::string, std::vector<std::string>> _gpio_srcs;
 
+    //! Cache of currently set GPIO sources
+    std::unordered_map<std::string, std::vector<std::string>> _current_gpio_src;
+
     std::vector<mb_controller::sync_source_updater_t> _sync_source_updaters;
 
 public:

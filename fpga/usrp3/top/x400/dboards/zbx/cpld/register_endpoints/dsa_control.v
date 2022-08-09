@@ -369,10 +369,16 @@ module dsa_control #(
   wire [31:0] ram_tx0_dia = select_gain_table ? table_tx0_doa : ram_datain;
   wire [31:0] ram_tx1_dia = select_gain_table ? table_tx1_doa : ram_datain;
 
+`ifdef VARIANT_XO3
+  localparam RAM_RW_MODE = "B-READ-ONLY" ;
+`else
+  localparam RAM_RW_MODE = "READ-FIRST" ;
+`endif
+
   ram_2port #(
     .DWIDTH     (32),
     .AWIDTH     (8),
-    .RW_MODE    ("READ-FIRST"),
+    .RW_MODE    (RAM_RW_MODE),
     .RAM_TYPE   ("AUTOMATIC"),
     .OUT_REG    (0),
     .INIT_FILE  ("register_endpoints/memory_init_files/tx_dsa_defaults.hex")
@@ -394,7 +400,7 @@ module dsa_control #(
   ram_2port #(
     .DWIDTH     (32),
     .AWIDTH     (8),
-    .RW_MODE    ("READ-FIRST"),
+    .RW_MODE    (RAM_RW_MODE),
     .RAM_TYPE   ("AUTOMATIC"),
     .OUT_REG    (0),
     .INIT_FILE  ("register_endpoints/memory_init_files/tx_dsa_defaults.hex")
@@ -416,7 +422,7 @@ module dsa_control #(
   ram_2port #(
     .DWIDTH     (32),
     .AWIDTH     (8),
-    .RW_MODE    ("READ-FIRST"),
+    .RW_MODE    (RAM_RW_MODE),
     .RAM_TYPE   ("AUTOMATIC"),
     .OUT_REG    (0),
     .INIT_FILE  ("register_endpoints/memory_init_files/rx_dsa_defaults.hex")
@@ -438,7 +444,7 @@ module dsa_control #(
   ram_2port #(
     .DWIDTH     (32),
     .AWIDTH     (8),
-    .RW_MODE    ("READ-FIRST"),
+    .RW_MODE    (RAM_RW_MODE),
     .RAM_TYPE   ("AUTOMATIC"),
     .OUT_REG    (0),
     .INIT_FILE  ("register_endpoints/memory_init_files/rx_dsa_defaults.hex")
@@ -464,7 +470,7 @@ module dsa_control #(
   ram_2port #(
     .DWIDTH     (32),
     .AWIDTH     (8),
-    .RW_MODE    ("READ-FIRST"),
+    .RW_MODE    (RAM_RW_MODE),
     .RAM_TYPE   ("AUTOMATIC"),
     .OUT_REG    (0),
     .INIT_FILE  ("register_endpoints/memory_init_files/tx_dsa_defaults.hex")
@@ -486,7 +492,7 @@ module dsa_control #(
   ram_2port #(
     .DWIDTH     (32),
     .AWIDTH     (8),
-    .RW_MODE    ("READ-FIRST"),
+    .RW_MODE    (RAM_RW_MODE),
     .RAM_TYPE   ("AUTOMATIC"),
     .OUT_REG    (0),
     .INIT_FILE  ("register_endpoints/memory_init_files/tx_dsa_defaults.hex")
@@ -508,7 +514,7 @@ module dsa_control #(
   ram_2port #(
     .DWIDTH     (32),
     .AWIDTH     (8),
-    .RW_MODE    ("READ-FIRST"),
+    .RW_MODE    (RAM_RW_MODE),
     .RAM_TYPE   ("AUTOMATIC"),
     .OUT_REG    (0),
     .INIT_FILE  ("register_endpoints/memory_init_files/rx_dsa_defaults.hex")
@@ -530,7 +536,7 @@ module dsa_control #(
   ram_2port #(
     .DWIDTH     (32),
     .AWIDTH     (8),
-    .RW_MODE    ("READ-FIRST"),
+    .RW_MODE    (RAM_RW_MODE),
     .RAM_TYPE   ("AUTOMATIC"),
     .OUT_REG    (0),
     .INIT_FILE  ("register_endpoints/memory_init_files/rx_dsa_defaults.hex")

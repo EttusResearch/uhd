@@ -24,6 +24,8 @@ typedef SSIZE_T ssize_t;
 #if defined(_MSC_VER)
     #define UHD_EXPORT         __declspec(dllexport)
     #define UHD_IMPORT         __declspec(dllimport)
+    #define UHD_EXPORT_HEADER
+    #define UHD_IMPORT_HEADER
     #define UHD_INLINE         __forceinline
     #define UHD_DEPRECATED     __declspec(deprecated)
     #define UHD_ALIGNED(x)     __declspec(align(x))
@@ -31,20 +33,26 @@ typedef SSIZE_T ssize_t;
 #elif defined(__MINGW32__)
     #define UHD_EXPORT         __declspec(dllexport)
     #define UHD_IMPORT         __declspec(dllimport)
+    #define UHD_EXPORT_HEADER
+    #define UHD_IMPORT_HEADER
     #define UHD_INLINE         inline
     #define UHD_DEPRECATED     __declspec(deprecated)
     #define UHD_ALIGNED(x)     __declspec(align(x))
     #define UHD_UNUSED(x)      x __attribute__((unused))
-#elif defined(__GNUC__) && __GNUC__ >= 4
+#elif defined(__clang__)
     #define UHD_EXPORT         __attribute__((visibility("default")))
     #define UHD_IMPORT         __attribute__((visibility("default")))
+    #define UHD_EXPORT_HEADER  __attribute__((visibility("default")))
+    #define UHD_IMPORT_HEADER  __attribute__((visibility("default")))
     #define UHD_INLINE         inline __attribute__((always_inline))
     #define UHD_DEPRECATED     __attribute__((deprecated))
     #define UHD_ALIGNED(x)     __attribute__((aligned(x)))
     #define UHD_UNUSED(x)      x __attribute__((unused))
-#elif defined(__clang__)
+#elif defined(__GNUC__) && (__GNUC__ >= 4)
     #define UHD_EXPORT         __attribute__((visibility("default")))
     #define UHD_IMPORT         __attribute__((visibility("default")))
+    #define UHD_EXPORT_HEADER  __attribute__((visibility("default")))
+    #define UHD_IMPORT_HEADER  __attribute__((visibility("default")))
     #define UHD_INLINE         inline __attribute__((always_inline))
     #define UHD_DEPRECATED     __attribute__((deprecated))
     #define UHD_ALIGNED(x)     __attribute__((aligned(x)))
@@ -52,22 +60,32 @@ typedef SSIZE_T ssize_t;
 #else
     #define UHD_EXPORT
     #define UHD_IMPORT
+    #define UHD_EXPORT_HEADER
+    #define UHD_IMPORT_HEADER
     #define UHD_INLINE         inline
     #define UHD_DEPRECATED
     #define UHD_ALIGNED(x)
     #define UHD_UNUSED(x)      x
 #endif
 
-// API declaration macro
-
 // Define API declaration macro
+//
+// UHD_API should be used for classes/structs that
+// have a direct cpp implementations that get directly
+// built into a so/dylib/dll.
+//
+// UHD_API_HEADER should be used for classes/structs
+// that are implemented in header only like hpp/ipp.
 #ifdef UHD_STATIC_LIB
     #define UHD_API
+    #define UHD_API_HEADER
 #else
     #ifdef UHD_DLL_EXPORTS
         #define UHD_API UHD_EXPORT
+        #define UHD_API_HEADER UHD_EXPORT_HEADER
     #else
         #define UHD_API UHD_IMPORT
+        #define UHD_API_HEADER UHD_IMPORT_HEADER
     #endif // UHD_DLL_EXPORTS
 #endif // UHD_STATIC_LIB
 

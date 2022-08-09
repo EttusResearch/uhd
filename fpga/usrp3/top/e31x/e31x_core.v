@@ -26,7 +26,7 @@ module e31x_core #(
   parameter NUM_CHANNELS_PER_DBOARD = 2,
   parameter FP_GPIO_WIDTH = 8,  // Front panel GPIO width
   parameter DB_GPIO_WIDTH = 16,  // Daughterboard GPIO width
-  parameter CHDR_WIDTH  = 16'd64 ,
+  parameter CHDR_W = 64,
   parameter RFNOC_PROTOVER  = {8'd1, 8'd0}
 )(
   // Clocks and resets
@@ -35,6 +35,7 @@ module e31x_core #(
   input wire bus_clk,
   input wire bus_rst,
   input wire clk40,
+  input wire clk200,
 
   // Motherboard Registers: AXI lite interface
   input wire                    s_axi_aclk,
@@ -94,6 +95,25 @@ module e31x_core #(
   input wire  [NUM_CHANNELS-1:0]    tx_stb,
   input wire  [32*NUM_CHANNELS-1:0] rx,
   output wire [32*NUM_CHANNELS-1:0] tx,
+
+  // DRAM Controller Clock
+  input wire         ddr3_sys_clk,
+
+  // DRAM Chip Interface
+  output wire [14:0] ddr3_addr,
+  output wire [ 2:0] ddr3_ba,
+  output wire        ddr3_cas_n,
+  output wire [ 0:0] ddr3_ck_n,
+  output wire [ 0:0] ddr3_ck_p,
+  output wire [ 0:0] ddr3_cke,
+  output wire        ddr3_ras_n,
+  output wire        ddr3_reset_n,
+  output wire        ddr3_we_n,
+  inout  wire [15:0] ddr3_dq,
+  inout  wire [ 1:0] ddr3_dqs_n,
+  inout  wire [ 1:0] ddr3_dqs_p,
+  output wire [ 1:0] ddr3_dm,
+  output wire [ 0:0] ddr3_odt,
 
   // DMA xport adapter to PS
   input wire  [63:0] s_dma_tdata,
@@ -394,7 +414,7 @@ module e31x_core #(
             cp_glob_resp_data <= {16'd0, device_id};
 
           REG_RFNOC_INFO:
-            cp_glob_resp_data <= {CHDR_WIDTH[15:0], RFNOC_PROTOVER[15:0]};
+            cp_glob_resp_data <= {CHDR_W[15:0], RFNOC_PROTOVER[15:0]};
 
           REG_COMPAT_NUM:
             cp_glob_resp_data <= {COMPAT_MAJOR[15:0], COMPAT_MINOR[15:0]};
@@ -658,19 +678,149 @@ module e31x_core #(
   );
 
   /////////////////////////////////////////////////////////////////////////////
+  // PL DDR3 Memory Interface
+  /////////////////////////////////////////////////////////////////////////////
+
+  localparam NUM_PORTS  = 2;
+  localparam AXI_DWIDTH = 64;
+
+  wire [          32*NUM_PORTS-1:0] dram_axi_araddr;
+  wire [           2*NUM_PORTS-1:0] dram_axi_arburst;
+  wire [           4*NUM_PORTS-1:0] dram_axi_arcache;
+  wire [           1*NUM_PORTS-1:0] dram_axi_arid;
+  wire [           8*NUM_PORTS-1:0] dram_axi_arlen;
+  wire [           1*NUM_PORTS-1:0] dram_axi_arlock;
+  wire [           3*NUM_PORTS-1:0] dram_axi_arprot;
+  wire [           4*NUM_PORTS-1:0] dram_axi_arqos;
+  wire [           1*NUM_PORTS-1:0] dram_axi_arready;
+  wire [           4*NUM_PORTS-1:0] dram_axi_arregion;
+  wire [           3*NUM_PORTS-1:0] dram_axi_arsize;
+  wire [           1*NUM_PORTS-1:0] dram_axi_arvalid;
+  wire [          32*NUM_PORTS-1:0] dram_axi_awaddr;
+  wire [           2*NUM_PORTS-1:0] dram_axi_awburst;
+  wire [           4*NUM_PORTS-1:0] dram_axi_awcache;
+  wire [           1*NUM_PORTS-1:0] dram_axi_awid;
+  wire [           8*NUM_PORTS-1:0] dram_axi_awlen;
+  wire [           1*NUM_PORTS-1:0] dram_axi_awlock;
+  wire [           3*NUM_PORTS-1:0] dram_axi_awprot;
+  wire [           4*NUM_PORTS-1:0] dram_axi_awqos;
+  wire [           1*NUM_PORTS-1:0] dram_axi_awready;
+  wire [           4*NUM_PORTS-1:0] dram_axi_awregion;
+  wire [           3*NUM_PORTS-1:0] dram_axi_awsize;
+  wire [           1*NUM_PORTS-1:0] dram_axi_awvalid;
+  wire [           1*NUM_PORTS-1:0] dram_axi_bid;
+  wire [           1*NUM_PORTS-1:0] dram_axi_bready;
+  wire [           2*NUM_PORTS-1:0] dram_axi_bresp;
+  wire [           1*NUM_PORTS-1:0] dram_axi_bvalid;
+  wire [  AXI_DWIDTH*NUM_PORTS-1:0] dram_axi_rdata;
+  wire [           1*NUM_PORTS-1:0] dram_axi_rid;
+  wire [           1*NUM_PORTS-1:0] dram_axi_rlast;
+  wire [           1*NUM_PORTS-1:0] dram_axi_rready;
+  wire [           2*NUM_PORTS-1:0] dram_axi_rresp;
+  wire [           1*NUM_PORTS-1:0] dram_axi_rvalid;
+  wire [  AXI_DWIDTH*NUM_PORTS-1:0] dram_axi_wdata;
+  wire [           1*NUM_PORTS-1:0] dram_axi_wlast;
+  wire [           1*NUM_PORTS-1:0] dram_axi_wready;
+  wire [AXI_DWIDTH/8*NUM_PORTS-1:0] dram_axi_wstrb;
+  wire [           1*NUM_PORTS-1:0] dram_axi_wvalid;
+
+  wire dram_clk;
+  wire dram_rst;
+
+  `ifdef ENABLE_DRAM
+  begin : gen_dram
+    wire clk200_rst;
+
+    synchronizer synchronizer_clk200_rst (
+      .clk(clk200  ),
+      .rst(1'b0    ),
+      .in (bus_rst ),
+      .out(clk200_rst)
+    );
+
+    e31x_dram #(
+      .AXI_DWIDTH(AXI_DWIDTH),
+      .NUM_PORTS (NUM_PORTS )
+    ) e31x_dram_i (
+      .sys_rst          (bus_rst          ),
+      .ddr3_sys_clk     (ddr3_sys_clk     ),
+      .clk200           (clk200           ),
+      .clk200_rst       (clk200_rst       ),
+      .ddr3_addr        (ddr3_addr        ),
+      .ddr3_ba          (ddr3_ba          ),
+      .ddr3_cas_n       (ddr3_cas_n       ),
+      .ddr3_ck_n        (ddr3_ck_n        ),
+      .ddr3_ck_p        (ddr3_ck_p        ),
+      .ddr3_cke         (ddr3_cke         ),
+      .ddr3_ras_n       (ddr3_ras_n       ),
+      .ddr3_reset_n     (ddr3_reset_n     ),
+      .ddr3_we_n        (ddr3_we_n        ),
+      .ddr3_dq          (ddr3_dq          ),
+      .ddr3_dqs_n       (ddr3_dqs_n       ),
+      .ddr3_dqs_p       (ddr3_dqs_p       ),
+      .ddr3_dm          (ddr3_dm          ),
+      .ddr3_odt         (ddr3_odt         ),
+      .dram_clk         (dram_clk         ),
+      .dram_rst         (dram_rst         ),
+      .dram_axi_araddr  (dram_axi_araddr  ),
+      .dram_axi_arburst (dram_axi_arburst ),
+      .dram_axi_arcache (dram_axi_arcache ),
+      .dram_axi_arid    (dram_axi_arid    ),
+      .dram_axi_arlen   (dram_axi_arlen   ),
+      .dram_axi_arlock  (dram_axi_arlock  ),
+      .dram_axi_arprot  (dram_axi_arprot  ),
+      .dram_axi_arqos   (dram_axi_arqos   ),
+      .dram_axi_arready (dram_axi_arready ),
+      .dram_axi_arregion(dram_axi_arregion),
+      .dram_axi_arsize  (dram_axi_arsize  ),
+      .dram_axi_arvalid (dram_axi_arvalid ),
+      .dram_axi_awaddr  (dram_axi_awaddr  ),
+      .dram_axi_awburst (dram_axi_awburst ),
+      .dram_axi_awcache (dram_axi_awcache ),
+      .dram_axi_awid    (dram_axi_awid    ),
+      .dram_axi_awlen   (dram_axi_awlen   ),
+      .dram_axi_awlock  (dram_axi_awlock  ),
+      .dram_axi_awprot  (dram_axi_awprot  ),
+      .dram_axi_awqos   (dram_axi_awqos   ),
+      .dram_axi_awready (dram_axi_awready ),
+      .dram_axi_awregion(dram_axi_awregion),
+      .dram_axi_awsize  (dram_axi_awsize  ),
+      .dram_axi_awvalid (dram_axi_awvalid ),
+      .dram_axi_bid     (dram_axi_bid     ),
+      .dram_axi_bready  (dram_axi_bready  ),
+      .dram_axi_bresp   (dram_axi_bresp   ),
+      .dram_axi_bvalid  (dram_axi_bvalid  ),
+      .dram_axi_rdata   (dram_axi_rdata   ),
+      .dram_axi_rid     (dram_axi_rid     ),
+      .dram_axi_rlast   (dram_axi_rlast   ),
+      .dram_axi_rready  (dram_axi_rready  ),
+      .dram_axi_rresp   (dram_axi_rresp   ),
+      .dram_axi_rvalid  (dram_axi_rvalid  ),
+      .dram_axi_wdata   (dram_axi_wdata   ),
+      .dram_axi_wlast   (dram_axi_wlast   ),
+      .dram_axi_wready  (dram_axi_wready  ),
+      .dram_axi_wstrb   (dram_axi_wstrb   ),
+      .dram_axi_wvalid  (dram_axi_wvalid  )
+    );
+  end  // gen_dram
+  `endif
+
+  /////////////////////////////////////////////////////////////////////////////
   //
   // RFNoC Image Core
   //
   /////////////////////////////////////////////////////////////////////////////
 
   rfnoc_image_core #(
-    .PROTOVER(RFNOC_PROTOVER)
+    .CHDR_W   (CHDR_W),
+    .PROTOVER (RFNOC_PROTOVER)
   ) rfnoc_image_core_i (
     .chdr_aclk               (bus_clk    ),
     .ctrl_aclk               (clk40      ),
     .core_arst               (bus_rst    ),
     .device_id               (device_id  ),
     .radio_clk               (radio_clk  ),
+    .dram_clk                (dram_clk   ),
     .m_ctrlport_req_wr       (m_ctrlport_req_wr      ),
     .m_ctrlport_req_rd       (m_ctrlport_req_rd      ),
     .m_ctrlport_req_addr     (m_ctrlport_req_addr    ),
@@ -688,6 +838,51 @@ module e31x_core #(
     .radio_tx_stb            ({tx_stb[1],     tx_stb[0]    }),
     .radio_tx_data           ({tx_data[1],    tx_data[0]   }),
     .radio_tx_running        ({tx_running[1], tx_running[0]}),
+    .axi_rst                 (dram_rst),
+    .m_axi_awid              (dram_axi_awid),
+    .m_axi_awaddr            (dram_axi_awaddr),
+    .m_axi_awlen             (dram_axi_awlen),
+    .m_axi_awsize            (dram_axi_awsize),
+    .m_axi_awburst           (dram_axi_awburst),
+    .m_axi_awlock            (dram_axi_awlock),
+    .m_axi_awcache           (dram_axi_awcache),
+    .m_axi_awprot            (dram_axi_awprot),
+    .m_axi_awqos             (dram_axi_awqos),
+    .m_axi_awregion          (dram_axi_awregion),
+    .m_axi_awuser            (),
+    .m_axi_awvalid           (dram_axi_awvalid),
+    .m_axi_awready           (dram_axi_awready),
+    .m_axi_wdata             (dram_axi_wdata),
+    .m_axi_wstrb             (dram_axi_wstrb),
+    .m_axi_wlast             (dram_axi_wlast),
+    .m_axi_wuser             (),
+    .m_axi_wvalid            (dram_axi_wvalid),
+    .m_axi_wready            (dram_axi_wready),
+    .m_axi_bid               (dram_axi_bid),
+    .m_axi_bresp             (dram_axi_bresp),
+    .m_axi_buser             (4'b0),
+    .m_axi_bvalid            (dram_axi_bvalid),
+    .m_axi_bready            (dram_axi_bready),
+    .m_axi_arid              (dram_axi_arid),
+    .m_axi_araddr            (dram_axi_araddr),
+    .m_axi_arlen             (dram_axi_arlen),
+    .m_axi_arsize            (dram_axi_arsize),
+    .m_axi_arburst           (dram_axi_arburst),
+    .m_axi_arlock            (dram_axi_arlock),
+    .m_axi_arcache           (dram_axi_arcache),
+    .m_axi_arprot            (dram_axi_arprot),
+    .m_axi_arqos             (dram_axi_arqos),
+    .m_axi_arregion          (dram_axi_arregion),
+    .m_axi_aruser            (),
+    .m_axi_arvalid           (dram_axi_arvalid),
+    .m_axi_arready           (dram_axi_arready),
+    .m_axi_rid               (dram_axi_rid),
+    .m_axi_rdata             (dram_axi_rdata),
+    .m_axi_rresp             (dram_axi_rresp),
+    .m_axi_rlast             (dram_axi_rlast),
+    .m_axi_ruser             (4'b0),
+    .m_axi_rvalid            (dram_axi_rvalid),
+    .m_axi_rready            (dram_axi_rready),
     .s_dma_tdata             (s_dma_tdata),
     .s_dma_tlast             (s_dma_tlast),
     .s_dma_tvalid            (s_dma_tvalid),

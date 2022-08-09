@@ -196,6 +196,26 @@ localparam REG_PLAY_ITEM_SIZE = 'h50;
 localparam REG_ITEM_SIZE_POS = 0;
 localparam REG_ITEM_SIZE_LEN = 8;
 
+// REG_REC_POS (R)
+//
+// Returns the byte address of the record pointer.
+//
+localparam REG_REC_POS_LO = 'h54;
+localparam REG_REC_POS_HI = 'h58;
+
+// REG_PLAY_POS (R)
+//
+// Returns the byte address of the play pointer.
+//
+localparam REG_PLAY_POS_LO = 'h5C;
+localparam REG_PLAY_POS_HI = 'h60;
+
+// REG_PLAY_CMD_FIFO_SPACE (R)
+//
+// Returns remaining space in the command FIFO
+//
+localparam REG_PLAY_CMD_FIFO_SPACE = 'h64;
+
 //-----------------------------------------------------------------------------
 // Playback Commands
 //-----------------------------------------------------------------------------

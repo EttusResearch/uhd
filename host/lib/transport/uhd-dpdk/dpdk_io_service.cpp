@@ -570,10 +570,10 @@ void dpdk_io_service::_service_xport_disconnect(dpdk::wait_req* req)
 
 int dpdk_io_service::_service_arp_request(dpdk::wait_req* req)
 {
-    int status               = 0;
-    auto arp_req_data        = (struct dpdk::arp_request*)req->data;
+    int status                   = 0;
+    auto arp_req_data            = (struct dpdk::arp_request*)req->data;
     dpdk::rte_ipv4_addr dst_addr = arp_req_data->tpa;
-    auto ctx_sptr            = _ctx.lock();
+    auto ctx_sptr                = _ctx.lock();
     UHD_ASSERT_THROW(ctx_sptr);
     dpdk::dpdk_port* port = ctx_sptr->get_port(arp_req_data->port);
     UHD_LOG_TRACE("DPDK::IO_SERVICE",
@@ -629,8 +629,13 @@ int dpdk_io_service::_send_arp_request(
     hdr       = rte_pktmbuf_mtod(mbuf, struct rte_ether_hdr*);
     arp_frame = (struct rte_arp_hdr*)&hdr[1];
 
+#if RTE_VER_YEAR > 21 || (RTE_VER_YEAR == 21 && RTE_VER_MONTH == 11)
+    memset(hdr->dst_addr.addr_bytes, 0xFF, RTE_ETHER_ADDR_LEN);
+    hdr->src_addr = port->get_mac_addr();
+#else
     memset(hdr->d_addr.addr_bytes, 0xFF, RTE_ETHER_ADDR_LEN);
-    hdr->s_addr     = port->get_mac_addr();
+    hdr->s_addr = port->get_mac_addr();
+#endif
     hdr->ether_type = rte_cpu_to_be_16(RTE_ETHER_TYPE_ARP);
 
     arp_frame->arp_hardware          = rte_cpu_to_be_16(RTE_ARP_HRD_ETHER);
@@ -676,9 +681,18 @@ int dpdk_io_service::_rx_burst(dpdk::dpdk_port* port, dpdk::queue_id_t queue)
                 rte_pktmbuf_free(bufs[buf]);
                 break;
             case RTE_ETHER_TYPE_IPV4:
+
+#if RTE_VER_YEAR > 21 || (RTE_VER_YEAR == 21 && RTE_VER_MONTH == 11)
+                if ((ol_flags & RTE_MBUF_F_RX_IP_CKSUM_MASK)
+                    == RTE_MBUF_F_RX_IP_CKSUM_BAD) {
+                    UHD_LOG_WARNING("DPDK::IO_SERVICE", "RX packet has bad IP cksum");
+                } else if ((ol_flags & RTE_MBUF_F_RX_IP_CKSUM_MASK)
+                           == RTE_MBUF_F_RX_IP_CKSUM_NONE) {
+#else
                 if ((ol_flags & PKT_RX_IP_CKSUM_MASK) == PKT_RX_IP_CKSUM_BAD) {
                     UHD_LOG_WARNING("DPDK::IO_SERVICE", "RX packet has bad IP cksum");
                 } else if ((ol_flags & PKT_RX_IP_CKSUM_MASK) == PKT_RX_IP_CKSUM_NONE) {
+#endif
                     UHD_LOG_WARNING("DPDK::IO_SERVICE", "RX packet missing IP cksum");
                 } else {
                     _process_ipv4(port, bufs[buf], (struct rte_ipv4_hdr*)l2_data);
@@ -695,7 +709,7 @@ int dpdk_io_service::_rx_burst(dpdk::dpdk_port* port, dpdk::queue_id_t queue)
 int dpdk_io_service::_process_arp(
     dpdk::dpdk_port* port, dpdk::queue_id_t queue_id, struct rte_arp_hdr* arp_frame)
 {
-    uint32_t dest_ip            = arp_frame->arp_data.arp_sip;
+    uint32_t dest_ip                = arp_frame->arp_data.arp_sip;
     struct rte_ether_addr dest_addr = arp_frame->arp_data.arp_sha;
     UHD_LOG_TRACE("DPDK::IO_SERVICE",
         "Processing ARP packet: " << dpdk::ipv4_num_to_str(dest_ip) << " -> "

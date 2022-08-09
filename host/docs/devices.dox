@@ -56,5 +56,9 @@ unless stated otherwise, they will still work with this version of UHD.
 
 \li \subpage page_octoclock
 
+## Usrpctl
+
+\li \subpage page_usrpctl
+
 */
 // vim:ft=doxygen:

@@ -216,7 +216,7 @@ protected:
     /******************************************
      * Internal Registration Functions
      ******************************************/
-    using prop_ptrs_t = std::unordered_set<property_base_t*>;
+    using prop_ptrs_t = std::vector<property_base_t*>;
 
     /*! Register a property for this block
      *
@@ -501,7 +501,7 @@ private:
         for (const auto& type_prop_pair : _props) {
             for (const auto& prop : type_prop_pair.second) {
                 if (predicate(prop)) {
-                    filtered_props.insert(prop);
+                    filtered_props.push_back(prop);
                 }
             }
         }

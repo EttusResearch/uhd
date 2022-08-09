@@ -32,7 +32,7 @@ from usrp_mpm.sys_utils import net
 TIMEOUT_INTERVAL = 5.0 # Seconds before claim expires (default value)
 TOKEN_LEN = 16 # Length of the token string
 # Compatibility number for MPM
-MPM_COMPAT_NUM = (4, 0)
+MPM_COMPAT_NUM = (4, 2)
 
 def no_claim(func):
     " Decorator for functions that require no token check "
@@ -87,6 +87,8 @@ class MPMServer(RPCServer):
                 to_binary_str(device_info.get("product", "n/a"))
         self._state.dev_serial.value = \
                 to_binary_str(device_info.get("serial", "n/a"))
+        self._state.dev_name.value = \
+                to_binary_str(device_info.get("name", "n/a"))
         self._state.dev_fpga_type.value = \
                 to_binary_str(device_info.get("fpga", "n/a"))
         self._db_methods = []

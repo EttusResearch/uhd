@@ -241,13 +241,12 @@ static void x300_setup_session(x300_session_t& session,
             throw uhd::runtime_error(
                 "Found a device but could not auto-generate an image filename.");
         } else {
-            session.filepath =
-                find_image_path("usrp_" + sanitized_product_name +  
-                                "_fpga_" + session.fpga_type + ".bit");
+            session.filepath = find_image_path(
+                "usrp_" + sanitized_product_name + "_fpga_" + session.fpga_type + ".bit");
         }
     } else {
         session.fpga_type = "";
-        session.filepath = filepath;
+        session.filepath  = filepath;
     }
 
     /*
@@ -292,7 +291,7 @@ static UHD_INLINE bool x300_recv_ok(const x300_fpga_update_data_t* pkt_in, size_
 {
     return (len > 0
             and ((ntohl(pkt_in->flags) & X300_FPGA_PROG_FLAGS_ERROR)
-                    != X300_FPGA_PROG_FLAGS_ERROR));
+                 != X300_FPGA_PROG_FLAGS_ERROR));
 }
 
 // Image data needs to be bitswapped

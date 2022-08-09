@@ -5,6 +5,14 @@ parameters:
   type: string
 - name: uhdInstallerDir
   type: string
+- name: uhdImageDir
+  type: string
+- name: uhdReleaseBinaries
+  type: boolean
+  default: false
+- name: uhdBuildPythonAPI
+  type: boolean
+  default: false
 - name: cmakeCompiler
   type: string
 - name: cmakeArch
@@ -16,10 +24,53 @@ parameters:
 
 steps:
 - script: |
+    mkdir ${{ parameters.uhdBuildDir }}
+    cd ${{ parameters.uhdBuildDir }}
+    cmake ${{ parameters.uhdSrcDir }}/host ^
+      -DVCPKG_TARGET_TRIPLET=uhd-$(vsArch)-windows-static-md ^
+      -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALL_DIR%/scripts/buildsystems/vcpkg.cmake
+    mkdir ${{ parameters.uhdImageDir }}
+    python ${{ parameters.uhdBuildDir }}/utils/uhd_images_downloader.py -i ${{ parameters.uhdImageDir }}
+  displayName: Download uhd-images
+  timeoutInMinutes: 30
+
+- script: |
+    cd $(Pipeline.Workspace)
+    rmdir ${{ parameters.uhdBuildDir }} /s /q
+  displayName: Clean build directory
+
+- script: |
+    mkdir ${{ parameters.uhdBuildDir }}
+    cd ${{ parameters.uhdBuildDir }}
+    if "${{ parameters.uhdReleaseBinaries }}" == "True" (
+      echo "Setting Release Mode"
+      SET UHD_CI_CMAKE_RELEASE_MODE="-DUHD_RELEASE_MODE=release"
+    )
+    if "${{ parameters.uhdBuildPythonAPI }}" == "True" (
+      echo "Setting Python API Build"
+      SET UHD_CI_CMAKE_PYTHON="-DENABLE_PYTHON_API=ON"
+      SET UHD_CI_CMAKE_SIM="-DENABLE_SIM=OFF"
+    )
+    cmake ${{ parameters.uhdSrcDir }}/host ^
+      -DVCPKG_TARGET_TRIPLET=uhd-$(vsArch)-windows-static-md ^
+      -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALL_DIR%/scripts/buildsystems/vcpkg.cmake ^
+      -DUHD_IMAGES_SRC_DIR="${{ parameters.uhdImageDir }}" ^
+      -DUHD_IMAGES_DIR="C:\\Program Files (x86)\\UHD\\share\\uhd\\images,C:\\Program Files\\UHD\\share\\uhd\\images" ^
+      -DSPECIFY_MSVC_VERSION=ON ^
+      -DENABLE_DOXYGEN_SHORTNAMES=ON ^
+      %UHD_CI_CMAKE_OPTIONS% ^
+      %UHD_CI_CMAKE_RELEASE_MODE% ^
+      %UHD_CI_CMAKE_PYTHON% ^
+      %UHD_CI_CMAKE_SIM% ^
+      -G "$(cmakeCompiler)" -A $(cmakeArch)
+  displayName: cmake msbuild UHD
+
+- script: |
     cd ${{ parameters.uhdBuildDir }}
     call "C:\Program Files (x86)\Microsoft Visual Studio\$(vsYear)\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
-    msbuild.exe package.vcxproj /p:configuration=release
+    msbuild.exe package.vcxproj -maxCpuCount -p:configuration=release
   displayName: msbuild package
+
 - task: CopyFiles@2
   inputs:
     sourceFolder: ${{ parameters.uhdBuildDir }}

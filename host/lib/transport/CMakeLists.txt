@@ -114,14 +114,9 @@ LIBUHD_PYTHON_GEN_SOURCE(
 )
 
 LIBUHD_APPEND_SOURCES(
-    ${CMAKE_CURRENT_SOURCE_DIR}/zero_copy_flow_ctrl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/tcp_zero_copy.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/buffer_pool.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/if_addrs.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/udp_simple.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/chdr.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/muxed_zero_copy_if.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/zero_copy_flow_ctrl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/inline_io_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/offload_io_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/adapter.cpp

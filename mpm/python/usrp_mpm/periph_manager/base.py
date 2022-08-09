@@ -8,14 +8,11 @@
 Mboard implementation base class
 """
 
-from __future__ import print_function
 import os
 from enum import Enum
 from hashlib import md5
 from time import sleep
 from concurrent import futures
-from builtins import str
-from builtins import object
 from six import iteritems, itervalues
 from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.sys_utils.filesystem_status import get_fs_version
@@ -51,7 +48,7 @@ def get_dboard_class_from_pid(pid):
 # pylint: disable=no-self-use
 # pylint: disable=too-many-public-methods
 # pylint: disable=too-many-instance-attributes
-class PeriphManagerBase(object):
+class PeriphManagerBase:
     """"
     Base class for all motherboards. Common function and API calls should
     be implemented here. Motherboard specific information can be stored in
@@ -242,7 +239,15 @@ class PeriphManagerBase(object):
         assert self.pids
         assert self.mboard_eeprom_magic is not None
         self.dboards = []
+        # fpga_features is a set of features the FPGA provides. It can be filled
+        # with arbitrary strings by the device classes. The usual way to fill
+        # this is to compare the FPGA compat number with a given compat number
+        # that added a feature.
+        self.fpga_features = set()
         self._default_args = ""
+        # CHDR transport managers. These need to be instantiated by the child
+        # classes.
+        self._xport_mgrs = {}
         # Set up logging
         self.log = get_logger('PeriphManager')
         self.claimed = False
@@ -659,7 +664,7 @@ class PeriphManagerBase(object):
             self.dboards.append(db_class(dboard_idx, **dboard_info))
         self.log.info("Initialized %d daughterboard(s).", len(self.dboards))
 
-    def _add_public_methods(self, src, prefix="", filter_cb=None):
+    def _add_public_methods(self, src, prefix="", filter_cb=None, allow_overwrite=False):
         """
         Add public methods (=API) of src to self. To avoid naming conflicts and
         make relations clear, all added method names are prefixed with 'prefix'.
@@ -677,6 +682,8 @@ class PeriphManagerBase(object):
         :param prefix: method names in dest will be prefixed with prefix
         :param filter_cb: A callback that returns true if the method should be
                           added. Defaults to always returning True
+        :param allow_overwrite: If True, then methods from src will overwrite
+                                existing methods on self. Use with care.
         """
         filter_cb = filter_cb or (lambda *args: True)
         assert callable(filter_cb)
@@ -691,7 +698,7 @@ class PeriphManagerBase(object):
                      and filter_cb(name, getattr(src, name))
                      ]:
             destname = prefix + name
-            if hasattr(self, destname):
+            if hasattr(self, destname) and not allow_overwrite:
                 self.log.warn("Cannot add method {} because it would "
                               "overwrite existing method.".format(destname))
             else:
@@ -728,6 +735,8 @@ class PeriphManagerBase(object):
             self.log.error(
                 "Cannot run init(), device was never fully initialized!")
             return False
+        for xport_mgr in self._xport_mgrs.values():
+            xport_mgr.init(args)
         if not self.dboards:
             return True
         if args.get("serialize_init", False):
@@ -759,6 +768,8 @@ class PeriphManagerBase(object):
         for slot, dboard in enumerate(self.dboards):
             self.log.trace("call deinit() on dBoard in slot {}".format(slot))
             dboard.deinit()
+        for xport_mgr in self._xport_mgrs.values():
+            xport_mgr.deinit()
 
     def tear_down(self):
         """
@@ -1088,7 +1099,7 @@ class PeriphManagerBase(object):
         the keys returned from this function can be used with
         get_chdr_link_options().
         """
-        raise NotImplementedError("get_chdr_link_types() not implemented.")
+        return list(self._xport_mgrs.keys())
 
     def get_chdr_link_options(self, xport_type):
         """
@@ -1104,7 +1115,15 @@ class PeriphManagerBase(object):
         - link_rate (bps of the link, e.g. 10e9 for 10GigE)
 
         """
-        raise NotImplementedError("get_chdr_link_options() not implemented.")
+        if xport_type not in self._xport_mgrs:
+            self.log.warning(
+                f"Can't get link options for unknown link type: `{xport_type}'.")
+            return []
+        if xport_type == "udp":
+            return self._xport_mgrs[xport_type].get_chdr_link_options(
+                self.mboard_info['rpc_connection'])
+        # else:
+        return self._xport_mgrs[xport_type].get_chdr_link_options()
 
     #######################################################################
     # Claimer API
@@ -1216,6 +1235,14 @@ class PeriphManagerBase(object):
     #######################################################################
     # Sync API
     #######################################################################
+    def get_clock_source(self):
+        " Returns the currently selected clock source "
+        raise NotImplementedError("get_clock_source() not available on this device!")
+
+    def get_time_source(self):
+        " Returns the currently selected time source "
+        raise NotImplementedError("get_time_source() not available on this device!")
+
     def get_sync_source(self):
         """
         Gets the current time and clock source
@@ -1224,6 +1251,57 @@ class PeriphManagerBase(object):
             "time_source": self.get_time_source(),
             "clock_source": self.get_clock_source(),
         }
+
+    def get_clock_sources(self):
+        """
+        Returns a list of valid clock sources. This is a list of strings.
+        """
+        self.log.warning("get_clock_sources() was not specified for this device!")
+        return []
+
+    def get_time_sources(self):
+        """
+        Returns a list of valid time sources. This is a list of strings.
+        """
+        self.log.warning("get_time_sources() was not specified for this device!")
+        return []
+
+    def get_sync_sources(self):
+        """
+        Returns a list of valid sync sources. This is a list of dictionaries.
+        """
+        self.log.warning("get_sync_sources() was not specified for this device!")
+        return []
+
+    def set_clock_source(self, *args):
+        """
+        Set a clock source.
+
+        The choice to allow arbitrary arguments is based on historical decisions
+        and backward compatibility. UHD/mpmd will call this with a single argument,
+        so args[0] is the clock source (as a string).
+        """
+        raise NotImplementedError("set_clock_source() not available on this device!")
+
+    def set_time_source(self, time_source):
+        " Set a time source "
+        raise NotImplementedError("set_time_source() not available on this device!")
+
+    def set_sync_source(self, sync_args):
+        """
+        If a device has no special code for setting the sync-source atomically,
+        we simply forward these settings to set_clock_source() and set_time_source()
+        (in that order).
+        """
+        if sync_args not in self.get_sync_sources():
+            sync_args_str = \
+                ','.join([str(k) + '=' + str(v) for k, v in sync_args.items()])
+            self.log.warn(
+                f"Attempting to set unrecognized Sync source `{sync_args_str}'!")
+        clock_source = sync_args.get('clock_source', self.get_clock_source())
+        time_source = sync_args.get('time_source', self.get_time_source())
+        self.set_clock_source(clock_source)
+        self.set_time_source(time_source)
 
     ###########################################################################
     # Clock/Time API

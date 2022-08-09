@@ -12,7 +12,11 @@ setup. See the documentation for uhd::usrp::multi_usrp.
 
 \subsection coding_api_hilevel_rfnoc High-Level: The RFNoC API
 
-\li \subpage page_properties
+This is a more granular API than the Multi-USRP API, and can directly interact
+with RFNoC blocks in a device, and the RFNoC graph. This is available for all
+Generation-3 USRPs and above.
+
+For more information on RFNoC, see \ref rfnoc_docs.
 
 \subsection coding_api_hilevelclock High-Level: The Multi-USRP-Clock
 
@@ -26,6 +30,8 @@ Both USRP and clock devices can be interacted with using a C API wrapper include
 by default in all UHD builds. More information can be found \subpage page_c_api "here".
 
 \subsection coding_api_lowlevel Low-Level: The device API
+
+This is an older API for pre-RFNoC devices (N2xx, B2xx, B100, USRP1).
 
 A device is an abstraction for hardware that is connected to the host
 system. For a USRP device, this means that the motherboard and

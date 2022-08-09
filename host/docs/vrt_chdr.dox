@@ -6,22 +6,21 @@ Radio transport protocols are used to exchange samples (or other items) between 
 If one were to sniff Ethernet traffic between a USRP and a PC, the packets would conform to a
 radio transport protocol.
 
-For USRP devices, three radio transport protocols are relevant: CHDR, Legacy
-CHDR (from UHD 3.x) and VRT (the VITA Radio Transport protocol).
-
-All Generation-3 devices use CHDR. Prior to UHD 4.0, Generation-3 devices used
-legacy CHDR. The B200 continues to use the legacy CHDR format. All other
-Generation-1 and Generation-2 devices use VRT.
-
+For USRP devices, three radio transport protocols are relevant:
+- CHDR (used by all Generation-3 and above devices)
+- Legacy CHDR. All RFNoC devices used to use this in UHD 3.x. In current versions,
+  only B200 series uses it.
+- VRT (the VITA Radio Transport protocol). This is used by Generation-1 and
+  Generation-2 devices.
 
 \section rtp_chdr CHDR
 
-The CHDR protocol is described in detail in the 
+The CHDR protocol is described in detail in the
 [RFNoC Specification](https://files.ettus.com/app_notes/RFNoC_Specification.pdf).
 Please refer to the specification document for protocol format information.
 
 
-\section rtp_legacy_chdr Legacy CHDR
+\section rtp_legacy_chdr Legacy CHDR (Used by B200-series devices)
 
 For the third generation of Ettus devices, a new type transport protocol was designed.
 It reduces the complexity of the original standard and uses a fixed-length 64-Bit header
@@ -31,8 +30,6 @@ was dubbed CHDR (pronounced like the cheese "cheddar").
 By compressing all information into a 64-bit line, the header can efficiently be parsed
 in newer FPGAs, where the common streaming protocol is 64-Bit AXI. The first line in a
 packet already provides all necessary information to proceed.
-
-Some CHDR-specific functions can be found in: uhd::transport::vrt::chdr.
 
 The form of a CHDR packet is the following:
 
@@ -53,7 +50,7 @@ Bits   | Meaning
 60     | End-of-burst or error flag
 59:48  | 12-bit sequence number
 47:32  | Total packet length in Bytes
-31:0   | Stream ID (SID). For the format of SID, see uhd::sid_t.
+31:0   | Stream ID (SID).
 
 The packet type is determined mainly by the first two bits, although
 the EOB or error flag are also taken into consideration (the third bit does not
@@ -71,12 +68,15 @@ Bit 63 | Bit 62 | Bit 61 | Bit 60 | Packet Type
 
 \section rtp_vrt VRT
 
-VRT is an open protocol defined by the VITA-49 standard. It was designed for interoperability,
-and to allow different device types to work with different software stacks.
+VRT is an open protocol defined by the VITA-49 standard. It was designed for
+interoperability, and to allow different device types to work with different
+software stacks.
 
 VRT is a very verbose standard, and only a subset is implemented in UHD/USRPs.
 The full standard is available from the VITA website: http://www.vita.com .
 
+Note that USRP 1 and 2 do not use VRL. Only VRT (version 49.0) is used, with some
+USRP-specific modifications.
 
 \section vrt_tools Tools
 
@@ -87,8 +87,6 @@ for Ethernet links as well as USB (e.g., for the B210).
 
 Relevant code sections for the radio transport layer are:
 * uhd::transport::vrt - Namespace for radio transport protocol related functions and definitions
-* uhd::transport::vrt::chdr - Sub-namespace specifically for CHDR
-* uhd::sid_t - Datatype to represent SIDs
 
 */
 // vim:ft=doxygen:

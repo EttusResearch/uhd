@@ -102,8 +102,8 @@ discoverable feature attached to the mb_controller:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
 auto usrp = uhd::usrp::multi_usrp::make("type=x4xx");
 
-auto gpio = usrp->get_mb_controller().get_feature<uhd::rfnoc::discoverable_feature::GPIO_POWER>();
-gpio->set_external_power("GPIO1", true); // Enable external power on GPIO1
+auto& gpio = usrp->get_mb_controller().get_feature<uhd::features::gpio_power_iface>();
+gpio.set_external_power("GPIO1", true); // Enable external power on GPIO1
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The status of the external power supply can be queried using
@@ -123,12 +123,80 @@ uhd::features::gpio_power_iface::set_port_voltage() API:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
 auto usrp = uhd::usrp::multi_usrp::make("type=x4xx");
 
-auto gpio = usrp->get_mb_controller().get_feature<uhd::rfnoc::discoverable_feature::GPIO_POWER>();
-gpio->set_port_voltage("GPIO0", "2V5"); // Set GPIO0 voltage to 2.5V
+auto& gpio = usrp->get_mb_controller().get_feature<uhd::features::gpio_power_iface>();
+gpio.set_port_voltage("GPIO0", "2V5"); // Set GPIO0 voltage to 2.5V
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Valid values can be enumerated with the
 uhd::features::gpio_power_iface::supported_voltages() call, and are "1V8",
 "2V5", and "3V3".
+
+\section x4x0_spi_iface The x4x0 SPI Mode
+
+The GPIO ports of the x4x0 can be used with the Serial Peripheral Interface (SPI) to control 
+external components. To use SPI mode, set the pins you need on the desired GPIO port to be 
+controlled by the SPI engine and configure the data direction.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+auto usrp = uhd::usrp::multi_usrp::make(args);
+auto& spi_getter_iface =
+        usrp->get_radio_control().get_feature<uhd::features::spi_getter_iface>();
+usrp->set_gpio_src("GPIO0",
+    {"DB0_SPI",
+        "DB0_SPI",
+        "DB0_SPI",
+        "DB0_SPI",
+        "DB0_SPI",
+        "DB0_SPI",
+        "DB0_SPI",
+        "DB0_SPI",
+        "DB0_SPI",
+        "DB0_SPI",
+        "DB0_SPI",
+        "DB0_SPI"});
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The example shows the usage of GPIO port 0 (GPIO0) for SPI and needs to be run for 
+GPIO1 again to use that port with SPI, too.
+
+\subsection x4x0_spi_cfg Configuration of SPI lines
+
+The x4x0 SPI mode supports up to 4 peripherals. All of these peripherals may have a different SPI pin 
+configuration. The pins available for the usage with SPI are listed in \ref x4x0gpio_fpanel_pins.
+For GPIO0 the available pins are enumerated from 0 through 11, for GPIO1 the available pins are 
+from 12 through 23.
+The vector of peripheral configurations is passed to the spi_iface_getter to get the reference:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+    uhd::features::spi_periph_config_t periph_cfg;
+    periph_cfg.periph_clk = 0;
+    periph_cfg.periph_sdi = 1;
+    periph_cfg.periph_sdo = 2;
+    periph_cfg.periph_cs  = 3;
+    std::vector<uhd::features::spi_periph_config_t> periph_cfgs;
+    periph_cfgs.push_back(periph_cfg);
+    auto spi_ref = spi_getter_iface.get_spi_ref(periph_cfgs);
+
+    // Set data direction register (set all to outgoing except for SDI)
+    usrp->set_gpio_attr("GPIOA", "DDR", 0xD, 0xF);
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+\subsection x4x0_spi_r_w Write and read on SPI
+
+With the SPI reference read and write operations can be performed. For doing this, 
+some characteristics of the SPI need to be configured:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+   uhd::spi_config_t config;
+   config.divider = 4;
+   config.miso_edge = config.EDGE_RISE;
+   ...
+   spi_ref->write_spi(0, config, 0xFEFE, 32);
+   uint32_t read_data = spi_ref->read_spi(0, config, 0xFEFE, 32);
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The terms 'MISO' and 'MOSI' in the spi_config_t struct map to 'SDI' and 'SDO' respectively. 
+They are legacy terms which will not be used in new code anymore following the resolution
+to redefine SPI signal names by the Open Source Hardware Association: 
+<https://www.oshwa.org/a-resolution-to-redefine-spi-signal-names/>
+
+The SPI clock \f$SCLK\f$ is derived from the Radio clock and the SPI clock divider as follows: 
+
+\f[SCLK = \frac{Radio\_Clk}{SPI\_CLK\_DIV + 1}\f]
 
 */
 // vim:ft=doxygen:

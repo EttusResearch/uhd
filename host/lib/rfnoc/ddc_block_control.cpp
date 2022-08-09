@@ -74,6 +74,8 @@ public:
                                             << " halfbands and "
                                                "max CIC decimation "
                                             << _cic_max_decim);
+        // This line is not strictly necessary, as ONE_TO_ONE is the default.
+        // We set it make it explicit how this block works.
         set_mtu_forwarding_policy(forwarding_policy_t::ONE_TO_ONE);
         // Load list of valid decimation values
         std::set<size_t> decims{1}; // 1 is always a valid decimation
@@ -539,12 +541,17 @@ private:
 
     //! Set the DDS frequency shift the signal to \p requested_freq
     double _set_freq(
-        const double requested_freq, const double input_rate, const size_t chan)
+        const double requested_freq, const double dds_rate, const size_t chan)
     {
+        static int freq_word_width = 24;
         double actual_freq;
         int32_t freq_word;
         std::tie(actual_freq, freq_word) =
-            get_freq_and_freq_word(requested_freq, input_rate);
+            get_freq_and_freq_word(requested_freq, dds_rate, freq_word_width);
+
+        // Only the upper 24 bits of the SR_FREQ_ADDR register are used, so shift the word
+        freq_word <<= (32 - freq_word_width);
+
         _ddc_reg_iface.poke32(
             SR_FREQ_ADDR, uint32_t(freq_word), chan, get_command_time(chan));
         return actual_freq;

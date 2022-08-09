@@ -235,6 +235,8 @@ public:
             pfd_freq = input_freq / _regs.pll_r;
         }
 
+        _set_fcal_adj_values(pfd_freq);
+
         // Calculate N and frac
         const auto N_dot_F = target_vco_freq / (pfd_freq * prescaler);
         auto N             = static_cast<uint16_t>(std::floor(N_dot_F));
@@ -253,12 +255,12 @@ public:
         // Calculate Fnum
         const auto initial_fnum = static_cast<uint32_t>(std::round(frac * fden));
         const auto fnum         = (spur_dodging) ? _find_fnum(N,
-                                               initial_fnum,
-                                               fden,
-                                               prescaler,
-                                               pfd_freq,
-                                               output_divider,
-                                               spur_dodging_threshold)
+                              initial_fnum,
+                              fden,
+                              prescaler,
+                              pfd_freq,
+                              output_divider,
+                              spur_dodging_threshold)
                                          : initial_fnum;
 
         // Calculate mash_seed
@@ -516,6 +518,41 @@ private: // Members
             _regs.chdiv_seg3 = lmx2592_regs_t::chdiv_seg3_t::CHDIV_SEG3_DIVIDE_BY_6;
         } else if (seg3 == 8) {
             _regs.chdiv_seg3 = lmx2592_regs_t::chdiv_seg3_t::CHDIV_SEG3_DIVIDE_BY_8;
+        }
+    }
+
+    void _set_fcal_adj_values(const double pfd_freq)
+    {
+        // Adjust FCAL speed for particularly high or low PFD frequencies
+        if (pfd_freq < 5e6) {
+            _regs.fcal_lpfd_adj = lmx2592_regs_t::fcal_lpfd_adj_t::FCAL_LPFD_ADJ_5MHZ;
+            _regs.fcal_hpfd_adj = lmx2592_regs_t::fcal_hpfd_adj_t::FCAL_HPFD_ADJ_UNUSED;
+            _regs.pfd_ctl       = lmx2592_regs_t::pfd_ctl_t::PFD_CTL_DUAL_PFD;
+        } else if (pfd_freq < 10e6) {
+            _regs.fcal_lpfd_adj = lmx2592_regs_t::fcal_lpfd_adj_t::FCAL_LPFD_ADJ_10MHZ;
+            _regs.fcal_hpfd_adj = lmx2592_regs_t::fcal_hpfd_adj_t::FCAL_HPFD_ADJ_UNUSED;
+            _regs.pfd_ctl       = lmx2592_regs_t::pfd_ctl_t::PFD_CTL_DUAL_PFD;
+        } else if (pfd_freq < 20e6) {
+            _regs.fcal_lpfd_adj = lmx2592_regs_t::fcal_lpfd_adj_t::FCAL_LPFD_ADJ_20MHZ;
+            _regs.fcal_hpfd_adj = lmx2592_regs_t::fcal_hpfd_adj_t::FCAL_HPFD_ADJ_UNUSED;
+            _regs.pfd_ctl       = lmx2592_regs_t::pfd_ctl_t::PFD_CTL_DUAL_PFD;
+        } else if (pfd_freq <= 100e6) {
+            _regs.fcal_lpfd_adj = lmx2592_regs_t::fcal_lpfd_adj_t::FCAL_LPFD_ADJ_UNUSED;
+            _regs.fcal_hpfd_adj = lmx2592_regs_t::fcal_hpfd_adj_t::FCAL_HPFD_ADJ_UNUSED;
+            _regs.pfd_ctl       = lmx2592_regs_t::pfd_ctl_t::PFD_CTL_DUAL_PFD;
+        } else if (pfd_freq <= 150e6) {
+            _regs.fcal_lpfd_adj = lmx2592_regs_t::fcal_lpfd_adj_t::FCAL_LPFD_ADJ_UNUSED;
+            _regs.fcal_hpfd_adj = lmx2592_regs_t::fcal_hpfd_adj_t::FCAL_HPFD_ADJ_100MHZ;
+            _regs.pfd_ctl       = lmx2592_regs_t::pfd_ctl_t::PFD_CTL_DUAL_PFD;
+        } else if (pfd_freq <= 200e6) {
+            _regs.fcal_lpfd_adj = lmx2592_regs_t::fcal_lpfd_adj_t::FCAL_LPFD_ADJ_UNUSED;
+            _regs.fcal_hpfd_adj = lmx2592_regs_t::fcal_hpfd_adj_t::FCAL_HPFD_ADJ_150MHZ;
+            _regs.pfd_ctl       = lmx2592_regs_t::pfd_ctl_t::PFD_CTL_DUAL_PFD;
+        } else {
+            // Note, this case requires single-loop PFD which increases PLL noise floor
+            _regs.fcal_lpfd_adj = lmx2592_regs_t::fcal_lpfd_adj_t::FCAL_LPFD_ADJ_UNUSED;
+            _regs.fcal_hpfd_adj = lmx2592_regs_t::fcal_hpfd_adj_t::FCAL_HPFD_ADJ_200MHZ;
+            _regs.pfd_ctl       = lmx2592_regs_t::pfd_ctl_t::PFD_CTL_SINGLE_PFD;
         }
     }
 

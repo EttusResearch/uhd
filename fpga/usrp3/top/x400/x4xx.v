@@ -186,48 +186,53 @@ module x4xx (
   inout  wire        TRIG_IO,
   output wire        PL_CPLD_JTAGEN,
   output wire        PL_CPLD_CS0_n,    // Dual-purpose CPLD JTAG TMS
-  output wire        PL_CPLD_CS1_n
+  output wire        PL_CPLD_CS1_n,
+
+
+  //-----------------------------------
+  // DRAM
+  //-----------------------------------
+
+  // DRAM Bank 0
+  input  wire        DRAM0_REFCLK_P,
+  input  wire        DRAM0_REFCLK_N,
+  output wire        DRAM0_ACT_n,
+  output wire [16:0] DRAM0_ADDR,
+  output wire [ 1:0] DRAM0_BA,
+  output wire [ 0:0] DRAM0_BG,
+  output wire [ 0:0] DRAM0_CKE,
+  output wire [ 0:0] DRAM0_ODT,
+  output wire [ 0:0] DRAM0_CS_n,
+  output wire [ 0:0] DRAM0_CLK_P,
+  output wire [ 0:0] DRAM0_CLK_N,
+  output wire        DRAM0_RESET_n,
+  inout  wire [ 7:0] DRAM0_DM_n,
+  inout  wire [63:0] DRAM0_DQ,
+  inout  wire [ 7:0] DRAM0_DQS_p,
+  inout  wire [ 7:0] DRAM0_DQS_n,
+
+  // DRAM Bank 1
+  input  wire        DRAM1_REFCLK_P,
+  input  wire        DRAM1_REFCLK_N,
+  output wire        DRAM1_ACT_n,
+  output wire [16:0] DRAM1_ADDR,
+  output wire [ 1:0] DRAM1_BA,
+  output wire [ 0:0] DRAM1_BG,
+  output wire [ 0:0] DRAM1_CKE,
+  output wire [ 0:0] DRAM1_ODT,
+  output wire [ 0:0] DRAM1_CS_n,
+  output wire [ 0:0] DRAM1_CLK_P,
+  output wire [ 0:0] DRAM1_CLK_N,
+  output wire        DRAM1_RESET_n,
+  inout  wire [ 7:0] DRAM1_DM_n,
+  inout  wire [63:0] DRAM1_DQ,
+  inout  wire [ 7:0] DRAM1_DQS_p,
+  inout  wire [ 7:0] DRAM1_DQS_n
 
 
   //-----------------------------------
   // Unused pins
   //-----------------------------------
-
-  // DRAM Controller 0
-  // input  wire        DRAM0_REFCLK_P,
-  // input  wire        DRAM0_REFCLK_N,
-  // output wire        DRAM0_ACT_n,
-  // output wire [16:0] DRAM0_ADDR,
-  // output wire [ 1:0] DRAM0_BA,
-  // output wire [ 0:0] DRAM0_BG,
-  // output wire [ 0:0] DRAM0_CKE,
-  // output wire [ 0:0] DRAM0_ODT,
-  // output wire [ 0:0] DRAM0_CS_n,
-  // output wire [ 0:0] DRAM0_CLK_P,
-  // output wire [ 0:0] DRAM0_CLK_N,
-  // output wire        DRAM0_RESET_n,
-  // inout  wire [ 7:0] DRAM0_DM_n,
-  // inout  wire [63:0] DRAM0_DQ,
-  // inout  wire [ 7:0] DRAM0_DQS_p,
-  // inout  wire [ 7:0] DRAM0_DQS_n,
-
-  // DRAM Controller 1
-  // input  wire        DRAM1_REFCLK_P,
-  // input  wire        DRAM1_REFCLK_N,
-  // output wire        DRAM1_ACT_n,
-  // output wire [16:0] DRAM1_ADDR,
-  // output wire [ 1:0] DRAM1_BA,
-  // output wire [ 0:0] DRAM1_BG,
-  // output wire [ 0:0] DRAM1_CKE,
-  // output wire [ 0:0] DRAM1_ODT,
-  // output wire [ 0:0] DRAM1_CS_n,
-  // output wire [ 0:0] DRAM1_CLK_P,
-  // output wire [ 0:0] DRAM1_CLK_N,
-  // output wire        DRAM1_RESET_n,
-  // inout  wire [ 7:0] DRAM1_DM_n,
-  // inout  wire [63:0] DRAM1_DQ,
-  // inout  wire [ 7:0] DRAM1_DQS_p,
-  // inout  wire [ 7:0] DRAM1_DQS_n,
 
   // input  wire [1:0] IPASS_SIDEBAND,
   // input  wire       PCIE_RESET,
@@ -557,8 +562,9 @@ module x4xx (
   wire [3:0]  eth0_link_up, eth0_activity;
   wire [3:0]  eth1_link_up, eth1_activity;
 
-  wire [31:0] gpio_0_tri_i;
-  wire [31:0] gpio_0_tri_o;
+  wire [63:0] gpio_0_tri_i;
+  wire [63:0] gpio_0_tri_o;
+  wire [63:0] gpio_0_tri_t;
 
   // RFDC AXI4-Stream interfaces
   //
@@ -707,8 +713,20 @@ module x4xx (
   assign pl_ps_irq1[6] = eth1_rx_irq[0] || eth1_rx_irq[1] || eth1_rx_irq[2] || eth1_rx_irq[3];
   assign pl_ps_irq1[7] = eth1_tx_irq[0] || eth1_tx_irq[1] || eth1_tx_irq[2] || eth1_tx_irq[3];
 
-  // GPIO inputs (assigned from 31 decreasing)
+  // BD DIO signals
+  wire [11:0] ps_gpio_out_a;
+  wire [11:0] ps_gpio_in_a;
+  wire [11:0] ps_gpio_ddr_a;
+  wire [11:0] ps_gpio_out_b;
+  wire [11:0] ps_gpio_in_b;
+  wire [11:0] ps_gpio_ddr_b;
+
+  // GPIO inputs (assigned from 63 decreasing)
   //
+  // DIO Control
+  assign gpio_0_tri_i[63:56] = 8'b0;
+  assign gpio_0_tri_i[55:44] = ps_gpio_in_b;
+  assign gpio_0_tri_i[43:32] = ps_gpio_in_a;
   // Make the current PPS signal available to the PS.
   assign gpio_0_tri_i[31]    = pps_refclk;
   assign gpio_0_tri_i[30]    = 0; //unused
@@ -737,6 +755,13 @@ module x4xx (
   assign CPLD_JTAG_OE_n = gpio_0_tri_o[0];
   // Drive the CPLD JTAG enable line (active high) with GPIO[1] from the PS.
   assign PL_CPLD_JTAGEN = gpio_0_tri_o[1];
+
+  // propagate db GPIO direction and output control
+  assign ps_gpio_ddr_a = gpio_0_tri_t[43:32];
+  assign ps_gpio_out_a = gpio_0_tri_o[43:32];
+
+  assign ps_gpio_ddr_b = gpio_0_tri_t[55:44];
+  assign ps_gpio_out_b = gpio_0_tri_o[55:44];
 
   x4xx_ps_rfdc_bd x4xx_ps_rfdc_bd_i (
     .adc_data_out_resetn_dclk      (adc_data_out_resetn_dclk),
@@ -943,7 +968,7 @@ module x4xx (
     .dac1_clk_clk_p                (DAC_CLK_P[1]),
     .gpio_0_tri_i                  (gpio_0_tri_i),
     .gpio_0_tri_o                  (gpio_0_tri_o),
-    .gpio_0_tri_t                  (),
+    .gpio_0_tri_t                  (gpio_0_tri_t),
     .m_axi_eth_internal_awaddr     (axi_eth_internal_awaddr),
     .m_axi_eth_internal_awprot     (),
     .m_axi_eth_internal_awvalid    (axi_eth_internal_awvalid),
@@ -1442,17 +1467,11 @@ module x4xx (
         .radio_clk               (radio_clk),
         .pll_ref_clk             (pll_ref_clk),
         .db_state                (db_state[dboard_num]),
-        .radio_time              (radio_time),
-        .radio_time_stb          (radio_time_stb),
-        .time_ignore_bits        (time_ignore_bits),
         .ctrlport_rst            (radio_rst),
         .s_ctrlport_req_wr       (db_ctrlport_req_wr[dboard_num]),
         .s_ctrlport_req_rd       (db_ctrlport_req_rd[dboard_num]),
         .s_ctrlport_req_addr     (db_ctrlport_req_addr[dboard_num]),
         .s_ctrlport_req_data     (db_ctrlport_req_data[dboard_num]),
-        .s_ctrlport_req_byte_en  (db_ctrlport_req_byte_en[dboard_num]),
-        .s_ctrlport_req_has_time (db_ctrlport_req_has_time[dboard_num]),
-        .s_ctrlport_req_time     (db_ctrlport_req_time[dboard_num]),
         .s_ctrlport_resp_ack     (db_ctrlport_resp_ack[dboard_num]),
         .s_ctrlport_resp_status  (db_ctrlport_resp_status[dboard_num]),
         .s_ctrlport_resp_data    (db_ctrlport_resp_data[dboard_num]),
@@ -2033,7 +2052,8 @@ module x4xx (
     .CHDR_W         (CHDR_W),
     .MTU            (CHDR_MTU),
     .RFNOC_PROTOVER (RFNOC_PROTOVER),
-    .RADIO_SPC      (RADIO_SPC)
+    .RADIO_SPC      (RADIO_SPC),
+    .RF_BANDWIDTH   (RF_BANDWIDTH)
   ) x4xx_core_i (
     .radio_clk                     (radio_clk),
     .radio_rst                     (radio_rst),
@@ -2042,6 +2062,38 @@ module x4xx (
     .rfnoc_chdr_rst                (clk200_rst),
     .rfnoc_ctrl_clk                (clk40),
     .rfnoc_ctrl_rst                (clk40_rst),
+    .dram0_sys_clk_p               (DRAM0_REFCLK_P),
+    .dram0_sys_clk_n               (DRAM0_REFCLK_N),
+    .dram0_ck_t                    (DRAM0_CLK_P),
+    .dram0_ck_c                    (DRAM0_CLK_N),
+    .dram0_cs_n                    (DRAM0_CS_n),
+    .dram0_act_n                   (DRAM0_ACT_n),
+    .dram0_adr                     (DRAM0_ADDR),
+    .dram0_ba                      (DRAM0_BA),
+    .dram0_bg                      (DRAM0_BG),
+    .dram0_cke                     (DRAM0_CKE),
+    .dram0_odt                     (DRAM0_ODT),
+    .dram0_reset_n                 (DRAM0_RESET_n),
+    .dram0_dm_dbi_n                (DRAM0_DM_n),
+    .dram0_dq                      (DRAM0_DQ),
+    .dram0_dqs_t                   (DRAM0_DQS_p),
+    .dram0_dqs_c                   (DRAM0_DQS_n),
+    .dram1_sys_clk_p               (DRAM1_REFCLK_P),
+    .dram1_sys_clk_n               (DRAM1_REFCLK_N),
+    .dram1_ck_t                    (DRAM1_CLK_P),
+    .dram1_ck_c                    (DRAM1_CLK_N),
+    .dram1_cs_n                    (DRAM1_CS_n),
+    .dram1_act_n                   (DRAM1_ACT_n),
+    .dram1_adr                     (DRAM1_ADDR),
+    .dram1_ba                      (DRAM1_BA),
+    .dram1_bg                      (DRAM1_BG),
+    .dram1_cke                     (DRAM1_CKE),
+    .dram1_odt                     (DRAM1_ODT),
+    .dram1_reset_n                 (DRAM1_RESET_n),
+    .dram1_dm_dbi_n                (DRAM1_DM_n),
+    .dram1_dq                      (DRAM1_DQ),
+    .dram1_dqs_t                   (DRAM1_DQS_p),
+    .dram1_dqs_c                   (DRAM1_DQS_n),
     .s_axi_aclk                    (clk40),
     .s_axi_aresetn                 (clk40_rstn),
     .s_axi_awaddr                  (axi_core_awaddr[REG_AWIDTH-1:0]),
@@ -2099,6 +2151,12 @@ module x4xx (
     .gpio_out_b                    (gpio_out_b),
     .gpio_en_a                     (gpio_en_a),
     .gpio_en_b                     (gpio_en_b),
+    .ps_gpio_out_a                 (ps_gpio_out_a),
+    .ps_gpio_in_a                  (ps_gpio_in_a),
+    .ps_gpio_ddr_a                 (ps_gpio_ddr_a),
+    .ps_gpio_out_b                 (ps_gpio_out_b),
+    .ps_gpio_in_b                  (ps_gpio_in_b),
+    .ps_gpio_ddr_b                 (ps_gpio_ddr_b),
     .qsfp_port_0_0_info            (qsfp_port_0_0_info),
     .qsfp_port_0_1_info            (qsfp_port_0_1_info),
     .qsfp_port_0_2_info            (qsfp_port_0_2_info),
@@ -2117,9 +2175,6 @@ module x4xx (
     .m_ctrlport_radio_req_rd       ({ db_ctrlport_req_rd       [1], db_ctrlport_req_rd       [0] }),
     .m_ctrlport_radio_req_addr     ({ db_ctrlport_req_addr     [1], db_ctrlport_req_addr     [0] }),
     .m_ctrlport_radio_req_data     ({ db_ctrlport_req_data     [1], db_ctrlport_req_data     [0] }),
-    .m_ctrlport_radio_req_byte_en  ({ db_ctrlport_req_byte_en  [1], db_ctrlport_req_byte_en  [0] }),
-    .m_ctrlport_radio_req_has_time ({ db_ctrlport_req_has_time [1], db_ctrlport_req_has_time [0] }),
-    .m_ctrlport_radio_req_time     ({ db_ctrlport_req_time     [1], db_ctrlport_req_time     [0] }),
     .m_ctrlport_radio_resp_ack     ({ db_ctrlport_resp_ack     [1], db_ctrlport_resp_ack     [0] }),
     .m_ctrlport_radio_resp_status  ({ db_ctrlport_resp_status  [1], db_ctrlport_resp_status  [0] }),
     .m_ctrlport_radio_resp_data    ({ db_ctrlport_resp_data    [1], db_ctrlport_resp_data    [0] }),
@@ -2220,12 +2275,12 @@ endmodule
 //        <li> Version last modified: @.VERSIONING_REGS_REGMAP..VERSION_LAST_MODIFIED
 //      </info>
 //      <value name="FPGA_CURRENT_VERSION_MAJOR"           integer="7"/>
-//      <value name="FPGA_CURRENT_VERSION_MINOR"           integer="3"/>
+//      <value name="FPGA_CURRENT_VERSION_MINOR"           integer="8"/>
 //      <value name="FPGA_CURRENT_VERSION_BUILD"           integer="0"/>
 //      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_MAJOR" integer="7"/>
 //      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_MINOR" integer="0"/>
 //      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_BUILD" integer="0"/>
-//      <value name="FPGA_VERSION_LAST_MODIFIED_TIME"      integer="0x21041616"/>
+//      <value name="FPGA_VERSION_LAST_MODIFIED_TIME"      integer="0x22031714"/>
 //    </enumeratedtype>
 //  </group>
 //</regmap>

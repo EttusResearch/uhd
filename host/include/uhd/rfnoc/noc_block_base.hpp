@@ -195,6 +195,19 @@ public:
         return _tree;
     }
 
+    /*! Get access to the motherboard controller for this block's motherboard
+     *
+     * This will return a nullptr if this block doesn't have access to the
+     * motherboard. In order to gain access to the motherboard, the block needs
+     * to have requested access to the motherboard during the registration
+     * procedure. See also registry.hpp.
+     *
+     * Even if this block requested access to the motherboard controller, there
+     * is no guarantee that UHD will honour that request. It is therefore
+     * important to verify that the returned pointer is valid.
+     */
+    std::shared_ptr<mb_controller> get_mb_controller();
+
 protected:
     noc_block_base(make_args_ptr make_args);
 
@@ -248,15 +261,15 @@ protected:
      *   all opposite side ports. This is an appropriate policy for the
      *   split-stream block.
      *
-     * The default policy is DROP.
+     * The default policy is ONE_TO_ONE.
      *
-     * Note: The MTU forwarding policy can only be set ONCE per instance of a
-     * noc_block_base. If an RFNoC block subclassing noc_block_base wants to
-     * modify the MTU forwarding policy, it would typically call this function
-     * in its constructor. Once set, however, the MTU forwarding policy cannot
-     * be changed. This represents a change in behaviour from UHD 4.0.
-     * Violations of this restriction will result in a uhd::runtime_error being
-     * thrown.
+     * Note: The MTU forwarding policy can only be set once, and only during
+     * construction of a noc_block_base. If an RFNoC block subclassing
+     * noc_block_base wants to modify the MTU forwarding policy, it must call
+     * this function in its constructor. Once set, however, the MTU forwarding
+     * policy cannot be changed. This represents a change in behaviour from UHD
+     * 4.0.  Violations of this restriction will result in a uhd::runtime_error
+     * being thrown.
      */
     void set_mtu_forwarding_policy(const forwarding_policy_t policy);
 
@@ -278,19 +291,6 @@ protected:
      */
     property_base_t* get_mtu_prop_ref(const res_source_info& edge);
 
-    /*! Get access to the motherboard controller for this block's motherboard
-     *
-     * This will return a nullptr if this block doesn't have access to the
-     * motherboard. In order to gain access to the motherboard, the block needs
-     * to have requested access to the motherboard during the registration
-     * procedure. See also registry.hpp.
-     *
-     * Even if this block requested access to the motherboard controller, there
-     * is no guarantee that UHD will honour that request. It is therefore
-     * important to verify that the returned pointer is valid.
-     */
-    std::shared_ptr<mb_controller> get_mb_controller();
-
     /*! Safely de-initialize the block
      *
      * This function is called by the framework when the RFNoC session is about
@@ -311,6 +311,8 @@ protected:
     virtual void deinit();
 
 private:
+    friend class block_initializer;
+
     /*! Update the tick rate of this block
      *
      * This will make sure that the underlying register_iface is notified of the
@@ -324,6 +326,15 @@ private:
      * - Invalidate regs()
      */
     void shutdown() override;
+
+    /*! Run post-init tasks, i.e., after the constructor concludes.
+     *
+     * The purpose of this method is to make sure the block is in a good state
+     * after the block controller's ctor has concluded. This allows checking
+     * that block configurations follow certain rules, even though they may not
+     * even be part of UHD.
+     */
+    void post_init();
 
     /**************************************************************************
      * Attributes
@@ -347,7 +358,7 @@ private:
     std::vector<property_t<double>> _tick_rate_props;
 
     //! Forwarding policy for the MTU properties
-    forwarding_policy_t _mtu_fwd_policy = forwarding_policy_t::DROP;
+    forwarding_policy_t _mtu_fwd_policy = forwarding_policy_t::ONE_TO_ONE;
 
     //! Flag indicating if MTU forwarding property has been set yet
     bool _mtu_fwd_policy_set = false;

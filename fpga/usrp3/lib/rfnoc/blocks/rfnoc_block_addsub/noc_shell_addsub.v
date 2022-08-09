@@ -1,5 +1,5 @@
 //
-// Copyright 2020 Ettus Research, a National Instruments Brand
+// Copyright 2022 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -15,6 +15,7 @@
 //   THIS_PORTID : Control crossbar port to which this block is connected
 //   CHDR_W      : AXIS-CHDR data bus width
 //   MTU         : Maximum transmission unit (i.e., maximum packet size in
+//                 CHDR words is 2**MTU).
 //
 
 `default_nettype none
@@ -25,7 +26,6 @@ module noc_shell_addsub #(
   parameter       CHDR_W          = 64,
   parameter [5:0] MTU             = 10,
   parameter       USE_IMPL        = "Verilog"
-
 ) (
   //---------------------
   // Framework Interface
@@ -166,12 +166,12 @@ module noc_shell_addsub #(
 
   wire ce_rst_pulse;
 
-  pulse_synchronizer #(.MODE ("POSEDGE")) pulse_synchronizer_ce_clk (
+  pulse_synchronizer #(.MODE ("POSEDGE")) pulse_synchronizer_ce (
     .clk_a(rfnoc_chdr_clk), .rst_a(1'b0), .pulse_a (rfnoc_chdr_rst), .busy_a (),
     .clk_b(ce_clk), .pulse_b (ce_rst_pulse)
   );
 
-  pulse_stretch_min #(.LENGTH(32)) pulse_stretch_min_ce_clk (
+  pulse_stretch_min #(.LENGTH(32)) pulse_stretch_min_ce (
     .clk(ce_clk), .rst(1'b0),
     .pulse_in(ce_rst_pulse), .pulse_out(ce_rst)
   );

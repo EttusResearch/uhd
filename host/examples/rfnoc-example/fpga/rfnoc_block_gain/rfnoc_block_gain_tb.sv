@@ -171,7 +171,7 @@ module rfnoc_block_gain_tb #(
 
   initial begin : tb_main
     string tb_name;
-    tb_name = $sformatf("chdr_crossbar_nxn: IP_OPTION = %s", IP_OPTION);
+    tb_name = $sformatf("rfnoc_block_gain_tb: IP_OPTION = %s", IP_OPTION);
 
     // Initialize the test exec object for this testbench
     test.start_tb(tb_name);

@@ -5,14 +5,29 @@
 #
 
 parameters:
+- name: build_linux
+  type: boolean
+  displayName: Build Linux
+  default: true
+- name: build_mac
+  type: boolean
+  displayName: Build macOS
+  default: true
+- name: build_win
+  type: boolean
+  displayName: Build Windows
+  default: true
 - name: custom_boost_version
   type: boolean
+  displayName: Use custom boost version
   default: false
 - name: custom_boost_version_url
   type: string
+  displayName: Custom Boost URL
   default: 'https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.bz2'
 - name: release_binaries
   type: boolean
+  displayName: Set release mode for installers
   default: false
 - name: testLength
   type: string
@@ -20,10 +35,40 @@ parameters:
   - 'smoke'
   - 'full'
   - 'stress'
+  displayName: Test Length
   default: 'smoke'
 - name: run_streaming_tests
   type: boolean
-  default: False
+  displayName: Run Streaming Tests
+  default: true
+- name: build_sdk
+  type: boolean
+  displayName: Build embedded image SDKs
+  default: false
+- name: cache_sstate
+  type: boolean
+  displayName: Use sstate cache for embedded builds
+  default: true
+- name: build_e310_sg1
+  type: boolean
+  displayName: Build e310_sg1 image
+  default: true
+- name: build_e310_sg3
+  type: boolean
+  displayName: Build e310_sg3 image
+  default: true
+- name: build_e320
+  type: boolean
+  displayName: Build e320 image
+  default: true
+- name: build_n3xx
+  type: boolean
+  displayName: Build n3xx image
+  default: true
+- name: build_x4xx
+  type: boolean
+  displayName: Build x4xx image
+  default: true
 
 trigger: none
 
@@ -34,6 +79,7 @@ pr:
   paths:
     include:
     - host
+    - mpm
     - .ci
     - images/manifest.txt
     exclude:
@@ -45,8 +91,18 @@ pr:
 extends:
   template: templates/stages-uhd-pipeline.yml
   parameters:
+    build_linux: ${{ parameters.build_linux }}
+    build_mac: ${{ parameters.build_mac }}
+    build_win: ${{ parameters.build_win }}
     custom_boost_version: ${{ parameters.custom_boost_version }}
     custom_boost_version_url: ${{ parameters.custom_boost_version_url }}
     release_binaries: ${{ parameters.release_binaries }}
     testLength: ${{ parameters.testLength }}
     run_streaming_tests: ${{ parameters.run_streaming_tests }}
+    build_sdk: ${{ parameters.build_sdk }}
+    cache_sstate: ${{ parameters.cache_sstate }}
+    build_e310_sg1: ${{ parameters.build_e310_sg1 }}
+    build_e310_sg3: ${{ parameters.build_e310_sg3 }}
+    build_e320: ${{ parameters.build_e320 }}
+    build_n3xx: ${{ parameters.build_n3xx }}
+    build_x4xx: ${{ parameters.build_x4xx }}

@@ -47,6 +47,8 @@ include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_null_src_sink/Makefile.srcs
 include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_radio/Makefile.srcs
 include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_ddc/Makefile.srcs
 include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_duc/Makefile.srcs
+include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_axi_ram_fifo/Makefile.srcs
+include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_replay/Makefile.srcs
 
 # If out-of-tree modules want to be compiled into this image, then they need to
 # pass in the RFNOC_OOT_MAKEFILE_SRCS as a list of Makefile.srcs files.
@@ -73,6 +75,9 @@ x4xx_core_common.v \
 x4xx_global_regs.v \
 x4xx_versioning_regs.v \
 x4xx_dio.v \
+x4xx_gpio_atr.v \
+x4xx_gpio_spi.v \
+x4xx_dram.v \
 rf/100m/rf_core_100m.v \
 rf/200m/rf_core_200m.v \
 rf/200m/rf_down_4to2.v \
@@ -97,7 +102,9 @@ MB_XDC = \
 constraints/pins/common.xdc \
 constraints/pins/rfdc_2x2.xdc \
 constraints/timing/shared_constants.sdc \
-constraints/timing/common.xdc
+constraints/timing/common.xdc \
+constraints/pins/dram.xdc \
+constraints/timing/dram.xdc
 
 # Definitions
 # MGT Types from x4xx_mgt_type.vh
@@ -138,12 +145,6 @@ ifneq (,$(findstring QSFP1_3,$(EXTRA_DEFS)))
   MB_XDC += constraints/pins/qsfp1_3.xdc
 endif
 
-ifndef NO_DRAM_FIFOS
-DRAM_SRCS =
-else
-DRAM_SRCS =
-endif
-
 ifdef X410
 DESIGN_SRCS = $(abspath $(MB_XDC))
 endif
@@ -163,6 +164,8 @@ $(RADIO_SRCS) $(CAP_GEN_GENERIC_SRCS) $(IP_XCI_SRCS) $(BD_SRCS) \
 $(RFNOC_SRCS) $(RFNOC_OOT_SRCS) $(LIB_IP_XCI_SRCS) $(LIB_HLS_IP_SRCS) $(LIBCOREGEN_SRCS) \
 $(RFNOC_BLOCK_DUC_SRCS) $(RFNOC_BLOCK_DDC_SRCS) \
 $(RFNOC_BLOCK_RADIO_SRCS) $(RFNOC_BLOCK_NULL_SRC_SINK_SRCS) \
+$(RFNOC_BLOCK_AXI_RAM_FIFO_SRCS) \
+$(RFNOC_BLOCK_REPLAY_SRCS) \
 $(DB_COMMON_SRCS) $(WHITE_RABBIT_SRCS) $(RFNOC_FRAMEWORK_SRCS) \
 $(WB_SPI_SRCS) $(RFNOC_XPORT_SV_SRCS) \
 )
@@ -170,7 +173,7 @@ $(WB_SPI_SRCS) $(RFNOC_XPORT_SV_SRCS) \
 # Pass the edge table and image core header files required by RFNoC
 # to Vivado as Verilog definitions.
 EDGE_TBL_DEF="RFNOC_EDGE_TBL_FILE=$(call RESOLVE_PATH,$(EDGE_FILE))"
-IMAGE_CORE_DEF="RFNOC_IMAGE_CORE_HDR=$(DEFAULT_RFNOC_IMAGE_CORE_FILE:.v=.vh)"
+IMAGE_CORE_DEF="RFNOC_IMAGE_CORE_HDR=$(call RESOLVE_PATH,$(IMAGE_CORE:.v=.vh))"
 
 ##################################################
 # Dependency Targets

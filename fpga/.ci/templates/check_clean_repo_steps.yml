@@ -12,7 +12,7 @@ parameters:
   # Directory to execute the commands in
   - name: directory
     type: string
-    default: $(Agent.BuildDirectory)/s
+    default: $(Agent.BuildDirectory)/s/uhddev
 
 steps:
 # Windows based calls

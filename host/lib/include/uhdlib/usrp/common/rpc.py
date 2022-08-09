@@ -92,6 +92,9 @@ IFACES = [
         fn_from_string("void dio_set_voltage_level(const std::string& port, const std::string& level)"),
         fn_from_string("void dio_set_port_mapping(const std::string& mapping)"),
         fn_from_string("void dio_set_pin_directions(const std::string& port, uint32_t values)"),
+
+        # GPIO
+        fn_from_string("std::vector<std::string> get_gpio_src(const std::string& bank)"),
     ]),
     Interface("dio_rpc", [
         fn_from_string("std::vector<std::string> dio_get_supported_voltage_levels(const std::string& port)"),

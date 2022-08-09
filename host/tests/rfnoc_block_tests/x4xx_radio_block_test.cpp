@@ -4,24 +4,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "../../lib/usrp/x400/x400_radio_control.hpp"
 #include "../rfnoc_graph_mock_nodes.hpp"
+#include "x4xx_radio_mock.hpp"
 #include "x4xx_zbx_mpm_mock.hpp"
-#include <uhd/rfnoc/actions.hpp>
-#include <uhd/rfnoc/defaults.hpp>
 #include <uhd/rfnoc/mock_block.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/math.hpp>
 #include <uhdlib/rfnoc/graph.hpp>
-#include <uhdlib/rfnoc/node_accessor.hpp>
-#include <uhdlib/usrp/dboard/zbx/zbx_constants.hpp>
-#include <uhdlib/usrp/dboard/zbx/zbx_dboard.hpp>
-#include <uhdlib/utils/narrow.hpp>
-#include <math.h>
 #include <boost/test/unit_test.hpp>
-#include <chrono>
-#include <cmath>
-#include <iomanip>
+#include <cstddef>
 #include <iostream>
 #include <thread>
 
@@ -30,247 +21,6 @@ using namespace uhd::rfnoc;
 using namespace std::chrono_literals;
 using namespace uhd::usrp::zbx;
 using namespace uhd::experts;
-
-// Redeclare this here, since it's only defined outside of UHD_API
-noc_block_base::make_args_t::~make_args_t() = default;
-
-namespace {
-
-/* This class extends mock_reg_iface_t by adding a constructor that initializes
- * some of the read memory to contain the memory size for the radio block.
- */
-class x4xx_radio_mock_reg_iface_t : public mock_reg_iface_t
-{
-    // Start address of CPLD register space
-    static constexpr uint32_t cpld_offset = radio_control_impl::regmap::PERIPH_BASE;
-    // Start address of RFDC control register space
-    static constexpr uint32_t rfdc_offset =
-        radio_control_impl::regmap::PERIPH_BASE + 0x8000;
-
-public:
-    x4xx_radio_mock_reg_iface_t(size_t num_channels)
-    {
-        for (size_t chan = 0; chan < num_channels; chan++) {
-            const uint32_t reg_compat =
-                radio_control_impl::regmap::REG_COMPAT_NUM
-                + chan * radio_control_impl::regmap::REG_CHAN_OFFSET;
-            read_memory[reg_compat] = (radio_control_impl::MINOR_COMPAT
-                                       | (radio_control_impl::MAJOR_COMPAT << 16));
-        }
-        read_memory[radio_control_impl::regmap::REG_RADIO_WIDTH] =
-            (32 /* bits per sample */ << 16) | 1 /* sample per clock */;
-    }
-
-    void _poke_cb(uint32_t addr, uint32_t data, uhd::time_spec_t, bool) override
-    {
-        // Are we on the peripheral?
-        if (addr >= radio_control_impl::regmap::PERIPH_BASE) {
-            // handle all the periphs stuff that is not CPLD here
-        } else {
-            return;
-        }
-
-        // Are we on the CPLD?
-        if (addr >= cpld_offset && addr < rfdc_offset) {
-            _poke_cpld_cb(addr, data);
-            return;
-        }
-
-        // Are we poking the RFDC controls?
-        if (addr >= rfdc_offset) {
-            _poke_rfdc_cb(addr, data);
-            return;
-        }
-    }
-
-    void _poke_cpld_cb(const uint32_t addr, const uint32_t data)
-    {
-        switch (addr - cpld_offset) {
-            /// CURRENT_CONFIG_REG
-            case 0x1000:
-                // FIXME: We write to all regs during init
-                // BOOST_REQUIRE(false); // Not a write-register
-                break;
-            /// SW_CONFIG
-            case 0x1008: {
-                // This register is RW so update read_memory
-                read_memory[addr] = data;
-                // If we're in SW-defined mode, also update CURRENT_CONFIG_REG
-                uint32_t& rf_opt = read_memory[cpld_offset + 0x1004];
-                uint32_t& ccr    = read_memory[cpld_offset + 0x1000];
-                // Check if RF0_OPTION is SW_DEFINED
-                if ((rf_opt & 0x00FF) == 0) {
-                    ccr = (ccr & 0xFF00) | (data & 0x00FF);
-                }
-                // Check if RF1_OPTION is SW_DEFINED
-                if ((rf_opt & 0xFF00) == 0) {
-                    ccr = (ccr & 0x00FF) | (data & 0xFF00);
-                }
-            } break;
-            /// LO SPI transactions
-            case 0x1020:
-                _poke_lo_spi(addr, data);
-                return;
-            /// LO SYNC
-            case 0x1024:
-                // We make these bits sticky, because they might get strobed in
-                // multiple calls. In order to see what was strobed within an
-                // API call, we keep bits as they are.
-                read_memory[addr] |= data;
-                return;
-            // TX0 Table Select
-            case 0x4000:
-            case 0x4004:
-            case 0x4008:
-            case 0x400C:
-            case 0x4010:
-            case 0x4014: {
-                read_memory[addr]               = data;
-                const uint32_t src_table_offset = data * 4;
-                const uint32_t dst_table_offset = (addr - cpld_offset) - 0x4000;
-                // Now we fake the transaction that copies ?X?_TABLE_* to
-                // ?X?_DSA*
-                read_memory[cpld_offset + 0x3000 + dst_table_offset] =
-                    read_memory[cpld_offset + 0x5000 + src_table_offset];
-            }
-                return;
-            // RX0 Table Select
-            case 0x4800:
-            case 0x4804:
-            case 0x4808:
-            case 0x480C:
-            case 0x4810:
-            case 0x4814: {
-                read_memory[addr]               = data;
-                const uint32_t src_table_offset = data * 4;
-                const uint32_t dst_table_offset = (addr - cpld_offset) - 0x4800;
-                // Now we fake the transaction that copies ?X?_TABLE_* to
-                // ?X?_DSA*
-                read_memory[cpld_offset + 0x3800 + dst_table_offset] =
-                    read_memory[cpld_offset + 0x5800 + src_table_offset];
-            }
-                return;
-            default: // All other CPLD registers are read-write
-                read_memory[addr] = data;
-                return;
-        }
-    }
-
-    void _poke_rfdc_cb(const uint32_t addr, const uint32_t data)
-    {
-        read_memory[addr] |= data;
-    }
-
-    void _poke_lo_spi(const uint32_t addr, const uint32_t data)
-    {
-        // UHD_LOG_INFO("TEST", "Detected LO SPI transaction!");
-        const uint16_t spi_data = data & 0xFFFF;
-        const uint8_t spi_addr  = (data >> 16) & 0x7F;
-        const bool read         = bool(data & (1 << 23));
-        const uint8_t lo_sel    = (data >> 24) & 0x7;
-        const bool start_xact   = bool(data & (1 << 28));
-        // UHD_LOG_INFO("TEST",
-        //     "Transaction record: Read: "
-        //         << (read ? "yes" : "no") << " Address: " << int(spi_addr) << std::hex
-        //         << " Data: 0x" << spi_data << " LO sel: " << int(lo_sel) << std::dec
-        //         << " Start Transaction: " << start_xact);
-        if (!start_xact) {
-            // UHD_LOG_INFO("TEST", "Register probably just initialized. Ignoring.");
-            return;
-        }
-        switch (spi_addr) {
-            case 0:
-                _muxout_to_lock = spi_data & (1 << 2);
-                break;
-            case 125:
-                BOOST_REQUIRE(read);
-                read_memory[addr] = 0x2288;
-                break;
-            default:
-                break;
-        }
-        if (read) {
-            read_memory[addr] = (read_memory[addr] & 0xFFFF) | (spi_addr << 16)
-                                | (lo_sel << 24) | (1 << 31);
-        }
-        if (_muxout_to_lock) {
-            // UHD_LOG_INFO("TEST", "Muxout set to lock. Returning all ones.");
-            read_memory[addr] = 0xFFFF;
-            return;
-        }
-        return;
-    }
-
-    bool _muxout_to_lock = false;
-}; // class x4xx_radio_mock_reg_iface_t
-
-/*
- * x400_radio_fixture is a class which is instantiated before each test
- * case is run. It sets up the block container, mock register interface,
- * and x400_radio_control object, all of which are accessible to the test
- * case. The instance of the object is destroyed at the end of each test
- * case.
- */
-constexpr size_t DEFAULT_MTU = 8000;
-
-//! Helper class to make sure we get the most logging regardless of environment
-// settings
-struct uhd_log_enabler
-{
-    uhd_log_enabler(uhd::log::severity_level level)
-    {
-        std::cout << "Setting log level to " << level << "..." << std::endl;
-        uhd::log::set_log_level(level);
-        uhd::log::set_console_level(level);
-        std::this_thread::sleep_for(10ms);
-    }
-};
-
-struct x400_radio_fixture
-{
-    x400_radio_fixture()
-        : ule(uhd::log::warning) // Note: When debugging this test, either set
-                                 // this to a lower level, or create a
-                                 // uhd_log_enabler in the test-under-test
-        , num_channels(uhd::usrp::zbx::ZBX_NUM_CHANS)
-        , num_input_ports(num_channels)
-        , num_output_ports(num_channels)
-        , reg_iface(std::make_shared<x4xx_radio_mock_reg_iface_t>(num_channels))
-        , rpcs(std::make_shared<uhd::test::x4xx_mock_rpc_server>(device_info))
-        , mbc(std::make_shared<mpmd_mb_controller>(rpcs, device_info))
-        , block_container(get_mock_block(RADIO_BLOCK,
-              num_channels,
-              num_channels,
-              device_info,
-              DEFAULT_MTU,
-              X400,
-              reg_iface,
-              mbc))
-        , test_radio(block_container.get_block<x400_radio_control_impl>())
-    {
-        node_accessor.init_props(test_radio.get());
-    }
-
-    ~x400_radio_fixture() {}
-
-
-    // Must remain the first member so we make sure the log level is high
-    uhd_log_enabler ule;
-    const size_t num_channels;
-    const size_t num_input_ports;
-    const size_t num_output_ports;
-    uhd::device_addr_t device_info = uhd::device_addr_t("master_clock_rate=122.88e6");
-    std::shared_ptr<x4xx_radio_mock_reg_iface_t> reg_iface;
-    std::shared_ptr<uhd::test::x4xx_mock_rpc_server> rpcs;
-    mpmd_mb_controller::sptr mbc;
-
-    mock_block_container block_container;
-    std::shared_ptr<x400_radio_control_impl> test_radio;
-    node_accessor_t node_accessor{};
-};
-
-} // namespace
-
 
 /******************************************************************************
  * RFNoC Graph Test
@@ -281,15 +31,15 @@ BOOST_FIXTURE_TEST_CASE(x400_radio_test_graph, x400_radio_fixture)
 {
     detail::graph_t graph{};
     detail::graph_t::graph_edge_t edge_port_info0;
-    edge_port_info0.src_port                    = 0;
-    edge_port_info0.dst_port                    = 0;
-    edge_port_info0.property_propagation_active = true;
-    edge_port_info0.edge                        = detail::graph_t::graph_edge_t::DYNAMIC;
+    edge_port_info0.src_port        = 0;
+    edge_port_info0.dst_port        = 0;
+    edge_port_info0.is_forward_edge = true;
+    edge_port_info0.edge            = detail::graph_t::graph_edge_t::DYNAMIC;
     detail::graph_t::graph_edge_t edge_port_info1;
-    edge_port_info1.src_port                    = 1;
-    edge_port_info1.dst_port                    = 1;
-    edge_port_info1.property_propagation_active = true;
-    edge_port_info1.edge                        = detail::graph_t::graph_edge_t::DYNAMIC;
+    edge_port_info1.src_port        = 1;
+    edge_port_info1.dst_port        = 1;
+    edge_port_info1.is_forward_edge = true;
+    edge_port_info1.edge            = detail::graph_t::graph_edge_t::DYNAMIC;
 
     mock_radio_node_t mock_radio_block{0};
     mock_terminator_t mock_sink_term(2, {}, "MOCK_SINK");
@@ -314,6 +64,138 @@ BOOST_FIXTURE_TEST_CASE(x400_radio_test_graph, x400_radio_fixture)
     UHD_LOG_INFO("TEST", "Committing graph...");
     graph.commit();
     UHD_LOG_INFO("TEST", "Commit complete.");
+}
+
+/******************************************************************************
+ * RFNoC atomic item size property test
+ *
+ * This test case ensures that the radio block propagates atomic item size correctly
+ *****************************************************************************/
+BOOST_FIXTURE_TEST_CASE(x400_radio_test_prop_prop, x400_radio_fixture)
+{
+    detail::graph_t graph{};
+    detail::graph_t::graph_edge_t edge_port_info0;
+    edge_port_info0.src_port        = 0;
+    edge_port_info0.dst_port        = 0;
+    edge_port_info0.is_forward_edge = true;
+    edge_port_info0.edge            = detail::graph_t::graph_edge_t::DYNAMIC;
+    detail::graph_t::graph_edge_t edge_port_info1;
+    edge_port_info1.src_port        = 1;
+    edge_port_info1.dst_port        = 1;
+    edge_port_info1.is_forward_edge = true;
+    edge_port_info1.edge            = detail::graph_t::graph_edge_t::DYNAMIC;
+
+    mock_terminator_t mock_sink_term(2, {}, "MOCK_SINK");
+    mock_terminator_t mock_source_term(2, {}, "MOCK_SOURCE");
+
+    UHD_LOG_INFO("TEST", "Priming mock block properties");
+    mock_source_term.set_edge_property<size_t>(
+        "atomic_item_size", 1, {res_source_info::OUTPUT_EDGE, 0});
+    mock_source_term.set_edge_property<size_t>(
+        "atomic_item_size", 1, {res_source_info::OUTPUT_EDGE, 1});
+    mock_source_term.set_edge_property<size_t>(
+        "mtu", 99, {res_source_info::OUTPUT_EDGE, 0});
+    mock_sink_term.set_edge_property<size_t>(
+        "atomic_item_size", 999, {res_source_info::INPUT_EDGE, 0});
+    mock_sink_term.set_edge_property<size_t>(
+        "atomic_item_size", 999, {res_source_info::INPUT_EDGE, 1});
+
+    UHD_LOG_INFO("TEST", "Creating graph...");
+    graph.connect(&mock_source_term, test_radio.get(), edge_port_info0);
+    graph.connect(&mock_source_term, test_radio.get(), edge_port_info1);
+    graph.connect(test_radio.get(), &mock_sink_term, edge_port_info0);
+    graph.connect(test_radio.get(), &mock_sink_term, edge_port_info1);
+    UHD_LOG_INFO("TEST", "Committing graph...");
+    graph.commit();
+
+    UHD_LOG_INFO("TEST", "Testing atomic item size propagation...");
+
+    // radio has a sample width of 32 bits (sc16) and spc of 1 by default
+    // this results in a atomic item size of 4 for the radio
+    // because property gets propagated immediately after setting in
+    // the committed graph we can check the result of the propagation
+    // at the mock edges
+
+    mock_source_term.set_edge_property<size_t>(
+        "atomic_item_size", 1, {res_source_info::OUTPUT_EDGE, 0});
+    BOOST_CHECK_EQUAL(mock_source_term.get_edge_property<size_t>(
+                          "atomic_item_size", {res_source_info::OUTPUT_EDGE, 0}),
+        4);
+
+    mock_source_term.set_edge_property<size_t>(
+        "atomic_item_size", 4, {res_source_info::OUTPUT_EDGE, 1});
+    BOOST_CHECK_EQUAL(mock_source_term.get_edge_property<size_t>(
+                          "atomic_item_size", {res_source_info::OUTPUT_EDGE, 1}),
+        4);
+
+    mock_source_term.set_edge_property<size_t>(
+        "atomic_item_size", 9, {res_source_info::OUTPUT_EDGE, 0});
+    BOOST_CHECK_EQUAL(mock_source_term.get_edge_property<size_t>(
+                          "atomic_item_size", {res_source_info::OUTPUT_EDGE, 0}),
+        36);
+
+    mock_source_term.set_edge_property<size_t>(
+        "atomic_item_size", 10, {res_source_info::OUTPUT_EDGE, 1});
+    BOOST_CHECK_EQUAL(mock_source_term.get_edge_property<size_t>(
+                          "atomic_item_size", {res_source_info::OUTPUT_EDGE, 1}),
+        20);
+
+    mock_source_term.set_edge_property<size_t>(
+        "mtu", 99, {res_source_info::OUTPUT_EDGE, 0});
+    mock_source_term.set_edge_property<size_t>(
+        "atomic_item_size", 25, {res_source_info::OUTPUT_EDGE, 0});
+    BOOST_CHECK_EQUAL(mock_source_term.get_edge_property<size_t>(
+                          "atomic_item_size", {res_source_info::OUTPUT_EDGE, 0}),
+        96);
+
+    // repeat for sink
+    mock_sink_term.set_edge_property<size_t>(
+        "atomic_item_size", 1, {res_source_info::INPUT_EDGE, 0});
+    BOOST_CHECK_EQUAL(mock_sink_term.get_edge_property<size_t>(
+                          "atomic_item_size", {res_source_info::INPUT_EDGE, 0}),
+        4);
+
+    mock_sink_term.set_edge_property<size_t>(
+        "atomic_item_size", 4, {res_source_info::INPUT_EDGE, 1});
+    BOOST_CHECK_EQUAL(mock_sink_term.get_edge_property<size_t>(
+                          "atomic_item_size", {res_source_info::INPUT_EDGE, 1}),
+        4);
+
+    mock_sink_term.set_edge_property<size_t>(
+        "atomic_item_size", 7, {res_source_info::INPUT_EDGE, 0});
+    BOOST_CHECK_EQUAL(mock_sink_term.get_edge_property<size_t>(
+                          "atomic_item_size", {res_source_info::INPUT_EDGE, 0}),
+        28);
+    BOOST_CHECK_EQUAL(test_radio->get_property<int>("spp", 0) % 7, 0);
+
+    mock_sink_term.set_edge_property<size_t>(
+        "atomic_item_size", 22, {res_source_info::INPUT_EDGE, 1});
+    BOOST_CHECK_EQUAL(mock_sink_term.get_edge_property<size_t>(
+                          "atomic_item_size", {res_source_info::INPUT_EDGE, 1}),
+        44);
+    BOOST_CHECK_EQUAL(test_radio->get_property<int>("spp", 1) % 11, 0);
+
+    mock_sink_term.set_edge_property<size_t>(
+        "mtu", 179, {res_source_info::INPUT_EDGE, 0});
+    mock_sink_term.set_edge_property<size_t>(
+        "atomic_item_size", 46, {res_source_info::INPUT_EDGE, 0});
+    BOOST_CHECK_EQUAL(mock_sink_term.get_edge_property<size_t>(
+                          "atomic_item_size", {res_source_info::INPUT_EDGE, 0}),
+        92);
+    BOOST_CHECK_EQUAL(test_radio->get_property<int>("spp", 0), 23);
+
+    test_radio->set_property<int>("spp", 3, 0);
+    BOOST_CHECK_EQUAL(test_radio->get_property<int>("spp", 0), 23);
+    test_radio->set_property<int>("spp", 24, 0);
+    BOOST_CHECK_EQUAL(test_radio->get_property<int>("spp", 0), 23);
+
+    // If we go higher, then there's no valid spp value that is both smaller than
+    // MTU *and* a multiple of AIS
+    UHD_LOG_INFO("TEST", "Expecting ERROR here VVV");
+    BOOST_REQUIRE_THROW(mock_sink_term.set_edge_property<size_t>(
+                            "atomic_item_size", 47, {res_source_info::INPUT_EDGE, 0}),
+        uhd::resolve_error);
+    UHD_LOG_INFO("TEST", "Expecting ERROR here ^^^");
 }
 
 BOOST_FIXTURE_TEST_CASE(zbx_api_freq_tx_test, x400_radio_fixture)
@@ -697,8 +579,8 @@ BOOST_FIXTURE_TEST_CASE(zbx_lo_tree_test, x400_radio_fixture)
                 const double req_lo2  = iter_lo->at(1);
                 UHD_LOG_INFO(log,
                     "Testing lo1 freq " << req_lo1 / 1e6 << "MHz, lo2 freq "
-                                         << req_lo2 / 1e6 << "MHz at center frequency "
-                                         << req_freq / 1e6 << "MHz");
+                                        << req_lo2 / 1e6 << "MHz at center frequency "
+                                        << req_freq / 1e6 << "MHz");
                 tree->access<double>(fe_path / "freq").set(req_freq);
                 const double ret_lo1 =
                     tree->access<double>(fe_path / "los" / ZBX_LO1 / "freq" / "value")
@@ -715,6 +597,65 @@ BOOST_FIXTURE_TEST_CASE(zbx_lo_tree_test, x400_radio_fixture)
     }
 }
 
+BOOST_FIXTURE_TEST_CASE(zbx_custom_tx_tune_table_test, x400_radio_fixture)
+{
+    auto tree             = test_radio->get_tree();
+    constexpr size_t chan = 0;
+    constexpr double ep   = 10.0;
+
+    test_radio->set_tx_frequency(4.4e9, chan);
+
+    BOOST_REQUIRE(abs(test_radio->get_tx_lo_freq(ZBX_LO2, chan) - 5447680000.0) < ep);
+
+    // Custom TX tune table to try. This table is identical to the normal table,
+    // except it only has one entry (4.03GHz-4.5GHz) and the IF2 frequency for
+    // that band is 10MHz lower (chosen arbitrarily)
+    // Turn clang-formatting off so it doesn't compress these tables into a mess.
+    // clang-format off
+    static const std::vector<zbx_tune_map_item_t> alternate_tx_tune_map = {
+    //  | min_band_freq | max_band_freq | rf_fir | if1_fir | if2_fir | lo1_inj_side | lo2_inj_side | if1_freq_min | if1_freq_max | if2_freq_min | if2_freq_max |
+        {   4030e6,         4500e6,          0,       1,        1,      NONE,               HIGH,          0,             0,        1050e6,        1050e6    },
+    };
+
+    // Turn clang-format back on just for posterity
+    // clang-format on
+
+    tree->access<std::vector<uhd::usrp::zbx::zbx_tune_map_item_t>>(
+            "dboard/tx_frontends/0/tune_table")
+        .set(alternate_tx_tune_map);
+
+    BOOST_REQUIRE(abs(test_radio->get_tx_lo_freq(ZBX_LO2, chan) - 5437440000.0) < ep);
+}
+
+BOOST_FIXTURE_TEST_CASE(zbx_custom_rx_tune_table_test, x400_radio_fixture)
+{
+    auto tree             = test_radio->get_tree();
+    constexpr size_t chan = 0;
+    constexpr double ep   = 10.0;
+
+    test_radio->set_rx_frequency(4.4e9, chan);
+
+    BOOST_REQUIRE(abs(test_radio->get_rx_lo_freq(ZBX_LO2, chan) - 6236160000.0) < ep);
+
+    // Custom RX tune table to try. This table is identical to the normal table,
+    // except it only has one entry (4.2GHz-4.5GHz) and the IF2 frequency for
+    // that band is 10MHz lower (chosen arbitrarily)
+    // Turn clang-formatting off so it doesn't compress these tables into a mess.
+    // clang-format off
+    static const std::vector<zbx_tune_map_item_t> alternate_rx_tune_map = {
+    //  | min_band_freq | max_band_freq | rf_fir | if1_fir | if2_fir | lo1_inj_side | lo2_inj_side | if1_freq_min | if1_freq_max | if2_freq_min | if2_freq_max |
+        {   4200e6,         4500e6,          0,       2,        2,     NONE,                 HIGH,          0,             0,        1840e6,        1840e6    },
+    };
+
+    // Turn clang-format back on just for posterity
+    // clang-format on
+
+    tree->access<std::vector<uhd::usrp::zbx::zbx_tune_map_item_t>>(
+            "dboard/rx_frontends/0/tune_table")
+        .set(alternate_rx_tune_map);
+
+    BOOST_REQUIRE(abs(test_radio->get_rx_lo_freq(ZBX_LO2, chan) - 6225920000.0) < ep);
+}
 
 BOOST_FIXTURE_TEST_CASE(zbx_ant_test, x400_radio_fixture)
 {
@@ -734,6 +675,16 @@ BOOST_FIXTURE_TEST_CASE(zbx_ant_test, x400_radio_fixture)
             BOOST_CHECK_EQUAL(iter, ret_ant);
         }
     }
+    for (size_t chan = 0; chan < 2; chan++) {
+        for (auto iter : RX_ANTENNAS) {
+            UHD_LOG_INFO(log, "Testing Antenna: " << iter);
+
+            test_radio->set_rx_antenna(iter, chan);
+
+            std::string ret_ant = test_radio->get_rx_antenna(chan);
+            BOOST_CHECK_EQUAL(iter, ret_ant);
+        }
+    }
     log = "ZBX TX ANTENNA TEST";
     for (auto fe_path :
         {fs_path("dboard/tx_frontends/0"), fs_path("dboard/tx_frontends/1")}) {
@@ -745,6 +696,16 @@ BOOST_FIXTURE_TEST_CASE(zbx_ant_test, x400_radio_fixture)
 
             std::string ret_ant =
                 tree->access<std::string>(fe_path / "antenna/value").get();
+            BOOST_CHECK_EQUAL(iter, ret_ant);
+        }
+    }
+    for (size_t chan = 0; chan < 2; chan++) {
+        for (auto iter : TX_ANTENNAS) {
+            UHD_LOG_INFO(log, "Testing Antenna: " << iter);
+
+            test_radio->set_tx_antenna(iter, chan);
+
+            std::string ret_ant = test_radio->get_tx_antenna(chan);
             BOOST_CHECK_EQUAL(iter, ret_ant);
         }
     }
@@ -898,7 +859,8 @@ BOOST_FIXTURE_TEST_CASE(zbx_tx_power_api, x400_radio_fixture)
             // regarding power
             const double pow_diff =
                 std::abs(tx_given_power - test_radio->get_tx_power_reference(chan));
-            BOOST_CHECK_MESSAGE(pow_diff < 3.0, "power differential is too large: " << pow_diff);
+            BOOST_CHECK_MESSAGE(
+                pow_diff < 3.0, "power differential is too large: " << pow_diff);
 
             // Back to gain mode
             gain_coerced = test_radio->set_tx_gain(tx_given_gain, chan);
@@ -932,7 +894,7 @@ BOOST_FIXTURE_TEST_CASE(zbx_rx_power_api, x400_radio_fixture)
             BOOST_CHECK_MESSAGE(pow_diff < 3.0,
                 "power differential is too large ("
                     << pow_diff << "): Expected close to: " << rx_given_power
-                    << " Actual: " << actual_power << " Frequency: " << (freq/1e6));
+                    << " Actual: " << actual_power << " Frequency: " << (freq / 1e6));
 
             gain_coerced = test_radio->set_rx_gain(rx_given_gain, chan);
             BOOST_REQUIRE_EQUAL(gain_coerced, rx_given_gain);

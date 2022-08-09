@@ -20,6 +20,7 @@ ctrlport_timer.v \
 ctrlport_combiner.v \
 ctrlport_decoder.v \
 ctrlport_decoder_param.v \
+ctrlport_window.v \
 ctrlport_splitter.v \
 ctrlport_resp_combine.v \
 ctrlport_clk_cross.v \

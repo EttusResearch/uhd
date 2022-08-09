@@ -244,7 +244,7 @@ module timekeeper #(
       pps_edge <= 0;
     end else begin
       pps_del <= pps;
-      pps_edge<= pps_del & ~pps;
+      pps_edge<= pps & ~pps_del;
     end
   end
 

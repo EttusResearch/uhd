@@ -122,11 +122,19 @@ magnesium_radio_control_impl::magnesium_radio_control_impl(make_args_ptr make_ar
     UHD_ASSERT_THROW(_n3xx_timekeeper);
     _rpcc = _n310_mb_control->get_rpc_client();
     UHD_ASSERT_THROW(_rpcc);
+    _mpm_compat_num = _rpcc->request<std::vector<size_t>>("get_mpm_compat_num");
+    UHD_ASSERT_THROW(_mpm_compat_num.size() == 2);
 
     _init_defaults();
     _init_mpm();
     _init_peripherals();
     _init_prop_tree();
+}
+
+void magnesium_radio_control_impl::deinit()
+{
+    RFNOC_LOG_TRACE("magnesium_radio_control_impl::deinit()");
+    _reset_tx_frontend(magnesium_cpld_ctrl::BOTH);
 }
 
 magnesium_radio_control_impl::~magnesium_radio_control_impl()
@@ -299,8 +307,8 @@ void magnesium_radio_control_impl::_update_freq(
                                              : ad9371_freq;
 
     RFNOC_LOG_TRACE("RF freq = " << rf_freq);
-    UHD_ASSERT_THROW(fp_compare_epsilon<double>(rf_freq) >= 0);
-    UHD_ASSERT_THROW(fp_compare_epsilon<double>(std::abs(rf_freq - _desired_rf_freq[dir]))
+    UHD_ASSERT_THROW(freq_compare_epsilon(rf_freq) >= 0);
+    UHD_ASSERT_THROW(freq_compare_epsilon(std::abs(rf_freq - _desired_rf_freq[dir]))
                      <= _master_clock_rate / 2);
     if (dir == RX_DIRECTION) {
         radio_control_impl::set_rx_frequency(rf_freq, chan);
@@ -350,28 +358,79 @@ double magnesium_radio_control_impl::set_rx_frequency(
     return radio_control_impl::get_rx_frequency(chan);
 }
 
-double magnesium_radio_control_impl::set_rx_bandwidth(
-    const double bandwidth, const size_t chan)
-{
-    std::lock_guard<std::recursive_mutex> l(_set_lock);
-    _ad9371->set_bandwidth(bandwidth, chan, RX_DIRECTION);
-    // FIXME: setting analog bandwidth on AD9371 take no effect.
-    // Remove this warning when ADI can confirm that it works.
-    RFNOC_LOG_WARNING("set_rx_bandwidth take no effect on AD9371. "
-                      "Default analog bandwidth is 100MHz");
-    return AD9371_RX_MAX_BANDWIDTH;
-}
-
 double magnesium_radio_control_impl::set_tx_bandwidth(
     const double bandwidth, const size_t chan)
 {
     std::lock_guard<std::recursive_mutex> l(_set_lock);
-    _ad9371->set_bandwidth(bandwidth, chan, TX_DIRECTION);
-    // FIXME: setting analog bandwidth on AD9371 take no effect.
-    // Remove this warning when ADI can confirm that it works.
-    RFNOC_LOG_WARNING("set_tx_bandwidth take no effect on AD9371. "
-                      "Default analog bandwidth is 100MHz");
-    return AD9371_TX_MAX_BANDWIDTH;
+
+    if (_mpm_compat_num[0] < 4 || (_mpm_compat_num[0] == 4 && _mpm_compat_num[1] < 1)) {
+        RFNOC_LOG_WARNING("Setting tx bandwidth not supported. Please upgrade MPM to a "
+                          "minimum version of 4.1.");
+        radio_control_impl::set_tx_bandwidth(bandwidth, 1 - chan);
+        return radio_control_impl::set_tx_bandwidth(bandwidth, chan);
+    }
+
+    const auto curr_bw = get_tx_bandwidth(chan);
+    if (fp_compare_epsilon<double>(curr_bw) == bandwidth) {
+        return curr_bw;
+    }
+
+    // TX frontend components should be deactivated before running init_cals
+    const auto tx_atr_bits =
+        _cpld->get_tx_atr_bits(magnesium_cpld_ctrl::BOTH, magnesium_cpld_ctrl::IDLE);
+    _reset_tx_frontend(magnesium_cpld_ctrl::BOTH);
+
+    RFNOC_LOG_INFO(
+        "Re-initializing dboard to apply bandwidth settings. This may take some time.");
+    const auto ret = _ad9371->set_bandwidth(bandwidth, chan, TX_DIRECTION);
+    RFNOC_LOG_INFO("Bandwidth settings applied: " + std::to_string(ret));
+
+    // Restore TX frontend components to previous state
+    _cpld->set_tx_atr_bits(
+        magnesium_cpld_ctrl::BOTH, magnesium_cpld_ctrl::IDLE, tx_atr_bits);
+
+    // Save the updated bandwidth settings for both channels
+    radio_control_impl::set_tx_bandwidth(bandwidth, 1 - chan);
+    return radio_control_impl::set_tx_bandwidth(ret, chan);
+}
+
+double magnesium_radio_control_impl::set_rx_bandwidth(
+    const double bandwidth, const size_t chan)
+{
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
+
+    if (_mpm_compat_num[0] < 4 || (_mpm_compat_num[0] == 4 && _mpm_compat_num[1] < 1)) {
+        RFNOC_LOG_WARNING("Setting rx bandwidth not supported. Please upgrade MPM to a "
+                          "minimum version of 4.1.");
+        radio_control_impl::set_rx_bandwidth(bandwidth, 1 - chan);
+        return radio_control_impl::set_rx_bandwidth(bandwidth, chan);
+    }
+
+    const auto curr_bw = get_rx_bandwidth(chan);
+    if (fp_compare_epsilon<double>(curr_bw) == bandwidth) {
+        return curr_bw;
+    }
+
+    // TX frontend components should be deactivated before running init_cals
+    //
+    // We want to avoid any TX signals coming out of the frontend. This is
+    // necessary even during RX calibration.
+    const auto tx_atr_bits =
+        _cpld->get_tx_atr_bits(magnesium_cpld_ctrl::BOTH, magnesium_cpld_ctrl::IDLE);
+    _reset_tx_frontend(magnesium_cpld_ctrl::BOTH);
+
+    RFNOC_LOG_INFO(
+        "Re-initializing dboard to apply bandwidth settings. This may take some time.");
+    const auto ret = _ad9371->set_bandwidth(bandwidth, chan, RX_DIRECTION);
+    RFNOC_LOG_INFO("Bandwidth settings applied: " + std::to_string(ret));
+
+    // Restore TX frontend components to previous state
+    _cpld->set_tx_atr_bits(
+        magnesium_cpld_ctrl::BOTH, magnesium_cpld_ctrl::IDLE, tx_atr_bits);
+
+    // Save the updated bandwidth settings for both channels
+    radio_control_impl::set_rx_bandwidth(bandwidth, 1 - chan);
+    return radio_control_impl::set_rx_bandwidth(ret, chan);
 }
 
 double magnesium_radio_control_impl::set_tx_gain(const double gain, const size_t chan)
@@ -753,18 +812,25 @@ freq_range_t magnesium_radio_control_impl::get_rx_lo_freq_range(
 }
 
 void magnesium_radio_control_impl::set_rx_lo_source(
-    const std::string& src, const std::string& name, const size_t /*chan*/
-)
+    const std::string& src, const std::string& name, const size_t chan)
 {
-    // TODO: checking what options are there
-    std::lock_guard<std::recursive_mutex> l(_set_lock);
     RFNOC_LOG_TRACE("Setting RX LO " << name << " to " << src);
-
-    if (name == MAGNESIUM_LO1) {
-        _ad9371->set_lo_source(src, RX_DIRECTION);
+    if (name == radio_control::ALL_LOS) {
+        const auto rx_lo_names = get_rx_lo_names(chan);
+        for (auto rx_lo_name : rx_lo_names) {
+            set_rx_lo_source(src, rx_lo_name, chan);
+        }
     } else {
-        RFNOC_LOG_ERROR(
-            "RX LO " << name << " does not support setting source to " << src);
+        std::lock_guard<std::recursive_mutex> l(_set_lock);
+        if (name == MAGNESIUM_LO1) {
+            _ad9371->set_lo_source(src, RX_DIRECTION);
+        } else if (name == MAGNESIUM_LO2 && src == "internal") {
+            // LO2 only supports internal source on this device
+            return;
+        } else {
+            RFNOC_LOG_ERROR(
+                "RX LO " << name << " does not support setting source to " << src);
+        }
     }
 }
 
@@ -775,8 +841,11 @@ const std::string magnesium_radio_control_impl::get_rx_lo_source(
     if (name == MAGNESIUM_LO1) {
         // TODO: should we use this from cache?
         return _ad9371->get_lo_source(RX_DIRECTION);
+    } else if (name == MAGNESIUM_LO2) {
+        return "internal";
+    } else {
+        throw uhd::value_error("Could not find LO stage " + name);
     }
-    return "internal";
 }
 
 double magnesium_radio_control_impl::_set_rx_lo_freq(const std::string source,
@@ -871,17 +940,25 @@ freq_range_t magnesium_radio_control_impl::get_tx_lo_freq_range(
 }
 
 void magnesium_radio_control_impl::set_tx_lo_source(
-    const std::string& src, const std::string& name, const size_t /*chan*/
-)
+    const std::string& src, const std::string& name, const size_t chan)
 {
-    // TODO: checking what options are there
-    std::lock_guard<std::recursive_mutex> l(_set_lock);
     RFNOC_LOG_TRACE("set_tx_lo_source(name=" << name << ", src=" << src << ")");
-    if (name == MAGNESIUM_LO1) {
-        _ad9371->set_lo_source(src, TX_DIRECTION);
+    if (name == radio_control::ALL_LOS) {
+        const auto tx_lo_names = get_tx_lo_names(chan);
+        for (auto tx_lo_name : tx_lo_names) {
+            set_tx_lo_source(src, tx_lo_name, chan);
+        }
     } else {
-        RFNOC_LOG_ERROR(
-            "TX LO " << name << " does not support setting source to " << src);
+        std::lock_guard<std::recursive_mutex> l(_set_lock);
+        if (name == MAGNESIUM_LO1) {
+            _ad9371->set_lo_source(src, TX_DIRECTION);
+        } else if (name == MAGNESIUM_LO2 && src == "internal") {
+            // LO2 only supports internal source on this device
+            return;
+        } else {
+            RFNOC_LOG_ERROR(
+                "TX LO " << name << " does not support setting source to " << src);
+        }
     }
 }
 
@@ -892,8 +969,11 @@ const std::string magnesium_radio_control_impl::get_tx_lo_source(
     if (name == MAGNESIUM_LO1) {
         // TODO: should we use this from cache?
         return _ad9371->get_lo_source(TX_DIRECTION);
+    } else if (name == MAGNESIUM_LO2) {
+        return "internal";
+    } else {
+        throw uhd::value_error("Could not find LO stage " + name);
     }
-    return "internal";
 }
 
 double magnesium_radio_control_impl::_set_tx_lo_freq(const std::string source,
@@ -1113,6 +1193,145 @@ sensor_value_t magnesium_radio_control_impl::get_tx_sensor(
     }
     return sensor_value_t(_rpcc->request_with_token<sensor_value_t::sensor_map_t>(
         _rpc_prefix + "get_sensor", "TX", name, chan));
+}
+
+/**************************************************************************
+ * Filter API
+ *************************************************************************/
+std::vector<std::string> magnesium_radio_control_impl::get_rx_filter_names(
+    const size_t chan) const
+{
+    UHD_ASSERT_THROW(chan < TOTAL_RADIO_PORTS);
+    if (chan % 2 == 0) {
+        return {"RX1_FIR", "RX1RX2_FIR"};
+    } else {
+        return {"RX2_FIR", "RX1RX2_FIR"};
+    }
+}
+
+uhd::filter_info_base::sptr magnesium_radio_control_impl::get_rx_filter(
+    const std::string& name, const size_t)
+{
+    if (_mpm_compat_num[0] < 4 || (_mpm_compat_num[0] == 4 && _mpm_compat_num[1] < 2)) {
+        RFNOC_LOG_WARNING("Getting rx filter not supported. Please upgrade MPM to a "
+                          "minimum version of 4.2.");
+        return std::make_shared<uhd::digital_filter_fir<int16_t>>(
+            uhd::filter_info_base::filter_type::DIGITAL_FIR_I16,
+            false,
+            0,
+            1.0,
+            1,
+            1,
+            32767,
+            AD9371_RX_MAX_FIR_TAPS,
+            std::vector<int16_t>(AD9371_RX_MAX_FIR_TAPS, 0));
+    }
+
+    const auto rv     = _ad9371->get_fir(name);
+    const auto coeffs = rv.second;
+    // TODO: Put gain in the digital_filter_fir
+    return std::make_shared<uhd::digital_filter_fir<int16_t>>(
+        uhd::filter_info_base::filter_type::DIGITAL_FIR_I16,
+        false,
+        0,
+        1.0,
+        1,
+        1,
+        32767,
+        AD9371_RX_MAX_FIR_TAPS,
+        coeffs);
+}
+
+void magnesium_radio_control_impl::set_rx_filter(
+    const std::string& name, uhd::filter_info_base::sptr filter, const size_t)
+{
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
+
+    if (_mpm_compat_num[0] < 4 || (_mpm_compat_num[0] == 4 && _mpm_compat_num[1] < 2)) {
+        RFNOC_LOG_WARNING("Setting rx filter not supported. Please upgrade MPM to a "
+                          "minimum version of 4.2.");
+        return;
+    }
+
+    auto fir = std::dynamic_pointer_cast<uhd::digital_filter_fir<int16_t>>(filter);
+    if (fir == nullptr) {
+        throw uhd::runtime_error("Invalid Filter Type for RX Filter");
+    }
+    if (fir->get_taps().size() != AD9371_RX_MAX_FIR_TAPS) {
+        throw uhd::runtime_error("AD937x RX Filter Taps must be "
+                                 + std::to_string(AD9371_RX_MAX_FIR_TAPS)
+                                 + " taps long!");
+    }
+    // TODO: Use gain in the digital_filter_fir
+    _ad9371->set_fir(name, 6, fir->get_taps());
+}
+
+std::vector<std::string> magnesium_radio_control_impl::get_tx_filter_names(
+    const size_t chan) const
+{
+    UHD_ASSERT_THROW(chan < TOTAL_RADIO_PORTS);
+    if (chan % 2 == 0) {
+        return {"TX1_FIR", "TX1TX2_FIR"};
+    } else {
+        return {"TX2_FIR", "TX1TX2_FIR"};
+    }
+}
+
+uhd::filter_info_base::sptr magnesium_radio_control_impl::get_tx_filter(
+    const std::string& name, const size_t)
+{
+    if (_mpm_compat_num[0] < 4 || (_mpm_compat_num[0] == 4 && _mpm_compat_num[1] < 2)) {
+        RFNOC_LOG_WARNING("Getting tx filter not supported. Please upgrade MPM to a "
+                          "minimum version of 4.2.");
+        return std::make_shared<uhd::digital_filter_fir<int16_t>>(
+            uhd::filter_info_base::filter_type::DIGITAL_FIR_I16,
+            false,
+            0,
+            1.0,
+            1,
+            1,
+            32767,
+            AD9371_TX_MAX_FIR_TAPS,
+            std::vector<int16_t>(AD9371_TX_MAX_FIR_TAPS, 0));
+    }
+
+    const auto rv   = _ad9371->get_fir(name);
+    const auto taps = rv.second;
+    // TODO: Use gain in the digital_filter_fir
+    return std::make_shared<uhd::digital_filter_fir<int16_t>>(
+        uhd::filter_info_base::filter_type::DIGITAL_FIR_I16,
+        false,
+        0,
+        1.0,
+        1,
+        1,
+        32767,
+        AD9371_TX_MAX_FIR_TAPS,
+        taps);
+}
+
+void magnesium_radio_control_impl::set_tx_filter(
+    const std::string& name, uhd::filter_info_base::sptr filter, const size_t)
+{
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
+
+    if (_mpm_compat_num[0] < 4 || (_mpm_compat_num[0] == 4 && _mpm_compat_num[1] < 2)) {
+        RFNOC_LOG_WARNING("Setting tx filter not supported. Please upgrade MPM to a "
+                          "minimum version of 4.2.");
+        return;
+    }
+
+    auto fir = std::dynamic_pointer_cast<uhd::digital_filter_fir<int16_t>>(filter);
+    if (fir == nullptr) {
+        throw uhd::runtime_error("Invalid Filter Type for TX Filter");
+    }
+    if (fir->get_taps().size() != AD9371_TX_MAX_FIR_TAPS) {
+        throw uhd::runtime_error("AD937x TX Filter Taps must be "
+                                 + std::to_string(AD9371_TX_MAX_FIR_TAPS)
+                                 + " taps long!");
+    }
+    // TODO: Use gain in the digital_filter_fir
+    _ad9371->set_fir(name, 6, fir->get_taps());
 }
 
 /**************************************************************************

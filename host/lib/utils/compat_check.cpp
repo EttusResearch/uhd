@@ -69,7 +69,7 @@ void uhd::assert_fpga_compat(const size_t uhd_major,
                     % fpga_component % fpga_major % fpga_minor % uhd_major % uhd_minor));
         } else {
             if (!log_component.empty()) {
-                UHD_LOGGER_WARNING(log_component) << str(
+                UHD_LOGGER_DEBUG(log_component) << str(
                     boost::format("Non-critical minor compat number mismatch "
                                   "for `%s': Expecting %d.%d, got %d.%d.")
                     % fpga_component % uhd_major % uhd_minor % fpga_major % fpga_minor);
@@ -77,7 +77,7 @@ void uhd::assert_fpga_compat(const size_t uhd_major,
         }
     } else if (uhd_minor < fpga_minor) {
         if (!log_component.empty()) {
-            UHD_LOGGER_WARNING(log_component) << str(
+            UHD_LOGGER_DEBUG(log_component) << str(
                 boost::format("Non-critical minor compat number mismatch "
                               "for `%s': Expecting %d.%d, got %d.%d.")
                 % fpga_component % uhd_major % uhd_minor % fpga_major % fpga_minor);

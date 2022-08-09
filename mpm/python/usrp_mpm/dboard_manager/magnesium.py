@@ -480,6 +480,27 @@ class Magnesium(BfrfsEEPROM, DboardManagerBase):
             'value': str(lock_status).lower(),
         }
 
+    ##########################################################################
+    # Filter API
+    ##########################################################################
+    def set_bandwidth(self, which, bw):
+        if which.lower()[0:2] in ('tx', 'dx'):
+            self.log.debug("ad9371 set_tx_bandwidth bw: {}".format(bw))
+            self._init_args['tx_bw'] = bw
+        if which.lower()[0:2] in ('rx', 'dx'):
+            self.log.debug("ad9371 set_rx_bandwidth bw: {}".format(bw))
+            self._init_args['rx_bw'] = bw
+        self._reinit(self.master_clock_rate)
+        return bw
+
+    def set_fir(self, name, gain, coeffs):
+        self.log.debug("ad9371 set_fir name: {} gain: {} coeffs: {}".format(name, gain, coeffs))
+        self.mykonos.set_fir(name, gain, coeffs)
+        return
+
+    def get_fir(self, name):
+        self.log.debug("ad9371 get_fir name: {}".format(name))
+        return self.mykonos.get_fir(name)
 
     ##########################################################################
     # Debug

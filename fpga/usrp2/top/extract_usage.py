@@ -40,7 +40,7 @@ def extract_maps():
     for line in ALL_MAP_FILES.splitlines():
         path, name = line.split()
         if not os.path.exists(path):
-            print 'DNE ', path, ' skipping...'
+            print('DNE {} skipping...'.format(path))
         output += """
 
 
@@ -54,5 +54,5 @@ def extract_maps():
 
 if __name__ == '__main__':
     summary = extract_maps()
-    if len(sys.argv) == 1: print summary
+    if len(sys.argv) == 1: print(summary)
     else: open(sys.argv[1], 'w').write(summary)

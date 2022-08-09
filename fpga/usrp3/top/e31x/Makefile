@@ -63,12 +63,12 @@ E310_SG3_IDLE E3XX_idle_sg3:  build/usrp_e310_sg3_idle_fpga.dts
 
 ##E310_SG1:       Build USRP E3XX (Speed Grade 1).
 E310_SG1 E310:  build/usrp_e310_sg1_fpga.dts
-	$(call vivado_build,E310_SG1, E310_SG1=1)
+	$(call vivado_build,E310_SG1, E310_SG1=1 $(if $(DRAM),ENABLE_DRAM=1,))
 	$(call post_build,$@,E310_SG1)
 
 ##E310_SG3:       Build USRP E3XX (Speed Grade 3).
 E310_SG3 E310_sg3:  build/usrp_e310_sg3_fpga.dts
-	$(call vivado_build,E310_SG3, E310_SG3=1)
+	$(call vivado_build,E310_SG3, E310_SG3=1 $(if $(DRAM),ENABLE_DRAM=1,))
 	$(call post_build,$@,E310_SG3)
 
 
@@ -93,6 +93,8 @@ help:           ##Show this help message.
 ##
 ##Supported Options
 ##-----------------
+##DRAM=1       Include DDR3 SDRAM memory controller IP in the FPGA build.
+##             Note: The RFNoC image core must also be configured to use DRAM.
 ##GUI=1        Launch the build in the Vivado GUI.
 ##CHECK=1      Launch the syntax checker instead of building a bitfile.
 ##SYNTH=1      Launch the build but stop after synthesis.

@@ -92,6 +92,35 @@ meta_range_t::meta_range_t(double start, double stop, double step)
     /* NOP */
 }
 
+meta_range_t meta_range_t::as_monotonic() const
+{
+    meta_range_t result;
+    for (const auto& range : *this) {
+        if (range.step() != 0.0) {
+            throw uhd::value_error("Cannot monotonize meta_range which contains non-continuous subranges");
+        }
+        result.push_back(range);
+    }
+
+    std::sort(result.begin(), result.end(), [](const range_t& a, const range_t& b) {
+        return a.start() < b.start();
+    });
+
+    // Merge overlapping
+    size_t i = 1;
+    while (i < result.size()) {
+        if (result[i - 1].stop() > result[i].start()) {
+            const auto new_stop = std::max(result[i - 1].stop(), result[i].stop());
+            result[i - 1] = range_t(result[i - 1].start(), new_stop, 0.0);
+            result.erase(result.begin() + i);
+        } else {
+            i++;
+        }
+    }
+
+    return result;
+}
+
 double meta_range_t::start(void) const
 {
     check_meta_range_monotonic(*this);

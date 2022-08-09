@@ -28,6 +28,7 @@ public:
     RFNOC_DECLARE_BLOCK(fir_filter_block_control)
 
     // Block registers
+    static const uint32_t REG_FIR_BLOCK_SIZE;
     static const uint32_t REG_FIR_MAX_NUM_COEFFS_ADDR;
     static const uint32_t REG_FIR_LOAD_COEFF_ADDR;
     static const uint32_t REG_FIR_LOAD_COEFF_LAST_ADDR;
@@ -39,7 +40,7 @@ public:
      *
      * \returns The maximum number of filter coefficients supported by this block
      */
-    virtual size_t get_max_num_coefficients() const = 0;
+    virtual size_t get_max_num_coefficients(const size_t chan = 0) const = 0;
 
     /*! Set the filter coefficients
      *
@@ -53,8 +54,9 @@ public:
      * a `uhd::value_error` is thrown.
      *
      * \param coeffs A vector of integer coefficients for the FIR filter
+     * \param chan Channel index
      */
-    virtual void set_coefficients(const std::vector<int16_t>& coeffs) = 0;
+    virtual void set_coefficients(const std::vector<int16_t>& coeffs, const size_t chan = 0) = 0;
 
     /*! Get the filter coefficients
      *
@@ -62,7 +64,7 @@ public:
      *
      * \returns The vector of current filter coefficients
      */
-    virtual std::vector<int16_t> get_coefficients() const = 0;
+    virtual std::vector<int16_t> get_coefficients(const size_t chan = 0) const = 0;
 };
 
 }} // namespace uhd::rfnoc

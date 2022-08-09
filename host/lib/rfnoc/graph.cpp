@@ -170,11 +170,11 @@ void graph_t::connect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t edg
             "Adding edge " << src_node->get_unique_id() << ":" << edge_info.src_port
                            << " -> " << dst_node->get_unique_id() << ":"
                            << edge_info.dst_port
-                           << " without disabling property_propagation_active will lead "
+                           << " without disabling is_forward_edge will lead "
                               "to unresolvable graph!");
         boost::remove_edge(edge_descriptor.first, _graph);
         throw uhd::rfnoc_error(
-            "Adding edge without disabling property_propagation_active will lead "
+            "Adding edge without disabling is_forward_edge will lead "
             "to unresolvable graph!");
     }
 }
@@ -287,7 +287,6 @@ void graph_t::resolve_all_properties(
         return;
     }
 
-    node_accessor_t node_accessor{};
     // We can't release during property propagation, so we lock this entire
     // method to make sure that a) different threads can't interfere with each
     // other, and b) that we don't release the graph while this method is still
@@ -297,6 +296,7 @@ void graph_t::resolve_all_properties(
         return;
     }
     if (_release_count) {
+        node_accessor_t node_accessor{};
         node_ref_t current_node = boost::get(vertex_property_t(), _graph, initial_node);
         UHD_LOG_TRACE(LOG_ID,
             "Only resolving node " << current_node->get_unique_id()
@@ -307,6 +307,19 @@ void graph_t::resolve_all_properties(
         node_accessor.clean_props(current_node);
         return;
     }
+
+    UHD_LOG_TRACE(LOG_ID, "Running forward edge property propagation...");
+    _resolve_all_properties(context, initial_node, true);
+    UHD_LOG_TRACE(LOG_ID, "Running backward edge property propagation...");
+    _resolve_all_properties(context, initial_node, false);
+}
+
+
+void graph_t::_resolve_all_properties(resolve_context context,
+    rfnoc_graph_t::vertex_descriptor initial_node,
+    const bool forward)
+{
+    node_accessor_t node_accessor{};
 
     // First, find the node on which we'll start.
     auto initial_dirty_nodes = _find_dirty_nodes();
@@ -361,10 +374,10 @@ void graph_t::resolve_all_properties(
             throw;
         }
 
-        //  Forward all edge props in all directions from current node. We make
-        //  sure to skip properties if the edge is flagged as
-        //  !property_propagation_active
-        _forward_edge_props(*node_it);
+        //  Forward all edge props in all directions from current node. We only
+        //  forward properties across edges that either forward- or back-edges,
+        //  depending on `forward`.
+        _forward_edge_props(*node_it, forward);
 
         // Now mark all properties on this node as clean
         node_accessor.clean_props(current_node);
@@ -412,7 +425,7 @@ void graph_t::resolve_all_properties(
     }
 
     // Post-iteration sanity checks:
-    // First, we make sure that there are no dirty properties left. If there are,
+    // Make sure that there are no dirty properties left. If there are,
     // that means our algorithm couldn't converge and we have a problem.
     auto remaining_dirty_nodes = _find_dirty_nodes();
     if (!remaining_dirty_nodes.empty()) {
@@ -428,21 +441,6 @@ void graph_t::resolve_all_properties(
             }
         }
         throw uhd::resolve_error("Could not resolve properties.");
-    }
-
-    // Second, go through edges marked !property_propagation_active and make
-    // sure that they match up
-    BackEdgePredicate back_edge_filter(_graph);
-    auto e_iterators =
-        boost::edges(boost::filtered_graph<rfnoc_graph_t, BackEdgePredicate>(
-            _graph, back_edge_filter));
-    bool back_edges_valid = true;
-    for (auto e_it = e_iterators.first; e_it != e_iterators.second; ++e_it) {
-        back_edges_valid = back_edges_valid && _assert_edge_props_consistent(*e_it);
-    }
-    if (!back_edges_valid) {
-        throw uhd::resolve_error(
-            "Error during property resultion: Back-edges inconsistent!");
     }
 }
 
@@ -604,7 +602,8 @@ void graph_t::_remove_node(node_ref_t node)
 }
 
 
-void graph_t::_forward_edge_props(graph_t::rfnoc_graph_t::vertex_descriptor origin)
+void graph_t::_forward_edge_props(
+    graph_t::rfnoc_graph_t::vertex_descriptor origin, const bool forward)
 {
     node_accessor_t node_accessor{};
     node_ref_t origin_node = boost::get(vertex_property_t(), _graph, origin);
@@ -615,12 +614,13 @@ void graph_t::_forward_edge_props(graph_t::rfnoc_graph_t::vertex_descriptor orig
     });
     UHD_LOG_TRACE(LOG_ID,
         "Forwarding up to " << edge_props.size() << " edge properties from node "
-                            << origin_node->get_unique_id());
+                            << origin_node->get_unique_id() << " along "
+                            << (forward ? "forward" : "back") << " edges.");
 
     for (auto prop : edge_props) {
         auto neighbour_node_info = _find_neighbour(origin, prop->get_src_info());
         if (neighbour_node_info.first != nullptr
-            && neighbour_node_info.second.property_propagation_active) {
+            && neighbour_node_info.second.is_forward_edge == forward) {
             const size_t neighbour_port = prop->get_src_info().type
                                                   == res_source_info::INPUT_EDGE
                                               ? neighbour_node_info.second.src_port
@@ -669,6 +669,13 @@ bool graph_t::_assert_edge_props_consistent(rfnoc_graph_t::edge_descriptor edge)
     for (auto src_prop_it = src_prop_map.begin(); src_prop_it != src_prop_map.end();
          ++src_prop_it) {
         auto src_prop = src_prop_it->second;
+        if (dst_prop_map.count(src_prop->get_id()) == 0) {
+            UHD_LOG_DEBUG(LOG_ID,
+                "On back-edge "
+                    << edge_info.to_string() << ", source block has edge property `"
+                    << src_prop->get_id() << "', but destination block does not.");
+            continue;
+        }
         auto dst_prop = dst_prop_map.at(src_prop->get_id());
         if (!src_prop->equal(dst_prop)) {
             UHD_LOG_ERROR(LOG_ID,
@@ -702,11 +709,48 @@ void graph_t::_check_topology()
         }
 
         if (!node_accessor.check_topology(node, connected_inputs, connected_outputs)) {
+            std::ostringstream input_topology;
+            input_topology << " requested inputs: (";
+            for (auto connected_input : connected_inputs) {
+                input_topology << connected_input;
+                if (connected_input != connected_inputs.back()) {
+                    input_topology << ", ";
+                }
+            }
+            input_topology << ")";
+            input_topology << " valid inputs: (";
+            for (size_t expected_input = 0; expected_input < node->get_num_input_ports();
+                 expected_input++) {
+                input_topology << expected_input;
+                if (expected_input < node->get_num_input_ports() - 1) {
+                    input_topology << ", ";
+                }
+            }
+            input_topology << ")";
+
+            std::ostringstream output_topology;
+            output_topology << " requested outputs: (";
+            for (auto connected_output : connected_outputs) {
+                output_topology << connected_output;
+                if (connected_output != connected_outputs.back()) {
+                    output_topology << ", ";
+                }
+            }
+            output_topology << ")";
+            output_topology << " valid outputs: (";
+            for (size_t expected_output = 0;
+                 expected_output < node->get_num_output_ports();
+                 expected_output++) {
+                output_topology << expected_output;
+                if (expected_output < node->get_num_output_ports() - 1) {
+                    output_topology << ", ";
+                }
+            }
+            output_topology << ")";
+
             UHD_LOG_ERROR(LOG_ID,
-                "Node " << node->get_unique_id()
-                        << "cannot handle its current topology! ("
-                        << connected_inputs.size() << "inputs, "
-                        << connected_outputs.size() << " outputs)");
+                "Node " << node->get_unique_id() << " using invalid inputs or outputs! "
+                        << input_topology.str() << ", " << output_topology.str());
             topo_ok = false;
         }
     }

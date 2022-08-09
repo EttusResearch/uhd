@@ -30,6 +30,9 @@ public:
         UHD_ASSERT_THROW(get_num_input_ports() == get_num_output_ports());
         set_action_forwarding_policy(forwarding_policy_t::ONE_TO_ONE);
         set_prop_forwarding_policy(forwarding_policy_t::ONE_TO_ONE);
+        // This line is not strictly necessary, as ONE_TO_ONE is the default.
+        // We set it make it explicit how this block works.
+        set_mtu_forwarding_policy(forwarding_policy_t::ONE_TO_ONE);
         // Now init DMA/DRAM control
         _fifo_cores.reserve(get_num_input_ports());
         for (size_t i = 0; i < get_num_input_ports(); i++) {

@@ -51,6 +51,16 @@ static const double PI = 3.14159265358979323846;
 static const float SINGLE_PRECISION_EPSILON  = 1.19e-7f;
 static const double DOUBLE_PRECISION_EPSILON = 2.22e-16;
 
+//! Epsilon value for when using fp_compare_epsilon to compare frequencies
+//
+// Note that this is a UHD/USRP-specific constant. In UHD, frequencies are on
+// the order of 1e9 (GHz) or below. We will declare frequencies as equal if they
+// are within a millihertz.  For the purpose of
+// comparing frequencies, we "lose" 9 decimal places for the integer
+// component of the frequency, so we choose this epsilon value for floating
+// point comparison of frequencies.
+static constexpr double FREQ_COMPARE_EPSILON = 1e-12;
+
 namespace fp_compare {
 
 /*!
@@ -85,10 +95,10 @@ public:
  * There are obviously a lot of strategies for defining floating point
  * equality, and in the end it all comes down to the domain at hand. UHD's
  * floating-point-with-epsilon comparison algorithm is based on the method
- * presented in Knuth's "The Art of Computer Science" called "very close
+ * presented in Knuth's "The Art of Computer Science" called "close enough
  * with tolerance epsilon".
  *
- *      [(|u - v| / |u|) <= e] && [(|u - v| / |v|) <= e]
+ *      [(|u - v| / |u|) <= e] || [(|u - v| / |v|) <= e]
  *
  * UHD's modification to this algorithm is using the denominator's epsilon
  * value (since each float_t object has its own epsilon) for each
@@ -141,6 +151,22 @@ template <typename float_t>
 UHD_INLINE bool operator>(double lhs, fp_compare_epsilon<float_t> rhs);
 template <typename float_t>
 UHD_INLINE bool operator>=(double lhs, fp_compare_epsilon<float_t> rhs);
+
+//! An alias for fp_compare_epsilon, but with defaults for frequencies
+class freq_compare_epsilon : public fp_compare_epsilon<double>
+{
+public:
+    UHD_INLINE freq_compare_epsilon(double value)
+        : fp_compare_epsilon<double>(value, FREQ_COMPARE_EPSILON)
+    {
+    }
+
+    UHD_INLINE freq_compare_epsilon(const freq_compare_epsilon& copy)
+        : fp_compare_epsilon<double>(copy)
+    {
+    }
+};
+
 
 } // namespace fp_compare
 

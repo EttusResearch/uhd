@@ -38,3 +38,5 @@
 - [ ] My code follows the code style of this project. See CODING.md.
 - [ ] I have updated the documentation accordingly.
 - [ ] I have added tests to cover my changes, and all previous tests pass.
+- [ ] I have checked all compat numbers if they need updating (FPGA compat,
+      MPM compat, noc_shell, specific RFNoC block, ...)

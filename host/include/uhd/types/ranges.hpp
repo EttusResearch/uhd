@@ -62,7 +62,7 @@ private:
 /*!
  * A meta-range object holds a list of individual ranges.
  */
-struct UHD_API meta_range_t : std::vector<range_t>
+struct UHD_API meta_range_t : public std::vector<range_t>
 {
     //! A default constructor for an empty meta-range
     meta_range_t(void);
@@ -112,6 +112,18 @@ struct UHD_API meta_range_t : std::vector<range_t>
      * \return a value that is in one of the ranges
      */
     double clip(double value, bool clip_step = false) const;
+
+    /*!
+     * A method for converting an arbitrary meta_range_t into a monotonic
+     * meta_range_t which has no overlapping ranges, and where all ranges
+     * are sorted.
+     *
+     * Requires that all subranges have a step size of zero, or else it
+     * throws uhd::value_error.
+     *
+     * \return a monotonic meta_range_t
+     */
+    meta_range_t as_monotonic() const;
 
     //! Convert this meta-range to a printable string
     const std::string to_pp_string(void) const;

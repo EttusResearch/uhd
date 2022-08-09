@@ -11,13 +11,14 @@ import threading
 import numpy
 import uhd
 
-class ToneGenerator:
+class WaveformGenerator:
     """
-    Class that can output a tone from a different thread until told to stop
+    Class that can output arbitrary waveform 
+    from a different thread until told to stop
     """
-    def __init__(self, rate, freq, ampl, streamer=None):
+    def __init__(self, iq_data, streamer=None):
+        self._buffer = iq_data
         self._streamer = streamer
-        self._buffer = uhd.dsp.signals.get_continuous_tone(rate, freq, ampl)
         self._run = False
         self._thread = None
 
@@ -59,3 +60,13 @@ class ToneGenerator:
         metadata.end_of_burst = True
         self._streamer.send(
             numpy.array([0], dtype=numpy.complex64), metadata, 0.1)
+
+
+class ToneGenerator(WaveformGenerator):
+    """
+    Class that can output a tone based on WaveformGenerator
+    """
+    def __init__(self, rate, freq, ampl, streamer=None):
+        super().__init__(
+            uhd.dsp.signals.get_continuous_tone(rate, freq, ampl),
+            streamer)

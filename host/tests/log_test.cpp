@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/log_add.hpp>
 #include <boost/test/unit_test.hpp>
@@ -29,4 +30,14 @@ BOOST_AUTO_TEST_CASE(test_messages)
     const int x = 42;
     UHD_VAR(x);
     UHD_HEX(x);
+}
+
+void log_with_throw()
+{
+    UHD_LOG_THROW(uhd::runtime_error, "TEST", "Testing log+throw " << 1234);
+}
+
+BOOST_AUTO_TEST_CASE(test_throw)
+{
+    BOOST_CHECK_THROW(log_with_throw(), uhd::runtime_error);
 }

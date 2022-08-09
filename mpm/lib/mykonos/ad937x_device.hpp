@@ -20,6 +20,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/noncopyable.hpp>
 #include <functional>
+#include <map>
 #include <memory>
 
 class ad937x_device : public boost::noncopyable
@@ -82,9 +83,10 @@ public:
 
     bool get_pll_lock_status(const uint8_t pll, const bool wait_for_lock = false);
 
+    void set_fir(const std::string& name, int8_t gain, const std::vector<int16_t>& fir);
     void set_fir(
         const uhd::direction_t direction, int8_t gain, const std::vector<int16_t>& fir);
-    std::vector<int16_t> get_fir(const uhd::direction_t direction, int8_t& gain);
+    std::pair<int8_t, std::vector<int16_t>> get_fir(const std::string& name);
 
     int16_t get_temperature();
 
@@ -136,4 +138,7 @@ private:
     static double _convert_rx_gain_from_mykonos(const uint8_t gain);
     static uint16_t _convert_tx_gain_to_mykonos(const double gain);
     static double _convert_tx_gain_from_mykonos(const uint16_t gain);
+
+    const static std::map<std::string, mykonosfirName_t> _tx_filter_map;
+    const static std::map<std::string, mykonosfirName_t> _rx_filter_map;
 };

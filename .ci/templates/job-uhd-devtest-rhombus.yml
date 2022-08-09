@@ -5,124 +5,151 @@ parameters:
     - ubuntu2004
 - name: uhdSrcDir
   type: string
+- name: uhdArtifactSource
+  type: string
+  default: current
+- name: testDevices
+  type: string
+  default: 'x3xx,b2xx,n3xx,e320'
 
 jobs:
 - template: job-uhd-devtest.yml
   parameters:
     suiteName: 'rhombus'
     testOS: '${{ parameters.testOS }}'
-    knownHost: 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE+SZhHi7YOvHW6xmVGhhZGLtqlZoPkOqGdr5WqnmLBN root@ubuntu'
+    knownHost: '|1|3et3xtaVaAtV98+6U+Tiu2wAX8I=|eEWBqjtPkxWfNR7hV/oQ+4QISlE= ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBKKCqeRQXnWgl+KZu54dJGjw90R07wHCLXzvnfR9PRZ8+yBFwaNhWQCKZVwhN0G9r3bJ5RSsX+CQespwpRMptds='
     toolset: 'make'
     uhdSrcDir: '${{ parameters.uhdSrcDir }}'
+    uhdArtifactSource: '${{ parameters.uhdArtifactSource }}'
     redisHost: 'sdr-rhombus'
     dutMatrix:
-      rhombus-x300-UBX-0 XG:
-        devType: 'x300'
-        devModel: 'x300'
-        devName: 'rhombus-x300-UBX-0'
-        devSerial: '30A6019'
-        devBus: 'ip'
-        devAddr: '192.168.40.2'
-        devFpga: 'XG'
-        devtestPattern: 'x3x0'
-        jtagSerial: '2516350A6019'
-        jtagServer: 'nitest@sdr-rhombus'
-      rhombus-x310-UBX-0 XG:
-        devType: 'x300'
-        devModel: 'x310'
-        devName: 'rhombus-x310-UBX-0'
-        devSerial: '3138EF5'
-        devBus: 'ip'
-        devAddr: '192.168.40.3'
-        devFpga: 'XG'
-        devtestPattern: 'x3x0'
-        jtagSerial: '251635138E98'
-        jtagServer: 'nitest@sdr-rhombus'
-      rhombus-x310-CBX-0 XG:
-        devType: 'x300'
-        devModel: 'x310'
-        devName: 'rhombus-x310-CBX-0'
-        devSerial: '30796C2'
-        devBus: 'ip'
-        devAddr: '192.168.40.4'
-        devFpga: 'XG'
-        devtestPattern: 'x3x0'
-        jtagSerial: '2516350796C2'
-        jtagServer: 'nitest@sdr-rhombus'
-      rhombus-x310-WBX-0 XG:
-        devType: 'x300'
-        devModel: 'x310'
-        devName: 'rhombus-x310-WBX-0'
-        devSerial: '30C5BFF'
-        devBus: 'ip'
-        devAddr: '192.168.40.5'
-        devFpga: 'XG'
-        devtestPattern: 'x3x0'
-        jtagSerial: '2516350C5BFF'
-        jtagServer: 'nitest@sdr-rhombus'
-      rhombus-x310-SBX-0 XG:
-        devType: 'x300'
-        devModel: 'x310'
-        devName: rhombus-x310-SBX-0
-        devSerial: 'F43D13'
-        devBus: 'ip'
-        devAddr: '192.168.40.6'
-        devFpga: 'XG'
-        devtestPattern: 'x3x0'
-        jtagSerial: '251635F43D13'
-        jtagServer: 'nitest@sdr-rhombus'
-      rhombus-x300-UBX-0 HG:
-        devType: 'x300'
-        devModel: 'x300'
-        devName: 'rhombus-x300-UBX-0'
-        devSerial: '30A6019'
-        devBus: 'ip'
-        devAddr: '192.168.40.2'
-        devFpga: 'HG'
-        devtestPattern: 'x3x0'
-        jtagSerial: '2516350A6019'
-        jtagServer: 'nitest@sdr-rhombus'
-      rhombus-x310-UBX-0 HG:
-        devType: 'x300'
-        devModel: 'x310'
-        devName: 'rhombus-x310-UBX-0'
-        devSerial: '3138EF5'
-        devBus: 'ip'
-        devAddr: '192.168.40.3'
-        devFpga: 'HG'
-        devtestPattern: 'x3x0'
-        jtagSerial: '251635138E98'
-        jtagServer: 'nitest@sdr-rhombus'
-      rhombus-x310-CBX-0 HG:
-        devType: 'x300'
-        devModel: 'x310'
-        devName: 'rhombus-x310-CBX-0'
-        devSerial: '30796C2'
-        devBus: 'ip'
-        devAddr: '192.168.40.4'
-        devFpga: 'HG'
-        devtestPattern: 'x3x0'
-        jtagSerial: '2516350796C2'
-        jtagServer: 'nitest@sdr-rhombus'
-      rhombus-x310-WBX-0 HG:
-        devType: 'x300'
-        devModel: 'x310'
-        devName: 'rhombus-x310-WBX-0'
-        devSerial: '30C5BFF'
-        devBus: 'ip'
-        devAddr: '192.168.40.5'
-        devFpga: 'HG'
-        devtestPattern: 'x3x0'
-        jtagSerial: '2516350C5BFF'
-        jtagServer: 'nitest@sdr-rhombus'
-      rhombus-x310-SBX-0 HG:
-        devType: 'x300'
-        devModel: 'x310'
-        devName: rhombus-x310-SBX-0
-        devSerial: 'F43D13'
-        devBus: 'ip'
-        devAddr: '192.168.40.6'
-        devFpga: 'HG'
-        devtestPattern: 'x3x0'
-        jtagSerial: '251635F43D13'
-        jtagServer: 'nitest@sdr-rhombus'
+      ${{ if contains(parameters.testDevices, 'x3xx') }}:
+        rhombus-x300-UBX-0:
+          devAgent: x3xxb2xx
+          devType: 'x300'
+          devModel: 'x300'
+          devName: 'rhombus-x300-UBX-0'
+          devSerial: '30A6019'
+          devBus: 'ip'
+          devAddr: '192.168.40.2'
+          devFpga: 'HG,XG'
+          devtestPattern: 'x3x0'
+          jtagSerial: '2516350A6019'
+          jtagServer: 'nitest@sdr-rhombus'
+        rhombus-x310-UBX-0:
+          devAgent: x3xxb2xx
+          devType: 'x300'
+          devModel: 'x310'
+          devName: 'rhombus-x310-UBX-0'
+          devSerial: '3138EF5'
+          devBus: 'ip'
+          devAddr: '192.168.40.3'
+          devFpga: 'HG,XG'
+          devtestPattern: 'x3x0'
+          jtagSerial: '251635138E98'
+          jtagServer: 'nitest@sdr-rhombus'
+        rhombus-x310-CBX-0:
+          devAgent: x3xxb2xx
+          devType: 'x300'
+          devModel: 'x310'
+          devName: 'rhombus-x310-CBX-0'
+          devSerial: '30796C2'
+          devBus: 'ip'
+          devAddr: '192.168.40.4'
+          devFpga: 'HG,XG'
+          devtestPattern: 'x3x0'
+          jtagSerial: '2516350796C2'
+          jtagServer: 'nitest@sdr-rhombus'
+        rhombus-x310-WBX-0:
+          devAgent: x3xxb2xx
+          devType: 'x300'
+          devModel: 'x310'
+          devName: 'rhombus-x310-WBX-0'
+          devSerial: '30C5BFF'
+          devBus: 'ip'
+          devAddr: '192.168.40.5'
+          devFpga: 'HG,XG'
+          devtestPattern: 'x3x0'
+          jtagSerial: '2516350C5BFF'
+          jtagServer: 'nitest@sdr-rhombus'
+        rhombus-x310-TWINRX-0:
+          devAgent: x3xxb2xx
+          devType: 'x300'
+          devModel: 'x310'
+          devName: rhombus-x310-TWINRX-0
+          devSerial: 'F43D13'
+          devBus: 'ip'
+          devAddr: '192.168.40.6'
+          devFpga: 'HG,XG'
+          devtestPattern: 'x3x0'
+          jtagSerial: '251635F43D13'
+          jtagServer: 'nitest@sdr-rhombus'
+        rhombus-x300-SBX-0:
+          devAgent: x3xxb2xx
+          devType: 'x300'
+          devModel: 'x300'
+          devName: rhombus-x300-SBX-0
+          devSerial: '32244AD'
+          devBus: 'ip'
+          devAddr: '192.168.40.7'
+          devFpga: 'HG,XG'
+          devtestPattern: 'x3x0'
+          jtagSerial: '2516352244AD'
+          jtagServer: 'nitest@sdr-rhombus'
+
+      ${{ if contains(parameters.testDevices, 'b2xx') }}:
+        rhombus-b210-0:
+          devAgent: x3xxb2xx
+          devType: 'b200'
+          devModel: 'b210'
+          devName: rhombus-b210-0
+          devSerial: '3218D0E'
+          devBus: 'usb'
+          devtestPattern: 'b2xx'
+
+      ${{ if contains(parameters.testDevices, 'n3xx') }}:
+        rhombus-n310-0:
+          devAgent: rhombus-n310-0
+          devType: 'n3xx'
+          devModel: 'n310'
+          devName: rhombus-n310-0
+          devSerial: '3176DF3'
+          devHostname: 'ni-n3xx-3176df3'
+          devBus: 'ip'
+          devAddr: '192.168.20.5'
+          sfpAddrs: '192.168.10.5,192.168.20.5'
+          devFpga: 'HG,XG'
+          devtestPattern: 'n3x0'
+          devSDImage: gnuradio-image-ni-sulfur-rev11-mender.sdimg.bz2
+          devLabgridConfig: .ci/templates/tests/rhombus-labgrid/device-configs/rhombus-n310-0.yml
+        rhombus-n321-0:
+          devAgent: rhombus-n321-0
+          devType: 'n3xx'
+          devModel: 'n320'
+          devName: rhombus-n321-0
+          devSerial: '3166646'
+          devHostname: 'ni-n3xx-3166646'
+          devBus: 'ip'
+          devAddr: '192.168.20.8'
+          sfpAddrs: '192.168.10.8,192.168.20.8'
+          devFpga: 'HG,XG'
+          devtestPattern: 'n3x0'
+          devSDImage: gnuradio-image-ni-sulfur-rev11-mender.sdimg.bz2
+          devLabgridConfig: .ci/templates/tests/rhombus-labgrid/device-configs/rhombus-n321-0.yml
+
+      ${{ if contains(parameters.testDevices, 'e320') }}:
+        rhombus-e320-0:
+          devAgent: rhombus-e320-0
+          devType: 'e3xx'
+          devModel: 'e320'
+          devName: rhombus-e320-0
+          devSerial: '31A8171'
+          devHostname: 'ni-e320-31a8171'
+          devBus: 'ip'
+          devAddr: '192.168.20.7'
+          sfpAddrs: '192.168.20.7'
+          devFpga: 'XG'
+          devtestPattern: 'e320'
+          devInitramfsImage: fitImage-manufacturing
+          devSDImage: gnuradio-image-ni-neon-rev2-mender.sdimg.bz2
+          devLabgridConfig: .ci/templates/tests/rhombus-labgrid/device-configs/rhombus-e320-0.yml

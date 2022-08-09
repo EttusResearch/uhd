@@ -12,31 +12,37 @@
 set(GEVENT_MIN_VERSION "1.4.0")
 set(PYUDEV_MIN_VERSION "0.21.0")
 
-PYTHON_CHECK_MODULE(
-    "gevent ${GEVENT_MIN_VERSION} or greater"
-    "gevent" "LooseVersion(gevent.__version__) >= LooseVersion('${GEVENT_MIN_VERSION}')"
+PYTHON_CHECK_MODULE_VERSION(
+    "gevent module"
+    "gevent"
+    "gevent.__version__"
+    ${GEVENT_MIN_VERSION}
     HAVE_PYTHON_MODULE_GEVENT
 )
 
 # mprpc does not expose a __version__ attribute, so merely check for its
-# presence.
+# presence
 PYTHON_CHECK_MODULE(
+    "mprpc module"
     "mprpc"
-    "mprpc" "True"
+    "True"
     HAVE_PYTHON_MODULE_MPRPC
 )
 
-PYTHON_CHECK_MODULE(
-    "pyudev ${PYUDEV_MIN_VERSION} or greater"
-    "pyudev" "LooseVersion(pyudev.__version__) >= LooseVersion('${PYUDEV_MIN_VERSION}')"
+PYTHON_CHECK_MODULE_VERSION(
+    "pyudev module"
+    "pyudev"
+    "pyudev.__version__"
+    ${PYUDEV_MIN_VERSION}
     HAVE_PYTHON_MODULE_PYUDEV
 )
 
 # Older versions of pyroute2 (e.g. 0.5.2) do not expose a __version__
 # attribute, so merely check for its presence.
 PYTHON_CHECK_MODULE(
+    "pyroute2 module"
     "pyroute2"
-    "pyroute2" "True"
+    "True"
     HAVE_PYTHON_MODULE_PYROUTE2
 )
 
@@ -94,44 +100,56 @@ add_custom_command(OUTPUT ${OUTPUT}
      DEPENDS ${USRP_MPM_FILES} pyusrp_periphs)
 add_custom_target(usrp_mpm ALL DEPENDS ${OUTPUT} pyusrp_periphs)
 
-execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
-    "from __future__ import print_function; from distutils import sysconfig; print(sysconfig.get_python_lib(plat_specific=True, prefix=''))"
-    OUTPUT_VARIABLE USRP_MPM_PYTHON_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+if(NOT DEFINED USRP_MPM_PYTHON_DIR)
+    execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
+        "import os,sysconfig;\
+        platlib = sysconfig.get_path(name='platlib');\
+        prefix = sysconfig.get_config_var('prefix');\
+        print(os.path.relpath(platlib, prefix));"
+        OUTPUT_VARIABLE USRP_MPM_PYTHON_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+endif(NOT DEFINED USRP_MPM_PYTHON_DIR)
+
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/build/lib/usrp_mpm DESTINATION ${USRP_MPM_PYTHON_DIR})
 install(PROGRAMS
-    aurora_bist_test.py
-    usrp_update_fs
     usrp_hwd.py
     DESTINATION ${RUNTIME_DIR}
 )
 
-if (ENABLE_MYKONOS)
+if(NOT ENABLE_SIM)
     install(PROGRAMS
-        n3xx_bist
+        aurora_bist_test.py
+        usrp_update_fs
         DESTINATION ${RUNTIME_DIR}
     )
-elseif (ENABLE_E320)
-    install(PROGRAMS
-        e320_bist
-        DESTINATION ${RUNTIME_DIR}
-    )
-elseif (ENABLE_X400)
-    install(PROGRAMS
-        x4xx_bist
-        DESTINATION ${RUNTIME_DIR}
-    )
-    install(PROGRAMS
-        usrp_mpm/dboard_manager/zbx_update_cpld.py
-        DESTINATION ${RUNTIME_DIR}
-        RENAME zbx_update_cpld
-    )
-    install(PROGRAMS
-        usrp_mpm/periph_manager/x4xx_update_cpld.py
-        DESTINATION ${RUNTIME_DIR}
-        RENAME x4xx_update_cpld
-    )
-endif (ENABLE_MYKONOS)
+
+    if (ENABLE_MYKONOS)
+        install(PROGRAMS
+            n3xx_bist
+            DESTINATION ${RUNTIME_DIR}
+        )
+    elseif (ENABLE_E320)
+        install(PROGRAMS
+            e320_bist
+            DESTINATION ${RUNTIME_DIR}
+        )
+    elseif (ENABLE_X400)
+        install(PROGRAMS
+            x4xx_bist
+            DESTINATION ${RUNTIME_DIR}
+        )
+        install(PROGRAMS
+            usrp_mpm/dboard_manager/zbx_update_cpld.py
+            DESTINATION ${RUNTIME_DIR}
+            RENAME zbx_update_cpld
+        )
+        install(PROGRAMS
+            usrp_mpm/periph_manager/x4xx_update_cpld.py
+            DESTINATION ${RUNTIME_DIR}
+            RENAME x4xx_update_cpld
+        )
+    endif (ENABLE_MYKONOS)
+endif()
 
 if (HAVE_MPM_TEST_PREREQS)
     add_subdirectory(tests)

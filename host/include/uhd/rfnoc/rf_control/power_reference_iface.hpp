@@ -22,6 +22,8 @@ namespace uhd { namespace rfnoc { namespace rf_control {
 class power_reference_iface
 {
 public:
+    using sptr = std::shared_ptr<power_reference_iface>;
+
     virtual ~power_reference_iface() = default;
 
     /*! Return true if this channel has a reference power API enabled

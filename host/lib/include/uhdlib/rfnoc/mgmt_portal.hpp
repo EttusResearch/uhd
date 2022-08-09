@@ -19,7 +19,8 @@ namespace uhd { namespace rfnoc { namespace mgmt {
 //! A portal to perform low-level management operations from an endpoint
 //
 // This object provides an interface to send management commands from a software stream
-// endpoint. There must one instance of this object per software stream endpoint.
+// endpoint. There must one instance of this object per software stream endpoint
+// (i.e., every link_stream_manager owns one of these).
 // The management portal is capable of discovering all endpoints reachable from the
 // transport associated with it. It can then setup routes and configure stream endpoints
 // downstream.
@@ -196,10 +197,17 @@ public:
 
     //! Define custom configuration functions for custom transports
     //
-    // \param xport_type The type of the custom transport
+    // The intention of this is to allow adding custom management operations to
+    // be inserted for specific types of transports. For example, if IPv4
+    // transport adapters were to require additional Ethernet-specific routing
+    // information, this function could add more configuration packets specific
+    // to this purpose.
+    //
+    // \param xport_type The type of the custom transport (e.g. '1' for IPV4,
+    //                   see rfnoc_xport_types.vh for a list of valid values).
     // \param init_hop_cfg_fn The function to call when initializing the custom xport
     // \param rtcfg_hop_cfg_fn The function to call when configuring routing for the
-    // custom xport
+    //                         custom xport
     //
     virtual void register_xport_hop_cfg_fns(uint8_t xport_subtype,
         xport_cfg_fn_t init_hop_cfg_fn,

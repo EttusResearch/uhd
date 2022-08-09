@@ -5,14 +5,17 @@
 //
 
 #include "x400_radio_control.hpp"
+#include "x400_gpio_control.hpp"
 #include <uhd/rfnoc/registry.hpp>
+#include <uhd/types/serial.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/math.hpp>
+#include <uhdlib/rfnoc/reg_iface_adapter.hpp>
 #include <uhdlib/usrp/common/x400_rfdc_control.hpp>
+#include <uhdlib/usrp/cores/spi_core_4000.hpp>
 #include <uhdlib/usrp/dboard/debug_dboard.hpp>
 #include <uhdlib/usrp/dboard/null_dboard.hpp>
 #include <uhdlib/usrp/dboard/zbx/zbx_dboard.hpp>
-#include <uhdlib/rfnoc/reg_iface_adapter.hpp>
 
 namespace uhd { namespace rfnoc {
 
@@ -49,6 +52,7 @@ x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
 
     UHD_ASSERT_THROW(get_mb_controller());
     _mb_control = std::dynamic_pointer_cast<mpmd_mb_controller>(get_mb_controller());
+    UHD_ASSERT_THROW(_mb_control)
 
     _x4xx_timekeeper = std::dynamic_pointer_cast<mpmd_mb_controller::mpmd_timekeeper>(
         _mb_control->get_timekeeper(0));
@@ -182,8 +186,37 @@ x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
 
     auto mpm_rpc = _mb_control->dynamic_cast_rpc_as<uhd::usrp::mpmd_rpc_iface>();
     if (mpm_rpc->get_gpio_banks().size() > 0) {
-        _gpios = std::make_shared<x400::gpio_control>(_rpcc,
-            RFNOC_MAKE_WB_IFACE(regmap::PERIPH_BASE + 0xC000, 0));
+        _gpios = std::make_shared<x400::gpio_control>(
+            _rpcc, _mb_control, RFNOC_MAKE_WB_IFACE(regmap::PERIPH_BASE + 0xC000, 0));
+
+        auto gpio_port_mapper = std::shared_ptr<uhd::mapper::gpio_port_mapper>(
+            new uhd::rfnoc::x400::x400_gpio_port_mapping);
+
+        // Check if SPI is available as GPIO source, otherwise don't register
+        // SPI_GETTER_IFace
+        auto gpio_srcs = _mb_control->get_gpio_srcs("GPIO0");
+        if (std::count(gpio_srcs.begin(), gpio_srcs.end(), "DB0_SPI") > 0) {
+            auto spicore = uhd::cores::spi_core_4000::make(
+                [this](const uint32_t addr, const uint32_t data) {
+                    regs().poke32(addr, data, get_command_time(0));
+                },
+                [this](const uint32_t addr) {
+                    return regs().peek32(addr, get_command_time(0));
+                },
+                x400_regs::SPI_PERIPH_CFG,
+                x400_regs::SPI_TRANSACTION_CFG_REG,
+                x400_regs::SPI_TRANSACTION_GO_REG,
+                x400_regs::SPI_STATUS_REG,
+                x400_regs::SPI_CONTROLLER_INFO_REG,
+                gpio_port_mapper);
+
+            _spi_getter_iface = std::make_shared<x400_spi_getter>(spicore);
+            register_feature(_spi_getter_iface);
+        } else {
+            UHD_LOG_INFO("x400_radio_control",
+                "SPI functionality not available in this FPGA image. Please update to at "
+                "least version 7.7 to use SPI.");
+        }
     }
 }
 
@@ -328,8 +361,8 @@ double x400_radio_control_impl::set_rate(const double rate)
     // X400 does not support runtime rate changes
     if (!uhd::math::frequencies_are_equal(rate, get_rate())) {
         RFNOC_LOG_WARNING("Requesting invalid sampling rate from device: "
-                          << (rate / 1e6) << " MHz. Actual rate is: "
-                          << (get_rate() / 1e6) << " MHz.");
+                          << (rate / 1e6)
+                          << " MHz. Actual rate is: " << (get_rate() / 1e6) << " MHz.");
     }
     return get_rate();
 }
@@ -795,5 +828,4 @@ std::string x400_radio_control_impl::get_dboard_fe_from_chan(
 
 UHD_RFNOC_BLOCK_REGISTER_FOR_DEVICE_DIRECT(
     x400_radio_control, RADIO_BLOCK, X400, "Radio", true, "radio_clk", "ctrl_clk")
-
 }} // namespace uhd::rfnoc

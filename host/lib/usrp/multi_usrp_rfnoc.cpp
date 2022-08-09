@@ -1,22 +1,27 @@
 //
-// Copyright 2019 Ettus Research, a National Instruments Brand
+// Copyright 2019-2022 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include <uhd/convert.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/rfnoc/ddc_block_control.hpp>
 #include <uhd/rfnoc/duc_block_control.hpp>
 #include <uhd/rfnoc/filter_node.hpp>
 #include <uhd/rfnoc/graph_edge.hpp>
 #include <uhd/rfnoc/radio_control.hpp>
+#include <uhd/rfnoc/replay_block_control.hpp>
 #include <uhd/rfnoc_graph.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/utils/graph_utils.hpp>
+#include <uhd/utils/math.hpp>
+#include <uhd/utils/string.hpp>
 #include <uhdlib/rfnoc/rfnoc_device.hpp>
 #include <uhdlib/rfnoc/rfnoc_rx_streamer.hpp>
 #include <uhdlib/rfnoc/rfnoc_tx_streamer.hpp>
+#include <uhdlib/rfnoc/rfnoc_tx_streamer_replay_buffered.hpp>
 #include <uhdlib/usrp/gpio_defs.hpp>
 #include <uhdlib/usrp/multi_usrp_utils.hpp>
 #include <uhdlib/utils/narrow.hpp>
@@ -157,6 +162,8 @@ std::string bytes_to_str(std::vector<uint8_t> str_b)
 
 class multi_usrp_rfnoc : public multi_usrp
 {
+    using replay_config_t = rfnoc_tx_streamer_replay_buffered::replay_config_t;
+
 public:
     struct rx_chan_t
     {
@@ -172,6 +179,7 @@ public:
         duc_block_control::sptr duc; // can be nullptr
         size_t block_chan;
         std::vector<graph_edge_t> edge_list;
+        replay_config_t replay;
     };
 
     /**************************************************************************
@@ -184,60 +192,62 @@ public:
         , _device(std::make_shared<redirector_device>(this))
     {
         // Discover all of the radios on our devices and create a mapping between
-        // radio chains and channel numbers. The result is sorted.
-        auto radio_blk_ids = _graph->find_blocks("Radio");
-        // If we don't find any radios, we don't have a multi_usrp object
-        if (radio_blk_ids.empty()) {
-            throw uhd::runtime_error(
-                "[multi_usrp] No radios found in connected devices.");
-        }
-        // Next, we assign block controllers to RX channels
-        // Note that we don't want to connect blocks now; we will wait until we create and
-        // connect a streamer. This gives us a little more time to figure out the desired
-        // values of our properties (such as master clock)
+        // radio chains and channel numbers.  Do this one motherboard at a time
+        // because each device can have a different subdev spec.
         size_t musrp_rx_channel = 0;
         size_t musrp_tx_channel = 0;
-        for (auto radio_id : radio_blk_ids) {
-            auto radio_blk = _graph->get_block<uhd::rfnoc::radio_control>(radio_id);
+        for (size_t mboard = 0; mboard < get_num_mboards(); mboard++)
+        {
+            auto radio_blk_ids = _graph->find_blocks(std::to_string(mboard) + "/Radio");
 
-            // Store radio blocks per mboard for quick retrieval
-            _radios[radio_id.get_device_no()].push_back(radio_blk);
+            // Generate the RX and TX subdev specs
+            uhd::usrp::subdev_spec_t rx_radio_subdev;
+            uhd::usrp::subdev_spec_t tx_radio_subdev;
+            for (auto radio_id : radio_blk_ids) {
+                auto radio_blk = _graph->get_block<uhd::rfnoc::radio_control>(radio_id);
 
-            for (size_t block_chan = 0; block_chan < radio_blk->get_num_output_ports();
-                 ++block_chan) {
-                // Create the RX chan
-                uhd::usrp::subdev_spec_t rx_radio_subdev;
-                rx_radio_subdev.push_back(uhd::usrp::subdev_spec_pair_t(
-                    radio_blk->get_slot_name(),
-                    radio_blk->get_dboard_fe_from_chan(block_chan, uhd::RX_DIRECTION)));
-                auto rx_chans =
-                    _generate_mboard_rx_chans(rx_radio_subdev, radio_id.get_device_no());
-                // TODO: we're passing the same info around here; there has to be a
-                // cleaner way
-                for (auto rx_chan : rx_chans) {
-                    _rx_chans.emplace(musrp_rx_channel, rx_chan);
-                    ++musrp_rx_channel; // Increment after logging so we print the correct
-                                        // value
+                // Store radio blocks per mboard for quick retrieval
+                _radios[mboard].push_back(radio_blk);
+
+                for (size_t block_chan = 0; block_chan < radio_blk->get_num_output_ports();
+                    ++block_chan) {
+                    rx_radio_subdev.push_back(uhd::usrp::subdev_spec_pair_t(
+                        radio_blk->get_slot_name(),
+                        radio_blk->get_dboard_fe_from_chan(block_chan, uhd::RX_DIRECTION)));
+                }
+
+                for (size_t block_chan = 0; block_chan < radio_blk->get_num_input_ports();
+                    ++block_chan) {
+                    tx_radio_subdev.push_back(uhd::usrp::subdev_spec_pair_t(
+                        radio_blk->get_slot_name(),
+                        radio_blk->get_dboard_fe_from_chan(block_chan, uhd::TX_DIRECTION)));
                 }
             }
-            for (size_t block_chan = 0; block_chan < radio_blk->get_num_input_ports();
-                 ++block_chan) {
-                // Create the TX chan
-                uhd::usrp::subdev_spec_t tx_radio_subdev;
-                tx_radio_subdev.push_back(uhd::usrp::subdev_spec_pair_t(
-                    radio_blk->get_slot_name(),
-                    radio_blk->get_dboard_fe_from_chan(block_chan, uhd::TX_DIRECTION)));
-                auto tx_chans =
-                    _generate_mboard_tx_chans(tx_radio_subdev, radio_id.get_device_no());
-                // TODO: we're passing the same info around here; there has to be a
-                // cleaner way
-                for (auto tx_chan : tx_chans) {
-                    _tx_chans.emplace(musrp_tx_channel, tx_chan);
-                    ++musrp_tx_channel; // Increment after logging so we print the correct
-                                        // value
-                }
+
+            // Generate the TX and RX chans
+            // Note that we don't want to connect blocks now; we will wait until we create and
+            // connect a streamer. This gives us a little more time to figure out the desired
+            // values of our properties (such as master clock)
+            auto rx_chans =
+                _generate_mboard_rx_chans(rx_radio_subdev, mboard);
+            for (auto rx_chan : rx_chans) {
+                _rx_chans.emplace(musrp_rx_channel, rx_chan);
+                ++musrp_rx_channel;
+            }
+            auto tx_chans =
+                _generate_mboard_tx_chans(tx_radio_subdev, mboard);
+            for (auto tx_chan : tx_chans) {
+                _tx_chans.emplace(musrp_tx_channel, tx_chan);
+                ++musrp_tx_channel;
             }
         }
+
+        if (_rx_chans.empty() and _tx_chans.empty()) {
+            // If we don't find any valid radio chains, we don't have a multi_usrp object
+            throw uhd::runtime_error(
+                "[multi_usrp] No valid radio channels found in connected devices.");
+        }
+
         // Manually propagate radio block sample rates to DDC/DUC blocks in order to allow
         // DDC/DUC blocks to have valid internal state before graph is (later) connected
         for (size_t rx_chan = 0; rx_chan < get_rx_num_channels(); ++rx_chan) {
@@ -254,6 +264,7 @@ public:
                     tx_chain.radio->get_rate(), tx_chain.block_chan);
             }
         }
+
         _graph->commit();
     }
 
@@ -362,6 +373,8 @@ public:
         std::lock_guard<std::recursive_mutex> l(_graph_mutex);
         stream_args_t args = sanitize_stream_args(args_);
         double rate        = 1.0;
+        bool replay_buffered = (args.args.has_key("streamer") and
+                            args.args["streamer"] == "replay_buffered");
 
         // Note that we don't release the graph, which means that property
         // propagation is possible. This is necessary so we don't disrupt
@@ -369,41 +382,63 @@ public:
         // property propagation where possible.
 
         // Connect the chains
-        auto edges = _connect_tx_chains(args.channels);
-        std::weak_ptr<rfnoc_graph> graph_ref(_graph);
+        std::map< size_t, std::vector<graph_edge_t> > edge_lists;
+        std::vector<replay_config_t> replay_configs;
+        for (auto channel : args.channels) {
+            if (replay_buffered) {
+                edge_lists[channel] = _connect_tx_chain_with_replay(channel);
+                replay_configs.push_back(_get_tx_chan(channel).replay);
+            } else {
+                edge_lists[channel] = _connect_tx_chain(channel);
+            }
+        }
 
         // Create a streamer
         // The disconnect callback must disconnect the entire chain because the radio
         // relies on the connections to determine what is enabled.
-        auto tx_streamer = std::make_shared<rfnoc_tx_streamer>(
-            args.channels.size(), args, [=](const std::string& id) {
+        tx_streamer::sptr tx_streamer;
+        std::weak_ptr<rfnoc_graph> graph_ref(_graph);
+        auto disconnect = [=](const std::string& id) {
                 if (auto graph = graph_ref.lock()) {
                     graph->disconnect(id);
-                    for (auto edge : edges) {
-                        graph->disconnect(edge.src_blockid,
-                            edge.src_port,
-                            edge.dst_blockid,
-                            edge.dst_port);
+                    for (auto edge_list : edge_lists) {
+                        for (auto edge : edge_list.second) {
+                            if (block_id_t(edge.src_blockid).match(NODE_ID_SEP) or
+                                block_id_t(edge.dst_blockid).match(NODE_ID_SEP)) {
+                                    continue;
+                            }
+                            graph->disconnect(edge.src_blockid,
+                                edge.src_port,
+                                edge.dst_blockid,
+                                edge.dst_port);
+                        }
                     }
                 }
-            });
+            };
+        if (replay_buffered) {
+            tx_streamer = std::make_shared<rfnoc_tx_streamer_replay_buffered>(
+                    args.channels.size(), args, disconnect, replay_configs);
+        } else {
+            tx_streamer = std::make_shared<rfnoc_tx_streamer>(
+                args.channels.size(), args, disconnect);
+        }
 
         // Connect the streamer
         for (size_t strm_port = 0; strm_port < args.channels.size(); ++strm_port) {
             auto tx_channel = args.channels.at(strm_port);
-            auto tx_chain   = _get_tx_chan(tx_channel);
-            if (tx_chain.edge_list.empty()) {
+            auto edge_list  = edge_lists[tx_channel];
+            if (edge_list.empty()) {
                 throw uhd::runtime_error("Graph edge list is empty for tx channel "
                                          + std::to_string(tx_channel));
             }
             UHD_LOG_TRACE("MULTI_USRP",
                 "Connecting TxStreamer:" << strm_port << " -> "
-                                         << tx_chain.edge_list.back().dst_blockid << ":"
-                                         << tx_chain.edge_list.back().dst_port);
+                                         << edge_list.back().dst_blockid << ":"
+                                         << edge_list.back().dst_port);
             _graph->connect(tx_streamer,
                 strm_port,
-                tx_chain.edge_list.back().dst_blockid,
-                tx_chain.edge_list.back().dst_port);
+                edge_list.back().dst_blockid,
+                edge_list.back().dst_port);
             const double chan_rate =
                 _tx_rates.count(tx_channel) ? _tx_rates.at(tx_channel) : 1.0;
             if (chan_rate > 1.0 && rate != chan_rate) {
@@ -1061,54 +1096,13 @@ public:
     void set_rx_subdev_spec(
         const uhd::usrp::subdev_spec_t& spec, size_t mboard = ALL_MBOARDS) override
     {
-        // First, generate a vector of the RX channels that we need to register
-        auto new_rx_chans = [this, spec, mboard]() {
-            /* When setting the subdev spec in multiple mboard scenarios, there are two
-             * cases we need to handle:
-             * 1. Setting all mboard to the same subdev spec. This is the easy case.
-             * 2. Setting a single mboard's subdev spec. In this case, we need to update
-             * the requested mboard's subdev spec, and keep the old subdev spec for the
-             * other mboards.
-             */
-            std::vector<rx_chan_t> new_rx_chans;
-            for (size_t current_mboard = 0; current_mboard < get_num_mboards();
-                 ++current_mboard) {
-                auto current_spec = [this, spec, mboard, current_mboard]() {
-                    if (mboard == ALL_MBOARDS || mboard == current_mboard) {
-                        // Update all mboards to the same subdev spec OR
-                        // only update this mboard to the new subdev spec
-                        return spec;
-                    } else {
-                        // Keep the old subdev spec for this mboard
-                        return get_rx_subdev_spec(current_mboard);
-                    }
-                }();
-                auto new_mboard_chans =
-                    _generate_mboard_rx_chans(current_spec, current_mboard);
-                new_rx_chans.insert(
-                    new_rx_chans.end(), new_mboard_chans.begin(), new_mboard_chans.end());
-            }
-            return new_rx_chans;
-        }();
-
-        // Disconnect and clear the existing chains
-        UHD_LOG_TRACE("MULTI_USRP", "Disconnecting RX chains");
-        for (auto entry : _rx_chans) {
-            for (auto edge : entry.second.edge_list) {
-                if (block_id_t(edge.dst_blockid).match(NODE_ID_SEP)) {
-                    break;
-                }
-                _graph->disconnect(
-                    edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
-            }
-        }
-        _rx_chans.clear();
-
-        // Register the new chains
-        size_t musrp_rx_channel = 0;
-        for (auto rx_chan : new_rx_chans) {
-            _rx_chans.emplace(musrp_rx_channel++, rx_chan);
-        }
+        _set_subdev_spec(_rx_chans, [this](size_t current_mboard) {
+            return this->get_rx_subdev_spec(current_mboard);
+        }, [this](uhd::usrp::subdev_spec_t current_spec, size_t current_mboard) {
+            return this->_generate_mboard_rx_chans(current_spec, current_mboard);
+        }, [](uhd::rfnoc::graph_edge_t edge) {
+            return block_id_t(edge.dst_blockid).match(NODE_ID_SEP);
+        }, spec, mboard);
     }
 
     uhd::usrp::subdev_spec_t get_rx_subdev_spec(size_t mboard = 0) override
@@ -1626,15 +1620,15 @@ public:
                                    "Disabling DUC control.";
                             break;
                         }
-                        auto ddc_blk = _graph->get_block<uhd::rfnoc::duc_block_control>(
+                        auto duc_blk = _graph->get_block<uhd::rfnoc::duc_block_control>(
                             edge.src_blockid);
                         return std::tuple<uhd::rfnoc::duc_block_control::sptr, size_t>(
-                            ddc_blk, block_chan);
+                            duc_blk, block_chan);
                     }
                 }
             } catch (const uhd::exception&) {
                 UHD_LOGGER_DEBUG("MULTI_USRP")
-                    << "No DDC found for radio block " << radio_id << ":"
+                    << "No DUC found for radio block " << radio_id << ":"
                     << std::to_string(block_chan);
                 // Then just return a nullptr
             }
@@ -1643,13 +1637,14 @@ public:
 
         // Create the TX chan
         return tx_chan_t(
-            {radio_blk, std::get<0>(duc_port_def), block_chan, radio_sink_chain});
+            {radio_blk, std::get<0>(duc_port_def), block_chan, radio_sink_chain, replay_config_t()});
     }
 
+    // Generate the TX chains.  Must call with a complete subdev spec for the mboard.
     std::vector<tx_chan_t> _generate_mboard_tx_chans(
         const uhd::usrp::subdev_spec_t& spec, size_t mboard)
     {
-        // Discover all of the radios on our devices and create a mapping between radio
+        // Discover all of the radios on the device and create a mapping between radio
         // chains and channel numbers
         auto radio_blk_ids = _graph->find_blocks(std::to_string(mboard) + "/Radio");
         // If we don't find any radios, we don't have a multi_usrp object
@@ -1657,6 +1652,19 @@ public:
             throw uhd::runtime_error(
                 "[multi_usrp] No radios found in the requested mboard: "
                 + std::to_string(mboard));
+        }
+
+        // Set up to map Replay blocks and ports to channel in case the user
+        // requests Replay buffering on the TX streamer
+        const auto replay_blk_ids = _graph->find_blocks(std::to_string(mboard) + "/Replay");
+        size_t replay_index = 0;
+        size_t replay_port = 0;
+        size_t num_replay_ports = 0;
+        for (const auto& replay_id : replay_blk_ids) {
+            auto replay = _graph->get_block<uhd::rfnoc::replay_block_control>(replay_id);
+            num_replay_ports += std::min(
+                replay->get_num_input_ports(),
+                replay->get_num_output_ports());
         }
 
         // Iterate through the subdev pairs, and try to find a radio that matches
@@ -1677,8 +1685,43 @@ public:
                 }
                 subdev_spec_pair_t radio_subdev(radio_blk->get_slot_name(),
                     radio_blk->get_dboard_fe_from_chan(block_chan, uhd::TX_DIRECTION));
+
                 if (chan_subdev_pair == radio_subdev) {
-                    new_chans.push_back(_generate_tx_radio_chan(radio_id, block_chan));
+                    tx_chan_t tx_chan(_generate_tx_radio_chan(radio_id, block_chan));
+
+                    // Map a Replay block and port to the channel if there are
+                    // enough Replay ports to cover all the channels
+                    if (num_replay_ports >= spec.size()) {
+                        auto replay_id = replay_blk_ids[replay_index];
+                        auto replay = _graph->get_block<uhd::rfnoc::replay_block_control>(replay_id);
+                        size_t num_ports = std::min(replay->get_num_input_ports(),
+                                                    replay->get_num_output_ports());
+                        while (replay_port >= num_ports) {
+                            // All ports on the current Replay block are allocated.
+                            // Get the next Replay block
+                            replay_index++;
+                            replay_port = 0;
+                            replay_id = replay_blk_ids[replay_index];
+                            replay = _graph->get_block<uhd::rfnoc::replay_block_control>(replay_id);
+                            num_ports = std::min(replay->get_num_input_ports(),
+                                                replay->get_num_output_ports());
+                        }
+
+                        // Update the Replay configuration (including memory allocation)
+                        const auto mem_per_block = replay->get_mem_size() / replay_blk_ids.size();
+                        tx_chan.replay.ctrl = replay;
+                        tx_chan.replay.port = replay_port;
+                        tx_chan.replay.mem_size = mem_per_block / num_ports;
+                        tx_chan.replay.start_address = (replay_index * mem_per_block) +
+                                                (tx_chan.replay.mem_size * replay_port);
+
+                        // Get the next Replay port
+                        replay_port++;
+                    } else {
+                        tx_chan.replay.ctrl = nullptr;
+                    }
+
+                    new_chans.push_back(tx_chan);
                     subdev_found = true;
                 }
             }
@@ -1701,64 +1744,20 @@ public:
     void set_tx_subdev_spec(
         const uhd::usrp::subdev_spec_t& spec, size_t mboard = ALL_MBOARDS) override
     {
-        /* TODO: Refactor with get_rx_subdev_spec- the algorithms are the same, just the
-         * types are different
-         */
-        // First, generate a vector of the tx channels that we need to register
-        auto new_tx_chans = [this, spec, mboard]() {
-            /* When setting the subdev spec in multiple mboard scenarios, there are two
-             * cases we need to handle:
-             * 1. Setting all mboard to the same subdev spec. This is the easy case.
-             * 2. Setting a single mboard's subdev spec. In this case, we need to update
-             * the requested mboard's subdev spec, and keep the old subdev spec for the
-             * other mboards.
-             */
-            std::vector<tx_chan_t> new_tx_chans;
-            for (size_t current_mboard = 0; current_mboard < get_num_mboards();
-                 ++current_mboard) {
-                auto current_spec = [this, spec, mboard, current_mboard]() {
-                    if (mboard == ALL_MBOARDS || mboard == current_mboard) {
-                        // Update all mboards to the same subdev spec OR
-                        // only update this mboard to the new subdev spec
-                        return spec;
-                    } else {
-                        // Keep the old subdev spec for this mboard
-                        return get_tx_subdev_spec(current_mboard);
-                    }
-                }();
-                auto new_mboard_chans =
-                    _generate_mboard_tx_chans(current_spec, current_mboard);
-                new_tx_chans.insert(
-                    new_tx_chans.end(), new_mboard_chans.begin(), new_mboard_chans.end());
-            }
-            return new_tx_chans;
-        }();
-
-        // Disconnect and clear existing chains
-        UHD_LOG_TRACE("MULTI_USRP", "Disconnecting TX chains");
-        for (auto entry : _tx_chans) {
-            for (auto edge : entry.second.edge_list) {
-                if (block_id_t(edge.src_blockid).match(NODE_ID_SEP)) {
-                    break;
-                }
-                _graph->disconnect(
-                    edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
-            }
-        }
-        _tx_chans.clear();
-
-        // Register new chains
-        size_t musrp_tx_channel = 0;
-        for (auto tx_chan : new_tx_chans) {
-            _tx_chans.emplace(musrp_tx_channel++, tx_chan);
-        }
+        _set_subdev_spec(_tx_chans, [this](size_t current_mboard) {
+            return this->get_tx_subdev_spec(current_mboard);
+        }, [this](uhd::usrp::subdev_spec_t current_spec, size_t current_mboard) {
+            return this->_generate_mboard_tx_chans(current_spec, current_mboard);
+        }, [](uhd::rfnoc::graph_edge_t edge) {
+            return block_id_t(edge.src_blockid).match(NODE_ID_SEP);
+        }, spec, mboard);
     }
 
     uhd::usrp::subdev_spec_t get_tx_subdev_spec(size_t mboard = 0) override
     {
         uhd::usrp::subdev_spec_t result;
         for (size_t tx_chan = 0; tx_chan < get_tx_num_channels(); tx_chan++) {
-            auto& tx_chain = _tx_chans.at(tx_chan);
+            auto& tx_chain = _get_tx_chan(tx_chan);
             if (tx_chain.radio->get_block_id().get_device_no() == mboard) {
                 result.push_back(
                     uhd::usrp::subdev_spec_pair_t(tx_chain.radio->get_slot_name(),
@@ -2129,8 +2128,10 @@ public:
         std::vector<std::string> gpio_banks;
         for (const auto& radio : _radios[mboard]) {
             auto radio_banks = radio->get_gpio_banks();
+            const std::string suffix =
+                _radios[mboard].size() == 1 ? "" : radio->get_slot_name();
             for (const auto& bank : radio_banks) {
-                gpio_banks.push_back(bank + radio->get_slot_name());
+                gpio_banks.push_back(bank + suffix);
             }
         }
 
@@ -2231,11 +2232,13 @@ public:
         const std::string& name, const size_t chan) override
     {
         try {
+            // Get the blockid and filtername separated from the name string
+            const auto names        = string::split(name, ":");
+            const auto& blockid     = names.first;
+            const auto& filter_name = names.second;
             // The block_id_t constructor is pretty smart; let it handle the parsing.
-            block_id_t block_id(name);
-            auto rx_chan = _get_rx_chan(chan);
-            // The filter name is the `name` after the BLOCK_ID and a `:`
-            std::string filter_name = name.substr(block_id.to_string().size() + 1);
+            block_id_t block_id(blockid);
+            const auto rx_chan = _get_rx_chan(chan);
             // Try to dynamic cast either the radio or the DDC to a filter_node, and call
             // its filter function
             auto block_ctrl = [rx_chan, block_id, chan]() -> noc_block_base::sptr {
@@ -2272,11 +2275,12 @@ public:
     {
         MUX_RX_API_CALL(set_rx_filter, name, filter);
         try {
+            const auto names        = string::split(name, ":");
+            const auto& blockid     = names.first;
+            const auto& filter_name = names.second;
             // The block_id_t constructor is pretty smart; let it handle the parsing.
-            block_id_t block_id(name);
-            auto rx_chan = _get_rx_chan(chan);
-            // The filter name is the `name` after the BLOCK_ID and a `:`
-            std::string filter_name = name.substr(block_id.to_string().size() + 1);
+            block_id_t block_id(blockid);
+            const auto rx_chan = _get_rx_chan(chan);
             // Try to dynamic cast either the radio or the DDC to a filter_node, and call
             // its filter function
             auto block_ctrl = [rx_chan, block_id, chan]() -> noc_block_base::sptr {
@@ -2354,11 +2358,12 @@ public:
         const std::string& name, const size_t chan) override
     {
         try {
+            const auto names        = string::split(name, ":");
+            const auto& blockid     = names.first;
+            const auto& filter_name = names.second;
             // The block_id_t constructor is pretty smart; let it handle the parsing.
-            block_id_t block_id(name);
-            auto tx_chan = _get_tx_chan(chan);
-            // The filter name is the `name` after the BLOCK_ID and a `:`
-            std::string filter_name = name.substr(block_id.to_string().size() + 1);
+            block_id_t block_id(blockid);
+            const auto tx_chan = _get_tx_chan(chan);
             // Try to dynamic cast either the radio or the DUC to a filter_node, and call
             // its filter function
             auto block_ctrl = [tx_chan, block_id, chan]() -> noc_block_base::sptr {
@@ -2395,11 +2400,12 @@ public:
     {
         MUX_TX_API_CALL(set_tx_filter, name, filter);
         try {
+            const auto names        = string::split(name, ":");
+            const auto& blockid     = names.first;
+            const auto& filter_name = names.second;
             // The block_id_t constructor is pretty smart; let it handle the parsing.
-            block_id_t block_id(name);
-            auto tx_chan = _get_tx_chan(chan);
-            // The filter name is the `name` after the BLOCK_ID and a `:`
-            std::string filter_name = name.substr(block_id.to_string().size() + 1);
+            block_id_t block_id(blockid);
+            const auto tx_chan = _get_tx_chan(chan);
             // Try to dynamic cast either the radio or the DUC to a filter_node, and call
             // its filter function
             auto block_ctrl = [tx_chan, block_id, chan]() -> noc_block_base::sptr {
@@ -2488,25 +2494,120 @@ private:
         return edges;
     }
 
-    std::vector<graph_edge_t> _connect_tx_chains(std::vector<size_t> chans)
+    std::vector<graph_edge_t> _connect_tx_chain(const size_t chan)
     {
         std::vector<graph_edge_t> edges;
-        for (auto chan : chans) {
+
+        UHD_LOG_TRACE(
+            "MULTI_USRP", std::string("Connecting TX chain for channel ") + std::to_string(chan));
+        auto chain = _get_tx_chan(chan);
+        for (auto edge : chain.edge_list) {
+            edges.push_back(edge);
+            if (block_id_t(edge.src_blockid).match(NODE_ID_SEP)) {
+                break;
+            }
             UHD_LOG_TRACE(
-                "MULTI_USRP", std::string("Connecting TX chain for channel ") + std::to_string(chan));
-            auto chain = _tx_chans.at(chan);
-            for (auto edge : chain.edge_list) {
-                if (block_id_t(edge.src_blockid).match(NODE_ID_SEP)) {
+                "MULTI_USRP", std::string("Connecting TX edge: ") + edge.to_string());
+            _graph->connect(
+                edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
+        }
+
+        return edges;
+    }
+
+    std::vector<graph_edge_t> _connect_tx_chain_with_replay(size_t chan)
+    {
+        std::vector<graph_edge_t> edges;
+        auto tx_chan = _get_tx_chan(chan);
+        if (not tx_chan.replay.ctrl) {
+            throw uhd::runtime_error(
+                "[multi_usrp] No Replay block found to buffer TX stream");
+        }
+        auto replay_id = tx_chan.replay.ctrl->get_block_id();
+        auto replay_port = tx_chan.replay.port;
+
+        // Connect Replay out to Radio in
+        try {
+            edges = connect_through_blocks(
+                _graph,
+                replay_id,
+                replay_port,
+                tx_chan.radio->get_block_id(),
+                tx_chan.block_chan);
+        } catch (uhd::runtime_error& e) {
+            throw uhd::runtime_error(
+                std::string("[multi_usrp] Unable to connect Replay block to Radio: ") +
+                e.what());
+        }
+
+        // Add Replay input edge (for streamer connection)
+        auto replay_edges_in = get_block_chain(_graph, replay_id, replay_port, false);
+        if (replay_edges_in.size() > 1) {
+            throw uhd::runtime_error(
+                "[multi_usrp] Unable to connect TX streamer to Replay block: "
+                "Unexpected block found before Replay block");
+        }
+        edges.push_back(replay_edges_in.at(0));
+
+        return edges;
+    }
+
+    template<typename ChanType, typename GetSubdevSpecFn, typename GenChansFn, typename CheckEdgeForSepFn>
+    void _set_subdev_spec(
+        std::unordered_map<size_t, ChanType>& chans,
+        GetSubdevSpecFn&& get_subdev_spec,
+        GenChansFn&& generate_chans,
+        CheckEdgeForSepFn&& check_edge_for_sep,
+        const uhd::usrp::subdev_spec_t& spec,
+        size_t mboard)
+    {
+        // First, generate a vector of the channels that we need to register
+        auto new_chans = [&]() {
+            /* When setting the subdev spec in multiple mboard scenarios, there are two
+             * cases we need to handle:
+             * 1. Setting all mboard to the same subdev spec. This is the easy case.
+             * 2. Setting a single mboard's subdev spec. In this case, we need to update
+             * the requested mboard's subdev spec, and keep the old subdev spec for the
+             * other mboards.
+             */
+            std::vector<ChanType> new_chans;
+            for (size_t current_mboard = 0; current_mboard < get_num_mboards();
+                 ++current_mboard) {
+                auto current_spec = [&]() {
+                    if (mboard == ALL_MBOARDS || mboard == current_mboard) {
+                        // Update all mboards to the same subdev spec OR
+                        // only update this mboard to the new subdev spec
+                        return spec;
+                    } else {
+                        // Keep the old subdev spec for this mboard
+                        return get_subdev_spec(current_mboard);
+                    }
+                }();
+                auto new_mboard_chans = generate_chans(current_spec, current_mboard);
+                new_chans.insert(
+                    new_chans.end(), new_mboard_chans.begin(), new_mboard_chans.end());
+            }
+            return new_chans;
+        }();
+
+        // Disconnect and clear existing chains
+        UHD_LOG_TRACE("MULTI_USRP", "Disconnecting chains");
+        for (auto entry : chans) {
+            for (auto edge : entry.second.edge_list) {
+                if (check_edge_for_sep(edge)) {
                     break;
                 }
-                UHD_LOG_TRACE(
-                    "MULTI_USRP", std::string("Connecting TX edge: ") + edge.to_string());
-                _graph->connect(
+                _graph->disconnect(
                     edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
-                edges.push_back(edge);
             }
         }
-        return edges;
+        chans.clear();
+
+        // Register new chains
+        size_t musrp_channel = 0;
+        for (auto chan : new_chans) {
+            chans.emplace(musrp_channel++, chan);
+        }
     }
 
     /**************************************************************************

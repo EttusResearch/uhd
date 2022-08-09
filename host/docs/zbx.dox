@@ -122,22 +122,6 @@ and one for "RX1". These LEDs behave as follows:
 | Green     | Port is receiving    | Port is receiving |
 | Red       | Port is transmitting | N/A               |
 
-\section zbx_phase_alignment Phase Alignment
-
-Like the UBX and SBX daughterboards, the ZBX allows to be phase-aligned. This is
-done by setting a command time before tuning the individual channels:
-~~~{.cpp}
-// Assume that `usrp` is a multi_usrp object
-// 1) Set a command time in the future, e.g. 500ms from now:
-usrp->set_command_time(usrp->get_time_now() + .5);
-// 2) Tune to a new frequency on all channels, e.g., 2 GHz:
-usrp->set_rx_freq(2e9); // The ALL_CHANS argument is implied here
-// 3) Wait until we're past the command time:
-std::this_thread::sleep_for(500ms);
-// Channel phases are now at a deterministic offset. Repeating this procedure
-// will lead to the same offset.
-~~~
-
 \section zbx_pwr_cal Power Calibration
 
 The ZBX supports the UHD power API (see also \ref page_power). UHD ships with

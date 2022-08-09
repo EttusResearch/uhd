@@ -8,7 +8,6 @@
 #pragma once
 
 #include <uhd/config.hpp>
-#include <boost/current_function.hpp>
 #include <stdexcept>
 #include <string>
 
@@ -302,10 +301,10 @@ struct UHD_API routing_error : rfnoc_error
  * \param what the std::exception message
  * \return the formatted exception message
  */
-#define UHD_THROW_SITE_INFO(what)                                                        \
-    std::string(std::string(what) + "\n" + "  in " + std::string(BOOST_CURRENT_FUNCTION) \
-                + "\n" + "  at " + std::string(__FILE__) + ":"                           \
-                + BOOST_STRINGIZE(__LINE__) + "\n")
+#define UHD_THROW_SITE_INFO(what)                                                     \
+    std::string(std::string(what) + "\n" + "  in " + std::string(UHD_FUNCTION) + "\n" \
+                + "  at " + std::string(__FILE__) + ":" + BOOST_STRINGIZE(__LINE__)   \
+                + "\n")
 
 /*!
  * Throws an invalid code path exception with throw-site information.

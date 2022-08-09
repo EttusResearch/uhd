@@ -33,8 +33,10 @@ variants of the N3XX series:
 \image html N310isoExplode.png N310 Exploded View
 
 - Supported master clock rates: 122.88 MHz, 125 MHz, 153.6 MHz
-- Tuning range: 10 MHz to 6 GHz (below 300 MHz, additional LOs and mixer stages
-  are used to shift the signal into the frequency range of the AD9371)
+- Tuning range: 10 MHz to 6 GHz
+    - Below 300 MHz, additional LOs and mixer stages
+    are used to shift the signal into the frequency range of the AD9371
+    - Tunable down to 1 MHz in UHD however performance is not guaranteed
 - Support for external LOs
 - 4 RX DDC chains in FPGA (2 for N300)
 - 4 TX DUC chain in FPGA (2 for N300)
@@ -53,8 +55,10 @@ FPGA (XCZ035). Also, it does not have connectors for external LOs.
 \subsection n3xx_feature_list_rh N320/N321 2-channel Transceiver
 
 - Supported master clock rates: 200 MHz, 245.76 MHz, 250 MHz
-- Tuning range: 1 MHz to 6 GHz (below 450 MHz, an additional LO and mixer stage
-  is used to shift the signal into the range of the main LO stage)
+- Tuning range: 3 MHz to 6 GHz
+    - Below 450 MHz, an additional LO and mixer stage
+    is used to shift the signal into the range of the main LO stage
+    - Tunable down to 1 MHz in UHD however performance is not guaranteed
 - Support for external LOs
 - 2 RX DDC chains in FPGA
 - 2 TX DUC chain in FPGA
@@ -279,8 +283,8 @@ Of course, you can also connect to the IP address directly if you know it (or
 set it manually using the serial console).
 
 Note: The device's hostname is derived from its serial number by default
-(`ni-n3xx-$SERIAL`). You can change the hostname by modifying the `/etc/hostname`
-file and rebooting.
+(`ni-n3xx-$SERIAL`). You can change the hostname by creating the file
+`/data/network/hostname`, saving the desired hostname in it, then rebooting.
 
 On Microsoft Windows, the connection can be established using a tool such as
 Putty, by selecting a username of root without password.
@@ -301,7 +305,7 @@ and 192.168.20.2/24, respectively. Their default MTU value is 9000. These
 settings are independent of the image type (HG vs. XG), i.e., the defaults are
 the same for 1 GigE and 10 GigE (unlike the X310!).
 
-The configuration for the sfpX port is stored in /etc/systemd/network/sfpX.network.
+The configuration for the `sfpX` port is stored in `/data/network/sfpX.network`.
 
 For configuration please refer to the
 <a href=https://www.freedesktop.org/software/systemd/man/systemd.network.html>systemd-networkd manual pages</a>
@@ -346,7 +350,7 @@ Additional notes on networking:
 
 - Care needs to be taken when editing these files on the device, since
   vi / vim sometimes generates undo files (e.g.
-  `/etc/systemd/network/sfp0.network~`), that systemd-networkd might
+  `/data/network/sfp0.network~`), that systemd-networkd might
   accidentally pick up.
 - Temporarily setting the IP addresses or MTU sizes via `ifconfig` or other
   command line tools will only change the value until the next reboot or reload
@@ -451,6 +455,10 @@ For a list of which arguments can be passed into make(), see Section
  rx_lo_source          | Initialize the source for the RX LO.                                         | N310              | rx_lo_source=external
  tx_lo_source          | Initialize the source for the TX LO.                                         | N310              | tx_lo_source=external
  rfic_digital_loopback | Digital data loopback inside the RFIC.                                       | N310              | rfic_digital_loopback=1
+ tx_gain_profile       | Initialize device with a specific TX gain profile.                           | N310              | tx_gain_profile=manual
+ rx_gain_profile       | Initialize device with a specific RX gain profile.                           | N310              | rx_gain_profile=manual
+ tx_band_map           | Semicolon-separated list of TX band edges.                                   | N310              | tx_band_map=0.0;723.18e6;1623.18e6;3323.18e6
+ rx_band_map           | Semicolon-separated list of RX band edges.                                   | N310              | rx_band_map=0.0;431e6;601e6;1051e6;1601e6;2101e6;2701e6
 
 \subsection n3xx_usage_init Device Initialization
 
@@ -1340,6 +1348,138 @@ where FLAGS is the hex number that you can construct with the following table of
 For example, to set your device to auto-boot, with TPM, the flag value is 0x1, so
 
     $ eeprom-set-flags 0x1
+
+\subsection n3xx_mg_gain_profiles Gain Profiles
+
+The N310 supports four gain profiles: `default`, `manual`,
+`default_rf_filter_bypass_always_on`, and `default_rf_filter_bypass_always_off`.
+
+Usually, UHD will program individual gain components to create an overall gain
+that is selected. The N310 daughterboards have three gain stages per path (two
+digital step attenuators (DSAs), and one amplifier).  When using the `manual`
+profile, the DSAs and amplifiers can be programmed directly. In the other gain
+profiles, a single, overall gain can be given, and UHD will attempt to program
+the gain stages based on hard-coded gain tables. The difference between the
+three "default" profiles is how the amplifier is used: Either it is always on,
+always off, or it is switched on and off to optimize linearity.
+
+\subsection n3xx_mg_custom_band_edges Custom Band Edges
+
+\b Note: This is a highly advanced feature. Most users will not have to use this!
+
+The N310 daughterboard splits the TX and RX paths into 4 and 7 different bands,
+respectively, to hardware-optimize the RF fidelity at all available frequencies.
+
+See the [schematics](https://kb.ettus.com/N300/N310#Schematics) for more details.
+
+Using the `rx_band_map` and `tx_band_map` device args, it is possible to move
+the band edges in software. This may be useful if the hardware was modified to
+use different filters, for example, because a signal of interest always falls
+onto a band edge. Using the `tx_band_map` or `rx_band_map` device arguments,
+you can provide a list of lower band edges for every band. Make sure to provide
+4 (for Tx) or 7 (for Rx) floating-point values. The first value should always be
+zero (0.0). It may make sense to encode these values in your `uhd.conf` file:
+
+~~~{.ini}
+[type=n3xx]
+rx_gain_profile=default_rf_filter_bypass_always_off
+tx_gain_profile=default_rf_filter_bypass_always_on
+rx_band_map=0.0;431e6;601e6;1051e6;1601e6;2101e6;2701e6
+tx_band_map=0.0;723.18e6;1623.18e6;3323.18e6
+~~~
+
+In this example, the second Rx band would start at 431 MHz.
+=======
+\subsection n3xx_filter_api Filter API
+
+The N300/N310 utilize the Analog Devices AD9371 AFE which contain programmable
+FIR filters in both the transmit and receive paths for each of the RF channels.
+These filters are available using the Digital Filter API in UHD.
+
+| Filter Name | AD9371 Channel | Max Taps |
+|-------------|----------------|----------|
+| RX1_FIR     | 1              | 48       |
+| RX2_FIR     | 2              | 48       |
+| RX1RX2_FIR  | 1 and 2        | 48       |
+| TX1_FIR     | 1              | 32       |
+| TX2_FIR     | 2              | 32       |
+| TX1TX2_FIR  | 1 and 2        | 32       |
+
+Each filter is applied at 2x the `master_clock_rate`, or 250 MHz by default.
+
+The Filter API also allows to set some 3 dB analog filters on the AD9371 through
+the `set_tx_bandwidth` and `set_rx_bandwidth` UHD functions.
+
+This is a small example on how to set the TX FIR and TX bandwidth.
+~~~{.cpp}
+// Create my USRP object
+auto usrp = uhd::usrp::multi_usrp::make(args);
+
+// Set to use channel 3
+auto chan = 3;
+
+// Set the Analog Bandwidth to be 20 MHz wide
+auto bw = 20e6;
+
+// Get the names of the filters
+auto tx_names = usrp->get_tx_filter_names(chan);
+
+// Get the first filter and print out the filter properties
+auto filt = usrp->get_tx_filter(tx_names[0], chan);
+
+// Some taps for our coefficients
+const std::vector<int16_t> taps{
+           0,
+          42,
+         169,
+         374,
+         650,
+         987,
+        1371,
+        1786,
+        2215,
+        2641,
+        3045,
+        3412,
+        3726,
+        3973,
+        4144,
+        4232,
+        4232,
+        4144,
+        3973,
+        3726,
+        3412,
+        3045,
+        2641,
+        2215,
+        1786,
+        1371,
+         987,
+         650,
+         374,
+         169,
+          42,
+           0
+};
+
+// Create a custom filter with taps as our coefficients
+auto filter(std::make_shared<uhd::digital_filter_fir<int16_t>>(
+     uhd::filter_info_base::filter_type::DIGITAL_FIR_I16,
+     false,
+     0,
+     1.0,
+     1,
+     1,
+     32767,
+     32,
+     taps)
+);
+
+// Apply the filter to the channel
+usrp->set_tx_bandwidth(bw, chan);
+usrp->set_tx_filter(tx_names[0], filter, chan);
+~~~
 
 \section n3xx_rh N32x-specific Features
 

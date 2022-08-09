@@ -55,7 +55,7 @@ protected:
     size_t _position_index;
 };
 
-UHD_API std::ostream& operator<<(std::ostream& os, filter_info_base& f);
+UHD_API_HEADER std::ostream& operator<<(std::ostream& os, filter_info_base& f);
 
 class UHD_API analog_filter_base : public filter_info_base
 {
@@ -119,7 +119,7 @@ public:
 };
 
 template <typename tap_t>
-class UHD_API digital_filter_base : public filter_info_base
+class UHD_API_HEADER digital_filter_base : public filter_info_base
 {
 protected:
     double _rate;
@@ -135,10 +135,10 @@ public:
         bool bypass,
         size_t position_index,
         double rate,
-        size_t interpolation,
-        size_t decimation,
-        double tap_full_scale,
-        size_t max_num_taps,
+        uint32_t interpolation,
+        uint32_t decimation,
+        tap_t tap_full_scale,
+        uint32_t max_num_taps,
         const std::vector<tap_t>& taps)
         : filter_info_base(type, bypass, position_index)
         , _rate(rate)
@@ -161,17 +161,17 @@ public:
         return _rate;
     }
 
-    UHD_INLINE double get_interpolation()
+    UHD_INLINE uint32_t get_interpolation()
     {
         return _interpolation;
     }
 
-    UHD_INLINE double get_decimation()
+    UHD_INLINE uint32_t get_decimation()
     {
         return _decimation;
     }
 
-    UHD_INLINE double get_tap_full_scale()
+    UHD_INLINE uint32_t get_tap_full_scale()
     {
         return _tap_full_scale;
     }
@@ -205,7 +205,7 @@ public:
 };
 
 template <typename tap_t>
-class UHD_API digital_filter_fir : public digital_filter_base<tap_t>
+class UHD_API_HEADER digital_filter_fir : public digital_filter_base<tap_t>
 {
 public:
     typedef std::shared_ptr<digital_filter_fir<tap_t>> sptr;
@@ -214,10 +214,10 @@ public:
         bool bypass,
         size_t position_index,
         double rate,
-        size_t interpolation,
-        size_t decimation,
-        size_t tap_bit_width,
-        size_t max_num_taps,
+        uint32_t interpolation,
+        uint32_t decimation,
+        tap_t tap_bit_width,
+        uint32_t max_num_taps,
         const std::vector<tap_t>& taps)
         : digital_filter_base<tap_t>(type,
               bypass,

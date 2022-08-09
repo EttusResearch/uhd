@@ -7,6 +7,7 @@
 //
 
 #include <uhd/property_tree.hpp>
+#include <uhd/types/ranges.hpp>
 #include <boost/test/unit_test.hpp>
 #include <exception>
 #include <functional>
@@ -226,6 +227,30 @@ BOOST_AUTO_TEST_CASE(test_prop_tree)
     tree->remove("/test");
     BOOST_CHECK(not tree->exists("/test/prop0"));
     BOOST_CHECK(not tree->exists("/test/prop1"));
+}
+
+BOOST_AUTO_TEST_CASE(test_prop_tree_wrong_type)
+{
+    uhd::property_tree::sptr tree = uhd::property_tree::make();
+    tree->create<int>("/test/prop0");
+    BOOST_CHECK_THROW(tree->access<std::string>("/test/prop0"), uhd::type_error);
+}
+
+BOOST_AUTO_TEST_CASE(test_prop_tree_wrong_type_range)
+{
+    uhd::property_tree::sptr tree = uhd::property_tree::make();
+
+    // Create the property
+    tree->create<uhd::range_t>("/test/prop1");
+    uhd::range_t singleton_range(5.0);
+    tree->access<uhd::range_t>("/test/prop1").set(singleton_range);
+
+    // Check it throws a type error
+    BOOST_CHECK_THROW(tree->access<std::string>("/test/prop1"), uhd::type_error);
+
+    // Check we can access its value
+    auto& prop = tree->access<uhd::range_t>("/test/prop1");
+    BOOST_CHECK_EQUAL(prop.get().start(), 5.0);
 }
 
 BOOST_AUTO_TEST_CASE(test_prop_subtree)

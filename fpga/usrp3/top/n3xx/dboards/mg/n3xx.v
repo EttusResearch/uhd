@@ -315,6 +315,22 @@ module n3xx (
 `endif
 );
 
+  // Include the RFNoC image core header file
+  `ifdef RFNOC_IMAGE_CORE_HDR
+    `include `"`RFNOC_IMAGE_CORE_HDR`"
+  `else
+    ERROR_RFNOC_IMAGE_CORE_HDR_not_defined();
+    `define CHDR_WIDTH     64
+    `define RFNOC_PROTOVER { 8'd1, 8'd0 }
+  `endif
+  localparam CHDR_W         = `CHDR_WIDTH;
+  localparam RFNOC_PROTOVER = `RFNOC_PROTOVER;
+
+  // This USRP currently only supports 64-bit CHDR width
+  if (CHDR_W != 64) begin : gen_chdr_w_error
+    CHDR_W_must_be_64_for_this_USRP();
+  end
+
   localparam N_AXILITE_SLAVES = 4;
   localparam REG_AWIDTH = 14; // log2(0x4000)
   localparam QSFP_REG_AWIDTH = 17; // log2(0x20000)
@@ -332,7 +348,6 @@ module n3xx (
   localparam NUM_DBOARDS = 1;
 `endif
   localparam NUM_CHANNELS = NUM_RADIOS * NUM_CHANNELS_PER_RADIO;
-  localparam [15:0] RFNOC_PROTOVER  = {8'd1, 8'd0};
 
   // Internal connections to PS
   // HP0 -- High Performance port 0, FPGA is the master
@@ -3517,6 +3532,8 @@ module n3xx (
     .NUM_CHANNELS_PER_RADIO(NUM_CHANNELS_PER_RADIO),
     .NUM_CHANNELS(NUM_CHANNELS),
     .NUM_DBOARDS(NUM_DBOARDS),
+    .CHDR_W(CHDR_W),
+    .RFNOC_PROTOVER(RFNOC_PROTOVER),
   `ifdef USE_REPLAY
     .USE_REPLAY(1)
   `else

@@ -261,8 +261,10 @@ byte_vector_t read_i2c(uint16_t addr, size_t num_bytes) override
  * Send/Recv over control
  **********************************************************************/
 usrp2_ctrl_data_t ctrl_send_and_recv(const usrp2_ctrl_data_t &out_data,
-		uint32_t lo = USRP2_FW_COMPAT_NUM, uint32_t hi = USRP2_FW_COMPAT_NUM) {
-	std::lock_guard<std::mutex> lock(_ctrl_mutex);
+        uint32_t lo = USRP2_FW_COMPAT_NUM,
+        uint32_t hi = USRP2_FW_COMPAT_NUM)
+    {
+        std::lock_guard<std::mutex> lock(_ctrl_mutex);
 
 	for (size_t i = 0; i < CTRL_RECV_RETRIES; i++) {
 		try {

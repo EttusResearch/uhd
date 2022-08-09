@@ -362,9 +362,6 @@ void usrp2_impl::update_rx_subdev_spec(
 
     // compute the new occupancy and resize
     _mbc[which_mb].rx_chan_occ = spec.size();
-    size_t nchan               = 0;
-    for (const std::string& mb : _mbc.keys())
-        nchan += _mbc[mb].rx_chan_occ;
 }
 
 void usrp2_impl::update_tx_subdev_spec(
@@ -385,9 +382,6 @@ void usrp2_impl::update_tx_subdev_spec(
 
     // compute the new occupancy and resize
     _mbc[which_mb].tx_chan_occ = spec.size();
-    size_t nchan               = 0;
-    for (const std::string& mb : _mbc.keys())
-        nchan += _mbc[mb].tx_chan_occ;
 }
 
 /***********************************************************************

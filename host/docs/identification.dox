@@ -19,14 +19,14 @@ See \ref page_configuration for a list of those options.
 
 Every device has several ways of identifying it on the host system:
 
-Identifier        | Key      | Notes                                                     | Example
-------------------|----------|-----------------------------------------------------------|---------------------------------
-Serial #          | serial   | globally unique identifier                                | 12345678
-IP Address        | addr     | unique identifier on a network                            | 192.168.10.2
-Resource          | resource | unique identifier for USRP RIO devices (over PCI Express) | RIO0
-Name              | name     | optional user-set identifier                              | my_usrp1 (User-defined value)
-Type              | type     | hardware series identifier                                | usrp1, usrp2, b200, x300, ...
-Vendor/Product ID | vid,pid  | For USB devices. Both must be provided                    | vid=0x04b4,pid=0x8613
+Identifier        | Key      | Notes                                                     | Devices             | Example Value
+------------------|----------|-----------------------------------------------------------|---------------------|---------------------------------
+Serial #          | serial   | globally unique identifier                                | All devices         | 12345678
+IP Address        | addr     | unique identifier on a network                            | All network devices | 192.168.10.2
+Resource          | resource | unique identifier for USRP RIO devices (over PCI Express) | X3x0                | RIO0
+Name              | name     | optional user-set identifier or hostname                  | All devices         | my_usrp1 (User-defined value)
+Type              | type     | hardware series identifier                                | All devices         | usrp1, usrp2, b200, x300, n3xx, x4xx ...
+Vendor/Product ID | vid,pid  | Both must be provided, as well as `type`.                 | All USB Devices     | vid=0x04b4,pid=0x8613
 
 \subsection id_identifying_cmdline Device discovery via command line
 

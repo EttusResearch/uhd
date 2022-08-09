@@ -12,6 +12,7 @@ parameters:
   NUM_COEFFS: 41
   COEFFS_VEC: "{ 16'h7FFF, {640{1'b0}} }"
   RELOADABLE_COEFFS: 1
+  BLANK_OUTPUT: 1
   SYMMETRIC_COEFFS: 0
   SKIP_ZERO_COEFFS: 0
   USE_EMBEDDED_REGS_COEFFS: 1
@@ -25,7 +26,6 @@ clocks:
     freq: "[]"
 
 control:
-  sw_iface: nocscript
   fpga_iface: ctrlport
   interface_direction: slave
   fifo_depth: 32

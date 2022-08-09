@@ -10,19 +10,25 @@ Populates the current directory with a valid set of binaries for the
 current commit.
 """
 
-from __future__ import print_function
 import os
+import sys
 import subprocess
-import uhdimgs
+
+def get_images_dir():
+    """
+    Returns the absolute position of the images/ subdir
+    in the UHD source tree.
+    """
+    return os.path.dirname(os.path.abspath(__file__))
 
 def download_images(img_root_dir=None):
     " Go, go, go! "
     # Switch to correct dir
-    img_root_dir = img_root_dir or os.path.join(uhdimgs.get_images_dir(), 'images')
+    img_root_dir = img_root_dir or os.path.join(get_images_dir(), 'images')
     if not os.path.isdir(img_root_dir):
         print("== Creating images directory...")
         os.mkdir(img_root_dir)
-    os.chdir(uhdimgs.get_images_dir())
+    os.chdir(get_images_dir())
     print("== Starting download...")
     try:
         downloader_cmd = [
@@ -34,7 +40,7 @@ def download_images(img_root_dir=None):
         subprocess.check_call(downloader_cmd)
     except (subprocess.CalledProcessError, OSError):
         print("[ERROR] Failed to run downloader script.")
-        exit(1)
+        sys.exit(1)
     print("== Done!")
 
 if __name__ == "__main__":

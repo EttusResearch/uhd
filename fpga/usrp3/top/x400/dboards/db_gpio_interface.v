@@ -34,26 +34,17 @@ module db_gpio_interface (
 
   // DB state lines (domain: radio_clk)
   input  wire [ 3:0] db_state,
-
-  // time interfaces (domain: radio_clk)
-  input  wire [63:0] radio_time,
-  input  wire        radio_time_stb,
-  input  wire [ 3:0] time_ignore_bits,
-
   // Request (domain: radio_clk)
   input  wire        ctrlport_rst,
   input  wire        s_ctrlport_req_wr,
   input  wire        s_ctrlport_req_rd,
   input  wire [19:0] s_ctrlport_req_addr,
   input  wire [31:0] s_ctrlport_req_data,
-  input  wire [ 3:0] s_ctrlport_req_byte_en,
-  input  wire        s_ctrlport_req_has_time,
-  input  wire [63:0] s_ctrlport_req_time,
 
   // Response (domain: radio_clk)
   output wire        s_ctrlport_resp_ack,
-  output wire [ 1:0] s_ctrlport_resp_status,
-  output wire [31:0] s_ctrlport_resp_data,
+  output reg  [ 1:0] s_ctrlport_resp_status,
+  output reg  [31:0] s_ctrlport_resp_data,
 
   // GPIO interface (domain: pll_ref_clk)
   input  wire [19:0] gpio_in,
@@ -68,45 +59,6 @@ module db_gpio_interface (
   `include "../regmap/versioning_utils.vh"
 
   //----------------------------------------------------------------------------
-  // Timed command processing
-  //----------------------------------------------------------------------------
-  wire [19:0] ctrlport_timed_req_addr;
-  wire [31:0] ctrlport_timed_req_data;
-  wire        ctrlport_timed_req_rd;
-  wire        ctrlport_timed_req_wr;
-  wire        ctrlport_timed_resp_ack;
-  reg  [31:0] ctrlport_timed_resp_data = 0;
-  reg  [ 1:0] ctrlport_timed_resp_status = 0;
-
-  ctrlport_timer #(
-    .EXEC_LATE_CMDS(1)
-  ) ctrlport_timer_i (
-    .clk                      (radio_clk),
-    .rst                      (ctrlport_rst),
-    .time_now                 (radio_time),
-    .time_now_stb             (radio_time_stb),
-    .time_ignore_bits         (time_ignore_bits),
-    .s_ctrlport_req_wr        (s_ctrlport_req_wr),
-    .s_ctrlport_req_rd        (s_ctrlport_req_rd),
-    .s_ctrlport_req_addr      (s_ctrlport_req_addr),
-    .s_ctrlport_req_data      (s_ctrlport_req_data),
-    .s_ctrlport_req_byte_en   (s_ctrlport_req_byte_en),
-    .s_ctrlport_req_has_time  (s_ctrlport_req_has_time),
-    .s_ctrlport_req_time      (s_ctrlport_req_time),
-    .s_ctrlport_resp_ack      (s_ctrlport_resp_ack),
-    .s_ctrlport_resp_status   (s_ctrlport_resp_status),
-    .s_ctrlport_resp_data     (s_ctrlport_resp_data),
-    .m_ctrlport_req_wr        (ctrlport_timed_req_wr),
-    .m_ctrlport_req_rd        (ctrlport_timed_req_rd),
-    .m_ctrlport_req_addr      (ctrlport_timed_req_addr),
-    .m_ctrlport_req_data      (ctrlport_timed_req_data),
-    .m_ctrlport_req_byte_en   (),
-    .m_ctrlport_resp_ack      (ctrlport_timed_resp_ack),
-    .m_ctrlport_resp_status   (ctrlport_timed_resp_status),
-    .m_ctrlport_resp_data     (ctrlport_timed_resp_data)
-  );
-
-  //----------------------------------------------------------------------------
   // Clock domain crossing (radio_clk -> pll_ref_clk)
   //----------------------------------------------------------------------------
   // Radio_clk is derived from pll_ref_clk by an integer multiplier and
@@ -116,8 +68,8 @@ module db_gpio_interface (
   // them.
 
   // holding read and write flags for multiple radio_clk cycles
-  reg         ctrlport_timed_req_wr_hold = 1'b0;
-  reg         ctrlport_timed_req_rd_hold = 1'b0;
+  reg         ctrlport_req_wr_hold = 1'b0;
+  reg         ctrlport_req_rd_hold = 1'b0;
 
   reg  [19:0] ctrlport_req_addr_prc = 20'b0;
   reg  [31:0] ctrlport_req_data_prc = 32'b0;
@@ -151,41 +103,41 @@ module db_gpio_interface (
 
   always @(posedge radio_clk) begin
     if (ctrlport_req_wr_fall) begin
-      ctrlport_timed_req_wr_hold <= 1'b0;
-    end else if (ctrlport_timed_req_wr) begin
-      ctrlport_timed_req_wr_hold <= 1'b1;
+      ctrlport_req_wr_hold <= 1'b0;
+    end else if (s_ctrlport_req_wr) begin
+      ctrlport_req_wr_hold <= 1'b1;
     end
     if (ctrlport_req_rd_fall) begin
-      ctrlport_timed_req_rd_hold <= 1'b0;
-    end else if (ctrlport_timed_req_rd) begin
-      ctrlport_timed_req_rd_hold <= 1'b1;
+      ctrlport_req_rd_hold <= 1'b0;
+    end else if (s_ctrlport_req_rd) begin
+      ctrlport_req_rd_hold <= 1'b1;
     end
 
     // capture request address and data
-    if (ctrlport_timed_req_wr || ctrlport_timed_req_rd) begin
-      ctrlport_req_addr_prc <= ctrlport_timed_req_addr;
-      ctrlport_req_data_prc <= ctrlport_timed_req_data;
+    if (s_ctrlport_req_wr || s_ctrlport_req_rd) begin
+      ctrlport_req_addr_prc <= s_ctrlport_req_addr;
+      ctrlport_req_data_prc <= s_ctrlport_req_data;
     end
   end
 
   // capture extended flags in pll_ref_clk domain
   always @(posedge pll_ref_clk) begin
-    ctrlport_req_wr_prc <= ctrlport_timed_req_wr_hold;
-    ctrlport_req_rd_prc <= ctrlport_timed_req_rd_hold;
+    ctrlport_req_wr_prc <= ctrlport_req_wr_hold;
+    ctrlport_req_rd_prc <= ctrlport_req_rd_hold;
   end
 
   // search for rising edge in response
-  reg [1:0] ctrlport_timed_ack_reg = 2'b0;
+  reg [1:0] ctrlport_resp_ack_reg = 2'b0;
   always @(posedge radio_clk) begin
-    ctrlport_timed_ack_reg = {ctrlport_timed_ack_reg[0], ctrlport_resp_ack_fall};
+    ctrlport_resp_ack_reg = {ctrlport_resp_ack_reg[0], ctrlport_resp_ack_fall};
   end
-  assign ctrlport_timed_resp_ack = ctrlport_timed_ack_reg[0] & ~ctrlport_timed_ack_reg[1];
+  assign s_ctrlport_resp_ack = ctrlport_resp_ack_reg[0] & ~ctrlport_resp_ack_reg[1];
 
   // capture response data
   always @(posedge radio_clk) begin
     if (ctrlport_resp_ack_fall) begin
-      ctrlport_timed_resp_status <= ctrlport_resp_status_fall;
-      ctrlport_timed_resp_data   <= ctrlport_resp_data_fall;
+      s_ctrlport_resp_status <= ctrlport_resp_status_fall;
+      s_ctrlport_resp_data   <= ctrlport_resp_data_fall;
     end
   end
 

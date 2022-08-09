@@ -7,7 +7,6 @@
 Rhodium dboard implementation module
 """
 
-from __future__ import print_function
 import os
 from usrp_mpm import lib # Pulls in everything from C++-land
 from usrp_mpm.dboard_manager import DboardManagerBase
@@ -126,7 +125,6 @@ def create_spidev_iface_dac(dev_node):
 ###############################################################################
 # Main dboard control class
 ###############################################################################
-
 class Rhodium(BfrfsEEPROM, DboardManagerBase):
     """
     Holds all dboard specific information and methods of the Rhodium dboard
@@ -205,7 +203,7 @@ class Rhodium(BfrfsEEPROM, DboardManagerBase):
         self.sampling_clock_rate = None
         self.current_jesd_rate = None
         # Predeclare some attributes to make linter happy:
-        self.lmk = None
+        self.lmk = None # This gets initialized in rh_init.py
         self._port_expander = None
         self._lo_dist = None
         self.cpld = None
@@ -409,8 +407,8 @@ class Rhodium(BfrfsEEPROM, DboardManagerBase):
         self.dac.tx_enable(False)
         self.adc.power_down_channel(True)
         with open_uio(
-            label="dboard-regs-{}".format(self.slot_idx),
-            read_only=False
+                label="dboard-regs-{}".format(self.slot_idx),
+                read_only=False
         ) as radio_regs:
             # Clear the Sample Clock enables and place the MMCM in reset.
             db_clk_control = DboardClockControl(radio_regs, self.log)
@@ -455,6 +453,21 @@ class Rhodium(BfrfsEEPROM, DboardManagerBase):
     def get_master_clock_rate(self):
         " Return master clock rate (== sampling rate / 2) "
         return self.master_clock_rate
+
+    def get_ref_lock(self):
+        """
+        Returns True if the LMK reference is locked.
+
+        Note: This does not return a sensor dict. The sensor API call is
+        in the motherboard class.
+        """
+        if self.lmk is None:
+            self.log.trace("LMK object not yet initialized, defaulting to " \
+                           "no ref locked!")
+            return False
+        lmk_lock_status = self.lmk.check_plls_locked()
+        self.log.trace("LMK lock status is: {}".format(lmk_lock_status))
+        return lmk_lock_status
 
     def update_ref_clock_freq(self, freq, **kwargs):
         """
@@ -541,7 +554,6 @@ class Rhodium(BfrfsEEPROM, DboardManagerBase):
         """
         pdac_regs = self._spi_ifaces['phase_dac']
         pdac_regs.poke16(addr, data)
-        return
 
     def adc_peek(self, addr):
         """
@@ -565,8 +577,8 @@ class Rhodium(BfrfsEEPROM, DboardManagerBase):
         Debug for reading out all JESD core registers via RPC shell
         """
         with open_uio(
-            label="dboard-regs-{}".format(self.slot_idx),
-            read_only=False
+                label="dboard-regs-{}".format(self.slot_idx),
+                read_only=False
         ) as radio_regs:
             for i in range(0x2000, 0x2110, 0x10):
                 print(("0x%04X " % i), end=' ')

@@ -5,6 +5,9 @@ parameters:
     - ubuntu2004
 - name: uhdSrcDir
   type: string
+- name: uhdArtifactSource
+  type: string
+  default: current
 - name: testLength
   type: string
 
@@ -16,10 +19,90 @@ jobs:
     testLength: '${{ parameters.testLength }}'
     toolset: 'make'
     uhdSrcDir: '${{ parameters.uhdSrcDir }}'
+    uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
+    xilinxLocation: /opt/Xilinx/Vivado_Lab/2019.1
     dutMatrix:
-      beauty-N320-0 XG:
-        dutName: 'beauty-N320-0'
-        dutType: 'N320'
+      # beauty-N320-0 XG:
+      #   dutName: 'beauty-N320-0'
+      #   dutType: 'N320'
+      #   dutAddr: '192.168.10.4'
+      #   dutSecondAddr: '192.168.20.4'
+      #   dutMgmtAddr: '10.0.57.13'
+      #   dutFPGA: 'XG'
+      #   dutNameId: ''
+      #   dutNumRecvFrames: ''
+      #   dutNumSendFrames: ''
+      beauty-X310-0:
+        dutName: 'beauty-X310-0'
+        dutType: 'X310'
+        dutAddr: '192.168.10.3'
+        dutSecondAddr: '192.168.20.3'
+        dutMgmtAddr: ''
+        dutFPGA: 'XG'
+        dutNameId: ''
+        dutNumRecvFrames: ''
+        dutNumSendFrames: ''
+        jtagSerial: '251635138E94'
+      # beauty-X410-0 X4_200:
+      #   dutName: 'beauty-X410-0'
+      #   dutType: 'x4xx'
+      #   dutAddr: '192.168.10.2'
+      #   dutSecondAddr: '192.168.20.2'
+      #   dutMgmtAddr: '10.0.57.29'
+      #   dutFPGA:'X4_200'
+      #   dutNameId: ''
+      #   dutNumRecvFrames: ''
+      #   dutNumSendFrames: ''
+      beauty-X410-0 CG_400:
+        dutName: 'beauty-X410-0'
+        dutType: 'x4xx'
         dutAddr: '192.168.10.2'
         dutSecondAddr: '192.168.20.2'
-        dutMgmtAddr: '10.0.57.13'
+        dutMgmtAddr: '10.0.57.29'
+        dutFPGA: 'CG_400'
+        dutNameId: ''
+        dutEmbeddedImagesArtifact: 'x4xx-images'
+        uartSerial: '2516351E2C9A'
+        dutNumRecvFrames: ''
+        dutNumSendFrames: ''
+      # beauty-E320-0:
+      #   dutName: 'beauty-E320-0'
+      #   dutType: 'E320'
+      #   dutAddr: '192.168.10.5'
+      #   dutSecondAddr: ''
+      #   dutMgmtAddr: '10.0.57.38'
+      #   dutFPGA: 'XG'
+      #   dutNameId: ''
+      #   dutNumRecvFrames: ''
+      #   dutNumSendFrames: ''
+      # beauty-N310-0:
+      #   dutName: 'beauty-N310-0'
+      #   dutType: 'N310'
+      #   dutAddr: '192.168.10.6'
+      #   dutSecondAddr: '192.168.20.6'
+      #   dutMgmtAddr: '10.0.57.31'
+      #   dutFPGA: 'XG'
+      #   dutNameId: ''
+      #   dutNumRecvFrames: ''
+      #   dutNumSendFrames: ''
+      # beauty-X310_TwinRx-0:
+      #   dutName: 'beauty-X310_TwinRx-0'
+      #   dutType: 'X310_TwinRx'
+      #   dutAddr: '192.168.10.7'
+      #   dutSecondAddr: '192.168.20.7'
+      #   dutMgmtAddr: ''
+      #   dutFPGA: 'XG'
+      #   dutNameId: ''
+      #   dutNumRecvFrames: ''
+      #   dutNumSendFrames: ''
+      beauty-B210-0:
+        dutName: 'beauty-B210-0'
+        dutType: 'B210'
+        dutAddr: ''
+        dutSecondAddr: ''
+        dutMgmtAddr: ''
+        dutFPGA: ''
+        dutNameId: 'MyB210'
+        dutNumRecvFrames: '256'
+        dutNumSendFrames: '256'
+

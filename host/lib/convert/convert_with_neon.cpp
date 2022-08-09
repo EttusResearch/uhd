@@ -33,25 +33,25 @@ DECLARE_CONVERTER(fc32, 1, sc16_item32_le, 1, PRIORITY_SIMD)
 
         float32x4_t Q2 = vmulq_f32(Q1, Q0);
         int32x4_t Q3   = vcvtq_s32_f32(Q2);
-        int16x4_t D8   = vmovn_s32(Q3);
+        int16x4_t D8   = vqmovn_s32(Q3);
         int16x4_t D9   = vrev32_s16(D8);
         vst1_s16((reinterpret_cast<int16_t*>(&output[i])), D9);
 
         float32x4_t Q5 = vmulq_f32(Q4, Q0);
         int32x4_t Q6   = vcvtq_s32_f32(Q5);
-        int16x4_t D10  = vmovn_s32(Q6);
+        int16x4_t D10  = vqmovn_s32(Q6);
         int16x4_t D11  = vrev32_s16(D10);
         vst1_s16((reinterpret_cast<int16_t*>(&output[i + 2])), D11);
 
         float32x4_t Q8 = vmulq_f32(Q7, Q0);
         int32x4_t Q9   = vcvtq_s32_f32(Q8);
-        int16x4_t D12  = vmovn_s32(Q9);
+        int16x4_t D12  = vqmovn_s32(Q9);
         int16x4_t D13  = vrev32_s16(D12);
         vst1_s16((reinterpret_cast<int16_t*>(&output[i + 4])), D13);
 
         float32x4_t Q11 = vmulq_f32(Q10, Q0);
         int32x4_t Q13   = vcvtq_s32_f32(Q11);
-        int16x4_t D14   = vmovn_s32(Q13);
+        int16x4_t D14   = vqmovn_s32(Q13);
         int16x4_t D15   = vrev32_s16(D14);
         vst1_s16((reinterpret_cast<int16_t*>(&output[i + 6])), D15);
     }

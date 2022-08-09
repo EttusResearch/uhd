@@ -99,6 +99,7 @@ private:
     {
     public:
         x300_mb_iface(uhd::usrp::x300::conn_manager::sptr conn_mgr,
+            uhd::wb_iface::sptr zpu_ctrl,
             const double radio_clk_freq,
             const uhd::rfnoc::device_id_t remote_dev_id);
         ~x300_mb_iface() override;
@@ -140,6 +141,7 @@ private:
         uhd::rfnoc::clock_iface::sptr _bus_clk;
         uhd::rfnoc::clock_iface::sptr _radio_clk;
         uhd::usrp::x300::conn_manager::sptr _conn_mgr;
+        uhd::wb_iface::sptr _zpu_ctrl;
     };
 
     /**************************************************************************

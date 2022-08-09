@@ -156,7 +156,8 @@ module e320 (
   output wire XCVR_TXNRX,
   output wire XCVR_ENA_AGC,
   output wire XCVR_RESET_N,
-  input wire [7:0] XCVR_CTRL_OUT,
+  input  wire [7:0] XCVR_CTRL_OUT,
+  output wire [3:0] XCVR_CTRL_IN,
 
   // Amplifiers
   output wire TX_HFAMP1_ENA,
@@ -173,6 +174,22 @@ module e320 (
   output wire TXRX2_GRN_ENA
 
 );
+
+  // Include the RFNoC image core header file
+  `ifdef RFNOC_IMAGE_CORE_HDR
+    `include `"`RFNOC_IMAGE_CORE_HDR`"
+  `else
+    ERROR_RFNOC_IMAGE_CORE_HDR_not_defined();
+    `define CHDR_WIDTH     64
+    `define RFNOC_PROTOVER { 8'd1, 8'd0 }
+  `endif
+  localparam CHDR_W         = `CHDR_WIDTH;
+  localparam RFNOC_PROTOVER = `RFNOC_PROTOVER;
+
+  // This USRP currently only supports 64-bit CHDR width
+  if (CHDR_W != 64) begin : gen_chdr_w_error
+    CHDR_W_must_be_64_for_this_USRP();
+  end
 
   `ifdef SFP_1GBE
     parameter PROTOCOL = "1GbE";
@@ -206,7 +223,6 @@ module e320 (
   localparam NUM_CHANNELS_PER_RADIO = 2;
   localparam NUM_DBOARDS = 1;
   localparam NUM_CHANNELS = NUM_RADIOS * NUM_CHANNELS_PER_RADIO;
-  localparam [15:0] RFNOC_PROTOVER  = {8'd1, 8'd0};
 
   // Clocks
   wire xgige_clk156;
@@ -1689,7 +1705,9 @@ module e320 (
     .NUM_CHANNELS(NUM_CHANNELS),
     .NUM_DBOARDS(NUM_DBOARDS),
     .FP_GPIO_WIDTH(FP_GPIO_WIDTH),
-    .DB_GPIO_WIDTH(DB_GPIO_WIDTH)
+    .DB_GPIO_WIDTH(DB_GPIO_WIDTH),
+    .CHDR_W(CHDR_W),
+    .RFNOC_PROTOVER(RFNOC_PROTOVER)
   ) e320_core_i (
 
     //Clocks and resets
@@ -1843,6 +1861,9 @@ module e320 (
     .dboard_ctrl(dboard_ctrl),
     .device_id(device_id)
   );
+
+  // Control pins to AD9361 will lay low for now
+  assign XCVR_CTRL_IN = 4'h0;
 
 endmodule // e320
 `default_nettype wire

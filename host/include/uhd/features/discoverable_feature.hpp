@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <uhd/config.hpp>
 #include <stddef.h>
 #include <memory>
 #include <string>
@@ -21,7 +22,7 @@ namespace uhd { namespace features {
  * Also note that all discoverable features must implement a static method
  * get_feature_id() which returns a feature_id_t.
  */
-class discoverable_feature
+class UHD_API discoverable_feature
 {
 public:
     using sptr = std::shared_ptr<discoverable_feature>;
@@ -36,6 +37,7 @@ public:
         REF_CLK_CALIBRATION,
         TRIG_IO_MODE,
         GPIO_POWER,
+        SPI_GETTER_IFACE
     };
 
     virtual ~discoverable_feature() = default;

@@ -40,11 +40,24 @@ public:
 
     /*! \brief Get the software device ID associated with this instance
      *
+     * For every link to a device, we create a unique device ID. For example,
+     * if there are two USRPs in the graph, each connected with a single
+     * Ethernet connection, there would be two link managers, and therefore also
+     * two device IDs on the host side.
+     * If we access a single USRP using two Ethernet connections, then we still
+     * have two link stream managers, each with its own unique device ID on the
+     * host side.
+     * The device IDs are allocated in the mb_iface associated with this device
+     * during discovery.
+     *
      * \return The software device ID associated with this instance
      */
     virtual device_id_t get_self_device_id() const = 0;
 
     /*! \brief Get the transport adapter ID associated with this instance
+     *
+     * See also uhd::transport::adapter_id_t. For example, when using two
+     * separate Ethernet ports, there would be two adapter IDs.
      *
      * \return The adapter ID associated with this instance
      */

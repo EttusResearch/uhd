@@ -503,7 +503,7 @@ std::vector<std::string> x300_mb_controller::get_gpio_srcs(const std::string& ba
             "Invalid GPIO source bank: " << bank << ". Only supported bank is "
                                          << GPIO_SRC_BANK);
         throw uhd::runtime_error(
-            std::string("Invalid GPIO source bank: ") + GPIO_SRC_BANK);
+            std::string("Invalid GPIO source bank: ") + bank);
     }
     return {GPIO_SRC_RFA, GPIO_SRC_RFB};
 }
@@ -515,7 +515,7 @@ std::vector<std::string> x300_mb_controller::get_gpio_src(const std::string& ban
             "Invalid GPIO source bank: " << bank << ". Only supported bank is "
                                          << GPIO_SRC_BANK);
         throw uhd::runtime_error(
-            std::string("Invalid GPIO source bank: ") + GPIO_SRC_BANK);
+            std::string("Invalid GPIO source bank: ") + bank);
     }
     uint32_t fp_gpio_src = _zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_FP_GPIO_SRC));
     const auto gpio_srcs = get_gpio_srcs(bank);
@@ -634,7 +634,7 @@ bool x300_mb_controller::is_pps_present()
         std::this_thread::sleep_for(100ms);
         if (pps_detect
             != _fw_regmap->clock_status_reg.read(
-                   fw_regmap_t::clk_status_reg_t::PPS_DETECT))
+                fw_regmap_t::clk_status_reg_t::PPS_DETECT))
             return true;
     }
     return false;
@@ -647,10 +647,10 @@ bool x300_mb_controller::get_ref_locked()
                == 1)
            && (_fw_regmap->clock_status_reg.get(
                    fw_regmap_t::clk_status_reg_t::RADIO_CLK_LOCK)
-                  == 1)
+               == 1)
            && (_fw_regmap->clock_status_reg.get(
                    fw_regmap_t::clk_status_reg_t::IDELAYCTRL_LOCK)
-                  == 1);
+               == 1);
 }
 
 void x300_mb_controller::self_cal_adc_xfer_delay(bool apply_delay)

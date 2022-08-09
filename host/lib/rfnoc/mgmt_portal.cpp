@@ -10,7 +10,7 @@
 #include <uhdlib/rfnoc/chdr_ctrl_xport.hpp>
 #include <uhdlib/rfnoc/chdr_packet_writer.hpp>
 #include <uhdlib/rfnoc/mgmt_portal.hpp>
-#include <unordered_set>
+#include <uhdlib/utils/narrow.hpp>
 #include <boost/format.hpp>
 #include <chrono>
 #include <cmath>
@@ -95,6 +95,10 @@ struct node_id_t
     //! The instance number of this node in the device
     sep_inst_t inst = 0;
     //! Extended info about node (not used for comparisons)
+    // The value depends on the node type. For example, this includes number of
+    // ports on a crossbar, data/ctrl capability for SEPs, or transport subtype
+    // for transport adapters.
+    // It contains up to 18 bits of information.
     uint32_t extended_info = 0;
 
     // ctors and operators
@@ -178,7 +182,7 @@ std::string to_string(const node_addr_t& node_addr)
 mgmt_portal::~mgmt_portal() {}
 
 //---------------------------------------------------------------
-// Stream Manager Implementation
+// Management Portal Implementation
 //---------------------------------------------------------------
 class mgmt_portal_impl : public mgmt_portal
 {
@@ -307,9 +311,13 @@ public:
         std::lock_guard<std::recursive_mutex> lock(_mutex);
         auto my_epid = xport.get_epid();
 
-        // Lookup the physical stream endpoint address using the endpoint ID
+        // Look up the physical stream endpoint address using the endpoint ID
+        // node_addr contains the route to the host SEP to the destination SEP
         const node_addr_t& node_addr = _lookup_sep_node_addr(dst_epid);
 
+        // Initialize all nodes between host and destination SEP. This will
+        // program all nodes to do the reverse routing (how to send packets to
+        // my_epid, i.e. back to the host).
         node_addr_t route_addr = node_addr_t();
         route_addr.push_back(std::make_pair(_my_node_id, next_dest_t(-1)));
         for (const auto& addr_pair : node_addr) {
@@ -354,7 +362,7 @@ public:
                     }
                 } break;
                 case node_type::NODE_TYPE_STRM_EP: {
-                    // Stream are not involved in routing, so do nothing
+                    // Stream endpoints are not involved in routing, so do nothing
                 } break;
                 default: {
                     UHD_THROW_INVALID_CODE_PATH();
@@ -367,8 +375,8 @@ public:
         }
 
         // If we follow this route then we should end up at a stream endpoint
-        // so add an extra hop and return the packet back with the node info we will
-        // sanity check it later
+        // so add an extra hop and return the packet back with the node info.
+        // We will sanity check it later
         mgmt_hop_t discover_hop;
         discover_hop.add_op(mgmt_op_t(mgmt_op_t::MGMT_OP_INFO_REQ));
         discover_hop.add_op(mgmt_op_t(mgmt_op_t::MGMT_OP_RETURN));
@@ -410,6 +418,9 @@ public:
         const node_addr_t& src_node_addr = _node_addr_map.at(node_id_t(src_addr));
 
         // Find a common parent (could be faster than n^2 but meh, this is easier)
+        // Note: This is *not* finding the fastest path from dst_addr to src_addr.
+        // This using the existing routes we have, and finding a route through
+        // a common parent that also needs to be a crossbar.
         for (const auto& dnode : dst_node_addr) {
             for (const auto& snode : src_node_addr) {
                 if (dnode.first == snode.first
@@ -822,7 +833,7 @@ private: // Functions
             const node_id_t& curr_node   = addr_pair.first;
             const next_dest_t& curr_dest = addr_pair.second;
             if (curr_node.type != node_type::NODE_TYPE_STRM_EP) {
-                // If a node is a crossbar, then it have have a non-negative destination
+                // If a node is a crossbar, then it must have a non-negative destination
                 UHD_ASSERT_THROW(
                     (curr_node.type != node_type::NODE_TYPE_XBAR || curr_dest >= 0));
                 _push_advance_hop(transaction, curr_dest);
@@ -1020,8 +1031,8 @@ private: // Functions
             case node_type::NODE_TYPE_XPORT: {
                 uint8_t node_subtype = static_cast<uint8_t>(node.extended_info & 0xFF);
                 // Run a hop configuration function for custom transports
-                if (_rtcfg_cfg_fns.count(node_subtype)) {
-                    _rtcfg_cfg_fns.at(node_subtype)(
+                if (_init_cfg_fns.count(node_subtype)) {
+                    _init_cfg_fns.at(node_subtype)(
                         node.device_id, node.inst, node_subtype, init_hop);
                 } else {
                     // For a generic transport, just advertise the transaction to the
