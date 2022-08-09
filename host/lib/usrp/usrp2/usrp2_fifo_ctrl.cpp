@@ -12,9 +12,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <boost/asio.hpp> //htonl
-#include <boost/format.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/thread.hpp>
+#include <mutex>
 
 using namespace uhd;
 using namespace uhd::transport;
@@ -58,7 +56,7 @@ public:
      ******************************************************************/
     void poke32(const wb_addr_type addr, const uint32_t data) override
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
 
         this->send_pkt((addr - SETTING_REGS_BASE) / 4, data, POKE32_CMD);
 
@@ -67,7 +65,7 @@ public:
 
     uint32_t peek32(const wb_addr_type addr) override
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
 
         this->send_pkt((addr - READBACK_BASE) / 4, 0, PEEK32_CMD);
 
@@ -92,7 +90,7 @@ public:
      ******************************************************************/
     void init_spi(void)
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
 
         this->send_pkt(SPI_DIV, SPI_DIVIDER, POKE32_CMD);
         this->wait_for_ack(_seq_out - MAX_SEQS_OUT);
@@ -106,7 +104,7 @@ public:
         size_t num_bits,
         bool readback) override
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
 
         // load control word
         uint32_t ctrl_word = 0;
@@ -145,7 +143,7 @@ public:
      ******************************************************************/
     void set_time(const uhd::time_spec_t& time) override
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         _time     = time;
         _use_time = _time != uhd::time_spec_t(0.0);
         if (_use_time)
@@ -154,13 +152,13 @@ public:
 
     uhd::time_spec_t get_time() override
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         return _time;
     }
 
     void set_tick_rate(const double rate) override
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         _tick_rate = rate;
     }
 
@@ -234,7 +232,7 @@ private:
     }
 
     zero_copy_if::sptr _xport;
-    boost::mutex _mutex;
+    std::mutex _mutex;
     uint16_t _seq_out;
     uint16_t _seq_ack;
     uhd::time_spec_t _time;

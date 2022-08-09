@@ -8,8 +8,8 @@
 #include <uhd/error.h>
 #include <uhd/exception.hpp>
 #include <uhd/utils/static.hpp>
-#include <boost/thread/mutex.hpp>
 #include <cstring>
+#include <mutex>
 
 #define MAP_TO_ERROR(exception_type, error_type)     \
     if (dynamic_cast<const uhd::exception_type*>(e)) \
@@ -40,17 +40,17 @@ uhd_error error_from_uhd_exception(const uhd::exception* e)
 // get_c_global_error_string() instead.
 UHD_SINGLETON_FCN(std::string, _c_global_error_string)
 
-static boost::mutex _error_c_mutex;
+static std::mutex _error_c_mutex;
 
 std::string get_c_global_error_string()
 {
-    boost::mutex::scoped_lock lock(_error_c_mutex);
+    std::lock_guard<std::mutex> lock(_error_c_mutex);
     return _c_global_error_string();
 }
 
 void set_c_global_error_string(const std::string& msg)
 {
-    boost::mutex::scoped_lock lock(_error_c_mutex);
+    std::lock_guard<std::mutex> lock(_error_c_mutex);
     _c_global_error_string() = msg;
 }
 

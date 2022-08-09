@@ -1,0 +1,889 @@
+# -------------------------------------------------------------------------- #
+#
+# Copyright (C) 2017  Intel Corporation. All rights reserved.
+# Your use of Intel Corporation's design tools, logic functions
+# and other software and tools, and its AMPP partner logic
+# functions, and any output files from any of the foregoing
+# (including device programming or simulation files), and any
+# associated documentation or information are expressly subject
+# to the terms and conditions of the Intel Program License
+# Subscription Agreement, the Intel Quartus Prime License Agreement,
+# the Intel MegaCore Function License Agreement, or other
+# applicable license agreement, including, without limitation,
+# that your use is for the sole purpose of programming logic
+# devices manufactured by Intel and sold by Intel or its
+# authorized distributors.  Please refer to the applicable
+# agreement for further details.
+#
+# -------------------------------------------------------------------------- #
+#
+# Quartus Prime
+# Version 16.1.2 Build 203 01/18/2017 SJ Standard Edition
+# Date created = 15:10:13  February 02, 2018
+#
+# -------------------------------------------------------------------------- #
+#
+# Notes:
+#
+# 1) The default values for assignments are stored in the file:
+#		TopCpld_assignment_defaults.qdf
+#    If this file doesn't exist, see file:
+#		assignment_defaults.qdf
+#
+# 2) Altera recommends that you do not modify this file. This
+#    file is updated automatically by the Quartus Prime software
+#    and any changes you make may be lost or overwritten.
+#
+# -------------------------------------------------------------------------- #
+
+
+set_global_assignment -name FAMILY "MAX 10"
+
+# Device that is being used in production run
+set_global_assignment -name DEVICE 10M04SAU324I7G
+
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION 16.1.2
+set_global_assignment -name PROJECT_CREATION_TIME_DATE "15:10:13  FEBRUARY 02, 2018"
+set_global_assignment -name LAST_QUARTUS_VERSION "20.1.0 Lite Edition"
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP "-40"
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 100
+set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 256
+set_global_assignment -name GENERATE_SVF_FILE OFF
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
+set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+
+set_global_assignment -name NUM_PARALLEL_PROCESSORS 2
+
+set_location_assignment PIN_P2 -to CTRL_REG_ARST
+set_instance_assignment -name IO_STANDARD "1.8 V" -to CTRL_REG_ARST
+
+set_location_assignment PIN_M4 -to CTRL_REG_CLK
+set_instance_assignment -name IO_STANDARD "1.8 V" -to CTRL_REG_CLK
+
+set_location_assignment PIN_N1 -to MB_CTRL_CS
+set_instance_assignment -name IO_STANDARD "1.8 V" -to MB_CTRL_CS
+
+set_location_assignment PIN_U2 -to MB_CTRL_MISO
+set_instance_assignment -name IO_STANDARD "1.8 V" -to MB_CTRL_MISO
+
+set_location_assignment PIN_N3 -to MB_CTRL_MOSI
+set_instance_assignment -name IO_STANDARD "1.8 V" -to MB_CTRL_MOSI
+
+set_location_assignment PIN_L3 -to MB_CTRL_SCK
+set_instance_assignment -name IO_STANDARD "1.8 V" -to MB_CTRL_SCK
+
+# The digital daughterboard connector has 120 pins [A-F][1-20].
+# The assignment below orders the CPLD IOs MSB first and connects it to the DB
+# connection with increasing letter and increasing number.
+# This results in:
+# FPGA Bit 13 = A14 (trace: MB_FPGA_GPIO_A14)
+# FPGA Bit 12 = A16 (trace: MB_FPGA_GPIO_A16)
+# ...
+# FPGA Bit  0 = C19 (trace: MB_FPGA_GPIO_C19)
+set_location_assignment PIN_R2 -to MB_FPGA_GPIO[13]
+# Workaround for missing pull down resistor:
+# Use pull up and schmitt trigger to detect FPGA reload by line going high unexpectedly
+set_instance_assignment -name IO_STANDARD "1.8 V SCHMITT TRIGGER" -to MB_FPGA_GPIO[13]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to MB_FPGA_GPIO[13]
+
+set_location_assignment PIN_N4 -to MB_FPGA_GPIO[12]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to MB_FPGA_GPIO[12]
+
+set_location_assignment PIN_K8 -to MB_FPGA_GPIO[11]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to MB_FPGA_GPIO[11]
+
+set_location_assignment PIN_M2 -to MB_FPGA_GPIO[10]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to MB_FPGA_GPIO[10]
+
+set_location_assignment PIN_M1 -to MB_FPGA_GPIO[9]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to MB_FPGA_GPIO[9]
+
+set_location_assignment PIN_T1 -to MB_FPGA_GPIO[8]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to MB_FPGA_GPIO[8]
+
+set_location_assignment PIN_U1 -to MB_FPGA_GPIO[7]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to MB_FPGA_GPIO[7]
+
+set_location_assignment PIN_P1 -to MB_FPGA_GPIO[6]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to MB_FPGA_GPIO[6]
+
+set_location_assignment PIN_R3 -to MB_FPGA_GPIO[5]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to MB_FPGA_GPIO[5]
+
+set_location_assignment PIN_M7 -to MB_FPGA_GPIO[4]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to MB_FPGA_GPIO[4]
+
+set_location_assignment PIN_T3 -to MB_FPGA_GPIO[3]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to MB_FPGA_GPIO[3]
+
+set_location_assignment PIN_P4 -to MB_FPGA_GPIO[2]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to MB_FPGA_GPIO[2]
+
+set_location_assignment PIN_L7 -to MB_FPGA_GPIO[1]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to MB_FPGA_GPIO[1]
+
+set_location_assignment PIN_L8 -to MB_FPGA_GPIO[0]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to MB_FPGA_GPIO[0]
+
+set_location_assignment PIN_M3 -to MB_SYNTH_SYNC
+set_instance_assignment -name IO_STANDARD "1.8 V" -to MB_SYNTH_SYNC
+
+set_location_assignment PIN_G18 -to RX0_LO1_CSB
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_LO1_CSB
+
+set_location_assignment PIN_J18 -to RX0_LO1_SCK
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_LO1_SCK
+
+set_location_assignment PIN_F16 -to RX0_LO1_SDI
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_LO1_SDI
+
+set_location_assignment PIN_H17 -to RX0_LO1_SYNC
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_LO1_SYNC
+
+set_location_assignment PIN_J12 -to RX0_LO2_CSB
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_LO2_CSB
+
+set_location_assignment PIN_J15 -to RX0_LO2_SCK
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_LO2_SCK
+
+set_location_assignment PIN_J16 -to RX0_LO2_SDI
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_LO2_SDI
+
+set_location_assignment PIN_K18 -to RX0_LO2_SYNC
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_LO2_SYNC
+
+set_location_assignment PIN_F15 -to RX1_LO1_CSB
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_LO1_CSB
+
+set_location_assignment PIN_K17 -to RX1_LO1_SCK
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_LO1_SCK
+
+set_location_assignment PIN_G15 -to RX1_LO1_SDI
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_LO1_SDI
+
+set_location_assignment PIN_H18 -to RX1_LO1_SYNC
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_LO1_SYNC
+
+set_location_assignment PIN_H15 -to RX1_LO2_CSB
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_LO2_CSB
+
+set_location_assignment PIN_L17 -to RX1_LO2_SCK
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_LO2_SCK
+
+set_location_assignment PIN_M17 -to RX1_LO2_SDI
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_LO2_SDI
+
+set_location_assignment PIN_L18 -to RX1_LO2_SYNC
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_LO2_SYNC
+
+set_location_assignment PIN_C18 -to TX0_LO1_CSB
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_LO1_CSB
+
+set_location_assignment PIN_H12 -to TX0_LO1_SCK
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_LO1_SCK
+
+set_location_assignment PIN_D15 -to TX0_LO1_SDI
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_LO1_SDI
+
+set_location_assignment PIN_E15 -to TX0_LO1_SYNC
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_LO1_SYNC
+
+set_location_assignment PIN_E18 -to TX0_LO2_CSB
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_LO2_CSB
+
+set_location_assignment PIN_G17 -to TX0_LO2_SCK
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_LO2_SCK
+
+set_location_assignment PIN_C17 -to TX0_LO2_SDI
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_LO2_SDI
+
+set_location_assignment PIN_D17 -to TX0_LO2_SYNC
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_LO2_SYNC
+
+set_location_assignment PIN_G11 -to TX1_LO1_CSB
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_LO1_CSB
+
+set_location_assignment PIN_D16 -to TX1_LO1_SCK
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_LO1_SCK
+
+set_location_assignment PIN_E16 -to TX1_LO1_SDI
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_LO1_SDI
+
+set_location_assignment PIN_B18 -to TX1_LO1_SYNC
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_LO1_SYNC
+
+set_location_assignment PIN_E17 -to TX1_LO2_CSB
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_LO2_CSB
+
+set_location_assignment PIN_G16 -to TX1_LO2_SCK
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_LO2_SCK
+
+set_location_assignment PIN_D18 -to TX1_LO2_SDI
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_LO2_SDI
+
+set_location_assignment PIN_H16 -to TX1_LO2_SYNC
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_LO2_SYNC
+
+set_location_assignment PIN_M12 -to RX0_DSA3_A_n[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_DSA3_A_n[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_DSA3_A_n[1]
+
+set_location_assignment PIN_T16 -to RX0_DSA3_A_n[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_DSA3_A_n[2]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_DSA3_A_n[2]
+
+set_location_assignment PIN_N15 -to RX0_DSA3_A_n[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_DSA3_A_n[3]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_DSA3_A_n[3]
+
+set_location_assignment PIN_M15 -to RX0_DSA3_A_n[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_DSA3_A_n[4]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_DSA3_A_n[4]
+
+set_location_assignment PIN_L12 -to RX1_DSA3_A_n[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_DSA3_A_n[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_DSA3_A_n[1]
+
+set_location_assignment PIN_L15 -to RX1_DSA3_A_n[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_DSA3_A_n[2]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_DSA3_A_n[2]
+
+set_location_assignment PIN_L16 -to RX1_DSA3_A_n[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_DSA3_A_n[3]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_DSA3_A_n[3]
+
+set_location_assignment PIN_K15 -to RX1_DSA3_A_n[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_DSA3_A_n[4]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_DSA3_A_n[4]
+
+set_location_assignment PIN_R18 -to P7V_PG_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to P7V_PG_A
+
+set_location_assignment PIN_N18 -to P7V_PG_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to P7V_PG_B
+
+set_location_assignment PIN_K12 -to CPLD_REFCLK
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to CPLD_REFCLK
+
+set_location_assignment PIN_R16 -to P3D3VA_ENABLE
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to P3D3VA_ENABLE
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to P3D3VA_ENABLE
+
+set_location_assignment PIN_P16 -to P7V_ENABLE_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to P7V_ENABLE_A
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to P7V_ENABLE_A
+
+set_location_assignment PIN_R17 -to P7V_ENABLE_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to P7V_ENABLE_B
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to P7V_ENABLE_B
+
+set_location_assignment PIN_H6 -to RX0_DSA1_n[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_DSA1_n[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_DSA1_n[1]
+
+set_location_assignment PIN_J3 -to RX0_DSA1_n[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_DSA1_n[2]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_DSA1_n[2]
+
+set_location_assignment PIN_J4 -to RX0_DSA1_n[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_DSA1_n[3]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_DSA1_n[3]
+
+set_location_assignment PIN_K4 -to RX0_DSA1_n[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_DSA1_n[4]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_DSA1_n[4]
+
+set_location_assignment PIN_T4 -to RX0_DSA2_n[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_DSA2_n[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_DSA2_n[1]
+
+set_location_assignment PIN_N8 -to RX0_DSA2_n[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_DSA2_n[2]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_DSA2_n[2]
+
+set_location_assignment PIN_T5 -to RX0_DSA2_n[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_DSA2_n[3]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_DSA2_n[3]
+
+set_location_assignment PIN_T6 -to RX0_DSA2_n[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_DSA2_n[4]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_DSA2_n[4]
+
+set_location_assignment PIN_V2 -to RX0_DSA3_B_n[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_DSA3_B_n[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_DSA3_B_n[1]
+
+set_location_assignment PIN_U5 -to RX0_DSA3_B_n[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_DSA3_B_n[2]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_DSA3_B_n[2]
+
+set_location_assignment PIN_V5 -to RX0_DSA3_B_n[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_DSA3_B_n[3]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_DSA3_B_n[3]
+
+set_location_assignment PIN_V6 -to RX0_DSA3_B_n[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_DSA3_B_n[4]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_DSA3_B_n[4]
+
+set_location_assignment PIN_T15 -to RX0_LO1_MUXOUT
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_LO1_MUXOUT
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_LO1_MUXOUT
+
+set_location_assignment PIN_T14 -to RX0_LO2_MUXOUT
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_LO2_MUXOUT
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_LO2_MUXOUT
+
+set_location_assignment PIN_U8 -to RX0_SW1_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_SW1_A
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_SW1_A
+
+set_location_assignment PIN_V8 -to RX0_SW1_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_SW1_B
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_SW1_B
+
+set_location_assignment PIN_T12 -to RX0_SW10_V1
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_SW10_V1
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_SW10_V1
+
+set_location_assignment PIN_P10 -to RX0_SW11_V1
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_SW11_V1
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_SW11_V1
+
+set_location_assignment PIN_U17 -to RX0_SW11_V2
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_SW11_V2
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_SW11_V2
+
+set_location_assignment PIN_F5 -to RX0_SW11_V3
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_SW11_V3
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_SW11_V3
+
+set_location_assignment PIN_R8 -to RX0_SW2_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_SW2_A
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_SW2_A
+
+set_location_assignment PIN_U15 -to RX0_SW3_V1
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_SW3_V1
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_SW3_V1
+
+set_location_assignment PIN_P14 -to RX0_SW3_V2
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_SW3_V2
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_SW3_V2
+
+set_location_assignment PIN_T11 -to RX0_SW3_V3
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_SW3_V3
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_SW3_V3
+
+set_location_assignment PIN_L11 -to RX0_SW4_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_SW4_A
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_SW4_A
+
+set_location_assignment PIN_P5 -to RX0_SW5_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_SW5_A
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_SW5_A
+
+set_location_assignment PIN_N7 -to RX0_SW5_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_SW5_B
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_SW5_B
+
+set_location_assignment PIN_U13 -to RX0_SW6_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_SW6_A
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_SW6_A
+
+set_location_assignment PIN_V10 -to RX0_SW6_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_SW6_B
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_SW6_B
+
+set_location_assignment PIN_D13 -to RX0_SW7_SW8_CTRL
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_SW7_SW8_CTRL
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_SW7_SW8_CTRL
+
+set_location_assignment PIN_R15 -to RX0_SW9_V1
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX0_SW9_V1
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX0_SW9_V1
+
+set_location_assignment PIN_R9 -to RX1_DSA1_n[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_DSA1_n[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_DSA1_n[1]
+
+set_location_assignment PIN_P6 -to RX1_DSA1_n[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_DSA1_n[2]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_DSA1_n[2]
+
+set_location_assignment PIN_R6 -to RX1_DSA1_n[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_DSA1_n[3]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_DSA1_n[3]
+
+set_location_assignment PIN_M10 -to RX1_DSA1_n[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_DSA1_n[4]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_DSA1_n[4]
+
+set_location_assignment PIN_T7 -to RX1_DSA2_n[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_DSA2_n[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_DSA2_n[1]
+
+set_location_assignment PIN_M9 -to RX1_DSA2_n[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_DSA2_n[2]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_DSA2_n[2]
+
+set_location_assignment PIN_R5 -to RX1_DSA2_n[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_DSA2_n[3]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_DSA2_n[3]
+
+set_location_assignment PIN_R4 -to RX1_DSA2_n[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_DSA2_n[4]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_DSA2_n[4]
+
+set_location_assignment PIN_U6 -to RX1_DSA3_B_n[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_DSA3_B_n[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_DSA3_B_n[1]
+
+set_location_assignment PIN_V4 -to RX1_DSA3_B_n[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_DSA3_B_n[2]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_DSA3_B_n[2]
+
+set_location_assignment PIN_V3 -to RX1_DSA3_B_n[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_DSA3_B_n[3]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_DSA3_B_n[3]
+
+set_location_assignment PIN_U3 -to RX1_DSA3_B_n[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_DSA3_B_n[4]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_DSA3_B_n[4]
+
+set_location_assignment PIN_P15 -to RX1_LO1_MUXOUT
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_LO1_MUXOUT
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_LO1_MUXOUT
+
+set_location_assignment PIN_R14 -to RX1_LO2_MUXOUT
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_LO2_MUXOUT
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_LO2_MUXOUT
+
+set_location_assignment PIN_D7 -to RX1_SW1_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_SW1_A
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_SW1_A
+
+set_location_assignment PIN_D8 -to RX1_SW1_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_SW1_B
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_SW1_B
+
+set_location_assignment PIN_R12 -to RX1_SW10_V1
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_SW10_V1
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_SW10_V1
+
+set_location_assignment PIN_V17 -to RX1_SW11_V1
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_SW11_V1
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_SW11_V1
+
+set_location_assignment PIN_R10 -to RX1_SW11_V2
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_SW11_V2
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_SW11_V2
+
+set_location_assignment PIN_F2 -to RX1_SW11_V3
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_SW11_V3
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_SW11_V3
+
+set_location_assignment PIN_T8 -to RX1_SW2_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_SW2_A
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_SW2_A
+
+set_location_assignment PIN_T10 -to RX1_SW3_V1
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_SW3_V1
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_SW3_V1
+
+set_location_assignment PIN_V16 -to RX1_SW3_V2
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_SW3_V2
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_SW3_V2
+
+set_location_assignment PIN_U16 -to RX1_SW3_V3
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_SW3_V3
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_SW3_V3
+
+set_location_assignment PIN_K7 -to RX1_SW4_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_SW4_A
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_SW4_A
+
+set_location_assignment PIN_M11 -to RX1_SW5_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_SW5_A
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_SW5_A
+
+set_location_assignment PIN_M8 -to RX1_SW5_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_SW5_B
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_SW5_B
+
+set_location_assignment PIN_U9 -to RX1_SW6_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_SW6_A
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_SW6_A
+
+set_location_assignment PIN_V9 -to RX1_SW6_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_SW6_B
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_SW6_B
+
+set_location_assignment PIN_E14 -to RX1_SW7_SW8_CTRL
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_SW7_SW8_CTRL
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_SW7_SW8_CTRL
+
+set_location_assignment PIN_N14 -to RX1_SW9_V1
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to RX1_SW9_V1
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to RX1_SW9_V1
+
+set_location_assignment PIN_C13 -to TX0_DSA1[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_DSA1[2]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_DSA1[2]
+
+set_location_assignment PIN_D14 -to TX0_DSA1[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_DSA1[3]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_DSA1[3]
+
+set_location_assignment PIN_A15 -to TX0_DSA1[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_DSA1[4]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_DSA1[4]
+
+set_location_assignment PIN_B14 -to TX0_DSA1[5]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_DSA1[5]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_DSA1[5]
+
+set_location_assignment PIN_C16 -to TX0_DSA1[6]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_DSA1[6]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_DSA1[6]
+
+set_location_assignment PIN_A2 -to TX0_DSA2[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_DSA2[2]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_DSA2[2]
+
+set_location_assignment PIN_C5 -to TX0_DSA2[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_DSA2[3]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_DSA2[3]
+
+set_location_assignment PIN_C4 -to TX0_DSA2[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_DSA2[4]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_DSA2[4]
+
+set_location_assignment PIN_D10 -to TX0_DSA2[5]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_DSA2[5]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_DSA2[5]
+
+set_location_assignment PIN_B2 -to TX0_DSA2[6]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_DSA2[6]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_DSA2[6]
+
+set_location_assignment PIN_A8 -to TX0_LO1_MUXOUT
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_LO1_MUXOUT
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_LO1_MUXOUT
+
+set_location_assignment PIN_F12 -to TX0_LO2_MUXOUT
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_LO2_MUXOUT
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_LO2_MUXOUT
+
+set_location_assignment PIN_A14 -to TX0_SW1_SW2_CTRL
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_SW1_SW2_CTRL
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_SW1_SW2_CTRL
+
+set_location_assignment PIN_U7 -to TX0_SW10_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_SW10_A
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_SW10_A
+
+set_location_assignment PIN_V7 -to TX0_SW10_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_SW10_B
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_SW10_B
+
+set_location_assignment PIN_V15 -to TX0_SW11_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_SW11_A
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_SW11_A
+
+set_location_assignment PIN_V14 -to TX0_SW11_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_SW11_B
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_SW11_B
+
+set_location_assignment PIN_F11 -to TX0_SW13_V1
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_SW13_V1
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_SW13_V1
+
+set_location_assignment PIN_B9 -to TX0_SW14_V1
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_SW14_V1
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_SW14_V1
+
+set_location_assignment PIN_E4 -to TX0_SW3_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_SW3_A
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_SW3_A
+
+set_location_assignment PIN_D1 -to TX0_SW3_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_SW3_B
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_SW3_B
+
+set_location_assignment PIN_J1 -to TX0_SW4_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_SW4_A
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_SW4_A
+
+set_location_assignment PIN_H2 -to TX0_SW4_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_SW4_B
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_SW4_B
+
+set_location_assignment PIN_K3 -to TX0_SW5_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_SW5_A
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_SW5_A
+
+set_location_assignment PIN_L2 -to TX0_SW5_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_SW5_B
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_SW5_B
+
+set_location_assignment PIN_G1 -to TX0_SW6_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_SW6_A
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_SW6_A
+
+set_location_assignment PIN_G3 -to TX0_SW6_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_SW6_B
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_SW6_B
+
+set_location_assignment PIN_C1 -to TX0_SW7_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_SW7_A
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_SW7_A
+
+set_location_assignment PIN_D4 -to TX0_SW7_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_SW7_B
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_SW7_B
+
+set_location_assignment PIN_C8 -to TX0_SW8_V1
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_SW8_V1
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_SW8_V1
+
+set_location_assignment PIN_C6 -to TX0_SW8_V2
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_SW8_V2
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_SW8_V2
+
+set_location_assignment PIN_B4 -to TX0_SW8_V3
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_SW8_V3
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_SW8_V3
+
+set_location_assignment PIN_A4 -to TX0_SW9_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_SW9_A
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_SW9_A
+
+set_location_assignment PIN_A3 -to TX0_SW9_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX0_SW9_B
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX0_SW9_B
+
+set_location_assignment PIN_C14 -to TX1_DSA1[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_DSA1[2]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_DSA1[2]
+
+set_location_assignment PIN_C15 -to TX1_DSA1[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_DSA1[3]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_DSA1[3]
+
+set_location_assignment PIN_B17 -to TX1_DSA1[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_DSA1[4]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_DSA1[4]
+
+set_location_assignment PIN_A17 -to TX1_DSA1[5]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_DSA1[5]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_DSA1[5]
+
+set_location_assignment PIN_A16 -to TX1_DSA1[6]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_DSA1[6]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_DSA1[6]
+
+set_location_assignment PIN_J6 -to TX1_DSA2[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_DSA2[2]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_DSA2[2]
+
+set_location_assignment PIN_F10 -to TX1_DSA2[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_DSA2[3]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_DSA2[3]
+
+set_location_assignment PIN_G10 -to TX1_DSA2[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_DSA2[4]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_DSA2[4]
+
+set_location_assignment PIN_L10 -to TX1_DSA2[5]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_DSA2[5]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_DSA2[5]
+
+set_location_assignment PIN_D9 -to TX1_DSA2[6]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_DSA2[6]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_DSA2[6]
+
+set_location_assignment PIN_C9 -to TX1_LO1_MUXOUT
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_LO1_MUXOUT
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_LO1_MUXOUT
+
+set_location_assignment PIN_B13 -to TX1_LO2_MUXOUT
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_LO2_MUXOUT
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_LO2_MUXOUT
+
+set_location_assignment PIN_B16 -to TX1_SW1_SW2_CTRL
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_SW1_SW2_CTRL
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_SW1_SW2_CTRL
+
+set_location_assignment PIN_G7 -to TX1_SW10_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_SW10_A
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_SW10_A
+
+set_location_assignment PIN_D5 -to TX1_SW10_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_SW10_B
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_SW10_B
+
+set_location_assignment PIN_D6 -to TX1_SW11_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_SW11_A
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_SW11_A
+
+set_location_assignment PIN_E5 -to TX1_SW11_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_SW11_B
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_SW11_B
+
+set_location_assignment PIN_A9 -to TX1_SW13_V1
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_SW13_V1
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_SW13_V1
+
+set_location_assignment PIN_B8 -to TX1_SW14_V1
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_SW14_V1
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_SW14_V1
+
+set_location_assignment PIN_E1 -to TX1_SW3_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_SW3_A
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_SW3_A
+
+set_location_assignment PIN_D2 -to TX1_SW3_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_SW3_B
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_SW3_B
+
+set_location_assignment PIN_J2 -to TX1_SW4_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_SW4_A
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_SW4_A
+
+set_location_assignment PIN_K1 -to TX1_SW4_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_SW4_B
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_SW4_B
+
+set_location_assignment PIN_L1 -to TX1_SW5_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_SW5_A
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_SW5_A
+
+set_location_assignment PIN_K2 -to TX1_SW5_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_SW5_B
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_SW5_B
+
+set_location_assignment PIN_H1 -to TX1_SW6_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_SW6_A
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_SW6_A
+
+set_location_assignment PIN_F1 -to TX1_SW6_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_SW6_B
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_SW6_B
+
+set_location_assignment PIN_B1 -to TX1_SW7_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_SW7_A
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_SW7_A
+
+set_location_assignment PIN_C2 -to TX1_SW7_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_SW7_B
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_SW7_B
+
+set_location_assignment PIN_B7 -to TX1_SW8_V1
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_SW8_V1
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_SW8_V1
+
+set_location_assignment PIN_C7 -to TX1_SW8_V2
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_SW8_V2
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_SW8_V2
+
+set_location_assignment PIN_A6 -to TX1_SW8_V3
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_SW8_V3
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_SW8_V3
+
+set_location_assignment PIN_B3 -to TX1_SW9_A
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_SW9_A
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_SW9_A
+
+set_location_assignment PIN_B5 -to TX1_SW9_B
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TX1_SW9_B
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to TX1_SW9_B
+
+set_location_assignment PIN_N11 -to CH0_RX2_LED
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to CH0_RX2_LED
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to CH0_RX2_LED
+
+set_location_assignment PIN_T13 -to CH0_RX_LED
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to CH0_RX_LED
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to CH0_RX_LED
+
+set_location_assignment PIN_R13 -to CH0_TX_LED
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to CH0_TX_LED
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to CH0_TX_LED
+
+set_location_assignment PIN_A10 -to CH1_RX2_LED
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to CH1_RX2_LED
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to CH1_RX2_LED
+
+set_location_assignment PIN_H7 -to CH1_RX_LED
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to CH1_RX_LED
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to CH1_RX_LED
+
+set_location_assignment PIN_G6 -to CH1_TX_LED
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to CH1_TX_LED
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to CH1_TX_LED
+
+# The zbx_top_cpld.v has to stand first as it contains a define statement.
+set_global_assignment -name VERILOG_FILE ../zbx_top_cpld.v
+set_global_assignment -name VERILOG_FILE ../../../../../../lib/rfnoc/utils/ctrlport_decoder.v
+set_global_assignment -name SDC_FILE ../../../../constraints/timing/shared_constants.sdc
+set_global_assignment -name SDC_FILE ../../../../cpld/db_spi_shared_constants.sdc
+set_global_assignment -name SDC_FILE ../zbx_top_cpld.sdc
+set_global_assignment -name VERILOG_FILE ../../../../../../lib/control/synchronizer_impl.v
+set_global_assignment -name VERILOG_FILE ../../../../../../lib/control/synchronizer.v
+set_global_assignment -name VERILOG_FILE ../../../../../../lib/control/reset_sync.v
+set_global_assignment -name VERILOG_FILE ../../../../../../lib/rfnoc/utils/ctrlport_splitter.v
+set_global_assignment -name VERILOG_FILE ../../../../cpld/spi_slave.v
+set_global_assignment -name VERILOG_FILE ../../../../cpld/spi_slave_to_ctrlport_master.v
+set_global_assignment -name VERILOG_FILE ../register_endpoints/basic_regs.v
+set_global_assignment -name VERILOG_FILE ../register_endpoints/power_regs.v
+set_global_assignment -name VERILOG_FILE ../register_endpoints/switch_control.v
+set_global_assignment -name VERILOG_FILE ../register_endpoints/dsa_control.v
+set_global_assignment -name VERILOG_FILE ../register_endpoints/led_control.v
+set_global_assignment -name VERILOG_FILE ../../../../../../lib/wb_spi/rtl/verilog/spi_top.v
+set_global_assignment -name VERILOG_FILE ../../../../../../lib/wb_spi/rtl/verilog/spi_clgen.v
+set_global_assignment -name VERILOG_FILE ../../../../../../lib/wb_spi/rtl/verilog/spi_shift.v
+set_global_assignment -name VERILOG_FILE ../register_endpoints/lo_control.v
+set_global_assignment -name VERILOG_FILE ../zbx_cpld_core.v
+set_global_assignment -name VERILOG_FILE ../../../ctrlport_byte_deserializer.v
+set_global_assignment -name VERILOG_FILE ../../../../../../lib/rfnoc/utils/ctrlport_clk_cross.v
+set_global_assignment -name VERILOG_FILE ../../../../cpld/reconfig_engine.v
+set_global_assignment -name VERILOG_FILE ../../../../../../lib/rfnoc/utils/ctrlport_combiner.v
+set_global_assignment -name VERILOG_FILE ../register_endpoints/atr_controller.v
+set_global_assignment -name VERILOG_INCLUDE_FILE ../../../../../../lib/control/ram_2port_impl.vh
+set_global_assignment -name VERILOG_FILE ../../../../../../lib/control/ram_2port.v
+set_global_assignment -name VERILOG_FILE ../../../../../../lib/control/handshake.v
+set_global_assignment -name VERILOG_FILE ../../../../../../lib/control/pulse_synchronizer.v
+set_global_assignment -name VERILOG_FILE ../ctrlport_window.v
+
+set_global_assignment -name QSYS_FILE ../ip/on_chip_flash/on_chip_flash.qsys
+set_global_assignment -name QSYS_FILE ../ip/osc/osc.qsys
+set_global_assignment -name QSYS_FILE ../../../../cpld/ip/clkctrl/clkctrl.qsys
+set_global_assignment -name SOURCE_FILE ../db/zbx_top_cpld.cmp.rdb
+
+set_global_assignment -name HEX_FILE ./register_endpoints/memory_init_files/tx1_path_defaults.hex
+set_global_assignment -name HEX_FILE ./register_endpoints/memory_init_files/tx0_path_defaults.hex
+set_global_assignment -name HEX_FILE ./register_endpoints/memory_init_files/tx_dsa_defaults.hex
+set_global_assignment -name HEX_FILE ./register_endpoints/memory_init_files/rx1_path_defaults.hex
+set_global_assignment -name HEX_FILE ./register_endpoints/memory_init_files/rx0_path_defaults.hex
+set_global_assignment -name HEX_FILE ./register_endpoints/memory_init_files/rx_dsa_defaults.hex
+
+set_global_assignment -name ENABLE_OCT_DONE OFF
+set_global_assignment -name EXTERNAL_FLASH_FALLBACK_ADDRESS 00000000
+set_global_assignment -name USE_CONFIGURATION_DEVICE OFF
+set_global_assignment -name INTERNAL_FLASH_UPDATE_MODE "SINGLE COMP IMAGE WITH ERAM"
+set_global_assignment -name CRC_ERROR_OPEN_DRAIN OFF
+set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -fall
+set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -rise
+set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -fall
+set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -rise
+set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
+set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
+set_global_assignment -name FLOW_ENABLE_POWER_ANALYZER ON
+set_global_assignment -name POWER_DEFAULT_INPUT_IO_TOGGLE_RATE "12.5 %"
+
+set_global_assignment -name TOP_LEVEL_ENTITY zbx_top_cpld
+
+
+
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

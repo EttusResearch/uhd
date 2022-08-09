@@ -1847,7 +1847,7 @@ public:
         } else {
             UHD_LOGGER_WARNING("MULTI_USRP")
                 << "This device does not support querying the RX DC offset range.";
-            return meta_range_t(0, 0);
+            return meta_range_t(0.0, 0.0);
         }
     }
 
@@ -2340,7 +2340,7 @@ public:
         } else {
             UHD_LOGGER_WARNING("MULTI_USRP")
                 << "This device does not support querying the TX DC offset range.";
-            return meta_range_t(0, 0);
+            return meta_range_t(0.0, 0.0);
         }
     }
 

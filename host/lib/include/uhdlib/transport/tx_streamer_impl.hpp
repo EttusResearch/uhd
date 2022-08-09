@@ -11,6 +11,7 @@
 #include <uhd/stream.hpp>
 #include <uhd/types/metadata.hpp>
 #include <uhd/utils/tasks.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhdlib/transport/tx_streamer_zero_copy.hpp>
 #include <limits>
 #include <vector>
@@ -111,13 +112,13 @@ public:
 
         if (stream_args.args.has_key("spp")) {
             _spp = stream_args.args.cast<size_t>("spp", _spp);
-            _mtu = _spp * _convert_info.bytes_per_otw_item;
         }
     }
 
     virtual void connect_channel(const size_t channel, typename transport_t::uptr xport)
     {
-        const size_t mtu = xport->get_max_payload_size();
+        const size_t mtu = xport->get_mtu();
+        _hdr_len = std::max(_hdr_len, xport->get_chdr_hdr_len());
         _zero_copy_streamer.connect_channel(channel, std::move(xport));
 
         if (mtu < _mtu) {
@@ -323,11 +324,15 @@ protected:
         return _mtu;
     }
 
-    //! Sets the MTU and calculates spp
+    //! Sets the MTU and checks spp. If spp would exceed the new MTU, it is
+    // reduced accordingly.
     void set_mtu(const size_t mtu)
     {
         _mtu = mtu;
-        _spp = _mtu / _convert_info.bytes_per_otw_item;
+        const size_t spp_from_mtu = (_mtu - _hdr_len) / _convert_info.bytes_per_otw_item;
+        if (spp_from_mtu < _spp) {
+            _spp = spp_from_mtu;
+        }
     }
 
     //! Configures scaling factor for conversion
@@ -444,7 +449,12 @@ private:
     // MTU, determined when xport is connected and modifiable by subclass
     size_t _mtu = std::numeric_limits<std::size_t>::max();
 
-    // Maximum number of samples per packet
+    // Size of CHDR header in bytes
+    size_t _hdr_len = 0;
+
+    // Maximum number of samples per packet. Note that this is not necessarily
+    // related to the MTU, it is a user-chosen value. However, it is always
+    // bounded by the MTU.
     size_t _spp = std::numeric_limits<std::size_t>::max();
 
     // Metadata cache for send calls with no data

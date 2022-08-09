@@ -129,7 +129,7 @@ uhd::meta_range_t ad937x_ctrl::get_rf_freq_range(void)
 uhd::meta_range_t ad937x_ctrl::get_bw_filter_range(void)
 {
     // TODO: fix
-    return uhd::meta_range_t(0, 1);
+    return uhd::meta_range_t(0.0, 1.0);
 }
 
 std::vector<double> ad937x_ctrl::get_clock_rates(void)

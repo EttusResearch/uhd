@@ -191,6 +191,37 @@ def jtag_cpld_update(filename, logger):
     logger.trace("Done programming CPLD...")
     return True
 
+def get_mb_compat_rev():
+    import re
+    cmd = ['eeprom-dump', 'mb']
+    output = subprocess.check_output(
+        cmd,
+        stderr=subprocess.STDOUT,
+        ).decode('utf-8')
+    expression = re.compile("^usrp_eeprom_board_info.*compat_rev: 0x([0-9A-Fa-f]+)")
+    for line in output.splitlines():
+        match = expression.match(line)
+        if match:
+            compat_rev = int(match.group(1), 16)
+            return compat_rev
+    raise AssertionError("Cannot get compat_rev from MB eeprom.: `{}'".format(output))
+
+def get_default_cpld_image_names(compat_rev):
+    """Determine the default CPLD image name based on the compat_rev"""
+    default_cpld_image_10m04 = ['cpld-x410-10m04.rpd', 'x4xx_x410_cpld_default_10m04.rpd']
+    default_cpld_image_10m08 = ['cpld-x410-10m08.rpd', 'x4xx_x410_cpld_default_10m08.rpd']
+    default_image_name_mapping = {
+        1: default_cpld_image_10m04,
+        2: default_cpld_image_10m04,
+        3: default_cpld_image_10m04,
+        4: default_cpld_image_10m04,
+        5: default_cpld_image_10m04,
+        6: default_cpld_image_10m04,
+        7: default_cpld_image_10m08
+    }
+    if compat_rev not in default_image_name_mapping:
+        raise NotImplementedError("The default CPLD image name for compat_rev {} is not available".format(compat_rev))
+    return default_image_name_mapping[compat_rev]
 
 def main():
     """
@@ -199,11 +230,21 @@ def main():
     def parse_args():
         """Parse the command-line arguments"""
         parser = argparse.ArgumentParser(description='Update the CPLD image on the X4xx')
+        default_image_names = get_default_cpld_image_names(get_mb_compat_rev())
+        default_image_path = "/lib/firmware/ni/" + default_image_names[0]
         parser.add_argument("--file", help="Filename of CPLD image",
-                            default="/lib/firmware/ni/cpld-x410.rpd")
+                            default=default_image_path)
+        # There are two --updater options supported by the script: "legacy" and "flash". However,
+        # the "legacy" mode requires a custom FPGA bitfile where the JTAG engine is compiled into.
+        # This is not the case for the standard UHD bitfile and hence the legacy mode cannot be
+        # used with it. --> Hide the command line argument to avoid false expectations
         parser.add_argument("--updater",
-                            help="The image updater method to use, either \"legacy\" or \"flash\"",
+                            help = argparse.SUPPRESS,
                             default="flash")
+        parser.add_argument("--force", help="Force installing the CPLD image specified by the --file " \
+                            "argument if it does not match the name of the default CPLD image. " \
+                            "Using the wrong CPLD image may brick your device.",
+                            action="store_true", default=False, required=False)
         parser.add_argument(
             '-v',
             '--verbose',
@@ -218,7 +259,19 @@ def main():
             action="count",
             default=0
         )
-        return parser.parse_args()
+        args = parser.parse_args()
+        if (os.path.basename(args.file) not in default_image_names) and not args.force:
+            parser.epilog = "\nERROR: Valid CPLD image names for X410 compat_rev {} are {}, " \
+                "but you selected {}. Using the wrong CPLD image may brick your device. " \
+                "Please use the --force option if you are really sure.".format(
+                    get_mb_compat_rev(),
+                    ' and '.join(default_image_names),
+                    args.file
+                )
+            parser.print_help()
+            parser.epilog = None
+            sys.exit(1)
+        return args
 
     args = parse_args()
 

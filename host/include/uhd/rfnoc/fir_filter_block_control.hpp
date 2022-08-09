@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_FIR_FILTER_BLOCK_CONTROL_HPP
-#define INCLUDED_LIBUHD_FIR_FILTER_BLOCK_CONTROL_HPP
+#pragma once
 
 #include <uhd/config.hpp>
 #include <uhd/rfnoc/noc_block_base.hpp>
@@ -14,6 +13,8 @@
 namespace uhd { namespace rfnoc {
 
 /*! FIR Filter Block Control Class
+ *
+ * \ingroup rfnoc_blocks
  *
  * The FIR Filter Block is a finite impulse response filter block for RFNoC.
  *
@@ -65,5 +66,3 @@ public:
 };
 
 }} // namespace uhd::rfnoc
-
-#endif /* INCLUDED_LIBUHD_FIR_FILTER_BLOCK_CONTROL_HPP */

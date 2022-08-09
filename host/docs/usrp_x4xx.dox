@@ -255,7 +255,7 @@ The Ettus USRP X410 has various network interfaces:
     single interface is used (`sfpX`).
 
 The configuration files for these network interfaces are stored in:
-`/etc/systemd/network/`.
+`/data/network/<interface>.network`.
 
 Interface Name | Description                            | Default Configuration | Configuration File | Example: X4_200 FPGA image |
 ---------------|----------------------------------------|-----------------------|--------------------|----------------------------|
@@ -269,6 +269,33 @@ Interface Name | Description                            | Default Configuration 
 `sfp1_1`       | QSFP28 1 (lane 1)                      | 192.168.21.2/24       | sfp1_1.network     | N/C                        |
 `sfp1_2`       | QSFP28 1 (lane 2)                      | 192.168.22.2/24       | sfp1_2.network     | N/C                        |
 `sfp1_3`       | QSFP28 1 (lane 3)                      | 192.168.23.2/24       | sfp1_3.network     | N/C                        |
+
+For example, `/data/network/eth0.network` by default looks like:
+```
+[Match]
+Name=eth0
+KernelCommandLine=!nfsroot
+
+[Network]
+DHCP=ipv4
+IPForward=ipv4
+
+[DHCP]
+UseHostname=true
+ClientIdentifier=mac
+```
+
+In order to change the eth0 interface from using DHCP to using a static IP, you
+can edit `/data/network/eth0.network` to be like:
+```
+[Match]
+Name=eth0
+KernelCommandLine=!nfsroot
+
+[Network]
+Address=192.168.1.123/24
+```
+replacing the IP address with the IP of your choice.
 
 \subsubsection x4xx_getting_started_network_connectivity_leds Network Status LEDs
 
@@ -701,10 +728,14 @@ found.
 
 Run:
 
-    sudo bmaptool /path/to/usrp_x4xx_fs.sdimg.bz2 /dev/sdX
+    sudo bmaptool copy /path/to/usrp_x4xx_fs.sdimg.bz2 /dev/sdX
 
 to flash the eMMC with this image (replacing /dev/sdX with the block device
 of the X410's eMMC as indicated by your kernel log).
+
+When bmaptool has indicated that copying has completed, hit Ctrl-C on the U-boot
+prompt to terminate the mass storage mode. Then, power-cycle the device to load
+the new filesystem.
 
 \subsection x4xx_jtag_boot Booting X410 over JTAG
 
@@ -761,7 +792,7 @@ For a list of which arguments can be passed into make(), see Section
  mgmt_addr             | IPv4 address or hostname to which to connect the RPC client. Defaults to `addr'.| mgmt_addr=ni-sulfur-311FE00
  find_all              | When using broadcast, find all devices, even if unreachable via CHDR.           | find_all=1
  master_clock_rate     | Master Clock Rate in Hz.                                                        | master_clock_rate=250e6
- serialize_init        | Force serial initialization of daughterboards.                                  | serialize_init=1
+ serialize_init        | Force serial initialization of motherboards (default is parallel)               | serialize_init=1
  skip_init             | Skip the initialization process for the device.                                 | skip_init=1
  time_source           | Specify the time (PPS) source.                                                  | time_source=internal
  clock_source          | Specify the reference clock source.                                             | clock_source=internal
@@ -1114,6 +1145,10 @@ Block diagram:
 Note that this section does not cover every single clock signal present on the
 X410, but mainly those clock signals relevant for the operation of the RF
 components. Refer to the schematic for more details.
+
+\section x4xx_gpio GPIO
+
+See \subpage page_x400_gpio_api
 
 */
 // vim:ft=doxygen:

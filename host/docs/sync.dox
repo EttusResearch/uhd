@@ -16,44 +16,49 @@ products.
 USRP devices take two reference signals in order to synchronize clocks
 and time:
 
--   A 10 MHz reference to provide a single frequency reference for both
+-   A 10 MHz reference to provide a single frequency reference for all
     devices.
 -   A pulse-per-second (PPS) to synchronize the sample time across
     devices.
--   A MIMO cable transmits an encoded time message from one device to
-    another.
 
-\subsection sync_commonref_pps PPS and 10 MHz reference signals
+The way these reference signals are provided to the devices varies.
 
-Connect the front panel SMA connectors to the reference sources.
-Typically, these signals are provided by an external GPSDO. However,
-some USRP models can provide these signals from an optional internal
-GPSDO.
+\subsection sync_commonref_pps External PPS and 10 MHz reference signals
 
+Most USRPs have SMA connnectors on the front- or back-panel to provide these
+signals (10 MHz reference and PPS). These signals could be provided by an
+\ref page_octoclock, an external/third-party GPSDO, a measurement device's
+reference outputs, or some other clock-generating device.
+
+Connect these SMA connectors to the reference sources. In your software, select
+the external reference inputs as clock and time sources:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
 usrp->set_clock_source("external");
 usrp->set_time_source("external");
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-<b>Note:</b> Sometimes the delay on the PPS signal will cause it to arrive
-inside the timing margin the FPGA sampling clock, causing PPS edges to
-be separated by less or more than 100 million cycles of the FPGA clock.
+<b>Note:</b> For users generating their own signals for the external SMA
+connectors, the PPS should be clocked from the 10 MHz reference. See the
+application notes for your device for specific signal requirements (e.g.,
+voltage).
+
+
+<b>Note (N200/N210 and B100 only):</b> Sometimes the delay on the PPS signal will
+cause it to arrive inside the timing margin of the FPGA sampling clock, causing
+PPS edges to be separated by less or more than 100 million cycles of the FPGA
+clock.
+
 If this is the case, you can change the edge reference of the PPS signal
 with this parameter:
-
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
 usrp->set_time_source("_external_");
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-<b>Note2:</b> For users generating their own signals for the external SMA
-connectors, the PPS should be clocked from the 10 MHz reference. See the
-application notes for your device for specific signal requirements.
-
-\subsection sync_commonref_mimo MIMO cable reference signals
+\subsection sync_commonref_mimo MIMO cable reference signals (N200-Series, USRP2)
 
 Use the MIMO expansion cable to share reference sources (USRP2 and
-N-Series). The MIMO cable can be used synchronize one device to another
-device. Users of the MIMO cable may use Method 1 (explained below) to
+N200-Series only). The MIMO cable can be used to synchronize one device to
+another device. Users of the MIMO cable may use Method 1 (explained below) to
 synchronize multiple pairs of devices.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}

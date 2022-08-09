@@ -63,9 +63,9 @@ if(NOT ENABLE_SIM)
     target_include_directories(pyusrp_periphs PUBLIC
         ${PYTHON_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/lib/
-        ${UHD_HOST_ROOT}/lib/usrp/common
-        ${UHD_HOST_ROOT}/lib/usrp/common/ad9361_driver
-        ${UHD_HOST_ROOT}/lib/deps/pybind11/include
+        ${UHD_SOURCE_DIR}/lib/usrp/common
+        ${UHD_SOURCE_DIR}/lib/usrp/common/ad9361_driver
+        ${UHD_SOURCE_DIR}/lib/deps/pybind11/include
     )
     target_link_libraries(pyusrp_periphs ${Boost_LIBRARIES} usrp-periphs)
     add_custom_command(TARGET pyusrp_periphs POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/libpyusrp_periphs.so ${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm/libpyusrp_periphs.so)

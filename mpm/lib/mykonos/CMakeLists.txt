@@ -19,7 +19,7 @@ set(mykonos_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/ad937x_device.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ad937x_spi_iface.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/adi_ctrl.cpp
-    ${UHD_HOST_ROOT}/lib/types/ranges.cpp
+    ${UHD_SOURCE_DIR}/lib/types/ranges.cpp
 )
 
 add_subdirectory(adi)

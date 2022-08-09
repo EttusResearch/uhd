@@ -15,6 +15,8 @@ namespace uhd { namespace rfnoc {
 
 /*! DDC Block Control Class
  *
+ * \ingroup rfnoc_blocks
+ *
  * The DDC Block is a multi-channel digital downconverter (DDC) with built-in
  * frequency shift. The number of channels as well as the maximum decimation is
  * configurable in the FPGA, the block controller will read out registers to
@@ -78,6 +80,13 @@ public:
     virtual double get_freq(const size_t chan) const = 0;
 
     /*! Return the range of frequencies that \p chan can be set to.
+     *
+     * The frequency shifter is the first component in the DDC, and thus can
+     * shift frequencies (digitally) between -get_input_rate()/2
+     * and +get_input_rate()/2.
+     *
+     * The returned values are in Hz (not normalized frequencies) and are valid
+     * inputs for set_freq().
      *
      * \return The range of frequencies that the DDC can shift the input by
      */

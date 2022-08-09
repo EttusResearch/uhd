@@ -418,7 +418,7 @@ int32_t main(int32_t argc, char* argv[])
         try {
             b200->reset_fx3();
         } catch (std::exception& e) {
-            std::cerr << "Exception while reseting FX3: " << e.what() << std::endl;
+            std::cerr << "Exception while resetting FX3: " << e.what() << std::endl;
         }
 
         // re-open device

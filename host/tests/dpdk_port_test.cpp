@@ -120,10 +120,10 @@ int main(int argc, char** argv)
     // Attach link
     std::cout << "Attaching UDP send link..." << std::endl;
     io_srv->attach_send_link(link);
-    struct ether_addr dest_mac;
+    struct rte_ether_addr dest_mac;
     link->get_remote_mac(dest_mac);
     char mac_str[20];
-    ether_format_addr(mac_str, 20, &dest_mac);
+    rte_ether_format_addr(mac_str, 20, &dest_mac);
     std::cout << "Remote MAC address is " << mac_str << std::endl;
     std::cout << std::endl;
     std::cout << "Attaching UDP recv link..." << std::endl;

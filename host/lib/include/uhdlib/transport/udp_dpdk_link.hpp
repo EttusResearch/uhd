@@ -120,9 +120,9 @@ public:
      *
      * \param mac the remote host's MAC address
      */
-    inline void set_remote_mac(struct ether_addr& mac)
+    inline void set_remote_mac(struct rte_ether_addr& mac)
     {
-        ether_addr_copy(&mac, &_remote_mac);
+        rte_ether_addr_copy(&mac, &_remote_mac);
     }
 
     /*!
@@ -130,9 +130,9 @@ public:
      *
      * \param mac Where to write the MAC address
      */
-    inline void get_remote_mac(struct ether_addr& dst)
+    inline void get_remote_mac(struct rte_ether_addr& dst)
     {
-        ether_addr_copy(&_remote_mac, &dst);
+        rte_ether_addr_copy(&_remote_mac, &dst);
     }
 
     /*!
@@ -244,7 +244,7 @@ private:
     //! Remote IPv4 address, in network order
     uint32_t _remote_ipv4;
     //! Remote host's MAC address
-    struct ether_addr _remote_mac;
+    struct rte_ether_addr _remote_mac;
     //! Number of recv frames is not validated
     size_t _num_recv_frames;
     //! Maximum bytes of UDP payload data in recv frame

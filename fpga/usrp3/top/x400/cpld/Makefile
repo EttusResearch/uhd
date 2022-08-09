@@ -4,74 +4,99 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 #
 
-GIT_HASH = $(shell ../../../tools/scripts/git-hash.sh)
+# NOTE: All comments prefixed with a "##" will be displayed as a part of the "make help" target
+##-------------------
+##USRP X410 CPLD Help
+##-------------------
+##Usage:
+## make <Targets> <Options>
+##
+##Output:
+## build/<device-id>/usrp_x410_cpld.pof:            Bitstream to use with JTAG programmer
+## build/<device-id>/usrp_x410_cpld.svf:            Bitstream to use with PS JTAG engine (background programming)
+## build/<device-id>/usrp_x410_cpld.rpd:            Bitstream to use via reconfig engine
+## build/<device-id>/usrp_x410_cpld_isp_off.svf:    Bitstream to use with JTAG test points (initial programming)
 
-build: ip
-	@echo -ne "\n---- Make: Synthesis ...\n\n";
-	@quartus_map mb_cpld --verilog_macro="GIT_HASH=32'h$(GIT_HASH)";
-	@echo -ne "\n---- Make: Partition Merge ...\n\n";
-	@quartus_cdb mb_cpld --merge=on --incremental_compilation_import
-	@echo -ne "\n\n---- Make: Implementation ...\n\n";
-	@quartus_fit mb_cpld;
-	@echo -ne "\n\n---- Make: Analyzing timing ...\n\n";
-	@quartus_sta mb_cpld;
-	@# grep for unconstrained path warning
-	@grep "332102" output_files/mb_cpld.sta.rpt; \
-		if [ $$? -eq 0 ]; then false; else true; fi
-	@# grep for timing closure critical warning
-	@grep "332148" output_files/mb_cpld.sta.rpt; \
-		if [ $$? -eq 0 ]; then false; else true; fi
-	@# expect no warnings
-	@grep -iw "warning" output_files/mb_cpld.sta.rpt; \
-		if [ $$? -eq 0 ]; then false; else true; fi
-	@# expect no critical warning except "review power analyzer report file"
-	@grep -i "critical warning" output_files/* | grep -v 16562; \
-		if [ $$? -eq 0 ]; then false; else true; fi
-	@# PS chip select analysis
-	@quartus_sta -t scripts/ps_cs_analysis.tcl
-	@echo -ne "\n\n---- Make: Generating bitfile...\n\n";
-	@quartus_asm mb_cpld;
-	@echo -ne "\n\n---- Make: Converting bitfile to svf format (ISP enabled)...\n\n";
-	@quartus_cpf --convert \
-	  --frequency 10.0MHz \
-	  --voltage 2.5       \
-	  --operation p       \
-	  ./output_files/mb_cpld.pof ./output_files/mb_cpld_isp_on.svf -o background_programming=on;
-	@echo -ne "\n\n---- Make: Converting bitfile to svf format (ISP disabled)...\n\n";
-	@quartus_cpf --convert \
-	  --frequency 10.0MHz \
-	  --voltage 2.5       \
-	  --operation p       \
-	  ./output_files/mb_cpld.pof ./output_files/mb_cpld_isp_off.svf;
-	@echo -ne "\n\n---- Make: Converting bitfile to rdp format...\n\n";
-	@quartus_cpf -c raw_conversion.cof
-	@echo -ne "\n\n---- Make: Copy final files...\n\n";
-	@mkdir -p build
-	@cp output_files/mb_cpld.pof                     build/usrp_x410_cpld.pof
-	@cp output_files/mb_cpld_isp_off.svf             build/usrp_x410_cpld_isp_off.svf
-	@cp output_files/mb_cpld_isp_on.svf              build/usrp_x410_cpld.svf
-	@cp output_files/mb_cpld_converted_cfm0_auto.rpd build/usrp_x410_cpld.rpd
-	@echo -ne "\n\n---- Make: MB CPLD ready!\n";
-	@echo -ne "     Use build/usrp_x410_cpld.pof via JTAG programmer or\n"
-	@echo -ne "         build/usrp_x410_cpld.svf (ISP on) via PS JTAG-engine (background programming) or\n"
-	@echo -ne "         build/usrp_x410_cpld.rpd via reconfig engine or\n"
-	@echo -ne "         build/usrp_x410_cpld_isp_off.svf via JTAG test points (initial programming)\n"
+# Definitions
+10M04_ID = "10M04SAU169I7G"
+10M08_ID = "10M08SAU169I7G"
 
-clean:
-	@echo -ne "\nCleaning MB CPLD...\n";
+# Target specific variables
+X410_CPLD_10M04:     DEFS = VARIANT_`echo $(10M04_ID) | cut -c1-5`=1
+X410_CPLD_10M08:     DEFS = VARIANT_`echo $(10M08_ID) | cut -c1-5`=1
+X410_CPLD_MFG_10M08: DEFS = VARIANT_`echo $(10M08_ID) | cut -c1-5`=1  MFG_SUPPORT=1
+
+TARGET = bin
+TOP ?= mb_cpld
+
+# quartus_build($1=Device, $2=Definitions)
+quartus_build = make -f Makefile.cpld.inc $(TARGET) NAME=$@ ARCH="MAX10" PART_ID="$1" $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2" POST_STA_TCL="ps_cs_analysis.tcl"
+
+# quartus_ip($1=Device, $2=Definitions)
+quartus_ip = make -f Makefile.cpld.inc quar_ip NAME=$@ ARCH="MAX10" PART_ID="$1" $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2"
+
+# post_build($1=Artifact Name)
+ifeq ($(TARGET),bin)
+	post_build = @\
+		mkdir -p build/; \
+		echo "Exporting bitstream files..."; \
+		cp build-$@/output_files/$(TOP).pof                      build/$(1).pof; \
+		cp build-$@/output_files/$(TOP)_isp_off.svf              build/$(1)_isp_off.svf; \
+		cp build-$@/output_files/$(TOP)_isp_on.svf               build/$(1).svf; \
+		cp build-$@/output_files/$(TOP)_converted_cfm0_auto.rpd  build/$(1).rpd; \
+		echo -ne "\n\n---- Make: MB CPLD ready!\n"; \
+		echo -ne "     Use build/$(1).pof via JTAG programmer or\n"; \
+		echo -ne "         build/$(1).svf (ISP on) via PS JTAG-engine (background programming) or\n"; \
+		echo -ne "         build/$(1).rpd via reconfig engine or\n"; \
+		echo -ne "         build/$(1)_isp_off.svf via JTAG test points (initial programming)\n";
+else
+	post_build = @echo "Skipping bitfile export."
+endif
+
+##
+##Supported Targets
+##-----------------
+
+all:              X410_CPLD_10M04 X410_CPLD_10M08 ##(Default target)
+
+##X410_CPLD_10M04:  Motherboard CPLD targeted to 10M04SAU169I7G.
+X410_CPLD_10M04:
+	$(call quartus_build,$(10M04_ID),$(DEFS))
+	$(call post_build,"usrp_x410_cpld_`echo $(10M04_ID) | cut -c1-5 | tr A-Z a-z`")
+
+##X410_CPLD_10M08:  Motherboard CPLD targeted to 10M08SAU169I7G.
+X410_CPLD_10M08:
+	$(call quartus_build,$(10M08_ID),$(DEFS))
+	$(call post_build,"usrp_x410_cpld_`echo $(10M08_ID) | cut -c1-5 | tr A-Z a-z`")
+
+X410_CPLD_IP:     ##Build IPs only, needed for simulation.
+	@# Building only X410_CPLD_10M04 IP
+	$(call quartus_ip,$(10M04_ID),$(DEFS))
+
+# Internal manufacturing test image.
+X410_CPLD_MFG_10M08:
+	$(call quartus_build,$(10M08_ID),$(DEFS))
+	$(call post_build,"usrp_x410_cpld_mfg_`echo $(10M08_ID) | cut -c1-5 | tr A-Z a-z`")
+
+clean:            ##Clean up all target build outputs.
+	@echo -ne "\nCleaning targets and git repo...\n";
+	@rm -rf build-X410_CPLD*
+	@rm -rf build
 	@git clean -Xdf
 
-QSYS_PATH=$(subst \,/,$(QSYS_ROOTDIR))
+cleanall:         ##Clean up all target and ip build outputs.
+	@echo -ne "\nCleaning targets, IP, and git repo...\n";
+	@rm -rf build-X410_CPLD*
+	@rm -rf build
+	@rm -rf build-ip
+	@git clean -Xdf
 
-ip: ip/flash/on_chip_flash/simulation/on_chip_flash.v \
-    ip/clkctrl/clkctrl/simulation/clkctrl.v
+help:             ##Show this help message.
+	@grep -h "##" Makefile | grep -v "\"##\"" | sed -e 's/\\$$//' | sed -e 's/##//'
 
-ip/flash/on_chip_flash/simulation/on_chip_flash.v:
-	$(QSYS_PATH)/qsys-generate ip/flash/on_chip_flash.qsys --simulation=VERILOG
-
-ip/clkctrl/clkctrl/simulation/clkctrl.v:
-	$(QSYS_PATH)/qsys-generate ip/clkctrl/clkctrl.qsys --simulation=VERILOG
-
-all: build
+##
+##Supported Options
+##-----------------
+##
 
 .PHONY: all build clean ip

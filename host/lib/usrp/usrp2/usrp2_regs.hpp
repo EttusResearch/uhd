@@ -61,6 +61,10 @@
 #define SPI_SS_TX_DB 128
 #define SPI_SS_ADS62P44 256 // for usrp2p
 
+#define SPI_SS_AD9516    1
+#define SPI_SS_AD9142A   2
+#define SPI_SS_LTC2185  256 //for usrp2xk
+
 /////////////////////////////////////////////////
 // Misc Control
 ////////////////////////////////////////////////

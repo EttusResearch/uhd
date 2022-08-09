@@ -11,7 +11,6 @@
 #include <string>
 #include <vector>
 
-static constexpr size_t FPGPIO_MASTER_RADIO     = 0;
 static constexpr double AD9361_RX_MIN_BANDWIDTH = 20.0e6; // Hz
 static constexpr double AD9361_RX_MAX_BANDWIDTH = 40.0e6; // Hz
 

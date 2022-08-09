@@ -11,11 +11,10 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhdlib/utils/atomic.hpp>
-#include <boost/thread/condition_variable.hpp>
-#include <boost/thread/mutex.hpp>
+#include <boost/thread/condition.hpp>
 #include <functional>
-#include <iostream>
 #include <memory>
+#include <mutex>
 #include <vector>
 
 using namespace uhd;
@@ -98,7 +97,7 @@ public:
 
     void release(void) override
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::unique_lock<std::mutex> lock(_mutex);
         _ok_to_auto_flush = true;
 
         // get a reference to the VITA header before incrementing
@@ -124,7 +123,7 @@ public:
 
     UHD_INLINE sptr get_new(const double timeout)
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         _ok_to_auto_flush = false;
 
         if (not _last_send_buff) {
@@ -146,8 +145,8 @@ private:
     char* _mem_buffer_tip;
 
     // private variables for auto flusher
-    boost::mutex _mutex;
-    boost::condition_variable _cond;
+    std::mutex _mutex;
+    boost::condition _cond;
     uhd::task::sptr _task;
     bool _ok_to_auto_flush;
 
@@ -157,7 +156,7 @@ private:
      */
     void auto_flush(void)
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::unique_lock<std::mutex> lock(_mutex);
         const bool timeout = not _cond.timed_wait(lock, AUTOFLUSH_TIMEOUT);
         if (timeout and _ok_to_auto_flush and _last_send_buff and _bytes_in_buffer != 0) {
             _last_send_buff->commit(_bytes_in_buffer);

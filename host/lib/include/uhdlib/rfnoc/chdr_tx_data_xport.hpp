@@ -175,13 +175,41 @@ public:
      */
     ~chdr_tx_data_xport();
 
+    /*! Returns MTU for this transport in bytes
+     *
+     * MTU is the max size for CHDR packets, including headers. For most
+     * applications, get_max_payload_size() is probably the more useful method.
+     * Compare also noc_block_base::get_mtu().
+     *
+     * \return MTU in bytes
+     */
+    size_t get_mtu() const
+    {
+        return _mtu;
+    }
+
+    /*! Return the size of a CHDR packet header, in bytes.
+     *
+     * This helper function factors in the CHDR width for this transport.
+     * Compare also noc_block_base::get_chdr_hdr_len().
+     *
+     * \returns the length of a CHDR header in bytes
+     */
+    size_t get_chdr_hdr_len() const
+    {
+        return _hdr_len;
+    }
+
     /*! Returns maximum number of payload bytes
+     *
+     * This is smaller than the MTU. Compare also
+     * noc_block_base::get_max_payload_size().
      *
      * \return maximum number of payload bytes
      */
     size_t get_max_payload_size() const
     {
-        return _max_payload_size;
+        return _mtu - _hdr_len;
     }
 
     /*!
@@ -373,8 +401,11 @@ private:
     // Flow control state
     tx_flow_ctrl_state _fc_state;
 
-    // Maximum data payload in bytes
-    size_t _max_payload_size = 0;
+    // MTU in bytes
+    size_t _mtu = 0;
+
+    // Size of CHDR headers
+    size_t _hdr_len = 0;
 
     // Sequence number for data packets
     uint16_t _data_seq_num = 0;

@@ -12,13 +12,13 @@
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhd/utils/math.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhdlib/utils/narrow.hpp>
-#include <cstdint>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
-#include <boost/math/special_functions/sign.hpp>
 #include <cmath>
+#include <cstdint>
 #include <iomanip>
 #include <tuple>
 
@@ -380,15 +380,10 @@ double usrp1_codec_ctrl_impl::fine_tune(double codec_rate, double target_freq)
 
 void usrp1_codec_ctrl_impl::set_duc_freq(double freq, double rate)
 {
-    double codec_rate = rate * 2;
-
-    // correct for outside of rate (wrap around)
-    freq = std::fmod(freq, rate);
-    if (std::abs(freq) > rate / 2.0)
-        freq -= boost::math::sign(freq) * rate;
-
-    double coarse_freq = coarse_tune(codec_rate, freq);
-    double fine_freq   = fine_tune(codec_rate / 4, freq - coarse_freq);
+    const double codec_rate  = rate * 2;
+    freq                     = uhd::math::wrap_frequency(freq, rate);
+    const double coarse_freq = coarse_tune(codec_rate, freq);
+    const double fine_freq   = fine_tune(codec_rate / 4, freq - coarse_freq);
 
     UHD_LOGGER_DEBUG("USRP1") << "ad9862 tuning result:"
                               << "   requested:   " << freq

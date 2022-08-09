@@ -8,15 +8,15 @@
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/thread.hpp>
 #include <boost/asio.hpp>
-#include <boost/format.hpp>
 #include <boost/program_options.hpp>
-#include <boost/thread/condition_variable.hpp>
+#include <boost/thread/condition.hpp>
 #include <boost/thread/thread.hpp>
 #include <chrono>
 #include <csignal>
 #include <cstdlib>
 #include <functional>
 #include <iostream>
+#include <mutex>
 #include <thread>
 #include <vector>
 
@@ -99,7 +99,7 @@ public:
         }
 
         std::cout << "spawning relay threads... " << _port << std::endl;
-        boost::unique_lock<boost::mutex> lock(
+        std::unique_lock<std::mutex> lock(
             spawn_mutex); // lock in preparation to wait for threads to spawn
         (void)_thread_group.create_thread(
             std::bind(&udp_relay_type::server_thread, this));
@@ -134,7 +134,7 @@ private:
         std::vector<char> buff(insane_mtu);
         while (not boost::this_thread::interruption_requested()) {
             if (wait_for_recv_ready(_server_socket->native_handle())) {
-                boost::mutex::scoped_lock lock(_endpoint_mutex);
+                std::unique_lock<std::mutex> lock(_endpoint_mutex);
                 const size_t len = _server_socket->receive_from(
                     asio::buffer(&buff.front(), buff.size()), _endpoint);
                 lock.unlock();
@@ -164,7 +164,7 @@ private:
             if (wait_for_recv_ready(_client_socket->native_handle())) {
                 const size_t len =
                     _client_socket->receive(asio::buffer(&buff.front(), buff.size()));
-                boost::mutex::scoped_lock lock(_endpoint_mutex);
+                std::lock_guard<std::mutex> lock(_endpoint_mutex);
                 _server_socket->send_to(asio::buffer(&buff.front(), len), _endpoint);
             }
         }
@@ -175,10 +175,10 @@ private:
     boost::thread_group _thread_group;
     asio::io_service _io_service;
     asio::ip::udp::endpoint _endpoint;
-    boost::mutex _endpoint_mutex;
+    std::mutex _endpoint_mutex;
     socket_type _server_socket, _client_socket;
-    boost::mutex spawn_mutex;
-    boost::condition_variable wait_for_thread;
+    std::mutex spawn_mutex;
+    boost::condition wait_for_thread;
 };
 
 
@@ -206,7 +206,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     // print the help message
     if (vm.count("help") or not vm.count("addr")) {
-        std::cout << boost::format("UHD Network Relay %s") % desc << std::endl
+        std::cout << "UHD Network Relay " << desc << std::endl
                   << "Runs a network relay between UHD on one computer and a USRP on the "
                      "network.\n"
                   << "This example is basically for test purposes. Use at your own "

@@ -87,6 +87,20 @@ IFACES = [
         fn_from_string("double get_spll_freq()"),
         fn_from_string("void setup_threshold(size_t db_number, size_t chan, size_t threshold_block, const std::string& mode, size_t delay, size_t under, size_t over)"),
         fn_from_string("bool is_db_gpio_ifc_present(size_t db_idx)"),
+
+        # Digital I/O functions
+        fn_from_string("void dio_set_voltage_level(const std::string& port, const std::string& level)"),
+        fn_from_string("void dio_set_port_mapping(const std::string& mapping)"),
+        fn_from_string("void dio_set_pin_directions(const std::string& port, uint32_t values)"),
+    ]),
+    Interface("dio_rpc", [
+        fn_from_string("std::vector<std::string> dio_get_supported_voltage_levels(const std::string& port)"),
+        fn_from_string("void dio_set_voltage_level(const std::string& port, const std::string& level)"),
+        fn_from_string("std::string dio_get_voltage_level(const std::string& port)"),
+        fn_from_string("void dio_set_port_mapping(const std::string& mapping)"),
+        fn_from_string("void dio_set_pin_directions(const std::string& port, uint32_t values)"),
+        fn_from_string("void dio_set_external_power(const std::string& port, bool enable)"),
+        fn_from_string("std::string dio_get_external_power_state(const std::string& port)"),
     ]),
     Interface("dboard_base_rpc", [
         fn_from_string("std::vector<std::string> get_sensors(const std::string& trx)"),

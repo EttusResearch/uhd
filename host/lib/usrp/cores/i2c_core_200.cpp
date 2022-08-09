@@ -8,8 +8,8 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/usrp/cores/i2c_core_200.hpp>
-#include <boost/thread/mutex.hpp>
 #include <chrono>
+#include <mutex>
 #include <thread>
 
 #define REG_I2C_WR_PRESCALER_LO (1 << 3) | 0
@@ -137,13 +137,13 @@ private:
 
     void poke(const size_t what, const uint8_t cmd)
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         _iface->poke32(_base, (what << 8) | cmd);
     }
 
     uint8_t peek(const size_t what)
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         _iface->poke32(_base, what << 8);
         return uint8_t(_iface->peek32(_readback));
     }
@@ -151,7 +151,7 @@ private:
     wb_iface::sptr _iface;
     const size_t _base;
     const size_t _readback;
-    boost::mutex _mutex;
+    std::mutex _mutex;
 };
 
 i2c_core_200::sptr i2c_core_200::make(

@@ -12,6 +12,10 @@
 
 namespace uhd { namespace rfnoc {
 
+/*! Null block: Bit bucket or -sink
+ *
+ * \ingroup rfnoc_blocks
+ */
 class UHD_API null_block_control : public noc_block_base
 {
 public:

@@ -52,6 +52,14 @@ using namespace uhd::transport;
 #define N200_PROD_FPGA_IMAGE_ADDR 0x00180000
 #define N200_SAFE_FPGA_IMAGE_ADDR 0x00000000
 
+#define N200_XK_FW_MAX_SIZE_BYTES 0x3fff	//16kB
+#define N200_XK_PROD_FW_IMAGE_ADDR  0x00f80000		//15.5MB
+#define N200_XK_SAFE_FW_IMAGE_ADDR  0x00f00000		//15MB
+
+#define N200_XK_FPGA_MAX_SIZE_BYTES 0xA00000	//10MB
+#define N200_XK_PROD_FPGA_IMAGE_ADDR  0x00500000	//5MB
+#define N200_XK_SAFE_FPGA_IMAGE_ADDR  0x00000000
+
 /*
  * Packet codes
  */
@@ -90,7 +98,10 @@ typedef enum {
 static const uhd::dict<uint32_t, std::string> n200_filename_map =
     boost::assign::map_list_of(
         0, "n2xx") // Is an N-Series, but the EEPROM value is invalid
-    (0xa, "n200_r3")(0x100a, "n200_r4")(0x10a, "n210_r3")(0x110a, "n210_r4");
+    (0xa, "n200_r3")(0x100a, "n200_r4")(0x10a, "n210_r3")(0x110a, "n210_r4")
+
+	(0x210a, "n210_xk")
+	(0x200a, "n210_xa");
 
 /*
  * Packet structure
@@ -275,7 +286,10 @@ static void n200_validate_firmware_image(n200_session_t& session)
     }
 
     session.size     = fs::file_size(session.filepath);
-    session.max_size = N200_FW_MAX_SIZE_BYTES;
+
+    if(session.dev_addr["hw_rev"] == "n210_xk") session.max_size = N200_XK_FW_MAX_SIZE_BYTES;
+    else if(session.dev_addr["hw_rev"] == "n210_xa") session.max_size = N200_XK_FW_MAX_SIZE_BYTES;
+    else session.max_size = N200_FW_MAX_SIZE_BYTES;
 
     if (session.size > session.max_size) {
         throw uhd::runtime_error(
@@ -308,7 +322,9 @@ static void n200_validate_fpga_image(n200_session_t& session)
     }
 
     session.size     = fs::file_size(session.filepath);
-    session.max_size = N200_FPGA_MAX_SIZE_BYTES;
+    if(session.dev_addr["hw_rev"] == "n210_xk") session.max_size = N200_XK_FPGA_MAX_SIZE_BYTES;
+    else if(session.dev_addr["hw_rev"] == "n210_xa") session.max_size = N200_XK_FPGA_MAX_SIZE_BYTES;
+    else session.max_size = N200_FPGA_MAX_SIZE_BYTES;
 
     if (session.size > session.max_size) {
         throw uhd::runtime_error(
@@ -378,14 +394,33 @@ static void n200_setup_session(n200_session_t& session,
         n200_validate_fpga_image(session);
 
     session.overwrite_safe = image_loader_args.args.has_key("overwrite-safe");
-    if (session.overwrite_safe) {
-        session.flash_addr = session.fw ? N200_SAFE_FW_IMAGE_ADDR
-                                        : N200_SAFE_FPGA_IMAGE_ADDR;
-        session.burn_type = session.fw ? "firmware safe" : "FPGA safe";
-    } else {
-        session.flash_addr = session.fw ? N200_PROD_FW_IMAGE_ADDR
-                                        : N200_PROD_FPGA_IMAGE_ADDR;
-        session.burn_type = session.fw ? "firmware" : "FPGA";
+    if(session.dev_addr["hw_rev"] == "n210_xk" or (session.dev_addr["hw_rev"] == "n210_xa")){
+    	if(session.overwrite_safe){
+    		session.flash_addr = session.fw ? N200_XK_SAFE_FW_IMAGE_ADDR
+                                        	: N200_XK_SAFE_FPGA_IMAGE_ADDR;
+    		session.burn_type = session.fw ? "firmware safe"
+                                       	   : "FPGA safe";
+    	}
+    	else{
+    		session.flash_addr = session.fw ? N200_XK_PROD_FW_IMAGE_ADDR
+                                        	: N200_XK_PROD_FPGA_IMAGE_ADDR;
+    		session.burn_type = session.fw ? "firmware"
+                                       	   : "FPGA";
+    	}
+    }
+    else{
+    	if(session.overwrite_safe){
+    		session.flash_addr = session.fw ? N200_SAFE_FW_IMAGE_ADDR
+                                        	: N200_SAFE_FPGA_IMAGE_ADDR;
+    		session.burn_type = session.fw ? "firmware safe"
+                                       	   : "FPGA safe";
+    	}
+    	else{
+    		session.flash_addr = session.fw ? N200_PROD_FW_IMAGE_ADDR
+                                        	: N200_PROD_FPGA_IMAGE_ADDR;
+    		session.burn_type = session.fw ? "firmware"
+                                       	   : "FPGA";
+    	}
     }
 
     session.xport = udp_simple::make_connected(

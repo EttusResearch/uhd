@@ -21,6 +21,8 @@
 namespace uhd { namespace rfnoc {
 
 /*! Parent class for radio block controllers
+ *
+ * \ingroup rfnoc_blocks
  */
 class radio_control : public noc_block_base,
                       public rf_control::core_iface,
@@ -61,6 +63,20 @@ public:
     //
     // Ultimately, the exact impact of SPC is device-dependent.
     virtual size_t get_spc() const = 0;
+
+    /**************************************************************************
+     * Time-Related API Calls
+     *************************************************************************/
+    /*! Get tick count
+     * \returns tick count
+     * \throws uhd::not_implemented_error if not implemented
+     */
+    virtual uint64_t get_ticks_now() = 0;
+    /*! Get the time
+     * \returns time now
+     * \throws uhd::not_implemented_error if not implemented
+     */
+    virtual uhd::time_spec_t get_time_now() = 0;
 
     /**************************************************************************
      * RF-Related API Calls

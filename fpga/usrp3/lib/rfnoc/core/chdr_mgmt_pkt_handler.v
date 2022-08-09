@@ -1,30 +1,41 @@
 //
-// Copyright 2018 Ettus Research, A National Instruments Company
+// Copyright 2021 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
 // Module: chdr_mgmt_pkt_handler
+//
 // Description:
-//   This module sits inline on a CHDR stream and adds a management
-//   node that is discoverable and configurable by software. As a 
-//   management node, a control-port master to configure any slave.
-//   The output CHDR stream has an additional tdest and tid which can
-//   be used to make routing decisions for management packets only.
-//   tid will be CHDR_MGMT_ROUTE_TDEST when tdest should be used.
+//
+//   This module sits inline on a CHDR stream and adds a management node that
+//   is discoverable and configurable by software. As a management node, it has
+//   a control-port master to configure any slave. The output CHDR stream has
+//   an additional tdest and tid which can be used to make routing decisions
+//   for management packets only. tid will be CHDR_MGMT_ROUTE_TDEST when tdest
+//   should be used.
 //
 // Parameters:
+//
 //   - PROTOVER: RFNoC protocol version {8'd<major>, 8'd<minor>}
 //   - CHDR_W: Width of the CHDR bus in bits
 //   - USER_W: Width of the user/data bits that accompany an advertisement op
-//   - RESP_FIFO_SIZE: Log2 of the depth of the response FIFO
-//                     Maximum value = 8
+//   - RESP_FIFO_SIZE: Log2 of the depth of the response FIFO (max value of 8)
 //
 // Signals:
+//
 //   - s_axis_chdr_* : Input CHDR stream (AXI-Stream)
 //   - m_axis_chdr_* : Output CHDR stream (AXI-Stream)
-//   - node_info: Info about the node that contains this management slave
-//   - ctrlport_* : Control-port master for management peripheral
-//   - op_*: Strobe and info signals for a mgmt advertisement
+//                   - m_axis_chdr_tid contains the routing mode, whose values
+//                     are defined in rfnoc_chdr_internal_utils.vh.
+//                   - m_axis_chdr_tdest contains the manual routing
+//                     destination, which is only valid for tid =
+//                     CHDR_MGMT_ROUTE_TDEST.
+//   - node_info     : Info about the node that contains this management slave
+//   - ctrlport_*    : Control-port master for management peripheral
+//   - op_*          : Strobe and info signals for a mgmt advertisement
+
+`default_nettype none
+
 
 module chdr_mgmt_pkt_handler #(
   parameter [15:0] PROTOVER       = {8'd1, 8'd0},
@@ -44,10 +55,10 @@ module chdr_mgmt_pkt_handler #(
   input  wire              s_axis_chdr_tvalid,
   output wire              s_axis_chdr_tready,
   input  wire [USER_W-1:0] s_axis_chdr_tuser,
-  // CHDR Data Out (AXI-Stream)             
+  // CHDR Data Out (AXI-Stream)
   output wire [CHDR_W-1:0] m_axis_chdr_tdata,
-  output wire [1:0]        m_axis_chdr_tid,      // Routing mode. Values defined in rfnoc_chdr_internal_utils.vh
-  output wire [9:0]        m_axis_chdr_tdest,    // Manual routing destination (only valid for tid = CHDR_MGMT_ROUTE_TDEST)
+  output wire [1:0]        m_axis_chdr_tid,
+  output wire [9:0]        m_axis_chdr_tdest,
   output wire              m_axis_chdr_tlast,
   output wire              m_axis_chdr_tvalid,
   input  wire              m_axis_chdr_tready,
@@ -86,7 +97,7 @@ module chdr_mgmt_pkt_handler #(
   wire              s_mgmt_tlast, s_mgmt_tvalid, s_mgmt_tready;
   wire              m_mgmt_tlast, m_mgmt_tvalid, m_mgmt_tready;
 
-  generate if (!MGMT_ONLY) begin
+  generate if (!MGMT_ONLY) begin : gen_not_mgmt_only
     // Instantiate MUX and DEMUX to segregate management and non-management packets.
     // Management packets go to the main state machine, all others get bypassed to
     // the output.
@@ -99,7 +110,7 @@ module chdr_mgmt_pkt_handler #(
     // We consume the management packet only if it is actually a management packet and we
     // don't know where it's going. If the packet has a valid EPID, it is a response that
     // is capable of being routed.
-    wire consume_mgmt_pkt = (chdr_get_pkt_type(s_header[63:0]) == CHDR_PKT_TYPE_MGMT) && 
+    wire consume_mgmt_pkt = (chdr_get_pkt_type(s_header[63:0]) == CHDR_PKT_TYPE_MGMT) &&
                             (chdr_get_dst_epid(s_header[63:0]) == NULL_EPID);
 
     axi_demux #(
@@ -130,7 +141,7 @@ module chdr_mgmt_pkt_handler #(
       .o_tlast(m_axis_chdr_tlast),
       .o_tvalid(m_axis_chdr_tvalid), .o_tready(m_axis_chdr_tready)
     );
-  end else begin
+  end else begin : gen_mgmt_only
     // We are assuming that only management packets come into this module so we don't
     // instantiate a bypass path to save resources.
     assign s_mgmt_tdata       = s_axis_chdr_tdata;
@@ -179,9 +190,10 @@ module chdr_mgmt_pkt_handler #(
     .space(), .occupied()
   );
 
-  generate 
-    if (CHDR_W > 64)
+  generate
+    if (CHDR_W > 64) begin : gen_upper_mgmt_tdata
       assign m_mgmt_tdata[CHDR_W-1:64] = 'h0;
+    end
   endgenerate
 
   // ---------------------------------------------------
@@ -193,8 +205,8 @@ module chdr_mgmt_pkt_handler #(
   localparam [3:0] ST_MGMT_OP_EXEC    = 4'd3;   // Management operation started
   localparam [3:0] ST_MGMT_OP_WAIT    = 4'd4;   // Waiting for management op to finish
   localparam [3:0] ST_MGMT_OP_DONE    = 4'd5;   // Consuming management op line
-  localparam [3:0] ST_CHDR_OUT_HDR    = 4'd6;   // Outputing a CHDR header
-  localparam [3:0] ST_MGMT_OUT_HDR    = 4'd7;   // Outputing a managment header
+  localparam [3:0] ST_CHDR_OUT_HDR    = 4'd6;   // Outputting a CHDR header
+  localparam [3:0] ST_MGMT_OUT_HDR    = 4'd7;   // Outputting a management header
   localparam [3:0] ST_PASS_PAYLOAD    = 4'd8;   // Passing payload for downstream hops
   localparam [3:0] ST_MOD_LAST_HOP    = 4'd9;   // Processing last hop
   localparam [3:0] ST_POP_RESPONSE    = 4'd10;  // Popping response from response FIFO
@@ -269,7 +281,7 @@ module chdr_mgmt_pkt_handler #(
 
         // ST_MGMT_IN_HDR
         // ------------------
-        // - Cache and consume the managment header. It will be modified
+        // - Cache and consume the management header. It will be modified
         //   later before the packet is sent out.
         // - Initialize management specific state
         ST_MGMT_IN_HDR: begin
@@ -366,7 +378,7 @@ module chdr_mgmt_pkt_handler #(
         // ST_MGMT_OP_DONE
         // ------------------
         // - The management operation has finished
-        // - Consume a word on the input CHDR stream and update interal state
+        // - Consume a word on the input CHDR stream and update internal state
         ST_MGMT_OP_DONE: begin
           if (i64_tvalid && i64_tready) begin
             if (!i64_tlast) begin
@@ -390,7 +402,7 @@ module chdr_mgmt_pkt_handler #(
 
         // ST_CHDR_OUT_HDR
         // ------------------
-        // - We are outputing the CHDR header
+        // - We are outputting the CHDR header
         ST_CHDR_OUT_HDR: begin
           if (o64_tvalid && o64_tready)
             pkt_state <= ST_MGMT_OUT_HDR;
@@ -398,7 +410,7 @@ module chdr_mgmt_pkt_handler #(
 
         // ST_CHDR_OUT_HDR
         // ------------------
-        // - We are outputing the management header
+        // - We are outputting the management header
         ST_MGMT_OUT_HDR: begin
           if (o64_tvalid && o64_tready)
             if (resp_o_tvalid && (hops_remaining == 10'd1))
@@ -510,9 +522,9 @@ module chdr_mgmt_pkt_handler #(
   end
 
   // Swap src/dst EPIDs if returning packet to source
-  wire [15:0] o64_dst_epid = (o64_tid == CHDR_MGMT_RETURN_TO_SRC) ? 
+  wire [15:0] o64_dst_epid = (o64_tid == CHDR_MGMT_RETURN_TO_SRC) ?
     chdr_mgmt_get_src_epid(cached_mgmt_hdr) : chdr_get_dst_epid(cached_chdr_hdr);
-  wire [15:0] o64_src_epid = (o64_tid == CHDR_MGMT_RETURN_TO_SRC) ? 
+  wire [15:0] o64_src_epid = (o64_tid == CHDR_MGMT_RETURN_TO_SRC) ?
     chdr_get_dst_epid(cached_chdr_hdr) : chdr_mgmt_get_src_epid(cached_mgmt_hdr);
 
   // Logic to drive the output CHDR stream
@@ -522,7 +534,7 @@ module chdr_mgmt_pkt_handler #(
         // We are generating new data using cached values.
         // Output header = Input header with new length
         o64_tdata  = chdr_set_length(
-          chdr_set_dst_epid(cached_chdr_hdr, o64_dst_epid), 
+          chdr_set_dst_epid(cached_chdr_hdr, o64_dst_epid),
           (stripped_len + (num_resp_pending << LOG2_CHDR_W_BYTES)));
         o64_tvalid = 1'b1;
         o64_tlast  = 1'b0;
@@ -530,7 +542,7 @@ module chdr_mgmt_pkt_handler #(
       ST_MGMT_OUT_HDR: begin
         // We are generating new data using cached values.
         // Output header = Input header with new num_hops and some protocol info
-        o64_tdata  = chdr_mgmt_build_hdr(PROTOVER, chdr_w_to_enum(CHDR_W), 
+        o64_tdata  = chdr_mgmt_build_hdr(PROTOVER, chdr_w_to_enum(CHDR_W),
           chdr_mgmt_get_num_hops(cached_mgmt_hdr) - 10'd1, o64_src_epid);
         o64_tvalid = 1'b1;
         o64_tlast  = 1'b0;
@@ -615,3 +627,6 @@ module chdr_mgmt_pkt_handler #(
   assign num_resp_pending = resp_fifo_occ[7:0];
 
 endmodule // chdr_mgmt_pkt_handler
+
+
+`default_nettype wire

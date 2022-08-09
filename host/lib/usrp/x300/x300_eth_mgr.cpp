@@ -56,14 +56,18 @@ constexpr size_t ETH_MSG_NUM_FRAMES                 = 64;
 constexpr size_t ETH_DATA_NUM_FRAMES = 32;
 
 constexpr size_t ETH_MSG_FRAME_SIZE = uhd::transport::udp_simple::mtu; // bytes
+// Note: These rates do not account for protocol overhead (CHDR headers), but
+// only have to be approximately correct. They are used as identifiers, and to
+// size buffers. Since the buffers also need to hold CHDR headers, this value
+// is good enough.
 constexpr size_t MAX_RATE_10GIGE    = (size_t)( // bytes/s
     10e9 / 8 * // wire speed multiplied by percentage of packets that is sample data
-    (float(x300::DATA_FRAME_MAX_SIZE - CHDR_MAX_LEN_HDR)
+    (float(x300::DATA_FRAME_MAX_SIZE)
         / float(x300::DATA_FRAME_MAX_SIZE
                 + 8 /* UDP header */ + 20 /* Ethernet header length */)));
 constexpr size_t MAX_RATE_1GIGE     = (size_t)( // bytes/s
-    10e9 / 8 * // wire speed multiplied by percentage of packets that is sample data
-    (float(GE_DATA_FRAME_RECV_SIZE - CHDR_MAX_LEN_HDR)
+    1e9 / 8 * // wire speed multiplied by percentage of packets that is sample data
+    (float(GE_DATA_FRAME_RECV_SIZE)
         / float(GE_DATA_FRAME_RECV_SIZE
                 + 8 /* UDP header */ + 20 /* Ethernet header length */)));
 
@@ -196,7 +200,7 @@ eth_manager::eth_manager(
     // Initially store only the first address provided to setup communication
     // Once we read the EEPROM, we use it to map IP to its interface
     // In discover_eth(), we'll check and enable the other IP address, if given
-    x300_eth_conn_t init;
+    x300_eth_conn_t init = x300_eth_conn_t();
     init.addr      = args.get_first_addr();
     auto device_id = allocate_device_id();
     _local_device_ids.push_back(device_id);
@@ -226,18 +230,10 @@ both_links_t eth_manager::get_links(link_type_t link_type,
     // a DMA FIFO, which is a device-specific thing. So punt on that for now.
 
     x300_eth_conn_t conn = eth_conns[local_device_id];
-    zero_copy_xport_params default_buff_args;
 
     const bool enable_fc = not link_args.has_key("enable_fc")
                            || uhd::cast::from_str<bool>(link_args.get("enable_fc"));
     const bool lossy_xport = enable_fc;
-
-    const size_t send_mtu = get_mtu(uhd::TX_DIRECTION);
-    const size_t recv_mtu = get_mtu(uhd::RX_DIRECTION);
-
-    // Set size and number of frames
-    default_buff_args.send_frame_size = std::min(send_mtu, ETH_MSG_FRAME_SIZE);
-    default_buff_args.recv_frame_size = std::min(recv_mtu, ETH_MSG_FRAME_SIZE);
 
     // Buffering is done in the socket buffers, so size them relative to
     // the link rate

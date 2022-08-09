@@ -263,15 +263,15 @@ static uhd::usrp::multi_usrp::sptr setup_usrp_for_cal(
  **********************************************************************/
 UHD_INLINE void set_optimal_rx_gain(uhd::usrp::multi_usrp::sptr usrp,
     uhd::rx_streamer::sptr rx_stream,
-    double wave_freq = 0.0)
+    double wave_freq = 0.0,
+    double gain_step = 3.0)
 {
-    const double gain_step                  = 3.0;
-    const double gain_compression_threshold = gain_step * 0.5;
-    const double actual_rx_rate             = usrp->get_rx_rate();
-    const double actual_tx_freq             = usrp->get_tx_freq();
-    const double actual_rx_freq             = usrp->get_rx_freq();
-    const double bb_tone_freq               = actual_tx_freq - actual_rx_freq + wave_freq;
-    const size_t nsamps = size_t(actual_rx_rate / default_fft_bin_size);
+    const double gain_step_threshold = gain_step * 0.5;
+    const double actual_rx_rate      = usrp->get_rx_rate();
+    const double actual_tx_freq      = usrp->get_tx_freq();
+    const double actual_rx_freq      = usrp->get_rx_freq();
+    const double bb_tone_freq        = actual_tx_freq - actual_rx_freq + wave_freq;
+    const size_t nsamps              = size_t(actual_rx_rate / default_fft_bin_size);
 
     std::vector<samp_type> buff(nsamps);
     uhd::gain_range_t rx_gain_range = usrp->get_rx_gain_range();
@@ -290,12 +290,34 @@ UHD_INLINE void set_optimal_rx_gain(uhd::usrp::multi_usrp::sptr usrp,
     // this by looking for the gain setting where the increase
     // in the tone is less than the gain step by more than the
     // gain compression threshold (curr - prev < gain - threshold).
+    // This routine starts searching at the bottom of the gain range
+    // rather than the top in order to minimize the chances of
+    // exposing frontend components to a dangerous amount of power
+    // from the incoming signal.
 
     // Initialize prev_dbrms value
     usrp->set_rx_gain(rx_gain);
     capture_samples(usrp, rx_stream, buff, nsamps);
     prev_dbrms = compute_tone_dbrms(buff, bb_tone_freq / actual_rx_rate);
     rx_gain += gain_step;
+
+    // First, get the signal above the noise floor
+    while (rx_gain <= rx_gain_range.stop()) {
+        usrp->set_rx_gain(rx_gain);
+        capture_samples(usrp, rx_stream, buff, nsamps);
+        curr_dbrms = compute_tone_dbrms(buff, bb_tone_freq / actual_rx_rate);
+        delta      = curr_dbrms - prev_dbrms;
+
+        // Check that the signal power is not already high
+        if (curr_dbrms >= 0)
+            break;
+        // Check that the signal power has increased as the gain increases
+        if (delta >= gain_step - gain_step_threshold)
+            break;
+
+        prev_dbrms = curr_dbrms;
+        rx_gain += gain_step;
+    }
 
     // Find RX gain where signal begins to clip
     while (rx_gain <= rx_gain_range.stop()) {
@@ -305,7 +327,7 @@ UHD_INLINE void set_optimal_rx_gain(uhd::usrp::multi_usrp::sptr usrp,
         delta      = curr_dbrms - prev_dbrms;
 
         // check if the gain is compressed beyone the threshold
-        if (delta < gain_step - gain_compression_threshold)
+        if (delta < gain_step - gain_step_threshold)
             break; // if so, we are done
 
         prev_dbrms = curr_dbrms;
@@ -335,7 +357,7 @@ static void tx_thread(std::atomic_flag* transmit,
     const double tx_wave_ampl)
 {
     // increase thread priority for TX to prevent underruns
-    uhd::set_thread_priority();
+    uhd::set_thread_priority_safe();
 
     // set max TX gain
     usrp->set_tx_gain(usrp->get_tx_gain_range().stop());

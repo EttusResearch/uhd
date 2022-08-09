@@ -88,7 +88,6 @@ public:
 
         if (stream_args.args.has_key("spp")) {
             _spp = stream_args.args.cast<size_t>("spp", _spp);
-            _mtu = _spp * _convert_info.bytes_per_otw_item;
         }
     }
 
@@ -97,7 +96,8 @@ public:
     // them
     virtual void connect_channel(const size_t channel, typename transport_t::uptr xport)
     {
-        const size_t mtu = xport->get_max_payload_size();
+        const size_t mtu = xport->get_mtu();
+        _hdr_len = std::max(_hdr_len, xport->get_chdr_hdr_len());
         _zero_copy_streamer.connect_channel(channel, std::move(xport));
 
         if (mtu < _mtu) {
@@ -201,11 +201,15 @@ protected:
         return _mtu;
     }
 
-    //! Sets the MTU and calculates spp
+    //! Sets the MTU and checks spp. If spp would exceed the new MTU, it is
+    // reduced accordingly.
     void set_mtu(const size_t mtu)
     {
         _mtu = mtu;
-        _spp = _mtu / _convert_info.bytes_per_otw_item;
+        const size_t spp_from_mtu = (_mtu - _hdr_len) / _convert_info.bytes_per_otw_item;
+        if (spp_from_mtu < _spp) {
+            _spp = spp_from_mtu;
+        }
     }
 
     //! Configures sample rate for conversion of timestamp
@@ -257,6 +261,38 @@ private:
         const int32_t timeout_ms,
         const size_t buffer_offset_bytes = 0)
     {
+        // A request to read zero samples should effectively be a no-op.
+        // However, in 2af10ee9, a change was made to increase the probability
+        // but not guarantee that calling recv() after a radio overflow event
+        // would return the overflow condition to the user. That change
+        // introduced a side effect that a read of zero samples (assuming there
+        // were no samples available) would block for the entirety of the
+        // timeout period and then return ERROR_CODE_TIMEOUT in the RX metadata
+        // for the read. (Prior to this change, there was an explicit check for
+        // a read of zero samples, which would return to the caller
+        // immediately.) This of course is undesirable--a request to read zero
+        // samples should always be fulfilled immediately, regardless of the
+        // availability of samples. Furthermore, reading zero samples is
+        // conventionally used to surface any stream errors, and it's that
+        // behavior we would like to preserve.
+        //
+        // This change to call get_recv_buffs() with a zero timeout when
+        // nsamps_per_buff is zero is an attempt to achieve the best of both
+        // worlds. The call to get_recv_buffs() will surface any stream errors,
+        // but using a timeout of 0 means that we'll return as quickly as
+        // possible (with a maximum latency of 1ms; see
+        // rx_streamer_zero_copy.hpp, line 219 or so). If there's any stream
+        // error, it'll be returned in the metadata. However, if the stream
+        // error is ERROR_CODE_TIMEOUT, we'll simply swallow the error, thus
+        // preserving the old behavior.
+        if (nsamps_per_buff == 0) {
+            _zero_copy_streamer.get_recv_buffs(_in_buffs, metadata, eov_positions, 0);
+            if (metadata.error_code == rx_metadata_t::ERROR_CODE_TIMEOUT) {
+                metadata.error_code = rx_metadata_t::ERROR_CODE_NONE;
+            }
+            return 0;
+        }
+
         if (_buff_samps_remaining == 0) {
             // Current set of buffers has expired, get the next one
             _buff_samps_remaining = _zero_copy_streamer.get_recv_buffs(
@@ -369,7 +405,12 @@ private:
     // MTU, determined when xport is connected and modifiable by subclass
     size_t _mtu = std::numeric_limits<std::size_t>::max();
 
-    // Maximum number of samples per packet
+    // Size of CHDR header in bytes
+    size_t _hdr_len = 0;
+
+    // Maximum number of samples per packet. Note that this is not necessarily
+    // related to the MTU, it is a user-chosen value. However, it is always
+    // bounded by the MTU.
     size_t _spp = std::numeric_limits<std::size_t>::max();
 
     // Num samps remaining in buffer currently held by zero copy streamer

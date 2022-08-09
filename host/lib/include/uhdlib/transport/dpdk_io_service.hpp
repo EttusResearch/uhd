@@ -160,7 +160,7 @@ private:
      * \param ip the IPv4 address for which the caller is seeking a MAC address
      */
     int _send_arp_request(
-        dpdk::dpdk_port* port, dpdk::queue_id_t queue, dpdk::ipv4_addr ip);
+        dpdk::dpdk_port* port, dpdk::queue_id_t queue, dpdk::rte_ipv4_addr ip);
 
     /*!
      * Helper function for I/O thread to process an ARP request/reply
@@ -170,7 +170,7 @@ private:
      * \param arp_frame a pointer to the ARP frame
      */
     int _process_arp(
-        dpdk::dpdk_port* port, dpdk::queue_id_t queue_id, struct arp_hdr* arp_frame);
+        dpdk::dpdk_port* port, dpdk::queue_id_t queue_id, struct rte_arp_hdr* arp_frame);
 
     /*!
      * Helper function for I/O thread to process an IPv4 packet
@@ -179,7 +179,7 @@ private:
      * \param mbuf a pointer to the packet buffer container
      * \param pkt a pointer to the IPv4 header of the packet
      */
-    int _process_ipv4(dpdk::dpdk_port* port, struct rte_mbuf* mbuf, struct ipv4_hdr* pkt);
+    int _process_ipv4(dpdk::dpdk_port* port, struct rte_mbuf* mbuf, struct rte_ipv4_hdr* pkt);
 
     /*!
      * Helper function for I/O thread to process an IPv4 packet
@@ -191,7 +191,7 @@ private:
      *              IPv4 address
      */
     int _process_udp(
-        dpdk::dpdk_port* port, struct rte_mbuf* mbuf, struct udp_hdr* pkt, bool bcast);
+        dpdk::dpdk_port* port, struct rte_mbuf* mbuf, struct rte_udp_hdr* pkt, bool bcast);
 
     /*!
      * Helper function to get a unique client ID

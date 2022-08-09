@@ -17,3 +17,18 @@ BOOST_AUTO_TEST_CASE(test_gcd)
 {
     BOOST_CHECK_EQUAL(uhd::math::gcd<int>(6, 15), 3);
 }
+
+BOOST_AUTO_TEST_CASE(test_sign)
+{
+    BOOST_CHECK_EQUAL(uhd::math::sign(2.3), +1);
+    BOOST_CHECK_EQUAL(uhd::math::sign(-2.3), -1);
+    BOOST_CHECK_EQUAL(uhd::math::sign(0.0), 0);
+}
+
+BOOST_AUTO_TEST_CASE(test_wrap_frequency)
+{
+    BOOST_CHECK_EQUAL(uhd::math::wrap_frequency(10e6, 200e6), 10e6);
+    BOOST_CHECK_EQUAL(uhd::math::wrap_frequency(250e6, 200e6), 50e6);
+    BOOST_CHECK_EQUAL(uhd::math::wrap_frequency(120e6, 200e6), -80e6);
+    BOOST_CHECK_EQUAL(uhd::math::wrap_frequency(-250e6, 200e6), -50e6);
+}

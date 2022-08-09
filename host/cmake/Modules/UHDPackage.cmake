@@ -80,16 +80,20 @@ if(${CPACK_GENERATOR} STREQUAL NSIS)
     check_type_size("void*[8]" BIT_WIDTH BUILTIN_TYPES_ONLY)
     # If CMake option given, specify MSVC version in installer filename
     if(SPECIFY_MSVC_VERSION)
-        if(MSVC90) # Visual Studio 2008 (9.0)
+        if(MSVC_TOOLSET_VERSION EQUAL 90) # Visual Studio 2008 (9.0)
             set(MSVC_VERSION "VS2008")
-        elseif(MSVC10) # Visual Studio 2010 (10.0)
+        elseif(MSVC_TOOLSET_VERSION EQUAL 100) # Visual Studio 2010 (10.0)
             set(MSVC_VERSION "VS2010")
-        elseif(MSVC11) # Visual Studio 2012 (11.0)
+        elseif(MSVC_TOOLSET_VERSION EQUAL 110) # Visual Studio 2012 (11.0)
             set(MSVC_VERSION "VS2012")
-        elseif(MSVC12) # Visual Studio 2013 (12.0)
+        elseif(MSVC_TOOLSET_VERSION EQUAL 120) # Visual Studio 2013 (12.0)
             set(MSVC_VERSION "VS2013")
-        elseif(MSVC14) # Visual Studio 2015 (14.0)
+        elseif(MSVC_TOOLSET_VERSION EQUAL 140) # Visual Studio 2015 (14.0)
             set(MSVC_VERSION "VS2015")
+        elseif(MSVC_TOOLSET_VERSION EQUAL 141) # Visual Studio 2017 (14.1)
+            set(MSVC_VERSION "VS2017")
+        elseif(MSVC_TOOLSET_VERSION EQUAL 142) # Visual Studio 2019 (14.2)
+            set(MSVC_VERSION "VS2019")
         endif()
         set(CPACK_PACKAGE_FILE_NAME "uhd_${UHD_VERSION}_Win${BIT_WIDTH}_${MSVC_VERSION}" CACHE INTERNAL "")
     else()
@@ -106,8 +110,8 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Ettus Research - USRP Hardware Driver")
 set(CPACK_PACKAGE_VENDOR              "Ettus Research (National Instruments)")
 set(CPACK_PACKAGE_CONTACT             "Ettus Research <support@ettus.com>")
 set(CPACK_PACKAGE_VERSION "${UHD_VERSION}")
-set(CPACK_RESOURCE_FILE_WELCOME ${CMAKE_SOURCE_DIR}/README.md)
-set(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_SOURCE_DIR}/LICENSE)
+set(CPACK_RESOURCE_FILE_WELCOME ${UHD_SOURCE_DIR}/README.md)
+set(CPACK_RESOURCE_FILE_LICENSE ${UHD_SOURCE_DIR}/LICENSE)
 
 ########################################################################
 # Setup CPack Source
@@ -161,16 +165,16 @@ set(CPACK_COMPONENTS_ALL libraries pythonapi headers utilities examples manual d
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-all-dev, python3-requests")
 set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "python3, python3-tk")
 foreach(filename preinst postinst prerm postrm)
-    list(APPEND CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA ${CMAKE_BINARY_DIR}/debian/${filename})
-    file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/debian)
+    list(APPEND CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA ${UHD_BINARY_DIR}/debian/${filename})
+    file(MAKE_DIRECTORY ${UHD_BINARY_DIR}/debian)
     configure_file(
-        ${CMAKE_SOURCE_DIR}/cmake/debian/${filename}.in
-        ${CMAKE_BINARY_DIR}/debian/${filename}
+        ${UHD_SOURCE_DIR}/cmake/debian/${filename}.in
+        ${UHD_BINARY_DIR}/debian/${filename}
     @ONLY)
 endforeach(filename)
 configure_file(
-    ${CMAKE_SOURCE_DIR}/cmake/debian/watch
-    ${CMAKE_BINARY_DIR}/debian/watch
+    ${UHD_SOURCE_DIR}/cmake/debian/watch
+    ${UHD_BINARY_DIR}/debian/watch
 @ONLY)
 
 ########################################################################
@@ -181,11 +185,11 @@ set(CPACK_RPM_PACKAGE_REQUIRES "boost-devel, python3-requests")
 set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION "/usr/share/man;/usr/share/man/man1;/usr/lib64/pkgconfig;/usr/lib64/cmake;/usr/lib64/python2.7;/usr/lib64/python2.7/site-packages")
 foreach(filename post_install post_uninstall pre_install pre_uninstall)
     string(TOUPPER ${filename} filename_upper)
-    list(APPEND CPACK_RPM_${filename_upper}_SCRIPT_FILE ${CMAKE_BINARY_DIR}/redhat/${filename})
-    file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/redhat)
+    list(APPEND CPACK_RPM_${filename_upper}_SCRIPT_FILE ${UHD_BINARY_DIR}/redhat/${filename})
+    file(MAKE_DIRECTORY ${UHD_BINARY_DIR}/redhat)
     configure_file(
-        ${CMAKE_SOURCE_DIR}/cmake/redhat/${filename}.in
-        ${CMAKE_BINARY_DIR}/redhat/${filename}
+        ${UHD_SOURCE_DIR}/cmake/redhat/${filename}.in
+        ${UHD_BINARY_DIR}/redhat/${filename}
     @ONLY)
 endforeach(filename)
 

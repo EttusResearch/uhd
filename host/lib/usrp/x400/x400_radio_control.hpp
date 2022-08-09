@@ -23,6 +23,8 @@
 #include <mutex>
 #include <string>
 #include <vector>
+#include <uhdlib/usrp/cores/gpio_atr_3000.hpp>
+#include "x400_gpio_control.hpp"
 
 namespace uhd { namespace rfnoc {
 
@@ -54,6 +56,12 @@ public:
     std::string get_dboard_fe_from_chan(size_t chan, uhd::direction_t) const override;
 
     uhd::eeprom_map_t get_db_eeprom() override;
+
+    // GPIO methods
+    std::vector<std::string> get_gpio_banks() const override;
+    uint32_t get_gpio_attr(const std::string& bank, const std::string& attr) override;
+    void set_gpio_attr(
+        const std::string& bank, const std::string& attr, const uint32_t value) override;
 
     // Shim calls for every method in rf_control_core
     double set_rate(const double rate) override;
@@ -170,6 +178,8 @@ private:
     uhd::usrp::x400::x400_dboard_iface::sptr _daughterboard;
 
     uhd::features::adc_self_calibration_iface::sptr _adc_self_calibration;
+
+    x400::gpio_control::sptr _gpios;
 
     class fpga_onload : public uhd::features::fpga_load_notification_iface
     {

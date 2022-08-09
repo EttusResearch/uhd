@@ -13,12 +13,12 @@
 #include <uhd/transport/nirio/niriok_proxy.h>
 #include <uhd/transport/nirio/status.h>
 #include <uhd/utils/noncopyable.hpp>
-#include <boost/thread/recursive_mutex.hpp>
 #include <atomic>
-#include <string>
 #include <chrono>
+#include <cstdint>
+#include <mutex>
+#include <string>
 #include <thread>
-#include <stdint.h>
 
 namespace uhd { namespace niusrprio {
 
@@ -213,7 +213,7 @@ private:    //Members
     size_t                         _remaining_in_claimed_block;
     size_t                         _remaining_acquirable_elements;
     nirio_driver_iface::rio_mmap_t _mem_map;
-    boost::recursive_mutex         _mutex;
+    std::recursive_mutex           _mutex;
     niriok_proxy::sptr             _riok_proxy_ptr;
 
     uint64_t                       _expected_xfer_count;

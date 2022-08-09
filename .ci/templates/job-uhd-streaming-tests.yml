@@ -1,0 +1,83 @@
+parameters:
+- name: suiteName
+  type: string
+- name: testOS
+  type: string
+  values:
+    - ubuntu2004
+- name: toolset
+  type: string
+  values:
+    - make
+- name: uhdSrcDir
+  type: string
+- name: dutMatrix
+  type: object
+- name: testLength
+  type: string
+  values:
+    - 'smoke'
+    - 'full'
+    - 'stress'
+
+jobs:
+- job: uhd_streaming_tests_${{ parameters.suiteName }}
+  displayName:  uhd streaming tests ${{ parameters.suiteName }}
+  timeoutInMinutes: 180
+  pool:
+    name: de-dre-lab
+    demands:
+    - suiteName -equals ${{ parameters.suiteName }}
+  strategy:
+    matrix: ${{ parameters.dutMatrix }}
+  workspace:
+    clean: outputs
+  steps:
+  - checkout: self
+    clean: true
+  - download: current
+    artifact: ${{ parameters.testOS }}-${{ parameters.toolset }}
+    displayName: download pipeline artifact ${{ parameters.testOS }}-${{ parameters.toolset }}
+  - task: ExtractFiles@1
+    inputs:
+      archiveFilePatterns: $(Pipeline.Workspace)/${{ parameters.testOS }}-${{ parameters.toolset }}/${{ parameters.testOS }}-${{ parameters.toolset }}.tar.gz
+      destinationFolder: $(Build.BinariesDirectory)
+      cleanDestinationFolder: true
+  - script: |
+      cd ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
+      sudo ./setup.sh --auto
+      sleep 5
+    displayName: setup interfaces for use without DPDK
+  - script: |
+      set -x
+      export PYTHONPATH=${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
+      cd ${{ parameters.uhdSrcDir }}/host/tests/pytests
+      python3 -m pytest -s test_streaming.py -m "not dpdk" --dut_type $(dutType) --test_length ${{ parameters.testLength }} \
+        --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $(dutMgmtAddr) \
+        --uhd_build_dir $(Build.BinariesDirectory)/uhddev/build --junitxml $(Common.TestResultsDirectory)/TEST-$(dutName).xml
+    continueOnError: true
+    displayName: Run streaming tests on $(dutName)
+  - script: |
+      cd ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
+      sudo ./setup.sh --auto --dpdk
+      sleep 5
+    displayName: setup interfaces for use with DPDK
+  - script: |
+      set -x
+      export PYTHONPATH=${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
+      cd ${{ parameters.uhdSrcDir }}/host/tests/pytests
+      sudo --preserve-env=PYTHONPATH python3 -m pytest -s test_streaming.py -m "dpdk" --dut_type $(dutType) --test_length ${{ parameters.testLength }} \
+        --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $(dutMgmtAddr) \
+        --uhd_build_dir $(Build.BinariesDirectory)/uhddev/build --junitxml $(Common.TestResultsDirectory)/TEST-$(dutName)-dpdk.xml
+    continueOnError: true
+    displayName: Run streaming tests with DPDK on $(dutName)
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: '$(Common.TestResultsDirectory)/TEST-*.xml'
+      testRunTitle: $(dutName) streaming tests
+      buildConfiguration: 'Release'
+      mergeTestResults: true
+      failTaskOnFailedTests: false
+    displayName: Upload streaming test results
+

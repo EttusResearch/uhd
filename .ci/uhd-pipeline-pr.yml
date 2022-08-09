@@ -1,0 +1,52 @@
+#
+# Copyright 2021 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+parameters:
+- name: custom_boost_version
+  type: boolean
+  default: false
+- name: custom_boost_version_url
+  type: string
+  default: 'https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.bz2'
+- name: release_binaries
+  type: boolean
+  default: false
+- name: testLength
+  type: string
+  values:
+  - 'smoke'
+  - 'full'
+  - 'stress'
+  default: 'smoke'
+- name: run_streaming_tests
+  type: boolean
+  default: False
+
+trigger: none
+
+pr:
+  branches:
+    include:
+    - master
+  paths:
+    include:
+    - host
+    - .ci
+    - images/manifest.txt
+    exclude:
+    - .ci/docker
+    - host/docs
+    - host/LICENSE
+    - host/README.md
+
+extends:
+  template: templates/stages-uhd-pipeline.yml
+  parameters:
+    custom_boost_version: ${{ parameters.custom_boost_version }}
+    custom_boost_version_url: ${{ parameters.custom_boost_version_url }}
+    release_binaries: ${{ parameters.release_binaries }}
+    testLength: ${{ parameters.testLength }}
+    run_streaming_tests: ${{ parameters.run_streaming_tests }}

@@ -212,9 +212,29 @@ public:
      * different sources, then those may be called from different threads
      * simultaneously.
      *
+     * \section stream_rx_error_handling Error Handling
+     *
+     * \p metadata is a value that is set inside this function (effectively, a
+     * return value), and should be checked
+     * for potential error codes (see rx_metadata_t::error_code_t).
+     *
+     * The most common error code when something goes wrong is an overrun (also
+     * referred to as overflow: error_code_t::ERROR_CODE_OVERFLOW). This error
+     * code means that the device produced data faster than the application
+     * could read, and various buffers filled up leaving no more space for the
+     * device to write data to. Note that an overrun on the device will not
+     * immediatiely show up when calling recv(). Depending on the device
+     * implementation, there may be many more valid samples available before the
+     * device had to stop writing samples to the FIFO. Only when all valid
+     * samples are returned to the call site will the error code be set to
+     * "overrun". When this happens, all valid samples have been returned to
+     * application where recv() was called.
+     * If the device is streaming continuously, it will reset itself when the
+     * FIFO is cleared, and recv() can be called again to retrieve new, valid data.
+     *
      * \param buffs a vector of writable memory to fill with samples
      * \param nsamps_per_buff the size of each buffer in number of samples
-     * \param metadata data to fill describing the buffer
+     * \param[out] metadata data to fill describing the buffer
      * \param timeout the timeout in seconds to wait for a packet
      * \param one_packet return after the first packet is received
      * \return the number of samples received or 0 on error

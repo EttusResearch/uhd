@@ -244,6 +244,12 @@ module n3xx_mgt_channel_wrapper #(
 
   wire [LANES-1:0]      reg_rd_resp_flat;
   wire [(LANES*REG_DWIDTH)-1:0] reg_rd_data_flat;
+  wire [LANES-1:0]      mod_pps_flat;
+  wire [LANES-1:0]      mod_refclk_flat;
+
+  // NOTE: Connecting WR signals of first lane only
+  assign mod_pps = mod_pps_flat[0];
+  assign mod_refclk = mod_refclk_flat[0];
 
   regport_resp_mux #(
     .WIDTH      (REG_DWIDTH),
@@ -337,6 +343,10 @@ module n3xx_mgt_channel_wrapper #(
 
         .port_info      (port_info[l*32 +: 32]),
         .device_id      (device_id),
+
+        // Timebase Outputs
+        .mod_pps(mod_pps_flat[l]),
+        .mod_refclk(mod_refclk_flat[l]),
 
         // Sideband White Rabbit Control
         .wr_reset_n     (wr_reset_n),

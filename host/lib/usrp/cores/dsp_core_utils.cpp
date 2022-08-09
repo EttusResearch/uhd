@@ -8,21 +8,18 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/math.hpp>
 #include <uhdlib/usrp/cores/dsp_core_utils.hpp>
-#include <boost/math/special_functions/sign.hpp>
 #include <cmath>
+#include <limits>
 
-static const int32_t MAX_FREQ_WORD = boost::numeric::bounds<int32_t>::highest();
-static const int32_t MIN_FREQ_WORD = boost::numeric::bounds<int32_t>::lowest();
+static const int32_t MAX_FREQ_WORD = std::numeric_limits<int32_t>::max();
+static const int32_t MIN_FREQ_WORD = std::numeric_limits<int32_t>::min();
 
 void get_freq_and_freq_word(const double requested_freq,
     const double tick_rate,
     double& actual_freq,
     int32_t& freq_word)
 {
-    // correct for outside of rate (wrap around)
-    double freq = std::fmod(requested_freq, tick_rate);
-    if (std::abs(freq) > tick_rate / 2.0)
-        freq -= boost::math::sign(freq) * tick_rate;
+    const double freq = uhd::math::wrap_frequency(requested_freq, tick_rate);
 
     // confirm that the target frequency is within range of the CORDIC
     UHD_ASSERT_THROW(std::abs(freq) <= tick_rate / 2.0);

@@ -151,9 +151,10 @@ public:
         // FP-GPIO (the gpio_atr_3000 ctor will initialize default values)
         RFNOC_LOG_TRACE("Creating FP-GPIO interface...");
         _fp_gpio = gpio_atr::gpio_atr_3000::make(_wb_iface,
-            x300_regs::SR_FP_GPIO,
-            x300_regs::RB_FP_GPIO,
-            x300_regs::PERIPH_REG_OFFSET);
+            gpio_atr::gpio_atr_offsets::make_default(
+                x300_regs::SR_FP_GPIO,
+                x300_regs::RB_FP_GPIO,
+                x300_regs::PERIPH_REG_OFFSET));
         // Create the GPIO banks and attributes, and populate them with some default
         // values
         // TODO: Do we need this section? Since the _fp_gpio handles state now, we
@@ -173,8 +174,9 @@ public:
 
         // LEDs are technically valid for both RX and TX, but let's put them
         // here
-        _leds = gpio_atr::gpio_atr_3000::make_write_only(
-            _wb_iface, x300_regs::SR_LEDS, x300_regs::PERIPH_REG_OFFSET);
+        _leds = gpio_atr::gpio_atr_3000::make(_wb_iface, 
+            gpio_atr::gpio_atr_offsets::make_write_only(
+                x300_regs::SR_LEDS, x300_regs::PERIPH_REG_OFFSET));
         _leds->set_atr_mode(
             usrp::gpio_atr::MODE_ATR, usrp::gpio_atr::gpio_atr_3000::MASK_SET_ALL);
         // We always want to initialize at least one frontend core for both TX and RX
@@ -821,7 +823,7 @@ public:
         } else {
             RFNOC_LOG_WARNING(
                 "This device does not support querying the TX DC offset range.");
-            return meta_range_t(0, 0);
+            return meta_range_t(0.0, 0.0);
         }
     }
 
@@ -864,7 +866,7 @@ public:
         } else {
             RFNOC_LOG_WARNING(
                 "This device does not support querying the rx DC offset range.");
-            return meta_range_t(0, 0);
+            return meta_range_t(0.0, 0.0);
         }
     }
 
@@ -874,7 +876,8 @@ public:
         if (get_tree()->exists(iq_balance_path)) {
             get_tree()->access<bool>(iq_balance_path).set(enb);
         } else {
-            RFNOC_LOG_WARNING("Setting RX IQ Balance is not possible on this device.");
+            RFNOC_LOG_WARNING(
+                "Setting automatic RX IQ Balance is not possible on this device.");
         }
     }
 
@@ -884,7 +887,8 @@ public:
         if (get_tree()->exists(iq_balance_path)) {
             get_tree()->access<std::complex<double>>(iq_balance_path).set(correction);
         } else {
-            RFNOC_LOG_WARNING("Setting RX IQ Balance is not possible on this device.");
+            RFNOC_LOG_WARNING(
+                "Setting manual RX IQ Balance is not possible on this device.");
         }
     }
 
@@ -1518,9 +1522,10 @@ private:
         // create a new dboard interface
         x300_dboard_iface_config_t db_config;
         db_config.gpio           = gpio_atr::db_gpio_atr_3000::make(_wb_iface,
-            x300_regs::SR_DB_GPIO,
-            x300_regs::RB_DB_GPIO,
-            x300_regs::PERIPH_REG_OFFSET);
+            gpio_atr::gpio_atr_offsets::make_default(
+                x300_regs::SR_DB_GPIO,
+                x300_regs::RB_DB_GPIO,
+                x300_regs::PERIPH_REG_OFFSET));
         db_config.spi            = _spi;
         db_config.rx_spi_slaveno = DB_RX_SEN;
         db_config.tx_spi_slaveno = DB_TX_SEN;

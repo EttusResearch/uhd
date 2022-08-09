@@ -1,5 +1,5 @@
 //
-// Copyright 2019 Ettus Research, A National Instruments Brand
+// Copyright 2021 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -32,7 +32,7 @@ module rfnoc_block_gain #(
   parameter       CHDR_W          = 64,
   parameter [5:0] MTU             = 10,
   parameter       IP_OPTION       = "HDL_IP"
-)(
+) (
   // RFNoC Framework Clocks and Resets
   input  wire                   rfnoc_chdr_clk,
   input  wire                   rfnoc_ctrl_clk,
@@ -60,6 +60,23 @@ module rfnoc_block_gain #(
   output wire                   m_rfnoc_ctrl_tvalid,
   input  wire                   m_rfnoc_ctrl_tready
 );
+
+  // These are examples of how to include an in-tree header file. UHD_FPGA_DIR
+  // is defined automatically and can be referenced as needed. Tools vary
+  // somewhat in how they support using macros in `include statements.
+  //
+  // This works in Vivado:
+  //
+  //   `include `"`UHD_FPGA_DIR/usrp3/lib/rfnoc/core/rfnoc_chdr_utils.vh`"
+  //
+  // Some tools allow this:
+  //
+  //   `define INCLUDE_UHD_FILE(REL_PATH) `"`UHD_FPGA_DIR/REL_PATH`"
+  //   `include `INCLUDE_UHD_FILE(usrp3/lib/rfnoc/core/rfnoc_chdr_utils.vh)
+  //
+  // This should work in most tools:
+  `define RFNOC_CHDR_UTILS_PATH `"`UHD_FPGA_DIR/usrp3/lib/rfnoc/core/rfnoc_chdr_utils.vh`"
+  `include `RFNOC_CHDR_UTILS_PATH
 
   //---------------------------------------------------------------------------
   // Signal Declarations
@@ -217,7 +234,7 @@ module rfnoc_block_gain #(
   localparam REG_GAIN_DEFAULT = 1;    // Default gain value
 
   reg [15:0] reg_gain = REG_GAIN_DEFAULT;
-  
+
   always @(posedge ctrlport_clk) begin
     if (ctrlport_rst) begin
       reg_gain = REG_GAIN_DEFAULT;
@@ -250,20 +267,25 @@ module rfnoc_block_gain #(
   //---------------------------------------------------------------------------
   // Signal Processing
   //---------------------------------------------------------------------------
+  //
+  // Multiply each complex sample by a real-valued gain. The RFNoC signals
+  // m_in_payload_* and m_out_payload_* expect the data with the real/I
+  // component on the upper bits [31:16] and the imaginary/Q component on the
+  // lower bits [15:0].
+  //
+  // We only input the real-valued gain (reg_gain) when we have payload data to
+  // go in (m_in_payload_*). That way the current gain value always applies to
+  // the current sample. This assumes that the tready of both inputs have
+  // identical behavior.
+  //
+  //---------------------------------------------------------------------------
 
-  wire [63:0] mult_tdata;   // Multiply results in 32-bit I and 32-bit Q (sc32)
+  // Multiply result. I/real in [63:32], Q/imaginary in [31:0] (sc32).
+  wire [63:0] mult_tdata;
   wire        mult_tlast;
   wire        mult_tvalid;
   wire        mult_tready;
 
-  // Multiply each complex sample by a real-valued gain. Only input the gain
-  // when we have payload data to go in (m_in_payload_tdata). That way the
-  // current gain value always applies to the current sample. This assumes that
-  // the tready of both inputs have identical behavior.
-  // 
-  // Note that we receive the data with I on bits [31:16] and Q on bits [15:0],
-  // but the I/Q order does not matter to our complex multiplier.
-  
   generate
     // Use a generate statement to choose which IP to use for the multiply.
     // These all do the same thing and we only have multiple options to show
@@ -295,38 +317,38 @@ module rfnoc_block_gain #(
       );
 
     end else if (IP_OPTION == "IN_TREE_IP") begin : gen_in_tree_ip
-      // Use the in-tree "complex_multiplier" IP, which is a Xilinx Complex
-      // Multiplier LogiCORE IP located in the UHD repository in
-      // fpga/usrp3/lib/ip/.
+      // Use the "cmul" module, which uses the in-tree "complex_multiplier" IP.
+      // This is a Xilinx Complex Multiplier LogiCORE IP located in the UHD
+      // repository in fpga/usrp3/lib/ip/.
 
       // The LSB of the output is clipped in this IP, so double the gain to
       // compensate. This limits the maximum gain in this version.
       wire [15:0] gain = 2*reg_gain;
 
-      complex_multiplier complex_multiplier (
-        .aclk               (axis_data_clk),
-        .aresetn            (~axis_data_rst),
-        .s_axis_a_tdata     ({16'b0, gain}),
-        .s_axis_a_tlast     (m_in_payload_tlast),
-        .s_axis_a_tvalid    (m_in_payload_tvalid),
-        .s_axis_a_tready    (),
-        .s_axis_b_tdata     (m_in_payload_tdata),
-        .s_axis_b_tlast     (m_in_payload_tlast),
-        .s_axis_b_tvalid    (m_in_payload_tvalid),
-        .s_axis_b_tready    (m_in_payload_tready),
-        .s_axis_ctrl_tdata  (8'd0),
-        .s_axis_ctrl_tvalid (1'b1),
-        .s_axis_ctrl_tready (),
-        .m_axis_dout_tdata  (mult_tdata),
-        .m_axis_dout_tlast  (mult_tlast),
-        .m_axis_dout_tvalid (mult_tvalid),
-        .m_axis_dout_tready (mult_tready)
+      cmul cmul_i (
+        .clk      (axis_data_clk),
+        .reset    (axis_data_rst),
+        .a_tdata  ({gain, 16'b0}),
+        .a_tlast  (m_in_payload_tlast ),
+        .a_tvalid (m_in_payload_tvalid),
+        .a_tready (),
+        .b_tdata  (m_in_payload_tdata ),
+        .b_tlast  (m_in_payload_tlast ),
+        .b_tvalid (m_in_payload_tvalid),
+        .b_tready (m_in_payload_tready),
+        .o_tdata  (mult_tdata),
+        .o_tlast  (mult_tlast),
+        .o_tvalid (mult_tvalid),
+        .o_tready (mult_tready)
       );
 
     end else if (IP_OPTION == "OUT_OF_TREE_IP") begin : gen_oot_ip
       // Use the out-of-tree "cmplx_mul" IP, which is a Xilinx Complex
       // Multiplier LogiCORE IP located in the IP directory of this example.
 
+      // This IP expects real/I in the lower bits and imaginary/Q in the upper
+      // bits, so we swap I and Q on the input and output to match RFNoC.
+      //
       // This IP has a 33-bit output, but because it's AXI-Stream, each
       // component is placed in a 5-byte word. Since our gain is real only,
       // we'll never need all 33-bits.
@@ -335,11 +357,12 @@ module rfnoc_block_gain #(
       cmplx_mul cmplx_mul_i (
         .aclk               (axis_data_clk),
         .aresetn            (~axis_data_rst),
-        .s_axis_a_tdata     ({16'd0, reg_gain}),
+        .s_axis_a_tdata     ({16'd0, reg_gain}),            // Real gain
         .s_axis_a_tlast     (m_in_payload_tlast),
         .s_axis_a_tvalid    (m_in_payload_tvalid),
         .s_axis_a_tready    (),
-        .s_axis_b_tdata     (m_in_payload_tdata),
+        .s_axis_b_tdata     ({m_in_payload_tdata[15:0],     // Imaginary
+                              m_in_payload_tdata[31:16]}),  // Real
         .s_axis_b_tlast     (m_in_payload_tlast),
         .s_axis_b_tvalid    (m_in_payload_tvalid),
         .s_axis_b_tready    (m_in_payload_tready),
@@ -349,8 +372,8 @@ module rfnoc_block_gain #(
         .m_axis_dout_tready (mult_tready)
       );
 
-      assign mult_tdata[31: 0] = m_axis_dout_tdata[31: 0];
-      assign mult_tdata[63:32] = m_axis_dout_tdata[71:40];
+      assign mult_tdata[63:32] = m_axis_dout_tdata[31: 0]; // Real
+      assign mult_tdata[31: 0] = m_axis_dout_tdata[71:40]; // Imaginary
 
     end
   endgenerate

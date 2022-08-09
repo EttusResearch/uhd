@@ -13,8 +13,8 @@
 #include <uhd/transport/nirio/niriok_proxy.h>
 #include <uhd/transport/nirio/rpc/usrprio_rpc_client.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <stdint.h>
-#include <boost/thread/recursive_mutex.hpp>
+#include <cstdint>
+#include <mutex>
 #include <string>
 
 namespace uhd { namespace niusrprio {
@@ -103,7 +103,7 @@ private:
     niriok_proxy::sptr _riok_proxy;
     nirio_resource_manager _resource_manager;
     usrprio_rpc::usrprio_rpc_client _rpc_client;
-    boost::recursive_mutex _session_mutex;
+    std::recursive_mutex _session_mutex;
 };
 
 }} // namespace uhd::niusrprio

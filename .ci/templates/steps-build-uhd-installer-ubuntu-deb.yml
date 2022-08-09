@@ -1,0 +1,17 @@
+parameters:
+- name: uhdSrcDir
+  type: string
+- name: uhdInstallerDir
+  type: string
+- name: ubuntuReleaseName
+  type: string
+
+steps:
+- script: |
+    sudo pbuilder create --debootstrapopts --variant=buildd --distribution ${{ parameters.ubuntuReleaseName }}
+  displayName: Setup pbuilder
+- script: |
+    mkdir -p ${{ parameters.uhdInstallerDir }}
+    cd ${{ parameters.uhdSrcDir }}
+    python3 tools/debs/uhd_ubuntu_deb.py ${{ parameters.ubuntuReleaseName }} --buildpath ${{ parameters.uhdInstallerDir }}
+  displayName: Build dsc and debs

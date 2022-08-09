@@ -6,8 +6,6 @@
 #include <uhd/rfnoc/chdr_types.hpp>
 #include <uhd/utils/chdr/chdr_packet.hpp>
 #include <chdr_resource/hardcoded_packets.cpp>
-#include <boost/bind.hpp>
-#include <boost/optional/optional_io.hpp>
 #include <boost/test/unit_test.hpp>
 #include <bitset>
 #include <iostream>

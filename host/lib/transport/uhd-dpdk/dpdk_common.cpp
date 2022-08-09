@@ -42,14 +42,14 @@ inline char* eal_add_opt(
     return ptr;
 }
 
-inline void separate_ipv4_addr(
-    const std::string ipv4, uint32_t& ipv4_addr, uint32_t& netmask)
+inline void separate_rte_ipv4_addr(
+    const std::string ipv4, uint32_t& rte_ipv4_addr, uint32_t& netmask)
 {
     std::vector<std::string> result;
     boost::algorithm::split(
         result, ipv4, [](const char& in) { return in == '/'; }, boost::token_compress_on);
     UHD_ASSERT_THROW(result.size() == 2);
-    ipv4_addr   = (uint32_t)inet_addr(result[0].c_str());
+    rte_ipv4_addr   = (uint32_t)inet_addr(result[0].c_str());
     int netbits = std::atoi(result[1].c_str());
     netmask     = htonl(0xffffffff << (32 - netbits));
 }
@@ -61,10 +61,10 @@ dpdk_port::uptr dpdk_port::make(port_id_t port,
     uint16_t num_desc,
     struct rte_mempool* rx_pktbuf_pool,
     struct rte_mempool* tx_pktbuf_pool,
-    std::string ipv4_address)
+    std::string rte_ipv4_address)
 {
     return std::make_unique<dpdk_port>(
-        port, mtu, num_queues, num_desc, rx_pktbuf_pool, tx_pktbuf_pool, ipv4_address);
+        port, mtu, num_queues, num_desc, rx_pktbuf_pool, tx_pktbuf_pool, rte_ipv4_address);
 }
 
 dpdk_port::dpdk_port(port_id_t port,
@@ -73,7 +73,7 @@ dpdk_port::dpdk_port(port_id_t port,
     uint16_t num_desc,
     struct rte_mempool* rx_pktbuf_pool,
     struct rte_mempool* tx_pktbuf_pool,
-    std::string ipv4_address)
+    std::string rte_ipv4_address)
     : _port(port)
     , _mtu(mtu)
     , _num_queues(num_queues)
@@ -94,7 +94,7 @@ dpdk_port::dpdk_port(port_id_t port,
         _mtu = actual_mtu;
     }
 
-    separate_ipv4_addr(ipv4_address, _ipv4, _netmask);
+    separate_rte_ipv4_addr(rte_ipv4_address, _ipv4, _netmask);
 
     /* Set hardware offloads */
     struct rte_eth_dev_info dev_info;
@@ -251,11 +251,11 @@ uint16_t dpdk_port::alloc_udp_port(uint16_t udp_port)
     return rte_cpu_to_be_16(port_selected);
 }
 
-int dpdk_port::_arp_reply(queue_id_t queue_id, struct arp_hdr* arp_req)
+int dpdk_port::_arp_reply(queue_id_t queue_id, struct rte_arp_hdr* arp_req)
 {
     struct rte_mbuf* mbuf;
-    struct ether_hdr* hdr;
-    struct arp_hdr* arp_frame;
+    struct rte_ether_hdr* hdr;
+    struct rte_arp_hdr* arp_frame;
 
     mbuf = rte_pktmbuf_alloc(_tx_pktbuf_pool);
     if (unlikely(mbuf == NULL)) {
@@ -263,21 +263,21 @@ int dpdk_port::_arp_reply(queue_id_t queue_id, struct arp_hdr* arp_req)
         return -ENOMEM;
     }
 
-    hdr       = rte_pktmbuf_mtod(mbuf, struct ether_hdr*);
-    arp_frame = (struct arp_hdr*)&hdr[1];
+    hdr       = rte_pktmbuf_mtod(mbuf, struct rte_ether_hdr*);
+    arp_frame = (struct rte_arp_hdr*)&hdr[1];
 
-    ether_addr_copy(&arp_req->arp_data.arp_sha, &hdr->d_addr);
-    ether_addr_copy(&_mac_addr, &hdr->s_addr);
-    hdr->ether_type = rte_cpu_to_be_16(ETHER_TYPE_ARP);
+    rte_ether_addr_copy(&arp_req->arp_data.arp_sha, &hdr->d_addr);
+    rte_ether_addr_copy(&_mac_addr, &hdr->s_addr);
+    hdr->ether_type = rte_cpu_to_be_16(RTE_ETHER_TYPE_ARP);
 
-    arp_frame->arp_hrd = rte_cpu_to_be_16(ARP_HRD_ETHER);
-    arp_frame->arp_pro = rte_cpu_to_be_16(ETHER_TYPE_IPv4);
-    arp_frame->arp_hln = 6;
-    arp_frame->arp_pln = 4;
-    arp_frame->arp_op  = rte_cpu_to_be_16(ARP_OP_REPLY);
-    ether_addr_copy(&_mac_addr, &arp_frame->arp_data.arp_sha);
+    arp_frame->arp_hardware = rte_cpu_to_be_16(RTE_ARP_HRD_ETHER);
+    arp_frame->arp_protocol = rte_cpu_to_be_16(RTE_ETHER_TYPE_IPV4);
+    arp_frame->arp_hlen = 6;
+    arp_frame->arp_plen = 4;
+    arp_frame->arp_opcode  = rte_cpu_to_be_16(RTE_ARP_OP_REPLY);
+    rte_ether_addr_copy(&_mac_addr, &arp_frame->arp_data.arp_sha);
     arp_frame->arp_data.arp_sip = _ipv4;
-    ether_addr_copy(&hdr->d_addr, &arp_frame->arp_data.arp_tha);
+    rte_ether_addr_copy(&hdr->d_addr, &arp_frame->arp_data.arp_tha);
     arp_frame->arp_data.arp_tip = arp_req->arp_data.arp_sip;
 
     mbuf->pkt_len  = 42;
@@ -418,7 +418,7 @@ void dpdk_ctx::init(const device_addr_t& user_args)
         device_addrs_t nics(num_dpdk_ports);
         RTE_ETH_FOREACH_DEV(i)
         {
-            struct ether_addr mac_addr;
+            struct rte_ether_addr mac_addr;
             rte_eth_macaddr_get(i, &mac_addr);
             nics[i]["dpdk_mac"] = eth_addr_to_string(mac_addr);
         }
@@ -543,11 +543,11 @@ dpdk_port* dpdk_ctx::get_port(port_id_t port) const
     return _ports.at(port).get();
 }
 
-dpdk_port* dpdk_ctx::get_port(struct ether_addr mac_addr) const
+dpdk_port* dpdk_ctx::get_port(struct rte_ether_addr mac_addr) const
 {
     assert(is_init_done());
     for (const auto& port : _ports) {
-        struct ether_addr port_mac_addr;
+        struct rte_ether_addr port_mac_addr;
         rte_eth_macaddr_get(port.first, &port_mac_addr);
         for (int j = 0; j < 6; j++) {
             if (mac_addr.addr_bytes[j] != port_mac_addr.addr_bytes[j]) {

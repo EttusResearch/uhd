@@ -14,10 +14,10 @@
 #include "../../transport/super_send_packet_handler.hpp"
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhd/utils/math.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <boost/format.hpp>
-#include <boost/math/special_functions/sign.hpp>
 #include <boost/thread/thread.hpp>
 #include <atomic>
 #include <chrono>
@@ -582,10 +582,13 @@ void usrp1_impl::update_rates(void)
 
 double usrp1_impl::update_rx_dsp_freq(const size_t dspno, const double freq_)
 {
-    // correct for outside of rate (wrap around)
-    double freq = std::fmod(freq_, _master_clock_rate);
-    if (std::abs(freq) > _master_clock_rate / 2.0)
-        freq -= boost::math::sign(freq) * _master_clock_rate;
+    // Note: The calculation of freq and freq_word could be done by
+    // get_freq_and_freq_word(), which has implemented this algorithm for all
+    // other USRPs.
+    // We'll not refactor this because it's ancient code, but note that
+    // get_freq_and_freq_word() fixes a numerical overflow issue that is not
+    // fixed here.
+    const double freq = uhd::math::wrap_frequency(freq_, _master_clock_rate);
 
     // calculate the freq register word (signed)
     UHD_ASSERT_THROW(std::abs(freq) <= _master_clock_rate / 2.0);

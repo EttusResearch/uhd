@@ -301,6 +301,7 @@ b200_impl::b200_impl(
     _revision(0)
     , _enable_user_regs(device_addr.has_key("enable_user_regs"))
     , _time_source(UNKNOWN)
+    , _time_set_with_pps(false)
     , _tick_rate(0.0) // Forces a clock initialization at startup
 {
     _tree                 = property_tree::make();
@@ -501,7 +502,7 @@ b200_impl::b200_impl(
     ////////////////////////////////////////////////////////////////////
     // Local control endpoint
     ////////////////////////////////////////////////////////////////////
-    _local_ctrl = radio_ctrl_core_3000::make(false /*lilE*/,
+    _local_ctrl = b200_radio_ctrl_core::make(false /*lilE*/,
         _ctrl_transport,
         zero_copy_if::sptr() /*null*/,
         B200_LOCAL_CTRL_SID);
@@ -715,11 +716,9 @@ b200_impl::b200_impl(
     _tree->create<time_spec_t>(mb_path / "time" / "pps")
         .set_publisher(
             std::bind(&time_core_3000::get_time_last_pps, _radio_perifs[0].time64));
-    for (radio_perifs_t& perif : _radio_perifs) {
-        _tree->access<time_spec_t>(mb_path / "time" / "pps")
-            .add_coerced_subscriber(std::bind(
-                &time_core_3000::set_time_next_pps, perif.time64, std::placeholders::_1));
-    }
+    _tree->access<time_spec_t>(mb_path / "time" / "pps")
+        .add_coerced_subscriber(std::bind(
+            &b200_impl::set_time_next_pps, this, std::placeholders::_1));
 
     // setup time source props
     const std::vector<std::string> time_sources =
@@ -749,7 +748,8 @@ b200_impl::b200_impl(
     // front panel gpio
     ////////////////////////////////////////////////////////////////////
     _radio_perifs[0].fp_gpio =
-        gpio_atr_3000::make(_radio_perifs[0].ctrl, TOREG(SR_FP_GPIO), RB32_FP_GPIO);
+        gpio_atr_3000::make(_radio_perifs[0].ctrl,
+            gpio_atr_offsets::make_default(TOREG(SR_FP_GPIO), RB32_FP_GPIO));
     for (const auto& attr : gpio_attr_map) {
         switch (attr.first) {
             case usrp::gpio_atr::GPIO_SRC:
@@ -868,22 +868,22 @@ void b200_impl::setup_radio(const size_t dspno)
     ////////////////////////////////////////////////////////////////////
     // radio control
     ////////////////////////////////////////////////////////////////////
-    perif.ctrl = radio_ctrl_core_3000::make(
+    perif.ctrl = b200_radio_ctrl_core::make(
         false /*lilE*/, _ctrl_transport, zero_copy_if::sptr() /*null*/, sid);
     perif.ctrl->hold_task(_async_task);
     _async_task_data->radio_ctrl[dspno] = perif.ctrl; // weak
     _tree->access<time_spec_t>(mb_path / "time" / "cmd")
         .add_coerced_subscriber(std::bind(
-            &radio_ctrl_core_3000::set_time, perif.ctrl, std::placeholders::_1));
+            &b200_radio_ctrl_core::set_time, perif.ctrl, std::placeholders::_1));
     _tree->access<double>(mb_path / "tick_rate")
         .add_coerced_subscriber(std::bind(
-            &radio_ctrl_core_3000::set_tick_rate, perif.ctrl, std::placeholders::_1));
+            &b200_radio_ctrl_core::set_tick_rate, perif.ctrl, std::placeholders::_1));
     this->register_loopback_self_test(perif.ctrl);
 
     ////////////////////////////////////////////////////////////////////
     // Set up peripherals
     ////////////////////////////////////////////////////////////////////
-    perif.atr = gpio_atr_3000::make_write_only(perif.ctrl, TOREG(SR_ATR));
+    perif.atr = gpio_atr_3000::make(perif.ctrl, gpio_atr_offsets::make_write_only(TOREG(SR_ATR)));
     perif.atr->set_atr_mode(MODE_ATR, 0xFFFFFFFF);
     // create rx dsp control objects
     perif.framer = rx_vita_core_3000::make(perif.ctrl, TOREG(SR_RX_CTRL));
@@ -1304,11 +1304,28 @@ void b200_impl::set_time(const uhd::time_spec_t& t)
         perif.time64->set_time_sync(t);
     _local_ctrl->poke32(TOREG(SR_CORE_SYNC), 1 << 2 | uint32_t(_time_source));
     _local_ctrl->poke32(TOREG(SR_CORE_SYNC), _time_source);
+    _time_set_with_pps = false;
+}
+
+void b200_impl::set_time_next_pps(const uhd::time_spec_t& t)
+{
+    for (radio_perifs_t& perif : _radio_perifs)
+        perif.time64->set_time_next_pps(t);
+    _time_set_with_pps = true;
 }
 
 void b200_impl::sync_times()
 {
-    set_time(_radio_perifs[0].time64->get_time_now());
+    if (_time_set_with_pps) {
+        UHD_LOG_DEBUG("B200", "Re-synchronizing time using PPS");
+        uhd::time_spec_t time_last_pps = _radio_perifs[0].time64->get_time_last_pps();
+        while (_radio_perifs[0].time64->get_time_last_pps() == time_last_pps) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+        set_time_next_pps(time_last_pps + 2.0);
+    } else {
+        set_time(_radio_perifs[0].time64->get_time_now());
+    }
 }
 
 /***********************************************************************
@@ -1442,7 +1459,7 @@ void b200_impl::update_enables(void)
                          and bool(_radio_perifs[_fe2].rx_streamer.lock());
     const size_t num_rx = (enb_rx1 ? 1 : 0) + (enb_rx2 ? 1 : 0);
     const size_t num_tx = (enb_tx1 ? 1 : 0) + (enb_tx2 ? 1 : 0);
-    const bool mimo     = num_rx == 2 or num_tx == 2;
+    const uint32_t mimo = (num_rx == 2 or num_tx == 2) ? 1 : 0;
 
     if ((num_rx + num_tx) == 3) {
         throw uhd::runtime_error(
@@ -1454,9 +1471,12 @@ void b200_impl::update_enables(void)
     if ((num_rx + num_tx) == 0)
         _codec_ctrl->set_active_chains(true, false, true, false); // enable something
 
-    // figure out if mimo is enabled based on new state
-    _gpio_state.mimo = (mimo) ? 1 : 0;
-    update_gpio_state();
+    // update MIMO state and re-sync times if necessary
+    if (_gpio_state.mimo != mimo) {
+        _gpio_state.mimo = mimo;
+        update_gpio_state();
+        sync_times();
+    }
 
     // atrs change based on enables
     this->update_atrs();

@@ -5,6 +5,7 @@
 //
 
 #include <uhd/rfnoc/chdr_types.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/chdr_tx_data_xport.hpp>
 #include <uhdlib/rfnoc/mgmt_portal.hpp>
 #include <uhdlib/rfnoc/rfnoc_common.hpp>
@@ -34,6 +35,7 @@ chdr_tx_data_xport::chdr_tx_data_xport(uhd::transport::io_service::sptr io_srv,
     const fc_params_t fc_params,
     disconnect_callback_t disconnect)
     : _fc_state(fc_params.buff_capacity)
+    , _mtu(send_link->get_send_frame_size())
     , _fc_sender(pkt_factory, epids)
     , _epid(epids.first)
     , _chdr_w_bytes(chdr_w_to_bits(pkt_factory.get_chdr_w()) / 8)
@@ -48,10 +50,9 @@ chdr_tx_data_xport::chdr_tx_data_xport(uhd::transport::io_service::sptr io_srv,
     _send_packet = pkt_factory.make_generic();
     _recv_packet = pkt_factory.make_generic();
 
-    // Calculate max payload size
-    const size_t pyld_offset =
-        _send_packet->calculate_payload_offset(chdr::PKT_TYPE_DATA_WITH_TS);
-    _max_payload_size = send_link->get_send_frame_size() - pyld_offset;
+    // Calculate header length
+    _hdr_len = _send_packet->calculate_payload_offset(chdr::PKT_TYPE_DATA_WITH_TS);
+    UHD_ASSERT_THROW(_hdr_len);
 
     // Now create the send I/O we will use for data
     auto send_cb = [this](buff_t::uptr buff, transport::send_link_if* send_link) {

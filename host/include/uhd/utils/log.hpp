@@ -9,12 +9,13 @@
 
 #include <uhd/config.hpp>
 #include <boost/current_function.hpp>
-#include <boost/thread/thread.hpp>
+#include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <iomanip>
 #include <iostream>
 #include <ostream>
 #include <sstream>
 #include <string>
+#include <thread>
 
 /*! \file log.hpp
  *
@@ -135,7 +136,7 @@ struct UHD_API logging_info
         const std::string& file_,
         const unsigned int& line_,
         const std::string& component_,
-        const boost::thread::id& thread_id_)
+        const std::thread::id& thread_id_)
         : time(time_)
         , verbosity(verbosity_)
         , file(file_)
@@ -150,7 +151,7 @@ struct UHD_API logging_info
     std::string file;
     unsigned int line;
     std::string component;
-    boost::thread::id thread_id;
+    std::thread::id thread_id;
     std::string message;
 };
 
@@ -187,7 +188,7 @@ UHD_API void set_logger_level(const std::string& logger, uhd::log::severity_leve
 //! \cond
 //! Internal logging macro to be used in other macros
 #define _UHD_LOG_INTERNAL(component, level) \
-    uhd::_log::log(level, __FILE__, __LINE__, component, boost::this_thread::get_id())
+    uhd::_log::log(level, __FILE__, __LINE__, component, std::this_thread::get_id())
 //! \endcond
 
 // macro-style logging (compile-time determined)
@@ -292,7 +293,7 @@ public:
         const std::string& file,
         const unsigned int line,
         const std::string& component,
-        const boost::thread::id thread_id);
+        const std::thread::id thread_id);
 
     ~log(void);
 

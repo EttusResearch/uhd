@@ -101,7 +101,7 @@ BOOST_AUTO_TEST_CASE(test_recv_get_release)
     for (size_t i = 0; i < 5; i++) {
         size_t packet_size = sizeof(uint8_t);
         auto packet_data   = boost::shared_array<uint8_t>(new uint8_t[packet_size]);
-        packet_data[0]     = i;
+        packet_data[0]     = static_cast<uint8_t>(i);
         xport->push_back_recv_packet(packet_data, packet_size);
 
         auto buff = xport->get_recv_buff(timeout_ms);
@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(test_recv_get_release)
         BOOST_CHECK(buff->data());
 
         auto* ptr = static_cast<uint8_t*>(buff->data());
-        ptr[0]    = i;
+        BOOST_CHECK_EQUAL(ptr[0], static_cast<uint8_t>(i));
 
         xport->release_recv_buff(std::move(buff));
         BOOST_CHECK(!buff);

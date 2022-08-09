@@ -6,6 +6,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+#include <glib.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -14,19 +15,18 @@ extern "C" {
 # include "config.h"
 #endif
 
-#include <glib.h>
 #include <epan/packet.h>
 
 #ifdef __cplusplus
 }
 #endif
 
+#include "../../../../host/lib/usrp/x300/x300_fw_common.h"
+#include <uhd/exception.hpp>
+#include <uhdlib/rfnoc/chdr_packet_writer.hpp>
 #include <cstdio>
 #include <iostream>
 #include <string>
-
-#include "../../../../host/lib/usrp/x300/x300_fw_common.h"
-#include <uhdlib/rfnoc/chdr_packet_writer.hpp>
 
 constexpr unsigned int RFNOC_PORT = X300_VITA_UDP_PORT;
 

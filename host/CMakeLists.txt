@@ -18,7 +18,7 @@ project(UHD CXX C)
 enable_testing()
 
 #make sure our local CMake Modules path comes first
-list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake/Modules)
+list(INSERT CMAKE_MODULE_PATH 0 ${UHD_SOURCE_DIR}/cmake/Modules)
 
 ########################################################################
 # UHD Dependency Minimum Versions
@@ -171,8 +171,8 @@ endif(DEFINED UHD_IMAGES_DIR_WINREG_KEY)
 ########################################################################
 # Local Include Dir
 ########################################################################
-include_directories(${CMAKE_BINARY_DIR}/include)
-include_directories(${CMAKE_SOURCE_DIR}/include)
+include_directories(${UHD_BINARY_DIR}/include)
+include_directories(${UHD_SOURCE_DIR}/include)
 
 ########################################################################
 # Static Lib Configuration
@@ -250,7 +250,7 @@ if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" OR
 endif()
 
 if(MSVC)
-    include_directories(${CMAKE_SOURCE_DIR}/cmake/msvc)
+    include_directories(${UHD_SOURCE_DIR}/cmake/msvc)
     add_definitions( #stop all kinds of compatibility warnings
         -DWIN32_LEAN_AND_MEAN
         -DVC_EXTRALEAN
@@ -311,19 +311,19 @@ include(UHDPython)
 
 PYTHON_CHECK_MODULE(
     "Python version ${PYTHON_MIN_VERSION} or greater"
-    "platform" "platform.python_version() >= '${PYTHON_MIN_VERSION}'"
+    "platform" "LooseVersion(platform.python_version()) >= LooseVersion('${PYTHON_MIN_VERSION}')"
     HAVE_PYTHON_PLAT_MIN_VERSION
 )
 
 PYTHON_CHECK_MODULE(
     "Mako templates ${PY_MAKO_MIN_VERSION} or greater"
-    "mako" "mako.__version__ >= '${PY_MAKO_MIN_VERSION}'"
+    "mako" "LooseVersion(mako.__version__) >= LooseVersion('${PY_MAKO_MIN_VERSION}')"
     HAVE_PYTHON_MODULE_MAKO
 )
 
 PYTHON_CHECK_MODULE(
     "requests ${PY_REQUESTS_MIN_VERSION} or greater"
-    "requests" "requests.__version__ >= '${PY_REQUESTS_MIN_VERSION}'"
+    "requests" "LooseVersion(requests.__version__) >= LooseVersion('${PY_REQUESTS_MIN_VERSION}')"
     HAVE_PYTHON_MODULE_REQUESTS
 )
 
@@ -396,7 +396,7 @@ endif(ENABLE_QEMU_UNITTESTS)
 # Create Uninstall Target
 ########################################################################
 configure_file(
-    ${CMAKE_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in
+    ${UHD_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake
 @ONLY)
 
@@ -509,20 +509,20 @@ endif(ENABLE_USB)
 set(UHD_RFNOC_FOUND "TRUE")
 
 configure_file(
-    ${CMAKE_SOURCE_DIR}/cmake/Modules/UHDConfigVersion.cmake.in
-    ${CMAKE_BINARY_DIR}/cmake/Modules/UHDConfigVersion.cmake
+    ${UHD_SOURCE_DIR}/cmake/Modules/UHDConfigVersion.cmake.in
+    ${UHD_BINARY_DIR}/cmake/Modules/UHDConfigVersion.cmake
     @ONLY
 )
 configure_file(
-    ${CMAKE_SOURCE_DIR}/cmake/Modules/UHDConfig.cmake.in
-    ${CMAKE_BINARY_DIR}/cmake/Modules/UHDConfig.cmake
+    ${UHD_SOURCE_DIR}/cmake/Modules/UHDConfig.cmake.in
+    ${UHD_BINARY_DIR}/cmake/Modules/UHDConfig.cmake
     @ONLY
 )
 
 set(uhd_cmake_scripts
-    ${CMAKE_BINARY_DIR}/cmake/Modules/UHDConfig.cmake
-    ${CMAKE_BINARY_DIR}/cmake/Modules/UHDConfigVersion.cmake
-    ${CMAKE_SOURCE_DIR}/cmake/Modules/UHDBoost.cmake
+    ${UHD_BINARY_DIR}/cmake/Modules/UHDConfig.cmake
+    ${UHD_BINARY_DIR}/cmake/Modules/UHDConfigVersion.cmake
+    ${UHD_SOURCE_DIR}/cmake/Modules/UHDBoost.cmake
 )
 
 UHD_INSTALL(
@@ -536,7 +536,7 @@ UHD_INSTALL(
 ########################################################################
 if(DEFINED UHD_IMAGES_SRC_DIR AND EXISTS "${UHD_IMAGES_SRC_DIR}")
     message(STATUS "Reading images from directory `${UHD_IMAGES_SRC_DIR}'")
-    file(GLOB_RECURSE _image_files "${UHD_IMAGES_SRC_DIR}/*")
+    file(GLOB_RECURSE _image_files RELATIVE "${UHD_SOURCE_DIR}" "${UHD_IMAGES_SRC_DIR}/*")
     message(STATUS "These images files will be installed/packaged:")
     foreach(_img ${_image_files})
         message(STATUS "  ${_img}")

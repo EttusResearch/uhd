@@ -72,7 +72,7 @@ public:
     typedef std::function<T(void)> publisher_type;
     typedef std::function<T(const T&)> coercer_type;
 
-    virtual ~property<T>(void) = 0;
+    virtual ~property(void) = 0;
 
     /*!
      * Register a coercer into the property.

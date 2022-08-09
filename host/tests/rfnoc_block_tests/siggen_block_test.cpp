@@ -191,7 +191,10 @@ BOOST_FIXTURE_TEST_CASE(siggen_test_construction, siggen_block_fixture)
         BOOST_CHECK_EQUAL(reg_iface->phase_increments.at(port), siggen_mock_reg_iface_t::phase_increment_to_register(1.0));
         BOOST_CHECK_EQUAL(reg_iface->phasors.at(port),
             siggen_mock_reg_iface_t::phasor_to_register({0.0, 0.0}));
-        BOOST_CHECK_EQUAL(reg_iface->spps.at(port), DEFAULT_SPP);
+        constexpr int bpi = 4; // sc16 has 4 bytes per item
+        const int expected_spp =
+            test_siggen->get_max_payload_size({res_source_info::OUTPUT_EDGE, port}) / bpi;
+        BOOST_CHECK_EQUAL(reg_iface->spps.at(port), expected_spp);
     }
 }
 
@@ -315,10 +318,11 @@ BOOST_FIXTURE_TEST_CASE(siggen_test_ranges, siggen_block_fixture)
  */
 BOOST_FIXTURE_TEST_CASE(siggen_test_spp_coercion, siggen_block_fixture)
 {
-    constexpr size_t mtu_in_samps = DEFAULT_MTU / 4 /* bytes/samp */;
-    size_t high_spp = mtu_in_samps + 10;
-    test_siggen->set_samples_per_packet(high_spp, 0);
-    BOOST_CHECK_EQUAL(test_siggen->get_samples_per_packet(0), mtu_in_samps);
+    const size_t max_samps =
+        (DEFAULT_MTU - test_siggen->get_chdr_hdr_len()) / 4 /* bytes/samp */;
+    const size_t too_high_spp = max_samps + 10;
+    test_siggen->set_samples_per_packet(too_high_spp, 0);
+    BOOST_CHECK_EQUAL(test_siggen->get_samples_per_packet(0), max_samps);
 }
 
 /*

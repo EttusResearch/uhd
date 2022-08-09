@@ -7,6 +7,7 @@
 #include "rfnoc_graph_mock_nodes.hpp"
 #include <uhd/rfnoc/mock_block.hpp>
 #include <uhd/rfnoc/noc_block_base.hpp>
+#include <uhd/rfnoc/rfnoc_types.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/clock_iface.hpp>
 #include <uhdlib/rfnoc/graph.hpp>
@@ -258,6 +259,7 @@ BOOST_AUTO_TEST_CASE(test_mtu_forwarding_policy_restrictions)
     mbc.make_args->num_input_ports  = 2;
     mbc.make_args->num_output_ports = 2;
     mbc.make_args->mtu              = 8000;
+    mbc.make_args->chdr_w           = uhd::rfnoc::CHDR_W_64;
     mbc.make_args->reg_iface        = mbc.reg_iface;
     mbc.make_args->tree             = mbc.tree;
     mbc.make_args->tb_clk_iface =

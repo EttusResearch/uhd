@@ -21,12 +21,12 @@
 #include <uhd/utils/static.hpp>
 #include <uhdlib/usrp/common/max287x.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/math/special_functions/round.hpp>
-#include <boost/thread/mutex.hpp>
+#include <boost/format.hpp>
 #include <chrono>
 #include <functional>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <thread>
 
 using namespace uhd;
@@ -595,14 +595,14 @@ private:
      **********************************************************************/
     void write_spi_reg(spi_dest_t dest, uint32_t value)
     {
-        boost::mutex::scoped_lock lock(_spi_mutex);
+        std::lock_guard<std::mutex> lock(_spi_mutex);
         ROUTE_SPI(_iface, dest);
         WRITE_SPI(_iface, value);
     }
 
     void write_spi_regs(spi_dest_t dest, std::vector<uint32_t> values)
     {
-        boost::mutex::scoped_lock lock(_spi_mutex);
+        std::lock_guard<std::mutex> lock(_spi_mutex);
         ROUTE_SPI(_iface, dest);
         for (uint32_t value : values)
             WRITE_SPI(_iface, value);
@@ -759,7 +759,7 @@ private:
      **********************************************************************/
     sensor_value_t get_locked(const std::string& pll_name)
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         assert_has(ubx_plls, pll_name, "ubx pll name");
 
         if (pll_name == "TXLO") {
@@ -785,7 +785,7 @@ private:
     // Set RX antennas
     std::string set_rx_ant(const std::string& ant)
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         // validate input
         assert_has(ubx_rx_antennas, ant, "ubx rx antenna name");
 
@@ -819,7 +819,7 @@ private:
      **********************************************************************/
     double set_tx_gain(double gain)
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         gain              = ubx_tx_gain_range.clip(gain);
         int attn_code     = int(std::floor(gain * 2));
         _ubx_tx_atten_val = ((attn_code & 0x3F) << 10);
@@ -834,7 +834,7 @@ private:
 
     double set_rx_gain(double gain)
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         gain              = ubx_rx_gain_range.clip(gain);
         int attn_code     = int(std::floor(gain * 2));
         _ubx_rx_atten_val = ((attn_code & 0x3F) << 10);
@@ -852,7 +852,7 @@ private:
      **********************************************************************/
     double set_tx_freq(double freq)
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         double freq_lo1 = 0.0;
         double freq_lo2 = 0.0;
         double ref_freq = _iface->get_clock_rate(dboard_iface::UNIT_TX);
@@ -1000,7 +1000,7 @@ private:
 
     double set_rx_freq(double freq)
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         double freq_lo1 = 0.0;
         double freq_lo2 = 0.0;
         double ref_freq = _iface->get_clock_rate(dboard_iface::UNIT_RX);
@@ -1186,7 +1186,7 @@ private:
      **********************************************************************/
     void set_power_mode(std::string mode)
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         if (mode == "performance") {
             // performance mode attempts to reduce tuning and settling time
             // as much as possible without adding noise.
@@ -1292,7 +1292,7 @@ private:
             }
         }();
 
-        boost::mutex::scoped_lock lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         for (const auto& lo : {_txlo1, _txlo2, _rxlo1, _rxlo2}) {
             lo->set_auto_retune(enabled);
         }
@@ -1302,8 +1302,8 @@ private:
      * Variables
      **********************************************************************/
     dboard_iface::sptr _iface;
-    boost::mutex _spi_mutex;
-    boost::mutex _mutex;
+    std::mutex _spi_mutex;
+    std::mutex _mutex;
     ubx_cpld_reg_t _cpld_reg;
     uint32_t _prev_cpld_value;
     std::map<ubx_gpio_field_id_t, ubx_gpio_field_info_t> _gpio_map;

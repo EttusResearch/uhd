@@ -13,6 +13,8 @@ namespace uhd { namespace rfnoc {
 
 /*! Vector IIR Block Control Class
  *
+ * \ingroup rfnoc_blocks
+ *
  * The Vector IIR Block is an RFNoC block that implements an infinite
  * impulse filter with a variable length delay line. The transfer
  * function is defined as follows:
@@ -106,4 +108,3 @@ public:
 };
 
 }} // namespace uhd::rfnoc
-

@@ -6,7 +6,7 @@
 trigger:
   branches:
     include:
-    - UHD-4.1
+    - master
   paths:
     include:
     - .ci/docker
@@ -14,18 +14,32 @@ trigger:
 pr:
   branches:
     include:
-    - UHD-4.1
+    - master
   paths:
     include:
     - .ci/docker
     - .ci/uhd-build-docker-container.yml
 
+schedules:
+- cron: "0 18 * * SAT"
+  displayName: Weekly Docker Build master branch
+  branches:
+    include:
+    - master
+  always: true
+- cron: "0 22 * * SAT"
+  displayName: Weekly Docker Build UHD-4.1 branch
+  branches:
+    include:
+    - UHD-4.1
+  always: true
+
 variables:
 - template: uhd-pipeline-vars.yml
 - name: linuxDockerImages
   value:
-    "{'Fedora-32-builder':{'dockerOSName':'fedora32','dockerImageName':'uhd-builder-fedora32'},
-    'Fedora-33-builder':{'dockerOSName':'fedora33','dockerImageName':'uhd-builder-fedora33'},
+    "{'Fedora-33-builder':{'dockerOSName':'fedora33','dockerImageName':'uhd-builder-fedora33'},
+    'Fedora-34-builder':{'dockerOSName':'fedora34','dockerImageName':'uhd-builder-fedora34'},
     'Ubuntu-1804-builder':{'dockerOSName':'ubuntu1804','dockerImageName':'uhd-builder-ubuntu1804'},
     'Ubuntu-2004-builder':{'dockerOSName':'ubuntu2004','dockerImageName':'uhd-builder-ubuntu2004'}}"
 - name: winDockerImages

@@ -11,12 +11,11 @@
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/utils/dirty_tracked.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <stdint.h>
 #include <unordered_map>
-#include <boost/thread/locks.hpp>
-#include <boost/thread/mutex.hpp>
 #include <boost/tokenizer.hpp>
+#include <cstdint>
 #include <list>
+#include <mutex>
 
 /*! \file soft_register.hpp
  * Utilities to access and index hardware registers.
@@ -329,48 +328,48 @@ public:
 
     UHD_INLINE void initialize(wb_iface& iface, bool sync = false)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         soft_register_t<reg_data_t, readable, writable>::initialize(iface, sync);
     }
 
     UHD_INLINE void set(const soft_reg_field_t field, const reg_data_t value)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         soft_register_t<reg_data_t, readable, writable>::set(field, value);
     }
 
     UHD_INLINE reg_data_t get(const soft_reg_field_t field)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         return soft_register_t<reg_data_t, readable, writable>::get(field);
     }
 
     UHD_INLINE void flush()
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         soft_register_t<reg_data_t, readable, writable>::flush();
     }
 
     UHD_INLINE void refresh()
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         soft_register_t<reg_data_t, readable, writable>::refresh();
     }
 
     UHD_INLINE void write(const soft_reg_field_t field, const reg_data_t value)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         soft_register_t<reg_data_t, readable, writable>::write(field, value);
     }
 
     UHD_INLINE reg_data_t read(const soft_reg_field_t field)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         return soft_register_t<reg_data_t, readable, writable>::read(field);
     }
 
 private:
-    boost::mutex _mutex;
+    std::mutex _mutex;
 };
 
 /*
@@ -483,7 +482,7 @@ public:
      */
     void initialize(wb_iface& iface, bool sync = false)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         for (soft_register_base* reg : _reglist) {
             reg->initialize(iface, sync);
         }
@@ -496,7 +495,7 @@ public:
      */
     void flush()
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         for (soft_register_base* reg : _reglist) {
             reg->flush();
         }
@@ -509,7 +508,7 @@ public:
      */
     void refresh()
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         for (soft_register_base* reg : _reglist) {
             reg->refresh();
         }
@@ -555,7 +554,7 @@ protected:
         const std::string& name,
         const visibility_t visible = PRIVATE)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         if (visible == PUBLIC) {
             // Only add to the map if this register is publicly visible
             if (not _regmap.insert(regmap_t::value_type(name, &reg)).second) {
@@ -573,7 +572,7 @@ private:
     const std::string _name;
     regmap_t _regmap; // For lookups
     reglist_t _reglist; // To maintain order
-    boost::mutex _mutex;
+    std::mutex _mutex;
 };
 
 
@@ -611,7 +610,7 @@ public:
      */
     void add(soft_regmap_t& regmap)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         _regmaps.push_back(&regmap);
     }
 
@@ -620,7 +619,7 @@ public:
      */
     void add(soft_regmap_db_t& db)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         if (&db == this) {
             throw uhd::assertion_error("cannot add regmap db to itself" + _name);
         } else {
@@ -700,7 +699,7 @@ private:
     const std::string _name;
     db_t _regmaps;
     db_t _regmap_dbs;
-    boost::mutex _mutex;
+    std::mutex _mutex;
 };
 
 } // namespace uhd

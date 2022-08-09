@@ -20,13 +20,13 @@ function(UHD_ADD_TEST test_name)
         #directory itself.
         if(WIN32)
             set(UHD_TEST_LIBRARY_DIRS
-                "${CMAKE_BINARY_DIR}/lib/${CMAKE_BUILD_TYPE}"
+                "${UHD_BINARY_DIR}/lib/${CMAKE_BUILD_TYPE}"
                 "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}"
                 "${Boost_LIBRARY_DIRS}"
             )
         else()
             set(UHD_TEST_LIBRARY_DIRS
-                "${CMAKE_BINARY_DIR}/lib"
+                "${UHD_BINARY_DIR}/lib"
                 "${CMAKE_CURRENT_BINARY_DIR}"
             )
             if(NOT APPLE)
@@ -56,7 +56,7 @@ function(UHD_ADD_TEST test_name)
 
         #replace list separator with the path separator
         string(REPLACE ";" ":" libpath "${libpath}")
-        list(APPEND environs "PATH=\"${binpath}\"" "${LD_PATH_VAR}=\"${libpath}\"" "UHD_RFNOC_DIR=\"${CMAKE_SOURCE_DIR}/include/uhd/rfnoc\"")
+        list(APPEND environs "PATH=\"${binpath}\"" "${LD_PATH_VAR}=\"${libpath}\"" "UHD_RFNOC_DIR=\"${UHD_SOURCE_DIR}/include/uhd/rfnoc\"")
 
         #generate a bat file that sets the environment and runs the test
         if (CMAKE_CROSSCOMPILING)
@@ -88,7 +88,7 @@ function(UHD_ADD_TEST test_name)
 
         #replace list separator with the path separator (escaped)
         string(REPLACE ";" "\\;" libpath "${libpath}")
-        list(APPEND environs "PATH=${libpath}" "UHD_RFNOC_DIR=${CMAKE_SOURCE_DIR}/include/uhd/rfnoc")
+        list(APPEND environs "PATH=${libpath}" "UHD_RFNOC_DIR=${UHD_SOURCE_DIR}/include/uhd/rfnoc")
 
         #generate a bat file that sets the environment and runs the test
         set(bat_file ${CMAKE_CURRENT_BINARY_DIR}/${test_name}_test.bat)
@@ -120,22 +120,25 @@ function(UHD_ADD_PYTEST test_name)
                                        -m unittest discover
                                        -s ${CMAKE_CURRENT_SOURCE_DIR}
                                        -p "${test_name}.*"
-            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/python"
+            WORKING_DIRECTORY "${UHD_BINARY_DIR}/python"
         )
     else()
         add_test(NAME ${test_name}
             COMMAND ${RUNTIME_PYTHON_EXECUTABLE} -m unittest discover
                                                  -s ${CMAKE_CURRENT_SOURCE_DIR}
                                                  -p "${test_name}.*"
-            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/python"
+            WORKING_DIRECTORY "${UHD_BINARY_DIR}/python"
         )
     endif(ENABLE_QEMU_UNITTESTS)
-    # Include ${CMAKE_BINARY_DIR}/utils/ for testing the python utils
+    # Include ${UHD_BINARY_DIR}/utils/ for testing the python utils
     if(APPLE)
         set_tests_properties(${test_name} PROPERTIES
-            ENVIRONMENT "DYLD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/lib/;PYTHONPATH=${CMAKE_SOURCE_DIR}/tests/common:${CMAKE_BINARY_DIR}/utils/")
+            ENVIRONMENT
+            "DYLD_LIBRARY_PATH=${UHD_BINARY_DIR}/lib/;PYTHONPATH=${UHD_BINARY_DIR}/python:${UHD_SOURCE_DIR}/tests/common:${UHD_BINARY_DIR}/utils/")
     else()
         set_tests_properties(${test_name} PROPERTIES
-            ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/lib/;PYTHONPATH=${CMAKE_SOURCE_DIR}/tests/common:${CMAKE_BINARY_DIR}/utils/")
+            ENVIRONMENT
+            "LD_LIBRARY_PATH=${UHD_BINARY_DIR}/lib/;PYTHONPATH=${UHD_BINARY_DIR}/python:${UHD_SOURCE_DIR}/tests/common:${UHD_BINARY_DIR}/utils/"
+            )
     endif()
 endfunction(UHD_ADD_PYTEST)

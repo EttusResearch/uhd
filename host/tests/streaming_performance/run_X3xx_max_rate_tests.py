@@ -127,14 +127,14 @@ def run_tests_for_single_10G(path, addr, iterations, duration, use_dpdk=False):
 def run_tests_for_dual_10G(path, addr, second_addr, iterations, duration, use_dpdk=False):
     if use_dpdk == True:
         base_params = {
-            "args": ("addr={},second_addr={},skip_dram=1,"
+            "args": ("addr={},second_addr={},"
                      "enable_tx_dual_eth=1,use_dpdk=1")
                      .format(addr, second_addr),
             "duration": duration
         }
     else:
         base_params = {
-            "args": "addr={},second_addr={},skip_dram=1,enable_tx_dual_eth=1"
+            "args": "addr={},second_addr={},enable_tx_dual_eth=1"
                     .format(addr, second_addr),
             "duration": duration
         }

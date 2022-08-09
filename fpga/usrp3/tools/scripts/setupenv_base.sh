@@ -45,11 +45,13 @@ function setupenv_help {
 
 Usage: source setupenv.sh [--help|-h] [--vivado-path=<PATH>] [--modelsim-path=<PATH>]
 
---vivado-path     : Path to the base install directory for Xilinx Vivado
-                    (Default: /opt/Xilinx/Vivado or /opt/Xilinx/Vivado_Lab)
---modelsim-path   : Path to the base install directory for Modelsim (optional simulation tool)
-                    (Default: /opt/mentor/modelsim)
---help -h         : Shows this message.
+--vivado-path   : Path to the base install directory for Xilinx Vivado if it is
+                  not installed in one of the default search locations (e.g.,
+                  /opt/Xilinx/Vivado).
+--modelsim-path : Path to the base install directory for ModelSim if it is not
+                  installed in one of the default search locations (e.g.,
+                  /opt/mentor/modelsim). This simulation tool is optional.
+--help -h       : Shows this message.
 
 This script sets up the environment required to build FPGA images for the Ettus Research
 ${DISPLAY_NAME}. It will also optionally set up the the environment to run the

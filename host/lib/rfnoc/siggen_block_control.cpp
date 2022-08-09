@@ -154,9 +154,12 @@ private:
                 PROP_KEY_CONSTANT_Q, 1.0, {res_source_info::USER, port}});
             _prop_phase_inc.emplace_back(property_t<double>{
                 PROP_KEY_SINE_PHASE_INC, 1.0, {res_source_info::USER, port}});
+            const int default_spp =
+                static_cast<int>(
+                    get_max_payload_size({res_source_info::OUTPUT_EDGE, port}))
+                / uhd::convert::get_bytes_per_item(_prop_type_out.at(port).get());
             _prop_spp.emplace_back(property_t<int>{
-                PROP_KEY_SPP, DEFAULT_SPP, {res_source_info::USER, port}});
-
+                PROP_KEY_SPP, default_spp, {res_source_info::USER, port}});
             register_property(&_prop_enable.back(), [this, port]() {
                 _siggen_reg_iface.poke32(REG_ENABLE_OFFSET,
                     uint32_t(_prop_enable.at(port).get() ? 1 : 0),
@@ -256,21 +259,20 @@ private:
                     get_mtu_prop_ref({res_source_info::OUTPUT_EDGE, port})},
                 {&_prop_spp.back()},
                 [this, port]() {
-                    // MTU is max payload size, header with timestamp is already
-                    // accounted for
-                    int spp = _prop_spp.at(port).get();
-                    const int mtu =
-                        static_cast<int>(get_mtu({res_source_info::OUTPUT_EDGE, port}));
-                    const int mtu_samps =
-                        mtu
+                    int spp               = _prop_spp.at(port).get();
+                    const int max_payload = static_cast<int>(
+                        get_max_payload_size({res_source_info::OUTPUT_EDGE, port}));
+                    const int max_samps =
+                        max_payload
                         / uhd::convert::get_bytes_per_item(_prop_type_out.at(port).get());
-                    if (spp > mtu_samps) {
-                        RFNOC_LOG_WARNING("spp value " << spp << " exceeds MTU of " << mtu
-                                                       << "! Coercing to " << mtu_samps);
-                        spp = mtu_samps;
+                    if (spp > max_samps) {
+                        RFNOC_LOG_WARNING("spp value " << spp << " exceeds MTU of "
+                                                       << max_payload << "! Coercing to "
+                                                       << max_samps);
+                        spp = max_samps;
                     }
                     if (spp <= 0) {
-                        spp = DEFAULT_SPP;
+                        spp = max_samps;
                         RFNOC_LOG_WARNING(
                             "spp must be greater than zero! Coercing to " << spp);
                     }
@@ -307,16 +309,16 @@ private:
         // The rotator that rotates the phasor to generate the sinusoidal
         // data has an initial phase offset which is impossible to predict.
         // Thus, the Cartesian parameter is largely immaterial, as long as
-        // the phasor's amplitude matchines with the client has specified.
+        // the phasor's amplitude matches what the client has specified.
         // For simplicity, the Cartesian parameter is chosen to have a real
-        // (X) component of 0.0 and an imaginary (Y) component of the desired
-        // amplitude.
-        const int16_t cartesian_i_fp = clamp<int16_t>(amplitude * 32767.0);
+        // (X) component of the desired amplitude and an imaginary (Y)
+        // component of 0.0.
+        const int16_t cartesian_x_fp = clamp<int16_t>(amplitude * 32767.0);
 
-        // Bits 31:16 represent the imaginary component (the pre-scaled
-        // fixed point amplitude), while bits 15:0 represents the real
-        // component (which are zeroed).
-        const uint32_t cartesian_reg_value = (uint32_t(cartesian_i_fp) << 16);
+        // Bits 31:16 represent the real component (the pre-scaled fixed-point
+        // amplitude), while bits 15:0 represent the imaginary component (which
+        // is zeroed).
+        const uint32_t cartesian_reg_value = (uint32_t(cartesian_x_fp) << 16);
         _siggen_reg_iface.poke32(REG_CARTESIAN_OFFSET, cartesian_reg_value, port);
     }
 

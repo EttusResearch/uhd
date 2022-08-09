@@ -100,6 +100,11 @@ def setup_parser():
         "-c", "--clean-all",
         help="Cleans the IP before a new build",
         action="store_true")
+    parser.add_argument(
+        "-p", "--vivado-path",
+        help="Path to the base install for Xilinx Vivado if not in default "
+             "location (e.g., /tools/Xilinx/Vivado).",
+        default=None)
 
     return parser
 
@@ -216,6 +221,7 @@ def main():
         output_path=args.image_core_output,
         router_hex_path=args.router_hex_output,
         include_paths=args.include_dir,
+        vivado_path=args.vivado_path,
         )
 
 if __name__ == "__main__":

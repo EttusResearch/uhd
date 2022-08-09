@@ -1,0 +1,89 @@
+#
+# Copyright 2021 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+parameters:
+- name: custom_boost_version
+  type: boolean
+  default: false
+- name: custom_boost_version_url
+  type: string
+  default: 'https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.bz2'
+- name: release_binaries
+  type: boolean
+  default: false
+- name: testLength
+  type: string
+- name: run_streaming_tests
+  type: boolean
+  default: false
+
+variables:
+- template: ../uhd-pipeline-vars.yml
+
+resources:
+  pipelines:
+  - pipeline: uhd_build_docker_container
+    source: 'uhddev Build Docker Containers'
+    branch: master
+stages:
+- stage: build_uhd_stage
+  displayName: Build UHD
+  jobs:
+  - template: job-get-latest-uhd-docker.yml
+
+  - template: job-uhd-build-src.yml
+    parameters:
+      toolset: make
+  - template: job-uhd-build-src.yml
+    parameters:
+      toolset: make_trace
+  - template: job-uhd-build-src.yml
+    parameters:
+      toolset: ninja
+  - template: job-uhd-build-src.yml
+    parameters:
+      toolset: msbuild
+      release_binaries: ${{ parameters.release_binaries }}
+
+  - ${{ if parameters.custom_boost_version }}:
+    - template: job-uhd-build-src.yml
+      parameters:
+        toolset: make_custom_boost_version
+        custom_boost_version_url: ${{ parameters.custom_boost_version_url }}
+
+- stage: build_uhd_installer_stage
+  displayName: Build UHD Installers
+  dependsOn: build_uhd_stage
+  jobs:
+    - template: job-get-latest-uhd-docker.yml
+    - template: job-uhd-build-installer.yml
+      parameters:
+        toolset: ubuntu_deb
+        installer: deb
+    - template: job-uhd-build-installer.yml
+      parameters:
+        toolset: msbuild
+        installer: nsis
+
+- stage: test_uhd_stage
+  displayName: Test UHD
+  dependsOn: build_uhd_stage
+  jobs:
+  - template: job-uhd-devtest-rhombus.yml
+    parameters:
+      testOS: ubuntu2004
+      uhdSrcDir: $(Build.SourcesDirectory)
+
+- stage: test_streaming_stage
+  displayName: Test UHD Streaming
+  dependsOn: build_uhd_stage
+  condition: and(succeeded('build_uhd_stage'), ${{ parameters.run_streaming_tests }})
+  jobs:
+  - template: job-uhd-streaming-tests-beauty.yml
+    parameters:
+      testOS: ubuntu2004
+      uhdSrcDir: $(Build.SourcesDirectory)
+      testLength: ${{ parameters.testLength }}

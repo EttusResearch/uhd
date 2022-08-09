@@ -56,6 +56,7 @@ class X4xxRfdcCtrl:
         122.88e6*4:    (2.94912e9, 2, False, False), # RF (1M-8G)
         122.88e6*2:    (2.94912e9, 2, False, True),  # RF (1M-8G)
         122.88e6*1:    (2.94912e9, 8, False, False), # RF (1M-8G)
+        125e6*2:       (3.00000e9, 2, False, True),  # RF (1M-8G)
         125e6*4:       (3.00000e9, 2, False, False), # RF (1M-8G)
         200e6:         (3.00000e9, 4, True,  False), # RF (Legacy Mode)
     })
@@ -87,11 +88,13 @@ class X4xxRfdcCtrl:
         self._cal_freeze_cache = {}
 
     @no_rpc
-    def unset_cbs(self):
+    def tear_down(self):
         """
-        Removes any stored references to our owning X4xx class instance
+        Removes any stored references to our owning X4xx class instance and
+        destructs anything that must happen at teardown
         """
         self._get_spll_freq = None
+        del self._rfdc_ctrl
 
     ###########################################################################
     # Public APIs (not available as MPM RPC calls)

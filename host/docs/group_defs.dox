@@ -1,0 +1,12 @@
+/*!
+ * \defgroup rfnoc_docs RFNoC
+ * \brief Additional documentation regarding RFNoC
+ *
+ * @{
+ */
+
+/*! \defgroup rfnoc_blocks RFNoC Blocks
+ * \brief Documentation for RFNoC blocks that are part of UHD.
+ */
+
+/*! @} */

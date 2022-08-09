@@ -123,10 +123,9 @@ public:
 
     uhd::freq_range_t get_frequency_range(const size_t chan) const override
     {
-        const double input_rate =
-            _samp_rate_in.at(chan).is_valid() ? _samp_rate_in.at(chan).get() : 1.0;
+        const double output_rate = get_output_rate(chan);
         // TODO add steps
-        return uhd::freq_range_t(-input_rate / 2, input_rate / 2);
+        return uhd::freq_range_t(-output_rate / 2, output_rate / 2);
     }
 
     double get_input_rate(const size_t chan) const override
@@ -241,7 +240,7 @@ private:
          * Add resolvers
          *********************************************************************/
         // Resolver for _interp: this gets executed when the user directly
-        // modifies interp. the desired behaviour is to coerce it first, then
+        // modifies 'interp'. The desired behaviour is to coerce it first, then
         // keep the output rate constant, and re-calculate the input rate.
         add_property_resolver({interp, scaling_in},
             {interp, samp_rate_out, samp_rate_in, scaling_in},

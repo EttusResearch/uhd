@@ -4,60 +4,42 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 #
 
+parameters:
+- name: release_binaries
+  type: boolean
+  default: false
+- name: testLength
+  type: string
+  values:
+  - 'smoke'
+  - 'full'
+  - 'stress'
+  default: 'smoke'
+- name: run_streaming_tests
+  type: boolean
+  default: False
+
 trigger:
+  batch: true
   branches:
     include:
-    - UHD-4.1
+    - master
   paths:
     include:
     - host
-    - .ci/uhd-pipeline.yml
+    - .ci
     - images/manifest.txt
-pr:
-  branches:
-    include:
-    - UHD-4.1
-  paths:
-    include:
-    - host
-    - .ci/uhd-pipeline.yml
-    - images/manifest.txt
+    exclude:
+    - .ci/docker
+    - host/docs
+    - host/LICENSE
+    - host/README.md
 
-variables:
-- template: uhd-pipeline-vars.yml
+pr: none
 
-resources:
-  pipelines:
-  - pipeline: uhd_build_docker_container
-    source: 'uhddev Build Docker Containers'
-    branch: UHD-4.1
-stages:
-- stage: build_uhd_stage
-  displayName: Build UHD
-  jobs:
-  - template: templates/job-get-latest-uhd-docker.yml
-
-  - template: templates/job-uhd-build-src.yml
-    parameters:
-      toolset: make
-  - template: templates/job-uhd-build-src.yml
-    parameters:
-      toolset: make_trace
-  - template: templates/job-uhd-build-src.yml
-    parameters:
-      toolset: ninja
-  - template: templates/job-uhd-build-src.yml
-    parameters:
-      toolset: msbuild
-  - template: templates/job-uhd-build-src.yml
-    parameters:
-      toolset: ubuntu_deb
-
-- stage: test_uhd_stage
-  displayName: Test UHD
-  dependsOn: build_uhd_stage
-  jobs:
-  - template: templates/job-uhd-devtest-rhombus.yml
-    parameters:
-      testOS: ubuntu2004
-      uhdSrcDir: $(Build.SourcesDirectory)
+extends:
+  template: templates/stages-uhd-pipeline.yml
+  parameters:
+    release_binaries: ${{ parameters.release_binaries }}
+    testLength: ${{ parameters.testLength }}
+    run_streaming_tests: ${{ parameters.run_streaming_tests }}

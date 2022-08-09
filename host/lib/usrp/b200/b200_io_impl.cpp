@@ -327,7 +327,7 @@ boost::optional<uhd::msg_task::msg_type_t> b200_impl::handle_async_task(
         case B200_RESP0_MSG_SID:
         case B200_RESP1_MSG_SID:
         case B200_LOCAL_RESP_SID: {
-            radio_ctrl_core_3000::sptr ctrl;
+            b200_radio_ctrl_core::sptr ctrl;
             if (sid == B200_RESP0_MSG_SID)
                 ctrl = data->radio_ctrl[0].lock();
             if (sid == B200_RESP1_MSG_SID)
@@ -496,28 +496,23 @@ void b200_impl::handle_overflow(const size_t radio_index)
             _radio_perifs[radio_index].framer->in_continuous_streaming_mode();
         // stop streaming
         my_streamer->issue_stream_cmd(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
-        // flush demux
-        _demux->realloc_sid(B200_RX_DATA0_SID);
-        _demux->realloc_sid(B200_RX_DATA1_SID);
-        // flush actual transport
-        while (_data_transport->get_recv_buff(0.001)) {
-        }
+        // flush data
+        while (_demux->get_recv_buff(B200_RX_DATA0_SID, 0.001)) {}
+        while (_demux->get_recv_buff(B200_RX_DATA1_SID, 0.001)) {}
         // restart streaming
         if (in_continuous_streaming_mode) {
             stream_cmd_t stream_cmd(stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
             stream_cmd.stream_now = false;
             stream_cmd.time_spec =
                 _radio_perifs[radio_index].time64->get_time_now() + time_spec_t(0.01);
-            // FIXME: temporarily remove the start stream command.
-            // This will avoid an issue that gets the b210 in a bad state.
-            // my_streamer->issue_stream_cmd(stream_cmd);
+            my_streamer->issue_stream_cmd(stream_cmd);
         }
     } else {
-        while (_data_transport->get_recv_buff(0.001)) {
-        }
-        // FIXME: temporarily remove the overflow handling that re-issues a stream
-        //        command. This will avoid an issue that gets the b210 in a bad state.
-        // _radio_perifs[radio_index].framer->handle_overflow();
+        const uint32_t sid = radio_index == 0 ? B200_RX_DATA0_SID : B200_RX_DATA1_SID;
+        // flush data
+        while (_demux->get_recv_buff(sid, 0.001)) {}
+        // restart streaming
+        _radio_perifs[radio_index].framer->handle_overflow();
     }
 }
 

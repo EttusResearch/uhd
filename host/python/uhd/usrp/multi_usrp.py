@@ -36,53 +36,92 @@ class MultiUSRP(lib.usrp.multi_usrp):
                 self.get_tree().access_device_addr("/mboards/0/args").get().to_dict()
             setattr(self, 'get_mpm_client', lambda: _get_mpm_client(token, mb_args))
 
-    def recv_num_samps(self, num_samps, freq, rate=1e6, channels=(0,), gain=10):
+    def recv_num_samps(self,
+                       num_samps,
+                       freq,
+                       rate=1e6,
+                       channels=(0,),
+                       gain=10,
+                       start_time=None,
+                       streamer=None):
         """
         RX a finite number of samples from the USRP
+
+        This is a convenience function to minimize the amount of code required
+        for just capturing samples. When calling this function more than once
+        in a script, pass in a streamer object to avoid recreating streamers
+        more than once.
+
         :param num_samps: number of samples to RX
         :param freq: RX frequency (Hz)
         :param rate: RX sample rate (Hz)
         :param channels: list of channels to RX on
         :param gain: RX gain (dB)
+        :param start_time: A valid TimeSpec object with the starting time. If
+                           None, then streaming starts immediately.
+        :param streamer: An RX streamer object. If None, this function will create
+                         one locally and attempt to destroy it afterwards.
         :return: numpy array of complex floating-point samples (fc32)
         """
-        result = np.empty((len(channels), num_samps), dtype=np.complex64)
-
+        def _config_streamer(streamer):
+            """
+            Set up the correct streamer
+            """
+            if streamer is None:
+                st_args = lib.usrp.stream_args("fc32", "sc16")
+                st_args.channels = channels
+                streamer = super(MultiUSRP, self).get_rx_stream(st_args)
+            return streamer
+        def _start_stream(streamer):
+            """
+            Issue the start-stream command.
+            """
+            stream_cmd = lib.types.stream_cmd(lib.types.stream_mode.start_cont)
+            stream_cmd.stream_now = (len(channels) == 1) and start_time is None
+            if not stream_cmd.stream_now:
+                if start_time is not None:
+                    stream_cmd.time_spec = start_time
+                else:
+                    stream_cmd.time_spec = lib.types.time_spec(
+                        super(MultiUSRP, self).get_time_now().get_real_secs() + 0.05)
+            streamer.issue_stream_cmd(stream_cmd)
+        def _stop_stream(streamer):
+            """
+            Issue the stop-stream command and flush the queue.
+            """
+            metadata = lib.types.rx_metadata()
+            stream_cmd = lib.types.stream_cmd(lib.types.stream_mode.stop_cont)
+            streamer.issue_stream_cmd(stream_cmd)
+            while streamer.recv(recv_buffer, metadata):
+                pass
+        ## And go!
+        # Configure USRP
         for chan in channels:
             super(MultiUSRP, self).set_rx_rate(rate, chan)
             super(MultiUSRP, self).set_rx_freq(lib.types.tune_request(freq), chan)
             super(MultiUSRP, self).set_rx_gain(gain, chan)
-
-        st_args = lib.usrp.stream_args("fc32", "sc16")
-        st_args.channels = channels
+        # Configure streamer
+        streamer = _config_streamer(streamer)
         metadata = lib.types.rx_metadata()
-        streamer = super(MultiUSRP, self).get_rx_stream(st_args)
-        buffer_samps = streamer.get_max_num_samps()
+        # Set up buffers and counters
+        result = np.empty((len(channels), num_samps), dtype=np.complex64)
         recv_buffer = np.zeros(
-            (len(channels), buffer_samps), dtype=np.complex64)
-
+            (len(channels), streamer.get_max_num_samps()), dtype=np.complex64)
         recv_samps = 0
-        stream_cmd = lib.types.stream_cmd(lib.types.stream_mode.start_cont)
-        stream_cmd.stream_now = True
-        streamer.issue_stream_cmd(stream_cmd)
-
-        samps = np.array([], dtype=np.complex64)
+        samps = 0
+        # Now stream
+        _start_stream(streamer)
         while recv_samps < num_samps:
             samps = streamer.recv(recv_buffer, metadata)
-
             if metadata.error_code != lib.types.rx_metadata_error_code.none:
                 print(metadata.strerror())
             if samps:
                 real_samps = min(num_samps - recv_samps, samps)
-                result[:, recv_samps:recv_samps + real_samps] = recv_buffer[:, 0:real_samps]
+                result[:, recv_samps:recv_samps + real_samps] = \
+                        recv_buffer[:, 0:real_samps]
                 recv_samps += real_samps
-
-        stream_cmd = lib.types.stream_cmd(lib.types.stream_mode.stop_cont)
-        streamer.issue_stream_cmd(stream_cmd)
-
-        while samps:
-            samps = streamer.recv(recv_buffer, metadata)
-
+        # Stop and clean up
+        _stop_stream(streamer)
         # Help the garbage collection
         streamer = None
         return result
@@ -93,7 +132,9 @@ class MultiUSRP(lib.usrp.multi_usrp):
                       freq,
                       rate=1e6,
                       channels=(0,),
-                      gain=10):
+                      gain=10,
+                      start_time=None,
+                      streamer=None):
         """
         TX a finite number of samples from the USRP
         :param waveform_proto: numpy array of samples to TX
@@ -102,42 +143,57 @@ class MultiUSRP(lib.usrp.multi_usrp):
         :param rate: TX sample rate (Hz)
         :param channels: list of channels to TX on
         :param gain: TX gain (dB)
+        :param start_time: A valid TimeSpec object with the starting time. If
+                           None, then streaming starts immediately.
+        :param streamer: A TX streamer object. If None, this function will create
+                         one locally and attempt to destroy it afterwards.
         :return: the number of transmitted samples
         """
+        def _config_streamer(streamer):
+            """
+            Set up the correct streamer
+            """
+            if streamer is None:
+                st_args = lib.usrp.stream_args("fc32", "sc16")
+                st_args.channels = channels
+                streamer = super(MultiUSRP, self).get_tx_stream(st_args)
+            return streamer
+        ## And go!
         for chan in channels:
             super(MultiUSRP, self).set_tx_rate(rate, chan)
             super(MultiUSRP, self).set_tx_freq(lib.types.tune_request(freq), chan)
             super(MultiUSRP, self).set_tx_gain(gain, chan)
 
-        st_args = lib.usrp.stream_args("fc32", "sc16")
-        st_args.channels = channels
-
-        streamer = super(MultiUSRP, self).get_tx_stream(st_args)
+        # Configure streamer
+        streamer = _config_streamer(streamer)
+        # Set up buffers and counters
         buffer_samps = streamer.get_max_num_samps()
         proto_len = waveform_proto.shape[-1]
-
         if proto_len < buffer_samps:
             waveform_proto = np.tile(waveform_proto,
                                      (1, int(np.ceil(float(buffer_samps)/proto_len))))
             proto_len = waveform_proto.shape[-1]
-
-        metadata = lib.types.tx_metadata()
         send_samps = 0
         max_samps = int(np.floor(duration * rate))
-
         if len(waveform_proto.shape) == 1:
             waveform_proto = waveform_proto.reshape(1, waveform_proto.size)
         if waveform_proto.shape[0] < len(channels):
             waveform_proto = np.tile(waveform_proto[0], (len(channels), 1))
-
+        # Now stream
+        metadata = lib.types.tx_metadata()
+        if start_time is not None:
+            metadata.time_spec = start_time
         while send_samps < max_samps:
             real_samps = min(proto_len, max_samps-send_samps)
             if real_samps < proto_len:
+                print(waveform_proto[:, :real_samps])
                 samples = streamer.send(waveform_proto[:, :real_samps], metadata)
             else:
                 samples = streamer.send(waveform_proto, metadata)
             send_samps += samples
-
+        # Send EOB to terminate Tx
+        metadata.end_of_burst = True
+        streamer.send(np.zeros((len(channels), 1), dtype=np.complex64), metadata)
         # Help the garbage collection
         streamer = None
         return send_samps

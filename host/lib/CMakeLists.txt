@@ -60,7 +60,7 @@ endmacro(INCLUDE_SUBDIRECTORY)
 message(STATUS "")
 # Dependencies
 find_package(LIBUSB)
-find_package(DPDK 18.11 EXACT)
+find_package(DPDK 19.11...20.11)
 LIBUHD_REGISTER_COMPONENT("USB" ENABLE_USB ON "ENABLE_LIBUHD;LIBUSB_FOUND" OFF OFF)
 # Devices
 LIBUHD_REGISTER_COMPONENT("B100" ENABLE_B100 ON "ENABLE_LIBUHD;ENABLE_USB" OFF OFF)
@@ -136,6 +136,7 @@ endif(ENABLE_C_API)
 # Add common resource compiler subdirectory
 ########################################################################
 add_subdirectory(rc)
+LIBUHD_APPEND_LIBS(uhd_rc)
 
 ########################################################################
 # Add DLL resource file to Windows build
@@ -152,7 +153,7 @@ if(MSVC)
         if(IS_ABSOLUTE "${CUSTOM_RC_FILE}")
             set(UHD_RC_IN "${CUSTOM_RC_FILE}")
         else()
-            set(UHD_RC_IN "${CMAKE_BINARY_DIR}/${CUSTOM_RC_FILE}")
+            set(UHD_RC_IN "${UHD_BINARY_DIR}/${CUSTOM_RC_FILE}")
         endif(IS_ABSOLUTE "${CUSTOM_RC_FILE}")
         message(STATUS "")
         message(STATUS "Using custom RC template: ${UHD_RC_IN}")
@@ -179,7 +180,7 @@ if(ENABLE_MPMD)
     list(APPEND libuhd_sources $<TARGET_OBJECTS:uhd_rpclib>)
 endif()
 add_library(uhd SHARED ${libuhd_sources})
-target_link_libraries(uhd ${Boost_LIBRARIES} ${libuhd_libs} uhd_rc)
+target_link_libraries(uhd ${Boost_LIBRARIES} ${libuhd_libs})
 set_target_properties(uhd PROPERTIES DEFINE_SYMBOL "UHD_DLL_EXPORTS")
 if(NOT LIBUHDDEV_PKG)
     set_target_properties(uhd PROPERTIES SOVERSION "${UHD_ABI_VERSION}")
@@ -193,7 +194,7 @@ if(ENABLE_SIM)
     # Get python include dirs
     include_directories(${PYTHON_INCLUDE_DIRS})
     set(PYBIND11_INCLUDE_DIR
-        "${CMAKE_SOURCE_DIR}/lib/deps/pybind11/include"
+        "${UHD_SOURCE_DIR}/lib/deps/pybind11/include"
         CACHE
         STRING
         "Location of PyBind11 includes"
@@ -221,9 +222,10 @@ endif(NOT UHDHOST_PKG)
 # Setup libuhd library (static)
 #######################################################
 if(ENABLE_STATIC_LIBS)
-    add_library(uhd_static STATIC ${libuhd_sources})
+    add_library(uhd_static STATIC ${libuhd_sources} $<TARGET_OBJECTS:uhd_rc>)
     set_target_properties(uhd_static PROPERTIES OUTPUT_NAME uhd)
     set_target_properties(uhd_static PROPERTIES COMPILE_DEFINITIONS UHD_STATIC_LIB)
+    target_link_libraries(uhd_static uhd_rc)
     install(TARGETS uhd_static
         ARCHIVE DESTINATION lib${LIB_SUFFIX} # .lib or .a file
     )

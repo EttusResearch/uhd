@@ -240,38 +240,6 @@ std::string get_ipv4_addr(unsigned int port_id)
     return std::string(addr_str);
 }
 
-/*
-void *prepare_and_bench_blocking(void *arg)
-{
-    struct dpdk_test_args *args = (struct dpdk_test_args *) arg;
-    pthread_mutex_lock(&args->mutex);
-    pthread_t t = pthread_self();
-    set_cpu(t, args->cpu);
-    args->started = true;
-    pthread_cond_wait(args->cond, &args->mutex);
-    auto ctx = uhd::transport::dpdk_ctx::get();
-    uhd::transport::dpdk_zero_copy::sptr eth_data[1];
-    uhd::transport::zero_copy_xport_params buff_args;
-    buff_args.recv_frame_size = 8000;
-    buff_args.send_frame_size = 8000;
-    buff_args.num_send_frames = 8;
-    buff_args.num_recv_frames = 8;
-    auto dev_addr = uhd::device_addr_t();
-    eth_data[0] = uhd::transport::dpdk_zero_copy::make(
-        ctx,
-        args->portid,
-        args->dst_ip,
-        "48888",
-        "48888",
-        buff_args,
-        dev_addr
-    );
-
-    bench(eth_data, 1, 0.1);
-    return 0;
-}
-*/
-
 void prepare_and_bench_polling(void)
 {
     auto ctx = uhd::transport::dpdk::dpdk_ctx::get();
@@ -310,17 +278,13 @@ void prepare_and_bench_polling(void)
 
 int main(int argc, char** argv)
 {
-    int retval, user0_cpu = 0, user1_cpu = 2;
     int status = 0;
     std::string args;
     std::string cpusets;
     po::options_description desc("Allowed options");
     desc.add_options()("help", "help message")(
         "args", po::value<std::string>(&args)->default_value(""), "UHD-DPDK args")(
-        "polling-mode", "Use polling mode (single thread on own core)")("cpusets",
-        po::value<std::string>(&cpusets)->default_value(""),
-        "which core(s) to use for a given thread in blocking mode (specify something "
-        "like \"user0=0,user1=2\")");
+        "polling-mode", "Use polling mode (single thread on own core)");
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
@@ -332,70 +296,11 @@ int main(int argc, char** argv)
 
     auto dpdk_args = uhd::device_addr_t(args);
 
-    auto cpuset_map = uhd::device_addr_t(cpusets);
-    for (std::string& key : cpuset_map.keys()) {
-        if (key == "user0") {
-            user0_cpu = std::stoi(cpuset_map[key], NULL, 0);
-        } else if (key == "user1") {
-            user1_cpu = std::stoi(cpuset_map[key], NULL, 0);
-        }
-    }
-
     auto ctx = uhd::transport::dpdk::dpdk_ctx::get();
     ctx->init(args);
 
     if (vm.count("polling-mode")) {
         prepare_and_bench_polling();
-    } /*else {
-        pthread_cond_t cond;
-        pthread_cond_init(&cond, NULL);
-        struct dpdk_test_args bench_args[2];
-        pthread_mutex_init(&bench_args[0].mutex, NULL);
-        pthread_mutex_init(&bench_args[1].mutex, NULL);
-        bench_args[0].cpu      = user0_cpu;
-        bench_args[0].cond     = &cond;
-        bench_args[0].dst_ip   = get_ipv4_addr(1);
-        bench_args[0].started  = false;
-        bench_args[0].portid   = 0;
-        bench_args[1].cpu      = user1_cpu;
-        bench_args[1].cond     = &cond;
-        bench_args[1].dst_ip   = get_ipv4_addr(0);
-        bench_args[1].started  = false;
-        bench_args[1].portid   = 1;
-
-        pthread_t threads[2];
-        pthread_create(&threads[0], NULL, prepare_and_bench_blocking, &bench_args[0]);
-        pthread_create(&threads[1], NULL, prepare_and_bench_blocking, &bench_args[1]);
-
-        do {
-            pthread_mutex_lock(&bench_args[0].mutex);
-            if (bench_args[0].started)
-                break;
-            pthread_mutex_unlock(&bench_args[0].mutex);
-        } while (true);
-        pthread_mutex_unlock(&bench_args[0].mutex);
-
-        do {
-            pthread_mutex_lock(&bench_args[1].mutex);
-            if (bench_args[1].started)
-                break;
-            pthread_mutex_unlock(&bench_args[1].mutex);
-        } while (true);
-        pthread_mutex_unlock(&bench_args[1].mutex);
-
-        pthread_cond_broadcast(&cond);
-
-        status = pthread_join(threads[0], (void **) &retval);
-        if (status) {
-            perror("Error while joining thread");
-            return status;
-        }
-        status = pthread_join(threads[1], (void **) &retval);
-        if (status) {
-            perror("Error while joining thread");
-            return status;
-        }
-    }*/
-
+    }
     return status;
 }

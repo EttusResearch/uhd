@@ -42,9 +42,9 @@ bool block_id_t::is_valid_blockname(const std::string& block_name)
     return std::regex_match(block_name, std::regex(VALID_BLOCKNAME_REGEX));
 }
 
-bool block_id_t::is_valid_block_id(const std::string& block_name)
+bool block_id_t::is_valid_block_id(const std::string& block_id)
 {
-    return std::regex_match(block_name, std::regex(VALID_BLOCKID_REGEX));
+    return std::regex_match(block_id, std::regex(VALID_BLOCKID_REGEX));
 }
 
 std::string block_id_t::to_string() const
@@ -66,7 +66,7 @@ bool block_id_t::match(const std::string& block_str)
 {
     std::cmatch matches;
     if (not std::regex_match(
-            block_str.c_str(), matches, std::regex(VALID_BLOCKID_REGEX))) {
+            block_str.c_str(), matches, std::regex(MATCH_BLOCKID_REGEX))) {
         return false;
     }
     try {

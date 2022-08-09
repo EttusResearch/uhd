@@ -7,7 +7,7 @@
 
 #include "libusb1_base.hpp"
 #include <uhd/transport/usb_control.hpp>
-#include <boost/thread/mutex.hpp>
+#include <mutex>
 
 using namespace uhd::transport;
 
@@ -38,7 +38,7 @@ public:
         uint16_t length,
         uint32_t libusb_timeout = 0) override
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         return libusb_control_transfer(_handle->get(),
             request_type,
             request,
@@ -51,7 +51,7 @@ public:
 
 private:
     libusb::device_handle::sptr _handle;
-    boost::mutex _mutex;
+    std::mutex _mutex;
 };
 
 libusb_control_impl::~libusb_control_impl(void)

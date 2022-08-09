@@ -10,6 +10,10 @@ The Multi-USRP class provides a high-level interface to a single USRP device
 with one or more channels, or multiple USRP devices in a homogeneous
 setup. See the documentation for uhd::usrp::multi_usrp.
 
+\subsection coding_api_hilevel_rfnoc High-Level: The RFNoC API
+
+\li \subpage page_properties
+
 \subsection coding_api_hilevelclock High-Level: The Multi-USRP-Clock
 
 The Multi-USRP-Clock class provides a high-level interface to a single clock

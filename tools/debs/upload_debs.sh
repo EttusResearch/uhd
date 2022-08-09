@@ -38,14 +38,14 @@ fi
 UHD_TOP_LEVEL=$PWD
 
 # Get version info
-VERSION=`head -1 host/cmake/debian/changelog | grep -o '[0-9.]*' | head -1`
+VERSION=`head -1 host/cmake/debian/changelog | sed 's/.*(\(.*\)-0ubuntu.*/\1/'`
 ORIG_RELEASE=`head -1 host/cmake/debian/changelog | sed 's/.*) \(.*\);.*/\1/'`
 
 #
 # Currently supported versions can be found here:
 # https://launchpad.net/ubuntu/+ppas
 #
-RELEASES="xenial bionic cosmic focal"
+RELEASES="bionic focal hirsute"
 PPA=ppa:ettusresearch/uhd
 
 #

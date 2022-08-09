@@ -14,9 +14,9 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/topological_sort.hpp>
 #include <boost/thread.hpp>
-#include <boost/thread/mutex.hpp>
 #include <functional>
 #include <memory>
+#include <mutex>
 
 #ifdef UHD_EXPERT_LOGGING
 #    define EX_LOG(depth, str) _log(depth, str)
@@ -79,8 +79,8 @@ public:
 
     void resolve_all(bool force = false) override
     {
-        boost::lock_guard<boost::recursive_mutex> resolve_lock(_resolve_mutex);
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::recursive_mutex> resolve_lock(_resolve_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         EX_LOG(0, str(boost::format("resolve_all(%s)") % (force ? "force" : "")));
         // Do a full resolve of the graph
         _resolve_helper("", "", force);
@@ -88,8 +88,8 @@ public:
 
     void resolve_from(const std::string&) override
     {
-        boost::lock_guard<boost::recursive_mutex> resolve_lock(_resolve_mutex);
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::recursive_mutex> resolve_lock(_resolve_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         EX_LOG(0, "resolve_from (overridden to resolve_all)");
         // Do a full resolve of the graph
         // Not optimizing the traversal using node_name to reduce experts complexity
@@ -98,8 +98,8 @@ public:
 
     void resolve_to(const std::string&) override
     {
-        boost::lock_guard<boost::recursive_mutex> resolve_lock(_resolve_mutex);
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::recursive_mutex> resolve_lock(_resolve_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         EX_LOG(0, "resolve_to (overridden to resolve_all)");
         // Do a full resolve of the graph
         // Not optimizing the traversal using node_name to reduce experts complexity
@@ -271,7 +271,7 @@ public:
 #endif
     }
 
-    inline boost::recursive_mutex& resolve_mutex() override
+    inline std::recursive_mutex& resolve_mutex() override
     {
         return _resolve_mutex;
     }
@@ -279,7 +279,7 @@ public:
 protected:
     void add_data_node(dag_vertex_t* data_node, auto_resolve_mode_t resolve_mode) override
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
 
         // Sanity check node pointer
         if (data_node == NULL) {
@@ -330,7 +330,7 @@ protected:
 
     void add_worker(worker_node_t* worker) override
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
 
         // Sanity check node pointer
         if (worker == NULL) {
@@ -400,7 +400,7 @@ protected:
 
     void clear() override
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         EX_LOG(0, "clear()");
 
         // Iterate through the vertices and release their node storage
@@ -553,8 +553,8 @@ private:
     vertex_map_t _worker_map; // A map from vertex name to vertex descriptor for workers
     vertex_map_t
         _datanode_map; // A map from vertex name to vertex descriptor for data nodes
-    boost::mutex _mutex;
-    boost::recursive_mutex _resolve_mutex;
+    std::mutex _mutex;
+    std::recursive_mutex _resolve_mutex;
 };
 
 expert_container::sptr expert_container::make(const std::string& name)

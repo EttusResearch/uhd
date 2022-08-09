@@ -11,9 +11,11 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <boost/asio.hpp>
-#include <boost/thread/condition_variable.hpp>
-#include <boost/thread/thread.hpp>
+#include <boost/date_time/posix_time/posix_time_types.hpp>
+#include <boost/thread.hpp>
+#include <boost/thread/condition.hpp>
 #include <memory>
+#include <mutex>
 
 namespace uhd { namespace usrprio_rpc {
 
@@ -76,8 +78,8 @@ private:
     func_xport_buf_t _request;
     func_xport_buf_t _response;
     // Synchronization
-    boost::mutex _mutex;
-    boost::condition_variable _exec_gate;
+    std::mutex _mutex;
+    boost::condition _exec_gate;
     boost::system::error_code _exec_err;
 };
 

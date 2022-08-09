@@ -18,7 +18,7 @@ from usrp_mpm.dboard_manager.lmk_mg import LMK04828Mg
 from usrp_mpm.dboard_manager.mg_periphs import DboardClockControl
 from usrp_mpm.cores import ClockSynchronizer
 from usrp_mpm.cores import nijesdcore
-from usrp_mpm.mpmutils import async_exec
+from usrp_mpm.mpmutils import async_exec, str2bool
 
 INIT_CALIBRATION_TABLE = {"TX_BB_FILTER"              :   0x0001,
                           "ADC_TUNER"                 :   0x0002,
@@ -602,9 +602,9 @@ class MagnesiumInitManager(object):
             # TODO: Maybe we can switch to digital loopback without running the
             # initialization. For now, force init when rfic_digital_loopback is
             # set because we're being conservative.
-            if bool(args.get('rfic_digital_loopback')):
-                self.log.debug("Using rfic_digital_loopback causes a full "
-                               "re-init sequence.")
+            if 'rfic_digital_loopback' in args:
+                self.log.debug("Using rfic_digital_loopback flag causes a "
+                               "full re-init sequence.")
                 fast_reinit = False
         # If we can't do fast re-init, start from scratch:
         if not fast_reinit:
@@ -621,7 +621,7 @@ class MagnesiumInitManager(object):
                 self.log.debug(
                     "{}={}".format(arg_key, args.get(arg_key, arg_default)))
             return True
-        if bool(args.get('rfic_digital_loopback')):
+        if str2bool(args.get('rfic_digital_loopback')):
             self.log.warning(
                 "RF Functionality Disabled: JESD204b digital loopback "
                 "enabled inside Mykonos!")

@@ -120,9 +120,10 @@ void magnesium_radio_control_impl::_init_peripherals()
         _wb_ifaces.push_back(RFNOC_MAKE_WB_IFACE(0, radio_idx));
         RFNOC_LOG_TRACE("Initializing GPIOs for channel " << radio_idx);
         _gpio.emplace_back(usrp::gpio_atr::gpio_atr_3000::make(_wb_ifaces.back(),
-            n310_regs::SR_DB_GPIO + radio_idx * n310_regs::CHAN_REG_OFFSET,
-            n310_regs::RB_DB_GPIO + radio_idx * n310_regs::CHAN_REG_OFFSET,
-            n310_regs::PERIPH_REG_OFFSET));
+            usrp::gpio_atr::gpio_atr_offsets::make_default(
+                n310_regs::SR_DB_GPIO + radio_idx * n310_regs::CHAN_REG_OFFSET,
+                n310_regs::RB_DB_GPIO + radio_idx * n310_regs::CHAN_REG_OFFSET,
+                n310_regs::PERIPH_REG_OFFSET)));
         // DSA and AD9371 gain bits do *not* toggle on ATR modes. If we ever
         // connect anything else to this core, we might need to set_atr_mode()
         // to MODE_ATR on those bits. For now, all bits simply do what they're
@@ -134,9 +135,10 @@ void magnesium_radio_control_impl::_init_peripherals()
     }
     RFNOC_LOG_TRACE("Initializing front-panel GPIO control...")
     _fp_gpio = usrp::gpio_atr::gpio_atr_3000::make(_wb_ifaces.front(),
-        n310_regs::SR_FP_GPIO,
-        n310_regs::RB_FP_GPIO,
-        n310_regs::PERIPH_REG_OFFSET);
+        usrp::gpio_atr::gpio_atr_offsets::make_default(
+            n310_regs::SR_FP_GPIO,
+            n310_regs::RB_FP_GPIO,
+            n310_regs::PERIPH_REG_OFFSET));
 }
 
 void magnesium_radio_control_impl::_init_frontend_subtree(

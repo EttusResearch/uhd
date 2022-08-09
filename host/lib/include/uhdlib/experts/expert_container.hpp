@@ -10,8 +10,8 @@
 #include <uhd/config.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <uhdlib/experts/expert_nodes.hpp>
-#include <boost/thread/recursive_mutex.hpp>
 #include <memory>
+#include <mutex>
 
 namespace uhd { namespace experts {
 
@@ -153,7 +153,7 @@ private:
      * container.
      *
      */
-    virtual boost::recursive_mutex& resolve_mutex() = 0;
+    virtual std::recursive_mutex& resolve_mutex() = 0;
 
     /*!
      * Add a data node to the expert graph

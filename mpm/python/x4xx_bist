@@ -633,15 +633,14 @@ class X4XXBIST(bist.UsrpBIST):
                 'write_patterns': list(patterns),
                 'read_patterns': list(patterns),
             }
-        from usrp_mpm.periph_manager import x4xx, x4xx_periphs, x4xx_mb_cpld
-        mboard_regs_control = x4xx_periphs.MboardRegsControl(
-            x4xx.x4xx.mboard_regs_label, self.log)
-        cpld_spi_node = dt_symbol_get_spidev('mb_cpld')
-        cpld_control = x4xx_mb_cpld.MboardCPLD(cpld_spi_node, self.log)
-        gpio_diocontrol = x4xx_periphs.DioControl(
-            mboard_regs_control,
-            cpld_control,
-            self.log)
+        from uhd.usrp import multi_usrp
+        try:
+            usrp_dev = multi_usrp.MultiUSRP("type=x4xx,addr=localhost")
+        except Exception as ex:
+            return False, {
+                'error_msg': "Failed to create usrp device: {}".format(str(ex))
+            }
+        mpm_c = usrp_dev.get_mpm_client()
         def _run_sub_test(inport, outport, pin_mode, voltage, pattern):
             """
             Closure to run an actual test. The GPIO control object is enclosed.
@@ -653,23 +652,28 @@ class X4XXBIST(bist.UsrpBIST):
             voltage: Valid arg for DioControl.set_voltage_level()
             pattern: Bits to write to the inport, should be read back at outport
             """
-            gpio_diocontrol.set_port_mapping(pin_mode)
+            mpm_c.dio_set_port_mapping(pin_mode)
             # We set all pins to be driven by the PS
             # in HDMI mode not all pins can be accessed by the user
             if pin_mode == "HDMI":
                 mask = 0xDB6D
             else:
                 mask = 0xFFF
-            gpio_diocontrol.set_pin_masters(inport, mask)
-            gpio_diocontrol.set_pin_masters(outport, mask)
-            gpio_diocontrol.set_voltage_level(inport, voltage)
-            gpio_diocontrol.set_voltage_level(outport, voltage)
-            gpio_diocontrol.set_pin_directions(inport, 0x00000)
-            gpio_diocontrol.set_pin_directions(outport, 0xFFFFF)
-            gpio_diocontrol.set_pin_outputs(outport, pattern)
-            read_values = gpio_diocontrol.get_pin_inputs(inport)
+            bank_convert = {
+                "PORTA": "GPIO0",
+                "PORTB": "GPIO1",
+            }
+            ps_control_args = ["MPM"] * 12
+            mpm_c.dio_set_gpio_src(bank_convert[inport], ps_control_args)
+            mpm_c.dio_set_gpio_src(bank_convert[outport], ps_control_args)
+            mpm_c.dio_set_voltage_level(inport, voltage)
+            mpm_c.dio_set_voltage_level(outport, voltage)
+            mpm_c.dio_set_pin_directions(inport, 0x00000)
+            mpm_c.dio_set_pin_directions(outport, 0xFFFFF)
+            mpm_c.dio_set_pin_outputs(outport, pattern)
+            read_values = mpm_c.dio_get_pin_inputs(inport)
             if (pattern & mask) != read_values:
-                sys.stderr.write(gpio_diocontrol.status())
+                sys.stderr.write(mpm_c.dio_status())
                 return False, {'write_patterns': ["0x{:04X}".format(pattern)],
                                'read_patterns': ["0x{:04X}".format(read_values)]}
             return True, {'write_patterns': ["0x{:04X}".format(pattern)],
@@ -678,13 +682,13 @@ class X4XXBIST(bist.UsrpBIST):
         for voltage in ["1V8", "2V5", "3V3"]:
             for mode in ["DIO", "HDMI"]:
                 for pattern in [0xFFFF, 0xA5A5, 0x5A5A, 0x0000]:
-                    sys.stderr.write("test: PortA -> PortB, {}, {}, 0x{:04X}"
+                    sys.stderr.write("test: PortA -> PortB, {}, {}, 0x{:04X}\n"
                                      .format(voltage, mode, pattern))
                     status, data = _run_sub_test(
                         "PORTB", "PORTA", mode, voltage, pattern)
                     if not status:
                         return status, data
-                    sys.stderr.write("test: PortB -> PortA, {}, {}, 0x{:04X}"
+                    sys.stderr.write("test: PortB -> PortA, {}, {}, 0x{:04X}\n"
                                      .format(voltage, mode, pattern))
                     status, data = _run_sub_test(
                         "PORTA", "PORTB", mode, voltage, pattern)

@@ -22,7 +22,7 @@ module chdr_16sc_to_12sc
     input               i_tvalid,
     output              i_tready,
     // Output CHDR bus
-    output reg [63:0]   o_tdata,
+    output [63:0]       o_tdata,
     output              o_tlast,
     output              o_tvalid,
     input               o_tready,
@@ -46,17 +46,21 @@ module chdr_16sc_to_12sc
   wire [16:0]   round_q2;
   wire [16:0]   round_i2;
 
+  reg  [63:0]   curr_word;
+
   // Pipeline register
-  reg [63:0]    line_buff;
+  reg [63:0]    buff;
+  reg           buff_tvalid;
+  reg           buff_tlast;
 
   // CHDR has either 8 bytes of header or 16 if VITA time is included.
-  wire [15:0]   chdr_header_lines = chdr_has_time? 16 : 8;
+  wire [15:0]   chdr_header_bytes = chdr_has_time? 16 : 8;
   // Calculate size of samples input in bytes by taking CHDR size filed and subtracting header length.
-  wire [15:0]   sample_byte_count_in = i_tdata[47:32] - chdr_header_lines;
+  wire [15:0]   sample_byte_count_in = i_tdata[47:32] - chdr_header_bytes;
   // Calculate size of samples to be output by taking input size and scaling by 3/4
   wire [15:0]   sample_byte_count_out = (sample_byte_count_in*3) >> 2;
   // Calculate size of output CHDR packet by adding back header size to new payload size.
-  wire [15:0]   output_chdr_pkt_size = sample_byte_count_out + chdr_header_lines;
+  wire [15:0]   output_chdr_pkt_size = sample_byte_count_out + chdr_header_bytes;
 
   reg           odd;
 
@@ -75,36 +79,64 @@ module chdr_16sc_to_12sc
   localparam    SAMPLE2   = 3'd3;
   localparam    SAMPLE3   = 3'd4;
   localparam    SAMPLE4   = 3'd5;
-  localparam    RESIDUAL  = 3'd6;
 
   reg [2:0]     state;
 
   always @(posedge clk)
     if (reset) begin
       state <= HEADER;
-      line_buff <= 0;
+      buff <= 64'd0;
+      buff_tvalid <= 1'd0;
+      buff_tlast <= 1'd0;
     end else begin
       case(state)
+
         //
         // Process header
         // Check for timestamp.  Byte count conversion is done above.
+        // If there is residual data in the buffer, store the header and
+        // output the line in the buffer.  If not, output the header.
         //
         HEADER: begin
           if (i_tvalid & i_tready) begin
             odd <= sample_byte_count_in [2];
-            // If the input packet had time, then add time to output packet
-            state <= (i_tdata[61])? TIME: SAMPLE1;
+            if (buff_tvalid) begin
+              buff <= curr_word;
+              buff_tvalid <= i_tvalid;
+              buff_tlast <= i_tlast;
+            end else begin
+              buff <= 64'd0;
+              buff_tvalid <= 1'd0;
+              buff_tlast <= 1'd0;
+            end
+            state <= i_tlast ? HEADER : (i_tdata[61]) ? TIME : SAMPLE1;
+          end else if (buff_tvalid & o_tready) begin
+              buff <= 64'd0;
+              buff_tvalid <= 1'd0;
+              buff_tlast <= 1'd0;
           end
         end
+
         //
         // Process time field
+        // If the header is in the buffer, output the header and
+        // store the timestamp.  If not, output the timestamp.
         //
         TIME: begin
           if (i_tvalid & i_tready) begin
-            // If we get a premature end of line go back to searching for start of new packet.
-            state <= (i_tlast) ? HEADER: SAMPLE1;
+            if (buff_tvalid) begin
+              buff <= curr_word;
+              buff_tvalid <= i_tvalid;
+              buff_tlast <= i_tlast;
+            end else begin
+              buff <= 64'd0;
+              buff_tvalid <= 1'd0;
+              buff_tlast <= 1'd0;
+            end
+            state <= i_tlast ? HEADER: SAMPLE1;
           end
         end
+
         //
         // There are 3 lines of output data for each 4 lines of input data.
         // The 4 sample states below represent the 4 lines of input.
@@ -113,20 +145,17 @@ module chdr_16sc_to_12sc
         // Process first line
         // The 8 bytes are converted to 6 bytes, so there is not enough for an
         // 8-byte output line.  Store the data unless this is the last line in
-        // the packet.
+        // the packet.  If the timestamp is in the buffer, output it.
         //
         SAMPLE1: begin
           if (i_tvalid & i_tready) begin
-            if (i_tlast) begin
-              line_buff <= 0;
-              state <= HEADER;
-            end else begin
-              // Save data to buffer - no output
-              line_buff <= {q0,i0,q1,i1,16'd0};
-              state <= SAMPLE2;
-            end
+            buff <= curr_word;
+            buff_tvalid <= i_tlast;
+            buff_tlast <= i_tlast;
+            state <= i_tlast ? HEADER : SAMPLE2;
           end
         end
+
         //
         // Process second line
         // Output a line comprised of the 6 bytes from the fist line and
@@ -134,10 +163,13 @@ module chdr_16sc_to_12sc
         //
         SAMPLE2: begin
           if (i_tvalid & i_tready) begin
-            line_buff <= {i0[7:0],q1,i1,32'd0};
-            state <= i_tlast ? RESIDUAL : SAMPLE3;
+            buff <= {i0[7:0],q1,i1,32'd0};
+            buff_tvalid <= i_tlast;
+            buff_tlast <= i_tlast;
+            state <= i_tlast ? HEADER : SAMPLE3;
           end
         end
+
         //
         // Process third line
         // Output line comprised of the 4 remaining bytes from the second line
@@ -146,13 +178,13 @@ module chdr_16sc_to_12sc
         //
         SAMPLE3: begin
           if (i_tvalid & i_tready) begin
-            line_buff <= (i_tlast & odd) ? 0 : {q1[3:0],i1,48'd0};
-            if (i_tlast)
-                state <= odd ? HEADER : RESIDUAL;
-            else
-              state <= SAMPLE4;
+            buff <= {q1[3:0],i1,48'd0};
+            buff_tvalid <= i_tlast & ~odd;
+            buff_tlast <= i_tlast & ~odd;
+            state <= i_tlast ? HEADER : SAMPLE4;
           end
         end
+
         //
         // Process fourth line
         // Output line comprised of the remaining 2 bytes from the third line
@@ -160,19 +192,13 @@ module chdr_16sc_to_12sc
         //
         SAMPLE4: begin
           if (i_tvalid & i_tready) begin
-            line_buff <= 0;
+            buff <= 64'd0;
+            buff_tvalid <= 1'd0;
+            buff_tlast <= 1'd0;
             state <= i_tlast ? HEADER : SAMPLE1;
           end
         end
-        //
-        // Pause input to output residual data in buffer
-        //
-        RESIDUAL: begin
-          if (o_tvalid & o_tready) begin
-            line_buff <= 0;
-            state <= HEADER;
-          end
-        end
+
         //
         // Should never get here.
         //
@@ -196,32 +222,24 @@ module chdr_16sc_to_12sc
   assign	i1 = (round_i1[16:15] == 2'b01) ? 12'h3FF : ((round_i1[16:15] == 2'b10) ? 12'h800 : round_i1[15:4]);
 
   //
-  // Mux Output data
+  // Mux for current word
   //
-  always @(*)
+  always @(*) 
     case(state)
-      // Populate header with CHDR fields
-      HEADER: o_tdata = {i_tdata[63:48], output_chdr_pkt_size,
-        set_sid ? {i_tdata[15:0], new_sid_dst[15:0]}:i_tdata[31:0]};
-      // Add 64bit VITA time to packet
-      TIME: o_tdata = i_tdata;
-      // Only output if i_tlast in SAMPLE1 state
-      SAMPLE1: o_tdata = {q0,i0,q1, i1, 16'b0};
-      SAMPLE2: o_tdata = {line_buff[63:16], q0, i0[11:8]};
-      SAMPLE3: o_tdata = {line_buff[63:32], q0, i0,q1[11:4]};
-      SAMPLE4: o_tdata = {line_buff[63:48], q0, i0, q1, i1};
-      RESIDUAL: o_tdata = line_buff;
-      default : o_tdata = i_tdata;
-    endcase // case(state)
+      HEADER:   curr_word <= {i_tdata[63:48], output_chdr_pkt_size, set_sid ?
+                            {i_tdata[15:0], new_sid_dst[15:0]}:i_tdata[31:0]};
+      TIME:     curr_word <= i_tdata;
+      SAMPLE1:  curr_word <= {q0,i0,q1, i1, 16'b0};
+      SAMPLE2:  curr_word <= {buff[63:16], q0, i0[11:8]};
+      SAMPLE3:  curr_word <= {buff[63:32], q0, i0,q1[11:4]};
+      SAMPLE4:  curr_word <= {buff[63:48], q0, i0, q1, i1};
+    endcase
 
-
-  assign  o_tvalid = state == RESIDUAL || (i_tvalid &&
-                        (state != SAMPLE1 || state == SAMPLE1 && i_tlast));
-
-  assign  i_tready = (o_tready && state != RESIDUAL);
-
-  wire need_extra_line = state == SAMPLE1 || state == SAMPLE2 ||
-                          (state == SAMPLE3 && ~odd);
-  assign  o_tlast = state == RESIDUAL || (i_tlast & ~need_extra_line);
+  assign  o_tdata   = buff_tvalid ? buff : curr_word;
+  assign  o_tvalid  = (state == HEADER && buff_tvalid) || (i_tvalid &&
+                      (state != SAMPLE1 || (state == SAMPLE1 && buff_tvalid)));
+  assign  o_tlast   = buff_tvalid ? buff_tlast : i_tlast && (state == HEADER ||
+                      state == TIME || (state == SAMPLE3 && odd) || state == SAMPLE4);
+  assign  i_tready  = o_tready;
 
 endmodule

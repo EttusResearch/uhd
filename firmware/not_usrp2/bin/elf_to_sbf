@@ -1,0 +1,142 @@
+#!/usr/bin/env python
+#
+# Copyright 2009 Free Software Foundation, Inc.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+import sys
+import struct
+from optparse import OptionParser
+from pprint import pprint
+
+import sbf
+
+# see /usr/include/elf.h for the various magic values
+
+
+_ehdr_fmt = ">16sHH5I6H"
+_ehdr_fmt_size = struct.calcsize(_ehdr_fmt)
+_phdr_fmt = ">8I"
+_phdr_fmt_size = struct.calcsize(_phdr_fmt)
+
+class elf32_ehdr(object):
+    def __init__(self, s):
+        (self.ident, self.type, self.machine, self.version, self.entry,
+         self.phoff, self.shoff, self.flags, self.ehsize,
+         self.phentsize, self.phnum, self.shentsize, self.shnum,
+         self.shstrndx) = struct.unpack(_ehdr_fmt, s)
+
+class elf32_phdr(object):
+    def __init__(self, s):
+        (self.type, self.offset, self.vaddr, self.paddr,
+         self.filesz, self.memsz,
+         self.flags, self.align) = struct.unpack(_phdr_fmt, s)
+
+    def __repr__(self):
+        return "<elf32_phdr %s offset=%d paddr=0x%x, filesz=%d>" % (
+            p_type_str(self.type), self.offset, self.paddr, self.filesz)
+
+
+def p_type_str(t):
+    if t <= 8:
+        return ('NULL', 'LOAD', 'DYNAMIC', 'INTERP', 'NOTE', 'SHLIB', 'PHDR', 'TLS', 'NUM')[t]
+    return "0x%x" % (t,)
+
+
+
+def _get_ehdr(f):
+    if len(f) < _ehdr_fmt_size:
+        return False
+    ehdr = elf32_ehdr(f[0:_ehdr_fmt_size])
+    return ehdr
+
+    
+def elf32_big_endian_exec_p(f):
+    ehdr = _get_ehdr(f)
+    if not ehdr:
+        return False
+    
+    #pprint(ehdr, sys.stderr)
+    e_ident = ehdr.ident
+    if not e_ident.startswith('\177ELF'):
+        return False
+    if (ord(e_ident[4]) != 1            # EI_CLASS == CLASS32
+        or ord(e_ident[5]) != 2         # EI_DATA == DATA2MSB
+        or ord(e_ident[6]) != 1         # EI_VERSION == EV_CURRENT
+        ):
+        return False
+
+    if ehdr.type != 2:                  # e_type == ET_EXEC
+        return False
+
+    return True
+
+
+
+# return (entry, (phdr, ...))
+
+def get_elf32_prog_headers(f):
+    ehdr = _get_ehdr(f)
+    entry = ehdr.entry
+    phoff = ehdr.phoff
+    phentsize = ehdr.phentsize
+    phnum = ehdr.phnum
+
+    def extract(i):
+        start = phoff + i * phentsize
+        end = start + phentsize
+        return f[start:end]
+    
+    return (entry, [elf32_phdr(extract(i)) for i in range(phnum)])
+    
+
+def main():
+    usage = "%prog: [options] elf_file"
+    parser = OptionParser()
+    parser.add_option("-o", "--output", default=None,
+                      help="specify output filename [default=stdout]")
+    (options, args) = parser.parse_args()
+    if len(args) != 1:
+        parser.print_help()
+        sys.exit(1)
+
+    elf_file = open(args[0], 'rb')
+
+    elf_contents = elf_file.read()
+    if not elf32_big_endian_exec_p(elf_contents):
+        sys.stderr.write("%s: not a big-endian 32-bit ELF executable\n" % (args[0],))
+        sys.exit(1)
+        
+    if options.output is None:
+        sbf_file = sys.stdout
+    else:
+        sbf_file = open(options.output, 'wb')
+
+    (entry, phdrs) = get_elf32_prog_headers(elf_contents)
+    #pprint(phdrs, sys.stderr)
+
+    def phdr_to_sec_desc(phdr):
+        target_addr = phdr.paddr
+        data = elf_contents[phdr.offset:phdr.offset+phdr.filesz]
+        #print >>sys.stderr, "pdhr_to_sec_desc:", (target_addr, data)
+        return sbf.sec_desc(target_addr, data)
+
+    sections = map(phdr_to_sec_desc, phdrs)
+    # pprint(sections, sys.stderr)
+    sbf.write_sbf(sbf_file, sbf.header(entry, sections))
+
+
+if __name__ == '__main__':
+    main()

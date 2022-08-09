@@ -75,9 +75,9 @@ localparam REG_GAIN_LEN = 16;
 // real and imaginary components are treated as 16-bit signed fixed point
 // values with 15 fractional bits.
 //
-// [31:16] Real/I component
-// [15: 0] Imaginary/Q component
-//
+// [31:16] X/I/Real component
+// [15: 0] Y/Q/Imaginary component
+
 localparam REG_CONSTANT = 'h10;
 //
 localparam REG_CONSTANT_LEN = 32;
@@ -86,10 +86,11 @@ localparam REG_CONSTANT_LEN = 32;
 // REG_PHASE_INC (R/W)
 //
 // Sets the phase increment, in "scaled radians", for the sine waveform
-// generator. This is the amount by which REG_CARTESIAN is rotated each clock
-// cycle. In other words, it controls the rate of rotation, or the frequency,
-// of the sine wave. The range of the phase value is -1.0 to +1.0. In scaled
-// radians, the value range -1 to +1 corresponds to -Pi to Pi in radians.
+// generator. This is the amount by which REG_CARTESIAN is rotated
+// counter-clockwise each clock cycle. In other words, it controls the rate of
+// rotation, or the frequency, of the sine wave. The range of the phase value
+// is -1.0 to +1.0. In scaled radians, the value range -1 to +1 corresponds to
+// -Pi to Pi in radians.
 //
 // In other words, the normalized frequency (in cycles/sample) of the
 // sinusoidal output is equal to 0.5*REG_PHASE_INC.
@@ -123,11 +124,11 @@ localparam REG_PHASE_INC_LEN = 16;
 // fixed point with 2 integer and 14 fractional bits, which is accurate.
 // However, since we treat the output as sc16 (15 fractional bits), we need to
 // double the value of the CARTESIAN inputs to get the output we want for sc16.
-// This is mathematically inequivalent to simply saying the CARTESIAN inputs
-// have 15 fractional bits instead of 14.
+// This is mathematically equivalent to simply saying the CARTESIAN inputs have
+// 15 fractional bits instead of 14.
 //
-// [31:16] : Y (Imaginary) component
-// [15: 0] : X (Real) component
+// [31:16] : X/I/Real component
+// [15: 0] : Y/Q/Imaginary component
 //
 localparam REG_CARTESIAN = 'h18;
 //

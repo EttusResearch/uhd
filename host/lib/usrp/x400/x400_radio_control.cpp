@@ -12,6 +12,7 @@
 #include <uhdlib/usrp/dboard/debug_dboard.hpp>
 #include <uhdlib/usrp/dboard/null_dboard.hpp>
 #include <uhdlib/usrp/dboard/zbx/zbx_dboard.hpp>
+#include <uhdlib/rfnoc/reg_iface_adapter.hpp>
 
 namespace uhd { namespace rfnoc {
 
@@ -178,6 +179,12 @@ x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
         get_num_output_ports(), _adc_self_calibration, get_unique_id());
     register_feature(_fpga_onload);
     _mb_control->_fpga_onload->request_cb(_fpga_onload);
+
+    auto mpm_rpc = _mb_control->dynamic_cast_rpc_as<uhd::usrp::mpmd_rpc_iface>();
+    if (mpm_rpc->get_gpio_banks().size() > 0) {
+        _gpios = std::make_shared<x400::gpio_control>(_rpcc,
+            RFNOC_MAKE_WB_IFACE(regmap::PERIPH_BASE + 0xC000, 0));
+    }
 }
 
 void x400_radio_control_impl::_init_prop_tree()
@@ -325,6 +332,46 @@ double x400_radio_control_impl::set_rate(const double rate)
                           << (get_rate() / 1e6) << " MHz.");
     }
     return get_rate();
+}
+
+std::vector<std::string> x400_radio_control_impl::get_gpio_banks() const
+{
+    if (!_gpios) {
+        return {};
+    }
+    return {x400::GPIO_BANK_NAME};
+}
+
+uint32_t x400_radio_control_impl::get_gpio_attr(
+    const std::string& bank, const std::string& attr)
+{
+    if (!_gpios) {
+        throw uhd::runtime_error("X410 does not have sufficient GPIO support!");
+    }
+    std::lock_guard<std::recursive_mutex> l(_lock);
+    if (bank != x400::GPIO_BANK_NAME) {
+        throw uhd::key_error("Invalid GPIO bank " + bank);
+    }
+    if (usrp::gpio_atr::gpio_attr_rev_map.count(attr) == 0) {
+        throw uhd::key_error("Invalid GPIO attribute " + attr);
+    }
+    return _gpios->get_gpio_attr(usrp::gpio_atr::gpio_attr_rev_map.at(attr));
+}
+
+void x400_radio_control_impl::set_gpio_attr(
+    const std::string& bank, const std::string& attr, const uint32_t value)
+{
+    if (!_gpios) {
+        throw uhd::runtime_error("X410 does not have sufficient GPIO support!");
+    }
+    std::lock_guard<std::recursive_mutex> l(_lock);
+    if (bank != x400::GPIO_BANK_NAME) {
+        throw uhd::key_error("Invalid GPIO bank " + bank);
+    }
+    if (usrp::gpio_atr::gpio_attr_rev_map.count(attr) == 0) {
+        throw uhd::key_error("Invalid GPIO attribute " + attr);
+    }
+    _gpios->set_gpio_attr(usrp::gpio_atr::gpio_attr_rev_map.at(attr), value);
 }
 
 eeprom_map_t x400_radio_control_impl::get_db_eeprom()

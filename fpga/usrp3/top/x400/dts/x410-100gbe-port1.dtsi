@@ -26,7 +26,7 @@
 		phy-mode = "internal";
 
 		fixed-link {
-			speed = <1000>;
+			speed = <100000>;
 			full-duplex;
 			link-gpios = <&gpio 98 0>;
 		};

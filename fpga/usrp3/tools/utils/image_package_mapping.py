@@ -86,10 +86,14 @@ PACKAGE_MAPPING = {
     "x410_cpld": {
         "type": "x4xx",
         "package_name": "x4xx_x410_cpld_default-g{}.zip",
-        "files": ["usrp_x410_cpld.rpd",
-                  "usrp_x410_cpld.rpd.md5",
-                  "usrp_x410_cpld.svf",
-                  "usrp_x410_cpld.svf.md5"]
+        "files": ["usrp_x410_cpld_10m04.rpd",
+                  "usrp_x410_cpld_10m04.rpd.md5",
+                  "usrp_x410_cpld_10m04.svf",
+                  "usrp_x410_cpld_10m04.svf.md5",
+                  "usrp_x410_cpld_10m08.rpd",
+                  "usrp_x410_cpld_10m08.rpd.md5",
+                  "usrp_x410_cpld_10m08.svf",
+                  "usrp_x410_cpld_10m08.svf.md5"]
     },
     "zbx_cpld": {
         "type": "x4xx",

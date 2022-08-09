@@ -11,7 +11,7 @@ import re
 import time
 import signal
 import struct
-from multiprocessing import Process, Event
+from multiprocessing import Process, Event, Value
 from statistics import mean
 from usrp_mpm import lib  # Pulls in everything from C++-land
 from usrp_mpm.sys_utils import i2c_dev
@@ -142,8 +142,31 @@ class DioControl:
     FPGA_DIO_DIRECTION_REGISTER = FPGA_DIO_REGISTER_BASE + 0x4
     FPGA_DIO_INPUT_REGISTER = FPGA_DIO_REGISTER_BASE + 0x8
     FPGA_DIO_OUTPUT_REGISTER = FPGA_DIO_REGISTER_BASE + 0xC
+    FPGA_DIO_SOURCE_REGISTER = FPGA_DIO_REGISTER_BASE + 0x10
+    FPGA_DIO_RADIO_SOURCE_REGISTER = FPGA_DIO_REGISTER_BASE + 0x14
+    FPGA_DIO_INTERFACE_DIO_SELECT_REGISTER = FPGA_DIO_REGISTER_BASE + 0x18
+    FPGA_DIO_OVERRIDE_REGISTER = FPGA_DIO_REGISTER_BASE + 0x1C
+    FPGA_DIO_SW_DIO_CONTROL_REGISTER = FPGA_DIO_REGISTER_BASE + 0x20
+
+    FULL_DIO_FPGA_COMPAT = (7, 5)
+
+    # DIO register addresses
+    RADIO_DIO_REGISTER_BASE = 0x8C000
+    RADIO_DIO_CLASSIC_ATR_CONFIG_REGISTER = RADIO_DIO_REGISTER_BASE + 0x40
+
     # DIO registers addresses in CPLD
     CPLD_DIO_DIRECTION_REGISTER = 0x30
+
+    # GPIO attributes
+    X4XX_GPIO_BANKS = ["GPIO0", "GPIO1"]
+    X4XX_GPIO_SRC_PS = "PS"
+    X4XX_GPIO_SRC_MPM = "MPM"
+    X4XX_GPIO_SRC_USER_APP = "USER_APP"
+    X4XX_GPIO_SRC_RADIO = [
+        ["DB0_RF0", "DB0_RF1", "DB0_SPI"],
+        ["DB1_RF0", "DB1_RF1", "DB1_SPI"]
+    ]
+    X4XX_GPIO_WIDTH = 12
 
     class _PortMapDescriptor:
         """
@@ -171,7 +194,33 @@ class DioControl:
             self.power_good = Gpio('%s_PWR_GOOD' % prefix, Gpio.INPUT)
 
 
-    def __init__(self, mboard_regs, mboard_cpld, log):
+    class _GpioReg:
+        """
+        Helper class for manipulating GPIO source configuration registers of this form:
+        [31..28]: Reserved
+        [27..16]: Port B
+        [15..12]: Reserved
+        [11..0]:  Port A
+        """
+
+        def __init__(self, dio_control, bank, offset):
+            self.offset = offset
+            self.value = dio_control.mboard_regs.peek32(offset)
+            self.mboard_regs = dio_control.mboard_regs
+            self.bank_offset = 0 if bank == dio_control.X4XX_GPIO_BANKS[0] else 16
+
+        def set_pin(self, pin_index, value):
+            self.value &= ~(1 << (pin_index + self.bank_offset))
+            self.value |= (value << (pin_index + self.bank_offset))
+
+        def get_pin(self, pin_index):
+            return bool((self.value >> (pin_index + self.bank_offset)) & 0x1)
+
+        def save(self):
+            self.mboard_regs.poke32(self.offset, self.value)
+
+
+    def __init__(self, mboard_regs, mboard_cpld, log, dboards):
         """
         Initializes access to hardware components as well as creating known
         port mappings
@@ -194,22 +243,46 @@ class DioControl:
         self.set_port_mapping(self.HDMI_MAP_NAME)
         self.log.trace("Spawning DIO fault monitors...")
         self._tear_down_monitor = Event()
+        self._dio_fault = {
+            "PORTA": Value('b', 0),
+            "PORTB": Value('b', 0),
+        }
         self._dio0_fault_monitor = Process(
             target=self._monitor_dio_fault,
-            args=('A', "DIO_INT0", self._tear_down_monitor)
+            args=('A', "DIO_INT0", self._tear_down_monitor, self._dio_fault["PORTA"])
         )
         self._dio1_fault_monitor = Process(
             target=self._monitor_dio_fault,
-            args=('B', "DIO_INT1", self._tear_down_monitor)
+            args=('B', "DIO_INT1", self._tear_down_monitor, self._dio_fault["PORTB"])
         )
         signal.signal(signal.SIGINT, self._monitor_int_handler)
         self._dio0_fault_monitor.start()
         self._dio1_fault_monitor.start()
 
-    def _monitor_dio_fault(self, dio_port, fault, tear_down):
+        # Init GPIO sources
+        gpio_srcs = [
+            self.X4XX_GPIO_SRC_PS,
+            self.X4XX_GPIO_SRC_MPM,
+            self.X4XX_GPIO_SRC_USER_APP
+        ]
+        for dboard in dboards:
+            gpio_srcs.extend(self.X4XX_GPIO_SRC_RADIO[dboard.slot_idx])
+
+        self._gpio_srcs = { gpio_bank : gpio_srcs for gpio_bank in self.X4XX_GPIO_BANKS }
+
+        self.log.debug(f"Found the following GPIO sources: {', '.join(gpio_srcs)}")
+
+        self._current_voltage_level = {
+            "PORTA": "3V3",
+            "PORTB": "3V3",
+        }
+        self.set_voltage_level("PORTA", "3V3")
+        self.set_voltage_level("PORTB", "3V3")
+
+    def _monitor_dio_fault(self, dio_port, fault, tear_down, fault_state):
         """
         Monitor the DIO_INT lines to detect an external power fault.
-        If there is a fault, turn off external power. 
+        If there is a fault, turn off external power.
         """
         self.log.trace("Launching monitor loop...")
         fault_line = Gpio(fault, Gpio.FALLING_EDGE)
@@ -218,8 +291,9 @@ class DioControl:
                 if fault_line.event_wait():
                     # If we saw a fault, disable the external power
                     self.log.warning("DIO fault occurred on port {} - turning off external power"
-                                    .format(dio_port))
+                                     .format(dio_port))
                     self.set_external_power(dio_port, 0)
+                    fault_state.value = 1
             # If the event wait gets interrupted because we are trying to tear down then stop
             # the monitoring process. If not, keep monitoring
             except InterruptedError:
@@ -338,10 +412,12 @@ class DioControl:
         :raises RuntimeError: name could not be normalized
         """
         assert isinstance(name, str)
-        if not name.upper() in self.DIO_PORTS + ("A", "B"):
+        gpio0_names = (self.DIO_PORTS[0], self.X4XX_GPIO_BANKS[0], "A")
+        gpio1_names = (self.DIO_PORTS[1], self.X4XX_GPIO_BANKS[1], "B")
+        if name.upper() not in gpio0_names + gpio1_names:
             raise RuntimeError("Could not map %s to port name" % name)
-        return self.DIO_PORTS[0] if name.upper() in (self.DIO_PORTS[0], "A") \
-                                    else self.DIO_PORTS[1]
+        return self.DIO_PORTS[0] if name.upper() in gpio0_names \
+            else self.DIO_PORTS[1]
 
     # --------------------------------------------------------------------------
     # Helper to format status output
@@ -420,6 +496,132 @@ class DioControl:
             for i, width in enumerate(col_widths)
         ]) + "\n"
 
+    def get_gpio_banks(self):
+        """
+        Returns a list of GPIO banks over which MPM has any control
+        """
+        if self.mboard_regs.get_compat_number() < self.FULL_DIO_FPGA_COMPAT:
+            return []
+
+        return self.X4XX_GPIO_BANKS
+
+    def get_gpio_srcs(self, bank: str):
+        """
+        Return a list of valid GPIO sources for a given bank
+        """
+        if self.mboard_regs.get_compat_number() < self.FULL_DIO_FPGA_COMPAT:
+            return ["MPM"]
+
+        assert bank in self.get_gpio_banks(), f"Invalid GPIO bank: {bank}"
+        return self._gpio_srcs[bank]
+
+    def get_gpio_src(self, bank: str):
+        """
+        Return the currently selected GPIO source for a given bank. The return
+        value is a list of strings. The length of the vector is identical to
+        the number of controllable GPIO pins on this bank. USER_APP is a GPIO
+        source that can be used in custom FPGA designs (e.g. LabView binary uses
+        this pin source).
+        """
+        if self.mboard_regs.get_compat_number() < self.FULL_DIO_FPGA_COMPAT:
+            return []
+
+        assert bank in self.get_gpio_banks(), f"Invalid GPIO bank: {bank}"
+
+        master_reg = self._GpioReg(self, bank, self.FPGA_DIO_MASTER_REGISTER)
+        source_reg = self._GpioReg(self, bank, self.FPGA_DIO_SOURCE_REGISTER)
+        radio_source_reg = self._GpioReg(self, bank, self.FPGA_DIO_RADIO_SOURCE_REGISTER)
+        interface_select_reg = self._GpioReg(self, bank, self.FPGA_DIO_INTERFACE_DIO_SELECT_REGISTER)
+        override_reg = self._GpioReg(self, bank, self.FPGA_DIO_OVERRIDE_REGISTER)
+        sw_control_reg = self._GpioReg(self, bank, self.FPGA_DIO_SW_DIO_CONTROL_REGISTER)
+        classic_atr_config_reg = self._GpioReg(self, bank, self.RADIO_DIO_CLASSIC_ATR_CONFIG_REGISTER)
+
+        def get_gpio_src_i(gpio_pin_index):
+            """
+            Return the current source given a pin index.
+            """
+            if source_reg.get_pin(gpio_pin_index):
+                if override_reg.get_pin(gpio_pin_index):
+                    db = int(interface_select_reg.get_pin(gpio_pin_index))
+                    return f"DB{db}_SPI"
+                else:
+                    db = int(radio_source_reg.get_pin(gpio_pin_index))
+                    ch = int(classic_atr_config_reg.get_pin(gpio_pin_index))
+                    return f"DB{db}_RF{ch}"
+            else:
+                if master_reg.get_pin(gpio_pin_index):
+                    if sw_control_reg.get_pin(gpio_pin_index):
+                        return self.X4XX_GPIO_SRC_PS
+                    else:
+                        return self.X4XX_GPIO_SRC_MPM
+                else:
+                    return self.X4XX_GPIO_SRC_USER_APP
+
+        return [get_gpio_src_i(i) for i in range(self.X4XX_GPIO_WIDTH)]
+
+    def set_gpio_src(self, bank: str, src):
+        """
+        Set the GPIO source for a given bank.
+        src input is big-endian
+        Usage:
+        > set_gpio_src <bank> <srcs>
+        > set_gpio_src GPIO0 PS DB1_RF0 PS PS MPM PS PS PS MPM USER_APP PS
+        """
+        if self.mboard_regs.get_compat_number() < self.FULL_DIO_FPGA_COMPAT:
+            # Older FPGAs only have a single GPIO source selector
+            master_reg = self._GpioReg(self, bank, self.FPGA_DIO_MASTER_REGISTER)
+            for pin_index, src_name in enumerate(src):
+                if src_name == "MPM":
+                    master_reg.set_pin(pin_index, 1)
+                else:
+                    master_reg.set_pin(pin_index, 0)
+            master_reg.save()
+            return
+
+        assert bank in self.get_gpio_banks(), f"Invalid GPIO bank: {bank}"
+        assert len(src) == self.X4XX_GPIO_WIDTH, f"Invalid number of GPIO sources! Expecting {self.X4XX_GPIO_WIDTH}, but got {len(src)}."
+
+        for pin_index, src_name in enumerate(src):
+            if src_name not in self.get_gpio_srcs(bank):
+                raise RuntimeError(f"Invalid GPIO source name `{src_name}' at bit position {pin_index}!")
+
+        master_reg = self._GpioReg(self, bank, self.FPGA_DIO_MASTER_REGISTER)
+        source_reg = self._GpioReg(self, bank, self.FPGA_DIO_SOURCE_REGISTER)
+        radio_source_reg = self._GpioReg(self, bank, self.FPGA_DIO_RADIO_SOURCE_REGISTER)
+        interface_select_reg = self._GpioReg(self, bank, self.FPGA_DIO_INTERFACE_DIO_SELECT_REGISTER)
+        override_reg = self._GpioReg(self, bank, self.FPGA_DIO_OVERRIDE_REGISTER)
+        sw_control_reg = self._GpioReg(self, bank, self.FPGA_DIO_SW_DIO_CONTROL_REGISTER)
+        classic_atr_config_reg = self._GpioReg(self, bank, self.RADIO_DIO_CLASSIC_ATR_CONFIG_REGISTER)
+
+        for pin_index, src_name in enumerate(src):
+            radio_srcs = [item for sublist in self.X4XX_GPIO_SRC_RADIO for item in sublist]
+            if src_name in radio_srcs:
+                source_reg.set_pin(pin_index, 1)
+                slot = int(src_name[2])
+                if src_name.endswith("_SPI"):
+                    override_reg.set_pin(pin_index, 1)
+                    interface_select_reg.set_pin(pin_index, slot)
+                else:
+                    channel = int(src_name[6])
+                    override_reg.set_pin(pin_index, 0)
+                    radio_source_reg.set_pin(pin_index, slot)
+                    classic_atr_config_reg.set_pin(pin_index, channel)
+            else:
+                source_reg.set_pin(pin_index, 0)
+                if src_name in (self.X4XX_GPIO_SRC_PS, self.X4XX_GPIO_SRC_MPM):
+                    master_reg.set_pin(pin_index, 1)
+                    sw_control_reg.set_pin(pin_index, int(src_name == self.X4XX_GPIO_SRC_PS))
+                else:
+                    master_reg.set_pin(pin_index, 0)
+
+        master_reg.save()
+        source_reg.save()
+        radio_source_reg.save()
+        interface_select_reg.save()
+        override_reg.save()
+        sw_control_reg.save()
+        classic_atr_config_reg.save()
+
     # --------------------------------------------------------------------------
     # Public API
     # --------------------------------------------------------------------------
@@ -452,31 +654,6 @@ class DioControl:
         if not map_name in self.port_mappings.keys():
             raise RuntimeError("Could not map %s to port mapping" % mapping)
         self.mapping = self.port_mappings[map_name]
-
-    def set_pin_master(self, port, pin, value=1):
-        """
-        Set master pin of a port. The master pin decides whether the DIO board
-        pin is driven by the PS (1) or FPGA (0) register interface. To change
-        the pin value the current register content is read first and modified
-        before it is written back, so the register must be readable.
-        :param port: port to change master assignment on
-        :param pin: pin to change
-        :param value: desired pin value
-        """
-        content = self._calc_register_value(self.FPGA_DIO_MASTER_REGISTER,
-                                            port, pin, value)
-        self.mboard_regs.poke32(self.FPGA_DIO_MASTER_REGISTER, content)
-
-    def set_pin_masters(self, port, values):
-        """
-        Set all master pins of a port at once using a bit mask.
-        :param port: port to change master pin assignment
-        :param values: New pin assignment represented by an integer. Each bit of
-                       values corresponds to a pin on board according to current
-                       mapping scheme. Bits that do not correspond to a pin in
-                       the current mapping scheme are skipped.
-        """
-        self._set_pin_values(port, values, self.set_pin_master)
 
     def set_pin_direction(self, port, pin, value=1):
         """
@@ -616,6 +793,8 @@ class DioControl:
         assert level in self.DIO_VOLTAGE_LEVELS
         port_control = self.port_control[port]
 
+        self._current_voltage_level[port] = level
+
         port_control.enable.set(0)
         port_control.en_2v5.set(0)
         port_control.en_3v3.set(0)
@@ -632,6 +811,14 @@ class DioControl:
                 raise RuntimeError(
                     "Power good pin did not go high after power up")
 
+    def get_voltage_level(self, port):
+        """
+        Returns the current GPIO voltage level as set by set_voltage_level
+        """
+        port = self._normalize_port_name(port)
+        assert port in self.DIO_PORTS
+        return self._current_voltage_level[port]
+
     def set_external_power(self, port, value):
         """
         Change EN_EXT_PWR_<port> to value.
@@ -644,6 +831,30 @@ class DioControl:
         assert value in (0, 1)
         assert port in self.DIO_PORTS
         self.port_control[port].ext_pwr.set(value)
+        self._dio_fault[port].value = 0
+
+    def get_external_power_state(self, port):
+        """
+        Returns the current state of the external power supply.
+
+        Usage:
+        > get_external_power_state PORTA
+        """
+        port = self._normalize_port_name(port)
+        if self._dio_fault[port].value == 1:
+            return "FAULT"
+        if self.port_control[port].ext_pwr.get() == 1:
+            return "ON"
+        return "OFF"
+
+    def get_supported_voltage_levels(self, port):
+        """
+        Returns the list of all supported voltage levels for the given port.
+        Note that, currently, all ports support all voltage levels, so we
+        simply validate that the given port name is valid.
+        """
+        _ = self._normalize_port_name(port)
+        return ["OFF", "1V8", "2V5", "3V3"]
 
     def status(self):
         """

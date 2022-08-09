@@ -5,6 +5,7 @@
 //
 
 #include <uhd/rfnoc/chdr_types.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/chdr_rx_data_xport.hpp>
 #include <uhdlib/rfnoc/mgmt_portal.hpp>
 #include <uhdlib/rfnoc/rfnoc_common.hpp>
@@ -39,6 +40,7 @@ chdr_rx_data_xport::chdr_rx_data_xport(uhd::transport::io_service::sptr io_srv,
     const fc_params_t& fc_params,
     disconnect_callback_t disconnect)
     : _fc_state(epids, fc_params.freq)
+    , _mtu(recv_link->get_recv_frame_size())
     , _fc_sender(pkt_factory, epids)
     , _epid(epids.second)
     , _chdr_w_bytes(chdr_w_to_bits(pkt_factory.get_chdr_w()) / 8)
@@ -52,10 +54,9 @@ chdr_rx_data_xport::chdr_rx_data_xport(uhd::transport::io_service::sptr io_srv,
     _recv_packet_cb = pkt_factory.make_generic();
     _fc_sender.set_capacity(fc_params.buff_capacity);
 
-    // Calculate max payload size
-    const size_t pyld_offset =
-        _recv_packet->calculate_payload_offset(chdr::PKT_TYPE_DATA_WITH_TS);
-    _max_payload_size = recv_link->get_recv_frame_size() - pyld_offset;
+    // Calculate header size
+    _hdr_len = _recv_packet->calculate_payload_offset(chdr::PKT_TYPE_DATA_WITH_TS);
+    UHD_ASSERT_THROW(_hdr_len);
 
     // Make data transport
     auto recv_cb =

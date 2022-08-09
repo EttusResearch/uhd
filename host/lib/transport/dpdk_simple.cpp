@@ -129,9 +129,9 @@ public:
 
         // Extract the sender's address. This is only possible because we know
         // the memory layout of the buff
-        struct udp_hdr* udp_hdr_end = (struct udp_hdr*)buff->data();
-        struct ipv4_hdr* ip_hdr_end = (struct ipv4_hdr*)(&udp_hdr_end[-1]);
-        struct ipv4_hdr* ip_hdr     = (struct ipv4_hdr*)(&ip_hdr_end[-1]);
+        struct rte_udp_hdr* rte_udp_hdr_end = (struct rte_udp_hdr*)buff->data();
+        struct rte_ipv4_hdr* ip_hdr_end = (struct rte_ipv4_hdr*)(&rte_udp_hdr_end[-1]);
+        struct rte_ipv4_hdr* ip_hdr     = (struct rte_ipv4_hdr*)(&ip_hdr_end[-1]);
         _last_recv_addr             = ip_hdr->src_addr;
 
         // Extract the buffer data

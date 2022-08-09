@@ -13,7 +13,11 @@
 
 namespace uhd { namespace rfnoc {
 
+enum class siggen_waveform { CONSTANT, SINE_WAVE, NOISE };
+
 /*! Siggen Control Class
+ *
+ * \ingroup rfnoc_blocks
  *
  * The Siggen Block is an RFNoC block that acts as a simple function
  * generating source block. The block supports three functions: generating a
@@ -21,9 +25,6 @@ namespace uhd { namespace rfnoc {
  * and phase increment between samples (but with a random initial phase
  * offset), and a noise source.
  */
-
-enum class siggen_waveform { CONSTANT, SINE_WAVE, NOISE };
-
 class UHD_API siggen_block_control : public noc_block_base
 {
 public:
@@ -203,4 +204,3 @@ public:
 };
 
 }} // namespace uhd::rfnoc
-

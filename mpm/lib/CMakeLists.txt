@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-set(UHD_HOST_ROOT ${CMAKE_SOURCE_DIR}/../host)
+set(UHD_SOURCE_DIR ${CMAKE_SOURCE_DIR}/../host)
 
 add_subdirectory(dboards)
 add_subdirectory(chips)
@@ -24,7 +24,7 @@ endif(ENABLE_X400)
 
 USRP_PERIPHS_ADD_OBJECT(periphs
     exception.cpp
-    ${UHD_HOST_ROOT}/lib/exception.cpp
+    ${UHD_SOURCE_DIR}/lib/exception.cpp
 )
 
 # vim: set sw=4 et:

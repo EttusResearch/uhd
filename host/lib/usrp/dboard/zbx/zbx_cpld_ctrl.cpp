@@ -273,7 +273,10 @@ void zbx_cpld_ctrl::set_tx_antenna_switches(
                 {tx_amp::HIGHBAND, {zbx_cpld_regs_t::TX0_ANT_11_HIGHBAND_AMP, zbx_cpld_regs_t::TX0_ANT_10_HIGHBAND_AMP}}
             };
             // clang-format on
-            std::tie(_regs.TX0_ANT_11[idx], _regs.TX0_ANT_10[idx]) = amp_map.at(amp);
+            if (idx == ATR_ADDR_TX || idx == ATR_ADDR_XX) {
+                _regs.TX0_ANT_11[idx] = std::get<0>(amp_map.at(amp));
+            }
+            _regs.TX0_ANT_10[idx] = std::get<1>(amp_map.at(amp));
         } else if (antenna == ANTENNA_CAL_LOOPBACK) {
             _regs.TX0_ANT_10[idx] = zbx_cpld_regs_t::TX0_ANT_10_CAL_LOOPBACK;
             _regs.RX0_ANT_1[idx]  = zbx_cpld_regs_t::RX0_ANT_1_CAL_LOOPBACK;
@@ -294,7 +297,10 @@ void zbx_cpld_ctrl::set_tx_antenna_switches(
                 {tx_amp::HIGHBAND, {zbx_cpld_regs_t::TX1_ANT_11_HIGHBAND_AMP, zbx_cpld_regs_t::TX1_ANT_10_HIGHBAND_AMP}}
             };
             // clang-format on
-            std::tie(_regs.TX1_ANT_11[idx], _regs.TX1_ANT_10[idx]) = amp_map.at(amp);
+            if (idx == ATR_ADDR_TX || idx == ATR_ADDR_XX) {
+                _regs.TX1_ANT_11[idx] = std::get<0>(amp_map.at(amp));
+            }
+            _regs.TX1_ANT_10[idx] = std::get<1>(amp_map.at(amp));
         } else if (antenna == ANTENNA_CAL_LOOPBACK) {
             _regs.TX1_ANT_10[idx] = zbx_cpld_regs_t::TX1_ANT_10_CAL_LOOPBACK;
             _regs.RX1_ANT_1[idx]  = zbx_cpld_regs_t::RX1_ANT_1_CAL_LOOPBACK;

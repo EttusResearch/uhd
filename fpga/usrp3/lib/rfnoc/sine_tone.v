@@ -11,19 +11,23 @@
 //   perform the rotate function in units of scaled radians. See the CORDIC IP
 //   Product Guide (PG105) for details.
 //
-//   The SR_PHASE_INC register controls the phase increment, in scaled
-//   radians, for the sine waveform generator. It is a 16-bit signed
-//   fixed-point phase value with 3 integer bits and 13 fractional bits. This
-//   is the amount by which REG_CARTESIAN is rotated each clock cycle. In
+//   This block outputs the X/I/real component in the most-significant bits and
+//   the Y/Q/imaginary component in the least-significant bits. This is
+//   opposite from the Xilinx IP but matches RFNoC.
+//
+//   The SR_PHASE_INC register controls the phase increment, in scaled radians,
+//   for the sine waveform generator. It is a 16-bit signed fixed-point phase
+//   value with 3 integer bits and 13 fractional bits. This is the amount by
+//   which REG_CARTESIAN is rotated counter-clockwise each clock cycle. In
 //   other words, it controls the rate of rotation, or the frequency, of the
 //   sine wave. In scaled radians, the phase value range -1 to +1 corresponds
 //   to -Pi to Pi in radians.
 //
 //   The SR_CARTESIAN register sets the sets the (X,Y) Cartesian coordinate
 //   that will be rotated to generate the sine output. Both X and Y are 16-bit
-//   signed fixed-point values with 2 integer bits and 14 fractional bits. Y
-//   is in the upper 16-bits and X is in the lower 16-bits.
-// 
+//   signed fixed-point values with 2 integer bits and 14 fractional bits.
+//   X/I/real is in the upper 16-bits and Y/Q/imaginary is in the lower 16-bits.
+//
 //   In addition to rotation, the SR_CARTESIAN input vector is also scaled by
 //   a "CORDIC scale factor" that equals about 1.1644 (that is, the product of
 //   sqrt(1 + 2^(-2i)) for i = 1 to n, where n = 14, the number of fractional
@@ -134,18 +138,20 @@ module sine_tone #(
     .o_tready (phase_out_tready & enable)
   );
 
-  // CORDIC
+  // CORDIC. Swap I and Q to match what the Xilinx IP expects.
   cordic_rotator cordic_inst (
     .aclk                    (clk),
     .aresetn                 (~(reset|clear)),
     .s_axis_phase_tdata      (phase_out_tdata),
     .s_axis_phase_tvalid     (phase_out_tvalid & cartesian_tvalid & enable),
     .s_axis_phase_tready     (phase_out_tready),
-    .s_axis_cartesian_tdata  (cartesian_tdata),
+    .s_axis_cartesian_tdata  ({cartesian_tdata[      0 +: WIDTH/2],   // Q
+                               cartesian_tdata[WIDTH/2 +: WIDTH/2]}), // I
     .s_axis_cartesian_tlast  (cartesian_tlast),
     .s_axis_cartesian_tvalid (phase_out_tvalid & cartesian_tvalid & enable),
     .s_axis_cartesian_tready (cartesian_tready),
-    .m_axis_dout_tdata       (sine_out_tdata),
+    .m_axis_dout_tdata       ({sine_out_tdata[      0 +: WIDTH/2],    // Q
+                               sine_out_tdata[WIDTH/2 +: WIDTH/2]}),  // I
     .m_axis_dout_tlast       (sine_out_tlast),
     .m_axis_dout_tvalid      (sine_out_tvalid),
     .m_axis_dout_tready      (sine_out_tready & enable)

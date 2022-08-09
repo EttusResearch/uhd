@@ -984,12 +984,12 @@ Total Offset =</td></tr>
 </div>
 
             <div class="register">
-              <a name="AXI_HPM0_REGMAP|WR"></a>
+              <a name="AXI_HPM0_REGMAP|RESERVED"></a>
             
-<h3 class="register">Offset 0x100003F000: WR Window (R|W)</h3>
+<h3 class="register">Offset 0x100003F000: RESERVED Window (R|W)</h3>
 
-                 <a class="sh_addrs" href="javascript:sa('AXI_HPM0_REGMAP|WR_in')">(<span id="show_AXI_HPM0_REGMAP|WR_in">show</span> extended info)</a>
-                 <div class="sh_addrs" id="div_AXI_HPM0_REGMAP|WR_in">
+                 <a class="sh_addrs" href="javascript:sa('AXI_HPM0_REGMAP|RESERVED_in')">(<span id="show_AXI_HPM0_REGMAP|RESERVED_in">show</span> extended info)</a>
+                 <div class="sh_addrs" id="div_AXI_HPM0_REGMAP|RESERVED_in">
                  
                 <table class="extended_info">
                 
@@ -1006,7 +1006,7 @@ Total Offset =</td></tr>
 <td class="outercell" rowspan="1">
 
 <table border="0" cellspacing="0" cellpadding="0">
-  <tr><td class="offset_info" align="right">WR</td></tr>
+  <tr><td class="offset_info" align="right">RESERVED</td></tr>
   <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x100003F000</td></tr>
   <tr><td class="offset_info" align="right">&nbsp;&nbsp;size=0x1000 (4 Kbytes)</td></tr>
 </table>
@@ -1039,7 +1039,7 @@ Total Offset =</td></tr>
 <div class="info">
 
 <div class="xmlpmd">
-<p>NOT IMPLEMENTED YET! Register space reserved for White Rabbit.</p></div>
+<p>Register space reserved for future use.</p></div>
 
 </div>
 
@@ -2338,9 +2338,9 @@ This enumeration is used to create the constants held in the basic registers.
 
 <tr valign="top">
 
-                        <td class='value'>553721877</td>
+                        <td class='value'>554767893</td>
                         
-                            <td class='l'>0x21012015</td>
+                            <td class='l'>0x21111615</td>
                             
                             <td class="l" style="text-align: left;">
                               <p class="name"><a name='CONSTANTS_REGMAP|CONSTANTS_ENUM|CPLD_REVISION'></a>CPLD_REVISION</p>
@@ -14556,10 +14556,12 @@ RFDC timing control interface.
               <a name="RECONFIG_REGMAP|FLASH_PRIMARY_IMAGE_ADDR_ENUM"></a>
             
 <h3 class="enum">FLASH_PRIMARY_IMAGE_ADDR_ENUM Enumeration</h3>
-Those values are the start and end address of the CFM image flash
-        sector from Intel's On-Chip Flash IP Generator. Note that the values
-        given in the IP generator are byte based where the values of this enum
-        are U32 based (divided by 4).
+These values are the start and end address of the CFM image flash
+        sector from Intel's On-Chip Flash IP Generator.
+        Be aware that three different values exist per each of the two
+        supported MAX10 variants: 10M04 and 10M08
+        Note that the values given in the IP generator are byte based where
+        the values of this enum are U32 based (divided by 4).
             <table class="enum" border="0" cellspacing="0" cellpadding="0">
               <tr class="header" valign="center">
             
@@ -14583,7 +14585,20 @@ Those values are the start and end address of the CFM image flash
                             <td class='l'>0x01000</td>
                             
                             <td class="l" style="text-align: left;">
-                              <p class="name"><a name='RECONFIG_REGMAP|FLASH_PRIMARY_IMAGE_ADDR_ENUM|FLASH_PRIMARY_IMAGE_START_ADDR_MEM_INIT'></a>FLASH_PRIMARY_IMAGE_START_ADDR_MEM_INIT</p>
+                              <p class="name"><a name='RECONFIG_REGMAP|FLASH_PRIMARY_IMAGE_ADDR_ENUM|FLASH_PRIMARY_IMAGE_START_ADDR_MEM_INIT_10M04'></a>FLASH_PRIMARY_IMAGE_START_ADDR_MEM_INIT_10M04</p>
+                            
+</td>
+
+</tr>
+
+<tr valign="top">
+
+                        <td class='value'>8192</td>
+                        
+                            <td class='l'>0x02000</td>
+                            
+                            <td class="l" style="text-align: left;">
+                              <p class="name"><a name='RECONFIG_REGMAP|FLASH_PRIMARY_IMAGE_ADDR_ENUM|FLASH_PRIMARY_IMAGE_START_ADDR_MEM_INIT_10M08'></a>FLASH_PRIMARY_IMAGE_START_ADDR_MEM_INIT_10M08</p>
                             
 </td>
 
@@ -14596,7 +14611,20 @@ Those values are the start and end address of the CFM image flash
                             <td class='l'>0x09C00</td>
                             
                             <td class="l" style="text-align: left;">
-                              <p class="name"><a name='RECONFIG_REGMAP|FLASH_PRIMARY_IMAGE_ADDR_ENUM|FLASH_PRIMARY_IMAGE_START_ADDR'></a>FLASH_PRIMARY_IMAGE_START_ADDR</p>
+                              <p class="name"><a name='RECONFIG_REGMAP|FLASH_PRIMARY_IMAGE_ADDR_ENUM|FLASH_PRIMARY_IMAGE_START_ADDR_10M04'></a>FLASH_PRIMARY_IMAGE_START_ADDR_10M04</p>
+                            
+</td>
+
+</tr>
+
+<tr valign="top">
+
+                        <td class='value'>44032</td>
+                        
+                            <td class='l'>0x0AC00</td>
+                            
+                            <td class="l" style="text-align: left;">
+                              <p class="name"><a name='RECONFIG_REGMAP|FLASH_PRIMARY_IMAGE_ADDR_ENUM|FLASH_PRIMARY_IMAGE_START_ADDR_10M08'></a>FLASH_PRIMARY_IMAGE_START_ADDR_10M08</p>
                             
 </td>
 
@@ -14609,7 +14637,20 @@ Those values are the start and end address of the CFM image flash
                             <td class='l'>0x127FF</td>
                             
                             <td class="l" style="text-align: left;">
-                              <p class="name"><a name='RECONFIG_REGMAP|FLASH_PRIMARY_IMAGE_ADDR_ENUM|FLASH_PRIMARY_IMAGE_END_ADDR'></a>FLASH_PRIMARY_IMAGE_END_ADDR</p>
+                              <p class="name"><a name='RECONFIG_REGMAP|FLASH_PRIMARY_IMAGE_ADDR_ENUM|FLASH_PRIMARY_IMAGE_END_ADDR_10M04'></a>FLASH_PRIMARY_IMAGE_END_ADDR_10M04</p>
+                            
+</td>
+
+</tr>
+
+<tr valign="top">
+
+                        <td class='value'>79871</td>
+                        
+                            <td class='l'>0x137FF</td>
+                            
+                            <td class="l" style="text-align: left;">
+                              <p class="name"><a name='RECONFIG_REGMAP|FLASH_PRIMARY_IMAGE_ADDR_ENUM|FLASH_PRIMARY_IMAGE_END_ADDR_10M08'></a>FLASH_PRIMARY_IMAGE_END_ADDR_10M08</p>
                             
 </td>
 
@@ -14999,9 +15040,12 @@ Total Offset =</td></tr>
                 <p>Defines the sector to be erased. Has to be set latest with the
           write access which starts the erase operation by strobing
           <a href="#RECONFIG_REGMAP|FLASH_CONTROL_REG|FLASH_ERASE_STB">FLASH_ERASE_STB</a>.<br>
-          If the flash is configured to support memory initialization (see
-          <a href="#RECONFIG_REGMAP|FLASH_STATUS_REG|FLASH_MEM_INIT_ENABLED">FLASH_MEM_INIT_ENABLED</a> flag) the sectors 2 to 4 have to be erased.
-          If the flag is not asserted only sector 4 has to be erased.</p>
+          With 10M04 variants, if the flash is configured to support memory
+          initialization (see <a href="#RECONFIG_REGMAP|FLASH_STATUS_REG|FLASH_MEM_INIT_ENABLED">FLASH_MEM_INIT_ENABLED</a> flag) the sectors 2
+          to 4 have to be erased. If the flag is not asserted only sector 4
+          has to be erased.
+          With 10M08 variants, the sectors to be erased are 3 to 5 when
+          using memory initialization or only sector 5 otherwise.</p>
             
               </td>
             </tr>

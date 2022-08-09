@@ -10,6 +10,7 @@
 #include <uhdlib/rfnoc/chdr_ctrl_xport.hpp>
 #include <uhdlib/rfnoc/chdr_packet_writer.hpp>
 #include <uhdlib/rfnoc/rfnoc_common.hpp>
+#include <functional>
 #include <memory>
 #include <set>
 

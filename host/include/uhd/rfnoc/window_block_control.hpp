@@ -14,6 +14,8 @@ namespace uhd { namespace rfnoc {
 
 /*! Window Block Control Class
  *
+ * \ingroup rfnoc_blocks
+ *
  * The Window Block is a windowing block for RFNoC that is intended to be
  * used with the FFT block. The block can be configured with coefficients,
  * by which the samples in each input packet are multiplied before begin
@@ -71,4 +73,3 @@ public:
 };
 
 }} // namespace uhd::rfnoc
-

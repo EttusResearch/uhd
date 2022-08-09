@@ -9,6 +9,7 @@
 #include <uhd/property_tree.hpp>
 #include <uhd/rfnoc/noc_block_base.hpp>
 #include <uhd/rfnoc/register_iface.hpp>
+#include <uhd/rfnoc/rfnoc_types.hpp>
 
 namespace uhd { namespace rfnoc {
 
@@ -36,8 +37,11 @@ struct noc_block_base::make_args_t
     //! Number of output ports (gets reported from the FPGA)
     size_t num_output_ports;
 
-    //! Value of the MTU register
+    //! Value of the MTU register, converted to bytes
     size_t mtu;
+
+    //! CHDR width of this block
+    chdr_w_t chdr_w;
 
     //! Register interface to this block's register space
     register_iface::sptr reg_iface;

@@ -292,7 +292,7 @@ def send_waveform(usrp):
     usrp -- Device object to run tests on.
     """
     rate = getattr(usrp, "get_rx_rate")()
-    getattr(usrp, "send_waveform")(numpy.asarray([1, 0, 1, 0]), 5, rate)
+    usrp.send_waveform(numpy.asarray([1, 0, 1, 0], dtype=numpy.complex64), 5, rate)
     return True
 
 

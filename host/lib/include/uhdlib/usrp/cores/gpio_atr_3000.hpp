@@ -17,6 +17,50 @@
 
 namespace uhd { namespace usrp { namespace gpio_atr {
 
+struct gpio_atr_offsets
+{
+    uhd::wb_iface::wb_addr_type idle;
+    uhd::wb_iface::wb_addr_type rx;
+    uhd::wb_iface::wb_addr_type tx;
+    uhd::wb_iface::wb_addr_type duplex;
+    uhd::wb_iface::wb_addr_type ddr;
+    uhd::wb_iface::wb_addr_type disable;
+    uhd::wb_iface::wb_addr_type readback;
+
+    /*!
+     * Returns whether this GPIO regmap is write-only.
+     *
+     * \return whether the readback register is valid
+     */
+    bool is_writeonly() const;
+
+    /*!
+     * Create a GPIO regmap according to the typical "defaults": Four
+     * sequential ATR registers followed immediately by, in order, duplex,
+     * direction, disable, and an explicitly specified readback address.
+     *
+     * \param base base settings offset for GPIO ATR registers
+     * \param rb_addr readback offset for GPIO ATR registers
+     * \param stride Delta between the register addresses
+     */
+    static gpio_atr_offsets make_default(
+        const uhd::wb_iface::wb_addr_type base,
+        const uhd::wb_iface::wb_addr_type rb_addr,
+        const size_t stride = 4);
+
+    /*!
+     * Create a GPIO regmap according to the typical "defaults" (see
+     * make_default), with the readback register disabled.
+     *
+     * \param base base settings offset for GPIO ATR registers
+     * \param rb_addr readback offset for GPIO ATR registers
+     * \param stride Delta between the register addresses
+     */
+    static gpio_atr_offsets make_write_only(
+        const uhd::wb_iface::wb_addr_type base,
+        const size_t stride = 4);
+};
+
 class gpio_atr_3000 : uhd::noncopyable
 {
 public:
@@ -27,28 +71,12 @@ public:
     virtual ~gpio_atr_3000(void) {}
 
     /*!
-     * Create a read-write GPIO ATR interface object
+     * Create a GPIO ATR interface object using the given registers
      *
      * \param iface register iface to GPIO ATR registers
-     * \param base base settings offset for GPIO ATR registers
-     * \param rb_addr readback offset for GPIO ATR registers
-     * \param reg_offset Delta between the register addresses
+     * \param registers Register offsets
      */
-    static sptr make(uhd::wb_iface::sptr iface,
-        const uhd::wb_iface::wb_addr_type base,
-        const uhd::wb_iface::wb_addr_type rb_addr,
-        const size_t reg_offset = 4);
-
-    /*!
-     * Create a write-only GPIO ATR interface object
-     *
-     * \param iface register iface to GPIO ATR registers
-     * \param base base settings offset for GPIO ATR registers
-     * \param reg_offset Delta between the register addresses
-     */
-    static sptr make_write_only(uhd::wb_iface::sptr iface,
-        const uhd::wb_iface::wb_addr_type base,
-        const size_t reg_offset = 4);
+    static sptr make(uhd::wb_iface::sptr iface, gpio_atr_offsets registers);
 
     /*!
      * Select the ATR mode for all bits in the mask
@@ -124,17 +152,12 @@ public:
     virtual ~db_gpio_atr_3000(void) {}
 
     /*!
-     * Create a read-write GPIO ATR interface object for a daughterboard connector
+     * Create a GPIO ATR interface object for a daughterboard connector
      *
      * \param iface register iface to GPIO ATR registers
-     * \param base base settings offset for GPIO ATR registers
-     * \param rb_addr readback offset for GPIO ATR registers
-     * \param reg_offset Delta between the register addresses
+     * \param registers Register offsets
      */
-    static sptr make(uhd::wb_iface::sptr iface,
-        const uhd::wb_iface::wb_addr_type base,
-        const uhd::wb_iface::wb_addr_type rb_addr,
-        const size_t reg_offset = 4);
+    static sptr make(uhd::wb_iface::sptr iface, gpio_atr_offsets registers);
 
     /*!
      * Configure the GPIO mode for all pins in the daughterboard connector

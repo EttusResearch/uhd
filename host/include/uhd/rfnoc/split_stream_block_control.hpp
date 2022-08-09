@@ -13,6 +13,8 @@ namespace uhd { namespace rfnoc {
 
 /*! Split Stream Block Control Class
  *
+ * \ingroup rfnoc_blocks
+ *
  * The Split Stream Block is an RFNoC block that takes in a single CHDR
  * stream and duplicates it, creating a number of output streams for each
  * input stream. The number of streams is defined by the NUM_PORTS parameter
@@ -60,4 +62,3 @@ public:
 };
 
 }} // namespace uhd::rfnoc
-
