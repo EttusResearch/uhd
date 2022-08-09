@@ -1,0 +1,117 @@
+parameters:
+- name: 'toolset'
+  type: string
+  values:
+  - make
+
+jobs:
+- job: build_and_upload_gnuradio_grettus_${{ parameters.toolset }}
+  displayName: ${{ parameters.toolset }}, ctest, and upload gnuradio and grettus
+  dependsOn: get_latest_uhd_docker
+  variables:
+    # Docker vars from job-get-latest-uhd-docker.yml
+    dockerBuildNumber: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerBuildNumber'] ]
+    dockerImagePrefix: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImagePrefix'] ]
+    dockerImageMatrixLin: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixLin'] ]
+    dockerImageMatrixWin: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixWin'] ]
+    dockerImageMatrixUbuntuDeb: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixUbuntuDeb'] ]
+    macOSBuilders: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.macOSBuilders'] ]
+    dockerImageMatrixSourcePackageBuilders: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixSourcePackageBuilders'] ]
+    dockerImageMatrixFedoraRpm: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixFedoraRpm'] ]
+    dockerImageMatrixWinPythonBuild: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixWinPythonBuild'] ]
+  pool:
+    ${{ if eq(parameters.toolset, 'msbuild') }}:
+      name: de-dre-lab
+    ${{ if ne(parameters.toolset, 'msbuild') }}:
+      name: Drivers-NIBuildFarm-RFMIBUILD
+    demands:
+      - ${{ if eq(parameters.toolset, 'msbuild') }}:
+        - docker
+        - Agent.OS -equals Windows_NT
+      - ${{ if or(eq(parameters.toolset, 'make'), eq(parameters.toolset, 'make_trace'), eq(parameters.toolset, 'ninja'), eq(parameters.toolset, 'make_custom_boost_version')) }}:
+        - docker
+        - Agent.OS -equals Linux
+      - ${{ if eq(parameters.toolset, 'make_homebrew_macos') }}:
+        - Agent.OS -equals Darwin
+        - Agent.OSVersion -equals $(macOSVersionDemand)
+        - Agent.OSArchitecture -equals $(macOSArchDemand)
+  workspace:
+    clean: outputs
+  strategy:
+    ${{ if eq(parameters.toolset, 'msbuild') }}:
+      matrix: $[ variables.dockerImageMatrixWin ]
+    ${{ if or(eq(parameters.toolset, 'make'), eq(parameters.toolset, 'make_trace'), eq(parameters.toolset, 'ninja'), eq(parameters.toolset, 'make_custom_boost_version')) }}:
+      matrix: $[ variables.dockerImageMatrixLin ]
+    ${{ if eq(parameters.toolset, 'make_homebrew_macos') }}:
+      matrix: $[ variables.macOSBuilders ]
+  ${{ if ne(parameters.toolset, 'make_homebrew_macos') }}:
+    container:
+      image: '$(dockerImagePrefix)$(DockerImageName):$(dockerBuildNumber)'
+      endpoint: 'Docker / Artifactory - rnd-builds-local'
+  steps:
+  - checkout: self
+    clean: true
+  - checkout: gnuradio
+    clean: true
+    submodules: recursive
+  - checkout: gr-ettus
+    clean: true
+
+  - task: DeleteFiles@1
+    inputs:
+      SourceFolder: $(Agent.BuildDirectory)
+      Contents: |
+        uhddev-$(buildOSName)-${{ parameters.toolset }}
+    displayName: Delete uhddev artifacts folder
+
+  - download: uhd_build_docker_container
+
+  - download: current
+    artifact: uhddev-$(buildOSName)-${{ parameters.toolset }}
+    displayName: Download pipeline artifact uhddev-$(buildOSName)-${{ parameters.toolset }}
+
+  - task: ExtractFiles@1
+    inputs:
+      archiveFilePatterns: $(Pipeline.Workspace)/uhddev-$(buildOSName)-${{ parameters.toolset }}/uhddev-$(buildOSName)-${{ parameters.toolset }}.tar.gz
+      destinationFolder: $(Agent.BuildDirectory)/uhddev-$(buildOSName)-${{ parameters.toolset }}
+      cleanDestinationFolder: false
+    displayName: Extract uhddev-$(buildOSName)-${{ parameters.toolset }} artifacts
+
+  - ${{ if eq(parameters.toolset, 'make') }}:
+    - template: steps-build-gnuradio-make.yml
+      parameters:
+        gnuradioSrcDir: $(Build.SourcesDirectory)/gnuradio
+        gnuradioBuildDir: $(Build.BinariesDirectory)/gnuradio/build
+        gnuradioInstallPath: $(Build.BinariesDirectory)/gnuradio/build-installed
+        uhdInstalledArtifactPath: $(Agent.BuildDirectory)/uhddev-$(buildOSName)-${{ parameters.toolset }}/uhddev/build-installed
+
+  - ${{ if eq(parameters.toolset, 'make') }}:
+    - template: steps-build-gr-ettus-make.yml
+      parameters:
+        grettusSrcDir: $(Build.SourcesDirectory)/gr-ettusdev
+        grettusBuildDir: $(Build.BinariesDirectory)/gr-ettusdev/build
+        grettusInstallPath: $(Build.BinariesDirectory)/gnuradio/build-installed
+        uhdInstalledArtifactPath: $(Agent.BuildDirectory)/uhddev-$(buildOSName)-${{ parameters.toolset }}/uhddev/build-installed
+        gnuradioInstalledArtifactPath: $(Build.BinariesDirectory)/gnuradio/build-installed
+
+  - task: ArchiveFiles@2
+    inputs:
+      rootFolderOrFile: $(Build.BinariesDirectory)
+      includeRootFolder: false
+      archiveType: tar
+      tarCompression: gz
+      archiveFile: $(Build.ArtifactStagingDirectory)/gnuradio-grettus-$(buildOSName)-${{ parameters.toolset }}.tar.gz
+      replaceExistingArchive: true
+    displayName: Compress build files
+
+  - task: CopyFiles@2
+    inputs:
+      sourceFolder: $(Pipeline.Workspace)/uhd_build_docker_container/$(UHDPipelineDockerImageArtifactName)
+      targetFolder: $(Build.ArtifactStagingDirectory)
+    displayName:  Copy builder container version to artifact folder
+
+  - task: PublishPipelineArtifact@1
+    inputs:
+      targetPath: '$(Build.ArtifactStagingDirectory)'
+      artifactName: 'gnuradio-grettus-$(buildOSName)-${{ parameters.toolset }}'
+    displayName: Upload gnuradio and gr-ettus build artifacts

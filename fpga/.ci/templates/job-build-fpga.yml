@@ -1,0 +1,94 @@
+#
+# Copyright 2022 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+# Description:
+#
+#   This template shall be used for FPGA builds within the uhddev
+#   repository. Exports the FPGA build results (bitfile, device tree and build
+#   report from build directory) as artifacts '<target>'.
+#
+#   See description for the parameters below.
+#
+
+parameters:
+### Required parameters
+# FPGA targets to be built.
+# E.g.
+#   targets_matrix:
+#     X410_XG_100:
+#       target: X410_XG_100
+#       timeout: 480
+#     X410_X4_200:
+#       target: X410_X4_200
+#       timeout: 480
+- name: targets_matrix
+  type: object
+# IP artifact name (from pipeline) to be used
+- name: ip_artifact
+  type: string
+# PATH to device's top directory (where Makefile is located)
+- name: top_dir
+  type: string
+
+### Optional parameters
+# Set to true if the intermediate files from build-<target> directory should
+# be exported for debugging as artifact 'Build artifacts <target> (Attempt <attempt>)'
+- name: publish_int_files
+  type: boolean
+  default: false
+
+
+jobs:
+- job: build_fpga
+  displayName: 'Build FPGA'
+  timeoutInMinutes: $[ variables['timeout'] ]
+  pool:
+    name: hardware
+  variables:
+  - group: sdr-pipeline-vars
+  strategy:
+    matrix:
+      ${{ parameters.targets_matrix }}
+  steps:
+    - checkout: self
+      clean: true
+
+    - checkout: hwtools
+      clean: true
+      path: s/hwtools/head
+      persistCredentials: true
+
+    - download: current
+      artifact: ${{ parameters.ip_artifact }}
+      displayName: 'Download ${{ parameters.ip_artifact }}'
+
+    - bash: |
+        mv $(Pipeline.Workspace)/${{ parameters.ip_artifact }} \
+           ${{ parameters.top_dir }}/build-ip/
+      displayName: 'Populate build-ip'
+
+    - bash: |
+        source $(Build.SourcesDirectory)/uhddev/fpga/.ci/scripts/run_setup.sh ./
+        make $(target_name)
+      workingDirectory: ${{ parameters.top_dir }}
+      env:
+        PATCHES_PATH: $(sdr-vivado-patches)
+      displayName: 'Build Target'
+
+    # Publish the final result only if all previous steps passed
+    - publish: ${{ parameters.top_dir }}/build
+      artifact: '$(target_name)'
+      displayName: 'Publish FPGA'
+
+    # Publish intermediate files.
+    - publish: ${{ parameters.top_dir }}/build-$(target_name)
+      artifact: 'Build artifacts $(target_name) (Attempt $(System.JobAttempt))'
+      condition: and(always(), eq('${{ parameters.publish_int_files }}', true))
+      displayName: 'Publish Build Directory'
+
+    # Check if FPGA build left any untracked files.
+    - template: check_clean_repo_steps.yml
+      parameters:
+        directory: ${{ parameters.top_dir }}

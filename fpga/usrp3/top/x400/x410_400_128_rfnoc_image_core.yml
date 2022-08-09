@@ -1,0 +1,125 @@
+# General parameters
+# -----------------------------------------
+schema: rfnoc_imagebuilder_args         # Identifier for the schema used to validate this file
+copyright: >-                           # Copyright information used in file headers
+  Ettus Research, A National Instruments Brand
+license: >-                             # License information used in file headers
+  SPDX-License-Identifier: LGPL-3.0-or-later
+version: '1.0'                          # File version
+chdr_width: 128                         # Bit width of the CHDR bus for this image
+device: 'x410'                          # USRP type
+image_core_name: 'x410_400_128'         # Name to use for the RFNoC Image Core files
+default_target: 'X410_X4_400'           # Default make target
+
+# A list of all stream endpoints in design
+# ----------------------------------------
+stream_endpoints:
+  ep0:                                  # Stream endpoint name
+    ctrl: True                          # Endpoint passes control traffic
+    data: True                          # Endpoint passes data traffic
+    buff_size_bytes: 32768              # Stream endpoint buffer size
+  ep1:
+    ctrl: False
+    data: True
+    buff_size_bytes: 32768
+  ep2:
+    ctrl: False
+    data: True
+    buff_size_bytes: 32768
+  ep3:
+    ctrl: False
+    data: True
+    buff_size_bytes: 32768
+  ep4:
+    ctrl: False
+    data: True
+    buff_size_bytes: 32768
+  ep5:
+    ctrl: False
+    data: True
+    buff_size_bytes: 32768
+  ep6:
+    ctrl: False
+    data: True
+    buff_size_bytes: 32768
+  ep7:
+    ctrl: False
+    data: True
+    buff_size_bytes: 32768
+
+# A list of all NoC blocks in design
+# ----------------------------------
+noc_blocks:
+  radio0:
+    block_desc: 'radio.yml'
+    parameters:
+      NUM_PORTS: 2
+      NIPC: RADIO_NIPC
+  radio1:
+    block_desc: 'radio.yml'
+    parameters:
+      NUM_PORTS: 2
+      NIPC: RADIO_NIPC
+  replay0:
+    block_desc: 'replay.yml'
+    parameters:
+      NUM_PORTS: 4
+      MEM_DATA_W: 128
+      MEM_ADDR_W: 32
+
+# A list of all static connections in design
+# ------------------------------------------
+# Format: A list of connection maps (list of key-value pairs) with the following keys
+#   - srcblk  = Source block to connect
+#   - srcport = Port on the source block to connect
+#   - dstblk  = Destination block to connect
+#   - dstport = Port on the destination block to connect
+connections:
+  # RF A:0 TX
+  - { srcblk: ep0,    srcport: out0,  dstblk: radio0, dstport: in_0 }
+  # RF A:0 RX
+  - { srcblk: radio0, srcport: out_0, dstblk: ep0,    dstport: in0  }
+  # RF A:1 TX
+  - { srcblk: ep1,    srcport: out0,  dstblk: radio0, dstport: in_1 }
+  # RF A:1 RX
+  - { srcblk: radio0, srcport: out_1, dstblk: ep1,    dstport: in0  }
+  #
+  # RF B:0 TX
+  - { srcblk: ep2,    srcport: out0,  dstblk: radio1, dstport: in_0 }
+  # RF B:0 RX
+  - { srcblk: radio1, srcport: out_0, dstblk: ep2,    dstport: in0  }
+  # RF B:1 TX
+  - { srcblk: ep3,    srcport: out0,  dstblk: radio1, dstport: in_1 }
+  # RF B:1 RX
+  - { srcblk: radio1, srcport: out_1, dstblk: ep3,    dstport: in0  }
+  #
+  # Replay Connections
+  - { srcblk: ep4,      srcport: out0,     dstblk: replay0,  dstport: in_0            }
+  - { srcblk: replay0,  srcport: out_0,    dstblk: ep4,      dstport: in0             }
+  - { srcblk: ep5,      srcport: out0,     dstblk: replay0,  dstport: in_1            }
+  - { srcblk: replay0,  srcport: out_1,    dstblk: ep5,      dstport: in0             }
+  - { srcblk: ep6,      srcport: out0,     dstblk: replay0,  dstport: in_2            }
+  - { srcblk: replay0,  srcport: out_2,    dstblk: ep6,      dstport: in0             }
+  - { srcblk: ep7,      srcport: out0,     dstblk: replay0,  dstport: in_3            }
+  - { srcblk: replay0,  srcport: out_3,    dstblk: ep7,      dstport: in0             }
+  #
+  # BSP Connections
+  - { srcblk: radio0,   srcport: ctrlport, dstblk: _device_, dstport: ctrlport_radio0 }
+  - { srcblk: radio1,   srcport: ctrlport, dstblk: _device_, dstport: ctrlport_radio1 }
+  - { srcblk: _device_, srcport: radio0,   dstblk: radio0,   dstport: radio           }
+  - { srcblk: _device_, srcport: radio1,   dstblk: radio1,   dstport: radio           }
+  - { srcblk: _device_, srcport: time,     dstblk: radio0,   dstport: time            }
+  - { srcblk: _device_, srcport: time,     dstblk: radio1,   dstport: time            }
+  - { srcblk: replay0,  srcport: axi_ram,  dstblk: _device_, dstport: dram            }
+
+# A list of all clock domain connections in design
+# ------------------------------------------------
+# Format: A list of connection maps (list of key-value pairs) with the following keys
+#   - srcblk  = Source block to connect (Always "_device_")
+#   - srcport = Clock domain on the source block to connect
+#   - dstblk  = Destination block to connect
+#   - dstport = Clock domain on the destination block to connect
+clk_domains:
+  - { srcblk: _device_, srcport: radio, dstblk: radio0,  dstport: radio }
+  - { srcblk: _device_, srcport: radio, dstblk: radio1,  dstport: radio }
+  - { srcblk: _device_, srcport: dram,  dstblk: replay0, dstport: mem   }

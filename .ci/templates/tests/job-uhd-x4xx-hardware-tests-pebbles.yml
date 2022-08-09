@@ -1,0 +1,32 @@
+parameters:
+- name: testOS
+  type: string
+  values:
+    - ubuntu1804
+- name: uhdArtifactSource
+  type: string
+  default: current
+
+jobs:
+- template: templates/job-uhd-x4xx-hardware-tests.yml
+  parameters:
+    suiteName: 'ettus_pebbles'
+    testOS: '${{ parameters.testOS }}'
+    toolset: 'make'
+    runPyTest: true
+    runDevTest: false
+    runSystemImageTest: false
+    uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
+    xilinxLocation: /opt/Xilinx/Vivado/2019.1
+    dutMatrix:
+      pebbles-x410-0:
+        dutName: 'pebbles-x410-0'
+        dutType: 'x4xx'
+        devtestPattern: 'x4x0'
+        dutFPGA: 'X4_200'
+        dutEmbeddedImagesArtifact: 'x4xx-images'
+        uartSerial: '2516351DDCC0'
+        pipelineAgent: pebbles-agent-1
+        pytestAtsConfig: uhd_oss_ats
+        pytestDUT: 'x410'
+        sfp0ip: '192.168.30.62'

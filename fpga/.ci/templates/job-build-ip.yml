@@ -1,0 +1,110 @@
+#
+# Copyright 2022 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+# Description:
+#
+#   This template should be used for IP builds within the uhddev repository.
+#   This job uses Azure's caching mechanism to speed up the build. A
+#   successful job publishes the corresponding build-ip/ directory as a
+#   pipeline artifact.
+#
+#   See description for the parameters below.
+#
+
+parameters:
+### Required parameters
+# PATH to device's top directory (where Makefile is located)
+- name: directory
+  type: string
+# Name of the IP Make target (e.g. X410_IP for X410's IP)
+- name: ip_target
+  type: string
+
+### Optional parameters
+# Option to ignore cached artifacts (when available) and perform
+# a clean IP build.
+- name: clean_build
+  type: boolean
+  default: false
+
+jobs:
+- job: ${{ parameters.ip_target }}
+  displayName: 'Build ${{ parameters.ip_target }}'
+  pool:
+    name: Hardware
+  timeoutInMinutes: 240
+  variables:
+  - group: sdr-pipeline-vars
+  steps:
+    - checkout: self
+      clean: true
+      persistCredentials: true
+
+    - checkout: hwtools
+      clean: true
+      path: s/hwtools/head
+      persistCredentials: true
+
+    # Pipeline caching is leveraged in this job to minimize the time it takes
+    # to build all the IP.
+    # At a high level, the pipeline checks for an available and valid cache
+    # artifact from its scope (target branch in PR or its own branch) and
+    # downloads it to the workspace (Cache hit).
+    # If no valid cache artifact exists (Cache miss), then the build will run
+    # and the pipeline will automatically save the result as a cache artifact
+    # for subsequent runs.
+    # Further details on "Pipeline caching" available online:
+    #   https://docs.microsoft.com/en-us/azure/devops/pipelines/release/caching?view=azure-devops
+    # We always allow the Cache task to run, even in clean builds. This way
+    # when in a cache miss, the IP build from that run will be saved as an
+    # artifact for subsequent CI and PR runs to fetch.
+    - task: Cache@2
+      inputs:
+        key: "uhddev-fpga-${{ parameters.ip_target }}"
+        path: ${{ parameters.directory }}/build-ip
+        cacheHitVar: CACHE_RESTORED
+      displayName: Cache IP
+
+    - bash: |
+        BUILD_IP_CACHE_HASH=`cat build-ip/.ci/build-hash`
+        echo "BUILD_IP_CACHE_HASH=$BUILD_IP_CACHE_HASH"
+        git fetch origin $BUILD_IP_CACHE_HASH
+        bash $(Build.SourcesDirectory)/uhddev/fpga/.ci/scripts/refresh_ip.sh \
+          `realpath build-ip/` $BUILD_IP_CACHE_HASH
+      workingDirectory: ${{ parameters.directory }}
+      # Refresh IP when caching is allowed (clean_build = false) and a cache
+      # artifact was fetched.
+      condition: and(eq('${{ parameters.clean_build }}', 'false'), eq(variables.CACHE_RESTORED, 'true'))
+      displayName: "Refresh IP"
+
+    - bash: |
+        echo "Clean IP build requested, removing existing build-ip"
+        rm -rf build-ip
+      workingDirectory: ${{ parameters.directory }}
+      # Remove build-ip directory whenever a clean IP build is requested.
+      condition: eq('${{ parameters.clean_build }}', 'true')
+      displayName: "Prune IP"
+
+    - bash: |
+        source $(Build.SourcesDirectory)/uhddev/fpga/.ci/scripts/run_setup.sh ./
+        make ${{ parameters.ip_target }}
+        mkdir -p build-ip/.ci/
+        git rev-parse --verify HEAD 2>/dev/null 1>build-ip/.ci/build-hash
+      workingDirectory: ${{ parameters.directory }}
+      env:
+        PATCHES_PATH: $(sdr-vivado-patches)
+      displayName: "Build IP"
+
+    - publish: ${{ parameters.directory }}/build-ip
+      artifact: '${{ parameters.ip_target }} (Attempt $(System.JobAttempt))'
+      condition: failed()
+
+    - publish: ${{ parameters.directory }}/build-ip
+      artifact: ${{ parameters.ip_target }}
+      condition: succeeded()
+
+    - template: check_clean_repo_steps.yml
+      parameters:
+        directory: ${{ parameters.directory }}

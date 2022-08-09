@@ -1,0 +1,16 @@
+targets:
+  main:
+    resources:
+      RemotePlace:
+        name: 'rhombus-n321-0'
+    drivers:
+    - SerialDriver:
+        name: 'linux_serial_driver'
+        bindings:
+          port: 'console-linux'
+    - SerialDriver:
+        name: 'scu_serial_driver'
+        bindings:
+          port: 'console-scu'
+    - USBSDMuxDriver: {}
+    - USBStorageDriver: {}

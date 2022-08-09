@@ -1,0 +1,77 @@
+parameters:
+- name: uhdSrcDir
+  type: string
+- name: uhdBuildDir
+  type: string
+- name: uhdGenerateTestBinaries
+  type: boolean
+  default: false
+
+steps:
+- script: |
+    mkdir -p ${{ parameters.uhdBuildDir }}
+    cd ${{ parameters.uhdBuildDir }}
+    pyenv exec python3 -m venv ${{ parameters.uhdBuildDir }}/pyenv
+    source ${{ parameters.uhdBuildDir }}/pyenv/bin/activate
+    python3 -m pip install mako numpy requests ruamel.yaml
+  displayName: Install python UHD deps
+
+- script: |
+    mkdir -p ${{ parameters.uhdBuildDir }}
+    cd ${{ parameters.uhdBuildDir }}
+    source ${{ parameters.uhdBuildDir }}/pyenv/bin/activate
+    if [[ "${{ parameters.uhdGenerateTestBinaries }}" = "True" ]]; then
+      mkdir -p ${{ parameters.uhdBuildDir }}-installed
+      echo "Setting CMAKE_INSTALL_PREFIX to ${{ parameters.uhdBuildDir }}-installed"
+      export UHD_CI_CMAKE_OPTIONS="-DCMAKE_INSTALL_PREFIX=${{ parameters.uhdBuildDir }}-installed"
+      export UHD_CI_CMAKE_SIM="-DENABLE_SIM=OFF"
+    fi
+    cmake \
+      $UHD_CI_CMAKE_OPTIONS \
+      $UHD_CI_CMAKE_SIM \
+      ${{ parameters.uhdSrcDir }}/host
+  displayName: cmake homebrew macOS UHD
+
+- script: |
+    cd ${{ parameters.uhdBuildDir }}
+    source ${{ parameters.uhdBuildDir }}/pyenv/bin/activate
+    make -j$(sysctl -n hw.ncpu) -k
+  displayName: make homebrew macOS UHD
+
+- script: |
+    cd ${{ parameters.uhdBuildDir }}
+    ctest --no-compress-output --output-on-failure -T test
+  continueOnError: true
+  displayName: ctest make homebrew macOS UHD
+
+- script: |
+    cd ${{ parameters.uhdBuildDir }}
+    source ${{ parameters.uhdBuildDir }}/pyenv/bin/activate
+    make install
+  displayName: Install uhd to uhdBuildDir-installed
+  condition: and(succeeded(), ${{ parameters.uhdGenerateTestBinaries }})
+
+# init_usrp is an example for how to write third-party apps using CMake that
+# link against UHD. This will test the UHDConfig.cmake (and related) CMake
+# files, as well as the example. We can only do this if UHD was previously
+# installed.
+# We need to match the install prefix with the previous step in order to find
+# UHDConfig.cmake.
+- script: |
+    export EXAMPLE_BUILD_DIR="${{ parameters.uhdBuildDir }}/build_init_usrp"
+    export EXAMPLE_SRC_DIR="${{ parameters.uhdSrcDir }}/host/examples/init_usrp"
+    mkdir -p $EXAMPLE_BUILD_DIR
+    cd $EXAMPLE_BUILD_DIR
+    source ${{ parameters.uhdBuildDir }}/pyenv/bin/activate
+    cmake \
+      $UHD_CI_CMAKE_SIM \
+      -DCMAKE_INSTALL_PREFIX=${{ parameters.uhdBuildDir }}-installed \
+      -DCMAKE_PREFIX_PATH=${{ parameters.uhdBuildDir }}-installed \
+      $EXAMPLE_SRC_DIR && \
+      make -j$(sysctl -n hw.ncpu) -k
+  displayName: Build init_usrp
+  condition: and(succeeded(), ${{ parameters.uhdGenerateTestBinaries }})
+
+- script: |
+    rm -rf ${{ parameters.uhdBuildDir }}/pyenv
+  displayName: Delete venv

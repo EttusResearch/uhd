@@ -1,0 +1,72 @@
+#
+# Copyright 2022 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+# Description:
+#
+#   This pipeline is used to build FPGAs and run testbenches for PRs.
+#
+#   See https://aka.ms/yaml for pipeline YAML documentation.
+#
+
+parameters:
+- name: run_testbenches
+  type: boolean
+  displayName: Run Testbenches
+  default: true
+- name: clean_ip_build
+  type: boolean
+  displayName: Clean IP Build
+  default: false
+- name: package_images
+  type: boolean
+  displayName: Package Images
+  default: false
+- name: build_x410
+  type: boolean
+  displayName: Build X410
+  default: true
+- name: x410_targets_matrix
+  type: object
+  displayName: X410 Targets
+  default:
+    X410_XG_100:
+      target_name: X410_XG_100
+      timeout: 480
+    X410_X4_200:
+      target_name: X410_X4_200
+      timeout: 480
+    X410_CG_400:
+      target_name: X410_CG_400
+      timeout: 480
+
+trigger: none
+
+pr:
+  branches:
+    include:
+    - master
+  paths:
+    include:
+    - fpga/usrp3/lib
+    - fpga/usrp3/top/x400
+    - fpga/.ci
+
+schedules:
+- cron: "0 18 * * Sun"
+  displayName: Weekly FPGA PR Build master branch
+  branches:
+    include:
+    - master
+  always: true
+
+extends:
+  template: templates/stages-fpga-pipeline.yml
+  parameters:
+    run_testbenches: ${{ parameters.run_testbenches }}
+    clean_ip_build: ${{ parameters.clean_ip_build }}
+    publish_int_files: true
+    package_images: ${{ parameters.package_images }}
+    build_x410: ${{ parameters.build_x410 }}
+    x410_targets_matrix: ${{ parameters.x410_targets_matrix }}

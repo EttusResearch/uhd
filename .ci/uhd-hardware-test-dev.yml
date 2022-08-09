@@ -1,0 +1,101 @@
+trigger: none
+
+pr: none
+
+parameters:
+- name: run_hardware_tests
+  type: boolean
+  displayName: Run Hardware Tests
+  default: false
+- name: run_streaming_tests
+  type: boolean
+  displayName: Run Streaming Tests
+  default: false
+- name: run_devtests
+  type: boolean
+  displayName: Run devtests
+  default: false
+- name: run_rf_tests
+  type: boolean
+  displayName: Run rf tests
+  default: false
+- name: testLength
+  type: string
+  values:
+  - 'smoke'
+  - 'full'
+  - 'stress'
+
+resources:
+  pipelines:
+  - pipeline: uhd_mono_pipeline
+    source: 'uhddev mono pipeline'
+    branch: master
+  - pipeline: usrp-kas-pipeline
+    source: 'usrp-kas'
+    branch: zeus-ci
+  repositories:
+  - repository: meta-ettus
+    type: github
+    name: EttusResearch/meta-ettus-dev
+    endpoint: EttusResearch
+    ref: zeus-ci
+  - repository: gr-ettus
+    type: github
+    name: EttusResearch/gr-ettusdev
+    endpoint: EttusResearch
+    ref: maint-3.8-uhd4.0
+  - repository: ettus-rts
+    type: github
+    endpoint: EttusResearch
+    name: EttusResearch/ettus-rts
+    ref: master
+
+stages:
+- stage: test_uhd_embedded_stage
+  displayName: Test Embedded UHD
+  dependsOn: []
+  condition: ${{ parameters.run_hardware_tests }}
+  jobs:
+  - template: templates/tests/job-uhd-x4xx-hardware-tests-sdr-test0.yml
+    parameters:
+      testOS: ubuntu1804
+      uhdArtifactSource: uhd_mono_pipeline
+  - template: templates/tests/job-uhd-x4xx-hardware-tests-pebbles.yml
+    parameters:
+      testOS: ubuntu1804
+      uhdArtifactSource: uhd_mono_pipeline
+
+- stage: test_streaming_stage
+  displayName: Test UHD Streaming
+  dependsOn: []
+  condition: ${{ parameters.run_streaming_tests }}
+  jobs:
+  - template: templates/job-uhd-streaming-tests-beauty.yml
+    parameters:
+      testOS: ubuntu2004
+      uhdSrcDir: $(Build.SourcesDirectory)/uhddev
+      uhdArtifactSource: uhd_mono_pipeline
+      testLength: ${{ parameters.testLength }}
+
+- stage: test_uhd_devtest
+  displayName: Test UHD Devtest
+  dependsOn: []
+  condition: ${{ parameters.run_devtests }}
+  jobs:
+  - template: templates/job-uhd-devtest-rhombus.yml
+    parameters:
+      testOS: ubuntu2004
+      uhdSrcDir: $(Build.SourcesDirectory)
+      uhdArtifactSource: uhd_mono_pipeline
+
+- stage: test_rf_tests
+  displayName: Run rf tests
+  dependsOn: []
+  condition: ${{ parameters.run_rf_tests }}
+  jobs:
+  - template: templates/job-uhd-rf-tests-pebbles.yml
+    parameters:
+      testOS: ubuntu1804
+      uhdSrcDir: $(Build.SourcesDirectory)/uhddev
+      uhdArtifactSource: uhd_mono_pipeline

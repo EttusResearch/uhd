@@ -1,0 +1,59 @@
+#
+# Copyright 2022 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+# Description:
+#
+#   This pipeline is used to build FPGAs and run testbenches as CI
+#   from commits in master.
+#
+#   See https://aka.ms/yaml for pipeline YAML documentation.
+#
+
+parameters:
+- name: run_testbenches
+  type: boolean
+  displayName: Run Testbenches
+  default: false
+- name: clean_ip_build
+  type: boolean
+  displayName: Clean IP Build
+  default: true
+- name: package_images
+  type: boolean
+  displayName: Package Images
+  default: true
+- name: build_x410
+  type: boolean
+  displayName: Build X410
+  default: true
+
+trigger:
+  batch: true
+  branches:
+    include:
+    - master
+  paths:
+    include:
+    - fpga/usrp3/lib
+    - fpga/usrp3/top/x400
+    - fpga/.ci
+
+pr: none
+
+schedules:
+- cron: "0 18 * * Sun"
+  displayName: Weekly FPGA CI Build master branch
+  branches:
+    include:
+    - master
+  always: true
+
+extends:
+  template: templates/stages-fpga-pipeline.yml
+  parameters:
+    run_testbenches: ${{ parameters.run_testbenches }}
+    clean_ip_build: ${{ parameters.clean_ip_build }}
+    package_images: ${{ parameters.package_images }}
+    build_x410: ${{ parameters.build_x410 }}

@@ -3,3 +3,4 @@ debian
 *swp
 *.pyc
 .DS_Store
+/venv/

@@ -1,0 +1,13 @@
+# Copyright 2022 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# These color rules ease orientation in RFNoC packet display.
+# Import this file in Wireshark's Coloring Rules dialog
+# (View -> Coloring Rules…)
+@RFNoC Management@rfnoc.PktType == 0@[65535, 50372, 2313][0,0,0]
+@RFNoC Stream Status@rfnoc.PktType == 1@[0,46774,30583][0,0,0]
+@RFNoC Stream Command@rfnoc.PktType == 2@[1028,16705,8995][65535,65535,65535]
+@RFNoC Control Transaction@rfnoc.PktType == 4@[25759,46003,59110][0,0,0]
+@RFNoC Data Packet without a Timestamp@rfnoc.PktType == 6@[56283, 56283, 51400][32639,32639,32639]
+@RFNoC Data Packet with a Timestamp@rfnoc.PktType == 7@[56283, 56283, 51400][0,0,0]

@@ -1,0 +1,8 @@
+Document: uhd-host
+Title: USRP Hardware Driver for Ettus Research products
+Author: Ettus Research
+Section: Programming
+
+Format: HTML
+Index: /usr/share/doc/uhd-doc/html/index.html
+Files: /usr/share/doc/uhd-doc/html/*

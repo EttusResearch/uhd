@@ -1,0 +1,110 @@
+#
+# Copyright 2022 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+# Description:
+#
+#   This template defines a stages-based pipeline that may be leveraged by both
+#   a PR pipeline or a continuous delivery pipeline.
+#
+#   See https://aka.ms/yaml for pipeline YAML documentation.
+#
+
+parameters:
+## Optional parameters
+# Run testbenches
+- name: run_testbenches
+  type: boolean
+  default: true
+# Option to ignore cached artifacts (if available) and perform
+# a clean IP build.
+- name: clean_ip_build
+  type: boolean
+  default: false
+# Option to publish intermediate files
+- name: publish_int_files
+  type: boolean
+  default: false
+# Create images package
+- name: package_images
+  type: boolean
+  default: false
+# Build X410 FPGA targets
+- name: build_x410
+  type: boolean
+  default: true
+# X410 FPGA targets to build (if build_x410 is true)
+- name: x410_targets_matrix
+  type: object
+  default:
+    X410_X4_200:
+      target_name: X410_X4_200
+      timeout: 480
+    X410_X4_400:
+      target_name: X410_X4_400
+      timeout: 480
+    X410_CG_400:
+      target_name: X410_CG_400
+      timeout: 480
+
+
+resources:
+  repositories:
+  - repository: hwtools
+    type: git
+    ref: main
+    name: DevCentral/hwtools
+
+
+stages:
+
+### START: Testbenches stage
+
+- stage: run_testbenches_stage
+  displayName: Run Testbenches
+  dependsOn: []
+  condition: and(succeeded(), eq('${{ parameters.run_testbenches }}', 'true'))
+  jobs:
+  - template: job-run-testbenches.yml
+
+### END: Testbenches stage
+
+
+### START: X410 stages
+
+- stage: build_x410_ip_stage
+  displayName: Build X410 IP
+  dependsOn: []
+  condition: and(succeeded(), eq('${{ parameters.build_x410 }}', 'true'))
+  jobs:
+  - template: job-build-ip.yml
+    parameters:
+      directory: uhddev/fpga/usrp3/top/x400
+      ip_target: X410_IP
+      clean_build: ${{ parameters.clean_ip_build }}
+
+- stage: build_x410_targets_stage
+  displayName: Build X410 FPGA Targets
+  dependsOn: build_x410_ip_stage
+  condition: succeeded('build_x410_ip_stage')
+  jobs:
+  - template: job-build-fpga.yml
+    parameters:
+      targets_matrix: ${{ parameters.x410_targets_matrix }}
+      ip_artifact: X410_IP
+      top_dir: uhddev/fpga/usrp3/top/x400
+      publish_int_files: ${{ parameters.publish_int_files }}
+
+- stage: create_x410_packages_stage
+  displayName: Create X410 Packages
+  dependsOn: build_x410_targets_stage
+  condition: and(succeeded('build_x410_targets_stage'), eq('${{ parameters.package_images }}', 'true'))
+  jobs:
+  - template: job-package-images.yml
+    parameters:
+      package_name: x4xx_x410_fpga_default
+      artifacts_matrix: ${{ parameters.x410_targets_matrix }}
+      build_directory: uhddev/fpga/usrp3/top/x400/build/
+
+### END: X410 stages

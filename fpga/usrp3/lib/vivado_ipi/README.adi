@@ -1,0 +1,18 @@
+This files in this directory and associated subdirectories bearing Analog
+Devices Inc.'s (ADI) copyright notice are available (albeit updated versions
+compared to these files) from Analog Devices' GitHub repository[1] containing
+HDL libraries for various reference designs. This repository contains a license
+file[2] that dictates the terms of use of the ADI IP.
+
+The `axi_dmac`, `util_axis_fifo`, and `util_axis_resize` modules are offered
+under either a GPLv2[3] or ADI-specific BSD[4] license. See, for example,
+the copyright notices in [5], [6], and [7].
+
+
+[1] https://github.com/analogdevicesinc/hdl
+[2] https://github.com/analogdevicesinc/hdl/blob/master/LICENSE
+[3] https://github.com/analogdevicesinc/hdl/blob/master/LICENSE_GPL2
+[4] https://github.com/analogdevicesinc/hdl/blob/master/LICENSE_ADIBSD
+[5] https://github.com/analogdevicesinc/hdl/blob/master/library/axi_dmac/axi_dmac.v
+[6] https://github.com/analogdevicesinc/hdl/blob/master/library/util_axis_fifo/util_axis_fifo.v
+[7] https://github.com/analogdevicesinc/hdl/blob/master/library/util_axis_resize/util_axis_resize.v

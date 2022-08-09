@@ -1,0 +1,40 @@
+parameters:
+- name: testOS
+  type: string
+  values:
+    - ubuntu1804
+- name: uhdSrcDir
+  type: string
+- name: uhdArtifactSource
+  type: string
+  default: current
+- name: testDevices
+  type: string
+  default: 'n3xx'
+
+jobs:
+- template: job-uhd-rf-tests.yml
+  parameters:
+    suiteName: 'pebbles'
+    testOS: '${{ parameters.testOS }}'
+    toolset: 'make'
+    uhdSrcDir: '${{ parameters.uhdSrcDir }}'
+    uhdArtifactSource: '${{ parameters.uhdArtifactSource }}'
+    redisHost: 'ettus-pebbles'
+    dutMatrix:
+      ${{ if contains(parameters.testDevices, 'n3xx') }}:
+        pebbles-n310-0:
+          devType: 'n3xx'
+          devModel: 'n310'
+          devName: pebbles-n310-0
+          devSerial: '3176DDF'
+          devHostname: 'ni-n3xx-3176DDF'
+          devBus: 'ip'
+          devAddr: '192.168.40.17'
+          sfpAddrs: '192.168.10.17,192.168.40.17'
+          devFpga: 'HG'
+          devtestPattern: 'n3x0'
+          devSDImage: gnuradio-image-ni-sulfur-rev11-mender.sdimg.bz2
+          devLabgridConfig: .ci/templates/tests/pebbles-labgrid/device-configs/pebbles-n310-0.yml
+          pytestDUT: 'n310-0'
+          pytestAtsConfig: 'uhd_oss_ats'

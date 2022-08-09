@@ -1,0 +1,47 @@
+rhombus-n310-0-group:
+  console-scu:
+    cls: USBSerialPort
+    match:
+      ID_SERIAL: 'Silicon_Labs_CP2105_Dual_USB_to_UART_Bridge_Controller_0097D446'
+      ID_USB_INTERFACE_NUM: '01'
+    speed: 115200
+  console-linux:
+    cls: USBSerialPort
+    match:
+      ID_SERIAL: 'Silicon_Labs_CP2105_Dual_USB_to_UART_Bridge_Controller_0097D446'
+      ID_USB_INTERFACE_NUM: '00'
+    speed: 115200
+  USBSDMuxDevice:
+    match:
+      ID_SERIAL_SHORT: '000000001506'
+
+rhombus-n321-0-group:
+  console-scu:
+    cls: USBSerialPort
+    match:
+      ID_SERIAL: 'Silicon_Labs_CP2105_Dual_USB_to_UART_Bridge_Controller_0097D610'
+      ID_USB_INTERFACE_NUM: '01'
+    speed: 115200
+  console-linux:
+    cls: USBSerialPort
+    match:
+      ID_SERIAL: 'Silicon_Labs_CP2105_Dual_USB_to_UART_Bridge_Controller_0097D610'
+      ID_USB_INTERFACE_NUM: '00'
+    speed: 115200
+  USBSDMuxDevice:
+    match:
+      ID_SERIAL_SHORT: '000000001140'
+
+rhombus-e320-0-group:
+  console-scu:
+    cls: USBSerialPort
+    match:
+      ID_SERIAL: 'Silicon_Labs_CP2105_Dual_USB_to_UART_Bridge_Controller_0097841B'
+      ID_USB_INTERFACE_NUM: '00'
+    speed: 115200
+  console-linux:
+    cls: USBSerialPort
+    match:
+      ID_SERIAL: 'Silicon_Labs_CP2105_Dual_USB_to_UART_Bridge_Controller_0097841B'
+      ID_USB_INTERFACE_NUM: '01'
+    speed: 115200

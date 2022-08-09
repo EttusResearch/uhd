@@ -1,0 +1,309 @@
+parameters:
+- name: suiteName
+  type: string
+- name: testOS
+  type: string
+  values:
+    - ubuntu1804
+- name: toolset
+  type: string
+  values:
+    - make
+- name: runPyTest
+  type: boolean
+- name: runSystemImageTest
+  type: boolean
+- name: runDevTest
+  type: boolean
+- name: dutMatrix
+  type: object
+- name: uhdArtifactSource
+  type: string
+  default: current
+- name: xilinxLocation
+  type: string
+
+jobs:
+- job: x4xx_hardware_test_${{ parameters.suiteName }}
+  displayName: x4xx hardware test ${{ parameters.suiteName }}
+  strategy:
+    matrix: ${{ parameters.dutMatrix }}
+
+  pool:
+    name: 'de-dre-lab'
+    demands: uhd_ats -equals $(pipelineAgent)
+
+  steps:
+  - checkout: self
+  - checkout: meta-ettus
+  - checkout: ettus-rts
+
+  - script: |
+      if [ "${{ parameters.uhdArtifactSource }}" = "current" ]; then
+        echo '##vso[task.setvariable variable=uhd_artifact_directory]'$(Agent.BuildDirectory)
+      else
+        echo '##vso[task.setvariable variable=uhd_artifact_directory]'$(Agent.BuildDirectory)/${{ parameters.uhdArtifactSource }}
+      fi
+    displayName: Set uhddev pipeline artifact location
+
+  - script: |
+      rm -rf $(uhd_artifact_directory)/$(dutEmbeddedImagesArtifact)
+      rm -rf $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
+      rm -rf $(uhd_artifact_directory)/gnuradio-${{ parameters.testOS }}-${{ parameters.toolset }}
+    displayName: Cleanup from prior run
+
+  - download: ${{ parameters.uhdArtifactSource }}
+    artifact: $(dutEmbeddedImagesArtifact)
+    displayName: Download $(dutEmbeddedImagesArtifact)
+
+  - task: ExtractFiles@1
+    inputs:
+      archiveFilePatterns: $(uhd_artifact_directory)/$(dutEmbeddedImagesArtifact)/u-boot-jtag-files.zip
+      destinationFolder: $(uhd_artifact_directory)/$(dutEmbeddedImagesArtifact)
+      cleanDestinationFolder: false
+      overwriteExistingFiles: true
+    displayName: Extract JTAG artifact
+
+  - download: ${{ parameters.uhdArtifactSource }}
+    artifact: uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
+    displayName: Download uhddev-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+
+  - task: ExtractFiles@1
+    inputs:
+      archiveFilePatterns: $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}.tar.gz
+      destinationFolder: $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
+      cleanDestinationFolder: false
+      overwriteExistingFiles: true
+    displayName: Extract uhddev-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+
+  - download: ${{ parameters.uhdArtifactSource }}
+    artifact: gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}
+    displayName: Download gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+
+  - task: ExtractFiles@1
+    inputs:
+      archiveFilePatterns: $(uhd_artifact_directory)/gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}/gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}.tar.gz
+      destinationFolder: $(uhd_artifact_directory)/gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}
+      cleanDestinationFolder: false
+      overwriteExistingFiles: true
+    displayName: Extract gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+
+  - script: |
+      cd $(Agent.TempDirectory)
+      python3 -m venv venv
+      source venv/bin/activate
+      echo '##vso[task.setvariable variable=USRP_EMB_VENV]'$(realpath venv)
+      echo '##vso[task.setvariable variable=USRP_EMB_IMAGE_PATH]'$(uhd_artifact_directory)/$(dutEmbeddedImagesArtifact)
+      echo '##vso[task.setvariable variable=USRP_EMB_FTDI_SERIAL]'$(uartSerial)
+      python3 -m pip install -U pip
+      pip3 install wheel
+      pip3 install --upgrade $(Build.SourcesDirectory)/meta-ettus-dev/contrib/test/usrp_emb
+    displayName: Create usrp_emb venv
+
+  - script: |
+      source ${{ parameters.xilinxLocation }}/settings64.sh
+      source $USRP_EMB_VENV/bin/activate
+      usrp_emb_x4xx_flash_emmc
+    displayName: Flash eMMC
+
+  - script: |
+      source $USRP_EMB_VENV/bin/activate
+      mkdir -p $(Common.TestResultsDirectory)/sysimg_tests/sysimg_boot_tests
+      cd $(Common.TestResultsDirectory)/sysimg_tests/sysimg_boot_tests
+      usrp_emb_test_x4xx
+    displayName: Run system image boot tests
+    condition: and(succeeded(), ${{ parameters.runSystemImageTest }})
+
+  - script: |
+      source $USRP_EMB_VENV/bin/activate
+      USRP_EMB_TARGET_IP=$(usrp_emb_x4xx_boot_linux)
+      echo Target IP is $USRP_EMB_TARGET_IP
+      echo '##vso[task.setvariable variable=USRP_EMB_TARGET_IP]'$USRP_EMB_TARGET_IP
+    displayName: Boot target, get mgmt IP
+
+  # Setting the timezone on the embedded device is
+  # required to make the test runtimes to look sane.
+  - script: |
+      export HOST_TIME_ZONE=$(cat /etc/timezone)
+      ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "timedatectl set-timezone $HOST_TIME_ZONE"
+    displayName: Set timezone to Host
+
+  - script: |
+        sleep 60
+    displayName: Wait for device to finish booting
+
+  - script: |
+        ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
+        ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "uhd_image_loader --args addr=localhost,type=$(dutType),fpga=$(dutFPGA)"
+        sleep 60
+    displayName: Flash FPGA $(dutFPGA)
+
+  - script: |
+      source $USRP_EMB_VENV/bin/activate
+      ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ip link set sfp0 down"
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ip addr add $(sfp0ip)/24 dev sfp0"
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ip link set sfp0 up"
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ifconfig sfp0"
+    displayName: Set sfp0 IP
+    condition: and(succeeded(), ${{ parameters.runPyTest }})
+
+
+  - script: |
+      mkdir -p $(Common.TestResultsDirectory)/sysimg_tests/sysimg_subsystem_tests
+      cd $(Common.TestResultsDirectory)/sysimg_tests/sysimg_subsystem_tests
+      ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "rm -rf ~/usrp_sysimg_test && mkdir -p ~/usrp_sysimg_test"
+      scp -o StrictHostKeyChecking=no -r $(Build.SourcesDirectory)/meta-ettus-dev/contrib/test/tests root@$USRP_EMB_TARGET_IP:~/usrp_sysimg_test
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "pip3 install unittest-xml-reporting && cd ~/usrp_sysimg_test/tests && python3 -m xmlrunner discover . -v"
+      scp -o StrictHostKeyChecking=no -r root@$USRP_EMB_TARGET_IP:~/usrp_sysimg_test .
+    displayName: Run system image embedded subsystems tests
+    continueOnError: true
+    condition: and(succeeded(), ${{ parameters.runSystemImageTest }})
+
+  - script: |
+      mkdir -p $(Common.TestResultsDirectory)/mpm/mpm_unit_tests
+      cd $(Common.TestResultsDirectory)/mpm/mpm_unit_tests
+      ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "rm -rf ~/mpm_test_run && mkdir -p ~/mpm_test_run"
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "cd ~/mpm_test_run && python3 /usr/lib/usrp_mpm/tests/run_unit_tests.py -x x4xx"
+      scp -o StrictHostKeyChecking=no -r root@$USRP_EMB_TARGET_IP:~/mpm_test_run .
+    displayName: Run MPM unit tests
+    continueOnError: true
+
+  - script: |
+      mkdir -p $(Common.TestResultsDirectory)/devtest
+      cd $(Common.TestResultsDirectory)/devtest
+      python3 $(Build.SourcesDirectory)/uhddev/host/tests/devtest/run_testsuite.py \
+        --src-dir $(Build.SourcesDirectory)/uhddev/host/tests/devtest \
+        --devtest-pattern $(devtestPattern) --args addr=$USRP_EMB_TARGET_IP,type=$(dutType) \
+        --build-dir $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev/build \
+        --build-type Release --python-interp python3 --xml
+    displayName: Run devtest
+    continueOnError: true
+    condition: and(succeeded(), ${{ parameters.runDevTest }})
+
+  - script: |
+      cd $(Common.TestResultsDirectory)/devtest
+      python3 $(Build.SourcesDirectory)/uhddev/.ci/utils/format_devtest_junitxml.py \
+        $(Common.TestResultsDirectory)/devtest \
+        $(Common.TestResultsDirectory)/devtest/devtestresults.xml
+    displayName: Format devtest results
+    continueOnError: true
+    condition: and(succeeded(), ${{ parameters.runDevTest }})
+
+  - script: |
+      cat $(Common.TestResultsDirectory)/devtest/log*.log
+      echo ""
+    displayName: cat devtest log
+    condition: and(succeeded(), ${{ parameters.runDevTest }})
+
+  - script: |
+      export UHD_INSTALL_PATH=$(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev/build-installed
+      export GNURADIO_GRETTUS_INSTALL_PATH=$(uhd_artifact_directory)/gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}/gnuradio/build-installed
+      export PATH=$UHD_INSTALL_PATH/bin:$PATH
+      export PATH=$GNURADIO_GRETTUS_INSTALL_PATH/bin:$PATH
+      export PYTHON_VERSION=$(python3 -c "import sys; print('python'+str(sys.version_info.major) + '.' + str(sys.version_info.minor))")
+
+      if [ -d "$UHD_INSTALL_PATH/lib64" ]; then
+        export PATH=$UHD_INSTALL_PATH/lib64/uhd/examples:$PATH
+        export LD_LIBRARY_PATH=$UHD_INSTALL_PATH/lib64:$LD_LIBRARY_PATH
+        export LD_LIBRARY_PATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib64:$LD_LIBRARY_PATH
+        export PYTHONPATH=$UHD_INSTALL_PATH/lib64/$PYTHON_VERSION/site-packages:$PYTHONPATH
+        export PYTHONPATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib64/python3/dist-packages:$PYTHONPATH
+      else
+        export PATH=$UHD_INSTALL_PATH/lib/uhd/examples:$PATH
+        export LD_LIBRARY_PATH=$UHD_INSTALL_PATH/lib:$LD_LIBRARY_PATH
+        export LD_LIBRARY_PATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib:$LD_LIBRARY_PATH
+        export PYTHONPATH=$UHD_INSTALL_PATH/lib/$PYTHON_VERSION/site-packages:$PYTHONPATH
+        export PYTHONPATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib/python3/dist-packages:$PYTHONPATH
+      fi
+
+      cd $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests
+      uhd_find_devices
+      python3 automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) --results_path '$(Common.TestResultsDirectory)/pytest/host'
+    displayName: Run pytest on host
+    continueOnError: true
+    condition: and(succeeded(), ${{ parameters.runPyTest }})
+
+  - script: |
+      mkdir -p $(Common.TestResultsDirectory)/pytest/embedded
+      cd $(Common.TestResultsDirectory)/pytest/embedded
+      ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "pip3 install --upgrade pytest pytest-helpers-namespace pytest-tempdir pytest-salt"
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "rm -rf ~/usrp_pytest && mkdir -p ~/usrp_pytest"
+      scp -o StrictHostKeyChecking=no -r $(Build.SourcesDirectory)/ettus-rts/config/remote/ root@$USRP_EMB_TARGET_IP:~/usrp_pytest
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "cd ~/usrp_pytest/remote/python_tests && python3 automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) --test_selector pytests/test_gnuradio_sanity.py --run_embedded"
+      scp -o StrictHostKeyChecking=no -r root@$USRP_EMB_TARGET_IP:~/usrp_pytest .
+    displayName: Run pytest on embedded
+    continueOnError: true
+    condition: and(succeeded(), ${{ parameters.runPyTest }})
+
+  # Run the mender tests last because they
+  # modify the flashed image on the device
+  - script: |
+      source $USRP_EMB_VENV/bin/activate
+      mkdir -p $(Common.TestResultsDirectory)/sysimg_tests/sysimg_mender_tests
+      cd $(Common.TestResultsDirectory)/sysimg_tests/sysimg_mender_tests
+      source $USRP_EMB_VENV/bin/activate
+      usrp_emb_test_x4xx_mender
+    displayName: Run system image mender tests
+    continueOnError: true
+    condition: and(succeeded(), ${{ parameters.runSystemImageTest }})
+
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: '$(Common.TestResultsDirectory)/sysimg_tests/**/*.xml'
+      testRunTitle: $(dutName) System Image Tests
+      mergeTestResults: true
+      failTaskOnFailedTests: true
+    displayName: Upload $(dutName) System Image Tests
+    condition: ${{ parameters.runSystemImageTest }}
+
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: '$(Common.TestResultsDirectory)/mpm/**/*.xml'
+      testRunTitle: $(dutName) mpm unit tests
+      mergeTestResults: true
+      failTaskOnFailedTests: true
+    displayName: Upload $(dutName) mpm unit tests
+    condition: always()
+
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: '$(Common.TestResultsDirectory)/devtest/devtestresults.xml'
+      testRunTitle: $(dutName) devtests
+      buildConfiguration: 'Release'
+      mergeTestResults: true
+      failTaskOnFailedTests: true
+    displayName: Upload $(dutName) devtests
+    condition: ${{ parameters.runDevTest }}
+
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: '$(Common.TestResultsDirectory)/pytest/host/**/*.xml'
+      testRunTitle: $(dutName) host pytests
+      mergeTestResults: true
+      failTaskOnFailedTests: true
+    displayName: Upload $(dutName) host pytests
+    condition: ${{ parameters.runPyTest }}
+
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: '$(Common.TestResultsDirectory)/pytest/embedded/**/*.xml'
+      testRunTitle: $(dutName) embedded pytests
+      mergeTestResults: true
+      failTaskOnFailedTests: true
+    displayName: Upload $(dutName) embedded pytests
+    condition: ${{ parameters.runPyTest }}
+
+  - publish: $(Common.TestResultsDirectory)
+    artifact: test-logs-x4xx-hardware-$(dutName)-run$(System.JobAttempt)
+    displayName: Upload Test Logs
+    condition: always()

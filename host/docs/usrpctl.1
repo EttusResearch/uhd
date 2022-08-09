@@ -1,0 +1,93 @@
+.TH "usrpctl" 1 "4.0.0" UHD "User Commands"
+.SH NAME
+usrpctl \- USRP Hardware Driver Peripheral Configuration Tool
+.SH DESCRIPTION
+Report detailed information on UHD-supported Software Radio Peripherals
+attached by USB, network, or embedded configuration.
+Allows update and configuration of attached devices.
+.LP
+The UHD package is the universal hardware driver for Ettus Research products. The goal
+is to provide a host driver and API for current and future Ettus Research products.
+Users will be able to use the UHD driver standalone or with 3rd party applications.
+.LP
+Details include unit names, revision numbers, and available sensors on all attached
+USRP motherboards and daughterboards.
+.SH SYNOPSIS
+.B  usrpctl [ID] COMMAND [OPTIONS]
+.SH ID
+ID is the optional device argument. It is used to define a set
+of USRP devices that COMMAND should be applied to. If ID is omitted
+COMMAND is applied to all reachable devices.
+
+usrpctl understands the device args argument used by other UHD
+tools like uhd_find_devices.
+
+.SH COMMAND
+Is the action the tool is to take. Every command can be either applied to a
+single device or a group of devices. Commands that run on a group of
+devices repeat the command for every device.
+
+- Single device commands:
+    - config: Read/write configuration variables (e.g., IP address)
+    - probe: reads extended information about the USRP
+- Multi device commands:
+    - update: Update binaries (e.g., FPGA image)
+    - reset: Reset the device or parts thereof (e.g., only reset MPM)
+    - find: finds all available USRPs in this network
+
+.SH OPTIONS
+The options are not always mandatory. It depends on the given COMMAND.
+
+.SH find command
+
+The find command takes no further options. If ID is not given it scans the
+system for available, supported devices and prints a list of discovered devices.
+The print out is compatible to uhd_find_devices.
+ID can be used to narrow down the list of discovered devices.
+
+.SH probe command
+.IP "Print a complete property tree:"
+-tree
+.TP
+The probe command can only be applied to a single device so make sure that
+ID identifies exactly one device. Without arguments it displays detailed
+information about the device such as name, serial, revision numbers,
+firmware version sensor information on attached motherboard and daughterboards.
+
+.SH EXAMPLES
+.TP \w'usrpctl\ 'u
+.BI usrpctl\ find
+find all supported devices
+.TP
+.BI usrpctl\ type=x300,product=X310 find
+find all x310 devices
+.TP
+.BI usrpctl\ name=my_usrp\ find
+find a device named my_usrp
+.TP
+.BI usrpctl\ addr=192.168.10.2\ find
+find a device with the given IP.
+.TP
+.BI usrpctl\ addr=192.168.10.2\ probe
+display device information for USRP with the given ID
+.TP
+.BI usprctl\ name=my_usrp\ probe\ \-tree
+display property tree of device with the name my_usrp
+.TP
+
+.SH SEE ALSO
+UHD documentation:
+.B http://files.ettus.com/manual/
+.LP
+.SH COPYRIGHT
+Copyright (c) 2022 Ettus Research, A National Instruments Brand
+.LP
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+.LP
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
