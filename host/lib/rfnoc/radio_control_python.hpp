@@ -14,7 +14,7 @@ using namespace uhd::rfnoc;
 void export_radio_control(py::module& m)
 {
     // Re-import ALL_CHANS here to avoid linker errors
-    const auto ALL_CHANS = radio_control::ALL_CHANS;
+    const static auto ALL_CHANS = radio_control::ALL_CHANS;
 
     py::class_<radio_control, noc_block_base, radio_control::sptr>(m, "radio_control")
         .def(py::init(&block_controller_factory<radio_control>::make_from))
