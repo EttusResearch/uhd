@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <uhd/features/gpio_power_iface.hpp>
 #include <uhd/features/ref_clk_calibration_iface.hpp>
 #include <uhd/features/trig_io_mode_iface.hpp>
 #include <uhd/rfnoc/mb_controller.hpp>
@@ -13,6 +14,7 @@
 #include <uhdlib/features/fpga_load_notification_iface.hpp>
 #include <uhdlib/usrp/common/rpc.hpp>
 #include <uhdlib/utils/rpc.hpp>
+#include <map>
 #include <memory>
 
 namespace uhd { namespace rfnoc {
@@ -169,9 +171,28 @@ public:
         uhd::usrp::mpmd_rpc_iface::sptr _rpcc;
     };
 
+    class gpio_power : public uhd::features::gpio_power_iface
+    {
+    public:
+        using sptr = std::shared_ptr<gpio_power>;
+
+        gpio_power(uhd::usrp::dio_rpc_iface::sptr rpcc, const std::vector<std::string>& ports);
+
+        std::vector<std::string> get_supported_voltages(const std::string& port) const override;
+        void set_port_voltage(const std::string& port, const std::string& voltage) override;
+        std::string get_port_voltage(const std::string& port) const override;
+        void set_external_power(const std::string& port, bool enable) override;
+        std::string get_external_power_status(const std::string& port) const override;
+
+    private:
+        uhd::usrp::dio_rpc_iface::sptr _rpcc;
+        const std::vector<std::string> _ports;
+    };
+
     fpga_onload::sptr _fpga_onload;
     ref_clk_calibration::sptr _ref_clk_cal;
     trig_io_mode::sptr _trig_io_mode;
+    gpio_power::sptr _gpio_power;
 };
 
 }} // namespace uhd::rfnoc

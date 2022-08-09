@@ -1,0 +1,432 @@
+# -------------------------------------------------------------------------- #
+#
+# Copyright (C) 2018  Intel Corporation. All rights reserved.
+# Your use of Intel Corporation's design tools, logic functions 
+# and other software and tools, and its AMPP partner logic 
+# functions, and any output files from any of the foregoing 
+# (including device programming or simulation files), and any 
+# associated documentation or information are expressly subject 
+# to the terms and conditions of the Intel Program License 
+# Subscription Agreement, the Intel Quartus Prime License Agreement,
+# the Intel FPGA IP License Agreement, or other applicable license
+# agreement, including, without limitation, that your use is for
+# the sole purpose of programming logic devices manufactured by
+# Intel and sold by Intel or its authorized distributors.  Please
+# refer to the applicable agreement for further details.
+#
+# -------------------------------------------------------------------------- #
+#
+# Quartus Prime
+# Version 18.1.0 Build 625 09/12/2018 SJ Lite Edition
+# Date created = 12:02:17  February 20, 2019
+#
+# -------------------------------------------------------------------------- #
+#
+# Notes:
+#
+# 1) The default values for assignments are stored in the file:
+#		TopCpld_assignment_defaults.qdf
+#    If this file doesn't exist, see file:
+#		assignment_defaults.qdf
+#
+# 2) Altera recommends that you do not modify this file. This
+#    file is updated automatically by the Quartus Prime software
+#    and any changes you make may be lost or overwritten.
+#
+# -------------------------------------------------------------------------- #
+
+
+
+#--------------------------------------------------------------------------
+# Project properties/settings
+#--------------------------------------------------------------------------
+set_global_assignment -name FAMILY "MAX 10"
+set_global_assignment -name DEVICE 10M04SAU169I7G
+set_global_assignment -name TOP_LEVEL_ENTITY mb_cpld
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION 18.1.0
+set_global_assignment -name PROJECT_CREATION_TIME_DATE "12:02:17  FEBRUARY 20, 2019"
+set_global_assignment -name LAST_QUARTUS_VERSION "20.1.0 Standard Edition"
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP "-40"
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 100
+set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 256
+set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
+set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
+set_global_assignment -name FLOW_ENABLE_POWER_ANALYZER ON
+set_global_assignment -name POWER_DEFAULT_INPUT_IO_TOGGLE_RATE "12.5 %"
+set_global_assignment -name ENABLE_OCT_DONE OFF
+set_global_assignment -name ENABLE_CONFIGURATION_PINS OFF
+set_global_assignment -name ENABLE_JTAG_PIN_SHARING ON
+set_global_assignment -name GENERATE_SVF_FILE OFF
+set_global_assignment -name USE_CONFIGURATION_DEVICE OFF
+set_global_assignment -name CRC_ERROR_OPEN_DRAIN OFF
+set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -rise
+set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -fall
+set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -rise
+set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -fall
+
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
+set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+
+set_global_assignment -name NUM_PARALLEL_PROCESSORS 2
+
+#--------------------------------------------------------------------------
+# Pin constraints
+#--------------------------------------------------------------------------
+
+# Clocking.
+#------------------------------------------
+
+# CPLD's PLL reference clock.
+set_location_assignment PIN_H6 -to PLL_REF_CLK
+set_location_assignment PIN_G5 -to "PLL_REF_CLK(n)"
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL LVPECL" -to PLL_REF_CLK
+
+# Reliable clock (100 MHz).
+set_location_assignment PIN_H4 -to CLK_100
+set_location_assignment PIN_H5 -to "CLK_100(n)"
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL LVPECL" -to CLK_100
+
+# Power supply clocks.
+set_location_assignment PIN_H8 -to PWR_SUPPLY_CLK_CORE
+set_location_assignment PIN_H9 -to PWR_SUPPLY_CLK_DDR4_S
+set_location_assignment PIN_G12 -to PWR_SUPPLY_CLK_DDR4_N
+set_location_assignment PIN_L13 -to PWR_SUPPLY_CLK_0P9V
+set_location_assignment PIN_G13 -to PWR_SUPPLY_CLK_1P8V
+set_location_assignment PIN_K10 -to PWR_SUPPLY_CLK_2P5V
+set_location_assignment PIN_J10 -to PWR_SUPPLY_CLK_3P3V
+set_location_assignment PIN_L12 -to PWR_SUPPLY_CLK_3P6V
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to PWR_SUPPLY_CLK_0P9V
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to PWR_SUPPLY_CLK_1P8V
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to PWR_SUPPLY_CLK_2P5V
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to PWR_SUPPLY_CLK_3P3V
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to PWR_SUPPLY_CLK_3P6V
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to PWR_SUPPLY_CLK_CORE
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to PWR_SUPPLY_CLK_DDR4_N
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to PWR_SUPPLY_CLK_DDR4_S
+
+# Oscillator power supply
+set_location_assignment PIN_L2 -to PWR_EN_5V_OSC_100
+set_location_assignment PIN_N2 -to PWR_EN_5V_OSC_122_88
+set_instance_assignment -name IO_STANDARD "2.5 V" -to PWR_EN_5V_OSC_100
+set_instance_assignment -name IO_STANDARD "2.5 V" -to PWR_EN_5V_OSC_122_88
+
+
+# Interfaces from/to RFSoC.
+#------------------------------------------
+
+# PL SPI slave interface.
+set_location_assignment PIN_G2 -to PL_CPLD_SCLK
+set_location_assignment PIN_F5 -to PL_CPLD_MOSI
+set_location_assignment PIN_F6 -to PL_CPLD_MISO
+set_location_assignment PIN_G1 -to PL_CPLD_CS_N[0]
+set_location_assignment PIN_G4 -to PL_CPLD_CS_N[1]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to PL_CPLD_SCLK
+set_instance_assignment -name IO_STANDARD "1.8 V" -to PL_CPLD_MOSI
+set_instance_assignment -name IO_STANDARD "1.8 V" -to PL_CPLD_MISO
+set_instance_assignment -name IO_STANDARD "1.8 V" -to PL_CPLD_CS_N[0]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to PL_CPLD_CS_N[1]
+
+# IRQ to PL.
+set_location_assignment PIN_F4 -to PL_CPLD_IRQ
+set_instance_assignment -name IO_STANDARD "1.8 V" -to PL_CPLD_IRQ
+
+# PS SPI slave interface.
+set_location_assignment PIN_E3 -to PS_CPLD_SCLK
+set_location_assignment PIN_E1 -to PS_CPLD_MOSI
+set_location_assignment PIN_F1 -to PS_CPLD_MISO
+set_location_assignment PIN_B1 -to PS_CPLD_CS_N[0]
+set_location_assignment PIN_C1 -to PS_CPLD_CS_N[1]
+set_location_assignment PIN_E4 -to PS_CPLD_CS_N[2]
+set_location_assignment PIN_D1 -to PS_CPLD_CS_N[3]
+set_instance_assignment -name IO_STANDARD "1.8-V" -to PS_CPLD_SCLK
+set_instance_assignment -name IO_STANDARD "1.8-V" -to PS_CPLD_MOSI
+set_instance_assignment -name IO_STANDARD "1.8-V" -to PS_CPLD_MISO
+set_instance_assignment -name IO_STANDARD "1.8-V" -to PS_CPLD_CS_N[0]
+set_instance_assignment -name IO_STANDARD "1.8-V" -to PS_CPLD_CS_N[1]
+set_instance_assignment -name IO_STANDARD "1.8-V" -to PS_CPLD_CS_N[2]
+set_instance_assignment -name IO_STANDARD "1.8-V" -to PS_CPLD_CS_N[3]
+
+
+# PL Interfaces to/from motherboard.
+#------------------------------------------
+
+# White Rabbit DAC SPI master interface.
+set_location_assignment PIN_A12 -to CLK_DB_SCLK
+set_location_assignment PIN_B13 -to CLK_DB_MOSI
+set_location_assignment PIN_D12 -to CLK_DB_MISO
+set_location_assignment PIN_D9 -to  CLK_DB_CS_N
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to CLK_DB_SCLK
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to CLK_DB_MOSI
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to CLK_DB_MISO
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to CLK_DB_CS_N
+
+# iPASS interfaces.
+set_location_assignment PIN_A6 -to IPASS_SCL[0]
+set_location_assignment PIN_H2 -to IPASS_SCL[1]
+set_location_assignment PIN_A7 -to IPASS_SDA[0]
+set_location_assignment PIN_H3 -to IPASS_SDA[1]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to IPASS_SCL[0]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to IPASS_SCL[1]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to IPASS_SDA[0]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to IPASS_SDA[1]
+
+set_location_assignment PIN_B11 -to IPASS_PRESENT_N[0]
+set_location_assignment PIN_F8  -to IPASS_PRESENT_N[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to IPASS_PRESENT_N[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to IPASS_PRESENT_N[1]
+
+# QSFP LEDs.
+set_location_assignment PIN_E12 -to QSFP0_LED_ACTIVE[0]
+set_location_assignment PIN_F12 -to QSFP0_LED_ACTIVE[1]
+set_location_assignment PIN_E9 -to QSFP0_LED_ACTIVE[2]
+set_location_assignment PIN_J1 -to QSFP0_LED_ACTIVE[3]
+set_location_assignment PIN_F10 -to QSFP0_LED_LINK[0]
+set_location_assignment PIN_F9 -to QSFP0_LED_LINK[1]
+set_location_assignment PIN_N11 -to QSFP0_LED_LINK[2]
+set_location_assignment PIN_D13 -to QSFP0_LED_LINK[3]
+set_location_assignment PIN_M1 -to QSFP1_LED_ACTIVE[0]
+set_location_assignment PIN_N3 -to QSFP1_LED_ACTIVE[1]
+set_location_assignment PIN_L3 -to QSFP1_LED_ACTIVE[2]
+set_location_assignment PIN_K2 -to QSFP1_LED_ACTIVE[3]
+set_location_assignment PIN_M2 -to QSFP1_LED_LINK[0]
+set_location_assignment PIN_M3 -to QSFP1_LED_LINK[1]
+set_location_assignment PIN_K1 -to QSFP1_LED_LINK[2]
+set_location_assignment PIN_L1 -to QSFP1_LED_LINK[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to QSFP0_LED_ACTIVE[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to QSFP0_LED_ACTIVE[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to QSFP0_LED_ACTIVE[2]
+set_instance_assignment -name IO_STANDARD "2.5 V"        -to QSFP0_LED_ACTIVE[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to QSFP0_LED_LINK[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to QSFP0_LED_LINK[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to QSFP0_LED_LINK[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to QSFP0_LED_LINK[3]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to QSFP1_LED_ACTIVE[0]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to QSFP1_LED_ACTIVE[1]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to QSFP1_LED_ACTIVE[2]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to QSFP1_LED_ACTIVE[3]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to QSFP1_LED_LINK[0]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to QSFP1_LED_LINK[1]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to QSFP1_LED_LINK[2]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to QSFP1_LED_LINK[3]
+
+# DIO direction control.
+set_location_assignment PIN_N12 -to DIO_DIRECTION_A[0]
+set_location_assignment PIN_N10 -to DIO_DIRECTION_A[1]
+set_location_assignment PIN_N9 -to DIO_DIRECTION_A[2]
+set_location_assignment PIN_M4 -to DIO_DIRECTION_A[3]
+set_location_assignment PIN_M5 -to DIO_DIRECTION_A[4]
+set_location_assignment PIN_N4 -to DIO_DIRECTION_A[5]
+set_location_assignment PIN_N5 -to DIO_DIRECTION_A[6]
+set_location_assignment PIN_N7 -to DIO_DIRECTION_A[7]
+set_location_assignment PIN_N8 -to DIO_DIRECTION_A[8]
+set_location_assignment PIN_M8 -to DIO_DIRECTION_A[9]
+set_location_assignment PIN_M9 -to DIO_DIRECTION_A[10]
+set_location_assignment PIN_M13 -to DIO_DIRECTION_A[11]
+set_location_assignment PIN_L5 -to DIO_DIRECTION_B[0]
+set_location_assignment PIN_L4 -to DIO_DIRECTION_B[1]
+set_location_assignment PIN_K5 -to DIO_DIRECTION_B[2]
+set_location_assignment PIN_J5 -to DIO_DIRECTION_B[3]
+set_location_assignment PIN_N6 -to DIO_DIRECTION_B[4]
+set_location_assignment PIN_M7 -to DIO_DIRECTION_B[5]
+set_location_assignment PIN_J6 -to DIO_DIRECTION_B[6]
+set_location_assignment PIN_K6 -to DIO_DIRECTION_B[7]
+set_location_assignment PIN_J7 -to DIO_DIRECTION_B[8]
+set_location_assignment PIN_K7 -to DIO_DIRECTION_B[9]
+set_location_assignment PIN_M12 -to DIO_DIRECTION_B[10]
+set_location_assignment PIN_M11 -to DIO_DIRECTION_B[11]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DIO_DIRECTION_A[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DIO_DIRECTION_A[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DIO_DIRECTION_A[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DIO_DIRECTION_A[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DIO_DIRECTION_A[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DIO_DIRECTION_A[5]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DIO_DIRECTION_A[6]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DIO_DIRECTION_A[7]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DIO_DIRECTION_A[8]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DIO_DIRECTION_A[9]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DIO_DIRECTION_A[10]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DIO_DIRECTION_A[11]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DIO_DIRECTION_B[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DIO_DIRECTION_B[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DIO_DIRECTION_B[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DIO_DIRECTION_B[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DIO_DIRECTION_B[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DIO_DIRECTION_B[5]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DIO_DIRECTION_B[6]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DIO_DIRECTION_B[7]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DIO_DIRECTION_B[8]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DIO_DIRECTION_B[9]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DIO_DIRECTION_B[10]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DIO_DIRECTION_B[11]
+
+
+# PS Interfaces to/from motherboard.
+#------------------------------------------
+
+# LMK04832 SPI master interface.
+set_location_assignment PIN_J9 -to LMK32_SCLK
+set_location_assignment PIN_H13 -to LMK32_MOSI
+set_location_assignment PIN_L11 -to LMK32_MISO
+set_location_assignment PIN_J13 -to LMK32_CS_N
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to LMK32_SCLK
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to LMK32_MOSI
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to LMK32_MISO
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to LMK32_CS_N
+
+# TPM 2.0 SPI master interface.
+set_location_assignment PIN_D11 -to TPM_SCLK
+set_location_assignment PIN_E10 -to TPM_MOSI
+set_location_assignment PIN_C13 -to TPM_MISO
+set_location_assignment PIN_L10 -to TPM_CS_N
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TPM_SCLK
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TPM_MOSI
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TPM_MISO
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TPM_CS_N
+
+# Phase DAC SPI master interface.
+set_location_assignment PIN_K8 -to PHASE_DAC_SCLK
+set_location_assignment PIN_J8 -to PHASE_DAC_MOSI
+set_location_assignment PIN_M10 -to PHASE_DAC_CS_N
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to PHASE_DAC_SCLK
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to PHASE_DAC_MOSI
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to PHASE_DAC_CS_N
+
+# Daughterboards' JTAG master interfaces.
+set_location_assignment PIN_J12 -to DB_JTAG_TCK[0]
+set_location_assignment PIN_G9 -to DB_JTAG_TCK[1]
+set_location_assignment PIN_K12 -to DB_JTAG_TDI[0]
+set_location_assignment PIN_E13 -to DB_JTAG_TDI[1]
+set_location_assignment PIN_H10 -to DB_JTAG_TDO[0]
+set_location_assignment PIN_F13 -to DB_JTAG_TDO[1]
+set_location_assignment PIN_K11 -to DB_JTAG_TMS[0]
+set_location_assignment PIN_G10 -to DB_JTAG_TMS[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DB_JTAG_TCK[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DB_JTAG_TCK[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DB_JTAG_TDI[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DB_JTAG_TDI[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DB_JTAG_TDO[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DB_JTAG_TDO[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DB_JTAG_TMS[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DB_JTAG_TMS[1]
+
+# Daughterboards' Calibration EEPROM SPI interfaces.
+set_location_assignment PIN_C9 -to DB_CALEEPROM_CS_N[0]
+set_location_assignment PIN_B9 -to DB_CALEEPROM_MISO[0]
+set_location_assignment PIN_B10 -to DB_CALEEPROM_MOSI[0]
+set_location_assignment PIN_A10 -to DB_CALEEPROM_SCLK[0]
+
+set_location_assignment PIN_B5 -to DB_CALEEPROM_MOSI[1]
+set_location_assignment PIN_B6 -to DB_CALEEPROM_SCLK[1]
+set_location_assignment PIN_B4 -to DB_CALEEPROM_MISO[1]
+set_location_assignment PIN_B3 -to DB_CALEEPROM_CS_N[1]
+
+set_instance_assignment -name IO_STANDARD "1.8 V" -to DB_CALEEPROM_CS_N[0]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to DB_CALEEPROM_MISO[0]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to DB_CALEEPROM_MOSI[0]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to DB_CALEEPROM_SCLK[0]
+
+set_instance_assignment -name IO_STANDARD "1.8 V" -to DB_CALEEPROM_MOSI[1]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to DB_CALEEPROM_SCLK[1]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to DB_CALEEPROM_MISO[1]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to DB_CALEEPROM_CS_N[1]
+
+# Daughterboards' Control interfaces.
+set_location_assignment PIN_C10 -to DB_CTRL_SCLK[0]
+set_location_assignment PIN_A9 -to DB_CTRL_MISO[0]
+set_location_assignment PIN_A8 -to DB_ARST[0]
+set_location_assignment PIN_A11 -to DB_CTRL_CS_N[0]
+set_location_assignment PIN_E8 -to DB_CTRL_MOSI[0]
+set_location_assignment PIN_D8 -to DB_REF_CLK[0]
+
+set_location_assignment PIN_A3 -to DB_REF_CLK[1]
+set_location_assignment PIN_A4 -to DB_CTRL_MISO[1]
+set_location_assignment PIN_D6 -to DB_CTRL_CS_N[1]
+set_location_assignment PIN_E6 -to DB_CTRL_SCLK[1]
+set_location_assignment PIN_A5 -to DB_CTRL_MOSI[1]
+set_location_assignment PIN_B2 -to DB_ARST[1]
+
+set_instance_assignment -name IO_STANDARD "1.8 V" -to DB_CTRL_SCLK[0]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to DB_CTRL_MISO[0]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to DB_ARST[0]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to DB_CTRL_CS_N[0]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to DB_CTRL_MOSI[0]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to DB_REF_CLK[0]
+
+set_instance_assignment -name IO_STANDARD "1.8 V" -to DB_REF_CLK[1]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to DB_CTRL_MISO[1]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to DB_CTRL_CS_N[1]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to DB_CTRL_SCLK[1]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to DB_CTRL_MOSI[1]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to DB_ARST[1]
+
+
+# Miscellaneous.
+#------------------------------------------
+
+# Power supply clocks switch.
+set_location_assignment PIN_J2 -to PS_CLK_ON_CPLD
+set_instance_assignment -name IO_STANDARD "2.5 V" -to PS_CLK_ON_CPLD
+
+# iPASS misc.
+set_location_assignment PIN_B12 -to IPASS_POWER_DISABLE
+set_location_assignment PIN_C11 -to IPASS_POWER_EN_FAULT[0]
+set_location_assignment PIN_C12 -to IPASS_POWER_EN_FAULT[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to IPASS_POWER_DISABLE
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to IPASS_POWER_EN_FAULT[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to IPASS_POWER_EN_FAULT[1]
+
+# PCIe reset to FPGA.
+set_location_assignment PIN_A2 -to PCIE_RESET
+set_instance_assignment -name IO_STANDARD "1.8 V" -to PCIE_RESET
+
+# TPM reset.
+set_location_assignment PIN_K13 -to TPM_RESET_n
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to TPM_RESET_n
+
+# File list.
+set_global_assignment -name EXTERNAL_FLASH_FALLBACK_ADDRESS 00000000
+set_global_assignment -name INTERNAL_FLASH_UPDATE_MODE "SINGLE COMP IMAGE"
+set_global_assignment -name EN_USER_IO_WEAK_PULLUP OFF
+set_global_assignment -name EN_SPI_IO_WEAK_PULLUP OFF
+
+set_global_assignment -name VHDL_FILE ../ip/cmi/PcieCmiWrapper.vhd
+set_global_assignment -name VHDL_FILE ../ip/cmi/PcieCmi.vhd
+set_global_assignment -name QSYS_FILE ../ip/clkctrl/clkctrl.qsys
+set_global_assignment -name QSYS_FILE ../ip/on_chip_flash/on_chip_flash.qsys
+set_global_assignment -name SDC_FILE ../db_spi_shared_constants.sdc
+set_global_assignment -name SDC_FILE ../mb_cpld.sdc
+set_global_assignment -name VERILOG_FILE ../reconfig_engine.v
+set_global_assignment -name VERILOG_FILE ../mb_cpld.v
+set_global_assignment -name VERILOG_FILE ../ctrlport_to_spi.v
+set_global_assignment -name VERILOG_FILE ../ctrlport_to_jtag.v
+set_global_assignment -name VERILOG_FILE ../pl_cpld_regs.v
+set_global_assignment -name VERILOG_FILE ../pwr_supply_clk_gen.v
+set_global_assignment -name VERILOG_FILE ../ps_cpld_regs.v
+set_global_assignment -name VERILOG_FILE ../ps_power_regs.v
+set_global_assignment -name VERILOG_FILE ../reset_generator.v
+set_global_assignment -name VERILOG_FILE ../spi_slave_to_ctrlport_master.v
+set_global_assignment -name VERILOG_FILE ../spi_slave.v
+set_global_assignment -name QIP_FILE ../ip/pll/pll.qip
+set_global_assignment -name VERILOG_FILE ../../../../lib/control/synchronizer_impl.v
+set_global_assignment -name VERILOG_FILE ../../../../lib/control/synchronizer.v
+set_global_assignment -name VERILOG_FILE ../../../../lib/rfnoc/utils/ctrlport_splitter.v
+set_global_assignment -name VERILOG_FILE ../../../../lib/rfnoc/utils/ctrlport_terminator.v
+set_global_assignment -name VERILOG_FILE ../../../../lib/wb_spi/rtl/verilog/spi_top.v
+set_global_assignment -name VERILOG_FILE ../../../../lib/wb_spi/rtl/verilog/spi_shift.v
+set_global_assignment -name VERILOG_FILE ../../../../lib/wb_spi/rtl/verilog/spi_defines.v
+set_global_assignment -name VERILOG_FILE ../../../../lib/wb_spi/rtl/verilog/spi_clgen.v
+set_global_assignment -name VERILOG_FILE ../../../../lib/control/pulse_synchronizer.v
+set_global_assignment -name VERILOG_FILE ../../../../lib/control/handshake.v
+set_global_assignment -name VHDL_FILE ../../../../lib/vivado_ipi/axi_bitq/bitq_fsm.vhd
+set_global_assignment -name VHDL_FILE ../../../../lib/vivado_ipi/axi_bitq/axi_bitq.vhd
+set_global_assignment -name QIP_FILE ../ip/oddr/oddr.qip
+set_global_assignment -name SOURCE_FILE db/mb_cpld.cmp.rdb
+set_global_assignment -name PARTITION_NETLIST_TYPE POST_FIT -section_id "PcieCmi:PcieCmix"
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id "PcieCmi:PcieCmix"
+set_global_assignment -name PARTITION_COLOR 52377 -section_id "PcieCmi:PcieCmix"
+set_global_assignment -name PARTITION_IMPORT_FILE ../ip/cmi/PcieCmi.qxp -section_id "PcieCmi:PcieCmix"
+set_global_assignment -name PARTITION_LAST_IMPORTED_FILE ip/cmi/PcieCmi.qxp -section_id "PcieCmi:PcieCmix"
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+set_instance_assignment -name PARTITION_HIERARCHY pciec_5b6b1 -to "PcieCmiWrapper:pcie_cmi_inst|PcieCmi:PcieCmix" -section_id "PcieCmi:PcieCmix"

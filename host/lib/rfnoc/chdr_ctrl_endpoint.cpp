@@ -12,6 +12,7 @@
 #include <uhdlib/rfnoc/chdr_ctrl_endpoint.hpp>
 #include <uhdlib/rfnoc/chdr_packet_writer.hpp>
 #include <boost/format.hpp>
+#include <boost/thread.hpp>
 #include <atomic>
 #include <mutex>
 #include <thread>
@@ -31,6 +32,7 @@ public:
         sep_id_t my_epid)
         : _my_epid(my_epid)
         , _xport(xport)
+        , _num_drops(0)
         , _send_pkt(pkt_factory.make_ctrl())
         , _recv_pkt(pkt_factory.make_ctrl())
         , _stop_recv_thread(false)
@@ -134,11 +136,23 @@ private:
                     _recv_pkt->refresh(buff->data());
                     const ctrl_payload payload = _recv_pkt->get_payload();
                     ep_map_key_t key{payload.src_epid, payload.dst_port};
-                    if (_endpoint_map.find(key) != _endpoint_map.end()) {
-                        _endpoint_map.at(key)->handle_recv(payload);
+                    auto ep_iter = _endpoint_map.find(key);
+                    if (ep_iter != _endpoint_map.end()) {
+                        ep_iter->second->handle_recv(payload);
+                    } else {
+                        UHD_LOG_WARNING("RFNOC",
+                            "chdr_ctrl_endpoint: Received async message for unknown "
+                            "destination. Source EPID: "
+                                << payload.src_epid
+                                << " Destination Port: " << payload.dst_port);
+                        _num_drops++;
                     }
                 } catch (...) {
                     // Ignore all errors
+                    UHD_LOG_DEBUG("RFNOC",
+                        "chdr_ctrl_endpoint: Unidentified error in async message handler "
+                        "loop.");
+                    _num_drops++;
                 }
                 _xport->release_recv_buff(std::move(buff));
             } else {
@@ -169,8 +183,9 @@ private:
     chdr_ctrl_xport::sptr _xport;
     // The curent sequence number for a send packet
     size_t _send_seqnum = 0;
-    // The number of packets dropped
-    size_t _num_drops = 0;
+    // The number of packets dropped due to misclassification. See also
+    // get_num_drops()
+    std::atomic<size_t> _num_drops;
     // Packet containers
     chdr_ctrl_packet::uptr _send_pkt;
     chdr_ctrl_packet::cuptr _recv_pkt;

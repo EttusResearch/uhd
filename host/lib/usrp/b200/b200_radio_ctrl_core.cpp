@@ -14,9 +14,8 @@
 #include <uhd/utils/safe_call.hpp>
 #include <uhdlib/usrp/common/async_packet_handler.hpp>
 #include <boost/format.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/thread.hpp>
 #include <functional>
+#include <mutex>
 #include <queue>
 
 using namespace uhd;
@@ -74,14 +73,14 @@ public:
      ******************************************************************/
     void poke32(const wb_addr_type addr, const uint32_t data) override
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         this->send_pkt(addr / 4, data);
         this->wait_for_ack(false);
     }
 
     uint32_t peek32(const wb_addr_type addr) override
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         this->send_pkt(SR_READBACK, addr / 8);
         const uint64_t res = this->wait_for_ack(true);
         const uint32_t lo  = uint32_t(res & 0xffffffff);
@@ -91,7 +90,7 @@ public:
 
     uint64_t peek64(const wb_addr_type addr) override
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         this->send_pkt(SR_READBACK, addr / 8);
         return this->wait_for_ack(true);
     }
@@ -101,7 +100,7 @@ public:
      ******************************************************************/
     void set_time(const uhd::time_spec_t& time) override
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         _time     = time;
         _use_time = _time != uhd::time_spec_t(0.0);
         if (_use_time)
@@ -110,13 +109,13 @@ public:
 
     uhd::time_spec_t get_time(void) override
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         return _time;
     }
 
     void set_tick_rate(const double rate) override
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         _tick_rate = rate;
     }
 
@@ -327,7 +326,7 @@ private:
     uhd::msg_task::sptr _async_task;
     const uint32_t _sid;
     const std::string _name;
-    boost::mutex _mutex;
+    std::mutex _mutex;
     size_t _seq_out;
     uhd::time_spec_t _time;
     bool _use_time;

@@ -157,7 +157,7 @@ BOOST_FIXTURE_TEST_CASE(replay_test_construction, replay_block_fixture)
         BOOST_CHECK_EQUAL(reg_iface->write_memory[reg_play_base_addr], 0);
         BOOST_CHECK_EQUAL(reg_iface->write_memory[reg_play_base_addr + 4], 0);
         BOOST_CHECK_EQUAL(reg_iface->write_memory[reg_words_per_pkt],
-            (DEFAULT_MTU - CHDR_MAX_LEN_HDR) / word_size);
+            (DEFAULT_MTU - test_replay->get_chdr_hdr_len()) / word_size);
         BOOST_CHECK_EQUAL(reg_iface->write_memory[reg_play_item_size], default_item_size);
     }
 }
@@ -353,18 +353,20 @@ BOOST_FIXTURE_TEST_CASE(replay_test_configure_play, replay_block_fixture)
 }
 
 /*
- * This test case ensures that the hardware is programmed correctly throough the playback
+ * This test case ensures that the hardware is programmed correctly through the playback
  * packet API calls.
  */
 BOOST_FIXTURE_TEST_CASE(replay_test_packet_size, replay_block_fixture)
 {
     for (size_t port = 0; port < num_output_ports; port++) {
         // Test the defaults
-        const uint32_t default_ipp = DEFAULT_SPP;
-        BOOST_CHECK_EQUAL(test_replay->get_max_items_per_packet(port), default_ipp);
-
-        const uint32_t item_size           = test_replay->get_play_item_size(port);
-        const uint32_t default_packet_size = default_ipp * item_size + CHDR_MAX_LEN_HDR;
+        const uint32_t item_size = test_replay->get_play_item_size(port);
+        const uint32_t expected_ipp =
+            test_replay->get_max_payload_size({res_source_info::OUTPUT_EDGE, port})
+            / item_size;
+        BOOST_CHECK_EQUAL(test_replay->get_max_items_per_packet(port), expected_ipp);
+        const uint32_t default_packet_size =
+            expected_ipp * item_size + test_replay->get_chdr_hdr_len();
         BOOST_CHECK_EQUAL(test_replay->get_max_packet_size(port), default_packet_size);
     }
 
@@ -374,7 +376,7 @@ BOOST_FIXTURE_TEST_CASE(replay_test_packet_size, replay_block_fixture)
         BOOST_CHECK_EQUAL(test_replay->get_max_items_per_packet(port), ipp);
 
         const uint32_t item_size   = test_replay->get_play_item_size(port);
-        const uint32_t packet_size = ipp * item_size + CHDR_MAX_LEN_HDR;
+        const uint32_t packet_size = ipp * item_size + test_replay->get_chdr_hdr_len();
         BOOST_CHECK_EQUAL(test_replay->get_max_packet_size(port), packet_size);
 
         const uint32_t wpp = ipp * item_size / word_size;

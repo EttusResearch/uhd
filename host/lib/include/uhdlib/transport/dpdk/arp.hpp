@@ -13,14 +13,14 @@ namespace uhd { namespace transport { namespace dpdk {
 
 struct arp_request
 {
-    struct ether_addr tha;
+    struct rte_ether_addr tha;
     port_id_t port;
-    ipv4_addr tpa;
+    rte_ipv4_addr tpa;
 };
 
 struct arp_entry
 {
-    struct ether_addr mac_addr;
+    struct rte_ether_addr mac_addr;
     std::vector<wait_req*> reqs;
 };
 

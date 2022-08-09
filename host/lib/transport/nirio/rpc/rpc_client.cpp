@@ -8,7 +8,6 @@
 #include <uhd/transport/nirio/rpc/rpc_client.hpp>
 #include <uhdlib/utils/narrow.hpp>
 #include <boost/asio/error.hpp>
-#include <boost/bind.hpp>
 #include <boost/format.hpp>
 #include <boost/version.hpp>
 
@@ -109,7 +108,7 @@ const boost::system::error_code& rpc_client::call(func_id_t func_id,
     func_args_reader_t& out_args,
     boost::posix_time::milliseconds timeout)
 {
-    boost::mutex::scoped_lock lock(_mutex);
+    std::unique_lock<std::mutex> lock(_mutex);
 
     if (_io_service_thread.get()) {
         _request.header.func_id = func_id;
@@ -168,7 +167,7 @@ const boost::system::error_code& rpc_client::call(func_id_t func_id,
 void rpc_client::_handle_response_hdr(
     const boost::system::error_code& err, size_t transferred, size_t expected)
 {
-    boost::mutex::scoped_lock lock(_mutex);
+    std::lock_guard<std::mutex> lock(_mutex);
     _exec_err = err;
     if (!_exec_err && (transferred == expected)) {
         // Response header received. Verify that it is expected
@@ -205,7 +204,7 @@ void rpc_client::_handle_response_hdr(
 void rpc_client::_handle_response_data(
     const boost::system::error_code& err, size_t transferred, size_t expected)
 {
-    boost::mutex::scoped_lock lock(_mutex);
+    std::lock_guard<std::mutex> lock(_mutex);
     _exec_err = err;
     if (transferred != expected) {
         _exec_err.assign(boost::asio::error::operation_aborted,

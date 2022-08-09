@@ -40,6 +40,25 @@ namespace uhd { namespace rfnoc {
  * achieve the best throughput to the downstream block without exceeding the supported
  * packet size. The maximum packet size can be explicitly set in terms of bytes or
  * number of items to allow users to tune the performance to suit their application.
+ *
+ * \section rfnoc_block_replay_properties Block Properties
+ *
+ * User Properties:
+ *
+ * | Key            | Description
+ * |---------------:|---------------------------------------------------------
+ * | record_offset  | The base address for recordings (data will be written here). Will be set by record().
+ * | record_size    | Size of the record buffer. Will be set by record().
+ * | play_offset    | Base address for playback (streaming will start from here). Set by play() or config_play().
+ * | play_size      | Size of the playback buffer. Set by play() or config_play().
+ * | packet_size    | Size of outgoing packets (in bytes). Gets set by set_max_items_per_packet().
+ *
+ * Edge properties:
+ *
+ * | Key   | Description
+ * |------:|-------------------------------------------------------------------
+ * | type  | Data type. On the input, it set by the upstream block (see get_record_type()). For output, it should be provided by set_play_type().
+ *
  */
 class UHD_API replay_block_control : public noc_block_base
 {
@@ -297,7 +316,8 @@ public:
 
     /*! Set the maximum size of a packet
      *
-     * Sets the maximum packet size, inclusive of headers and payload.
+     * Sets the maximum packet size, inclusive of headers and payload. Cannot
+     * exceed the MTU for this block.
      *
      * \param size The size of the packet
      * \param port Which output port of the replay block to use

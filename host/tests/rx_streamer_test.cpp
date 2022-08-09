@@ -96,9 +96,19 @@ public:
         _recv_link->release_recv_buff(std::move(buff));
     }
 
+    size_t get_mtu() const
+    {
+        return _recv_link->get_recv_frame_size();
+    }
+
+    size_t get_chdr_hdr_len() const
+    {
+        return sizeof(mock_header_t);
+    }
+
     size_t get_max_payload_size() const
     {
-        return _recv_link->get_recv_frame_size() - sizeof(packet_info_t);
+        return get_mtu() - get_chdr_hdr_len();
     }
 
 private:

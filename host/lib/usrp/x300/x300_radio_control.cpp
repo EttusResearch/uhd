@@ -876,7 +876,8 @@ public:
         if (get_tree()->exists(iq_balance_path)) {
             get_tree()->access<bool>(iq_balance_path).set(enb);
         } else {
-            RFNOC_LOG_WARNING("Setting RX IQ Balance is not possible on this device.");
+            RFNOC_LOG_WARNING(
+                "Setting automatic RX IQ Balance is not possible on this device.");
         }
     }
 
@@ -886,7 +887,8 @@ public:
         if (get_tree()->exists(iq_balance_path)) {
             get_tree()->access<std::complex<double>>(iq_balance_path).set(correction);
         } else {
-            RFNOC_LOG_WARNING("Setting RX IQ Balance is not possible on this device.");
+            RFNOC_LOG_WARNING(
+                "Setting manual RX IQ Balance is not possible on this device.");
         }
     }
 

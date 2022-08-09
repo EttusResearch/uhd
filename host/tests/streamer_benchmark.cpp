@@ -76,9 +76,19 @@ public:
         _buff = std::move(buff);
     }
 
-    size_t get_max_payload_size() const
+    size_t get_mtu() const
     {
         return _buff_size;
+    }
+
+    size_t get_chdr_hdr_len() const
+    {
+        return sizeof(packet_info_t);
+    }
+
+    size_t get_max_payload_size() const
+    {
+        return get_mtu() - sizeof(packet_info_t);
     }
 
 private:
@@ -137,10 +147,21 @@ public:
         _buff = std::move(buff);
     }
 
+    size_t get_mtu() const
+    {
+        return _buff_size;
+    }
+
+    size_t get_chdr_hdr_len() const
+    {
+        return sizeof(packet_info_t);
+    }
+
     size_t get_max_payload_size() const
     {
-        return _buff_size - sizeof(packet_info_t);
+        return get_mtu() - sizeof(packet_info_t);
     }
+
 
 private:
     size_t _buff_size;

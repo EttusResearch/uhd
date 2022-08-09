@@ -61,7 +61,7 @@ nirio_status nirio_fifo<data_t>::initialize(
 {
     nirio_status status = NiRio_Status_Success;
     if (!_riok_proxy_ptr) return NiRio_Status_ResourceNotInitialized;
-    boost::unique_lock<boost::recursive_mutex> lock(_mutex);
+    std::unique_lock<std::recursive_mutex> lock(_mutex);
 
     if (_state == UNMAPPED) {
 
@@ -101,7 +101,7 @@ nirio_status nirio_fifo<data_t>::initialize(
 template <typename data_t>
 void nirio_fifo<data_t>::finalize()
 {
-    boost::unique_lock<boost::recursive_mutex> lock(_mutex);
+    std::unique_lock<std::recursive_mutex> lock(_mutex);
 
     //If the FIFO is started, the stop will change the state to MAPPED.
     stop();
@@ -200,7 +200,7 @@ nirio_status nirio_fifo<data_t>::start()
     nirio_status status = NiRio_Status_Success;
     if (!_riok_proxy_ptr) return NiRio_Status_ResourceNotInitialized;
 
-    boost::unique_lock<boost::recursive_mutex> lock(_mutex);
+    std::unique_lock<std::recursive_mutex> lock(_mutex);
 
     if (_state == STARTED) {
         //Do nothing. Already started.
@@ -237,7 +237,7 @@ nirio_status nirio_fifo<data_t>::stop()
     nirio_status status = NiRio_Status_Success;
     if (!_riok_proxy_ptr) return NiRio_Status_ResourceNotInitialized;
 
-    boost::unique_lock<boost::recursive_mutex> lock(_mutex);
+    std::unique_lock<std::recursive_mutex> lock(_mutex);
 
     if (_state == STARTED) {
 
@@ -266,7 +266,7 @@ nirio_status nirio_fifo<data_t>::acquire(
     nirio_status status = NiRio_Status_Success;
     if (!_riok_proxy_ptr || _mem_map.is_null()) return NiRio_Status_ResourceNotInitialized;
 
-    boost::unique_lock<boost::recursive_mutex> lock(_mutex);
+    std::unique_lock<std::recursive_mutex> lock(_mutex);
 
     if (_state == STARTED) {
 
@@ -320,7 +320,7 @@ nirio_status nirio_fifo<data_t>::release(const size_t elements)
     nirio_status status = NiRio_Status_Success;
     if (!_riok_proxy_ptr) return NiRio_Status_ResourceNotInitialized;
 
-    boost::unique_lock<boost::recursive_mutex> lock(_mutex);
+    std::unique_lock<std::recursive_mutex> lock(_mutex);
 
     if (_state == STARTED) {
         status = _riok_proxy_ptr->grant_fifo(
@@ -345,7 +345,7 @@ nirio_status nirio_fifo<data_t>::read(
     nirio_status status = NiRio_Status_Success;
     if (!_riok_proxy_ptr) return NiRio_Status_ResourceNotInitialized;
 
-    boost::unique_lock<boost::recursive_mutex> lock(_mutex);
+    std::unique_lock<std::recursive_mutex> lock(_mutex);
 
     if (_state == STARTED) {
         status = _riok_proxy_ptr->read_fifo(
@@ -375,7 +375,7 @@ nirio_status nirio_fifo<data_t>::write(
     nirio_status status = NiRio_Status_Success;
     if (!_riok_proxy_ptr) return NiRio_Status_ResourceNotInitialized;
 
-    boost::unique_lock<boost::recursive_mutex> lock(_mutex);
+    std::unique_lock<std::recursive_mutex> lock(_mutex);
 
     if (_state == STARTED) {
         status = _riok_proxy_ptr->write_fifo(

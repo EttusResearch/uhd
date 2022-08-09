@@ -14,11 +14,11 @@
 #include <uhd/utils/log.hpp>
 #include <boost/circular_buffer.hpp>
 #include <boost/format.hpp>
-#include <boost/thread/condition_variable.hpp>
-#include <boost/thread/mutex.hpp>
+#include <boost/thread/condition.hpp>
 #include <functional>
 #include <list>
 #include <memory>
+#include <mutex>
 
 using namespace uhd;
 using namespace uhd::transport;
@@ -49,8 +49,8 @@ struct lut_result_t
     int completed;
     libusb_transfer_status status;
     int actual_length;
-    boost::mutex mut;
-    boost::condition_variable usb_transfer_complete;
+    std::mutex mut;
+    boost::condition usb_transfer_complete;
 
 #ifdef UHD_TXRX_DEBUG_PRINTS
     // These are fore debugging
@@ -89,7 +89,7 @@ static void libusb1_zerocopy_dbg_print_err(std::string msg)
 static void LIBUSB_CALL libusb_async_cb(libusb_transfer* lut)
 {
     lut_result_t* r = (lut_result_t*)lut->user_data;
-    boost::lock_guard<boost::mutex> lock(r->mut);
+    std::lock_guard<std::mutex> lock(r->mut);
     r->status        = lut->status;
     r->actual_length = lut->actual_length;
     r->completed     = 1;
@@ -179,7 +179,7 @@ public:
      */
     UHD_INLINE bool wait_for_completion(const double timeout)
     {
-        boost::unique_lock<boost::mutex> lock(result.mut);
+        std::unique_lock<std::mutex> lock(result.mut);
         if (!result.completed) {
             if (timeout < 0.0) {
                 result.usb_transfer_complete.wait(lock);
@@ -313,9 +313,9 @@ public:
             return buff;
 
         // Serialize access to buffers
-        boost::mutex::scoped_lock get_buff_lock(_get_buff_mutex);
+        std::lock_guard<std::mutex> get_buff_lock(_get_buff_mutex);
 
-        boost::mutex::scoped_lock queue_lock(_queue_mutex);
+        std::unique_lock<std::mutex> queue_lock(_queue_mutex);
         if (_enqueued.empty()) {
             _buff_ready_cond.timed_wait(
                 queue_lock, boost::posix_time::microseconds(long(timeout * 1e6)));
@@ -351,9 +351,9 @@ private:
     buffer_pool::sptr _buffer_pool;
     std::vector<std::shared_ptr<libusb_zero_copy_mb>> _mb_pool;
 
-    boost::mutex _queue_mutex;
-    boost::condition_variable _buff_ready_cond;
-    boost::mutex _get_buff_mutex;
+    std::mutex _queue_mutex;
+    boost::condition _buff_ready_cond;
+    std::mutex _get_buff_mutex;
 
     //! why 2 queues? there is room in the future to have > N buffers but only N in flight
     boost::circular_buffer<libusb_zero_copy_mb*> _enqueued, _released;
@@ -362,7 +362,7 @@ private:
 
     void enqueue_buffer(libusb_zero_copy_mb* mb)
     {
-        boost::mutex::scoped_lock l(_queue_mutex);
+        std::lock_guard<std::mutex> l(_queue_mutex);
         _released.push_back(mb);
         this->submit_what_we_can();
         _buff_ready_cond.notify_one();
@@ -416,13 +416,13 @@ struct libusb_zero_copy_impl : usb_zero_copy
 
     managed_recv_buffer::sptr get_recv_buff(double timeout) override
     {
-        boost::mutex::scoped_lock l(_recv_mutex);
+        std::lock_guard<std::mutex> l(_recv_mutex);
         return _recv_impl->get_buff<managed_recv_buffer>(timeout);
     }
 
     managed_send_buffer::sptr get_send_buff(double timeout) override
     {
-        boost::mutex::scoped_lock l(_send_mutex);
+        std::lock_guard<std::mutex> l(_send_mutex);
         return _send_impl->get_buff<managed_send_buffer>(timeout);
     }
 
@@ -445,7 +445,7 @@ struct libusb_zero_copy_impl : usb_zero_copy
     }
 
     std::shared_ptr<libusb_zero_copy_single> _recv_impl, _send_impl;
-    boost::mutex _recv_mutex, _send_mutex;
+    std::mutex _recv_mutex, _send_mutex;
 };
 
 libusb_zero_copy_impl::~libusb_zero_copy_impl(void)

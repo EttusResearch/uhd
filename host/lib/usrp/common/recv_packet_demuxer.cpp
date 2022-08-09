@@ -10,8 +10,8 @@
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/usrp/common/recv_packet_demuxer.hpp>
-#include <boost/thread/mutex.hpp>
 #include <deque>
+#include <mutex>
 #include <queue>
 #include <vector>
 
@@ -59,7 +59,7 @@ public:
     managed_recv_buffer::sptr get_recv_buff(
         const size_t index, const double timeout) override
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         managed_recv_buffer::sptr buff;
 
         // there is already an entry in the queue, so pop that
@@ -104,7 +104,7 @@ public:
 private:
     transport::zero_copy_if::sptr _transport;
     const uint32_t _sid_base;
-    boost::mutex _mutex;
+    std::mutex _mutex;
     struct channel_guts_type
     {
         channel_guts_type(void) : wrapper(container) {}

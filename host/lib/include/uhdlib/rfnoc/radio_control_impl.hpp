@@ -59,6 +59,12 @@ public:
     size_t get_spc() const override;
 
     /**************************************************************************
+     * Time-Related API Calls
+     *************************************************************************/
+    uint64_t get_ticks_now() override;
+    uhd::time_spec_t get_time_now() override;
+
+    /**************************************************************************
      * RF-specific API calls
      *************************************************************************/
     // Setters
@@ -209,6 +215,10 @@ public:
     {
         static const uint32_t REG_COMPAT_NUM =
             0x00; // Compatibility number register offset
+        static const uint32_t REG_TIME_LO =
+            0x04; // Time lower bits
+        static const uint32_t REG_TIME_HI =
+            0x08; // Time upper bits
         static const uint32_t REG_RADIO_WIDTH =
             0x1000 + 0x04; // Upper 16 bits is sample width, lower 16 bits is NSPC
 
@@ -345,6 +355,15 @@ private:
     void async_message_handler(uint32_t addr,
         const std::vector<uint32_t>& data,
         boost::optional<uint64_t> timestamp);
+
+    //! Return the maximum samples per packet of size \p bytes
+    //
+    // Given a packet of size \p bytes, how many samples can we fit in there?
+    // This gives the answer, factoring in item size and samples per clock.
+    //
+    // \param bytes Number of bytes we can fill with samples (excluding bytes
+    //              required for CHDR headers!)
+    int get_max_spp(const size_t bytes);
 
     //! FPGA compat number
     const uint32_t _fpga_compat;

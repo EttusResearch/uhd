@@ -26,31 +26,42 @@ computer.
 \subsection dpdk_installation DPDK Installation Instructions
 
 As a new and developing technology, the DPDK APIs are unstable. UHD requires
-version 18.11.
+version 19.11 or 20.11.
 
-On Ubuntu 19.04/19.10, Fedora 31, or Debian Buster/Stretch (via backports),
+On Ubuntu 20.04, Fedora 33-36, or Debian Bullseye/Buster (via backports),
 DPDK is available in your distribution's repositories. For example, on Debian
 systems, it can be obtained with the following command:
 
     sudo apt install dpdk dpdk-dev
 
 Otherwise, you'll need to follow the build guide at
-https://doc.dpdk.org/guides-18.11/linux_gsg/build_dpdk.html . The software
-releases can be found at https://core.dpdk.org/download/. Note that if you
-are building and installing DPDK from source, you will need to change its
-configuration to build shared libraries in order for UHD to link successfully.
-After running `make config` or `make defconfig`, open the `build/.config` file
-in an editor and find the following line:
+https://doc.dpdk.org/guides-20.11/linux_gsg/build_dpdk.html . The software
+releases can be found at https://core.dpdk.org/download/. Version 20.11 builds
+with appropriate options when using the default build procedure.
+
+Note that if you are using a Mellanox NIC, the MLNX-OFED drivers available from
+https://www.mellanox.com/products/infiniband-drivers/linux/mlnx_ofed may be
+needed to support dpdk. 
+
+Note that if you are building and installing older versions of DPDK from source, 
+you will need to change its configuration to build shared libraries in order for 
+UHD to link successfully. After running `make config` or `make defconfig`, open 
+the `build/.config` file in an editor and find the following line:
 
     CONFIG_RTE_BUILD_SHARED_LIB=n
 
 Change the `n` to a `y` to enable the building of shared libraries, then type
 `make` to start the build.
 
+If you are using a Mellanox ConnectX 4 or later NIC, you also need to update the
+following line:
+
+    CONFIG_RTE_LIBRTE_MLX5_PMD=n
+
 \subsection dpdk_system_configuration System Configuration
 
 The official documentation regarding system configuration can be found at
-https://doc.dpdk.org/guides-18.11/linux_gsg/sys_reqs.html.
+https://doc.dpdk.org/guides-20.11/linux_gsg/sys_reqs.html.
 
 First, you'll need to enable the IOMMU and set up some hugepages. DPDK will
 completely take over all available hugepages, so don't allocate all your memory
@@ -74,6 +85,10 @@ load that driver with the following command:
 
     modprobe vfio-pci
 
+Mellanox ConnectX 4 and later NICs do not use the vfio-pci driver, so this step
+is not necessary for them. They will use the standard driver in conjunction with
+libibverbs.
+
 For NICs that require vfio-pci (like Intel's X520), you'll want to use the
 `dpdk-devbind.py` script to the vfio-pci driver. This script is shipped with
 DPDK and installed to `$prefix/share/dpdk/usertools`. If the NIC uses the
@@ -92,7 +107,7 @@ If successful, the script might provide an updated status like this:
     [...]
 
 
-See https://doc.dpdk.org/guides-18.11/linux_gsg/linux_drivers.html#binding-and-unbinding-network-ports-to-from-the-kernel-modules
+See https://doc.dpdk.org/guides-20.11/linux_gsg/linux_drivers.html#binding-and-unbinding-network-ports-to-from-the-kernel-modules
 for more details.
 
 With the hugepages, IOMMU, and drivers set up, the system is ready for DPDK to
@@ -124,14 +139,15 @@ options:
     ;automatically, you may need this argument to point it to the folder where it can find the drivers
     ;Note that DPDK will attempt to load _everything_ in that folder as a driver, so you may want to
     ;create a separate folder with symlinks to the librte_pmd_* and librte_mempool_* libraries.
-    dpdk_driver=/usr/local/lib/dpdk-pmds/
+    dpdk_driver=/usr/local/lib/x86_64-linux-gnu/dpdk/pmds-21.0/
     ;dpdk_corelist is the -l flag for the DPDK EAL. See more at the link
-    ; https://doc.dpdk.org/guides-18.11/linux_gsg/build_sample_apps.html#running-a-sample-application
+    ; https://doc.dpdk.org/guides-20.11/linux_gsg/build_sample_apps.html#running-a-sample-application
     dpdk_corelist=0,1
     ;dpdk_num_mbufs is the total number of packet buffers allocated
     ;to each direction's packet buffer pool
     ;This will be multiplied by the number of NICs, but NICs on the same
-    ;CPU socket share a pool.
+    ;CPU socket share a pool. When using Mellanox NICs, this value must be greater
+    ;than the dpdk_num_desc value in the next section.
     dpdk_num_mbufs=4096
     ;dpdk_mbuf_cache_size is the number of buffers to cache for a CPU
     ;The cache reduces the interaction with the global pool
@@ -172,6 +188,7 @@ only available on the following devices:
 - \ref page_usrp_e3xx "E320 (but not E31x) device"
 - \ref page_usrp_n3xx "N3xx devices"
 - \ref page_usrp_x3x0 "X3xx devices"
+- \ref page_usrp_x4xx "X4xx devices"
 
 \subsection dpdk_device_args Enabling DPDK with UHD Device Args
 
@@ -201,6 +218,13 @@ The timeout can be overridden by passing `dpdk_link_timeout=N` in the device
 arguments, where N is the desired timeout time in <b>milliseconds</b>, or
 by adding a `dpdk_link_timeout` entry to the
 \ref page_configfiles "UHD configuration file".
+
+\subsection dpdk_notes DPDK performance dpdk_notes
+
+With Linux kernel 5.11 on Ubuntu 20.04, we have observed periodic underruns
+on systems that otherwise have no issues. The behavior does not reproduce on
+the 5.4 kernel that is also available for Ubuntu 20.04, so that version can 
+be used as a workaround.
 
 */
 // vim:ft=doxygen:

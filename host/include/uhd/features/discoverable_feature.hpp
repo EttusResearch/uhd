@@ -35,6 +35,7 @@ public:
         ADC_SELF_CALIBRATION,
         REF_CLK_CALIBRATION,
         TRIG_IO_MODE,
+        GPIO_POWER,
     };
 
     virtual ~discoverable_feature() = default;

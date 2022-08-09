@@ -172,11 +172,15 @@ public:
      * Note you need to also call this on statically connected blocks if you
      * desire to use them.
      *
+     * Connections that are made using this API call will be listed when calling
+     * enumerate_active_connections().
+     *
      * \param src_blk The block ID of the source block to connect.
      * \param src_port The port of the source block to connect.
      * \param dst_blk The block ID of the destination block to connect to.
      * \param dst_port The port of the destination block to connect to.
-     * \param skip_property_propagation Skip property propagation for this edge
+     * \param skip_property_propagation Skip property propagation for this edge.
+     *        See also \ref props_graph_resolution_back_edges.
      *
      * \throws uhd::routing_error if the source or destination ports are
      *                            statically connected to a *different* block
@@ -225,6 +229,9 @@ public:
      * \p dst_blk.  This will logically disconnect the blocks, but the physical
      * connection will not be changed until a new connection is made on the source
      * port.
+     *
+     * Disconnected edges will no longer be listed in
+     * enumerate_active_connections().
      *
      * \param src_blk The block ID of the source block to disconnect.
      * \param src_port The port of the source block to disconnect.
@@ -285,11 +292,19 @@ public:
 
     /*! Enumerate all the possible static connections in the graph
      *
+     * A static connection is a connection that is statically connected in
+     * hardware. Note that static connections also need to be declared using
+     * connect() if an application wants to use them, or they won't be available
+     * for property propagation or any other graph mechanism.
+     *
      * \return A vector containing all the static edges in the graph.
      */
     virtual std::vector<graph_edge_t> enumerate_static_connections() const = 0;
 
     /*! Enumerate all the active connections in the graph
+     *
+     * An active connection is a connection which was previously created by
+     * calling connect().
      *
      * \return A vector containing all the active edges in the graph.
      */

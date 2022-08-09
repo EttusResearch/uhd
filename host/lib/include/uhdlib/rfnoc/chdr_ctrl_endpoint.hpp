@@ -42,6 +42,11 @@ public:
         const clock_iface& timebase_clk) = 0;
 
     //! Returns the number of dropped packets due to misclassification
+    //
+    // This includes packets that are not valid CHDR as well as packets that
+    // are valid CHDR, but have no known/valid endpoint. Correctly classified
+    // packets may still be invalid, but they don't get counted here, they are
+    // handled in ctrlport_endpoint.
     virtual size_t get_num_drops() const = 0;
 
     //! Creates a control endpoint object

@@ -51,7 +51,7 @@ nirio_status niusrprio_session::enumerate(
 
 nirio_status niusrprio_session::open(nifpga_lvbitx::sptr lvbitx, bool force_download)
 {
-    boost::unique_lock<boost::recursive_mutex> lock(_session_mutex);
+    std::unique_lock<std::recursive_mutex> lock(_session_mutex);
 
     _lvbitx = lvbitx;
 
@@ -101,7 +101,7 @@ nirio_status niusrprio_session::open(nifpga_lvbitx::sptr lvbitx, bool force_down
 
 void niusrprio_session::close(bool skip_reset)
 {
-    boost::unique_lock<boost::recursive_mutex> lock(_session_mutex);
+    std::unique_lock<std::recursive_mutex> lock(_session_mutex);
 
     if (_session_open) {
         nirio_status status = NiRio_Status_Success;
@@ -114,14 +114,14 @@ void niusrprio_session::close(bool skip_reset)
 
 nirio_status niusrprio_session::reset()
 {
-    boost::unique_lock<boost::recursive_mutex> lock(_session_mutex);
+    std::unique_lock<std::recursive_mutex> lock(_session_mutex);
     return _rpc_client.niusrprio_reset_device(_resource_name);
 }
 
 nirio_status niusrprio_session::download_bitstream_to_flash(
     const std::string& bitstream_path)
 {
-    boost::unique_lock<boost::recursive_mutex> lock(_session_mutex);
+    std::unique_lock<std::recursive_mutex> lock(_session_mutex);
     return _rpc_client.niusrprio_download_fpga_to_flash(_resource_name, bitstream_path);
 }
 

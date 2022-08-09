@@ -11,8 +11,8 @@
 #include <uhd/types/serial.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/utils/log.hpp>
-#include <boost/format.hpp>
 #include <chrono>
+#include <mutex>
 
 using namespace uhd;
 
@@ -52,7 +52,7 @@ struct x300_uart_iface : uart_iface
 
     void write_uart(const std::string& buff) override
     {
-        boost::mutex::scoped_lock lock(_write_mutex);
+        std::lock_guard<std::mutex> lock(_write_mutex);
         for (const char ch : buff) {
             this->putchar(ch);
         }
@@ -120,7 +120,7 @@ struct x300_uart_iface : uart_iface
 
     std::string read_uart(double timeout) override
     {
-        boost::mutex::scoped_lock lock(_read_mutex);
+        std::lock_guard<std::mutex> lock(_read_mutex);
         const auto exit_time = std::chrono::steady_clock::now()
                                + std::chrono::microseconds(int64_t(timeout * 1e6));
 
@@ -156,8 +156,8 @@ struct x300_uart_iface : uart_iface
     uint32_t _last_device_rxoffset;
     std::vector<uint32_t> _rxcache;
     std::string _rxbuff;
-    boost::mutex _read_mutex;
-    boost::mutex _write_mutex;
+    std::mutex _read_mutex;
+    std::mutex _write_mutex;
 };
 
 uart_iface::sptr x300_make_uart_iface(wb_iface::sptr iface)

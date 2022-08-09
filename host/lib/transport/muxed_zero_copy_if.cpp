@@ -10,10 +10,10 @@
 #include <uhd/transport/muxed_zero_copy_if.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <boost/thread.hpp>
-#include <boost/thread/locks.hpp>
 #include <functional>
 #include <map>
 #include <memory>
+#include <mutex>
 
 using namespace uhd;
 using namespace uhd::transport;
@@ -60,7 +60,7 @@ public:
 
     zero_copy_if::sptr make_stream(const uint32_t stream_num) override
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         if (_streams.size() >= _max_num_streams) {
             throw uhd::runtime_error("muxed_zero_copy_if: stream capacity exceeded. "
                                      "cannot create more streams.");
@@ -82,7 +82,7 @@ public:
 
     void remove_stream(const uint32_t stream_num) override
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         _streams.erase(stream_num);
     }
 
@@ -256,7 +256,7 @@ private:
                 {
                     // Hold the stream mutex long enough to pull a bounded buffer
                     // and lock it (increment its ref count).
-                    boost::lock_guard<boost::mutex> lock(_mutex);
+                    std::lock_guard<std::mutex> lock(_mutex);
                     stream_map_t::iterator str_iter = _streams.find(stream_num);
                     if (str_iter != _streams.end()) {
                         stream = (*str_iter).second.lock();
@@ -270,7 +270,7 @@ private:
             if (stream.get()) {
                 stream->push_recv_buff(buff);
             } else {
-                boost::lock_guard<boost::mutex> lock(_mutex);
+                std::lock_guard<std::mutex> lock(_mutex);
                 _num_dropped_frames++;
             }
             // We processed a packet, and there could be more coming
@@ -291,7 +291,7 @@ private:
     const size_t _max_num_streams;
     size_t _num_dropped_frames;
     boost::thread _recv_thread;
-    boost::mutex _mutex;
+    std::mutex _mutex;
 };
 
 muxed_zero_copy_if::sptr muxed_zero_copy_if::make(zero_copy_if::sptr base_xport,

@@ -92,7 +92,7 @@ public:
      */
     UHD_INLINE bool check_fc_condition(double timeout)
     {
-        boost::mutex::scoped_lock lock(_fc_mutex);
+        std::unique_lock<std::mutex> lock(_fc_mutex);
         if (this->ready())
             return true;
         boost::this_thread::disable_interruption di; // disable because the wait can throw
@@ -105,7 +105,7 @@ public:
      */
     UHD_INLINE void update_fc_condition(seq_type seq)
     {
-        boost::mutex::scoped_lock lock(_fc_mutex);
+        std::unique_lock<std::mutex> lock(_fc_mutex);
         _last_seq_ack = seq;
         lock.unlock();
         _fc_cond.notify_one();
@@ -117,7 +117,7 @@ private:
         return seq_type(_last_seq_out - _last_seq_ack) < _max_seqs_out;
     }
 
-    boost::mutex _fc_mutex;
+    std::mutex _fc_mutex;
     boost::condition _fc_cond;
     seq_type _last_seq_out, _last_seq_ack;
     const seq_type _max_seqs_out;

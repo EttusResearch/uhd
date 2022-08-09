@@ -50,7 +50,10 @@ public:
         USRP_N200_R4 = 201,
         USRP_N210    = 210,
         USRP_N210_R4 = 211,
-        USRP_NXXX    = 0
+        USRP_NXXX    = 0,
+
+		USRP_N210_XK = 221,
+		USRP_N210_XA = 220
     };
 
     //! Get the revision type for this device

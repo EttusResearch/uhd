@@ -16,6 +16,7 @@
 #include <exception>
 #include <functional>
 #include <iostream>
+#include <mutex>
 #include <thread>
 #include <vector>
 
@@ -106,7 +107,7 @@ public:
      */
     msg_payload_t get_msg_from_dump_queue(uint32_t sid) override
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         msg_payload_t b;
         for (size_t i = 0; i < _dump_queue.size(); i++) {
             if (sid == _dump_queue[i].first) {
@@ -133,7 +134,7 @@ private:
                      * pushed to the dump_queue. This way ctrl_cores can check dump_queue
                      * for missing messages.
                      */
-                    boost::mutex::scoped_lock lock(_mutex);
+                    std::lock_guard<std::mutex> lock(_mutex);
                     _dump_queue.push_back(buff.get());
                 }
             }
@@ -155,7 +156,7 @@ private:
             << "The task loop will now exit, things may not work." << msg;
     }
 
-    boost::mutex _mutex;
+    std::mutex _mutex;
     boost::thread_group _thread_group;
     boost::barrier _spawn_barrier;
     bool _running;

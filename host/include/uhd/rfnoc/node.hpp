@@ -229,6 +229,8 @@ protected:
      * either be reset after the constructor is finished, or the next time
      * properties are resolved.
      *
+     * For more information, see \ref props_define.
+     *
      * \param prop A reference to the property
      * \param clean_callback A callback that gets executed whenever this property
      *                       is dirty and gets marked clean
@@ -265,6 +267,8 @@ protected:
      *   (which is considered advanced usage), then the block needs to serialize
      *   access to this function itself.
      *
+     * For more information, see \ref props_resolvers.
+     *
      * \param inputs The properties that will cause this resolver to run
      * \param outputs The properties that this resolver will write to
      * \param resolver_fn The resolver function
@@ -290,6 +294,8 @@ protected:
      * Typically, this function should only ever be called from within the
      * constructor.
      *
+     * See also \ref props_unknown.
+     *
      * \param policy The policy that is applied (see also forwarding_policy_t).
      * \param prop_id The property ID that this forwarding policy is applied to.
      *                If \p prop_id is not given, it will apply to all properties,
@@ -314,6 +320,8 @@ protected:
      * The following conditions will generate exceptions at property
      * propagation time:
      *   - Any value in the destination vector represents a non-existent port
+     *
+     * See also \ref props_unknown.
      *
      * \param map The map describing how properties should be propagated
      */

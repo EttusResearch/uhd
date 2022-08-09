@@ -138,6 +138,46 @@ std::vector<std::string> get_addrs_from_mb_args(const uhd::device_addr_t& mb_arg
     return addrs;
 }
 
+/*! Run a plausibility check on a detected MTU, and return a value that passes
+ * custom constraints.
+ *
+ * This function forcibly overrides the detected MTU value using hardcoded
+ * heuristics/rules, even if the detected MTU is actually correct!
+ * These rules should thus be chosen very carefully, and should only coerce down
+ * (i.e., the return value should be smaller than argument).
+ */
+size_t run_mtu_plausibility_check(const size_t detected_mtu)
+{
+    // 1 GbE MTU check: We have observed that the detected path MTU for 1 GbE
+    // devices can come out a few bytes too high over 1 GbE. This is most likely
+    // due to some drivers being a little more tolerant with larger-than-MTU
+    // packets, which is not helpful for us. When the MTU detection errs on the
+    // large side, it can happen that either packets going from UHD to the
+    // device get fragmented (this is bad, the USRP can't defragment) or that
+    // packets coming from the device won't get accepted by our NIC/driver,
+    // causing drops (this is the rarer case). We avoid this by detecting typical
+    // 1 GbE MTU sizes and coercing them to 1472 bytes. When using a NIC MTU of
+    // 1500, we have observed detected MTUs of 1476 up to 1488 bytes, when they
+    // should be 1472 bytes instead.
+    {
+        constexpr size_t DEFAULT_1GBE_MTU          = 1472; // bytes
+        constexpr size_t MIN_1GBE_MTU_COERCE_VALUE = 1472; // bytes
+        constexpr size_t MAX_1GBE_MTU_COERCE_VALUE = 1500; // bytes
+        if (detected_mtu > MIN_1GBE_MTU_COERCE_VALUE
+            && detected_mtu < MAX_1GBE_MTU_COERCE_VALUE) {
+            UHD_LOG_DEBUG("MPMD",
+                "MTU discovery detected "
+                    << detected_mtu
+                    << " bytes. This may be due to a faulty MTU discovery. Coercing to "
+                    << DEFAULT_1GBE_MTU << " bytes.");
+            return DEFAULT_1GBE_MTU;
+        }
+    } // End 1 GbE MTU check.
+
+    // If no one raises any red flags, we let the detected MTU slide.
+    return detected_mtu;
+}
+
 /*! Do a binary search to discover MTU
  *
  * Uses the MPM echo service to figure out MTU. We simply send a bunch of
@@ -233,6 +273,8 @@ size_t discover_mtu(const std::string& address,
             max_frame_size = len;
         }
     }
+
+    min_frame_size = run_mtu_plausibility_check(min_frame_size);
     UHD_LOG_DEBUG("MPMD", "Path MTU for address " << address << ": " << min_frame_size);
     return min_frame_size;
 }

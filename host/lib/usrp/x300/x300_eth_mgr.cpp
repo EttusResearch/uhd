@@ -56,14 +56,18 @@ constexpr size_t ETH_MSG_NUM_FRAMES                 = 64;
 constexpr size_t ETH_DATA_NUM_FRAMES = 32;
 
 constexpr size_t ETH_MSG_FRAME_SIZE = uhd::transport::udp_simple::mtu; // bytes
+// Note: These rates do not account for protocol overhead (CHDR headers), but
+// only have to be approximately correct. They are used as identifiers, and to
+// size buffers. Since the buffers also need to hold CHDR headers, this value
+// is good enough.
 constexpr size_t MAX_RATE_10GIGE    = (size_t)( // bytes/s
     10e9 / 8 * // wire speed multiplied by percentage of packets that is sample data
-    (float(x300::DATA_FRAME_MAX_SIZE - CHDR_MAX_LEN_HDR)
+    (float(x300::DATA_FRAME_MAX_SIZE)
         / float(x300::DATA_FRAME_MAX_SIZE
                 + 8 /* UDP header */ + 20 /* Ethernet header length */)));
 constexpr size_t MAX_RATE_1GIGE     = (size_t)( // bytes/s
     1e9 / 8 * // wire speed multiplied by percentage of packets that is sample data
-    (float(GE_DATA_FRAME_RECV_SIZE - CHDR_MAX_LEN_HDR)
+    (float(GE_DATA_FRAME_RECV_SIZE)
         / float(GE_DATA_FRAME_RECV_SIZE
                 + 8 /* UDP header */ + 20 /* Ethernet header length */)));
 

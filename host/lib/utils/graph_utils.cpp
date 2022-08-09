@@ -56,7 +56,7 @@ std::vector<graph_edge_t> get_block_chain(const rfnoc_graph::sptr graph,
                 // If the current block is the edge's source, make the edge's
                 // destination the current block
                 next_found = true;
-                UHD_LOG_TRACE("GRAPH_UTILS", "Found next block: " + edge.dst_blockid);
+                UHD_LOG_TRACE("GRAPH_UTILS", " --> Found next block: " + edge.dst_blockid);
 
                 block_chain.push_back(edge);
                 current_block = (source_chain) ? edge.dst_blockid : edge.src_blockid;
@@ -103,12 +103,14 @@ void connect_through_blocks(rfnoc_graph::sptr graph,
                    || (dst_blk.to_string() == edge.dst_blockid
                        && dst_port == edge.dst_port);
         });
-    // If our dst_blk is in the chain already, make sure its the last element and continue
     if (dst_found) {
+        // If our dst_blk is in the chain already, make sure it's the last element
+        // and continue. This means we pop everything from block_chain that comes
+        // after our block.
         UHD_LOG_TRACE(
             "GRAPH_UTILS", "Found dst_blk (" + dst_blk.to_string() + ") in source chain");
-        while (dst_blk.to_string() == block_chain.back().dst_blockid
-               && dst_port == block_chain.back().dst_port) {
+        while (dst_blk.to_string() != block_chain.back().dst_blockid
+               || dst_port != block_chain.back().dst_port) {
             UHD_LOG_TRACE("GRAPH_UTILS",
                 boost::format(
                     "Last block (%s:%d) doesn't match dst_blk (%s:%d); removing.")
@@ -153,8 +155,9 @@ void connect_through_blocks(rfnoc_graph::sptr graph,
     if (has_src_to_sep_connection && has_sep_to_dst_connection) {
         graph->connect(src_to_sep_id, src_to_sep_port, sep_to_dst_id, sep_to_dst_port);
     } else if (has_src_to_sep_connection != has_sep_to_dst_connection) {
-        throw uhd::runtime_error(
-            "[graph_utils] Incomplete path. Only one SEP edge found.");
+        const std::string err_msg = "Incomplete path. Only one SEP edge found.";
+        UHD_LOG_TRACE("GRAPH_UTILS", err_msg);
+        throw uhd::runtime_error("[graph_utils] " + err_msg);
     }
 }
 

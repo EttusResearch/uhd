@@ -263,6 +263,39 @@ inline IntegerType gcd(IntegerType x, IntegerType y)
     return _bmint::gcd<IntegerType>(x, y);
 }
 
+//! Returns the sign of x
+//
+// Note: This is equivalent to the Boost.Math version, but without the
+// dependency.
+//
+// Returns +1 for positive arguments, -1 for negative arguments, and 0 if x is
+// zero.
+template <typename T>
+inline constexpr int sign(T x)
+{
+    // Note: If T is unsigned, then this will compile with a warning. Should
+    // we need that, expand the template logic.
+    return (T(0) < x) - (x < T(0));
+}
+
+//! Return a wrapped frequency that is the equivalent frequency in the first
+// Nyquist zone.
+//
+// Examples:
+// - Just above the sampling rate:
+//   wrap_frequency(250e6, 200e6) == 50e6
+// - Just outside the Nyquist zone:
+//   wrap_frequency(120e6, 200e6) == -80e6
+// - Also works for negative frequencies:
+//   wrap_frequency(-250e6, 200e6) == -50e6
+inline double wrap_frequency(const double requested_freq, const double rate)
+{
+    double freq = std::fmod(requested_freq, rate);
+    if (std::abs(freq) > rate / 2.0)
+        freq -= uhd::math::sign(freq) * rate;
+    return freq;
+}
+
 } // namespace math
 } // namespace uhd
 

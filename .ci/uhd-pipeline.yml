@@ -8,12 +8,22 @@ parameters:
 - name: release_binaries
   type: boolean
   default: false
+- name: testLength
+  type: string
+  values:
+  - 'smoke'
+  - 'full'
+  - 'stress'
+  default: 'smoke'
+- name: run_streaming_tests
+  type: boolean
+  default: False
 
 trigger:
   batch: true
   branches:
     include:
-    - UHD-4.1
+    - master
   paths:
     include:
     - host
@@ -31,3 +41,5 @@ extends:
   template: templates/stages-uhd-pipeline.yml
   parameters:
     release_binaries: ${{ parameters.release_binaries }}
+    testLength: ${{ parameters.testLength }}
+    run_streaming_tests: ${{ parameters.run_streaming_tests }}

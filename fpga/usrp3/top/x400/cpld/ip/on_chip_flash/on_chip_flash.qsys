@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<system name="$${FILENAME}">
+ <component
+   name="$${FILENAME}"
+   displayName="$${FILENAME}"
+   version="1.0"
+   description=""
+   tags="INTERNAL_COMPONENT=true"
+   categories="System" />
+ <parameter name="bonusData"><![CDATA[bonusData 
+{
+   element onchip_flash_0
+   {
+      datum _sortIndex
+      {
+         value = "0";
+         type = "int";
+      }
+   }
+}
+]]></parameter>
+ <parameter name="clockCrossingAdapter" value="HANDSHAKE" />
+ <parameter name="device" value="10M04SAU169I7G" />
+ <parameter name="deviceFamily" value="MAX 10" />
+ <parameter name="deviceSpeedGrade" value="7" />
+ <parameter name="fabricMode" value="QSYS" />
+ <parameter name="generateLegacySim" value="false" />
+ <parameter name="generationId" value="0" />
+ <parameter name="globalResetBus" value="false" />
+ <parameter name="hdlLanguage" value="VERILOG" />
+ <parameter name="hideFromIPCatalog" value="true" />
+ <parameter name="lockedInterfaceDefinition" value="" />
+ <parameter name="maxAdditionalLatency" value="1" />
+ <parameter name="projectName" value="" />
+ <parameter name="sopcBorderPoints" value="false" />
+ <parameter name="systemHash" value="0" />
+ <parameter name="testBenchDutName" value="" />
+ <parameter name="timeStamp" value="0" />
+ <parameter name="useTestBenchNamingPattern" value="false" />
+ <instanceScript></instanceScript>
+ <interface name="clk" internal="onchip_flash_0.clk" type="clock" dir="end">
+  <port name="clock" internal="clock" />
+ </interface>
+ <interface name="csr" internal="onchip_flash_0.csr" type="avalon" dir="end">
+  <port name="avmm_csr_addr" internal="avmm_csr_addr" />
+  <port name="avmm_csr_read" internal="avmm_csr_read" />
+  <port name="avmm_csr_writedata" internal="avmm_csr_writedata" />
+  <port name="avmm_csr_write" internal="avmm_csr_write" />
+  <port name="avmm_csr_readdata" internal="avmm_csr_readdata" />
+ </interface>
+ <interface name="data" internal="onchip_flash_0.data" type="avalon" dir="end">
+  <port name="avmm_data_addr" internal="avmm_data_addr" />
+  <port name="avmm_data_read" internal="avmm_data_read" />
+  <port name="avmm_data_writedata" internal="avmm_data_writedata" />
+  <port name="avmm_data_write" internal="avmm_data_write" />
+  <port name="avmm_data_readdata" internal="avmm_data_readdata" />
+  <port name="avmm_data_waitrequest" internal="avmm_data_waitrequest" />
+  <port name="avmm_data_readdatavalid" internal="avmm_data_readdatavalid" />
+  <port name="avmm_data_burstcount" internal="avmm_data_burstcount" />
+ </interface>
+ <interface name="nreset" internal="onchip_flash_0.nreset" type="reset" dir="end">
+  <port name="reset_n" internal="reset_n" />
+ </interface>
+ <module
+   name="onchip_flash_0"
+   kind="altera_onchip_flash"
+   version="18.1"
+   enabled="1"
+   autoexport="1">
+  <parameter name="AUTO_CLOCK_RATE" value="0" />
+  <parameter name="CLOCK_FREQUENCY" value="50.0" />
+  <parameter name="CONFIGURATION_MODE">Single Compressed Image</parameter>
+  <parameter name="CONFIGURATION_SCHEME">Internal Configuration</parameter>
+  <parameter name="DATA_INTERFACE" value="Parallel" />
+  <parameter name="DEVICE_FAMILY" value="MAX 10" />
+  <parameter name="PART_NAME" value="10M04SAU169I7G" />
+  <parameter name="READ_BURST_COUNT" value="8" />
+  <parameter name="READ_BURST_MODE" value="Incrementing" />
+  <parameter name="SECTOR_ACCESS_MODE">Read and write,Read and write,Read and write,Read and write,Read and write</parameter>
+  <parameter name="autoInitializationFileName">$${FILENAME}_onchip_flash_0</parameter>
+  <parameter name="initFlashContent" value="false" />
+  <parameter name="initializationFileName">altera_onchip_flash.hex</parameter>
+  <parameter name="initializationFileNameForSim">altera_onchip_flash.dat</parameter>
+  <parameter name="useNonDefaultInitFile" value="false" />
+ </module>
+ <interconnectRequirement for="$system" name="qsys_mm.clockCrossingAdapter" value="HANDSHAKE" />
+ <interconnectRequirement for="$system" name="qsys_mm.enableEccProtection" value="FALSE" />
+ <interconnectRequirement for="$system" name="qsys_mm.insertDefaultSlave" value="FALSE" />
+ <interconnectRequirement for="$system" name="qsys_mm.maxAdditionalLatency" value="1" />
+</system>

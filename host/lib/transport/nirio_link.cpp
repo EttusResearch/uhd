@@ -9,6 +9,7 @@
 #include <uhdlib/transport/adapter.hpp>
 #include <uhdlib/transport/links.hpp>
 #include <uhdlib/transport/nirio_link.hpp>
+#include <boost/format.hpp>
 #include <chrono>
 
 // X300 regs

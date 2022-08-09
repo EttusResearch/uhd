@@ -12,12 +12,13 @@
 #include <stdint.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/date_time.hpp>
+#include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/format.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/thread.hpp>
+#include <boost/thread/thread_time.hpp>
 #include <boost/tokenizer.hpp>
 #include <chrono>
 #include <ctime>
+#include <mutex>
 #include <regex>
 #include <string>
 #include <thread>
@@ -49,7 +50,7 @@ class gps_ctrl_impl : public gps_ctrl
 {
 private:
     std::map<std::string, std::tuple<std::string, boost::system_time, bool>> sentences;
-    boost::mutex cache_mutex;
+    std::mutex cache_mutex;
     boost::system_time _last_cache_update;
 
     std::string get_sentence(const std::string which,
@@ -63,7 +64,7 @@ private:
         boost::posix_time::time_duration age;
 
         if (wait_for_next) {
-            boost::lock_guard<boost::mutex> lock(cache_mutex);
+            std::lock_guard<std::mutex> lock(cache_mutex);
             update_cache();
             // mark sentence as touched
             if (sentences.find(which) != sentences.end())
@@ -71,7 +72,7 @@ private:
         }
         while (1) {
             try {
-                boost::lock_guard<boost::mutex> lock(cache_mutex);
+                std::lock_guard<std::mutex> lock(cache_mutex);
 
                 // update cache if older than a millisecond
                 if (now - _last_cache_update > milliseconds(1)) {

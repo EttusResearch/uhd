@@ -14,11 +14,7 @@ using namespace uhd::rfnoc;
 class block_control_impl : public block_control
 {
 public:
-    RFNOC_BLOCK_CONSTRUCTOR(block_control)
-    {
-        set_prop_forwarding_policy(forwarding_policy_t::DROP);
-        set_action_forwarding_policy(forwarding_policy_t::DROP);
-    }
+    RFNOC_BLOCK_CONSTRUCTOR(block_control) {}
 };
 
 UHD_RFNOC_BLOCK_REGISTER_DIRECT(

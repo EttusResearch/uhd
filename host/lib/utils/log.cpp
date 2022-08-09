@@ -266,7 +266,7 @@ public:
             __FILE__,
             __LINE__,
             "LOGGING",
-            boost::this_thread::get_id());
+            std::this_thread::get_id());
         final_message.message = "";
         push(final_message);
 #    ifndef UHD_LOG_FASTPATH_DISABLE
@@ -482,7 +482,7 @@ private:
             __FILE__,
             __LINE__,
             component,
-            boost::this_thread::get_id());
+            std::this_thread::get_id());
         log_msg.message = msg;
         _log_queue.push_with_timed_wait(log_msg, 0.25);
     }
@@ -506,7 +506,7 @@ uhd::_log::log::log(const uhd::log::severity_level verbosity,
     const std::string& file,
     const unsigned int line,
     const std::string& component,
-    const boost::thread::id thread_id)
+    const std::thread::id thread_id)
     : _log_it(verbosity >= log_rs().global_level)
 {
     if (_log_it) {

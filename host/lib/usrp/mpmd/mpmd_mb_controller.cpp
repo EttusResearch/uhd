@@ -74,6 +74,41 @@ void mpmd_mb_controller::trig_io_mode::set_trig_io_mode(const uhd::trig_io_mode_
     }
 }
 
+mpmd_mb_controller::gpio_power::gpio_power(
+    uhd::usrp::dio_rpc_iface::sptr rpcc, const std::vector<std::string>& ports)
+    : _rpcc(rpcc), _ports(ports)
+{}
+
+std::vector<std::string> mpmd_mb_controller::gpio_power::get_supported_voltages(
+    const std::string& port) const
+{
+    return _rpcc->dio_get_supported_voltage_levels(port);
+}
+
+void mpmd_mb_controller::gpio_power::set_port_voltage(
+    const std::string& port, const std::string& voltage)
+{
+    _rpcc->dio_set_voltage_level(port, voltage);
+}
+
+std::string mpmd_mb_controller::gpio_power::get_port_voltage(
+    const std::string& port) const
+{
+    return _rpcc->dio_get_voltage_level(port);
+}
+
+void mpmd_mb_controller::gpio_power::set_external_power(
+    const std::string& port, bool enable)
+{
+    _rpcc->dio_set_external_power(port, enable);
+}
+
+std::string mpmd_mb_controller::gpio_power::get_external_power_status(
+    const std::string& port) const
+{
+    return _rpcc->dio_get_external_power_state(port);
+}
+
 mpmd_mb_controller::mpmd_mb_controller(
     uhd::usrp::mpmd_rpc_iface::sptr rpcc, uhd::device_addr_t device_info)
     : _rpc(rpcc), _device_info(device_info)
@@ -105,6 +140,12 @@ mpmd_mb_controller::mpmd_mb_controller(
     if (_rpc->supports_feature("trig_io_mode")) {
         _trig_io_mode = std::make_shared<trig_io_mode>(_rpc);
         register_feature(_trig_io_mode);
+    }
+
+    if (_rpc->supports_feature("gpio_power")) {
+        _gpio_power = std::make_shared<gpio_power>(
+            std::make_shared<uhd::usrp::dio_rpc>(get_rpc_client()), _gpio_banks);
+        register_feature(_gpio_power);
     }
 }
 

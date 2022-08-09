@@ -14,11 +14,12 @@
 #include <uhd/utils/noncopyable.hpp>
 #include <stdint.h>
 #include <boost/core/demangle.hpp>
-#include <boost/thread.hpp>
-#include <boost/thread/recursive_mutex.hpp>
 #include <functional>
 #include <list>
 #include <memory>
+#include <mutex>
+#include <sstream>
+#include <thread>
 
 namespace uhd { namespace experts {
 
@@ -130,7 +131,7 @@ public:
     // from the outside world (of experts) using read and write callbacks. We
     // assume that if a callback mutex is passed into the data node that it will
     // be accessed from the outside and tag the data node as a PROPERTY.
-    data_node_t(const std::string& name, boost::recursive_mutex* mutex = NULL)
+    data_node_t(const std::string& name, std::recursive_mutex* mutex = NULL)
         : dag_vertex_t(mutex ? CLASS_PROPERTY : CLASS_DATA, name)
         , _callback_mutex(mutex)
         , _data()
@@ -138,9 +139,8 @@ public:
     {
     }
 
-    data_node_t(const std::string& name,
-        const data_t& value,
-        boost::recursive_mutex* mutex = NULL)
+    data_node_t(
+        const std::string& name, const data_t& value, std::recursive_mutex* mutex = NULL)
         : dag_vertex_t(mutex ? CLASS_PROPERTY : CLASS_DATA, name)
         , _callback_mutex(mutex)
         , _data(value)
@@ -199,7 +199,7 @@ public:
         if (_callback_mutex == NULL)
             throw uhd::assertion_error(
                 "node " + get_name() + " is missing the callback mutex");
-        boost::lock_guard<boost::recursive_mutex> lock(*_callback_mutex);
+        std::lock_guard<std::recursive_mutex> lock(*_callback_mutex);
         set(value);
         _author = AUTHOR_USER;
         if (is_dirty() and has_write_callback()) {
@@ -213,7 +213,7 @@ public:
         if (_callback_mutex == NULL)
             throw uhd::assertion_error(
                 "node " + get_name() + " is missing the callback mutex");
-        boost::lock_guard<boost::recursive_mutex> lock(*_callback_mutex);
+        std::lock_guard<std::recursive_mutex> lock(*_callback_mutex);
         if (has_read_callback()) {
             _rd_callback(std::string(get_name()));
         }
@@ -252,7 +252,7 @@ private:
         _rd_callback = nullptr;
     }
 
-    boost::recursive_mutex* _callback_mutex;
+    std::recursive_mutex* _callback_mutex;
     callback_func_t _rd_callback;
     callback_func_t _wr_callback;
     dirty_tracked<data_t> _data;
