@@ -227,7 +227,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "multi uhd device address args")
         ("file", po::value<std::string>(&file)->default_value("usrp_samples.dat"), "name of the file to write binary samples to")
-        ("type", po::value<std::string>(&type)->default_value("short"), "sample type: double, float, or short")
+        ("type", po::value<std::string>(&type)->default_value("short"), "sample type: char, double, float, or short")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(0), "total number of samples to receive")
         ("duration", po::value<double>(&total_time)->default_value(0), "total number of seconds to receive")
         ("spb", po::value<size_t>(&spb)->default_value(10000), "samples per buffer")
@@ -401,6 +401,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             recv_to_file<float> recv_to_file_args("f32");
         else if (type == "short")
             recv_to_file<short> recv_to_file_args("s16");
+        else if (type == "char")
+            recv_to_file<char> recv_to_file_args("s8");
         else
             throw std::runtime_error("Unknown type " + type);
     } else {
@@ -410,6 +412,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             recv_to_file<std::complex<float>> recv_to_file_args("fc32");
         else if (type == "short")
             recv_to_file<std::complex<short>> recv_to_file_args("sc16");
+        else if (type == "char")
+            recv_to_file<std::complex<char>> recv_to_file_args("sc8");
         else
             throw std::runtime_error("Unknown type " + type);
     }
