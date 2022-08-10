@@ -95,6 +95,13 @@ void graph_t::connect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t edg
     node_accessor.set_resolve_all_callback(dst_node, [this, dst_node]() {
         this->resolve_all_properties(resolve_context::NODE_PROP, dst_node);
     });
+    node_accessor.set_graph_mutex_callback(src_node, [this]() -> std::recursive_mutex& {
+        return this->get_graph_mutex();
+    });
+    node_accessor.set_graph_mutex_callback(dst_node, [this]() -> std::recursive_mutex& {
+        return this->get_graph_mutex();
+    });
+
     // Set post action callbacks:
     node_accessor.set_post_action_callback(
         src_node, [this, src_node](const res_source_info& src, action_info::sptr action) {
@@ -212,6 +219,7 @@ void graph_t::disconnect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t 
         UHD_LOG_TRACE(LOG_ID,
             "Removing block " << src_node->get_unique_id() << ":" << edge_info.src_port);
         node_accessor.clear_resolve_all_callback(src_node);
+        node_accessor.clear_graph_mutex_callback(src_node);
         node_accessor.set_post_action_callback(
             src_node, [](const res_source_info&, action_info::sptr) {});
     }
@@ -224,6 +232,7 @@ void graph_t::disconnect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t 
         UHD_LOG_TRACE(LOG_ID,
             "Removing block " << dst_node->get_unique_id() << ":" << edge_info.dst_port);
         node_accessor.clear_resolve_all_callback(dst_node);
+        node_accessor.clear_graph_mutex_callback(dst_node);
         node_accessor.set_post_action_callback(
             dst_node, [](const res_source_info&, action_info::sptr) {});
     }
@@ -243,6 +252,7 @@ void graph_t::commit()
     }
     if (_release_count == 0) {
         _check_topology();
+        std::lock_guard<std::recursive_mutex> l(_graph_mutex);
         resolve_all_properties(resolve_context::INIT, *boost::vertices(_graph).first);
     }
 }
@@ -287,11 +297,6 @@ void graph_t::resolve_all_properties(
         return;
     }
 
-    // We can't release during property propagation, so we lock this entire
-    // method to make sure that a) different threads can't interfere with each
-    // other, and b) that we don't release the graph while this method is still
-    // running.
-    std::lock_guard<std::recursive_mutex> l(_graph_mutex);
     if (_shutdown) {
         return;
     }
@@ -449,6 +454,11 @@ void graph_t::resolve_all_properties(
 {
     auto initial_node_vertex_desc = _node_map.at(initial_node);
     resolve_all_properties(context, initial_node_vertex_desc);
+}
+
+std::recursive_mutex& graph_t::get_graph_mutex()
+{
+    return _graph_mutex;
 }
 
 void graph_t::enqueue_action(

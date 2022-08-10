@@ -21,6 +21,7 @@ dirtifier_t node_t::ALWAYS_DIRTY{};
 node_t::node_t()
 {
     _resolve_all_cb = _default_resolve_all_cb;
+    _graph_mutex_cb = NULL;
     register_property(&ALWAYS_DIRTY);
 }
 

@@ -60,17 +60,15 @@ template <typename prop_data_t>
 void node_t::set_property(
     const std::string& id, const prop_data_t& val, const res_source_info& src_info)
 {
-    RFNOC_LOG_TRACE("Setting property " << id << "@" << src_info.to_string());
-    auto prop_ptr =
-        _assert_prop<prop_data_t>(_find_property(src_info, id), get_unique_id(), id);
-    {
-        auto prop_access = _request_property_access(prop_ptr, property_base_t::RW);
-        prop_ptr->set(val);
+    if(_graph_mutex_cb) {
+        // Node connected to graph. Must lock graph first.
+        std::lock_guard<std::recursive_mutex> l(_graph_mutex_cb());
+        _set_property(id, val, src_info);
     }
-
-    // Now trigger a property resolution. If other properties depend on this one,
-    // they will be updated.
-    resolve_all();
+    else {
+        // Node unconnected to graph
+        _set_property(id, val, src_info);
+    }
 }
 
 template <typename prop_data_t>
@@ -86,6 +84,24 @@ const prop_data_t& node_t::get_property(
 
     auto prop_access = _request_property_access(prop_ptr, property_base_t::RO);
     return prop_ptr->get();
+}
+
+template <typename prop_data_t>
+void node_t::_set_property(
+    const std::string& id, const prop_data_t& val, const res_source_info& src_info)
+{
+    RFNOC_LOG_TRACE("Setting property " << id << "@" << src_info.to_string());
+
+    auto prop_ptr =
+        _assert_prop<prop_data_t>(_find_property(src_info, id), get_unique_id(), id);
+    {
+        auto prop_access = _request_property_access(prop_ptr, property_base_t::RW);
+        prop_ptr->set(val);
+    }
+
+    // Now trigger a property resolution. If other properties depend on this one,
+    // they will be updated.
+    resolve_all();
 }
 
 }} /* namespace uhd::rfnoc */

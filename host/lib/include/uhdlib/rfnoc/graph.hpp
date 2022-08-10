@@ -166,6 +166,9 @@ private:
     /**************************************************************************
      * The Algorithm
      *************************************************************************/
+    /*! These are the functions that do the sanity checks before calling
+     * _resolve_all_properties. Graph mutex must be held before calling.
+     */
     void resolve_all_properties(uhd::rfnoc::resolve_context context,
         rfnoc_graph_t::vertex_descriptor initial_node);
 
@@ -180,6 +183,10 @@ private:
     void _resolve_all_properties(uhd::rfnoc::resolve_context context,
         rfnoc_graph_t::vertex_descriptor initial_node,
         const bool forward);
+
+    /*! Returns a reference to the graph mutex.
+     */
+    std::recursive_mutex& get_graph_mutex();
 
     /**************************************************************************
      * Action API

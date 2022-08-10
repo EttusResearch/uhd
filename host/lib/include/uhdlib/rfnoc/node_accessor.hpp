@@ -78,6 +78,26 @@ public:
         node->clear_resolve_all_callback();
     }
 
+    /*! Sets a callback that the node can call to the mutex to the graph it
+     * is connected to. Used for setting properties and propagation.
+     *
+     * See node_t::set_graph_mutex_callback() for details.
+     */
+    void set_graph_mutex_callback(node_t* node, node_t::graph_mutex_callback_t&& mutex)
+    {
+        node->set_graph_mutex_callback(std::move(mutex));
+    }
+
+    /*! Clears the graph mutex callback. Called when node is disconnected
+     * from the graph.
+     *
+     * See node_t::clear_graph_mutex_callback() for details.
+     */
+    void clear_graph_mutex_callback(node_t* node)
+    {
+        node->clear_graph_mutex_callback();
+    }
+
     /*! Forward an edge property to \p dst_node
      *
      * See node_t::forward_edge_property() for details.
