@@ -1,0 +1,124 @@
+/*! \page page_extension Extension Framework documentation
+
+\section extension_intro Introduction
+
+The extension framework enables custom libraries to attach to UHD. This can be used for 
+instance when an external frontend module shall be used together with a USRP while 
+maintaining the control via the UHD API.
+
+For getting started with the extensions framework please refer to the extension 
+example in the examples directory. It can be built by 
+- changing into the example_extension directory,
+- creating a build directory and changing into it,
+- calling `cmake .. && make && make install`
+
+Depending on your UHD installation prefix root privileges may be required for `make install`.
+
+<b>Known issue</b>: 
+When using the Python API with an extension installed, `import uhd` may throw an error: 
+
+`Error: EnvironmentError: OSError: dlopen failed to load "/path/to/libextension.so"`
+
+If this occurs, please provide the LD_PRELOAD variable with the path to the uhdlib:
+
+export LD_PRELOAD=[UHD_PREFIX]/lib/libuhd.so
+
+Afterwards start Python again in the same commandline. 
+
+\section extension_capabilities Capabilities of the Extension Framework
+
+The Extension Framework attaches to multi_usrp and will work for all RFNoC-capable devices. 
+The following methods in multi_usrp offer hooks which allow for manipulating the behavior 
+of the USRP and controlling the extension:
+
+RX:
+- `set_rx_freq()`
+- `get_rx_freq()`
+- `get_rx_freq_range()`
+- `get_fe_rx_freq_range()`
+- `set_rx_gain()`
+- `set_rx_agc()`
+- `get_rx_gain()`
+- `get_rx_gain_range()`
+- `get_rx_gain_names()`
+- `set_rx_antenna()`
+- `get_rx_antenna()`
+- `get_rx_antennas()`
+- `set_rx_bandwidth()`
+- `get_rx_bandwidth()`
+- `get_rx_bandwidth_range()`
+
+TX: 
+- `set_tx_freq()`
+- `get_tx_freq()`
+- `get_tx_freq_range()`
+- `get_fe_tx_freq_range()`
+- `set_tx_gain()`
+- `get_tx_gain()`
+- `get_tx_gain_range()`
+- `get_tx_gain_names()`
+- `set_tx_antenna()`
+- `get_tx_antenna()`
+- `get_tx_antennas()`
+- `set_tx_bandwidth()`
+- `get_tx_bandwidth()`
+- `get_tx_bandwidth_range()`
+
+Further hooks may be implemented in the future. These hooks call into the following methods
+in an extension:
+
+RX:
+- `set_rx_tune_args()`
+- `set_rx_frequency()`
+- `get_rx_frequency()`
+- `get_rx_frequency_range()`
+- `set_rx_bandwidth()`
+- `get_rx_bandwidth()`
+- `get_rx_bandwidth_range()`
+- `set_rx_gain()`
+- `get_rx_gain()`
+- `set_rx_agc()`
+- `get_rx_gain_range()`
+- `get_rx_gain_names()`
+- `set_rx_antenna()`
+- `get_rx_antenna()`
+- `get_rx_antennas()`
+
+TX: 
+- `set_tx_tune_args()`
+- `set_tx_frequency()`
+- `get_tx_frequency()`
+- `get_tx_frequency_range()`
+- `set_tx_bandwidth()`
+- `get_tx_bandwidth()`
+- `get_tx_bandwidth_range()`
+- `set_tx_gain()`
+- `get_tx_gain()`
+- `get_tx_gain_range()`
+- `get_tx_gain_names()`
+- `set_tx_antenna()`
+- `get_tx_antenna()`
+- `get_tx_antennas()`
+
+The implementation of these methods in the extension may just pass this through to the 
+equivalent method on the radio or it can change values, call other methods e.g. of other 
+devices etc.
+
+\subsection extension_howto How to use the Extension Framework
+
+To use the Extension Framework, uhd::extension::extension from 
+uhd/extension/extension.hpp needs to be implemented. 
+
+The implementation of the
+extension will have to register itself by calling
+`UHD_REGISTER_EXTENSION([extension_name], [class_name])`. 
+After building the extension library it must be either:
+- found in the `UHD_MODULE_PATH` environment variable,
+- installed into the `\<install-path\>/share/uhd/modules` directory,
+- or installed into `/usr/share/uhd/modules` directory (UNIX only).
+
+To use the extension its name will have to be passed to the arguments string like
+"extension=[extension_name]".
+
+*/
+// vim:ft=doxygen:
