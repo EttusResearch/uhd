@@ -115,9 +115,13 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     /************************************************************************
      * Set up radio
      ***********************************************************************/
+    // Only forward properties once per block in the chain. In the case of
+    // looping back to a single radio block, skip property propagation after
+    // traversing back to the starting point of the chain.
+    const bool skip_pp = rx_radio_ctrl_id == tx_radio_ctrl_id;
     // Connect the RX radio to the TX radio
     uhd::rfnoc::connect_through_blocks(
-        graph, rx_radio_ctrl_id, rx_chan, tx_radio_ctrl_id, tx_chan);
+        graph, rx_radio_ctrl_id, rx_chan, tx_radio_ctrl_id, tx_chan, skip_pp);
     graph->commit();
 
     rx_radio_ctrl->enable_rx_timestamps(rx_timestamps, rx_chan);
