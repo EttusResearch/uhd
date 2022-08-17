@@ -29,6 +29,7 @@ MAC_ADDRS=()
 GEN_CONF=NO
 FORCE_OVERWRITE_CONF=NO
 HELP=NO
+RAMDISK=NO
 
 while [[ $# -gt 0 ]]; do
   key="$1"
@@ -65,6 +66,10 @@ while [[ $# -gt 0 ]]; do
       FORCE_OVERWRITE_CONF=YES
       shift
       ;;
+    --ramdisk)
+      RAMDISK=YES
+      shift
+      ;;
     *)
       ETH_10_GIGS+=($1)
       shift
@@ -87,6 +92,7 @@ if [[ "$HELP" == "YES" ]]; then
   echo "      --dpdk         sets up the system for using dpdk"
   echo "      --gen          generates a uhd conf file template for the system interfaces"
   echo "      --force        loads uhd conf file in the current directory as the system-wide uhd.conf"
+  echo "      --ramdisk      creates a ram disk for lossless capture with network packet capture applications like tcpdump"
   exit 0
 fi
 
@@ -127,6 +133,12 @@ function reset_state() {
     sudo dpdk-devbind --bind=$dev_drv $dev_name
     detect_mode
   done
+  DIR="/mnt/ramdisk/"
+  if [ -d "$DIR" ]; then
+    echo "Unmounting ramdisk at ${DIR}..."
+    sudo umount ${DIR}
+    sudo rm -rf ${DIR}
+  fi
 }
 
 function get_devs() {
@@ -207,6 +219,20 @@ if [[ "$USE_DPDK" == "YES" ]]; then
     log "binding $iface to vfio-pci"
     sudo dpdk-devbind --bind=vfio-pci $iface
   done
+fi
+
+if [[ "$RAMDISK" == "YES" ]]; then
+  log ""
+  log "SETTING UP RAMDISK"
+  DIR="/mnt/ramdisk/"
+  if ! [ -d "$DIR" ]; then
+    sudo mkdir ${DIR}
+  fi
+  if [[ $(findmnt -M "$DIR") ]]; then
+    echo "${DIR} already mounted"
+  else
+    sudo mount -t tmpfs -o rw,size=16G tmpfs ${DIR}
+  fi
 fi
 
 function generate_uhd_conf() {
