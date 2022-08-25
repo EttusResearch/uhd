@@ -50,29 +50,33 @@ endif
 ##Supported Targets
 ##-----------------
 
-all:            E310_SG1_IDLE E310_SG3_IDLE E310_SG1 E310_SG3 E310_SG1_RFNOC E310_SG3_RFNOC ##(Default target)
+all:            E310_SG1_IDLE E310_SG3_IDLE E310_SG1 E310_SG3 ##(Default target)
 
-##E310_IP:        Build IP for E310 only.
-E310_IP:
+##E310_SG1_IP:    Build IP for E310_SG1 only.
+E310_SG1_IP:
+	+$(call vivado_ip,E310_SG1,E310_SG1=1)
+
+##E310_SG3_IP:    Build IP for E310_SG3 only.
+E310_SG3_IP:
 	+$(call vivado_ip,E310_SG3,E310_SG3=1)
 
 ##E310_SG1_IDLE:  Build USRP E3XX idle design (Speed Grade 1).
-E310_SG1_IDLE E3XX_idle: E310_IP build/usrp_e310_sg1_idle_fpga.dts
+E310_SG1_IDLE E3XX_idle: E310_SG1_IP build/usrp_e310_sg1_idle_fpga.dts
 	$(call vivado_build,E310_SG1, E310_IDLE_IMAGE=1 E310_SG1=1)
 	$(call post_build,$@,E310_SG1_IDLE)
 
 ##E310_SG3_IDLE:  Build USRP E3XX idle design (Speed Grade 3).
-E310_SG3_IDLE E3XX_idle_sg3: E310_IP build/usrp_e310_sg3_idle_fpga.dts
+E310_SG3_IDLE E3XX_idle_sg3: E310_SG3_IP build/usrp_e310_sg3_idle_fpga.dts
 	$(call vivado_build,E310_SG3, E310_IDLE_IMAGE=1 E310_SG3=1)
 	$(call post_build,$@,E310_SG3_IDLE)
 
 ##E310_SG1:       Build USRP E3XX (Speed Grade 1).
-E310_SG1 E310: E310_IP build/usrp_e310_sg1_fpga.dts
+E310_SG1 E310: E310_SG1_IP build/usrp_e310_sg1_fpga.dts
 	$(call vivado_build,E310_SG1, E310_SG1=1 $(if $(DRAM),ENABLE_DRAM=1,))
 	$(call post_build,$@,E310_SG1)
 
 ##E310_SG3:       Build USRP E3XX (Speed Grade 3).
-E310_SG3 E310_sg3: E310_IP build/usrp_e310_sg3_fpga.dts
+E310_SG3 E310_sg3: E310_SG3_IP build/usrp_e310_sg3_fpga.dts
 	$(call vivado_build,E310_SG3, E310_SG3=1 $(if $(DRAM),ENABLE_DRAM=1,))
 	$(call post_build,$@,E310_SG3)
 
