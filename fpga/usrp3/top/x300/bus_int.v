@@ -189,6 +189,14 @@ module bus_int #(
    localparam CHDR_W         = `CHDR_WIDTH;
    localparam RFNOC_PROTOVER = `RFNOC_PROTOVER;
 
+   // This USRP currently only supports 64-bit CHDR width
+   if (CHDR_W != 64) begin : gen_chdr_w_error
+     CHDR_W_must_be_64_for_this_USRP();
+   end
+
+   // Log base 2 of the maximum transmission unit (MTU) in bytes
+   localparam BYTE_MTU = $clog2(8192);
+
    wire [31:0] 	        set_data;
    wire [7:0] 	        set_addr;
    reg  [31:0] 	        rb_data;
@@ -636,7 +644,7 @@ module bus_int #(
    assign {zpui0_tdata, zpui0_tlast, zpui0_tvalid, zpuo0_tready} = {64'h0, 1'b0, 1'b0, 1'b1};
 `else
    x300_eth_interface #(
-      .PROTOVER(RFNOC_PROTOVER), .MTU(10), .NODE_INST(0), .BASE(SR_ETHINT0)
+      .PROTOVER(RFNOC_PROTOVER), .MTU(BYTE_MTU-3), .NODE_INST(0), .BASE(SR_ETHINT0)
    ) eth_interface0 (
       .clk(clk), .reset(reset),
       .device_id(device_id),
@@ -659,7 +667,7 @@ module bus_int #(
    assign {zpui1_tdata, zpui1_tlast, zpui1_tvalid, zpuo1_tready} = {64'h0, 1'b0, 1'b0, 1'b1};
 `else
    x300_eth_interface #(
-      .PROTOVER(RFNOC_PROTOVER), .MTU(10), .NODE_INST(1), .BASE(SR_ETHINT1)
+      .PROTOVER(RFNOC_PROTOVER), .MTU(BYTE_MTU-3), .NODE_INST(1), .BASE(SR_ETHINT1)
    ) eth_interface1 (
       .clk(clk), .reset(reset),
       .device_id(device_id),
@@ -745,6 +753,7 @@ module bus_int #(
 
   rfnoc_image_core #(
     .CHDR_W   (CHDR_W),
+    .MTU      (BYTE_MTU - $clog2(CHDR_W/8)),
     .PROTOVER (RFNOC_PROTOVER)
   ) rfnoc_sandbox_i (
     .chdr_aclk               (clk        ),
