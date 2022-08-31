@@ -292,6 +292,7 @@ module n3xx_mgt_channel_wrapper #(
         .GT_COMMON        (GT_COMMON),
         .MDIO_EN          (MDIO_EN),
         .MDIO_PHYADDR     (MDIO_PHYADDR),
+        .RFNOC_PROTOVER   (RFNOC_PROTOVER),
         .PORTNUM          (PORTNUM_BASE + l),
         .NODE_INST        (NODE_INST_BASE + l)
       ) lane_i (
