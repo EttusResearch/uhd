@@ -191,6 +191,9 @@ module e320 (
     CHDR_W_must_be_64_for_this_USRP();
   end
 
+  // Log base 2 of the maximum transmission unit (MTU) in bytes
+  localparam BYTE_MTU = $clog2(8192);
+
   `ifdef SFP_1GBE
     parameter PROTOCOL = "1GbE";
     parameter MDIO_EN = 1'b1;
@@ -1082,6 +1085,7 @@ module e320 (
     .PORTNUM(SFP_PORTNUM),
     .MDIO_EN(MDIO_EN),
     .MDIO_PHYADDR(MDIO_PHYADDR),
+    .BYTE_MTU(BYTE_MTU),
     .RFNOC_PROTOVER(RFNOC_PROTOVER),
     .NODE_INST(0)
   ) sfp_wrapper_i (
@@ -1322,6 +1326,7 @@ module e320 (
     .DWIDTH         (REG_DWIDTH),
     .AWIDTH         (REG_AWIDTH),
     .PORTNUM        (8'd1),
+    .BYTE_MTU       (BYTE_MTU),
     .RFNOC_PROTOVER (RFNOC_PROTOVER),
     .NODE_INST      (1)
   ) eth_internal_i (
@@ -1703,6 +1708,7 @@ module e320 (
     .FP_GPIO_WIDTH(FP_GPIO_WIDTH),
     .DB_GPIO_WIDTH(DB_GPIO_WIDTH),
     .CHDR_W(CHDR_W),
+    .BYTE_MTU(BYTE_MTU),
     .RFNOC_PROTOVER(RFNOC_PROTOVER)
   ) e320_core_i (
 

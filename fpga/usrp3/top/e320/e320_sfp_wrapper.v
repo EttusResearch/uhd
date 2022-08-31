@@ -17,6 +17,7 @@
 //   PORTNUM          : Port number
 //   MDIO_EN          : Enables internal MDIO master
 //   MDIO_PHYADDR     : Address to use for the MDIO
+//   BYTE_MTU         : Log base 2 of the MTU in bytes
 //   RFNOC_PROTOVER   : RFNoC protocol version to be reported by transport
 //                      adapters.
 //   NODE_INST        : RFNoC transport adapter node instance for this port
@@ -34,6 +35,7 @@ module e320_sfp_wrapper #(
   parameter [7:0]  PORTNUM          = 8'd0,
   parameter        MDIO_EN          = 0,
   parameter [4:0]  MDIO_PHYADDR     = 5'd0,
+  parameter        BYTE_MTU         = $clog2(8192),
   parameter [15:0] RFNOC_PROTOVER   = {8'd1, 8'd0},
   parameter        NODE_INST        = 0,
   parameter        EN_RX_KV_MAP_CFG = 1,
@@ -302,6 +304,8 @@ module e320_sfp_wrapper #(
       if (EN_RX_KV_MAP_CFG || EN_RX_RAW_PYLD) begin : gen_eth_ipv4_interface_wrapper
         eth_ipv4_interface_wrapper #(
           .PROTOVER         (RFNOC_PROTOVER),
+          .CPU_FIFO_SIZE    (BYTE_MTU),
+          .CHDR_FIFO_SIZE   (BYTE_MTU),
           .NODE_INST        (NODE_INST),
           .REG_AWIDTH       (AWIDTH),
           .BASE             (REG_BASE_ETH_SWITCH),
@@ -361,7 +365,7 @@ module e320_sfp_wrapper #(
       else begin : gen_eth_interface
         eth_interface #(
           .PROTOVER   (RFNOC_PROTOVER),
-          .MTU        (10),
+          .MTU        (BYTE_MTU-3),        // Log base 2 of the MTU in 64-words
           .NODE_INST  (NODE_INST),
           .REG_AWIDTH (AWIDTH),
           .BASE       (REG_BASE_ETH_SWITCH)
