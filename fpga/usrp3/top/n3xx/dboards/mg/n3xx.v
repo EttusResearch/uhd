@@ -3551,12 +3551,7 @@ module n3xx (
     .NUM_CHANNELS(NUM_CHANNELS),
     .NUM_DBOARDS(NUM_DBOARDS),
     .CHDR_W(CHDR_W),
-    .RFNOC_PROTOVER(RFNOC_PROTOVER),
-  `ifdef USE_REPLAY
-    .USE_REPLAY(1)
-  `else
-    .USE_REPLAY(0)
-  `endif
+    .RFNOC_PROTOVER(RFNOC_PROTOVER)
   ) n3xx_core(
     // Clocks and resets
   `ifdef NO_DB

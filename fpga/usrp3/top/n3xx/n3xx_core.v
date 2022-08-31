@@ -24,7 +24,6 @@ module n3xx_core #(
   parameter NUM_DBOARDS = 2,
   parameter NUM_SPI_PER_DBOARD = 8,
   parameter USE_CORRECTION = 0,
-  parameter USE_REPLAY = 0,     // 1 for Replay block instead of DMA FIFO
   parameter FP_GPIO_WIDTH = 12, // Front panel GPIO width
   parameter CHDR_W = 64,
   parameter RFNOC_PROTOVER = {8'd1, 8'd0}
