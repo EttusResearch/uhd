@@ -323,6 +323,9 @@ module n3xx (
     CHDR_W_must_be_64_for_this_USRP();
   end
 
+  // Log base 2 of the maximum transmission unit (MTU) in bytes
+  localparam BYTE_MTU = $clog2(8192);
+  
   localparam N_AXILITE_SLAVES = 4;
   localparam REG_AWIDTH = 14; // log2(0x4000)
   localparam QSFP_REG_AWIDTH = 17; // log2(0x20000)
@@ -1169,6 +1172,7 @@ module n3xx (
     .PORTNUM_BASE   (4),
     .REG_DWIDTH     (REG_DWIDTH),
     .REG_AWIDTH     (QSFP_REG_AWIDTH),
+    .BYTE_MTU       (BYTE_MTU),
     .RFNOC_PROTOVER (RFNOC_PROTOVER),
     .NODE_INST_BASE (0)
   ) qsfp_wrapper_i (
@@ -1688,6 +1692,7 @@ module n3xx (
     .REG_AWIDTH(REG_AWIDTH), // Width of the address bus
     .GT_COMMON(1),
     .PORTNUM_BASE(8'd0),
+    .BYTE_MTU(BYTE_MTU),
     .RFNOC_PROTOVER(RFNOC_PROTOVER),
     .NODE_INST_BASE(0)
    ) sfp_wrapper_0 (
@@ -1861,6 +1866,7 @@ module n3xx (
     .REG_AWIDTH(REG_AWIDTH),     // Width of the address bus
     .GT_COMMON(1),
     .PORTNUM_BASE(8'd1),
+    .BYTE_MTU(BYTE_MTU),
     .RFNOC_PROTOVER(RFNOC_PROTOVER),
     .NODE_INST_BASE(1)
   ) sfp_wrapper_1 (
@@ -2574,6 +2580,7 @@ module n3xx (
     .DWIDTH(REG_DWIDTH),
     .AWIDTH(REG_AWIDTH),
     .PORTNUM(8'd1),
+    .BYTE_MTU(BYTE_MTU),
     .RFNOC_PROTOVER(RFNOC_PROTOVER),
     .NODE_INST(2)
   ) eth_internal_i (
@@ -3471,6 +3478,7 @@ module n3xx (
     .NUM_SPI_PER_DBOARD(4),
     .USE_CORRECTION(1),
     .CHDR_W(CHDR_W),
+    .BYTE_MTU(BYTE_MTU),
     .RFNOC_PROTOVER(RFNOC_PROTOVER)
   ) n3xx_core(
     // Clocks and resets

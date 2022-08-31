@@ -26,6 +26,7 @@ module n3xx_core #(
   parameter USE_CORRECTION = 0,
   parameter FP_GPIO_WIDTH = 12, // Front panel GPIO width
   parameter CHDR_W = 64,
+  parameter BYTE_MTU = $clog2(8192),
   parameter RFNOC_PROTOVER = {8'd1, 8'd0}
 )(
   // Clocks and resets
@@ -1118,6 +1119,7 @@ module n3xx_core #(
 
   rfnoc_image_core #(
     .CHDR_W   (CHDR_W),
+    .MTU      (BYTE_MTU - $clog2(CHDR_W/8)),
     .PROTOVER (RFNOC_PROTOVER)
   ) rfnoc_sandbox_i (
     .chdr_aclk               (bus_clk    ),

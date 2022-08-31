@@ -21,6 +21,7 @@
 //   REG_DWIDTH       : Width of regport address bus
 //   REG_AWIDTH       : Width of regport data bus
 //   GT_COMMON        : Use GT Common ports on MGT
+//   BYTE_MTU         : Log base 2 of the MTU size in bytes
 //   RFNOC_PROTOVER   : RFNoC protocol version to be reported by transport
 //                      adapters.
 //   NODE_INST        : RFNoC transport adapter node instance for this port
@@ -37,6 +38,7 @@ module n3xx_mgt_channel_wrapper #(
   parameter        REG_DWIDTH       = 32,
   parameter        REG_AWIDTH       = 14,
   parameter        GT_COMMON        = 1,
+  parameter        BYTE_MTU         = $clog2(8192),
   parameter [15:0] RFNOC_PROTOVER   = {8'd1, 8'd0},
   parameter        NODE_INST_BASE   = 0
 )(
@@ -292,6 +294,7 @@ module n3xx_mgt_channel_wrapper #(
         .GT_COMMON        (GT_COMMON),
         .MDIO_EN          (MDIO_EN),
         .MDIO_PHYADDR     (MDIO_PHYADDR),
+        .BYTE_MTU         (BYTE_MTU),
         .RFNOC_PROTOVER   (RFNOC_PROTOVER),
         .PORTNUM          (PORTNUM_BASE + l),
         .NODE_INST        (NODE_INST_BASE + l)
