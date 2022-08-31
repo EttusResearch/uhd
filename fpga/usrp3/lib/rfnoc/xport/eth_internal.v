@@ -1,22 +1,43 @@
-///////////////////////////////////////////////////////////////////
 //
-// Copyright 2019 Ettus Research, a National Instruments brand
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
 // Module: eth_internal
-// Description:
-//   Reduces clutter at top level.
-//   - FPGA-internal Ethernet port
-//   - ARP responder instead of other CPU connection
 //
-//////////////////////////////////////////////////////////////////////
+// Description:
+//
+//   This internal Ethernet port is responsible for routing CHDR data between
+//   the ARM CPU and RFNoC. Treating the RFNoC interface to the CPU like an
+//   internal Ethernet device allows the ARM processor to take advantage of
+//   highly optimized DMA engines and software designed for Ethernet. This
+//   block also includes an ARP responder for IP address discovery.
+//
+//   Prefixes are used to distinguish the various AXI-Stream buses:
+//
+//    - e2h : Ethernet to Host (Ethernet transport adapter to ARM)
+//    - h2e : Host to Ethernet (ARM to Ethernet transport adapter)
+//    - e2v : Ethernet to CHDR (Ethernet transport to RFNoC)
+//    - v2e : CHDR to Ethernet (RFNoC to Ethernet transport adapter)
+//    - e2c : Ethernet to CPU (Ethernet transport adapter to ARP responder)
+//    - c2e : CPU to Ethernet (ARP responder to Ethernet transport adapter)
+//
+// Parameters:
+//
+//    DWIDTH         : Data width for AXI-Lite interface (32 or 64)
+//    AWIDTH         : Address width for AXI-Lite interface
+//    PORTNUM        : Ethernet port number
+//    BYTE_MTU       : Sets the MTU to 2^BYTE_MTU bytes
+//    RFNOC_PROTOVER : 16-bit RFNoC protocol version (major[7:0], minor[7:0])
+//    NODE_INST      : The node instance to identify this transport adapter
+//
 
 `default_nettype none
 module eth_internal #(
   parameter        DWIDTH         = 32,
   parameter        AWIDTH         = 14,
   parameter [7:0]  PORTNUM        = 0,
+  parameter        BYTE_MTU       = $clog2(8192),
   parameter [15:0] RFNOC_PROTOVER = {8'd1, 8'd0},
   parameter        NODE_INST      = 0
 )(
@@ -276,7 +297,7 @@ module eth_internal #(
 
   eth_interface #(
      .PROTOVER(RFNOC_PROTOVER),
-     .MTU(10),
+     .MTU(BYTE_MTU-3),                // Log base 2 of the MTU in 64-bit words
      .NODE_INST(NODE_INST),
      .REG_AWIDTH (AWIDTH),
      .BASE(REG_BASE_ETH_SWITCH)
