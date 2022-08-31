@@ -420,7 +420,9 @@ module e31x (
   eth_internal #(
     .DWIDTH(REG_DWIDTH),
     .AWIDTH(REG_AWIDTH),
-    .PORTNUM(8'd1)
+    .PORTNUM(8'd1),
+    .RFNOC_PROTOVER(RFNOC_PROTOVER),
+    .NODE_INST(0)
   ) eth_internal_i (
     // Resets
     .bus_rst (bus_rst),
