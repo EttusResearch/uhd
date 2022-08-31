@@ -152,6 +152,9 @@ module e31x (
     CHDR_W_must_be_64_for_this_USRP();
   end
 
+  // Log base 2 of the maximum transmission unit (MTU) in bytes
+  localparam BYTE_MTU = $clog2(8192);
+
   // Constants
   localparam REG_AWIDTH = 14; // log2(0x4000)
   localparam REG_DWIDTH = 32;
@@ -421,6 +424,7 @@ module e31x (
     .DWIDTH(REG_DWIDTH),
     .AWIDTH(REG_AWIDTH),
     .PORTNUM(8'd1),
+    .BYTE_MTU(BYTE_MTU),
     .RFNOC_PROTOVER(RFNOC_PROTOVER),
     .NODE_INST(0)
   ) eth_internal_i (
@@ -866,6 +870,7 @@ module e31x (
     .FP_GPIO_WIDTH(FP_GPIO_WIDTH),
     .DB_GPIO_WIDTH(DB_GPIO_WIDTH),
     .CHDR_W(CHDR_W),
+    .BYTE_MTU(BYTE_MTU),
     .RFNOC_PROTOVER(RFNOC_PROTOVER)
   ) e31x_core_inst (
 
