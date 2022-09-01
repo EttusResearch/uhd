@@ -33,13 +33,13 @@ namespace {
 // However, we artificially limit this to a smaller frame size, which gives us
 // a safety margin.
 const size_t MPMD_10GE_DATA_FRAME_MAX_SIZE = 8016;
-// For 1 GbE, we either go through our on-chip PHY/MAC, which also caps at 8192
-// bytes, or we go through the RJ45, and then the DMA to the chip, which can go
-// higher. We thus choose the same value as for 10 GbE.
-// Note that for 1 GbE, we almost always have an MTU of 1500, so we will rarely
-// meet this frame size, but MTU discovery will take care of that. This is just
-// a cap to make sure we never try CHDR packets that will clog our fabric.
-const size_t MPMD_1GE_DATA_FRAME_MAX_SIZE = 8016;
+// For 1 GbE, we either go through the the SFP+ port, which supports up to 8192
+// bytes, or the RJ45 port, which uses DMA to the FPGA fabric and supports even
+// larger packets.  However, there is a known issue where the MTU discovery can
+// incorrectly detect a size that is larger than the true MTU size.  The default
+// MTU size for 1GbE is 1500 and that is sufficient for the highest sample rates
+// supported over 1GbE, so it is capped at 1500 here.
+const size_t MPMD_1GE_DATA_FRAME_MAX_SIZE = 1500;
 
 //! Number of send/recv frames
 const size_t MPMD_ETH_NUM_FRAMES = 32;
@@ -297,11 +297,11 @@ mpmd_link_if_ctrl_udp::mpmd_link_if_ctrl_udp(const uhd::device_addr_t& mb_args,
     const std::string mpm_discovery_port = _mb_args.get(
         mpmd_impl::MPM_DISCOVERY_PORT_KEY, std::to_string(mpmd_impl::MPM_DISCOVERY_PORT));
     auto discover_mtu_for_ip = [mpm_discovery_port, use_dpdk](
-                                   const std::string& ip_addr) {
+                                   const std::string& ip_addr, size_t max_frame_size) {
         return discover_mtu(ip_addr,
             mpm_discovery_port,
             IP_PROTOCOL_MIN_MTU_SIZE - IP_PROTOCOL_UDP_PLUS_IP_HEADER,
-            MPMD_10GE_DATA_FRAME_MAX_SIZE,
+            max_frame_size,
             MPMD_MTU_DISCOVERY_TIMEOUT,
             use_dpdk);
     };
@@ -319,7 +319,10 @@ mpmd_link_if_ctrl_udp::mpmd_link_if_ctrl_udp(const uhd::device_addr_t& mb_args,
                                                   << std::to_string(info.if_mtu));
                 _mtu = std::min(_mtu, info.if_mtu);
             } else {
-                _mtu = std::min(_mtu, discover_mtu_for_ip(ip_addr));
+                _mtu = std::min(_mtu, discover_mtu_for_ip(ip_addr,
+                                    info.link_rate == MAX_RATE_1GIGE ?
+                                    MPMD_1GE_DATA_FRAME_MAX_SIZE :
+                                    MPMD_10GE_DATA_FRAME_MAX_SIZE));
             }
             _available_addrs.push_back(ip_addr);
         } catch (const uhd::exception& ex) {
