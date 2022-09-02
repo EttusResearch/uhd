@@ -114,6 +114,25 @@ The build environment also defines many ease-of-use utilities. Please use
 the \subpage md_usrp3_vivado_env_utils "Vivado Utility Reference" page for
 a list and usage information.
 
+### Known Issues
+
+#### N2rt13HDRTExceptionE in Vivado 2021.1
+
+**Problem:**
+
+A sporadic routing error has been observed when building an FPGA with Vivado 2021.1, which prevents a bitfile from being generated:
+```
+ERROR: [Route 35-9] Router encountered a fatal exception of type 'N2rt13HDRTExceptionE' - 'Trying to tool lock on already tool locked arc
+ERROR: [Common 17-39] 'route_design' failed due to earlier errors.
+```
+Attempting to rebuild the FPGA on the same Git hash does not resolve the problem.
+
+**Solution:**
+
+Use a different Git hash or make a non-functional source code change to the HDL to rebuild the design.
+
+According to [Xilinx Support](https://support.xilinx.com/s/question/0D52E00006zHvfcSAC/router-crashes-after-a-second-routedesign-call?language=en_US), this issue will be fixed in a future version of Vivado.
+
 ## Build Instructions (Xilinx ISE only)
 
 ### Makefile Based Builder
