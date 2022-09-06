@@ -68,8 +68,12 @@ proc ::jtag_program { filepath {serial "."} {address "0:0"} } {
     }
 }
 
+# Work around Vivado 2021.1 bug where patches aren't included in Vivado version
+# string check. See AR 76681.
+set_param labtools.override_cs_server_version_check 1
+
 # Initialization sequence
-open_hw
+open_hw_manager
 connect_server
 
 if [expr $argc > 0] {
