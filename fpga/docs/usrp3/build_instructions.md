@@ -121,10 +121,10 @@ a list and usage information.
 **Problem:**
 
 A sporadic routing error has been observed when building an FPGA with Vivado 2021.1, which prevents a bitfile from being generated:
-```
-ERROR: [Route 35-9] Router encountered a fatal exception of type 'N2rt13HDRTExceptionE' - 'Trying to tool lock on already tool locked arc
-ERROR: [Common 17-39] 'route_design' failed due to earlier errors.
-```
+
+    ERROR: [Route 35-9] Router encountered a fatal exception of type 'N2rt13HDRTExceptionE' - 'Trying to tool lock on already tool locked arc
+    ERROR: [Common 17-39] 'route_design' failed due to earlier errors.
+
 Attempting to rebuild the FPGA on the same Git hash does not resolve the problem.
 
 **Solution:**
@@ -132,6 +132,26 @@ Attempting to rebuild the FPGA on the same Git hash does not resolve the problem
 Use a different Git hash or make a non-functional source code change to the HDL to rebuild the design.
 
 According to [Xilinx Support](https://support.xilinx.com/s/question/0D52E00006zHvfcSAC/router-crashes-after-a-second-routedesign-call?language=en_US), this issue will be fixed in a future version of Vivado.
+
+#### Error During cs_server Initialization in Vivado 2021.1
+
+**Problem:**
+
+When using the Vivado hardware manager (JTAG), the following error is observed:
+
+    ERROR: [Labtools 27-3733] Error during cs_server initialization: Vivado<->cs_server version mismatch, cs_server: [2021.1], Vivado: [2021.1_AR76780].
+      To remedy this error, terminate the cs_server exectuable, and relaunch with version 2021.1_AR76780.
+    ERROR: [Common 17-39] 'connect_hw_server' failed due to earlier errors.
+
+**Solution:**
+
+This is a known issue in Vivado 2021.1. See [Xilinx AR76681](https://support.xilinx.com/s/article/76681)
+for details.
+
+Issue the following TCL command to disable the version check before attempting
+to connect to the hardware:
+
+    set_param labtools.override_cs_server_version_check 1
 
 ## Build Instructions (Xilinx ISE only)
 
