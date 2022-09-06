@@ -53,7 +53,7 @@ override_dh_acc:
 	- cat logs/libuhd-dev/*/log.txt
 
 override_dh_shlibdeps:
-	dh_shlibdeps --package=uhd-host --libpackage=libuhd4.2.0
-	dh_shlibdeps --package=libuhd4.2.0 --libpackage=libuhd4.2.0
-	dh_shlibdeps --package=libuhd-dev --libpackage=libuhd4.2.0
-	dh_shlibdeps --package=python3-uhd --libpackage=libuhd4.2.0
+	dh_shlibdeps --package=uhd-host --libpackage=libuhd4.3.0
+	dh_shlibdeps --package=libuhd4.3.0 --libpackage=libuhd4.3.0
+	dh_shlibdeps --package=libuhd-dev --libpackage=libuhd4.3.0
+	dh_shlibdeps --package=python3-uhd --libpackage=libuhd4.3.0

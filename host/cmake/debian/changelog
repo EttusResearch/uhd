@@ -1,3 +1,111 @@
+uhd (4.3.0.0-0ubuntu1) ubuntu_release; urgency=low
+
+  * ci
+    - Add n310 rf tests to monopipeline
+    - Mark SucceededWithIssues as failure
+    - Remove Fedora 34 and add Fedora 36
+    - Workaround Ubuntu 18.04 systemd bug 1988563
+  * doc
+    - Update manual on streaming
+  * docs
+    - Clarify live install and remove version
+  * examples
+    - Add remote RX streaming example
+    - Enable radio loopback for a single radio
+    - rx_samples_c: Use error_code instead of return_code
+  * experts
+    - Move expert framework into public API
+  * extension
+    - Add extension example
+    - Add extension framework
+    - Add Extension Framework documentation
+  * features
+    - Make all feature headers install
+  * fpga
+    - ci: Upgrade to Vivado 2021.1
+    - docs: Upgrade to Vivado 2021.1
+    - e31x: Add PROTOVER to eth_internal
+    - e31x: Cleanup MTU parameters
+    - e31x: Fix IP dependencies
+    - e31x: Upgrade to Vivado 2021.1
+    - e320: Bump FPGA compat to 6.1
+    - e320: Cleanup MTU parameters
+    - e320: Support advanced transport adapter
+    - e320: Upgrade to Vivado 2021.1
+    - Fix target dependencies in Makefile.xxx.inc
+    - lib: Add advanced features to IPv4 SV transport adapter
+    - lib: Add chdr_strip_header module
+    - lib: Add compat to Verilog transport adapter
+    - lib: Add eth_ipv4_interface_tb
+    - lib: Add MTU parameter to eth_internal
+    - lib: Add NET_CHDR_W parameter to transport adapters
+    - lib: Add RegPort SystemVerilog interface
+    - lib: Add support for length in tuser in eth_ipv4_add_udp
+    - lib: Add verilog-compatible wrapper for eth_ipv4_interface
+    - lib: Fix addsub_hls
+    - lib: Fix NODE_INST parameter in eth_internal
+    - lib: Upgrade to Vivado 2021.1
+    - n3xx: Add BUFG to SPI output line to ease timing
+    - n3xx: Add PROTOVER to n3xx_mgt_wrapper
+    - n3xx: Bump FPGA compat to 8.1
+    - n3xx: Cleanup MTU parameters
+    - n3xx: Fix async clocks relationship
+    - n3xx: Remove unused USE_REPLAY parameter
+    - n3xx: Support advanced transport adapter
+    - n3xx: Upgrade to Vivado 2021.1
+    - sim: Support unused tkeep in AxiStreamPacket::dump_bytes()
+    - sim: Update struct enum initialization
+    - sim: Workaround Vivado bug in ChdrIfaceBfm_tb
+    - tools: Add utility to upgrade TCL-based BD
+    - tools: Allow IP renaming with viv_ip_xci_editor.py
+    - tools: Fix HLS IP builder for Vivado 2021.1
+    - tools: Lattice build flow clean-up
+    - Update makefiles to allow parallel FPGA builds
+    - Use AR76780 patch for fir_compiler
+    - x300: Cleanup MTU parameters
+    - x300: Upgrade to Vivado 2021.1
+    - x400: Bump FPGA compat to 7.9
+    - x400: Fix link status detection of 10 GbE IP
+    - x400: Fix NODE_INST for transport adapters
+    - x400: Fix transport adapter PROTOVER
+    - x400: Upgrade to Vivado 2021.1
+    - x400: zbx: Revision Bump
+    - zbx: Update HTML regmap
+  * images
+    - update fpgas for vivado 2021.1 upgrade
+    - update manifest for raw udp streaming
+    - installer: update ubuntu uhd library verison
+  * mpm
+    - bump fpga compat for raw udp streaming
+    - bump x4xx fpga compat
+    - e320: Enable raw UDP streaming
+    - Enable opt-in transport adapter control
+    - n3xx: Enable raw UDP streaming
+    - x4xx: Enable transport manager adapter
+    - xports: Add XportAdapterMgr class
+  * MPMD:
+    - Limit 1GbE MTU discovery to 1500
+  * python
+    - Fix error from pybind11 2.10 update
+    - update to pybind11 for Python 3.11
+  * rfnoc
+    - Add topology graph object
+    - Enable remote UDP streaming
+    - Mutex graph on set_property
+    - Transition stream managers and mgmt_portal to topo_graph_t
+  * tests
+    - Setup isolated processors to use performance governor
+  * tune_map
+    - Publish and simplify zbx_tune_map
+  * uhd
+    - multi_usrp.cpp remove commented out code
+    - update to uniform SPDX license identifier
+  * uhd/mpm
+    - Add API to set remote routes
+
+ -- Ettus Research <packages@ettus.com>  Tue, 06 Sep 2022 09:44:18 -0800
+
+
 uhd (4.2.0.1-0ubuntu1) ubuntu_release; urgency=low
 
   * cal
