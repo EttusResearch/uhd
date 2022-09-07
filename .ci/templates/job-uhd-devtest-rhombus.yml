@@ -132,7 +132,7 @@ jobs:
           devBus: 'ip'
           devAddr: '192.168.20.8'
           sfpAddrs: '192.168.10.8,192.168.20.8'
-          devFpga: 'HG,XG'
+          devFpga: 'HG,XG,XQ'
           devtestPattern: 'n3x0'
           devSDImage: gnuradio-image-ni-sulfur-rev11-mender.sdimg.bz2
           devLabgridConfig: .ci/templates/tests/rhombus-labgrid/device-configs/rhombus-n321-0.yml
