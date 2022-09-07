@@ -44,10 +44,20 @@ if(GIT_FOUND)
         RESULT_VARIABLE _git_branch_result
     )
     if(_git_branch_result EQUAL 0)
+        # This is a special case for Azure Pipelines where it runs
+        # in detached HEAD mode. The branch name is instead stored
+        # in the envionement variable BUILD_SOURCEBRANCH with values
+        # like refs/heads/master for the branch master and
+        # refs/pull/1/merge for pull request 1
+        # The regex removes the first two path segments to match
+        # the "git rev-parse --abbrev-ref HEAD" output
+        if("${_git_branch}" STREQUAL "HEAD" AND DEFINED ENV{BUILD_SOURCEBRANCH})
+            string(REGEX REPLACE "^[^\/]*\/[^\/]*\/" "" _git_branch $ENV{BUILD_SOURCEBRANCH})
+        endif()
         set(UHD_GIT_BRANCH ${_git_branch})
         if(UHD_GIT_BRANCH MATCHES "^UHD-")
             message(STATUS "Operating on release branch (${UHD_GIT_BRANCH}).")
-	    set(UHD_VERSION_DEVEL FALSE)
+            set(UHD_VERSION_DEVEL FALSE)
         elseif(UHD_GIT_BRANCH STREQUAL "master")
             message(STATUS "Operating on master branch.")
             set(UHD_VERSION_DEVEL TRUE)
