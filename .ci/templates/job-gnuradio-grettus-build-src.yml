@@ -28,6 +28,7 @@ jobs:
       - ${{ if eq(parameters.toolset, 'msbuild') }}:
         - docker
         - Agent.OS -equals Windows_NT
+        - rfsdr-build
       - ${{ if or(eq(parameters.toolset, 'make'), eq(parameters.toolset, 'make_trace'), eq(parameters.toolset, 'ninja'), eq(parameters.toolset, 'make_custom_boost_version')) }}:
         - docker
         - Agent.OS -equals Linux

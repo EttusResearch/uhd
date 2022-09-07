@@ -25,6 +25,7 @@ jobs:
     demands:
       - ${{ if eq(parameters.toolset, 'msbuild') }}:
         - Agent.OS -equals Windows_NT
+        - rfsdr-build
   workspace:
     clean: all
   strategy:

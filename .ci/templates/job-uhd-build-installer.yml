@@ -42,6 +42,7 @@ jobs:
       - docker
       - ${{ if contains(parameters.toolset, 'msbuild') }}:
         - Agent.OS -equals Windows_NT
+        - rfsdr-build
       - ${{ if not(contains(parameters.toolset, 'msbuild')) }}:
         - Agent.OS -equals Linux
   workspace:

@@ -155,6 +155,7 @@ jobs:
     demands:
       - agent.os -equals Windows_NT
       - docker
+      - rfsdr-build
   strategy:
     matrix: $[ variables.winDockerImages ]
     maxParallel: 2
@@ -187,6 +188,7 @@ jobs:
     demands:
       - agent.os -equals Windows_NT
       - docker
+      - rfsdr-build
   strategy:
     matrix: $[ variables.winDockerImages ]
   container:
