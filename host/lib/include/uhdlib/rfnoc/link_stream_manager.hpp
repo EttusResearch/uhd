@@ -12,7 +12,6 @@
 #include <uhdlib/rfnoc/ctrlport_endpoint.hpp>
 #include <uhdlib/rfnoc/epid_allocator.hpp>
 #include <uhdlib/rfnoc/mb_iface.hpp>
-#include <uhdlib/rfnoc/topo_graph.hpp>
 #include <functional>
 #include <memory>
 #include <set>
@@ -68,7 +67,7 @@ public:
      *
      * \return A vector of addresses for all reachable endpoints
      */
-    virtual std::set<sep_addr_t> get_reachable_endpoints() const = 0;
+    virtual const std::set<sep_addr_t>& get_reachable_endpoints() const = 0;
 
     /*! \brief Connect the host to the specified destination and init a control endpoint
      *
@@ -168,8 +167,7 @@ public:
     static uptr make(const chdr::chdr_packet_factory& pkt_factory,
         mb_iface& mb_if,
         const epid_allocator::sptr& epid_alloc,
-        device_id_t device_id,
-        detail::topo_graph_t::sptr topo_graph);
+        device_id_t device_id);
 
 }; // class link_stream_manager
 
