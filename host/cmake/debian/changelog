@@ -2,15 +2,15 @@ uhd (4.3.0.0-0ubuntu1) ubuntu_release; urgency=low
 
   * ci
     - Add n310 rf tests to monopipeline
+    - Add XQ testing to n321
     - Mark SucceededWithIssues as failure
     - Remove Fedora 34 and add Fedora 36
+    - set required capability for windows builds
     - Workaround Ubuntu 18.04 systemd bug 1988563
-  * doc
-    - Update manual on streaming
   * docs
+    - Add known issue for Xilinx AR 76681
     - Clarify live install and remove version
   * examples
-    - Add remote RX streaming example
     - Enable radio loopback for a single radio
     - rx_samples_c: Use error_code instead of return_code
   * experts
@@ -33,6 +33,7 @@ uhd (4.3.0.0-0ubuntu1) ubuntu_release; urgency=low
     - e320: Support advanced transport adapter
     - e320: Upgrade to Vivado 2021.1
     - Fix target dependencies in Makefile.xxx.inc
+    - Fix Vivado version check in viv_hardware_utils
     - lib: Add advanced features to IPv4 SV transport adapter
     - lib: Add chdr_strip_header module
     - lib: Add compat to Verilog transport adapter
@@ -71,6 +72,8 @@ uhd (4.3.0.0-0ubuntu1) ubuntu_release; urgency=low
     - x400: Upgrade to Vivado 2021.1
     - x400: zbx: Revision Bump
     - zbx: Update HTML regmap
+  * host
+    - if monotonic don't run monotonic algo
   * images
     - update fpgas for vivado 2021.1 upgrade
     - update manifest for raw udp streaming
@@ -78,32 +81,23 @@ uhd (4.3.0.0-0ubuntu1) ubuntu_release; urgency=low
   * mpm
     - bump fpga compat for raw udp streaming
     - bump x4xx fpga compat
-    - e320: Enable raw UDP streaming
-    - Enable opt-in transport adapter control
-    - n3xx: Enable raw UDP streaming
-    - x4xx: Enable transport manager adapter
-    - xports: Add XportAdapterMgr class
   * MPMD:
     - Limit 1GbE MTU discovery to 1500
   * python
     - Fix error from pybind11 2.10 update
     - update to pybind11 for Python 3.11
   * rfnoc
-    - Add topology graph object
-    - Enable remote UDP streaming
     - Mutex graph on set_property
-    - Transition stream managers and mgmt_portal to topo_graph_t
   * tests
     - Setup isolated processors to use performance governor
   * tune_map
     - Publish and simplify zbx_tune_map
   * uhd
     - multi_usrp.cpp remove commented out code
+    - Revert Raw UDP Host Changes
     - update to uniform SPDX license identifier
-  * uhd/mpm
-    - Add API to set remote routes
 
- -- Ettus Research <packages@ettus.com>  Tue, 06 Sep 2022 09:44:18 -0800
+ -- Ettus Research <packages@ettus.com>  Mon, 12 Sep 2022 05:10:25 -0800
 
 
 uhd (4.2.0.1-0ubuntu1) ubuntu_release; urgency=low
