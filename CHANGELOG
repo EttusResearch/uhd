@@ -77,6 +77,7 @@ Change Log for Releases
 * host
   - if monotonic don't run monotonic algo
 * images
+  - Update filesystem images to point to 4.3.0.0-rc2
   - update fpgas for vivado 2021.1 upgrade
   - update manifest for raw udp streaming
   - installer: update ubuntu uhd library verison
