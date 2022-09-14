@@ -267,6 +267,7 @@ public:
      */
     virtual std::vector<std::string> get_clock_sources() const = 0;
 
+    virtual std::string send_gps_cmd(const std::string& cmd) { return cmd; };
     /*! Set the reference/synchronization sources for the USRP device
      *
      * This is a shorthand for calling

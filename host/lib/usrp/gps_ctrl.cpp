@@ -285,6 +285,11 @@ public:
         }
     }
 
+    std::string send_cmd(const std::string &cmd){
+        _send(cmd);
+        return cmd; // Cheat for now - it should flow through as a malformed GPS message into the cache.
+    }
+
 private:
     void init_gpsdo(void)
     {

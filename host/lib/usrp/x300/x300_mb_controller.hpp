@@ -137,6 +137,7 @@ public:
     std::vector<std::string> get_gpio_srcs(const std::string&) const override;
     std::vector<std::string> get_gpio_src(const std::string&) override;
     void set_gpio_src(const std::string&, const std::vector<std::string>&) override;
+    std::string send_gps_cmd(const std::string& cmd) override;
 
 private:
     //! Return a string X300::MB_CTRL#N

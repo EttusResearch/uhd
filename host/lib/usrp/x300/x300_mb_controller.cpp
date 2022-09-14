@@ -309,6 +309,10 @@ std::vector<std::string> x300_mb_controller::get_clock_sources() const
     return {"internal", "external", "gpsdo"};
 }
 
+std::string x300_mb_controller::send_gps_cmd(const std::string& cmd) {
+    return _gps->send_cmd(cmd);
+}
+
 void x300_mb_controller::set_sync_source(
     const std::string& clock_source, const std::string& time_source)
 {
