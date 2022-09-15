@@ -251,11 +251,9 @@ class e320(ZynqComponents, PeriphManagerBase):
         self._check_fpga_compat()
         self._update_fpga_type()
         # Init peripherals
-        self.enable_gps(
-            enable=str2bool(
-                args.get('enable_gps', E320_DEFAULT_ENABLE_GPS)
-            )
-        )
+        self._gps_enabled = None  # Assume indeterminant, will latch _def_gps_enabled
+        self._def_gps_enabled = str2bool(args.get('enable_gps', E320_DEFAULT_ENABLE_GPS))
+        self.enable_gps(self._def_gps_enabled)
         self.enable_fp_gpio(
             enable=args.get('enable_fp_gpio', E320_DEFAULT_ENABLE_FPGPIO)
         )
@@ -299,10 +297,23 @@ class e320(ZynqComponents, PeriphManagerBase):
                 "Cannot run init(), device was never fully initialized!")
             return False
         args = self._update_default_args(args)
+        self.enable_gps(str2bool(args.get('enable_gps', self._def_gps_enabled)))
         self.set_clock_source(args.get("clock_source", E320_DEFAULT_CLOCK_SOURCE))
         self.set_time_source(args.get("time_source", E320_DEFAULT_TIME_SOURCE))
         result = super(e320, self).init(args)
         return result
+
+    def deinit(self):
+        """
+        Clean up after a UHD session terminates.
+        """
+        if not self._device_initialized:
+            self.log.warning(
+                "Cannot run deinit(), device was never fully initialized!")
+            return
+        # Restore default power-state of GPS hardware resources
+        self.enable_gps(self._def_gps_enabled)
+        super(e320, self).deinit()
 
     def tear_down(self):
         """
@@ -503,7 +514,11 @@ class e320(ZynqComponents, PeriphManagerBase):
         """
         Turn power to the GPS (CLK_GPS_PWR_EN) off or on.
         """
+        if enable == self._gps_enabled:
+            self.log.trace("Nothing to do -- GPS power state unchanged.")
+            return
         self.mboard_regs_control.enable_gps(enable)
+        self._gps_enabled = enable
 
     def enable_fp_gpio(self, enable):
         """
