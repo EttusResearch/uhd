@@ -546,6 +546,7 @@ For a list of which arguments can be passed into make(), see Section
  skip_init           | Skip the initialization process for the device.                               | skip_init=1
  discovery_port      | Override default value for MPM discovery port.                                | discovery_port=49700
  rpc_port            | Override default value for MPM RPC port.                                      | rpc_port=49701
+ enable_gps          | Enable/disable power to the integrated GPSDO (E320 only).                     | enable_gps=0
 
 \subsection e3xx_usage_sensors The sensor API
 
