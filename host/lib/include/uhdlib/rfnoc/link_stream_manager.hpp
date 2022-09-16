@@ -30,7 +30,10 @@ namespace uhd { namespace rfnoc {
  * For convenience, the link_stream_manager also provides a method to get the
  * host's transport adapter ID directly.
  *
- * There must be one instance of this class per logical link.
+ * There must be one instance of this class per logical link. This means there
+ * is at least one link_stream_manager per USRP attached to an rfnoc_graph, and
+ * if the user requested multiple links (e.g., using `addr=...,second_addr=')
+ * then there are multiple link_stream_managers.
  */
 class link_stream_manager
 {
@@ -38,6 +41,17 @@ public:
     using uptr = std::unique_ptr<link_stream_manager>;
 
     virtual ~link_stream_manager() = 0;
+
+    /*! Find transport adapters unreachable by discovery and add them to graph
+     *
+     * Call this after all link stream managers are initialized. It will query
+     * the device for a list of all transport adapters, and add those to the
+     * graph which were not previously found by the topology discovery. This
+     * implies that transport adapters found with this method are never
+     * available for communication with UHD directly, and can only be used to
+     * stream elsewhere (e.g., using the raw UDP streaming API).
+     */
+    virtual void add_unreachable_transport_adapters() = 0;
 
     /*! \brief Get the software device ID associated with this instance
      *

@@ -41,6 +41,7 @@ public:
             }
         }
         for (const auto& mgr_pair : _link_mgrs) {
+            mgr_pair.second->add_unreachable_transport_adapters();
             for (const auto& ep : mgr_pair.second->get_reachable_endpoints()) {
                 // Add entry to source map
                 if (_src_map.count(ep) == 0) {
@@ -49,6 +50,7 @@ public:
                 _src_map[ep].push_back(mgr_pair.first);
             }
         }
+        UHD_LOG_TRACE("RFNOC::GRAPH", "RFNoC Topology:\n" << _tgraph->to_dot());
     }
 
     ~graph_stream_manager_impl() override = default;

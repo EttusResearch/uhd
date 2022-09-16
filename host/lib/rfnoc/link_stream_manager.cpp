@@ -81,7 +81,10 @@ public:
             _pkt_factory,
             sep_addr_t(_my_device_id, SEP_INST_MGMT_CTRL),
             _tgraph);
+    }
 
+    void add_unreachable_transport_adapters() override
+    {
         // Topology discovery can't detect transport adapters that are not also
         // connected to UHD, but we might need those for remote streams. We
         // therefore query a list of available transport adapters we need to
@@ -104,8 +107,9 @@ public:
                 });
                 UHD_ASSERT_THROW(xbar_nodes.size() < 2);
                 if (xbar_nodes.empty()) {
-                    UHD_LOG_DEBUG("RFNOC", "Cannot link transport adapter node "
-                            << ta_node.to_string() << " to topology.");
+                    UHD_LOG_DEBUG("RFNOC",
+                        "Cannot link transport adapter node " << ta_node.to_string()
+                                                              << " to topology.");
                     continue;
                 }
                 detail::topo_edge_t edge;
@@ -116,7 +120,7 @@ public:
                 edge.src_port = ta_node.inst;
                 UHD_LOG_DEBUG(
                     LOG_ID, "Adding transport adapter on xbar port " << edge.src_port);
-                _tgraph->add_edge(xbar_nodes.front(), ta_node, edge);
+                _tgraph->add_biedge(xbar_nodes.front(), ta_node, edge);
             }
         }
     }
