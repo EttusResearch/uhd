@@ -14,6 +14,8 @@ from usrp_mpm.compat_num import CompatNumber
 from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.sys_utils.uio import UIO
 
+MIN_COMPAT_NUM_REMOTE_STREAMING = CompatNumber(1, 0)
+
 # pylint: disable=too-many-arguments
 
 class XportAdapterCtrl:
@@ -60,15 +62,23 @@ class XportAdapterCtrl:
         self._regs = UIO(label=label, read_only=False)
         self.poke32 = self._regs.poke32
         self.peek32 = self._regs.peek32
+        self.features = set()
+        self._ta_index = -1
+        # These three registers are always available, even if the transport
+        # adapter supports nothing else.
         with self._regs:
             compat_num = self.peek32(self.XPORT_ADAPTER_COMPAT_NUM)
             self._ta_index = self.peek32(self.XPORT_ADAPTER_NODE_INST)
-            capabilities = self.peek32(self.XPORT_ADAPTER_INFO)
+            adapter_info = self.peek32(self.XPORT_ADAPTER_INFO)
         self._compat_num = CompatNumber((compat_num >> 8) & 0xFF, compat_num & 0xFF)
-        self.features = set()
-        if bool(capabilities & (1 << 0)):
+        # If the FPGA is new enough to know about remote UDP streaming, but
+        # doesn't have that feature enabled, it will have a compat number of
+        # zero.
+        if self._compat_num < MIN_COMPAT_NUM_REMOTE_STREAMING:
+            return
+        if bool(adapter_info & (1 << 0)):
             self.features.add('rx_routing')
-        if bool(capabilities & (1 << 1)):
+        if bool(adapter_info & (1 << 1)):
             self.features.add('rx_hdr_removal')
 
     def get_xport_adapter_inst(self):

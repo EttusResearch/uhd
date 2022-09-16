@@ -315,3 +315,19 @@ uhd::rfnoc::chdr_tx_data_xport::uptr x300_impl::x300_mb_iface::make_tx_data_tran
 
     return tx_xport;
 }
+
+
+std::map<std::string, uhd::device_addr_t>
+x300_impl::x300_mb_iface::get_chdr_xport_adapters()
+{
+    return {};
+}
+
+int x300_impl::x300_mb_iface::add_remote_chdr_route(const std::string& /*adapter_id*/,
+    const uhd::rfnoc::sep_id_t /*epid*/,
+    const uhd::device_addr_t& /*route_args*/)
+{
+    throw uhd::not_implemented_error(
+        "add_remote_chdr_route() not implemented for X3x0 series!");
+}
+

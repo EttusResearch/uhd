@@ -133,6 +133,10 @@ private:
             const uhd::rfnoc::sw_buff_t mdata_buff_fmt,
             const uhd::device_addr_t& xport_args,
             const std::string& streamer_id) override;
+        std::map<std::string, uhd::device_addr_t> get_chdr_xport_adapters() override;
+        int add_remote_chdr_route(const std::string& adapter_id,
+            const uhd::rfnoc::sep_id_t epid,
+            const uhd::device_addr_t& route_args) override;
 
     private:
         const uhd::rfnoc::device_id_t _remote_dev_id;

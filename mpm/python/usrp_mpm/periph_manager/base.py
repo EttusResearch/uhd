@@ -22,6 +22,7 @@ from usrp_mpm.sys_utils.udev import get_eeprom_paths
 from usrp_mpm.sys_utils.udev import get_spidev_nodes
 from usrp_mpm.sys_utils import dtoverlay
 from usrp_mpm.sys_utils import net
+from usrp_mpm.xports import XportAdapterMgr
 from usrp_mpm import eeprom
 from usrp_mpm.rpc_server import no_claim, no_rpc
 from usrp_mpm import prefs
@@ -248,6 +249,7 @@ class PeriphManagerBase:
         # CHDR transport managers. These need to be instantiated by the child
         # classes.
         self._xport_mgrs = {}
+        self._xport_adapter_mgrs = {}
         # Set up logging
         self.log = get_logger('PeriphManager')
         self.claimed = False
@@ -737,6 +739,28 @@ class PeriphManagerBase:
             return False
         for xport_mgr in self._xport_mgrs.values():
             xport_mgr.init(args)
+        if 'remote_udp_streaming' in self.fpga_features and 'udp' in self._xport_mgrs:
+            # We piggy-back the enumeration and initialization of the transport
+            # adapter managers off of the transport managers.
+            udp_xport_mgr = self._xport_mgrs['udp']
+            chdr_link_options = \
+                udp_xport_mgr.get_chdr_link_options('remote')
+            self._xport_adapter_mgrs = {
+                x['iface']: XportAdapterMgr(
+                    self.log,
+                    x['iface'],
+                    udp_xport_mgr.iface_config[x['iface']]['label'])
+                for x in chdr_link_options if x['type'] == 'sfp'
+            }
+            # Remove transport adapters without capabilities
+            self._xport_adapter_mgrs = {
+                iface: mgr
+                for iface, mgr in self._xport_adapter_mgrs.items()
+                if mgr.get_capabilities()
+            }
+            self.log.debug(
+                "Loaded transport adapter managers for the following interfaces: {}"
+                .format(", ".join(self._xport_adapter_mgrs.keys())))
         if not self.dboards:
             return True
         if args.get("serialize_init", False):
@@ -1124,6 +1148,76 @@ class PeriphManagerBase:
                 self.mboard_info['rpc_connection'])
         # else:
         return self._xport_mgrs[xport_type].get_chdr_link_options()
+
+    def get_chdr_xport_adapters(self):
+        """
+        Returns a dictionary of dictionaries for interfaces that can be used for
+        remote CHDR traffic.
+        This might not include all available transport adapters, rather, it will
+        only include those adapters that can be used as an argument in
+        add_remote_chdr_route().
+
+        For example, this could return a map such as:
+        {
+            'sfp0': {
+                'ta_inst': 0,
+                'rx_routing': 0,
+            },
+            'sfp1': {
+                'ta_inst': 1,
+                'rx_routing': 0,
+            },
+        }
+        """
+        if 'udp' not in self._xport_mgrs:
+            return {}
+        # Note that self._xport_adapter_mgrs will be empty if no remote streaming
+        # is supported.
+        udp_xport_mgr = self._xport_mgrs['udp']
+        xport_mgr_info = {
+            info['iface']: {
+                key: val
+                for key, val in info.items()
+                if key != 'iface'
+            }
+            for info in udp_xport_mgr.get_chdr_link_options('remote')
+        }
+        def gen_options_map(adapter_mgr):
+            """
+            Generate a map of options in UHD-readable form
+            """
+            options_map = xport_mgr_info.get(adapter_mgr.iface, {})
+            options_map['ta_inst'] = str(adapter_mgr.get_xport_adapter_inst())
+            for cap in adapter_mgr.get_capabilities():
+                options_map[cap] = "1"
+            return options_map
+        return {
+            iface: gen_options_map(adapter_mgr)
+            for iface, adapter_mgr in self._xport_adapter_mgrs.items()
+        }
+
+    def add_remote_chdr_route(self, adapter, epid, route_args):
+        """
+        Add a route from a transport adapter to a remote endpoint.
+
+        :param adapter: The name of the adapter from which the remote route
+                        should be created (e.g., 'sfp0').
+        :param epid: The 16-bit endpoint ID for which this route is being set
+                     up.
+        :param route_args: A dictionary of string -> string entries that describe
+                           where the route goes to. For a UDP streaming route,
+                           this should include the following keys:
+                           - dest_addr (Destination IPv4 address)
+                           - dest_port (Destination port)
+                           - dest_mac_addr (Optional! Destination MAC address)
+                           - stream_mode: A string representation of the
+                             streaming mode used between the transport adapter
+                             and the remote endpoint.
+        """
+        if adapter not in self._xport_adapter_mgrs:
+            raise ValueError(f"Invalid adapter to create route from: {adapter}")
+        return self._xport_adapter_mgrs[adapter].add_remote_ep_route(
+            epid, **route_args)
 
     #######################################################################
     # Claimer API
