@@ -668,6 +668,7 @@ private: // Functions
                 // legitimate error. In all other cases we assume that there was nothing
                 // to discover downstream.
                 if (next_path.second < 0) {
+                    UHD_LOG_ERROR(LOG_ID, io_err.what());
                     throw io_err;
                 } else {
                     // Move to the next pending path
