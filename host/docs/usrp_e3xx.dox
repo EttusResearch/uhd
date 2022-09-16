@@ -1312,6 +1312,10 @@ Unlike the E31x, but like most other USRPs, the USRP E320 has separate inputs fo
 clock and time reference. There is no separate internal 10 MHz oscillator, when
 selecting an 'internal' reference, the GPSDO is used to create reference signals.
 
+To reduce phase noise, it may be necessary to power down the GPSDO when using
+an external reference.  To do this, just add `enable_gps=False` to args when
+connecting to the radio (see also \ref page_configfiles).
+
 The values 'internal' and 'gpsdo' are thus interchangeable and mean the same
 thing.
 
