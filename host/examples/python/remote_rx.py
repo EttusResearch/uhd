@@ -36,6 +36,10 @@ def parse_args():
                         help="Remote destination UDP port")
     parser.add_argument("--adapter", type=str,
                         help="Adapter to use for remote streaming (e.g. 'sfp0')")
+    parser.add_argument("--dest-mac-addr",
+                        help="Manually provide destination MAC address in the "
+                             "format 01:a2:4f:6d:7e:5f. By default, the device will "
+                             "use ARP to identify the MAC address.")
     parser.add_argument("--keep-hdr", action="store_true",
                         help="Specify this argument to keep CHDR headers on outgoing packets")
     return parser.parse_args()
@@ -93,7 +97,8 @@ def main():
     stream_args.args = \
         f"dest_addr={args.dest_addr},dest_port={args.dest_port}," \
         f"stream_mode={'full_packet' if args.keep_hdr else 'raw_payload'}" + \
-        (f",adapter={args.adapter}" if args.adapter else "")
+        (f",adapter={args.adapter}" if args.adapter else "") + \
+        (f",dest_mac_addr={args.dest_mac_addr}" if args.dest_mac_addr else "")
     rx_streamer = usrp.get_rx_stream(stream_args)
     print("Starting stream...")
     num_channels = rx_streamer.get_num_channels()
