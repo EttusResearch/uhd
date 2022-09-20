@@ -287,7 +287,9 @@ public:
 
     std::string send_cmd(const std::string &cmd){
         _send(cmd);
-        return cmd; // Cheat for now - it should flow through as a malformed GPS message into the cache.
+        std::this_thread::sleep_for(std::chrono::milliseconds(GPSDO_COMMAND_DELAY_MS));
+        update_cache();
+        return get_sentence(boost::to_upper_copy(cmd.substr(0, 5)), GPS_SERVO_FRESHNESS, GPS_TIMEOUT_DELAY_MS); // Cheat for now - it should flow through as a malformed GPS message into the cache.
     }
 
 private:
