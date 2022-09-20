@@ -482,9 +482,10 @@ private:
                 }
             }
             if (remote_adapter_id.empty()) {
-                throw uhd::runtime_error(
-                    "Cannot identify transport adapter " + std::to_string(default_ta_inst)
-                    + " on route to EPID " + std::to_string(dst_epid));
+                UHD_LOG_THROW(uhd::runtime_error,
+                    LOG_ID,
+                    "Cannot identify transport adapter "
+                        << default_ta_inst << " on route to EPID " << dst_epid);
             }
         }
         UHD_ASSERT_THROW(ta_node.inst != sep_inst_t(-1));
@@ -525,9 +526,9 @@ private:
         // we've already programmed all the routes between the SEP and the TA.
         // The only thing left to do is to program the destination IP/port into
         // the TA.
-        _mb_iface.add_remote_chdr_route(remote_adapter_id, dst_epid, xport_args);
         UHD_LOG_DEBUG("RFNOC",
             "Creating diverted RX stream with arguments: " << xport_args.to_string());
+        _mb_iface.add_remote_chdr_route(remote_adapter_id, dst_epid, xport_args);
     }
 
     /**************************************************************************
