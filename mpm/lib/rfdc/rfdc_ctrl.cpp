@@ -94,6 +94,16 @@ void rfdc_ctrl::init(uint16_t rfdc_device_id)
     }
 }
 
+bool rfdc_ctrl::is_dac_enabled(uint32_t tile_id, uint32_t block_id) const
+{
+    return XRFdc_IsDACBlockEnabled(rfdc_inst_ptr, tile_id, block_id) == 1;
+}
+
+bool rfdc_ctrl::is_adc_enabled(uint32_t tile_id, uint32_t block_id) const
+{
+    return XRFdc_IsADCBlockEnabled(rfdc_inst_ptr, tile_id, block_id) == 1;
+}
+
 bool rfdc_ctrl::startup_tile(int tile_id, bool is_dac)
 {
     return XRFdc_StartUp(rfdc_inst_ptr, is_dac, tile_id) == XRFDC_SUCCESS;

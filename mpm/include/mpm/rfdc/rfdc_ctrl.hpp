@@ -120,6 +120,28 @@ public:
     void init(uint16_t rfdc_device_id);
 
     /**
+     * Queries enabled state of a given DAC block.
+     *
+     * @param  tile_id  ID of the tile (0..3)
+     * @param  block_id ID of the block within the tile (0..3)
+     * @return          enabled state of block
+     *                  true is an enabled block
+     *                  false is an invalid or disabled block
+     */
+    bool is_dac_enabled(uint32_t tile_id, uint32_t block_id) const;
+
+    /**
+     * Queries enabled state of a given ADC block.
+     *
+     * @param  tile_id  ID of the tile (0..3)
+     * @param  block_id ID of the block within the tile (0..3)
+     * @return          enabled state of block
+     *                  true is an enabled block
+     *                  false is an invalid or disabled block
+     */
+    bool is_adc_enabled(uint32_t tile_id, uint32_t block_id) const;
+
+    /**
      * Starts up the requested tile while retaining register values.
      *
      * @param    tile_id the ID of the tile to start.
@@ -651,6 +673,8 @@ void export_rfdc(py::module& top_module)
     py::class_<rfdc_ctrl, std::shared_ptr<rfdc_ctrl>>(m, "rfdc_ctrl")
         .def(py::init())
         .def("init", &rfdc_ctrl::init)
+        .def("is_adc_enabled", &rfdc_ctrl::is_adc_enabled)
+        .def("is_dac_enabled", &rfdc_ctrl::is_dac_enabled)
         .def("startup_tile", &rfdc_ctrl::startup_tile)
         .def("shutdown_tile", &rfdc_ctrl::shutdown_tile)
         .def("reset_tile", &rfdc_ctrl::reset_tile)
