@@ -133,7 +133,7 @@ convert.hpp and \ref page_converters for further documentation.
 Ethernet-based devices allow sending data to an alternative destination instead
 of back to the controlling UHD session.
 
-\subsection stream_remote_rfnoc RFNoC Devices (X410, N3xx Series, E320)
+\subsection stream_remote_rfnoc RFNoC Devices (X410, X3x0, N3xx Series, E320)
 
 Starting with UHD 4.3, these devices allow streaming data to alternative
 locations from their QSFP/SFP connectors (streaming data to alternative locations
@@ -207,6 +207,8 @@ The streamer objects accepts the following arguments:
   This allows connecting to one interface and streaming out of another. It also
   allows running UHD on the device itself (for MPM devices, i.e. X410, E320,
   N3xx series) and streaming to a remote destination at a high rate.
+  Note that for X3x0, the available adapter names are hardcoded as `sfp0` and
+  `sfp1`, respectively.
 - `stream_mode`: This key allows two options: `raw_payload` (the default) and
   `full_packet`. When `full_packet` is selected, the full CHDR packet is streamed
   and the remote destination needs to dissect or remove the header. With
@@ -229,6 +231,25 @@ enable flow control. However, the remote destination must now unpack the data
 packets and send flow control responses to the USRP in order for it to keep
 streaming. Refer to the RFNoC specification for how to format flow control
 response packets.
+
+\subsubsection stream_remote_rfnoc_limits Limitations
+
+The following limitations apply when using remote streaming:
+
+- The streaming rates must not exceed the link speed (e.g., a 10 GbE link cannot
+  handle more than approx. 300 Msps when using 16-bit complex samples). If the
+  link speed is exceeded, the data will back up in the device and will cause an
+  overrun. The radios will then stop producing data. The overrun will be reported
+  to UHD, but the remote streaming destination will not automatically be
+  notified.
+- When identifying the adapter to stream out of, USRPs will *not* verify that the
+  remote destination is actually available on this connector. For example, if a
+  USRP X310 were connected to a host with IP address 192.168.30.1 on sfp0, and
+  another host with IP 192.168.40.1 on sfp1, it is possible to request sending
+  packets to 192.168.40.1 on sfp0, even though there is no connection that way.
+  The USRP will simply "do as it is told" and stream packets with the destination
+  address 192.168.40.1 out of sfp0; those packets would then likely not be
+  processed by any network interface.
 
 \subsection stream_remote_usrp2 USRP N200/N210/USRP2
 
