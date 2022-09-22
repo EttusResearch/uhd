@@ -36,6 +36,7 @@ endfunction(CHECK_WORKING_CXX_ATOMICS64)
 # Note: If we reach this, we have already checked for the existence of Boost,
 # and Boost.Lockfree is a header-only library so no linker options required.
 function(CHECK_WORKING_CXX_BOOST_ATOMICS varname)
+    set(CMAKE_REQUIRED_INCLUDES ${Boost_INCLUDE_DIRS})
     CHECK_CXX_SOURCE_COMPILES("
         #include <boost/lockfree/queue.hpp>
         boost::lockfree::queue<int> queue(1);
@@ -43,6 +44,7 @@ function(CHECK_WORKING_CXX_BOOST_ATOMICS varname)
         return queue.is_lock_free();
         }
         " ${varname})
+    unset(CMAKE_REQUIRED_INCLUDES)
 endfunction(CHECK_WORKING_CXX_BOOST_ATOMICS)
 
 macro(CHECK_ATOMICS_LIB_REQUIRED required_var)
