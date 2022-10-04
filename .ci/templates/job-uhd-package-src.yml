@@ -47,13 +47,10 @@ jobs:
       fi
       cmake \
         $UHD_CI_CMAKE_OPTIONS \
-      ${{ parameters.uhdSrcDir }}/host
+        ${{ parameters.uhdSrcDir }}/host
 
       # Finds UHD_VERSION String from CMake Output
-      uhd_version_str=$(grep UHD_VERSION:STRING= CMakeCache.txt)
-
-      # Strip variable prefix
-      uhd_version_str=${uhd_version_str#"UHD_VERSION:STRING="}
+      uhd_version_str=$(grep -P -o "(?<=set\(PACKAGE_VERSION )[a-z0-9.-]+" cmake/Modules/UHDConfigVersion.cmake)
 
       echo "##vso[task.setvariable variable=uhdVersionStr;isOutput=true;]$uhd_version_str"
     name: get_uhd_version

@@ -164,5 +164,6 @@ if(${PACKAGE_FIND_VERSION} VERSION_EQUAL ${PACKAGE_VERSION})
   set(PACKAGE_VERSION_EXACT TRUE)
 endif()
 
-# Undo our patch-version-number hack
+# Undo our patch-version-number hack. Careful when changing this line, we use it
+# to scrape the version for some CI scripting.
 set(PACKAGE_VERSION @UHD_VERSION@)
