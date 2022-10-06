@@ -30,6 +30,7 @@ from usrp_mpm.sys_utils import watchdog
 from usrp_mpm.sys_utils import net
 
 TIMEOUT_INTERVAL = 5.0 # Seconds before claim expires (default value)
+LOCK_ACQ_TIMEOUT = 1 # Seconds to wait for acquiring shared lock (default value)
 TOKEN_LEN = 16 # Length of the token string
 # Compatibility number for MPM
 MPM_COMPAT_NUM = (4, 3)
@@ -263,6 +264,18 @@ class MPMServer(RPCServer):
                 len(token) == TOKEN_LEN and \
                 self._state.claim_token.value == token
 
+    def _acquire_or_throw(self, lock, error_msg, timeout=LOCK_ACQ_TIMEOUT):
+        """
+        Attempt to acquire a shared lock. If the timeout is exceeded, then
+        throw an error.
+        """
+        acquired = lock.acquire(timeout=LOCK_ACQ_TIMEOUT)
+        if not acquired:
+            self.log.error(error_msg)
+            self._last_error = error_msg
+            raise RuntimeError("RPC Server Lock Acquire Timeout: " + error_msg)
+
+
     def claim(self, session_id):
         """Claim device
 
@@ -272,7 +285,8 @@ class MPMServer(RPCServer):
 
         Will return a token on success, or raise an Exception on failure.
         """
-        self._state.lock.acquire()
+        error_msg = "Claim timed out acquiring the shared state lock after 1 second."
+        self._acquire_or_throw(self._state.lock, error_msg)
         if self._state.claim_status.value:
             error_msg = \
                 "Someone tried to claim this device again (From: {})".format(
@@ -294,19 +308,20 @@ class MPMServer(RPCServer):
         self.periph_manager.claim()
         if self.periph_manager.clear_rpc_registry_on_unclaim:
             self._init_rpc_calls(self.periph_manager)
+        token_val = self._state.claim_token.value
         self._state.lock.release()
         self.session_id = session_id + " ({})".format(self.client_host)
         self._reset_timer()
         self.log.debug(
             "giving token: %s to host: %s",
-            self._state.claim_token.value,
+            token_val,
             self.client_host
         )
         if _is_connection_local(self.client_host):
             self.periph_manager.set_connection_type("local")
         else:
             self.periph_manager.set_connection_type("remote")
-        return self._state.claim_token.value
+        return token_val
 
     def reclaim(self, token):
         """
@@ -315,7 +330,8 @@ class MPMServer(RPCServer):
         claimed at all.
         """
         if self._state.claim_status.value:
-            self._state.lock.acquire()
+            error_msg = "Reclaim timed out acquiring the shared state lock after 1 second."
+            self._acquire_or_throw(self._state.lock, error_msg)
             if self._check_token_valid(token):
                 self._state.lock.release()
                 self.log.debug("reclaimed from: %s", self.client_host)
@@ -339,7 +355,8 @@ class MPMServer(RPCServer):
 
         Resets and deinitalizes the periph manager as well.
         """
-        self._state.lock.acquire()
+        error_msg = "Unclaim timed out acquiring the shared state lock after 1 second."
+        self._acquire_or_throw(self._state.lock, error_msg)
         self.log.debug(
             "Deinitializing device and releasing claim on session `{}'"
             .format(self.session_id))
