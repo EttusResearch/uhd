@@ -625,7 +625,7 @@ def spawn_rpc_process(state, udp_port, default_args):
     """
     proc = Process(
         target=_rpc_server_process,
-        args=[udp_port, state, default_args],
+        args=[state, udp_port, default_args],
     )
     proc.start()
     return proc

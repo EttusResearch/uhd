@@ -163,7 +163,7 @@ def spawn_processes(log, args):
     log.info("Spawning RPC process...")
     _PROCESSES.append(
         mpm.spawn_rpc_process(
-            mpm.mpmtypes.MPM_RPC_PORT, shared, args.default_args))
+            shared, mpm.mpmtypes.MPM_RPC_PORT, args.default_args))
     log.debug("RPC process has PID: %d", _PROCESSES[-1].pid)
     if watchdog.has_watchdog():
         watchdog.transfer_control(_PROCESSES[-1].pid)
