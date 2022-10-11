@@ -13,6 +13,7 @@ import copy
 from random import choice
 from string import ascii_letters, digits
 from multiprocessing import Process
+from multiprocessing import RLock
 import threading
 import sys
 from gevent.server import StreamServer
@@ -63,6 +64,7 @@ class MPMServer(RPCServer):
                        MPM_COMPAT_NUM[0], MPM_COMPAT_NUM[1])
         self._state = state
         self._timer = Greenlet()
+        self._timer_lock = RLock()
         # Setting this to True will disable an unclaim on timeout. Use with
         # care, and make sure to set it to False again when finished.
         self._disable_timeouts = False
@@ -361,7 +363,10 @@ class MPMServer(RPCServer):
             "Deinitializing device and releasing claim on session `{}'"
             .format(self.session_id))
         # Disable unclaim timer, we're now finished with reclaim loops.
+        error_msg = "Unclaim timed out acquiring the timer lock after 1 second."
+        self._acquire_or_throw(self._timer_lock, error_msg)
         self._timer.kill(block=False)
+        self._timer_lock.release()
         # We might need to clear the method registry
         if self.periph_manager.clear_rpc_registry_on_unclaim:
             self.clear_method_registry()
@@ -411,8 +416,11 @@ class MPMServer(RPCServer):
         Reset unclaim timer. After calling this, call this function again
         within 'timeout' seconds to avoid a timeout event.
         """
+        error_msg = "Reset Timer timed out acquiring the timer lock after 1 second."
+        self._acquire_or_throw(self._timer_lock, error_msg)
         self._timer.kill()
         self._timer = spawn_later(self._timeout_interval, self._timeout_event)
+        self._timer_lock.release()
 
     @contextmanager
     def _timeout_disabler(self):
