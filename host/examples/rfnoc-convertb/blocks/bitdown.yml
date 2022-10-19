@@ -1,0 +1,70 @@
+
+schema: rfnoc_modtool_args
+module_name: bitdown
+version: 1.0
+rfnoc_version: 1.0
+chdr_width: 64
+noc_id: 0x56789
+
+clocks:
+  - name: rfnoc_chdr
+    freq: "[]"
+  - name: rfnoc_ctrl
+    freq: "[]"
+  - name: ce
+    freq: "[]"
+
+control:
+  sw_iface: nocscript
+  fpga_iface: ctrlport
+  interface_direction: slave
+  fifo_depth: 32
+  clk_domain: ce
+  ctrlport:
+    byte_mode: False
+    timed: False
+    has_status: False
+
+data:
+  fpga_iface: axis_pyld_ctxt
+  clk_domain: ce
+  inputs:
+    in_0:
+      index: 0
+      item_width: 32
+      nipc: 1
+      context_fifo_depth: 4
+      payload_fifo_depth: 4
+      format: sc16
+      mdata_sig: ~
+    in_1:
+      index: 0
+      item_width: 32
+      nipc: 1
+      context_fifo_depth: 4
+      payload_fifo_depth: 4
+      format: sc16
+      mdata_sig: ~
+  outputs:
+    out_0:
+      index: 0
+      item_width: 16
+      nipc: 1
+      context_fifo_depth: 4
+      payload_fifo_depth: 4
+      format: sc16
+      mdata_sig: ~
+    out_1:
+      index: 0
+      item_width: 16
+      nipc: 1
+      context_fifo_depth: 4
+      payload_fifo_depth: 4
+      format: sc16
+      mdata_sig: ~
+
+io_port:
+
+registers:
+
+properties:
