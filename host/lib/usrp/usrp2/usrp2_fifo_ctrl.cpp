@@ -46,9 +46,6 @@ public:
     ~usrp2_fifo_ctrl_impl(void) override
     {
         _timeout = ACK_TIMEOUT; // reset timeout to something small
-        UHD_SAFE_CALL(
-            this->peek32(0); // dummy peek with the purpose of ack'ing all packets
-        )
     }
 
     /*******************************************************************
