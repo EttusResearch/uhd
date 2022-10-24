@@ -50,6 +50,9 @@ void export_types(py::module& m)
     // This will allow functions in Python that take a device_addr to also take
     // a string:
     py::implicitly_convertible<std::string, uhd::device_addr_t>();
+
+    m.def("separate_device_addr", &uhd::separate_device_addr);
+    m.def("combine_device_addrs", &uhd::combine_device_addrs);
 }
 
 #endif /* INCLUDED_UHD_TYPES_PYTHON_HPP */
