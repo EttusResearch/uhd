@@ -87,3 +87,22 @@ BOOST_AUTO_TEST_CASE(test_map_device_addr)
     BOOST_CHECK_EQUAL(dev_addr["key1"], "val1");
     BOOST_CHECK_EQUAL(dev_addr["key2"], "val2");
 }
+
+BOOST_AUTO_TEST_CASE(test_separate_device_addr)
+{
+    uhd::device_addr_t dev_addr("addr0=192.168.10.2,addr1=192.168.20.2,addr2=192.168.30."
+                                "2,clock_source=external,clock_source2=internal");
+    const auto dev_addr_sep = uhd::separate_device_addr(dev_addr);
+    BOOST_CHECK(
+        dev_addr_sep[0] == uhd::device_addr_t("addr=192.168.10.2,clock_source=external"));
+    BOOST_CHECK(
+        dev_addr_sep[1] == uhd::device_addr_t("addr=192.168.20.2,clock_source=external"));
+    BOOST_CHECK(
+        dev_addr_sep[2] == uhd::device_addr_t("addr=192.168.30.2,clock_source=internal"));
+    const auto dev_addr2 = uhd::combine_device_addrs(dev_addr_sep);
+    BOOST_CHECK(
+        dev_addr2
+            == uhd::device_addr_t(
+                "addr0=192.168.10.2,addr1=192.168.20.2,addr2=192.168.30."
+                "2,clock_source0=external,clock_source1=external,clock_source2=internal"));
+}
