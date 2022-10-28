@@ -18,8 +18,10 @@ class MboardCPLD:
     SIGNATURE_OFFSET         = 0x0000
     COMPAT_REV_OFFSET        = 0x0004
     OLDEST_COMPAT_REV_OFFSET = 0x0008
+    SCRATCH                  = 0x000C
     GIT_HASH_OFFSET          = 0x0010
     DB_ENABLE_OFFSET         = 0x0020
+    DIO_DIRECTION_REGISTER   = 0x0030
     SERIAL_NO_LO_OFFSET      = 0x0034
     SERIAL_NO_HI_OFFSET      = 0x0038
     CMI_OFFSET               = 0x003C
@@ -28,7 +30,13 @@ class MboardCPLD:
     OLDEST_REQ_COMPAT_REV   = 0x20122114
     REQ_COMPAT_REV          = 0x20122114
     SIGNATURE               = 0x0A522D27
+
+    # Bit fields in DB_ENABLE_OFFSET
+    DB0_CLOCK_ENABLED       = 1 << 0
+    DB1_CLOCK_ENABLED       = 1 << 1
     PLL_REF_CLOCK_ENABLED   = 1 << 2
+    DB0_RESET_ASSERTED      = 1 << 4
+    DB1_RESET_ASSERTED      = 1 << 5
     ENABLE_CLK_DB0          = 1 << 8
     ENABLE_CLK_DB1          = 1 << 9
     ENABLE_PRC              = 1 << 10
