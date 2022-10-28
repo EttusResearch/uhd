@@ -8,8 +8,8 @@ Miscellaneous utilities for MPM
 """
 
 import time
-import pyudev
 from contextlib import contextmanager
+import pyudev
 
 def poll_with_timeout(state_check, timeout_ms, interval_ms):
     """
