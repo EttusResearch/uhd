@@ -56,6 +56,7 @@ class X4xxDbMixin:
         rev_compat = kwargs.get('rev_compat') if 'rev_compat' in kwargs else \
                 self.get_eeprom()['rev_compat']
         self._assert_rev_compatibility(rev_compat)
+        self._assert_mb_cpld_compatibility(self.db_iface.mboard.cpld_control)
 
     ###########################################################################
     # Init helpers
@@ -84,6 +85,20 @@ class X4xxDbMixin:
                 f"This MPM version is not compatible with this {self.product_name}" \
                 f"daughterboard. Found rev_compat value: 0x{rev_compat:02x}. " \
                 "Please update your MPM version to support this daughterboard revision."
+            self.log.error(err)
+            raise RuntimeError(err)
+
+    def _assert_mb_cpld_compatibility(self, mb_cpld_ctrl):
+        """
+        Verify that the MB CPLD is compatible with this daughterboard.
+
+        Throws a RuntimeError() if that's not the case.
+        """
+        if not any(pid in self.pids for pid in mb_cpld_ctrl.COMPATIBLE_DB_PIDS):
+            err = \
+                f"This {self.product_name} daughterboard is not compatible with " \
+                f"the motherboard CPLD image (CPLD signature: {mb_cpld_ctrl.SIGNATURE:X}). " \
+                f"Please update the motherboard CPLD image."
             self.log.error(err)
             raise RuntimeError(err)
 

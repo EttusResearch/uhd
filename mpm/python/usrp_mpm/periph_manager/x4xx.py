@@ -30,7 +30,7 @@ from usrp_mpm.periph_manager.x4xx_periphs import CtrlportRegs
 from usrp_mpm.periph_manager.x4xx_dio_control import DioControl
 from usrp_mpm.periph_manager.x4xx_periphs import QSFPModule
 from usrp_mpm.periph_manager.x4xx_periphs import get_temp_sensor
-from usrp_mpm.periph_manager.x4xx_mb_cpld import MboardCPLD
+from usrp_mpm.periph_manager.x4xx_mb_cpld import make_mb_cpld_ctrl
 from usrp_mpm.periph_manager.x4xx_clk_aux import ClockingAuxBrdControl
 from usrp_mpm.periph_manager.x4xx_clk_mgr import X4xxClockMgr
 from usrp_mpm.periph_manager.x4xx_gps_mgr import X4xxGPSMgr
@@ -462,10 +462,9 @@ class x4xx(ZynqComponents, PeriphManagerBase):
 
         # Init CPLD before talking to clocking ICs
         cpld_spi_node = dt_symbol_get_spidev('mb_cpld')
-        self.cpld_control = MboardCPLD(cpld_spi_node, self.log)
-        self.cpld_control.check_signature()
-        self.cpld_control.check_compat_version()
-        self.cpld_control.trace_git_hash()
+        # This factory function will check signature and compat-rev, and
+        # therefore could throw if the CPLD is not compatible.
+        self.cpld_control = make_mb_cpld_ctrl(cpld_spi_node, self.log)
 
         self._assert_rfdc_powered()
         # Init clocking after CPLD as the SPLL communication is relying on it.
