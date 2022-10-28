@@ -875,6 +875,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
                 self.set_sync_source({**self._safe_sync_source, '__noretry__': True})
             raise
 
+    @no_rpc
     def set_master_clock_rate(self, master_clock_rate):
         """
         Sets the master clock rate by configuring the RFDC decimation and SPLL,
@@ -970,6 +971,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
     #######################################################################
     # Timekeeper API
     #######################################################################
+    @no_rpc
     def get_master_clock_rate(self):
         """ Return the master clock rate set during init """
         return self._master_clock_rate

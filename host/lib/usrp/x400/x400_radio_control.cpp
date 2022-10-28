@@ -81,7 +81,10 @@ x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
         return;
     }
 
-    const double master_clock_rate = _rpcc->get_master_clock_rate();
+    // Note: mpmd passed the device args to MPM earlier, so if the user provided
+    // a master_clock_rate key, then MPM will have used that to initialize the
+    // master clock rate.
+    const double master_clock_rate = _db_rpcc->get_master_clock_rate();
     set_tick_rate(master_clock_rate);
     _x4xx_timekeeper->update_tick_rate(master_clock_rate);
     radio_control_impl::set_rate(master_clock_rate);
@@ -284,10 +287,10 @@ void x400_radio_control_impl::_validate_master_clock_rate_args()
     auto block_args = get_block_args();
 
     // Note: MCR gets set during the init() call (prior to this), which takes
-    // in arguments from the device args. So if block_args contains a
+    // in arguments from the device args. So if the block args contain a
     // master_clock_rate key, then it should better be whatever the device is
     // configured to do.
-    const double master_clock_rate = _rpcc->get_master_clock_rate();
+    const double master_clock_rate = _db_rpcc->get_master_clock_rate();
     if (!uhd::math::frequencies_are_equal(get_rate(), master_clock_rate)) {
         throw uhd::runtime_error(
             str(boost::format("Master clock rate mismatch. Device returns %f MHz, "
