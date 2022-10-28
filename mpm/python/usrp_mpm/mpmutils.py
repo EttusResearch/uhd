@@ -213,6 +213,7 @@ def check_fpga_state(which=0, logger=None):
             logger.error("Error while checking FPGA status: {}".format(ex))
         return False
 
+
 def parse_encoded_git_hash(encoded):
     """
     Turn a register-encoded git hash into a readable git hash.
@@ -224,3 +225,43 @@ def parse_encoded_git_hash(encoded):
     tree_dirty = ((encoded & 0xF0000000) > 0)
     dirtiness_qualifier = 'dirty' if tree_dirty else 'clean'
     return (git_hash, dirtiness_qualifier)
+
+
+def parse_multi_device_arg(arg, conv=None, delim=";"):
+    """
+    In device args, there may be values that can either be scalar or a vector.
+    They are listed as one of these:
+    - key=val
+    - key=[val0;val1]
+    - key=[val0]
+
+    This function takes the string representation of val and returns a tuple
+    of values.
+
+    :param arg: The argument value as a string
+    :param conv: An optional converter function. This will be applied to all
+                 individual elements.
+    :param delim: The delimiter
+
+    Example:
+    >>> parse_multi_device_arg('[1;2;3]', float)
+    (1.0, 2.0, 3.0)
+    >>> parse_multi_device_arg('1', float)
+    (1.0,)
+    >>> parse_multi_device_arg('[1;2;3]')
+    ('1', '2', '3')
+    >>> parse_multi_device_arg('')
+    ()
+    """
+    if conv is None:
+        conv = lambda x: x
+    arg = str(arg).strip()
+    if not arg: # Handle empty string
+        return tuple()
+
+    if ((arg[0], arg[-1]) == ('{', '}') or \
+            (arg[0], arg[-1]) == ('[', ']') or \
+            (arg[0], arg[-1]) == ('(', ')')):
+        arg = arg[1:-1]
+    arg = arg.split(delim)
+    return tuple(conv(x) for x in arg)
