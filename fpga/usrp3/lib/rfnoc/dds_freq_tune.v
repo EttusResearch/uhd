@@ -161,11 +161,13 @@ module dds_freq_tune #(
     .s_axis_phase_tvalid (s_axis_phase_tvalid | phase_valid_hold),
     .s_axis_phase_tready (s_axis_phase_tready_dds),
     .s_axis_phase_tlast  (s_axis_phase_tlast),
+    .s_axis_phase_tuser  (1'b0),
     .s_axis_phase_tdata  (s_axis_phase_tdata),   // [23 : 0]
     .m_axis_data_tvalid  (m_axis_dds_tvalid),
     .m_axis_data_tready  (m_axis_dds_tready),
     .m_axis_data_tlast   (m_axis_dds_tlast),
-    .m_axis_data_tdata   (m_axis_dds_tdata)      // [31 : 0]
+    .m_axis_data_tdata   (m_axis_dds_tdata),     // [31 : 0]
+    .m_axis_data_tuser   ()
   );
 
   wire [        WIDTH*2-1:0] mult_in_a_tdata;
