@@ -11,12 +11,14 @@
 #include <uhd/error.h>
 
 #ifdef __cplusplus
-#include <uhd/types/sensors.hpp>
-#include <string>
+#    include <uhd/types/sensors.hpp>
+#    include <memory>
+#    include <string>
 
-struct uhd_sensor_value_t {
+struct uhd_sensor_value_t
+{
     // No default constructor, so we need a pointer
-    uhd::sensor_value_t* sensor_value_cpp;
+    std::unique_ptr<uhd::sensor_value_t> sensor_value_cpp;
     std::string last_error;
 };
 extern "C" {
@@ -50,9 +52,7 @@ typedef enum {
  * \param h the sensor handle in which to place sensor
  * \returns UHD error code
  */
-UHD_API uhd_error uhd_sensor_value_make(
-    uhd_sensor_value_handle* h
-);
+UHD_API uhd_error uhd_sensor_value_make(uhd_sensor_value_handle* h);
 
 //! Make a UHD sensor from a boolean.
 /*!
@@ -63,13 +63,11 @@ UHD_API uhd_error uhd_sensor_value_make(
  * \param ufalse string representing "false"
  * \returns UHD error code
  */
-UHD_API uhd_error uhd_sensor_value_make_from_bool(
-    uhd_sensor_value_handle* h,
+UHD_API uhd_error uhd_sensor_value_make_from_bool(uhd_sensor_value_handle* h,
     const char* name,
     bool value,
     const char* utrue,
-    const char* ufalse
-);
+    const char* ufalse);
 
 //! Make a UHD sensor from an integer.
 /*!
@@ -80,13 +78,11 @@ UHD_API uhd_error uhd_sensor_value_make_from_bool(
  * \param formatter printf-style format string for value string
  * \returns UHD error code
  */
-UHD_API uhd_error uhd_sensor_value_make_from_int(
-    uhd_sensor_value_handle* h,
+UHD_API uhd_error uhd_sensor_value_make_from_int(uhd_sensor_value_handle* h,
     const char* name,
     int value,
     const char* unit,
-    const char* formatter
-);
+    const char* formatter);
 
 //! Make a UHD sensor from a real number.
 /*!
@@ -97,13 +93,11 @@ UHD_API uhd_error uhd_sensor_value_make_from_int(
  * \param formatter printf-style format string for value string
  * \returns UHD error code
  */
-UHD_API uhd_error uhd_sensor_value_make_from_realnum(
-    uhd_sensor_value_handle* h,
+UHD_API uhd_error uhd_sensor_value_make_from_realnum(uhd_sensor_value_handle* h,
     const char* name,
     double value,
     const char* unit,
-    const char* formatter
-);
+    const char* formatter);
 
 //! Make a UHD sensor from a string.
 /*!
@@ -114,38 +108,24 @@ UHD_API uhd_error uhd_sensor_value_make_from_realnum(
  * \returns UHD error code
  */
 UHD_API uhd_error uhd_sensor_value_make_from_string(
-    uhd_sensor_value_handle* h,
-    const char* name,
-    const char* value,
-    const char* unit
-);
+    uhd_sensor_value_handle* h, const char* name, const char* value, const char* unit);
 
 //! Free the given sensor handle.
 /*!
  * Attempting to use the handle after calling this handle will
  * result in a segmentation fault.
  */
-UHD_API uhd_error uhd_sensor_value_free(
-    uhd_sensor_value_handle* h
-);
+UHD_API uhd_error uhd_sensor_value_free(uhd_sensor_value_handle* h);
 
 //! Get the sensor's value as a boolean.
-UHD_API uhd_error uhd_sensor_value_to_bool(
-    uhd_sensor_value_handle h,
-    bool *value_out
-);
+UHD_API uhd_error uhd_sensor_value_to_bool(uhd_sensor_value_handle h, bool* value_out);
 
 //! Get the sensor's value as an integer.
-UHD_API uhd_error uhd_sensor_value_to_int(
-    uhd_sensor_value_handle h,
-    int *value_out
-);
+UHD_API uhd_error uhd_sensor_value_to_int(uhd_sensor_value_handle h, int* value_out);
 
 //! Get the sensor's value as a real number.
 UHD_API uhd_error uhd_sensor_value_to_realnum(
-    uhd_sensor_value_handle h,
-    double *value_out
-);
+    uhd_sensor_value_handle h, double* value_out);
 
 //! Get the sensor's name.
 /*!
@@ -157,10 +137,7 @@ UHD_API uhd_error uhd_sensor_value_to_realnum(
  * \param strbuffer_len buffer length
  */
 UHD_API uhd_error uhd_sensor_value_name(
-    uhd_sensor_value_handle h,
-    char* name_out,
-    size_t strbuffer_len
-);
+    uhd_sensor_value_handle h, char* name_out, size_t strbuffer_len);
 
 //! Get the sensor's value.
 /*!
@@ -172,10 +149,7 @@ UHD_API uhd_error uhd_sensor_value_name(
  * \param strbuffer_len buffer length
  */
 UHD_API uhd_error uhd_sensor_value_value(
-    uhd_sensor_value_handle h,
-    char* value_out,
-    size_t strbuffer_len
-);
+    uhd_sensor_value_handle h, char* value_out, size_t strbuffer_len);
 
 //! Get the sensor's unit.
 /*!
@@ -187,15 +161,10 @@ UHD_API uhd_error uhd_sensor_value_value(
  * \param strbuffer_len buffer length
  */
 UHD_API uhd_error uhd_sensor_value_unit(
-    uhd_sensor_value_handle h,
-    char* unit_out,
-    size_t strbuffer_len
-);
+    uhd_sensor_value_handle h, char* unit_out, size_t strbuffer_len);
 
 UHD_API uhd_error uhd_sensor_value_data_type(
-    uhd_sensor_value_handle h,
-    uhd_sensor_value_data_type_t *data_type_out
-);
+    uhd_sensor_value_handle h, uhd_sensor_value_data_type_t* data_type_out);
 
 //! Get a pretty-print representation of the given sensor.
 /*!
@@ -207,10 +176,7 @@ UHD_API uhd_error uhd_sensor_value_data_type(
  * \param strbuffer_len buffer length
  */
 UHD_API uhd_error uhd_sensor_value_to_pp_string(
-    uhd_sensor_value_handle h,
-    char* pp_string_out,
-    size_t strbuffer_len
-);
+    uhd_sensor_value_handle h, char* pp_string_out, size_t strbuffer_len);
 
 //! Get the last error logged by the sensor handle.
 /*!
@@ -222,10 +188,7 @@ UHD_API uhd_error uhd_sensor_value_to_pp_string(
  * \param strbuffer_len buffer length
  */
 UHD_API uhd_error uhd_sensor_value_last_error(
-    uhd_sensor_value_handle h,
-    char* error_out,
-    size_t strbuffer_len
-);
+    uhd_sensor_value_handle h, char* error_out, size_t strbuffer_len);
 
 #ifdef __cplusplus
 }

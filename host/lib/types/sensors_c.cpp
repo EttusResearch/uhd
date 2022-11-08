@@ -18,8 +18,9 @@ uhd_error uhd_sensor_value_make(uhd_sensor_value_handle* h)
         return UHD_ERROR_UNKNOWN;
     }
 
-    UHD_SAFE_C_SAVE_ERROR(
-        (*h), (*h)->sensor_value_cpp = new uhd::sensor_value_t("", false, "", "");)
+    UHD_SAFE_C_SAVE_ERROR((*h),
+                          (*h)->sensor_value_cpp =
+                              std::make_unique<uhd::sensor_value_t>("", false, "", "");)
 }
 
 uhd_error uhd_sensor_value_make_from_bool(uhd_sensor_value_handle* h,
@@ -34,9 +35,9 @@ uhd_error uhd_sensor_value_make_from_bool(uhd_sensor_value_handle* h,
         return UHD_ERROR_UNKNOWN;
     }
 
-    UHD_SAFE_C_SAVE_ERROR(
-        (*h),
-        (*h)->sensor_value_cpp = new uhd::sensor_value_t(name, value, utrue, ufalse);)
+    UHD_SAFE_C_SAVE_ERROR((*h),
+                          (*h)->sensor_value_cpp = std::make_unique<uhd::sensor_value_t>(
+                              name, value, utrue, ufalse);)
 }
 
 uhd_error uhd_sensor_value_make_from_int(uhd_sensor_value_handle* h,
@@ -53,9 +54,11 @@ uhd_error uhd_sensor_value_make_from_int(uhd_sensor_value_handle* h,
 
     UHD_SAFE_C_SAVE_ERROR(
         (*h), std::string fmt(formatter); if (fmt.empty()) {
-            (*h)->sensor_value_cpp = new uhd::sensor_value_t(name, value, unit);
+            (*h)->sensor_value_cpp =
+                std::make_unique<uhd::sensor_value_t>(name, value, unit);
         } else {
-            (*h)->sensor_value_cpp = new uhd::sensor_value_t(name, value, unit, fmt);
+            (*h)->sensor_value_cpp =
+                std::make_unique<uhd::sensor_value_t>(name, value, unit, fmt);
         })
 }
 
@@ -73,9 +76,11 @@ uhd_error uhd_sensor_value_make_from_realnum(uhd_sensor_value_handle* h,
 
     UHD_SAFE_C_SAVE_ERROR(
         (*h), std::string fmt(formatter); if (fmt.empty()) {
-            (*h)->sensor_value_cpp = new uhd::sensor_value_t(name, value, unit);
+            (*h)->sensor_value_cpp =
+                std::make_unique<uhd::sensor_value_t>(name, value, unit);
         } else {
-            (*h)->sensor_value_cpp = new uhd::sensor_value_t(name, value, unit, fmt);
+            (*h)->sensor_value_cpp =
+                std::make_unique<uhd::sensor_value_t>(name, value, unit, fmt);
         })
 }
 
@@ -88,13 +93,14 @@ uhd_error uhd_sensor_value_make_from_string(
         return UHD_ERROR_UNKNOWN;
     }
 
-    UHD_SAFE_C_SAVE_ERROR(
-        (*h), (*h)->sensor_value_cpp = new uhd::sensor_value_t(name, value, unit);)
+    UHD_SAFE_C_SAVE_ERROR((*h),
+                          (*h)->sensor_value_cpp =
+                              std::make_unique<uhd::sensor_value_t>(name, value, unit);)
 }
 
 uhd_error uhd_sensor_value_free(uhd_sensor_value_handle* h)
 {
-    UHD_SAFE_C(delete (*h)->sensor_value_cpp; delete *h; *h = NULL;)
+    UHD_SAFE_C(delete *h; *h = NULL;)
 }
 
 uhd_error uhd_sensor_value_to_bool(uhd_sensor_value_handle h, bool* value_out)
