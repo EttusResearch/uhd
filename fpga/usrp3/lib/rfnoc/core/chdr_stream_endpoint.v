@@ -15,7 +15,8 @@
 // Parameters:
 //   - DEVICE_FAMILY: The FPGA device family (e.g., "7SERIES" or "ULTRASCALE")
 //   - PROTOVER: RFNoC protocol version {8'd<major>, 8'd<minor>}
-//   - CHDR_W: Width of the CHDR bus in bits
+//   - CHDR_W: Width of the CHDR bus in bits on the crossbar side (axis_chdr)
+//   - BLOCK_CHDR_W: Width of the CHDR bus in bits on the block side (axis_data)
 //   - INST_NUM: The instance number of this module
 //   - CTRL_XBAR_PORT: The port index on the control crossbar that
 //                     this module's control path will connect to
@@ -25,9 +26,9 @@
 //   - NUM_DATA_O: Number of AXIS data master ports
 //   - INGRESS_BUFF_SIZE: Buffer size in log2 of the number of words
 //                        in the ingress buffer for the stream
-//   - MTU: Log2 of the maximum packet size in words
+//   - MTU: Log2 of the maximum packet size in CHDR_W words
 //   - REPORT_STRM_ERRS: Report data stream errors upstream
-//   - SIM_SPEEDUP: Set to 1 in simultion, and 0 otherwise
+//   - SIM_SPEEDUP: Set to 1 in simulation, and 0 otherwise
 //
 // Signals:
 //   - device_id     : The ID of the device that has instantiated this module
@@ -37,59 +38,61 @@
 //   - strm_*_err_stb: The stream encountered an error
 //   - signal_*_err  : Notify upstream that we encountered an error
 
+`default_nettype none
+
+
 module chdr_stream_endpoint #(
   parameter        DEVICE_FAMILY     = "7SERIES",
   parameter [15:0] PROTOVER          = {8'd1, 8'd0},
   parameter        CHDR_W            = 64,
-  parameter [9:0]  INST_NUM          = 0,
-  parameter [9:0]  CTRL_XBAR_PORT    = 0,
-  parameter [0:0]  AXIS_CTRL_EN      = 1,
-  parameter [0:0]  AXIS_DATA_EN      = 1,
-  parameter [5:0]  NUM_DATA_I        = 1,
-  parameter [5:0]  NUM_DATA_O        = 1,
-  parameter [5:0]  INGRESS_BUFF_SIZE = 12,
-  parameter [5:0]  MTU               = 10,
-  parameter [0:0]  REPORT_STRM_ERRS  = 1,
-  parameter [0:0]  SIM_SPEEDUP       = 0
+  parameter        BLOCK_CHDR_W      = CHDR_W,
+  parameter [ 9:0] INST_NUM          = 0,
+  parameter [ 9:0] CTRL_XBAR_PORT    = 0,
+  parameter [ 0:0] AXIS_CTRL_EN      = 1,
+  parameter [ 0:0] AXIS_DATA_EN      = 1,
+  parameter [ 5:0] NUM_DATA_I        = 1,
+  parameter [ 5:0] NUM_DATA_O        = 1,
+  parameter [ 5:0] INGRESS_BUFF_SIZE = 12,
+  parameter [ 5:0] MTU               = 10,
+  parameter [ 0:0] REPORT_STRM_ERRS  = 1,
+  parameter [ 0:0] SIM_SPEEDUP       = 0
 )(
   // Clock, reset and settings
   input  wire                           rfnoc_chdr_clk,
   input  wire                           rfnoc_chdr_rst,
   input  wire                           rfnoc_ctrl_clk,
   input  wire                           rfnoc_ctrl_rst,
-  // Device info                        
-  input  wire [15:0]                    device_id,
-  // CHDR in (AXI-Stream)               
-  input  wire [CHDR_W-1:0]              s_axis_chdr_tdata,
+  // Device info
+  input  wire [                   15:0] device_id,
+  // Full CHDR bus (AXI-Stream crossbar connections)
+  input  wire [             CHDR_W-1:0] s_axis_chdr_tdata,
   input  wire                           s_axis_chdr_tlast,
   input  wire                           s_axis_chdr_tvalid,
   output wire                           s_axis_chdr_tready,
-  // CHDR out (AXI-Stream)
-  output wire [CHDR_W-1:0]              m_axis_chdr_tdata,
+  output wire [             CHDR_W-1:0] m_axis_chdr_tdata,
   output wire                           m_axis_chdr_tlast,
   output wire                           m_axis_chdr_tvalid,
   input  wire                           m_axis_chdr_tready,
-  // Flow controlled data in (AXI-Stream)
-  input  wire [(CHDR_W*NUM_DATA_I)-1:0] s_axis_data_tdata,
-  input  wire [NUM_DATA_I-1:0]          s_axis_data_tlast,
-  input  wire [NUM_DATA_I-1:0]          s_axis_data_tvalid,
-  output wire [NUM_DATA_I-1:0]          s_axis_data_tready,
-  // Flow controlled data out (AXI-Stream)
-  output wire [(CHDR_W*NUM_DATA_O)-1:0] m_axis_data_tdata,
-  output wire [NUM_DATA_O-1:0]          m_axis_data_tlast,
-  output wire [NUM_DATA_O-1:0]          m_axis_data_tvalid,
-  input  wire [NUM_DATA_O-1:0]          m_axis_data_tready,
+  // Data-only CHDR buses (AXI-Stream RFNoC block connections)
+  input  wire [BLOCK_CHDR_W*NUM_DATA_I-1:0] s_axis_data_tdata,
+  input  wire [             NUM_DATA_I-1:0] s_axis_data_tlast,
+  input  wire [             NUM_DATA_I-1:0] s_axis_data_tvalid,
+  output wire [             NUM_DATA_I-1:0] s_axis_data_tready,
+  output wire [BLOCK_CHDR_W*NUM_DATA_O-1:0] m_axis_data_tdata,
+  output wire [             NUM_DATA_O-1:0] m_axis_data_tlast,
+  output wire [             NUM_DATA_O-1:0] m_axis_data_tvalid,
+  input  wire [             NUM_DATA_O-1:0] m_axis_data_tready,
   // Control in (AXI-Stream)
-  input  wire [31:0]                    s_axis_ctrl_tdata,
+  input  wire [                   31:0] s_axis_ctrl_tdata,
   input  wire                           s_axis_ctrl_tlast,
   input  wire                           s_axis_ctrl_tvalid,
   output wire                           s_axis_ctrl_tready,
   // Control out (AXI-Stream)
-  output wire [31:0]                    m_axis_ctrl_tdata,
+  output wire [                   31:0] m_axis_ctrl_tdata,
   output wire                           m_axis_ctrl_tlast,
   output wire                           m_axis_ctrl_tvalid,
   input  wire                           m_axis_ctrl_tready,
-  // Stream status specfic              
+  // Stream status specific
   output wire                           strm_seq_err_stb,
   output wire                           strm_data_err_stb,
   output wire                           strm_route_err_stb,
@@ -103,7 +106,7 @@ module chdr_stream_endpoint #(
   `include "rfnoc_chdr_internal_utils.vh"
 
   // ---------------------------------------------------
-  //  Filter packets by type 
+  //  Filter packets by type
   // ---------------------------------------------------
   wire [CHDR_W-1:0] ctrl_i_tdata,  ctrl_o_tdata;
   wire              ctrl_i_tlast,  ctrl_o_tlast;
@@ -180,7 +183,7 @@ module chdr_stream_endpoint #(
   );
 
   // ---------------------------------------------------
-  //  Management Path 
+  //  Management Path
   // ---------------------------------------------------
   wire              ctrlport_req_wr, ctrlport_req_rd;
   reg               ctrlport_resp_ack = 1'b0;
@@ -210,7 +213,7 @@ module chdr_stream_endpoint #(
     .op_data(/* unused */)
   );
 
-  // ============================== REGISTERS ============================== 
+  // ============================== REGISTERS ==============================
   // * REG_EPID_SELF (Read-Write):
   //   The endpoint ID of this stream endpoint
   //   - [15:0]: Endpoint ID
@@ -257,7 +260,7 @@ module chdr_stream_endpoint #(
   //   - [3:2]: Payload SW buff (0=u64, 1=u32, 2=u16, 3=u8)
   //   - [5:4]: Metadata SW buff (0=u64, 1=u32, 2=u16, 3=u8)
   //   - [6]  : Swap endianness
-  // ======================================================================= 
+  // =======================================================================
 
   localparam [15:0] REG_EPID_SELF               = 16'h00;   //RW
   localparam [15:0] REG_RESET_AND_FLUSH         = 16'h04;   //W
@@ -329,7 +332,7 @@ module chdr_stream_endpoint #(
           REG_OSTRM_FC_HEADROOM:
             {reg_fc_headroom_pkts, reg_fc_headroom_bytes} <= ctrlport_req_data[23:0];
           REG_ISTRM_CTRL_STATUS:
-            {reg_istrm_cfg_swap_endian, reg_istrm_cfg_mdata_sw_buff, reg_istrm_cfg_pyld_sw_buff} 
+            {reg_istrm_cfg_swap_endian, reg_istrm_cfg_mdata_sw_buff, reg_istrm_cfg_pyld_sw_buff}
               <= ctrlport_req_data[6:2];
         endcase
       end else begin
@@ -372,10 +375,20 @@ module chdr_stream_endpoint #(
   end
 
   // ---------------------------------------------------
-  //  Data and Flow Control Path 
+  //  Data Path
   // ---------------------------------------------------
+
+  wire [CHDR_W*NUM_DATA_I-1:0] rs_i_data_tdata;
+  wire [       NUM_DATA_I-1:0] rs_i_data_tlast;
+  wire [       NUM_DATA_I-1:0] rs_i_data_tvalid;
+  wire [       NUM_DATA_I-1:0] rs_i_data_tready;
+  wire [CHDR_W*NUM_DATA_O-1:0] rs_o_data_tdata;
+  wire [       NUM_DATA_O-1:0] rs_o_data_tlast;
+  wire [       NUM_DATA_O-1:0] rs_o_data_tvalid;
+  wire [       NUM_DATA_O-1:0] rs_o_data_tready;
+
   genvar i;
-  generate if (AXIS_DATA_EN) begin: datapath
+  generate if (AXIS_DATA_EN) begin: gen_data_path
     localparam INPUT_FLUSH_TIMEOUT_W = SIM_SPEEDUP ? 6 : 14;
 
     // Data => CHDR
@@ -390,25 +403,25 @@ module chdr_stream_endpoint #(
     if (NUM_DATA_I == 6'd1) begin
       axi_fifo #(.WIDTH(CHDR_W+1), .SIZE(1)) axis_s_reg_i (
         .clk(rfnoc_chdr_clk), .reset(rfnoc_chdr_rst | reg_ostrm_reset), .clear(1'b0),
-        .i_tdata({s_axis_data_tlast, s_axis_data_tdata}),
-        .i_tvalid(s_axis_data_tvalid), .i_tready(s_axis_data_tready),
+        .i_tdata({rs_i_data_tlast, rs_i_data_tdata}),
+        .i_tvalid(rs_i_data_tvalid), .i_tready(rs_i_data_tready),
         .o_tdata({axis_di_tlast, axis_di_tdata_pre}),
         .o_tvalid(axis_di_tvalid), .o_tready(axis_di_tready),
         .space(), .occupied()
       );
       assign axis_di_tdest = 6'd0;
     end else begin
-      wire [((CHDR_W+6)*NUM_DATA_I)-1:0] s_axis_data_tdata_tmp;
+      wire [((CHDR_W+6)*NUM_DATA_I)-1:0] rs_i_data_tdata_tmp;
       for (i = 0; i < NUM_DATA_I; i=i+1) begin
-        assign s_axis_data_tdata_tmp[(i*(CHDR_W+6))+:(CHDR_W+6)] = {i[5:0], s_axis_data_tdata[(i*CHDR_W)+:CHDR_W]};
+        assign rs_i_data_tdata_tmp[(i*(CHDR_W+6))+:(CHDR_W+6)] = {i[5:0], rs_i_data_tdata[(i*CHDR_W)+:CHDR_W]};
       end
 
       axi_mux #(
         .WIDTH(CHDR_W+6), .SIZE(NUM_DATA_I), .PRIO(0), .PRE_FIFO_SIZE(1), .POST_FIFO_SIZE(1)
       ) axis_s_mux_i (
         .clk(rfnoc_chdr_clk), .reset(rfnoc_chdr_rst | reg_ostrm_reset), .clear(1'b0),
-        .i_tdata(s_axis_data_tdata_tmp), .i_tlast(s_axis_data_tlast),
-        .i_tvalid(s_axis_data_tvalid), .i_tready(s_axis_data_tready),
+        .i_tdata(rs_i_data_tdata_tmp), .i_tlast(rs_i_data_tlast),
+        .i_tvalid(rs_i_data_tvalid), .i_tready(rs_i_data_tready),
         .o_tdata({axis_di_tdest, axis_di_tdata_pre}), .o_tlast(axis_di_tlast),
         .o_tvalid(axis_di_tvalid), .o_tready(axis_di_tready)
       );
@@ -428,7 +441,7 @@ module chdr_stream_endpoint #(
       assign axis_di_tdata[CHDR_W-1:64] = axis_di_tdata_pre[CHDR_W-1:64];
     end
 
-    // Module to swap words in the payload and metadata depending on SW settings 
+    // Module to swap words in the payload and metadata depending on SW settings
     chdr_data_swapper #( .CHDR_W(CHDR_W)) di_swap_i (
       .clk            (rfnoc_chdr_clk),
       .rst            (rfnoc_chdr_rst | reg_ostrm_reset),
@@ -515,7 +528,7 @@ module chdr_stream_endpoint #(
       .data_err_stb      (signal_data_err)
     );
 
-    // Module to swap words in the payload and metadata depending on SW settings 
+    // Module to swap words in the payload and metadata depending on SW settings
     chdr_data_swapper #( .CHDR_W(CHDR_W)) do_swap_i (
       .clk            (rfnoc_chdr_clk),
       .rst            (rfnoc_chdr_rst | reg_istrm_reset),
@@ -533,14 +546,14 @@ module chdr_stream_endpoint #(
     );
 
     // Optional DEMUX to split multiple single stream into multiple outputs
-    // Packets with an invalid (out of bounds) VC goes to port 0 
+    // Packets with an invalid (out of bounds) VC goes to port 0
     if (NUM_DATA_O == 6'd1) begin
       axi_fifo #(.WIDTH(CHDR_W+1), .SIZE(1)) axis_m_reg_i (
         .clk(rfnoc_chdr_clk), .reset(rfnoc_chdr_rst | reg_istrm_reset), .clear(1'b0),
         .i_tdata({axis_dos_tlast, axis_dos_tdata}),
         .i_tvalid(axis_dos_tvalid), .i_tready(axis_dos_tready),
-        .o_tdata({m_axis_data_tlast, m_axis_data_tdata}),
-        .o_tvalid(m_axis_data_tvalid), .o_tready(m_axis_data_tready),
+        .o_tdata({rs_o_data_tlast, rs_o_data_tdata}),
+        .o_tvalid(rs_o_data_tvalid), .o_tready(rs_o_data_tready),
         .space(), .occupied()
       );
     end else begin
@@ -554,12 +567,78 @@ module chdr_stream_endpoint #(
         .dest((data_vc < NUM_DATA_O) ? data_vc[$clog2(NUM_DATA_O)-1:0] : {$clog2(NUM_DATA_O){1'b0}}),
         .i_tdata(axis_dos_tdata), .i_tlast(axis_dos_tlast),
         .i_tvalid(axis_dos_tvalid), .i_tready(axis_dos_tready),
-        .o_tdata(m_axis_data_tdata), .o_tlast(m_axis_data_tlast),
-        .o_tvalid(m_axis_data_tvalid), .o_tready(m_axis_data_tready)
+        .o_tdata(rs_o_data_tdata), .o_tlast(rs_o_data_tlast),
+        .o_tvalid(rs_o_data_tvalid), .o_tready(rs_o_data_tready)
       );
     end
 
-  end else begin    // if (AXIS_DATA_EN)
+    // -------------
+    //  CHDR Resize
+    // -------------
+
+    // We put resize on the block side, rather than the crossbar side, to
+    // minimize the impact on streaming performance.
+
+    if (CHDR_W != BLOCK_CHDR_W) begin : gen_chdr_resize
+      for (i = 0; i < NUM_DATA_O; i=i+1) begin : gen_outputs
+        chdr_resize #(
+          .I_CHDR_W(CHDR_W      ),
+          .O_CHDR_W(BLOCK_CHDR_W),
+          .USER_W  (1           ),
+          .PIPELINE("OUT"       )
+        ) chdr_resize_out (
+          .clk          (rfnoc_chdr_clk                                    ),
+          .rst          (rfnoc_chdr_rst                                    ),
+          .i_chdr_tdata (rs_o_data_tdata   [i*CHDR_W +: CHDR_W]            ),
+          .i_chdr_tuser (1'b1                                              ),
+          .i_chdr_tlast (rs_o_data_tlast   [i]                             ),
+          .i_chdr_tvalid(rs_o_data_tvalid  [i]                             ),
+          .i_chdr_tready(rs_o_data_tready  [i]                             ),
+          .o_chdr_tdata (m_axis_data_tdata [i*BLOCK_CHDR_W +: BLOCK_CHDR_W]),
+          .o_chdr_tuser (                                                  ),
+          .o_chdr_tlast (m_axis_data_tlast [i]                             ),
+          .o_chdr_tvalid(m_axis_data_tvalid[i]                             ),
+          .o_chdr_tready(m_axis_data_tready[i]                             )
+        );
+      end
+
+      for (i = 0; i < NUM_DATA_I; i=i+1) begin: gen_inputs
+        chdr_resize #(
+          .I_CHDR_W(BLOCK_CHDR_W),
+          .O_CHDR_W(CHDR_W      ),
+          .USER_W  (1           ),
+          .PIPELINE("IN"        )
+        ) chdr_resize_in (
+          .clk          (rfnoc_chdr_clk                                    ),
+          .rst          (rfnoc_chdr_rst                                    ),
+          .i_chdr_tdata (s_axis_data_tdata [i*BLOCK_CHDR_W +: BLOCK_CHDR_W]),
+          .i_chdr_tuser (1'b1                                              ),
+          .i_chdr_tlast (s_axis_data_tlast [i]                             ),
+          .i_chdr_tvalid(s_axis_data_tvalid[i]                             ),
+          .i_chdr_tready(s_axis_data_tready[i]                             ),
+          .o_chdr_tdata (rs_i_data_tdata   [i*CHDR_W +: CHDR_W]            ),
+          .o_chdr_tuser (                                                  ),
+          .o_chdr_tlast (rs_i_data_tlast   [i]                             ),
+          .o_chdr_tvalid(rs_i_data_tvalid  [i]                             ),
+          .o_chdr_tready(rs_i_data_tready  [i]                             )
+        );
+      end
+
+    end else begin : gen_no_chdr_resize
+
+      assign m_axis_data_tdata  = rs_o_data_tdata;
+      assign m_axis_data_tlast  = rs_o_data_tlast;
+      assign m_axis_data_tvalid = rs_o_data_tvalid;
+      assign rs_o_data_tready   = m_axis_data_tready;
+
+      assign rs_i_data_tdata    = s_axis_data_tdata;
+      assign rs_i_data_tlast    = s_axis_data_tlast;
+      assign rs_i_data_tvalid   = s_axis_data_tvalid;
+      assign s_axis_data_tready = rs_i_data_tready;
+
+    end
+
+  end else begin : gen_no_data_path
 
     assign data_i_tready = 1'b1;
     assign data_o_tdata  = {CHDR_W{1'b0}};
@@ -571,7 +650,7 @@ module chdr_stream_endpoint #(
     assign strs_o_tlast  = 1'b0;
     assign strs_o_tvalid = 1'b0;
 
-    assign s_axis_data_tready = {NUM_DATA_I{1'b0}};
+    assign s_axis_data_tready = {NUM_DATA_I{1'b1}};
     assign m_axis_data_tdata  = {(CHDR_W*NUM_DATA_O){1'b0}};
     assign m_axis_data_tlast  = {NUM_DATA_O{1'b0}};
     assign m_axis_data_tvalid = {NUM_DATA_O{1'b0}};
@@ -579,9 +658,10 @@ module chdr_stream_endpoint #(
   end endgenerate
 
   // ---------------------------------------------------
-  //  Control Path 
+  //  Control Path
   // ---------------------------------------------------
-  generate if (AXIS_CTRL_EN) begin: ctrlpath
+
+  generate if (AXIS_CTRL_EN) begin: gen_ctrlpath
 
     // Convert from a CHDR control packet to an AXIS control packet
     chdr_to_axis_ctrl #(
@@ -610,7 +690,7 @@ module chdr_stream_endpoint #(
       .m_rfnoc_ctrl_tready(m_axis_ctrl_tready)
     );
 
-  end else begin    // if (AXIS_CTRL_EN)
+  end else begin : gen_no_ctrl_path
 
     assign ctrl_i_tready = 1'b1;
     assign ctrl_o_tdata  = {CHDR_W{1'b0}};
@@ -626,3 +706,5 @@ module chdr_stream_endpoint #(
 
 endmodule // chdr_stream_endpoint
 
+
+`default_nettype wire
