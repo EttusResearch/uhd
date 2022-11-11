@@ -222,7 +222,7 @@ jobs:
       fi
 
       cd $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests
-      uhd_find_devices
+      uhd_find_devices --args type=$(dutType)
       python3 automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) --results_path '$(Common.TestResultsDirectory)/pytest/host'
     displayName: Run pytest on host
     continueOnError: true
