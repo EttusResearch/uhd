@@ -225,6 +225,33 @@ proc ::vivado_utils::generate_post_route_reports {} {
 # ---------------------------------------------------
 # Export implementation
 # ---------------------------------------------------
+proc ::vivado_utils::check_timing_report {} {
+    variable g_output_dir
+    set s "(Implementation outputs were still generated)"
+
+    if {! [string match -nocase {*timing constraints are met*} [read [open $g_output_dir/build.rpt]]]} {
+        send_msg_id {Builder 0-0} error "The design did not satisfy timing constraints. ${s}"
+    }
+    if {! [string match -nocase {*checking no_clock (0)*} [read [open $g_output_dir/build.rpt]]]} {
+        send_msg_id {Builder 0-0} error "There are register/latch pins with no clock driven by root clock pin. ${s}"
+    }
+    if {! [string match -nocase {*checking constant_clock (0)*} [read [open $g_output_dir/build.rpt]]]} {
+        send_msg_id {Builder 0-0} error "There are register/latch pins with constant clock. ${s}"
+    }
+    if {! [string match -nocase {*checking multiple_clock (0)*} [read [open $g_output_dir/build.rpt]]]} {
+        send_msg_id {Builder 0-0} error "There are register/latch pins with multiple clocks. ${s}"
+    }
+    if {! [string match -nocase {*checking generated_clocks (0)*} [read [open $g_output_dir/build.rpt]]]} {
+        send_msg_id {Builder 0-0} error "There are generated clocks that are not connected to a clock source. ${s}"
+    }
+    if {! [string match -nocase {*checking loops (0)*} [read [open $g_output_dir/build.rpt]]]} {
+        send_msg_id {Builder 0-0} error "There are combinational loops in the design. ${s}"
+    }
+    if {! [string match -nocase {*checking latch_loops (0)*} [read [open $g_output_dir/build.rpt]]]} {
+        send_msg_id {Builder 0-0} error "There are combinational latch loops in the design. ${s}"
+    }
+}
+
 proc ::vivado_utils::write_implementation_outputs { {byte_swap_bin 0} } {
     variable g_output_dir
     variable g_top_module
@@ -245,9 +272,7 @@ proc ::vivado_utils::write_implementation_outputs { {byte_swap_bin 0} } {
     puts "BUILDER: Writing export report"
     report_utilization -omit_locs -file $g_output_dir/build.rpt
     report_timing_summary -no_detailed_paths -file $g_output_dir/build.rpt -append
-    if {! [string match -nocase {*timing constraints are met*} [read [open $g_output_dir/build.rpt]]]} {
-        send_msg_id {Builder 0-0} error "The design did not satisfy timing constraints. (Implementation outputs were still generated)"
-    }
+    vivado_utils::check_timing_report
 }
 
 proc ::vivado_utils::write_netlist_outputs { {suffix ""} } {
@@ -264,9 +289,7 @@ proc ::vivado_utils::write_netlist_outputs { {suffix ""} } {
     puts "BUILDER: Writing export report"
     report_utilization -omit_locs -file $g_output_dir/build.rpt
     report_timing_summary -no_detailed_paths -file $g_output_dir/build.rpt -append
-    if {! [string match -nocase {*timing constraints are met*} [read [open $g_output_dir/build.rpt]]]} {
-        send_msg_id {Builder 0-0} error "The design did not meet all timing constraints. (Implementation outputs were still generated)"
-    }
+    vivado_utils::check_timing_report
 }
 
 # ---------------------------------------------------
