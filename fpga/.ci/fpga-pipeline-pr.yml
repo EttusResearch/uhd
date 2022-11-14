@@ -19,6 +19,10 @@ parameters:
   type: boolean
   displayName: Clean IP Build
   default: false
+- name: num_ip_jobs
+  type: number
+  default: 5
+  displayName: Number of parallel IP jobs
 - name: package_images
   type: boolean
   displayName: Package Images

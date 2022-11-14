@@ -22,6 +22,10 @@ parameters:
 - name: clean_ip_build
   type: boolean
   default: false
+# Number of parallel jobs to use for IP build
+- name: num_ip_jobs
+  type: number
+  default: 5
 # Option to publish intermediate files
 - name: publish_int_files
   type: boolean
@@ -86,6 +90,7 @@ stages:
       directory: uhddev/fpga/usrp3/top/x400
       ip_target: X410_IP
       clean_build: ${{ parameters.clean_ip_build }}
+      num_jobs: ${{ parameters.num_ip_jobs }}
 
 - stage: build_x410_targets_stage
   displayName: Build X410 FPGA Targets
