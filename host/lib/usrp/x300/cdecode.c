@@ -4,6 +4,7 @@ cdecoder.c - c source to a base64 decoding algorithm implementation
 This is part of the libb64 project, and has been placed in the public domain.
 For details, see http://sourceforge.net/projects/libb64
 */
+/* clang-format off */
 
 #include "cdecode.h"
 
@@ -87,3 +88,4 @@ size_t base64_decode_block(const char* code_in, const size_t length_in, char* pl
     /* control should not reach here */
     return plainchar - plaintext_out;
 }
+/* clang-format on */

@@ -4,10 +4,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include "chdr_resource/rfnoc_packets_ctrl_mgmt.cpp"
+#include "chdr_resource/rfnoc_packets_data.cpp"
 #include <uhd/rfnoc/chdr_types.hpp>
 #include <uhd/utils/chdr/chdr_packet.hpp>
-#include <chdr_resource/rfnoc_packets_ctrl_mgmt.cpp>
-#include <chdr_resource/rfnoc_packets_data.cpp>
 
 namespace chdr_util  = uhd::utils::chdr;
 namespace chdr_rfnoc = uhd::rfnoc::chdr;

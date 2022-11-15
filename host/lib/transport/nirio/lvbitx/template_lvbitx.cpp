@@ -1,14 +1,17 @@
 {autogen_msg}
 
 #include "{lvbitx_classname}_lvbitx.hpp"
-#include <string>
-#include <iostream>
-#include <fstream>
-#include <streambuf>
-#include <boost/filesystem/path.hpp>
-#include <boost/algorithm/string.hpp>
-#include <regex>
 #include <uhd/utils/paths.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/filesystem/path.hpp>
+#include <fstream>
+#include <iostream>
+#include <regex>
+#include <streambuf>
+#include <string>
+
+// This is a template, so clang-format needs to ignore this file
+// clang-format off
 
 namespace uhd {{ namespace niusrprio {{
 
@@ -86,3 +89,4 @@ void {lvbitx_classname}_lvbitx::init_fifo_info(nirio_fifo_info_vtr& vtr) {{ {fif
 }}
 
 }}}}
+// clang-format on
