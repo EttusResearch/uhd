@@ -43,6 +43,17 @@ module quarter_rate_downconverter #(
   reg [WIDTH-1:0] tmp_i = {WIDTH{1'b0}};
   reg [WIDTH-1:0] tmp_q = {WIDTH{1'b0}};
 
+  localparam [WIDTH-1:0] MAX_NEG_VAL = -2**(WIDTH-1);
+  localparam [WIDTH-1:0] MAX_POS_VAL = 2**(WIDTH-1)-1;
+
+  function [WIDTH-1:0] invert_sig(
+    input [WIDTH-1:0] x
+  );
+    begin
+      invert_sig = x == MAX_NEG_VAL ? MAX_POS_VAL : -x;
+    end
+  endfunction
+
   // State machine types and reg
   localparam S0=0, S1=1, S2=2, S3=3;
   reg[1:0] cur_state;
@@ -108,18 +119,18 @@ module quarter_rate_downconverter #(
         end
       S1: begin
           // S(t) * i = -Q(t) + iI(t):
-          tmp_i = -q_in;
-          tmp_q = i_in;
+          tmp_i = invert_sig(q_in);
+          tmp_q =            i_in;
         end
       S2: begin
           // S(t) * -1 = -I(t) - iQ(t):
-          tmp_i = -i_in;
-          tmp_q = -q_in;
+          tmp_i = invert_sig(i_in);
+          tmp_q = invert_sig(q_in);
         end
       S3: begin
           // S(t) * -i = Q(t) - iI(t):
-          tmp_i = q_in;
-          tmp_q = -i_in;
+          tmp_i =            q_in;
+          tmp_q = invert_sig(i_in);
         end
       default: begin
           tmp_i = i_in;
