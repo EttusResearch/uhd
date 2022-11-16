@@ -101,6 +101,11 @@ module rx_frontend_gen3_tb;
   // Input Generator
   //---------------------------------------------------------------------------
 
+  enum {
+    SIGTYPE_REAL,   // Real-valued sinusoid
+    SIGTYPE_CPLX,   // Complex-valued sinusoid
+    SIGTYPE_CNST    // Constant signal (real-valued)
+  } sigtype_state;
 
   real amplitude = 0.4375;               // Pick your favorite amplitude < 1.0
   real test_freq = CLK_FREQUENCY / 80.0; // Pick a frequency < CLK_FREQUENCY
@@ -113,14 +118,27 @@ module rx_frontend_gen3_tb;
 
   initial begin : gen_input
     count = 0;
+    sigtype_state = SIGTYPE_CPLX;
     forever begin
       clk_gen.clk_wait_r();
       if (rst) begin
         count = 0;
         continue;
       end
-      adc_i <= fp_amp * $cos(2.0*PI*f_norm*count);
-      adc_q <= fp_amp * $sin(2.0*PI*f_norm*count);
+      case (sigtype_state)
+        SIGTYPE_REAL: begin
+          adc_i <= fp_amp * $cos(2.0*PI*f_norm*count);
+          adc_q <= 0;
+        end
+        SIGTYPE_CPLX: begin
+          adc_i <= fp_amp * $cos(2.0*PI*f_norm*count);
+          adc_q <= fp_amp * $sin(2.0*PI*f_norm*count);
+        end
+        SIGTYPE_CNST: begin
+          adc_i <= fp_amp;
+          adc_q <= 0;
+        end
+      endcase
       count++;
     end
   end : gen_input
@@ -145,8 +163,6 @@ module rx_frontend_gen3_tb;
   //---------------------------------------------------------------------------
 
   initial begin : tb_main
-    string tb_name;
-
     // Initialize the test exec object for this testbench
     test.start_tb("rx_frontend_gen3_tb");
 
@@ -162,11 +178,13 @@ module rx_frontend_gen3_tb;
     @rst;
     test.end_test();
 
-    //--------------------------------
-    // Initialize Registers
-    //--------------------------------
+    //-------------------------------------------------------------------------
+    // Initialize Registers: TwinRX mode
+    // - No IQ/DC offset corrections
+    // - Enable 1/4-rate downconverter
+    //-------------------------------------------------------------------------
 
-    test.start_test("Initialize registers", 10us);
+    test.start_test("Initialize registers (TwinRX mode)", 10us);
 
     // Set IQ mapping (Enable down-conversion)
     sr_write(SR_IQ_MAPPING, DOWNCONVERT);
@@ -204,6 +222,5 @@ module rx_frontend_gen3_tb;
   end : tb_main
 
 endmodule : rx_frontend_gen3_tb
-
 
 `default_nettype wire
