@@ -91,9 +91,9 @@ config_parser& uhd::prefs::get_uhd_config()
         // loaded from ~/.config), but we show a warning.
         if (!user_conf_loaded
             && _update_conf_file(
-                   (get_legacy_config_home() / std::string(UHD_USER_CONF_FILE)).string(),
-                   "user",
-                   _conf_files)) {
+                (get_legacy_config_home() / std::string(UHD_USER_CONF_FILE)).string(),
+                "user",
+                _conf_files)) {
             UHD_LOG_WARNING("PREFS",
                 "Loaded config from " << get_legacy_config_home().string()
                                       << ". This location is considered deprecated, "

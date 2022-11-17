@@ -242,9 +242,8 @@ public:
         UHD_THROW_INVALID_CODE_PATH();
     }
 
-    double set_frequency(const double target_freq,
-        const double fOSC,
-        const bool spur_dodging) override
+    double set_frequency(
+        const double target_freq, const double fOSC, const bool spur_dodging) override
     {
         // Sanity check
         if (target_freq > MAX_OUT_FREQ || target_freq < MIN_OUT_FREQ) {
@@ -313,7 +312,8 @@ public:
         // Equation (2): fVCO = fPD * [PLL_N + (PLL_NUM / PLL_DEN)] * p
         // Note that p here is the "extra divider in SYNC mode" that is in the
         // text, but not listed in Eq. (2) in this section.
-        const double fVCO_actual = fPD * p * (N + (static_cast<double>(PLL_NUM) / PLL_DEN));
+        const double fVCO_actual =
+            fPD * p * (N + (static_cast<double>(PLL_NUM) / PLL_DEN));
         UHD_ASSERT_THROW(3200e6 <= fVCO_actual && fVCO_actual <= 6400e6);
         const double actual_freq = fVCO_actual / out_D;
         // clang-format off
@@ -366,7 +366,7 @@ public:
             _find_and_set_lo_power(actual_freq, RF_OUTPUT_A);
         }
         if (_get_output_enabled(RF_OUTPUT_B)) {
-           _find_and_set_lo_power(actual_freq, RF_OUTPUT_B);
+            _find_and_set_lo_power(actual_freq, RF_OUTPUT_B);
         }
 
         return actual_freq;
@@ -453,9 +453,9 @@ private:
     // lock detect signal, so ensure we're in readback mode if reads desired
     void _enable_register_readback(const bool enable)
     {
-        auto desired_state = enable
-            ? lmx2572_regs_t::muxout_ld_sel_t::MUXOUT_LD_SEL_REGISTER_READBACK
-            : lmx2572_regs_t::muxout_ld_sel_t::MUXOUT_LD_SEL_LOCK_DETECT;
+        auto desired_state =
+            enable ? lmx2572_regs_t::muxout_ld_sel_t::MUXOUT_LD_SEL_REGISTER_READBACK
+                   : lmx2572_regs_t::muxout_ld_sel_t::MUXOUT_LD_SEL_LOCK_DETECT;
         if (_regs.muxout_ld_sel != desired_state) {
             _regs.muxout_ld_sel = desired_state;
             _poke16(0, _regs.get_reg(0));
@@ -497,7 +497,7 @@ private:
         auto out_div_it = out_div_map.upper_bound(freq);
         UHD_ASSERT_THROW(out_div_it != out_div_map.end());
         std::tie(out_D, chdiv) = out_div_it->second;
-        _regs.chdiv = lmx2572_regs_t::chdiv_t(chdiv);
+        _regs.chdiv            = lmx2572_regs_t::chdiv_t(chdiv);
         // If we're using the output divider, map it to the corresponding output
         // mux. Otherwise, connect the VCO directly to the mux.
         const mux_in_t input = (out_D > 1) ? mux_in_t::DIVIDER : mux_in_t::VCO;
@@ -505,7 +505,7 @@ private:
             set_mux_input(RF_OUTPUT_A, input);
         }
         if (_get_output_enabled(RF_OUTPUT_B)) {
-           set_mux_input(RF_OUTPUT_B, input);
+            set_mux_input(RF_OUTPUT_B, input);
         }
 
         return out_D;
@@ -549,19 +549,16 @@ private:
         uint32_t mash_seed = 0;
         if (spur_dodging || PLL_NUM == 0) {
             // Leave mash_seed set to 0
-        }
-        else {
-            const std::map<double, uint32_t> seed_map = {
-                {25e6,    4999},
+        } else {
+            const std::map<double, uint32_t> seed_map = {{25e6, 4999},
                 {30.72e6, 5531},
                 {31.25e6, 5591},
-                {32e6,    5657},
-                {50e6,    7096},
+                {32e6, 5657},
+                {50e6, 7096},
                 {61.44e6, 7841},
-                {62.5e6,  7907},
-                {64e6,    7993}
-            };
-            mash_seed = seed_map.lower_bound(pfd)->second;
+                {62.5e6, 7907},
+                {64e6, 7993}};
+            mash_seed                                 = seed_map.lower_bound(pfd)->second;
         }
         _regs.mash_seed_upper = uhd::narrow_cast<uint16_t>(mash_seed >> 16);
         _regs.mash_seed_lower = uhd::narrow_cast<uint16_t>(mash_seed);
@@ -802,10 +799,12 @@ private:
         auto vco_gain_it = vco_gain_map.lower_bound(fVCO_actual);
         UHD_ASSERT_THROW(vco_gain_it != vco_gain_map.end());
         std::tie(fmin, fmax, VCO_CORE, KvcoMin, KvcoMax) = vco_gain_it->second;
-        double Kvco = uhd::math::linear_interp<double>(fVCO_actual, fmin, KvcoMin, fmax, KvcoMax);
+        double Kvco =
+            uhd::math::linear_interp<double>(fVCO_actual, fmin, KvcoMin, fmax, KvcoMax);
 
         // Calculate the optimal charge pump current (uA)
-        const double icp = 2 * uhd::math::PI * TARGET_LOOP_BANDWIDTH * N_real / (Kvco * LOOP_GAIN_SETTING_RESISTANCE);
+        const double icp = 2 * uhd::math::PI * TARGET_LOOP_BANDWIDTH * N_real
+                           / (Kvco * LOOP_GAIN_SETTING_RESISTANCE);
 
         // clang-format off
         // Table 2 (Charge Pump Gain)
@@ -826,7 +825,7 @@ private:
         };
         // clang-format on
         const uint8_t cpg = uhd::math::at_nearest(cpg_map, icp);
-        _regs.cpg = cpg;
+        _regs.cpg         = cpg;
     }
 
     //! Compute and set VCO calibration values
@@ -928,7 +927,7 @@ private:
             lmx2572_regs_t::vco_daciset_force_t::VCO_DACISET_FORCE_NORMAL_OPERATION;
         _regs.vco_capctrl_force =
             lmx2572_regs_t::vco_capctrl_force_t::VCO_CAPCTRL_FORCE_NORMAL_OPERATION;
-        _regs.vco_sel_force = lmx2572_regs_t::vco_sel_force_t::VCO_SEL_FORCE_DISABLED;
+        _regs.vco_sel_force    = lmx2572_regs_t::vco_sel_force_t::VCO_SEL_FORCE_DISABLED;
         _regs.vco_daciset_strt = 0x096;
         _regs.vco_sel          = 0x6;
         _regs.vco_capctrl_strt = 0;

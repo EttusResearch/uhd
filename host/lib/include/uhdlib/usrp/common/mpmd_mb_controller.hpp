@@ -31,7 +31,8 @@ class mpmd_mb_controller : public mb_controller,
 public:
     using sptr = std::shared_ptr<mpmd_mb_controller>;
 
-    mpmd_mb_controller(uhd::usrp::mpmd_rpc_iface::sptr rpcc, uhd::device_addr_t device_info);
+    mpmd_mb_controller(
+        uhd::usrp::mpmd_rpc_iface::sptr rpcc, uhd::device_addr_t device_info);
 
     //! Return reference to the RPC client
     uhd::rpc_client::sptr get_rpc_client()
@@ -39,7 +40,7 @@ public:
         return _rpc->get_raw_rpc_client();
     }
 
-    template<typename T>
+    template <typename T>
     std::shared_ptr<T> dynamic_cast_rpc_as()
     {
         return std::dynamic_pointer_cast<T>(_rpc);
@@ -144,7 +145,8 @@ public:
     /*! When the FPGA is reloaded, pass the notification to every Radio block
      *  Public to allow other classes to register for notifications.
      */
-    class fpga_onload : public uhd::features::fpga_load_notification_iface {
+    class fpga_onload : public uhd::features::fpga_load_notification_iface
+    {
     public:
         using sptr = std::shared_ptr<fpga_onload>;
 
@@ -159,7 +161,8 @@ public:
     };
 
     //! Class to expose the ref_clk_calibration discoverable feature functions.
-    class ref_clk_calibration : public uhd::features::ref_clk_calibration_iface {
+    class ref_clk_calibration : public uhd::features::ref_clk_calibration_iface
+    {
     public:
         using sptr = std::shared_ptr<ref_clk_calibration>;
 
@@ -191,10 +194,13 @@ public:
     public:
         using sptr = std::shared_ptr<gpio_power>;
 
-        gpio_power(uhd::usrp::dio_rpc_iface::sptr rpcc, const std::vector<std::string>& ports);
+        gpio_power(
+            uhd::usrp::dio_rpc_iface::sptr rpcc, const std::vector<std::string>& ports);
 
-        std::vector<std::string> get_supported_voltages(const std::string& port) const override;
-        void set_port_voltage(const std::string& port, const std::string& voltage) override;
+        std::vector<std::string> get_supported_voltages(
+            const std::string& port) const override;
+        void set_port_voltage(
+            const std::string& port, const std::string& voltage) override;
         std::string get_port_voltage(const std::string& port) const override;
         void set_external_power(const std::string& port, bool enable) override;
         std::string get_external_power_status(const std::string& port) const override;

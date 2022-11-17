@@ -136,13 +136,13 @@ public:
                     _supp.count(freq) ? _supp.at(freq).second : 0.0);
             });
         // Now load it all into the FlatBuffer
-        const auto metadata  = CreateMetadataDirect(builder,
+        const auto metadata = CreateMetadataDirect(builder,
             _name.c_str(),
             _serial.c_str(),
             _timestamp,
             VERSION_MAJOR,
             VERSION_MINOR);
-        auto cal_table = CreateIQCalCoeffsDirect(builder, metadata, &fb_coeffs);
+        auto cal_table      = CreateIQCalCoeffsDirect(builder, metadata, &fb_coeffs);
         FinishIQCalCoeffsBuffer(builder, cal_table);
         const size_t table_size = builder.GetSize();
         const uint8_t* table    = builder.GetBufferPointer();
@@ -160,10 +160,10 @@ public:
         auto cal_table = GetIQCalCoeffs(static_cast<const void*>(data.data()));
         // TODO we can handle this more nicely
         UHD_ASSERT_THROW(cal_table->metadata()->version_major() == VERSION_MAJOR);
-        _name          = std::string(cal_table->metadata()->name()->c_str());
-        _serial        = std::string(cal_table->metadata()->serial()->c_str());
-        _timestamp     = cal_table->metadata()->timestamp();
-        auto coeffs    = cal_table->coeffs();
+        _name       = std::string(cal_table->metadata()->name()->c_str());
+        _serial     = std::string(cal_table->metadata()->serial()->c_str());
+        _timestamp  = cal_table->metadata()->timestamp();
+        auto coeffs = cal_table->coeffs();
         for (auto it = coeffs->begin(); it != coeffs->end(); ++it) {
             _coeffs[it->freq()] = {it->coeff_real(), it->coeff_imag()};
             // Suppression levels are really not necessary for runtime.

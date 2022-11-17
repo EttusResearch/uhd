@@ -1640,7 +1640,7 @@ public:
                 "get_rx_power_range() not available for this device and channel");
         }
         return _tree->access<meta_range_t>(power_ref_path).get();
-        }
+    }
 
     void set_rx_antenna(const std::string& ant, size_t chan) override
     {

@@ -30,10 +30,7 @@ static const float uhd_default_thread_priority = 0.5;
  * \param realtime true to use realtime mode
  * \return UHD error code
  */
-UHD_API uhd_error uhd_set_thread_priority(
-    float priority,
-    bool realtime
-);
+UHD_API uhd_error uhd_set_thread_priority(float priority, bool realtime);
 
 #ifdef __cplusplus
 }

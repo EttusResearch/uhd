@@ -97,8 +97,8 @@ dpdk_port::dpdk_port(port_id_t port,
     uint64_t rx_offloads = RTE_ETH_RX_OFFLOAD_IPV4_CKSUM;
     uint64_t tx_offloads = RTE_ETH_TX_OFFLOAD_IPV4_CKSUM;
 #else
-    uint64_t rx_offloads = DEV_RX_OFFLOAD_IPV4_CKSUM;
-    uint64_t tx_offloads = DEV_TX_OFFLOAD_IPV4_CKSUM;
+    uint64_t rx_offloads            = DEV_RX_OFFLOAD_IPV4_CKSUM;
+    uint64_t tx_offloads            = DEV_TX_OFFLOAD_IPV4_CKSUM;
 #endif
     if ((dev_info.rx_offload_capa & rx_offloads) != rx_offloads) {
         UHD_LOGGER_ERROR("DPDK") << boost::format("%d: Only supports RX offloads 0x%0llx")
@@ -198,9 +198,9 @@ dpdk_port::dpdk_port(port_id_t port,
 
         struct rte_eth_txconf txconf = dev_info.default_txconf;
 #ifdef RTE_ETH_TX_OFFLOAD_IPV4_CKSUM
-        txconf.offloads              = RTE_ETH_TX_OFFLOAD_IPV4_CKSUM;
+        txconf.offloads = RTE_ETH_TX_OFFLOAD_IPV4_CKSUM;
 #else
-        txconf.offloads              = DEV_TX_OFFLOAD_IPV4_CKSUM;
+        txconf.offloads = DEV_TX_OFFLOAD_IPV4_CKSUM;
 #endif
         retval = rte_eth_tx_queue_setup(_port, i, tx_desc, cpu_socket, &txconf);
         if (retval < 0) {

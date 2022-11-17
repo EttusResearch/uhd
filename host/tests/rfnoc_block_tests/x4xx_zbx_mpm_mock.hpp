@@ -27,18 +27,24 @@ constexpr double DEFAULT_MCR = 122.88e6;
 //! Mock MPM server for X410/ZBX
 //
 // This is a mock server that mimicks an X410 with a ZBX daughterboard.
-class x4xx_mock_rpc_server : public x400_rpc_iface, public mpmd_rpc_iface, public dboard_base_rpc_iface, public zbx_rpc_iface, public dio_rpc_iface
+class x4xx_mock_rpc_server : public x400_rpc_iface,
+                             public mpmd_rpc_iface,
+                             public dboard_base_rpc_iface,
+                             public zbx_rpc_iface,
+                             public dio_rpc_iface
 {
 public:
     x4xx_mock_rpc_server(const uhd::device_addr_t& device_info)
         : _device_info(device_info)
-    {}
+    {
+    }
 
     uhd::rpc_client::sptr get_raw_rpc_client() override
     {
         // This function is unimplemented! Perhaps you need to:
         // - Add it to the appropriate RPC interface,
-        // - Retrofit all calls to your desired function to directly use the RPC interface, and
+        // - Retrofit all calls to your desired function to directly use the RPC
+        // interface, and
         // - Add a mock implementation here.
         UHD_THROW_INVALID_CODE_PATH();
     }
@@ -101,7 +107,8 @@ public:
         return {};
     }
 
-    std::map<std::string, std::string> get_sensor(const std::string&, const std::string&, size_t) override
+    std::map<std::string, std::string> get_sensor(
+        const std::string&, const std::string&, size_t) override
     {
         return {};
     }
@@ -176,14 +183,13 @@ public:
         return spll_map.at(mcr);
     }
 
-    std::vector<std::map<std::string, std::string>> pop_host_tasks(const std::string&) override
+    std::vector<std::map<std::string, std::string>> pop_host_tasks(
+        const std::string&) override
     {
         return {};
     }
 
-    void enable_iq_swap(const bool,
-        const std::string&,
-        const size_t) override
+    void enable_iq_swap(const bool, const std::string&, const size_t) override
     {
         // nop
     }
@@ -198,7 +204,8 @@ public:
         return 0;
     }
 
-    void set_timekeeper_time(size_t /*timekeeper_idx*/, uint64_t /*ticks*/, bool /*last_pps*/) override
+    void set_timekeeper_time(
+        size_t /*timekeeper_idx*/, uint64_t /*ticks*/, bool /*last_pps*/) override
     {
         // nop
     }
@@ -253,7 +260,8 @@ public:
         return {};
     }
 
-    void set_gpio_src(const std::string& /*bank*/, const std::vector<std::string>& /*src*/) override
+    void set_gpio_src(
+        const std::string& /*bank*/, const std::vector<std::string>& /*src*/) override
     {
         // nop
     }
@@ -293,7 +301,8 @@ public:
         // nop
     }
 
-    bool get_threshold_status(size_t /*db_number*/, size_t /*chan*/, size_t /*threshold_block*/) override
+    bool get_threshold_status(
+        size_t /*db_number*/, size_t /*chan*/, size_t /*threshold_block*/) override
     {
         return false;
     }
@@ -314,8 +323,7 @@ public:
         return 0.0;
     }
 
-    void setup_threshold(
-        size_t /*db_number*/,
+    void setup_threshold(size_t /*db_number*/,
         size_t /*chan*/,
         size_t /*threshold_block*/,
         const std::string& /*mode*/,

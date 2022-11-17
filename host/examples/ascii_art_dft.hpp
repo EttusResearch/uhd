@@ -321,10 +321,10 @@ std::string dft_to_plot(const log_pwr_dft_type& dft_,
 //example main function to test the dft
 
 #include <curses.h>
+#include <chrono>
 #include <cstdlib>
 #include <iostream>
 #include <thread>
-#include <chrono>
 
 int main(void){
     using namespace std::chrono_literals;
@@ -351,7 +351,7 @@ int main(void){
             12.5e4, 2.45e9,
             60, 0
         ).c_str());
-	refresh();
+        refresh();
 
         std::this_thread::sleep_for(1s);
     }

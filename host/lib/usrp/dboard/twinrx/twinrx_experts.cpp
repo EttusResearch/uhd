@@ -271,8 +271,8 @@ void twinrx_chan_gain_expert::resolve()
     // Compute minimum gain. The user-specified gain value will be interpreted as
     // the gain applied on top of the minimum gain state.
     // If antennas are shared or swapped, the switch has 6dB of loss
-    size_t gain_index = std::min(static_cast<size_t>(std::lround(_gain.get())),
-        table.get_num_entries() - 1);
+    size_t gain_index = std::min(
+        static_cast<size_t>(std::lround(_gain.get())), table.get_num_entries() - 1);
 
     // Translate gain to an index in the gain table
     const twinrx_gain_config_t& config = table.find_by_index(gain_index);
@@ -670,14 +670,16 @@ void twinrx_settings_expert::_resolve_lox_freq(lo_stage_t lo_stage,
             // Tuning has already been done above if CH0 LO source is not external
             if (ch0_lo_source == twinrx_ctrl::LO_EXTERNAL) {
                 // Tune the LO being shared
-                twinrx_ctrl::channel_t ch =
-                    (synth0_mapping == MAPPING_SHARED) ? twinrx_ctrl::CH1 : twinrx_ctrl::CH2;
-                ch0_freq_c = _set_lox_synth_freq(lo_stage, ch, ch0_freq_d);
-                ch1_freq_c = ch0_freq_c;
+                twinrx_ctrl::channel_t ch = (synth0_mapping == MAPPING_SHARED)
+                                                ? twinrx_ctrl::CH1
+                                                : twinrx_ctrl::CH2;
+                ch0_freq_c                = _set_lox_synth_freq(lo_stage, ch, ch0_freq_d);
+                ch1_freq_c                = ch0_freq_c;
 
                 // Tune the synthesizer of the other channel away to avoid interference
-                twinrx_ctrl::channel_t other_ch =
-                    (synth0_mapping == MAPPING_SHARED) ? twinrx_ctrl::CH2 : twinrx_ctrl::CH1;
+                twinrx_ctrl::channel_t other_ch = (synth0_mapping == MAPPING_SHARED)
+                                                      ? twinrx_ctrl::CH2
+                                                      : twinrx_ctrl::CH1;
                 _set_lox_synth_freq(lo_stage, other_ch, ch0_freq_d + 100e6);
             }
         }

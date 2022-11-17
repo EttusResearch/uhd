@@ -140,8 +140,8 @@ static clock_settings_type get_clock_settings(double rate)
         for ( // calculate an r divider that fits into the bounds of the vco
             cs.r_counter =
                 size_t(cs.get_n_counter() * cs.get_ref_rate() / (1800e6 - vco_bound_pad));
-            cs.r_counter <= size_t(cs.get_n_counter() * cs.get_ref_rate()
-                                   / (1400e6 + vco_bound_pad))
+            cs.r_counter <= size_t(
+                cs.get_n_counter() * cs.get_ref_rate() / (1400e6 + vco_bound_pad))
             and cs.r_counter > 0;
             cs.r_counter++) {
             // determine chan_div and vco_div

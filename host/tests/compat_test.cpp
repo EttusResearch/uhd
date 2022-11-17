@@ -40,4 +40,3 @@ BOOST_AUTO_TEST_CASE(test_compat_num32)
     BOOST_CHECK(cn != compat_num32(0, 0));
     BOOST_CHECK(cn == compat_num32((5 << 16) | 3));
 }
-

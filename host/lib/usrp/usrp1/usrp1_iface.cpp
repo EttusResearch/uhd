@@ -135,10 +135,10 @@ public:
                 and buff[num_bytes - 3] == 0) {
                 if (int(num_bytes - 2)
                     != _ctrl_transport->usrp_control_read(VRQ_SPI_READ,
-                           (buff[num_bytes - 1] << 8) | (buff[num_bytes - 2] << 0),
-                           (which_slave << 8) | SPI_FMT_MSB | SPI_FMT_HDR_2,
-                           buff,
-                           num_bytes - 2))
+                        (buff[num_bytes - 1] << 8) | (buff[num_bytes - 2] << 0),
+                        (which_slave << 8) | SPI_FMT_MSB | SPI_FMT_HDR_2,
+                        buff,
+                        num_bytes - 2))
                     throw uhd::io_error("USRP1: failed SPI readback transaction");
             }
 
@@ -147,10 +147,10 @@ public:
                      and buff[num_bytes - 2] == 0) {
                 if (int(num_bytes - 1)
                     != _ctrl_transport->usrp_control_read(VRQ_SPI_READ,
-                           buff[num_bytes - 1],
-                           (which_slave << 8) | SPI_FMT_MSB | SPI_FMT_HDR_1,
-                           buff,
-                           num_bytes - 1))
+                        buff[num_bytes - 1],
+                        (which_slave << 8) | SPI_FMT_MSB | SPI_FMT_HDR_1,
+                        buff,
+                        num_bytes - 1))
                     throw uhd::io_error("USRP1: failed SPI readback transaction");
             } else {
                 throw uhd::io_error("USRP1: invalid input data for SPI readback");

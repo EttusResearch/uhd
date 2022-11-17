@@ -70,9 +70,9 @@ BOOST_AUTO_TEST_CASE(test_valid_names)
     bool value_error_caught = false;
     try {
         property_t<int> prop_i{"int_prop:0", 10, {res_source_info::USER, 0}};
-    } catch(const uhd::value_error& e) {
+    } catch (const uhd::value_error& e) {
         value_error_caught = true;
-    } catch(...) {
+    } catch (...) {
     }
 
     BOOST_CHECK(value_error_caught);

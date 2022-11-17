@@ -14,7 +14,8 @@
 /*!
  * This struct is populated by uhd_usrp_get_rx_info().
  */
-typedef struct {
+typedef struct
+{
     //! Motherboard ID
     char* mboard_id;
     //! Motherboard name
@@ -37,7 +38,8 @@ typedef struct {
 /*!
  * This struct is populated by uhd_usrp_get_tx_info().
  */
-typedef struct {
+typedef struct
+{
     //! Motherboard ID
     char* mboard_id;
     //! Motherboard name
@@ -66,7 +68,7 @@ extern "C" {
  * been populated by uhd_usrp_get_rx_info(), it will produce a double-free
  * error.
  */
-UHD_API uhd_error uhd_usrp_rx_info_free(uhd_usrp_rx_info_t *rx_info);
+UHD_API uhd_error uhd_usrp_rx_info_free(uhd_usrp_rx_info_t* rx_info);
 
 //! Clean up a uhd_usrp_tx_info_t populated by uhd_usrp_get_tx_info().
 /*!
@@ -74,7 +76,7 @@ UHD_API uhd_error uhd_usrp_rx_info_free(uhd_usrp_rx_info_t *rx_info);
  * been populated by uhd_usrp_get_tx_info(), it will produce a double-free
  * error.
  */
-UHD_API uhd_error uhd_usrp_tx_info_free(uhd_usrp_tx_info_t *tx_info);
+UHD_API uhd_error uhd_usrp_tx_info_free(uhd_usrp_tx_info_t* tx_info);
 
 #ifdef __cplusplus
 }

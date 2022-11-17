@@ -59,7 +59,7 @@ using namespace uhd::convert;
  * | 127                                 0 |
  *
  */
-#define SC12_SHIFT_MASK 0x0fff0fff, 0x0fff0fff, 0xfff0fff0, 0xfff0fff0
+#define SC12_SHIFT_MASK    0x0fff0fff, 0x0fff0fff, 0xfff0fff0, 0xfff0fff0
 #define SC12_PACK_SHUFFLE1 5, 4, 8, 7, 11, 10, 14, 13, 6, 5, 9, 8, 12, 11, 15, 14
 #define SC12_PACK_SHUFFLE2 15, 14, 7, 6, 13, 12, 5, 4, 11, 10, 3, 2, 9, 8, 1, 0
 

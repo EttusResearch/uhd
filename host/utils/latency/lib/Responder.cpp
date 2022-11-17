@@ -583,7 +583,7 @@ double Responder::get_simulate_frequency(
     uint64_t highest_delay_samples = _opt.highest_delay_samples(delay);
     if ((_opt.optimize_simulation_rate)
         || ((highest_delay_samples + response_length + _opt.flush_count)
-               > original_simulate_duration)) {
+            > original_simulate_duration)) {
         simulate_frequency =
             get_max_possible_frequency(highest_delay_samples, response_length);
     }
@@ -1015,7 +1015,7 @@ int Responder::test_step_finished(uint64_t trigger_count,
     if (((_opt.test_iterations_is_sample_count == false)
             && (trigger_count >= _opt.test_iterations))
         || ((_opt.test_iterations_is_sample_count)
-               && (num_total_samps_test > _opt.test_iterations))) {
+            && (num_total_samps_test > _opt.test_iterations))) {
         add_stats_to_results(statsCurrent, _delay);
 
         if (statsCurrent.missed == 0) // == NO late bursts

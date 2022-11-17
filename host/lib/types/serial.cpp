@@ -33,11 +33,8 @@ spi_config_t::spi_config_t(edge_t edge) : mosi_edge(edge), miso_edge(edge)
     use_custom_divider = false;
 }
 
-spi_config_t::spi_config_t(edge_t edge, size_t divider) :
-    mosi_edge(edge),
-    miso_edge(edge),
-    use_custom_divider(true),
-    divider(divider)
+spi_config_t::spi_config_t(edge_t edge, size_t divider)
+    : mosi_edge(edge), miso_edge(edge), use_custom_divider(true), divider(divider)
 {
     // empty
 }

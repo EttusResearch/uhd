@@ -5,8 +5,8 @@
 //
 
 #include <uhd/cal/database.hpp>
-#include <uhd/utils/paths.hpp>
 #include <uhd/exception.hpp>
+#include <uhd/utils/paths.hpp>
 #include <stdlib.h> // putenv or _putenv
 #include <boost/filesystem.hpp>
 #include <boost/test/unit_test.hpp>

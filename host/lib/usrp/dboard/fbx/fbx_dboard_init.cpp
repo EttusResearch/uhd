@@ -250,9 +250,8 @@ void fbx_dboard_impl::_init_lo_prop_tree(uhd::property_tree::sptr subtree,
         .add_coerced_subscriber([](const sensor_value_t&) {
             throw uhd::runtime_error("Attempting to write to sensor!");
         })
-        .set_publisher([]() {
-            return sensor_value_t("all_los", true, "locked", "unlocked");
-        });
+        .set_publisher(
+            []() { return sensor_value_t("all_los", true, "locked", "unlocked"); });
     subtree->create<sensor_value_t>(fe_path / "sensors" / "nco_locked")
         .add_coerced_subscriber([](const sensor_value_t&) {
             throw uhd::runtime_error("Attempting to write to sensor!");

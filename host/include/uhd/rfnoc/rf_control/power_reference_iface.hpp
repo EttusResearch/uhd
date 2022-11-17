@@ -187,7 +187,6 @@ public:
      * \param chan The channel index
      */
     virtual meta_range_t get_tx_power_range(const size_t chan) = 0;
-
 };
 
 }}} // namespace uhd::rfnoc::rf_control

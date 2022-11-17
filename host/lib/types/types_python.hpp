@@ -137,7 +137,6 @@ void export_types(py::module& m)
 
 
         ;
-
 }
 
 #endif /* INCLUDED_UHD_TYPES_PYTHON_HPP */

@@ -17,10 +17,19 @@ template <typename major_type, typename minor_type>
 class compat_num
 {
 public:
-    constexpr compat_num(major_type major, minor_type minor) : _major(major), _minor(minor) {}
+    constexpr compat_num(major_type major, minor_type minor)
+        : _major(major), _minor(minor)
+    {
+    }
 
-    major_type get_major() const { return _major; }
-    major_type get_minor() const { return _minor; }
+    major_type get_major() const
+    {
+        return _major;
+    }
+    major_type get_minor() const
+    {
+        return _minor;
+    }
 
     bool operator==(const compat_num<major_type, minor_type>& rhs) const
     {

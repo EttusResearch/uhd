@@ -394,10 +394,9 @@ private:
                 }
             });
         // Resolvers for type: These are constants
-        add_property_resolver({type_in}, {type_in}, [& type_in = *type_in]() {
-            type_in.set(IO_TYPE_SC16);
-        });
-        add_property_resolver({type_out}, {type_out}, [& type_out = *type_out]() {
+        add_property_resolver(
+            {type_in}, {type_in}, [&type_in = *type_in]() { type_in.set(IO_TYPE_SC16); });
+        add_property_resolver({type_out}, {type_out}, [&type_out = *type_out]() {
             type_out.set(IO_TYPE_SC16);
         });
     }
@@ -473,8 +472,8 @@ private:
         _duc_reg_iface.poke32(SR_N_ADDR, 1, chan);
 
         // Configure time increment in ticks per M output samples
-        _duc_reg_iface.poke32(SR_TIME_INCR_ADDR,
-            uint32_t(get_tick_rate()/get_output_rate(chan)), chan);
+        _duc_reg_iface.poke32(
+            SR_TIME_INCR_ADDR, uint32_t(get_tick_rate() / get_output_rate(chan)), chan);
 
         if (cic_interp > 1 and hb_enable == 0) {
             RFNOC_LOG_WARNING(

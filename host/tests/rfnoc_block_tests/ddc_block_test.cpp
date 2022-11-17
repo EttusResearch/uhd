@@ -31,11 +31,11 @@ constexpr size_t DEFAULT_MTU = 8000;
 BOOST_AUTO_TEST_CASE(test_ddc_block)
 {
     node_accessor_t node_accessor{};
-    constexpr uint32_t num_hb  = 2;
-    constexpr uint32_t max_cic = 128;
-    constexpr size_t num_chans = 4;
-    constexpr noc_id_t noc_id  = DDC_BLOCK;
-    constexpr int TEST_DECIM   = 20;
+    constexpr uint32_t num_hb     = 2;
+    constexpr uint32_t max_cic    = 128;
+    constexpr size_t num_chans    = 4;
+    constexpr noc_id_t noc_id     = DDC_BLOCK;
+    constexpr int TEST_DECIM      = 20;
     constexpr double DEFAULT_RATE = 200e6; // Matches typical MCR of X310
 
     auto block_container =

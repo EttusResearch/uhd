@@ -102,9 +102,9 @@ static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp)
  **********************************************************************/
 static std::string get_serial(uhd::usrp::multi_usrp::sptr usrp, const std::string& tx_rx)
 {
-    const size_t chan = 0;
-    auto usrp_info    = (tx_rx == "tx") ? usrp->get_usrp_tx_info(chan)
-                                     : usrp->get_usrp_rx_info(chan);
+    const size_t chan            = 0;
+    auto usrp_info               = (tx_rx == "tx") ? usrp->get_usrp_tx_info(chan)
+                                                   : usrp->get_usrp_rx_info(chan);
     const std::string serial_key = tx_rx + "_serial";
     if (!usrp_info.has_key(serial_key)) {
         throw uhd::runtime_error("Cannot determine daughterboard serial!");
@@ -423,12 +423,12 @@ bool has_tx_error(uhd::tx_streamer::sptr tx_stream)
 
     return async_md.event_code
            & (0
-                 // Any of these errors are considered a problematic TX error:
-                 | uhd::async_metadata_t::EVENT_CODE_UNDERFLOW
-                 | uhd::async_metadata_t::EVENT_CODE_SEQ_ERROR
-                 | uhd::async_metadata_t::EVENT_CODE_TIME_ERROR
-                 | uhd::async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET
-                 | uhd::async_metadata_t::EVENT_CODE_SEQ_ERROR_IN_BURST);
+               // Any of these errors are considered a problematic TX error:
+               | uhd::async_metadata_t::EVENT_CODE_UNDERFLOW
+               | uhd::async_metadata_t::EVENT_CODE_SEQ_ERROR
+               | uhd::async_metadata_t::EVENT_CODE_TIME_ERROR
+               | uhd::async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET
+               | uhd::async_metadata_t::EVENT_CODE_SEQ_ERROR_IN_BURST);
 }
 
 void wait_for_lo_lock(uhd::usrp::multi_usrp::sptr usrp)

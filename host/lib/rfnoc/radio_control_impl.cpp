@@ -1008,8 +1008,8 @@ bool radio_control_impl::async_message_validator(
         return false;
     }
     // For these calculations, see below
-    const uint32_t addr_base = (addr >= regmap::SWREG_RX_ERR) ? regmap::SWREG_RX_ERR
-                                                              : regmap::SWREG_TX_ERR;
+    const uint32_t addr_base   = (addr >= regmap::SWREG_RX_ERR) ? regmap::SWREG_RX_ERR
+                                                                : regmap::SWREG_TX_ERR;
     const uint32_t chan        = (addr - addr_base) / regmap::SWREG_CHAN_OFFSET;
     const uint32_t addr_offset = addr % regmap::SWREG_CHAN_OFFSET;
     const uint32_t code        = data[0];
@@ -1066,7 +1066,7 @@ void radio_control_impl::async_message_handler(
     // BASE == 0x0000 for TX, 0x1000 for RX
     const uint32_t addr_base = (addr >= regmap::SWREG_RX_ERR) ? regmap::SWREG_RX_ERR
                                                               : regmap::SWREG_TX_ERR;
-    const uint32_t chan = (addr - addr_base) / regmap::SWREG_CHAN_OFFSET;
+    const uint32_t chan      = (addr - addr_base) / regmap::SWREG_CHAN_OFFSET;
     // Note: addr_offset is always going to be zero for now, because we only
     // have one "register" that gets hit for either RX or TX, but we'll keep it
     // in case we add other regs in the future

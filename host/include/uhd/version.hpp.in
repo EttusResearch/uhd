@@ -15,6 +15,7 @@
  */
 #define UHD_VERSION_ABI_STRING "@UHD_VERSION_MAJOR@.@UHD_VERSION_API@.@UHD_VERSION_ABI@"
 
+// clang-format off
 /*!
  * A macro to check UHD version at compile-time.
  * The value of this macro is MAJOR * 1000000 + API * 10000 + ABI * 100 + PATCH
@@ -26,16 +27,18 @@
 #include <uhd/config.hpp>
 #include <string>
 
-namespace uhd{
+// clang-format on
 
-    //! Get the version string (dotted version number + build info)
-    UHD_API std::string get_version_string(void);
+namespace uhd {
 
-    //! Get the ABI compatibility string for this build of the library
-    UHD_API std::string get_abi_string(void);
+//! Get the version string (dotted version number + build info)
+UHD_API std::string get_version_string(void);
 
-    //! Get the component string
-    UHD_API std::string get_component(void);
+//! Get the ABI compatibility string for this build of the library
+UHD_API std::string get_abi_string(void);
 
-} //namespace uhd
+//! Get the component string
+UHD_API std::string get_component(void);
+
+} // namespace uhd
 #endif

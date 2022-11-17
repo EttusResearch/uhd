@@ -638,14 +638,14 @@ void ad9361_device_t::_setup_adc()
         rc_timeconst =
             (1
                 / ((1.4 * 2 * M_PI) * (18300 * rxbbf_r2346)
-                      * ((160e-15 * rxbbf_c3_msb) + (10e-15 * rxbbf_c3_lsb) + 140e-15)
-                      * (bbbw_mhz * 1e6)));
+                    * ((160e-15 * rxbbf_c3_msb) + (10e-15 * rxbbf_c3_lsb) + 140e-15)
+                    * (bbbw_mhz * 1e6)));
     } else {
         rc_timeconst =
             (1
                 / ((1.4 * 2 * M_PI) * (18300 * rxbbf_r2346)
-                      * ((160e-15 * rxbbf_c3_msb) + (10e-15 * rxbbf_c3_lsb) + 140e-15)
-                      * (bbbw_mhz * 1e6) * (1 + (0.01 * (bbbw_mhz - 18)))));
+                    * ((160e-15 * rxbbf_c3_msb) + (10e-15 * rxbbf_c3_lsb) + 140e-15)
+                    * (bbbw_mhz * 1e6) * (1 + (0.01 * (bbbw_mhz - 18)))));
     }
 
     double scale_res = sqrt(1 / rc_timeconst);
@@ -666,15 +666,14 @@ void ad9361_device_t::_setup_adc()
     data[5]        = 0;
     data[6]        = 0;
     data[7]        = std::min<uint8_t>(124,
-        uint8_t(
-            std::floor(-0.5
-                       + (80.0 * scale_snr * scale_res
-                             * std::min<double>(1.0, sqrt(maxsnr * fsadc / 640.0))))));
+        uint8_t(std::floor(-0.5
+                           + (80.0 * scale_snr * scale_res
+                               * std::min<double>(1.0, sqrt(maxsnr * fsadc / 640.0))))));
     double data007 = data[7];
     data[8]        = std::min<uint8_t>(255,
         uint8_t(std::floor(0.5
                            + ((20.0 * (640.0 / fsadc) * ((data007 / 80.0))
-                                 / (scale_res * scale_cap))))));
+                               / (scale_res * scale_cap))))));
     data[10]       = std::min<uint8_t>(127,
         uint8_t(std::floor(
             -0.5

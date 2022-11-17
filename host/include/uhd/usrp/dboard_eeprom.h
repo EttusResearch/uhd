@@ -11,10 +11,11 @@
 #include <uhd/error.h>
 
 #ifdef __cplusplus
-#include <uhd/usrp/dboard_eeprom.hpp>
-#include <string>
+#    include <uhd/usrp/dboard_eeprom.hpp>
+#    include <string>
 
-struct uhd_dboard_eeprom_t {
+struct uhd_dboard_eeprom_t
+{
     uhd::usrp::dboard_eeprom_t dboard_eeprom_cpp;
     std::string last_error;
 };
@@ -34,44 +35,29 @@ struct uhd_dboard_eeprom_t;
 typedef struct uhd_dboard_eeprom_t* uhd_dboard_eeprom_handle;
 
 //! Create handle for a USRP daughterboard EEPROM
-UHD_API uhd_error uhd_dboard_eeprom_make(
-    uhd_dboard_eeprom_handle* h
-);
+UHD_API uhd_error uhd_dboard_eeprom_make(uhd_dboard_eeprom_handle* h);
 
 //! Safely destroy the given handle
 /*!
  * NOTE: Using a handle after passing it into this function will result in
  * a segmentation fault.
  */
-UHD_API uhd_error uhd_dboard_eeprom_free(
-    uhd_dboard_eeprom_handle* h
-);
+UHD_API uhd_error uhd_dboard_eeprom_free(uhd_dboard_eeprom_handle* h);
 
 //! Get the ID associated with the given daughterboard as a string hex representation
 UHD_API uhd_error uhd_dboard_eeprom_get_id(
-    uhd_dboard_eeprom_handle h,
-    char* id_out,
-    size_t strbuffer_len
-);
+    uhd_dboard_eeprom_handle h, char* id_out, size_t strbuffer_len);
 
 //! Set the daughterboard ID using a string hex representation
-UHD_API uhd_error uhd_dboard_eeprom_set_id(
-    uhd_dboard_eeprom_handle h,
-    const char* id
-);
+UHD_API uhd_error uhd_dboard_eeprom_set_id(uhd_dboard_eeprom_handle h, const char* id);
 
 //! Get the daughterboard's serial
 UHD_API uhd_error uhd_dboard_eeprom_get_serial(
-    uhd_dboard_eeprom_handle h,
-    char* serial_out,
-    size_t strbuffer_len
-);
+    uhd_dboard_eeprom_handle h, char* serial_out, size_t strbuffer_len);
 
 //! Set the daughterboard's serial
 UHD_API uhd_error uhd_dboard_eeprom_set_serial(
-    uhd_dboard_eeprom_handle h,
-    const char* serial
-);
+    uhd_dboard_eeprom_handle h, const char* serial);
 
 /*! Get the daughterboard's revision
  *
@@ -79,22 +65,15 @@ UHD_API uhd_error uhd_dboard_eeprom_set_serial(
  * will return an error.
  */
 UHD_API uhd_error uhd_dboard_eeprom_get_revision(
-    uhd_dboard_eeprom_handle h,
-    int* revision_out
-);
+    uhd_dboard_eeprom_handle h, int* revision_out);
 
 //! Set the daughterboard's revision
 UHD_API uhd_error uhd_dboard_eeprom_set_revision(
-    uhd_dboard_eeprom_handle h,
-    int revision
-);
+    uhd_dboard_eeprom_handle h, int revision);
 
 //! Get the last error reported by the handle
 UHD_API uhd_error uhd_dboard_eeprom_last_error(
-    uhd_dboard_eeprom_handle h,
-    char* error_out,
-    size_t strbuffer_len
-);
+    uhd_dboard_eeprom_handle h, char* error_out, size_t strbuffer_len);
 
 #ifdef __cplusplus
 }

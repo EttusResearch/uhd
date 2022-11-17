@@ -246,8 +246,7 @@ private:
         register_property(&_prop_hist_decimation, [this]() {
             int decim = _prop_hist_decimation.get();
             if (decim < 2 || decim > 1024) {
-                throw uhd::value_error(
-                    "Histogram decimation value must be in [2, 1024]");
+                throw uhd::value_error("Histogram decimation value must be in [2, 1024]");
             }
             this->regs().poke32(REG_DECIM_ADDR, uint32_t(decim - 2));
         });
@@ -298,7 +297,7 @@ private:
             if (prediv_ratio
                     < static_cast<int>(fosphor_waterfall_predivision_ratio::RATIO_1_1)
                 || prediv_ratio > static_cast<int>(
-                                      fosphor_waterfall_predivision_ratio::RATIO_1_256)) {
+                       fosphor_waterfall_predivision_ratio::RATIO_1_256)) {
                 throw uhd::value_error(
                     "Waterfall predivision ratio value must be in [0, 3]");
             }
@@ -315,8 +314,7 @@ private:
         register_property(&_prop_wf_decim, [this]() {
             int wf_decim = _prop_wf_decim.get();
             if (wf_decim < 2 || wf_decim > 257) {
-                throw uhd::value_error(
-                    "Waterfall decimation value must be in [2, 257]");
+                throw uhd::value_error("Waterfall decimation value must be in [2, 257]");
             }
             this->regs().poke32(REG_WF_DECIM_ADDR, uint32_t(wf_decim - 2));
         });
@@ -408,8 +406,8 @@ private:
         static_cast<int>(fosphor_waterfall_predivision_ratio::RATIO_1_1),
         {res_source_info::USER}};
     property_t<int> _prop_wf_mode         = property_t<int>{PROP_KEY_WF_MODE,
-        static_cast<int>(fosphor_waterfall_mode::MAX_HOLD),
-        {res_source_info::USER}};
+                static_cast<int>(fosphor_waterfall_mode::MAX_HOLD),
+                {res_source_info::USER}};
     property_t<int> _prop_wf_decim =
         property_t<int>{PROP_KEY_WF_DECIMATION, 8, {res_source_info::USER}};
 };

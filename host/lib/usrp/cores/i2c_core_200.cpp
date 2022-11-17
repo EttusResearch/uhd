@@ -14,11 +14,11 @@
 
 #define REG_I2C_WR_PRESCALER_LO (1 << 3) | 0
 #define REG_I2C_WR_PRESCALER_HI (1 << 3) | 1
-#define REG_I2C_WR_CTRL (1 << 3) | 2
-#define REG_I2C_WR_DATA (1 << 3) | 3
-#define REG_I2C_WR_CMD (1 << 3) | 4
-#define REG_I2C_RD_DATA (0 << 3) | 3
-#define REG_I2C_RD_ST (0 << 3) | 4
+#define REG_I2C_WR_CTRL         (1 << 3) | 2
+#define REG_I2C_WR_DATA         (1 << 3) | 3
+#define REG_I2C_WR_CMD          (1 << 3) | 4
+#define REG_I2C_RD_DATA         (0 << 3) | 3
+#define REG_I2C_RD_ST           (0 << 3) | 4
 
 //
 // STA, STO, RD, WR, and IACK bits are cleared automatically
@@ -27,24 +27,24 @@
 #define I2C_CTRL_EN (1 << 7) // core enable
 #define I2C_CTRL_IE (1 << 6) // interrupt enable
 
-#define I2C_CMD_START (1 << 7) // generate (repeated) start condition
-#define I2C_CMD_STOP (1 << 6) // generate stop condition
-#define I2C_CMD_RD (1 << 5) // read from slave
-#define I2C_CMD_WR (1 << 4) // write to slave
-#define I2C_CMD_NACK (1 << 3) // when a rcvr, send ACK (ACK=0) or NACK (ACK=1)
+#define I2C_CMD_START  (1 << 7) // generate (repeated) start condition
+#define I2C_CMD_STOP   (1 << 6) // generate stop condition
+#define I2C_CMD_RD     (1 << 5) // read from slave
+#define I2C_CMD_WR     (1 << 4) // write to slave
+#define I2C_CMD_NACK   (1 << 3) // when a rcvr, send ACK (ACK=0) or NACK (ACK=1)
 #define I2C_CMD_RSVD_2 (1 << 2) // reserved
 #define I2C_CMD_RSVD_1 (1 << 1) // reserved
-#define I2C_CMD_IACK (1 << 0) // set to clear pending interrupt
+#define I2C_CMD_IACK   (1 << 0) // set to clear pending interrupt
 
 #define I2C_ST_RXACK (1 << 7) // Received acknowledgement from slave (1 = NAK, 0 = ACK)
 #define I2C_ST_BUSY \
     (1 << 6) // 1 after START signal detected; 0 after STOP signal detected
-#define I2C_ST_AL (1 << 5) // Arbitration lost.  1 when core lost arbitration
+#define I2C_ST_AL     (1 << 5) // Arbitration lost.  1 when core lost arbitration
 #define I2C_ST_RSVD_4 (1 << 4) // reserved
 #define I2C_ST_RSVD_3 (1 << 3) // reserved
 #define I2C_ST_RSVD_2 (1 << 2) // reserved
-#define I2C_ST_TIP (1 << 1) // Transfer-in-progress
-#define I2C_ST_IP (1 << 0) // Interrupt pending
+#define I2C_ST_TIP    (1 << 1) // Transfer-in-progress
+#define I2C_ST_IP     (1 << 0) // Interrupt pending
 
 using namespace uhd;
 

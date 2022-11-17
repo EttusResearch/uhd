@@ -205,11 +205,13 @@ static std::string get_fpga_path(
             throw uhd::runtime_error("Found a device but could not "
                                      "auto-generate an image filename.");
         } else if (fpga_type.empty()) {
-            return find_image_path(
-                "usrp_" + boost::algorithm::to_lower_copy(dev_addr["product"]) + "_fpga.bit");
+            return find_image_path("usrp_"
+                                   + boost::algorithm::to_lower_copy(dev_addr["product"])
+                                   + "_fpga.bit");
         } else {
-            return find_image_path(
-                "usrp_" + boost::algorithm::to_lower_copy(dev_addr["product"]) + "_fpga_" + fpga_type + ".bit");
+            return find_image_path("usrp_"
+                                   + boost::algorithm::to_lower_copy(dev_addr["product"])
+                                   + "_fpga_" + fpga_type + ".bit");
         }
     }
 }
@@ -363,7 +365,8 @@ static bool mpmd_image_loader(const image_loader::image_loader_args_t& image_loa
     device_addrs_t devs = mpmd_find(find_hint);
 
     if (devs.size() != 1) {
-        UHD_LOG_ERROR("MPMD IMAGE LOADER", "mpmd_image_loader only supports a single device.");
+        UHD_LOG_ERROR(
+            "MPMD IMAGE LOADER", "mpmd_image_loader only supports a single device.");
         return false;
     }
     // Grab the first device_addr
@@ -387,7 +390,7 @@ static bool mpmd_image_loader(const image_loader::image_loader_args_t& image_loa
     return true;
 }
 
-}} // namespace uhd::
+}} // namespace uhd
 
 UHD_STATIC_BLOCK(register_mpm_image_loader)
 {

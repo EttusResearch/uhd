@@ -6,9 +6,9 @@
 //
 
 // IO Pin functions
-#define POWER_IO (1 << 7) // Low enables power supply
-#define ANTSW_IO (1 << 6) // On TX DB, 0 = TX, 1 = RX, on RX DB 0 = main ant, 1 = RX2
-#define MIXER_IO (1 << 5) // Enable appropriate mixer
+#define POWER_IO     (1 << 7) // Low enables power supply
+#define ANTSW_IO     (1 << 6) // On TX DB, 0 = TX, 1 = RX, on RX DB 0 = main ant, 1 = RX2
+#define MIXER_IO     (1 << 5) // Enable appropriate mixer
 #define LOCKDET_MASK (1 << 2) // Input pin
 
 // Mixer constants
@@ -16,11 +16,11 @@
 #define MIXER_DIS 0
 
 // Antenna constants
-#define ANT_TX 0 // the tx line is transmitting
-#define ANT_RX ANTSW_IO // the tx line is receiving
+#define ANT_TX   0 // the tx line is transmitting
+#define ANT_RX   ANTSW_IO // the tx line is receiving
 #define ANT_TXRX 0 // the rx line is on txrx
-#define ANT_RX2 ANTSW_IO // the rx line in on rx2
-#define ANT_XX 0 // dont care how the antenna is set
+#define ANT_RX2  ANTSW_IO // the rx line in on rx2
+#define ANT_XX   0 // dont care how the antenna is set
 
 #include "adf4360_regs.hpp"
 #include <uhd/types/dict.hpp>
@@ -480,15 +480,15 @@ done_loop:
     regs.b_counter               = B;
     regs.cp_gain_1               = adf4360_regs_t::CP_GAIN_1_SET1;
     regs.divide_by_2_output      = (_div2[unit] && (!is_rx_rfx400))
-                                  ? // Special case RFX400 RX Mixer divides by two
+                                       ? // Special case RFX400 RX Mixer divides by two
                                   adf4360_regs_t::DIVIDE_BY_2_OUTPUT_DIV2
-                                  : adf4360_regs_t::DIVIDE_BY_2_OUTPUT_FUND;
-    regs.divide_by_2_prescaler = adf4360_regs_t::DIVIDE_BY_2_PRESCALER_FUND;
-    regs.r_counter             = R;
-    regs.ablpw                 = adf4360_regs_t::ABLPW_3_0NS;
-    regs.lock_detect_precision = adf4360_regs_t::LOCK_DETECT_PRECISION_5CYCLES;
-    regs.test_mode_bit         = 0;
-    regs.band_select_clock_div = bandsel_to_enum[BS];
+                                       : adf4360_regs_t::DIVIDE_BY_2_OUTPUT_FUND;
+    regs.divide_by_2_prescaler   = adf4360_regs_t::DIVIDE_BY_2_PRESCALER_FUND;
+    regs.r_counter               = R;
+    regs.ablpw                   = adf4360_regs_t::ABLPW_3_0NS;
+    regs.lock_detect_precision   = adf4360_regs_t::LOCK_DETECT_PRECISION_5CYCLES;
+    regs.test_mode_bit           = 0;
+    regs.band_select_clock_div   = bandsel_to_enum[BS];
 
     // write the registers
     std::vector<adf4360_regs_t::addr_t> addrs =

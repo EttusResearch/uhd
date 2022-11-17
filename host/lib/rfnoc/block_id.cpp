@@ -73,7 +73,7 @@ bool block_id_t::match(const std::string& block_str)
         return (matches[1] == "" or boost::lexical_cast<size_t>(matches[1]) == _device_no)
                and (matches[2] == "" or matches[2] == _block_name)
                and (matches[3] == ""
-                       or boost::lexical_cast<size_t>(matches[3]) == _block_ctr)
+                    or boost::lexical_cast<size_t>(matches[3]) == _block_ctr)
                and not(matches[1] == "" and matches[2] == "" and matches[3] == "");
     } catch (const std::bad_cast&) {
         return false;

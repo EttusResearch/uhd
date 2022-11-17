@@ -703,8 +703,9 @@ public:
         }
     };
 
-    mgmt_op_t(const op_code_t op_code, const payload_t op_payload = 0,
-        const uint8_t ops_pending = 0)
+    mgmt_op_t(const op_code_t op_code,
+        const payload_t op_payload = 0,
+        const uint8_t ops_pending  = 0)
         : _op_code(op_code), _op_payload(op_payload), _ops_pending(ops_pending)
     {
     }

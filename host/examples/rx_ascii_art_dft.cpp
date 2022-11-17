@@ -120,7 +120,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                       << 0 << "!" << std::endl;
             return EXIT_FAILURE;
         }
-        std::cout << "Setting RX reference power level: " << power << " dBm..." << std::endl;
+        std::cout << "Setting RX reference power level: " << power << " dBm..."
+                  << std::endl;
         usrp->set_rx_power_reference(power);
         std::cout << "Actual RX reference power level: " << usrp->get_rx_power_reference()
                   << " dBm..." << std::endl;
@@ -138,7 +139,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                   << std::endl;
         show_gain_mode = true;
     } else {
-        gain = usrp->get_rx_gain();
+        gain           = usrp->get_rx_gain();
         show_gain_mode = true;
     }
 

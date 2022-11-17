@@ -242,7 +242,7 @@ x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
                                    << get_block_id().get_block_count() << "...");
                     const auto args           = get_block_args();
                     const std::string ch_list = args.get("cal_ch_list", "");
-                    size_t num_calibrations = 0;
+                    size_t num_calibrations   = 0;
                     auto& self_cal =
                         get_feature<uhd::features::adc_self_calibration_iface>();
                     const size_t num_channels = get_num_output_ports();

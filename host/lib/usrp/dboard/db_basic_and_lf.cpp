@@ -80,10 +80,8 @@ UHD_STATIC_BLOCK(reg_basic_and_lf_dboards)
         BASIC_TX_RFNOC_PID, &make_basic_tx, "Basic TX", tx_frontends);
     dboard_manager::register_dboard(
         BASIC_RX_RFNOC_PID, &make_basic_rx, "Basic RX", rx_frontends);
-    dboard_manager::register_dboard(
-        LF_TX_RFNOC_PID, &make_lf_tx, "LF TX", tx_frontends);
-    dboard_manager::register_dboard(
-        LF_RX_RFNOC_PID, &make_lf_rx, "LF RX", rx_frontends);
+    dboard_manager::register_dboard(LF_TX_RFNOC_PID, &make_lf_tx, "LF TX", tx_frontends);
+    dboard_manager::register_dboard(LF_RX_RFNOC_PID, &make_lf_rx, "LF RX", rx_frontends);
 }
 
 /***********************************************************************

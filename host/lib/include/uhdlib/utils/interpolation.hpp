@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include <uhd/utils/math.hpp>
 #include <uhd/utils/interpolation.hpp>
+#include <uhd/utils/math.hpp>
 #include <map>
 #include <utility>
 
@@ -169,8 +169,7 @@ template <typename map_type>
 typename map_type::mapped_type at_nearest(
     const map_type& data, const typename map_type::key_type& key)
 {
-    return at_interpolate_1d(
-        data,
+    return at_interpolate_1d(data,
         key,
         [&](const typename map_type::key_type x,
             const typename map_type::key_type x0,
@@ -221,22 +220,22 @@ typename map_type::mapped_type at_lin_interp(
 // key of \p data, we return the value for the closest available key.
 template <typename doublemap_type>
 typename doublemap_type::mapped_type::mapped_type at_bilin_interp(
-    const doublemap_type& data, const typename doublemap_type::key_type& key_x,
+    const doublemap_type& data,
+    const typename doublemap_type::key_type& key_x,
     const typename doublemap_type::mapped_type::key_type& key_y)
 {
     // Find x1 and x2 coordinates. They are the x-values closest to key_x.
     const auto x_iters = get_bounding_iterators(data, key_x);
-    const auto x1 = x_iters.first->first;
-    const auto x2 = x_iters.second->first;
+    const auto x1      = x_iters.first->first;
+    const auto x2      = x_iters.second->first;
     // x-boundary condition
     if (x1 == x2) {
         return at_lin_interp(x_iters.first->second, key_y);
     }
     // Find y1 and y2 coordinates. They are the y-values closest to key_y.
-    const auto y_iters =
-        get_bounding_iterators(x_iters.first->second, key_y);
-    const auto y1 = y_iters.first->first;
-    const auto y2 = y_iters.second->first;
+    const auto y_iters = get_bounding_iterators(x_iters.first->second, key_y);
+    const auto y1      = y_iters.first->first;
+    const auto y2      = y_iters.second->first;
     // y-boundary condition
     if (y1 == y2) {
         return linear_interp(key_x, x1, data.at(x1).at(y1), x2, data.at(x2).at(y1));

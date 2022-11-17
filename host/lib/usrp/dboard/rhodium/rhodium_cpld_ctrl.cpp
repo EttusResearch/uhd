@@ -362,11 +362,11 @@ void rhodium_cpld_ctrl::set_lo_gain(
     // so reverse the gain value to write the value
     const uint32_t attenuation = MAX_LO_GAIN_INDEX - index;
     const uint8_t set_rx       = (dir == RX_DIRECTION or dir == DX_DIRECTION)
-                               ? LO_GAIN_CTRL_RX_LO_WRITE_ENABLE
-                               : LO_GAIN_CTRL_RX_LO_WRITE_DISABLE;
-    const uint8_t set_tx = (dir == TX_DIRECTION or dir == DX_DIRECTION)
-                               ? LO_GAIN_CTRL_TX_LO_WRITE_ENABLE
-                               : LO_GAIN_CTRL_TX_LO_WRITE_DISABLE;
+                                     ? LO_GAIN_CTRL_RX_LO_WRITE_ENABLE
+                                     : LO_GAIN_CTRL_RX_LO_WRITE_DISABLE;
+    const uint8_t set_tx       = (dir == TX_DIRECTION or dir == DX_DIRECTION)
+                                     ? LO_GAIN_CTRL_TX_LO_WRITE_ENABLE
+                                     : LO_GAIN_CTRL_TX_LO_WRITE_DISABLE;
 
     const uint32_t cmd = (LO_GAIN_CTRL_TABLE_LO << LO_GAIN_CTRL_TABLE_FIELD)
                          | (attenuation << LO_GAIN_CTRL_INDEX_FIELD)

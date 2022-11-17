@@ -22,11 +22,12 @@ namespace uhd { namespace rfnoc {
 
 /*! A default block controller for blocks that can't be found in the registry
  */
-class UHD_API mb_controller : public uhd::noncopyable,
-                              public virtual ::uhd::features::discoverable_feature_getter_iface
+class UHD_API mb_controller
+    : public uhd::noncopyable,
+      public virtual ::uhd::features::discoverable_feature_getter_iface
 {
 public:
-    using sptr = std::shared_ptr<mb_controller>;
+    using sptr          = std::shared_ptr<mb_controller>;
     using sync_source_t = device_addr_t;
 
     /*! Callback function for changing sync sources

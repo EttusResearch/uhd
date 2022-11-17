@@ -100,7 +100,7 @@ public:
         UHD_ASSERT_THROW(_cal_data.count(key));
         _desired_power      = power_dbm;
         const uint64_t freq = static_cast<uint64_t>(std::round(_get_freq()));
-        auto& cal_data = _cal_data.at(key);
+        auto& cal_data      = _cal_data.at(key);
         if (!cal_data) {
             const std::string err_msg = std::string("Attempting to set power for key ")
                                         + key + ", but no cal data available!";
@@ -133,7 +133,7 @@ public:
         const std::string key = _get_key();
         _load_cal_data(key);
         UHD_ASSERT_THROW(_cal_data.count(key));
-        auto& cal_data         = _cal_data.at(key);
+        auto& cal_data = _cal_data.at(key);
         if (!cal_data) {
             const std::string err_msg = std::string("Attempting to get power for key ")
                                         + key + ", but no cal data available!";
@@ -141,8 +141,8 @@ public:
             throw uhd::runtime_error(err_msg);
         }
 
-        const uint64_t freq    = static_cast<uint64_t>(std::round(_get_freq()));
-        const double hw_gain = _gain_group->get_value(_hw_gain_name);
+        const uint64_t freq   = static_cast<uint64_t>(std::round(_get_freq()));
+        const double hw_gain  = _gain_group->get_value(_hw_gain_name);
         const double hw_power = cal_data->get_power(hw_gain, freq);
         // We directly scale the power with the residual gain
         return hw_power + (_gain_group->get_value() - hw_gain);
@@ -162,8 +162,9 @@ public:
         UHD_ASSERT_THROW(_cal_data.count(key));
         auto& cal_data = _cal_data.at(key);
         if (!cal_data) {
-            const std::string err_msg = std::string("Attempting to get power range for key ")
-                                        + key + ", but no cal data available!";
+            const std::string err_msg =
+                std::string("Attempting to get power range for key ") + key
+                + ", but no cal data available!";
             UHD_LOG_ERROR(_log_id, err_msg);
             throw uhd::runtime_error(err_msg);
         }
@@ -272,9 +273,6 @@ pwr_cal_mgr::sptr pwr_cal_mgr::make(const std::string& serial,
     pwr_cal_mgr::get_str_type&& get_key,
     uhd::gain_group::sptr gain_group)
 {
-    return std::make_shared<pwr_cal_mgr_impl>(serial,
-        log_id,
-        std::move(get_freq),
-        std::move(get_key),
-        gain_group);
+    return std::make_shared<pwr_cal_mgr_impl>(
+        serial, log_id, std::move(get_freq), std::move(get_key), gain_group);
 }

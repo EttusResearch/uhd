@@ -57,7 +57,9 @@ public:
      * \param rpcc RPC object to talk to MPM
      * \param iface wb_iface to talk to the radio registers
      */
-    gpio_control(uhd::usrp::x400_rpc_iface::sptr rpcc, uhd::rfnoc::mpmd_mb_controller::sptr mb_control, wb_iface::sptr iface);
+    gpio_control(uhd::usrp::x400_rpc_iface::sptr rpcc,
+        uhd::rfnoc::mpmd_mb_controller::sptr mb_control,
+        wb_iface::sptr iface);
 
     /*! Set the given GPIO attribute. See gpio_atr_3000 for details.
      */

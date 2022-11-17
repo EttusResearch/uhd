@@ -291,8 +291,8 @@ public:
         double target_pfd_freq,
         bool is_int_n) override
     {
-        _regs.cpoc = is_int_n ? max2870_regs_t::CPOC_ENABLED
-                              : max2870_regs_t::CPOC_DISABLED;
+        _regs.cpoc            = is_int_n ? max2870_regs_t::CPOC_ENABLED
+                                         : max2870_regs_t::CPOC_DISABLED;
         _regs.feedback_select = target_freq >= 3.0e9
                                     ? max2870_regs_t::FEEDBACK_SELECT_DIVIDED
                                     : max2870_regs_t::FEEDBACK_SELECT_FUNDAMENTAL;
@@ -832,8 +832,8 @@ double max287x<max287x_regs_t>::set_frequency(
     _regs.r_counter_10_bit      = R;
     _regs.reference_divide_by_2 = T ? max287x_regs_t::REFERENCE_DIVIDE_BY_2_ENABLED
                                     : max287x_regs_t::REFERENCE_DIVIDE_BY_2_DISABLED;
-    _regs.reference_doubler = D ? max287x_regs_t::REFERENCE_DOUBLER_ENABLED
-                                : max287x_regs_t::REFERENCE_DOUBLER_DISABLED;
+    _regs.reference_doubler     = D ? max287x_regs_t::REFERENCE_DOUBLER_ENABLED
+                                    : max287x_regs_t::REFERENCE_DOUBLER_DISABLED;
     _regs.band_select_clock_div = BS & 0xFF;
     _regs.bs_msb                = (BS & 0x300) >> 8;
     UHD_ASSERT_THROW(rfdivsel_to_enum.count(RFdiv) > 0);
@@ -988,8 +988,8 @@ void max287x<max287x_regs_t>::set_auto_retune(bool enabled)
 template <>
 inline void max287x<max2871_regs_t>::set_auto_retune(bool enabled)
 {
-    _regs.retune = enabled ? max2871_regs_t::RETUNE_ENABLED
-                           : max2871_regs_t::RETUNE_DISABLED;
+    _regs.retune  = enabled ? max2871_regs_t::RETUNE_ENABLED
+                            : max2871_regs_t::RETUNE_DISABLED;
     _regs.vas_dly = enabled ? max2871_regs_t::VAS_DLY_ENABLED
                             : max2871_regs_t::VAS_DLY_DISABLED;
 }

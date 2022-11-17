@@ -6,12 +6,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include <algorithm>
 #include <cmath>
 #include <complex>
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include <algorithm>
 
 static const size_t wave_table_len = 8192;
 

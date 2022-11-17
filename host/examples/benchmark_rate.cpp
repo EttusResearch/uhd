@@ -105,16 +105,15 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp,
     cmd.num_samps = spb;
     if (random_nsamps) {
         cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE;
-        cmd.num_samps = (rand() % spb) + 1;
+        cmd.num_samps   = (rand() % spb) + 1;
     }
 
     cmd.time_spec  = usrp->get_time_now() + uhd::time_spec_t(rx_delay);
     cmd.stream_now = (rx_delay == 0.0);
     rx_stream->issue_stream_cmd(cmd);
 
-    const float burst_pkt_time =
-        std::max<float>(0.100f, (2 * spb / rate));
-    float recv_timeout = burst_pkt_time + (rx_delay);
+    const float burst_pkt_time = std::max<float>(0.100f, (2 * spb / rate));
+    float recv_timeout         = burst_pkt_time + (rx_delay);
 
     bool stop_called = false;
     while (true) {
@@ -123,7 +122,7 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp,
             stop_called = true;
         }
         if (random_nsamps) {
-            cmd.time_spec  = usrp->get_time_now() + uhd::time_spec_t(rx_delay);
+            cmd.time_spec = usrp->get_time_now() + uhd::time_spec_t(rx_delay);
             cmd.num_samps = (rand() % spb) + 1;
             rx_stream->issue_stream_cmd(cmd);
         }
@@ -229,8 +228,7 @@ void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp,
                      % time_stamp % (tx_rate / 1e6) % num_channels;
 
     // setup variables and allocate buffer
-    std::vector<char> buff(
-        spb * uhd::convert::get_bytes_per_item(tx_cpu));
+    std::vector<char> buff(spb * uhd::convert::get_bytes_per_item(tx_cpu));
     std::vector<const void*> buffs;
     for (size_t ch = 0; ch < tx_stream->get_num_channels(); ch++)
         buffs.push_back(&buff.front()); // same buffer for each channel
@@ -245,9 +243,8 @@ void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp,
     // are full and that is dependent on several factors such as the device,
     // FPGA configuration, and device arguments.  The extra 100ms is to account
     // for overhead of the send() call (enough).
-    const double burst_pkt_time =
-        std::max<double>(0.1, (2.0 * spb / tx_rate));
-    double timeout = burst_pkt_time + tx_delay;
+    const double burst_pkt_time = std::max<double>(0.1, (2.0 * spb / tx_rate));
+    double timeout              = burst_pkt_time + tx_delay;
 
     if (random_nsamps) {
         std::srand((unsigned int)time(NULL));
@@ -549,7 +546,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         // a delay. Also delay start in case we are using multiple streamers to stream
         // multi channel data to avoid management transaction contention between threads
         // during setup.
-        if ((rx_delay == 0.0 || vm.count("multi_streamer")) && rx_channel_nums.size() > 1) {
+        if ((rx_delay == 0.0 || vm.count("multi_streamer"))
+            && rx_channel_nums.size() > 1) {
             rx_delay = std::max(rx_delay, 0.05);
         }
 
@@ -565,7 +563,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         if (vm.count("multi_streamer")) {
             for (size_t count = 0; count < rx_channel_nums.size(); count++) {
                 std::vector<size_t> this_streamer_channels{rx_channel_nums[count]};
-                 // create a receive streamer
+                // create a receive streamer
                 uhd::stream_args_t stream_args(rx_cpu, rx_otw);
                 stream_args.channels             = this_streamer_channels;
                 stream_args.args                 = uhd::device_addr_t(rx_stream_args);
@@ -583,8 +581,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                 });
                 uhd::set_thread_name(rx_thread, "bmark_rx_strm" + std::to_string(count));
             }
-        }
-        else {
+        } else {
             // create a receive streamer
             uhd::stream_args_t stream_args(rx_cpu, rx_otw);
             stream_args.channels             = rx_channel_nums;
@@ -614,7 +611,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         // a delay. Also delay start in case we are using multiple streamers to stream
         // multi channel data to avoid management transaction contention between threads
         // during setup.
-        if ((tx_delay == 0.0 || vm.count("multi_streamer")) && tx_channel_nums.size() > 1) {
+        if ((tx_delay == 0.0 || vm.count("multi_streamer"))
+            && tx_channel_nums.size() > 1) {
             tx_delay = std::max(tx_delay, 0.25);
         }
 
@@ -632,27 +630,30 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                 if (vm.count("tx_spp")) {
                     spp = std::min(spp, tx_spp);
                 }
-                size_t spb                       = spp;
+                size_t spb = spp;
                 if (vm.count("tx_spb")) {
                     spb = tx_spb;
                 }
                 std::cout << boost::format("Setting TX spb to %u\n") % spb;
                 auto tx_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
                     benchmark_tx_rate(usrp,
-                    tx_cpu,
-                    tx_stream,
-                    burst_timer_elapsed,
-                    start_time,
-                    spb,
-                    elevate_priority,
-                    tx_delay,
-                    random_nsamps);
+                        tx_cpu,
+                        tx_stream,
+                        burst_timer_elapsed,
+                        start_time,
+                        spb,
+                        elevate_priority,
+                        tx_delay,
+                        random_nsamps);
                 });
                 uhd::set_thread_name(tx_thread, "bmark_tx_strm" + std::to_string(count));
-                auto tx_async_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
-                    benchmark_tx_rate_async_helper(tx_stream, start_time, burst_timer_elapsed);
-                });
-                uhd::set_thread_name(tx_async_thread, "bmark_tx_hlpr" + std::to_string(count));
+                auto tx_async_thread =
+                    thread_group.create_thread([=, &burst_timer_elapsed]() {
+                        benchmark_tx_rate_async_helper(
+                            tx_stream, start_time, burst_timer_elapsed);
+                    });
+                uhd::set_thread_name(
+                    tx_async_thread, "bmark_tx_hlpr" + std::to_string(count));
             }
         } else {
             // create a transmit streamer
@@ -665,34 +666,36 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             if (vm.count("tx_spp")) {
                 spp = std::min(spp, tx_spp);
             }
-            size_t spb                       = spp;
+            size_t spb = spp;
             if (vm.count("tx_spb")) {
                 spb = tx_spb;
             }
             std::cout << boost::format("Setting TX spp to %u\n") % spp;
             auto tx_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
                 benchmark_tx_rate(usrp,
-                tx_cpu,
-                tx_stream,
-                burst_timer_elapsed,
-                start_time,
-                spb,
-                elevate_priority,
-                tx_delay,
-                random_nsamps);
+                    tx_cpu,
+                    tx_stream,
+                    burst_timer_elapsed,
+                    start_time,
+                    spb,
+                    elevate_priority,
+                    tx_delay,
+                    random_nsamps);
             });
             uhd::set_thread_name(tx_thread, "bmark_tx_stream");
-            auto tx_async_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
-                benchmark_tx_rate_async_helper(tx_stream, start_time, burst_timer_elapsed);
-            });
+            auto tx_async_thread =
+                thread_group.create_thread([=, &burst_timer_elapsed]() {
+                    benchmark_tx_rate_async_helper(
+                        tx_stream, start_time, burst_timer_elapsed);
+                });
             uhd::set_thread_name(tx_async_thread, "bmark_tx_helper");
         }
     }
 
     // Sleep for the required duration (add any initial delay).
     // If you are benchmarking Rx and Tx at the same time, Rx threads will run longer
-    // than specified duration if tx_delay > rx_delay because of the overly simplified logic below
-    // and vice versa.
+    // than specified duration if tx_delay > rx_delay because of the overly simplified
+    // logic below and vice versa.
     if (vm.count("rx_rate") and vm.count("tx_rate")) {
         duration += std::max(rx_delay, tx_delay);
     } else if (vm.count("rx_rate")) {

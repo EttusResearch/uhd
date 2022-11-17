@@ -67,7 +67,7 @@ BOOST_AUTO_TEST_CASE(test_multi_poke32)
     multichan_register_iface block_reg_iface{mock_holder, BASE_ADDR, INSTANCE_SIZE};
     std::vector<uint32_t> addrs = {0, 4, 8, 12, 16, 20, 24, 28};
     std::vector<uint32_t> data  = {
-        0x0000, 0x0010, 0x0200, 0x3000, 0x0004, 0x0050, 0x0600, 0x7000};
+         0x0000, 0x0010, 0x0200, 0x3000, 0x0004, 0x0050, 0x0600, 0x7000};
     block_reg_iface.multi_poke32(addrs, data);
     for (size_t i = 0; i < addrs.size(); i++) {
         uint32_t abs_addr = get_addr_translation(addrs[i], 0);

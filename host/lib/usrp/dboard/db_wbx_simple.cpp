@@ -8,10 +8,10 @@
 // Antenna constants
 #define ANTSW_IO \
     ((1 << 15)) // on UNIT_TX, 0 = TX, 1 = RX, on UNIT_RX 0 = main ant, 1 = RX2
-#define ANT_TX 0 // the tx line is transmitting
-#define ANT_RX ANTSW_IO // the tx line is receiving
+#define ANT_TX   0 // the tx line is transmitting
+#define ANT_RX   ANTSW_IO // the tx line is receiving
 #define ANT_TXRX 0 // the rx line is on txrx
-#define ANT_RX2 ANTSW_IO // the rx line in on rx2
+#define ANT_RX2  ANTSW_IO // the rx line in on rx2
 
 #include "db_wbx_common.hpp"
 #include <uhd/usrp/dboard_manager.hpp>

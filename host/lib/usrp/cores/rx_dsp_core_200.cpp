@@ -20,23 +20,23 @@
 #include <thread>
 #include <tuple>
 
-#define REG_DSP_RX_FREQ _dsp_base + 0
+#define REG_DSP_RX_FREQ     _dsp_base + 0
 #define REG_DSP_RX_SCALE_IQ _dsp_base + 4
-#define REG_DSP_RX_DECIM _dsp_base + 8
-#define REG_DSP_RX_MUX _dsp_base + 12
+#define REG_DSP_RX_DECIM    _dsp_base + 8
+#define REG_DSP_RX_MUX      _dsp_base + 12
 
-#define FLAG_DSP_RX_MUX_SWAP_IQ (1 << 0)
+#define FLAG_DSP_RX_MUX_SWAP_IQ   (1 << 0)
 #define FLAG_DSP_RX_MUX_REAL_MODE (1 << 1)
 
 #define REG_RX_CTRL_STREAM_CMD _ctrl_base + 0
-#define REG_RX_CTRL_TIME_HI _ctrl_base + 4
-#define REG_RX_CTRL_TIME_LO _ctrl_base + 8
-#define REG_RX_CTRL_FORMAT _ctrl_base + 12
-#define REG_RX_CTRL_VRT_HDR _ctrl_base + 16
-#define REG_RX_CTRL_VRT_SID _ctrl_base + 20
-#define REG_RX_CTRL_VRT_TLR _ctrl_base + 24
-#define REG_RX_CTRL_NSAMPS_PP _ctrl_base + 28
-#define REG_RX_CTRL_NCHANNELS _ctrl_base + 32
+#define REG_RX_CTRL_TIME_HI    _ctrl_base + 4
+#define REG_RX_CTRL_TIME_LO    _ctrl_base + 8
+#define REG_RX_CTRL_FORMAT     _ctrl_base + 12
+#define REG_RX_CTRL_VRT_HDR    _ctrl_base + 16
+#define REG_RX_CTRL_VRT_SID    _ctrl_base + 20
+#define REG_RX_CTRL_VRT_TLR    _ctrl_base + 24
+#define REG_RX_CTRL_NSAMPS_PP  _ctrl_base + 28
+#define REG_RX_CTRL_NCHANNELS  _ctrl_base + 32
 
 template <class T>
 T ceil_log2(T num)

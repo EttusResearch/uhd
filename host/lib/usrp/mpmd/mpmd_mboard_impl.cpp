@@ -207,13 +207,14 @@ boost::optional<device_addr_t> mpmd_mboard_impl::is_device_reachable(
     // 3) Check for network-reachable device
     // Note: This makes the assumption that devices will always allow RPC
     // connections on their CHDR addresses.
-    const std::vector<std::string> addr_keys = {"second_addr", "addr", "third_addr", "fourth_addr"};
+    const std::vector<std::string> addr_keys = {
+        "second_addr", "addr", "third_addr", "fourth_addr"};
     bool addr_key_found = false;
     for (const auto& addr_key : addr_keys) {
         if (not device_info_dict.count(addr_key)) {
             continue;
         }
-        addr_key_found = true;
+        addr_key_found              = true;
         const std::string chdr_addr = device_info_dict.at(addr_key);
         UHD_LOG_TRACE("MPMD", "Checking reachability via network addr " << chdr_addr);
         try {
@@ -249,12 +250,11 @@ boost::optional<device_addr_t> mpmd_mboard_impl::is_device_reachable(
                 "MPMD", "Failed to reach device on network addr " << chdr_addr << ".");
         }
     }
-    if(!addr_key_found)
-    {
+    if (!addr_key_found) {
         // 4) get_device_info didn't give us CHDR info
-        // This could be because the device isn't fully 
+        // This could be because the device isn't fully
         // initialized (e.g. e31x with a power save FPGA).
-        // For UHD 4.0+, the mgmt interface will always 
+        // For UHD 4.0+, the mgmt interface will always
         // route CHDR packets when fully initialized
         // via Virtual NIC packet fowarding.
         device_addr_t device_addr_copy = device_addr;
@@ -308,7 +308,8 @@ mpmd_mboard_impl::mpmd_mboard_impl(
     if (!mb_args.has_key("skip_init")) {
         // Initialize mb_iface and mb_controller
         mb_iface = std::make_unique<mpmd_mb_iface>(mb_args, rpc);
-        mb_ctrl  = std::make_shared<rfnoc::mpmd_mb_controller>(std::make_shared<uhd::usrp::mpmd_rpc>(rpc), device_info);
+        mb_ctrl  = std::make_shared<rfnoc::mpmd_mb_controller>(
+            std::make_shared<uhd::usrp::mpmd_rpc>(rpc), device_info);
     } // Note -- when skip_init is used, these are not initialized, and trying
       // to use them will result in a null pointer dereference exception!
 }

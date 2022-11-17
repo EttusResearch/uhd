@@ -22,21 +22,21 @@
 #include <mutex>
 #include <thread>
 #ifdef HAVE_DPDK
-#include <uhdlib/transport/dpdk/common.hpp>
+#    include <uhdlib/transport/dpdk/common.hpp>
 #endif
 
 namespace pt = boost::posix_time;
 
 // Don't make these static const std::string -- we need their lifetime guaranteed!
-#define PURPLE "\033[0;35m" // purple
-#define BLUE "\033[1;34m" // blue
-#define GREEN "\033[0;32m" // green
-#define YELLOW "\033[0;33m" // yellow
-#define BYELLOW "\033[1;33m" // yellow
-#define RED "\033[0;31m" // red
-#define BRED "\033[1;31m" // bright red
+#define PURPLE        "\033[0;35m" // purple
+#define BLUE          "\033[1;34m" // blue
+#define GREEN         "\033[0;32m" // green
+#define YELLOW        "\033[0;33m" // yellow
+#define BYELLOW       "\033[1;33m" // yellow
+#define RED           "\033[0;31m" // red
+#define BRED          "\033[1;31m" // bright red
 #define RED_ON_YELLOW "\033[0;31;43m" // bright red
-#define RESET_COLORS "\033[0;39m" // reset colors
+#define RESET_COLORS  "\033[0;39m" // reset colors
 
 /***********************************************************************
  * Helpers
@@ -130,7 +130,7 @@ boost::optional<uhd::log::severity_level> parse_log_level_from_string(
     return boost::none;
 }
 
-}}
+}} // namespace uhd::log
 
 /***********************************************************************
  * Logger backends
@@ -210,7 +210,7 @@ private:
  **********************************************************************/
 
 #define UHD_CONSOLE_LOGGER_KEY "console"
-#define UHD_FILE_LOGGER_KEY "file"
+#define UHD_FILE_LOGGER_KEY    "file"
 
 class log_resource
 {

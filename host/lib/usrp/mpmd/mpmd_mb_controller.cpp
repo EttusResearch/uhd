@@ -16,30 +16,31 @@ namespace {
 constexpr size_t MPMD_DEFAULT_LONG_TIMEOUT = 30000; // ms
 } // namespace
 
-mpmd_mb_controller::fpga_onload::fpga_onload()
-{}
+mpmd_mb_controller::fpga_onload::fpga_onload() {}
 
 void mpmd_mb_controller::fpga_onload::onload()
 {
-    for (auto& cb : _cbs)
-    {
-        if (auto spt = cb.lock())
-        {
+    for (auto& cb : _cbs) {
+        if (auto spt = cb.lock()) {
             spt->onload();
         }
     }
 }
 
-void mpmd_mb_controller::fpga_onload::request_cb(uhd::features::fpga_load_notification_iface::sptr handler)
+void mpmd_mb_controller::fpga_onload::request_cb(
+    uhd::features::fpga_load_notification_iface::sptr handler)
 {
     _cbs.emplace_back(handler);
 }
 
-mpmd_mb_controller::ref_clk_calibration::ref_clk_calibration(uhd::usrp::mpmd_rpc_iface::sptr rpcc)
+mpmd_mb_controller::ref_clk_calibration::ref_clk_calibration(
+    uhd::usrp::mpmd_rpc_iface::sptr rpcc)
     : _rpcc(rpcc)
-{}
+{
+}
 
-void mpmd_mb_controller::ref_clk_calibration::set_ref_clk_tuning_word(uint32_t tuning_word)
+void mpmd_mb_controller::ref_clk_calibration::set_ref_clk_tuning_word(
+    uint32_t tuning_word)
 {
     _rpcc->set_ref_clk_tuning_word(tuning_word);
 }
@@ -49,7 +50,8 @@ uint32_t mpmd_mb_controller::ref_clk_calibration::get_ref_clk_tuning_word()
     return _rpcc->get_ref_clk_tuning_word();
 }
 
-void mpmd_mb_controller::ref_clk_calibration::store_ref_clk_tuning_word(uint32_t tuning_word)
+void mpmd_mb_controller::ref_clk_calibration::store_ref_clk_tuning_word(
+    uint32_t tuning_word)
 {
     _rpcc->store_ref_clk_tuning_word(tuning_word);
 }
@@ -79,7 +81,8 @@ void mpmd_mb_controller::trig_io_mode::set_trig_io_mode(const uhd::trig_io_mode_
 mpmd_mb_controller::gpio_power::gpio_power(
     uhd::usrp::dio_rpc_iface::sptr rpcc, const std::vector<std::string>& ports)
     : _rpcc(rpcc), _ports(ports)
-{}
+{
+}
 
 std::vector<std::string> mpmd_mb_controller::gpio_power::get_supported_voltages(
     const std::string& port) const
@@ -194,7 +197,8 @@ std::string mpmd_mb_controller::get_mboard_name() const
 
 void mpmd_mb_controller::set_time_source(const std::string& source)
 {
-    _rpc->get_raw_rpc_client()->notify_with_token(MPMD_DEFAULT_LONG_TIMEOUT, "set_time_source", source);
+    _rpc->get_raw_rpc_client()->notify_with_token(
+        MPMD_DEFAULT_LONG_TIMEOUT, "set_time_source", source);
     if (!_sync_source_updaters.empty()) {
         mb_controller::sync_source_t sync_source;
         sync_source["time_source"] = source;
@@ -216,7 +220,8 @@ std::vector<std::string> mpmd_mb_controller::get_time_sources() const
 
 void mpmd_mb_controller::set_clock_source(const std::string& source)
 {
-    _rpc->get_raw_rpc_client()->notify_with_token(MPMD_DEFAULT_LONG_TIMEOUT, "set_clock_source", source);
+    _rpc->get_raw_rpc_client()->notify_with_token(
+        MPMD_DEFAULT_LONG_TIMEOUT, "set_clock_source", source);
     if (!_sync_source_updaters.empty()) {
         mb_controller::sync_source_t sync_source;
         sync_source["clock_source"] = source;
@@ -284,12 +289,9 @@ void mpmd_mb_controller::set_clock_source_out(const bool enb)
 
 void mpmd_mb_controller::set_time_source_out(const bool enb)
 {
-    if (_rpc->supports_feature("time_export"))
-    {
+    if (_rpc->supports_feature("time_export")) {
         _rpc->set_trigger_io(enb ? "pps_output" : "off");
-    }
-    else
-    {
+    } else {
         throw uhd::not_implemented_error(
             "set_time_source_out() not implemented on this device!");
     }

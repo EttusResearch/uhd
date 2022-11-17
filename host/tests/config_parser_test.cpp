@@ -11,20 +11,20 @@
 
 const std::string INI1_FILENAME = "test1.ini";
 const std::string INI1          = "[section1]\n"
-                         "key1=value1\n"
-                         "key2=4\n"
-                         "\n"
-                         "; This is a comment\n"
-                         "[section2]\n"
-                         "key3=value with spaces\n"
-                         "key4= leading and trailing spaces \n";
+                                  "key1=value1\n"
+                                  "key2=4\n"
+                                  "\n"
+                                  "; This is a comment\n"
+                                  "[section2]\n"
+                                  "key3=value with spaces\n"
+                                  "key4= leading and trailing spaces \n";
 
 const std::string INI2_FILENAME = "test2.ini";
 const std::string INI2          = "[section2]\n"
-                         "key3=value with even more spaces\n"
-                         "\n"
-                         "[section3]\n"
-                         "key4=\"with quotes\"\n";
+                                  "key3=value with even more spaces\n"
+                                  "\n"
+                                  "[section3]\n"
+                                  "key4=\"with quotes\"\n";
 
 namespace {
 //! Create files that can be read by the CUT

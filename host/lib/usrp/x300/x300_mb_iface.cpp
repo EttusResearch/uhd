@@ -12,9 +12,9 @@ using namespace uhd::rfnoc;
 using uhd::transport::link_type_t;
 
 namespace {
-    // This is the first compat number that added remote streaming capabilities
-    constexpr uhd::compat_num32 MIN_FPGA_COMPAT_TA_CONTROL{7, 3};
-    constexpr uhd::compat_num32 MIN_FW_COMPAT_TA_ARP{6, 1};
+// This is the first compat number that added remote streaming capabilities
+constexpr uhd::compat_num32 MIN_FPGA_COMPAT_TA_CONTROL{7, 3};
+constexpr uhd::compat_num32 MIN_FW_COMPAT_TA_ARP{6, 1};
 } // namespace
 
 static uhd::usrp::io_service_args_t get_default_io_srv_args()
@@ -56,7 +56,7 @@ void x300_impl::x300_mb_iface::init()
     _rfnoc_proto_ver          = ZPU_RB_RFNOC_INFO_PROTOVER(rfnoc_info);
     const size_t chdr_width   = ZPU_RB_RFNOC_INFO_CHDR_WIDTH(rfnoc_info);
     _chdr_width               = bits_to_chdr_w(chdr_width);
-    const bool has_arp = (_fw_compat >= MIN_FW_COMPAT_TA_ARP);
+    const bool has_arp        = (_fw_compat >= MIN_FW_COMPAT_TA_ARP);
     if (_fpga_compat >= MIN_FPGA_COMPAT_TA_CONTROL) {
         _sfp_adapter_ctrl.insert({"sfp0",
             uhd::usrp::xport_adapter_ctrl(
@@ -397,4 +397,3 @@ int x300_impl::x300_mb_iface::add_remote_chdr_route(const std::string& adapter_i
             route_args.get("stream_mode", ""));
     return 0;
 }
-

@@ -24,9 +24,9 @@ constexpr uint32_t DELAY_REG_MAX_DELAY_SHIFT = 16;
 constexpr uint32_t DELAY_REG_DELAY_MASK      = 0x0000ffff;
 
 // User property names
-const char* const PROP_KEY_ALPHA = "alpha";
-const char* const PROP_KEY_BETA = "beta";
-const char* const PROP_KEY_DELAY = "delay";
+const char* const PROP_KEY_ALPHA     = "alpha";
+const char* const PROP_KEY_BETA      = "beta";
+const char* const PROP_KEY_DELAY     = "delay";
 const char* const PROP_KEY_MAX_DELAY = "max_delay";
 
 class vector_iir_block_control_impl : public vector_iir_block_control
@@ -98,10 +98,10 @@ private:
                 property_t<double>{PROP_KEY_ALPHA, 0.9, {res_source_info::USER, chan}});
             _prop_beta.emplace_back(
                 property_t<double>{PROP_KEY_BETA, 0.9, {res_source_info::USER, chan}});
-            _prop_delay.emplace_back(
-                property_t<int>{PROP_KEY_DELAY, max_delay, {res_source_info::USER, chan}});
-            _prop_max_delay.emplace_back(
-                property_t<int>{PROP_KEY_MAX_DELAY, max_delay, {res_source_info::USER, chan}});
+            _prop_delay.emplace_back(property_t<int>{
+                PROP_KEY_DELAY, max_delay, {res_source_info::USER, chan}});
+            _prop_max_delay.emplace_back(property_t<int>{
+                PROP_KEY_MAX_DELAY, max_delay, {res_source_info::USER, chan}});
 
             register_property(&_prop_alpha.back(), [this, chan]() {
                 double alpha = _prop_alpha.at(chan).get();

@@ -39,11 +39,12 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     // print the help message
     if (vm.count("help") or (not vm.count("values") and not vm.count("read-all"))) {
         std::cout << boost::format("USRP Burn Motherboard EEPROM %s") % desc << std::endl;
-        std::cout << boost::format("In values argument, omit value to perform a readback,\n"
-                                   "Or specify a new value to burn into the EEPROM.\n"
-                                   "Example (write to ip-addr0 and read out ip-addr1):\n"
-                                   "    usrp_burn_mb_eeprom --args=<device args> "
-                                   "--values \"ip-addr0=192.168.10.3,ip-addr1\"")
+        std::cout << boost::format(
+            "In values argument, omit value to perform a readback,\n"
+            "Or specify a new value to burn into the EEPROM.\n"
+            "Example (write to ip-addr0 and read out ip-addr1):\n"
+            "    usrp_burn_mb_eeprom --args=<device args> "
+            "--values \"ip-addr0=192.168.10.3,ip-addr1\"")
                   << std::endl;
         return EXIT_FAILURE;
     }
@@ -59,8 +60,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     if (vm.count("read-all")) {
         keys_vec = mb_eeprom.keys();
         // Leaving vals_vec empty will force utility to only read
-    }
-    else if (vm.count("values")) {
+    } else if (vm.count("values")) {
         // uhd::device_addr_t properly parses input values
         uhd::device_addr_t vals(input_str);
         keys_vec = vals.keys();

@@ -15,11 +15,11 @@
 
 using namespace uhd;
 
-#define REG_TX_FE_DC_OFFSET_I _base + 0 * _offset // 24 bits
-#define REG_TX_FE_DC_OFFSET_Q _base + 1 * _offset // 24 bits
-#define REG_TX_FE_MAG_CORRECTION _base + 2 * _offset // 18 bits
+#define REG_TX_FE_DC_OFFSET_I      _base + 0 * _offset // 24 bits
+#define REG_TX_FE_DC_OFFSET_Q      _base + 1 * _offset // 24 bits
+#define REG_TX_FE_MAG_CORRECTION   _base + 2 * _offset // 18 bits
 #define REG_TX_FE_PHASE_CORRECTION _base + 3 * _offset // 18 bits
-#define REG_TX_FE_MUX _base + 4 * _offset // 8 bits (std output = 0x10, reversed = 0x01)
+#define REG_TX_FE_MUX              _base + 4 * _offset // 8 bits (std output = 0x10, reversed = 0x01)
 
 const std::complex<double> tx_frontend_core_200::DEFAULT_DC_OFFSET_VALUE =
     std::complex<double>(0.0, 0.0);

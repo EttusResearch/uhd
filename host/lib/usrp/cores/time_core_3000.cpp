@@ -11,12 +11,12 @@
 #include <chrono>
 #include <thread>
 
-#define REG_TIME_HI _base + 0
-#define REG_TIME_LO _base + 4
+#define REG_TIME_HI   _base + 0
+#define REG_TIME_LO   _base + 4
 #define REG_TIME_CTRL _base + 8
 
-#define CTRL_LATCH_TIME_NOW (1 << 0)
-#define CTRL_LATCH_TIME_PPS (1 << 1)
+#define CTRL_LATCH_TIME_NOW  (1 << 0)
+#define CTRL_LATCH_TIME_PPS  (1 << 1)
 #define CTRL_LATCH_TIME_SYNC (1 << 2)
 
 using namespace uhd;

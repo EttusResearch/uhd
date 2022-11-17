@@ -81,8 +81,7 @@ static std::string get_frontend_pp_string(
        << std::endl;
     ss << boost::format("Antennas: %s")
               % prop_names_to_pp_string(
-                    tree->access<std::vector<std::string>>(path / "antenna/options")
-                        .get())
+                  tree->access<std::vector<std::string>>(path / "antenna/options").get())
        << std::endl;
     if (tree->exists(path / "sensors")) {
         ss << boost::format("Sensors: %s")
@@ -119,8 +118,8 @@ static std::string get_frontend_pp_string(
     ss << boost::format("Uses LO offset: %s")
               % ((tree->exists(path / "use_lo_offset")
                      and tree->access<bool>(path / "use_lo_offset").get())
-                        ? "Yes"
-                        : "No")
+                      ? "Yes"
+                      : "No")
        << std::endl;
 
     return ss.str();
@@ -149,8 +148,7 @@ static std::string get_codec_pp_string(
     return ss.str();
 }
 
-static std::string get_dboard_pp_string(
-    const std::string& type,
+static std::string get_dboard_pp_string(const std::string& type,
     const std::string& name,
     property_tree::sptr tree,
     const fs_path& path)
@@ -222,8 +220,10 @@ static std::string get_rfnoc_pp_string(
     ss << make_border(get_rfnoc_connections_pp_string(graph));
     auto radio_blocks = graph->find_blocks("Radio");
     for (std::string block : radio_blocks) {
-        ss << make_border(get_dboard_pp_string("TX", block, tree, "blocks" / block / "dboard"));
-        ss << make_border(get_dboard_pp_string("RX", block, tree, "blocks" / block / "dboard"));
+        ss << make_border(
+            get_dboard_pp_string("TX", block, tree, "blocks" / block / "dboard"));
+        ss << make_border(
+            get_dboard_pp_string("RX", block, tree, "blocks" / block / "dboard"));
     }
     return ss.str();
 }

@@ -10,8 +10,8 @@
 #include <unordered_map>
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/asio.hpp>
-#include <cstdio>
 #include <chrono>
+#include <cstdio>
 #include <thread>
 
 using namespace uhd::usrp;
@@ -25,25 +25,25 @@ const std::unordered_map<std::string, uint32_t> STREAM_MODES{
     {xport_adapter_ctrl::STREAM_MODE_RAW_PAYLOAD, 1}};
 
 std::pair<uint32_t, uint32_t> cast_ipv4_and_port(
-        const std::string& ipv4, const std::string& port)
+    const std::string& ipv4, const std::string& port)
 {
     using namespace boost::asio;
-        io_service io_service;
-        ip::udp::resolver resolver(io_service);
-        try {
-            ip::udp::resolver::query query(ip::udp::v4(), ipv4, port);
-            ip::udp::endpoint endpoint = *resolver.resolve(query);
-            return {uint32_t(endpoint.address().to_v4().to_ulong()),
-                uint32_t(endpoint.port())};
-        } catch (const std::exception&) {
-            throw uhd::value_error("Invalid UDP address: " + ipv4 + ":" + port);
-        }
+    io_service io_service;
+    ip::udp::resolver resolver(io_service);
+    try {
+        ip::udp::resolver::query query(ip::udp::v4(), ipv4, port);
+        ip::udp::endpoint endpoint = *resolver.resolve(query);
+        return {
+            uint32_t(endpoint.address().to_v4().to_ulong()), uint32_t(endpoint.port())};
+    } catch (const std::exception&) {
+        throw uhd::value_error("Invalid UDP address: " + ipv4 + ":" + port);
+    }
 }
 
 std::pair<uint32_t, uint32_t> cast_mac(const std::string& mac_addr)
 {
     unsigned char mac[8] = {0}; // 8 bytes for conversion to uint64_t
-    int ret = std::sscanf(mac_addr.c_str(),
+    int ret              = std::sscanf(mac_addr.c_str(),
         "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
         &mac[5],
         &mac[4],
@@ -155,9 +155,9 @@ void xport_adapter_ctrl::add_remote_ep_route(const uhd::rfnoc::sep_inst_t epid,
     } else {
         // If the user didn't specify MAC, then the device firmware can try and
         // look it up.
-        constexpr int num_arp_tries = 3;
+        constexpr int num_arp_tries   = 3;
         constexpr auto retry_interval = 300ms;
-        bool arp_successful = false;
+        bool arp_successful           = false;
         for (int i = 0; i < num_arp_tries; i++) {
             try {
                 _poke32(KV_IPV4_W_ARP, ipv4_and_port.first);

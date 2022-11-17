@@ -38,15 +38,15 @@ localparam SR_GPIO   = 224; // 5
 #define REG_RB_TIME_NOW_LO TOREG(11)
 #define REG_RB_TIME_PPS_HI TOREG(14)
 #define REG_RB_TIME_PPS_LO TOREG(15)
-#define REG_RB_SPI TOREG(0)
-#define REG_RB_COMPAT TOREG(1)
-#define REG_RB_GPIO TOREG(3)
-#define REG_RB_I2C TOREG(2)
-#define REG_RB_NUM_RX_DSP TOREG(6)
+#define REG_RB_SPI         TOREG(0)
+#define REG_RB_COMPAT      TOREG(1)
+#define REG_RB_GPIO        TOREG(3)
+#define REG_RB_I2C         TOREG(2)
+#define REG_RB_NUM_RX_DSP  TOREG(6)
 
 // spi slave constants
 #define B100_SPI_SS_AD9862 (1 << 2)
-#define B100_SPI_SS_TX_DB (1 << 1)
-#define B100_SPI_SS_RX_DB (1 << 0)
+#define B100_SPI_SS_TX_DB  (1 << 1)
+#define B100_SPI_SS_RX_DB  (1 << 0)
 
 #endif /*INCLUDED_B100_REGS_HPP*/

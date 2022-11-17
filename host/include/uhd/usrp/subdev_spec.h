@@ -13,7 +13,8 @@
 #include <stdbool.h>
 
 //! Subdevice specification
-typedef struct {
+typedef struct
+{
     // Daughterboard slot name
     char* db_name;
     //! Subdevice name
@@ -21,10 +22,11 @@ typedef struct {
 } uhd_subdev_spec_pair_t;
 
 #ifdef __cplusplus
-#include <uhd/usrp/subdev_spec.hpp>
-#include <string>
+#    include <uhd/usrp/subdev_spec.hpp>
+#    include <string>
 
-struct uhd_subdev_spec_t {
+struct uhd_subdev_spec_t
+{
     uhd::usrp::subdev_spec_t subdev_spec_cpp;
     std::string last_error;
 };
@@ -44,81 +46,52 @@ struct uhd_subdev_spec_t;
 typedef struct uhd_subdev_spec_t* uhd_subdev_spec_handle;
 
 //! Safely destroy any memory created in the generation of a uhd_subdev_spec_pair_t
-UHD_API uhd_error uhd_subdev_spec_pair_free(
-    uhd_subdev_spec_pair_t *subdev_spec_pair
-);
+UHD_API uhd_error uhd_subdev_spec_pair_free(uhd_subdev_spec_pair_t* subdev_spec_pair);
 
 //! Check to see if two subdevice specifications are equal
-UHD_API uhd_error uhd_subdev_spec_pairs_equal(
-    const uhd_subdev_spec_pair_t* first,
+UHD_API uhd_error uhd_subdev_spec_pairs_equal(const uhd_subdev_spec_pair_t* first,
     const uhd_subdev_spec_pair_t* second,
-    bool *result_out
-);
+    bool* result_out);
 
 //! Create a handle for a list of subdevice specifications
-UHD_API uhd_error uhd_subdev_spec_make(
-    uhd_subdev_spec_handle* h,
-    const char* markup
-);
+UHD_API uhd_error uhd_subdev_spec_make(uhd_subdev_spec_handle* h, const char* markup);
 
 //! Safely destroy a subdevice specification handle
 /*!
  * NOTE: Using a handle after passing it into this function will result in
  * a segmentation fault.
  */
-UHD_API uhd_error uhd_subdev_spec_free(
-    uhd_subdev_spec_handle* h
-);
+UHD_API uhd_error uhd_subdev_spec_free(uhd_subdev_spec_handle* h);
 
 //! Check how many subdevice specifications are in this list
-UHD_API uhd_error uhd_subdev_spec_size(
-    uhd_subdev_spec_handle h,
-    size_t *size_out
-);
+UHD_API uhd_error uhd_subdev_spec_size(uhd_subdev_spec_handle h, size_t* size_out);
 
 //! Add a subdevice specification to this list
-UHD_API uhd_error uhd_subdev_spec_push_back(
-    uhd_subdev_spec_handle h,
-    const char* markup
-);
+UHD_API uhd_error uhd_subdev_spec_push_back(uhd_subdev_spec_handle h, const char* markup);
 
 //! Get the subdevice specification at the given index
 UHD_API uhd_error uhd_subdev_spec_at(
-    uhd_subdev_spec_handle h,
-    size_t num,
-    uhd_subdev_spec_pair_t *subdev_spec_pair_out
-);
+    uhd_subdev_spec_handle h, size_t num, uhd_subdev_spec_pair_t* subdev_spec_pair_out);
 
 //! Get a string representation of the given list
 UHD_API uhd_error uhd_subdev_spec_to_pp_string(
-    uhd_subdev_spec_handle h,
-    char* pp_string_out,
-    size_t strbuffer_len
-);
+    uhd_subdev_spec_handle h, char* pp_string_out, size_t strbuffer_len);
 
 //! Get a markup string representation of the given list
 UHD_API uhd_error uhd_subdev_spec_to_string(
-    uhd_subdev_spec_handle h,
-    char* string_out,
-    size_t strbuffer_len
-);
+    uhd_subdev_spec_handle h, char* string_out, size_t strbuffer_len);
 
 //! Get the last error recorded by the given handle
 UHD_API uhd_error uhd_subdev_spec_last_error(
-    uhd_subdev_spec_handle h,
-    char* error_out,
-    size_t strbuffer_len
-);
+    uhd_subdev_spec_handle h, char* error_out, size_t strbuffer_len);
 
 #ifdef __cplusplus
 }
 
 UHD_API uhd::usrp::subdev_spec_pair_t uhd_subdev_spec_pair_c_to_cpp(
-    const uhd_subdev_spec_pair_t* subdev_spec_pair_c
-);
+    const uhd_subdev_spec_pair_t* subdev_spec_pair_c);
 
 UHD_API void uhd_subdev_spec_pair_cpp_to_c(
-    const uhd::usrp::subdev_spec_pair_t &subdev_spec_pair_cpp,
-    uhd_subdev_spec_pair_t *subdev_spec_pair_c
-);
+    const uhd::usrp::subdev_spec_pair_t& subdev_spec_pair_cpp,
+    uhd_subdev_spec_pair_t* subdev_spec_pair_c);
 #endif

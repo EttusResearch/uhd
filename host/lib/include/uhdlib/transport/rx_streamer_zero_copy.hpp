@@ -216,7 +216,7 @@ public:
             if (!_stopped_due_to_overrun) {
                 // Packets were not available with zero timeout, wait for them
                 // to arrive using the specified timeout.
-                result = _get_aligned_buffs(std::max(1,timeout_ms));
+                result = _get_aligned_buffs(std::max(1, timeout_ms));
             }
             if (result == get_aligned_buffs_t::TIMEOUT) {
                 if (_stopped_due_to_overrun) {

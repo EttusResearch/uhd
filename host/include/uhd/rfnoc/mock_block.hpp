@@ -27,7 +27,7 @@ namespace uhd { namespace rfnoc {
 class UHD_API mock_reg_iface_t : public register_iface
 {
 public:
-    mock_reg_iface_t()          = default;
+    mock_reg_iface_t()           = default;
     ~mock_reg_iface_t() override = default;
 
     /**************************************************************************

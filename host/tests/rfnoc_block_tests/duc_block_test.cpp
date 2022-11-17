@@ -29,11 +29,11 @@ constexpr size_t DEFAULT_MTU = 8000;
 BOOST_AUTO_TEST_CASE(test_duc_block)
 {
     node_accessor_t node_accessor{};
-    constexpr uint32_t num_hb  = 2;
-    constexpr uint32_t max_cic = 128;
-    constexpr size_t num_chans = 4;
-    constexpr noc_id_t noc_id  = DUC_BLOCK;
-    constexpr int TEST_INTERP  = 20; // 2 halfbands, CIC==5
+    constexpr uint32_t num_hb     = 2;
+    constexpr uint32_t max_cic    = 128;
+    constexpr size_t num_chans    = 4;
+    constexpr noc_id_t noc_id     = DUC_BLOCK;
+    constexpr int TEST_INTERP     = 20; // 2 halfbands, CIC==5
     constexpr double DEFAULT_RATE = 200e6; // Matches typical MCR of X310
 
     auto block_container = get_mock_block(noc_id, num_chans, num_chans);
@@ -102,7 +102,7 @@ BOOST_AUTO_TEST_CASE(test_duc_block)
                     "samp_rate", {res_source_info::OUTPUT_EDGE, 0})
                     * TEST_INTERP
                 == mock_sink_term.get_edge_property<double>(
-                       "samp_rate", {res_source_info::INPUT_EDGE, 0}));
+                    "samp_rate", {res_source_info::INPUT_EDGE, 0}));
     // Output rate should remain unchanged
     CHECK_OUTPUT_RATE(DEFAULT_RATE);
     const double initial_input_scaling = mock_source_term.get_edge_property<double>(
@@ -120,10 +120,10 @@ BOOST_AUTO_TEST_CASE(test_duc_block)
         "scaling", 42.0, {res_source_info::OUTPUT_EDGE, 0});
     BOOST_CHECK(initial_input_scaling
                 == mock_source_term.get_edge_property<double>(
-                       "scaling", {res_source_info::OUTPUT_EDGE, 0}));
+                    "scaling", {res_source_info::OUTPUT_EDGE, 0}));
     BOOST_CHECK(initial_output_scaling
                 == mock_sink_term.get_edge_property<double>(
-                       "scaling", {res_source_info::INPUT_EDGE, 0}));
+                    "scaling", {res_source_info::INPUT_EDGE, 0}));
     // However, if we change the scaling on the DUC's output, that will
     // propagate to its input
     UHD_LOG_INFO("TEST", "Testing doubling the output scaling...");

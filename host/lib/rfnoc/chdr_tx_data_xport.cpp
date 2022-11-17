@@ -149,7 +149,8 @@ static chdr_tx_data_xport::fc_params_t configure_flow_ctrl(io_service::sptr io_s
         frame_buff::uptr buff = send_io->get_send_buff(0);
 
         if (!buff) {
-            UHD_LOG_THROW(uhd::runtime_error, "XPORT::TX_DATA_XPORT",
+            UHD_LOG_THROW(uhd::runtime_error,
+                "XPORT::TX_DATA_XPORT",
                 "tx xport timed out getting a response from mgmt_portal");
         }
 

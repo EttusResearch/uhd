@@ -175,7 +175,8 @@ public:
         return spll_map.at(mcr);
     }
 
-    std::vector<std::map<std::string, std::string>> pop_host_tasks(const std::string&) override
+    std::vector<std::map<std::string, std::string>> pop_host_tasks(
+        const std::string&) override
     {
         return {};
     }

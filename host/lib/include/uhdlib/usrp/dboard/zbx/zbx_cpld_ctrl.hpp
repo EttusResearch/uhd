@@ -233,8 +233,7 @@ public:
      * \param idx Table index
      * \param rf_fir rf filter value
      */
-    void set_rx_rf_filter(
-        const size_t channel, const uint8_t idx, const uint8_t rf_fir);
+    void set_rx_rf_filter(const size_t channel, const uint8_t idx, const uint8_t rf_fir);
 
     /*! Setting switches required for if1 filter changes, receiving side
      *
@@ -260,8 +259,7 @@ public:
      * \param idx Table index
      * \param rf_fir rf filter value
      */
-    void set_tx_rf_filter(
-        const size_t channel, const uint8_t idx, const uint8_t rf_fir);
+    void set_tx_rf_filter(const size_t channel, const uint8_t idx, const uint8_t rf_fir);
 
     /*! Setting switches required for if1 filter changes, transmitting side
      *

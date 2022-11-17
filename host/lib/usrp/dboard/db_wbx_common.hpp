@@ -12,33 +12,33 @@
 #include <uhdlib/usrp/common/adf435x.hpp>
 
 // LO Related
-#define ADF435X_CE (1 << 3)
-#define ADF435X_PDBRF (1 << 2)
+#define ADF435X_CE     (1 << 3)
+#define ADF435X_PDBRF  (1 << 2)
 #define ADF435X_MUXOUT (1 << 1) // INPUT!!!
-#define LOCKDET_MASK (1 << 0) // INPUT!!!
+#define LOCKDET_MASK   (1 << 0) // INPUT!!!
 
 // TX IO Pins
 #define TX_PUP_5V (1 << 7) // enables 5.0V power supply
 #define TX_PUP_3V (1 << 6) // enables 3.3V supply
-#define TXMOD_EN (1 << 4) // on UNIT_TX, 1 enables TX Modulator
+#define TXMOD_EN  (1 << 4) // on UNIT_TX, 1 enables TX Modulator
 
 // RX IO Pins
 #define RX_PUP_5V (1 << 7) // enables 5.0V power supply
 #define RX_PUP_3V (1 << 6) // enables 3.3V supply
-#define RXBB_PDB (1 << 4) // on UNIT_RX, 1 powers up RX baseband
+#define RXBB_PDB  (1 << 4) // on UNIT_RX, 1 powers up RX baseband
 
 // TX Attenuator Pins (v3 only)
 #define TX_ATTN_16 (1 << 14)
-#define TX_ATTN_8 (1 << 5)
-#define TX_ATTN_4 (1 << 4)
-#define TX_ATTN_2 (1 << 3)
-#define TX_ATTN_1 (1 << 1)
+#define TX_ATTN_8  (1 << 5)
+#define TX_ATTN_4  (1 << 4)
+#define TX_ATTN_2  (1 << 3)
+#define TX_ATTN_1  (1 << 1)
 #define TX_ATTN_MASK                                \
     (TX_ATTN_16 | TX_ATTN_8 | TX_ATTN_4 | TX_ATTN_2 \
         | TX_ATTN_1) // valid bits of TX Attenuator Control
 
 #define RX_ATTN_SHIFT 8 // lsb of RX Attenuator Control
-#define RX_ATTN_MASK (63 << RX_ATTN_SHIFT) // valid bits of RX Attenuator Control
+#define RX_ATTN_MASK  (63 << RX_ATTN_SHIFT) // valid bits of RX Attenuator Control
 
 // Mixer functions
 #define TX_MIXER_ENB \
@@ -50,10 +50,10 @@
 #define RX_MIXER_DIS 0
 
 // Power functions
-#define TX_POWER_UP (TX_PUP_5V | TX_PUP_3V) // high enables power supply
+#define TX_POWER_UP   (TX_PUP_5V | TX_PUP_3V) // high enables power supply
 #define TX_POWER_DOWN 0
 
-#define RX_POWER_UP (RX_PUP_5V | RX_PUP_3V | ADF435X_CE) // high enables power supply
+#define RX_POWER_UP   (RX_PUP_5V | RX_PUP_3V | ADF435X_CE) // high enables power supply
 #define RX_POWER_DOWN 0
 
 

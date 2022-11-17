@@ -76,8 +76,7 @@ BOOST_AUTO_TEST_CASE(lmx_sync_tune_test)
     lo->set_output_enable(lmx2572_iface::output_t::RF_OUTPUT_A, true);
     lo->set_output_enable(lmx2572_iface::output_t::RF_OUTPUT_B, false);
     // Test Category 1A + SYNC:
-    lo->set_frequency(
-        50 * 64e6, 64e6, zbx_spur_dodging);
+    lo->set_frequency(50 * 64e6, 64e6, zbx_spur_dodging);
     lo->commit();
     // These values are generated with TICS PRO. We don't check all the values,
     // mainly the ones related to sync operation.
@@ -89,14 +88,12 @@ BOOST_AUTO_TEST_CASE(lmx_sync_tune_test)
         },
         mem.mem);
     // Test max frequency just to test boundary conditions:
-    lo->set_frequency(
-        100 * 64e6, 64e6, zbx_spur_dodging);
+    lo->set_frequency(100 * 64e6, 64e6, zbx_spur_dodging);
     lo->commit();
 
     // Test Category 1B + SYNC:
     // Will set CHDIV to 2.
-    lo->set_frequency(
-        40 * 64e6, 64e6, zbx_spur_dodging);
+    lo->set_frequency(40 * 64e6, 64e6, zbx_spur_dodging);
     lo->commit();
     UHD_CHECK_REGMAP(
         std::map<uint8_t, uint16_t>{
@@ -108,8 +105,7 @@ BOOST_AUTO_TEST_CASE(lmx_sync_tune_test)
 
     // Test Category 2 + SYNC:
     // Will set CHDIV to 8.
-    lo->set_frequency(
-        10 * 64e6, 64e6, zbx_spur_dodging);
+    lo->set_frequency(10 * 64e6, 64e6, zbx_spur_dodging);
     lo->commit();
     UHD_CHECK_REGMAP(
         std::map<uint8_t, uint16_t>{
@@ -123,8 +119,7 @@ BOOST_AUTO_TEST_CASE(lmx_sync_tune_test)
 
     // Test Category 3 + SYNC:
     // Will set CHDIV to 1.
-    lo->set_frequency(
-        50.5 * 64e6, 64e6, zbx_spur_dodging);
+    lo->set_frequency(50.5 * 64e6, 64e6, zbx_spur_dodging);
     lo->commit();
     UHD_CHECK_REGMAP(
         std::map<uint8_t, uint16_t>{
@@ -135,8 +130,7 @@ BOOST_AUTO_TEST_CASE(lmx_sync_tune_test)
     BOOST_CHECK(mem.mem[0] & (1 << 14));
 
     // Will set CHDIV to 2.
-    lo->set_frequency(
-        50.5 * 64e6 / 2, 64e6, zbx_spur_dodging);
+    lo->set_frequency(50.5 * 64e6 / 2, 64e6, zbx_spur_dodging);
     lo->commit();
     UHD_CHECK_REGMAP(
         std::map<uint8_t, uint16_t>{

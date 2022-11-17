@@ -85,9 +85,7 @@ BOOST_AUTO_TEST_CASE(test_pwr_cal_mgr_populated)
     gg->register_fcns("MAIN",
         {[&]() { return uhd::meta_range_t(min_gain, max_gain, 1.0); },
             [&]() { return gain; },
-            [&](const double new_gain) {
-                gain = new_gain;
-            }});
+            [&](const double new_gain) { gain = new_gain; }});
     // Now we craft some mock cal data
     auto cal_data       = cal::pwr_cal::make("mock_cal_data", MOCK_SERIAL, 0xBAD71113);
     constexpr int TEMP1 = 20, TEMP2 = 30; // Some temperatures

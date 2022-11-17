@@ -120,7 +120,7 @@ public:
     virtual void connect_channel(const size_t channel, typename transport_t::uptr xport)
     {
         const size_t mtu = xport->get_mtu();
-        _hdr_len = std::max(_hdr_len, xport->get_chdr_hdr_len());
+        _hdr_len         = std::max(_hdr_len, xport->get_chdr_hdr_len());
         _zero_copy_streamer.connect_channel(channel, std::move(xport));
         // Note: The previous call also checks if the channel index was valid.
         _chans_connected[channel] = true;
@@ -345,7 +345,7 @@ protected:
     // reduced accordingly.
     void set_mtu(const size_t mtu)
     {
-        _mtu = mtu;
+        _mtu                      = mtu;
         const size_t spp_from_mtu = (_mtu - _hdr_len) / _convert_info.bytes_per_otw_item;
         if (spp_from_mtu < _spp) {
             _spp = spp_from_mtu;

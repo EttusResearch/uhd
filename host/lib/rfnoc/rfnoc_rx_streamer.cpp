@@ -126,7 +126,8 @@ void rfnoc_rx_streamer::issue_stream_cmd(const stream_cmd_t& stream_cmd)
             "single streamer will fail to time align.");
     }
 
-    _last_stream_cmd_stop = stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
+    _last_stream_cmd_stop = stream_cmd.stream_mode
+                            == stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
 
     auto cmd        = stream_cmd_action_info::make(stream_cmd.stream_mode);
     cmd->stream_cmd = stream_cmd;
@@ -192,8 +193,8 @@ void rfnoc_rx_streamer::_register_props(const size_t chan, const std::string& ot
         PROP_KEY_TYPE, otw_format, {res_source_info::INPUT_EDGE, chan}));
     _mtu_in.emplace_back(
         property_t<size_t>(PROP_KEY_MTU, get_mtu(), {res_source_info::INPUT_EDGE, chan}));
-    _atomic_item_size_in.emplace_back(
-        property_t<size_t>(PROP_KEY_ATOMIC_ITEM_SIZE, 1, {res_source_info::INPUT_EDGE, chan}));
+    _atomic_item_size_in.emplace_back(property_t<size_t>(
+        PROP_KEY_ATOMIC_ITEM_SIZE, 1, {res_source_info::INPUT_EDGE, chan}));
 
     // Give us some shorthands for the rest of this function
     property_t<double>* scaling_in          = &_scaling_in.back();
@@ -212,7 +213,7 @@ void rfnoc_rx_streamer::_register_props(const size_t chan, const std::string& ot
     register_property(atomic_item_size_in);
 
     // Add resolvers
-    add_property_resolver({scaling_in}, {}, [& scaling_in = *scaling_in, chan, this]() {
+    add_property_resolver({scaling_in}, {}, [&scaling_in = *scaling_in, chan, this]() {
         RFNOC_LOG_TRACE("Calling resolver for `scaling_in'@" << chan);
         // Other data types than sc16 will require other values
         const double converter_scaling = 1. / 32767.0;
@@ -246,12 +247,15 @@ void rfnoc_rx_streamer::_register_props(const size_t chan, const std::string& ot
             if (ais.is_valid()) {
                 const auto spp = this->rx_streamer_impl::get_max_num_samps();
                 if (spp < ais.get()) {
-                    throw uhd::value_error("samples per package must not be smaller than atomic item size");
+                    throw uhd::value_error(
+                        "samples per package must not be smaller than atomic item size");
                 }
                 const auto misalignment = spp % ais.get();
-                RFNOC_LOG_TRACE("Check atomic item size " << ais.get() << " divides spp " << spp);
+                RFNOC_LOG_TRACE(
+                    "Check atomic item size " << ais.get() << " divides spp " << spp);
                 if (misalignment > 0) {
-                    RFNOC_LOG_TRACE("Reduce spp by " << misalignment << " to align with atomic item size");
+                    RFNOC_LOG_TRACE("Reduce spp by "
+                                    << misalignment << " to align with atomic item size");
                     this->rx_streamer_impl::set_max_num_samps(spp - misalignment);
                 }
             }
@@ -278,7 +282,8 @@ void rfnoc_rx_streamer::_handle_rx_event_action(
         for (size_t i = 0; i < get_num_input_ports(); ++i) {
             post_action({res_source_info::INPUT_EDGE, i}, stop_action);
         }
-        if (!rx_event_action->args.cast<bool>("cont_mode", false) || _last_stream_cmd_stop) {
+        if (!rx_event_action->args.cast<bool>("cont_mode", false)
+            || _last_stream_cmd_stop) {
             // If we don't need to restart, that's all we need to do. Clear this
             // flag before setting the stopped due to overrun status below to
             // avoid a potential race condition with the overrun handler.
