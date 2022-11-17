@@ -1,0 +1,18 @@
+./host/cmake
+./host/lib/deps
+./mpm/lib/mykonos
+./mpm/lib/rfdc
+./mpm/include/mpm/rfdc
+./mpm/tools
+./fpga
+./tools
+./firmware
+*cdecode.*
+*getopt.*
+*_generated.h
+*template_lvbitx.*
+# Ignore all the junk
+.git
+.vscode
+./host/build
+.ccls-cache
