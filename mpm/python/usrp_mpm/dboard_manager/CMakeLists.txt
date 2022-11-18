@@ -31,6 +31,7 @@ set(USRP_MPM_DBMGR_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/test.py
     ${CMAKE_CURRENT_SOURCE_DIR}/unknown.py
     ${CMAKE_CURRENT_SOURCE_DIR}/dboard_iface.py
+    ${CMAKE_CURRENT_SOURCE_DIR}/x4xx_db.py
     ${CMAKE_CURRENT_SOURCE_DIR}/x4xx_db_iface.py
     ${CMAKE_CURRENT_SOURCE_DIR}/zbx_update_cpld.py
     ${CMAKE_CURRENT_SOURCE_DIR}/x4xx_debug_db.py

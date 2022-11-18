@@ -146,6 +146,7 @@ class DboardManagerBase:
 
         direction needs to be either RX or TX.
         """
+        assert direction.lower() in ('rx', 'tx')
         if direction.lower() == 'rx':
             return list(self.rx_sensor_callback_map.keys())
         # else:
