@@ -7,12 +7,10 @@
 dboard base implementation module
 """
 
-from builtins import object
-from six import iteritems
 from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.mpmutils import to_native_str
 
-class DboardManagerBase(object):
+class DboardManagerBase:
     """
     Base class for daughterboard controls
     """
@@ -72,7 +70,7 @@ class DboardManagerBase(object):
             return {}
         return {
             spi_device: spi_devices[chip_select]
-            for spi_device, chip_select in iteritems(chip_select_map)
+            for spi_device, chip_select in chip_select_map.items()
         }
 
     def init(self, args):
@@ -99,7 +97,6 @@ class DboardManagerBase(object):
         Tear down all members that need to be specially handled before
         deconstruction.
         """
-        pass
 
     def get_serial(self):
         """
@@ -110,7 +107,7 @@ class DboardManagerBase(object):
 
     def get_revision(self):
         """
-        Return this daughterboard's revision number as integer. Will return 
+        Return this daughterboard's revision number as integer. Will return
         -1 if no revision can be found or revision is not an integer
         """
         try:
@@ -133,7 +130,6 @@ class DboardManagerBase(object):
         """
         Called when the motherboard is reconfiguring its clocks.
         """
-        pass
 
     def update_ref_clock_freq(self, freq, **kwargs):
         """
@@ -152,8 +148,8 @@ class DboardManagerBase(object):
         """
         if direction.lower() == 'rx':
             return list(self.rx_sensor_callback_map.keys())
-        else:
-            return list(self.tx_sensor_callback_map.keys())
+        # else:
+        return list(self.tx_sensor_callback_map.keys())
 
     def get_sensor(self, direction, sensor_name, chan=0):
         """
@@ -176,4 +172,3 @@ class DboardManagerBase(object):
         return getattr(
             self, callback_map.get(sensor_name)
         )(chan)
-
