@@ -10,24 +10,124 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/thread.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/process.hpp>
 #include <boost/program_options.hpp>
-#include <boost/algorithm/string.hpp>
 #include <chrono>
 #include <complex>
 #include <csignal>
 #include <fstream>
 #include <iostream>
+#include <regex>
 #include <thread>
 
 namespace po = boost::program_options;
+
 
 static bool stop_signal_called = false;
 void sig_int_handler(int)
 {
     stop_signal_called = true;
 }
+
+
+/*
+ * Very simple disk write test using dd for at most 1 second.
+ * Measures an upper bound of the maximum
+ * sustainable stream to disk rate. Though the rate measured
+ * varies depending on the system load at the time.
+ *
+ * Does not take into account OS cache or disk cache capacities
+ * filling up over time to avoid extra complexity.
+ *
+ * Returns the measured write speed in bytes per second
+ */
+double disk_rate_check(const size_t sample_type_size,
+    const size_t channel_count,
+    size_t samps_per_buff,
+    const std::string& file)
+{
+#ifdef __linux__
+
+    std::string err_msg =
+        "Disk benchmark tool 'dd' did not run or returned an unexpected output format";
+    boost::process::ipstream pipe_stream;
+    boost::filesystem::path temp_file =
+        boost::filesystem::path(file).parent_path() / boost::filesystem::unique_path();
+
+    std::string disk_check_proc_str =
+        "dd if=/dev/random of=" + temp_file.native()
+        + " bs=" + std::to_string(samps_per_buff * channel_count * sample_type_size)
+        + " count=100";
+
+    try {
+        boost::process::child c(
+            disk_check_proc_str, boost::process::std_err > pipe_stream);
+        if (!c.wait_for(
+                std::chrono::duration<float>(std::chrono::milliseconds(int64_t(1000))))) {
+            kill(c.id(), SIGINT);
+            c.wait();
+        }
+    } catch (std::system_error& err) {
+        std::cerr << err_msg << std::endl;
+        if (boost::filesystem::exists(temp_file)) {
+            boost::filesystem::remove(temp_file);
+        }
+        return 0;
+    }
+    // sig_int_handler will absorb SIGINT by this point, but other signals may
+    // leave a temporary file on program exit.
+    boost::filesystem::remove(temp_file);
+
+    std::string line;
+    std::string dd_output;
+    while (pipe_stream && std::getline(pipe_stream, line) && !line.empty()) {
+        dd_output += line;
+    }
+
+    // Parse dd output this format:
+    //   1+0 records in
+    //   1+0 records out
+    //   80000000 bytes (80 MB, 76 MiB) copied, 0.245538 s, 326 MB/s
+    // and capture the measured disk write speed (e.g. 326 MB/s)
+    std::smatch dd_matchs;
+    std::regex dd_regex(
+        R"(\d+\+\d+ records in)"
+        R"(\d+\+\d+ records out)"
+        R"(\d+ bytes \(\d+(?:\.\d+)? [KMGTP]?B, \d+(?:\.\d+)? [KMGTP]?iB\) copied, \d+(?:\.\d+)? s, (\d+(?:\.\d+)?) ([KMGTP]?B/s))"
+
+    );
+    std::regex_match(dd_output, dd_matchs, dd_regex);
+
+    if (dd_matchs[0].str() != dd_output) {
+        std::cerr << err_msg << std::endl;
+    } else {
+        double disk_rate_sigfigs = std::stod(dd_matchs[1]);
+
+        switch (dd_matchs[2].str().at(0)) {
+            case 'K':
+                return disk_rate_sigfigs * 1e3;
+            case 'M':
+                return disk_rate_sigfigs * 1e6;
+            case 'G':
+                return disk_rate_sigfigs * 1e9;
+            case 'T':
+                return disk_rate_sigfigs * 1e12;
+            case 'P':
+                return disk_rate_sigfigs * 1e15;
+            case 'B':
+                return disk_rate_sigfigs;
+            default:
+                std::cerr << err_msg << std::endl;
+        }
+    }
+#endif
+    return 0;
+}
+
 
 template <typename samp_type>
 void recv_to_file(uhd::usrp::multi_usrp::sptr usrp,
@@ -51,6 +151,21 @@ void recv_to_file(uhd::usrp::multi_usrp::sptr usrp,
     uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
 
     uhd::rx_metadata_t md;
+
+    const double req_disk_rate =
+        usrp->get_rx_rate(channel_nums[0]) * channel_nums.size() * sizeof(samp_type);
+    const double disk_rate_meas =
+        disk_rate_check(sizeof(samp_type), channel_nums.size(), samps_per_buff, file);
+    if (disk_rate_meas > 0 && req_disk_rate >= disk_rate_meas) {
+        std::cerr
+            << boost::format(
+                   "  Disk write test indicates that an overflow is likely to occur.\n"
+                   "  Your write medium must sustain a rate of %0.3fMB/s,\n"
+                   "  but write test returned write speed of %0.3fMB/s.\n"
+                   "  The disk write rate is also affected by system load\n"
+                   "  and OS/disk caching capacity.\n")
+                   % (req_disk_rate / 1e6) % (disk_rate_meas / 1e6);
+    }
 
     // Cannot use std::vector as second dimension type because recv will call 
     // reinterpret_cast<char*> on each subarray, which is incompatible with 
@@ -122,7 +237,8 @@ void recv_to_file(uhd::usrp::multi_usrp::sptr usrp,
                            "  Dropped samples will not be written to the file.\n"
                            "  Please modify this example for your purposes.\n"
                            "  This message will not appear again.\n")
-                           % (usrp->get_rx_rate(channel_nums[0]) * sizeof(samp_type) / 1e6);
+                           % (usrp->get_rx_rate(channel_nums[0])
+                               * rx_stream->get_num_channels() * sizeof(samp_type) / 1e6);
             }
             continue;
         }
