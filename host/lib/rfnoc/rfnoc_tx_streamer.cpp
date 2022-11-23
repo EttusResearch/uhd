@@ -196,9 +196,10 @@ void rfnoc_tx_streamer::_register_props(const size_t chan, const std::string& ot
     add_property_resolver(
         {scaling_out}, {}, [& scaling_out = *scaling_out, chan, this]() {
             RFNOC_LOG_TRACE("Calling resolver for `scaling_out'@" << chan);
-            if (scaling_out.is_valid()) {
-                this->set_scale_factor(chan, 32767.0 / scaling_out.get());
-            }
+            // Other data types than sc16 will require other values
+            const double converter_scaling = 32767.0;
+            const double graph_scaling = scaling_out.is_valid() ? scaling_out.get() : 1.0;
+            this->set_scale_factor(chan, converter_scaling * graph_scaling);
         });
 
     add_property_resolver(
