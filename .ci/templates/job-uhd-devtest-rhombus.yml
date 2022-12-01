@@ -143,8 +143,8 @@ jobs:
           devType: 'e3xx'
           devModel: 'e320'
           devName: rhombus-e320-0
-          devSerial: '31A8171'
-          devHostname: 'ni-e320-31a8171'
+          devSerial: '31BB63C'
+          devHostname: 'ni-e320-31bb63c'
           devBus: 'ip'
           devAddr: '192.168.20.7'
           sfpAddrs: '192.168.20.7'
