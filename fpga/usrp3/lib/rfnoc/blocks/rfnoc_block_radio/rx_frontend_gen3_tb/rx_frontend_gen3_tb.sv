@@ -56,7 +56,7 @@ module rx_frontend_gen3_tb;
 
   localparam BYPASS_DC_OFFSET_CORR = 0;
   localparam BYPASS_IQ_COMP        = 0;
-  localparam BYPASS_REALMODE_DSP   = 0;
+  localparam BYPASS_HETERODYNE     = 0;
   localparam DEVICE                = "7SERIES";
 
   logic               sync_in;
@@ -79,7 +79,7 @@ module rx_frontend_gen3_tb;
     .SR_HET_PHASE_INCR     (SR_HET_PHASE_INCR),
     .BYPASS_DC_OFFSET_CORR (BYPASS_DC_OFFSET_CORR),
     .BYPASS_IQ_COMP        (BYPASS_IQ_COMP),
-    .BYPASS_REALMODE_DSP   (BYPASS_REALMODE_DSP),
+    .BYPASS_HETERODYNE     (BYPASS_HETERODYNE),
     .DEVICE                (DEVICE)
   ) rx_frontend_gen3_i (
     .clk      (clk),
