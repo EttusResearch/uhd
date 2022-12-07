@@ -148,7 +148,7 @@ jobs:
           devBus: 'ip'
           devAddr: '192.168.20.7'
           sfpAddrs: '192.168.20.7'
-          devFpga: 'XG'
+          devFpga: '1G'
           devtestPattern: 'e320'
           devInitramfsImage: fitImage-manufacturing
           devSDImage: gnuradio-image-ni-neon-rev2-mender.sdimg.bz2
