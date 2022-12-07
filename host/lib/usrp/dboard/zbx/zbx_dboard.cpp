@@ -12,8 +12,11 @@
 #include <uhd/utils/math.hpp>
 #include <uhdlib/usrp/dboard/zbx/zbx_dboard.hpp>
 #include <uhdlib/utils/narrow.hpp>
+#include <chrono>
 #include <cstdlib>
 #include <sstream>
+
+using namespace std::chrono_literals;
 
 namespace uhd { namespace usrp { namespace zbx {
 
@@ -642,6 +645,65 @@ std::string zbx_dboard_impl::get_dboard_fe_from_chan(
     }
     throw uhd::lookup_error(
         std::string("[X400] Invalid channel: ") + std::to_string(chan));
+}
+
+/*********************************************************************
+ * ADC Self Cal API
+ **********************************************************************/
+bool zbx_dboard_impl::select_adc_self_cal_gain(size_t chan)
+{
+    constexpr double min_gain          = 10.0;
+    constexpr double max_gain          = 50.0;
+    constexpr int threshold_reset_time = 100;
+    constexpr int threshold_reset      = 8000;
+    constexpr int threshold_set        = 8192;
+
+    bool found_gain = false;
+
+    // Set the threshold to detect half-scale
+    // The setup_threshold call uses 14-bit ADC values
+    _mb_rpcc->setup_threshold(_db_idx,
+        chan,
+        0,
+        "hysteresis",
+        threshold_reset_time,
+        threshold_reset,
+        threshold_set);
+
+    for (double i = min_gain; i <= max_gain; i += 1.0) {
+        this->get_rx_gain_profile_api()->set_gain_profile("default", chan);
+        this->get_tx_gain_profile_api()->set_gain_profile("default", chan);
+
+        this->set_tx_gain(i, chan);
+        this->set_rx_gain(i, chan);
+
+        // Set the daughterboard to use the duplex entry in the DSA table which was
+        // configured in the set_?x_gain call. (note that with a LabVIEW FPGA, we don't
+        // control the ATR lines, hence why we override them here)
+        this->get_rx_gain_profile_api()->set_gain_profile("table_noatr", chan);
+        this->get_tx_gain_profile_api()->set_gain_profile("table_noatr", chan);
+
+        this->set_rx_gain(0b11, chan);
+        this->set_tx_gain(0b11, chan);
+
+        // Wait for it to settle
+        constexpr auto settle_time = 10ms;
+        std::this_thread::sleep_for(settle_time);
+
+        try {
+            const bool threshold_status =
+                _mb_rpcc->get_threshold_status(_db_idx, chan, 0);
+            if (threshold_status) {
+                found_gain = true;
+                break;
+            }
+        } catch (uhd::runtime_error&) {
+            // Catch & eat this error, the user has a 5.0 FPGA and so can't auto-gain
+            return false;
+        }
+    }
+
+    return found_gain;
 }
 
 /*********************************************************************
