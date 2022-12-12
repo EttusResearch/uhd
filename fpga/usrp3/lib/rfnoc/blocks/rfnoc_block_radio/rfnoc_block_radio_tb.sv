@@ -44,6 +44,9 @@ module rfnoc_block_radio_tb #(
   localparam int          CTRL_CLK_PER   = 25;                  // rfnoc_ctrl_clk period in ns
   localparam int          RADIO_CLK_PER  = 10;                  // radio_clk_per period in ns
 
+  localparam int NUM_TESTS = 2;   // Number of times to run each test
+  localparam bit VERBOSE   = 0;   // Display lots of output, or not
+
   // Amount of time to wait for a packet to be fully acquired
   localparam realtime MAX_PKT_WAIT = 4*WPP*(RADIO_CLK_PER+CTRL_CLK_PER)*1ns;
 
@@ -52,6 +55,22 @@ module rfnoc_block_radio_tb #(
   localparam bit [ 9:0] TX_ERR_REM_DST_PORT = 10'h14C;
   localparam bit [15:0] TX_ERR_REM_DST_EPID = 16'hA18E;
   localparam bit [19:0] TX_ERR_ADDRESS      = 20'hA31D3;
+
+  // Radio latency expected in due to time alignment. There is a fixed amount
+  // of latency between the radio_time and when the corresponding sample is
+  // strobed in or out. We need to make sure this latency is constant. The
+  // actual amount of latency is not critical since there's always an unknown
+  // but constant amount of latency in the RF front end.
+  localparam int RADIO_TX_LATENCY = (NIPC > 1) ? 4 : 2;
+  localparam int RADIO_RX_LATENCY = (NIPC > 1) ? 2 : 0;
+
+  // Calculate an appropriate delay to use for future timed TX/RX tests in
+  // terms of the radio time ticks. RX takes a lot longer because you have to
+  // queue a command using a register write. The higher the NIPC, the faster
+  // the tick rate for the same clock. We want it to be short-ish to reduce
+  // simulation time.
+  localparam int TX_CMD_DELAY = 200;
+  localparam int RX_CMD_DELAY = 500*NIPC;
 
 
 
@@ -70,7 +89,7 @@ module rfnoc_block_radio_tb #(
     rfnoc_chdr_clk_gen (.clk(rfnoc_chdr_clk), .rst());
   sim_clock_gen #(.PERIOD(CTRL_CLK_PER), .AUTOSTART(0))
     rfnoc_ctrl_clk_gen (.clk(rfnoc_ctrl_clk), .rst());
-  sim_clock_gen #(.PERIOD(RADIO_CLK_PER), .AUTOSTART(0)) 
+  sim_clock_gen #(.PERIOD(RADIO_CLK_PER), .AUTOSTART(0))
     radio_clk_gen (.clk(radio_clk), .rst());
 
 
@@ -110,11 +129,10 @@ module rfnoc_block_radio_tb #(
   // Radio Data Model
   //---------------------------------------------------------------------------
 
-  bit [NUM_PORTS*RADIO_W-1:0] radio_rx_data;
-  bit [        NUM_PORTS-1:0] radio_rx_stb;
+  logic [NUM_PORTS*RADIO_W-1:0] radio_rx_data;
+  logic [        NUM_PORTS-1:0] radio_rx_stb;
 
-  bit [63:0] radio_time;
-  bit        radio_pps;
+  logic [63:0] radio_time;
 
   // Radio data generation
   sim_radio_gen #(
@@ -122,15 +140,13 @@ module rfnoc_block_radio_tb #(
     .SAMP_W       (ITEM_W),
     .NUM_CHANNELS (NUM_PORTS),
     .STB_PROB     (STB_PROB),
-    .INCREMENT    (NIPC),
-    .PPS_PERIOD   (NIPC * 250)
+    .INCREMENT    (NIPC)
   ) radio_gen (
     .radio_clk     (radio_clk),
     .radio_rst     (1'b0),
     .radio_rx_data (radio_rx_data),
     .radio_rx_stb  (radio_rx_stb),
-    .radio_time    (radio_time),
-    .radio_pps     (radio_pps)
+    .radio_time    (radio_time)
   );
 
 
@@ -275,11 +291,11 @@ module rfnoc_block_radio_tb #(
 
     if (num_words == 0) begin
       // Do a continuous acquisition
-      $display("Radio %0d: Start RX, continuous receive", radio_num);
+      if (VERBOSE) $display("Radio %0d: Start RX, continuous receive", radio_num);
       cmd = RX_CMD_CONTINUOUS;
     end else begin
       // Do a finite acquisition (num samps and done)
-      $display("Radio %0d: Start RX, receive %0d words", radio_num, num_words);
+      if (VERBOSE) $display("Radio %0d: Start RX, receive %0d words", radio_num, num_words);
       write_radio_64(radio_num, REG_RX_CMD_NUM_WORDS_LO, num_words);
       cmd = RX_CMD_FINITE;
     end
@@ -292,18 +308,18 @@ module rfnoc_block_radio_tb #(
   // Start an Rx acquisition at a specific time
   task automatic start_rx_timed (
     int        radio_num,      // Radio channel to use
-    bit [63:0] num_words = 0,  // Number of radio words
+    bit [63:0] num_words = 0,  // Number of radio words (0 means continuous)
     bit [63:0] start_time
   );
     logic [31:0] cmd;
 
     if (num_words == 0) begin
       // Do a continuous acquisition
-      $display("Radio %0d: Start RX, continuous receive (timed)", radio_num);
+      if (VERBOSE) $display("Radio %0d: Start RX, continuous receive (timed)", radio_num);
       cmd = RX_CMD_CONTINUOUS;
     end else begin
       // Do a finite acquisition (num samps and done)
-      $display("Radio %0d: Start RX, receive %0d words (timed)", radio_num, num_words);
+      if (VERBOSE) $display("Radio %0d: Start RX, receive %0d words (timed)", radio_num, num_words);
       write_radio_64(radio_num, REG_RX_CMD_NUM_WORDS_LO, num_words);
       cmd = RX_CMD_FINITE;
     end
@@ -321,12 +337,12 @@ module rfnoc_block_radio_tb #(
 
   // Send the Rx stop command to the indicated radio channel
   task automatic stop_rx(int radio_num);
-    $display("Radio %0d: Stop RX", radio_num);
+    if (VERBOSE) $display("Radio %0d: Stop RX", radio_num);
     write_radio(radio_num, REG_RX_CMD, RX_CMD_STOP);
   endtask : stop_rx
 
 
-  // Receive num_words from the indicated radio channel and verify that it's 
+  // Receive num_words from the indicated radio channel and verify that it's
   // sequential and contiguous data aligned on packet boundaries.
   task automatic check_rx(
     int radio_num,    // Radio to receive from and check
@@ -364,7 +380,8 @@ module rfnoc_block_radio_tb #(
       // Check that the length matches our expectation
       `ASSERT_ERROR(
         byte_length == expected_length,
-        "Received packet didn't have expected length."
+        $sformatf({"Received packet didn't have expected length.\n",
+          "Expected 0x%X, Received 0x%X"}, expected_length, byte_length)
       );
 
       // Loop over the packet, one chdr_word_t at a time
@@ -408,7 +425,7 @@ module rfnoc_block_radio_tb #(
     chdr_word_t      chdr_word;       // Next word to send to BFM
     packet_info_t    pkt_info = 0;    // Flags/timestamp for next packet
 
-    $display("Radio %0d: Start TX, send %0d words", radio_num, num_words);
+    if (VERBOSE) $display("Radio %0d: Start TX, send %0d words", radio_num, num_words);
 
     num_samples = num_words * NIPC;
 
@@ -474,34 +491,54 @@ module rfnoc_block_radio_tb #(
     bit   [ITEM_W-1:0] start_val  = 1    // Initial sample value
   );
     int sample_val;           // Expected value of next sample
+    bit found = 0;
+    int offset = 0;
+    int num_samps;
 
-    sample_val = start_val;
-
-    // Wait for the packet to start
-    wait(radio_tx_data[radio_num*RADIO_W +: ITEM_W] == start_val);
+    // Wait for the expected packet to start. Look for the start value in any
+    // sample position. Save the sample offset so we can verify it's correct.
+    while (!found) begin
+      @(posedge radio_clk);
+      if (radio_tx_stb[radio_num]) begin
+        for (int samp_i = 0; samp_i < NIPC; samp_i++) begin
+          if (radio_tx_data[radio_num*RADIO_W + samp_i*ITEM_W +: ITEM_W] == start_val) begin
+            found = 1;
+            offset = samp_i;
+            break;
+          end
+        end
+      end
+    end
 
     // Check the time
     if (!$isunknown(start_time)) begin
       `ASSERT_ERROR(
-        radio_time - start_time <= NIPC*2,
-        $sformatf("Packet transmitted at radio time 0x%0X but expected 0x%0X", radio_time, start_time)
+        radio_time+offset == start_time + RADIO_TX_LATENCY*NIPC,
+        $sformatf("First sample transmitted at radio time 0x%0X but expected 0x%0X",
+          radio_time+offset, start_time + RADIO_TX_LATENCY*NIPC)
       );
     end
 
     // Verify output one word at a time
-    for (int word_count = 0; word_count < num_words; word_count++) begin
-      // Wait for the next radio word to be output
-      do begin
-        @(posedge radio_clk);
-      end while (radio_tx_stb[radio_num] == 0);
+    sample_val = start_val;
+    num_samps = num_words * NIPC;
+    for (int samp_count = 0; samp_count < num_samps; samp_count++) begin
+      `ASSERT_ERROR(
+        radio_tx_data[radio_num*RADIO_W + offset*ITEM_W +: ITEM_W] == sample_val,
+        $sformatf({"Radio output doesn't match expected value\n",
+          "Expected 0x%X but found 0x%X at sample %0d (word offset %0d)."},
+          sample_val, radio_tx_data[radio_num*RADIO_W + ITEM_W*offset +: ITEM_W],
+          samp_count, offset)
+      );
+      sample_val++;
+      offset++;
 
-      // Check each sample of the radio word
-      for (int sub_sample = 0; sub_sample < NIPC; sub_sample++) begin
-        `ASSERT_ERROR(
-          radio_tx_data[radio_num*RADIO_W + ITEM_W*sub_sample +: ITEM_W] == sample_val,
-          "Radio output doesn't match expected value"
-        );
-        sample_val++;
+      if (offset == NIPC) begin
+        offset = 0;
+        // Wait for the next radio word to be output
+        do begin
+          @(posedge radio_clk);
+        end while (!radio_tx_stb[radio_num]);
       end
     end
   endtask : check_tx_timed
@@ -545,6 +582,23 @@ module rfnoc_block_radio_tb #(
   endtask : check_error
 
 
+  // This function is a copy of the one in sim_radio_gen, but due to a Vivado
+  // 2021.1 bug, we need to copy it here.
+  typedef sample_t [     NIPC-1:0] radio_t;     // Radio output word
+  typedef radio_t  [NUM_PORTS-1:0] data_t;      // Radio output for all channels
+  function radio_t radio_init(
+    sample_t first_sample = '0
+  );
+    radio_t ret_val;
+
+    for (int samp_i = 0; samp_i < NIPC; samp_i++) begin
+      ret_val[samp_i] = first_sample + samp_i;
+    end
+
+    return ret_val;
+  endfunction : radio_init
+
+
 
   //---------------------------------------------------------------------------
   // Test Procedures
@@ -579,13 +633,18 @@ module rfnoc_block_radio_tb #(
       },
       "REG_COMPAT_NUM didn't read correctly"
     );
-    read_shared(REG_TIME_LO, time1[31:0]);
-    read_shared(REG_TIME_HI, time1[63:32]);
-    read_shared(REG_TIME_LO, time2[31:0]);
-    read_shared(REG_TIME_HI, time2[63:32]);
+    do begin
+      read_shared(REG_TIME_LO, time1[31:0]);
+      read_shared(REG_TIME_HI, time1[63:32]);
+    end while ($isunknown(time1));
+    do begin
+      read_shared(REG_TIME_LO, time2[31:0]);
+      read_shared(REG_TIME_HI, time2[63:32]);
+    end while ($isunknown(time2));
     `ASSERT_ERROR(
       time2 > time1,
-      "Time did not increment in REG_TIME_HI and REG_TIME_LO"
+      $sformatf({"Time did not increment in REG_TIME_HI and REG_TIME_LO",
+      "Time1: 0x%X, Time2: 0x%X"}, time1, time2)
     );
     test.end_test();
   endtask : test_shared_registers
@@ -615,7 +674,7 @@ module rfnoc_block_radio_tb #(
 
 
   task test_rx_registers(int radio_num);
-    logic [63:0] val, temp, expected;
+    logic [63:0] val, expected, radio_val_0, radio_val_1;
     localparam int num_words_len = RX_CMD_NUM_WORDS_LEN;
 
     test.start_test("Rx Registers", 50us);
@@ -625,7 +684,7 @@ module rfnoc_block_radio_tb #(
     read_radio(radio_num, REG_RX_STATUS, val);
     `ASSERT_ERROR(val == expected, "REG_RX_STATUS not initially CMD_FIFO_SPACE_MAX");
 
-    // REG_RX_CMD (read/write). Test a bogus timed stop command just to check 
+    // REG_RX_CMD (read/write). Test a bogus timed stop command just to check
     // read/write of the register.
     expected = 0;
     expected[RX_CMD_POS +: RX_CMD_LEN] = RX_CMD_STOP;
@@ -694,13 +753,20 @@ module rfnoc_block_radio_tb #(
     `ASSERT_ERROR(val == expected, "REG_RX_ERR_ADDR didn't update correctly");
 
     // REG_RX_DATA (read-only)
-    temp = radio_tx_data[RADIO_W*radio_num +: RADIO_W];
-    read_radio(radio_num, REG_RX_DATA, val);
+    do begin
+      // Loop until we get a valid sample from the register (not X's)
+      do @(posedge radio_clk); while (!radio_rx_stb[radio_num]);
+      radio_val_0 = radio_rx_data[RADIO_W*radio_num +: RADIO_W] & {32{1'b1}};
+      read_radio(radio_num, REG_RX_DATA, val);
+      do @(posedge radio_clk); while (!radio_rx_stb[radio_num]);
+      radio_val_1 = radio_rx_data[RADIO_W*radio_num +: RADIO_W] & {32{1'b1}};
+    end while ($isunknown(val));
     `ASSERT_ERROR(
-      radio_rx_data[RADIO_W*radio_num +: RADIO_W] >= val && val >= temp, 
-      "REG_RX_DATA wasn't in the expected range");
-    read_radio(radio_num, REG_RX_DATA, temp);
-    `ASSERT_ERROR(temp != val, "REG_RX_DATA didn't update");
+      radio_val_0 < val && val < radio_val_1,
+      $sformatf({"REG_RX_DATA wasn't in the expected range\n",
+        "Radio Value 0: 0x%X, Reg Value: 0x%X, Radio Value 1: 0x%X"},
+        radio_val_0, val, radio_val_1)
+    );
 
     test.end_test();
   endtask : test_rx_registers
@@ -772,14 +838,14 @@ module rfnoc_block_radio_tb #(
 
   task automatic test_rx(int radio_num);
 
+    // Set default packet length
+    write_radio(radio_num, REG_RX_MAX_WORDS_PER_PKT, WPP);
+
     //---------------------
     // Finite Acquisitions
     //---------------------
 
     test.start_test("Rx (finite)", 50us);
-
-    // Set packet length
-    write_radio(radio_num, REG_RX_MAX_WORDS_PER_PKT, WPP);
 
     // Grab and verify a partial packet
     start_rx(radio_num, WPP/2);
@@ -793,7 +859,7 @@ module rfnoc_block_radio_tb #(
     start_rx(radio_num, WPP*15/2);
     check_rx(radio_num, WPP*15/2);
 
-    // Wait long enough to receive another packet and then make sure we didn't 
+    // Wait long enough to receive another packet and then make sure we didn't
     // receive anything. That is, make sure Rx actually stopped.
     #MAX_PKT_WAIT;
     `ASSERT_ERROR(
@@ -834,19 +900,36 @@ module rfnoc_block_radio_tb #(
 
     begin
       ChdrPacket #(CHDR_W) chdr_packet;
-      chdr_word_t expected_time;
+      bit [ITEM_W-1:0] expected_samp;
+      bit [      63:0] new_time;
+      bit [      63:0] expected_time;
 
       test.start_test("Rx (finite, timed)", 100us);
 
+      // Set radio time and data so we know which sample value to expect
+      radio_clk_gen.clk_wait_f();
+      new_time = radio_time;
+      radio_gen.set_time(new_time);
+      radio_gen.set_data(radio_num, radio_init(new_time));
+      radio_clk_gen.clk_wait_f();
+
       // Send Rx command with time in the future
-      expected_time = radio_time + 2000;
+      expected_time = new_time + RX_CMD_DELAY;
       start_rx_timed(radio_num, WPP, expected_time);
 
       // Take a peak at the timestamp in the received packet to check it
       blk_ctrl.peek_chdr(radio_num, chdr_packet);
       `ASSERT_ERROR(
         chdr_packet.timestamp == expected_time,
-        "Received packet didn't have expected timestamp"
+        $sformatf({"Received packet didn't have expected timestamp.\n",
+          "Expected 0x%X, Received 0x%X"}, expected_time, chdr_packet.timestamp)
+      );
+      expected_samp = expected_time[ITEM_W-1:0] - RADIO_RX_LATENCY*NIPC;
+      `ASSERT_ERROR(
+        chdr_packet.data[0][0+:ITEM_W] == expected_samp,
+        $sformatf({"Received packet didn't have expected start value.\n",
+          "Expected 0x%X, Received 0x%X"}, expected_samp,
+          chdr_packet.data[0][0+:ITEM_W])
       );
 
       // Verify the packet data
@@ -861,12 +944,21 @@ module rfnoc_block_radio_tb #(
 
     begin
       ChdrPacket #(CHDR_W) chdr_packet;
-      chdr_word_t expected_time;
+      bit [ITEM_W-1:0] expected_samp;
+      bit [      63:0] new_time;
+      bit [      63:0] expected_time;
 
       test.start_test("Rx (continuous, timed)", 100us);
 
+      // Set radio time and data so we know which sample value to expect
+      radio_clk_gen.clk_wait_f();
+      new_time = radio_time;
+      radio_gen.set_time(new_time);
+      radio_gen.set_data(radio_num, radio_init(new_time));
+      radio_clk_gen.clk_wait_f();
+
       // Send Rx command with time in the future
-      expected_time = radio_time + 2000;
+      expected_time = new_time + RX_CMD_DELAY;
       start_rx_timed(radio_num, 0, expected_time);
 
       // Take a peak at the timestamp in the received packet to check it
@@ -874,6 +966,13 @@ module rfnoc_block_radio_tb #(
       `ASSERT_ERROR(
         chdr_packet.timestamp == expected_time,
         "Received packet didn't have expected timestamp"
+      );
+      expected_samp = expected_time[ITEM_W-1:0] - RADIO_RX_LATENCY*NIPC;
+      `ASSERT_ERROR(
+        chdr_packet.data[0][0+:ITEM_W] == expected_samp,
+        $sformatf({"Received packet didn't have expected start value.\n",
+          "Expected 0x%X, Received 0x%X"}, expected_samp,
+          chdr_packet.data[0][0+:ITEM_W])
       );
 
       // Verify a few packets
@@ -893,9 +992,81 @@ module rfnoc_block_radio_tb #(
     end
 
 
+    //--------------------------
+    // RX Sample Time Alignment
+    //--------------------------
+
+    if (NIPC > 1) begin
+      ChdrPacket #(CHDR_W) chdr_packet;
+      localparam int ALIGN_W   = (NIPC > 1) ? $clog2(NIPC) : 1;
+      localparam int NUM_WORDS = 4;
+      bit [ALIGN_W-1:0] radio_align;     // Radio alignment
+      bit [ALIGN_W-1:0] req_align;       // Request alignment
+      bit [       63:0] new_time;
+      bit [       63:0] expected_time;
+      bit [ ITEM_W-1:0] expected_samp;
+
+      test.start_test("Rx (time alignment)", NIPC*NIPC*10us);
+
+      // Iterate over all possible alignments
+      repeat(2**ALIGN_W) begin
+        repeat(2**ALIGN_W) begin
+          if (VERBOSE) $display("Testing Rx alignment radio: %0d, request: %0d",
+            radio_align, req_align);
+
+          // Set radio alignment and set the data to be the same as the time to
+          // make it easier to validate.
+          radio_clk_gen.clk_wait_f();
+          new_time = (radio_time & ('1 << ALIGN_W)) | radio_align;
+          radio_gen.set_time(new_time);
+          radio_gen.set_data(radio_num, radio_init(new_time));
+          radio_clk_gen.clk_wait_f();
+
+          // Create future time that's aligned for our request
+          expected_time = new_time + RX_CMD_DELAY;
+          expected_time = (expected_time & ('1 << ALIGN_W)) | req_align;
+
+          // Send Rx command with time in the future
+          start_rx_timed(radio_num, NUM_WORDS, expected_time);
+          blk_ctrl.peek_chdr(radio_num, chdr_packet);
+
+          // Check the timestamp in the received packet
+          `ASSERT_ERROR(
+            chdr_packet.timestamp == expected_time,
+            $sformatf({"Received packet didn't have expected timestamp.\n",
+              "Expected 0x%X, Received 0x%X"}, expected_time,
+              chdr_packet.timestamp)
+          );
+          // Check the first sample to make sure it matches the sample for the
+          // requested time.
+          expected_samp = expected_time[ITEM_W-1:0] - RADIO_RX_LATENCY*NIPC;
+          `ASSERT_ERROR(
+            chdr_packet.data[0][0+:ITEM_W] == expected_samp,
+            $sformatf({"Received packet didn't have expected start value.\n",
+              "Expected 0x%X, Received 0x%X"}, expected_samp,
+              chdr_packet.data[0][0+:ITEM_W])
+          );
+
+          // Verify the rest of the packet
+          check_rx(radio_num, NUM_WORDS);
+          req_align++;
+        end
+        radio_align++;
+      end
+
+      // Reset the radio time and outputs
+      radio_gen.set_time(0);
+      radio_gen.set_data_all(radio_gen.radio_init_all(0));
+      radio_clk_gen.clk_wait_r(2);
+
+      test.end_test();
+    end
+
+
     //-------------
     // Rx Overflow
     //-------------
+
     begin
       logic [31:0] val;
 
@@ -933,7 +1104,7 @@ module rfnoc_block_radio_tb #(
         "Rx radio reports that it is still busy after overflow"
       );
 
-      // Discard any packets we received. Rx should eventually stop 
+      // Discard any packets we received. Rx should eventually stop
       // automatically after an overflow.
       do begin
         while (blk_ctrl.num_received(radio_num) != 0) begin
@@ -986,7 +1157,7 @@ module rfnoc_block_radio_tb #(
       expected = CMD_FIFO_SPACE_MAX-1;
       read_radio(radio_num, REG_RX_STATUS, val);
       `ASSERT_ERROR(
-        val[CMD_FIFO_SPACE_POS+:CMD_FIFO_SPACE_LEN] == expected, 
+        val[CMD_FIFO_SPACE_POS+:CMD_FIFO_SPACE_LEN] == expected,
         "CMD_FIFO_SPACE did not decrement"
       );
 
@@ -997,7 +1168,7 @@ module rfnoc_block_radio_tb #(
       expected = 0;
       read_radio(radio_num, REG_RX_STATUS, val);
       `ASSERT_ERROR(
-        val[CMD_FIFO_SPACE_POS+:CMD_FIFO_SPACE_LEN] == expected, 
+        val[CMD_FIFO_SPACE_POS+:CMD_FIFO_SPACE_LEN] == expected,
         "CMD_FIFO_SPACE did not reach 0"
       );
 
@@ -1006,7 +1177,7 @@ module rfnoc_block_radio_tb #(
       expected = CMD_FIFO_SPACE_MAX;
       read_radio(radio_num, REG_RX_STATUS, val);
       `ASSERT_ERROR(
-        val[CMD_FIFO_SPACE_POS+:CMD_FIFO_SPACE_LEN] == expected, 
+        val[CMD_FIFO_SPACE_POS+:CMD_FIFO_SPACE_LEN] == expected,
         "CMD_FIFO_SPACE did not return to max"
       );
 
@@ -1019,8 +1190,8 @@ module rfnoc_block_radio_tb #(
         #MAX_PKT_WAIT;
       end while (blk_ctrl.num_received(radio_num) != 0);
 
-      // Queue several long commands back-to-back and make sure they all 
-      // complete. The lengths are unique to ensure we execute the right 
+      // Queue several long commands back-to-back and make sure they all
+      // complete. The lengths are unique to ensure we execute the right
       // commands in the expected order.
       for (int i = 0; i < 3; i++) start_rx(radio_num, WPP*20+i);
       for (int i = 0; i < 3; i++) check_rx(radio_num, WPP*20+i);
@@ -1089,6 +1260,8 @@ module rfnoc_block_radio_tb #(
 
     test.start_test("Tx (now, underflow)", 50us);
 
+    write_radio(radio_num, REG_TX_ERROR_POLICY, TX_ERR_POLICY_PACKET);
+
     // Send some bursts without EOB
     start_tx(radio_num, WPP*3/4, 1, 0);  // Skip EOB
     check_tx(radio_num, WPP*3/4);
@@ -1108,34 +1281,86 @@ module rfnoc_block_radio_tb #(
     test.start_test("Tx (timed)", 50us);
 
     // Grab and verify a partial packet
-    start_tx_timed(radio_num, WPP*3/4, radio_time + 200);
-    check_tx_timed(radio_num, WPP*3/4, radio_time + 200);
+    start_tx_timed(radio_num, WPP*3/4, radio_time + TX_CMD_DELAY);
+    check_tx_timed(radio_num, WPP*3/4, radio_time + TX_CMD_DELAY);
     check_error(ERR_TX_EOB_ACK);
 
     // Grab and verify whole packets
-    start_tx_timed(radio_num, WPP*2, radio_time + 200);
-    check_tx_timed(radio_num, WPP*2, radio_time + 200);
+    start_tx_timed(radio_num, WPP*2, radio_time + TX_CMD_DELAY);
+    check_tx_timed(radio_num, WPP*2, radio_time + TX_CMD_DELAY);
     check_error(ERR_TX_EOB_ACK);
 
     test.end_test();
 
 
-    //-----------------
+    //----------------------------
     // Test Tx (timed, underflow)
-    //-----------------
+    //----------------------------
 
     test.start_test("Tx (timed, underflow)", 50us);
 
     // Send some bursts without EOB
-    start_tx_timed(radio_num, WPP*3/4, radio_time + 200, 1, 0);
-    check_tx_timed(radio_num, WPP*3/4, radio_time + 200);
+    start_tx_timed(radio_num, WPP*3/4, radio_time + TX_CMD_DELAY, 1, 0);
+    check_tx_timed(radio_num, WPP*3/4, radio_time + TX_CMD_DELAY);
     check_error(ERR_TX_UNDERRUN);
 
-    start_tx_timed(radio_num, WPP*2, radio_time + 200, 1, 0);
-    check_tx_timed(radio_num, WPP*2, radio_time + 200);
+    start_tx_timed(radio_num, WPP*2, radio_time + TX_CMD_DELAY, 1, 0);
+    check_tx_timed(radio_num, WPP*2, radio_time + TX_CMD_DELAY);
     check_error(ERR_TX_UNDERRUN);
 
     test.end_test();
+
+
+    //-------------------------------
+    // Test Tx Sample Time Alignment
+    //-------------------------------
+
+    if (NIPC > 1) begin
+      ChdrPacket #(CHDR_W) chdr_packet;
+      localparam int ALIGN_W   = (NIPC > 1) ? $clog2(NIPC) : 1;
+      localparam int NUM_WORDS = 4;
+      bit [ALIGN_W-1:0] radio_align;     // Radio alignment
+      bit [ALIGN_W-1:0] req_align;       // Request alignment
+      bit [       63:0] new_time;
+      bit [       63:0] expected_time;
+      bit [ ITEM_W-1:0] expected_samp;
+
+
+      test.start_test("Tx (time alignment)", 200us);
+
+      // Iterate over all possible alignments
+      repeat(2**ALIGN_W) begin
+        repeat(2**ALIGN_W) begin
+          if (VERBOSE) $display("Testing Tx alignment radio: %0d, request: %0d",
+            radio_align, req_align);
+
+          // Set radio alignment
+          radio_clk_gen.clk_wait_f();
+          new_time = (radio_time & ('1 << ALIGN_W)) | radio_align;
+          radio_gen.set_time(new_time);
+          radio_clk_gen.clk_wait_f();
+
+          // Create future time that's aligned for our request
+          expected_time = new_time + TX_CMD_DELAY;
+          expected_time = (expected_time & ('1 << ALIGN_W)) | req_align;
+
+          // Transmit and verify the output
+          start_tx_timed(radio_num, NUM_WORDS, expected_time);
+          check_tx_timed(radio_num, NUM_WORDS, expected_time);
+          check_error(ERR_TX_EOB_ACK);
+
+          req_align++;
+        end
+        radio_align++;
+      end
+
+      // Reset the radio time and outputs
+      radio_gen.set_time(0);
+      radio_gen.set_data_all(radio_gen.radio_init_all(0));
+      radio_clk_gen.clk_wait_r(2);
+
+      test.end_test();
+    end
 
 
     //---------------------------
@@ -1154,9 +1379,8 @@ module rfnoc_block_radio_tb #(
         write_radio(radio_num, REG_TX_ERROR_POLICY, TX_ERR_POLICY_BURST);
       end
 
-// Commenting out the fork code for now due to Vivado 2018.3 bug.
-//      radio_data = radio_tx_data[radio_num];
-//      fork : tx_fork
+      radio_data = radio_tx_data[radio_num];
+      fork : tx_fork
         // In this branch of the fork, we send the packets
         repeat (2) begin
           // Send late packets with random start value
@@ -1171,29 +1395,31 @@ module rfnoc_block_radio_tb #(
           end
         end
 
-//        // The packets sent in the above branch of the fork should be 
-//        // dropped. In this branch of the fork we make sure that the Tx 
-//        // output doesn't change.
-//        begin
-//          forever begin
-//            @(posedge radio_clk)
-//            `ASSERT_ERROR(
-//              radio_data === radio_tx_data[radio_num], 
-//              "Radio Tx output changed when late Tx packet should have been ignored"
-//            );
-//          end
-//        end
-//      join_any
-//
-//      // Stop checking the output
-//      disable tx_fork;
+        // The packets sent in the above branch of the fork should be
+        // dropped. In this branch of the fork we make sure that the Tx
+        // output doesn't change.
+        begin
+          forever begin
+            @(posedge radio_clk)
+            if (radio_tx_stb[radio_num]) begin
+              `ASSERT_ERROR(
+                radio_data === radio_tx_data[radio_num],
+                "Radio Tx output changed when late Tx packet should have been ignored"
+              );
+            end
+          end
+        end
+      join_any
+
+      // Stop checking the output
+      disable tx_fork;
 
       policy = policy.next();
     end while (policy != policy.first());
 
     // Make sure good transmissions can go through now.
-    start_tx_timed(radio_num, WPP, radio_time + 200);
-    check_tx_timed(radio_num, WPP, radio_time + 200);
+    start_tx_timed(radio_num, WPP, radio_time + TX_CMD_DELAY);
+    check_tx_timed(radio_num, WPP, radio_time + TX_CMD_DELAY);
     check_error(ERR_TX_EOB_ACK);
 
     test.end_test();
@@ -1217,8 +1443,8 @@ module rfnoc_block_radio_tb #(
     // Turn on loopback
     write_radio(radio_num, REG_LOOPBACK_EN, 1);
 
-    // This test ensures we get the Tx output on Rx and not the TB's simulated 
-    // radio data. It also tests updating the idle value. Run the test twice to 
+    // This test ensures we get the Tx output on Rx and not the TB's simulated
+    // radio data. It also tests updating the idle value. Run the test twice to
     // make sure the IDLE value updates.
     repeat (2) begin
       // Set idle value
@@ -1226,12 +1452,12 @@ module rfnoc_block_radio_tb #(
       write_radio(radio_num, REG_TX_IDLE_VALUE, idle);
 
       // Grab a radio word and check that it equals the IDLE value
-      write_radio_64(radio_num, REG_RX_CMD_NUM_WORDS_LO, 1);
+      write_radio_64(radio_num, REG_RX_CMD_NUM_WORDS_LO, WPP);
       write_radio(radio_num, REG_RX_CMD, RX_CMD_FINITE);
       blk_ctrl.recv(radio_num, data, byte_length);
 
       // Check the length
-      `ASSERT_ERROR(byte_length == RADIO_W/8, "Didn't receive expected length");
+      `ASSERT_ERROR(byte_length == WPP*RADIO_W/8, "Didn't receive expected length");
 
       // Check the payload
       foreach (data[i]) begin
@@ -1265,12 +1491,12 @@ module rfnoc_block_radio_tb #(
     // Set packet length
     write_radio(radio_num, REG_RX_MAX_WORDS_PER_PKT, WPP);
 
-    // Loopback a few packets, back-to-back. This code has a race condition 
-    // since there's a delay between when we start Tx and when Rx starts, due 
-    // to how long it takes to write the Rx registers. Therefore, we transmit a 
-    // lot more packets than we receive to ensure we're still transmitting by 
+    // Loopback a few packets, back-to-back. This code has a race condition
+    // since there's a delay between when we start Tx and when Rx starts, due
+    // to how long it takes to write the Rx registers. Therefore, we transmit a
+    // lot more packets than we receive to ensure we're still transmitting by
     // the time we receive.
-    start_tx(radio_num, WPP*16);
+    start_tx(radio_num, WPP*20);
     start_rx(radio_num, WPP*2);
 
     // Check the results
@@ -1300,11 +1526,12 @@ module rfnoc_block_radio_tb #(
 
     // Generate a string for the name of this instance of the testbench
     tb_name = $sformatf(
-      "rfnoc_block_radio_tb\nCHDR_W = %0D, ITEM_W = %0D, NIPC = %0D, NUM_PORTS = %0D, STALL_PROB = %0D, STB_PROB = %0D, TEST_REGS = %0D",
+      {"rfnoc_block_radio_tb\nCHDR_W = %0D, ITEM_W = %0D, NIPC = %0D, ",
+      "NUM_PORTS = %0D, STALL_PROB = %0D, STB_PROB = %0D, TEST_REGS = %0D"},
       CHDR_W, ITEM_W, NIPC, NUM_PORTS, STALL_PROB, STB_PROB, TEST_REGS
     );
 
-    test.start_tb(tb_name);
+    test.start_tb(tb_name, NUM_TESTS*5ms);
 
     // Don't start the clocks until after start_tb() returns. This ensures that
     // the clocks aren't toggling while other instances of this testbench are
@@ -1330,7 +1557,7 @@ module rfnoc_block_radio_tb #(
     // Test Sequences
     //-------------------------------------------------------------------------
 
-    // Run register tests first, since they check that initial values are 
+    // Run register tests first, since they check that initial values are
     // correct.
 
     test_block_info();
@@ -1345,9 +1572,11 @@ module rfnoc_block_radio_tb #(
         test_rx_registers(radio_num);
         test_tx_registers(radio_num);
       end
-      test_rx(radio_num);
-      test_tx(radio_num);
-      test_loopback_and_idle(radio_num);
+      repeat (NUM_TESTS) begin
+        test_rx(radio_num);
+        test_tx(radio_num);
+        test_loopback_and_idle(radio_num);
+      end
     end
 
 
@@ -1355,7 +1584,7 @@ module rfnoc_block_radio_tb #(
     // Finish
     //-------------------------------------------------------------------------
 
-    // End the TB, but don't $finish, since we don't want to kill other 
+    // End the TB, but don't $finish, since we don't want to kill other
     // instances of this testbench that may be running.
     test.end_tb(0);
 

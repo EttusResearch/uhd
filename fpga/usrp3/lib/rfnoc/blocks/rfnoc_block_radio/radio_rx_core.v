@@ -7,19 +7,19 @@
 //
 // Description:
 //
-// This module contains the core Rx radio acquisition logic. It retrieves 
-// sample data from the radio interface, as indicated by the radio's strobe 
+// This module contains the core Rx radio acquisition logic. It retrieves
+// sample data from the radio interface, as indicated by the radio's strobe
 // signal, and outputs the data via AXI-Stream.
 //
-// The receiver is operated by writing a time (optionally) to the 
-// REG_RX_CMD_TIME_* registers and a number of words (optionally) to 
-// REG_RX_CMD_NUM_WORDS_* registers followed by writing a command word to 
-// REG_RX_CMD. The command word indicates whether it is a finite ("num samps 
-// and done") or continuous acquisition and whether or not the acquisition 
-// should start at the time indicated byREG_RX_CMD_TIME_*. A stop command will 
+// The receiver is operated by writing a time (optionally) to the
+// REG_RX_CMD_TIME_* registers and a number of words (optionally) to
+// REG_RX_CMD_NUM_WORDS_* registers followed by writing a command word to
+// REG_RX_CMD. The command word indicates whether it is a finite ("num samps
+// and done") or continuous acquisition and whether or not the acquisition
+// should start at the time indicated byREG_RX_CMD_TIME_*. A stop command will
 // stop any acquisition that's waiting to start or is in progress.
 //
-// The REG_RX_MAX_WORDS_PER_PKT and REG_RX_ERR_* registers should be 
+// The REG_RX_MAX_WORDS_PER_PKT and REG_RX_ERR_* registers should be
 // initialized prior to the first acquisition.
 //
 // Parameters:
@@ -207,7 +207,7 @@ module radio_rx_core #(
       if (s_ctrlport_req_rd) begin
         case (s_ctrlport_req_addr)
           REG_RX_STATUS: begin
-            s_ctrlport_resp_data[CMD_FIFO_SPACE_POS+:CMD_FIFO_SPACE_LEN] 
+            s_ctrlport_resp_data[CMD_FIFO_SPACE_POS+:CMD_FIFO_SPACE_LEN]
                                 <= cmd_fifo_space[CMD_FIFO_SPACE_LEN-1:0];
             s_ctrlport_resp_ack <= 1;
           end
@@ -285,7 +285,8 @@ module radio_rx_core #(
     .clk      (radio_clk),
     .reset    (radio_rst),
     .clear    (clear_fifo),
-    .i_tdata  ({ reg_cmd_time, reg_cmd_timed, reg_cmd_num_words, (reg_cmd_word == RX_CMD_CONTINUOUS) }),
+    .i_tdata  ({ reg_cmd_time, reg_cmd_timed, reg_cmd_num_words,
+                (reg_cmd_word == RX_CMD_CONTINUOUS) }),
     .i_tvalid (reg_cmd_valid),
     .i_tready (),
     .o_tdata  ({ cmd_time, cmd_timed, cmd_num_words, cmd_continuous }),
@@ -294,6 +295,45 @@ module radio_rx_core #(
     .space    (cmd_fifo_space),
     .occupied ()
   );
+
+
+  //---------------------------------------------------------------------------
+  // Sample Alignment
+  //---------------------------------------------------------------------------
+  //
+  // Shift the incoming radio data to align the requested sample with the start
+  // of the data word. This ensures that the first sample received matches the
+  // timestamp requested.
+  //
+  //---------------------------------------------------------------------------
+
+  localparam SHIFT_W = $clog2(NSPC);
+
+  reg  [SHIFT_W-1:0]     time_shift   = 0;
+  reg                    align_cfg_en = 0;
+  wire [SAMP_W*NSPC-1:0] aligned_data;
+
+  if (NSPC > 1) begin : gen_time_alignment
+    align_samples #(
+      .SAMP_W  (SAMP_W),
+      .SPC     (NSPC  ),
+      .USER_W  (1     ),
+      .PIPE_IN (1     ),
+      .PIPE_OUT(1     )
+    ) shifter_i (
+      .clk     (radio_clk    ),
+      .i_data  (radio_rx_data),
+      .i_push  (radio_rx_stb ),
+      .i_user  (1'b0         ),
+      .i_dir   (1'b0         ),
+      .i_shift (time_shift   ),
+      .i_cfg_en(align_cfg_en ),
+      .o_data  (aligned_data ),
+      .o_user  (             )
+    );
+  end else begin : gen_no_time_alignment
+    assign aligned_data = radio_rx_data;
+  end
 
 
   //---------------------------------------------------------------------------
@@ -325,8 +365,12 @@ module radio_rx_core #(
   reg                    out_fifo_teob;
   reg                    out_fifo_almost_full;
 
-  reg [63:0] radio_time_low_samp, radio_time_hi_samp;
-  reg        time_now, time_past;
+  reg time_now;    // Indicates when we've reached the requested timestamp
+  reg time_now_p1; // Indicates we've reached the requested timestamp plus 1
+  reg time_past;   // Indicates when we've passed the requested timestamp
+
+  reg [SHIFT_W-1:0] radio_offset;
+  reg               align_delay;
 
   // All ctrlport requests have a time
   assign m_ctrlport_req_has_time = 1'b1;
@@ -342,36 +386,80 @@ module radio_rx_core #(
       seq_num           <=  'd0;
       m_ctrlport_req_wr <= 1'b0;
       first_word        <= 1'b1;
+      time_shift        <= 0;
+      align_cfg_en      <= 1'b0;
+
+      // Registers for which we don't care if they have a reset or not because
+      // they're set during state machine execution.
+      radio_offset        <= 'bX;
+      align_delay         <= 'bX;
+      error_code          <= 'bX;
+      error_time          <= 'bX;
+      m_ctrlport_req_addr <= 'bX;
+      m_ctrlport_req_data <= 'bX;
+      m_ctrlport_req_time <= 'bX;
+      time_now            <= 'bX;
+      time_now_p1         <= 'bX;
+      time_past           <= 'bX;
+      words_left          <= 'bX;
+      words_left_pkt      <= 'bX;
     end else begin
       // Default assignments
-      out_fifo_tvalid         <= 1'b0;
-      out_fifo_tlast          <= 1'b0;
-      out_fifo_teob           <= 1'b0;
-      m_ctrlport_req_wr       <= 1'b0;
+      out_fifo_tvalid   <= 1'b0;
+      out_fifo_tlast    <= 1'b0;
+      out_fifo_teob     <= 1'b0;
+      m_ctrlport_req_wr <= 1'b0;
+      align_cfg_en      <= 1'b0;
+
+      if (NSPC > 1) begin
+        if (radio_rx_stb) begin
+          radio_offset <= radio_time[0+:SHIFT_W];
+        end
+      end else begin
+        radio_offset <= 0;
+      end
 
       if (radio_rx_stb) begin
-        // Get the time for the low sample and the high sample of the radio
-        // word (needed when NISPC > 1). Compensate for the delay required to
-        // check the time by adding 3 clock cycles worth of samples.
-        radio_time_low_samp <= (radio_time + 3*NSPC);
-        radio_time_hi_samp  <= (radio_time + 3*NSPC + (NSPC-1));
-
-        // Register the time comparisons so they don't become the critical path
-        time_now  <= (cmd_time >= radio_time_low_samp &&
-                      cmd_time <= radio_time_hi_samp);
-        time_past <= (cmd_time <  radio_time_low_samp);
+        // Register time comparisons so they don't become the critical path.
+        // Add two to compensate for the pipeline delays of this comparison and
+        // its propagation through the state machine. This ensures that the
+        // timestamp in the packet matches the requested timestamp.
+        time_now    <= (radio_time[63:SHIFT_W]+2 == cmd_time[63:SHIFT_W]);
+        time_now_p1 <= time_now;
+        time_past   <= (radio_time[63:SHIFT_W]   >= cmd_time[63:SHIFT_W]);
       end
 
       case (state)
         ST_IDLE : begin
-          // Wait for a new command to arrive and allow a cycle for the time 
-          // comparisons to update.
+          // Wait for a new command to arrive and a radio strobe to update the
+          // time comparisons.
           if (cmd_valid && radio_rx_stb) begin
             state <= ST_TIME_CHECK;
           end else if (cmd_stop) begin
             state <= ST_STOP;
           end
           first_word <= 1'b1;
+
+          // Calculate the time shift, in samples, needed to left-shift the
+          // first sample requested into the least-significant position.
+          // "align_delay" means that the requested sample will arrive one
+          // radio word later than the requested timestamp due to being shifted
+          // into the next word by the alignment.
+          if (NSPC > 1) begin
+            align_cfg_en <= 1'b1;
+            if (cmd_timed) begin
+              if (radio_offset < cmd_time[0+:SHIFT_W]) begin
+                time_shift  <= NSPC - (cmd_time[0+:SHIFT_W] - radio_offset);
+                align_delay <= 1'b1;
+              end else begin
+                time_shift  <= radio_offset - cmd_time[0+:SHIFT_W];
+                align_delay <= 1'b0;
+              end
+            end else begin
+              time_shift  <= 0;
+              align_delay <= 1'b0;
+            end
+          end
         end
 
         ST_TIME_CHECK : begin
@@ -386,22 +474,26 @@ module radio_rx_core #(
             error_code <= ERR_RX_LATE_CMD;
             error_time <= radio_time;
             state      <= ST_REPORT_ERR;
-          end else if (!cmd_timed || (time_now && radio_rx_stb)) begin
+          end else if (!cmd_timed ||
+            (radio_rx_stb && time_now    && (!align_delay || NSPC == 1)) ||
+            (radio_rx_stb && time_now_p1 && ( align_delay && NSPC  > 1))
+          ) begin
             // Either it's time to run this command or it should run
             // immediately.
-            words_left     <= cmd_num_words;
-            words_left_pkt <= reg_max_pkt_len;
-            state          <= ST_RUNNING;
+            state <= ST_RUNNING;
           end
+
+          words_left     <= cmd_num_words;
+          words_left_pkt <= reg_max_pkt_len;
         end
 
         ST_RUNNING : begin
           if (radio_rx_stb) begin
             // Output the next word
-            out_fifo_tvalid    <= 1'b1;
-            out_fifo_tdata     <= radio_rx_data;
+            out_fifo_tvalid <= 1'b1;
+            out_fifo_tdata  <= aligned_data;
             if (first_word) begin
-              out_fifo_timestamp <= radio_time;
+              out_fifo_timestamp <= radio_time - time_shift;
               first_word         <= 1'b0;
             end
 
@@ -437,12 +529,11 @@ module radio_rx_core #(
               error_code     <= ERR_RX_OVERRUN;
               state          <= ST_REPORT_ERR;
             end
-
           end
         end
 
         ST_STOP : begin
-          // This single-cycle state allows time for STOP to be acknowledged 
+          // This single-cycle state allows time for STOP to be acknowledged
           // and for the command FIFO to be popped.
           state <= ST_IDLE;
         end
@@ -472,7 +563,7 @@ module radio_rx_core #(
 
   assign radio_rx_running = (state == ST_RUNNING);  // We're actively acquiring
 
-  // Directly connect the port ID, remote port ID, and remote EPID since they 
+  // Directly connect the port ID, remote port ID, and remote EPID since they
   // are only used for error reporting.
   assign m_ctrlport_req_portid     = reg_error_portid;
   assign m_ctrlport_req_rem_epid   = reg_error_rem_epid;
@@ -513,7 +604,6 @@ module radio_rx_core #(
       out_fifo_almost_full <= (out_fifo_space < 5);
     end
   end
-
 
 endmodule
 
