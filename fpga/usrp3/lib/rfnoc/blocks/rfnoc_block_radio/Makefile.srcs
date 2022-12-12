@@ -17,4 +17,5 @@ rfnoc_block_radio.v \
 rx_frontend_gen3.v \
 tx_frontend_gen3.v \
 quarter_rate_downconverter.v \
+align_samples.sv \
 ))
