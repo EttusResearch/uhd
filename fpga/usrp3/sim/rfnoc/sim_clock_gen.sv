@@ -103,7 +103,7 @@ module sim_clock_gen #(
   endtask
 
   // Wait for num falling edges of the clock
-  task clkd_wait_f(int num = 1);
+  task clk_wait_f(int num = 1);
     repeat(num) @(negedge clk);
   endtask
 
