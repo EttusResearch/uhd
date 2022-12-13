@@ -10,6 +10,7 @@
 #include <uhd/transport/frame_buff.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhdlib/transport/adapter_info.hpp>
+#include <rte_arp.h>
 #include <rte_ethdev.h>
 #include <rte_ether.h>
 #include <rte_flow.h>
