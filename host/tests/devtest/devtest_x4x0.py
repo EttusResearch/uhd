@@ -101,3 +101,5 @@ gpio_atr_readback_test.test_params = [
 
 from list_sensors_test import list_sensors_test
 from python_api_test import uhd_python_api_test
+from rx_multi_spc_timed_commands_test import rx_multi_spc_timed_commands_test
+from tx_multi_spc_timed_commands_test import tx_multi_spc_timed_commands_test

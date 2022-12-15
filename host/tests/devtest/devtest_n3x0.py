@@ -68,4 +68,5 @@ from gpio_test import gpio_test
 from bitbang_test import bitbang_test
 from list_sensors_test import list_sensors_test
 from test_messages_test import test_messages_test
-
+from rx_multi_spc_timed_commands_test import rx_multi_spc_timed_commands_test
+from tx_multi_spc_timed_commands_test import tx_multi_spc_timed_commands_test

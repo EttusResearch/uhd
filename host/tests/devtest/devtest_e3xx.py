@@ -66,3 +66,5 @@ uhd_tx_waveforms_test.tests = {
 
 from tx_bursts_test import uhd_tx_bursts_test
 from test_pps_test import uhd_test_pps_test
+from rx_multi_spc_timed_commands_test import rx_multi_spc_timed_commands_test
+from tx_multi_spc_timed_commands_test import tx_multi_spc_timed_commands_test
