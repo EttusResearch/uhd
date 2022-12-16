@@ -136,6 +136,8 @@ void adc_self_calibration::run(size_t chan)
             "Could not find appropriate gain for performing ADC self cal");
     }
 
+    _rpcc->set_calibration_mode(_db_number, chan, cal_params.calibration_mode);
+
     // (if required) unfreeze calibration
     const std::vector<int> current_frozen_state = _rpcc->get_cal_frozen(_db_number, chan);
     _rpcc->set_cal_frozen(0, _db_number, chan);

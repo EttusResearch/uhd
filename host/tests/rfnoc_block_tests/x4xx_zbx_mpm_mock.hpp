@@ -116,6 +116,11 @@ public:
         return {};
     }
 
+    void set_calibration_mode(size_t, size_t, std::string) override
+    {
+        // nop
+    }
+
     std::map<std::string, std::vector<uint8_t>> get_db_eeprom(const size_t) override
     {
         return {{

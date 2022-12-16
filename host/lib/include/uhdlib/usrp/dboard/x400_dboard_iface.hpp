@@ -20,6 +20,7 @@ struct adc_self_cal_params_t
 {
     double rx_freq;
     double tx_freq;
+    std::string calibration_mode;
 };
 
 /*! Interface for daughterboards which support being plugged into a X400 motherboard.

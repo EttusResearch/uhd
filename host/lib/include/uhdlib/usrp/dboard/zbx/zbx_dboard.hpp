@@ -100,6 +100,7 @@ public:
         return {
             rx_freq, // rx_freq
             tx_freq, // tx_freq
+            "calib_mode2", // calibration_mode
         };
     }
 
