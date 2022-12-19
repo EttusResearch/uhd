@@ -71,9 +71,9 @@ public:
      */
     const std::vector<uint64_t>& get_metadata() const;
 
-    /*! Moves the metadata out of this object and returns it in a new vector
+    /*! Sets the metadata for a CHDR packet and updates the headers
      *
-     * \return A vector containing the moved metadata
+     * \param metadata A vector containing the new metadata
      */
     void set_metadata(std::vector<uint64_t> metadata);
 
