@@ -108,6 +108,8 @@ public:
         boost::optional<ctrl_payload> response;
         std::tie(std::ignore, response) =
             send_request_packet(OP_READ, addr, {uint32_t(0)}, timestamp);
+        UHD_ASSERT_THROW(bool(response));
+        UHD_ASSERT_THROW(!response.get().data_vtr.empty());
         return response.get().data_vtr[0];
     }
 
