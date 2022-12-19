@@ -15,7 +15,6 @@ from collections import namedtuple
 from usrp_mpm import lib # Pulls in everything from C++-land
 from usrp_mpm import tlv_eeprom
 from usrp_mpm.compat_num import CompatNumber
-from usrp_mpm.cores import WhiteRabbitRegsControl
 from usrp_mpm.components import ZynqComponents
 from usrp_mpm.sys_utils import dtoverlay
 from usrp_mpm.sys_utils import ectool
@@ -220,15 +219,10 @@ class x4xx(ZynqComponents, PeriphManagerBase):
     # End of overridables from PeriphManagerBase
     ###########################################################################
 
-
     # X400-specific settings
     # Label for the mboard UIO
     mboard_regs_label = "mboard-regs"
     ctrlport_regs_label = "ctrlport-mboard-regs"
-    # Label for the white rabbit UIO
-    wr_regs_label = "wr-regs"
-    # Override the list of updateable components
-    # X4xx specific discoverable features
 
     @classmethod
     def generate_device_info(cls, eeprom_md, mboard_info, dboard_infos):
