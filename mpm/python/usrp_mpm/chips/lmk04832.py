@@ -57,7 +57,8 @@ class LMK04832:
 
     def verify_chip_id(self):
         """
-        Returns True if the chip ID and product ID matches what we expect, False otherwise.
+        Returns True if the chip ID and product ID matches what we expect,
+        False otherwise.
         """
         chip_id = self.get_chip_id()
         prod_id = self.get_product_id()
@@ -68,6 +69,23 @@ class LMK04832:
             self.log.error("Wrong Product ID 0x{:X}".format(prod_id))
             return False
         return True
+
+
+    def enable_4wire_spi(self):
+        """ Enable 4-wire SPI readback from the CLKin_SEL0 pin """
+        self.poke8(0x148, 0x33)
+        self.enable_3wire_spi = False
+
+
+    def get_status(self):
+        """
+        Returns PLL lock status as a dictionary
+        """
+        pll1_status = self.check_plls_locked(pll='PLL1')
+        pll2_status = self.check_plls_locked(pll='PLL2')
+        return {'PLL1 lock': pll1_status,
+                'PLL2 lock': pll2_status}
+
 
     def check_plls_locked(self, pll='BOTH'):
         """

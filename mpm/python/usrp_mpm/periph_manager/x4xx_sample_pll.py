@@ -65,11 +65,6 @@ class LMK04832X4xx(LMK04832):
             # SPI reads on the x4xx.
             self.enable_4wire_spi()
 
-    def enable_4wire_spi(self):
-        """ Enable 4-wire SPI readback from the CLKin_SEL0 pin """
-        self.poke8(0x148, 0x33)
-        self.enable_3wire_spi = False
-
     def set_vcxo(self, source_freq):
         """
         Selects either the 100e6 MHz or 122.88e6 MHz VCXO for the PLL1 loop of the LMK04832.
@@ -87,15 +82,6 @@ class LMK04832X4xx(LMK04832):
             'Selected VCXO source of {:g}'
             .format(source_freq))
         self._sclk_pll_select.set(source_index)
-
-    def get_status(self):
-        """
-        Returns PLL lock status
-        """
-        pll1_status = self.check_plls_locked(pll='PLL1')
-        pll2_status = self.check_plls_locked(pll='PLL2')
-        return {'PLL1 lock': pll1_status,
-                'PLL2 lock': pll2_status}
 
     def config(self, output_freq, brc_freq, is_legacy_mode=False):
         """
