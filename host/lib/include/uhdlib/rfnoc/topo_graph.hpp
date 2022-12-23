@@ -130,6 +130,8 @@ struct topo_node_t
         return this->unique_id() < rhs.unique_id();
     }
 
+    topo_node_t& operator=(const topo_node_t&) = default;
+
     sep_addr_t get_addr() const
     {
         return {device_id, inst};
@@ -208,6 +210,8 @@ struct topo_edge_t
     {
         return type == edge_type::END_OF_ROUTE ? 0 : weight;
     }
+
+    topo_edge_t& operator=(const topo_edge_t&) = default;
 };
 
 struct route_element_type
