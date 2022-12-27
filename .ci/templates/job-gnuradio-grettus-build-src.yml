@@ -48,7 +48,7 @@ jobs:
   ${{ if ne(parameters.toolset, 'make_homebrew_macos') }}:
     container:
       image: '$(dockerImagePrefix)$(DockerImageName):$(dockerBuildNumber)'
-      endpoint: 'Docker / Artifactory - rnd-builds-local'
+      endpoint: 'niartifacts.jfrog.io'
   steps:
   - checkout: self
     clean: true

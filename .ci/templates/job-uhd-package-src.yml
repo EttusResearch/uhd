@@ -33,7 +33,7 @@ jobs:
     clean: all
   container:
     image: '$(dockerImagePrefix)$(DockerImageName):$(dockerBuildNumber)'
-    endpoint: 'Docker / Artifactory - rnd-builds-local'
+    endpoint: 'niartifacts.jfrog.io'
   steps:
   - checkout: self
     clean: true
