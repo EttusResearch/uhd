@@ -8,6 +8,7 @@
 
 #include <uhd/config.hpp>
 #include <stddef.h>
+#include <cstdint>
 #include <string>
 #include <vector>
 #include <functional>
