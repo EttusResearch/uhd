@@ -7,7 +7,7 @@
 The USRP FPGA build system requires a UNIX-like environment with the following dependencies:
 
 - [Xilinx Vivado ML Enterprise 2021.1](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/2021-1.html) (For 7 Series and SoCs)
-  + [AR76780 Patch for Vivado 2021.1](https://support.xilinx.com/s/article/76780?language=en_US) (For USRP N3x0 and USRP X410)
+  + [AR76780 Patch for Vivado 2021.1](https://support.xilinx.com/s/article/76780?language=en_US)
 - [Xilinx ISE Design Suite 14.7](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/archive-ise.html) (For all other FPGAs)
 - [GNU Make 3.6+](https://www.gnu.org/software/make/)
 - [GNU Bash 4.0+](https://www.gnu.org/software/bash/)
