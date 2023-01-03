@@ -6,6 +6,7 @@
 
 #pragma once
 #include <uhd/config.hpp>
+#include <cstdint>
 #include <cstring>
 #include <string>
 #include <vector>

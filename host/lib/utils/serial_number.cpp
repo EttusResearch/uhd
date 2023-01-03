@@ -5,6 +5,7 @@
 //
 
 #include <uhdlib/utils/serial_number.hpp>
+#include <cstdint>
 #include <stdexcept>
 #include <string>
 
