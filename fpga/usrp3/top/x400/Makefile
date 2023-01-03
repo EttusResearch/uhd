@@ -71,7 +71,6 @@ BUILD_SEED ?= 0
 DEFS += BUILD_SEED=$(BUILD_SEED)
 
 # Defaults specific to the various targets:
-X410_100_DEFAULTS     := DEFAULT_RFNOC_IMAGE_CORE_FILE=x410_100_rfnoc_image_core.v     DEFAULT_EDGE_FILE=$(abspath x410_100_static_router.hex)
 X410_200_DEFAULTS     := DEFAULT_RFNOC_IMAGE_CORE_FILE=x410_200_rfnoc_image_core.v     DEFAULT_EDGE_FILE=$(abspath x410_200_static_router.hex)
 X410_400_DEFAULTS     := DEFAULT_RFNOC_IMAGE_CORE_FILE=x410_400_rfnoc_image_core.v     DEFAULT_EDGE_FILE=$(abspath x410_400_static_router.hex)
 X410_400_128_DEFAULTS := DEFAULT_RFNOC_IMAGE_CORE_FILE=x410_400_128_rfnoc_image_core.v DEFAULT_EDGE_FILE=$(abspath x410_400_128_static_router.hex)
@@ -125,15 +124,15 @@ endif
 ##* Note: Not all targets are shipped with UHD
 
 X410_X1_100: X410_IP build/usrp_x410_fpga_X1_100.dts
-	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_100_DEFAULTS))
+	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_200_DEFAULTS))
 	$(call post_build,X410,X1_100)
 
 X410_XG_100: X410_IP build/usrp_x410_fpga_XG_100.dts
-	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_100_DEFAULTS))
+	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_200_DEFAULTS))
 	$(call post_build,X410,XG_100)
 
 X410_X4_100: X410_IP build/usrp_x410_fpga_X4_100.dts
-	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_100_DEFAULTS))
+	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_200_DEFAULTS))
 	$(call post_build,X410,X4_100)
 
 X410_X1_200: X410_IP build/usrp_x410_fpga_X1_200.dts
