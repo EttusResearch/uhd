@@ -41,7 +41,6 @@ QSFP1_10GBE   = QSFP1_0=$(MGT_10GbE)
 QSFP1_4X10GBE = QSFP1_0=$(MGT_10GbE)  QSFP1_1=$(MGT_10GbE)    QSFP1_2=$(MGT_10GbE)    QSFP1_3=$(MGT_10GbE)
 QSFP1_100GBE  = QSFP1_0=$(MGT_100GbE) QSFP1_1=$(MGT_Disabled) QSFP1_2=$(MGT_Disabled) QSFP1_3=$(MGT_Disabled)
 
-
 # Target specific variables
 X410_IP:      DEFS += $(QSFP0_10GBE)                   RFBW_100M=1
 X410_X1_100:  DEFS += $(QSFP0_10GBE)                   RFBW_100M=1 DRAM_CH=4*$(DRAM) DRAM_W=64
@@ -49,7 +48,10 @@ X410_XG_100:  DEFS += $(QSFP0_10GBE)   $(QSFP1_10GBE)  RFBW_100M=1 DRAM_CH=4*$(D
 X410_X4_100:  DEFS += $(QSFP0_4X10GBE)                 RFBW_100M=1 DRAM_CH=4*$(DRAM) DRAM_W=64
 X410_X4C_100: DEFS += $(QSFP0_4X10GBE) $(QSFP1_100GBE) RFBW_100M=1 DRAM_CH=0
 X410_C1_100:  DEFS += $(QSFP0_100GBE)                  RFBW_100M=1 DRAM_CH=4*$(DRAM) DRAM_W=64
+X410_UC_100:  DEFS +=                  $(QSFP1_100GBE) RFBW_100M=1 DRAM_CH=4*$(DRAM) DRAM_W=64
 X410_C1_200:  DEFS += $(QSFP0_100GBE)                  RFBW_200M=1 DRAM_CH=4*$(DRAM) DRAM_W=64
+X410_UC_200:  DEFS +=                  $(QSFP1_100GBE) RFBW_200M=1 DRAM_CH=4*$(DRAM) DRAM_W=64
+X410_CG_200:  DEFS += $(QSFP0_100GBE)  $(QSFP1_100GBE) RFBW_200M=1 DRAM_CH=4*$(DRAM) DRAM_W=64
 X410_X1_200:  DEFS += $(QSFP0_10GBE)                   RFBW_200M=1 DRAM_CH=4*$(DRAM) DRAM_W=64
 X410_XG_200:  DEFS += $(QSFP0_10GBE)   $(QSFP1_10GBE)  RFBW_200M=1 DRAM_CH=4*$(DRAM) DRAM_W=64
 X410_X4_200:  DEFS += $(QSFP0_4X10GBE)                 RFBW_200M=1 DRAM_CH=4*$(DRAM) DRAM_W=64
@@ -58,6 +60,7 @@ X410_X1_400:  DEFS += $(QSFP0_10GBE)                   RFBW_400M=1 DRAM_CH=4*$(D
 X410_XG_400:  DEFS += $(QSFP0_10GBE)   $(QSFP1_10GBE)  RFBW_400M=1 DRAM_CH=4*$(DRAM) DRAM_W=128
 X410_X4_400:  DEFS += $(QSFP0_4X10GBE)                 RFBW_400M=1 DRAM_CH=4*$(DRAM) DRAM_W=128
 X410_C1_400:  DEFS += $(QSFP0_100GBE)                  RFBW_400M=1 DRAM_CH=0
+X410_UC_400:  DEFS +=                  $(QSFP1_100GBE) RFBW_400M=1 DRAM_CH=0
 X410_CG_400:  DEFS += $(QSFP0_100GBE)  $(QSFP1_100GBE) RFBW_400M=1 DRAM_CH=0
 
 # DRAM IP inclusion. Set to 1 to include DRAM memory controller in design, 0 to
@@ -72,6 +75,8 @@ DEFS += BUILD_SEED=$(BUILD_SEED)
 
 # Defaults specific to the various targets:
 X410_200_DEFAULTS     := DEFAULT_RFNOC_IMAGE_CORE_FILE=x410_200_rfnoc_image_core.v     DEFAULT_EDGE_FILE=$(abspath x410_200_static_router.hex)
+X410_X4C_200_DEFAULTS := DEFAULT_RFNOC_IMAGE_CORE_FILE=x410_x4c_200_rfnoc_image_core.v DEFAULT_EDGE_FILE=$(abspath x410_x4c_200_static_router.hex)
+X410_CG_200_DEFAULTS  := DEFAULT_RFNOC_IMAGE_CORE_FILE=x410_cg_200_rfnoc_image_core.v  DEFAULT_EDGE_FILE=$(abspath x410_cg_200_static_router.hex)
 X410_400_DEFAULTS     := DEFAULT_RFNOC_IMAGE_CORE_FILE=x410_400_rfnoc_image_core.v     DEFAULT_EDGE_FILE=$(abspath x410_400_static_router.hex)
 X410_400_128_DEFAULTS := DEFAULT_RFNOC_IMAGE_CORE_FILE=x410_400_128_rfnoc_image_core.v DEFAULT_EDGE_FILE=$(abspath x410_400_128_static_router.hex)
 
@@ -107,21 +112,29 @@ endif
 
 ##
 ##Available Targets
-##------------|-----------|-----------------|-----------------|------------
-##Target      | Bandwidth | QSFP0           | QSFP1           | DRAM
-##------------|-----------|-----------------|-----------------|------------
-##X410_X1_100 | 100 MHz   | 10 GbE (Lane 0) | None            | 64b x 4 Ch
-##X410_XG_100 | 100 MHz   | 10 GbE (Lane 0) | 10 GbE (Lane 0) | 64b x 4 Ch
-##X410_X4_100 | 100 MHz   | 4 x 10 GbE      | None            | 64b x 4 Ch
-##X410_X1_200 | 200 MHz   | 10 GbE (Lane 0) | None            | 64b x 4 Ch
-##X410_XG_200 | 200 MHz   | 10 GbE (Lane 0) | 10 GbE (Lane 0) | 64b x 4 Ch
-##X410_X4_200 | 200 MHz   | 4 x 10 GbE      | None            | 64b x 4 Ch
-##X410_X1_400 | 400 MHz   | 10 GbE (Lane 0) | None            | 128b x 4 Ch
-##X410_XG_400 | 400 MHz   | 10 GbE (Lane 0) | 10 GbE (Lane 0) | 128b x 4 ch
-##X410_X4_400 | 400 MHz   | 4 x 10 GbE      | None            | 128b x 4 Ch
-##X410_C1_400 | 400 MHz   | 100 GbE         | None            | None
-##X410_CG_400 | 400 MHz   | 100 GbE         | 100 GbE         | None
-##* Note: Not all targets are shipped with UHD
+##-------------|-----------|-----------------|-----------------|------------
+##Target       | Bandwidth | QSFP0           | QSFP1           | DRAM
+##-------------|-----------|-----------------|-----------------|------------
+##X410_X1_100  | 100 MHz   | 10 GbE (Lane 0) | Unused          | 64b x 4 Ch
+##X410_XG_100  | 100 MHz   | 10 GbE (Lane 0) | 10 GbE (Lane 0) | 64b x 4 Ch
+##X410_X4_100  | 100 MHz   | 4 x 10 GbE      | Unused          | 64b x 4 Ch
+##X410_X4C_100 | 100 MHz   | 4 x 10 GbE      | 100 GbE         | Unused
+##X410_C1_100  | 100 MHz   | 100 GbE         | Unused          | 64b x 4 Ch
+##X410_UC_100  | 100 MHz   | Unused          | 100 GbE         | 64b x 4 Ch
+##X410_X1_200  | 200 MHz   | 10 GbE (Lane 0) | Unused          | 64b x 4 Ch
+##X410_XG_200  | 200 MHz   | 10 GbE (Lane 0) | 10 GbE (Lane 0) | 64b x 4 Ch
+##X410_X4_200  | 200 MHz   | 4 x 10 GbE      | Unused          | 64b x 4 Ch
+##X410_X4C_200 | 200 MHz   | 4 x 10 GbE      | 100 GbE         | Unused
+##X410_C1_200  | 200 MHz   | 100 GbE         | Unused          | 64b x 4 Ch
+##X410_UC_200  | 200 MHz   | Unused          | 100 GbE         | 64b x 4 Ch
+##X410_X1_400  | 400 MHz   | 10 GbE (Lane 0) | Unused          | 128b x 4 Ch
+##X410_XG_400  | 400 MHz   | 10 GbE (Lane 0) | 10 GbE (Lane 0) | 128b x 4 ch
+##X410_X4_400  | 400 MHz   | 4 x 10 GbE      | Unused          | 128b x 4 Ch
+##X410_C1_400  | 400 MHz   | 100 GbE         | Unused          | Unused
+##X410_UC_400  | 400 MHz   | Unused          | 100 GbE         | Unused
+##X410_CG_400  | 400 MHz   | 100 GbE         | 100 GbE         | Unused
+##* Note: Not all targets are shipped with UHD.
+##* Note: Some YAML configurations might not use all available DRAM channels.
 
 X410_X1_100: X410_IP build/usrp_x410_fpga_X1_100.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_200_DEFAULTS))
@@ -135,6 +148,18 @@ X410_X4_100: X410_IP build/usrp_x410_fpga_X4_100.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_200_DEFAULTS))
 	$(call post_build,X410,X4_100)
 
+X410_X4C_100: X410_IP build/usrp_x410_fpga_X4C_100.dts
+	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_X4C_200_DEFAULTS))
+	$(call post_build,X410,X4C_100)
+
+X410_C1_100: X410_IP build/usrp_x410_fpga_C1_100.dts
+	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_CG_200_DEFAULTS))
+	$(call post_build,X410,C1_100)
+
+X410_UC_100: X410_IP build/usrp_x410_fpga_UC_100.dts
+	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_CG_200_DEFAULTS))
+	$(call post_build,X410,UC_100)
+
 X410_X1_200: X410_IP build/usrp_x410_fpga_X1_200.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_200_DEFAULTS))
 	$(call post_build,X410,X1_200)
@@ -146,6 +171,18 @@ X410_XG_200: X410_IP build/usrp_x410_fpga_XG_200.dts
 X410_X4_200: X410_IP build/usrp_x410_fpga_X4_200.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_200_DEFAULTS))
 	$(call post_build,X410,X4_200)
+
+X410_X4C_200: X410_IP build/usrp_x410_fpga_X4C_200.dts
+	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_X4C_200_DEFAULTS))
+	$(call post_build,X410,X4C_200)
+
+X410_C1_200: X410_IP build/usrp_x410_fpga_C1_200.dts
+	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_CG_200_DEFAULTS))
+	$(call post_build,X410,C1_200)
+
+X410_UC_200: X410_IP build/usrp_x410_fpga_UC_200.dts
+	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_CG_200_DEFAULTS))
+	$(call post_build,X410,UC_200)
 
 X410_X1_400: X410_IP build/usrp_x410_fpga_X1_400.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_400_128_DEFAULTS))
@@ -163,35 +200,24 @@ X410_C1_400: X410_IP build/usrp_x410_fpga_C1_400.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_400_DEFAULTS))
 	$(call post_build,X410,C1_400)
 
+X410_UC_400: X410_IP build/usrp_x410_fpga_UC_400.dts
+	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_400_DEFAULTS))
+	$(call post_build,X410,UC_400)
+
 X410_CG_400: X410_IP build/usrp_x410_fpga_CG_400.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_400_DEFAULTS))
 	$(call post_build,X410,CG_400)
 
 ##
 ##Experimental Targets
-##-------------|-----------|----------------|----------------|------------
-##Target       | Bandwidth | QSFP0          | QSFP1          | DRAM
-##-------------|-----------|----------------|----------------|------------
-##X410_X4C_100 | 100       | 4 x 10 GbE     | 100GbE         | None
-##X410_C1_100  | 100       | 100 GbE        | None           | 64b x 4 Ch
-##X410_X4C_200 | 200       | 4 x 10 GbE     | 100GbE         | None
-##X410_C1_200  | 200       | 100 GbE        | None           | 64b x 4 Ch
+##-------------|-----------|-----------------|-----------------|------------
+##Target       | Bandwidth | QSFP0           | QSFP1           | DRAM
+##-------------|-----------|-----------------|-----------------|------------
+##X410_CG_200  | 200       | 100 GbE         | 100 GbE         | 64b x 4 Ch
 
-X410_X4C_100: X410_IP build/usrp_x410_fpga_X4C_100.dts
-	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_100_DEFAULTS))
-	$(call post_build,X410,X4C_100)
-
-X410_C1_100: X410_IP build/usrp_x410_fpga_CG_100.dts
-	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_100_DEFAULTS))
-	$(call post_build,X410,CG_100)
-
-X410_C1_200: X410_IP build/usrp_x410_fpga_CG_200.dts
-	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_200_DEFAULTS))
+X410_CG_200: X410_IP build/usrp_x410_fpga_CG_200.dts
+	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_CG_200_DEFAULTS))
 	$(call post_build,X410,CG_200)
-
-X410_X4C_200: X410_IP build/usrp_x410_fpga_X4C_200.dts
-	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_200_DEFAULTS))
-	$(call post_build,X410,X4C_200)
 
 ##
 ##Other Make Targets
@@ -199,7 +225,7 @@ X410_X4C_200: X410_IP build/usrp_x410_fpga_X4C_200.dts
 
 .DEFAULT_GOAL := all
 
-all:          X410_X4_200 X410_CG_400 ##(Default targets)
+all:          X410_X4_200 X410_CG_400 X410_UC_200 ##(Default targets)
 
 X410_IP:      ##Build IP only.
 	+$(call vivado_ip,X410,$(DEFS) X410=1)
