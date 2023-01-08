@@ -65,6 +65,10 @@ DRAM ?= 1
 
 DEFS += $(OPTIONS)
 
+# Initialize a build seed. This can be changed to randomly affect build results.
+BUILD_SEED ?= 0
+DEFS += BUILD_SEED=$(BUILD_SEED)
+
 # Defaults specific to the various targets:
 X410_100_DEFAULTS     := DEFAULT_RFNOC_IMAGE_CORE_FILE=x410_100_rfnoc_image_core.v     DEFAULT_EDGE_FILE=$(abspath x410_100_static_router.hex)
 X410_200_DEFAULTS     := DEFAULT_RFNOC_IMAGE_CORE_FILE=x410_200_rfnoc_image_core.v     DEFAULT_EDGE_FILE=$(abspath x410_200_static_router.hex)
@@ -226,10 +230,11 @@ help:         ##Show this help message.
 ##
 ##Supported Options
 ##-----------------
-##DRAM=0       Exclude DDR4 memory controller IP from the FPGA build.
-##GUI=1        Launch the build in the Vivado GUI.
-##CHECK=1      Launch the syntax checker instead of building a bitfile.
-##SYNTH=1      Launch the build but stop after synthesis.
-##TOP=<module> Specify a top module for syntax checking. (Optional. Default is the bitfile top)
+##DRAM=0         Exclude DDR4 memory controller IP from the FPGA build.
+##GUI=1          Launch the build in the Vivado GUI.
+##CHECK=1        Launch the syntax checker instead of building a bitfile.
+##SYNTH=1        Launch the build but stop after synthesis.
+##BUILD_SEED=<N> Build seed to used to affect build results. (Default is 0)
+##TOP=<module>   Specify a top module for syntax checking. (Default is the bitfile top)
 
 .PHONY: all clean cleanall help

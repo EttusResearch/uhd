@@ -14,6 +14,10 @@
 ## build/usrp_<product>_fpga_<image_type>.dts:    Device tree source file
 ## build/usrp_<product>_fpga_<image_type>.rpt:    Build report (includes utilization and timing summary)
 
+# Initialize a build seed. This can be changed to randomly affect build results.
+BUILD_SEED ?= 0
+DEFS += BUILD_SEED=$(BUILD_SEED)
+
 # Set build option (check RTL, run synthesis, or do a full build)
 ifndef TARGET
 	ifdef CHECK
@@ -62,22 +66,22 @@ E310_SG3_IP:
 
 ##E310_SG1_IDLE:  Build USRP E3XX idle design (Speed Grade 1).
 E310_SG1_IDLE E3XX_idle: E310_SG1_IP build/usrp_e310_sg1_idle_fpga.dts
-	$(call vivado_build,E310_SG1, E310_IDLE_IMAGE=1 E310_SG1=1)
+	$(call vivado_build,E310_SG1,$(DEFS) E310_IDLE_IMAGE=1 E310_SG1=1)
 	$(call post_build,$@,E310_SG1_IDLE)
 
 ##E310_SG3_IDLE:  Build USRP E3XX idle design (Speed Grade 3).
 E310_SG3_IDLE E3XX_idle_sg3: E310_SG3_IP build/usrp_e310_sg3_idle_fpga.dts
-	$(call vivado_build,E310_SG3, E310_IDLE_IMAGE=1 E310_SG3=1)
+	$(call vivado_build,E310_SG3,$(DEFS) E310_IDLE_IMAGE=1 E310_SG3=1)
 	$(call post_build,$@,E310_SG3_IDLE)
 
 ##E310_SG1:       Build USRP E3XX (Speed Grade 1).
 E310_SG1 E310: E310_SG1_IP build/usrp_e310_sg1_fpga.dts
-	$(call vivado_build,E310_SG1, E310_SG1=1 $(if $(DRAM),ENABLE_DRAM=1,))
+	$(call vivado_build,E310_SG1,$(DEFS) E310_SG1=1 $(if $(DRAM),ENABLE_DRAM=1,))
 	$(call post_build,$@,E310_SG1)
 
 ##E310_SG3:       Build USRP E3XX (Speed Grade 3).
 E310_SG3 E310_sg3: E310_SG3_IP build/usrp_e310_sg3_fpga.dts
-	$(call vivado_build,E310_SG3, E310_SG3=1 $(if $(DRAM),ENABLE_DRAM=1,))
+	$(call vivado_build,E310_SG3,$(DEFS) E310_SG3=1 $(if $(DRAM),ENABLE_DRAM=1,))
 	$(call post_build,$@,E310_SG3)
 
 
@@ -102,11 +106,12 @@ help:           ##Show this help message.
 ##
 ##Supported Options
 ##-----------------
-##DRAM=1       Include DDR3 SDRAM memory controller IP in the FPGA build.
-##             Note: The RFNoC image core must also be configured to use DRAM.
-##GUI=1        Launch the build in the Vivado GUI.
-##CHECK=1      Launch the syntax checker instead of building a bitfile.
-##SYNTH=1      Launch the build but stop after synthesis.
-##TOP=<module> Specify a top module for syntax checking. (Optional. Default is the bitfile top)
+##DRAM=1         Include DDR3 SDRAM memory controller IP in the FPGA build.
+##               Note: The RFNoC image core must also be configured to use DRAM.
+##GUI=1          Launch the build in the Vivado GUI.
+##CHECK=1        Launch the syntax checker instead of building a bitfile.
+##SYNTH=1        Launch the build but stop after synthesis.
+##BUILD_SEED=<N> Build seed to used to affect build results. (Default is 0)
+##TOP=<module>   Specify a top module for syntax checking. (Default is the bitfile top)
 
 .PHONY: all clean cleanall help

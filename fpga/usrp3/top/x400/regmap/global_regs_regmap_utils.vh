@@ -1,5 +1,5 @@
 //
-// Copyright 2022 Ettus Research, A National Instruments Company
+// Copyright 2023 Ettus Research, A National Instruments Company
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -21,6 +21,7 @@
   // PPS_CTRL_REG           : 0x1C (x4xx_global_regs.v)
   // CHDR_CLK_RATE_REG      : 0x20 (x4xx_global_regs.v)
   // CHDR_CLK_COUNT_REG     : 0x24 (x4xx_global_regs.v)
+  // BUILD_SEED_REG         : 0x28 (x4xx_global_regs.v)
   // GPS_CTRL_REG           : 0x38 (x4xx_global_regs.v)
   // GPS_STATUS_REG         : 0x3C (x4xx_global_regs.v)
   // DBOARD_CTRL_REG        : 0x40 (x4xx_global_regs.v)
@@ -180,6 +181,11 @@
   localparam CHDR_CLK_COUNT_REG = 'h24; // Register Offset
   localparam CHDR_CLK_COUNT_REG_SIZE = 32;  // register width in bits
   localparam CHDR_CLK_COUNT_REG_MASK = 32'h0;
+
+  // BUILD_SEED_REG Register (from x4xx_global_regs.v)
+  localparam BUILD_SEED_REG = 'h28; // Register Offset
+  localparam BUILD_SEED_REG_SIZE = 32;  // register width in bits
+  localparam BUILD_SEED_REG_MASK = 32'h0;
 
   // GPS_CTRL_REG Register (from x4xx_global_regs.v)
   localparam GPS_CTRL_REG = 'h38; // Register Offset

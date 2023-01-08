@@ -716,7 +716,7 @@ Prism.languages.vhdl={comment:/--.+/,"vhdl-vectors":{pattern:/\b[oxb]"[\da-f_]+"
             <p>The top is defined in HDL source file common_regs.v, x4xx.v.</p>
             <div class="group"><a name="P5 Content"></a><h2 class="group">P5 Content</h2>
             <div class="register"><h3 class="register">Register map supplied for open-source projects</h3>
-            <i><BR/><BR/>"All content provided is Copyright 2022 National Instruments Corporation.
+            <i><BR/><BR/>"All content provided is Copyright 2023 National Instruments Corporation.
 For information on NI trademark guidelines, please see <a href="http://www.ni.com/legal/trademarks/">http://www.ni.com/legal/trademarks/</a>. For the NI Patent Notice, please see <a href="http://www.ni.com/legal/patents/">http://www.ni.com/legal/patents/</a>."
             </i></div><BR/>
 </div>
@@ -6827,6 +6827,89 @@ Total Offset =</td></tr>
 
 Returns the count value of a free-running counter driven by the RFNoC
         CHDR bus clock.
+
+</div>
+
+</div>
+
+            <div class="register">
+              <a name="GLOBAL_REGS_REGMAP|BUILD_SEED_REG"></a>
+            
+<h3 class="register">Offset 0x0028: BUILD_SEED_REG Register (R)</h3>
+
+                 <a class="sh_addrs" href="javascript:sa('GLOBAL_REGS_REGMAP|BUILD_SEED_REG_in')">(<span id="show_GLOBAL_REGS_REGMAP|BUILD_SEED_REG_in">show</span> extended info)</a>
+                 <div class="sh_addrs" id="div_GLOBAL_REGS_REGMAP|BUILD_SEED_REG_in">
+                 
+                <table class="extended_info">
+                
+<tr>
+
+<td class="outercell" rowspan="1">
+
+                  <table border="0" cellspacing="0" cellpadding="0">
+                    <tr><td class="offset_info" align="right">Port <a href="#X4XX_FPGA|ARM_M_AXI_HPM0">ARM_M_AXI_HPM0</a></td></tr>
+                  </table>
+               
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#AXI_HPM0_REGMAP|CORE_REGS">AXI_HPM0_REGMAP|CORE_REGS</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x10000A0000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#CORE_REGS_REGMAP|GLOBAL_REGS">CORE_REGS_REGMAP|GLOBAL_REGS</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x000000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right">BUILD_SEED_REG</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x0028</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x10000A0028
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+</table><p/>
+
+<p class="reg_info">Initial Value not specified
+</p>
+
+<p class="reg_info">This register is defined in HDL source file x4xx_global_regs.v.</p>
+
+</div>
+
+<div class="info">
+
+Build seed used for this compilation. Making this value readable
+        ensures that compilation results are affected by the value in this
+        register.
 
 </div>
 
@@ -24241,9 +24324,9 @@ FPGA version.<BR/>
 
 <tr valign="top">
 
-                        <td class='value'>9</td>
+                        <td class='value'>10</td>
                         
-                            <td class='l'>0x00000009</td>
+                            <td class='l'>0x0000000A</td>
                             
                             <td class="l" style="text-align: left;">
                               <p class="name"><a name='VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_CURRENT_VERSION_MINOR'></a>FPGA_CURRENT_VERSION_MINOR</p>
@@ -24254,9 +24337,9 @@ FPGA version.<BR/>
 
 <tr valign="top">
 
-                        <td class='value'>570827282</td>
+                        <td class='value'>571610633</td>
                         
-                            <td class='l'>0x22062212</td>
+                            <td class='l'>0x22121609</td>
                             
                             <td class="l" style="text-align: left;">
                               <p class="name"><a name='VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_VERSION_LAST_MODIFIED_TIME'></a>FPGA_VERSION_LAST_MODIFIED_TIME</p>
