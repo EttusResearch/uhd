@@ -14,9 +14,12 @@
 ## build/usrp_<product>_fpga_<image_type>.dts:    Device tree source file
 ## build/usrp_<product>_fpga_<image_type>.rpt:    Build report (includes utilization and timing summary)
 
-1G_DEFS=SFP_1GBE=1   BUILD_1G=1     $(OPTIONS)
-XG_DEFS=SFP_10GBE=1  BUILD_10G=1    $(OPTIONS)
-AA_DEFS=SFP_AURORA=1 BUILD_AURORA=1 $(OPTIONS)
+# Initialize a build seed. This can be changed to randomly affect build results.
+BUILD_SEED ?= 0
+
+1G_DEFS=SFP_1GBE=1   BUILD_1G=1     $(OPTIONS) BUILD_SEED=$(BUILD_SEED)
+XG_DEFS=SFP_10GBE=1  BUILD_10G=1    $(OPTIONS) BUILD_SEED=$(BUILD_SEED)
+AA_DEFS=SFP_AURORA=1 BUILD_AURORA=1 $(OPTIONS) BUILD_SEED=$(BUILD_SEED)
 
 # Set build option (check RTL, run synthesis, or do a full build)
 ifndef TARGET
@@ -97,9 +100,10 @@ help:     ##Show this help message.
 ##
 ##Supported Options
 ##-----------------
-##GUI=1        Launch the build in the Vivado GUI.
-##CHECK=1      Launch the syntax checker instead of building a bitfile.
-##SYNTH=1      Launch the build but stop after synthesis.
-##TOP=<module> Specify a top module for syntax checking. (Optional. Default is the bitfile top)
+##GUI=1          Launch the build in the Vivado GUI.
+##CHECK=1        Launch the syntax checker instead of building a bitfile.
+##SYNTH=1        Launch the build but stop after synthesis.
+##BUILD_SEED=<N> Build seed to used to affect build results. (Default is 0)
+##TOP=<module>   Specify a top module for syntax checking. (Default is the bitfile top)
 
 .PHONY: all clean cleanall help

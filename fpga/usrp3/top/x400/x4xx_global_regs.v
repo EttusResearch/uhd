@@ -280,6 +280,13 @@ module x4xx_global_regs #(
             s_ctrlport_resp_data <= CHDR_CLK_RATE[CHDR_CLK_RATE_REG_SIZE-1:0];
           end
 
+          REG_BASE + BUILD_SEED_REG: begin
+            `ifndef BUILD_SEED
+              `define BUILD_SEED 32'b0
+            `endif
+            s_ctrlport_resp_data <= `BUILD_SEED;
+          end
+
           REG_BASE + CHDR_CLK_COUNT_REG: begin
             s_ctrlport_resp_data <= chdr_counter_reg;
           end
@@ -599,6 +606,13 @@ endmodule
 //      <info>
 //        Returns the count value of a free-running counter driven by the RFNoC
 //        CHDR bus clock.
+//      </info>
+//    </register>
+//    <register name="BUILD_SEED_REG" offset="0x28" size="32" writable="false">
+//      <info>
+//        Build seed used for this compilation. Making this value readable
+//        ensures that compilation results are affected by the value in this
+//        register.
 //      </info>
 //    </register>
 //    <register name="QSFP_PORT_0_0_INFO_REG"   offset="0x60" size="32" writable="false">

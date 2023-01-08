@@ -150,7 +150,7 @@ module e31x_core #(
   /////////////////////////////////////////////////////////////////////////////////
 
   localparam [15:0] COMPAT_MAJOR = 16'd6;
-  localparam [15:0] COMPAT_MINOR = 16'd0;
+  localparam [15:0] COMPAT_MINOR = 16'd1;
 
   /////////////////////////////////////////////////////////////////////////////////
 
@@ -186,6 +186,7 @@ module e31x_core #(
   localparam REG_DBOARD_CTRL       = REG_BASE_MISC + 14'h40;
   localparam REG_DBOARD_STATUS     = REG_BASE_MISC + 14'h44;
   localparam REG_NUM_TIMEKEEPERS   = REG_BASE_MISC + 14'h48;
+  localparam REG_BUILD_SEED        = REG_BASE_MISC + 14'h4C;
 
   localparam NUM_TIMEKEEPERS = 1;
 
@@ -468,6 +469,13 @@ module e31x_core #(
 
           REG_NUM_TIMEKEEPERS:
             cp_glob_resp_data <= NUM_TIMEKEEPERS;
+
+          REG_BUILD_SEED: begin
+            `ifndef BUILD_SEED
+              `define BUILD_SEED 32'b0
+            `endif
+            cp_glob_resp_data <= `BUILD_SEED;
+          end
 
           default: begin
             // Don't acknowledge if the address doesn't match
