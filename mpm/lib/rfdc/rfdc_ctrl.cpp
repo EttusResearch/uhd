@@ -486,6 +486,32 @@ double rfdc_ctrl::get_sample_rate(uint32_t tile_id, uint32_t block_id, bool is_d
     return block_status.SamplingFreq * 1e9;
 }
 
+bool rfdc_ctrl::configure_pll(
+    uint32_t tile_id, bool is_dac, uint8_t source, double ref_freq, double sample_rate)
+{
+    // The XRFdc API expects the sample rate / reference freq in MHz
+    return XRFdc_DynamicPLLConfig(
+               rfdc_inst_ptr, is_dac, tile_id, source, ref_freq / 1e6, sample_rate / 1e6)
+           == XRFDC_SUCCESS;
+}
+
+rfdc_pll_config rfdc_ctrl::get_pll_config(uint32_t tile_id, bool is_dac)
+{
+    XRFdc_PLL_Settings settings;
+    rfdc_pll_config result;
+    if (XRFdc_GetPLLConfig(rfdc_inst_ptr, is_dac, tile_id, &settings) != XRFDC_SUCCESS) {
+        throw mpm::runtime_error("Error in RFDC code: Failed to get PLL status");
+    }
+    result.status           = settings.Enabled == 0 ? rfdc_pll_config::PLL_bypassed
+                                                    : rfdc_pll_config::PLL_enabled;
+    result.ref_clk_freq     = settings.RefClkFreq * 1e6;
+    result.sample_rate      = settings.SampleRate * 1e9;
+    result.ref_clk_divider  = settings.RefClkDivider;
+    result.feedback_divider = settings.FeedbackDivider;
+    result.output_divider   = settings.OutputDivider;
+    return result;
+}
+
 bool rfdc_ctrl::set_if(uint32_t tile_id, uint32_t block_id, bool is_dac, double if_freq)
 {
     nyquist_zone_options nyquist_zone;
