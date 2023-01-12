@@ -211,7 +211,7 @@ jobs:
       UHD_IMAGES_DIR: $(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images
     continueOnError: true
     displayName: Run raw udp streaming tests on $(dutName)
-    condition: and(succeeded(), eq(variables.dutType, 'x4xx'))
+    condition: and(succeeded(), or(eq(variables.dutType, 'x4xx'), eq(variables.dutType, 'X310')))
   - script: |
       cd ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
       sudo ./setup.sh --auto --dpdk

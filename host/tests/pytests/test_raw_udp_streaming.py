@@ -69,6 +69,23 @@ def generate_x4xx_100GbE_test_cases(metafunc, test_length):
     stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
     parametrize_test_length(metafunc, test_length, fast_params, stress_params)
 
+def generate_X310_10GbE_test_cases(metafunc, test_length):
+    test_cases = [
+        # Test Lengths                                        dual_SFP  rate  rx_rate  rx_channels dest_addr        dest_port   adapter  host_interface   keep_hdr test case ID
+        # --------------------------------------------------------------------------------------------------------------------------------------------------------
+        [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,   200e6, 200e6, "0",      "192.168.10.1",     1234,      "sfp0",     "ens4f0",        True,    id="SFP0_FULL_PACKET_1x10GbE-1xRX@200e6")],
+        [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,   200e6, 200e6, "1",      "192.168.10.1",     1234,      "sfp0",     "ens4f0",        False,   id="SFP0_RAW_PAYLOAD_1x10GbE-1xRX@200e6")],
+        [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,   200e6, 200e6, "0",      "192.168.20.1",     1234,      "sfp1",     "ens4f1",        True,    id="SFP1_FULL_PACKET_1x10GbE-1xRX@200e6")],
+        [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,   200e6, 200e6, "1",      "192.168.20.1",     1234,      "sfp1",     "ens4f1",        False,   id="SFP1_RAW_PAYLOAD_1x10GbE-1xRX@200e6")],
+    ]
+
+    argvalues = test_length_utils.select_test_cases_by_length(test_length, test_cases)
+    metafunc.parametrize(ARGNAMES_DUAL_SFP, argvalues)
+
+    fast_params = test_length_utils.test_length_params(iterations=5, duration=30)
+    stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
+    parametrize_test_length(metafunc, test_length, fast_params, stress_params)
+
 def pytest_generate_tests(metafunc):
     dut_type = metafunc.config.getoption("dut_type")
     dut_fpga = metafunc.config.getoption("dut_fpga")
@@ -80,6 +97,8 @@ def pytest_generate_tests(metafunc):
         generate_x4xx_10GbE_test_cases(metafunc, test_length)
     if dut_type.lower() == 'x4xx' and dut_fpga.upper() == 'CG_400':
         generate_x4xx_100GbE_test_cases(metafunc, test_length)
+    if dut_type.lower() == 'x310' and dut_fpga.upper() == 'XG':
+        generate_X310_10GbE_test_cases(metafunc, test_length)
 
 
 def test_raw_udp_streaming(pytestconfig, dut_type, dual_SFP, rate, rx_rate, rx_channels,
@@ -90,7 +109,7 @@ def test_raw_udp_streaming(pytestconfig, dut_type, dual_SFP, rate, rx_rate, rx_c
     device_args = ""
 
     # construct device args string
-    if dut_type.lower() in ['n310', 'n320', 'e320', 'x4xx']:
+    if dut_type.lower() in ['n310', 'n320', 'e320', 'x4xx', 'x310']:
         device_args += f"master_clock_rate={rate},"
 
     addr = pytestconfig.getoption('addr')
@@ -130,7 +149,7 @@ def test_raw_udp_streaming(pytestconfig, dut_type, dual_SFP, rate, rx_rate, rx_c
     if dut_fpga:
         if dut_fpga.upper() == "CG_400":
             chdr_hdr_size = 64
-        if dut_fpga.upper() == "X4_200":
+        if dut_fpga.upper() in {"X4_200", "XG"}:
             chdr_hdr_size = 16
     analyze_stats(stats, remote_rx_params, chdr_hdr_size)
 
