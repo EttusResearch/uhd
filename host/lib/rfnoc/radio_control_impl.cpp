@@ -97,8 +97,7 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
                 uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
             stream_cmd_action->stream_cmd.stream_now = false;
             stream_cmd_action->stream_cmd.time_spec =
-                get_mb_controller()->get_timekeeper(0)->get_time_now()
-                + uhd::time_spec_t(OVERRUN_RESTART_DELAY);
+                this->get_time_now() + uhd::time_spec_t(OVERRUN_RESTART_DELAY);
             const size_t port = src.instance;
             if (port >= get_num_output_ports()) {
                 RFNOC_LOG_WARNING("Received stream command to invalid output port!");
@@ -332,6 +331,9 @@ uint64_t radio_control_impl::get_ticks_now()
 {
     // Time registers added in 0.1
     if (_fpga_compat < 1) {
+        // Note that it's not guaranteed that timekeeper 0 is the one assigned
+        // to this radio, but this if-clause is just for handling older FPGA
+        // images, where we have always connected TK 0 to the radios.
         return get_mb_controller()->get_timekeeper(0)->get_ticks_now();
     }
     // Applying the command time here allows for testing of timed commands,
