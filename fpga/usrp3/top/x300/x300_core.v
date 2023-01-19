@@ -2,6 +2,7 @@
 // Copyright 2014 Ettus Research LLC
 // Copyright 2017 Ettus Research, a National Instruments Company
 // Copyright 2020 Ettus Research, a National Instruments Brand
+// Copyright 2023 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
