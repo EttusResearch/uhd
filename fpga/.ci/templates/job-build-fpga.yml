@@ -71,7 +71,7 @@ jobs:
 
     - bash: |
         source $(Build.SourcesDirectory)/uhddev/fpga/.ci/scripts/run_setup.sh ./
-        make $(target_name)
+        python3 ../../tools/utils/repeat_fpga_build.py --target $(target_name) --num $(max_attempts)
       workingDirectory: ${{ parameters.top_dir }}
       env:
         PATCHES_PATH: $(sdr-vivado-patches)
