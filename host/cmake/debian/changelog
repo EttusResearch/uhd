@@ -1,3 +1,102 @@
+uhd (4.4.0.0-0ubuntu1) ubuntu_release; urgency=low
+
+  C API: Fix double-free issue with sensor values
+  * ci
+    - Add clang-format 14.0 to the Ubuntu 22.04 container
+    - devtest: Test E320 1G FPGA Image
+    - Filter uhd_find_devices checks by device type
+    - increase timeout for x4xx hardware test job
+    - Pull UHD version from UHDConfigVersion.cmake
+    - Replace Rhombus E320
+    - Update docker repo location
+  * cmake
+    - fix UHDAtomics.cmake to read custom Boost install prefix
+    - Fix build with GCC 13 (add missing <cstdint> include)
+  * devtest
+    - Add multi-spc timed command tests
+  * docs
+    - Fix typo in Python API dox file
+    - Phase noise consideration when using external clock with E320
+    - rfnoc: Fix Doxygen warnings on chdr_packet::set_metadata()
+    - Update manual for X3x0 raw UDP streaming
+  * e320
+    - Allow internal GPSDO to be powered-down via UHD session args
+  * e3xx
+    - add support for power calibration api
+  * examples
+    - remote_rx: Add --mac-address argument
+    - rx_samples_to_file: Add disk write speed check
+    - rx_samples_to_file: Add multichannel option
+    - Upgrade RFNoC example to Vivado 2021.1
+  * fpga
+    - ci: Create local copy of patches to use
+    - Cosmetic changes to rx_frontend_gen3_tb
+    - docs: Fix AR76780 dependency
+    - e320 Change MIG arbitration to RD_PRI_REG
+    - Fix overflows in DDC
+    - Fix overflows in quarterrate downconverter
+    - Fix warnings in dds_freq_tune module
+    - lib: Add align_samples module
+    - lib: Add verilog-compatible wrapper for eth_ipv4_chdr_adapter
+    - lib: Add ZPU support to SV transport adapter
+    - lib: Fix indentation in setting_reg.v
+    - lib: Fix inferred latch in ep_autonegotiation
+    - lib: Support time and data updates in sim_radio_gen
+    - lib: Update header for AXI4S add/remove bytes
+    - Require AR76780 for X3xx and E3xx
+    - Restore FIR filter in rx_frontend_gen3
+    - rfnoc: Add align_samples testbench
+    - rfnoc: Add timed sample alignment to radio
+    - rfnoc: Fix inferred latch in chdr_strip_header
+    - sim: Fix typo in clk_wait_f
+    - tools: Detect check_timing issues during build
+    - tools: Fix error detection in run_testbenches.py
+    - x300: Bump FPGA compat to 39.1
+    - x300: Change MIG arbitration to RD_PRI_REG
+    - x300: Support advanced transport adapter
+  * host
+    - ADC cal: Add ability to set calibration mode explicitly
+    - cal: Rearrange ADC self calibration routine
+  * images
+    - Update manifest - timed sample alignment in RFNoC
+  * lib
+    - Fix warning in ctrlport_endpoint.cpp
+    - topo graph: Fix rule-of-3 related compiler warnings
+  * mpm
+    - Add a lock to the rpc server timer
+    - Better error message for multiple assigned MACs
+    - Fix rpc process shared state and port argument positions
+    - Move parse_encoded_git_hash() to mpmutils
+    - rfdc: Add X4xx 125e6 master clock rate
+    - rpc server: Capture claim token value before releasing state lock
+    - x4xx: Remove references to white rabbit
+  * n3xx
+    - Increase tune timeout
+  * octoclock
+    - Fix type of eeprom object in property_tree
+  * rfnoc
+    - Add logging to some throw statements
+    - lsm: Improve logging/error messages
+    - Move detection of TAs post-LSM-init
+    - streamers: Fix scaling factor
+  * tests
+    - add ramdisk cfg option to streaming setup
+    - add support for 10-100GB x410 raw udp
+    - add x310 raw udp tests
+  * uhd
+    - Fix RfnocGraph pybind binding for get_tree
+    - python: Bind {separate,combine}_device_addr{s}
+    - python: Make DeviceAddr behave like dict
+    - When separating device_addr_t, keep indexed values
+    - Add xport_adapter_ctrl core
+  * x300
+    - Enable use of advanced transport adapters
+    - Respect X300_FW_COMMS_FLAGS_ARP_FAIL flag
+    - Update firmware for TA control
+
+ -- Ettus Research <packages@ettus.com>  Mon, 23 Jan 2023 10:07:25 -0800
+
+
 uhd (4.3.0.0-0ubuntu1) ubuntu_release; urgency=low
 
   * ci
