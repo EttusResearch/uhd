@@ -22,6 +22,7 @@ jobs:
 - job: build_uhd_installer_${{ parameters.toolset }}
   displayName: ${{ parameters.toolset }} UHD installer
   dependsOn: get_latest_uhd_docker
+  timeoutInMinutes: 90
   variables:
     # Docker vars from job-get-latest-uhd-docker.yml
     dockerBuildNumber: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerBuildNumber'] ]
