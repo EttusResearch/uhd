@@ -298,6 +298,10 @@ module rfnoc_image_core #(
   args="connections=io_con, config=config"
 />\
 
+  //---------------------------------------------------------------------------
+  // User Clocks
+  //---------------------------------------------------------------------------
+<%include file="/modules/user_clocks.v.mako" args="user_clocks=config.user_clocks"/>\
 
   //---------------------------------------------------------------------------
   // Clock Domains and Resets

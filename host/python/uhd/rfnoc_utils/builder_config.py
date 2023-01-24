@@ -49,6 +49,7 @@ class ImageBuilderConfig:
         self.clk_domains = []
         self.resets = []
         self.block_ports = {}
+        self.user_clocks = {}
         self.clocks = {}
         self.log = logging.getLogger(__name__)
         self.warnings = []
@@ -825,6 +826,11 @@ class ImageBuilderConfig:
                     clock["direction"] = "in"
                 if clock["direction"] == "out":
                     clock["index"] = register_clk_index(name + "." + clock["name"], clock)
+        # Add user clocks
+        for name, clock in self.user_clocks.items():
+            self.clocks[name + '.' + clock['port_in']] = {"freq": '[]', "name": clock['port_in'], "direction":'in'} # Only port for inputs since the wire blkname_clockname
+            self.clocks[name + '.' + clock['port_out']] = {"freq": '[]', "name": name+'_'+clock['port_out'], "direction":'out'}
+
 
     def _check_clk_domains(self):
         """Check/sanitize clock domain connections.
