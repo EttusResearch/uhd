@@ -212,3 +212,15 @@ def check_fpga_state(which=0, logger=None):
         if logger is not None:
             logger.error("Error while checking FPGA status: {}".format(ex))
         return False
+
+def parse_encoded_git_hash(encoded):
+    """
+    Turn a register-encoded git hash into a readable git hash.
+
+    32-bit registers are used to store 7 characters of the hex git hash.
+    The top nibble is used to store the dirtiness flag.
+    """
+    git_hash = encoded & 0x0FFFFFFF
+    tree_dirty = ((encoded & 0xF0000000) > 0)
+    dirtiness_qualifier = 'dirty' if tree_dirty else 'clean'
+    return (git_hash, dirtiness_qualifier)

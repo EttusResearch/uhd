@@ -12,6 +12,7 @@
 #include <uhdlib/rfnoc/ctrlport_endpoint.hpp>
 #include <uhdlib/rfnoc/epid_allocator.hpp>
 #include <uhdlib/rfnoc/mb_iface.hpp>
+#include <uhdlib/rfnoc/topo_graph.hpp>
 #include <functional>
 #include <memory>
 #include <set>
@@ -29,7 +30,10 @@ namespace uhd { namespace rfnoc {
  * For convenience, the link_stream_manager also provides a method to get the
  * host's transport adapter ID directly.
  *
- * There must be one instance of this class per logical link.
+ * There must be one instance of this class per logical link. This means there
+ * is at least one link_stream_manager per USRP attached to an rfnoc_graph, and
+ * if the user requested multiple links (e.g., using `addr=...,second_addr=')
+ * then there are multiple link_stream_managers.
  */
 class link_stream_manager
 {
@@ -37,6 +41,17 @@ public:
     using uptr = std::unique_ptr<link_stream_manager>;
 
     virtual ~link_stream_manager() = 0;
+
+    /*! Find transport adapters unreachable by discovery and add them to graph
+     *
+     * Call this after all link stream managers are initialized. It will query
+     * the device for a list of all transport adapters, and add those to the
+     * graph which were not previously found by the topology discovery. This
+     * implies that transport adapters found with this method are never
+     * available for communication with UHD directly, and can only be used to
+     * stream elsewhere (e.g., using the raw UDP streaming API).
+     */
+    virtual void add_unreachable_transport_adapters() = 0;
 
     /*! \brief Get the software device ID associated with this instance
      *
@@ -67,7 +82,7 @@ public:
      *
      * \return A vector of addresses for all reachable endpoints
      */
-    virtual const std::set<sep_addr_t>& get_reachable_endpoints() const = 0;
+    virtual std::set<sep_addr_t> get_reachable_endpoints() const = 0;
 
     /*! \brief Connect the host to the specified destination and init a control endpoint
      *
@@ -167,7 +182,8 @@ public:
     static uptr make(const chdr::chdr_packet_factory& pkt_factory,
         mb_iface& mb_if,
         const epid_allocator::sptr& epid_alloc,
-        device_id_t device_id);
+        device_id_t device_id,
+        detail::topo_graph_t::sptr topo_graph);
 
 }; // class link_stream_manager
 

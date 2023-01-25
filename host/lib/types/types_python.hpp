@@ -9,6 +9,7 @@
 #define INCLUDED_UHD_TYPES_PYTHON_HPP
 
 #include <uhd/types/device_addr.hpp>
+#include <uhd/types/dict.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <pybind11/stl.h>
 #include <map>
@@ -44,12 +45,88 @@ void export_types(py::module& m)
         .def("__str__", &uhd::device_addr_t::to_pp_string)
         .def("to_string", &uhd::device_addr_t::to_string)
         .def("to_pp_string", &uhd::device_addr_t::to_pp_string)
-        .def("to_dict", [](uhd::device_addr_t& self) {
-            return static_cast<std::map<std::string, std::string>>(self);
-        });
+        .def("to_dict",
+            [](uhd::device_addr_t& self) {
+                return static_cast<std::map<std::string, std::string>>(self);
+            })
+        .def("keys", [](const uhd::device_addr_t& self) { return self.keys(); })
+        .def("values", [](const uhd::device_addr_t& self) { return self.vals(); })
+        .def("get",
+            [](const uhd::device_addr_t& self, const std::string& key) -> py::object {
+                if (self.has_key(key)) {
+                    return py::str(self.get(key));
+                }
+                return py::none();
+            })
+        .def("get",
+            [](const uhd::device_addr_t& self,
+                const std::string& key,
+                const std::string& other) { return self.get(key, other); })
+        .def(
+            "pop",
+            [](uhd::device_addr_t& self,
+                const std::string& key,
+                const char* def) -> std::string {
+                if (!self.has_key(key)) {
+                    if (def == nullptr) {
+                        throw py::key_error(key);
+                    }
+                    return std::string(def);
+                }
+                return self.pop(key);
+            },
+            py::arg("k"),
+            py::arg("d") = nullptr)
+        .def(
+            "update",
+            [](uhd::device_addr_t& self,
+                const uhd::device_addr_t& new_dict,
+                const bool fail_on_conflict) { self.update(new_dict, fail_on_conflict); },
+            py::arg("E"),
+            py::arg("fail_on_conflict") = true)
+        .def(
+            "update",
+            [](uhd::device_addr_t& self,
+                const std::map<std::string, std::string>& new_dict,
+                const bool fail_on_conflict) {
+                self.update(uhd::device_addr_t(new_dict), fail_on_conflict);
+            },
+            py::arg("E"),
+            py::arg("fail_on_conflict") = true)
+        .def("separate",
+            [](const uhd::device_addr_t& self) {
+                return uhd::separate_device_addr(self);
+            })
+        .def("__getitem__",
+            [](const uhd::device_addr_t& self, const std::string& key) -> std::string {
+                if (!self.has_key(key)) {
+                    throw py::key_error(key);
+                }
+                return self.get(key);
+            })
+        .def("__setitem__",
+            [](uhd::device_addr_t& self, const std::string& key, const std::string& val) {
+                self.set(key, val);
+            })
+        .def("__contains__",
+            [](const uhd::device_addr_t& self, const std::string& key) {
+                return self.has_key(key);
+            })
+        .def("__len__", [](const uhd::device_addr_t& self) { return self.size(); })
+        .def("__eq__",
+            [](const uhd::device_addr_t& self, const uhd::device_addr_t& other) {
+                return self == other;
+            })
+        .def("__ne__",
+            [](const uhd::device_addr_t& self, const uhd::device_addr_t& other) {
+                return self != other;
+            });
     // This will allow functions in Python that take a device_addr to also take
     // a string:
     py::implicitly_convertible<std::string, uhd::device_addr_t>();
+
+    m.def("separate_device_addr", &uhd::separate_device_addr);
+    m.def("combine_device_addrs", &uhd::combine_device_addrs);
 }
 
 #endif /* INCLUDED_UHD_TYPES_PYTHON_HPP */

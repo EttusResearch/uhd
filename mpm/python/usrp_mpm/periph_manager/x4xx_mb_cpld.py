@@ -8,12 +8,7 @@ X4xx motherboard CPLD control
 """
 
 from usrp_mpm import lib  # Pulls in everything from C++-land
-
-def parse_encoded_git_hash(encoded):
-    git_hash = encoded & 0x0FFFFFFF
-    tree_dirty = ((encoded & 0xF0000000) > 0)
-    dirtiness_qualifier = 'dirty' if tree_dirty else 'clean'
-    return (git_hash, dirtiness_qualifier)
+from usrp_mpm.mpmutils import parse_encoded_git_hash
 
 class MboardCPLD:
     """

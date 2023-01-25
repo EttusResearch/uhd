@@ -1,6 +1,7 @@
 //
 // Copyright 2016 Ettus Research
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2023 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -75,8 +76,11 @@ module ddc #(
   wire [WIDTH-1:0] i_dds_clip, q_dds_clip;
   wire [WIDTH-1:0] i_cic, q_cic;
   wire [46:0] i_hb1, q_hb1;
+  wire [WIDTH-1:0] i_hb1_clip, q_hb1_clip;
   wire [46:0] i_hb2, q_hb2;
+  wire [WIDTH-1:0] i_hb2_clip, q_hb2_clip;
   wire [47:0] i_hb3, q_hb3;
+  wire [WIDTH-1:0] i_hb3_clip, q_hb3_clip;
   wire sample_out_stb;
 
   wire strobe_cic, strobe_hb1, strobe_hb2, strobe_hb3;
@@ -471,12 +475,25 @@ module ddc #(
       .data_valid(data_valid1), // output data_valid
       .dout_1(i_hb1), // output [46 : 0] dout_1
       .dout_2(q_hb1)); // output [46 : 0] dout_2
-  end else begin //if (NUM_HB <= 2)
+
+    clip #(.bits_in(47-HB1_SCALE), .bits_out(WIDTH)) clip_hb1_i (
+      .in(i_hb1[46:HB1_SCALE]),
+      .out(i_hb1_clip)
+    );
+
+    clip #(.bits_in(47-HB1_SCALE), .bits_out(WIDTH)) clip_hb1_q (
+      .in(q_hb1[46:HB1_SCALE]),
+      .out(q_hb1_clip)
+    );
+
+  end else begin //if (NUM_HB == 0)
     assign rdy1 = 1'b1;
     assign rfd1 = 1'b1;
     assign data_valid1 = 1'b1;
     assign i_hb1 = 'h0;
     assign q_hb1 = 'h0;
+    assign i_hb1_clip = 'h0;
+    assign q_hb1_clip = 'h0;
   end
   if( NUM_HB > 1) begin
     hbdec2 hbdec2 (
@@ -488,18 +505,31 @@ module ddc #(
       .coef_din(coef_din), // input [17 : 0] coef_din
       .rfd(rfd2), // output rfd
       .nd(nd2), // input nd
-      .din_1(i_hb1[23+HB1_SCALE:HB1_SCALE]), // input [23 : 0] din_1
-      .din_2(q_hb1[23+HB1_SCALE:HB1_SCALE]), // input [23 : 0] din_2
+      .din_1(i_hb1_clip), // input [23 : 0] din_1
+      .din_2(q_hb1_clip), // input [23 : 0] din_2
       .rdy(rdy2), // output rdy
       .data_valid(data_valid2), // output data_valid
       .dout_1(i_hb2), // output [46 : 0] dout_1
       .dout_2(q_hb2)); // output [46 : 0] dout_2
-  end else begin //if (NUM_HB <= 2)
+
+    clip #(.bits_in(47-HB2_SCALE), .bits_out(WIDTH)) clip_hb2_i (
+      .in(i_hb2[46:HB2_SCALE]),
+      .out(i_hb2_clip)
+    );
+
+    clip #(.bits_in(47-HB2_SCALE), .bits_out(WIDTH)) clip_hb2_q (
+      .in(q_hb2[46:HB2_SCALE]),
+      .out(q_hb2_clip)
+    );
+
+  end else begin //if (NUM_HB <= 1)
     assign rdy2 = 1'b1;
     assign rfd2 = 1'b1;
     assign data_valid2 = 1'b1;
     assign i_hb2 = 'h0;
     assign q_hb2 = 'h0;
+    assign i_hb2_clip = 'h0;
+    assign q_hb2_clip = 'h0;
   end
   if( NUM_HB > 2) begin
     hbdec3 hbdec3 (
@@ -511,18 +541,31 @@ module ddc #(
       .coef_din(coef_din), // input [17 : 0] coef_din
       .rfd(rfd3), // output rfd
       .nd(nd3), // input nd
-      .din_1(i_hb2[23+HB2_SCALE:HB2_SCALE]), // input [23 : 0] din_1
-      .din_2(q_hb2[23+HB2_SCALE:HB2_SCALE]), // input [23 : 0] din_2
+      .din_1(i_hb2_clip), // input [23 : 0] din_1
+      .din_2(q_hb2_clip), // input [23 : 0] din_2
       .rdy(rdy3), // output rdy
       .data_valid(data_valid3), // output data_valid
       .dout_1(i_hb3), // output [47 : 0] dout_1
       .dout_2(q_hb3)); // output [47 : 0] dout_2
+
+    clip #(.bits_in(48-HB3_SCALE), .bits_out(WIDTH)) clip_hb3_i (
+      .in(i_hb3[47:HB3_SCALE]),
+      .out(i_hb3_clip)
+    );
+
+    clip #(.bits_in(48-HB3_SCALE), .bits_out(WIDTH)) clip_hb3_q (
+      .in(q_hb3[47:HB3_SCALE]),
+      .out(q_hb3_clip)
+    );
+
   end else begin //if (NUM_HB <= 2)
     assign rdy3 = 1'b1;
     assign rfd3 = 1'b1;
     assign data_valid3 = 1'b1;
     assign i_hb3 = 'h0;
     assign q_hb3 = 'h0;
+    assign i_hb3_clip = 'h0;
+    assign q_hb3_clip = 'h0;
   end
   endgenerate
   reg [23:0] i_unscaled, q_unscaled;
@@ -546,20 +589,20 @@ module ddc #(
         2'd1 : begin
           last_unscaled <= last_hb1;
           strobe_unscaled <= strobe_hb1;
-          i_unscaled <= i_hb1[23+HB1_SCALE:HB1_SCALE];
-          q_unscaled <= q_hb1[23+HB1_SCALE:HB1_SCALE];
+          i_unscaled <= i_hb1_clip;
+          q_unscaled <= q_hb1_clip;
         end
         2'd2 : begin
           last_unscaled <= last_hb2;
           strobe_unscaled <= strobe_hb2;
-          i_unscaled <= i_hb2[23+HB2_SCALE:HB2_SCALE];
-          q_unscaled <= q_hb2[23+HB2_SCALE:HB2_SCALE];
+          i_unscaled <= i_hb2_clip;
+          q_unscaled <= q_hb2_clip;
         end
         2'd3 : begin
           last_unscaled <= last_hb3;
           strobe_unscaled <= strobe_hb3;
-          i_unscaled <= i_hb3[23+HB3_SCALE:HB3_SCALE];
-          q_unscaled <= q_hb3[23+HB3_SCALE:HB3_SCALE];
+          i_unscaled <= i_hb3_clip;
+          q_unscaled <= q_hb3_clip;
         end
       endcase // case (hb_rate)
     end

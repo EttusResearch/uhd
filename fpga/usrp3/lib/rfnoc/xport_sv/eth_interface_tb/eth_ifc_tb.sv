@@ -5,16 +5,36 @@
 //
 // Module: eth_ifc_tb
 //
-// Description:  Testbench for eth_interface
+// Description:
+//
+//   Testbench for eth_ipv4_interface and eth_interface. Both DUTs should have
+//   the same behavior, but eth_interface only supports 64-bit and does not
+//   support having preamble bytes on the CPU interface.
+//
+// Parameters:
+//
+//   TEST_NAME      : Name of this test (for the reporting outputs)
+//   SV_ETH_IFC     : If true, use eth_ipv4_interface (SystemVerilog) as the
+//                    DUT, otherwise use eth_interface (Verilog, 64-bit only).
+//   ENET_W         : Width of the Ethernet interface to simulate
+//   CPU_W          : Width of the CPU interface to simulate
+//   CHDR_W         : Width of the CHDR interface to simulate
+//   PREAMBLE_BYTES : Number of preamble bytes expected by then Ethernet
+//                    interface. Can be 0 or 6.
+//   CPU_PREAMBLE   : If true, then the CPU interface will expect
+//                    PREAMBLE_BYTES (for ZPU). Otherwise it will expect 0
+//                    bytes of preamble (for ARM CPU).
 //
 
 module eth_ifc_tb #(
-  parameter TEST_NAME  = "eth_ifc_tb",
-  parameter SV_ETH_IFC = 1,
-  parameter ENET_W     = 64,
-  parameter CPU_W      = 64,
-  parameter CHDR_W     = 64
-)(
+  parameter TEST_NAME      = "eth_ifc_tb",
+  parameter SV_ETH_IFC     = 1,
+  parameter ENET_W         = 64,
+  parameter CPU_W          = 64,
+  parameter CHDR_W         = 64,
+  parameter PREAMBLE_BYTES = 0,
+  parameter CPU_PREAMBLE   = 0
+) (
   /* no IO */
 );
   // Include macros and time declarations for use with PkgTestExec
@@ -43,7 +63,6 @@ module eth_ifc_tb #(
   localparam        ETH_PERIOD = (ENET_W==512) ? 3.1:5.0;
   // can set PREAMBLE_BYTES to 0 or 6 if SV_ETH_IFC, but otherwise
   // it's hard-coded to 6. (0 is normal for 100G)(6 is normal for old Xge)
-  localparam PREAMBLE_BYTES = SV_ETH_IFC ? 0 : 6;
   // Include for register offsets
   `include "../eth_regs.vh"
   // allows the DUT to push full words and tb does not check tuser/tkeep of packets it's transmitting
@@ -139,9 +158,9 @@ module eth_ifc_tb #(
 
 
   if (SV_ETH_IFC) begin : gen_new_dut
-
     eth_ipv4_interface #(
      .PREAMBLE_BYTES(PREAMBLE_BYTES),
+     .CPU_PREAMBLE(CPU_PREAMBLE),
      .CPU_FIFO_SIZE(MTU),
      .CHDR_FIFO_SIZE(MTU),
      .PROTOVER(PROTOVER),
@@ -150,7 +169,7 @@ module eth_ifc_tb #(
      .RT_TBL_SIZE(RT_TBL_SIZE),
      .BASE(BASE),.SYNC(SYNC),
      .ENET_W(ENET_W),.CPU_W(CPU_W),.CHDR_W(CHDR_W)
-    ) eth_interface (
+    ) eth_ipv4_interface_i (
      .bus_clk(clk),.bus_rst(reset),.eth_pause_req(),.*
     );
   end else begin : gen_old_dut
@@ -229,7 +248,7 @@ module eth_ifc_tb #(
      .PROTOVER(PROTOVER), .NODE_INST(NODE_INST), .MTU(MTU),
      .REG_AWIDTH(REG_AWIDTH), .RT_TBL_SIZE(RT_TBL_SIZE),
      .BASE(BASE)
-    ) eth_interface (
+    ) eth_interface_i (
      .*,
      .my_udp_port   (my_udp_chdr_port)
     );
@@ -281,6 +300,7 @@ module eth_ifc_tb #(
   //---------------------------------------------------------------------------
 
   task test_reset();
+    test.start_test({TEST_NAME,"::Wait for Reset"}, 10us);
     wait(!reset);
     repeat (10) @(posedge clk);
     test.end_test();
@@ -355,12 +375,12 @@ module eth_ifc_tb #(
     typedef ChdrPacket        #(CHDR_W,CHDR_USER_W) ChdrPacket_t;
 
   task automatic test_ethcpu(int num_samples[$], int ERROR_PROB=2, int EXPECT_DROPS=0);
-    TestExec test_e2c = new();
     automatic EthXportPacket_t send[$];
     automatic CpuXportPacket_t expected[$];
     automatic int sample_sum = 0;
 
-    test_e2c.start_test({TEST_NAME,"::Ethernet to CPU"}, 60us);
+    $display("%s::Ethernet to CPU", TEST_NAME);
+
     // This path is
     //   eth_rx -> s_mac(eth_adapter) -> s_mac(eth_dispatch) ->
     ////   in_reg(AXI_FIFO)(SIZE=1)
@@ -377,11 +397,21 @@ module eth_ifc_tb #(
       automatic ipv4_hdr_t   ipv4_hdr = DEFAULT_IPV4_HDR;
       automatic udp_hdr_t    udp_hdr;
       automatic raw_pkt_t    pay,udp_raw;
-      automatic int          preamble;
+      automatic int          eth_preamble;
+      automatic int          cpu_preamble;
 
-      if      (PREAMBLE_BYTES == 6) preamble = NORMAL_PREAMBLE;
-      else if (PREAMBLE_BYTES == 0) preamble = NO_PREAMBLE;
-      else    $fatal(1, "Invalid PREAMBLE_BYTES");
+      // eth_preamble refers to the preamble to add or expect on the Ethernet
+      // interface whereas cpu_preamble is the preamble to add or expect on the
+      // CPU interface. The CHDR interface never has a preamble.
+      if (PREAMBLE_BYTES == 6) begin
+        eth_preamble = NORMAL_PREAMBLE;
+        cpu_preamble = CPU_PREAMBLE ? NORMAL_PREAMBLE : NO_PREAMBLE;
+      end else if (PREAMBLE_BYTES == 0) begin
+        eth_preamble = NO_PREAMBLE;
+        cpu_preamble = NO_PREAMBLE;
+      end else begin
+        $fatal(1, "Invalid PREAMBLE_BYTES");
+      end
 
       expected[i] = new;
       send[i] = new;
@@ -391,13 +421,13 @@ module eth_ifc_tb #(
                        .ramp_inc(1),.pkt(pay),.SWIDTH(8));
       sample_sum += num_samples[i];
       udp_raw = build_udp_pkt(eth_hdr,ipv4_hdr,udp_hdr,pay,
-                              .preamble(preamble));
+                              .preamble(eth_preamble));
       send[i].push_bytes(udp_raw);
       send[i].tkeep_to_tuser(.ERROR_PROB(ERROR_PROB));
 
       // rebuild the expected packet for comparison without the preamble
       udp_raw = build_udp_pkt(eth_hdr,ipv4_hdr,udp_hdr,pay,
-                              .preamble(NO_PREAMBLE));
+                              .preamble(cpu_preamble));
       expected[i].push_bytes(udp_raw);
       expected[i].tkeep_to_tuser();
 
@@ -439,17 +469,17 @@ module eth_ifc_tb #(
               void'(expected.pop_front());
               ++drop_count;
               ++pkt_num;
-               $display("Droped packet %d",pkt_num);
+               $display("Dropped packet:  %d",pkt_num);
               `ASSERT_ERROR(drop_count < EXPECT_DROPS,"Exceeded anticipated number of dropped packets e2c");
             end
             if (expected.size() > 0) begin
               ++pkt_num;
-              $display("Rcvd packet   %d",pkt_num);
+              $display("Received packet: %d",pkt_num);
               void'(expected.pop_front());
             end
           end
           if (SV_ETH_IFC) begin
-            $display("Verify drop count is %d",drop_count);
+            $display("Drop count:      %d",drop_count);
             reg_rd_check(REG_CPU_DROPPED,drop_count);
           end
         end else begin
@@ -464,8 +494,6 @@ module eth_ifc_tb #(
         end
       end
     join
-
-    test_e2c.end_test();
   endtask : test_ethcpu
 
   task automatic wait_for_udp_packets(int udp_dest_port);
@@ -491,12 +519,11 @@ module eth_ifc_tb #(
 
 
   task automatic test_cpueth(int num_samples[$]);
-    TestExec test_c2e = new();
     automatic CpuXportPacket_t send[$];
     automatic EthXportPacket_t expected[$];
     automatic int sample_sum = 0;
 
-    test_c2e.start_test({TEST_NAME,"::CPU to Ethernet"}, 60us);
+    $display("%s::CPU to Ethernet", TEST_NAME);
     // This path is
     //   c2e -> (eth_adapter) s_cpu ->
     ////  (ARM_DEFRAMER)(IF ARM)
@@ -522,7 +549,7 @@ module eth_ifc_tb #(
                        .ramp_inc(1),.pkt(pay),.SWIDTH(8));
       sample_sum += num_samples[i];
       udp_raw = build_udp_pkt(eth_hdr,ipv4_hdr,udp_hdr,pay,
-                              .preamble(NO_PREAMBLE));
+                              .preamble(CPU_PREAMBLE ? preamble : NO_PREAMBLE));
       send[i].push_bytes(udp_raw);
       send[i].tkeep_to_tuser();
 
@@ -564,9 +591,8 @@ module eth_ifc_tb #(
         end
       end
     join
-    test_c2e.end_test();
-
   endtask : test_cpueth
+
   //---------------------------------------------------------------------------
   // Ethernet to CHDR test
   //---------------------------------------------------------------------------
@@ -604,12 +630,12 @@ module eth_ifc_tb #(
   endfunction : unflatten_chdr
 
   task automatic test_ethchdr(int num_samples[$], int ERROR_PROB=2, int EXPECT_DROPS=0);
-    TestExec test_e2v = new();
     automatic EthXportPacket_t send[$];
     automatic ChdrXportPacket_t expected[$];
     automatic int sample_sum = 0;
 
-    test_e2v.start_test({TEST_NAME,"::Ethernet to CHDR"}, 60us);
+    $display("%s::Ethernet to CHDR", TEST_NAME);
+
     // This path is
     //   eth_rx -> s_mac(eth_adapter) -> s_mac(eth_dispatch) ->
     ////   in_reg(AXI_FIFO)(SIZE=1)
@@ -715,17 +741,17 @@ module eth_ifc_tb #(
               void'(expected.pop_front());
               ++drop_count;
               ++pkt_num;
-               $display("Dropped packet %d",pkt_num);
+               $display("Dropped packet:  %d",pkt_num);
               `ASSERT_ERROR(drop_count < EXPECT_DROPS,"Exceeded anticipated number of dropped packets e2v");
             end
             if (expected.size() > 0) begin
               ++pkt_num;
-              $display("Rcvd packet   %d",pkt_num);
+              $display("Received packet: %d",pkt_num);
               void'(expected.pop_front());
             end
           end
           if (SV_ETH_IFC) begin
-            $display("Verify drop count is %d",drop_count);
+            $display("Drop count:      %d",drop_count);
             reg_rd_check(REG_CHDR_DROPPED,drop_count);
           end
         end else begin
@@ -740,17 +766,14 @@ module eth_ifc_tb #(
         end
       end
     join
-    test_e2v.end_test();
-
   endtask : test_ethchdr;
 
   task automatic test_chdreth(int num_samples[$]);
-    TestExec test_v2e = new();
     automatic ChdrXportPacket_t send[$];
     automatic EthXportPacket_t expected[$];
     automatic int sample_sum = 0;
 
-    test_v2e.start_test({TEST_NAME,"::CHDR to Ethernet"}, 60us);
+    $display("%s::CHDR to Ethernet", TEST_NAME);
     // This path is
     //   v2e -> s_chdr(eth_adapter) -> s_axis_rfnoc (xport_adapter_gen) ->
     ////   axi_demux_mgmt_filter (AXI_DEMUX) (IF ALLOW_DISC) (discards discovery packets)
@@ -877,8 +900,6 @@ module eth_ifc_tb #(
         end
       end
     join
-    test_v2e.end_test();
-
   endtask : test_chdreth
 
   integer cached_mgmt_seqnum = 0;
@@ -887,7 +908,6 @@ module eth_ifc_tb #(
   `include "../../core/rfnoc_chdr_internal_utils.vh"
   `include "../../xport/rfnoc_xport_types.vh"
   task automatic test_chdr_endpoint();
-    TestExec test_e2v = new();
     automatic EthXportPacket_t send[$];
     automatic EthXportPacket_t expected[$];
     automatic int sample_sum = 0;
@@ -909,8 +929,7 @@ module eth_ifc_tb #(
     automatic int preamble;
     localparam NODE_INST=0;
 
-    test_e2v.start_test({TEST_NAME,"::ChdrEndpoint"}, 60us);
-
+    test.start_test({TEST_NAME,"::ChdrEndpoint"}, 60us);
 
     expected[0] = new;
     send[0] = new;
@@ -1030,170 +1049,175 @@ module eth_ifc_tb #(
         end
       end
     join
-    test_e2v.end_test();
 
+    test.end_test();
   endtask : test_chdr_endpoint
+
   //----------------------------------------------------
   // Main test loop
   //----------------------------------------------------
   initial begin : tb_main
-   automatic int num_samples[$];
-   automatic int cpu_num_samples[$];
-   automatic int expected_drops;
-   localparam QUICK = 0;
+    automatic int num_samples[$];
+    automatic int cpu_num_samples[$];
+    automatic int expected_drops;
+    localparam QUICK = 0;
 
-   test.start_tb(TEST_NAME);
+    test.start_tb(TEST_NAME);
 
-   test.start_test({TEST_NAME,"::Wait for Reset"}, 10us);
-   clk_gen.start();
-   eth_clk_gen.start();
-   clk_gen.reset();
-   eth_clk_gen.reset();
+    // Check some parameters
+    if (!SV_ETH_IFC) begin
+      `ASSERT_FATAL(CHDR_W == 64, "Legacy transport adapter only supports 64-bit CHDR");
+      `ASSERT_FATAL(CPU_PREAMBLE == 0, "CPU preamble is not supported on legacy transport adapter");
+    end
 
-   eth.run();
-   cpu.run();
-   v.run();
+    clk_gen.start();
+    eth_clk_gen.start();
+    clk_gen.reset();
+    eth_clk_gen.reset();
 
+    eth.run();
+    cpu.run();
+    v.run();
 
-   test_reset();
-   test_registers();
+    test_reset();
+    test_registers();
+    test_chdr_endpoint();
 
-   test_chdr_endpoint();
+    // Check what happens if the input bandwidth exceeds
+    // the devices ability to consume packets
+    // This can happen in matched bandwidth cases
+    // if there is hold off from upstream
+    // Dropped packets exceed the drop count cause an error
+    // The actual dropped count is compared versus the real count
+    test.start_test({TEST_NAME,"::Input overrun"}, 200us);
 
-   // Check what happens if the input bandwidth exceeds
-   // the devices ability to consume packets
-   // This can happen in matched bandwidth cases
-   // if there is hold off from upstream
-   // Dropped packets exceed the drop count cause an error
-   // The actual dropped count is compared versus the real count
-   test.start_test({TEST_NAME,"::Input overrun"}, 200us);
+    eth.set_master_stall_prob(0);
+    eth.set_slave_stall_prob(0);
+    cpu.set_master_stall_prob(0);
+    cpu.set_slave_stall_prob(0);
+    v.set_master_stall_prob(0);
+    v.set_slave_stall_prob(0);
 
-   eth.set_master_stall_prob(0);
-   eth.set_slave_stall_prob(0);
-   cpu.set_master_stall_prob(0);
-   cpu.set_slave_stall_prob(0);
-   v.set_master_stall_prob(0);
-   v.set_slave_stall_prob(0);
+    num_samples = {7936,7936,7936,7936,7936,320,
+                   7936,7936,7936,7936,7936,320};
 
-   num_samples = {7936,7936,7936,7936,7936,320,
-                  7936,7936,7936,7936,7936,320};
+    // The actual number of expected drops depends on the
+    // bus width difference between ENET_W and CHDR/CPU_W
 
-   // The actual number of expected drops depends on the
-   // bus width difference between ENET_W and CHDR/CPU_W
+    // in this SIM unlimited Ethernet bandwidth is coming in at over 300 MHZ
+    // and output runs at 200 MHZ.  This causes excess BW on transmitter even when matched.
+    expected_drops = 9;
 
-   // in this SIM unlimited Ethernet bandwidth is coming in at over 300 MHZ
-   // and output runs at 200 MHZ.  This causes excess BW on transmitter even when matched.
-   expected_drops = 9;
+    test_ethchdr(num_samples,.EXPECT_DROPS(expected_drops),.ERROR_PROB(0));
+    test_ethcpu(num_samples,.EXPECT_DROPS(expected_drops),.ERROR_PROB(0));
 
-   test_ethchdr(num_samples,.EXPECT_DROPS(expected_drops),.ERROR_PROB(0));
-   test_ethcpu(num_samples,.EXPECT_DROPS(expected_drops),.ERROR_PROB(0));
-   test.end_test();
+    test.end_test();
 
-   eth.set_master_stall_prob(38);
-   eth.set_slave_stall_prob(38);
-   cpu.set_master_stall_prob(38);
-   cpu.set_slave_stall_prob(38);
-   v.set_master_stall_prob(38);
-   v.set_slave_stall_prob(38);
+    eth.set_master_stall_prob(38);
+    eth.set_slave_stall_prob(38);
+    cpu.set_master_stall_prob(38);
+    cpu.set_slave_stall_prob(38);
+    v.set_master_stall_prob(38);
+    v.set_slave_stall_prob(38);
 
-   num_samples = {1,2,3,4,5,6,7,8,
-                  ENET_W/8-1,ENET_W/8,ENET_W/8+1,
-                  2*ENET_W/8-1,2*ENET_W/8,2*ENET_W/8+1,
-                  CPU_W/8-1,CPU_W/8,CPU_W/8+1,
-                  2*CPU_W/8-1,2*CPU_W/8,2*CPU_W/8+1,
-                  CHDR_W/8-1,CHDR_W/8,CHDR_W/8+1,
-                  2*CHDR_W/8-1,2*CHDR_W/8,2*CHDR_W/8+1
-                 };
-   // add some extra samples for CPU packets to try to get above the min
-   //packet size of 64. (just the headers makes up 42 bytes)
-   //this way we still have some short packets to drop, but not as many.
-   foreach (num_samples[i]) cpu_num_samples[i] = num_samples[i]+20;
-   test.start_test({TEST_NAME,"::PacketW Combos NO Errors"}, 10us);
-   fork // run in parallel
-     // ethrx
-     test_ethcpu(cpu_num_samples,.ERROR_PROB(0));
-     test_ethchdr(num_samples,.ERROR_PROB(0));
-     // ethtx
-     test_chdreth(num_samples);
-     test_cpueth(num_samples);
-   join
-   test.end_test();
-
-   if (!QUICK) begin
-
-     test.start_test({TEST_NAME,"::PacketW Combos Errors"}, 10us);
-     fork // run in parallel
-       // ethrx
-       test_ethcpu(cpu_num_samples,.ERROR_PROB(2));
-       test_ethchdr(num_samples,.ERROR_PROB(2));
-       // ethtx
-       test_chdreth(num_samples);
-       test_cpueth(num_samples);
-     join
-     test.end_test();
-
-     num_samples = {16,32,64,128,256,512,1024,1500,1522,9000};
-     test.start_test({TEST_NAME,"::Pwr2 NoErrors"}, 60us);
-     fork // run in parallel
-       // ethrx
-       test_ethcpu(cpu_num_samples,.ERROR_PROB(0));
-       test_ethchdr(num_samples,.ERROR_PROB(0));
-       // ethtx
-       test_chdreth(num_samples);
-       test_cpueth(num_samples);
+    num_samples = {1,2,3,4,5,6,7,8,
+                   ENET_W/8-1,ENET_W/8,ENET_W/8+1,
+                   2*ENET_W/8-1,2*ENET_W/8,2*ENET_W/8+1,
+                   CPU_W/8-1,CPU_W/8,CPU_W/8+1,
+                   2*CPU_W/8-1,2*CPU_W/8,2*CPU_W/8+1,
+                   CHDR_W/8-1,CHDR_W/8,CHDR_W/8+1,
+                   2*CHDR_W/8-1,2*CHDR_W/8,2*CHDR_W/8+1
+                  };
+    // Add some extra samples for CPU packets to try to get above the min
+    // packet size of 64 (just the headers make up 42 bytes). This way we still
+    // have some short packets to drop, but not as many.
+    foreach (num_samples[i]) cpu_num_samples[i] = num_samples[i]+20;
+    test.start_test({TEST_NAME,"::PacketW Combos NO Errors"}, 10us);
+    fork // run in parallel
+      // ethrx
+      test_ethcpu(cpu_num_samples,.ERROR_PROB(0));
+      test_ethchdr(num_samples,.ERROR_PROB(0));
+      // ethtx
+      test_chdreth(num_samples);
+      test_cpueth(num_samples);
     join
-     test.end_test();
-   end
+    test.end_test();
 
-   eth.set_master_stall_prob(0);
-   eth.set_slave_stall_prob(0);
-   cpu.set_master_stall_prob(0);
-   cpu.set_slave_stall_prob(0);
-   v.set_master_stall_prob(0);
-   v.set_slave_stall_prob(0);
+    if (!QUICK) begin
 
-   num_samples = {1,2,3,4,5,6,7,8,
-                  ENET_W/8-1,ENET_W/8,ENET_W/8+1,
-                  2*ENET_W/8-1,2*ENET_W/8,2*ENET_W/8+1,
-                  CPU_W/8-1,CPU_W/8,CPU_W/8+1,
-                  2*CPU_W/8-1,2*CPU_W/8,2*CPU_W/8+1,
-                  CHDR_W/8-1,CHDR_W/8,CHDR_W/8+1,
-                  2*CHDR_W/8-1,2*CHDR_W/8,2*CHDR_W/8+1
-                 };
-   test.start_test({TEST_NAME,"::Pktw NoStall+Error"}, 10us);
-   fork // run in parallel
-     // ethrx
-     test_ethcpu(cpu_num_samples,.ERROR_PROB(2));
-     test_ethchdr(num_samples,.ERROR_PROB(2));
-     // ethtx
-     test_chdreth(num_samples);
-     test_cpueth(num_samples);
-   join
-   test.end_test();
+      test.start_test({TEST_NAME,"::PacketW Combos Errors"}, 10us);
+      fork // run in parallel
+        // ethrx
+        test_ethcpu(cpu_num_samples,.ERROR_PROB(2));
+        test_ethchdr(num_samples,.ERROR_PROB(2));
+        // ethtx
+        test_chdreth(num_samples);
+        test_cpueth(num_samples);
+      join
+      test.end_test();
 
-   // repeat with back to back cpu/chdr packets
-   test.start_test({TEST_NAME,"::Serial Pktw NoStall+Error"}, 10us);
-   fork // run in parallel
-     // ethrx
-     begin
-       test_ethcpu(cpu_num_samples,.ERROR_PROB(2));
-       test_ethchdr(num_samples,.ERROR_PROB(2));
-     end
-     // ethtx
-     begin
-       test_chdreth(num_samples);
-       test_cpueth(num_samples);
-     end
-   join
-   test.end_test();
+      num_samples = {16,32,64,128,256,512,1024,1500,1522,9000};
+      test.start_test({TEST_NAME,"::Pwr2 NoErrors"}, 60us);
+      fork // run in parallel
+        // ethrx
+        test_ethcpu(cpu_num_samples,.ERROR_PROB(0));
+        test_ethchdr(num_samples,.ERROR_PROB(0));
+        // ethtx
+        test_chdreth(num_samples);
+        test_cpueth(num_samples);
+      join
+      test.end_test();
+    end
 
-   // End the TB, but don't $finish, since we don't want to kill other
-   // instances of this testbench that may be running.
-   test.end_tb(0);
+    eth.set_master_stall_prob(0);
+    eth.set_slave_stall_prob(0);
+    cpu.set_master_stall_prob(0);
+    cpu.set_slave_stall_prob(0);
+    v.set_master_stall_prob(0);
+    v.set_slave_stall_prob(0);
 
-   // Kill the clocks to end this instance of the testbench
-   clk_gen.kill();
-   eth_clk_gen.kill();
+    num_samples = {1,2,3,4,5,6,7,8,
+                   ENET_W/8-1,ENET_W/8,ENET_W/8+1,
+                   2*ENET_W/8-1,2*ENET_W/8,2*ENET_W/8+1,
+                   CPU_W/8-1,CPU_W/8,CPU_W/8+1,
+                   2*CPU_W/8-1,2*CPU_W/8,2*CPU_W/8+1,
+                   CHDR_W/8-1,CHDR_W/8,CHDR_W/8+1,
+                   2*CHDR_W/8-1,2*CHDR_W/8,2*CHDR_W/8+1
+                  };
+    test.start_test({TEST_NAME,"::Pktw NoStall+Error"}, 10us);
+    fork // run in parallel
+      // ethrx
+      test_ethcpu(cpu_num_samples,.ERROR_PROB(2));
+      test_ethchdr(num_samples,.ERROR_PROB(2));
+      // ethtx
+      test_chdreth(num_samples);
+      test_cpueth(num_samples);
+    join
+    test.end_test();
+
+    // repeat with back to back cpu/chdr packets
+    test.start_test({TEST_NAME,"::Serial Pktw NoStall+Error"}, 10us);
+    fork // run in parallel
+      // ethrx
+      begin
+        test_ethcpu(cpu_num_samples,.ERROR_PROB(2));
+        test_ethchdr(num_samples,.ERROR_PROB(2));
+      end
+      // ethtx
+      begin
+        test_chdreth(num_samples);
+        test_cpueth(num_samples);
+      end
+    join
+    test.end_test();
+
+    // End the TB, but don't $finish, since we don't want to kill other
+    // instances of this testbench that may be running.
+    test.end_tb(0);
+
+    // Kill the clocks to end this instance of the testbench
+    clk_gen.kill();
+    eth_clk_gen.kill();
   end // initial begin
 
 endmodule

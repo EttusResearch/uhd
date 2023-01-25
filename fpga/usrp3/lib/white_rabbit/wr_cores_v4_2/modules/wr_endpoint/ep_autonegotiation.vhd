@@ -158,7 +158,8 @@ begin  -- syn
   -- make the code more readable
   ability_match     <= an_rx_valid_i;
   acknowledge_match <= an_rx_valid_i and an_rx_val_i(14);
-  consistency_match <= '1' when (an_rx_valid_i = '1' and rx_config_reg (15) = an_rx_val_i(15) and rx_config_reg(13 downto 0) = an_rx_val_i(13 downto 0));
+  consistency_match <= '1' when (an_rx_valid_i = '1' and rx_config_reg (15) = an_rx_val_i(15) and rx_config_reg(13 downto 0) = an_rx_val_i(13 downto 0))
+                       else '0';
 
 
 -- process: main auto-negotiation state machine. More or less compatible with

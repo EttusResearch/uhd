@@ -7,20 +7,20 @@
 //
 // Description:
 //
-// This module contains the core Tx radio data-path logic. It receives samples 
-// over AXI-Stream that it then sends to the radio interface coincident with a 
+// This module contains the core Tx radio data-path logic. It receives samples
+// over AXI-Stream that it then sends to the radio interface coincident with a
 // strobe signal that must be provided by the radio interface.
 //
-// There are no registers for starting or stopping the transmitter. It is 
-// operated simply by providing data packets via its AXI-Stream data interface. 
-// The end-of-burst (EOB) signal is used to indicate when the transmitter is 
-// allowed to stop transmitting. Packet timestamps can be used to indicate when 
+// There are no registers for starting or stopping the transmitter. It is
+// operated simply by providing data packets via its AXI-Stream data interface.
+// The end-of-burst (EOB) signal is used to indicate when the transmitter is
+// allowed to stop transmitting. Packet timestamps can be used to indicate when
 // transmission should start.
 //
-// Care must be taken to provide data to the transmitter at a rate that is 
-// faster than the radio needs it so that underflows do not occur. Similarly, 
-// timed packets must be delivered before the timestamp expires. If a packet 
-// arrives late, then it will be dropped and the error will be reported via the 
+// Care must be taken to provide data to the transmitter at a rate that is
+// faster than the radio needs it so that underflows do not occur. Similarly,
+// timed packets must be delivered before the timestamp expires. If a packet
+// arrives late, then it will be dropped and the error will be reported via the
 // CTRL port interface.
 //
 // Parameters:
@@ -188,6 +188,44 @@ module radio_tx_core #(
 
 
   //---------------------------------------------------------------------------
+  // Sample Alignment
+  //---------------------------------------------------------------------------
+  //
+  // Shift the outgoing data to align the first sample with sample position
+  // corresponding to the requested timestamp.
+  //
+  //---------------------------------------------------------------------------
+
+  localparam SHIFT_W = $clog2(NSPC);
+
+  reg  [SHIFT_W-1:0]     time_shift   = 0;
+  reg                    align_cfg_en = 0;
+  wire [SAMP_W*NSPC-1:0] unaligned_data;
+
+  if (NSPC > 1) begin : gen_time_alignment
+    align_samples #(
+      .SAMP_W  (SAMP_W),
+      .SPC     (NSPC  ),
+      .USER_W  (1     ),
+      .PIPE_IN (1     ),
+      .PIPE_OUT(1     )
+    ) align_samples_i (
+      .clk     (radio_clk     ),
+      .i_data  (unaligned_data),
+      .i_push  (radio_tx_stb  ),
+      .i_user  (1'b0          ),
+      .i_dir   (1'b0          ),
+      .i_shift (time_shift    ),
+      .i_cfg_en(align_cfg_en  ),
+      .o_data  (radio_tx_data ),
+      .o_user  (              )
+    );
+  end else begin : gen_no_time_alignment
+    assign radio_tx_data = unaligned_data;
+  end
+
+
+  //---------------------------------------------------------------------------
   // Transmitter State Machine
   //---------------------------------------------------------------------------
 
@@ -195,9 +233,11 @@ module radio_tx_core #(
   localparam ST_IDLE        = 0;
   localparam ST_TIME_CHECK  = 1;
   localparam ST_TRANSMIT    = 2;
-  localparam ST_POLICY_WAIT = 3;
+  localparam ST_WAIT_ALIGN0 = 3;
+  localparam ST_WAIT_ALIGN1 = 4;
+  localparam ST_POLICY_WAIT = 5;
 
-  reg [1:0] state = ST_IDLE;
+  reg [2:0] state = ST_IDLE;
 
   reg sop = 1'b1;  // Start of packet
 
@@ -205,20 +245,50 @@ module radio_tx_core #(
   reg [             63:0] new_error_time;
   reg                     new_error_valid = 1'b0;
 
-  reg time_now, time_past;
+  reg time_now;    // Indicates when we've reached the requested timestamp
+  reg time_now_m1; // Indicates we've reached the requested timestamp minus 1
+  reg time_past;   // Indicates when we've passed the requested timestamp
 
+  reg [SHIFT_W-1:0] radio_offset = 0;
+  reg               send_early;
 
   always @(posedge radio_clk) begin
     if (radio_rst) begin
       state           <= ST_IDLE;
       sop             <= 1'b1;
       new_error_valid <= 1'b0;
-    end else begin
-      new_error_valid <= 1'b0;
+      time_shift      <= 0;
+      align_cfg_en    <= 1'b0;
 
-      // Register time comparisons so they don't become the critical path
-      time_now  <= (radio_time == s_axis_ttimestamp);
-      time_past <= (radio_time >  s_axis_ttimestamp);
+      // Registers for which we don't care if they have a reset or not because
+      // they're set during state machine execution.
+      radio_offset    <= 'bX;
+      send_early      <= 'bX;
+      new_error_code  <= 'bX;
+      new_error_time  <= 'bX;
+      new_error_valid <= 'bX;
+      time_now        <= 'bX;
+      time_now_m1     <= 'bX;
+      time_past       <= 'bX;
+    end else begin
+      // Default assignments
+      new_error_valid <= 1'b0;
+      align_cfg_en    <= 1'b0;
+
+      if (radio_tx_stb) begin
+        // Register time comparisons so they don't become the critical path
+        time_now_m1 <= (radio_time[63:SHIFT_W]+1 == s_axis_ttimestamp[63:SHIFT_W]);
+        time_now    <= time_now_m1;
+        time_past   <= (radio_time[63:SHIFT_W]    > s_axis_ttimestamp[63:SHIFT_W]);
+      end
+
+      if (NSPC > 1) begin
+        if (radio_tx_stb) begin
+          radio_offset <= radio_time[0+:SHIFT_W];
+        end
+      end else begin
+        radio_offset <= 0;
+      end
 
       // Track if the next word will be the start of a packet (sop)
       if (s_axis_tvalid && s_axis_tready) begin
@@ -227,15 +297,39 @@ module radio_tx_core #(
 
       case (state)
         ST_IDLE : begin
-          // Wait for a new packet to arrive and allow a cycle for the time 
-          // comparisons to update.
-          if (s_axis_tvalid) begin
-            state <= ST_TIME_CHECK;
+          // Wait for a new packet to arrive and a radio strobe to update the
+          // time comparisons.
+          if (s_axis_tvalid && radio_tx_stb) begin
+            align_cfg_en <= 1'b1;
+            state        <= ST_TIME_CHECK;
+          end
+
+          // Calculate the time shift, in samples, needed to left-shift the
+          // first sample to be transmitted into the time slot indicated by the
+          // requested timestamp. "send_early" means that the requested
+          // timestamp is actually one word earlier than the word with the
+          // matching timestamp because of the way the radio_time is aligned.
+          if (NSPC > 1) begin
+            if (s_axis_thas_time) begin
+              if (radio_offset > s_axis_ttimestamp[0+:SHIFT_W]) begin
+                time_shift <= NSPC - (radio_offset - s_axis_ttimestamp[0+:SHIFT_W]);
+                send_early <= 1'b1;
+              end else begin
+                time_shift <= s_axis_ttimestamp[0+:SHIFT_W] - radio_offset;
+                send_early <= 1'b0;
+              end
+            end else begin
+              time_shift <= 0;
+              send_early <= 1'b0;
+            end
           end
         end
 
         ST_TIME_CHECK : begin
-          if (!s_axis_thas_time || time_now) begin
+          if (!s_axis_thas_time ||
+            (radio_tx_stb && time_now_m1 && ( send_early && NSPC  > 1)) ||
+            (radio_tx_stb && time_now    && (!send_early || NSPC == 1))
+          ) begin
             // We have a new packet without a timestamp, or a new packet
             // whose time has arrived.
             state <= ST_TRANSMIT;
@@ -268,8 +362,26 @@ module radio_tx_core #(
               new_error_code  <= ERR_TX_EOB_ACK;
               new_error_time  <= radio_time;
               new_error_valid <= 1'b1;
-              state <= ST_IDLE;
+              if (NSPC > 1) begin
+                state <= ST_WAIT_ALIGN0;
+              end else begin
+                state <= ST_IDLE;
+              end
             end
+          end
+        end
+
+        ST_WAIT_ALIGN0 : begin
+          // Add extra radio word delays to ensure we don't update the time
+          // alignment until the last word is strobed out.
+          if (radio_tx_stb) begin
+            state <= ST_WAIT_ALIGN1;
+          end
+        end
+
+        ST_WAIT_ALIGN1 : begin
+          if (radio_tx_stb) begin
+            state <= ST_IDLE;
           end
         end
 
@@ -299,9 +411,9 @@ module radio_tx_core #(
 
   // Output the current sample whenever we're transmitting and the sample is
   // valid. Otherwise, output the idle value.
-  assign radio_tx_data = (s_axis_tvalid && state == ST_TRANSMIT) ?
-                         s_axis_tdata :
-                         {NSPC{reg_idle_value[SAMP_W-1:0]}};
+  assign unaligned_data = (s_axis_tvalid && state == ST_TRANSMIT) ?
+                          s_axis_tdata :
+                          {NSPC{reg_idle_value[SAMP_W-1:0]}};
 
   // Read packet in the transmit state or dump it in the error state
   assign s_axis_tready = (radio_tx_stb && (state == ST_TRANSMIT)) ||
@@ -364,8 +476,8 @@ module radio_tx_core #(
   //
   //---------------------------------------------------------------------------
 
-  localparam ST_ERR_IDLE     = 0;
-  localparam ST_ERR_CODE     = 1;
+  localparam ST_ERR_IDLE = 0;
+  localparam ST_ERR_CODE = 1;
 
   reg [0:0] err_state = ST_ERR_IDLE;
 
@@ -378,19 +490,19 @@ module radio_tx_core #(
       err_state         <= ST_ERR_IDLE;
       next_error_ready  <= 1'b0;
     end else begin
-      m_ctrlport_req_wr       <= 1'b0;
-      next_error_ready        <= 1'b0;
+      m_ctrlport_req_wr <= 1'b0;
+      next_error_ready  <= 1'b0;
 
       case (err_state)
         ST_ERR_IDLE : begin
           if (next_error_valid) begin
             // Setup write of error code
-            m_ctrlport_req_wr       <= 1'b1;
-            m_ctrlport_req_addr     <= reg_error_addr;
-            m_ctrlport_req_data     <= {{(32-ERR_TX_CODE_W){1'b0}}, next_error_code};
-            m_ctrlport_req_time     <= next_error_time;
-            next_error_ready        <= 1'b1;
-            err_state               <= ST_ERR_CODE;
+            m_ctrlport_req_wr   <= 1'b1;
+            m_ctrlport_req_addr <= reg_error_addr;
+            m_ctrlport_req_data <= {{(32-ERR_TX_CODE_W){1'b0}}, next_error_code};
+            m_ctrlport_req_time <= next_error_time;
+            next_error_ready    <= 1'b1;
+            err_state           <= ST_ERR_CODE;
           end
         end
 
@@ -407,7 +519,7 @@ module radio_tx_core #(
   end
 
 
-  // Directly connect the port ID, remote port ID, remote EPID since they are 
+  // Directly connect the port ID, remote port ID, remote EPID since they are
   // only used for error reporting.
   assign m_ctrlport_req_portid     = reg_error_portid;
   assign m_ctrlport_req_rem_epid   = reg_error_rem_epid;

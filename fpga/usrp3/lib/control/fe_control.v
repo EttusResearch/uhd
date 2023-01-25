@@ -1,5 +1,6 @@
 //
 // Copyright 2019 Ettus Research, a National Instruments Brand
+// Copyright 2023 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -14,7 +15,10 @@ module fe_control #(
   parameter NUM_CHANNELS = 2,
   parameter [7:0] SR_FE_CHAN_OFFSET = 16,
   parameter [7:0] SR_TX_FE_BASE = 192,
-  parameter [7:0] SR_RX_FE_BASE = 200
+  parameter [7:0] SR_RX_FE_BASE = 200,
+  parameter BYPASS_DC_OFFSET_CORR = 0,
+  parameter BYPASS_IQ_COMP = 0,
+  parameter BYPASS_HETERODYNE = 1
 )(
   input clk, input reset,
   // Commands from Radio Core
@@ -37,7 +41,7 @@ module fe_control #(
       tx_frontend_gen3 #(
         .SR_OFFSET_I(SR_TX_OFFSET_I), .SR_OFFSET_Q(SR_TX_OFFSET_Q),.SR_MAG_CORRECTION(SR_TX_MAG_CORRECTION),
         .SR_PHASE_CORRECTION(SR_TX_PHASE_CORRECTION), .SR_MUX(SR_TX_MUX),
-        .BYPASS_DC_OFFSET_CORR(0), .BYPASS_IQ_COMP(0),
+        .BYPASS_DC_OFFSET_CORR(BYPASS_DC_OFFSET_CORR), .BYPASS_IQ_COMP(BYPASS_IQ_COMP),
         .DEVICE("7SERIES")
       ) tx_fe_corr_i (
         .clk(clk), .reset(reset),
@@ -56,7 +60,7 @@ module fe_control #(
       rx_frontend_gen3 #(
         .SR_MAG_CORRECTION(SR_RX_MAG_CORRECTION), .SR_PHASE_CORRECTION(SR_RX_PHASE_CORRECTION), .SR_OFFSET_I(SR_RX_OFFSET_I),
         .SR_OFFSET_Q(SR_RX_OFFSET_Q), .SR_IQ_MAPPING(SR_RX_IQ_MAPPING), .SR_HET_PHASE_INCR(SR_RX_HET_PHASE_INCR),
-        .BYPASS_DC_OFFSET_CORR(0), .BYPASS_IQ_COMP(0), .BYPASS_REALMODE_DSP(0),
+        .BYPASS_DC_OFFSET_CORR(BYPASS_DC_OFFSET_CORR), .BYPASS_IQ_COMP(BYPASS_IQ_COMP), .BYPASS_HETERODYNE(BYPASS_HETERODYNE),
         .DEVICE("7SERIES")
       ) rx_fe_corr_i (
         .clk(clk), .reset(reset), .sync_in(time_sync),

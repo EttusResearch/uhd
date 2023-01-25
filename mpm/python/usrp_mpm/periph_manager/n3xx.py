@@ -13,6 +13,7 @@ import threading
 import time
 from six import iteritems
 from usrp_mpm.cores import WhiteRabbitRegsControl
+from usrp_mpm.compat_num import CompatNumber
 from usrp_mpm.components import ZynqComponents
 from usrp_mpm.gpsd_iface import GPSDIfaceExtension
 from usrp_mpm.periph_manager import PeriphManagerBase
@@ -39,6 +40,7 @@ N32X_DEFAULT_QSFP_RATE_PRESET = 'Ethernet'
 N32X_DEFAULT_QSFP_DRIVER_PRESET = 'Optical'
 N32X_QSFP_I2C_LABEL = 'qsfp-i2c'
 N3XX_FPGA_COMPAT = (8, 1)
+N3XX_REMOTE_STREAMING_COMPAT = (8, 1)
 N3XX_MONITOR_THREAD_INTERVAL = 1.0 # seconds
 N3XX_BUS_CLK = 200e6
 N3XX_GPIO_BANKS = ["FP0",]
@@ -267,6 +269,11 @@ class n3xx(ZynqComponents, PeriphManagerBase):
             fail_on_old_minor=True,
             log=self.log
         )
+        if CompatNumber(actual_compat) >= CompatNumber(N3XX_REMOTE_STREAMING_COMPAT):
+            self.fpga_features.add('remote_udp_streaming')
+        self.log.debug(
+            "FPGA supports the following features: {}"
+            .format(", ".join(self.fpga_features)))
 
     def _init_ref_clock_and_time(self, default_args):
         """

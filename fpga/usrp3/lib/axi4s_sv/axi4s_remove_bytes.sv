@@ -6,18 +6,19 @@
 // Module : axi4s_remove_bytes
 //
 // Description:
-//   Remove bytes from a packet.  1 removal can happen per
-//   packet.  The removal is made by delaying the output
-//   by a clock, and then combining the new and old word
-//   and providing a combination of shifted words.
-//   This implementation requires that the user field
-//   holds the number of valid bytes in the word, and the MSB of the user field
-//   indicates if the MAC had an error.
+//
+//   Remove bytes from a packet.  1 removal can happen per packet.  The removal
+//   is made by delaying the output by a clock, and then combining the new and
+//   old word and providing a combination of shifted words. This implementation
+//   requires that the user field holds the number of valid bytes in the word,
+//   and the MSB of the user field indicates if the MAC had an error.
 //
 //   The block will hold off the input if it goes to the BONUS State.
 //
-//   This block is intended to remove data from the beginning or middle
-//   of a packet.  You can truncate a packet by setting REM_END to -1.
+//   This block is intended to remove data from the beginning or middle of a
+//   packet.  You can truncate a packet by setting REM_END to -1.
+//
+//   TKEEP is not used. TUSER should have the format {error, trailing bytes};
 //
 //  LIMITATIONS
 //    The block will set the error bit if you put in a packet between
@@ -27,6 +28,7 @@
 //    Packets must be terminated with tlast.
 //
 // Parameters:
+//
 //   REM_START  - First byte to remove (0 means start)
 //   REM_END    - Last byte to remove (-1 means truncate from REM START)
 //

@@ -190,6 +190,11 @@ transports based on the \ref page_dpdk "Data Plane Development Kit (DPDK)".
 See the DPDK page for details on how it can improve streaming and how to use
 it.
 
+### Remote UDP streaming
+
+The USRP X300 and X310 support streaming data to a remote network destination.
+See \ref stream_remote for more details.
+
 \subsection x3x0_hw_pcie PCI Express (Desktop)
 
 <b>Important Note: The USRP X-Series provides PCIe connectivity over MXI cable.

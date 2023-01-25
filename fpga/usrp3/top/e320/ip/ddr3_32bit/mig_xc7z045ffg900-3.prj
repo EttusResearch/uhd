@@ -150,7 +150,7 @@
         <mr2RTTWR name="RTT_WR - Dynamic On Die Termination (ODT)" >Dynamic ODT off</mr2RTTWR>
         <PortInterface>AXI</PortInterface>
         <AXIParameters>
-            <C0_C_RD_WR_ARB_ALGORITHM>ROUND_ROBIN</C0_C_RD_WR_ARB_ALGORITHM>
+            <C0_C_RD_WR_ARB_ALGORITHM>RD_PRI_REG</C0_C_RD_WR_ARB_ALGORITHM>
             <C0_S_AXI_ADDR_WIDTH>31</C0_S_AXI_ADDR_WIDTH>
             <C0_S_AXI_DATA_WIDTH>256</C0_S_AXI_DATA_WIDTH>
             <C0_S_AXI_ID_WIDTH>4</C0_S_AXI_ID_WIDTH>

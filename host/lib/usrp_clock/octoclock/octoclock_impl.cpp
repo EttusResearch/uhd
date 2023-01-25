@@ -264,13 +264,10 @@ octoclock_impl::octoclock_impl(const device_addr_t& _device_addr)
         // Set up EEPROM
         ////////////////////////////////////////////////////////////////////
         _oc_dict[oc].eeprom = octoclock_eeprom_t(_oc_dict[oc].ctrl_xport, _proto_ver);
-        _tree->create<uhd::usrp::mboard_eeprom_t>(oc_path / "eeprom")
+        _tree->create<octoclock_eeprom_t>(oc_path / "eeprom")
             .set(_oc_dict[oc].eeprom)
             .add_coerced_subscriber(
-                std::bind(&octoclock_impl::_set_eeprom, this, oc, std::placeholders::_1))
-            .set_publisher([this, oc]() {
-                return static_cast<uhd::usrp::mboard_eeprom_t>(this->_oc_dict[oc].eeprom);
-            });
+                std::bind(&octoclock_impl::_set_eeprom, this, oc, std::placeholders::_1));
 
         ////////////////////////////////////////////////////////////////////
         // Initialize non-GPSDO sensors

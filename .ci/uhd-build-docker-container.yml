@@ -84,7 +84,7 @@ variables:
     "{'VS2019-x64-builder':{'buildOSName':'win-vs19-v142-x64','dockerImageName':'uhd-builder-vs2019-v142-x64','cmakeCompiler':'Visual Studio 16 2019','cmakeArch':'x64','vsArch':'x64','vsYear':'2019'}}"
 
 - name: dockerImagePrefix
-  value: 'rfsdr/'
+  value: 'rnd-docker-ci/ni/rfsdr/'
 
 jobs:
 - job: build_image_linux
@@ -104,7 +104,7 @@ jobs:
     inputs:
       command: 'build'
       Dockerfile: '$(Build.SourcesDirectory)/.ci/docker/$(dockerImageName).Dockerfile'
-      containerRegistry: 'Docker / Artifactory - rnd-builds-local'
+      containerRegistry: 'niartifacts.jfrog.io'
       repository: '$(dockerImagePrefix)$(dockerImageName)'
       tags: $(Build.BuildNumber)
       arguments: --no-cache --pull
@@ -112,7 +112,7 @@ jobs:
     displayName: Push Image
     inputs:
       command: 'push'
-      containerRegistry: 'Docker / Artifactory - rnd-builds-local'
+      containerRegistry: 'niartifacts.jfrog.io'
       repository: '$(dockerImagePrefix)$(dockerImageName)'
       tags: $(Build.BuildNumber)
 
@@ -128,7 +128,7 @@ jobs:
     matrix: $[ variables.linuxDockerImages ]
   container:
     image: '$(dockerImagePrefix)$(dockerImageName):$(Build.BuildNumber)'
-    endpoint: 'Docker / Artifactory - rnd-builds-local'
+    endpoint: 'niartifacts.jfrog.io'
   workspace:
     clean: outputs
   steps:
@@ -167,7 +167,7 @@ jobs:
     inputs:
       command: 'build'
       Dockerfile: '$(Build.SourcesDirectory)/.ci/docker/$(dockerImageName).Dockerfile'
-      containerRegistry: 'Docker / Artifactory - rnd-builds-local'
+      containerRegistry: 'niartifacts.jfrog.io'
       repository: '$(dockerImagePrefix)$(dockerImageName)'
       tags: $(Build.BuildNumber)
       buildContext: $(Build.SourcesDirectory)
@@ -176,7 +176,7 @@ jobs:
     displayName: Push Image
     inputs:
       command: 'push'
-      containerRegistry: 'Docker / Artifactory - rnd-builds-local'
+      containerRegistry: 'niartifacts.jfrog.io'
       repository: '$(dockerImagePrefix)$(dockerImageName)'
       tags: $(Build.BuildNumber)
 
@@ -193,7 +193,7 @@ jobs:
     matrix: $[ variables.winDockerImages ]
   container:
     image: '$(dockerImagePrefix)$(dockerImageName):$(Build.BuildNumber)'
-    endpoint: 'Docker / Artifactory - rnd-builds-local'
+    endpoint: 'niartifacts.jfrog.io'
   workspace:
     clean: outputs
   steps:

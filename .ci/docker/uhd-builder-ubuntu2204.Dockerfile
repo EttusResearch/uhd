@@ -16,6 +16,8 @@ RUN apt-get update && \
         curl \
         git \
         sudo \
+    # Install formatting tools
+        clang-format-14 \
     # Install UHD dependencies
         abi-dumper \
         cmake \

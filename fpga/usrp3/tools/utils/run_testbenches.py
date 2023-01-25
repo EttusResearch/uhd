@@ -157,7 +157,7 @@ def parse_output(simout):
     # testbench or may occur in a subsequent instance, after a pass.
     tb_match_error = ([
         '\n',
-        '(Error|Fatal): .*\n',
+        '(Error|Fatal): .*\n.?',
         'Time: .+\n',
     ])
     m_error = re.search(''.join(tb_match_error), plain_simout)

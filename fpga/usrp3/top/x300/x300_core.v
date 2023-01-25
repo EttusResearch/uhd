@@ -2,6 +2,7 @@
 // Copyright 2014 Ettus Research LLC
 // Copyright 2017 Ettus Research, a National Instruments Company
 // Copyright 2020 Ettus Research, a National Instruments Brand
+// Copyright 2023 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -603,7 +604,8 @@ module x300_core #(
          .NUM_CHANNELS(NUM_CHANNELS_PER_DBOARD),
          .SR_FE_CHAN_OFFSET(SR_FE_CHAN_OFFSET),
          .SR_TX_FE_BASE(SR_TX_FE_BASE),
-         .SR_RX_FE_BASE(SR_RX_FE_BASE)
+         .SR_RX_FE_BASE(SR_RX_FE_BASE),
+         .BYPASS_HETERODYNE(0)
        ) x300_fe_core_i (
          .clk(radio_clk), .reset(radio_rst),
          .set_stb(db_fe_set_stb[i]), .set_addr(db_fe_set_addr[i]), .set_data(db_fe_set_data[i]),

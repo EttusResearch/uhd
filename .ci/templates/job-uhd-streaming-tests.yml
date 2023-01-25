@@ -157,11 +157,18 @@ jobs:
     displayName: Enable Tx Pause Frames on sfp0 and sfp1
     condition: and(succeeded(), eq(variables.dutType, 'x4xx'), eq(variables.dutFPGA, 'CG_400'))
   - script: |
+      ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ip addr add $(dutAddr)/24 dev sfp0"
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ip addr del 192.168.10.2/24 dev sfp0"
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ip addr add $(dutSecondAddr)/24 dev sfp1"
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ip addr del 192.168.20.2/24 dev sfp1"
+    displayName: Setup IP addresses on sfp0 and sfp1
+    condition: and(succeeded(), eq(variables.dutType, 'x4xx'), eq(variables.dutFPGA, 'CG_400'))
+  - script: |
       cd ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
       sudo ./setup.sh --auto
       sleep 5
     displayName: setup interfaces for use without DPDK
-    condition: and(succeeded(), not(eq(variables.dutType, 'x4xx')))
   - script: |
       echo "##[group]Printing Environment"
       printenv
@@ -183,6 +190,28 @@ jobs:
     continueOnError: true
     displayName: Run streaming tests on $(dutName)
     condition: and(succeeded(), not(eq(variables.dutType, 'x4xx')))
+  - script: |
+      export PYTHON_VERSION=$(python3 -c "import sys; print('python'+str(sys.version_info.major) + '.' + str(sys.version_info.minor))")
+      export PYTHONPATH=$(Build.BinariesDirectory)/uhddev/build-installed/lib/$PYTHON_VERSION/site-packages:${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
+      echo "##[group]Printing Environment"
+      printenv
+      echo "##[endgroup]"
+      set -x
+      cd ${{ parameters.uhdSrcDir }}/host/tests/pytests
+      # Disable creation of __pycache__ files using -B to avoid errors on clean up during next run
+      # as using sudo below creates them with root priveleges.
+      sudo -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONPATH=$PYTHONPATH python3 -B -m pytest -s test_raw_udp_streaming.py \
+        --dut_type $(dutType) --dut_fpga $(dutFPGA) --test_length ${{ parameters.testLength }} \
+        --uhd_build_dir $(Build.BinariesDirectory)/uhddev/build-installed/lib/uhd --junitxml $(Common.TestResultsDirectory)/TEST-$(dutName).xml \
+        --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $(dutMgmtAddr) --name $(dutNameId) \
+        --num_recv_frames $(dutNumRecvFrames) --num_send_frames $(dutNumSendFrames)
+    env:
+      UHD_CONFIG_FILE: $(config_file)
+      LD_LIBRARY_PATH: $(Build.BinariesDirectory)/uhddev/build-installed/lib
+      UHD_IMAGES_DIR: $(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images
+    continueOnError: true
+    displayName: Run raw udp streaming tests on $(dutName)
+    condition: and(succeeded(), or(eq(variables.dutType, 'x4xx'), eq(variables.dutType, 'X310')))
   - script: |
       cd ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
       sudo ./setup.sh --auto --dpdk

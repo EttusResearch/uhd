@@ -56,6 +56,7 @@ class X4xxRfdcCtrl:
         122.88e6*4:    (2.94912e9, 2, False, False), # RF (1M-8G)
         122.88e6*2:    (2.94912e9, 2, False, True),  # RF (1M-8G)
         122.88e6*1:    (2.94912e9, 8, False, False), # RF (1M-8G)
+        125e6*1:       (3.00000e9, 8, False, False), # RF (1M-8G)
         125e6*2:       (3.00000e9, 2, False, True),  # RF (1M-8G)
         125e6*4:       (3.00000e9, 2, False, False), # RF (1M-8G)
         200e6:         (3.00000e9, 4, True,  False), # RF (Legacy Mode)
@@ -290,6 +291,20 @@ class X4xxRfdcCtrl:
         return self._rfdc_ctrl.get_nco_freq(tile_id, block_id, is_dac)
 
     ### ADC cal ###############################################################
+    def set_calibration_mode(self, slot_id, channel, mode):
+        """
+        Set RFDC calibration mode
+        """
+        MODES = {
+            "calib_mode1": lib.rfdc.calibration_mode_options.CALIB_MODE1,
+            "calib_mode2": lib.rfdc.calibration_mode_options.CALIB_MODE2,
+        }
+        if mode not in MODES:
+            raise RuntimeError(
+                 f"Mode {mode} is not one of the allowable modes {list(MODES.keys())}")
+        for tile_id, block_id, _ in self._find_converters(slot_id, "rx", channel):
+            self._rfdc_ctrl.set_calibration_mode(tile_id, block_id, MODES[mode])
+
     def set_cal_frozen(self, frozen, slot_id, channel):
         """
         Set the freeze state for the ADC cal blocks

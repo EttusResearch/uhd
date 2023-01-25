@@ -10,9 +10,16 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/device_id.hpp>
+#include <uhdlib/utils/compat_check.hpp>
 
 using namespace uhd::rfnoc;
 using namespace uhd::mpmd;
+
+namespace {
+
+constexpr uhd::compat_num<size_t, size_t> REMOTE_XPORT_CAP_MIN{4, 3};
+
+}
 
 static uhd::usrp::io_service_args_t get_default_io_srv_args()
 {
@@ -31,6 +38,12 @@ mpmd_mboard_impl::mpmd_mb_iface::mpmd_mb_iface(
     _remote_device_id = allocate_device_id();
     UHD_LOG_TRACE("MPMD::MB_IFACE", "Assigning device_id " << _remote_device_id);
     _rpc->notify_with_token("set_device_id", _remote_device_id);
+
+    // Check for remote streaming capabilities
+    auto compat_num = rpc->request<std::vector<size_t>>("get_mpm_compat_num");
+    _has_remote_xport_capability =
+        uhd::compat_num<size_t, size_t>(compat_num[0], compat_num[1])
+        >= REMOTE_XPORT_CAP_MIN;
 }
 
 /******************************************************************************
@@ -382,4 +395,46 @@ mpmd_mboard_impl::mpmd_mb_iface::make_tx_data_transport(
         });
 
     return tx_xport;
+}
+
+std::map<std::string, uhd::device_addr_t>
+mpmd_mboard_impl::mpmd_mb_iface::get_chdr_xport_adapters()
+{
+    if (!_has_remote_xport_capability) {
+        return {};
+    }
+
+    // Note: If MPM is capable, but the FPGA is not, then MPM will return an
+    // empty list here.
+    const auto xport_adapters = _rpc->request_with_token<
+        std::map<std::string, std::map<std::string, std::string>>>(
+        "get_chdr_xport_adapters");
+
+    // Convert to UHD data type and return
+    std::map<std::string, uhd::device_addr_t> return_val;
+    for (auto& adapter_info : xport_adapters) {
+        return_val.insert({adapter_info.first, uhd::device_addr_t(adapter_info.second)});
+    }
+    return return_val;
+}
+
+int mpmd_mboard_impl::mpmd_mb_iface::add_remote_chdr_route(const std::string& adapter_id,
+    const uhd::rfnoc::sep_id_t epid,
+    const uhd::device_addr_t& route_args)
+{
+    if (!_has_remote_xport_capability) {
+        throw uhd::not_implemented_error("This version of MPM does not have the "
+                                         "capability to add remote CHDR routes!");
+    }
+    const auto adapters = get_chdr_xport_adapters();
+    if (!adapters.count(adapter_id)) {
+        throw uhd::value_error(
+            "Invalid adapter for creating a remote route: " + adapter_id);
+    }
+    std::map<std::string, std::string> route_args_map;
+    for (const auto& key : route_args.keys()) {
+        route_args_map[key] = route_args.get(key);
+    }
+    return _rpc->request_with_token<int>(
+        "add_remote_chdr_route", adapter_id, epid, route_args_map);
 }

@@ -56,8 +56,8 @@ jobs:
       beauty-X410-0 CG_400:
         dutName: 'beauty-X410-0'
         dutType: 'x4xx'
-        dutAddr: '192.168.10.2'
-        dutSecondAddr: '192.168.20.2'
+        dutAddr: '192.168.110.2'
+        dutSecondAddr: '192.168.120.2'
         dutMgmtAddr: '10.0.57.29'
         dutFPGA: 'CG_400'
         dutNameId: ''

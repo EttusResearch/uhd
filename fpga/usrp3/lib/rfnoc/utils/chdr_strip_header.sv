@@ -109,8 +109,12 @@ module chdr_strip_header #(
   //---------------------------------------------------------------------------
 
   always_comb begin : sm_comb
-    m_tdata = s_chdr_tdata;
-    m_tlast = s_chdr_tlast;
+    // Default assignments
+    m_tdata       = s_chdr_tdata;
+    m_tlast       = s_chdr_tlast;
+    m_tvalid      = 0;
+    m_tuser       = packet_length;
+    s_chdr_tready = 1;
 
     // Calculate the length of the header, including timestamp and metadata,
     // minus 1.
@@ -137,7 +141,6 @@ module chdr_strip_header #(
       ST_STRIP : begin
         // Drop incoming words
         m_tvalid      = 0;
-        m_tuser       = 'X;
         s_chdr_tready = 1;
       end
       ST_PASS : begin

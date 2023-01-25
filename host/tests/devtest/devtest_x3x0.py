@@ -101,12 +101,13 @@ if (tx_chans > 0):
     if (tx_chans > 1):
         uhd_tx_waveforms_test.tests.update({'all_chans': {'chan': ",".join(all_chans)}})
     from tx_bursts_test import uhd_tx_bursts_test
+    from tx_multi_spc_timed_commands_test import tx_multi_spc_timed_commands_test
 
 if (rx_chans > 0):
     from rx_samples_to_file_test import rx_samples_to_file_test
+    from rx_multi_spc_timed_commands_test import rx_multi_spc_timed_commands_test
 from test_pps_test import uhd_test_pps_test
 from gpio_test import gpio_test
 from bitbang_test import bitbang_test
 from list_sensors_test import list_sensors_test
 from test_messages_test import test_messages_test
-

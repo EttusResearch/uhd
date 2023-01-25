@@ -98,12 +98,13 @@ public:
         // Minus because this zone is inverted
         const double tx_freq = rx_freq - offset;
         return {
-            10.0, // min_gain
-            50.0, // max_gain
             rx_freq, // rx_freq
             tx_freq, // tx_freq
+            "calib_mode2", // calibration_mode
         };
     }
+
+    bool select_adc_self_cal_gain(size_t chan) override;
 
     rf_control::gain_profile_iface::sptr get_tx_gain_profile_api() override
     {

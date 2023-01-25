@@ -75,6 +75,7 @@ IFACES = [
     ]),
     Interface("x400_rpc", [
         fn_from_string("std::vector<std::map<std::string, std::string>> get_dboard_info()", no_claim=True),
+        fn_from_string("void set_calibration_mode(size_t tile_id, size_t block_id, std::string mode)"),
         fn_from_string("void set_cal_frozen(bool state, size_t block_count, size_t chan)"),
         fn_from_string("std::vector<int> get_cal_frozen(size_t block_count, size_t chan)"),
         fn_from_string("double rfdc_set_nco_freq(const std::string& trx, size_t block_count, size_t chan, double freq)"),

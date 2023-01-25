@@ -52,9 +52,13 @@ public:
         return {
             0.0,
             0.0,
-            0.0,
-            0.0,
+            "calib_mode1",
         };
+    }
+
+    bool select_adc_self_cal_gain(size_t) override
+    {
+        return true;
     }
 
     size_t get_chan_from_dboard_fe(const std::string& fe, direction_t) const override

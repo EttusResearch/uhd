@@ -19,60 +19,41 @@
 static uint32_t *shmem = (uint32_t *) X300_FW_SHMEM_BASE;
 
 /***********************************************************************
- * Setup call for udp framer
+ * ARP lookup for MAC addresses for the transport adapter
+ *
+ * When the user programs a destination IP address, we look up the
+ * corresponding MAC address from the ZPU, because there is no guarantee
+ * the host is on the same subnet and can look up the MAC address.
  **********************************************************************/
-void program_udp_framer(
-    const uint8_t ethno,
-    const uint32_t sid,
-    const struct ip_addr *dst_ip,
-    const uint16_t dst_port,
-    const uint16_t src_port
-)
+void program_ta_mac(
+    const x300_fw_comms_t* request,
+    x300_fw_comms_t* reply,
+    uint32_t* addr)
 {
+    // Are we on sfp0 or sfp1? Calculate base address for transport adapter
+    // registers based on *addr.
+    const uint32_t ta_base_addr = (*addr >= SR_ADDR(SET0_BASE, SR_SFP1_ADAPTER))
+                                      ? SR_ADDR(SET0_BASE, SR_SFP1_ADAPTER)
+                                      : SR_ADDR(SET0_BASE, SR_SFP0_ADAPTER);
+
+    // Use our internal ARP cache to map IP address to MAC address
+    const struct ip_addr *dst_ip = (const struct ip_addr *) &(request->data);
     const eth_mac_addr_t *dst_mac = u3_net_stack_arp_cache_lookup(dst_ip);
-    const size_t ethbase = (ethno == 0)? SR_ETHINT0 : SR_ETHINT1;
-    const size_t vdest = (sid >> 16) & 0xff;
-    UHD_FW_TRACE_FSTR(INFO, "handle_udp_prog_framer sid %u vdest %u\n", sid, vdest);
-
-    //setup source framer
-    const eth_mac_addr_t *src_mac = u3_net_stack_get_mac_addr(ethno);
-    wb_poke32(SR_ADDR(SET0_BASE, ethbase + ETH_FRAMER_SRC_MAC_HI),
-        (((uint32_t)src_mac->addr[0]) << 8) | (((uint32_t)src_mac->addr[1]) << 0));
-    wb_poke32(SR_ADDR(SET0_BASE, ethbase + ETH_FRAMER_SRC_MAC_LO),
-        (((uint32_t)src_mac->addr[2]) << 24) | (((uint32_t)src_mac->addr[3]) << 16) |
-        (((uint32_t)src_mac->addr[4]) << 8) | (((uint32_t)src_mac->addr[5]) << 0));
-    wb_poke32(SR_ADDR(SET0_BASE, ethbase + ETH_FRAMER_SRC_IP_ADDR), u3_net_stack_get_ip_addr(ethno)->addr);
-    wb_poke32(SR_ADDR(SET0_BASE, ethbase + ETH_FRAMER_SRC_UDP_PORT), src_port);
-
-    //setup destination framer
-    wb_poke32(SR_ADDR(SET0_BASE, ethbase + ETH_FRAMER_DST_RAM_ADDR), vdest);
-    wb_poke32(SR_ADDR(SET0_BASE, ethbase + ETH_FRAMER_DST_IP_ADDR), dst_ip->addr);
-    wb_poke32(SR_ADDR(SET0_BASE, ethbase + ETH_FRAMER_DST_UDP_MAC),
-        (((uint32_t)dst_port) << 16) |
-        (((uint32_t)dst_mac->addr[0]) << 8) | (((uint32_t)dst_mac->addr[1]) << 0));
-    wb_poke32(SR_ADDR(SET0_BASE, ethbase + ETH_FRAMER_DST_MAC_LO),
-        (((uint32_t)dst_mac->addr[2]) << 24) | (((uint32_t)dst_mac->addr[3]) << 16) |
-        (((uint32_t)dst_mac->addr[4]) << 8) | (((uint32_t)dst_mac->addr[5]) << 0));
-}
-
-/***********************************************************************
- * Handler for UDP framer program packets
- **********************************************************************/
-void handle_udp_prog_framer(
-    const uint8_t ethno,
-    const struct ip_addr *src, const struct ip_addr *dst,
-    const uint16_t src_port, const uint16_t dst_port,
-    const void *buff, const size_t num_bytes
-)
-{
-  if (buff == NULL) {
-    /* We got here from ICMP_DUR undeliverable packet */
-    /* Future space for hooks to tear down streaming radios etc */
-  }
-  else {
-    const uint32_t sid = ((const uint32_t *)buff)[1];
-    program_udp_framer(ethno, sid, src, src_port, dst_port);
-  }
+    if (dst_mac) {
+        wb_poke32(SR_ADDR(ta_base_addr, TA_KV_MAC_LO),
+            (((uint32_t)dst_mac->addr[2]) << 24) | (((uint32_t)dst_mac->addr[3]) << 16)
+                | (((uint32_t)dst_mac->addr[4]) << 8)
+                | (((uint32_t)dst_mac->addr[5]) << 0));
+        wb_poke32(SR_ADDR(ta_base_addr, TA_KV_MAC_HI),
+            (((uint32_t)dst_mac->addr[0]) << 8) | (((uint32_t)dst_mac->addr[1]) << 0));
+    } else {
+        reply->flags |= X300_FW_COMMS_FLAGS_ARP_FAIL;
+    }
+    // Update addr so the following poke32 goes to the expected location
+    *addr = SR_ADDR(ta_base_addr, TA_KV_IPV4);
+    // Now, addr is equal to one of the following:
+    // - SR_ADDR(SET0_BASE, SR_SFP0_ADAPTER + TA_KV_IPV4)
+    // - SR_ADDR(SET0_BASE, SR_SFP1_ADAPTER + TA_KV_IPV4)
 }
 
 /***********************************************************************
@@ -106,12 +87,21 @@ void handle_udp_fw_comms(
                     reply.data = wb_peek32(request->addr);
                 }
             }
-            if (request->flags & X300_FW_COMMS_FLAGS_POKE32)
-            {
-                if (request->addr & 0x00100000) {
-                    chinch_poke32(request->addr & 0x000FFFFF, request->data);
+            if (request->flags & X300_FW_COMMS_FLAGS_POKE32) {
+                uint32_t addr = request->addr;
+                if (addr & 0x00100000) {
+                    chinch_poke32(addr & 0x000FFFFF, request->data);
                 } else {
-                    wb_poke32(request->addr, request->data);
+                    // Some registers require some special handling:
+                    //
+                    // - User requested MAC lookup for programming TA IP address
+                    if (addr == SR_ADDR(SET0_BASE, SR_SFP0_ADAPTER + TA_KV_IPV4_W_ARP)
+                        || addr == SR_ADDR(SET0_BASE, SR_SFP1_ADAPTER + TA_KV_IPV4_W_ARP)) {
+                        program_ta_mac(request, &reply, &addr);
+                    }
+                    if (request->flags == reply.flags) {
+                        wb_poke32(addr, request->data);
+                    }
                 }
             }
         }
@@ -280,49 +270,19 @@ static void handle_claim(uint32_t ticks_now)
 }
 
 /***********************************************************************
- * LED blinky logic and support utilities
+ * Update the 'LINK' and 'ACTIVITY' LEDs on the front panel
  **********************************************************************/
-static uint32_t get_xbar_total(const uint32_t port)
-{
-    static const uint32_t NUM_PORTS = 16;
-    uint32_t total = 0;
-    for (uint32_t i = 0; i < NUM_PORTS; i++)
-    {
-        wb_poke32(SET0_BASE + SR_RB_ADDR*4, (NUM_PORTS*port + i));
-        total += wb_peek32(RB0_BASE + RB_XBAR*4);
-        wb_poke32(SET0_BASE + SR_RB_ADDR*4, (NUM_PORTS*i + port));
-        total += wb_peek32(RB0_BASE + RB_XBAR*4);
-    }
-    if (port < 2) //also netstack if applicable
-    {
-        total += u3_net_stack_get_stat_counts(port);
-    }
-    return total;
-}
-
 static void update_leds(void)
 {
-    static uint32_t last_total0 = 0;
-    static uint32_t last_total1 = 0;
-    const uint32_t total0 = get_xbar_total(0);
-    const uint32_t total1 = get_xbar_total(1);
-    const bool act0 = (total0 != last_total0);
-    const bool act1 = (total1 != last_total1);
-    last_total0 = total0;
-    last_total1 = total1;
-
-    const bool link0 = ethernet_get_link_up(0);
-    const bool link1 = ethernet_get_link_up(1);
+    static uint32_t last_packet_total = 0;
+    const uint32_t current_total =
+        u3_net_stack_get_stat_counts(0) + u3_net_stack_get_stat_counts(1);
+    const bool activity = last_packet_total != current_total;
+    last_packet_total = current_total;
     const bool claimed = shmem[X300_FW_SHMEM_CLAIM_STATUS];
 
-    wb_poke32(SET0_BASE + SR_LEDS*4, 0
-        | (link0? LED_LINK2 : 0)
-        | (link1? LED_LINK1 : 0)
-        | (act0? LED_ACT2 : 0)
-        | (act1? LED_ACT1 : 0)
-        | ((act0 || act1)? LED_LINKACT : 0)
-        | (claimed? LED_LINKSTAT : 0)
-    );
+    wb_poke32(SR_ADDR(SET0_BASE, SR_LEDS),
+        (activity ? LED_LINKACT : 0) | (claimed ? LED_LINKSTAT : 0));
 }
 
 /***********************************************************************
@@ -447,7 +407,6 @@ int main(void)
 {
     x300_init((x300_eeprom_map_t *)&shmem[X300_FW_SHMEM_IDENT]);
     u3_net_stack_register_udp_handler(X300_FW_COMMS_UDP_PORT, &handle_udp_fw_comms);
-    u3_net_stack_register_udp_handler(X300_VITA_UDP_PORT, &handle_udp_prog_framer);
     u3_net_stack_register_udp_handler(X300_FPGA_PROG_UDP_PORT, &handle_udp_fpga_prog);
     u3_net_stack_register_udp_handler(X300_FPGA_READ_UDP_PORT, &handle_udp_fpga_read);
     u3_net_stack_register_udp_handler(X300_MTU_DETECT_UDP_PORT, &handle_udp_mtu_detect);

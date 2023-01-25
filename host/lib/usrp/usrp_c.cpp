@@ -478,9 +478,10 @@ uhd_error uhd_usrp_get_mboard_sensor(uhd_usrp_handle h,
     size_t mboard,
     uhd_sensor_value_handle* sensor_value_out)
 {
-    UHD_SAFE_C_SAVE_ERROR(h, delete (*sensor_value_out)->sensor_value_cpp;
-                          (*sensor_value_out)->sensor_value_cpp = new uhd::sensor_value_t(
-                              USRP(h)->get_mboard_sensor(name, mboard));)
+    UHD_SAFE_C_SAVE_ERROR(
+        h,
+        (*sensor_value_out)->sensor_value_cpp = std::make_unique<uhd::sensor_value_t>(
+            USRP(h)->get_mboard_sensor(name, mboard));)
 }
 
 uhd_error uhd_usrp_get_mboard_sensor_names(
@@ -698,10 +699,10 @@ UHD_API uhd_error uhd_usrp_get_rx_lo_freq(
 uhd_error uhd_usrp_set_rx_gain(
     uhd_usrp_handle h, double gain, size_t chan, const char* gain_name)
 {
-    UHD_SAFE_C_SAVE_ERROR(h, std::string name(gain_name);
-                          if (name.empty()) { USRP(h)->set_rx_gain(gain, chan); } else {
-                              USRP(h)->set_rx_gain(gain, name, chan);
-                          })
+    UHD_SAFE_C_SAVE_ERROR(
+        h, std::string name(gain_name); if (name.empty()) {
+            USRP(h)->set_rx_gain(gain, chan);
+        } else { USRP(h)->set_rx_gain(gain, name, chan); })
 }
 
 uhd_error uhd_usrp_set_normalized_rx_gain(uhd_usrp_handle h, double gain, size_t chan)
@@ -786,9 +787,10 @@ uhd_error uhd_usrp_get_rx_sensor(uhd_usrp_handle h,
     size_t chan,
     uhd_sensor_value_handle* sensor_value_out)
 {
-    UHD_SAFE_C_SAVE_ERROR(h, delete (*sensor_value_out)->sensor_value_cpp;
-                          (*sensor_value_out)->sensor_value_cpp = new uhd::sensor_value_t(
-                              USRP(h)->get_rx_sensor(name, chan));)
+    UHD_SAFE_C_SAVE_ERROR(
+        h,
+        (*sensor_value_out)->sensor_value_cpp =
+            std::make_unique<uhd::sensor_value_t>(USRP(h)->get_rx_sensor(name, chan));)
 }
 
 uhd_error uhd_usrp_get_rx_sensor_names(
@@ -952,10 +954,10 @@ UHD_API uhd_error uhd_usrp_get_tx_lo_freq(
 uhd_error uhd_usrp_set_tx_gain(
     uhd_usrp_handle h, double gain, size_t chan, const char* gain_name)
 {
-    UHD_SAFE_C_SAVE_ERROR(h, std::string name(gain_name);
-                          if (name.empty()) { USRP(h)->set_tx_gain(gain, chan); } else {
-                              USRP(h)->set_tx_gain(gain, name, chan);
-                          })
+    UHD_SAFE_C_SAVE_ERROR(
+        h, std::string name(gain_name); if (name.empty()) {
+            USRP(h)->set_tx_gain(gain, chan);
+        } else { USRP(h)->set_tx_gain(gain, name, chan); })
 }
 
 uhd_error uhd_usrp_set_normalized_tx_gain(uhd_usrp_handle h, double gain, size_t chan)
@@ -1035,9 +1037,10 @@ uhd_error uhd_usrp_get_tx_sensor(uhd_usrp_handle h,
     size_t chan,
     uhd_sensor_value_handle* sensor_value_out)
 {
-    UHD_SAFE_C_SAVE_ERROR(h, delete (*sensor_value_out)->sensor_value_cpp;
-                          (*sensor_value_out)->sensor_value_cpp = new uhd::sensor_value_t(
-                              USRP(h)->get_tx_sensor(name, chan));)
+    UHD_SAFE_C_SAVE_ERROR(
+        h,
+        (*sensor_value_out)->sensor_value_cpp =
+            std::make_unique<uhd::sensor_value_t>(USRP(h)->get_tx_sensor(name, chan));)
 }
 
 uhd_error uhd_usrp_get_tx_sensor_names(

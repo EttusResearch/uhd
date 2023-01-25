@@ -36,6 +36,9 @@ include $(LIB_DIR)/io_port2/Makefile.srcs
 include $(LIB_DIR)/axi/Makefile.srcs
 include $(LIB_DIR)/io_cap_gen/Makefile.srcs
 include $(LIB_DIR)/rfnoc/Makefile.srcs
+include $(LIB_DIR)/axi4s_sv/Makefile.srcs
+include $(LIB_DIR)/rfnoc/xport_sv/Makefile.srcs
+
 # For sake of convenience, we include the Makefile.srcs for DRAM FIFO, DDC, and
 # DUC, Replay, and of course the radio. Any other block needs to use the
 # RFNOC_OOT_MAKEFILE_SRCS variable (see below).
@@ -111,7 +114,8 @@ $(RFNOC_FRAMEWORK_SRCS) \
 $(RFNOC_BLOCK_DUC_SRCS) $(RFNOC_BLOCK_DDC_SRCS) $(RFNOC_BLOCK_RADIO_SRCS) \
 $(RFNOC_BLOCK_AXI_RAM_FIFO_SRCS) \
 $(RFNOC_BLOCK_REPLAY_SRCS) \
-$(RFNOC_OOT_SRCS)
+$(RFNOC_OOT_SRCS) \
+$(AXI4S_SV_SRCS) $(RFNOC_XPORT_SV_SRCS) \
 
 EDGE_TBL_DEF="RFNOC_EDGE_TBL_FILE=$(call RESOLVE_PATH,$(EDGE_FILE))"
 IMAGE_CORE_DEF="RFNOC_IMAGE_CORE_HDR=$(DEFAULT_RFNOC_IMAGE_CORE_FILE:.v=.vh)"

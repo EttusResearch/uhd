@@ -14,20 +14,11 @@ from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.chips.ic_reg_maps import zbx_cpld_regs_t
 from usrp_mpm.periph_manager.x4xx_periphs import get_temp_sensor
 from usrp_mpm.sys_utils.udev import get_eeprom_paths_by_symbol
+from usrp_mpm.mpmutils import parse_encoded_git_hash
 
 ###############################################################################
 # Helpers
 ###############################################################################
-def parse_encoded_git_hash(encoded):
-    """
-    Helper function: Unpacks the git hash encoded in the ZBX CPLD image into
-    the git hash and a dirty flag.
-    """
-    git_hash = encoded & 0x0FFFFFFF
-    tree_dirty = ((encoded & 0xF0000000) > 0)
-    dirtiness_qualifier = 'dirty' if tree_dirty else 'clean'
-    return (git_hash, dirtiness_qualifier)
-
 # pylint: disable=too-few-public-methods
 class EepromTagMap:
     """

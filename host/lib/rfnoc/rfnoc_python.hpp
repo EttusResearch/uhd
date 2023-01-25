@@ -230,7 +230,7 @@ void export_rfnoc(py::module& m)
         .def(
             "get_mb_controller", &rfnoc_graph::get_mb_controller, py::arg("mb_index") = 0)
         .def("synchronize_devices", &rfnoc_graph::synchronize_devices)
-        .def("get_tree", &rfnoc_graph::get_tree);
+        .def("get_tree", [](rfnoc_graph& self){ return self.get_tree().get(); }, py::return_value_policy::reference_internal);
 
     py::class_<uhd::features::gpio_power_iface>(m, "gpio_power")
         .def("get_supported_voltages", &uhd::features::gpio_power_iface::get_supported_voltages)

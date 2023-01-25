@@ -72,6 +72,7 @@ set(pytest_sources
     verify_fbs_test.py
     pychdr_parse_test.py
     uhd_image_downloader_test.py
+    device_addr_test.py
 )
 
 #turn each test cpp file into an executable with an int main() function
@@ -248,6 +249,12 @@ UHD_ADD_NONAPI_TEST(
     TARGET rfnoc_detailgraph_test.cpp
     EXTRA_SOURCES
     ${UHD_SOURCE_DIR}/lib/rfnoc/graph.cpp
+)
+
+UHD_ADD_NONAPI_TEST(
+    TARGET rfnoc_topograph_test.cpp
+    EXTRA_SOURCES
+    ${UHD_SOURCE_DIR}/lib/rfnoc/topo_graph.cpp
 )
 
 UHD_ADD_NONAPI_TEST(
@@ -444,6 +451,12 @@ UHD_ADD_NONAPI_TEST(
     TARGET "compat_test.cpp"
     EXTRA_SOURCES
     ${UHD_SOURCE_DIR}/lib/utils/compat_check.cpp
+)
+
+UHD_ADD_NONAPI_TEST(
+    TARGET "xport_adapter_ctrl_test.cpp"
+    EXTRA_SOURCES
+    ${UHD_SOURCE_DIR}/lib/usrp/cores/xport_adapter_ctrl.cpp
 )
 
 ########################################################################

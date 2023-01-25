@@ -2,6 +2,7 @@
 // Copyright 2015 Ettus Research LLC
 // Copyright 2018 Ettus Research, a National Instruments Company
 // Copyright 2020 Ettus Research, a National Instruments Brand
+// Copyright 2023 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -22,13 +23,12 @@
 //      This register uses the following bits:
 //
 //      Bit 0:  Set to 1 to swap I and Q.
-//      Bit 1:  Set to 1 to enable real mode (only relevant if
-//              BYPASS_REALMODE_DSP is set to 0, see below). If it is 1, then
+//      Bit 1:  Set to 1 to enable real mode. If it is 1, then
 //              the Q input signal is ignored and assumed to be zero.
 //      Bit 2:  Set to 1 to invert the Q input signal
 //      Bit 3:  Set to 1 to invert the I input signal
 //      Bit 4:  Set to 1 to enable the quarter-rate downconverter (only relevant
-//              when BYPASS_REALMODE_DSP is set to 0, see below).
+//              when BYPASS_HETERODYNE is set to 0, see below).
 //      Bit 7:  Disable all corrections in this module.
 //
 //   2) DC offset correction. See the rx_dcoffset module for details. This is
@@ -49,13 +49,15 @@
 //      B is the value written to the register at SR_PHASE_CORRECTION.
 //      Set BYPASS_IQ_COMP to 1 to not synthesize this step.
 //
-//   4) Real-to-imaginary conversion. The converter is only enabled when the
+//   4) Heterodyne conversion. The converter is only enabled when the
 //      "downconvert" bit in the SR_IQ_MAPPING register is asserted. In this
 //      case, it enables a quarter-rate mixer. The direction of this mixer is
 //      controlled by the SR_HET_PHASE_INCR register (a 0 in this register
 //      rotates by pi/2 every clock cycle, a 1 in this register rotates by -pi/2).
 //
-//      Set BYPASS_REALMODE_DSP to 1 to not synthesize this step.
+//      The mixer is followed by a non-decimating FIR filter.
+//
+//      Set BYPASS_HETERODYNE to 1 to not synthesize this step.
 //
 //
 // UHD Developers Note: This module is typically controlled by rx_frontend_core_3000 in UHD,
@@ -74,7 +76,7 @@
 //                           increment value
 //   BYPASS_DC_OFFSET_CORR : Set to 1 to disable DC offset correction
 //   BYPASS_IQ_COMP        : Set to 1 to disable IQ offset correction
-//   BYPASS_REALMODE_DSP   : Set to 1 to disable realmode to complex conversion
+//   BYPASS_HETERODYNE     : Set to 1 to disable heterodyne conversion
 //   DEVICE                : Unused.
 //
 module rx_frontend_gen3 #(
@@ -86,7 +88,7 @@ module rx_frontend_gen3 #(
   parameter SR_HET_PHASE_INCR = 5,
   parameter BYPASS_DC_OFFSET_CORR = 0,
   parameter BYPASS_IQ_COMP = 0,
-  parameter BYPASS_REALMODE_DSP = 0,
+  parameter BYPASS_HETERODYNE = 0,
   parameter DEVICE = "7SERIES"
 )(
   input clk, input reset, input sync_in,
@@ -248,10 +250,12 @@ module rx_frontend_gen3 #(
   *  - Realmode decimation (by 2)
   ********************************************************/
   generate
-    if (BYPASS_REALMODE_DSP == 0) begin
+    if (BYPASS_HETERODYNE == 0) begin
 
       wire [23:0] adc_i_dsp_cout, adc_q_dsp_cout;
+      wire [23:0] adc_i_filt, adc_q_filt;
       wire        adc_dsp_cout_stb;
+      wire        adc_filt_stb;
 
       // 90 degree mixer
       quarter_rate_downconverter #(.WIDTH(24)) qr_dc_i(
@@ -260,9 +264,57 @@ module rx_frontend_gen3 #(
         .o_tdata({adc_i_dsp_cout, adc_q_dsp_cout}), .o_tlast(), .o_tvalid(adc_dsp_cout_stb), .o_tready(1'b1),
         .dirctn(phase_dir));
 
-      assign adc_dsp_stb = downconvert ? adc_dsp_cout_stb : adc_comp_stb;
-      assign adc_i_dsp   = downconvert ? adc_i_dsp_cout : adc_i_comp;
-      assign adc_q_dsp   = downconvert ? adc_q_dsp_cout : adc_q_comp;
+      // Double FIR block
+      localparam HB_COEFS = {-18'd62, 18'd0, 18'd194, 18'd0, -18'd440, 18'd0, 18'd855, 18'd0, -18'd1505, 18'd0, 18'd2478, 18'd0,
+        -18'd3900, 18'd0, 18'd5990, 18'd0, -18'd9187, 18'd0, 18'd14632, 18'd0, -18'd26536, 18'd0, 18'd83009, 18'd131071, 18'd83009,
+        18'd0, -18'd26536, 18'd0, 18'd14632, 18'd0, -18'd9187, 18'd0, 18'd5990, 18'd0, -18'd3900, 18'd0, 18'd2478, 18'd0, -18'd1505,
+        18'd0, 18'd855, 18'd0, -18'd440, 18'd0, 18'd194, 18'd0, -18'd62};
+
+      // FIR filter for real part
+      axi_fir_filter #(.IN_WIDTH(24), .COEFF_WIDTH(18), .OUT_WIDTH(24), .NUM_COEFFS(47), .COEFFS_VEC(HB_COEFS),
+        .RELOADABLE_COEFFS(0), .BLANK_OUTPUT(0), .SYMMETRIC_COEFFS(1), .SKIP_ZERO_COEFFS(1), .USE_EMBEDDED_REGS_COEFFS(0)
+      ) hbfir0(
+        .clk(clk),
+        .reset(reset),
+        .clear(reset),
+        .s_axis_data_tdata(adc_i_dsp_cout),
+        .s_axis_data_tlast(1'b1),
+        .s_axis_data_tvalid(adc_dsp_cout_stb),
+        .s_axis_data_tready(),
+        .m_axis_data_tdata(adc_i_filt),
+        .m_axis_data_tlast(),
+        .m_axis_data_tvalid(adc_filt_stb),
+        .m_axis_data_tready(1'b1),
+        .s_axis_reload_tdata(18'd0),
+        .s_axis_reload_tvalid(1'b0),
+        .s_axis_reload_tlast(1'b0),
+        .s_axis_reload_tready()
+      );
+
+      // FIR filter for imag. part
+      axi_fir_filter #(.IN_WIDTH(24), .COEFF_WIDTH(18), .OUT_WIDTH(24), .NUM_COEFFS(47), .COEFFS_VEC(HB_COEFS),
+        .RELOADABLE_COEFFS(0), .BLANK_OUTPUT(0), .SYMMETRIC_COEFFS(1), .SKIP_ZERO_COEFFS(1), .USE_EMBEDDED_REGS_COEFFS(0)
+      ) hbfir1(
+        .clk(clk),
+        .reset(reset),
+        .clear(reset),
+        .s_axis_data_tdata(adc_q_dsp_cout),
+        .s_axis_data_tlast(1'b1),
+        .s_axis_data_tvalid(adc_dsp_cout_stb),
+        .s_axis_data_tready(),
+        .m_axis_data_tdata(adc_q_filt),
+        .m_axis_data_tlast(),
+        .m_axis_data_tvalid(),
+        .m_axis_data_tready(1'b1),
+        .s_axis_reload_tdata(18'd0),
+        .s_axis_reload_tvalid(1'b0),
+        .s_axis_reload_tlast(1'b0),
+        .s_axis_reload_tready()
+      );
+
+      assign adc_dsp_stb = downconvert ? adc_filt_stb : adc_comp_stb;
+      assign adc_i_dsp   = downconvert ? adc_i_filt : adc_i_comp;
+      assign adc_q_dsp   = downconvert ? adc_q_filt : adc_q_comp;
 
     end else begin
       assign adc_dsp_stb = adc_comp_stb;

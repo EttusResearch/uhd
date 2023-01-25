@@ -11,7 +11,8 @@ import bisect
 import copy
 import re
 from functools import partial
-from six import iteritems, itervalues
+from six import iteritems
+from usrp_mpm.compat_num import CompatNumber
 from usrp_mpm.components import ZynqComponents
 from usrp_mpm.dboard_manager import Neon
 from usrp_mpm.gpsd_iface import GPSDIfaceExtension
@@ -31,6 +32,7 @@ E320_DEFAULT_TIME_SOURCE = 'internal'
 E320_DEFAULT_ENABLE_GPS = True
 E320_DEFAULT_ENABLE_FPGPIO = True
 E320_FPGA_COMPAT = (6, 1)
+E320_REMOTE_STREAMING_COMPAT = (6, 1)
 E320_DBOARD_SLOT_IDX = 0
 E320_GPIO_BANKS = ["FP0",]
 E320_GPIO_SRC_PS = "PS"
@@ -151,6 +153,7 @@ class e320(ZynqComponents, PeriphManagerBase):
         self._clock_source = None
         self._time_source = None
         self._gpsd = None
+        self._xport_adapter_mgrs = {}
         self.dboard = self.dboards[E320_DBOARD_SLOT_IDX]
         for sensor_name, sensor_cb_name in self.mboard_sensor_callback_map.items():
             if sensor_name[:5] == 'temp_':
@@ -216,6 +219,11 @@ class e320(ZynqComponents, PeriphManagerBase):
             fail_on_old_minor=True,
             log=self.log
         )
+        if CompatNumber(actual_compat) >= CompatNumber(E320_REMOTE_STREAMING_COMPAT):
+            self.fpga_features.add('remote_udp_streaming')
+        self.log.debug(
+            "FPGA supports the following features: {}"
+            .format(", ".join(self.fpga_features)))
 
     def _init_ref_clock_and_time(self, default_args):
         """
@@ -251,11 +259,9 @@ class e320(ZynqComponents, PeriphManagerBase):
         self._check_fpga_compat()
         self._update_fpga_type()
         # Init peripherals
-        self.enable_gps(
-            enable=str2bool(
-                args.get('enable_gps', E320_DEFAULT_ENABLE_GPS)
-            )
-        )
+        self._gps_enabled = None  # Assume indeterminant, will latch _def_gps_enabled
+        self._def_gps_enabled = str2bool(args.get('enable_gps', E320_DEFAULT_ENABLE_GPS))
+        self.enable_gps(self._def_gps_enabled)
         self.enable_fp_gpio(
             enable=args.get('enable_fp_gpio', E320_DEFAULT_ENABLE_FPGPIO)
         )
@@ -299,10 +305,23 @@ class e320(ZynqComponents, PeriphManagerBase):
                 "Cannot run init(), device was never fully initialized!")
             return False
         args = self._update_default_args(args)
+        self.enable_gps(str2bool(args.get('enable_gps', self._def_gps_enabled)))
         self.set_clock_source(args.get("clock_source", E320_DEFAULT_CLOCK_SOURCE))
         self.set_time_source(args.get("time_source", E320_DEFAULT_TIME_SOURCE))
         result = super(e320, self).init(args)
         return result
+
+    def deinit(self):
+        """
+        Clean up after a UHD session terminates.
+        """
+        if not self._device_initialized:
+            self.log.warning(
+                "Cannot run deinit(), device was never fully initialized!")
+            return
+        # Restore default power-state of GPS hardware resources
+        self.enable_gps(self._def_gps_enabled)
+        super(e320, self).deinit()
 
     def tear_down(self):
         """
@@ -318,6 +337,7 @@ class e320(ZynqComponents, PeriphManagerBase):
         ))
         for overlay in active_overlays:
             dtoverlay.rm_overlay(overlay)
+
 
     ###########################################################################
     # Device info
@@ -503,7 +523,11 @@ class e320(ZynqComponents, PeriphManagerBase):
         """
         Turn power to the GPS (CLK_GPS_PWR_EN) off or on.
         """
+        if enable == self._gps_enabled:
+            self.log.trace("Nothing to do -- GPS power state unchanged.")
+            return
         self.mboard_regs_control.enable_gps(enable)
+        self._gps_enabled = enable
 
     def enable_fp_gpio(self, enable):
         """

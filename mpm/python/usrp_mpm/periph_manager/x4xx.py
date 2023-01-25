@@ -14,7 +14,7 @@ from os import path
 from collections import namedtuple
 from usrp_mpm import lib # Pulls in everything from C++-land
 from usrp_mpm import tlv_eeprom
-from usrp_mpm.cores import WhiteRabbitRegsControl
+from usrp_mpm.compat_num import CompatNumber
 from usrp_mpm.components import ZynqComponents
 from usrp_mpm.sys_utils import dtoverlay
 from usrp_mpm.sys_utils import ectool
@@ -45,6 +45,7 @@ X400_DEFAULT_TIME_SOURCE = X4xxClockMgr.TIME_SOURCE_INTERNAL
 X400_DEFAULT_CLOCK_SOURCE = X4xxClockMgr.CLOCK_SOURCE_INTERNAL
 X400_DEFAULT_ENABLE_PPS_EXPORT = True
 X400_FPGA_COMPAT = (7, 9)
+X400_REMOTE_STREAMING_COMPAT = (7, 9)
 X400_DEFAULT_TRIG_DIRECTION = ClockingAuxBrdControl.DIRECTION_OUTPUT
 X400_MONITOR_THREAD_INTERVAL = 1.0 # seconds
 QSFPModuleConfig = namedtuple("QSFPModuleConfig", "modprs modsel devsymbol")
@@ -218,15 +219,10 @@ class x4xx(ZynqComponents, PeriphManagerBase):
     # End of overridables from PeriphManagerBase
     ###########################################################################
 
-
     # X400-specific settings
     # Label for the mboard UIO
     mboard_regs_label = "mboard-regs"
     ctrlport_regs_label = "ctrlport-mboard-regs"
-    # Label for the white rabbit UIO
-    wr_regs_label = "wr-regs"
-    # Override the list of updateable components
-    # X4xx specific discoverable features
 
     @classmethod
     def generate_device_info(cls, eeprom_md, mboard_info, dboard_infos):
@@ -342,7 +338,14 @@ class x4xx(ZynqComponents, PeriphManagerBase):
     # pylint: enable=no-self-use
 
     def _check_fpga_compat(self):
-        " Throw an exception if the compat numbers don't match up "
+        """
+        Read the FPGA compat number and throw an exception if the compat numbers
+        don't match up (i.e., this version of MPM requires a newer FPGA compat
+        number).
+
+        If the numbers match, we check the FPGA compat number for available
+        features.
+        """
         actual_compat = self.mboard_regs_control.get_compat_number()
         self.log.debug("Actual FPGA compat number: {:d}.{:d}".format(
             actual_compat[0], actual_compat[1]
@@ -354,6 +357,11 @@ class x4xx(ZynqComponents, PeriphManagerBase):
             fail_on_old_minor=False,
             log=self.log
         )
+        if CompatNumber(actual_compat) >= CompatNumber(X400_REMOTE_STREAMING_COMPAT):
+            self.fpga_features.add('remote_udp_streaming')
+        self.log.debug(
+            "FPGA supports the following features: {}"
+            .format(", ".join(self.fpga_features)))
 
     def _init_gps_mgr(self):
         """
@@ -663,7 +671,6 @@ class x4xx(ZynqComponents, PeriphManagerBase):
                 args.get('pps_export', X400_DEFAULT_ENABLE_PPS_EXPORT),
                 args.get('trig_direction', X400_DEFAULT_TRIG_DIRECTION)
                 )
-
         return result
 
     def deinit(self):
@@ -710,6 +717,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         ))
         for overlay in active_overlays:
             dtoverlay.rm_overlay(overlay)
+
     ###########################################################################
     # Device info
     ###########################################################################

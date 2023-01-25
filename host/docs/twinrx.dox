@@ -45,20 +45,6 @@ custom RFNoC FPGA images, but the DDC can be replaced by a custom block
 as long as it consumes the 400 Msps and produces an aggregate of less than
 200 Msps.
 
-Starting with UHD release 4.1, the X310/X300 FPGA images no longer contain a
-halfband anti-aliasing filter directly after the ADC when using TwinRX. The
-filter was left out because the radio no longer decimates the sampling rate for
-TwinRX, instead relying on the DDC RFNoC block to adjust the sampling rate, and
-the DSP utilization of the filter was permanent, even when no TwinRX daughtercard
-was used. This means the output of the radio block (which produces a 200 Msps
-output signal when using TwinRX) contains aliases of the signal. The following
-image shows the output of the X310+TwinRX when configuring it to run at 200 Msps.
-The center frequency is set to 2.1 GHz, and a signal is applied at approx. 2.13 GHz.
-
-\image html twinrx_alias.png "TwinRX Signal Aliases"
-
-Due to aliasing, a mirrored alias signal will also appear at 2.17 GHz. The
-statically connected DDC block will remove these aliases.
 
 \image html TwinRX_Block_Diagram.png "TwinRX Block Diagram"
 

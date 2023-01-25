@@ -121,9 +121,10 @@ uhd_error uhd_usrp_clock_get_sensor(uhd_usrp_clock_handle h,
     size_t board,
     uhd_sensor_value_handle* sensor_value_out)
 {
-    UHD_SAFE_C_SAVE_ERROR(h, delete (*sensor_value_out)->sensor_value_cpp;
-                          (*sensor_value_out)->sensor_value_cpp = new uhd::sensor_value_t(
-                              USRP_CLOCK(h)->get_sensor(name, board));)
+    UHD_SAFE_C_SAVE_ERROR(
+        h,
+        (*sensor_value_out)->sensor_value_cpp = std::make_unique<uhd::sensor_value_t>(
+            USRP_CLOCK(h)->get_sensor(name, board));)
 }
 
 uhd_error uhd_usrp_clock_get_sensor_names(

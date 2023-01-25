@@ -1,5 +1,6 @@
 //
 // Copyright 2017 Ettus Research, a National Instruments Company
+// Copyright 2023 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -64,7 +65,7 @@ module n3xx_db_fe_core #(
       rx_frontend_gen3 #(
         .SR_MAG_CORRECTION(SR_RX_FE_BASE + 0), .SR_PHASE_CORRECTION(SR_RX_FE_BASE + 1), .SR_OFFSET_I(SR_RX_FE_BASE + 2),
         .SR_OFFSET_Q(SR_RX_FE_BASE + 3), .SR_IQ_MAPPING(SR_RX_FE_BASE + 4), .SR_HET_PHASE_INCR(SR_RX_FE_BASE + 5),
-        .BYPASS_DC_OFFSET_CORR(0), .BYPASS_IQ_COMP(0), .BYPASS_REALMODE_DSP(1),
+        .BYPASS_DC_OFFSET_CORR(0), .BYPASS_IQ_COMP(0), .BYPASS_HETERODYNE(1),
         .DEVICE("7SERIES")
       ) rx_fe_corr_i (
         .clk(clk), .reset(reset), .sync_in(),

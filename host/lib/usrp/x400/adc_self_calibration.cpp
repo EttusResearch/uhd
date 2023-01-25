@@ -130,56 +130,13 @@ void adc_self_calibration::run(size_t chan)
         _daughterboard->set_rx_gain(rx_gain, chan);
     });
 
-    // Set the threshold to detect half-scale
-    // The setup_threshold call uses 14-bit ADC values
-    constexpr int hysteresis_reset_time      = 100;
-    constexpr int hysteresis_reset_threshold = 8000;
-    constexpr int hysteresis_set_threshold   = 8192;
-    _rpcc->setup_threshold(_db_number,
-        chan,
-        0,
-        "hysteresis",
-        hysteresis_reset_time,
-        hysteresis_reset_threshold,
-        hysteresis_set_threshold);
-    bool found_gain = false;
-    for (double i = cal_params.min_gain; i <= cal_params.max_gain; i += 1.0) {
-        _daughterboard->get_rx_gain_profile_api()->set_gain_profile("default", chan);
-        _daughterboard->get_tx_gain_profile_api()->set_gain_profile("default", chan);
-
-        _daughterboard->set_tx_gain(i, chan);
-        _daughterboard->set_rx_gain(i, chan);
-
-        // Set the daughterboard to use the duplex entry in the DSA table which was
-        // configured in the set_?x_gain call. (note that with a LabVIEW FPGA, we don't
-        // control the ATR lines, hence why we override them here)
-        _daughterboard->get_rx_gain_profile_api()->set_gain_profile("table_noatr", chan);
-        _daughterboard->get_tx_gain_profile_api()->set_gain_profile("table_noatr", chan);
-
-        _daughterboard->set_rx_gain(0b11, chan);
-        _daughterboard->set_tx_gain(0b11, chan);
-
-        // Wait for it to settle
-        constexpr auto settle_time = 10ms;
-        std::this_thread::sleep_for(settle_time);
-
-        try {
-            const bool threshold_status =
-                _rpcc->get_threshold_status(_db_number, chan, 0);
-            if (threshold_status) {
-                found_gain = true;
-                break;
-            }
-        } catch (uhd::runtime_error&) {
-            // Catch & eat this error, the user has a 5.0 FPGA and so can't auto-gain
-            return;
-        }
-    }
-
+    bool found_gain = _daughterboard->select_adc_self_cal_gain(chan);
     if (!found_gain) {
         throw uhd::runtime_error(
             "Could not find appropriate gain for performing ADC self cal");
     }
+
+    _rpcc->set_calibration_mode(_db_number, chan, cal_params.calibration_mode);
 
     // (if required) unfreeze calibration
     const std::vector<int> current_frozen_state = _rpcc->get_cal_frozen(_db_number, chan);

@@ -272,7 +272,7 @@ The following key/value pairs are understood:
 
  Key                 | Description                                                                  | Supported Devices | Example Value
 ---------------------|------------------------------------------------------------------------------|-------------------|---------------------
- enable_gps          | Enable/disable power to the GPSDO.                                           | N3xx, E320        | enable_gps=0
+ enable_gps          | Enable/disable power to the GPSDO (can be overridden by UHD on E320).        | N3xx, E320        | enable_gps=0
  enable_fp_gpio      | Enable/disable power to the front-panel GPIOs.                               | N3xx, E320        | enable_fp_gpio=0
  skip_boot_init      | Don't init the device during MPM boot, but on the first UHD run.             | N3xx              | skip_boot_init=1
  clock_source        | Default clock source for this device (can be overridden by UHD).             | N3xx, E320, E31x  | clock_source=external

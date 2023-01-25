@@ -8,6 +8,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/graph_stream_manager.hpp>
 #include <uhdlib/rfnoc/link_stream_manager.hpp>
+#include <uhdlib/rfnoc/topo_graph.hpp>
 #include <uhdlib/transport/links.hpp>
 #include <boost/format.hpp>
 #include <map>
@@ -26,22 +27,22 @@ public:
     graph_stream_manager_impl(const chdr::chdr_packet_factory& pkt_factory,
         const epid_allocator::sptr& epid_alloc,
         const std::vector<std::pair<device_id_t, mb_iface*>>& links)
-        : _epid_alloc(epid_alloc)
+        : _epid_alloc(epid_alloc),
+        _tgraph(std::make_shared<detail::topo_graph_t>())
     {
         for (const auto& lnk : links) {
             UHD_ASSERT_THROW(lnk.second);
             _link_mgrs.emplace(lnk.first,
                 link_stream_manager::make(
-                    pkt_factory, *lnk.second, epid_alloc, lnk.first));
+                    pkt_factory, *lnk.second, epid_alloc, lnk.first, _tgraph));
             auto adapter = _link_mgrs.at(lnk.first)->get_adapter_id();
             if (_alloc_map.count(adapter) == 0) {
                 _alloc_map[adapter] = allocation_info{0, 0};
             }
         }
         for (const auto& mgr_pair : _link_mgrs) {
+            mgr_pair.second->add_unreachable_transport_adapters();
             for (const auto& ep : mgr_pair.second->get_reachable_endpoints()) {
-                // Add the (potential) destinations to the
-                _reachable_endpoints.insert(ep);
                 // Add entry to source map
                 if (_src_map.count(ep) == 0) {
                     _src_map[ep] = std::vector<device_id_t>();
@@ -49,17 +50,16 @@ public:
                 _src_map[ep].push_back(mgr_pair.first);
             }
         }
+        UHD_LOG_TRACE("RFNOC::GRAPH", "RFNoC Topology:\n" << _tgraph->to_dot());
     }
 
     ~graph_stream_manager_impl() override = default;
 
-    const std::set<sep_addr_t>& get_reachable_endpoints() const override
-    {
-        return _reachable_endpoints;
-    }
-
     std::vector<device_id_t> get_local_devices() const override
     {
+        // We could also pull the local devices out of _tgraph, but since we
+        // have to store the link managers' device IDs anyway, this is more
+        // efficient
         std::vector<device_id_t> retval;
         for (const auto& mgr_pair : _link_mgrs) {
             retval.push_back(mgr_pair.first);
@@ -293,7 +293,9 @@ private:
                                        "from the via device");
             }
         } else {
-            throw uhd::rfnoc_error("Specified destination address is unreachable");
+            throw uhd::rfnoc_error("Specified destination address is unreachable: "
+                                   + std::to_string(dst_addr.first) + ":"
+                                   + std::to_string(dst_addr.second));
         }
     }
 
@@ -301,8 +303,6 @@ private:
     epid_allocator::sptr _epid_alloc;
     // A map the contains all link manager indexed by the device ID
     std::map<device_id_t, link_stream_manager::uptr> _link_mgrs;
-    // A set of the addresses of all devices reachable from this graph
-    std::set<sep_addr_t> _reachable_endpoints;
     // A map of addresses that can be taken to reach a particular destination
     std::map<sep_addr_t, std::vector<device_id_t>> _src_map;
 
@@ -315,6 +315,9 @@ private:
 
     // A map of allocations for each host transport adapter
     std::map<uhd::transport::adapter_id_t, allocation_info> _alloc_map;
+
+    //! Graph object for the available topology
+    detail::topo_graph_t::sptr _tgraph;
 };
 
 graph_stream_manager::uptr graph_stream_manager::make(

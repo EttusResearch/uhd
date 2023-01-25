@@ -9,6 +9,7 @@
 
 #include <uhd/types/ranges.hpp>
 #include <cstddef>
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -86,7 +87,7 @@ static constexpr double MAGNESIUM_RX_IF_FREQ = 2.4418e9;
 static constexpr double MAGNESIUM_TX_IF_FREQ = 1.95e9;
 
 //! Max time we allow for a call to set_freq() to take
-static constexpr size_t MAGNESIUM_TUNE_TIMEOUT = 15000; // milliseconds
+static constexpr size_t MAGNESIUM_TUNE_TIMEOUT = 30000; // milliseconds
 
 //! Magnesium gain profile options
 static const std::vector<std::string> MAGNESIUM_GP_OPTIONS = {"manual",

@@ -20,7 +20,7 @@ Note that since UHD version 4.0.0.0, Python 2 is no longer supported.
 
 \subsection python_install_windows Installing on Windows
 
-Static linking on is unsupported on Windows. Otherwise, compiling the Python API
+Static linking is unsupported on Windows. Otherwise, compiling the Python API
 on Windows is no different from other operating systems.
 
 Note that you may have to set the `PYTHONPATH` environment variable to ensure
