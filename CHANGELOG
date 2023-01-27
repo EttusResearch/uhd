@@ -2,7 +2,10 @@ Change Log for Releases
 ==============================
 
 ## 004.004.000.000
-C API: Fix double-free issue with sensor values
+* Features
+  - Raw UDP Traffic to Remote Destination for RFNoC-enabled devices
+* C API
+  - Fix double-free issue with sensor values
 * ci
   - Add clang-format 14.0 to the Ubuntu 22.04 container
   - devtest: Test E320 1G FPGA Image
