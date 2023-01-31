@@ -193,7 +193,7 @@ internet:
 
 Then, use the image loader tool to pick an FPGA image:
 
-    uhd_image_loader -a type=e3xx,addr=<IP Address>,fpga=XG
+    uhd_image_loader --args type=e3xx,addr=<IP Address>,fpga=XG
 
 \section e3xx_sdcard The SD card
 
