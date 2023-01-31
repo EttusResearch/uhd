@@ -2,13 +2,13 @@
 # Target    hash    url     SHA256
 
 # X410-Series
-x4xx_x410_fpga_default          uhd-92c09f7       x4xx/uhd-92c09f7/x4xx_x410_fpga_default-g92c09f7.zip       dd085cb1ee1e4a3fc04aa2ff9dc7c2365f1884baf584d7ec30c7cdf26bfdfdfd
+x4xx_x410_fpga_default          uhd-92c09f7       x4xx/uhd-92c09f7/x4xx_x410_fpga_default-g92c09f7.zip      2d11365b83fc6af9401ef5dcc61f6c6bb6656a46475e833af9753e12933282b5
 x4xx_x410_cpld_default          uhd-6fd9f37       x4xx/uhd-6fd9f37/x4xx_x410_cpld_default-g6fd9f37.zip       74e09bedda84105258484217d4dbf68860ce2079d27cf8352952fe8e4d727e93
 x4xx_zbx_cpld_default           uhd-8d022b3       x4xx/uhd-8d022b3/x4xx_zbx_cpld_default-g8d022b3.zip        95993c736d48e22cbdb453a606189378a420f62280b4fb387cbe0272b146044b
 # X410-Series Filesystems
-x4xx_common_sdk_default         meta-ettus-v4.4.0.0-rc1  x4xx/meta-ettus-v4.4.0.0-rc1/x4xx_common_sdk_default-v4.4.0.0-rc1.zip       0
-x4xx_common_mender_default      meta-ettus-v4.4.0.0-rc1  x4xx/meta-ettus-v4.4.0.0-rc1/x4xx_common_mender_default-v4.4.0.0-rc1.zip    0
-x4xx_common_sdimg_default       meta-ettus-v4.4.0.0-rc1  x4xx/meta-ettus-v4.4.0.0-rc1/x4xx_common_sdimg_default-v4.4.0.0-rc1.zip     0
+x4xx_common_sdk_default         meta-ettus-v4.4.0.0  x4xx/meta-ettus-v4.4.0.0/x4xx_common_sdk_default-v4.4.0.0.zip       0
+x4xx_common_mender_default      meta-ettus-v4.4.0.0  x4xx/meta-ettus-v4.4.0.0/x4xx_common_mender_default-v4.4.0.0.zip    0
+x4xx_common_sdimg_default       meta-ettus-v4.4.0.0  x4xx/meta-ettus-v4.4.0.0/x4xx_common_sdimg_default-v4.4.0.0.zip     0
 
 # X300-Series
 x3xx_x310_fpga_default          uhd-92c09f7       x3xx/uhd-92c09f7/x3xx_x310_fpga_default-g92c09f7.zip                  55ee7c8da86060a0ce57f9120ebcd058dba9119e57a1ef10fd723fd9e3269b50
@@ -23,16 +23,16 @@ e3xx_e310_sg3_fpga_default      uhd-92c09f7       e3xx/uhd-92c09f7/e3xx_e310_sg3
 e3xx_e320_fpga_default          uhd-92c09f7       e3xx/uhd-92c09f7/e3xx_e320_fpga_default-g92c09f7.zip                 80b82b06751a6081d880d1f2abed0afa94532a6dd8439c01911958c68ec36f78
 
 # E310 Filesystems
-e3xx_e310_sdk_default         meta-ettus-v4.4.0.0-rc1  e3xx/meta-ettus-v4.4.0.0-rc1/e3xx_e310_sdk_default-v4.4.0.0-rc1.zip       0
-e3xx_e310_sg1_mender_default  meta-ettus-v4.4.0.0-rc1  e3xx/meta-ettus-v4.4.0.0-rc1/e3xx_e310_sg1_mender_default-v4.4.0.0-rc1.zip    0
-e3xx_e310_sg1_sdimg_default   meta-ettus-v4.4.0.0-rc1  e3xx/meta-ettus-v4.4.0.0-rc1/e3xx_e310_sg1_sdimg_default-v4.4.0.0-rc1.zip     0
-e3xx_e310_sg3_mender_default  meta-ettus-v4.4.0.0-rc1  e3xx/meta-ettus-v4.4.0.0-rc1/e3xx_e310_sg3_mender_default-v4.4.0.0-rc1.zip    0
-e3xx_e310_sg3_sdimg_default   meta-ettus-v4.4.0.0-rc1  e3xx/meta-ettus-v4.4.0.0-rc1/e3xx_e310_sg3_sdimg_default-v4.4.0.0-rc1.zip     0
+e3xx_e310_sdk_default         meta-ettus-v4.4.0.0  e3xx/meta-ettus-v4.4.0.0/e3xx_e310_sdk_default-v4.4.0.0.zip       0
+e3xx_e310_sg1_mender_default  meta-ettus-v4.4.0.0  e3xx/meta-ettus-v4.4.0.0/e3xx_e310_sg1_mender_default-v4.4.0.0.zip    0
+e3xx_e310_sg1_sdimg_default   meta-ettus-v4.4.0.0  e3xx/meta-ettus-v4.4.0.0/e3xx_e310_sg1_sdimg_default-v4.4.0.0.zip     0
+e3xx_e310_sg3_mender_default  meta-ettus-v4.4.0.0  e3xx/meta-ettus-v4.4.0.0/e3xx_e310_sg3_mender_default-v4.4.0.0.zip    0
+e3xx_e310_sg3_sdimg_default   meta-ettus-v4.4.0.0  e3xx/meta-ettus-v4.4.0.0/e3xx_e310_sg3_sdimg_default-v4.4.0.0.zip     0
 
 # E320 Filesystems, etc
-e3xx_e320_sdk_default         meta-ettus-v4.4.0.0-rc1  e3xx/meta-ettus-v4.4.0.0-rc1/e3xx_e320_sdk_default-v4.4.0.0-rc1.zip       0
-e3xx_e320_mender_default      meta-ettus-v4.4.0.0-rc1  e3xx/meta-ettus-v4.4.0.0-rc1/e3xx_e320_mender_default-v4.4.0.0-rc1.zip    0
-e3xx_e320_sdimg_default       meta-ettus-v4.4.0.0-rc1  e3xx/meta-ettus-v4.4.0.0-rc1/e3xx_e320_sdimg_default-v4.4.0.0-rc1.zip     0
+e3xx_e320_sdk_default         meta-ettus-v4.4.0.0  e3xx/meta-ettus-v4.4.0.0/e3xx_e320_sdk_default-v4.4.0.0.zip       0
+e3xx_e320_mender_default      meta-ettus-v4.4.0.0  e3xx/meta-ettus-v4.4.0.0/e3xx_e320_mender_default-v4.4.0.0.zip    0
+e3xx_e320_sdimg_default       meta-ettus-v4.4.0.0  e3xx/meta-ettus-v4.4.0.0/e3xx_e320_sdimg_default-v4.4.0.0.zip     0
 
 # N300-Series
 n3xx_n310_fpga_default          uhd-92c09f7         n3xx/uhd-92c09f7/n3xx_n310_fpga_default-g92c09f7.zip                873178a11fe5d2064316f76073e1fd1432856d95ac37a4634d2efd848f42a8bf
@@ -43,9 +43,9 @@ n3xx_n320_cpld_default          uhd-739b37b         n3xx/uhd-739b37b/n3xx_n320_c
 # N3XX Mykonos firmware
 #n3xx_n310_fw_default           fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n310_fw_default-g6bea23d.zip                     0
 # N300-Series Filesystems, etc
-n3xx_common_sdk_default         meta-ettus-v4.4.0.0-rc1  n3xx/meta-ettus-v4.4.0.0-rc1/n3xx_common_sdk_default-v4.4.0.0-rc1.zip       0
-n3xx_common_mender_default      meta-ettus-v4.4.0.0-rc1  n3xx/meta-ettus-v4.4.0.0-rc1/n3xx_common_mender_default-v4.4.0.0-rc1.zip    0
-n3xx_common_sdimg_default       meta-ettus-v4.4.0.0-rc1  n3xx/meta-ettus-v4.4.0.0-rc1/n3xx_common_sdimg_default-v4.4.0.0-rc1.zip     0
+n3xx_common_sdk_default         meta-ettus-v4.4.0.0  n3xx/meta-ettus-v4.4.0.0/n3xx_common_sdk_default-v4.4.0.0.zip       0
+n3xx_common_mender_default      meta-ettus-v4.4.0.0  n3xx/meta-ettus-v4.4.0.0/n3xx_common_mender_default-v4.4.0.0.zip    0
+n3xx_common_sdimg_default       meta-ettus-v4.4.0.0  n3xx/meta-ettus-v4.4.0.0/n3xx_common_sdimg_default-v4.4.0.0.zip     0
 
 # B200-Series
 b2xx_b200_fpga_default          uhd-92c09f7       b2xx/uhd-92c09f7/b2xx_b200_fpga_default-g92c09f7.zip               8df8872fb383738b9fc0e83eb5166b080662e54681d191274e19e1a8b291df23

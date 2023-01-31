@@ -1,6 +1,9 @@
 uhd (4.4.0.0-0ubuntu1) ubuntu_release; urgency=low
 
-  C API: Fix double-free issue with sensor values
+  * Features
+    - Raw UDP Traffic to Remote Destination for RFNoC-enabled devices
+  * C API
+    - Fix double-free issue with sensor values
   * ci
     - Add clang-format 14.0 to the Ubuntu 22.04 container
     - devtest: Test E320 1G FPGA Image
@@ -94,8 +97,7 @@ uhd (4.4.0.0-0ubuntu1) ubuntu_release; urgency=low
     - Respect X300_FW_COMMS_FLAGS_ARP_FAIL flag
     - Update firmware for TA control
 
- -- Ettus Research <packages@ettus.com>  Mon, 23 Jan 2023 10:07:25 -0800
-
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (4.3.0.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -197,8 +199,7 @@ uhd (4.3.0.0-0ubuntu1) ubuntu_release; urgency=low
     - Revert Raw UDP Host Changes
     - update to uniform SPDX license identifier
 
- -- Ettus Research <packages@ettus.com>  Mon, 12 Sep 2022 05:10:25 -0800
-
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (4.2.0.1-0ubuntu1) ubuntu_release; urgency=low
 
@@ -312,6 +313,7 @@ uhd (4.2.0.1-0ubuntu1) ubuntu_release; urgency=low
     - package_source remove double bracket
   * uhd
     - change default into option flag in register definition
+    - Enable branch naming on Azure Pipelines
     - fix minor typo when querying tx sensors property tree
     - refactor get_all_addrs to remove duplicates
   * usrp2
@@ -328,7 +330,7 @@ uhd (4.2.0.1-0ubuntu1) ubuntu_release; urgency=low
   * zbx
     - Remove stray include
 
- -- Ettus Research <packages@ettus.com>  Wed, 20 Jul 2022 05:33:58 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (4.2.0.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -916,8 +918,7 @@ uhd (4.2.0.0-0ubuntu1) ubuntu_release; urgency=low
   * x4xx_bist
     - Use get_mpm_client in gpio bist
 
- -- Ettus Research <packages@ettus.com>  Tue, 19 Apr 2022 13:55:00 -0800
-
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (4.1.0.1-0ubuntu1) ubuntu_release; urgency=low
 
@@ -936,8 +937,7 @@ uhd (4.1.0.1-0ubuntu1) ubuntu_release; urgency=low
     - max10_cpld_flash_ctrl: improve programming log
     - Skip DTS compatibility check if DTS is not being updated
 
- -- Ettus Research <packages@ettus.com>  Mon, 12 Jul 2021 04:29:39 -0800
-
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (4.1.0.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -1345,8 +1345,7 @@ uhd (4.1.0.0-0ubuntu1) ubuntu_release; urgency=low
     - Fix clang compiler warnings
     - Fix compilation on clang-10
 
- -- Ettus Research <packages@ettus.com>  Fri, 25 Jun 2021 01:13:18 -0800
-
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (4.0.0.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -1579,14 +1578,13 @@ uhd (4.0.0.0-0ubuntu1) ubuntu_release; urgency=low
     - Expand DRAM address space to 1G
     - Add front-panel GPIO source control
 
- -- Ettus Research <packages@ettus.com>  Sun, 13 Sep 2020 12:08:55 -0800
-
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.15.0.0-0ubuntu1) ubuntu_release; urgency=low
 
   * N320: Fix MCR initialization, fix checks for LO distribution board,
     reset RX IQ balance on init, replace DRAM FIFO with replay block,
-    improve constraints, fix I/Q imbalance compensation, add FPGPIO control
+    improve constraints, fix I/Q imbalance compensation
   * N310: increase default dc offset averaging window, make tunes
     asynchronous, add capability to control RF filter bypass and freq.band
     limits, fix setting user DB EEPROM, correctly report N321 vs N320,
@@ -1595,27 +1593,26 @@ uhd (3.15.0.0-0ubuntu1) ubuntu_release; urgency=low
     link up status, add workaround for clocking interference with external
     reference clocks, disable gpsdo clock/time source options when
     enable_gps=0
-  * X300: Fix max bitfile size, fix GPIO ATR property access type, heavily
+  * X310: Fix max bitfile size, fix GPIO ATR property access type, heavily
     refactor, introduce conn_mgr, add DPDK support, add
     capability to flash NI-2974 FPGA, fix clocking code, enable 11.52 MHz
     and 23.04 MHz system ref rates, improve usage of constrained device
     args, enable ADC gain through RFNoC API, add mode to set master clock
-    rate to arbitrary values between 184.32 and 200 MHz, throttle
-    muxed_zero_copy_if
+    rate to arbitrary values between 184.32 and 200 MHz, fix get_tx_gain()
+    to make RX/TX gain functions symmetric
   * E320: Fix time source clobbering ref source, add support for RevE, fix
     reporting of FPGA version hash, fix SFP link up status, fix missing
     ce_clk driver
   * E310: Convert to MPM architecture, fix uhd_image_loader usage, fix DMA
     arbitration to use contiguous packets, reduced DMA chans to 4 (using
     data stream muxing), fix DRAM_TEST target build
-  * E3xx: Correct frontend name in devtest
   * B200: Add command to query bootloader status, fix sc12 streaming, fix
     FIFO sizes on GPIFII interface
   * UBX: add temperature compensation mode
   * SBX: Only update ATRs when lock state changes
   * TwinRX: add LO charge pump properties, increase default charge pump
     value on LO1, add low spur tuning mode, fix duplicate write to N value
-    in DDC
+    in DDC, add TwinRX support to phase alignment script
   * RFNoC/device3: Read command FIFO size from device instead of
     hardcoding values, fix multidevice graph connections, ENABLE_RFNOC now
     defaults to ON, search all nodes for tick rate, add update_graph()
@@ -1630,18 +1627,11 @@ uhd (3.15.0.0-0ubuntu1) ubuntu_release; urgency=low
     latching N on M in axi_rate_change, various fixes to
     uhd_image_builder, fix MTU settings in blocks, align byte count to
     8-byte word
-  * RFNOC: Allow UHD_RFNOC_DIR to contain multiple paths
   * Python API: Replace Boost.Python with PyBind11, fix benchmark_rate
     statistics, fix phase alignment test script
-  * Python API: Added include of complex.h to allow pybind to convert
-    complex data types
-  * Python API: Make multi_usrp::get_*_usrp_info() return a Python dict
-  * Python API: Fix array processing in send_waveforms()
   * UHD: Allow ignoring fallthrough warnings, reduce Boost footprint,
     remove gpsd dependency, improve streaming, reduced the number of
-    compiler warnings, introduce pop() to the prop tree, add typecast
-    operator from uhd::dict<> to std::map<>, properly cache config file
-    data
+    compiler warnings, introduce pop() to the prop tree
   * MPM/mpmd: Introduce compatible rev numbers to support future hardware,
     fix some resource leaks in mpmd, fix spurious reclaims causing
     unnecessary warnings, fix resource leaks in liberio xport, allow to
@@ -1649,43 +1639,41 @@ uhd (3.15.0.0-0ubuntu1) ubuntu_release; urgency=low
     channels on E310), wait for DPDK links to come up before proceeding,
     relax failure handling when updating components (fixes spurious errors
     when updating FPGA images over SFP), fix issue where RPC
-    initialization would hang on failure
-  * MPM:  Re-enable RPC server timeouts after components have been updated
-  * MPMD: Remove arbitraty frame size defaults for UDP transports
-  * MPMD: Fix incorrect link rate warnings
+    initialization would hang on failure, fixed cmake macros for enabling
+    modules
   * FPGA: Use new device-tree overlay syntax, upgraded to Vivado 2018.3,
     broke various paths with critical timing, allow SystemVerilog source
     files, improve viv_modify_bd and viv_modify_tcl_bd, fix resets on 2clk
     FIFOs
   * USB: Allow cancelled USB requests to occur
-  * USB: Fix global session race condition
   * Logging: Always honour log level, don't log colours for non-ttys, fix
     includes, demote various log messages, fix logging colours, fix
     deadlock on Windows machines
   * Examples: Fix benchmark_rate INIT_DELAY, fix memory leak in
-    tx_samples_c
-  * Examples: Remove thread priority elevation
-  * Examples: Add options to benchmark_rate for start delays and priority
+    tx_samples_c, fix replay example for replay_chan > 1, improve
+    benchmark_rate output to not interleave
   * Tests: Make the Python interpreter for devtests a parameter, add unit
     tests to MPM
-  * Utilities: Fix converter benchmark for Py3k and scaling issue
+  * Utilities: Fix converter benchmark for Py3k and scaling issue, use
+    runtime library path lookup instead of hardcoded paths, improvements
+    to images downloader (support UHD_IMAGES_URL; check conditions before
+    writing, use HTTPS instead of HTTP to avoid redirect)
   * Tools: Fix kitchen_sink
-  * Tools: Fix Wireshark dissectors to work with WS1, 2, and 3
-  * Tools: Various fixes to FPGA functional verification tests
-  * Docs: Various fixes, fix Doxygen warnings, fix links to KB, update
-    DPDK information about building libraries, add DPDK subsection about
-    thread priorities, update testing procedures
+  * Docs: Various fixes, fix Doxygen warnings, fix links to KB
   * C API: Add uhd_get_abi_string, uhd_get_version_string
   * CMake: Make manpage compression optional, allow setting of PKG_DOC_DIR
     from the CMake commandline, add replay example, fix missing 'project',
     replace ENABLE_PYTHON3 with a simpler Python detection, clean up
     superfluous modules, improve log statements, bump dependency min
     versions, add MPM unit testing, fix missing BIGOBJ for MSVC, add our
-    own UHDBoost.cmake to better find Boost across versions and systems,
-    constrain DPDK check to exact version
+    own UHDBoost.cmake to better find Boost across versions and systems
   * Formatting: Apply clang-format to all files, break after template<>
+  * AD9361: Fix mask for product ID check
+  * Debian: Update control file to rely on Python3 versions of deps
+  * Octoclock: Clear OctoClock packets and initialize version/seq num
+    before transmission
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.14.1.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -1727,7 +1715,7 @@ uhd (3.14.1.0-0ubuntu1) ubuntu_release; urgency=low
   tools: Fix for proj creation in ip_utils for tcl-based IP
   tests: Fix mock_ctrl_iface for 32-bit MSVC
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.14.0.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -1941,7 +1929,7 @@ uhd (3.14.0.0-0ubuntu1) ubuntu_release; urgency=low
   * Cmake: Use native format for setup.py
   * CPack: Fix RPM generation
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.13.1.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2057,7 +2045,7 @@ uhd (3.13.1.0-0ubuntu1) ubuntu_release; urgency=low
   * Debian: Update control files
   * Images: Add N3xx CPLD file to manifest
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.13.0.2-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2069,7 +2057,7 @@ uhd (3.13.0.2-0ubuntu1) ubuntu_release; urgency=low
   * Docs: Add section on building fs/SD images for N3xx
   * Docs: Fix Doxygen warnings
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.13.0.1-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2077,7 +2065,7 @@ uhd (3.13.0.1-0ubuntu1) ubuntu_release; urgency=low
   * N3xx: Fix EEPROM parsing (for upcoming hardware)
   * UHD: Fix install path for Python API
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.13.0.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2102,7 +2090,7 @@ uhd (3.13.0.0-0ubuntu1) ubuntu_release; urgency=low
   * CMake: Allow to override UHD_GIT_BRANCH, fix Python-finding logic, add
            ENABLE_N300 target
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.12.0.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2139,7 +2127,7 @@ uhd (3.12.0.0-0ubuntu1) ubuntu_release; urgency=low
   * Known issues: N310: In some rare scenarios at high rates, streaming
     can fail and even bring the FPGA into a bad state.
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.11.1.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2197,7 +2185,7 @@ uhd (3.11.1.0-0ubuntu1) ubuntu_release; urgency=low
   * cmake: update NSIS template
   * cmake: Remove images downloader section (replaced by manifest)
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.11.0.1-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2216,7 +2204,7 @@ uhd (3.11.0.1-0ubuntu1) ubuntu_release; urgency=low
   * cmake: Correctly fail when an unavailable component is requested
   * debian: Add UHDConfig.cmake to install list for libuhd-dev
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.11.0.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2239,7 +2227,7 @@ uhd (3.11.0.0-0ubuntu1) ubuntu_release; urgency=low
   * This release includes all bugfixes and features from previous releases, in
     particular, the 3.10.* release cycle
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.10.3.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2275,7 +2263,7 @@ uhd (3.10.3.0-0ubuntu1) ubuntu_release; urgency=low
   ** Fix build with Boost 1.66
   ** Add EEPROM info to dboard_base class so daughterboard code can access all EEPROM info
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.10.2.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2307,7 +2295,7 @@ uhd (3.10.2.0-0ubuntu1) ubuntu_release; urgency=low
   * CMake: Fixed GCC 4.4 compilation issue. Added ability to specify package
            names.
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.10.1.1-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2330,7 +2318,7 @@ uhd (3.10.1.1-0ubuntu1) ubuntu_release; urgency=low
   * FPGA repository: Merged usrp3_rfnoc and usrp3 directories again. Cleaned up
     superfluous files. Clean separation between Gen-3 and other devices in usrp3.
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.10.1.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2358,7 +2346,7 @@ uhd (3.10.1.0-0ubuntu1) ubuntu_release; urgency=low
   * Tools: Merged dissectors into common directory.
   * CMake: -Og is the default now for gcc-based Debug builds.
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.10.0.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2382,7 +2370,7 @@ uhd (3.10.0.0-0ubuntu1) ubuntu_release; urgency=low
   * Added more aggressive optimization strategies for FPGA builds
   * Xilinx IP tool upgrade scripts cleaned up
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.9.5-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2400,7 +2388,7 @@ uhd (3.9.5-0ubuntu1) ubuntu_release; urgency=low
     fixes (off-by-one errors). uhd_usrp_probe will pick up an OC now,
     added Wireshark dissector for OC packets
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.9.4-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2415,7 +2403,7 @@ uhd (3.9.4-0ubuntu1) ubuntu_release; urgency=low
   * Windows: Include registry file in installation
   * Converters: Improve NEON converters
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.9.3-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2431,7 +2419,7 @@ uhd (3.9.3-0ubuntu1) ubuntu_release; urgency=low
   * Fixed several compiler warnings and minor bugs
   * Examples: Updated benchmark_rate for improved thread safety
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.9.2-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2447,7 +2435,7 @@ uhd (3.9.2-0ubuntu1) ubuntu_release; urgency=low
   * E310: DRAM testbenching
   * Docs/Manual: Many updates and fixes
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.9.1-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2459,7 +2447,7 @@ uhd (3.9.1-0ubuntu1) ubuntu_release; urgency=low
   * Examples: Added PPS source option
   * Docs: Multiple manual updates
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.9.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2504,7 +2492,7 @@ uhd (3.9.0-0ubuntu1) ubuntu_release; urgency=low
   * Utils: Read more property tree types from the command line
   * Tools: kitchen sink updated, added mega_fft
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.8.5-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2521,7 +2509,7 @@ uhd (3.8.5-0ubuntu1) ubuntu_release; urgency=low
   * Build System: Fixed builds on some Windows platforms, removed
     stray prints
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.8.4-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2532,7 +2520,7 @@ uhd (3.8.4-0ubuntu1) ubuntu_release; urgency=low
   * USRP2: Bugfix that allows latest UHD to work with USRP2
   * Documentation: Many fixes for E300 section, added FPGA manual
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.8.3-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2546,7 +2534,7 @@ uhd (3.8.3-0ubuntu1) ubuntu_release; urgency=low
   * CMake: Build fixes
   * E300: Flow control fix
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.8.2-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2564,7 +2552,7 @@ uhd (3.8.2-0ubuntu1) ubuntu_release; urgency=low
   * Path handling vastly improved, made more consistent
   * Minor UHD fixes
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.8.1-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2578,7 +2566,7 @@ uhd (3.8.1-0ubuntu1) ubuntu_release; urgency=low
   * Examples: Multiple bugfixes (multi-channel ops)
   * Docs/Manual: Multiple fixes, E310 panel images
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.8.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2607,7 +2595,7 @@ uhd (3.8.0-0ubuntu1) ubuntu_release; urgency=low
   * Examples: Improved GPIO example, rx_samples_to_file
   * Bumped minimum Boost version to 1.46
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.7.3-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2621,7 +2609,7 @@ uhd (3.7.3-0ubuntu1) ubuntu_release; urgency=low
   * Multiple FPGA improvements, as well as upgrade of build env
   * Added support for B200 vs B210 discovery
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.7.2-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2650,7 +2638,7 @@ uhd (3.7.2-0ubuntu1) ubuntu_release; urgency=low
   * Fixed issue with filter selection in B200 that caused loss of RX power.
   * Removed ref lock check from X300 where it wasn't necessary.
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.7.1-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2673,7 +2661,7 @@ uhd (3.7.1-0ubuntu1) ubuntu_release; urgency=low
   * Fixed MTU / frame size detection for X3xx devices.
   * Fixed B2xx filter chain causing wrong sample rate in some circumstances.
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.7.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2687,7 +2675,7 @@ uhd (3.7.0-0ubuntu1) ubuntu_release; urgency=low
   * Fixed threading bug in USRP B2xx code causing GQRX issue
   * General UHD bug fixes & improvements
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.6.2-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2706,20 +2694,20 @@ uhd (3.6.2-0ubuntu1) ubuntu_release; urgency=low
   * N-Series: netburner now accepts relative paths with '~'
   * Completely re-written UHD Images Downloader, with numerous bug fixes and new features.
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.6.1-0ubuntu1) ubuntu_release; urgency=low
 
   * B2xx: Fixed critical bug in 003.006.000 regarding USRP B2xx operation
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.6.0-0ubuntu1) ubuntu_release; urgency=low
 
   * Many small fixes for bugs revealed by static analysis.
   * Introduced support for the USRP B200 / B210
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.5.3-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2729,7 +2717,7 @@ uhd (3.5.3-0ubuntu1) ubuntu_release; urgency=low
   ** Fixed timespec irrational rate rounding
   ** Multichan streamer CPU utilization
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.5.2-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2740,7 +2728,7 @@ uhd (3.5.2-0ubuntu1) ubuntu_release; urgency=low
   * USRP1:
   ** Restore broken EEPROM writing
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.5.1-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2752,7 +2740,7 @@ uhd (3.5.1-0ubuntu1) ubuntu_release; urgency=low
   ** Fix for socket send code newer OS versions
   * Changes from 3.4.5
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.5.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2778,7 +2766,7 @@ uhd (3.5.0-0ubuntu1) ubuntu_release; urgency=low
   ** Added multi-threading to packet converters
   ** Added automatic images fetcher application
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.4.5-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2790,7 +2778,7 @@ uhd (3.4.5-0ubuntu1) ubuntu_release; urgency=low
   ** Fix to rx_samples_to_udp byte count
   ** stream command enums easy on SWIG
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.4.4-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2800,7 +2788,7 @@ uhd (3.4.4-0ubuntu1) ubuntu_release; urgency=low
   ** Fixed RX ADC IQ inversion swap
   ** Incremented FPGA compat number to 9.4
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.4.3-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2816,7 +2804,7 @@ uhd (3.4.3-0ubuntu1) ubuntu_release; urgency=low
   ** Shutoff the DAC on transmit EOB flags
   ** Revert 1st nyquist zone DAC calculation
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.4.2-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2836,7 +2824,7 @@ uhd (3.4.2-0ubuntu1) ubuntu_release; urgency=low
   ** SIMD conversion routines priority over table look-up
   ** Fix undefined GCC float conversion behaviour for sc8
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.4.1-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2857,7 +2845,7 @@ uhd (3.4.1-0ubuntu1) ubuntu_release; urgency=low
   * FreeBSD:
   ** Fixed network relay example compilation
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.4.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2880,7 +2868,7 @@ uhd (3.4.0-0ubuntu1) ubuntu_release; urgency=low
   ** Added API calls for DC offset correction
   ** Added API calls for IQ balance correction
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.3.2-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2896,7 +2884,7 @@ uhd (3.3.2-0ubuntu1) ubuntu_release; urgency=low
   ** Handle EINTR on select() w/ udp transport
   ** Minor fixes for compiling on FreeBSD
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
   ## Release 003.003.001
   * B100/E1x0:
@@ -2904,7 +2892,7 @@ uhd (3.3.2-0ubuntu1) ubuntu_release; urgency=low
   * B100:
   ** Fixed discovery throwing when device claimed
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.3.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2926,7 +2914,7 @@ uhd (3.3.0-0ubuntu1) ubuntu_release; urgency=low
   * Gen2:
   ** Fix DSP rate selection clipping for very low rates
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.2.4-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2945,7 +2933,7 @@ uhd (3.2.4-0ubuntu1) ubuntu_release; urgency=low
   ** Fix bounds checking on stream num samps
   ** Fix error using PPS_NEG in clock config
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.2.3-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2963,7 +2951,7 @@ uhd (3.2.3-0ubuntu1) ubuntu_release; urgency=low
   ** Clip the reported tune range to the dboard bandwidth
   ** Preserve bands when calculating overall tune range
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.2.2-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2987,7 +2975,7 @@ uhd (3.2.2-0ubuntu1) ubuntu_release; urgency=low
   ** Fix send to return zero on empty packets
   ** Perform version check on liborc
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.2.1-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2995,7 +2983,7 @@ uhd (3.2.1-0ubuntu1) ubuntu_release; urgency=low
   ** Firmware fix to shutoff streaming when socket unreachable
   ** Incremented firmware image compat number to 10.3
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.2.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -3028,7 +3016,7 @@ uhd (3.2.0-0ubuntu1) ubuntu_release; urgency=low
   ** Code reorganization with property tree
   ** Calibration support in gen2 FPGAs
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.1.2-0ubuntu1) ubuntu_release; urgency=low
 
@@ -3037,7 +3025,7 @@ uhd (3.1.2-0ubuntu1) ubuntu_release; urgency=low
   * XCVR2450:
   ** Fix for descontructor throwing on hardware disconnect
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.1.1-0ubuntu1) ubuntu_release; urgency=low
 
@@ -3049,7 +3037,7 @@ uhd (3.1.1-0ubuntu1) ubuntu_release; urgency=low
   * WBX
   ** Keep mixers on between bursts to maintain phase offsets
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.1.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -3085,7 +3073,7 @@ uhd (3.1.0-0ubuntu1) ubuntu_release; urgency=low
   ** Deprecated API in utils/warning.hpp
   ** Fixed race condition in device discovery/factory
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.0.1-0ubuntu1) ubuntu_release; urgency=low
 
@@ -3098,11 +3086,9 @@ uhd (3.0.1-0ubuntu1) ubuntu_release; urgency=low
   * build: various work on build system
   * build: include FPGA and firmware images in installers
 
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
 
 uhd (3.0.0-0ubuntu1) ubuntu_release; urgency=low
 
   Initial (formal) release, no changes to mention.
-
- -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
