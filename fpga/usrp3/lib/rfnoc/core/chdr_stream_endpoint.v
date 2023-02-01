@@ -29,6 +29,7 @@
 //   - MTU: Log2 of the maximum packet size in CHDR_W words
 //   - REPORT_STRM_ERRS: Report data stream errors upstream
 //   - SIM_SPEEDUP: Set to 1 in simulation, and 0 otherwise
+//   - THROTTLE: Enable (1) or disable (0) the throttle feature
 //
 // Signals:
 //   - device_id     : The ID of the device that has instantiated this module
@@ -55,6 +56,7 @@ module chdr_stream_endpoint #(
   parameter [ 5:0] INGRESS_BUFF_SIZE = 12,
   parameter [ 5:0] MTU               = 10,
   parameter [ 0:0] REPORT_STRM_ERRS  = 1,
+  parameter [ 0:0] THROTTLE          = 1,
   parameter [ 0:0] SIM_SPEEDUP       = 0
 )(
   // Clock, reset and settings
@@ -260,6 +262,8 @@ module chdr_stream_endpoint #(
   //   - [3:2]: Payload SW buff (0=u64, 1=u32, 2=u16, 3=u8)
   //   - [5:4]: Metadata SW buff (0=u64, 1=u32, 2=u16, 3=u8)
   //   - [6]  : Swap endianness
+  // * REG_OSTRM_THROTTLE (Write-Only):
+  //   Control the maximum rate of the output stream
   // =======================================================================
 
   localparam [15:0] REG_EPID_SELF               = 16'h00;   //RW
@@ -277,6 +281,9 @@ module chdr_stream_endpoint #(
   localparam [15:0] REG_OSTRM_DATA_ERR_CNT      = 16'h30;   //R
   localparam [15:0] REG_OSTRM_ROUTE_ERR_CNT     = 16'h34;   //R
   localparam [15:0] REG_ISTRM_CTRL_STATUS       = 16'h38;   //RW
+  localparam [15:0] REG_OSTRM_THROTTLE          = 16'h3C;   //W
+
+  localparam THROTTLE_W = 16;
 
   // Configurable registers
   reg  [15:0] reg_epid_self = 16'h0;
@@ -304,6 +311,8 @@ module chdr_stream_endpoint #(
   wire [31:0] reg_seq_err_cnt;
   wire [31:0] reg_data_err_cnt;
   wire [31:0] reg_route_err_cnt;
+
+  reg [THROTTLE_W-1:0] throttle = 0;
 
   always @(posedge rfnoc_chdr_clk) begin
     if (rfnoc_chdr_rst) begin
@@ -334,6 +343,11 @@ module chdr_stream_endpoint #(
           REG_ISTRM_CTRL_STATUS:
             {reg_istrm_cfg_swap_endian, reg_istrm_cfg_mdata_sw_buff, reg_istrm_cfg_pyld_sw_buff}
               <= ctrlport_req_data[6:2];
+          REG_OSTRM_THROTTLE: begin
+            if (THROTTLE) begin
+              throttle <= ctrlport_req_data[THROTTLE_W-1:0];
+            end
+          end
         endcase
       end else begin
         // Strobed registers
@@ -458,16 +472,21 @@ module chdr_stream_endpoint #(
       .m_axis_tready  (axis_dis_tready)
     );
 
+    wire [CHDR_W-1:0] stream_o_tdata;
+    wire              stream_o_tlast;
+    wire              stream_o_tvalid;
+    wire              stream_o_tready;
+
     // Stream endpoint flow-control output module
     chdr_stream_output #(
       .CHDR_W(CHDR_W), .MTU(MTU)
     ) strm_output_i (
       .clk                  (rfnoc_chdr_clk),
       .rst                  (rfnoc_chdr_rst | reg_ostrm_reset),
-      .m_axis_chdr_tdata    (data_o_tdata),
-      .m_axis_chdr_tlast    (data_o_tlast),
-      .m_axis_chdr_tvalid   (data_o_tvalid),
-      .m_axis_chdr_tready   (data_o_tready),
+      .m_axis_chdr_tdata    (stream_o_tdata),
+      .m_axis_chdr_tlast    (stream_o_tlast),
+      .m_axis_chdr_tvalid   (stream_o_tvalid),
+      .m_axis_chdr_tready   (stream_o_tready),
       .s_axis_data_tdata    (axis_dis_tdata),
       .s_axis_data_tlast    (axis_dis_tlast),
       .s_axis_data_tvalid   (axis_dis_tvalid),
@@ -496,6 +515,32 @@ module chdr_stream_endpoint #(
       .route_err_stb        (strm_route_err_stb),
       .route_err_cnt        (reg_route_err_cnt)
     );
+
+    if (THROTTLE) begin : gen_throttle
+      // Output stream throttle control
+      axis_pkt_throttle #(
+        .THROTTLE_W(THROTTLE_W),
+        .DATA_W    (CHDR_W    ),
+        .MTU       (MTU       )
+      ) axis_pkt_throttle_i (
+        .clk     (rfnoc_chdr_clk                  ),
+        .rst     (rfnoc_chdr_rst | reg_ostrm_reset),
+        .throttle(throttle                        ),
+        .i_tdata (stream_o_tdata                  ),
+        .i_tlast (stream_o_tlast                  ),
+        .i_tvalid(stream_o_tvalid                 ),
+        .i_tready(stream_o_tready                 ),
+        .o_tdata (data_o_tdata                    ),
+        .o_tlast (data_o_tlast                    ),
+        .o_tvalid(data_o_tvalid                   ),
+        .o_tready(data_o_tready                   )
+      );
+    end else begin : gen_no_throttle
+      assign data_o_tdata    = stream_o_tdata;
+      assign data_o_tlast    = stream_o_tlast;
+      assign data_o_tvalid   = stream_o_tvalid;
+      assign stream_o_tready = data_o_tready;
+    end
 
     // CHDR => Data
     //-------------
