@@ -42,7 +42,7 @@ static const std::vector<block_port_def> TERMINATOR_BLOCKS{
  *  \param port The block port of `src_port` that the path will begin at
  *  \param source_chain Whether or not the `start_block` is a source (or a destination).
  *                      If true, the chain will start at `start_block`'s output port. If
- *                      false, the chain will start with `start_block`'s output port.
+ *                      false, the chain will start with `start_block`'s input port.
  *  \return The edge list representing the data path requested
  */
 std::vector<graph_edge_t> UHD_API get_block_chain(const rfnoc_graph::sptr graph,
