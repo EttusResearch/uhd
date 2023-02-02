@@ -1,7 +1,7 @@
 # please follow docker best practices
 # https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/
 
-FROM fedora:35
+FROM fedora:37
 LABEL maintainer="Ettus Research"
 
 RUN dnf install -y \
