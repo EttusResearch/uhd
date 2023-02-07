@@ -1209,5 +1209,59 @@ Note that this section does not cover every single clock signal present on the
 X410, but mainly those clock signals relevant for the operation of the RF
 components. Refer to the schematic for more details.
 
+\section x4xx_adc_self_cal ADC self calibration
+
+The USRP x4xx device family support ADC self calibration by utilizing
+functionality from the Xilinx RFDC.
+The ["UltraScale+ RFSoC RF Data Converter" manual](https://docs.xilinx.com/r/en-US/pg269-rf-data-converter)
+gives a detailed description. There is no additional hardware or
+fixture necessary to execute the calibration. It is recommended
+to have no input signal at the input during calibration to get
+the best calibration performance.
+
+The ADC self calibration is implemented as a discoverable feature.
+It therefore cannot be triggered directly using the multi_usrp or RFNoC API.
+Instead, one has to query if the device supports the feature
+and then call the calibration routine:
+
+~~~{.cpp}
+// graph was created using rfnoc_graph::make
+auto radio_blk = graph->get_block("0/Radio#0"); // replace with the radio of interest
+if (radio_blk->has_feature<uhd::features::adc_self_calibration_iface>()) {
+    auto& adc_self_cal = radio_blk->get_feature<uhd::features::adc_self_calibration_iface>();
+    adc_self_cal.run();
+}
+~~~
+
+The x4xx devices do ADC self-calibration only on demand, namely when
+the device is started or a new bitfile is downloaded to the device. The
+device startup calibration is triggered by a systemd service called
+`usrp-adc-self-cal`. The calibration after bitfile change is triggered
+via a fgpa_onload callback.
+
+The ADC calibration coefficients stay constant during execution.
+In RFDC terms, the coefficients are said to be "frozen". When a channel is
+calibrated the calibration algorithm runs through the following steps:
+1. Set the antennas on that channel to `CAL_LOOPBACK`, thereby creating
+a loopback connection between TX and RX.
+2. Generate a tone from TX (in the FPGA) and loop it back into RX.
+3. Find a suitable gain level on RX to execute the calibration (this is
+  daughterboard specific).
+4. Unfreeze the ADC tile for the channel that is currently calibrated.
+5. Wait for the ADC self cal to execute.
+6. Freeze the ADC tile.
+7. Revert all changes made to the channel setup, such as antenna, gain
+  and LO settings on RX and TX.
+
+To loop in a CW tone for calibration, MPM offers the `set_dac_mux_data`
+which takes two signed 16 bit values for I and Q of the tone. Using
+`set_dac_mux_enable` with the channel number and the 1 for enabled the
+tone becomes the signal that is send out by TX of the corresponding
+channel. Use 0 for the enable to switch back to the signal generated
+by UHD. The DAC mux does not affect the ATR state of the device.
+From an UHD perspective it looks like no data is transmitted in TX or
+RX direction during calibration.
+
+For different daughterboards, different frequencies and gain values are used at which the ADC self-calibration is run.
 */
 // vim:ft=doxygen:
