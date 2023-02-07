@@ -14,6 +14,9 @@
 ## build/usrp_<product>_fpga_<image_type>.dts:    Device tree source file
 ## build/usrp_<product>_fpga_<image_type>.rpt:    Build report (includes utilization and timing summary)
 
+# Base output directory for all builds
+BUILD_BASE_DIR ?= .
+
 # Initialize a build seed. This can be changed to randomly affect build results.
 BUILD_SEED ?= 0
 DEFS += BUILD_SEED=$(BUILD_SEED)
@@ -42,9 +45,9 @@ ifeq ($(TARGET),bin)
 	post_build = @\
 		mkdir -p build; \
 		echo "Exporting bitstream file..."; \
-		cp build-$(1)/e31x.bit build/usrp_`echo $(2) | tr A-Z a-z`_fpga.bit; \
+		cp $(BUILD_BASE_DIR)/build-$(1)/e31x.bit build/usrp_`echo $(2) | tr A-Z a-z`_fpga.bit; \
 		echo "Exporting build report..."; \
-		cp build-$(1)/build.rpt build/usrp_`echo $(2) | tr A-Z a-z`_fpga.rpt; \
+		cp $(BUILD_BASE_DIR)/build-$(1)/build.rpt build/usrp_`echo $(2) | tr A-Z a-z`_fpga.rpt; \
 		echo "Build DONE ... $(1)";
 else
 	post_build = @echo "Skipping bitfile export."

@@ -23,6 +23,9 @@
 # Uncomment this line to add four example Aurora loopback lanes on the QSFP NPIO bus.
 # OPTIONS += QSFP_LANES=4
 
+# Base output directory for all builds
+BUILD_BASE_DIR ?= .
+
 # Initialize a build seed. This can be changed to randomly affect build results.
 BUILD_SEED ?= 0
 
@@ -68,9 +71,9 @@ ifeq ($(TARGET),bin)
 	post_build = @\
 		mkdir -p build; \
 		echo "Exporting bitstream file..."; \
-		cp build-$(1)_$(2)/n3xx.bit build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bit; \
+		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/n3xx.bit build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bit; \
 		echo "Exporting build report..."; \
-		cp build-$(1)_$(2)/build.rpt build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).rpt; \
+		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/build.rpt build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).rpt; \
 		echo "Build DONE ... $(1)_$(2)";
 else
 	post_build = @echo "Skipping bitfile export."
