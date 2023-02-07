@@ -16,7 +16,8 @@
 ##  build/usrp_<product>_fpga_<image_type>.dts:  Device tree source file
 ##  build/usrp_<product>_fpga_<image_type>.rpt:  Build report (includes utilization and timing summary)
 
-
+# Base output directory for all builds
+BUILD_BASE_DIR ?= .
 
 # Definitions
 # MGT Types from x4xx_mgt_type.vh
@@ -97,9 +98,9 @@ ifeq ($(TARGET),bin)
 	post_build = @\
 		mkdir -p build; \
 		echo "Exporting bitstream file..."; \
-		cp build-$(1)_$(2)/x4xx.bit build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bit; \
+		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/x4xx.bit build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bit; \
 		echo "Exporting build report..."; \
-		cp build-$(1)_$(2)/build.rpt build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).rpt; \
+		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/build.rpt build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).rpt; \
 		echo "Build DONE ... $(1)_$(2)";
 else
 	post_build = @echo "Skipping bitfile export."

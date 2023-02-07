@@ -21,6 +21,9 @@
 
 CREATE_LVBITX=python ../../lib/io_port2/create-lvbitx.py
 
+# Base output directory for all builds
+BUILD_BASE_DIR ?= .
+
 # Initialize a build seed. This can be changed to randomly affect build results.
 BUILD_SEED ?= 0
 
@@ -56,13 +59,13 @@ ifeq ($(TARGET),bin)
 	post_build = @\
 		mkdir -p build; \
 		echo "Exporting bitstream files..."; \
-		cp build-$(1)_$(2)/x300.bin build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bin; \
-		cp build-$(1)_$(2)/x300.bit build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bit; \
+		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/x300.bin build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bin; \
+		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/x300.bit build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bit; \
 		echo "Generating LVBITX..."; \
-		$(CREATE_LVBITX) --input-bin=build-$(1)_$(2)/x300.bin --output-lvbitx=build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).lvbitx --device="USRP $(1)" x3x0_base.lvbitx; \
+		$(CREATE_LVBITX) --input-bin=$(BUILD_BASE_DIR)/build-$(1)_$(2)/x300.bin --output-lvbitx=build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).lvbitx --device="USRP $(1)" x3x0_base.lvbitx; \
 		cp -f x3x0_base.lvbitx build/`echo $(1) | tr A-Z a-z`.lvbitx_base; \
 		echo "Exporting build report..."; \
-		cp build-$(1)_$(2)/build.rpt build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).rpt; \
+		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/build.rpt build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).rpt; \
 		echo "Build DONE ... $(1)_$(2)";
 else
 	post_build = @echo "Skipping bitfile export."
