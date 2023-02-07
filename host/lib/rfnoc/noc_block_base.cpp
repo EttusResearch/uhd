@@ -347,7 +347,7 @@ void noc_block_base::shutdown()
 {
     RFNOC_LOG_TRACE("Calling deinit()");
     deinit();
-    RFNOC_LOG_DEBUG("Invalidating register interface");
+    RFNOC_LOG_TRACE("Invalidating register interface");
     update_reg_iface();
 }
 
@@ -368,5 +368,5 @@ std::shared_ptr<mb_controller> noc_block_base::get_mb_controller()
 
 void noc_block_base::deinit()
 {
-    RFNOC_LOG_DEBUG("deinit() called, but not implemented.");
+    RFNOC_LOG_TRACE("deinit() called, but not implemented.");
 }
