@@ -8,6 +8,7 @@
 #include <stddef.h>
 
 static struct pid_info pid_list[] = {
+  { 0xa410, "x410", "X410 Module", 0 },
   { 0x0410, "x410", "X410 Motherboard", 0 },
   { 0x4000, NULL, "Power Aux Board", 0 },
   { 0x4001, NULL, "Debug RF DB", 0 },

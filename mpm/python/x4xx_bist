@@ -129,34 +129,9 @@ class X4XXBIST(bist.UsrpBIST):
 
     def get_product_id(self):
         """Return the mboard product ID:"""
-        # TODO: use correct product ID, this is just a hack
-        # TODO: the path to the eeprom is not self-speaking like e.g. mb_eeprom
-        # return bist.get_product_id_from_eeprom(valid_ids=['x410'], eeprom='mb_eeprom')
-        return self.get_product_id_from_eeprom(
-            valid_ids=['0410'],
-            eeprom='/sys/bus/nvmem/devices/13-00500/nvmem')
-
-    def get_product_id_from_eeprom(self, valid_ids, eeprom):
-        """Return the mboard product ID
-        Returns something like x410...
-        """
-        # it is just here as override because eeprom-id installed on the
-        # x410 now needs a parameter while on n310 it runs without
-        # also the path to the eeprom is not self-speaking like e.g. mb_eeprom
-        # last problem is that the returned id is not 'x410' but '0410'
-        cmd = ['eeprom-id']
-        cmd.append(eeprom)
-        cmd = ' '.join(cmd)
-        output = subprocess.check_output(
-            cmd,
-            stderr=subprocess.STDOUT,
-            shell=True,
-            ).decode('utf-8')
-        sys.stderr.write("product_id_from_eeprom: {}".format(str(output)))
-        for valid_id in valid_ids:
-            if valid_id in output:
-                return 'x410'
-        raise AssertionError("Cannot determine product ID.: `{}'".format(output))
+        return bist.get_product_id_from_eeprom(
+            valid_ids=['x410',],
+            cmd='eeprom-id mb')
 
     def reload_fpga(self, fpga_type, sfp0_addrs):
         """
