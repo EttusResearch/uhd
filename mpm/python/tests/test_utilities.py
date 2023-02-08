@@ -24,13 +24,12 @@ def on_usrp():
 
     if not os.path.exists(path):
         return False
-    else:
-        with open(path, 'r') as f:
-            s = f.read()
-            # String returned is actually a list of null-terminated strings,
-            # replace the null-terminations with a separator
-            s.replace('\x00', ';')
-            return 'ettus' in s
+    with open(path, 'r') as f:
+        s = f.read()
+        # String returned is actually a list of null-terminated strings,
+        # replace the null-terminations with a separator
+        s.replace('\x00', ';')
+        return 'ettus' in s
 
 def _mock_gpiod_pkg():
     """
@@ -47,13 +46,14 @@ def _mock_gpiod_pkg():
         import sys
         sys.modules["gpiod"] = MockGpiod
 
-class MockGpiod(object):
+class MockGpiod:
     """
     Mocks a portion of the gpiod python package without actually
     accessing GPIO hardware.
     """
     LINE_REQ_DIR_IN = 0
     LINE_REQ_DIR_OUT = 1
+    LINE_REQ_EV_FALLING_EDGE = 4
 
     _DEFAULT_LINE_VAL = 0
 
@@ -74,7 +74,7 @@ class MockGpiod(object):
             self.val = val
 
     def __init__(self):
-        self.lines = dict()
+        self.lines = {}
 
     def find_line(self, name):
         if name not in self.lines.keys():
@@ -162,7 +162,7 @@ class MockRegsIface(object):
         for val in vals:
             self.next_vals[addr].put_nowait(val)
 
-class MockLog(object):
+class MockLog:
     """
     Mocks logging functionality for testing purposes by putting log
     messages in a queue.
