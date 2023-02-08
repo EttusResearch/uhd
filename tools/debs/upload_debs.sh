@@ -70,7 +70,7 @@ fi
 # or are unnecessary for Debian builds
 rm -rf ${UHD_TOP_LEVEL}/../uhd-${VERSION}
 mkdir ${UHD_TOP_LEVEL}/../uhd-${VERSION}
-rsync --exclude='.git*' --exclude='/debian/' --exclude='*.swp' --exclude='/fpga-src/' --exclude='/build' --exclude='/images/*.pyc' --exclude='/images/uhd-*' --exclude='tags' --exclude='/host/cmake/msvc/' --exclude='/host/cmake/vcpkg/' -a  ${UHD_TOP_LEVEL}/ ${UHD_TOP_LEVEL}/../uhd-${VERSION}/
+rsync --exclude='.git*' --exclude='/debian/' --exclude='*.swp' --exclude='/fpga-src/' --exclude='/build' --exclude='/images/*.pyc' --exclude='/images/uhd-*' --exclude='tags' --exclude='/host/cmake/msvc/' --exclude='/host/cmake/vcpkg/' --exclude='/fpga/' -a  ${UHD_TOP_LEVEL}/ ${UHD_TOP_LEVEL}/../uhd-${VERSION}/
 if [ $? != 0 ]
 then
     echo "Failed to copy UHD source."
