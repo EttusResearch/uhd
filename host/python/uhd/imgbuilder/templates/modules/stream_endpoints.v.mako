@@ -51,6 +51,7 @@ else:
   wire              m_${sep}_ctrl_tready, s_${sep}_ctrl_tready;
 
   chdr_stream_endpoint #(
+    .DEVICE_FAMILY      ("${config.device.family}"),
     .PROTOVER           (PROTOVER),
     .CHDR_W             (CHDR_W),
     .AXIS_CTRL_EN       (${int(seps[sep]["ctrl"])}),
