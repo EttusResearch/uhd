@@ -8,11 +8,12 @@
 //   The implementation of a stream endpoint. This module serves as
 //   an endpoint for a bidirectional stream. It implement a control
 //   and a data path, both of which can be individually enabled using
-//   parameters. The control path contains a bidirectional CHDR to 
+//   parameters. The control path contains a bidirectional CHDR to
 //   AXIS-Control converter. The data path has a stream input and
 //   output port.
 //
 // Parameters:
+//   - DEVICE_FAMILY: The FPGA device family (e.g., "7SERIES" or "ULTRASCALE")
 //   - PROTOVER: RFNoC protocol version {8'd<major>, 8'd<minor>}
 //   - CHDR_W: Width of the CHDR bus in bits
 //   - INST_NUM: The instance number of this module
@@ -37,6 +38,7 @@
 //   - signal_*_err  : Notify upstream that we encountered an error
 
 module chdr_stream_endpoint #(
+  parameter        DEVICE_FAMILY     = "7SERIES",
   parameter [15:0] PROTOVER          = {8'd1, 8'd0},
   parameter        CHDR_W            = 64,
   parameter [9:0]  INST_NUM          = 0,
@@ -491,6 +493,7 @@ module chdr_stream_endpoint #(
 
     // Stream endpoint flow-control input module
     chdr_stream_input #(
+      .DEVICE_FAMILY(DEVICE_FAMILY),
       .CHDR_W(CHDR_W), .BUFF_SIZE(INGRESS_BUFF_SIZE),
       .FLUSH_TIMEOUT_W(INPUT_FLUSH_TIMEOUT_W),
       .MONITOR_EN(0), .SIGNAL_ERRS(REPORT_STRM_ERRS)
