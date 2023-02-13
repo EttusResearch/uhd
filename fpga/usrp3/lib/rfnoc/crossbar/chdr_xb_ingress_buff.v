@@ -27,7 +27,7 @@ module chdr_xb_ingress_buff #(
   parameter       MTU         = 10,
   parameter       DEST_W      = 4,
   parameter [9:0] NODE_ID     = 0,
-  parameter       EN_PKT_GATE = 1
+  parameter       EN_PKT_GATE = 0
 ) (
   input  wire               clk,
   input  wire               reset,
