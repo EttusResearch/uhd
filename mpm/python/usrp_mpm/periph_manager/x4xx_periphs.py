@@ -190,7 +190,8 @@ class MboardRegsControl(MboardRegsCommon):
             ("4x10G", ""):     "X4",
             ("4x10G", "100G"): "X4C",
             ("100G", "100G"):  "CG",
-            ("100G", ""):      "C1"
+            ("100G", ""):      "C1",
+            ("", "100G"):      "UC",
         }
 
         qsfp0_type = self._get_qsfp_type(0)
