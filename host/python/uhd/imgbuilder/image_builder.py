@@ -785,7 +785,7 @@ def write_edges(config, destination):
                           ((dst[0] << 6) | dst[1])))
 
 
-def write_verilog(config, destination, source, source_hash):
+def write_verilog(config, destination, args):
     """
     Generates rfnoc_image_core.v file for the device.
 
@@ -796,8 +796,7 @@ def write_verilog(config, destination, source, source_hash):
     template engine.
     :param config: ImageBuilderConfig derived from script parameter
     :param destination: Filepath to write to
-    :param source: Filepath to the image YAML/GRC to generate from
-    :param source_hash: Source file hash value
+    :param args: Dictionary of arguments for the code generation
     :return: None
     """
     template_dir = os.path.join(os.path.dirname(__file__), "templates")
@@ -811,8 +810,7 @@ def write_verilog(config, destination, source, source_hash):
     try:
         block = tpl.render(**{
             "config": config,
-            "source": source,
-            "source_hash": source_hash,
+            "args": args,
             })
     except:
         print(exceptions.text_error_template().render())
@@ -823,13 +821,12 @@ def write_verilog(config, destination, source, source_hash):
         image_core_file.write(block)
 
 
-def write_verilog_header(config, destination, source, source_hash):
+def write_verilog_header(config, destination, args):
     """
     Generates rfnoc_image_core.vh file for the device.
     :param config: ImageBuilderConfig derived from script parameter
     :param destination: Filepath to write to
-    :param source: Filepath to the image YAML/GRC to generate from
-    :param source_hash: Source file hash value
+    :param args: Dictionary of arguments for the code generation
     :return: None
     """
     template_dir = os.path.join(os.path.dirname(__file__), "templates")
@@ -843,8 +840,7 @@ def write_verilog_header(config, destination, source, source_hash):
     try:
         block = tpl.render(**{
             "config": config,
-            "source": source,
-            "source_hash": source_hash,
+            "args": args,
             })
     except:
         print(exceptions.text_error_template().render())
@@ -1041,13 +1037,13 @@ def build_image(config, fpga_path, config_path, device, **args):
     write_verilog(
         builder_conf,
         image_core_path,
-        source=args.get('source'),
-        source_hash=args.get('source_hash'))
+        args,
+    )
     write_verilog_header(
         builder_conf,
         image_core_header_path,
-        source=args.get('source'),
-        source_hash=args.get('source_hash'))
+        args,
+    )
     write_build_env()
 
     if "generate_only" in args and args["generate_only"]:
