@@ -53,7 +53,7 @@ namespace uhd { namespace rfnoc {
  * | record_size    | Size of the record buffer. Will be set by record().
  * | play_offset    | Base address for playback (streaming will start from here). Set by play() or config_play().
  * | play_size      | Size of the playback buffer. Set by play() or config_play().
- * | packet_size    | Size of outgoing packets (in bytes). Gets set by set_max_items_per_packet().
+ * | payload_size   | Size of outgoing packet payload (in bytes). Gets set by set_max_items_per_packet().
  *
  * Edge properties:
  *
