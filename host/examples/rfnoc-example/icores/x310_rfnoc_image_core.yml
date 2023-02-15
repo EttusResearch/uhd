@@ -2,7 +2,7 @@
 # -----------------------------------------
 schema: rfnoc_imagebuilder_args         # Identifier for the schema used to validate this file
 copyright: >-                           # Copyright information used in file headers
-  Ettus Research, A National Instruments Brand
+  Copyright 2023 Ettus Research, a National Instruments Brand
 license: >-                             # License information used in file headers
   SPDX-License-Identifier: LGPL-3.0-or-later
 version: '1.0'                          # File version (must be string so we can distinguish 1.1 and 1.10)
