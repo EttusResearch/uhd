@@ -295,7 +295,6 @@ module x4xx (
   localparam NET_CHDR_W     = ENET_W;
   localparam CHDR_W         = `CHDR_WIDTH;
   localparam DMA_W          = `CHDR_WIDTH;
-  localparam CPU_W          = 64;
 
   localparam REG_AWIDTH     = 15;
   localparam REG_DWIDTH     = 32;
@@ -1671,7 +1670,6 @@ module x4xx (
       `ifdef QSFP0_3
       .PROTOCOL3      (`QSFP0_3),
       `endif
-      .CPU_W          (CPU_W),
       .CHDR_W         (QSFP0_W),
       .NET_CHDR_W     (NET_CHDR_W),
       .BYTE_MTU       (BYTE_MTU),
@@ -1789,7 +1787,6 @@ module x4xx (
       `ifdef QSFP1_3
       .PROTOCOL3      (`QSFP1_3),
       `endif
-      .CPU_W          (CPU_W),
       .CHDR_W         (QSFP1_W),
       .NET_CHDR_W     (NET_CHDR_W),
       .BYTE_MTU       (BYTE_MTU),
