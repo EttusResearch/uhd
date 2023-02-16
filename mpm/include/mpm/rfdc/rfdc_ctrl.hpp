@@ -651,7 +651,7 @@ public:
      *
      * @return   true if synchronization completed successfully
      */
-    bool sync_tiles(const std::vector<uint32_t>& tiles, bool is_dac, uint32_t latency);
+    bool sync_tiles(const std::vector<uint32_t>& tiles, bool is_dac, int32_t latency);
 
     /**
      * Get post-sync latency between ADC or DAC tiles

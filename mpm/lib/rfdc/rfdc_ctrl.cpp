@@ -661,12 +661,13 @@ void rfdc_ctrl::clear_data_fifo_interrupts(
     }
 }
 
-bool rfdc_ctrl::sync_tiles(const std::vector<uint32_t>& tiles, bool is_dac, uint32_t latency)
+bool rfdc_ctrl::sync_tiles(
+    const std::vector<uint32_t>& tiles, bool is_dac, int32_t latency)
 {
     XRFdc_MultiConverter_Sync_Config* sync_config = is_dac ? &rfdc_dac_sync_config
                                                            : &rfdc_adc_sync_config;
-    sync_config->Tiles = 0;
-    sync_config->Target_Latency = latency;
+    sync_config->Tiles                            = 0;
+    sync_config->Target_Latency                   = static_cast<int>(latency);
 
     for (auto tile = tiles.begin(); tile != tiles.end(); ++tile) {
         // sync_config->Tiles is a bitmask, we need to "bump" each bit (0->1)
@@ -676,7 +677,7 @@ bool rfdc_ctrl::sync_tiles(const std::vector<uint32_t>& tiles, bool is_dac, uint
 
     return XRFDC_MTS_OK
            == XRFdc_MultiConverter_Sync(
-                  &rfdc_inst, is_dac ? XRFDC_DAC_TILE : XRFDC_ADC_TILE, sync_config);
+               &rfdc_inst, is_dac ? XRFDC_DAC_TILE : XRFDC_ADC_TILE, sync_config);
 }
 
 uint32_t rfdc_ctrl::get_tile_latency(uint32_t tile_index, bool is_dac)
