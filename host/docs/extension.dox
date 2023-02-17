@@ -14,17 +14,6 @@ example in the examples directory. It can be built by
 
 Depending on your UHD installation prefix root privileges may be required for `make install`.
 
-<b>Known issue</b>: 
-When using the Python API with an extension installed, `import uhd` may throw an error: 
-
-`Error: EnvironmentError: OSError: dlopen failed to load "/path/to/libextension.so"`
-
-If this occurs, please provide the LD_PRELOAD variable with the path to the uhdlib:
-
-export LD_PRELOAD=[UHD_PREFIX]/lib/libuhd.so
-
-Afterwards start Python again in the same commandline. 
-
 \section extension_capabilities Capabilities of the Extension Framework
 
 The Extension Framework attaches to multi_usrp and will work for all RFNoC-capable devices. 
