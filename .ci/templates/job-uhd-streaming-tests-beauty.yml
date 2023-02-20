@@ -65,6 +65,18 @@ jobs:
         uartSerial: '2516351E2C9A'
         dutNumRecvFrames: ''
         dutNumSendFrames: ''
+      beauty-X410-0 UC_200:
+        dutName: 'beauty-X410-0'
+        dutType: 'x4xx'
+        dutAddr: '192.168.120.2'
+        dutSecondAddr: '192.168.120.2'
+        dutMgmtAddr: '10.0.57.29'
+        dutFPGA: 'UC_200'
+        dutNameId: ''
+        dutEmbeddedImagesArtifact: 'x4xx-images'
+        uartSerial: '2516351E2C9A'
+        dutNumRecvFrames: ''
+        dutNumSendFrames: ''
       # beauty-E320-0:
       #   dutName: 'beauty-E320-0'
       #   dutType: 'E320'
