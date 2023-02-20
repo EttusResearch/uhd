@@ -67,6 +67,8 @@ IFACES = [
         fn_from_string("std::map<std::string, std::string> get_mb_eeprom()"),
         fn_from_string("std::vector<std::string> get_gpio_src(const std::string& bank)"),
         fn_from_string("void set_gpio_src(const std::string& bank, const std::vector<std::string>& src)"),
+        Function("std::map<std::string, std::string>", "synchronize", [("const std::map<std::string, std::string>&", "sync_data"), ("bool", "finalize")]),
+        Function("std::map<std::string, std::string>", "aggregate_sync_data", [("const std::list<std::map<std::string, std::string>>&", "collated_sync_data")]),
 
         # ref_clk_calibration
         fn_from_string("void set_ref_clk_tuning_word(uint32_t tuning_word)"),

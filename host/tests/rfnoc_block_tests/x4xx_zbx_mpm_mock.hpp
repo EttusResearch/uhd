@@ -355,6 +355,18 @@ public:
         return "OFF";
     }
 
+    std::map<std::string, std::string> synchronize(
+        const std::map<std::string, std::string>&, bool) override
+    {
+        return {};
+    }
+
+    std::map<std::string, std::string> aggregate_sync_data(
+        const std::list<std::map<std::string, std::string>>& collated_sync_data) override
+    {
+        return collated_sync_data.front();
+    }
+
     ///////////////////////////////////////////////////////////////////////////
     // Public attributes for easy inspection
     //
