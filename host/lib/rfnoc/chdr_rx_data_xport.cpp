@@ -107,6 +107,7 @@ chdr_rx_data_xport::fc_params_t chdr_rx_data_xport::configure_sep(io_service::sp
     const stream_buff_params_t& fc_freq,
     const stream_buff_params_t& fc_headroom,
     const bool lossy_xport,
+    const uhd::device_addr_t& xport_args,
     disconnect_callback_t disconnect)
 {
     const sep_id_t remote_epid = epids.first;
@@ -188,7 +189,8 @@ chdr_rx_data_xport::fc_params_t chdr_rx_data_xport::configure_sep(io_service::sp
         pyld_buff_fmt,
         mdata_buff_fmt,
         fc_freq,
-        fc_headroom);
+        fc_headroom,
+        xport_args.get("throttle", "1.0"));
 
     // Now, release the buffer. In the flow control callback for the recv_io
     // (fc_cb above), we send a stream status containing the xport buffer

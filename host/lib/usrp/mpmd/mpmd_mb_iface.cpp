@@ -286,6 +286,7 @@ mpmd_mboard_impl::mpmd_mb_iface::make_rx_data_transport(
         fc_freq,
         fc_headroom,
         lossy_xport,
+        xport_args,
         [io_srv_mgr, recv_link, send_link]() {
             io_srv_mgr->disconnect_links(recv_link, send_link);
         });

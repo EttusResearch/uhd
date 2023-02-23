@@ -6,6 +6,7 @@
 
 
 #include <uhd/exception.hpp>
+#include <uhd/utils/cast.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/chdr_ctrl_xport.hpp>
 #include <uhdlib/rfnoc/chdr_packet_writer.hpp>
@@ -51,11 +52,16 @@ constexpr uint16_t REG_OSTRM_BUFF_CAP_PKTS     = 0x28; // R
 // constexpr uint16_t REG_OSTRM_DATA_ERR_CNT      = 0x30; // R
 // constexpr uint16_t REG_OSTRM_ROUTE_ERR_CNT     = 0x34; // R
 constexpr uint16_t REG_ISTRM_CTRL_STATUS = 0x38; // RW
+constexpr uint16_t REG_OSTRM_THROTTLE    = 0x3C; // W
 
 constexpr uint32_t RESET_AND_FLUSH_OSTRM = (1 << 0);
 constexpr uint32_t RESET_AND_FLUSH_ISTRM = (1 << 1);
 // constexpr uint32_t RESET_AND_FLUSH_CTRL  = (1 << 2);
 constexpr uint32_t RESET_AND_FLUSH_ALL = 0x7;
+
+constexpr uint32_t THROTTLE_W      = 16;
+constexpr uint32_t MAX_THROTTLE    = (1 << THROTTLE_W) - 1;
+constexpr uint32_t THROTTLE_FACTOR = (1 << (THROTTLE_W / 2));
 
 #ifdef UHD_BIG_ENDIAN
 constexpr endianness_t HOST_ENDIANNESS = ENDIANNESS_BIG;
@@ -411,6 +417,7 @@ public:
         const sw_buff_t mdata_buff_fmt,
         const stream_buff_params_t& fc_freq,
         const stream_buff_params_t& fc_headroom,
+        const std::string& throttle_ratio,
         const bool reset = false) override
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
@@ -443,6 +450,7 @@ public:
             fc_freq,
             fc_headroom,
             cfg_hop);
+        _push_ostrm_throttle_config(throttle_ratio, cfg_hop);
         // Return the packet back to us
         cfg_hop.add_op(mgmt_op_t(mgmt_op_t::MGMT_OP_RETURN));
 
@@ -851,6 +859,45 @@ private: // Functions
             mgmt_op_t::cfg_payload(REG_OSTRM_CTRL_STATUS,
                 BUILD_CTRL_STATUS_WORD(
                     true, lossy_xport, pyld_buff_fmt, mdata_buff_fmt, byte_swap))));
+    }
+
+    void _push_ostrm_throttle_config(const std::string& throttle_ratio_s, mgmt_hop_t& hop)
+    {
+        const double throttle_ratio = [&](std::string ratio_s) -> double {
+            try {
+                if (ratio_s.back() == '%') {
+                    ratio_s.resize(ratio_s.size() - 1);
+                    return uhd::cast::from_str<double>(ratio_s) / 100.0;
+                }
+                return uhd::cast::from_str<double>(ratio_s);
+            } catch (const std::invalid_argument&) {
+                UHD_LOG_WARNING(LOG_ID,
+                    "Invalid throttle argument provided: `"
+                        << throttle_ratio_s << "', setting throttle to 1.0.");
+                return 1.0;
+            }
+        }(throttle_ratio_s);
+
+        if (throttle_ratio <= 0.0 || throttle_ratio > 1.0) {
+            UHD_LOG_THROW(uhd::value_error,
+                LOG_ID,
+                "Throttle ratio " + throttle_ratio_s + " is out of bounds, "
+                    + "must be in the range (0, 1] or (0%, 100%]");
+        }
+        const uint32_t throttle_val = [](const double ratio) -> uint32_t {
+            const double throttle_f = ((1.0 / ratio) - 1.0) * THROTTLE_FACTOR;
+            if (throttle_f > MAX_THROTTLE) {
+                return MAX_THROTTLE;
+            }
+            return uhd::narrow_cast<uint32_t>(throttle_f);
+        }(throttle_ratio);
+        UHD_LOG_DEBUG(LOG_ID,
+            "Throttling stream endpoint to "
+                << (100.0 / ((static_cast<float>(throttle_val) / THROTTLE_FACTOR) + 1))
+                << "% "
+                << "(0x" << std::hex << (int)throttle_val << ")");
+        hop.add_op(mgmt_op_t(mgmt_op_t::MGMT_OP_CFG_WR_REQ,
+            mgmt_op_t::cfg_payload(REG_OSTRM_THROTTLE, throttle_val)));
     }
 
     // Send/recv a management transaction that will get the output stream status
