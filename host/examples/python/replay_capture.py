@@ -75,6 +75,10 @@ def parse_args():
                         help="Save output file in NumPy format (default: No)")
     parser.add_argument("--cpu-format", default="sc16", choices=["sc16", "fc32"],
                         help="Data format for storing data")
+    parser.add_argument("--throttle", type=float, default=0.25,
+                        help="Throttle for streaming to host, range (0, 1] (default: 0.25)")
+    parser.add_argument("--no-progress", "-N", action="store_true",
+                        help="Do not display progress bar during data transfer")
     return parser.parse_args()
 
 def enumerate_radios(graph, radio_chans):
@@ -236,7 +240,7 @@ def rx_data_to_host(replay, rx_streamer, output_data, mem_stride, num_samps,
     rx_streamer.issue_stream_cmd(stream_cmd)
     if HAVE_TQDM:
         num_rx = 0
-        output_buf = np.zeros((num_ports, max_samps_per_pkt), dtype=output_data.dtype)
+        output_buf = np.zeros((num_ports, 1000*max_samps_per_pkt), dtype=output_data.dtype)
         with tqdm.tqdm(total=num_bytes*num_ports,
                        unit_scale=True, unit="byte") as pbar:
             while num_rx < num_samps:
@@ -268,7 +272,10 @@ def main():
     """
     Run capture
     """
+    global HAVE_TQDM
     args = parse_args()
+    if args.no_progress:
+        HAVE_TQDM = False
     graph = uhd.rfnoc.RfnocGraph(args.args)
     replay = uhd.rfnoc.ReplayBlockControl(graph.get_block(args.block))
     radio_chan_pairs = enumerate_radios(graph, args.radio_channels)
@@ -277,6 +284,7 @@ def main():
     print(f"Using rate: {rate/1e6:.3f} Msps")
     # Set up streamer
     stream_args = uhd.usrp.StreamArgs(args.cpu_format, "sc16")
+    stream_args.args['throttle'] = str(args.throttle)
     rx_streamer = graph.create_rx_streamer(len(radio_chan_pairs), stream_args)
     num_ports = rx_streamer.get_num_channels()
     for chan in range(len(radio_chan_pairs)):
