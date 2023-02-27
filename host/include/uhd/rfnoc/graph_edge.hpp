@@ -55,20 +55,30 @@ struct UHD_API graph_edge_t
     //are not used for sorting the graph as a DAG.
     bool is_forward_edge = true;
 
+    //! Equality operator: Compare two edges if they match, including edge
+    // properties.
     bool operator==(const graph_edge_t& rhs) const
     {
-        return std::tie(src_blockid,
-                   src_port,
-                   dst_blockid,
-                   dst_port,
-                   edge,
-                   is_forward_edge)
-               == std::tie(rhs.src_blockid,
-                      rhs.src_port,
-                      rhs.dst_blockid,
-                      rhs.dst_port,
-                      rhs.edge,
-                      rhs.is_forward_edge);
+        return is_equal(rhs, true);
+    }
+
+    /*! Equality comparison of two edges.
+     *
+     * If \p match_properties is false, this compares two edges to test if they
+     * have the same direction, source port, and destination port.
+     * If \p match_properties is true, then it also tests if all the edge
+     * properties match (edge type, back-edge).
+     *
+     * \returns true if edges match.
+     */
+    bool is_equal(const graph_edge_t& rhs, const bool match_properties = false) const
+    {
+        return (std::tie(src_blockid, src_port, dst_blockid, dst_port)
+                   == std::tie(
+                       rhs.src_blockid, rhs.src_port, rhs.dst_blockid, rhs.dst_port))
+               && (match_properties ? (std::tie(edge, is_forward_edge)
+                                       == std::tie(rhs.edge, rhs.is_forward_edge))
+                                    : true);
     }
 
     //! Return a string representation of the connection
