@@ -256,3 +256,98 @@ BOOST_AUTO_TEST_CASE(test_graph_disconnect_reconnect)
 
     BOOST_CHECK_EQUAL(graph.enumerate_edges().size(), 1);
 }
+
+BOOST_AUTO_TEST_CASE(test_graph_backedge_w_ddc_disconnect_reconnect)
+{
+    graph_t graph{};
+    node_accessor_t node_accessor{};
+
+    // Define some mock nodes:
+    // radio
+    mock_radio_node_t mock_radio(0);
+    // Replay (use mock_edge_node instead of replay)
+    mock_edge_node_t mock_replay_node(1, 1, "MOCK_EDGE_NODE<replay>");
+    // TX streamer
+    mock_streamer_t mock_rx_streamer(1);
+    // RX streamer
+    mock_streamer_t mock_tx_streamer(1);
+    // DUC
+    mock_ddc_node_t mock_ddc_node{};
+    // DDC
+    mock_ddc_node_t mock_duc_node{};
+
+    // These init calls would normally be done by the framework
+    node_accessor.init_props(&mock_radio);
+    node_accessor.init_props(&mock_replay_node);
+    node_accessor.init_props(&mock_rx_streamer);
+    node_accessor.init_props(&mock_tx_streamer);
+    node_accessor.init_props(&mock_ddc_node);
+    node_accessor.init_props(&mock_duc_node);
+
+    uhd::rfnoc::detail::graph_t::graph_edge_t edge_info_ddc(
+        0, 0, graph_t::graph_edge_t::STATIC, true);
+
+    uhd::rfnoc::detail::graph_t::graph_edge_t edge_info(
+        0, 0, graph_t::graph_edge_t::DYNAMIC, true);
+
+    uhd::rfnoc::detail::graph_t::graph_edge_t edge_info_backedge(
+        0, 0, graph_t::graph_edge_t::DYNAMIC, false);
+
+    // Now create the graph (FDx Replay and Record):
+    // RX: radio (src) >> DDC >> Replay Block (sink)
+    graph.connect(&mock_radio, &mock_ddc_node, edge_info);
+    graph.connect(&mock_ddc_node, &mock_replay_node, edge_info);
+    // TX: Replay Block (src) >> DUC >> radio (sink)
+    graph.connect(&mock_replay_node, &mock_duc_node, edge_info);
+    graph.connect(&mock_duc_node, &mock_radio, edge_info_backedge);
+    graph.commit();
+    BOOST_CHECK_EQUAL(graph.enumerate_edges().size(), 4);
+
+    // Disconnect Replay Block source (used for TX Radio)
+    // in preparation for connecting to RX streamer
+    graph.disconnect(&mock_replay_node, &mock_duc_node, edge_info);
+    graph.commit();
+    BOOST_CHECK_EQUAL(graph.enumerate_edges().size(), 3);
+}
+
+BOOST_AUTO_TEST_CASE(test_graph_backedge_wo_ddc_disconnect_reconnect)
+{
+    graph_t graph{};
+    node_accessor_t node_accessor{};
+
+    // Define some mock nodes:
+    // radio
+    mock_radio_node_t mock_radio(0);
+    // Replay (use mock_edge_node instead of replay)
+    mock_edge_node_t mock_replay_node(1, 1, "MOCK_EDGE_NODE<replay>");
+    // TX streamer
+    mock_streamer_t mock_rx_streamer(1);
+    // RX streamer
+    mock_streamer_t mock_tx_streamer(1);
+
+    // These init calls would normally be done by the framework
+    node_accessor.init_props(&mock_radio);
+    node_accessor.init_props(&mock_replay_node);
+    node_accessor.init_props(&mock_rx_streamer);
+    node_accessor.init_props(&mock_tx_streamer);
+
+    uhd::rfnoc::detail::graph_t::graph_edge_t edge_info(
+        0, 0, graph_t::graph_edge_t::DYNAMIC, true);
+
+    uhd::rfnoc::detail::graph_t::graph_edge_t edge_info_backedge(
+        0, 0, graph_t::graph_edge_t::DYNAMIC, false);
+
+    // Now create the graph (FDx Replay and Record):
+    // RX: radio (src) sends data to Replay Block (sink)
+    graph.connect(&mock_radio, &mock_replay_node, edge_info);
+    // TX: Replay Block (src) sends data to radio (sink)
+    graph.connect(&mock_replay_node, &mock_radio, edge_info_backedge);
+    graph.commit();
+    BOOST_CHECK_EQUAL(graph.enumerate_edges().size(), 2);
+
+    // Disconnect Replay Block source (used for TX Radio)
+    // in preparation for connecting to RX streamer
+    graph.disconnect(&mock_replay_node, &mock_radio, edge_info);
+    graph.commit();
+    BOOST_CHECK_EQUAL(graph.enumerate_edges().size(), 1);
+}
