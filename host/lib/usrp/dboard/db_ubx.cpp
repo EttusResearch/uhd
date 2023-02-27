@@ -520,6 +520,20 @@ public:
             .add_coerced_subscriber(
                 std::bind(&ubx_xcvr::set_sync_delay, this, true, std::placeholders::_1))
             .set(0);
+        get_tx_subtree()
+            ->create<bool>("calibrate_vco_map")
+            .add_coerced_subscriber(
+                std::bind(&ubx_xcvr::calibrate_vco_maps, this, TX_DIRECTION));
+        get_tx_subtree()
+            ->create<std::map<uint8_t, uhd::range_t>>("LO1/vco_map")
+            .add_coerced_subscriber(std::bind(
+                &ubx_xcvr::set_vco_map, this, TX_DIRECTION, 1, std::placeholders::_1))
+            .set_publisher(std::bind(&ubx_xcvr::get_vco_map, this, TX_DIRECTION, 1));
+        get_tx_subtree()
+            ->create<std::map<uint8_t, uhd::range_t>>("LO2/vco_map")
+            .add_coerced_subscriber(std::bind(
+                &ubx_xcvr::set_vco_map, this, TX_DIRECTION, 2, std::placeholders::_1))
+            .set_publisher(std::bind(&ubx_xcvr::get_vco_map, this, TX_DIRECTION, 2));
 
         ////////////////////////////////////////////////////////////////////
         // Register RX properties
@@ -558,6 +572,20 @@ public:
             .add_coerced_subscriber(
                 std::bind(&ubx_xcvr::set_sync_delay, this, false, std::placeholders::_1))
             .set(0);
+        get_rx_subtree()
+            ->create<bool>("calibrate_vco_map")
+            .add_coerced_subscriber(
+                std::bind(&ubx_xcvr::calibrate_vco_maps, this, RX_DIRECTION));
+        get_rx_subtree()
+            ->create<std::map<uint8_t, uhd::range_t>>("LO1/vco_map")
+            .add_coerced_subscriber(std::bind(
+                &ubx_xcvr::set_vco_map, this, RX_DIRECTION, 1, std::placeholders::_1))
+            .set_publisher(std::bind(&ubx_xcvr::get_vco_map, this, RX_DIRECTION, 1));
+        get_rx_subtree()
+            ->create<std::map<uint8_t, uhd::range_t>>("LO2/vco_map")
+            .add_coerced_subscriber(std::bind(
+                &ubx_xcvr::set_vco_map, this, RX_DIRECTION, 2, std::placeholders::_1))
+            .set_publisher(std::bind(&ubx_xcvr::get_vco_map, this, RX_DIRECTION, 2));
     }
 
     ~ubx_xcvr(void) override
@@ -853,8 +881,8 @@ private:
     double set_tx_freq(double freq)
     {
         std::lock_guard<std::mutex> lock(_mutex);
-        double freq_lo1 = 0.0;
-        double freq_lo2 = 0.0;
+        double freq_lo1 = _txlo1_freq;
+        double freq_lo2 = _txlo2_freq;
         double ref_freq = _iface->get_clock_rate(dboard_iface::UNIT_TX);
         bool is_int_n   = false;
 
@@ -1295,6 +1323,96 @@ private:
         std::lock_guard<std::mutex> lock(_mutex);
         for (const auto& lo : {_txlo1, _txlo2, _rxlo1, _rxlo2}) {
             lo->set_auto_retune(enabled);
+        }
+    }
+
+    void calibrate_vco_maps(uhd::direction_t dir)
+    {
+        if (dir == TX_DIRECTION) {
+            double orig_freq = _tx_freq;
+            double ref_freq  = _iface->get_clock_rate(dboard_iface::UNIT_TX);
+
+            // Set to high band frequency (so lock detect will be LO1 only)
+            set_tx_freq(6000 * fMHz);
+            // Calibrate LO1
+            _txlo1->calibrate_vco_map(
+                [this]() { return this->get_gpio_field(TX_LO_LOCKED) != 0; },
+                ref_freq,
+                _tx_target_pfd_freq);
+            // Set to low band frequency (so LO1 will be fixed and lock detect will be LO1
+            // & LO2)
+            set_tx_freq(400 * fMHz);
+            // Calibrate LO2
+            _txlo2->calibrate_vco_map(
+                [this]() { return this->get_gpio_field(TX_LO_LOCKED) != 0; },
+                ref_freq,
+                _tx_target_pfd_freq);
+            // Restore to original frequency
+            set_tx_freq(orig_freq);
+        } else {
+            double orig_freq = _rx_freq;
+            double ref_freq  = _iface->get_clock_rate(dboard_iface::UNIT_RX);
+
+            // Set to high band frequency (so lock detect will be LO1 only)
+            set_rx_freq(6000 * fMHz);
+            // Calibrate LO1
+            _rxlo1->calibrate_vco_map(
+                [this]() { return this->get_gpio_field(RX_LO_LOCKED) != 0; },
+                ref_freq,
+                _rx_target_pfd_freq);
+            // Set to low band frequency (so LO1 will be fixed and lock detect will be LO1
+            // & LO2)
+            set_rx_freq(400 * fMHz);
+            // Calibrate LO2
+            _rxlo2->calibrate_vco_map(
+                [this]() { return this->get_gpio_field(RX_LO_LOCKED) != 0; },
+                ref_freq,
+                _rx_target_pfd_freq);
+            // Restore to original frequency
+            set_rx_freq(orig_freq);
+        }
+    }
+
+    std::map<uint8_t, uhd::range_t> get_vco_map(uhd::direction_t dir, size_t which)
+    {
+        if (dir == TX_DIRECTION) {
+            if (which == 1) {
+                return _txlo1->get_vco_map();
+            } else if (which == 2) {
+                return _txlo2->get_vco_map();
+            } else {
+                UHD_THROW_INVALID_CODE_PATH();
+            }
+        } else {
+            if (which == 1) {
+                return _rxlo1->get_vco_map();
+            } else if (which == 2) {
+                return _rxlo2->get_vco_map();
+            } else {
+                UHD_THROW_INVALID_CODE_PATH();
+            }
+        }
+    }
+
+    void set_vco_map(
+        uhd::direction_t dir, size_t which, const std::map<uint8_t, uhd::range_t>& map)
+    {
+        if (dir == TX_DIRECTION) {
+            if (which == 1) {
+                _txlo1->set_vco_map(map);
+            } else if (which == 2) {
+                _txlo2->set_vco_map(map);
+            } else {
+                UHD_THROW_INVALID_CODE_PATH();
+            }
+        } else {
+            if (which == 1) {
+                _rxlo1->set_vco_map(map);
+            } else if (which == 2) {
+                _rxlo2->set_vco_map(map);
+            } else {
+                UHD_THROW_INVALID_CODE_PATH();
+            }
         }
     }
 

@@ -17,7 +17,6 @@
 #include <uhd/utils/math.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <stdint.h>
-#include <boost/assign.hpp>
 #include <chrono>
 #include <cmath>
 #include <functional>
@@ -33,6 +32,7 @@ public:
     typedef std::shared_ptr<max287x_iface> sptr;
 
     typedef std::function<void(std::vector<uint32_t>)> write_fn;
+    typedef std::map<uint8_t, uhd::range_t> vco_map_t;
 
     /**
      * LD Pin Modes
@@ -213,6 +213,23 @@ public:
      * Configure synthesizer for phase synchronization
      */
     virtual void config_for_sync(bool enable) = 0;
+
+    /**
+     * Calibrate VCO map
+     */
+    virtual void calibrate_vco_map(
+        std::function<bool(void)> lo_locked, double ref_freq, double target_pfd_freq) = 0;
+
+    /**
+     * Get VCO map
+     */
+    virtual vco_map_t get_vco_map() = 0;
+
+    /**
+     * Set VCO map
+     * @param map the VCO map
+     */
+    virtual void set_vco_map(const vco_map_t& map) = 0;
 };
 
 /**
@@ -223,7 +240,7 @@ template <typename max287x_regs_t>
 class max287x : public max287x_iface
 {
 public:
-    max287x(write_fn func);
+    max287x(write_fn write);
     ~max287x() override;
     void power_up(void) override;
     void shutdown(void) override;
@@ -244,6 +261,11 @@ public:
     void commit() override;
     bool can_sync() override;
     void config_for_sync(bool enable) override;
+    void calibrate_vco_map(std::function<bool(void)> lo_locked,
+        double ref_freq,
+        double target_pfd_freq) override;
+    vco_map_t get_vco_map() override;
+    void set_vco_map(const vco_map_t& map) override;
 
 protected:
     max287x_regs_t _regs;
@@ -262,7 +284,7 @@ private:
 class max2870 : public max287x<max2870_regs_t>
 {
 public:
-    max2870(write_fn func) : max287x<max2870_regs_t>(func) {}
+    max2870(write_fn write) : max287x<max2870_regs_t>(write) {}
     ~max2870() override {}
     double set_frequency(double target_freq,
         double ref_freq,
@@ -289,75 +311,74 @@ public:
 /**
  * MAX2871
  */
-// clang-format off
+
 // Table of frequency ranges for each VCO value.
 // The values were derived from sampling multiple
 // units over a temperature range of -10 to 40 deg C.
-typedef std::map<uint8_t,uhd::range_t> vco_map_t;
-static const vco_map_t max2871_vco_map =
-    boost::assign::map_list_of
-    (0,uhd::range_t(2767776024.0,2838472816.0))
-    (1,uhd::range_t(2838472816.0,2879070053.0))
-    (2,uhd::range_t(2879070053.0,2921202504.0))
-    (3,uhd::range_t(2921202504.0,2960407579.0))
-    (4,uhd::range_t(2960407579.0,3001687422.0))
-    (5,uhd::range_t(3001687422.0,3048662562.0))
-    (6,uhd::range_t(3048662562.0,3097511550.0))
-    (7,uhd::range_t(3097511550.0,3145085864.0))
-    (8,uhd::range_t(3145085864.0,3201050835.0))
-    (9,uhd::range_t(3201050835.0,3259581909.0))
-    (10,uhd::range_t(3259581909.0,3321408729.0))
-    (11,uhd::range_t(3321408729.0,3375217285.0))
-    (12,uhd::range_t(3375217285.0,3432807972.0))
-    (13,uhd::range_t(3432807972.0,3503759088.0))
-    (14,uhd::range_t(3503759088.0,3579011283.0))
-    (15,uhd::range_t(3579011283.0,3683570865.0))
-    (20,uhd::range_t(3683570865.0,3711845712.0))
-    (21,uhd::range_t(3711845712.0,3762188221.0))
-    (22,uhd::range_t(3762188221.0,3814209551.0))
-    (23,uhd::range_t(3814209551.0,3865820020.0))
-    (24,uhd::range_t(3865820020.0,3922520021.0))
-    (25,uhd::range_t(3922520021.0,3981682709.0))
-    (26,uhd::range_t(3981682709.0,4043154280.0))
-    (27,uhd::range_t(4043154280.0,4100400020.0))
-    (28,uhd::range_t(4100400020.0,4159647583.0))
-    (29,uhd::range_t(4159647583.0,4228164842.0))
-    (30,uhd::range_t(4228164842.0,4299359879.0))
-    (31,uhd::range_t(4299359879.0,4395947962.0))
-    (33,uhd::range_t(4395947962.0,4426512061.0))
-    (34,uhd::range_t(4426512061.0,4480333656.0))
-    (35,uhd::range_t(4480333656.0,4526297331.0))
-    (36,uhd::range_t(4526297331.0,4574689510.0))
-    (37,uhd::range_t(4574689510.0,4633102021.0))
-    (38,uhd::range_t(4633102021.0,4693755616.0))
-    (39,uhd::range_t(4693755616.0,4745624435.0))
-    (40,uhd::range_t(4745624435.0,4803922123.0))
-    (41,uhd::range_t(4803922123.0,4871523881.0))
-    (42,uhd::range_t(4871523881.0,4942111286.0))
-    (43,uhd::range_t(4942111286.0,5000192446.0))
-    (44,uhd::range_t(5000192446.0,5059567510.0))
-    (45,uhd::range_t(5059567510.0,5136258187.0))
-    (46,uhd::range_t(5136258187.0,5215827295.0))
-    (47,uhd::range_t(5215827295.0,5341282949.0))
-    (49,uhd::range_t(5341282949.0,5389819310.0))
-    (50,uhd::range_t(5389819310.0,5444868434.0))
-    (51,uhd::range_t(5444868434.0,5500079705.0))
-    (52,uhd::range_t(5500079705.0,5555329630.0))
-    (53,uhd::range_t(5555329630.0,5615049833.0))
-    (54,uhd::range_t(5615049833.0,5676098527.0))
-    (55,uhd::range_t(5676098527.0,5744191577.0))
-    (56,uhd::range_t(5744191577.0,5810869917.0))
-    (57,uhd::range_t(5810869917.0,5879176194.0))
-    (58,uhd::range_t(5879176194.0,5952430629.0))
-    (59,uhd::range_t(5952430629.0,6016743964.0))
-    (60,uhd::range_t(6016743964.0,6090658690.0))
-    (61,uhd::range_t(6090658690.0,6128133570.0));
-// clang-format on
+static const max287x_iface::vco_map_t max2871_vco_map{
+    {0, uhd::range_t(2767776024.0, 2838472816.0)},
+    {1, uhd::range_t(2838472816.0, 2879070053.0)},
+    {2, uhd::range_t(2879070053.0, 2921202504.0)},
+    {3, uhd::range_t(2921202504.0, 2960407579.0)},
+    {4, uhd::range_t(2960407579.0, 3001687422.0)},
+    {5, uhd::range_t(3001687422.0, 3048662562.0)},
+    {6, uhd::range_t(3048662562.0, 3097511550.0)},
+    {7, uhd::range_t(3097511550.0, 3145085864.0)},
+    {8, uhd::range_t(3145085864.0, 3201050835.0)},
+    {9, uhd::range_t(3201050835.0, 3259581909.0)},
+    {10, uhd::range_t(3259581909.0, 3321408729.0)},
+    {11, uhd::range_t(3321408729.0, 3375217285.0)},
+    {12, uhd::range_t(3375217285.0, 3432807972.0)},
+    {13, uhd::range_t(3432807972.0, 3503759088.0)},
+    {14, uhd::range_t(3503759088.0, 3579011283.0)},
+    {15, uhd::range_t(3579011283.0, 3683570865.0)},
+    {20, uhd::range_t(3683570865.0, 3711845712.0)},
+    {21, uhd::range_t(3711845712.0, 3762188221.0)},
+    {22, uhd::range_t(3762188221.0, 3814209551.0)},
+    {23, uhd::range_t(3814209551.0, 3865820020.0)},
+    {24, uhd::range_t(3865820020.0, 3922520021.0)},
+    {25, uhd::range_t(3922520021.0, 3981682709.0)},
+    {26, uhd::range_t(3981682709.0, 4043154280.0)},
+    {27, uhd::range_t(4043154280.0, 4100400020.0)},
+    {28, uhd::range_t(4100400020.0, 4159647583.0)},
+    {29, uhd::range_t(4159647583.0, 4228164842.0)},
+    {30, uhd::range_t(4228164842.0, 4299359879.0)},
+    {31, uhd::range_t(4299359879.0, 4395947962.0)},
+    {33, uhd::range_t(4395947962.0, 4426512061.0)},
+    {34, uhd::range_t(4426512061.0, 4480333656.0)},
+    {35, uhd::range_t(4480333656.0, 4526297331.0)},
+    {36, uhd::range_t(4526297331.0, 4574689510.0)},
+    {37, uhd::range_t(4574689510.0, 4633102021.0)},
+    {38, uhd::range_t(4633102021.0, 4693755616.0)},
+    {39, uhd::range_t(4693755616.0, 4745624435.0)},
+    {40, uhd::range_t(4745624435.0, 4803922123.0)},
+    {41, uhd::range_t(4803922123.0, 4871523881.0)},
+    {42, uhd::range_t(4871523881.0, 4942111286.0)},
+    {43, uhd::range_t(4942111286.0, 5000192446.0)},
+    {44, uhd::range_t(5000192446.0, 5059567510.0)},
+    {45, uhd::range_t(5059567510.0, 5136258187.0)},
+    {46, uhd::range_t(5136258187.0, 5215827295.0)},
+    {47, uhd::range_t(5215827295.0, 5341282949.0)},
+    {49, uhd::range_t(5341282949.0, 5389819310.0)},
+    {50, uhd::range_t(5389819310.0, 5444868434.0)},
+    {51, uhd::range_t(5444868434.0, 5500079705.0)},
+    {52, uhd::range_t(5500079705.0, 5555329630.0)},
+    {53, uhd::range_t(5555329630.0, 5615049833.0)},
+    {54, uhd::range_t(5615049833.0, 5676098527.0)},
+    {55, uhd::range_t(5676098527.0, 5744191577.0)},
+    {56, uhd::range_t(5744191577.0, 5810869917.0)},
+    {57, uhd::range_t(5810869917.0, 5879176194.0)},
+    {58, uhd::range_t(5879176194.0, 5952430629.0)},
+    {59, uhd::range_t(5952430629.0, 6016743964.0)},
+    {60, uhd::range_t(6016743964.0, 6090658690.0)},
+    {61, uhd::range_t(6090658690.0, 6128133570.0)},
+    {62, uhd::range_t(6128133570.0, 6150000000.0)},
+    {63, uhd::range_t(6150000000.0, 6300000000.0)}};
 
 class max2871 : public max287x<max2871_regs_t>
 {
 public:
-    max2871(write_fn func) : max287x<max2871_regs_t>(func) {}
+    max2871(write_fn write) : max287x<max2871_regs_t>(write), _vco_map(max2871_vco_map) {}
     ~max2871() override{};
     void set_muxout_mode(muxout_mode_t mode) override
     {
@@ -392,7 +413,7 @@ public:
             while (vco_freq < MIN_VCO_FREQ)
                 vco_freq *= 2;
             uint8_t vco_index = 0xFF;
-            for (const vco_map_t::value_type& vco : max2871_vco_map) {
+            for (const vco_map_t::value_type& vco : _vco_map) {
                 if (uhd::math::fp_compare::fp_compare_epsilon<double>(vco_freq)
                     < vco.second.stop()) {
                     vco_index = vco.first;
@@ -420,6 +441,152 @@ public:
         return freq;
     }
 
+    void calibrate_vco_map(std::function<bool(void)> lo_locked,
+        double ref_freq,
+        double target_pfd_freq) final
+    {
+        // Check the VCO table.  Each VCO should lock within the specified frequency
+        // range plus some margin on each end of the range so temperature changes will
+        // not cause the PLL to unlock.  Test to make sure each VCO band locks for the
+        // specified range plus some margin.  If not, adjust the frequency range for
+        // the band.  The VCO bands overlap, so the PLL should lock for the VCO band
+        // below and above the frequency range.
+
+        static const double margin     = 20e6;
+        static const double resolution = 1e6;
+
+        // Cache original _config_for_sync setting
+        const bool config_for_sync_cache = _config_for_sync;
+        _config_for_sync                 = true;
+
+        size_t band  = 0;
+        double start = _vco_map[band].start();
+        double stop  = _vco_map[band].stop();
+
+        // Make sure things are settled
+        // Testing showed that the LO would never report locked if the calibration was
+        // done without waiting for the previous tuning to complete.
+        lo_locked();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+        // Check for lock at 3 GHz plus margin
+        set_frequency(3e9 + margin, ref_freq, target_pfd_freq, false);
+        commit();
+        lo_locked();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        if (lo_locked()) {
+            band  = _regs.vco;
+            start = _vco_map[band].start();
+            stop  = _vco_map[band].stop();
+        } else {
+            // Find all the bands that lock at 3 GHz plus margin and use the
+            // one in the middle of the range.
+            size_t first     = 0;
+            size_t last      = 0;
+            bool found_first = false;
+            band             = 0;
+            while (1) {
+                _regs.vco = band;
+                commit();
+                lo_locked();
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                if (lo_locked()) {
+                    if (found_first) {
+                        last = band;
+                    } else {
+                        found_first = true;
+                        first       = band;
+                        last        = band;
+                    }
+                } else if (found_first) {
+                    band  = (first + last + 1) / 2;
+                    start = _vco_map[band].start();
+                    while (start > 3e9) {
+                        start -= resolution;
+                    }
+                    stop = _vco_map[band].stop();
+                    while (stop < 3e9 + margin) {
+                        stop += resolution;
+                    }
+                    _vco_map[band] = uhd::range_t(start, stop);
+                    break;
+                }
+                ++band;
+                UHD_ASSERT_THROW(band <= 15);
+            }
+        }
+
+        // For each band
+        size_t next_band = band;
+        while (1) {
+            while (_vco_map.count(++next_band) == 0)
+                ;
+
+            // Stop if we are past 6 GHz
+            if (stop > 6e9) {
+                _vco_map[band] = uhd::range_t(start, stop);
+                break;
+            }
+
+            while (1) {
+                double overlap_start = stop - margin;
+                double overlap_end   = stop + margin;
+
+                // Set frequency to overlap end and this band
+                set_frequency(overlap_end, ref_freq, target_pfd_freq, false);
+                _regs.vco = band;
+                commit();
+
+                // Wait and check for lock
+                lo_locked();
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                if (not lo_locked()) {
+                    // If not locked, adjust and retry
+                    stop -= resolution;
+                    continue;
+                }
+
+                // Set frequency to overlap start and next band
+                set_frequency(overlap_start, ref_freq, target_pfd_freq, false);
+                _regs.vco = next_band;
+                commit();
+
+                // Wait and check for lock
+                lo_locked();
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                if (not lo_locked()) {
+                    // If not locked, adjust and retry
+                    stop += resolution;
+                    continue;
+                }
+
+                // Store split frequency
+                _vco_map[band] = uhd::range_t(start, stop);
+                break;
+            }
+            UHD_ASSERT_THROW(next_band < 64);
+            band  = next_band;
+            start = stop;
+            stop  = _vco_map[band].stop();
+            while (stop < start) {
+                stop += resolution;
+            }
+        }
+
+        // Restore original _config_for_sync value
+        _config_for_sync = config_for_sync_cache;
+    }
+
+    vco_map_t get_vco_map() final
+    {
+        return _vco_map;
+    }
+
+    void set_vco_map(const vco_map_t& map) final
+    {
+        _vco_map = map;
+    }
+
     void commit() override
     {
         max287x<max2871_regs_t>::commit();
@@ -441,6 +608,11 @@ public:
             _can_sync = false;
         }
     }
+
+private:
+    vco_map_t _vco_map;
+    double _ref_freq;
+    double _pfd_freq;
 };
 
 
@@ -451,11 +623,11 @@ public:
 // include it here.
 
 template <typename max287x_regs_t>
-max287x<max287x_regs_t>::max287x(write_fn func)
+max287x<max287x_regs_t>::max287x(write_fn write)
     : _can_sync(false)
     , _config_for_sync(false)
     , _write_all_regs(true)
-    , _write(func)
+    , _write(write)
     , _delay_after_write(true)
 {
     power_up();
@@ -507,16 +679,15 @@ double max287x<max287x_regs_t>::set_frequency(
     double target_freq, double ref_freq, double target_pfd_freq, bool is_int_n)
 {
     // map rf divider select output dividers to enums
-    static const uhd::dict<int, typename max287x_regs_t::rf_divider_select_t>
-        rfdivsel_to_enum =
-            boost::assign::map_list_of(1, max287x_regs_t::RF_DIVIDER_SELECT_DIV1)(
-                2, max287x_regs_t::RF_DIVIDER_SELECT_DIV2)(
-                4, max287x_regs_t::RF_DIVIDER_SELECT_DIV4)(
-                8, max287x_regs_t::RF_DIVIDER_SELECT_DIV8)(
-                16, max287x_regs_t::RF_DIVIDER_SELECT_DIV16)(
-                32, max287x_regs_t::RF_DIVIDER_SELECT_DIV32)(
-                64, max287x_regs_t::RF_DIVIDER_SELECT_DIV64)(
-                128, max287x_regs_t::RF_DIVIDER_SELECT_DIV128);
+    static const std::map<int, typename max287x_regs_t::rf_divider_select_t>
+        rfdivsel_to_enum{{1, max287x_regs_t::RF_DIVIDER_SELECT_DIV1},
+            {2, max287x_regs_t::RF_DIVIDER_SELECT_DIV2},
+            {4, max287x_regs_t::RF_DIVIDER_SELECT_DIV4},
+            {8, max287x_regs_t::RF_DIVIDER_SELECT_DIV8},
+            {16, max287x_regs_t::RF_DIVIDER_SELECT_DIV16},
+            {32, max287x_regs_t::RF_DIVIDER_SELECT_DIV32},
+            {64, max287x_regs_t::RF_DIVIDER_SELECT_DIV64},
+            {128, max287x_regs_t::RF_DIVIDER_SELECT_DIV128}};
 
     // map mode setting to valid integer divider (N) values
     static const uhd::range_t int_n_mode_div_range(16, 65535, 1);
@@ -667,8 +838,8 @@ double max287x<max287x_regs_t>::set_frequency(
                                 : max287x_regs_t::REFERENCE_DOUBLER_DISABLED;
     _regs.band_select_clock_div = BS & 0xFF;
     _regs.bs_msb                = (BS & 0x300) >> 8;
-    UHD_ASSERT_THROW(rfdivsel_to_enum.has_key(RFdiv));
-    _regs.rf_divider_select = rfdivsel_to_enum[RFdiv];
+    UHD_ASSERT_THROW(rfdivsel_to_enum.count(RFdiv) > 0);
+    _regs.rf_divider_select = rfdivsel_to_enum.at(RFdiv);
 
     if (_regs.clock_div_mode == max287x_regs_t::CLOCK_DIV_MODE_FAST_LOCK) {
         // Charge pump current needs to be set to lowest value in fast lock mode
@@ -924,6 +1095,24 @@ template <typename max287x_regs_t>
 void max287x<max287x_regs_t>::config_for_sync(bool enable)
 {
     _config_for_sync = enable;
+}
+
+template <typename max287x_regs_t>
+void max287x<max287x_regs_t>::calibrate_vco_map(std::function<bool(void)>, double, double)
+{
+    // NOP
+}
+
+template <typename max287x_regs_t>
+max287x_iface::vco_map_t max287x<max287x_regs_t>::get_vco_map()
+{
+    UHD_THROW_INVALID_CODE_PATH();
+}
+
+template <typename max287x_regs_t>
+void max287x<max287x_regs_t>::set_vco_map(const max287x_iface::vco_map_t&)
+{
+    UHD_THROW_INVALID_CODE_PATH();
 }
 
 #endif // MAX287X_HPP_INCLUDED

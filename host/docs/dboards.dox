@@ -379,17 +379,55 @@ Notes:
 - When used in the X300/X310 at frequencies below 1 GHz, it is necessary to
   reduce the daughterboard clock rate to 20 MHz to achieve phase
   synchronization and best RF performance (see \ref config_devaddr).
-- The LO lock sensor for the UBX can intermittently fail to report True. In that
-  case, the UBX has a temperature compensation mode, which can be activated to
-  help the synthesizer to lock. It may also increase the tuning time, though,
-  which is why the default is to disable the temperature compensation mode.
-  To enable the temperature compensation mode, identify the property tree path
-  to the daughterboard, and set the `temp_comp_mode` to "enabled":
+- The LO lock sensor for the UBX can intermittently fail to report True.  The
+  mitigation depends on whether tuning is done using timed commands or not.
+  + If not using timed commands, a temperature compensation mode can be enabled to
+    help the LO to lock. It may also increase the tuning time, though,
+    which is why the default is to disable the temperature compensation mode.
+    To enable the temperature compensation mode, identify the property tree path
+    to the daughterboard, and set the `temp_comp_mode` to "enabled":
 ~~~~{.cpp}
 // Assume DEV is a valid device, and we are talking to the UBX in motherboard 0
 // in slot A:
 DEV->get_tree()->access<std::string>("/mboards/0/rx_frontends/A/temp_comp_mode/value")
     .set("enabled");
+~~~~
+  + If using timed commands, the LO uses a map to choose the appropriate VCO band.
+    There is a calibration for the map that can be run by setting the
+    `calibrate_vco_map` property to true.  It is done independently for TX and RX:
+~~~~{.cpp}
+// Assume DEV is a valid device, and we are talking to the UBX in motherboard 0
+// in slot A:
+DEV->get_tree()->access<bool>("/mboards/0/rx_frontends/A/calibrate_vco_map")
+    .set(true);
+DEV->get_tree()->access<bool>("/mboards/0/tx_frontends/A/calibrate_vco_map")
+    .set(true);
+~~~~
+  + The VCO maps for each LO can be accessed and controlled independently.  This allows
+    users to calibrate the maps for a particular daughterboard in their environment
+    so the same VCO is always used for a given frequency.  This may be necessary to
+    maintain the same phase offset between channels across power cycles.  The maps can
+    be accessed via the `vco_map` property:
+~~~~{.cpp}
+// Assume DEV is a valid device, and we are talking to the UBX in motherboard 0
+// in slot A:
+auto rx_lo1_map = DEV->get_tree()->access< std::map<int,uhd::range_t> >("/mboards/0/rx_frontends/A/LO1/vco_map")
+    .get();
+auto rx_lo2_map = DEV->get_tree()->access< std::map<int,uhd::range_t> >("/mboards/0/rx_frontends/A/LO2/vco_map")
+    .get();
+auto tx_lo1_map = DEV->get_tree()->access< std::map<int,uhd::range_t> >("/mboards/0/tx_frontends/A/LO1/vco_map")
+    .get();
+auto tx_lo2_map = DEV->get_tree()->access< std::map<int,uhd::range_t> >("/mboards/0/tx_frontends/A/LO2/vco_map")
+    .get();
+
+DEV->get_tree()->access< std::map<int,uhd::range_t> >("/mboards/0/rx_frontends/A/LO1/vco_map")
+    .set(rx_lo1_map);
+DEV->get_tree()->access< std::map<int,uhd::range_t> >("/mboards/0/rx_frontends/A/LO2/vco_map")
+    .set(rx_lo2_map);
+DEV->get_tree()->access< std::map<int,uhd::range_t> >("/mboards/0/tx_frontends/A/LO1/vco_map")
+    .set(tx_lo1_map);
+DEV->get_tree()->access< std::map<int,uhd::range_t> >("/mboards/0/tx_frontends/A/LO2/vco_map")
+    .set(tx_lo2_map);
 ~~~~
 
 \subsection dboards_twinrx TwinRX
