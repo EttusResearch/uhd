@@ -208,9 +208,11 @@ void graph_t::disconnect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t 
     edge_info.src_blockid = src_node->get_unique_id();
     edge_info.dst_blockid = dst_node->get_unique_id();
 
-    boost::remove_out_edge_if(src_vertex_desc,
+    boost::remove_out_edge_if(
+        src_vertex_desc,
         [this, edge_info](rfnoc_graph_t::edge_descriptor edge_desc) {
-            return (edge_info == boost::get(edge_property_t(), this->_graph, edge_desc));
+            return (edge_info.is_equal(
+                boost::get(edge_property_t(), this->_graph, edge_desc), false));
         },
         _graph);
 
