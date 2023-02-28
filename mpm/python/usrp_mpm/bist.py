@@ -491,7 +491,10 @@ class UsrpBIST(object):
         Return arg parser
         """
         parser = argparse.ArgumentParser(
-            description="{} BIST Tool".format(self.usrp_type),
+            description=f"""{self.usrp_type} BIST Tool
+
+            By default, it will execute a standard set of tests.
+            """
         )
         parser.add_argument(
             '-n', '--dry-run', action='store_true',
@@ -525,8 +528,11 @@ class UsrpBIST(object):
         )
         parser.add_argument(
             'tests',
-            help="List the tests that should be run",
+            help="List the tests that should be run. Use 'standard' or 'extended' "
+                 "for a collection of tests. The 'extended' test collection might "
+                 "require additional hardware or fixtures.",
             nargs='+', # There has to be at least one
+            default=['standard'],
         )
         return parser
 
