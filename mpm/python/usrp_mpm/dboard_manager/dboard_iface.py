@@ -68,19 +68,6 @@ class DboardIface(object):
         raise NotImplementedError('DboardIface::ctrl_spi_reset() not supported!')
 
     ####################################################################
-    # Management Bus
-    ####################################################################
-
-    ####################################################################
-    # Calibration SPI
-    #   The SPI/QSPI node used to interact with the DB
-    #   Calibration EEPROM if it exists
-    ####################################################################
-    def get_cal_eeprom_spi_node(self, addr):
-        raise NotImplementedError('DboardIface::get_cal_eeprom_spi_node()'
-                                  ' not supported!')
-
-    ####################################################################
     # MB Control
     #   Some of the MB settings may be controlled from the DB Driver
     ####################################################################

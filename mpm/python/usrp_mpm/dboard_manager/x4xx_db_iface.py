@@ -67,26 +67,6 @@ class X4xxDboardIface(DboardIface):
         self.db_cpld_iface.poke32(addr, val)
 
     ####################################################################
-    # Management Bus
-    ####################################################################
-
-    ####################################################################
-    # Calibration SPI
-    #   The SPI/QSPI node used to interact with the DB
-    #   Calibration EEPROM if it exists
-    ####################################################################
-    def get_cal_eeprom_spi_node(self, addr):
-        """
-        Returns the QSPI node leading to the calibration EEPROM of the
-        given DB.
-        """
-        chip_select = self.mboard.qspi_cs.get(self.db_name, None)
-        if chip_select is None:
-            raise RuntimeError('No QSPI chip select corresponds ' \
-                               'with daughterboard {}'.format(self.db_name))
-        return self.mboard.qspi_nodes[chip_select]
-
-    ####################################################################
     # MB Control
     #   Some of the MB settings may be controlled from the DB Driver
     ####################################################################
