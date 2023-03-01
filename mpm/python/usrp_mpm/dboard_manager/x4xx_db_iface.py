@@ -3,11 +3,14 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
+"""
+X4xx Daughterboard interface. See X4xxDboardIface documentation.
+"""
 
 from usrp_mpm.sys_utils.db_flash import DBFlash
 from usrp_mpm.sys_utils.gpio import Gpio
 from usrp_mpm.dboard_manager import DboardIface
-from usrp_mpm import lib # Pulls in everything from C++-land
+from usrp_mpm.mpmutils import get_dboard_class_from_pid
 
 class X4xxDboardIface(DboardIface):
     """
@@ -24,12 +27,24 @@ class X4xxDboardIface(DboardIface):
     def __init__(self, slot_idx, motherboard, dboard_info):
         super().__init__(slot_idx, motherboard)
         self.db_cpld_iface = motherboard.ctrlport_regs.get_db_cpld_iface(self.slot_idx)
-        self._power_enable = Gpio('DB{}_PWR_EN'.format(slot_idx), Gpio.OUTPUT)
-        self._power_status = Gpio('DB{}_PWR_STATUS'.format(slot_idx), Gpio.INPUT)
+        self._power_enable = Gpio(f'DB{slot_idx}_PWR_EN', Gpio.OUTPUT)
+        self._power_status = Gpio(f'DB{slot_idx}_PWR_STATUS', Gpio.INPUT)
+        self.db_flash = None
+        self._init_db_flash(slot_idx, dboard_info)
 
-        self.db_flash = DBFlash(slot_idx, log=self.log)
+    def _init_db_flash(self, slot_idx, dboard_info):
+        """
+        Identify if this daughterboard has a flash memory, and initialize it if
+        necessary.
+        """
+        db_class = get_dboard_class_from_pid(dboard_info['pid'])
+        if getattr(db_class, 'has_db_flash', False):
+            self.db_flash = DBFlash(slot_idx, log=self.log)
 
     def tear_down(self):
+        """
+        De-init flash memory before shutting down to avoid data loss.
+        """
         self.log.trace("Tearing down X4xx daughterboard...")
         if self.db_flash:
             self.db_flash.deinit()

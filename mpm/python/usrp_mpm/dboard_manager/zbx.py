@@ -35,6 +35,7 @@ class ZBX(X4xxDbMixin, DboardManagerBase):
     tx_sensor_callback_map = {
         'temperature': 'get_rf_temp_sensor',
     }
+    has_db_flash = True
     ### End of overridables #################################################
 
     ### Daughterboard driver/hardware compatibility value
