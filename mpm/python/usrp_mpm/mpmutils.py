@@ -265,3 +265,18 @@ def parse_multi_device_arg(arg, conv=None, delim=";"):
         arg = arg[1:-1]
     arg = arg.split(delim)
     return tuple(conv(x) for x in arg)
+
+def get_dboard_class_from_pid(pid):
+    """
+    Given a PID, return a dboard class initializer callable.
+    """
+    from usrp_mpm import dboard_manager
+    for member in dboard_manager.__dict__.values():
+        try:
+            if issubclass(member, dboard_manager.DboardManagerBase) and \
+                    hasattr(member, 'pids') and \
+                    pid in member.pids:
+                return member
+        except (TypeError, AttributeError):
+            continue
+    return None

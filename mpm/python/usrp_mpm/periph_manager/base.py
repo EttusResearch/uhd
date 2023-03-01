@@ -23,25 +23,10 @@ from usrp_mpm.sys_utils.udev import get_spidev_nodes
 from usrp_mpm.sys_utils import dtoverlay
 from usrp_mpm.sys_utils import net
 from usrp_mpm.xports import XportAdapterMgr
-from usrp_mpm import eeprom
 from usrp_mpm.rpc_server import no_claim, no_rpc
+from usrp_mpm.mpmutils import get_dboard_class_from_pid
+from usrp_mpm import eeprom
 from usrp_mpm import prefs
-
-def get_dboard_class_from_pid(pid):
-    """
-    Given a PID, return a dboard class initializer callable.
-    """
-    from usrp_mpm import dboard_manager
-    for member in itervalues(dboard_manager.__dict__):
-        try:
-            if issubclass(member, dboard_manager.DboardManagerBase) and \
-                    hasattr(member, 'pids') and \
-                    pid in member.pids:
-                return member
-        except (TypeError, AttributeError):
-            continue
-    return None
-
 
 # We need to disable the no-self-use check, because we might require self to
 # become an RPC method, but PyLint doesnt' know that. We'll also disable
