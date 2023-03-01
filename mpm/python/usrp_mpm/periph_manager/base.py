@@ -13,7 +13,6 @@ from enum import Enum
 from hashlib import md5
 from time import sleep
 from concurrent import futures
-from six import iteritems, itervalues
 from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.sys_utils.filesystem_status import get_fs_version
 from usrp_mpm.sys_utils.filesystem_status import get_mender_artifact
@@ -1046,7 +1045,7 @@ class PeriphManagerBase:
         """
         return {
             k: v.decode() if isinstance(v, bytes) else str(v)
-            for k, v in iteritems(self._eeprom_head)
+            for k, v in self._eeprom_head.items()
         }
 
     def set_mb_eeprom(self, eeprom_vals):
