@@ -76,7 +76,7 @@ def generate_x4xx_100GbE_test_cases(metafunc, test_length, dut_fpga):
     argvalues = test_length_utils.select_test_cases_by_length(test_length, test_cases)
     metafunc.parametrize(ARGNAMES_DUAL_SFP, argvalues)
 
-    fast_params = test_length_utils.test_length_params(iterations=5, duration=30)
+    fast_params = test_length_utils.test_length_params(iterations=5, duration=2)
     stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
     parametrize_test_length(metafunc, test_length, fast_params, stress_params)
 
@@ -93,7 +93,7 @@ def generate_X310_10GbE_test_cases(metafunc, test_length):
     argvalues = test_length_utils.select_test_cases_by_length(test_length, test_cases)
     metafunc.parametrize(ARGNAMES_DUAL_SFP, argvalues)
 
-    fast_params = test_length_utils.test_length_params(iterations=5, duration=30)
+    fast_params = test_length_utils.test_length_params(iterations=5, duration=5)
     stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
     parametrize_test_length(metafunc, test_length, fast_params, stress_params)
 
@@ -168,6 +168,7 @@ def test_raw_udp_streaming(pytestconfig, dut_type, dual_SFP, rate, rx_rate, rx_c
 
 def analyze_stats(stats, remote_rx_params, chdr_hdr_size):
     ALLOWED_LOSS = 0.1 #percentage, arbitrary limit for now
+    ALLOWED_CAPTURE_LOSS = 1 #percentage, arbitrary limit for now
 
     def get_expected_data(remote_rx_params, no_of_packets, chdr_hdr_size):
         # Our calculation here is approx only. Since we are not monitoring each
@@ -188,46 +189,52 @@ def analyze_stats(stats, remote_rx_params, chdr_hdr_size):
 
     def get_analyzed_stats(stats):
         analyzed_stats = []
-        for [stats_before_run, stats_after_run] in stats:
+        for [stats_before_run, stats_after_run, capture_file_size] in stats:
             expected_data = get_expected_data(remote_rx_params, stats_after_run.packets_recv - stats_before_run.packets_recv, chdr_hdr_size)
             received_data = stats_after_run.bytes_recv - stats_before_run.bytes_recv
             if (expected_data != 0):
-                analyzed_stats.append([expected_data, received_data, abs(100 * (received_data - expected_data) / expected_data)])
+                analyzed_stats.append([capture_file_size, expected_data, received_data, abs(100 * (received_data - expected_data) / expected_data), abs(100 * (capture_file_size - expected_data) / expected_data)])
             else:
                 raise RuntimeError("Expected Data is of zero size! Modify rate or duration params!")
         return analyzed_stats
 
     def print_analyzed_stats(analyzed_stats):
-        header = "| expected_data | received_data | deviation(%)  |"
-        ruler  = "|---------------|---------------|---------------|"
+        header = "| capture_file_size | expected_data | received_data | deviation(%) | capture_file_size_deviation(%) |"
+        ruler  = "|-------------------|---------------|---------------|--------------|--------------------------------|"
         s = header + "\n" + ruler + "\n"
-        for [expected_data, received_data, deviation] in analyzed_stats:
+        for [capture_file_size, expected_data, received_data, deviation, capture_file_size_deviation] in analyzed_stats:
             row = (
-                "| {:>15} ".format(expected_data) +
-                "| {:>15} ".format(received_data) +
-                "| {:>15.3f} ".format(deviation)
+                "| {:<17} ".format(capture_file_size) +
+                "| {:<13} ".format(expected_data) +
+                "| {:<13} ".format(received_data) +
+                "| {:<12.3f} ".format(deviation) +
+                "| {:<27.3f} ".format(capture_file_size_deviation)
             )
             s += row + "|" + "\n"
 
         print(s)
 
     # Basic check
-    for [stats_before_run, stats_after_run] in stats:
+    for [stats_before_run, stats_after_run, capture_file_size] in stats:
         assert (stats_after_run.bytes_recv > stats_before_run.bytes_recv)
+        assert (capture_file_size > 0)
 
     # Actual check
     analyzed_stats = get_analyzed_stats(stats)
     print_analyzed_stats(analyzed_stats)
-    for [_, _, deviation] in analyzed_stats:
+    for [_, _, _, deviation, capture_file_size_deviation] in analyzed_stats:
         assert(deviation < ALLOWED_LOSS)
-
+        assert(capture_file_size_deviation < ALLOWED_CAPTURE_LOSS)
 
 def run_remote_rx(remote_rx_params, remote_rx_path, iterations, host_interface, stop_on_error=True):
     """
     Runs remote_rx multiple times
     """
     import subprocess
+    import shlex
     import re
+    import os
+    import time
 
     stats = []
 
@@ -240,10 +247,54 @@ def run_remote_rx(remote_rx_params, remote_rx_path, iterations, host_interface, 
 
     print(proc_params)
 
+    packet_capture_utility_path = "/usr/sbin/tcpdump"
+    capture_file_dir = "/mnt/ramdisk/"
+    capture_file_name = "tcpdump.pcap"
+    # sudo tcpdump -i ens6f0 udp -nn -# -N -B 1048576 -t -q -Q in -p -w /tmp/tcpdump.pcap dst port 1234
+    pkt_capture_proc_cmd = packet_capture_utility_path
+    pkt_capture_proc_cmd += " -i {} udp -nn -# -N -B 1048576 -t -q -Q in -p -w {} dst port {}".format(
+                                host_interface,
+                                os.path.join(capture_file_dir, capture_file_name),
+                                remote_rx_params["dest-port"])
+    pkt_capture_proc_params = shlex.split(pkt_capture_proc_cmd)
+
+    print("Running packet capture tool tcpdump with following arguments: ")
+    print(pkt_capture_proc_params)
+
+    def clean_packet_capture_dir(capture_file_dir):
+        import os
+        files_in_directory = os.listdir(capture_file_dir)
+        for file in files_in_directory:
+            if file.endswith(".pcap"):
+                path_to_file = os.path.join(capture_file_dir, file)
+                os.remove(path_to_file)
+
     iteration = 0
     while iteration < iterations:
         stats_before_run = get_nic_statistics(host_interface)
+        # Start packet capture process before running remote streaming.
+        clean_packet_capture_dir(capture_file_dir)
+        pkt_capture_proc = subprocess.Popen(pkt_capture_proc_params, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         proc = subprocess.run(proc_params, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # Send stop signal (CTRL + C) after remote streaming process has ended
+        poll = pkt_capture_proc.poll()
+        if poll is None:
+            # packet capture subprocess is alive
+            # wait for arbitrary time for the packet capture process to finish writing to file.
+            time.sleep(2)
+            pkt_capture_proc.terminate()
+            #TODO:  Check if the pkt_capture_proc terminated?
+        else:
+            # packet capture subprocess terminated prematurely.
+            msg = "Exception occurred while running tcpdump\n"
+            msg += "tcpdump arguments:\n"
+            msg += str(pkt_capture_proc.args) + "\n"
+            msg += "Stderr capture:\n"
+            msg += pkt_capture_proc.stderr.read().decode('ASCII')
+            msg += "Stdout capture:\n"
+            msg += pkt_capture_proc.stdout.read().decode('ASCII')
+            raise RuntimeError(msg)
+
         match = re.search("Streaming complete. Exiting.", proc.stdout.decode('ASCII'))
         if match is None:
             if stop_on_error:
@@ -256,8 +307,27 @@ def run_remote_rx(remote_rx_params, remote_rx_path, iterations, host_interface, 
                 msg += proc.stdout.decode('ASCII')
                 raise RuntimeError(msg)
 
+        # TODO Figure out why tcpdump output is going to stderr instead of stdout.
+        pkt_capture_err_print = pkt_capture_proc.stderr.read().decode('ASCII')
+        match = re.search("tcpdump: listening on {}".format(host_interface), pkt_capture_err_print)
+        if match is None:
+            if stop_on_error:
+                msg = "Exception occurred while running tcpdump\n"
+                msg += "tcpdump arguments:\n"
+                msg += str(pkt_capture_proc.args) + "\n"
+                msg += "Stderr capture:\n"
+                msg += pkt_capture_proc.stderr.read().decode('ASCII')
+                msg += "Stdout capture:\n"
+                msg += pkt_capture_proc.stdout.read().decode('ASCII')
+                raise RuntimeError(msg)
+
+        capture_file_path = os.path.join(capture_file_dir, capture_file_name)
+        capture_file_size = 0
+        if os.path.isfile(capture_file_path):
+            capture_file_size = os.path.getsize(capture_file_path) #bytes
+
         stats_after_run = get_nic_statistics(host_interface)
-        stats.append([stats_before_run, stats_after_run])
+        stats.append([stats_before_run, stats_after_run, capture_file_size])
         iteration += 1
 
     return stats

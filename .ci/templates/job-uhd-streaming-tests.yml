@@ -198,6 +198,11 @@ jobs:
     displayName: Run streaming tests on $(dutName)
     condition: and(succeeded(), not(eq(variables.dutType, 'x4xx')))
   - script: |
+      cd ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
+      sudo ./setup.sh --auto --ramdisk
+      sleep 5
+    displayName: setup interfaces for use raw udp streaming
+  - script: |
       export PYTHON_VERSION=$(python3 -c "import sys; print('python'+str(sys.version_info.major) + '.' + str(sys.version_info.minor))")
       export PYTHONPATH=$(Build.BinariesDirectory)/uhddev/build-installed/lib/$PYTHON_VERSION/site-packages:${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
       echo "##[group]Printing Environment"
