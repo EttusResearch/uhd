@@ -21,7 +21,7 @@ class X4xxDboardIface(DboardIface):
     # The device tree label for the bus to the DB's Management EEPROM
     MGMT_EEPROM_DEVICE_LABEL = "e0004000.i2c"
 
-    def __init__(self, slot_idx, motherboard):
+    def __init__(self, slot_idx, motherboard, dboard_info):
         super().__init__(slot_idx, motherboard)
         self.db_cpld_iface = motherboard.ctrlport_regs.get_db_cpld_iface(self.slot_idx)
         self._power_enable = Gpio('DB{}_PWR_EN'.format(slot_idx), Gpio.OUTPUT)

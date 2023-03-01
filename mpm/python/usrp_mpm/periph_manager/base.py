@@ -645,7 +645,7 @@ class PeriphManagerBase:
             # If the MB supports the DB Iface architecture, pass
             # the corresponding DB Iface to the dboard class
             if self.db_iface is not None:
-                dboard_info['db_iface'] = self.db_iface(dboard_idx, self)
+                dboard_info['db_iface'] = self.db_iface(dboard_idx, self, dboard_info)
             # This will actually instantiate the dboard class:
             self.dboards.append(db_class(dboard_idx, **dboard_info))
         self.log.info("Initialized %d daughterboard(s).", len(self.dboards))
