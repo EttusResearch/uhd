@@ -10,7 +10,6 @@
 // - Ten Gige phy + MAC
 // - Aurora phy + MAC
 //
-//////////////////////////////////////////////////////////////////////
 
 module x300_sfpp_io_core #(
    parameter PROTOCOL = "10GbE",    // Must be {10GbE, 1GbE, Aurora}
