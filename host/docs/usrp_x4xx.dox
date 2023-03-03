@@ -460,24 +460,51 @@ which master clock rates are available. This is because the data converter
 configuration is part of the FPGA image (the ADCs/DACs on the X410 are on the
 same die as the FPGA).
 
-The image flavors consist of two short strings, separated by an underscore, e.g.
-`X4_200` is an image flavor which contains 4x 10 GbE, and can handle an analog
-bandwidth of 200 MHz. The first few characters describe the configuration of
-the QSFP28 ports: 'X' stands for 10 GbE, 'C' stands for 100 GbE. The second
-group of characters indicates the analog bandwidth.
+The image flavor names consist of two short strings, separated by an
+underscore. The first string describes the configuration of the QSFP28 ports.
+The second string indicates the approximate analog bandwidth. An example is
+shown below.
 
-As of UHD 4.2, the following images flavors are shipped with UHD:
 
-| FPGA Image Flavor | Bandwidth | QSFP28 Port 0 Interface | QSFP28 Port 1 Interface | DDC/DUC | DRAM               |
-|-------------------|-----------|-------------------------|-------------------------|---------|--------------------|
-| X4_200            | 200 MHz   | 4x 10 GbE (All Lanes)   | N/C                     | Yes     | Yes (4-Ch Replay)  |
-| CG_400            | 400 MHz   | 100 GbE                 | 100 GbE                 | No      | No                 |
+```
+       Analog Bandwidth ──────────────────┐
+   QSFP 1 Configuration ────────────┐     │
+   QSFP 0 Configuration ─────────┐  │     │
+                                ┌┴┐┌┴┐  ┌─┴─┐
+
+                                X 4 C _ 2 0 0
+
+                                │ │ │
+       QSFP 0 Port Type ────────┘ │ │
+  Number of QSFP 0 lanes ─────────┘ │
+       QSFP 1 Port Type ────────────┘
+```
+
+The following port types are available:
+
+| Port Type | Description    |
+|-----------|----------------|
+| X         | 10 GbE         |
+| C         | 100 GbE        |
+| U         | Unused         |
+
+If the QSFP 1 configuration is not specified, then that port is unused. XG and
+CG indicate that each QSFP port has a single 10 GbE or 100 GbE, respectively
+(same as previous USRPs). The 'G' in this case is short for 'gigabit'.
+
+As of UHD 4.4, the following images flavors are shipped with UHD:
+
+| FPGA Image Flavor | Bandwidth | QSFP28 Port 0 Interface | QSFP28 Port 1 Interface | DDC/DUC | DRAM                     |
+|-------------------|-----------|-------------------------|-------------------------|---------|--------------------------|
+| X4_200            | 200 MHz   | 4x 10 GbE (All Lanes)   | Unused                  | Yes     | Yes (4 GiB, 4-Ch Replay) |
+| UC_200            | 200 MHz   | Unused                  | 100 GbE                 | Yes     | Yes (4 GiB, 4-Ch Replay) |
+| CG_400            | 400 MHz   | 100 GbE                 | 100 GbE                 | No      | No                       |
 
 The following list shows some potential use-cases for different FPGA images:
 
-- `X4_200`: 200 MHz analog bandwidth, or below (using RFNoC DDC/DUCs),
-  streaming between the X410 and an external host computer, or streaming
-  to/from on-board DRAM using the RFNoC Record/Replay block.
+- `X4_200` or `UC_200`: 200 MHz analog bandwidth, or below (using RFNoC
+  DDC/DUCs), streaming between the X410 and an external host computer, or
+  streaming to/from on-board DRAM using the RFNoC Record/Replay block.
 - `CG_400`: Full-rate (400 MHz analog bandwidth) streaming between the X410 and
   an external host computer. The current implementation requires dual 100 GbE
   connections for 4 full-duplex channels or a single 100 GbE connection for 2
