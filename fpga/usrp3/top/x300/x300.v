@@ -1,4 +1,3 @@
-///////////////////////////////////
 //
 // Copyright 2016-2017 Ettus Research LLC
 // Copyright 2017 Ettus Research, a National Instruments Company
@@ -12,7 +11,6 @@
 // SFP1_10GBE - Ethernet Port1 is configured for 10G (default is 1G)
 // DEBUG_UART - Adds 115kbaud UART to GPIO pins 10 & 11 for firmware debug
 //
-///////////////////////////////////
 
 //Defines `LVFPGA_IFACE constants
 `include "../../lib/io_port2/LvFpga_Chinch_Interface.vh"
