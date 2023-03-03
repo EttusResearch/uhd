@@ -216,6 +216,12 @@ The following parameters are supported:
   to RFNoC enabled devices with a Replay block in the FPGA image) Adds data
   buffering in DRAM using the Replay block for TX streamers when using the
   multi_usrp API.
+- `throttle` Specify the throttle of the streamer in order to limit its rate.
+  This is for RFNoC-compatible devices starting in UHD 4.5. It is set as a
+  ratio in the range (0, 1] or a percentage in the range (0%, 100%]. For
+  example, use `100%` or `1.0` for maximum rate, and `50%` or `0.5` for half
+  the maximum rate. Note that other factors may affect the actual rate, such
+  as the rate of the source or the speed supported by the transport.
 
 \subsubsection config_stream_args_transport Transport-related Stream Arguments
 
