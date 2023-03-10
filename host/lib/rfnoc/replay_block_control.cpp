@@ -76,6 +76,10 @@ const char* const PROP_KEY_PYLD_SIZE     = "payload_size";
 // Depth of the async message queues
 constexpr size_t ASYNC_MSG_QUEUE_SIZE = 128;
 
+// Default byte multiple to round the payload size down to. This is
+// conservatively set to to ensure compatibility with most blocks by default.
+constexpr uint32_t DEFAULT_MULT = 64;
+
 class replay_block_control_impl : public replay_block_control
 {
 public:
@@ -512,7 +516,8 @@ private:
         const io_type_t default_type = IO_TYPE_SC16;
         const uint64_t play_offset   = 0;
         const uint64_t play_size     = _mem_size;
-        const uint32_t payload_size  = get_max_payload_size({res_source_info::OUTPUT_EDGE, port});
+        const uint32_t max_payload   = get_max_payload_size({res_source_info::OUTPUT_EDGE, port});
+        const uint32_t payload_size  = max_payload - (max_payload % DEFAULT_MULT);
 
         // Initialize properties
         _play_type.emplace_back(property_t<std::string>(
