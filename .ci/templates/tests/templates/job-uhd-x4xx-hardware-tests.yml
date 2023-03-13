@@ -137,7 +137,9 @@ jobs:
   - script: |
         ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
         ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "uhd_image_loader --args addr=localhost,type=$(dutType),fpga=$(dutFPGA)"
+        EXITCODE=$?
         sleep 60
+        exit $EXITCODE
     displayName: Flash FPGA $(dutFPGA)
 
   - script: |
@@ -158,7 +160,9 @@ jobs:
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "rm -rf ~/usrp_sysimg_test && mkdir -p ~/usrp_sysimg_test"
       scp -o StrictHostKeyChecking=no -r $(Build.SourcesDirectory)/meta-ettus-dev/contrib/test/tests root@$USRP_EMB_TARGET_IP:~/usrp_sysimg_test
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "pip3 install unittest-xml-reporting && cd ~/usrp_sysimg_test/tests && python3 -m xmlrunner discover . -v"
+      EXITCODE=$?
       scp -o StrictHostKeyChecking=no -r root@$USRP_EMB_TARGET_IP:~/usrp_sysimg_test .
+      exit $EXITCODE
     displayName: Run system image embedded subsystems tests
     continueOnError: true
     condition: and(succeeded(), ${{ parameters.runSystemImageTest }})
@@ -169,7 +173,9 @@ jobs:
       ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "rm -rf ~/mpm_test_run && mkdir -p ~/mpm_test_run"
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "cd ~/mpm_test_run && python3 /usr/lib/usrp_mpm/tests/run_unit_tests.py -x x4xx"
+      EXITCODE=$?
       scp -o StrictHostKeyChecking=no -r root@$USRP_EMB_TARGET_IP:~/mpm_test_run .
+      exit $EXITCODE
     displayName: Run MPM unit tests
     continueOnError: true
 
@@ -236,7 +242,9 @@ jobs:
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "rm -rf ~/usrp_pytest && mkdir -p ~/usrp_pytest"
       scp -o StrictHostKeyChecking=no -r $(Build.SourcesDirectory)/ettus-rts/config/remote/ root@$USRP_EMB_TARGET_IP:~/usrp_pytest
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "cd ~/usrp_pytest/remote/python_tests && python3 automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) --test_selector pytests/test_gnuradio_sanity.py --run_embedded"
+      EXITCODE=$?
       scp -o StrictHostKeyChecking=no -r root@$USRP_EMB_TARGET_IP:~/usrp_pytest .
+      exit $EXITCODE
     displayName: Run pytest on embedded
     continueOnError: true
     condition: and(succeeded(), ${{ parameters.runPyTest }})

@@ -128,7 +128,9 @@ jobs:
   - script: |
         ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
         ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "uhd_image_loader --args addr=localhost,type=$(dutType),fpga=$(dutFPGA)"
+        EXITCODE=$?
         sleep 60
+        exit $EXITCODE
     displayName: Flash FPGA $(dutFPGA)
     condition: and(succeeded(), eq(variables.dutType, 'x4xx'))
 
@@ -174,7 +176,9 @@ jobs:
   - script: |
       cd ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
       sudo ./setup.sh --auto
+      EXITCODE=$?
       sleep 5
+      exit $EXITCODE
     displayName: setup interfaces for use without DPDK
   - script: |
       echo "##[group]Printing Environment"
@@ -227,7 +231,9 @@ jobs:
   - script: |
       cd ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
       sudo ./setup.sh --auto --dpdk
+      EXITCODE=$?
       sleep 5
+      exit $EXITCODE
     displayName: setup interfaces for use with DPDK
     condition: and(succeeded(), not(eq(variables.dutType, 'B210')))
   - script: |
