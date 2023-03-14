@@ -17,6 +17,9 @@ parameters:
   type: string
 - name: dutMatrix
   type: object
+- name: extra_rf_test_args
+  type: string
+  default: ''
 
 jobs:
 - job: build_uhd_run_hardware_test
@@ -131,7 +134,7 @@ jobs:
         ${{ parameters.redisHost }} $(devName) \
         "uhd_usrp_probe --args addr=$(devAddr)" \
         "python3 $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) \
-          --results_path $(Common.TestResultsDirectory)/pytest/{fpga}"
+          --results_path $(Common.TestResultsDirectory)/pytest/{fpga} ${{ parameters.extra_rf_test_args }}"
     continueOnError: true
     condition: and(succeeded(), eq(variables.devType, 'n3xx'), eq(variables.devBus, 'ip'))
     displayName: Run pytests on $(devName)

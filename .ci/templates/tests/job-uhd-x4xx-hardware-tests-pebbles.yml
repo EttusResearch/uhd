@@ -6,6 +6,9 @@ parameters:
 - name: uhdArtifactSource
   type: string
   default: current
+- name: extra_rf_test_args
+  type: string
+  default: ''
 
 jobs:
 - template: templates/job-uhd-x4xx-hardware-tests.yml
@@ -18,6 +21,7 @@ jobs:
     runSystemImageTest: false
     uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
     xilinxLocation: /opt/Xilinx/Vivado/2019.1
+    extra_rf_test_args: '${{ parameters.extra_rf_test_args }}'
     dutMatrix:
       pebbles-x410-0:
         dutName: 'pebbles-x410-0'
