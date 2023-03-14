@@ -81,6 +81,7 @@ class MultiUSRP(lib.usrp.multi_usrp):
             if not stream_cmd.stream_now:
                 if start_time is not None:
                     stream_cmd.time_spec = start_time
+                    stream_cmd.stream_now = False
                 else:
                     stream_cmd.time_spec = lib.types.time_spec(
                         super(MultiUSRP, self).get_time_now().get_real_secs() + 0.05)
@@ -183,6 +184,7 @@ class MultiUSRP(lib.usrp.multi_usrp):
         metadata = lib.types.tx_metadata()
         if start_time is not None:
             metadata.time_spec = start_time
+            metadata.has_time_spec = True
         while send_samps < max_samps:
             real_samps = min(proto_len, max_samps-send_samps)
             if real_samps < proto_len:
