@@ -92,10 +92,15 @@ public:
     virtual sep_id_pair_t connect_host_to_device(sep_addr_t dst_addr) = 0;
 
     /*! \brief Check if the two specified endpoints can be connected remotely
+     * by this link stream manager instance.
+     *
+     * Note: If this returns, a connection may still be possible, but might
+     * require a different link stream manager instance.
      *
      * \param dst_addr The physical address of the destination endpoint
      * \param src_addr The physical address of the source endpoint
-     * \return true if the endpoints can be connected
+     * \return true if the endpoints can be connected by this link stream manager
+     *              instance.
      */
     virtual bool can_connect_device_to_device(
         sep_addr_t dst_addr, sep_addr_t src_addr) const = 0;
