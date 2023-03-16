@@ -17,7 +17,7 @@ DEFAULT_MASTER_CLOCK_RATE = 16e6
 ###############################################################################
 # Main dboard control class
 ###############################################################################
-class E31x_db(DboardManagerBase, AD936xDboard):
+class E31x_db(AD936xDboard, DboardManagerBase):
     """
     Holds all dboard specific information and methods of the E31x_db dboard
     """
