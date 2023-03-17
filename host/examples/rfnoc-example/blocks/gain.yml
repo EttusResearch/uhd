@@ -43,7 +43,7 @@ data:
       format: int32
       mdata_sig: ~
 
-io_port:
+io_ports:
 
 registers:
 
