@@ -3,9 +3,9 @@ trigger: none
 pr: none
 
 parameters:
-- name: run_hardware_tests
+- name: run_embedded_tests
   type: boolean
-  displayName: Run Hardware Tests
+  displayName: Run X410 Embedded Tests
   default: false
 - name: run_streaming_tests
   type: boolean
@@ -15,13 +15,17 @@ parameters:
   type: boolean
   displayName: Run devtests
   default: false
-- name: run_rf_tests
+- name: run_n310_rf_tests
   type: boolean
-  displayName: Run rf tests
+  displayName: Run N310 RF tests
+  default: false
+- name: run_x410_rf_tests
+  type: boolean
+  displayName: Run X410 RF tests
   default: false
 - name: extra_rf_test_args
   type: string
-  displayName: Extra UHD RF ATS Arguments
+  displayName: Extra UHD RF ATS Arguments (for N310 and X410 runs)
   default: ' '
 - name: testLength
   type: string
@@ -59,17 +63,12 @@ stages:
 - stage: test_uhd_embedded_stage
   displayName: Test Embedded UHD
   dependsOn: []
-  condition: ${{ parameters.run_hardware_tests }}
+  condition: ${{ parameters.run_embedded_tests }}
   jobs:
   - template: templates/tests/job-uhd-x4xx-hardware-tests-sdr-test0.yml
     parameters:
       testOS: ubuntu1804
       uhdArtifactSource: uhd_mono_pipeline
-  - template: templates/tests/job-uhd-x4xx-hardware-tests-pebbles.yml
-    parameters:
-      testOS: ubuntu1804
-      uhdArtifactSource: uhd_mono_pipeline
-      extra_rf_test_args: ${{ parameters.extra_rf_test_args }}
 
 
 - stage: test_streaming_stage
@@ -95,14 +94,25 @@ stages:
       uhdSrcDir: $(Build.SourcesDirectory)
       uhdArtifactSource: uhd_mono_pipeline
 
-- stage: test_rf_tests
-  displayName: Run rf tests
+- stage: test_n310_rf_tests
+  displayName: Run N310 RF tests
   dependsOn: []
-  condition: ${{ parameters.run_rf_tests }}
+  condition: ${{ parameters.run_n310_rf_tests }}
   jobs:
   - template: templates/job-uhd-rf-tests-pebbles.yml
     parameters:
       testOS: ubuntu1804
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
+      uhdArtifactSource: uhd_mono_pipeline
+      extra_rf_test_args: ${{ parameters.extra_rf_test_args }}
+
+- stage: test_x410_rf_tests
+  displayName: Run X410 RF tests
+  dependsOn: []
+  condition: ${{ parameters.run_x410_rf_tests }}
+  jobs:
+  - template: templates/tests/job-uhd-x4xx-hardware-tests-pebbles.yml
+    parameters:
+      testOS: ubuntu1804
       uhdArtifactSource: uhd_mono_pipeline
       extra_rf_test_args: ${{ parameters.extra_rf_test_args }}
