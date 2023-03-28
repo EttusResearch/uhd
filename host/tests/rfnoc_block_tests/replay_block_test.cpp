@@ -497,10 +497,11 @@ BOOST_FIXTURE_TEST_CASE(replay_test_issue_stream_cmd, replay_block_fixture)
         cmd_finite.num_samps     = num_words * word_size / 4;
         test_replay->issue_stream_cmd(cmd_finite, port);
 
+        const uint32_t cmd_no_eob_mask = 1 << 30;
         const uint32_t reg_stream_cmd =
             get_addr(replay_block_control::REG_PLAY_CMD_ADDR, port);
         BOOST_CHECK_EQUAL(reg_iface->write_memory[reg_stream_cmd],
-            replay_block_control::PLAY_CMD_FINITE);
+            replay_block_control::PLAY_CMD_FINITE | cmd_no_eob_mask);
         // PLAY_CMD_FINITE writes the number of words to hardware
         const uint32_t reg_num_words =
             get_addr(replay_block_control::REG_PLAY_CMD_NUM_WORDS_LO_ADDR, port);
@@ -575,10 +576,11 @@ BOOST_FIXTURE_TEST_CASE(replay_test_issue_stream_cmd_timed, replay_block_fixture
         test_replay->issue_stream_cmd(cmd_finite, port);
 
         const uint32_t cmd_time_mask = 1 << 31;
+        const uint32_t cmd_no_eob_mask = 1 << 30;
         const uint32_t reg_stream_cmd =
             get_addr(replay_block_control::REG_PLAY_CMD_ADDR, port);
         BOOST_CHECK_EQUAL(reg_iface->write_memory[reg_stream_cmd],
-            replay_block_control::PLAY_CMD_FINITE | cmd_time_mask);
+            replay_block_control::PLAY_CMD_FINITE | cmd_time_mask | cmd_no_eob_mask);
         // PLAY_CMD_FINITE writes the number of words to hardware
         const uint32_t reg_num_words =
             get_addr(replay_block_control::REG_PLAY_CMD_NUM_WORDS_LO_ADDR, port);

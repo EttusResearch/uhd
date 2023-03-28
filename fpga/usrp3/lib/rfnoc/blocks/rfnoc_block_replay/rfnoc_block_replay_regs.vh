@@ -153,6 +153,9 @@ localparam REG_CMD_TIME_LEN = 64;
 //
 //   [31] : Timed flag. Indicates if the command is timed (1) or not (0).
 //
+//   [30] : No EOB flag. Indicates if EOB should be set at the end of the
+//          command execution (0) or not (1).
+//
 //   [1:0] : Command field. The command indicates what you want the playback to
 //           do. It can be one of the following:
 //
@@ -164,6 +167,9 @@ localparam REG_PLAY_CMD = 'h48;
 //
 localparam REG_PLAY_TIMED_POS = 31;
 localparam REG_PLAY_TIMED_LEN =  1;
+//
+localparam REG_PLAY_NO_EOB_POS = 30;
+localparam REG_PLAY_NO_EOB_LEN =  1;
 //
 localparam REG_PLAY_CMD_POS = 0;
 localparam REG_PLAY_CMD_LEN = 2;

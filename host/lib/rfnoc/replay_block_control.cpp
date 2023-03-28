@@ -21,8 +21,8 @@
 using namespace uhd::rfnoc;
 
 // Block compatability version
-const uint16_t replay_block_control::MINOR_COMPAT = 1;
 const uint16_t replay_block_control::MAJOR_COMPAT = 1;
+const uint16_t replay_block_control::MINOR_COMPAT = 2;
 
 // NoC block address space
 const uint32_t replay_block_control::REPLAY_ADDR_W = 8;
@@ -62,9 +62,11 @@ const uint32_t replay_block_control::PLAY_CMD_FINITE     = 1;
 const uint32_t replay_block_control::PLAY_CMD_CONTINUOUS = 2;
 
 // Mask bits
-constexpr uint32_t PLAY_COMMAND_TIMED_BIT  = 31;
-constexpr uint32_t PLAY_COMMAND_TIMED_MASK = uint32_t(1) << PLAY_COMMAND_TIMED_BIT;
-constexpr uint32_t PLAY_COMMAND_MASK       = 3;
+constexpr uint32_t PLAY_COMMAND_TIMED_BIT   = 31;
+constexpr uint32_t PLAY_COMMAND_TIMED_MASK  = uint32_t(1) << PLAY_COMMAND_TIMED_BIT;
+constexpr uint32_t PLAY_COMMAND_NO_EOB_BIT  = 30;
+constexpr uint32_t PLAY_COMMAND_NO_EOB_MASK = uint32_t(1) << PLAY_COMMAND_NO_EOB_BIT;
+constexpr uint32_t PLAY_COMMAND_MASK        = 3;
 
 // User property names
 const char* const PROP_KEY_RECORD_OFFSET = "record_offset";
@@ -194,8 +196,8 @@ public:
                 port);
             // The register to get the command FIFO space was added in v1.1
             if (_fpga_compat >= 0x00010001) {
-                _cmd_fifo_spaces[port] = _replay_reg_iface.peek32(
-                    REG_PLAY_CMD_FIFO_SPACE_ADDR, port);
+                _cmd_fifo_spaces[port] =
+                    _replay_reg_iface.peek32(REG_PLAY_CMD_FIFO_SPACE_ADDR, port);
             }
         }
     }
@@ -275,7 +277,8 @@ public:
     uint64_t get_record_position(const size_t port) override
     {
         if (_fpga_compat < 0x00010001) {
-            throw uhd::not_implemented_error("Replay block version 1.1 or "
+            throw uhd::not_implemented_error(
+                "Replay block version 1.1 or "
                 "greater required to get record position.  "
                 "Update the FPGA image to get this feature.");
         }
@@ -416,8 +419,8 @@ public:
         if (_fpga_compat >= 0x00010001) {
             // Make sure the command queue has space.  Allow stop commands to pass.
             if (play_cmd != PLAY_CMD_STOP and _cmd_fifo_spaces[port] == 0) {
-                _cmd_fifo_spaces[port] = _replay_reg_iface.peek32(
-                    REG_PLAY_CMD_FIFO_SPACE_ADDR, port);
+                _cmd_fifo_spaces[port] =
+                    _replay_reg_iface.peek32(REG_PLAY_CMD_FIFO_SPACE_ADDR, port);
                 if (_cmd_fifo_spaces[port] == 0) {
                     throw uhd::op_failed("[Replay] Play command queue is full");
                 }
@@ -433,6 +436,10 @@ public:
 
         // Set the time for the command
         const uint32_t timed_flag = (stream_cmd.stream_now) ? 0 : PLAY_COMMAND_TIMED_MASK;
+        const uint32_t no_eob_flag =
+            (stream_cmd.stream_mode == uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE)
+                ? PLAY_COMMAND_NO_EOB_MASK
+                : 0;
         if (!stream_cmd.stream_now) {
             const double tick_rate = get_tick_rate();
             UHD_LOG_DEBUG("REPLAY",
@@ -442,15 +449,15 @@ public:
         }
 
         // Issue the stream command
-        uint32_t command_word = (play_cmd & PLAY_COMMAND_MASK) | timed_flag;
+        uint32_t command_word = (play_cmd & PLAY_COMMAND_MASK) | timed_flag | no_eob_flag;
         _replay_reg_iface.poke32(REG_PLAY_CMD_ADDR, command_word, port);
 
         // The register to get the command FIFO space was added in v1.1
         if (_fpga_compat >= 0x00010001) {
             if (play_cmd == PLAY_CMD_STOP) {
                 // The stop command will clear the FIFO, so reset the space value
-                _cmd_fifo_spaces[port] = _replay_reg_iface.peek32(
-                    REG_PLAY_CMD_FIFO_SPACE_ADDR, port);
+                _cmd_fifo_spaces[port] =
+                    _replay_reg_iface.peek32(REG_PLAY_CMD_FIFO_SPACE_ADDR, port);
             } else {
                 _cmd_fifo_spaces[port]--;
             }

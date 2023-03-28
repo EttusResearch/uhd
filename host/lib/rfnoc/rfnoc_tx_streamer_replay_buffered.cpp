@@ -149,9 +149,14 @@ size_t rfnoc_tx_streamer_replay_buffered::send(
 
             while (1) {
                 try {
-                    replay->play(play_start, play_size, config.port,
-                        metadata.has_time_spec ? metadata.time_spec :
-                        uhd::time_spec_t(0.0));
+                    replay->config_play(play_start, play_size, config.port);
+                    uhd::stream_cmd_t play_cmd = metadata.end_of_burst ?
+                        uhd::stream_cmd_t(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE) :
+                        uhd::stream_cmd_t(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE);
+                    play_cmd.num_samps  = play_size / replay->get_play_item_size(config.port);
+                    play_cmd.time_spec  = metadata.time_spec;
+                    play_cmd.stream_now = not metadata.has_time_spec;
+                    replay->issue_stream_cmd(play_cmd, config.port);
                     break;
                 } catch(uhd::op_failed& e) {
                     // Too many play commands in queue 
