@@ -8,7 +8,7 @@
 #include <uhd/device.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/types/device_addr.hpp>
-#include <uhd/usrp_clock/octoclock_eeprom.hpp>
+#include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
@@ -19,7 +19,7 @@
 namespace po = boost::program_options;
 
 using namespace uhd;
-using namespace uhd::usrp_clock;
+using namespace uhd::usrp;
 
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
@@ -51,8 +51,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     std::cout << "Creating OctoClock device from args: " + args << std::endl;
     device::sptr oc          = device::make(args, device::CLOCK);
     property_tree::sptr tree = oc->get_tree();
-    octoclock_eeprom_t oc_eeprom =
-        tree->access<octoclock_eeprom_t>("/mboards/0/eeprom").get();
+    mboard_eeprom_t oc_eeprom =
+        tree->access<mboard_eeprom_t>("/mboards/0/eeprom").get();
     std::cout << std::endl;
 
     std::vector<std::string> keys_vec, vals_vec;
@@ -89,10 +89,10 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                           << std::endl;
             }
         }
-        tree->access<octoclock_eeprom_t>("/mboards/0/eeprom").set(oc_eeprom);
+        tree->access<mboard_eeprom_t>("/mboards/0/eeprom").set(oc_eeprom);
+        std::cout << std::endl
+                << "Power-cycle your device to allow any changes to take effect."
+                << std::endl;
     }
-    std::cout << std::endl
-              << "Power-cycle your device to allow any changes to take effect."
-              << std::endl;
     return EXIT_SUCCESS;
 }
