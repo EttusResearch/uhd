@@ -36,7 +36,6 @@ from usrp_mpm.periph_manager.x4xx_clk_mgr import X4xxClockMgr
 from usrp_mpm.periph_manager.x4xx_gps_mgr import X4xxGPSMgr
 from usrp_mpm.periph_manager.x4xx_rfdc_ctrl import X4xxRfdcCtrl
 from usrp_mpm.dboard_manager.x4xx_db_iface import X4xxDboardIface
-from usrp_mpm.dboard_manager.zbx import ZBX
 
 
 X400_DEFAULT_EXT_CLOCK_FREQ = 10e6
@@ -45,6 +44,7 @@ X400_DEFAULT_TIME_SOURCE = X4xxClockMgr.TIME_SOURCE_INTERNAL
 X400_DEFAULT_CLOCK_SOURCE = X4xxClockMgr.CLOCK_SOURCE_INTERNAL
 X400_DEFAULT_ENABLE_PPS_EXPORT = True
 X400_FPGA_COMPAT = (7, 9)
+# The compat number at which remote streaming was added:
 X400_REMOTE_STREAMING_COMPAT = (7, 9)
 X400_DEFAULT_TRIG_DIRECTION = ClockingAuxBrdControl.DIRECTION_OUTPUT
 X400_MONITOR_THREAD_INTERVAL = 1.0 # seconds
@@ -428,6 +428,13 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         """
         Turn on all peripherals. This may throw an error on failure, so make
         sure to catch it.
+
+        Reminder: This is the first function that is run that actually talks to
+        hardware *after* PeriphManagerBase.__init__() has been executed. The
+        only bits of hardware that have been initialized/read out are the
+        motherboard and daughterboard EEPROMs.
+        After this, we initialize the daughterboards, so we have to make sure
+        everything else, in particular the clocks, are running as desired.
         """
         # Sanity checks
         assert self.mboard_info.get('product') in self.pids.values(), \
@@ -495,7 +502,8 @@ class x4xx(ZynqComponents, PeriphManagerBase):
             allow_overwrite=True
         )
 
-        # Overlay must be applied after clocks have been configured
+        # Overlay must be applied after clocks have been configured. This will
+        # load the FPGA bitfile.
         self.overlay_apply()
 
         # Init Mboard Regs
