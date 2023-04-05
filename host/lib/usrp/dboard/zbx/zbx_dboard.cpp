@@ -15,6 +15,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <sstream>
+#include <thread>
 
 using namespace std::chrono_literals;
 
@@ -654,21 +655,8 @@ bool zbx_dboard_impl::select_adc_self_cal_gain(size_t chan)
 {
     constexpr double min_gain          = 10.0;
     constexpr double max_gain          = 50.0;
-    constexpr int threshold_reset_time = 100;
-    constexpr int threshold_reset      = 8000;
-    constexpr int threshold_set        = 8192;
 
     bool found_gain = false;
-
-    // Set the threshold to detect half-scale
-    // The setup_threshold call uses 14-bit ADC values
-    _mb_rpcc->setup_threshold(_db_idx,
-        chan,
-        0,
-        "hysteresis",
-        threshold_reset_time,
-        threshold_reset,
-        threshold_set);
 
     for (double i = min_gain; i <= max_gain; i += 1.0) {
         this->get_rx_gain_profile_api()->set_gain_profile("default", chan);

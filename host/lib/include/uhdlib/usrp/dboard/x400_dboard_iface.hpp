@@ -7,7 +7,9 @@
 #pragma once
 
 #include <uhdlib/rfnoc/rf_control/dboard_iface.hpp>
+#include <complex>
 #include <memory>
+#include <string>
 
 namespace uhd { namespace usrp { namespace x400 {
 
@@ -20,6 +22,10 @@ struct adc_self_cal_params_t
 {
     double rx_freq;
     double tx_freq;
+    std::complex<int32_t> dac_iq_values;
+    uint32_t threshold_delay;
+    uint32_t threshold_under;
+    uint32_t threshold_over;
     std::string calibration_mode;
 };
 

@@ -100,6 +100,12 @@ public:
         return {
             rx_freq, // rx_freq
             tx_freq, // tx_freq
+            {32768 / 2, 0}, // Configure the output DAC mux to output
+                            // 1/2 full scale dac data (only I, no Q)
+            100, // delay
+            8000, // under
+            8192, //  over, Set the threshold to detect half-scale
+                  //  setup_threshold call uses 14-bit ADC values
             "calib_mode2", // calibration_mode
         };
     }
