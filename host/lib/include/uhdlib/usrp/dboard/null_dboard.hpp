@@ -49,6 +49,20 @@ public:
         return true;
     }
 
+    double get_converter_rate() override
+    {
+        return 0.0;
+    }
+
+    size_t get_num_rx_channels() override
+    {
+        return 2;
+    }
+    size_t get_num_tx_channels() override
+    {
+        return 2;
+    }
+
     size_t get_chan_from_dboard_fe(const std::string& fe, direction_t) const override
     {
         if (fe == "0") {

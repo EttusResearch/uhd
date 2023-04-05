@@ -41,6 +41,16 @@ public:
     //! that is suitable for ADC self calibration.
     //! Returns true, if a suitable gain was found, false otherwise.
     virtual bool select_adc_self_cal_gain(size_t chan) = 0;
+
+    //! Returns the RFdc converter rate, i.e., the rate at which the converters
+    //! are clocked. May be different from the actual sampling rate, if the RFdc
+    //! resamplers are enabled.
+    virtual double get_converter_rate() = 0;
+
+    //! Returns the number of rx channels on the daughterboard
+    virtual size_t get_num_rx_channels() = 0;
+    //! Returns the number of tx channels on the daughterboard
+    virtual size_t get_num_tx_channels() = 0;
 };
 
 }}} // namespace uhd::usrp::x400

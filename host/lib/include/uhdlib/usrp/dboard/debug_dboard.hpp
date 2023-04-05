@@ -61,6 +61,20 @@ public:
         return true;
     }
 
+    double get_converter_rate() override
+    {
+        return 0.0;
+    }
+
+    size_t get_num_rx_channels() override
+    {
+        return 2;
+    }
+    size_t get_num_tx_channels() override
+    {
+        return 2;
+    }
+
     size_t get_chan_from_dboard_fe(const std::string& fe, direction_t) const override
     {
         if (fe == "0") {
@@ -462,6 +476,10 @@ public:
         return _rpcc->request_with_token<eeprom_map_t>("get_db_eeprom", _db_idx);
     }
 
+    double get_converter_rate() override
+    {
+        return _rpcc->request_with_token<double>(_rpc_prefix + "get_dboard_sample_rate");
+    }
 
 private:
     //! Used by the RFNOC_LOG_* macros.

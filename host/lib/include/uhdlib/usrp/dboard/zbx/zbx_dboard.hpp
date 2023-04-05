@@ -115,6 +115,20 @@ public:
         return _rx_gain_profile_api;
     }
 
+    double get_converter_rate() override
+    {
+        return _rfdc_rate;
+    }
+
+    size_t get_num_rx_channels() override
+    {
+        return _num_rx_chans;
+    }
+    size_t get_num_tx_channels() override
+    {
+        return _num_tx_chans;
+    }
+
     double set_tx_frequency(const double freq, const size_t chan) override;
     double set_rx_frequency(const double freq, const size_t chan) override;
     uhd::freq_range_t get_tx_frequency_range(const size_t /*chan*/) const override
