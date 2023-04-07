@@ -73,10 +73,10 @@ static const uint32_t LED_TXRX_TX2 = (1 << 0);
 
 
 /* ATR State Definitions. */
-static const uint32_t STATE_OFF = 0x00;
-
 ///////////////////////// side 1 ///////////////////////////////////
-static const uint32_t STATE_RX1_RX2 = (SFDX1_RX | SFDX1_TX | LED_RX1);
+static const uint32_t STATE_RX1_OFF = (SFDX1_RX | SRX1_TX);
+
+static const uint32_t STATE_RX1_RX2 = (SFDX1_RX | SRX1_TX | LED_RX1);
 
 static const uint32_t STATE_RX1_TXRX = (SRX1_RX | SRX1_TX | LED_TXRX_RX1);
 
@@ -86,6 +86,8 @@ static const uint32_t STATE_FDX1_TXRX =
 static const uint32_t STATE_TX1_TXRX = (TX_ENABLE1 | SFDX1_RX | SFDX1_TX | LED_TXRX_TX1);
 
 ///////////////////////// side 2 ///////////////////////////////////
+static const uint32_t STATE_RX2_OFF = (SFDX2_RX | SRX2_TX);
+
 static const uint32_t STATE_RX2_RX2 = (SFDX2_RX | SRX2_TX | LED_RX2);
 
 static const uint32_t STATE_RX2_TXRX = (SRX2_TX | SRX2_RX | LED_TXRX_RX2);
