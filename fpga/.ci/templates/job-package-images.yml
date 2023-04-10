@@ -39,6 +39,8 @@ jobs:
   timeoutInMinutes: 10
   pool:
     name: hardware
+    demands:
+    - MAX_CPU -equals 4
   steps:
     - checkout: self
       clean: true

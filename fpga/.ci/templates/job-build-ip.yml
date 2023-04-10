@@ -38,6 +38,8 @@ jobs:
   displayName: 'Build ${{ parameters.ip_target }}'
   pool:
     name: Hardware
+    demands:
+    - MAX_CPU -equals 4
   timeoutInMinutes: 240
   variables:
   - group: sdr-pipeline-vars

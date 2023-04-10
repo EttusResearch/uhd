@@ -46,6 +46,8 @@ jobs:
   timeoutInMinutes: $[ variables['timeout'] ]
   pool:
     name: hardware
+    demands:
+    - MAX_CPU -equals 4
   variables:
   - group: sdr-pipeline-vars
   strategy:
