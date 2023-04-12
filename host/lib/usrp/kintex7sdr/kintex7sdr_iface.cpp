@@ -317,19 +317,18 @@ public:
     }
     const std::string get_cname(void) override {
         switch (this->get_rev()) {
-            case USRP_N210_XK:
+            case kintex7sdr_iface::USRP_N210_XK:
                 return "N210_XK";
-            case USRP_N210_XA:
+            case kintex7sdr_iface::USRP_N210_XA:
                 return "N210_XA";
-            case USRP_NXXX:
+            default:
                 return "N???";
         }
         UHD_THROW_INVALID_CODE_PATH();
     }
 
     const std::string get_fw_version_string(void) override {
-        uint32_t minor =
-                this->get_reg<uint32_t, USRP2_REG_ACTION_FW_PEEK32>(U2_FW_REG_VER_MINOR);
+        uint32_t minor = this->get_reg<uint32_t, USRP2_REG_ACTION_FW_PEEK32>(U2_FW_REG_VER_MINOR);
         return str(boost::format("%u.%u") % _protocol_compat % minor);
     }
 
@@ -337,29 +336,13 @@ public:
         // determine the images names
         std::string fw_image, fpga_image;
         switch (this->get_rev()) {
-            case USRP2_REV3:
-                fpga_image = "usrp2_fpga.bin";
-                fw_image = "usrp2_fw.bin";
+            case kintex7sdr_iface::USRP_N210_XK:
+                fpga_image = "kintex7sdr_xa_fpga.bin";
+                fw_image = "kintex7sdr_fw.bin";
                 break;
-            case USRP2_REV4:
-                fpga_image = "usrp2_fpga.bin";
-                fw_image = "usrp2_fw.bin";
-                break;
-            case USRP_N200:
-                fpga_image = "usrp_n200_r2_fpga.bin";
-                fw_image = "usrp_n200_fw.bin";
-                break;
-            case USRP_N210:
-                fpga_image = "usrp_n210_r2_fpga.bin";
-                fw_image = "usrp_n210_fw.bin";
-                break;
-            case USRP_N200_R4:
-                fpga_image = "usrp_n200_r4_fpga.bin";
-                fw_image = "usrp_n200_fw.bin";
-                break;
-            case USRP_N210_R4:
-                fpga_image = "usrp_n210_r4_fpga.bin";
-                fw_image = "usrp_n210_fw.bin";
+            case kintex7sdr_iface::USRP_N210_XA:
+                fpga_image = "kintex7sdr_xa_fpga.bin";
+                fw_image = "kintex7sdr_fw.bin";
                 break;
             default:
                 break;
@@ -391,27 +374,15 @@ public:
 #else
         const std::string ml = "\\\n    ";
 #endif
-
-        // create the burner commands
-        if (this->get_rev() == USRP2_REV3 or this->get_rev() == USRP2_REV4) {
-            const std::string card_burner = uhd::find_utility("usrp2_card_burner_gui.py");
-            const std::string card_burner_cmd =
-                    str(boost::format(" %s\"%s\" %s--fpga=\"%s\" %s--fw=\"%s\"") % sudo
-                        % card_burner % ml % fpga_image_path % ml % fw_image_path);
-            return str(boost::format("%s\n%s")
-                       % print_utility_error("uhd_images_downloader.py")
-                       % card_burner_cmd);
-        } else {
-            const std::string addr = _ctrl_transport->get_recv_addr();
-            const std::string image_loader_path =
-                    (fs::path(uhd::get_pkg_path()) / "bin" / "uhd_image_loader").string();
-            const std::string image_loader_cmd =
-                    str(boost::format(" \"%s\" %s--args=\"type=usrp2,addr=%s\"")
-                        % image_loader_path % ml % addr);
-            return str(boost::format("%s\n%s")
-                       % print_utility_error("uhd_images_downloader.py")
-                       % image_loader_cmd);
-        }
+        const std::string addr = _ctrl_transport->get_recv_addr();
+        const std::string image_loader_path =
+                (fs::path(uhd::get_pkg_path()) / "bin" / "uhd_image_loader").string();
+        const std::string image_loader_cmd =
+                str(boost::format(" \"%s\" %s--args=\"type=usrp2,addr=%s\"")
+                    % image_loader_path % ml % addr);
+        return str(boost::format("%s\n%s")
+                   % print_utility_error("uhd_images_downloader.py")
+                   % image_loader_cmd);
     }
 
     void set_time(const time_spec_t &) override {
