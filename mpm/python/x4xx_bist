@@ -435,15 +435,13 @@ class X4XXBIST(bist.UsrpBIST):
         """
         BIST for testing the fabric_clk signal from the motherboard
 
-        Description: Checks to see if the LMK on the clocking auxiliary board
-        can lock to the fabric clock signal output by the motherboard. We check
-        this by verifying that the pri_ref signal is being used, the dpll is locked,
-        the apll1 is locked, and apll2 is unlocked.
+        Description: Checks to see if the LMK will detect the experimental fabric_clk 
 
         External Equipment: None
-
+        
         Return dictionary:
-        - fabric_clk pll lock: Did the clkaux lmk lock to the fabric_clk signal
+        - fabric_clk successfully enabled and validated: signal has been validated
+        - fabric_clk successfully disabled: signal has been disabled
         """
         assert 'nsync_fabric' in self.tests_to_run
         import uhd
@@ -459,26 +457,29 @@ class X4XXBIST(bist.UsrpBIST):
             }
 
         mpm_c = usrp_dev.get_mpm_client()
-
+        
+        # Make sure fabric_clk is turned off
+        mpm_c.enable_ecpri_clocks(False)
+        # Check validation bit - reg 0x19B second bit as per datasheet
+        pri_ref_disabled_condition = not (int(mpm_c.peek_clkaux(0x19B),16) & 0x4)
+        # Turn on fabric_clk
         mpm_c.nsync_change_input_source('fabric_clk')
-        # The lock should happen fast, but give it half a second
+        # Give it some time
         time.sleep(0.5)
         # Status 1 checks that the lmk is configured to use the priref signal
         # True = secref, False = priref
         using_pri_ref = not mpm_c.clkaux_get_nsync_status1()
-        # Status 0 checks dpll loss of lock
-        dpll_lock = not mpm_c.clkaux_get_nsync_status0()
-        # Reg 0xD checks several APLL statuses, we need to make sure APLL1 is
-        # locked and APLL2 is unlocked
-        apll_lock = mpm_c.peek_clkaux(0xD) == '0x8'
-
-        result = using_pri_ref and dpll_lock and apll_lock
-
+        # Check validation bit - reg 0x19B second bit as per datasheet
+        pri_ref_enabled = (int(mpm_c.peek_clkaux(0x19B),16) & 0x4) == 0x4
+        # Turn off clock
         mpm_c.enable_ecpri_clocks(False)
+        # Check validation bit - reg 0x19B second bit as per datasheet
+        pri_ref_disabled = not (int(mpm_c.peek_clkaux(0x19B),16) & 0x4)
+         
+        result = pri_ref_disabled and using_pri_ref and pri_ref_enabled and pri_ref_disabled_condition
 
-        return result, {"pri_ref_selected": using_pri_ref,
-                        "dpll_locked": dpll_lock,
-                        "apll1_locked_apll2_unlocked": apll_lock}
+        return result, {"fabric_clock_successfully_enabled": pri_ref_enabled,
+                        "fabric_clock_successfully_disabled": pri_ref_disabled}
 
     def bist_nsync_gty(self):
         """
