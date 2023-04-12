@@ -438,6 +438,6 @@ private:
 /***********************************************************************
  * Public make function for kintex7sdr interface
  **********************************************************************/
-usrp2_iface::sptr usrp2_iface::make(udp_simple::sptr ctrl_transport) {
+kintex7sdr_iface::sptr kintex7sdr_iface::make(udp_simple::sptr ctrl_transport) {
     return kintex7sdr_iface::sptr(new kintex7sdr_iface_impl(ctrl_transport));
 }

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "usrp2/codec_ctrl.hpp"
+#include "codec_ctrl.hpp"
 #include "ad9142a_regs.hpp"
 #include "ad9777_regs.hpp"
 #include "ads62p44_regs.hpp"
@@ -320,3 +320,10 @@ private:
     }
 
 };
+
+/***********************************************************************
+ * Public make function for the usrp2 codec control
+ **********************************************************************/
+kintex7sdr_codec_ctrl::sptr kintex7sdr_codec_ctrl::make( kintex7sdr_iface::sptr iface, uhd::spi_iface::sptr spiface){
+    return sptr(new kintex7sdr_codec_ctrl_impl(iface, spiface));
+}

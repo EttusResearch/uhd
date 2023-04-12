@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "usrp2/clock_ctrl.hpp"
+#include "clock_ctrl.hpp"
 #include "ad9510_regs.hpp"
 #include "ad9516_regs.hpp"
 #include "kintex7sdr_clk_regs.hpp"
@@ -20,9 +20,9 @@ static const bool enb_test_clk = false;
 /*!
  * A kintex7sdr clock control specific to the ad9510 and ad9516 ic.
  */
-class kintex7sdr_clock_ctrl_impl : public usrp2_clock_ctrl {
+class kintex7sdr_clock_ctrl_impl : public kintex7sdr_clock_ctrl {
 public:
-    kintex7sdr_clock_ctrl_impl(usrp2_iface::sptr iface, uhd::spi_iface::sptr spiface) {
+    kintex7sdr_clock_ctrl_impl(kintex7sdr_iface::sptr iface, uhd::spi_iface::sptr spiface) {
         _iface = iface;
         _spiface = spiface;
         clk_regs = kintex7sdr_clk_regs_t(_iface->get_rev());
@@ -434,3 +434,10 @@ private:
     ad9510_regs_t _ad9510_regs;
     ad9516_regs_t _ad9516_regs;
 };
+
+/***********************************************************************
+ * Public make function for the ad9510 clock control
+ **********************************************************************/
+kintex7sdr_clock_ctrl::sptr kintex7sdr_clock_ctrl::make(kintex7sdr_iface::sptr iface, uhd::spi_iface::sptr spiface){
+    return sptr(new kintex7sdr_clock_ctrl_impl(iface, spiface));
+}

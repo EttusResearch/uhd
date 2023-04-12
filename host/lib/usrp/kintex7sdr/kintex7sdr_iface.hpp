@@ -29,6 +29,13 @@ public:
         USRP_N210_XA = 220,
         USRP_NXXX    = 0
     };
+    /*!
+     * Make a new kintex7sdr interface with the control transport.
+     * \param ctrl_transport the udp transport object
+     * \return a new kintex7sdr interface object
+     */
+    typedef std::shared_ptr<kintex7sdr_iface> sptr;
+    static sptr make(uhd::transport::udp_simple::sptr ctrl_transport);
 };
 
 #endif /* INCLUDED_KINTEX7SDR_IFACE_HPP */
