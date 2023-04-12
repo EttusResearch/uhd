@@ -1,13 +1,10 @@
 //
-// Copyright 2015-2016 Ettus Research LLC
-// Copyright 2018 Ettus Research, a National Instruments Company
-//
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "fw_common.h"
-#include "usrp2_iface.hpp"
-#include "usrp2_impl.hpp"
+#include "usrp2/fw_common.h"
+#include "usrp2/usrp2_impl.hpp"
+#include "kintex7sdr_iface.hpp"
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/image_loader.hpp>
@@ -90,15 +87,15 @@ typedef enum {
 
     GET_HW_REV_CMD = 'v',
     GET_HW_REV_ACK = 'V',
-} n200_fw_update_id_t;
+} kintex7sdr_fw_update_id_t;
 
 /*
  * Mapping revision numbers to names
  */
-static const uhd::dict <uint32_t, std::string> n200_filename_map =
+static const uhd::dict<uint32_t, std::string> kintex7sdr_filename_map =
         boost::assign::map_list_of(
                 0, "n2xx") // Is an N-Series, but the EEPROM value is invalid
-                (0xa, "n200_r3")(0x100a, "n200_r4")(0x10a, "n210_r3")(0x110a, "n210_r4")
+                (0xa, "kintex7sdr_r3")(0x100a, "kintex7sdr_r4")(0x10a, "n210_r3")(0x110a, "n210_r4")
 
                 (0x210a, "n210_xk")(0x200a, "n210_xa");
 
@@ -122,7 +119,7 @@ typedef struct {
             uint32_t memory_size_bytes;
         } flash_info_args;
     } data;
-} n200_fw_update_data_t;
+} kintex7sdr_fw_update_data_t;
 
 /*
  * N-Series burn session
@@ -139,7 +136,7 @@ typedef struct {
     uint32_t max_size;
     uint32_t flash_addr;
     udp_simple::sptr xport;
-} n200_session_t;
+} kintex7sdr_session_t;
 
 /***********************************************************************
  * uhd::image_loader functionality
@@ -183,33 +180,32 @@ static void print_usrp2_error(const image_loader::image_loader_args_t &image_loa
  * Ethernet communication functions
  */
 static UHD_INLINE size_t
-n200_send_and_recv(udp_simple::sptr
-xport,
-n200_fw_update_id_t pkt_code,
-        n200_fw_update_data_t
-* pkt_out,
-uint8_t *data
-)
-{
-pkt_out->
-proto_ver = htonx<uint32_t>(USRP2_FW_COMPAT_NUM);
-pkt_out->
-id = htonx<uint32_t>(pkt_code);
-xport->
-send(boost::asio::buffer(pkt_out, sizeof(*pkt_out))
-);
-return xport->
-recv(boost::asio::buffer(data, udp_simple::mtu),
-UDP_TIMEOUT);
+kintex7sdr_send_and_recv(udp_simple::sptr
+                   xport,
+                   kintex7sdr_fw_update_id_t pkt_code,
+                   kintex7sdr_fw_update_data_t
+                   *pkt_out,
+                   uint8_t *data
+) {
+    pkt_out->
+            proto_ver = htonx<uint32_t>(USRP2_FW_COMPAT_NUM);
+    pkt_out->
+            id = htonx<uint32_t>(pkt_code);
+    xport->
+            send(boost::asio::buffer(pkt_out, sizeof(*pkt_out))
+    );
+    return xport->
+            recv(boost::asio::buffer(data, udp_simple::mtu),
+                 UDP_TIMEOUT);
 }
 
-static UHD_INLINE bool n200_response_matches(
-        const n200_fw_update_data_t *pkt_in, n200_fw_update_id_t pkt_code, size_t len) {
-    return (len > offsetof(n200_fw_update_data_t, data)
+static UHD_INLINE bool kintex7sdr_response_matches(
+        const kintex7sdr_fw_update_data_t *pkt_in, kintex7sdr_fw_update_id_t pkt_code, size_t len) {
+    return (len > offsetof(kintex7sdr_fw_update_data_t, data)
             and ntohl(pkt_in->id) == (unsigned) pkt_code);
 }
 
-static uhd::device_addr_t n200_find(
+static uhd::device_addr_t kintex7sdr_find(
         const image_loader::image_loader_args_t &image_loader_args) {
     bool user_specified = image_loader_args.args.has_key("addr")
                           or image_loader_args.args.has_key("serial")
@@ -218,12 +214,12 @@ static uhd::device_addr_t n200_find(
     uhd::device_addrs_t found = usrp2_find(image_loader_args.args);
 
     if (!found.empty()) {
-        uhd::device_addrs_t n200_found;
+        uhd::device_addrs_t kintex7sdr_found;
         udp_simple::sptr rev_xport;
-        n200_fw_update_data_t pkt_out;
+        kintex7sdr_fw_update_data_t pkt_out;
         uint8_t data_in[udp_simple::mtu];
-        const n200_fw_update_data_t *pkt_in =
-                reinterpret_cast<const n200_fw_update_data_t *>(data_in);
+        const kintex7sdr_fw_update_data_t *pkt_in =
+                reinterpret_cast<const kintex7sdr_fw_update_data_t *>(data_in);
         size_t len = 0;
 
         /*
@@ -236,14 +232,14 @@ static uhd::device_addr_t n200_find(
             rev_xport = udp_simple::make_connected(
                     dev.get("addr"), BOOST_STRINGIZE(N200_UDP_FW_UPDATE_PORT));
 
-            len = n200_send_and_recv(rev_xport, GET_HW_REV_CMD, &pkt_out, data_in);
-            if (n200_response_matches(pkt_in, GET_HW_REV_ACK, len)) {
+            len = kintex7sdr_send_and_recv(rev_xport, GET_HW_REV_CMD, &pkt_out, data_in);
+            if (kintex7sdr_response_matches(pkt_in, GET_HW_REV_ACK, len)) {
                 uint32_t rev = ntohl(pkt_in->data.hw_rev);
-                std::string hw_rev = n200_filename_map.get(rev, "n2xx");
+                std::string hw_rev = kintex7sdr_filename_map.get(rev, "n2xx");
 
-                n200_found.push_back(dev);
-                n200_found[n200_found.size() - 1]["hw_rev"] = hw_rev;
-            } else if (len > offsetof(n200_fw_update_data_t, data)
+                kintex7sdr_found.push_back(dev);
+                kintex7sdr_found[kintex7sdr_found.size() - 1]["hw_rev"] = hw_rev;
+            } else if (len > offsetof(kintex7sdr_fw_update_data_t, data)
                        and ntohl(pkt_in->id) != GET_HW_REV_ACK) {
                 throw uhd::runtime_error(
                         str(boost::format("Received invalid reply %d from device.")
@@ -255,14 +251,14 @@ static uhd::device_addr_t n200_find(
         }
 
         // At this point, we should have a single N-Series device
-        if (n200_found.size() == 1) {
-            return n200_found[0];
-        } else if (n200_found.size() > 1) {
+        if (kintex7sdr_found.size() == 1) {
+            return kintex7sdr_found[0];
+        } else if (kintex7sdr_found.size() > 1) {
             std::string err_msg =
                     "Could not resolve given args to a single N-Series device.\n"
                     "Applicable devices:\n";
 
-            for (const uhd::device_addr_t &dev : n200_found) {
+            for (const uhd::device_addr_t &dev : kintex7sdr_found) {
                 err_msg += str(boost::format("* %s (addr=%s)\n") % dev.get("hw_rev")
                                % dev.get("addr"));
             }
@@ -280,7 +276,7 @@ static uhd::device_addr_t n200_find(
 /*
  * Validate and read firmware image
  */
-static void n200_validate_firmware_image(n200_session_t &session) {
+static void kintex7sdr_validate_firmware_image(kintex7sdr_session_t &session) {
     if (not fs::exists(session.filepath)) {
         throw uhd::runtime_error(str(
                 boost::format("Could not find image at path \"%s\".") % session.filepath));
@@ -318,7 +314,7 @@ static void n200_validate_firmware_image(n200_session_t &session) {
 /*
  * Validate and validate FPGA image
  */
-static void n200_validate_fpga_image(n200_session_t &session) {
+static void kintex7sdr_validate_fpga_image(kintex7sdr_session_t &session) {
     if (not fs::exists(session.filepath)) {
         throw uhd::runtime_error(str(
                 boost::format("Could not find image at path \"%s\".") % session.filepath));
@@ -364,7 +360,7 @@ static void n200_validate_fpga_image(n200_session_t &session) {
  * Set up a session for burning an N-Series image. This session info
  * will be passed into the erase, burn, and verify functions.
  */
-static void n200_setup_session(n200_session_t &session,
+static void kintex7sdr_setup_session(kintex7sdr_session_t &session,
                                const image_loader::image_loader_args_t &image_loader_args,
                                bool fw) {
     session.fw = fw;
@@ -394,9 +390,9 @@ static void n200_setup_session(n200_session_t &session,
                                       : image_loader_args.fpga_path;
     }
     if (session.fw)
-        n200_validate_firmware_image(session);
+        kintex7sdr_validate_firmware_image(session);
     else
-        n200_validate_fpga_image(session);
+        kintex7sdr_validate_fpga_image(session);
 
     session.overwrite_safe = image_loader_args.args.has_key("overwrite-safe");
     if (session.dev_addr["hw_rev"] == "n210_xk"
@@ -426,11 +422,11 @@ static void n200_setup_session(n200_session_t &session,
             session.dev_addr["addr"], BOOST_STRINGIZE(N200_UDP_FW_UPDATE_PORT));
 }
 
-static void n200_erase_image(n200_session_t &session) {
+static void kintex7sdr_erase_image(kintex7sdr_session_t &session) {
     // UDP receive buffer
-    n200_fw_update_data_t pkt_out;
-    const n200_fw_update_data_t *pkt_in =
-            reinterpret_cast<const n200_fw_update_data_t *>(session.data_in);
+    kintex7sdr_fw_update_data_t pkt_out;
+    const kintex7sdr_fw_update_data_t *pkt_in =
+            reinterpret_cast<const kintex7sdr_fw_update_data_t *>(session.data_in);
 
     // Setting up UDP packet
     pkt_out.data.flash_args.flash_addr = htonx<uint32_t>(session.flash_addr);
@@ -438,11 +434,11 @@ static void n200_erase_image(n200_session_t &session) {
 
     // Begin erasing
     size_t len =
-            n200_send_and_recv(session.xport, ERASE_FLASH_CMD, &pkt_out, session.data_in);
-    if (n200_response_matches(pkt_in, ERASE_FLASH_ACK, len)) {
+            kintex7sdr_send_and_recv(session.xport, ERASE_FLASH_CMD, &pkt_out, session.data_in);
+    if (kintex7sdr_response_matches(pkt_in, ERASE_FLASH_ACK, len)) {
         std::cout << boost::format("-- Erasing %s image...") % session.burn_type
                   << std::flush;
-    } else if (len < offsetof(n200_fw_update_data_t, data)) {
+    } else if (len < offsetof(kintex7sdr_fw_update_data_t, data)) {
         std::cout << "failed." << std::endl;
         throw uhd::runtime_error("Timed out waiting for reply from device.");
     } else if (ntohl(pkt_in->id) != ERASE_FLASH_ACK) {
@@ -457,12 +453,12 @@ static void n200_erase_image(n200_session_t &session) {
 
     // Check for erase completion
     while (true) {
-        len = n200_send_and_recv(
+        len = kintex7sdr_send_and_recv(
                 session.xport, CHECK_ERASING_DONE_CMD, &pkt_out, session.data_in);
-        if (n200_response_matches(pkt_in, DONE_ERASING_ACK, len)) {
+        if (kintex7sdr_response_matches(pkt_in, DONE_ERASING_ACK, len)) {
             std::cout << "successful." << std::endl;
             break;
-        } else if (len < offsetof(n200_fw_update_data_t, data)) {
+        } else if (len < offsetof(kintex7sdr_fw_update_data_t, data)) {
             std::cout << "failed." << std::endl;
             throw uhd::runtime_error("Timed out waiting for reply from device.");
         } else if (ntohl(pkt_in->id) != NOT_DONE_ERASING_ACK) {
@@ -474,11 +470,11 @@ static void n200_erase_image(n200_session_t &session) {
     }
 }
 
-static void n200_write_image(n200_session_t &session) {
+static void kintex7sdr_write_image(kintex7sdr_session_t &session) {
     // UDP receive buffer
-    n200_fw_update_data_t pkt_out;
-    const n200_fw_update_data_t *pkt_in =
-            reinterpret_cast<const n200_fw_update_data_t *>(session.data_in);
+    kintex7sdr_fw_update_data_t pkt_out;
+    const kintex7sdr_fw_update_data_t *pkt_in =
+            reinterpret_cast<const kintex7sdr_fw_update_data_t *>(session.data_in);
     size_t len = 0;
 
     // Write image
@@ -491,14 +487,14 @@ static void n200_write_image(n200_session_t &session) {
         image.read((char *) pkt_out.data.flash_args.data, N200_FLASH_DATA_PACKET_SIZE);
 
         len =
-                n200_send_and_recv(session.xport, WRITE_FLASH_CMD, &pkt_out, session.data_in);
-        if (n200_response_matches(pkt_in, WRITE_FLASH_ACK, len)) {
+                kintex7sdr_send_and_recv(session.xport, WRITE_FLASH_CMD, &pkt_out, session.data_in);
+        if (kintex7sdr_response_matches(pkt_in, WRITE_FLASH_ACK, len)) {
             std::cout << boost::format("\r-- Writing %s image (%d%%)") % session.burn_type
                          % int((double(current_addr - session.flash_addr)
                                 / double(session.size))
                                * 100)
                       << std::flush;
-        } else if (len < offsetof(n200_fw_update_data_t, data)) {
+        } else if (len < offsetof(kintex7sdr_fw_update_data_t, data)) {
             image.close();
             std::cout << boost::format("\r--Writing %s image..failed at %d%%.")
                          % session.burn_type
@@ -528,11 +524,11 @@ static void n200_write_image(n200_session_t &session) {
     image.close();
 }
 
-static void n200_verify_image(n200_session_t &session) {
+static void kintex7sdr_verify_image(kintex7sdr_session_t &session) {
     // UDP receive buffer
-    n200_fw_update_data_t pkt_out;
-    const n200_fw_update_data_t *pkt_in =
-            reinterpret_cast<const n200_fw_update_data_t *>(session.data_in);
+    kintex7sdr_fw_update_data_t pkt_out;
+    const kintex7sdr_fw_update_data_t *pkt_in =
+            reinterpret_cast<const kintex7sdr_fw_update_data_t *>(session.data_in);
     size_t len = 0;
 
     // Read and verify image
@@ -550,8 +546,8 @@ static void n200_verify_image(n200_session_t &session) {
         cmp_len = image.gcount();
 
         len =
-                n200_send_and_recv(session.xport, READ_FLASH_CMD, &pkt_out, session.data_in);
-        if (n200_response_matches(pkt_in, READ_FLASH_ACK, len)) {
+                kintex7sdr_send_and_recv(session.xport, READ_FLASH_CMD, &pkt_out, session.data_in);
+        if (kintex7sdr_response_matches(pkt_in, READ_FLASH_ACK, len)) {
             std::cout << boost::format("\r-- Verifying %s image (%d%%)")
                          % session.burn_type
                          % int((double(current_addr - session.flash_addr)
@@ -569,7 +565,7 @@ static void n200_verify_image(n200_session_t &session) {
                 throw uhd::runtime_error(
                         str(boost::format("Failed to verify %s image.") % session.burn_type));
             }
-        } else if (len < offsetof(n200_fw_update_data_t, data)) {
+        } else if (len < offsetof(kintex7sdr_fw_update_data_t, data)) {
             image.close();
             std::cout << boost::format("\r-- Verifying %s image...failed at %d%%.")
                          % session.burn_type
@@ -600,13 +596,13 @@ static void n200_verify_image(n200_session_t &session) {
     image.close();
 }
 
-static void n200_reset(n200_session_t &session) {
+static void kintex7sdr_reset(kintex7sdr_session_t &session) {
     // UDP receive buffer
-    n200_fw_update_data_t pkt_out;
+    kintex7sdr_fw_update_data_t pkt_out;
 
     // There should be no response
     std::cout << "-- Resetting device..." << std::flush;
-    size_t len = n200_send_and_recv(session.xport, RESET_CMD, &pkt_out, session.data_in);
+    size_t len = kintex7sdr_send_and_recv(session.xport, RESET_CMD, &pkt_out, session.data_in);
     if (len > 0) {
         std::cout << "failed." << std::endl;
         throw uhd::runtime_error("Failed to reset N200.");
@@ -627,15 +623,15 @@ static std::string nice_name(const std::string &fw_rev) {
     return ret;
 }
 
-static bool n200_image_loader(const image_loader::image_loader_args_t &image_loader_args) {
+static bool kintex7sdr_image_loader(const image_loader::image_loader_args_t &image_loader_args) {
     if (!image_loader_args.load_firmware and !image_loader_args.load_fpga) {
         return false;
     }
 
     // See if any N2x0 with the given args is found
     // This will throw if specific args lead to a USRP2
-    n200_session_t session;
-    session.dev_addr = n200_find(image_loader_args);
+    kintex7sdr_session_t session;
+    session.dev_addr = kintex7sdr_find(image_loader_args);
     if (session.dev_addr.size() == 0) {
         return false;
     }
@@ -646,40 +642,39 @@ static bool n200_image_loader(const image_loader::image_loader_args_t &image_loa
               << std::endl;
 
     if (image_loader_args.load_firmware) {
-        n200_setup_session(session, image_loader_args, true);
+        kintex7sdr_setup_session(session, image_loader_args, true);
 
         std::cout << "Firmware image: " << session.filepath << std::endl;
 
-        n200_erase_image(session);
-        n200_write_image(session);
-        n200_verify_image(session);
+        kintex7sdr_erase_image(session);
+        kintex7sdr_write_image(session);
+        kintex7sdr_verify_image(session);
         if (session.reset and !image_loader_args.load_fpga) {
-            n200_reset(session);
+            kintex7sdr_reset(session);
         }
     }
     if (image_loader_args.load_fpga) {
-        n200_setup_session(session, image_loader_args, false);
+        kintex7sdr_setup_session(session, image_loader_args, false);
 
         std::cout << "FPGA image: " << session.filepath << std::endl;
 
-        n200_erase_image(session);
-        n200_write_image(session);
-        n200_verify_image(session);
+        kintex7sdr_erase_image(session);
+        kintex7sdr_write_image(session);
+        kintex7sdr_verify_image(session);
         if (session.reset) {
-            n200_reset(session);
+            kintex7sdr_reset(session);
         }
     }
 
     return true;
 }
 
-UHD_STATIC_BLOCK(register_n200_image_loader)
-        {
-                std::string recovery_instructions =
-        "Aborting. Your USRP-N Series unit will likely be unusable.\n"
-        "Refer to http://files.ettus.com/manual/page_usrp2.html#usrp2_loadflash_brick\n"
-        "for details on restoring your device.";
+UHD_STATIC_BLOCK(register_kintex7sdr_image_loader) {
+    std::string recovery_instructions =
+            "Aborting. Your USRP-N Series unit will likely be unusable.\n"
+            "Refer to http://files.ettus.com/manual/page_usrp2.html#usrp2_loadflash_brick\n"
+            "for details on restoring your device.";
 
-        image_loader::register_image_loader(
-        "usrp2", n200_image_loader, recovery_instructions);
-        }
+    image_loader::register_image_loader(
+            "kintex7sdr", kintex7sdr_image_loader, recovery_instructions);
+}

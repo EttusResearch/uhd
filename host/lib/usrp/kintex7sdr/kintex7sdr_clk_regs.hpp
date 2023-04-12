@@ -1,19 +1,15 @@
 //
-// Copyright 2010 Ettus Research LLC
-// Copyright 2018 Ettus Research, a National Instruments Company
-//
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_USRP2_CLK_REGS_HPP
-#define INCLUDED_USRP2_CLK_REGS_HPP
+#ifndef INCLUDED_KINTEX7SDR_CLK_REGS_HPP
+#define INCLUDED_KINTEX7SDR_CLK_REGS_HPP
 
-#include "usrp2_iface.hpp"
+#include "kintex7sdr_iface.hpp"
 
-class usrp2_clk_regs_t {
+class kintex7sdr_clk_regs_t {
 public:
-    usrp2_clk_regs_t(void)
-            : test(0), fpga(0), adc(0), dac(0),
+    kintex7sdr_clk_regs_t(void) : test(0), fpga(0), adc(0), dac(0),
 
               dac_ref(0),
 
@@ -25,7 +21,7 @@ public:
               pll_6(0), pll_7(0), pll_8(0), pll_9(0), pll_PFD(0), pll_rdbck(0), revision(usrp2_iface::USRP_NXXX) {
     }
 
-    usrp2_clk_regs_t(usrp2_iface::rev_type rev) {
+    kintex7sdr_clk_regs_t(usrp2_iface::rev_type rev) {
         revision = rev;
 
         fpga = adc = serdes = exp = tx_db = 0;
@@ -54,32 +50,10 @@ public:
         pll_rdbck = 0;
 
         switch (rev) {
-            case usrp2_iface::USRP2_REV3:
-                exp = 2;
-                adc = 4;
-                serdes = 2;
-                tx_db = 6;
-                break;
-            case usrp2_iface::USRP2_REV4:
-                exp = 5;
-                adc = 4;
-                serdes = 2;
-                tx_db = 6;
-                break;
-            case usrp2_iface::USRP_N200:
-            case usrp2_iface::USRP_N210:
-            case usrp2_iface::USRP_N200_R4:
-            case usrp2_iface::USRP_N210_R4:
-                exp = 6;
-                adc = 2;
-                serdes = 4;
-                tx_db = 5;
-                break;
             case usrp2_iface::USRP_NXXX:
                 // dont throw, it may be unitialized
                 break;
-
-            case usrp2_iface::USRP_N210_XK: // It's my device on Kintex-7 board
+            case kintex7sdr_iface::USRP_N210_XK: // It's my device on Kintex-7 board
                 fpga = 0;
                 adc = 1;
                 dac = 2;
@@ -106,7 +80,7 @@ public:
                 pll_PFD = 0x010;
                 pll_rdbck = 0x01F;
                 break;
-            case usrp2_iface::USRP_N210_XA:
+            case kintex7sdr_iface::USRP_N210_XA:
                 fpga = 3;
                 adc = 1;
                 dac = 0;
@@ -133,55 +107,55 @@ public:
                 pll_PFD = 0x010;
                 pll_rdbck = 0x01F;
                 break;
+            default:
+                throw uhd::not_implemented_error("kintex7sdr_clk_regs_t: unknown hardware version");
         }
     }
 
     int output(int clknum) {
         switch (revision) {
-            case usrp2_iface::USRP_N210_XK:
-            case usrp2_iface::USRP_N210_XA:
+            case kintex7sdr_iface::USRP_N210_XK:
+            case kintex7sdr_iface::USRP_N210_XA:
                 return clknum < 6 ? 0x0F0 + clknum : 0x140 + clknum - 6;
                 break;
             default:
-                return 0x3C + clknum;
+                throw uhd::not_implemented_error("output: unknown hardware version");
         }
     }
 
     int div_lo(int clknum) {
         switch (revision) {
-            case usrp2_iface::USRP_N210_XK:
-            case usrp2_iface::USRP_N210_XA:
+            case kintex7sdr_iface::USRP_N210_XK:
+            case kintex7sdr_iface::USRP_N210_XA:
                 return clknum < 6 ? 0x190 + 3 * (int) (clknum / 2)
                                   : 0x199 + 5 * (int) ((clknum - 6) / 2);
-                break;
             default:
-                return 0x48 + 2 * clknum;
+                throw uhd::not_implemented_error("div_lo: unknown hardware version");
         }
     }
 
     int div_hi(int clknum) {
         switch (revision) {
-            case usrp2_iface::USRP_N210_XK:
-            case usrp2_iface::USRP_N210_XA:
+            case kintex7sdr_iface::USRP_N210_XK:
+            case kintex7sdr_iface::USRP_N210_XA:
                 return clknum < 6 ? 0x191 + 3 * (int) (clknum / 2)
                                   : 0x19A + 5 * (int) ((clknum - 6) / 2);
-                break;
             default:
-                return 0x49 + 2 * clknum;
+                throw uhd::not_implemented_error("div_lo: unknown hardware version");
         }
     }
 
-    const static int acounter = 0x04;
-    const static int bcounter_msb = 0x05;
-    const static int bcounter_lsb = 0x06;
-    const static int pll_1 = 0x07;
-    const static int pll_2 = 0x08;
-    const static int pll_3 = 0x09;
-    const static int pll_4 = 0x0A;
-    const static int ref_counter_msb = 0x0B;
-    const static int ref_counter_lsb = 0x0C;
-    const static int pll_5 = 0x0D;
-    const static int update = 0x5A;
+    int acounter = 0x04;
+    int bcounter_msb = 0x05;
+    int bcounter_lsb = 0x06;
+    int pll_1 = 0x07;
+    int pll_2 = 0x08;
+    int pll_3 = 0x09;
+    int pll_4 = 0x0A;
+    int ref_counter_msb = 0x0B;
+    int ref_counter_lsb = 0x0C;
+    int pll_5 = 0x0D;
+    int update = 0x5A;
 
     int pll_6;
     int pll_7;
@@ -199,10 +173,9 @@ public:
     int exp;
     int tx_db;
     int rx_db;
-};
 
 private:
 usrp2_iface::rev_type revision;
 };
 
-#endif // INCLUDED_USRP2_CLK_REGS_HPP
+#endif // INCLUDED_KINTEX7SDR_CLK_REGS_HPP

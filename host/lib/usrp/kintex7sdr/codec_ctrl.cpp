@@ -1,15 +1,12 @@
 //
-// Copyright 2010-2012,2014 Ettus Research LLC
-// Copyright 2018 Ettus Research, a National Instruments Company
-//
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "codec_ctrl.hpp"
+#include "usrp2/codec_ctrl.hpp"
 #include "ad9142a_regs.hpp"
 #include "ad9777_regs.hpp"
 #include "ads62p44_regs.hpp"
-#include "usrp2_regs.hpp"
+#include "kintex7sdr_iface.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
@@ -18,21 +15,17 @@
 
 using namespace uhd;
 
-usrp2_codec_ctrl::~usrp2_codec_ctrl(void) {
-    /* NOP */
-}
-
 /*!
- * A usrp2 codec control specific to the ad9777 ic.
+ * A kintex7sdr codec control specific to the ad9777 or ad9142a ic.
  */
-class usrp2_codec_ctrl_impl : public usrp2_codec_ctrl {
+class kintex7sdr_codec_ctrl_impl : public usrp2_codec_ctrl {
 public:
-    usrp2_codec_ctrl_impl(usrp2_iface::sptr iface, uhd::spi_iface::sptr spiface) {
+    kintex7sdr_codec_ctrl_impl(kintex7sdr_iface::sptr iface, uhd::spi_iface::sptr spiface) {
         _iface = iface;
         _spiface = spiface;
 
         switch (_iface->get_rev()) {
-            case usrp2_iface::USRP_N210_XK:
+            case kintex7sdr_iface::USRP_N210_XK:
                 setup_the_ad9142a_dac();
                 break;
             default:
@@ -80,32 +73,32 @@ public:
         }
     }
 
-    ~usrp2_codec_ctrl_impl(void) override {
+    ~kintex7sdr_codec_ctrl_impl(void) override {
         UHD_SAFE_CALL(
-                // power-down dac
+        // power-down dac
                 _ad9777_regs.power_down_mode = 1;
-        this->send_ad9777_reg(0);
+                this->send_ad9777_reg(0);
 
-        // power-down adc
-        switch (_iface->get_rev()) {
-            case usrp2_iface::USRP2_REV3:
-            case usrp2_iface::USRP2_REV4:
-                _iface->poke32(U2_REG_MISC_CTRL_ADC, U2_FLAG_MISC_CTRL_ADC_OFF);
-                break;
+                // power-down adc
+                switch (_iface->get_rev()) {
+                    case usrp2_iface::USRP2_REV3:
+                    case usrp2_iface::USRP2_REV4:
+                        _iface->poke32(U2_REG_MISC_CTRL_ADC, U2_FLAG_MISC_CTRL_ADC_OFF);
+                        break;
 
-            case usrp2_iface::USRP_N200:
-            case usrp2_iface::USRP_N210:
-            case usrp2_iface::USRP_N200_R4:
-            case usrp2_iface::USRP_N210_R4:
-                // send a global power-down to the ADC here... it will get lifted on
-                // reset
-                _ads62p44_regs.power_down = ads62p44_regs_t::POWER_DOWN_GLOBAL_PD;
-                this->send_ads62p44_reg(0x14);
-                break;
+                    case usrp2_iface::USRP_N200:
+                    case usrp2_iface::USRP_N210:
+                    case usrp2_iface::USRP_N200_R4:
+                    case usrp2_iface::USRP_N210_R4:
+                        // send a global power-down to the ADC here... it will get lifted on
+                        // reset
+                        _ads62p44_regs.power_down = ads62p44_regs_t::POWER_DOWN_GLOBAL_PD;
+                        this->send_ads62p44_reg(0x14);
+                        break;
 
-            case usrp2_iface::USRP_NXXX:
-                break;
-        })
+                    case usrp2_iface::USRP_NXXX:
+                        break;
+                })
     }
 
     void setup_the_ad9142a_dac() {
@@ -319,23 +312,11 @@ private:
     uint32_t read_ad9142a_reg(uint16_t addr) {
         uint32_t reg = _ad9142a_regs.get_read_reg(addr);
         uint32_t readback =
-                _spiface->read_spi(SPI_SS_AD9142A, pi_config_t::EDGE_RISE, reg, 24);
+                _spiface->read_spi(SPI_SS_AD9142A, spi_config_t::EDGE_RISE, reg, 24);
         readback &= 0x7fffff;
         UHD_LOG_TRACE("USRP2", "read AD9142A reg: 0x"
-        : std::hex << readback << std::endl);
+                : std::hex << readback << std::endl);
         return readback;
     }
 
-    void send_ads62p44_reg(uint8_t addr) {
-        uint16_t reg = _ads62p44_regs.get_write_reg(addr);
-        _spiface->write_spi(SPI_SS_ADS62P44, spi_config_t::EDGE_FALL, reg, 16);
-    }
 };
-
-/***********************************************************************
- * Public make function for the usrp2 codec control
- **********************************************************************/
-usrp2_codec_ctrl::sptr usrp2_codec_ctrl::make(
-        usrp2_iface::sptr iface, uhd::spi_iface::sptr spiface) {
-    return sptr(new usrp2_codec_ctrl_impl(iface, spiface));
-}
