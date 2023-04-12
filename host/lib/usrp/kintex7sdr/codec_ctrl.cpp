@@ -24,82 +24,31 @@ public:
         _iface = iface;
         _spiface = spiface;
 
-        switch (_iface->get_rev()) {
+        switch (static_cast<kintex7sdr_iface::rev_type>(_iface->get_rev())) {
             case kintex7sdr_iface::USRP_N210_XK:
                 setup_the_ad9142a_dac();
+                break;
+            case kintex7sdr_iface::USRP_NXXX:
                 break;
             default:
                 setup_the_ad9777_dac();
         }
+    }
 
-        // power-up adc
-        switch (_iface->get_rev()) {
-            case usrp2_iface::USRP2_REV3:
-            case usrp2_iface::USRP2_REV4:
-                _iface->poke32(U2_REG_MISC_CTRL_ADC, U2_FLAG_MISC_CTRL_ADC_ON);
-                break;
+    ~kintex7sdr_codec_ctrl_impl(void) override { UHD_SAFE_CALL(
+        // power-down dac
+        _ad9777_regs.power_down_mode = 1;
+        this->send_ad9777_reg(0);
 
-            case usrp2_iface::USRP_N200:
-            case usrp2_iface::USRP_N210:
-                _ads62p44_regs.reset = 1;
-                this->send_ads62p44_reg(0x00); // issue a reset to the ADC
-                // everything else should be pretty much default, i think
-                //_ads62p44_regs.decimation = DECIMATION_DECIMATE_1;
-                _ads62p44_regs.power_down = ads62p44_regs_t::POWER_DOWN_NORMAL;
-                this->send_ads62p44_reg(0x14);
-                this->set_rx_analog_gain(1);
-                break;
-
-            case usrp2_iface::USRP_N200_R4:
-            case usrp2_iface::USRP_N210_R4:
-                _ads62p44_regs.reset = 1;
-                this->send_ads62p44_reg(0x00); // issue a reset to the ADC
-                // everything else should be pretty much default, i think
-                //_ads62p44_regs.decimation = DECIMATION_DECIMATE_1;
-                _ads62p44_regs.override = 1;
-                this->send_ads62p44_reg(0x14);
-                _ads62p44_regs.power_down = ads62p44_regs_t::POWER_DOWN_NORMAL;
-                _ads62p44_regs.output_interface = ads62p44_regs_t::OUTPUT_INTERFACE_LVDS;
-                _ads62p44_regs.lvds_current = ads62p44_regs_t::LVDS_CURRENT_2_5MA;
-                _ads62p44_regs.lvds_data_term = ads62p44_regs_t::LVDS_DATA_TERM_100;
-                this->send_ads62p44_reg(0x11);
-                this->send_ads62p44_reg(0x12);
-                this->send_ads62p44_reg(0x14);
-                this->set_rx_analog_gain(1);
-                break;
-
-            case usrp2_iface::USRP_NXXX:
+        // power-down adc
+        switch (static_cast<kintex7sdr_iface::rev_type>(_iface->get_rev())) {
+            case kintex7sdr_iface::USRP_N210_XK:
+            case kintex7sdr_iface::USRP_N210_XA:
+                //TODO: выключение устройства в деструкторе
+            case kintex7sdr_iface::USRP_NXXX:
                 break;
         }
-    }
-
-    ~kintex7sdr_codec_ctrl_impl(void) override {
-        UHD_SAFE_CALL(
-        // power-down dac
-                _ad9777_regs.power_down_mode = 1;
-                this->send_ad9777_reg(0);
-
-                // power-down adc
-                switch (_iface->get_rev()) {
-                    case usrp2_iface::USRP2_REV3:
-                    case usrp2_iface::USRP2_REV4:
-                        _iface->poke32(U2_REG_MISC_CTRL_ADC, U2_FLAG_MISC_CTRL_ADC_OFF);
-                        break;
-
-                    case usrp2_iface::USRP_N200:
-                    case usrp2_iface::USRP_N210:
-                    case usrp2_iface::USRP_N200_R4:
-                    case usrp2_iface::USRP_N210_R4:
-                        // send a global power-down to the ADC here... it will get lifted on
-                        // reset
-                        _ads62p44_regs.power_down = ads62p44_regs_t::POWER_DOWN_GLOBAL_PD;
-                        this->send_ads62p44_reg(0x14);
-                        break;
-
-                    case usrp2_iface::USRP_NXXX:
-                        break;
-                })
-    }
+    )}
 
     void setup_the_ad9142a_dac() {
         _ad9142a_regs.DEVICE_RESET = 1;
@@ -201,9 +150,8 @@ public:
 
     void set_tx_mod_mode(int mod_mode) override {
         // set the sign of the frequency shift
-        _ad9777_regs.modulation_form = (mod_mode > 0)
-                                       ? ad9777_regs_t::MODULATION_FORM_E_PLUS_JWT
-                                       : ad9777_regs_t::MODULATION_FORM_E_MINUS_JWT;
+        _ad9777_regs.modulation_form = (mod_mode > 0) ? ad9777_regs_t::MODULATION_FORM_E_PLUS_JWT
+                                                      : ad9777_regs_t::MODULATION_FORM_E_MINUS_JWT;
 
         // set the frequency shift
         switch (std::abs(mod_mode)) {
@@ -228,47 +176,30 @@ public:
     }
 
     void set_rx_digital_gain(double gain) override { // fine digital gain
-        switch (_iface->get_rev()) {
-            case usrp2_iface::USRP_N200:
-            case usrp2_iface::USRP_N210:
-            case usrp2_iface::USRP_N200_R4:
-            case usrp2_iface::USRP_N210_R4:
-                _ads62p44_regs.fine_gain = int(gain / 0.5);
-                this->send_ads62p44_reg(0x17);
-                break;
-
+        switch (static_cast<kintex7sdr_iface::rev_type>(_iface->get_rev())) {
+            case kintex7sdr_iface::USRP_N210_XK:
+            case kintex7sdr_iface::USRP_N210_XA:
+                throw uhd::not_implemented_error("set_rx_digital_gain: unknown hardware version");
             default:
                 UHD_THROW_INVALID_CODE_PATH();
         }
     }
 
     void set_rx_digital_fine_gain(double gain) override { // gain correction
-        switch (_iface->get_rev()) {
-            case usrp2_iface::USRP_N200:
-            case usrp2_iface::USRP_N210:
-            case usrp2_iface::USRP_N200_R4:
-            case usrp2_iface::USRP_N210_R4:
-                _ads62p44_regs.gain_correction = int(gain / 0.05);
-                this->send_ads62p44_reg(0x1A);
-                break;
-
+        switch (static_cast<kintex7sdr_iface::rev_type>(_iface->get_rev())) {
+            case kintex7sdr_iface::USRP_N210_XK:
+            case kintex7sdr_iface::USRP_N210_XA:
+                throw uhd::not_implemented_error("set_rx_digital_fine_gain: unknown hardware version");
             default:
                 UHD_THROW_INVALID_CODE_PATH();
         }
     }
 
     void set_rx_analog_gain(bool /*gain*/) override { // turns on/off analog 3.5dB preamp
-        switch (_iface->get_rev()) {
-            case usrp2_iface::USRP_N200:
-            case usrp2_iface::USRP_N210:
-            case usrp2_iface::USRP_N200_R4:
-            case usrp2_iface::USRP_N210_R4:
-                _ads62p44_regs.coarse_gain = ads62p44_regs_t::
-                COARSE_GAIN_3_5DB; // gain ? ads62p44_regs_t::COARSE_GAIN_3_5DB :
-                // ads62p44_regs_t::COARSE_GAIN_0DB;
-                this->send_ads62p44_reg(0x14);
-                break;
-
+        switch (static_cast<kintex7sdr_iface::rev_type>(_iface->get_rev())) {
+            case kintex7sdr_iface::USRP_N210_XK:
+            case kintex7sdr_iface::USRP_N210_XA:
+                throw uhd::not_implemented_error("set_rx_analog_gain: unknown hardware version");
             default:
                 UHD_THROW_INVALID_CODE_PATH();
         }
@@ -324,6 +255,6 @@ private:
 /***********************************************************************
  * Public make function for the usrp2 codec control
  **********************************************************************/
-kintex7sdr_codec_ctrl::sptr kintex7sdr_codec_ctrl::make( kintex7sdr_iface::sptr iface, uhd::spi_iface::sptr spiface){
+kintex7sdr_codec_ctrl::sptr kintex7sdr_codec_ctrl::make(kintex7sdr_iface::sptr iface, uhd::spi_iface::sptr spiface) {
     return sptr(new kintex7sdr_codec_ctrl_impl(iface, spiface));
 }

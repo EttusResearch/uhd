@@ -4,7 +4,7 @@
 
 #include "ad5623_regs.hpp" //aux dac
 #include "ad7922_regs.hpp" //aux adc
-#include "usrp2/clock_ctrl.hpp"
+#include "clock_ctrl.hpp"
 #include "usrp2/usrp2_fifo_ctrl.hpp"
 #include "kintex7sdr_regs.hpp" //wishbone address constants
 #include <uhd/exception.hpp>
@@ -26,7 +26,7 @@ public:
     kintex7sdr_dboard_iface(timed_wb_iface::sptr wb_iface,
                             uhd::i2c_iface::sptr i2c_iface,
                             uhd::spi_iface::sptr spi_iface,
-                            usrp2_clock_ctrl::sptr clock_ctrl);
+                            kintex7sdr_clock_ctrl::sptr clock_ctrl);
 
     ~kintex7sdr_dboard_iface(void) override;
 
@@ -91,7 +91,7 @@ private:
     timed_wb_iface::sptr _wb_iface;
     uhd::i2c_iface::sptr _i2c_iface;
     uhd::spi_iface::sptr _spi_iface;
-    usrp2_clock_ctrl::sptr _clock_ctrl;
+    kintex7sdr_clock_ctrl::sptr _clock_ctrl;
     gpio_core_200::sptr _gpio;
 
     uhd::dict<unit_t, ad5623_regs_t> _dac_regs;
@@ -106,7 +106,7 @@ private:
 dboard_iface::sptr make_kintex7sdr_dboard_iface(timed_wb_iface::sptr wb_iface,
                                            uhd::i2c_iface::sptr i2c_iface,
                                            uhd::spi_iface::sptr spi_iface,
-                                           usrp2_clock_ctrl::sptr clock_ctrl) {
+                                           kintex7sdr_clock_ctrl::sptr clock_ctrl) {
     return dboard_iface::sptr(
             new kintex7sdr_dboard_iface(wb_iface, i2c_iface, spi_iface, clock_ctrl));
 }
@@ -117,7 +117,7 @@ dboard_iface::sptr make_kintex7sdr_dboard_iface(timed_wb_iface::sptr wb_iface,
 kintex7sdr_dboard_iface::kintex7sdr_dboard_iface(timed_wb_iface::sptr wb_iface,
                                        uhd::i2c_iface::sptr i2c_iface,
                                        uhd::spi_iface::sptr spi_iface,
-                                       usrp2_clock_ctrl::sptr clock_ctrl)
+                                       kintex7sdr_clock_ctrl::sptr clock_ctrl)
         : _wb_iface(wb_iface), _i2c_iface(i2c_iface), _spi_iface(spi_iface), _clock_ctrl(clock_ctrl) {
     _gpio = gpio_core_200::make(wb_iface, U2_REG_SR_ADDR(SR_GPIO), U2_REG_GPIO_RB);
 

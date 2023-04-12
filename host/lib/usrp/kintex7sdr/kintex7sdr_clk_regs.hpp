@@ -9,19 +9,13 @@
 
 class kintex7sdr_clk_regs_t {
 public:
-    kintex7sdr_clk_regs_t(void) : test(0), fpga(0), adc(0), dac(0),
+    kintex7sdr_clk_regs_t(void) :
+        acounter(0), bcounter_msb(0), bcounter_lsb(0), pll_1(0), pll_2(0), pll_3(0), pll_4(0), ref_counter_msb(0),
+        ref_counter_lsb(0), pll_5(0), update(0), pll_6(0), pll_7(0), pll_8(0), pll_9(0), pll_PFD(0), pll_rdbck(0),
+        test(0), fpga(0), adc(0), dac(0), dac_ref(0), serdes(0), exp(0), tx_db(0), rx_db(0),
+        revision(kintex7sdr_iface::USRP_NXXX){}
 
-              dac_ref(0),
-
-              serdes(0), exp(0), tx_db(0), rx_db(0),
-
-              acounter(0), bcounter_msb(0), bcounter_lsb(0), pll_1(0), pll_2(0), pll_3(0), pll_4(0), ref_counter_msb(0),
-              ref_counter_lsb(0), pll_5(0), update(0),
-
-              pll_6(0), pll_7(0), pll_8(0), pll_9(0), pll_PFD(0), pll_rdbck(0), revision(usrp2_iface::USRP_NXXX) {
-    }
-
-    kintex7sdr_clk_regs_t(usrp2_iface::rev_type rev) {
+    kintex7sdr_clk_regs_t(kintex7sdr_iface::rev_type rev) {
         revision = rev;
 
         fpga = adc = serdes = exp = tx_db = 0;
@@ -50,7 +44,7 @@ public:
         pll_rdbck = 0;
 
         switch (rev) {
-            case usrp2_iface::USRP_NXXX:
+            case kintex7sdr_iface::USRP_NXXX:
                 // dont throw, it may be unitialized
                 break;
             case kintex7sdr_iface::USRP_N210_XK: // It's my device on Kintex-7 board
@@ -175,7 +169,7 @@ public:
     int rx_db;
 
 private:
-usrp2_iface::rev_type revision;
+    kintex7sdr_iface::rev_type revision;
 };
 
 #endif // INCLUDED_KINTEX7SDR_CLK_REGS_HPP

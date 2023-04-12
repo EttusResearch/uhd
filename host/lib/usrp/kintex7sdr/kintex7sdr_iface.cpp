@@ -254,7 +254,7 @@ public:
                 return ctrl_send_and_recv_internal(
                         out_data, lo, hi, CTRL_RECV_TIMEOUT / CTRL_RECV_RETRIES);
             } catch (const timeout_error &e) {
-                UHD_LOGGER_ERROR("USRP2")
+                UHD_LOGGER_ERROR("KINTEX7SDR")
                         << "Control packet attempt " << i << ", sequence number "
                         << _ctrl_seq_num << ":\n"
                         << e.what();
@@ -316,7 +316,7 @@ public:
         return static_cast<usrp2_iface::rev_type>(USRP_NXXX);; // unknown type
     }
     const std::string get_cname(void) override {
-        switch (this->get_rev()) {
+        switch (static_cast<kintex7sdr_iface::rev_type>(this->get_rev())) {
             case kintex7sdr_iface::USRP_N210_XK:
                 return "N210_XK";
             case kintex7sdr_iface::USRP_N210_XA:
@@ -335,7 +335,7 @@ public:
     std::string images_warn_help_message(void) override {
         // determine the images names
         std::string fw_image, fpga_image;
-        switch (this->get_rev()) {
+        switch (static_cast<kintex7sdr_iface::rev_type>(this->get_rev())) {
             case kintex7sdr_iface::USRP_N210_XK:
                 fpga_image = "kintex7sdr_xa_fpga.bin";
                 fw_image = "kintex7sdr_fw.bin";
