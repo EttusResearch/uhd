@@ -6,8 +6,8 @@
 //
 
 #include "kintex7sdr_iface.hpp"
-#include "usrp2/fw_common.h"
-#include <usrp2/usrp2_impl.hpp>
+#include "fw_common.h"
+#include "kintex7sdr_impl.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/log.hpp>
@@ -61,14 +61,14 @@ public:
         // Obtain the firmware's compat number.
         // Save the response compat number for communication.
         // TODO can choose to reject certain older compat numbers
-        usrp2_ctrl_data_t ctrl_data = usrp2_ctrl_data_t();
-        ctrl_data.id = htonl(USRP2_CTRL_ID_WAZZUP_BRO);
+        kintex7sdr_ctrl_data_t ctrl_data = kintex7sdr_ctrl_data_t();
+        ctrl_data.id = htonl(KINTEX7SDR_CTRL_ID_WAZZUP_BRO);
         ctrl_data = ctrl_send_and_recv(ctrl_data, 0, ~0);
-        if (ntohl(ctrl_data.id) != USRP2_CTRL_ID_WAZZUP_DUDE)
+        if (ntohl(ctrl_data.id) != KINTEX7SDR_CTRL_ID_WAZZUP_DUDE)
             throw uhd::runtime_error("firmware not responding");
         _protocol_compat = ntohl(ctrl_data.proto_ver);
 
-        mb_eeprom = usrp2_impl::get_mb_eeprom(*this);
+        mb_eeprom = kintex7sdr_impl::get_mb_eeprom(*this);
     }
 
     ~kintex7sdr_iface_impl(void) override {
@@ -91,7 +91,7 @@ public:
 
     bool is_device_locked(void) override {
         // never assume lock with fpga image mismatch
-        if ((this->peek32(U2_REG_COMPAT_NUM_RB) >> 16) != USRP2_FPGA_COMPAT_NUM)
+        if ((this->peek32(U2_REG_COMPAT_NUM_RB) >> 16) != KINTEX7SDR_FPGA_COMPAT_NUM)
             return false;
 
         uint32_t lock_time = this->peekfw(U2_FW_REG_LOCK_TIME);
@@ -126,42 +126,42 @@ public:
      * Peek and Poke
      **********************************************************************/
     void poke32(const wb_addr_type addr, const uint32_t data) override {
-        this->get_reg<uint32_t, USRP2_REG_ACTION_FPGA_POKE32>(addr, data);
+        this->get_reg<uint32_t, KINTEX7SDR_REG_ACTION_FPGA_POKE32>(addr, data);
     }
 
     uint32_t peek32(const wb_addr_type addr) override {
-        return this->get_reg<uint32_t, USRP2_REG_ACTION_FPGA_PEEK32>(addr);
+        return this->get_reg<uint32_t, KINTEX7SDR_REG_ACTION_FPGA_PEEK32>(addr);
     }
 
     void poke16(const wb_addr_type addr, const uint16_t data) override {
-        this->get_reg<uint16_t, USRP2_REG_ACTION_FPGA_POKE16>(addr, data);
+        this->get_reg<uint16_t, KINTEX7SDR_REG_ACTION_FPGA_POKE16>(addr, data);
     }
 
     uint16_t peek16(const wb_addr_type addr) override {
-        return this->get_reg<uint16_t, USRP2_REG_ACTION_FPGA_PEEK16>(addr);
+        return this->get_reg<uint16_t, KINTEX7SDR_REG_ACTION_FPGA_PEEK16>(addr);
     }
 
     void pokefw(wb_addr_type addr, uint32_t data) override {
-        this->get_reg<uint32_t, USRP2_REG_ACTION_FW_POKE32>(addr, data);
+        this->get_reg<uint32_t, KINTEX7SDR_REG_ACTION_FW_POKE32>(addr, data);
     }
 
     uint32_t peekfw(wb_addr_type addr) override {
-        return this->get_reg<uint32_t, USRP2_REG_ACTION_FW_PEEK32>(addr);
+        return this->get_reg<uint32_t, KINTEX7SDR_REG_ACTION_FW_PEEK32>(addr);
     }
 
-    template<class T, usrp2_reg_action_t action>
+    template<class T, kintex7sdr_reg_action_t action>
     T get_reg(wb_addr_type addr, T data = 0) {
         // setup the out data
-        usrp2_ctrl_data_t out_data = usrp2_ctrl_data_t();
-        out_data.id = htonl(USRP2_CTRL_ID_GET_THIS_REGISTER_FOR_ME_BRO);
+        kintex7sdr_ctrl_data_t out_data = kintex7sdr_ctrl_data_t();
+        out_data.id = htonl(KINTEX7SDR_CTRL_ID_GET_THIS_REGISTER_FOR_ME_BRO);
         out_data.data.reg_args.addr = htonl(addr);
         out_data.data.reg_args.data = htonl(uint32_t(data));
         out_data.data.reg_args.action = action;
 
         // send and recv
-        usrp2_ctrl_data_t in_data =
+        kintex7sdr_ctrl_data_t in_data =
                 this->ctrl_send_and_recv(out_data, MIN_PROTO_COMPAT_REG);
-        UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_OMG_GOT_REGISTER_SO_BAD_DUDE);
+        UHD_ASSERT_THROW(ntohl(in_data.id) == KINTEX7SDR_CTRL_ID_OMG_GOT_REGISTER_SO_BAD_DUDE);
         return T(ntohl(in_data.data.reg_args.data));
     }
 
@@ -174,12 +174,12 @@ public:
                           size_t num_bits,
                           bool readback) override {
         static const uhd::dict<spi_config_t::edge_t, int> spi_edge_to_otw =
-                boost::assign::map_list_of(spi_config_t::EDGE_RISE, USRP2_CLK_EDGE_RISE)(
-                        spi_config_t::EDGE_FALL, USRP2_CLK_EDGE_FALL);
+                boost::assign::map_list_of(spi_config_t::EDGE_RISE, KINTEX7SDR_CLK_EDGE_RISE)(
+                        spi_config_t::EDGE_FALL, KINTEX7SDR_CLK_EDGE_FALL);
 
         // setup the out data
-        usrp2_ctrl_data_t out_data = usrp2_ctrl_data_t();
-        out_data.id = htonl(USRP2_CTRL_ID_TRANSACT_ME_SOME_SPI_BRO);
+        kintex7sdr_ctrl_data_t out_data = kintex7sdr_ctrl_data_t();
+        out_data.id = htonl(KINTEX7SDR_CTRL_ID_TRANSACT_ME_SOME_SPI_BRO);
         out_data.data.spi_args.dev = htonl(which_slave);
         out_data.data.spi_args.miso_edge = spi_edge_to_otw[config.miso_edge];
         out_data.data.spi_args.mosi_edge = spi_edge_to_otw[config.mosi_edge];
@@ -188,9 +188,9 @@ public:
         out_data.data.spi_args.data = htonl(data);
 
         // send and recv
-        usrp2_ctrl_data_t in_data =
+        kintex7sdr_ctrl_data_t in_data =
                 this->ctrl_send_and_recv(out_data, MIN_PROTO_COMPAT_SPI);
-        UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE);
+        UHD_ASSERT_THROW(ntohl(in_data.id) == KINTEX7SDR_CTRL_ID_OMG_TRANSACTED_SPI_DUDE);
 
         return ntohl(in_data.data.spi_args.data);
     }
@@ -200,8 +200,8 @@ public:
      **********************************************************************/
     void write_i2c(uint16_t addr, const byte_vector_t &buf) override {
         // setup the out data
-        usrp2_ctrl_data_t out_data = usrp2_ctrl_data_t();
-        out_data.id = htonl(USRP2_CTRL_ID_WRITE_THESE_I2C_VALUES_BRO);
+        kintex7sdr_ctrl_data_t out_data = kintex7sdr_ctrl_data_t();
+        out_data.id = htonl(KINTEX7SDR_CTRL_ID_WRITE_THESE_I2C_VALUES_BRO);
         out_data.data.i2c_args.addr = uint8_t(addr);
         out_data.data.i2c_args.bytes = buf.size();
 
@@ -212,15 +212,15 @@ public:
         std::copy(buf.begin(), buf.end(), out_data.data.i2c_args.data);
 
         // send and recv
-        usrp2_ctrl_data_t in_data =
+        kintex7sdr_ctrl_data_t in_data =
                 this->ctrl_send_and_recv(out_data, MIN_PROTO_COMPAT_I2C);
-        UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE);
+        UHD_ASSERT_THROW(ntohl(in_data.id) == KINTEX7SDR_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE);
     }
 
     byte_vector_t read_i2c(uint16_t addr, size_t num_bytes) override {
         // setup the out data
-        usrp2_ctrl_data_t out_data = usrp2_ctrl_data_t();
-        out_data.id = htonl(USRP2_CTRL_ID_DO_AN_I2C_READ_FOR_ME_BRO);
+        kintex7sdr_ctrl_data_t out_data = kintex7sdr_ctrl_data_t();
+        out_data.id = htonl(KINTEX7SDR_CTRL_ID_DO_AN_I2C_READ_FOR_ME_BRO);
         out_data.data.i2c_args.addr = uint8_t(addr);
         out_data.data.i2c_args.bytes = num_bytes;
 
@@ -228,9 +228,9 @@ public:
         UHD_ASSERT_THROW(num_bytes <= sizeof(out_data.data.i2c_args.data));
 
         // send and recv
-        usrp2_ctrl_data_t in_data =
+        kintex7sdr_ctrl_data_t in_data =
                 this->ctrl_send_and_recv(out_data, MIN_PROTO_COMPAT_I2C);
-        UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_HERES_THE_I2C_DATA_DUDE);
+        UHD_ASSERT_THROW(ntohl(in_data.id) == KINTEX7SDR_CTRL_ID_HERES_THE_I2C_DATA_DUDE);
         UHD_ASSERT_THROW(in_data.data.i2c_args.bytes == num_bytes);
 
         // copy out the data
@@ -244,9 +244,9 @@ public:
     /***********************************************************************
      * Send/Recv over control
      **********************************************************************/
-    usrp2_ctrl_data_t ctrl_send_and_recv(const usrp2_ctrl_data_t &out_data,
-                                         uint32_t lo = USRP2_FW_COMPAT_NUM,
-                                         uint32_t hi = USRP2_FW_COMPAT_NUM) {
+    kintex7sdr_ctrl_data_t ctrl_send_and_recv(const kintex7sdr_ctrl_data_t &out_data,
+                                         uint32_t lo = KINTEX7SDR_FW_COMPAT_NUM,
+                                         uint32_t hi = KINTEX7SDR_FW_COMPAT_NUM) {
         std::lock_guard <std::mutex> lock(_ctrl_mutex);
 
         for (size_t i = 0; i < CTRL_RECV_RETRIES; i++) {
@@ -263,18 +263,18 @@ public:
         throw uhd::runtime_error("link dead: timeout waiting for control packet ACK");
     }
 
-    usrp2_ctrl_data_t ctrl_send_and_recv_internal(
-            const usrp2_ctrl_data_t &out_data, uint32_t lo, uint32_t hi, const double timeout) {
+    kintex7sdr_ctrl_data_t ctrl_send_and_recv_internal(
+            const kintex7sdr_ctrl_data_t &out_data, uint32_t lo, uint32_t hi, const double timeout) {
         // fill in the seq number and send
-        usrp2_ctrl_data_t out_copy = out_data;
+        kintex7sdr_ctrl_data_t out_copy = out_data;
         out_copy.proto_ver = htonl(_protocol_compat);
         out_copy.seq = htonl(++_ctrl_seq_num);
-        _ctrl_transport->send(boost::asio::buffer(&out_copy, sizeof(usrp2_ctrl_data_t)));
+        _ctrl_transport->send(boost::asio::buffer(&out_copy, sizeof(kintex7sdr_ctrl_data_t)));
 
         // loop until we get the packet or timeout
         uint8_t usrp2_ctrl_data_in_mem[udp_simple::mtu]; // allocate max bytes for recv
-        const usrp2_ctrl_data_t *ctrl_data_in =
-                reinterpret_cast<const usrp2_ctrl_data_t *>(usrp2_ctrl_data_in_mem);
+        const kintex7sdr_ctrl_data_t *ctrl_data_in =
+                reinterpret_cast<const kintex7sdr_ctrl_data_t *>(usrp2_ctrl_data_in_mem);
         while (true) {
             size_t len = _ctrl_transport->recv(
                     boost::asio::buffer(usrp2_ctrl_data_in_mem), timeout);
@@ -291,7 +291,7 @@ public:
                                       : (boost::format("[%d to %d]") % lo % hi))
                         % compat % this->images_warn_help_message()));
             }
-            if (len >= sizeof(usrp2_ctrl_data_t)
+            if (len >= sizeof(kintex7sdr_ctrl_data_t)
                 and ntohl(ctrl_data_in->seq) == _ctrl_seq_num) {
                 return *ctrl_data_in;
             }
@@ -328,7 +328,7 @@ public:
     }
 
     const std::string get_fw_version_string(void) override {
-        uint32_t minor = this->get_reg<uint32_t, USRP2_REG_ACTION_FW_PEEK32>(U2_FW_REG_VER_MINOR);
+        uint32_t minor = this->get_reg<uint32_t, KINTEX7SDR_REG_ACTION_FW_PEEK32>(U2_FW_REG_VER_MINOR);
         return str(boost::format("%u.%u") % _protocol_compat % minor);
     }
 

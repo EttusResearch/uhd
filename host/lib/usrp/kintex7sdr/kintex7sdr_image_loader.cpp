@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "usrp2/fw_common.h"
-#include "usrp2/usrp2_impl.hpp"
+#include "fw_common.h"
+#include "kintex7sdr_impl.hpp"
 #include "kintex7sdr_iface.hpp"
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
@@ -142,28 +142,28 @@ typedef struct {
  * uhd::image_loader functionality
  **********************************************************************/
 
-static void print_usrp2_error(const image_loader::image_loader_args_t &image_loader_args) {
+static void print_kintex7sdr_error(const image_loader::image_loader_args_t &image_loader_args) {
 #ifdef UHD_PLATFORM_WIN32
-    std::string usrp2_card_burner_gui = "\"";
+    std::string kintex7sdr_card_burner_gui = "\"";
     const std::string nl              = " ^\n    ";
 #else
-    std::string usrp2_card_burner_gui = "sudo \"";
+    std::string kintex7sdr_card_burner_gui = "sudo \"";
     const std::string nl = " \\\n    ";
 #endif
 
-    usrp2_card_burner_gui += find_utility("usrp2_card_burner_gui.py");
-    usrp2_card_burner_gui += "\"";
+    kintex7sdr_card_burner_gui += find_utility("kintex7sdr_card_burner_gui.py");
+    kintex7sdr_card_burner_gui += "\"";
 
     if (image_loader_args.load_firmware) {
-        usrp2_card_burner_gui += str(boost::format("%s--fw=\"%s\"") % nl
+        kintex7sdr_card_burner_gui += str(boost::format("%s--fw=\"%s\"") % nl
                                      % ((image_loader_args.firmware_path.empty())
-                                        ? find_image_path("usrp2_fw.bin")
+                                        ? find_image_path("kintex7sdr_fw.bin")
                                         : image_loader_args.firmware_path));
     }
     if (image_loader_args.load_fpga) {
-        usrp2_card_burner_gui += str(
+        kintex7sdr_card_burner_gui += str(
                 boost::format("%s--fpga=\"%s\"") % nl
-                % ((image_loader_args.fpga_path.empty()) ? find_image_path("usrp2_fpga.bin")
+                % ((image_loader_args.fpga_path.empty()) ? find_image_path("kintex7sdr_fpga.bin")
                                                          : image_loader_args.fpga_path));
     }
 
@@ -173,7 +173,7 @@ static void print_usrp2_error(const image_loader::image_loader_args_t &image_loa
                     "Instead, plug the device's SD card into your machine and run this "
                     "command:\n\n"
                     "%s")
-            % usrp2_card_burner_gui));
+            % kintex7sdr_card_burner_gui));
 }
 
 /*
@@ -188,7 +188,7 @@ kintex7sdr_send_and_recv(udp_simple::sptr
                    uint8_t *data
 ) {
     pkt_out->
-            proto_ver = htonx<uint32_t>(USRP2_FW_COMPAT_NUM);
+            proto_ver = htonx<uint32_t>(KINTEX7SDR_FW_COMPAT_NUM);
     pkt_out->
             id = htonx<uint32_t>(pkt_code);
     xport->
@@ -211,7 +211,7 @@ static uhd::device_addr_t kintex7sdr_find(
                           or image_loader_args.args.has_key("serial")
                           or image_loader_args.args.has_key("name");
 
-    uhd::device_addrs_t found = usrp2_find(image_loader_args.args);
+    uhd::device_addrs_t found = kintex7sdr_find(image_loader_args.args);
 
     if (!found.empty()) {
         uhd::device_addrs_t kintex7sdr_found;
@@ -246,7 +246,7 @@ static uhd::device_addr_t kintex7sdr_find(
                             % ntohl(pkt_in->id)));
             } else if (user_specified) {
                 // At this point, we haven't received any response, so assume it's a USRP2
-                print_usrp2_error(image_loader_args);
+                print_kintex7sdr_error(image_loader_args);
             }
         }
 
@@ -672,7 +672,7 @@ static bool kintex7sdr_image_loader(const image_loader::image_loader_args_t &ima
 UHD_STATIC_BLOCK(register_kintex7sdr_image_loader) {
     std::string recovery_instructions =
             "Aborting. Your USRP-N Series unit will likely be unusable.\n"
-            "Refer to http://files.ettus.com/manual/page_usrp2.html#usrp2_loadflash_brick\n"
+            "Refer to http://files.ettus.com/manual/page_usrp2.html#kintex7sdr_loadflash_brick\n"
             "for details on restoring your device.";
 
     image_loader::register_image_loader(

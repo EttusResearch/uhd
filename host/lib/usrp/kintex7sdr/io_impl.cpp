@@ -4,7 +4,7 @@
 
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
-#include "usrp2/fw_common.h"
+#include "fw_common.h"
 #include "kintex7sdr_impl.hpp"
 #include "kintex7sdr_regs.hpp"
 #include <uhd/exception.hpp>
@@ -401,9 +401,9 @@ void kintex7sdr_impl::program_stream_dest(
     }
 
     // program the stream command
-    usrp2_stream_ctrl_t stream_ctrl = usrp2_stream_ctrl_t();
+    kintex7sdr_stream_ctrl_t stream_ctrl = kintex7sdr_stream_ctrl_t();
     stream_ctrl.sequence            = uhd::htonx(uint32_t(0 /* don't care seq num */));
-    stream_ctrl.vrt_hdr             = uhd::htonx(uint32_t(USRP2_INVALID_VRT_HEADER));
+    stream_ctrl.vrt_hdr             = uhd::htonx(uint32_t(KINTEX7SDR_INVALID_VRT_HEADER));
 
     // user has provided an alternative address and port for destination
     if (args.args.has_key("addr") and args.args.has_key("port")) {
