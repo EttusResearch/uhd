@@ -11,10 +11,10 @@
 ########################################################################
 if (ENABLE_KINTEX7SDR)
     LIBUHD_APPEND_SOURCES(
-            ${CMAKE_CURRENT_SOURCE_DIR}/../usrp2/usrp2_impl.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/../usrp2/usrp2_fifo_ctrl.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/../usrp2/io_impl.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/../usrp2/mb_eeprom.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/io_impl.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/mb_eeprom.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/kintex7sdr_impl.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/clock_ctrl.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/codec_ctrl.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/dboard_iface.cpp
