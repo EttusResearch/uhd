@@ -477,8 +477,8 @@ kintex7sdr_impl::kintex7sdr_impl(const device_addr_t& _device_addr)
         ////////////////////////////////////////////////////////////////
         // create codec control objects
         ////////////////////////////////////////////////////////////////
-        const fs_path rx_codec_path = mb_path / "rx_codecs/K";
-        const fs_path tx_codec_path = mb_path / "tx_codecs/K";
+        const fs_path rx_codec_path = mb_path / "rx_codecs/A";
+        const fs_path tx_codec_path = mb_path / "tx_codecs/A";
         _tree->create<int>(rx_codec_path / "gains"); // phony property so this dir exists
         _tree->create<int>(tx_codec_path / "gains"); // phony property so this dir exists
         _mbc[mb].codec = kintex7sdr_codec_ctrl::make(_mbc[mb].iface, _mbc[mb].spiface);
