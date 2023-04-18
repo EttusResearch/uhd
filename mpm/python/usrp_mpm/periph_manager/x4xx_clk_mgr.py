@@ -180,6 +180,7 @@ class X4xxClockMgr:
         self._reference_pll = None
         self._rpll_i2c_bus = None
         self._base_ref_clk_select = None
+        self._set_reset_rfdc = lambda **kwargs: None
         self._set_reset_db_clocks = lambda *args: None
         self._rpll_reference_sources = {}
         # Init peripherals
@@ -326,14 +327,26 @@ class X4xxClockMgr:
         self._master_clock_rate = initial_mcr
 
         # Force reset the RFDC to ensure it is in a good state
-        self._reset_clocks(value=True, reset_list=('rfdc',))
-        self._reset_clocks(value=False, reset_list=('rfdc',))
+        self.rfdc.set_reset(reset=True)
+        self.rfdc.set_reset(reset=False)
 
         # Synchronize SYSREF and clock distributed to all converters
         self.rfdc.sync()
+        self.set_rfdc_reset_cb(self.rfdc.set_reset)
 
-        self.set_master_clock_rate(initial_mcr)
+        # The initial default mcr only works if we have an FPGA with
+        # a decimation of 2. But we need the overlay applied before we
+        # can detect decimation, and that requires clocks to be initialized.
+        self.set_master_clock_rate(self.rfdc.get_default_mcr())
 
+
+    @no_rpc
+    def set_rfdc_reset_cb(self, rfdc_reset_cb):
+        """
+        Set reference to RFDC control. Ideally, we'd get that in __init__(), but
+        due to order of operations, it's not ready yet when we call that.
+        """
+        self._set_reset_rfdc = rfdc_reset_cb
 
     @no_rpc
     def set_dboard_reset_cb(self, db_reset_cb):
@@ -369,6 +382,7 @@ class X4xxClockMgr:
         """
         Removes any stored references to our owning X4xx class instance
         """
+        self._set_reset_rfdc = None
         self._set_reset_db_clocks = None
         self.rfdc = None
 
@@ -785,7 +799,7 @@ class X4xxClockMgr:
             if 'cpld' in reset_list:
                 self._cpld_control.enable_pll_ref_clk(enable=False)
             if 'rfdc' in reset_list:
-                self.rfdc.set_reset(reset=True)
+                self._set_reset_rfdc(reset=True)
             if 'spll' in reset_list:
                 self._sample_pll.reset(value, hard=True)
             if 'rpll' in reset_list:
@@ -797,9 +811,7 @@ class X4xxClockMgr:
             if 'spll' in reset_list:
                 self._sample_pll.reset(value, hard=True)
             if 'rfdc' in reset_list:
-                clk_config = self.clk_policy.get_config(
-                    self.get_ref_clock_freq(), [self._master_clock_rate])
-                self.rfdc.set_reset(reset=False, rfdc_configs=clk_config.rfdc_configs)
+                self._set_reset_rfdc(reset=False)
             if 'cpld' in reset_list:
                 self._cpld_control.enable_pll_ref_clk(enable=True)
             if 'db_clock' in reset_list:

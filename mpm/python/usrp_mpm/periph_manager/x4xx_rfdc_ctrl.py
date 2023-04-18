@@ -45,8 +45,27 @@ class X4xxRfdcCtrl:
         },
     ]
 
-    def __init__(self, log):
+    # Maps all possible master_clock_rate (data clk rate * data SPC) values to the
+    # corresponding sample rate, expected FPGA decimation, whether to configure
+    # the SPLL in legacy mode (which uses a different divider), and whether half-band
+    # resampling is used.
+    # Using an OrderedDict to use the first rates as a preference for the default
+    # rate for its corresponding decimation.
+    master_to_sample_clk = OrderedDict({
+        #      MCR:    (SPLL, decimation, legacy mode, half-band resampling)
+        122.88e6*4:    (2.94912e9, 2, False, False), # RF (1M-8G)
+        122.88e6*2:    (2.94912e9, 2, False, True),  # RF (1M-8G)
+        122.88e6*1:    (2.94912e9, 8, False, False), # RF (1M-8G)
+        125e6*1:       (3.00000e9, 8, False, False), # RF (1M-8G)
+        125e6*2:       (3.00000e9, 2, False, True),  # RF (1M-8G)
+        125e6*4:       (3.00000e9, 2, False, False), # RF (1M-8G)
+        200e6:         (3.00000e9, 4, True,  False), # RF (Legacy Mode)
+    })
+
+
+    def __init__(self, get_spll_freq, log):
         self.log = log.getChild('RFDC')
+        self._get_spll_freq = get_spll_freq
         self._rfdc_regs = RfdcRegsControl(self.rfdc_regs_label, self.log)
         self._rfdc_ctrl = lib.rfdc.rfdc_ctrl()
         self._rfdc_ctrl.init(RFDC_DEVICE_ID)
@@ -75,13 +94,14 @@ class X4xxRfdcCtrl:
         Removes any stored references to our owning X4xx class instance and
         destructs anything that must happen at teardown
         """
+        self._get_spll_freq = None
         del self._rfdc_ctrl
 
     ###########################################################################
     # Public APIs (not available as MPM RPC calls)
     ###########################################################################
     @no_rpc
-    def set_reset(self, reset=True, rfdc_configs=None):
+    def set_reset(self, reset=True):
         """
         Resets the RFDC FPGA components or takes them out of reset.
         """
@@ -117,8 +137,7 @@ class X4xxRfdcCtrl:
         # Set sample rate for all active tiles
         active_converters = set()
         for db_idx, db_info in enumerate(self.RFDC_DB_MAP):
-            rfdc_config = rfdc_configs[db_idx]
-            db_rfdc_resamp = rfdc_config.resampling
+            db_rfdc_resamp, _ = self._rfdc_regs.get_rfdc_resampling_factor(db_idx)
             for converter_type, tile_block_set in db_info.items():
                 for tile, block in tile_block_set:
                     is_dac = converter_type != 'adc'
@@ -126,7 +145,7 @@ class X4xxRfdcCtrl:
                     active_converters.add(active_converter_tuple)
         for tile, block, resampling_factor, is_dac in active_converters:
             self._rfdc_ctrl.reset_mixer_settings(tile, block, is_dac)
-            self._rfdc_ctrl.set_sample_rate(tile, is_dac, rfdc_config.conv_rate)
+            self._rfdc_ctrl.set_sample_rate(tile, is_dac, self._get_spll_freq())
             self._set_interpolation_decimation(tile, block, is_dac, resampling_factor)
 
         self._rfdc_regs.log_status()
@@ -182,6 +201,19 @@ class X4xxRfdcCtrl:
                 self._rfdc_ctrl.get_tile_latency(tile, True))
         if len(dac_tile_latency_set) != 1:
             raise RuntimeError("DAC tiles failed to sync properly")
+
+    @no_rpc
+    def get_default_mcr(self):
+        """
+        Gets the default master clock rate based on FPGA decimation
+        """
+        fpga_decimation, fpga_halfband = self._rfdc_regs.get_rfdc_resampling_factor(0)
+        for master_clock_rate in self.master_to_sample_clk:
+            _, decimation, _, halfband = self.master_to_sample_clk[master_clock_rate]
+            if decimation == fpga_decimation and fpga_halfband == halfband:
+                return master_clock_rate
+        raise RuntimeError('No master clock rate acceptable for current fpga '
+                           'with decimation of {}'.format(fpga_decimation))
 
     @no_rpc
     def get_dsp_bw(self):
