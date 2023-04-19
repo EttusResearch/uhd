@@ -32,7 +32,7 @@ set(MSVC_MIN_VERSION "1910")
 set(MSVC_MIN_VERSION_READABLE "15.0")
 # This Python version gets used for Python API (if requested) as well as
 # all the build-time Python scripts
-set(PYTHON_MIN_VERSION "3.6")
+set(PYTHON_MIN_VERSION "3.7")
 # Other deps
 set(SETUPTOOLS_MIN_VERSION "40.0")
 set(BOOST_MIN_VERSION "1.65")
