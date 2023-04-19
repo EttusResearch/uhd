@@ -34,7 +34,7 @@ jobs:
     clean: all
   container:
     image: '$(dockerImagePrefix)$(DockerImageName):$(dockerBuildNumber)'
-    endpoint: 'niartifacts.jfrog.io'
+    endpoint: 'rnd-docker-niartifacts-pre-readonly'
   steps:
   - checkout: self
     clean: true
