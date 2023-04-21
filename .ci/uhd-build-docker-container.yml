@@ -149,7 +149,7 @@ jobs:
 
 - job: build_image_win
   displayName: Build Docker Image Windows
-  timeoutInMinutes: 120
+  timeoutInMinutes: 180
   pool:
     name: de-dre-lab
     demands:
