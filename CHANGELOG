@@ -1,6 +1,14 @@
 Change Log for Releases
 ==============================
 
+## 004.001.000.007
+* mpm
+  - Simplify x4xx_bist nsync_fabric
+* ci
+  - Update commit vcpkg and CMake version
+* test
+  - Add proper include
+
 ## 004.001.000.006
 * mpm
   - add support for lattice zbx cpld

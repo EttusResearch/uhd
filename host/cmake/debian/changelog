@@ -1,3 +1,15 @@
+uhd (4.1.0.7-0ubuntu1) ubuntu_release; urgency=low
+
+  * mpm
+    - Simplify x4xx_bist nsync_fabric
+  * ci
+    - Update commit vcpkg and CMake version
+  * test
+    - Add proper include
+
+ -- Ettus Research <packages@ettus.com>  Tue, 25 Apr 2023 04:15:34 -0800
+
+
 uhd (4.1.0.6-0ubuntu1) ubuntu_release; urgency=low
 
   * mpm
