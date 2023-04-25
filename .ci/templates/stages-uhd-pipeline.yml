@@ -57,7 +57,7 @@ resources:
   pipelines:
   - pipeline: uhd_build_docker_container
     source: 'uhddev Build Docker Containers'
-    branch: master
+    branch: UHD-4.4
   - pipeline: usrp-kas-pipeline
     source: 'usrp-kas'
     branch: zeus-ci
