@@ -80,6 +80,7 @@ For this reason, it requires callbacks to reset RFDC and daughterboard clocks.
 """
 
 from enum import Enum
+from dataclasses import dataclass
 from usrp_mpm import lib # Pulls in everything from C++-land
 from usrp_mpm.sys_utils import i2c_dev
 from usrp_mpm.sys_utils.gpio import Gpio
@@ -88,6 +89,7 @@ from usrp_mpm.periph_manager.x4xx_periphs import MboardRegsControl
 from usrp_mpm.periph_manager.x4xx_sample_pll import LMK04832X4xx
 from usrp_mpm.periph_manager.x4xx_reference_pll import LMK03328X4xx
 from usrp_mpm.periph_manager.x4xx_clk_aux import ClockingAuxBrdControl
+from usrp_mpm.periph_manager.x4xx_clock_types import Spll1Vco, RpllRefSel, RpllBrcSrcSel
 from usrp_mpm.mpmutils import poll_with_timeout
 from usrp_mpm.rpc_server import no_rpc
 
@@ -520,18 +522,7 @@ class X4xxClockMgr:
         Note: The ref clock will change if the sample clock frequency
         is modified.
         """
-        prc_clock_map = {
-            2.94912e9:  61.44e6,
-            3e9:        62.5e6,
-            # 3e9:      50e6, RF Legacy mode will be checked separately
-            3.072e9:    64e6,
-        }
-
-        # RF Legacy Mode always has a PRC rate of 50 MHz
-        if self._sample_pll.is_legacy_mode:
-            return 50e6
-        # else:
-        return prc_clock_map[self.get_spll_freq()]
+        return self._sample_pll.prc_freq
 
     def set_ref_clk_tuning_word(self, tuning_word, out_select=0):
         """
@@ -622,17 +613,24 @@ class X4xxClockMgr:
                            .format(internal_brc_source))
             raise RuntimeError('Invalid internal BRC source of {} was selected.'
                                .format(internal_brc_source))
-        ref_select = self._rpll_reference_sources[internal_brc_source][0]
+        ref_select = RpllRefSel(self._rpll_reference_sources[internal_brc_source][0])
+        ref_rate = self._rpll_reference_sources[internal_brc_source][1]
 
         # If the desired rate matches the rate of the primary reference source,
         # directly passthrough that reference source
         if internal_brc_rate == self._reference_pll.reference_rates[0]:
-            brc_select = 'bypass'
+            brc_select = RpllBrcSrcSel.BYPASS
         else:
-            brc_select = 'PLL'
+            brc_select = RpllBrcSrcSel.PLL
+
+        brc_rate = 25e6
         self._reference_pll.init()
         self._reference_pll.config(
-            ref_select, internal_brc_rate, usr_clk_rate, brc_select)
+            ref_select,
+            ref_rate,
+            brc_rate,
+            usr_clk_rate,
+            brc_select)
         # The internal BRC rate will only change when _config_rpll is called
         # with a new internal BRC rate
         self._int_clock_freq = internal_brc_rate
@@ -642,8 +640,74 @@ class X4xxClockMgr:
         Configures the SPLL for the specified master clock rate.
         """
         self._sample_pll.init()
-        self._sample_pll.config(sample_clock_freq, self.get_ref_clock_freq(),
-                                is_legacy_mode)
+        @dataclass
+        class SpllConfig:
+            """
+            Provide all relevant SPLL settings.
+            """
+            # The reference frequency for the SPLL (e.g. from the external reference input,
+            # often 10 MHz)
+            ref_freq: float
+            # The frequency that is generated at the SPLL output for the ADC/DACs. In
+            # other words, the reference frequency for the RFDC PLLs.
+            output_freq: float
+            # Output divider for the ADC/DAC clock signal
+            output_divider: int
+            # The output divider for the PRC output (PRC is thus PLL2 VCO rate divided
+            # by this)
+            prc_divider: int
+            vcxo_freq: Spll1Vco
+            sysref_div: int
+            clkin0_r_div: int
+            pll1_n_div: int
+            pll2_prescaler: int
+            pll2_n_cal_div: int
+            pll2_n_div: int
+
+        ref_clock_freq = self.get_ref_clock_freq()
+        pfd1 = {2.94912e9: 40e3, 3e9: 50e3, 3.072e9: 40e3}[sample_clock_freq]
+        spll_args = {
+            2.94912e9: {
+                'ref_freq': ref_clock_freq,
+                'output_freq': sample_clock_freq,
+                'output_divider': 1,
+                'prc_divider': 0x3C if is_legacy_mode else 0x30,
+                'vcxo_freq': Spll1Vco.VCO122_88MHz,
+                'sysref_div': 1152,
+                'clkin0_r_div': int(ref_clock_freq / pfd1),
+                'pll1_n_div': 64,
+                'pll2_prescaler': 2,
+                'pll2_n_cal_div': 12,
+                'pll2_n_div': 12,
+            },
+            3e9: {
+                'ref_freq': ref_clock_freq,
+                'output_freq': sample_clock_freq,
+                'output_divider': 1,
+                'prc_divider': 0x3C if is_legacy_mode else 0x30,
+                'vcxo_freq': Spll1Vco.VCO100MHz,
+                'sysref_div': 1200,
+                'clkin0_r_div': int(ref_clock_freq / pfd1),
+                'pll1_n_div': 50,
+                'pll2_prescaler': 3,
+                'pll2_n_cal_div': 10,
+                'pll2_n_div': 10,
+            },
+            3.072e9: {
+                'ref_freq': ref_clock_freq,
+                'output_freq': sample_clock_freq,
+                'output_divider': 1,
+                'prc_divider': 0x3C if is_legacy_mode else 0x30,
+                'vcxo_freq': Spll1Vco.VCO122_88MHz,
+                'sysref_div': 1200,
+                'clkin0_r_div': int(ref_clock_freq / pfd1),
+                'pll1_n_div': 64,
+                'pll2_prescaler': 5,
+                'pll2_n_cal_div': 5,
+                'pll2_n_div': 5,
+            },
+        }[sample_clock_freq]
+        self._sample_pll.config(SpllConfig(**spll_args))
 
     def _set_brc_source(self, clock_source):
         """

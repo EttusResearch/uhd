@@ -17,6 +17,15 @@ class LMK04832:
     LMK_CHIP_ID = 6
     LMK_PROD_ID = 0xD163
 
+    VCXO_FREQUENCIES = [122.88e6, 100.00e6]
+    LMK_VCO0_RANGE_MIN = 2440e6
+    LMK_VCO0_RANGE_MAX = 2580e6
+    LMK_VCO1_RANGE_MIN = 2945e6
+    LMK_VCO1_RANGE_MAX = 3255e6
+
+    # PLL2 Prescaler is in range from 2, 8
+    PLL2_PRESCALER = range(2,9)
+
     def __init__(self, regs_iface, parent_log=None):
         self.log = \
             parent_log.getChild("LMK04832") if parent_log is not None \
