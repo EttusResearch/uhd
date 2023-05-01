@@ -911,6 +911,230 @@ Change Log for Releases
 * x4xx_bist
   - Use get_mpm_client in gpio bist
 
+## 004.001.000.007
+* mpm
+  - Simplify x4xx_bist nsync_fabric
+* ci
+  - Update commit vcpkg and CMake version
+* test
+  - Add proper include
+
+## 004.001.000.006
+* mpm
+  - add support for lattice zbx cpld
+* N320
+  -  Revert PLL lock time reduction
+* images
+  -  Update manifest with latest cpld firmware
+  -  Update ZBX CPLD image in manifest
+  -  zbx lattice cpld image manifest
+* uhd
+  - fixup! add support for max10 variants
+
+## 004.001.000.005
+* ad9361
+  -  Add comment re overclocking
+  -  Modify set-tx-gain procedure to update gain in one go
+* b200
+  -  Re-sync times
+  -  Move the B200 radio control core into usrp/b200/
+* cal
+  -  Use safe version of set_thread_priority()
+* ci
+  -  Device wait to redlock scope for Vivado close
+  -  Add Fedora 34 and remove Fedora 32
+  -  Refactor installers and add Windows support
+  -  Add custom boost version support
+  -  Remove documentation-only changes from pipeline runs
+  -  enable batch CI
+  -  Split CI and PR pipelines for mono pipeline
+  -  Enable custom CXX flags, enable -Werror
+  -  Let make keep building upon failure
+  -  Add clang as a compiler to all Fedora and Ubuntu containers
+* cmake
+  -  use LooseVersion to ensure correct version comparisons
+  -  Fix rfnoc-example (CMake paths)
+  -  Fix issues with static builds and CMRC
+  -  Replace CMAKE_{SOURCE,BINARY}_DIR with UHD_*_DIR
+  -  tests: Add build-python path to PYTHONPATH
+  -  Add check for libatomic linking requirement
+  -  remove duplicate entry in LIBUHD_PYTHON_GEN_SOURCE
+  -  Fix VS names and use relative for images
+* dbsrx
+  -  Fix issue with loop variable
+* debs
+  -  Update upload_debs script
+* devtest
+  -  Clarify data type in multi_usrp_test::send_waveform()
+  -  Add receive stability test to B2xx devtest
+  -  Add receive stability test
+* dissectors
+  -  Fix whitespace formatting in CMake files
+  -  Fix inclusion of glib.h and Python version
+* docs
+  -  Several minor manual improvements
+  -  Collect all RFNoC block controllers in a module in the manual
+  -  Align dependencies and bump deb package versions
+  -  Clarify set/get_gpio_attr() and GPIO banks
+  -  Fix GPIO documentation example
+  -  x410: Fix info on loading SD card images with bmaptool
+  -  Improve docs for rx_streamer::recv() on overruns
+  -  sync: Update page on synchronization
+  -  Fix typo in ZBX Block Diagram
+  -  x4xx: Document configuring eth0 static IP
+  -  Remove bmaptool instructions for writing filesystems
+* examples
+  -  Use cmul for gain block in-tree IP example
+  -  Test all variants in gain testbench
+  -  Make IQ order clear in gain RFNoC block
+  -  Improve txrx_loopback_to_file (late recv, Boost, timing)
+  -  Show how to use in-tree Verilog header
+  -  Add x400/x410 target to RFNoC example
+  -  gpio: Separate bank and port arguments
+  -  usrp_power_meter: fix channel indexing when reading USRP power
+* fpga
+  -  Revert "Add ability to get time from Radio block"
+  -  Add ability to get time from Radio block
+  -  rfnoc: Add RFNoC CHDR resize module
+  -  rfnoc: Add CHDR management util functions
+  -  lib: Clean up axi_mux
+  -  rfnoc: Add labels to axi_switch generate blocks
+  -  rfnoc: Add labels to chdr_mgmt_pkt_handler
+  -  rfnoc: Add documentation to chdr_xb_routing_table
+  -  Shorten line length for Launchpad linter
+  -  x300: Update synchronizer constraint
+  -  n3xx: Update synchronizer constraint
+  -  lib: Update example constraint in synchronizer
+  -  Update help message for setupenv.sh
+  -  Remove stale references to UHD_FPGA_DIR
+  -  tools: Add UHD_FPGA_DIR definition to synthesis
+  -  Set default part for sim in setupenv.sh
+  -  Fix Xilinx bitfile parser for Python 3
+  -  rfnoc: Fix EOB loss in DUC
+  -  sim: Add PkgComplex, PkgMath, and PkgRandom
+  -  lib: Clean up and document lib files
+  -  x400: Remove stale information in register map
+  -  ci: Add testbench pipeline
+* host
+  -  Revert "Add ability to get time from Radio block"
+  -  Add ability to get time from Radio block
+  -  python: Return mb_controller with reference_internal
+  -  x4xx: Implement GPIO API
+  -  Add GPIO functions to MPM RPC shim
+  -  gpio: Create gpio_atr_offsets to store GPIO registers
+* images
+  -  Update image packager script for Python 3
+* lib
+  -  Remove all remaining usage of boost::numeric::bounds<>
+  -  transport: Mark typecast as intended
+  -  transport: Initialize _hshake_args_server
+  -  rfnoc: Make implicit typecasts explicit
+  -  rfnoc: Change enum node_type to enum class
+  -  Add various missing includes
+* libusb
+  -  Remove unused context variable
+* mpm
+  -  x4xx: update mboard_max_rev
+  -  x4xx: Allow GPIO0 and GPIO1 as port names
+  -  x4xx: add DIO GPIO API configuration methods
+  -  mpm: x4xx: Add checks before accessing self.dio_control
+  -  Fix handling of rfic_digital_loopback argument
+  -  rfdc: Tear down RFDC on teardown
+  -  add X410 support for 250e6 master clock rate
+  -  Expose motherboard regs for debugging
+* mpmd
+  -  Increase UHD-side MTU cap for 10 GbE and 1 GbE
+* multi_usrp_rfnoc
+  -  Revert "Reduce latency of get_time_now()"
+  -  Reduce latency of get_time_now()
+* n320
+  -  Reduce PLL lock time
+* n3x0/e3x0
+  -  Remove reference to "master FP-GPIO radio"
+* n3xx
+  -  Add support for rev 10
+  -  Fix White Rabbit
+* python
+  -  multi_usrp: Add set_rx_spp()
+  -  multi_usrp: Fix issues in send_waveform()
+  -  multi_usrp: Fix issues with recv_num_samps()
+  -  Fix dropped-sample calculation in benchmark_rate.py
+  -  multi_usrp: Fix overloaded function definition
+  -  Add new method bindings to noc_block_base
+  -  rfnoc: Change reference type for noc_block_base export
+* responder
+  -  Fix printw function arguments
+* rfnoc
+  -  radio: Fix async message handling channel checks
+  -  mgmt_portal: Fix order of validity checks
+  -  blocks: Minor cleanup (whitespace, typos)
+  -  mgmt_portal: Remove two unused variables
+  -  Add vivado-path to rfnoc_image_builder
+  -  ddc: Improve unit tests and documentation
+  -  duc: Fix frequency range for DUC block
+  -  duc: Remove stale references to CORDIC
+  -  siggen: Fix direction of rotation
+* rh
+  -  Fix auto DC-offset correction and auto-IQ balance APIs
+* tests
+  -  Remove skip_dram from streaming performance test script
+  -  Fix rfnoc_graph mock nodes stop-stream command
+  -  Use reference type to prevent copy
+  -  Fix check in link_test
+  -  Fix potential resource leak
+* tools
+  -  Fix rfnoc dissector build
+* uhd
+  -  add support for max10 variants
+  -  update manifest for x410 cpld
+  -  Update manifest
+  -  update num_recv_frames calculation for ctrl links
+  -  Remove spurious template from property dtor
+  -  Fix spelling errors
+  -  mpm: Expose filesystem version information on MPM tree
+  -  Remove Boost version checks for Boost 1.61
+  -  Fix usage of std::abs with template parameters
+* utils
+  -  Get signal above noise floor when finding optimal gain
+* x300
+  -  Fix error message for wrong reference frequency
+  -  Remove unused variables in x300_eth_mgr.cpp
+  -  Fix MAX_RATE_1GIGE value
+  -  Fix sfpp_io_core tuser width
+  -  Initialize struct variable before using it
+* x410
+  -  correct 100GbE link speed
+
+## 004.001.000.004
+* uhd
+  - Update version in UHDVersion.cmake
+
+## 004.001.000.003
+* uhd
+  - zbx: Prevent TX antenna config from disrupting RX
+
+## 004.001.000.002
+* b200
+  -  Fix overflow handling
+* fpga
+  -  Re-order error and data packets
+  -  Fix sc16 to sc12 converter
+* host
+  -  Add static_assert to prevent meta_range_t(0,0)
+* mpm
+  -  x4xx: update mboard_max_rev
+* mpmd
+  -  Add discoverable feature for trig i/o mode
+* sim
+  -  Update chdr_16sc_to_sc12 testbench
+* tests
+  -  Add recv(0) case to rx_streamer_test
+* uhd
+  -  transport: Avoid exceptions in disconnect_receiver()
+  -  streamer: Restore original recv(0) semantics
+* x4xx_bist
+  -  use get_mpm_client in gpio bist
+
 ## 004.001.000.001
 * cmake
   - remove redundant include
