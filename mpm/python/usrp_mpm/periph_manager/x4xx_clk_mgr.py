@@ -102,6 +102,7 @@ X400_DEFAULT_RPLL_REF_SOURCE = '100M_reliable_clk'
 X400_DEFAULT_MGT_CLOCK_RATE = 156.25e6
 X400_DEFAULT_INT_CLOCK_FREQ = 25e6
 
+
 class X4xxClockMgr:
     """
     X4x0 Clocking Manager
@@ -122,6 +123,11 @@ class X4xxClockMgr:
     TIME_SOURCE_GPSDO = "gpsdo"
     TIME_SOURCE_QSFP0 = "qsfp0"
 
+    X400_DEFAULT_EXT_CLOCK_FREQ = 10e6
+    X400_DEFAULT_MASTER_CLOCK_RATE = 122.88e6
+    X400_DEFAULT_TIME_SOURCE = TIME_SOURCE_INTERNAL
+    X400_DEFAULT_CLOCK_SOURCE = CLOCK_SOURCE_INTERNAL
+
     # All valid sync_sources for X4xx in the form of (clock_source, time_source)
     valid_sync_sources = {
         (CLOCK_SOURCE_MBOARD, TIME_SOURCE_INTERNAL),
@@ -139,11 +145,7 @@ class X4xxClockMgr:
         FAIL = 'failure'
 
     def __init__(self,
-                 clock_source,
-                 time_source,
-                 ref_clock_freq,
-                 sample_clock_freq,
-                 is_legacy_mode,
+                 args,
                  clk_aux_board,
                  cpld_control,
                  log):
@@ -151,12 +153,32 @@ class X4xxClockMgr:
         self.log = log.getChild("ClkMgr")
         self._cpld_control = cpld_control
         self._clocking_auxbrd = clk_aux_board
-        self._time_source = time_source
-        self._clock_source = clock_source
+        self._master_clock_rate = float(
+            args.get('master_clock_rate', self.X400_DEFAULT_MASTER_CLOCK_RATE))
+        from usrp_mpm.periph_manager.x4xx_rfdc_ctrl import X4xxRfdcCtrl
+        sample_clock_freq, _, is_legacy_mode, _ = \
+            X4xxRfdcCtrl.master_to_sample_clk[self._master_clock_rate]
+
+        self._safe_sync_source = {
+            'clock_source': self.X400_DEFAULT_CLOCK_SOURCE,
+            'time_source': self.X400_DEFAULT_TIME_SOURCE,
+        }
+        initial_clock_source = args.get('clock_source', self.X400_DEFAULT_CLOCK_SOURCE)
+        if not self._clocking_auxbrd:
+            self._safe_sync_source = {
+                'clock_source': X4xxClockMgr.CLOCK_SOURCE_MBOARD,
+                'time_source': X4xxClockMgr.TIME_SOURCE_INTERNAL,
+            }
+            initial_clock_source = X4xxClockMgr.CLOCK_SOURCE_MBOARD
+
+        self._time_source = args.get('time_source', self.X400_DEFAULT_TIME_SOURCE)
+        self._clock_source = initial_clock_source
         self._int_clock_freq = X400_DEFAULT_INT_CLOCK_FREQ
-        self._ext_clock_freq = ref_clock_freq
+        self._ext_clock_freq = float(args.get(
+            'ext_clock_freq', self.X400_DEFAULT_EXT_CLOCK_FREQ))
         # Preallocate other objects to satisfy linter
         self.mboard_regs_control = None
+        self.rfdc = None
         self._sample_pll = None
         self._reference_pll = None
         self._rpll_i2c_bus = None
@@ -169,8 +191,8 @@ class X4xxClockMgr:
         self._init_clk_peripherals()
         # Now initialize the clocks themselves
         self._init_ref_clock_and_time(
-            clock_source,
-            ref_clock_freq,
+            self._clock_source,
+            self._ext_clock_freq,
             sample_clock_freq,
             is_legacy_mode,
         )
@@ -284,6 +306,31 @@ class X4xxClockMgr:
     # Public APIs (that are not exposed as MPM calls)
     ###########################################################################
     @no_rpc
+    def finalize_init(self, args, mboard_regs_control, rfdc):
+        """
+        Store a reference to the RFdc object, and update internal state.
+
+        This completes initialization of the clocking. After this call, all
+        clocks are ticking at a useful rate.
+        """
+        self.mboard_regs_control = mboard_regs_control
+        self.rfdc = rfdc
+
+        # Force reset the RFDC to ensure it is in a good state
+        self.rfdc.set_reset(reset=True)
+        self.rfdc.set_reset(reset=False)
+
+        # Synchronize SYSREF and clock distributed to all converters
+        self.rfdc.sync()
+        self.set_rfdc_reset_cb(self.rfdc.set_reset)
+
+        # The initial default mcr only works if we have an FPGA with
+        # a decimation of 2. But we need the overlay applied before we
+        # can detect decimation, and that requires clocks to be initialized.
+        self.set_master_clock_rate(self.rfdc.get_default_mcr())
+
+
+    @no_rpc
     def set_rfdc_reset_cb(self, rfdc_reset_cb):
         """
         Set reference to RFDC control. Ideally, we'd get that in __init__(), but
@@ -300,7 +347,28 @@ class X4xxClockMgr:
         self._set_reset_db_clocks = db_reset_cb
 
     @no_rpc
-    def unset_cbs(self):
+    def init(self, args):
+        """ Is called when a UHD session is initialized (from x4xx.init()) """
+        # If the caller has not specified clock_source or time_source, set them
+        # to the default values.
+        args['clock_source'] = args.get('clock_source', self.X400_DEFAULT_CLOCK_SOURCE)
+        args['time_source'] = args.get('time_source', self.X400_DEFAULT_TIME_SOURCE)
+        self.set_sync_source(args)
+
+        # If a Master Clock Rate was specified,
+        # re-configure the Sample PLL and all downstream clocks
+        if 'master_clock_rate' in args:
+            self.set_master_clock_rate(float(args['master_clock_rate']))
+
+    @no_rpc
+    def deinit(self):
+        """ Called from x4xx.deinit() """
+        if not self.get_ref_locked():
+            self.log.error("ref clocks aren't locked, falling back to default")
+            self.set_sync_source(self._safe_sync_source)
+
+    @no_rpc
+    def tear_down(self):
         """
         Removes any stored references to our owning X4xx class instance
         """
@@ -315,18 +383,6 @@ class X4xxClockMgr:
             else "external_pps"
         self._sync_spll_clocks(pps_source)
         self._configure_pps_forwarding(True, master_clock_rate)
-
-    @no_rpc
-    def get_clock_sources(self):
-        """
-        Lists all available clock sources.
-        """
-        return self._avail_clk_sources
-
-    @no_rpc
-    def get_time_sources(self):
-        " Returns list of valid time sources "
-        return self._avail_time_sources
 
     @no_rpc
     def get_ref_clock_freq(self):
@@ -365,7 +421,7 @@ class X4xxClockMgr:
         self._reset_clocks(value=False, reset_list=('rfdc', 'cpld', 'db_clock'))
 
     @no_rpc
-    def set_sync_source(self, clock_source, time_source):
+    def _set_sync_source(self, clock_source, time_source):
         """
         Selects reference clock and PPS sources. Unconditionally re-applies the
         time source to ensure continuity between the reference clock and time
@@ -404,20 +460,34 @@ class X4xxClockMgr:
         return self.SetSyncRetVal.OK
 
     @no_rpc
-    def set_clock_source_out(self, enable=True):
+    def set_master_clock_rate(self, master_clock_rate):
         """
-        Allows routing the clock configured as source on the clk aux board to
-        the RefOut terminal. This only applies to internal, gpsdo and nsync.
+        Sets the master clock rate by configuring the RFDC decimation and SPLL,
+        and then resetting downstream clocks.
         """
-        clock_source = self.get_clock_source()
-        if self.get_time_source() == self.TIME_SOURCE_EXTERNAL:
-            raise RuntimeError(
-                'Cannot export clock when using external time reference!')
-        if clock_source not in self._clocking_auxbrd.VALID_CLK_EXPORTS:
-            raise RuntimeError(f"Invalid source to export: `{clock_source}'")
-        if self._clocking_auxbrd is None:
-            raise RuntimeError("No clocking aux board available")
-        return self._clocking_auxbrd.export_clock(enable)
+        if master_clock_rate not in self.rfdc.master_to_sample_clk:
+            self.log.error('Unsupported master clock rate selection {}'
+                           .format(master_clock_rate))
+            raise RuntimeError('Unsupported master clock rate selection')
+        sample_clock_freq, decimation, is_legacy_mode, halfband = \
+                self.rfdc.master_to_sample_clk[master_clock_rate]
+        for db_idx in (0, 1):
+            db_rfdc_resamp, db_halfband = self.rfdc.get_rfdc_resampling_factor(db_idx)
+            if db_rfdc_resamp != decimation or db_halfband != halfband:
+                msg = (f'master_clock_rate {master_clock_rate} is not compatible '
+                       f'with FPGA which expected decimation {db_rfdc_resamp}')
+                self.log.error(msg)
+                raise RuntimeError(msg)
+        self.log.trace(f"Set master clock rate (SPLL) to: {master_clock_rate}")
+        self.set_spll_rate(sample_clock_freq, is_legacy_mode)
+        self._master_clock_rate = master_clock_rate
+        self.rfdc.sync()
+        self.config_pps_to_timekeeper(master_clock_rate)
+
+    @no_rpc
+    def get_master_clock_rate(self):
+        """ Return the master clock rate set during init """
+        return self._master_clock_rate
 
     ###########################################################################
     # Top-level BIST APIs
@@ -471,7 +541,7 @@ class X4xxClockMgr:
         """
         # LMK28PRIRefClk only available when nsync is source, as lmk
         # is powered off otherwise
-        self.set_sync_source(clock_source='nsync', time_source=self._time_source)
+        self._set_sync_source(clock_source='nsync', time_source=self._time_source)
 
         # Add LMK28PRIRefClk as an available RPLL reference source
         # 1 => PRIREF source; source is output at 25 MHz
@@ -503,6 +573,12 @@ class X4xxClockMgr:
     #
     # These calls will be available as MPM calls
     ###########################################################################
+    def get_clock_sources(self):
+        """
+        Lists all available clock sources.
+        """
+        return self._avail_clk_sources
+
     def get_clock_source(self):
         " Return the currently selected clock source "
         return self._clock_source
@@ -510,6 +586,39 @@ class X4xxClockMgr:
     def get_time_source(self):
         " Return the currently selected time source "
         return self._time_source
+
+    def get_time_sources(self):
+        " Returns list of valid time sources "
+        return self._avail_time_sources
+
+    def set_time_source(self, time_source):
+        """
+        Set a time source
+
+        This will call set_sync_source() internally, and use the current clock
+        source as a clock source. If the current clock source plus the requested
+        time source is not a valid combination, it will coerce the clock source
+        to a valid choice and print a warning.
+        """
+        clock_source = self.get_clock_source()
+        assert clock_source is not None
+        assert time_source is not None
+        if (clock_source, time_source) not in self.valid_sync_sources:
+            old_clock_source = clock_source
+            if time_source == X4xxClockMgr.TIME_SOURCE_QSFP0:
+                clock_source = X4xxClockMgr.CLOCK_SOURCE_MBOARD
+            elif time_source == X4xxClockMgr.TIME_SOURCE_INTERNAL:
+                clock_source = X4xxClockMgr.CLOCK_SOURCE_MBOARD
+            elif time_source == X4xxClockMgr.TIME_SOURCE_EXTERNAL:
+                clock_source = X4xxClockMgr.CLOCK_SOURCE_EXTERNAL
+            elif time_source == X4xxClockMgr.TIME_SOURCE_GPSDO:
+                clock_source = X4xxClockMgr.CLOCK_SOURCE_GPSDO
+            self.log.warning(
+                f'Clock source {old_clock_source} is an invalid selection with '
+                f'time source {time_source}. Coercing clock source to {clock_source}')
+        self.set_sync_source(
+            {"time_source": time_source, "clock_source": clock_source})
+
 
     def get_spll_freq(self):
         """ Returns the output frequency setting of the SPLL """
@@ -560,6 +669,126 @@ class X4xxClockMgr:
             "clock_source": clock_source
         } for (clock_source, time_source) in self.valid_sync_sources]
 
+    def set_clock_source(self, *args):
+        """
+        Ensures the new reference clock source and current time source pairing
+        is valid and sets both by calling set_sync_source().
+        """
+        clock_source = args[0]
+        time_source = self.get_time_source()
+        assert clock_source is not None
+        assert time_source is not None
+        if (clock_source, time_source) not in self.valid_sync_sources:
+            old_time_source = time_source
+            if clock_source in (
+                    X4xxClockMgr.CLOCK_SOURCE_MBOARD,
+                    X4xxClockMgr.CLOCK_SOURCE_INTERNAL):
+                time_source = X4xxClockMgr.TIME_SOURCE_INTERNAL
+            elif clock_source == X4xxClockMgr.CLOCK_SOURCE_EXTERNAL:
+                time_source = X4xxClockMgr.TIME_SOURCE_EXTERNAL
+            elif clock_source == X4xxClockMgr.CLOCK_SOURCE_GPSDO:
+                time_source = X4xxClockMgr.TIME_SOURCE_GPSDO
+            self.log.warning(
+                f"Time source '{old_time_source}' is an invalid selection with "
+                f"clock source '{clock_source}'. "
+                f"Coercing time source to '{time_source}'")
+        self.set_sync_source({
+            "clock_source": clock_source, "time_source": time_source})
+
+    def set_sync_source(self, args):
+        """
+        Selects reference clock and PPS sources. Unconditionally re-applies the
+        time source to ensure continuity between the reference clock and time
+        rates.
+        Note that if we change the source such that the time source is changed
+        to 'external', then we need to also disable exporting the reference
+        clock (RefOut and PPS-In are the same SMA connector).
+        """
+        # Check the clock source, time source, and combined pair are valid:
+        clock_source = args.get('clock_source', self.get_clock_source())
+        if clock_source not in self.get_clock_sources():
+            raise ValueError(f'Clock source {clock_source} is not a valid selection')
+        time_source = args.get('time_source', self.get_time_source())
+        if time_source not in self.get_time_sources():
+            raise ValueError(f'Time source {time_source} is not a valid selection')
+        if (clock_source, time_source) not in self.valid_sync_sources:
+            raise ValueError(
+                f'Clock and time source pair ({clock_source}, {time_source}) is '
+                'not a valid selection')
+        # Sanity checks complete. Now check if we need to disable the RefOut.
+        # Reminder: RefOut and PPSIn share an SMA. Besides, you can't export an
+        # external clock. We are thus not checking for time_source == 'external'
+        # because that's a subset of clock_source == 'external'.
+        # We also disable clock exports for 'mboard', because the mboard clock
+        # does not get routed back to the clocking aux board and thus can't be
+        # exported either.
+        if clock_source in (X4xxClockMgr.CLOCK_SOURCE_EXTERNAL,
+                            X4xxClockMgr.CLOCK_SOURCE_MBOARD) and \
+                                    self._clocking_auxbrd:
+            self._clocking_auxbrd.export_clock(enable=False)
+        # Now the clock manager can do its thing.
+        ret_val = self._set_sync_source(clock_source, time_source)
+        if ret_val == self.SetSyncRetVal.NOP:
+            return
+        try:
+            # Re-set master clock rate. If this doesn't work, it will time out
+            # and throw an exception. We need to put the device back into a safe
+            # state in that case.
+            self.set_master_clock_rate(self._master_clock_rate)
+            # Restore the nco frequency to the same values as before the sync source
+            # was changed, to ensure the device transmission/acquisition continues at
+            # the requested frequency.
+            self.rfdc.rfdc_restore_nco_freq()
+            # Do the same for the calibration freeze state
+            self.rfdc.rfdc_restore_cal_freeze()
+        except RuntimeError as ex:
+            err = f"Setting clock_source={clock_source},time_source={time_source} " \
+                  f"failed, falling back to {self._safe_sync_source}. Error: " \
+                  f"{ex}"
+            self.log.error(err)
+            if args.get('__noretry__', False):
+                self.log.error("Giving up.")
+            else:
+                self.set_sync_source({**self._safe_sync_source, '__noretry__': True})
+            raise
+
+
+    def get_clocks(self):
+        """
+        Gets the RFNoC-related clocks present in the FPGA design
+        """
+        # TODO: The 200 and 40 MHz clocks should not be hard coded, and ideally
+        # be linked to the FPGA image somehow
+        return [
+            {
+                'name': 'radio_clk',
+                'freq': str(self.get_master_clock_rate()),
+                'mutable': 'true'
+            },
+            {
+                'name': 'bus_clk',
+                'freq': str(200e6),
+            },
+            {
+                'name': 'ctrl_clk',
+                'freq': str(40e6),
+            }
+        ]
+
+    def set_clock_source_out(self, enable=True):
+        """
+        Allows routing the clock configured as source on the clk aux board to
+        the RefOut terminal. This only applies to internal, gpsdo and nsync.
+        """
+        clock_source = self.get_clock_source()
+        if self.get_time_source() == self.TIME_SOURCE_EXTERNAL:
+            raise RuntimeError(
+                'Cannot export clock when using external time reference!')
+        if clock_source not in self._clocking_auxbrd.VALID_CLK_EXPORTS:
+            raise RuntimeError(f"Invalid source to export: `{clock_source}'")
+        if self._clocking_auxbrd is None:
+            raise RuntimeError("No clocking aux board available")
+        return self._clocking_auxbrd.export_clock(enable)
 
     ###########################################################################
     # Low-level controls
