@@ -683,7 +683,8 @@ module e31x_core #(
    .pps                   (pps_radioclk),
    .tb_timestamp          (radio_time),
    .tb_timestamp_last_pps (),
-   .tb_period_ns_q32      ()
+   .tb_period_ns_q32      (),
+   .tb_changed            ()
   );
 
   /////////////////////////////////////////////////////////////////////////////

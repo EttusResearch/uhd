@@ -1109,7 +1109,8 @@ module n3xx_core #(
    .pps                   (pps),
    .tb_timestamp          (radio_time),
    .tb_timestamp_last_pps (),
-   .tb_period_ns_q32      ()
+   .tb_period_ns_q32      (),
+   .tb_changed            ()
   );
 
 
