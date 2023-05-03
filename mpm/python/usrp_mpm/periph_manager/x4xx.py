@@ -1027,7 +1027,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         Return main refclock lock status. This is the lock status of the
         reference and sample PLLs.
         """
-        lock_status = self.clk_mgr.get_ref_locked()
+        lock_status = self.clk_mgr.clk_ctrl.get_ref_locked()
         return {
             'name': 'ref_locked',
             'type': 'BOOLEAN',
