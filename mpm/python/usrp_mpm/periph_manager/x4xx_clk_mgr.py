@@ -80,7 +80,6 @@ For this reason, it requires callbacks to reset RFDC and daughterboard clocks.
 """
 
 from enum import Enum
-from dataclasses import dataclass
 from usrp_mpm import lib # Pulls in everything from C++-land
 from usrp_mpm.sys_utils import i2c_dev
 from usrp_mpm.sys_utils.gpio import Gpio
@@ -146,6 +145,7 @@ class X4xxClockMgr:
 
     def __init__(self,
                  args,
+                 clk_policy,
                  clk_aux_board,
                  cpld_control,
                  log):
@@ -153,12 +153,9 @@ class X4xxClockMgr:
         self.log = log.getChild("ClkMgr")
         self._cpld_control = cpld_control
         self._clocking_auxbrd = clk_aux_board
-        self._master_clock_rate = float(
-            args.get('master_clock_rate', self.X400_DEFAULT_MASTER_CLOCK_RATE))
-        from usrp_mpm.periph_manager.x4xx_rfdc_ctrl import X4xxRfdcCtrl
-        sample_clock_freq, _, is_legacy_mode, _ = \
-            X4xxRfdcCtrl.master_to_sample_clk[self._master_clock_rate]
-
+        self.clk_policy = clk_policy
+        self._master_clock_rate = \
+            float(args.get('master_clock_rate', self.clk_policy.get_default_mcr()))
         self._safe_sync_source = {
             'clock_source': self.X400_DEFAULT_CLOCK_SOURCE,
             'time_source': self.X400_DEFAULT_TIME_SOURCE,
@@ -183,7 +180,6 @@ class X4xxClockMgr:
         self._reference_pll = None
         self._rpll_i2c_bus = None
         self._base_ref_clk_select = None
-        self._set_reset_rfdc = lambda **kwargs: None
         self._set_reset_db_clocks = lambda *args: None
         self._rpll_reference_sources = {}
         # Init peripherals
@@ -193,8 +189,6 @@ class X4xxClockMgr:
         self._init_ref_clock_and_time(
             self._clock_source,
             self._ext_clock_freq,
-            sample_clock_freq,
-            is_legacy_mode,
         )
         self._init_meas_clock()
         self._cpld_control.enable_pll_ref_clk()
@@ -258,8 +252,6 @@ class X4xxClockMgr:
     def _init_ref_clock_and_time(self,
                                  clock_source,
                                  ref_clock_freq,
-                                 sample_clock_freq,
-                                 is_legacy_mode,
                                  ):
         """
         Initialize clock and time sources. After this function returns, the
@@ -291,7 +283,9 @@ class X4xxClockMgr:
             X400_DEFAULT_MGT_CLOCK_RATE,
             X400_DEFAULT_INT_CLOCK_FREQ,
             X400_DEFAULT_RPLL_REF_SOURCE)
-        self._config_spll(sample_clock_freq, is_legacy_mode)
+        clk_config = self.clk_policy.get_config(
+            self.get_ref_clock_freq(), [self._master_clock_rate,])
+        self._config_spll(clk_config.spll_config)
         self._reset_clocks(value=False, reset_list=['cpld'])
 
     def _init_meas_clock(self):
@@ -315,28 +309,31 @@ class X4xxClockMgr:
         """
         self.mboard_regs_control = mboard_regs_control
         self.rfdc = rfdc
+        # Update the policy with new info on the FPGA image:
+        self.clk_policy.set_dsp_info(self.rfdc.get_dsp_info())
+
+        # Now do the full MCR init for the first time. When this is done, all
+        # the clocks will be ticking. Now, the policy should know about the
+        # FPGA capabilities, and can choose the correct default MCR.
+        initial_mcr = \
+            float(args.get('master_clock_rate', self.clk_policy.get_default_mcr()))
+        try:
+            initial_mcr = self.clk_policy.coerce_mcr([initial_mcr])[0]
+        except ValueError:
+            self.log.warning(
+                f"Requested initial master clock rate {initial_mcr/1e6} MHz is invalid!")
+            initial_mcr = self.clk_policy.get_default_mcr()
+        self._master_clock_rate = initial_mcr
 
         # Force reset the RFDC to ensure it is in a good state
-        self.rfdc.set_reset(reset=True)
-        self.rfdc.set_reset(reset=False)
+        self._reset_clocks(value=True, reset_list=('rfdc',))
+        self._reset_clocks(value=False, reset_list=('rfdc',))
 
         # Synchronize SYSREF and clock distributed to all converters
         self.rfdc.sync()
-        self.set_rfdc_reset_cb(self.rfdc.set_reset)
 
-        # The initial default mcr only works if we have an FPGA with
-        # a decimation of 2. But we need the overlay applied before we
-        # can detect decimation, and that requires clocks to be initialized.
-        self.set_master_clock_rate(self.rfdc.get_default_mcr())
+        self.set_master_clock_rate(initial_mcr)
 
-
-    @no_rpc
-    def set_rfdc_reset_cb(self, rfdc_reset_cb):
-        """
-        Set reference to RFDC control. Ideally, we'd get that in __init__(), but
-        due to order of operations, it's not ready yet when we call that.
-        """
-        self._set_reset_rfdc = rfdc_reset_cb
 
     @no_rpc
     def set_dboard_reset_cb(self, db_reset_cb):
@@ -372,8 +369,8 @@ class X4xxClockMgr:
         """
         Removes any stored references to our owning X4xx class instance
         """
-        self._set_reset_rfdc = None
         self._set_reset_db_clocks = None
+        self.rfdc = None
 
     @no_rpc
     def config_pps_to_timekeeper(self, master_clock_rate):
@@ -408,17 +405,6 @@ class X4xxClockMgr:
             sample_pll_status['PLL1 lock'],
             sample_pll_status['PLL2 lock'],
         ])
-
-    @no_rpc
-    def set_spll_rate(self, sample_clock_freq, is_legacy_mode):
-        """
-        Safely set the output rate of the sample PLL.
-
-        This will do the required resets.
-        """
-        self._reset_clocks(value=True, reset_list=('rfdc', 'cpld', 'db_clock'))
-        self._config_spll(sample_clock_freq, is_legacy_mode)
-        self._reset_clocks(value=False, reset_list=('rfdc', 'cpld', 'db_clock'))
 
     @no_rpc
     def _set_sync_source(self, clock_source, time_source):
@@ -465,27 +451,19 @@ class X4xxClockMgr:
         Sets the master clock rate by configuring the RFDC decimation and SPLL,
         and then resetting downstream clocks.
         """
-        if master_clock_rate not in self.rfdc.master_to_sample_clk:
-            self.log.error('Unsupported master clock rate selection {}'
-                           .format(master_clock_rate))
-            raise RuntimeError('Unsupported master clock rate selection')
-        sample_clock_freq, decimation, is_legacy_mode, halfband = \
-                self.rfdc.master_to_sample_clk[master_clock_rate]
-        for db_idx in (0, 1):
-            db_rfdc_resamp, db_halfband = self.rfdc.get_rfdc_resampling_factor(db_idx)
-            if db_rfdc_resamp != decimation or db_halfband != halfband:
-                msg = (f'master_clock_rate {master_clock_rate} is not compatible '
-                       f'with FPGA which expected decimation {db_rfdc_resamp}')
-                self.log.error(msg)
-                raise RuntimeError(msg)
+        master_clock_rate = self.clk_policy.coerce_mcr([master_clock_rate])[0]
+        clk_config = self.clk_policy.get_config(
+                self.get_ref_clock_freq(), [master_clock_rate])
         self.log.trace(f"Set master clock rate (SPLL) to: {master_clock_rate}")
-        self.set_spll_rate(sample_clock_freq, is_legacy_mode)
+        self._reset_clocks(value=True, reset_list=('rfdc', 'cpld', 'db_clock'))
+        self._config_spll(clk_config.spll_config)
+        self._reset_clocks(value=False, reset_list=('rfdc', 'cpld', 'db_clock'))
         self._master_clock_rate = master_clock_rate
         self.rfdc.sync()
         self.config_pps_to_timekeeper(master_clock_rate)
 
     @no_rpc
-    def get_master_clock_rate(self):
+    def get_master_clock_rate(self, db_idx=0):
         """ Return the master clock rate set during init """
         return self._master_clock_rate
 
@@ -807,7 +785,7 @@ class X4xxClockMgr:
             if 'cpld' in reset_list:
                 self._cpld_control.enable_pll_ref_clk(enable=False)
             if 'rfdc' in reset_list:
-                self._set_reset_rfdc(reset=True)
+                self.rfdc.set_reset(reset=True)
             if 'spll' in reset_list:
                 self._sample_pll.reset(value, hard=True)
             if 'rpll' in reset_list:
@@ -819,7 +797,9 @@ class X4xxClockMgr:
             if 'spll' in reset_list:
                 self._sample_pll.reset(value, hard=True)
             if 'rfdc' in reset_list:
-                self._set_reset_rfdc(reset=False)
+                clk_config = self.clk_policy.get_config(
+                    self.get_ref_clock_freq(), [self._master_clock_rate])
+                self.rfdc.set_reset(reset=False, rfdc_configs=clk_config.rfdc_configs)
             if 'cpld' in reset_list:
                 self._cpld_control.enable_pll_ref_clk(enable=True)
             if 'db_clock' in reset_list:
@@ -864,79 +844,12 @@ class X4xxClockMgr:
         # with a new internal BRC rate
         self._int_clock_freq = internal_brc_rate
 
-    def _config_spll(self, sample_clock_freq, is_legacy_mode):
+    def _config_spll(self, spll_config):
         """
         Configures the SPLL for the specified master clock rate.
         """
         self._sample_pll.init()
-        @dataclass
-        class SpllConfig:
-            """
-            Provide all relevant SPLL settings.
-            """
-            # The reference frequency for the SPLL (e.g. from the external reference input,
-            # often 10 MHz)
-            ref_freq: float
-            # The frequency that is generated at the SPLL output for the ADC/DACs. In
-            # other words, the reference frequency for the RFDC PLLs.
-            output_freq: float
-            # Output divider for the ADC/DAC clock signal
-            output_divider: int
-            # The output divider for the PRC output (PRC is thus PLL2 VCO rate divided
-            # by this)
-            prc_divider: int
-            vcxo_freq: Spll1Vco
-            sysref_div: int
-            clkin0_r_div: int
-            pll1_n_div: int
-            pll2_prescaler: int
-            pll2_n_cal_div: int
-            pll2_n_div: int
-
-        ref_clock_freq = self.get_ref_clock_freq()
-        pfd1 = {2.94912e9: 40e3, 3e9: 50e3, 3.072e9: 40e3}[sample_clock_freq]
-        spll_args = {
-            2.94912e9: {
-                'ref_freq': ref_clock_freq,
-                'output_freq': sample_clock_freq,
-                'output_divider': 1,
-                'prc_divider': 0x3C if is_legacy_mode else 0x30,
-                'vcxo_freq': Spll1Vco.VCO122_88MHz,
-                'sysref_div': 1152,
-                'clkin0_r_div': int(ref_clock_freq / pfd1),
-                'pll1_n_div': 64,
-                'pll2_prescaler': 2,
-                'pll2_n_cal_div': 12,
-                'pll2_n_div': 12,
-            },
-            3e9: {
-                'ref_freq': ref_clock_freq,
-                'output_freq': sample_clock_freq,
-                'output_divider': 1,
-                'prc_divider': 0x3C if is_legacy_mode else 0x30,
-                'vcxo_freq': Spll1Vco.VCO100MHz,
-                'sysref_div': 1200,
-                'clkin0_r_div': int(ref_clock_freq / pfd1),
-                'pll1_n_div': 50,
-                'pll2_prescaler': 3,
-                'pll2_n_cal_div': 10,
-                'pll2_n_div': 10,
-            },
-            3.072e9: {
-                'ref_freq': ref_clock_freq,
-                'output_freq': sample_clock_freq,
-                'output_divider': 1,
-                'prc_divider': 0x3C if is_legacy_mode else 0x30,
-                'vcxo_freq': Spll1Vco.VCO122_88MHz,
-                'sysref_div': 1200,
-                'clkin0_r_div': int(ref_clock_freq / pfd1),
-                'pll1_n_div': 64,
-                'pll2_prescaler': 5,
-                'pll2_n_cal_div': 5,
-                'pll2_n_div': 5,
-            },
-        }[sample_clock_freq]
-        self._sample_pll.config(SpllConfig(**spll_args))
+        self._sample_pll.config(spll_config)
 
     def _set_brc_source(self, clock_source):
         """
@@ -1063,11 +976,9 @@ class X4xxClockMgr:
         """
         if (freq < 1e6) or (freq > 50e6):
             raise RuntimeError('External reference clock frequency is out of the valid range.')
-        if (freq % 40e3) != 0:
-            # TODO: implement exception of a 50e3 step size for 200MSPS
-            raise RuntimeError('External reference clock frequency is of incorrect step size.')
+        self.clk_policy.validate_ref_clock_freq(freq, [self._master_clock_rate])
         self._ext_clock_freq = freq
         # If the external source is currently selected we also need to re-apply the
         # time_source. This call also updates the dboards' rates.
         if self.get_clock_source() == self.CLOCK_SOURCE_EXTERNAL:
-            self.set_sync_source(self._clock_source, self._time_source)
+            self._set_sync_source(self._clock_source, self._time_source)

@@ -35,6 +35,7 @@ from usrp_mpm.periph_manager.x4xx_clk_aux import ClockingAuxBrdControl
 from usrp_mpm.periph_manager.x4xx_clk_mgr import X4xxClockMgr
 from usrp_mpm.periph_manager.x4xx_gps_mgr import X4xxGPSMgr
 from usrp_mpm.periph_manager.x4xx_rfdc_ctrl import X4xxRfdcCtrl
+from usrp_mpm.periph_manager.x4xx_clock_policy import get_clock_policy
 from usrp_mpm.dboard_manager.x4xx_db_iface import X4xxDboardIface
 
 
@@ -465,6 +466,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         # the clocks, and fix the MCR value later (in init()).
         self.clk_mgr = X4xxClockMgr(
             args,
+            clk_policy=get_clock_policy(self.mboard_info, self.dboard_infos, args, self.log),
             clk_aux_board=self._clocking_auxbrd,
             cpld_control=self.cpld_control,
             log=self.log)
@@ -492,7 +494,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         # available after the RFDC object is created.
 
         # Create control for RFDC
-        self.rfdc = X4xxRfdcCtrl(self.clk_mgr.get_spll_freq, self.log)
+        self.rfdc = X4xxRfdcCtrl(self.log)
         self._add_public_methods(
             self.rfdc, prefix="",
             filter_cb=lambda name, method: not hasattr(method, '_norpc')
