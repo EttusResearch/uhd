@@ -262,6 +262,14 @@ class X4xxRfdcCtrl:
                         self._cal_freeze_cache[(tile_id, block_id)]
                     )
 
+    @no_rpc
+    def enable_iq_swap(self, enable, db_idx, channel, is_dac):
+        """
+        Enable or disable swap of I and Q samples from the RFDCs.
+        """
+        self._rfdc_regs.enable_iq_swap(enable, db_idx, channel, is_dac)
+
+
 
     ###########################################################################
     # Public APIs that get exposed as MPM RPC calls

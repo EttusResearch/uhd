@@ -132,7 +132,8 @@ class RfdcRegsControl:
         en = en & ~en_mask
         self.poke(self.CAL_ENABLE_OFFSET, en | (en_mask if enable else 0))
 
-    def enable_iq_swap(self, enable, db_id, block_id, is_dac):
+    def enable_iq_swap(self, enable, db_id, channel, is_dac):
+        block_id = self.get_converter_mapping()[1 if is_dac else 0][db_id][channel][1]
         iq_swap_bit = (int(is_dac) * 8) + (db_id * 4) + block_id
 
         # Write IQ swap bit with a mask

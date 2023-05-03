@@ -85,19 +85,11 @@ class X4xxDboardIface(DboardIface):
     # MB Control
     #   Some of the MB settings may be controlled from the DB Driver
     ####################################################################
-    def _find_converters(self, direction='both', channel='both'):
-        """
-        Returns a list of (tile_id, block_id, is_dac) tuples describing
-        the data converters associated with a given channel and direction.
-        """
-        return self.mboard.rfdc._find_converters(self.slot_idx, direction, channel)
-
     def enable_iq_swap(self, enable, direction, channel):
         """
         Enable or disable swap of I and Q samples from the RFDCs.
         """
-        for tile_id, block_id, is_dac in self._find_converters(direction, channel):
-            self.mboard.rfdc._rfdc_regs.enable_iq_swap(enable, self.slot_idx, block_id, is_dac)
+        self.mboard.rfdc.enable_iq_swap(enable, self.slot_idx, channel, direction == 'tx')
 
     def get_sample_rate(self):
         """
