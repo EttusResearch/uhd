@@ -1196,7 +1196,10 @@ driven from the RFSoC ("fabric clock") for testing purposes.
 The master clock rate (MCR) depends on the sample clock rate. It also depends on
 the RFDC settings, which are different for different flavours of FPGA images (see
 also \ref x4xx_updating_fpga_types). The actual clock running at this frequency
-is generated digitally, within the RFSoC, and is derived from the SPLL clock.
+is derived from the PRC within the RFSoC, using an MMCM. The MMCM provides
+various clocks that enable resampling in the RFSoC and streaming data into RFNoC
+at a rate dependant on the master clock rate and the number of samples per cycle
+that the RFdc will produce.
 
 Block diagram:
 ```
@@ -1218,18 +1221,41 @@ Block diagram:
  └───────────┼───────────────────────────┼────────────────┘ ││
              │                           │                  ││
              │  ┌─────────────┐          │                  ││
-          ┌──v──v┐            │          │                  ││
-          │ MUX  │            │          │  ┌───── 100 MHz  ││
-          └──┬───┘            │          │  │               ││
+          ┌──v──v┐     25 MHz │          │                  ││
+          │ MUX  │            │       PRI│  ┌───── 100 MHz  ││
+          └──┬───┘            │       REF│  │ SEC REF       ││
              │Base Ref. Clock │          │  │               ││
      ┌───────v───────┐        │  ┌───────v──v──┐            ││
      │ Sample PLL    │        └──┤Reference PLL│            ││
-     │ LMK04832      │           │LMK03328     │            ││
-     └──┬─────────┬──┘           └────┬────────┘            │└─ PL/Fabric Clock
+     │ LMK04832      │           │LMK03328     │            │└─ PL/Fabric Clock
+     └──┬─────────┬──┘           └────┬────────┘            │
         │         │                   │                     │
         v         v                   v                     │
-    Sample      PLL Reference        GTY Banks     GTY Recovered
-    Clock       Clock                              Clock
+    Sample      PLL Reference        GTY Banks         GTY Recovered
+    Reference   Clock (50-64 MHz)                      Clock
+    Clock         │
+    (< 3.2 GHz)   ├─────> DB Connectors
+  ┌─────┼─────────┼────────────────────────────────────────────┐
+  │     │         └─────────┐                                  │
+  │ ┌───┤                   │          ┌──> To DB GPIO Iface,  │
+  │ │┌──V───────┐       ┌───V──────┐PRC│    MB CPLD Iface      │
+  │ ││          │       │          ├───┘                       │
+  │ ││ RFdc PLL │       │  MMCM    │  data_clk (< 250 MHz)     │
+  │ ││ or bypass│       │          ├──┬─────────┐              │
+  │ │└──┬───────┘       └─┬────────┘  │         │              │
+  │ │ Sample           rfdc_clk       │         │              │
+  │ └─Clock            (< 187.5 MHz)  │         │              │
+  │   (1-4 GHz)           │           │         │              │
+  │     │                 │           │         │              │
+  │  ┌──V───────┐         │   ┌───────V──┐    ┌─V───────┐      │
+  │  │          <─────────┴───>          │    │ RFNoC   │      │
+  │  │ RFdc     │             │Resampler │    │ Radio   │      │
+  │  │ Converter├------------->(Optional)├----> Block   ├-->   │
+  │  └──────────┘  data       └──────────┘    └─────────┘      │
+  │                                                            │
+  │                                                            │
+  │                                                      RFSoC │
+  └────────────────────────────────────────────────────────────┘
 ```
 
 Note that this section does not cover every single clock signal present on the
