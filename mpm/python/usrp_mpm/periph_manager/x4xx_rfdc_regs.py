@@ -40,6 +40,60 @@ class RfdcRegsControl:
         # Index corresponds to dboard number.
         self._converter_chains_in_reset = True
 
+    def reset(self):
+        """
+        Resets the state of the register object. Call this after pulling the
+        RFDC out of reset.
+        """
+        # FIXME when we properly engage registers, update them here
+
+    def get_converter_mapping(self):
+        """
+        Returns two tuples: (adc_mapping, dac_mapping).
+
+        Every tuple consists of two sub-tuples: (db0_map, db1_map).
+
+        Every map contains yet another tuple per channel: (tile, block).
+
+        For example, adc_mapping might be of value:
+        (
+            (
+                (0, 1), (0, 0)
+            ), (
+                (2, 1), (2, 0)
+            )
+        )
+
+        This means there are 2 dboards. On the first dboard, we have 2 channels,
+        and channel 0 uses tile 0, block 1.
+        """
+        # FIXME read this from a register!
+        return (((0, 1), (0, 0)), ((2, 1), (2, 0))), \
+               (((0, 0), (0, 1)), ((1, 0), (1, 1)))
+
+    def get_rfdc_info(self, db_idx):
+        """
+        Return a dictionary with information about the RFDC configuration.
+        """
+        assert db_idx in (0, 1)
+        bw, rx_cnt, tx_cnt = self.get_fabric_dsp_info(db_idx)
+        rfdc_resamp = {100: 8, 200: 2, 400: 2}[bw]
+        FABRIC_WORDS_ARRAY = { # [is_dac][factor]
+            False: {0: 16, 1: 16, 2: 8, 4: 4, 8: 2}, # ADC
+            True: {0: -1, 1: -1, 2: 16, 4: 8, 8: 4} # DAC
+        }
+
+        # FIXME: All this should come from a register in the FPGA.
+        return {
+            'num_rx_chans': rx_cnt,
+            'num_tx_chans': tx_cnt,
+            'bw': bw,
+            'extra_resampling': {100: 3, 200: 6, 400: 3}[bw],
+            'spc_rx': FABRIC_WORDS_ARRAY[False][rfdc_resamp],
+            'spc_tx': FABRIC_WORDS_ARRAY[True][rfdc_resamp],
+        }
+
+
     def get_threshold_status(self, slot_id, channel, threshold_idx):
         """
         Retrieves the status bit for the given threshold block
@@ -87,6 +141,9 @@ class RfdcRegsControl:
                     | (enable << iq_swap_bit)
         self.poke(self.IQ_SWAP_OFFSET, reg_val)
 
+    ###########################################################################
+    # MMCM control
+    ###########################################################################
     def set_reset_mmcm(self, reset=True):
         if reset:
             # Put the MMCM in reset (active low)
@@ -94,6 +151,17 @@ class RfdcRegsControl:
         else:
             # Take the MMCM out of reset
             self.poke(self.MMCM_RESET_BASE_OFFSET, 1)
+
+    def reconfigure_mmcm(self, use_regs=True):
+        """
+        Reconfigure the MMCM, either through the DRP registers, or from the
+        hard-coded defaults.
+
+        We assume we're using the MMCM through the clock configuration wizard,
+        for documentation on this register and this procedure, cf. pg065, Table
+        2-2, "Clock Configuration Register".
+        """
+        # Just a stub for now
 
     def wait_for_mmcm_locked(self, timeout=0.001):
         """
@@ -111,6 +179,36 @@ class RfdcRegsControl:
                 return
         self.log.error("MMCM failed to lock in the expected time.")
         raise RuntimeError("MMCM failed to lock within the expected time.")
+
+    def set_mmcm_div(self, div_val):
+        """
+        Set MMCM input divider.
+
+        Does not commit register values!
+        """
+        # Just a stub for now
+
+    def set_mmcm_output_div(self, div_val, clock_name):
+        """
+        Set the output divider of a given clock
+
+        clock_name is either a string name of a clock ('rfdc_clk', 'data_clk'
+        and so on) or an integer, in which case it's the *zero-based* index of
+        the clock (0, 1, 2, etc.). Note that the Clock Wizard GUI uses a 1-based
+        index, but pg065 uses a 0-based index to describe the registers. Between
+        these two, we choose the sane option.
+
+        Does not commit register values!
+        """
+        # Just a stub for now
+
+    def get_mmcm_output_div(self, clock_name):
+        """
+        Get the output divider of a given clock
+
+        For clock_name, see set_mmcm_output_div().
+        """
+        # Just a stub for now
 
     def set_gated_clock_enables(self, value=True):
         """
