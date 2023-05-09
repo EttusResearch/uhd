@@ -12,14 +12,14 @@ import sys
 import os
 import argparse
 import subprocess
-import pyudev
 import re
+import pyudev
 from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.mpmlog import get_main_logger
 from usrp_mpm.mpmutils import check_fpga_state
 from usrp_mpm.sys_utils.sysfs_gpio import GPIOBank
 from usrp_mpm.periph_manager.x4xx_periphs import CtrlportRegs
-from usrp_mpm.periph_manager.x4xx_mb_cpld import MboardCPLD
+from usrp_mpm.periph_manager.x4xx_mb_cpld import make_mb_cpld_ctrl
 from usrp_mpm.chips.max10_cpld_flash_ctrl import Max10CpldFlashCtrl
 from usrp_mpm.sys_utils.udev import dt_symbol_get_spidev
 
@@ -175,10 +175,10 @@ def flash_cpld_update(filename, dboard, cpld_update_strategies=None, logger=None
     :return: True on success, False otherwise
     """
     dboard = int(dboard, 10)
-    logger.info("Updating daughterboard slot {}...".format(dboard))
+    logger.info(f"Updating daughterboard slot {dboard}...")
     # enable required daughterboard clock
     cpld_spi_node = dt_symbol_get_spidev('mb_cpld')
-    cpld_control = MboardCPLD(cpld_spi_node, logger)
+    cpld_control = make_mb_cpld_ctrl(cpld_spi_node, logger)
     cpld_control.enable_daughterboard_support_clock(dboard, enable=True)
     # setup flash configuration engine and required register access
     label = "ctrlport-mboard-regs"
