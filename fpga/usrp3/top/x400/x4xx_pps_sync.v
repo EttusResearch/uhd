@@ -422,13 +422,13 @@ module x4xx_pps_sync #(
   endgenerate
 
   always @(posedge radio_clk[0]) begin
-    pps_shift_reg_rc[3:0] <= {pps_shift_reg_rc[2:0],  pps_delayed_prc_rc[0]};
+    pps_shift_reg_rc[3:0] <= {pps_shift_reg_rc[2:0],  pps_delayed_prc};
     // Restoring a one clock cycle pulse by feeding back to output value.
     pps_out_rc[0] <= pps_shift_reg_rc[prc_rc_divider_rc[1:0]] & ~pps_out_rc[0] & pps_rc_enabled_rc[0];
   end
 
   always @(posedge radio_clk[1]) begin
-    pps_shift_reg_rc[7:4] <= {pps_shift_reg_rc[6:4],  pps_delayed_prc_rc[1]};
+    pps_shift_reg_rc[7:4] <= {pps_shift_reg_rc[6:4],  pps_delayed_prc};
     // Restoring a one clock cycle pulse by feeding back to output value.
     pps_out_rc[1] <= pps_shift_reg_rc[prc_rc_divider_rc[3:2]] & ~pps_out_rc[1] & pps_rc_enabled_rc[1];
   end
