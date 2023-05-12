@@ -257,30 +257,6 @@ class RfdcRegsControl:
 
         return [dsp_bw, dsp_rx_cnt, dsp_tx_cnt]
 
-    def get_rfdc_resampling_factor(self, dboard):
-        """
-        Returns the appropriate decimation/interpolation factor to set in the RFDC.
-        """
-        # DSP vs. RFDC decimation/interpolation dictionary
-        # Key: bandwidth in MHz
-        # Value: (RFDC resampling factor, is Half-band resampling used?)
-        RFDC_RESAMPLING_FACTOR = {
-            100: (8, False), # 100 MHz BW requires 8x RFDC resampling
-            200: (2, True),  # 200 MHz BW requires 2x RFDC resampling
-                             # (400 MHz RFDC DSP used w/ half-band resampling)
-            400: (2, False)  # 400 MHz BW requires 2x RFDC resampling
-        }
-        dsp_bw, _, _ = self.get_fabric_dsp_info(dboard)
-        # When no RF fabric DSP is present (dsp_bw = 0), MPM should
-        # simply use the default RFDC resampling factor (400 MHz).
-        if dsp_bw in RFDC_RESAMPLING_FACTOR:
-            rfdc_resampling_factor, halfband = RFDC_RESAMPLING_FACTOR[dsp_bw]
-        else:
-            rfdc_resampling_factor, halfband = RFDC_RESAMPLING_FACTOR[400]
-            self.log.trace("  Using default resampling!")
-        self.log.trace("  RFDC resampling:  %d", rfdc_resampling_factor)
-        return (rfdc_resampling_factor, halfband)
-
     def set_reset_adc_dac_chains(self, reset=True):
         """ Resets or enables the ADC and DAC chain for the given dboard """
 

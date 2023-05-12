@@ -63,9 +63,8 @@ class X4xxRfdcCtrl:
     })
 
 
-    def __init__(self, get_spll_freq, log):
+    def __init__(self, log):
         self.log = log.getChild('RFDC')
-        self._get_spll_freq = get_spll_freq
         self._rfdc_regs = RfdcRegsControl(self.rfdc_regs_label, self.log)
         self._rfdc_ctrl = lib.rfdc.rfdc_ctrl()
         self._rfdc_ctrl.init(RFDC_DEVICE_ID)
@@ -94,14 +93,13 @@ class X4xxRfdcCtrl:
         Removes any stored references to our owning X4xx class instance and
         destructs anything that must happen at teardown
         """
-        self._get_spll_freq = None
         del self._rfdc_ctrl
 
     ###########################################################################
     # Public APIs (not available as MPM RPC calls)
     ###########################################################################
     @no_rpc
-    def set_reset(self, reset=True):
+    def set_reset(self, reset=True, rfdc_configs=None):
         """
         Resets the RFDC FPGA components or takes them out of reset.
         """
@@ -114,6 +112,7 @@ class X4xxRfdcCtrl:
             # Resetting the MMCM will automatically disable clock buffers
             return
 
+        assert rfdc_configs
         # Take upstream MMCM out of reset
         self._rfdc_regs.set_reset_mmcm(reset=False)
 
@@ -137,26 +136,28 @@ class X4xxRfdcCtrl:
         # Set sample rate for all active tiles
         active_converters = set()
         for db_idx, db_info in enumerate(self.RFDC_DB_MAP):
-            db_rfdc_resamp, _ = self._rfdc_regs.get_rfdc_resampling_factor(db_idx)
+            db_rfdc_resamp = rfdc_configs[db_idx].resampling
+            conv_rate = rfdc_configs[db_idx].conv_rate
             for converter_type, tile_block_set in db_info.items():
                 for tile, block in tile_block_set:
                     is_dac = converter_type != 'adc'
-                    active_converter_tuple = (tile, block, db_rfdc_resamp, is_dac)
+                    active_converter_tuple = (
+                        tile, block, db_rfdc_resamp, is_dac, conv_rate)
                     active_converters.add(active_converter_tuple)
-        for tile, block, resampling_factor, is_dac in active_converters:
+        for tile, block, resampling_factor, is_dac, conv_rate in active_converters:
             self._rfdc_ctrl.reset_mixer_settings(tile, block, is_dac)
             self._rfdc_ctrl.configure_pll(
                 tile,
                 is_dac,
                 0, # XRFDC_EXTERNAL_CLK == 0, means don't use RFDC PLL
-                self._get_spll_freq(),
-                self._get_spll_freq())
+                conv_rate,
+                conv_rate)
             self._set_interpolation_decimation(tile, block, is_dac, resampling_factor)
 
         self._rfdc_regs.log_status()
 
         # Set RFDC NCO reset event source to analog SYSREF
-        for tile, block, _, is_dac in active_converters:
+        for tile, block, _, is_dac, __ in active_converters:
             self._rfdc_ctrl.set_nco_event_src(tile, block, is_dac)
 
 
@@ -225,15 +226,6 @@ class X4xxRfdcCtrl:
         settings that are baked into the FPGA.
         """
         return [self._rfdc_regs.get_rfdc_info(db_idx) for db_idx in range(2)]
-
-    @no_rpc
-    def get_rfdc_resampling_factor(self, db_idx):
-        """
-        Returns a tuple resampling_factor, halfbands.
-
-        See RfdcRegsControl.get_rfdc_resampling_factor().
-        """
-        return self._rfdc_regs.get_rfdc_resampling_factor(db_idx)
 
     @no_rpc
     def rfdc_restore_nco_freq(self):

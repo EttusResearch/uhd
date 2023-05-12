@@ -494,7 +494,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         # available after the RFDC object is created.
 
         # Create control for RFDC
-        self.rfdc = X4xxRfdcCtrl(self.clk_mgr.get_spll_freq, self.log)
+        self.rfdc = X4xxRfdcCtrl(self.log)
         self._add_public_methods(
             self.rfdc, prefix="",
             filter_cb=lambda name, method: not hasattr(method, '_norpc')

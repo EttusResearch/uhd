@@ -264,26 +264,16 @@ class X4xxClockMgr:
         self._master_clock_rate = initial_mcr
 
         # Force reset the RFDC to ensure it is in a good state
-        self.rfdc.set_reset(reset=True)
-        self.rfdc.set_reset(reset=False)
+        self._reset_clocks(True, ('rfdc',))
+        self._reset_clocks(False, ('rfdc',))
 
         # Synchronize SYSREF and clock distributed to all converters
         self.rfdc.sync()
-        self.set_rfdc_reset_cb(self.rfdc.set_reset)
 
         # The initial default mcr only works if we have an FPGA with
         # a decimation of 2. But we need the overlay applied before we
         # can detect decimation, and that requires clocks to be initialized.
         self.set_master_clock_rate(self.clk_policy.get_default_mcr())
-
-
-    @no_rpc
-    def set_rfdc_reset_cb(self, rfdc_reset_cb):
-        """
-        Set reference to RFDC control. Ideally, we'd get that in __init__(), but
-        due to order of operations, it's not ready yet when we call that.
-        """
-        self._set_reset_rfdc = rfdc_reset_cb
 
     @no_rpc
     def set_dboard_reset_cb(self, db_reset_cb):
@@ -324,7 +314,6 @@ class X4xxClockMgr:
         """
         Called by x4xx.tear_down(), when the device driver is being unloaded.
         """
-        self._set_reset_rfdc = None
         self._set_reset_db_clocks = None
         self.rfdc = None
         self._set_reset_db_clocks = None
@@ -502,7 +491,9 @@ class X4xxClockMgr:
             if 'spll' in reset_list:
                 self.clk_ctrl.reset_clock(value, 'spll')
             if 'rfdc' in reset_list:
-                self.rfdc.set_reset(reset=False)
+                clk_config = self.clk_policy.get_config(
+                    self.get_ref_clock_freq(), [self._master_clock_rate,])
+                self.rfdc.set_reset(reset=False, rfdc_configs=clk_config.rfdc_configs)
             if 'cpld' in reset_list:
                 self.clk_ctrl.reset_clock(value, 'cpld')
             if 'db_clock' in reset_list:
@@ -528,8 +519,8 @@ class X4xxClockMgr:
         # Reset everything downstream from SPLL
         self._reset_clocks(value=True, reset_list=('rfdc', 'cpld', 'db_clock'))
         self.clk_ctrl.config_spll(clk_settings.spll_config)
-        self._reset_clocks(value=False, reset_list=('rfdc', 'cpld', 'db_clock'))
         self._master_clock_rate = master_clock_rate
+        self._reset_clocks(value=False, reset_list=('rfdc', 'cpld', 'db_clock'))
         self.rfdc.sync()
         self._config_pps_to_timekeeper(master_clock_rate)
 
