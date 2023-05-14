@@ -24,7 +24,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif(NOT CMAKE_BUILD_TYPE)
 set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "")
 
-#force UHD_RELEASE_MODE to be a string for cmake-gui
+# Force UHD_RELEASE_MODE to be a string for cmake-gui
 set(UHD_RELEASE_MODE "${UHD_RELEASE_MODE}" CACHE STRING "UHD Release Mode")
 
 ########################################################################
@@ -33,7 +33,7 @@ set(UHD_RELEASE_MODE "${UHD_RELEASE_MODE}" CACHE STRING "UHD Release Mode")
 project(UHD CXX C)
 enable_testing()
 
-#make sure our local CMake Modules path comes first
+# Make sure our local CMake Modules path comes first
 list(INSERT CMAKE_MODULE_PATH 0 ${UHD_SOURCE_DIR}/cmake/Modules)
 
 ########################################################################
@@ -222,6 +222,8 @@ if(APPLE)
     if(NOT CMAKE_BUILD_WITH_INSTALL_RPATH)
         set(CMAKE_BUILD_WITH_INSTALL_RPATH ON CACHE
             BOOL "Do Build Using Library Install RPath" FORCE)
+        set(CMAKE_BUILD_WITH_INSTALL_NAME_DIR ON CACHE
+            BOOL "Set install name to install name dir during build" FORCE)
     endif(NOT CMAKE_BUILD_WITH_INSTALL_RPATH)
 endif(APPLE)
 
@@ -308,7 +310,7 @@ set(UHD_BOOST_REQUIRED_COMPONENTS
 
 include(UHDBoost)
 
-include_directories(${Boost_INCLUDE_DIRS})
+include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 
 ########################################################################
