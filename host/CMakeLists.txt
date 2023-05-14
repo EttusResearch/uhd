@@ -14,10 +14,11 @@ cmake_minimum_required(VERSION 3.8)
 if(POLICY CMP0048)
   cmake_policy(SET CMP0048 NEW) # Suppress Version warnings
 endif(POLICY CMP0048)
+
 project(UHD CXX C)
 enable_testing()
 
-#make sure our local CMake Modules path comes first
+# Make sure our local CMake Modules path comes first
 list(INSERT CMAKE_MODULE_PATH 0 ${UHD_SOURCE_DIR}/cmake/Modules)
 
 ########################################################################
@@ -202,6 +203,8 @@ if(APPLE)
     if(NOT CMAKE_BUILD_WITH_INSTALL_RPATH)
         set(CMAKE_BUILD_WITH_INSTALL_RPATH ON CACHE
             BOOL "Do Build Using Library Install RPath" FORCE)
+        set(CMAKE_BUILD_WITH_INSTALL_NAME_DIR ON CACHE
+            BOOL "Set install name to install name dir during build" FORCE)
     endif(NOT CMAKE_BUILD_WITH_INSTALL_RPATH)
 endif(APPLE)
 
@@ -298,7 +301,7 @@ set(UHD_BOOST_REQUIRED_COMPONENTS
 
 include(UHDBoost)
 
-include_directories(${Boost_INCLUDE_DIRS})
+include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 
 ########################################################################

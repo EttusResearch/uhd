@@ -83,7 +83,9 @@ else()
     endif(PC_DPDK_FOUND)
 endif()
 
+
 find_package_handle_standard_args(DPDK
     REQUIRED_VARS DPDK_INCLUDE_DIRS DPDK_LIBRARIES
     VERSION_VAR DPDK_VERSION
+    HANDLE_VERSION_RANGE
 )
