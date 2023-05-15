@@ -1,5 +1,5 @@
 //
-// Copyright 2023 Ettus Research, A National Instruments Company
+// Copyright 2022 Ettus Research, A National Instruments Company
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -11,21 +11,21 @@
 // A numerically ordered list of registers and their HDL source files
 //===============================================================================
 
-  // TX_DATA  : 0x0 (ctrlport_to_jtag.v)
-  // STB_DATA : 0x4 (ctrlport_to_jtag.v)
-  // CONTROL  : 0x8 (ctrlport_to_jtag.v)
-  // RX_DATA  : 0xC (ctrlport_to_jtag.v)
+  // ID EEPROM  : 0x0 : 0x50 (ctrlport_to_i2c.v)
+  // Top Side Temp Sensor : 0x4 : 0x48 (ctrlport_to_i2c.v)
+  // Bottom Side Temp Sensor  : 0x8 : 0x49 (ctrlport_to_i2c.v)
+  // LED GPIO Expander  : 0xC : 0x20 (ctrlport_to_i2c.v)
 
 //===============================================================================
 // RegTypes
 //===============================================================================
 
 //===============================================================================
-// Register Group JTAG_REGS
+// Register Group JTAG_REGS TODO update these
 //===============================================================================
 
   // TX_DATA Register (from ctrlport_to_jtag.v)
-  localparam TX_DATA = 'h0; // Register Offset
+  localparam ID_EEPROM = 'h0; // Register Offset
   localparam TX_DATA_SIZE = 32;  // register width in bits
   localparam TX_DATA_MASK = 32'h0;
 

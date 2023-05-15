@@ -44,7 +44,7 @@ bin: .prereqs
 		--operation p       \
 		output_files/$(TOP_MODULE).pof output_files/$(TOP_MODULE)_isp_off.svf; \
 	echo "Converting bitfile to rpd format..."; \
-	quartus_cpf -c raw_conversion.cof; \
+	quartus_cpf -c ../common/quartus/raw_conversion.cof; \
 	popd;
 
 quar_ip: .prereqs ip
