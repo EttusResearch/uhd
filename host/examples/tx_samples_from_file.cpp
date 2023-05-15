@@ -20,10 +20,10 @@
 
 namespace po = boost::program_options;
 
-static bool stop_signal_called = false;
+volatile sig_atomic_t stop_signal_called = 0;
 void sig_int_handler(int)
 {
-    stop_signal_called = true;
+    stop_signal_called = 1;
 }
 
 template <typename samp_type>
@@ -37,7 +37,6 @@ void send_from_file(
     std::ifstream infile(file.c_str(), std::ifstream::binary);
 
     // loop until the entire file has been read
-
     while (not md.end_of_burst and not stop_signal_called) {
         infile.read((char*)&buff.front(), buff.size() * sizeof(samp_type));
         size_t num_tx_samps = size_t(infile.gcount() / sizeof(samp_type));
@@ -60,7 +59,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 {
     // variables to be set by po
     std::string args, file, type, ant, subdev, ref, wirefmt, channel;
-    size_t spb;
+    size_t spb, n_repeats;
     double rate, freq, gain, bw, delay, lo_offset;
 
     // setup the program options
@@ -68,23 +67,23 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     // clang-format off
     desc.add_options()
         ("help", "help message")
-        ("args", po::value<std::string>(&args)->default_value(""), "multi uhd device address args")
-        ("file", po::value<std::string>(&file)->default_value("usrp_samples.dat"), "name of the file to read binary samples from")
-        ("type", po::value<std::string>(&type)->default_value("short"), "sample type: double, float, or short")
-        ("spb", po::value<size_t>(&spb)->default_value(10000), "samples per buffer")
-        ("rate", po::value<double>(&rate), "rate of outgoing samples")
-        ("freq", po::value<double>(&freq), "RF center frequency in Hz")
-        ("lo-offset", po::value<double>(&lo_offset)->default_value(0.0),
-            "Offset for frontend LO in Hz (optional)")
-        ("gain", po::value<double>(&gain), "gain for the RF chain")
-        ("ant", po::value<std::string>(&ant), "antenna selection")
-        ("subdev", po::value<std::string>(&subdev), "subdevice specification")
-        ("bw", po::value<double>(&bw), "analog frontend filter bandwidth in Hz")
-        ("ref", po::value<std::string>(&ref)->default_value("internal"), "reference source (internal, external, mimo)")
-        ("wirefmt", po::value<std::string>(&wirefmt)->default_value("sc16"), "wire format (sc8 or sc16)")
-        ("delay", po::value<double>(&delay)->default_value(0.0), "specify a delay between repeated transmission of file (in seconds)")
-        ("channel", po::value<std::string>(&channel)->default_value("0"), "which channel to use")
-        ("repeat", "repeatedly transmit file")
+        ("args",      po::value<std::string>(&args)->default_value(""), "multi uhd device address args")
+        ("file",      po::value<std::string>(&file)->default_value("usrp_samples.dat"), "name of the file to read binary samples from")
+        ("type",      po::value<std::string>(&type)->default_value("short"), "sample type: double, float, or short")
+        ("spb",       po::value<size_t>(&spb)->default_value(10000), "samples per buffer")
+        ("rate",      po::value<double>(&rate), "rate of outgoing samples")
+        ("freq",      po::value<double>(&freq), "RF center frequency in Hz")
+        ("bw",        po::value<double>(&bw), "analog frontend filter bandwidth in Hz")
+        ("gain",      po::value<double>(&gain), "gain for the RF chain")
+        ("lo-offset", po::value<double>(&lo_offset)->default_value(0.0), "Offset for frontend LO in Hz (optional)")
+        ("delay",     po::value<double>(&delay)->default_value(0.0), "specify a delay between repeated transmission of file (in seconds)")
+        ("ant",       po::value<std::string>(&ant), "antenna selection")
+        ("subdev",    po::value<std::string>(&subdev), "subdevice specification")
+        ("ref",       po::value<std::string>(&ref)->default_value("internal"), "reference source (internal, external, mimo)")
+        ("wirefmt",   po::value<std::string>(&wirefmt)->default_value("sc16"), "wire format (sc8 or sc16)")
+        ("channel",   po::value<std::string>(&channel)->default_value("0"), "which channel to use")
+        ("repeat",    "repeatedly transmit file in an endless loop. NOTE: Overwrites 'n-repeat' option.")
+        ("n-repeat",  po::value<size_t>(&n_repeats)->default_value(1), "repeat transmission n times. NOTE: Overwritten by 'repeat' option")
         ("int-n", "tune USRP with integer-n tuning")
     ;
     // clang-format on
@@ -99,6 +98,13 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     }
 
     bool repeat = vm.count("repeat") > 0;
+
+    // Warn if both repeat and n-repeat were specified
+    if (repeat and (vm.count("n-repeat") > 0)) {
+        std::cerr << "Both 'repeat' and 'n-repeat' options were specified. \n"
+                  << "The former overwrites the latter to stream until a SIGINT was received. \n"
+                  << "This may not perform as expected!" << std::endl;
+    }
 
     // create a usrp device
     std::cout << std::endl;
@@ -201,7 +207,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     }
 
     // set sigint if user wants to receive
-    if (repeat) {
+    if (repeat and (n_repeats > 0)) {
         std::signal(SIGINT, &sig_int_handler);
         std::cout << "Press Ctrl + C to stop streaming..." << std::endl;
     }
@@ -221,7 +227,21 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
 
     // send from file
-    do {
+    while(true) {
+
+        // First check whether to send or to stop
+        if(stop_signal_called)
+            break;
+
+        if(repeat and (delay > 0.0)) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(int64_t(delay * 1000)));
+        } else {
+            // If no endless repeat was configured, count down the number of repeats
+            if (n_repeats == 0)
+                break;
+            n_repeats--;
+        }
+
         if (type == "double")
             send_from_file<std::complex<double>>(tx_stream, file, spb);
         else if (type == "float")
@@ -230,11 +250,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             send_from_file<std::complex<short>>(tx_stream, file, spb);
         else
             throw std::runtime_error("Unknown type " + type);
-
-        if (repeat and delay > 0.0) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(int64_t(delay * 1000)));
-        }
-    } while (repeat and not stop_signal_called);
+    };
 
     // finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
