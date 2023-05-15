@@ -308,8 +308,8 @@ class x4xx(ZynqComponents, PeriphManagerBase):
             self.log.warning("Failed to initialize device on boot: %s", str(ex))
 
         # Freeze the RFDC calibration by default
-        self.rfdc.set_cal_frozen(1, 1, "both")
-        self.rfdc.set_cal_frozen(1, 0, "both")
+        self.rfdc.set_cal_frozen(1, 1, "all")
+        self.rfdc.set_cal_frozen(1, 0, "all")
 
     # The parent class versions of these functions require access to self, but
     # these versions don't.

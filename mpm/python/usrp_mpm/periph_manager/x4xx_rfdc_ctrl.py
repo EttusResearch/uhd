@@ -264,7 +264,7 @@ class X4xxRfdcCtrl:
         Restores the previously set calibration freeze settings
         """
         for slot_id in [0, 1]:
-            for tile_id, block_id, _ in self._find_converters(slot_id, "rx", "both"):
+            for tile_id, block_id, _ in self._find_converters(slot_id, "rx", "all"):
                 if (tile_id, block_id) in self._cal_freeze_cache:
                     self._rfdc_ctrl.set_cal_frozen(
                         tile_id, block_id, 0
@@ -534,6 +534,10 @@ class X4xxRfdcCtrl:
         Returns a list of (tile_id, block_id, is_dac) tuples describing
         the data converters associated with a given channel and direction.
         """
+        if direction == 'all':
+            direction = 'both'
+        if channel == 'all':
+            channel = 'both'
         if direction not in ('rx', 'tx', 'both'):
             self.log.error('Invalid direction "{}". Cannot find '
                            'associated data converters'.format(direction))
