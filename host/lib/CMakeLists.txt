@@ -17,39 +17,39 @@ macro(LIBUHD_APPEND_LIBS)
 endmacro(LIBUHD_APPEND_LIBS)
 
 macro(LIBUHD_PYTHON_GEN_SOURCE pyfile outfile)
-    #ensure that the directory exists for outfile
+    # Ensure that the directory exists for outfile
     get_filename_component(outfile_dir ${outfile} PATH)
     file(MAKE_DIRECTORY ${outfile_dir})
 
-    #make the outfile depend on the python script
+    # Make the outfile depend on the python script
     add_custom_command(
         OUTPUT ${outfile} DEPENDS ${pyfile} ${LIBUHD_PYTHON_GEN_SOURCE_DEPS}
         COMMAND ${PYTHON_EXECUTABLE} -B ${pyfile} ${outfile}
         COMMENT "Generating ${outfile}"
     )
 
-    #make libuhd depend on the outfile
+    # Make libuhd depend on the outfile
     LIBUHD_APPEND_SOURCES(${outfile})
 endmacro(LIBUHD_PYTHON_GEN_SOURCE)
 
 macro(INCLUDE_SUBDIRECTORY subdir)
-    #insert the current directories on the front of the list
+    # Insert the current directories on the front of the list
     list(INSERT _cmake_source_dirs 0 ${CMAKE_CURRENT_SOURCE_DIR})
     list(INSERT _cmake_binary_dirs 0 ${CMAKE_CURRENT_BINARY_DIR})
 
-    #set the current directories to the names of the subdirs
+    # Set the current directories to the names of the subdirs
     set(CMAKE_CURRENT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${subdir})
     set(CMAKE_CURRENT_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${subdir})
 
-    #include the subdirectory CMakeLists to run it
+    # Include the subdirectory CMakeLists to run it
     file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
     include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt)
 
-    #reset the value of the current directories
+    # Reset the value of the current directories
     list(GET _cmake_source_dirs 0 CMAKE_CURRENT_SOURCE_DIR)
     list(GET _cmake_binary_dirs 0 CMAKE_CURRENT_BINARY_DIR)
 
-    #pop the subdir names of the front of the list
+    # Pop the subdir names of the front of the list
     list(REMOVE_AT _cmake_source_dirs 0)
     list(REMOVE_AT _cmake_binary_dirs 0)
 endmacro(INCLUDE_SUBDIRECTORY)
@@ -212,7 +212,7 @@ if(ENABLE_SIM)
 
 endif(ENABLE_SIM)
 
-if(NOT UHDHOST_PKG) #Syntax makes it unusable by UHD_INSTALL
+if(NOT UHDHOST_PKG) # Syntax makes it unusable by UHD_INSTALL
     install(TARGETS uhd
         LIBRARY DESTINATION ${LIBRARY_DIR} COMPONENT libraries # .so file
         ARCHIVE DESTINATION ${LIBRARY_DIR} COMPONENT libraries # .lib file

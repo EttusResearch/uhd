@@ -21,13 +21,11 @@
 # Allows us to use all .cmake files in this directory
 list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_LIST_DIR}")
 
-# set that this file was found, for use in GNU Radio's FindUHD.cmake.
+# Set that this file was found, for use in GNU Radio's FindUHD.cmake.
 # Have to use the ENV, since this file might not allow CACHE changes.
-
 set(ENV{UHD_CONFIG_USED} TRUE)
 
-# set default values
-
+# Set default values
 set(UHD_FOUND TRUE)
 set(UHD_RFNOC_FOUND @UHD_RFNOC_FOUND@)
 set(UHD_INCLUDE_HINTS)
@@ -69,7 +67,6 @@ endif()
 # Verify that <uhd/config.hpp> and libuhd are available, and, if a
 # version is provided, that UHD meets the version requirements -- no
 # matter what pkg-config might think.
-
 find_path(
     UHD_INCLUDE_DIRS
     NAMES uhd/config.hpp
@@ -103,13 +100,9 @@ if(UHD_USE_STATIC_LIBS)
 endif(UHD_USE_STATIC_LIBS)
 
 if(UHD_LIBRARIES AND UHD_INCLUDE_DIRS)
-
   include(FindPackageHandleStandardArgs)
   FIND_PACKAGE_HANDLE_STANDARD_ARGS(UHD DEFAULT_MSG UHD_LIBRARIES UHD_INCLUDE_DIRS)
   mark_as_advanced(UHD_LIBRARIES UHD_INCLUDE_DIRS)
-
 elseif(UHD_FIND_REQUIRED)
-
   message(FATAL_ERROR "UHD is required, but was not found.")
-
 endif()

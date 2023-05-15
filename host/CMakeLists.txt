@@ -21,6 +21,7 @@ enable_testing()
 # Make sure our local CMake Modules path comes first
 list(INSERT CMAKE_MODULE_PATH 0 ${UHD_SOURCE_DIR}/cmake/Modules)
 
+
 ########################################################################
 # UHD Dependency Minimum Versions
 ########################################################################
@@ -42,6 +43,7 @@ set(RUAMEL.YAML_MIN_VERSION "0.15")
 set(PY_MAKO_MIN_VERSION "0.4.2")
 set(PY_REQUESTS_MIN_VERSION "2.0")
 
+
 ########################################################################
 # Check Compiler Version
 ########################################################################
@@ -60,21 +62,22 @@ elseif(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
         RESULT_VARIABLE res ERROR_VARIABLE err
         ERROR_STRIP_TRAILING_WHITESPACE)
     if(${res} STREQUAL "0")
-        # output is in error stream
+        # Version output is in error stream
         string(REGEX MATCH "^Apple.*" IS_APPLE ${err})
+
+        # Retrieve the compiler's version
         if("${IS_APPLE}" STREQUAL "")
             set(MIN_VERSION ${CLANG_MIN_VERSION})
             set(APPLE_STR "")
-            # retrieve the compiler's version from it
             string(REGEX MATCH "clang version [0-9.]+" CLANG_OTHER_VERSION ${err})
             string(REGEX MATCH "[0-9.]+" CLANG_VERSION ${CLANG_OTHER_VERSION})
         else()
             set(MIN_VERSION ${APPLECLANG_MIN_VERSION})
             set(APPLE_STR "Apple ")
-            # retrieve the compiler's version from it
             string(REGEX MATCH "(clang-[0-9.]+)" CLANG_APPLE_VERSION ${err})
             string(REGEX MATCH "[0-9.]+" CLANG_VERSION ${CLANG_APPLE_VERSION})
         endif()
+
         if(${CLANG_VERSION} VERSION_LESS "${MIN_VERSION}")
             message(WARNING "\nThe compiler selected to build UHD (${APPLE_STR}Clang version ${CLANG_VERSION} : ${CMAKE_CXX_COMPILER}) is older than that officially supported (${MIN_VERSION} minimum). This build may or not work. We highly recommend using Apple Clang version ${APPLECLANG_MIN_VERSION} or more recent, or Clang version ${CLANG_MIN_VERSION} or more recent.")
         endif()
@@ -95,10 +98,10 @@ if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "C
     set(CMAKE_CXX_FLAGS "-stdlib=libc++ ${CMAKE_CXX_FLAGS}")
 endif()
 
+
 ########################################################################
 # Packaging Variables
 ########################################################################
-
 option(UNDERSCORE_UHD_VERSION "Replace dashes in uhd version with underscores" OFF)
 set(LIBUHD_PKG ${LIBUHD_PKG} CACHE BOOL "Build Debian libuhd003 package")
 set(LIBUHDDEV_PKG ${LIBUHDDEV_PKG} CACHE BOOL "Build Debian libuhd-dev package")
@@ -106,10 +109,11 @@ set(UHDHOST_PKG ${UHDPOST_PKG} CACHE BOOL "Build Debian uhd-host package")
 include(UHDComponent) #enable components
 include(UHDPackage)   #setup cpack
 
+
 ########################################################################
 # Install Dirs
 ########################################################################
-#when the library suffix should be 64 (applies to redhat linux family)
+# Whether the library suffix should be 64 (applies to redhat linux family)
 if(NOT DEFINED LIB_SUFFIX AND REDHAT AND CMAKE_SYSTEM_PROCESSOR MATCHES "64$")
     set(LIB_SUFFIX 64)
 endif()
@@ -129,6 +133,7 @@ if(NOT DEFINED PKG_DOC_DIR)
     set(PKG_DOC_DIR share/doc/uhd)
 endif()
 set(PKG_MAN_DIR share/man/man1)
+
 
 ########################################################################
 # UHD config files
@@ -154,6 +159,7 @@ else()
     message(WARNING "Not setting UHD_SYS_CONF_FILE!")
 endif()
 
+
 ########################################################################
 # UHD Image Directories
 ########################################################################
@@ -172,11 +178,13 @@ if(DEFINED UHD_IMAGES_DIR_WINREG_KEY)
     add_definitions(-DUHD_IMAGES_DIR_WINREG_KEY=${UHD_IMAGES_DIR_WINREG_KEY})
 endif(DEFINED UHD_IMAGES_DIR_WINREG_KEY)
 
+
 ########################################################################
 # Local Include Dir
 ########################################################################
 include_directories(${UHD_BINARY_DIR}/include)
 include_directories(${UHD_SOURCE_DIR}/include)
+
 
 ########################################################################
 # Static Lib Configuration
@@ -186,8 +194,9 @@ if(ENABLE_STATIC_LIBS)
     message(STATUS "Building Static Libraries: ${ENABLE_STATIC_LIBS}")
 endif(ENABLE_STATIC_LIBS)
 
+
 ########################################################################
-# On Apple only, set install name and use rpath correctly, if not already set
+# On Apple only, set install name and rpath correctly if not already set
 ########################################################################
 if(APPLE)
     if(NOT CMAKE_INSTALL_NAME_DIR)
@@ -208,6 +217,7 @@ if(APPLE)
     endif(NOT CMAKE_BUILD_WITH_INSTALL_RPATH)
 endif(APPLE)
 
+
 ########################################################################
 # Optional Compiler Flags
 ########################################################################
@@ -219,14 +229,14 @@ macro(UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG flag have)
     endif(${have})
 endmacro(UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG)
 
-#select the release build type by default to get optimization flags
+# Select the release build type by default to get optimization flags
 if(NOT CMAKE_BUILD_TYPE)
    set(CMAKE_BUILD_TYPE "Release")
    message(STATUS "Build type not specified: defaulting to release.")
 endif(NOT CMAKE_BUILD_TYPE)
 set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "")
 
-#force UHD_RELEASE_MODE to be a string for cmake-gui
+# Force UHD_RELEASE_MODE to be a string for cmake-gui
 set(UHD_RELEASE_MODE "${UHD_RELEASE_MODE}" CACHE STRING "UHD Release Mode")
 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" OR
@@ -243,13 +253,14 @@ if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" OR
     #add_definitions(-pedantic)
     #add_definitions(-ansi)
     if(NOT WIN32)
-        #only export symbols that are declared to be part of the uhd api (non dll platforms)
+        # Only export symbols that are declared to be part of the uhd api (non dll platforms)
         UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-fvisibility=hidden HAVE_VISIBILITY_HIDDEN)
         UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-fvisibility-inlines-hidden HAVE_VISIBILITY_INLINES_HIDDEN)
     endif(NOT WIN32)
     if(${CMAKE_BUILD_TYPE} STREQUAL "Coverage")
         include(CodeCoverage)
-        setup_target_for_coverage(coverage "ctest || return 0" coverage) # never fail ctest, always generate coverage report
+        # Never fail ctest, always generate coverage report
+        setup_target_for_coverage(coverage "ctest || return 0" coverage)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -pthread -g -O0 -fprofile-arcs -ftest-coverage" CACHE STRING "Flags used by the C++ compiler during Coverage builds." FORCE)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic -pthread -g -O0 -fprofile-arcs -ftest-coverage" CACHE STRING "Flags used by the C compiler during Coverage builds." FORCE)
     endif()
@@ -257,7 +268,8 @@ endif()
 
 if(MSVC)
     include_directories(${UHD_SOURCE_DIR}/cmake/msvc)
-    add_definitions( #stop all kinds of compatibility warnings
+    # Stop all kinds of compatibility warnings
+    add_definitions(
         -DWIN32_LEAN_AND_MEAN
         -DVC_EXTRALEAN
         -D_SCL_SECURE_NO_WARNINGS
@@ -268,18 +280,19 @@ if(MSVC)
         -D_CRT_NONSTDC_NO_DEPRECATE
         -D_WINSOCK_DEPRECATED_NO_WARNINGS
     )
-    # multi-threaded build and increases the number of addressable sections in an .obj file.
+    # Enable multi-threaded build and increase the number of addressable sections in an .obj file.
     add_compile_options(/MP /bigobj)
 endif(MSVC)
 
 if(CYGWIN)
-    add_definitions(-D__USE_W32_SOCKETS) #boost asio says we need this
+    add_definitions(-D__USE_W32_SOCKETS) # boost asio says we need this
 endif(CYGWIN)
 
 if(WIN32)
-    add_definitions(-D_WIN32_WINNT=0x0501) #minimum version required is windows xp
-    add_definitions(-DNOMINMAX) #disables stupidity and enables std::min and std::max
+    add_definitions(-D_WIN32_WINNT=0x0501) # minimum version required is windows xp
+    add_definitions(-DNOMINMAX) # disables stupidity and enables std::min and std::max
 endif(WIN32)
+
 
 ########################################################################
 # Setup Boost
@@ -304,11 +317,13 @@ include(UHDBoost)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 
+
 ########################################################################
 # Additional settings for build environment
 ########################################################################
 include(UHDGlobalDefs)
 include(UHDLog)
+
 
 ########################################################################
 # Check Python Modules
@@ -354,6 +369,7 @@ PYTHON_CHECK_MODULE_VERSION(
     ${RUAMEL.YAML_MIN_VERSION}
     HAVE_PYTHON_MODULE_YAML
 )
+
 
 ########################################################################
 # Option to use QEMU for running unittests
@@ -408,6 +424,7 @@ if(ENABLE_QEMU_UNITTESTS)
     message(STATUS "  QEMU sysroot: ${QEMU_SYSROOT}")
 endif(ENABLE_QEMU_UNITTESTS)
 
+
 ########################################################################
 # Create Uninstall Target
 ########################################################################
@@ -420,6 +437,7 @@ add_custom_target(uninstall
     ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake
 )
 
+
 ########################################################################
 # Install Package Docs
 ########################################################################
@@ -429,6 +447,7 @@ UHD_INSTALL(FILES
     DESTINATION ${PKG_DOC_DIR}
     COMPONENT readme
 )
+
 
 ########################################################################
 # Register top level components
@@ -443,6 +462,7 @@ endif(WIN32)
 LIBUHD_REGISTER_COMPONENT("Examples" ENABLE_EXAMPLES ON "ENABLE_LIBUHD" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("Utils" ENABLE_UTILS ON "ENABLE_LIBUHD" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("Tests" ENABLE_TESTS ON "ENABLE_LIBUHD" OFF OFF)
+
 
 ########################################################################
 # Add the subdirectories
@@ -471,6 +491,7 @@ if(ENABLE_PYTHON_API)
     add_subdirectory(python)
 endif()
 
+
 ########################################################################
 # Create Pkg Config File
 ########################################################################
@@ -482,12 +503,12 @@ foreach(lib ${Boost_LIBRARY_DIRS})
     list(APPEND UHD_PC_LIBS "-L${lib}")
 endforeach(lib)
 
-#use space-separation format for the pc file
+# Use space-separation format for the pc file
 string(REPLACE ";" " " UHD_PC_REQUIRES "${UHD_PC_REQUIRES}")
 string(REPLACE ";" " " UHD_PC_CFLAGS "${UHD_PC_CFLAGS}")
 string(REPLACE ";" " " UHD_PC_LIBS "${UHD_PC_LIBS}")
 
-#unset these vars to avoid hard-coded paths to cross environment
+# Unset these vars to avoid hard-coded paths to cross environment
 if(CMAKE_CROSSCOMPILING)
     set(UHD_PC_CFLAGS)
     set(UHD_PC_LIBS)
@@ -547,6 +568,7 @@ UHD_INSTALL(
     COMPONENT "devel"
 )
 
+
 ########################################################################
 # Handle pre-built UHD Images for packaging
 ########################################################################
@@ -559,6 +581,7 @@ if(DEFINED UHD_IMAGES_SRC_DIR AND EXISTS "${UHD_IMAGES_SRC_DIR}")
     endforeach(_img)
     UHD_INSTALL(FILES ${_image_files} DESTINATION ${PKG_DATA_DIR}/images COMPONENT images)
 endif(DEFINED UHD_IMAGES_SRC_DIR AND EXISTS "${UHD_IMAGES_SRC_DIR}")
+
 
 ########################################################################
 # Print Summary
