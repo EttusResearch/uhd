@@ -138,9 +138,9 @@ bool rfdc_ctrl::reset_mixer_settings(uint32_t tile_id, uint32_t block_id, bool i
     mixer_settings.FineMixerScale = 0;
     mixer_settings.MixerType      = XRFDC_MIXER_TYPE_FINE;
 
-    return (XRFdc_SetMixerSettings(
-                rfdc_inst_ptr, is_dac, tile_id, block_id, &mixer_settings)
-               == XRFDC_SUCCESS);
+    return (
+        XRFdc_SetMixerSettings(rfdc_inst_ptr, is_dac, tile_id, block_id, &mixer_settings)
+        == XRFDC_SUCCESS);
 }
 
 bool rfdc_ctrl::set_gain_enable(
@@ -159,7 +159,7 @@ bool rfdc_ctrl::set_gain_enable(
     qmc_settings.EventSource = XRFDC_EVNT_SRC_SYSREF;
 
     return (XRFdc_SetQMCSettings(rfdc_inst_ptr, is_dac, tile_id, block_id, &qmc_settings)
-               == XRFDC_SUCCESS);
+            == XRFDC_SUCCESS);
 }
 
 bool rfdc_ctrl::set_gain(uint32_t tile_id, uint32_t block_id, bool is_dac, double gain)
@@ -178,7 +178,7 @@ bool rfdc_ctrl::set_gain(uint32_t tile_id, uint32_t block_id, bool is_dac, doubl
     qmc_settings.EventSource = XRFDC_EVNT_SRC_SYSREF;
 
     return (XRFdc_SetQMCSettings(rfdc_inst_ptr, is_dac, tile_id, block_id, &qmc_settings)
-               == XRFDC_SUCCESS);
+            == XRFDC_SUCCESS);
 }
 
 bool rfdc_ctrl::set_threshold_settings(uint32_t tile_id,
@@ -362,8 +362,8 @@ bool rfdc_ctrl::reset_nco_phase(uint32_t tile_id, uint32_t block_id, bool is_dac
         return false;
     }
 
-    return (XRFdc_ResetNCOPhase(rfdc_inst_ptr, is_dac, tile_id, block_id)
-               == XRFDC_SUCCESS);
+    return (
+        XRFdc_ResetNCOPhase(rfdc_inst_ptr, is_dac, tile_id, block_id) == XRFDC_SUCCESS);
 }
 
 bool rfdc_ctrl::set_nco_freq(
@@ -387,7 +387,7 @@ bool rfdc_ctrl::set_nco_freq(
     return (XRFdc_SetMixerSettings(
                 rfdc_inst_ptr, is_dac, tile_id, block_id, &mixer_settings)
                == XRFDC_SUCCESS)
-               && trigger_update_event(tile_id, block_id, is_dac, MIXER_EVENT);
+           && trigger_update_event(tile_id, block_id, is_dac, MIXER_EVENT);
 }
 
 double rfdc_ctrl::get_nco_freq(uint32_t tile_id, uint32_t block_id, bool is_dac)
@@ -416,8 +416,9 @@ bool rfdc_ctrl::set_nco_event_src(uint32_t tile_id, uint32_t block_id, bool is_d
     mixer_settings.EventSource = XRFDC_EVNT_SRC_SYSREF;
 
     // Set the mixer settings to set the NCO event source
-    return (XRFdc_SetMixerSettings(rfdc_inst_ptr, is_dac, tile_id, block_id, &mixer_settings)
-            == XRFDC_SUCCESS);
+    return (
+        XRFdc_SetMixerSettings(rfdc_inst_ptr, is_dac, tile_id, block_id, &mixer_settings)
+        == XRFDC_SUCCESS);
 }
 
 bool rfdc_ctrl::set_mixer_mode(
@@ -438,7 +439,7 @@ bool rfdc_ctrl::set_mixer_mode(
     return (XRFdc_SetMixerSettings(
                 rfdc_inst_ptr, is_dac, tile_id, block_id, &mixer_settings)
                == XRFDC_SUCCESS)
-               && trigger_update_event(tile_id, block_id, is_dac, MIXER_EVENT);
+           && trigger_update_event(tile_id, block_id, is_dac, MIXER_EVENT);
 }
 
 bool rfdc_ctrl::set_nyquist_zone(
@@ -459,19 +460,6 @@ bool rfdc_ctrl::enable_inverse_sinc_filter(
     uint32_t tile_id, uint32_t block_id, bool enable)
 {
     return XRFdc_SetInvSincFIR(rfdc_inst_ptr, tile_id, block_id, enable) == XRFDC_SUCCESS;
-}
-
-bool rfdc_ctrl::set_sample_rate(uint32_t tile_id, bool is_dac, double sample_rate)
-{
-    // The XRFdc API expects the sample rate in MHz
-    double sample_rate_mhz = sample_rate / 1e6;
-    return XRFdc_DynamicPLLConfig(rfdc_inst_ptr,
-               is_dac,
-               tile_id,
-               XRFDC_EXTERNAL_CLK,
-               sample_rate_mhz,
-               sample_rate_mhz)
-           == XRFDC_SUCCESS;
 }
 
 double rfdc_ctrl::get_sample_rate(uint32_t tile_id, uint32_t block_id, bool is_dac)
@@ -737,11 +725,12 @@ bool rfdc_ctrl::get_cal_frozen(const uint32_t tile_id, const uint32_t block_id)
     return cal_freeze_settings.CalFrozen;
 }
 
-void rfdc_ctrl::set_adc_cal_coefficients(uint32_t tile_id, uint32_t block_id, uint32_t cal_block, std::vector<uint32_t> coefs)
+void rfdc_ctrl::set_adc_cal_coefficients(
+    uint32_t tile_id, uint32_t block_id, uint32_t cal_block, std::vector<uint32_t> coefs)
 {
-    if (coefs.size() != 8)
-    {
-        throw mpm::runtime_error("set_adc_cal_coefficients requires that exactly 8 coefficients be passed");
+    if (coefs.size() != 8) {
+        throw mpm::runtime_error(
+            "set_adc_cal_coefficients requires that exactly 8 coefficients be passed");
     }
 
     XRFdc_Calibration_Coefficients cs;
@@ -754,16 +743,19 @@ void rfdc_ctrl::set_adc_cal_coefficients(uint32_t tile_id, uint32_t block_id, ui
     cs.Coeff6 = coefs[6];
     cs.Coeff7 = coefs[7];
 
-    if (XRFdc_SetCalCoefficients(&rfdc_inst, tile_id, block_id, cal_block, &cs) != XRFDC_SUCCESS) {
+    if (XRFdc_SetCalCoefficients(&rfdc_inst, tile_id, block_id, cal_block, &cs)
+        != XRFDC_SUCCESS) {
         throw mpm::runtime_error("Error returned from XRFdc_SetCalCoefficients");
     }
 }
 
-std::vector<uint32_t> rfdc_ctrl::get_adc_cal_coefficients(uint32_t tile_id, uint32_t block_id, uint32_t cal_block)
+std::vector<uint32_t> rfdc_ctrl::get_adc_cal_coefficients(
+    uint32_t tile_id, uint32_t block_id, uint32_t cal_block)
 {
     std::vector<uint32_t> result;
     XRFdc_Calibration_Coefficients cs;
-    if (XRFdc_GetCalCoefficients(&rfdc_inst, tile_id, block_id, cal_block, &cs) != XRFDC_SUCCESS) {
+    if (XRFdc_GetCalCoefficients(&rfdc_inst, tile_id, block_id, cal_block, &cs)
+        != XRFDC_SUCCESS) {
         throw mpm::runtime_error("Error returned from XRFdc_GetCalCoefficients");
     }
 

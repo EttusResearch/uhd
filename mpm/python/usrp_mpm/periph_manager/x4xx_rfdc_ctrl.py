@@ -145,7 +145,12 @@ class X4xxRfdcCtrl:
                     active_converters.add(active_converter_tuple)
         for tile, block, resampling_factor, is_dac in active_converters:
             self._rfdc_ctrl.reset_mixer_settings(tile, block, is_dac)
-            self._rfdc_ctrl.set_sample_rate(tile, is_dac, self._get_spll_freq())
+            self._rfdc_ctrl.configure_pll(
+                tile,
+                is_dac,
+                0, # XRFDC_EXTERNAL_CLK == 0, means don't use RFDC PLL
+                self._get_spll_freq(),
+                self._get_spll_freq())
             self._set_interpolation_decimation(tile, block, is_dac, resampling_factor)
 
         self._rfdc_regs.log_status()

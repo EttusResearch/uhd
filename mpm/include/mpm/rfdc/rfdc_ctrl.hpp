@@ -99,9 +99,9 @@ public:
         CALIB_MODE2 = XRFDC_CALIB_MODE2
     };
     enum event_type_options {
-        MIXER_EVENT = XRFDC_EVENT_MIXER,
+        MIXER_EVENT    = XRFDC_EVENT_MIXER,
         CRSE_DLY_EVENT = XRFDC_EVENT_CRSE_DLY,
-        QMC_EVENT = XRFDC_EVENT_QMC,
+        QMC_EVENT      = XRFDC_EVENT_QMC,
     };
     enum interp_decim_options {
         INTERP_DECIM_OFF = XRFDC_INTERP_DECIM_OFF,
@@ -204,8 +204,8 @@ public:
      *
      * @return   true if the operation was successful
      */
-    bool trigger_update_event(uint32_t tile_id, uint32_t block_id,
-       bool is_dac, event_type_options event_type);
+    bool trigger_update_event(
+        uint32_t tile_id, uint32_t block_id, bool is_dac, event_type_options event_type);
 
     /**
      * Enable/Disable gain correction for a given block.
@@ -424,18 +424,8 @@ public:
     bool enable_inverse_sinc_filter(uint32_t tile_id, uint32_t block_id, bool enable);
 
     /**
-     * Sets the sample rate for a given tile.
-     *
-     * @param    tile_id the ID of the tile to set
-     * @param    is_dac whether the tile is a DAC (true) or ADC (false)
-     * @param    sample_rate the rate in Hz to sample at
-     *
-     * @return   true if the operation was successful
-     */
-    bool set_sample_rate(uint32_t tile_id, bool is_dac, double sample_rate);
-
-    /**
-     * Gets the sample rate for a given block.
+     * Gets the sample rate for a given block. To set the sample rate, call
+     * configure_pll().
      *
      * @param    tile_id the ID of the tile to set
      * @param    block_id the ID of the block to set
@@ -692,13 +682,17 @@ public:
      */
     bool get_cal_frozen(uint32_t tile_id, uint32_t block_id);
 
-    void set_adc_cal_coefficients(uint32_t tile_id, uint32_t block_id, uint32_t cal_block, std::vector<uint32_t> coefs);
-    std::vector<uint32_t> get_adc_cal_coefficients(uint32_t tile_id, uint32_t block_id, uint32_t cal_block);
+    void set_adc_cal_coefficients(uint32_t tile_id,
+        uint32_t block_id,
+        uint32_t cal_block,
+        std::vector<uint32_t> coefs);
+    std::vector<uint32_t> get_adc_cal_coefficients(
+        uint32_t tile_id, uint32_t block_id, uint32_t cal_block);
 
     /**
      * Resets an internal mixer with known valid settings.
      */
-    bool reset_mixer_settings( uint32_t tile_id, uint32_t block_id, bool is_dac);
+    bool reset_mixer_settings(uint32_t tile_id, uint32_t block_id, bool is_dac);
 
 private:
     /* Indicates whether libmetal was initialized successfully and can
@@ -753,7 +747,6 @@ void export_rfdc(py::module& top_module)
         .def("set_nyquist_zone", &rfdc_ctrl::set_nyquist_zone)
         .def("set_calibration_mode", &rfdc_ctrl::set_calibration_mode)
         .def("enable_inverse_sinc_filter", &rfdc_ctrl::enable_inverse_sinc_filter)
-        .def("set_sample_rate", &rfdc_ctrl::set_sample_rate)
         .def("get_sample_rate", &rfdc_ctrl::get_sample_rate)
         .def("configure_pll", &rfdc_ctrl::configure_pll)
         .def("get_pll_config", &rfdc_ctrl::get_pll_config)
