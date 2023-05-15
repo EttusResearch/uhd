@@ -76,7 +76,7 @@ public:
         }
     }
 
-    void _peek_cb(uint32_t addr, uhd::time_spec_t /*time*/)
+    void _peek_cb(uint32_t addr, uhd::time_spec_t /*time*/) override
     {
         if (addr >= fft_block_control::REG_RESET_ADDR_V1) {
             throw uhd::assertion_error(

@@ -42,7 +42,7 @@ public:
         }
     }
 
-    void _peek_cb(uint32_t addr, uhd::time_spec_t /*time*/)
+    void _peek_cb(uint32_t addr, uhd::time_spec_t /*time*/) override
     {
         if ((addr >= fft_block_control::REG_COMPAT_ADDR)
             && (addr <= fft_block_control::REG_CP_REM_LIST_OCC_ADDR)) {

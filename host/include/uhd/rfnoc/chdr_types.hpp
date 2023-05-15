@@ -709,7 +709,10 @@ public:
         : _op_code(op_code), _op_payload(op_payload), _ops_pending(ops_pending)
     {
     }
-    mgmt_op_t(const mgmt_op_t& rhs) = default;
+
+    mgmt_op_t(const mgmt_op_t& rhs)            = default;
+    mgmt_op_t& operator=(const mgmt_op_t& rhs) = default;
+
 
     //! Get the ops pending for this transaction
     //  Note that ops_pending is not used by UHD, since it can infer this value
