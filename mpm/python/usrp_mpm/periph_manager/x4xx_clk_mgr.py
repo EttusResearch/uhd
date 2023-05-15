@@ -337,7 +337,7 @@ class X4xxClockMgr:
         # The initial default mcr only works if we have an FPGA with
         # a decimation of 2. But we need the overlay applied before we
         # can detect decimation, and that requires clocks to be initialized.
-        self.set_master_clock_rate(self.rfdc.get_default_mcr())
+        self.set_master_clock_rate(self.clk_policy.get_default_mcr())
 
 
     @no_rpc

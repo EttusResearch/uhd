@@ -208,19 +208,6 @@ class X4xxRfdcCtrl:
             raise RuntimeError("DAC tiles failed to sync properly")
 
     @no_rpc
-    def get_default_mcr(self):
-        """
-        Gets the default master clock rate based on FPGA decimation
-        """
-        fpga_decimation, fpga_halfband = self._rfdc_regs.get_rfdc_resampling_factor(0)
-        for master_clock_rate in self.master_to_sample_clk:
-            _, decimation, _, halfband = self.master_to_sample_clk[master_clock_rate]
-            if decimation == fpga_decimation and fpga_halfband == halfband:
-                return master_clock_rate
-        raise RuntimeError('No master clock rate acceptable for current fpga '
-                           'with decimation of {}'.format(fpga_decimation))
-
-    @no_rpc
     def get_dsp_bw(self):
         """
         Return the bandwidth encoded in the RFdc registers.
