@@ -233,7 +233,6 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
         add_property_resolver({&_samp_rate_in.back(), &_samp_rate_out.back()},
             {&_samp_rate_in.back(), &_samp_rate_out.back()},
             [this,
-                chan,
                 &samp_rate_in  = _samp_rate_in.at(chan),
                 &samp_rate_out = _samp_rate_out.at(chan)]() {
                 RFNOC_LOG_TRACE("Calling resolver for samp_rate@" << chan);

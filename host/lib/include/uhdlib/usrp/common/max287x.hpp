@@ -611,8 +611,6 @@ public:
 
 private:
     vco_map_t _vco_map;
-    double _ref_freq;
-    double _pfd_freq;
 };
 
 

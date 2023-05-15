@@ -64,15 +64,13 @@ void Responder::FLUSH_SCREEN()
 // Like FLUSH_SCREEN but with new line
 void Responder::FLUSH_SCREEN_NL()
 {
-    do {
-        int y, x;
-        getyx(_window, y, x);
-        if (x > 0) {
-            printw("\n");
-            y++;
-        }
-        FLUSH_SCREEN();
-    } while (0);
+    int y, x;
+    getyx(_window, y, x);
+    if (x > 0) {
+        printw("\n");
+    }
+    FLUSH_SCREEN();
+    static_cast<void>(y);
 }
 
 // Constructor
