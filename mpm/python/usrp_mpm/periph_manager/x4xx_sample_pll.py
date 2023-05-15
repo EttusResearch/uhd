@@ -165,7 +165,7 @@ class LMK04832X4xx(LMK04832):
             (0x0117, 0x44),
             (0x0118, cfg.prc_divider),
             (0x0119, 0x0A),
-            (0x011A, 0x60),
+            (0x011A, 0x60 if (cfg.prc_to_db) else 0xE0), # disables CLKout6_7 if prc_to_db==false
             (0x011B, 0x40),
             (0x011C, 0x10),
             (0x011D, 0x00),

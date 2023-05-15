@@ -65,6 +65,8 @@ class SpllConfig:
     pll2_prescaler: int
     pll2_n_cal_div: int
     pll2_n_div: int
+    # PRC output to the daughterboard
+    prc_to_db: bool
 
 @dataclass
 class X4xxClockConfig:
@@ -285,6 +287,7 @@ class X410ClockPolicy(X4xxClockPolicy):
                 'pll2_prescaler': 2,
                 'pll2_n_cal_div': 12,
                 'pll2_n_div': 12,
+                'prc_to_db': True,
             },
             3e9: {
                 'ref_freq': ref_clock_freq,
@@ -298,6 +301,7 @@ class X410ClockPolicy(X4xxClockPolicy):
                 'pll2_prescaler': 3,
                 'pll2_n_cal_div': 10,
                 'pll2_n_div': 10,
+                'prc_to_db': True,
             },
             3.072e9: {
                 'ref_freq': ref_clock_freq,
@@ -311,6 +315,7 @@ class X410ClockPolicy(X4xxClockPolicy):
                 'pll2_prescaler': 5,
                 'pll2_n_cal_div': 5,
                 'pll2_n_div': 5,
+                'prc_to_db': True,
             },
         }[rfdc_freq]
         spll_config = SpllConfig(**spll_args)
