@@ -14,14 +14,16 @@
 //
 // Parameters:
 //
-//   REG_BASE : Base address to use for registers.
-//   REG_SIZE : Register space size.
-//   WIDTH    : Number of GPIO lines controlled by this block.
+//   REG_BASE       : Base address to use for registers.
+//   REG_SIZE       : Register space size.
+//   WIDTH          : Number of GPIO lines controlled by this block.
+//   NUM_CH_PER_DB  : Number of RF Channels per daughterboard
 //
 module x4xx_gpio_atr #(
-  parameter REG_BASE = 0,
-  parameter REG_SIZE = 'h20,
-  parameter WIDTH    = 32
+  parameter REG_BASE      = 0,
+  parameter REG_SIZE      = 'h20,
+  parameter WIDTH         = 32,
+  parameter NUM_CH_PER_DB = 2
 ) (
   // Slave ctrlport interface
   input  wire        ctrlport_clk,
@@ -34,7 +36,7 @@ module x4xx_gpio_atr #(
   output reg  [ 1:0] s_ctrlport_resp_status = 2'b00,
   output reg  [31:0] s_ctrlport_resp_data   = {32 {1'bX}},
   // Run state signals that indicate tx and rx operation
-  input wire [3:0] db_state,
+  input wire [2*NUM_CH_PER_DB-1:0] db_state,
   // GPIO control signals
   input  wire [WIDTH-1:0]  gpio_in,                              //GPIO input state
   output reg  [WIDTH-1:0]  gpio_out  = {WIDTH {1'b0}},           //GPIO output state

@@ -55,7 +55,8 @@ module x4xx_global_regs #(
   input  wire        pll_sync_done,
   output reg  [ 7:0] pps_brc_delay     = 8'b0,
   output reg  [25:0] pps_prc_delay     = 26'b0,
-  output reg  [ 1:0] prc_rc_divider    = 2'b0,
+  output reg  [ 1:0] prc_rc0_divider   = 2'b0,
+  output reg  [ 1:0] prc_rc1_divider   = 2'b0,
   output reg         pps_rc_enabled    = 1'b0,
 
   // Misc control and status signals (domain: s_ctrlport_clk)
@@ -77,7 +78,10 @@ module x4xx_global_regs #(
 
   `include "../../lib/rfnoc/core/ctrlport.vh"
   `include "regmap/global_regs_regmap_utils.vh"
-  `include "regmap/versioning_regs_regmap_utils.vh"
+
+  // Variant-dependent register map.
+  `include "regmap/x410/versioning_regs_regmap_utils.vh"
+
 
   // Make DEVICE_ID default to anything but 0, since that has special meaning
   localparam [DEVICE_ID_SIZE-1:0] DEFAULT_DEVICE_ID = 1;
@@ -191,7 +195,8 @@ module x4xx_global_regs #(
 
           REG_BASE + PPS_CTRL_REG: begin
             pps_prc_delay  <= s_ctrlport_req_data[PPS_PRC_DELAY_MSB:PPS_PRC_DELAY];
-            prc_rc_divider <= s_ctrlport_req_data[PRC_RC_DIVIDER_MSB:PRC_RC_DIVIDER];
+            prc_rc0_divider <= s_ctrlport_req_data[PRC_RC0_DIVIDER_MSB:PRC_RC0_DIVIDER];
+            prc_rc1_divider <= s_ctrlport_req_data[PRC_RC1_DIVIDER_MSB:PRC_RC1_DIVIDER];
             pps_rc_enabled <= s_ctrlport_req_data[PPS_RC_ENABLED];
           end
 
@@ -272,7 +277,8 @@ module x4xx_global_regs #(
 
           REG_BASE + PPS_CTRL_REG: begin
             s_ctrlport_resp_data[PPS_RC_ENABLED]                    <= pps_rc_enabled;
-            s_ctrlport_resp_data[PRC_RC_DIVIDER_MSB:PRC_RC_DIVIDER] <= prc_rc_divider;
+            s_ctrlport_resp_data[PRC_RC0_DIVIDER_MSB:PRC_RC0_DIVIDER] <= prc_rc0_divider;
+            s_ctrlport_resp_data[PRC_RC1_DIVIDER_MSB:PRC_RC1_DIVIDER] <= prc_rc1_divider;
             s_ctrlport_resp_data[PPS_PRC_DELAY_MSB:PPS_PRC_DELAY]   <= pps_prc_delay;
           end
 
@@ -576,9 +582,16 @@ endmodule
 //          HDL implementation.
 //        </info>
 //      </bitfield>
-//      <bitfield name="PRC_RC_DIVIDER" range="29..28">
+//      <bitfield name="PRC_RC1_DIVIDER" range="27..26">
 //        <info>
-//          Clock multiplier used to generate radio clock from PLL reference clock.
+//          Clock multiplier used to generate radio clock 1 from PLL reference clock.
+//          The value written to the register has to be reduced by 2 due to
+//          HDL implementation.
+//        </info>
+//      </bitfield>
+//      <bitfield name="PRC_RC0_DIVIDER" range="29..28">
+//        <info>
+//          Clock multiplier used to generate radio clock 0 from PLL reference clock.
 //          The value written to the register has to be reduced by 2 due to
 //          HDL implementation.
 //        </info>
@@ -596,10 +609,7 @@ endmodule
 //    </register>
 //    <register name="CHDR_CLK_RATE_REG"   offset="0x20" size="32" writable="false">
 //      <info>Returns the RFNoC bus clock rate (CHDR).</info>
-//      <bitfield name="CHDR_CLK" range="31..0" initialvalue="CHDR_CLK_VALUE">
-//        <enumeratedtype name="CHDR_CLK_ENUM" showhex="true">
-//          <value name="CHDR_CLK_VALUE" integer="200000000"/>
-//        </enumeratedtype>
+//      <bitfield name="CHDR_CLK" range="31..0">
 //      </bitfield>
 //    </register>
 //    <register name="CHDR_CLK_COUNT_REG"  offset="0x24" size="32" writable="false">

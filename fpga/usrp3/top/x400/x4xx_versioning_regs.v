@@ -68,7 +68,11 @@ module x4xx_versioning_regs #(
   input wire [64*96-1:0] version_info
 );
 
-  `include "regmap/versioning_regs_regmap_utils.vh"
+  // Variant-dependent register map.
+  `ifdef X410
+    `include "regmap/x410/versioning_regs_regmap_utils.vh"
+  `endif
+
   `include "regmap/versioning_utils.vh"
   `include "../../lib/rfnoc/core/ctrlport.vh"
 

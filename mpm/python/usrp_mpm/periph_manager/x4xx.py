@@ -39,7 +39,7 @@ from usrp_mpm.periph_manager.x4xx_clock_policy import get_clock_policy
 from usrp_mpm.dboard_manager.x4xx_db_iface import X4xxDboardIface
 
 
-X400_FPGA_COMPAT = (7, 9)
+X400_FPGA_COMPAT = (8, 0)
 # The compat number at which remote streaming was added:
 X400_REMOTE_STREAMING_COMPAT = (7, 9)
 X400_DEFAULT_ENABLE_PPS_EXPORT = True
