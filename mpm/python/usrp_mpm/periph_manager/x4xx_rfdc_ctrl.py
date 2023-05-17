@@ -280,28 +280,37 @@ class X4xxRfdcCtrl:
         del self._rfdc_ctrl
 
     @no_rpc
+    def reset_mmcm(self, reset=True):
+        """
+        Resets the MMCM, or takes it out of reset.
+
+        When taking it out of reset, it also waits until it is locked.
+
+        Resetting the MMCM will automatically disable clock buffers
+        """
+        self._rfdc_regs.set_reset_mmcm(reset=reset)
+
+        if reset:
+            return
+
+        # Once the MMCM has locked, enable driving the clocks to the rest of
+        # the design. Poll lock status for up to 1 ms
+        self._rfdc_regs.wait_for_mmcm_locked(timeout=0.001)
+        self._rfdc_regs.set_gated_clock_enables(value=True)
+
+    @no_rpc
     def set_reset(self, reset=True, rfdc_configs=None):
         """
         Resets the RFDC FPGA components or takes them out of reset.
+        Does not include MMCM!
         """
         if reset:
             # Assert RFDC AXI-S, filters and associated gearbox reset.
             self._rfdc_regs.set_reset_adc_dac_chains(reset=True)
             self._rfdc_regs.log_status()
-            # Assert Radio clock PLL reset
-            self._rfdc_regs.set_reset_mmcm(reset=True)
-            # Resetting the MMCM will automatically disable clock buffers
             return
 
         assert rfdc_configs
-        # Take upstream MMCM out of reset
-        self._rfdc_regs.set_reset_mmcm(reset=False)
-
-        # Once the MMCM has locked, enable driving the clocks
-        # to the rest of the design. Poll lock status for up
-        # to 1 ms
-        self._rfdc_regs.wait_for_mmcm_locked(timeout=0.001)
-        self._rfdc_regs.set_gated_clock_enables(value=True)
 
         # De-assert RF signal chain reset
         self._rfdc_regs.set_reset_adc_dac_chains(reset=False)

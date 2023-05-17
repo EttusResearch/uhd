@@ -270,9 +270,12 @@ class X4xxClockManager:
             initial_mcr = self.clk_policy.get_default_mcr()
         self._master_clock_rates = initial_mcr
 
-        # Force reset the RFDC to ensure it is in a good state
-        self._reset_clocks(True, ('rfdc',))
-        self._reset_clocks(False, ('rfdc',))
+        # Force reset the RFDC to ensure it is in a good state. Note that for
+        # pulling the RFDC out of reset, we need access to the rfdc object, and
+        # the clocking policy needs access to the DSP info, meaning this is the
+        # earliest point during initialization when we can do this reset.
+        self._reset_clocks(True, ('mmcm', 'rfdc'))
+        self._reset_clocks(False, ('mmcm', 'rfdc'))
 
         # Synchronize SYSREF and clock distributed to all converters
         self.rfdc.sync()
@@ -358,7 +361,7 @@ class X4xxClockManager:
             f"clock_source={clock_source}")
         self._time_source = time_source
         # Reset downstream clocks (excluding RPLL)
-        self._reset_clocks(value=True, reset_list=('db_clock', 'cpld', 'rfdc', 'spll'))
+        self._reset_clocks(True, ('db_clock', 'cpld', 'rfdc', 'mmcm', 'spll'))
         self._set_brc_source(clock_source, time_source)
         self._clock_source = clock_source
         return self.SetSyncRetVal.OK
@@ -487,6 +490,8 @@ class X4xxClockManager:
             if 'rfdc' in reset_list:
                 assert self.rfdc
                 self.rfdc.set_reset(reset=True)
+            if 'mmcm' in reset_list:
+                self.rfdc.reset_mmcm(reset=value)
             if 'spll' in reset_list:
                 self.clk_ctrl.reset_clock(value, 'spll')
             if 'rpll' in reset_list:
@@ -498,6 +503,9 @@ class X4xxClockManager:
                 self.clk_ctrl.reset_clock(value, 'rpll')
             if 'spll' in reset_list:
                 self.clk_ctrl.reset_clock(value, 'spll')
+            if 'mmcm' in reset_list:
+                assert self.rfdc
+                self.rfdc.reset_mmcm(reset=value)
             if 'rfdc' in reset_list:
                 clk_config = self.clk_policy.get_config(
                     self.get_ref_clock_freq(), self._master_clock_rates)
@@ -544,8 +552,12 @@ class X4xxClockManager:
         clk_settings = self.clk_policy.get_config(
             self.get_ref_clock_freq(), master_clock_rates)
         # Reset everything downstream from SPLL
-        self._reset_clocks(value=True, reset_list=('rfdc', 'cpld', 'db_clock'))
+        self._reset_clocks(True, ('mmcm', 'rfdc', 'cpld', 'db_clock'))
+        # The following call will return only when the SPLL successfully locks
+        # to the new settings:
         self.clk_ctrl.config_spll(clk_settings.spll_config)
+        # Bring MMCM out of reset, wait for it to be locked.
+        self._reset_clocks(False, ('mmcm',))
         self._master_clock_rates = master_clock_rates
         self._reset_clocks(value=False, reset_list=('rfdc', 'cpld', 'db_clock'))
         self.rfdc.sync()
