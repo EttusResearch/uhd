@@ -277,9 +277,6 @@ class X4xxClockManager:
         self._reset_clocks(True, ('mmcm', 'rfdc'))
         self._reset_clocks(False, ('mmcm', 'rfdc'))
 
-        # Synchronize SYSREF and clock distributed to all converters
-        self.rfdc.sync()
-
         # The initial default mcr only works if we have an FPGA with
         # a decimation of 2. But we need the overlay applied before we
         # can detect decimation, and that requires clocks to be initialized.
@@ -560,7 +557,6 @@ class X4xxClockManager:
         self._reset_clocks(False, ('mmcm',))
         self._master_clock_rates = master_clock_rates
         self._reset_clocks(value=False, reset_list=('rfdc', 'cpld', 'db_clock'))
-        self.rfdc.sync()
         self._config_pps_to_timekeeper(master_clock_rates)
 
     @no_rpc
@@ -767,6 +763,9 @@ class X4xxClockManager:
             self.rfdc.rfdc_restore_nco_freq()
             # Do the same for the calibration freeze state
             self.rfdc.rfdc_restore_cal_freeze()
+            # Call synchronize to trigger the tile latency determination again. This is necessary
+            # to prevent us from bad EVM after changing the sync source.
+            self.synchronize(None, False)
         except RuntimeError as ex:
             err = f"Setting clock_source={clock_source},time_source={time_source} " \
                   f"failed, falling back to {self._safe_sync_source}. Error: " \
@@ -838,6 +837,90 @@ class X4xxClockManager:
         else:
             raise RuntimeError("No clocking aux board available")
 
+    ###########################################################################
+    # Synchronization API
+    ###########################################################################
+    def synchronize(self, sync_args, finalize):
+        """
+        See PeriphManagerBase.synchronize() for the full documentation.
+        """
+        def determine_sync_settings():
+            """
+            This is the algorithm that is run when finalize is False: Determine
+            the values.
+            """
+            self.log.trace("Determining sync settings...")
+            sync_args_result = {}
+            rates = [self.rfdc.get_converter_rate(db_idx) for db_idx in range(2)]
+            if rates[0] != rates[1]:
+                self.log.debug("Synchronizing daughterboards separately.")
+                db_keys = [0, 1]
+                db_keys = [
+                    (0, 'adc_latency0', 'dac_latency0'),
+                    (1, 'adc_latency1', 'dac_latency1'),
+                ]
+            else:
+                db_keys = [('all', 'adc_latency', 'dac_latency')]
+            for db_key, adc_lat_key, dac_lat_key in db_keys:
+                adc_latencies, dac_latencies = \
+                    self.rfdc.determine_tile_latencies(db_key)
+                self.log.debug(
+                    f"Determined ADC tile latencies: "
+                    f"{','.join(f'{k}={v}' for k,v in adc_latencies.items())}")
+                self.log.debug(
+                    f"Determined DAC tile latencies: "
+                    f"{','.join(f'{k}={v}' for k,v in dac_latencies.items())}")
+                # We need to pick a scalar latency value from all the latencies.
+                # For now, we just pick the first.
+                adc_latency = adc_latencies[0]
+                dac_latency = dac_latencies[0]
+                sync_args_result[adc_lat_key] = str(adc_latency)
+                sync_args_result[dac_lat_key] = str(dac_latency)
+            return sync_args_result
+
+        def finalize_sync_settings(sync_args):
+            """
+            This is the algorithm that is run when finalize is True: Apply the
+            latency values.
+            """
+            self.log.trace("Finalizing synchronization settings.")
+            if 'adc_latency' in sync_args and \
+                    'dac_latency' in sync_args:
+                return self.rfdc.set_tile_latencies(
+                    'all',
+                    int(sync_args['adc_latency']),
+                    int(sync_args['dac_latency']))
+            if all(
+                    lambda x: x in sync_args \
+                    for x in ('adc_latency0', 'adc_latency1',
+                              'dac_latency0', 'dac_latency1')):
+                return \
+                    self.rfdc.set_tile_latencies(
+                        0,
+                        int(sync_args['adc_latency0']),
+                        int(sync_args['dac_latency0'])) and \
+                    self.rfdc.set_tile_latencies(
+                        1,
+                        int(sync_args['adc_latency1']),
+                        int(sync_args['dac_latency1']))
+            self.log.error("Invalid sync args provided!")
+            raise RuntimeError("Invalid sync args provided!")
+        # Go, go, go!
+        if not finalize:
+            return determine_sync_settings()
+        if not finalize_sync_settings(sync_args):
+            self.log.error("Failed to apply synchronization settings!")
+        return {}
+
+    def aggregate_sync_data(self, collated_sync_data):
+        """
+        See PeriphManagerBase.aggregate_sync_data() for the full documentation.
+        """
+        self.log.trace("Aggregating sync data...")
+        return {} if not collated_sync_data else collated_sync_data[0]
+
+
+    ###########################################################################
     # Top-level BIST APIs
     #
     # These calls will be available as MPM calls. They are only needed by BIST.

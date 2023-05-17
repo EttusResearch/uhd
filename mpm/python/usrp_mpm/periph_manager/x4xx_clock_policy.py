@@ -35,11 +35,6 @@ class RfdcConfig:
     # have one radio block per daughterboard, the radio rates for Tx and Rx are
     # always identical, and thus the resampling factor is the same, too.
     resampling: int = 1
-    # If these latency values are set to None, then we auto-detect them. If they
-    # are an integer value, they are applied as-is to all ADCs/DACs, respectively,
-    # that are associated with this daughterboard's RfdcConfig.
-    adc_latency: int = None
-    dac_latency: int = None
 
 
 @dataclass
@@ -320,17 +315,7 @@ class X410ClockPolicy(X4xxClockPolicy):
         }[rfdc_freq]
         spll_config = SpllConfig(**spll_args)
         resampling_factor = self.master_to_sample_clk[mcr][2]
-        rfdc_config = RfdcConfig(
-            conv_rate=rfdc_freq,
-            resampling=resampling_factor,
-            # Note: Those latency values were experimentally determined using
-            # the algorith shown in X4xxRfdcCtrl.determine_tile_latency(). We
-            # should be not hard coding this in accordance with pg269, but since
-            # these numbers have worked since the initial release of X410, we
-            # won't change that now to minimize risk.
-            adc_latency=1272,
-            dac_latency=816,
-        )
+        rfdc_config = RfdcConfig(conv_rate=rfdc_freq, resampling=resampling_factor)
         return X4xxClockConfig(
             spll_config=spll_config,
             rfdc_configs=[rfdc_config, rfdc_config],

@@ -378,27 +378,65 @@ class X4xxRfdcCtrl:
         # Shutdown all DAC Tiles
         if not self._rfdc_ctrl.shutdown_tile(-1, True):
             self.log.warning('Error shutting down DAC tiles')
-    @no_rpc
-    def sync(self):
-        """
-        Multi-tile Synchronization on both ADC and DAC
-        """
-        # These numbers are determined from the procedure mentioned in
-        # PG269 section "Advanced Multi-Tile Synchronization API use".
-        adc_latency = 1228  # ADC delay in sample clocks
-        dac_latency = 800   # DAC delay in sample clocks
 
-        # Ideally, this would be a set to avoiding duplicate indices,
-        # but we need to use a list for compatibility with the rfdc_ctrl
-        # C++ interface (std::vector)
-        adcs_to_sync = tuple(self._find_converters(0, 'all', 'rx')) + \
-                       tuple(self._find_converters(1, 'all', 'rx'))
-        dacs_to_sync = tuple(self._find_converters(0, 'all', 'tx')) + \
-                       tuple(self._find_converters(1, 'all', 'tx'))
+    @no_rpc
+    def determine_tile_latencies(self, db_idx):
+        """
+        This procedure is mentioned in PG269 section
+        "Deterministic Multi-Tile Synchronization API Use". Quote:
+        "To prevent this error, the Target_Latency value must first be determined
+        for the user FIFO and tile configuration by running XRFdc_MultiConverter_Sync
+        with the target set to -1."
+
+        Then we add a margin.
+        Quote from pg269: The margin value to be applied is
+        specified in terms of sample clocks. For the RF-ADC tiles, this value
+        must be a multiple of the number of FIFO read-words times the
+        decimation factor, and for RF-DAC tiles this value can be a constant
+        of 16.
+        """
+        adcs_to_sync = tuple(self._find_converters(db_idx, 'all', 'rx'))
+        dacs_to_sync = tuple(self._find_converters(db_idx, 'all', 'tx'))
         adc_tiles_to_sync = tuple({x[0] for x in adcs_to_sync})
         dac_tiles_to_sync = tuple({x[0] for x in dacs_to_sync})
-        self._rfdc_ctrl.sync_tiles(adc_tiles_to_sync, False, adc_latency)
-        self._rfdc_ctrl.sync_tiles(dac_tiles_to_sync, True, dac_latency)
+        # Run preliminary latency determination
+        if not self._rfdc_ctrl.sync_tiles(adc_tiles_to_sync, False, -1):
+            self.log.error("sync_tiles() failed to run for ADC latency determination.")
+        if not self._rfdc_ctrl.sync_tiles(dac_tiles_to_sync, True, -1):
+            self.log.error("sync_tiles() failed to run for DAC latency determination.")
+        # We assume that all ADCs are running at the same decimation
+        decimation = int(self._rfdc_ctrl.get_decimation_factor(
+            adcs_to_sync[0][0],
+            adcs_to_sync[0][1]))
+        assert decimation
+        spc_rx = self._rfdc_regs.get_rfdc_info(0)['spc_rx']
+        safety_margin = 2 # This is a number we picked
+        add_adc_margin = lambda latency: latency + decimation * spc_rx * safety_margin
+        # We now read back the measured tile latencies and add margins as
+        # described above
+        adc_latencies = {
+            tile_idx: add_adc_margin(self._rfdc_ctrl.get_tile_latency(tile_idx, False))
+            for tile_idx in adc_tiles_to_sync
+        }
+        dac_latencies = {
+            tile_idx: self._rfdc_ctrl.get_tile_latency(tile_idx, True) + 16
+            for tile_idx in dac_tiles_to_sync
+        }
+        return adc_latencies, dac_latencies
+
+    @no_rpc
+    def set_tile_latencies(self, db_idx, adc_latency, dac_latency):
+        """
+        Apply an ADC latency values to all channels of a daughterboard.
+        """
+        adcs_to_sync = tuple(self._find_converters(db_idx, 'all', 'rx'))
+        dacs_to_sync = tuple(self._find_converters(db_idx, 'all', 'tx'))
+        adc_tiles_to_sync = tuple({x[0] for x in adcs_to_sync})
+        dac_tiles_to_sync = tuple({x[0] for x in dacs_to_sync})
+        if not self._rfdc_ctrl.sync_tiles(adc_tiles_to_sync, False, int(adc_latency)):
+            self.log.error("sync_tiles() failed to synchronize ADC tiles!")
+        if not self._rfdc_ctrl.sync_tiles(dac_tiles_to_sync, True, int(dac_latency)):
+            self.log.error("sync_tiles() failed to synchronize DAC tiles!")
 
         # We expect all sync'd tiles to have equal latencies
         # check for both ADC and DAC separately
@@ -408,7 +446,7 @@ class X4xxRfdcCtrl:
         if not all(latencies[0] == latency for latency in latencies):
             raise RuntimeError("ADC tiles failed to sync properly")
         if latencies[0] != adc_latency:
-            self.log.debug(
+            self.log.warning(
                 f"ADC latency failed to set to desired value (is: {latencies[0]}, "
                 f"requested: {adc_latency}). This may cause problems in multi-device "
                 f"synchronization.")
@@ -419,10 +457,12 @@ class X4xxRfdcCtrl:
         if not all(latencies[0] == latency for latency in latencies):
             raise RuntimeError("DAC tiles failed to sync properly")
         if latencies[0] != dac_latency:
-            self.log.debug(
+            self.log.warning(
                 f"DAC latency failed to set to desired value (is: {latencies[0]}, "
                 f"requested: {dac_latency}). This may cause problems in multi-device "
                 f"synchronization.")
+
+        return True
 
     @no_rpc
     def get_dsp_bw(self):
