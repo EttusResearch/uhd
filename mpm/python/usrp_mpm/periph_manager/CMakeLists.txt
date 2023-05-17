@@ -22,7 +22,7 @@ set(USRP_MPM_PERIPHMGR_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/x4xx_periphs.py
     ${CMAKE_CURRENT_SOURCE_DIR}/x4xx_clk_aux.py
     ${CMAKE_CURRENT_SOURCE_DIR}/x4xx_clock_ctrl.py
-    ${CMAKE_CURRENT_SOURCE_DIR}/x4xx_clk_mgr.py
+    ${CMAKE_CURRENT_SOURCE_DIR}/x4xx_clock_mgr.py
     ${CMAKE_CURRENT_SOURCE_DIR}/x4xx_clock_policy.py
     ${CMAKE_CURRENT_SOURCE_DIR}/x4xx_clock_types.py
     ${CMAKE_CURRENT_SOURCE_DIR}/x4xx_dio_control.py

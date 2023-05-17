@@ -32,7 +32,7 @@ from usrp_mpm.periph_manager.x4xx_periphs import QSFPModule
 from usrp_mpm.periph_manager.x4xx_periphs import get_temp_sensor
 from usrp_mpm.periph_manager.x4xx_mb_cpld import make_mb_cpld_ctrl
 from usrp_mpm.periph_manager.x4xx_clk_aux import ClockingAuxBrdControl
-from usrp_mpm.periph_manager.x4xx_clk_mgr import X4xxClockMgr
+from usrp_mpm.periph_manager.x4xx_clock_mgr import X4xxClockManager
 from usrp_mpm.periph_manager.x4xx_gps_mgr import X4xxGPSMgr
 from usrp_mpm.periph_manager.x4xx_rfdc_ctrl import X4xxRfdcCtrl
 from usrp_mpm.periph_manager.x4xx_clock_policy import get_clock_policy
@@ -464,7 +464,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         # MCR, because we need the RFDC controls for that -- but they won't
         # work without clocks. So let's pick a sensible default MCR value, init
         # the clocks, and fix the MCR value later (in init()).
-        self.clk_mgr = X4xxClockMgr(
+        self.clk_mgr = X4xxClockManager(
             args,
             clk_policy=get_clock_policy(self.mboard_info, self.dboard_infos, args, self.log),
             clk_aux_board=self._clocking_auxbrd,
