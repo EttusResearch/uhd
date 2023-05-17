@@ -14,13 +14,6 @@ from usrp_mpm import lib # Pulls in everything from C++-land
 from usrp_mpm.periph_manager.x4xx_rfdc_regs import RfdcRegsControl
 from usrp_mpm.rpc_server import no_rpc
 
-# Map the interpolation/decimation factor to fabric words.
-# Keys: is_dac (False -> ADC, True -> DAC) and factor
-FABRIC_WORDS_ARRAY = { # [is_dac][factor]
-    False: {0: 16, 1: 16, 2: 8, 4: 4, 8: 2}, # ADC
-    True: {0: -1, 1: -1, 2: 16, 4: 8, 8: 4} # DAC
-}
-
 RFDC_DEVICE_ID = 0
 
 class X4xxRfdcCtrl:
@@ -217,7 +210,7 @@ class X4xxRfdcCtrl:
                    (db_channel == "all" or int(db_channel) == conv_ch)
         return filter(filter_expression, enumerate(converters))
 
-    def _set_interpolation_decimation(self, tile, block, is_dac, factor):
+    def _set_interpolation_decimation(self, tile, block, is_dac, factor, fab_words):
         """
         Set the provided interpolation/decimation factor to the
         specified ADC/DAC tile, block
@@ -228,9 +221,7 @@ class X4xxRfdcCtrl:
         # Keys: is_dac (False -> ADC, True -> DAC) and factor
         # Disable FIFO
         self._rfdc_ctrl.set_data_fifo_state(tile, is_dac, False)
-        # Define fabric rate based on given factor.
-        fab_words = FABRIC_WORDS_ARRAY[is_dac].get(int(factor))
-        if fab_words == -1:
+        if fab_words < 2:
             raise RuntimeError('Unsupported dec/int factor in RFDC')
         # Define dec/int constant based on integer factor
         int_dec = {
@@ -338,8 +329,10 @@ class X4xxRfdcCtrl:
                 0, # XRFDC_EXTERNAL_CLK == 0, means don't use RFDC PLL
                 rfdc_config.conv_rate,
                 rfdc_config.conv_rate)
+            fab_words = self._rfdc_regs.get_rfdc_info(db_idx).get(
+                    'spc_tx' if is_dac else 'spc_rx')
             self._set_interpolation_decimation(
-                conv.tile, conv.block, is_dac, rfdc_config.resampling)
+                conv.tile, conv.block, is_dac, rfdc_config.resampling, fab_words)
 
         self._rfdc_regs.log_status()
         for conv, _, is_dac in converter_list:
