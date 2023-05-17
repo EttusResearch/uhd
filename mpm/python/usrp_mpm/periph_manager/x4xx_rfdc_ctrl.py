@@ -299,21 +299,16 @@ class X4xxRfdcCtrl:
         self._rfdc_regs.set_gated_clock_enables(value=True)
 
     @no_rpc
-    def set_reset(self, reset=True, rfdc_configs=None):
+    def reset_rfdc(self, reset=True):
         """
         Resets the RFDC FPGA components or takes them out of reset.
-        Does not include MMCM!
+
+        (De-)Assert RFDC AXI-S, filters and associated gearbox reset.
         """
+        self._rfdc_regs.set_reset_adc_dac_chains(reset=reset)
         if reset:
-            # Assert RFDC AXI-S, filters and associated gearbox reset.
-            self._rfdc_regs.set_reset_adc_dac_chains(reset=True)
             self._rfdc_regs.log_status()
             return
-
-        assert rfdc_configs
-
-        # De-assert RF signal chain reset
-        self._rfdc_regs.set_reset_adc_dac_chains(reset=False)
 
         # Restart tiles in XRFdc
         # All ADC Tiles
@@ -323,32 +318,6 @@ class X4xxRfdcCtrl:
         if not self._rfdc_ctrl.reset_tile(-1, True):
             self.log.warning('Error starting up DAC tiles')
 
-        # Set sample rate for all active tiles
-        converter_list = itertools.chain(
-                map(lambda x: (x[1], x[0], True), enumerate(self._dac_convs)),
-                map(lambda x: (x[1], x[0], False), enumerate(self._adc_convs)))
-
-        for conv, channel, is_dac in converter_list:
-            db_idx = self._device_to_db_channel(channel)[1]
-            rfdc_config = rfdc_configs[db_idx]
-            self._rfdc_ctrl.reset_mixer_settings(conv.tile, conv.block, is_dac)
-            # Configure the RFDC PLL (either in bypass or PLL mode) and program
-            # the real converter rate
-            self._rfdc_ctrl.configure_pll(
-                conv.tile,
-                is_dac,
-                0, # XRFDC_EXTERNAL_CLK == 0, means don't use RFDC PLL
-                rfdc_config.conv_rate,
-                rfdc_config.conv_rate)
-            fab_words = self._rfdc_regs.get_rfdc_info(db_idx).get(
-                    'spc_tx' if is_dac else 'spc_rx')
-            self._set_interpolation_decimation(
-                conv.tile, conv.block, is_dac, rfdc_config.resampling, fab_words)
-
-        self._rfdc_regs.log_status()
-        for conv, _, is_dac in converter_list:
-            # Set RFDC NCO reset event source to analog SYSREF
-            self._rfdc_ctrl.set_nco_event_src(conv.tile, conv.block, is_dac)
 
     @no_rpc
     def startup_tiles(self):
@@ -378,6 +347,44 @@ class X4xxRfdcCtrl:
         # Shutdown all DAC Tiles
         if not self._rfdc_ctrl.shutdown_tile(-1, True):
             self.log.warning('Error shutting down DAC tiles')
+
+    @no_rpc
+    def configure(self, ref_freq, rfdc_configs):
+        """
+        Configure RFDC settings (RFDC PLL, converters).
+        """
+        # Set sample rate for all active tiles
+        converter_list = itertools.chain(
+                map(lambda x: (x[1], x[0], True), enumerate(self._dac_convs)),
+                map(lambda x: (x[1], x[0], False), enumerate(self._adc_convs)))
+
+        for conv, channel, is_dac in converter_list:
+            db_idx = self._device_to_db_channel(channel)[1]
+            rfdc_config = rfdc_configs[db_idx]
+            self._rfdc_ctrl.reset_mixer_settings(conv.tile, conv.block, is_dac)
+            # Configure the RFDC PLL (either in bypass or PLL mode) and program
+            # the real converter rate
+            if not self._rfdc_ctrl.configure_pll(
+                conv.tile,
+                is_dac,
+                int(ref_freq != rfdc_config.conv_rate),
+                ref_freq,
+                rfdc_config.conv_rate):
+                self.log.error(f"Failed to configure RFDC PLL for {'DAC' if is_dac else 'ADC'} "
+                                 f"at channel {channel}.")
+                raise RuntimeError(f"Failed to configure RFDC PLL for {'DAC' if is_dac else 'ADC'} "
+                                 f"at channel {channel}.")
+            fab_words = self._rfdc_regs.get_rfdc_info(db_idx).get(
+                    'spc_tx' if is_dac else 'spc_rx')
+            self._set_interpolation_decimation(
+                conv.tile, conv.block, is_dac, rfdc_config.resampling, fab_words)
+
+        self._rfdc_regs.log_status()
+        for conv, _, is_dac in converter_list:
+            # Set RFDC NCO reset event source to analog SYSREF
+            self._rfdc_ctrl.set_nco_event_src(conv.tile, conv.block, is_dac)
+        # Now reset registers that might require updating
+        self._rfdc_regs.reset()
 
     @no_rpc
     def determine_tile_latencies(self, db_idx):

@@ -510,7 +510,7 @@ class X4xxClockManager:
                 self.clk_ctrl.reset_clock(value, 'cpld')
             if 'rfdc' in reset_list:
                 assert self.rfdc
-                self.rfdc.set_reset(reset=True)
+                self.rfdc.reset_rfdc(reset=value)
             if 'mmcm' in reset_list:
                 self.rfdc.reset_mmcm(reset=value)
             if 'spll' in reset_list:
@@ -528,14 +528,12 @@ class X4xxClockManager:
                 assert self.rfdc
                 self.rfdc.reset_mmcm(reset=value)
             if 'rfdc' in reset_list:
-                clk_config = self.clk_policy.get_config(
-                    self.get_ref_clock_freq(), self._master_clock_rates)
-                self.rfdc.set_reset(reset=False, rfdc_configs=clk_config.rfdc_configs)
+                assert self.rfdc
+                self.rfdc.reset_rfdc(reset=value)
             if 'cpld' in reset_list:
                 self.clk_ctrl.reset_clock(value, 'cpld')
             if 'db_clock' in reset_list:
                 self._set_reset_db_clocks(value)
-
 
 
     ###########################################################################
@@ -581,8 +579,14 @@ class X4xxClockManager:
         # for the MMCM to be locked, therefore we call it again after config.
         self._reset_clocks(False, ('mmcm',))
         self._config_mmcm(clk_settings)
+        # Reconfigure RFDC and bring it out of reset
+        self.rfdc.configure(clk_settings.spll_config.output_freq, clk_settings.rfdc_configs)
+        self._reset_clocks(False, ('rfdc',))
+        # All settings are applied: Now bring other clocks out of reset. Note
+        # that cpld and db_clock don't depend on MMCM or RFDC, but we don't need
+        # them so they only come back now.
+        self._reset_clocks(False, ('cpld', 'db_clock'))
         self._master_clock_rates = master_clock_rates
-        self._reset_clocks(value=False, reset_list=('rfdc', 'cpld', 'db_clock'))
         self._config_pps_to_timekeeper(master_clock_rates)
 
     @no_rpc
