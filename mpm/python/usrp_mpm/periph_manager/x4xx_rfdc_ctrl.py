@@ -8,7 +8,8 @@ X400 RFDC Control Module
 """
 
 import ast
-from collections import OrderedDict
+import itertools
+from dataclasses import dataclass
 from usrp_mpm import lib # Pulls in everything from C++-land
 from usrp_mpm.periph_manager.x4xx_rfdc_regs import RfdcRegsControl
 from usrp_mpm.rpc_server import no_rpc
@@ -24,44 +25,48 @@ RFDC_DEVICE_ID = 0
 
 class X4xxRfdcCtrl:
     """
-    Control class for the X4xx's RFDC
+    Control class for the X4xx's RFDC.
 
+    This class is agnostic to blocks used on the RFdc. Device
+    specific mappings between ADC/DAC block and RF channels
+    must be given during initialization so it works for all
+    X4xx devices.
     """
+
+    RFSOC_ADC_FIN_MIN = 102.40625e6
+    RFSOC_ADC_FIN_MAX = 6554e6
+    ADC_CONV_RATE_MIN = 1000e6
+    ADC_CONV_RATE_MAX = 4096e6
+    RFDC_RESAMPLER = (8, 4, 2)
+
+    MMCM_INPUT_MIN = 10e6
+    # The MMCM_INPUT_MAX is 933 MHz according to the spec, but we limit it to 775 MHz because
+    # of the limitation of a bufgce resource we're using.
+    MMCM_INPUT_MAX = 775e6
+    MMCM_FOUTMIN = 6.25e6
+    MMCM_FOUTMAX = 775e6
+    MMCM_VCO_MIN = 800e6
+    MMCM_VCO_MAX = 1600e6
+    MMCM_FB_MIN = 2
+    MMCM_FB_MAX = 64
+    MMCM_OD_MIN = 1
+    MMCM_OD_MAX = 128
+
+    @dataclass
+    class ConverterInfo:
+        """
+        Helper class to cache converter information. Tile
+        and block identify the converter where freq and
+        cal_freeze are used to cache the last nco_freq
+        and the calibration freeze state.
+        """
+        tile: int
+        block: int
+        nco_freq: float = None
+        cal_freeze: int = 0
+
     # Label for RFDC UIO
     rfdc_regs_label = "rfdc-regs"
-    # Describes the mapping of ADC/DAC Tiles and Blocks to DB Slot IDs
-    # Follows the below structure:
-    #   <slot_idx>
-    #       'adc': [ (<tile_number>, <block_number>), ... ]
-    #       'dac': [ (<tile_number>, <block_number>), ... ]
-    RFDC_DB_MAP = [
-        {
-            'adc': [(0, 1), (0, 0)],
-            'dac': [(0, 0), (0, 1)],
-        },
-        {
-            'adc': [(2, 1), (2, 0)],
-            'dac': [(1, 0), (1, 1)],
-        },
-    ]
-
-    # Maps all possible master_clock_rate (data clk rate * data SPC) values to the
-    # corresponding sample rate, expected FPGA decimation, whether to configure
-    # the SPLL in legacy mode (which uses a different divider), and whether half-band
-    # resampling is used.
-    # Using an OrderedDict to use the first rates as a preference for the default
-    # rate for its corresponding decimation.
-    master_to_sample_clk = OrderedDict({
-        #      MCR:    (SPLL, decimation, legacy mode, half-band resampling)
-        122.88e6*4:    (2.94912e9, 2, False, False), # RF (1M-8G)
-        122.88e6*2:    (2.94912e9, 2, False, True),  # RF (1M-8G)
-        122.88e6*1:    (2.94912e9, 8, False, False), # RF (1M-8G)
-        125e6*1:       (3.00000e9, 8, False, False), # RF (1M-8G)
-        125e6*2:       (3.00000e9, 2, False, True),  # RF (1M-8G)
-        125e6*4:       (3.00000e9, 2, False, False), # RF (1M-8G)
-        200e6:         (3.00000e9, 4, True,  False), # RF (Legacy Mode)
-    })
-
 
     def __init__(self, log):
         self.log = log.getChild('RFDC')
@@ -69,24 +74,210 @@ class X4xxRfdcCtrl:
         self._rfdc_ctrl = lib.rfdc.rfdc_ctrl()
         self._rfdc_ctrl.init(RFDC_DEVICE_ID)
 
-        # Stores the last set value of the nco freq for each channel
-        # Follows the below structure:
-        #   <slot_id>
-        #       'rx': [chan0_freq, chan1_freq]
-        #       'tx': [chan0_freq, chan1_freq]
-        self._rfdc_freq_cache = [
-            {
-                'rx': [0, 0],
-                'tx': [0, 0],
-            },
-            {
-                'rx': [0, 0],
-                'tx': [0, 0],
-            },
-        ]
+        rinfo = self._rfdc_regs.get_rfdc_info(0)
+        self.log.debug(
+            f"Found bitfile with bandwidth: {rinfo['bw']} MHz, RX/TX chans: "
+            f"{rinfo['num_rx_chans']}/{rinfo['num_tx_chans']}, extra resampling: "
+            f"{rinfo['extra_resampling']}, RFDC SPC RX/TX: "
+            f"{rinfo['spc_rx']}/{rinfo['spc_tx']}")
 
-        self._cal_freeze_cache = {}
+        adc_mapping, dac_mapping = self._rfdc_regs.get_converter_mapping()
 
+        assert len(adc_mapping) == len(dac_mapping), "len of ADC/DAC mappings differ"
+
+        channels_per_db = (len(list) for list in itertools.chain(adc_mapping, dac_mapping))
+        self._channels_per_db = next(channels_per_db)
+
+        assert all(self._channels_per_db == i for i in channels_per_db), \
+            "all ADC/DAC board mappings must be of equal length"
+
+        self._adc_convs = tuple(X4xxRfdcCtrl.ConverterInfo(tile, block)
+            for (tile, block) in itertools.chain(*adc_mapping))
+        self._dac_convs = tuple(X4xxRfdcCtrl.ConverterInfo(tile, block)
+            for (tile, block) in itertools.chain(*dac_mapping))
+
+        self.log.debug(f"Got assigned ADCs/DACs for {len(self._adc_convs)} channels "
+            f"with {self._channels_per_db} channels per board.")
+        self.log.debug(f"ADCs {[(conv.tile, conv.block) for conv in self._adc_convs]}")
+        self.log.debug(f"DACs {[(conv.tile, conv.block) for conv in self._dac_convs]}")
+
+
+        self._check_converters_enabled()
+
+    ###########################################################################
+    # Private helpers (note: x4xx_db_iface calls into those)
+    ###########################################################################
+    def _check_converters_enabled(self):
+        """
+        Check that all configured converters are actually enabled on the RFDC.
+        Prints an enable map of all tiles first to help debugging.
+        """
+        self.log.debug("tile/block | ADC | DAC ")
+        self.log.debug("-----------+-----+-----")
+        for tile, block in itertools.product(range(4), range(4)):
+            self.log.debug(f"{tile}/{block}        |"
+                f"  {int(self._rfdc_ctrl.is_adc_enabled(tile, block))}  |"
+                f"  {int(self._rfdc_ctrl.is_dac_enabled(tile, block))}   ")
+
+        for conv in self._adc_convs:
+            if not self._rfdc_ctrl.is_adc_enabled(conv.tile, conv.block):
+                raise RuntimeError(f"ADC converter for tile {conv.tile}/{conv.block} "
+                    "is configured but not enabled.")
+        for conv in self._dac_convs:
+            if not self._rfdc_ctrl.is_dac_enabled(conv.tile, conv.block):
+                raise RuntimeError(f"DAC converter for tile {conv.tile}/{conv.block} "
+                    "is configured but not enabled.")
+
+    def _device_to_db_channel(self, device_channel):
+        """
+        Converts a device channel to a tuple of daughterboard channel and
+        a daughterboard index.
+        :param device_channel: channel number in device counting (one number over all boards)
+        :return: tuple, first item channel in daughterboard counting, second daughterboard index
+        """
+        return (device_channel % self._channels_per_db, device_channel // self._channels_per_db)
+
+    def _get_converter(self, direction, db_id, db_channel):
+        """
+        Returns a *single* converter that matches direction, db_id and conv_channel
+        :param direction: converter type to search, "tx" for DACs, "rx" for ADCs
+        :param db_id: index of daughterboard to search on
+        :param db_channel: channel number on the board to search for
+        :asserts: more than one converter found
+        :return: matching converter (if any)
+        """
+        converters = {
+            "tx": self._dac_convs,
+            "rx": self._adc_convs,
+        }.get(direction)
+        if not converters:
+            raise ValueError(f"Invalid direction '{direction}' given (chose between 'rx' or 'tx').")
+        [converter, *residual] = [conv[1] for conv in
+                self._filter_converters(db_id, db_channel, converters)]
+        assert len(residual) == 0
+        return converter
+
+    def _find_converters(self, db_id, db_channel, direction):
+        """
+        Returns an iterable of converters that match the given parameter.
+        :param db_id: index of daughterboard to search on ('all' for all daughterboards)
+        :param db_channel: channel number on the board to search for ('all' for all channels)
+        :param direction: converter type to search, "tx" for DACs, "rx" for ADCs, "both" for both
+        :return: iterable of matching converters
+        """
+        if not direction in ("rx", "tx", "both"):
+            raise ValueError("Allowed value for direction are: "
+                f"'rx', 'tx', 'both'. Given: '{direction}'")
+        rx_converters = []
+        tx_converters = []
+        if direction in ("rx", "both"):
+            rx_converters = map(lambda conv: (conv[1].tile, conv[1].block, False),
+                    self._filter_converters(db_id, db_channel, self._adc_convs))
+        if direction in ("tx", "both"):
+            tx_converters = map(lambda conv: (conv[1].tile, conv[1].block, True),
+                    self._filter_converters(db_id, db_channel, self._dac_convs))
+        return itertools.chain(rx_converters, tx_converters)
+
+    def _check_valid_index(self, name, value):
+        """
+        Checks value to be either string or int. Value has to be an unsigned
+        integer. If value is a string 'all' is allowed as well.
+        :param name: The name of value (used for Exception messages)
+        :param value: value to check
+        :raises TypeError if not int or str, ValueError if not an unsigned integer or 'all'
+        :return: validated value
+        """
+        if value == "both":
+            # translate 'both' to 'all' for backward compat
+            self.log.warning("'both' as glob is deprecated. Use 'all' instead.")
+            value = "all"
+        if isinstance(value, int):
+            if value < 0:
+                raise ValueError(f"{name} must not be negative")
+        elif isinstance(value, str):
+            # isdigit implies positive integer
+            if not (value.isdigit() or (value == "all")):
+                raise ValueError(f"{name} must denote an positive integer or 'all'")
+        else:
+            raise TypeError(f"{name} must be either 'int' or 'str'")
+
+        return value
+
+    def _filter_converters(self, db_id, db_channel, converters):
+        """
+        Returns an iterable on converters where items match db_id and db_channel.
+        db_id and db_channel are allowed to be 'all' to match every
+        daughterboard and/or every channel on the daughterboard.
+        """
+        db_id = self._check_valid_index("slot_id", db_id)
+        db_channel = self._check_valid_index("channel", db_channel)
+        def filter_expression(item):
+            (conv_ch, conv_db) = self._device_to_db_channel(item[0])
+            return (db_id == "all" or int(db_id) == conv_db) and \
+                   (db_channel == "all" or int(db_channel) == conv_ch)
+        return filter(filter_expression, enumerate(converters))
+
+    def _set_interpolation_decimation(self, tile, block, is_dac, factor):
+        """
+        Set the provided interpolation/decimation factor to the
+        specified ADC/DAC tile, block
+
+        Only gets called from set_reset_rfdc().
+        """
+        # Map the interpolation/decimation factor to fabric words.
+        # Keys: is_dac (False -> ADC, True -> DAC) and factor
+        # Disable FIFO
+        self._rfdc_ctrl.set_data_fifo_state(tile, is_dac, False)
+        # Define fabric rate based on given factor.
+        fab_words = FABRIC_WORDS_ARRAY[is_dac].get(int(factor))
+        if fab_words == -1:
+            raise RuntimeError('Unsupported dec/int factor in RFDC')
+        # Define dec/int constant based on integer factor
+        int_dec = {
+            0: lib.rfdc.interp_decim_options.INTERP_DECIM_OFF,
+            1: lib.rfdc.interp_decim_options.INTERP_DECIM_1X,
+            2: lib.rfdc.interp_decim_options.INTERP_DECIM_2X,
+            4: lib.rfdc.interp_decim_options.INTERP_DECIM_4X,
+            8: lib.rfdc.interp_decim_options.INTERP_DECIM_8X
+        }.get(factor)
+        if int_dec is None:
+            raise RuntimeError(
+                f'Unsupported dec/int factor of {factor} in RFDC')
+        # Update tile, block settings...
+        self.log.debug(
+                "Setting %s for %s tile %d, block %d to %dx (SPC value: %d)",
+            ('interpolation' if is_dac else 'decimation'),
+            'DAC' if is_dac else 'ADC', tile, block, factor, fab_words)
+        if is_dac:
+            # Set interpolation
+            self._rfdc_ctrl.set_interpolation_factor(tile, block, int_dec)
+            self.log.trace(
+                "  interpolation: %s",
+                self._rfdc_ctrl.get_interpolation_factor(tile, block).name)
+            # Set fabric write rate
+            self._rfdc_ctrl.set_data_write_rate(tile, block, fab_words)
+            self.log.trace(
+                "  Read words: %d",
+                self._rfdc_ctrl.get_data_write_rate(tile, block, True))
+        else: # ADC
+            # Set decimation
+            self._rfdc_ctrl.set_decimation_factor(tile, block, int_dec)
+            self.log.trace(
+                "  Decimation: %s",
+                self._rfdc_ctrl.get_decimation_factor(tile, block).name)
+            # Set fabric read rate
+            self._rfdc_ctrl.set_data_read_rate(tile, block, fab_words)
+            self.log.trace(
+                "  Read words: %d",
+                self._rfdc_ctrl.get_data_read_rate(tile, block, False))
+        # Clear interrupts
+        self._rfdc_ctrl.clear_data_fifo_interrupts(tile, block, is_dac)
+        # Enable FIFO
+        self._rfdc_ctrl.set_data_fifo_state(tile, is_dac, True)
+
+    ###########################################################################
+    # Public APIs (not available as MPM RPC calls)
+    ###########################################################################
     @no_rpc
     def tear_down(self):
         """
@@ -95,9 +286,6 @@ class X4xxRfdcCtrl:
         """
         del self._rfdc_ctrl
 
-    ###########################################################################
-    # Public APIs (not available as MPM RPC calls)
-    ###########################################################################
     @no_rpc
     def set_reset(self, reset=True, rfdc_configs=None):
         """
@@ -134,32 +322,29 @@ class X4xxRfdcCtrl:
             self.log.warning('Error starting up DAC tiles')
 
         # Set sample rate for all active tiles
-        active_converters = set()
-        for db_idx, db_info in enumerate(self.RFDC_DB_MAP):
-            db_rfdc_resamp = rfdc_configs[db_idx].resampling
-            conv_rate = rfdc_configs[db_idx].conv_rate
-            for converter_type, tile_block_set in db_info.items():
-                for tile, block in tile_block_set:
-                    is_dac = converter_type != 'adc'
-                    active_converter_tuple = (
-                        tile, block, db_rfdc_resamp, is_dac, conv_rate)
-                    active_converters.add(active_converter_tuple)
-        for tile, block, resampling_factor, is_dac, conv_rate in active_converters:
-            self._rfdc_ctrl.reset_mixer_settings(tile, block, is_dac)
+        converter_list = itertools.chain(
+                map(lambda x: (x[1], x[0], True), enumerate(self._dac_convs)),
+                map(lambda x: (x[1], x[0], False), enumerate(self._adc_convs)))
+
+        for conv, channel, is_dac in converter_list:
+            db_idx = self._device_to_db_channel(channel)[1]
+            rfdc_config = rfdc_configs[db_idx]
+            self._rfdc_ctrl.reset_mixer_settings(conv.tile, conv.block, is_dac)
+            # Configure the RFDC PLL (either in bypass or PLL mode) and program
+            # the real converter rate
             self._rfdc_ctrl.configure_pll(
-                tile,
+                conv.tile,
                 is_dac,
                 0, # XRFDC_EXTERNAL_CLK == 0, means don't use RFDC PLL
-                conv_rate,
-                conv_rate)
-            self._set_interpolation_decimation(tile, block, is_dac, resampling_factor)
+                rfdc_config.conv_rate,
+                rfdc_config.conv_rate)
+            self._set_interpolation_decimation(
+                conv.tile, conv.block, is_dac, rfdc_config.resampling)
 
         self._rfdc_regs.log_status()
-
-        # Set RFDC NCO reset event source to analog SYSREF
-        for tile, block, _, is_dac, __ in active_converters:
-            self._rfdc_ctrl.set_nco_event_src(tile, block, is_dac)
-
+        for conv, _, is_dac in converter_list:
+            # Set RFDC NCO reset event source to analog SYSREF
+            self._rfdc_ctrl.set_nco_event_src(conv.tile, conv.block, is_dac)
 
     @no_rpc
     def sync(self):
@@ -174,39 +359,38 @@ class X4xxRfdcCtrl:
         # Ideally, this would be a set to avoiding duplicate indices,
         # but we need to use a list for compatibility with the rfdc_ctrl
         # C++ interface (std::vector)
-        adc_tiles_to_sync = []
-        dac_tiles_to_sync = []
-
-        rfdc_map = self.RFDC_DB_MAP
-        for db_id in rfdc_map:
-            for converter_type, tile_block_set in db_id.items():
-                for tile, _ in tile_block_set:
-                    if converter_type == 'adc':
-                        if tile not in adc_tiles_to_sync:
-                            adc_tiles_to_sync.append(tile)
-                    else:  # dac
-                        if tile not in dac_tiles_to_sync:
-                            dac_tiles_to_sync.append(tile)
-
+        adcs_to_sync = tuple(self._find_converters(0, 'all', 'rx')) + \
+                       tuple(self._find_converters(1, 'all', 'rx'))
+        dacs_to_sync = tuple(self._find_converters(0, 'all', 'tx')) + \
+                       tuple(self._find_converters(1, 'all', 'tx'))
+        adc_tiles_to_sync = tuple({x[0] for x in adcs_to_sync})
+        dac_tiles_to_sync = tuple({x[0] for x in dacs_to_sync})
         self._rfdc_ctrl.sync_tiles(adc_tiles_to_sync, False, adc_latency)
         self._rfdc_ctrl.sync_tiles(dac_tiles_to_sync, True, dac_latency)
 
         # We expect all sync'd tiles to have equal latencies
-        # Sets don't add duplicates, so we can use that to look
-        # for erroneous tiles
-        adc_tile_latency_set = set()
-        for tile in adc_tiles_to_sync:
-            adc_tile_latency_set.add(
-                self._rfdc_ctrl.get_tile_latency(tile, False))
-        if len(adc_tile_latency_set) != 1:
+        # check for both ADC and DAC separately
+        latencies = [
+            self._rfdc_ctrl.get_tile_latency(tile, False)
+            for tile in adc_tiles_to_sync]
+        if not all(latencies[0] == latency for latency in latencies):
             raise RuntimeError("ADC tiles failed to sync properly")
+        if latencies[0] != adc_latency:
+            self.log.debug(
+                f"ADC latency failed to set to desired value (is: {latencies[0]}, "
+                f"requested: {adc_latency}). This may cause problems in multi-device "
+                f"synchronization.")
 
-        dac_tile_latency_set = set()
-        for tile in dac_tiles_to_sync:
-            dac_tile_latency_set.add(
-                self._rfdc_ctrl.get_tile_latency(tile, True))
-        if len(dac_tile_latency_set) != 1:
+        latencies = [
+            self._rfdc_ctrl.get_tile_latency(tile, True)
+            for tile in dac_tiles_to_sync]
+        if not all(latencies[0] == latency for latency in latencies):
             raise RuntimeError("DAC tiles failed to sync properly")
+        if latencies[0] != dac_latency:
+            self.log.debug(
+                f"DAC latency failed to set to desired value (is: {latencies[0]}, "
+                f"requested: {dac_latency}). This may cause problems in multi-device "
+                f"synchronization.")
 
     @no_rpc
     def get_dsp_bw(self):
@@ -217,7 +401,8 @@ class X4xxRfdcCtrl:
         access to RfdcRegsControl, and the bandwidth is strongly related to the
         RFdc settings.
         """
-        return self._rfdc_regs.get_fabric_dsp_info(0)[0]
+        return self._rfdc_regs.get_rfdc_info(0)['bw']
+
 
     @no_rpc
     def get_dsp_info(self):
@@ -232,27 +417,22 @@ class X4xxRfdcCtrl:
         """
         Restores previously set RFDC NCO Frequencies
         """
-        for slot_id, slot_info in enumerate(self._rfdc_freq_cache):
-            for direction, channel_frequencies in slot_info.items():
-                self.rfdc_set_nco_freq(direction, slot_id, 0, channel_frequencies[0])
-                self.rfdc_set_nco_freq(direction, slot_id, 1, channel_frequencies[1])
+        for channel, (adc_conv, dac_conv) in enumerate(zip(self._adc_convs, self._dac_convs)):
+            (conv_ch, conv_db) = self._device_to_db_channel(channel)
+            if adc_conv.nco_freq:
+                self.rfdc_set_nco_freq("rx", conv_db, conv_ch, adc_conv.nco_freq)
+            if dac_conv.nco_freq:
+                self.rfdc_set_nco_freq("tx", conv_db, conv_ch, dac_conv.nco_freq)
+
 
     @no_rpc
     def rfdc_restore_cal_freeze(self):
         """
         Restores the previously set calibration freeze settings
         """
-        for slot_id in [0, 1]:
-            for tile_id, block_id, _ in self._find_converters(slot_id, "rx", "all"):
-                if (tile_id, block_id) in self._cal_freeze_cache:
-                    self._rfdc_ctrl.set_cal_frozen(
-                        tile_id, block_id, 0
-                    )
-                    self._rfdc_ctrl.set_cal_frozen(
-                        tile_id,
-                        block_id,
-                        self._cal_freeze_cache[(tile_id, block_id)]
-                    )
+        for conv in self._adc_convs:
+            self._rfdc_ctrl.set_cal_frozen(conv.tile, conv.block, 0)
+            self._rfdc_ctrl.set_cal_frozen(conv.tile, conv.block, conv.cal_freeze)
     @no_rpc
     def enable_iq_swap(self, enable, db_idx, channel, is_dac):
         """
@@ -279,25 +459,20 @@ class X4xxRfdcCtrl:
         """
         Sets the RFDC NCO Frequency for the specified channel
         """
-        converters = self._find_converters(slot_id, direction, channel)
-        assert len(converters) == 1
-        (tile_id, block_id, is_dac) = converters[0]
+        conv = self._get_converter(direction, slot_id, channel)
 
-        if not self._rfdc_ctrl.set_if(tile_id, block_id, is_dac, freq):
+        if not self._rfdc_ctrl.set_if(conv.tile, conv.block, direction == "tx", freq):
             raise RuntimeError("Error setting RFDC IF Frequency")
-        self._rfdc_freq_cache[slot_id][direction][channel] = freq
-
-        return self._rfdc_ctrl.get_nco_freq(tile_id, block_id, is_dac)
+        conv.nco_freq = self._rfdc_ctrl.get_nco_freq(conv.tile, conv.block, direction == "tx")
+        return conv.nco_freq
 
     def rfdc_get_nco_freq(self, direction, slot_id, channel):
         """
         Gets the RFDC NCO Frequency for the specified channel
         """
-        converters = self._find_converters(slot_id, direction, channel)
-        assert len(converters) == 1
-        (tile_id, block_id, is_dac) = converters[0]
+        conv = self._get_converter(direction, slot_id, channel)
 
-        return self._rfdc_ctrl.get_nco_freq(tile_id, block_id, is_dac)
+        return self._rfdc_ctrl.get_nco_freq(conv.tile, conv.block, direction == "tx")
 
     ### ADC cal ###############################################################
     def set_calibration_mode(self, slot_id, channel, mode):
@@ -311,7 +486,7 @@ class X4xxRfdcCtrl:
         if mode not in MODES:
             raise RuntimeError(
                  f"Mode {mode} is not one of the allowable modes {list(MODES.keys())}")
-        for tile_id, block_id, _ in self._find_converters(slot_id, "rx", channel):
+        for tile_id, block_id, _ in self._find_converters(slot_id, channel, "rx"):
             self._rfdc_ctrl.set_calibration_mode(tile_id, block_id, MODES[mode])
 
     def set_cal_frozen(self, frozen, slot_id, channel):
@@ -323,9 +498,9 @@ class X4xxRfdcCtrl:
 
         <frozen> should be 0 to unfreeze the calibration blocks or 1 to freeze them.
         """
-        for tile_id, block_id, _ in self._find_converters(slot_id, "rx", channel):
-            self._cal_freeze_cache[(tile_id, block_id)] = frozen
-            self._rfdc_ctrl.set_cal_frozen(tile_id, block_id, frozen)
+        for _, conv in self._filter_converters(slot_id, channel, self._adc_convs):
+            conv.cal_freeze = frozen
+            self._rfdc_ctrl.set_cal_frozen(conv.tile, conv.block, frozen)
 
     def get_cal_frozen(self, slot_id, channel):
         """
@@ -334,21 +509,21 @@ class X4xxRfdcCtrl:
         Usage:
         > get_cal_frozen <slot_id> <channel>
         """
-        return [
-            1 if self._rfdc_ctrl.get_cal_frozen(tile_id, block_id) else 0
-            for tile_id, block_id, is_dac in self._find_converters(slot_id, "rx", channel)
-        ]
+        def get_cal_frozen(conv):
+            return 1 if self._rfdc_ctrl.get_cal_frozen(conv[1].tile, conv[1].block) else 0
+
+        return list(map(get_cal_frozen,
+            self._filter_converters(slot_id, channel, self._adc_convs)))
 
     def set_cal_coefs(self, channel, slot_id, cal_block, coefs):
         """
         Manually override calibration block coefficients. You probably don't need to use this.
         """
-        self.log.trace(
-            "Setting ADC cal coefficients for channel={} slot_id={} cal_block={}".format(
-                channel, slot_id, cal_block))
-        for tile_id, block_id, _ in self._find_converters(slot_id, "rx", channel):
+        self.log.trace("Setting ADC cal coefficients for "
+            f"channel={channel} slot_id={slot_id} cal_block={cal_block}")
+        for _, conv in self._filter_converters(slot_id, channel, self._adc_convs):
             self._rfdc_ctrl.set_adc_cal_coefficients(
-                tile_id, block_id, cal_block, ast.literal_eval(coefs))
+                conv.tile, conv.block, cal_block, ast.literal_eval(coefs))
 
     def get_cal_coefs(self, channel, slot_id, cal_block):
         """
@@ -366,13 +541,14 @@ class X4xxRfdcCtrl:
         2 - GCB
         3 - TSCB
         """
-        self.log.trace(
-            "Getting ADC cal coefficients for channel={} slot_id={} cal_block={}".format(
-                channel, slot_id, cal_block))
-        result = []
-        for tile_id, block_id, _ in self._find_converters(slot_id, "rx", channel):
-            result.append(self._rfdc_ctrl.get_adc_cal_coefficients(tile_id, block_id, cal_block))
-        return result
+        def get_adc_dac_coeffs(conv):
+            return self._rfdc_ctrl.get_adc_cal_coefficients(
+                conv[1].tile, conv[1].block, cal_block)
+
+        self.log.trace("Getting ADC cal coefficients for "
+            "channel={channel} slot_id={slot_id} cal_block={cal_block}")
+        return list(map(get_adc_dac_coeffs,
+            self._filter_converters(slot_id, channel, self._adc_convs)))
 
     ### DAC mux
     def set_dac_mux_data(self, i_val, q_val):
@@ -413,20 +589,20 @@ class X4xxRfdcCtrl:
         under: 0-16384, ADC codes to set the "under" threshold to
         over: 0-16384, ADC codes to set the "over" threshold to
         """
-        for tile_id, block_id, _ in self._find_converters(slot_id, "rx", channel):
-            THRESHOLDS = {
+        for _, conv in self._filter_converters(slot_id, channel, self._adc_convs):
+            thresholds = {
                 0: lib.rfdc.threshold_id_options.THRESHOLD_0,
                 1: lib.rfdc.threshold_id_options.THRESHOLD_1,
             }
-            MODES = {
+            modes = {
                 "sticky_over": lib.rfdc.threshold_mode_options.TRSHD_STICKY_OVER,
                 "sticky_under": lib.rfdc.threshold_mode_options.TRSHD_STICKY_UNDER,
                 "hysteresis": lib.rfdc.threshold_mode_options.TRSHD_HYSTERESIS,
             }
-            if mode not in MODES:
+            if mode not in modes:
                 raise RuntimeError(
-                    f"Mode {mode} is not one of the allowable modes {list(MODES.keys())}")
-            if threshold_idx not in THRESHOLDS:
+                    f"Mode {mode} is not one of the allowable modes {list(modes.keys())}")
+            if threshold_idx not in thresholds:
                 raise RuntimeError("threshold_idx must be 0 or 1")
             delay = int(delay)
             under = int(under)
@@ -434,9 +610,9 @@ class X4xxRfdcCtrl:
             assert 0 <= under <= 16383
             assert 0 <= over <= 16383
             self._rfdc_ctrl.set_threshold_settings(
-                tile_id, block_id,
+                conv.tile, conv.block,
                 lib.rfdc.threshold_id_options.THRESHOLD_0,
-                MODES[mode],
+                modes[mode],
                 delay,
                 under,
                 over)
@@ -450,107 +626,5 @@ class X4xxRfdcCtrl:
         e.g.
         > get_threshold_status 0 1 0
         """
-        return self._rfdc_regs.get_threshold_status(slot_id, channel, threshold_idx) != 0
-
-
-    ###########################################################################
-    # Private helpers (note: x4xx_db_iface calls into those)
-    ###########################################################################
-    def _set_interpolation_decimation(self, tile, block, is_dac, factor):
-        """
-        Set the provided interpolation/decimation factor to the
-        specified ADC/DAC tile, block
-
-        Only gets called from set_reset_rfdc().
-        """
-        # Map the interpolation/decimation factor to fabric words.
-        # Keys: is_dac (False -> ADC, True -> DAC) and factor
-        # Disable FIFO
-        self._rfdc_ctrl.set_data_fifo_state(tile, is_dac, False)
-        # Define fabric rate based on given factor.
-        fab_words = FABRIC_WORDS_ARRAY[is_dac].get(int(factor))
-        if fab_words == -1:
-            raise RuntimeError('Unsupported dec/int factor in RFDC')
-        # Define dec/int constant based on integer factor
-        if factor == 0:
-            int_dec = lib.rfdc.interp_decim_options.INTERP_DECIM_OFF
-        elif factor == 1:
-            int_dec = lib.rfdc.interp_decim_options.INTERP_DECIM_1X
-        elif factor == 2:
-            int_dec = lib.rfdc.interp_decim_options.INTERP_DECIM_2X
-        elif factor == 4:
-            int_dec = lib.rfdc.interp_decim_options.INTERP_DECIM_4X
-        elif factor == 8:
-            int_dec = lib.rfdc.interp_decim_options.INTERP_DECIM_8X
-        else:
-            raise RuntimeError('Unsupported dec/int factor in RFDC')
-        # Update tile, block settings...
-        self.log.debug(
-            "Setting %s for %s tile %d, block %d to %dx",
-            ('interpolation' if is_dac else 'decimation'),
-            'DAC' if is_dac else 'ADC', tile, block, factor)
-        if is_dac:
-            # Set interpolation
-            self._rfdc_ctrl.set_interpolation_factor(tile, block, int_dec)
-            self.log.trace(
-                "  interpolation: %s",
-                self._rfdc_ctrl.get_interpolation_factor(tile, block).name)
-            # Set fabric write rate
-            self._rfdc_ctrl.set_data_write_rate(tile, block, fab_words)
-            self.log.trace(
-                "  Read words: %d",
-                self._rfdc_ctrl.get_data_write_rate(tile, block, True))
-        else: # ADC
-            # Set decimation
-            self._rfdc_ctrl.set_decimation_factor(tile, block, int_dec)
-            self.log.trace(
-                "  Decimation: %s",
-                self._rfdc_ctrl.get_decimation_factor(tile, block).name)
-            # Set fabric read rate
-            self._rfdc_ctrl.set_data_read_rate(tile, block, fab_words)
-            self.log.trace(
-                "  Read words: %d",
-                self._rfdc_ctrl.get_data_read_rate(tile, block, False))
-        # Clear interrupts
-        self._rfdc_ctrl.clear_data_fifo_interrupts(tile, block, is_dac)
-        # Enable FIFO
-        self._rfdc_ctrl.set_data_fifo_state(tile, is_dac, True)
-
-
-    def _find_converters(self, slot, direction, channel):
-        """
-        Returns a list of (tile_id, block_id, is_dac) tuples describing
-        the data converters associated with a given channel and direction.
-        """
-        if direction == 'all':
-            direction = 'both'
-        if channel == 'all':
-            channel = 'both'
-        if direction not in ('rx', 'tx', 'both'):
-            self.log.error('Invalid direction "{}". Cannot find '
-                           'associated data converters'.format(direction))
-            raise RuntimeError('Invalid direction "{}". Cannot find '
-                               'associated data converters'.format(direction))
-        if str(channel) not in ('0', '1', 'both'):
-            self.log.error('Invalid channel "{}". Cannot find '
-                           'associated data converters'.format(channel))
-            raise RuntimeError('Invalid channel "{}". Cannot find '
-                               'associated data converters'.format(channel))
-        data_converters = []
-        rfdc_map = self.RFDC_DB_MAP[slot]
-
-        if direction in ('rx', 'both'):
-            if str(channel) == '0' or str(channel) == 'both':
-                (tile_id, block_id) = rfdc_map['adc'][0]
-                data_converters.append((tile_id, block_id, False))
-            if str(channel) == '1' or str(channel) == 'both':
-                (tile_id, block_id) = rfdc_map['adc'][1]
-                data_converters.append((tile_id, block_id, False))
-        if direction in ('tx', 'both'):
-            if str(channel) == '0' or str(channel) == 'both':
-                (tile_id, block_id) = rfdc_map['dac'][0]
-                data_converters.append((tile_id, block_id, True))
-            if str(channel) == '1' or str(channel) == 'both':
-                (tile_id, block_id) = rfdc_map['dac'][1]
-                data_converters.append((tile_id, block_id, True))
-        return data_converters
+        return self._rfdc_regs.get_threshold_status(
+            slot_id, channel, threshold_idx) != 0
