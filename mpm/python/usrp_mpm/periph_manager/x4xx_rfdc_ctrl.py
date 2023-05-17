@@ -275,6 +275,8 @@ class X4xxRfdcCtrl:
         Removes any stored references to our owning X4xx class instance and
         destructs anything that must happen at teardown
         """
+        # See PG269 chapter 4 "Bitstream Reconfiguration"
+        self.shutdown_tiles()
         del self._rfdc_ctrl
 
     @no_rpc
@@ -339,6 +341,34 @@ class X4xxRfdcCtrl:
             # Set RFDC NCO reset event source to analog SYSREF
             self._rfdc_ctrl.set_nco_event_src(conv.tile, conv.block, is_dac)
 
+    @no_rpc
+    def startup_tiles(self):
+        """
+        PG269: This API function restarts the tile as requested through Tile_Id. If -1 is passed
+        as Tile_Id, the function restarts all the enabled tiles. Existing register settings are
+        not lost or altered in the process.
+        """
+        # Startup all ADC Tiles
+        if not self._rfdc_ctrl.startup_tile(-1, False):
+            self.log.warning('Error starting up ADC tiles')
+        # Startup all DAC Tiles
+        if not self._rfdc_ctrl.startup_tile(-1, True):
+            self.log.warning('Error starting up DAC tiles')
+
+    @no_rpc
+    def shutdown_tiles(self):
+        """
+        PG269: This API function stops the tile as requested through Tile_Id. If -1 is passed as
+        Tile_Id, the function stops all the enabled tiles. The existing register settings are not
+        cleared.
+        """
+        # Shutdown all ADC Tiles
+        if not self._rfdc_ctrl.shutdown_tile(-1, False):
+            self.log.warning('Error shutting down ADC tiles')
+
+        # Shutdown all DAC Tiles
+        if not self._rfdc_ctrl.shutdown_tile(-1, True):
+            self.log.warning('Error shutting down DAC tiles')
     @no_rpc
     def sync(self):
         """
