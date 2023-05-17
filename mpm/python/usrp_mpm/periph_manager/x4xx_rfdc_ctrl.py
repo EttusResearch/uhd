@@ -253,7 +253,6 @@ class X4xxRfdcCtrl:
                         block_id,
                         self._cal_freeze_cache[(tile_id, block_id)]
                     )
-
     @no_rpc
     def enable_iq_swap(self, enable, db_idx, channel, is_dac):
         """
@@ -261,6 +260,16 @@ class X4xxRfdcCtrl:
         """
         self._rfdc_regs.enable_iq_swap(enable, db_idx, channel, is_dac)
 
+    @no_rpc
+    def get_converter_rate(self, db_idx, channel=0, is_dac=None):
+        """
+        Return the converter rate on a given daughterboard/channel.
+        """
+        # This can be extended such that 'None' means 'either tx or rx'. Should
+        # we ever support boards with only tx or rx, then we can pick.
+        is_dac = bool(is_dac)
+        conv = self._get_converter('tx' if is_dac else 'rx', db_idx, channel)
+        return self._rfdc_ctrl.get_sample_rate(conv.tile, conv.block, bool(is_dac))
 
 
     ###########################################################################

@@ -577,6 +577,19 @@ class X4xxClockManager:
         # clock_source == "external":
         return self._ext_clock_freq
 
+    @no_rpc
+    def get_converter_rate(self, db_idx):
+        """
+        Returns the rate at which the ADC/DAC on a given daughterboard is
+        sampling.
+        """
+        if not self.rfdc:
+            self.log.info(
+                "Querying converter rate from SPLL, RFDC is not yet enabled!")
+            return self.clk_ctrl.get_spll_freq()
+        return self.rfdc.get_converter_rate(db_idx)
+
+    @no_rpc
     def get_prc_rate(self):
         """
         Return the PRC rate
