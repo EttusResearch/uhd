@@ -505,6 +505,22 @@ class X4xxRfdcCtrl:
         for conv in self._adc_convs:
             self._rfdc_ctrl.set_cal_frozen(conv.tile, conv.block, 0)
             self._rfdc_ctrl.set_cal_frozen(conv.tile, conv.block, conv.cal_freeze)
+
+    @no_rpc
+    def rfdc_configure_mmcm(self, input_div, fb_div, output_div_map):
+        """
+        Configures all dividers of the MMCM and starts the DRP
+        """
+        self.log.trace(
+            f"Configure MMCM with Input_Div={input_div}, "
+            f"mmcm_fb_div={fb_div} and output_div_map={output_div_map}.")
+        assert self._rfdc_regs
+        self._rfdc_regs.set_mmcm_div(input_div)
+        self._rfdc_regs.set_mmcm_fb_div(fb_div)
+        for clock_name, div_val in output_div_map.items():
+            self._rfdc_regs.set_mmcm_output_div(div_val, clock_name)
+        self._rfdc_regs.reconfigure_mmcm()
+
     @no_rpc
     def enable_iq_swap(self, enable, db_idx, channel, is_dac):
         """

@@ -316,6 +316,7 @@ class X4xxClockManager:
             self.log.error("ref clocks aren't locked, falling back to default")
             self.set_sync_source(self._safe_sync_source)
 
+
     @no_rpc
     def tear_down(self):
         """
@@ -398,6 +399,29 @@ class X4xxClockManager:
         # The internal BRC rate will only change when _config_rpll is called
         # with a new internal BRC rate
         self._int_clock_freq = internal_brc_rate
+
+
+    def _config_mmcm(self, clk_settings):
+        """
+        Configure the MMCM which provides various internal clocks to the
+        data path after the RFdc.
+
+        Also waits for the MMCM to be done with reconfiguration.
+        """
+        self.log.trace("Entering _config_mmcm()")
+        assert self.rfdc
+        # First configure all MMCM settings:
+        if not clk_settings.mmcm_use_defaults:
+            self.log.debug("Updating MMCM")
+            # This reconfigures, but does not wait for a valid lock.
+            self.rfdc.rfdc_configure_mmcm(
+                clk_settings.mmcm_input_divider,
+                clk_settings.mmcm_feedback_divider,
+                clk_settings.mmcm_output_div_map)
+            self.log.trace('MMCM Configuration applied, now waiting for MMCM to lock...')
+            self.rfdc.reset_mmcm(reset=False)
+        else:
+            self.log.debug("Using default values for MMCM")
 
     def _set_ref_clock_freq(self, freq, update_clocks=True):
         """
@@ -553,8 +577,10 @@ class X4xxClockManager:
         # The following call will return only when the SPLL successfully locks
         # to the new settings:
         self.clk_ctrl.config_spll(clk_settings.spll_config)
-        # Bring MMCM out of reset, wait for it to be locked.
+        # Bring MMCM out of reset, and reconfigure. The reset also waits
+        # for the MMCM to be locked, therefore we call it again after config.
         self._reset_clocks(False, ('mmcm',))
+        self._config_mmcm(clk_settings)
         self._master_clock_rates = master_clock_rates
         self._reset_clocks(value=False, reset_list=('rfdc', 'cpld', 'db_clock'))
         self._config_pps_to_timekeeper(master_clock_rates)
