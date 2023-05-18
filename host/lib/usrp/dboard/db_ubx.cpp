@@ -1076,7 +1076,7 @@ private:
         }
 
         // Work with frequencies
-        if (freq < 100 * fMHz) {
+        if (freq < 42 * fMHz) {
             set_cpld_field(SEL_LNA1, 0);
             set_cpld_field(SEL_LNA2, 1);
             set_cpld_field(RXLO1_FSEL3, 1);
@@ -1084,16 +1084,20 @@ private:
             set_cpld_field(RXLO1_FSEL1, 0);
             set_cpld_field(RXLB_SEL, 1);
             set_cpld_field(RXHB_SEL, 0);
-            // Set LO1 to IF of 2380 MHz (2440 MHz filter center minus 60 MHz offset to
-            // minimize LO leakage)
+
+            // The filter on the IF has a center of 2440 MHz and an 84 MHz bandwidth.
+            // For frequencies under 42 MHz, the LO for the IF will be in the filter
+            // bandwidth.  Shift the IF to move the LO to the edge of the filter bandwidth
+            // to reduce LO leakage.
+            double if_freq = 2398 * fMHz + freq;
             freq_lo1 =
-                _rxlo1->set_frequency(2380 * fMHz, ref_freq, target_pfd_freq, is_int_n);
+                _rxlo1->set_frequency(if_freq, ref_freq, target_pfd_freq, is_int_n);
             _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_5DBM);
             // Set LO2 to IF minus desired frequency
             freq_lo2 = _rxlo2->set_frequency(
                 freq_lo1 - freq, ref_freq, target_pfd_freq, is_int_n);
             _rxlo2->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
-        } else if ((freq >= 100 * fMHz) && (freq < 500 * fMHz)) {
+        } else if ((freq >= 42 * fMHz) && (freq < 500 * fMHz)) {
             set_cpld_field(SEL_LNA1, 0);
             set_cpld_field(SEL_LNA2, 1);
             set_cpld_field(RXLO1_FSEL3, 1);
