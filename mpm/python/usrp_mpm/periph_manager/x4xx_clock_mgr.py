@@ -236,6 +236,7 @@ class X4xxClockManager:
         self.clk_ctrl.config_spll(clk_config.spll_config)
         self._reset_clocks(value=False, reset_list=['cpld'])
 
+
     def _init_meas_clock(self):
         """
         Initialize the TDC measurement clock. After this function returns, the
@@ -285,10 +286,12 @@ class X4xxClockManager:
     @no_rpc
     def set_dboard_reset_cb(self, db_reset_cb):
         """
-        Set reference to RFDC control. Ideally, we'd get that in __init__(), but
-        due to order of operations, it's not ready yet when we call that.
+        Provide callbacks to set/reset daughterboard clocks. The controls for
+        these live elsewhere (not on X4xxClockCtrl), thus they have to be given
+        to us after the dboards have been initialized.
         """
         self._set_reset_db_clocks = db_reset_cb
+
 
     @no_rpc
     def init(self, args):
@@ -297,12 +300,41 @@ class X4xxClockManager:
         """
         args['clock_source'] = args.get('clock_source', self.X400_DEFAULT_CLOCK_SOURCE)
         args['time_source'] = args.get('time_source', self.X400_DEFAULT_TIME_SOURCE)
+        self.clk_policy.args = args
+        # If this is None, the user desires the MCR to not change
+        desired_master_clock_rates = args.get('master_clock_rate')
+        desired_converter_rates = args.get('converter_rate')
+        if desired_master_clock_rates is not None:
+            desired_master_clock_rates = \
+                parse_multi_device_arg(args['master_clock_rate'], conv=float)
+        force_set_mcr = False
+        if 'ext_clock_freq' in args:
+            new_ext_clock_freq = float(args.get('ext_clock_freq'))
+            if new_ext_clock_freq != self._ext_clock_freq:
+                # This will update self._ext_clock_freq and validate, but not
+                # apply the settings to hardware.
+                self._set_ref_clock_freq(new_ext_clock_freq, update_clocks=False)
+                # Now we force an update to all clocking further down.
+                if args['clock_source'] == self.CLOCK_SOURCE_EXTERNAL:
+                    if not desired_master_clock_rates:
+                        desired_master_clock_rates = self._master_clock_rates
+                    force_set_mcr = True
+        # set_sync_source() will cause a reconfiguration of the master clock rate
+        # if anything changed. By modifying self._master_clock_rates, we can
+        # use that to immediately set the sync source, the external ref clock freq,
+        # and the MCR all in one go. If we called set_master_clock_rate()
+        # separately, there's a theoretical chance that we would fail to lock
+        # the old MCR with the new ext_clock_freq, or vice versa.
+        if desired_master_clock_rates:
+            self._master_clock_rates = desired_master_clock_rates
+            force_set_mcr = True # TODO this can be skipped if MCR and Conv_Rate haven't changed
+        if desired_converter_rates and not desired_master_clock_rates:
+            self.log.warning("Passing `converter_rate` argument without obligatory "
+                             "`master_clock_rate` argument. Ignoring `converter_rate`.")
+        if force_set_mcr:
+            args['__force__'] = True
         self.set_sync_source(args)
 
-        # If a Master Clock Rate was specified,
-        # re-configure the Sample PLL and all downstream clocks
-        if 'master_clock_rate' in args:
-            self.set_master_clock_rate(float(args['master_clock_rate']))
 
     @no_rpc
     def deinit(self):
@@ -325,10 +357,11 @@ class X4xxClockManager:
         self.rfdc = None
         self._set_reset_db_clocks = None
 
+
     ###########################################################################
     # Internal helpers/workers
     ###########################################################################
-    def _set_sync_source(self, clock_source, time_source):
+    def _set_sync_source(self, clock_source, time_source, force=False):
         """
         See set_sync_source() for docs. This is the internal helper that does
         the actual work, but it assumes clock_source and time_source are
@@ -342,7 +375,7 @@ class X4xxClockManager:
             'not a valid selection'
         # Now see if we can keep the current settings, or if we need to run an
         # update of sync sources:
-        if not False and \
+        if not force and \
                 clock_source == self._clock_source and \
                 time_source == self._time_source:
             if self.clk_ctrl.get_ref_locked():
@@ -589,6 +622,7 @@ class X4xxClockManager:
         self._master_clock_rates = master_clock_rates
         self._config_pps_to_timekeeper(master_clock_rates)
 
+
     @no_rpc
     def get_master_clock_rate(self, db_idx=0):
         """ Return the master clock rate set during init """
@@ -779,8 +813,9 @@ class X4xxClockManager:
                 and self._clocking_auxbrd:
             self._clocking_auxbrd.export_clock(enable=False)
         # Now the clock manager can do its thing.
-        ret_val = self._set_sync_source(clock_source, time_source)
-        if ret_val == self.SetSyncRetVal.NOP:
+        force_update = args.get("__force__", False)
+        ret_val = self._set_sync_source(clock_source, time_source, force_update)
+        if ret_val == self.SetSyncRetVal.NOP and not force_update:
             return
         try:
             # Re-set master clock rate. If this doesn't work, it will time out
