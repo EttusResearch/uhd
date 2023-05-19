@@ -308,9 +308,13 @@ class X4xxRfdcCtrl:
         self._rfdc_regs.set_reset_adc_dac_chains(reset=reset)
         if reset:
             self._rfdc_regs.log_status()
-            return
 
-        # Restart tiles in XRFdc
+    @no_rpc
+    def reset_tiles(self):
+        """
+        This resets all ADC/DAC tiles.  All existing register settings are
+        cleared and are replaced with the settings initially configured.
+        """
         # All ADC Tiles
         if not self._rfdc_ctrl.reset_tile(-1, False):
             self.log.warning('Error starting up ADC tiles')
@@ -318,13 +322,12 @@ class X4xxRfdcCtrl:
         if not self._rfdc_ctrl.reset_tile(-1, True):
             self.log.warning('Error starting up DAC tiles')
 
-
     @no_rpc
     def startup_tiles(self):
         """
-        PG269: This API function restarts the tile as requested through Tile_Id. If -1 is passed
-        as Tile_Id, the function restarts all the enabled tiles. Existing register settings are
-        not lost or altered in the process.
+        Restarts all enabled ADC/DAC tiles.
+
+        PG269: Existing register settings are not lost or altered in the process.
         """
         # Startup all ADC Tiles
         if not self._rfdc_ctrl.startup_tile(-1, False):
@@ -336,9 +339,9 @@ class X4xxRfdcCtrl:
     @no_rpc
     def shutdown_tiles(self):
         """
-        PG269: This API function stops the tile as requested through Tile_Id. If -1 is passed as
-        Tile_Id, the function stops all the enabled tiles. The existing register settings are not
-        cleared.
+        Stops all enabled ADC/DAC tiles.
+
+        PG269: The existing register settings are not cleared.
         """
         # Shutdown all ADC Tiles
         if not self._rfdc_ctrl.shutdown_tile(-1, False):
