@@ -20,15 +20,28 @@ class LMK04832X4xx(LMK04832):
     """
     X4xx-specific subclass of the Sample Clock PLL LMK04832 controls.
     """
-    # Sysref depening on the PLL1 VCO freq
-    SYSREFFREQ = {100e6: 2.5e6, 122.88e6: 2.56e6}
-    # PLL1 N Divider depending on the PLL1 VCO freq
-    PLL1NDIV =  {100e6: 50, 122.88e6: 64}
-    # PLL1 Phase Detector Frequency depending on PLL1 VCO freq
-    PDF = {100e6: 50e3, 122.88e6: 40e3}
     # maximum: 1,1023, but limited as greater dividers generate too low Fin for RFDC anyway
     LMK_OUT_DIVIDERS = range(1, 35)
     PRC_OUT_DIVIDERS = range(1, 1023)
+
+    # Obtainable SYSREF frequencies for each VCXO frequency
+    SYSREF_CONFIG = { 100e6: (  { 'SYSREF_FREQ': 2.5e6,
+                                  'PDF'        : 50e3, } ,
+                                { 'SYSREF_FREQ': 1.25e6,
+                                  'PDF'        : 50e3, } ,
+                                { 'SYSREF_FREQ': 0.625e6,
+                                  'PDF'        : 25e3, } ,
+                                { 'SYSREF_FREQ': 0.5e6,
+                                  'PDF'        : 50e3, } ,
+                              ),
+                      122.88e6:({ 'SYSREF_FREQ': 2.56e6,
+                                  'PDF'        : 40e3, } ,
+                                { 'SYSREF_FREQ': 1.28e6,
+                                  'PDF'        : 40e3, } ,
+                                { 'SYSREF_FREQ': 0.64e6,
+                                  'PDF'        : 40e3, } ,
+                              ) ,
+                      }
 
     def __init__(self, pll_regs_iface, log=None):
         LMK04832.__init__(self, pll_regs_iface, log)
@@ -205,8 +218,8 @@ class LMK04832X4xx(LMK04832):
             (0x0139, 0x00), # Set SysRef source to 'Normal SYNC' as we initially use the sync signal to synchronize dividers
             (0x013A, (cfg.sysref_div & 0x1F00) >> 8), # SYSREF Divide [12:8]
             (0x013B, (cfg.sysref_div & 0x00FF) >> 0), # SYSREF Divide [7:0]
-            (0x013C, 0x00), # set sysref delay value
-            (0x013D, 0x20), # shift SYSREF with respect to falling edge of data clock
+            (0x013C, (cfg.sysref_delay & 0x1F00) >> 8), # SYSREF DDLY [12:8]
+            (0x013D, (cfg.sysref_delay & 0x00FF) >> 0), # shift SYSREF with respect to falling edge of data clock
             (0x013E, 0x03), # set number of SYSREF pulse to 8(Default)
             (0x013F, 0x0F), # PLL1_NCLK_MUX = Feedback mux, FB_MUX = External, FB_MUX_EN = enabled
             (0x0140, 0x00), # All power down controls set to false.
