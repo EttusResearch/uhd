@@ -409,11 +409,22 @@ class X4xxRfdcCtrl:
         dacs_to_sync = tuple(self._find_converters(db_idx, 'all', 'tx'))
         adc_tiles_to_sync = tuple({x[0] for x in adcs_to_sync})
         dac_tiles_to_sync = tuple({x[0] for x in dacs_to_sync})
+
+        # Per Xilinx input: "MTS needs to run a number of times so that we know
+        # what the worst case mismatch is and we can apply a margin to it.", we
+        # arbitrarily choose the number of attempts.
+        num_training_attempts = 5
+        adc_trained_latencies = []
+        dac_trained_latencies = []
         # Run preliminary latency determination
-        if not self._rfdc_ctrl.sync_tiles(adc_tiles_to_sync, False, -1):
-            self.log.error("sync_tiles() failed to run for ADC latency determination.")
-        if not self._rfdc_ctrl.sync_tiles(dac_tiles_to_sync, True, -1):
-            self.log.error("sync_tiles() failed to run for DAC latency determination.")
+        for _ in range(num_training_attempts):
+            if not self._rfdc_ctrl.sync_tiles(adc_tiles_to_sync, False, -1):
+                self.log.error("sync_tiles() failed to run for ADC latency determination.")
+            if not self._rfdc_ctrl.sync_tiles(dac_tiles_to_sync, True, -1):
+                self.log.error("sync_tiles() failed to run for DAC latency determination.")
+            adc_trained_latencies.append(self._rfdc_ctrl.get_tile_latency(0, False))
+            dac_trained_latencies.append(self._rfdc_ctrl.get_tile_latency(0, True))
+
         # We assume that all ADCs are running at the same decimation
         decimation = int(self._rfdc_ctrl.get_decimation_factor(
             adcs_to_sync[0][0],
@@ -425,11 +436,11 @@ class X4xxRfdcCtrl:
         # We now read back the measured tile latencies and add margins as
         # described above
         adc_latencies = {
-            tile_idx: add_adc_margin(self._rfdc_ctrl.get_tile_latency(tile_idx, False))
+            tile_idx: add_adc_margin(max(adc_trained_latencies))
             for tile_idx in adc_tiles_to_sync
         }
         dac_latencies = {
-            tile_idx: self._rfdc_ctrl.get_tile_latency(tile_idx, True) + 16
+            tile_idx: max(dac_trained_latencies) + 16
             for tile_idx in dac_tiles_to_sync
         }
         return adc_latencies, dac_latencies
