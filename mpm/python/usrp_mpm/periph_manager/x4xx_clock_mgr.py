@@ -287,6 +287,7 @@ class X4xxClockManager:
         # can detect decimation, and that requires clocks to be initialized.
         self.set_master_clock_rate([initial_mcr[0],])
 
+
     @no_rpc
     def set_dboard_reset_cb(self, db_reset_cb):
         """
@@ -610,9 +611,11 @@ class X4xxClockManager:
         # At this point the SPLL is sync'd in time and frequency to the reference.
         # From now on, no-one will be touching the SPLL until we call
         # set_master_clock_rate() again.
-        # Bring MMCM out of reset, and reconfigure. The reset also waits
-        # for the MMCM to be locked, therefore we call it again after config.
-        self._reset_clocks(False, ('mmcm',))
+        # Bring MMCM out of reset, and reconfigure. The MMCM lock status
+        # is monitored at the end of the MMCM DRP access, as it is required
+        # for the MMCM to report the DRP configuration as complete.
+        self.rfdc.reset_mmcm(reset=False, check_locked=False)
+        self.rfdc.rfdc_update_mmcm_regs()
         self._config_mmcm(clk_settings)
         # Bring RFDC out of reset, reset tiles and reconfigure RFDC
         self._reset_clocks(False, ('rfdc',))

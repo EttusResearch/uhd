@@ -66,11 +66,9 @@ void adc_self_calibration::run(size_t chan)
     _rpcc->set_dac_mux_data(
         cal_params.dac_iq_values.real(), cal_params.dac_iq_values.imag());
 
-    const size_t motherboard_channel_number =
-        _db_number * _daughterboard->get_num_rx_channels() + chan;
-    _rpcc->set_dac_mux_enable(motherboard_channel_number, 1);
+    _rpcc->set_dac_mux_enable(_db_number, chan, 1);
     auto disable_dac_mux = uhd::utils::scope_exit::make(
-        [&]() { _rpcc->set_dac_mux_enable(motherboard_channel_number, 0); });
+        [&]() { _rpcc->set_dac_mux_enable(_db_number, chan, 0); });
 
     // Save all of the LO frequencies & sources
     const double original_rx_freq = _daughterboard->get_rx_frequency(chan);

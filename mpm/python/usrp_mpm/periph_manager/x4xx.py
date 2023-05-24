@@ -38,7 +38,6 @@ from usrp_mpm.periph_manager.x4xx_rfdc_ctrl import X4xxRfdcCtrl
 from usrp_mpm.periph_manager.x4xx_clock_policy import get_clock_policy
 from usrp_mpm.dboard_manager.x4xx_db_iface import X4xxDboardIface
 
-
 X400_FPGA_COMPAT = (8, 0)
 # The compat number at which remote streaming was added:
 X400_REMOTE_STREAMING_COMPAT = (7, 9)
@@ -149,7 +148,9 @@ class x4xx(ZynqComponents, PeriphManagerBase):
     # See PeriphManagerBase for documentation on these fields. We try and keep
     # them in the same order as they are in PeriphManagerBase for easier lookup.
     #########################################################################
-    pids = {0x0410: 'x410'}
+    pids = {
+        0x0410: 'x410',
+        0x0440: 'x440'}
     description = "X400-Series Device"
     eeprom_search = PeriphManagerBase._EepromSearch.SYMBOL
     # This is not in the overridables section from PeriphManagerBase, but we use
@@ -185,7 +186,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
             'compatibility': {
                 'fpga': {
                     'current': X400_FPGA_COMPAT,
-                    'oldest': (7, 0),
+                    'oldest': (8, 0),
                 },
                 'cpld_ifc' : {
                     'current': (2, 0),

@@ -293,7 +293,8 @@ public:
         return false;
     }
 
-    void set_dac_mux_enable(size_t /*motherboard_channel_number*/, int /*enable*/) override
+    void set_dac_mux_enable(
+        size_t /*db_number*/, size_t /*chan*/, int /*enable*/) override
     {
         // nop
     }

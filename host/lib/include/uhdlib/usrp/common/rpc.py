@@ -84,7 +84,7 @@ IFACES = [
         fn_from_string("double rfdc_get_nco_freq(const std::string& trx, size_t block_count, size_t chan)"),
         fn_from_string("std::map<std::string, std::vector<uint8_t>> get_db_eeprom(size_t db_idx)"),
         fn_from_string("bool get_threshold_status(size_t db_number, size_t chan, size_t threshold_block)"),
-        fn_from_string("void set_dac_mux_enable(size_t motherboard_channel_number, int enable)"),
+        fn_from_string("void set_dac_mux_enable(size_t db_idx, size_t channel, int enable)"),
         fn_from_string("void set_dac_mux_data(size_t i, size_t q)"),
         fn_from_string("double get_spll_freq()"),
         fn_from_string("void setup_threshold(size_t db_number, size_t chan, size_t threshold_block, const std::string& mode, size_t delay, size_t under, size_t over)"),

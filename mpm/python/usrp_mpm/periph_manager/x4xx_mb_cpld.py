@@ -12,6 +12,7 @@ import inspect
 from usrp_mpm import lib  # Pulls in everything from C++-land
 from usrp_mpm.mpmutils import parse_encoded_git_hash
 from usrp_mpm.dboard_manager import ZBX
+from usrp_mpm.dboard_manager import FBX
 
 class X4xxMboardCPLD:
     """
@@ -206,6 +207,20 @@ class X410MboardCPLD(X4xxMboardCPLD):
     REQ_COMPAT_REV          = 0x20122114
     SIGNATURE               = 0x0A522D27
     COMPATIBLE_DB_PIDS      = ZBX.pids
+    # pylint: enable=bad-whitespace
+
+
+class X440MboardCPLD(X4xxMboardCPLD):
+    """
+    MB CPLD Image for USRP X440 (which means there are FBX daughterboards
+    installed).
+    """
+    # pylint: disable=bad-whitespace
+    # change these revisions only on breaking changes
+    OLDEST_REQ_COMPAT_REV   = 0x22080414
+    REQ_COMPAT_REV          = 0x22080414
+    SIGNATURE               = 0x0A522D28
+    COMPATIBLE_DB_PIDS      = FBX.pids
     # pylint: enable=bad-whitespace
 
 

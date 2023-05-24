@@ -1308,9 +1308,10 @@ a loopback connection between TX and RX.
 
 To loop in a CW tone for calibration, MPM offers the `set_dac_mux_data`
 which takes two signed 16 bit values for I and Q of the tone. Using
-`set_dac_mux_enable` with the channel number and the 1 for enabled the
-tone becomes the signal that is send out by TX of the corresponding
-channel. Use 0 for the enable to switch back to the signal generated
+`set_dac_mux_enable` with the daughterboard and channel number and the 1
+for enabled the tone becomes the signal that is sent out by TX of the
+corresponding channel on the daughterboard.
+Use 0 for the enable to switch back to the signal generated
 by UHD. The DAC mux does not affect the ATR state of the device.
 From an UHD perspective it looks like no data is transmitted in TX or
 RX direction during calibration.

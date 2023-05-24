@@ -34,9 +34,9 @@ class X4xxRfdcCtrl:
     RFDC_RESAMPLER = (8, 4, 2)
 
     MMCM_INPUT_MIN = 10e6
-    # The MMCM_INPUT_MAX is 933 MHz according to the spec, but we limit it to 775 MHz because
-    # of the limitation of a bufgce resource we're using.
-    MMCM_INPUT_MAX = 775e6
+    # The MMCM_INPUT_MAX is 933 MHz according to the spec, but we limit it to 64 MHz
+    # to ensure our slowest MMCM output will be phase aligned to the reference.
+    MMCM_INPUT_MAX = 64e6
     MMCM_FOUTMIN = 6.25e6
     MMCM_FOUTMAX = 775e6
     MMCM_VCO_MIN = 800e6
@@ -320,7 +320,7 @@ class X4xxRfdcCtrl:
         del self._rfdc_ctrl
 
     @no_rpc
-    def reset_mmcm(self, reset=True):
+    def reset_mmcm(self, reset=True, check_locked = True):
         """
         Resets the MMCM, or takes it out of reset.
 
@@ -333,10 +333,11 @@ class X4xxRfdcCtrl:
         if reset:
             return
 
-        # Once the MMCM has locked, enable driving the clocks to the rest of
-        # the design. Poll lock status for up to 1 ms
-        self._rfdc_regs.wait_for_mmcm_locked(timeout=0.001)
-        self._rfdc_regs.set_gated_clock_enables(value=True)
+        if check_locked:
+          # Once the MMCM has locked, enable driving the clocks to the rest of
+          # the design. Poll lock status for up to 1 ms
+          self._rfdc_regs.wait_for_mmcm_locked(timeout=0.001)
+          self._rfdc_regs.set_gated_clock_enables(value=True)
 
     @no_rpc
     def reset_rfdc(self, reset=True):
@@ -583,11 +584,20 @@ class X4xxRfdcCtrl:
             f"Configure MMCM with Input_Div={input_div}, "
             f"mmcm_fb_div={fb_div} and output_div_map={output_div_map}.")
         assert self._rfdc_regs
+        # Update cached values to reflect the state of the hardware and
+        # propagate modifications accordingly.
         self._rfdc_regs.set_mmcm_div(input_div)
         self._rfdc_regs.set_mmcm_fb_div(fb_div)
         for clock_name, div_val in output_div_map.items():
             self._rfdc_regs.set_mmcm_output_div(div_val, clock_name)
         self._rfdc_regs.reconfigure_mmcm()
+
+    @no_rpc
+    def rfdc_update_mmcm_regs(self):
+        """
+        Update the saved state of the MMCM registers from the hardware
+        """
+        self._rfdc_regs.update_mmcm_regs()
 
     @no_rpc
     def enable_iq_swap(self, enable, db_idx, channel, is_dac):
@@ -718,16 +728,16 @@ class X4xxRfdcCtrl:
         """
         self._rfdc_regs.set_cal_data(i_val, q_val)
 
-    def set_dac_mux_enable(self, channel, enable):
+    def set_dac_mux_enable(self, db_idx, channel, enable):
         """
         Sets whether the DAC mux is enabled for a given channel
 
         Usage:
-        > set_dac_mux_enable <channel, 0-3> <enable, 1=enabled>
+        > set_dac_mux_enable <db_idx> <channel> <enable, 1=enabled>
         e.g.
-        > set_dac_mux_enable 1 0
+        > set_dac_mux_enable 0 1 0
         """
-        self._rfdc_regs.set_cal_enable(channel, bool(enable))
+        self._rfdc_regs.set_cal_enable(db_idx, channel, bool(enable))
 
     ### ADC thresholds
     def setup_threshold(self, slot_id, channel, threshold_idx, mode, delay, under, over):

@@ -14,6 +14,7 @@ from compatnum_tests import TestCompatNum
 from sys_utils_tests import TestNet
 from mpm_utils_tests import TestMpmUtils
 from eeprom_tests import TestEeprom
+from x440_clock_tests import TestX440ClockConfig
 from usrp_mpm import __simulated__
 
 import importlib.util
@@ -26,6 +27,7 @@ TESTS = {
         TestMpmUtils,
         TestEeprom,
         TestCompatNum,
+        TestX440ClockConfig
     },
     'n3xx': set(),
     'x4xx': set()
