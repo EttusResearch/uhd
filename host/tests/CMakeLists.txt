@@ -388,10 +388,46 @@ IF(ENABLE_X400)
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_lo_ctrl.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_cpld_ctrl.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_expert.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/fbx/fbx_dboard.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/fbx/fbx_dboard_init.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/fbx/fbx_expert.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/fbx/fbx_ctrl.cpp
             ${UHD_SOURCE_DIR}/lib/utils/compat_check.cpp
             ${UHD_SOURCE_DIR}/lib/features/discoverable_feature_registry.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/cores/gpio_atr_3000.cpp
-	         ${UHD_SOURCE_DIR}/lib/usrp/cores/spi_core_4000.cpp
+	        ${UHD_SOURCE_DIR}/lib/usrp/cores/spi_core_4000.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/x400/x400_internal_sync.cpp
+            $<TARGET_OBJECTS:uhd_rpclib>
+            INCLUDE_DIRS ${UHD_SOURCE_DIR}/lib/deps/rpclib/include
+            INCLUDE_DIRS ${UHD_SOURCE_DIR}/lib/deps/flatbuffers/include
+        )
+    # TODO: Fix dependency list/duplicates
+        UHD_ADD_RFNOC_BLOCK_TEST(
+            TARGET ferrum_radio_block_test.cpp
+            EXTRA_SOURCES
+            ${UHD_SOURCE_DIR}/lib/usrp/common/lmx2572.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/common/pwr_cal_mgr.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/x400/x400_gpio_control.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/x400/x400_radio_control.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/x400/x400_rfdc_control.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/x400/adc_self_calibration.cpp
+            ${UHD_SOURCE_DIR}/lib/rfnoc/radio_control_impl.cpp
+            ${UHD_SOURCE_DIR}/lib/rfnoc/rf_control/gain_profile.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/mpmd/mpmd_mb_controller.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/fbx/fbx_dboard.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/fbx/fbx_dboard_init.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/fbx/fbx_expert.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/fbx/fbx_ctrl.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_dboard.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_dboard_init.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_lo_ctrl.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_cpld_ctrl.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_expert.cpp
+            ${UHD_SOURCE_DIR}/lib/utils/compat_check.cpp
+            ${UHD_SOURCE_DIR}/lib/features/discoverable_feature_registry.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/cores/gpio_atr_3000.cpp
+	        ${UHD_SOURCE_DIR}/lib/usrp/cores/spi_core_4000.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/x400/x400_internal_sync.cpp
             $<TARGET_OBJECTS:uhd_rpclib>
             INCLUDE_DIRS ${UHD_SOURCE_DIR}/lib/deps/rpclib/include
             INCLUDE_DIRS ${UHD_SOURCE_DIR}/lib/deps/flatbuffers/include

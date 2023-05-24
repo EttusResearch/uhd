@@ -17,6 +17,7 @@ if(ENABLE_X400)
         ${CMAKE_CURRENT_SOURCE_DIR}/x400_gpio_control.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/x400_radio_control.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/x400_rfdc_control.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/x400_internal_sync.cpp
     )
 
     if(ENABLE_DPDK)

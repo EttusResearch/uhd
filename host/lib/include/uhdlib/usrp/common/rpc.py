@@ -117,6 +117,10 @@ IFACES = [
         fn_from_string("double get_dboard_sample_rate()"),
         fn_from_string("void enable_iq_swap(bool is_band_inverted, const std::string& trx, size_t chan)"),
     ], has_rpcprefix=True),
+    Interface("fbx_rpc", [
+        fn_from_string("double get_dboard_sample_rate()"),
+        fn_from_string("void enable_iq_swap(bool is_band_inverted, const std::string& trx, size_t chan)"),
+    ], has_rpcprefix=True),
 ]
 
 COMMON_TMPL = """<% import time %>\

@@ -1,0 +1,22 @@
+/*! \page page_fbx FBX Daughterboard
+
+\tableofcontents
+
+\section fbx_overview Overview
+
+The FBX daughterboard is a four-channel, balun-coupled transceiver board.
+
+The FBX daughterboard is the daughterboard for the Ettus USRP X440.
+
+Feature list:
+- tbw
+- Timed tuning is not supported by the X440, because timed tuning of the NCO
+  (within the RFSoC) is not supported.
+
+\section fbx_too Theory of Operation
+
+The FBX daughterboard has four transceiver chains. The following simplified block
+diagram shows their structure:
+
+*/
+// vim:ft=doxygen:

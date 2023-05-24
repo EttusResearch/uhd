@@ -10,8 +10,8 @@
 #include <uhd/types/time_spec.hpp>
 #include <cstdint>
 #include <memory>
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace uhd { namespace rfnoc { namespace x400 {
 
@@ -41,7 +41,7 @@ public:
     };
 
     //! Identify the NCOs/ADCs/DACs available to this radio control
-    enum class rfdc_type { RX0, RX1, TX0, TX1 };
+    enum class rfdc_type { RX0, RX1, RX2, RX3, TX0, TX1, TX2, TX3 };
 
     rfdc_control(uhd::memmap32_iface_timed&& iface, const std::string& log_id);
 
@@ -81,5 +81,28 @@ private:
     //! Prefix for log messages
     const std::string _log_id;
 };
+
+constexpr std::initializer_list<rfdc_control::rfdc_type> RX_RFDC = {
+    rfdc_control::rfdc_type::RX0,
+    rfdc_control::rfdc_type::RX1,
+    rfdc_control::rfdc_type::RX2,
+    rfdc_control::rfdc_type::RX3};
+constexpr std::initializer_list<rfdc_control::rfdc_type> TX_RFDC = {
+    rfdc_control::rfdc_type::TX0,
+    rfdc_control::rfdc_type::TX1,
+    rfdc_control::rfdc_type::TX2,
+    rfdc_control::rfdc_type::TX3};
+template <typename T, typename F>
+void indexed_for(const T& range, const size_t limit, F&& func)
+{
+    std::size_t i = 0;
+    for (auto it = std::begin(range); it != std::end(range); ++it) {
+        if (i < limit) {
+            func(*it, i++);
+        } else {
+            break;
+        }
+    }
+}
 
 }}} // namespace uhd::rfnoc::x400

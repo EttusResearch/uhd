@@ -15,8 +15,6 @@
   - Xilinx Zynq UltraScale+ RFSoC (ZU28DR), includes quad-core ARM Cortex-A53
     (1200 MHz), dual-core ARM Cortex-R5F real-time unit, and UltraScale+ FPGA
   - 4 GiB DDR4 RAM for Processing System, 2x4 GiB DDR4 RAM for Programmable Logic
-  - Up to 4x400 MHz of analog bandwidth, center frequency 1 MHz - 7.2 GHz
-    (tunable to 8 GHz) using \ref page_zbx
   - Closed-loop temperature control
   - Default airflow: front-to-back
   - Field replaceable fan tray
@@ -24,7 +22,7 @@
   - Full Linux system running on the quad-core ARM Cortex-A53
   - Runs MPM (see also \ref page_mpm)
 - FPGA Capabilities:
-  - Timed commands in FPGA
+  - Timed commands in FPGA (note: only limited timed frequency tuning available)
   - Timed sampling in FPGA
   - RFNoC capable: Supports various CHDR bus widths from 64-bits (for minimal
     footprint) up to 512 bits (for maximum throughput)
@@ -33,34 +31,44 @@
   - Stackable (with stack mount kit)
   - Airflow default direction can be changed to back-to-front with an
     accessory, which is sold separately
+- RF Capabilities:
+  - USRP X410: 4x full-duplex RF channels with a maximum analog bandwidth of
+    400 MHz, tunable from 1 MHz - 7.2 GHz center frequency (tunable to 8 GHz)
+    using \ref page_zbx
+  - USRP X440: 8x full-duplex direct-sampling channels, tunable digitally from
+    1 MHz to 4 GHz, with a maximum sampling rate of 2048 Msps, using \ref page_fbx
 
 \section x4xx_overview Overview and Features
 
+The X4x0 series of USRPs comes in two variants: The USRP X410, and the USRP X440.
+Both variants share the same enclosure and motherboard, and are collectively
+referred to as X4x0.
+
 \image html x410.png "Ettus USRP X410" width=50%
 
-The Ettus USRP X410 is a fourth-generation Software Defined Radio (SDR) out of the USRP
-family of SDRs. It contains two \ref page_zbx "ZBX Daughterboards" for a
-total of 4 channels at up to 400 MHz of analog bandwidth each. The analog
-features of the \ref page_zbx are described in a separate manual page.
+The Ettus USRP X4x0 is a fourth-generation Software Defined Radio (SDR) out of the USRP
+family of SDRs. Depending on the variant, it contains either two
+\ref page_zbx "ZBX Daughterboards" for a total of 4 channels at up to 400 MHz of
+analog bandwidth each, or two \ref page_fbx "FBX Daughterboards" for a total of
+8 channels at up to 1.6 GHz of analog bandwidth.
+The analog features of the \ref page_zbx and the \ref page_fbx are described in
+a separate manual page.
 
-The USRP X410 features a Xilinx RFSoC, running an embedded Linux system. Like
+The USRP X4x0 features a Xilinx RFSoC, running an embedded Linux system. Like
 other USRPs, it is addressable through a 1 GbE RJ45 connector, which allows full
 access to the embedded Linux system, as well as data streaming at low rates. In
 addition, it features two QSFP28 connectors, which allow for up to 4x10 GbE or
-1x100 GbE connections each.
+1x100 GbE connections each. The RFSoC used on the USRP X410 is a ZU28DR speed grade 1,
+on the USRP X440 the ZU28DR speed grade 2.
 
-The front panel provides access to the RF connectors (SMA), Tx/Rx status LEDs,
-programmable GPIOs, and the power button. The rear panel is where the power and
-data connections go (Ethernet, USB) as well as time/clock reference signals and
-GPS antenna.
-
-X410's cooling system uses a field replaceable fan assembly and supports two
-variants: one that pulls air front-to-back and one that pulls air back-to-front.
-By default, the unit comes with the front-to-back fan assembly.
+The front panel provides access to the RF connectors (SMA for X410, MMCX for
+X440), Tx/Rx status LEDs, programmable GPIOs, and the power button. The rear
+panel is where the power and data connections go (Ethernet, USB) as well as
+time/clock reference signals and GPS antenna.
 
 \subsection x4xx_overview_rfsoc The RFSoC CPU/FPGA and Host Operating System
 
-The main chip (the SoC) of the X410 is a Xilinx Zynq UltraScale+ RFSoC
+The main chip (the SoC) of the X4x0 is a Xilinx Zynq UltraScale+ RFSoC
 (ZU28DR). It contains an ARM quad-core Cortex A53 CPU (referred to as
 the "APU"), an UltraScale+ FPGA including peripherals such as built-in data
 converters and SD-FEC cores, and an ARM Cortex-R5F real-time processor
@@ -84,17 +92,28 @@ It is possible to connect to the host OS either via SSH or serial console (see
 sections \ref x4xx_getting_started_ssh and \ref x4xx_getting_started_serial,
 respectively).
 
-The X410 has a higher maximum analog bandwidth than previous USRPs. It can provide
-rates up to 500 Msps, resulting in a usable analog bandwidth of up to 400 MHz.
-In order to facilitate the higher bandwidth, UHD
-uses a technology called \ref page_dpdk "Data Plane Development Kit (DPDK)".
-See the DPDK page for details on how it can improve streaming, and how to use
-it.
+The X4x0 has a higher maximum analog bandwidth than previous USRPs. The USRP X410
+can provide rates up to 500 Msps, resulting in a usable analog bandwidth of up to 400 MHz.
 
-\subsection x4xx_overview_dboards Daughterboard Connectivity
+The USRP X440 can, depending on the FPGA image used, provide up to 2048 Msps of
+sampling rate, resulting  in a usable analog bandwidth of up to 1.6 GHz on two
+channels, or 8 channels at 500 Msps.
+
+In order to facilitate the higher bandwidth, UHD may use a technology called
+\ref page_dpdk "Data Plane Development Kit (DPDK)".
+See the DPDK page for details on how it can improve streaming, and how to use it.
+
+\subsection x4xx_overview_x410_dboards USRP X410 Daughterboard Connectivity
 
 The Ettus USRP X410 contains two ZBX daughterboards. To find out more about the
 capabilities of these analog front-end cards, see \ref page_zbx.
+
+\subsection x4xx_overview_x440_dboards USRP X440 Daughterboard Connectivity
+
+The Ettus USRP X440 contains two FBX daughterboards. Unlike the ZBX daughtercards,
+they have no analog mixers or filters, but directly connect the converters to the
+RF connectors. To find out more about the
+capabilities of these analog front-end cards, see \ref page_zbx and \ref page_fbx.
 
 \subsection x4xx_overview_panels Front and Back Panels
 
@@ -127,6 +146,16 @@ related connections, and some status LEDs:
   It is also possible to stream data over this interface, albeit at a slow rate
   (approx. 10 Msps).
 
+The back panel is identical between X4x0 variants.
+
+\image html x410_front_panel.png "Ettus USRP X440 Front Panel" width=90%
+
+FIXME insert X440 front panel pic!
+
+The front panel provides access to the RF ports and status LEDs of the \ref page_fbx.
+It also provides access to the front-panel GPIO connectors (2x HDMI) and the
+power button.
+
 \subsection x4xx_overview_micro The STM32 Microcontroller
 
 The STM32 microcontroller (also referred to as the "SCU") controls various
@@ -142,7 +171,9 @@ for whatever reason.
 
 \subsection x4xx_overview_rackmount Rack Mounting and Cooling
 
-Coming soon!
+The X4x0's cooling system uses a field replaceable fan assembly and supports two
+variants: one that pulls air front-to-back and one that pulls air back-to-front.
+By default, the unit comes with the front-to-back fan assembly.
 
 \subsection x4xx_overview_storage eMMC Storage
 
@@ -181,17 +212,22 @@ is currently already mounted.
 \section x4xx_getting_started Getting Started
 
 Firstly, download and install UHD on a host computer following \ref page_install
-or \ref page_build_guide. The USRP X410 requires UHD version 4.1 or above.
+or \ref page_build_guide. The following minimum UHD versions are required:
 
-\subsection x4xx_getting_started_assembling Assembling the X410
+- The USRP X410 requires UHD version 4.1 or above.
+- The USRP X440 requires UHD version 4.5 or above.
 
-Inside the kit you will find the X410 and an X410 power supply. Plug these in,
+It is generally recommended to use the latest UHD version.
+
+\subsection x4xx_getting_started_assembling Assembling the X4x0
+
+Inside the kit you will find the X4x0 and an X4x0 power supply. Plug these in,
 connect the 1GbE RJ45 interface to your network, and power on the device by
 pressing the power button.
 
 \subsection x4xx_getting_started_network_connectivity Network Connectivity
 
-Once the X410 has booted, determine the IP address and verify network
+Once the X4x0 has booted, determine the IP address and verify network
 connectivity by running `uhd_find_devices` on the host computer:
 
     $ uhd_find_devices
@@ -206,7 +242,10 @@ connectivity by running `uhd_find_devices` on the host computer:
         product: x410
         type: x4xx
 
-By default, an X410 will use DHCP to attempt to find an address.
+By default, an X4x0 will use DHCP to attempt to find an address.
+
+All X4x0 variants will report their `type` as 'x4xx'. The `product` key can be
+used to identify the X410/X440 variant.
 
 At this point, you should run:
 
@@ -218,33 +257,29 @@ Note: If you receive the following error:
 
     Error: RuntimeError: Graph edge list is empty for rx channel 0
 
-then you will need to download a UHD-compatible FPGA as described in
+then you will need to download a UHD-compatible FPGA image as described in
 \ref x4xx_updating_fpga or using the following command (it assumes that FPGA
 images have been downloaded previously using uhd_images_downloader, or that the
 command is run on the device itself):
 
     uhd_image_loader --args type=x4xx,addr=<ip address>,fpga=X4_200
 
-When running on the device, use 127.0.0.1 as the IP address.
+When running on the device, use `127.0.0.1` as the IP address.
 
 You can now use existing UHD examples or applications (such as
 rx_sample_to_file, rx_ascii_art_dft, or tx_waveforms) or other UHD-compatible
 applications to start receiving and transmitting with the device.
 
 See \ref x4xx_getting_started_network_connectivity_ifcs for further details on
-the various network interfaces available on the X410.
+the various network interfaces available on the X4x0.
 
 \subsubsection x4xx_getting_started_network_connectivity_ifcs Network Interfaces
 
-The Ettus USRP X410 has various network interfaces:
+The Ettus USRP X4x0 has various network interfaces:
 - `eth0`: RJ45 port.
   - The RJ45 port comes up with a default configuration of DHCP, that will
     request a network address from your DHCP server (if available on your
     network). This interface is agnostic of FPGA image flavor.
-- `int0`: internal interface for network communication between the embedded ARM
-  processor and FPGA.
-  - The internal network interface is configured with a static address:
-    `169.254.0.1/24`. This interface is agnostic of FPGA image flavor.
 - `sfpX [, sfpX_1, sfpX_2, sfpX_3]`: QSFP28 network interface(s), up-to four
   (one per lane) based on implemented protocol.
   - Each QSFP28 port has four high-speed transceiver lanes. Therefore,
@@ -253,6 +288,11 @@ The Ettus USRP X410 has various network interfaces:
     `sfpX_1-3` for the other three lanes. Each network interface has a default
     static IP address. Note that for multi-lane protocols, such as 100 GbE, a
     single interface is used (`sfpX`).
+- `int0`: internal interface for network communication between the embedded ARM
+  processor and FPGA. It is generally not recommended or necessary to directly
+  connect to this interface.
+  - The internal network interface is configured with a static address:
+    `169.254.0.1/24`. This interface is agnostic of FPGA image flavor.
 
 The configuration files for these network interfaces are stored in:
 `/data/network/<interface>.network`.
@@ -299,7 +339,7 @@ replacing the IP address with the IP of your choice.
 
 \subsubsection x4xx_getting_started_network_connectivity_leds Network Status LEDs
 
-The Ettus USRP X410 is equipped with status LEDs for its network-capable ports:
+The Ettus USRP X4x0 is equipped with status LEDs for its network-capable ports:
 RJ45 and QSFP28s,
 see \ref x4xx_getting_started_network_connectivity_leds_rj45 and
 \ref x4xx_getting_started_network_connectivity_leds_qsfp28 accordingly.
@@ -332,7 +372,7 @@ Link / Activity    | Amber (blinking)     |
 
 \subsection x4xx_getting_started_security Security-related Settings
 
-The X410 ships without a root password set. It is possible to ssh into the
+The X4x0 ships without a root password set. It is possible to ssh into the
 device by simply connecting as root, and thus gaining access to all subsystems.
 To set a password, run the command
 
@@ -386,7 +426,7 @@ The microcontroller (which controls the power sequencing, among other things)
 also has a serial console available. To connect to the microcontroller, use the
 other UART device. In the example above:
 
-    $ sudo screen /dev/serial/by-id/usb-Digilent_Digilent_USB_Device_2516351DDCC0-if02-port0 115200
+    $ sudo screen /dev/serial/by-id/usb-Digilent_Digilent_USB_Device_251635234ABC-if02-port0 115200
 
 It provides a very simple prompt. The command 'help' will list all available
 commands. A direct connection to the microcontroller can be used to hard-reset
@@ -394,6 +434,9 @@ the device without physically accessing it and other low-level diagnostics. For
 example, running the command `reboot` will emulate a reset button press,
 resetting the state of the device, while the command `powerbtn` will emulate a
 power button press, turning the device back on again.
+
+Note that the final 6 digits of the serial number match between the device and
+the serial connection (in this example, 234ABC).
 
 \subsection x4xx_getting_started_ssh SSH Connection
 
@@ -457,7 +500,7 @@ these images can be loaded by SSH'ing into the device and running:
 Unlike the USRP X310 or other third-generation USRP devices, the FPGA image
 flavors do not only encode how the QSFP28 connectors are configured, but also
 which master clock rates are available. This is because the data converter
-configuration is part of the FPGA image (the ADCs/DACs on the X410 are on the
+configuration is part of the FPGA image (the ADCs/DACs on the X4x0 are on the
 same die as the FPGA).
 
 The image flavor names consist of two short strings, separated by an
@@ -492,13 +535,22 @@ If the QSFP 1 configuration is not specified, then that port is unused. XG and
 CG indicate that each QSFP port has a single 10 GbE or 100 GbE, respectively
 (same as previous USRPs). The 'G' in this case is short for 'gigabit'.
 
-As of UHD 4.4, the following images flavors are shipped with UHD:
+As of UHD 4.4, the following USRP X410 images flavors are shipped with UHD:
 
 | FPGA Image Flavor | Bandwidth | QSFP28 Port 0 Interface | QSFP28 Port 1 Interface | DDC/DUC | DRAM                     |
 |-------------------|-----------|-------------------------|-------------------------|---------|--------------------------|
 | X4_200            | 200 MHz   | 4x 10 GbE (All Lanes)   | Unused                  | Yes     | Yes (4 GiB, 4-Ch Replay) |
 | UC_200            | 200 MHz   | Unused                  | 100 GbE                 | Yes     | Yes (4 GiB, 4-Ch Replay) |
 | CG_400            | 400 MHz   | 100 GbE                 | 100 GbE                 | No      | No                       |
+
+As of UHD 4.5, the following USRP X440 images flavors are shipped with UHD:
+
+| FPGA Image Flavor | Bandwidth | QSFP28 Port 0 Interface | QSFP28 Port 1 Interface | DDC/DUC | DRAM                     |
+|-------------------|-----------|-------------------------|-------------------------|---------|--------------------------|
+| X4_400            | 400 MHz   | 4x 10 GbE (All Lanes)   | Unused                  | No      | No                       |
+| CG_400            | 400 MHz   | 100 GbE                 | 100 GbE                 | No      | No                       |
+| X4_1600           | 1600 MHz  | 4x 10 GbE (All Lanes)   | Unused                  | No      | Yes (8 GiB, 2-Ch Replay) |
+| CG_1600           | 1600 MHz  | 100 GbE                 | 100 GbE                 | No      | No                       |
 
 The following list shows some potential use-cases for different FPGA images:
 
@@ -513,6 +565,11 @@ The following list shows some potential use-cases for different FPGA images:
   DRAM using the RFNoC Record/Replay block. Up to 4 x 10 GbE connections may be
   used to access the DRAM from an external host computer. Note that 10 GbE is
   not fast enough for continuous full-rate streaming at this rate.
+- `X4_1600` (USRP X440 only): Highest bandwidth streaming including DRAM support.
+  This is a useful image for capture/replay from DRAM. Note that streaming at
+  full rate (2 Gsps) exceeds the streaming capabilities of 10 GbE, which means
+  that direct streaming (without using DRAM) is not possible at these rates with
+  this image.
 
 Run `make help` in the `fpga/usrp3/top/x400` directory of the UHD repository to
 see a complete list of FPGA images that can be built, some of which are
@@ -528,7 +585,7 @@ should use the 200 MHz images and make use the DDC/DUC for lower rates.
 
 \subsubsection x4xx_pl_dram DDR4 Memory for Programmable Logic
 
-The USRP X410 has two banks of DDR4 memory available for use by the
+The USRP X4x0 has two banks of DDR4 memory available for use by the
 programmable logic in the FPGA. Each bank has a 4 GiB capacity. The DRAM can be
 run at up to 2.4 GT/s but is clocked at 2.0 GT/s by default to ease FPGA timing
 closure.
@@ -540,13 +597,13 @@ interfaces. For 200 MHz images, each AXI interface is 64-bit at 250 MHz. For
 maximum sample rate to be read and written to DRAM for up to 4 channels
 simultaneously.
 
-The default use for the DRAM is the Replay RFnoC block, which supports
+The default use for the DRAM is the Replay RFNoC block, which supports
 recording and playback of data in real time. See section \ref
 x4xx_updating_fpga_types for a list of which images have DRAM by default.
 
 \section x4xx_updating_filesystems Updating Filesystems
 
-The easiest way to update the filesystem is directly from the X410 via the
+The easiest way to update the filesystem is directly from the X4x0 via the
 built-in `usrp_update_fs` utility.
 
 To perform a filesystem "factory-reset", run:
@@ -583,7 +640,7 @@ works.
 
 \subsubsection x4xx_updating_filesystems_mender_artifact Downloading a Mender Artifact
 
-To initiate an update directly from the X410 device, download a Mender artifact
+To initiate an update directly from the X4x0 device, download a Mender artifact
 containing the update itself. These are files with a `.mender` suffix. They can
 be downloaded by using the `uhd_images_downloader` utility:
 
@@ -609,7 +666,7 @@ Second, use the `-m` switch to use the new manifest file:
 
 \subsubsection x4xx_updating_filesystems_mender_install Installing the Mender Artifact
 
-Once a Mender artifact is downloaded to the X410 (see
+Once a Mender artifact is downloaded to the X4x0 (see
 \ref x4xx_updating_filesystems_mender_artifact), install it by running mender
 on the command line:
 
@@ -673,9 +730,6 @@ you forget to update the CPLD, MPM will fail to fully initialize and emit a
 warning. This is not critical, and the CPLD update can be performed later by
 following these same steps, but the device will not be usable until then.
 
-Even though the CPLD may not require updating, it is recommended to always run
-these steps for a consistent update procedure.
-
 You can update the motherboard (MB) CPLD by running the following command on
 the X410:
 
@@ -737,13 +791,13 @@ reboot.
 \subsection x4xx_accessing_emmc_usb USB Access to eMMC
 
 While Mender should be used for routine filesystem updates (see \ref
-x4xx_updating_filesystems), it is also possible to access the X410's internal
+x4xx_updating_filesystems), it is also possible to access the X4x0's internal
 eMMC from an external host over USB. This allows accessing or modifying the
 filesystem, as well as the ability to flash the device with an entirely new
 filesystem.
 
 In order to do so, you'll need an external computer with two USB ports, and two
-USB cables to connect the computer to your X410. The instructions below assume
+USB cables to connect the computer to your X4x0. The instructions below assume
 a Linux host.
 
 First, connect to the APU serial console at a baud rate of 115200. Boot the
@@ -756,8 +810,8 @@ This will start the USB mass storage gadget to expose the eMMC as a USB mass
 storage device. You should see a spinning indicator on the console, which
 indicates the gadget is active.
 
-Next, connect your external computer to the X410's USB to PS port using an OTG
-cable. Your computer should recognize the X410 as a mass storage device, and you
+Next, connect your external computer to the X4x0's USB to PS port using an OTG
+cable. Your computer should recognize the X4x0 as a mass storage device, and you
 should see an entry in your kernel logs (`dmesg`) that looks like this:
 
     usb 3-1: New USB device found, idVendor=3923, idProduct=7a7d, bcdDevice= 2.23
@@ -769,11 +823,11 @@ should see an entry in your kernel logs (`dmesg`) that looks like this:
     sd 6:0:0:0: [sdc] Attached SCSI removable disk
 
 The exact output will depend on your machine, but from this log you can see that
-the X410 was recognized and `/dev/sdc` is the block device representing the
+the X4x0 was recognized and `/dev/sdc` is the block device representing the
 eMMC, with 4 partitions detected (see \ref x4xx_overview_storage for details on
 the partition layout).
 
-It is now possible to treat the X410's eMMC as you would any other USB drive:
+It is now possible to treat the X4x0's eMMC as you would any other USB drive:
 the individual partitions can be mounted and accessed, or the entire block
 device can be read/written.
 
@@ -782,7 +836,7 @@ stopped by hitting Ctrl-C at the APU serial console.
 
 \subsubsection x4xx_flash_emmc Flashing eMMC
 
-Once the X410's eMMC is accessible over USB, it's possible to write the
+Once the X4x0's eMMC is accessible over USB, it's possible to write the
 filesystem image using `dd`. You can obtain the latest filesystem image by
 running:
 
@@ -796,30 +850,30 @@ Run:
     sudo dd if=/path/to/usrp_x4xx_fs.sdimg of=/dev/sdX bs=1M
 
 to flash the eMMC with this image (replacing /dev/sdX with the block device
-of the X410's eMMC as indicated by your kernel log).
+of the X4x0's eMMC as indicated by your kernel log).
 
 When copying has completed, hit Ctrl-C on the U-boot
 prompt to terminate the mass storage mode. Then, power-cycle the device to load
 the new filesystem.
 
-\subsection x4xx_jtag_boot Booting X410 over JTAG
+\subsection x4xx_jtag_boot Booting X4x0 over JTAG
 
-If the X410 is no longer able to boot from eMMC, it is possible to boot the
+If the X4x0 is no longer able to boot from eMMC, it is possible to boot the
 device into u-boot over JTAG. This will allow the filesystem to be reflashed
 using the process described in \ref x4xx_accessing_emmc_usb.
 
-In order to boot the X410 over JTAG, you'll first need to have either the
+In order to boot the X4x0 over JTAG, you'll first need to have either the
 Xilinx SDK, or the freely available Vivado Lab Edition. The following steps
 require that one of these is installed and available in your environment.
 
 For convenience, pre-compiled bootloader binaries are provided, along with a
-script to handle downloading these into the X410's memory and booting the
+script to handle downloading these into the X4x0's memory and booting the
 device. These are included in the sdimg package with the name
 `usrp_x4xx_recovery.zip`, which can be downloaded using:
 
     uhd_images_downloader -t sdimg -t x4xx
 
-To boot the device over JTAG, first ensure the X410 is powered off, and that you
+To boot the device over JTAG, first ensure the X4x0 is powered off, and that you
 have serial consoles open to both the SCU and the APU. Configure the device to
 boot over JTAG by running `zynqmp bootmode jtag` on the SCU console, and press
 the power button (or run the `powerbtn` command at the SCU console). At this
@@ -867,8 +921,8 @@ For a list of which arguments can be passed into make(), see Section
 
 \subsection x4xx_usage_gps GPS
 
-The USRP X410 includes a Jackson Labs LTE-Lite GPS module. Its antenna port is
-on the rear panel (see \ref x4xx_overview_panels). When the X410 has access to
+The USRP X4x0 includes a Jackson Labs LTE-Lite GPS module. Its antenna port is
+on the rear panel (see \ref x4xx_overview_panels). When the X4x0 has access to
 GPS satellite signals, it can use this module to read out the current GPS time
 and location as well as to discipline an onboard OCXO.
 
@@ -896,7 +950,7 @@ GPS lock is reported.
 
 \subsection x4xx_usage_gpio Front-Panel Programmable GPIOs
 
-The USRP X410 has two HDMI front-panel connectors, which are connected to the
+The USRP X4x0 has two HDMI front-panel connectors, which are connected to the
 FPGA. For a description of the GPIO control API, see \subpage page_x400_gpio_api.
 
 There are multiple sources that can control the state of the GPIO lines.
@@ -938,6 +992,20 @@ DB 0 / RF 0 | A:0
 DB 0 / RF 1 | A:1
 DB 1 / RF 0 | B:0
 DB 1 / RF 1 | B:1
+
+The RF ports on the front panel of the X440 + FBX correspond to the following
+subdev specifications:
+
+Label       | Subdev Spec
+------------|------------
+DB 0 / RF 0 | A:0
+DB 0 / RF 1 | A:1
+DB 0 / RF 2 | A:2
+DB 0 / RF 3 | A:3
+DB 1 / RF 0 | B:0
+DB 1 / RF 1 | B:1
+DB 1 / RF 2 | B:2
+DB 1 / RF 3 | B:3
 
 The subdev spec slot identifiers "A" and "B" are not reflected on the front panel.
 They were set to match valid subdev specifications of previous USRPs, maintaining
@@ -994,7 +1062,7 @@ sensors values. If the GPS is disabled, they will always return false.
 
 \subsection x4xx_usage_rearpanelleds Rear Panel Status LEDs
 
-The USRP X410 is equipped with four LEDs located on the device's rear panel.
+The USRP X4x0 is equipped with four LEDs located on the device's rear panel.
 Each LED supports four different states: Off, Green, Red, and Amber.
 One LED (`PWR`) indicates the device's power state (see
 \ref x4xx_usage_rearpanelleds_power below).
@@ -1006,7 +1074,7 @@ different behaviors are supported for each of these LEDs (see
 
 \subsubsection x4xx_usage_rearpanelleds_power Power LED
 
-The USRP X410's `PWR` LED is reserved to visually indicate the user the
+The USRP X4x0's `PWR` LED is reserved to visually indicate the user the
 device's power state. \ref x4xx_usage_rearpanelleds_power_behavior describes
 what each LED state represents.
 
@@ -1015,13 +1083,13 @@ what each LED state represents.
 | `PWR` LED State | Meaning                               |
 |-----------------|---------------------------------------|
 | Off             | No power is applied                   |
-| Amber           | Power is good but X410 is powered off |
-| Green           | Power is good and X410 is powered on  |
+| Amber           | Power is good but X4x0 is powered off |
+| Green           | Power is good and X4x0 is powered on  |
 | Red             | Power error state                     |
 
 \subsubsection x4xx_usage_rearpanelleds_configurable User-configurable LEDs
 
-The USRP X410's user-configurable rear panel status LEDs (`LED 0`, `LED 1`, and
+The USRP X4x0's user-configurable rear panel status LEDs (`LED 0`, `LED 1`, and
 `LED 2`) allow the user to have visual indication of various device conditions.
 \ref x4xx_usage_rearpanelleds_configurable_suppbeh provides a complete list of
 the supported behaviors for each user-configurable LED. By default, these LEDs are
@@ -1053,12 +1121,12 @@ persistently, see \ref x4xx_usage_rearpanelleds_configurable_tempbeh or
 | LED 1      | `fpga`           |
 | LED 2      | `emmc`           |
 
-A user may change the X410 LEDs' default behavior via running a utility on the
+A user may change the X4x0 LEDs' default behavior via running a utility on the
 on-board ARM processor (Linux).
 
 \paragraph x4xx_usage_rearpanelleds_configurable_tempbeh Temporarily change the LED Behavior
 
-1. Establish a connection (serial or SSH) to the X410's Linux terminal.
+1. Establish a connection (serial or SSH) to the X4x0's Linux terminal.
 2. Use the `ledctrl` utility to configure each LED based on desired supported behavior:
 
         ledctrl <led> <command>
@@ -1072,7 +1140,7 @@ Example:
 
     root@ni-x4xx-1111111:~# ledctrl led0 user0
 
-Sets the X410's `LED 0` to be controlled via the FPGA application using "User LED 0".
+Sets the X4x0's `LED 0` to be controlled via the FPGA application using "User LED 0".
 
 \paragraph x4xx_usage_rearpanelleds_configurable_persistentbeh Persistently change the LED Behavior
 
@@ -1098,7 +1166,7 @@ Below is an excerpt of the FPGA source code, setting the `user0`, `user1`, and
   // Rear panel LEDs control
   // Each LED is comprised of a green (LSB) and a red (MSB) LED
   // which the user can control through a 2-bit vector once fabric
-  // LED control is configured on the X410's Linux shell.
+  // LED control is configured on the X4x0's Linux shell.
   localparam LED_OFF   = 2'b00;
   localparam LED_GREEN = 2'b01;
   localparam LED_RED   = 2'b10;
@@ -1114,7 +1182,7 @@ Below is an excerpt of the FPGA source code, setting the `user0`, `user1`, and
 
 \image html x4xx_block_diagram.svg "X4x0 Motherboard Block Diagram" width=60%
 
-The USRP X410 has three processors on the motherboard: The RFSoC, the SCU, and a
+The USRP X4x0 has three processors on the motherboard: The RFSoC, the SCU, and a
 control CPLD. The RFSoC does the bulk of the work. It houses the programmable
 logic (PL), the APU and RPU processors (the former running the embedded Linux
 system), connects to the data ports (RJ45, QSFP28) and also includes RF data
@@ -1159,26 +1227,30 @@ auxiliary board, which contains an OCXO (either GPS-disciplined or controlled by
 a DAC), but also connects an external reference to the motherboard. Furthermore,
 it houses a PLL for deriving a clock from the network (eCPRI).
 
-The motherboard itself has two main PLLs for clocking purposes: The Sample PLL
+The motherboard itself has two main PLLs for clocking purposes: The sample PLL
+and the reference PLL.  The Sample PLL
 (also SPLL) is used to create all clocks used for RF-related purposes. It creates
-the sample clock (a very fast clock, ~3 GHz) and the PLL reference clock (PRC)
-which is used as a reference for the LO synthesizers (50-64 MHz).
+the sample clock (a very fast clock, 1-4 GHz) and the PLL reference clock (PRC,
+50-64 MHz) which is used as a reference for the daughterboard LO synthesizers,
+the daughterboard CPLD, and as a reference clock inside the FPGA, where it is
+further routed to the motherboard CPLD and daughterboard interfaces.
 
-Its input is called the base reference clock (BRC). It has four possible sources:
+The reference input to the SPLL is called the base reference clock (BRC). It has
+four possible sources:
 - The OCXO, which always produces a 10 MHz reference clock. When the clock source
   is set to `internal`, this OCXO is only disciplined by a DAC (control of that
   DAC is not exposed in this version of UHD), but there is no further control
   loop. By selecting `gpsdo` as a clock source, a GPS module is used to
   discipline the OCXO (see also \ref x4xx_usage_gps).
 - The external reference input SMA port. When an external reference is used (by
-  selecting `external` as the clock source), the X410 assumes a 10 MHz reference
+  selecting `external` as the clock source), the X4x0 assumes a 10 MHz reference
   clock (it is possible to drive the device with a different external clock
   frequency by providing the `ref_clk_freq` device argument, but this is not a
   supported use case for this UHD version). Note the clocking card can also import
   a PPS signal (when setting the time source to `external`) as well as export it.
 - The eCPRI PLL (when using the `nsync` clock source). It will generate a 10 MHz
   BRC. Note the intention is to use this for scenarios where the clock is derived
-  from the network port (e.g., eCPRI), but this version of UHD does not include
+  from the network port (e.g., SyncE), but this version of UHD does not include
   such a feature.
 - The reference PLL, when the clock source is set to `mboard` (this is a 25 MHz
   BRC). This is not a common use case, as it is not possible to synchronize the
@@ -1259,7 +1331,7 @@ Block diagram:
 ```
 
 Note that this section does not cover every single clock signal present on the
-X410, but mainly those clock signals relevant for the operation of the RF
+X4x0, but mainly those clock signals relevant for the operation of the RF
 components. Refer to the schematic for more details.
 
 \section x4xx_adc_self_cal ADC self calibration

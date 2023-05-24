@@ -6,6 +6,7 @@
 
 #include "x400_radio_control.hpp"
 #include "x400_gpio_control.hpp"
+#include "x400_internal_sync.hpp"
 #include <uhd/rfnoc/registry.hpp>
 #include <uhd/types/serial.hpp>
 #include <uhd/utils/log.hpp>
@@ -14,6 +15,7 @@
 #include <uhdlib/usrp/common/x400_rfdc_control.hpp>
 #include <uhdlib/usrp/cores/spi_core_4000.hpp>
 #include <uhdlib/usrp/dboard/debug_dboard.hpp>
+#include <uhdlib/usrp/dboard/fbx/fbx_dboard.hpp>
 #include <uhdlib/usrp/dboard/null_dboard.hpp>
 #include <uhdlib/usrp/dboard/zbx/zbx_dboard.hpp>
 
@@ -54,10 +56,15 @@ x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
     _mb_control = std::dynamic_pointer_cast<mpmd_mb_controller>(get_mb_controller());
     UHD_ASSERT_THROW(_mb_control)
 
+    RFNOC_LOG_TRACE("num timekeepers: " << _mb_control->get_num_timekeepers()
+                                        << "radio slot: " << _radio_slot);
+    // select time keeper based on block id but restrict to number of time keepers
+    // available
+    const size_t tk_idx =
+        _mb_control->get_num_timekeepers() >= 2 ? get_block_id().get_block_count() : 0;
     _x4xx_timekeeper = std::dynamic_pointer_cast<mpmd_mb_controller::mpmd_timekeeper>(
-        _mb_control->get_timekeeper(0));
+        _mb_control->get_timekeeper(tk_idx));
     UHD_ASSERT_THROW(_x4xx_timekeeper);
-
     _rpcc = _mb_control->dynamic_cast_rpc_as<uhd::usrp::x400_rpc_iface>();
     if (!_rpcc) {
         _rpcc = std::make_shared<uhd::usrp::x400_rpc>(_mb_control->get_rpc_client());
@@ -144,6 +151,35 @@ x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
             zbx_rpc_sptr,
             _rfdcc,
             get_tree());
+    } else if (std::stol(pid) == uhd::usrp::fbx::FBX_PID) {
+        auto fbx_rpc_sptr = _mb_control->dynamic_cast_rpc_as<uhd::usrp::fbx_rpc_iface>();
+        if (!fbx_rpc_sptr) {
+            fbx_rpc_sptr = std::make_shared<uhd::usrp::fbx_rpc>(
+                _mb_control->get_rpc_client(), _rpc_prefix);
+        }
+        _daughterboard = std::make_shared<uhd::usrp::fbx::fbx_dboard_impl>(
+            regs(),
+            regmap::PERIPH_BASE,
+            [this](const size_t instance) { return get_command_time(instance); },
+            get_block_id().get_block_count(),
+            _radio_slot,
+            get_num_input_ports(),
+            get_num_output_ports(),
+            _rpc_prefix,
+            get_unique_id(),
+            _rpcc,
+            fbx_rpc_sptr,
+            _rfdcc,
+            get_tree());
+
+        auto fbx_dboard =
+            std::dynamic_pointer_cast<uhd::usrp::fbx::fbx_dboard_impl>(_daughterboard);
+        if (fbx_dboard != NULL) {
+            RFNOC_LOG_DEBUG("Registering internal sync feature")
+            auto int_sync = std::make_shared<uhd::features::internal_sync>(
+                uhd::features::internal_sync(fbx_dboard->get_fbx_ctrl()));
+            register_feature(int_sync);
+        }
     } else if (std::stol(pid) == uhd::rfnoc::DEBUG_DB_PID) {
         _daughterboard = std::make_shared<debug_dboard_impl>();
     } else if (std::stol(pid) == uhd::rfnoc::IF_TEST_DBOARD_PID) {
@@ -284,7 +320,12 @@ void x400_radio_control_impl::_init_prop_tree()
 
 void x400_radio_control_impl::_validate_master_clock_rate_args()
 {
-    auto block_args = get_block_args();
+    // auto block_args = get_block_args(); // FIXME use the block args!
+    // Comparing master_clock_rate with get_rate() further down is utterly
+    // pointless, because get_rate() gets initialized from the DB RPC call
+    // that returns us the MCR. What we need to do is to parse the block args,
+    // check if there was a master_clock_rate key in there, and then compare
+    // those two. FIXME resolve this.
 
     // Note: MCR gets set during the init() call (prior to this), which takes
     // in arguments from the device args. So if the block args contain a
@@ -304,8 +345,9 @@ void x400_radio_control_impl::_init_mpm()
 {
     // Init sensors
     for (const auto& dir : std::vector<direction_t>{RX_DIRECTION, TX_DIRECTION}) {
-        // TODO: We should pull the number of channels from _daughterboard
-        for (size_t chan_idx = 0; chan_idx < uhd::usrp::zbx::ZBX_NUM_CHANS; chan_idx++) {
+        const size_t num_chans = (dir == RX_DIRECTION) ? get_num_input_ports()
+                                                       : get_num_output_ports();
+        for (size_t chan_idx = 0; chan_idx < num_chans; chan_idx++) {
             _init_mpm_sensors(dir, chan_idx);
         }
     }
@@ -328,8 +370,10 @@ std::string x400_radio_control_impl::_get_trx_string(const direction_t dir) cons
 void x400_radio_control_impl::_init_mpm_sensors(
     const direction_t dir, const size_t chan_idx)
 {
-    // TODO: We should pull the number of channels from _daughterboard
-    UHD_ASSERT_THROW(chan_idx < uhd::usrp::zbx::ZBX_NUM_CHANS);
+    UHD_ASSERT_THROW(dir == RX_DIRECTION || dir == TX_DIRECTION);
+    const size_t num_chans = (dir == RX_DIRECTION) ? get_num_input_ports()
+                                                   : get_num_output_ports();
+    UHD_ASSERT_THROW(chan_idx < num_chans);
     const std::string trx = _get_trx_string(dir);
     const fs_path fe_path = fs_path("dboard")
                             / (dir == RX_DIRECTION ? "rx_frontends" : "tx_frontends")
