@@ -34,30 +34,30 @@ timekeeper:
   - name: radio_time
     width: 64
 
-# Radio interface (up to eight channels or eight samples per clock)
+# Radio interface (up to 32 channels or 32 samples per clock)
 radio:
   type: master-slave
   ports:
   - name: radio_rx_data
     type: from-master
-    width: 256
+    width: 1024
   - name: radio_rx_stb
     type: from-master
-    width: 8
+    width: 32
   - name: radio_rx_running
     type: to-master
-    width: 8
+    width: 32
   - name: radio_tx_data
     type: to-master
-    width: 256
+    width: 1024
   - name: radio_tx_stb
     type: from-master
-    width: 8
+    width: 32
   - name: radio_tx_running
     type: to-master
-    width: 8
+    width: 32
 
-# AXI4 memory-mapped interface (up to 4 x 512-bit data and 48-bit address)
+# AXI4 memory-mapped interface (up to 8 x 512-bit data and 48-bit address)
 axi4_mm:
   type: master-slave
   ports:
@@ -66,133 +66,133 @@ axi4_mm:
     width: 1
   - name: m_axi_awid
     type: from-master
-    width: 4
+    width: 8
   - name: m_axi_awaddr
     type: from-master
-    width: 192
+    width: 384
   - name: m_axi_awlen
     type: from-master
-    width: 32
+    width: 64
   - name: m_axi_awsize
     type: from-master
-    width: 12
+    width: 24
   - name: m_axi_awburst
     type: from-master
-    width: 8
+    width: 16
   - name: m_axi_awlock
     type: from-master
-    width: 4
+    width: 8
   - name: m_axi_awcache
     type: from-master
-    width: 16
+    width: 32
   - name: m_axi_awprot
     type: from-master
-    width: 12
+    width: 24
   - name: m_axi_awqos
     type: from-master
-    width: 16
+    width: 32
   - name: m_axi_awregion
     type: from-master
-    width: 16
+    width: 32
   - name: m_axi_awuser
     type: from-master
-    width: 4
+    width: 8
   - name: m_axi_awvalid
     type: from-master
-    width: 4
+    width: 8
   - name: m_axi_awready
     type: to-master
-    width: 4
+    width: 8
   - name: m_axi_wdata
     type: from-master
-    width: 2048
+    width: 4192
   - name: m_axi_wstrb
     type: from-master
-    width: 256
+    width: 512
   - name: m_axi_wlast
     type: from-master
-    width: 4
+    width: 8
   - name: m_axi_wuser
     type: from-master
-    width: 4
+    width: 8
   - name: m_axi_wvalid
     type: from-master
-    width: 4
+    width: 8
   - name: m_axi_wready
     type: to-master
-    width: 4
+    width: 8
   - name: m_axi_bid
     type: to-master
-    width: 4
+    width: 8
   - name: m_axi_bresp
     type: to-master
-    width: 8
+    width: 16
   - name: m_axi_buser
     type: to-master
-    width: 4
+    width: 8
   - name: m_axi_bvalid
     type: to-master
-    width: 4
+    width: 8
   - name: m_axi_bready
     type: from-master
-    width: 4
+    width: 8
   - name: m_axi_arid
     type: from-master
-    width: 4
+    width: 8
   - name: m_axi_araddr
     type: from-master
-    width: 192
+    width: 384
   - name: m_axi_arlen
     type: from-master
-    width: 32
+    width: 64
   - name: m_axi_arsize
     type: from-master
-    width: 12
+    width: 24
   - name: m_axi_arburst
     type: from-master
-    width: 8
+    width: 16
   - name: m_axi_arlock
     type: from-master
-    width: 4
+    width: 8
   - name: m_axi_arcache
     type: from-master
-    width: 16
+    width: 32
   - name: m_axi_arprot
     type: from-master
-    width: 12
+    width: 32
   - name: m_axi_arqos
     type: from-master
-    width: 16
+    width: 32
   - name: m_axi_arregion
     type: from-master
-    width: 16
+    width: 32
   - name: m_axi_aruser
     type: from-master
-    width: 4
+    width: 8
   - name: m_axi_arvalid
     type: from-master
-    width: 4
+    width: 8
   - name: m_axi_arready
     type: to-master
-    width: 4
+    width: 8
   - name: m_axi_rid
     type: to-master
-    width: 4
+    width: 8
   - name: m_axi_rdata
     type: to-master
-    width: 2048
+    width: 4192
   - name: m_axi_rresp
     type: to-master
-    width: 8
+    width: 16
   - name: m_axi_rlast
     type: to-master
-    width: 4
+    width: 8
   - name: m_axi_ruser
     type: to-master
-    width: 4
+    width: 8
   - name: m_axi_rvalid
     type: to-master
-    width: 4
+    width: 8
   - name: m_axi_rready
     type: from-master
-    width: 4
+    width: 8

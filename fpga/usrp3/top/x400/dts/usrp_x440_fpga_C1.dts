@@ -1,0 +1,20 @@
+/*
+ * Copyright 2021 Ettus Research, a National Instruments Brand
+ *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
+ */
+
+/dts-v1/;
+/plugin/;
+
+#include "x440-version-info.dtsi"
+
+#include "x440-fpga.dtsi"
+
+#include "x4xx-common.dtsi"
+
+#include "x440-rfdc.dtsi"
+
+#include "x4xx-dma.dtsi"
+
+#include "x4xx-100gbe-port0.dtsi"

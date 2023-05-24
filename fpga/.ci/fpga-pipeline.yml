@@ -32,12 +32,16 @@ parameters:
   type: boolean
   displayName: Build X410
   default: true
+- name: build_x440
+  type: boolean
+  displayName: Build X440
+  default: true
 
 trigger:
   batch: true
   branches:
     include:
-    - master
+    - ferratus-master
   paths:
     include:
     - fpga/usrp3/lib
@@ -51,7 +55,7 @@ schedules:
   displayName: Weekly FPGA CI Build master branch
   branches:
     include:
-    - master
+    - ferratus-master
   always: true
 
 extends:
@@ -61,3 +65,4 @@ extends:
     clean_ip_build: ${{ parameters.clean_ip_build }}
     package_images: ${{ parameters.package_images }}
     build_x410: ${{ parameters.build_x410 }}
+    build_x440: ${{ parameters.build_x440 }}

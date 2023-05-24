@@ -85,7 +85,11 @@ module cpld_interface (
   `include "../../lib/rfnoc/core/ctrlport.vh"
   `include "regmap/pl_cpld_regmap_utils.vh"
   // Variant-dependent register map.
-  `include "cpld/regmap/x410/mb_cpld_pl_regmap_utils.vh"
+  `ifdef X440
+    `include "cpld/regmap/x440/mb_cpld_pl_regmap_utils.vh"
+  `else // Use X410 as the default variant for regmap.
+    `include "cpld/regmap/x410/mb_cpld_pl_regmap_utils.vh"
+  `endif
   `include "cpld/regmap/pl_cpld_base_regmap_utils.vh"
 
   //---------------------------------------------------------------------------

@@ -1285,7 +1285,11 @@ module x4xx_dram #(
         ERROR_invalid_dwidth();
       end
 
-      ddr4_64bits ddr4_64bits_i (
+      `ifdef X440
+        ddr4_64bits_x440 ddr4_64bits_i (
+      `else
+        ddr4_64bits ddr4_64bits_i (
+      `endif
         .sys_rst                (sys_rst                  ),
         .c0_sys_clk_p           (dram0_sys_clk_p          ),
         .c0_sys_clk_n           (dram0_sys_clk_n          ),
@@ -1978,7 +1982,11 @@ module x4xx_dram #(
         ERROR_invalid_dwidth();
       end
 
-      ddr4_64bits ddr4_64bits_i (
+      `ifdef X440
+        ddr4_64bits_x440 ddr4_64bits_i (
+      `else
+        ddr4_64bits ddr4_64bits_i (
+      `endif
         .sys_rst                (sys_rst                  ),
         .c0_sys_clk_p           (dram1_sys_clk_p          ),
         .c0_sys_clk_n           (dram1_sys_clk_n          ),

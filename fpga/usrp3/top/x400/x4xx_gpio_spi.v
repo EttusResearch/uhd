@@ -343,8 +343,32 @@ module x4xx_gpio_spi #(
   // SPI master
   //---------------------------------------------------------------------------
 
-  `ifdef X410
+  `ifdef X440
 
+    simple_spi_core #(
+      .BASE     (0),
+      .WIDTH    (NUM_SLAVES),
+      .CLK_IDLE (0),
+      .SEN_IDLE ({NUM_SLAVES{1'b1}})
+    ) simple_spi_core_i (
+      .clock        (ctrlport_clk),
+      .reset        (ctrlport_rst),
+      .set_stb      (set_stb),
+      .set_addr     (set_addr),
+      .set_data     (set_data),
+      .readback     (readback),
+      .readback_stb (readback_stb),
+      .ready        (),
+      .sen          (ss[NUM_SLAVES-1:0]),
+      .sclk         (sclk),
+      .mosi         (mosi),
+      .miso         (miso),
+      .debug        ()
+    );
+
+    assign readback_stb_extended = readback_stb;
+
+  `else // X410
     //  Register set_stb for use in 2x domain.
     reg set_stb_2x = 1'b0;
     reg ctrlport_clk_phase = 1'b1;
@@ -423,7 +447,13 @@ module x4xx_gpio_spi #(
       assign gated_sclk[i]   = gpio_is_sclk[i] ? sclk : 1'b0;
 
       // register signals once remapping logic is resolved
-      `ifdef X410
+      `ifdef X440
+        always @ (posedge ctrlport_clk) begin
+          mosi_mux_out_dlyd[i] <= mosi_mux_out[i];
+          gpio_is_sclk_dlyd[i] <= gpio_is_sclk[i];
+          gated_sclk_dlyd[i]   <= gated_sclk[i];
+        end
+      `else // X410
         always @ (posedge ctrlport_clk_2x) begin
           mosi_mux_out_dlyd[i] <= mosi_mux_out[i];
           gpio_is_sclk_dlyd[i] <= gpio_is_sclk[i];

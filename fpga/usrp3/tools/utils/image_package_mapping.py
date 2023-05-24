@@ -95,6 +95,31 @@ PACKAGE_MAPPING = {
                   "usrp_x410_fpga_CG_400.rpt",
                  ]
     },
+    "x440": {
+        "type": "x4xx",
+        "package_name": "x4xx_x440_fpga_default-g{}.zip",
+        "files": ["usrp_x440_fpga_CG_400.bit",
+                  "usrp_x440_fpga_CG_400.bit.md5",
+                  "usrp_x440_fpga_CG_400.dts",
+                  "usrp_x440_fpga_CG_400.dts.md5",
+                  "usrp_x440_fpga_CG_400.rpt",
+                  "usrp_x440_fpga_X4_400.bit",
+                  "usrp_x440_fpga_X4_400.bit.md5",
+                  "usrp_x440_fpga_X4_400.dts",
+                  "usrp_x440_fpga_X4_400.dts.md5",
+                  "usrp_x440_fpga_X4_400.rpt",
+                  "usrp_x440_fpga_CG_1600.bit",
+                  "usrp_x440_fpga_CG_1600.bit.md5",
+                  "usrp_x440_fpga_CG_1600.dts",
+                  "usrp_x440_fpga_CG_1600.dts.md5",
+                  "usrp_x440_fpga_CG_1600.rpt",
+                  "usrp_x440_fpga_X4_1600.bit",
+                  "usrp_x440_fpga_X4_1600.bit.md5",
+                  "usrp_x440_fpga_X4_1600.dts",
+                  "usrp_x440_fpga_X4_1600.dts.md5",
+                  "usrp_x440_fpga_X4_1600.rpt",
+                 ]
+    },
     "x410_cpld": {
         "type": "x4xx",
         "package_name": "x4xx_x410_cpld_default-g{}.zip",
@@ -106,6 +131,18 @@ PACKAGE_MAPPING = {
                   "usrp_x410_cpld_10m08.rpd.md5",
                   "usrp_x410_cpld_10m08.svf",
                   "usrp_x410_cpld_10m08.svf.md5"]
+    },
+    "x440_cpld": {
+        "type": "x4xx",
+        "package_name": "x4xx_x440_cpld_default-g{}.zip",
+        "files": ["usrp_x440_cpld_10m04.rpd",
+                  "usrp_x440_cpld_10m04.rpd.md5",
+                  "usrp_x440_cpld_10m04.svf",
+                  "usrp_x440_cpld_10m04.svf.md5",
+                  "usrp_x440_cpld_10m08.rpd",
+                  "usrp_x440_cpld_10m08.rpd.md5",
+                  "usrp_x440_cpld_10m08.svf",
+                  "usrp_x440_cpld_10m08.svf.md5"]
     },
     "zbx_cpld": {
         "type": "x4xx",

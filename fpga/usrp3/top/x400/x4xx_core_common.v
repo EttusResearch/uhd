@@ -85,7 +85,7 @@ module x4xx_core_common #(
 
   // Timekeeper (Domain: radio_clk)
   input  wire [ 7:0]                   radio_spc,
-  input  wire                          sample_rx_stb,
+  input  wire [NUM_TIMEKEEPERS-1:0]    sample_rx_stb,
   input  wire [ 3:0]                   time_ignore_bits,
   output wire [64*NUM_TIMEKEEPERS-1:0] radio_time,
 
@@ -352,11 +352,12 @@ module x4xx_core_common #(
         .s_ctrlport_resp_ack   (timekeeper_resp_ack[tk_i]),
         .s_ctrlport_resp_data  (timekeeper_resp_data[CTRLPORT_DATA_W*tk_i+:CTRLPORT_DATA_W]),
         .time_increment        (radio_spc),
-        .sample_rx_stb         (sample_rx_stb),
+        .sample_rx_stb         (sample_rx_stb[tk_i]),
         .pps                   (pps_radioclk[tk_i]),
         .tb_timestamp          (radio_time[64*tk_i+:64]),
         .tb_timestamp_last_pps (),
-        .tb_period_ns_q32      ()
+        .tb_period_ns_q32      (),
+        .tb_changed            ()
       );
     end
   endgenerate
@@ -428,10 +429,13 @@ module x4xx_core_common #(
       ) ctrlport_timer_i (
         .clk                      (radio_clk[db_i]),
         .rst                      (radio_rst[db_i]),
-     `ifdef X410
+     `ifdef X440
+        .time_now                 (radio_time[64*db_i+:64]),
+        .time_now_stb             (sample_rx_stb[db_i]),
+     `else
         .time_now                 (radio_time),
-     `endif
         .time_now_stb             (sample_rx_stb),
+     `endif
         .time_ignore_bits         (time_ignore_bits),
         .s_ctrlport_req_wr        (s_radio_ctrlport_req_wr         [ 1*db_i+: 1]),
         .s_ctrlport_req_rd        (s_radio_ctrlport_req_rd         [ 1*db_i+: 1]),
@@ -553,7 +557,8 @@ module x4xx_core_common #(
       end
 
       x4xx_gpio_atr #(
-        .REG_SIZE (RADIO_GPIO_ATR_REGS_SIZE)
+        .REG_SIZE      (RADIO_GPIO_ATR_REGS_SIZE),
+        .NUM_CH_PER_DB (NUM_CH_PER_DB)
       ) x4xx_gpio_atr_i (
         .ctrlport_clk             (radio_clk[db_i]),
         .ctrlport_rst             (radio_rst[db_i]),

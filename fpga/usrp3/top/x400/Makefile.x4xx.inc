@@ -100,9 +100,34 @@ rf/x410/x410_rf_reset_controller.vhd \
 dboards/zbx/db_gpio_interface.v
 endif
 
+ifdef X440
+TOP_SRCS += \
+rf/100m/rf_core_100m.v \
+rf/full/rf_core_full.v \
+rf/x440/x440_rf_reset_controller.vhd \
+dboards/fbx/db_gpio_interface.v \
+dboards/fbx/ctrlport_to_i2c_sync_ctrl.v \
+dboards/fbx/led_atr_control.v \
+dboards/fbx/clock_en_control.v \
+dboards/fbx/rf_atr_control.v
+endif
+
 ifdef X410
 MB_XDC += \
 constraints/timing/x410_clocks.xdc
+endif
+
+ifdef X440
+ifeq ($(RF_BW), 400)
+MB_XDC += \
+constraints/timing/x440_clocks_400.xdc
+endif
+ifeq ($(RF_BW), 1600)
+MB_XDC += \
+constraints/timing/x440_clocks_1600.xdc
+endif
+MB_XDC += \
+constraints/timing/x440_clocks.xdc
 endif
 
 MB_XDC += \
@@ -117,6 +142,13 @@ MB_XDC += \
 constraints/pins/rfdc_2x2.xdc \
 constraints/pins/x410/db_gpio.xdc \
 constraints/timing/x410.xdc
+endif
+
+ifdef X440
+MB_XDC += \
+constraints/pins/rfdc_4x4.xdc \
+constraints/pins/x440/db_gpio.xdc \
+constraints/timing/x440.xdc
 endif
 
 # Definitions

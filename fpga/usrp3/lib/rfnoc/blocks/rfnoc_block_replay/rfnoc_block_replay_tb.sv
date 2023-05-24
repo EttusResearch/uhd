@@ -209,7 +209,8 @@ module rfnoc_block_replay_tb#(
       .DWIDTH      (MEM_DATA_W),
       .IDWIDTH     (1),
       .BIG_ENDIAN  (0),
-      .STALL_PROB  (STALL_PROB)
+      .STALL_PROB  (STALL_PROB),
+      .NO_4KB_LIMIT(MEM_DATA_W/8 * 256 > 4096)
     ) sim_axi_ram_i (
       .s_aclk        (mem_clk),
       .s_aresetn     (~mem_rst),

@@ -168,8 +168,12 @@ module axis_replay #(
   // The lower MEM_ALIGN bits for all memory byte addresses should be 0.
   localparam MEM_ALIGN = $clog2(MEM_DATA_W / 8);
   //
-  // AXI alignment requirement (4096 bytes) in MEM_DATA_W-bit words
-  localparam AXI_ALIGNMENT = 4096 / BYTES_PER_WORD;
+  // Burst length in bytes
+  localparam BURST_LENGTH = 2**MEM_COUNT_W * BYTES_PER_WORD;
+  //
+  // AXI alignment requirement (normally 4096 bytes) in MEM_DATA_W-bit words
+  localparam AXI_ALIGNMENT = (BURST_LENGTH <= 4096) ? 4096 / BYTES_PER_WORD :
+                                                      BURST_LENGTH / BYTES_PER_WORD;
 
   // Memory Buffering Parameters
   //

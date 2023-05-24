@@ -80,7 +80,11 @@ module x4xx_global_regs #(
   `include "regmap/global_regs_regmap_utils.vh"
 
   // Variant-dependent register map.
-  `include "regmap/x410/versioning_regs_regmap_utils.vh"
+  `ifdef X440
+    `include "regmap/x440/versioning_regs_regmap_utils.vh"
+  `else // Use X410 as the default variant for regmap.
+    `include "regmap/x410/versioning_regs_regmap_utils.vh"
+  `endif
 
 
   // Make DEVICE_ID default to anything but 0, since that has special meaning

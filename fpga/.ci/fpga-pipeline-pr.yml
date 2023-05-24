@@ -31,6 +31,10 @@ parameters:
   type: boolean
   displayName: Build X410
   default: true
+- name: build_x440
+  type: boolean
+  displayName: Build X440
+  default: true
 - name: x410_targets_matrix
   type: object
   displayName: X410 Targets
@@ -51,13 +55,33 @@ parameters:
       target_name: X410_CG_400
       timeout: 720
       max_attempts: 2
+- name: x440_targets_matrix
+  type: object
+  displayName: X440 Targets
+  default:
+    X440_CG_1600:
+      target_name: X440_CG_1600
+      timeout: 720
+      max_attempts: 2
+    X440_CG_400:
+      target_name: X440_CG_400
+      timeout: 720
+      max_attempts: 2
+    X440_X4_1600:
+      target_name: X440_X4_1600
+      timeout: 720
+      max_attempts: 2
+    X440_X4_400:
+      target_name: X440_X4_400
+      timeout: 720
+      max_attempts: 2
 
 trigger: none
 
 pr:
   branches:
     include:
-    - master
+    - ferratus-master
   paths:
     include:
     - fpga/usrp3/lib
@@ -69,7 +93,7 @@ schedules:
   displayName: Weekly FPGA PR Build master branch
   branches:
     include:
-    - master
+    - ferratus-master
   always: true
 
 extends:
@@ -80,4 +104,6 @@ extends:
     publish_int_files: true
     package_images: ${{ parameters.package_images }}
     build_x410: ${{ parameters.build_x410 }}
+    build_x440: ${{ parameters.build_x440 }}
     x410_targets_matrix: ${{ parameters.x410_targets_matrix }}
+    x440_targets_matrix: ${{ parameters.x440_targets_matrix }}

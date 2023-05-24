@@ -58,6 +58,30 @@ parameters:
       target_name: X410_CG_400
       timeout: 720
       max_attempts: 2
+# Build X440 FPGA targets
+- name: build_x440
+  type: boolean
+  default: true
+# X440 FPGA targets to build (if build_x440 is true)
+- name: x440_targets_matrix
+  type: object
+  default:
+    X440_CG_1600:
+      target_name: X440_CG_1600
+      timeout: 720
+      max_attempts: 2
+    X440_CG_400:
+      target_name: X440_CG_400
+      timeout: 720
+      max_attempts: 2
+    X440_X4_1600:
+      target_name: X440_X4_1600
+      timeout: 720
+      max_attempts: 2
+    X440_X4_400:
+      target_name: X440_X4_400
+      timeout: 720
+      max_attempts: 2
 
 
 resources:
@@ -120,3 +144,41 @@ stages:
       build_directory: uhddev/fpga/usrp3/top/x400/build/
 
 ### END: X410 stages
+
+### START: X440 stages
+
+- stage: build_x440_ip_stage
+  displayName: Build X440 IP
+  dependsOn: []
+  condition: and(succeeded(), eq('${{ parameters.build_x440 }}', 'true'))
+  jobs:
+  - template: job-build-ip.yml
+    parameters:
+      directory: uhddev/fpga/usrp3/top/x400
+      ip_target: X440_IP
+      clean_build: ${{ parameters.clean_ip_build }}
+
+- stage: build_x440_targets_stage
+  displayName: Build X440 FPGA Targets
+  dependsOn: build_x440_ip_stage
+  condition: succeeded('build_x440_ip_stage')
+  jobs:
+  - template: job-build-fpga.yml
+    parameters:
+      targets_matrix: ${{ parameters.x440_targets_matrix }}
+      ip_artifact: X440_IP
+      top_dir: uhddev/fpga/usrp3/top/x400
+      publish_int_files: ${{ parameters.publish_int_files }}
+
+- stage: create_x440_packages_stage
+  displayName: Create X440 Packages
+  dependsOn: build_x440_targets_stage
+  condition: and(succeeded('build_x440_targets_stage'), eq('${{ parameters.package_images }}', 'true'))
+  jobs:
+  - template: job-package-images.yml
+    parameters:
+      package_name: x4xx_x440_fpga_default
+      artifacts_matrix: ${{ parameters.x440_targets_matrix }}
+      build_directory: uhddev/fpga/usrp3/top/x400/build/
+
+### END: X440 stages

@@ -26,6 +26,7 @@ module rf_all_tb;
   tb_duc_400m_saturate        tb_duc_400m_saturate_i        ();
   tb_rf_nco_reset             tb_rf_nco_reset_i             ();
   tb_x410_rf_reset_controller tb_x410_rf_reset_controller_i ();
+  tb_adc_iq_repacker          tb_adc_iq_repacker_i          ();
 
   initial begin
     test.start_tb("rf_all_tb", 1ms);
@@ -44,7 +45,8 @@ module rf_all_tb;
         tb_ddc_400m_saturate_i.StopSim         &&
         tb_duc_400m_saturate_i.StopSim         &&
         tb_rf_nco_reset_i.StopSim              &&
-        tb_x410_rf_reset_controller_i.StopSim
+        tb_x410_rf_reset_controller_i.StopSim  &&
+        tb_adc_iq_repacker_i.StopSim
       ) break;
     end
     test.end_test();
