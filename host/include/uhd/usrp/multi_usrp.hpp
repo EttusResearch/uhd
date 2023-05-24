@@ -234,6 +234,11 @@ public:
 
     /*!
      * Get the current time in the usrp time registers.
+     *
+     * For RFNoC devices with multiple timekeepers, this returns the time of the first
+     * timekeeper. To access specific timekeepers, use the corresponding RFNoC APIs
+     * (e.g., mb_controller::get_timekeeper()).
+     *
      * \param mboard which motherboard to query
      * \return a timespec representing current usrp time
      */
@@ -241,6 +246,11 @@ public:
 
     /*!
      * Get the time when the last pps pulse occurred.
+     *
+     * For RFNoC devices with multiple timekeepers, this returns the time of the first
+     * timekeeper. To access specific timekeepers, use the corresponding RFNoC APIs
+     * (e.g., mb_controller::get_timekeeper()).
+     *
      * \param mboard which motherboard to query
      * \return a timespec representing the last pps
      */
