@@ -23,9 +23,13 @@ parameters:
   type: boolean
   displayName: Run X410 RF tests
   default: false
+- name: run_x440_rf_tests
+  type: boolean
+  displayName: Run X440 RF tests
+  default: false
 - name: extra_rf_test_args
   type: string
-  displayName: Extra UHD RF ATS Arguments (for N310 and X410 runs)
+  displayName: Extra UHD RF ATS Arguments (for N310 and X4x0 runs)
   default: ' '
 - name: testLength
   type: string
@@ -111,7 +115,19 @@ stages:
   dependsOn: []
   condition: ${{ parameters.run_x410_rf_tests }}
   jobs:
-  - template: templates/tests/job-uhd-x4xx-hardware-tests-pebbles.yml
+  - template: templates/tests/job-uhd-x410-hardware-tests-pebbles.yml
+    parameters:
+      testOS: ubuntu1804
+      uhdArtifactSource: uhd_mono_pipeline
+      extra_rf_test_args: ${{ parameters.extra_rf_test_args }}
+
+
+- stage: test_x440_rf_tests
+  displayName: Run X440 RF tests
+  dependsOn: []
+  condition: ${{ parameters.run_x440_rf_tests }}
+  jobs:
+  - template: templates/tests/job-uhd-x440-hardware-tests-pebbles.yml
     parameters:
       testOS: ubuntu1804
       uhdArtifactSource: uhd_mono_pipeline

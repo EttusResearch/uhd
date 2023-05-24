@@ -283,7 +283,10 @@ stages:
   - template: tests/job-uhd-x4xx-hardware-tests-sdr-test0.yml
     parameters:
       testOS: ubuntu1804
-  - template: tests/job-uhd-x4xx-hardware-tests-pebbles.yml
+  - template: tests/job-uhd-x410-hardware-tests-pebbles.yml
+    parameters:
+      testOS: ubuntu1804
+  - template: tests/job-uhd-x440-hardware-tests-pebbles.yml
     parameters:
       testOS: ubuntu1804
 

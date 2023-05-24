@@ -13,7 +13,7 @@ parameters:
 jobs:
 - template: templates/job-uhd-x4xx-hardware-tests.yml
   parameters:
-    suiteName: 'ettus_pebbles'
+    suiteName: 'ettus_pebbles_x410'
     testOS: '${{ parameters.testOS }}'
     toolset: 'make'
     runPyTest: true
