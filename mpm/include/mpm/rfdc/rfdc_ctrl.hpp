@@ -9,6 +9,7 @@
 #include "xrfdc.h"
 #include "xrfdc_mts.h"
 #include <boost/noncopyable.hpp>
+#include <string>
 #include <vector>
 
 #ifdef LIBMPM_PYTHON
@@ -694,6 +695,19 @@ public:
      */
     bool reset_mixer_settings(uint32_t tile_id, uint32_t block_id, bool is_dac);
 
+    /**
+     * Returns the version of libmetal as a string
+     *
+     * @param libver If true, return the library version. If false, return the
+     *               compile-time version. These should always match!
+     */
+    std::string get_metal_version(bool libver = true);
+
+    /**
+     * Returns the version of the RFDC driver as a string
+     */
+    std::string get_rfdc_version();
+
 private:
     /* Indicates whether libmetal was initialized successfully and can
      * be safely deinitialized.
@@ -770,7 +784,9 @@ void export_rfdc(py::module& top_module)
         .def("set_cal_frozen", &rfdc_ctrl::set_cal_frozen)
         .def("get_cal_frozen", &rfdc_ctrl::get_cal_frozen)
         .def("set_adc_cal_coefficients", &rfdc_ctrl::set_adc_cal_coefficients)
-        .def("get_adc_cal_coefficients", &rfdc_ctrl::get_adc_cal_coefficients);
+        .def("get_adc_cal_coefficients", &rfdc_ctrl::get_adc_cal_coefficients)
+        .def("get_metal_version", &rfdc_ctrl::get_metal_version)
+        .def("get_rfdc_version", &rfdc_ctrl::get_rfdc_version);
 
     py::enum_<mpm::rfdc::rfdc_ctrl::threshold_id_options>(m, "threshold_id_options")
         .value("THRESHOLD_0", mpm::rfdc::rfdc_ctrl::THRESHOLD_0)

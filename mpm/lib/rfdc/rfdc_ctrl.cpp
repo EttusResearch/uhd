@@ -5,8 +5,12 @@
 //
 
 #include "mpm/rfdc/rfdc_ctrl.hpp"
+#include <metal/config.h>
+#include <metal/version.h>
 #include <mpm/exception.hpp>
+#include <iomanip>
 #include <set>
+#include <sstream>
 
 #define BUS_NAME "platform"
 
@@ -769,6 +773,24 @@ std::vector<uint32_t> rfdc_ctrl::get_adc_cal_coefficients(
     result.push_back(cs.Coeff7);
 
     return result;
+}
+
+std::string rfdc_ctrl::get_metal_version(bool libver)
+{
+    if (libver) {
+        return metal_ver();
+    }
+
+    return METAL_VER;
+}
+
+std::string rfdc_ctrl::get_rfdc_version()
+{
+    const double rfdc_ver = XRFdc_GetDriverVersion();
+
+    std::stringstream ver_ss;
+    ver_ss << std::fixed << std::setprecision(1) << rfdc_ver;
+    return ver_ss.str();
 }
 
 }} // namespace mpm::rfdc

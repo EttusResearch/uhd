@@ -66,6 +66,14 @@ class X4xxRfdcCtrl:
         self._rfdc_regs = RfdcRegsControl(self.rfdc_regs_label, self.log)
         self._rfdc_ctrl = lib.rfdc.rfdc_ctrl()
         self._rfdc_ctrl.init(RFDC_DEVICE_ID)
+        self.log.debug(
+            f"Using RFDC driver version {self._rfdc_ctrl.get_rfdc_version()}, "
+            f"libmetal version {self._rfdc_ctrl.get_metal_version(True)}, "
+            f"(compile-time version: {self._rfdc_ctrl.get_metal_version(False)})")
+        if self._rfdc_ctrl.get_metal_version(True) != self._rfdc_ctrl.get_metal_version(False):
+            self.log.warning(
+                f"libmetal compile time version {self._rfdc_ctrl.get_metal_version(False)} "
+                f"does not match library version {self._rfdc_ctrl.get_metal_version(False)}!")
 
         rinfo = self._rfdc_regs.get_rfdc_info(0)
         self.log.debug(
