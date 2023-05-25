@@ -257,14 +257,7 @@ class X4xxClockManager:
         self.rfdc = rfdc
         # Update the policy with new info on the FPGA image:
         self.clk_policy.set_dsp_info(self.rfdc.get_dsp_info())
-        # Force reset the RFDC to ensure it is in a good state. Note that for
-        # pulling the RFDC out of reset, we need access to the rfdc object, and
-        # the clocking policy needs access to the DSP info, meaning this is the
-        # earliest point during initialization when we can do this reset.
-        self._reset_clocks(True, ('mmcm', 'rfdc'))
-        self._reset_clocks(False, ('mmcm', 'rfdc'))
-        # Also restart the ADC/DAC tiles. This will nuke any previous settings.
-        self.rfdc.reset_tiles()
+
         # Now do the full MCR init for the first time. When this is done, all
         # the clocks will be ticking. Now, the policy should know about the
         # FPGA capabilities, and can choose the correct default MCR.
@@ -276,6 +269,18 @@ class X4xxClockManager:
             self.log.warning(
                 f"Requested initial master clock rate {initial_mcr/1e6} MHz is invalid!")
             initial_mcr = self.clk_policy.get_default_mcr()
+        self._master_clock_rates = initial_mcr
+
+        # Force reset the RFDC to ensure it is in a good state. Note that for
+        # pulling the RFDC out of reset, we need access to the rfdc object, and
+        # the clocking policy needs access to the DSP info, meaning this is the
+        # earliest point during initialization when we can do this reset.
+        self._reset_clocks(True, ('mmcm', 'rfdc'))
+        self._reset_clocks(False, ('mmcm', 'rfdc'))
+
+        # The initial default mcr only works if we have an FPGA with
+        # a decimation of 2. But we need the overlay applied before we
+        # can detect decimation, and that requires clocks to be initialized.
         self.set_master_clock_rate([initial_mcr[0],])
 
     @no_rpc
