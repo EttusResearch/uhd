@@ -321,7 +321,8 @@ module eth_ipv4_chdr_dispatch #(
               cpu_error  = 1'b1;
               chdr_error = 1'b1;
               next_dispatch_state = ST_DROP_TERM;
-            end else if (udp_dst_is_me &&
+            end else if (eth_dst_is_me &&
+                         udp_dst_is_me &&
                          ipv4_dst_is_me &&
                          //ip_version_new    == IPV4_LEN5 && // NEW CHECK --verify if this is ok
                          ipv4_protocol_is_udp &&
