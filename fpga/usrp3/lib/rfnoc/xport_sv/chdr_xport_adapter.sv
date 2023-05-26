@@ -536,7 +536,8 @@ module chdr_xport_adapter #(
     .udp_src(e_my_udp_chdr_port),
     .mac_dst(au_mac_dst),
     .ip_dst(au_ip_dst),
-    .udp_dst(au_udp_dst)
+    .udp_dst(au_udp_dst),
+    .length(0)
   );
 
 

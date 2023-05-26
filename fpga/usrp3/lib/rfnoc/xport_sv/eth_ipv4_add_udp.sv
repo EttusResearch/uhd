@@ -22,7 +22,8 @@ module eth_ipv4_add_udp #(
   logic [15:0] MISC_IP = { 4'd4 /* IPv4 */, 4'd5 /* IP HDR Len */, 8'h00 /* DSCP and ECN */},
   logic [15:0] IDENT = 16'h0,
   logic [15:0] FLAG_FRAG = { 3'b010 /* don't fragment */, 13'h0 },
-  logic [15:0] TTL_PROT = { 8'h10 /* TTL */, 8'h11 /* UDP */ }
+  logic [15:0] TTL_PROT = { 8'h10 /* TTL */, 8'h11 /* UDP */ },
+  logic        CHDR_LENGTH = 1 /* 1=extract the CHDR_LEN from the packet / 0=use length input */
 )(
   // Clock domain: i.clk (o_.clk is unused)
 
@@ -34,6 +35,8 @@ module eth_ipv4_add_udp #(
   input  logic [47:0] mac_dst,
   input  logic [31:0] ip_dst,
   input  logic [15:0] udp_dst,
+
+  input  logic [15:0] length,
 
   // Ethernet Stream - CHDR ONLY
   AxiStreamIf.slave  i, // tUser = {*not used*}
@@ -109,7 +112,11 @@ module eth_ipv4_add_udp #(
 
   always_comb begin : calc_length_fields
     // exract fields
-    chdr_len_new  = s0.get_packet_field16(chdr_len_old,CHDR_LENGTH_BYTE);
+    if (CHDR_LENGTH==1) begin
+      chdr_len_new  = s0.get_packet_field16(chdr_len_old,CHDR_LENGTH_BYTE);
+    end else begin
+      chdr_len_new = length;
+    end
     ip_len  = (16'd28 + chdr_len_new);  // 20 for IP, 8 for UDP
     udp_len = (16'd8 + chdr_len_new);
   end
