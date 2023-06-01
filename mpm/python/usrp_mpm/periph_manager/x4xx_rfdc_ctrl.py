@@ -316,16 +316,23 @@ class X4xxRfdcCtrl:
         self._rfdc_regs.set_reset_adc_dac_chains(reset=reset)
         if reset:
             self._rfdc_regs.log_status()
-            return
 
-        # Restart tiles in XRFdc
+    @no_rpc
+    def reset_tiles(self):
+        """
+        This resets all ADC/DAC tiles.  All existing register settings are
+        cleared and are replaced with the settings initially configured.
+        """
         # All ADC Tiles
         if not self._rfdc_ctrl.reset_tile(-1, False):
-            self.log.warning('Error starting up ADC tiles')
+            # We only have to worry about issues here if we see other issues like tiles not syncing
+            self.log.trace('Error resetting ADC tiles. This is expected in most cases and "\
+                           "startup_tiles() will usually compensate for this.')
         # All DAC Tiles
         if not self._rfdc_ctrl.reset_tile(-1, True):
-            self.log.warning('Error starting up DAC tiles')
-
+            # We only have to worry about issues here if we see other issues like tiles not syncing
+            self.log.trace('Error resetting DAC tiles. This is expected in most cases and "\
+                           "startup_tiles() will usually compensate for this.')
 
     @no_rpc
     def startup_tiles(self):

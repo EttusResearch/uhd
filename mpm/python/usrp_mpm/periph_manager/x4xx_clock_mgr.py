@@ -278,6 +278,10 @@ class X4xxClockManager:
         self._reset_clocks(True, ('mmcm', 'rfdc'))
         self._reset_clocks(False, ('mmcm', 'rfdc'))
 
+        # Devices that use non-default clocking parameters may require an explicit
+        # startup after the RFDC reset:
+        self.rfdc.startup_tiles()
+
         # The initial default mcr only works if we have an FPGA with
         # a decimation of 2. But we need the overlay applied before we
         # can detect decimation, and that requires clocks to be initialized.
@@ -612,9 +616,14 @@ class X4xxClockManager:
         # for the MMCM to be locked, therefore we call it again after config.
         self._reset_clocks(False, ('mmcm',))
         self._config_mmcm(clk_settings)
-        # Reconfigure RFDC and bring it out of reset
-        self.rfdc.configure(clk_settings.spll_config.output_freq, clk_settings.rfdc_configs)
+        # Bring RFDC out of reset, reset tiles and reconfigure RFDC
         self._reset_clocks(False, ('rfdc',))
+        self.rfdc.reset_tiles()
+        self.rfdc.configure(clk_settings.spll_config.output_freq, clk_settings.rfdc_configs)
+        # If non-default clocking parameters are used, reset_tiles() may not be successful in
+        # the first place, so we have to start the tiles explicitely again after the
+        # reconfiguration:
+        self.rfdc.startup_tiles()
         # All settings are applied: Now bring other clocks out of reset. Note
         # that cpld and db_clock don't depend on MMCM or RFDC, but we don't need
         # them so they only come back now.
