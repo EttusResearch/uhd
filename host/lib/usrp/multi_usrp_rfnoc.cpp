@@ -632,7 +632,22 @@ public:
                 break;
 
             case tune_request_t::POLICY_MANUAL:
-                target_rf_freq = rf_freq_range.clip(tune_request.rf_freq);
+                if ((tune_request.dsp_freq_policy == tune_request_t::POLICY_AUTO)
+                    && (dsp_freq_range.size() == 1) && dsp_freq_range.stop() == 0) {
+                    /* Hardware does not incl. DSP chain 
+                     * (dsp_freq_range only has single item, with value 0), 
+                     * requested dsp frequency will be combined with rf frequency.
+                     * The case to handle uses MANUAL rf_freq_policy and
+                     * AUTOMATIC dsp_freq_policy */
+                    UHD_LOGGER_WARNING("MULTI_USRP")
+                        << boost::format("No DSP capabilities detected. Combining offset "
+                                         "into target frequency of %.3fMHz")
+                               % (clipped_requested_freq / 1e6);
+                    target_rf_freq = clipped_requested_freq;
+                } else {
+                    /* Normal manual mode observing individual tune requests*/
+                    target_rf_freq = rf_freq_range.clip(tune_request.rf_freq);
+                }
                 break;
 
             case tune_request_t::POLICY_NONE:
@@ -648,6 +663,9 @@ public:
             set_rf_freq(target_rf_freq);
         }
         const double actual_rf_freq = get_rf_freq();
+
+        UHD_LOGGER_TRACE("MULTI_USRP")
+            << "Actual RF Freq: " + std::to_string(actual_rf_freq / 1e6) + "MHz";
 
         //------------------------------------------------------------------
         //-- Set the DSP frequency depending upon the DSP frequency policy.
@@ -689,6 +707,8 @@ public:
             set_dsp_freq(target_dsp_freq);
         }
         const double actual_dsp_freq = get_dsp_freq();
+        UHD_LOGGER_TRACE("MULTI_USRP")
+            << "Actual DSP Freq: " + std::to_string(actual_dsp_freq / 1e6) + "MHz";
 
         //------------------------------------------------------------------
         //-- Load and return the tune result
