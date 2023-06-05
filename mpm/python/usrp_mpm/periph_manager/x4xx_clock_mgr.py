@@ -520,18 +520,6 @@ class X4xxClockManager:
                 raise RuntimeError(f'Invalid BRC selection {clock_source}')
         self.log.debug(f"Base reference clock source is: {clock_source}")
 
-    def _config_pps_to_timekeeper(self, master_clock_rates):
-        """
-        Configures the path from the PPS to the timekeepers
-        """
-        pps_source = "internal_pps" \
-            if self._time_source == self.TIME_SOURCE_INTERNAL \
-            else "external_pps"
-        self.clk_ctrl.sync_spll_clocks(pps_source, self.get_ref_clock_freq())
-        for tk_idx, mcr in enumerate(master_clock_rates):
-            self.clk_ctrl.configure_pps_forwarding(
-                tk_idx, True, mcr)
-
     def _reset_clocks(self, value, reset_list):
         """
         Shuts down all clocks downstream to upstream or clears reset on all
@@ -612,6 +600,16 @@ class X4xxClockManager:
         # The following call will return only when the SPLL successfully locks
         # to the new settings:
         self.clk_ctrl.config_spll(clk_settings.spll_config)
+        # When the SPLL is configured and locked, its output dividers are
+        # synchronized (share a common flank). Next, we need to synchronize the
+        # R-dividers to the common PPS signals. Because we need to wait for the
+        # PPS, this function may take > 1s to execute, worst-case.
+        self.clk_ctrl.sync_spll_clocks(
+            "internal_pps" if self._time_source == self.TIME_SOURCE_INTERNAL else "external_pps",
+            self.get_ref_clock_freq())
+        # At this point the SPLL is sync'd in time and frequency to the reference.
+        # From now on, no-one will be touching the SPLL until we call
+        # set_master_clock_rate() again.
         # Bring MMCM out of reset, and reconfigure. The reset also waits
         # for the MMCM to be locked, therefore we call it again after config.
         self._reset_clocks(False, ('mmcm',))
@@ -629,7 +627,10 @@ class X4xxClockManager:
         # them so they only come back now.
         self._reset_clocks(False, ('cpld', 'db_clock'))
         self._master_clock_rates = master_clock_rates
-        self._config_pps_to_timekeeper(master_clock_rates)
+        # Configure PPS forwarding to timekeepers. The requirement is that this
+        # be called after sync_spll_clocks() was called.
+        for tk_idx, mcr in enumerate(master_clock_rates):
+            self.clk_ctrl.configure_pps_forwarding(tk_idx, True, mcr)
 
 
     @no_rpc
