@@ -280,7 +280,7 @@ class X4xxClockManager:
 
         # Devices that use non-default clocking parameters may require an explicit
         # startup after the RFDC reset:
-        self.rfdc.startup_tiles()
+        self.rfdc.startup_tiles(quiet=True)
 
         # The initial default mcr only works if we have an FPGA with
         # a decimation of 2. But we need the overlay applied before we

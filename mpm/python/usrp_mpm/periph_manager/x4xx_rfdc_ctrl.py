@@ -335,18 +335,19 @@ class X4xxRfdcCtrl:
                            "startup_tiles() will usually compensate for this.')
 
     @no_rpc
-    def startup_tiles(self):
+    def startup_tiles(self, quiet=False):
         """
         PG269: This API function restarts the tile as requested through Tile_Id. If -1 is passed
         as Tile_Id, the function restarts all the enabled tiles. Existing register settings are
         not lost or altered in the process.
         """
         # Startup all ADC Tiles
-        if not self._rfdc_ctrl.startup_tile(-1, False):
+        if not self._rfdc_ctrl.startup_tile(-1, False) and not quiet:
             self.log.warning('Error starting up ADC tiles')
         # Startup all DAC Tiles
-        if not self._rfdc_ctrl.startup_tile(-1, True):
+        if not self._rfdc_ctrl.startup_tile(-1, True) and not quiet:
             self.log.warning('Error starting up DAC tiles')
+
 
     @no_rpc
     def shutdown_tiles(self):
