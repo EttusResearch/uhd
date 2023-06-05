@@ -13,7 +13,7 @@ import subprocess
 from usrp_mpm.rpc_server import no_rpc
 
 
-class ZynqComponents(object):
+class ZynqComponents:
     """
     Mixin class that update Zynq FPGA and devicetree components.
 
@@ -82,6 +82,31 @@ class ZynqComponents(object):
                 version_info[component][version_type] = version
         return version_info
 
+    def _merge_updateable_components(self):
+        """
+        Combines updateable_components from MB and all DBs and returns the
+        merged result.
+        """
+        def merge_dicts(origd, newd):
+            """
+            https://stackoverflow.com/questions/71396284/python-how-to-recursively-merge-2-dictionaries
+            """
+            for key, val in newd.items():
+                if key not in origd:
+                    origd[key] = val
+                    continue
+                if isinstance(val, dict):
+                    if not isinstance(origd[key], dict):
+                        origd[key] = {}
+                    merge_dicts(origd[key], val)
+                else:
+                    origd[key] = val
+            return origd
+        upc = self.updateable_components
+        for dboard in self.dboards:
+            upc = merge_dicts(upc, dboard.updateable_components)
+        return upc
+
     def _verify_compatibility(self, filebasename, update_dict):
         """
         check whether the given MPM compatibility matches the
@@ -102,18 +127,18 @@ class ZynqComponents(object):
             self.log.trace("Compatibility check MPM <-> FPGA via DTS enabled")
             dtsfilepath = filebasename + '.dts'
             if not os.path.exists(dtsfilepath):
-                self.log.warning("DTS file not found: {}, cannot check version of bitfile without DTS.".format(dtsfilepath))
+                self.log.warning(f"DTS file not found: {dtsfilepath}, cannot "
+                                 f"check version of bitfile without DTS.")
                 return
-            self.log.trace("Parse DTS file {} for version information"\
-                .format(dtsfilepath))
+            self.log.trace(f"Parsing DTS file {dtsfilepath} for version information")
             fpga_versions = self._parse_dts_version_info_from_file(dtsfilepath)
             if not fpga_versions:
                 self._log_and_raise("no component version information in DTS file")
             if 'compatibility' not in update_dict:
                 self._log_and_raise("MPM FPGA version infos not found")
             mpm_versions = update_dict['compatibility']
-            self.log.trace("DTS version infos: {}".format(fpga_versions))
-            self.log.trace("MPM version infos: {}".format(mpm_versions))
+            self.log.trace(f"DTS version infos: {fpga_versions}")
+            self.log.trace(f"MPM version infos: {mpm_versions}")
 
             try:
                 for component in mpm_versions.keys():
@@ -160,19 +185,19 @@ class ZynqComponents(object):
         self.log.trace(f"Updating FPGA with image at {filepath}"\
             " (metadata: `{str(metadata)}')")
         file_name, file_extension = os.path.splitext(filepath)
-        self.log.trace("file_name: {}".format(file_name))
         # Cut off the period from the file extension
         file_extension = file_extension[1:].lower()
         if file_extension not in ['bit', 'bin']:
             self._log_and_raise(f"Invalid FPGA bitfile: {filepath}")
-        binfile_path = self.updateable_components['fpga']['path']\
-            .format(self.device_info.get('product'))
+        updc = self._merge_updateable_components()
+        assert 'path' in updc['fpga']
+        binfile_path = updc['fpga']['path'].format(self.device_info.get('product'))
 
-        self._verify_compatibility(file_name, self.updateable_components['fpga'])
+        self._verify_compatibility(file_name, updc['fpga'])
 
         if file_extension == "bit":
-            self.log.trace("Converting bit to bin file and writing to {}"
-                           .format(binfile_path))
+            self.log.trace(
+                f"Converting bit to bin file and writing to {binfile_path}")
             from usrp_mpm.fpga_bit_to_bin import fpga_bit_to_bin
             fpga_bit_to_bin(filepath, binfile_path, flip=True)
         elif file_extension == "bin":
@@ -189,12 +214,12 @@ class ZynqComponents(object):
         :param filepath: path to new DTS image
         :param metadata: Dictionary of strings containing metadata
         """
-        dtsfile_path = self.updateable_components['dts']['path'].format(
+        dtsfile_path = self._merge_updateable_components()['dts']['path'].format(
             self.device_info.get('product'))
         self.log.trace("Updating DTS with image at %s to %s (metadata: %s)",
                        filepath, dtsfile_path, str(metadata))
         shutil.copy(filepath, dtsfile_path)
-        dtbofile_path = self.updateable_components['dts']['output'].format(
+        dtbofile_path = self._merge_updateable_components()['dts']['output'].format(
             self.device_info.get('product'))
         self.log.trace("Compiling to %s...", dtbofile_path)
         dtc_command = [

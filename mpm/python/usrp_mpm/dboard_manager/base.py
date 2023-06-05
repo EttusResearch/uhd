@@ -34,6 +34,10 @@ class DboardManagerBase:
     # maps these keys to actual spidev paths. Also throws a warning/error if
     # the SPI configuration is invalid.
     spi_chipselect = {}
+    # If the daughterboard adds updateable components, add them there. This can
+    # also be used to amend already existing updateable components, such as the
+    # FPGA.
+    updateable_components = {}
     ### End of overridables #################################################
 
     def __init__(self, slot_idx, **kwargs):

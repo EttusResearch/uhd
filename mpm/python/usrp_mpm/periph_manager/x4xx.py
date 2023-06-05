@@ -175,6 +175,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
     }
     db_iface = X4xxDboardIface
     dboard_eeprom_magic = eeprom_magic
+    # Note: Daughterboard classes also carry updateable_components information.
     updateable_components = {
         'fpga': {
             'callback': "update_fpga",
@@ -191,14 +192,6 @@ class x4xx(ZynqComponents, PeriphManagerBase):
                     'oldest': (2, 0),
                 },
                 'db_gpio_ifc': {
-                    'current': (1, 0),
-                    'oldest': (1, 0),
-                },
-                'rf_core_100m': {
-                    'current': (1, 0),
-                    'oldest': (1, 0),
-                },
-                'rf_core_400m': {
                     'current': (1, 0),
                     'oldest': (1, 0),
                 },
