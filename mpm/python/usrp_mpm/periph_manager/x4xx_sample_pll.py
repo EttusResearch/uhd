@@ -19,6 +19,14 @@ from usrp_mpm.periph_manager.x4xx_clock_types import Spll1Vco
 class LMK04832X4xx(LMK04832):
     """
     X4xx-specific subclass of the Sample Clock PLL LMK04832 controls.
+
+    X4xx-specific usage notes of the LMK04832:
+    - The PLL is driven in nested 0-delay mode, using an external feedback of
+      the SysRef signal, going directly from CLKout9 to FBCLKin. We don't use
+      an internal feedback because the feedback trace matches the length of the
+      SysRef trace to the SoC.
+    - All our configurations use a PLL2 R-divider of 1. We thus don't have to
+      synchronize PLL2 R-divider.
     """
     # maximum: 1,1023, but limited as greater dividers generate too low Fin for RFDC anyway
     LMK_OUT_DIVIDERS = range(1, 35)
@@ -148,6 +156,12 @@ class LMK04832X4xx(LMK04832):
         self.reset(False, hard=False)
 
         prescaler = self.pll2_pre_to_reg(cfg.pll2_prescaler)
+        # The lower nibble of the prescaler register defines OSCin_FREQ and
+        # PLL2_REF_2X_EN. On X4x0, the former must always be ==1 (PLL2 ref input
+        # is 63 MHz < f <= 127 MHz) and the latter must be ==0 (double disabled).
+        # This is not something we configure through the cfg object, so we check
+        # it's the correct, valid value.
+        assert (prescaler & 0x1F) == 0x4
         # CLKout Config
         self.pokes8((
             # For the output divider we only use the first 8 bits as otherwise the
@@ -215,7 +229,7 @@ class LMK04832X4xx(LMK04832):
         # PLL Config
         self.pokes8((
             (0x0138, (self.int_vco & 0x1) << 5), # VCO_MUX, choose VCO0 or VCO1
-            (0x0139, 0x00), # Set SysRef source to 'Normal SYNC' as we initially use the sync signal to synchronize dividers
+            (0x0139, 0x00), # Set SysRef source to 'Normal SYNC' (SYSREF_MUX=0) as we initially use the sync signal to synchronize dividers
             (0x013A, (cfg.sysref_div & 0x1F00) >> 8), # SYSREF Divide [12:8]
             (0x013B, (cfg.sysref_div & 0x00FF) >> 0), # SYSREF Divide [7:0]
             (0x013C, (cfg.sysref_delay & 0x1F00) >> 8), # SYSREF DDLY [12:8]
@@ -224,9 +238,16 @@ class LMK04832X4xx(LMK04832):
             (0x013F, 0x0F), # PLL1_NCLK_MUX = Feedback mux, FB_MUX = External, FB_MUX_EN = enabled
             (0x0140, 0x00), # All power down controls set to false.
             (0x0141, 0x00), # Disable dynamic digital delay.
-            (0x0142, 0x00), # Set dynamic digtial delay step count to 0.
-            (0x0143, 0x81), # Enable SYNC pin, disable sync functionality, SYSREF_CLR='0, SYNC is level sensitive.
-            (0x0144, 0x00), # Allow SYNC to synchronize all SysRef and clock outputs
+            (0x0142, 0x00), # Set dynamic digital delay step count to 0.
+            # Initial SYNC configuration:
+            # SYSREF_CLR=1 (reset SYSREF digital delay),
+            # SYNC_1SHOT_EN=0 (SYNC is level sensitive, not edge sensitive),
+            # SYNC_POL=0, SYNC_EN=0 (disable sync), SYNC_PLL{1,2}_DLD=0,
+            # SYNC_MODE=1 (enable SYNC pin).
+            # When initial configuration is done, we do the final SYNC config
+            # further down.
+            (0x0143, 0x81), # See above ^^^
+            (0x0144, 0x00), # Allow SYNC to synchronize all SysRef and clock output dividers
             (0x0145, 0x10), # Disable PLL1 R divider SYNC, use SYNC pin for PLL1 R divider SYNC, disable PLL2 R divider SYNC
             (0x0146, 0x00), # CLKIN0/1 type = Bipolar, disable CLKin_sel pin, disable both CLKIn source for auto-switching.
             (0x0147, 0x06), # ClkIn0_Demux= PLL1, CLKIn1-Demux=Feedback mux (need for 0-delay mode)
@@ -263,7 +284,7 @@ class LMK04832X4xx(LMK04832):
             (0x0169, 0x59), # Write this val after x165. PLL2 CP gain is 3.2 mA, PLL2 window is 1.8 ns
             (0x016A, 0x20), # PLL2 lock detect count is 8192 cycles (default)
             (0x016B, 0x00), # PLL2 lock detect count is 8192 cycles (default)
-            (0x016E, 0x13), # Stautus_LD2 pin not used. Don't care about this register
+            (0x016E, 0x13), # Status_LD2 pin not used. Don't care about this register
             (0x0173, 0x10), # PLL2 prescaler and PLL2 are enabled.
             (0x0177, 0x00), # PLL1 R divider not in reset
             (0x0166, (cfg.pll2_n_div & 0x030000) >> 16), # PLL2 N[17:16]
@@ -271,15 +292,21 @@ class LMK04832X4xx(LMK04832):
             (0x0168, (cfg.pll2_n_div & 0x0000FF) >> 0), # PLL2 N[7:0]
         ))
 
-        # Synchronize Output and SYSREF Dividers
+        # Synchronize Output and SYSREF Dividers. This is similar to the config
+        # example in the datasheet, section 8.3.3.1.
         self.pokes8((
-            (0x0143, 0x91),
-            (0x0143, 0xB1),
-            (0x0143, 0x91),
-            (0x0144, 0xFF),
-            (0x0143, 0x11),
-            (0x0139, 0x12),
-            (0x0143, 0x31),
+            (0x0143, 0x91), # Set SYNC_EN=1
+            (0x0143, 0xB1), # Toggle SYNC_POL on...
+            (0x0143, 0x91), # ...and off again. This will sync dividers.
+            (0x0144, 0xFF), # Prevent sysref and other clock outputs from being
+                            # synchronized or interrupted by a SYNC event.
+                            # Note that this will synchronize clock outputs on
+                            # a single LMK, but not between devices. To do that,
+                            # we still need to synchronize the PLL1 R-divider
+                            # to the PPS.
+            (0x0143, 0x11), # Now set SYNC_EN=1, SYNC_MODE=1, and clear SYSREF_CLR
+            (0x0139, 0x12), # SYSREF_REQ_EN=1, SYSREF_MUX=2
+            (0x0143, 0x31), # SYNC_POL=1, SYNC_EN=1, SYNC_MODE=1
         ))
         # pylint: enable=line-too-long
 
