@@ -34,7 +34,7 @@ jobs:
     clean: all
   container:
     image: '$(dockerImagePrefix)$(DockerImageName):$(dockerBuildNumber)'
-    endpoint: 'rnd-docker-niartifacts-pre-readonly'
+    endpoint: ${{ variables.dockerRegistryReadOnly }}
   steps:
   - checkout: self
     clean: true

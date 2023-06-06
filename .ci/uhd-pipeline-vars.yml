@@ -1,3 +1,23 @@
 variables:
 - name: UHDPipelineDockerImageArtifactName
   value: 'DockerImageNames'
+# The rnd-docker-pre artifactory repo has a retention policy of 7 days. This is fine for
+# PR builds, but for our mainline and release branches, we need to use the rnd-docker-ci
+# repo to keep them around longer.
+# The standard rnd-docker-niartifacts-ci-publish service connection only allows
+# certain branch names, which don't include UHD's release branch naming. We were given
+# a special sdr-specific service connection to allow this use case.
+- ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/UHD-')) }}:
+  - name: dockerRegistryPublish
+    value: rnd-docker-niartifacts-sdr-ci-publish
+  - name: dockerRegistryReadOnly
+    value: rnd-docker-niartifacts-ci-readonly
+  - name: dockerImagePrefix
+    value: 'rnd-docker-ci/ni/rfsdr/'
+- ${{ else }}:
+  - name: dockerRegistryPublish
+    value: rnd-docker-niartifacts-pre-publish
+  - name: dockerRegistryReadOnly
+    value: rnd-docker-niartifacts-pre-readonly
+  - name: dockerImagePrefix
+    value: 'rnd-docker-pre/ni/rfsdr/'

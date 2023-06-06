@@ -64,7 +64,7 @@ jobs:
       matrix: $[ variables.dockerImageMatrixFedoraRpm ]
   container:
     image: '$(dockerImagePrefix)$(DockerImageName):$(dockerBuildNumber)'
-    endpoint: 'rnd-docker-niartifacts-pre-readonly'
+    endpoint: ${{ variables.dockerRegistryReadOnly }}
     ${{ if eq(parameters.toolset, 'ubuntu_deb') }}:
       #pbuilder requires access to /proc
       options: --privileged

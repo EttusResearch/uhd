@@ -49,7 +49,7 @@ jobs:
   ${{ if ne(parameters.toolset, 'make_homebrew_macos') }}:
     container:
       image: '$(dockerImagePrefix)$(DockerImageName):$(dockerBuildNumber)'
-      endpoint: 'rnd-docker-niartifacts-pre-readonly'
+      endpoint: ${{ variables.dockerRegistryReadOnly }}
   steps:
   - checkout: self
     clean: true
