@@ -23,10 +23,17 @@ parameters:
   type: number
   default: 5
   displayName: Number of parallel IP jobs
-- name: package_images
+- name: package_and_publish_images
   type: boolean
-  displayName: Package Images
-  default: false
+  displayName: Package & Publish Images
+  default: true
+- name: package_access
+  type: string
+  values:
+  - 'Internal'
+  - 'files.ettus.com (Public)'
+  displayName: Published Package Access
+  default: 'Internal'
 - name: build_x410
   type: boolean
   displayName: Build X410
@@ -102,7 +109,8 @@ extends:
     run_testbenches: ${{ parameters.run_testbenches }}
     clean_ip_build: ${{ parameters.clean_ip_build }}
     publish_int_files: true
-    package_images: ${{ parameters.package_images }}
+    package_and_publish_images: ${{ parameters.package_and_publish_images }}
+    package_access: ${{ parameters.package_access }}
     build_x410: ${{ parameters.build_x410 }}
     build_x440: ${{ parameters.build_x440 }}
     x410_targets_matrix: ${{ parameters.x410_targets_matrix }}

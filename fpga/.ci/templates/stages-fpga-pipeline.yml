@@ -30,10 +30,14 @@ parameters:
 - name: publish_int_files
   type: boolean
   default: false
-# Create images package
-- name: package_images
+# Package and publish images
+- name: package_and_publish_images
   type: boolean
-  default: false
+  default: true
+# Package access in the SDR server ('Internal' or 'Public')
+- name: package_access
+  type: string
+  default: 'Internal'
 # Build X410 FPGA targets
 - name: build_x410
   type: boolean
@@ -133,15 +137,16 @@ stages:
       publish_int_files: ${{ parameters.publish_int_files }}
 
 - stage: create_x410_packages_stage
-  displayName: Create X410 Packages
+  displayName: Package & Publish X410 Binaries
   dependsOn: build_x410_targets_stage
-  condition: and(succeeded('build_x410_targets_stage'), eq('${{ parameters.package_images }}', 'true'))
+  condition: and(succeeded('build_x410_targets_stage'), eq('${{ parameters.package_and_publish_images }}', 'true'))
   jobs:
   - template: job-package-images.yml
     parameters:
       package_name: x4xx_x410_fpga_default
       artifacts_matrix: ${{ parameters.x410_targets_matrix }}
       build_directory: uhddev/fpga/usrp3/top/x400/build/
+      package_access: ${{ parameters.package_access }}
 
 ### END: X410 stages
 
@@ -171,14 +176,15 @@ stages:
       publish_int_files: ${{ parameters.publish_int_files }}
 
 - stage: create_x440_packages_stage
-  displayName: Create X440 Packages
+  displayName: Package & Publish X440 Binaries
   dependsOn: build_x440_targets_stage
-  condition: and(succeeded('build_x440_targets_stage'), eq('${{ parameters.package_images }}', 'true'))
+  condition: and(succeeded('build_x440_targets_stage'), eq('${{ parameters.package_and_publish_images }}', 'true'))
   jobs:
   - template: job-package-images.yml
     parameters:
       package_name: x4xx_x440_fpga_default
       artifacts_matrix: ${{ parameters.x440_targets_matrix }}
       build_directory: uhddev/fpga/usrp3/top/x400/build/
+      package_access: ${{ parameters.package_access }}
 
 ### END: X440 stages
