@@ -468,9 +468,9 @@ class X4xxRfdcCtrl:
         adc_tiles_to_sync = tuple({x[0] for x in adcs_to_sync})
         dac_tiles_to_sync = tuple({x[0] for x in dacs_to_sync})
         if not self._rfdc_ctrl.sync_tiles(adc_tiles_to_sync, False, int(adc_latency)):
-            self.log.error("sync_tiles() failed to synchronize ADC tiles!")
+            self.log.warning("sync_tiles() failed to synchronize ADC tiles!")
         if not self._rfdc_ctrl.sync_tiles(dac_tiles_to_sync, True, int(dac_latency)):
-            self.log.error("sync_tiles() failed to synchronize DAC tiles!")
+            self.log.warning("sync_tiles() failed to synchronize DAC tiles!")
 
         # We expect all sync'd tiles to have equal latencies
         # check for both ADC and DAC separately
@@ -478,7 +478,8 @@ class X4xxRfdcCtrl:
             self._rfdc_ctrl.get_tile_latency(tile, False)
             for tile in adc_tiles_to_sync]
         if not all(latencies[0] == latency for latency in latencies):
-            raise RuntimeError("ADC tiles failed to sync properly")
+            self.log.error("ADC tiles failed to sync properly.")
+            raise RuntimeError("ADC tiles failed to sync properly.")
         if latencies[0] != adc_latency:
             self.log.warning(
                 f"ADC latency failed to set to desired value (is: {latencies[0]}, "
@@ -489,7 +490,8 @@ class X4xxRfdcCtrl:
             self._rfdc_ctrl.get_tile_latency(tile, True)
             for tile in dac_tiles_to_sync]
         if not all(latencies[0] == latency for latency in latencies):
-            raise RuntimeError("DAC tiles failed to sync properly")
+            self.log.error("DAC tiles failed to sync properly.")
+            raise RuntimeError("DAC tiles failed to sync properly.")
         if latencies[0] != dac_latency:
             self.log.warning(
                 f"DAC latency failed to set to desired value (is: {latencies[0]}, "
