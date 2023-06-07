@@ -302,17 +302,46 @@ class X4xxClockManager:
     def init(self, args):
         """
         Called by x4xx.init(), when a UHD session initializes.
+
+        Rules for argument handling:
+        - If clock_source and/or time_source are not given, then we use the
+          defaults (internal)
+        - If master_clock_rate is not given, we use whatever the device last
+          was set to.
+        - If ext_clock_freq is not given, we use whatever the device was last
+          set to (this only matters for 'external' clock source!)
+        - If converter_rate is not given, we use the maximum possible converter
+          rate. If it is given, but master_clock_rate is not given, we ignore it.
+        - If clock source, time source, ext_clock_freq, and master clock rate do
+          not change from run to run, we skip re-initializing the RFDC chain.
+          - The user can override this by specifying `force_reinit` (like with
+            N310).
+          - If converter_rate is given, we always force reinit. This could be
+            optimized away if desired.
         """
         args['clock_source'] = args.get('clock_source', self.X400_DEFAULT_CLOCK_SOURCE)
         args['time_source'] = args.get('time_source', self.X400_DEFAULT_TIME_SOURCE)
         self.clk_policy.args = args
+        # This flag will be used to force a full run of the clocking initialization.
+        # If False, MPM may still decide to do a full clocking initialization,
+        # depending on other settings.
+        force_set_mcr = bool(args.get('force_reinit', False))
         # If this is None, the user desires the MCR to not change
         desired_master_clock_rates = args.get('master_clock_rate')
         desired_converter_rates = args.get('converter_rate')
-        if desired_master_clock_rates is not None:
+        # If the user specifies everything, then we always force setting
+        # everything. This can be optimized in the future.
+        force_set_mcr = desired_master_clock_rates and desired_converter_rates
+        # Convert desired master clock rate from string into a tuple. We cover
+        # the special case where a single rate was given to populate both
+        # daughterboard rates.
+        if desired_master_clock_rates:
             desired_master_clock_rates = \
                 parse_multi_device_arg(args['master_clock_rate'], conv=float)
-        force_set_mcr = False
+            if len(desired_master_clock_rates) == 1 and \
+                    len(self._master_clock_rates) > 1:
+                desired_master_clock_rates = \
+                    desired_master_clock_rates * len(self._master_clock_rates)
         if 'ext_clock_freq' in args:
             new_ext_clock_freq = float(args.get('ext_clock_freq'))
             if new_ext_clock_freq != self._ext_clock_freq:
@@ -330,14 +359,15 @@ class X4xxClockManager:
         # and the MCR all in one go. If we called set_master_clock_rate()
         # separately, there's a theoretical chance that we would fail to lock
         # the old MCR with the new ext_clock_freq, or vice versa.
-        if desired_master_clock_rates:
+        if desired_master_clock_rates and \
+                tuple(desired_master_clock_rates) != tuple(self._master_clock_rates):
             self._master_clock_rates = desired_master_clock_rates
-            force_set_mcr = True # TODO this can be skipped if MCR and Conv_Rate haven't changed
+            force_set_mcr = True
         if desired_converter_rates and not desired_master_clock_rates:
             self.log.warning("Passing `converter_rate` argument without obligatory "
                              "`master_clock_rate` argument. Ignoring `converter_rate`.")
         if force_set_mcr:
-            args['__force__'] = True
+            args['force_reinit'] = True
         self.set_sync_source(args)
 
 
@@ -372,7 +402,11 @@ class X4xxClockManager:
         the actual work, but it assumes clock_source and time_source are
         validated/sanitized.
 
-        If anything changed, then all clocks are in reset. Call
+        This method checks if the new clock/time source are different from the
+        current ones. If not, it will return SetSyncRetVal.NOP and not touch
+        the hardware.
+
+        If anything changed, then all clocks will be put into reset. Call
         set_master_clock_rate() in that case to get them running again!
         """
         assert (clock_source, time_source) in self.valid_sync_sources, \
@@ -588,10 +622,14 @@ class X4xxClockManager:
         max_num_rates = self.clk_policy.get_num_rates()
         if len(master_clock_rates) == 1:
             master_clock_rates = [master_clock_rates[0]] * max_num_rates
+        elif max_num_rates == 1:
+            # User provided > 1 rate, but we can only support one
+            raise RuntimeError(
+                'Invalid number of clock rates provided! Must provide a single rate.')
         elif len(master_clock_rates) != max_num_rates:
             raise RuntimeError(
                 f'Invalid number of clock rates provided! Must provide either a '
-                f'single rate or {max_num_rates} rates (one per daughterboard).')
+                f'single rate or {max_num_rates} rates.')
         # Get the validated and rounded MCR back
         master_clock_rates = self.clk_policy.coerce_mcr(master_clock_rates)
         clk_settings = self.clk_policy.get_config(
@@ -825,12 +863,16 @@ class X4xxClockManager:
         if clock_source in (self.CLOCK_SOURCE_EXTERNAL, self.CLOCK_SOURCE_MBOARD) \
                 and self._clocking_auxbrd:
             self._clocking_auxbrd.export_clock(enable=False)
-        # Now the clock manager can do its thing.
-        force_update = args.get("__force__", False)
+        # Now configure the sync sources:
+        force_update = args.get("force_reinit", False)
         ret_val = self._set_sync_source(clock_source, time_source, force_update)
         if ret_val == self.SetSyncRetVal.NOP and not force_update:
+            self.log.debug("Skipping reconfiguration of clocks.")
             return
         try:
+            self.log.debug(
+                f"Reconfiguring clock configuration for a master clock rate of "
+                f"{self._master_clock_rates}")
             # Re-set master clock rate. If this doesn't work, it will time out
             # and throw an exception. We need to put the device back into a safe
             # state in that case.
