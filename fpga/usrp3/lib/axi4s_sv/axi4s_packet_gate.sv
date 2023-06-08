@@ -26,8 +26,8 @@ module axi4s_packet_gate #(
 ) (
   input logic clear=1'b0,
   input logic error=1'b0,
-  interface   i,  // AxiStreamIf or AxiStreamPacketIf
-  interface   o   // AxiStreamIf or AxiStreamPacketIf
+  interface.slave  i,  // AxiStreamIf or AxiStreamPacketIf
+  interface.master o   // AxiStreamIf or AxiStreamPacketIf
 );
 
   `include "axi4s.vh"
