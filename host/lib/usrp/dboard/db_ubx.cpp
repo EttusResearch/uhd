@@ -828,9 +828,9 @@ private:
             // Force on TX PA for boards with high isolation or if the user sets the TDD
             // mode
             set_cpld_field(TXDRV_FORCEON,
-                (_power_mode == POWERSAVE
-                        ? 0
-                        : _high_isolation or _xcvr_mode == TDD ? 1 : 0));
+                (_power_mode == POWERSAVE                  ? 0
+                    : _high_isolation or _xcvr_mode == TDD ? 1
+                                                           : 0));
         } else {
             set_gpio_field(RX_ANT, 1);
             set_cpld_field(
@@ -881,8 +881,8 @@ private:
     double set_tx_freq(double freq)
     {
         std::lock_guard<std::mutex> lock(_mutex);
-        double freq_lo1 = _txlo1_freq;
-        double freq_lo2 = _txlo2_freq;
+        double freq_lo1 = 0.0;
+        double freq_lo2 = 0.0;
         double ref_freq = _iface->get_clock_rate(dboard_iface::UNIT_TX);
         bool is_int_n   = false;
 
