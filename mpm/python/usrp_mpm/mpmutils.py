@@ -317,3 +317,13 @@ class LogWrapper:
         """
         return getattr(self._wc, k)
 # pylint: enable=too-few-public-methods
+
+
+class LogRuntimeError(RuntimeError):
+    """
+    Custom version of RuntimeError that also prints the exception message to
+    a logger.
+    """
+    def __init__(self, log, message):
+        log.error(message)
+        super.__init__(message)
