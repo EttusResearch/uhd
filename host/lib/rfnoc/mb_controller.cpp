@@ -43,7 +43,7 @@ bool sync_tks(
         UHD_LOGGER_INFO("MB_CTRL")
             << "Synchronizing " << timekeepers.size() << " timekeepers";
     } else {
-        UHD_LOGGER_DEBUG("MULTI_USRP")
+        UHD_LOGGER_DEBUG("MB_CTRL")
             << "Synchronizing " << timekeepers.size() << " timekeepers";
     }
 
@@ -61,8 +61,6 @@ bool sync_tks(
         UHD_LOGGER_INFO("MB_CTRL")
             << "  Synchronizing timekeepers to Board " << std::get<0>(timekeepers.front())
             << "/TK " << std::get<1>(timekeepers.front());
-    }
-    if (!quiet) {
         UHD_LOGGER_INFO("MB_CTRL") << "    1) catch time transition at pps edge";
     }
     const auto end_time = std::chrono::steady_clock::now() + 1100ms;
@@ -109,9 +107,9 @@ bool sync_tks(
                 % std::get<0>(timekeepers.front()) % std::get<1>(timekeepers.front()));
 
             if (!quiet) {
-                UHD_LOG_WARNING("MULTI_USRP", warn_str);
+                UHD_LOG_WARNING("MB_CTRL", warn_str);
             } else {
-                UHD_LOG_DEBUG("MULTI_USRP", warn_str);
+                UHD_LOG_DEBUG("MB_CTRL", warn_str);
             }
             return false;
         }
@@ -191,7 +189,7 @@ bool mb_controller::synchronize(std::vector<mb_controller::sptr>& mb_controllers
         try {
             collated_sync_tks.push_back(sync_task.get());
         } catch (const std::exception& e) {
-            UHD_LOGGER_ERROR("MPMD") << "Synchronization error: " << e.what();
+            UHD_LOGGER_ERROR("MB_CTRL") << "Synchronization error: " << e.what();
             return false;
         }
     }

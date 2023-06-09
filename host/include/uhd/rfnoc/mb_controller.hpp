@@ -357,7 +357,7 @@ public:
      * The exact steps taken when calling this method are hardware-specific, but
      * in all cases, they will ensure that:
      * - Timekeepers are synchronized. That means that timekeepers with the
-     *   same clock rate increment in in unison, and at all times have the same
+     *   same clock rate increment are in unison, and at all times have the same
      *   time. This allows sending timed commands to the motherboards and
      *   expect them to be executed at the same time.
      * - Any hardware settings that need to be applied to synchronize will be
