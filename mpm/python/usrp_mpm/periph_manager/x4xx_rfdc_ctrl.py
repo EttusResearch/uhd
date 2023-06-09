@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from usrp_mpm import lib # Pulls in everything from C++-land
 from usrp_mpm.periph_manager.x4xx_rfdc_regs import RfdcRegsControl
 from usrp_mpm.rpc_server import no_rpc
+from usrp_mpm.mpmutils import LogRuntimeError
 
 RFDC_DEVICE_ID = 0
 
@@ -113,12 +114,27 @@ class X4xxRfdcCtrl:
         Check that all configured converters are actually enabled on the RFDC.
         Prints an enable map of all tiles first to help debugging.
         """
-        self.log.debug("tile/block | ADC | DAC ")
-        self.log.debug("-----------+-----+-----")
+        self.log.debug("tile/block | ADC | DAC | Notes")
+        self.log.debug("-----------+-----+-----+------")
         for tile, block in itertools.product(range(4), range(4)):
+            notes = ""
+            chan = [
+                idx
+                for idx, conv in enumerate(self._adc_convs)
+                if conv.tile == tile and conv.block == block]
+            if chan:
+                notes += f"RX Channel {chan[0]}. "
+            chan = [
+                idx
+                for idx, conv in enumerate(self._dac_convs)
+                if conv.tile == tile and conv.block == block]
+            if chan:
+                notes += f"TX Channel {chan[0]}. "
+            if tile == 0 and block == 0:
+                notes += "MTS ref tile. "
             self.log.debug(f"{tile}/{block}        |"
                 f"  {int(self._rfdc_ctrl.is_adc_enabled(tile, block))}  |"
-                f"  {int(self._rfdc_ctrl.is_dac_enabled(tile, block))}   ")
+                f"  {int(self._rfdc_ctrl.is_dac_enabled(tile, block))}  | {notes} ")
 
         for conv in self._adc_convs:
             if not self._rfdc_ctrl.is_adc_enabled(conv.tile, conv.block):
@@ -128,6 +144,22 @@ class X4xxRfdcCtrl:
             if not self._rfdc_ctrl.is_dac_enabled(conv.tile, conv.block):
                 raise RuntimeError(f"DAC converter for tile {conv.tile}/{conv.block} "
                     "is configured but not enabled.")
+
+        # According to pg269, multi-tile synchronization uses tile 0/block 0 as
+        # a reference, and therefore, those tiles need to be enabled even if
+        # those specific tiles are not used in the current bitfile image.
+        # Newer versions of the xrfdc driver specify a reference-tile argument,
+        # so maybe this requirement will be dropped in the future, which could
+        # be useful when we do dual rates.
+        # For now, we enable tile 0 / block 0 in all FPGA images. This is just
+        # a double-check for safety and sanity.
+        if not self._rfdc_ctrl.is_adc_enabled(0, 0):
+            raise LogRuntimeError(
+                self.log, f"ADC tile 0/block 0 is not enabled! MTS not possible!")
+        if not self._rfdc_ctrl.is_dac_enabled(0, 0):
+            raise LogRuntimeError(
+                self.log, f"DAC tile 0/block 0 is not enabled! MTS not possible!")
+
 
     def _device_to_db_channel(self, device_channel):
         """
