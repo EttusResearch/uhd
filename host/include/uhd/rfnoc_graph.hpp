@@ -359,14 +359,24 @@ public:
     /**************************************************************************
      * Hardware Control
      *************************************************************************/
-    //! Return the number of motherboards in this graph
-    //
-    // Methods that take a motherboard index (e.g., get_mb_controller()) will
+    /*! Return the number of motherboards in this graph
+     *
+     * Methods that take a motherboard index (e.g., get_mb_controller()) will error out if
+     * an index is passed that is greater or equal to this number of motherboards.
+     *
+     * \return the number of motherboards in this graph
+     */
     virtual size_t get_num_mboards() const = 0;
 
-    //! Return a reference to a motherboard controller
-    //
-    // See also uhd::rfnoc::mb_controller
+    /*! Return a reference to a motherboard controller
+     *
+     * See also uhd::rfnoc::mb_controller
+     *
+     * \param mb_index The index of the motherboard in the graph, 0 if only one device is
+     *                 used.
+     *
+     * \return a reference to the motherboard controller at index mb_index
+     */
     virtual std::shared_ptr<mb_controller> get_mb_controller(
         const size_t mb_index = 0) = 0;
 
