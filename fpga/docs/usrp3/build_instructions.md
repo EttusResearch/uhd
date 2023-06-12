@@ -33,7 +33,8 @@ The following USRPs work with the free versions:
 | USRP E320      | Zynq-7000 XC7Z045 (SoCs: Zynq-7000)           |
 | USRP N300      | Zynq-7000 XC7Z035 (SoCs: Zynq-7000)           |
 | USRP N310/N320 | Zynq-7000 XC7Z100 (SoCs: Zynq-7000)           |
-| USRP X410      | RFSoC XCZU28DR (SoCs: Zynq UltraScale+ RFSoC) |
+| USRP X410      | RFSoC XCZU28DR Speed grade 1 (SoCs: Zynq UltraScale+ RFSoC) |
+| USRP X440      | RFSoC XCZU28DR Speed grade 2 (SoCs: Zynq UltraScale+ RFSoC) |
 
 Note: The Xilinx installation must include support for the specified FPGA family. You can save disk space and installation time by only installing support for the FPGAs you intend to use.
 
@@ -64,7 +65,7 @@ link above.
 
 You can install all the dependencies through the package manager:
 
-    sudo apt-get install python bash build-essential doxygen
+    sudo apt-get install python3 bash build-essential doxygen
 
 Your actual command may differ.
 
@@ -72,7 +73,7 @@ Your actual command may differ.
 
 You can install all the dependencies through the package manager:
 
-    sudo yum -y install python bash make doxygen
+    sudo dnf -y install python bash make doxygen
 
 Your actual command may differ.
 
@@ -277,7 +278,8 @@ support a 245.76 MHz or 250 MHz master clock rate.
 
 A more detailed description of the targets can be found at \ref x4xx_updating_fpga_types.
 Run `make help` in the `<repo>/fpga/usrp3/top/x400/` directory to see
-the complete list of targets available.
+the complete list of targets available. It will list targets for both X410 and
+X440.
 
 #### Outputs
 - `build/usrp_<product>_fpga.bit` : Configuration bitstream with header

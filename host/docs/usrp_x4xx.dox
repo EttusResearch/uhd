@@ -35,8 +35,9 @@
   - USRP X410: 4x full-duplex RF channels with a maximum analog bandwidth of
     400 MHz, tunable from 1 MHz - 7.2 GHz center frequency (tunable to 8 GHz)
     using \ref page_zbx
-  - USRP X440: 8x full-duplex direct-sampling channels, tunable digitally from
-    1 MHz to 4 GHz, with a maximum sampling rate of 2048 Msps, using \ref page_fbx
+  - USRP X440: 8x full-duplex direct-sampling channels, configurable center
+    frequencies 30 MHz - 4 GHz (tunable 1 MHz - 4 GHz), with a maximum sampling
+    rate of 2048 Msps, using \ref page_fbx
 
 \section x4xx_overview Overview and Features
 
@@ -45,6 +46,7 @@ Both variants share the same enclosure and motherboard, and are collectively
 referred to as X4x0.
 
 \image html x410.png "Ettus USRP X410" width=50%
+\image html x440.png "Ettus USRP X440" width=50%
 
 The Ettus USRP X4x0 is a fourth-generation Software Defined Radio (SDR) out of the USRP
 family of SDRs. Depending on the variant, it contains either two
@@ -119,11 +121,20 @@ capabilities of these analog front-end cards, see \ref page_zbx and \ref page_fb
 
 \image html x410_front_panel.png "Ettus USRP X410 Front Panel" width=90%
 
-The front panel provides access to the RF ports and status LEDs of the \ref page_zbx.
+The X410 front panel provides access to the RF ports and status LEDs of the \ref page_zbx.
 It also provides access to the front-panel GPIO connectors (2x HDMI) and the
 power button.
 
-\image html x410_back_panel.png "Ettus USRP X410 Back Panel" width=90%
+\image html x440_front_panel.png "Ettus USRP X440 Front Panel" width=90%
+
+The X440 front panel provides access to the RF ports and status LEDs of the \ref page_fbx.
+It also provides access to the front-panel GPIO connectors (2x HDMI) and the
+power button.
+
+The SYNC IN connectors provide access to additional circuitry for advanced time
+synchronization, in the current version of UHD, they are not supported.
+
+\image html x410_back_panel.png "Ettus USRP X4x0 Back Panel" width=90%
 
 The back panel provides access to power, data connections, clocking and timing
 related connections, and some status LEDs:
@@ -147,14 +158,6 @@ related connections, and some status LEDs:
   (approx. 10 Msps).
 
 The back panel is identical between X4x0 variants.
-
-\image html x410_front_panel.png "Ettus USRP X440 Front Panel" width=90%
-
-FIXME insert X440 front panel pic!
-
-The front panel provides access to the RF ports and status LEDs of the \ref page_fbx.
-It also provides access to the front-panel GPIO connectors (2x HDMI) and the
-power button.
 
 \subsection x4xx_overview_micro The STM32 Microcontroller
 
@@ -575,9 +578,8 @@ Run `make help` in the `fpga/usrp3/top/x400` directory of the UHD repository to
 see a complete list of FPGA images that can be built, some of which are
 experimental (unsupported).
 
-The analog bandwidth determines the available master clock rates. The 200 MHz
-images allow master clock rates of 245.76 MHz or 250 MHz. The 400 MHz images
-allow master clock rates of 491.52 MHz or 500 MHz.
+The analog bandwidth determines the available master clock rates. See section
+\ref x4xx_usage_mcrs for more information on available mater clock rates.
 
 Applications that require more than 200 MHz bandwidth should use the full rate
 of the 400 MHz images. Applications that require 200 MHz bandwidth or less
@@ -915,9 +917,48 @@ For a list of which arguments can be passed into make(), see Section
  skip_init             | Skip the initialization process for the device.                                 | skip_init=1
  time_source           | Specify the time (PPS) source.                                                  | time_source=internal
  clock_source          | Specify the reference clock source.                                             | clock_source=internal
- ref_clk_freq          | Specify the external reference clock frequency, default is 10 MHz.              | ref_clk_freq=20e6
+ ext_clock_freq        | Specify the external reference clock frequency, default is 10 MHz.              | ref_clk_freq=20e6
  discovery_port        | Override default value for MPM discovery port.                                  | discovery_port=49700
  rpc_port              | Override default value for MPM RPC port.                                        | rpc_port=49701
+ force_reinit          | Force reinitialization of clocking                                              | force_reinit=1
+ converter_rate        | Specify the rate of the ADC/DAC. X440 only. UHD may choose to ignore this.      | master_clock_rate=500e6,converter_rate=1e9
+
+\subsection x4xx_usage_mcrs Master clock rates
+
+The available master clock rates depend on the FPGA image flavor that is
+currently installed on the device (see \ref x4xx_updating_fpga_types).
+
+The USRP X410 has a small number of fixed master clock rates available for
+every image type:
+
+The 200 MHz images allow master clock rates of 245.76 MHz or 250 MHz. The 400
+MHz images allow master clock rates of 491.52 MHz or 500 MHz.
+
+The USRP X440 has a much broader range of available master clock rates.
+
+FIXME link to the tool or amend this
+
+For all devices, changing the master clock rate during a running session is not
+supported. Once a UHD session is initialized, the master clock rate is fixed.
+For that reason, uhd::usrp::multi_usrp::get_master_clock_rate_range() will not return
+a list of multiple entries, but only the currently active master clock rate.
+This behaviour is identical to that of the USRP X3x0.
+
+When selecting a master clock rate, UHD will coerce to the next available master
+clock rate. Example:
+
+~~~{.cpp}
+// Assumption: We are using a USRP X410, with a 200 MHz FPGA image
+auto usrp = uhd::usrp::multi_usrp::make("type=x4xx,master_clock_rate=245e6");
+// 245 MHz is not a valid master clock rate!
+std::cout << usrp->get_master_clock_rate() << std::endl; // Prints 245.76e6
+// Changing the master clock rate is not allowed:
+std::cout << usrp->set_master_clock_rate(250e6) << std::endl; // Prints 245.76e6 and a warning
+// The range is now also fixed:
+std::cout << usrp->get_master_clock_rate_range().start() << std::endl; // Prints 245.76e6
+std::cout << usrp->get_master_clock_rate_range().stop() << std::endl; // Prints 245.76e6
+~~~
+
 
 \subsection x4xx_usage_gps GPS
 
@@ -1220,6 +1261,23 @@ is possible to access the PS through these interfaces (when configured as Ethern
 interfaces), but their main purpose is to stream data from and to the FPGA at
 high rates.
 
+\subsection x4xx_too_convrate Converter Rates
+
+The RFSoC internally has a decimation/interpolation chain which can resample by
+a factor of up to 8. For example, if the converter is running at 2 GHz, then
+the RFSoC can produce a signal at a master clock rate of 1 Gsps, 500 Msps, or
+250 Msps (it must resample at least by 2 to convert the signal to a complex one).
+
+By default, UHD will choose the largest converter rate available. This can be
+overridden by specifying the `converter_rate` device argument (see also \ref x4xx_usage_args).
+
+The USRP X410 only supports a small number of fixed master clock rates (see
+\ref x4xx_usage_mcrs), with a predefined converter rate.
+
+Note that the maximum supported converter rate is 4.096 GHz. The minimum supported
+converter rate is 1 GHz. Without further DSP, the smallest possible master clock rate is
+thus 125 Msps (1 GHz resampled by eight), which is only supported on the X440.
+
 \subsection x4xx_too_clocking Clocking
 
 The clocking architecture of the motherboard is spread out between a clocking
@@ -1272,6 +1330,12 @@ is derived from the PRC within the RFSoC, using an MMCM. The MMCM provides
 various clocks that enable resampling in the RFSoC and streaming data into RFNoC
 at a rate dependant on the master clock rate and the number of samples per cycle
 that the RFdc will produce.
+
+The ADCs/DACs themselves make use of the sample reference clock, but may additionally use
+the RFdc PLL (a PLL integrated into the RFSoC) to derive the actual sample clock
+if the Sample PLL is not able to generate the required clock directly (e.g., for
+a converter rate of 4 GHz, the RFdc-PLL is required as the maximum SPLL output
+frequency is 3.2 GHz). UHD is configured to bypass the RFdc PLL whenever possible.
 
 Block diagram:
 ```
