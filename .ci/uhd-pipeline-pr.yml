@@ -6,17 +6,29 @@
 
 parameters:
 - name: build_linux
-  type: boolean
   displayName: Build Linux
-  default: true
+  type: string
+  default: Auto-detect
+  values:
+  - Auto-detect
+  - Force-yes
+  - No
 - name: build_mac
-  type: boolean
   displayName: Build macOS
-  default: true
+  type: string
+  default: Auto-detect
+  values:
+  - Auto-detect
+  - Force-yes
+  - No
 - name: build_win
-  type: boolean
   displayName: Build Windows
-  default: true
+  type: string
+  default: Auto-detect
+  values:
+  - Auto-detect
+  - Force-yes
+  - No
 - name: custom_boost_version
   type: boolean
   displayName: Use custom boost version
