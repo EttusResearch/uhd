@@ -276,7 +276,7 @@ X410_CG_200: X410_IP build/usrp_x410_fpga_CG_200.dts
 
 .DEFAULT_GOAL := all
 
-all:          X410_X4_200 X410_CG_400 X410_UC_200 ##(Default targets)
+all:          X410_X4_200 X410_CG_400 X410_UC_200 X440_X4_400 X440_CG_400 X440_X4_1600 X440_CG_1600 ##(Default targets)
 
 X410_IP:      ##Build IP only.
 	+$(call vivado_ip,X410,$(DEFS) X410=1)
