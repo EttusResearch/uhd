@@ -41,7 +41,7 @@ trigger:
   batch: true
   branches:
     include:
-    - ferratus-master
+    - master
   paths:
     include:
     - fpga/usrp3/lib
@@ -55,7 +55,7 @@ schedules:
   displayName: Weekly FPGA CI Build master branch
   branches:
     include:
-    - ferratus-master
+    - master
   always: true
 
 extends:
