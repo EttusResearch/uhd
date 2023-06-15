@@ -400,7 +400,12 @@ module x4xx_core #(
   );
 
   // Provide information for ctrlport timed commands
-  assign radio_time_stb = rx_stb[0];
+  genvar tk_i;
+  generate
+    for (tk_i = 0; tk_i < NUM_TIMEKEEPERS; tk_i = tk_i + 1) begin : gen_time_stb
+      assign radio_time_stb[tk_i] = rx_stb[tk_i*NUM_CH_PER_DB];
+    end
+  endgenerate
 
 
   //---------------------------------------------------------------------------
