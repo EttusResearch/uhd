@@ -15,6 +15,9 @@ parameters:
   type: boolean
 - name: runDevTest
   type: boolean
+- name: master_clock_rate
+  type: string
+  default: ''
 - name: dutMatrix
   type: object
 - name: uhdArtifactSource
@@ -185,9 +188,15 @@ jobs:
   - script: |
       mkdir -p $(Common.TestResultsDirectory)/devtest
       cd $(Common.TestResultsDirectory)/devtest
+      if [ -z "$(master_clock_rate)" ]; then
+        args="addr=$USRP_EMB_TARGET_IP,type=$(dutType)"
+      else
+        args="addr=$USRP_EMB_TARGET_IP,type=$(dutType),master_clock_rate=$(master_clock_rate)"
+      fi
+      echo $args
       python3 $(Build.SourcesDirectory)/uhddev/host/tests/devtest/run_testsuite.py \
         --src-dir $(Build.SourcesDirectory)/uhddev/host/tests/devtest \
-        --devtest-pattern $(devtestPattern) --args addr=$USRP_EMB_TARGET_IP,type=$(dutType) \
+        --devtest-pattern $(devtestPattern) --args $args \
         --build-dir $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev/build \
         --build-type Release --python-interp python3 --xml
     displayName: Run devtest

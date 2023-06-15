@@ -10,7 +10,7 @@ parameters:
 jobs:
 - template: templates/job-uhd-x4xx-hardware-tests.yml
   parameters:
-    suiteName: 'sdr_test0'
+    suiteName: 'sdr_test0_x410'
     testOS: '${{ parameters.testOS }}'
     toolset: 'make'
     runPyTest: false
@@ -22,7 +22,7 @@ jobs:
       sdr-test0-x410-0:
         dutName: 'sdr-test0-x410-0'
         dutType: 'x4xx'
-        devtestPattern: 'x4x0'
+        devtestPattern: 'x410'
         dutFPGA: 'X4_200'
         dutEmbeddedImagesArtifact: 'x4xx-images'
         uartSerial: '2516351FE64E'

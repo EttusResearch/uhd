@@ -280,7 +280,10 @@ stages:
   - build_uhd_embedded_system_images
   - build_gnuradio_stage_linux
   jobs:
-  - template: tests/job-uhd-x4xx-hardware-tests-sdr-test0.yml
+  - template: tests/job-uhd-x410-hardware-tests-sdr-test0.yml
+    parameters:
+      testOS: ubuntu1804
+  - template: tests/job-uhd-x440-hardware-tests-sdr-test0.yml
     parameters:
       testOS: ubuntu1804
   - template: tests/job-uhd-x410-hardware-tests-pebbles.yml
