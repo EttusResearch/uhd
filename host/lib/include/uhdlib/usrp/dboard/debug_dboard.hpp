@@ -65,17 +65,17 @@ public:
         return true;
     }
 
-    double get_converter_rate() override
+    double get_converter_rate() const override
     {
         return 0.0;
     }
 
-    size_t get_num_rx_channels() final
+    size_t get_num_rx_channels() const final
     {
         return 2;
     }
 
-    size_t get_num_tx_channels() final
+    size_t get_num_tx_channels() const final
     {
         return 2;
     }
@@ -484,7 +484,7 @@ public:
         return _rpcc->request_with_token<eeprom_map_t>("get_db_eeprom", _db_idx);
     }
 
-    double get_converter_rate() final
+    double get_converter_rate() const final
     {
         return _rpcc->request_with_token<double>(_rpc_prefix + "get_dboard_sample_rate");
     }

@@ -29,6 +29,13 @@ module x4xx_qsfp_wrapper_all_tb;
   ) ETH_10Gb_fast ();
 
   x4xx_qsfp_wrapper_tb #(
+    .TEST_NAME ("10GbE_F_512"),
+    .PROTOCOL0 (`MGT_10GbE),
+    .CHDR_W    (512),
+    .USE_MAC   (0)
+  ) ETH_10Gb_fast_512 ();
+
+  x4xx_qsfp_wrapper_tb #(
     .TEST_NAME ("10GbE_x4_F"),
     .PROTOCOL0 (`MGT_10GbE),
     .PROTOCOL1 (`MGT_10GbE),
@@ -67,6 +74,7 @@ module x4xx_qsfp_wrapper_all_tb;
   always_ff@(posedge clk) begin
     if (ETH_100Gb_fast.test.done      &&
         ETH_10Gb_fast.test.done       &&
+        ETH_10Gb_fast_512.test.done   &&
         ETH_10Gb_x4_fast.test.done    &&
         ETH_100Gb_512serial.test.done &&
         ETH_100Gb_128serial.test.done &&

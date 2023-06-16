@@ -64,7 +64,7 @@ public:
         uhd::usrp::zbx_rpc_iface::sptr rpcc,
         uhd::rfnoc::x400::rfdc_control::sptr rfdcc,
         uhd::property_tree::sptr tree);
-    virtual ~zbx_dboard_impl();
+    ~zbx_dboard_impl() override;
 
     size_t get_chan_from_dboard_fe(
         const std::string& fe, const uhd::direction_t) const final;
@@ -121,16 +121,17 @@ public:
         return _rx_gain_profile_api;
     }
 
-    double get_converter_rate() final
+    double get_converter_rate() const final
     {
         return _rfdc_rate;
     }
 
-    size_t get_num_rx_channels() final
+    size_t get_num_rx_channels() const final
     {
         return _num_rx_chans;
     }
-    size_t get_num_tx_channels() final
+
+    size_t get_num_tx_channels() const final
     {
         return _num_tx_chans;
     }

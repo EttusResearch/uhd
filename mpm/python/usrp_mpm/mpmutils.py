@@ -8,6 +8,7 @@ Miscellaneous utilities for MPM
 """
 
 import time
+from functools import partial
 from contextlib import contextmanager
 import pyudev
 
@@ -280,3 +281,49 @@ def get_dboard_class_from_pid(pid):
         except (TypeError, AttributeError):
             continue
     return None
+
+# pylint: disable=too-few-public-methods
+class LogWrapper:
+    """
+    This is a class that can be wrapped around any other class. It will log any
+    calls to this class, including call arguments, return value, and execution
+    time.
+    """
+    def __init__(self, logger, level, wrap_class):
+        self.logger = logger
+        self.log = getattr(self.logger, level)
+        self._wc = wrap_class
+        for attr_name in dir(self._wc):
+            attr = getattr(self._wc, attr_name)
+            if not callable(attr):
+                continue
+            def new_method(name, *args, **kwargs):
+                args_str = ', '.join(str(x) for x in args)
+                if kwargs:
+                    if args_str:
+                        args_str += ','
+                    args_str += ','.join([f' {k}={v}' for k, v in kwargs.items()])
+                self.log(f"{name}({args_str.strip()})")
+                start_time = time.monotonic()
+                ret_val = getattr(self._wc, name)(*args, **kwargs)
+                stop_time = time.monotonic()
+                self.log(f"--> {ret_val} [Execution time: {(stop_time-start_time)*1e3:.3f} ms]")
+                return ret_val
+            setattr(self, attr_name, partial(new_method, attr_name))
+
+    def __getattr__(self, k):
+        """
+        Catch-all getattr: We forward that to the wrapped class.
+        """
+        return getattr(self._wc, k)
+# pylint: enable=too-few-public-methods
+
+
+class LogRuntimeError(RuntimeError):
+    """
+    Custom version of RuntimeError that also prints the exception message to
+    a logger.
+    """
+    def __init__(self, log, message):
+        log.error(message)
+        super.__init__(message)

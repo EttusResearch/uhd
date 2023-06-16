@@ -43,8 +43,8 @@ module cam_priority_encoder #
 );
 
 // power-of-two width
-parameter W1 = 2**$clog2(WIDTH);
-parameter W2 = W1/2;
+localparam W1 = 2**$clog2(WIDTH);
+localparam W2 = W1/2;
 
 generate
     if (WIDTH == 2) begin
@@ -67,7 +67,8 @@ generate
         priority_encoder_inst1 (
             .input_unencoded(input_unencoded[W2-1:0]),
             .output_valid(valid1),
-            .output_encoded(out1)
+            .output_encoded(out1),
+            .output_unencoded()
         );
         cam_priority_encoder #(
             .WIDTH(W2),
@@ -76,7 +77,8 @@ generate
         priority_encoder_inst2 (
             .input_unencoded({{W1-WIDTH{1'b0}}, input_unencoded[WIDTH-1:W2]}),
             .output_valid(valid2),
-            .output_encoded(out2)
+            .output_encoded(out2),
+            .output_unencoded()
         );
         // multiplexer to select part
         assign output_valid = valid1 | valid2;

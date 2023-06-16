@@ -149,4 +149,4 @@ class X4xxDbMixin:
         Return the master clock rate. This is the rate that UHD cares about,
         in the 125-500 MHz range for X410/ZBX.
         """
-        return self.db_iface.mboard.clk_mgr.get_master_clock_rate()
+        return self.db_iface.mboard.clk_mgr.get_master_clock_rate(self.slot_idx)

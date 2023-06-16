@@ -156,13 +156,16 @@
   // PPS_CTRL_REG Register (from x4xx_global_regs.v)
   localparam PPS_CTRL_REG = 'h1C; // Register Offset
   localparam PPS_CTRL_REG_SIZE = 32;  // register width in bits
-  localparam PPS_CTRL_REG_MASK = 32'hB3FFFFFF;
+  localparam PPS_CTRL_REG_MASK = 32'hBFFFFFFF;
   localparam PPS_PRC_DELAY_SIZE = 26;  //PPS_CTRL_REG:PPS_PRC_DELAY
   localparam PPS_PRC_DELAY_MSB  = 25;  //PPS_CTRL_REG:PPS_PRC_DELAY
   localparam PPS_PRC_DELAY      =  0;  //PPS_CTRL_REG:PPS_PRC_DELAY
-  localparam PRC_RC_DIVIDER_SIZE =  2;  //PPS_CTRL_REG:PRC_RC_DIVIDER
-  localparam PRC_RC_DIVIDER_MSB  = 29;  //PPS_CTRL_REG:PRC_RC_DIVIDER
-  localparam PRC_RC_DIVIDER      = 28;  //PPS_CTRL_REG:PRC_RC_DIVIDER
+  localparam PRC_RC1_DIVIDER_SIZE =  2;  //PPS_CTRL_REG:PRC_RC1_DIVIDER
+  localparam PRC_RC1_DIVIDER_MSB  = 27;  //PPS_CTRL_REG:PRC_RC1_DIVIDER
+  localparam PRC_RC1_DIVIDER      = 26;  //PPS_CTRL_REG:PRC_RC1_DIVIDER
+  localparam PRC_RC0_DIVIDER_SIZE =  2;  //PPS_CTRL_REG:PRC_RC0_DIVIDER
+  localparam PRC_RC0_DIVIDER_MSB  = 29;  //PPS_CTRL_REG:PRC_RC0_DIVIDER
+  localparam PRC_RC0_DIVIDER      = 28;  //PPS_CTRL_REG:PRC_RC0_DIVIDER
   localparam PPS_RC_ENABLED_SIZE =  1;  //PPS_CTRL_REG:PPS_RC_ENABLED
   localparam PPS_RC_ENABLED_MSB  = 31;  //PPS_CTRL_REG:PPS_RC_ENABLED
   localparam PPS_RC_ENABLED      = 31;  //PPS_CTRL_REG:PPS_RC_ENABLED
@@ -174,8 +177,6 @@
   localparam CHDR_CLK_SIZE = 32;  //CHDR_CLK_RATE_REG:CHDR_CLK
   localparam CHDR_CLK_MSB  = 31;  //CHDR_CLK_RATE_REG:CHDR_CLK
   localparam CHDR_CLK      =  0;  //CHDR_CLK_RATE_REG:CHDR_CLK
-    localparam CHDR_CLK_ENUM_SIZE = 1;
-    localparam CHDR_CLK_VALUE  = 'hBEBC200;  // enum value
 
   // CHDR_CLK_COUNT_REG Register (from x4xx_global_regs.v)
   localparam CHDR_CLK_COUNT_REG = 'h24; // Register Offset

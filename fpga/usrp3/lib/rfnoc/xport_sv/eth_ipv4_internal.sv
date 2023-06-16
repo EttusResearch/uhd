@@ -351,6 +351,7 @@ module eth_ipv4_internal #(
     .CPU_FIFO_SIZE  (BYTE_MTU),
     .CHDR_FIFO_SIZE (BYTE_MTU),
     .NODE_INST      (NODE_INST),
+    .REG_AWIDTH     (AWIDTH),
     .BASE           (REG_BASE_ETH_SWITCH),
     .PREAMBLE_BYTES (6),
     .ADD_SOF        (1),

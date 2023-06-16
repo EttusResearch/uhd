@@ -272,8 +272,8 @@ class MboardRegsControl(MboardRegsCommon):
     def configure_pps_forwarding(self, enable, master_clock_rate, prc_rate, delay):
         """
         Configures the PPS forwarding to the sample clock domain (master
-        clock rate). This function assumes _sync_spll_clocks function has
-        already been executed.
+        clock rate). This function assumes X4xxClockCtrl.sync_spll_clocks
+        function has already been executed.
 
         :param enable: Boolean to choose whether PPS is forwarded to the
                        sample clock domain.
@@ -287,7 +287,8 @@ class MboardRegsControl(MboardRegsCommon):
                        range 0 < x <= 1. In order to forward the PPS signal
                        from base reference clock to sample clock an aligned
                        rising edge of the clock is required. This can be
-                       created by the _sync_spll_clocks function. Based on the
+                       created by the X4xxClockCtrl.sync_spll_clocks function.
+                       Based on the
                        greatest common divisor of the two clock rates there
                        are multiple occurences of an aligned edge each second.
                        One of these aligned edges has to be chosen for the

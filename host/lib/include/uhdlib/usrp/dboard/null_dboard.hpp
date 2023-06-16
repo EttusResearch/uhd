@@ -53,16 +53,16 @@ public:
         return true;
     }
 
-    double get_converter_rate() final
+    double get_converter_rate() const final
     {
         return 0.0;
     }
 
-    size_t get_num_rx_channels() final
+    size_t get_num_rx_channels() const final
     {
         return 2;
     }
-    size_t get_num_tx_channels() final
+    size_t get_num_tx_channels() const final
     {
         return 2;
     }

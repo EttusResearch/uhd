@@ -89,8 +89,9 @@ module rf_core_200m (
 
   // Control/status vectors from/to RFDC.
   // Notice these are all in the s_axi_config_clk domain.
-  output reg  [15:0] dsp_info_sclk,
+  output wire  [9:0] dsp_info_sclk,
   output wire [15:0] axi_status_sclk,
+  output wire [15:0] rfdc_info_sclk,
 
   // Resets.
   input wire adc_data_out_resetn_dclk,
@@ -105,7 +106,7 @@ module rf_core_200m (
   output wire [95:0] version_info
 );
 
-  `include "../../regmap/rfdc_regs_regmap_utils.vh"
+  `include "../../regmap/x410/rfdc_regs_regmap_utils.vh"
 
   //---------------------------------------------------------------------------
   // 400 MHz RF Core
@@ -170,11 +171,12 @@ module rf_core_200m (
     .version_info              (version_info)
   );
 
-  // Change reported bandwidth 200 MHz
-  always @(*) begin
-    dsp_info_sclk                                    <= dsp_info_sclk_400m;
-    dsp_info_sclk[FABRIC_DSP_BW_MSB : FABRIC_DSP_BW] <= FABRIC_DSP_BW_200M;
-  end
+  assign dsp_info_sclk = dsp_info_sclk_400m;
+
+  // This RF core always consumes 8 SPC from the gearbox per I/Q signal
+  assign rfdc_info_sclk[RFDC_INFO_SPC_RX_MSB:RFDC_INFO_SPC_RX] = $clog2(8);
+  assign rfdc_info_sclk[RFDC_INFO_SPC_TX_MSB:RFDC_INFO_SPC_TX] = $clog2(16);
+  assign rfdc_info_sclk[RFDC_INFO_XTRA_RESAMP_MSB:RFDC_INFO_XTRA_RESAMP] = 4'd6;
 
 
   //---------------------------------------------------------------------------

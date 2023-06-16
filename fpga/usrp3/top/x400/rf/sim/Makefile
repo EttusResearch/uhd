@@ -36,8 +36,9 @@ include ../200m/Makefile.srcs
 include ../400m/Makefile.srcs
 
 DESIGN_SRCS += $(abspath \
-../../regmap/PkgRFDC_REGS_REGMAP.vhd \
+../../regmap/x410/PkgRFDC_REGS_REGMAP.vhd \
 $(RF_COMMON_SRCS) \
+$(RF_X410_SRCS) \
 $(RF_100M_SRCS) \
 $(RF_200M_SRCS) \
 $(RF_400M_SRCS) \
@@ -68,18 +69,18 @@ SIM_TOP = rf_all_tb
 SIM_RUNTIME_US = 1000
 
 SIM_SRCS = \
-$(abspath tb_adc_gearbox_2x1.vhd    ) \
-$(abspath tb_adc_gearbox_2x4.vhd    ) \
-$(abspath tb_adc_gearbox_8x4.vhd    ) \
-$(abspath tb_capture_sysref.vhd     ) \
-$(abspath tb_dac_gearbox_12x8.vhd   ) \
-$(abspath tb_dac_gearbox_4x2.vhd    ) \
-$(abspath tb_dac_gearbox_6x12.vhd   ) \
-$(abspath tb_ddc_400m_saturate.vhd  ) \
-$(abspath tb_duc_400m_saturate.vhd  ) \
-$(abspath tb_rf_nco_reset.vhd       ) \
-$(abspath tb_rf_reset_controller.vhd) \
-$(abspath rf_all_tb.sv              ) \
+$(abspath tb_adc_gearbox_2x1.vhd          ) \
+$(abspath tb_adc_gearbox_2x4.vhd          ) \
+$(abspath tb_adc_gearbox_8x4.vhd          ) \
+$(abspath tb_capture_sysref.vhd           ) \
+$(abspath tb_dac_gearbox_12x8.vhd         ) \
+$(abspath tb_dac_gearbox_4x2.vhd          ) \
+$(abspath tb_dac_gearbox_6x12.vhd         ) \
+$(abspath tb_ddc_400m_saturate.vhd        ) \
+$(abspath tb_duc_400m_saturate.vhd        ) \
+$(abspath tb_rf_nco_reset.vhd             ) \
+$(abspath tb_x410_rf_reset_controller.vhd ) \
+$(abspath rf_all_tb.sv                    ) \
 
 #-------------------------------------------------
 # Bottom-of-Makefile

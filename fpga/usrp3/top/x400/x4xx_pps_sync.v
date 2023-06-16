@@ -19,20 +19,20 @@
 
 
 module x4xx_pps_sync #(
-  parameter SIMULATION = 0 
+  parameter SIMULATION = 0
 ) (
   // clock and reset
-  input  wire base_ref_clk, // BRC
-  input  wire pll_ref_clk,  // PRC
-  input  wire ctrl_clk,     // CC
-  input  wire radio_clk,    // RC
+  input  wire       base_ref_clk, // BRC
+  input  wire       pll_ref_clk,  // PRC
+  input  wire       ctrl_clk,     // CC
+  input  wire [1:0] radio_clk,    // RC
 
   input  wire brc_rst,
 
   // PPS
   input  wire pps_in, // BRC domain
   output wire pps_out_brc,
-  output reg  pps_out_rc = 1'b0,
+  output reg  [1:0] pps_out_rc = 2'b00,
 
   // LMK control signal
   output reg  sync = 1'b0,
@@ -44,7 +44,7 @@ module x4xx_pps_sync #(
   output wire        pll_sync_done,
   input  wire [7:0]  pps_brc_delay,
   input  wire [25:0] pps_prc_delay,
-  input  wire [1:0]  prc_rc_divider,
+  input  wire [3:0]  prc_rc_divider,
   input  wire        pps_rc_enabled,
 
   //signal for debugging
@@ -386,31 +386,51 @@ module x4xx_pps_sync #(
   // rc. The divider has to account for the output register and the shift
   // register.
 
-  wire [1:0] prc_rc_divider_rc;
-  wire       pps_rc_enabled_rc;
-  synchronizer #(
-    .FALSE_PATH_TO_IN (1),
-    .WIDTH            (2)
-  ) synchronizer_prc_rc_divider (
-    .clk (radio_clk),
-    .rst (1'b0),
-    .in  (prc_rc_divider),
-    .out (prc_rc_divider_rc)
-  );
-  synchronizer #(
-    .FALSE_PATH_TO_IN (1)
-  ) synchronizer_pps_rc_enabled (
-    .clk (radio_clk),
-    .rst (1'b0),
-    .in  (pps_rc_enabled),
-    .out (pps_rc_enabled_rc)
-  );
+  wire [3:0] prc_rc_divider_rc;
+  wire [1:0] pps_rc_enabled_rc;
+  wire [1:0] pps_delayed_prc_rc;
+  reg  [7:0] pps_shift_reg_rc = 8'b0;
+  genvar rc_sync_i;
+  generate
+    for (rc_sync_i = 0; rc_sync_i < 2; rc_sync_i = rc_sync_i+1) begin : gen_rc_sync
+      synchronizer #(
+        .FALSE_PATH_TO_IN (1),
+        .WIDTH            (2)
+      ) synchronizer_prc_rc_divider (
+        .clk (radio_clk[rc_sync_i]),
+        .rst (1'b0),
+        .in  (prc_rc_divider[2*rc_sync_i+:2]),
+        .out (prc_rc_divider_rc[2*rc_sync_i+:2])
+      );
+      synchronizer #(
+        .FALSE_PATH_TO_IN (1)
+      ) synchronizer_pps_rc_enabled (
+        .clk (radio_clk[rc_sync_i]),
+        .rst (1'b0),
+        .in  (pps_rc_enabled),
+        .out (pps_rc_enabled_rc[rc_sync_i])
+      );
+      synchronizer #(
+        .FALSE_PATH_TO_IN (1)
+      ) synchronizer_pps_rc (
+        .clk (radio_clk[rc_sync_i]),
+        .rst (1'b0),
+        .in  (pps_delayed_prc),
+        .out (pps_delayed_prc_rc[rc_sync_i])
+      );
+    end
+  endgenerate
 
-  reg [3:0] pps_shift_reg_rc = 4'b0;
-  always @(posedge radio_clk) begin
-    pps_shift_reg_rc <= {pps_shift_reg_rc[2:0],  pps_delayed_prc};
+  always @(posedge radio_clk[0]) begin
+    pps_shift_reg_rc[3:0] <= {pps_shift_reg_rc[2:0],  pps_delayed_prc_rc[0]};
     // Restoring a one clock cycle pulse by feeding back to output value.
-    pps_out_rc <= pps_shift_reg_rc[prc_rc_divider_rc] & ~pps_out_rc & pps_rc_enabled_rc;
+    pps_out_rc[0] <= pps_shift_reg_rc[prc_rc_divider_rc[1:0]] & ~pps_out_rc[0] & pps_rc_enabled_rc[0];
+  end
+
+  always @(posedge radio_clk[1]) begin
+    pps_shift_reg_rc[7:4] <= {pps_shift_reg_rc[6:4],  pps_delayed_prc_rc[1]};
+    // Restoring a one clock cycle pulse by feeding back to output value.
+    pps_out_rc[1] <= pps_shift_reg_rc[prc_rc_divider_rc[3:2]] & ~pps_out_rc[1] & pps_rc_enabled_rc[1];
   end
 
   //---------------------------------------------------------------------------

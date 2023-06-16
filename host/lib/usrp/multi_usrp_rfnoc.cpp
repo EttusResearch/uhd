@@ -541,7 +541,7 @@ public:
             : db_eeprom.count("serial")  ? bytes_to_str(db_eeprom.at("serial"))
                                          : "";
         usrp_info["rx_id"] = db_eeprom.count("rx_id")
-                                 ? bytes_to_str(db_eeprom.at("rx_id"))
+                ? bytes_to_str(db_eeprom.at("rx_id"))
                              : db_eeprom.count("pid") ? bytes_to_str(db_eeprom.at("pid"))
                                                       : "";
 
@@ -581,7 +581,7 @@ public:
             : db_eeprom.count("serial")  ? bytes_to_str(db_eeprom.at("serial"))
                                          : "";
         usrp_info["tx_id"] = db_eeprom.count("tx_id")
-                                 ? bytes_to_str(db_eeprom.at("tx_id"))
+                ? bytes_to_str(db_eeprom.at("tx_id"))
                              : db_eeprom.count("pid") ? bytes_to_str(db_eeprom.at("pid"))
                                                       : "";
 
@@ -632,7 +632,22 @@ public:
                 break;
 
             case tune_request_t::POLICY_MANUAL:
-                target_rf_freq = rf_freq_range.clip(tune_request.rf_freq);
+                if ((tune_request.dsp_freq_policy == tune_request_t::POLICY_AUTO)
+                    && (dsp_freq_range.size() == 1) && dsp_freq_range.stop() == 0) {
+                    /* Hardware does not incl. DSP chain 
+                     * (dsp_freq_range only has single item, with value 0), 
+                     * requested dsp frequency will be combined with rf frequency.
+                     * The case to handle uses MANUAL rf_freq_policy and
+                     * AUTOMATIC dsp_freq_policy */
+                    UHD_LOGGER_WARNING("MULTI_USRP")
+                        << boost::format("No DSP capabilities detected. Combining offset "
+                                         "into target frequency of %.3fMHz")
+                               % (clipped_requested_freq / 1e6);
+                    target_rf_freq = clipped_requested_freq;
+                } else {
+                    /* Normal manual mode observing individual tune requests*/
+                    target_rf_freq = rf_freq_range.clip(tune_request.rf_freq);
+                }
                 break;
 
             case tune_request_t::POLICY_NONE:
@@ -648,6 +663,9 @@ public:
             set_rf_freq(target_rf_freq);
         }
         const double actual_rf_freq = get_rf_freq();
+
+        UHD_LOGGER_TRACE("MULTI_USRP")
+            << "Actual RF Freq: " + std::to_string(actual_rf_freq / 1e6) + "MHz";
 
         //------------------------------------------------------------------
         //-- Set the DSP frequency depending upon the DSP frequency policy.
@@ -689,6 +707,8 @@ public:
             set_dsp_freq(target_dsp_freq);
         }
         const double actual_dsp_freq = get_dsp_freq();
+        UHD_LOGGER_TRACE("MULTI_USRP")
+            << "Actual DSP Freq: " + std::to_string(actual_dsp_freq / 1e6) + "MHz";
 
         //------------------------------------------------------------------
         //-- Load and return the tune result
@@ -817,25 +837,29 @@ public:
 
     time_spec_t get_time_now(size_t mboard = 0) override
     {
-        return _radios[mboard][0]->get_time_now();
+        return _get_time_now(mboard);
     }
 
     time_spec_t get_time_last_pps(size_t mboard = 0) override
     {
-        return _get_mbc(mboard)->get_timekeeper(0)->get_time_last_pps();
+        return _get_time_last_pps(mboard);
     }
 
     void set_time_now(const time_spec_t& time_spec, size_t mboard = ALL_MBOARDS) override
     {
         MUX_MB_API_CALL(set_time_now, time_spec);
-        _get_mbc(mboard)->get_timekeeper(0)->set_time_now(time_spec);
+        for (size_t tk = 0; tk < _get_mbc(mboard)->get_num_timekeepers(); tk++) {
+            _get_mbc(mboard)->get_timekeeper(tk)->set_time_now(time_spec);
+        }
     }
 
     void set_time_next_pps(
         const time_spec_t& time_spec, size_t mboard = ALL_MBOARDS) override
     {
         MUX_MB_API_CALL(set_time_next_pps, time_spec);
-        _get_mbc(mboard)->get_timekeeper(0)->set_time_next_pps(time_spec);
+        for (size_t tk = 0; tk < _get_mbc(mboard)->get_num_timekeepers(); tk++) {
+            _get_mbc(mboard)->get_timekeeper(tk)->set_time_next_pps(time_spec);
+        }
     }
 
     void set_time_unknown_pps(const time_spec_t& time_spec) override
@@ -857,28 +881,37 @@ public:
         std::this_thread::sleep_for(1s);
 
         // verify that the time registers are read to be within a few RTT
-        for (size_t m = 1; m < get_num_mboards(); m++) {
-            time_spec_t time_0 = this->get_time_now(0);
-            time_spec_t time_i = this->get_time_now(m);
-            // 10 ms: greater than RTT but not too big
-            if (time_i < time_0 or (time_i - time_0) > time_spec_t(0.01)) {
-                UHD_LOGGER_WARNING("MULTI_USRP")
-                    << boost::format(
-                           "Detected time deviation between board %d and board 0.\n"
-                           "Board 0 time is %f seconds.\n"
-                           "Board %d time is %f seconds.\n")
-                           % m % time_0.get_real_secs() % m % time_i.get_real_secs();
+        // TODO: This code is similar to the check implemented
+        //       in mb_controller::synchronize >> sync_tks
+        //       maybe we can find a way to single source this
+        for (size_t m = 0; m < get_num_mboards(); m++) {
+            for (size_t tk = 0; tk < _get_mbc(m)->get_num_timekeepers(); tk++) {
+                time_spec_t time_0 = this->_get_time_now(0, 0);
+                time_spec_t time_i = this->_get_time_now(m, tk);
+                // 10 ms: greater than RTT but not too big
+                if (time_i < time_0 or (time_i - time_0) > time_spec_t(0.01)) {
+                    UHD_LOGGER_WARNING("MULTI_USRP")
+                        << boost::format("Detected time deviation between board %1%/TK "
+                                         "%2% and board 0.\n"
+                                         "Board 0/TK 0 time is %3% seconds.\n"
+                                         "Board %1%/TK %2% time is %4% seconds.\n")
+                               % m % tk % time_0.get_real_secs() % time_i.get_real_secs();
+                }
             }
         }
     }
 
     bool get_time_synchronized(void) override
     {
-        for (size_t m = 1; m < get_num_mboards(); m++) {
-            time_spec_t time_0 = this->get_time_now(0);
-            time_spec_t time_i = this->get_time_now(m);
-            if (time_i < time_0 or (time_i - time_0) > time_spec_t(0.01)) {
-                return false;
+        // verify that the time registers are read to be within a few RTT
+        for (size_t m = 0; m < get_num_mboards(); m++) {
+            for (size_t tk = 0; tk < _get_mbc(m)->get_num_timekeepers(); tk++) {
+                time_spec_t time_0 = this->_get_time_now(0, 0);
+                time_spec_t time_i = this->_get_time_now(m, tk);
+                // 10 ms: greater than RTT but not too big
+                if (time_i < time_0 or (time_i - time_0) > time_spec_t(0.01)) {
+                    return false;
+                }
             }
         }
         return true;
@@ -2608,6 +2641,20 @@ private:
                 std::string("Invalid TX channel: ") + std::to_string(chan));
         }
         return _tx_chans.at(chan);
+    }
+
+    // private function to query multiple timekeepers
+    time_spec_t _get_time_now(size_t mboard = 0, size_t timekeeper = 0)
+    {
+        // second parameter is called slot in definition of _radio
+        // on most devices the timekeeper in all slots/db are the same
+        return _radios[mboard][timekeeper]->get_time_now();
+    }
+
+    // private function to query multiple timekeepers
+    time_spec_t _get_time_last_pps(size_t mboard = 0, size_t timekeeper = 0)
+    {
+        return _get_mbc(mboard)->get_timekeeper(timekeeper)->get_time_last_pps();
     }
 
     std::vector<graph_edge_t> _connect_rx_chains(std::vector<size_t> chans)

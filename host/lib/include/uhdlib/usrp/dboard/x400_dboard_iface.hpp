@@ -51,12 +51,12 @@ public:
     //! Returns the RFdc converter rate, i.e., the rate at which the converters
     //! are clocked. May be different from the actual sampling rate, if the RFdc
     //! resamplers are enabled.
-    virtual double get_converter_rate() = 0;
+    virtual double get_converter_rate() const = 0;
 
     //! Returns the number of rx channels on the daughterboard
-    virtual size_t get_num_rx_channels() = 0;
+    virtual size_t get_num_rx_channels() const = 0;
     //! Returns the number of tx channels on the daughterboard
-    virtual size_t get_num_tx_channels() = 0;
+    virtual size_t get_num_tx_channels() const = 0;
 };
 
 }}} // namespace uhd::usrp::x400

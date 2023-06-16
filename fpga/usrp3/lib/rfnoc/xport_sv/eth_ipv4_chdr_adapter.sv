@@ -259,10 +259,10 @@ module eth_ipv4_chdr_adapter #(
   //---------------------------------------
 
   //   tUser = {*not used*}
-  AxiStreamIf #(.DATA_WIDTH(CHDR_W),.USER_WIDTH(ENET_USER_W),.TKEEP(0))
+  AxiStreamIf #(.DATA_WIDTH(CHDR_W),.USER_WIDTH(CHDR_USER_W),.TKEEP(0))
     v2e1D(v2e.clk,v2e.rst);
   //   tUser = {*not used*}
-  AxiStreamIf #(.DATA_WIDTH(CHDR_W),.USER_WIDTH(ENET_USER_W),.TKEEP(0))
+  AxiStreamIf #(.DATA_WIDTH(CHDR_W),.USER_WIDTH(CHDR_USER_W),.TKEEP(0))
     v2e1(v2e.clk,v2e.rst);
   //   tUser = {*not used*}
   AxiStreamIf #(.DATA_WIDTH(ENET_W),.USER_WIDTH(ENET_USER_W),.TKEEP(0))

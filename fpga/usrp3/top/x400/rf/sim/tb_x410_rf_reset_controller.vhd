@@ -3,11 +3,11 @@
 --
 -- SPDX-License-Identifier: LGPL-3.0-or-later
 --
--- Module: tb_rf_reset_controller
+-- Module: tb_x410_rf_reset_controller
 --
 -- Description:
 --
---   Testbench for rf_reset_controller.
+--   Testbench for x410_rf_reset_controller.
 --
 
 library IEEE;
@@ -17,13 +17,13 @@ library IEEE;
 library WORK;
   use WORK.PkgRFDC_REGS_REGMAP.all;
 
-entity tb_rf_reset_controller is
-end tb_rf_reset_controller;
+entity tb_x410_rf_reset_controller is
+end tb_x410_rf_reset_controller;
 
 
-architecture RTL of tb_rf_reset_controller is
+architecture RTL of tb_x410_rf_reset_controller is
 
-  component rf_reset_controller
+  component x410_rf_reset_controller
     port (
       ConfigClk          : in  std_logic;
       DataClk            : in  std_logic;
@@ -185,7 +185,7 @@ begin
   PllRefClk <= not PllRefClk after kPllRefClkPer/2 when not StopSim else '0';
 
   -- rAdcEnableData is a constant and is not tested.
-  dut: rf_reset_controller
+  dut: x410_rf_reset_controller
     port map (
       ConfigClk          => ConfigClk,
       DataClk            => DataClk,

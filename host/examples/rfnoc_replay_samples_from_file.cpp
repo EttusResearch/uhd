@@ -75,7 +75,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("gain", po::value<double>(&gain), "gain for the RF chain")
         ("ant", po::value<std::string>(&ant), "antenna selection")
         ("bw", po::value<double>(&bw), "analog front-end filter bandwidth in Hz")
-        ("ref", po::value<std::string>(&ref)->default_value("internal"), "reference source (internal, external, mimo)")
+        ("ref", po::value<std::string>(&ref), "clock reference (internal, external, mimo, gpsdo)")
     ;
     // clang-format on
     po::variables_map vm;

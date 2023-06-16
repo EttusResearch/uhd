@@ -12,46 +12,50 @@
 //
 // Parameters:
 //
-//   NUM_DBOARDS    : Number of daughter boards
-//   REG_DWIDTH     : Width of the AXI4-Lite data bus (must be 32 or 64)
-//   REG_AWIDTH     : Width of the address bus
-//   CHDR_CLK_RATE  : rfnoc_chdr_clk rate in Hz
-//   NUM_CHANNELS   : Total number of channels
-//   CHDR_W         : CHDR width used by RFNoC
-//   DMA_W          : Width of the DMA port interface
-//   NET_CHDR_W     : CHDR width used by the network interface ports
-//   ENET_W         : Width of the Ethernet buses (each port may have a unique
-//                    width, but all signals have equal width for simplicity).
-//   ENET_WIDTHS    : Actual width of each Ethernet port's interface. This is a
-//                    packed array of 32-bit integers with port 0 in the
-//                    right-most position.
-//   MTU            : Log2 of maximum transmission unit in CHDR_W sized words
-//   RFNOC_PROTOVER : RFNoC protocol version (major[7:0], minor[7:0])
-//   RADIO_SPC      : Number of samples per radio clock cycle
-//   RF_BANDWIDTH   : RF bandwidth of each radio channel
+//   NUM_DBOARDS     : Number of daughter boards
+//   REG_DWIDTH      : Width of the AXI4-Lite data bus (must be 32 or 64)
+//   REG_AWIDTH      : Width of the address bus
+//   CHDR_CLK_RATE   : rfnoc_chdr_clk rate in Hz
+//   NUM_CHANNELS    : Total number of channels
+//   NUM_CH_PER_DB   : Number of channels per daughterboard and radio core
+//   CHDR_W          : CHDR width used by RFNoC
+//   DMA_W           : Width of the DMA port interface
+//   NET_CHDR_W      : CHDR width used by the network interface ports
+//   ENET_W          : Width of the Ethernet buses (each port may have a unique
+//                     width, but all signals have equal width for simplicity).
+//   ENET_WIDTHS     : Actual width of each Ethernet port's interface. This is
+//                     a packed array of 32-bit integers with port 0 in the
+//                     right-most position.
+//   MTU             : Log2 of maximum transmission unit in CHDR_W sized words
+//   RFNOC_PROTOVER  : RFNoC protocol version (major[7:0], minor[7:0])
+//   RADIO_SPC       : Number of samples per radio clock cycle
+//   NUM_TIMEKEEPERS : Number of timekeepers
+//   RF_BANDWIDTH    : RF bandwidth of each radio channel
 //
 
 
 module x4xx_core #(
-  parameter            NUM_DBOARDS    = 2,
-  parameter            REG_DWIDTH     = 32,
-  parameter            REG_AWIDTH     = 32,
-  parameter            CHDR_CLK_RATE  = 200000000,
-  parameter            NUM_CHANNELS   = 4,
-  parameter            CHDR_W         = 64,
-  parameter            DMA_W          = 64,
-  parameter            NET_CHDR_W     = 64,
-  parameter [    31:0] ENET_W         = 64,
-  parameter [32*8-1:0] ENET_WIDTHS    = {8{ENET_W}},
-  parameter            MTU            = $clog2(8192 / (CHDR_W/8)),
-  parameter            RFNOC_PROTOVER = {8'd1, 8'd0},
-  parameter            RADIO_SPC      = 1,
-  parameter            RF_BANDWIDTH   = 200
+  parameter            NUM_DBOARDS     = 2,
+  parameter            REG_DWIDTH      = 32,
+  parameter            REG_AWIDTH      = 32,
+  parameter            CHDR_CLK_RATE   = 200000000,
+  parameter            NUM_CH_PER_DB   = 2,
+  parameter            NUM_CHANNELS    = NUM_CH_PER_DB*NUM_DBOARDS,
+  parameter            CHDR_W          = 64,
+  parameter            DMA_W           = 64,
+  parameter            NET_CHDR_W      = 64,
+  parameter [    31:0] ENET_W          = 64,
+  parameter [32*8-1:0] ENET_WIDTHS     = {8{ENET_W}},
+  parameter            MTU             = $clog2(8192 / (CHDR_W/8)),
+  parameter            RFNOC_PROTOVER  = {8'd1, 8'd0},
+  parameter            RADIO_SPC       = 1,
+  parameter            NUM_TIMEKEEPERS = NUM_DBOARDS,
+  parameter            RF_BANDWIDTH    = 200
 ) (
   // Clocks and resets
-  input wire radio_clk,
-  input wire radio_rst,
-  input wire radio_clk_2x,
+  input wire [NUM_DBOARDS-1:0] radio_clk,
+  input wire [NUM_DBOARDS-1:0] radio_rst,
+  input wire [NUM_DBOARDS-1:0] radio_clk_2x,
 
   input wire rfnoc_chdr_clk,
   input wire rfnoc_chdr_rst,
@@ -116,7 +120,7 @@ module x4xx_core #(
   input                     s_axi_rready,
 
   // PPS and Clock Control
-  input         pps_radioclk,
+  input  [ 1:0] pps_radioclk,
   output [ 1:0] pps_select,
   output [ 1:0] trig_io_select,
   output        pll_sync_trigger,
@@ -124,7 +128,8 @@ module x4xx_core #(
   input         pll_sync_done,
   output [ 7:0] pps_brc_delay,
   output [25:0] pps_prc_delay,
-  output [ 1:0] prc_rc_divider,
+  output [ 1:0] prc_rc0_divider,
+  output [ 1:0] prc_rc1_divider,
   output        pps_rc_enabled,
 
   // Radio Data
@@ -189,8 +194,8 @@ module x4xx_core #(
   input         fpga_aux_ref,
 
   // Radio Control Ports
-  output wire [63:0] radio_time,
-  output wire        radio_time_stb,
+  output wire [64*NUM_TIMEKEEPERS-1:0] radio_time,
+  output wire [   NUM_TIMEKEEPERS-1:0] radio_time_stb,
 
   output wire [  1*NUM_DBOARDS-1:0] m_ctrlport_radio_req_wr,
   output wire [  1*NUM_DBOARDS-1:0] m_ctrlport_radio_req_rd,
@@ -295,11 +300,13 @@ module x4xx_core #(
   wire [ 32*NUM_DBOARDS-1:0] ctrlport_radio_resp_data;
 
   x4xx_core_common #(
-    .CHDR_CLK_RATE  (CHDR_CLK_RATE),
-    .CHDR_W         (NET_CHDR_W),
-    .RFNOC_PROTOVER (RFNOC_PROTOVER),
-    .NUM_DBOARDS    (NUM_DBOARDS),
-    .PCIE_PRESENT   (0)
+    .CHDR_CLK_RATE   (CHDR_CLK_RATE),
+    .CHDR_W          (NET_CHDR_W),
+    .RFNOC_PROTOVER  (RFNOC_PROTOVER),
+    .NUM_DBOARDS     (NUM_DBOARDS),
+    .NUM_CH_PER_DB   (NUM_CH_PER_DB),
+    .NUM_TIMEKEEPERS (NUM_TIMEKEEPERS),
+    .PCIE_PRESENT    (0)
   ) x4xx_core_common_i (
     .radio_clk                        (radio_clk),
     .radio_clk_2x                     (radio_clk_2x),
@@ -331,7 +338,8 @@ module x4xx_core #(
     .pll_sync_done                    (pll_sync_done),
     .pps_brc_delay                    (pps_brc_delay),
     .pps_prc_delay                    (pps_prc_delay),
-    .prc_rc_divider                   (prc_rc_divider),
+    .prc_rc0_divider                  (prc_rc0_divider),
+    .prc_rc1_divider                  (prc_rc1_divider),
     .pps_rc_enabled                   (pps_rc_enabled),
     .radio_spc                        (RADIO_SPC),
     .radio_time                       (radio_time),
@@ -548,8 +556,31 @@ module x4xx_core #(
   // RFNoC Image Core
   //---------------------------------------------------------------------------
 
-  // Calculate how may bits wide each channel is
+  // Calculate how many bits wide each channel is
   localparam CHAN_W = 32 * RADIO_SPC;
+  wire [NUM_CH_PER_DB-1:0]        rx_stb0, rx_stb1;
+  wire [NUM_CH_PER_DB-1:0]        tx_stb0, tx_stb1;
+  wire [NUM_CH_PER_DB-1:0]        rx_running0, rx_running1;
+  wire [NUM_CH_PER_DB-1:0]        tx_running0, tx_running1;
+  wire [CHAN_W*NUM_CH_PER_DB-1:0] rx_data0, rx_data1;
+  wire [CHAN_W*NUM_CH_PER_DB-1:0] tx_data0, tx_data1;
+
+  // Separate out signals to the radio blocks, 1 per dboard, 2 assumed dboards
+  // [signal name]0 is lower half of a signal, and [signal name]1 is top half
+  // ex: rx_stb is 1 bit per channel with a width of NUM_CHANNELS
+  //     rx_stb0 is lower half, NUM_CH_PER_DB-1:0
+  //     rx_stb1 is top half, starting at NUM_CH_PER_DB
+  // Datapaths follow the same pattern but with CHAN_W factored in
+  // output paths can just concatenate top/bottom half signals
+  assign rx_stb0    = rx_stb[NUM_CH_PER_DB*0+:NUM_CH_PER_DB];
+  assign rx_stb1    = rx_stb[NUM_CH_PER_DB*1+:NUM_CH_PER_DB];
+  assign rx_running = { rx_running1, rx_running0};
+  assign rx_data0   = rx_data[CHAN_W*NUM_CH_PER_DB*0+:CHAN_W*NUM_CH_PER_DB];
+  assign rx_data1   = rx_data[CHAN_W*NUM_CH_PER_DB*1+:CHAN_W*NUM_CH_PER_DB];
+  assign tx_stb0    = tx_stb[NUM_CH_PER_DB*0+:NUM_CH_PER_DB];
+  assign tx_stb1    = tx_stb[NUM_CH_PER_DB*1+:NUM_CH_PER_DB];
+  assign tx_running = { tx_running1, tx_running0};
+  assign tx_data    = { tx_data1, tx_data0};
 
   localparam PORT_W  = 512;  // Set to max value; unused bits will be ignored.
   localparam ENET0_W = ENET_WIDTHS[32*0 +: 32];
@@ -574,8 +605,8 @@ module x4xx_core #(
     .chdr_aclk                      (rfnoc_chdr_clk),
     .ctrl_aclk                      (rfnoc_ctrl_clk),
     .core_arst                      (rfnoc_ctrl_rst),
-    .radio_clk                      (radio_clk),
-    .radio_2x_clk                   (radio_clk_2x),
+    .radio_clk                      (radio_clk[0]),
+    .radio_2x_clk                   (radio_clk_2x[0]),
     .dram_clk                       (dram_clk),
     .device_id                      (device_id),
     .m_ctrlport_radio0_req_wr       (ctrlport_radio_req_wr      [0* 1+: 1]),
@@ -598,19 +629,19 @@ module x4xx_core #(
     .m_ctrlport_radio1_resp_ack     (ctrlport_radio_resp_ack    [1* 1+: 1]),
     .m_ctrlport_radio1_resp_status  (ctrlport_radio_resp_status [1* 2+: 2]),
     .m_ctrlport_radio1_resp_data    (ctrlport_radio_resp_data   [1*32+:32]),
-    .radio_rx_stb_radio1            ({    rx_stb[3],                 rx_stb[2]               }),
-    .radio_rx_data_radio1           ({   rx_data[3*CHAN_W+:CHAN_W], rx_data[2*CHAN_W+:CHAN_W]}),
-    .radio_rx_running_radio1        ({rx_running[3],             rx_running[2]               }),
-    .radio_tx_stb_radio1            ({    tx_stb[3],                 tx_stb[2]               }),
-    .radio_tx_data_radio1           ({   tx_data[3*CHAN_W+:CHAN_W], tx_data[2*CHAN_W+:CHAN_W]}),
-    .radio_tx_running_radio1        ({tx_running[3],             tx_running[2]               }),
-    .radio_rx_stb_radio0            ({    rx_stb[1],                 rx_stb[0]               }),
-    .radio_rx_data_radio0           ({   rx_data[1*CHAN_W+:CHAN_W], rx_data[0*CHAN_W+:CHAN_W]}),
-    .radio_rx_running_radio0        ({rx_running[1],             rx_running[0]               }),
-    .radio_tx_stb_radio0            ({    tx_stb[1],                 tx_stb[0]               }),
-    .radio_tx_data_radio0           ({   tx_data[1*CHAN_W+:CHAN_W], tx_data[0*CHAN_W+:CHAN_W]}),
-    .radio_tx_running_radio0        ({tx_running[1],             tx_running[0]               }),
-    .radio_time                     (radio_time),
+    .radio_rx_stb_radio1            ({       rx_stb1}),
+    .radio_rx_data_radio1           ({      rx_data1}),
+    .radio_rx_running_radio1        ({   rx_running1}),
+    .radio_tx_stb_radio1            ({       tx_stb1}),
+    .radio_tx_data_radio1           ({      tx_data1}),
+    .radio_tx_running_radio1        ({   tx_running1}),
+    .radio_rx_stb_radio0            ({       rx_stb0}),
+    .radio_rx_data_radio0           ({      rx_data0}),
+    .radio_rx_running_radio0        ({   rx_running0}),
+    .radio_tx_stb_radio0            ({       tx_stb0}),
+    .radio_tx_data_radio0           ({      tx_data0}),
+    .radio_tx_running_radio0        ({   tx_running0}),
+    .radio_time                     (radio_time[0*64+:64]),
     .axi_rst                        (dram_rst),
     .m_axi_awid                     (dram_axi_awid),
     .m_axi_awaddr                   (dram_axi_awaddr),

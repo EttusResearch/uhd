@@ -32,13 +32,14 @@ from usrp_mpm.periph_manager.x4xx_periphs import QSFPModule
 from usrp_mpm.periph_manager.x4xx_periphs import get_temp_sensor
 from usrp_mpm.periph_manager.x4xx_mb_cpld import make_mb_cpld_ctrl
 from usrp_mpm.periph_manager.x4xx_clk_aux import ClockingAuxBrdControl
-from usrp_mpm.periph_manager.x4xx_clk_mgr import X4xxClockMgr
+from usrp_mpm.periph_manager.x4xx_clock_mgr import X4xxClockManager
 from usrp_mpm.periph_manager.x4xx_gps_mgr import X4xxGPSMgr
 from usrp_mpm.periph_manager.x4xx_rfdc_ctrl import X4xxRfdcCtrl
+from usrp_mpm.periph_manager.x4xx_clock_policy import get_clock_policy
 from usrp_mpm.dboard_manager.x4xx_db_iface import X4xxDboardIface
 
 
-X400_FPGA_COMPAT = (7, 9)
+X400_FPGA_COMPAT = (8, 0)
 # The compat number at which remote streaming was added:
 X400_REMOTE_STREAMING_COMPAT = (7, 9)
 X400_DEFAULT_ENABLE_PPS_EXPORT = True
@@ -174,6 +175,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
     }
     db_iface = X4xxDboardIface
     dboard_eeprom_magic = eeprom_magic
+    # Note: Daughterboard classes also carry updateable_components information.
     updateable_components = {
         'fpga': {
             'callback': "update_fpga",
@@ -190,14 +192,6 @@ class x4xx(ZynqComponents, PeriphManagerBase):
                     'oldest': (2, 0),
                 },
                 'db_gpio_ifc': {
-                    'current': (1, 0),
-                    'oldest': (1, 0),
-                },
-                'rf_core_100m': {
-                    'current': (1, 0),
-                    'oldest': (1, 0),
-                },
-                'rf_core_400m': {
                     'current': (1, 0),
                     'oldest': (1, 0),
                 },
@@ -307,8 +301,8 @@ class x4xx(ZynqComponents, PeriphManagerBase):
             self.log.warning("Failed to initialize device on boot: %s", str(ex))
 
         # Freeze the RFDC calibration by default
-        self.rfdc.set_cal_frozen(1, 1, "both")
-        self.rfdc.set_cal_frozen(1, 0, "both")
+        self.rfdc.set_cal_frozen(1, 1, "all")
+        self.rfdc.set_cal_frozen(1, 0, "all")
 
     # The parent class versions of these functions require access to self, but
     # these versions don't.
@@ -463,8 +457,9 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         # MCR, because we need the RFDC controls for that -- but they won't
         # work without clocks. So let's pick a sensible default MCR value, init
         # the clocks, and fix the MCR value later (in init()).
-        self.clk_mgr = X4xxClockMgr(
+        self.clk_mgr = X4xxClockManager(
             args,
+            clk_policy=get_clock_policy(self.mboard_info, self.dboard_infos, args, self.log),
             clk_aux_board=self._clocking_auxbrd,
             cpld_control=self.cpld_control,
             log=self.log)
@@ -492,7 +487,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         # available after the RFDC object is created.
 
         # Create control for RFDC
-        self.rfdc = X4xxRfdcCtrl(self.clk_mgr.get_spll_freq, self.log)
+        self.rfdc = X4xxRfdcCtrl(self.log)
         self._add_public_methods(
             self.rfdc, prefix="",
             filter_cb=lambda name, method: not hasattr(method, '_norpc')
@@ -672,8 +667,10 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         super(x4xx, self).tear_down()
         if self.dio_control is not None:
             self.dio_control.tear_down()
-        self.rfdc.tear_down()
-        self.clk_mgr.tear_down()
+        if self.rfdc:
+            self.rfdc.tear_down()
+        if self.clk_mgr:
+            self.clk_mgr.tear_down()
         # remove x4xx overlay
         active_overlays = self.list_active_overlays()
         self.log.trace("X4xx has active device tree overlays: {}".format(
@@ -1025,7 +1022,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         Return main refclock lock status. This is the lock status of the
         reference and sample PLLs.
         """
-        lock_status = self.clk_mgr.get_ref_locked()
+        lock_status = self.clk_mgr.clk_ctrl.get_ref_locked()
         return {
             'name': 'ref_locked',
             'type': 'BOOLEAN',
