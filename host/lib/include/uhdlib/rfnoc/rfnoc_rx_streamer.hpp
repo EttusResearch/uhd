@@ -121,7 +121,16 @@ private:
     // Callback function to disconnect
     const disconnect_fn_t _disconnect_cb;
 
+    //! True if we're in overrun handling mode. In overrun handling mode, we are
+    // not doing regular streaming, but we are trying to get the streaming back
+    // up and running after a previous overrun. This flag helps us to catch
+    // duplicate overrun messages from upstream blocks (so we don't recursively
+    // go into overrun handling).
+    // For more information on overrun handling, see the documentation for
+    // uhd::rfnoc::radio_control.
     std::atomic<bool> _overrun_handling_mode{false};
+    //! True if the last call to issue_stream_cmd() contained a 'stop' command.
+    std::atomic<bool> _last_stream_cmd_stop{false};
     size_t _overrun_channel = 0;
 };
 

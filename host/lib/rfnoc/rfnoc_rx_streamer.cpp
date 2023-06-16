@@ -126,6 +126,8 @@ void rfnoc_rx_streamer::issue_stream_cmd(const stream_cmd_t& stream_cmd)
             "single streamer will fail to time align.");
     }
 
+    _last_stream_cmd_stop = stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
+
     auto cmd        = stream_cmd_action_info::make(stream_cmd.stream_mode);
     cmd->stream_cmd = stream_cmd;
 
@@ -154,7 +156,7 @@ bool rfnoc_rx_streamer::check_topology(const std::vector<size_t>& connected_inpu
 
 void rfnoc_rx_streamer::_handle_overrun()
 {
-    if (_overrun_handling_mode) {
+    if (_overrun_handling_mode && !_last_stream_cmd_stop) {
         RFNOC_LOG_TRACE("Requesting restart from overrun-reporting node...");
         post_action({res_source_info::INPUT_EDGE, _overrun_channel},
             action_info::make(ACTION_KEY_RX_RESTART_REQ));
@@ -276,7 +278,7 @@ void rfnoc_rx_streamer::_handle_rx_event_action(
         for (size_t i = 0; i < get_num_input_ports(); ++i) {
             post_action({res_source_info::INPUT_EDGE, i}, stop_action);
         }
-        if (!rx_event_action->args.cast<bool>("cont_mode", false)) {
+        if (!rx_event_action->args.cast<bool>("cont_mode", false) || _last_stream_cmd_stop) {
             // If we don't need to restart, that's all we need to do. Clear this
             // flag before setting the stopped due to overrun status below to
             // avoid a potential race condition with the overrun handler.
