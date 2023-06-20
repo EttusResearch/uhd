@@ -31,6 +31,7 @@ void export_types(py::module& m)
     py::class_<stream_cmd_t>(m, "stream_cmd")
         .def(py::init<stream_cmd_t::stream_mode_t>())
         // Properties
+        .def_readwrite("stream_mode", &stream_cmd_t::stream_mode)
         .def_readwrite("num_samps", &stream_cmd_t::num_samps)
         .def_readwrite("time_spec", &stream_cmd_t::time_spec)
         .def_readwrite("stream_now", &stream_cmd_t::stream_now);
