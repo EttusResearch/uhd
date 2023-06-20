@@ -51,7 +51,7 @@ def get_continuous_tone(rate, freq, ampl, desired_size=None, max_size=None, wave
              for n in range(length)],
             dtype=numpy.complex64)
     elif waveform == 'const':
-        tone = numpy.array([1+0j,] * desired_size, dtype=numpy.complex64) * ampl
+        tone = numpy.ones(length, dtype=numpy.complex64) * ampl
     else:
         raise KeyError(f"Invalid waveform type: `{waveform}'")
 
