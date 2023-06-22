@@ -28,7 +28,7 @@ Using a USB-based device?
 
 Install the MSVC Redistributable Package:
 
-- Download <a href="http://www.microsoft.com/downloads/en/details.aspx?FamilyID=a7b7a05e-6de6-4d3a-a423-37bf0912db84
+- Download <a href="https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2015-2017-2019-and-2022
 ">MSVC Redistributable Package</a>
 
 \subsection install_win_source Building from source
