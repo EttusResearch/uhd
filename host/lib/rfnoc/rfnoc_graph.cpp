@@ -1107,5 +1107,5 @@ rfnoc_graph::sptr rfnoc_graph::make(const uhd::device_addr_t& device_addr)
         throw uhd::key_error(std::string("No RFNoC devices found for ----->\n")
                              + device_addr.to_pp_string());
     }
-    return std::make_shared<rfnoc_graph_impl>(dev, device_addr);
+    return detail::make_rfnoc_graph(dev, device_addr);
 }
