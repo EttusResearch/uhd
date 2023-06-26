@@ -171,7 +171,16 @@ void export_stream(py::module& m)
         .def("recv_async_msg",
             &wrap_recv_async_msg,
             py::arg("async_metadata"),
+            py::arg("timeout") = 0.1)
+        .def("recv_async_msg", [](tx_streamer& self, const double timeout) -> py::object {
+                uhd::async_metadata_t md;
+                if (self.recv_async_msg(md, timeout)) {
+                    return py::cast(md);
+                }
+                return py::cast(nullptr);
+            },
             py::arg("timeout") = 0.1);
+
 }
 
 #endif /* INCLUDED_UHD_STREAM_PYTHON_HPP */
