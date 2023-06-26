@@ -10,6 +10,7 @@
 
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/dict.hpp>
+#include <uhd/types/direction.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <pybind11/stl.h>
 #include <map>
@@ -128,6 +129,15 @@ void export_types(py::module& m)
 
     m.def("separate_device_addr", &uhd::separate_device_addr);
     m.def("combine_device_addrs", &uhd::combine_device_addrs);
+
+    py::enum_<uhd::direction_t>(m, "direction_t")
+        .value("RX_DIRECTION", uhd::direction_t::RX_DIRECTION)
+        .value("TX_DIRECTION", uhd::direction_t::TX_DIRECTION)
+        .value("DX_DIRECTION", uhd::direction_t::DX_DIRECTION)
+
+
+        ;
+
 }
 
 #endif /* INCLUDED_UHD_TYPES_PYTHON_HPP */
