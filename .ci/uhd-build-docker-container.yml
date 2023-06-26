@@ -21,35 +21,11 @@ pr:
     - .ci/uhd-build-docker-container.yml
 
 schedules:
-- cron: "0 18 * * SAT"
+- cron: "0 18 * * WED,SAT"
   displayName: Weekly Docker Build master branch
   branches:
     include:
     - master
-  always: true
-- cron: "0 22 * * SAT"
-  displayName: Weekly Docker Build UHD-4.1 branch
-  branches:
-    include:
-    - UHD-4.1
-  always: true
-- cron: "0 2 * * SUN"
-  displayName: Weekly Docker Build UHD-4.2 branch
-  branches:
-    include:
-    - UHD-4.2
-  always: true
-- cron: "0 4 * * SUN"
-  displayName: Weekly Docker Build UHD-4.3 branch
-  branches:
-    include:
-    - UHD-4.3
-  always: true
-- cron: "0 6 * * SUN"
-  displayName: Weekly Docker Build UHD-4.4 branch
-  branches:
-    include:
-    - UHD-4.4
   always: true
 
 variables:
