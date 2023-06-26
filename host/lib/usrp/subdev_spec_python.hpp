@@ -26,7 +26,10 @@ void export_subdev_spec(py::module& m)
 
         // Methods
         .def("__str__", &subdev_spec_t::to_pp_string)
-        .def("to_string", &subdev_spec_t::to_string);
+        .def("to_string", &subdev_spec_t::to_string)
+        .def("__getitem__", [](subdev_spec_t& self, const size_t idx) { return self.at(idx); })
+
+        ;
 }
 
 #endif /* INCLUDED_UHD_USRP_SUBDEV_SPEC_PYTHON_HPP */
