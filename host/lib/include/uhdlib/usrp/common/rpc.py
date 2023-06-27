@@ -89,6 +89,7 @@ IFACES = [
         fn_from_string("double get_spll_freq()"),
         fn_from_string("void setup_threshold(size_t db_number, size_t chan, size_t threshold_block, const std::string& mode, size_t delay, size_t under, size_t over)"),
         fn_from_string("bool is_db_gpio_ifc_present(size_t db_idx)"),
+        fn_from_string("std::vector<std::map<std::string, std::string>> pop_host_tasks(const std::string& task)"),
 
         # Digital I/O functions
         fn_from_string("void dio_set_voltage_level(const std::string& port, const std::string& level)"),

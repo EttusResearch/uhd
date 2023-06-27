@@ -175,6 +175,11 @@ public:
         return spll_map.at(mcr);
     }
 
+    std::vector<std::map<std::string, std::string>> pop_host_tasks(const std::string&)
+    {
+        return {};
+    }
+
     void enable_iq_swap(const bool, const std::string&, const size_t) override
     {
         // nop

@@ -1087,3 +1087,15 @@ class x4xx(ZynqComponents, PeriphManagerBase):
             {self.get_gps_survey_sensor()}
             {self.get_gps_phase_lock_sensor()}
         """
+
+    ###########################################################################
+    # Helpers
+    ###########################################################################
+    def pop_host_tasks(self, task):
+        """
+        Queries all known sources of host tasks and returns a list of dicts
+        that can be used for parameterization of the requested task. Depending
+        on the return value of this, the host can trigger tasks. Currently we
+        only have such tasks in the clock manager.
+        """
+        return self.clk_mgr.pop_host_tasks(task)

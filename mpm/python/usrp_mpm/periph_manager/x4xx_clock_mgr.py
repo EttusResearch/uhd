@@ -125,6 +125,12 @@ class X4xxClockManager:
                  log):
         self.log = log.getChild("ClkMgr")
         self._clocking_auxbrd = clk_aux_board
+        # Number of daughterboards (set later from RFDC CTRL)
+        self.num_dboards = 2
+        # Tasks to be executed by the host if queried
+        self.tasks = {}
+        self.skip_adc_selfcal = False
+
         if self._clocking_auxbrd:
             self._safe_sync_source = {
                 'clock_source': self.X400_DEFAULT_CLOCK_SOURCE,
@@ -257,6 +263,9 @@ class X4xxClockManager:
         self.rfdc = rfdc
         # Update the policy with new info on the FPGA image:
         self.clk_policy.set_dsp_info(self.rfdc.get_dsp_info())
+        self.num_dboards = len(self.rfdc.get_dsp_info())
+        for db in range(self.num_dboards):
+            self.tasks[f"db{db}_ADCSelfCal"] = []
 
         # Now do the full MCR init for the first time. When this is done, all
         # the clocks will be ticking. Now, the policy should know about the
@@ -322,6 +331,9 @@ class X4xxClockManager:
         args['clock_source'] = args.get('clock_source', self.X400_DEFAULT_CLOCK_SOURCE)
         args['time_source'] = args.get('time_source', self.X400_DEFAULT_TIME_SOURCE)
         self.clk_policy.args = args
+        # This flag is used to skip the self-cal that otherwise is marked as required
+        # after each clocking change
+        self.skip_adc_selfcal = args.get('skip_adc_selfcal', False)
         # This flag will be used to force a full run of the clocking initialization.
         # If False, MPM may still decide to do a full clocking initialization,
         # depending on other settings.
@@ -663,6 +675,13 @@ class X4xxClockManager:
         # the first place, so we have to start the tiles explicitely again after the
         # reconfiguration:
         self.rfdc.startup_tiles()
+        # According to PG269, self-cal coefficients get lost when calling startup_tiles().
+        # Therefore we need to mark self-cal as required again after that. May be skipped
+        # with 'skip_adc_selfcal' argument (but should be called manually then).
+        if not self.skip_adc_selfcal:
+            for db in range(self.num_dboards):
+                self.tasks[f"db{db}_ADCSelfCal"] = [{"Run":"True"}]
+
         # All settings are applied: Now bring other clocks out of reset. Note
         # that cpld and db_clock don't depend on MMCM or RFDC, but we don't need
         # them so they only come back now.
@@ -1039,6 +1058,16 @@ class X4xxClockManager:
         self.log.trace("Aggregating sync data...")
         return {} if not collated_sync_data else collated_sync_data[0]
 
+    ###########################################################################
+    # Helpers
+    ###########################################################################
+    @no_rpc
+    def pop_host_tasks(self, task):
+        """
+        Returns if a task should be executed by the host. Self-Cal is a task
+        to begin with.
+        """
+        return self.tasks.pop(task,[])
 
     ###########################################################################
     # Top-level BIST APIs

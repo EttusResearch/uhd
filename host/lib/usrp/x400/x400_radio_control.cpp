@@ -257,6 +257,41 @@ x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
                 "least version 7.7 to use SPI.");
         }
     }
+
+    uhd::rfnoc::mb_controller::sync_source_updater_t self_cal_runner =
+        [&](const uhd::rfnoc::mb_controller::sync_source_t&) {
+            auto self_cal_req = _rpcc->pop_host_tasks(
+                "db" + std::to_string(get_block_id().get_block_count()) + "_ADCSelfCal");
+            if (self_cal_req.size() > 0) {
+                if (has_feature<uhd::features::adc_self_calibration_iface>()) {
+                    RFNOC_LOG_INFO("Clocking reconfigured, running ADC Self Cal on DB"
+                                   << get_block_id().get_block_count() << "...");
+                    size_t num_calibrations = 0;
+                    auto& self_cal =
+                        get_feature<uhd::features::adc_self_calibration_iface>();
+                    const size_t num_channels = get_num_output_ports();
+                    for (size_t i = 0; i < num_channels; i++) {
+                        RFNOC_LOG_INFO("Calibrating channel " << i << "...");
+                        self_cal.run(i);
+                        num_calibrations++;
+                    }
+                    if (num_calibrations > 0) {
+                        RFNOC_LOG_DEBUG(
+                            "Calibrated " << num_calibrations << " channels.");
+                    } else {
+                        RFNOC_LOG_WARNING("Did not find any channels to calibrate!");
+                    }
+                } else {
+                    RFNOC_LOG_WARNING(
+                        "Clocking reconfigured, ADC Self Cal requested for DB"
+                        << get_block_id().get_block_count()
+                        << " but ADC Self Cal feature not available.");
+                }
+            }
+        };
+
+    self_cal_runner("");
+    get_mb_controller()->register_sync_source_updater(self_cal_runner);
 }
 
 void x400_radio_control_impl::_init_prop_tree()
