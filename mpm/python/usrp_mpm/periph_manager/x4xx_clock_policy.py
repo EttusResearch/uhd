@@ -337,7 +337,7 @@ class X440ClockPolicy(X4xxClockPolicy):
     it uses the flexibility of the LMK04832 much more.
     """
 
-    DEFAULT_MASTER_CLOCK_RATE = 500e6
+    DEFAULT_MASTER_CLOCK_RATE = 368.64e6
 
     def __init__(self, mboard_info, dboard_infos, args, log):
         self.log = log.getChild('Clk_Policy')
