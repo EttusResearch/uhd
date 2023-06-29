@@ -6907,11 +6907,11 @@ Control registers for PPS generation.
               <td>
                 <p><span class="name"><a name="GLOBAL_REGS_REGMAP|PPS_CTRL_REG|PPS_RC_ENABLED"></a>PPS_RC_ENABLED</span><span class="attr"> </span></p>
                 <p>Enables the PPS signal in radio clock domain. Please make sure that
-          the values of <a href="#GLOBAL_REGS_REGMAP|CLOCK_CTRL_REG|PPS_BRC_DELAY">PPS_BRC_DELAY</a>, <a href="#GLOBAL_REGS_REGMAP|PPS_CTRL_REG|PPS_PRC_DELAY">PPS_PRC_DELAY</a> and @.PRC_RC_DIVIDER are
-          set before enabling this bit. It is recommended to disable the PPS
-          for changes on the other values. Use a wait time of at least 1 second
-          before changing this value to ensure the values are stable for the
-          next PPS edge.</p>
+          the values of <a href="#GLOBAL_REGS_REGMAP|CLOCK_CTRL_REG|PPS_BRC_DELAY">PPS_BRC_DELAY</a>, <a href="#GLOBAL_REGS_REGMAP|PPS_CTRL_REG|PPS_PRC_DELAY">PPS_PRC_DELAY</a>, <a href="#GLOBAL_REGS_REGMAP|PPS_CTRL_REG|PRC_RC0_DIVIDER">PRC_RC0_DIVIDER</a> and
+          <a href="#GLOBAL_REGS_REGMAP|PPS_CTRL_REG|PRC_RC1_DIVIDER">PRC_RC1_DIVIDER</a> are set before enabling this bit. It is recommended
+          to disable the PPS for changes on the other values. Use a wait time of
+          at least 1 second before changing this value to ensure the values are
+          stable for the next PPS edge.</p>
             
               </td>
             </tr>
@@ -7300,7 +7300,7 @@ Total Offset =</td></tr>
 
 <div class="info">
 
-RESERVED. This register is not implemented on X4xx. GPS is connected 
+RESERVED. This register is not implemented on X4xx. GPS is connected
         to the PS via a UART.
 
 </div>
@@ -7382,7 +7382,7 @@ Total Offset =</td></tr>
 
 <div class="info">
 
-RESERVED. This register is not implemented on X4xx. GPS is connected 
+RESERVED. This register is not implemented on X4xx. GPS is connected
         to the PS via a UART.
 
 </div>
