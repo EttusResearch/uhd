@@ -611,6 +611,41 @@ class X4xxClockManager:
             if 'db_clock' in reset_list:
                 self._set_reset_db_clocks(value)
 
+    def _configure_clock_chain(self, clk_settings, time_source, ref_clk_freq):
+        """
+        Configures clocking chain (RPLL -> SPLL -> MMCM) with given clock
+        settings. This function does not reset the RFDC, so that its
+        startup can be controlled independently.
+
+        This configuration takes 1-3 seconds, depending on the configuration
+        and the previous state of the clocks.
+
+        Arguments:
+        clk_settings -- A clock settings object to be applied.
+        time_source -- The current time source
+        """
+        # Reset everything downstream from SPLL
+        self._reset_clocks(True, ('mmcm', 'rfdc', 'cpld', 'db_clock'))
+        # The following call will return only when the SPLL successfully locks
+        # to the new settings:
+        self.clk_ctrl.config_spll(clk_settings.spll_config)
+        # When the SPLL is configured and locked, its output dividers are
+        # synchronized (share a common flank). Next, we need to synchronize the
+        # R-dividers to the common PPS signals. Because we need to wait for the
+        # PPS, this function may take > 1s to execute, worst-case.
+        self.clk_ctrl.sync_spll_clocks(
+            "internal_pps" if time_source == self.TIME_SOURCE_INTERNAL else "external_pps",
+            ref_clk_freq)
+        # At this point the SPLL is sync'd in time and frequency to the reference.
+        # From now on, no-one will be touching the SPLL until we call
+        # set_master_clock_rate() again.
+        # Bring MMCM out of reset, and reconfigure. The MMCM lock status
+        # is monitored at the end of the MMCM DRP access, as it is required
+        # for the MMCM to report the DRP configuration as complete.
+        self.rfdc.reset_mmcm(reset=False, check_locked=False)
+        self.rfdc.rfdc_update_mmcm_regs()
+        self._config_mmcm(clk_settings)
+
 
     ###########################################################################
     # Public APIS, but not MPM APIs (these can be called by x4xx or the
@@ -650,27 +685,8 @@ class X4xxClockManager:
         master_clock_rates = self.clk_policy.coerce_mcr(master_clock_rates)
         clk_settings = self.clk_policy.get_config(
             self.get_ref_clock_freq(), master_clock_rates)
-        # Reset everything downstream from SPLL
-        self._reset_clocks(True, ('mmcm', 'rfdc', 'cpld', 'db_clock'))
-        # The following call will return only when the SPLL successfully locks
-        # to the new settings:
-        self.clk_ctrl.config_spll(clk_settings.spll_config)
-        # When the SPLL is configured and locked, its output dividers are
-        # synchronized (share a common flank). Next, we need to synchronize the
-        # R-dividers to the common PPS signals. Because we need to wait for the
-        # PPS, this function may take > 1s to execute, worst-case.
-        self.clk_ctrl.sync_spll_clocks(
-            "internal_pps" if self._time_source == self.TIME_SOURCE_INTERNAL else "external_pps",
-            self.get_ref_clock_freq())
-        # At this point the SPLL is sync'd in time and frequency to the reference.
-        # From now on, no-one will be touching the SPLL until we call
-        # set_master_clock_rate() again.
-        # Bring MMCM out of reset, and reconfigure. The MMCM lock status
-        # is monitored at the end of the MMCM DRP access, as it is required
-        # for the MMCM to report the DRP configuration as complete.
-        self.rfdc.reset_mmcm(reset=False, check_locked=False)
-        self.rfdc.rfdc_update_mmcm_regs()
-        self._config_mmcm(clk_settings)
+        self._configure_clock_chain(
+            clk_settings, self.get_time_source(), self.get_ref_clock_freq())
         # Bring RFDC out of reset, reset tiles and reconfigure RFDC
         self._reset_clocks(False, ('rfdc',))
         self.rfdc.reset_tiles()
@@ -695,7 +711,6 @@ class X4xxClockManager:
         # be called after sync_spll_clocks() was called.
         for tk_idx, mcr in enumerate(master_clock_rates):
             self.clk_ctrl.configure_pps_forwarding(tk_idx, True, mcr)
-
 
     @no_rpc
     def get_master_clock_rate(self, db_idx=0):
@@ -906,7 +921,19 @@ class X4xxClockManager:
             # Re-set master clock rate. If this doesn't work, it will time out
             # and throw an exception. We need to put the device back into a safe
             # state in that case.
-            self.set_master_clock_rate(self._master_clock_rates)
+            interm_clk_settings = self.clk_policy.get_intermediate_clk_settings(
+                    self.get_ref_clock_freq(),
+                    self._master_clock_rates,
+                    master_clock_rates)
+            if interm_clk_settings:
+                self.log.debug( "Applying intermediate clock settings.")
+                self._configure_clock_chain(interm_clk_settings,
+                                            self.get_time_source(),
+                                            self.get_ref_clock_freq())
+                # Note that set_master_clock_rate() will also configure the
+                # clock chain, so if we had an intermediate settting, it will
+                # be overwritten immediately.
+            self.set_master_clock_rate(master_clock_rates)
             # Restore the nco frequency to the same values as before the sync source
             # was changed, to ensure the device transmission/acquisition continues at
             # the requested frequency.
