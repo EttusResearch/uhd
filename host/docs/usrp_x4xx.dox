@@ -34,10 +34,10 @@
 - RF Capabilities:
   - USRP X410: 4x full-duplex RF channels with a maximum analog bandwidth of
     400 MHz, tunable from 1 MHz - 7.2 GHz center frequency (tunable to 8 GHz)
-    using \ref page_zbx
+    using \subpage page_zbx
   - USRP X440: 8x full-duplex direct-sampling channels, configurable center
     frequencies 30 MHz - 4 GHz (tunable 1 MHz - 4 GHz), with a maximum sampling
-    rate of 2048 Msps, using \ref page_fbx
+    rate of 2048 Msps, using \subpage page_fbx
 
 \section x4xx_overview Overview and Features
 
