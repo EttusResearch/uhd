@@ -170,7 +170,6 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         'fan0': 'get_fan0_sensor',
         'fan1': 'get_fan1_sensor',
         'temp_fpga' : 'get_fpga_temp_sensor',
-        'temp_internal' : 'get_internal_temp_sensor',
         'temp_main_power' : 'get_main_power_temp_sensor',
         'temp_scu_internal' : 'get_scu_internal_temp_sensor',
     }
@@ -1048,16 +1047,6 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         """ Get temperature sensor reading of STM32 SCU's internal sensor. """
         self.log.trace("Reading SCU internal temperature.")
         return get_temp_sensor(["EC Internal"], log=self.log)
-
-    def get_internal_temp_sensor(self):
-        """ TODO: Determine how to interpret this function """
-        self.log.warning("Reading internal temperature is not yet implemented.")
-        return {
-            'name': 'temperature',
-            'type': 'REALNUM',
-            'unit': 'C',
-            'value': '-1'
-        }
 
     def _get_fan_sensor(self, fan='fan0'):
         """ Get fan speed. """
