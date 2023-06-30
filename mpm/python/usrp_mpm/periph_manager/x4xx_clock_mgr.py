@@ -165,6 +165,7 @@ class X4xxClockManager:
         self._ext_clock_freq = None
         self._set_ref_clock_freq(
             float(args.get('ext_clock_freq', self.X400_DEFAULT_EXT_CLOCK_FREQ)),
+            self._master_clock_rates,
             update_clocks=False)
         # If there is a valid PRIREF clock signal available at the RPLL (e.g.,
         # when SyncE is being used), set this to whatever the rate of the input
@@ -359,7 +360,12 @@ class X4xxClockManager:
             if new_ext_clock_freq != self._ext_clock_freq:
                 # This will update self._ext_clock_freq and validate, but not
                 # apply the settings to hardware.
-                self._set_ref_clock_freq(new_ext_clock_freq, update_clocks=False)
+                self._set_ref_clock_freq(
+                    new_ext_clock_freq,
+                    desired_master_clock_rates \
+                            if desired_master_clock_rates \
+                            else self._master_clock_rates,
+                    update_clocks=False)
                 # Now we force an update to all clocking further down.
                 if args['clock_source'] == self.CLOCK_SOURCE_EXTERNAL:
                     if not desired_master_clock_rates:
@@ -507,7 +513,7 @@ class X4xxClockManager:
         else:
             self.log.debug("Using default values for MMCM")
 
-    def _set_ref_clock_freq(self, freq, update_clocks=True):
+    def _set_ref_clock_freq(self, freq, master_clock_rates, update_clocks=True):
         """
         Tell our USRP what the frequency of the external reference clock is.
 
@@ -518,7 +524,7 @@ class X4xxClockManager:
         if freq < self.X400_MIN_EXT_REF_FREQ or freq > self.X400_MAX_EXT_REF_FREQ:
             raise RuntimeError(
                 'External reference clock frequency is out of the valid range.')
-        self.clk_policy.validate_ref_clock_freq(freq, self._master_clock_rates)
+        self.clk_policy.validate_ref_clock_freq(freq, master_clock_rates)
         self._ext_clock_freq = freq
         # If the external source is currently selected we also need to re-apply the
         # time_source. This call also updates the dboards' rates.
@@ -891,7 +897,7 @@ class X4xxClockManager:
         try:
             self.log.debug(
                 f"Reconfiguring clock configuration for a master clock rate of "
-                f"{self._master_clock_rates}")
+                f"{master_clock_rates}")
             # Re-set master clock rate. If this doesn't work, it will time out
             # and throw an exception. We need to put the device back into a safe
             # state in that case.
