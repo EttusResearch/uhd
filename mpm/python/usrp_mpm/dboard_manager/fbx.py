@@ -27,9 +27,11 @@ class FBX(X4xxDbMixin, DboardManagerBase):
     pids = [0x4007]
     rx_sensor_callback_map = {
         'temperature': 'get_rf_temp_sensor',
+        'rfdc_rate': 'get_rfdc_rate_sensor',
     }
     tx_sensor_callback_map = {
         'temperature': 'get_rf_temp_sensor',
+        'rfdc_rate': 'get_rfdc_rate_sensor',
     }
     # FBX depends on several RF core implementations which each have
     # compat versions.
