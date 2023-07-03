@@ -377,10 +377,8 @@ class X4xxClockManager:
         # and the MCR all in one go. If we called set_master_clock_rate()
         # separately, there's a theoretical chance that we would fail to lock
         # the old MCR with the new ext_clock_freq, or vice versa.
-        if desired_master_clock_rates and \
-                tuple(desired_master_clock_rates) != tuple(self._master_clock_rates):
-            self._master_clock_rates = desired_master_clock_rates
-            force_set_mcr = True
+        if desired_master_clock_rates:
+            args['master_clock_rate'] = desired_master_clock_rates
         if desired_converter_rates and not desired_master_clock_rates:
             self.log.warning("Passing `converter_rate` argument without obligatory "
                              "`master_clock_rate` argument. Ignoring `converter_rate`.")
@@ -874,10 +872,17 @@ class X4xxClockManager:
             raise ValueError(
                 f'Clock and time source pair ({clock_source}, {time_source}) is '
                 'not a valid selection')
+        # Now figure out which master clock rate we'll be switching to. It might
+        # be the same as before.
+        master_clock_rates = args.get('master_clock_rate', self._master_clock_rates)
+        if isinstance(master_clock_rates, str):
+            master_clock_rates = parse_multi_device_arg(
+               master_clock_rates, conv=float)
+        mcr_change = tuple(master_clock_rates) != tuple(self._master_clock_rates)
         # Also check the external reference clock frequency is valid
         if clock_source == self.CLOCK_SOURCE_EXTERNAL:
             self.clk_policy.validate_ref_clock_freq(
-                self.get_ref_clock_freq(), self._master_clock_rates)
+                self.get_ref_clock_freq(), master_clock_rates)
         # Sanity checks complete. Now check if we need to disable the RefOut.
         # Reminder: RefOut and PPSIn share an SMA. Besides, you can't export an
         # external clock. We are thus not checking for time_source == 'external'
@@ -889,7 +894,7 @@ class X4xxClockManager:
                 and self._clocking_auxbrd:
             self._clocking_auxbrd.export_clock(enable=False)
         # Now configure the sync sources:
-        force_update = args.get("force_reinit", False)
+        force_update = args.get("force_reinit", False) or mcr_change
         ret_val = self._set_sync_source(clock_source, time_source, force_update)
         if ret_val == self.SetSyncRetVal.NOP and not force_update:
             self.log.debug("Skipping reconfiguration of clocks.")
