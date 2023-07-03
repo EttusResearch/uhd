@@ -150,6 +150,13 @@ class X4xxClockPolicy:
         """
         raise NotImplementedError()
 
+    def get_intermediate_clk_settings(self, ref_clk_freq, old_mcrs, new_mcrs):
+        """
+        Returns an intermediate clock settings object if going from the old to
+        the new master clock rates would fail otherwise.
+        """
+        raise NotImplementedError()
+
     def coerce_mcr(self, master_clock_rates):
         """
         Validate that the requested master clock rate is valid.
@@ -244,6 +251,13 @@ class X410ClockPolicy(X4xxClockPolicy):
         if ref_clock_freq % step_size != 0:
             raise RuntimeError(
                 'External reference clock frequency is of incorrect step size.')
+
+    def get_intermediate_clk_settings(self, ref_clk_freq, old_mcrs, new_mcrs):
+        """
+        Returns an intermediate clock settings object if going from the old to
+        the new master clock rates would fail otherwise.
+        """
+        return None
 
     def coerce_mcr(self, master_clock_rates):
         """
@@ -563,6 +577,16 @@ class X440ClockPolicy(X4xxClockPolicy):
             if mmcm_input:
                 break
         return max(mmcm_cfg), mmcm_cfg[max(mmcm_cfg)]
+
+    def get_intermediate_clk_settings(self, ref_clk_freq, old_mcrs, new_mcrs):
+        """
+        Returns an intermediate clock settings object if going from the old to
+        the new master clock rates would fail otherwise.
+        """
+        # TODO we can be smarter here -- not all transitions require this.
+        if tuple(old_mcrs) != tuple(new_mcrs):
+            return self.get_config(ref_clk_freq, [250e6, 250e6])
+        return None
 
     def coerce_mcr(self, master_clock_rates):
         """
