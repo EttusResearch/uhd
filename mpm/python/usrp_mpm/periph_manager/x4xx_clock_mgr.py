@@ -685,6 +685,12 @@ class X4xxClockManager:
         master_clock_rates = self.clk_policy.coerce_mcr(master_clock_rates)
         clk_settings = self.clk_policy.get_config(
             self.get_ref_clock_freq(), master_clock_rates)
+        self.log.debug(f"Clock Config: {clk_settings}")
+        self.log.info(f"Using Clock Configuration:\n"
+            f"DB0: Master Clock Rate: {master_clock_rates[0]/1e6} MSps "
+            f"@Converter Rate {clk_settings.rfdc_configs[0].conv_rate/1e9} GHz\n"
+            f"DB1: Master Clock Rate: {master_clock_rates[-1]/1e6} MSps "
+            f"@Converter Rate {clk_settings.rfdc_configs[1].conv_rate/1e9} GHz")
         self._configure_clock_chain(
             clk_settings, self.get_time_source(), self.get_ref_clock_freq())
         # Bring RFDC out of reset, reset tiles and reconfigure RFDC

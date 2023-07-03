@@ -763,10 +763,6 @@ class X440ClockPolicy(X4xxClockPolicy):
             'spll_config': SpllConfig(**spll_cfg)
             }
 
-        self.log.debug(f"Clock Config: {clk_config}")
-        self.log.info(f"Using Clock Configuration:\n"
-            f"DB0: Master Clock Rate: {mcrs[0]/1e6} MSps @Converter Rate {conv_rates[0]/1e9} GSps\n"
-            f"DB1: Master Clock Rate: {mcrs[1]/1e6} MSps @Converter Rate {conv_rates[1]/1e9} GSps")
 
         return X4xxClockConfig(**clk_config)
 
