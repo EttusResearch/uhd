@@ -35,7 +35,7 @@ def get_continuous_tone(rate, freq, ampl, desired_size=None, max_size=None, wave
     gcd = math.gcd(rate_int, freq_int)
     rate_int = rate_int / gcd
     freq_int = freq_int / gcd
-    length = max(freq_int * rate_int, 1) # freq may be zero
+    length = int(max(freq_int * rate_int, 1)) # freq may be zero
     f_norm = freq/rate
     if waveform in ('sine', 'square'):
         tone = \
@@ -47,9 +47,13 @@ def get_continuous_tone(rate, freq, ampl, desired_size=None, max_size=None, wave
             tone = tone * ampl
     elif waveform == 'ramp':
         tone = numpy.array(
-            (2 * (n * f_norm - numpy.floor(float(0.5 + n * f_norm)))
-                for n in numpy.arange(length)),
+            [2 * (n * f_norm - numpy.floor(float(0.5 + n * f_norm)))
+             for n in range(length)],
             dtype=numpy.complex64)
+    elif waveform == 'const':
+        tone = numpy.array([1+0j,] * desired_size, dtype=numpy.complex64) * ampl
+    else:
+        raise KeyError(f"Invalid waveform type: `{waveform}'")
 
     if length < desired_size:
         tone = numpy.tile(tone, int(desired_size // length))
