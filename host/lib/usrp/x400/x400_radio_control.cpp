@@ -266,14 +266,21 @@ x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
                 if (has_feature<uhd::features::adc_self_calibration_iface>()) {
                     RFNOC_LOG_INFO("Clocking reconfigured, running ADC Self Cal on DB"
                                    << get_block_id().get_block_count() << "...");
+                    auto args               = get_block_args();
+                    std::string ch_list     = args.get("cal_ch_list", "");
                     size_t num_calibrations = 0;
                     auto& self_cal =
                         get_feature<uhd::features::adc_self_calibration_iface>();
                     const size_t num_channels = get_num_output_ports();
                     for (size_t i = 0; i < num_channels; i++) {
-                        RFNOC_LOG_INFO("Calibrating channel " << i << "...");
-                        self_cal.run(i);
-                        num_calibrations++;
+                        auto abs_ch = get_block_id().get_block_count() * num_channels + i;
+                        if (ch_list.size() == 0
+                            or ch_list.find(std::to_string(abs_ch))
+                                   != std::string::npos) {
+                            RFNOC_LOG_INFO("Calibrating channel " << abs_ch << "...");
+                            self_cal.run(i, args);
+                            num_calibrations++;
+                        }
                     }
                     if (num_calibrations > 0) {
                         RFNOC_LOG_DEBUG(

@@ -27,6 +27,7 @@ struct adc_self_cal_params_t
     uint32_t threshold_under;
     uint32_t threshold_over;
     std::string calibration_mode;
+    uint32_t calibration_time;
 };
 
 /*! Interface for daughterboards which support being plugged into a X400 motherboard.

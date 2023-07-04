@@ -79,13 +79,16 @@ public:
     uhd::usrp::x400::adc_self_cal_params_t get_adc_self_cal_params(const double) override
     {
         // FBX uses a fixed low freq for both TX and RX
-        return {100e6, // rx_freq
+        return {
+            100e6, // rx_freq
             100e6, // tx_freq
             {0x7FFF, 0}, // output full scale dac mux
             100, // delay
             4000, // under
             4192, // over
-            "calib_mode2"};
+            "calib_mode2",
+            2000, // 2 seconds were found to be sufficient
+        };
     }
 
     bool select_adc_self_cal_gain(size_t) override;
