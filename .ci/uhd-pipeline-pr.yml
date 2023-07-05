@@ -94,6 +94,7 @@ pr:
     - host/docs
     - host/LICENSE
     - host/README.md
+  drafts: false
 
 extends:
   template: templates/stages-uhd-pipeline.yml
