@@ -27,14 +27,17 @@ from rx_samples_to_file_test import rx_samples_to_file_test
 from tx_bursts_test import uhd_tx_bursts_test
 from test_pps_test import uhd_test_pps_test
 
-from gpio_test import gpio_x410_set_get_source_test
-gpio_x410_set_get_source_test.test_params = {
-    "possible_sources": ["PS", "MPM", "USER_APP", "DB0_RF0", "DB0_RF1",
-                         "DB0_SPI", "DB1_RF0", "DB1_RF1", "DB1_SPI"],
+from gpio_test import gpio_x4xx_set_get_source_test
+gpio_x4xx_set_get_source_test.test_params = {
+    "possible_sources": [
+        "PS", "MPM", "USER_APP",
+        "DB0_SPI", "DB0_RF0", "DB0_RF1",
+        "DB1_SPI", "DB1_RF0", "DB1_RF1",
+    ],
     "num_pins": 12,
 }
 
-from gpio_test import x410_gpio_power_test
+from gpio_test import x4xx_gpio_power_test
 
 from gpio_test import gpio_atr_readback_test
 gpio_atr_readback_test.test_params = [

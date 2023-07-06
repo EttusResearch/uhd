@@ -75,13 +75,13 @@ for port in ["GPIO0", "GPIO1"]:
             "addl_args": ["--src", " ".join([driver]*12), "--bank", bank, "--port", port, "--bits", "12"],
         }
 
-from gpio_test import gpio_x410_set_get_source_test
-gpio_x410_set_get_source_test.test_params = {
+from gpio_test import gpio_x4xx_set_get_source_test
+gpio_x4xx_set_get_source_test.test_params = {
     "possible_sources": ["PS", "MPM", "USER_APP", "DB0_RF0", "DB0_RF1", "DB0_SPI", "DB1_RF0", "DB1_RF1", "DB1_SPI"],
     "num_pins": 12,
 }
 
-from gpio_test import x410_gpio_power_test
+from gpio_test import x4xx_gpio_power_test
 
 from bitbang_test import bitbang_test
 bitbang_test.tests = {}
