@@ -651,9 +651,28 @@ class X4xxRfdcCtrl:
         }
         if mode not in MODES:
             raise RuntimeError(
-                 f"Mode {mode} is not one of the allowable modes {list(MODES.keys())}")
+                 f"Mode {mode} is not one of the allowable modes {list(MODES.keys())}.")
         for tile_id, block_id, _ in self._find_converters(slot_id, channel, "rx"):
-            self._rfdc_ctrl.set_calibration_mode(tile_id, block_id, MODES[mode])
+            # Only set the cal-mode if it is not yet what we want.
+            if self._rfdc_ctrl.get_calibration_mode(tile_id, block_id) != MODES[mode]:
+                self.log.debug(f"Setting calibration mode {mode} "
+                               f"for tile_id {tile_id}, block {block_id}.")
+                self._rfdc_ctrl.set_calibration_mode(tile_id, block_id, MODES[mode])
+                # As per PG269:
+                self._rfdc_ctrl.startup_tile(tile_id, False)
+                # Ensure the cal-mode was set properly, otherwise throw
+                if self._rfdc_ctrl.get_calibration_mode(tile_id, block_id) != MODES[mode]:
+                    self.log.error(
+                        "RFDC error: Desired calibration mode could not be set properly "
+                        f"for tile_id {tile_id}, block {block_id}.")
+                    raise RuntimeError(
+                        "RFDC error: Desired calibration mode could not be set properly "
+                        f"for tile_id {tile_id}, block {block_id}.")
+                self.log.debug(f"Successfully set calibration mode to {mode} "
+                                   f"for tile_id {tile_id}, block {block_id}.")
+            else:
+                self.log.debug(f"Calibration mode {mode} for tile_id {tile_id}, "
+                               f"block {block_id} already set, not changing it.")
 
     def set_cal_frozen(self, frozen, slot_id, channel):
         """

@@ -414,6 +414,15 @@ public:
         uint32_t tile_id, uint32_t block_id, calibration_mode_options calibration_mode);
 
     /**
+     * Gets the calibration mode of a given ADC
+     *
+     * @param tile_id the tile ID of the block to set
+     * @param block_id the block ID of the block to set
+     * @return the calibration mode
+     */
+    calibration_mode_options get_calibration_mode(uint32_t tile_id, uint32_t block_id);
+
+    /**
      * Enables/Disables the Inverse-Sinc filter on a DAC block.
      *
      * @param    tile_id the tile ID of the block to set
@@ -760,6 +769,7 @@ void export_rfdc(py::module& top_module)
         .def("set_mixer_mode", &rfdc_ctrl::set_mixer_mode)
         .def("set_nyquist_zone", &rfdc_ctrl::set_nyquist_zone)
         .def("set_calibration_mode", &rfdc_ctrl::set_calibration_mode)
+        .def("get_calibration_mode", &rfdc_ctrl::get_calibration_mode)
         .def("enable_inverse_sinc_filter", &rfdc_ctrl::enable_inverse_sinc_filter)
         .def("get_sample_rate", &rfdc_ctrl::get_sample_rate)
         .def("configure_pll", &rfdc_ctrl::configure_pll)

@@ -50,21 +50,20 @@ void adc_self_calibration::run(size_t chan, uhd::device_addr_t params)
 
     if (params.has_key("cal_freq")) {
         const double cal_freq = params.cast<double>("cal_freq", cal_params.rx_freq);
-        if (cal_freq < 0 or cal_freq > 0.4 * _daughterboard->get_converter_rate()) {
+        // According to PG269 calibration modes are available for up to Fs / 2
+        if (cal_freq < 0 or cal_freq > _daughterboard->get_converter_rate() / 2) {
             RFNOC_LOG_WARNING("Invalid value for `cal_freq`: "
                               << cal_freq
                               << ". Valid values are "
-                                 "between 0 Hz and 0.4 x converter_rate. Using default "
+                                 "between 0 Hz and converter_rate / 2. Using default "
                               << cal_params.rx_freq / 1e6 << " MHz.");
         } else {
             cal_params.rx_freq = cal_freq;
             cal_params.tx_freq = cal_freq;
-            // 0.4 * Fs/2 as limit between cal mode and 2 according to PG269
+            // 0.4 * Fs is the limit between cal mode 2 and 1 according to PG269
             if (cal_freq <= (0.4 * _daughterboard->get_converter_rate())) {
                 cal_params.calibration_mode = "calib_mode2";
             } else {
-                // This will never be reached as long as we want to limit ourselves to
-                // calib_mode2
                 cal_params.calibration_mode = "calib_mode1";
             }
             RFNOC_LOG_DEBUG("Custom cal_freq: " << cal_freq << " => Calibration Mode: "
