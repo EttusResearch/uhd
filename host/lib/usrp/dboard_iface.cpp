@@ -19,7 +19,7 @@ void dboard_iface::sleep(const std::chrono::nanoseconds& time)
     // FIXME: Create a delay in the FPGA on the device.
     auto cmd_time = get_command_time();
     if (cmd_time.get_real_secs() != 0.0) {
-        set_command_time(cmd_time + uhd::time_spec_t(time.count()));
+        set_command_time(cmd_time + uhd::time_spec_t(static_cast<double>(time.count())));
     } else {
         // nanosleep is not really accurate in userland and it is also not very
         // cross-platform. So just sleep for the minimum amount of time in us.
