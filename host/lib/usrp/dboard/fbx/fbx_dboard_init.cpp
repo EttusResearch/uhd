@@ -205,7 +205,7 @@ void fbx_dboard_impl::_init_gain_prop_tree(uhd::property_tree::sptr subtree,
         .add_coerced_subscriber([](const meta_range_t&) {
             throw uhd::runtime_error("Attempting to update gain range!");
         })
-        .set_publisher([this]() {
+        .set_publisher([]() {
             const auto empty_range = uhd::meta_range_t(0, 0, 0);
             return empty_range;
         });
@@ -238,8 +238,8 @@ void fbx_dboard_impl::_init_antenna_prop_tree(uhd::property_tree::sptr subtree,
 }
 
 void fbx_dboard_impl::_init_lo_prop_tree(uhd::property_tree::sptr subtree,
-    const uhd::direction_t trx,
-    const size_t chan_idx,
+    const uhd::direction_t,
+    const size_t,
     const fs_path fe_path)
 {
     // LO lock sensor
@@ -250,7 +250,7 @@ void fbx_dboard_impl::_init_lo_prop_tree(uhd::property_tree::sptr subtree,
         .add_coerced_subscriber([](const sensor_value_t&) {
             throw uhd::runtime_error("Attempting to write to sensor!");
         })
-        .set_publisher([this, trx, chan_idx]() {
+        .set_publisher([]() {
             return sensor_value_t("all_los", true, "locked", "unlocked");
         });
     subtree->create<sensor_value_t>(fe_path / "sensors" / "nco_locked")
