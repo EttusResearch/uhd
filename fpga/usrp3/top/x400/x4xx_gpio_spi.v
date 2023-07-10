@@ -151,14 +151,14 @@ module x4xx_gpio_spi #(
 
       // Assigned to unassigned mapping. This avoids overwriting
       // signals with those from uninitialized slaves.
-      for (slave_i=0; slave_i<4; slave_i=slave_i+1) begin
+      for ( slave_i = 0; slave_i < 4; slave_i = slave_i + 1 ) begin
         sclk_mapping[slave_i] <= 5'h31;
         mosi_mapping[slave_i] <= 5'h31;
         miso_mapping[slave_i] <= 5'h31;
         ss_mapping  [slave_i] <= 5'h31;
       end
 
-      for (slave_i=0; slave_i<NUM_SLAVES; slave_i=slave_i+1) begin
+      for ( slave_i = 0; slave_i < NUM_SLAVES; slave_i = slave_i + 1) begin
         slave_spi_length[slave_i] <= {SPI_LENGTH_SIZE{1'b0}};
       end
     end else begin
@@ -330,7 +330,7 @@ module x4xx_gpio_spi #(
       gpio_is_sclk  <= 32'h0;
       gpio_is_cs    <= 32'h0;
 
-      for (slave_i=0; slave_i<NUM_SLAVES; slave_i=slave_i+1) begin
+      for ( slave_i = 0; slave_i < NUM_SLAVES; slave_i = slave_i + 1) begin
         gpio_is_mosi  [mosi_mapping[slave_i]] <= 1'b1;
         gpio_is_sclk  [sclk_mapping[slave_i]] <= 1'b1;
         gpio_is_cs    [  ss_mapping[slave_i]] <= 1'b1;
@@ -339,56 +339,59 @@ module x4xx_gpio_spi #(
     end
   end
 
-
   //---------------------------------------------------------------------------
   // SPI master
   //---------------------------------------------------------------------------
 
-  //  Register set_stb for use in 2x domain.
-  reg set_stb_2x = 1'b0;
-  reg ctrlport_clk_phase = 1'b1;
+  `ifdef X410
 
-  always @ (posedge ctrlport_clk_2x) begin
-    if (ctrlport_rst) begin
-      ctrlport_clk_phase <= 1'b1;
-      set_stb_2x         <= 1'b0;
-    end else begin
-      // Assert strobe only during a single 2x cycle of the
-      // 1x pulse, when 1x clock is low.
-      set_stb_2x         <= ctrlport_clk_phase & set_stb;
-      ctrlport_clk_phase <= ~ctrlport_clk_phase;
+    //  Register set_stb for use in 2x domain.
+    reg set_stb_2x = 1'b0;
+    reg ctrlport_clk_phase = 1'b1;
+
+    always @ (posedge ctrlport_clk_2x) begin
+      if (ctrlport_rst) begin
+        ctrlport_clk_phase <= 1'b1;
+        set_stb_2x         <= 1'b0;
+      end else begin
+        // Assert strobe only during a single 2x cycle of the
+        // 1x pulse, when 1x clock is low.
+        set_stb_2x         <= ctrlport_clk_phase & set_stb;
+        ctrlport_clk_phase <= ~ctrlport_clk_phase;
+      end
     end
-  end
 
-  simple_spi_core #(
-    .BASE     (0),
-    .WIDTH    (NUM_SLAVES),
-    .CLK_IDLE (0),
-    .SEN_IDLE ({NUM_SLAVES{1'b1}})
-  ) simple_spi_core_i (
-    .clock        (ctrlport_clk_2x),
-    .reset        (ctrlport_rst),
-    .set_stb      (set_stb_2x),
-    .set_addr     (set_addr),
-    .set_data     (set_data),
-    .readback     (readback),
-    .readback_stb (readback_stb),
-    .ready        (),
-    .sen          (ss[NUM_SLAVES-1:0]),
-    .sclk         (sclk),
-    .mosi         (mosi),
-    .miso         (miso),
-    .debug        ()
-  );
+    simple_spi_core #(
+      .BASE     (0),
+      .WIDTH    (NUM_SLAVES),
+      .CLK_IDLE (0),
+      .SEN_IDLE ({NUM_SLAVES{1'b1}})
+    ) simple_spi_core_i (
+      .clock        (ctrlport_clk_2x),
+      .reset        (ctrlport_rst),
+      .set_stb      (set_stb_2x),
+      .set_addr     (set_addr),
+      .set_data     (set_data),
+      .readback     (readback),
+      .readback_stb (readback_stb),
+      .ready        (),
+      .sen          (ss[NUM_SLAVES-1:0]),
+      .sclk         (sclk),
+      .mosi         (mosi),
+      .miso         (miso),
+      .debug        ()
+    );
 
-  // Delay and extend signal for use in 1x domain.
-  reg readback_stb_dly = 1'b0;
+    // Delay and extend signal for use in 1x domain.
+    reg readback_stb_dly = 1'b0;
 
-  always @ (posedge ctrlport_clk_2x) begin
-    readback_stb_dly <= readback_stb;
-  end
+    always @ (posedge ctrlport_clk_2x) begin
+      readback_stb_dly <= readback_stb;
+    end
 
-  assign readback_stb_extended = readback_stb_dly | readback_stb;
+    assign readback_stb_extended = readback_stb_dly | readback_stb;
+
+  `endif
 
   //---------------------------------------------------------------------------
   // GPIO Mapping
@@ -420,11 +423,13 @@ module x4xx_gpio_spi #(
       assign gated_sclk[i]   = gpio_is_sclk[i] ? sclk : 1'b0;
 
       // register signals once remapping logic is resolved
-      always @ (posedge ctrlport_clk_2x) begin
-        mosi_mux_out_dlyd[i] <= mosi_mux_out[i];
-        gpio_is_sclk_dlyd[i] <= gpio_is_sclk[i];
-        gated_sclk_dlyd[i]   <= gated_sclk[i];
-      end
+      `ifdef X410
+        always @ (posedge ctrlport_clk_2x) begin
+          mosi_mux_out_dlyd[i] <= mosi_mux_out[i];
+          gpio_is_sclk_dlyd[i] <= gpio_is_sclk[i];
+          gated_sclk_dlyd[i]   <= gated_sclk[i];
+        end
+      `endif
 
       // Choose between SCLK and MOSI/SS mux.
       glitch_free_mux glitch_free_gpio_out (

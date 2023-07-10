@@ -38,4 +38,4 @@ $(IP_XGE_PCS_PMA_SRCS) $(IP_XGE_PCS_PMA_OUTS): IP_XGE_PCS_PMA_TRGT
 	@:
 
 IP_XGE_PCS_PMA_TRGT: $(IP_DIR)/xge_pcs_pma/xge_pcs_pma.xci
-	$(call BUILD_VIVADO_IP,xge_pcs_pma,$(ARCH),$(PART_ID),$(IP_DIR),$(IP_BUILD_DIR),1)
+	$(call BUILD_VIVADO_IP_WITH_SUBCORES,xge_pcs_pma,$(ARCH),$(PART_ID),$(IP_DIR),$(IP_BUILD_DIR),1)

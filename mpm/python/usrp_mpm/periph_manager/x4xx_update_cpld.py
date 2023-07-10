@@ -16,8 +16,7 @@ import pyudev
 from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.sys_utils.sysfs_gpio import GPIOBank
 from usrp_mpm.sys_utils.udev import dt_symbol_get_spidev
-from usrp_mpm.periph_manager.x4xx_mb_cpld import MboardCPLD
-from usrp_mpm.periph_manager.x4xx import x4xx
+from usrp_mpm.periph_manager.x4xx_mb_cpld import make_mb_cpld_ctrl
 from usrp_mpm.chips.max10_cpld_flash_ctrl import Max10CpldFlashCtrl
 
 OPENOCD_DIR = "/usr/share/openocd/scripts"
@@ -129,7 +128,7 @@ def do_update_cpld(filename, updater_mode):
         return jtag_cpld_update(filename, logger)
     if updater_mode == 'flash':
         cpld_spi_node = dt_symbol_get_spidev('mb_cpld')
-        regs = MboardCPLD(cpld_spi_node, logger)
+        regs = make_mb_cpld_ctrl(cpld_spi_node, logger)
         reconfig_engine_offset = 0x40
         cpld_min_revision = 0x19100108
         flash_control = Max10CpldFlashCtrl(logger, regs, reconfig_engine_offset, cpld_min_revision)
@@ -191,25 +190,31 @@ def jtag_cpld_update(filename, logger):
     logger.trace("Done programming CPLD...")
     return True
 
-def get_mb_compat_rev():
+def get_mb_info(item):
+    valid_items = {'pid', 'rev', 'compat_rev'}
+    assert(item in valid_items)
     import re
     cmd = ['eeprom-dump', 'mb']
     output = subprocess.check_output(
         cmd,
         stderr=subprocess.STDOUT,
         ).decode('utf-8')
-    expression = re.compile("^usrp_eeprom_board_info.*compat_rev: 0x([0-9A-Fa-f]+)")
+    expression = re.compile(f"^usrp_eeprom_board_info.*{item}: 0x([0-9A-Fa-f]+)")
     for line in output.splitlines():
         match = expression.match(line)
         if match:
-            compat_rev = int(match.group(1), 16)
-            return compat_rev
-    raise AssertionError("Cannot get compat_rev from MB eeprom.: `{}'".format(output))
+            ret_val = int(match.group(1), 16)
+            return ret_val
+    raise AssertionError(f"Cannot get {item} from MB eeprom: `{output}'")
 
-def get_default_cpld_image_names(compat_rev):
+def get_default_cpld_image_names(pid, compat_rev):
     """Determine the default CPLD image name based on the compat_rev"""
-    default_cpld_image_10m04 = ['cpld-x410-10m04.rpd', 'usrp_x410_cpld_10m04.rpd']
-    default_cpld_image_10m08 = ['cpld-x410-10m08.rpd', 'usrp_x410_cpld_10m08.rpd']
+    if pid==0x410:
+        default_cpld_image_10m04 = ['cpld-x410-10m04.rpd', 'usrp_x410_cpld_10m04.rpd']
+        default_cpld_image_10m08 = ['cpld-x410-10m08.rpd', 'usrp_x410_cpld_10m08.rpd']
+    else:
+        raise NotImplementedError(f"No default CPLD image found for PID 0x{pid:x}")
+
     default_image_name_mapping = {
         1: default_cpld_image_10m04,
         2: default_cpld_image_10m04,
@@ -220,7 +225,7 @@ def get_default_cpld_image_names(compat_rev):
         7: default_cpld_image_10m08
     }
     if compat_rev not in default_image_name_mapping:
-        raise NotImplementedError("The default CPLD image name for compat_rev {} is not available".format(compat_rev))
+        raise NotImplementedError(f"The default CPLD image name for compat_rev {compat_rev} is not available")
     return default_image_name_mapping[compat_rev]
 
 def main():
@@ -230,7 +235,8 @@ def main():
     def parse_args():
         """Parse the command-line arguments"""
         parser = argparse.ArgumentParser(description='Update the CPLD image on the X4xx')
-        default_image_names = get_default_cpld_image_names(get_mb_compat_rev())
+        pid = get_mb_info('pid')
+        default_image_names = get_default_cpld_image_names(pid, get_mb_info('compat_rev'))
         default_image_path = "/lib/firmware/ni/" + default_image_names[0]
         parser.add_argument("--file", help="Filename of CPLD image",
                             default=default_image_path)
@@ -261,13 +267,12 @@ def main():
         )
         args = parser.parse_args()
         if (os.path.basename(args.file) not in default_image_names) and not args.force:
-            parser.epilog = "\nERROR: Valid CPLD image names for X410 compat_rev {} are {}, " \
-                "but you selected {}. Using the wrong CPLD image may brick your device. " \
-                "Please use the --force option if you are really sure.".format(
-                    get_mb_compat_rev(),
-                    ' and '.join(default_image_names),
-                    args.file
-                )
+            devices = {0x410: 'X410'}
+            device = devices.get(pid, "unknown device")
+            parser.epilog = f"\nERROR: Valid CPLD image names for {device} compat_rev "\
+                f"{get_mb_info('compat_rev')} are {' and '.join(default_image_names)}, " \
+                f"but you selected {args.file}. Using the wrong CPLD image may brick your device. " \
+                f"Please use the --force option if you are really sure."
             parser.print_help()
             parser.epilog = None
             sys.exit(1)

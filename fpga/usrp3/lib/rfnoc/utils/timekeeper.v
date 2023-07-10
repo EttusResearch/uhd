@@ -33,6 +33,7 @@
 //   tb_timestamp          : 64-bit global timestamp synchronous to tb_clk
 //   tb_timestamp_last_pps : 64-bit timestamp of the last PPS edge
 //   tb_period_ns_q32      : Time Period of time-base in nanoseconds
+//   tb_changed            : Pulse indicating the time-base has changed
 //
 
 module timekeeper #(
@@ -63,7 +64,8 @@ module timekeeper #(
   input wire         pps,
   output reg [63:0]  tb_timestamp,
   output reg [63:0]  tb_timestamp_last_pps,
-  output reg [63:0]  tb_period_ns_q32
+  output reg [63:0]  tb_period_ns_q32,
+  output reg         tb_changed
 );
 
   //---------------------------------------------------------------------------
@@ -267,14 +269,17 @@ module timekeeper #(
     if (tb_rst) begin
       tb_timestamp     <= 0;
       time_event_armed <= 0;
+      tb_changed       <= 0;
     end else begin
+      tb_changed       <= 0;
       if (time_event) begin
         // Load the timing info configured prior to the event
         time_event_armed <= 0;
         tb_timestamp     <= time_at_next_event;
+        tb_changed       <= 1;
       end else if (sample_rx_stb) begin
         // Update time for each sample word received
-        tb_timestamp <= tb_timestamp + increment;
+        tb_timestamp     <= tb_timestamp + increment;
       end
 
       if (new_time_ctrl) begin

@@ -39,6 +39,8 @@ jobs:
   timeoutInMinutes: 10
   pool:
     name: hardware
+    demands:
+    - MAX_CPU -equals 4
   steps:
     - checkout: self
       clean: true
@@ -60,7 +62,8 @@ jobs:
         OSS_REPO_HASH="$(git rev-parse --verify HEAD --short=7 2>/dev/null)"
         echo "##vso[task.setvariable variable=OSS_REPO_HASH]$OSS_REPO_HASH"
         echo "OSS Repo hash: $OSS_REPO_HASH"
-        python3 $(Build.SourcesDirectory)/fpga/usrp3/tools/utils/package_images.py --githash "uhd-$OSS_REPO_HASH"
+        cp $(Build.SourcesDirectory)/images/manifest.txt .
+        python3 $(Build.SourcesDirectory)/fpga/usrp3/tools/utils/package_images.py --githash "uhd-$OSS_REPO_HASH" -m ./manifest.txt
         rm -f *.bit *.dts *.rpt *.md5
       workingDirectory: ${{ parameters.build_directory }}
       displayName: 'Run package_images.py'

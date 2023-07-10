@@ -125,7 +125,7 @@ module dds_freq_tune_duc #(
 
   // Width of each component of the DDS output. This width is fixed by the IP
   // configuration.
-  parameter DDS_W = 16;
+  localparam DDS_W = 16;
 
   wire               m_axis_dds_tlast;
   wire               m_axis_dds_tvalid;

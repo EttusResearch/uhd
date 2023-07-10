@@ -22,6 +22,7 @@ module bus_int #(
     output [3:0] sw_rst,
     // Timekeeper
     input                   pps,
+    output                  time_sync,
     // Block connections
     input                   ce_clk,
     input                   ce_rst,
@@ -545,7 +546,8 @@ module bus_int #(
      .pps                   (pps),
      .tb_timestamp          (radio_time_tb),
      .tb_timestamp_last_pps (radio_time_last_pps_tb),
-     .tb_period_ns_q32      (period_ns_q32_tb)
+     .tb_period_ns_q32      (period_ns_q32_tb),
+     .tb_changed            (time_sync)
    );
 
    // Latch state changes to SFP0+ pins.

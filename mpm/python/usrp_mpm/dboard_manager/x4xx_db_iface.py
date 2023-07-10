@@ -3,11 +3,14 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
+"""
+X4xx Daughterboard interface. See X4xxDboardIface documentation.
+"""
 
 from usrp_mpm.sys_utils.db_flash import DBFlash
 from usrp_mpm.sys_utils.gpio import Gpio
 from usrp_mpm.dboard_manager import DboardIface
-from usrp_mpm import lib # Pulls in everything from C++-land
+from usrp_mpm.mpmutils import get_dboard_class_from_pid
 
 class X4xxDboardIface(DboardIface):
     """
@@ -21,15 +24,27 @@ class X4xxDboardIface(DboardIface):
     # The device tree label for the bus to the DB's Management EEPROM
     MGMT_EEPROM_DEVICE_LABEL = "e0004000.i2c"
 
-    def __init__(self, slot_idx, motherboard):
+    def __init__(self, slot_idx, motherboard, dboard_info):
         super().__init__(slot_idx, motherboard)
         self.db_cpld_iface = motherboard.ctrlport_regs.get_db_cpld_iface(self.slot_idx)
-        self._power_enable = Gpio('DB{}_PWR_EN'.format(slot_idx), Gpio.OUTPUT)
-        self._power_status = Gpio('DB{}_PWR_STATUS'.format(slot_idx), Gpio.INPUT)
+        self._power_enable = Gpio(f'DB{slot_idx}_PWR_EN', Gpio.OUTPUT)
+        self._power_status = Gpio(f'DB{slot_idx}_PWR_STATUS', Gpio.INPUT)
+        self.db_flash = None
+        self._init_db_flash(slot_idx, dboard_info)
 
-        self.db_flash = DBFlash(slot_idx, log=self.log)
+    def _init_db_flash(self, slot_idx, dboard_info):
+        """
+        Identify if this daughterboard has a flash memory, and initialize it if
+        necessary.
+        """
+        db_class = get_dboard_class_from_pid(dboard_info['pid'])
+        if getattr(db_class, 'has_db_flash', False):
+            self.db_flash = DBFlash(slot_idx, log=self.log)
 
     def tear_down(self):
+        """
+        De-init flash memory before shutting down to avoid data loss.
+        """
         self.log.trace("Tearing down X4xx daughterboard...")
         if self.db_flash:
             self.db_flash.deinit()
@@ -70,49 +85,17 @@ class X4xxDboardIface(DboardIface):
     # MB Control
     #   Some of the MB settings may be controlled from the DB Driver
     ####################################################################
-    def _find_converters(self, direction='both', channel='both'):
-        """
-        Returns a list of (tile_id, block_id, is_dac) tuples describing
-        the data converters associated with a given channel and direction.
-        """
-        return self.mboard.rfdc._find_converters(self.slot_idx, direction, channel)
-
-    def set_if_freq(self, freq, direction='both', channel='both'):
-        """
-        Use the rfdc_ctrl object to set the IF frequency of the ADCs and
-        DACs corresponding to the specified channels of the DB.
-        By default, all channels and directions will be set.
-        Returns True if the IF frequency was successfully set.
-        """
-        for tile_id, block_id, is_dac in self._find_converters(direction, channel):
-            if not self.mboard.rfdc._rfdc_ctrl.set_if(tile_id, block_id, is_dac, freq):
-                return False
-        return True
-
-    def get_if_freq(self, direction, channel):
-        """
-        Gets the IF frequency of the ADC/DAC corresponding
-        to the specified channel of the DB.
-        """
-        converters = self._find_converters(direction, channel)
-        assert len(converters) == 1, \
-            'Expected a single RFDC associated with {}{}. Instead found {}.' \
-            .format(direction, channel, len(converters))
-        (tile_id, block_id, is_dac) = converters[0]
-        return self.mboard.rfdc._rfdc_ctrl.get_nco_freq(tile_id, block_id, is_dac)
-
     def enable_iq_swap(self, enable, direction, channel):
         """
         Enable or disable swap of I and Q samples from the RFDCs.
         """
-        for tile_id, block_id, is_dac in self._find_converters(direction, channel):
-            self.mboard.rfdc._rfdc_regs.enable_iq_swap(enable, self.slot_idx, block_id, is_dac)
+        self.mboard.rfdc.enable_iq_swap(enable, self.slot_idx, channel, direction == 'tx')
 
     def get_sample_rate(self):
         """
         Gets the sample rate of the RFDCs.
         """
-        return self.mboard.get_spll_freq()
+        return self.mboard.clk_mgr.get_spll_freq()
 
     def get_prc_rate(self):
         """
@@ -121,4 +104,4 @@ class X4xxDboardIface(DboardIface):
         Note: The ref clock will change if the sample clock frequency
         is modified.
         """
-        return self.mboard.get_prc_rate()
+        return self.mboard.clk_mgr.get_prc_rate()

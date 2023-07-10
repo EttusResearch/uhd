@@ -151,7 +151,16 @@ public:
     bool can_connect_device_to_device(
         sep_addr_t dst_addr, sep_addr_t src_addr) const override
     {
-        return _mgmt_portal->can_remote_route(dst_addr, src_addr);
+        const auto reachable_eps = _mgmt_portal->get_reachable_endpoints();
+        // NOTE: For full completeness, we should be checking the entire route
+        // from src_addr to dst_addr, including all intermediate nodes. In
+        // practice all nodes will be on the same device, and usually only
+        // separated by a crossbar (or not even that).
+        return
+            // First check if a connection is even possible
+            _mgmt_portal->can_remote_route(dst_addr, src_addr)
+            // Then see if we can reach those EPs from here.
+            && reachable_eps.count(dst_addr) && reachable_eps.count(src_addr);
     }
 
     sep_id_pair_t connect_host_to_device(sep_addr_t dst_addr) override

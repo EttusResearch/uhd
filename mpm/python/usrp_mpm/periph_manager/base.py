@@ -645,7 +645,7 @@ class PeriphManagerBase:
             # If the MB supports the DB Iface architecture, pass
             # the corresponding DB Iface to the dboard class
             if self.db_iface is not None:
-                dboard_info['db_iface'] = self.db_iface(dboard_idx, self)
+                dboard_info['db_iface'] = self.db_iface(dboard_idx, self, dboard_info)
             # This will actually instantiate the dboard class:
             self.dboards.append(db_class(dboard_idx, **dboard_info))
         self.log.info("Initialized %d daughterboard(s).", len(self.dboards))
@@ -1380,6 +1380,42 @@ class PeriphManagerBase:
         time_source = sync_args.get('time_source', self.get_time_source())
         self.set_clock_source(clock_source)
         self.set_time_source(time_source)
+
+    def synchronize(self, sync_args, finalize):
+        """
+        This is the main MPM-based synchronization call. It should be called if
+        there are synchronization-related settings that need to be applied to
+        devices that can only be set via MPM (exluding setting the time of
+        timekeepers).
+
+        For example, on RFSoC-based devices, we need to make sure to set the
+        same tile latency on all devices.
+
+        UHD will call this function at least twice. The first time, the device
+        can do whatever it needs to to determine various settings. It shall then
+        return a dictionary (key and value types are both strings) with
+        information that is necessary to determine final synchronization settings.
+
+        UHD will then take the sync information from all the devices it has been
+        trying to synchronize, and send them to aggregate_sync_data() on one of
+        the USRPs. That RPC call will return a single dictionary.
+
+        When UHD really needs to synchronize the devices, it will set the
+        'finalize' argument to True, and pass in the result from
+        aggregate_sync_data().
+        """
+        self.log.debug("No specific synchronize() API defined, using default.")
+        return sync_args
+
+    def aggregate_sync_data(self, collated_sync_data):
+        """
+        This API call is called during time/frequency synchronization of devices.
+        It will be passed a list of dictionaries. The job of this API call is to
+        aggregate the list and return a single dictionary with definitive values
+        that the various devices need to apply.
+        """
+        self.log.debug("No specific aggregate_sync_data() API defined, using default.")
+        return {} if not collated_sync_data else collated_sync_data[0]
 
     ###########################################################################
     # Clock/Time API

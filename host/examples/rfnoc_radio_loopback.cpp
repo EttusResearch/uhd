@@ -72,8 +72,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("rate", po::value<double>(&rate)->default_value(0.0), "Sampling rate")
         ("duration", po::value<double>(&total_time)->default_value(0), "total number of seconds to receive")
         ("int-n", "Tune USRP with integer-N tuning")
-        ("ref", po::value<std::string>(&ref)->default_value("internal"), "clock reference (internal, external, mimo, gpsdo)")
-        ("pps", po::value<std::string>(&pps)->default_value("internal"), "PPS source (internal, external, mimo, gpsdo)")
+        ("ref", po::value<std::string>(&ref), "clock reference (internal, external, gpsdo, mimo)")
+        ("pps", po::value<std::string>(&pps), "PPS source (internal, external, mimo, gpsdo)")
     ;
     // clang-format on
     po::variables_map vm;
@@ -127,13 +127,16 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     rx_radio_ctrl->enable_rx_timestamps(rx_timestamps, rx_chan);
 
     // Set time and clock reference
-    if (vm.count("ref")) {
+    if (vm.count("ref") && vm.count("pps")) {
+        for (size_t i = 0; i < graph->get_num_mboards(); ++i) {
+            graph->get_mb_controller(i)->set_sync_source(ref, pps);
+        }
+    } else if (vm.count("ref")) {
         // Lock mboard clocks
         for (size_t i = 0; i < graph->get_num_mboards(); ++i) {
             graph->get_mb_controller(i)->set_clock_source(ref);
         }
-    }
-    if (vm.count("pps")) {
+    } else if (vm.count("pps")) {
         // Lock mboard clocks
         for (size_t i = 0; i < graph->get_num_mboards(); ++i) {
             graph->get_mb_controller(i)->set_time_source(pps);

@@ -99,6 +99,9 @@ public:
     uhd::sensor_value_t get_sensor(const std::string& name) override;
     std::vector<std::string> get_sensor_names() override;
     uhd::usrp::mboard_eeprom_t get_eeprom() override;
+    bool synchronize(std::vector<mb_controller::sptr>& mb_controllers,
+        const uhd::time_spec_t& time_spec = uhd::time_spec_t(0.0),
+        const bool quiet                  = false) override;
     std::vector<std::string> get_gpio_banks() const override;
     std::vector<std::string> get_gpio_srcs(const std::string& bank) const override;
     std::vector<std::string> get_gpio_src(const std::string& bank) override;
@@ -108,6 +111,15 @@ public:
         mb_controller::sync_source_updater_t callback_f) override;
 
 private:
+    //! Helper for synchronize(): Dispatch the synchronize() RPC call
+    std::map<std::string, std::string> _synchronize(
+        const std::map<std::string, std::string>& sync_args, bool finalize);
+
+    //! Helper for synchronize(): Dispatch the aggregate_sync_data() RPC call
+    std::map<std::string, std::string> _aggregate_sync_info(
+        const std::list<std::map<std::string, std::string>>& collated_sync_args);
+
+
     /**************************************************************************
      * Attributes
      *************************************************************************/

@@ -49,6 +49,10 @@ parameters:
 - name: build_x4xx
   type: boolean
   default: true
+- name: fpga_imgs_base_url
+  type: string
+  displayName: FPGA Images Base URL
+  default: 'Internal'
 
 variables:
 - template: ../uhd-pipeline-vars.yml
@@ -168,6 +172,17 @@ stages:
                 path: host
               - package: mpmd
                 path: mpm
+        # If requested, we set a variable "UHD_BASE_URL", which is consumed by
+        # the uhd-fpga-images recipe to an internal file server which is closer
+        # to the build machines. It is simply appended to auto.conf, where
+        # bitbake will pick it up and apply it to the recipe.
+        - ${{ if contains(parameters.fpga_imgs_base_url, 'Internal') }}:
+          - bash: |
+              cat <<EOF >>$AUTO_CONF
+              UHD_BASE_URL = "$FILE_SERVER_URL"
+              EOF
+            env:
+              FILE_SERVER_URL: $(InternalFileServerUrl)
         postbuild_steps:
         - script: |
             rm $(AUTO_CONF)

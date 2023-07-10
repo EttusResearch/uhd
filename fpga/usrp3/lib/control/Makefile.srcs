@@ -20,6 +20,7 @@ axi_slave_mux.v \
 axi_test_vfifo.v \
 bin2gray.v \
 binary_encoder.v \
+clock_div.v \
 db_control.v \
 fe_control.v \
 filter_bad_sid.v \

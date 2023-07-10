@@ -34,6 +34,10 @@ const uhd::fs_path radio_control_impl::FE_PATH("frontends");
 
 static constexpr double OVERRUN_RESTART_DELAY = 0.05;
 
+// Default byte multiple to round the payload size down to. This is
+// conservatively set to to ensure compatibility with most blocks by default.
+static constexpr uint32_t DEFAULT_MULT = 64;
+
 /****************************************************************************
  * Structors
  ***************************************************************************/
@@ -114,9 +118,13 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
     _type_in.reserve(get_num_input_ports());
     _type_out.reserve(get_num_output_ports());
     for (size_t chan = 0; chan < get_num_output_ports(); ++chan) {
-        // Default SPP is the maximum value we can fit through the edge, given our MTU
+        const uint32_t max_payload_size =
+            get_max_payload_size({res_source_info::OUTPUT_EDGE, chan});
+        // Default SPP is the maximum value we can fit through the edge, given
+        // our MTU, rounded down to the nearest CHDR word.
         const int default_spp =
-            get_max_spp(get_max_payload_size({res_source_info::OUTPUT_EDGE, chan}));
+            get_max_spp(max_payload_size - (max_payload_size % DEFAULT_MULT));
+        UHD_ASSERT_THROW(default_spp > 0);
         _spp_prop.push_back(
             property_t<int>(PROP_KEY_SPP, default_spp, {res_source_info::USER, chan}));
         _atomic_item_size_in.push_back(

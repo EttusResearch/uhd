@@ -32,36 +32,55 @@ class debug_dboard_common_impl : public uhd::usrp::x400::x400_dboard_iface
 public:
     using sptr = std::shared_ptr<debug_dboard_common_impl>;
 
-    rf_control::gain_profile_iface::sptr get_tx_gain_profile_api() override
+    rf_control::gain_profile_iface::sptr get_tx_gain_profile_api() final
     {
         return rf_control::gain_profile_iface::sptr();
     }
 
-    rf_control::gain_profile_iface::sptr get_rx_gain_profile_api() override
+    rf_control::gain_profile_iface::sptr get_rx_gain_profile_api() final
     {
         return rf_control::gain_profile_iface::sptr();
     }
 
-    bool is_adc_self_cal_supported() override
+    bool is_adc_self_cal_supported() final
     {
         return false;
     }
 
-    uhd::usrp::x400::adc_self_cal_params_t get_adc_self_cal_params(double) override
+    uhd::usrp::x400::adc_self_cal_params_t get_adc_self_cal_params(double) final
     {
         return {
             0.0,
             0.0,
+            {0, 0},
+            0,
+            0,
+            0,
             "calib_mode1",
         };
     }
 
-    bool select_adc_self_cal_gain(size_t) override
+    bool select_adc_self_cal_gain(size_t) final
     {
         return true;
     }
 
-    size_t get_chan_from_dboard_fe(const std::string& fe, direction_t) const override
+    double get_converter_rate() const override
+    {
+        return 0.0;
+    }
+
+    size_t get_num_rx_channels() const final
+    {
+        return 2;
+    }
+
+    size_t get_num_tx_channels() const final
+    {
+        return 2;
+    }
+
+    size_t get_chan_from_dboard_fe(const std::string& fe, direction_t) const final
     {
         if (fe == "0") {
             return 0;
@@ -72,7 +91,7 @@ public:
         throw uhd::key_error(std::string("[X400] Invalid frontend: ") + fe);
     }
 
-    std::string get_dboard_fe_from_chan(size_t chan, direction_t) const override
+    std::string get_dboard_fe_from_chan(size_t chan, direction_t) const final
     {
         if (chan == 0) {
             return "0";
@@ -84,7 +103,7 @@ public:
             std::string("[X400] Invalid channel: ") + std::to_string(chan));
     }
 
-    std::vector<usrp::pwr_cal_mgr::sptr>& get_pwr_mgr(direction_t) override
+    std::vector<usrp::pwr_cal_mgr::sptr>& get_pwr_mgr(direction_t) final
     {
         static std::vector<usrp::pwr_cal_mgr::sptr> empty_vtr;
         return empty_vtr;
@@ -105,7 +124,10 @@ public:
         return {};
     }
 
-    void set_tx_antenna(const std::string&, const size_t) override{UHD_LOG_SKIP_CFG()}
+    void set_tx_antenna(const std::string&, const size_t) override
+    {
+        UHD_LOG_SKIP_CFG();
+    }
 
     std::string get_rx_antenna(const size_t) const override
     {
@@ -363,7 +385,7 @@ public:
         return 0;
     }
 
-    void set_command_time(uhd::time_spec_t, const size_t) override
+    void set_command_time(uhd::time_spec_t, const size_t) final
     {
         // nop
     }
@@ -410,7 +432,7 @@ public:
         _init_frontend_subtree();
     }
 
-    ~if_test_dboard_impl()
+    ~if_test_dboard_impl() override
     {
         RFNOC_LOG_TRACE(UHD_FUNCTION);
     }
@@ -457,11 +479,15 @@ public:
         return _rpcc->request_with_token<std::string>(_rpc_prefix + "get_rx_path");
     }
 
-    eeprom_map_t get_db_eeprom() override
+    eeprom_map_t get_db_eeprom() final
     {
         return _rpcc->request_with_token<eeprom_map_t>("get_db_eeprom", _db_idx);
     }
 
+    double get_converter_rate() const final
+    {
+        return _rpcc->request_with_token<double>(_rpc_prefix + "get_dboard_sample_rate");
+    }
 
 private:
     //! Used by the RFNOC_LOG_* macros.

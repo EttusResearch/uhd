@@ -61,7 +61,7 @@ jobs:
       matrix: $[ variables.dockerImageMatrixFedoraRpm ]
   container:
     image: '$(dockerImagePrefix)$(DockerImageName):$(dockerBuildNumber)'
-    endpoint: 'niartifacts.jfrog.io'
+    endpoint: 'rnd-docker-niartifacts-pre-readonly'
     ${{ if eq(parameters.toolset, 'ubuntu_deb') }}:
       #pbuilder requires access to /proc
       options: --privileged

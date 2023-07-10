@@ -10,6 +10,7 @@ LMK03328 driver for use with X4xx
 from time import sleep
 from usrp_mpm.chips import LMK03328
 from usrp_mpm.sys_utils.gpio import Gpio
+from usrp_mpm.periph_manager.x4xx_clock_types import RpllRefSel, RpllBrcSrcSel
 
 class LMK03328X4xx(LMK03328):
     """
@@ -77,7 +78,12 @@ class LMK03328X4xx(LMK03328):
                 'PLL2 lock': self.check_pll_locked(2),
                 'status indicator': status_indicator}
 
-    def config(self, ref_select=2, brc_rate=25e6, usr_clk_rate=156.25e6, brc_select='PLL'):
+    def config(self,
+               ref_select,
+               ref_rate=100e6,
+               brc_rate=25e6,
+               usr_clk_rate=156.25e6,
+               brc_select=RpllBrcSrcSel.PLL):
         """
         Configure the RPLL to generate the desired MGT Reference clock sources
         using the specified internal BRC.
@@ -87,20 +93,21 @@ class LMK03328X4xx(LMK03328):
         brc_select - specifies whether the BRC out should be from the PLL ('PLL') or
                      a passthrough of the primary reference signal ('bypass')
         """
+        assert ref_select in RpllRefSel
         def calculate_out7_mux(brc_select):
             """
             Returns the OUT7 Mux select register value based on the chosen BRC source.
             Note that OUT7 is wired to the InternalRef clock which is used as the default
             reference clock source.
             """
-            return {'bypass': 0x98, 'PLL': 0x58}[brc_select]
+            return {'bypass': 0x98, 'PLL': 0x58}[brc_select.value]
         def calculate_out7_div(brc_rate):
             """ Returns the OUT7 Divider register value based on the chosen BRC rate """
             return {25e6: 0x31, 125e6: 0x09}[brc_rate]
         def calculate_pll2_input_select(ref_select):
             """ Returns the reference mux register value based on which reference should be used """
-            assert ref_select in (1, 2)
-            return {1: 0x5B, 2: 0x7F}[ref_select]
+            assert ref_select.value in (1, 2)
+            return {1: 0x5B, 2: 0x7F}[ref_select.value]
         def calculate_pll2_n_div(ref_rate):
             """ Returns the PLL2 N div value based on the rate of the reference source """
             return {25e6: 0x00C8, 100e6: 0x0032}[ref_rate]
@@ -146,31 +153,27 @@ class LMK03328X4xx(LMK03328):
             assert usr_clk_rate in (156.25e6, 125e6)
             return {156.25e6: 0x07, 125e6: 0x09}[usr_clk_rate]
 
-        if self._reference_rates is None:
-            self.log.error('Cannot config reference PLL until the reference sources are set.')
-            raise RuntimeError('Cannot config reference PLL until the reference sources are set.')
-        if ref_select not in (1, 2):
-            raise RuntimeError('Selected reference source {} is invalid'.format(ref_select))
-        ref_rate = self._reference_rates[ref_select-1]
         if ref_rate not in (25e6, 100e6):
-            raise RuntimeError('Selected reference rate {} Hz is invalid'.format(ref_rate))
-        if brc_select not in ('bypass', 'PLL'):
+            raise RuntimeError(
+                'Selected reference rate {} Hz is invalid'.format(ref_rate))
+        if brc_select.value not in ('bypass', 'PLL'):
             raise RuntimeError('Selected BRC source {} is invalid'.format(brc_select))
         if brc_rate not in (25e6, 125e6):
             raise RuntimeError('Selected BRC rate {} Hz is invalid'.format(brc_rate))
-        if brc_select == 'bypass':
+        if brc_select.value == 'bypass':
             # 'bypass' sends the primary reference directly to out7
-            actual_brc_rate = self._reference_rates[0]
-            if actual_brc_rate != brc_rate:
+            if ref_rate != brc_rate:
                 self.log.error('The specified BRC rate does not match the actual '
                                'rate of the primary ref in bypass mode.')
                 raise RuntimeError('The specified BRC rate does not match the actual '
                                    'rate of the primary ref in bypass mode.')
         if usr_clk_rate not in (156.25e6, 125e6):
-            raise RuntimeError('Selected RPLL clock rate {} Hz is not supported'.format(usr_clk_rate))
+            raise RuntimeError(
+                f'Selected RPLL clock rate {usr_clk_rate} Hz is not supported')
 
-        self.log.trace("Configuring RPLL to ref:{}, brc:{} {} Hz, clock rate:{}"
-                       .format(ref_select, brc_select, brc_rate, usr_clk_rate))
+        self.log.trace(
+            f"Configuring RPLL to ref: {ref_select.name}, brc source: {brc_select.value} "
+            f"BRC rate {brc_rate/1e6} MHz, MGT clock rate: {usr_clk_rate/1e6} MHz")
         # Config
         pll2_input_mux = calculate_pll2_input_select(ref_select)
         pll2_n_div = calculate_pll2_n_div(ref_rate)

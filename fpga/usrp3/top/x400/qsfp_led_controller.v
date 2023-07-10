@@ -1,5 +1,5 @@
 //
-// Copyright 2021 Ettus Research, A National Instruments Brand
+// Copyright 2023 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -7,8 +7,8 @@
 //
 // Description:
 //
-//   Translate the CLIP active and link LED signals on FPGA to control port
-//   requests in order to transfer them to the CPLD, which drives the LEDs
+//   Translate the active and link status LED signals on FPGA to control port
+//   requests in order to transfer them to the CPLD, which drives the LEDs.
 //
 // Parameters:
 //
@@ -44,6 +44,8 @@ module qsfp_led_controller #(
   input wire [3:0] qsfp1_led_link
 );
 
+  `include "../../lib/rfnoc/core/ctrlport.vh"
+
   //----------------------------------------------------------
   // Transfer LED signals to local clock domain
   //----------------------------------------------------------
@@ -63,32 +65,69 @@ module qsfp_led_controller #(
   );
 
   //----------------------------------------------------------
-  // Logic to wait for response after trigging request
+  // State machine to initialize and update LED status
   //----------------------------------------------------------
 
-  reg transfer_in_progress;
+  localparam COUNT_W   = 8;
+  localparam MAX_COUNT = 2**COUNT_W-1;
+
+  // This counter ensures the we have a delay before we attempt to initialize
+  // the LED state and limits the rate at which the LEDs update.
+  reg [COUNT_W-1:0] startup_count = 0;
+
+  localparam ST_INIT     = 0;
+  localparam ST_WRITE    = 1;
+  localparam ST_WAIT_ACK = 2;
+  localparam ST_IDLE     = 3;
+
+  reg [1:0] state = ST_INIT;
+
   reg [15:0] led_combined_delayed;
 
   always @(posedge ctrlport_clk) begin
+    m_ctrlport_req_wr    <= 0;
+    led_combined_delayed <= led_combined;
+
+    case (state)
+      ST_INIT : begin
+        // Set LED state after a delay
+        startup_count <= startup_count + 1;
+        if (startup_count == MAX_COUNT) begin
+          state <= ST_WRITE;
+        end
+      end
+
+      ST_WRITE : begin
+        // Start an LED update request
+        m_ctrlport_req_wr <= 1;
+        state             <= ST_WAIT_ACK;
+      end
+
+      ST_WAIT_ACK : begin
+        // Wait for the acknowledgment from the bus
+        if (m_ctrlport_resp_ack) begin
+          if (m_ctrlport_resp_status != CTRL_STS_OKAY) begin
+            // Status was bad, so try again after a delay
+            state <= ST_INIT;
+          end else begin
+            state <= ST_IDLE;
+          end
+        end
+      end
+
+      ST_IDLE : begin
+        // Wait here until the LED status changes
+        if (led_combined != led_combined_delayed) begin
+          state <= ST_INIT;
+        end
+      end
+    endcase
+
     if (ctrlport_rst) begin
-      m_ctrlport_req_wr <= 1'b0;
-      transfer_in_progress <= 1'b0;
-      led_combined_delayed <= 16'b0;
-    end else begin
-      // Default assignment
-      m_ctrlport_req_wr <= 1'b0;
-
-      // Issue new request on change if no request is pending
-      if (led_combined != led_combined_delayed && ~transfer_in_progress) begin
-        transfer_in_progress <= 1'b1;
-        m_ctrlport_req_wr <= 1'b1;
-        led_combined_delayed <= led_combined;
-      end
-
-      // Reset pending request
-      if (m_ctrlport_resp_ack) begin
-        transfer_in_progress <= 1'b0;
-      end
+      state                <= ST_INIT;
+      startup_count        <= 0;
+      m_ctrlport_req_wr    <= 0;
+      led_combined_delayed <= 0;
     end
   end
 

@@ -50,7 +50,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("channels", po::value<std::string>(&channel_list)->default_value("0"), "which channel(s) to use (specify \"0\", \"1\", \"0,1\", etc")
         ("int-n", "tune USRP with integer-n tuning")
         ("subdev", po::value<std::string>(&subdev), "subdevice specification")
-        ("ref", po::value<std::string>(&ref)->default_value("internal"), "reference source (internal, external, mimo)")
+        ("ref", po::value<std::string>(&ref), "reference source (internal, external, gpsdo, mimo)")
         ("lo-offset", po::value<double>(&lo_offset)->default_value(0.0),
             "Offset for frontend LO in Hz (optional)")
         ("bw", po::value<double>(&bw), "analog frontend filter bandwidth in Hz")

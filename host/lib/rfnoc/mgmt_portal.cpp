@@ -382,7 +382,6 @@ public:
         const auto src_node = _get_sep_node(src_epid);
         const auto dst_node = _get_sep_node(dst_epid);
         const auto route    = _tgraph->get_route(src_node, dst_node);
-        UHD_HERE();
 
         auto in_edge = route.cbegin()->edge;
         for (auto hop_it = route.cbegin(); hop_it != route.cend(); ++hop_it) {

@@ -35,6 +35,23 @@ class ZBX(X4xxDbMixin, DboardManagerBase):
     tx_sensor_callback_map = {
         'temperature': 'get_rf_temp_sensor',
     }
+    has_db_flash = True
+    # ZBX depends on two types of RF core implementations which each have
+    # compat versions.
+    updateable_components = {
+        'fpga': {
+            'compatibility': {
+                'rf_core_100m': {
+                    'current': (1, 0),
+                    'oldest': (1, 0),
+                },
+                'rf_core_400m': {
+                    'current': (1, 0),
+                    'oldest': (1, 0),
+                },
+            }
+        },
+    }
     ### End of overridables #################################################
 
     ### Daughterboard driver/hardware compatibility value

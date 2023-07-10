@@ -9,6 +9,7 @@
 #include "xrfdc.h"
 #include "xrfdc_mts.h"
 #include <boost/noncopyable.hpp>
+#include <string>
 #include <vector>
 
 #ifdef LIBMPM_PYTHON
@@ -18,6 +19,25 @@
 #define THRESHOLDS_PER_BLOCK 2
 
 namespace mpm { namespace rfdc {
+
+/**
+ * This struct represents the relevant parts of the
+ * XRfdc_PLL_settings.
+ * The enabled boolean is reflected by a matching
+ * enum.
+ * All frequencies and rates are in Hz.
+ * The fractional parts of the struct are ignored.
+ */
+struct rfdc_pll_config
+{
+    enum pll_status : bool { PLL_bypassed = false, PLL_enabled = true };
+    pll_status status;
+    double ref_clk_freq;
+    double sample_rate;
+    uint32_t ref_clk_divider;
+    uint32_t feedback_divider;
+    uint32_t output_divider;
+};
 
 /**
  * A class to control the Xilinx RFdc driver.
@@ -80,9 +100,9 @@ public:
         CALIB_MODE2 = XRFDC_CALIB_MODE2
     };
     enum event_type_options {
-        MIXER_EVENT = XRFDC_EVENT_MIXER,
+        MIXER_EVENT    = XRFDC_EVENT_MIXER,
         CRSE_DLY_EVENT = XRFDC_EVENT_CRSE_DLY,
-        QMC_EVENT = XRFDC_EVENT_QMC,
+        QMC_EVENT      = XRFDC_EVENT_QMC,
     };
     enum interp_decim_options {
         INTERP_DECIM_OFF = XRFDC_INTERP_DECIM_OFF,
@@ -118,6 +138,28 @@ public:
      * @param    rfdc_device_id the device ID of the rfdc device
      */
     void init(uint16_t rfdc_device_id);
+
+    /**
+     * Queries enabled state of a given DAC block.
+     *
+     * @param  tile_id  ID of the tile (0..3)
+     * @param  block_id ID of the block within the tile (0..3)
+     * @return          enabled state of block
+     *                  true is an enabled block
+     *                  false is an invalid or disabled block
+     */
+    bool is_dac_enabled(uint32_t tile_id, uint32_t block_id) const;
+
+    /**
+     * Queries enabled state of a given ADC block.
+     *
+     * @param  tile_id  ID of the tile (0..3)
+     * @param  block_id ID of the block within the tile (0..3)
+     * @return          enabled state of block
+     *                  true is an enabled block
+     *                  false is an invalid or disabled block
+     */
+    bool is_adc_enabled(uint32_t tile_id, uint32_t block_id) const;
 
     /**
      * Starts up the requested tile while retaining register values.
@@ -163,8 +205,8 @@ public:
      *
      * @return   true if the operation was successful
      */
-    bool trigger_update_event(uint32_t tile_id, uint32_t block_id,
-       bool is_dac, event_type_options event_type);
+    bool trigger_update_event(
+        uint32_t tile_id, uint32_t block_id, bool is_dac, event_type_options event_type);
 
     /**
      * Enable/Disable gain correction for a given block.
@@ -383,18 +425,8 @@ public:
     bool enable_inverse_sinc_filter(uint32_t tile_id, uint32_t block_id, bool enable);
 
     /**
-     * Sets the sample rate for a given tile.
-     *
-     * @param    tile_id the ID of the tile to set
-     * @param    is_dac whether the tile is a DAC (true) or ADC (false)
-     * @param    sample_rate the rate in Hz to sample at
-     *
-     * @return   true if the operation was successful
-     */
-    bool set_sample_rate(uint32_t tile_id, bool is_dac, double sample_rate);
-
-    /**
-     * Gets the sample rate for a given block.
+     * Gets the sample rate for a given block. To set the sample rate, call
+     * configure_pll().
      *
      * @param    tile_id the ID of the tile to set
      * @param    block_id the ID of the block to set
@@ -403,6 +435,37 @@ public:
      * @return   sample rate of the block in Hz
      */
     double get_sample_rate(uint32_t tile_id, uint32_t block_id, bool is_dac);
+
+    /**
+     * Configures PLL by passing a reference frequency and a destination sample
+     * rate. Xilinx IP will figure out the best matching PLL settings for the
+     * given parameters. Use `get_pll_config` to query the parameter chosen
+     * by Xilinx IP.
+     *
+     * @param    tile_id the ID of the tile to configure
+     * @param    is_dac whether the tile is a DAC (true) or ADC (false)
+     * @param    source clock source to use could be XRFDC_EXTERNAL_CLK for
+     *           external clock or XRFDC_INTERNAL_PLL_CLK for internal
+     * @param    ref_freq reference frequency to be used
+     * @param    sample_rate target sample rate
+     *
+     * @return   true if the operation was successful
+     */
+    bool configure_pll(uint32_t tile_id,
+        bool is_dac,
+        uint8_t source,
+        double ref_freq,
+        double sample_rate);
+
+    /**
+     * Read the current PLL settings.
+     *
+     * @param   tile_id the ID of the tile to query
+     * @param   block_id the ID of the block to query
+     *
+     * @return  struct containing current PLL configuration
+     */
+    rfdc_pll_config get_pll_config(uint32_t tile_id, bool is_dac);
 
     /**
      * Specifies the IF for the given ADC or DAC.
@@ -579,7 +642,7 @@ public:
      *
      * @return   true if synchronization completed successfully
      */
-    bool sync_tiles(const std::vector<uint32_t>& tiles, bool is_dac, uint32_t latency);
+    bool sync_tiles(const std::vector<uint32_t>& tiles, bool is_dac, int32_t latency);
 
     /**
      * Get post-sync latency between ADC or DAC tiles
@@ -620,13 +683,30 @@ public:
      */
     bool get_cal_frozen(uint32_t tile_id, uint32_t block_id);
 
-    void set_adc_cal_coefficients(uint32_t tile_id, uint32_t block_id, uint32_t cal_block, std::vector<uint32_t> coefs);
-    std::vector<uint32_t> get_adc_cal_coefficients(uint32_t tile_id, uint32_t block_id, uint32_t cal_block);
+    void set_adc_cal_coefficients(uint32_t tile_id,
+        uint32_t block_id,
+        uint32_t cal_block,
+        std::vector<uint32_t> coefs);
+    std::vector<uint32_t> get_adc_cal_coefficients(
+        uint32_t tile_id, uint32_t block_id, uint32_t cal_block);
 
     /**
      * Resets an internal mixer with known valid settings.
      */
-    bool reset_mixer_settings( uint32_t tile_id, uint32_t block_id, bool is_dac);
+    bool reset_mixer_settings(uint32_t tile_id, uint32_t block_id, bool is_dac);
+
+    /**
+     * Returns the version of libmetal as a string
+     *
+     * @param libver If true, return the library version. If false, return the
+     *               compile-time version. These should always match!
+     */
+    std::string get_metal_version(bool libver = true);
+
+    /**
+     * Returns the version of the RFDC driver as a string
+     */
+    std::string get_rfdc_version();
 
 private:
     /* Indicates whether libmetal was initialized successfully and can
@@ -647,10 +727,20 @@ void export_rfdc(py::module& top_module)
 {
     using namespace mpm::rfdc;
     auto m = top_module.def_submodule("rfdc");
+    py::class_<rfdc_pll_config>(m, "rfdc_pll_config")
+        .def(py::init())
+        .def_readwrite("status", &rfdc_pll_config::status)
+        .def_readwrite("ref_clk_freq", &rfdc_pll_config::ref_clk_freq)
+        .def_readwrite("sample_rate", &rfdc_pll_config::sample_rate)
+        .def_readwrite("ref_clk_divider", &rfdc_pll_config::ref_clk_divider)
+        .def_readwrite("feedback_divider", &rfdc_pll_config::feedback_divider)
+        .def_readwrite("output_divider", &rfdc_pll_config::output_divider);
 
     py::class_<rfdc_ctrl, std::shared_ptr<rfdc_ctrl>>(m, "rfdc_ctrl")
         .def(py::init())
         .def("init", &rfdc_ctrl::init)
+        .def("is_adc_enabled", &rfdc_ctrl::is_adc_enabled)
+        .def("is_dac_enabled", &rfdc_ctrl::is_dac_enabled)
         .def("startup_tile", &rfdc_ctrl::startup_tile)
         .def("shutdown_tile", &rfdc_ctrl::shutdown_tile)
         .def("reset_tile", &rfdc_ctrl::reset_tile)
@@ -671,8 +761,9 @@ void export_rfdc(py::module& top_module)
         .def("set_nyquist_zone", &rfdc_ctrl::set_nyquist_zone)
         .def("set_calibration_mode", &rfdc_ctrl::set_calibration_mode)
         .def("enable_inverse_sinc_filter", &rfdc_ctrl::enable_inverse_sinc_filter)
-        .def("set_sample_rate", &rfdc_ctrl::set_sample_rate)
         .def("get_sample_rate", &rfdc_ctrl::get_sample_rate)
+        .def("configure_pll", &rfdc_ctrl::configure_pll)
+        .def("get_pll_config", &rfdc_ctrl::get_pll_config)
         .def("set_if", &rfdc_ctrl::set_if)
         .def("set_decimation_factor", &rfdc_ctrl::set_decimation_factor)
         .def("get_decimation_factor", &rfdc_ctrl::get_decimation_factor)
@@ -693,7 +784,9 @@ void export_rfdc(py::module& top_module)
         .def("set_cal_frozen", &rfdc_ctrl::set_cal_frozen)
         .def("get_cal_frozen", &rfdc_ctrl::get_cal_frozen)
         .def("set_adc_cal_coefficients", &rfdc_ctrl::set_adc_cal_coefficients)
-        .def("get_adc_cal_coefficients", &rfdc_ctrl::get_adc_cal_coefficients);
+        .def("get_adc_cal_coefficients", &rfdc_ctrl::get_adc_cal_coefficients)
+        .def("get_metal_version", &rfdc_ctrl::get_metal_version)
+        .def("get_rfdc_version", &rfdc_ctrl::get_rfdc_version);
 
     py::enum_<mpm::rfdc::rfdc_ctrl::threshold_id_options>(m, "threshold_id_options")
         .value("THRESHOLD_0", mpm::rfdc::rfdc_ctrl::THRESHOLD_0)
@@ -751,5 +844,9 @@ void export_rfdc(py::module& top_module)
         .value("DIV_4", mpm::rfdc::rfdc_ctrl::DIV_4)
         .value("DIV_8", mpm::rfdc::rfdc_ctrl::DIV_8)
         .value("DIV_16", mpm::rfdc::rfdc_ctrl::DIV_16);
+
+    py::enum_<rfdc_pll_config::pll_status>(m, "pll_status")
+        .value("PLL_bypassed", rfdc_pll_config::PLL_bypassed)
+        .value("PLL_enabled", rfdc_pll_config::PLL_enabled);
 }
 #endif

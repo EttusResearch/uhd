@@ -1400,9 +1400,9 @@ void b200_impl::update_atrs(void)
         const bool enb_tx     = bool(perif.tx_streamer.lock());
         const bool is_rx2     = perif.ant_rx2;
         const uint32_t rxonly = (enb_rx) ? ((is_rx2) ? STATE_RX1_RX2 : STATE_RX1_TXRX)
-                                         : STATE_OFF;
-        const uint32_t txonly = (enb_tx) ? (STATE_TX1_TXRX) : STATE_OFF;
-        uint32_t fd           = STATE_OFF;
+                                       : STATE_RX1_OFF;
+        const uint32_t txonly = (enb_tx) ? (STATE_TX1_TXRX) : STATE_RX1_OFF;
+        uint32_t fd           = STATE_RX1_OFF;
         if (enb_rx and enb_tx)
             fd = STATE_FDX1_TXRX;
         if (enb_rx and not enb_tx)
@@ -1410,7 +1410,7 @@ void b200_impl::update_atrs(void)
         if (not enb_rx and enb_tx)
             fd = txonly;
         gpio_atr_3000::sptr atr = perif.atr;
-        atr->set_atr_reg(ATR_REG_IDLE, STATE_OFF);
+        atr->set_atr_reg(ATR_REG_IDLE, STATE_RX1_OFF);
         atr->set_atr_reg(ATR_REG_RX_ONLY, rxonly);
         atr->set_atr_reg(ATR_REG_TX_ONLY, txonly);
         atr->set_atr_reg(ATR_REG_FULL_DUPLEX, fd);
@@ -1421,9 +1421,9 @@ void b200_impl::update_atrs(void)
         const bool enb_tx     = bool(perif.tx_streamer.lock());
         const bool is_rx2     = perif.ant_rx2;
         const uint32_t rxonly = (enb_rx) ? ((is_rx2) ? STATE_RX2_RX2 : STATE_RX2_TXRX)
-                                         : STATE_OFF;
-        const uint32_t txonly = (enb_tx) ? (STATE_TX2_TXRX) : STATE_OFF;
-        uint32_t fd           = STATE_OFF;
+                                         : STATE_RX2_OFF;
+        const uint32_t txonly = (enb_tx) ? (STATE_TX2_TXRX) : STATE_RX2_OFF;
+        uint32_t fd           = STATE_RX2_OFF;
         if (enb_rx and enb_tx)
             fd = STATE_FDX2_TXRX;
         if (enb_rx and not enb_tx)
@@ -1431,7 +1431,7 @@ void b200_impl::update_atrs(void)
         if (not enb_rx and enb_tx)
             fd = txonly;
         gpio_atr_3000::sptr atr = perif.atr;
-        atr->set_atr_reg(ATR_REG_IDLE, STATE_OFF);
+        atr->set_atr_reg(ATR_REG_IDLE, STATE_RX2_OFF);
         atr->set_atr_reg(ATR_REG_RX_ONLY, rxonly);
         atr->set_atr_reg(ATR_REG_TX_ONLY, txonly);
         atr->set_atr_reg(ATR_REG_FULL_DUPLEX, fd);

@@ -17,6 +17,15 @@ class LMK04832:
     LMK_CHIP_ID = 6
     LMK_PROD_ID = 0xD163
 
+    VCXO_FREQUENCIES = [122.88e6, 100.00e6]
+    LMK_VCO0_RANGE_MIN = 2440e6
+    LMK_VCO0_RANGE_MAX = 2580e6
+    LMK_VCO1_RANGE_MIN = 2945e6
+    LMK_VCO1_RANGE_MAX = 3255e6
+
+    # PLL2 Prescaler is in range from 2, 8
+    PLL2_PRESCALER = range(2,9)
+
     def __init__(self, regs_iface, parent_log=None):
         self.log = \
             parent_log.getChild("LMK04832") if parent_log is not None \
@@ -57,7 +66,8 @@ class LMK04832:
 
     def verify_chip_id(self):
         """
-        Returns True if the chip ID and product ID matches what we expect, False otherwise.
+        Returns True if the chip ID and product ID matches what we expect,
+        False otherwise.
         """
         chip_id = self.get_chip_id()
         prod_id = self.get_product_id()
@@ -68,6 +78,23 @@ class LMK04832:
             self.log.error("Wrong Product ID 0x{:X}".format(prod_id))
             return False
         return True
+
+
+    def enable_4wire_spi(self):
+        """ Enable 4-wire SPI readback from the CLKin_SEL0 pin """
+        self.poke8(0x148, 0x33)
+        self.enable_3wire_spi = False
+
+
+    def get_status(self):
+        """
+        Returns PLL lock status as a dictionary
+        """
+        pll1_status = self.check_plls_locked(pll='PLL1')
+        pll2_status = self.check_plls_locked(pll='PLL2')
+        return {'PLL1 lock': pll1_status,
+                'PLL2 lock': pll2_status}
+
 
     def check_plls_locked(self, pll='BOTH'):
         """

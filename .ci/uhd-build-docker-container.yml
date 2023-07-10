@@ -39,6 +39,18 @@ schedules:
     include:
     - UHD-4.2
   always: true
+- cron: "0 4 * * SUN"
+  displayName: Weekly Docker Build UHD-4.3 branch
+  branches:
+    include:
+    - UHD-4.3
+  always: true
+- cron: "0 6 * * SUN"
+  displayName: Weekly Docker Build UHD-4.4 branch
+  branches:
+    include:
+    - UHD-4.4
+  always: true
 
 variables:
 - template: uhd-pipeline-vars.yml
@@ -84,7 +96,7 @@ variables:
     "{'VS2019-x64-builder':{'buildOSName':'win-vs19-v142-x64','dockerImageName':'uhd-builder-vs2019-v142-x64','cmakeCompiler':'Visual Studio 16 2019','cmakeArch':'x64','vsArch':'x64','vsYear':'2019'}}"
 
 - name: dockerImagePrefix
-  value: 'rnd-docker-ci/ni/rfsdr/'
+  value: 'rnd-docker-pre/ni/rfsdr/'
 
 jobs:
 - job: build_image_linux
@@ -104,7 +116,7 @@ jobs:
     inputs:
       command: 'build'
       Dockerfile: '$(Build.SourcesDirectory)/.ci/docker/$(dockerImageName).Dockerfile'
-      containerRegistry: 'niartifacts.jfrog.io'
+      containerRegistry: 'rnd-docker-niartifacts-pre-publish'
       repository: '$(dockerImagePrefix)$(dockerImageName)'
       tags: $(Build.BuildNumber)
       arguments: --no-cache --pull
@@ -112,7 +124,7 @@ jobs:
     displayName: Push Image
     inputs:
       command: 'push'
-      containerRegistry: 'niartifacts.jfrog.io'
+      containerRegistry: 'rnd-docker-niartifacts-pre-publish'
       repository: '$(dockerImagePrefix)$(dockerImageName)'
       tags: $(Build.BuildNumber)
 
@@ -128,7 +140,7 @@ jobs:
     matrix: $[ variables.linuxDockerImages ]
   container:
     image: '$(dockerImagePrefix)$(dockerImageName):$(Build.BuildNumber)'
-    endpoint: 'niartifacts.jfrog.io'
+    endpoint: 'rnd-docker-niartifacts-pre-readonly'
   workspace:
     clean: outputs
   steps:
@@ -149,7 +161,7 @@ jobs:
 
 - job: build_image_win
   displayName: Build Docker Image Windows
-  timeoutInMinutes: 120
+  timeoutInMinutes: 180
   pool:
     name: de-dre-lab
     demands:
@@ -167,7 +179,7 @@ jobs:
     inputs:
       command: 'build'
       Dockerfile: '$(Build.SourcesDirectory)/.ci/docker/$(dockerImageName).Dockerfile'
-      containerRegistry: 'niartifacts.jfrog.io'
+      containerRegistry: 'rnd-docker-niartifacts-pre-publish'
       repository: '$(dockerImagePrefix)$(dockerImageName)'
       tags: $(Build.BuildNumber)
       buildContext: $(Build.SourcesDirectory)
@@ -176,7 +188,7 @@ jobs:
     displayName: Push Image
     inputs:
       command: 'push'
-      containerRegistry: 'niartifacts.jfrog.io'
+      containerRegistry: 'rnd-docker-niartifacts-pre-publish'
       repository: '$(dockerImagePrefix)$(dockerImageName)'
       tags: $(Build.BuildNumber)
 
@@ -193,7 +205,7 @@ jobs:
     matrix: $[ variables.winDockerImages ]
   container:
     image: '$(dockerImagePrefix)$(dockerImageName):$(Build.BuildNumber)'
-    endpoint: 'niartifacts.jfrog.io'
+    endpoint: 'rnd-docker-niartifacts-pre-readonly'
   workspace:
     clean: outputs
   steps:

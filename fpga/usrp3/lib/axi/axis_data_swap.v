@@ -51,8 +51,8 @@ module axis_data_swap #(
   input  wire                      m_axis_tready
 );
 
-  parameter SWAP_STAGES = $clog2(DATA_W);
-  parameter SWAP_W      = $clog2(DATA_W)-1;
+  localparam SWAP_STAGES = $clog2(DATA_W);
+  localparam SWAP_W      = $clog2(DATA_W)-1;
   genvar s, w;
 
   wire [DATA_W-1:0] stg_tdata [0:SWAP_STAGES], stg_tdata_swp[0:SWAP_STAGES], stg_tdata_res[0:SWAP_STAGES];

@@ -359,29 +359,57 @@ public:
     /**************************************************************************
      * Hardware Control
      *************************************************************************/
+    /*! Return the number of motherboards in this graph
+     *
+     * Methods that take a motherboard index (e.g., get_mb_controller()) will error out if
+     * an index is passed that is greater or equal to this number of motherboards.
+     *
+     * \return the number of motherboards in this graph
+     */
     virtual size_t get_num_mboards() const = 0;
-    //! Return a reference to a motherboard controller
-    //
-    // See also uhd::rfnoc::mb_controller
+
+    /*! Return a reference to a motherboard controller
+     *
+     * See also uhd::rfnoc::mb_controller
+     *
+     * \param mb_index The index of the motherboard in the graph, 0 if only one device is
+     *                 used.
+     *
+     * \return a reference to the motherboard controller at index mb_index
+     */
     virtual std::shared_ptr<mb_controller> get_mb_controller(
         const size_t mb_index = 0) = 0;
 
     /*! Run any routines necessary to synchronize devices
      *
      * The specific implementation of this call are device-specific. In all
-     * cases, it will set the time to a common value.
+     * cases, it will set the motherboard time to a common value, if devices
+     * share a common reference. Depending on the hardware it may run other
+     * algorithms to synchronize individual hardware components.
      *
      * Any application that requires any kind of phase or time alignment (if
-     * supported by the hardware) must call this before operation.
+     * supported by the hardware) must call this before operation. Note that
+     * during the initialization of an rfnoc_graph, this method is always called
+     * and thus calling it again from an external application is only necessary
+     * when synchronization was previously lost.
+     *
+     * Note that because this is a motherboard-level API, individual LOs may
+     * still be unsynchronized (i.e., not phase-aligned) after calling this.
+     * Typically, to synchronize LOs, it is necessary to tune daughterboard
+     * channels to the same frequency by using a timed command. See \ref sync_phase
+     * for more details.
+     *
+     * Internally, this calls mb_controller::synchronize() with a full list of
+     * motherboard controllers for this rfnoc_graph.
      *
      * \param time_spec The timestamp to be used to sync the devices. It will be
      *                  an input to set_time_next_pps() on the motherboard
      *                  controllers.
      * \param quiet If true, there will be no errors or warnings printed if the
-     *              synchronization happens. This call will always be called
-     *              during initialization, but preconditions might not yet be
-     *              met (e.g., the time and reference sources might still be
-     *              internal), and will fail quietly in that case.
+     *              synchronization happens. synchronize_devices() will always
+     *              be called during initialization, but preconditions might not
+     *              yet be met (e.g., the time and reference sources might still
+     *              be `internal`), and will fail quietly in that case.
      *
      * \returns the success status of this call (true means devices are now
      *          synchronized)

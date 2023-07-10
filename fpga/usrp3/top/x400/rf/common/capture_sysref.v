@@ -7,8 +7,15 @@
 //
 // Description:
 //
-//   Capture SYSREF and transfer it to the higher clock domain. Module incurs
-//   in 2 pll_ref_clk cycles + 1 rfdc_clk cycle of delay.
+//   Capture SYSREF and transfer it to the higher clock domain.
+//   For X410, module incurs in 2 pll_ref_clk cycles + 1 rfdc_clk
+//   cycle of delay. For X440, module synchronizes to each
+//   pll_ref_clk and rfdc_clk separately, incurring in 2 cycles
+//   for each clock.
+//
+// Parameters:
+//
+//   DEVICE_TYPE     : Type of device for which SYSREF is synchronized.
 //
 
 module capture_sysref (
@@ -25,7 +32,9 @@ module capture_sysref (
   output wire sysref_out_rclk  // RFDC output  (Domain: rfdc_clk).
 );
 
-  reg sysref_pclk_ms = 1'b0, sysref_pclk = 1'b0, sysref_rclk = 1'b0;
+  (* ASYNC_REG = "TRUE" *) reg sysref_pclk_ms = 1'b0;
+  reg sysref_pclk = 1'b0;
+  reg sysref_rclk = 1'b0;
 
   // Capture SYSREF synchronously with the pll_ref_clk, but double-sync it just
   // in case static timing isn't met so as not to destroy downstream logic.

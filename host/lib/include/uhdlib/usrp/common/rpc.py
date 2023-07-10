@@ -67,6 +67,8 @@ IFACES = [
         fn_from_string("std::map<std::string, std::string> get_mb_eeprom()"),
         fn_from_string("std::vector<std::string> get_gpio_src(const std::string& bank)"),
         fn_from_string("void set_gpio_src(const std::string& bank, const std::vector<std::string>& src)"),
+        Function("std::map<std::string, std::string>", "synchronize", [("const std::map<std::string, std::string>&", "sync_data"), ("bool", "finalize")]),
+        Function("std::map<std::string, std::string>", "aggregate_sync_data", [("const std::list<std::map<std::string, std::string>>&", "collated_sync_data")]),
 
         # ref_clk_calibration
         fn_from_string("void set_ref_clk_tuning_word(uint32_t tuning_word)"),
@@ -80,7 +82,6 @@ IFACES = [
         fn_from_string("std::vector<int> get_cal_frozen(size_t block_count, size_t chan)"),
         fn_from_string("double rfdc_set_nco_freq(const std::string& trx, size_t block_count, size_t chan, double freq)"),
         fn_from_string("double rfdc_get_nco_freq(const std::string& trx, size_t block_count, size_t chan)"),
-        fn_from_string("double get_master_clock_rate()"),
         fn_from_string("std::map<std::string, std::vector<uint8_t>> get_db_eeprom(size_t db_idx)"),
         fn_from_string("bool get_threshold_status(size_t db_number, size_t chan, size_t threshold_block)"),
         fn_from_string("void set_dac_mux_enable(size_t motherboard_channel_number, int enable)"),
@@ -109,6 +110,7 @@ IFACES = [
     Interface("dboard_base_rpc", [
         fn_from_string("std::vector<std::string> get_sensors(const std::string& trx)"),
         fn_from_string("sensor_value_t::sensor_map_t get_sensor(const std::string& trx, const std::string& sensor, size_t chan)"),
+        fn_from_string("double get_master_clock_rate()")
     ], has_rpcprefix=True),
     Interface("zbx_rpc", [
         fn_from_string("double get_dboard_prc_rate()"),

@@ -349,7 +349,21 @@ public:
      */
     virtual uhd::usrp::mboard_eeprom_t get_eeprom() = 0;
 
-    /*! Synchronize a list of motherboards
+    /*! Synchronize a list of motherboards in time and frequency
+     *
+     * Note: When a uhd::rfnoc_graph is instantiated, this method is called on
+     * all motherboards.
+     *
+     * The exact steps taken when calling this method are hardware-specific, but
+     * in all cases, they will ensure that:
+     * - Timekeepers are synchronized. That means that timekeepers with the
+     *   same clock rate increment are in unison, and at all times have the same
+     *   time. This allows sending timed commands to the motherboards and
+     *   expect them to be executed at the same time.
+     * - Any hardware settings that need to be applied to synchronize will be
+     *   configured. For example, the X3x0 DAC (AD9146) requires synchronization
+     *   triggers for all the DACs to run synchronously, and the X4x0 RFSoC
+     *   requires programming an identical tile latency.
      *
      * \param mb_controllers A list of motherboard controllers to synchronize.
      *                       Any motherboard controllers that could not be
@@ -357,10 +371,12 @@ public:
      *                       motherboard controller are removed from the list.
      *                       On return, the list should be (ideally) identical
      *                       to its value at call time.
-     * \param time_spec Time specification to syncrhonize \p mb_controllers to
+     * \param time_spec Time specification to synchronize \p mb_controllers to
      * \param quiet If true, don't print any errors or warnings if
-     *              synchronization fails.
-     * \returns true if all motherboards that were removed from \p mb_controllers
+     *              synchronization fails. During initialization of uhd::rfnoc_graph,
+     *              UHD will call synchronize() on all motherboards with \p quiet
+     *              set to true.
+     * \returns true if all motherboards that were listed in \p mb_controllers
      *          could be synchronized.
      */
     virtual bool synchronize(std::vector<mb_controller::sptr>& mb_controllers,

@@ -5,6 +5,8 @@
 //
 
 #include <uhdlib/usrp/common/mpmd_mb_controller.hpp>
+#include <future>
+#include <vector>
 
 using namespace uhd::rfnoc;
 using namespace uhd;
@@ -356,4 +358,108 @@ void mpmd_mb_controller::register_sync_source_updater(
     mb_controller::sync_source_updater_t callback_f)
 {
     _sync_source_updaters.push_back(callback_f);
+}
+
+/******************************************************************************
+ * synchronize() API + helpers
+ *****************************************************************************/
+bool mpmd_mb_controller::synchronize(std::vector<mb_controller::sptr>& mb_controllers,
+    const uhd::time_spec_t& time_spec,
+    const bool quiet)
+{
+    // First, synchronize timekeepers
+    if (!mb_controller::synchronize(mb_controllers, time_spec, quiet)) {
+        return false;
+    }
+
+    // Filter out MB controllers that aren't mpmd_mb_controllers. This is safe-
+    // guarding against future changes where we allow multiple types of USRP in
+    // a single rfnoc_graph session.
+    std::vector<std::shared_ptr<mpmd_mb_controller>> mpmd_mb_controllers;
+    mpmd_mb_controllers.reserve(mb_controllers.size());
+    for (auto mb_controller : mb_controllers) {
+        if (std::dynamic_pointer_cast<mpmd_mb_controller>(mb_controller)) {
+            mpmd_mb_controllers.push_back(
+                std::dynamic_pointer_cast<mpmd_mb_controller>(mb_controller));
+        }
+    }
+    // Now, mb_controller_copy contains only references of mb_controllers that
+    // are actually mpmd_mb_controllers
+    mb_controllers.clear();
+    for (auto mb_controller : mpmd_mb_controllers) {
+        mb_controllers.push_back(mb_controller);
+    }
+
+    // The MPM additional sync works like this:
+    // - We allow all devices to run a preliminary sync. This call will return
+    //   a dictionary of data from each device.
+    // - We then collate the data and send it to one of the devices to merge it
+    //   into a single data structure. For example, that device could be
+    //   averaging numbers from the data structures.
+    // - Then we send the final data structure out to all devices to finalize
+    //   the synchronization.
+    //
+    // This method allows all knowledge about device synchronization to reside
+    // on the devices itself. UHD will only sequence the calls and manage the
+    // data between devices. This is in line with our philosophy of putting as
+    // much hardware-specific knowledge onto the devices.
+
+    std::vector<std::future<std::map<std::string, std::string>>> sync_tasks;
+    sync_tasks.reserve(mb_controllers.size());
+    // It would be nice to initialize the initial sync args with this MB's
+    // device args, but we don't have access to them here. Might be a useful
+    // change.
+    std::map<std::string, std::string> sync_args{};
+    std::list<std::map<std::string, std::string>> collated_sync_args;
+    // Now prime the sync args (in parallel) on all relevant devices.
+    for (auto& mbc : mpmd_mb_controllers) {
+        sync_tasks.emplace_back(std::async(
+            std::launch::async, [&]() { return mbc->_synchronize(sync_args, false); }));
+    }
+    for (auto& sync_task : sync_tasks) {
+        try {
+            collated_sync_args.push_back(sync_task.get());
+        } catch (const std::exception& e) {
+            UHD_LOGGER_ERROR("MPMD") << "Synchronization error: " << e.what();
+            return false;
+        }
+    }
+
+    // The sync-coordinator is one of the USRPs that is selected to process the
+    // collated data and return us a single dictionary for finalizing the
+    // synchronization. We might choose this based on some criteria in the future,
+    // for now we simply use the first USRP.
+    constexpr size_t sync_coordinator = 0;
+    sync_args                         = mpmd_mb_controllers.at(sync_coordinator)
+                    ->_aggregate_sync_info(collated_sync_args);
+
+    sync_tasks.clear();
+    sync_tasks.reserve(mb_controllers.size());
+    // Now prime the sync args (in parallel) on all relevant devices.
+    for (auto& mbc : mpmd_mb_controllers) {
+        sync_tasks.emplace_back(std::async(std::launch::async,
+            [&, sync_args]() { return mbc->_synchronize(sync_args, true); }));
+    }
+    for (auto& sync_task : sync_tasks) {
+        try {
+            sync_task.get();
+        } catch (const std::exception& e) {
+            UHD_LOGGER_ERROR("MPMD") << "Synchronization error: " << e.what();
+            return false;
+        }
+    }
+
+    return true;
+}
+
+std::map<std::string, std::string> mpmd_mb_controller::_synchronize(
+    const std::map<std::string, std::string>& sync_args, bool finalize)
+{
+    return _rpc->synchronize(sync_args, finalize);
+}
+
+std::map<std::string, std::string> mpmd_mb_controller::_aggregate_sync_info(
+    const std::list<std::map<std::string, std::string>>& collated_sync_args)
+{
+    return _rpc->aggregate_sync_data(collated_sync_args);
 }

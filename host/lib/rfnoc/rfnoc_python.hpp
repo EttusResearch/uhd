@@ -299,7 +299,9 @@ void export_rfnoc(py::module& m)
         .def("get_tick_rate", &noc_block_base::get_tick_rate)
         .def("get_mtu", &noc_block_base::get_mtu)
         .def("get_block_args", &noc_block_base::get_block_args)
-        .def("get_tree",
+	.def("set_command_time", &noc_block_base::set_command_time)
+	.def("clear_command_time", &noc_block_base::clear_command_time)
+	.def("get_tree",
             [](noc_block_base::sptr& self) {
                 // Force the non-const `get_tree`
                 uhd::property_tree::sptr tree = self->get_tree();

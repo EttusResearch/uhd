@@ -1,5 +1,5 @@
 //
-// Copyright 2022 Ettus Research, A National Instruments Company
+// Copyright 2023 Ettus Research, A National Instruments Company
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -13,7 +13,8 @@
 
   // GLOBAL_REGS     : 0x0 (x4xx_core_common.v)
   // VERSIONING_REGS : 0xC00 (x4xx_core_common.v)
-  // TIMEKEEPER      : 0x1000 (x4xx_core_common.v)
+  // TIMEKEEPER_A    : 0x1000 (x4xx_core_common.v)
+  // TIMEKEEPER_B    : 0x1100 (x4xx_core_common.v)
   // DIO             : 0x2000 (x4xx_core_common.v)
 
 //===============================================================================
@@ -32,9 +33,13 @@
   localparam VERSIONING_REGS = 'hC00; // Window Offset
   localparam VERSIONING_REGS_SIZE = 'h400;  // size in byte
 
-  // TIMEKEEPER Window (from x4xx_core_common.v)
-  localparam TIMEKEEPER = 'h1000; // Window Offset
-  localparam TIMEKEEPER_SIZE = 'h20;  // size in bytes
+  // TIMEKEEPER_A Window (from x4xx_core_common.v)
+  localparam TIMEKEEPER_A = 'h1000; // Window Offset
+  localparam TIMEKEEPER_A_SIZE = 'h20;  // size in bytes
+
+  // TIMEKEEPER_B Window (from x4xx_core_common.v)
+  localparam TIMEKEEPER_B = 'h1100; // Window Offset
+  localparam TIMEKEEPER_B_SIZE = 'h20;  // size in bytes
 
   // DIO Window (from x4xx_core_common.v)
   localparam DIO = 'h2000; // Window Offset

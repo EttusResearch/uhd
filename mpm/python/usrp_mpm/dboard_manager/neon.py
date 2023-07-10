@@ -20,7 +20,7 @@ DEFAULT_MASTER_CLOCK_RATE = 16e6
 ###############################################################################
 # Main dboard control class
 ###############################################################################
-class Neon(DboardManagerBase, AD936xDboard):
+class Neon(AD936xDboard, DboardManagerBase):
     """
     Holds all dboard specific information and methods of the neon dboard
     """

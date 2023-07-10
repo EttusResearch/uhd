@@ -60,6 +60,7 @@ public:
     // Graph resolution specific
     virtual bool is_dirty() const = 0;
     virtual void mark_clean()     = 0;
+    virtual void force_dirty()    = 0;
     virtual void resolve()        = 0;
 
     // External callbacks
@@ -175,6 +176,11 @@ public:
     void mark_clean() override
     {
         _data.mark_clean();
+    }
+
+    void force_dirty() override
+    {
+        _data.force_dirty();
     }
 
     void resolve() override
@@ -519,6 +525,13 @@ private:
     {
         for (data_accessor_t* acc : _inputs) {
             acc->node().mark_clean();
+        }
+    }
+
+    void force_dirty() override
+    {
+        for (data_accessor_t* acc : _outputs) {
+            acc->node().force_dirty();
         }
     }
 

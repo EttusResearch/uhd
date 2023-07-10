@@ -21,8 +21,8 @@
 using namespace uhd::rfnoc;
 
 // Block compatability version
-const uint16_t replay_block_control::MINOR_COMPAT = 1;
 const uint16_t replay_block_control::MAJOR_COMPAT = 1;
+const uint16_t replay_block_control::MINOR_COMPAT = 2;
 
 // NoC block address space
 const uint32_t replay_block_control::REPLAY_ADDR_W = 8;
@@ -62,19 +62,25 @@ const uint32_t replay_block_control::PLAY_CMD_FINITE     = 1;
 const uint32_t replay_block_control::PLAY_CMD_CONTINUOUS = 2;
 
 // Mask bits
-constexpr uint32_t PLAY_COMMAND_TIMED_BIT  = 31;
-constexpr uint32_t PLAY_COMMAND_TIMED_MASK = uint32_t(1) << PLAY_COMMAND_TIMED_BIT;
-constexpr uint32_t PLAY_COMMAND_MASK       = 3;
+constexpr uint32_t PLAY_COMMAND_TIMED_BIT   = 31;
+constexpr uint32_t PLAY_COMMAND_TIMED_MASK  = uint32_t(1) << PLAY_COMMAND_TIMED_BIT;
+constexpr uint32_t PLAY_COMMAND_NO_EOB_BIT  = 30;
+constexpr uint32_t PLAY_COMMAND_NO_EOB_MASK = uint32_t(1) << PLAY_COMMAND_NO_EOB_BIT;
+constexpr uint32_t PLAY_COMMAND_MASK        = 3;
 
 // User property names
 const char* const PROP_KEY_RECORD_OFFSET = "record_offset";
 const char* const PROP_KEY_RECORD_SIZE   = "record_size";
 const char* const PROP_KEY_PLAY_OFFSET   = "play_offset";
 const char* const PROP_KEY_PLAY_SIZE     = "play_size";
-const char* const PROP_KEY_PKT_SIZE      = "packet_size";
+const char* const PROP_KEY_PYLD_SIZE     = "payload_size";
 
 // Depth of the async message queues
 constexpr size_t ASYNC_MSG_QUEUE_SIZE = 128;
+
+// Default byte multiple to round the payload size down to. This is
+// conservatively set to to ensure compatibility with most blocks by default.
+constexpr uint32_t DEFAULT_MULT = 64;
 
 class replay_block_control_impl : public replay_block_control
 {
@@ -174,7 +180,7 @@ public:
         _play_type.reserve(_num_output_ports);
         _play_offset.reserve(_num_output_ports);
         _play_size.reserve(_num_output_ports);
-        _packet_size.reserve(_num_output_ports);
+        _payload_size.reserve(_num_output_ports);
         _atomic_item_size_out.reserve(_num_output_ports);
         for (size_t port = 0; port < _num_output_ports; port++) {
             _register_output_props(port);
@@ -186,12 +192,12 @@ public:
             _replay_reg_iface.poke64(
                 REG_PLAY_BUFFER_SIZE_LO_ADDR, _play_size.at(port).get(), port);
             _replay_reg_iface.poke32(REG_PLAY_WORDS_PER_PKT_ADDR,
-                (_packet_size.at(port).get() - get_chdr_hdr_len()) / _word_size,
+                (_payload_size.at(port).get()) / _word_size,
                 port);
             // The register to get the command FIFO space was added in v1.1
             if (_fpga_compat >= 0x00010001) {
-                _cmd_fifo_spaces[port] = _replay_reg_iface.peek32(
-                    REG_PLAY_CMD_FIFO_SPACE_ADDR, port);
+                _cmd_fifo_spaces[port] =
+                    _replay_reg_iface.peek32(REG_PLAY_CMD_FIFO_SPACE_ADDR, port);
             }
         }
     }
@@ -271,7 +277,8 @@ public:
     uint64_t get_record_position(const size_t port) override
     {
         if (_fpga_compat < 0x00010001) {
-            throw uhd::not_implemented_error("Replay block version 1.1 or "
+            throw uhd::not_implemented_error(
+                "Replay block version 1.1 or "
                 "greater required to get record position.  "
                 "Update the FPGA image to get this feature.");
         }
@@ -319,13 +326,12 @@ public:
 
     uint32_t get_max_items_per_packet(const size_t port) const override
     {
-        return (_packet_size.at(port).get() - get_chdr_hdr_len())
-               / get_play_item_size(port);
+        return _payload_size.at(port).get() / get_play_item_size(port);
     }
 
     uint32_t get_max_packet_size(const size_t port) const override
     {
-        return _packet_size.at(port).get();
+        return _payload_size.at(port).get() + get_chdr_hdr_len();
     }
 
     io_type_t get_play_type(const size_t port) const override
@@ -373,12 +379,17 @@ public:
 
     void set_max_items_per_packet(const uint32_t ipp, const size_t port) override
     {
-        set_max_packet_size(get_chdr_hdr_len() + ipp * get_play_item_size(port), port);
+        const uint32_t item_size = get_play_item_size(port);
+        set_property<uint32_t>(
+            PROP_KEY_PYLD_SIZE, ipp * item_size,
+            {res_source_info::USER, port});
     }
 
     void set_max_packet_size(const uint32_t size, const size_t port) override
     {
-        set_property<uint32_t>(PROP_KEY_PKT_SIZE, size, {res_source_info::USER, port});
+        set_property<uint32_t>(
+            PROP_KEY_PYLD_SIZE, size - get_chdr_hdr_len(),
+            {res_source_info::USER, port});
     }
 
     void issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd, const size_t port) override
@@ -408,8 +419,8 @@ public:
         if (_fpga_compat >= 0x00010001) {
             // Make sure the command queue has space.  Allow stop commands to pass.
             if (play_cmd != PLAY_CMD_STOP and _cmd_fifo_spaces[port] == 0) {
-                _cmd_fifo_spaces[port] = _replay_reg_iface.peek32(
-                    REG_PLAY_CMD_FIFO_SPACE_ADDR, port);
+                _cmd_fifo_spaces[port] =
+                    _replay_reg_iface.peek32(REG_PLAY_CMD_FIFO_SPACE_ADDR, port);
                 if (_cmd_fifo_spaces[port] == 0) {
                     throw uhd::op_failed("[Replay] Play command queue is full");
                 }
@@ -425,6 +436,10 @@ public:
 
         // Set the time for the command
         const uint32_t timed_flag = (stream_cmd.stream_now) ? 0 : PLAY_COMMAND_TIMED_MASK;
+        const uint32_t no_eob_flag =
+            (stream_cmd.stream_mode == uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE)
+                ? PLAY_COMMAND_NO_EOB_MASK
+                : 0;
         if (!stream_cmd.stream_now) {
             const double tick_rate = get_tick_rate();
             UHD_LOG_DEBUG("REPLAY",
@@ -434,15 +449,15 @@ public:
         }
 
         // Issue the stream command
-        uint32_t command_word = (play_cmd & PLAY_COMMAND_MASK) | timed_flag;
+        uint32_t command_word = (play_cmd & PLAY_COMMAND_MASK) | timed_flag | no_eob_flag;
         _replay_reg_iface.poke32(REG_PLAY_CMD_ADDR, command_word, port);
 
         // The register to get the command FIFO space was added in v1.1
         if (_fpga_compat >= 0x00010001) {
             if (play_cmd == PLAY_CMD_STOP) {
                 // The stop command will clear the FIFO, so reset the space value
-                _cmd_fifo_spaces[port] = _replay_reg_iface.peek32(
-                    REG_PLAY_CMD_FIFO_SPACE_ADDR, port);
+                _cmd_fifo_spaces[port] =
+                    _replay_reg_iface.peek32(REG_PLAY_CMD_FIFO_SPACE_ADDR, port);
             } else {
                 _cmd_fifo_spaces[port]--;
             }
@@ -508,7 +523,8 @@ private:
         const io_type_t default_type = IO_TYPE_SC16;
         const uint64_t play_offset   = 0;
         const uint64_t play_size     = _mem_size;
-        const uint32_t packet_size   = get_mtu({res_source_info::OUTPUT_EDGE, port});
+        const uint32_t max_payload   = get_max_payload_size({res_source_info::OUTPUT_EDGE, port});
+        const uint32_t payload_size  = max_payload - (max_payload % DEFAULT_MULT);
 
         // Initialize properties
         _play_type.emplace_back(property_t<std::string>(
@@ -517,21 +533,21 @@ private:
             PROP_KEY_PLAY_OFFSET, play_offset, {res_source_info::USER, port}));
         _play_size.push_back(property_t<uint64_t>(
             PROP_KEY_PLAY_SIZE, play_size, {res_source_info::USER, port}));
-        _packet_size.push_back(property_t<uint32_t>(
-            PROP_KEY_PKT_SIZE, packet_size, {res_source_info::USER, port}));
+        _payload_size.push_back(property_t<uint32_t>(
+            PROP_KEY_PYLD_SIZE, payload_size, {res_source_info::USER, port}));
         _atomic_item_size_out.push_back(property_t<size_t>(
             PROP_KEY_ATOMIC_ITEM_SIZE, _word_size, {res_source_info::OUTPUT_EDGE, port}));
         UHD_ASSERT_THROW(_play_type.size() == port + 1);
         UHD_ASSERT_THROW(_play_offset.size() == port + 1);
         UHD_ASSERT_THROW(_play_size.size() == port + 1);
-        UHD_ASSERT_THROW(_packet_size.size() == port + 1);
+        UHD_ASSERT_THROW(_payload_size.size() == port + 1);
         UHD_ASSERT_THROW(_atomic_item_size_out.size() == port + 1);
 
         // Register user properties
         register_property(&_play_type.at(port));
         register_property(&_play_offset.at(port));
         register_property(&_play_size.at(port));
-        register_property(&_packet_size.at(port));
+        register_property(&_payload_size.at(port));
         register_property(&_atomic_item_size_out.at(port));
 
         // Add property resolvers
@@ -544,10 +560,11 @@ private:
         add_property_resolver({&_play_size.at(port)},
             {&_play_size.at(port)},
             [this, port]() { _set_play_size(_play_size.at(port).get(), port); });
-        add_property_resolver({&_packet_size.at(port),
-                                  get_mtu_prop_ref({res_source_info::OUTPUT_EDGE, port})},
-            {},
-            [this, port]() { _set_packet_size(_packet_size.at(port).get(), port); });
+        add_property_resolver({&_payload_size.at(port),
+                                  get_mtu_prop_ref({res_source_info::OUTPUT_EDGE, port}),
+                                  &_atomic_item_size_out.back()},
+            {&_payload_size.at(port)},
+            [this, port]() { _set_payload_size(_payload_size.at(port).get(), port); });
         add_property_resolver({&_atomic_item_size_out.back(),
                                   get_mtu_prop_ref({res_source_info::OUTPUT_EDGE, port})},
             {&_atomic_item_size_out.back()},
@@ -612,46 +629,50 @@ private:
         _replay_reg_iface.poke64(REG_PLAY_BUFFER_SIZE_LO_ADDR, play_size, port);
     }
 
-    void _set_packet_size(const uint32_t packet_size, const size_t port)
+    // This method is only called by the property resolver and coerces the
+    // property value to a legal value if necessary.
+    void _set_payload_size(const uint32_t payload_size, const size_t port)
     {
-        const size_t mtu               = get_mtu({res_source_info::OUTPUT_EDGE, port});
-        uint32_t requested_packet_size = packet_size;
-        if (requested_packet_size > mtu) {
-            requested_packet_size = mtu;
-            RFNOC_LOG_WARNING("Requested packet size exceeds MTU! Coercing to "
-                              << requested_packet_size);
+        const size_t max_pyld_size = get_max_payload_size(
+            {res_source_info::OUTPUT_EDGE, port}, true);
+        uint32_t new_pyld_size = payload_size;
+        if (new_pyld_size > max_pyld_size) {
+            new_pyld_size = max_pyld_size;
+            RFNOC_LOG_DEBUG("Requested payload size " << payload_size <<
+                            " exceeds maximum! Coercing to " << new_pyld_size);
         }
-        const size_t max_payload_bytes =
-            get_max_payload_size({res_source_info::OUTPUT_EDGE, port});
+
+        // For correct behavior, we must ensure that the replay payload size is
+        // a multiple of the:
+        //   - Replay word size (_word_size)
+        //   - Atomic item size (e.g., the radio word size)
+        //   - Configured item size (e.g., sample size)
         const uint32_t item_size = get_play_item_size(port);
-        const uint32_t ipc       = _word_size / item_size; // items per cycle
-        const uint32_t max_items = max_payload_bytes / item_size;
-        const uint32_t max_ipp   = max_items - (max_items % ipc);
-        const uint32_t requested_payload_size =
-            requested_packet_size - (mtu - max_payload_bytes);
-        uint32_t ipp = requested_payload_size / item_size;
-        if (ipp > max_ipp) {
-            RFNOC_LOG_DEBUG("ipp value " << ipp << " exceeds MTU of " << mtu
-                                         << "! Coercing to " << max_ipp);
-            ipp = max_ipp;
+        const uint32_t atomic_item_size = _atomic_item_size_out.at(port).get();
+        const uint32_t min_chunk = uhd::math::lcm<uint32_t>(
+            uhd::math::lcm<uint32_t>(item_size, atomic_item_size),
+            _word_size);
+
+        if (new_pyld_size % min_chunk != 0) {
+            const uint32_t coerced_size =
+                new_pyld_size - (new_pyld_size % min_chunk);
+            RFNOC_LOG_WARNING("Payload size " << new_pyld_size <<
+                              " is not compatible! Coercing to " << coerced_size);
+            new_pyld_size = coerced_size;
         }
-        if ((ipp % ipc) != 0) {
-            ipp = ipp - (ipp % ipc);
-            RFNOC_LOG_WARNING(
-                "ipp must be a multiple of the block bus width! Coercing to " << ipp);
+        if (new_pyld_size < min_chunk) {
+            const uint32_t coerced_size = min_chunk;
+            RFNOC_LOG_WARNING("Payload size " << new_pyld_size <<
+                              " is too small! Coercing to " << coerced_size);
+            new_pyld_size = coerced_size;
         }
-        if (ipp <= 0) {
-            ipp = max_ipp;
-            RFNOC_LOG_WARNING("ipp must be greater than zero! Coercing to " << ipp);
-        }
-        // Packet size must be a multiple of word size
-        if ((packet_size % _word_size) != 0) {
-            throw uhd::value_error("Packet size must be a multiple of word size.");
-        }
+
         const uint16_t words_per_packet =
-            uhd::narrow_cast<uint16_t>(ipp * item_size / _word_size);
+            uhd::narrow_cast<uint16_t>(new_pyld_size / _word_size);
         _replay_reg_iface.poke32(
             REG_PLAY_WORDS_PER_PKT_ADDR, uint32_t(words_per_packet), port);
+
+        _payload_size.at(port) = new_pyld_size;
     }
 
     void _validate_record_buffer(const size_t port)
@@ -724,7 +745,7 @@ private:
     std::vector<property_t<std::string>> _play_type;
     std::vector<property_t<uint64_t>> _play_offset;
     std::vector<property_t<uint64_t>> _play_size;
-    std::vector<property_t<uint32_t>> _packet_size;
+    std::vector<property_t<uint32_t>> _payload_size;
     std::vector<property_t<size_t>> _atomic_item_size_in;
     std::vector<property_t<size_t>> _atomic_item_size_out;
 
