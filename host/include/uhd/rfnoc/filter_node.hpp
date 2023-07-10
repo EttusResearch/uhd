@@ -21,6 +21,8 @@ class filter_node
 public:
     using sptr = std::shared_ptr<filter_node>;
 
+    virtual ~filter_node() = default;
+
     virtual std::vector<std::string> get_rx_filter_names(const size_t chan) const = 0;
     virtual uhd::filter_info_base::sptr get_rx_filter(
         const std::string& name, const size_t chan) = 0;
