@@ -49,7 +49,7 @@ module eth_ipv4_add_udp #(
   // Include for byte positions
   //---------------------------------------
   `include "eth_constants.vh"
-  `include "../../axi4s_sv/axi4s.vh"
+  `include "axi4s.vh"
 
   //   tUser = {1'b0,trailing bytes(always full)}
   AxiStreamPacketIf #(.DATA_WIDTH(i.DATA_WIDTH),.USER_WIDTH(ENET_USER_W),.TKEEP(0),
