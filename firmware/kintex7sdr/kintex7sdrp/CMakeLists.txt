@@ -22,7 +22,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 ADD_DEFINITIONS(-DUSRP2P)
 ADD_DEFINITIONS(-DUDP_UART_MASK=4) #GPS=UART2 streaming enabled
 
-ADD_LIBRARY(libusrp2pfw STATIC
+ADD_LIBRARY(libkintex7sdrpfw STATIC
     ${COMMON_SRCS}
     spif.c
     spi_flash.c
@@ -40,7 +40,7 @@ ADD_SUBDIRECTORY(bootloader)
 ########################################################################
 SET(GEN_OUTPUTS_BIN_SIZE 0x3fff)
 
-ADD_EXECUTABLE(usrp2p_txrx_uhd.elf ${CMAKE_SOURCE_DIR}/apps/txrx_uhd.c)
-TARGET_LINK_LIBRARIES(usrp2p_txrx_uhd.elf libusrp2pfw)
-GEN_OUTPUTS(usrp2p_txrx_uhd.elf)
+ADD_EXECUTABLE(kintex7sdrp_txrx_uhd.elf ${CMAKE_SOURCE_DIR}/apps/txrx_uhd.c)
+TARGET_LINK_LIBRARIES(kintex7sdrp_txrx_uhd.elf libkintex7sdrpfw)
+GEN_OUTPUTS(kintex7sdrp_txrx_uhd.elf)
 

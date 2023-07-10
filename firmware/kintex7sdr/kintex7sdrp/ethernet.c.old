@@ -27,7 +27,7 @@
 #include <nonstdio.h>
 #include <stdbool.h>
 #include <i2c.h>
-#include "usrp2/fw_common.h"
+#include "kintex7sdr/fw_common.h"
 
 #define VERBOSE 0
 

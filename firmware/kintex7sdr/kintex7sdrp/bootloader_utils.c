@@ -61,7 +61,7 @@ void do_the_bootload_thing(void) {
 	set_safe_booted_flag(0); //haven't booted yet
 	
 	if(BUTTON_PUSHED) { //see memory_map.h
-		puts("Starting USRP2+ in safe mode. Loading safe firmware.");
+		puts("Starting KINTEX7SDR+ in safe mode. Loading safe firmware.");
 
 		if(is_valid_fw_image(SAFE_FW_IMAGE_LOCATION_ADDR)) {
 			spi_flash_read(SAFE_FW_IMAGE_LOCATION_ADDR, FW_IMAGE_SIZE_BYTES, (void *)RAM_BASE);
