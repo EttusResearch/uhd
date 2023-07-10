@@ -45,7 +45,7 @@ MACRO(GEN_COE target)
     ADD_CUSTOM_TARGET(
         ${name}_coe ALL DEPENDS ${name}.coe
     )
-ENDMACRO(GEN_RMI)
+ENDMACRO(GEN_COE)
 
 ########################################################################
 ADD_EXECUTABLE(bootloader.elf ${CMAKE_SOURCE_DIR}/apps/txrx_uhd.c)

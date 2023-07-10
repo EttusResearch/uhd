@@ -50,7 +50,7 @@ typedef enum {
 
   KINTEX7SDR_FW_UPDATE_ID_KTHXBAI = '~'
 
-} usrp2_fw_update_id_t;
+} kintex7sdr_fw_update_id_t;
 
 typedef struct {
   uint32_t proto_ver;
@@ -69,7 +69,7 @@ typedef struct {
       uint32_t memory_size_bytes;
     } flash_info_args;
   } data;
-} usrp2_fw_update_data_t;
+} kintex7sdr_fw_update_data_t;
 
 void handle_udp_fw_update_packet(struct socket_address src, struct socket_address dst,
                                  unsigned char *payload, int payload_len);

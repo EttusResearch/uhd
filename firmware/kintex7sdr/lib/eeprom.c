@@ -17,19 +17,19 @@
 
 #include "i2c.h"
 #include "mdelay.h"
-#include "usrp2/fw_common.h"
+#include "kintex7sdr/fw_common.h"
 
 static const int EEPROM_PAGESIZE = 16;
 
 bool find_safe_booted_flag(void) {
 	unsigned char flag_byte;
-	eeprom_read(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_BOOTLOADER_FLAGS, &flag_byte, 1);
+	eeprom_read(KINTEX7SDR_I2C_ADDR_MBOARD, KINTEX7SDR_EE_MBOARD_BOOTLOADER_FLAGS, &flag_byte, 1);
 	return (flag_byte == 0x5E);
 }
 
 void set_safe_booted_flag(bool flag) {
 	unsigned char flag_byte = flag ? 0x5E : 0xDC;
-	eeprom_write(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_BOOTLOADER_FLAGS, &flag_byte, 1);
+	eeprom_write(KINTEX7SDR_I2C_ADDR_MBOARD, KINTEX7SDR_EE_MBOARD_BOOTLOADER_FLAGS, &flag_byte, 1);
 }
 
 bool

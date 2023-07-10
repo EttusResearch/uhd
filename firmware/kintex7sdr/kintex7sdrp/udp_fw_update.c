@@ -42,10 +42,10 @@ spi_flash_async_state_t spi_flash_async_state;
 void handle_udp_fw_update_packet(struct socket_address src, struct socket_address dst,
                                  unsigned char *payload, int payload_len) {
 
-  const usrp2_fw_update_data_t *update_data_in = (usrp2_fw_update_data_t *) payload;
+  const kintex7sdr_fw_update_data_t *update_data_in = (kintex7sdr_fw_update_data_t *) payload;
 
-  usrp2_fw_update_data_t update_data_out;
-  usrp2_fw_update_id_t update_data_in_id = update_data_in->id;
+  kintex7sdr_fw_update_data_t update_data_out;
+  kintex7sdr_fw_update_id_t update_data_in_id = update_data_in->id;
 
   //ensure that the protocol versions match
 /*  if (payload_len >= sizeof(uint32_t) && update_data_in->proto_ver != KINTEX7SDR_FW_COMPAT_NUM){
@@ -56,9 +56,9 @@ void handle_udp_fw_update_packet(struct socket_address src, struct socket_addres
   }
 */
   //ensure that this is not a short packet
-  if (payload_len < sizeof(usrp2_fw_update_data_t)){
+  if (payload_len < sizeof(kintex7sdr_fw_update_data_t)){
       printf("!Error in update packet handler: Expected payload length %d, but got %d\n",
-          (int)sizeof(usrp2_fw_update_data_t), payload_len
+          (int)sizeof(kintex7sdr_fw_update_data_t), payload_len
       );
       update_data_in_id = KINTEX7SDR_FW_UPDATE_ID_WAT;
   }

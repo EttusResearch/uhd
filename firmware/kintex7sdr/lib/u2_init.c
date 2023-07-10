@@ -24,7 +24,7 @@
 #include "i2c.h"
 #include "mdelay.h"
 #include "clocks.h"
-#include "usrp2/fw_common.h"
+#include "kintex7sdr/fw_common.h"
 #include "nonstdio.h"
 #include "ltc2185.h"
 #include <clocks.h>

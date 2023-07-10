@@ -22,7 +22,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 ADD_DEFINITIONS(-DUSRP2)
 ADD_DEFINITIONS(-DUDP_UART_MASK=0)
 
-ADD_LIBRARY(libusrp2fw STATIC
+ADD_LIBRARY(libkintex7sdrfw STATIC
     ${COMMON_SRCS}
     sd.c
     ethernet.c
@@ -31,7 +31,7 @@ ADD_LIBRARY(libusrp2fw STATIC
 ########################################################################
 SET(GEN_OUTPUTS_BIN_SIZE 0x3fff)
 
-ADD_EXECUTABLE(usrp2_txrx_uhd.elf ${CMAKE_SOURCE_DIR}/apps/txrx_uhd.c)
-TARGET_LINK_LIBRARIES(usrp2_txrx_uhd.elf libusrp2fw)
-GEN_OUTPUTS(usrp2_txrx_uhd.elf)
+ADD_EXECUTABLE(kintex7sdr_txrx_uhd.elf ${CMAKE_SOURCE_DIR}/apps/txrx_uhd.c)
+TARGET_LINK_LIBRARIES(kintex7sdr_txrx_uhd.elf libkintex7sdrfw)
+GEN_OUTPUTS(kintex7sdr_txrx_uhd.elf)
 

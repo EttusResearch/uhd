@@ -22,7 +22,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include "i2c.h"
-#include "usrp2/fw_common.h"
+#include "kintex7sdr/fw_common.h"
 
 static bool
 unprogrammed(const void *t, size_t len)
@@ -61,16 +61,16 @@ static void eth_addrs_init(void){
     eth_addrs_initialized = true;
 
     #define eth_addrs_init_x(addr, x){ \
-        const bool ok = eeprom_read(USRP2_I2C_ADDR_MBOARD, addr, &current_eth_addrs.x, sizeof(current_eth_addrs.x)); \
+        const bool ok = eeprom_read(KINTEX7SDR_I2C_ADDR_MBOARD, addr, &current_eth_addrs.x, sizeof(current_eth_addrs.x)); \
         if (!ok || unprogrammed(&current_eth_addrs.x, sizeof(current_eth_addrs.x))){ \
             memcpy(&current_eth_addrs.x, &default_eth_addrs.x, sizeof(current_eth_addrs.x)); \
         } \
     }
 
-    eth_addrs_init_x(USRP2_EE_MBOARD_MAC_ADDR, mac_addr);
-    eth_addrs_init_x(USRP2_EE_MBOARD_IP_ADDR,  ip_addr);
-    eth_addrs_init_x(USRP2_EE_MBOARD_GATEWAY,  gateway);
-    eth_addrs_init_x(USRP2_EE_MBOARD_SUBNET,   subnet);
+    eth_addrs_init_x(KINTEX7SDR_EE_MBOARD_MAC_ADDR, mac_addr);
+    eth_addrs_init_x(KINTEX7SDR_EE_MBOARD_IP_ADDR,  ip_addr);
+    eth_addrs_init_x(KINTEX7SDR_EE_MBOARD_GATEWAY,  gateway);
+    eth_addrs_init_x(KINTEX7SDR_EE_MBOARD_SUBNET,   subnet);
 
 }
 
@@ -95,7 +95,7 @@ const struct ip_addr *get_gateway(void){
 }
 
 bool set_ip_addr(const struct ip_addr *t){
-    const bool ok = eeprom_write(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_IP_ADDR, t, sizeof(struct ip_addr));
+    const bool ok = eeprom_write(KINTEX7SDR_I2C_ADDR_MBOARD, KINTEX7SDR_EE_MBOARD_IP_ADDR, t, sizeof(struct ip_addr));
     if (ok) current_eth_addrs.ip_addr = *t;
     return ok;
 }
