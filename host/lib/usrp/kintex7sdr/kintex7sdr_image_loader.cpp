@@ -93,11 +93,10 @@ typedef enum {
  * Mapping revision numbers to names
  */
 static const uhd::dict<uint32_t, std::string> kintex7sdr_filename_map =
-        boost::assign::map_list_of(
-                0, "n2xx") // Is an N-Series, but the EEPROM value is invalid
-                (0xa, "kintex7sdr_r3")(0x100a, "kintex7sdr_r4")(0x10a, "n210_r3")(0x110a, "n210_r4")
-
-                (0x210a, "n210_xk")(0x200a, "n210_xa");
+        boost::assign::map_list_of
+                (0, "n2xx") // Is an N-Series, but the EEPROM value is invalid
+                (0x210a, "n210_xk")
+                (0x200a, "n210_xa");
 
 /*
  * Packet structure
@@ -147,33 +146,33 @@ static void print_kintex7sdr_error(const image_loader::image_loader_args_t &imag
     std::string kintex7sdr_card_burner_gui = "\"";
     const std::string nl              = " ^\n    ";
 #else
-    std::string kintex7sdr_card_burner_gui = "sudo \"";
+    std::string usrp2_card_burner_gui = "sudo \"";
     const std::string nl = " \\\n    ";
 #endif
 
-    kintex7sdr_card_burner_gui += find_utility("kintex7sdr_card_burner_gui.py");
-    kintex7sdr_card_burner_gui += "\"";
+    usrp2_card_burner_gui += find_utility("usrp2_card_burner_gui.py");
+    usrp2_card_burner_gui += "\"";
 
     if (image_loader_args.load_firmware) {
-        kintex7sdr_card_burner_gui += str(boost::format("%s--fw=\"%s\"") % nl
+        usrp2_card_burner_gui += str(boost::format("%s--fw=\"%s\"") % nl
                                      % ((image_loader_args.firmware_path.empty())
-                                        ? find_image_path("kintex7sdr_fw.bin")
+                                        ? find_image_path("usrp_fw.bin")
                                         : image_loader_args.firmware_path));
     }
     if (image_loader_args.load_fpga) {
-        kintex7sdr_card_burner_gui += str(
+        usrp2_card_burner_gui += str(
                 boost::format("%s--fpga=\"%s\"") % nl
-                % ((image_loader_args.fpga_path.empty()) ? find_image_path("kintex7sdr_fpga.bin")
+                % ((image_loader_args.fpga_path.empty()) ? find_image_path("usrp_fpga.bin")
                                                          : image_loader_args.fpga_path));
     }
 
     throw uhd::runtime_error(str(
             boost::format(
-                    "The specified device is a USRP2, which is not supported by this utility.\n"
+                    "The specified device is not KINTEX7SDR, which is not supported by this utility.\n"
                     "Instead, plug the device's SD card into your machine and run this "
                     "command:\n\n"
                     "%s")
-            % kintex7sdr_card_burner_gui));
+            % usrp2_card_burner_gui));
 }
 
 /*
@@ -187,20 +186,16 @@ kintex7sdr_send_and_recv(udp_simple::sptr
                    *pkt_out,
                    uint8_t *data
 ) {
-    pkt_out->
-            proto_ver = htonx<uint32_t>(KINTEX7SDR_FW_COMPAT_NUM);
-    pkt_out->
-            id = htonx<uint32_t>(pkt_code);
-    xport->
-            send(boost::asio::buffer(pkt_out, sizeof(*pkt_out))
-    );
-    return xport->
-            recv(boost::asio::buffer(data, udp_simple::mtu),
-                 UDP_TIMEOUT);
+    pkt_out->proto_ver = htonx<uint32_t>(KINTEX7SDR_FW_COMPAT_NUM);
+    pkt_out->id = htonx<uint32_t>(pkt_code);
+    xport->send(boost::asio::buffer(pkt_out, sizeof(*pkt_out)));
+    return xport->recv(boost::asio::buffer(data, udp_simple::mtu),UDP_TIMEOUT);
 }
 
 static UHD_INLINE bool kintex7sdr_response_matches(
-        const kintex7sdr_fw_update_data_t *pkt_in, kintex7sdr_fw_update_id_t pkt_code, size_t len) {
+    const kintex7sdr_fw_update_data_t *pkt_in,
+    kintex7sdr_fw_update_id_t pkt_code, size_t len
+) {
     return (len > offsetof(kintex7sdr_fw_update_data_t, data)
             and ntohl(pkt_in->id) == (unsigned) pkt_code);
 }
@@ -218,8 +213,7 @@ static uhd::device_addr_t kintex7sdr_find(
         udp_simple::sptr rev_xport;
         kintex7sdr_fw_update_data_t pkt_out;
         uint8_t data_in[udp_simple::mtu];
-        const kintex7sdr_fw_update_data_t *pkt_in =
-                reinterpret_cast<const kintex7sdr_fw_update_data_t *>(data_in);
+        const auto *pkt_in = reinterpret_cast<const kintex7sdr_fw_update_data_t *>(data_in);
         size_t len = 0;
 
         /*
@@ -284,9 +278,7 @@ static void kintex7sdr_validate_firmware_image(kintex7sdr_session_t &session) {
 
     session.size = fs::file_size(session.filepath);
 
-    if (session.dev_addr["hw_rev"] == "n210_xk")
-        session.max_size = N200_XK_FW_MAX_SIZE_BYTES;
-    else if (session.dev_addr["hw_rev"] == "n210_xa")
+    if (session.dev_addr["hw_rev"] == "n210_xk" or session.dev_addr["hw_rev"] == "n210_xa")
         session.max_size = N200_XK_FW_MAX_SIZE_BYTES;
     else
         session.max_size = N200_FW_MAX_SIZE_BYTES;
@@ -321,9 +313,7 @@ static void kintex7sdr_validate_fpga_image(kintex7sdr_session_t &session) {
     }
 
     session.size = fs::file_size(session.filepath);
-    if (session.dev_addr["hw_rev"] == "n210_xk")
-        session.max_size = N200_XK_FPGA_MAX_SIZE_BYTES;
-    else if (session.dev_addr["hw_rev"] == "n210_xa")
+    if (session.dev_addr["hw_rev"] == "n210_xk" or session.dev_addr["hw_rev"] == "n210_xa")
         session.max_size = N200_XK_FPGA_MAX_SIZE_BYTES;
     else
         session.max_size = N200_FPGA_MAX_SIZE_BYTES;
@@ -372,17 +362,16 @@ static void kintex7sdr_setup_session(kintex7sdr_session_t &session,
      * EEPROM or is otherwise unable to provide its revision, this is
      * impossible, and the user must manually provide a firmware file.
      */
-    if ((session.fw and image_loader_args.firmware_path.empty())
-        or image_loader_args.fpga_path.empty()) {
+    if ((session.fw and image_loader_args.firmware_path.empty()) or image_loader_args.fpga_path.empty()) {
         if (session.dev_addr["hw_rev"] == "n2xx") {
             throw uhd::runtime_error("This device's revision cannot be determined. "
                                      "You must manually specify a filepath.");
         } else {
             session.filepath = session.fw
                                ? find_image_path(str(
-                            boost::format("usrp_%s_fw.bin")
+                            boost::format("kintex7sdr_%s_fw.bin")
                             % erase_tail_copy(session.dev_addr["hw_rev"], 3)))
-                               : find_image_path(str(boost::format("usrp_%s_fpga.bin")
+                               : find_image_path(str(boost::format("kintex7sdr_%s_fpga.bin")
                                                      % session.dev_addr["hw_rev"]));
         }
     } else {
@@ -425,8 +414,7 @@ static void kintex7sdr_setup_session(kintex7sdr_session_t &session,
 static void kintex7sdr_erase_image(kintex7sdr_session_t &session) {
     // UDP receive buffer
     kintex7sdr_fw_update_data_t pkt_out;
-    const kintex7sdr_fw_update_data_t *pkt_in =
-            reinterpret_cast<const kintex7sdr_fw_update_data_t *>(session.data_in);
+    const auto *pkt_in = reinterpret_cast<const kintex7sdr_fw_update_data_t *>(session.data_in);
 
     // Setting up UDP packet
     pkt_out.data.flash_args.flash_addr = htonx<uint32_t>(session.flash_addr);
@@ -473,8 +461,7 @@ static void kintex7sdr_erase_image(kintex7sdr_session_t &session) {
 static void kintex7sdr_write_image(kintex7sdr_session_t &session) {
     // UDP receive buffer
     kintex7sdr_fw_update_data_t pkt_out;
-    const kintex7sdr_fw_update_data_t *pkt_in =
-            reinterpret_cast<const kintex7sdr_fw_update_data_t *>(session.data_in);
+    const auto *pkt_in = reinterpret_cast<const kintex7sdr_fw_update_data_t *>(session.data_in);
     size_t len = 0;
 
     // Write image
@@ -527,8 +514,7 @@ static void kintex7sdr_write_image(kintex7sdr_session_t &session) {
 static void kintex7sdr_verify_image(kintex7sdr_session_t &session) {
     // UDP receive buffer
     kintex7sdr_fw_update_data_t pkt_out;
-    const kintex7sdr_fw_update_data_t *pkt_in =
-            reinterpret_cast<const kintex7sdr_fw_update_data_t *>(session.data_in);
+    const auto *pkt_in = reinterpret_cast<const kintex7sdr_fw_update_data_t *>(session.data_in);
     size_t len = 0;
 
     // Read and verify image
