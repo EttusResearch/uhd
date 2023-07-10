@@ -18,11 +18,10 @@
 ########################################################################
 # setup project and compiler
 ########################################################################
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
-#force the compiler because the check wont use the special flag below
-INCLUDE(CMakeForceCompiler)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6...3.3)
 SET(CMAKE_SYSTEM_NAME Generic)
-CMAKE_FORCE_C_COMPILER(zpu-elf-gcc GNU)
+SET(CMAKE_C_COMPILER zpu-elf-gcc)
+SET (CMAKE_C_COMPILER_WORKS 1)
 PROJECT(KINTEX7SDR_FW C)
 
 ########################################################################
