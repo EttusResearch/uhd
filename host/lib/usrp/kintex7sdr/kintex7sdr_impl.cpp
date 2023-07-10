@@ -1,0 +1,959 @@
+//
+// Copyright 2010-2012,2014,2017 Ettus Research, A National Instruments Company
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+
+#include "kintex7sdr_impl.hpp"
+#include "fw_common.h"
+#include <uhd/exception.hpp>
+#include <uhd/transport/if_addrs.hpp>
+#include <uhd/transport/udp_zero_copy.hpp>
+#include <uhd/types/ranges.hpp>
+#include <uhd/utils/byteswap.hpp>
+#include <uhd/utils/log.hpp>
+#include <uhd/utils/safe_call.hpp>
+#include <uhd/utils/static.hpp>
+#include <uhdlib/usrp/common/apply_corrections.hpp>
+#include <boost/asio.hpp>
+#include <boost/asio/ip/address_v4.hpp>
+#include <boost/format.hpp>
+#include <cmath>
+#include <functional>
+
+using namespace uhd;
+using namespace uhd::usrp;
+using namespace uhd::transport;
+
+// A reasonable number of frames for send/recv and async/sync
+static const size_t DEFAULT_NUM_FRAMES = 32;
+
+/***********************************************************************
+ * Discovery over the udp transport
+ **********************************************************************/
+device_addrs_t kintex7sdr_find(const device_addr_t& hint_)
+{
+    // handle the multi-device discovery
+    device_addrs_t hints = separate_device_addr(hint_);
+    if (hints.size() > 1) {
+        device_addrs_t found_devices;
+        std::string error_msg;
+        for (const device_addr_t& hint_i : hints) {
+            device_addrs_t found_devices_i = kintex7sdr_find(hint_i);
+            if (found_devices_i.size() != 1)
+                error_msg +=
+                    str(boost::format(
+                            "Could not resolve device hint \"%s\" to a single device.")
+                        % hint_i.to_string());
+            else
+                found_devices.push_back(found_devices_i[0]);
+        }
+        if (found_devices.empty())
+            return device_addrs_t();
+        if (not error_msg.empty())
+            throw uhd::value_error(error_msg);
+        return device_addrs_t(1, combine_device_addrs(found_devices));
+    }
+
+    // initialize the hint for a single device case
+    UHD_ASSERT_THROW(hints.size() <= 1);
+    hints.resize(1); // in case it was empty
+    device_addr_t hint = hints[0];
+    device_addrs_t kintex7sdr_addrs;
+
+    // return an empty list of addresses when type is set to non-kintex7sdr
+    if (hint.has_key("type") and hint["type"] != "kintex7sdr")
+        return kintex7sdr_addrs;
+
+    // Return an empty list of addresses when a resource is specified,
+    // since a resource is intended for a different, non-USB, device.
+    if (hint.has_key("resource"))
+        return kintex7sdr_addrs;
+
+    // if no address was specified, send a broadcast on each interface
+    if (not hint.has_key("addr")) {
+        for (const if_addrs_t& if_addrs : get_if_addrs()) {
+            // avoid the loopback device
+            if (if_addrs.inet == boost::asio::ip::address_v4::loopback().to_string())
+                continue;
+
+            // create a new hint with this broadcast address
+            device_addr_t new_hint = hint;
+            new_hint["addr"]       = if_addrs.bcast;
+
+            // call discover with the new hint and append results
+            device_addrs_t new_kintex7sdr_addrs = kintex7sdr_find(new_hint);
+            kintex7sdr_addrs.insert(
+                kintex7sdr_addrs.begin(), new_kintex7sdr_addrs.begin(), new_kintex7sdr_addrs.end());
+        }
+        return kintex7sdr_addrs;
+    }
+
+    // Create a UDP transport to communicate:
+    // Some devices will cause a throw when opened for a broadcast address.
+    // We print and recover so the caller can loop through all bcast addrs.
+    udp_simple::sptr udp_transport;
+    try {
+        udp_transport = udp_simple::make_broadcast(
+            hint["addr"], BOOST_STRINGIZE(KINTEX7SDR_UDP_CTRL_PORT));
+    } catch (const std::exception& e) {
+        UHD_LOGGER_ERROR("KINTEX7SDR")
+            << "Cannot open UDP transport on " << hint["addr"] << ": " << e.what();
+        return kintex7sdr_addrs; // dont throw, but return empty address so caller can insert
+    }
+
+    // send a hello control packet
+    kintex7sdr_ctrl_data_t ctrl_data_out = kintex7sdr_ctrl_data_t();
+    ctrl_data_out.proto_ver         = uhd::htonx<uint32_t>(KINTEX7SDR_FW_COMPAT_NUM);
+    ctrl_data_out.id                = uhd::htonx<uint32_t>(KINTEX7SDR_CTRL_ID_WAZZUP_BRO);
+    try {
+        udp_transport->send(boost::asio::buffer(&ctrl_data_out, sizeof(ctrl_data_out)));
+    } catch (const std::exception& ex) {
+        UHD_LOGGER_ERROR("KINTEX7SDR") << "KINTEX7SDR Network discovery error " << ex.what();
+    } catch (...) {
+        UHD_LOGGER_ERROR("KINTEX7SDR") << "KINTEX7SDR Network discovery unknown error ";
+    }
+
+    // loop and recieve until the timeout
+    uint8_t kintex7sdr_ctrl_data_in_mem[udp_simple::mtu]; // allocate max bytes for recv
+    const kintex7sdr_ctrl_data_t* ctrl_data_in =
+        reinterpret_cast<const kintex7sdr_ctrl_data_t*>(kintex7sdr_ctrl_data_in_mem);
+    while (true) {
+        size_t len = udp_transport->recv(boost::asio::buffer(kintex7sdr_ctrl_data_in_mem));
+        if (len > offsetof(kintex7sdr_ctrl_data_t, data)
+            and ntohl(ctrl_data_in->id) == KINTEX7SDR_CTRL_ID_WAZZUP_DUDE) {
+            // make a boost asio ipv4 with the raw addr in host byte order
+            device_addr_t new_addr;
+            new_addr["type"] = "kintex7sdr";
+            // We used to get the address from the control packet.
+            // Now now uses the socket itself to yield the address.
+            // boost::asio::ip::address_v4 ip_addr(ntohl(ctrl_data_in->data.ip_addr));
+            // new_addr["addr"] = ip_addr.to_string();
+            new_addr["addr"] = udp_transport->get_recv_addr();
+
+            // Attempt a simple 2-way communication with a connected socket.
+            // Reason: Although the USRP will respond the broadcast above,
+            // we may not be able to communicate directly (non-broadcast).
+            udp_simple::sptr ctrl_xport = udp_simple::make_connected(
+                new_addr["addr"], BOOST_STRINGIZE(KINTEX7SDR_UDP_CTRL_PORT));
+            ctrl_xport->send(boost::asio::buffer(&ctrl_data_out, sizeof(ctrl_data_out)));
+            size_t len = ctrl_xport->recv(boost::asio::buffer(kintex7sdr_ctrl_data_in_mem));
+            if (len > offsetof(kintex7sdr_ctrl_data_t, data)
+                and ntohl(ctrl_data_in->id) == KINTEX7SDR_CTRL_ID_WAZZUP_DUDE) {
+                // found the device, open up for communication!
+            } else {
+                // otherwise we don't find it...
+                continue;
+            }
+
+            // Attempt to read the name from the EEPROM and perform filtering.
+            // This operation can throw due to compatibility mismatch.
+            try {
+                kintex7sdr_iface::sptr iface = kintex7sdr_iface::make(ctrl_xport);
+                if (iface->is_device_locked())
+                    continue; // ignore locked devices
+                mboard_eeprom_t mb_eeprom = iface->mb_eeprom;
+                new_addr["name"]          = mb_eeprom["name"];
+                new_addr["serial"]        = mb_eeprom["serial"];
+            } catch (const std::exception&) {
+                // set these values as empty string so the device may still be found
+                // and the filter's below can still operate on the discovered device
+                new_addr["name"]   = "";
+                new_addr["serial"] = "";
+            }
+
+            // filter the discovered device below by matching optional keys
+            if ((not hint.has_key("name") or hint["name"] == new_addr["name"])
+                and (not hint.has_key("serial")
+                     or hint["serial"] == new_addr["serial"])) {
+                kintex7sdr_addrs.push_back(new_addr);
+            }
+
+            // dont break here, it will exit the while loop
+            // just continue on to the next loop iteration
+        }
+        if (len == 0)
+            break; // timeout
+    }
+
+    return kintex7sdr_addrs;
+}
+
+/***********************************************************************
+ * Make
+ **********************************************************************/
+static device::sptr kintex7sdr_make(const device_addr_t& device_addr)
+{
+    return device::sptr(new kintex7sdr_impl(device_addr));
+}
+
+UHD_STATIC_BLOCK(register_kintex7sdr_device)
+{
+    device::register_device(&kintex7sdr_find, &kintex7sdr_make, device::USRP);
+}
+
+/***********************************************************************
+ * MTU Discovery
+ **********************************************************************/
+struct mtu_result_t
+{
+    size_t recv_mtu, send_mtu;
+};
+
+static mtu_result_t determine_mtu(const std::string& addr, const mtu_result_t& user_mtu)
+{
+    udp_simple::sptr udp_sock =
+        udp_simple::make_connected(addr, BOOST_STRINGIZE(KINTEX7SDR_UDP_CTRL_PORT));
+
+    // The FPGA offers 4K buffers, and the user may manually request this.
+    // However, multiple simultaneous receives (2DSP slave + 2DSP master),
+    // require that buffering to be used internally, and this is a safe setting.
+    std::vector<uint8_t> buffer(std::max(user_mtu.recv_mtu, user_mtu.send_mtu));
+    kintex7sdr_ctrl_data_t* ctrl_data = reinterpret_cast<kintex7sdr_ctrl_data_t*>(&buffer.front());
+    static const double echo_timeout = 0.020; // 20 ms
+
+    // test holler - check if its supported in this fw version
+    ctrl_data->id                 = htonl(KINTEX7SDR_CTRL_ID_HOLLER_AT_ME_BRO);
+    ctrl_data->proto_ver          = htonl(KINTEX7SDR_FW_COMPAT_NUM);
+    ctrl_data->data.echo_args.len = htonl(sizeof(kintex7sdr_ctrl_data_t));
+    udp_sock->send(boost::asio::buffer(buffer, sizeof(kintex7sdr_ctrl_data_t)));
+    udp_sock->recv(boost::asio::buffer(buffer), echo_timeout);
+    if (ntohl(ctrl_data->id) != KINTEX7SDR_CTRL_ID_HOLLER_BACK_DUDE)
+        throw uhd::not_implemented_error("holler protocol not implemented");
+
+    size_t min_recv_mtu = sizeof(kintex7sdr_ctrl_data_t), max_recv_mtu = user_mtu.recv_mtu;
+    size_t min_send_mtu = sizeof(kintex7sdr_ctrl_data_t), max_send_mtu = user_mtu.send_mtu;
+
+    while (min_recv_mtu < max_recv_mtu) {
+        size_t test_mtu = (max_recv_mtu / 2 + min_recv_mtu / 2 + 3) & ~3;
+
+        ctrl_data->id                 = htonl(KINTEX7SDR_CTRL_ID_HOLLER_AT_ME_BRO);
+        ctrl_data->proto_ver          = htonl(KINTEX7SDR_FW_COMPAT_NUM);
+        ctrl_data->data.echo_args.len = htonl(test_mtu);
+        udp_sock->send(boost::asio::buffer(buffer, sizeof(kintex7sdr_ctrl_data_t)));
+
+        size_t len = udp_sock->recv(boost::asio::buffer(buffer), echo_timeout);
+
+        if (len >= test_mtu)
+            min_recv_mtu = test_mtu;
+        else
+            max_recv_mtu = test_mtu - 4;
+    }
+
+    while (min_send_mtu < max_send_mtu) {
+        size_t test_mtu = (max_send_mtu / 2 + min_send_mtu / 2 + 3) & ~3;
+
+        ctrl_data->id                 = htonl(KINTEX7SDR_CTRL_ID_HOLLER_AT_ME_BRO);
+        ctrl_data->proto_ver          = htonl(KINTEX7SDR_FW_COMPAT_NUM);
+        ctrl_data->data.echo_args.len = htonl(sizeof(kintex7sdr_ctrl_data_t));
+        udp_sock->send(boost::asio::buffer(buffer, test_mtu));
+
+        size_t len = udp_sock->recv(boost::asio::buffer(buffer), echo_timeout);
+        if (len >= sizeof(kintex7sdr_ctrl_data_t))
+            len = ntohl(ctrl_data->data.echo_args.len);
+
+        if (len >= test_mtu)
+            min_send_mtu = test_mtu;
+        else
+            max_send_mtu = test_mtu - 4;
+    }
+
+    mtu_result_t mtu;
+    mtu.recv_mtu = min_recv_mtu;
+    mtu.send_mtu = min_send_mtu;
+    return mtu;
+}
+
+/***********************************************************************
+ * Helpers
+ **********************************************************************/
+static zero_copy_if::sptr make_xport(const std::string& addr,
+    const std::string& port,
+    const device_addr_t& hints,
+    const std::string& filter)
+{
+    // only copy hints that contain the filter word
+    device_addr_t filtered_hints;
+    for (const std::string& key : hints.keys()) {
+        if (key.find(filter) == std::string::npos)
+            continue;
+        filtered_hints[key] = hints[key];
+    }
+
+    zero_copy_xport_params default_buff_args;
+    default_buff_args.send_frame_size = transport::udp_simple::mtu;
+    default_buff_args.recv_frame_size = transport::udp_simple::mtu;
+    default_buff_args.num_send_frames = DEFAULT_NUM_FRAMES;
+    default_buff_args.num_recv_frames = DEFAULT_NUM_FRAMES;
+
+    // make the transport object with the filtered hints
+    udp_zero_copy::buff_params ignored_params;
+    zero_copy_if::sptr xport = udp_zero_copy::make(
+        addr, port, default_buff_args, ignored_params, filtered_hints);
+
+    // Send a small data packet so the kintex7sdr knows the udp source port.
+    // This setup must happen before further initialization occurs
+    // or the async update packets will cause ICMP destination unreachable.
+    static const uint32_t data[2] = {uhd::htonx(uint32_t(0 /* don't care seq num */)),
+        uhd::htonx(uint32_t(KINTEX7SDR_INVALID_VRT_HEADER))};
+    transport::managed_send_buffer::sptr send_buff = xport->get_send_buff();
+    std::memcpy(send_buff->cast<void*>(), &data, sizeof(data));
+    send_buff->commit(sizeof(data));
+
+    return xport;
+}
+
+/***********************************************************************
+ * Structors
+ **********************************************************************/
+kintex7sdr_impl::kintex7sdr_impl(const device_addr_t& _device_addr)
+    : device_addr(_device_addr), _pirate_task_exit(false)
+{
+    UHD_LOGGER_INFO("KINTEX7SDR") << "Opening a KINTEX7SDR/N-Series device...";
+
+    // setup the dsp transport hints (default to a large recv buff)
+    if (not device_addr.has_key("recv_buff_size")) {
+#if defined(UHD_PLATFORM_MACOS) || defined(UHD_PLATFORM_BSD)
+        // limit buffer resize on macos or it will error
+        device_addr["recv_buff_size"] = "1e6";
+#elif defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_WIN32)
+        // set to half-a-second of buffering at max rate
+        device_addr["recv_buff_size"] = "50e6";
+#endif
+    }
+    if (not device_addr.has_key("send_buff_size")) {
+        // The buffer should be the size of the SRAM on the device,
+        // because we will never commit more than the SRAM can hold.
+        device_addr["send_buff_size"] = std::to_string(USRP2_SRAM_BYTES);
+    }
+
+    device_addrs_t device_args = separate_device_addr(device_addr);
+
+    // extract the user's requested MTU size or default
+    mtu_result_t user_mtu;
+    user_mtu.recv_mtu =
+        size_t(device_addr.cast<double>("recv_frame_size", udp_simple::mtu));
+    user_mtu.send_mtu =
+        size_t(device_addr.cast<double>("send_frame_size", udp_simple::mtu));
+
+    try {
+        // calculate the minimum send and recv mtu of all devices
+        mtu_result_t mtu = determine_mtu(device_args[0]["addr"], user_mtu);
+        for (size_t i = 1; i < device_args.size(); i++) {
+            mtu_result_t mtu_i = determine_mtu(device_args[i]["addr"], user_mtu);
+            mtu.recv_mtu       = std::min(mtu.recv_mtu, mtu_i.recv_mtu);
+            mtu.send_mtu       = std::min(mtu.send_mtu, mtu_i.send_mtu);
+        }
+
+        device_addr["recv_frame_size"] = std::to_string(mtu.recv_mtu);
+        device_addr["send_frame_size"] = std::to_string(mtu.send_mtu);
+
+        UHD_LOGGER_INFO("KINTEX7SDR")
+            << "Current recv frame size: " << mtu.recv_mtu << " bytes";
+        UHD_LOGGER_INFO("KINTEX7SDR")
+            << "Current send frame size: " << mtu.send_mtu << " bytes";
+    } catch (const uhd::not_implemented_error&) {
+        // just ignore this error, makes older fw work...
+    }
+
+    device_args = separate_device_addr(device_addr); // update args for new frame sizes
+
+    ////////////////////////////////////////////////////////////////////
+    // create controller objects and initialize the properties tree
+    ////////////////////////////////////////////////////////////////////
+    _tree            = property_tree::make();
+    _type            = device::USRP;
+    _ignore_cal_file = device_addr.has_key("ignore-cal-file");
+    _tree->create<std::string>("/name").set("KINTEX7SDR / N-Series Device");
+
+    for (size_t mbi = 0; mbi < device_args.size(); mbi++) {
+        const device_addr_t device_args_i = device_args[mbi];
+        const std::string mb              = std::to_string(mbi);
+        const std::string addr            = device_args_i["addr"];
+        const fs_path mb_path             = "/mboards/" + mb;
+
+        ////////////////////////////////////////////////////////////////
+        // create the iface that controls i2c, spi, uart, and wb
+        ////////////////////////////////////////////////////////////////
+        _mbc[mb].iface = kintex7sdr_iface::make(
+            udp_simple::make_connected(addr, BOOST_STRINGIZE(KINTEX7SDR_UDP_CTRL_PORT)));
+        _tree->create<std::string>(mb_path / "name").set(_mbc[mb].iface->get_cname());
+        _tree->create<std::string>(mb_path / "fw_version")
+            .set(_mbc[mb].iface->get_fw_version_string());
+
+        // check the fpga compatibility number
+        const uint32_t fpga_compat_num = _mbc[mb].iface->peek32(U2_REG_COMPAT_NUM_RB);
+        uint16_t fpga_major            = fpga_compat_num >> 16,
+                 fpga_minor            = fpga_compat_num & 0xffff;
+        if (fpga_major == 0) { // old version scheme
+            fpga_major = fpga_minor;
+            fpga_minor = 0;
+        }
+        int expected_fpga_compat_num =
+            std::min(KINTEX7SDR_FPGA_COMPAT_NUM, N200_FPGA_COMPAT_NUM);
+        switch (static_cast<kintex7sdr_iface::rev_type>(_mbc[mb].iface->get_rev())) {
+            case kintex7sdr_iface::USRP_N210_XK:
+            case kintex7sdr_iface::USRP_N210_XA:
+                expected_fpga_compat_num = N200_FPGA_COMPAT_NUM;
+                break;
+            default:
+                // handle case where the MB EEPROM is not programmed
+                if (fpga_major == KINTEX7SDR_FPGA_COMPAT_NUM
+                    or fpga_major == N200_FPGA_COMPAT_NUM) {
+                    UHD_LOGGER_WARNING("KINTEX7SDR")
+                        << "Unable to identify device - assuming KINTEX7SDR/N-Series device";
+                    expected_fpga_compat_num = fpga_major;
+                }
+        }
+        if (fpga_major != expected_fpga_compat_num) {
+            throw uhd::runtime_error(
+                str(boost::format(
+                        "\nPlease update the firmware and FPGA images for your device.\n"
+                        "See the application notes for KINTEX7SDR/N-Series for instructions.\n"
+                        "Expected FPGA compatibility number %d, but got %d:\n"
+                        "The FPGA build is not compatible with the host code build.\n"
+                        "%s\n")
+                    % expected_fpga_compat_num % fpga_major
+                    % _mbc[mb].iface->images_warn_help_message()));
+        }
+        _tree->create<std::string>(mb_path / "fpga_version")
+            .set(str(boost::format("%u.%u") % fpga_major % fpga_minor));
+
+        // lock the device/motherboard to this process
+        _mbc[mb].iface->lock_device(true);
+
+        ////////////////////////////////////////////////////////////////
+        // construct transports for RX and TX DSPs
+        ////////////////////////////////////////////////////////////////
+        UHD_LOGGER_TRACE("KINTEX7SDR") << "Making transport for RX DSP0...";
+        _mbc[mb].rx_dsp_xports.push_back(make_xport(
+            addr, BOOST_STRINGIZE(KINTEX7SDR_UDP_RX_DSP0_PORT), device_args_i, "recv"));
+        UHD_LOGGER_TRACE("KINTEX7SDR") << "Making transport for RX DSP1...";
+        _mbc[mb].rx_dsp_xports.push_back(make_xport(
+            addr, BOOST_STRINGIZE(KINTEX7SDR_UDP_RX_DSP1_PORT), device_args_i, "recv"));
+        UHD_LOGGER_TRACE("KINTEX7SDR") << "Making transport for TX DSP0...";
+        _mbc[mb].tx_dsp_xport = make_xport(
+            addr, BOOST_STRINGIZE(KINTEX7SDR_UDP_TX_DSP0_PORT), device_args_i, "send");
+        UHD_LOGGER_TRACE("KINTEX7SDR") << "Making transport for Control...";
+        _mbc[mb].fifo_ctrl_xport = make_xport(
+            addr, BOOST_STRINGIZE(KINTEX7SDR_UDP_FIFO_CRTL_PORT), device_addr_t(), "");
+        // set the filter on the router to take dsp data from this port
+        _mbc[mb].iface->poke32(U2_REG_ROUTER_CTRL_PORTS,
+            (KINTEX7SDR_UDP_FIFO_CRTL_PORT << 16) | KINTEX7SDR_UDP_TX_DSP0_PORT);
+
+        // create the fifo control interface for high speed register access
+        _mbc[mb].fifo_ctrl = usrp2_fifo_ctrl::make(_mbc[mb].fifo_ctrl_xport);
+        switch (static_cast<kintex7sdr_iface::rev_type>(_mbc[mb].iface->get_rev())) {
+            case kintex7sdr_iface::USRP_N210_XK:
+            case kintex7sdr_iface::USRP_N210_XA:
+                _mbc[mb].wbiface = _mbc[mb].fifo_ctrl;
+                _mbc[mb].spiface = _mbc[mb].fifo_ctrl;
+                break;
+            default:
+                _mbc[mb].wbiface = _mbc[mb].iface;
+                _mbc[mb].spiface = _mbc[mb].iface;
+                break;
+        }
+        _tree->create<double>(mb_path / "link_max_rate").set(USRP2_LINK_RATE_BPS);
+
+        ////////////////////////////////////////////////////////////////
+        // setup the mboard eeprom
+        ////////////////////////////////////////////////////////////////
+        _tree->create<mboard_eeprom_t>(mb_path / "eeprom")
+            .set(_mbc[mb].iface->mb_eeprom)
+            .add_coerced_subscriber(
+                std::bind(&kintex7sdr_impl::set_mb_eeprom, this, mb, std::placeholders::_1));
+
+        ////////////////////////////////////////////////////////////////
+        // create clock control objects
+        ////////////////////////////////////////////////////////////////
+        _mbc[mb].clock = kintex7sdr_clock_ctrl::make(_mbc[mb].iface, _mbc[mb].spiface);
+        _tree->create<double>(mb_path / "tick_rate")
+            .set_publisher(
+                std::bind(&kintex7sdr_clock_ctrl::get_master_clock_rate, _mbc[mb].clock))
+            .add_coerced_subscriber(
+                std::bind(&kintex7sdr_impl::update_tick_rate, this, std::placeholders::_1));
+
+        ////////////////////////////////////////////////////////////////
+        // create codec control objects
+        ////////////////////////////////////////////////////////////////
+        const fs_path rx_codec_path = mb_path / "rx_codecs/A";
+        const fs_path tx_codec_path = mb_path / "tx_codecs/A";
+        _tree->create<int>(rx_codec_path / "gains"); // phony property so this dir exists
+        _tree->create<int>(tx_codec_path / "gains"); // phony property so this dir exists
+        _mbc[mb].codec = kintex7sdr_codec_ctrl::make(_mbc[mb].iface, _mbc[mb].spiface);
+        switch (static_cast<kintex7sdr_iface::rev_type>(_mbc[mb].iface->get_rev())) {
+            case kintex7sdr_iface::USRP_N210_XK:{
+                _tree->create<std::string>(rx_codec_path / "name").set("LTC2185");
+                _tree->create<std::string>(tx_codec_path / "name").set("AD9142A");
+            }break;
+            case kintex7sdr_iface::USRP_N210_XA:{
+                _tree->create<std::string>(rx_codec_path / "name").set("LTC2185");
+                _tree->create<std::string>(tx_codec_path / "name").set("AD9777");
+            }break;
+
+            case kintex7sdr_iface::USRP_NXXX:
+                _tree->create<std::string>(rx_codec_path / "name").set("??????");
+                _tree->create<std::string>(tx_codec_path / "name").set("ad9777");
+                break;
+        }
+
+        ////////////////////////////////////////////////////////////////////
+        // Create the GPSDO control
+        ////////////////////////////////////////////////////////////////////
+        static const uint32_t dont_look_for_gpsdo = 0x1234abcdul;
+
+        // disable check for internal GPSDO when not the following:
+        switch (static_cast<kintex7sdr_iface::rev_type>(_mbc[mb].iface->get_rev())) {
+            case kintex7sdr_iface::USRP_N210_XK:
+            case kintex7sdr_iface::USRP_N210_XA:
+                break;
+            default:
+                _mbc[mb].iface->pokefw(U2_FW_REG_HAS_GPSDO, dont_look_for_gpsdo);
+        }
+
+        // otherwise if not disabled, look for the internal GPSDO
+        if (_mbc[mb].iface->peekfw(U2_FW_REG_HAS_GPSDO) != dont_look_for_gpsdo) {
+            UHD_LOGGER_INFO("KINTEX7SDR") << "Detecting internal GPSDO.... ";
+            try {
+                _mbc[mb].gps =
+                    gps_ctrl::make(udp_simple::make_uart(udp_simple::make_connected(
+                        addr, BOOST_STRINGIZE(KINTEX7SDR_UDP_UART_GPS_PORT))));
+            } catch (std::exception& e) {
+                UHD_LOGGER_ERROR("KINTEX7SDR")
+                    << "An error occurred making GPSDO control: " << e.what();
+            }
+            if (_mbc[mb].gps and _mbc[mb].gps->gps_detected()) {
+                for (const std::string& name : _mbc[mb].gps->get_sensors()) {
+                    _tree->create<sensor_value_t>(mb_path / "sensors" / name)
+                        .set_publisher(
+                            std::bind(&gps_ctrl::get_sensor, _mbc[mb].gps, name));
+                }
+            } else {
+                _mbc[mb].iface->pokefw(U2_FW_REG_HAS_GPSDO, dont_look_for_gpsdo);
+            }
+        }
+
+        ////////////////////////////////////////////////////////////////
+        // and do the misc mboard sensors
+        ////////////////////////////////////////////////////////////////
+        _tree->create<sensor_value_t>(mb_path / "sensors/mimo_locked")
+            .set_publisher(std::bind(&kintex7sdr_impl::get_mimo_locked, this, mb));
+        _tree->create<sensor_value_t>(mb_path / "sensors/ref_locked")
+            .set_publisher(std::bind(&kintex7sdr_impl::get_ref_locked, this, mb));
+
+        ////////////////////////////////////////////////////////////////
+        // create frontend control objects
+        ////////////////////////////////////////////////////////////////
+        _mbc[mb].rx_fe =
+            rx_frontend_core_200::make(_mbc[mb].wbiface, U2_REG_SR_ADDR(SR_RX_FRONT));
+        _mbc[mb].tx_fe =
+            tx_frontend_core_200::make(_mbc[mb].wbiface, U2_REG_SR_ADDR(SR_TX_FRONT));
+
+        _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec")
+            .add_coerced_subscriber(std::bind(
+                &kintex7sdr_impl::update_rx_subdev_spec, this, mb, std::placeholders::_1));
+        _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec")
+            .add_coerced_subscriber(std::bind(
+                &kintex7sdr_impl::update_tx_subdev_spec, this, mb, std::placeholders::_1));
+
+        const fs_path rx_fe_path = mb_path / "rx_frontends" / "A";
+        const fs_path tx_fe_path = mb_path / "tx_frontends" / "A";
+
+        _tree->create<std::complex<double>>(rx_fe_path / "dc_offset" / "value")
+            .set_coercer(std::bind(&rx_frontend_core_200::set_dc_offset,
+                _mbc[mb].rx_fe,
+                std::placeholders::_1))
+            .set(std::complex<double>(0.0, 0.0));
+        _tree->create<bool>(rx_fe_path / "dc_offset" / "enable")
+            .add_coerced_subscriber(std::bind(&rx_frontend_core_200::set_dc_offset_auto,
+                _mbc[mb].rx_fe,
+                std::placeholders::_1))
+            .set(true);
+        _tree->create<std::complex<double>>(rx_fe_path / "iq_balance" / "value")
+            .add_coerced_subscriber(std::bind(&rx_frontend_core_200::set_iq_balance,
+                _mbc[mb].rx_fe,
+                std::placeholders::_1))
+            .set(std::complex<double>(0.0, 0.0));
+        _tree->create<std::complex<double>>(tx_fe_path / "dc_offset" / "value")
+            .set_coercer(std::bind(&tx_frontend_core_200::set_dc_offset,
+                _mbc[mb].tx_fe,
+                std::placeholders::_1))
+            .set(std::complex<double>(0.0, 0.0));
+        _tree->create<std::complex<double>>(tx_fe_path / "iq_balance" / "value")
+            .add_coerced_subscriber(std::bind(&tx_frontend_core_200::set_iq_balance,
+                _mbc[mb].tx_fe,
+                std::placeholders::_1))
+            .set(std::complex<double>(0.0, 0.0));
+
+        ////////////////////////////////////////////////////////////////
+        // create rx dsp control objects
+        ////////////////////////////////////////////////////////////////
+        _mbc[mb].rx_dsps.push_back(rx_dsp_core_200::make(_mbc[mb].wbiface,
+            U2_REG_SR_ADDR(SR_RX_DSP0),
+            U2_REG_SR_ADDR(SR_RX_CTRL0),
+            USRP2_RX_SID_BASE + 0,
+            true));
+        _mbc[mb].rx_dsps.push_back(rx_dsp_core_200::make(_mbc[mb].wbiface,
+            U2_REG_SR_ADDR(SR_RX_DSP1),
+            U2_REG_SR_ADDR(SR_RX_CTRL1),
+            USRP2_RX_SID_BASE + 1,
+            true));
+        for (size_t dspno = 0; dspno < _mbc[mb].rx_dsps.size(); dspno++) {
+            _mbc[mb].rx_dsps[dspno]->set_link_rate(USRP2_LINK_RATE_BPS);
+            _tree->access<double>(mb_path / "tick_rate")
+                .add_coerced_subscriber(std::bind(&rx_dsp_core_200::set_tick_rate,
+                    _mbc[mb].rx_dsps[dspno],
+                    std::placeholders::_1));
+            fs_path rx_dsp_path = mb_path / "rx_dsps" / dspno;
+            _tree->create<meta_range_t>(rx_dsp_path / "rate/range")
+                .set_publisher(
+                    std::bind(&rx_dsp_core_200::get_host_rates, _mbc[mb].rx_dsps[dspno]));
+            _tree->create<double>(rx_dsp_path / "rate/value")
+                .set(1e6) // some default
+                .set_coercer(std::bind(&rx_dsp_core_200::set_host_rate,
+                    _mbc[mb].rx_dsps[dspno],
+                    std::placeholders::_1))
+                .add_coerced_subscriber(std::bind(&kintex7sdr_impl::update_rx_samp_rate,
+                    this,
+                    mb,
+                    dspno,
+                    std::placeholders::_1));
+            _tree->create<double>(rx_dsp_path / "freq/value")
+                .set_coercer(std::bind(&rx_dsp_core_200::set_freq,
+                    _mbc[mb].rx_dsps[dspno],
+                    std::placeholders::_1));
+            _tree->create<meta_range_t>(rx_dsp_path / "freq/range")
+                .set_publisher(
+                    std::bind(&rx_dsp_core_200::get_freq_range, _mbc[mb].rx_dsps[dspno]));
+            _tree->create<stream_cmd_t>(rx_dsp_path / "stream_cmd")
+                .add_coerced_subscriber(std::bind(&rx_dsp_core_200::issue_stream_command,
+                    _mbc[mb].rx_dsps[dspno],
+                    std::placeholders::_1));
+        }
+
+        ////////////////////////////////////////////////////////////////
+        // create tx dsp control objects
+        ////////////////////////////////////////////////////////////////
+        _mbc[mb].tx_dsp = tx_dsp_core_200::make(_mbc[mb].wbiface,
+            U2_REG_SR_ADDR(SR_TX_DSP),
+            U2_REG_SR_ADDR(SR_TX_CTRL),
+            USRP2_TX_ASYNC_SID);
+        _mbc[mb].tx_dsp->set_link_rate(USRP2_LINK_RATE_BPS);
+        { // This scope can be removed once we're able to do named captures
+            auto this_tx_dsp = _mbc[mb].tx_dsp; // This can then also go away
+            _tree->access<double>(mb_path / "tick_rate")
+                .add_coerced_subscriber([this_tx_dsp](const double rate) {
+                    this_tx_dsp->set_tick_rate(rate);
+                });
+            _tree->create<meta_range_t>(mb_path / "tx_dsps/0/rate/range")
+                .set_publisher([this_tx_dsp]() { return this_tx_dsp->get_host_rates(); });
+            _tree->create<double>(mb_path / "tx_dsps/0/rate/value")
+                .set(1e6) // some default
+                .set_coercer([this_tx_dsp](const double rate) {
+                    return this_tx_dsp->set_host_rate(rate);
+                })
+                .add_coerced_subscriber([this, mb](const double rate) {
+                    this->update_tx_samp_rate(mb, 0, rate);
+                });
+        } // End of non-C++14 scope (to release reference to this_tx_dsp)
+        _tree->create<double>(mb_path / "tx_dsps/0/freq/value")
+            .set_coercer([this, mb](const double rate) {
+                return this->set_tx_dsp_freq(mb, rate);
+            });
+        _tree->create<meta_range_t>(mb_path / "tx_dsps/0/freq/range")
+            .set_publisher([this, mb]() { return this->get_tx_dsp_freq_range(mb); });
+
+        // setup dsp flow control
+        const double ups_per_sec     = device_args_i.cast<double>("ups_per_sec", 20);
+        const size_t send_frame_size = _mbc[mb].tx_dsp_xport->get_send_frame_size();
+        const double ups_per_fifo    = device_args_i.cast<double>("ups_per_fifo", 8.0);
+        _mbc[mb].tx_dsp->set_updates(
+            (ups_per_sec > 0.0) ? size_t(100e6 /*approx tick rate*/ / ups_per_sec) : 0,
+            (ups_per_fifo > 0.0)
+                ? size_t(USRP2_SRAM_BYTES / ups_per_fifo / send_frame_size)
+                : 0);
+
+        ////////////////////////////////////////////////////////////////
+        // create time control objects
+        ////////////////////////////////////////////////////////////////
+        time64_core_200::readback_bases_type time64_rb_bases;
+        time64_rb_bases.rb_hi_now = U2_REG_TIME64_HI_RB_IMM;
+        time64_rb_bases.rb_lo_now = U2_REG_TIME64_LO_RB_IMM;
+        time64_rb_bases.rb_hi_pps = U2_REG_TIME64_HI_RB_PPS;
+        time64_rb_bases.rb_lo_pps = U2_REG_TIME64_LO_RB_PPS;
+        _mbc[mb].time64           = time64_core_200::make(_mbc[mb].wbiface,
+            U2_REG_SR_ADDR(SR_TIME64),
+            time64_rb_bases,
+            mimo_clock_sync_delay_cycles);
+        _tree->access<double>(mb_path / "tick_rate")
+            .add_coerced_subscriber(std::bind(
+                &time64_core_200::set_tick_rate, _mbc[mb].time64, std::placeholders::_1));
+        _tree->create<time_spec_t>(mb_path / "time/now")
+            .set_publisher(std::bind(&time64_core_200::get_time_now, _mbc[mb].time64))
+            .add_coerced_subscriber(std::bind(
+                &time64_core_200::set_time_now, _mbc[mb].time64, std::placeholders::_1));
+        _tree->create<time_spec_t>(mb_path / "time/pps")
+            .set_publisher(
+                std::bind(&time64_core_200::get_time_last_pps, _mbc[mb].time64))
+            .add_coerced_subscriber(std::bind(&time64_core_200::set_time_next_pps,
+                _mbc[mb].time64,
+                std::placeholders::_1));
+        // setup time source props
+        _tree->create<std::string>(mb_path / "time_source/value")
+            .add_coerced_subscriber(std::bind(&time64_core_200::set_time_source,
+                _mbc[mb].time64,
+                std::placeholders::_1))
+            .set("none");
+        _tree->create<std::vector<std::string>>(mb_path / "time_source/options")
+            .set_publisher(
+                std::bind(&time64_core_200::get_time_sources, _mbc[mb].time64));
+        // setup reference source props
+        _tree->create<std::string>(mb_path / "clock_source/value")
+            .add_coerced_subscriber(std::bind(
+                &kintex7sdr_impl::update_clock_source, this, mb, std::placeholders::_1))
+            .set("internal");
+        std::vector<std::string> clock_sources{"internal", "external", "mimo"};
+        if (_mbc[mb].gps and _mbc[mb].gps->gps_detected()) {
+            clock_sources.push_back("gpsdo");
+        }
+        _tree->create<std::vector<std::string>>(mb_path / "clock_source/options")
+            .set(clock_sources);
+        // plug timed commands into tree here
+        switch (static_cast<kintex7sdr_iface::rev_type>(_mbc[mb].iface->get_rev())) {
+            case kintex7sdr_iface::USRP_N210_XK:
+            case kintex7sdr_iface::USRP_N210_XA:
+                _tree->create<time_spec_t>(mb_path / "time/cmd").add_coerced_subscriber(
+                        std::bind(&usrp2_fifo_ctrl::set_time, _mbc[mb].fifo_ctrl,
+                                  std::placeholders::_1));
+            default:
+                break; // otherwise, do not register
+        }
+        _tree->access<double>(mb_path / "tick_rate")
+            .add_coerced_subscriber(std::bind(&usrp2_fifo_ctrl::set_tick_rate,
+                _mbc[mb].fifo_ctrl,
+                std::placeholders::_1));
+
+        ////////////////////////////////////////////////////////////////////
+        // create user-defined control objects
+        ////////////////////////////////////////////////////////////////////
+        _mbc[mb].user =
+            user_settings_core_200::make(_mbc[mb].wbiface, U2_REG_SR_ADDR(SR_USER_REGS));
+        _tree->create<user_settings_core_200::user_reg_t>(mb_path / "user/regs")
+            .add_coerced_subscriber(std::bind(
+                &user_settings_core_200::set_reg, _mbc[mb].user, std::placeholders::_1));
+
+        ////////////////////////////////////////////////////////////////
+        // create dboard control objects
+        ////////////////////////////////////////////////////////////////
+
+        // read the dboard eeprom to extract the dboard ids
+        dboard_eeprom_t rx_db_eeprom, tx_db_eeprom, gdb_eeprom;
+        rx_db_eeprom.load(*_mbc[mb].iface, KINTEX7SDR_I2C_ADDR_RX_DB);
+        tx_db_eeprom.load(*_mbc[mb].iface, KINTEX7SDR_I2C_ADDR_TX_DB);
+        gdb_eeprom.load(*_mbc[mb].iface, KINTEX7SDR_I2C_ADDR_TX_DB ^ 5);
+
+        // disable rx dc offset if LFRX
+        if (rx_db_eeprom.id == 0x000f)
+            _tree->access<bool>(rx_fe_path / "dc_offset" / "enable").set(false);
+
+        // create the properties and register subscribers
+        _tree->create<dboard_eeprom_t>(mb_path / "dboards/A/rx_eeprom")
+            .set(rx_db_eeprom)
+            .add_coerced_subscriber(std::bind(
+                &kintex7sdr_impl::set_db_eeprom, this, mb, "rx", std::placeholders::_1));
+        _tree->create<dboard_eeprom_t>(mb_path / "dboards/A/tx_eeprom")
+            .set(tx_db_eeprom)
+            .add_coerced_subscriber(std::bind(
+                &kintex7sdr_impl::set_db_eeprom, this, mb, "tx", std::placeholders::_1));
+        _tree->create<dboard_eeprom_t>(mb_path / "dboards/A/gdb_eeprom")
+            .set(gdb_eeprom)
+            .add_coerced_subscriber(std::bind(
+                &kintex7sdr_impl::set_db_eeprom, this, mb, "gdb", std::placeholders::_1));
+
+        // create a new dboard interface and manager
+        _mbc[mb].dboard_manager = dboard_manager::make(rx_db_eeprom,
+            tx_db_eeprom,
+            gdb_eeprom,
+            make_kintex7sdr_dboard_iface(_mbc[mb].wbiface,
+                _mbc[mb].iface /*i2c*/,
+                _mbc[mb].spiface,
+                _mbc[mb].clock),
+            _tree->subtree(mb_path / "dboards/A"));
+
+        // bind frontend corrections to the dboard freq props
+        const fs_path db_tx_fe_path = mb_path / "dboards" / "A" / "tx_frontends";
+        for (const std::string& name : _tree->list(db_tx_fe_path)) {
+            _tree->access<double>(db_tx_fe_path / name / "freq" / "value")
+                .add_coerced_subscriber(std::bind(
+                    &kintex7sdr_impl::set_tx_fe_corrections, this, mb, std::placeholders::_1));
+        }
+        const fs_path db_rx_fe_path = mb_path / "dboards" / "A" / "rx_frontends";
+        for (const std::string& name : _tree->list(db_rx_fe_path)) {
+            _tree->access<double>(db_rx_fe_path / name / "freq" / "value")
+                .add_coerced_subscriber(std::bind(
+                    &kintex7sdr_impl::set_rx_fe_corrections, this, mb, std::placeholders::_1));
+        }
+    }
+
+    // initialize io handling
+    this->io_init();
+
+    // do some post-init tasks
+    this->update_rates();
+    for (const std::string& mb : _mbc.keys()) {
+        fs_path root = "/mboards/" + mb;
+
+        // reset cordic rates and their properties to zero
+        for (const std::string& name : _tree->list(root / "rx_dsps")) {
+            _tree->access<double>(root / "rx_dsps" / name / "freq" / "value").set(0.0);
+        }
+        for (const std::string& name : _tree->list(root / "tx_dsps")) {
+            _tree->access<double>(root / "tx_dsps" / name / "freq" / "value").set(0.0);
+        }
+
+        _tree->access<subdev_spec_t>(root / "rx_subdev_spec")
+            .set(
+                subdev_spec_t("A:" + _tree->list(root / "dboards/A/rx_frontends").at(0)));
+        _tree->access<subdev_spec_t>(root / "tx_subdev_spec")
+            .set(
+                subdev_spec_t("A:" + _tree->list(root / "dboards/A/tx_frontends").at(0)));
+        _tree->access<std::string>(root / "clock_source/value").set("internal");
+        _tree->access<std::string>(root / "time_source/value").set("none");
+
+        // GPS installed: use external ref, time, and init time spec
+        if (_mbc[mb].gps and _mbc[mb].gps->gps_detected()) {
+            _mbc[mb].time64->enable_gpsdo();
+            UHD_LOGGER_INFO("KINTEX7SDR") << "Setting references to the internal GPSDO";
+            _tree->access<std::string>(root / "time_source/value").set("gpsdo");
+            _tree->access<std::string>(root / "clock_source/value").set("gpsdo");
+        }
+    }
+}
+
+kintex7sdr_impl::~kintex7sdr_impl(void)
+{
+    UHD_SAFE_CALL(_pirate_task_exit = true;
+                  for (const std::string& mb
+                       : _mbc.keys()) { _mbc[mb].tx_dsp->set_updates(0, 0); })
+}
+
+void kintex7sdr_impl::set_db_eeprom(const std::string& mb,
+    const std::string& type,
+    const uhd::usrp::dboard_eeprom_t& db_eeprom)
+{
+    if (type == "rx")
+        db_eeprom.store(*_mbc[mb].iface, KINTEX7SDR_I2C_ADDR_RX_DB);
+    if (type == "tx")
+        db_eeprom.store(*_mbc[mb].iface, KINTEX7SDR_I2C_ADDR_TX_DB);
+    if (type == "gdb")
+        db_eeprom.store(*_mbc[mb].iface, KINTEX7SDR_I2C_ADDR_TX_DB ^ 5);
+}
+
+sensor_value_t kintex7sdr_impl::get_mimo_locked(const std::string& mb)
+{
+    const bool lock = (_mbc[mb].wbiface->peek32(U2_REG_IRQ_RB) & (1 << 10)) != 0;
+    return sensor_value_t("MIMO", lock, "locked", "unlocked");
+}
+
+sensor_value_t kintex7sdr_impl::get_ref_locked(const std::string& mb)
+{
+    const bool lock = (_mbc[mb].wbiface->peek32(U2_REG_IRQ_RB) & (1 << 11)) != 0;
+    return sensor_value_t("Ref", lock, "locked", "unlocked");
+}
+
+void kintex7sdr_impl::set_rx_fe_corrections(const std::string& mb, const double lo_freq)
+{
+    if (not _ignore_cal_file) {
+        apply_rx_fe_corrections(
+            this->get_tree()->subtree("/mboards/" + mb), "A", lo_freq);
+    }
+}
+
+void kintex7sdr_impl::set_tx_fe_corrections(const std::string& mb, const double lo_freq)
+{
+    if (not _ignore_cal_file) {
+        apply_tx_fe_corrections(
+            this->get_tree()->subtree("/mboards/" + mb), "A", lo_freq);
+    }
+}
+
+double kintex7sdr_impl::set_tx_dsp_freq(const std::string& mb, const double freq_)
+{
+    double new_freq        = freq_;
+    const double tick_rate = _tree->access<double>("/mboards/" + mb + "/tick_rate").get();
+
+    // calculate the DAC shift (multiples of rate)
+    const int zone         = std::max(std::min<int>(std::lround(new_freq / tick_rate), 2), -2);
+    const double dac_shift = zone * tick_rate;
+    new_freq -= dac_shift; // update FPGA DSP target freq
+    UHD_LOG_TRACE("KINTEX7SDR",
+        "DSP Tuning: Requested " + std::to_string(freq_ / 1e6)
+            + " MHz, Using "
+              "Nyquist zone "
+            + std::to_string(zone)
+            + ", leftover DSP tuning: " + std::to_string(new_freq / 1e6) + " MHz.");
+
+    // set the DAC shift (modulation mode)
+    if (zone == 0) {
+        _mbc[mb].codec->set_tx_mod_mode(0); // no shift
+    } else {
+        _mbc[mb].codec->set_tx_mod_mode(4 / zone); // DAC interp = 4
+    }
+
+    return _mbc[mb].tx_dsp->set_freq(new_freq) + dac_shift; // actual freq
+}
+
+meta_range_t kintex7sdr_impl::get_tx_dsp_freq_range(const std::string& mb)
+{
+    const double dac_rate = _tree->access<double>("/mboards/" + mb + "/tick_rate").get()
+                            * _mbc[mb].codec->get_tx_interpolation();
+    const auto dsp_range_step = _mbc[mb].tx_dsp->get_freq_range().step();
+    // The DSP tuning rate is the entire range of the DAC clock rate. The step
+    // size is determined by the FPGA IP, however.
+    return meta_range_t(-dac_rate / 2, +dac_rate / 2, dsp_range_step);
+}
+
+#include <boost/math/special_functions/round.hpp>
+#include <boost/math/special_functions/sign.hpp>
+
+void kintex7sdr_impl::update_clock_source(const std::string& mb, const std::string& source)
+{
+    // NOTICE: U2_REG_MISC_CTRL_CLOCK is on the wb clock, and cannot be set from fifo_ctrl
+    // clock source ref 10mhz
+    switch (static_cast<kintex7sdr_iface::rev_type>(_mbc[mb].iface->get_rev())) {
+        case kintex7sdr_iface::USRP_N210_XK:
+        case kintex7sdr_iface::USRP_N210_XA:
+            if (source == "internal")
+                _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x12);
+            else if (source == "external")
+                _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x1C);
+            else if (source == "gpsdo")
+                _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x1C);
+            else if (source == "mimo")
+                _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x15);
+            else
+                throw uhd::value_error(
+                        "unhandled clock configuration reference source: "
+                        + source);
+            _mbc[mb].clock->enable_external_ref(true); //KINTEX7SDRP has an internal 10MHz TCXO
+            break;
+        case kintex7sdr_iface::USRP_NXXX:
+            break;
+    }
+
+    // always drive the clock over serdes if not locking to it
+    _mbc[mb].clock->enable_mimo_clock_out(source != "mimo");
+
+    // set the mimo clock delay over the serdes
+    if (source != "mimo") {
+        switch (static_cast<kintex7sdr_iface::rev_type>(_mbc[mb].iface->get_rev())) {
+            case kintex7sdr_iface::USRP_N210_XK:
+            case kintex7sdr_iface::USRP_N210_XA:
+                _mbc[mb].clock->set_mimo_clock_delay(mimo_clock_delay_usrp_n2xx);
+                break;
+            default:
+                break; // not handled
+        }
+    }
+}
