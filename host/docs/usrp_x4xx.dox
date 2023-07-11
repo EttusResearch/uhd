@@ -920,8 +920,15 @@ For a list of which arguments can be passed into make(), see Section
  ext_clock_freq        | Specify the external reference clock frequency, default is 10 MHz.              | ref_clk_freq=20e6
  discovery_port        | Override default value for MPM discovery port.                                  | discovery_port=49700
  rpc_port              | Override default value for MPM RPC port.                                        | rpc_port=49701
- force_reinit          | Force reinitialization of clocking                                              | force_reinit=1
+ force_reinit          | Force reinitialization of clocking.                                             | force_reinit=1
  converter_rate        | Specify the rate of the ADC/DAC. X440 only. UHD may choose to ignore this.      | master_clock_rate=500e6,converter_rate=1e9
+ cal_freq              | Frequency to use for self-calibration. Mainly for X440, but works on X410, too. | cal_freq=400e6
+ cal_dac_mux_i         | 16 bit I value for self calibration tone.                                       | cal_dac_mux_i=0x7FFF
+ cal_dac_mux_q         | 16 bit Q value for self calibration tone.                                       | cal_dac_mux_q=0x0
+ cal_tone_duration     | Duration in ms for how long the self-calibration shall run per channel.         | cal_tone_duration=2000
+ cal_delay             | Delay for calibration threshold status (see \ref x4xx_adc_self_cal).            | cal_delay=100
+ cal_ch_list           | Selects the channels to be calibrated.                                          | cal_ch_list=1;2;3
+ skip_adc_selfcal      | Skips the ADC self-cal on clock-reconfig.                                       | skip_adc_selfcal=true
 
 \subsection x4xx_usage_mcrs Master clock rates
 
@@ -1400,7 +1407,7 @@ components. Refer to the schematic for more details.
 
 \section x4xx_adc_self_cal ADC self calibration
 
-The USRP x4xx device family support ADC self calibration by utilizing
+The USRP X4xx device family supports ADC self calibration by utilizing
 functionality from the Xilinx RFDC.
 The ["UltraScale+ RFSoC RF Data Converter" manual](https://docs.xilinx.com/r/en-US/pg269-rf-data-converter)
 gives a detailed description. There is no additional hardware or
@@ -1422,11 +1429,22 @@ if (radio_blk->has_feature<uhd::features::adc_self_calibration_iface>()) {
 }
 ~~~
 
-The x4xx devices do ADC self-calibration only on demand, namely when
-the device is started or a new bitfile is downloaded to the device. The
-device startup calibration is triggered by a systemd service called
-`usrp-adc-self-cal`. The calibration after bitfile change is triggered
-via a fgpa_onload callback.
+Before UHD 4.5, ADC self calibration was only executed during device startup
+and when a new FPGA bitfile was loaded.
+Starting from UHD 4.5, the x4xx devices do an ADC self calibration whenever
+the internal clocking configuration was changed. This improves the RF
+performance of X410 and enables sample rate flexibility on X440. 
+The clocking configuration is changed and therefore the self-cal is triggered
+- when the device or only its hardware daemon MPM are (re-)started,
+- when a UHD session is initialized with a different master_clock_rate, 
+  converter_rate, clock_source or time_source than in the previous session,
+- if the `force_reinit=true` argument is passed
+- if clock_source or time_source are changed in an already opened UHD session,
+- when the bitfile was changed.
+
+In all of these cases, MPM will mark self-cal as required, UHD will query
+this during session initialization or when calling `set_clock_source()` or 
+`set_time_source()` and initiate an ADC self calibration.
 
 The ADC calibration coefficients stay constant during execution.
 In RFDC terms, the coefficients are said to be "frozen". When a channel is
@@ -1452,6 +1470,25 @@ by UHD. The DAC mux does not affect the ATR state of the device.
 From an UHD perspective it looks like no data is transmitted in TX or
 RX direction during calibration.
 
-For different daughterboards, different frequencies and gain values are used at which the ADC self-calibration is run.
+For different daughterboards, different frequencies and gain values are
+used at which the ADC self-calibration is run.
+
+To cover corner-cases especially in X440, the ADC self calibration can
+be parameterized with the following parameters:
+- `cal_freq`: The frequency of the cal tone. Must be within the first Nyquist 
+  zone (converter rate / 2)
+- `cal_dac_mux_i`: 16 bit I value for the cal tone
+- `cal_dac_mux_q`: 16 bit Q value for the cal tone
+- `cal_tone_duration`: Duration in ms for how long the calibration shall run
+   per channel.
+- `cal_delay`: Data must be below lower threshold for `cal_delay` * 8 samples
+   to unset the threshold status output (using hysteresis mode).
+- `cal_ch_list`: List of channels to calibrate
+- `skip_adc_selfcal`: Skip the entire self-cal (may result in bad RF performance)
+
+It is not recommended to run without any self-cal. Therefore, if `skip_adc_selfcal`
+is used, a self-cal should be run manually before doing any kind of RF reception.
+If not all channels are used in an application, using the `cal_ch_list` may save
+some time in case the self-cal needs to run.
 */
 // vim:ft=doxygen:
