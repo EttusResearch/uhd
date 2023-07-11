@@ -21,27 +21,6 @@
 
 namespace uhd { namespace rfnoc {
 
-x400_radio_control_impl::fpga_onload::fpga_onload(size_t num_channels,
-    uhd::features::adc_self_calibration_iface::sptr adc_self_cal,
-    std::string unique_id)
-    : _num_channels(num_channels), _adc_self_cal(adc_self_cal), _unique_id(unique_id)
-{
-}
-
-void x400_radio_control_impl::fpga_onload::onload()
-{
-    for (size_t channel = 0; channel < _num_channels; channel++) {
-        if (_adc_self_cal) {
-            try {
-                _adc_self_cal->run(channel);
-            } catch (uhd::runtime_error& e) {
-                RFNOC_LOG_WARNING("Failure while running self cal on channel "
-                                  << channel << ": " << e.what());
-            }
-        }
-    }
-}
-
 x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
     : radio_control_impl(std::move(make_args))
 {
@@ -218,11 +197,6 @@ x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
         register_feature(_adc_self_calibration);
     }
 
-    _fpga_onload = std::make_shared<fpga_onload>(
-        get_num_output_ports(), _adc_self_calibration, get_unique_id());
-    register_feature(_fpga_onload);
-    _mb_control->_fpga_onload->request_cb(_fpga_onload);
-
     auto mpm_rpc = _mb_control->dynamic_cast_rpc_as<uhd::usrp::mpmd_rpc_iface>();
     if (mpm_rpc->get_gpio_banks().size() > 0) {
         _gpios = std::make_shared<x400::gpio_control>(
@@ -266,8 +240,8 @@ x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
                 if (has_feature<uhd::features::adc_self_calibration_iface>()) {
                     RFNOC_LOG_INFO("Clocking reconfigured, running ADC Self Cal on DB"
                                    << get_block_id().get_block_count() << "...");
-                    auto args               = get_block_args();
-                    std::string ch_list     = args.get("cal_ch_list", "");
+                    const auto args           = get_block_args();
+                    const std::string ch_list = args.get("cal_ch_list", "");
                     size_t num_calibrations = 0;
                     auto& self_cal =
                         get_feature<uhd::features::adc_self_calibration_iface>();

@@ -205,29 +205,6 @@ private:
 
     x400::gpio_control::sptr _gpios;
 
-    class fpga_onload : public uhd::features::fpga_load_notification_iface
-    {
-    public:
-        using sptr = std::shared_ptr<fpga_onload>;
-
-        fpga_onload(size_t num_channels,
-            uhd::features::adc_self_calibration_iface::sptr adc_self_cal,
-            std::string unique_id);
-
-        void onload() override;
-
-    private:
-        const size_t _num_channels;
-        uhd::features::adc_self_calibration_iface::sptr _adc_self_cal;
-        const std::string _unique_id;
-        std::string get_unique_id() const
-        {
-            return _unique_id;
-        }
-    };
-
-    fpga_onload::sptr _fpga_onload;
-
     class x400_spi_getter : public uhd::features::spi_getter_iface
     {
     public:
