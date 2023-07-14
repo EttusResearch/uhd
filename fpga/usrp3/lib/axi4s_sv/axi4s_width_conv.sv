@@ -29,9 +29,6 @@ module axi4s_width_conv #(
    interface.master  o   // AxiStreamIf or AxiStreamPacketIf
 );
 
-  localparam IWIDTH =i.DATA_WIDTH;
-  localparam OWIDTH =o.DATA_WIDTH;
-
   `include "axi4s.vh"
   // Parameter Checks
   initial begin
@@ -85,7 +82,7 @@ module axi4s_width_conv #(
     `AXI4S_ASSIGN(o,s1)
   end
 
-  logic [IWIDTH/8-1:0] s0_tkeep;
+  logic [i.DATA_WIDTH/8-1:0] s0_tkeep;
   always_comb begin
     if (s0.TKEEP) begin
       s0_tkeep = s0.tkeep;
@@ -96,7 +93,7 @@ module axi4s_width_conv #(
     end
   end
 
-  logic [OWIDTH/8-1:0] s1_tkeep;
+  logic [o.DATA_WIDTH/8-1:0] s1_tkeep;
   logic [15:0] s1_bytes;
 
   always_comb begin
@@ -114,13 +111,13 @@ module axi4s_width_conv #(
   end
 
   logic s0_ready, s1_valid, s1_last;
-  logic [OWIDTH-1:0] s1_data;
+  logic [o.DATA_WIDTH-1:0] s1_data;
   always_comb s0.tready = s0_ready;
   always_comb s1.tvalid = s1_valid;
   always_comb s1.tlast  = s1_last;
   always_comb s1.tdata  = s1_data;
   axis_width_conv #(
-    .IN_WORDS(IWIDTH/8), .OUT_WORDS(OWIDTH/8),
+    .IN_WORDS(i.DATA_WIDTH/8), .OUT_WORDS(o.DATA_WIDTH/8),
     .SYNC_CLKS(SYNC_CLKS), .PIPELINE(PIPELINE)
   ) axis_width_conv (
     .s_axis_aclk(s0.clk), .s_axis_rst(s0.rst),

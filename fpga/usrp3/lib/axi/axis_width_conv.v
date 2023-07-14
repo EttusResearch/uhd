@@ -130,7 +130,8 @@ module axis_width_conv #(
     end
     // x is the greatest common divisor
     // LCM = (a*b)/GCD
-    lcm = (a*b)/x;
+    if (x > 0)  lcm = (a*b)/x;
+    else        lcm = 32768;
   end
   endfunction
 
@@ -139,6 +140,11 @@ module axis_width_conv #(
   localparam integer INT_DATA_W     = INT_KEEP_W * WORD_W;
   localparam integer UPSIZE_RATIO   = INT_KEEP_W / IN_WORDS;
   localparam integer DOWNSIZE_RATIO = INT_KEEP_W / OUT_WORDS;
+  initial begin
+    if (IN_WORDS==0)       $display("Finding LCM of 0. IN_WORDS=%d",IN_WORDS);
+    if (OUT_WORDS==0)      $display("Finding LCM of 0. OUT_WORDS=%d",OUT_WORDS);  
+    if (INT_KEEP_W==32768) $display("Finding strange INT_KEEP_W=%d",INT_KEEP_W); 
+  end
 
   wire [INT_DATA_W-1:0] fifo_i_tdata, fifo_o_tdata;
   wire [INT_KEEP_W-1:0] fifo_i_tkeep, fifo_o_tkeep;
