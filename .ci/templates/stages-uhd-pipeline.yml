@@ -347,10 +347,12 @@ stages:
         toolset: msbuild
         installer: nsis
         releaseBinaries: ${{ parameters.release_binaries }}
+        fpga_imgs_base_url: ${{ parameters.fpga_imgs_base_url }}
     - template: job-uhd-build-installer.yml
       parameters:
         toolset: msbuild_python
         installer: nsis
+        fpga_imgs_base_url: ${{ parameters.fpga_imgs_base_url }}
     - ${{ if parameters.release_binaries }}:
       - template: job-uhd-build-installer-signing.yml
         parameters:
