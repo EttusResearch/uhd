@@ -86,32 +86,31 @@ module axi4s_width_conv #(
   end
 
   logic [IWIDTH/8-1:0] s0_tkeep;
-
-  if (s0.TKEEP) begin
-    always_comb s0_tkeep = s0.tkeep;
-  end else if (I_USER_TRAILING_BYTES) begin
-    always_comb s0_tkeep = s0.get_trailing_bytes();
-  end else begin
-    always_comb s0_tkeep = '1;
+  always_comb begin
+    if (s0.TKEEP) begin
+      s0_tkeep = s0.tkeep;
+    end else if (I_USER_TRAILING_BYTES) begin
+      s0_tkeep = s0.get_trailing_bytes();
+    end else begin
+      s0_tkeep = '1;
+    end
   end
 
   logic [OWIDTH/8-1:0] s1_tkeep;
   logic [15:0] s1_bytes;
 
-  if (s1.TKEEP) begin
-    always_comb s1.tkeep = s1_tkeep;
-    always_comb s1.tuser = 'X;
-  end else if (O_USER_TRAILING_BYTES) begin
-    always_comb  s1.tkeep = 'X;
-    always_comb begin : assign_s1_tuser
+  always_comb begin
+    if (s1.TKEEP) begin
+      s1.tkeep = s1_tkeep;
+      s1.tuser = 'X;
+    end else if (O_USER_TRAILING_BYTES) begin
       s1.tuser = 0;
-      // MODELSIM_BUG - deleting the s1_bytes assignment causes modelsim failures.
       s1_bytes = s1.keep2trailing(s1_tkeep);
       s1.set_trailing_bytes(s1_tkeep);
+    end else begin
+      s1.tkeep = 'X;
+      s1.tuser = 'X;
     end
-  end else begin
-    always_comb s1.tkeep = 'X;
-    always_comb s1.tuser = 'X;
   end
 
   logic s0_ready, s1_valid, s1_last;
@@ -120,7 +119,6 @@ module axi4s_width_conv #(
   always_comb s1.tvalid = s1_valid;
   always_comb s1.tlast  = s1_last;
   always_comb s1.tdata  = s1_data;
-
   axis_width_conv #(
     .IN_WORDS(IWIDTH/8), .OUT_WORDS(OWIDTH/8),
     .SYNC_CLKS(SYNC_CLKS), .PIPELINE(PIPELINE)
