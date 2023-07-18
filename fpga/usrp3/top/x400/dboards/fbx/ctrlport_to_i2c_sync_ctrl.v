@@ -76,10 +76,8 @@ module ctrlport_to_i2c_sync_ctrl #(
   reg rfs_en;
   reg setup_trig; // initiate setup
   reg config_io_trig; // configure IO
-  reg setup_finished;
-  reg setup_finished_hold;
-  reg config_io_finished;
-  reg config_io_finished_hold;
+  reg setup_in_progress;
+  reg config_io_in_progress;
 
   //---------------------------------------------------------------
   // WishBone interface
@@ -130,8 +128,6 @@ module ctrlport_to_i2c_sync_ctrl #(
       s_ctrlport_resp_data   <= 32'b0;
       setup_trig     <= 1'b0;
       config_io_trig <= 1'b0;
-      setup_finished_hold     <= 1'b0;
-      config_io_finished_hold <= 1'b0;
       sync1  <= 3'b0;
       sync2  <= 3'b0;
       sync3  <= 3'b0;
@@ -139,14 +135,12 @@ module ctrlport_to_i2c_sync_ctrl #(
       sync5  <= 3'b0;
       rfs_en <= 1'b0;
     end else begin
+      // De-assert trigger strobes
+      setup_trig <= 1'b0;
+      config_io_trig <= 1'b0;
+
       // Only ack under certain conditions
       s_ctrlport_resp_ack <= 1'b0;
-      if (setup_finished) begin
-        setup_finished_hold <= 1'b1;
-      end
-      if (config_io_finished) begin
-        config_io_finished_hold <= 1'b1;
-      end
       if (s_ctrlport_req_wr) begin // Write requests
         // if address is normal ctrlport, immediately ack
         if (address_in_range) begin
@@ -179,13 +173,11 @@ module ctrlport_to_i2c_sync_ctrl #(
           end
           //initialize SYNC_IO peripheral
           BASE_ADDRESS + SETUP_REG: begin
-            setup_trig <= 1'b1;
-            setup_finished_hold <= 1'b0;
+            setup_trig <= 1'b1 & ~config_io_in_progress;
           end
           //configure IO
           BASE_ADDRESS + CONFIG_IO_REG: begin
-            config_io_trig <= 1'b1;
-            config_io_finished_hold <= 1'b0;
+            config_io_trig <= 1'b1 & ~setup_in_progress;
           end
         endcase
 
@@ -216,16 +208,10 @@ module ctrlport_to_i2c_sync_ctrl #(
             s_ctrlport_resp_data[2:0] <= {2'b00, rfs_en};
           end
           BASE_ADDRESS + SETUP_STATUS_REG: begin
-            s_ctrlport_resp_data[2:0] <= {2'b00, setup_finished_hold};
-            if(setup_finished_hold) begin
-              setup_trig          <= 1'b0;
-            end
+            s_ctrlport_resp_data[2:0] <= {2'b00, ~setup_in_progress};
           end
           BASE_ADDRESS + CONFIG_IO_STATUS_REG: begin
-            s_ctrlport_resp_data[2:0] <= {2'b00, config_io_finished_hold};
-            if(config_io_finished_hold) begin
-              config_io_trig          <= 1'b0;
-            end
+            s_ctrlport_resp_data[2:0] <= {2'b00, ~config_io_in_progress};
           end
           // Respond with 0
           default: begin
@@ -383,7 +369,6 @@ module ctrlport_to_i2c_sync_ctrl #(
   localparam IO_EXP_CONFIG_2 = 3;
   localparam IO_EXP_CONFIG_3 = 4;
   localparam IO_EXP_CONFIG_4 = 5;
-  localparam IO_EXP_FIN      = 6;
 
   wire [15:0] io_config;
   assign io_config = { rfs_en, sync5, sync4, sync3, sync2, sync1 };
@@ -394,21 +379,23 @@ module ctrlport_to_i2c_sync_ctrl #(
       wb_txr <= 8'b0;
       wb_cr  <= 8'b0;
       i2c_wr <= 1'b0;
-      setup_finished     <= 1'b0;
-      config_io_finished <= 1'b0;
-      i2c_core_setup     <= 1'b0;
+      setup_in_progress     <= 1'b0;
+      config_io_in_progress <= 1'b0;
+      i2c_core_setup        <= 1'b0;
     end
     else begin
       case(master_state)
         IDLE: begin
           i2c_wr <= 1'b0;
-          setup_finished     <= 1'b0;
-          config_io_finished <= 1'b0;
-          i2c_core_setup     <= 1'b0;
+          setup_in_progress     <= 1'b0;
+          config_io_in_progress <= 1'b0;
+          i2c_core_setup        <= 1'b0;
           if (setup_trig) begin
+            setup_in_progress     <= 1'b1;
             master_state <= EN;
           end
           else if (config_io_trig) begin
+            config_io_in_progress <= 1'b1;
             master_state <= IO_EXP_CONFIG_1;
           end
         end
@@ -430,9 +417,9 @@ module ctrlport_to_i2c_sync_ctrl #(
           end
         end
         IO_EXP_CONFIG_2: begin
-          if (setup_trig) begin
+          if (setup_in_progress) begin
             wb_txr <= IO_EXP_CONFIG0_REG; //CONFIG0 reg is what we set to configure I/O as output
-          end else if (config_io_trig) begin
+          end else if (config_io_in_progress) begin
             wb_txr <= IO_EXP_OUTPUT_PORT0_REG;
           end
           wb_cr <= CR_WRITE;
@@ -444,9 +431,9 @@ module ctrlport_to_i2c_sync_ctrl #(
           end
         end
         IO_EXP_CONFIG_3: begin
-          if (setup_trig) begin
+          if (setup_in_progress) begin
             wb_txr <= 1'b0;
-          end else if (config_io_trig) begin
+          end else if (config_io_in_progress) begin
             wb_txr <= io_config[7:0];
           end
           wb_cr <= CR_WRITE;
@@ -458,27 +445,19 @@ module ctrlport_to_i2c_sync_ctrl #(
           end
         end
         IO_EXP_CONFIG_4: begin
-          if (setup_trig) begin
+          if (setup_in_progress) begin
             wb_txr <= 1'b0;
-          end else if (config_io_trig) begin
+          end else if (config_io_in_progress) begin
             wb_txr <= io_config[15:8];
           end
           wb_cr <= CR_WRITE_AND_STOP;
           if (i2c_tip_fin) begin //when transfer is done, i2c_wr is disabled
             i2c_wr <= 1'b0;
-            setup_finished <= setup_trig;
-            config_io_finished <= config_io_trig;
-            master_state <= IO_EXP_FIN;
+            setup_in_progress <= 1'b0;
+            config_io_in_progress <= 1'b0;
+            master_state <= IDLE;
           end else begin
             i2c_wr <= 1'b1;
-          end
-        end
-        IO_EXP_FIN : begin //final state to make sure triggers are unset before returning to IDLE;
-          i2c_wr <= 1'b0;
-          setup_finished     <= 1'b0;
-          config_io_finished <= 1'b0;
-          if (!setup_trig && !config_io_trig) begin
-            master_state <= IDLE;
           end
         end
         default : begin
