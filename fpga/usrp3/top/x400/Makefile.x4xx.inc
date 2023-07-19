@@ -55,7 +55,7 @@ include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_replay/Makefile.srcs
 # pass in the RFNOC_OOT_MAKEFILE_SRCS as a list of Makefile.srcs files.
 # Those files need to amend the RFNOC_OOT_SRCS variable with a list of actual
 # source files.
-include $(RFNOC_OOT_MAKEFILE_SRCS)
+-include $(RFNOC_OOT_MAKEFILE_SRCS)
 
 IMAGE_CORE ?= $(DEFAULT_RFNOC_IMAGE_CORE_FILE)
 EDGE_FILE ?= $(DEFAULT_EDGE_FILE)
