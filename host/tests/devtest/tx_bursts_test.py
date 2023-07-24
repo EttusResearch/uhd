@@ -5,13 +5,13 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-""" Run the test for tx_burst """
+""" Run the test for tx_bursts """
 
 import re
 from uhd_test_base import uhd_example_test_case
 
 class uhd_tx_bursts_test(uhd_example_test_case):
-    """ Run test_messages. """
+    """ Run tx_bursts and check output. """
     tests = {
         'default': {
             'nsamps': 10000,
