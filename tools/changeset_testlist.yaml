@@ -97,6 +97,10 @@
   add:
     - uhd.build.all
     - hw.rf.n2xx
+- re: host/tests/devtest
+  add:
+    - uhd.build.all
+    - devtest.all
 # Catchall rule for UHD changes
 - re: host/.+cpp$|host/.+CMakeLists.txt|host/.+hpp$|host/.+ipp$|host/.+c$|host/.+h$|host/.+py$
   add:
