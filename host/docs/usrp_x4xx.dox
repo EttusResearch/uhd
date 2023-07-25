@@ -968,6 +968,24 @@ std::cout << usrp->get_master_clock_rate_range().start() << std::endl; // Prints
 std::cout << usrp->get_master_clock_rate_range().stop() << std::endl; // Prints 245.76e6
 ~~~
 
+\subsection x4xx_usage_timedcmds Timed Commands
+
+The USRP X4x0 series can execute \ref page_timedcmds the same way as other USRPs,
+with the following restrictions:
+
+- Timed tuning is not supported (to be accurate, timed tuning of the RFSoC NCO
+  is not supported)
+- The USRP X440 only (this does not apply to the USRP X410!) has two timekeepers
+  instead of the usual single timekeeper.
+  - Timekeeper 0 manages the time for daughterboard 0, timekeeper 1 manages the
+    time for daughterboard 1.
+  - When a UHD session is initialized, timekeepers will be configured to run in
+    lockstep. By default, the time for both daughterboards is thus synchronized.
+  - When using multi_usrp API calls, e.g. uhd::usrp::multi_usrp::set_time_now(),
+    UHD will set the time on all available timekeepers. However, this means that
+    it is possible to desynchronize the time between daughterboards.
+  - When using the motherboard controller directly, attention must be paid to
+    not only access timekeeper zero
 
 \subsection x4xx_usage_gps GPS
 

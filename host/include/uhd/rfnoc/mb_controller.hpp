@@ -44,8 +44,17 @@ public:
      *************************************************************************/
     /*! Interface to interact with timekeepers
      *
-     * Timekeepers are objects separate from RFNoC blocks. This class is meant
-     * to be subclassed by motherboards implementing it.
+     * A timekeeper is an entity within a USRPs FPGA to track the time. For
+     * example, the execution of timed commands requires the existence of a
+     * timekeeper.
+     *
+     * Timekeepers are objects separate from RFNoC blocks, but RFNoC blocks can
+     * have access to the time provided by timekeepers in order to execute
+     * commands at a certain time (e.g., the radio blocks use this to be able to
+     * assign a timestamp to samples). Note that most other RFNoC blocks do not
+     * require access to a timekeeper to execute timed commands, as they will
+     * execute commands relative to the incoming data.
+     *
      */
     class UHD_API timekeeper
     {
@@ -64,11 +73,27 @@ public:
          * value. Calling this on two synchronized clocks sequentially will
          * definitely return two different values.
          *
+         * When using the RFNoC API, radio blocks also provide API calls
+         * (uhd::rfnoc::radio_control::get_time_now() and
+         * uhd::rfnoc::radio_control::get_ticks_now()) which directly returns the
+         * current time from the radio block itself. This has the advantage that
+         * it is not necessary to know which timekeeper is providing the time to
+         * which radio block when reading the current time, and generally has a
+         * lower latency than executing this call.
+         *
          * \returns the current time
          */
         uhd::time_spec_t get_time_now(void);
 
         /*! Return the current time as a tick count
+         *
+         * When using the RFNoC API, radio blocks also provide API calls
+         * (uhd::rfnoc::radio_control::get_time_now() and
+         * uhd::rfnoc::radio_control::get_ticks_now()) which directly returns the
+         * current time from the radio block itself. This has the advantage that
+         * it is not necessary to know which timekeeper is providing the time to
+         * which radio block when reading the current time, and generally has a
+         * lower latency than executing this call.
          *
          * See also get_time_now().
          *
@@ -92,18 +117,40 @@ public:
         virtual uint64_t get_ticks_last_pps() = 0;
 
         /*! Set the time "now" from a time spec
+         *
+         * This will convert \p time into a tick count value and call
+         * set_ticks_now().
          */
         void set_time_now(const uhd::time_spec_t& time);
 
         /*! Set the ticks "now"
+         *
+         * This will set the tick count on the remote device's timekeeper as
+         * soon as possible. Note that there is some amount of lag between
+         * executing this call and when the device's time will be updated, e.g.,
+         * due to network latency.
          */
         virtual void set_ticks_now(const uint64_t ticks) = 0;
 
         /*! Set the time at next PPS from a time spec
+         *
+         * This will convert \p time into a tick count value and use that to
+         * call set_ticks_next_pps().
          */
         void set_time_next_pps(const uhd::time_spec_t& time);
 
         /*! Set the ticks at next PPS
+         *
+         * This will instruct the remote device to set its tick count when the
+         * next PPS edge is detected. Use this to set multiple devices to the
+         * same time (assuming they are synchronized in time and frequency).
+         *
+         * To guarantee that devices are synchronized in time it is recommended
+         * to wait for a PPS edge before calling this command. Otherwise, it
+         * could happen that due to network latency or other reasons, this
+         * command reaches different devices on different sides of the same PPS
+         * edge, causing devices to be unsynchronized in time by exactly one
+         * second.
          */
         virtual void set_ticks_next_pps(const uint64_t ticks) = 0;
 
@@ -138,9 +185,22 @@ public:
 
     //! Returns the number of timekeepers, which equals the number of timebases
     // on this device.
+    //
+    // Most USRPs have one timekeeper. Custom FPGA images can implement multiple
+    // timekeepers for various purposes. The USRP X440 has a minimum of two
+    // timekeepers, one for each daughterboard.
     size_t get_num_timekeepers() const;
 
     //! Return a reference to the \p tk_idx-th timekeeper on this motherboard
+    //
+    // For most USRPs, timekeeper index 0 is used to access the main timekeeper.
+    // On the USRP X440, timekeeper index 0 used to keep time for daughterboard
+    // 0, and timekeeper index 1 is used to keep time for daughterboard 1.
+    //
+    // Custom FPGA images can implement multiple timekeepers.
+    //
+    // To make sure that \p tk_idx is a valid value, get_num_timekeepers() can
+    // be used to query the number of timekeepers available.
     //
     // \throws uhd::index_error if \p tk_idx is not valid
     timekeeper::sptr get_timekeeper(const size_t tk_idx) const;
