@@ -9,6 +9,7 @@
 \li \subpage page_images
 \li \subpage page_transport
 \li \subpage page_sync
+\li \subpage page_timedcmds
 \li \subpage page_calibration
 \li \subpage page_mpm
 \li \subpage page_dpdk

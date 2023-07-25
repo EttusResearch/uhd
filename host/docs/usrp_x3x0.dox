@@ -17,7 +17,8 @@ More information:
 	- External PPS input & output
 	- External reference (10 MHz, 11.52 MHz, 23.04 MHz, or 30.72 MHz) input & output
 	- Expandable via 2nd SFP+ interface
-	- Supported master clock rates: 200 MHz and 184.32 MHz
+	- Supported master clock rates: 200 MHz and 184.32 MHz (other master
+	  clock rates also available)
         - Variable daughterboard clock rates
 	- External GPIO Connector with UHD API control
 	- External USB Connection for built-in JTAG debugger
@@ -26,9 +27,9 @@ More information:
 - FPGA Capabilities:
 	- 2 RX DDC chains in FPGA
 	- 2 TX DUC chain in FPGA
-	- Timed commands in FPGA
+	- \ref page_timedcmds in FPGA
 	- Timed sampling in FPGA
-	- Up to 120 MHz of RF bandwidth with 16-bit samples
+	- Up to 160 MHz of RF bandwidth with 16-bit samples
 
 \section x3x0_getting_started Getting started
 

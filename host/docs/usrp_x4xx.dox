@@ -22,7 +22,7 @@
   - Full Linux system running on the quad-core ARM Cortex-A53
   - Runs MPM (see also \ref page_mpm)
 - FPGA Capabilities:
-  - Timed commands in FPGA (note: only limited timed frequency tuning available)
+  - \ref page_timedcmds in FPGA (note: only limited timed frequency tuning available)
   - Timed sampling in FPGA
   - RFNoC capable: Supports various CHDR bus widths from 64-bits (for minimal
     footprint) up to 512 bits (for maximum throughput)
