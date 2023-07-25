@@ -37,7 +37,7 @@ public:
      */
     using sync_source_updater_t = std::function<void(const sync_source_t& sync_source)>;
 
-    virtual ~mb_controller() {}
+    ~mb_controller() override = default;
 
     /**************************************************************************
      * Timebase API
