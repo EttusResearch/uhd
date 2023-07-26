@@ -19,7 +19,7 @@ jobs:
     uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
     xilinxLocation: /opt/Xilinx/SDK/2019.1
     dutMatrix:
-      sdr-test0-x410-0:
+      sdr-test0-x440-0:
         dutName: 'sdr-test0-x440-0'
         dutType: 'x4xx'
         devtestPattern: 'x440'
