@@ -7,3 +7,4 @@ SPDX-License-Identifier: GPL-3.0-or-later
 from .command import BaseCommand
 from .find import FindCommand
 from .probe import ProbeCommand
+from .reset import ResetCommand
