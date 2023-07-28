@@ -71,6 +71,13 @@ variables:
   value:
     "{'VS2019-x64-builder':{'buildOSName':'win-vs19-v142-x64','dockerImageName':'uhd-builder-vs2019-v142-x64','cmakeCompiler':'Visual Studio 16 2019','cmakeArch':'x64','vsArch':'x64','vsYear':'2019'}}"
 
+- ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/UHD-')) }}:
+  - name: dockerImagePrefix
+    value: 'rnd-docker-ci/ni/rfsdr/'
+- ${{ else }}:
+  - name: dockerImagePrefix
+    value: 'rnd-docker-pre/ni/rfsdr/'
+
 jobs:
 - job: build_image_linux
   displayName: Build Docker Image
@@ -89,7 +96,10 @@ jobs:
     inputs:
       command: 'build'
       Dockerfile: '$(Build.SourcesDirectory)/.ci/docker/$(dockerImageName).Dockerfile'
-      containerRegistry: ${{ variables.dockerRegistryPublish }}
+      ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/UHD-')) }}:
+        containerRegistry: rnd-docker-niartifacts-sdr-ci-publish
+      ${{ else }}:
+        containerRegistry: rnd-docker-niartifacts-pre-publish
       repository: '$(dockerImagePrefix)$(dockerImageName)'
       tags: $(Build.BuildNumber)
       arguments: --no-cache --pull
@@ -97,7 +107,10 @@ jobs:
     displayName: Push Image
     inputs:
       command: 'push'
-      containerRegistry: ${{ variables.dockerRegistryPublish }}
+      ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/UHD-')) }}:
+        containerRegistry: rnd-docker-niartifacts-sdr-ci-publish
+      ${{ else }}:
+        containerRegistry: rnd-docker-niartifacts-pre-publish
       repository: '$(dockerImagePrefix)$(dockerImageName)'
       tags: $(Build.BuildNumber)
 
@@ -113,7 +126,10 @@ jobs:
     matrix: $[ variables.linuxDockerImages ]
   container:
     image: '$(dockerImagePrefix)$(dockerImageName):$(Build.BuildNumber)'
-    endpoint: ${{ variables.dockerRegistryReadOnly }}
+    ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/UHD-')) }}:
+      endpoint: rnd-docker-niartifacts-ci-readonly
+    ${{ else }}:
+      endpoint: rnd-docker-niartifacts-pre-readonly
   workspace:
     clean: outputs
   steps:
@@ -152,7 +168,10 @@ jobs:
     inputs:
       command: 'build'
       Dockerfile: '$(Build.SourcesDirectory)/.ci/docker/$(dockerImageName).Dockerfile'
-      containerRegistry: ${{ variables.dockerRegistryPublish }}
+      ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/UHD-')) }}:
+        containerRegistry: rnd-docker-niartifacts-sdr-ci-publish
+      ${{ else }}:
+        containerRegistry: rnd-docker-niartifacts-pre-publish
       repository: '$(dockerImagePrefix)$(dockerImageName)'
       tags: $(Build.BuildNumber)
       buildContext: $(Build.SourcesDirectory)
@@ -161,7 +180,10 @@ jobs:
     displayName: Push Image
     inputs:
       command: 'push'
-      containerRegistry: ${{ variables.dockerRegistryPublish }}
+      ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/UHD-')) }}:
+        containerRegistry: rnd-docker-niartifacts-sdr-ci-publish
+      ${{ else }}:
+        containerRegistry: rnd-docker-niartifacts-pre-publish
       repository: '$(dockerImagePrefix)$(dockerImageName)'
       tags: $(Build.BuildNumber)
 
@@ -178,7 +200,10 @@ jobs:
     matrix: $[ variables.winDockerImages ]
   container:
     image: '$(dockerImagePrefix)$(dockerImageName):$(Build.BuildNumber)'
-    endpoint: ${{ variables.dockerRegistryReadOnly }}
+    ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/UHD-')) }}:
+      endpoint: rnd-docker-niartifacts-ci-readonly
+    ${{ else }}:
+      endpoint: rnd-docker-niartifacts-pre-readonly
   workspace:
     clean: outputs
   steps:

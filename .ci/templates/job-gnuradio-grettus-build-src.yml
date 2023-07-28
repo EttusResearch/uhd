@@ -49,7 +49,10 @@ jobs:
   ${{ if ne(parameters.toolset, 'make_homebrew_macos') }}:
     container:
       image: '$(dockerImagePrefix)$(DockerImageName):$(dockerBuildNumber)'
-      endpoint: ${{ variables.dockerRegistryReadOnly }}
+      ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/UHD-')) }}:
+        endpoint: rnd-docker-niartifacts-ci-readonly
+      ${{ else }}:
+        endpoint: rnd-docker-niartifacts-pre-readonly
   steps:
   - checkout: self
     clean: true
