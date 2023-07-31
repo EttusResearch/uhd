@@ -32,7 +32,7 @@ devices repeat the command for every device.
     - probe: reads extended information about the USRP
 - Multi device commands:
     - update: Update binaries (e.g., FPGA image)
-    - reset: Reset the device or parts thereof (e.g., only reset MPM)
+    - reset: Reset the specified subcomponent(s) of the USRP
     - find: finds all available USRPs in this network
 
 .SH OPTIONS
@@ -54,12 +54,20 @@ ID identifies exactly one device. Without arguments it displays detailed
 information about the device such as name, serial, revision numbers,
 firmware version sensor information on attached motherboard and daughterboards.
 
+.SH reset command
+.IP "Reset MPM:"
+-mpm
+.TP
+The reset command resets specified subcomponents of a device. If ID is not
+given, it scans the system for available, supported devices and resets the
+specified subcomponent of all discovered devices.
+
 .SH EXAMPLES
 .TP \w'usrpctl\ 'u
 .BI usrpctl\ find
 find all supported devices
 .TP
-.BI usrpctl\ type=x300,product=X310 find
+.BI usrpctl\ type=x300,product=X310\ find
 find all x310 devices
 .TP
 .BI usrpctl\ name=my_usrp\ find
@@ -73,6 +81,9 @@ display device information for USRP with the given ID
 .TP
 .BI usprctl\ name=my_usrp\ probe\ \-tree
 display property tree of device with the name my_usrp
+.TP
+.BI usrpctl\ addr=192.168.10.2\ reset\ \-mpm
+Resets MPM on the device with the given IP.
 .TP
 
 .SH SEE ALSO

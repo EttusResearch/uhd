@@ -31,7 +31,7 @@ devices repeat the command for every device.
     - `probe`: reads extended information about the USRP
 - Multi device commands:
     - `update`: Update binaries (e.g., FPGA image)
-    - `reset`: Reset the device or parts thereof (e.g., only reset MPM)
+    - `reset`: Reset the specified subcomponent(s) of the USRP
     - `find`: finds all available USRPs in this network
 
 \section usrpctl_options $OPTIONS
@@ -67,6 +67,17 @@ firmware version sensor information on attached motherboard and daughterboards.
 Examples:
 - `usrpctl addr=192.168.10.2 probe` display device information for USRP with the given ID
 - `usprctl name=my_usrp probe -tree` display property tree of device with the name my_usrp
+
+\subsection usrpctl_probe reset
+Arguments:
+-`-mpm`: reset MPM of USRP device
+ 
+The reset command resets specified subcomponents of a device. If `$ID` is not
+given, it scans the system for available, supported devices and resets the
+specified subcomponent of all discovered devices.
+
+Examples:
+- `usrpctl addr=192.168.10.2 -mpm` reset MPM for USRP with the given ID
 
 */
 // vim:ft=doxygen:
