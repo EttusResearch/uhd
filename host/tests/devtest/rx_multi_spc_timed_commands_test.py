@@ -77,7 +77,7 @@ class rx_multi_spc_timed_commands_test(UHDPythonTestCase):
                 if not run_results['passed']:
                     self.log.error(
                         f"Test Failed.\n"
-                        f"Timekeeper offset: {timkeeper_offset}, "
+                        f"Timekeeper offset: {timekeeper_offset}, "
                         f"Sample offset: {sample_offset}, "
                         f"Sample rate: {rate}"
                     )
