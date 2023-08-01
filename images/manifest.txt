@@ -2,11 +2,11 @@
 # Target    hash    url     SHA256
 
 # X410-Series
-x4xx_x410_fpga_default          uhd-d13d1fc       x4xx/uhd-d13d1fc/x4xx_x410_fpga_default-gd13d1fc.zip       5f25ce83d32a4d842fb8c43be7dff447d4ed93d2af0f650a4f527a0586a3b68d
+x4xx_x410_fpga_default          uhd-5da42f3       x4xx/uhd-5da42f3/x4xx_x410_fpga_default-g5da42f3.zip       953deb10720688010fedc20ed6567c372f5f29c5e30805b36cabcb408a6508c3
 x4xx_x410_cpld_default          uhd-6fd9f37       x4xx/uhd-6fd9f37/x4xx_x410_cpld_default-g6fd9f37.zip       74e09bedda84105258484217d4dbf68860ce2079d27cf8352952fe8e4d727e93
 x4xx_zbx_cpld_default           uhd-8d022b3       x4xx/uhd-8d022b3/x4xx_zbx_cpld_default-g8d022b3.zip        95993c736d48e22cbdb453a606189378a420f62280b4fb387cbe0272b146044b
 # X440-Series
-x4xx_x440_fpga_default          uhd-d13d1fc       x4xx/uhd-d13d1fc/x4xx_x440_fpga_default-gd13d1fc.zip       c1028600602ca5ed72a499ade33a6f64861ea7842281e6220fd8ae1af55a79cb
+x4xx_x440_fpga_default          uhd-5da42f3       x4xx/uhd-5da42f3/x4xx_x440_fpga_default-g5da42f3.zip       11735bea4a086c64f1d4c9a7dfed6ddb94abc4c18fb9e1d46696e15acba31fcb
 x4xx_x440_cpld_default          uhd-f5bb3e0       x4xx/uhd-f5bb3e0/x4xx_x440_cpld_default-gf5bb3e0.zip       1c929c125b868bac47e027e4351ca8f3cbafc8ea517fff24693a1801955eb4db
 # X410-Series Filesystems
 x4xx_common_sdk_default         meta-ettus-v4.4.0.0  x4xx/meta-ettus-v4.4.0.0/x4xx_common_sdk_default-v4.4.0.0.zip       0
