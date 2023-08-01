@@ -101,6 +101,13 @@
   add:
     - uhd.build.all
     - devtest.all
+- re: images/manifest
+  add:
+    - uhd.build.all
+    - uhd.utest.all
+    - hw.streaming.all
+    - hw.rf.all
+    - devtest.all
 # Catchall rule for UHD changes
 - re: host/.+cpp$|host/.+CMakeLists.txt|host/.+hpp$|host/.+ipp$|host/.+c$|host/.+h$|host/.+py$
   add:
