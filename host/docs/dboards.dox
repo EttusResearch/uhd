@@ -509,7 +509,7 @@ Please refer to \ref n3xx_mg.
 
 Features:
 - Dual channel transceivers
-- TX/RX and RX2 antenna ports per channel
+- TX/RX 0 and RX 1 antenna ports per channel
 - Frequency Range: 1 MHz to 8 GHz
 - Relative Gain Range: 0 - 60 dB (RX gain range reduced below 500 MHz)
 
@@ -517,6 +517,19 @@ The ZBX daughterboard only works with the X410 motherboard.
 
 More information:
 \li \subpage page_zbx
+
+\subsection dboards_fbx FBX XCVR board
+
+Features:
+- Quad channel transceivers
+- TX/RX 0 and RX 1 antenna ports per channel
+- Frequency Range: 30 MHz to 4 GHz
+- Relative Gain Range: 0 dB (no gain control)
+
+The FBX daughterboard only works with the X440 motherboard.
+
+More information:
+\li \subpage page_fbx
 
 \subsection dboards_clock_rate Daughterboard reference clock
 
