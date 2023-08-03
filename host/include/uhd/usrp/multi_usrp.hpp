@@ -258,21 +258,9 @@ public:
 
     /*! Sets the time registers on the USRP immediately.
      *
-     * This will set the tick count on the remote device's timekeeper as soon
-     * as possible. Note that there is some amount of lag between executing
-     * this call and when the device's time will be updated, e.g., due to
-     * network latency. This call is therefore unsuitable for setting the time
-     * on multiple devices synchronously.  Please use the set_time_next_pps() or
-     * set_time_unknown_pps() calls with a PPS signal for this use case.
-     *
-     * The one exception is when using a pair of USRP2/N200/N210 with a MIMO
-     * cable: If only one MIMO master is present in your configuration,
-     * set_time_now is safe to use because the slave's time automatically
-     * follows the master's time.
-     *
-     * On RFNoC devices, this will call
-     * uhd::rfnoc::mb_controller::timekeeper::set_time_now() on all available timekeepers
-     * (usually there is one timekeeper per device, with the exception of the USRP X440).
+     * This will set the tick count on the timekeepers of all devices as soon
+     * as possible.  It is done serially for multiple timekeepers, so times
+     * across multiple timekeepers will not be synchronized.
      *
      * \param time_spec the time to latch into the usrp device
      * \param mboard the motherboard index 0 to M-1
@@ -280,26 +268,25 @@ public:
     virtual void set_time_now(
         const time_spec_t& time_spec, size_t mboard = ALL_MBOARDS) = 0;
 
-    /*! Set the time registers on the USRP at the next PPS tick.
+    /*! Set the time registers on the USRP at the next PPS rising edge.
      *
-     * The values will not be latched in until the pulse occurs.
-     * It is recommended that the user sleep(1) after calling to ensure
-     * that the time registers will be in a known state prior to use.
+     * This will set the tick count on the timekeepers of all devices on
+     * the next rising edge of the PPS trigger signal.  It is important
+     * to note that this means the time may not be set for up to 1 second
+     * after this call is made, so it is recommended to wait for 1 second
+     * after this call before making any calls that depend on the time to
+     * ensure that the time registers will be in a known state prior to use.
      *
-     * Note: Because this call sets the time on the "next" pps,
-     * the seconds in the time spec should be current seconds + 1.
+     * Note: Because this call sets the time on the next PPS edge, the time
+     * spec supplied should correspond to the next pulse (i.e. current
+     * time + 1 second).
      *
      * Note: Make sure to not call this shortly before the next PPS edge. This
-     * should be called with plenty of time before the next PPS edge (at least
-     * 50 ms) to ensure that all devices will execute this command on the same
-     * PPS edge. If not, devices could be unsynchronized in time by exactly one
-     * second. If in doubt, use set_time_unknown_pps() which will take care of
-     * this issue (but will also take longer to execute).
-     *
-     * On RFNoC devices, this will call
-     * uhd::rfnoc::mb_controller::timekeeper::set_time_next_pps() on all available
-     * timekeepers (usually there is one timekeeper per device, with the exception of the
-     * USRP X440).
+     * should be called with plenty of time before the next PPS edge to ensure
+     * that all timekeepers on all devices will execute this command on the
+     * same PPS edge. If not, timekeepers could be unsynchronized in time by
+     * exactly one second. If in doubt, use set_time_unknown_pps() which will
+     * take care of this issue (but will also take longer to execute).
      *
      * \param time_spec the time to latch into the usrp device
      * \param mboard the motherboard index 0 to M-1

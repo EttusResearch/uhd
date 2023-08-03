@@ -983,7 +983,10 @@ with the following restrictions:
     lockstep. By default, the time for both daughterboards is thus synchronized.
   - When using multi_usrp API calls, e.g. uhd::usrp::multi_usrp::set_time_now(),
     UHD will set the time on all available timekeepers. However, this means that
-    it is possible to desynchronize the time between daughterboards.
+    it is possible to desynchronize the time between daughterboards.  It is
+    recommended to use uhd::usrp::multi_usrp::set_time_next_pps() or
+    uhd::usrp::multi_usrp::set_time_unknown_pps() to keep all timekeepers
+    synchronized.
   - When using the motherboard controller directly, attention must be paid to
     not only access timekeeper zero
 

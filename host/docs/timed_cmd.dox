@@ -110,10 +110,9 @@ that is in the past) are executed immediately.
 In RFNoC devices, each RFNoC block has its own command queue. Older devices have
 fewer (or only one command queue).
 
-When the command queue is full, UHD will attempt to hold on to the command in a
-software queue until the USRP has signaled that there is space for more commands.
-When this happens, it is possible that timed commands reach the FPGA after their
-desired execution time.
+When the command queue is full, UHD will block until the USRP has signaled that
+there is space for more commands. That can cause timed commands to reach the FPGA
+after their desired execution time.
 
 \subsection timedcmds_gen_cmds_what Which commands can be timed?
 
