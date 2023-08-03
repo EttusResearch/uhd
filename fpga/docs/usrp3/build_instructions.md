@@ -15,7 +15,8 @@ The USRP FPGA build system requires a UNIX-like environment with the following d
 - [Doxygen](https://www.doxygen.nl/index.html) (Optional: To build the manual)
 - [ModelSim](https://www.mentor.com/products/fv/modelsim/) (Optional: For simulation)
 
-The following USRPs work with the free versions:
+The following USRPs work with the free versions of the Xilinx tools as well as
+the full licensed versions:
 - USRP B200/B200mini (ISE WebPACK)
 - USRP E310/E312/E313 (Vivado ML Standard)
 
@@ -40,20 +41,20 @@ Xilinx documentation for the build tool required by your FPGA type.
 
 ### What FPGA does my USRP have?
 
-| USRP           | FPGA                                          |
-| -------------- | --------------------------------------------- |
-| USRP B200      | Spartan-6 XC6SLX75                            |
-| USRP B210      | Spartan-6 XC6SLX150                           |
-| USRP B200mini  | Spartan-6 XC6SLX75                            |
-| USRP B205mini  | Spartan-6 XC6SLX150                           |
-| USRP X300      | Kintex-7 XC7K325T (7 Series: Kintex-7)        |
-| USRP X310      | Kintex-7 XC7K410T (7 Series: Kintex-7)        |
-| USRP E31x      | Zynq-7000 XC7Z020 (SoCs: Zynq-7000)           |
-| USRP E320      | Zynq-7000 XC7Z045 (SoCs: Zynq-7000)           |
-| USRP N300      | Zynq-7000 XC7Z035 (SoCs: Zynq-7000)           |
-| USRP N310/N320 | Zynq-7000 XC7Z100 (SoCs: Zynq-7000)           |
-| USRP X410      | RFSoC XCZU28DR Speed grade 1 (SoCs: Zynq UltraScale+ RFSoC) |
-| USRP X440      | RFSoC XCZU28DR Speed grade 2 (SoCs: Zynq UltraScale+ RFSoC) |
+| USRP           | FPGA                                          | Design Tool       |
+| -------------- | --------------------------------------------- | ----------------- |
+| USRP B200      | Spartan-6 XC6SLX75                            | ISE               |
+| USRP B210      | Spartan-6 XC6SLX150                           | ISE               |
+| USRP B200mini  | Spartan-6 XC6SLX75                            | ISE               |
+| USRP B205mini  | Spartan-6 XC6SLX150                           | ISE               |
+| USRP X300      | Kintex-7 XC7K325T (7 Series: Kintex-7)        | Vivado            |
+| USRP X310      | Kintex-7 XC7K410T (7 Series: Kintex-7)        | Vivado            |
+| USRP E31x      | Zynq-7000 XC7Z020 (SoCs: Zynq-7000)           | Vivado            |
+| USRP E320      | Zynq-7000 XC7Z045 (SoCs: Zynq-7000)           | Vivado            |
+| USRP N300      | Zynq-7000 XC7Z035 (SoCs: Zynq-7000)           | Vivado            |
+| USRP N310/N320 | Zynq-7000 XC7Z100 (SoCs: Zynq-7000)           | Vivado            |
+| USRP X410      | RFSoC XCZU28DR Speed grade 1 (SoCs: Zynq UltraScale+ RFSoC) | Vivado |
+| USRP X440      | RFSoC XCZU28DR Speed grade 2 (SoCs: Zynq UltraScale+ RFSoC) | Vivado |
 
 Note: The Xilinx installation must include support for the specified FPGA family. You can save disk space and installation time by only installing support for the FPGAs you intend to use.
 
