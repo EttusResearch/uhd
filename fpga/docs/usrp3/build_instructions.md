@@ -19,6 +19,25 @@ The following USRPs work with the free versions:
 - USRP B200/B200mini (ISE WebPACK)
 - USRP E310/E312/E313 (Vivado ML Standard)
 
+### System Requirements
+
+In general, a high-performance PC with a lot of disk space and memory is
+recommended for building FPGA images. For USRP FPGA builds, the following
+system RAM is recommended:
+
+- USRP E3xx, X3xx, and N3xx Series
+  - 12 GiB minimum
+  - 16 GiB recommended
+- USRP X4xx Series
+  - 24 GiB minimum
+  - 32 GiB recommended
+
+For other system requirements related to the Xilinx tools, see the appropriate
+Xilinx documentation for the build tool required by your FPGA type.
+
+- [Xilinx Vivado Release Notes](https://www.xilinx.com/content/dam/xilinx/support/documents/sw_manuals/xilinx2021_1/ug973-vivado-release-notes-install-license.pdf)
+- [Xilinx ISE Platform Requirements](http://www.xilinx.com/support/documentation/sw_manuals/xilinx14_7/irn.pdf)
+
 ### What FPGA does my USRP have?
 
 | USRP           | FPGA                                          |
@@ -37,11 +56,6 @@ The following USRPs work with the free versions:
 | USRP X440      | RFSoC XCZU28DR Speed grade 2 (SoCs: Zynq UltraScale+ RFSoC) |
 
 Note: The Xilinx installation must include support for the specified FPGA family. You can save disk space and installation time by only installing support for the FPGAs you intend to use.
-
-### Requirements
-
-- [Xilinx Vivado Release Notes](https://www.xilinx.com/content/dam/xilinx/support/documents/sw_manuals/xilinx2021_1/ug973-vivado-release-notes-install-license.pdf)
-- [Xilinx ISE Platform Requirements](http://www.xilinx.com/support/documentation/sw_manuals/xilinx14_7/irn.pdf)
 
 ## Build Environment Setup
 
