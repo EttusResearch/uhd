@@ -9,14 +9,14 @@ query, update or configure USRP devices. The command structure is:
 
     usrpctl $ID $COMMAND $OPTIONS
 
-`usrpctl` will run $COMMAND on the devices identified by $ID. $OPTIONS
+`usrpctl` will run `$COMMAND` on the devices identified by `$ID`. `$OPTIONS`
 is dependend on the chosen command.
 
 \section usrpctl_id $ID
 
-$ID is the optional device argument. It is used to define a set
+`$ID` is the optional device argument. It is used to define a set
 of USRP devices that `$COMMAND` should be applied to. If `$ID` is omitted
-$COMMAND is applied to all reachable devices.
+`$COMMAND` is applied to all reachable devices.
 
 `usrpctl` understands the device args argument used by other UHD
 tools like `uhd_find_devices`.
@@ -41,7 +41,7 @@ with a dash, mandatory are not.
 
 \section usrpctl_commands Available commands
 
-\section usrpctl_find find
+\subsection usrpctl_find find
 
 The find command takes no further options. If `$ID` is not given it scans the
 system for available, supported devices and prints a list of discovered devices.
@@ -60,7 +60,7 @@ Arguments:
 -`-tree`: print a list of the device property tree
  
 The probe command can only be applied to a single device so make sure that
-$ID identifies exactly one device. Without arguments it displays detailed
+`$ID` identifies exactly one device. Without arguments it displays detailed
 information about the device such as name, serial, revision numbers, 
 firmware version sensor information on attached motherboard and daughterboards.
 
@@ -68,7 +68,7 @@ Examples:
 - `usrpctl addr=192.168.10.2 probe` display device information for USRP with the given ID
 - `usprctl name=my_usrp probe -tree` display property tree of device with the name my_usrp
 
-\subsection usrpctl_probe reset
+\subsection usrpctl_reset reset
 Arguments:
 -`-mpm`: reset MPM of USRP device
  
