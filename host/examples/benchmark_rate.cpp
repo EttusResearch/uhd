@@ -75,7 +75,9 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp,
     const start_time_type& start_time,
     std::atomic<bool>& burst_timer_elapsed,
     bool elevate_priority,
-    double rx_delay)
+    double adjusted_rx_delay,
+    double user_rx_delay,
+    bool rx_stream_now)
 {
     if (elevate_priority) {
         uhd::set_thread_priority_safe();
@@ -108,12 +110,12 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp,
         cmd.num_samps   = (rand() % spb) + 1;
     }
 
-    cmd.time_spec  = usrp->get_time_now() + uhd::time_spec_t(rx_delay);
-    cmd.stream_now = (rx_delay == 0.0);
+    cmd.time_spec  = usrp->get_time_now() + uhd::time_spec_t(adjusted_rx_delay);
+    cmd.stream_now = rx_stream_now;
     rx_stream->issue_stream_cmd(cmd);
 
     const float burst_pkt_time = std::max<float>(0.100f, (2 * spb / rate));
-    float recv_timeout         = burst_pkt_time + (rx_delay);
+    float recv_timeout         = burst_pkt_time + (adjusted_rx_delay);
 
     bool stop_called = false;
     while (true) {
@@ -122,7 +124,7 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp,
             stop_called = true;
         }
         if (random_nsamps) {
-            cmd.time_spec = usrp->get_time_now() + uhd::time_spec_t(rx_delay);
+            cmd.time_spec = usrp->get_time_now() + uhd::time_spec_t(user_rx_delay);
             cmd.num_samps = (rand() % spb) + 1;
             rx_stream->issue_stream_cmd(cmd);
         }
@@ -337,7 +339,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     std::atomic<bool> burst_timer_elapsed(false);
     size_t overrun_threshold, underrun_threshold, drop_threshold, seq_threshold;
     size_t rx_spp, tx_spp, rx_spb, tx_spb;
-    double tx_delay, rx_delay;
+    double tx_delay, rx_delay, adjusted_tx_delay, adjusted_rx_delay;
+    bool rx_stream_now = false;
     std::string priority;
     bool elevate_priority = false;
 
@@ -409,6 +412,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                   << std::endl;
         random_nsamps = true;
     }
+
+    adjusted_tx_delay = tx_delay;
+    adjusted_rx_delay = rx_delay;
 
     // create a usrp device
     std::cout << std::endl;
@@ -548,7 +554,11 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         // during setup.
         if ((rx_delay == 0.0 || vm.count("multi_streamer"))
             && rx_channel_nums.size() > 1) {
-            rx_delay = std::max(rx_delay, 0.05);
+            adjusted_rx_delay = std::max(rx_delay, 0.05);
+        }
+        if (rx_delay == 0.0
+            && (vm.count("multi_streamer") || rx_channel_nums.size() == 1)) {
+            rx_stream_now = true;
         }
 
         size_t spb = 0;
@@ -577,7 +587,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                         start_time,
                         burst_timer_elapsed,
                         elevate_priority,
-                        rx_delay);
+                        adjusted_rx_delay,
+                        rx_delay,
+                        rx_stream_now);
                 });
                 uhd::set_thread_name(rx_thread, "bmark_rx_strm" + std::to_string(count));
             }
@@ -596,7 +608,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                     start_time,
                     burst_timer_elapsed,
                     elevate_priority,
-                    rx_delay);
+                    adjusted_rx_delay,
+                    rx_delay,
+                    rx_stream_now);
             });
             uhd::set_thread_name(rx_thread, "bmark_rx_stream");
         }
@@ -613,7 +627,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         // during setup.
         if ((tx_delay == 0.0 || vm.count("multi_streamer"))
             && tx_channel_nums.size() > 1) {
-            tx_delay = std::max(tx_delay, 0.25);
+            adjusted_tx_delay = std::max(tx_delay, 0.25);
         }
 
         if (vm.count("multi_streamer")) {
@@ -643,7 +657,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                         start_time,
                         spb,
                         elevate_priority,
-                        tx_delay,
+                        adjusted_tx_delay,
                         random_nsamps);
                 });
                 uhd::set_thread_name(tx_thread, "bmark_tx_strm" + std::to_string(count));
@@ -679,7 +693,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                     start_time,
                     spb,
                     elevate_priority,
-                    tx_delay,
+                    adjusted_tx_delay,
                     random_nsamps);
             });
             uhd::set_thread_name(tx_thread, "bmark_tx_stream");
@@ -697,11 +711,11 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     // than specified duration if tx_delay > rx_delay because of the overly simplified
     // logic below and vice versa.
     if (vm.count("rx_rate") and vm.count("tx_rate")) {
-        duration += std::max(rx_delay, tx_delay);
+        duration += std::max(adjusted_rx_delay, adjusted_tx_delay);
     } else if (vm.count("rx_rate")) {
-        duration += rx_delay;
+        duration += adjusted_rx_delay;
     } else {
-        duration += tx_delay;
+        duration += adjusted_tx_delay;
     }
     const int64_t secs  = int64_t(duration);
     const int64_t usecs = int64_t((duration - secs) * 1e6);
