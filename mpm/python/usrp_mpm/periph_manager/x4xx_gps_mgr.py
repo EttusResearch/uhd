@@ -78,14 +78,14 @@ class X4xxGPSMgr:
             'value': str(gps_enabled).lower(),
         }
 
-    def get_gps_lock_sensor(self):
+    def get_gps_locked_sensor(self):
         """
         Get lock status of GPS as a sensor dict
         """
         gps_locked = self.is_gps_enabled() and \
-                bool(self._clocking_auxbrd.get_gps_lock())
+                bool(self._clocking_auxbrd.get_gps_locked())
         return {
-            'name': 'gps_lock',
+            'name': 'gps_locked',
             'type': 'BOOLEAN',
             'unit': 'locked' if gps_locked else 'unlocked',
             'value': str(gps_locked).lower(),

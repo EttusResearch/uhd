@@ -265,7 +265,7 @@ class X4XXBIST(bist.UsrpBIST):
             "Waiting for LOCKOK to go high for up to {} seconds...\n".format(
                 gps_lockok_timeout))
         if not bist.poll_with_timeout(
-                clk_aux_brd.get_gps_lock,
+                clk_aux_brd.get_gps_locked,
                 gps_lockok_timeout*1000,
                 1000
             ):

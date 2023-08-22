@@ -1081,7 +1081,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         assert self._gps_mgr
         self.log.trace("Reading all GPS status pins")
         return f"""
-            {self.get_gps_lock_sensor()}
+            {self.get_gps_locked_sensor()}
             {self.get_gps_alarm_sensor()}
             {self.get_gps_warmup_sensor()}
             {self.get_gps_survey_sensor()}
