@@ -945,6 +945,7 @@ For a list of which arguments can be passed into make(), see Section
  cal_delay             | Delay for calibration threshold status (see \ref x4xx_adc_self_cal).            | cal_delay=100
  cal_ch_list           | Selects the channels to be calibrated.                                          | cal_ch_list=1;2;3
  skip_adc_selfcal      | Skips the ADC self-cal on clock-reconfig.                                       | skip_adc_selfcal=true
+ skip_mpm_reboot       | Skips MPM rebooting during session initialization on clock-reconfig. X440 only. | skip_mpm_reboot=1
 
 \subsection x4xx_usage_mcrs Master Clock Rates
 

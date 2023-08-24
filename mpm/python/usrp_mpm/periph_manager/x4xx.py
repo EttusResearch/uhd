@@ -296,6 +296,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
             return
         try:
             if not args.get('skip_boot_init', False):
+                args['boot_init'] = True
                 self.init(args)
         except Exception as ex:
             self.log.warning("Failed to initialize device on boot: %s", str(ex))

@@ -41,7 +41,7 @@ For a block diagram, cf. usrp_x4xx.dox. For more details, see the schematic.
 """
 
 from enum import Enum
-from usrp_mpm.mpmutils import parse_multi_device_arg
+from usrp_mpm.mpmutils import parse_multi_device_arg, str2bool
 from usrp_mpm.periph_manager.x4xx_clk_aux import ClockingAuxBrdControl
 from usrp_mpm.periph_manager.x4xx_clock_types import RpllRefSel, BrcSource
 from usrp_mpm.periph_manager.x4xx_clock_ctrl import X4xxClockCtrl
@@ -135,11 +135,13 @@ class X4xxClockManager:
             self._safe_sync_source = {
                 'clock_source': self.X400_DEFAULT_CLOCK_SOURCE,
                 'time_source': self.X400_DEFAULT_TIME_SOURCE,
+                'skip_mpm_reboot': 1,
             }
         else:
             self._safe_sync_source = {
                 'clock_source': self.CLOCK_SOURCE_MBOARD,
                 'time_source': self.TIME_SOURCE_INTERNAL,
+                'skip_mpm_reboot': 1,
             }
         self.clk_policy = clk_policy
         # Parse args
@@ -187,6 +189,8 @@ class X4xxClockManager:
         self.clk_ctrl = X4xxClockCtrl(cpld_control, log)
         self._init_ref_clock_and_time()
         self._init_meas_clock()
+        self.configured_since_boot = False
+        self.tasks["mpm_reboot"] = []
         ### IMPORTANT! The clocking initialization is not complete until
         ### finalize_init() was called. This is as far as we get for now.
 
@@ -332,6 +336,7 @@ class X4xxClockManager:
         args['clock_source'] = args.get('clock_source', self.X400_DEFAULT_CLOCK_SOURCE)
         args['time_source'] = args.get('time_source', self.X400_DEFAULT_TIME_SOURCE)
         self.clk_policy.args = args
+        args['initializing'] = True
         # This flag is used to skip the self-cal that otherwise is marked as required
         # after each clocking change
         self.skip_adc_selfcal = args.get('skip_adc_selfcal', False)
@@ -385,6 +390,8 @@ class X4xxClockManager:
         if force_set_mcr:
             args['force_reinit'] = True
         self.set_sync_source(args)
+        if not 'boot_init' in args:
+            self.configured_since_boot = True
 
 
     @no_rpc
@@ -921,6 +928,31 @@ class X4xxClockManager:
             self.log.debug("Skipping reconfiguration of clocks.")
             return
         try:
+            # An intermittent spur has been seen on multiple reconfigurations of clocking for x440.
+            # If we have already reconfigured clocking after initializtion, the next clocking
+            # reconfiguration will trigger MPM to reboot
+            skip_mpm_reboot = str2bool(args.get('skip_mpm_reboot', False))
+            initializing = str2bool(args.get('initializing', False))
+            if self.clk_policy.should_reboot_on_reconfiguration() \
+                    and self.configured_since_boot \
+                    and not skip_mpm_reboot:
+                if initializing:
+                    self.tasks["mpm_reboot"] = [{"Run":"True"}]
+                    # We are going to reboot mpm, so return early
+                    return
+                else:
+                    # If a different clocking configuration is being set through an
+                    # API after device initialization (e.g. set_clock_source()), then
+                    # don't return and reboot mpm, throw an error that reconfiguring
+                    # the clocking configuration can lead to bad performance
+                    raise RuntimeError("Changing clocking configuration after device "
+                                       "initialization is not permitted since it can "
+                                       "lead to decreased spurious performance. "
+                                       "To configure clocking settings, use the proper "
+                                       "device arguments during initialization")
+            if skip_mpm_reboot:
+                self.log.warning("Overriding recommended MPM reboot during clocking configuration. "
+                                 "This can lead to decreased spurious performance")
             self.log.debug(
                 f"Reconfiguring clock configuration for a master clock rate of "
                 f"{master_clock_rates}")

@@ -179,6 +179,12 @@ class X4xxClockPolicy:
         """
         raise NotImplementedError()
 
+    def should_reboot_on_reconfiguration(self):
+        """
+        This returns if MPM should reboot on a clocking reconfiguration
+        """
+        raise NotImplementedError()
+
 class X410ClockPolicy(X4xxClockPolicy):
     """
     This is a pretty dumb policy, everything is hardcoded.
@@ -343,6 +349,9 @@ class X410ClockPolicy(X4xxClockPolicy):
             rfdc_configs=[rfdc_config, rfdc_config],
             mmcm_use_defaults=True
         )
+
+    def should_reboot_on_reconfiguration(self):
+        return False
 
 class X440ClockPolicy(X4xxClockPolicy):
     """
@@ -765,6 +774,9 @@ class X440ClockPolicy(X4xxClockPolicy):
 
 
         return X4xxClockConfig(**clk_config)
+
+    def should_reboot_on_reconfiguration(self):
+        return True
 
 def get_clock_policy(mboard_info, dboard_infos, args, log):
     """
