@@ -69,6 +69,7 @@ IFACES = [
         fn_from_string("void set_gpio_src(const std::string& bank, const std::vector<std::string>& src)"),
         Function("std::map<std::string, std::string>", "synchronize", [("const std::map<std::string, std::string>&", "sync_data"), ("bool", "finalize")]),
         Function("std::map<std::string, std::string>", "aggregate_sync_data", [("const std::list<std::map<std::string, std::string>>&", "collated_sync_data")]),
+        fn_from_string("std::vector<std::map<std::string, std::string>> pop_host_tasks(const std::string& task)"),
 
         # ref_clk_calibration
         fn_from_string("void set_ref_clk_tuning_word(uint32_t tuning_word)"),
@@ -89,7 +90,6 @@ IFACES = [
         fn_from_string("double get_spll_freq()"),
         fn_from_string("void setup_threshold(size_t db_number, size_t chan, size_t threshold_block, const std::string& mode, size_t delay, size_t under, size_t over)"),
         fn_from_string("bool is_db_gpio_ifc_present(size_t db_idx)"),
-        fn_from_string("std::vector<std::map<std::string, std::string>> pop_host_tasks(const std::string& task)"),
 
         # Digital I/O functions
         fn_from_string("void dio_set_voltage_level(const std::string& port, const std::string& level)"),

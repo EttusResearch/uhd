@@ -234,7 +234,8 @@ x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
 
     uhd::rfnoc::mb_controller::sync_source_updater_t self_cal_runner =
         [&](const uhd::rfnoc::mb_controller::sync_source_t&) {
-            auto self_cal_req = _rpcc->pop_host_tasks(
+            auto mpm_rpc = _mb_control->dynamic_cast_rpc_as<uhd::usrp::mpmd_rpc_iface>();
+            auto self_cal_req = mpm_rpc->pop_host_tasks(
                 "db" + std::to_string(get_block_id().get_block_count()) + "_ADCSelfCal");
             if (self_cal_req.size() > 0) {
                 if (has_feature<uhd::features::adc_self_calibration_iface>()) {
