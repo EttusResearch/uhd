@@ -27,6 +27,8 @@
 static constexpr size_t MPMD_RECLAIM_INTERVAL_MS = 1000;
 //! Default timeout value for the init() RPC call (ms)
 static constexpr size_t MPMD_DEFAULT_INIT_TIMEOUT = 120000;
+//! Default timeout value for the reset_timer_and_mgr() RPC call (ms)
+static constexpr size_t MPMD_DEFAULT_REBOOT_TIMEOUT = 200000;
 //! Default timeout value for RPC calls (ms)
 static constexpr size_t MPMD_DEFAULT_RPC_TIMEOUT = 2000;
 //! Short timeout value for RPC calls (ms), used for calls that shouldn't
@@ -157,7 +159,12 @@ private:
      */
     void set_rpcc_timeout(const uint64_t timeout_ms);
 
+    uhd::task::sptr make_claim_loop_task();
+
     uhd::task::sptr claim_device_and_make_task();
+
+    //! Reset the _claim_rpc and _claimer_task
+    void reset_claim_loop();
 
     /*! Read out the log buffer from the MPM device and send it to native
      * logging system.
@@ -174,6 +181,10 @@ private:
     /*! A copy of the device access token
      */
     std::string _token;
+
+    /*! A copy of the device access token
+     */
+    std::string _rpc_server_addr;
 
     /*! This flag is only used within the claim() function. Go look there if you
      * really need to know what it does.

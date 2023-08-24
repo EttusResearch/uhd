@@ -275,6 +275,7 @@ mpmd_mboard_impl::mpmd_mboard_impl(
     : mb_args(mb_args_)
     , rpc(make_mpm_rpc_client(rpc_server_addr, mb_args_))
     , _claim_rpc(make_mpm_rpc_client(rpc_server_addr, mb_args, MPMD_CLAIMER_RPC_TIMEOUT))
+    , _rpc_server_addr(rpc_server_addr)
 {
     UHD_LOGGER_TRACE("MPMD") << "Initializing mboard, connecting to RPC server address: "
                              << rpc_server_addr
@@ -330,6 +331,20 @@ mpmd_mboard_impl::~mpmd_mboard_impl()
 void mpmd_mboard_impl::init()
 {
     init_device(rpc, mb_args);
+    auto need_mpm_reboot =
+        rpc->request_with_token<std::vector<std::map<std::string, std::string>>>(
+            "pop_host_tasks", "mpm_reboot");
+    if (!need_mpm_reboot.empty()) {
+        UHD_LOG_DEBUG("MPMD", "Bracing for potential loss of RPC server connection.");
+        allow_claim_failure(true);
+        UHD_LOGGER_INFO("MPMD") << "Rebooting MPM before device initialization!";
+        auto id = rpc->request_with_token<int>("get_device_id");
+        rpc->notify_with_token(MPMD_DEFAULT_REBOOT_TIMEOUT, "reset_timer_and_mgr");
+        allow_claim_failure(false);
+        reset_claim_loop();
+        rpc->notify_with_token("set_device_id", id);
+        init_device(rpc, mb_args);
+    }
     mb_iface->init();
 }
 
@@ -369,6 +384,26 @@ bool mpmd_mboard_impl::claim()
     }
 }
 
+uhd::task::sptr mpmd_mboard_impl::make_claim_loop_task()
+{
+    return uhd::task::make(
+        [this] {
+            auto now = std::chrono::steady_clock::now();
+            if (not this->claim()) {
+                throw uhd::value_error("mpmd device reclaiming loop failed!");
+            } else {
+                try {
+                    this->dump_logs();
+                } catch (const uhd::runtime_error&) {
+                    UHD_LOG_WARNING("MPMD", "Could not read back log queue!");
+                }
+            }
+            std::this_thread::sleep_until(
+                now + std::chrono::milliseconds(MPMD_RECLAIM_INTERVAL_MS));
+        },
+        "mpmd_claimer_task");
+}
+
 uhd::task::sptr mpmd_mboard_impl::claim_device_and_make_task()
 {
     auto rpc_token = _claim_rpc->request<std::string>(
@@ -389,22 +424,17 @@ uhd::task::sptr mpmd_mboard_impl::claim_device_and_make_task()
             UHD_LOG_WARNING("MPMD", "Could not read back log queue!");
         }
     }
-    return uhd::task::make(
-        [this] {
-            auto now = std::chrono::steady_clock::now();
-            if (not this->claim()) {
-                throw uhd::value_error("mpmd device reclaiming loop failed!");
-            } else {
-                try {
-                    this->dump_logs();
-                } catch (const uhd::runtime_error&) {
-                    UHD_LOG_WARNING("MPMD", "Could not read back log queue!");
-                }
-            }
-            std::this_thread::sleep_until(
-                now + std::chrono::milliseconds(MPMD_RECLAIM_INTERVAL_MS));
-        },
-        "mpmd_claimer_task");
+    return make_claim_loop_task();
+}
+
+void mpmd_mboard_impl::reset_claim_loop()
+{
+    // Rebooting MPM puts the _claim_rpc in weird state where it cannot communicate
+    // with the rpc server properly, so reset the client and claim loop
+    _claimer_task.reset();
+    _claim_rpc = make_mpm_rpc_client(_rpc_server_addr, mb_args, MPMD_CLAIMER_RPC_TIMEOUT);
+    _claim_rpc->set_token(_token);
+    _claimer_task = make_claim_loop_task();
 }
 
 void mpmd_mboard_impl::dump_logs(const bool dump_to_null)
