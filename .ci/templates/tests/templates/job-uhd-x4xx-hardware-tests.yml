@@ -148,12 +148,15 @@ jobs:
         exit $EXITCODE
     displayName: Flash FPGA $(dutFPGA)
 
+  # When MPM reboots, the sfp0 address is reset to default
+  # Since rebooting MPM was added for clocking re-config we need
+  # to change sfp0 default on the device
   - script: |
       source $USRP_EMB_VENV/bin/activate
       ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
-      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ip link set sfp0 down"
-      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ip addr add $(sfp0ip)/24 dev sfp0"
-      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ip link set sfp0 up"
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "sed -i 's/192.168.10.2/$(sfp0ip)/g' /data/network/sfp0.network"
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "reboot"
+      sleep 140
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ifconfig sfp0"
     displayName: Set sfp0 IP
     condition: and(succeeded(), ${{ parameters.runPyTest }})
