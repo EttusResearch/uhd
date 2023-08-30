@@ -922,7 +922,7 @@ class X4xxClockManager:
                 and self._clocking_auxbrd:
             self._clocking_auxbrd.export_clock(enable=False)
         # Now configure the sync sources:
-        force_update = args.get("force_reinit", False) or mcr_change
+        force_update = str2bool(args.get('force_reinit', False)) or mcr_change
         ret_val = self._set_sync_source(clock_source, time_source, force_update)
         if ret_val == self.SetSyncRetVal.NOP and not force_update:
             self.log.debug("Skipping reconfiguration of clocks.")
