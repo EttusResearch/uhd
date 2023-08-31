@@ -801,6 +801,9 @@ def get_device_config(usrp_type, device_config_path=None):
                 'set_normalized_rx_gain',
                 'get_normalized_tx_gain',
                 'set_normalized_tx_gain',
+                # Changing clock or time source after device init throws an error
+                'set_clock_source',
+                'set_time_source',
             ],
             'clock_sources': ['internal', 'mboard'],
         }
