@@ -13,6 +13,7 @@ jobs:
     displayName: Analyze Changeset
     pool:
       name: Drivers-NIBuildFarm-RFMIBUILD
+      demands: sh
     condition: not(${{ parameters.skip_analyze_changeset }})
     steps:
     - checkout: self
