@@ -55,8 +55,8 @@ def settings(usrp):
     if is_x440(usrp):
         return {
             "gain": None,
-            "rx_freq": 100e6,
-            "tx_freq": 100e6
+            "rx_freq": 397.55e6,
+            "tx_freq": 397.55e6
         }
     print("Unknown x4xx device")
     sys.exit(1)
