@@ -522,8 +522,14 @@ class X4XXBIST(bist.UsrpBIST):
         mpm_c.enable_ecpri_clocks(False)
         # Set the clock source back to internal, as the register values
         # for locking to the gty_rcv_clk cause the mboard to lose ref_lock
-        # to the nsync lmk.
-        mpm_c.set_clock_source('internal')
+        # to the nsync lmk. For x440 setting clock source must be done
+        # at device initialization.
+        if self.product_id == 'x440':
+            usrp_dev = None
+            usrp_dev = multi_usrp.MultiUSRP("type=x4xx,addr=localhost,clock_source=internal,"
+                                            "master_clock_rate={}".format(str(mcr)))
+        else:
+            mpm_c.set_clock_source('internal')
 
         return result, {"pri_ref_selected": using_pri_ref,
                         "dpll_locked": dpll_lock,
