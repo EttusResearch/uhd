@@ -951,12 +951,12 @@ For a list of which arguments can be passed into make(), see Section
 The available master clock rates (MCR) depend on the FPGA image flavor that is
 currently installed on the device (see \ref x4xx_updating_fpga_types).
 
-\paragraph x410_usage_mcrs USRP X410
+\subsubsection x410_usage_mcrs USRP X410
 The USRP X410 has a few fixed MCR available for every image type:
 The 200 MHz images allow master clock rates of 245.76 MHz or 250 MHz. The 400
 MHz images allow master clock rates of 491.52 MHz or 500 MHz.
 
-\paragraph x440_usage_mcrs USRP X440
+\subsubsection x440_usage_mcrs USRP X440
 The USRP X440 has a much broader range of available master clock rates, and 
 supports a fixed set of rates between 125 Msps and 2 Gsps. The maximum available 
 MCR is further dependent on the FPGA image type. The master clock rate depends 
@@ -1374,13 +1374,13 @@ convert the signal to a complex one). In the USRP X4x0 design all ADC and DAC
 converter rates are identical and use the same RFDC decimation/interpolation 
 settings.
 
-\paragraph x410_too_convrate USRP X410
+\subsubsection x410_too_convrate USRP X410
 The USRP X410 only supports a few fixed master clock rates (see \ref x4xx_usage_mcrs), 
 with predefined converter rates around 3 GHz, and uses in addition to the RFDC 
 decimation/interpolation block also a 3/2 decimation (2/3 interpolation) block 
 implemented in FPGA fabric.
 
-\paragraph x440_too_convrate USRP X440
+\subsubsection x440_too_convrate USRP X440
 The USRP X440 supports a large, finite number of master clock rates (see
 \ref x4xx_usage_mcrs), and utilizes converter rates between 1GHz and the maximum 
 supported converter rate of 4.096 GHz. The smallest possible master clock rate 
