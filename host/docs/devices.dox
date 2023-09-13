@@ -53,6 +53,7 @@ unless stated otherwise, they will still work with this version of UHD.
 \li \subpage page_dboards
 \li \ref page_twinrx
 \li \ref page_zbx
+\li \ref page_fbx
 
 ## OctoClock
 
