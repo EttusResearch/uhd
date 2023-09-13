@@ -11,13 +11,13 @@ The FBX daughterboard is the daughterboard for the Ettus USRP X440.
 Feature list:
 - Frequency range (TX and RX): 30 MHz - 4 GHz (Note: UHD Tune range is 1 MHz - 4 GHz)
 - Maximum output power: up to 1 dBm (depending on Nyquist zone selection and 
-  tune frequency, see <em>TX Maximum Output Power</em> in <a href="https://www.ni.com//r/uhdx440specs">specifications</a>)
+  tune frequency, see <em>TX Maximum Output Power</em> in <a href="https://www.ni.com/r/uhdx440specs">specifications</a>)
 - Maximum input power: 10 dBm (operational, see
-  <a href="https://www.ni.com//r/uhdx440specs">specifications</a> for damage levels)
+  <a href="https://www.ni.com/r/uhdx440specs">specifications</a> for damage levels)
 - Timed tuning is not supported by the X440, because timed tuning of the NCO
   (within the RFSoC) is not supported.
 
-See the RF section in the <a href="https://www.ni.com//r/uhdx440specs">Ettus
+See the RF section in the <a href="https://www.ni.com/r/uhdx440specs">Ettus
 USRP X440 Specifications</a> for a comprehensive FBX daughterboard
 specifications list.
 
