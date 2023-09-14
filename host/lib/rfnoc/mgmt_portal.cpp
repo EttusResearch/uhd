@@ -162,6 +162,9 @@ public:
             mgmt_op_t::cfg_payload(REG_RESET_AND_FLUSH, RESET_AND_FLUSH_ALL)));
         cfg_hop.add_op(mgmt_op_t(
             mgmt_op_t::MGMT_OP_CFG_WR_REQ, mgmt_op_t::cfg_payload(REG_EPID_SELF, epid)));
+        // Reset throttle to default value of 1.0 to prevent adverse effects of
+        // last configured value.
+        _push_ostrm_throttle_config("1.0", cfg_hop);
         cfg_hop.add_op(mgmt_op_t(mgmt_op_t::MGMT_OP_RETURN));
         cfg_xact.add_hop(cfg_hop);
 
@@ -572,6 +575,9 @@ public:
             // Configure flow control parameters
             _push_ostrm_flow_control_config(
                 lossy_xport, BUFF_U64, BUFF_U64, false, fc_freq, fc_headroom, cfg_hop);
+            // Reset throttle to default value of 1.0 to prevent adverse effects of
+            // last configured value.
+            _push_ostrm_throttle_config("1.0", cfg_hop);
             // Return the packet back to us
             cfg_hop.add_op(mgmt_op_t(mgmt_op_t::MGMT_OP_RETURN));
 
