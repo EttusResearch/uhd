@@ -20,7 +20,7 @@ jobs:
 - job: build_ctest_and_upload_uhd_${{ parameters.toolset }}
   displayName: ${{ parameters.toolset }}, ctest, and upload UHD
   dependsOn: get_latest_uhd_docker
-  timeoutInMinutes: 90
+  timeoutInMinutes: 120
   variables:
     # Docker vars from job-get-latest-uhd-docker.yml
     dockerBuildNumber: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerBuildNumber'] ]
@@ -33,15 +33,11 @@ jobs:
     dockerImageMatrixFedoraRpm: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixFedoraRpm'] ]
     dockerImageMatrixWinPythonBuild: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixWinPythonBuild'] ]
   pool:
-    ${{ if contains(parameters.toolset, 'msbuild') }}:
-      name: de-dre-lab
-    ${{ if not(contains(parameters.toolset, 'msbuild')) }}:
-      name: Drivers-NIBuildFarm-RFMIBUILD
+    name: Drivers-NIBuildFarm-RFMIBUILD
     demands:
       - ${{ if contains(parameters.toolset, 'msbuild') }}:
         - docker
         - Agent.OS -equals Windows_NT
-        - rfsdr-build
       - ${{ if or(eq(parameters.toolset, 'make'), eq(parameters.toolset, 'make_trace'), eq(parameters.toolset, 'ninja'), eq(parameters.toolset, 'make_custom_boost_version')) }}:
         - docker
         - Agent.OS -equals Linux
@@ -62,6 +58,8 @@ jobs:
       matrix: $[ variables.macOSBuilders ]
   ${{ if ne(parameters.toolset, 'make_homebrew_macos') }}:
     container:
+      ${{ if or(eq(parameters.toolset, 'msbuild'), eq(parameters.toolset, 'msbuild_python')) }}:
+        options: --cpu-count 6 --memory 12G
       image: '$(dockerImagePrefix)$(DockerImageName):$(dockerBuildNumber)'
       ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/UHD-')) }}:
         endpoint: rnd-docker-niartifacts-ci-readonly
@@ -104,7 +102,7 @@ jobs:
     - template: steps-build-uhd-msbuild.yml
       parameters:
         uhdSrcDir: $(Build.SourcesDirectory)
-        uhdBuildDir: $(Build.BinariesDirectory)\\uhddev\\build
+        uhdBuildDir: c:\uhddev\build
         uhdReleaseBinaries: ${{ parameters.release_binaries }}
         uhdBuildPythonAPI: false
         cmakeCompiler: $(cmakeCompiler)
@@ -117,7 +115,7 @@ jobs:
     - template: steps-build-uhd-msbuild.yml
       parameters:
         uhdSrcDir: $(Build.SourcesDirectory)
-        uhdBuildDir: $(Build.BinariesDirectory)\\uhddev\\build
+        uhdBuildDir: c:\uhddev\build
         uhdReleaseBinaries: ${{ parameters.release_binaries }}
         uhdBuildPythonAPI: true
         cmakeCompiler: $(cmakeCompiler)

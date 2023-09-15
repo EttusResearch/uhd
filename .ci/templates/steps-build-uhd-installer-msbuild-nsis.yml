@@ -78,6 +78,6 @@ steps:
   inputs:
     sourceFolder: ${{ parameters.uhdBuildDir }}
     contents: 'uhd_*.exe'
-    targetFolder: ${{ parameters.uhdInstallerDir }}
+    targetFolder: '$(Build.BinariesDirectory)/uhddev-installer'
     cleanTargetFolder: true
   displayName: Copy msbuild installer

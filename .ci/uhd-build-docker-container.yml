@@ -152,11 +152,10 @@ jobs:
   displayName: Build Docker Image Windows
   timeoutInMinutes: 180
   pool:
-    name: de-dre-lab
+    name: Drivers-NIBuildFarm-RFMIBUILD
     demands:
       - agent.os -equals Windows_NT
       - docker
-      - rfsdr-build
   strategy:
     matrix: $[ variables.winDockerImages ]
     maxParallel: 2
@@ -189,17 +188,18 @@ jobs:
 
 - job: test_image_win
   displayName: Test Docker Image Windows
+  timeoutInMinutes: 90
   dependsOn: build_image_win
   pool:
-    name: de-dre-lab
+    name: Drivers-NIBuildFarm-RFMIBUILD
     demands:
       - agent.os -equals Windows_NT
       - docker
-      - rfsdr-build
   strategy:
     matrix: $[ variables.winDockerImages ]
   container:
     image: '$(dockerImagePrefix)$(dockerImageName):$(Build.BuildNumber)'
+    options: --cpu-count 6 --memory 12G
     ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/UHD-')) }}:
       endpoint: rnd-docker-niartifacts-ci-readonly
     ${{ else }}:
@@ -210,17 +210,15 @@ jobs:
   - checkout: self
     clean: true
   - script: |
-        cd $(Build.BinariesDirectory)
-        mkdir uhddev\build
-        cd uhddev\build
+        mkdir c:\uhddev\build
+        cd c:\uhddev\build
         cmake $(Build.SourcesDirectory)/host ^
           -DVCPKG_TARGET_TRIPLET=uhd-$(vsArch)-windows-static-md ^
           -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALL_DIR%\scripts\buildsystems\vcpkg.cmake ^
           -G "$(cmakeCompiler)" -A $(cmakeArch)
     displayName: Test image with cmake uhd
   - script: |
-        cd $(Build.BinariesDirectory)
-        cd uhddev\build
+        cd c:\uhddev\build
         "C:\Program Files (x86)\Microsoft Visual Studio\$(vsYear)\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
     displayName: Load Visual C++ Env
 
