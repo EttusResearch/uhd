@@ -357,9 +357,10 @@ module x4xx_pps_sync #(
     .out (pps_prc_delay_prc)
   );
 
-  reg [25:0] delay_counter_prc = 26'b0;
-  reg        pps_delayed_prc = 1'b0;
-  reg        pps_prc_delayed = 1'b0;
+  reg [25:0] delay_counter_prc   = 26'b0;
+  reg        pps_delayed_prc     = 1'b0;
+  reg        pps_delayed_prc_out = 1'b0;
+  reg        pps_prc_delayed     = 1'b0;
   always @(posedge pll_ref_clk) begin
     // Disable delayed rising edge by default
     pps_delayed_prc <= 1'b0;
@@ -441,7 +442,7 @@ module x4xx_pps_sync #(
   //---------------------------------------------------------------------------
 
   assign debug[0] = pps_delayed_brc;
-  assign debug[1] = pps_delayed_prc;
+  assign debug[1] = pps_delayed_prc_out;
 
 endmodule
 

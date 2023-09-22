@@ -128,8 +128,8 @@ module x4xx_core #(
   input         pll_sync_done,
   output [ 7:0] pps_brc_delay,
   output [25:0] pps_prc_delay,
-  output [ 1:0] prc_rc0_divider,
-  output [ 1:0] prc_rc1_divider,
+  output [ 4:0] prc_rc0_divider,
+  output [ 4:0] prc_rc1_divider,
   output        pps_rc_enabled,
 
   // Radio Data

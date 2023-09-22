@@ -79,8 +79,8 @@ module x4xx_core_common #(
   input  wire        pll_sync_done,
   output wire [ 7:0] pps_brc_delay,
   output wire [25:0] pps_prc_delay,
-  output wire [ 1:0] prc_rc0_divider,
-  output wire [ 1:0] prc_rc1_divider,
+  output wire [ 4:0] prc_rc0_divider,
+  output wire [ 4:0] prc_rc1_divider,
   output wire        pps_rc_enabled,
 
   // Timekeeper (Domain: radio_clk)

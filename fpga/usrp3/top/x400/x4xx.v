@@ -494,7 +494,7 @@ module x4xx (
   wire [ 7:0] pll_sync_delay;
   wire [ 7:0] pps_brc_delay;
   wire [25:0] pps_prc_delay;
-  wire [ 3:0] prc_rc_divider;
+  wire [ 9:0] prc_rc_divider;
   wire        pps_rc_enabled;
 
   x4xx_pps_sync x4xx_pps_sync_i (
@@ -3032,8 +3032,8 @@ module x4xx (
     .pll_sync_done                 (pll_sync_done),
     .pps_brc_delay                 (pps_brc_delay),
     .pps_prc_delay                 (pps_prc_delay),
-    .prc_rc0_divider               (prc_rc_divider[1:0]),
-    .prc_rc1_divider               (prc_rc_divider[3:2]),
+    .prc_rc0_divider               (prc_rc_divider[4:0]),
+    .prc_rc1_divider               (prc_rc_divider[9:5]),
     .pps_rc_enabled                (pps_rc_enabled),
     .rx_data                       (rx_data_iq),
     .rx_stb                        (rx_stb),
@@ -3194,12 +3194,12 @@ endmodule
 //        <li> Version last modified: @.VERSIONING_REGS_REGMAP..VERSION_LAST_MODIFIED
 //      </info>
 //      <value name="FPGA_CURRENT_VERSION_MAJOR"           integer="8"/>
-//      <value name="FPGA_CURRENT_VERSION_MINOR"           integer="0"/>
+//      <value name="FPGA_CURRENT_VERSION_MINOR"           integer="1"/>
 //      <value name="FPGA_CURRENT_VERSION_BUILD"           integer="0"/>
 //      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_MAJOR" integer="8"/>
-//      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_MINOR" integer="0"/>
+//      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_MINOR" integer="1"/>
 //      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_BUILD" integer="0"/>
-//      <value name="FPGA_VERSION_LAST_MODIFIED_TIME"      integer="0x23042011"/>
+//      <value name="FPGA_VERSION_LAST_MODIFIED_TIME"      integer="0x23092509"/>
 //    </enumeratedtype>
 //  </group>
 //</regmap>
