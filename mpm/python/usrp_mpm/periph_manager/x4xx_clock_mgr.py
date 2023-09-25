@@ -723,7 +723,8 @@ class X4xxClockManager:
         # Configure PPS forwarding to timekeepers. The requirement is that this
         # be called after sync_spll_clocks() was called.
         for tk_idx, mcr in enumerate(master_clock_rates):
-            self.clk_ctrl.configure_pps_forwarding(tk_idx, True, mcr)
+            self.clk_ctrl.configure_pps_forwarding(tk_idx, True, 
+                                                   self.clk_policy.get_radio_clock_rate(mcr))
 
     @no_rpc
     def get_master_clock_rate(self, db_idx=0):

@@ -130,6 +130,14 @@ class X4xxClockPolicy:
         depending on whether or not the DSP info is set.
         """
         raise NotImplementedError()
+    
+    def get_radio_clock_rate(self, mcr):
+        """
+        Return the radio clock rates for the current configuration.
+
+        The individual clock policies can choose how to calculate this info.
+        """
+        raise NotImplementedError()
 
     def get_num_rates(self):
         """
@@ -231,6 +239,12 @@ class X410ClockPolicy(X4xxClockPolicy):
             if cfg[0] == self._dsp_bw:
                 return mcr
         raise AssertionError("Cannot determine default MCR.")
+
+    def get_radio_clock_rate(self, mcr):
+        """
+        Return the radio clock rates for the current configuration.
+        """
+        return mcr / self._dsp_info[0]['spc_rx']
 
     # pylint: disable=no-self-use
     def get_num_rates(self):
@@ -414,6 +428,12 @@ class X440ClockPolicy(X4xxClockPolicy):
         if self.bandwidth_to_default_mcr.get(self._dsp_bw):
             return self.bandwidth_to_default_mcr.get(self._dsp_bw)
         raise AssertionError("Cannot determine default MCR.")
+
+    def get_radio_clock_rate(self, mcr):
+        """
+        Return the radio clock rates for the current configuration.
+        """
+        return mcr / self._spc
 
     def get_num_rates(self):
         """
