@@ -1120,12 +1120,8 @@ class X4xxClockManager:
             sync_args_result = {}
             rates = [self.rfdc.get_converter_rate(db_idx) for db_idx in range(2)]
             if rates[0] != rates[1]:
-                self.log.debug("Synchronizing daughterboards separately.")
-                db_keys = [0, 1]
-                db_keys = [
-                    (0, 'adc_latency0', 'dac_latency0'),
-                    (1, 'adc_latency1', 'dac_latency1'),
-                ]
+                self.log.info("Multiple master clock rates detected: Skipping Multi-Tile Synchronization, channels may not be fully synchronized!")
+                return sync_args_result
             else:
                 db_keys = [('all', 'adc_latency', 'dac_latency')]
             for db_key, adc_lat_key, dac_lat_key in db_keys:
@@ -1157,19 +1153,9 @@ class X4xxClockManager:
                     'all',
                     int(sync_args['adc_latency']),
                     int(sync_args['dac_latency']))
-            if all(
-                    lambda x: x in sync_args \
-                    for x in ('adc_latency0', 'adc_latency1',
-                              'dac_latency0', 'dac_latency1')):
-                return \
-                    self.rfdc.set_tile_latencies(
-                        0,
-                        int(sync_args['adc_latency0']),
-                        int(sync_args['dac_latency0'])) and \
-                    self.rfdc.set_tile_latencies(
-                        1,
-                        int(sync_args['adc_latency1']),
-                        int(sync_args['dac_latency1']))
+            if len(sync_args) == 0:
+                self.log.debug("Empty sync args, not finalizing sync settings")
+                return True
             self.log.error("Invalid sync args provided!")
             raise RuntimeError("Invalid sync args provided!")
         # Go, go, go!
