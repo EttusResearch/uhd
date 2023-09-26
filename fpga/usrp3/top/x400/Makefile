@@ -62,6 +62,7 @@ X410_X4_400:      DEFS += $(QSFP0_4X10GBE)                 RF_BW=400  RF_CORE_40
 X410_C1_400:      DEFS += $(QSFP0_100GBE)                  RF_BW=400  RF_CORE_400M=1 DRAM_CH=0
 X410_UC_400:      DEFS +=                  $(QSFP1_100GBE) RF_BW=400  RF_CORE_400M=1 DRAM_CH=0
 X410_CG_400:      DEFS += $(QSFP0_100GBE)  $(QSFP1_100GBE) RF_BW=400  RF_CORE_400M=1 DRAM_CH=0
+X440_X4_200:      DEFS += $(QSFP0_4X10GBE)                 RF_BW=200  RF_CORE_FULL=1 DRAM_CH=0
 X440_X1_400:      DEFS += $(QSFP0_10GBE)                   RF_BW=400  RF_CORE_FULL=1 DRAM_CH=8*$(DRAM) DRAM_W=128
 X440_X4_400:      DEFS += $(QSFP0_4X10GBE)                 RF_BW=400  RF_CORE_FULL=1 DRAM_CH=8*$(DRAM) DRAM_W=128
 X440_C1_400:      DEFS += $(QSFP0_100GBE)                  RF_BW=400  RF_CORE_FULL=1 DRAM_CH=0
@@ -87,6 +88,7 @@ X410_X4C_200_DEFAULTS := DEFAULT_RFNOC_IMAGE_CORE_FILE=x410_x4c_200_rfnoc_image_
 X410_CG_200_DEFAULTS  := DEFAULT_RFNOC_IMAGE_CORE_FILE=x410_cg_200_rfnoc_image_core.v  DEFAULT_EDGE_FILE=$(abspath x410_cg_200_static_router.hex)
 X410_400_DEFAULTS     := DEFAULT_RFNOC_IMAGE_CORE_FILE=x410_400_rfnoc_image_core.v     DEFAULT_EDGE_FILE=$(abspath x410_400_static_router.hex)
 X410_400_D_DEFAULTS   := DEFAULT_RFNOC_IMAGE_CORE_FILE=x410_400_d_rfnoc_image_core.v   DEFAULT_EDGE_FILE=$(abspath x410_400_d_static_router.hex)
+X440_200_DEFAULTS     := DEFAULT_RFNOC_IMAGE_CORE_FILE=x440_200_rfnoc_image_core.v     DEFAULT_EDGE_FILE=$(abspath x440_200_static_router.hex)
 X440_400_DEFAULTS     := DEFAULT_RFNOC_IMAGE_CORE_FILE=x440_400_rfnoc_image_core.v     DEFAULT_EDGE_FILE=$(abspath x440_400_static_router.hex)
 X440_400_D_DEFAULTS   := DEFAULT_RFNOC_IMAGE_CORE_FILE=x440_400_d_rfnoc_image_core.v   DEFAULT_EDGE_FILE=$(abspath x440_400_d_static_router.hex)
 X440_1600_DEFAULTS    := DEFAULT_RFNOC_IMAGE_CORE_FILE=x440_1600_rfnoc_image_core.v    DEFAULT_EDGE_FILE=$(abspath x440_1600_static_router.hex)
@@ -227,6 +229,10 @@ X410_CG_400: X410_IP build/usrp_x410_fpga_CG_400.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_400_DEFAULTS))
 	$(call post_build,X410,CG_400)
 
+X440_X4_200: X440_IP build/usrp_x440_fpga_X4_200.dts
+	$(call vivado_build,X440,$(DEFS) X440=1,$(X440_200_DEFAULTS))
+	$(call post_build,X440,X4_200)
+
 X440_X1_400: X440_IP build/usrp_x440_fpga_X1_400.dts
 	$(call vivado_build,X440,$(DEFS) X440=1,$(X440_400_D_DEFAULTS))
 	$(call post_build,X440,X1_400)
@@ -276,7 +282,7 @@ X410_CG_200: X410_IP build/usrp_x410_fpga_CG_200.dts
 
 .DEFAULT_GOAL := all
 
-all:          X410_X4_200 X410_CG_400 X410_UC_200 X440_X4_400 X440_CG_400 X440_X4_1600 X440_CG_1600 ##(Default targets)
+all:          X410_X4_200 X410_CG_400 X410_UC_200 X440_X4_200 X440_X4_400 X440_CG_400 X440_X4_1600 X440_CG_1600 ##(Default targets)
 
 X410_IP:      ##Build IP only.
 	+$(call vivado_ip,X410,$(DEFS) X410=1)
