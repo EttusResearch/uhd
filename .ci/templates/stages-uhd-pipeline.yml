@@ -438,9 +438,11 @@ stages:
   - template: tests/job-uhd-x410-hardware-tests-pebbles.yml
     parameters:
       testOS: ubuntu1804
+      testLength: ${{ parameters.testLength }}
   - template: tests/job-uhd-x440-hardware-tests-pebbles.yml
     parameters:
       testOS: ubuntu1804
+      testLength: ${{ parameters.testLength }}
 
 - stage: test_uhd_rf_test_stage
   displayName: Run rf tests n3xx

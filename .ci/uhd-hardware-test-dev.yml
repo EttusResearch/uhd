@@ -133,6 +133,7 @@ stages:
       testOS: ubuntu1804
       uhdArtifactSource: uhd_mono_pipeline
       extra_rf_test_args: ${{ parameters.extra_rf_test_args }}
+      testLength: ${{ parameters.testLength }}
 
 
 - stage: test_x440_rf_tests
@@ -145,3 +146,4 @@ stages:
       testOS: ubuntu1804
       uhdArtifactSource: uhd_mono_pipeline
       extra_rf_test_args: ${{ parameters.extra_rf_test_args }}
+      testLength: ${{ parameters.testLength }}

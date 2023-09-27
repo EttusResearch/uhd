@@ -28,6 +28,9 @@ parameters:
 - name: extra_rf_test_args
   type: string
   default: ''
+- name: testLength
+  type: string
+  default: 'smoke'
 
 jobs:
 - job: x4xx_hardware_test_${{ parameters.suiteName }}
@@ -244,7 +247,7 @@ jobs:
 
       cd $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests
       uhd_find_devices --args type=$(dutType)
-      python3 automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) --results_path '$(Common.TestResultsDirectory)/pytest/host' ${{ parameters.extra_rf_test_args }}
+      python3 automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) --results_path '$(Common.TestResultsDirectory)/pytest/host' ${{ parameters.extra_rf_test_args }} --test_length ${{ parameters.testLength }}
     displayName: Run pytest on host
     continueOnError: true
     condition: and(succeeded(), ${{ parameters.runPyTest }})

@@ -9,6 +9,8 @@ parameters:
 - name: extra_rf_test_args
   type: string
   default: ''
+- name: testLength
+  type: string
 
 jobs:
 - template: templates/job-uhd-x4xx-hardware-tests.yml
@@ -22,6 +24,7 @@ jobs:
     uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
     xilinxLocation: /opt/Xilinx/Vivado/2019.1
     extra_rf_test_args: '${{ parameters.extra_rf_test_args }}'
+    testLength: '${{ parameters.testLength }}'
     dutMatrix:
       pebbles-x440-0:
         dutName: 'pebbles-x440-0'
