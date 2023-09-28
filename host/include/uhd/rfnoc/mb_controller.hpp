@@ -416,15 +416,20 @@ public:
      * all motherboards.
      *
      * The exact steps taken when calling this method are hardware-specific, but
-     * in all cases, they will ensure that:
-     * - Timekeepers are synchronized. That means that timekeepers with the
-     *   same clock rate increment are in unison, and at all times have the same
-     *   time. This allows sending timed commands to the motherboards and
-     *   expect them to be executed at the same time.
+     * primarily can be split in three steps in a specific order:
+     * 1. Pre-timekeeper sync tasks (things here could affect timekeepers)
+     * 2. Timekeeper sync (timekeepers are perfectly aligned after this step)
+     * 3. Post-timekeeper sync ( anything here should not affect timekeepers)
+     * This ensures that timekeepers will not lose synchronization.
+     * In all cases these will ensure that:
      * - Any hardware settings that need to be applied to synchronize will be
      *   configured. For example, the X3x0 DAC (AD9146) requires synchronization
      *   triggers for all the DACs to run synchronously, and the X4x0 RFSoC
      *   requires programming an identical tile latency.
+     * - Timekeepers are synchronized. That means that timekeepers with the
+     *   same clock rate increment are in unison, and at all times have the same
+     *   time. This allows sending timed commands to the motherboards and
+     *   expect them to be executed at the same time.
      *
      * \param mb_controllers A list of motherboard controllers to synchronize.
      *                       Any motherboard controllers that could not be

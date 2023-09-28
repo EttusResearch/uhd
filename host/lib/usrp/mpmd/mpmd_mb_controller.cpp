@@ -369,11 +369,6 @@ bool mpmd_mb_controller::synchronize(std::vector<mb_controller::sptr>& mb_contro
     const uhd::time_spec_t& time_spec,
     const bool quiet)
 {
-    // First, synchronize timekeepers
-    if (!mb_controller::synchronize(mb_controllers, time_spec, quiet)) {
-        return false;
-    }
-
     // Filter out MB controllers that aren't mpmd_mb_controllers. This is safe-
     // guarding against future changes where we allow multiple types of USRP in
     // a single rfnoc_graph session.
@@ -392,6 +387,27 @@ bool mpmd_mb_controller::synchronize(std::vector<mb_controller::sptr>& mb_contro
         mb_controllers.push_back(mb_controller);
     }
 
+    if (!_pre_timekeeper_synchronize(mpmd_mb_controllers)) {
+        return false;
+    }
+
+    // Synchronize the timekeepers; doing this earlier causes the timekeepers
+    // in multi-device case to get misaligned due to delay adjustment resulting
+    // from MTS procedure on X4xx RFSoC based devices.
+    if (!_timekeeper_synchronize(mb_controllers, time_spec, quiet)) {
+        return false;
+    }
+
+    if (!_post_timekeeper_synchronize()) {
+        return false;
+    }
+
+    return true;
+}
+
+bool mpmd_mb_controller::_pre_timekeeper_synchronize(
+    std::vector<std::shared_ptr<mpmd_mb_controller>> mpmd_mb_controllers)
+{
     // The MPM additional sync works like this:
     // - We allow all devices to run a preliminary sync. This call will return
     //   a dictionary of data from each device.
@@ -407,7 +423,7 @@ bool mpmd_mb_controller::synchronize(std::vector<mb_controller::sptr>& mb_contro
     // much hardware-specific knowledge onto the devices.
 
     std::vector<std::future<std::map<std::string, std::string>>> sync_tasks;
-    sync_tasks.reserve(mb_controllers.size());
+    sync_tasks.reserve(mpmd_mb_controllers.size());
     // It would be nice to initialize the initial sync args with this MB's
     // device args, but we don't have access to them here. Might be a useful
     // change.
@@ -436,7 +452,7 @@ bool mpmd_mb_controller::synchronize(std::vector<mb_controller::sptr>& mb_contro
                     ->_aggregate_sync_info(collated_sync_args);
 
     sync_tasks.clear();
-    sync_tasks.reserve(mb_controllers.size());
+    sync_tasks.reserve(mpmd_mb_controllers.size());
     // Now prime the sync args (in parallel) on all relevant devices.
     for (auto& mbc : mpmd_mb_controllers) {
         sync_tasks.emplace_back(std::async(std::launch::async,
@@ -451,6 +467,19 @@ bool mpmd_mb_controller::synchronize(std::vector<mb_controller::sptr>& mb_contro
         }
     }
 
+    return true;
+}
+
+bool mpmd_mb_controller::_timekeeper_synchronize(
+    std::vector<mb_controller::sptr>& mb_controllers,
+    const uhd::time_spec_t& time_spec,
+    const bool quiet)
+{
+    return mb_controller::synchronize(mb_controllers, time_spec, quiet);
+}
+
+bool mpmd_mb_controller::_post_timekeeper_synchronize(void)
+{ // NOP for now.
     return true;
 }
 

@@ -1395,7 +1395,7 @@ class PeriphManagerBase:
         This is the main MPM-based synchronization call. It should be called if
         there are synchronization-related settings that need to be applied to
         devices that can only be set via MPM (exluding setting the time of
-        timekeepers).
+        timekeepers). It is called from mpmd_mb_controller::_pre_timekeeper_synchronize()
 
         For example, on RFSoC-based devices, we need to make sure to set the
         same tile latency on all devices.

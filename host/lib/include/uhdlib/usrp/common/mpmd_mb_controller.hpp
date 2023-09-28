@@ -116,6 +116,15 @@ private:
     std::map<std::string, std::string> _synchronize(
         const std::map<std::string, std::string>& sync_args, bool finalize);
 
+    bool _pre_timekeeper_synchronize(
+        std::vector<std::shared_ptr<mpmd_mb_controller>> mpmd_mb_controllers);
+
+    bool _timekeeper_synchronize(std::vector<mb_controller::sptr>& mb_controllers,
+        const uhd::time_spec_t& time_spec,
+        const bool quiet);
+
+    bool _post_timekeeper_synchronize(void);
+
     //! Helper for synchronize(): Dispatch the aggregate_sync_data() RPC call
     std::map<std::string, std::string> _aggregate_sync_info(
         const std::list<std::map<std::string, std::string>>& collated_sync_args);
