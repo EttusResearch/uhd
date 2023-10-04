@@ -117,11 +117,12 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         return ~0;
     }
     std::cout << boost::format("Setting TX Rate: %f Msps...") % (rate / 1e6) << std::endl;
-    for (std::size_t channel : channel_nums) {   
+    for (std::size_t channel : channel_nums) {
         usrp->set_tx_rate(rate, channel);
-        std::cout << boost::format("Actual TX Rate: %f Msps...") % (usrp->get_tx_rate(channel) / 1e6)
-                << std::endl
-                << std::endl;
+        std::cout << boost::format("Actual TX Rate: %f Msps...")
+                         % (usrp->get_tx_rate(channel) / 1e6)
+                  << std::endl
+                  << std::endl;
     }
 
     // set the center frequency
@@ -142,8 +143,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     // pre-compute the waveform values
     const wave_table_class wave_table(wave_type, ampl);
-    const size_t step = std::lround(wave_freq / usrp->get_tx_rate(channel_nums.front()) * wave_table_len);
-    size_t index      = 0;
+    const size_t step =
+        std::lround(wave_freq / usrp->get_tx_rate(channel_nums.front()) * wave_table_len);
+    size_t index = 0;
 
     for (std::size_t channel : channel_nums) {
         std::cout << boost::format("Setting TX Freq: %f MHz...") % (freq / 1e6)

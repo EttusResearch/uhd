@@ -9,9 +9,9 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/thread.hpp>
+#include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
-#include <boost/algorithm/string.hpp>
 #include <chrono>
 #include <complex>
 #include <csignal>
@@ -109,35 +109,30 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     std::cout << boost::format("Creating the usrp device with: %s...") % args
               << std::endl;
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
-    
+
     // Channels
     std::vector<size_t> channel_nums;
     std::vector<std::string> channels_split;
-    if (vm.count("channel"))
-    {
-        if (vm.count("channels"))
-        {
+    if (vm.count("channel")) {
+        if (vm.count("channels")) {
             std::cout << "ERROR: Cannot specify 'channel' and 'channels'!" << std::endl;
             return EXIT_FAILURE;
         }
         if (single_channel >= usrp->get_tx_num_channels())
             throw std::runtime_error("Invalid channel specified.");
         channel_nums.push_back(single_channel);
-    }
-    else
-    {
+    } else {
         // Provide default
         if (!vm.count("channels"))
             channels = "0";
         // Split string into 1 or more channels
         boost::split(channels_split, channels, boost::is_any_of("\"',"));
-        for (std::string channel : channels_split)
-        {
+        for (std::string channel : channels_split) {
             if (boost::lexical_cast<size_t>(channel) >= usrp->get_tx_num_channels())
                 throw std::runtime_error("Invalid channel(s) specified.");
             channel_nums.push_back(boost::lexical_cast<size_t>(channel));
         }
-    }  
+    }
 
     // Lock mboard clocks
     if (vm.count("ref")) {
@@ -156,11 +151,12 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         return ~0;
     }
     std::cout << boost::format("Setting TX Rate: %f Msps...") % (rate / 1e6) << std::endl;
-    for (std::size_t channel : channel_nums) {        
+    for (std::size_t channel : channel_nums) {
         usrp->set_tx_rate(rate, channel);
-        std::cout << boost::format("Actual TX Rate: %f Msps...") % (usrp->get_tx_rate(channel) / 1e6)
-                << std::endl
-                << std::endl;
+        std::cout << boost::format("Actual TX Rate: %f Msps...")
+                         % (usrp->get_tx_rate(channel) / 1e6)
+                  << std::endl
+                  << std::endl;
     }
 
     // set the center frequency
@@ -177,9 +173,10 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         tune_request.args = uhd::device_addr_t("mode_n=integer");
     for (std::size_t channel : channel_nums) {
         usrp->set_tx_freq(tune_request, channel);
-        std::cout << boost::format("Actual TX Freq: %f MHz...") % (usrp->get_tx_freq(channel) / 1e6)
-                << std::endl
-                << std::endl;
+        std::cout << boost::format("Actual TX Freq: %f MHz...")
+                         % (usrp->get_tx_freq(channel) / 1e6)
+                  << std::endl
+                  << std::endl;
     }
 
     // set the rf gain
@@ -187,28 +184,28 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         for (std::size_t channel : channel_nums) {
             if (!usrp->has_tx_power_reference(channel)) {
                 std::cout << "ERROR: USRP does not have a reference power API on channel "
-                            << channel << "!" << std::endl;
+                          << channel << "!" << std::endl;
                 return EXIT_FAILURE;
             }
             std::cout << "Setting TX output power: " << power << " dBm..." << std::endl;
             usrp->set_tx_power_reference(power, channel);
             std::cout << "Actual TX output power: "
-                        << usrp->get_tx_power_reference(channel)
-                        << " dBm..." << std::endl;
+                      << usrp->get_tx_power_reference(channel) << " dBm..." << std::endl;
         }
-    
+
         if (vm.count("gain")) {
             std::cout << "WARNING: If you specify both --power and --gain, "
-                        " the latter will be ignored."
-                        << std::endl;
+                         " the latter will be ignored."
+                      << std::endl;
         }
     } else if (vm.count("gain")) {
         for (std::size_t channel : channel_nums) {
             std::cout << boost::format("Setting TX Gain: %f dB...") % gain << std::endl;
             usrp->set_tx_gain(gain, channel);
-            std::cout << boost::format("Actual TX Gain: %f dB...") % usrp->get_tx_gain(channel)
-                        << std::endl
-                        << std::endl;
+            std::cout << boost::format("Actual TX Gain: %f dB...")
+                             % usrp->get_tx_gain(channel)
+                      << std::endl
+                      << std::endl;
         }
     }
 
@@ -219,16 +216,16 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         for (std::size_t channel : channel_nums) {
             usrp->set_tx_bandwidth(bw, channel);
             std::cout << boost::format("Actual TX Bandwidth: %f MHz...")
-                            % (usrp->get_tx_bandwidth(channel) / 1e6)
-                    << std::endl
-                    << std::endl;
+                             % (usrp->get_tx_bandwidth(channel) / 1e6)
+                      << std::endl
+                      << std::endl;
         }
     }
 
     // set the antenna
     if (vm.count("ant")) {
         for (std::size_t channel : channel_nums)
-            usrp->set_tx_antenna(ant, channel);  
+            usrp->set_tx_antenna(ant, channel);
     }
     // allow for some setup time:
     std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -241,7 +238,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             != sensor_names.end()) {
             uhd::sensor_value_t lo_locked = usrp->get_tx_sensor("lo_locked", channel);
             std::cout << boost::format("Checking TX: %s ...") % lo_locked.to_pp_string()
-                    << std::endl;
+                      << std::endl;
             UHD_ASSERT_THROW(lo_locked.to_bool());
         }
     }
@@ -268,7 +265,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         std::signal(SIGINT, &sig_int_handler);
         std::cout << "Press Ctrl + C to stop streaming..." << std::endl;
     }
-    
+
     // create a transmit streamer
     std::string cpu_format;
     if (type == "double")
@@ -277,7 +274,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         cpu_format = "fc32";
     else if (type == "short")
         cpu_format = "sc16";
-    
+
     uhd::stream_args_t stream_args(cpu_format, wirefmt);
     stream_args.channels             = channel_nums;
     uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
