@@ -62,7 +62,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 {
     // variables to be set by po
     std::string args, file, type, ant, subdev, ref, wirefmt, channels;
-    size_t spb;
+    size_t spb, single_channel;
     double rate, freq, gain, power, bw, delay, lo_offset;
 
     // setup the program options
@@ -86,7 +86,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("ref", po::value<std::string>(&ref), "clock reference (internal, external, mimo, gpsdo)")
         ("wirefmt", po::value<std::string>(&wirefmt)->default_value("sc16"), "wire format (sc8 or sc16)")
         ("delay", po::value<double>(&delay)->default_value(0.0), "specify a delay between repeated transmission of file (in seconds)")
-        ("channels", po::value<std::string>(&channels)->default_value("0"), "which channels to use (multiple channels can be seperated by ',')")
+        ("channel", po::value<size_t>(&single_channel), "which channel to use")
+        ("channels", po::value<std::string>(&channels), "which channels to use (specify \"0\", \"1\", \"0,1\", etc)")
         ("repeat", "repeatedly transmit file")
         ("int-n", "tune USRP with integer-n tuning")
     ;
@@ -108,14 +109,35 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     std::cout << boost::format("Creating the usrp device with: %s...") % args
               << std::endl;
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
-
+    
     // Channels
-    // Split string into 1 or more channels
     std::vector<size_t> channel_nums;
     std::vector<std::string> channels_split;
-    boost::split(channels_split, channels, boost::is_any_of(","));
-    for (std::string channel : channels_split)
-        channel_nums.push_back(boost::lexical_cast<size_t>(channel));
+    if (vm.count("channel"))
+    {
+        if (vm.count("channels"))
+        {
+            std::cout << "ERROR: Cannot specify 'channel' and 'channels'!" << std::endl;
+            return EXIT_FAILURE;
+        }
+        if (single_channel >= usrp->get_tx_num_channels())
+            throw std::runtime_error("Invalid channel specified.");
+        channel_nums.push_back(single_channel);
+    }
+    else
+    {
+        // Provide default
+        if (!vm.count("channels"))
+            channels = "0";
+        // Split string into 1 or more channels
+        boost::split(channels_split, channels, boost::is_any_of("\"',"));
+        for (std::string channel : channels_split)
+        {
+            if (boost::lexical_cast<size_t>(channel) >= usrp->get_tx_num_channels())
+                throw std::runtime_error("Invalid channel(s) specified.");
+            channel_nums.push_back(boost::lexical_cast<size_t>(channel));
+        }
+    }  
 
     // Lock mboard clocks
     if (vm.count("ref")) {
