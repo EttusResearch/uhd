@@ -5,6 +5,8 @@ parameters:
   type: string
   values:
     - ubuntu1804
+    - ubuntu2004
+    - ubuntu2204
 - name: toolset
   type: string
   values:
@@ -31,6 +33,9 @@ parameters:
 - name: testLength
   type: string
   default: 'smoke'
+- name: warmUpAfterBoot
+  type: number
+  default: 0
 
 jobs:
 - job: x4xx_hardware_test_${{ parameters.suiteName }}
@@ -141,7 +146,8 @@ jobs:
 
   - script: |
         sleep 60
-    displayName: Wait for device to finish booting
+        sleep ${{ parameters.warmUpAfterBoot }}
+    displayName: Wait for device to finish booting with optional warmup
 
   - script: |
         ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
