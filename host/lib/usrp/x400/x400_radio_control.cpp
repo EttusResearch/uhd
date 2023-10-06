@@ -891,5 +891,5 @@ std::string x400_radio_control_impl::get_dboard_fe_from_chan(
 }
 
 UHD_RFNOC_BLOCK_REGISTER_FOR_DEVICE_DIRECT(
-    x400_radio_control, RADIO_BLOCK, X400, "Radio", true, "radio_clk", "ctrl_clk")
+    x400_radio_control, RADIO_BLOCK, X400, "Radio", true, CLOCK_KEY_AUTO, CLOCK_KEY_AUTO)
 }} // namespace uhd::rfnoc
