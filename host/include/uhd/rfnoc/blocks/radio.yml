@@ -17,6 +17,8 @@ clocks:
     freq: "[]"
   - name: radio
     freq: "[]"
+    direction: in # 'in' is the default direction for block clocks, so we can
+                  # skip it here.
 
 control:
   fpga_iface: ctrlport

@@ -49,7 +49,9 @@ module rfnoc_image_core #(
   input  wire         ctrl_aclk,
   input  wire         core_arst,
 %for clock in config.device.clocks:
+%if clock["name"] not in ('rfnoc_ctrl', 'rfnoc_chdr'):
   input  wire         ${clock["name"]}_clk,
+%endif
 %endfor
   // Basic
   input  wire [  15:0] device_id,
@@ -193,7 +195,7 @@ module rfnoc_image_core #(
   // Blocks
   //---------------------------------------------------------------------------
 %for i, name in enumerate(config.noc_blocks):
-<%include file="/modules/rfnoc_block.v.mako" args="block_id=i + len(ctrl_seps) + 1, block_number=i, block_name=name, block=config.blocks[config.noc_blocks[name]['block_desc']], block_params=config.noc_blocks[name]['parameters'], block_ports=config.block_ports"/>\
+<%include file="/modules/rfnoc_block.v.mako" args="block_id=i + len(ctrl_seps) + 1, block_number=i, block_name=name, block=config.blocks[config.noc_blocks[name]['block_desc']], block_params=config.noc_blocks[name]['parameters'], block_ports=config.block_ports, ctrl_clock=config.noc_blocks[name].get('ctrl_clock'), timebase_clock=config.noc_blocks[name].get('timebase_clock'), clocks=config.clocks"/>\
 %endfor
 
   //---------------------------------------------------------------------------
