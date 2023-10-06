@@ -8,6 +8,7 @@
 #include "mpmd_mb_iface.hpp"
 #include "mpmd_link_if_mgr.hpp"
 #include <uhd/exception.hpp>
+#include <uhd/rfnoc/defaults.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/device_id.hpp>
 #include <uhdlib/utils/compat_check.hpp>
@@ -156,14 +157,36 @@ void mpmd_mboard_impl::mpmd_mb_iface::reset_network()
 }
 
 uhd::rfnoc::clock_iface::sptr mpmd_mboard_impl::mpmd_mb_iface::get_clock_iface(
-    const std::string& clock_name)
+    const std::string& clock_name, const uint8_t clock_idx)
 {
-    if (_clock_ifaces.count(clock_name)) {
-        return _clock_ifaces.at(clock_name);
+    // In MPM, get_clocks() only provides clocks by a string index. For any clock
+    // that is not known by name (i.e., the standard clocks such as radio_clk),
+    // we simply pretend the index number as a string is its name.
+    const bool auto_clk_idx   = clock_name == CLOCK_KEY_AUTO;
+    const std::string clk_key = auto_clk_idx ? std::to_string(int(clock_idx))
+                                             : clock_name;
+    // clock_idx is a 6-bit value. If the clock index is 0, but we want to
+    // auto-derive the clock attributes, then that means we have an old bitfile
+    // where the clock ID bits are not populated.  (0 is the default value for
+    // these bits prior to these changes). If we read back 0x3F (0b111111),
+    // then that's the new default value for the clock ID. This means we have
+    // built a bitfile off of up-to-date HDL, but the block never set the clock
+    // info.
+    if (auto_clk_idx && (clock_idx == 0x00 || clock_idx == 0x3F)) {
+        UHD_LOG_THROW(uhd::not_implemented_error,
+            "MPMD::MB_IFACE",
+            "Automatic clock detection requested, but no valid clock index given ("
+                << std::hex << clk_key << "). Make sure FPGA bitfile is up to date!");
+    }
+    if (_clock_ifaces.count(clk_key)) {
+        UHD_LOG_TRACE(
+            "MPMD::MB_IFACE", "Looking up clock info for clock ID '" << clk_key << "'");
+        return _clock_ifaces.at(clk_key);
     } else {
-        UHD_LOG_ERROR("MPMD::MB_IFACE", "Invalid timebase clock name: " + clock_name);
-        throw uhd::key_error(
-            "[MPMD_MB::IFACE] Invalid timebase clock name: " + clock_name);
+        UHD_LOG_THROW(uhd::key_error,
+            "MPMD::MB_IFACE",
+            "Unable to look up clock '" << clk_key << "'. Invalid "
+                                        << (auto_clk_idx ? "index" : "clock name"));
     }
 }
 

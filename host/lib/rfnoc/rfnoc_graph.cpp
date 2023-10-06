@@ -718,10 +718,12 @@ private:
             //   object on the fly here.
             // - In all other cases, the BSP must provide us that clock
             //   iface object through the mb_iface
-            auto ctrlport_clk_iface = mb.get_clock_iface(block_factory_info.ctrlport_clk);
-            auto tb_clk_iface       = (block_factory_info.timebase_clk == CLOCK_KEY_GRAPH)
-                                          ? std::make_shared<clock_iface>(CLOCK_KEY_GRAPH)
-                                          : mb.get_clock_iface(block_factory_info.timebase_clk);
+            auto ctrlport_clk_iface = mb.get_clock_iface(
+                block_factory_info.ctrlport_clk, block_info.ctrl_clk_idx);
+            auto tb_clk_iface = (block_factory_info.timebase_clk == CLOCK_KEY_GRAPH)
+                                    ? std::make_shared<clock_iface>(CLOCK_KEY_GRAPH)
+                                    : mb.get_clock_iface(block_factory_info.timebase_clk,
+                                        block_info.tb_clk_idx);
             // A "graph" clock is always "running"
             if (block_factory_info.timebase_clk == CLOCK_KEY_GRAPH) {
                 tb_clk_iface->set_running(true);

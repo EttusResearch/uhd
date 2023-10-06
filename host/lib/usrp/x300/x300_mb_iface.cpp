@@ -128,7 +128,7 @@ void x300_impl::x300_mb_iface::reset_network()
 }
 
 uhd::rfnoc::clock_iface::sptr x300_impl::x300_mb_iface::get_clock_iface(
-    const std::string& clock_name)
+    const std::string& clock_name, const uint8_t)
 {
     if (clock_name == "radio_clk") {
         return _radio_clk;
