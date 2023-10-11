@@ -145,9 +145,9 @@ connections:
 #   - dstport = Clock domain on the destination block to connect
 clk_domains:
     - { srcblk: _device_, srcport: radio,    dstblk: radio0,  dstport: radio }
-    - { srcblk: _device_, srcport: radio_2x, dstblk: duc0,    dstport: ce    }
-    - { srcblk: _device_, srcport: radio_2x, dstblk: ddc0,    dstport: ce    }
+    - { srcblk: _device_, srcport: ce,       dstblk: duc0,    dstport: ce    }
+    - { srcblk: _device_, srcport: ce,       dstblk: ddc0,    dstport: ce    }
     - { srcblk: _device_, srcport: radio,    dstblk: radio1,  dstport: radio }
-    - { srcblk: _device_, srcport: radio_2x, dstblk: duc1,    dstport: ce    }
-    - { srcblk: _device_, srcport: radio_2x, dstblk: ddc1,    dstport: ce    }
+    - { srcblk: _device_, srcport: ce,       dstblk: duc1,    dstport: ce    }
+    - { srcblk: _device_, srcport: ce,       dstblk: ddc1,    dstport: ce    }
     - { srcblk: _device_, srcport: dram,     dstblk: replay0, dstport: mem   }

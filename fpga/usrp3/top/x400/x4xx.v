@@ -482,6 +482,61 @@ module x4xx (
     );
   `endif
 
+  // Compute Engine Clock
+  //
+  //----------------------------------------------------------------------------
+  //  Output     Output      Phase    Duty Cycle   Pk-to-Pk     Phase
+  //   Clock     Freq (MHz)  (degrees)    (%)     Jitter (ps)  Error (ps)
+  //----------------------------------------------------------------------------
+  // __ce_clk__266.66667______0.000______50.0_______94.562_____97.786
+  //
+  //----------------------------------------------------------------------------
+  // Input Clock   Freq (MHz)    Input Jitter (UI)
+  //----------------------------------------------------------------------------
+  // __primary_____________200____________0.010
+
+  wire ce_gen_clkfbout;
+  wire ce_gen_clkout0;
+  wire ce_clk;
+
+  PLLE4_ADV #(
+    .COMPENSATION      ("AUTO" ),
+    .STARTUP_WAIT      ("FALSE"),
+    .DIVCLK_DIVIDE     (1      ),
+    .CLKFBOUT_MULT     (4      ),
+    .CLKFBOUT_PHASE    (0.000  ),
+    .CLKOUT0_DIVIDE    (3      ),
+    .CLKOUT0_PHASE     (0.000  ),
+    .CLKOUT0_DUTY_CYCLE(0.500  ),
+    .CLKIN_PERIOD      (5.000  )
+  ) ce_clk_gen_i (
+    .CLKFBOUT   (ce_gen_clkfbout),
+    .CLKOUT0    (ce_gen_clkout0 ),
+    .CLKOUT0B   (               ),
+    .CLKOUT1    (               ),
+    .CLKOUT1B   (               ),
+    .CLKFBIN    (ce_gen_clkfbout),
+    .CLKIN      (clk200         ),
+    .DADDR      (7'h0           ),
+    .DCLK       (1'b0           ),
+    .DEN        (1'b0           ),
+    .DI         (16'h0          ),
+    .DO         (               ),
+    .DRDY       (               ),
+    .DWE        (1'b0           ),
+    .CLKOUTPHYEN(1'b0           ),
+    .CLKOUTPHY  (               ),
+    .LOCKED     (               ),
+    .PWRDWN     (1'b0           ),
+    .RST        (areset         )
+  );
+
+  BUFG bufg_ce_i (
+    .O(ce_clk        ),
+    .I(ce_gen_clkout0)
+  );
+
+
   //---------------------------------------------------------------------------
   // PPS Handling
   //---------------------------------------------------------------------------
@@ -2973,6 +3028,7 @@ module x4xx (
     .rfnoc_chdr_rst                (bus_clk_rst),
     .rfnoc_ctrl_clk                (clk40),
     .rfnoc_ctrl_rst                (clk40_rst),
+    .ce_clk                        (ce_clk),
     .dram0_sys_clk_p               (DRAM0_REFCLK_P),
     .dram0_sys_clk_n               (DRAM0_REFCLK_N),
     .dram0_ck_t                    (DRAM0_CLK_P),

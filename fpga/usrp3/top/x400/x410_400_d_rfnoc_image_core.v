@@ -39,6 +39,7 @@ module rfnoc_image_core #(
   input  wire         radio_clk,
   input  wire         radio_2x_clk,
   input  wire         dram_clk,
+  input  wire         ce_clk,
   // Basic
   input  wire [  15:0] device_id,
 

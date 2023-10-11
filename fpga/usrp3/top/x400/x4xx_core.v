@@ -62,6 +62,8 @@ module x4xx_core #(
   input wire rfnoc_ctrl_clk,
   input wire rfnoc_ctrl_rst,
 
+  input wire ce_clk,
+
   // DRAM Bank 0
   input wire          dram0_sys_clk_p,
   input wire          dram0_sys_clk_n,
@@ -620,6 +622,7 @@ module x4xx_core #(
     .radio_2x_clk                   (radio_clk_2x[0]),
   `endif
     .dram_clk                       (dram_clk),
+    .ce_clk                         (ce_clk),
     .device_id                      (device_id),
     .m_ctrlport_radio0_req_wr       (ctrlport_radio_req_wr      [0* 1+: 1]),
     .m_ctrlport_radio0_req_rd       (ctrlport_radio_req_rd      [0* 1+: 1]),
