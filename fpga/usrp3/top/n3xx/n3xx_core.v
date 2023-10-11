@@ -36,6 +36,7 @@ module n3xx_core #(
   input         bus_rst,
   input         ddr3_dma_clk,
   input         clk40,
+  input         ce_clk,
 
   // Clocking and PPS Controls/Indicators
   input            pps,
@@ -1138,6 +1139,7 @@ module n3xx_core #(
     .device_id               (device_id  ),
     .radio_clk               (radio_clk  ),
     .dram_clk                (ddr3_dma_clk),
+    .ce_clk                  (ce_clk),
     `ifndef N300
       .m_ctrlport_radio1_req_wr       (m_ctrlport_req_wr_radio1      ),
       .m_ctrlport_radio1_req_rd       (m_ctrlport_req_rd_radio1      ),

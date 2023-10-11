@@ -724,6 +724,7 @@ module n3xx (
   wire        clk40;
   wire        meas_clk_ref;
   wire        bus_clk;
+  wire        ce_clk;
   wire        gige_refclk;
   wire        gige_refclk_bufg;
   wire        xgige_refclk;
@@ -849,6 +850,8 @@ module n3xx (
     .ddr3_dma_clk(ddr3_dma_clk),
     .misc_clks_reset(meas_clk_reset),
     .misc_clks_locked(meas_clk_locked),
+    .clk200(bus_clk),
+    .ce_clk(ce_clk),
     .ext_pps_from_pin(REF_1PPS_IN),
     .gps_pps_from_pin(GPS_1PPS),
     .pps_select(pps_select),
@@ -3493,6 +3496,7 @@ module n3xx (
     .bus_rst(bus_rst),
     .ddr3_dma_clk(ddr3_dma_clk),
     .clk40(clk40),
+    .ce_clk(ce_clk),
 
     // Clocking and PPS Controls/Indicators
     .pps(pps_radioclk1x),

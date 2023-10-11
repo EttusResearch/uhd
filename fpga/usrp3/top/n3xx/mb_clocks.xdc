@@ -64,6 +64,10 @@ set_input_jitter [get_clocks bus_clk]      $bus_clk_jitter
 create_generated_clock -name meas_clk_fb [get_pins {n3xx_clocking_i/misc_clock_gen_i/inst/mmcm_adv_inst/CLKFBOUT}]
 create_generated_clock -name meas_clk    [get_pins {n3xx_clocking_i/misc_clock_gen_i/inst/mmcm_adv_inst/CLKOUT0}]
 
+# CE Clock
+create_generated_clock -name ce_clk_fb [get_pins {n3xx_clocking_i/ce_clk_gen_i/CLKFBOUT}]
+create_generated_clock -name ce_clk    [get_pins {n3xx_clocking_i/ce_clk_gen_i/CLKOUT0}]
+
 #*******************************************************************************
 ## White Rabbit DAC
 # Constrain the DIN and NSYNC bits around the clock output. No readback.
