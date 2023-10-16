@@ -1,0 +1,13 @@
+#
+# Copyright 2023 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+##################################################
+# Hardware Utilities Sources
+##################################################
+HWUTILS_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/hwutils/, \
+device_dna.v \
+device_dna_ctrlport.v \
+))
