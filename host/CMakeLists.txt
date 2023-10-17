@@ -324,6 +324,7 @@ set(UHD_BOOST_REQUIRED_COMPONENTS
 
 include(UHDBoost)
 
+# Include boost headers as system headers to avoid compiler warnings from them.
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 
