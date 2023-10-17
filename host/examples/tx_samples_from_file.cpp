@@ -207,7 +207,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     }
 
     // set sigint if user wants to receive
-    if (repeat and (n_repeats > 0)) {
+    if (repeat or (n_repeats > 0)) {
         std::signal(SIGINT, &sig_int_handler);
         std::cout << "Press Ctrl + C to stop streaming..." << std::endl;
     }
@@ -230,15 +230,15 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     while(true) {
 
         // First check whether to send or to stop
-        if(stop_signal_called)
+        if(stop_signal_called) {
             break;
+        }
 
-        if(repeat and (delay > 0.0)) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(int64_t(delay * 1000)));
-        } else {
-            // If no endless repeat was configured, count down the number of repeats
-            if (n_repeats == 0)
+        // If no endless repeat was configured, count down the number of repeats
+        if(!repeat){
+            if (n_repeats == 0){
                 break;
+            }
             n_repeats--;
         }
 
@@ -250,6 +250,10 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             send_from_file<std::complex<short>>(tx_stream, file, spb);
         else
             throw std::runtime_error("Unknown type " + type);
+
+        if((repeat or n_repeats > 0) and (delay > 0.0)) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(int64_t(delay * 1000)));
+        }
     };
 
     // finished
