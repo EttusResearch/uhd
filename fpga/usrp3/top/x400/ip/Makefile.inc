@@ -33,6 +33,14 @@ include $(IP_DIR)/dac_400m_bd/Makefile.inc
 include $(IP_DIR)/x4xx_ps_rfdc_bd/x410_ps_rfdc_bd/Makefile.inc
 endif
 
+ifdef X440
+include $(IP_DIR)/adc_full_bd/Makefile.inc
+include $(IP_DIR)/adc_100m_bd/Makefile.inc
+include $(IP_DIR)/dac_100m_bd/Makefile.inc
+include $(IP_DIR)/ddr4_64bits_x440/Makefile.inc
+include $(IP_DIR)/x4xx_ps_rfdc_bd/x440_ps_rfdc_bd/Makefile.inc
+endif
+
 BD_SRCS = \
 $(IP_X4XX_PS_RFDC_BD_SRCS) \
 $(IP_X4XX_PS_RFDC_HDL_SRCS) \
@@ -66,6 +74,16 @@ $(IP_DAC_400M_BD_SRCS)  \
 $(IP_DAC_400M_HDL_SRCS)
 endif
 
+ifdef X440
+BD_SRCS += \
+$(IP_ADC_FULL_BD_SRCS)   \
+$(IP_ADC_FULL_HDL_SRCS)  \
+$(IP_ADC_100M_BD_SRCS)   \
+$(IP_ADC_100M_HDL_SRCS)  \
+$(IP_DAC_100M_BD_SRCS)   \
+$(IP_DAC_100M_HDL_SRCS)
+endif
+
 IP_XCI_SRCS = \
 $(IP_XGE_PCS_PMA_SRCS) \
 $(IP_AXI64_4K_2CLK_FIFO_SRCS) \
@@ -77,6 +95,11 @@ $(IP_HB47_2TO1_SRCS) \
 ifdef X410
 IP_XCI_SRCS += \
 $(IP_DDR4_64BITS_SRCS)
+endif
+
+ifdef X440
+IP_XCI_SRCS += \
+$(IP_DDR4_64BITS_X440_SRCS)
 endif
 
 BD_OUTPUTS = \
@@ -103,6 +126,13 @@ $(BD_DAC_100M_BD_OUTS) \
 $(BD_DAC_400M_BD_OUTS)
 endif
 
+ifdef X440
+BD_OUTPUTS += \
+$(BD_ADC_FULL_BD_OUTS) \
+$(BD_ADC_100M_BD_OUTS) \
+$(BD_DAC_100M_BD_OUTS)
+endif
+
 IP_SYNTH_OUTPUTS = \
 $(IP_XGE_PCS_PMA_OUTS) \
 $(IP_AXI64_4K_2CLK_FIFO_OUTS) \
@@ -114,6 +144,11 @@ $(IP_HB47_2TO1_OUTS) \
 ifdef X410
 IP_SYNTH_OUTPUTS += \
 $(IP_DDR4_64BITS_OUTS)
+endif
+
+ifdef X440
+IP_SYNTH_OUTPUTS += \
+$(IP_DDR4_64BITS_X440_OUTS)
 endif
 
 IP_HDL_SIM_SRCS = \

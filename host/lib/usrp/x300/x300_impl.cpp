@@ -472,7 +472,8 @@ x300_impl::~x300_impl(void)
 /***********************************************************************
  * compat checks
  **********************************************************************/
-uhd::compat_num32 x300_impl::check_fw_compat(const fs_path& mb_path, const mboard_members_t& members)
+uhd::compat_num32 x300_impl::check_fw_compat(
+    const fs_path& mb_path, const mboard_members_t& members)
 {
     auto iface = members.zpu_ctrl;
     const uint32_t compat_num =
@@ -510,11 +511,12 @@ uhd::compat_num32 x300_impl::check_fw_compat(const fs_path& mb_path, const mboar
     return {static_cast<uint16_t>(compat_major), static_cast<uint16_t>(compat_minor)};
 }
 
-uhd::compat_num32 x300_impl::check_fpga_compat(const fs_path& mb_path, const mboard_members_t& members)
+uhd::compat_num32 x300_impl::check_fpga_compat(
+    const fs_path& mb_path, const mboard_members_t& members)
 {
     uint32_t compat_num = members.zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_COMPAT_NUM));
     uint32_t compat_major = (compat_num >> 16);
-    int64_t  compat_minor = (compat_num & 0xffff);
+    int64_t compat_minor  = (compat_num & 0xffff);
 
     if (compat_major != X300_FPGA_COMPAT_MAJOR || compat_minor < X300_FPGA_COMPAT_MINOR) {
         std::string image_loader_path =

@@ -15,7 +15,8 @@
 /*!
  * See uhd::tune_result_t for more details.
  */
-typedef struct {
+typedef struct
+{
     //! Target RF frequency, clipped to be within system range
     double clipped_rf_freq;
     //! Target RF frequency, including RF FE offset
@@ -33,15 +34,15 @@ extern "C" {
 #endif
 
 //! Create a pretty print representation of this tune result.
-UHD_API void uhd_tune_result_to_pp_string(uhd_tune_result_t *tune_result,
-                                          char* pp_string_out, size_t strbuffer_len);
+UHD_API void uhd_tune_result_to_pp_string(
+    uhd_tune_result_t* tune_result, char* pp_string_out, size_t strbuffer_len);
 
 #ifdef __cplusplus
 }
-#include <uhd/types/tune_result.hpp>
+#    include <uhd/types/tune_result.hpp>
 
-UHD_API uhd::tune_result_t uhd_tune_result_c_to_cpp(uhd_tune_result_t *tune_result_c);
+UHD_API uhd::tune_result_t uhd_tune_result_c_to_cpp(uhd_tune_result_t* tune_result_c);
 
-UHD_API void uhd_tune_result_cpp_to_c(const uhd::tune_result_t &tune_result_cpp,
-                                      uhd_tune_result_t *tune_result_c);
+UHD_API void uhd_tune_result_cpp_to_c(
+    const uhd::tune_result_t& tune_result_cpp, uhd_tune_result_t* tune_result_c);
 #endif

@@ -443,7 +443,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     // pre-compute the waveform values
     const wave_table_class wave_table(wave_type, ampl);
     const size_t step = std::lround(wave_freq / tx_usrp->get_tx_rate() * wave_table_len);
-    size_t index = 0;
+    size_t index      = 0;
 
     // create a transmit streamer
     // linearly map channels (index0 = channel0, index1 = channel1, ...)
@@ -486,7 +486,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     tx_sensor_names = tx_usrp->get_mboard_sensor_names(0);
     if ((ref == "mimo")
         and (std::find(tx_sensor_names.begin(), tx_sensor_names.end(), "mimo_locked")
-                != tx_sensor_names.end())) {
+             != tx_sensor_names.end())) {
         uhd::sensor_value_t mimo_locked = tx_usrp->get_mboard_sensor("mimo_locked", 0);
         std::cout << boost::format("Checking TX: %s ...") % mimo_locked.to_pp_string()
                   << std::endl;
@@ -494,7 +494,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     }
     if ((ref == "external")
         and (std::find(tx_sensor_names.begin(), tx_sensor_names.end(), "ref_locked")
-                != tx_sensor_names.end())) {
+             != tx_sensor_names.end())) {
         uhd::sensor_value_t ref_locked = tx_usrp->get_mboard_sensor("ref_locked", 0);
         std::cout << boost::format("Checking TX: %s ...") % ref_locked.to_pp_string()
                   << std::endl;
@@ -504,7 +504,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     rx_sensor_names = rx_usrp->get_mboard_sensor_names(0);
     if ((ref == "mimo")
         and (std::find(rx_sensor_names.begin(), rx_sensor_names.end(), "mimo_locked")
-                != rx_sensor_names.end())) {
+             != rx_sensor_names.end())) {
         uhd::sensor_value_t mimo_locked = rx_usrp->get_mboard_sensor("mimo_locked", 0);
         std::cout << boost::format("Checking RX: %s ...") % mimo_locked.to_pp_string()
                   << std::endl;
@@ -512,7 +512,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     }
     if ((ref == "external")
         and (std::find(rx_sensor_names.begin(), rx_sensor_names.end(), "ref_locked")
-                != rx_sensor_names.end())) {
+             != rx_sensor_names.end())) {
         uhd::sensor_value_t ref_locked = rx_usrp->get_mboard_sensor("ref_locked", 0);
         std::cout << boost::format("Checking RX: %s ...") % ref_locked.to_pp_string()
                   << std::endl;

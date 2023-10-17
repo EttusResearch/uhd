@@ -19,13 +19,13 @@ using namespace uhd::transport;
 
 static const size_t POKE32_CMD      = (1 << 8);
 static const size_t PEEK32_CMD      = 0;
-static const double ACK_TIMEOUT = 0.5;
+static const double ACK_TIMEOUT     = 0.5;
 static const double MASSIVE_TIMEOUT = 10.0; // for when we wait on a timed command
-static const uint32_t MAX_SEQS_OUT = 63;
+static const uint32_t MAX_SEQS_OUT  = 63;
 
-#define SPI_DIV SR_SPI_CORE + 0
-#define SPI_CTRL SR_SPI_CORE + 1
-#define SPI_DATA SR_SPI_CORE + 2
+#define SPI_DIV      SR_SPI_CORE + 0
+#define SPI_CTRL     SR_SPI_CORE + 1
+#define SPI_DATA     SR_SPI_CORE + 2
 #define SPI_READBACK 0
 // spi clock rate = master_clock/(div+1)/2 (10MHz in this case)
 #define SPI_DIVIDER 4

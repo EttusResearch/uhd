@@ -8,7 +8,10 @@
 
 #include <uhd/config.hpp>
 #include <uhd/features/discoverable_feature.hpp>
+#include <uhd/types/device_addr.hpp>
+#include <map>
 #include <memory>
+#include <vector>
 
 namespace uhd { namespace features {
 
@@ -41,6 +44,10 @@ public:
     //  signal chain, use the rx_codec/<n>/calibration_frozen property on the
     //  motherboard's property tree.
     virtual void run(const size_t chan) = 0;
+
+    //! Runs calibration on the specified channel but takes custom calibration
+    //  parameters.
+    virtual void run(const size_t chan, const uhd::device_addr_t params) = 0;
 };
 
 }} // namespace uhd::features

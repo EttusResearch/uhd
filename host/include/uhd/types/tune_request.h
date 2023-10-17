@@ -14,9 +14,9 @@
 //! Policy options for tunable elements in the RF chain.
 typedef enum {
     //! Do not set this argument, use current setting.
-    UHD_TUNE_REQUEST_POLICY_NONE   = 78,
+    UHD_TUNE_REQUEST_POLICY_NONE = 78,
     //! Automatically determine the argument's value.
-    UHD_TUNE_REQUEST_POLICY_AUTO   = 65,
+    UHD_TUNE_REQUEST_POLICY_AUTO = 65,
     //! Use the argument's value for the setting.
     UHD_TUNE_REQUEST_POLICY_MANUAL = 77
 } uhd_tune_request_policy_t;
@@ -25,7 +25,8 @@ typedef enum {
 /*!
  * See uhd::tune_request_t for more details.
  */
-typedef struct {
+typedef struct
+{
     //! Target frequency for RF chain in Hz
     double target_freq;
     //! RF frequency policy
@@ -41,8 +42,8 @@ typedef struct {
 } uhd_tune_request_t;
 
 #ifdef __cplusplus
-#include <uhd/types/tune_request.hpp>
+#    include <uhd/types/tune_request.hpp>
 
-UHD_API uhd::tune_request_t uhd_tune_request_c_to_cpp(uhd_tune_request_t *tune_request_c);
+UHD_API uhd::tune_request_t uhd_tune_request_c_to_cpp(uhd_tune_request_t* tune_request_c);
 
 #endif

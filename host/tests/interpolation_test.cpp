@@ -100,4 +100,3 @@ BOOST_AUTO_TEST_CASE(test_map_bilinear_interp)
     BOOST_CHECK_EQUAL(at_bilin_interp(test_data, 1.0, 1.5), 0.5);
     BOOST_CHECK_EQUAL(at_bilin_interp(test_data, 1.5, 2.0), 1.5);
 }
-

@@ -290,7 +290,7 @@ void magnesium_radio_control_impl::_update_gain(
 {
     const std::string fe = (dir == TX_DIRECTION) ? "tx_frontends" : "rx_frontends";
     const double freq    = (dir == TX_DIRECTION) ? this->get_tx_frequency(chan)
-                                              : this->get_rx_frequency(chan);
+                                                 : this->get_rx_frequency(chan);
     this->_set_all_gain(this->_get_all_gain(chan, dir), freq, chan, dir);
 }
 
@@ -303,8 +303,8 @@ void magnesium_radio_control_impl::_update_freq(
 
     const double ad9371_freq = ad9371_source == "external" ? _ad9371_freq[dir] / 2
                                                            : _ad9371_freq[dir];
-    const double rf_freq = _is_low_band[dir] ? ad9371_freq - _adf4351_freq[dir]
-                                             : ad9371_freq;
+    const double rf_freq     = _is_low_band[dir] ? ad9371_freq - _adf4351_freq[dir]
+                                                 : ad9371_freq;
 
     RFNOC_LOG_TRACE("RF freq = " << rf_freq);
     UHD_ASSERT_THROW(freq_compare_epsilon(rf_freq) >= 0);
@@ -1082,7 +1082,7 @@ bool magnesium_radio_control_impl::get_lo_lock_status(const direction_t dir)
     const std::string trx = (dir == RX_DIRECTION) ? "rx" : "tx";
     const size_t chan     = 0; // They're the same after all
     const double freq     = (dir == RX_DIRECTION) ? get_rx_frequency(chan)
-                                              : get_tx_frequency(chan);
+                                                  : get_tx_frequency(chan);
 
     bool lo_lock =
         _rpcc->request_with_token<bool>(_rpc_prefix + "get_ad9371_lo_lock", trx);

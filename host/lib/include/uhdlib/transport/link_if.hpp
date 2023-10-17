@@ -65,8 +65,8 @@ public:
         return true;
     }
 
-    send_link_if()                    = default;
-    send_link_if(const send_link_if&) = delete;
+    send_link_if()                               = default;
+    send_link_if(const send_link_if&)            = delete;
     send_link_if& operator=(const send_link_if&) = delete;
 };
 
@@ -119,8 +119,8 @@ public:
         return true;
     }
 
-    recv_link_if()                    = default;
-    recv_link_if(const recv_link_if&) = delete;
+    recv_link_if()                               = default;
+    recv_link_if(const recv_link_if&)            = delete;
     recv_link_if& operator=(const recv_link_if&) = delete;
 };
 

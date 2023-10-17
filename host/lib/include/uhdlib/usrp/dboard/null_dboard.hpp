@@ -45,6 +45,7 @@ public:
             0,
             0,
             "calib_mode1",
+            2000,
         };
     }
 

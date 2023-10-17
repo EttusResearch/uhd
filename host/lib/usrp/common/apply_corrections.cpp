@@ -35,7 +35,8 @@ std::unordered_map<std::string, iq_cal::sptr> fe_cal_cache;
 // Deprecated CSV file loader. Delete this function once we remove CSV support.
 // Then, also delete the uhd::csv module.
 bool load_legacy_fe_corrections(const std::string& cal_key,
-    const std::string& db_serial, const std::string& file_prefix)
+    const std::string& db_serial,
+    const std::string& file_prefix)
 {
     namespace fs                             = boost::filesystem;
     const std::string file_prefix_deprecated = file_prefix + "_cal_v0.2_";
@@ -96,10 +97,10 @@ void apply_fe_corrections(uhd::property_tree::sptr sub_tree,
             } catch (const uhd::exception& ex) {
                 UHD_LOG_WARNING("CAL",
                     "Error occurred reading cal data: `" << ex.what()
-                                                        << "'. Skipping future loads.");
+                                                         << "'. Skipping future loads.");
                 fe_cal_cache.insert({cal_key, nullptr});
             }
-        // Delete the following else clause once we remove CSV support
+            // Delete the following else clause once we remove CSV support
         } else if (load_legacy_fe_corrections(cal_key, db_serial, file_prefix)) {
             UHD_LOG_WARNING("CAL",
                 "Found deprecated (CSV-based) cal data format. This feature will go away "

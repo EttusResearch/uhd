@@ -503,8 +503,8 @@ io_service::sptr io_service_mgr_impl::connect_links(recv_link_if::sptr recv_link
         if (link_type == link_type_t::CTRL) {
             io_srv_type = INLINE_IO_SRV;
         } else {
-            bool offload = (link_type == link_type_t::RX_DATA) ? args.recv_offload
-                                                               : args.send_offload;
+            bool offload   = (link_type == link_type_t::RX_DATA) ? args.recv_offload
+                                                                 : args.send_offload;
             auto wait_mode = (link_type == link_type_t::RX_DATA)
                                  ? args.recv_offload_wait_mode
                                  : args.send_offload_wait_mode;

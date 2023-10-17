@@ -17,12 +17,12 @@
  *
  * \returns 0 if all is good, or an error code otherwise
  */
-int init_spi(int *fd, const char *device,
+int init_spi(int* fd,
+    const char* device,
     const uint32_t mode,
     const uint32_t speed_hz,
     const uint8_t bits_per_word,
-    const uint16_t delay_us
-);
+    const uint16_t delay_us);
 
 /*! Do a SPI transaction over spidev
  *
@@ -37,9 +37,10 @@ int init_spi(int *fd, const char *device,
  *
  * \returns 0 if all is golden
  */
-int transfer(
-        int fd,
-        uint8_t *tx, uint8_t *rx, uint32_t len,
-        uint32_t speed_hz, uint8_t bits_per_word, uint16_t delay_us
-);
-
+int transfer(int fd,
+    uint8_t* tx,
+    uint8_t* rx,
+    uint32_t len,
+    uint32_t speed_hz,
+    uint8_t bits_per_word,
+    uint16_t delay_us);

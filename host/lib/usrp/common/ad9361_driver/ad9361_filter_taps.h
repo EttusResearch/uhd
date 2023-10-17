@@ -48,6 +48,7 @@ static uint16_t lte10mhz_tx_coeffs[] = {
 };
 */
 
+/* clang-format off */
 /************************************************************/
 /* These filters suitable for decimation/interpolation by 2 */
 /************************************************************/
@@ -107,5 +108,6 @@ static int16_t fir_48_x4_coeffs[] = {
   12736,7555,2230,-1580,-3073,-2508,-887,647,1358,1149,419,-287,-609,-508,-183,114,237,191,68,-39,-84,-74,-32};
 
 /* NOTE: To write coeffs directly from Octave in a format that's useful in C use: dlmwrite ("file.csv",bb,","); */
+/* clang-format on */
 
 #endif // INCLUDED_AD9361_FILTER_TAPS_HPP

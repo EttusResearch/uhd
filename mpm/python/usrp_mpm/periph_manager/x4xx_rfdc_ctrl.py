@@ -27,16 +27,16 @@ class X4xxRfdcCtrl:
     X4xx devices.
     """
 
-    RFSOC_ADC_FIN_MIN = 102.40625e6
-    RFSOC_ADC_FIN_MAX = 6554e6
-    ADC_CONV_RATE_MIN = 1000e6
-    ADC_CONV_RATE_MAX = 4096e6
+    RFSOC_FIN_MIN = 102.40625e6
+    RFSOC_FIN_MAX = 6554e6
+    CONV_RATE_MIN = 1000e6
+    CONV_RATE_MAX = 4096e6
     RFDC_RESAMPLER = (8, 4, 2)
 
     MMCM_INPUT_MIN = 10e6
-    # The MMCM_INPUT_MAX is 933 MHz according to the spec, but we limit it to 775 MHz because
-    # of the limitation of a bufgce resource we're using.
-    MMCM_INPUT_MAX = 775e6
+    # The MMCM_INPUT_MAX is 933 MHz according to the spec, but we limit it to 64 MHz
+    # to ensure our slowest MMCM output will be phase aligned to the reference.
+    MMCM_INPUT_MAX = 64e6
     MMCM_FOUTMIN = 6.25e6
     MMCM_FOUTMAX = 775e6
     MMCM_VCO_MIN = 800e6
@@ -320,7 +320,7 @@ class X4xxRfdcCtrl:
         del self._rfdc_ctrl
 
     @no_rpc
-    def reset_mmcm(self, reset=True):
+    def reset_mmcm(self, reset=True, check_locked = True):
         """
         Resets the MMCM, or takes it out of reset.
 
@@ -333,10 +333,11 @@ class X4xxRfdcCtrl:
         if reset:
             return
 
-        # Once the MMCM has locked, enable driving the clocks to the rest of
-        # the design. Poll lock status for up to 1 ms
-        self._rfdc_regs.wait_for_mmcm_locked(timeout=0.001)
-        self._rfdc_regs.set_gated_clock_enables(value=True)
+        if check_locked:
+          # Once the MMCM has locked, enable driving the clocks to the rest of
+          # the design. Poll lock status for up to 1 ms
+          self._rfdc_regs.wait_for_mmcm_locked(timeout=0.001)
+          self._rfdc_regs.set_gated_clock_enables(value=True)
 
     @no_rpc
     def reset_rfdc(self, reset=True):
@@ -583,11 +584,20 @@ class X4xxRfdcCtrl:
             f"Configure MMCM with Input_Div={input_div}, "
             f"mmcm_fb_div={fb_div} and output_div_map={output_div_map}.")
         assert self._rfdc_regs
+        # Update cached values to reflect the state of the hardware and
+        # propagate modifications accordingly.
         self._rfdc_regs.set_mmcm_div(input_div)
         self._rfdc_regs.set_mmcm_fb_div(fb_div)
         for clock_name, div_val in output_div_map.items():
             self._rfdc_regs.set_mmcm_output_div(div_val, clock_name)
         self._rfdc_regs.reconfigure_mmcm()
+
+    @no_rpc
+    def rfdc_update_mmcm_regs(self):
+        """
+        Update the saved state of the MMCM registers from the hardware
+        """
+        self._rfdc_regs.update_mmcm_regs()
 
     @no_rpc
     def enable_iq_swap(self, enable, db_idx, channel, is_dac):
@@ -641,9 +651,28 @@ class X4xxRfdcCtrl:
         }
         if mode not in MODES:
             raise RuntimeError(
-                 f"Mode {mode} is not one of the allowable modes {list(MODES.keys())}")
+                 f"Mode {mode} is not one of the allowable modes {list(MODES.keys())}.")
         for tile_id, block_id, _ in self._find_converters(slot_id, channel, "rx"):
-            self._rfdc_ctrl.set_calibration_mode(tile_id, block_id, MODES[mode])
+            # Only set the cal-mode if it is not yet what we want.
+            if self._rfdc_ctrl.get_calibration_mode(tile_id, block_id) != MODES[mode]:
+                self.log.debug(f"Setting calibration mode {mode} "
+                               f"for tile_id {tile_id}, block {block_id}.")
+                self._rfdc_ctrl.set_calibration_mode(tile_id, block_id, MODES[mode])
+                # As per PG269:
+                self._rfdc_ctrl.startup_tile(tile_id, False)
+                # Ensure the cal-mode was set properly, otherwise throw
+                if self._rfdc_ctrl.get_calibration_mode(tile_id, block_id) != MODES[mode]:
+                    self.log.error(
+                        "RFDC error: Desired calibration mode could not be set properly "
+                        f"for tile_id {tile_id}, block {block_id}.")
+                    raise RuntimeError(
+                        "RFDC error: Desired calibration mode could not be set properly "
+                        f"for tile_id {tile_id}, block {block_id}.")
+                self.log.debug(f"Successfully set calibration mode to {mode} "
+                                   f"for tile_id {tile_id}, block {block_id}.")
+            else:
+                self.log.debug(f"Calibration mode {mode} for tile_id {tile_id}, "
+                               f"block {block_id} already set, not changing it.")
 
     def set_cal_frozen(self, frozen, slot_id, channel):
         """
@@ -718,16 +747,16 @@ class X4xxRfdcCtrl:
         """
         self._rfdc_regs.set_cal_data(i_val, q_val)
 
-    def set_dac_mux_enable(self, channel, enable):
+    def set_dac_mux_enable(self, db_idx, channel, enable):
         """
         Sets whether the DAC mux is enabled for a given channel
 
         Usage:
-        > set_dac_mux_enable <channel, 0-3> <enable, 1=enabled>
+        > set_dac_mux_enable <db_idx> <channel> <enable, 1=enabled>
         e.g.
-        > set_dac_mux_enable 1 0
+        > set_dac_mux_enable 0 1 0
         """
-        self._rfdc_regs.set_cal_enable(channel, bool(enable))
+        self._rfdc_regs.set_cal_enable(db_idx, channel, bool(enable))
 
     ### ADC thresholds
     def setup_threshold(self, slot_id, channel, threshold_idx, mode, delay, under, over):

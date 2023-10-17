@@ -92,7 +92,7 @@ double disk_rate_check(const size_t sample_type_size,
     while (pipe_stream && std::getline(pipe_stream, line) && !line.empty()) {
         dd_output += line;
     }
-    
+
     // Parse dd output this format:
     //   1+0 records in
     //   1+0 records out
@@ -164,8 +164,8 @@ void recv_to_file(uhd::usrp::multi_usrp::sptr usrp,
 
     uhd::rx_metadata_t md;
 
-    // Cannot use std::vector as second dimension type because recv will call 
-    // reinterpret_cast<char*> on each subarray, which is incompatible with 
+    // Cannot use std::vector as second dimension type because recv will call
+    // reinterpret_cast<char*> on each subarray, which is incompatible with
     // std::vector. Instead create new arrays and manage the memory ourselves
     std::vector<samp_type*> buffs(rx_stream->get_num_channels());
     try {
@@ -216,7 +216,7 @@ void recv_to_file(uhd::usrp::multi_usrp::sptr usrp,
         const auto now = std::chrono::steady_clock::now();
 
         size_t num_rx_samps =
-                rx_stream->recv(buffs, samps_per_buff, md, 3.0, enable_size_map);
+            rx_stream->recv(buffs, samps_per_buff, md, 3.0, enable_size_map);
 
         if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_TIMEOUT) {
             std::cout << std::endl
@@ -261,7 +261,8 @@ void recv_to_file(uhd::usrp::multi_usrp::sptr usrp,
 
         for (size_t ch = 0; ch < rx_stream->get_num_channels(); ch++) {
             if (outfiles[ch].is_open()) {
-                outfiles[ch].write((const char *) buffs[ch], num_rx_samps * sizeof(samp_type));
+                outfiles[ch].write(
+                    (const char*)buffs[ch], num_rx_samps * sizeof(samp_type));
             }
         }
 
@@ -281,24 +282,24 @@ void recv_to_file(uhd::usrp::multi_usrp::sptr usrp,
     stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
     rx_stream->issue_stream_cmd(stream_cmd);
 
-    for (size_t i = 0 ; i < outfiles.size(); i++) {
+    for (size_t i = 0; i < outfiles.size(); i++) {
         if (outfiles[i].is_open()) {
             outfiles[i].close();
         }
     }
-    
-    for (size_t i = 0 ; i < rx_stream->get_num_channels(); i++) {
+
+    for (size_t i = 0; i < rx_stream->get_num_channels(); i++) {
         delete[] buffs[i];
     }
-    
+
 
     if (stats) {
         const std::lock_guard<std::mutex> lock(recv_mutex);
         std::cout << std::endl;
         const double actual_duration_seconds =
             std::chrono::duration<float>(actual_stop_time - start_time).count();
-        std::cout << boost::format("%sReceived %d samples in %f seconds")
-                         % thread_prefix % num_total_samps % actual_duration_seconds
+        std::cout << boost::format("%sReceived %d samples in %f seconds") % thread_prefix
+                         % num_total_samps % actual_duration_seconds
                   << std::endl;
 
         if (enable_size_map) {
@@ -322,7 +323,7 @@ bool check_locked_sensor(std::vector<std::string> sensor_names,
         return false;
 
     const auto setup_timeout = std::chrono::steady_clock::now() + (setup_time * 1s);
-    bool lock_detected = false;
+    bool lock_detected       = false;
 
     std::cout << "Waiting for \"" << sensor_name << "\": ";
     std::cout.flush();
@@ -517,7 +518,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     if (not vm.count("skip-lo")) {
         for (size_t channel : channel_list) {
             std::cout << "Locking LO on channel " << channel << std::endl;
-            check_locked_sensor(usrp->get_rx_sensor_names(channel),
+            check_locked_sensor(
+                usrp->get_rx_sensor_names(channel),
                 "lo_locked",
                 [usrp, channel](const std::string& sensor_name) {
                     return usrp->get_rx_sensor(sensor_name, channel);
@@ -525,7 +527,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                 setup_time);
         }
         if (ref == "mimo") {
-            check_locked_sensor(usrp->get_mboard_sensor_names(0),
+            check_locked_sensor(
+                usrp->get_mboard_sensor_names(0),
                 "mimo_locked",
                 [usrp](const std::string& sensor_name) {
                     return usrp->get_mboard_sensor(sensor_name);
@@ -533,7 +536,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                 setup_time);
         }
         if (ref == "external") {
-            check_locked_sensor(usrp->get_mboard_sensor_names(0),
+            check_locked_sensor(
+                usrp->get_mboard_sensor_names(0),
                 "ref_locked",
                 [usrp](const std::string& sensor_name) {
                     return usrp->get_mboard_sensor(sensor_name);
@@ -622,7 +626,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     if (total_time == 0) {
         if (total_num_samps > 0) {
             total_time = std::ceil(total_num_samps / usrp->get_rx_rate());
-        } 
+        }
     }
 
     // Wait a bit extra for the first updates from each thread

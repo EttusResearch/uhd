@@ -15,17 +15,17 @@
 #include <cmath>
 #include <functional>
 
-#define REG_DSP_RX_FREQ _dsp_base + 0
+#define REG_DSP_RX_FREQ     _dsp_base + 0
 #define REG_DSP_RX_SCALE_IQ _dsp_base + 4
-#define REG_DSP_RX_DECIM _dsp_base + 8
-#define REG_DSP_RX_MUX _dsp_base + 12
-#define REG_DSP_RX_COEFFS _dsp_base + 16
+#define REG_DSP_RX_DECIM    _dsp_base + 8
+#define REG_DSP_RX_MUX      _dsp_base + 12
+#define REG_DSP_RX_COEFFS   _dsp_base + 16
 // FIXME: Add code to support REG_DSP_RX_COEFFS
 
-#define FLAG_DSP_RX_MUX_SWAP_IQ (1 << 0)
+#define FLAG_DSP_RX_MUX_SWAP_IQ   (1 << 0)
 #define FLAG_DSP_RX_MUX_REAL_MODE (1 << 1)
-#define FLAG_DSP_RX_MUX_INVERT_Q (1 << 2)
-#define FLAG_DSP_RX_MUX_INVERT_I (1 << 3)
+#define FLAG_DSP_RX_MUX_INVERT_Q  (1 << 2)
+#define FLAG_DSP_RX_MUX_INVERT_I  (1 << 3)
 
 template <class T>
 T ceil_log2(T num)

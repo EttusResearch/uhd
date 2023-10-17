@@ -36,11 +36,12 @@ zbx_dboard_impl::zbx_dboard_impl(register_iface& reg_iface,
     uhd::rfnoc::x400::rfdc_control::sptr rfdcc,
     uhd::property_tree::sptr tree)
     : nameless_gain_mixin([this](const uhd::direction_t trx, size_t chan) {
-        const auto gain_profile = trx == TX_DIRECTION ?
-            _tx_gain_profile_api->get_gain_profile(chan) :
-            _rx_gain_profile_api->get_gain_profile(chan);
+        const auto gain_profile = trx == TX_DIRECTION
+                                      ? _tx_gain_profile_api->get_gain_profile(chan)
+                                      : _rx_gain_profile_api->get_gain_profile(chan);
         if (gain_profile == ZBX_GAIN_PROFILE_MANUAL) {
-            const std::string err_msg = "When using 'manual' gain mode, a gain name is required!";
+            const std::string err_msg =
+                "When using 'manual' gain mode, a gain name is required!";
             RFNOC_LOG_ERROR(err_msg);
             throw uhd::runtime_error(err_msg);
         }
@@ -67,16 +68,20 @@ zbx_dboard_impl::zbx_dboard_impl(register_iface& reg_iface,
     RFNOC_LOG_TRACE("Entering zbx_dboard_impl ctor...");
     RFNOC_LOG_TRACE("Radio slot: " << _radio_slot);
 
-    _rx_antenna = std::make_shared<uhd::rfnoc::rf_control::enumerated_antenna>(tree,
+    _rx_antenna = std::make_shared<uhd::rfnoc::rf_control::enumerated_antenna>(
+        tree,
         [this](size_t chan) {
             return this->_get_frontend_path(RX_DIRECTION, chan) / "antenna" / "value";
         },
-        RX_ANTENNAS, RX_ANTENNA_NAME_COMPAT_MAP);
-    _tx_antenna = std::make_shared<uhd::rfnoc::rf_control::enumerated_antenna>(tree,
+        RX_ANTENNAS,
+        RX_ANTENNA_NAME_COMPAT_MAP);
+    _tx_antenna = std::make_shared<uhd::rfnoc::rf_control::enumerated_antenna>(
+        tree,
         [this](size_t chan) {
             return this->_get_frontend_path(TX_DIRECTION, chan) / "antenna" / "value";
         },
-        TX_ANTENNAS, TX_ANTENNA_NAME_COMPAT_MAP);
+        TX_ANTENNAS,
+        TX_ANTENNA_NAME_COMPAT_MAP);
 
     _tx_gain_profile_api = std::make_shared<rf_control::enumerated_gain_profile>(
         ZBX_GAIN_PROFILES, ZBX_GAIN_PROFILE_DEFAULT, ZBX_NUM_CHANS);
@@ -344,7 +349,7 @@ double zbx_dboard_impl::get_rx_gain(const std::string& name_, const size_t chan)
     // (e.g. by multi_usrp)
     const std::string name   = name_.empty() ? ZBX_GAIN_STAGE_ALL : name_;
     const fs_path gains_path = _get_frontend_path(RX_DIRECTION, chan) / "gains";
-    const auto gain_profile = _rx_gain_profile_api->get_gain_profile(chan);
+    const auto gain_profile  = _rx_gain_profile_api->get_gain_profile(chan);
     // Overall gain: Only reliable in 'default' mode. We warn, not throw, in
     // the other modes. That's because reading back the overall gain is common
     // diagnostic for many existing applications.
@@ -486,7 +491,9 @@ double zbx_dboard_impl::set_tx_lo_freq(
     const fs_path fe_path = _get_frontend_path(TX_DIRECTION, chan);
     assert_has(ZBX_LOS, name);
 
-    return _tree->access<double>(fe_path / "los" / name / "freq" / "value").set(freq).get();
+    return _tree->access<double>(fe_path / "los" / name / "freq" / "value")
+        .set(freq)
+        .get();
 }
 
 double zbx_dboard_impl::get_tx_lo_freq(const std::string& name, const size_t chan)
@@ -653,8 +660,8 @@ std::string zbx_dboard_impl::get_dboard_fe_from_chan(
  **********************************************************************/
 bool zbx_dboard_impl::select_adc_self_cal_gain(size_t chan)
 {
-    constexpr double min_gain          = 10.0;
-    constexpr double max_gain          = 50.0;
+    constexpr double min_gain = 10.0;
+    constexpr double max_gain = 50.0;
 
     bool found_gain = false;
 

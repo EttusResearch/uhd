@@ -72,16 +72,16 @@ const char* tx_band_to_log(rhodium_radio_control_impl::tx_band tx_band)
 void rhodium_radio_control_impl::_update_rx_freq_switches(const double freq)
 {
     RFNOC_LOG_TRACE("Update all RX freq related switches. f=" << freq << " Hz");
-    const auto band = _map_freq_to_rx_band(freq);
+    const auto band                 = _map_freq_to_rx_band(freq);
     const auto UHD_UNUSED(log_band) = rx_band_to_log(band);
     RFNOC_LOG_TRACE("Selected band " << log_band);
 
     // select values for lowband/highband switches
     const bool is_lowband = (band == rx_band::RX_BAND_0);
     auto rx_sw2_sw7       = is_lowband ? rhodium_cpld_ctrl::RX_SW2_SW7_LOWBANDFILTERBANK
-                                 : rhodium_cpld_ctrl::RX_SW2_SW7_HIGHBANDFILTERBANK;
-    auto rx_hb_lb_sel = is_lowband ? rhodium_cpld_ctrl::RX_HB_LB_SEL_LOWBAND
-                                   : rhodium_cpld_ctrl::RX_HB_LB_SEL_HIGHBAND;
+                                       : rhodium_cpld_ctrl::RX_SW2_SW7_HIGHBANDFILTERBANK;
+    auto rx_hb_lb_sel     = is_lowband ? rhodium_cpld_ctrl::RX_HB_LB_SEL_LOWBAND
+                                       : rhodium_cpld_ctrl::RX_HB_LB_SEL_HIGHBAND;
 
     // select values for filter bank switches
     rhodium_cpld_ctrl::rx_sw3_t rx_sw3;
@@ -139,14 +139,14 @@ void rhodium_radio_control_impl::_update_rx_freq_switches(const double freq)
 void rhodium_radio_control_impl::_update_tx_freq_switches(const double freq)
 {
     RFNOC_LOG_TRACE("Update all TX freq related switches. f=" << freq << " Hz");
-    const auto band = _map_freq_to_tx_band(freq);
+    const auto band                 = _map_freq_to_tx_band(freq);
     const auto UHD_UNUSED(log_band) = tx_band_to_log(band);
     RFNOC_LOG_TRACE("Selected band " << log_band);
 
     // select values for lowband/highband switches
     const bool is_lowband = (band == tx_band::TX_BAND_0);
     auto tx_hb_lb_sel     = is_lowband ? rhodium_cpld_ctrl::TX_HB_LB_SEL_LOWBAND
-                                   : rhodium_cpld_ctrl::TX_HB_LB_SEL_HIGHBAND;
+                                       : rhodium_cpld_ctrl::TX_HB_LB_SEL_HIGHBAND;
 
     // select values for filter bank switches
     rhodium_cpld_ctrl::tx_sw2_t tx_sw2;

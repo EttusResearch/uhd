@@ -30,12 +30,11 @@ bool gpio_atr_offsets::is_writeonly() const
     return readback == READBACK_DISABLED;
 }
 
-gpio_atr_offsets gpio_atr_offsets::make_default(
-    const uhd::wb_iface::wb_addr_type base,
+gpio_atr_offsets gpio_atr_offsets::make_default(const uhd::wb_iface::wb_addr_type base,
     const uhd::wb_iface::wb_addr_type rb_addr,
     const size_t stride)
 {
-    gpio_atr_offsets offsets {
+    gpio_atr_offsets offsets{
         base, // Idle
         static_cast<uhd::wb_iface::wb_addr_type>(base + stride), // RX
         static_cast<uhd::wb_iface::wb_addr_type>(base + stride * 2), // TX
@@ -48,8 +47,7 @@ gpio_atr_offsets gpio_atr_offsets::make_default(
 }
 
 gpio_atr_offsets gpio_atr_offsets::make_write_only(
-    const uhd::wb_iface::wb_addr_type base,
-    const size_t stride)
+    const uhd::wb_iface::wb_addr_type base, const size_t stride)
 {
     return make_default(base, READBACK_DISABLED, stride);
 }
@@ -57,8 +55,7 @@ gpio_atr_offsets gpio_atr_offsets::make_write_only(
 class gpio_atr_3000_impl : public gpio_atr_3000
 {
 public:
-    gpio_atr_3000_impl(wb_iface::sptr iface,
-        const gpio_atr_offsets registers)
+    gpio_atr_3000_impl(wb_iface::sptr iface, const gpio_atr_offsets registers)
         : _iface(iface)
         , _rb_addr(registers.readback)
         , _atr_idle_reg(registers.idle, _atr_disable_reg)
@@ -333,8 +330,8 @@ protected:
 
 gpio_atr_3000::sptr gpio_atr_3000::make(wb_iface::sptr iface, gpio_atr_offsets registers)
 {
-    gpio_atr_3000::sptr gpio_iface = std::make_shared<gpio_atr_3000_impl>(
-        iface, registers);
+    gpio_atr_3000::sptr gpio_iface =
+        std::make_shared<gpio_atr_3000_impl>(iface, registers);
     if (registers.is_writeonly()) {
         gpio_iface->set_gpio_ddr(DDR_OUTPUT, MASK_SET_ALL);
     }
@@ -454,7 +451,8 @@ private:
     }
 };
 
-db_gpio_atr_3000::sptr db_gpio_atr_3000::make(wb_iface::sptr iface, gpio_atr_offsets registers)
+db_gpio_atr_3000::sptr db_gpio_atr_3000::make(
+    wb_iface::sptr iface, gpio_atr_offsets registers)
 {
     return std::make_shared<db_gpio_atr_3000_impl>(iface, registers);
 }

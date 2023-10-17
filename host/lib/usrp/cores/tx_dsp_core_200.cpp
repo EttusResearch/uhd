@@ -16,20 +16,20 @@
 #include <cmath>
 #include <thread>
 
-#define REG_DSP_TX_FREQ _dsp_base + 0
+#define REG_DSP_TX_FREQ     _dsp_base + 0
 #define REG_DSP_TX_SCALE_IQ _dsp_base + 4
-#define REG_DSP_TX_INTERP _dsp_base + 8
+#define REG_DSP_TX_INTERP   _dsp_base + 8
 
-#define REG_TX_CTRL_CLEAR _ctrl_base + 0
-#define REG_TX_CTRL_FORMAT _ctrl_base + 4
-#define REG_TX_CTRL_REPORT_SID _ctrl_base + 8
-#define REG_TX_CTRL_POLICY _ctrl_base + 12
-#define REG_TX_CTRL_CYCLES_PER_UP _ctrl_base + 16
+#define REG_TX_CTRL_CLEAR          _ctrl_base + 0
+#define REG_TX_CTRL_FORMAT         _ctrl_base + 4
+#define REG_TX_CTRL_REPORT_SID     _ctrl_base + 8
+#define REG_TX_CTRL_POLICY         _ctrl_base + 12
+#define REG_TX_CTRL_CYCLES_PER_UP  _ctrl_base + 16
 #define REG_TX_CTRL_PACKETS_PER_UP _ctrl_base + 20
 
-#define FLAG_TX_CTRL_POLICY_WAIT (0x1 << 0)
+#define FLAG_TX_CTRL_POLICY_WAIT        (0x1 << 0)
 #define FLAG_TX_CTRL_POLICY_NEXT_PACKET (0x1 << 1)
-#define FLAG_TX_CTRL_POLICY_NEXT_BURST (0x1 << 2)
+#define FLAG_TX_CTRL_POLICY_NEXT_BURST  (0x1 << 2)
 
 // enable flag for registers: cycles and packets per update packet
 #define FLAG_TX_CTRL_UP_ENB (1ul << 31)

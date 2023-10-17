@@ -67,9 +67,8 @@ public:
 
     virtual void set_muxout_mode(const muxout_t mode) = 0;
 
-    virtual double set_frequency(const double target_freq,
-        const uint32_t mod2 = 2,
-        const bool flush = false) = 0;
+    virtual double set_frequency(
+        const double target_freq, const uint32_t mod2 = 2, const bool flush = false) = 0;
 
     virtual double set_charge_pump_current(
         const double target_current, const bool flush = false) = 0;
@@ -185,7 +184,7 @@ public:
                     : adf535x_regs_t::REFERENCE_DIVIDE_BY_2_DISABLED;
         _regs.reference_doubler = doubler_en ? adf535x_regs_t::REFERENCE_DOUBLER_ENABLED
                                              : adf535x_regs_t::REFERENCE_DOUBLER_DISABLED;
-        _regs.r_counter_10_bit = ref_div_factor;
+        _regs.r_counter_10_bit  = ref_div_factor;
         UHD_ASSERT_THROW((_regs.r_counter_10_bit & ((uint16_t)~0x3FF)) == 0);
 
         //-----------------------------------------------------------
@@ -227,7 +226,7 @@ public:
 
     double set_frequency(const double target_freq,
         const uint32_t mod2 = 2,
-        const bool flush = false) override
+        const bool flush    = false) override
     {
         return _set_frequency(target_freq, mod2, flush);
     }
@@ -250,9 +249,8 @@ public:
 
         if (std::abs(current - coerced_current) > 0.01e-6) {
             UHD_LOG_WARNING("ADF535x",
-                "Requested charge pump current was coerced! Requested: "
-                    << std::setw(4) << current << " A  Actual: " << coerced_current
-                    << " A");
+                "Requested charge pump current was coerced! Requested: " << std::setw(
+                    4) << current << " A  Actual: " << coerced_current << " A");
         }
 
         return coerced_current;
@@ -423,16 +421,14 @@ inline double adf535x_impl<adf5355_regs_t>::_set_frequency(
     // The data sheet recommends reducing FRAC2 and MOD2 to the lowest possible values
     const auto frac2 = static_cast<uint16_t>(
         std::min(ceil(residue * mod2), static_cast<double>(ADF5355_MAX_FRAC2)));
-    const auto gcd = 
-        uhd::math::gcd(static_cast<int>(frac2), static_cast<int>(mod2));
+    const auto gcd   = uhd::math::gcd(static_cast<int>(frac2), static_cast<int>(mod2));
     const auto FRAC2 = frac2 == 0 ? 0 : frac2 / gcd;
-    const auto MOD2 = frac2 == 0 ? 2 : mod2 / gcd;
+    const auto MOD2  = frac2 == 0 ? 2 : mod2 / gcd;
 
     const double coerced_vco_freq =
         _pfd_freq * (_fb_after_divider ? rf_divider : 1)
         * (double(INT)
-              + ((double(FRAC1) + (double(FRAC2) / double(MOD2)))
-                    / double(ADF535X_MOD1)));
+            + ((double(FRAC1) + (double(FRAC2) / double(MOD2))) / double(ADF535X_MOD1)));
 
     const double coerced_out_freq = coerced_vco_freq / rf_divider;
 
@@ -448,8 +444,7 @@ inline double adf535x_impl<adf5355_regs_t>::_set_frequency(
     /* Update registers */
     if ((rf_divider == 1) or not _fb_after_divider) {
         _regs.feedback_select = adf5355_regs_t::FEEDBACK_SELECT_FUNDAMENTAL;
-    }
-    else {
+    } else {
         _regs.feedback_select = adf5355_regs_t::FEEDBACK_SELECT_DIVIDED;
     }
     _regs.int_16_bit   = INT;
@@ -567,16 +562,14 @@ inline double adf535x_impl<adf5356_regs_t>::_set_frequency(
     // The data sheet recommends reducing FRAC2 and MOD2 to the lowest possible values
     const auto frac2 = static_cast<uint16_t>(
         std::min(ceil(residue * mod2), static_cast<double>(ADF5356_MAX_FRAC2)));
-    const auto gcd =
-        uhd::math::gcd(static_cast<int>(frac2), static_cast<int>(mod2));
+    const auto gcd   = uhd::math::gcd(static_cast<int>(frac2), static_cast<int>(mod2));
     const auto FRAC2 = frac2 == 0 ? 0 : frac2 / gcd;
-    const auto MOD2 = frac2 == 0 ? 2 : mod2 / gcd;
+    const auto MOD2  = frac2 == 0 ? 2 : mod2 / gcd;
 
     const double coerced_vco_freq =
         _pfd_freq * (_fb_after_divider ? rf_divider : 1)
         * (double(INT)
-              + ((double(FRAC1) + (double(FRAC2) / double(MOD2)))
-                    / double(ADF535X_MOD1)));
+            + ((double(FRAC1) + (double(FRAC2) / double(MOD2))) / double(ADF535X_MOD1)));
 
     const double coerced_out_freq = coerced_vco_freq / rf_divider;
 
@@ -592,8 +585,7 @@ inline double adf535x_impl<adf5356_regs_t>::_set_frequency(
     /* Update registers */
     if ((rf_divider == 1) or not _fb_after_divider) {
         _regs.feedback_select = adf5356_regs_t::FEEDBACK_SELECT_FUNDAMENTAL;
-    }
-    else {
+    } else {
         _regs.feedback_select = adf5356_regs_t::FEEDBACK_SELECT_DIVIDED;
     }
     _regs.int_16_bit   = INT;
@@ -604,9 +596,9 @@ inline double adf535x_impl<adf5356_regs_t>::_set_frequency(
     _regs.mod2_msb     = narrow_cast<uint16_t>(MOD2 >> 14);
     _regs.phase_24_bit = 0;
 
-    _regs.negative_bleed =  FRAC1 != 0 or FRAC2 != 0 ?
-                            adf5356_regs_t::NEGATIVE_BLEED_ENABLED :
-                            adf5356_regs_t::NEGATIVE_BLEED_DISABLED;
+    _regs.negative_bleed = FRAC1 != 0 or FRAC2 != 0
+                               ? adf5356_regs_t::NEGATIVE_BLEED_ENABLED
+                               : adf5356_regs_t::NEGATIVE_BLEED_DISABLED;
 
     if (flush)
         commit();

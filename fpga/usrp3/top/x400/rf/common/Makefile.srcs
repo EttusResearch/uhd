@@ -6,6 +6,7 @@
 
 RF_COMMON_SRCS = $(abspath $(addprefix $(BASE_DIR)/../top/x400/rf/common/, \
 PkgRf.vhd \
+adc_iq_repacker.v \
 axis_mux.vhd \
 capture_sysref.v \
 gpio_to_axis_mux.vhd \

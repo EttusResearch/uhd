@@ -312,6 +312,7 @@ class USRPCalibratorBase:
             if recvd_power - self._noise[freq][gain] <= 1.5:
                 self.log("Can no longer detect input signal. Terminating.")
                 break
+            last_gain = gain
         self.results[freq] = results
 
     def run_tx_cal(self, freq):

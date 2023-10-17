@@ -41,9 +41,7 @@ double zbx_lo_ctrl::set_lo_freq(const double freq)
     UHD_ASSERT_THROW(_lmx);
     UHD_LOG_TRACE(_log_id, "Setting LO frequency " << freq / 1e6 << " MHz");
 
-    _freq = _lmx->set_frequency(freq,
-        _db_prc_rate,
-        false /*TODO: get_spur_dodging()*/);
+    _freq = _lmx->set_frequency(freq, _db_prc_rate, false /*TODO: get_spur_dodging()*/);
     _lmx->commit();
     return _freq;
 }

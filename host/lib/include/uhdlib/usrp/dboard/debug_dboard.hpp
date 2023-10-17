@@ -57,6 +57,7 @@ public:
             0,
             0,
             "calib_mode1",
+            2000,
         };
     }
 
@@ -344,7 +345,8 @@ public:
         return {};
     }
 
-    std::vector<std::string> get_tx_lo_sources(const std::string&, const size_t) const override
+    std::vector<std::string> get_tx_lo_sources(
+        const std::string&, const size_t) const override
     {
         return {};
     }

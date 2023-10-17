@@ -62,6 +62,14 @@ X410_X4_400:      DEFS += $(QSFP0_4X10GBE)                 RF_BW=400  RF_CORE_40
 X410_C1_400:      DEFS += $(QSFP0_100GBE)                  RF_BW=400  RF_CORE_400M=1 DRAM_CH=0
 X410_UC_400:      DEFS +=                  $(QSFP1_100GBE) RF_BW=400  RF_CORE_400M=1 DRAM_CH=0
 X410_CG_400:      DEFS += $(QSFP0_100GBE)  $(QSFP1_100GBE) RF_BW=400  RF_CORE_400M=1 DRAM_CH=0
+X440_X1_400:      DEFS += $(QSFP0_10GBE)                   RF_BW=400  RF_CORE_FULL=1 DRAM_CH=8*$(DRAM) DRAM_W=128
+X440_X4_400:      DEFS += $(QSFP0_4X10GBE)                 RF_BW=400  RF_CORE_FULL=1 DRAM_CH=8*$(DRAM) DRAM_W=128
+X440_C1_400:      DEFS += $(QSFP0_100GBE)                  RF_BW=400  RF_CORE_FULL=1 DRAM_CH=0
+X440_CG_400:      DEFS += $(QSFP0_100GBE)  $(QSFP1_100GBE) RF_BW=400  RF_CORE_FULL=1 DRAM_CH=0
+X440_X1_1600:     DEFS += $(QSFP0_10GBE)                   RF_BW=1600 RF_CORE_FULL=1 DRAM_CH=2*$(DRAM) DRAM_W=512
+X440_X4_1600:     DEFS += $(QSFP0_4X10GBE)                 RF_BW=1600 RF_CORE_FULL=1 DRAM_CH=2*$(DRAM) DRAM_W=512
+X440_C1_1600:     DEFS += $(QSFP0_100GBE)                  RF_BW=1600 RF_CORE_FULL=1 DRAM_CH=0
+X440_CG_1600:     DEFS += $(QSFP0_100GBE)  $(QSFP1_100GBE) RF_BW=1600 RF_CORE_FULL=1 DRAM_CH=0
 
 # DRAM IP inclusion. Set to 1 to include DRAM memory controller in design, 0 to
 # exclude it. Note that some targets exclude it regardless of this setting.
@@ -79,6 +87,10 @@ X410_X4C_200_DEFAULTS := DEFAULT_RFNOC_IMAGE_CORE_FILE=x410_x4c_200_rfnoc_image_
 X410_CG_200_DEFAULTS  := DEFAULT_RFNOC_IMAGE_CORE_FILE=x410_cg_200_rfnoc_image_core.v  DEFAULT_EDGE_FILE=$(abspath x410_cg_200_static_router.hex)
 X410_400_DEFAULTS     := DEFAULT_RFNOC_IMAGE_CORE_FILE=x410_400_rfnoc_image_core.v     DEFAULT_EDGE_FILE=$(abspath x410_400_static_router.hex)
 X410_400_D_DEFAULTS   := DEFAULT_RFNOC_IMAGE_CORE_FILE=x410_400_d_rfnoc_image_core.v   DEFAULT_EDGE_FILE=$(abspath x410_400_d_static_router.hex)
+X440_400_DEFAULTS     := DEFAULT_RFNOC_IMAGE_CORE_FILE=x440_400_rfnoc_image_core.v     DEFAULT_EDGE_FILE=$(abspath x440_400_static_router.hex)
+X440_400_D_DEFAULTS   := DEFAULT_RFNOC_IMAGE_CORE_FILE=x440_400_d_rfnoc_image_core.v   DEFAULT_EDGE_FILE=$(abspath x440_400_d_static_router.hex)
+X440_1600_DEFAULTS    := DEFAULT_RFNOC_IMAGE_CORE_FILE=x440_1600_rfnoc_image_core.v    DEFAULT_EDGE_FILE=$(abspath x440_1600_static_router.hex)
+X440_1600_D_DEFAULTS  := DEFAULT_RFNOC_IMAGE_CORE_FILE=x440_1600_d_rfnoc_image_core.v  DEFAULT_EDGE_FILE=$(abspath x440_1600_d_static_router.hex)
 
 # Option to stop after RTL elaboration. Use this flag as a synthesis check.
 ifndef TARGET
@@ -132,7 +144,15 @@ endif
 ##X410_C1_400  | 400 MHz   | 4  | 100 GbE         | Unused          | Unused
 ##X410_UC_400  | 400 MHz   | 4  | Unused          | 100 GbE         | Unused
 ##X410_CG_400  | 400 MHz   | 4  | 100 GbE         | 100 GbE         | Unused
-##* Note: Not all targets are shipped with UHD.
+##X440_X1_400  | 400 MHz   | 8  | 10 GbE (Lane 0) | Unused          | 128b x 8 Ch
+##X440_X4_400  | 400 MHz   | 8  | 4 x 10 GbE      | Unused          | 128b x 8 Ch
+##X440_C1_400  | 400 MHz   | 8  | 100 GbE         | Unused          | Unused
+##X440_CG_400  | 400 MHz   | 8  | 100 GbE         | 100 GbE         | Unused
+##X440_X1_1600 | 1.6 GHz   | 2  | 10 GbE (Lane 0) | Unused          | 512b x 2 Ch
+##X440_X4_1600 | 1.6 GHz   | 2  | 4 x 10 GbE      | Unused          | 512b x 2 Ch
+##X440_C1_1600 | 1.6 GHz   | 2  | 100 GbE         | Unused          | Unused
+##X440_CG_1600 | 1.6 GHz   | 2  | 100 GbE         | 100 GbE         | Unused
+##* Note: Not all targets are shipped with UHD
 ##* Note: Some YAML configurations might not use all available DRAM channels.
 
 X410_X1_100: X410_IP build/usrp_x410_fpga_X1_100.dts
@@ -207,6 +227,38 @@ X410_CG_400: X410_IP build/usrp_x410_fpga_CG_400.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_400_DEFAULTS))
 	$(call post_build,X410,CG_400)
 
+X440_X1_400: X440_IP build/usrp_x440_fpga_X1_400.dts
+	$(call vivado_build,X440,$(DEFS) X440=1,$(X440_400_D_DEFAULTS))
+	$(call post_build,X440,X1_400)
+
+X440_X4_400: X440_IP build/usrp_x440_fpga_X4_400.dts
+	$(call vivado_build,X440,$(DEFS) X440=1,$(X440_400_D_DEFAULTS))
+	$(call post_build,X440,X4_400)
+
+X440_C1_400: X440_IP build/usrp_x440_fpga_C1_400.dts
+	$(call vivado_build,X440,$(DEFS) X440=1,$(X440_400_DEFAULTS))
+	$(call post_build,X440,C1_400)
+
+X440_CG_400: X440_IP build/usrp_x440_fpga_CG_400.dts
+	$(call vivado_build,X440,$(DEFS) X440=1,$(X440_400_DEFAULTS))
+	$(call post_build,X440,CG_400)
+
+X440_X1_1600: X440_IP build/usrp_x440_fpga_X1_1600.dts
+	$(call vivado_build,X440,$(DEFS) X440=1,$(X440_1600_D_DEFAULTS))
+	$(call post_build,X440,X1_1600)
+
+X440_X4_1600: X440_IP build/usrp_x440_fpga_X4_1600.dts
+	$(call vivado_build,X440,$(DEFS) X440=1,$(X440_1600_D_DEFAULTS))
+	$(call post_build,X440,X4_1600)
+
+X440_C1_1600: X440_IP build/usrp_x440_fpga_C1_1600.dts
+	$(call vivado_build,X440,$(DEFS) X440=1,$(X440_1600_DEFAULTS))
+	$(call post_build,X440,C1_1600)
+
+X440_CG_1600: X440_IP build/usrp_x440_fpga_CG_1600.dts
+	$(call vivado_build,X440,$(DEFS) X440=1,$(X440_1600_DEFAULTS))
+	$(call post_build,X440,CG_1600)
+
 ##
 ##Experimental Targets
 ##-------------|-----------|----|-----------------|-----------------|------------
@@ -224,10 +276,13 @@ X410_CG_200: X410_IP build/usrp_x410_fpga_CG_200.dts
 
 .DEFAULT_GOAL := all
 
-all:          X410_X4_200 X410_CG_400 X410_UC_200 ##(Default targets)
+all:          X410_X4_200 X410_CG_400 X410_UC_200 X440_X4_400 X440_CG_400 X440_X4_1600 X440_CG_1600 ##(Default targets)
 
 X410_IP:      ##Build IP only.
 	+$(call vivado_ip,X410,$(DEFS) X410=1)
+
+X440_IP:      ##Build IP only.
+	+$(call vivado_ip,X440,$(DEFS) X440=1)
 
 build/usrp_x410%.dts: dts/*.dts dts/*.dtsi
 	-mkdir -p build
@@ -235,6 +290,15 @@ build/usrp_x410%.dts: dts/*.dts dts/*.dtsi
 		--input regmap/x410/versioning_regs_regmap_utils.vh \
 		--output dts/x410-version-info.dtsi \
 		--components fpga,cpld_ifc,db_gpio_ifc,rf_core_100m,rf_core_400m
+	${CC} -o $@ -C -E -I dts -nostdinc -undef -x assembler-with-cpp -D__DTS__ \
+		$$(python3 tools/get_dts_input.py --target $@)
+
+build/usrp_x440%.dts: dts/*.dts dts/*.dtsi
+	-mkdir -p build
+	tools/parse_versions_for_dts.py \
+		--input regmap/x440/versioning_regs_regmap_utils.vh \
+		--output dts/x440-version-info.dtsi \
+		--components fpga,cpld_ifc,db_gpio_ifc,rf_core_full
 	${CC} -o $@ -C -E -I dts -nostdinc -undef -x assembler-with-cpp -D__DTS__ \
 		$$(python3 tools/get_dts_input.py --target $@)
 

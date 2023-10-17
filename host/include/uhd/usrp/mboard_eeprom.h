@@ -11,10 +11,11 @@
 #include <uhd/error.h>
 
 #ifdef __cplusplus
-#include <uhd/usrp/mboard_eeprom.hpp>
-#include <string>
+#    include <uhd/usrp/mboard_eeprom.hpp>
+#    include <string>
 
-struct uhd_mboard_eeprom_t {
+struct uhd_mboard_eeprom_t
+{
     uhd::usrp::mboard_eeprom_t mboard_eeprom_cpp;
     std::string last_error;
 };
@@ -34,40 +35,26 @@ struct uhd_mboard_eeprom_t;
 typedef struct uhd_mboard_eeprom_t* uhd_mboard_eeprom_handle;
 
 //! Create a handle for working with a USRP motherboard EEPROM
-UHD_API uhd_error uhd_mboard_eeprom_make(
-    uhd_mboard_eeprom_handle* h
-);
+UHD_API uhd_error uhd_mboard_eeprom_make(uhd_mboard_eeprom_handle* h);
 
 //! Free a USRP motherboard EEPROM handle
 /*!
  * NOTE: Using a handle after passing it into this function will result in
  * a segmentation fault.
  */
-UHD_API uhd_error uhd_mboard_eeprom_free(
-    uhd_mboard_eeprom_handle* h
-);
+UHD_API uhd_error uhd_mboard_eeprom_free(uhd_mboard_eeprom_handle* h);
 
 //! Get the value associated with the given EEPROM key
 UHD_API uhd_error uhd_mboard_eeprom_get_value(
-    uhd_mboard_eeprom_handle h,
-    const char* key,
-    char* value_out,
-    size_t strbuffer_len
-);
+    uhd_mboard_eeprom_handle h, const char* key, char* value_out, size_t strbuffer_len);
 
 //! Set the value for the given EEPROM key
 UHD_API uhd_error uhd_mboard_eeprom_set_value(
-    uhd_mboard_eeprom_handle h,
-    const char* key,
-    const char* value
-);
+    uhd_mboard_eeprom_handle h, const char* key, const char* value);
 
 //! Get the last error recorded by the handle
 UHD_API uhd_error uhd_mboard_eeprom_last_error(
-    uhd_mboard_eeprom_handle h,
-    char* error_out,
-    size_t strbuffer_len
-);
+    uhd_mboard_eeprom_handle h, char* error_out, size_t strbuffer_len);
 
 #ifdef __cplusplus
 }

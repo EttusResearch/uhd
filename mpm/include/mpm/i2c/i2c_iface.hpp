@@ -53,7 +53,6 @@ public:
      */
     virtual std::vector<uint8_t> transfer(
         std::vector<uint8_t>& tx, size_t num_rx_bytes, bool do_close = true) = 0;
-
 };
 
 }}; /* namespace mpm::i2c */

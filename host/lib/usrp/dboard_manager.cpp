@@ -272,12 +272,11 @@ dboard_manager_impl::dboard_manager_impl(dboard_eeprom_t rx_eeprom,
     try {
         this->init(rx_eeprom, tx_eeprom, subtree, defer_db_init);
     } catch (const std::exception& e) {
-        UHD_LOGGER_ERROR("DBMGR")
-            << boost::format(
-                   "The daughterboard manager encountered a recoverable error in init.\n"
-                   "Loading the \"unknown\" daughterboard implementations to continue.\n"
-                   "The daughterboard cannot operate until this error is resolved.\n")
-            << e.what();
+        UHD_LOGGER_ERROR("DBMGR") << boost::format(
+            "The daughterboard manager encountered a recoverable error in init.\n"
+            "Loading the \"unknown\" daughterboard implementations to continue.\n"
+            "The daughterboard cannot operate until this error is resolved.\n")
+                                  << e.what();
         // clean up the stuff added by the call above
         if (subtree->exists("rx_frontends"))
             subtree->remove("rx_frontends");

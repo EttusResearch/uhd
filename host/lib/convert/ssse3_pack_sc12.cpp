@@ -44,7 +44,7 @@
  *      -----------------------
  *     31                     0
  */
-#define SC12_SHIFT_MASK 0xfff0fff0, 0xfff0fff0, 0x0fff0fff, 0x0fff0fff
+#define SC12_SHIFT_MASK    0xfff0fff0, 0xfff0fff0, 0x0fff0fff, 0x0fff0fff
 #define SC12_PACK_SHUFFLE1 13, 12, 9, 8, 5, 4, 1, 0, 15, 14, 11, 10, 7, 6, 3, 2
 #define SC12_PACK_SHUFFLE2 9, 8, 0, 11, 10, 2, 13, 12, 4, 15, 14, 6, 0, 0, 0, 0
 #define SC12_PACK_SHUFFLE3 8, 1, 8, 8, 3, 8, 8, 5, 8, 8, 7, 8, 8, 8, 8, 8

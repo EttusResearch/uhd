@@ -54,11 +54,10 @@ struct res_source_info
     //! Returns a string representation of the source
     std::string to_string() const
     {
-        const std::string type_repr =
-            type == USER
-                ? "USER"
-                : type == INPUT_EDGE ? "INPUT_EDGE"
-                                     : type == OUTPUT_EDGE ? "OUTPUT_EDGE" : "INVALID";
+        const std::string type_repr = type == USER          ? "USER"
+                                      : type == INPUT_EDGE  ? "INPUT_EDGE"
+                                      : type == OUTPUT_EDGE ? "OUTPUT_EDGE"
+                                                            : "INVALID";
         return type_repr + ":" + std::to_string(instance);
     }
 

@@ -16,15 +16,15 @@ using namespace uhd::rfnoc::detail;
 BOOST_AUTO_TEST_CASE(topo_node_check_ops)
 {
     topo_node_t sep0;
-    sep0.device_id = 2;
-    sep0.type = topo_node_t::node_type::STRM_EP;
-    sep0.inst = 0;
+    sep0.device_id     = 2;
+    sep0.type          = topo_node_t::node_type::STRM_EP;
+    sep0.inst          = 0;
     sep0.extended_info = 12;
 
     topo_node_t sep1;
-    sep1.device_id = 2;
-    sep1.type = topo_node_t::node_type::STRM_EP;
-    sep1.inst = 0;
+    sep1.device_id     = 2;
+    sep1.type          = topo_node_t::node_type::STRM_EP;
+    sep1.inst          = 0;
     sep1.extended_info = 23;
 
     BOOST_CHECK(sep0 == sep1);
@@ -43,19 +43,19 @@ BOOST_AUTO_TEST_CASE(topo_graph_add_node)
 
     topo_node_t sep0;
     sep0.device_id = 1;
-    sep0.type = topo_node_t::node_type::STRM_EP;
-    sep0.inst = 0;
+    sep0.type      = topo_node_t::node_type::STRM_EP;
+    sep0.inst      = 0;
 
     BOOST_CHECK(g.add_node(sep0));
     BOOST_CHECK(!g.add_node(sep0));
 
     topo_edge_t edge0; // From sep0
-    edge0.type = topo_edge_t::edge_type::HOST;
+    edge0.type     = topo_edge_t::edge_type::HOST;
     edge0.src_port = 0; // Need to not use -1 ("don't care")
     topo_node_t ta0;
     ta0.device_id = 2;
-    ta0.type = topo_node_t::node_type::XPORT;
-    ta0.inst = 0;
+    ta0.type      = topo_node_t::node_type::XPORT;
+    ta0.inst      = 0;
 
     // Can't add a route from ta0, because it's not yet in the graph
     UHD_LOG_INFO("TEST", "Expect ERROR here VVV:");
@@ -85,10 +85,10 @@ BOOST_AUTO_TEST_CASE(topo_graph_add_node)
 
     BOOST_CHECK(g.add_node(xbar0));
     topo_edge_t edge1; // From xbar0 to xbar1
-    edge1.type = topo_edge_t::edge_type::ON_CHIP;
+    edge1.type     = topo_edge_t::edge_type::ON_CHIP;
     edge1.src_port = 2;
     topo_edge_t edge2; // Also from xbar0 to xbar1
-    edge2.type = topo_edge_t::edge_type::ON_CHIP;
+    edge2.type     = topo_edge_t::edge_type::ON_CHIP;
     edge2.src_port = 2;
 
     BOOST_CHECK(g.add_edge(xbar0, xbar1, edge1));
@@ -129,17 +129,17 @@ BOOST_AUTO_TEST_CASE(topo_graph_update_edge)
 
     topo_node_t sep0;
     sep0.device_id = 1;
-    sep0.type = topo_node_t::node_type::STRM_EP;
-    sep0.inst = 0;
+    sep0.type      = topo_node_t::node_type::STRM_EP;
+    sep0.inst      = 0;
 
     topo_edge_t edge0; // From sep0
-    edge0.type = topo_edge_t::edge_type::HOST;
+    edge0.type     = topo_edge_t::edge_type::HOST;
     edge0.src_port = 0;
 
     topo_node_t ta0;
     ta0.device_id = 2;
-    ta0.type = topo_node_t::node_type::XPORT;
-    ta0.inst = 0;
+    ta0.type      = topo_node_t::node_type::XPORT;
+    ta0.inst      = 0;
 
     BOOST_CHECK(g.add_node(sep0));
     BOOST_CHECK(g.add_edge(sep0, ta0, edge0));
@@ -248,7 +248,7 @@ BOOST_AUTO_TEST_CASE(topo_graph_find_route)
     UHD_LOG_INFO("TEST", "Expect ERROR here ^^^:");
 
     // Now check we can find the best route
-    auto r = g.get_route(sep0, sep1);
+    auto r    = g.get_route(sep0, sep1);
     auto r_it = r.cbegin();
     BOOST_CHECK_EQUAL(r_it->node.to_string(), "device:1/sep:0");
     ++r_it;
@@ -275,7 +275,7 @@ BOOST_AUTO_TEST_CASE(topo_graph_find_route)
     // Now we update the distance from SEP0 to XBAR2. The new optimal route now
     // goes via XBAR0 and XBAR1
     g.update_weight(sep0, 1, 100);
-    r = g.get_route(sep0, sep1);
+    r    = g.get_route(sep0, sep1);
     r_it = r.cbegin();
     BOOST_CHECK_EQUAL(r_it->node.to_string(), "device:1/sep:0");
     ++r_it;

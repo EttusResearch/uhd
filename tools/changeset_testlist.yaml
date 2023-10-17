@@ -1,0 +1,186 @@
+# Test targets:
+# - uhd.build.$PLATFORM: Build UHD on given platforms. This includes running unit tests.
+#                        Valid values for $PLATFORM are: all, linux, windows, mac.
+# - hw.streaming.$DEVICE: Run streaming tests for $DEVICE.
+# - hw.rf.$DEVICE: Run RF tests for $DEVICE.
+# - devtest.$DEVICE: Run devtests for $DEVICE.
+
+
+###############################################################################
+# HOST CHANGES (UHD)
+###############################################################################
+# If only a unit test changed, then we need to re-run unit tests, but no HW tests
+- re: ^host/tests/[^/]+(cpp|py)$|^host/tests/CMakeLists.txt
+  add:
+    - uhd.build.all
+    - uhd.utest.all
+# Documentation changes
+- re: ^host/docs/
+  add:
+    - uhd.docs
+# Device-specific changes. These should trigger HW tests only on those devices
+# they affect. We start with daughterboard rules, then motherboard rules.
+- re: host/lib/usrp/dboard/zbx/
+  add:
+    - uhd.build.all
+    - hw.rf.x410
+    - hw.streaming.x410
+    - devtest.x410
+- re: host/lib/usrp/dboard/e3xx
+  add:
+    - uhd.build.all
+    - hw.rf.e3xx
+    - hw.streaming.e3xx
+    - devtest.e3xx
+- re: host/lib/usrp/dboard/magnesium
+  add:
+    - uhd.build.all
+    - hw.rf.n310
+    - devtest.n310
+- re: host/lib/usrp/dboard/rhodium
+  add:
+    - uhd.build.all
+    - hw.rf.n320
+    - devtest.n320
+- re: host/lib/usrp/dboard/twinrx/
+  name: host/lib/usrp/dboard/db_twinrx.cpp
+  add:
+    - uhd.build.all
+    - hw.rf.x310.twinrx
+    - hw.rf.x300.twinrx
+- re: host/lib/usrp/dboard/.*CMakeLists.txt
+  add:
+    - uhd.build.all
+- re: host/lib/usrp/dboard/db_.+pp$
+  add:
+    - uhd.build.all
+    - hw.rf.x3xx
+    - hw.rf.n2xx
+- re: host/lib/usrp/b200/
+  add:
+    - uhd.build.all
+    - hw.rf.b2xx
+    - hw.streaming.b2xx
+    - devtest.b2xx
+- re: host/lib/usrp/b100/
+  add:
+    - uhd.build.all
+    - hw.rf.b1xx
+    - hw.streaming.b1xx
+    - devtest.b1xx
+- re: host/lib/usrp/x300/
+  add:
+    - uhd.build.all
+    - hw.rf.x3xx
+    - hw.streaming.x3xx
+    - devtest.x3xx.all
+- re: host/lib/usrp/x400/
+  add:
+    - uhd.build.all
+    - hw.rf.x4xx
+    - hw.rf.n3xx
+    - hw.streaming.x4xx
+    - devtest.x4xx
+- re: host/lib/usrp/mpmd/
+  add:
+    - uhd.build.all
+    - hw.rf.x4xx
+    - hw.rf.n3xx
+    - hw.rf.e3xx
+    - hw.streaming.x4xx
+    - hw.streaming.n3xx
+    - hw.streaming.e3xx
+    - devtest.x4xx
+    - devtest.e3xx
+    - devtest.n3xx
+- re: host/lib/usrp/usrp2
+  add:
+    - uhd.build.all
+    - hw.rf.n2xx
+- re: host/tests/devtest
+  add:
+    - uhd.build.all
+    - devtest.all
+- re: images/manifest
+  add:
+    - uhd.build.all
+    - uhd.utest.all
+    - hw.streaming.all
+    - hw.rf.all
+    - devtest.all
+# Catchall rule for UHD changes
+- re: host/.+cpp$|host/.+CMakeLists.txt|host/.+hpp$|host/.+ipp$|host/.+c$|host/.+h$|host/.+py$
+  add:
+    - uhd.build.all
+    - uhd.utest.all
+    - hw.streaming.all
+    - hw.rf.all
+    - devtest.all
+
+###############################################################################
+# MPM CHANGES
+###############################################################################
+# When any code file changes, we want to run the unit tests, but run the
+# other tests, too
+- re: ^mpm/.+hpp$|^mpm/.+cpp$|^mpm/.+py$|^mpm/.+/tests/|^mpm/.+CMakeLists.txt$
+  add:
+    - mpm.utest.all
+  stop: False
+- re: ^mpm/.+/ad9361|^mpm/.+catalina$|^mpm/.+/dboard_manager/ad936x_db.py
+  add:
+    - mpm.build.e3xx
+    - hw.rf.e3xx
+    - devtest.e3xx
+- re: ^mpm/.+/periph_manager/n3xx
+  add:
+    - mpm.build.n3xx
+    - hw.rf.n3xx
+    - hw.streaming.n3xx
+    - devtest.n3xx
+- re: ^mpm/.+/ad937x|^mpm/.+/mykonos|^mpm/.+/dboard_manager/mg_|magnesium_manager..pp$
+  add:
+    - mpm.build.n310
+    - hw.rf.n310
+    - devtest.n310
+- re: ^mpm/.+/dboard_manager/rh_|^mpm/.+/dboard_manager/..._rh.py
+  add:
+    - mpm.build.n320
+    - hw.rf.n320
+    - devtest.n320
+- re: ^mpm/.+periph_manager/x4xx
+  add:
+    - hw.streaming.x4xx
+  stop: False
+- re: ^mpm/.+/rfdc|^mpm/.+_manager/x4xx
+  add:
+    - mpm.build.x4xx
+    - hw.rf.x4xx
+    - devtest.x4xx
+- re: fbx.py$
+  add:
+    - mpm.build.x4xx
+    - hw.rf.x440
+    - devtest.x440
+- re: zbx.py
+  add:
+    - mpm.build.x4xx
+    - hw.rf.x410
+    - devtest.x410
+- re: e31x_db_manager..pp$|^mpm/.+/periph_manager/e31x|e31x_db.py$
+  add:
+    - mpm.build.e310
+    - hw.rf.e310
+    - devtest.e310
+- re: neon_manager..pp$|^mpm/.+/periph_manager/e320
+  add:
+    - mpm.build.e320
+    - hw.rf.e320
+    - devtest.e320
+# Catchall rule for MPM changes
+- re: ^mpm/
+  add:
+    - mpm.build.all
+    - mpm.utest.all
+    - hw.streaming.all
+    - hw.rf.all
+    - devtest.all

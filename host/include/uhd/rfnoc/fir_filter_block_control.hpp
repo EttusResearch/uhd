@@ -56,7 +56,8 @@ public:
      * \param coeffs A vector of integer coefficients for the FIR filter
      * \param chan Channel index
      */
-    virtual void set_coefficients(const std::vector<int16_t>& coeffs, const size_t chan = 0) = 0;
+    virtual void set_coefficients(
+        const std::vector<int16_t>& coeffs, const size_t chan = 0) = 0;
 
     /*! Get the filter coefficients
      *

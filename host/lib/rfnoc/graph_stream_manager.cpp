@@ -27,8 +27,7 @@ public:
     graph_stream_manager_impl(const chdr::chdr_packet_factory& pkt_factory,
         const epid_allocator::sptr& epid_alloc,
         const std::vector<std::pair<device_id_t, mb_iface*>>& links)
-        : _epid_alloc(epid_alloc),
-        _tgraph(std::make_shared<detail::topo_graph_t>())
+        : _epid_alloc(epid_alloc), _tgraph(std::make_shared<detail::topo_graph_t>())
     {
         for (const auto& lnk : links) {
             UHD_ASSERT_THROW(lnk.second);

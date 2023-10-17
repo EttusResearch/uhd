@@ -108,7 +108,8 @@ UHD_INLINE uint64_t uhd::byteswap(uint64_t x)
  **********************************************************************/
 namespace uhd {
 
-template <typename T> UHD_INLINE T ntohx(T num)
+template <typename T>
+UHD_INLINE T ntohx(T num)
 {
 #ifdef UHD_BIG_ENDIAN
     return num;
@@ -117,7 +118,8 @@ template <typename T> UHD_INLINE T ntohx(T num)
 #endif
 }
 
-template <typename T> UHD_INLINE T htonx(T num)
+template <typename T>
+UHD_INLINE T htonx(T num)
 {
 #ifdef UHD_BIG_ENDIAN
     return num;
@@ -126,7 +128,8 @@ template <typename T> UHD_INLINE T htonx(T num)
 #endif
 }
 
-template <typename T> UHD_INLINE T wtohx(T num)
+template <typename T>
+UHD_INLINE T wtohx(T num)
 {
 #ifdef UHD_BIG_ENDIAN
     return uhd::byteswap(num);
@@ -135,7 +138,8 @@ template <typename T> UHD_INLINE T wtohx(T num)
 #endif
 }
 
-template <typename T> UHD_INLINE T htowx(T num)
+template <typename T>
+UHD_INLINE T htowx(T num)
 {
 #ifdef UHD_BIG_ENDIAN
     return uhd::byteswap(num);

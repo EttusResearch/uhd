@@ -1,34 +1,44 @@
 //
-// Copyright 2019 Ettus Research, A National Instruments Company
+// Copyright 2023 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
 // Module: sim_axi_ram
 //
-// Description: 
+// Description:
 //
-//   Simulation model for a basic AXI4 memory mapped memory. A few notes on its 
+//   Simulation model for a basic AXI4 memory mapped memory. A few notes on its
 //   behavior:
 //
-//     - This model does not reorder requests (regardless of WID/RID). All 
+//     - This model does not reorder requests (regardless of WID/RID). All
 //       requests are evaluated strictly in order.
 //     - The only supported response is OKAY
-//     - This model supports misaligned memory accesses, which cause a 
+//     - This model supports misaligned memory accesses, which cause a
 //       simulation warning.
 //     - A reset does not clear the memory contents
-//     - The memory itself is implemented using an associative array (sparse 
+//     - The memory itself is implemented using an associative array (sparse
 //       matrix) so that large memories can be supported.
 //     - This model is half duplex, meaning read and write data transfers won't
 //       happen at the same time. A new data transfer won't begin until the
 //       previous one has completed.
 //
+// Parameters:
+//
+//   - AWIDTH       : Address width of the memory to model
+//   - DWIDTH       : Data width of the memory to model
+//   - IDWIDTH      : Width of ID ports of the AXI bus
+//   - BIG_ENDIAN   : Endianness of the memory model (0 = little, 1 = big)
+//   - STALL_PROB   : Default probability of a channel stalling (0 to 99)
+//   - NO_4KB_LIMIT : Allow bursts to cross 4 KiB boundaries
+//
 
 module sim_axi_ram #(
-  parameter AWIDTH     = 32,
-  parameter DWIDTH     = 64,
-  parameter IDWIDTH    = 2,
-  parameter BIG_ENDIAN = 0,
-  parameter STALL_PROB = 25
+  parameter AWIDTH       = 32,
+  parameter DWIDTH       = 64,
+  parameter IDWIDTH      = 2,
+  parameter BIG_ENDIAN   = 0,
+  parameter STALL_PROB   = 25,
+  parameter NO_4KB_LIMIT = 0
 ) (
   input logic s_aclk,
   input logic s_aresetn,
@@ -82,7 +92,7 @@ module sim_axi_ram #(
   //---------------------------------------------------------------------------
   // Data Types
   //---------------------------------------------------------------------------
-  
+
   typedef enum logic [1:0] { FIXED, INCR, WRAP }            burst_t;
   typedef enum logic [1:0] { OKAY, EXOKAY, SLVERR, DECERR } resp_t;
 
@@ -95,7 +105,7 @@ module sim_axi_ram #(
     burst_t             burst;
   } req_t;
 
-  // Make the address type an extra bit wide so that we can detect 
+  // Make the address type an extra bit wide so that we can detect
   // out-of-bounds accesses easily.
   typedef bit [AWIDTH:0] addr_t;
 
@@ -160,7 +170,7 @@ module sim_axi_ram #(
     rdata_stall_prob = probability;
   endfunction : set_read_stall_prob
 
-  // Set Write Address Channel stall probability  
+  // Set Write Address Channel stall probability
   function void set_waddr_stall_prob(int probability);
     assert(probability >= 0 && probability <= 100) else begin
       $error("Probability must be from 0 to 100");
@@ -200,7 +210,7 @@ module sim_axi_ram #(
     rdata_stall_prob = probability;
   endfunction : set_rdata_stall_prob
 
-  // Get Write Address Channel stall probability  
+  // Get Write Address Channel stall probability
   function int get_waddr_stall_prob();
     return waddr_stall_prob;
   endfunction : get_waddr_stall_prob
@@ -313,13 +323,13 @@ module sim_axi_ram #(
           assert ($cast(burst, s_axi_awburst)) else begin
             $fatal(1, "Invalid AWBURST value");
           end
-          assert ((s_axi_awaddr & MASK_4K) ==
-            ((s_axi_awaddr + (s_axi_awlen+1)*(2**s_axi_awsize) - 1) & MASK_4K)) else begin
+          assert (NO_4KB_LIMIT || ((s_axi_awaddr & MASK_4K) ==
+            ((s_axi_awaddr + (s_axi_awlen+1)*(2**s_axi_awsize) - 1) & MASK_4K))) else begin
             $fatal(1, "Memory write burst crosses 4 KiB boundary");
           end
 
           if (DEBUG) begin
-            $display("WRITE REQ: id=%X, addr=%X, len=%X, size=%X, burst=%s, %t, %m", 
+            $display("WRITE REQ: id=%X, addr=%X, len=%X, size=%X, burst=%s, %t, %m",
               req.id, req.addr, req.len, req.size, req.burst.name, $realtime);
           end
 
@@ -370,13 +380,13 @@ module sim_axi_ram #(
           assert ($cast(burst, s_axi_awburst)) else begin
             $fatal(1, "Invalid ARBURST value");
           end
-          assert ((s_axi_araddr & MASK_4K) ==
-            ((s_axi_araddr + (s_axi_arlen+1)*(2**s_axi_arsize) - 1) & MASK_4K)) else begin
+          assert (NO_4KB_LIMIT || ((s_axi_araddr & MASK_4K) ==
+            ((s_axi_araddr + (s_axi_arlen+1)*(2**s_axi_arsize) - 1) & MASK_4K))) else begin
             $fatal(1, "Memory read burst crosses 4 KiB boundary");
           end
 
           if (DEBUG) begin
-            $display("READ REQ:  id=%X, addr=%X, len=%X, size=%X, burst=%s, %t, %m", 
+            $display("READ REQ:  id=%X, addr=%X, len=%X, size=%X, burst=%s, %t, %m",
               req.id, req.addr, req.len, req.size, req.burst.name, $realtime);
           end
 
@@ -437,7 +447,7 @@ module sim_axi_ram #(
                 addr = req.addr;
               end
               INCR : begin
-                // If the address rolls over, we've reached the end of the 
+                // If the address rolls over, we've reached the end of the
                 // memory and we should stop here.
                 addr = req.addr + i*req.size;
                 if (addr < req.addr) break;
@@ -451,7 +461,7 @@ module sim_axi_ram #(
             write_mem(addr, req.size, s_axi_wdata, s_axi_wstrb);
 
             if (DEBUG) begin
-              $display("WRITE: count=%3X, ADDR=%X, DATA=%X, SIZE=%X, STRB=%X, %t, %m", 
+              $display("WRITE: count=%3X, ADDR=%X, DATA=%X, SIZE=%X, STRB=%X, %t, %m",
                 i, addr, s_axi_wdata, req.size, s_axi_wstrb, $realtime);
             end
 
@@ -474,9 +484,9 @@ module sim_axi_ram #(
       // Enqueue write response
       write_resp.put(req);
 
-      // Make sure WLAST asserted for the last word. If not we report an error. 
-      // Per the AXI4 standard, "a slave is not required to use the WLAST 
-      // signal" because "a slave can calculate the last write data transfer 
+      // Make sure WLAST asserted for the last word. If not we report an error.
+      // Per the AXI4 standard, "a slave is not required to use the WLAST
+      // signal" because "a slave can calculate the last write data transfer
       // from the burst length AWLEN".
       if (s_axi_wlast != 1'b1) begin
         $error("WLAST not asserted on last word of burst");
@@ -598,7 +608,7 @@ module sim_axi_ram #(
             addr = req.addr;
           end
           INCR : begin
-            // If the address rolls over, we've reached the end of the memory 
+            // If the address rolls over, we've reached the end of the memory
             // and we should stop here.
             addr = req.addr + i*req.size;
             if (addr < req.addr) break;

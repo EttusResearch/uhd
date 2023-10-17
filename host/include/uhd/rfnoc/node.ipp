@@ -24,13 +24,13 @@ uhd::rfnoc::property_t<prop_data_t>* _assert_prop(
     }
 
     // Next, check if we can cast the pointer to the desired type:
-    auto prop_ptr =
-        dynamic_cast<uhd::rfnoc::property_t<prop_data_t>*>(prop_base_ptr);
+    auto prop_ptr = dynamic_cast<uhd::rfnoc::property_t<prop_data_t>*>(prop_base_ptr);
     if (!prop_ptr) {
         throw uhd::type_error(str(
             boost::format(
                 "[%s] Found property `%s', but could not cast to requested type `%s'!")
-            % node_id % prop_id % boost::units::detail::demangle(typeid(prop_data_t).name()) ));
+            % node_id % prop_id
+            % boost::units::detail::demangle(typeid(prop_data_t).name())));
     }
 
     // All is good, we now return the raw pointer that has been validated.
@@ -60,12 +60,11 @@ template <typename prop_data_t>
 void node_t::set_property(
     const std::string& id, const prop_data_t& val, const res_source_info& src_info)
 {
-    if(_graph_mutex_cb) {
+    if (_graph_mutex_cb) {
         // Node connected to graph. Must lock graph first.
         std::lock_guard<std::recursive_mutex> l(_graph_mutex_cb());
         _set_property(id, val, src_info);
-    }
-    else {
+    } else {
         // Node unconnected to graph
         _set_property(id, val, src_info);
     }
@@ -79,8 +78,8 @@ const prop_data_t& node_t::get_property(
     // First, trigger a property resolution to make sure this property is
     // updated (if necessary) before reading it out
     resolve_all();
-    auto prop_ptr = _assert_prop<prop_data_t>(
-        _find_property(src_info, id), get_unique_id(), id);
+    auto prop_ptr =
+        _assert_prop<prop_data_t>(_find_property(src_info, id), get_unique_id(), id);
 
     auto prop_access = _request_property_access(prop_ptr, property_base_t::RO);
     return prop_ptr->get();
@@ -105,4 +104,3 @@ void node_t::_set_property(
 }
 
 }} /* namespace uhd::rfnoc */
-

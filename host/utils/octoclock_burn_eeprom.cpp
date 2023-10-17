@@ -49,10 +49,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     }
 
     std::cout << "Creating OctoClock device from args: " + args << std::endl;
-    device::sptr oc          = device::make(args, device::CLOCK);
-    property_tree::sptr tree = oc->get_tree();
-    mboard_eeprom_t oc_eeprom =
-        tree->access<mboard_eeprom_t>("/mboards/0/eeprom").get();
+    device::sptr oc           = device::make(args, device::CLOCK);
+    property_tree::sptr tree  = oc->get_tree();
+    mboard_eeprom_t oc_eeprom = tree->access<mboard_eeprom_t>("/mboards/0/eeprom").get();
     std::cout << std::endl;
 
     std::vector<std::string> keys_vec, vals_vec;
@@ -91,8 +90,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         }
         tree->access<mboard_eeprom_t>("/mboards/0/eeprom").set(oc_eeprom);
         std::cout << std::endl
-                << "Power-cycle your device to allow any changes to take effect."
-                << std::endl;
+                  << "Power-cycle your device to allow any changes to take effect."
+                  << std::endl;
     }
     return EXIT_SUCCESS;
 }

@@ -195,7 +195,7 @@ uhd::rfnoc::chdr_ctrl_xport::sptr mpmd_mboard_impl::mpmd_mb_iface::make_ctrl_tra
         recv_link, send_link, transport::link_type_t::CTRL);
 
     auto pkt_factory = _link_if_mgr->get_packet_factory(link_idx);
-    auto io_srv_mgr = this->get_io_srv_mgr();
+    auto io_srv_mgr  = this->get_io_srv_mgr();
     auto xport       = uhd::rfnoc::chdr_ctrl_xport::make(io_srv,
         send_link,
         recv_link,
@@ -273,7 +273,7 @@ mpmd_mboard_impl::mpmd_mb_iface::make_rx_data_transport(
 
     // Create the data transport
     auto pkt_factory = _link_if_mgr->get_packet_factory(link_idx);
-    auto io_srv_mgr = this->get_io_srv_mgr();
+    auto io_srv_mgr  = this->get_io_srv_mgr();
     auto fc_params   = chdr_rx_data_xport::configure_sep(cfg_io_srv,
         recv_link,
         send_link,
@@ -358,7 +358,7 @@ mpmd_mboard_impl::mpmd_mb_iface::make_tx_data_transport(
         recv_link, send_link, transport::link_type_t::CTRL);
 
     auto pkt_factory         = _link_if_mgr->get_packet_factory(link_idx);
-    auto io_srv_mgr = this->get_io_srv_mgr();
+    auto io_srv_mgr          = this->get_io_srv_mgr();
     const auto buff_capacity = chdr_tx_data_xport::configure_sep(cfg_io_srv,
         recv_link,
         send_link,

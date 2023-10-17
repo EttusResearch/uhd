@@ -80,7 +80,11 @@ module x4xx_global_regs #(
   `include "regmap/global_regs_regmap_utils.vh"
 
   // Variant-dependent register map.
-  `include "regmap/x410/versioning_regs_regmap_utils.vh"
+  `ifdef X440
+    `include "regmap/x440/versioning_regs_regmap_utils.vh"
+  `else // Use X410 as the default variant for regmap.
+    `include "regmap/x410/versioning_regs_regmap_utils.vh"
+  `endif
 
 
   // Make DEVICE_ID default to anything but 0, since that has special meaning
@@ -599,11 +603,11 @@ endmodule
 //      <bitfield name="PPS_RC_ENABLED" range="31">
 //        <info>
 //          Enables the PPS signal in radio clock domain. Please make sure that
-//          the values of @.PPS_BRC_DELAY, @.PPS_PRC_DELAY and @.PRC_RC_DIVIDER are
-//          set before enabling this bit. It is recommended to disable the PPS
-//          for changes on the other values. Use a wait time of at least 1 second
-//          before changing this value to ensure the values are stable for the
-//          next PPS edge.
+//          the values of @.PPS_BRC_DELAY, @.PPS_PRC_DELAY, @.PRC_RC0_DIVIDER and
+//          @.PRC_RC1_DIVIDER are set before enabling this bit. It is recommended
+//          to disable the PPS for changes on the other values. Use a wait time of
+//          at least 1 second before changing this value to ensure the values are
+//          stable for the next PPS edge.
 //        </info>
 //      </bitfield>
 //    </register>
@@ -667,13 +671,13 @@ endmodule
 //    </register>
 //    <register name="GPS_CTRL_REG"        offset="0x38" size="32">
 //      <info>
-//        RESERVED. This register is not implemented on X4xx. GPS is connected 
+//        RESERVED. This register is not implemented on X4xx. GPS is connected
 //        to the PS via a UART.
 //      </info>
 //    </register>
 //    <register name="GPS_STATUS_REG"      offset="0x3C" size="32" writable="false">
 //      <info>
-//        RESERVED. This register is not implemented on X4xx. GPS is connected 
+//        RESERVED. This register is not implemented on X4xx. GPS is connected
 //        to the PS via a UART.
 //      </info>
 //    </register>

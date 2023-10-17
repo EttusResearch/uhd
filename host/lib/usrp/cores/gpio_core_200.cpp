@@ -8,11 +8,11 @@
 #include <uhd/types/dict.hpp>
 #include <uhdlib/usrp/cores/gpio_core_200.hpp>
 
-#define REG_GPIO_IDLE _base + 0
+#define REG_GPIO_IDLE    _base + 0
 #define REG_GPIO_RX_ONLY _base + 4
 #define REG_GPIO_TX_ONLY _base + 8
-#define REG_GPIO_BOTH _base + 12
-#define REG_GPIO_DDR _base + 16
+#define REG_GPIO_BOTH    _base + 12
+#define REG_GPIO_DDR     _base + 16
 
 using namespace uhd;
 using namespace usrp;
@@ -85,7 +85,7 @@ public:
             (uint32_t(_gpio_ddr[dboard_iface::UNIT_RX])
                 << shift_by_unit(dboard_iface::UNIT_RX))
                 | (uint32_t(_gpio_ddr[dboard_iface::UNIT_TX])
-                      << shift_by_unit(dboard_iface::UNIT_TX)));
+                    << shift_by_unit(dboard_iface::UNIT_TX)));
     }
 
     uint16_t get_gpio_ddr(unit_t unit) override
@@ -163,17 +163,17 @@ private:
         const uint32_t atr_val = (uint32_t(_atr_regs[dboard_iface::UNIT_RX][atr])
                                      << shift_by_unit(dboard_iface::UNIT_RX))
                                  | (uint32_t(_atr_regs[dboard_iface::UNIT_TX][atr])
-                                       << shift_by_unit(dboard_iface::UNIT_TX));
+                                     << shift_by_unit(dboard_iface::UNIT_TX));
 
         const uint32_t gpio_val = (uint32_t(_gpio_out[dboard_iface::UNIT_RX])
                                       << shift_by_unit(dboard_iface::UNIT_RX))
                                   | (uint32_t(_gpio_out[dboard_iface::UNIT_TX])
-                                        << shift_by_unit(dboard_iface::UNIT_TX));
+                                      << shift_by_unit(dboard_iface::UNIT_TX));
 
         const uint32_t ctrl = (uint32_t(_pin_ctrl[dboard_iface::UNIT_RX])
                                   << shift_by_unit(dboard_iface::UNIT_RX))
                               | (uint32_t(_pin_ctrl[dboard_iface::UNIT_TX])
-                                    << shift_by_unit(dboard_iface::UNIT_TX));
+                                  << shift_by_unit(dboard_iface::UNIT_TX));
         const uint32_t val = (ctrl & atr_val) | ((~ctrl) & gpio_val);
         if (not _update_cache.has_key(addr) or _update_cache[addr] != val) {
             _iface->poke32(addr, val);

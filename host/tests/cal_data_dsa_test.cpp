@@ -7,8 +7,8 @@
 #include <uhd/cal/dsa_cal.hpp>
 #include <uhd/exception.hpp>
 #include <boost/test/unit_test.hpp>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 
 using namespace uhd::usrp::cal;
 
@@ -31,26 +31,32 @@ BOOST_AUTO_TEST_CASE(test_pwr_cal_api)
     dsa_data->add_frequency_band(1E9, "low", gains1);
     dsa_data->add_frequency_band(4E9, "high", gains2);
 
-    auto expected = gains1[0];
+    auto expected   = gains1[0];
     auto calculated = dsa_data->get_dsa_setting(1E9, 0);
-    BOOST_CHECK_EQUAL_COLLECTIONS(calculated.begin(), calculated.end(), expected.begin(), expected.end());
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        calculated.begin(), calculated.end(), expected.begin(), expected.end());
 
     calculated = dsa_data->get_dsa_setting(1E8, 0);
-    BOOST_CHECK_EQUAL_COLLECTIONS(calculated.begin(), calculated.end(), expected.begin(), expected.end());
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        calculated.begin(), calculated.end(), expected.begin(), expected.end());
 
-    expected = gains1[1];
+    expected   = gains1[1];
     calculated = dsa_data->get_dsa_setting(1E9, 1);
-    BOOST_CHECK_EQUAL_COLLECTIONS(calculated.begin(), calculated.end(), expected.begin(), expected.end());
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        calculated.begin(), calculated.end(), expected.begin(), expected.end());
 
     calculated = dsa_data->get_dsa_setting(1E8, 1);
-    BOOST_CHECK_EQUAL_COLLECTIONS(calculated.begin(), calculated.end(), expected.begin(), expected.end());
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        calculated.begin(), calculated.end(), expected.begin(), expected.end());
 
-    expected = gains2[1];
+    expected   = gains2[1];
     calculated = dsa_data->get_dsa_setting(3E9, 1);
-    BOOST_CHECK_EQUAL_COLLECTIONS(calculated.begin(), calculated.end(), expected.begin(), expected.end());
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        calculated.begin(), calculated.end(), expected.begin(), expected.end());
 
     calculated = dsa_data->get_dsa_setting(4E9, 1);
-    BOOST_CHECK_EQUAL_COLLECTIONS(calculated.begin(), calculated.end(), expected.begin(), expected.end());
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        calculated.begin(), calculated.end(), expected.begin(), expected.end());
 
     BOOST_REQUIRE_THROW(dsa_data->get_dsa_setting(5E9, 1), uhd::value_error);
 }
@@ -60,7 +66,7 @@ BOOST_AUTO_TEST_CASE(test_pwr_cal_serdes)
     const std::string name   = "Mock Gain/DSA Data";
     const std::string serial = "FOOBAR";
     const uint64_t timestamp = 0xCAFEBABE;
-    auto cal_data = zbx_tx_dsa_cal::make(name, serial, timestamp);
+    auto cal_data            = zbx_tx_dsa_cal::make(name, serial, timestamp);
 
     std::vector<double> freqs{2e9, 6e9};
 
@@ -87,5 +93,6 @@ BOOST_AUTO_TEST_CASE(test_pwr_cal_des_fail)
 {
     std::vector<uint8_t> not_actual_data(42, 23);
 
-    BOOST_REQUIRE_THROW(container::make<zbx_tx_dsa_cal>(not_actual_data), uhd::runtime_error);
+    BOOST_REQUIRE_THROW(
+        container::make<zbx_tx_dsa_cal>(not_actual_data), uhd::runtime_error);
 }

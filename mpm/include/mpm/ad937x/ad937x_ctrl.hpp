@@ -289,12 +289,14 @@ void export_mykonos(py::module& top_module)
 
     py::class_<ad937x_ctrl, std::shared_ptr<ad937x_ctrl>>(m, "ad937x_ctrl")
         .def("set_master_clock_rate", &ad937x_ctrl::set_master_clock_rate)
-        .def("async__set_master_clock_rate",
+        .def(
+            "async__set_master_clock_rate",
             +[](ad937x_ctrl& self, const double rate) {
                 self.handle_set_master_clock_rate = std::async(std::launch::async,
                     [&self, rate]() { self.set_master_clock_rate(rate); });
             })
-        .def("await__set_master_clock_rate",
+        .def(
+            "await__set_master_clock_rate",
             +[](ad937x_ctrl& self) -> bool {
                 if (self.handle_set_master_clock_rate.wait_for(std::chrono::seconds(0))
                     == std::future_status::ready) {
@@ -304,12 +306,14 @@ void export_mykonos(py::module& top_module)
                 return false;
             })
         .def("begin_initialization", &ad937x_ctrl::begin_initialization)
-        .def("async__finish_initialization",
+        .def(
+            "async__finish_initialization",
             +[](ad937x_ctrl& self) {
                 self.handle_finish_initialization = std::async(
                     std::launch::async, &ad937x_ctrl::finish_initialization, &self);
             })
-        .def("await__finish_initialization",
+        .def(
+            "await__finish_initialization",
             +[](ad937x_ctrl& self) -> bool {
                 if (self.handle_finish_initialization.wait_for(std::chrono::seconds(0))
                     == std::future_status::ready) {
@@ -320,7 +324,8 @@ void export_mykonos(py::module& top_module)
             })
         .def("set_lo_source", &ad937x_ctrl::set_lo_source)
         .def("get_lo_source", &ad937x_ctrl::get_lo_source)
-        .def("async__setup_cal",
+        .def(
+            "async__setup_cal",
             +[](ad937x_ctrl& self,
                  const uint32_t init_cals_mask,
                  const uint32_t timeout,
@@ -332,7 +337,8 @@ void export_mykonos(py::module& top_module)
                     timeout,
                     tracking_cals_mask);
             })
-        .def("await__setup_cal",
+        .def(
+            "await__setup_cal",
             +[](ad937x_ctrl& self) -> bool {
                 if (self.handle_setup_cal.wait_for(std::chrono::seconds(0))
                     == std::future_status::ready) {
@@ -365,7 +371,8 @@ void export_mykonos(py::module& top_module)
         .def("set_clock_rate", &ad937x_ctrl::set_clock_rate)
         .def("enable_channel", &ad937x_ctrl::enable_channel)
         .def("set_freq", &ad937x_ctrl::set_freq)
-        .def("async__set_freq",
+        .def(
+            "async__set_freq",
             +[](ad937x_ctrl& self,
                  const std::string& which,
                  const double value,
@@ -377,7 +384,8 @@ void export_mykonos(py::module& top_module)
                     value,
                     wait_for_lock);
             })
-        .def("await__set_freq",
+        .def(
+            "await__set_freq",
             +[](ad937x_ctrl& self) -> bool {
                 if (self.handle_set_freq.wait_for(std::chrono::seconds(0))
                     == std::future_status::ready) {

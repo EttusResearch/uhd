@@ -543,7 +543,7 @@ The following motherboard sensors are always available:
   external reference.
 - `temp`: The temperature of the die itself
 - `fan`: The current fan speed
-- `gps_lock`: GPS lock
+- `gps_locked`: GPS lock
 - `gps_time`: GPS time in seconds sin ce the epch
 - `gps_tpv`: A TPV report from GPSd serialized as JSON
 - `gps_sky`: A SKY report from GPSd serialized as JSON

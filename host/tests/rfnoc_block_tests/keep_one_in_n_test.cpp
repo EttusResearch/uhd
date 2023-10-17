@@ -25,17 +25,15 @@ noc_block_base::make_args_t::~make_args_t() = default;
 class keep_one_in_n_mock_reg_iface_t : public mock_reg_iface_t
 {
 public:
-    keep_one_in_n_mock_reg_iface_t(uint32_t width_n) : _width_n(width_n)
-    {
-    }
+    keep_one_in_n_mock_reg_iface_t(uint32_t width_n) : _width_n(width_n) {}
 
     void _peek_cb(uint32_t addr, uhd::time_spec_t /*time*/) override
     {
         // Emulate the read-only behavior of the WIDTH_N register
         if (addr == keep_one_in_n_block_control::REG_WIDTH_N_OFFSET) {
             read_memory[addr] = _width_n;
-        } else if (addr != keep_one_in_n_block_control::REG_N_OFFSET ||
-                   addr != keep_one_in_n_block_control::REG_MODE_OFFSET) {
+        } else if (addr != keep_one_in_n_block_control::REG_N_OFFSET
+                   || addr != keep_one_in_n_block_control::REG_MODE_OFFSET) {
             throw uhd::assertion_error("Invalid read from out of bounds address");
         }
     }
@@ -51,17 +49,22 @@ public:
 
 namespace {
 constexpr size_t WIDTH_N     = 24;
-constexpr size_t MAX_N       = (2 << WIDTH_N)-1;
+constexpr size_t MAX_N       = (2 << WIDTH_N) - 1;
 constexpr size_t DEFAULT_MTU = 8000;
-};
+}; // namespace
 
 struct keep_one_in_n_block_fixture
 {
     //! Create an Keep One in N block and all related infrastructure for unit testing.
     keep_one_in_n_block_fixture()
         : reg_iface(std::make_shared<keep_one_in_n_mock_reg_iface_t>(WIDTH_N))
-        , block_container(get_mock_block(
-              KEEP_ONE_IN_N_BLOCK, 1, 1, uhd::device_addr_t(), DEFAULT_MTU, ANY_DEVICE, reg_iface))
+        , block_container(get_mock_block(KEEP_ONE_IN_N_BLOCK,
+              1,
+              1,
+              uhd::device_addr_t(),
+              DEFAULT_MTU,
+              ANY_DEVICE,
+              reg_iface))
         , test_keep_one_in_n(block_container.get_block<keep_one_in_n_block_control>())
     {
         node_accessor.init_props(test_keep_one_in_n.get());
@@ -84,13 +87,15 @@ BOOST_FIXTURE_TEST_CASE(keep_one_in_n_test_api, keep_one_in_n_block_fixture)
 
     constexpr int n = 2;
     test_keep_one_in_n->set_n(n);
-    BOOST_CHECK_EQUAL(reg_iface->write_memory[keep_one_in_n_block_control::REG_N_OFFSET], n);
+    BOOST_CHECK_EQUAL(
+        reg_iface->write_memory[keep_one_in_n_block_control::REG_N_OFFSET], n);
     BOOST_CHECK(test_keep_one_in_n->get_n() == n);
 
     constexpr keep_one_in_n_block_control::mode mode =
-      keep_one_in_n_block_control::mode::PACKET_MODE;
+        keep_one_in_n_block_control::mode::PACKET_MODE;
     test_keep_one_in_n->set_mode(mode);
-    BOOST_CHECK_EQUAL(reg_iface->write_memory[keep_one_in_n_block_control::REG_MODE_OFFSET],
+    BOOST_CHECK_EQUAL(
+        reg_iface->write_memory[keep_one_in_n_block_control::REG_MODE_OFFSET],
         static_cast<uint32_t>(mode));
     BOOST_CHECK(test_keep_one_in_n->get_mode() == mode);
 }
@@ -101,10 +106,12 @@ BOOST_FIXTURE_TEST_CASE(keep_one_in_n_test_api, keep_one_in_n_block_fixture)
  */
 BOOST_FIXTURE_TEST_CASE(keep_one_in_n_test_range_errors, keep_one_in_n_block_fixture)
 {
-    BOOST_CHECK_THROW(test_keep_one_in_n->set_property<int>("n", MAX_N+1), uhd::value_error);
+    BOOST_CHECK_THROW(
+        test_keep_one_in_n->set_property<int>("n", MAX_N + 1), uhd::value_error);
     BOOST_CHECK_THROW(test_keep_one_in_n->set_property<int>("n", 0), uhd::value_error);
     BOOST_CHECK_THROW(test_keep_one_in_n->set_property<int>("n", -1), uhd::value_error);
-    BOOST_CHECK_THROW(test_keep_one_in_n->set_property<int>("mode", -1), uhd::value_error);
+    BOOST_CHECK_THROW(
+        test_keep_one_in_n->set_property<int>("mode", -1), uhd::value_error);
 }
 
 /*

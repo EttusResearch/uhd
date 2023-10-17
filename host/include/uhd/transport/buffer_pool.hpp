@@ -43,4 +43,3 @@ public:
 };
 
 }} // namespace uhd::transport
-

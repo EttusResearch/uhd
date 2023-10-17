@@ -69,7 +69,9 @@ module x4xx_versioning_regs #(
 );
 
   // Variant-dependent register map.
-  `ifdef X410
+  `ifdef X440
+    `include "regmap/x440/versioning_regs_regmap_utils.vh"
+  `else // Use X410 as the default variant for regmap.
     `include "regmap/x410/versioning_regs_regmap_utils.vh"
   `endif
 

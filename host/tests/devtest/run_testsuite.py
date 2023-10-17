@@ -112,6 +112,8 @@ def main():
         )
         if 'addr' in arg_dict:
             args_str += ',addr={}'.format(arg_dict['addr'])
+        if 'master_clock_rate' in arg_dict:
+            args_str += ',master_clock_rate={}'.format(arg_dict['master_clock_rate'])
         env['_UHD_TEST_ARGS_STR'] = args_str
         env['_UHD_TEST_LOGFILE'] = os.path.join(args.log_dir, logfile_name)
         env['_UHD_TEST_RESULTSFILE'] = os.path.join(args.log_dir, resultsfile_name)

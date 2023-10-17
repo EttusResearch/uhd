@@ -95,7 +95,7 @@ class e320(ZynqComponents, PeriphManagerBase):
     mboard_max_rev = 4  # rev E
     mboard_sensor_callback_map = {
         'ref_locked': 'get_ref_lock_sensor',
-        'gps_locked': 'get_gps_lock_sensor',
+        'gps_locked': 'get_gps_locked_sensor',
         'fan': 'get_fan_sensor',
         'temp_fpga' : 'get_fpga_temp_sensor',
         'temp_internal' : 'get_internal_temp_sensor',
@@ -602,13 +602,13 @@ class e320(ZynqComponents, PeriphManagerBase):
             'value': return_val
         }
 
-    def get_gps_lock_sensor(self):
+    def get_gps_locked_sensor(self):
         """
         Get lock status of GPS as a sensor dict
         """
         gps_locked = bool(self.mboard_regs_control.get_gps_locked_val())
         return {
-            'name': 'gps_lock',
+            'name': 'gps_locked',
             'type': 'BOOLEAN',
             'unit': 'locked' if gps_locked else 'unlocked',
             'value': str(gps_locked).lower(),

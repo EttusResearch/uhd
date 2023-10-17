@@ -127,12 +127,10 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
         UHD_ASSERT_THROW(default_spp > 0);
         _spp_prop.push_back(
             property_t<int>(PROP_KEY_SPP, default_spp, {res_source_info::USER, chan}));
-        _atomic_item_size_in.push_back(
-            property_t<size_t>(PROP_KEY_ATOMIC_ITEM_SIZE,
+        _atomic_item_size_in.push_back(property_t<size_t>(PROP_KEY_ATOMIC_ITEM_SIZE,
             get_atomic_item_size(),
             {res_source_info::INPUT_EDGE, chan}));
-        _atomic_item_size_out.push_back(
-            property_t<size_t>(PROP_KEY_ATOMIC_ITEM_SIZE,
+        _atomic_item_size_out.push_back(property_t<size_t>(PROP_KEY_ATOMIC_ITEM_SIZE,
             get_atomic_item_size(),
             {res_source_info::OUTPUT_EDGE, chan}));
         _samp_rate_in.push_back(property_t<double>(
@@ -159,13 +157,13 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
         register_property(&_type_out.back());
         // Add AIS resolvers first, they are used as inputs to other resolvers
         add_property_resolver({&_atomic_item_size_in.back(),
-            get_mtu_prop_ref({res_source_info::INPUT_EDGE, chan})},
+                                  get_mtu_prop_ref({res_source_info::INPUT_EDGE, chan})},
             {&_atomic_item_size_in.back()},
-            [this, chan,
-                &ais_in = _atomic_item_size_in.back()]() {
+            [this, chan, &ais_in = _atomic_item_size_in.back()]() {
                 RFNOC_LOG_TRACE("Calling resolver for atomic_item_size in@" << chan);
                 ais_in = uhd::math::lcm<size_t>(ais_in, get_atomic_item_size());
-                ais_in = std::min<size_t>(ais_in, get_mtu({res_source_info::INPUT_EDGE, chan}));
+                ais_in = std::min<size_t>(
+                    ais_in, get_mtu({res_source_info::INPUT_EDGE, chan}));
                 if ((ais_in % get_atomic_item_size()) > 0) {
                     ais_in = ais_in - (ais_in % get_atomic_item_size());
                 }
@@ -177,7 +175,8 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
             [this, chan, &ais_out = _atomic_item_size_out.back()]() {
                 RFNOC_LOG_TRACE("Calling resolver for atomic_item_size out@" << chan);
                 ais_out = uhd::math::lcm<size_t>(ais_out, get_atomic_item_size());
-                ais_out = std::min<size_t>(ais_out, get_mtu({res_source_info::OUTPUT_EDGE, chan}));
+                ais_out = std::min<size_t>(
+                    ais_out, get_mtu({res_source_info::OUTPUT_EDGE, chan}));
                 if ((ais_out % get_atomic_item_size()) > 0) {
                     ais_out = ais_out - (ais_out % get_atomic_item_size());
                 }
@@ -242,10 +241,10 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
         // Resolvers for type: These are constants
         add_property_resolver({&_type_in.back()},
             {&_type_in.back()},
-            [& type_in = _type_in.back()]() { type_in.set(IO_TYPE_SC16); });
+            [&type_in = _type_in.back()]() { type_in.set(IO_TYPE_SC16); });
         add_property_resolver({&_type_out.back()},
             {&_type_out.back()},
-            [& type_out = _type_out.back()]() { type_out.set(IO_TYPE_SC16); });
+            [&type_out = _type_out.back()]() { type_out.set(IO_TYPE_SC16); });
     }
     // Enable async messages coming from the radio
     const uint32_t xbar_port = 1; // FIXME: Find a better way to figure this out
@@ -505,22 +504,26 @@ void radio_control_impl::set_rx_agc(const bool, const size_t)
     throw uhd::not_implemented_error("set_rx_agc() is not supported on this radio!");
 }
 
-void radio_control_impl::set_tx_gain_profile(const std::string& profile, const size_t chan)
+void radio_control_impl::set_tx_gain_profile(
+    const std::string& profile, const size_t chan)
 {
     _tx_gain_profile_api->set_gain_profile(profile, chan);
 }
 
-void radio_control_impl::set_rx_gain_profile(const std::string& profile, const size_t chan)
+void radio_control_impl::set_rx_gain_profile(
+    const std::string& profile, const size_t chan)
 {
     _rx_gain_profile_api->set_gain_profile(profile, chan);
 }
 
-std::vector<std::string> radio_control_impl::get_tx_gain_profile_names(const size_t chan) const
+std::vector<std::string> radio_control_impl::get_tx_gain_profile_names(
+    const size_t chan) const
 {
     return _tx_gain_profile_api->get_gain_profile_names(chan);
 }
 
-std::vector<std::string> radio_control_impl::get_rx_gain_profile_names(const size_t chan) const
+std::vector<std::string> radio_control_impl::get_rx_gain_profile_names(
+    const size_t chan) const
 {
     return _rx_gain_profile_api->get_gain_profile_names(chan);
 }
@@ -954,15 +957,14 @@ void radio_control_impl::issue_stream_cmd(
                               "zero samples");
             return;
         }
-        uint64_t num_words = stream_cmd.num_samps / _spc;
+        uint64_t num_words               = stream_cmd.num_samps / _spc;
         constexpr uint64_t max_num_words = 0x00FFFFFFFFFFFF; // 48 bits
         if (stream_cmd.num_samps % _spc != 0) {
             num_words++;
-            RFNOC_LOG_WARNING("The requested "
-                + std::to_string(stream_cmd.num_samps)
-                + " samples is not a multiple of the samples per cycle ("
-                + std::to_string(_spc) + "); returning "
-                + std::to_string(num_words * _spc) + " samples.");
+            RFNOC_LOG_WARNING("The requested " + std::to_string(stream_cmd.num_samps)
+                              + " samples is not a multiple of the samples per cycle ("
+                              + std::to_string(_spc) + "); returning "
+                              + std::to_string(num_words * _spc) + " samples.");
         }
         if (num_words > max_num_words) {
             RFNOC_LOG_ERROR("Requesting too many samples in a single burst! "
@@ -1005,8 +1007,8 @@ bool radio_control_impl::async_message_validator(
         return false;
     }
     // For these calculations, see below
-    const uint32_t addr_base = (addr >= regmap::SWREG_RX_ERR) ? regmap::SWREG_RX_ERR
-                                                              : regmap::SWREG_TX_ERR;
+    const uint32_t addr_base   = (addr >= regmap::SWREG_RX_ERR) ? regmap::SWREG_RX_ERR
+                                                                : regmap::SWREG_TX_ERR;
     const uint32_t chan        = (addr - addr_base) / regmap::SWREG_CHAN_OFFSET;
     const uint32_t addr_offset = addr % regmap::SWREG_CHAN_OFFSET;
     const uint32_t code        = data[0];
@@ -1063,7 +1065,7 @@ void radio_control_impl::async_message_handler(
     // BASE == 0x0000 for TX, 0x1000 for RX
     const uint32_t addr_base = (addr >= regmap::SWREG_RX_ERR) ? regmap::SWREG_RX_ERR
                                                               : regmap::SWREG_TX_ERR;
-    const uint32_t chan = (addr - addr_base) / regmap::SWREG_CHAN_OFFSET;
+    const uint32_t chan      = (addr - addr_base) / regmap::SWREG_CHAN_OFFSET;
     // Note: addr_offset is always going to be zero for now, because we only
     // have one "register" that gets hit for either RX or TX, but we'll keep it
     // in case we add other regs in the future

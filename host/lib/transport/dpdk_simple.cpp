@@ -132,7 +132,7 @@ public:
         struct rte_udp_hdr* rte_udp_hdr_end = (struct rte_udp_hdr*)buff->data();
         struct rte_ipv4_hdr* ip_hdr_end = (struct rte_ipv4_hdr*)(&rte_udp_hdr_end[-1]);
         struct rte_ipv4_hdr* ip_hdr     = (struct rte_ipv4_hdr*)(&ip_hdr_end[-1]);
-        _last_recv_addr             = ip_hdr->src_addr;
+        _last_recv_addr                 = ip_hdr->src_addr;
 
         // Extract the buffer data
         const size_t copy_len = std::min(user_buff_size, buff->packet_size());

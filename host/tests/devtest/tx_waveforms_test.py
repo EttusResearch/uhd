@@ -11,7 +11,7 @@ from uhd_test_base import uhd_example_test_case
 
 class uhd_tx_waveforms_test(uhd_example_test_case):
     """
-    Run benchmark_rate in various configurations.
+    Run tx_waveforms and check output.
     """
     tests = {}
 

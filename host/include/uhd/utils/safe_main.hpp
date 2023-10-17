@@ -19,7 +19,7 @@
  * \param _argv the declaration for argv
  */
 #define UHD_SAFE_MAIN(_argc, _argv)                               \
-    _main(int, char* []);                                         \
+    _main(int, char*[]);                                          \
     int main(int argc, char* argv[])                              \
     {                                                             \
         try {                                                     \

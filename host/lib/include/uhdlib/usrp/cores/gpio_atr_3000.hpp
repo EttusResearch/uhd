@@ -43,8 +43,7 @@ struct gpio_atr_offsets
      * \param rb_addr readback offset for GPIO ATR registers
      * \param stride Delta between the register addresses
      */
-    static gpio_atr_offsets make_default(
-        const uhd::wb_iface::wb_addr_type base,
+    static gpio_atr_offsets make_default(const uhd::wb_iface::wb_addr_type base,
         const uhd::wb_iface::wb_addr_type rb_addr,
         const size_t stride = 4);
 
@@ -57,8 +56,7 @@ struct gpio_atr_offsets
      * \param stride Delta between the register addresses
      */
     static gpio_atr_offsets make_write_only(
-        const uhd::wb_iface::wb_addr_type base,
-        const size_t stride = 4);
+        const uhd::wb_iface::wb_addr_type base, const size_t stride = 4);
 };
 
 class gpio_atr_3000 : uhd::noncopyable

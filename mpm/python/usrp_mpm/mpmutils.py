@@ -326,4 +326,4 @@ class LogRuntimeError(RuntimeError):
     """
     def __init__(self, log, message):
         log.error(message)
-        super.__init__(message)
+        super().__init__(message)

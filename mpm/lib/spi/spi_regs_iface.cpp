@@ -88,7 +88,7 @@ public:
         }
 
         // Status data is the last byte
-        bool ack = (data >> 2) & 0x1;
+        bool ack       = (data >> 2) & 0x1;
         uint8_t status = data & 0x3;
         if (!ack) {
             throw mpm::runtime_error("Ctrlport SPI read had no ACK");

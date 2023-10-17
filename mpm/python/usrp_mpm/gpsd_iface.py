@@ -393,7 +393,7 @@ class GPSDIfaceExtension:
             'value': gpgga_from_tpv_sky(tpv_sensor_data, sky_sensor_data),
         }
 
-    def get_gps_lock(self):
+    def get_gps_locked(self):
         """
         Get the GPS lock status using the TPV data.
 

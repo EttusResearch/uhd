@@ -26,9 +26,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     // variables to be set by po
     std::string args, ant, subdev, ref;
     size_t num_bins;
-    double rate, freq, gain, bw, frame_rate, step;
+    double rate, freq, gain, bw, frame_rate, step, power;
     float ref_lvl, dyn_rng;
-    bool show_controls;
+    bool show_controls, show_gain_mode;
 
     // setup the program options
     po::options_description desc("Allowed options");
@@ -40,6 +40,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("rate", po::value<double>(&rate), "rate of incoming samples (sps)")
         ("freq", po::value<double>(&freq), "RF center frequency in Hz")
         ("gain", po::value<double>(&gain), "gain for the RF chain")
+        ("power", po::value<double>(&power), "Transmit power (if USRP supports it)")
         ("ant", po::value<std::string>(&ant), "antenna selection")
         ("subdev", po::value<std::string>(&subdev), "subdevice specification")
         ("bw", po::value<double>(&bw), "analog frontend filter bandwidth in Hz")
@@ -106,15 +107,40 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
               << std::endl
               << std::endl;
 
+    // set the antenna
+    // note: must be set before any operation that requires the calibration table (like
+    // power reference) otherwise the driver will look up the wrong antenna for the table
+    if (vm.count("ant"))
+        usrp->set_rx_antenna(ant);
+
     // set the rf gain
-    if (vm.count("gain")) {
+    if (vm.count("power")) {
+        if (!usrp->has_rx_power_reference()) {
+            std::cout << "ERROR: USRP does not have a reference power API on channel "
+                      << 0 << "!" << std::endl;
+            return EXIT_FAILURE;
+        }
+        std::cout << "Setting RX reference power level: " << power << " dBm..."
+                  << std::endl;
+        usrp->set_rx_power_reference(power);
+        std::cout << "Actual RX reference power level: " << usrp->get_rx_power_reference()
+                  << " dBm..." << std::endl;
+        if (vm.count("gain")) {
+            std::cout << "WARNING: If you specify both --power and --gain, "
+                         " the latter will be ignored."
+                      << std::endl;
+        }
+        show_gain_mode = false;
+    } else if (vm.count("gain")) {
         std::cout << boost::format("Setting RX Gain: %f dB...") % gain << std::endl;
         usrp->set_rx_gain(gain);
         std::cout << boost::format("Actual RX Gain: %f dB...") % usrp->get_rx_gain()
                   << std::endl
                   << std::endl;
+        show_gain_mode = true;
     } else {
-        gain = usrp->get_rx_gain();
+        gain           = usrp->get_rx_gain();
+        show_gain_mode = true;
     }
 
     // set the analog frontend filter bandwidth
@@ -129,10 +155,6 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     } else {
         bw = usrp->get_rx_bandwidth();
     }
-
-    // set the antenna
-    if (vm.count("ant"))
-        usrp->set_rx_antenna(ant);
 
     std::this_thread::sleep_for(std::chrono::seconds(1)); // allow for some setup time
 
@@ -149,7 +171,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     sensor_names = usrp->get_mboard_sensor_names(0);
     if ((ref == "mimo")
         and (std::find(sensor_names.begin(), sensor_names.end(), "mimo_locked")
-                != sensor_names.end())) {
+             != sensor_names.end())) {
         uhd::sensor_value_t mimo_locked = usrp->get_mboard_sensor("mimo_locked", 0);
         std::cout << boost::format("Checking RX: %s ...") % mimo_locked.to_pp_string()
                   << std::endl;
@@ -157,7 +179,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     }
     if ((ref == "external")
         and (std::find(sensor_names.begin(), sensor_names.end(), "ref_locked")
-                != sensor_names.end())) {
+             != sensor_names.end())) {
         uhd::sensor_value_t ref_locked = usrp->get_mboard_sensor("ref_locked", 0);
         std::cout << boost::format("Checking RX: %s ...") % ref_locked.to_pp_string()
                   << std::endl;
@@ -212,12 +234,21 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
         if (show_controls) {
             printw("%s", border.c_str());
-            printw("[f-F]req: %4.3f MHz   |   [r-R]ate: %2.2f Msps   |"
-                   "   [b-B]w: %2.2f MHz   |   [g-G]ain: %2.0f dB\n\n",
-                freq / 1e6,
-                rate / 1e6,
-                bw / 1e6,
-                gain);
+            if (show_gain_mode) {
+                printw("[f-F]req: %4.3f MHz   |   [r-R]ate: %2.2f Msps   |"
+                       "   [b-B]w: %2.2f MHz   |   [g-G]ain: %2.0f dB\n\n",
+                    freq / 1e6,
+                    rate / 1e6,
+                    bw / 1e6,
+                    gain);
+            } else {
+                printw("[f-F]req: %4.3f MHz   |   [r-R]ate: %2.2f Msps   |"
+                       "   [b-B]w: %2.2f MHz   |   [p-P]ower: %2.0f dBm\n\n",
+                    freq / 1e6,
+                    rate / 1e6,
+                    bw / 1e6,
+                    power);
+            }
             printw("[d-D]yn Range: %2.0f dB    |   Ref [l-L]evel: %2.0f dB   |"
                    "   fp[s-S] : %2.0f   |   [t-T]uning step: %3.3f M\n",
                 dyn_rng,
@@ -246,13 +277,25 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             freq = usrp->get_rx_freq();
         }
 
-        else if (ch == 'g') {
+        else if (ch == 'p' && !show_gain_mode) {
+            power -= 1;
+            usrp->set_rx_power_reference(power);
+            power = usrp->get_rx_power_reference();
+        }
+
+        else if (ch == 'P' && !show_gain_mode) {
+            power += 1;
+            usrp->set_rx_power_reference(power);
+            power = usrp->get_rx_power_reference();
+        }
+
+        else if (ch == 'g' && show_gain_mode) {
             gain -= 1;
             usrp->set_rx_gain(gain);
             gain = usrp->get_rx_gain();
         }
 
-        else if (ch == 'G') {
+        else if (ch == 'G' && show_gain_mode) {
             gain += 1;
             usrp->set_rx_gain(gain);
             gain = usrp->get_rx_gain();

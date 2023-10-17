@@ -210,6 +210,15 @@ class PeriphManagerBase:
         device_args -- Arbitrary dictionary of info, typically user-defined
         """
         return []
+
+    def pop_host_tasks(self, task):
+        """
+        Queries all known sources of host tasks and returns a list of dicts
+        that can be used for parameterization of the requested task. Depending
+        on the return value of this, the host can trigger tasks. Currently we
+        only have such tasks in the clock manager.
+        """
+        return []
     # pylint: enable=unused-argument
     ### End of overridables ###################################################
 

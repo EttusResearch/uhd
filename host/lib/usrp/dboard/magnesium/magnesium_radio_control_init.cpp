@@ -136,9 +136,7 @@ void magnesium_radio_control_impl::_init_peripherals()
     RFNOC_LOG_TRACE("Initializing front-panel GPIO control...")
     _fp_gpio = usrp::gpio_atr::gpio_atr_3000::make(_wb_ifaces.front(),
         usrp::gpio_atr::gpio_atr_offsets::make_default(
-            n310_regs::SR_FP_GPIO,
-            n310_regs::RB_FP_GPIO,
-            n310_regs::PERIPH_REG_OFFSET));
+            n310_regs::SR_FP_GPIO, n310_regs::RB_FP_GPIO, n310_regs::PERIPH_REG_OFFSET));
 }
 
 void magnesium_radio_control_impl::_init_frontend_subtree(

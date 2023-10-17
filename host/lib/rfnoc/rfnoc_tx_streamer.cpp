@@ -173,8 +173,8 @@ void rfnoc_tx_streamer::_register_props(const size_t chan, const std::string& ot
         PROP_KEY_TYPE, otw_format, {res_source_info::OUTPUT_EDGE, chan}));
     _mtu_out.push_back(property_t<size_t>(
         PROP_KEY_MTU, get_mtu(), {res_source_info::OUTPUT_EDGE, chan}));
-    _atomic_item_size_out.push_back(
-        property_t<size_t>(PROP_KEY_ATOMIC_ITEM_SIZE, 1, {res_source_info::OUTPUT_EDGE, chan}));
+    _atomic_item_size_out.push_back(property_t<size_t>(
+        PROP_KEY_ATOMIC_ITEM_SIZE, 1, {res_source_info::OUTPUT_EDGE, chan}));
 
     // Give us some shorthands for the rest of this function
     property_t<double>* scaling_out          = &_scaling_out.back();
@@ -193,14 +193,13 @@ void rfnoc_tx_streamer::_register_props(const size_t chan, const std::string& ot
     register_property(atomic_item_size_out);
 
     // Add resolvers
-    add_property_resolver(
-        {scaling_out}, {}, [& scaling_out = *scaling_out, chan, this]() {
-            RFNOC_LOG_TRACE("Calling resolver for `scaling_out'@" << chan);
-            // Other data types than sc16 will require other values
-            const double converter_scaling = 32767.0;
-            const double graph_scaling = scaling_out.is_valid() ? scaling_out.get() : 1.0;
-            this->set_scale_factor(chan, converter_scaling * graph_scaling);
-        });
+    add_property_resolver({scaling_out}, {}, [&scaling_out = *scaling_out, chan, this]() {
+        RFNOC_LOG_TRACE("Calling resolver for `scaling_out'@" << chan);
+        // Other data types than sc16 will require other values
+        const double converter_scaling = 32767.0;
+        const double graph_scaling     = scaling_out.is_valid() ? scaling_out.get() : 1.0;
+        this->set_scale_factor(chan, converter_scaling * graph_scaling);
+    });
 
     add_property_resolver(
         {samp_rate_out}, {}, [&samp_rate_out = *samp_rate_out, chan, this]() {
@@ -219,19 +218,23 @@ void rfnoc_tx_streamer::_register_props(const size_t chan, const std::string& ot
                 this->set_tick_rate(tick_rate_out.get());
             }
         });
-    add_property_resolver(
-        {atomic_item_size_out, mtu_out}, {}, [&ais = *atomic_item_size_out, chan, this]() {
+    add_property_resolver({atomic_item_size_out, mtu_out},
+        {},
+        [&ais = *atomic_item_size_out, chan, this]() {
             const auto UHD_UNUSED(log_chan) = chan;
             RFNOC_LOG_TRACE("Calling resolver for `atomic_item_size'@" << chan);
             if (ais.is_valid()) {
                 const auto spp = this->tx_streamer_impl::get_max_num_samps();
                 if (spp < ais.get()) {
-                    throw uhd::value_error("samples per package must not be smaller than atomic item size");
+                    throw uhd::value_error(
+                        "samples per package must not be smaller than atomic item size");
                 }
                 const auto misalignment = spp % ais.get();
-                RFNOC_LOG_TRACE("Check atomic item size " << ais.get() << " divides spp " << spp);
+                RFNOC_LOG_TRACE(
+                    "Check atomic item size " << ais.get() << " divides spp " << spp);
                 if (misalignment > 0) {
-                    RFNOC_LOG_TRACE("Reduce spp by " << misalignment << " to align with atomic item size");
+                    RFNOC_LOG_TRACE("Reduce spp by "
+                                    << misalignment << " to align with atomic item size");
                     this->tx_streamer_impl::set_max_num_samps(spp - misalignment);
                 }
             }

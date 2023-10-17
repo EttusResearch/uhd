@@ -7,7 +7,10 @@
 #pragma once
 
 #include "block_controller_factory_python.hpp"
+#include <uhd/features/discoverable_feature.hpp>
+#include <uhd/features/internal_sync_iface.hpp>
 #include <uhd/rfnoc/radio_control.hpp>
+#include <pybind11/stl.h>
 
 using namespace uhd::rfnoc;
 
@@ -16,12 +19,18 @@ void export_radio_control(py::module& m)
     // Re-import ALL_CHANS here to avoid linker errors
     const static auto ALL_CHANS = radio_control::ALL_CHANS;
 
+    py::class_<uhd::features::internal_sync_iface>(m, "internal_sync")
+        .def("enable_sync_clk", &uhd::features::internal_sync_iface::enable_sync_clk)
+        .def("disable_sync_clk", &uhd::features::internal_sync_iface::disable_sync_clk);
+
     py::class_<radio_control, noc_block_base, radio_control::sptr>(m, "radio_control")
         .def(py::init(&block_controller_factory<radio_control>::make_from))
         .def("set_rate", &radio_control::set_rate)
         .def("get_rate", &radio_control::get_rate)
         .def("get_rate_range", &radio_control::get_rate_range)
         .def("get_spc", &radio_control::get_spc)
+        .def("get_ticks_now", &radio_control::get_ticks_now)
+        .def("get_time_now", &radio_control::get_time_now)
         .def("get_tx_antenna", &radio_control::get_tx_antenna)
         .def("get_tx_antennas", &radio_control::get_tx_antennas)
         .def("set_tx_antenna", &radio_control::set_tx_antenna)
@@ -171,5 +180,11 @@ void export_radio_control(py::module& m)
         .def("get_dboard_fe_from_chan", &radio_control::get_dboard_fe_from_chan)
         .def("get_fe_name", &radio_control::get_fe_name)
         .def("set_db_eeprom", &radio_control::set_db_eeprom)
-        .def("get_db_eeprom", &radio_control::get_db_eeprom);
+        .def("get_db_eeprom", &radio_control::get_db_eeprom)
+        .def(
+            "get_internal_sync",
+            [](radio_control& self) {
+                return &self.get_feature<uhd::features::internal_sync_iface>();
+            },
+            py::return_value_policy::reference_internal);
 }

@@ -10,6 +10,7 @@
 
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/dict.hpp>
+#include <uhd/types/direction.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <pybind11/stl.h>
 #include <map>
@@ -31,6 +32,7 @@ void export_types(py::module& m)
     py::class_<stream_cmd_t>(m, "stream_cmd")
         .def(py::init<stream_cmd_t::stream_mode_t>())
         // Properties
+        .def_readwrite("stream_mode", &stream_cmd_t::stream_mode)
         .def_readwrite("num_samps", &stream_cmd_t::num_samps)
         .def_readwrite("time_spec", &stream_cmd_t::time_spec)
         .def_readwrite("stream_now", &stream_cmd_t::stream_now);
@@ -127,6 +129,14 @@ void export_types(py::module& m)
 
     m.def("separate_device_addr", &uhd::separate_device_addr);
     m.def("combine_device_addrs", &uhd::combine_device_addrs);
+
+    py::enum_<uhd::direction_t>(m, "direction_t")
+        .value("RX_DIRECTION", uhd::direction_t::RX_DIRECTION)
+        .value("TX_DIRECTION", uhd::direction_t::TX_DIRECTION)
+        .value("DX_DIRECTION", uhd::direction_t::DX_DIRECTION)
+
+
+        ;
 }
 
 #endif /* INCLUDED_UHD_TYPES_PYTHON_HPP */

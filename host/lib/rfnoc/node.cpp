@@ -121,7 +121,7 @@ void node_t::register_property(property_base_t* prop, resolve_callback_t&& clean
     auto prop_already_registered = [prop](const property_base_t* existing_prop) {
         return (prop == existing_prop)
                || (prop->get_src_info() == existing_prop->get_src_info()
-                      && prop->get_id() == existing_prop->get_id());
+                   && prop->get_id() == existing_prop->get_id());
     };
     if (!filter_props(prop_already_registered).empty()) {
         throw uhd::runtime_error(std::string("Attempting to double-register property: ")
@@ -298,8 +298,8 @@ property_base_t* node_t::inject_edge_property(
     if (fwd_policy == forwarding_policy_t::ONE_TO_FAN) {
         const auto opposite_port_type = res_source_info::invert_edge(port_type);
         const size_t num_ports        = opposite_port_type == res_source_info::INPUT_EDGE
-                                     ? get_num_input_ports()
-                                     : get_num_output_ports();
+                                            ? get_num_input_ports()
+                                            : get_num_output_ports();
         for (size_t i = 0; i < num_ports; i++) {
             auto opposite_prop = inject_edge_property(new_prop, {opposite_port_type, i});
             // Now add a resolver that will always forward the value from this
@@ -591,8 +591,8 @@ void node_t::receive_action(const res_source_info& src_info, action_info::sptr a
         RFNOC_LOG_TRACE("Forwarding action " << action->key << " to all opposite ports");
         const auto new_edge_type = res_source_info::invert_edge(src_info.type);
         const size_t num_ports   = new_edge_type == res_source_info::INPUT_EDGE
-                                     ? get_num_input_ports()
-                                     : get_num_output_ports();
+                                       ? get_num_input_ports()
+                                       : get_num_output_ports();
         for (size_t i = 0; i < num_ports; i++) {
             post_action({new_edge_type, i}, action);
         }
@@ -647,5 +647,5 @@ bool node_t::_has_port(const res_source_info& port_info) const
     return (port_info.type == res_source_info::INPUT_EDGE
                && port_info.instance < get_num_input_ports())
            || (port_info.type == res_source_info::OUTPUT_EDGE
-                  && port_info.instance < get_num_output_ports());
+               && port_info.instance < get_num_output_ports());
 }

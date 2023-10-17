@@ -708,10 +708,9 @@ private: // Functions
         // AMP_LO1_EN_CH1 also controls the amp for the external LO1 port,
         // which could be in use by ch2
         _cpld_regs->rf1_reg1.set(rm::rf1_reg1_t::AMP_LO1_EN_CH1,
-            bool2bin(
-                ch1_enabled
-                || (ch2_enabled
-                       && (ch2_lo1_src == LO_EXTERNAL || ch2_lo1_src == LO_REIMPORT))));
+            bool2bin(ch1_enabled
+                     || (ch2_enabled
+                         && (ch2_lo1_src == LO_EXTERNAL || ch2_lo1_src == LO_REIMPORT))));
     }
 
     void _config_lo_route(lo_t lo, channel_t channel)
@@ -841,13 +840,13 @@ private: // Members
     {
         tune_freq_t()
             : uhd::math::fp_compare::fp_compare_delta<double>(
-                  0.0, uhd::math::FREQ_COMPARISON_DELTA_HZ)
+                0.0, uhd::math::FREQ_COMPARISON_DELTA_HZ)
         {
         }
 
         tune_freq_t(double freq)
             : uhd::math::fp_compare::fp_compare_delta<double>(
-                  freq, uhd::math::FREQ_COMPARISON_DELTA_HZ)
+                freq, uhd::math::FREQ_COMPARISON_DELTA_HZ)
         {
         }
     };

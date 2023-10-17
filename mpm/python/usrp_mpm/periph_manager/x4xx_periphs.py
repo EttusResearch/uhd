@@ -321,6 +321,8 @@ class MboardRegsControl(MboardRegsCommon):
             # reduction by 2 required by HDL implementation
             prc_rc_divider = (int(master_clock_rate/prc_rate) - 2) & 0x3
             value = value | (prc_rc_divider << 28)
+            #FIXME update this when implementing dual rate support. bits 26 & 27 are prc_rc_divider for radio1
+            value = value | (prc_rc_divider << 26)
 
             # write configuration to PPS control register (with PPS disabled)
             self.poke32(self.MB_PPS_CTRL, value)

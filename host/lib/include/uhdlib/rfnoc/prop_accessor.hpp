@@ -74,7 +74,7 @@ public:
     {
         const auto w_access_type = (safe && dst->is_dirty()) ? property_base_t::RWLOCKED
                                                              : property_base_t::RW;
-        auto read_access = get_scoped_prop_access(
+        auto read_access         = get_scoped_prop_access(
             *source, property_base_t::RO, source->get_access_mode());
         auto write_access =
             get_scoped_prop_access(*dst, w_access_type, dst->get_access_mode());

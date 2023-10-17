@@ -178,7 +178,7 @@ static uhd::dict<std::string, gain_range_t> get_tvrx_gain_ranges(void)
 static const double opamp_gain          = 1.22; // onboard DAC opamp gain
 static const double tvrx_if_freq        = 43.75e6; // IF freq of TVRX module
 static const uint16_t reference_divider = 640; // clock reference divider to use
-static const double reference_freq = 4.0e6;
+static const double reference_freq      = 4.0e6;
 
 /***********************************************************************
  * The tvrx dboard class

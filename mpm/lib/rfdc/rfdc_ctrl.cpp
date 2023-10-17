@@ -460,6 +460,18 @@ bool rfdc_ctrl::set_calibration_mode(
            == XRFDC_SUCCESS;
 }
 
+rfdc_ctrl::calibration_mode_options rfdc_ctrl::get_calibration_mode(
+    uint32_t tile_id, uint32_t block_id)
+{
+    uint8_t cal_mode;
+    if (XRFdc_GetCalibrationMode(rfdc_inst_ptr, tile_id, block_id, &cal_mode)
+        != XRFDC_SUCCESS) {
+        throw mpm::runtime_error("Error in RFDC code: Failed to get calibration mode.");
+    }
+    return cal_mode == 1 ? calibration_mode_options::CALIB_MODE1
+                         : calibration_mode_options::CALIB_MODE2;
+}
+
 bool rfdc_ctrl::enable_inverse_sinc_filter(
     uint32_t tile_id, uint32_t block_id, bool enable)
 {

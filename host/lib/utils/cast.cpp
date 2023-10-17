@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhd/utils/cast.hpp>
 #include <uhd/exception.hpp>
+#include <uhd/utils/cast.hpp>
 #include <boost/algorithm/string.hpp>
 
 using namespace uhd;
@@ -17,14 +17,12 @@ bool cast::from_str(const std::string& val)
         return (std::stoi(val) != 0);
     } catch (std::exception& ex) {
         if (boost::algorithm::to_lower_copy(val) == "true"
-                   || boost::algorithm::to_lower_copy(val) == "yes"
-                   || boost::algorithm::to_lower_copy(val) == "y"
-                   || val == "1") {
+            || boost::algorithm::to_lower_copy(val) == "yes"
+            || boost::algorithm::to_lower_copy(val) == "y" || val == "1") {
             return true;
         } else if (boost::algorithm::to_lower_copy(val) == "false"
                    || boost::algorithm::to_lower_copy(val) == "no"
-                   || boost::algorithm::to_lower_copy(val) == "n"
-                   || val == "0") {
+                   || boost::algorithm::to_lower_copy(val) == "n" || val == "0") {
             return false;
         } else {
             throw uhd::runtime_error("Cannot convert `" + val + "' to boolean!");

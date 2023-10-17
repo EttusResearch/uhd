@@ -183,12 +183,15 @@ struct siggen_block_fixture
  */
 BOOST_FIXTURE_TEST_CASE(siggen_test_construction, siggen_block_fixture)
 {
-    for(size_t port = 0; port < NUM_PORTS; port++) {
+    for (size_t port = 0; port < NUM_PORTS; port++) {
         BOOST_CHECK_EQUAL(reg_iface->enables.at(port), 0);
         BOOST_CHECK(reg_iface->waveforms.at(port) == siggen_waveform::CONSTANT);
-        BOOST_CHECK_EQUAL(reg_iface->gains.at(port), siggen_mock_reg_iface_t::gain_to_register(1.0));
-        BOOST_CHECK_EQUAL(reg_iface->constants.at(port), siggen_mock_reg_iface_t::constant_to_register({1.0, 1.0}));
-        BOOST_CHECK_EQUAL(reg_iface->phase_increments.at(port), siggen_mock_reg_iface_t::phase_increment_to_register(1.0));
+        BOOST_CHECK_EQUAL(
+            reg_iface->gains.at(port), siggen_mock_reg_iface_t::gain_to_register(1.0));
+        BOOST_CHECK_EQUAL(reg_iface->constants.at(port),
+            siggen_mock_reg_iface_t::constant_to_register({1.0, 1.0}));
+        BOOST_CHECK_EQUAL(reg_iface->phase_increments.at(port),
+            siggen_mock_reg_iface_t::phase_increment_to_register(1.0));
         BOOST_CHECK_EQUAL(reg_iface->phasors.at(port),
             siggen_mock_reg_iface_t::phasor_to_register({0.0, 0.0}));
         constexpr int bpi = 4; // sc16 has 4 bytes per item
@@ -204,7 +207,7 @@ BOOST_FIXTURE_TEST_CASE(siggen_test_construction, siggen_block_fixture)
  */
 BOOST_FIXTURE_TEST_CASE(siggen_test_api, siggen_block_fixture)
 {
-    for(size_t port = 0; port < NUM_PORTS; port++) {
+    for (size_t port = 0; port < NUM_PORTS; port++) {
         test_siggen->set_enable(true, port);
         BOOST_CHECK_EQUAL(reg_iface->enables.at(port), 1);
         BOOST_CHECK_EQUAL(test_siggen->get_enable(port), true);
@@ -246,12 +249,14 @@ BOOST_FIXTURE_TEST_CASE(siggen_test_api, siggen_block_fixture)
 
         const std::complex<double> constant{-0.5 - (port * 0.05), 0.5 + (port * 0.05)};
         test_siggen->set_constant(constant, port);
-        BOOST_CHECK_EQUAL(reg_iface->constants.at(port), siggen_mock_reg_iface_t::constant_to_register(constant));
+        BOOST_CHECK_EQUAL(reg_iface->constants.at(port),
+            siggen_mock_reg_iface_t::constant_to_register(constant));
         BOOST_CHECK_EQUAL(test_siggen->get_constant(port), constant);
 
         const double phase_inc = (port * uhd::math::PI / 16.0);
         test_siggen->set_sine_phase_increment(phase_inc, port);
-        BOOST_CHECK_EQUAL(reg_iface->phase_increments.at(port), siggen_mock_reg_iface_t::phase_increment_to_register(phase_inc));
+        BOOST_CHECK_EQUAL(reg_iface->phase_increments.at(port),
+            siggen_mock_reg_iface_t::phase_increment_to_register(phase_inc));
         BOOST_CHECK_EQUAL(test_siggen->get_sine_phase_increment(port), phase_inc);
 
         const double freq      = 1000 + (100 * port);
@@ -277,8 +282,9 @@ BOOST_FIXTURE_TEST_CASE(siggen_test_api, siggen_block_fixture)
  */
 BOOST_FIXTURE_TEST_CASE(siggen_test_ranges, siggen_block_fixture)
 {
-    for(size_t port = 0; port < NUM_PORTS; port++) {
-        BOOST_CHECK_THROW(test_siggen->set_property<int>("waveform", 100, port), uhd::value_error);
+    for (size_t port = 0; port < NUM_PORTS; port++) {
+        BOOST_CHECK_THROW(
+            test_siggen->set_property<int>("waveform", 100, port), uhd::value_error);
 
         const double bad_amplitude = 100 + (port * 100);
         // I got a bad amplitude!
@@ -288,12 +294,16 @@ BOOST_FIXTURE_TEST_CASE(siggen_test_ranges, siggen_block_fixture)
             test_siggen->set_amplitude(-bad_amplitude, port), uhd::value_error);
 
         const std::complex<double> bad_constant_i{-100.0 + (port * 100), 0.1};
-        BOOST_CHECK_THROW(test_siggen->set_constant(bad_constant_i, port), uhd::value_error);
-        BOOST_CHECK_THROW(test_siggen->set_constant(-bad_constant_i, port), uhd::value_error);
+        BOOST_CHECK_THROW(
+            test_siggen->set_constant(bad_constant_i, port), uhd::value_error);
+        BOOST_CHECK_THROW(
+            test_siggen->set_constant(-bad_constant_i, port), uhd::value_error);
 
         const std::complex<double> bad_constant_q{-0.1, 100.0 + (port * 100)};
-        BOOST_CHECK_THROW(test_siggen->set_constant(bad_constant_q, port), uhd::value_error);
-        BOOST_CHECK_THROW(test_siggen->set_constant(-bad_constant_q, port), uhd::value_error);
+        BOOST_CHECK_THROW(
+            test_siggen->set_constant(bad_constant_q, port), uhd::value_error);
+        BOOST_CHECK_THROW(
+            test_siggen->set_constant(-bad_constant_q, port), uhd::value_error);
 
         const double bad_phase_inc = 5 * uhd::math::PI;
         BOOST_CHECK_THROW(
@@ -341,8 +351,10 @@ BOOST_FIXTURE_TEST_CASE(siggen_test_graph, siggen_block_fixture)
         "type", "sc16", {res_source_info::INPUT_EDGE, 0});
 
     UHD_LOG_INFO("TEST", "Creating graph...");
-    for(size_t port = 0; port < NUM_PORTS; port++) {
-        graph.connect(test_siggen.get(), &mock_sink_term, {port, port, detail::graph_t::graph_edge_t::DYNAMIC, true});
+    for (size_t port = 0; port < NUM_PORTS; port++) {
+        graph.connect(test_siggen.get(),
+            &mock_sink_term,
+            {port, port, detail::graph_t::graph_edge_t::DYNAMIC, true});
     }
     UHD_LOG_INFO("TEST", "Committing graph...");
     graph.commit();

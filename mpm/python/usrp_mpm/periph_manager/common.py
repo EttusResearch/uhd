@@ -33,7 +33,7 @@ class MboardRegsCommon:
     MB_TIME_LAST_PPS_HI    = 0x1018
     MB_TIME_BASE_PERIOD_LO = 0x101C
     MB_TIME_BASE_PERIOD_HI = 0x1020
-    MB_TIMEKEEPER_OFFSET   = 12
+    MB_TIMEKEEPER_OFFSET   = 0x100
     # Timekeeper control words
     MB_TIME_SET_NOW       = 0x0001
     MB_TIME_SET_NEXT_PPS  = 0x0002

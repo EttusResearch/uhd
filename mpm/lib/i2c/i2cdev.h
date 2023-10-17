@@ -11,8 +11,8 @@
 extern "C" {
 #endif
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 /*
  * This API provides access to i2c devices. It uses the character device API
@@ -30,7 +30,7 @@ extern "C" {
  *
  * \returns 0 if all is good, or an error code otherwise
  */
-int i2cdev_open(int *fd, const char *device, const unsigned int timeout_ms);
+int i2cdev_open(int* fd, const char* device, const unsigned int timeout_ms);
 
 /*! Do an i2c transaction over i2cdev
  * If both tx and rx are to be done in one transaction, first tx data is
@@ -49,9 +49,13 @@ int i2cdev_open(int *fd, const char *device, const unsigned int timeout_ms);
  *
  * \returns 0 if all is golden
  */
-int i2cdev_transfer(int fd, uint16_t addr, int ten_bit_addr,
-                    uint8_t *tx, size_t tx_len,
-                    uint8_t *rx, size_t rx_len);
+int i2cdev_transfer(int fd,
+    uint16_t addr,
+    int ten_bit_addr,
+    uint8_t* tx,
+    size_t tx_len,
+    uint8_t* rx,
+    size_t rx_len);
 #ifdef __cplusplus
 }
 #endif

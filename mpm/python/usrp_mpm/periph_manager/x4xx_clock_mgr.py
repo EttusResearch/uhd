@@ -41,7 +41,7 @@ For a block diagram, cf. usrp_x4xx.dox. For more details, see the schematic.
 """
 
 from enum import Enum
-from usrp_mpm.mpmutils import parse_multi_device_arg
+from usrp_mpm.mpmutils import parse_multi_device_arg, str2bool
 from usrp_mpm.periph_manager.x4xx_clk_aux import ClockingAuxBrdControl
 from usrp_mpm.periph_manager.x4xx_clock_types import RpllRefSel, BrcSource
 from usrp_mpm.periph_manager.x4xx_clock_ctrl import X4xxClockCtrl
@@ -125,15 +125,23 @@ class X4xxClockManager:
                  log):
         self.log = log.getChild("ClkMgr")
         self._clocking_auxbrd = clk_aux_board
+        # Number of daughterboards (set later from RFDC CTRL)
+        self.num_dboards = 2
+        # Tasks to be executed by the host if queried
+        self.tasks = {}
+        self.skip_adc_selfcal = False
+
         if self._clocking_auxbrd:
             self._safe_sync_source = {
                 'clock_source': self.X400_DEFAULT_CLOCK_SOURCE,
                 'time_source': self.X400_DEFAULT_TIME_SOURCE,
+                'skip_mpm_reboot': 1,
             }
         else:
             self._safe_sync_source = {
                 'clock_source': self.CLOCK_SOURCE_MBOARD,
                 'time_source': self.TIME_SOURCE_INTERNAL,
+                'skip_mpm_reboot': 1,
             }
         self.clk_policy = clk_policy
         # Parse args
@@ -159,6 +167,7 @@ class X4xxClockManager:
         self._ext_clock_freq = None
         self._set_ref_clock_freq(
             float(args.get('ext_clock_freq', self.X400_DEFAULT_EXT_CLOCK_FREQ)),
+            self._master_clock_rates,
             update_clocks=False)
         # If there is a valid PRIREF clock signal available at the RPLL (e.g.,
         # when SyncE is being used), set this to whatever the rate of the input
@@ -180,6 +189,8 @@ class X4xxClockManager:
         self.clk_ctrl = X4xxClockCtrl(cpld_control, log)
         self._init_ref_clock_and_time()
         self._init_meas_clock()
+        self.configured_since_boot = False
+        self.tasks["mpm_reboot"] = []
         ### IMPORTANT! The clocking initialization is not complete until
         ### finalize_init() was called. This is as far as we get for now.
 
@@ -257,6 +268,9 @@ class X4xxClockManager:
         self.rfdc = rfdc
         # Update the policy with new info on the FPGA image:
         self.clk_policy.set_dsp_info(self.rfdc.get_dsp_info())
+        self.num_dboards = len(self.rfdc.get_dsp_info())
+        for db in range(self.num_dboards):
+            self.tasks[f"db{db}_ADCSelfCal"] = []
 
         # Now do the full MCR init for the first time. When this is done, all
         # the clocks will be ticking. Now, the policy should know about the
@@ -287,6 +301,7 @@ class X4xxClockManager:
         # can detect decimation, and that requires clocks to be initialized.
         self.set_master_clock_rate([initial_mcr[0],])
 
+
     @no_rpc
     def set_dboard_reset_cb(self, db_reset_cb):
         """
@@ -301,23 +316,61 @@ class X4xxClockManager:
     def init(self, args):
         """
         Called by x4xx.init(), when a UHD session initializes.
+
+        Rules for argument handling:
+        - If clock_source and/or time_source are not given, then we use the
+          defaults (internal)
+        - If master_clock_rate is not given, we use whatever the device last
+          was set to.
+        - If ext_clock_freq is not given, we use whatever the device was last
+          set to (this only matters for 'external' clock source!)
+        - If converter_rate is not given, we use the maximum possible converter
+          rate. If it is given, but master_clock_rate is not given, we ignore it.
+        - If clock source, time source, ext_clock_freq, and master clock rate do
+          not change from run to run, we skip re-initializing the RFDC chain.
+          - The user can override this by specifying `force_reinit` (like with
+            N310).
+          - If converter_rate is given, we always force reinit. This could be
+            optimized away if desired.
         """
         args['clock_source'] = args.get('clock_source', self.X400_DEFAULT_CLOCK_SOURCE)
         args['time_source'] = args.get('time_source', self.X400_DEFAULT_TIME_SOURCE)
         self.clk_policy.args = args
+        args['initializing'] = True
+        # This flag is used to skip the self-cal that otherwise is marked as required
+        # after each clocking change
+        self.skip_adc_selfcal = args.get('skip_adc_selfcal', False)
+        # This flag will be used to force a full run of the clocking initialization.
+        # If False, MPM may still decide to do a full clocking initialization,
+        # depending on other settings.
+        force_set_mcr = bool(args.get('force_reinit', False))
         # If this is None, the user desires the MCR to not change
         desired_master_clock_rates = args.get('master_clock_rate')
         desired_converter_rates = args.get('converter_rate')
-        if desired_master_clock_rates is not None:
+        # If the user specifies everything, then we always force setting
+        # everything. This can be optimized in the future.
+        force_set_mcr = desired_master_clock_rates and desired_converter_rates
+        # Convert desired master clock rate from string into a tuple. We cover
+        # the special case where a single rate was given to populate both
+        # daughterboard rates.
+        if desired_master_clock_rates:
             desired_master_clock_rates = \
                 parse_multi_device_arg(args['master_clock_rate'], conv=float)
-        force_set_mcr = False
+            if len(desired_master_clock_rates) == 1 and \
+                    len(self._master_clock_rates) > 1:
+                desired_master_clock_rates = \
+                    desired_master_clock_rates * len(self._master_clock_rates)
         if 'ext_clock_freq' in args:
             new_ext_clock_freq = float(args.get('ext_clock_freq'))
             if new_ext_clock_freq != self._ext_clock_freq:
                 # This will update self._ext_clock_freq and validate, but not
                 # apply the settings to hardware.
-                self._set_ref_clock_freq(new_ext_clock_freq, update_clocks=False)
+                self._set_ref_clock_freq(
+                    new_ext_clock_freq,
+                    desired_master_clock_rates \
+                            if desired_master_clock_rates \
+                            else self._master_clock_rates,
+                    update_clocks=False)
                 # Now we force an update to all clocking further down.
                 if args['clock_source'] == self.CLOCK_SOURCE_EXTERNAL:
                     if not desired_master_clock_rates:
@@ -330,14 +383,15 @@ class X4xxClockManager:
         # separately, there's a theoretical chance that we would fail to lock
         # the old MCR with the new ext_clock_freq, or vice versa.
         if desired_master_clock_rates:
-            self._master_clock_rates = desired_master_clock_rates
-            force_set_mcr = True # TODO this can be skipped if MCR and Conv_Rate haven't changed
+            args['master_clock_rate'] = desired_master_clock_rates
         if desired_converter_rates and not desired_master_clock_rates:
             self.log.warning("Passing `converter_rate` argument without obligatory "
                              "`master_clock_rate` argument. Ignoring `converter_rate`.")
         if force_set_mcr:
-            args['__force__'] = True
+            args['force_reinit'] = True
         self.set_sync_source(args)
+        if not 'boot_init' in args:
+            self.configured_since_boot = True
 
 
     @no_rpc
@@ -371,7 +425,11 @@ class X4xxClockManager:
         the actual work, but it assumes clock_source and time_source are
         validated/sanitized.
 
-        If anything changed, then all clocks are in reset. Call
+        This method checks if the new clock/time source are different from the
+        current ones. If not, it will return SetSyncRetVal.NOP and not touch
+        the hardware.
+
+        If anything changed, then all clocks will be put into reset. Call
         set_master_clock_rate() in that case to get them running again!
         """
         assert (clock_source, time_source) in self.valid_sync_sources, \
@@ -460,7 +518,7 @@ class X4xxClockManager:
         else:
             self.log.debug("Using default values for MMCM")
 
-    def _set_ref_clock_freq(self, freq, update_clocks=True):
+    def _set_ref_clock_freq(self, freq, master_clock_rates, update_clocks=True):
         """
         Tell our USRP what the frequency of the external reference clock is.
 
@@ -471,7 +529,7 @@ class X4xxClockManager:
         if freq < self.X400_MIN_EXT_REF_FREQ or freq > self.X400_MAX_EXT_REF_FREQ:
             raise RuntimeError(
                 'External reference clock frequency is out of the valid range.')
-        self.clk_policy.validate_ref_clock_freq(freq, self._master_clock_rates)
+        self.clk_policy.validate_ref_clock_freq(freq, master_clock_rates)
         self._ext_clock_freq = freq
         # If the external source is currently selected we also need to re-apply the
         # time_source. This call also updates the dboards' rates.
@@ -560,6 +618,41 @@ class X4xxClockManager:
             if 'db_clock' in reset_list:
                 self._set_reset_db_clocks(value)
 
+    def _configure_clock_chain(self, clk_settings, time_source, ref_clk_freq):
+        """
+        Configures clocking chain (RPLL -> SPLL -> MMCM) with given clock
+        settings. This function does not reset the RFDC, so that its
+        startup can be controlled independently.
+
+        This configuration takes 1-3 seconds, depending on the configuration
+        and the previous state of the clocks.
+
+        Arguments:
+        clk_settings -- A clock settings object to be applied.
+        time_source -- The current time source
+        """
+        # Reset everything downstream from SPLL
+        self._reset_clocks(True, ('mmcm', 'rfdc', 'cpld', 'db_clock'))
+        # The following call will return only when the SPLL successfully locks
+        # to the new settings:
+        self.clk_ctrl.config_spll(clk_settings.spll_config)
+        # When the SPLL is configured and locked, its output dividers are
+        # synchronized (share a common flank). Next, we need to synchronize the
+        # R-dividers to the common PPS signals. Because we need to wait for the
+        # PPS, this function may take > 1s to execute, worst-case.
+        self.clk_ctrl.sync_spll_clocks(
+            "internal_pps" if time_source == self.TIME_SOURCE_INTERNAL else "external_pps",
+            ref_clk_freq)
+        # At this point the SPLL is sync'd in time and frequency to the reference.
+        # From now on, no-one will be touching the SPLL until we call
+        # set_master_clock_rate() again.
+        # Bring MMCM out of reset, and reconfigure. The MMCM lock status
+        # is monitored at the end of the MMCM DRP access, as it is required
+        # for the MMCM to report the DRP configuration as complete.
+        self.rfdc.reset_mmcm(reset=False, check_locked=False)
+        self.rfdc.rfdc_update_mmcm_regs()
+        self._config_mmcm(clk_settings)
+
 
     ###########################################################################
     # Public APIS, but not MPM APIs (these can be called by x4xx or the
@@ -587,33 +680,26 @@ class X4xxClockManager:
         max_num_rates = self.clk_policy.get_num_rates()
         if len(master_clock_rates) == 1:
             master_clock_rates = [master_clock_rates[0]] * max_num_rates
+        elif max_num_rates == 1:
+            # User provided > 1 rate, but we can only support one
+            raise RuntimeError(
+                'Invalid number of clock rates provided! Must provide a single rate.')
         elif len(master_clock_rates) != max_num_rates:
             raise RuntimeError(
                 f'Invalid number of clock rates provided! Must provide either a '
-                f'single rate or {max_num_rates} rates (one per daughterboard).')
+                f'single rate or {max_num_rates} rates.')
         # Get the validated and rounded MCR back
         master_clock_rates = self.clk_policy.coerce_mcr(master_clock_rates)
         clk_settings = self.clk_policy.get_config(
             self.get_ref_clock_freq(), master_clock_rates)
-        # Reset everything downstream from SPLL
-        self._reset_clocks(True, ('mmcm', 'rfdc', 'cpld', 'db_clock'))
-        # The following call will return only when the SPLL successfully locks
-        # to the new settings:
-        self.clk_ctrl.config_spll(clk_settings.spll_config)
-        # When the SPLL is configured and locked, its output dividers are
-        # synchronized (share a common flank). Next, we need to synchronize the
-        # R-dividers to the common PPS signals. Because we need to wait for the
-        # PPS, this function may take > 1s to execute, worst-case.
-        self.clk_ctrl.sync_spll_clocks(
-            "internal_pps" if self._time_source == self.TIME_SOURCE_INTERNAL else "external_pps",
-            self.get_ref_clock_freq())
-        # At this point the SPLL is sync'd in time and frequency to the reference.
-        # From now on, no-one will be touching the SPLL until we call
-        # set_master_clock_rate() again.
-        # Bring MMCM out of reset, and reconfigure. The reset also waits
-        # for the MMCM to be locked, therefore we call it again after config.
-        self._reset_clocks(False, ('mmcm',))
-        self._config_mmcm(clk_settings)
+        self.log.debug(f"Clock Config: {clk_settings}")
+        self.log.info(f"Using Clock Configuration:\n"
+            f"DB0: Master Clock Rate: {master_clock_rates[0]/1e6} MSps "
+            f"@Converter Rate {clk_settings.rfdc_configs[0].conv_rate/1e9} GHz\n"
+            f"DB1: Master Clock Rate: {master_clock_rates[-1]/1e6} MSps "
+            f"@Converter Rate {clk_settings.rfdc_configs[1].conv_rate/1e9} GHz")
+        self._configure_clock_chain(
+            clk_settings, self.get_time_source(), self.get_ref_clock_freq())
         # Bring RFDC out of reset, reset tiles and reconfigure RFDC
         self._reset_clocks(False, ('rfdc',))
         self.rfdc.reset_tiles()
@@ -622,6 +708,13 @@ class X4xxClockManager:
         # the first place, so we have to start the tiles explicitely again after the
         # reconfiguration:
         self.rfdc.startup_tiles()
+        # According to PG269, self-cal coefficients get lost when calling startup_tiles().
+        # Therefore we need to mark self-cal as required again after that. May be skipped
+        # with 'skip_adc_selfcal' argument (but should be called manually then).
+        if not self.skip_adc_selfcal:
+            for db in range(self.num_dboards):
+                self.tasks[f"db{db}_ADCSelfCal"] = [{"Run":"True"}]
+
         # All settings are applied: Now bring other clocks out of reset. Note
         # that cpld and db_clock don't depend on MMCM or RFDC, but we don't need
         # them so they only come back now.
@@ -631,7 +724,6 @@ class X4xxClockManager:
         # be called after sync_spll_clocks() was called.
         for tk_idx, mcr in enumerate(master_clock_rates):
             self.clk_ctrl.configure_pps_forwarding(tk_idx, True, mcr)
-
 
     @no_rpc
     def get_master_clock_rate(self, db_idx=0):
@@ -808,10 +900,17 @@ class X4xxClockManager:
             raise ValueError(
                 f'Clock and time source pair ({clock_source}, {time_source}) is '
                 'not a valid selection')
+        # Now figure out which master clock rate we'll be switching to. It might
+        # be the same as before.
+        master_clock_rates = args.get('master_clock_rate', self._master_clock_rates)
+        if isinstance(master_clock_rates, str):
+            master_clock_rates = parse_multi_device_arg(
+               master_clock_rates, conv=float)
+        mcr_change = tuple(master_clock_rates) != tuple(self._master_clock_rates)
         # Also check the external reference clock frequency is valid
         if clock_source == self.CLOCK_SOURCE_EXTERNAL:
             self.clk_policy.validate_ref_clock_freq(
-                self.get_ref_clock_freq(), self._master_clock_rates)
+                self.get_ref_clock_freq(), master_clock_rates)
         # Sanity checks complete. Now check if we need to disable the RefOut.
         # Reminder: RefOut and PPSIn share an SMA. Besides, you can't export an
         # external clock. We are thus not checking for time_source == 'external'
@@ -822,16 +921,57 @@ class X4xxClockManager:
         if clock_source in (self.CLOCK_SOURCE_EXTERNAL, self.CLOCK_SOURCE_MBOARD) \
                 and self._clocking_auxbrd:
             self._clocking_auxbrd.export_clock(enable=False)
-        # Now the clock manager can do its thing.
-        force_update = args.get("__force__", False)
+        # Now configure the sync sources:
+        force_update = str2bool(args.get('force_reinit', False)) or mcr_change
         ret_val = self._set_sync_source(clock_source, time_source, force_update)
         if ret_val == self.SetSyncRetVal.NOP and not force_update:
+            self.log.debug("Skipping reconfiguration of clocks.")
             return
         try:
+            # An intermittent spur has been seen on multiple reconfigurations of clocking for x440.
+            # If we have already reconfigured clocking after initializtion, the next clocking
+            # reconfiguration will trigger MPM to reboot
+            skip_mpm_reboot = str2bool(args.get('skip_mpm_reboot', False))
+            initializing = str2bool(args.get('initializing', False))
+            if self.clk_policy.should_reboot_on_reconfiguration() \
+                    and self.configured_since_boot \
+                    and not skip_mpm_reboot:
+                if initializing:
+                    self.tasks["mpm_reboot"] = [{"Run":"True"}]
+                    # We are going to reboot mpm, so return early
+                    return
+                else:
+                    # If a different clocking configuration is being set through an
+                    # API after device initialization (e.g. set_clock_source()), then
+                    # don't return and reboot mpm, throw an error that reconfiguring
+                    # the clocking configuration can lead to bad performance
+                    raise RuntimeError("Changing clocking configuration after device "
+                                       "initialization is not permitted since it can "
+                                       "lead to decreased spurious performance. "
+                                       "To configure clocking settings, use the proper "
+                                       "device arguments during initialization")
+            if skip_mpm_reboot:
+                self.log.warning("Overriding recommended MPM reboot during clocking configuration. "
+                                 "This can lead to decreased spurious performance")
+            self.log.debug(
+                f"Reconfiguring clock configuration for a master clock rate of "
+                f"{master_clock_rates}")
             # Re-set master clock rate. If this doesn't work, it will time out
             # and throw an exception. We need to put the device back into a safe
             # state in that case.
-            self.set_master_clock_rate(self._master_clock_rates)
+            interm_clk_settings = self.clk_policy.get_intermediate_clk_settings(
+                    self.get_ref_clock_freq(),
+                    self._master_clock_rates,
+                    master_clock_rates)
+            if interm_clk_settings:
+                self.log.debug( "Applying intermediate clock settings.")
+                self._configure_clock_chain(interm_clk_settings,
+                                            self.get_time_source(),
+                                            self.get_ref_clock_freq())
+                # Note that set_master_clock_rate() will also configure the
+                # clock chain, so if we had an intermediate settting, it will
+                # be overwritten immediately.
+            self.set_master_clock_rate(master_clock_rates)
             # Restore the nco frequency to the same values as before the sync source
             # was changed, to ensure the device transmission/acquisition continues at
             # the requested frequency.
@@ -994,6 +1134,16 @@ class X4xxClockManager:
         self.log.trace("Aggregating sync data...")
         return {} if not collated_sync_data else collated_sync_data[0]
 
+    ###########################################################################
+    # Helpers
+    ###########################################################################
+    @no_rpc
+    def pop_host_tasks(self, task):
+        """
+        Returns if a task should be executed by the host. Self-Cal is a task
+        to begin with.
+        """
+        return self.tasks.pop(task,[])
 
     ###########################################################################
     # Top-level BIST APIs

@@ -96,7 +96,6 @@ public:
     // \param target_freq The target frequency
     // \param ref_freq The input reference frequency
     // \param spur_dodging Set to true to enable spur dodging
-    virtual double set_frequency(const double target_freq,
-        const double ref_freq,
-        const bool spur_dodging) = 0;
+    virtual double set_frequency(
+        const double target_freq, const double ref_freq, const bool spur_dodging) = 0;
 };

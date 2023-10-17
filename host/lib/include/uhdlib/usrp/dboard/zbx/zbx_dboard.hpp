@@ -107,6 +107,7 @@ public:
             8192, //  over, Set the threshold to detect half-scale
                   //  setup_threshold call uses 14-bit ADC values
             "calib_mode2", // calibration_mode
+            2000, // 2 seconds were found to be sufficent
         };
     }
 

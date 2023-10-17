@@ -7,6 +7,7 @@
 X4xx RFDC register control
 """
 
+import time
 from usrp_mpm.sys_utils.uio import UIO
 from usrp_mpm.chips.ic_reg_maps.x4xx_rfdc_regmap import x4xx_rfdc_regmap_t
 from usrp_mpm.mpmutils import poll_with_timeout
@@ -158,18 +159,15 @@ class RfdcRegsControl:
         self._regs.CAL_DATA_Q = q
         self._commit()
 
-    def set_cal_enable(self, channel, enable):
+    def set_cal_enable(self, db_idx, channel, enable):
         """
         Enable the cal tone for the specified TX channel. The cal tone is
         muxed into the TX signal path.
         """
-        num_tx_channels = self.get_num_tx_channels()
-        assert 0 <= channel < sum(num_tx_channels)
+        info = self.get_rfdc_info(db_idx)
+        assert 0 <= channel < info["num_tx_chans"]
         assert enable in [False, True]
-        # we assume here that number of TX channels is equal on all boards
-        db = channel // num_tx_channels[0]
-        db_channel = channel % num_tx_channels[0]
-        setattr(self._regs, f'CAL_ENABLE_DB{db}_CHAN{db_channel}', int(enable))
+        setattr(self._regs, f'CAL_ENABLE_DB{db_idx}_CHAN{channel}', int(enable))
         self._commit()
 
     def enable_iq_swap(self, enable, db_id, chan_idx, is_dac):
@@ -214,7 +212,23 @@ class RfdcRegsControl:
         self._poke(
             self._regs.get_addr("MMCM_LOAD_SEN"),
             self._regs.get_reg(self._regs.get_addr("MMCM_LOAD_SEN")))
+            
+        self.log.trace('MMCM Configuration applied, now waiting for MMCM to lock...')
         self.wait_for_mmcm_drp_done()
+        self.clear_data_clk_unlocked()
+        self._commit()
+
+    def clear_data_clk_unlocked(self):
+        """
+        Currently required when checking the MMCM lock.
+        FIXME: Quick & dirty workaround for CLEAR_DATA_CLK_UNLOCKED bit. Needs to be
+        removed when this is resolved in digital.
+        """
+        time.sleep(1)
+        self._regs.CLEAR_DATA_CLK_UNLOCKED=self._regs.CLEAR_DATA_CLK_UNLOCKED_t(1)
+        self._commit()
+        self._regs.CLEAR_DATA_CLK_UNLOCKED=self._regs.CLEAR_DATA_CLK_UNLOCKED_t(0)
+        self._commit()
 
     def wait_for_mmcm_locked(self, timeout=0.001):
         """
@@ -232,6 +246,7 @@ class RfdcRegsControl:
         if not poll_with_timeout(check_lock, timeout * 1000, poll_sleep_ms):
             self.log.error("MMCM failed to lock in the expected time.")
             raise RuntimeError("MMCM failed to lock within the expected time.")
+        self.clear_data_clk_unlocked()
 
     def wait_for_mmcm_drp_done(self, timeout=0.001):
         """
@@ -350,6 +365,8 @@ class RfdcRegsControl:
             self._regs.CLKOUT0_FRAC_WF_R = 0
             self._regs.CLKOUT0_FRAC_WF_F = 0
 
+        self._commit()
+
     def get_mmcm_output_div(self, clock_name):
         """
         Get the output divider of a given clock
@@ -406,6 +423,7 @@ class RfdcRegsControl:
         self._regs.CLKFBOUT_PHASE_MUX_F = 0
         self._regs.CLKFBOUT_FRAC_WF_R = 0
         self._regs.CLKFBOUT_FRAC_WF_F = 0
+        self._commit()
 
         # Fetch the register values from LUTs.
         # LUTs' first index corresponds to FB_DIV = 1
@@ -442,6 +460,7 @@ class RfdcRegsControl:
                                    (filt_lookup & 0x18)  << (11 - 3) | \
                                    (filt_lookup & 0x6)   << ( 7 - 1) | \
                                    (filt_lookup & 0x1)   << ( 4 - 0)
+        self._commit()
 
     def set_gated_clock_enables(self, value=True):
         """

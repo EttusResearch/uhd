@@ -12,15 +12,15 @@
 
 using namespace uhd;
 
-#define REG_RX_FE_SWAP_IQ _base + 0 // lower bit
-#define REG_RX_FE_MAG_CORRECTION _base + 4 // 18 bits
+#define REG_RX_FE_SWAP_IQ          _base + 0 // lower bit
+#define REG_RX_FE_MAG_CORRECTION   _base + 4 // 18 bits
 #define REG_RX_FE_PHASE_CORRECTION _base + 8 // 18 bits
-#define REG_RX_FE_OFFSET_I _base + 12 // 18 bits
-#define REG_RX_FE_OFFSET_Q _base + 16 // 18 bits
+#define REG_RX_FE_OFFSET_I         _base + 12 // 18 bits
+#define REG_RX_FE_OFFSET_Q         _base + 16 // 18 bits
 
 #define OFFSET_FIXED (1ul << 31)
-#define OFFSET_SET (1ul << 30)
-#define FLAG_MASK (OFFSET_FIXED | OFFSET_SET)
+#define OFFSET_SET   (1ul << 30)
+#define FLAG_MASK    (OFFSET_FIXED | OFFSET_SET)
 
 namespace {
 static const double DC_OFFSET_MIN = -1.0;

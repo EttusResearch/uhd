@@ -193,10 +193,10 @@ private:
         register_property(&_type_in);
         register_property(&_type_out);
         // add resolvers for type (keeps it constant)
-        add_property_resolver({&_type_in}, {&_type_in}, [& type_in = _type_in]() {
+        add_property_resolver({&_type_in}, {&_type_in}, [&type_in = _type_in]() {
             type_in.set(IO_TYPE_SC16);
         });
-        add_property_resolver({&_type_out}, {&_type_out}, [& type_out = _type_out]() {
+        add_property_resolver({&_type_out}, {&_type_out}, [&type_out = _type_out]() {
             type_out.set(IO_TYPE_SC16);
         });
     }

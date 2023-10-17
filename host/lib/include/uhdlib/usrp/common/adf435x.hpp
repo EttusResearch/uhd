@@ -259,7 +259,7 @@ public:
         _regs.low_noise_and_spur = (_tuning_mode == TUNING_MODE_HIGH_RESOLUTION)
                                        ? adf435x_regs_t::LOW_NOISE_AND_SPUR_LOW_SPUR
                                        : adf435x_regs_t::LOW_NOISE_AND_SPUR_LOW_NOISE;
-        _regs.phase_12_bit = (_tuning_mode == TUNING_MODE_HIGH_RESOLUTION) ? 0 : 1;
+        _regs.phase_12_bit       = (_tuning_mode == TUNING_MODE_HIGH_RESOLUTION) ? 0 : 1;
     }
 
     void set_charge_pump_current(charge_pump_current_t cp_current) override
@@ -336,9 +336,8 @@ public:
 
         if (std::abs(current - coerced_current) > 0.01e-6) {
             UHD_LOG_WARNING("ADF435x",
-                "Requested charge pump current was coerced! Requested: "
-                    << std::setw(4) << current << " A  Actual: " << coerced_current
-                    << " A");
+                "Requested charge pump current was coerced! Requested: " << std::setw(
+                    4) << current << " A  Actual: " << coerced_current << " A");
         }
 
         return coerced_current;
@@ -480,21 +479,21 @@ public:
             clock_div = uint16_t(std::ceil(PHASE_RESYNC_TIME * pfd_freq / MOD));
         }
 
-        _regs.frac_12_bit          = FRAC;
-        _regs.int_16_bit           = N;
-        _regs.mod_12_bit           = MOD;
-        _regs.clock_divider_12_bit = clock_div;
-        _regs.feedback_select      = _fb_after_divider
-                                    ? adf435x_regs_t::FEEDBACK_SELECT_DIVIDED
-                                    : adf435x_regs_t::FEEDBACK_SELECT_FUNDAMENTAL;
-        _regs.clock_div_mode = _fb_after_divider
-                                   ? adf435x_regs_t::CLOCK_DIV_MODE_RESYNC_ENABLE
-                                   : adf435x_regs_t::CLOCK_DIV_MODE_FAST_LOCK;
+        _regs.frac_12_bit           = FRAC;
+        _regs.int_16_bit            = N;
+        _regs.mod_12_bit            = MOD;
+        _regs.clock_divider_12_bit  = clock_div;
+        _regs.feedback_select       = _fb_after_divider
+                                          ? adf435x_regs_t::FEEDBACK_SELECT_DIVIDED
+                                          : adf435x_regs_t::FEEDBACK_SELECT_FUNDAMENTAL;
+        _regs.clock_div_mode        = _fb_after_divider
+                                          ? adf435x_regs_t::CLOCK_DIV_MODE_RESYNC_ENABLE
+                                          : adf435x_regs_t::CLOCK_DIV_MODE_FAST_LOCK;
         _regs.r_counter_10_bit      = R;
         _regs.reference_divide_by_2 = T ? adf435x_regs_t::REFERENCE_DIVIDE_BY_2_ENABLED
                                         : adf435x_regs_t::REFERENCE_DIVIDE_BY_2_DISABLED;
-        _regs.reference_doubler = D ? adf435x_regs_t::REFERENCE_DOUBLER_ENABLED
-                                    : adf435x_regs_t::REFERENCE_DOUBLER_DISABLED;
+        _regs.reference_doubler     = D ? adf435x_regs_t::REFERENCE_DOUBLER_ENABLED
+                                        : adf435x_regs_t::REFERENCE_DOUBLER_DISABLED;
         _regs.band_select_clock_div = uint8_t(BS);
         _regs.rf_divider_select =
             static_cast<typename adf435x_regs_t::rf_divider_select_t>(

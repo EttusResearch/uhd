@@ -15,11 +15,11 @@
 
 using namespace uhd;
 
-#define REG_RX_FE_MAG_CORRECTION (base + reg_offset * 0) // 18 bits
+#define REG_RX_FE_MAG_CORRECTION   (base + reg_offset * 0) // 18 bits
 #define REG_RX_FE_PHASE_CORRECTION (base + reg_offset * 1) // 18 bits
-#define REG_RX_FE_OFFSET_I (base + reg_offset * 2) // 18 bits
-#define REG_RX_FE_OFFSET_Q (base + reg_offset * 3) // 18 bits
-#define REG_RX_FE_MAPPING (base + reg_offset * 4)
+#define REG_RX_FE_OFFSET_I         (base + reg_offset * 2) // 18 bits
+#define REG_RX_FE_OFFSET_Q         (base + reg_offset * 3) // 18 bits
+#define REG_RX_FE_MAPPING          (base + reg_offset * 4)
 #define REG_RX_FE_HET_CORDIC_PHASE (base + reg_offset * 5)
 
 #define FLAG_DSP_RX_MAPPING_SWAP_IQ     (1 << 0)
@@ -32,8 +32,8 @@ using namespace uhd;
 #define FLAG_DSP_RX_MAPPING_BYPASS_ALL (1 << 7)
 
 #define OFFSET_FIXED (1ul << 31)
-#define OFFSET_SET (1ul << 30)
-#define FLAG_MASK (OFFSET_FIXED | OFFSET_SET)
+#define OFFSET_SET   (1ul << 30)
+#define FLAG_MASK    (OFFSET_FIXED | OFFSET_SET)
 
 namespace {
 static const double DC_OFFSET_MIN = -1.0;

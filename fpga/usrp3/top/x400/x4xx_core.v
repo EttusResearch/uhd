@@ -400,7 +400,12 @@ module x4xx_core #(
   );
 
   // Provide information for ctrlport timed commands
-  assign radio_time_stb = rx_stb[0];
+  genvar tk_i;
+  generate
+    for (tk_i = 0; tk_i < NUM_TIMEKEEPERS; tk_i = tk_i + 1) begin : gen_time_stb
+      assign radio_time_stb[tk_i] = rx_stb[tk_i*NUM_CH_PER_DB];
+    end
+  endgenerate
 
 
   //---------------------------------------------------------------------------
@@ -605,8 +610,15 @@ module x4xx_core #(
     .chdr_aclk                      (rfnoc_chdr_clk),
     .ctrl_aclk                      (rfnoc_ctrl_clk),
     .core_arst                      (rfnoc_ctrl_rst),
+  `ifdef X440
+    .radio0_clk                     (radio_clk[0]),
+    .radio0_2x_clk                  (radio_clk_2x[0]),
+    .radio1_clk                     (radio_clk[1]),
+    .radio1_2x_clk                  (radio_clk_2x[1]),
+  `else
     .radio_clk                      (radio_clk[0]),
     .radio_2x_clk                   (radio_clk_2x[0]),
+  `endif
     .dram_clk                       (dram_clk),
     .device_id                      (device_id),
     .m_ctrlport_radio0_req_wr       (ctrlport_radio_req_wr      [0* 1+: 1]),
@@ -641,7 +653,12 @@ module x4xx_core #(
     .radio_tx_stb_radio0            ({       tx_stb0}),
     .radio_tx_data_radio0           ({      tx_data0}),
     .radio_tx_running_radio0        ({   tx_running0}),
+  `ifdef X440
+    .radio_time0                    (radio_time[0*64+:64]),
+    .radio_time1                    (radio_time[1*64+:64]),
+  `else
     .radio_time                     (radio_time[0*64+:64]),
+  `endif
     .axi_rst                        (dram_rst),
     .m_axi_awid                     (dram_axi_awid),
     .m_axi_awaddr                   (dram_axi_awaddr),

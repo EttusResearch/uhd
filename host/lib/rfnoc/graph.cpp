@@ -95,12 +95,10 @@ void graph_t::connect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t edg
     node_accessor.set_resolve_all_callback(dst_node, [this, dst_node]() {
         this->resolve_all_properties(resolve_context::NODE_PROP, dst_node);
     });
-    node_accessor.set_graph_mutex_callback(src_node, [this]() -> std::recursive_mutex& {
-        return this->get_graph_mutex();
-    });
-    node_accessor.set_graph_mutex_callback(dst_node, [this]() -> std::recursive_mutex& {
-        return this->get_graph_mutex();
-    });
+    node_accessor.set_graph_mutex_callback(
+        src_node, [this]() -> std::recursive_mutex& { return this->get_graph_mutex(); });
+    node_accessor.set_graph_mutex_callback(
+        dst_node, [this]() -> std::recursive_mutex& { return this->get_graph_mutex(); });
 
     // Set post action callbacks:
     node_accessor.set_post_action_callback(
@@ -180,9 +178,8 @@ void graph_t::connect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t edg
                            << " without disabling is_forward_edge will lead "
                               "to unresolvable graph!");
         boost::remove_edge(edge_descriptor.first, _graph);
-        throw uhd::rfnoc_error(
-            "Adding edge without disabling is_forward_edge will lead "
-            "to unresolvable graph!");
+        throw uhd::rfnoc_error("Adding edge without disabling is_forward_edge will lead "
+                               "to unresolvable graph!");
     }
 }
 
@@ -451,8 +448,7 @@ void graph_t::_resolve_all_properties(resolve_context context,
     }
 }
 
-void graph_t::resolve_all_properties(
-    resolve_context context, node_ref_t initial_node)
+void graph_t::resolve_all_properties(resolve_context context, node_ref_t initial_node)
 {
     auto initial_node_vertex_desc = _node_map.at(initial_node);
     resolve_all_properties(context, initial_node_vertex_desc);

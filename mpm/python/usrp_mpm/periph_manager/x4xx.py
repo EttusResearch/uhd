@@ -38,7 +38,6 @@ from usrp_mpm.periph_manager.x4xx_rfdc_ctrl import X4xxRfdcCtrl
 from usrp_mpm.periph_manager.x4xx_clock_policy import get_clock_policy
 from usrp_mpm.dboard_manager.x4xx_db_iface import X4xxDboardIface
 
-
 X400_FPGA_COMPAT = (8, 0)
 # The compat number at which remote streaming was added:
 X400_REMOTE_STREAMING_COMPAT = (7, 9)
@@ -149,7 +148,9 @@ class x4xx(ZynqComponents, PeriphManagerBase):
     # See PeriphManagerBase for documentation on these fields. We try and keep
     # them in the same order as they are in PeriphManagerBase for easier lookup.
     #########################################################################
-    pids = {0x0410: 'x410'}
+    pids = {
+        0x0410: 'x410',
+        0x0440: 'x440'}
     description = "X400-Series Device"
     eeprom_search = PeriphManagerBase._EepromSearch.SYMBOL
     # This is not in the overridables section from PeriphManagerBase, but we use
@@ -169,7 +170,6 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         'fan0': 'get_fan0_sensor',
         'fan1': 'get_fan1_sensor',
         'temp_fpga' : 'get_fpga_temp_sensor',
-        'temp_internal' : 'get_internal_temp_sensor',
         'temp_main_power' : 'get_main_power_temp_sensor',
         'temp_scu_internal' : 'get_scu_internal_temp_sensor',
     }
@@ -185,7 +185,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
             'compatibility': {
                 'fpga': {
                     'current': X400_FPGA_COMPAT,
-                    'oldest': (7, 0),
+                    'oldest': (8, 0),
                 },
                 'cpld_ifc' : {
                     'current': (2, 0),
@@ -296,6 +296,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
             return
         try:
             if not args.get('skip_boot_init', False):
+                args['boot_init'] = True
                 self.init(args)
         except Exception as ex:
             self.log.warning("Failed to initialize device on boot: %s", str(ex))
@@ -1048,16 +1049,6 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         self.log.trace("Reading SCU internal temperature.")
         return get_temp_sensor(["EC Internal"], log=self.log)
 
-    def get_internal_temp_sensor(self):
-        """ TODO: Determine how to interpret this function """
-        self.log.warning("Reading internal temperature is not yet implemented.")
-        return {
-            'name': 'temperature',
-            'type': 'REALNUM',
-            'unit': 'C',
-            'value': '-1'
-        }
-
     def _get_fan_sensor(self, fan='fan0'):
         """ Get fan speed. """
         self.log.trace("Reading {} speed sensor.".format(fan))
@@ -1091,9 +1082,21 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         assert self._gps_mgr
         self.log.trace("Reading all GPS status pins")
         return f"""
-            {self.get_gps_lock_sensor()}
+            {self.get_gps_locked_sensor()}
             {self.get_gps_alarm_sensor()}
             {self.get_gps_warmup_sensor()}
             {self.get_gps_survey_sensor()}
             {self.get_gps_phase_lock_sensor()}
         """
+
+    ###########################################################################
+    # Helpers
+    ###########################################################################
+    def pop_host_tasks(self, task):
+        """
+        Queries all known sources of host tasks and returns a list of dicts
+        that can be used for parameterization of the requested task. Depending
+        on the return value of this, the host can trigger tasks. Currently we
+        only have such tasks in the clock manager.
+        """
+        return self.clk_mgr.pop_host_tasks(task)

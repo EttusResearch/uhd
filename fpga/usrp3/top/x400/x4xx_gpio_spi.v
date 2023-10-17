@@ -343,21 +343,74 @@ module x4xx_gpio_spi #(
   // SPI master
   //---------------------------------------------------------------------------
 
-  `ifdef X410
+  `ifdef X440
 
-    //  Register set_stb for use in 2x domain.
+    simple_spi_core #(
+      .BASE     (0),
+      .WIDTH    (NUM_SLAVES),
+      .CLK_IDLE (0),
+      .SEN_IDLE ({NUM_SLAVES{1'b1}})
+    ) simple_spi_core_i (
+      .clock        (ctrlport_clk),
+      .reset        (ctrlport_rst),
+      .set_stb      (set_stb),
+      .set_addr     (set_addr),
+      .set_data     (set_data),
+      .readback     (readback),
+      .readback_stb (readback_stb),
+      .ready        (),
+      .sen          (ss[NUM_SLAVES-1:0]),
+      .sclk         (sclk),
+      .mosi         (mosi),
+      .miso         (miso),
+      .debug        ()
+    );
+
+    assign readback_stb_extended = readback_stb;
+
+  `else // X410
+
+  // We only trigger one cycle of set_stb_2x per state change. This way the latency
+  // is deterministic from the first change and aligned to the correct address,
+  // without the need to pipeline the signal.
+  //               ┐     ┌─────┐     ┌─────┐     ┌─────┐     ┌─────┐     ┌─────┐
+  //clk          : └─────┘     └─────┘     └─────┘     └─────┘     └─────┘     └───
+  //               xxxxxx/          \/          \/          \xxxxxxxxxxxxxxxxxxxxxx
+  //state        : xxxxxx\   ctrl   /\   div    /\   data   /xxxxxxxxxxxxxxxxxxxxxx
+  //               xxxxxxxxxxxxxxxxxx/          \/          \/          \xxxxxxxxxx
+  //state_dlyd   : xxxxxxxxxxxxxxxxxx\   ctrl   /\   div    /\   data   /xxxxxxxxxx
+  //               ┐                 ┌───────────────────────────────────┐
+  //set_stb      : └─────────────────┘                                   └─────────
+  //               xxxxxxxxxxxxxxxxxx/          \/          \/          \xxxxxxxxxx
+  //set_addr     : xxxxxxxxxxxxxxxxxx\   0x1    /\   0x0    /\   0x2    /xxxxxxxxxx
+  //                ──┐  ┌──┐  ┌──┐  ┌──┐  ┌──┐  ┌──┐  ┌──┐  ┌──┐  ┌──┐  ┌──┐  ┌──┐
+  //clk_2x       :    └──┘  └──┘  └──┘  └──┘  └──┘  └──┘  └──┘  └──┘  └──┘  └──┘  └
+  //               xxxxxxxxxxxxxxxxxxxxxxxx/          \/          \/          \xxxx
+  //state_dlyd_2x: xxxxxxxxxxxxxxxxxxxxxxxx\   ctrl   /\   div    /\   data   /xxxx
+  //                                       ┌─────┐     ┌─────┐     ┌─────┐
+  //set_stb_2x   : ────────────────────────┘     └─────┘     └─────┘     └─────────
+  //                                                                     ┌─────┐
+  //trigger_spi  : ──────────────────────────────────────────────────────┘     └───
+  //
+
     reg set_stb_2x = 1'b0;
-    reg ctrlport_clk_phase = 1'b1;
+    reg [2:0] state_dlyd, state_dlyd_2x = IDLE;
+
+    always @ (posedge ctrlport_clk) begin
+      if (ctrlport_rst) begin
+        state_dlyd <= IDLE;
+      end else begin
+        state_dlyd <= state;
+      end
+    end
 
     always @ (posedge ctrlport_clk_2x) begin
       if (ctrlport_rst) begin
-        ctrlport_clk_phase <= 1'b1;
-        set_stb_2x         <= 1'b0;
+        state_dlyd_2x <= IDLE;
+        set_stb_2x <= 1'b0;
       end else begin
-        // Assert strobe only during a single 2x cycle of the
-        // 1x pulse, when 1x clock is low.
-        set_stb_2x         <= ctrlport_clk_phase & set_stb;
-        ctrlport_clk_phase <= ~ctrlport_clk_phase;
+        state_dlyd_2x <= state_dlyd;
+        set_stb_2x <= set_stb && (state_dlyd_2x != state_dlyd);
       end
     end
 
@@ -423,7 +476,13 @@ module x4xx_gpio_spi #(
       assign gated_sclk[i]   = gpio_is_sclk[i] ? sclk : 1'b0;
 
       // register signals once remapping logic is resolved
-      `ifdef X410
+      `ifdef X440
+        always @ (posedge ctrlport_clk) begin
+          mosi_mux_out_dlyd[i] <= mosi_mux_out[i];
+          gpio_is_sclk_dlyd[i] <= gpio_is_sclk[i];
+          gated_sclk_dlyd[i]   <= gated_sclk[i];
+        end
+      `else // X410
         always @ (posedge ctrlport_clk_2x) begin
           mosi_mux_out_dlyd[i] <= mosi_mux_out[i];
           gpio_is_sclk_dlyd[i] <= gpio_is_sclk[i];

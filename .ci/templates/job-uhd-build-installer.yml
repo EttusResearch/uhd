@@ -17,6 +17,9 @@ parameters:
 - name: releaseBinaries
   type: boolean
   default: false
+- name: fpga_imgs_base_url
+  type: string
+  default: 'Internal'
 
 jobs:
 - job: build_uhd_installer_${{ parameters.toolset }}
@@ -61,7 +64,10 @@ jobs:
       matrix: $[ variables.dockerImageMatrixFedoraRpm ]
   container:
     image: '$(dockerImagePrefix)$(DockerImageName):$(dockerBuildNumber)'
-    endpoint: 'rnd-docker-niartifacts-pre-readonly'
+    ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/UHD-')) }}:
+      endpoint: rnd-docker-niartifacts-ci-readonly
+    ${{ else }}:
+      endpoint: rnd-docker-niartifacts-pre-readonly
     ${{ if eq(parameters.toolset, 'ubuntu_deb') }}:
       #pbuilder requires access to /proc
       options: --privileged
@@ -92,6 +98,8 @@ jobs:
         uhdInstallerDir: $(Build.BinariesDirectory)\\uhddev-installer
         uhdImageDir: $(Build.BinariesDirectory)\\uhd-images
         uhdReleaseBinaries: ${{ parameters.releaseBinaries }}
+        ${{ if contains(parameters.fpga_imgs_base_url, 'Internal') }}:
+          uhdImagesDownloaderExtraArgs: '-b $(InternalFileServerUrl)'
         cmakeCompiler: $(cmakeCompiler)
         cmakeArch: $(cmakeArch)
         vsArch: $(vsArch)
@@ -105,6 +113,8 @@ jobs:
         uhdImageDir: $(Build.BinariesDirectory)\\uhd-images
         uhdReleaseBinaries: ${{ parameters.releaseBinaries }}
         uhdBuildPythonAPI: True
+        ${{ if contains(parameters.fpga_imgs_base_url, 'Internal') }}:
+          uhdImagesDownloaderExtraArgs: '-b $(InternalFileServerUrl)'
         cmakeCompiler: $(cmakeCompiler)
         cmakeArch: $(cmakeArch)
         vsArch: $(vsArch)

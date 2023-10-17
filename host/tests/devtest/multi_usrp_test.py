@@ -773,6 +773,40 @@ def get_device_config(usrp_type, device_config_path=None):
             ],
             'clock_sources': ['internal', 'mboard'],
         }
+    if usrp_type == 'x440':
+        return {
+            'skip': [
+                # No AGC on FBX
+                'set_rx_agc',
+                # No IQ imbalance on FBX
+                'set_rx_iq_balance',
+                'set_tx_iq_balance',
+                # No DC offset on FBX
+                'set_rx_dc_offset',
+                'set_tx_dc_offset',
+                # No LO source control on FBX
+                'set_rx_lo_source',
+                'set_tx_lo_source',
+                'set_rx_lo_export_enabled',
+                'set_tx_lo_export_enabled',
+                # No Filters on FBX
+                'get_rx_filter',
+                'set_rx_filter',
+                'get_rx_filter_names',
+                'get_tx_filter',
+                'set_tx_filter',
+                'get_tx_filter_names',
+                # No Gain control on FBX, getters return 0, setters do nothing
+                'get_normalized_rx_gain',
+                'set_normalized_rx_gain',
+                'get_normalized_tx_gain',
+                'set_normalized_tx_gain',
+                # Changing clock or time source after device init throws an error
+                'set_clock_source',
+                'set_time_source',
+            ],
+            'clock_sources': ['internal', 'mboard'],
+        }
     return {}
 
 def dump_defaults(usrp_type):

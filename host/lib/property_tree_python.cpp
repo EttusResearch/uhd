@@ -27,7 +27,7 @@ void export_property(py::module& m, const std::string& type_str)
 void export_property_tree(py::module& m)
 {
     using property_tree = uhd::property_tree;
-    using fs_path = uhd::fs_path;
+    using fs_path       = uhd::fs_path;
 
     py::class_<fs_path>(m, "fs_path")
         // Constructors

@@ -63,8 +63,8 @@ double sbx_xcvr::sbx_version4::set_lo_freq(dboard_iface::unit_t unit, double tar
     property_tree::sptr subtree = (unit == dboard_iface::UNIT_RX)
                                       ? self_base->get_rx_subtree()
                                       : self_base->get_tx_subtree();
-    device_addr_t tune_args = subtree->access<device_addr_t>("tune_args").get();
-    bool is_int_n           = boost::iequals(tune_args.get("mode_n", ""), "integer");
+    device_addr_t tune_args     = subtree->access<device_addr_t>("tune_args").get();
+    bool is_int_n               = boost::iequals(tune_args.get("mode_n", ""), "integer");
 
     // Select the LO
     adf435x_iface::sptr& lo_iface = unit == dboard_iface::UNIT_RX ? _rxlo : _txlo;

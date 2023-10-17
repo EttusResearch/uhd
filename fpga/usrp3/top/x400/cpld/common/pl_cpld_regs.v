@@ -47,6 +47,8 @@ module pl_cpld_regs #(
 
   `ifdef X410
   `include "../regmap/x410/constants_regmap_utils.vh"
+  `else
+  `include "../regmap/x440/constants_regmap_utils.vh"
   `endif
   `include "../regmap/pl_cpld_base_regmap_utils.vh"
   `include "../../../../lib/rfnoc/core/ctrlport.vh"

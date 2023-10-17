@@ -197,7 +197,8 @@ chdr_rx_data_xport::fc_params_t chdr_rx_data_xport::configure_sep(io_service::sp
     // capacity.
     auto buff = recv_io->get_recv_buff(100);
     if (!buff) {
-        UHD_LOG_THROW(uhd::runtime_error, "XPORT::RX_DATA_XPORT",
+        UHD_LOG_THROW(uhd::runtime_error,
+            "XPORT::RX_DATA_XPORT",
             "rx xport timed out getting a response from mgmt_portal");
     }
     recv_io->release_recv_buff(std::move(buff));
