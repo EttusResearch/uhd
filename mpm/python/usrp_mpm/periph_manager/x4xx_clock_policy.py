@@ -360,7 +360,20 @@ class X440ClockPolicy(X4xxClockPolicy):
     it uses the flexibility of the LMK04832 much more.
     """
 
-    DEFAULT_MASTER_CLOCK_RATE = 368.64e6
+    # This is the lowest value possible and should therefore be
+    # achievable with every bitfile. This value will only used
+    # if we don't have information about the DSP bandwidth of
+    # the bitfile available, otherwise the lookup table
+    # `bandwidth_to_default_mcr` will be used.
+    DEFAULT_MASTER_CLOCK_RATE = 125e6
+
+    # Lookup table for setting up the correct master clock rate
+    # depending on the DSP bandwidth (in MHz) of the FPGA image.
+    bandwidth_to_default_mcr = {
+        200: 245.76e6,
+        400: 368.64e6,
+        1600: 368.64e6,
+    }
 
     def __init__(self, mboard_info, dboard_infos, args, log):
         self.log = log.getChild('Clk_Policy')
@@ -371,7 +384,7 @@ class X440ClockPolicy(X4xxClockPolicy):
 
         self._dsp_info = None
         # Use default values during startup
-        self._dsp_bw = 1600
+        self._dsp_bw = None
         self._spc = 8
         self._extra_resampling = 1
         self._valid_sysref_freqs = list(sysref_setting['SYSREF_FREQ']
@@ -396,7 +409,11 @@ class X440ClockPolicy(X4xxClockPolicy):
         """
         Return a reasonable default master clock rate.
         """
-        return self.DEFAULT_MASTER_CLOCK_RATE
+        if self._dsp_bw is None:
+            return self.DEFAULT_MASTER_CLOCK_RATE
+        if self.bandwidth_to_default_mcr.get(self._dsp_bw):
+            return self.bandwidth_to_default_mcr.get(self._dsp_bw)
+        raise AssertionError("Cannot determine default MCR.")
 
     def get_num_rates(self):
         """
@@ -527,11 +544,14 @@ class X440ClockPolicy(X4xxClockPolicy):
         """
         Returns the maximum sample rate based on the DSP BW reported by the FPGA.
         """
-        assert self._dsp_bw > 0
         # _dsp_bw is in MHz, multiplied by 1.28 for the sample rate necessary to capture this, e.g.
         # 1.6 GS/s (FPGA) * 1.28 = 2.048 GS/s (max sample rate)
         # 400 MS/s * 1.28 = 512 GS/s
-        return self._dsp_bw * 1e6 * 1.28
+        dsp_bw = self._dsp_bw
+        if dsp_bw is None:
+            # Play it safe and assume the lowest known dsp_bw
+            dsp_bw = min(self.bandwidth_to_default_mcr.keys())
+        return dsp_bw * 1e6 * 1.28
 
     def _get_min_mcr(self):
         """
