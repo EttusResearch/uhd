@@ -1137,6 +1137,8 @@ module rfnoc_image_core #(
     .NUM_PORTS           (2),
     .NIPC                (RADIO_NIPC),
     .ITEM_W              (32),
+    .CTRL_CLK_IDX        (1),
+    .TB_CLK_IDX          (4),
     .MTU                 (BLOCK_MTU)
   ) b_radio0_2 (
     .rfnoc_chdr_clk      (rfnoc_chdr_clk),
@@ -1310,6 +1312,8 @@ module rfnoc_image_core #(
     .NUM_PORTS           (2),
     .NIPC                (RADIO_NIPC),
     .ITEM_W              (32),
+    .CTRL_CLK_IDX        (1),
+    .TB_CLK_IDX          (4),
     .MTU                 (BLOCK_MTU)
   ) b_radio1_5 (
     .rfnoc_chdr_clk      (rfnoc_chdr_clk),

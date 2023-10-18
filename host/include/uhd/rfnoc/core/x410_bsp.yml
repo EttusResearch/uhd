@@ -23,11 +23,25 @@ transports:
   type: dma
   width: 64
 
+# This describes available clocks from the BSP. Note that the indices are not
+# arbitrary: Making clock info fully discoverable through registers would be
+# more complicated than is worth it, so we hard-code the indices for some of the
+# clocks. The control and default CHDR clocks are 0/1, followed by the radio
+# clocks.
+# Note that indices can also be dynamically allocated.
 clocks:
-- name: radio
-- name: radio_2x
-- name: dram
+- name: rfnoc_ctrl
+  index: 1
+- name: rfnoc_chdr
+  index: 2
 - name: ce
+  index: 3
+- name: radio
+  index: 4
+- name: radio_2x
+  index: 7
+- name: dram
+  index: 8
 
 io_ports:
   ctrlport_radio0:

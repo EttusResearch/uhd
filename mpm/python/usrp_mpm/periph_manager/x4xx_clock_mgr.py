@@ -999,23 +999,75 @@ class X4xxClockManager:
     def get_clocks(self):
         """
         Gets the RFNoC-related clocks present in the FPGA design
+
+        TODO: The plan is to have the FPGA provide a list of clocks. This would
+        also allow user-defined clocks to show up in this list.
+
+        For now, we hardcode the list of clocks to our best knowledge. The main
+        issue with that is, we have to manually match the frequency of the clocks
+        with what the HDL implementation is using.
+
+        The following clock indices are fixed, and need to be changed in the
+        BSP YAML files (x410_bsp.yml and x440_bsp.yml) if they are changed here,
+        and vice versa. Note that clocks 1-3 are also hard-coded in image_builder.py.
+
+        1 - ctrl clk
+        2 - chdr clk
+        3 - ce clk
+        4,5 - radio clks
+        6,7 - radio clks 2x
+
+        Note: Even if we were able to read back the clock frequency for some
+        clocks from the FPGA, this wouldn't trivially be possible with the radio
+        clocks, as we spend a lot of work in this file to generate them in the
+        first place. Therefore, we populate their rates in this function manually.
         """
-        # TODO: The 200 and 40 MHz clocks should not be hard coded, and ideally
-        # be linked to the FPGA image somehow
         return [
-            {
-                'name': 'radio_clk',
-                'freq': str(self.get_master_clock_rate()),
-                'mutable': 'true'
+            ### These clocks should be read back from the FPGA!
+            { # Alias for clock 1: Control clock
+                'name': 'ctrl_clk',
+                'freq': str(40e6),
             },
             {
+                'name': '1',
+                'freq': str(40e6),
+            },
+            { # Alias for clock 2: Bus/CHDR clock
                 'name': 'bus_clk',
                 'freq': str(200e6),
             },
+            { # Alias for clock 2: Bus/CHDR clock
+                'name': 'chdr_clk',
+                'freq': str(200e6),
+            },
             {
-                'name': 'ctrl_clk',
-                'freq': str(40e6),
-            }
+                'name': '2',
+                'freq': str(200e6),
+            },
+            { # CE clock
+                'name': '3',
+                'freq': str(266.66667e6),
+            },
+            ### These clocks will likely be always defined here
+            { # Alias for clock 4: radio clock 0
+                'name': 'radio_clk',
+                'freq': str(self.get_master_clock_rate(0)),
+                'mutable': 'true'
+            },
+            {
+                'name': '4',
+                'freq': str(self.get_master_clock_rate(0)),
+                'mutable': 'true'
+            },
+            # We don't need an alias for clock 4, because it is not referenced
+            # in the block registry.
+            {
+                'name': '5',
+                'freq': str(self.get_master_clock_rate(1)),
+                'mutable': 'true'
+            },
+            ### Now we should be asking the FPGA for any other clocks and their
+            ### attributes.
         ]
 
 
