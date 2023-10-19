@@ -53,6 +53,9 @@ static void handle_udp_data_packet(
     struct socket_address src, struct socket_address dst,
     unsigned char *payload, int payload_len
 ){
+#ifdef VERBOSE_PACKET
+    printf("Got UDP data packet #words: %d\n", (int)payload_len);
+#endif
     //handle ICMP destination unreachable
     if (payload == NULL) switch(src.port){
     case KINTEX7SDR_UDP_RX_DSP0_PORT:
@@ -136,7 +139,9 @@ static void handle_udp_ctrl_packet(
     struct socket_address src, struct socket_address dst,
     unsigned char *payload, int payload_len
 ){
-    //printf("Got ctrl packet #words: %d\n", (int)payload_len);
+#ifdef VERBOSE_PACKET
+    printf("Got UDP control packet #words: %d\n", (int)payload_len);
+#endif
     const kintex7sdr_ctrl_data_t *ctrl_data_in = (kintex7sdr_ctrl_data_t *)payload;
     uint32_t ctrl_data_in_id = ctrl_data_in->id;
 
@@ -280,6 +285,27 @@ static void handle_inp_packet(uint32_t *buff, size_t num_lines){
       } data;
   }recovery_packet_t;
   recovery_packet_t *recovery_packet = (recovery_packet_t *)buff;
+
+
+#ifdef VERBOSE_PACKET
+  static const char *digits = "0123456789ABCDEF";
+  char hex_buff[4];
+  uint16_t val = recovery_packet->eth_hdr.ethertype;
+  hex_buff[0] = digits[(val >> 12)];
+  hex_buff[1] = digits[((val >> 8) & 0xf)];
+  hex_buff[2] = digits[((val >> 4) & 0xf)];
+  hex_buff[3] = digits[(val & 0xf)];
+
+  printf("Got packet: ");
+  printf(hex_buff);
+  switch(val){
+      case 2048: printf("(Internet Protocol version 4) -> "); break;
+      case 2054: printf("(Address Resolution Protocol) -> "); break;
+      default:   printf("(Unknown) -> ");
+  }
+  printf(recovery_packet->code);
+  newline();
+#endif
   if (recovery_packet->eth_hdr.ethertype == 0xbeee && strncmp(recovery_packet->code, "addr", 4) == 0){
       printf("Got ip recovery packet: "); print_ip_addr(&recovery_packet->data.ip_addr); newline();
       set_ip_addr(&recovery_packet->data.ip_addr);

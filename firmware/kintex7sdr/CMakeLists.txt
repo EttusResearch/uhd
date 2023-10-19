@@ -59,6 +59,22 @@ ADD_LINKER_FLAGS("-Wl,--relax")
 #ADD_DEFINITIONS(-DHAL_IO_USES_DBOARD_PINS)
 ADD_DEFINITIONS(-DHAL_IO_USES_UART)
 
+OPTION(DEFINE_VERBOSE_PACKET "Show all incoming packets" OFF)
+IF(DEFINE_VERBOSE_PACKET)
+    message("Showing all packets EtherType. Disable in production")
+    ADD_DEFINITIONS(-DVERBOSE_PACKET=1)
+    ADD_DEFINITIONS(-DLWIP_DEBUG=1)
+    ADD_DEFINITIONS(-DLWIP_DBG_LEVEL=1)
+    ADD_DEFINITIONS(-DAPI_MSG_DEBUG=128)
+    ADD_DEFINITIONS(-DTCP_DEBUG=128)
+    ADD_DEFINITIONS(-DNETIF_DEBUG=128)
+    ADD_DEFINITIONS(-DDHCP_DEBUG=128)
+    ADD_DEFINITIONS(-DUDP_DEBUG=128)
+    ADD_DEFINITIONS(-DMEMP_DEBUG=128)
+    ADD_DEFINITIONS(-DMEM_DEBUG=128)
+    ADD_DEFINITIONS(-DICMP_DEBUG=128)
+ENDIF(DEFINE_VERBOSE_PACKET)
+
 ########################################################################
 # common cflags and ldflags
 ########################################################################
