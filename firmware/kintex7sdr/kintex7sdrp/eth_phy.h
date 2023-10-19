@@ -142,11 +142,11 @@
 #define CR_1000T_HD_CAPS         0x0100 /* Advertise 1000T HD capability */
 #define CR_1000T_FD_CAPS         0x0200 /* Advertise 1000T FD capability  */
 #define CR_1000T_REPEATER_DTE    0x0400 /* 1=Repeater/switch device port */
-                                        /* 0=DTE device */
+/* 0=DTE device */
 #define CR_1000T_MS_VALUE        0x0800 /* 1=Configure PHY as Master */
-                                        /* 0=Configure PHY as Slave */
+/* 0=Configure PHY as Slave */
 #define CR_1000T_MS_ENABLE       0x1000 /* 1=Master/Slave manual config value */
-                                        /* 0=Automatic Master/Slave config */
+/* 0=Automatic Master/Slave config */
 #define CR_1000T_TEST_MODE_NORMAL 0x0000 /* Normal Operation */
 #define CR_1000T_TEST_MODE_1     0x2000 /* Transmit Waveform test */
 #define CR_1000T_TEST_MODE_2     0x4000 /* Master Transmit Jitter test */
@@ -178,7 +178,7 @@
 #define PHY_TX_NORMAL_POLARITY 0      /* register 10h bit 8 (normal polarity) */
 
 #define AUTO_POLARITY_DISABLE  0x0010 /* register 11h bit 4 */
-                                      /* (0=enable, 1=disable) */
+/* (0=enable, 1=disable) */
 
 /* Link and Auto Negotiation Status Reg (PHY_LINK_AN) [READ-ONLY] */
 #define	LANSR_MASTER           0x0001 /* 1=PHY is currently in master mode */

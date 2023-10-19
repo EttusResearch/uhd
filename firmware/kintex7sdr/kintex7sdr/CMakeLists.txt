@@ -25,7 +25,7 @@ ADD_DEFINITIONS(-DUDP_UART_MASK=0)
 ADD_LIBRARY(libkintex7sdrfw STATIC
     ${COMMON_SRCS}
     sd.c
-    ethernet.c
+    ../kintex7sdrp/ethernet.c
 )
 
 ########################################################################

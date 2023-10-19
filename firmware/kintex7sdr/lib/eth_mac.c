@@ -19,7 +19,7 @@
 #include "eth_mac.h"
 #include "memory_map.h"
 #include <stdbool.h>
-#include "eth_phy.h"	// for simulation constants
+#include "../kintex7sdrp/eth_phy.h"	// for simulation constants
 #include "mdelay.h"
 #include "stdio.h"
 

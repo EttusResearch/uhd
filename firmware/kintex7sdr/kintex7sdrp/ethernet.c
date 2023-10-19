@@ -17,13 +17,17 @@
  */
 
 #include "ethernet.h"
-#include "eth_phy.h"
+#include "../kintex7sdrp/eth_phy.h"
 #include "eth_mac.h"
 #include "pic.h"
 #include "hal_io.h"
 #include "nonstdio.h"
 
-#define VERBOSE 1
+#ifdef VERBOSE_PACKET
+#define VERBOSE VERBOSE_PACKET
+#else
+#define VERBOSE 0
+#endif
 
 static ethernet_t ed_state;
 static ethernet_link_changed_callback_t ed_callback = 0;
@@ -38,7 +42,9 @@ ethernet_register_link_changed_callback(ethernet_link_changed_callback_t new_cal
 static void
 ed_set_mac_speed(int speed)
 {
+#if VERBOSE == 1
   printf("Speed set to %d\n",speed);
+#endif
   /*
   switch(speed){
   case 10:
@@ -59,8 +65,9 @@ ed_set_mac_speed(int speed)
 static void
 ed_link_up(int speed)
 {
-   putstr("ed_link_up: "); puthex16_nl(speed);
-
+#if VERBOSE == 1
+  putstr("ed_link_up: "); puthex16_nl(speed);
+#endif
   ed_set_mac_speed(speed);
 
   if (ed_callback)		// fire link changed callback
@@ -70,7 +77,9 @@ ed_link_up(int speed)
 static void
 ed_link_down(void)
 {
-   putstr("ed_link_down\n");
+#if VERBOSE == 1
+  putstr("ed_link_down\n");
+#endif
 
   if (ed_callback)		// fire link changed callback
     (*ed_callback)(0);
@@ -90,8 +99,10 @@ print_flow_control(int flow_control)
   static const char *flow_control_msg[4] = {
     "NONE", "WE_TX", "WE_RX", "SYMMETRIC"
   };
+#if VERBOSE == 1
   putstr("ethernet flow control: ");
   puts(flow_control_msg[flow_control & 0x3]);
+#endif
 }
 
 static void
@@ -110,8 +121,9 @@ check_flow_control_resolution(void)
   int index = (((us >> 10) & 0x3) << 2) | ((lp >> 10) & 0x3);
   ed_state.flow_control = table[index];
 
-  if (1)
+#if VERBOSE == 1
     print_flow_control(ed_state.flow_control);
+#endif
 }
 
 /*
@@ -124,14 +136,21 @@ ed_check_phy_state(void)
   eth_link_state_t new_state = LS_UNKNOWN;
   int new_speed = S_UNKNOWN;
 
-  if (VERBOSE){
-	    putstr("LANSR: ");
-	    puthex16_nl(lansr);
-  }
+#if VERBOSE == 1
+    putstr("LANSR: ");
+    puthex16_nl(lansr);
+
+    putstr("Reg 0x10: ");
+    puthex16_nl(eth_mac_miim_read(0x10));
+
+    putstr("Reg 0x12: ");
+    puthex16_nl(eth_mac_miim_read(0x12));
+#endif
 
   if (lansr & LANSR_LINK_GOOD){		// link's up
-    if (VERBOSE)
+#if VERBOSE == 1
       puts("  LINK_GOOD");
+#endif
 
     new_state = LS_UP;
     switch (lansr & LANSR_SPEED_MASK){
@@ -155,8 +174,9 @@ ed_check_phy_state(void)
     check_flow_control_resolution();
   }
   else {				// link's down
-    if (VERBOSE)
+#if VERBOSE == 1
       puts("  NOT LINK_GOOD");
+#endif
     
     new_state = LS_DOWN;
     new_speed = S_UNKNOWN;
