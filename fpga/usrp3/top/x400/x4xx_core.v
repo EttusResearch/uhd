@@ -420,6 +420,8 @@ module x4xx_core #(
   wire [  2*NUM_DBOARDS-1:0] ctrlport_radio_resp_status;
   wire [ 32*NUM_DBOARDS-1:0] ctrlport_radio_resp_data;
 
+  wire [95:0] device_dna;
+
   x4xx_core_common #(
     .CHDR_CLK_RATE   (CHDR_CLK_RATE),
     .CHDR_W          (CHDR_W),
@@ -517,7 +519,8 @@ module x4xx_core #(
     .mfg_test_en_fabric_clk           (mfg_test_en_fabric_clk),
     .mfg_test_en_gty_rcv_clk          (mfg_test_en_gty_rcv_clk),
     .fpga_aux_ref                     (fpga_aux_ref),
-    .version_info                     (version_info)
+    .version_info                     (version_info),
+    .device_dna                       (device_dna)
   );
 
   // Provide information for ctrlport timed commands
@@ -813,6 +816,7 @@ module x4xx_core #(
     .dram_clk                       (dram_clk),
     .ce_clk                         (ce_clk),
     .device_id                      (device_id),
+    .dna                            (device_dna),
     .m_ctrlport_radio0_req_wr       (ctrlport_radio_req_wr      [0* 1+: 1]),
     .m_ctrlport_radio0_req_rd       (ctrlport_radio_req_rd      [0* 1+: 1]),
     .m_ctrlport_radio0_req_addr     (ctrlport_radio_req_addr    [0*20+:20]),

@@ -3123,7 +3123,7 @@ endmodule
 //        <li> Version last modified: @.VERSIONING_REGS_REGMAP..VERSION_LAST_MODIFIED
 //      </info>
 //      <value name="FPGA_CURRENT_VERSION_MAJOR"           integer="8"/>
-//      <value name="FPGA_CURRENT_VERSION_MINOR"           integer="2"/>
+//      <value name="FPGA_CURRENT_VERSION_MINOR"           integer="3"/>
 //      <value name="FPGA_CURRENT_VERSION_BUILD"           integer="0"/>
 //      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_MAJOR" integer="8"/>
 //      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_MINOR" integer="2"/>
