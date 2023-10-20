@@ -69,7 +69,13 @@ noc_blocks:
   replay0:
     block_desc: 'replay.yml'
     parameters:
-      NUM_PORTS: 4
+      NUM_PORTS: 2
+      MEM_DATA_W: 128
+      MEM_ADDR_W: 32
+  replay1:
+    block_desc: 'replay.yml'
+    parameters:
+      NUM_PORTS: 2
       MEM_DATA_W: 128
       MEM_ADDR_W: 32
 
@@ -104,10 +110,10 @@ connections:
   - { srcblk: replay0,  srcport: out_0,    dstblk: ep4,      dstport: in0             }
   - { srcblk: ep5,      srcport: out0,     dstblk: replay0,  dstport: in_1            }
   - { srcblk: replay0,  srcport: out_1,    dstblk: ep5,      dstport: in0             }
-  - { srcblk: ep6,      srcport: out0,     dstblk: replay0,  dstport: in_2            }
-  - { srcblk: replay0,  srcport: out_2,    dstblk: ep6,      dstport: in0             }
-  - { srcblk: ep7,      srcport: out0,     dstblk: replay0,  dstport: in_3            }
-  - { srcblk: replay0,  srcport: out_3,    dstblk: ep7,      dstport: in0             }
+  - { srcblk: ep6,      srcport: out0,     dstblk: replay1,  dstport: in_0            }
+  - { srcblk: replay1,  srcport: out_0,    dstblk: ep6,      dstport: in0             }
+  - { srcblk: ep7,      srcport: out0,     dstblk: replay1,  dstport: in_1            }
+  - { srcblk: replay1,  srcport: out_1,    dstblk: ep7,      dstport: in0             }
   #
   # BSP Connections
   - { srcblk: radio0,   srcport: ctrlport, dstblk: _device_, dstport: ctrlport_radio0 }
@@ -116,7 +122,8 @@ connections:
   - { srcblk: _device_, srcport: radio1,   dstblk: radio1,   dstport: radio           }
   - { srcblk: _device_, srcport: time,     dstblk: radio0,   dstport: time            }
   - { srcblk: _device_, srcport: time,     dstblk: radio1,   dstport: time            }
-  - { srcblk: replay0,  srcport: axi_ram,  dstblk: _device_, dstport: dram            }
+  - { srcblk: replay0,  srcport: axi_ram,  dstblk: _device_, dstport: dram0           }
+  - { srcblk: replay1,  srcport: axi_ram,  dstblk: _device_, dstport: dram1           }
 
 # A list of all clock domain connections in design
 # ------------------------------------------------
@@ -129,3 +136,4 @@ clk_domains:
   - { srcblk: _device_, srcport: radio, dstblk: radio0,  dstport: radio }
   - { srcblk: _device_, srcport: radio, dstblk: radio1,  dstport: radio }
   - { srcblk: _device_, srcport: dram,  dstblk: replay0, dstport: mem   }
+  - { srcblk: _device_, srcport: dram,  dstblk: replay1, dstport: mem   }

@@ -149,7 +149,7 @@ connections:
   - { srcblk: _device_, srcport: time,        dstblk: radio1,   dstport: time            }
   - { srcblk: radio0,   srcport: ctrlport,    dstblk: _device_, dstport: ctrlport_radio0 }
   - { srcblk: radio1,   srcport: ctrlport,    dstblk: _device_, dstport: ctrlport_radio1 }
-  - { srcblk: replay0,  srcport: axi_ram,     dstblk: _device_, dstport: dram            }
+  - { srcblk: replay0,  srcport: axi_ram,     dstblk: _device_, dstport: dram0           }
 
 # A list of all clock domain connections in design
 # ------------------------------------------------

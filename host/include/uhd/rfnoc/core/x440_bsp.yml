@@ -84,6 +84,15 @@ io_ports:
     rename:
       pattern: (.*)
       repl: \1_radio1
-  dram:
+  dram0:
     type: axi4_mm
     drive: slave
+    rename:
+      pattern: (.*)
+      repl: dram0_\1
+  dram1:
+    type: axi4_mm
+    drive: slave
+    rename:
+      pattern: (.*)
+      repl: dram1_\1

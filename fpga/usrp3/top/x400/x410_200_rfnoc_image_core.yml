@@ -136,7 +136,7 @@ connections:
   # BSP Connections
   - { srcblk: radio0,   srcport: ctrlport,    dstblk: _device_, dstport: ctrlport_radio0 }
   - { srcblk: radio1,   srcport: ctrlport,    dstblk: _device_, dstport: ctrlport_radio1 }
-  - { srcblk: replay0,  srcport: axi_ram,     dstblk: _device_, dstport: dram            }
+  - { srcblk: replay0,  srcport: axi_ram,     dstblk: _device_, dstport: dram0           }
   - { srcblk: _device_, srcport: radio0,      dstblk: radio0,   dstport: radio           }
   - { srcblk: _device_, srcport: radio1,      dstblk: radio1,   dstport: radio           }
   - { srcblk: _device_, srcport: time,        dstblk: radio0,   dstport: time            }

@@ -131,7 +131,13 @@ noc_blocks:
   replay0:
     block_desc: 'replay.yml'
     parameters:
-      NUM_PORTS: 8
+      NUM_PORTS: 4
+      MEM_DATA_W: 128
+      MEM_ADDR_W: 32
+  replay1:
+    block_desc: 'replay.yml'
+    parameters:
+      NUM_PORTS: 4
       MEM_DATA_W: 128
       MEM_ADDR_W: 32
 
@@ -186,14 +192,14 @@ connections:
   - { srcblk: replay0, srcport: out_2, dstblk: ep10,    dstport: in0  }
   - { srcblk: ep11,    srcport: out0,  dstblk: replay0, dstport: in_3 }
   - { srcblk: replay0, srcport: out_3, dstblk: ep11,    dstport: in0  }
-  - { srcblk: ep12,    srcport: out0,  dstblk: replay0, dstport: in_4 }
-  - { srcblk: replay0, srcport: out_4, dstblk: ep12,    dstport: in0  }
-  - { srcblk: ep13,    srcport: out0,  dstblk: replay0, dstport: in_5 }
-  - { srcblk: replay0, srcport: out_5, dstblk: ep13,    dstport: in0  }
-  - { srcblk: ep14,    srcport: out0,  dstblk: replay0, dstport: in_6 }
-  - { srcblk: replay0, srcport: out_6, dstblk: ep14,    dstport: in0  }
-  - { srcblk: ep15,    srcport: out0,  dstblk: replay0, dstport: in_7 }
-  - { srcblk: replay0, srcport: out_7, dstblk: ep15,    dstport: in0  }
+  - { srcblk: ep12,    srcport: out0,  dstblk: replay1, dstport: in_0 }
+  - { srcblk: replay1, srcport: out_0, dstblk: ep12,    dstport: in0  }
+  - { srcblk: ep13,    srcport: out0,  dstblk: replay1, dstport: in_1 }
+  - { srcblk: replay1, srcport: out_1, dstblk: ep13,    dstport: in0  }
+  - { srcblk: ep14,    srcport: out0,  dstblk: replay1, dstport: in_2 }
+  - { srcblk: replay1, srcport: out_2, dstblk: ep14,    dstport: in0  }
+  - { srcblk: ep15,    srcport: out0,  dstblk: replay1, dstport: in_3 }
+  - { srcblk: replay1, srcport: out_3, dstblk: ep15,    dstport: in0  }
   #
   # BSP Connections
   - { srcblk: radio0,   srcport: ctrlport, dstblk: _device_, dstport: ctrlport_radio0 }
@@ -202,7 +208,8 @@ connections:
   - { srcblk: _device_, srcport: radio1,   dstblk: radio1,   dstport: radio           }
   - { srcblk: _device_, srcport: time0,    dstblk: radio0,   dstport: time            }
   - { srcblk: _device_, srcport: time1,    dstblk: radio1,   dstport: time            }
-  - { srcblk: replay0,  srcport: axi_ram,  dstblk: _device_, dstport: dram            }
+  - { srcblk: replay0,  srcport: axi_ram,  dstblk: _device_, dstport: dram0           }
+  - { srcblk: replay1,  srcport: axi_ram,  dstblk: _device_, dstport: dram1           }
 
 # A list of all clock domain connections in design
 # ------------------------------------------------
@@ -215,3 +222,4 @@ clk_domains:
   - { srcblk: _device_, srcport: radio0, dstblk: radio0,  dstport: radio }
   - { srcblk: _device_, srcport: radio1, dstblk: radio1,  dstport: radio }
   - { srcblk: _device_, srcport: dram,   dstblk: replay0, dstport: mem   }
+  - { srcblk: _device_, srcport: dram,   dstblk: replay1, dstport: mem   }
