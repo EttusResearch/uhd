@@ -45,9 +45,9 @@ jobs:
   displayName: 'Build FPGA'
   timeoutInMinutes: $[ variables['timeout'] ]
   pool:
-    name: hardware
+    name: Drivers-NIBuildFarm-RFMIBUILD
     demands:
-    - MAX_CPU -equals 4
+    - Agent.OS -equals Linux
   variables:
   - group: sdr-pipeline-vars
   strategy:

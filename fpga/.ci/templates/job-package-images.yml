@@ -43,9 +43,9 @@ jobs:
   displayName: 'Create ${{ parameters.package_name }}'
   timeoutInMinutes: 10
   pool:
-    name: hardware
+    name: Drivers-NIBuildFarm-RFMIBUILD
     demands:
-    - MAX_CPU -equals 4
+    - Agent.OS -equals Linux
   variables:
     - group: sdr-pipeline-vars
   steps:
