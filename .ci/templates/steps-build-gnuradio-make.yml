@@ -18,6 +18,7 @@ steps:
     cmake \
       $UHD_CI_CMAKE_OPTIONS \
       -DCMAKE_PREFIX_PATH="${{ parameters.uhdInstalledArtifactPath }}" \
+      -DPYTHON_EXECUTABLE=/usr/bin/python3 \
       ${{ parameters.gnuradioSrcDir }}
   displayName: cmake make gnuradio
 
