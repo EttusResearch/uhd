@@ -48,8 +48,8 @@ parameters:
   default:
     X410_X4_200:
       target_name: X410_X4_200
-      timeout: 480
-      max_attempts: 1
+      timeout: 720
+      max_attempts: 2
     X410_UC_200:
       target_name: X410_UC_200
       timeout: 720
@@ -84,6 +84,10 @@ parameters:
       max_attempts: 2
     X440_X4_400:
       target_name: X440_X4_400
+      timeout: 720
+      max_attempts: 2
+    X440_X4_200:
+      target_name: X440_X4_200
       timeout: 720
       max_attempts: 2
 
