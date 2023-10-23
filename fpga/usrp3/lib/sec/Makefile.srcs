@@ -13,4 +13,5 @@ sha256_core.v \
 sha256_k_constants.v \
 sha256_stream.v \
 sha256_w_mem.v \
+license_check.sv \
 ))
