@@ -78,7 +78,8 @@ def load_rules(rule_file):
     Return the rules as a Python list.
     """
     with open(rule_file, 'r', encoding='utf-8') as rfd:
-        return yaml.safe_load(rfd)
+        y = yaml.YAML(typ='safe', pure=True)
+        return y.load(rfd)
 
 class RuleApplier:
     """
