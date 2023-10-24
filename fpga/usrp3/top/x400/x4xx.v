@@ -3252,12 +3252,12 @@ endmodule
 //        <li> Version last modified: @.VERSIONING_REGS_REGMAP..VERSION_LAST_MODIFIED
 //      </info>
 //      <value name="FPGA_CURRENT_VERSION_MAJOR"           integer="8"/>
-//      <value name="FPGA_CURRENT_VERSION_MINOR"           integer="1"/>
+//      <value name="FPGA_CURRENT_VERSION_MINOR"           integer="2"/>
 //      <value name="FPGA_CURRENT_VERSION_BUILD"           integer="0"/>
 //      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_MAJOR" integer="8"/>
-//      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_MINOR" integer="1"/>
+//      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_MINOR" integer="2"/>
 //      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_BUILD" integer="0"/>
-//      <value name="FPGA_VERSION_LAST_MODIFIED_TIME"      integer="0x23092509"/>
+//      <value name="FPGA_VERSION_LAST_MODIFIED_TIME"      integer="0x23102410"/>
 //    </enumeratedtype>
 //  </group>
 //</regmap>
