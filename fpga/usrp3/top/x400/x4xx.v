@@ -700,14 +700,14 @@ module x4xx (
   wire [  3:0] m_axi_mpm_ep_wstrb;
   wire [  0:0] m_axi_mpm_ep_wvalid;
 
-  wire adc_data_out_resetn_dclk;
-  wire adc_enable_data_rclk;
-  wire adc_rfdc_axi_resetn_rclk;
+  wire                       adc_data_out_resetn_dclk;
+  wire [NUM_TIMEKEEPERS-1:0] adc_enable_data_rclk;
+  wire [NUM_TIMEKEEPERS-1:0] adc_rfdc_axi_resetn_rclk;
 
-  wire dac_data_in_resetn_dclk;
-  wire dac_data_in_resetn_dclk2x;
-  wire dac_data_in_resetn_rclk;
-  wire dac_data_in_resetn_rclk2x;
+  wire                       dac_data_in_resetn_dclk;
+  wire                       dac_data_in_resetn_dclk2x;
+  wire [NUM_TIMEKEEPERS-1:0] dac_data_in_resetn_rclk;
+  wire [NUM_TIMEKEEPERS-1:0] dac_data_in_resetn_rclk2x;
 
   wire fir_resetn_rclk2x;
 
@@ -839,10 +839,10 @@ module x4xx (
   wire [3:0] eth1_tx_irq;
 
   // RF reset control
-  wire nco_reset_done;
-  wire start_nco_reset;
-  wire adc_reset_pulse;
-  wire dac_reset_pulse;
+  wire                       nco_reset_done;
+  wire                       start_nco_reset;
+  wire [NUM_TIMEKEEPERS-1:0] adc_reset_pulse;
+  wire [NUM_TIMEKEEPERS-1:0] dac_reset_pulse;
 
   // Rear panel LEDs control
   //
@@ -1337,25 +1337,27 @@ module x4xx (
     );
   `elsif X440
     x440_ps_rfdc_bd x440_ps_rfdc_bd_i (
-    .adc_data_out_resetn_dclk      (adc_data_out_resetn_dclk),
-    .adc_enable_data_rclk          (adc_enable_data_rclk),
-    .adc_reset_pulse_dclk          (adc_reset_pulse),
-    .adc_rfdc_axi_resetn_rclk      (adc_rfdc_axi_resetn_rclk),
+    .adc_enable_data_r0clk         (adc_enable_data_rclk[0]),
+    .adc_enable_data_r1clk         (adc_enable_data_rclk[1]),
+    .adc_reset_pulse_r0clk         (adc_reset_pulse[0]),
+    .adc_reset_pulse_r1clk         (adc_reset_pulse[1]),
+    .adc_rfdc_axi_resetn_r0clk     (adc_rfdc_axi_resetn_rclk[0]),
+    .adc_rfdc_axi_resetn_r1clk     (adc_rfdc_axi_resetn_rclk[1]),
     .bus_clk                       (bus_clk),
     .bus_rstn                      (bus_clk_rstn),
     .clk40                         (clk40),
     .clk40_rstn                    (clk40_rstn),
-    .dac_data_in_resetn_dclk       (dac_data_in_resetn_dclk),
-    .dac_data_in_resetn_dclk2x     (dac_data_in_resetn_dclk2x),
-    .dac_data_in_resetn_rclk       (dac_data_in_resetn_rclk),
-    .dac_data_in_resetn_rclk2x     (dac_data_in_resetn_rclk2x),
-    .dac_reset_pulse_dclk          (dac_reset_pulse),
+    .dac_data_in_resetn_r0clk      (dac_data_in_resetn_rclk[0]),
+    .dac_data_in_resetn_r1clk      (dac_data_in_resetn_rclk[1]),
+    .dac_data_in_resetn_r0clk2x    (dac_data_in_resetn_rclk2x[0]),
+    .dac_data_in_resetn_r1clk2x    (dac_data_in_resetn_rclk2x[1]),
+    .dac_reset_pulse_r0clk         (dac_reset_pulse[0]),
+    .dac_reset_pulse_r1clk         (dac_reset_pulse[1]),
     .data_clk                      (data_clk),
     .data_clk_2x                   (data_clk_2x),
     .data_clock_locked             (),
     .enable_gated_clocks_clk40     (1'b1),
-    .enable_sysref_rclk            (1'b1),
-    .fir_resetn_rclk2x             (fir_resetn_rclk2x),
+    .enable_sysref_r0clk           (1'b1),
     .gated_base_clks_valid_clk40   (),
     .radio0_invert_adc_iq_r0clk    (invert_adc_iq_rclk2[3:0]),
     .radio0_invert_dac_iq_r0clk    (invert_dac_iq_rclk2[3:0]),
@@ -1367,7 +1369,7 @@ module x4xx (
     .jtag0_tdi                     (),
     .jtag0_tdo                     (),
     .jtag0_tms                     (),
-    .nco_reset_done_dclk           (nco_reset_done),
+    .nco_reset_done_r0clk          (nco_reset_done),
     .pl_clk40                      (clk40),
     .pl_clk100                     (clk100),
     .pl_clk166                     (clk166),
@@ -1391,9 +1393,9 @@ module x4xx (
     .s_axi_hp0_aclk                (clk40),
     .s_axi_hp1_aclk                (clk40),
     .s_axi_hpc0_aclk               (),
-    .start_nco_reset_dclk          (start_nco_reset),
+    .start_nco_reset_r0clk         (start_nco_reset),
     .sysref_out_pclk               (),
-    .sysref_out_rclk               (),
+    .sysref_out_r0clk              (),
     .sysref_pl_in                  (sysref_pl),
   `ifdef QSFP0_0
     .s_axi_hp0_aruser              (axi_hp0_aruser),
@@ -2212,8 +2214,8 @@ module x4xx (
           .dsp_info_sclk             (rf_dsp_info_clk40[10*db_i+:10]),
           .rfdc_info_sclk            (rf_rfdc_info_clk40[16*db_i+:16]),
           .axi_status_sclk           (rf_axi_status_clk40[16*db_i +: 16]),
-          .adc_enable_data_rclk      (adc_enable_data_rclk),
-          .adc_rfdc_axi_resetn_rclk  (adc_rfdc_axi_resetn_rclk),
+          .adc_enable_data_rclk      (adc_enable_data_rclk[db_i]),
+          .adc_rfdc_axi_resetn_rclk  (adc_rfdc_axi_resetn_rclk[db_i]),
           .version_info              (rf_core_version[db_i])
         );
       end // gen_rf_core_full

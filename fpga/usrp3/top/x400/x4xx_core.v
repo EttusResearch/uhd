@@ -208,10 +208,10 @@ module x4xx_core #(
   input  wire [ 32*NUM_DBOARDS-1:0] m_ctrlport_radio_resp_data,
 
   // RF Reset Control
-  output wire start_nco_reset,
-  input  wire nco_reset_done,
-  output wire adc_reset_pulse,
-  output wire dac_reset_pulse,
+  output wire                       start_nco_reset,
+  input  wire                       nco_reset_done,
+  output wire [NUM_TIMEKEEPERS-1:0] adc_reset_pulse,
+  output wire [NUM_TIMEKEEPERS-1:0] dac_reset_pulse,
 
   // Version (Constant)
   // Each component consists of a 96-bit vector (refer to versioning_utils.vh)

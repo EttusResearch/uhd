@@ -37,7 +37,7 @@ module x4xx_core_common #(
   parameter RFNOC_PROTOVER   = {8'd1, 8'd0},
   parameter NUM_DBOARDS      = 2,
   parameter NUM_CH_PER_DB    = 2,
-  parameter NUM_TIMEKEEPERS = NUM_DBOARDS,
+  parameter NUM_TIMEKEEPERS  = NUM_DBOARDS,
   parameter PCIE_PRESENT     = 0
 ) (
   // Clocks and resets
@@ -134,10 +134,10 @@ module x4xx_core_common #(
   input  wire [ 32*NUM_DBOARDS-1:0] m_radio_ctrlport_resp_data,
 
   // RF Reset Control
-  output wire start_nco_reset,
-  input  wire nco_reset_done,
-  output wire adc_reset_pulse,
-  output wire dac_reset_pulse,
+  output wire                       start_nco_reset,
+  input  wire                       nco_reset_done,
+  output wire [NUM_TIMEKEEPERS-1:0] adc_reset_pulse,
+  output wire [NUM_TIMEKEEPERS-1:0] dac_reset_pulse,
 
   // Radio state for ATR control
   input wire [NUM_DBOARDS*NUM_CH_PER_DB-1:0] tx_running,
@@ -596,6 +596,60 @@ module x4xx_core_common #(
     end
   endgenerate
 
+  // Synchronize DB1 ctrlport to radio_clk[0] domain
+  wire         radio1_crossed_req_wr;
+  wire         radio1_crossed_req_rd;
+  wire [ 19:0] radio1_crossed_req_addr;
+  wire [ 31:0] radio1_crossed_req_data;
+  wire         radio1_crossed_resp_ack;
+  wire [  1:0] radio1_crossed_resp_status;
+  wire [ 31:0] radio1_crossed_resp_data;
+
+  generate
+    // Crossing only necessary if there are multiple timekeepers/radio rates.
+    if (NUM_TIMEKEEPERS > 1) begin : gen_ctrlport_dio_clk_cross
+      ctrlport_clk_cross ctrlport_clk_radio_dio (
+        .rst                        (radio_rst[1]),
+        .s_ctrlport_clk             (radio_clk[1]),
+        .s_ctrlport_req_wr          (radio_dio_req_wr[1*1 +: 1]),
+        .s_ctrlport_req_rd          (radio_dio_req_rd[1*1 +: 1]),
+        .s_ctrlport_req_addr        (radio_dio_req_addr[1*20 +: 20]),
+        .s_ctrlport_req_portid      (10'b0),
+        .s_ctrlport_req_rem_epid    (16'b0),
+        .s_ctrlport_req_rem_portid  (10'b0),
+        .s_ctrlport_req_data        (radio_dio_req_data[1*32 +: 32]),
+        .s_ctrlport_req_byte_en     (4'hF),
+        .s_ctrlport_req_has_time    (1'b0),
+        .s_ctrlport_req_time        (64'b0),
+        .s_ctrlport_resp_ack        (radio_dio_resp_ack[1*1 +: 1]),
+        .s_ctrlport_resp_status     (radio_dio_resp_status[1*2 +: 2]),
+        .s_ctrlport_resp_data       (radio_dio_resp_data[1*32 +: 32]),
+        .m_ctrlport_clk             (radio_clk[0]),
+        .m_ctrlport_req_wr          (radio1_crossed_req_wr),
+        .m_ctrlport_req_rd          (radio1_crossed_req_rd),
+        .m_ctrlport_req_addr        (radio1_crossed_req_addr),
+        .m_ctrlport_req_portid      (),
+        .m_ctrlport_req_rem_epid    (),
+        .m_ctrlport_req_rem_portid  (),
+        .m_ctrlport_req_data        (radio1_crossed_req_data),
+        .m_ctrlport_req_byte_en     (),
+        .m_ctrlport_req_has_time    (),
+        .m_ctrlport_req_time        (),
+        .m_ctrlport_resp_ack        (radio1_crossed_resp_ack),
+        .m_ctrlport_resp_status     (radio1_crossed_resp_status),
+        .m_ctrlport_resp_data       (radio1_crossed_resp_data)
+      );
+    end else begin
+      assign radio1_crossed_req_wr   = radio_dio_req_wr[1*1 +: 1];
+      assign radio1_crossed_req_rd   = radio_dio_req_rd[1*1 +: 1];
+      assign radio1_crossed_req_addr = radio_dio_req_addr[1*20 +: 20];
+      assign radio1_crossed_req_data = radio_dio_req_data[1*32 +: 32];
+      assign radio_dio_resp_ack[1*1 +: 1]    = radio1_crossed_resp_ack;
+      assign radio_dio_resp_status[1*2 +: 2] = radio1_crossed_resp_status;
+      assign radio_dio_resp_data[1*32 +: 32] = radio1_crossed_resp_data;
+    end
+  endgenerate
+
 
   //-------------------------------------------------------------------------
   // RF Timing Reset Control
@@ -604,8 +658,8 @@ module x4xx_core_common #(
   rfdc_timing_control #(
     .NUM_DBOARDS (NUM_DBOARDS)
   ) rfdc_timing_control_i (
-    .clk                              (radio_clk[0]),
-    .rst                              (radio_rst[0]),
+    .clk                              (radio_clk),
+    .rst                              (radio_rst),
     .s_ctrlport_req_wr                (rf_ctrlport_req_wr),
     .s_ctrlport_req_rd                (rf_ctrlport_req_rd),
     .s_ctrlport_req_addr              (rf_ctrlport_req_addr),
@@ -750,19 +804,19 @@ module x4xx_core_common #(
   ) ctrlport_combiner_dio (
     .ctrlport_clk               (radio_clk[0]),
     .ctrlport_rst               (radio_rst[0]),
-    .s_ctrlport_req_wr          ({radio_dio_req_wr,      windowed_mpm_dio_req_wr}),
-    .s_ctrlport_req_rd          ({radio_dio_req_rd,      windowed_mpm_dio_req_rd}),
-    .s_ctrlport_req_addr        ({radio_dio_req_addr,    windowed_mpm_dio_req_addr}),
+    .s_ctrlport_req_wr          ({radio1_crossed_req_wr,      radio_dio_req_wr[0*1 +: 1],      windowed_mpm_dio_req_wr}),
+    .s_ctrlport_req_rd          ({radio1_crossed_req_rd,      radio_dio_req_rd[0*1 +: 1],      windowed_mpm_dio_req_rd}),
+    .s_ctrlport_req_addr        ({radio1_crossed_req_addr,    radio_dio_req_addr[0*20 +: 20],  windowed_mpm_dio_req_addr}),
     .s_ctrlport_req_portid      ({(NUM_DBOARDS+1){10'b0}}),
     .s_ctrlport_req_rem_epid    ({(NUM_DBOARDS+1){16'b0}}),
     .s_ctrlport_req_rem_portid  ({(NUM_DBOARDS+1){10'b0}}),
-    .s_ctrlport_req_data        ({radio_dio_req_data,    windowed_mpm_dio_req_data}),
+    .s_ctrlport_req_data        ({radio1_crossed_req_data,    radio_dio_req_data[0*32 +: 32],  windowed_mpm_dio_req_data}),
     .s_ctrlport_req_byte_en     ({(NUM_DBOARDS+1){4'hF}}),
     .s_ctrlport_req_has_time    ({(NUM_DBOARDS+1){1'b0}}),
     .s_ctrlport_req_time        ({(NUM_DBOARDS+1){64'b0}}),
-    .s_ctrlport_resp_ack        ({radio_dio_resp_ack,    windowed_mpm_dio_resp_ack}),
-    .s_ctrlport_resp_status     ({radio_dio_resp_status, windowed_mpm_dio_resp_status}),
-    .s_ctrlport_resp_data       ({radio_dio_resp_data,   windowed_mpm_dio_resp_data}),
+    .s_ctrlport_resp_ack        ({radio1_crossed_resp_ack,    radio_dio_resp_ack[0*1 +: 1],    windowed_mpm_dio_resp_ack}),
+    .s_ctrlport_resp_status     ({radio1_crossed_resp_status, radio_dio_resp_status[0*2 +: 2], windowed_mpm_dio_resp_status}),
+    .s_ctrlport_resp_data       ({radio1_crossed_resp_data,   radio_dio_resp_data[0*32 +: 32], windowed_mpm_dio_resp_data}),
     .m_ctrlport_req_wr          (dio_ctrlport_req_wr),
     .m_ctrlport_req_rd          (dio_ctrlport_req_rd),
     .m_ctrlport_req_addr        (dio_ctrlport_req_addr),
