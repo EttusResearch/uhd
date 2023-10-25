@@ -10,3 +10,4 @@ a.out
 *.jou
 *.log
 *.pyc
+vivado_pid*
