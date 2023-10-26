@@ -334,11 +334,11 @@ main(void)
   arp_cache_init();
 
 #if VERBOSE == 1
-#ifdef BOOTLOADER
-  putstr("\nBootloader initialization...\n");
-#else
-  putstr("\nTxRx-UHD-ZPU over 7-Series FPGA\n");
-#endif
+  #ifdef BOOTLOADER
+    putstr("\nBootloader initialization...\n");
+  #else
+    putstr("\nTxRx-UHD-ZPU over 7-Series FPGA\n");
+  #endif
   printf("FPGA compatibility number: %d\n", KINTEX7SDR_FPGA_COMPAT_NUM);
   printf("Firmware compatibility number: %d\n", KINTEX7SDR_FW_COMPAT_NUM);
 #endif

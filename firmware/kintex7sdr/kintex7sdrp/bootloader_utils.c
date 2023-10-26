@@ -79,15 +79,16 @@ void do_the_bootload_thing(void) {
 	}
 	
 	if(!production_image) {
-		puts("Checking for valid production FPGA image...");
+		//puts("Checking for valid production FPGA image...");
 		if(is_valid_fpga_image(PROD_FPGA_IMAGE_LOCATION_ADDR)) {
 			puts("Valid production FPGA image found. Attempting to boot.");
 			set_safe_booted_flag(1);
 			mdelay(300); //so serial output can finish
 			//icap_reload_fpga(PROD_FPGA_IMAGE_LOCATION_ADDR);
 			warmboot(PROD_FPGA_IMAGE_LOCATION_ADDR);
-		}
-		puts("No valid production FPGA image found. Falling through to built-in firmware.");
+		}else{
+                        puts("No valid production FPGA image found. Falling through to built-in firmware.");
+                }
 		return;
 	}
 	if(is_valid_fw_image(PROD_FW_IMAGE_LOCATION_ADDR)) {
