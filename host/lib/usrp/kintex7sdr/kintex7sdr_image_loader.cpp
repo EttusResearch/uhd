@@ -332,7 +332,7 @@ static void kintex7sdr_setup_session(kintex7sdr_session_t &session,
      * EEPROM or is otherwise unable to provide its revision, this is
      * impossible, and the user must manually provide a firmware file.
      */
-    if ((session.fw and image_loader_args.firmware_path.empty()) or image_loader_args.fpga_path.empty()) {
+    if ((!session.fw and image_loader_args.fpga_path.empty()) or (session.fw and image_loader_args.firmware_path.empty())) {
         if (session.dev_addr["hw_rev"] == "n2xx") {
             throw uhd::runtime_error("This device's revision cannot be determined. "
                                      "You must manually specify a filepath.");
