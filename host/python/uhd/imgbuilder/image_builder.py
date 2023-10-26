@@ -385,7 +385,10 @@ class ImageBuilderConfig:
             # Generate list of block ports, adding 'index' to each port's dict
             for direction in ("inputs", "outputs"):
                 index = 0
-                for port_name, port_info in desc.data[direction].items():
+                data_ports = getattr(desc, "data", {}).get(direction, {}).items()
+                if not data_ports:
+                    logging.info("Block %s has no data %s.", desc.module_name, direction)
+                for port_name, port_info in data_ports:
                     num_ports = 1
                     if "num_ports" in port_info:
                         parameter = port_info["num_ports"]

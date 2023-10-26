@@ -28,14 +28,18 @@
   wire                    ${block_name}_${clock["name"]}_clk;
   %endif
 %endfor
+%if axis_inputs:
   wire [BLOCK_CHDR_W-1:0] ${axis_inputs.format("s", "tdata ")};
   wire                    ${axis_inputs.format("s", "tlast ")};
   wire                    ${axis_inputs.format("s", "tvalid")};
   wire                    ${axis_inputs.format("s", "tready")};
+%endif
+%if axis_outputs:
   wire [BLOCK_CHDR_W-1:0] ${axis_outputs.format("m", "tdata ")};
   wire                    ${axis_outputs.format("m", "tlast ")};
   wire                    ${axis_outputs.format("m", "tvalid")};
   wire                    ${axis_outputs.format("m", "tready")};
+%endif
 
 %if hasattr(block, "io_ports"):
   %for name, io_port in block.io_ports.items():
@@ -84,14 +88,18 @@
     %endfor
   %endfor
 %endif
+%if axis_inputs:
     .s_rfnoc_chdr_tdata  ({${axis_inputs.format("s", "tdata ")}}),
     .s_rfnoc_chdr_tlast  ({${axis_inputs.format("s", "tlast ")}}),
     .s_rfnoc_chdr_tvalid ({${axis_inputs.format("s", "tvalid")}}),
     .s_rfnoc_chdr_tready ({${axis_inputs.format("s", "tready")}}),
+%endif
+%if axis_outputs:
     .m_rfnoc_chdr_tdata  ({${axis_outputs.format("m", "tdata ")}}),
     .m_rfnoc_chdr_tlast  ({${axis_outputs.format("m", "tlast ")}}),
     .m_rfnoc_chdr_tvalid ({${axis_outputs.format("m", "tvalid")}}),
     .m_rfnoc_chdr_tready ({${axis_outputs.format("m", "tready")}}),
+%endif
     .s_rfnoc_ctrl_tdata  (s_${block_name}_ctrl_tdata),
     .s_rfnoc_ctrl_tlast  (s_${block_name}_ctrl_tlast),
     .s_rfnoc_ctrl_tvalid (s_${block_name}_ctrl_tvalid),
