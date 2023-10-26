@@ -280,13 +280,6 @@ handle_udp_packet(struct ip_addr src_ip, struct ip_addr dst_ip,
   unsigned char *payload = ((unsigned char *) udp) + UDP_HLEN;
   int payload_len = len - UDP_HLEN;
 
-#ifdef VERBOSE_PACKET
-    printf("\nUDP: src = %d  dst = %d  len = %d\n",
-	   udp->src, udp->dest, udp->len);
-
-    //print_bytes(0, payload, payload_len);
-#endif
-
   struct listener_entry *lx = find_listener_by_port(udp->dest);
   if (lx){
     struct socket_address src = make_socket_address(src_ip, udp->src);
@@ -319,9 +312,6 @@ handle_icmp_packet(struct ip_addr src, struct ip_addr dst,
       putchar('i');
     }
     else {
-#ifdef VERBOSE_PACKET
-      printf("icmp dst unr (code: %d)", icmp->code);
-#endif
       putchar('i');
     }
     break;

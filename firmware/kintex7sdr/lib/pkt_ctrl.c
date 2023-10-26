@@ -69,12 +69,6 @@ void *pkt_ctrl_claim_incoming_buffer(size_t *num_lines){
 
     //if error: drop the packet and start a new read
     if (status & CPU_STAT_RD_EROR){
-#ifdef VERBOSE_PACKET
-        putstr("Router Status: ");
-        puthex16(status);
-        putstr(" = ");
-        putbin16_nl(status);
-#endif
         putstr("E");
         pkt_ctrl_release_incoming_buffer();
     }

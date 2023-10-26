@@ -156,7 +156,9 @@ ed_check_phy_state(void)
 #endif
 
   if (lansr & LANSR_LINK_GOOD){		// link's up
+#if VERBOSE == 1
     puts("  LINK_GOOD");
+#endif
 
     new_state = LS_UP;
     switch (lansr & LANSR_SPEED_MASK){
@@ -180,7 +182,9 @@ ed_check_phy_state(void)
     check_flow_control_resolution();
   }
   else {				// link's down
-      puts("  NOT LINK_GOOD");
+#if VERBOSE == 1
+    puts("  NOT LINK_GOOD");
+#endif
     
     new_state = LS_DOWN;
     new_speed = S_UNKNOWN;

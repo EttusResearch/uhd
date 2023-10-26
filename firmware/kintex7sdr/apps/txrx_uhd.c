@@ -53,9 +53,6 @@ static void handle_udp_data_packet(
     struct socket_address src, struct socket_address dst,
     unsigned char *payload, int payload_len
 ){
-#ifdef VERBOSE_PACKET
-    printf("Got UDP data packet #words: %d\n", (int)payload_len);
-#endif
     //handle ICMP destination unreachable
     if (payload == NULL) switch(src.port){
     case KINTEX7SDR_UDP_RX_DSP0_PORT:
@@ -287,16 +284,6 @@ static void handle_inp_packet(uint32_t *buff, size_t num_lines){
   recovery_packet_t *recovery_packet = (recovery_packet_t *)buff;
 
 
-#ifdef VERBOSE_PACKET
-  printf("Got packet: ");
-  puthex16(recovery_packet->eth_hdr.ethertype);
-  switch(recovery_packet->eth_hdr.ethertype){
-      case 2048: printf("(Internet Protocol version 4)"); break;
-      case 2054: printf("(Address Resolution Protocol)"); break;
-      default:   printf("(Unknown)");
-  }
-  newline();
-#endif
   if (recovery_packet->eth_hdr.ethertype == 0xbeee && strncmp(recovery_packet->code, "addr", 4) == 0){
       printf("Got ip recovery packet: "); print_ip_addr(&recovery_packet->data.ip_addr); newline();
       set_ip_addr(&recovery_packet->data.ip_addr);
@@ -333,12 +320,12 @@ main(void)
   u2_init();
   arp_cache_init();
 
+#ifdef BOOTLOADER
+  putstr("\nBootloader initialization...\n");
+#else
+  putstr("\nTxRx-UHD-ZPU over 7-Series FPGA\n");
+#endif
 #if VERBOSE == 1
-  #ifdef BOOTLOADER
-    putstr("\nBootloader initialization...\n");
-  #else
-    putstr("\nTxRx-UHD-ZPU over 7-Series FPGA\n");
-  #endif
   printf("FPGA compatibility number: %d\n", KINTEX7SDR_FPGA_COMPAT_NUM);
   printf("Firmware compatibility number: %d\n", KINTEX7SDR_FW_COMPAT_NUM);
 #endif
