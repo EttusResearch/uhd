@@ -528,6 +528,8 @@ public:
         auto mb_eeprom      = mbc->get_eeprom();
 
         dict<std::string, std::string> usrp_info;
+        usrp_info["module_serial"] =
+            mb_eeprom.get("module_serial", mb_eeprom.get("serial", "n/a"));
         usrp_info["mboard_id"]      = mbc->get_mboard_name();
         usrp_info["mboard_name"]    = mb_eeprom.get("name", "n/a");
         usrp_info["mboard_serial"]  = mb_eeprom.get("serial", "n/a");
@@ -568,6 +570,8 @@ public:
         auto mb_eeprom      = mbc->get_eeprom();
 
         dict<std::string, std::string> usrp_info;
+        usrp_info["module_serial"] =
+            mb_eeprom.get("module_serial", mb_eeprom.get("serial", "n/a"));
         usrp_info["mboard_id"]      = mbc->get_mboard_name();
         usrp_info["mboard_name"]    = mb_eeprom.get("name", "n/a");
         usrp_info["mboard_serial"]  = mb_eeprom.get("serial", "n/a");
