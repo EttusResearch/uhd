@@ -30,10 +30,12 @@ void puthex4(unsigned long x);		// output 1 hex digit
 void puthex8(unsigned long x);		// output 2 hex digits
 void puthex16(unsigned long x);		// output 4 hex digits
 void puthex32(unsigned long x);		// output 8 hex digits
+void putbin16(unsigned long x);
 void puthex4_nl(unsigned long x);	// ... followed by newline
 void puthex8_nl(unsigned long x);
 void puthex16_nl(unsigned long x);
 void puthex32_nl(unsigned long x);
+void putbin16_nl(unsigned long x);
 #define puthex puthex32
 #define puthex_nl puthex32_nl
 void newline();				// putchar('\n')

@@ -138,19 +138,25 @@ ed_check_phy_state(void)
 
 #if VERBOSE == 1
     putstr("LANSR: ");
-    puthex16_nl(lansr);
+    puthex16(lansr);
+    putstr(" = ");
+    putbin16_nl(lansr);
 
+    int prev_bytes = eth_mac_miim_read(0x10);
     putstr("Reg 0x10: ");
-    puthex16_nl(eth_mac_miim_read(0x10));
+    puthex16(prev_bytes);
+    putstr(" = ");
+    putbin16_nl(prev_bytes);
 
+    int next_bytes = eth_mac_miim_read(0x12);
     putstr("Reg 0x12: ");
-    puthex16_nl(eth_mac_miim_read(0x12));
+    puthex16(next_bytes);
+    putstr(" = ");
+    putbin16_nl(next_bytes);
 #endif
 
   if (lansr & LANSR_LINK_GOOD){		// link's up
-#if VERBOSE == 1
-      puts("  LINK_GOOD");
-#endif
+    puts("  LINK_GOOD");
 
     new_state = LS_UP;
     switch (lansr & LANSR_SPEED_MASK){
@@ -174,9 +180,7 @@ ed_check_phy_state(void)
     check_flow_control_resolution();
   }
   else {				// link's down
-#if VERBOSE == 1
       puts("  NOT LINK_GOOD");
-#endif
     
     new_state = LS_DOWN;
     new_speed = S_UNKNOWN;

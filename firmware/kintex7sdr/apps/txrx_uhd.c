@@ -288,22 +288,13 @@ static void handle_inp_packet(uint32_t *buff, size_t num_lines){
 
 
 #ifdef VERBOSE_PACKET
-  static const char *digits = "0123456789ABCDEF";
-  char hex_buff[4];
-  uint16_t val = recovery_packet->eth_hdr.ethertype;
-  hex_buff[0] = digits[(val >> 12)];
-  hex_buff[1] = digits[((val >> 8) & 0xf)];
-  hex_buff[2] = digits[((val >> 4) & 0xf)];
-  hex_buff[3] = digits[(val & 0xf)];
-
   printf("Got packet: ");
-  printf(hex_buff);
-  switch(val){
-      case 2048: printf("(Internet Protocol version 4) -> "); break;
-      case 2054: printf("(Address Resolution Protocol) -> "); break;
-      default:   printf("(Unknown) -> ");
+  puthex16(recovery_packet->eth_hdr.ethertype);
+  switch(recovery_packet->eth_hdr.ethertype){
+      case 2048: printf("(Internet Protocol version 4)"); break;
+      case 2054: printf("(Address Resolution Protocol)"); break;
+      default:   printf("(Unknown)");
   }
-  printf(recovery_packet->code);
   newline();
 #endif
   if (recovery_packet->eth_hdr.ethertype == 0xbeee && strncmp(recovery_packet->code, "addr", 4) == 0){
@@ -322,7 +313,9 @@ static void handle_inp_packet(uint32_t *buff, size_t num_lines){
  * Called when eth phy state changes (w/ interrupts disabled)
  */
 void link_changed_callback(int speed){
-    printf("\neth link changed: speed = %d\n", speed);
+#if VERBOSE == 1
+    printf("eth link changed: speed = %d\n", speed);
+#endif
     if (speed != 0){
         hal_set_leds(LED_RJ45, LED_RJ45);
         pkt_ctrl_set_routing_mode(PKT_CTRL_ROUTING_MODE_MASTER);
@@ -340,14 +333,15 @@ main(void)
   u2_init();
   arp_cache_init();
 
+#if VERBOSE == 1
 #ifdef BOOTLOADER
-  putstr("\nHello World from SDR Board!\n\nMy Super UDP bootloader! =)\n");
+  putstr("\nBootloader initialization...\n");
 #else
   putstr("\nTxRx-UHD-ZPU over 7-Series FPGA\n");
 #endif
   printf("FPGA compatibility number: %d\n", KINTEX7SDR_FPGA_COMPAT_NUM);
   printf("Firmware compatibility number: %d\n", KINTEX7SDR_FW_COMPAT_NUM);
-
+#endif
   //init readback for firmware minor version number
   fw_regs[U2_FW_REG_VER_MINOR] = KINTEX7SDR_FW_VER_MINOR;
 
@@ -389,7 +383,6 @@ main(void)
   ethernet_init();
 
   while(true){
-
     size_t num_lines;
     void *buff = pkt_ctrl_claim_incoming_buffer(&num_lines);
     if (buff != NULL){

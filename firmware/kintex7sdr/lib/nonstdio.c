@@ -51,6 +51,17 @@ puthex32(unsigned long x)
   puthex16(x);
 }
 
+void
+putbin16(unsigned long x)
+{
+  for (int i = 15; i >= 0; i--) {
+      if (x & (1 << i))
+          putchar('1');
+      else
+          putchar('0');
+  }
+}
+
 void 
 puthex4_nl(unsigned long x)
 {
@@ -76,6 +87,13 @@ void
 puthex32_nl(unsigned long x)
 {
   puthex32(x);
+  newline();
+}
+
+void
+putbin16_nl(unsigned long x)
+{
+  putbin16(x);
   newline();
 }
 /*

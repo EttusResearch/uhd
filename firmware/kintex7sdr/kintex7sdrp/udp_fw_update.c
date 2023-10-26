@@ -48,13 +48,13 @@ void handle_udp_fw_update_packet(struct socket_address src, struct socket_addres
   kintex7sdr_fw_update_id_t update_data_in_id = update_data_in->id;
 
   //ensure that the protocol versions match
-/*  if (payload_len >= sizeof(uint32_t) && update_data_in->proto_ver != KINTEX7SDR_FW_COMPAT_NUM){
+  if (payload_len >= sizeof(uint32_t) && update_data_in->proto_ver != KINTEX7SDR_FW_COMPAT_NUM){
     printf("!Error in update packet handler: Expected compatibility number %d, but got %d\n",
         KINTEX7SDR_FW_COMPAT_NUM, update_data_in->proto_ver
       );
       update_data_in_id = KINTEX7SDR_FW_UPDATE_ID_OHAI_LOL; //so we can respond
   }
-*/
+
   //ensure that this is not a short packet
   if (payload_len < sizeof(kintex7sdr_fw_update_data_t)){
       printf("!Error in update packet handler: Expected payload length %d, but got %d\n",
@@ -120,6 +120,7 @@ void handle_udp_fw_update_packet(struct socket_address src, struct socket_addres
 //    break;
 
   default: //uhhhh
+    printf("Cannot determine update command: %c", update_data_in_id);
     update_data_out.id = KINTEX7SDR_FW_UPDATE_ID_WAT;
   }
   send_udp_pkt(KINTEX7SDR_UDP_UPDATE_PORT, src, &update_data_out, sizeof(update_data_out));

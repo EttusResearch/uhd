@@ -87,7 +87,7 @@ void do_the_bootload_thing(void) {
 			//icap_reload_fpga(PROD_FPGA_IMAGE_LOCATION_ADDR);
 			warmboot(PROD_FPGA_IMAGE_LOCATION_ADDR);
 		}
-		puts("No valid production FPGA image found.\nFalling through to built-in firmware.");
+		puts("No valid production FPGA image found. Falling through to built-in firmware.");
 		return;
 	}
 	if(is_valid_fw_image(PROD_FW_IMAGE_LOCATION_ADDR)) {

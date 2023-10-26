@@ -94,7 +94,9 @@ eth_mac_miim_read(int addr)
     ;
 
   int r = eth_mac->miirx_data;
-  //printf("MIIM-READ ADDR 0x%x DATA 0x%x\n",addr, r);
+#ifdef VERBOSE_PACKET
+  printf("MIIM-READ ADDR 0x%x DATA 0x%x\n",addr, r);
+#endif
   return r;
 }
 
@@ -106,7 +108,9 @@ eth_mac_miim_write(int addr, int value)
   eth_mac->miitx_data = value;
   eth_mac->miicommand = MIIC_WCTRLDATA;
 
-//  printf("MIIM-WRITE ADDR 0x%x VAL 0x%x\n",addr,value);
+#ifdef VERBOSE_PACKET
+  printf("MIIM-WRITE ADDR 0x%x VAL 0x%x\n",addr,value);
+#endif
   while((eth_mac->miistatus & MIIS_BUSY) != 0)
     ;
 }

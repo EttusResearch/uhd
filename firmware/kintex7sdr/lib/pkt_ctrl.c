@@ -61,7 +61,6 @@ static inline void cpu_stat_wait_for(int bm){
 
 void *pkt_ctrl_claim_incoming_buffer(size_t *num_lines){
     uint32_t status = router_status->status;
-
     //if done: clear the read and return the buffer
     if (status & CPU_STAT_RD_DONE){
         *num_lines = (router_status->status >> 16) & 0xffff;
@@ -70,6 +69,12 @@ void *pkt_ctrl_claim_incoming_buffer(size_t *num_lines){
 
     //if error: drop the packet and start a new read
     if (status & CPU_STAT_RD_EROR){
+#ifdef VERBOSE_PACKET
+        putstr("Router Status: ");
+        puthex16(status);
+        putstr(" = ");
+        putbin16_nl(status);
+#endif
         putstr("E");
         pkt_ctrl_release_incoming_buffer();
     }
