@@ -23,10 +23,12 @@
 #include "hal_io.h"
 #include "nonstdio.h"
 
-#ifdef VERBOSE_PACKET
-#define VERBOSE VERBOSE_PACKET
-#else
-#define VERBOSE 0
+#ifndef VERBOSE
+  #ifdef VERBOSE_PACKET
+    #define VERBOSE VERBOSE_PACKET
+  #else
+    #define VERBOSE 0
+  #endif
 #endif
 
 static ethernet_t ed_state;
@@ -141,18 +143,6 @@ ed_check_phy_state(void)
     puthex16(lansr);
     putstr(" = ");
     putbin16_nl(lansr);
-
-    int prev_bytes = eth_mac_miim_read(0x10);
-    putstr("Reg 0x10: ");
-    puthex16(prev_bytes);
-    putstr(" = ");
-    putbin16_nl(prev_bytes);
-
-    int next_bytes = eth_mac_miim_read(0x12);
-    putstr("Reg 0x12: ");
-    puthex16(next_bytes);
-    putstr(" = ");
-    putbin16_nl(next_bytes);
 #endif
 
   if (lansr & LANSR_LINK_GOOD){		// link's up
