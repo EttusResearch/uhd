@@ -59,20 +59,24 @@ module noc_shell_${config['module_name']} #(
   output wire ${clock['name']}_rst,
 % endfor
 
-  // RFNoC Backend Interface
-  input  wire [511:0]          rfnoc_core_config,
-  output wire [511:0]          rfnoc_core_status,
-
+<%
+    has_inputs = 'inputs' in config.get('data', {})
+    has_outputs = 'outputs' in config.get('data', {})
+%>\
+%if has_inputs:
   // AXIS-CHDR Input Ports (from framework)
   input  wire [(${func.num_ports_in_str()})*CHDR_W-1:0] s_rfnoc_chdr_tdata,
   input  wire [(${func.num_ports_in_str()})-1:0]        s_rfnoc_chdr_tlast,
   input  wire [(${func.num_ports_in_str()})-1:0]        s_rfnoc_chdr_tvalid,
   output wire [(${func.num_ports_in_str()})-1:0]        s_rfnoc_chdr_tready,
+%endif
+%if has_outputs:
   // AXIS-CHDR Output Ports (to framework)
   output wire [(${func.num_ports_out_str()})*CHDR_W-1:0] m_rfnoc_chdr_tdata,
   output wire [(${func.num_ports_out_str()})-1:0]        m_rfnoc_chdr_tlast,
   output wire [(${func.num_ports_out_str()})-1:0]        m_rfnoc_chdr_tvalid,
   input  wire [(${func.num_ports_out_str()})-1:0]        m_rfnoc_chdr_tready,
+%endif
 
   // AXIS-Ctrl Control Input Port (from framework)
   input  wire [31:0]           s_rfnoc_ctrl_tdata,
@@ -101,36 +105,47 @@ module noc_shell_${config['module_name']} #(
 <%include file="/modules/axis_ctrl_wires_template.mako" args="mode='shell'"/>\
 %endif
 
-%if config['data']['fpga_iface'] == "axis_chdr":
+
+<%
+    fpga_data_iface = config.get('data', {}).get('fpga_iface')
+%>\
+%if fpga_data_iface == "axis_chdr":
   // AXIS-CHDR Clock and Reset
   output wire               axis_chdr_clk,
   output wire               axis_chdr_rst,
 <%include file="/modules/axis_chdr_wires_template.mako" args="mode='shell'"/>\
-%elif config['data']['fpga_iface'] == "axis_pyld_ctxt":
+%elif fpga_data_iface == "axis_pyld_ctxt":
   // AXI-Stream Payload Context Clock and Reset
   output wire               axis_data_clk,
   output wire               axis_data_rst,
 <%include file="/modules/axis_pyld_ctxt_wires_template.mako" args="mode='shell'"/>\
-%elif config['data']['fpga_iface'] == "axis_data":
+%elif fpga_data_iface == "axis_data":
   // AXI-Stream Data Clock and Reset
   output wire               axis_data_clk,
   output wire               axis_data_rst,
 <%include file="/modules/axis_data_wires_template.mako" args="mode='shell'"/>\
 %endif
+
+  // RFNoC Backend Interface
+  input  wire [511:0]       rfnoc_core_config,
+  output wire [511:0]       rfnoc_core_status
 );
 
   //---------------------------------------------------------------------------
   //  Backend Interface
   //---------------------------------------------------------------------------
-
+%if has_inputs:
   wire         data_i_flush_en;
   wire [31:0]  data_i_flush_timeout;
   wire [63:0]  data_i_flush_active;
   wire [63:0]  data_i_flush_done;
+%endif
+%if has_outputs:
   wire         data_o_flush_en;
   wire [31:0]  data_o_flush_timeout;
   wire [63:0]  data_o_flush_active;
   wire [63:0]  data_o_flush_done;
+%endif
 
   backend_iface #(
     .NOC_ID        (32'h${format(config['noc_id'], "08X")}),
@@ -143,16 +158,30 @@ module noc_shell_${config['module_name']} #(
     .rfnoc_chdr_rst       (rfnoc_chdr_rst),
     .rfnoc_ctrl_clk       (rfnoc_ctrl_clk),
     .rfnoc_ctrl_rst       (rfnoc_ctrl_rst),
-    .rfnoc_core_config    (rfnoc_core_config),
-    .rfnoc_core_status    (rfnoc_core_status),
+%if has_inputs:
     .data_i_flush_en      (data_i_flush_en),
     .data_i_flush_timeout (data_i_flush_timeout),
     .data_i_flush_active  (data_i_flush_active),
     .data_i_flush_done    (data_i_flush_done),
+%else:
+    .data_i_flush_en      (),
+    .data_i_flush_timeout (),
+    .data_i_flush_active  (64'b0),
+    .data_i_flush_done    (64'b1),
+%endif
+%if has_outputs:
     .data_o_flush_en      (data_o_flush_en),
     .data_o_flush_timeout (data_o_flush_timeout),
     .data_o_flush_active  (data_o_flush_active),
-    .data_o_flush_done    (data_o_flush_done)
+    .data_o_flush_done    (data_o_flush_done),
+%else:
+    .data_o_flush_en      (),
+    .data_o_flush_timeout (),
+    .data_o_flush_active  (64'b0),
+    .data_o_flush_done    (64'b1),
+%endif
+    .rfnoc_core_config    (rfnoc_core_config),
+    .rfnoc_core_status    (rfnoc_core_status)
   );
 
 <% reset_comment_block = False %>\
@@ -194,27 +223,29 @@ module noc_shell_${config['module_name']} #(
 <%include file="/modules/ctrlport_modules_template.mako"/>\
 %endif
 
+%if has_inputs or has_outputs:
   //---------------------------------------------------------------------------
   //  Data Path
   //---------------------------------------------------------------------------
 
   genvar i;
 
-%if config['data']['fpga_iface'] == "axis_pyld_ctxt":
+%if fpga_data_iface == "axis_pyld_ctxt":
   assign axis_data_clk = ${config['data']['clk_domain']}_clk;
   assign axis_data_rst = ${config['data']['clk_domain']}_rst;
 
 <%include file="/modules/axis_pyld_ctxt_modules_template.mako"/>\
-%elif config['data']['fpga_iface'] == "axis_chdr":
+%elif fpga_data_iface == "axis_chdr":
   assign axis_chdr_clk = ${config['data']['clk_domain']}_clk;
   assign axis_chdr_rst = ${config['data']['clk_domain']}_rst;
 
 <%include file="/modules/axis_chdr_modules_template.mako"/>\
-%elif config['data']['fpga_iface'] == "axis_data":
+%elif fpga_data_iface == "axis_data":
   assign axis_data_clk = ${config['data']['clk_domain']}_clk;
   assign axis_data_rst = ${config['data']['clk_domain']}_rst;
 
 <%include file="/modules/axis_data_modules_template.mako"/>\
+%endif
 %endif
 endmodule // noc_shell_${config['module_name']}
 
