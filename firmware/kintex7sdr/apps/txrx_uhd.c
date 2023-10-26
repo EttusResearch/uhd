@@ -369,10 +369,7 @@ main(void)
   register_udp_listener(KINTEX7SDR_UDP_FIFO_CRTL_PORT, handle_udp_data_packet);
   
 #ifdef USRP2P
-  printf("Registered firware update listener\n");
   register_udp_listener(KINTEX7SDR_UDP_UPDATE_PORT, handle_udp_fw_update_packet);
-#else
-  printf("No update port for you!\n");
 #endif
 
   udp_uart_init(KINTEX7SDR_UDP_UART_BASE_PORT); //setup uart messaging
