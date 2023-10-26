@@ -42,6 +42,9 @@ spi_flash_async_state_t spi_flash_async_state;
 void handle_udp_fw_update_packet(struct socket_address src, struct socket_address dst,
                                  unsigned char *payload, int payload_len) {
 
+#ifdef VERBOSE_PACKET
+    printf("Got UDP update packet #words: %d\n", (int)payload_len);
+#endif
   const kintex7sdr_fw_update_data_t *update_data_in = (kintex7sdr_fw_update_data_t *) payload;
 
   kintex7sdr_fw_update_data_t update_data_out;
@@ -62,7 +65,9 @@ void handle_udp_fw_update_packet(struct socket_address src, struct socket_addres
       );
       update_data_in_id = KINTEX7SDR_FW_UPDATE_ID_WAT;
   }
-
+#ifdef VERBOSE_PACKET
+  printf("Got command from update_port: %c\n", update_data_in_id);
+#endif
   switch(update_data_in_id) {
   case KINTEX7SDR_FW_UPDATE_ID_OHAI_LOL: //why hello there you handsome devil
     update_data_out.id = KINTEX7SDR_FW_UPDATE_ID_OHAI_OMG;
@@ -120,7 +125,7 @@ void handle_udp_fw_update_packet(struct socket_address src, struct socket_addres
 //    break;
 
   default: //uhhhh
-    printf("Cannot determine update command: %c", update_data_in_id);
+    printf("Cannot determine update command: %c\n", update_data_in_id);
     update_data_out.id = KINTEX7SDR_FW_UPDATE_ID_WAT;
   }
   send_udp_pkt(KINTEX7SDR_UDP_UPDATE_PORT, src, &update_data_out, sizeof(update_data_out));

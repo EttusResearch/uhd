@@ -142,37 +142,7 @@ typedef struct {
  **********************************************************************/
 
 static void print_kintex7sdr_error(const image_loader::image_loader_args_t &image_loader_args) {
-#ifdef UHD_PLATFORM_WIN32
-    std::string kintex7sdr_card_burner_gui = "\"";
-    const std::string nl              = " ^\n    ";
-#else
-    std::string usrp2_card_burner_gui = "sudo \"";
-    const std::string nl = " \\\n    ";
-#endif
-
-    usrp2_card_burner_gui += find_utility("usrp2_card_burner_gui.py");
-    usrp2_card_burner_gui += "\"";
-
-    if (image_loader_args.load_firmware) {
-        usrp2_card_burner_gui += str(boost::format("%s--fw=\"%s\"") % nl
-                                     % ((image_loader_args.firmware_path.empty())
-                                        ? find_image_path("usrp_fw.bin")
-                                        : image_loader_args.firmware_path));
-    }
-    if (image_loader_args.load_fpga) {
-        usrp2_card_burner_gui += str(
-                boost::format("%s--fpga=\"%s\"") % nl
-                % ((image_loader_args.fpga_path.empty()) ? find_image_path("usrp_fpga.bin")
-                                                         : image_loader_args.fpga_path));
-    }
-
-    throw uhd::runtime_error(str(
-            boost::format(
-                    "The specified device is not KINTEX7SDR, which is not supported by this utility.\n"
-                    "Instead, plug the device's SD card into your machine and run this "
-                    "command:\n\n"
-                    "%s")
-            % usrp2_card_burner_gui));
+    throw uhd::runtime_error("The specified device did not respond with valid hardware revision");
 }
 
 /*
