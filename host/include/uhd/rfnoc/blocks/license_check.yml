@@ -1,0 +1,30 @@
+schema: rfnoc_modtool_args
+module_name: license_check
+version: "1.0"
+rfnoc_version: "1.0"
+chdr_width: 64
+noc_id: 0x11C0CECC
+
+parameters:
+  NUM_FEATURES: 1
+  FEATURE_IDS: "32'hC0DE"
+
+clocks:
+  - name: rfnoc_chdr
+    freq: "[]"
+  - name: rfnoc_ctrl
+    freq: "[]"
+
+control:
+  fpga_iface: ctrlport
+  interface_direction: slave
+  fifo_depth: 64
+  clk_domain: rfnoc_ctrl
+  ctrlport:
+    byte_mode: False
+    timed: False
+    has_status: False
+
+registers:
+
+properties:

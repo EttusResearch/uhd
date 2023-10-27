@@ -43,6 +43,12 @@
 //                            ID that was written. Bit 31 tells us if the feature
 //                            was unlocked. The rest tells us which feature index
 //                            it is.
+//   - RB_FID_ADDR (BASE_ADDR+12): Readback, will return a feature flag this
+//                                 module was compiled with. On the next read,
+//                                 it will return the next feature ID. To
+//                                 learn all feature IDs that this module knows,
+//                                 keep reading this register until values
+//                                 repeat.
 //
 // Parameters:
 //
@@ -64,8 +70,7 @@ module license_check #(
   parameter                         SERIAL_W    = 96,
   parameter                         NUM_FEATURES = 1,
   parameter [(32*NUM_FEATURES)-1:0] FEATURE_IDS = {32'hC0DE},
-  parameter [PKEY_W-1:0]            PRIVATE_KEY = 0,
-  parameter                         DEVICE_TYPE = "ULTRASCALE"
+  parameter [PKEY_W-1:0]            PRIVATE_KEY = 0
 )(
   input wire clk,
   input wire rst,
@@ -113,6 +118,7 @@ module license_check #(
   localparam FID_ADDR = BASE_ADDR;
   localparam KEY_ADDR = BASE_ADDR + 4;
   localparam RB_ADDR  = BASE_ADDR + 8;
+  localparam RB_FID_ADDR = BASE_ADDR + 12;
 
   // States
   typedef enum logic [2:0] {
@@ -123,6 +129,11 @@ module license_check #(
     ST_CTRLPORT_ERROR
   } state_t;
 
+  typedef enum logic {
+    ST_RB_ENABLED,
+    ST_RB_FIDS
+  } rb_state_t;
+
   // Registers & Wires
   state_t state = ST_IDLE;
   reg       key_valid  = 1'b0; // Tracks if current hash matches
@@ -130,6 +141,9 @@ module license_check #(
   reg [2:0] word_cnt   = 3'd7; // Track which word we are currently comparing
   // The index of the feature ID we're hashing/comparing
   reg [FIDXREG_W-1:0] feature_idx = NO_FID;
+  // The index of the last feature ID we returned on RB_FID_ADDR
+  reg [FIDXREG_W-1:0] rb_feature_idx = (NUM_FEATURES - 1);
+  reg                 rb_last_req = ST_RB_ENABLED;
 
   wire         fid_wr_req = (s_ctrlport_req_wr && (s_ctrlport_req_addr == FID_ADDR));
   wire         key_wr_req = (s_ctrlport_req_wr && (s_ctrlport_req_addr == KEY_ADDR));
@@ -172,6 +186,8 @@ module license_check #(
       // On reset, all features are disabled. Otherwise, they always stay on.
       feature_enabled <= {NUM_FEATURES{1'b0}};
       feature_idx     <= NO_FID;
+      // Reset the readback feature index
+      rb_feature_idx  <= (NUM_FEATURES - 1);
     end else case (state)
       ST_IDLE : begin
         //// Idle state: We're waiting on input via CtrlPort.
@@ -225,6 +241,14 @@ module license_check #(
         // Handle readback
         end else if (s_ctrlport_req_rd && (s_ctrlport_req_addr == RB_ADDR)) begin
           state <= ST_ACK;
+          rb_last_req <= ST_RB_ENABLED;
+
+        end else if (s_ctrlport_req_rd && (s_ctrlport_req_addr == RB_FID_ADDR)) begin
+          state <= ST_ACK;
+          rb_last_req <= ST_RB_FIDS;
+          rb_feature_idx <= rb_feature_idx == (NUM_FEATURES-1)
+              ? {FIDXREG_W{1'b0}}
+              : (rb_feature_idx + 1);
 
         // Any other read/write request is ignored
         end else begin
@@ -257,9 +281,11 @@ module license_check #(
   assign s_ctrlport_resp_status =
                 (state == ST_CTRLPORT_ERROR) ? CTRL_STS_CMDERR : CTRL_STS_OKAY;
 
-  assign s_ctrlport_resp_data = (feature_idx == NO_FID)
-      ? 32'b0
-      : {feature_enabled[feature_idx], {(31-FIDXREG_W){1'b0}}, feature_idx};
+  assign s_ctrlport_resp_data = (rb_last_req == ST_RB_ENABLED) ?
+      ((feature_idx == NO_FID)
+          ? 32'b0
+          : {feature_enabled[feature_idx], {(31-FIDXREG_W){1'b0}}, feature_idx})
+      : (FEATURE_IDS[(32*rb_feature_idx) +: 32]);
 
 endmodule
 
