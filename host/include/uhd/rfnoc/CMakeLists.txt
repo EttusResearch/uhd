@@ -17,6 +17,7 @@ UHD_INSTALL(FILES
     fir_filter_block_control.hpp
     fosphor_block_control.hpp
     keep_one_in_n_block_control.hpp
+    lc_block_control.hpp
     logpwr_block_control.hpp
     mock_block.hpp
     moving_average_block_control.hpp
