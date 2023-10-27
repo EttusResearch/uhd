@@ -14,16 +14,16 @@ x4xx_common_mender_default      meta-ettus-v4.5.0.0  x4xx/meta-ettus-v4.5.0.0/x4
 x4xx_common_sdimg_default       meta-ettus-v4.5.0.0  x4xx/meta-ettus-v4.5.0.0/x4xx_common_sdimg_default-v4.5.0.0.zip     0
 
 # X300-Series
-x3xx_x310_fpga_default          uhd-a2a04e3       x3xx/uhd-a2a04e3/x3xx_x310_fpga_default-ga2a04e3.zip                  7ad6420b41a7eed30f876b09c2789f3335fb34dbe373d7d9b0d390d0350db76e
-x3xx_x300_fpga_default          uhd-a2a04e3       x3xx/uhd-a2a04e3/x3xx_x300_fpga_default-ga2a04e3.zip                  8c2c2aed4d84fd06708f9349ef899b907775662adb97972e6c7e5e0cd8a712b2
+x3xx_x310_fpga_default          uhd-0790f58       x3xx/uhd-0790f58/x3xx_x310_fpga_default-g0790f58.zip                  b6e1b4ad7007836074add5730bd3ee9b06e3555120e383b0c3914a61a18d0cb1
+x3xx_x300_fpga_default          uhd-0790f58       x3xx/uhd-0790f58/x3xx_x300_fpga_default-g0790f58.zip                  c34793cc43cbeb3ca7370826518bbb900f9249da8241b9e068e856ad009e2ef2
 # Example daughterboard targets (none currently exist)
 #x3xx_twinrx_cpld_default   example_target
 #dboard_ubx_cpld_default    example_target
 
 # E-Series
-e3xx_e310_sg1_fpga_default      uhd-a2a04e3       e3xx/uhd-a2a04e3/e3xx_e310_sg1_fpga_default-ga2a04e3.zip             12bd1b7e5f401ee6364876483a3193fffbdc79275f5f8cd4b2071fe0868fc764
-e3xx_e310_sg3_fpga_default      uhd-a2a04e3       e3xx/uhd-a2a04e3/e3xx_e310_sg3_fpga_default-ga2a04e3.zip             716d769f7a5c242c30d719fee67effd3daeae766f42721985d7deb992569f3fc
-e3xx_e320_fpga_default          uhd-a2a04e3       e3xx/uhd-a2a04e3/e3xx_e320_fpga_default-ga2a04e3.zip                 3b4225e724213a49ba1ef7895b4420c09e2bfc1f67440b07c34d72fec5520b2f
+e3xx_e310_sg1_fpga_default      uhd-0790f58       e3xx/uhd-0790f58/e3xx_e310_sg1_fpga_default-g0790f58.zip             a23e5a4e7c555ba2faf45a3033dd86e73a03e0b3805111d6e11b0990dc7100bd
+e3xx_e310_sg3_fpga_default      uhd-0790f58       e3xx/uhd-0790f58/e3xx_e310_sg3_fpga_default-g0790f58.zip             2abe336c36aee1bb5636fc70313d5aa4802f2e9eba08d7aea2ece5ba8a818130
+e3xx_e320_fpga_default          uhd-0790f58       e3xx/uhd-0790f58/e3xx_e320_fpga_default-g0790f58.zip                 9976cee010814a59cddfc9a2bd5ca33c4f2df1a21ceecc1929fb1704a997cccf
 
 # E310 Filesystems
 e3xx_e310_sdk_default         meta-ettus-v4.5.0.0  e3xx/meta-ettus-v4.5.0.0/e3xx_e310_sdk_default-v4.5.0.0.zip       0
@@ -38,9 +38,9 @@ e3xx_e320_mender_default      meta-ettus-v4.5.0.0  e3xx/meta-ettus-v4.5.0.0/e3xx
 e3xx_e320_sdimg_default       meta-ettus-v4.5.0.0  e3xx/meta-ettus-v4.5.0.0/e3xx_e320_sdimg_default-v4.5.0.0.zip     0
 
 # N300-Series
-n3xx_n310_fpga_default          uhd-5da42f3         n3xx/uhd-5da42f3/n3xx_n310_fpga_default-g5da42f3.zip                555ca5c9287bd3313a679b9404fc2c7560c33da7781e769e22ed9d5f7df3386e
-n3xx_n300_fpga_default          uhd-5da42f3         n3xx/uhd-5da42f3/n3xx_n300_fpga_default-g5da42f3.zip                eb361f6adb6322cd4a1bdf43107430a19e38f83396bbc2490ffb248ff22db523
-n3xx_n320_fpga_default          uhd-5da42f3         n3xx/uhd-5da42f3/n3xx_n320_fpga_default-g5da42f3.zip                af4f924031d513010995208794261dbcf4a5ecf181d3451609dd9eb34211339c
+n3xx_n310_fpga_default          uhd-0790f58         n3xx/uhd-0790f58/n3xx_n310_fpga_default-g0790f58.zip                f354eb0142e6d5369dcd8b38c4570eef2596e4584380b561a1af2c3c490a32d1
+n3xx_n300_fpga_default          uhd-0790f58         n3xx/uhd-0790f58/n3xx_n300_fpga_default-g0790f58.zip                efa670c607cb0d97fb2fbda1be25456915f14742ce2e34f5a4efecca17f85cfe
+n3xx_n320_fpga_default          uhd-0790f58         n3xx/uhd-0790f58/n3xx_n320_fpga_default-g0790f58.zip                40034ce7fb3e5971867f0a8e28a1468410c1339eb4551f789e1c17712a2acf1f
 n3xx_n310_cpld_default          fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n310_cpld_default-g6bea23d.zip               ef128dcd265ee8615b673021d4ee84c39357012ffe8b28c8ad7f893f9dcb94cb
 n3xx_n320_cpld_default          uhd-739b37b         n3xx/uhd-739b37b/n3xx_n320_cpld_default-g739b37b.zip                552631c2993abc328a9f5a374777793e66031385aa14b9446c250c4616eff9f1
 # N3XX Mykonos firmware
