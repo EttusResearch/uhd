@@ -88,6 +88,14 @@ public:
      */
     std::vector<graph_edge_t> enumerate_edges();
 
+    /*! Create a dot representation of the current graph
+     *
+     * The graph is represented in the dot language, which can be visualized
+     * using the Graphviz tools. It contains all blocks and their connections.
+     * The connections are drawn between the ports of the blocks.
+     */
+    std::string to_dot();
+
 private:
     friend class graph_accessor_t;
 
