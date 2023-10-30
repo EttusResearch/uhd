@@ -619,12 +619,21 @@ class X440ClockPolicy(X4xxClockPolicy):
                     not (mmcm_vco_rate / rfdc_rate[0] / 2) % 1 and
                     not (mmcm_vco_rate / rfdc_rate[1] / 2) % 1 and
                     # RFDC rate must be a multiple of the PRC(==mmcm_input)
-                    not min_common_rfdc_rate % mmcm_input):
+                    all([(rate % mmcm_input) == 0 for rate in rfdc_rate])):
                     if not mmcm_cfg.get(mmcm_input) or mmcm_cfg.get(mmcm_input) > mmcm_vco_rate:
                         mmcm_cfg.update({mmcm_input: mmcm_vco_rate})
                 mmcm_input = False
             if mmcm_input:
                 break
+        if len(mmcm_cfg.keys()) == 0:
+            self.log.error(f"Unable to find a valid MMCM configuration for Master Clock Rate(s)"
+                           f" requested. Refer to \"About Sampling Rates and Master Clock Rates"
+                           f" for the USRP X440\" in Knowledge Base for more information on"
+                           f" supported rates.")
+            raise RuntimeError(f"Unable to find a valid MMCM configuration for Master Clock Rate(s)"
+                               f" requested. Refer to \"About Sampling Rates and Master Clock Rates"
+                               f" for the USRP X440\" in Knowledge Base for more information on"
+                               f" supported rates.")
         return max(mmcm_cfg), mmcm_cfg[max(mmcm_cfg)]
 
     def get_intermediate_clk_settings(self, ref_clk_freq, old_mcrs, new_mcrs):
