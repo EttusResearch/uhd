@@ -1,6 +1,60 @@
 Change Log for Releases
 ==============================
 
+## 004.006.000.000
+* ci
+  - only build docker images once per week
+  - propagate testLength to RF ATS
+  - replace deprecated ruamel.yaml methods
+  - use build farm for windows builds
+* deb
+  - copyright file update to eliminate errors and warnings
+* docs
+  - X440: Add FBX to daughterboard list
+  - X440: Corrected web link syntax in FBX doc.
+  - x440: Add X440_X4_200 to image flavors
+* examples
+  - L band capture example using dual rate
+* fpga
+  - ci: Add X440_X4_200 to pipelines
+  - lib: Allow buffering in eth_ipv4_chdr_adapter
+  - n3xx: Add CE clock
+  - rfnoc: Add clock info to backend ifc
+  - rfnoc: radio: Add clock index parameters
+  - tools: Add X440_X4_200 to X440 package
+  - x400: Add CE clock
+  - x400: Add X440 200 MHz variant
+  - x400: Split DRAM interface into two banks
+  - x400: Split DRAM interface on X440_X4_200
+  - x400: Update PL DRAM speed bin
+  - x400: bump minor revision
+  - x400: pps_sync cleanup
+  - x400: propagate pps_sync changes
+  - x400: update signals to run on two domains
+  - x440: cpld: led control cleanup
+  - x440: remove extra synchronizer
+* images
+  - bump x4xx fpga images
+  - bump x4xx fpga images
+  - update non-x4xx images
+* lib
+  - rfnoc: Add clock info fields to client zero
+  - rfnoc: Add support for auto-clock discovery
+  - x4xx: Use auto clock ID in x400_radio_control
+* mpm
+  - Add LUT for def. MCR per DSP bandwidth
+  - Disable MTS completely for dual rate
+  - x400: Align FPGA revision
+  - x400: match HDL PPS updates
+  - fix timekeeper misalignment
+* rfnoc
+  - Enable SEP throttle register
+  - image builder: Add clock index support to image builder
+* utils
+  - init device with gpsdo sources in query_gpsdo_sensors
+* x4xx
+  - Add support for auto clock ID
+
 ## 004.005.000.000
 * b200
   - Fix invalid RF switch positions
