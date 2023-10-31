@@ -27,13 +27,13 @@ Because the X4_1600 bitfile is used, only channel 0 of each radio is available a
 
 By default this example will use master clock rates, converter rates and center frequencies to
 cover the L-band. The parameters are:
- -Master clock rate 0: 998.4 MHz (converter rate: 3.9936 GHz)
- -Master clock rate 1: 1331.2 MHz (converter rate: 2.6624 GHz)
- -Center frequency 0: 0.67 GHz
- -Center frequency 1: 1.8 GHz
+ -Master clock rate 0: 1024 MHz (converter rate: 4.096 GHz)
+ -Master clock rate 1: 1280 MHz (converter rate: 2.560 GHz)
+ -Center frequency 0: 0.9 GHz
+ -Center frequency 1: 2 GHz
 
-With these settings, radio 0 will be able to capture the L-band between 0.17 GHz and 1.17 GHz in its
-first Nyquist zone, and radio 1 will cover the range between 1.15 GHz and 2.5 GHz with its second
+With these settings, radio 0 will be able to capture the L-band between 0.39 GHz and 1.4 GHz in its
+first Nyquist zone, and radio 1 will cover the range between 1.36 GHz and 2.64 GHz with its second
 Nyquist zone.
 """
 
@@ -60,11 +60,11 @@ def parse_args():
                         help="Device args to use when connecting to the USRP.")
     parser.add_argument("--mcrs", "-m", type=float, required=False, nargs=2,
                         help="Master clock rates for both channels, default "
-                        "998.4e6 1331.2e6",
-                        default=[998.4e6,1331.2e6])
+                        "1024e6 1280e6",
+                        default=[1024e6,1280e6])
     parser.add_argument("-f", "--freq", type=float, required=False, nargs=2,
-                        help="Center frequencies 0 and 1, default 670e6 1.80e9",
-                        default=[670e6, 1.80e9])
+                        help="Center frequencies for 2 channels, default 900e6 2e9",
+                        default=[900e6, 2e9])
     parser.add_argument("--antenna", help="Antennas for both channels, default "
                         "RX1 RX1", nargs=2,
                         default=['RX1', 'RX1'])
