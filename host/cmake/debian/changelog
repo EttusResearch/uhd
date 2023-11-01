@@ -23,9 +23,8 @@ uhd (4.6.0.0-0ubuntu1) ubuntu_release; urgency=low
     - rfnoc: radio: Add clock index parameters
     - tools: Add X440_X4_200 to X440 package
     - x400: Add CE clock
-    - x400: Add X440 200 MHz variant
+    - x400: Add X440 200 MHz variant with DDC/DUC
     - x400: Split DRAM interface into two banks
-    - x400: Split DRAM interface on X440_X4_200
     - x400: Update PL DRAM speed bin
     - x400: bump minor revision
     - x400: pps_sync cleanup
@@ -41,8 +40,8 @@ uhd (4.6.0.0-0ubuntu1) ubuntu_release; urgency=low
     - rfnoc: Add support for auto-clock discovery
     - x4xx: Use auto clock ID in x400_radio_control
   * mpm
-    - Add LUT for def. MCR per DSP bandwidth
-    - Disable MTS completely for dual rate
+    - x440: Add lookup table for default MCR per DSP bandwidth
+    - x440: Multi-Tile Sync disabled when using dual rate
     - x400: Align FPGA revision
     - x400: match HDL PPS updates
     - x400: make PRC a multiple of both rfdc rates
@@ -56,9 +55,13 @@ uhd (4.6.0.0-0ubuntu1) ubuntu_release; urgency=low
     - init device with gpsdo sources in query_gpsdo_sensors
   * x4xx
     - Add support for auto clock ID
+    - FPGA designs now use a replay block per utilized DRAM bank
+  * x440
+    - Add support for using radio block specific master clock rates
+    - X4_440 and X4_1600 fpga image now contain 2 replay blocks
+      (number of ports per replay block halved compared to previous release)
 
- -- Ettus Research <packages@ettus.com>  Mon, 06 Nov 2023 04:16:03 -0800
-
+ -- Ettus Research <packages@ettus.com>  Tue, 07 Nov 2023 04:27:56 -0800
 
 uhd (4.5.0.0-0ubuntu1) ubuntu_release; urgency=low
 
