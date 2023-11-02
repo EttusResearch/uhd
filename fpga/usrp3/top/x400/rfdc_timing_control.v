@@ -44,7 +44,7 @@ module rfdc_timing_control #(
   `include "regmap/rfdc_timing_regmap_utils.vh"
 
   // Reset registers
-  reg [NUM_DBOARDS-1:0] reg_nco_reset_start = 0;
+  reg [NUM_DBOARDS-1:0] reg_nco_reset_start = {NUM_DBOARDS {1'b0}};
 
   genvar db;
   generate
@@ -93,26 +93,26 @@ module rfdc_timing_control #(
 
       always @(posedge clk[db]) begin
         if (rst[db]) begin
-          nco_ctrlport_resp_ack   <= 0;
-          reg_nco_reset_start[db] <= 0;
-          nco_ctrlport_resp_data  <= 'bX;
+          nco_ctrlport_resp_ack   <= 1'b0;
+          reg_nco_reset_start[db] <= 1'b0;
+          nco_ctrlport_resp_data  <= 32'bX;
         end else begin
           // Default assignments
-          reg_nco_reset_start[db] <= 0;
-          adc_reset_pulse[db]     <= 0;
-          dac_reset_pulse[db]     <= 0;
-          nco_ctrlport_resp_ack   <= 0;
-          nco_ctrlport_resp_data  <= 0;
+          reg_nco_reset_start[db] <= 1'b0;
+          adc_reset_pulse[db]     <= 1'b0;
+          dac_reset_pulse[db]     <= 1'b0;
+          nco_ctrlport_resp_ack   <= 1'b0;
+          nco_ctrlport_resp_data  <= 32'b0;
 
           // Handle register reads
           if (nco_ctrlport_req_rd) begin
             case (nco_ctrlport_req_addr)
               NCO_RESET_REG: begin
-                nco_ctrlport_resp_ack <= 1;
+                nco_ctrlport_resp_ack <= 1'b1;
                 nco_ctrlport_resp_data[NCO_RESET_DONE] <= nco_reset_done_clk;
               end
               GEARBOX_RESET_REG: begin
-                nco_ctrlport_resp_ack <= 1;
+                nco_ctrlport_resp_ack <= 1'b1;
               end
             endcase
           end
@@ -121,11 +121,11 @@ module rfdc_timing_control #(
           if (nco_ctrlport_req_wr) begin
             case (nco_ctrlport_req_addr)
               NCO_RESET_REG: begin
-                nco_ctrlport_resp_ack   <= 1;
+                nco_ctrlport_resp_ack   <= 1'b1;
                 reg_nco_reset_start[db] <= nco_ctrlport_req_data[NCO_RESET_START];
               end
               GEARBOX_RESET_REG: begin
-                nco_ctrlport_resp_ack   <= 1;
+                nco_ctrlport_resp_ack   <= 1'b1;
                 adc_reset_pulse[db]     <= nco_ctrlport_req_data[ADC_RESET];
                 dac_reset_pulse[db]     <= nco_ctrlport_req_data[DAC_RESET];
               end
@@ -148,14 +148,14 @@ module rfdc_timing_control #(
   //
   //---------------------------------------------------------------------------
 
-  wire [NUM_DBOARDS-1:0] reg_nco_reset_start_clk0 = 0;
+  wire [NUM_DBOARDS-1:0] reg_nco_reset_start_clk0;
 
   genvar db_i;
   generate
     for (db_i = 0; db_i < NUM_DBOARDS; db_i = db_i+1) begin : gen_nco_start_sync
 
       pulse_synchronizer #(
-        .MODE("PULSE"), .STAGES(2)
+        .MODE("POSEDGE"), .STAGES(2)
       ) pulse_sync_nco_start (
          .clk_a(clk[db_i]), .rst_a(rst[db_i]), .pulse_a(reg_nco_reset_start[db_i]), .busy_a(),
          .clk_b(clk[0]), .pulse_b(reg_nco_reset_start_clk0[db_i])
@@ -166,7 +166,7 @@ module rfdc_timing_control #(
 
   always @(posedge clk[0]) begin
     if (rst[0]) begin
-      start_nco_reset <= 0;
+      start_nco_reset <= 1'b0;
     end else begin
       start_nco_reset <= |reg_nco_reset_start_clk0;
     end
