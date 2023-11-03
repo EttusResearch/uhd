@@ -680,6 +680,8 @@ class X440ClockPolicy(X4xxClockPolicy):
         # Use the first MCR for both if we cannot combine them.
         if len(common_out) == 0:
             mcrs[1] = mcrs[0]
+            # Ensure we're falling back to converter rate 0, too
+            conv_rates[1] = conv_rates[0]
 
         # With these values check if we can do this in MMCM
         rfdc_rate = list(map(lambda x: int(x / (self._spc * self._extra_resampling)), mcrs))
@@ -687,6 +689,9 @@ class X440ClockPolicy(X4xxClockPolicy):
         # Inform user if we don't have an exact match
         if min_mmcm_vco_rate > X4xxRfdcCtrl.MMCM_VCO_MAX:
             mcrs[1] = mcrs[0]
+            # Ensure we're falling back to converter rate 0, too
+            conv_rates[1] = conv_rates[0]
+
         if mcrs != master_clock_rates:
             self.log.warning(f"Unable to use desired master clock rate(s), using "
                              f"{mcrs[0]/1e6} MHz for DB0 and {mcrs[1]/1e6} MHz for DB1.")
