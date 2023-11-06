@@ -5,6 +5,8 @@ uhd (4.6.0.0-0ubuntu1) ubuntu_release; urgency=low
     - propagate testLength to RF ATS
     - replace deprecated ruamel.yaml methods
     - use build farm for windows builds
+  * cmake
+    - Fix make_x410 and make_x440 targets
   * deb
     - copyright file update to eliminate errors and warnings
   * docs
@@ -33,7 +35,6 @@ uhd (4.6.0.0-0ubuntu1) ubuntu_release; urgency=low
     - x440: remove extra synchronizer
   * images
     - bump x4xx fpga images
-    - bump x4xx fpga images
     - update non-x4xx images
   * lib
     - rfnoc: Add clock info fields to client zero
@@ -44,7 +45,10 @@ uhd (4.6.0.0-0ubuntu1) ubuntu_release; urgency=low
     - Disable MTS completely for dual rate
     - x400: Align FPGA revision
     - x400: match HDL PPS updates
+    - x400: make PRC a multiple of both rfdc rates
     - fix timekeeper misalignment
+  * multi_usrp
+    - Added module_serial to info
   * rfnoc
     - Enable SEP throttle register
     - image builder: Add clock index support to image builder
@@ -53,7 +57,7 @@ uhd (4.6.0.0-0ubuntu1) ubuntu_release; urgency=low
   * x4xx
     - Add support for auto clock ID
 
- -- Ettus Research <packages@ettus.com>  Mon, 30 Oct 2023 11:41:37 -0800
+ -- Ettus Research <packages@ettus.com>  Mon, 06 Nov 2023 04:16:03 -0800
 
 
 uhd (4.5.0.0-0ubuntu1) ubuntu_release; urgency=low

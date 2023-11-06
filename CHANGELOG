@@ -7,6 +7,8 @@ Change Log for Releases
   - propagate testLength to RF ATS
   - replace deprecated ruamel.yaml methods
   - use build farm for windows builds
+* cmake
+  - Fix make_x410 and make_x440 targets
 * deb
   - copyright file update to eliminate errors and warnings
 * docs
@@ -35,7 +37,6 @@ Change Log for Releases
   - x440: remove extra synchronizer
 * images
   - bump x4xx fpga images
-  - bump x4xx fpga images
   - update non-x4xx images
 * lib
   - rfnoc: Add clock info fields to client zero
@@ -46,7 +47,10 @@ Change Log for Releases
   - Disable MTS completely for dual rate
   - x400: Align FPGA revision
   - x400: match HDL PPS updates
+  - x400: make PRC a multiple of both rfdc rates
   - fix timekeeper misalignment
+* multi_usrp
+  - Added module_serial to info
 * rfnoc
   - Enable SEP throttle register
   - image builder: Add clock index support to image builder
