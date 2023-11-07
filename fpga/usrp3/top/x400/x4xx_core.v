@@ -417,6 +417,9 @@ module x4xx_core #(
   `ifndef DRAM_CH
     `define DRAM_CH 0
   `endif
+  `ifndef DRAM_BANKS
+    `define DRAM_BANKS 0
+  `endif
   `ifndef DRAM_W
     `define DRAM_W 64
   `endif
