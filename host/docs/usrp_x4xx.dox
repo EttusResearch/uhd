@@ -548,7 +548,7 @@ As of UHD 4.5, the following USRP X410 images flavors are shipped with UHD:
 | UC_200            | 4 (2 per ZBX)         | 200 MHz                  | Unused                  | 100 GbE                 | Yes     | Yes (4 GiB, 4-Ch Replay) |
 | CG_400            | 4 (2 per ZBX)         | 400 MHz                  | 100 GbE                 | 100 GbE                 | No      | No                       |
 
-As of UHD 4.5, the following USRP X440 images flavors are shipped with UHD:
+As of UHD 4.6, the following USRP X440 images flavors are shipped with UHD:
 
 | FPGA Image Flavor | Number of \n Channels | Bandwidth \n per Channel | QSFP28 Port 0 Interface | QSFP28 Port 1 Interface | DDC/DUC | DRAM                     |
 |-------------------|-----------------------|--------------------------|-------------------------|-------------------------|---------|--------------------------|
@@ -959,9 +959,15 @@ currently installed on the device (see \ref x4xx_updating_fpga_types).
 \subsubsection x410_usage_mcrs USRP X410
 The USRP X410 has a few fixed MCR available for every image type:
 The 200 MHz images allow master clock rates of 245.76 MHz or 250 MHz. The 400
-MHz images allow master clock rates of 491.52 MHz or 500 MHz.
+MHz images allow master clock rates of 491.52 MHz or 500 MHz. Typically it is 
+sufficient to open a UHD session without the master_clock_rate argument as UHD
+will pick a rate that fits the FPGA image loaded. If a non-valid MCR is chosen,
+the session will error out.
 
 \subsubsection x440_usage_mcrs USRP X440
+
+\paragraph x440_usage_mcr_general General
+
 The USRP X440 has a much broader range of available master clock rates, and 
 supports a fixed set of rates between 125 Msps and 2 Gsps. The maximum available 
 MCR is further dependent on the FPGA image type. The master clock rate depends 
@@ -1004,7 +1010,7 @@ select set of MCR during testing and design validation. For the X440, these are:
 |360 MHz | 2.88 GHz | 8 | 288 MHz | xx_400, \n xx_1600 | L-Band Applications |
 |327.68 MHz | 2.62144 GHz | 8 | 262 MHz | xx_400, \n xx_1600 | L-Band Applications |
 |307.2 MHz | 2.4576 GHz | 8 | 245.76 MHz | xx_400, \n xx_1600 | Highest PLL VCO Rate |
-|125 MHz | 1.0 GHz | 8 | 100 MHz | xx_400, \n xx_1600 | Minimum Fc |
+|125 MHz | 1.0 GHz | 8 | 100 MHz | xx_200, \n xx_400, \n xx_1600 | Minimum Fc |
 
 \n
 For all devices, changing the master clock rate during a running session is not
@@ -1019,10 +1025,10 @@ network configurations for the QSFP28 interfaces to be reset. See
 \ref x4xx_getting_started_network_connectivity_ifcs for a persistent 
 configuration option that is maintained during MPM reboots. 
 
-When selecting a master clock rate, UHD will coerce to the next available master
-clock rate. Example:
+In contrast to X410, when selecting a master clock rate on a USRP X440, UHD will
+coerce to the next available master clock rate. Example:
 ~~~{.cpp}
-// Assumption: We are using a USRP X410, with a 200 MHz FPGA image
+// Assumption: USRP X440, 400 MHz FPGA image
 auto usrp = uhd::usrp::multi_usrp::make("type=x4xx,master_clock_rate=245e6");
 // 245 MHz is not a valid master clock rate!
 std::cout << usrp->get_master_clock_rate() << std::endl; // Prints 245.76e6
@@ -1033,6 +1039,45 @@ std::cout << usrp->get_master_clock_rate_range().start() << std::endl; // Prints
 std::cout << usrp->get_master_clock_rate_range().stop() << std::endl; // Prints 245.76e6
 ~~~
 For details see \ref x4xx_too_convrate. 
+
+\paragraph x440_usage_mcr_dualrate Dual Rate
+
+The USRP X440 supports being operated at two different master clock rates simultaneously.
+All channels on daughterboard 0 will run on their own master clock rate / sampling rate and
+all channels on daughterboard 1 will run on the other configured master clock rate /
+sampling rate.
+The main motivation for having two different master clock rates is the direct sampling
+architecture of the USRP X440 without signal conditioning and filtering:
+Both TX and RX signals are affected by Nyquist zones and their boundaries. By using different
+rates for both radios, one can close the Nyquist gap of the other. UHD comes with the
+x440_L_band_capture.py example which demonstrates the dual rate feature to capture
+the full L-band spectrum. The L-band is located between 1 GHz and 2.4 GHz and can
+be captured using the master clock rates 1024 MHz and 1280 MHz which result in the
+converter rates 4096 MHz and 2560 MHz.
+
+When opening an RFNoC session, two rates can be configured by passing them via the
+argument string:
+~~~{.cpp}
+auto graph = uhd::rfnoc::rfnoc_graph::make("type=x4xx,master_clock_rate=1024e6;1280e6");
+~~~
+
+<b>Important</b>: For best RF performance it is required to put the MCR first that
+                  results in the greater converter rate. Refer to \ref x4xx_too_convrate
+                  for more details.
+
+
+Note: Not all master clock rates can be combined. Refer to 
+[About Sampling Rates and Master Clock Rates for the USRP X440]
+(https://kb.ettus.com/About_Sampling_Rates_and_Master_Clock_Rates_for_the_USRP_X440) 
+for possible master clock rates and master clock rate combinations. When configuring
+two rates, UHD will go through the following steps:
+
+1. Coerce both MCRs to the closest possible values individually.
+2. Check if those two values can be combined.
+2a) If they can be combined, the session will be set up with these values. 
+2b) If they cannot be combined, UHD will fall back to the MCR of radio 0 and report
+    this in a warning log message. 
+3. The chosen MCR and converter rate values will be shown in the info log.
 
 \subsection x4xx_usage_timedcmds Timed Commands
 
@@ -1388,9 +1433,10 @@ implemented in FPGA fabric.
 \subsubsection x440_too_convrate USRP X440
 The USRP X440 supports a large, finite number of master clock rates (see
 \ref x4xx_usage_mcrs), and utilizes converter rates between 1GHz and the maximum 
-supported converter rate of 4.096 GHz. The smallest possible master clock rate 
-is thus 125 Msps (1 GHz decimated by eight), and the maximum possible master 
-clock rate is 2.048 Gsps (4.096 GHz resampled by two).
+supported converter rate of 4.096 GHz. The resulting master clock rates are
+derived by decimating by 8, 4 or 2 and vice versa. The smallest possible master
+clock rate is thus 125 Msps (1 GHz resampled by eight), and the maximum possible
+master clock rate is 2.048 Gsps (4.096 GHz resampled by two).
 \n By default, UHD will choose the largest converter rate available. This can 
 be overridden by specifying the `converter_rate` device argument (see also 
 \ref x4xx_usage_args).
@@ -1409,6 +1455,27 @@ std::cout << usrp->get_rx_sensor('rfdc_rate').to_real() << std::endl; //Prints 4
 
 Note: The selected FPGA bitfile may further limit the maximum supported 
       master clock. 
+
+When using dual rate in X440, the above code snippet will only report back the
+master clock rate and converter rate of radio 0. To verify configured rates in
+a dual rate configuration, it is recommended to use RFNoC and query the radio
+blocks directly:
+
+~~~{.cpp}
+// Assumption: USRP X440, 1600 MHz bitfile, master clock rates 1024 MHz and 1280 MHz
+auto graph = uhd::rfnoc::rfnoc_graph::make("type=x4xx,master_clock_rate=1024e6;1280e6");
+// Get the two radio blocks:
+auto radio0 = graph->get_block<uhd::rfnoc::radio_control>("0/Radio0");
+auto radio1 = graph->get_block<uhd::rfnoc::radio_control>("0/Radio1");
+std::cout << "MCR0: " << radio0->get_rate() << std::endl;
+// Prints 1024000000.0
+std::cout << "MCR1: " << radio1->get_rate() << std::endl;
+// Prints 1280000000.0
+std::cout << "Converter Rate 0: " << radio0->get_rx_sensor("rfdc_rate", 0).to_real() << std::endl;
+// Prints 4096000000.0
+std::cout << "Converter Rate 1: " << radio1->get_rx_sensor("rfdc_rate", 0).to_real() << std::endl;
+// Prints 2560000000.0
+~~~
 
 \subsection x4xx_too_clocking Clocking
 
