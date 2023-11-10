@@ -3,5 +3,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+   - pip
   - cmake
   - compilers
+  - sphinx=5.3
