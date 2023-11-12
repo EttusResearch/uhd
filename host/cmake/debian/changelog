@@ -13,6 +13,7 @@ uhd (4.6.0.0-0ubuntu1) ubuntu_release; urgency=low
     - X440: Add FBX to daughterboard list
     - X440: Corrected web link syntax in FBX doc.
     - x440: Add X440_X4_200 to image flavors
+    - Add dual-rate documentation
   * examples
     - L band capture example using dual rate
   * fpga
@@ -61,7 +62,8 @@ uhd (4.6.0.0-0ubuntu1) ubuntu_release; urgency=low
     - X4_440 and X4_1600 fpga image now contain 2 replay blocks
       (number of ports per replay block halved compared to previous release)
 
- -- Ettus Research <packages@ettus.com>  Tue, 07 Nov 2023 04:27:56 -0800
+ -- Ettus Research <packages@ettus.com>  Sun, 12 Nov 2023 02:44:06 -0800
+
 
 uhd (4.5.0.0-0ubuntu1) ubuntu_release; urgency=low
 

@@ -15,6 +15,7 @@ Change Log for Releases
   - X440: Add FBX to daughterboard list
   - X440: Corrected web link syntax in FBX doc.
   - x440: Add X440_X4_200 to image flavors
+  - Add dual-rate documentation
 * examples
   - L band capture example using dual rate
 * fpga
