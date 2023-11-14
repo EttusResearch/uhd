@@ -1004,7 +1004,7 @@ select set of MCR during testing and design validation. For the X440, these are:
 |:--:|:--:|:--:|:--:|:--:|--|
 |368.64 MHz|2.94912 GHz| 8 | 295 MHz | xx_400, \n xx_1600 | Same Fc as X410, UHD default |
 |2000 MHz | 4.0 GHz | 2 | 1600 MHz | xx_1600 | Maximum Digital Bandwidth |
-|1000 MHz | 4.0 GHz | 4 | 1600 MHz | xx_1600 |  |
+|1000 MHz | 4.0 GHz | 4 | 800 MHz | xx_1600 |  |
 |500 MHz | 4.0 GHz | 8 | 400 MHz | xx_400, \n xx_1600 | Maximum Fc |
 |400 MHz | 3.2 GHz | 8 | 320 MHz | xx_400, \n xx_1600 |  |
 |360 MHz | 2.88 GHz | 8 | 288 MHz | xx_400, \n xx_1600 | L-Band Applications |
