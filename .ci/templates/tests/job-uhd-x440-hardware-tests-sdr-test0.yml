@@ -26,5 +26,5 @@ jobs:
         master_clock_rate: '125e6'
         dutFPGA: 'X4_400'
         dutEmbeddedImagesArtifact: 'x4xx-images'
-        uartSerial: '251635284FC7'
+        uartSerial: '25163525D2B3'
         pipelineAgent: sdr-test0
