@@ -130,7 +130,7 @@ class X4xxClockPolicy:
         depending on whether or not the DSP info is set.
         """
         raise NotImplementedError()
-    
+
     def get_radio_clock_rate(self, mcr):
         """
         Return the radio clock rates for the current configuration.
@@ -789,9 +789,12 @@ class X440ClockPolicy(X4xxClockPolicy):
         assert X4xxRfdcCtrl.MMCM_OD_MIN <= prc_out_div <= X4xxRfdcCtrl.MMCM_OD_MAX, \
             "Invalid MMCM output divider for PRC."
 
+        # When looking for the correct sysref config we need to get the MCR that belongs to the
+        # greatest converter rate used
+        max_cr_mcr = mcrs[conv_rates.index(max(conv_rates))]
         sysref_config = next(sysref_setting
                         for sysref_setting in LMK04832X4xx.SYSREF_CONFIG[spll1_vco]
-                        if sysref_setting['SYSREF_FREQ'] in self._find_sysref_matches(mcrs[0]))
+                        if all(sysref_setting['SYSREF_FREQ'] in self._find_sysref_matches(mcr) for mcr in mcrs))
 
         # The following asserts are to explicitly check for SYSREF requirements
         # as per pg269, Ch. 4, Section "SYSREF Signal Requirements"
