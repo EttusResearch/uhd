@@ -698,6 +698,9 @@ class X4xxClockManager:
             f"@Converter Rate {clk_settings.rfdc_configs[0].conv_rate/1e9} GHz\n"
             f"DB1: Master Clock Rate: {master_clock_rates[-1]/1e6} MSps "
             f"@Converter Rate {clk_settings.rfdc_configs[1].conv_rate/1e9} GHz")
+        if clk_settings.rfdc_configs[1].conv_rate > clk_settings.rfdc_configs[0].conv_rate:
+            self.log.warn('Converter Rate 1 is larger than Converter Rate 0. This will impact '
+            ' RF performance. Consider swapping your master clock rate values.')
         self._configure_clock_chain(
             clk_settings, self.get_time_source(), self.get_ref_clock_freq())
         # Bring RFDC out of reset, reset tiles and reconfigure RFDC
