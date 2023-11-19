@@ -248,11 +248,14 @@ size_t discover_mtu(const std::string& address,
         // Only test multiples of 4 bytes!
         const size_t test_frame_size = (max_frame_size / 2 + min_frame_size / 2 + 3)
                                        & ~size_t(3);
+
         // Encode sequence number and current size in the string, makes it
         // easy to debug in code or Wireshark. Is also used for identifying
         // response packets.
-        std::sprintf(
-            &send_buf[echo_prefix_offset], ";%04lu,%04lu", seq_no++, test_frame_size);
+        size_t remaining_size = test_frame_size - echo_prefix_offset;
+        std::snprintf(
+            &send_buf[echo_prefix_offset], remaining_size, ";%04lu,%04lu", seq_no++, test_frame_size);
+        
         UHD_LOG_TRACE("MPMD", "Testing frame size " << test_frame_size);
         udp->send(boost::asio::buffer(&send_buf[0], test_frame_size));
 

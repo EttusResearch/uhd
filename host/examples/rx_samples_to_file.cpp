@@ -129,6 +129,11 @@ double disk_rate_check(const size_t sample_type_size,
                 std::cerr << err_msg << std::endl;
         }
     }
+#else
+    static_cast<void>(sample_type_size);
+    static_cast<void>(channel_count);
+    static_cast<void>(samps_per_buff);
+    static_cast<void>(file);
 #endif
     return 0;
 }
