@@ -51,7 +51,6 @@ include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_duc/Makefile.srcs
 -include $(RFNOC_OOT_MAKEFILE_SRCS)
 
 IMAGE_CORE ?= $(DEFAULT_RFNOC_IMAGE_CORE_FILE)
-EDGE_FILE ?= $(DEFAULT_EDGE_FILE)
 
 ##################################################
 # Sources
@@ -124,7 +123,6 @@ $(RFNOC_BLOCK_RADIO_SRCS) \
 $(AXI4S_SV_SRCS) $(RFNOC_XPORT_SV_SRCS) \
 $(abspath $(MB_XDC))
 
-EDGE_TBL_DEF="RFNOC_EDGE_TBL_FILE=$(call RESOLVE_PATH,$(EDGE_FILE))"
 IMAGE_CORE_DEF="RFNOC_IMAGE_CORE_HDR=$(call RESOLVE_PATH,$(IMAGE_CORE:.v=.vh))"
 
 ##################################################
@@ -132,7 +130,7 @@ IMAGE_CORE_DEF="RFNOC_IMAGE_CORE_HDR=$(call RESOLVE_PATH,$(IMAGE_CORE:.v=.vh))"
 ##################################################
 .SECONDEXPANSION:
 
-VERILOG_DEFS=$(EXTRA_DEFS) $(CUSTOM_DEFS) $(GIT_HASH_VERILOG_DEF) $(EDGE_TBL_DEF) $(IMAGE_CORE_DEF)
+VERILOG_DEFS=$(EXTRA_DEFS) $(CUSTOM_DEFS) $(GIT_HASH_VERILOG_DEF) $(IMAGE_CORE_DEF)
 
 # DESIGN_SRCS and VERILOG_DEFS must be defined
 bin: .prereqs

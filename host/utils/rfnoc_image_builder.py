@@ -28,6 +28,8 @@ logging.basicConfig(format='[%(levelname).3s] %(message)s')
 
 from uhd.imgbuilder import image_builder
 from uhd.imgbuilder import yaml_utils
+from uhd.imgbuilder import grc
+
 
 def setup_parser():
     """
@@ -57,8 +59,7 @@ def setup_parser():
         default=None)
     parser.add_argument(
         "-x", "--router-hex-output",
-        help="Path to where to save the static router hex file. "
-             "Defaults to the directory of the YAML file, filename <DEVICE>_static_router.hex",
+        help="DEPRECATED! This option will be ignored. ",
         default=None)
     parser.add_argument(
         "-I", "--include-dir",
@@ -74,9 +75,17 @@ def setup_parser():
         help="Adjust log level",
         default='info')
     parser.add_argument(
-        "-G", "--generate-only",
-        help="Just generate files without building IP",
+        "-R", "--reuse",
+        help="Reuse existing files (do not regenerate image core)",
         action="store_true")
+    parser.add_argument(
+        "-G", "--generate-only",
+        help="Just generate files without building the FPGA",
+        action="store_true")
+    parser.add_argument(
+        "-S", "--secure-core",
+        help="Build a secure image core instead of a bitfile.",
+        )
     parser.add_argument(
         "-d", "--device",
         help="Device to be programmed [x300, x310, e310, e320, n300, n310, n320, x410, x440]. "
@@ -85,7 +94,7 @@ def setup_parser():
     parser.add_argument(
         "-n", "--image_core_name",
         help="Name to use for the RFNoC image core. "
-             "Defaults to the device name.",
+             "Defaults to name of the image core YML file, without the extension.",
         default=None)
     parser.add_argument(
         "-t", "--target",
@@ -155,17 +164,17 @@ def image_config(args):
     :return: image configuration as dictionary
     """
     if args.yaml_config:
-        config = yaml_utils.load_config(args.yaml_config, get_config_path())
+        config = yaml_utils.load_config_validate(args.yaml_config, get_config_path(), True)
         device = config.get('device') if args.device is None else args.device
         target = config.get('default_target') if args.target is None else args.target
         image_core_name = config.get('image_core_name') if args.image_core_name is None else args.image_core_name
         if image_core_name is None:
             image_core_name = device
         return config, args.yaml_config, device, image_core_name, target
-    with open(args.grc_config) as grc_file:
+    with open(args.grc_config, encoding='utf-8') as grc_file:
         config = yaml.load(grc_file)
         logging.info("Converting GNU Radio Companion file to image builder format")
-        config = image_builder.convert_to_image_config(config, args.grc_blocks)
+        config = grc.convert_to_image_config(config, args.grc_blocks)
         image_core_name = args.device if args.image_core_name is None else args.image_core_name
         return config, args.grc_config, args.device, image_core_name, args.target
 
@@ -241,13 +250,17 @@ def main():
     with open(source, "rb") as source_file:
         source_hash.update(source_file.read())
 
+    if args.secure_core:
+        target = 'secure_core'
+
     image_builder.build_image(
         config=config,
-        fpga_path=get_fpga_path(args),
+        repo_fpga_path=get_fpga_path(args),
         config_path=get_config_path(),
         device=device,
         image_core_name=image_core_name,
         target=target,
+        reuse=args.reuse,
         generate_only=args.generate_only,
         clean_all=args.clean_all,
         GUI=args.GUI,
@@ -259,11 +272,11 @@ def main():
         source=source,
         source_hash=source_hash.hexdigest(),
         output_path=args.image_core_output,
-        router_hex_path=args.router_hex_output,
         include_paths=args.include_dir,
         vivado_path=args.vivado_path,
         no_date=args.no_date,
         no_hash=args.no_hash,
+        build_secure_core=args.secure_core,
         )
 
 if __name__ == "__main__":

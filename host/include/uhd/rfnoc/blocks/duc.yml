@@ -50,3 +50,7 @@ data:
       sideband_at_end: True
       format: sc16
       mdata_sig: ~
+
+fpga_includes:
+  - include: "$(LIB_DIR)/rfnoc/blocks/rfnoc_block_duc/Makefile.srcs"
+    make_var: "$(RFNOC_BLOCK_DUC_SRCS)"

@@ -1,0 +1,72 @@
+# General parameters
+# -----------------------------------------
+schema: rfnoc_imagebuilder_args         # Identifier for the schema used to validate this file
+copyright: >-                           # Copyright information used in file headers
+  Copyright 2023 Ettus Research, a National Instruments Brand
+license: >-                             # License information used in file headers
+  SPDX-License-Identifier: LGPL-3.0-or-later
+version: '1.0'                          # File version
+chdr_width: 64                          # Bit width of the CHDR bus for this image
+device: 'x310'
+image_core_name: 'usrp_x310_fpga_HG'  # This is used for the bitfile, DTS, and report
+default_target: 'X310_HG'
+inherit:
+  - 'yaml_include/x3xx_radio_base.yml'
+
+# A list of all stream endpoints in design
+# ----------------------------------------
+stream_endpoints:
+  ep0:                                  # Stream endpoint name
+    buff_size: 65536                    # Ingress buffer size for data
+  ep1:
+    buff_size: 0
+  ep2:
+    buff_size: 65536
+  ep3:
+    buff_size: 0
+  ep4:
+    buff_size: 4096
+    ctrl: False
+    data: True
+  ep5:
+    buff_size: 4096
+    ctrl: False
+    data: True
+
+# A list of all NoC blocks in design
+# ----------------------------------
+noc_blocks:
+  replay0:
+    block_desc: 'replay.yml'
+    parameters:
+      NUM_PORTS: 2
+      MEM_DATA_W: 64
+      MEM_ADDR_W: 30
+    priority: 99 # Make sure they come after the blocks defined in x3xx_radio_base.yml
+
+# A list of all static connections in design
+# ------------------------------------------
+# Format: A list of connection maps (list of key-value pairs) with the following keys
+#   - srcblk  = Source block to connect
+#   - srcport = Port on the source block to connect
+#   - dstblk  = Destination block to connect
+#   - dstport = Port on the destination block to connect
+connections:
+  # Replay Connections
+  - { srcblk: ep4,     srcport: out0,  dstblk: replay0, dstport: in_0 }
+  - { srcblk: replay0, srcport: out_0, dstblk: ep4,     dstport: in0  }
+  - { srcblk: ep5,     srcport: out0,  dstblk: replay0, dstport: in_1 }
+  - { srcblk: replay0, srcport: out_1, dstblk: ep5,     dstport: in0  }
+  #
+  # BSP Connections
+  - { srcblk: replay0,  srcport: axi_ram,  dstblk: _device_, dstport: dram }
+
+# A list of all clock domain connections in design
+# ------------------------------------------------
+# Format: A list of connection maps (list of key-value pairs) with the following keys
+#   - srcblk  = Source block to connect (Always "_device"_)
+#   - srcport = Clock domain on the source block to connect
+#   - dstblk  = Destination block to connect
+#   - dstport = Clock domain on the destination block to connect
+clk_domains:
+    - { srcblk: _device_, srcport: dram,  dstblk: replay0, dstport: mem  }

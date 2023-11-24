@@ -36,12 +36,18 @@ io_ports:
   radio0:
     type: radio
     drive: master
+    parameters:
+      spc: 1
+      num_ports: 2
     rename:
       pattern: (.*)
       repl: \1_radio0
   radio1:
     type: radio
     drive: master
+    parameters:
+      spc: 1
+      num_ports: 2
     rename:
       pattern: (.*)
       repl: \1_radio1

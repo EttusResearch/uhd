@@ -20,16 +20,12 @@ include $(BASE_DIR)/../tools/make/viv_sim_preamble.mak
 # dependencies.
 include $(LIB_DIR)/rfnoc/core/Makefile.srcs
 include $(LIB_DIR)/rfnoc/utils/Makefile.srcs
-include $(LIB_DIR)/sec/Makefile.srcs
-include $(LIB_DIR)/hwutils/Makefile.srcs
 include Makefile.srcs
 
 DESIGN_SRCS += $(abspath \
 $(RFNOC_CORE_SRCS) \
 $(RFNOC_UTIL_SRCS) \
 $(RFNOC_BLOCK_LICENSE_CHECK_SRCS)  \
-$(SEC_SRCS) \
-$(HWUTILS_SRCS) \
 )
 
 #-------------------------------------------------

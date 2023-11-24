@@ -1,0 +1,23 @@
+# This is the description of the DMA transport adapter, which directly connects
+# the PL to the PS. The DMA engine itself is not part of the image core (it is
+# always instantiated), so the transport is mostly a passthrough.
+
+schema: rfnoc_modtool_args
+transport_name: chdr
+version: "1.0"
+
+module_name: rfnoc_ta_chdr
+
+# Same as RFNoC blocks, we list the rfnoc_chdr clock, which is required and
+# will always be connected automatically by the image builder.
+clocks:
+  - name: rfnoc_chdr
+
+data:
+  num_ports: 1
+
+io_ports:
+  chdr_dma:
+    # This is the actual connection to the QSFP pins.
+    type: chdr_dma
+    drive: master

@@ -28,6 +28,8 @@ BUILD_OUTPUT_DIR ?= $(BUILD_BASE_DIR)/build
 
 # Initialize a build seed. This can be changed to randomly affect build results.
 BUILD_SEED ?= 0
+# The image core name is something like 'usrp_x310_fpga_XG'
+IMAGE_CORE_NAME ?= usrp_fpga
 
 GIGE_DEFS=BUILD_1G=1 SFP0_1GBE=1 SFP1_1GBE=1 $(OPTIONS) BUILD_SEED=$(BUILD_SEED)
 HG_DEFS=BUILD_1G=1 BUILD_10G=1 SFP0_1GBE=1 SFP1_10GBE=1 $(OPTIONS) BUILD_SEED=$(BUILD_SEED)
@@ -49,27 +51,22 @@ ifndef TARGET
 endif
 TOP ?= x300
 
-DEFAULT_IMAGE_CORE_FILE_X300=x300_rfnoc_image_core.v
-DEFAULT_IMAGE_CORE_FILE_X310=x310_rfnoc_image_core.v
-DEFAULT_EDGE_FILE_X300=$(abspath x300_static_router.hex)
-DEFAULT_EDGE_FILE_X310=$(abspath x310_static_router.hex)
-
 # vivado_build($1=Device, $2=Definitions)
-vivado_build = make -f Makefile.x300.inc $(TARGET) NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2" DEFAULT_RFNOC_IMAGE_CORE_FILE=$(DEFAULT_IMAGE_CORE_FILE_$1) DEFAULT_EDGE_FILE=$(DEFAULT_EDGE_FILE_$1)
-vivado_ip    = make -f Makefile.x300.inc viv_ip    NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2" DEFAULT_RFNOC_IMAGE_CORE_FILE=$(DEFAULT_IMAGE_CORE_FILE_$1) DEFAULT_EDGE_FILE=$(DEFAULT_EDGE_FILE_$1)
+vivado_build = make -f Makefile.x300.inc $(TARGET) NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2"
+vivado_ip    = make -f Makefile.x300.inc viv_ip    NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2"
 
 # post_build($1=Device, $2=Option)
 ifeq ($(TARGET),bin)
 	post_build = @\
 		mkdir -p $(BUILD_OUTPUT_DIR); \
 		echo "Exporting bitstream files..."; \
-		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/x300.bin $(BUILD_OUTPUT_DIR)/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bin; \
-		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/x300.bit $(BUILD_OUTPUT_DIR)/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bit; \
+		cp $(ARTIFACT_DIR)/x300.bin $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).bin; \
+		cp $(ARTIFACT_DIR)/x300.bit $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).bit; \
 		echo "Generating LVBITX..."; \
-		$(CREATE_LVBITX) --input-bin=$(BUILD_BASE_DIR)/build-$(1)_$(2)/x300.bin --output-lvbitx=$(BUILD_OUTPUT_DIR)/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).lvbitx --device="USRP $(1)" x3x0_base.lvbitx; \
+		$(CREATE_LVBITX) --input-bin=$(ARTIFACT_DIR)/x300.bin --output-lvbitx=$(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).lvbitx --device="USRP $(1)" x3x0_base.lvbitx; \
 		cp -f x3x0_base.lvbitx $(BUILD_OUTPUT_DIR)/`echo $(1) | tr A-Z a-z`.lvbitx_base; \
 		echo "Exporting build report..."; \
-		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/build.rpt $(BUILD_OUTPUT_DIR)/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).rpt; \
+		cp $(ARTIFACT_DIR)/build.rpt $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).rpt; \
 		echo "Build DONE ... $(1)_$(2)";
 else
 	post_build = @echo "Skipping bitfile export."
@@ -141,13 +138,13 @@ X300_XA: X300_IP
 
 clean:    ##Clean up all target build outputs.
 	@echo "Cleaning targets..."
-	@rm -rf $(BUILD_BASE_DIR)/build-X3*_*
+	@rm -rf $(BUILD_BASE_DIR)/build-X3*_* $(BUILD_BASE_DIR)/build-x3*
 	@rm -rf $(BUILD_OUTPUT_DIR)
 
 cleanall: ##Clean up all target and ip build outputs.
 	@echo "Cleaning targets and IP..."
 	@rm -rf build-ip
-	@rm -rf $(BUILD_BASE_DIR)/build-X3*_*
+	@rm -rf $(BUILD_BASE_DIR)/build-X3*_* $(BUILD_BASE_DIR)/build-x3*
 	@rm -rf $(BUILD_OUTPUT_DIR)
 
 help:     ##Show this help message.

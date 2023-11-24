@@ -39,27 +39,27 @@ module rfnoc_image_core #(
   // IO ports /////////////////////////
 
   // ctrlport
-  output wire [   0:0] m_ctrlport_req_wr,
-  output wire [   0:0] m_ctrlport_req_rd,
+  output wire          m_ctrlport_req_wr,
+  output wire          m_ctrlport_req_rd,
   output wire [  19:0] m_ctrlport_req_addr,
   output wire [  31:0] m_ctrlport_req_data,
   output wire [   3:0] m_ctrlport_req_byte_en,
-  output wire [   0:0] m_ctrlport_req_has_time,
+  output wire          m_ctrlport_req_has_time,
   output wire [  63:0] m_ctrlport_req_time,
-  input  wire [   0:0] m_ctrlport_resp_ack,
+  input  wire          m_ctrlport_resp_ack,
   input  wire [   1:0] m_ctrlport_resp_status,
   input  wire [  31:0] m_ctrlport_resp_data,
   // time
   input  wire [  63:0] radio_time,
   // radio
-  input  wire [1023:0] radio_rx_data,
-  input  wire [  31:0] radio_rx_stb,
-  output wire [  31:0] radio_rx_running,
-  output wire [1023:0] radio_tx_data,
-  input  wire [  31:0] radio_tx_stb,
-  output wire [  31:0] radio_tx_running,
+  input  wire [  63:0] radio_rx_data,
+  input  wire [   1:0] radio_rx_stb,
+  output wire [   1:0] radio_rx_running,
+  output wire [  63:0] radio_tx_data,
+  input  wire [   1:0] radio_tx_stb,
+  output wire [   1:0] radio_tx_running,
   // dram
-  input  wire [   0:0] axi_rst,
+  input  wire          axi_rst,
   output wire [   7:0] m_axi_awid,
   output wire [ 383:0] m_axi_awaddr,
   output wire [  63:0] m_axi_awlen,
@@ -118,7 +118,6 @@ module rfnoc_image_core #(
   input  wire              m_dma_tready
 );
 
-  localparam EDGE_TBL_FILE = `"`RFNOC_EDGE_TBL_FILE`";
   localparam BLOCK_CHDR_W  = 64;
   localparam BYTE_MTU      = MTU + $clog2(CHDR_W/8);
   localparam BLOCK_MTU     = BYTE_MTU - $clog2(BLOCK_CHDR_W/8);
@@ -386,7 +385,12 @@ module rfnoc_image_core #(
     .NUM_TRANSPORTS      (1),
     .NUM_EDGES           (4),
     .CHDR_XBAR_PRESENT   (1),
-    .EDGE_TBL_FILE       (EDGE_TBL_FILE)
+    .EDGE_TBL            ({
+      {10'd03, 6'd01, 10'd02, 6'd00},
+      {10'd02, 6'd00, 10'd03, 6'd01},
+      {10'd03, 6'd00, 10'd01, 6'd00},
+      {10'd01, 6'd00, 10'd03, 6'd00}
+    })
   ) core_kernel_i (
     .chdr_aclk          (chdr_aclk),
     .chdr_aclk_locked   (1'b1),
@@ -430,31 +434,31 @@ module rfnoc_image_core #(
   wire                    m_radio0_out_1_tready, m_radio0_out_0_tready;
 
   // ctrlport
-  wire [   0:0] radio0_m_ctrlport_req_wr;
-  wire [   0:0] radio0_m_ctrlport_req_rd;
+  wire          radio0_m_ctrlport_req_wr;
+  wire          radio0_m_ctrlport_req_rd;
   wire [  19:0] radio0_m_ctrlport_req_addr;
   wire [  31:0] radio0_m_ctrlport_req_data;
   wire [   3:0] radio0_m_ctrlport_req_byte_en;
-  wire [   0:0] radio0_m_ctrlport_req_has_time;
+  wire          radio0_m_ctrlport_req_has_time;
   wire [  63:0] radio0_m_ctrlport_req_time;
-  wire [   0:0] radio0_m_ctrlport_resp_ack;
+  wire          radio0_m_ctrlport_resp_ack;
   wire [   1:0] radio0_m_ctrlport_resp_status;
   wire [  31:0] radio0_m_ctrlport_resp_data;
   // time
   wire [  63:0] radio0_radio_time;
   // radio
-  wire [1023:0] radio0_radio_rx_data;
-  wire [  31:0] radio0_radio_rx_stb;
-  wire [  31:0] radio0_radio_rx_running;
-  wire [1023:0] radio0_radio_tx_data;
-  wire [  31:0] radio0_radio_tx_stb;
-  wire [  31:0] radio0_radio_tx_running;
+  wire [32*RADIO_NIPC*2-1:0] radio0_radio_rx_data;
+  wire [   1:0] radio0_radio_rx_stb;
+  wire [   1:0] radio0_radio_rx_running;
+  wire [32*RADIO_NIPC*2-1:0] radio0_radio_tx_data;
+  wire [   1:0] radio0_radio_tx_stb;
+  wire [   1:0] radio0_radio_tx_running;
 
   rfnoc_block_radio #(
     .THIS_PORTID         (2),
     .CHDR_W              (BLOCK_CHDR_W),
     .NUM_PORTS           (2),
-    .NIPC                (1),
+    .NIPC                (RADIO_NIPC),
     .ITEM_W              (32),
     .MTU                 (BLOCK_MTU)
   ) b_radio0_0 (
@@ -488,12 +492,12 @@ module rfnoc_image_core #(
     .m_rfnoc_chdr_tlast  ({m_radio0_out_1_tlast , m_radio0_out_0_tlast }),
     .m_rfnoc_chdr_tvalid ({m_radio0_out_1_tvalid, m_radio0_out_0_tvalid}),
     .m_rfnoc_chdr_tready ({m_radio0_out_1_tready, m_radio0_out_0_tready}),
-    .s_rfnoc_ctrl_tdata  (s_radio0_ctrl_tdata),
-    .s_rfnoc_ctrl_tlast  (s_radio0_ctrl_tlast),
+    .s_rfnoc_ctrl_tdata  (s_radio0_ctrl_tdata ),
+    .s_rfnoc_ctrl_tlast  (s_radio0_ctrl_tlast ),
     .s_rfnoc_ctrl_tvalid (s_radio0_ctrl_tvalid),
     .s_rfnoc_ctrl_tready (s_radio0_ctrl_tready),
-    .m_rfnoc_ctrl_tdata  (m_radio0_ctrl_tdata),
-    .m_rfnoc_ctrl_tlast  (m_radio0_ctrl_tlast),
+    .m_rfnoc_ctrl_tdata  (m_radio0_ctrl_tdata ),
+    .m_rfnoc_ctrl_tlast  (m_radio0_ctrl_tlast ),
     .m_rfnoc_ctrl_tvalid (m_radio0_ctrl_tvalid),
     .m_rfnoc_ctrl_tready (m_radio0_ctrl_tready)
   );
@@ -530,7 +534,7 @@ module rfnoc_image_core #(
 
 
   //---------------------------------------------------------------------------
-  // Clock Domains
+  // Clock Domains and Resets
   //---------------------------------------------------------------------------
 
   assign radio0_radio_clk = radio_clk;

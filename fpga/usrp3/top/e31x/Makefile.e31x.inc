@@ -48,7 +48,6 @@ include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_axi_ram_fifo/Makefile.srcs
 -include $(RFNOC_OOT_MAKEFILE_SRCS)
 
 IMAGE_CORE ?= $(DEFAULT_RFNOC_IMAGE_CORE_FILE)
-EDGE_FILE ?= $(DEFAULT_EDGE_FILE)
 
 ##################################################
 # Sources
@@ -64,7 +63,7 @@ TOP_SRCS += e31x.v
 TOP_SRCS += e31x_core.v
 TOP_SRCS += e31x_dram.v
 TOP_SRCS += e310_io.v
-TOP_SRCS += $(EDGE_FILE) $(IMAGE_CORE)
+TOP_SRCS += $(IMAGE_CORE)
 MB_XDC = \
 e31x_pins.xdc \
 e31x_timing.xdc
@@ -108,7 +107,6 @@ $(RFNOC_BLOCK_REPLAY_SRCS) \
 $(RFNOC_BLOCK_EXAMPLE_SRCS) \
 $(abspath $(MB_XDC))
 
-EDGE_TBL_DEF="RFNOC_EDGE_TBL_FILE=$(call RESOLVE_PATH,$(EDGE_FILE))"
 IMAGE_CORE_DEF="RFNOC_IMAGE_CORE_HDR=$(call RESOLVE_PATH,$(IMAGE_CORE:.v=.vh))"
 
 ##################################################
@@ -116,7 +114,7 @@ IMAGE_CORE_DEF="RFNOC_IMAGE_CORE_HDR=$(call RESOLVE_PATH,$(IMAGE_CORE:.v=.vh))"
 ##################################################
 .SECONDEXPANSION:
 
-VERILOG_DEFS=$(EXTRA_DEFS) $(CUSTOM_DEFS) $(GIT_HASH_VERILOG_DEF) $(EDGE_TBL_DEF) $(IMAGE_CORE_DEF)
+VERILOG_DEFS=$(EXTRA_DEFS) $(CUSTOM_DEFS) $(GIT_HASH_VERILOG_DEF) $(IMAGE_CORE_DEF)
 
 # DESIGN_SRCS and VERILOG_DEFS must be defined
 bin: .prereqs

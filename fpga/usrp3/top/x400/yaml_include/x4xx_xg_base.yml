@@ -1,0 +1,37 @@
+# A list of transport adapters to use
+# -----------------------------------
+schema: rfnoc_imagebuilder_args         # Identifier for the schema used to validate this file
+copyright: >-                           # Copyright information used in file headers
+  Copyright 2023 Ettus Research, a National Instruments Brand
+license: >-                             # License information used in file headers
+  SPDX-License-Identifier: LGPL-3.0-or-later
+version: '1.0'                          # File version
+chdr_width: 64                          # Bit width of the CHDR bus for this image
+
+transport_adapters:
+  eth_qsfp0:
+    block_desc : 'x4xx_eth.yml'
+    parameters:
+      port_type0: 2
+      port_type1: 0
+      port_type2: 0
+      port_type3: 0
+      qsfp_num: 0
+  eth_qsfp1:
+    block_desc : 'x4xx_eth.yml'
+    parameters:
+      port_type0: 2
+      port_type1: 0
+      port_type2: 0
+      port_type3: 0
+      qsfp_num: 1
+  dma:
+    block_desc : 'chdr_dma.yml'
+
+connections:
+  - {srcblk: eth_qsfp0, srcport: qsfp,       dstblk: _device_, dstport: qsfp0     }
+  - {srcblk: eth_qsfp1, srcport: qsfp,       dstblk: _device_, dstport: qsfp1     }
+  - {srcblk: dma,       srcport: chdr_dma_s, dstblk: _device_, dstport: chdr_dma_s}
+  - {srcblk: _device_,  srcport: chdr_dma_m, dstblk: dma,      dstport: chdr_dma_m}
+
+noc_blocks: {}
