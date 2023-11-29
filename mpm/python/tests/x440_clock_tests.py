@@ -158,7 +158,7 @@ class TestX440ClockConfig(TestBase):
         self.assertEqual(mmcm_vco_rate / clk_config.mmcm_output_div_map['r0_clk'], mcr[0] / dsp_info['spc_rx'])
         self.assertEqual(mmcm_vco_rate / clk_config.mmcm_output_div_map['r1_clk'], mcr[1] / dsp_info['spc_rx'])
         self.assertEqual(clk_config.spll_config.vcxo_freq, Spll1Vco.VCO100MHz)
-        self.assertEqual(clk_config.spll_config.sysref_div, 1200)
+        self.assertEqual(clk_config.spll_config.sysref_div, 2400)
         self.assertEqual(clk_config.spll_config.clkin0_r_div, 200)
         self.assertEqual(clk_config.spll_config.pll2_n_cal_div, clk_config.spll_config.pll2_n_div)
     
