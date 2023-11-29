@@ -35,7 +35,3 @@ data:
   outputs:
     out:
       num_ports: NUM_OUTPUTS
-
-registers:
-
-properties:
