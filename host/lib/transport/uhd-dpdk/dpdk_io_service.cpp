@@ -267,7 +267,11 @@ int dpdk_io_service::_io_worker(void* arg)
 
     char name[16];
     snprintf(name, sizeof(name), "dpdk-io_%hu", (uint16_t)lcore_id);
+#if RTE_VER_YEAR >= 23
+    rte_thread_set_name(rte_thread_self(), name);
+#else
     rte_thread_setname(pthread_self(), name);
+#endif
     UHD_LOG_TRACE("DPDK::IO_SERVICE",
         "I/O service thread '" << name << "' started on lcore " << lcore_id);
 
