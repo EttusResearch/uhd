@@ -48,6 +48,9 @@ ifndef TARGET
 		TARGET = synth
 	else ifeq ($(IP_ONLY), 1)
 		TARGET = viv_ip
+	else ifeq ($(SECURE_CORE), 1)
+		TARGET = secure_core
+		TOP = secure_image_core
 	else
 		TARGET = bin
 	endif
@@ -174,6 +177,7 @@ help:         ##Show this help message.
 ##CHECK=1        Launch the syntax checker instead of building a bitfile.
 ##IP_ONLY=1      Launch the build but stop after IP generation.
 ##SYNTH=1        Launch the build but stop after synthesis.
+##SECURE_CORE=1  Launch a build of the secure image core only.
 ##BUILD_SEED=<N> Build seed to used to affect build results. (Default is 0)
 ##TOP=<module>   Specify a top module for syntax checking. (Default is the bitfile top)
 

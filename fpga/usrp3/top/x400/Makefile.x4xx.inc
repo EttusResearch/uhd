@@ -187,4 +187,7 @@ rtl: .prereqs
 viv_ip: .prereqs $$(DESIGN_SRCS) ip
 	@echo "IP build for $(NAME) DONE . . ."
 
-.PHONY: bin synth rtl viv_ip
+secure_core: .prereqs
+	$(call BUILD_VIVADO_DESIGN,$(TOOLS_DIR)/scripts/viv_secure_synth.tcl,$(TOP_MODULE),$(ARCH),$(PART_ID))
+
+.PHONY: bin synth rtl viv_ip secure_synth_netlist

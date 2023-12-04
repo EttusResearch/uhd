@@ -10,6 +10,9 @@ namespace eval ::vivado_utils {
     namespace export \
         initialize_project \
         synthesize_design \
+        export_synth_netlist \
+        separate_encrypted \
+        export_encrypted_netlist \
         check_design \
         generate_post_synth_reports \
         generate_post_place_reports \
@@ -27,6 +30,7 @@ namespace eval ::vivado_utils {
     variable g_source_files $::env(VIV_DESIGN_SRCS)
     variable g_vivado_mode  $::env(VIV_MODE)
     variable g_project_save $::env(VIV_PROJECT)
+    variable g_secure_key   $::env(VIV_SECURE_KEY)
 
     # Optional environment variables
     variable g_verilog_defs ""
@@ -73,23 +77,29 @@ proc ::vivado_utils::initialize_project { {save_to_disk 0} } {
     foreach src_file $g_source_files {
         set src_ext [file extension $src_file ]
         if [expr [lsearch {.vhd .vhdl} $src_ext] >= 0] {
-            puts "BUILDER: Adding VHDL    : $src_file"
+            puts "BUILDER: Adding VHDL: $src_file"
             read_vhdl -library work $src_file
-        } elseif [expr [lsearch {.v .vh .sv .svh} $src_ext] >= 0] {
-            puts "BUILDER: Adding Verilog : $src_file"
+        } elseif [expr [lsearch {.v .vh} $src_ext] >= 0] {
+            puts "BUILDER: Adding Verilog: $src_file"
             read_verilog $src_file
+        } elseif [expr [lsearch {.vp} $src_ext] >= 0] {
+            puts "BUILDER: Adding encrypted Verilog: $src_file"
+            read_verilog $src_file
+        } elseif [expr [lsearch {.sv .svh} $src_ext] >= 0] {
+            puts "BUILDER: Adding SystemVerilog: $src_file"
+            read_verilog -sv $src_file
         } elseif [expr [lsearch {.xdc} $src_ext] >= 0] {
-            puts "BUILDER: Adding XDC     : $src_file"
+            puts "BUILDER: Adding XDC: $src_file"
             read_xdc $src_file
         } elseif [expr [lsearch {.sdc} $src_ext] >= 0] {
-            puts "BUILDER: Adding SDC     : $src_file"
+            puts "BUILDER: Adding SDC: $src_file"
             read_xdc $src_file
         } elseif [expr [lsearch {.xci} $src_ext] >= 0] {
-            puts "BUILDER: Adding IP      : $src_file"
+            puts "BUILDER: Adding IP: $src_file"
             read_ip $src_file
             set_property generate_synth_checkpoint true [get_files $src_file]
         } elseif [expr [lsearch {.ngc .edif .edf} $src_ext] >= 0] {
-            puts "BUILDER: Adding Netlist : $src_file"
+            puts "BUILDER: Adding Netlist: $src_file"
             read_edif $src_file
         } elseif [expr [lsearch {.bd} $src_ext] >= 0] {
             puts "BUILDER: Adding Block Design to list (added after IP regeneration): $src_file"
@@ -98,7 +108,7 @@ proc ::vivado_utils::initialize_project { {save_to_disk 0} } {
             puts "BUILDER: Adding Block Design XML to list (added after IP regeneration): $src_file"
             append bd_files "$src_file "
         } elseif [expr [lsearch {.dat} $src_ext] >= 0] {
-            puts "BUILDER: Adding Data File : $src_file"
+            puts "BUILDER: Adding Data File: $src_file"
             add_files $src_file
         } else {
             puts "BUILDER: \[WARNING\] File ignored!!!: $src_file"
@@ -146,6 +156,98 @@ proc ::vivado_utils::synthesize_design {args} {
     set synth_cmd [concat $synth_cmd $args]
     puts "BUILDER: Synthesizing design"
     eval $synth_cmd
+}
+
+# ---------------------------------------------------
+# Generate netlist from Synthesis
+# ---------------------------------------------------
+proc ::vivado_utils::export_synth_netlist { {suffix ""} } {
+    variable g_output_dir
+    variable g_top_module
+
+    puts "BUILDER: Writing EDIF netlist for $g_top_module"
+    set filename ${g_output_dir}/${g_top_module}
+    if { [expr [string length $suffix] > 0] } {
+        set filename ${filename}_${suffix}
+    }
+    write_edif -security_mode all -force ${filename}.edf
+    write_verilog -mode synth_stub -force -file ${filename}_stub.v
+}
+
+# ---------------------------------------------------
+# Extract encrypted sections from a file
+# ---------------------------------------------------
+proc ::vivado_utils::separate_encrypted {input_filename unencrypted_filename encrypted_filename} {
+    set protected_sections ""
+    set unprotected_sections ""
+    set inside_protected_section 0
+
+    # Read each line from the input file and separate it into protected and
+    # unprotected sections.
+    set input_file [open $input_filename r]
+    while {[gets $input_file line] >= 0} {
+        # Check if we are inside a protected section
+        if {[string match "*`pragma protect begin_protected*" $line]} {
+            set inside_protected_section 1
+        }
+
+        # Append the line to the appropriate section
+        if {$inside_protected_section} {
+            append protected_sections "$line\n"
+        } else {
+            append unprotected_sections "$line\n"
+        }
+
+        if {[string match "*`pragma protect end_protected*" $line]} {
+            set inside_protected_section 0
+        }
+    }
+    close $input_file
+
+    # Write the extracted portions to files
+    set encrypted_file [open $encrypted_filename w]
+    puts $encrypted_file $protected_sections
+    close $encrypted_file
+    set unencrypted_file [open $unencrypted_filename w]
+    puts $unencrypted_file $unprotected_sections
+    close $unencrypted_file
+}
+
+# ---------------------------------------------------------
+# Generate an IEEE-1735 encrypted netlist in a single file
+# ---------------------------------------------------------
+proc ::vivado_utils::export_encrypted_netlist { {suffix ""} } {
+    variable g_output_dir
+    variable g_top_module
+    variable g_secure_key
+
+    puts "BUILDER: Writing encrypted netlist for $g_top_module"
+    set filename ${g_output_dir}/${g_top_module}
+    if { [expr [string length $suffix] > 0] } {
+        set filename ${filename}_${suffix}
+    }
+
+    # Uniquify the module names to prevent collisions when the netlist is used
+    rename_ref -prefix_all $g_top_module
+
+    # Write the design to a Verilog netlist
+    write_verilog -force ${filename}_netlist.v
+    puts "BUILDER: Unencrypted netlist written to ${filename}_netlist.v"
+    write_xdc -force ${filename}.xdc
+    puts "BUILDER: Constraints written to ${filename}.xdc"
+    if {$g_secure_key ne ""} {
+        # The netlist may have parts that are already encrypted and Vivado doesn't
+        # let us encrypt stuff that's already encrypted, so we need to split it up.
+        vivado_utils::separate_encrypted ${filename}_netlist.v ${filename}_netlist_user.v ${filename}_netlist_other.vp
+        # Encrypt the parts that aren't already encrypted
+        encrypt -key ${g_secure_key} -lang verilog -ext .vp ${filename}_netlist_user.v
+        # Merge the two encrypted files
+        set combined_netlists [read [open ${filename}_netlist_user.vp r]][read [open ${filename}_netlist_other.vp r]]
+        set combined_netlists_file [open ${filename}.vp w]
+        puts $combined_netlists_file $combined_netlists
+        close $combined_netlists_file
+        puts "BUILDER: Encrypted netlist written to ${filename}.vp"
+    }
 }
 
 # ---------------------------------------------------
