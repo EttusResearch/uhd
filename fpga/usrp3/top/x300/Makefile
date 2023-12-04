@@ -19,7 +19,7 @@
 # Uncomment the following line to add a debug UART on GPIO 10 & 11
 #OPTIONS += DEBUG_UART=1
 
-CREATE_LVBITX=python ../../lib/io_port2/create-lvbitx.py
+CREATE_LVBITX=python3 ../../lib/io_port2/create-lvbitx.py
 
 # Base output directory for all builds
 BUILD_BASE_DIR ?= .

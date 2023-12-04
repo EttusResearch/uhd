@@ -1,6 +1,7 @@
 #
 # Copyright 2008-2013 Ettus Research LLC
 #
+# Used by b200 and b2xxmini
 
 ##################################################
 # Constants
@@ -13,8 +14,8 @@ else
 endif
 BASE_DIR = $(abspath ..)
 ISE_HELPER = xtclsh $(BASE_DIR)/tcl/ise_helper.tcl
-SANITY_CHECKER = python $(BASE_DIR)/python/check_inout.py
-TIMING_CHECKER = python $(BASE_DIR)/python/check_timing.py
+SANITY_CHECKER = python3 $(BASE_DIR)/python/check_inout.py
+TIMING_CHECKER = python3 $(BASE_DIR)/python/check_timing.py
 ISE_FILE = $(BUILD_DIR)/$(TOP_MODULE).$(ISE_EXT)
 BIN_FILE = $(BUILD_DIR)/$(TOP_MODULE).bin
 BIT_FILE = $(BUILD_DIR)/$(TOP_MODULE).bit

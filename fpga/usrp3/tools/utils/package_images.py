@@ -40,7 +40,7 @@ def parse_args():
     even) information will be lacking. The suggested usage is to invoke the following command from
     the directory containing the image files
 
-    `python package_images.py --manifest /path/to/manifest --githash <REPO>-<GITHASH>`
+    `python3 package_images.py --manifest /path/to/manifest --githash <REPO>-<GITHASH>`
 
     where REPO is the repository used to create the images  (ie 'fpga'), and GITHASH is the Git
     hash of that repository used to create the images. When in doubt, please check with previous
