@@ -215,6 +215,8 @@ jobs:
         cmake $(Build.SourcesDirectory)/host ^
           -DVCPKG_TARGET_TRIPLET=uhd-$(vsArch)-windows-static-md ^
           -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALL_DIR%\scripts\buildsystems\vcpkg.cmake ^
+          -DVCPKG_INSTALLED_DIR=c:\uhd-vcpkg\vcpkg_installed ^
+          -DVCPKG_MANIFEST_DIR=c:\uhd-vcpkg ^
           -G "$(cmakeCompiler)" -A $(cmakeArch)
     displayName: Test image with cmake uhd
   - script: |

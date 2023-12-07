@@ -95,6 +95,7 @@ jobs:
         uhdBuildDir: c:\uhddev\build
         uhdInstallerDir: c:\uhddev-installer
         uhdImageDir: c:\uhd-images
+        uhdVcpkgManifestDir: c:\uhd-vcpkg
         uhdReleaseBinaries: ${{ parameters.releaseBinaries }}
         ${{ if contains(parameters.fpga_imgs_base_url, 'Internal') }}:
           uhdImagesDownloaderExtraArgs: '-b $(InternalFileServerUrl)'
@@ -109,6 +110,7 @@ jobs:
         uhdBuildDir: c:\uhddev\build
         uhdInstallerDir: c:\uhddev-installer
         uhdImageDir: c:\uhd-images
+        uhdVcpkgManifestDir: c:\uhd-vcpkg
         uhdReleaseBinaries: ${{ parameters.releaseBinaries }}
         uhdBuildPythonAPI: True
         ${{ if contains(parameters.fpga_imgs_base_url, 'Internal') }}:

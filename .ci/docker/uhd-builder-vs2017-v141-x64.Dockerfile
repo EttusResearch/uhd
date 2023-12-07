@@ -35,12 +35,11 @@ RUN "%TEMP%\vs_buildtools.exe"  --quiet --wait --norestart --noUpdateInstaller \
 RUN setx VCPKG_INSTALL_DIR "c:\\vcpkg" /m
 RUN git clone https://github.com/microsoft/vcpkg %VCPKG_INSTALL_DIR% && \
     cd %VCPKG_INSTALL_DIR% && \
-    # The vcpkg git tag sets the toolchain dependenices
-    # This commit uses Boost 1.78 and libusb 1.0.24
-    git checkout 2022.03.10 && \
     bootstrap-vcpkg.bat
     # Add custom UHD vcpkg triplet
 COPY host/cmake/vcpkg/* c:/vcpkg/triplets/
-RUN cd %VCPKG_INSTALL_DIR% && vcpkg install --clean-after-build \
-    libusb:uhd-x64-windows-static-md \
-    boost:uhd-x64-windows-static-md
+RUN mkdir c:\\uhd-vcpkg
+COPY .ci\\docker\\vcpkg\\vcpkg.json c:/uhd-vcpkg
+RUN cd c:\\uhd-vcpkg && %VCPKG_INSTALL_DIR%\vcpkg.exe install \
+    --triplet uhd-x64-windows-static-md \
+    --clean-after-build

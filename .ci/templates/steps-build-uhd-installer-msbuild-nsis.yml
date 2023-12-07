@@ -24,6 +24,8 @@ parameters:
   type: string
 - name: vsYear
   type: string
+- name: uhdVcpkgManifestDir
+  type: string
 
 steps:
 - script: |
@@ -31,7 +33,9 @@ steps:
     cd ${{ parameters.uhdBuildDir }}
     cmake ${{ parameters.uhdSrcDir }}/host ^
       -DVCPKG_TARGET_TRIPLET=uhd-$(vsArch)-windows-static-md ^
-      -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALL_DIR%/scripts/buildsystems/vcpkg.cmake
+      -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALL_DIR%/scripts/buildsystems/vcpkg.cmake ^
+      -DVCPKG_INSTALLED_DIR=${{ parameters.uhdVcpkgManifestDir }}\vcpkg_installed ^
+      -DVCPKG_MANIFEST_DIR=${{ parameters.uhdVcpkgManifestDir }}
     mkdir ${{ parameters.uhdImageDir }}
     python ${{ parameters.uhdBuildDir }}/utils/uhd_images_downloader.py -i ${{ parameters.uhdImageDir }} ${{ parameters.uhdImagesDownloaderExtraArgs }}
   displayName: Download uhd-images
@@ -57,6 +61,8 @@ steps:
     cmake ${{ parameters.uhdSrcDir }}/host ^
       -DVCPKG_TARGET_TRIPLET=uhd-$(vsArch)-windows-static-md ^
       -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALL_DIR%/scripts/buildsystems/vcpkg.cmake ^
+      -DVCPKG_INSTALLED_DIR=${{ parameters.uhdVcpkgManifestDir }}\vcpkg_installed ^
+      -DVCPKG_MANIFEST_DIR=${{ parameters.uhdVcpkgManifestDir }} ^
       -DUHD_IMAGES_SRC_DIR="${{ parameters.uhdImageDir }}" ^
       -DUHD_IMAGES_DIR="C:\\Program Files (x86)\\UHD\\share\\uhd\\images,C:\\Program Files\\UHD\\share\\uhd\\images" ^
       -DSPECIFY_MSVC_VERSION=ON ^

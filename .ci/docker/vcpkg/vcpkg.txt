@@ -1,0 +1,4 @@
+The vcpkg.json manifest file is using a builtin-baseline that corresponds to these versions of our dependencies:
+
+boost 1.78
+libusb 1.0.24
