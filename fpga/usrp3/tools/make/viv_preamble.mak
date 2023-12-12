@@ -13,6 +13,9 @@ RESOLVE_PATH = $(1)
 RESOLVE_PATHS = "$(1)"
 endif
 
+# A function that removes duplicate entries from lists without changing its order
+uniq = $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))
+
 # -------------------------------------------------------------------
 # Project Setup
 # -------------------------------------------------------------------
