@@ -60,11 +60,25 @@ entity rf_nco_reset is
     cAdc0xNcoUpdateReq      : out std_logic := '0';
 
     -----------------------------------
+    --ADC Tile 225
+    -----------------------------------
+    -- ADC common NCO update controls and status.
+    cAdc1xNcoUpdateBusy     : in  std_logic;
+    cAdc1xNcoUpdateReq      : out std_logic := '0';
+
+    -----------------------------------
     --ADC Tile 226
     -----------------------------------
     -- ADC common NCO update controls and status.
     cAdc2xNcoUpdateBusy     : in  std_logic;
     cAdc2xNcoUpdateReq      : out std_logic := '0';
+
+    -----------------------------------
+    --ADC Tile 227
+    -----------------------------------
+    -- ADC common NCO update controls and status.
+    cAdc3xNcoUpdateBusy     : in  std_logic;
+    cAdc3xNcoUpdateReq      : out std_logic := '0';
 
     -- NCO reset can be initiated only when cNcoPhaseRst is set to '1' and
     -- cNcoUpdateEn = 0x20. The FSM in this entity will set these values when
@@ -146,7 +160,9 @@ begin
       cDac0xSysrefIntReenable <= '0';
       cDac1xNcoUpdateReq      <= '0';
       cAdc0xNcoUpdateReq      <= '0';
+      cAdc1xNcoUpdateReq      <= '0';
       cAdc2xNcoUpdateReq      <= '0';
+      cAdc3xNcoUpdateReq      <= '0';
       case cResetState is
         -- Stay in this state until NCO reset sequence is initiated. NCO reset
         -- is initiated only on the rising edge of SYSREF.
@@ -177,7 +193,9 @@ begin
             cResetState <= CheckUpdateDone;
             cDac1xNcoUpdateReq <= '1';
             cAdc0xNcoUpdateReq <= '1';
+            cAdc1xNcoUpdateReq <= '1';
             cAdc2xNcoUpdateReq <= '1';
+            cAdc3xNcoUpdateReq <= '1';
           end if;
 
         -- In this state, we check if the RFDC block is ready for NCO reset.
@@ -187,7 +205,8 @@ begin
           cSysrefIntGating <= '1';
           cResetState <= CheckUpdateDone;
           if cDac0xNcoUpdateBusy = "10" and  cAdc0xNcoUpdateBusy = '0' and
-             cAdc2xNcoUpdateBusy = '0'  and  cDac1xNcoUpdateBusy = '0'  and
+             cAdc1xNcoUpdateBusy = '0' and cAdc2xNcoUpdateBusy = '0' and
+             cAdc3xNcoUpdateBusy = '0' and  cDac1xNcoUpdateBusy = '0'  and
              cSysref = '1' and cSysrefDlyd = '0' then
             cDac0xSysrefIntReenable <= '1';
             cResetState <= CheckResetDone;

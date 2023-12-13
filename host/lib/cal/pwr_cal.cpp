@@ -86,7 +86,7 @@ public:
                             + std::to_string(min_power) + " dBm, "
                             + std::to_string(max_power) + " dBm)"));
         }
-        const int temp    = bool(temperature) ? temperature.get() : _default_temp;
+        const int temp = bool(temperature) ? temperature.get() : _default_temp;
         _data[temp][static_cast<uint64_t>(freq)] = {
             gain_power_map, reverse_map(gain_power_map), min_power, max_power};
     }
@@ -100,7 +100,7 @@ public:
     {
         UHD_ASSERT_THROW(!_data.empty());
         const uint64_t freqi = static_cast<uint64_t>(freq);
-        const auto& table = _get_table(temperature);
+        const auto& table    = _get_table(temperature);
 
         const auto f_iters = get_bounding_iterators(table, freqi);
         const uint64_t f1i = f_iters.first->first;
@@ -109,18 +109,15 @@ public:
         if (f1i == f2i) {
             return at_lin_interp(table.at(f1i).g2p, gain);
         }
-        const double f1 = static_cast<double>(f1i);
-        const double f2 = static_cast<double>(f2i);
+        const double f1       = static_cast<double>(f1i);
+        const double f2       = static_cast<double>(f2i);
         const auto gain_iters = get_bounding_iterators(table.at(f1).g2p, gain);
-        const double gain1 = gain_iters.first->first;
-        const double gain2 = gain_iters.second->first;
+        const double gain1    = gain_iters.first->first;
+        const double gain2    = gain_iters.second->first;
         // Gain is out of bounds
         if (gain1 == gain2) {
-            return linear_interp(freq,
-                f1,
-                table.at(f1i).g2p.at(gain1),
-                f2,
-                table.at(f2i).g2p.at(gain1));
+            return linear_interp(
+                freq, f1, table.at(f1i).g2p.at(gain1), f2, table.at(f2i).g2p.at(gain1));
         }
 
         // Both gain and freq are within bounds: Bi-Linear interpolation
@@ -171,8 +168,8 @@ public:
         const boost::optional<int> temperature = boost::none) const override
     {
         UHD_ASSERT_THROW(!_data.empty());
-        const uint64_t freqi = static_cast<uint64_t>(freq);
-        const auto& table = _get_table(temperature);
+        const uint64_t freqi       = static_cast<uint64_t>(freq);
+        const auto& table          = _get_table(temperature);
         const double power_coerced = get_power_limits(freq, temperature).clip(power_dbm);
 
         const auto f_iters = get_bounding_iterators(table, freqi);
@@ -356,4 +353,3 @@ pwr_cal::sptr pwr_cal::make(
 {
     return std::make_shared<pwr_cal_impl>(name, serial, timestamp);
 }
-

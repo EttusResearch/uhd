@@ -561,7 +561,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     // upper most bit should now be 1, but all the other bits should be unchanged
     failures += int(!check_rb_values(usrp->get_gpio_attr(gpio_bank, "DDR") & mask,
         ddr | GPIO_BIT(num_bits - 1),
-        num_bits, 0));
+        num_bits,
+        0));
     output_reg_values(gpio_bank, port, usrp, num_bits, has_src_api);
     // restore DDR value
     usrp->set_gpio_attr(gpio_bank, "DDR", ddr, mask);
@@ -583,7 +584,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         }
         failures += int(!check_rb_values(usrp->get_gpio_attr(gpio_bank, "READBACK"),
             GPIO_BIT(4) | GPIO_BIT(0),
-            num_bits, loopback_num_bits));
+            num_bits,
+            loopback_num_bits));
         output_reg_values(gpio_bank, port, usrp, num_bits, has_src_api);
         usrp->set_gpio_attr(gpio_bank, "OUT", 0, GPIO_BIT(4));
         if (stop_signal_called)
@@ -596,7 +598,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             stream_helper.start_stream(false, true);
             failures += int(!check_rb_values(usrp->get_gpio_attr(gpio_bank, "READBACK"),
                 GPIO_BIT(1),
-                num_bits, loopback_num_bits));
+                num_bits,
+                loopback_num_bits));
             output_reg_values(gpio_bank, port, usrp, num_bits, has_src_api);
             stream_helper.stop_stream(false, true);
         }
@@ -610,7 +613,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             stream_helper.start_stream(true, false);
             failures += int(!check_rb_values(usrp->get_gpio_attr(gpio_bank, "READBACK"),
                 GPIO_BIT(2),
-                num_bits, loopback_num_bits));
+                num_bits,
+                loopback_num_bits));
             output_reg_values(gpio_bank, port, usrp, num_bits, has_src_api);
             stream_helper.stop_stream(true, false);
         }
@@ -624,7 +628,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             stream_helper.start_stream(true, true);
             failures += int(!check_rb_values(usrp->get_gpio_attr(gpio_bank, "READBACK"),
                 GPIO_BIT(3),
-                num_bits, loopback_num_bits));
+                num_bits,
+                loopback_num_bits));
             output_reg_values(gpio_bank, port, usrp, num_bits, has_src_api);
             stream_helper.stop_stream(true, true);
         }

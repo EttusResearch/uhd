@@ -39,7 +39,8 @@ public:
     uhd::transport::adapter_id_t get_adapter_id(
         const uhd::rfnoc::device_id_t local_device_id) override;
     void reset_network() override;
-    uhd::rfnoc::clock_iface::sptr get_clock_iface(const std::string& clock_name) override;
+    uhd::rfnoc::clock_iface::sptr get_clock_iface(
+        const std::string& clock_name, const uint8_t clock_idx) override;
     uhd::rfnoc::chdr_ctrl_xport::sptr make_ctrl_transport(
         uhd::rfnoc::device_id_t local_device_id,
         const uhd::rfnoc::sep_id_t& local_epid) override;

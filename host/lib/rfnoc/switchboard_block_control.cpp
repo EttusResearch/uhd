@@ -18,7 +18,7 @@ const uint32_t switchboard_block_control::REG_DEMUX_SELECT_ADDR = 0;
 const uint32_t switchboard_block_control::REG_MUX_SELECT_ADDR   = 4;
 
 // User properties
-const char* const PROP_KEY_INPUT_SELECT = "input_select";
+const char* const PROP_KEY_INPUT_SELECT  = "input_select";
 const char* const PROP_KEY_OUTPUT_SELECT = "output_select";
 
 class switchboard_block_control_impl : public switchboard_block_control
@@ -26,7 +26,7 @@ class switchboard_block_control_impl : public switchboard_block_control
 public:
     RFNOC_BLOCK_CONSTRUCTOR(switchboard_block_control),
         _num_input_ports(get_num_input_ports()),
-        _num_output_ports(get_num_output_ports()),
+        _num_output_ports(get_num_output_ports()), _connect_call(false),
         _switchboard_reg_iface(*this, 0, REG_BLOCK_SIZE)
     {
         UHD_ASSERT_THROW(_num_input_ports > 0 && _num_output_ports > 0);
@@ -46,15 +46,25 @@ public:
 
     void connect(const size_t input, const size_t output) override
     {
-        set_property<int>(PROP_KEY_INPUT_SELECT, static_cast<int>(input), output);
-        set_property<int>(PROP_KEY_OUTPUT_SELECT, static_cast<int>(output), input);
-
+        // Let the property resolvers know they don't need to call
+        // _update_forwarding_map() themselves, connect() will call it after both
+        // properties are set.
+        _connect_call = true;
+        try {
+            set_property<int>(PROP_KEY_INPUT_SELECT, static_cast<int>(input), output);
+            set_property<int>(PROP_KEY_OUTPUT_SELECT, static_cast<int>(output), input);
+        } catch (...) {
+            _connect_call = false;
+            throw;
+        }
         _update_forwarding_map();
+        _connect_call = false;
     }
 
 private:
     const size_t _num_input_ports;
     const size_t _num_output_ports;
+    bool _connect_call;
 
     void _register_props()
     {
@@ -68,11 +78,13 @@ private:
 
             register_property(&_input_select.back(), [this, output_port]() {
                 int select_val = _input_select.at(output_port).get();
-                if (select_val < 0 
+                if (select_val < 0
                     || static_cast<unsigned int>(select_val) >= _num_input_ports)
                     throw uhd::value_error("Index out of bounds");
                 _switchboard_reg_iface.poke32(
                     REG_MUX_SELECT_ADDR, select_val, output_port);
+                if (!_connect_call)
+                    _update_forwarding_map();
             });
         }
 
@@ -88,6 +100,8 @@ private:
                     throw uhd::value_error("Index out of bounds");
                 _switchboard_reg_iface.poke32(
                     REG_DEMUX_SELECT_ADDR, select_val, input_port);
+                if (!_connect_call)
+                    _update_forwarding_map();
             });
         }
     }
@@ -130,5 +144,8 @@ private:
     multichan_register_iface _switchboard_reg_iface;
 };
 
-UHD_RFNOC_BLOCK_REGISTER_DIRECT(
-    switchboard_block_control, SWITCHBOARD_BLOCK, "Switchboard", CLOCK_KEY_GRAPH, "bus_clk")
+UHD_RFNOC_BLOCK_REGISTER_DIRECT(switchboard_block_control,
+    SWITCHBOARD_BLOCK,
+    "Switchboard",
+    CLOCK_KEY_GRAPH,
+    "bus_clk")

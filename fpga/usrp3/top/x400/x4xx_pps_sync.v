@@ -19,20 +19,20 @@
 
 
 module x4xx_pps_sync #(
-  parameter SIMULATION = 0 
+  parameter SIMULATION = 0
 ) (
   // clock and reset
-  input  wire base_ref_clk, // BRC
-  input  wire pll_ref_clk,  // PRC
-  input  wire ctrl_clk,     // CC
-  input  wire radio_clk,    // RC
+  input  wire       base_ref_clk, // BRC
+  input  wire       pll_ref_clk,  // PRC
+  input  wire       ctrl_clk,     // CC
+  input  wire [1:0] radio_clk,    // RC
 
   input  wire brc_rst,
 
   // PPS
   input  wire pps_in, // BRC domain
   output wire pps_out_brc,
-  output reg  pps_out_rc = 1'b0,
+  output reg  [1:0] pps_out_rc = 2'b00,
 
   // LMK control signal
   output reg  sync = 1'b0,
@@ -44,7 +44,7 @@ module x4xx_pps_sync #(
   output wire        pll_sync_done,
   input  wire [7:0]  pps_brc_delay,
   input  wire [25:0] pps_prc_delay,
-  input  wire [1:0]  prc_rc_divider,
+  input  wire [9:0]  prc_rc_divider,
   input  wire        pps_rc_enabled,
 
   //signal for debugging
@@ -325,7 +325,7 @@ module x4xx_pps_sync #(
   // On the aligned edge of BRC and PRC this synchronizer is just a two stage
   // delay into the PRC domain as the edges occur at the same time the tools
   // should make sure we close timing on this edge
-  
+
   wire pps_prc;
   synchronizer #(
     .FALSE_PATH_TO_IN (0)
@@ -357,12 +357,18 @@ module x4xx_pps_sync #(
     .out (pps_prc_delay_prc)
   );
 
-  reg [25:0] delay_counter_prc = 26'b0;
-  reg        pps_delayed_prc = 1'b0;
-  reg        pps_prc_delayed = 1'b0;
+  reg [25:0] delay_counter_prc   = 26'b0;
+  reg        pps_delayed_prc     = 1'b0;
+  reg        pps_delayed_prc_out = 1'b0;
+  reg        pps_prc_delayed     = 1'b0;
   always @(posedge pll_ref_clk) begin
     // Disable delayed rising edge by default
     pps_delayed_prc <= 1'b0;
+    // pps_delayed_prc should assert one PRC clock cycle before the aligned edge,
+    // so that it can be transferred to the radio clock domain when PRC and radio_clock
+    // run at the same rate. pps_delayed_prc_out holds the PPS on PRC domain delayed to
+    // the aligned edge.
+    pps_delayed_prc_out <= pps_delayed_prc;
     pps_prc_delayed <= pps_prc;
 
     // Reset counter on rising edge
@@ -386,39 +392,57 @@ module x4xx_pps_sync #(
   // rc. The divider has to account for the output register and the shift
   // register.
 
-  wire [1:0] prc_rc_divider_rc;
-  wire       pps_rc_enabled_rc;
-  synchronizer #(
-    .FALSE_PATH_TO_IN (1),
-    .WIDTH            (2)
-  ) synchronizer_prc_rc_divider (
-    .clk (radio_clk),
-    .rst (1'b0),
-    .in  (prc_rc_divider),
-    .out (prc_rc_divider_rc)
-  );
-  synchronizer #(
-    .FALSE_PATH_TO_IN (1)
-  ) synchronizer_pps_rc_enabled (
-    .clk (radio_clk),
-    .rst (1'b0),
-    .in  (pps_rc_enabled),
-    .out (pps_rc_enabled_rc)
-  );
+  genvar rc_sync_i;
+  generate
+    for (rc_sync_i = 0; rc_sync_i < 2; rc_sync_i = rc_sync_i+1) begin : gen_rc_sync
 
-  reg [3:0] pps_shift_reg_rc = 4'b0;
-  always @(posedge radio_clk) begin
-    pps_shift_reg_rc <= {pps_shift_reg_rc[2:0],  pps_delayed_prc};
-    // Restoring a one clock cycle pulse by feeding back to output value.
-    pps_out_rc <= pps_shift_reg_rc[prc_rc_divider_rc] & ~pps_out_rc & pps_rc_enabled_rc;
-  end
+      wire [ 4:0] prc_rc_divider_rc;
+      reg  [ 4:0] prc_rc_divider_reg_rc = 5'b0;
+      wire        prc_rc_divider_valid;
+      wire        pps_rc_enabled_rc;
+      // Make signal one bit longer than maximum divider value to enable t-1 comparison.
+      reg  [31:0] pps_shift_reg_rc = 32'b0;
+
+      handshake #(
+        .WIDTH            (5)
+      ) synchronizer_prc_rc_divider (
+        .clk_a    (ctrl_clk),
+        .rst_a    (1'b0),
+        .valid_a  (1'b1),
+        .data_a   (prc_rc_divider[5*rc_sync_i+:5]),
+        .busy_a   (),
+        .clk_b    (radio_clk[rc_sync_i]),
+        .valid_b  (prc_rc_divider_valid),
+        .data_b   (prc_rc_divider_rc)
+      );
+      synchronizer #(
+        .FALSE_PATH_TO_IN (1)
+      ) synchronizer_pps_rc_enabled (
+        .clk (radio_clk[rc_sync_i]),
+        .rst (1'b0),
+        .in  (pps_rc_enabled),
+        .out (pps_rc_enabled_rc)
+      );
+
+      always @(posedge radio_clk[rc_sync_i]) begin
+        if (prc_rc_divider_valid) begin
+          prc_rc_divider_reg_rc <= prc_rc_divider_rc;
+        end
+        pps_shift_reg_rc <= {pps_shift_reg_rc[30:0],  pps_delayed_prc};
+        // Restoring a one clock cycle pulse by feeding back to output value.
+        pps_out_rc[rc_sync_i] <= pps_shift_reg_rc[prc_rc_divider_reg_rc] &
+                                 ~pps_shift_reg_rc[prc_rc_divider_reg_rc+1] & pps_rc_enabled_rc;
+      end
+
+    end
+  endgenerate
 
   //---------------------------------------------------------------------------
   // Debug assignment
   //---------------------------------------------------------------------------
 
   assign debug[0] = pps_delayed_brc;
-  assign debug[1] = pps_delayed_prc;
+  assign debug[1] = pps_delayed_prc_out;
 
 endmodule
 

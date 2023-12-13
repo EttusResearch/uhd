@@ -41,9 +41,7 @@ class MboardRegsControl(MboardRegsCommon):
     MB_PPS_CTRL          = 0x001C
     MB_BUS_CLK_RATE      = 0x0020
     MB_BUS_COUNTER       = 0x0024
-    MB_GPIO_CTRL         = 0x002C
-    MB_GPIO_MASTER       = 0x0030
-    MB_GPIO_RADIO_SRC    = 0x0034
+    MB_PPS_CROSSING_REG  = 0x0030
     # MB_NUM_TIMEKEEPERS   = 0x0048 Shared with MboardRegsCommon
     MB_SERIAL_NO_LO      = 0x004C
     MB_SERIAL_NO_HI      = 0x0050
@@ -190,7 +188,8 @@ class MboardRegsControl(MboardRegsCommon):
             ("4x10G", ""):     "X4",
             ("4x10G", "100G"): "X4C",
             ("100G", "100G"):  "CG",
-            ("100G", ""):      "C1"
+            ("100G", ""):      "C1",
+            ("", "100G"):      "UC",
         }
 
         qsfp0_type = self._get_qsfp_type(0)
@@ -268,16 +267,19 @@ class MboardRegsControl(MboardRegsCommon):
                 clock_ctrl_reg |= self.CLOCK_CTRL_TRIG_IO_INPUT
             self.poke32(MboardRegsControl.MB_CLOCK_CTRL, clock_ctrl_reg)
 
-    def configure_pps_forwarding(self, enable, master_clock_rate, prc_rate, delay):
+    def configure_pps_forwarding(self, enable, tk_idx, radio_clock_rate, prc_rate, delay):
         """
         Configures the PPS forwarding to the sample clock domain (master
-        clock rate). This function assumes _sync_spll_clocks function has
-        already been executed.
+        clock rate). This function assumes X4xxClockCtrl.sync_spll_clocks
+        function has already been executed.
 
         :param enable: Boolean to choose whether PPS is forwarded to the
                        sample clock domain.
 
-        :param master_clock_rate: Master clock rate in MHz
+        :param tk_idx: Identifies the timekeeper for which clock crossing will
+                       be configured. The index is zero-based.
+
+        :param radio_clock_rate: Master clock rate in MHz
 
         :param prc_rate: PRC rate in MHz
 
@@ -286,7 +288,8 @@ class MboardRegsControl(MboardRegsCommon):
                        range 0 < x <= 1. In order to forward the PPS signal
                        from base reference clock to sample clock an aligned
                        rising edge of the clock is required. This can be
-                       created by the _sync_spll_clocks function. Based on the
+                       created by the X4xxClockCtrl.sync_spll_clocks function.
+                       Based on the
                        greatest common divisor of the two clock rates there
                        are multiple occurences of an aligned edge each second.
                        One of these aligned edges has to be chosen for the
@@ -307,18 +310,27 @@ class MboardRegsControl(MboardRegsCommon):
             value = (value & 0x00FFFFFF) | (pps_brc_delay << 24)
             self.poke32(self.MB_CLOCK_CTRL, value)
 
+            # configure clock divider
+            self.log.debug(f"Configuring PPS clock crossing for RC: \
+                          {radio_clock_rate}, prc_rate: {prc_rate}")
+            value = self.peek32(self.MB_PPS_CROSSING_REG)
+
+            # Due to HDL implementation, the value to be written is determined via the formula:
+            # value = (radio_clock_rate / prc_rate)*2 - 2.
+            div_bitfield = 0 if tk_idx == 0 else 16
+            prc_rc_divider = (int(radio_clock_rate/prc_rate)*2 - 2) & 0x1F
+            value = value | (prc_rc_divider << div_bitfield)
+
+            # write configuration to PPS crossing register
+            self.poke32(self.MB_PPS_CROSSING_REG, value)
+
             # configure delay in PRC clock domain
-            # reduction by 4 required by HDL implementation
-            pps_prc_delay = (int(delay * prc_rate) - 4) & 0x3FFFFFF
+            # reduction by 5 required by HDL implementation
+            pps_prc_delay = (int(delay * prc_rate) - 5) & 0x3FFFFFF
             if pps_prc_delay == 0:
                 # limitation from HDL implementation
                 raise RuntimeError("The calculated delay has to be greater than 0")
             value = pps_prc_delay
-
-            # configure clock divider
-            # reduction by 2 required by HDL implementation
-            prc_rc_divider = (int(master_clock_rate/prc_rate) - 2) & 0x3
-            value = value | (prc_rc_divider << 28)
 
             # write configuration to PPS control register (with PPS disabled)
             self.poke32(self.MB_PPS_CTRL, value)

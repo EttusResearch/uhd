@@ -68,40 +68,11 @@ class DboardIface(object):
         raise NotImplementedError('DboardIface::ctrl_spi_reset() not supported!')
 
     ####################################################################
-    # Management Bus
-    ####################################################################
-
-    ####################################################################
-    # Calibration SPI
-    #   The SPI/QSPI node used to interact with the DB
-    #   Calibration EEPROM if it exists
-    ####################################################################
-    def get_cal_eeprom_spi_node(self, addr):
-        raise NotImplementedError('DboardIface::get_cal_eeprom_spi_node()'
-                                  ' not supported!')
-
-    ####################################################################
     # MB Control
     #   Some of the MB settings may be controlled from the DB Driver
     ####################################################################
     def set_reference_clock(self, freq):
         raise NotImplementedError('DboardIface::set_reference_clock() not supported!')
-
-    def set_if_freq(self, freq, direction='both', channel='both'):
-        """
-        Set the IF frequency of the ADCs and DACs corresponding
-        to the specified channels of the DB.
-        By default, all channels and directions will be set.
-        Returns true if the IF frequency was successfully set.
-        """
-        raise NotImplementedError('DboardIface::set_if_freq() not supported!')
-
-    def get_if_freq(self, direction, channel):
-        """
-        Gets the IF frequency of the ADC/DAC corresponding
-        to the specified channel of the DB.
-        """
-        raise NotImplementedError('DboardIface::get_if_freq() not supported!')
 
     def enable_iq_swap(self, enable, direction, channel):
         """

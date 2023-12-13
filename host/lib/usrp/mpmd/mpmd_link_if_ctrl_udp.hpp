@@ -9,9 +9,9 @@
 
 #include "mpmd_link_if_ctrl_base.hpp"
 #include "mpmd_link_if_mgr.hpp"
-#include <map>
 #include <uhd/types/device_addr.hpp>
 #include <uhdlib/rfnoc/rfnoc_common.hpp>
+#include <map>
 
 namespace uhd { namespace mpmd { namespace xport {
 

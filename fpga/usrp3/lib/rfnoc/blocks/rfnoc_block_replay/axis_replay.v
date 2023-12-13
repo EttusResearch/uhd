@@ -149,7 +149,7 @@ module axis_replay #(
   //---------------------------------------------------------------------------
 
   localparam [REG_MAJOR_LEN-1:0] COMPAT_MAJOR = 1;
-  localparam [REG_MINOR_LEN-1:0] COMPAT_MINOR = 1;
+  localparam [REG_MINOR_LEN-1:0] COMPAT_MINOR = 2;
 
   localparam [REG_ITEM_SIZE_LEN-1:0] DEFAULT_ITEM_SIZE = 4;  // 4 bytes for sc16
 
@@ -168,8 +168,12 @@ module axis_replay #(
   // The lower MEM_ALIGN bits for all memory byte addresses should be 0.
   localparam MEM_ALIGN = $clog2(MEM_DATA_W / 8);
   //
-  // AXI alignment requirement (4096 bytes) in MEM_DATA_W-bit words
-  localparam AXI_ALIGNMENT = 4096 / BYTES_PER_WORD;
+  // Burst length in bytes
+  localparam BURST_LENGTH = 2**MEM_COUNT_W * BYTES_PER_WORD;
+  //
+  // AXI alignment requirement (normally 4096 bytes) in MEM_DATA_W-bit words
+  localparam AXI_ALIGNMENT = (BURST_LENGTH <= 4096) ? 4096 / BYTES_PER_WORD :
+                                                      BURST_LENGTH / BYTES_PER_WORD;
 
   // Memory Buffering Parameters
   //
@@ -248,6 +252,7 @@ module axis_replay #(
   reg            [TIME_W-1:0] reg_play_cmd_time;
   reg             [CMD_W-1:0] reg_play_cmd;
   reg                         reg_play_cmd_timed;
+  reg                         reg_play_cmd_no_eob;
   reg                         reg_play_cmd_valid;
   wire                        reg_play_cmd_ready;
   reg                         play_cmd_stop;
@@ -294,6 +299,7 @@ module axis_replay #(
       clear_cmd_fifo         <= 0;
       reg_play_cmd           <= 'bX;
       reg_play_cmd_timed     <= 'bX;
+      reg_play_cmd_no_eob    <= 'bX;
       reg_play_cmd_valid     <= 0;
       s_ctrlport_resp_data   <= 'bX;
       s_ctrlport_resp_ack    <= 0;
@@ -469,6 +475,7 @@ module axis_replay #(
           REG_PLAY_CMD : begin
             reg_play_cmd       <= s_ctrlport_req_data[REG_PLAY_CMD_POS+:REG_PLAY_CMD_LEN];
             reg_play_cmd_timed <= s_ctrlport_req_data[REG_PLAY_TIMED_POS];
+            reg_play_cmd_no_eob <= s_ctrlport_req_data[REG_PLAY_NO_EOB_POS];
             reg_play_cmd_valid <= 1'b1;
             if (!play_cmd_stop && s_ctrlport_req_data[REG_PLAY_CMD_LEN-1:0] == PLAY_CMD_STOP) begin
               play_cmd_stop  <= 1;
@@ -511,6 +518,7 @@ module axis_replay #(
   // Command FIFO Signals
   wire      [CMD_W-1:0]  cmd_cf;
   wire                   cmd_timed_cf;
+  wire                   cmd_no_eob_cf;
   wire [NUM_WORDS_W-1:0] cmd_num_words_cf;
   wire      [TIME_W-1:0] cmd_time_cf;
   wire  [MEM_ADDR_W-1:0] cmd_base_addr_cf;
@@ -519,15 +527,15 @@ module axis_replay #(
   reg                    cmd_fifo_ready;
 
   axi_fifo_short #(
-    .WIDTH (MEM_ADDR_W + MEM_SIZE_W + 1 + CMD_W + NUM_WORDS_W + TIME_W)
+    .WIDTH (MEM_ADDR_W + MEM_SIZE_W + 2 + CMD_W + NUM_WORDS_W + TIME_W)
   ) command_fifo (
     .clk      (clk),
     .reset    (rst),
     .clear    (clear_cmd_fifo),
-    .i_tdata  ({play_base_addr_sr, play_buffer_size_sr, reg_play_cmd_timed, reg_play_cmd, reg_play_cmd_num_words, reg_play_cmd_time}),
+    .i_tdata  ({play_base_addr_sr, play_buffer_size_sr, reg_play_cmd_timed, reg_play_cmd_no_eob, reg_play_cmd, reg_play_cmd_num_words, reg_play_cmd_time}),
     .i_tvalid (reg_play_cmd_valid),
     .i_tready (reg_play_cmd_ready),
-    .o_tdata  ({cmd_base_addr_cf, cmd_buffer_size_cf, cmd_timed_cf, cmd_cf, cmd_num_words_cf, cmd_time_cf}),
+    .o_tdata  ({cmd_base_addr_cf, cmd_buffer_size_cf, cmd_timed_cf, cmd_no_eob_cf, cmd_cf, cmd_num_words_cf, cmd_time_cf}),
     .o_tvalid (cmd_fifo_valid),
     .o_tready (cmd_fifo_ready),
     .occupied (),
@@ -773,6 +781,7 @@ module axis_replay #(
   //
   reg [NUM_WORDS_W-1:0] play_words_remaining; // Number of words left for playback command
   reg       [CMD_W-1:0] cmd;                  // Copy of cmd_cf from last command
+  reg                   cmd_eob;              // Inverse copy of cmd_no_eob_cf from last command
   reg  [MEM_ADDR_W-1:0] cmd_base_addr;        // Copy of cmd_base_addr_cf from last command
   reg  [MEM_SIZE_W-1:0] cmd_buffer_size;      // Copy of cmd_buffer_size_cf from last command
   reg                   last_trans;           // Is this the last read transaction for the command?
@@ -805,6 +814,7 @@ module axis_replay #(
       play_buffer_end           <= {MEM_SIZE_W{1'bX}};
       read_ctrl_valid           <= 1'bX;
       cmd                       <= {CMD_W{1'bX}};
+      cmd_eob                   <= 1'bX;
       cmd_base_addr             <= {MEM_ADDR_W{1'bX}};
       cmd_buffer_size           <= {MEM_SIZE_W{1'bX}};
       play_buffer_avail         <= {MEM_SIZE_W{1'bX}};
@@ -842,6 +852,7 @@ module axis_replay #(
         PLAY_IDLE : begin
           // Save needed command info
           cmd             <= cmd_cf;
+          cmd_eob         <= ~cmd_no_eob_cf;
           cmd_base_addr   <= cmd_base_addr_cf;
           cmd_buffer_size <= cmd_buffer_size_cf  / BYTES_PER_WORD;
 
@@ -1046,7 +1057,7 @@ module axis_replay #(
       // If read_count is 0, then the next word is also the last word
       if (read_count == 0) begin
         play_fifo_i_tlast <= 1'b1;
-        eob               <= last_trans;
+        eob               <= last_trans & cmd_eob;
       end
     end
 
@@ -1075,7 +1086,7 @@ module axis_replay #(
       // case it's both the last word of the packet and the end of the burst.
       if (last_trans && read_counter == 1) begin
         play_fifo_i_tlast <= 1'b1;
-        eob <= 1;
+        eob               <= cmd_eob;
 
       // Next, check if this is the last word of the packet according to packet
       // length. But note that the next word won't be the last if we're already

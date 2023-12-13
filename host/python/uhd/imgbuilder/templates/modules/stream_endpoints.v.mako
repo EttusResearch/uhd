@@ -18,49 +18,42 @@
 \
 %for i, sep in enumerate(seps):
 <%
-# The schema allows buff_size_bytes or buff_size, but not both.
-if "buff_size_bytes" in seps[sep]:
-  # Use buffer size in bytes
-  buff_size = "(" + str(seps[sep]["buff_size_bytes"]) + ")/(CHDR_W/8)"
-elif "buff_size" in seps[sep]:
-  # Use buffer size in CHDR words
-  buff_size = str(seps[sep]["buff_size"])
-else:
-  # Min SRL-based FIFO size
-  buff_size = str("32")
+  ep_name = sep.upper()
 %>\
   // If requested buffer size is 0, use the minimum SRL-based FIFO size.
   // Otherwise, make sure it's at least two MTU-sized packets.
-  localparam REQ_BUFF_SIZE_${sep.upper()} = ${buff_size};
-  localparam INGRESS_BUFF_SIZE_${sep.upper()} =
-    REQ_BUFF_SIZE_${sep.upper()} == 0         ? 5     :
-    REQ_BUFF_SIZE_${sep.upper()} < 2*(2**MTU) ? MTU+1 :
-    $clog2(REQ_BUFF_SIZE_${sep.upper()});
+  localparam REQ_BUFF_SIZE_${ep_name} = ${str(seps[sep]["buff_size"])};
+  localparam INGRESS_BUFF_SIZE_${ep_name} =
+    REQ_BUFF_SIZE_${ep_name} == 0             ? 5         :
+    REQ_BUFF_SIZE_${ep_name} < 2*(2**${ep_name}_MTU) ? ${ep_name}_MTU+1 :
+                                         $clog2(REQ_BUFF_SIZE_${ep_name});
 
-  wire [CHDR_W-1:0] ${axis_outputs[sep].format(sep,"tdata")};
-  wire              ${axis_outputs[sep].format(sep,"tlast")};
-  wire              ${axis_outputs[sep].format(sep,"tvalid")};
-  wire              ${axis_outputs[sep].format(sep,"tready")};
-  wire [CHDR_W-1:0] ${axis_inputs[sep].format(sep,"tdata")};
-  wire              ${axis_inputs[sep].format(sep,"tlast")};
-  wire              ${axis_inputs[sep].format(sep,"tvalid")};
-  wire              ${axis_inputs[sep].format(sep,"tready")};
-  wire [      31:0] m_${sep}_ctrl_tdata,  s_${sep}_ctrl_tdata;
-  wire              m_${sep}_ctrl_tlast,  s_${sep}_ctrl_tlast;
-  wire              m_${sep}_ctrl_tvalid, s_${sep}_ctrl_tvalid;
-  wire              m_${sep}_ctrl_tready, s_${sep}_ctrl_tready;
+  wire [BLOCK_CHDR_W-1:0] ${axis_outputs[sep].format(sep,"tdata")};
+  wire                    ${axis_outputs[sep].format(sep,"tlast")};
+  wire                    ${axis_outputs[sep].format(sep,"tvalid")};
+  wire                    ${axis_outputs[sep].format(sep,"tready")};
+  wire [BLOCK_CHDR_W-1:0] ${axis_inputs[sep].format(sep,"tdata")};
+  wire                    ${axis_inputs[sep].format(sep,"tlast")};
+  wire                    ${axis_inputs[sep].format(sep,"tvalid")};
+  wire                    ${axis_inputs[sep].format(sep,"tready")};
+  wire [            31:0] m_${sep}_ctrl_tdata,  s_${sep}_ctrl_tdata;
+  wire                    m_${sep}_ctrl_tlast,  s_${sep}_ctrl_tlast;
+  wire                    m_${sep}_ctrl_tvalid, s_${sep}_ctrl_tvalid;
+  wire                    m_${sep}_ctrl_tready, s_${sep}_ctrl_tready;
 
   chdr_stream_endpoint #(
+    .DEVICE_FAMILY      ("${config.device.family}"),
     .PROTOVER           (PROTOVER),
-    .CHDR_W             (CHDR_W),
+    .CHDR_W             (${ep_name + "_W"}),
+    .BLOCK_CHDR_W       (BLOCK_CHDR_W),
     .AXIS_CTRL_EN       (${int(seps[sep]["ctrl"])}),
     .AXIS_DATA_EN       (${int(seps[sep]["data"])}),
     .NUM_DATA_I         (${int(seps[sep]["num_data_i"])}),
     .NUM_DATA_O         (${int(seps[sep]["num_data_o"])}),
     .INST_NUM           (${i}),
     .CTRL_XBAR_PORT     (${i+1}),
-    .INGRESS_BUFF_SIZE  (INGRESS_BUFF_SIZE_${sep.upper()}),
-    .MTU                (MTU),
+    .INGRESS_BUFF_SIZE  (INGRESS_BUFF_SIZE_${ep_name}),
+    .MTU                (${ep_name + "_MTU"}),
     .REPORT_STRM_ERRS   (1)
   ) ${sep}_i (
     .rfnoc_chdr_clk     (rfnoc_chdr_clk),

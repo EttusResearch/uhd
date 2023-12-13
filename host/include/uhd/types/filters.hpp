@@ -220,14 +220,14 @@ public:
         uint32_t max_num_taps,
         const std::vector<tap_t>& taps)
         : digital_filter_base<tap_t>(type,
-              bypass,
-              position_index,
-              rate,
-              interpolation,
-              decimation,
-              tap_bit_width,
-              max_num_taps,
-              taps)
+            bypass,
+            position_index,
+            rate,
+            interpolation,
+            decimation,
+            tap_bit_width,
+            max_num_taps,
+            taps)
     {
         // NOP
     }

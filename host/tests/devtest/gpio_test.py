@@ -64,7 +64,7 @@ class gpio_atr_readback_test(UHDPythonTestCase):
             assert usrp.get_gpio_attr(gpio, "ATR_XX") == 0xBAB
 
 
-class gpio_x410_set_get_source_test(UHDPythonTestCase):
+class gpio_x4xx_set_get_source_test(UHDPythonTestCase):
     test_params = {
         "possible_sources": [],
         "num_pins": 0,
@@ -76,8 +76,8 @@ class gpio_x410_set_get_source_test(UHDPythonTestCase):
 
         POSSIBLE_SOURCES = self.test_params["possible_sources"]
 
-        # Assemble two lists which have at least one of each of the 7 sources,
-        # with the remaining 12-7=5 entries containing random sources.
+        # Assemble two lists which have at least one of each of the x sources,
+        # with the remaining (num_pins - x) entries containing random sources.
         sources_0 = [x for x in POSSIBLE_SOURCES]
         sources_1 = [x for x in POSSIBLE_SOURCES]
         for _ in range(self.test_params["num_pins"] - len(POSSIBLE_SOURCES)):
@@ -86,6 +86,12 @@ class gpio_x410_set_get_source_test(UHDPythonTestCase):
         random.shuffle(sources_0)
         random.shuffle(sources_1)
 
+        # If the list of possible sources has more sources than the number of
+        # pins we need to reduce the sources list to match num_pins
+        for _ in range(len(sources_0) - self.test_params["num_pins"]):
+            sources_0.pop()
+            sources_1.pop()
+
         usrp.set_gpio_src("GPIO0", sources_0)
         usrp.set_gpio_src("GPIO1", sources_1)
 
@@ -93,9 +99,9 @@ class gpio_x410_set_get_source_test(UHDPythonTestCase):
         assert sources_1 == list(usrp.get_gpio_src("GPIO1"))
 
 
-class x410_gpio_power_test(UHDPythonTestCase):
+class x4xx_gpio_power_test(UHDPythonTestCase):
     """ Run gpio_power_test """
-    test_name = "x410_gpio_power_test"
+    test_name = "x4xx_gpio_power_test"
 
     def run_test(self, test_name, test_args):
         """

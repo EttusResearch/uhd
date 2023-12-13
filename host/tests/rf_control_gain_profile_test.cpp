@@ -21,16 +21,13 @@ void test_profile_invariant(gain_profile_iface& gain_profile)
 
 BOOST_AUTO_TEST_CASE(test_default_profile_get_set)
 {
-   default_gain_profile gain_profile;
-   test_profile_invariant(gain_profile);
+    default_gain_profile gain_profile;
+    test_profile_invariant(gain_profile);
 }
 
 BOOST_AUTO_TEST_CASE(test_enumerated_profile_get_set)
 {
-   enumerated_gain_profile gain_profile(
-      {"ProfileA", "ProfileB", "ProfileC", "ProfileD"},
-      "ProfileD",
-      1
-   );
-   test_profile_invariant(gain_profile);
+    enumerated_gain_profile gain_profile(
+        {"ProfileA", "ProfileB", "ProfileC", "ProfileD"}, "ProfileD", 1);
+    test_profile_invariant(gain_profile);
 }

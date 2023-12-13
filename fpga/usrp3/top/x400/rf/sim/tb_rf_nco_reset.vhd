@@ -21,7 +21,9 @@ end tb_rf_nco_reset;
 architecture RTL of tb_rf_nco_reset is
 
   signal cAdc0xNcoUpdateReq      : std_logic;
+  signal cAdc1xNcoUpdateReq      : std_logic;
   signal cAdc2xNcoUpdateReq      : std_logic;
+  signal cAdc3xNcoUpdateReq      : std_logic;
   signal cDac0xNcoUpdateReq      : std_logic;
   signal cDac0xSysrefIntGating   : std_logic;
   signal cDac0xSysrefIntReenable : std_logic;
@@ -33,7 +35,9 @@ architecture RTL of tb_rf_nco_reset is
   signal cDac0xNcoUpdateBusy : std_logic_vector(1 downto 0) := "00";
   signal dStartNcoReset      : std_logic := '0';
   signal cAdc0xNcoUpdateBusy : std_logic := '0';
+  signal cAdc1xNcoUpdateBusy : std_logic := '0';
   signal cAdc2xNcoUpdateBusy : std_logic := '0';
+  signal cAdc3xNcoUpdateBusy : std_logic := '0';
   signal cDac1xNcoUpdateBusy : std_logic := '0';
 
   signal cSysref_ms, cSysref       : std_logic := '0';
@@ -100,8 +104,12 @@ begin
       cDac1xNcoUpdateReq      => cDac1xNcoUpdateReq,
       cAdc0xNcoUpdateBusy     => cAdc0xNcoUpdateBusy,
       cAdc0xNcoUpdateReq      => cAdc0xNcoUpdateReq,
+      cAdc1xNcoUpdateBusy     => cAdc1xNcoUpdateBusy,
+      cAdc1xNcoUpdateReq      => cAdc1xNcoUpdateReq,
       cAdc2xNcoUpdateBusy     => cAdc2xNcoUpdateBusy,
       cAdc2xNcoUpdateReq      => cAdc2xNcoUpdateReq,
+      cAdc3xNcoUpdateBusy     => cAdc3xNcoUpdateBusy,
+      cAdc3xNcoUpdateReq      => cAdc3xNcoUpdateReq,
       cNcoPhaseRst            => cNcoPhaseRst,
       cNcoUpdateEn            => cNcoUpdateEn,
       dNcoResetDone           => dNcoResetDone
@@ -180,7 +188,9 @@ begin
           cRfdcNcoState <= CheckUpdate;
           cDac1xNcoUpdateBusy <= cDac1xNcoUpdateReq;
           cAdc0xNcoUpdateBusy <= cAdc0xNcoUpdateReq;
+          cAdc1xNcoUpdateBusy <= cAdc1xNcoUpdateReq;
           cAdc2xNcoUpdateBusy <= cAdc2xNcoUpdateReq;
+          cAdc3xNcoUpdateBusy <= cAdc3xNcoUpdateReq;
 
         -- It takes 5 clock cycles to update each RFDC internal registers with
         -- the used request change. In rf_nco_reset entity, we only want to
@@ -194,7 +204,9 @@ begin
             cDac0xNcoUpdateBusy <= "10"; --Indicates that SYSREF is gated.
             cDac1xNcoUpdateBusy <= '0';
             cAdc0xNcoUpdateBusy <= '0';
+            cAdc1xNcoUpdateBusy <= '0';
             cAdc2xNcoUpdateBusy <= '0';
+            cAdc3xNcoUpdateBusy <= '0';
           end if;
           cWrCount <= cWrCount + 1;
 

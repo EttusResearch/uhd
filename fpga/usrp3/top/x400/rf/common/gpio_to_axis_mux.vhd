@@ -1,5 +1,5 @@
 --
--- Copyright 2021 Ettus Research, a National Instruments Brand
+-- Copyright 2022 Ettus Research, a National Instruments Brand
 --
 -- SPDX-License-Identifier: LGPL-3.0-or-later
 --
@@ -38,8 +38,6 @@ entity gpio_to_axis_mux is
 
     -- mux_select(n) chooses the data source for AXIS interface n.
     -- '0' chooses s_axis_tdata_n. '1' chooses gpio as the data source.
-    -- The only used bits are 0, 1, 4, 5. The remaining bits are reserved for
-    -- future expansion.
     mux_select : in std_logic_vector(7 downto 0);
 
     s_axis_0_aclk   : in  std_logic;
@@ -72,7 +70,39 @@ entity gpio_to_axis_mux is
     s_axis_tready_3 : out std_logic;
     m_axis_3_aclk   : in  std_logic;
     m_axis_tvalid_3 : out std_logic;
-    m_axis_tdata_3  : out std_logic_vector(kAxiWidth - 1 downto 0)
+    m_axis_tdata_3  : out std_logic_vector(kAxiWidth - 1 downto 0);
+
+    s_axis_4_aclk   : in  std_logic;
+    s_axis_tdata_4  : in  std_logic_vector(kAxiWidth - 1 downto 0);
+    s_axis_tvalid_4 : in  std_logic;
+    s_axis_tready_4 : out std_logic;
+    m_axis_4_aclk   : in  std_logic;
+    m_axis_tvalid_4 : out std_logic;
+    m_axis_tdata_4  : out std_logic_vector(kAxiWidth - 1 downto 0);
+
+    s_axis_5_aclk   : in  std_logic;
+    s_axis_tdata_5  : in  std_logic_vector(kAxiWidth - 1 downto 0);
+    s_axis_tvalid_5 : in  std_logic;
+    s_axis_tready_5 : out std_logic;
+    m_axis_5_aclk   : in  std_logic;
+    m_axis_tvalid_5 : out std_logic;
+    m_axis_tdata_5  : out std_logic_vector(kAxiWidth - 1 downto 0);
+
+    s_axis_6_aclk   : in  std_logic;
+    s_axis_tdata_6  : in  std_logic_vector(kAxiWidth - 1 downto 0);
+    s_axis_tvalid_6 : in  std_logic;
+    s_axis_tready_6 : out std_logic;
+    m_axis_6_aclk   : in  std_logic;
+    m_axis_tvalid_6 : out std_logic;
+    m_axis_tdata_6  : out std_logic_vector(kAxiWidth - 1 downto 0);
+
+    s_axis_7_aclk   : in  std_logic;
+    s_axis_tdata_7  : in  std_logic_vector(kAxiWidth - 1 downto 0);
+    s_axis_tvalid_7 : in  std_logic;
+    s_axis_tready_7 : out std_logic;
+    m_axis_7_aclk   : in  std_logic;
+    m_axis_tvalid_7 : out std_logic;
+    m_axis_tdata_7  : out std_logic_vector(kAxiWidth - 1 downto 0)
   );
 end entity;
 
@@ -118,7 +148,7 @@ begin
       kAxiWidth  => kAxiWidth)
     port map (
       gpio          => gpio,
-      mux_select    => mux_select(4),
+      mux_select    => mux_select(2),
       s_axis_aclk   => s_axis_2_aclk,
       s_axis_tdata  => s_axis_tdata_2,
       s_axis_tvalid => s_axis_tvalid_2,
@@ -134,7 +164,7 @@ begin
       kAxiWidth  => kAxiWidth)
     port map (
       gpio          => gpio,
-      mux_select    => mux_select(5),
+      mux_select    => mux_select(3),
       s_axis_aclk   => s_axis_3_aclk,
       s_axis_tdata  => s_axis_tdata_3,
       s_axis_tvalid => s_axis_tvalid_3,
@@ -143,5 +173,70 @@ begin
       m_axis_tvalid => m_axis_tvalid_3,
       m_axis_tdata  => m_axis_tdata_3
     );
+
+  axis_mux4: entity work.axis_mux (RTL)
+    generic map (
+      kGpioWidth => kGpioWidth,
+      kAxiWidth  => kAxiWidth)
+    port map (
+      gpio          => gpio,
+      mux_select    => mux_select(4),
+      s_axis_aclk   => s_axis_4_aclk,
+      s_axis_tdata  => s_axis_tdata_4,
+      s_axis_tvalid => s_axis_tvalid_4,
+      s_axis_tready => s_axis_tready_4,
+      m_axis_aclk   => m_axis_4_aclk,
+      m_axis_tvalid => m_axis_tvalid_4,
+      m_axis_tdata  => m_axis_tdata_4
+    );
+
+  axis_mux5: entity work.axis_mux (RTL)
+    generic map (
+      kGpioWidth => kGpioWidth,
+      kAxiWidth  => kAxiWidth)
+    port map (
+      gpio          => gpio,
+      mux_select    => mux_select(5),
+      s_axis_aclk   => s_axis_5_aclk,
+      s_axis_tdata  => s_axis_tdata_5,
+      s_axis_tvalid => s_axis_tvalid_5,
+      s_axis_tready => s_axis_tready_5,
+      m_axis_aclk   => m_axis_5_aclk,
+      m_axis_tvalid => m_axis_tvalid_5,
+      m_axis_tdata  => m_axis_tdata_5
+    );
+
+  axis_mux6: entity work.axis_mux (RTL)
+    generic map (
+      kGpioWidth => kGpioWidth,
+      kAxiWidth  => kAxiWidth)
+    port map (
+      gpio          => gpio,
+      mux_select    => mux_select(6),
+      s_axis_aclk   => s_axis_6_aclk,
+      s_axis_tdata  => s_axis_tdata_6,
+      s_axis_tvalid => s_axis_tvalid_6,
+      s_axis_tready => s_axis_tready_6,
+      m_axis_aclk   => m_axis_6_aclk,
+      m_axis_tvalid => m_axis_tvalid_6,
+      m_axis_tdata  => m_axis_tdata_6
+    );
+
+  axis_mux7: entity work.axis_mux (RTL)
+    generic map (
+      kGpioWidth => kGpioWidth,
+      kAxiWidth  => kAxiWidth)
+    port map (
+      gpio          => gpio,
+      mux_select    => mux_select(7),
+      s_axis_aclk   => s_axis_7_aclk,
+      s_axis_tdata  => s_axis_tdata_7,
+      s_axis_tvalid => s_axis_tvalid_7,
+      s_axis_tready => s_axis_tready_7,
+      m_axis_aclk   => m_axis_7_aclk,
+      m_axis_tvalid => m_axis_tvalid_7,
+      m_axis_tdata  => m_axis_tdata_7
+    );
+
 
 end RTL;

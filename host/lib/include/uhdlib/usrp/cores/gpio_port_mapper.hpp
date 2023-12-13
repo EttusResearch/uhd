@@ -23,4 +23,3 @@ public:
 };
 
 }} // namespace uhd::mapper
-

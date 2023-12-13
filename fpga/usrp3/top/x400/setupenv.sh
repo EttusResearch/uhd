@@ -12,6 +12,7 @@ REPO_BASE_PATH=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 
 declare -A PRODUCT_ID_MAP
 PRODUCT_ID_MAP["X410"]="zynquplusRFSOC/xczu28dr/ffvg1517/-1/e"
+PRODUCT_ID_MAP["X440"]="zynquplusRFSOC/xczu28dr/ffvg1517/-2/e"
 
 # Set default part for simulation
 export ARCH=zynquplusRFSOC

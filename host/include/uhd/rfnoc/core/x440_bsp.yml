@@ -1,0 +1,98 @@
+type: x440
+type_id: A400
+family: ULTRASCALE
+transports:
+# QSFP Ethernet Ports:
+- name: eth0
+  type: 10G
+  width: 64
+- name: eth1
+  type: 10G
+  width: 64
+- name: eth2
+  type: 10G
+  width: 64
+- name: eth3
+  type: 10G
+  width: 64
+- name: eth4
+  type: 10G
+  width: 64
+# ARM CPU:
+- name: dma
+  type: dma
+  width: 64
+
+# This describes available clocks from the BSP. Note that the indices are not
+# arbitrary: Making clock info fully discoverable through registers would be
+# more complicated than is worth it, so we hard-code the indices for some of the
+# clocks. The control and default CHDR clocks are 0/1, followed by the radio
+# clocks.
+# Note that indices can also be dynamically allocated.
+clocks:
+- name: rfnoc_ctrl
+  index: 1
+- name: rfnoc_chdr
+  index: 2
+- name: ce
+  index: 3
+- name: radio0
+  index: 4
+- name: radio1
+  index: 5
+- name: radio0_2x
+  index: 6
+- name: radio1_2x
+  index: 7
+- name: dram
+  index: 8
+
+io_ports:
+  ctrlport_radio0:
+    type: ctrlport
+    drive: slave
+    rename:
+      pattern: (ctrlport_)(.*)
+      repl: m_\1radio0_\2
+  ctrlport_radio1:
+    type: ctrlport
+    drive: slave
+    rename:
+      pattern: (ctrlport_)(.*)
+      repl: m_\1radio1_\2
+  time0:
+    type: timekeeper
+    drive: broadcaster
+    rename:
+      pattern: time(.*)
+      repl: \1time0
+  time1:
+    type: timekeeper
+    drive: broadcaster
+    rename:
+      pattern: time(.*)
+      repl: \1time1
+  radio0:
+    type: radio
+    drive: master
+    rename:
+      pattern: (.*)
+      repl: \1_radio0
+  radio1:
+    type: radio
+    drive: master
+    rename:
+      pattern: (.*)
+      repl: \1_radio1
+  dram0:
+    type: axi4_mm
+    drive: slave
+    rename:
+      pattern: (.*)
+      repl: dram0_\1
+  dram1:
+    type: axi4_mm
+    drive: slave
+    rename:
+      pattern: (.*)
+      repl: dram1_\1

@@ -20,36 +20,55 @@ class null_dboard_impl : public uhd::usrp::x400::x400_dboard_iface
 public:
     using sptr = std::shared_ptr<null_dboard_impl>;
 
-    rf_control::gain_profile_iface::sptr get_tx_gain_profile_api() override
+    rf_control::gain_profile_iface::sptr get_tx_gain_profile_api() final
     {
         return rf_control::gain_profile_iface::sptr();
     }
 
-    rf_control::gain_profile_iface::sptr get_rx_gain_profile_api() override
+    rf_control::gain_profile_iface::sptr get_rx_gain_profile_api() final
     {
         return rf_control::gain_profile_iface::sptr();
     }
 
-    bool is_adc_self_cal_supported() override
+    bool is_adc_self_cal_supported() final
     {
         return false;
     }
 
-    uhd::usrp::x400::adc_self_cal_params_t get_adc_self_cal_params(double) override
+    uhd::usrp::x400::adc_self_cal_params_t get_adc_self_cal_params(double) final
     {
         return {
             0.0,
             0.0,
+            {0, 0},
+            0,
+            0,
+            0,
             "calib_mode1",
+            2000,
         };
     }
 
-    bool select_adc_self_cal_gain(size_t) override
+    bool select_adc_self_cal_gain(size_t) final
     {
         return true;
     }
 
-    size_t get_chan_from_dboard_fe(const std::string& fe, direction_t) const override
+    double get_converter_rate() const final
+    {
+        return 0.0;
+    }
+
+    size_t get_num_rx_channels() const final
+    {
+        return 2;
+    }
+    size_t get_num_tx_channels() const final
+    {
+        return 2;
+    }
+
+    size_t get_chan_from_dboard_fe(const std::string& fe, direction_t) const final
     {
         if (fe == "0") {
             return 0;
@@ -60,7 +79,7 @@ public:
         throw uhd::key_error(std::string("[X400] Invalid frontend: ") + fe);
     }
 
-    std::string get_dboard_fe_from_chan(size_t chan, direction_t) const override
+    std::string get_dboard_fe_from_chan(size_t chan, direction_t) const final
     {
         if (chan == 0) {
             return "0";
@@ -72,284 +91,285 @@ public:
             std::string("[X400] Invalid channel: ") + std::to_string(chan));
     }
 
-    std::vector<usrp::pwr_cal_mgr::sptr>& get_pwr_mgr(direction_t) override
+    std::vector<usrp::pwr_cal_mgr::sptr>& get_pwr_mgr(direction_t) final
     {
         static std::vector<usrp::pwr_cal_mgr::sptr> empty_vtr;
         return empty_vtr;
     }
 
-    eeprom_map_t get_db_eeprom() override
+    eeprom_map_t get_db_eeprom() final
     {
         return {};
     }
 
-    std::string get_tx_antenna(const size_t) const override
+    std::string get_tx_antenna(const size_t) const final
     {
         return "";
     }
 
-    std::vector<std::string> get_tx_antennas(const size_t) const override
+    std::vector<std::string> get_tx_antennas(const size_t) const final
     {
         return {};
     }
 
-    void set_tx_antenna(const std::string&, const size_t) override
+    void set_tx_antenna(const std::string&, const size_t) final
     {
         throw _no_dboard_exception();
     }
 
-    std::string get_rx_antenna(const size_t) const override
+    std::string get_rx_antenna(const size_t) const final
     {
         return "";
     }
 
-    std::vector<std::string> get_rx_antennas(const size_t) const override
+    std::vector<std::string> get_rx_antennas(const size_t) const final
     {
         return {};
     }
 
-    void set_rx_antenna(const std::string&, const size_t) override
+    void set_rx_antenna(const std::string&, const size_t) final
     {
         throw _no_dboard_exception();
     }
 
-    double get_tx_frequency(const size_t) override
+    double get_tx_frequency(const size_t) final
     {
         return 0;
     }
 
-    double set_tx_frequency(const double, size_t) override
+    double set_tx_frequency(const double, size_t) final
     {
         throw _no_dboard_exception();
     }
 
-    void set_tx_tune_args(const device_addr_t&, const size_t) override
+    void set_tx_tune_args(const device_addr_t&, const size_t) final
     {
         throw _no_dboard_exception();
     }
 
-    freq_range_t get_tx_frequency_range(const size_t) const override
+    freq_range_t get_tx_frequency_range(const size_t) const final
     {
         return meta_range_t(0.0, 0.0);
     }
 
-    double get_rx_frequency(const size_t) override
+    double get_rx_frequency(const size_t) final
     {
         return 0;
     }
 
-    double set_rx_frequency(const double, const size_t) override
+    double set_rx_frequency(const double, const size_t) final
     {
         throw _no_dboard_exception();
     }
 
-    void set_rx_tune_args(const device_addr_t&, const size_t) override
+    void set_rx_tune_args(const device_addr_t&, const size_t) final
     {
         throw _no_dboard_exception();
     }
 
-    freq_range_t get_rx_frequency_range(const size_t) const override
+    freq_range_t get_rx_frequency_range(const size_t) const final
     {
         return meta_range_t(0.0, 0.0);
     }
 
-    std::vector<std::string> get_tx_gain_names(const size_t) const override
+    std::vector<std::string> get_tx_gain_names(const size_t) const final
     {
         return {};
     }
 
-    gain_range_t get_tx_gain_range(const size_t) const override
+    gain_range_t get_tx_gain_range(const size_t) const final
     {
         return meta_range_t(0.0, 0.0);
     }
 
-    gain_range_t get_tx_gain_range(const std::string&, const size_t) const override
+    gain_range_t get_tx_gain_range(const std::string&, const size_t) const final
     {
         return meta_range_t(0.0, 0.0);
     }
 
-    double get_tx_gain(const size_t) override
+    double get_tx_gain(const size_t) final
     {
         return 0;
     }
 
-    double get_tx_gain(const std::string&, const size_t) override
+    double get_tx_gain(const std::string&, const size_t) final
     {
         throw _no_dboard_exception();
     }
 
-    double set_tx_gain(const double, const size_t) override
+    double set_tx_gain(const double, const size_t) final
     {
         throw _no_dboard_exception();
     }
 
-    double set_tx_gain(const double, const std::string&, const size_t) override
+    double set_tx_gain(const double, const std::string&, const size_t) final
     {
         throw _no_dboard_exception();
     }
 
-    std::vector<std::string> get_rx_gain_names(const size_t) const override
+    std::vector<std::string> get_rx_gain_names(const size_t) const final
     {
         return {};
     }
 
-    gain_range_t get_rx_gain_range(const size_t) const override
+    gain_range_t get_rx_gain_range(const size_t) const final
     {
         throw _no_dboard_exception();
     }
 
-    gain_range_t get_rx_gain_range(const std::string&, const size_t) const override
+    gain_range_t get_rx_gain_range(const std::string&, const size_t) const final
     {
         throw _no_dboard_exception();
     }
 
-    double get_rx_gain(const size_t) override
+    double get_rx_gain(const size_t) final
     {
         return 0;
     }
 
-    double get_rx_gain(const std::string&, const size_t) override
+    double get_rx_gain(const std::string&, const size_t) final
     {
         return 0;
     }
 
-    double set_rx_gain(const double, const size_t) override
+    double set_rx_gain(const double, const size_t) final
     {
         throw _no_dboard_exception();
     }
 
-    double set_rx_gain(const double, const std::string&, const size_t) override
+    double set_rx_gain(const double, const std::string&, const size_t) final
     {
         throw _no_dboard_exception();
     }
 
-    void set_rx_agc(const bool, const size_t) override
+    void set_rx_agc(const bool, const size_t) final
     {
         throw _no_dboard_exception();
     }
 
-    meta_range_t get_tx_bandwidth_range(size_t) const override
+    meta_range_t get_tx_bandwidth_range(size_t) const final
     {
         return meta_range_t(0.0, 0.0);
     }
 
-    double get_tx_bandwidth(const size_t) override
+    double get_tx_bandwidth(const size_t) final
     {
         return 0;
     }
 
-    double set_tx_bandwidth(const double, const size_t) override
+    double set_tx_bandwidth(const double, const size_t) final
     {
         throw _no_dboard_exception();
     }
 
-    meta_range_t get_rx_bandwidth_range(size_t) const override
+    meta_range_t get_rx_bandwidth_range(size_t) const final
     {
         return meta_range_t(0.0, 0.0);
     }
 
-    double get_rx_bandwidth(const size_t) override
+    double get_rx_bandwidth(const size_t) final
     {
         return 0;
     }
 
-    double set_rx_bandwidth(const double, const size_t) override
+    double set_rx_bandwidth(const double, const size_t) final
     {
         throw _no_dboard_exception();
     }
 
-    std::vector<std::string> get_rx_lo_names(const size_t) const override
+    std::vector<std::string> get_rx_lo_names(const size_t) const final
     {
         return {};
     }
 
     std::vector<std::string> get_rx_lo_sources(
-        const std::string&, const size_t) const override
+        const std::string&, const size_t) const final
     {
         throw _no_dboard_exception();
     }
 
-    freq_range_t get_rx_lo_freq_range(const std::string&, const size_t) const override
+    freq_range_t get_rx_lo_freq_range(const std::string&, const size_t) const final
     {
         throw _no_dboard_exception();
     }
 
-    void set_rx_lo_source(const std::string&, const std::string&, const size_t) override
+    void set_rx_lo_source(const std::string&, const std::string&, const size_t) final
     {
         throw _no_dboard_exception();
     }
 
-    const std::string get_rx_lo_source(const std::string&, const size_t) override
+    const std::string get_rx_lo_source(const std::string&, const size_t) final
     {
         throw _no_dboard_exception();
     }
 
-    void set_rx_lo_export_enabled(bool, const std::string&, const size_t) override
+    void set_rx_lo_export_enabled(bool, const std::string&, const size_t) final
     {
         throw _no_dboard_exception();
     }
 
-    bool get_rx_lo_export_enabled(const std::string&, const size_t) override
+    bool get_rx_lo_export_enabled(const std::string&, const size_t) final
     {
         throw _no_dboard_exception();
     }
 
-    double set_rx_lo_freq(double, const std::string&, const size_t) override
+    double set_rx_lo_freq(double, const std::string&, const size_t) final
     {
         throw _no_dboard_exception();
     }
 
-    double get_rx_lo_freq(const std::string&, const size_t) override
+    double get_rx_lo_freq(const std::string&, const size_t) final
     {
         throw _no_dboard_exception();
     }
 
-    std::vector<std::string> get_tx_lo_names(const size_t) const override
+    std::vector<std::string> get_tx_lo_names(const size_t) const final
     {
         return {};
     }
 
-    std::vector<std::string> get_tx_lo_sources(const std::string&, const size_t) const override
+    std::vector<std::string> get_tx_lo_sources(
+        const std::string&, const size_t) const final
     {
         throw _no_dboard_exception();
     }
 
-    freq_range_t get_tx_lo_freq_range(const std::string&, const size_t) override
+    freq_range_t get_tx_lo_freq_range(const std::string&, const size_t) final
     {
         throw _no_dboard_exception();
     }
 
-    void set_tx_lo_source(const std::string&, const std::string&, const size_t) override
+    void set_tx_lo_source(const std::string&, const std::string&, const size_t) final
     {
         throw _no_dboard_exception();
     }
 
-    const std::string get_tx_lo_source(const std::string&, const size_t) override
+    const std::string get_tx_lo_source(const std::string&, const size_t) final
     {
         throw _no_dboard_exception();
     }
 
-    void set_tx_lo_export_enabled(const bool, const std::string&, const size_t) override
+    void set_tx_lo_export_enabled(const bool, const std::string&, const size_t) final
     {
         throw _no_dboard_exception();
     }
 
-    bool get_tx_lo_export_enabled(const std::string&, const size_t) override
+    bool get_tx_lo_export_enabled(const std::string&, const size_t) final
     {
         throw _no_dboard_exception();
     }
 
-    double set_tx_lo_freq(const double, const std::string&, const size_t) override
+    double set_tx_lo_freq(const double, const std::string&, const size_t) final
     {
         throw _no_dboard_exception();
     }
 
-    double get_tx_lo_freq(const std::string&, const size_t) override
+    double get_tx_lo_freq(const std::string&, const size_t) final
     {
         throw _no_dboard_exception();
     }
 
-    void set_command_time(uhd::time_spec_t, const size_t) override
+    void set_command_time(uhd::time_spec_t, const size_t) final
     {
         // nop
     }

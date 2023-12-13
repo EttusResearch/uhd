@@ -1,0 +1,147 @@
+/*! \page page_timedcmds Timed Commands
+
+\tableofcontents
+
+Most USRPs support timed commands, which allow execution of commands at a specific
+time. Timed commands fall into one of two categories: \ref timedcmds_stream_cmds
+and \ref timedcmds_gen_cmds.
+
+\section timedcmds_stream_cmds Stream Commands
+
+All USRPs (with the exception of the USRP1) allow specifying times for stream
+commands. This allows capturing/receiving and transmitting samples at specific
+times.
+
+For receiving samples, simply provide a time specification to the stream command.
+Example:
+
+~~~{.cpp}
+using namespace uhd;
+auto usrp = usrp::multi_usrp::make("");
+// Configure the USRP here, incl. frequency, gain, etc.
+uhd::stream_args_t st_args("fc32", "sc16");
+auto rx_stream = usrp->get_rx_stream(st_args);
+rx_metadata_t md{};
+// Figure out the current time
+auto time_now = usrp->get_time_now();
+// Craft timed command
+stream_cmd_t stream_cmd(stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
+stream_cmd.stream_now = false; // Enable timed streaming
+stream_cmd.time_spec = time_now + 1.0; // Start 1s in the future
+rx_stream->issue_stream_cmd(stream_cmd);
+// We assume buffers etc. have been allocated
+const double timeout = 2.0; // We need to wait at least 1 seconds before samples arrive
+num_recvd = rx_stream->recv(buffs, nsamps_per_buff, md, timeout);
+// The first sample in 'buffs' will be captured at the requested time. Also,
+// the metadata object (md) will most likely contain a timestamp which then will
+// match that in the stream command.
+~~~
+
+For transmitting samples, simply attach a timestamp to the outgoing data. The
+USRP will buffer the data until the requested time has been reached. Example:
+
+~~~{.cpp}
+using namespace uhd;
+auto usrp = usrp::multi_usrp::make("");
+// Configure the USRP here, incl. frequency, gain, etc.
+uhd::stream_args_t st_args("fc32", "sc16");
+auto tx_stream = usrp->get_tx_stream(st_args);
+tx_metadata_t md{};
+md.has_time_spec = true;
+// Start 1s in the future
+md.time_spec = usrp->get_time_now() + 1.0;
+// We assume buffers etc. have been allocated
+tx_stream->send(buffs, nsamps_per_buff, md);
+~~~
+
+
+\section timedcmds_gen_cmds General Timed Commands
+
+There are other commands that can also be executed in a timed fashion, including,
+but not limited to:
+
+- Configuring the gain
+- Configuring the center frequency
+- Switching antenna ports
+- Toggling GPIO lines
+
+This can be used to implement features such as frequency hopping, AGC (automatic
+gain control) loops, bit-banging serial protocols over GPIO lines, etc.
+
+Unlike timed stream commands, these timed commands are not atomic with respect
+to setting the command time. Instead, the command time needs to be set for all
+subsequent commands. Example:
+
+~~~{.cpp}
+using namespace uhd;
+auto usrp = usrp::multi_usrp::make("");
+// Configure the USRP here, incl. frequency, gain, etc.
+// Now we set timed commands to occur 1s into the future:
+usrp->set_command_time(usrp->get_time_now() + 1.0);
+// All of these commands will be queued up in the FPGA until the desired command
+// time is reached:
+usrp->set_tx_freq(1.0e9); // Tune to 1 GHz
+usrp->set_tx_gain(40); // Bump Tx gain to 40 dB
+// Now we should reset the command time so future commands are not affected:
+usrp->clear_command_time();
+// The following command will be executed as soon as the FPGA has received the
+// command and has finished processing previous commands:
+usrp->set_tx_gain(30); // Bump Tx gain to 30 dB
+~~~
+
+\subsection timedcmds_gen_cmds_qs Command Queues
+
+Every command that is submitted to the USRP is placed into a command queue, and
+commands in such a queue are always executed in the order they are received.
+
+When a command has a command time attached to it, the command is held in the
+queue until the desired time has been reached. This has consequences:
+
+- If multiple commands are received that all carry the same command time, they
+  will be executed serially in the order they were placed in the queue.
+- If a command with an earlier command time is received after a command with a
+  later command time, there is no reordering occurring in the FPGA. This means
+  that in this case, the command with the earlier command time would still be
+  executed after the command with the later command time.
+
+Because of this mode of operation, "late" commands (commands with a command time
+that is in the past) are executed immediately.
+
+In RFNoC devices, each RFNoC block has its own command queue. Older devices have
+fewer (or only one command queue).
+
+When the command queue is full, UHD will block until the USRP has signaled that
+there is space for more commands. That can cause timed commands to reach the FPGA
+after their desired execution time.
+
+\subsection timedcmds_gen_cmds_what Which commands can be timed?
+
+The choice of timed commands which can be executed in a timed fashion depend
+entirely on the underlying device, and for RFNoC devices, depend also on the
+RFNoC blocks receiving the commands. Typical RF configuration commands, such as
+setting gain, frequency, or antenna ports are often capable of being timed, but
+not for all devices. Refer to the individual device manual pages for more details.
+
+\section timedcmds_res Command Time Resolution
+
+When a command time is requested in software, the command time (stored as a
+uhd::time_spec_t) will be converted into an integer value (a 64-bit tick count
+value). This conversion will quantize the command time, potentially causing an
+offset from the desired value.
+
+UHD will quantize the command time according to the tick rate of the RFNoC block
+or device (in case of pre-RFNoC USRPs). For radio blocks, and commands that affect
+the radio (including stream commands, and RF controls) this tick rate is equal
+to the master clock rate. For example, if a USRP X310 is operating at a 200 MHz
+master clock rate, then the timing resolution of the timed commands is
+\f$ 1/200 MHz = 5 ns \f$. Specifying a command time at 2.000000001 s in this case
+would be rounded to a command time at 2s.
+
+Additionally, devices may physically operate at a lower clock frequency. For
+example, the USRP X440, when operating at a master clock rate of 500 MHz, internally
+uses a 62.5 MHz clock (operating at 8 samples per clock edge). The command
+processor can only compare the command time with the current time every 16 ns,
+resulting in a further quantization of effective command times.
+
+*/
+// vim:ft=doxygen:

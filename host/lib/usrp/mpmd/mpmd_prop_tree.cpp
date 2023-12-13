@@ -47,10 +47,9 @@ uhd::usrp::component_files_t _update_component(
             metadata[key]           = comp.metadata[key];
             comp_copy.metadata[key] = comp.metadata[key];
             if (key == "just_reload") {
-                just_reload =
-                    just_reload
-                    | uhd::cast::from_str<bool>(metadata.at("just_reload"));
-                    //| (boost::to_lower_copy(metadata.at("just_reload")) == "true");
+                just_reload = just_reload
+                              | uhd::cast::from_str<bool>(metadata.at("just_reload"));
+                //| (boost::to_lower_copy(metadata.at("just_reload")) == "true");
             }
         }
         // Copy to the update component args

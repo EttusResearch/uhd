@@ -197,9 +197,7 @@ void rhodium_radio_control_impl::_init_peripherals()
     // DB GPIOs
     _gpio = usrp::gpio_atr::gpio_atr_3000::make(_wb_iface,
         gpio_atr::gpio_atr_offsets::make_default(
-            n320_regs::SR_DB_GPIO,
-            n320_regs::RB_DB_GPIO,
-            n320_regs::PERIPH_REG_OFFSET));
+            n320_regs::SR_DB_GPIO, n320_regs::RB_DB_GPIO, n320_regs::PERIPH_REG_OFFSET));
     _gpio->set_atr_mode(usrp::gpio_atr::MODE_ATR, // Enable ATR mode for Rhodium bits
         RHODIUM_GPIO_MASK);
     _gpio->set_atr_mode(usrp::gpio_atr::MODE_GPIO, // Disable ATR mode for unused bits
@@ -208,9 +206,7 @@ void rhodium_radio_control_impl::_init_peripherals()
         usrp::gpio_atr::gpio_atr_3000::MASK_SET_ALL);
     _fp_gpio = gpio_atr::gpio_atr_3000::make(_wb_iface,
         gpio_atr::gpio_atr_offsets::make_default(
-            n320_regs::SR_FP_GPIO,
-            n320_regs::RB_FP_GPIO,
-            n320_regs::PERIPH_REG_OFFSET));
+            n320_regs::SR_FP_GPIO, n320_regs::RB_FP_GPIO, n320_regs::PERIPH_REG_OFFSET));
 
     RFNOC_LOG_TRACE("Set initial ATR values...");
     _update_atr(RHODIUM_DEFAULT_TX_ANTENNA, TX_DIRECTION);
@@ -604,7 +600,7 @@ void rhodium_radio_control_impl::_init_mpm()
             + " MHz, "
               "but should have been "
             + std::to_string(
-                  block_args.cast<double>("master_clock_rate", _master_clock_rate))
+                block_args.cast<double>("master_clock_rate", _master_clock_rate))
             + " MHz.");
     }
     RFNOC_LOG_DEBUG("Master Clock Rate is: " << (_master_clock_rate / 1e6) << " MHz.");

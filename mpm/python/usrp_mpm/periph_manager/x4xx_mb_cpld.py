@@ -7,28 +7,42 @@
 X4xx motherboard CPLD control
 """
 
+import sys
+import inspect
 from usrp_mpm import lib  # Pulls in everything from C++-land
 from usrp_mpm.mpmutils import parse_encoded_git_hash
+from usrp_mpm.dboard_manager import ZBX
+from usrp_mpm.dboard_manager import FBX
 
-class MboardCPLD:
+class X4xxMboardCPLD:
     """
-    Control for the CPLD.
+    Base class for the CPLD control
+
+    Derive from this class for a specific implementation of the X4xx MB CPLD.
     """
     # pylint: disable=bad-whitespace
     SIGNATURE_OFFSET         = 0x0000
     COMPAT_REV_OFFSET        = 0x0004
     OLDEST_COMPAT_REV_OFFSET = 0x0008
+    SCRATCH                  = 0x000C
     GIT_HASH_OFFSET          = 0x0010
     DB_ENABLE_OFFSET         = 0x0020
+    DIO_DIRECTION_REGISTER   = 0x0030
     SERIAL_NO_LO_OFFSET      = 0x0034
     SERIAL_NO_HI_OFFSET      = 0x0038
     CMI_OFFSET               = 0x003C
 
-    # change these revisions only on breaking changes
-    OLDEST_REQ_COMPAT_REV   = 0x20122114
-    REQ_COMPAT_REV          = 0x20122114
-    SIGNATURE               = 0x0A522D27
+    # These need to be filled out by derived classes
+    OLDEST_REQ_COMPAT_REV   = None
+    REQ_COMPAT_REV          = None
+    SIGNATURE               = None
+
+    # Bit fields in DB_ENABLE_OFFSET
+    DB0_CLOCK_ENABLED       = 1 << 0
+    DB1_CLOCK_ENABLED       = 1 << 1
     PLL_REF_CLOCK_ENABLED   = 1 << 2
+    DB0_RESET_ASSERTED      = 1 << 4
+    DB1_RESET_ASSERTED      = 1 << 5
     ENABLE_CLK_DB0          = 1 << 8
     ENABLE_CLK_DB1          = 1 << 9
     ENABLE_PRC              = 1 << 10
@@ -39,19 +53,13 @@ class MboardCPLD:
     RELEASE_RST_DB1         = 1 << 17
     ASSERT_RST_DB0          = 1 << 20
     ASSERT_RST_DB1          = 1 << 21
+
+    COMPATIBLE_DB_PIDS      = []
     # pylint: enable=bad-whitespace
 
-    def __init__(self, spi_dev_node, log):
-        self.log = log.getChild("CPLD")
-        self.regs = lib.spi.make_spidev_regs_iface(
-            spi_dev_node,
-            1000000, # Speed (Hz)
-            0,       # SPI mode
-            32,      # Addr shift
-            0,       # Data shift
-            0,       # Read flag
-            1<<47     # Write flag
-        )
+    def __init__(self, regs, log):
+        self.log = log
+        self.regs = regs
         self.poke32 = self.regs.poke32
         self.peek32 = self.regs.peek32
 
@@ -79,6 +87,7 @@ class MboardCPLD:
 
     def enable_daughterboard(self, db_id, enable=True):
         """ Enable or disable clock forwarding to a given DB """
+        assert db_id in (0, 1)
         if db_id == 0:
             release_reset = self.RELEASE_RST_DB0
             assert_reset = self.ASSERT_RST_DB0
@@ -110,18 +119,6 @@ class MboardCPLD:
             # Disable clock
             value = (value | clk_disable) & (~clk_enable)
         self.poke32(self.DB_ENABLE_OFFSET, value)
-
-    def check_signature(self):
-        """
-        Assert that the CPLD signature is correct. If the CPLD 'signature'
-        register returns something unexpectected, throws a RuntimeError.
-        """
-        read_signature = self.peek32(self.SIGNATURE_OFFSET)
-        if self.SIGNATURE != read_signature:
-            self.log.error('MB PS CPLD signature {:X} does not match '
-                           'expected value {:X}'.format(read_signature, self.SIGNATURE))
-            raise RuntimeError('MB PS CPLD signature {:X} does not match '
-                               'expected value {:X}'.format(read_signature, self.SIGNATURE))
 
     def check_compat_version(self):
         """
@@ -197,3 +194,63 @@ class MboardCPLD:
         Return true if upstream CMI device was found.
         """
         return bool(self.peek32(self.CMI_OFFSET))
+
+
+class X410MboardCPLD(X4xxMboardCPLD):
+    """
+    MB CPLD Image for USRP X410 (which means there are ZBX daughterboards
+    installed).
+    """
+    # pylint: disable=bad-whitespace
+    # change these revisions only on breaking changes
+    OLDEST_REQ_COMPAT_REV   = 0x20122114
+    REQ_COMPAT_REV          = 0x20122114
+    SIGNATURE               = 0x0A522D27
+    COMPATIBLE_DB_PIDS      = ZBX.pids
+    # pylint: enable=bad-whitespace
+
+
+class X440MboardCPLD(X4xxMboardCPLD):
+    """
+    MB CPLD Image for USRP X440 (which means there are FBX daughterboards
+    installed).
+    """
+    # pylint: disable=bad-whitespace
+    # change these revisions only on breaking changes
+    OLDEST_REQ_COMPAT_REV   = 0x22080414
+    REQ_COMPAT_REV          = 0x22080414
+    SIGNATURE               = 0x0A522D28
+    COMPATIBLE_DB_PIDS      = FBX.pids
+    # pylint: enable=bad-whitespace
+
+
+def make_mb_cpld_ctrl(spi_dev_node, log):
+    """
+    Factory function for the X4xx MB CPLD core
+    """
+    log = log.getChild("CPLD")
+    regs = lib.spi.make_spidev_regs_iface(
+        spi_dev_node,
+        1000000, # Speed (Hz)
+        0,       # SPI mode
+        32,      # Addr shift
+        0,       # Data shift
+        0,       # Read flag
+        1<<47    # Write flag
+    )
+    cpld_signature = regs.peek32(X4xxMboardCPLD.SIGNATURE_OFFSET)
+    log.trace("Found MB CPLD signature: %x", cpld_signature)
+    def _map_sig_to_class(signature):
+        for name, obj in sys.modules[__name__].__dict__.items():
+            if inspect.isclass(obj) and \
+                    issubclass(obj, X4xxMboardCPLD) and \
+                    getattr(obj, 'SIGNATURE') == signature:
+                log.debug("Found MB CPLD control class: %s", name)
+                return obj
+        raise RuntimeError(
+            "Unable to find a MB CPLD controller for CPLD with signature "
+            f"{cpld_signature:X}!")
+    cpld_control = _map_sig_to_class(cpld_signature)(regs, log)
+    cpld_control.check_compat_version()
+    cpld_control.trace_git_hash()
+    return cpld_control

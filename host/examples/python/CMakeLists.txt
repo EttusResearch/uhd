@@ -12,6 +12,7 @@ set(python_examples
     benchmark_rate.py
     usrp_power_meter.py
     remote_rx.py
+    x440_L_band_capture.py
 )
 
 UHD_INSTALL(PROGRAMS ${python_examples}

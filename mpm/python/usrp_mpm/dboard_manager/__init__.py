@@ -16,6 +16,7 @@ if not __simulated__:
     from .e31x_db import E31x_db
     from .empty_slot import EmptySlot
     from .zbx import ZBX
+    from .fbx import FBX
     from .test import test
     from .unknown import unknown
     from .dboard_iface import DboardIface

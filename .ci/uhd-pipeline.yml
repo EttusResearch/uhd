@@ -6,17 +6,26 @@
 
 parameters:
 - name: build_linux
-  type: boolean
   displayName: Build Linux
-  default: true
+  type: string
+  default: Force-yes
+  values:
+  - Force-yes
+  - No
 - name: build_mac
-  type: boolean
   displayName: Build macOS
-  default: true
+  type: string
+  default: Force-yes
+  values:
+  - Force-yes
+  - No
 - name: build_win
-  type: boolean
   displayName: Build Windows
-  default: true
+  type: string
+  default: Force-yes
+  values:
+  - Force-yes
+  - No
 - name: release_binaries
   type: boolean
   displayName: Set release mode for installers
@@ -61,6 +70,13 @@ parameters:
   type: boolean
   displayName: Build x4xx image
   default: true
+- name: fpga_imgs_base_url
+  type: string
+  values:
+  - 'files.ettus.com (Public)'
+  - 'Internal'
+  displayName: FPGA Images Base URL
+  default: 'Internal'
 
 trigger:
   batch: true
@@ -97,3 +113,5 @@ extends:
     build_e320: ${{ parameters.build_e320 }}
     build_n3xx: ${{ parameters.build_n3xx }}
     build_x4xx: ${{ parameters.build_x4xx }}
+    fpga_imgs_base_url: ${{ parameters.fpga_imgs_base_url }}
+    skip_analyze_changeset: true

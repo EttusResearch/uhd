@@ -377,7 +377,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("gain-step", po::value<double>(&gain_step)->default_value(1.0), "Specify the delta between gain scans")
         ("tx", "Specify to test TX frequency and gain coercion")
         ("rx", "Specify to test RX frequency and gain coercion")
-        ("ref", po::value<std::string>(&ref)->default_value("internal"), "Waveform type: internal, external, or mimo")
+        ("ref", po::value<std::string>(&ref), "clock reference (internal, external, mimo, gpsdo)")
         ("no-tx-gain", "Do not test TX gain")
         ("no-rx-gain", "Do not test RX gain")
         ("verbose", "Output every frequency and gain check instead of just final summary")
@@ -424,7 +424,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                         and (usrp->get_rx_gain_range().stop() > 0);
     bool verbose = vm.count("verbose") > 0;
 
-    if (ref != "internal" and ref != "external" and ref != "mimo") {
+    if (!ref.empty() and ref != "internal" and ref != "external" and ref != "mimo") {
         std::cout << desc << std::endl;
         std::cout << "REF must equal internal, external, or mimo." << std::endl;
         return EXIT_FAILURE;
@@ -474,13 +474,16 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     }
 
     // Setting clock source
-    usrp->set_clock_source(ref);
+    if (!ref.empty()) {
+        usrp->set_clock_source(ref);
+    }
+    ref = usrp->get_clock_source(0);
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
     std::vector<std::string> sensor_names = usrp->get_mboard_sensor_names(0);
     if ((ref == "mimo")
         and (std::find(sensor_names.begin(), sensor_names.end(), "mimo_locked")
-                != sensor_names.end())) {
+             != sensor_names.end())) {
         uhd::sensor_value_t mimo_locked = usrp->get_mboard_sensor("mimo_locked", 0);
         std::cout << boost::format("Checking MIMO lock: %s ...")
                          % mimo_locked.to_pp_string()
@@ -489,7 +492,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     }
     if ((ref == "external")
         and (std::find(sensor_names.begin(), sensor_names.end(), "ref_locked")
-                != sensor_names.end())) {
+             != sensor_names.end())) {
         uhd::sensor_value_t ref_locked = usrp->get_mboard_sensor("ref_locked", 0);
         std::cout << boost::format("Checking REF lock: %s ...")
                          % ref_locked.to_pp_string()

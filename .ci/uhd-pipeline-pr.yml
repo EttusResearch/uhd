@@ -6,17 +6,29 @@
 
 parameters:
 - name: build_linux
-  type: boolean
   displayName: Build Linux
-  default: true
+  type: string
+  default: Auto-detect
+  values:
+  - Auto-detect
+  - Force-yes
+  - No
 - name: build_mac
-  type: boolean
   displayName: Build macOS
-  default: true
+  type: string
+  default: Auto-detect
+  values:
+  - Auto-detect
+  - Force-yes
+  - No
 - name: build_win
-  type: boolean
   displayName: Build Windows
-  default: true
+  type: string
+  default: Auto-detect
+  values:
+  - Auto-detect
+  - Force-yes
+  - No
 - name: custom_boost_version
   type: boolean
   displayName: Use custom boost version
@@ -69,6 +81,13 @@ parameters:
   type: boolean
   displayName: Build x4xx image
   default: true
+- name: fpga_imgs_base_url
+  type: string
+  values:
+  - 'files.ettus.com (Public)'
+  - 'Internal'
+  displayName: FPGA Images Base URL
+  default: 'Internal'
 
 trigger: none
 
@@ -87,6 +106,7 @@ pr:
     - host/docs
     - host/LICENSE
     - host/README.md
+  drafts: false
 
 extends:
   template: templates/stages-uhd-pipeline.yml
@@ -106,3 +126,4 @@ extends:
     build_e320: ${{ parameters.build_e320 }}
     build_n3xx: ${{ parameters.build_n3xx }}
     build_x4xx: ${{ parameters.build_x4xx }}
+    fpga_imgs_base_url: ${{ parameters.fpga_imgs_base_url }}

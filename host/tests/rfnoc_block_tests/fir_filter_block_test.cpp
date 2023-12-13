@@ -7,8 +7,8 @@
 #include "../rfnoc_graph_mock_nodes.hpp"
 #include <uhd/rfnoc/actions.hpp>
 #include <uhd/rfnoc/defaults.hpp>
-#include <uhd/rfnoc/mock_block.hpp>
 #include <uhd/rfnoc/fir_filter_block_control.hpp>
+#include <uhd/rfnoc/mock_block.hpp>
 #include <uhdlib/rfnoc/graph.hpp>
 #include <uhdlib/rfnoc/node_accessor.hpp>
 #include <uhdlib/utils/narrow.hpp>
@@ -108,7 +108,8 @@ static const std::vector<size_t> MAX_NUM_COEFFS{1, 2, 1337, 65537};
 struct fir_filter_block_fixture
 {
     fir_filter_block_fixture()
-        : reg_iface(std::make_shared<fir_filter_mock_reg_iface_t>(NUM_CHANS, MAX_NUM_COEFFS))
+        : reg_iface(
+            std::make_shared<fir_filter_mock_reg_iface_t>(NUM_CHANS, MAX_NUM_COEFFS))
         , block_container(get_mock_block(FIR_FILTER_BLOCK,
               NUM_CHANS,
               NUM_CHANS,
@@ -156,7 +157,8 @@ BOOST_FIXTURE_TEST_CASE(fir_filter_test_construction, fir_filter_block_fixture)
 BOOST_FIXTURE_TEST_CASE(fir_filter_test_max_num_coeffs, fir_filter_block_fixture)
 {
     for (size_t chan = 0; chan < NUM_CHANS; chan++) {
-        BOOST_CHECK_EQUAL(test_fir_filter->get_max_num_coefficients(chan), MAX_NUM_COEFFS.at(chan));
+        BOOST_CHECK_EQUAL(
+            test_fir_filter->get_max_num_coefficients(chan), MAX_NUM_COEFFS.at(chan));
     }
 }
 
@@ -188,7 +190,8 @@ BOOST_FIXTURE_TEST_CASE(fir_filter_test_set_get_coefficients, fir_filter_block_f
         BOOST_CHECK_EQUAL(reg_iface->last_coeff_write_pos.at(chan), num_coeffs - 1);
 
         // Verify that get_coefficients() returns what we expect
-        const std::vector<int16_t> received_coeffs = test_fir_filter->get_coefficients(chan);
+        const std::vector<int16_t> received_coeffs =
+            test_fir_filter->get_coefficients(chan);
 
         BOOST_CHECK_EQUAL(received_coeffs.size(), num_coeffs);
 
@@ -206,7 +209,8 @@ BOOST_FIXTURE_TEST_CASE(fir_filter_test_set_get_coefficients, fir_filter_block_f
         test_fir_filter->set_coefficients(coeffs2, chan);
 
         // Verify that get_coefficients() returns what we expect
-        const std::vector<int16_t> received_coeffs2 = test_fir_filter->get_coefficients(chan);
+        const std::vector<int16_t> received_coeffs2 =
+            test_fir_filter->get_coefficients(chan);
         BOOST_CHECK_EQUAL(received_coeffs2.at(0), coeffs2.at(0));
         for (size_t i = 1; i < num_coeffs; i++) {
             BOOST_CHECK_EQUAL(received_coeffs2.at(i), 0);
@@ -225,7 +229,8 @@ BOOST_FIXTURE_TEST_CASE(fir_filter_test_length_error, fir_filter_block_fixture)
     for (size_t chan = 0; chan < NUM_CHANS; chan++) {
         const size_t num_coeffs = test_fir_filter->get_max_num_coefficients(chan);
         const std::vector<int16_t> coeffs(num_coeffs * 2);
-        BOOST_CHECK_THROW(test_fir_filter->set_coefficients(coeffs, chan), uhd::value_error);
+        BOOST_CHECK_THROW(
+            test_fir_filter->set_coefficients(coeffs, chan), uhd::value_error);
     }
 }
 

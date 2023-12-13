@@ -85,11 +85,11 @@ void e3xx_radio_control_impl::_init_peripherals()
         RFNOC_LOG_TRACE("Initializing DB GPIOs for channel " << radio_idx);
         // Note: The register offset is baked into the different _wb_iface
         // objects!
-        _db_gpio.emplace_back(
-            usrp::gpio_atr::gpio_atr_3000::make(_wb_ifaces.at(radio_idx),
-                usrp::gpio_atr::gpio_atr_offsets::make_write_only(
-                    e3xx_regs::SR_DB_GPIO + (radio_idx * e3xx_regs::PERIPH_REG_CHAN_OFFSET),
-                    e3xx_regs::PERIPH_REG_OFFSET)));
+        _db_gpio.emplace_back(usrp::gpio_atr::gpio_atr_3000::make(
+            _wb_ifaces.at(radio_idx),
+            usrp::gpio_atr::gpio_atr_offsets::make_write_only(
+                e3xx_regs::SR_DB_GPIO + (radio_idx * e3xx_regs::PERIPH_REG_CHAN_OFFSET),
+                e3xx_regs::PERIPH_REG_OFFSET)));
         _db_gpio[radio_idx]->set_atr_mode(
             usrp::gpio_atr::MODE_ATR, usrp::gpio_atr::gpio_atr_3000::MASK_SET_ALL);
     }
@@ -107,9 +107,7 @@ void e3xx_radio_control_impl::_init_peripherals()
     RFNOC_LOG_TRACE("Initializing front-panel GPIO control...")
     _fp_gpio = usrp::gpio_atr::gpio_atr_3000::make(_wb_ifaces.at(0),
         usrp::gpio_atr::gpio_atr_offsets::make_default(
-            e3xx_regs::SR_FP_GPIO,
-            e3xx_regs::RB_FP_GPIO,
-            e3xx_regs::PERIPH_REG_OFFSET));
+            e3xx_regs::SR_FP_GPIO, e3xx_regs::RB_FP_GPIO, e3xx_regs::PERIPH_REG_OFFSET));
 
 
     auto block_args = get_block_args();
@@ -126,8 +124,8 @@ void e3xx_radio_control_impl::_init_peripherals()
 void e3xx_radio_control_impl::_init_frontend_subtree(
     uhd::property_tree::sptr subtree, const size_t chan_idx)
 {
-    const fs_path tx_fe_path = fs_path("tx_frontends") / chan_idx;
-    const fs_path rx_fe_path = fs_path("rx_frontends") / chan_idx;
+    const fs_path tx_fe_path       = fs_path("tx_frontends") / chan_idx;
+    const fs_path rx_fe_path       = fs_path("rx_frontends") / chan_idx;
     constexpr char HW_GAIN_STAGE[] = "hw";
     uhd::eeprom_map_t eeprom_map   = get_db_eeprom();
     const std::string db_serial(eeprom_map["serial"].begin(), eeprom_map["serial"].end());

@@ -121,7 +121,7 @@ static device_addrs_t usrp1_find(const device_addr_t& hint)
             // this is a found usrp1 when the hint serial and name match or blank
             if ((not hint.has_key("name") or hint["name"] == new_addr["name"])
                 and (not hint.has_key("serial")
-                        or hint["serial"] == new_addr["serial"])) {
+                     or hint["serial"] == new_addr["serial"])) {
                 usrp1_addrs.push_back(new_addr);
             }
         }

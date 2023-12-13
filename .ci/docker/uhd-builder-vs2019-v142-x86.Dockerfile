@@ -10,6 +10,7 @@
 FROM mcr.microsoft.com/windows/servercore:1809
 LABEL maintainer="Ettus Research"
 
+RUN setx chocolateyVersion 1.4.0 /m
 RUN @"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" \
     -NoProfile -InputFormat None -ExecutionPolicy Bypass \
     -Command "[System.Net.ServicePointManager]::SecurityProtocol = 3072; \

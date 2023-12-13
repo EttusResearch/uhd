@@ -11,6 +11,9 @@ parameters:
 - name: testDevices
   type: string
   default: 'n3xx'
+- name: extra_rf_test_args
+  type: string
+  default: ''
 
 jobs:
 - template: job-uhd-rf-tests.yml
@@ -21,6 +24,7 @@ jobs:
     uhdSrcDir: '${{ parameters.uhdSrcDir }}'
     uhdArtifactSource: '${{ parameters.uhdArtifactSource }}'
     redisHost: 'ettus-pebbles'
+    extra_rf_test_args: '${{ parameters.extra_rf_test_args }}'
     dutMatrix:
       ${{ if contains(parameters.testDevices, 'n3xx') }}:
         pebbles-n310-0:

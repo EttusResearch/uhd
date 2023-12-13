@@ -65,7 +65,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("bw", po::value<double>(&bw), "analog frontend filter bandwidth in Hz")
         ("wave-type", po::value<std::string>(&wave_type)->default_value("CONST"), "waveform type (CONST, SQUARE, RAMP, SINE)")
         ("wave-freq", po::value<double>(&wave_freq)->default_value(0), "waveform frequency in Hz")
-        ("ref", po::value<std::string>(&ref)->default_value("internal"), "clock reference (internal, external, mimo, gpsdo)")
+        ("ref", po::value<std::string>(&ref), "clock reference (internal, external, mimo, gpsdo)")
         ("pps", po::value<std::string>(&pps), "PPS source (internal, external, mimo, gpsdo)")
         ("otw", po::value<std::string>(&otw)->default_value("sc16"), "specify the over-the-wire sample mode")
         ("channels", po::value<std::string>(&channel_list)->default_value("0"), "which channels to use (specify \"0\", \"1\", \"0,1\", etc)")
@@ -140,9 +140,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     // pre-compute the waveform values
     const wave_table_class wave_table(wave_type, ampl);
-    const size_t step =
-        std::lround(wave_freq / usrp->get_tx_rate() * wave_table_len);
-    size_t index = 0;
+    const size_t step = std::lround(wave_freq / usrp->get_tx_rate() * wave_table_len);
+    size_t index      = 0;
 
     for (size_t ch = 0; ch < channel_nums.size(); ch++) {
         std::cout << boost::format("Setting TX Freq: %f MHz...") % (freq / 1e6)
@@ -268,7 +267,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     sensor_names                   = usrp->get_mboard_sensor_names(mboard_sensor_idx);
     if ((ref == "mimo")
         and (std::find(sensor_names.begin(), sensor_names.end(), "mimo_locked")
-                != sensor_names.end())) {
+             != sensor_names.end())) {
         uhd::sensor_value_t mimo_locked =
             usrp->get_mboard_sensor("mimo_locked", mboard_sensor_idx);
         std::cout << boost::format("Checking TX: %s ...") % mimo_locked.to_pp_string()
@@ -277,7 +276,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     }
     if ((ref == "external")
         and (std::find(sensor_names.begin(), sensor_names.end(), "ref_locked")
-                != sensor_names.end())) {
+             != sensor_names.end())) {
         uhd::sensor_value_t ref_locked =
             usrp->get_mboard_sensor("ref_locked", mboard_sensor_idx);
         std::cout << boost::format("Checking TX: %s ...") % ref_locked.to_pp_string()

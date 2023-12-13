@@ -54,17 +54,14 @@ public:
         const int32_t timeout_ms)
     {
         frame_buff::uptr buff = _recv_link->get_recv_buff(timeout_ms);
-        if(buff.get() == nullptr) {
+        if (buff.get() == nullptr) {
             // No samples available - simulate a timeout for the duration,
             // then return a nullptr for the buffer. This will ultimately
             // return an TIMEOUT to the upper-level receive layers.
             std::this_thread::sleep_for(std::chrono::milliseconds(timeout_ms));
-            return std::make_tuple(
-                nullptr,
-                packet_info_t{},
-                false);
+            return std::make_tuple(nullptr, packet_info_t{}, false);
         }
-        mock_header_t header  = *(reinterpret_cast<mock_header_t*>(buff->data()));
+        mock_header_t header = *(reinterpret_cast<mock_header_t*>(buff->data()));
 
         packet_info_t info;
         info.eob           = header.eob;
@@ -887,8 +884,7 @@ BOOST_AUTO_TEST_CASE(test_recv_zero_samples)
 
     const auto start_time = std::chrono::steady_clock::now();
 
-    const size_t num_samps_ret =
-        streamer->recv(buff.data(), 0, metadata, 10.0, false);
+    const size_t num_samps_ret = streamer->recv(buff.data(), 0, metadata, 10.0, false);
 
     const auto end_time = std::chrono::steady_clock::now();
     const std::chrono::duration<double> elapsed_time(end_time - start_time);

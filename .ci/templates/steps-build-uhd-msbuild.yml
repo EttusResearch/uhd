@@ -98,3 +98,11 @@ steps:
     msbuild.exe ALL_BUILD.vcxproj -maxCpuCount -p:configuration=release
   displayName: Build init_usrp
   condition: and(succeeded(), ${{ parameters.uhdGenerateTestBinaries }})
+
+- task: CopyFiles@2
+  inputs:
+    sourceFolder: ${{ parameters.uhdBuildDir }}
+    contents: '**'
+    targetFolder: $(Build.BinariesDirectory)\\uhddev\\build
+    cleanTargetFolder: true
+  displayName: Copy build files to Binaries folder

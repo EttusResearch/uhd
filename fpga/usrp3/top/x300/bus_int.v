@@ -22,6 +22,7 @@ module bus_int #(
     output [3:0] sw_rst,
     // Timekeeper
     input                   pps,
+    output                  time_sync,
     // Block connections
     input                   ce_clk,
     input                   ce_rst,
@@ -175,11 +176,12 @@ module bus_int #(
    localparam RB_NUM_TIMEKEEPERS = 8'd12;
    localparam RB_FP_GPIO_SRC     = 8'd13;
    localparam RB_DEVICE_ID       = 8'd14;
+   localparam RB_BUILD_SEED      = 8'd15;
    localparam RB_TA_SFP0_BASE    = SR_TA_SFP0_BASE;
    localparam RB_TA_SFP1_BASE    = SR_TA_SFP1_BASE;
 
    localparam COMPAT_MAJOR       = 16'h0027;
-   localparam COMPAT_MINOR       = 16'h0001;
+   localparam COMPAT_MINOR       = 16'h0002;
    localparam NUM_TIMEKEEPERS    = 1;
 
    // Include the RFNoC image core header file
@@ -458,7 +460,14 @@ module bus_int #(
        RB_ETH_TYPE1: rb_data = {32'h0};
    `endif
 `endif
+`ifndef GIT_HASH
+  `define GIT_HASH 32'h0BADC0DE
+`endif
        RB_GIT_HASH:  rb_data = `GIT_HASH;
+`ifndef BUILD_SEED
+  `define BUILD_SEED 32'b0
+`endif
+       RB_BUILD_SEED: rb_data = `BUILD_SEED;
        RB_XADC_VALS: rb_data = xadc_readback;
        RB_FP_GPIO_SRC: rb_data = fp_gpio_src;
        SR_BASE_TIME: begin
@@ -537,7 +546,8 @@ module bus_int #(
      .pps                   (pps),
      .tb_timestamp          (radio_time_tb),
      .tb_timestamp_last_pps (radio_time_last_pps_tb),
-     .tb_period_ns_q32      (period_ns_q32_tb)
+     .tb_period_ns_q32      (period_ns_q32_tb),
+     .tb_changed            (time_sync)
    );
 
    // Latch state changes to SFP0+ pins.

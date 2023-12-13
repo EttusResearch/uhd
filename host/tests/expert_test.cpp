@@ -267,4 +267,10 @@ BOOST_AUTO_TEST_CASE(test_experts)
     BOOST_CHECK(!nodeC.is_dirty());
     container->resolve_to("Consume_G");
     VALIDATE_ALL_DEPENDENCIES
+
+    BOOST_CHECK(!nodeA.is_dirty());
+    nodeA.force_dirty();
+    BOOST_CHECK(nodeA.is_dirty());
+    nodeA.mark_clean();
+    BOOST_CHECK(!nodeA.is_dirty());
 }

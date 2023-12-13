@@ -13,6 +13,9 @@ parameters:
 - name: uhdBuildPythonAPI
   type: boolean
   default: false
+- name: uhdImagesDownloaderExtraArgs
+  type: string
+  default: ""
 - name: cmakeCompiler
   type: string
 - name: cmakeArch
@@ -30,7 +33,7 @@ steps:
       -DVCPKG_TARGET_TRIPLET=uhd-$(vsArch)-windows-static-md ^
       -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALL_DIR%/scripts/buildsystems/vcpkg.cmake
     mkdir ${{ parameters.uhdImageDir }}
-    python ${{ parameters.uhdBuildDir }}/utils/uhd_images_downloader.py -i ${{ parameters.uhdImageDir }}
+    python ${{ parameters.uhdBuildDir }}/utils/uhd_images_downloader.py -i ${{ parameters.uhdImageDir }} ${{ parameters.uhdImagesDownloaderExtraArgs }}
   displayName: Download uhd-images
   timeoutInMinutes: 30
 
@@ -75,6 +78,6 @@ steps:
   inputs:
     sourceFolder: ${{ parameters.uhdBuildDir }}
     contents: 'uhd_*.exe'
-    targetFolder: ${{ parameters.uhdInstallerDir }}
+    targetFolder: '$(Build.BinariesDirectory)/uhddev-installer'
     cleanTargetFolder: true
   displayName: Copy msbuild installer

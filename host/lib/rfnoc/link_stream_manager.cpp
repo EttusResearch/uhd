@@ -28,7 +28,7 @@ constexpr double STREAM_SETUP_TIMEOUT = 0.2;
 
 constexpr char LOG_ID[] = "RFNOC::LSM";
 
-}
+} // namespace
 
 link_stream_manager::~link_stream_manager() = default;
 
@@ -151,7 +151,16 @@ public:
     bool can_connect_device_to_device(
         sep_addr_t dst_addr, sep_addr_t src_addr) const override
     {
-        return _mgmt_portal->can_remote_route(dst_addr, src_addr);
+        const auto reachable_eps = _mgmt_portal->get_reachable_endpoints();
+        // NOTE: For full completeness, we should be checking the entire route
+        // from src_addr to dst_addr, including all intermediate nodes. In
+        // practice all nodes will be on the same device, and usually only
+        // separated by a crossbar (or not even that).
+        return
+            // First check if a connection is even possible
+            _mgmt_portal->can_remote_route(dst_addr, src_addr)
+            // Then see if we can reach those EPs from here.
+            && reachable_eps.count(dst_addr) && reachable_eps.count(src_addr);
     }
 
     sep_id_pair_t connect_host_to_device(sep_addr_t dst_addr) override
@@ -412,7 +421,8 @@ private:
             if (!args.has_key("stream_mode")) {
                 args["stream_mode"] = "raw_payload";
             } else {
-                if (args["stream_mode"] != "raw_payload" && args["stream_mode"] != "full_packet") {
+                if (args["stream_mode"] != "raw_payload"
+                    && args["stream_mode"] != "full_packet") {
                     UHD_LOG_THROW(uhd::runtime_error,
                         LOG_ID,
                         "Invalid stream mode: " << args["stream_mode"]);
@@ -441,20 +451,19 @@ private:
      * the data packets to the remote location, and the transport adapter knows
      * where to send the outgoing packets to.
      */
-    void _enable_remote_rx_stream(
-            const device_addr_t& xport_args,
-            const sep_addr_t src_addr,
-            const sep_id_t dst_epid)
+    void _enable_remote_rx_stream(const device_addr_t& xport_args,
+        const sep_addr_t src_addr,
+        const sep_id_t dst_epid)
     {
         // Get the route from the regular streamer to the SEP and see which
         // transport adapter we're using
         const auto route_to_sep = _mgmt_portal->get_route(src_addr);
-        auto route_it = route_to_sep.begin();
+        auto route_it           = route_to_sep.begin();
         UHD_ASSERT_THROW(!!route_it->node.epid);
         const sep_id_t src_epid = route_it->node.epid.get();
         route_it++;
         UHD_ASSERT_THROW(route_it->node.type == topo_node_t::node_type::XPORT);
-        auto ta_node = route_it->node;
+        auto ta_node               = route_it->node;
         const auto default_ta_inst = ta_node.inst;
         UHD_LOG_TRACE(LOG_ID,
             "Configuring remote stream via transport adapter: " << ta_node.to_string());
@@ -467,7 +476,7 @@ private:
             // We assume xport_args are sanitized, so we know this lookup should not
             // throw an exception.
             const auto ta_info = available_transport_adapters.at(remote_adapter_id);
-            ta_node.inst  = ta_info.cast<sep_inst_t>("ta_inst", -1);
+            ta_node.inst       = ta_info.cast<sep_inst_t>("ta_inst", -1);
             if (!ta_info.has_key("rx_routing")) {
                 UHD_LOG_THROW(uhd::runtime_error,
                     LOG_ID,
@@ -478,7 +487,7 @@ private:
             for (auto& ta : available_transport_adapters) {
                 if (ta.second.cast<sep_inst_t>("ta_inst", -1) == default_ta_inst) {
                     remote_adapter_id = ta.first;
-                    ta_node.inst = ta.second.cast<sep_inst_t>("ta_inst", -1);
+                    ta_node.inst      = ta.second.cast<sep_inst_t>("ta_inst", -1);
                 }
             }
             if (remote_adapter_id.empty()) {

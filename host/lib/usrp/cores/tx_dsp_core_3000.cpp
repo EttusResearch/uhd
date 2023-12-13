@@ -15,9 +15,9 @@
 #include <cmath>
 #include <functional>
 
-#define REG_DSP_TX_FREQ _dsp_base + 0
+#define REG_DSP_TX_FREQ     _dsp_base + 0
 #define REG_DSP_TX_SCALE_IQ _dsp_base + 4
-#define REG_DSP_TX_INTERP _dsp_base + 8
+#define REG_DSP_TX_INTERP   _dsp_base + 8
 
 template <class T>
 T ceil_log2(T num)

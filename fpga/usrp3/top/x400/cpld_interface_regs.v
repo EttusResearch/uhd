@@ -45,9 +45,15 @@ module cpld_interface_regs #(
   output wire [95:0] version_info
 );
 
-  `include "regmap/cpld_interface_regmap_utils.vh"
-  `include "regmap/versioning_regs_regmap_utils.vh"
+  // Variant-dependent register map.
+  `ifdef X440
+    `include "regmap/x440/versioning_regs_regmap_utils.vh"
+  `else // Use X410 as the default variant for regmap.
+    `include "regmap/x410/versioning_regs_regmap_utils.vh"
+  `endif
+
   `include "regmap/versioning_utils.vh"
+  `include "regmap/cpld_interface_regmap_utils.vh"
   `include "../../lib/rfnoc/core/ctrlport.vh"
 
   //----------------------------------------------------------

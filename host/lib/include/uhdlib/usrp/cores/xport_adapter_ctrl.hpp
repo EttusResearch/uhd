@@ -93,4 +93,4 @@ private:
     uhd::device_addr_t _capabilities;
 };
 
-}} // namespace usrp::zbx
+}} // namespace uhd::usrp

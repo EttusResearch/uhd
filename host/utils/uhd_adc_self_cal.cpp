@@ -44,9 +44,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         std::cout << uhd::get_version_string() << std::endl;
         return EXIT_SUCCESS;
     }
-
-    rfnoc::rfnoc_graph::sptr graph =
-        rfnoc::rfnoc_graph::make(vm["args"].as<std::string>());
+    const uhd::device_addr_t args  = vm["args"].as<std::string>();
+    rfnoc::rfnoc_graph::sptr graph = rfnoc::rfnoc_graph::make(args);
 
     size_t num_calibrations = 0;
     for (auto radio_id : graph->find_blocks("Radio")) {
@@ -55,14 +54,21 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             auto& feature =
                 radio_blk->get_feature<uhd::features::adc_self_calibration_iface>();
 
-            // Run it on all channels
+            const std::string ch_list = args.get("cal_ch_list", "");
+
+            // Run it on all (enabled) channels
             const size_t num_channels = radio_blk->get_num_output_ports();
             for (size_t i = 0; i < num_channels; i++) {
-                std::cout << "Calibrating on channel " << i << " of " << radio_id << "..."
-                          << std::endl;
-                feature.run(i);
-                std::cout << "Finished!" << std::endl;
-                num_calibrations++;
+                auto abs_ch =
+                    radio_blk->get_block_id().get_block_count() * num_channels + i;
+                if (ch_list.size() == 0
+                    or ch_list.find(std::to_string(abs_ch)) != std::string::npos) {
+                    std::cout << "Calibrating on channel " << i << " of " << radio_id
+                              << "..." << std::endl;
+                    feature.run(i, vm["args"].as<std::string>());
+                    std::cout << "Finished!" << std::endl;
+                    num_calibrations++;
+                }
             }
         }
     }

@@ -9,6 +9,7 @@
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/rfnoc/chdr_types.hpp>
+#include <uhd/types/device_addr.hpp>
 #include <uhdlib/rfnoc/chdr_packet_writer.hpp>
 #include <uhdlib/rfnoc/rfnoc_common.hpp>
 #include <uhdlib/rfnoc/rx_flow_ctrl_state.hpp>
@@ -136,6 +137,7 @@ public:
      * \param fc_freq Frequency of flow control status messages
      * \param fc_headroom Headroom for flow control status messages
      * \param lossy_xport Whether the xport is lossy, for flow control configuration
+     * \param xport_args Stream args
      * \param disconnect Callback function to disconnect the links
      * \return Parameters for xport flow control
      */
@@ -151,6 +153,7 @@ public:
         const stream_buff_params_t& fc_freq,
         const stream_buff_params_t& fc_headroom,
         const bool lossy_xport,
+        const uhd::device_addr_t& xport_args,
         disconnect_callback_t disconnect);
 
     /*! Constructor

@@ -131,8 +131,7 @@ void export_rfnoc(py::module& m)
         .def_readwrite("dst_blockid", &graph_edge_t::dst_blockid)
         .def_readwrite("dst_port", &graph_edge_t::dst_port)
         .def_readwrite("edge", &graph_edge_t::edge)
-        .def_readwrite(
-            "is_forward_edge", &graph_edge_t::is_forward_edge)
+        .def_readwrite("is_forward_edge", &graph_edge_t::is_forward_edge)
 
         // Methods
         .def("__str__", &graph_edge_t::to_string)
@@ -230,14 +229,19 @@ void export_rfnoc(py::module& m)
         .def(
             "get_mb_controller", &rfnoc_graph::get_mb_controller, py::arg("mb_index") = 0)
         .def("synchronize_devices", &rfnoc_graph::synchronize_devices)
-        .def("get_tree", [](rfnoc_graph& self){ return self.get_tree().get(); }, py::return_value_policy::reference_internal);
+        .def(
+            "get_tree",
+            [](rfnoc_graph& self) { return self.get_tree().get(); },
+            py::return_value_policy::reference_internal);
 
     py::class_<uhd::features::gpio_power_iface>(m, "gpio_power")
-        .def("get_supported_voltages", &uhd::features::gpio_power_iface::get_supported_voltages)
+        .def("get_supported_voltages",
+            &uhd::features::gpio_power_iface::get_supported_voltages)
         .def("set_port_voltage", &uhd::features::gpio_power_iface::set_port_voltage)
         .def("get_port_voltage", &uhd::features::gpio_power_iface::get_port_voltage)
         .def("set_external_power", &uhd::features::gpio_power_iface::set_external_power)
-        .def("get_external_power_status", &uhd::features::gpio_power_iface::get_external_power_status);
+        .def("get_external_power_status",
+            &uhd::features::gpio_power_iface::get_external_power_status);
 
     py::class_<detail::filter_node>(m, "filter_node")
         .def("get_rx_filter_names", &detail::filter_node::get_rx_filter_names)
@@ -275,7 +279,12 @@ void export_rfnoc(py::module& m)
         .def("get_gpio_srcs", &mb_controller::get_gpio_srcs)
         .def("get_gpio_src", &mb_controller::get_gpio_src)
         .def("set_gpio_src", &mb_controller::set_gpio_src)
-        .def("get_gpio_power", [](mb_controller& self){ return &self.get_feature<uhd::features::gpio_power_iface>(); }, py::return_value_policy::reference_internal);
+        .def(
+            "get_gpio_power",
+            [](mb_controller& self) {
+                return &self.get_feature<uhd::features::gpio_power_iface>();
+            },
+            py::return_value_policy::reference_internal);
 
     py::class_<timekeeper, PyTimekeeper, timekeeper::sptr>(m, "timekeeper")
         // Methods
@@ -299,6 +308,8 @@ void export_rfnoc(py::module& m)
         .def("get_tick_rate", &noc_block_base::get_tick_rate)
         .def("get_mtu", &noc_block_base::get_mtu)
         .def("get_block_args", &noc_block_base::get_block_args)
+        .def("set_command_time", &noc_block_base::set_command_time)
+        .def("clear_command_time", &noc_block_base::clear_command_time)
         .def("get_tree",
             [](noc_block_base::sptr& self) {
                 // Force the non-const `get_tree`
@@ -450,13 +461,9 @@ void export_rfnoc(py::module& m)
             py::arg("time"),
             py::arg("ack") = false)
         .def("get_src_epid",
-            [](noc_block_base& self) {
-                return self.regs().get_src_epid();
-            })
+            [](noc_block_base& self) { return self.regs().get_src_epid(); })
         .def("get_port_num",
-            [](noc_block_base& self) {
-                return self.regs().get_port_num();
-            })
+            [](noc_block_base& self) { return self.regs().get_port_num(); })
         .def("__repr__",
             [](noc_block_base& self) {
                 return "<NocBlock for block ID '" + self.get_unique_id() + "'>";
@@ -484,25 +491,28 @@ void export_rfnoc(py::module& m)
             py::arg("instance") = 0)
         .def(
             "get_int_property",
-            [](noc_block_base& self, const std::string& id, const size_t instance) -> uint64_t {
+            [](noc_block_base& self,
+                const std::string& id,
+                const size_t instance) -> uint64_t {
                 // Try all integer types until we find the right one
                 try {
                     int value = self.get_property<int>(id, instance);
                     return (uint64_t)value;
-                } catch(const uhd::type_error&) {
+                } catch (const uhd::type_error&) {
                     try {
                         size_t value = self.get_property<size_t>(id, instance);
                         return (uint64_t)value;
-                    } catch(const uhd::type_error&) {
+                    } catch (const uhd::type_error&) {
                         try {
                             uint32_t value = self.get_property<uint32_t>(id, instance);
                             return (uint64_t)value;
-                        } catch(const uhd::type_error&) {
+                        } catch (const uhd::type_error&) {
                             try {
-                                uint64_t value = self.get_property<uint64_t>(id, instance);
+                                uint64_t value =
+                                    self.get_property<uint64_t>(id, instance);
                                 return (uint64_t)value;
-                            } catch(...) {
-                                 throw;
+                            } catch (...) {
+                                throw;
                             }
                         }
                     }
@@ -512,17 +522,19 @@ void export_rfnoc(py::module& m)
             py::arg("instance") = 0)
         .def(
             "get_float_property",
-            [](noc_block_base& self, const std::string& id, const size_t instance) -> double {
+            [](noc_block_base& self,
+                const std::string& id,
+                const size_t instance) -> double {
                 // Try both float types
                 try {
-                   return self.get_property<double>(id, instance);
-                } catch(const uhd::type_error&) {
-                   try {
-                      float value = self.get_property<float>(id, instance);
-                      return static_cast<double>(value);
-                   } catch(...) {
-                      throw;
-                   }
+                    return self.get_property<double>(id, instance);
+                } catch (const uhd::type_error&) {
+                    try {
+                        float value = self.get_property<float>(id, instance);
+                        return static_cast<double>(value);
+                    } catch (...) {
+                        throw;
+                    }
                 }
             },
             py::arg("id"),

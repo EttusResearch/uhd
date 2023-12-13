@@ -184,5 +184,3 @@ BOOST_AUTO_TEST_CASE(test_xport_adapter_arp)
     BOOST_CHECK_EQUAL((regs.mem[uint32_t(xport_adapter_ctrl::KV_CFG)] >> 16), 1);
     BOOST_CHECK_EQUAL(regs.mem[uint32_t(xport_adapter_ctrl::KV_IPV4_W_ARP)], 0xc0a81e01);
 }
-
-

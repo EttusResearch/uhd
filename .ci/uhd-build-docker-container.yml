@@ -27,25 +27,13 @@ schedules:
     include:
     - master
   always: true
-- cron: "0 22 * * SAT"
-  displayName: Weekly Docker Build UHD-4.1 branch
-  branches:
-    include:
-    - UHD-4.1
-  always: true
-- cron: "0 2 * * SUN"
-  displayName: Weekly Docker Build UHD-4.2 branch
-  branches:
-    include:
-    - UHD-4.2
-  always: true
 
 variables:
 - template: uhd-pipeline-vars.yml
 - name: linuxDockerImages
   value:
-    "{'Fedora-35-builder':{'buildOSName':'fedora35','dockerImageName':'uhd-builder-fedora35'},
-    'Fedora-36-builder':{'buildOSName':'fedora36','dockerImageName':'uhd-builder-fedora36'},
+    "{'Fedora-36-builder':{'buildOSName':'fedora36','dockerImageName':'uhd-builder-fedora36'},
+    'Fedora-37-builder':{'buildOSName':'fedora37','dockerImageName':'uhd-builder-fedora37'},
     'Ubuntu-1804-builder':{'buildOSName':'ubuntu1804','dockerImageName':'uhd-builder-ubuntu1804'},
     'Ubuntu-2004-builder':{'buildOSName':'ubuntu2004','dockerImageName':'uhd-builder-ubuntu2004'},
     'Ubuntu-2204-builder':{'buildOSName':'ubuntu2204','dockerImageName':'uhd-builder-ubuntu2204'}}"
@@ -75,16 +63,20 @@ variables:
 - name: fedoraRpmDockerImages
   # Match with Fedora images in linuxDockerImages
   value:
-    "{'Fedora-35-builder':{'buildOSName':'fedora35','dockerImageName':'uhd-builder-fedora35','fedoraReleaseName':'35'},
-    'Fedora-36-builder':{'buildOSName':'fedora36','dockerImageName':'uhd-builder-fedora36','fedoraReleaseName':'36'}}"
+    "{'Fedora-36-builder':{'buildOSName':'fedora36','dockerImageName':'uhd-builder-fedora36','fedoraReleaseName':'36'},
+    'Fedora-37-builder':{'buildOSName':'fedora37','dockerImageName':'uhd-builder-fedora37','fedoraReleaseName':'37'}}"
 
 - name: winDockerImagesPythonBuild
   # Match with one of the images in winDockerImages
   value:
     "{'VS2019-x64-builder':{'buildOSName':'win-vs19-v142-x64','dockerImageName':'uhd-builder-vs2019-v142-x64','cmakeCompiler':'Visual Studio 16 2019','cmakeArch':'x64','vsArch':'x64','vsYear':'2019'}}"
 
-- name: dockerImagePrefix
-  value: 'rnd-docker-ci/ni/rfsdr/'
+- ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/UHD-')) }}:
+  - name: dockerImagePrefix
+    value: 'rnd-docker-ci/ni/rfsdr/'
+- ${{ else }}:
+  - name: dockerImagePrefix
+    value: 'rnd-docker-pre/ni/rfsdr/'
 
 jobs:
 - job: build_image_linux
@@ -104,7 +96,10 @@ jobs:
     inputs:
       command: 'build'
       Dockerfile: '$(Build.SourcesDirectory)/.ci/docker/$(dockerImageName).Dockerfile'
-      containerRegistry: 'niartifacts.jfrog.io'
+      ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/UHD-')) }}:
+        containerRegistry: rnd-docker-niartifacts-sdr-ci-publish
+      ${{ else }}:
+        containerRegistry: rnd-docker-niartifacts-pre-publish
       repository: '$(dockerImagePrefix)$(dockerImageName)'
       tags: $(Build.BuildNumber)
       arguments: --no-cache --pull
@@ -112,7 +107,10 @@ jobs:
     displayName: Push Image
     inputs:
       command: 'push'
-      containerRegistry: 'niartifacts.jfrog.io'
+      ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/UHD-')) }}:
+        containerRegistry: rnd-docker-niartifacts-sdr-ci-publish
+      ${{ else }}:
+        containerRegistry: rnd-docker-niartifacts-pre-publish
       repository: '$(dockerImagePrefix)$(dockerImageName)'
       tags: $(Build.BuildNumber)
 
@@ -128,7 +126,10 @@ jobs:
     matrix: $[ variables.linuxDockerImages ]
   container:
     image: '$(dockerImagePrefix)$(dockerImageName):$(Build.BuildNumber)'
-    endpoint: 'niartifacts.jfrog.io'
+    ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/UHD-')) }}:
+      endpoint: rnd-docker-niartifacts-ci-readonly
+    ${{ else }}:
+      endpoint: rnd-docker-niartifacts-pre-readonly
   workspace:
     clean: outputs
   steps:
@@ -149,13 +150,12 @@ jobs:
 
 - job: build_image_win
   displayName: Build Docker Image Windows
-  timeoutInMinutes: 120
+  timeoutInMinutes: 180
   pool:
-    name: de-dre-lab
+    name: Drivers-NIBuildFarm-RFMIBUILD
     demands:
       - agent.os -equals Windows_NT
       - docker
-      - rfsdr-build
   strategy:
     matrix: $[ variables.winDockerImages ]
     maxParallel: 2
@@ -167,7 +167,10 @@ jobs:
     inputs:
       command: 'build'
       Dockerfile: '$(Build.SourcesDirectory)/.ci/docker/$(dockerImageName).Dockerfile'
-      containerRegistry: 'niartifacts.jfrog.io'
+      ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/UHD-')) }}:
+        containerRegistry: rnd-docker-niartifacts-sdr-ci-publish
+      ${{ else }}:
+        containerRegistry: rnd-docker-niartifacts-pre-publish
       repository: '$(dockerImagePrefix)$(dockerImageName)'
       tags: $(Build.BuildNumber)
       buildContext: $(Build.SourcesDirectory)
@@ -176,41 +179,46 @@ jobs:
     displayName: Push Image
     inputs:
       command: 'push'
-      containerRegistry: 'niartifacts.jfrog.io'
+      ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/UHD-')) }}:
+        containerRegistry: rnd-docker-niartifacts-sdr-ci-publish
+      ${{ else }}:
+        containerRegistry: rnd-docker-niartifacts-pre-publish
       repository: '$(dockerImagePrefix)$(dockerImageName)'
       tags: $(Build.BuildNumber)
 
 - job: test_image_win
   displayName: Test Docker Image Windows
+  timeoutInMinutes: 90
   dependsOn: build_image_win
   pool:
-    name: de-dre-lab
+    name: Drivers-NIBuildFarm-RFMIBUILD
     demands:
       - agent.os -equals Windows_NT
       - docker
-      - rfsdr-build
   strategy:
     matrix: $[ variables.winDockerImages ]
   container:
     image: '$(dockerImagePrefix)$(dockerImageName):$(Build.BuildNumber)'
-    endpoint: 'niartifacts.jfrog.io'
+    options: --cpu-count 6 --memory 12G
+    ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/UHD-')) }}:
+      endpoint: rnd-docker-niartifacts-ci-readonly
+    ${{ else }}:
+      endpoint: rnd-docker-niartifacts-pre-readonly
   workspace:
     clean: outputs
   steps:
   - checkout: self
     clean: true
   - script: |
-        cd $(Build.BinariesDirectory)
-        mkdir uhddev\build
-        cd uhddev\build
+        mkdir c:\uhddev\build
+        cd c:\uhddev\build
         cmake $(Build.SourcesDirectory)/host ^
           -DVCPKG_TARGET_TRIPLET=uhd-$(vsArch)-windows-static-md ^
           -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALL_DIR%\scripts\buildsystems\vcpkg.cmake ^
           -G "$(cmakeCompiler)" -A $(cmakeArch)
     displayName: Test image with cmake uhd
   - script: |
-        cd $(Build.BinariesDirectory)
-        cd uhddev\build
+        cd c:\uhddev\build
         "C:\Program Files (x86)\Microsoft Visual Studio\$(vsYear)\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
     displayName: Load Visual C++ Env
 

@@ -26,6 +26,13 @@ public:
 
     void run(const size_t channel) override;
 
+    void run(const size_t chan, const uhd::device_addr_t params) override;
+
+    // Maximum duration for self-cal in ms. From tests we found that 2 seconds are good,
+    // so we limit the maximum value to twice 2 seconds to keep the overall calibration
+    // duration at a convenient level.
+    const uint32_t MAX_CAL_DURATION = 4000;
+
 private:
     //! Reference to the RPC client
     uhd::usrp::x400_rpc_iface::sptr _rpcc;

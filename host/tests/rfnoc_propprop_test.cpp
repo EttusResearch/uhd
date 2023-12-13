@@ -14,8 +14,8 @@
 #include <uhdlib/rfnoc/node_accessor.hpp>
 #include <uhdlib/rfnoc/prop_accessor.hpp>
 #include <boost/test/unit_test.hpp>
-#include <iostream>
 #include <algorithm>
+#include <iostream>
 
 /*! Mock invalid node
  *
@@ -170,8 +170,8 @@ public:
 class mock_noc_block_t : public noc_block_base
 {
 public:
-    mock_noc_block_t(noc_block_base::make_args_ptr make_args) :
-        noc_block_base(std::move(make_args))
+    mock_noc_block_t(noc_block_base::make_args_ptr make_args)
+        : noc_block_base(std::move(make_args))
     {
     }
 
@@ -252,22 +252,20 @@ BOOST_AUTO_TEST_CASE(test_mtu_forwarding_policy_restrictions)
     // Most of this is just dummy stuff required to correctly instantiate a
     // noc_block_base-derived block and is inconsequential to the test itself
     mock_block_container mbc;
-    mbc.reg_iface = std::make_shared<mock_reg_iface_t>();
-    mbc.tree      = uhd::property_tree::make();
-    mbc.make_args                   = std::make_unique<noc_block_base::make_args_t>();
-    mbc.make_args->noc_id           = 0x01020304;
-    mbc.make_args->block_id         = block_id_t("0/Dummy#0");
-    mbc.make_args->num_input_ports  = 2;
-    mbc.make_args->num_output_ports = 2;
-    mbc.make_args->mtu              = 8000;
-    mbc.make_args->chdr_w           = uhd::rfnoc::CHDR_W_64;
-    mbc.make_args->reg_iface        = mbc.reg_iface;
-    mbc.make_args->tree             = mbc.tree;
-    mbc.make_args->tb_clk_iface =
-        std::make_shared<clock_iface>("dummy");
-    mbc.make_args->ctrlport_clk_iface =
-        std::make_shared<clock_iface>("dummy");
-    mbc.make_args->mb_control = nullptr;
+    mbc.reg_iface                     = std::make_shared<mock_reg_iface_t>();
+    mbc.tree                          = uhd::property_tree::make();
+    mbc.make_args                     = std::make_unique<noc_block_base::make_args_t>();
+    mbc.make_args->noc_id             = 0x01020304;
+    mbc.make_args->block_id           = block_id_t("0/Dummy#0");
+    mbc.make_args->num_input_ports    = 2;
+    mbc.make_args->num_output_ports   = 2;
+    mbc.make_args->mtu                = 8000;
+    mbc.make_args->chdr_w             = uhd::rfnoc::CHDR_W_64;
+    mbc.make_args->reg_iface          = mbc.reg_iface;
+    mbc.make_args->tree               = mbc.tree;
+    mbc.make_args->tb_clk_iface       = std::make_shared<clock_iface>("dummy");
+    mbc.make_args->ctrlport_clk_iface = std::make_shared<clock_iface>("dummy");
+    mbc.make_args->mb_control         = nullptr;
 
     // Construct the dummy RFNoC block
     mock_noc_block_t mock_block(std::move(mbc.make_args));
@@ -276,7 +274,9 @@ BOOST_AUTO_TEST_CASE(test_mtu_forwarding_policy_restrictions)
     mock_block.set_mtu_forwarding_policy(noc_block_base::forwarding_policy_t::ONE_TO_ONE);
 
     // And the seocnd time should generate an exception
-    BOOST_REQUIRE_THROW(mock_block.set_mtu_forwarding_policy(noc_block_base::forwarding_policy_t::ONE_TO_FAN), uhd::runtime_error);
+    BOOST_REQUIRE_THROW(mock_block.set_mtu_forwarding_policy(
+                            noc_block_base::forwarding_policy_t::ONE_TO_FAN),
+        uhd::runtime_error);
 }
 
 BOOST_AUTO_TEST_CASE(test_graph_resolve_ddc_radio)
@@ -708,12 +708,8 @@ BOOST_AUTO_TEST_CASE(test_graph_node_loop_resolve)
             register_property(&_ais_in);
             register_property(&_ais_out);
 
-            add_property_resolver({&_ais_in}, {&_ais_in}, [this]() {
-                _ais_in = 8;
-            });
-            add_property_resolver({&_ais_out}, {&_ais_out}, [this]() {
-                _ais_out = 8;
-            });
+            add_property_resolver({&_ais_in}, {&_ais_in}, [this]() { _ais_in = 8; });
+            add_property_resolver({&_ais_out}, {&_ais_out}, [this]() { _ais_out = 8; });
         }
 
         std::string get_unique_id() const override

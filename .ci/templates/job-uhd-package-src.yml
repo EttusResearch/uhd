@@ -11,6 +11,7 @@ jobs:
 - job: uhd_package_src
   displayName: UHD Package Source
   dependsOn: get_latest_uhd_docker
+  timeoutInMinutes: 90
   variables:
     # Docker vars from job-get-latest-uhd-docker.yml
     dockerBuildNumber: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerBuildNumber'] ]
@@ -33,7 +34,10 @@ jobs:
     clean: all
   container:
     image: '$(dockerImagePrefix)$(DockerImageName):$(dockerBuildNumber)'
-    endpoint: 'niartifacts.jfrog.io'
+    ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/UHD-')) }}:
+      endpoint: rnd-docker-niartifacts-ci-readonly
+    ${{ else }}:
+      endpoint: rnd-docker-niartifacts-pre-readonly
   steps:
   - checkout: self
     clean: true

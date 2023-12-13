@@ -13,6 +13,7 @@
 //   using stream command packets.
 //
 // Parameters:
+//   - DEVICE_FAMILY: The FPGA device family (e.g., "7SERIES" or "ULTRASCALE")
 //   - CHDR_W: Width of the CHDR bus in bits
 //   - BUFF_SIZE: Buffer size in log2 of the number of words in the
 //                ingress buffer for the stream
@@ -29,6 +30,7 @@
 //
 
 module chdr_stream_input #(
+  parameter DEVICE_FAMILY   = "7SERIES",
   parameter CHDR_W          = 256,
   parameter BUFF_SIZE       = 14,
   parameter FLUSH_TIMEOUT_W = 14,
@@ -77,7 +79,7 @@ module chdr_stream_input #(
   wire [15:0]       buff_info;
 
   chdr_ingress_fifo #(
-    .WIDTH(CHDR_W), .SIZE(BUFF_SIZE)
+    .DEVICE(DEVICE_FAMILY), .WIDTH(CHDR_W), .SIZE(BUFF_SIZE)
   ) ingress_fifo_i (
     .clk(clk), .reset(rst), .clear(1'b0),
     .i_tdata(s_axis_chdr_tdata), .i_tlast(s_axis_chdr_tlast),

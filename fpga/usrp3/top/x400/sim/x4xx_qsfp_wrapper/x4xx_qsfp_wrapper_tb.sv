@@ -180,10 +180,8 @@ module x4xx_qsfp_wrapper_tb #(
     .PROTOCOL1     (PROTOCOL1),
     .PROTOCOL2     (PROTOCOL2),
     .PROTOCOL3     (PROTOCOL3),
-
-    .CPU_W        (CPU_W),
-    .CHDR_W       (CHDR_W),
-    .PORTNUM      (0)
+    .CHDR_W        (CHDR_W),
+    .PORTNUM       (0)
   ) dut (
     .areset          (refclk_rst),
     .refclk_p        (refclk_p),

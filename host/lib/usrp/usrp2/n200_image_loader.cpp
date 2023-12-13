@@ -41,14 +41,14 @@ using namespace uhd::transport;
  */
 
 #define N200_FLASH_DATA_PACKET_SIZE 256
-#define N200_UDP_FW_UPDATE_PORT 49154
-#define UDP_TIMEOUT 0.5
+#define N200_UDP_FW_UPDATE_PORT     49154
+#define UDP_TIMEOUT                 0.5
 
-#define N200_FW_MAX_SIZE_BYTES 31744
+#define N200_FW_MAX_SIZE_BYTES  31744
 #define N200_PROD_FW_IMAGE_ADDR 0x00300000
 #define N200_SAFE_FW_IMAGE_ADDR 0x003F0000
 
-#define N200_FPGA_MAX_SIZE_BYTES 1572864
+#define N200_FPGA_MAX_SIZE_BYTES  1572864
 #define N200_PROD_FPGA_IMAGE_ADDR 0x00180000
 #define N200_SAFE_FPGA_IMAGE_ADDR 0x00000000
 
@@ -361,12 +361,12 @@ static void n200_setup_session(n200_session_t& session,
             throw uhd::runtime_error("This device's revision cannot be determined. "
                                      "You must manually specify a filepath.");
         } else {
-            session.filepath =
-                session.fw ? find_image_path(
-                                 str(boost::format("usrp_%s_fw.bin")
-                                     % erase_tail_copy(session.dev_addr["hw_rev"], 3)))
-                           : find_image_path(str(boost::format("usrp_%s_fpga.bin")
-                                                 % session.dev_addr["hw_rev"]));
+            session.filepath = session.fw
+                                   ? find_image_path(str(
+                                       boost::format("usrp_%s_fw.bin")
+                                       % erase_tail_copy(session.dev_addr["hw_rev"], 3)))
+                                   : find_image_path(str(boost::format("usrp_%s_fpga.bin")
+                                                         % session.dev_addr["hw_rev"]));
         }
     } else {
         session.filepath = session.fw ? image_loader_args.firmware_path
@@ -381,11 +381,11 @@ static void n200_setup_session(n200_session_t& session,
     if (session.overwrite_safe) {
         session.flash_addr = session.fw ? N200_SAFE_FW_IMAGE_ADDR
                                         : N200_SAFE_FPGA_IMAGE_ADDR;
-        session.burn_type = session.fw ? "firmware safe" : "FPGA safe";
+        session.burn_type  = session.fw ? "firmware safe" : "FPGA safe";
     } else {
         session.flash_addr = session.fw ? N200_PROD_FW_IMAGE_ADDR
                                         : N200_PROD_FPGA_IMAGE_ADDR;
-        session.burn_type = session.fw ? "firmware" : "FPGA";
+        session.burn_type  = session.fw ? "firmware" : "FPGA";
     }
 
     session.xport = udp_simple::make_connected(

@@ -12,8 +12,8 @@
 #include <uhd/types/sensors.h>
 #include <uhd/types/string_vector.h>
 
-#include <stdlib.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <time.h>
 
 /****************************************************************************
@@ -41,71 +41,47 @@ extern "C" {
 /*!
  * See uhd::device::find() for more details.
  */
-UHD_API uhd_error uhd_usrp_clock_find(
-    const char* args,
-    uhd_string_vector_t *devices_out
-);
+UHD_API uhd_error uhd_usrp_clock_find(const char* args, uhd_string_vector_t* devices_out);
 
 //! Create a clock handle.
 /*!
  * \param h The handle
  * \param args Device args (e.g. "addr=192.168.10.3")
  */
-UHD_API uhd_error uhd_usrp_clock_make(
-    uhd_usrp_clock_handle *h,
-    const char *args
-);
+UHD_API uhd_error uhd_usrp_clock_make(uhd_usrp_clock_handle* h, const char* args);
 
 //! Safely destroy the clock object underlying the handle.
 /*!
  * Note: After calling this, usage of h may cause segmentation faults.
  * However, multiple calling of uhd_usrp_free() is safe.
  */
-UHD_API uhd_error uhd_usrp_clock_free(
-    uhd_usrp_clock_handle *h
-);
+UHD_API uhd_error uhd_usrp_clock_free(uhd_usrp_clock_handle* h);
 
 //! Get last error
 UHD_API uhd_error uhd_usrp_clock_last_error(
-    uhd_usrp_clock_handle h,
-    char* error_out,
-    size_t strbuffer_len
-);
+    uhd_usrp_clock_handle h, char* error_out, size_t strbuffer_len);
 
 //! Get board information in a nice output
 UHD_API uhd_error uhd_usrp_clock_get_pp_string(
-    uhd_usrp_clock_handle h,
-    char* pp_string_out,
-    size_t strbuffer_len
-);
+    uhd_usrp_clock_handle h, char* pp_string_out, size_t strbuffer_len);
 
 //! Get number of boards
 UHD_API uhd_error uhd_usrp_clock_get_num_boards(
-    uhd_usrp_clock_handle h,
-    size_t *num_boards_out
-);
+    uhd_usrp_clock_handle h, size_t* num_boards_out);
 
 //! Get time
 UHD_API uhd_error uhd_usrp_clock_get_time(
-    uhd_usrp_clock_handle h,
-    size_t board,
-    uint32_t *clock_time_out
-);
+    uhd_usrp_clock_handle h, size_t board, uint32_t* clock_time_out);
 
 //! Get sensor
-UHD_API uhd_error uhd_usrp_clock_get_sensor(
-    uhd_usrp_clock_handle h,
+UHD_API uhd_error uhd_usrp_clock_get_sensor(uhd_usrp_clock_handle h,
     const char* name,
     size_t board,
-    uhd_sensor_value_handle *sensor_value_out
-);
+    uhd_sensor_value_handle* sensor_value_out);
 
 //! Get sensor names
 UHD_API uhd_error uhd_usrp_clock_get_sensor_names(
-    uhd_usrp_clock_handle h,
-    size_t board,
-    uhd_string_vector_handle *sensor_names_out
-);
+    uhd_usrp_clock_handle h, size_t board, uhd_string_vector_handle* sensor_names_out);
 
 #ifdef __cplusplus
 }

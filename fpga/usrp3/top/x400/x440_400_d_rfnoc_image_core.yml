@@ -1,0 +1,225 @@
+# General parameters
+# -----------------------------------------
+schema: rfnoc_imagebuilder_args         # Identifier for the schema used to validate this file
+copyright: >-                           # Copyright information used in file headers
+  Copyright 2023 Ettus Research, a National Instruments Brand
+license: >-                             # License information used in file headers
+  SPDX-License-Identifier: LGPL-3.0-or-later
+version: '1.0'                          # File version
+chdr_width: 128                         # Bit width of the CHDR bus for this image
+device: 'x440'                          # USRP type
+image_core_name: 'x440_400_d'           # Name to use for the RFNoC Image Core files
+default_target: 'X440_X4_400'           # Default make target
+
+# A list of all stream endpoints in design
+# ----------------------------------------
+stream_endpoints:
+  ep0:                                  # Stream endpoint name
+    ctrl: True                          # Endpoint passes control traffic
+    data: True                          # Endpoint passes data traffic
+    buff_size_bytes: 131072             # Ingress buffer size for data
+  ep1:
+    ctrl: False
+    data: True
+    buff_size_bytes: 131072
+  ep2:
+    ctrl: False
+    data: True
+    buff_size_bytes: 131072
+  ep3:
+    ctrl: False
+    data: True
+    buff_size_bytes: 131072
+  ep4:
+    ctrl: False
+    data: True
+    buff_size_bytes: 131072
+  ep5:
+    ctrl: False
+    data: True
+    buff_size_bytes: 131072
+  ep6:
+    ctrl: False
+    data: True
+    buff_size_bytes: 131072
+  ep7:
+    ctrl: False
+    data: True
+    buff_size_bytes: 131072
+  ep8:
+    ctrl: False
+    data: True
+    buff_size_bytes: 131072
+  ep9:
+    ctrl: False
+    data: True
+    buff_size_bytes: 131072
+  ep10:
+    ctrl: False
+    data: True
+    buff_size_bytes: 131072
+  ep11:
+    ctrl: False
+    data: True
+    buff_size_bytes: 131072
+  ep12:
+    ctrl: False
+    data: True
+    buff_size_bytes: 131072
+  ep13:
+    ctrl: False
+    data: True
+    buff_size_bytes: 131072
+  ep14:
+    ctrl: False
+    data: True
+    buff_size_bytes: 131072
+  ep15:
+    ctrl: False
+    data: True
+    buff_size_bytes: 131072
+
+# A table of which crossbar routes to include
+# -------------------------------------------
+# Rows correspond to input ports and columns correspond to output ports.
+# Entering a 1 includes and a 0 removes that route from the crossbar.
+crossbar_routes:
+  #  eth0  eth2  eth4  ep0   ep2   ep4   ep6   ep8   ep10  ep12  ep14
+  #     eth1  eth3  dma   ep1   ep3   ep5   ep7   ep9   ep11  ep13  ep15
+  - [ 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ] # eth0 (QSFP Port 0, Lane 0)
+  - [ 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ] # eth1 (QSFP Port 0, Lane 1)
+  - [ 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ] # eth2 (QSFP Port 0, Lane 2)
+  - [ 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ] # eth3 (QSFP Port 0, Lane 3)
+  - [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ] # eth4 (NC)
+  - [ 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ] # dma
+  - [ 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1 ] # ep0  (radio0.0)
+  - [ 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1 ] # ep1  (radio0.1)
+  - [ 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1 ] # ep2  (radio0.2)
+  - [ 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1 ] # ep3  (radio0.3)
+  - [ 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1 ] # ep4  (radio1.0)
+  - [ 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1 ] # ep5  (radio1.1)
+  - [ 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1 ] # ep6  (radio1.2)
+  - [ 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1 ] # ep7  (radio1.3)
+  - [ 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 ] # ep8  (replay0.0)
+  - [ 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 ] # ep9  (replay0.1)
+  - [ 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 ] # ep10 (replay0.2)
+  - [ 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 ] # ep11 (replay0.3)
+  - [ 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 ] # ep12 (replay0.4)
+  - [ 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 ] # ep13 (replay0.5)
+  - [ 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 ] # ep14 (replay0.6)
+  - [ 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 ] # ep15 (replay0.7)
+
+# A list of all NoC blocks in design
+# ----------------------------------
+noc_blocks:
+  radio0:
+    block_desc: 'radio.yml'
+    parameters:
+      NUM_PORTS: 4
+      NIPC: RADIO_NIPC
+    ctrl_clock: _device_.rfnoc_ctrl     # The clock that is used for the control
+                                        # interface. This is the default clock,
+                                        # so we could skip it.
+    timebase_clock: _device_.radio0     # The clock that is used for the timebase.
+  radio1:
+    block_desc: 'radio.yml'
+    parameters:
+      NUM_PORTS: 4
+      NIPC: RADIO_NIPC
+    ctrl_clock: _device_.rfnoc_ctrl
+    timebase_clock: _device_.radio1
+  replay0:
+    block_desc: 'replay.yml'
+    parameters:
+      NUM_PORTS: 4
+      MEM_DATA_W: 128
+      MEM_ADDR_W: 32
+  replay1:
+    block_desc: 'replay.yml'
+    parameters:
+      NUM_PORTS: 4
+      MEM_DATA_W: 128
+      MEM_ADDR_W: 32
+
+# A list of all static connections in design
+# ------------------------------------------
+# Format: A list of connection maps (list of key-value pairs) with the following keys
+#   - srcblk  = Source block to connect
+#   - srcport = Port on the source block to connect
+#   - dstblk  = Destination block to connect
+#   - dstport = Port on the destination block to connect
+connections:
+  # RF A:0 TX
+  - { srcblk: ep0,    srcport: out0,  dstblk: radio0, dstport: in_0 }
+  # RF A:0 RX
+  - { srcblk: radio0, srcport: out_0, dstblk: ep0,    dstport: in0  }
+  # RF A:1 TX
+  - { srcblk: ep1,    srcport: out0,  dstblk: radio0, dstport: in_1 }
+  # RF A:1 RX
+  - { srcblk: radio0, srcport: out_1, dstblk: ep1,    dstport: in0  }
+  # RF A:2 TX
+  - { srcblk: ep2,    srcport: out0,  dstblk: radio0, dstport: in_2 }
+  # RF A:2 RX
+  - { srcblk: radio0, srcport: out_2, dstblk: ep2,    dstport: in0  }
+  # RF A:3 TX
+  - { srcblk: ep3,    srcport: out0,  dstblk: radio0, dstport: in_3 }
+  # RF A:3 RX
+  - { srcblk: radio0, srcport: out_3, dstblk: ep3,    dstport: in0  }
+  #
+  # RF B:0 TX
+  - { srcblk: ep4,    srcport: out0,  dstblk: radio1, dstport: in_0 }
+  # RF B:0 RX
+  - { srcblk: radio1, srcport: out_0, dstblk: ep4,    dstport: in0  }
+  # RF B:1 TX
+  - { srcblk: ep5,    srcport: out0,  dstblk: radio1, dstport: in_1 }
+  # RF B:1 RX
+  - { srcblk: radio1, srcport: out_1, dstblk: ep5,    dstport: in0  }
+  # RF B:2 TX
+  - { srcblk: ep6,    srcport: out0,  dstblk: radio1, dstport: in_2 }
+  # RF B:2 RX
+  - { srcblk: radio1, srcport: out_2, dstblk: ep6,    dstport: in0  }
+  # RF B:3 TX
+  - { srcblk: ep7,    srcport: out0,  dstblk: radio1, dstport: in_3 }
+  # RF B:3 RX
+  - { srcblk: radio1, srcport: out_3, dstblk: ep7,    dstport: in0  }
+  #
+  # Replay Connections
+  - { srcblk: ep8,     srcport: out0,  dstblk: replay0, dstport: in_0 }
+  - { srcblk: replay0, srcport: out_0, dstblk: ep8,     dstport: in0  }
+  - { srcblk: ep9,     srcport: out0,  dstblk: replay0, dstport: in_1 }
+  - { srcblk: replay0, srcport: out_1, dstblk: ep9,     dstport: in0  }
+  - { srcblk: ep10,    srcport: out0,  dstblk: replay0, dstport: in_2 }
+  - { srcblk: replay0, srcport: out_2, dstblk: ep10,    dstport: in0  }
+  - { srcblk: ep11,    srcport: out0,  dstblk: replay0, dstport: in_3 }
+  - { srcblk: replay0, srcport: out_3, dstblk: ep11,    dstport: in0  }
+  - { srcblk: ep12,    srcport: out0,  dstblk: replay1, dstport: in_0 }
+  - { srcblk: replay1, srcport: out_0, dstblk: ep12,    dstport: in0  }
+  - { srcblk: ep13,    srcport: out0,  dstblk: replay1, dstport: in_1 }
+  - { srcblk: replay1, srcport: out_1, dstblk: ep13,    dstport: in0  }
+  - { srcblk: ep14,    srcport: out0,  dstblk: replay1, dstport: in_2 }
+  - { srcblk: replay1, srcport: out_2, dstblk: ep14,    dstport: in0  }
+  - { srcblk: ep15,    srcport: out0,  dstblk: replay1, dstport: in_3 }
+  - { srcblk: replay1, srcport: out_3, dstblk: ep15,    dstport: in0  }
+  #
+  # BSP Connections
+  - { srcblk: radio0,   srcport: ctrlport, dstblk: _device_, dstport: ctrlport_radio0 }
+  - { srcblk: radio1,   srcport: ctrlport, dstblk: _device_, dstport: ctrlport_radio1 }
+  - { srcblk: _device_, srcport: radio0,   dstblk: radio0,   dstport: radio           }
+  - { srcblk: _device_, srcport: radio1,   dstblk: radio1,   dstport: radio           }
+  - { srcblk: _device_, srcport: time0,    dstblk: radio0,   dstport: time            }
+  - { srcblk: _device_, srcport: time1,    dstblk: radio1,   dstport: time            }
+  - { srcblk: replay0,  srcport: axi_ram,  dstblk: _device_, dstport: dram0           }
+  - { srcblk: replay1,  srcport: axi_ram,  dstblk: _device_, dstport: dram1           }
+
+# A list of all clock domain connections in design
+# ------------------------------------------------
+# Format: A list of connection maps (list of key-value pairs) with the following keys
+#   - srcblk  = Source block to connect (Always "_device"_)
+#   - srcport = Clock domain on the source block to connect
+#   - dstblk  = Destination block to connect
+#   - dstport = Clock domain on the destination block to connect
+clk_domains:
+  - { srcblk: _device_, srcport: radio0, dstblk: radio0,  dstport: radio }
+  - { srcblk: _device_, srcport: radio1, dstblk: radio1,  dstport: radio }
+  - { srcblk: _device_, srcport: dram,   dstblk: replay0, dstport: mem   }
+  - { srcblk: _device_, srcport: dram,   dstblk: replay1, dstport: mem   }

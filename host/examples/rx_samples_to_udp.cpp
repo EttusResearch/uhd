@@ -43,7 +43,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("bw", po::value<double>(&bw), "analog frontend filter bandwidth in Hz")
         ("port", po::value<std::string>(&port)->default_value("7124"), "server udp port")
         ("addr", po::value<std::string>(&addr)->default_value("192.168.1.10"), "resolvable server address")
-        ("ref", po::value<std::string>(&ref)->default_value("internal"), "reference source (internal, external, mimo)")
+        ("ref", po::value<std::string>(&ref), "clock reference (internal, external, mimo, gpsdo)")
         ("int-n", "tune USRP with integer-N tuning")
     ;
     // clang-format on
@@ -128,7 +128,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     sensor_names = usrp->get_mboard_sensor_names(0);
     if ((ref == "mimo")
         and (std::find(sensor_names.begin(), sensor_names.end(), "mimo_locked")
-                != sensor_names.end())) {
+             != sensor_names.end())) {
         uhd::sensor_value_t mimo_locked = usrp->get_mboard_sensor("mimo_locked", 0);
         std::cout << boost::format("Checking RX: %s ...") % mimo_locked.to_pp_string()
                   << std::endl;
@@ -136,7 +136,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     }
     if ((ref == "external")
         and (std::find(sensor_names.begin(), sensor_names.end(), "ref_locked")
-                != sensor_names.end())) {
+             != sensor_names.end())) {
         uhd::sensor_value_t ref_locked = usrp->get_mboard_sensor("ref_locked", 0);
         std::cout << boost::format("Checking RX: %s ...") % ref_locked.to_pp_string()
                   << std::endl;

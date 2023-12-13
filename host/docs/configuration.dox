@@ -16,9 +16,10 @@ one of these, it will connect to it and pass the `master_clock_rate=16e6` option
 to the device initialization (in this case, it will set the master clock rate
 to 16 MHz as described on \ref b200_mcr).
 
-The following table lists the configuration options you can pass as device
+The following table lists common configuration options you can pass as device
 arguments. Also check out the individual device manuals for more information
-and possible more options.
+and possible more options, as individual devices may have more specialized
+options available not listed here.
 
  Key                 | Description                                                                  | Supported Devices | Example Value
 ---------------------|------------------------------------------------------------------------------|-------------------|---------------------
@@ -26,7 +27,7 @@ and possible more options.
  fpga                | Provide alternative FPGA bitfile                                             | All USB Devices, X3x0 (PCIe only), E310, E1x0 | fpga=/path/to/bitfile.bit
  fw                  | Provide alternative firmware                                                 | All USB Devices, X3x0 | fw=/path/to/fw.bin
  ignore-cal-file     | Ignores existing device calibration files                                    | All Devices with cal-file support| See \ref ignore_cal_file
- master_clock_rate   | Master Clock Rate in Hz                                                      | X3x0, B2x0, B1x0, E3xx, E1x0, N3xx | master_clock_rate=16e6
+ master_clock_rate   | Master Clock Rate in Hz                                                      | X3x0, X4x0, B2x0, B1x0, E3xx, E1x0, N3xx | master_clock_rate=16e6
  dboard_clock_rate   | Daughterboard clock rate in Hz                                               | X3x0               | dboard_clock_rate=50e6
  system_ref_rate     | Frequency of external reference                                              | X3x0               | system_ref_rate=11.52e6
  mcr                 | Override master clock rate settings (see \ref usrp1_hw_extclk)               | USRP1              | mcr=52e6
@@ -36,6 +37,7 @@ and possible more options.
  ext_adc_self_test   | Run an extended ADC self test (more than the usual)                          | X3x0               | ext_adc_self_test=1
  recover_mb_eeprom   | Disable version checks. Can damage hardware. Only recommended for recovering devices with corrupted EEPROMs. | X3x0 | recover_mb_eeprom=1
  serialize_init      | Force serial initialization of motherboards (default is parallel)            | X3x0, all MPM devices | serialize_init=1
+ force_reinit        | Force reinitialization of device                                             | N3x0, X4x0         | force_reinit=1
 
 In addition, many of the streaming-related options can be set per-device at configuration time.
 See \ref config_stream_args and \ref page_transport for more details.
@@ -216,6 +218,12 @@ The following parameters are supported:
   to RFNoC enabled devices with a Replay block in the FPGA image) Adds data
   buffering in DRAM using the Replay block for TX streamers when using the
   multi_usrp API.
+- `throttle` Specify the throttle of the streamer in order to limit its rate.
+  This is for RFNoC-compatible devices starting in UHD 4.5. It is set as a
+  ratio in the range (0, 1] or a percentage in the range (0%, 100%]. For
+  example, use `100%` or `1.0` for maximum rate, and `50%` or `0.5` for half
+  the maximum rate. Note that other factors may affect the actual rate, such
+  as the rate of the source or the speed supported by the transport.
 
 \subsubsection config_stream_args_transport Transport-related Stream Arguments
 

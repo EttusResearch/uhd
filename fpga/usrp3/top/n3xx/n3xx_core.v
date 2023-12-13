@@ -36,6 +36,7 @@ module n3xx_core #(
   input         bus_rst,
   input         ddr3_dma_clk,
   input         clk40,
+  input         ce_clk,
 
   // Clocking and PPS Controls/Indicators
   input            pps,
@@ -211,7 +212,7 @@ module n3xx_core #(
   /////////////////////////////////////////////////////////////////////////////////
 
   localparam [15:0] COMPAT_MAJOR = 16'd8;
-  localparam [15:0] COMPAT_MINOR = 16'd1;
+  localparam [15:0] COMPAT_MINOR = 16'd2;
   /////////////////////////////////////////////////////////////////////////////////
 
   /////////////////////////////////////////////////////////////////////////////////
@@ -244,6 +245,7 @@ module n3xx_core #(
   localparam REG_FP_GPIO_MASTER    = REG_BASE_MISC + 14'h30;
   localparam REG_FP_GPIO_RADIO_SRC = REG_BASE_MISC + 14'h34;
   localparam REG_NUM_TIMEKEEPERS   = REG_BASE_MISC + 14'h48;
+  localparam REG_BUILD_SEED        = REG_BASE_MISC + 14'h4C;
 
   localparam NUM_TIMEKEEPERS = 1;
 
@@ -543,11 +545,12 @@ module n3xx_core #(
           REG_DATESTAMP:
             cp_glob_resp_data <= build_datestamp;
 
-          REG_GIT_HASH:
+          REG_GIT_HASH: begin
             `ifndef GIT_HASH
-            `define GIT_HASH 32'h0BADC0DE
+              `define GIT_HASH 32'h0BADC0DE
             `endif
             cp_glob_resp_data <= `GIT_HASH;
+          end
 
           REG_FP_GPIO_MASTER:
             cp_glob_resp_data <= fp_gpio_master_reg;
@@ -587,6 +590,13 @@ module n3xx_core #(
 
           REG_NUM_TIMEKEEPERS:
             cp_glob_resp_data <= NUM_TIMEKEEPERS;
+
+          REG_BUILD_SEED: begin
+            `ifndef BUILD_SEED
+              `define BUILD_SEED 32'b0
+            `endif
+            cp_glob_resp_data <= `BUILD_SEED;
+          end
 
           default: begin
             // Don't acknowledge if the address doesn't match
@@ -1100,7 +1110,8 @@ module n3xx_core #(
    .pps                   (pps),
    .tb_timestamp          (radio_time),
    .tb_timestamp_last_pps (),
-   .tb_period_ns_q32      ()
+   .tb_period_ns_q32      (),
+   .tb_changed            ()
   );
 
 
@@ -1128,6 +1139,7 @@ module n3xx_core #(
     .device_id               (device_id  ),
     .radio_clk               (radio_clk  ),
     .dram_clk                (ddr3_dma_clk),
+    .ce_clk                  (ce_clk),
     `ifndef N300
       .m_ctrlport_radio1_req_wr       (m_ctrlport_req_wr_radio1      ),
       .m_ctrlport_radio1_req_rd       (m_ctrlport_req_rd_radio1      ),

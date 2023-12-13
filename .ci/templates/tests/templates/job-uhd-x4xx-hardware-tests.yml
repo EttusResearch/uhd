@@ -15,6 +15,9 @@ parameters:
   type: boolean
 - name: runDevTest
   type: boolean
+- name: master_clock_rate
+  type: string
+  default: ''
 - name: dutMatrix
   type: object
 - name: uhdArtifactSource
@@ -22,6 +25,12 @@ parameters:
   default: current
 - name: xilinxLocation
   type: string
+- name: extra_rf_test_args
+  type: string
+  default: ''
+- name: testLength
+  type: string
+  default: 'smoke'
 
 jobs:
 - job: x4xx_hardware_test_${{ parameters.suiteName }}
@@ -137,15 +146,20 @@ jobs:
   - script: |
         ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
         ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "uhd_image_loader --args addr=localhost,type=$(dutType),fpga=$(dutFPGA)"
+        EXITCODE=$?
         sleep 60
+        exit $EXITCODE
     displayName: Flash FPGA $(dutFPGA)
 
+  # When MPM reboots, the sfp0 address is reset to default
+  # Since rebooting MPM was added for clocking re-config we need
+  # to change sfp0 default on the device
   - script: |
       source $USRP_EMB_VENV/bin/activate
       ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
-      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ip link set sfp0 down"
-      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ip addr add $(sfp0ip)/24 dev sfp0"
-      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ip link set sfp0 up"
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "sed -i 's/192.168.10.2/$(sfp0ip)/g' /data/network/sfp0.network"
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "reboot"
+      sleep 140
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ifconfig sfp0"
     displayName: Set sfp0 IP
     condition: and(succeeded(), ${{ parameters.runPyTest }})
@@ -158,7 +172,9 @@ jobs:
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "rm -rf ~/usrp_sysimg_test && mkdir -p ~/usrp_sysimg_test"
       scp -o StrictHostKeyChecking=no -r $(Build.SourcesDirectory)/meta-ettus-dev/contrib/test/tests root@$USRP_EMB_TARGET_IP:~/usrp_sysimg_test
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "pip3 install unittest-xml-reporting && cd ~/usrp_sysimg_test/tests && python3 -m xmlrunner discover . -v"
+      EXITCODE=$?
       scp -o StrictHostKeyChecking=no -r root@$USRP_EMB_TARGET_IP:~/usrp_sysimg_test .
+      exit $EXITCODE
     displayName: Run system image embedded subsystems tests
     continueOnError: true
     condition: and(succeeded(), ${{ parameters.runSystemImageTest }})
@@ -169,16 +185,24 @@ jobs:
       ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "rm -rf ~/mpm_test_run && mkdir -p ~/mpm_test_run"
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "cd ~/mpm_test_run && python3 /usr/lib/usrp_mpm/tests/run_unit_tests.py -x x4xx"
+      EXITCODE=$?
       scp -o StrictHostKeyChecking=no -r root@$USRP_EMB_TARGET_IP:~/mpm_test_run .
+      exit $EXITCODE
     displayName: Run MPM unit tests
     continueOnError: true
 
   - script: |
       mkdir -p $(Common.TestResultsDirectory)/devtest
       cd $(Common.TestResultsDirectory)/devtest
+      if [ -z "$(master_clock_rate)" ]; then
+        args="addr=$USRP_EMB_TARGET_IP,type=$(dutType)"
+      else
+        args="addr=$USRP_EMB_TARGET_IP,type=$(dutType),master_clock_rate=$(master_clock_rate)"
+      fi
+      echo $args
       python3 $(Build.SourcesDirectory)/uhddev/host/tests/devtest/run_testsuite.py \
         --src-dir $(Build.SourcesDirectory)/uhddev/host/tests/devtest \
-        --devtest-pattern $(devtestPattern) --args addr=$USRP_EMB_TARGET_IP,type=$(dutType) \
+        --devtest-pattern $(devtestPattern) --args $args \
         --build-dir $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev/build \
         --build-type Release --python-interp python3 --xml
     displayName: Run devtest
@@ -223,7 +247,7 @@ jobs:
 
       cd $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests
       uhd_find_devices --args type=$(dutType)
-      python3 automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) --results_path '$(Common.TestResultsDirectory)/pytest/host'
+      python3 automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) --results_path '$(Common.TestResultsDirectory)/pytest/host' --test_length ${{ parameters.testLength }} ${{ parameters.extra_rf_test_args }}
     displayName: Run pytest on host
     continueOnError: true
     condition: and(succeeded(), ${{ parameters.runPyTest }})
@@ -236,7 +260,9 @@ jobs:
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "rm -rf ~/usrp_pytest && mkdir -p ~/usrp_pytest"
       scp -o StrictHostKeyChecking=no -r $(Build.SourcesDirectory)/ettus-rts/config/remote/ root@$USRP_EMB_TARGET_IP:~/usrp_pytest
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "cd ~/usrp_pytest/remote/python_tests && python3 automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) --test_selector pytests/test_gnuradio_sanity.py --run_embedded"
+      EXITCODE=$?
       scp -o StrictHostKeyChecking=no -r root@$USRP_EMB_TARGET_IP:~/usrp_pytest .
+      exit $EXITCODE
     displayName: Run pytest on embedded
     continueOnError: true
     condition: and(succeeded(), ${{ parameters.runPyTest }})

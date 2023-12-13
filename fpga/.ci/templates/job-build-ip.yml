@@ -28,12 +28,18 @@ parameters:
 - name: clean_build
   type: boolean
   default: false
+# Number of parallel jobs to use for IP build
+- name: num_jobs
+  type: number
+  default: 5
 
 jobs:
 - job: ${{ parameters.ip_target }}
   displayName: 'Build ${{ parameters.ip_target }}'
   pool:
     name: Hardware
+    demands:
+    - MAX_CPU -equals 4
   timeoutInMinutes: 240
   variables:
   - group: sdr-pipeline-vars
@@ -89,7 +95,7 @@ jobs:
 
     - bash: |
         source $(Build.SourcesDirectory)/uhddev/fpga/.ci/scripts/run_setup.sh ./
-        make ${{ parameters.ip_target }}
+        make -j ${{ parameters.num_jobs }} ${{ parameters.ip_target }}
         mkdir -p build-ip/.ci/
         git rev-parse --verify HEAD 2>/dev/null 1>build-ip/.ci/build-hash
       workingDirectory: ${{ parameters.directory }}

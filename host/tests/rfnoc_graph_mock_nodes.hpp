@@ -39,7 +39,7 @@ public:
         // always reset the rate back to the TX rate.
         add_property_resolver({&_samp_rate_in},
             {&_samp_rate_in},
-            [& samp_rate_in        = _samp_rate_in,
+            [&samp_rate_in         = _samp_rate_in,
                 &master_clock_rate = _master_clock_rate,
                 this]() {
                 UHD_LOG_INFO(get_unique_id(), " Calling resolver for `samp_rate_in'...");
@@ -179,7 +179,7 @@ public:
         // keep the input rate constant, and re-calculate the output rate.
         add_property_resolver({&_decim},
             {&_decim, &_samp_rate_out},
-            [& decim           = _decim,
+            [&decim            = _decim,
                 &samp_rate_out = _samp_rate_out,
                 &samp_rate_in  = _samp_rate_in]() {
                 UHD_LOG_INFO("MOCK DDC", "Calling resolver for `decim'...");
@@ -191,7 +191,7 @@ public:
         // output rate is modified.
         add_property_resolver({&_samp_rate_in},
             {&_decim, &_samp_rate_out},
-            [& decim           = _decim,
+            [&decim            = _decim,
                 &samp_rate_out = _samp_rate_out,
                 &samp_rate_in  = _samp_rate_in]() {
                 UHD_LOG_INFO("MOCK DDC", "Calling resolver for `samp_rate_in'...");
@@ -201,7 +201,7 @@ public:
         // Resolver for the output rate: Like the previous one, but flipped.
         add_property_resolver({&_samp_rate_out},
             {&_decim, &_samp_rate_in},
-            [& decim           = _decim,
+            [&decim            = _decim,
                 &samp_rate_out = _samp_rate_out,
                 &samp_rate_in  = _samp_rate_in]() {
                 UHD_LOG_INFO("MOCK DDC", "Calling resolver for `samp_rate_out'...");

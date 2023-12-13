@@ -8,8 +8,9 @@ Miscellaneous utilities for MPM
 """
 
 import time
-import pyudev
+from functools import partial
 from contextlib import contextmanager
+import pyudev
 
 def poll_with_timeout(state_check, timeout_ms, interval_ms):
     """
@@ -213,6 +214,7 @@ def check_fpga_state(which=0, logger=None):
             logger.error("Error while checking FPGA status: {}".format(ex))
         return False
 
+
 def parse_encoded_git_hash(encoded):
     """
     Turn a register-encoded git hash into a readable git hash.
@@ -224,3 +226,104 @@ def parse_encoded_git_hash(encoded):
     tree_dirty = ((encoded & 0xF0000000) > 0)
     dirtiness_qualifier = 'dirty' if tree_dirty else 'clean'
     return (git_hash, dirtiness_qualifier)
+
+
+def parse_multi_device_arg(arg, conv=None, delim=";"):
+    """
+    In device args, there may be values that can either be scalar or a vector.
+    They are listed as one of these:
+    - key=val
+    - key=[val0;val1]
+    - key=[val0]
+
+    This function takes the string representation of val and returns a tuple
+    of values.
+
+    :param arg: The argument value as a string
+    :param conv: An optional converter function. This will be applied to all
+                 individual elements.
+    :param delim: The delimiter
+
+    Example:
+    >>> parse_multi_device_arg('[1;2;3]', float)
+    (1.0, 2.0, 3.0)
+    >>> parse_multi_device_arg('1', float)
+    (1.0,)
+    >>> parse_multi_device_arg('[1;2;3]')
+    ('1', '2', '3')
+    >>> parse_multi_device_arg('')
+    ()
+    """
+    if conv is None:
+        conv = lambda x: x
+    arg = str(arg).strip()
+    if not arg: # Handle empty string
+        return tuple()
+
+    if ((arg[0], arg[-1]) == ('{', '}') or \
+            (arg[0], arg[-1]) == ('[', ']') or \
+            (arg[0], arg[-1]) == ('(', ')')):
+        arg = arg[1:-1]
+    arg = arg.split(delim)
+    return tuple(conv(x) for x in arg)
+
+def get_dboard_class_from_pid(pid):
+    """
+    Given a PID, return a dboard class initializer callable.
+    """
+    from usrp_mpm import dboard_manager
+    for member in dboard_manager.__dict__.values():
+        try:
+            if issubclass(member, dboard_manager.DboardManagerBase) and \
+                    hasattr(member, 'pids') and \
+                    pid in member.pids:
+                return member
+        except (TypeError, AttributeError):
+            continue
+    return None
+
+# pylint: disable=too-few-public-methods
+class LogWrapper:
+    """
+    This is a class that can be wrapped around any other class. It will log any
+    calls to this class, including call arguments, return value, and execution
+    time.
+    """
+    def __init__(self, logger, level, wrap_class):
+        self.logger = logger
+        self.log = getattr(self.logger, level)
+        self._wc = wrap_class
+        for attr_name in dir(self._wc):
+            attr = getattr(self._wc, attr_name)
+            if not callable(attr):
+                continue
+            def new_method(name, *args, **kwargs):
+                args_str = ', '.join(str(x) for x in args)
+                if kwargs:
+                    if args_str:
+                        args_str += ','
+                    args_str += ','.join([f' {k}={v}' for k, v in kwargs.items()])
+                self.log(f"{name}({args_str.strip()})")
+                start_time = time.monotonic()
+                ret_val = getattr(self._wc, name)(*args, **kwargs)
+                stop_time = time.monotonic()
+                self.log(f"--> {ret_val} [Execution time: {(stop_time-start_time)*1e3:.3f} ms]")
+                return ret_val
+            setattr(self, attr_name, partial(new_method, attr_name))
+
+    def __getattr__(self, k):
+        """
+        Catch-all getattr: We forward that to the wrapped class.
+        """
+        return getattr(self._wc, k)
+# pylint: enable=too-few-public-methods
+
+
+class LogRuntimeError(RuntimeError):
+    """
+    Custom version of RuntimeError that also prints the exception message to
+    a logger.
+    """
+    def __init__(self, log, message):
+        log.error(message)
+        super().__init__(message)

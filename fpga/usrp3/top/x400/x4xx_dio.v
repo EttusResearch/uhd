@@ -519,7 +519,7 @@ endmodule
 //      read the GPIO lines as master. The following diagram shows how source
 //      selection multiplexers are arranged, as well as an indicator for the
 //      register that control them. </br>
-//      <img src = "..\..\..\..\..\host\docs\res\x4xx_dio_source_muxes.svg"
+//      <img src = "..\..\..\..\..\..\host\docs\res\x4xx_dio_source_muxes.svg"
 //          alt="Front-Panel Programmable GPIOs"/></br>
 //      Make sure the GPIO lines between FPGA and GPIO board are not driven by
 //      two drivers. Set the DIO registers in @.PS_CPLD_BASE_REGMAP appropriately.

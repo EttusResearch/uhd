@@ -39,22 +39,20 @@ public:
     replay_mock_reg_iface_t(size_t mem_addr_size, size_t word_size, size_t num_channels)
     {
         for (size_t chan = 0; chan < num_channels; chan++) {
-            const uint32_t base = chan * replay_block_control::REPLAY_BLOCK_OFFSET;
-            const uint32_t reg_compat = base +
-                replay_block_control::REG_COMPAT_ADDR;
-            const uint32_t reg_mem_size = base +
-                replay_block_control::REG_MEM_SIZE_ADDR;
-            const uint32_t reg_rec_fullness = base +
-                replay_block_control::REG_REC_FULLNESS_LO_ADDR;
-            const uint32_t reg_rec_position = base +
-                replay_block_control::REG_REC_POS_LO_ADDR;
-            const uint32_t reg_play_position = base +
-                replay_block_control::REG_PLAY_POS_LO_ADDR;
-            const uint32_t reg_play_fifo_space = base +
-                replay_block_control::REG_PLAY_CMD_FIFO_SPACE_ADDR;
-            read_memory[reg_compat] = (replay_block_control::MINOR_COMPAT
+            const uint32_t base       = chan * replay_block_control::REPLAY_BLOCK_OFFSET;
+            const uint32_t reg_compat = base + replay_block_control::REG_COMPAT_ADDR;
+            const uint32_t reg_mem_size = base + replay_block_control::REG_MEM_SIZE_ADDR;
+            const uint32_t reg_rec_fullness =
+                base + replay_block_control::REG_REC_FULLNESS_LO_ADDR;
+            const uint32_t reg_rec_position =
+                base + replay_block_control::REG_REC_POS_LO_ADDR;
+            const uint32_t reg_play_position =
+                base + replay_block_control::REG_PLAY_POS_LO_ADDR;
+            const uint32_t reg_play_fifo_space =
+                base + replay_block_control::REG_PLAY_CMD_FIFO_SPACE_ADDR;
+            read_memory[reg_compat]            = (replay_block_control::MINOR_COMPAT
                                        | (replay_block_control::MAJOR_COMPAT << 16));
-            read_memory[reg_mem_size] = (mem_addr_size | (word_size << 16));
+            read_memory[reg_mem_size]          = (mem_addr_size | (word_size << 16));
             read_memory[reg_rec_fullness]      = 0x0010;
             read_memory[reg_rec_fullness + 4]  = 0x0000;
             read_memory[reg_rec_position]      = 0xBEEF;
@@ -73,7 +71,8 @@ public:
  * case. The instance of the object is destroyed at the end of each test
  * case.
  */
-constexpr size_t DEFAULT_MTU = 8000;
+constexpr size_t DEFAULT_MTU  = 8000;
+constexpr size_t DEFAULT_MULT = 64;
 
 struct replay_block_fixture
 {
@@ -164,8 +163,9 @@ BOOST_FIXTURE_TEST_CASE(replay_test_construction, replay_block_fixture)
             (max_buffer_size >> 32) & 0xFFFFFFFF);
         BOOST_CHECK_EQUAL(reg_iface->write_memory[reg_play_base_addr], 0);
         BOOST_CHECK_EQUAL(reg_iface->write_memory[reg_play_base_addr + 4], 0);
+        const uint32_t max_payload_size = DEFAULT_MTU - test_replay->get_chdr_hdr_len();
         BOOST_CHECK_EQUAL(reg_iface->write_memory[reg_words_per_pkt],
-            (DEFAULT_MTU - test_replay->get_chdr_hdr_len()) / word_size);
+            (max_payload_size - (max_payload_size % DEFAULT_MULT)) / word_size);
         BOOST_CHECK_EQUAL(reg_iface->write_memory[reg_play_item_size], default_item_size);
     }
 }
@@ -297,8 +297,9 @@ BOOST_FIXTURE_TEST_CASE(replay_test_record_position, replay_block_fixture)
     for (size_t port = 0; port < num_input_ports; port++) {
         const uint32_t reg_rec_position =
             get_addr(replay_block_control::REG_REC_POS_LO_ADDR, port);
-        uint64_t rec_pos = reg_iface->read_memory[reg_rec_position] |
-            (uint64_t(reg_iface->read_memory[reg_rec_position + 4]) << 32);
+        uint64_t rec_pos =
+            reg_iface->read_memory[reg_rec_position]
+            | (uint64_t(reg_iface->read_memory[reg_rec_position + 4]) << 32);
         BOOST_CHECK_EQUAL(test_replay->get_record_position(port), rec_pos);
     }
 }
@@ -383,9 +384,10 @@ BOOST_FIXTURE_TEST_CASE(replay_test_packet_size, replay_block_fixture)
     for (size_t port = 0; port < num_output_ports; port++) {
         // Test the defaults
         const uint32_t item_size = test_replay->get_play_item_size(port);
+        const uint32_t max_payload_size =
+            test_replay->get_max_payload_size({res_source_info::OUTPUT_EDGE, port});
         const uint32_t expected_ipp =
-            test_replay->get_max_payload_size({res_source_info::OUTPUT_EDGE, port})
-            / item_size;
+            (max_payload_size - (max_payload_size % DEFAULT_MULT)) / item_size;
         BOOST_CHECK_EQUAL(test_replay->get_max_items_per_packet(port), expected_ipp);
         const uint32_t default_packet_size =
             expected_ipp * item_size + test_replay->get_chdr_hdr_len();
@@ -494,10 +496,11 @@ BOOST_FIXTURE_TEST_CASE(replay_test_issue_stream_cmd, replay_block_fixture)
         cmd_finite.num_samps     = num_words * word_size / 4;
         test_replay->issue_stream_cmd(cmd_finite, port);
 
+        const uint32_t cmd_no_eob_mask = 1 << 30;
         const uint32_t reg_stream_cmd =
             get_addr(replay_block_control::REG_PLAY_CMD_ADDR, port);
         BOOST_CHECK_EQUAL(reg_iface->write_memory[reg_stream_cmd],
-            replay_block_control::PLAY_CMD_FINITE);
+            replay_block_control::PLAY_CMD_FINITE | cmd_no_eob_mask);
         // PLAY_CMD_FINITE writes the number of words to hardware
         const uint32_t reg_num_words =
             get_addr(replay_block_control::REG_PLAY_CMD_NUM_WORDS_LO_ADDR, port);
@@ -571,11 +574,12 @@ BOOST_FIXTURE_TEST_CASE(replay_test_issue_stream_cmd_timed, replay_block_fixture
         cmd_finite.stream_now    = false;
         test_replay->issue_stream_cmd(cmd_finite, port);
 
-        const uint32_t cmd_time_mask = 1 << 31;
+        const uint32_t cmd_time_mask   = 1 << 31;
+        const uint32_t cmd_no_eob_mask = 1 << 30;
         const uint32_t reg_stream_cmd =
             get_addr(replay_block_control::REG_PLAY_CMD_ADDR, port);
         BOOST_CHECK_EQUAL(reg_iface->write_memory[reg_stream_cmd],
-            replay_block_control::PLAY_CMD_FINITE | cmd_time_mask);
+            replay_block_control::PLAY_CMD_FINITE | cmd_time_mask | cmd_no_eob_mask);
         // PLAY_CMD_FINITE writes the number of words to hardware
         const uint32_t reg_num_words =
             get_addr(replay_block_control::REG_PLAY_CMD_NUM_WORDS_LO_ADDR, port);
@@ -757,8 +761,9 @@ BOOST_FIXTURE_TEST_CASE(replay_test_play_position, replay_block_fixture)
     for (size_t port = 0; port < num_input_ports; port++) {
         const uint32_t reg_play_position =
             get_addr(replay_block_control::REG_PLAY_POS_LO_ADDR, port);
-        uint64_t play_pos = reg_iface->read_memory[reg_play_position] |
-            (uint64_t(reg_iface->read_memory[reg_play_position + 4]) << 32);
+        uint64_t play_pos =
+            reg_iface->read_memory[reg_play_position]
+            | (uint64_t(reg_iface->read_memory[reg_play_position + 4]) << 32);
         BOOST_CHECK_EQUAL(test_replay->get_play_position(port), play_pos);
     }
 }

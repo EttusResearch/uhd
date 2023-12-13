@@ -35,6 +35,7 @@ include $(LIB_DIR)/dsp/Makefile.srcs
 include $(LIB_DIR)/ip/Makefile.inc
 include $(LIB_DIR)/rfnoc/Makefile.srcs
 include $(LIB_DIR)/wb_spi/Makefile.srcs
+include $(LIB_DIR)/wishbone/Makefile.srcs
 include $(LIB_DIR)/axi4_sv/Makefile.srcs
 include $(LIB_DIR)/axi4s_sv/Makefile.srcs
 include $(LIB_DIR)/axi4lite_sv/Makefile.srcs
@@ -54,7 +55,7 @@ include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_replay/Makefile.srcs
 # pass in the RFNOC_OOT_MAKEFILE_SRCS as a list of Makefile.srcs files.
 # Those files need to amend the RFNOC_OOT_SRCS variable with a list of actual
 # source files.
-include $(RFNOC_OOT_MAKEFILE_SRCS)
+-include $(RFNOC_OOT_MAKEFILE_SRCS)
 
 IMAGE_CORE ?= $(DEFAULT_RFNOC_IMAGE_CORE_FILE)
 EDGE_FILE ?= $(DEFAULT_EDGE_FILE)
@@ -62,10 +63,7 @@ EDGE_FILE ?= $(DEFAULT_EDGE_FILE)
 ##################################################
 # Sources
 ##################################################
-TOP_SRCS =
-
-ifdef X410
-TOP_SRCS += \
+TOP_SRCS = \
 x4xx.v \
 x4xx_qsfp_wrapper_temp.sv \
 x4xx_qsfp_wrapper.sv \
@@ -78,12 +76,6 @@ x4xx_dio.v \
 x4xx_gpio_atr.v \
 x4xx_gpio_spi.v \
 x4xx_dram.v \
-rf/100m/rf_core_100m.v \
-rf/200m/rf_core_200m.v \
-rf/200m/rf_down_4to2.v \
-rf/200m/rf_up_2to4.v \
-rf/400m/rf_core_400m.v \
-rf/common/rf_reset_controller.vhd \
 ctrlport_spi_master.v \
 cpld_interface.v \
 cpld_interface_regs.v \
@@ -92,19 +84,72 @@ rfdc_timing_control.v \
 x4xx_pps_sync.v \
 ../../lib/timing/pps_generator.v \
 dboards/ctrlport_byte_serializer.v \
-dboards/db_gpio_interface.v \
+dboards/ctrlport_clk_crossing_derived.v \
 dboards/db_gpio_reordering.v \
 ipass_present_controller.v \
 $(IMAGE_CORE)
+
+ifdef X410
+TOP_SRCS += \
+rf/100m/rf_core_100m.v \
+rf/200m/rf_core_200m.v \
+rf/200m/rf_down_4to2.v \
+rf/200m/rf_up_2to4.v \
+rf/400m/rf_core_400m.v \
+rf/x410/x410_rf_reset_controller.vhd \
+dboards/zbx/db_gpio_interface.v
 endif
 
-MB_XDC = \
+ifdef X440
+TOP_SRCS += \
+rf/100m/rf_core_100m.v \
+rf/full/rf_core_full.v \
+rf/x440/x440_rf_reset_controller.vhd \
+dboards/fbx/db_gpio_interface.v \
+dboards/fbx/ctrlport_to_i2c_sync_ctrl.v \
+dboards/fbx/led_atr_control.v \
+dboards/fbx/clock_en_control.v \
+dboards/fbx/rf_atr_control.v
+endif
+
+ifdef X410
+MB_XDC += \
+constraints/timing/x410_clocks.xdc
+endif
+
+ifdef X440
+ifeq ($(RF_BW), 400)
+MB_XDC += \
+constraints/timing/x440_clocks_400.xdc
+endif
+ifeq ($(RF_BW), 1600)
+MB_XDC += \
+constraints/timing/x440_clocks_1600.xdc
+endif
+MB_XDC += \
+constraints/timing/x440_clocks.xdc
+endif
+
+MB_XDC += \
 constraints/pins/common.xdc \
-constraints/pins/rfdc_2x2.xdc \
 constraints/timing/shared_constants.sdc \
 constraints/timing/common.xdc \
 constraints/pins/dram.xdc \
 constraints/timing/dram.xdc
+
+ifdef X410
+MB_XDC += \
+constraints/pins/rfdc_2x2.xdc \
+constraints/pins/x410/db_gpio.xdc \
+constraints/timing/x410.xdc
+endif
+
+ifdef X440
+MB_XDC += \
+constraints/pins/rfdc_4x4.xdc \
+constraints/pins/x440/db_gpio.xdc \
+constraints/timing/x440.xdc
+endif
 
 # Definitions
 # MGT Types from x4xx_mgt_type.vh
@@ -145,9 +190,7 @@ ifneq (,$(findstring QSFP1_3,$(EXTRA_DEFS)))
   MB_XDC += constraints/pins/qsfp1_3.xdc
 endif
 
-ifdef X410
 DESIGN_SRCS = $(abspath $(MB_XDC))
-endif
 
 # The XDC files must be read in a specific order, motherboard first and then daughterboard.
 # Outside of that, all the other sources can be read in any order desired.

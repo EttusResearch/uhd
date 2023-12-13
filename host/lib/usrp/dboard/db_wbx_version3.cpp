@@ -228,9 +228,9 @@ double wbx_base::wbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
     property_tree::sptr subtree = (unit == dboard_iface::UNIT_RX)
                                       ? self_base->get_rx_subtree()
                                       : self_base->get_tx_subtree();
-    device_addr_t tune_args = subtree->access<device_addr_t>("tune_args").get();
-    bool is_int_n           = boost::iequals(tune_args.get("mode_n", ""), "integer");
-    double reference_freq   = self_base->get_iface()->get_clock_rate(unit);
+    device_addr_t tune_args     = subtree->access<device_addr_t>("tune_args").get();
+    bool is_int_n               = boost::iequals(tune_args.get("mode_n", ""), "integer");
+    double reference_freq       = self_base->get_iface()->get_clock_rate(unit);
 
     // Select the LO
     adf435x_iface::sptr& lo_iface = unit == dboard_iface::UNIT_RX ? _rxlo : _txlo;

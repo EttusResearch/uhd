@@ -47,6 +47,7 @@ include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_radio/Makefile.srcs
 include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_ddc/Makefile.srcs
 include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_duc/Makefile.srcs
 include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_replay/Makefile.srcs
+
 # If out-of-tree modules want to be compiled into this image, then they need to
 # pass in the RFNOC_OOT_MAKEFILE_SRCS as a list of Makefile.srcs files.
 # Those files need to amend the RFNOC_OOT_SRCS variable with a list of actual

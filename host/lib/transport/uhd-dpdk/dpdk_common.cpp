@@ -93,8 +93,13 @@ dpdk_port::dpdk_port(port_id_t port,
     /* Set hardware offloads */
     struct rte_eth_dev_info dev_info;
     rte_eth_dev_info_get(_port, &dev_info);
-    uint64_t rx_offloads = DEV_RX_OFFLOAD_IPV4_CKSUM;
-    uint64_t tx_offloads = DEV_TX_OFFLOAD_IPV4_CKSUM;
+#ifdef RTE_ETH_RX_OFFLOAD_IPV4_CKSUM
+    uint64_t rx_offloads = RTE_ETH_RX_OFFLOAD_IPV4_CKSUM;
+    uint64_t tx_offloads = RTE_ETH_TX_OFFLOAD_IPV4_CKSUM;
+#else
+    uint64_t rx_offloads            = DEV_RX_OFFLOAD_IPV4_CKSUM;
+    uint64_t tx_offloads            = DEV_TX_OFFLOAD_IPV4_CKSUM;
+#endif
     if ((dev_info.rx_offload_capa & rx_offloads) != rx_offloads) {
         UHD_LOGGER_ERROR("DPDK") << boost::format("%d: Only supports RX offloads 0x%0llx")
                                         % _port % dev_info.rx_offload_capa;
@@ -192,7 +197,11 @@ dpdk_port::dpdk_port(port_id_t port,
         }
 
         struct rte_eth_txconf txconf = dev_info.default_txconf;
-        txconf.offloads              = DEV_TX_OFFLOAD_IPV4_CKSUM;
+#ifdef RTE_ETH_TX_OFFLOAD_IPV4_CKSUM
+        txconf.offloads = RTE_ETH_TX_OFFLOAD_IPV4_CKSUM;
+#else
+        txconf.offloads = DEV_TX_OFFLOAD_IPV4_CKSUM;
+#endif
         retval = rte_eth_tx_queue_setup(_port, i, tx_desc, cpu_socket, &txconf);
         if (retval < 0) {
             UHD_LOGGER_ERROR("DPDK")
@@ -365,12 +374,31 @@ void dpdk_ctx::_eal_init(const device_addr_t& eal_args)
             opt = eal_add_opt(argv, end - opt, opt, "-l", val.c_str());
         } else if (key == "dpdk_coremap") {
             opt = eal_add_opt(argv, end - opt, opt, "--lcores", val.c_str());
-        } else if (key == "dpdk_master_lcore") {
+        } else if (key == "dpdk_master_lcore" || key == "dpdk_main_lcore") {
+#if RTE_VER_YEAR > 21 || (RTE_VER_YEAR == 21 && RTE_VER_MONTH >= 11)
+            opt = eal_add_opt(argv, end - opt, opt, "--main-lcore", val.c_str());
+#else
             opt = eal_add_opt(argv, end - opt, opt, "--master-lcore", val.c_str());
-        } else if (key == "dpdk_pci_blacklist") {
-            opt = eal_add_opt(argv, end - opt, opt, "-b", val.c_str());
-        } else if (key == "dpdk_pci_whitelist") {
+#endif
+        } else if (key == "dpdk_pci_blacklist" || key == "dpdk_pci_blocklist") {
+            std::stringstream ss(val);
+            while (ss.good()) {
+                std::string entry;
+                getline(ss, entry, ',');
+                opt = eal_add_opt(argv, end - opt, opt, "-b", entry.c_str());
+            }
+        } else if (key == "dpdk_pci_whitelist" || key == "dpdk_pci_allowlist") {
             opt = eal_add_opt(argv, end - opt, opt, "-w", val.c_str());
+            std::stringstream ss(val);
+            while (ss.good()) {
+                std::string entry;
+                getline(ss, entry, ',');
+#if RTE_VER_YEAR > 21 || (RTE_VER_YEAR == 21 && RTE_VER_MONTH >= 11)
+                opt = eal_add_opt(argv, end - opt, opt, "-a", entry.c_str());
+#else
+                opt = eal_add_opt(argv, end - opt, opt, "-w", entry.c_str());
+#endif
+            }
         } else if (key == "dpdk_log_level") {
             opt = eal_add_opt(argv, end - opt, opt, "--log-level", val.c_str());
         } else if (key == "dpdk_huge_dir") {

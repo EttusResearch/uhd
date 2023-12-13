@@ -30,11 +30,6 @@ module cpld_interface (
   // Reset (domain: pll_ref_clk)
   input  wire        ctrlport_rst,
 
-  // Timestamp (domain: radio_clk)
-  input  wire [63:0] radio_time,
-  input  wire        radio_time_stb,
-  input  wire [ 3:0] time_ignore_bits,
-
   // AXI4-Lite: Write address port (domain: s_axi_aclk)
   input  wire [16:0] s_axi_awaddr,
   input  wire        s_axi_awvalid,
@@ -64,8 +59,6 @@ module cpld_interface (
   input  wire [19:0] s_ctrlport_req_addr,
   input  wire [31:0] s_ctrlport_req_data,
   input  wire [ 3:0] s_ctrlport_req_byte_en,
-  input  wire        s_ctrlport_req_has_time,
-  input  wire [63:0] s_ctrlport_req_time,
   output wire        s_ctrlport_resp_ack,
   output wire [ 1:0] s_ctrlport_resp_status,
   output wire [31:0] s_ctrlport_resp_data,
@@ -91,7 +84,12 @@ module cpld_interface (
 
   `include "../../lib/rfnoc/core/ctrlport.vh"
   `include "regmap/pl_cpld_regmap_utils.vh"
-  `include "cpld/regmap/mb_cpld_pl_regmap_utils.vh"
+  // Variant-dependent register map.
+  `ifdef X440
+    `include "cpld/regmap/x440/mb_cpld_pl_regmap_utils.vh"
+  `else // Use X410 as the default variant for regmap.
+    `include "cpld/regmap/x410/mb_cpld_pl_regmap_utils.vh"
+  `endif
   `include "cpld/regmap/pl_cpld_base_regmap_utils.vh"
 
   //---------------------------------------------------------------------------
@@ -104,28 +102,6 @@ module cpld_interface (
   assign ctrlport_clk = pll_ref_clk;
 
   //---------------------------------------------------------------------------
-  // Timestamp synchronization
-  //---------------------------------------------------------------------------
-
-  reg  [ 3:0] radio_time_stb_shift_reg;
-  wire        radio_time_stb_prc;
-  reg  [63:0] radio_time_prc;
-
-  // radio_clk and pll_ref_clk are synchronous clocks with an integer
-  // multiplier <= 4.
-  //
-  // A simple register can be used to capture the latest timestamp the strobe
-  // pulse is preserved for up to 4 clock cycles and used in pll_ref_clk domain
-  // to driver timers.
-  always @(posedge radio_clk) begin
-    radio_time_stb_shift_reg <= {radio_time_stb_shift_reg[2:0], radio_time_stb};
-    if (radio_time_stb) begin
-      radio_time_prc <= radio_time;
-    end
-  end
-  assign radio_time_stb_prc = | radio_time_stb_shift_reg;
-
-  //---------------------------------------------------------------------------
   // MPM Endpoint connection
   //---------------------------------------------------------------------------
   // Translate AXI lite to control port.
@@ -134,12 +110,10 @@ module cpld_interface (
   wire [19:0] mpm_endpoint_ctrlport_axi_clk_req_addr;
   wire [ 3:0] mpm_endpoint_ctrlport_axi_clk_req_byte_en;
   wire [31:0] mpm_endpoint_ctrlport_axi_clk_req_data;
-  wire        mpm_endpoint_ctrlport_axi_clk_req_has_time;
   wire [ 9:0] mpm_endpoint_ctrlport_axi_clk_req_portid;
   wire        mpm_endpoint_ctrlport_axi_clk_req_rd;
   wire [15:0] mpm_endpoint_ctrlport_axi_clk_req_rem_epid;
   wire [ 9:0] mpm_endpoint_ctrlport_axi_clk_req_rem_portid;
-  wire [63:0] mpm_endpoint_ctrlport_axi_clk_req_time;
   wire        mpm_endpoint_ctrlport_axi_clk_req_wr;
   wire        mpm_endpoint_ctrlport_axi_clk_resp_ack;
   wire [31:0] mpm_endpoint_ctrlport_axi_clk_resp_data;
@@ -177,8 +151,8 @@ module cpld_interface (
     .m_ctrlport_req_rem_portid (mpm_endpoint_ctrlport_axi_clk_req_rem_portid),
     .m_ctrlport_req_data       (mpm_endpoint_ctrlport_axi_clk_req_data),
     .m_ctrlport_req_byte_en    (mpm_endpoint_ctrlport_axi_clk_req_byte_en),
-    .m_ctrlport_req_has_time   (mpm_endpoint_ctrlport_axi_clk_req_has_time),
-    .m_ctrlport_req_time       (mpm_endpoint_ctrlport_axi_clk_req_time),
+    .m_ctrlport_req_has_time   (),
+    .m_ctrlport_req_time       (),
     .m_ctrlport_resp_ack       (mpm_endpoint_ctrlport_axi_clk_resp_ack),
     .m_ctrlport_resp_status    (mpm_endpoint_ctrlport_axi_clk_resp_status),
     .m_ctrlport_resp_data      (mpm_endpoint_ctrlport_axi_clk_resp_data)
@@ -186,16 +160,14 @@ module cpld_interface (
 
   // Transfer AXI clock based MPM endpoint control port request to pll_ref_clk
   // domain.
-  wire [19:0] mpm_endpoint_ctrlport_pll_clk_req_addr;
-  wire [ 3:0] mpm_endpoint_ctrlport_pll_clk_req_byte_en;
-  wire [31:0] mpm_endpoint_ctrlport_pll_clk_req_data;
-  wire        mpm_endpoint_ctrlport_pll_clk_req_has_time;
-  wire        mpm_endpoint_ctrlport_pll_clk_req_rd;
-  wire [63:0] mpm_endpoint_ctrlport_pll_clk_req_time;
-  wire        mpm_endpoint_ctrlport_pll_clk_req_wr;
-  wire        mpm_endpoint_ctrlport_pll_clk_resp_ack;
-  wire [31:0] mpm_endpoint_ctrlport_pll_clk_resp_data;
-  wire [ 1:0] mpm_endpoint_ctrlport_pll_clk_resp_status;
+  wire [19:0] mpm_endpoint_ctrlport_req_addr;
+  wire [ 3:0] mpm_endpoint_ctrlport_req_byte_en;
+  wire [31:0] mpm_endpoint_ctrlport_req_data;
+  wire        mpm_endpoint_ctrlport_req_rd;
+  wire        mpm_endpoint_ctrlport_req_wr;
+  wire        mpm_endpoint_ctrlport_resp_ack;
+  wire [31:0] mpm_endpoint_ctrlport_resp_data;
+  wire [ 1:0] mpm_endpoint_ctrlport_resp_status;
 
   ctrlport_clk_cross ctrlport_clk_cross_mpm (
     .rst                       (s_axi_areset),
@@ -208,63 +180,25 @@ module cpld_interface (
     .s_ctrlport_req_rem_portid (mpm_endpoint_ctrlport_axi_clk_req_rem_portid),
     .s_ctrlport_req_data       (mpm_endpoint_ctrlport_axi_clk_req_data),
     .s_ctrlport_req_byte_en    (mpm_endpoint_ctrlport_axi_clk_req_byte_en),
-    .s_ctrlport_req_has_time   (mpm_endpoint_ctrlport_axi_clk_req_has_time),
-    .s_ctrlport_req_time       (mpm_endpoint_ctrlport_axi_clk_req_time),
+    .s_ctrlport_req_has_time   (1'b0),
+    .s_ctrlport_req_time       (64'b0),
     .s_ctrlport_resp_ack       (mpm_endpoint_ctrlport_axi_clk_resp_ack),
     .s_ctrlport_resp_status    (mpm_endpoint_ctrlport_axi_clk_resp_status),
     .s_ctrlport_resp_data      (mpm_endpoint_ctrlport_axi_clk_resp_data),
     .m_ctrlport_clk            (ctrlport_clk),
-    .m_ctrlport_req_wr         (mpm_endpoint_ctrlport_pll_clk_req_wr),
-    .m_ctrlport_req_rd         (mpm_endpoint_ctrlport_pll_clk_req_rd),
-    .m_ctrlport_req_addr       (mpm_endpoint_ctrlport_pll_clk_req_addr),
+    .m_ctrlport_req_wr         (mpm_endpoint_ctrlport_req_wr),
+    .m_ctrlport_req_rd         (mpm_endpoint_ctrlport_req_rd),
+    .m_ctrlport_req_addr       (mpm_endpoint_ctrlport_req_addr),
     .m_ctrlport_req_portid     (),
     .m_ctrlport_req_rem_epid   (),
     .m_ctrlport_req_rem_portid (),
-    .m_ctrlport_req_data       (mpm_endpoint_ctrlport_pll_clk_req_data),
-    .m_ctrlport_req_byte_en    (mpm_endpoint_ctrlport_pll_clk_req_byte_en),
-    .m_ctrlport_req_has_time   (mpm_endpoint_ctrlport_pll_clk_req_has_time),
-    .m_ctrlport_req_time       (mpm_endpoint_ctrlport_pll_clk_req_time),
-    .m_ctrlport_resp_ack       (mpm_endpoint_ctrlport_pll_clk_resp_ack),
-    .m_ctrlport_resp_status    (mpm_endpoint_ctrlport_pll_clk_resp_status),
-    .m_ctrlport_resp_data      (mpm_endpoint_ctrlport_pll_clk_resp_data)
-  );
-
-  // Apply time of ControlPort request to MPM endpoint request.
-  wire [19:0] mpm_endpoint_ctrlport_req_addr;
-  wire [ 3:0] mpm_endpoint_ctrlport_req_byte_en;
-  wire [31:0] mpm_endpoint_ctrlport_req_data;
-  wire        mpm_endpoint_ctrlport_req_rd;
-  wire        mpm_endpoint_ctrlport_req_wr;
-  wire        mpm_endpoint_ctrlport_resp_ack;
-  wire [31:0] mpm_endpoint_ctrlport_resp_data;
-  wire [ 1:0] mpm_endpoint_ctrlport_resp_status;
-
-  ctrlport_timer #(
-    .EXEC_LATE_CMDS (1)
-  ) ctrlport_timer_mpm (
-    .clk                     (ctrlport_clk),
-    .rst                     (ctrlport_rst),
-    .time_now                (radio_time_prc),
-    .time_now_stb            (radio_time_stb_prc),
-    .time_ignore_bits        (time_ignore_bits),
-    .s_ctrlport_req_wr       (mpm_endpoint_ctrlport_pll_clk_req_wr),
-    .s_ctrlport_req_rd       (mpm_endpoint_ctrlport_pll_clk_req_rd),
-    .s_ctrlport_req_addr     (mpm_endpoint_ctrlport_pll_clk_req_addr),
-    .s_ctrlport_req_data     (mpm_endpoint_ctrlport_pll_clk_req_data),
-    .s_ctrlport_req_byte_en  (mpm_endpoint_ctrlport_pll_clk_req_byte_en),
-    .s_ctrlport_req_has_time (mpm_endpoint_ctrlport_pll_clk_req_has_time),
-    .s_ctrlport_req_time     (mpm_endpoint_ctrlport_pll_clk_req_time),
-    .s_ctrlport_resp_ack     (mpm_endpoint_ctrlport_pll_clk_resp_ack),
-    .s_ctrlport_resp_status  (mpm_endpoint_ctrlport_pll_clk_resp_status),
-    .s_ctrlport_resp_data    (mpm_endpoint_ctrlport_pll_clk_resp_data),
-    .m_ctrlport_req_wr       (mpm_endpoint_ctrlport_req_wr),
-    .m_ctrlport_req_rd       (mpm_endpoint_ctrlport_req_rd),
-    .m_ctrlport_req_addr     (mpm_endpoint_ctrlport_req_addr),
-    .m_ctrlport_req_data     (mpm_endpoint_ctrlport_req_data),
-    .m_ctrlport_req_byte_en  (mpm_endpoint_ctrlport_req_byte_en),
-    .m_ctrlport_resp_ack     (mpm_endpoint_ctrlport_resp_ack),
-    .m_ctrlport_resp_status  (mpm_endpoint_ctrlport_resp_status),
-    .m_ctrlport_resp_data    (mpm_endpoint_ctrlport_resp_data)
+    .m_ctrlport_req_data       (mpm_endpoint_ctrlport_req_data),
+    .m_ctrlport_req_byte_en    (mpm_endpoint_ctrlport_req_byte_en),
+    .m_ctrlport_req_has_time   (),
+    .m_ctrlport_req_time       (),
+    .m_ctrlport_resp_ack       (mpm_endpoint_ctrlport_resp_ack),
+    .m_ctrlport_resp_status    (mpm_endpoint_ctrlport_resp_status),
+    .m_ctrlport_resp_data      (mpm_endpoint_ctrlport_resp_data)
   );
 
   //---------------------------------------------------------------------------
@@ -272,16 +206,14 @@ module cpld_interface (
   //---------------------------------------------------------------------------
   // Transfer request to pll_ref_clk domain.
 
-  wire [19:0] app_ctrlport_pll_clk_req_addr;
-  wire [ 3:0] app_ctrlport_pll_clk_req_byte_en;
-  wire [31:0] app_ctrlport_pll_clk_req_data;
-  wire        app_ctrlport_pll_clk_req_has_time;
-  wire        app_ctrlport_pll_clk_req_rd;
-  wire [63:0] app_ctrlport_pll_clk_req_time;
-  wire        app_ctrlport_pll_clk_req_wr;
-  wire        app_ctrlport_pll_clk_resp_ack;
-  wire [31:0] app_ctrlport_pll_clk_resp_data;
-  wire [ 1:0] app_ctrlport_pll_clk_resp_status;
+  wire [19:0] app_ctrlport_req_addr;
+  wire [ 3:0] app_ctrlport_req_byte_en;
+  wire [31:0] app_ctrlport_req_data;
+  wire        app_ctrlport_req_rd;
+  wire        app_ctrlport_req_wr;
+  wire        app_ctrlport_resp_ack;
+  wire [31:0] app_ctrlport_resp_data;
+  wire [ 1:0] app_ctrlport_resp_status;
 
   ctrlport_clk_cross ctrlport_clk_cross_app (
     .rst                       (ctrlport_rst),
@@ -294,63 +226,25 @@ module cpld_interface (
     .s_ctrlport_req_rem_portid (),
     .s_ctrlport_req_data       (s_ctrlport_req_data),
     .s_ctrlport_req_byte_en    (s_ctrlport_req_byte_en),
-    .s_ctrlport_req_has_time   (s_ctrlport_req_has_time),
-    .s_ctrlport_req_time       (s_ctrlport_req_time),
+    .s_ctrlport_req_has_time   (1'b0),
+    .s_ctrlport_req_time       (64'b0),
     .s_ctrlport_resp_ack       (s_ctrlport_resp_ack),
     .s_ctrlport_resp_status    (s_ctrlport_resp_status),
     .s_ctrlport_resp_data      (s_ctrlport_resp_data),
     .m_ctrlport_clk            (ctrlport_clk),
-    .m_ctrlport_req_wr         (app_ctrlport_pll_clk_req_wr),
-    .m_ctrlport_req_rd         (app_ctrlport_pll_clk_req_rd),
-    .m_ctrlport_req_addr       (app_ctrlport_pll_clk_req_addr),
+    .m_ctrlport_req_wr         (app_ctrlport_req_wr),
+    .m_ctrlport_req_rd         (app_ctrlport_req_rd),
+    .m_ctrlport_req_addr       (app_ctrlport_req_addr),
     .m_ctrlport_req_portid     (),
     .m_ctrlport_req_rem_epid   (),
     .m_ctrlport_req_rem_portid (),
-    .m_ctrlport_req_data       (app_ctrlport_pll_clk_req_data),
-    .m_ctrlport_req_byte_en    (app_ctrlport_pll_clk_req_byte_en),
-    .m_ctrlport_req_has_time   (app_ctrlport_pll_clk_req_has_time),
-    .m_ctrlport_req_time       (app_ctrlport_pll_clk_req_time),
-    .m_ctrlport_resp_ack       (app_ctrlport_pll_clk_resp_ack),
-    .m_ctrlport_resp_status    (app_ctrlport_pll_clk_resp_status),
-    .m_ctrlport_resp_data      (app_ctrlport_pll_clk_resp_data)
-  );
-
-  // Apply timing to application based ControlPort request.
-  wire [19:0] app_ctrlport_req_addr;
-  wire [ 3:0] app_ctrlport_req_byte_en;
-  wire [31:0] app_ctrlport_req_data;
-  wire        app_ctrlport_req_rd;
-  wire        app_ctrlport_req_wr;
-  wire        app_ctrlport_resp_ack;
-  wire [31:0] app_ctrlport_resp_data;
-  wire [ 1:0] app_ctrlport_resp_status;
-
-  ctrlport_timer #(
-    .EXEC_LATE_CMDS (1)
-  ) ctrlport_timer_app (
-    .clk                     (ctrlport_clk),
-    .rst                     (ctrlport_rst),
-    .time_now                (radio_time_prc),
-    .time_now_stb            (radio_time_stb_prc),
-    .time_ignore_bits        (time_ignore_bits),
-    .s_ctrlport_req_wr       (app_ctrlport_pll_clk_req_wr),
-    .s_ctrlport_req_rd       (app_ctrlport_pll_clk_req_rd),
-    .s_ctrlport_req_addr     (app_ctrlport_pll_clk_req_addr),
-    .s_ctrlport_req_data     (app_ctrlport_pll_clk_req_data),
-    .s_ctrlport_req_byte_en  (app_ctrlport_pll_clk_req_byte_en),
-    .s_ctrlport_req_has_time (app_ctrlport_pll_clk_req_has_time),
-    .s_ctrlport_req_time     (app_ctrlport_pll_clk_req_time),
-    .s_ctrlport_resp_ack     (app_ctrlport_pll_clk_resp_ack),
-    .s_ctrlport_resp_status  (app_ctrlport_pll_clk_resp_status),
-    .s_ctrlport_resp_data    (app_ctrlport_pll_clk_resp_data),
-    .m_ctrlport_req_wr       (app_ctrlport_req_wr),
-    .m_ctrlport_req_rd       (app_ctrlport_req_rd),
-    .m_ctrlport_req_addr     (app_ctrlport_req_addr),
-    .m_ctrlport_req_data     (app_ctrlport_req_data),
-    .m_ctrlport_req_byte_en  (app_ctrlport_req_byte_en),
-    .m_ctrlport_resp_ack     (app_ctrlport_resp_ack),
-    .m_ctrlport_resp_status  (app_ctrlport_resp_status),
-    .m_ctrlport_resp_data    (app_ctrlport_resp_data)
+    .m_ctrlport_req_data       (app_ctrlport_req_data),
+    .m_ctrlport_req_byte_en    (app_ctrlport_req_byte_en),
+    .m_ctrlport_req_has_time   (),
+    .m_ctrlport_req_time       (),
+    .m_ctrlport_resp_ack       (app_ctrlport_resp_ack),
+    .m_ctrlport_resp_status    (app_ctrlport_resp_status),
+    .m_ctrlport_resp_data      (app_ctrlport_resp_data)
   );
 
   //---------------------------------------------------------------------------
@@ -440,8 +334,8 @@ module cpld_interface (
     .s_ctrlport_req_rem_portid (),
     .s_ctrlport_req_data       ({ipass_ctrlport_req_data, led_ctrlport_req_data, mpm_endpoint_ctrlport_req_data, app_ctrlport_req_data}),
     .s_ctrlport_req_byte_en    ({ipass_ctrlport_req_byte_en, led_ctrlport_req_byte_en, mpm_endpoint_ctrlport_req_byte_en, app_ctrlport_req_byte_en}),
-    .s_ctrlport_req_has_time   (),
-    .s_ctrlport_req_time       (),
+    .s_ctrlport_req_has_time   ({4{1'b0}}),
+    .s_ctrlport_req_time       ({4{64'b0}}),
     .s_ctrlport_resp_ack       ({ipass_ctrlport_resp_ack, led_ctrlport_resp_ack, mpm_endpoint_ctrlport_resp_ack, app_ctrlport_resp_ack}),
     .s_ctrlport_resp_status    ({ipass_ctrlport_resp_status, led_ctrlport_resp_status, mpm_endpoint_ctrlport_resp_status, app_ctrlport_resp_status}),
     .s_ctrlport_resp_data      ({ipass_ctrlport_resp_data, led_ctrlport_resp_data, mpm_endpoint_ctrlport_resp_data, app_ctrlport_resp_data}),

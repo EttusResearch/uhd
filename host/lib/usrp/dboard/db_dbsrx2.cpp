@@ -219,8 +219,8 @@ dbsrx2::dbsrx2(ctor_args_t args) : rx_dboard_base(args)
         .set_coercer(std::bind(&dbsrx2::set_bandwidth, this, std::placeholders::_1))
         .set(2.0
              * (0.8 * codec_rate
-                   / 2.0)); // bandwidth in lowpass, convert to complex bandpass
-                            // default to anti-alias at different codec_rate
+                 / 2.0)); // bandwidth in lowpass, convert to complex bandpass
+                          // default to anti-alias at different codec_rate
     this->get_rx_subtree()
         ->create<meta_range_t>("bandwidth/range")
         .set(dbsrx2_bandwidth_range);
@@ -269,7 +269,7 @@ double dbsrx2::set_lo_freq(double target_freq)
     _max2112_write_regs.set_f_divider(fracdiv);
     _max2112_write_regs.r_divider = R;
     _max2112_write_regs.d24       = scaler == 4 ? max2112_write_regs_t::D24_DIV4
-                                          : max2112_write_regs_t::D24_DIV2;
+                                                : max2112_write_regs_t::D24_DIV2;
 
     // debug output of calculated variables
     UHD_LOGGER_TRACE("DBSRX")

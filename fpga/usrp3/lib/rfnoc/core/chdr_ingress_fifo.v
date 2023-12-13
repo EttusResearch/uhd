@@ -26,15 +26,16 @@ module chdr_ingress_fifo #(
 );
 
   localparam SIZE_THRESHOLD = (
-    (DEVICE == "7SERIES")   ? 14 : (
-    (DEVICE == "VIRTEX6")   ? 14 : (
-    (DEVICE == "SPARTAN6")  ? 12 : (
+    (DEVICE == "ULTRASCALE") ? 12 :  // Set to 12 to allow URAM
+    (DEVICE == "7SERIES")    ? 14 : (
+    (DEVICE == "VIRTEX6")    ? 14 : (
+    (DEVICE == "SPARTAN6")   ? 12 : (
     12
   ))));
 
   wire [WIDTH-1:0] i_tdata_pre;
   wire             i_tlast_pre, i_tvalid_pre, i_tready_pre;
-  
+
   // SRL based FIFO to break timing paths to BRAM resources
   axi_fifo_flop2 #(.WIDTH(WIDTH+1)) pre_fifo (
     .clk(clk), .reset(reset), .clear(clear),
@@ -43,8 +44,8 @@ module chdr_ingress_fifo #(
     .space(), .occupied()
   );
 
-  generate 
-    if (SIZE <= SIZE_THRESHOLD) begin
+  generate
+    if (SIZE <= SIZE_THRESHOLD) begin : gen_single_fifo
       wire [WIDTH-1:0] o_tdata_int;
       wire             o_tlast_int, o_tvalid_int, o_tready_int;
       // Instantiate a single axi_fifo if size is not larger than threshold
@@ -60,13 +61,13 @@ module chdr_ingress_fifo #(
         .o_tdata({o_tlast, o_tdata}), .o_tvalid(o_tvalid), .o_tready(o_tready),
         .space(), .occupied()
       );
-    end else begin
+    end else begin : gen_fifo_cascade
       // Instantiate a cascade of axi_fifos if size is larger than threshold
       localparam CDEPTH = 2**(SIZE - SIZE_THRESHOLD); //Cascade Depth
       wire [WIDTH-1:0] c_tdata[CDEPTH:0], int_tdata[CDEPTH-1:0];
       wire             c_tlast[CDEPTH:0], c_tvalid[CDEPTH:0], c_tready[CDEPTH:0];
       wire             int_tlast[CDEPTH-1:0], int_tvalid[CDEPTH-1:0], int_tready[CDEPTH-1:0];
-      
+
       //Connect input to first cascade state
       assign {c_tdata[0], c_tlast[0], c_tvalid[0]} = {i_tdata_pre, i_tlast_pre, i_tvalid_pre};
       assign i_tready_pre = c_tready[0];
@@ -92,4 +93,4 @@ module chdr_ingress_fifo #(
     end
   endgenerate
 
-endmodule // axi_fifo_large
+endmodule // chdr_ingress_fifo

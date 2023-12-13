@@ -23,12 +23,12 @@ endif
 TOOLS_DIR  = $(BASE_DIR)/../tools
 LIB_DIR    = $(BASE_DIR)/../lib
 
-O ?= .
+BUILD_BASE_DIR ?= .
 
 ifdef NAME
-BUILD_DIR = $(abspath $(O)/build-$(NAME))
+BUILD_DIR = $(abspath $(BUILD_BASE_DIR)/build-$(NAME))
 else
-BUILD_DIR = $(abspath $(O)/build)
+BUILD_DIR = $(abspath $(BUILD_BASE_DIR)/build)
 endif
 
 IP_BUILD_DIR = $(abspath ./build-ip/$(subst /,,$(PART_ID)))

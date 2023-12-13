@@ -187,10 +187,10 @@ module chdr_stream_endpoint_tb#(
   );
 
   chdr_crossbar_nxn #(
-    .CHDR_W         (CHDR_W),
+    .PORT_W         (CHDR_W),
     .NPORTS         (3),
     .DEFAULT_PORT   (0),
-    .MTU            (MTU),
+    .BYTE_MTU       (MTU + $clog2(CHDR_W/8)),
     .ROUTE_TBL_SIZE (6),
     .MUX_ALLOC      ("ROUND-ROBIN"),
     .OPTIMIZE       ("AREA"),

@@ -46,6 +46,8 @@ jobs:
   timeoutInMinutes: $[ variables['timeout'] ]
   pool:
     name: hardware
+    demands:
+    - MAX_CPU -equals 4
   variables:
   - group: sdr-pipeline-vars
   strategy:
@@ -71,7 +73,7 @@ jobs:
 
     - bash: |
         source $(Build.SourcesDirectory)/uhddev/fpga/.ci/scripts/run_setup.sh ./
-        make $(target_name)
+        python3 ../../tools/utils/repeat_fpga_build.py --target $(target_name) --num $(max_attempts) --seed $(($(System.JobAttempt)-1)) --persistent
       workingDirectory: ${{ parameters.top_dir }}
       env:
         PATCHES_PATH: $(sdr-vivado-patches)

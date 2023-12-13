@@ -74,12 +74,12 @@ def setup_parser():
         help="Adjust log level",
         default='info')
     parser.add_argument(
-        "--generate-only",
+        "-G", "--generate-only",
         help="Just generate files without building IP",
         action="store_true")
     parser.add_argument(
         "-d", "--device",
-        help="Device to be programmed [x300, x310, e310, e320, n300, n310, n320, x410]. "
+        help="Device to be programmed [x300, x310, e310, e320, n300, n310, n320, x410, x440]. "
              "Needs to be specified either here, or in the configuration file.",
         default=None)
     parser.add_argument(
@@ -105,6 +105,16 @@ def setup_parser():
         help="Path to the base install for Xilinx Vivado if not in default "
              "location (e.g., /tools/Xilinx/Vivado).",
         default=None)
+    parser.add_argument(
+        "-H", "--no-hash",
+        help="Do not include source YAML hash in the generated source code.",
+        action="store_true",
+        default=False)
+    parser.add_argument(
+        "-D", "--no-date",
+        help="Do not include date or time in the generated source code.",
+        action="store_true",
+        default=False)
 
     return parser
 
@@ -222,6 +232,8 @@ def main():
         router_hex_path=args.router_hex_output,
         include_paths=args.include_dir,
         vivado_path=args.vivado_path,
+        no_date=args.no_date,
+        no_hash=args.no_hash,
         )
 
 if __name__ == "__main__":

@@ -41,8 +41,8 @@ def parse_args():
 def get_input(target):
     # Remove the path from the beginning
     dts_input = os.path.basename(target)
-    # Remove the _XXX and extension from the end of the file name
-    dts_input = "_".join(dts_input.split("_")[:-1])
+    # Remove everything after the bandwidth from the end of the file name
+    dts_input = "_".join(dts_input.split("_")[:4])
     # Add path and extension
     dts_input = os.path.join('dts', dts_input + '.dts')
     return dts_input

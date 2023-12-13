@@ -23,15 +23,21 @@
 # Uncomment this line to add four example Aurora loopback lanes on the QSFP NPIO bus.
 # OPTIONS += QSFP_LANES=4
 
+# Base output directory for all builds
+BUILD_BASE_DIR ?= .
+
+# Initialize a build seed. This can be changed to randomly affect build results.
+BUILD_SEED ?= 0
+
 # Additional definitions specific to the various targets:
-WX_DEFS=SFP0_WR=1     SFP1_10GBE=1                BUILD_WR=1     BUILD_10G=1                 $(OPTIONS)
-HG_DEFS=SFP0_1GBE=1   SFP1_10GBE=1                BUILD_1G=1     BUILD_10G=1                 $(OPTIONS)
-XG_DEFS=SFP0_10GBE=1  SFP1_10GBE=1                BUILD_10G=1                                $(OPTIONS)
-HA_DEFS=SFP0_1GBE=1   SFP1_AURORA=1               BUILD_1G=1     BUILD_AURORA=1              $(OPTIONS)
-XA_DEFS=SFP0_10GBE=1  SFP1_AURORA=1               BUILD_10G=1    BUILD_AURORA=1              $(OPTIONS)
-AA_DEFS=SFP0_AURORA=1 SFP1_AURORA=1               BUILD_AURORA=1                             $(OPTIONS)
-XQ_DEFS=SFP0_WR=1                   QSFP_10GBE=1  BUILD_WR=1     BUILD_10G=1    QSFP_LANES=2 $(OPTIONS)
-AQ_DEFS=SFP0_10GBE=1  SFP1_10GBE=1  QSFP_AURORA=1 BUILD_10G=1    BUILD_AURORA=1 QSFP_LANES=4 $(OPTIONS)
+WX_DEFS=SFP0_WR=1     SFP1_10GBE=1                BUILD_WR=1     BUILD_10G=1                 $(OPTIONS) BUILD_SEED=$(BUILD_SEED)
+HG_DEFS=SFP0_1GBE=1   SFP1_10GBE=1                BUILD_1G=1     BUILD_10G=1                 $(OPTIONS) BUILD_SEED=$(BUILD_SEED)
+XG_DEFS=SFP0_10GBE=1  SFP1_10GBE=1                BUILD_10G=1                                $(OPTIONS) BUILD_SEED=$(BUILD_SEED)
+HA_DEFS=SFP0_1GBE=1   SFP1_AURORA=1               BUILD_1G=1     BUILD_AURORA=1              $(OPTIONS) BUILD_SEED=$(BUILD_SEED)
+XA_DEFS=SFP0_10GBE=1  SFP1_AURORA=1               BUILD_10G=1    BUILD_AURORA=1              $(OPTIONS) BUILD_SEED=$(BUILD_SEED)
+AA_DEFS=SFP0_AURORA=1 SFP1_AURORA=1               BUILD_AURORA=1                             $(OPTIONS) BUILD_SEED=$(BUILD_SEED)
+XQ_DEFS=SFP0_WR=1                   QSFP_10GBE=1  BUILD_WR=1     BUILD_10G=1    QSFP_LANES=2 $(OPTIONS) BUILD_SEED=$(BUILD_SEED)
+AQ_DEFS=SFP0_10GBE=1  SFP1_10GBE=1  QSFP_AURORA=1 BUILD_10G=1    BUILD_AURORA=1 QSFP_LANES=4 $(OPTIONS) BUILD_SEED=$(BUILD_SEED)
 
 # Defaults specific to the various targets:
 N300_DEFAULTS:=DEFAULT_RFNOC_IMAGE_CORE_FILE=$(abspath n300_rfnoc_image_core.v) DEFAULT_EDGE_FILE=$(abspath n300_static_router.hex)
@@ -65,9 +71,9 @@ ifeq ($(TARGET),bin)
 	post_build = @\
 		mkdir -p build; \
 		echo "Exporting bitstream file..."; \
-		cp build-$(1)_$(2)/n3xx.bit build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bit; \
+		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/n3xx.bit build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bit; \
 		echo "Exporting build report..."; \
-		cp build-$(1)_$(2)/build.rpt build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).rpt; \
+		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/build.rpt build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).rpt; \
 		echo "Build DONE ... $(1)_$(2)";
 else
 	post_build = @echo "Skipping bitfile export."
@@ -200,9 +206,10 @@ help:     ##Show this help message.
 ##
 ##Supported Options
 ##-----------------
-##GUI=1        Launch the build in the Vivado GUI.
-##CHECK=1      Launch the syntax checker instead of building a bitfile.
-##SYNTH=1      Launch the build but stop after synthesis.
-##TOP=<module> Specify a top module for syntax checking. (Optional. Default is the bitfile top)
+##GUI=1          Launch the build in the Vivado GUI.
+##CHECK=1        Launch the syntax checker instead of building a bitfile.
+##SYNTH=1        Launch the build but stop after synthesis.
+##BUILD_SEED=<N> Build seed to used to affect build results. (Default is 0)
+##TOP=<module>   Specify a top module for syntax checking. (Default is the bitfile top)
 
 .PHONY: all clean cleanall help

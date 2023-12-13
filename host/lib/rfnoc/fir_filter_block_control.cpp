@@ -6,10 +6,10 @@
 
 #include <uhd/exception.hpp>
 #include <uhd/rfnoc/defaults.hpp>
+#include <uhd/rfnoc/fir_filter_block_control.hpp>
 #include <uhd/rfnoc/multichan_register_iface.hpp>
 #include <uhd/rfnoc/property.hpp>
 #include <uhd/rfnoc/registry.hpp>
-#include <uhd/rfnoc/fir_filter_block_control.hpp>
 
 using namespace uhd::rfnoc;
 
@@ -36,20 +36,24 @@ public:
         if (chan >= get_num_input_ports()) {
             std::string error_msg =
                 "Cannot get max number of coefficients for FIR Filter channel "
-                + std::to_string(chan) + ", channel value must be less than "
-                "or equal to " + std::to_string(get_num_input_ports()-1);
+                + std::to_string(chan)
+                + ", channel value must be less than "
+                  "or equal to "
+                + std::to_string(get_num_input_ports() - 1);
             throw uhd::value_error(error_msg);
         }
         return _max_num_coeffs.at(chan);
     }
 
-    void set_coefficients(const std::vector<int16_t>& coeffs, const size_t chan = 0) override
+    void set_coefficients(
+        const std::vector<int16_t>& coeffs, const size_t chan = 0) override
     {
         if (chan >= get_num_input_ports()) {
-            std::string error_msg =
-                "Cannot set coefficients for FIR Filter channel "
-                + std::to_string(chan) + ", channel value must be less than "
-                "or equal to " + std::to_string(get_num_input_ports()-1);
+            std::string error_msg = "Cannot set coefficients for FIR Filter channel "
+                                    + std::to_string(chan)
+                                    + ", channel value must be less than "
+                                      "or equal to "
+                                    + std::to_string(get_num_input_ports() - 1);
             throw uhd::value_error(error_msg);
         }
         if (coeffs.size() > _max_num_coeffs.at(chan)) {
@@ -68,10 +72,11 @@ public:
     std::vector<int16_t> get_coefficients(const size_t chan = 0) const override
     {
         if (chan >= get_num_input_ports()) {
-            std::string error_msg =
-                "Cannot get coefficients for FIR Filter channel "
-                + std::to_string(chan) + ", channel value must be less than "
-                "or equal to " + std::to_string(get_num_input_ports()-1);
+            std::string error_msg = "Cannot get coefficients for FIR Filter channel "
+                                    + std::to_string(chan)
+                                    + ", channel value must be less than "
+                                      "or equal to "
+                                    + std::to_string(get_num_input_ports() - 1);
             throw uhd::value_error(error_msg);
         }
         return _coeffs.at(chan);
@@ -105,7 +110,9 @@ private:
             register_property(&_prop_max_num_coeffs.back());
             add_property_resolver({&ALWAYS_DIRTY},
                 {&_prop_max_num_coeffs.back()},
-                [this, chan, max_num_coeffs]() { _prop_max_num_coeffs.at(chan).set(max_num_coeffs); });
+                [this, chan, max_num_coeffs]() {
+                    _prop_max_num_coeffs.at(chan).set(max_num_coeffs);
+                });
 
             // register edge properties
             _prop_type_in.emplace_back(property_t<std::string>{

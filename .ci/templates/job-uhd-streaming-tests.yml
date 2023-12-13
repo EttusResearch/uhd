@@ -128,7 +128,9 @@ jobs:
   - script: |
         ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
         ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "uhd_image_loader --args addr=localhost,type=$(dutType),fpga=$(dutFPGA)"
+        EXITCODE=$?
         sleep 60
+        exit $EXITCODE
     displayName: Flash FPGA $(dutFPGA)
     condition: and(succeeded(), eq(variables.dutType, 'x4xx'))
 
@@ -153,21 +155,30 @@ jobs:
   - script: |
       ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ethtool -A sfp0 tx on"
-      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ethtool -A sfp1 tx on"
-    displayName: Enable Tx Pause Frames on sfp0 and sfp1
+    displayName: Enable Tx Pause Frames on sfp0
     condition: and(succeeded(), eq(variables.dutType, 'x4xx'), eq(variables.dutFPGA, 'CG_400'))
+  - script: |
+      ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ethtool -A sfp1 tx on"
+    displayName: Enable Tx Pause Frames on sfp1
+    condition: and(succeeded(), eq(variables.dutType, 'x4xx'), in(variables.dutFPGA, 'CG_400', 'UC_200'))
   - script: |
       ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ip addr add $(dutAddr)/24 dev sfp0"
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ip addr del 192.168.10.2/24 dev sfp0"
+    displayName: Setup IP addresses on sfp0
+    condition: and(succeeded(), eq(variables.dutType, 'x4xx'), eq(variables.dutFPGA, 'CG_400'))
+  - script: |
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ip addr add $(dutSecondAddr)/24 dev sfp1"
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ip addr del 192.168.20.2/24 dev sfp1"
-    displayName: Setup IP addresses on sfp0 and sfp1
-    condition: and(succeeded(), eq(variables.dutType, 'x4xx'), eq(variables.dutFPGA, 'CG_400'))
+    displayName: Setup IP addresses on sfp1
+    condition: and(succeeded(), eq(variables.dutType, 'x4xx'), in(variables.dutFPGA, 'CG_400', 'UC_200'))
   - script: |
       cd ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
       sudo ./setup.sh --auto
+      EXITCODE=$?
       sleep 5
+      exit $EXITCODE
     displayName: setup interfaces for use without DPDK
   - script: |
       echo "##[group]Printing Environment"
@@ -190,6 +201,11 @@ jobs:
     continueOnError: true
     displayName: Run streaming tests on $(dutName)
     condition: and(succeeded(), not(eq(variables.dutType, 'x4xx')))
+  - script: |
+      cd ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
+      sudo ./setup.sh --auto --ramdisk
+      sleep 5
+    displayName: setup interfaces for use raw udp streaming
   - script: |
       export PYTHON_VERSION=$(python3 -c "import sys; print('python'+str(sys.version_info.major) + '.' + str(sys.version_info.minor))")
       export PYTHONPATH=$(Build.BinariesDirectory)/uhddev/build-installed/lib/$PYTHON_VERSION/site-packages:${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
@@ -215,13 +231,18 @@ jobs:
   - script: |
       cd ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
       sudo ./setup.sh --auto --dpdk
+      EXITCODE=$?
       sleep 5
+      exit $EXITCODE
     displayName: setup interfaces for use with DPDK
     condition: and(succeeded(), not(eq(variables.dutType, 'B210')))
   - script: |
       if [ "$(dutFPGA)" = "CG_400" ]; then
         echo "##vso[task.setvariable variable=config_file]${{ parameters.uhdSrcDir }}/host/tests/pytests/uhd_configs/uhd_dpdk_100GbE.conf"
         echo "Using 100 GbE UHD Config File"
+      elif [ "$(dutFPGA)" = "UC_200" ]; then
+        echo "##vso[task.setvariable variable=config_file]${{ parameters.uhdSrcDir }}/host/tests/pytests/uhd_configs/uhd_dpdk_100GbE_SFP1.conf"
+        echo "Using 100 GbE SFP1 UHD Config File"
       else
         echo "##vso[task.setvariable variable=config_file]${{ parameters.uhdSrcDir }}/host/tests/pytests/uhd_configs/uhd_dpdk_10GbE.conf"
         echo "Using 10 GbE UHD Config File"
@@ -236,7 +257,7 @@ jobs:
       # Disable creation of __pycache__ files using -B to avoid errors on clean up during next run
       # as using sudo below creates them with root priveleges.
       sudo -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONPATH=$PYTHONPATH python3 -B -m pytest -s test_streaming.py -m "dpdk" \
-        --dut_type $(dutType) --test_length ${{ parameters.testLength }} \
+        --dut_type $(dutType) --dut_fpga $(dutFPGA) --test_length ${{ parameters.testLength }} \
         --uhd_build_dir $(Build.BinariesDirectory)/uhddev/build --junitxml $(Common.TestResultsDirectory)/TEST-$(dutName)-dpdk.xml \
         --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $(dutMgmtAddr) --name $(dutNameId)
     env:

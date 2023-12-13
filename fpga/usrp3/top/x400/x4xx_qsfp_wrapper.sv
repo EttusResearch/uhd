@@ -14,8 +14,8 @@
 //
 //   PROTOCOL       : Indicates the protocol to use for each of the 4 QSFP
 //                    lanes. See x4xx_mgt_types.vh for possible values.
-//   CPU_W          : Width of CPU interface
 //   CHDR_W         : CHDR bus width
+//   NET_CHDR_W     : CHDR width used over the network connection
 //   BYTE_MTU       : Transport MTU in bytes
 //   PORTNUM        : Port number to distinguish multiple QSFP ports
 //   NODE_INST      : RFNoC transport adapter node instance for the first port
@@ -31,8 +31,8 @@ module x4xx_qsfp_wrapper #(
                                       `MGT_Disabled,
                                       `MGT_Disabled,
                                       `MGT_Disabled},
-  parameter         CPU_W          = 64,
   parameter         CHDR_W         = 64,
+  parameter         NET_CHDR_W     = CHDR_W,
   parameter         BYTE_MTU       = $clog2(8*1024),
   parameter  [ 7:0] PORTNUM        = 8'd0,
   parameter         NODE_INST      = 0,
@@ -83,6 +83,7 @@ module x4xx_qsfp_wrapper #(
 
   localparam REG_BASE_SFP_IO      = 14'h0;
   localparam REG_BASE_ETH_SWITCH  = 14'h1000;
+  localparam CPU_W                = 64;     // Must match axi_eth_dma IP
   localparam CPU_USER_W           = $clog2(CPU_W/8)+1;
   localparam CHDR_USER_W          = $clog2(CHDR_W/8);
   localparam REG_DWIDTH           = 32;
@@ -450,7 +451,8 @@ module x4xx_qsfp_wrapper #(
             .PAUSE_EN       (PAUSE_EN),
             .ENET_W         (MGT_W),
             .CPU_W          (CPU_W),
-            .CHDR_W         (CHDR_W)
+            .CHDR_W         (CHDR_W),
+            .NET_CHDR_W     (NET_CHDR_W)
           ) eth_ipv4_interface_i (
             .bus_clk          (bus_clk),
             .bus_rst          (bus_rst),

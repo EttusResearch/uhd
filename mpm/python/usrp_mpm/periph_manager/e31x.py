@@ -87,7 +87,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
     mboard_info = {"type": "e3xx"}
     mboard_sensor_callback_map = {
         'ref_locked': 'get_ref_lock_sensor',
-        'gps_locked': 'get_gps_lock_sensor',
+        'gps_locked': 'get_gps_locked_sensor',
         'temp_fpga' : 'get_fpga_temp_sensor',
         'temp_mb' : 'get_mb_temp_sensor',
     }
@@ -622,13 +622,13 @@ class e31x(ZynqComponents, PeriphManagerBase):
             'value': str(lock_status).lower(),
         }
 
-    def get_gps_lock_sensor(self):
+    def get_gps_locked_sensor(self):
         """
         Get lock status of GPS as a sensor dict
         """
-        gps_locked = self._gpsd.get_gps_lock()
+        gps_locked = self._gpsd.get_gps_locked()
         return {
-            'name': 'gps_lock',
+            'name': 'gps_locked',
             'type': 'BOOLEAN',
             'unit': 'locked' if gps_locked else 'unlocked',
             'value': str(gps_locked).lower(),

@@ -90,8 +90,26 @@ set(TIMESTAMP_FILE "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")
 file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR} NATIVE_CURRENT_BINARY_DIR)
 configure_file(${SETUP_PY_IN} ${SETUP_PY})
 
+
+# If we're not in a virtual environment, then we need to figure out where to
+# install the Python module. Do this here so we can use the value for UHD_PYTHON_DIR
+# in the simulator.
+if(NOT DEFINED UHD_PYTHON_DIR)
+    execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
+        # Avoid the posix_local install scheme
+        "import os,sysconfig;\
+        install_scheme = 'posix_prefix';\
+        platlib = sysconfig.get_path('platlib', scheme=install_scheme);\
+        prefix = sysconfig.get_config_var('prefix');\
+        print(os.path.relpath(platlib, prefix));"
+        OUTPUT_VARIABLE UHD_PYTHON_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+endif(NOT DEFINED UHD_PYTHON_DIR)
+
 if(ENABLE_SIM)
     set(MPM_DEVICE "sim")
+    # Whereever UHD Python gets installed, also install that from MPM.
+    set(USRP_MPM_PYTHON_DIR ${UHD_PYTHON_DIR})
     add_subdirectory(${UHD_SOURCE_DIR}/../mpm/python simulator)
     # simulator/usrp_mpm needs to be copied to usrp_mpm because setuptools only detects import packages in the working directory
     add_custom_target(copy_mpm_packages ALL DEPENDS usrp_mpm)
@@ -157,7 +175,7 @@ add_custom_command(OUTPUT ${TIMESTAMP_FILE}
 
 add_custom_target(pyuhd_library ALL DEPENDS ${TIMESTAMP_FILE} pyuhd)
 if(HAVE_PYTHON_VIRTUALENV)
-    message(STATUS "python virtual environment detected.")
+  message(STATUS "Python virtual environment detected -- Ignoring UHD_PYTHON_DIR.")
     # In virtualenvs, let setuptools do its thing
     install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} -q install --force)")
 else()
@@ -165,8 +183,10 @@ else()
     # packages, and install to our prefix
     if(NOT DEFINED UHD_PYTHON_DIR)
         execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
+            # Avoid the posix_local install scheme
             "import os,sysconfig;\
-            platlib = sysconfig.get_path(name='platlib');\
+            install_scheme = 'posix_user';\
+            platlib = sysconfig.get_path('platlib', scheme=install_scheme);\
             prefix = sysconfig.get_config_var('prefix');\
             print(os.path.relpath(platlib, prefix));"
             OUTPUT_VARIABLE UHD_PYTHON_DIR OUTPUT_STRIP_TRAILING_WHITESPACE

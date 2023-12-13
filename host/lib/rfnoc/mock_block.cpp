@@ -6,8 +6,8 @@
 
 #include <uhd/property_tree.hpp>
 #include <uhd/rfnoc/defaults.hpp>
-#include <uhd/rfnoc/rfnoc_types.hpp>
 #include <uhd/rfnoc/mock_block.hpp>
+#include <uhd/rfnoc/rfnoc_types.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhdlib/rfnoc/clock_iface.hpp>
 #include <uhdlib/rfnoc/factory.hpp>

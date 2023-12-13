@@ -5,6 +5,7 @@
 //
 
 #include "adc_self_calibration.hpp"
+#include <uhd/utils/cast.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/scope_exit.hpp>
 #include <chrono>
@@ -27,7 +28,7 @@ adc_self_calibration::adc_self_calibration(uhd::usrp::x400_rpc_iface::sptr rpcc,
 {
 }
 
-void adc_self_calibration::run(size_t chan)
+void adc_self_calibration::run(size_t chan, uhd::device_addr_t params)
 {
     const auto tx_gain_profile =
         _daughterboard->get_tx_gain_profile_api()->get_gain_profile(chan);
@@ -38,12 +39,80 @@ void adc_self_calibration::run(size_t chan)
                                  "profile for RX or TX is not 'default'.");
     }
 
-    // The frequency that we need to feed into the ADC is, by decree,
-    // 13109 / 32768 times the ADC sample rate. (approx. 1.2GHz for a 3Gsps rate)
-    const double spll_freq     = _rpcc->get_spll_freq();
-    const double cal_tone_freq = spll_freq * 13109.0 / 32768.0;
+    // The frequency that we need to feed into the ADC is, by decree and if not specified
+    // differently by the user, 13109 / 32768 times the ADC sample rate for X410.
+    // (approx. 1.2GHz for a 3Gsps rate) This is at 0.4 * Fs, right on the boundary
+    // between modes 1 and 2 for the ADC self-cal. But devices may also specify different
+    // values in their ADC self cal params.
+    const double cal_tone_freq = _daughterboard->get_converter_rate() * 13109.0 / 32768.0;
 
-    const auto cal_params = _daughterboard->get_adc_self_cal_params(cal_tone_freq);
+    auto cal_params = _daughterboard->get_adc_self_cal_params(cal_tone_freq);
+
+    if (params.has_key("cal_freq")) {
+        const double cal_freq = params.cast<double>("cal_freq", cal_params.rx_freq);
+        // According to PG269 calibration modes are available for up to Fs / 2
+        if (cal_freq < 0 or cal_freq > _daughterboard->get_converter_rate() / 2) {
+            RFNOC_LOG_WARNING("Invalid value for `cal_freq`: "
+                              << cal_freq
+                              << ". Valid values are "
+                                 "between 0 Hz and converter_rate / 2. Using default "
+                              << cal_params.rx_freq / 1e6 << " MHz.");
+        } else {
+            cal_params.rx_freq = cal_freq;
+            cal_params.tx_freq = cal_freq;
+            // 0.4 * Fs is the limit between cal mode 2 and 1 according to PG269
+            if (cal_freq <= (0.4 * _daughterboard->get_converter_rate())) {
+                cal_params.calibration_mode = "calib_mode2";
+            } else {
+                cal_params.calibration_mode = "calib_mode1";
+            }
+            RFNOC_LOG_DEBUG("Custom cal_freq: " << cal_freq << " => Calibration Mode: "
+                                                << cal_params.calibration_mode);
+        }
+    }
+    if (params.has_key("cal_dac_mux_i")) {
+        const int32_t dac_mux_i =
+            uhd::cast::fromstr_cast<int32_t>(params.get("cal_dac_mux_i"));
+        if (dac_mux_i < 0 or dac_mux_i > 0xFFFF) {
+            RFNOC_LOG_WARNING("Invalid value for `cal_dac_mux_i`: "
+                              << dac_mux_i << ". Using default value "
+                              << cal_params.dac_iq_values.real());
+        } else {
+            cal_params.dac_iq_values.real(dac_mux_i);
+            RFNOC_LOG_DEBUG("Custom cal_dac_mux_i: (" << dac_mux_i);
+        }
+    }
+    if (params.has_key("cal_dac_mux_q")) {
+        const int32_t dac_mux_q =
+            uhd::cast::fromstr_cast<int32_t>(params.get("cal_dac_mux_q"));
+        if (dac_mux_q < 0 or dac_mux_q > 0xFFFF) {
+            RFNOC_LOG_WARNING("Invalid value for `cal_dac_mux_q`: "
+                              << dac_mux_q << ". Using default value "
+                              << cal_params.dac_iq_values.imag());
+        } else {
+            cal_params.dac_iq_values.imag(dac_mux_q);
+            RFNOC_LOG_DEBUG("Custom cal_dac_mux_q: (" << dac_mux_q);
+        }
+    }
+    if (params.has_key("cal_tone_duration")) {
+        const uint32_t cal_time =
+            params.cast<uint32_t>("cal_tone_duration", cal_params.calibration_time);
+        if (cal_time > MAX_CAL_DURATION) {
+            RFNOC_LOG_WARNING("Invalid value for `cal_tone_duration`: "
+                              << cal_time << ". Maximum value: " << MAX_CAL_DURATION
+                              << ". Using default " << cal_params.calibration_time
+                              << " ms.");
+        } else {
+            cal_params.calibration_time = cal_time;
+            RFNOC_LOG_DEBUG("Custom cal_tone_duration: " << cal_time << " ms");
+        }
+    }
+    if (params.has_key("cal_delay")) {
+        const uint32_t threshold_delay =
+            params.cast<uint32_t>("cal_delay", cal_params.threshold_delay);
+        cal_params.threshold_delay = threshold_delay;
+        RFNOC_LOG_DEBUG("Custom cal_delay: " << cal_params.threshold_delay << " ms");
+    }
 
     // Switch to CAL_LOOPBACK and save the current antenna
     const auto rx_antenna = _daughterboard->get_rx_antenna(chan);
@@ -62,14 +131,12 @@ void adc_self_calibration::run(size_t chan)
     _daughterboard->set_rx_antenna("CAL_LOOPBACK", chan);
     _daughterboard->set_tx_antenna("CAL_LOOPBACK", chan);
 
-    // Configure the output DAC mux to output 1/2 full scale
-    // set_dac_mux_data uses 16-bit values.
-    _rpcc->set_dac_mux_data(32768 / 2, 0);
+    _rpcc->set_dac_mux_data(
+        cal_params.dac_iq_values.real(), cal_params.dac_iq_values.imag());
 
-    const size_t motherboard_channel_number = _db_number * 2 + chan;
-    _rpcc->set_dac_mux_enable(motherboard_channel_number, 1);
+    _rpcc->set_dac_mux_enable(_db_number, chan, 1);
     auto disable_dac_mux = uhd::utils::scope_exit::make(
-        [&]() { _rpcc->set_dac_mux_enable(motherboard_channel_number, 0); });
+        [&]() { _rpcc->set_dac_mux_enable(_db_number, chan, 0); });
 
     // Save all of the LO frequencies & sources
     const double original_rx_freq = _daughterboard->get_rx_frequency(chan);
@@ -130,6 +197,14 @@ void adc_self_calibration::run(size_t chan)
         _daughterboard->set_rx_gain(rx_gain, chan);
     });
 
+    _rpcc->setup_threshold(_db_number,
+        chan,
+        0,
+        "hysteresis",
+        cal_params.threshold_delay,
+        cal_params.threshold_under,
+        cal_params.threshold_over);
+
     bool found_gain = _daughterboard->select_adc_self_cal_gain(chan);
     if (!found_gain) {
         throw uhd::runtime_error(
@@ -146,8 +221,14 @@ void adc_self_calibration::run(size_t chan)
 
     // Let the ADC calibrate
     // 2000ms was found experimentally to be sufficient
-    constexpr auto calibration_time = 2000ms;
+    auto calibration_time = std::chrono::milliseconds(cal_params.calibration_time);
     std::this_thread::sleep_for(calibration_time);
+}
+
+void adc_self_calibration::run(size_t chan)
+{
+    const uhd::device_addr_t params;
+    adc_self_calibration::run(chan, params);
 }
 
 }} // namespace uhd::features

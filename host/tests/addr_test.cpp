@@ -102,7 +102,7 @@ BOOST_AUTO_TEST_CASE(test_separate_device_addr)
     const auto dev_addr2 = uhd::combine_device_addrs(dev_addr_sep);
     BOOST_CHECK(
         dev_addr2
-            == uhd::device_addr_t(
-                "addr0=192.168.10.2,addr1=192.168.20.2,addr2=192.168.30."
-                "2,clock_source0=external,clock_source1=external,clock_source2=internal"));
+        == uhd::device_addr_t(
+            "addr0=192.168.10.2,addr1=192.168.20.2,addr2=192.168.30."
+            "2,clock_source0=external,clock_source1=external,clock_source2=internal"));
 }

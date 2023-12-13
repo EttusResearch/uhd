@@ -501,6 +501,8 @@ module axis_data_to_chdr #(
   end
 
   always @(*) begin
+    // Initialize to 0 to avoid latch on unassigned bits
+    chdr_pf_tdata = {CHDR_W{1'b0}};
     case (state)
       ST_HDR: begin
         // Insert header word

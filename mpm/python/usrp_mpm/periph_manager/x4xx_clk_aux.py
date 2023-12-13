@@ -137,7 +137,7 @@ class ClockingAuxBrdControl:
             self._gps_phase_lock = Gpio("CLKAUX_GPS_PHASELOCK", Gpio.INPUT)
             self._gps_warmup = Gpio("CLKAUX_GPS_WARMUP", Gpio.INPUT)
             self._gps_survey = Gpio("CLKAUX_GPS_SURVEY", Gpio.INPUT)
-            self._gps_lock = Gpio("CLKAUX_GPS_LOCK", Gpio.INPUT)
+            self._gps_locked = Gpio("CLKAUX_GPS_LOCK", Gpio.INPUT)
             self._gps_alarm = Gpio("CLKAUX_GPS_ALARM", Gpio.INPUT)
             self._gps_rst_n = Gpio("CLKAUX_GPS_RSTn", Gpio.OUTPUT, 0)
             if self._revision == 1:
@@ -378,9 +378,9 @@ class ClockingAuxBrdControl:
         """Returns whether or not an auto survey is in progress"""
         return self._gps_survey.get()
 
-    def get_gps_lock(self):
+    def get_gps_locked(self):
         """Returns whether or not the GPS has a lock"""
-        return self._gps_lock.get()
+        return self._gps_locked.get()
 
     def get_gps_alarm(self):
         """Returns true if the GPS detects a hardware fault or software alarm"""

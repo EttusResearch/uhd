@@ -23,6 +23,80 @@ namespace uhd { namespace rfnoc {
 /*! Parent class for radio block controllers
  *
  * \ingroup rfnoc_blocks
+ *
+ * \section rfnoc_radio_overrun_handling Overrun Handling
+ *
+ * When the radio block on the FPGA detects an overrun (i.e., a buffer filled up
+ * and was not emptied fast enough), the radio block sends an asynchronous
+ * message to the radio block controller to notify the software of an overrun.
+ *
+ * When streaming samples into a user application, the radio block is however
+ * not the recipient of the streaming data. Rather, the recipient is a streamer
+ * object.
+ *
+ * Because the topology of the RFNoC graph is not known at compile time, overruns
+ * are handled with a special protocol. As an example, assume that multiple radios
+ * are streaming to the host via a custom DSP block, and that Radio0 has detected
+ * an overrun:
+ *
+ * ```
+ * ┌─────────┐ O
+ * │ Radio0  ├──┐
+ * └─────────┘  │   ┌──────────────────┐    ┌─────────────┐
+ *              ├───> Custom DSP Block ├────> RX Streamer │
+ * ┌─────────┐  │   └──────────────────┘    └─────────────┘
+ * │ Radio1  ├──┘
+ * └─────────┘
+ * ```
+ *
+ * In all cases, when the radio block controller is notified of an overrun by
+ * the FPGA, it will log a 'O' character (using UHD_LOG_FASTPATH()) and post an
+ * uhd::rfnoc::rx_event_action_info object downstream. The custom DSP block may
+ * choose to act upon the overrun notification by registering an event handler
+ * for such an action message, or it can ignore the message, in which case
+ * RFNoC will forward the message downstream to the RX Streamer. If the user is
+ * calling uhd::rx_streamer::recv(), then the overrun will be declared as part
+ * of the uhd::rx_metadata_t object.
+ *
+ * Note that the FPGA will immediately stop streaming when overrun occurs, as it
+ * has nowhere to put the received sample data. However, there is a special case
+ * where UHD performs a more elaborate overrun handling: When the user requested
+ * continuous streaming data (the stream command mode was
+ * stream_cmd_t::STREAM_MODE_START_CONTINUOUS), the streamer will attempt to
+ * restart the stream. This restarting of the stream is implemented as handshake
+ * between the streamer and the radio blocks.
+ *
+ * In the example above, the following steps will be taken:
+ * - At some point, the application starts requests a continuous stream from the
+ *   radios. The radio block controllers will take a note of this continuous
+ *   streaming state.
+ * - Now the overrun occurs in Radio0. It will send an overrun notification
+ *   downstream. We assume that the custom DSP block is not handling the message.
+ *   The rx_event_action_info object with the overrun information is then
+ *   delivered to the RX Streamer. This object also contains a flag whether or
+ *   not the radio block controller was in continuous streaming mode.
+ * - The RX Streamer will switch to overrun handling mode. This is to prevent it
+ *   from overreacting from other overrun messages (e.g., Radio1 could be stalled
+ *   by Radio0 and then also send an overrun message).
+ * - The RX Streamer then sends a stop stream command to all upstream blocks.
+ *   This is to ensure that other radios (in this example, Radio1) are no longer
+ *   streaming.
+ * - At some point, the RX streamer will run out of data to receive (because the
+ *   upstream radios have either stopped due to an overrun, or because they were
+ *   told to stop by the streamer). When this happens, the rx_streamer::recv()
+ *   call will flag an overrun.
+ * - If the overrun happened during continuous streaming, the RX streamer will
+ *   now issue a restart request to the radio that first flagged an overrun (in
+ *   this example, Radio0) by posting another uhd::rfnoc::action_info object.
+ * - When Radio0 receives the restart request, it will send a new continuous
+ *   stream command downstream to the RX streamer, with a timestamp that is
+ *   sufficiently far enough in the future.
+ * - The RX streamer sends the start-stream command back upstream to all radios.
+ *   This ensures that all upstream radios start streaming at the same time.
+ *   It also leaves overrun handling mode.
+ * - Note that if either the radio block controller or the RX streamer receive
+ *   a stop-stream command from outside, this overrun handling mode is interrupted
+ *   and there will be no further attempts to restart the radio.
  */
 class radio_control : public noc_block_base,
                       public rf_control::core_iface,

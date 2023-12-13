@@ -21,16 +21,23 @@
 10M04_ID = "10M04SAU169I7G"
 10M08_ID = "10M08SAU169I7G"
 
+# Project directories
+X440_DIR = $(abspath ./x440)
+X410_DIR = $(abspath ./x410)
+
 # Target specific variables
-X410_CPLD_10M04:     DEFS = VARIANT_`echo $(10M04_ID) | cut -c1-5`=1
-X410_CPLD_10M08:     DEFS = VARIANT_`echo $(10M08_ID) | cut -c1-5`=1
-X410_CPLD_MFG_10M08: DEFS = VARIANT_`echo $(10M08_ID) | cut -c1-5`=1  MFG_SUPPORT=1
+X410_CPLD_10M04:     DEFS = VARIANT_`echo $(10M04_ID) | cut -c1-5`=1  PROJECT_DIR=$(X410_DIR) X410=1
+X410_CPLD_10M08:     DEFS = VARIANT_`echo $(10M08_ID) | cut -c1-5`=1  PROJECT_DIR=$(X410_DIR) X410=1
+X440_CPLD_10M04:     DEFS = VARIANT_`echo $(10M04_ID) | cut -c1-5`=1  PROJECT_DIR=$(X440_DIR) X440=1
+X440_CPLD_10M08:     DEFS = VARIANT_`echo $(10M08_ID) | cut -c1-5`=1  PROJECT_DIR=$(X440_DIR) X440=1
+X410_CPLD_MFG_10M08: DEFS = VARIANT_`echo $(10M08_ID) | cut -c1-5`=1  MFG_SUPPORT=1 PROJECT_DIR=$(X410_DIR)
+
 
 TARGET = bin
 TOP ?= mb_cpld
 
 # quartus_build($1=Device, $2=Definitions)
-quartus_build = make -f Makefile.cpld.inc $(TARGET) NAME=$@ ARCH="MAX10" PART_ID="$1" $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2" POST_STA_TCL="ps_cs_analysis.tcl"
+quartus_build = make -f Makefile.cpld.inc $(TARGET) NAME=$@ ARCH="MAX10" PART_ID="$1" $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2" POST_STA_TCL="../../common/quartus/ps_cs_analysis.tcl"
 
 # quartus_ip($1=Device, $2=Definitions)
 quartus_ip = make -f Makefile.cpld.inc quar_ip NAME=$@ ARCH="MAX10" PART_ID="$1" $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2"
@@ -57,7 +64,7 @@ endif
 ##Supported Targets
 ##-----------------
 
-all:              X410_CPLD_10M04 X410_CPLD_10M08 ##(Default target)
+all:              X410_CPLD_10M04 X410_CPLD_10M08 X440_CPLD_10M04 X440_CPLD_10M08 ##(Default target)
 
 ##X410_CPLD_10M04:  Motherboard CPLD targeted to 10M04SAU169I7G.
 X410_CPLD_10M04:
@@ -68,6 +75,16 @@ X410_CPLD_10M04:
 X410_CPLD_10M08:
 	$(call quartus_build,$(10M08_ID),$(DEFS))
 	$(call post_build,"usrp_x410_cpld_`echo $(10M08_ID) | cut -c1-5 | tr A-Z a-z`")
+
+##X440_CPLD_10M08:  Motherboard CPLD targeted to 10M04SAU169I7G.
+X440_CPLD_10M04:
+	$(call quartus_build,$(10M04_ID),$(DEFS))
+	$(call post_build,"usrp_x440_cpld_`echo $(10M04_ID) | cut -c1-5 | tr A-Z a-z`")
+
+##X440_CPLD_10M08:  Motherboard CPLD targeted to 10M08SAU169I7G.
+X440_CPLD_10M08:
+	$(call quartus_build,$(10M08_ID),$(DEFS))
+	$(call post_build,"usrp_x440_cpld_`echo $(10M08_ID) | cut -c1-5 | tr A-Z a-z`")
 
 X410_CPLD_IP:     ##Build IPs only, needed for simulation.
 	@# Building only X410_CPLD_10M04 IP

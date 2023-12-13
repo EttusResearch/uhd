@@ -98,8 +98,9 @@ module rf_core_100m (
 
   // Control/status vectors from/to RFDC.
   // Notice these are all in the s_axi_config_clk domain.
-  output wire [15:0] dsp_info_sclk,
+  output wire [9:0] dsp_info_sclk,
   output wire [15:0] axi_status_sclk,
+  output wire [15:0] rfdc_info_sclk,
 
   // Resets.
   input wire adc_data_out_resetn_dclk,
@@ -114,8 +115,8 @@ module rf_core_100m (
   output wire [95:0] version_info
 );
 
-  `include "../../regmap/rfdc_regs_regmap_utils.vh"
-  `include "../../regmap/versioning_regs_regmap_utils.vh"
+  `include "../../regmap/x410/rfdc_regs_regmap_utils.vh"
+  `include "../../regmap/x410/versioning_regs_regmap_utils.vh"
   `include "../../regmap/versioning_utils.vh"
 
   // Fixed for this implementation.
@@ -177,9 +178,13 @@ module rf_core_100m (
   );
 
   // Drive the DSP info vector with information on this specific DSP chain.
-  assign dsp_info_sclk[FABRIC_DSP_BW_MSB    :FABRIC_DSP_BW]     = FABRIC_DSP_BW_100M;
   assign dsp_info_sclk[FABRIC_DSP_RX_CNT_MSB:FABRIC_DSP_RX_CNT] = NUM_ADC_CHANNELS;
   assign dsp_info_sclk[FABRIC_DSP_TX_CNT_MSB:FABRIC_DSP_TX_CNT] = NUM_DAC_CHANNELS;
+
+  // This RF core always consumes 2 SPC from the gearbox per I/Q signal
+  assign rfdc_info_sclk[RFDC_INFO_SPC_RX_MSB:RFDC_INFO_SPC_RX] = $clog2(2);
+  assign rfdc_info_sclk[RFDC_INFO_SPC_TX_MSB:RFDC_INFO_SPC_TX] = $clog2(4);
+  assign rfdc_info_sclk[RFDC_INFO_XTRA_RESAMP_MSB:RFDC_INFO_XTRA_RESAMP] = 4'd3;
 
   //---------------------------------------------------------------------------
   // ADC Post-Processing

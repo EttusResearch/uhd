@@ -22,14 +22,16 @@
 
 
 module rfnoc_block_radio #(
-  parameter THIS_PORTID      = 0,
-  parameter CHDR_W           = 64,
-  parameter NIPC             = 1,
-  parameter ITEM_W           = 32,
-  parameter NUM_PORTS        = 2,
-  parameter MTU              = 10,
-  parameter PERIPH_BASE_ADDR = 20'h80000,
-  parameter PERIPH_ADDR_W    = 19
+  parameter THIS_PORTID           = 0,
+  parameter CHDR_W                = 64,
+  parameter NIPC                  = 1,
+  parameter ITEM_W                = 32,
+  parameter NUM_PORTS             = 2,
+  parameter MTU                   = 10,
+  parameter PERIPH_BASE_ADDR      = 20'h80000,
+  parameter PERIPH_ADDR_W         = 19,
+  parameter [5:0] CTRL_CLK_IDX    = 6'h3F,
+  parameter [5:0] TB_CLK_IDX      = 6'h3F
 ) (
   //---------------------------------------------------------------------------
   // AXIS CHDR Port
@@ -166,6 +168,8 @@ module rfnoc_block_radio #(
   noc_shell_radio #(
     .THIS_PORTID     (THIS_PORTID),
     .CHDR_W          (CHDR_W),
+    .CTRL_CLK_IDX    (CTRL_CLK_IDX),
+    .TB_CLK_IDX      (TB_CLK_IDX),
     .MTU             (MTU),
     .NUM_PORTS       (NUM_PORTS),
     .NIPC            (NIPC),

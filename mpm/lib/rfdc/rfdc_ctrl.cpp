@@ -5,8 +5,12 @@
 //
 
 #include "mpm/rfdc/rfdc_ctrl.hpp"
+#include <metal/config.h>
+#include <metal/version.h>
 #include <mpm/exception.hpp>
+#include <iomanip>
 #include <set>
+#include <sstream>
 
 #define BUS_NAME "platform"
 
@@ -94,6 +98,16 @@ void rfdc_ctrl::init(uint16_t rfdc_device_id)
     }
 }
 
+bool rfdc_ctrl::is_dac_enabled(uint32_t tile_id, uint32_t block_id) const
+{
+    return XRFdc_IsDACBlockEnabled(rfdc_inst_ptr, tile_id, block_id) == 1;
+}
+
+bool rfdc_ctrl::is_adc_enabled(uint32_t tile_id, uint32_t block_id) const
+{
+    return XRFdc_IsADCBlockEnabled(rfdc_inst_ptr, tile_id, block_id) == 1;
+}
+
 bool rfdc_ctrl::startup_tile(int tile_id, bool is_dac)
 {
     return XRFdc_StartUp(rfdc_inst_ptr, is_dac, tile_id) == XRFDC_SUCCESS;
@@ -128,9 +142,9 @@ bool rfdc_ctrl::reset_mixer_settings(uint32_t tile_id, uint32_t block_id, bool i
     mixer_settings.FineMixerScale = 0;
     mixer_settings.MixerType      = XRFDC_MIXER_TYPE_FINE;
 
-    return (XRFdc_SetMixerSettings(
-                rfdc_inst_ptr, is_dac, tile_id, block_id, &mixer_settings)
-               == XRFDC_SUCCESS);
+    return (
+        XRFdc_SetMixerSettings(rfdc_inst_ptr, is_dac, tile_id, block_id, &mixer_settings)
+        == XRFDC_SUCCESS);
 }
 
 bool rfdc_ctrl::set_gain_enable(
@@ -149,7 +163,7 @@ bool rfdc_ctrl::set_gain_enable(
     qmc_settings.EventSource = XRFDC_EVNT_SRC_SYSREF;
 
     return (XRFdc_SetQMCSettings(rfdc_inst_ptr, is_dac, tile_id, block_id, &qmc_settings)
-               == XRFDC_SUCCESS);
+            == XRFDC_SUCCESS);
 }
 
 bool rfdc_ctrl::set_gain(uint32_t tile_id, uint32_t block_id, bool is_dac, double gain)
@@ -168,7 +182,7 @@ bool rfdc_ctrl::set_gain(uint32_t tile_id, uint32_t block_id, bool is_dac, doubl
     qmc_settings.EventSource = XRFDC_EVNT_SRC_SYSREF;
 
     return (XRFdc_SetQMCSettings(rfdc_inst_ptr, is_dac, tile_id, block_id, &qmc_settings)
-               == XRFDC_SUCCESS);
+            == XRFDC_SUCCESS);
 }
 
 bool rfdc_ctrl::set_threshold_settings(uint32_t tile_id,
@@ -352,8 +366,8 @@ bool rfdc_ctrl::reset_nco_phase(uint32_t tile_id, uint32_t block_id, bool is_dac
         return false;
     }
 
-    return (XRFdc_ResetNCOPhase(rfdc_inst_ptr, is_dac, tile_id, block_id)
-               == XRFDC_SUCCESS);
+    return (
+        XRFdc_ResetNCOPhase(rfdc_inst_ptr, is_dac, tile_id, block_id) == XRFDC_SUCCESS);
 }
 
 bool rfdc_ctrl::set_nco_freq(
@@ -377,7 +391,7 @@ bool rfdc_ctrl::set_nco_freq(
     return (XRFdc_SetMixerSettings(
                 rfdc_inst_ptr, is_dac, tile_id, block_id, &mixer_settings)
                == XRFDC_SUCCESS)
-               && trigger_update_event(tile_id, block_id, is_dac, MIXER_EVENT);
+           && trigger_update_event(tile_id, block_id, is_dac, MIXER_EVENT);
 }
 
 double rfdc_ctrl::get_nco_freq(uint32_t tile_id, uint32_t block_id, bool is_dac)
@@ -406,8 +420,9 @@ bool rfdc_ctrl::set_nco_event_src(uint32_t tile_id, uint32_t block_id, bool is_d
     mixer_settings.EventSource = XRFDC_EVNT_SRC_SYSREF;
 
     // Set the mixer settings to set the NCO event source
-    return (XRFdc_SetMixerSettings(rfdc_inst_ptr, is_dac, tile_id, block_id, &mixer_settings)
-            == XRFDC_SUCCESS);
+    return (
+        XRFdc_SetMixerSettings(rfdc_inst_ptr, is_dac, tile_id, block_id, &mixer_settings)
+        == XRFDC_SUCCESS);
 }
 
 bool rfdc_ctrl::set_mixer_mode(
@@ -428,7 +443,7 @@ bool rfdc_ctrl::set_mixer_mode(
     return (XRFdc_SetMixerSettings(
                 rfdc_inst_ptr, is_dac, tile_id, block_id, &mixer_settings)
                == XRFDC_SUCCESS)
-               && trigger_update_event(tile_id, block_id, is_dac, MIXER_EVENT);
+           && trigger_update_event(tile_id, block_id, is_dac, MIXER_EVENT);
 }
 
 bool rfdc_ctrl::set_nyquist_zone(
@@ -445,23 +460,22 @@ bool rfdc_ctrl::set_calibration_mode(
            == XRFDC_SUCCESS;
 }
 
+rfdc_ctrl::calibration_mode_options rfdc_ctrl::get_calibration_mode(
+    uint32_t tile_id, uint32_t block_id)
+{
+    uint8_t cal_mode;
+    if (XRFdc_GetCalibrationMode(rfdc_inst_ptr, tile_id, block_id, &cal_mode)
+        != XRFDC_SUCCESS) {
+        throw mpm::runtime_error("Error in RFDC code: Failed to get calibration mode.");
+    }
+    return cal_mode == 1 ? calibration_mode_options::CALIB_MODE1
+                         : calibration_mode_options::CALIB_MODE2;
+}
+
 bool rfdc_ctrl::enable_inverse_sinc_filter(
     uint32_t tile_id, uint32_t block_id, bool enable)
 {
     return XRFdc_SetInvSincFIR(rfdc_inst_ptr, tile_id, block_id, enable) == XRFDC_SUCCESS;
-}
-
-bool rfdc_ctrl::set_sample_rate(uint32_t tile_id, bool is_dac, double sample_rate)
-{
-    // The XRFdc API expects the sample rate in MHz
-    double sample_rate_mhz = sample_rate / 1e6;
-    return XRFdc_DynamicPLLConfig(rfdc_inst_ptr,
-               is_dac,
-               tile_id,
-               XRFDC_EXTERNAL_CLK,
-               sample_rate_mhz,
-               sample_rate_mhz)
-           == XRFDC_SUCCESS;
 }
 
 double rfdc_ctrl::get_sample_rate(uint32_t tile_id, uint32_t block_id, bool is_dac)
@@ -474,6 +488,32 @@ double rfdc_ctrl::get_sample_rate(uint32_t tile_id, uint32_t block_id, bool is_d
     }
     // The XRFdc API returns the sampling frequency in GHz
     return block_status.SamplingFreq * 1e9;
+}
+
+bool rfdc_ctrl::configure_pll(
+    uint32_t tile_id, bool is_dac, uint8_t source, double ref_freq, double sample_rate)
+{
+    // The XRFdc API expects the sample rate / reference freq in MHz
+    return XRFdc_DynamicPLLConfig(
+               rfdc_inst_ptr, is_dac, tile_id, source, ref_freq / 1e6, sample_rate / 1e6)
+           == XRFDC_SUCCESS;
+}
+
+rfdc_pll_config rfdc_ctrl::get_pll_config(uint32_t tile_id, bool is_dac)
+{
+    XRFdc_PLL_Settings settings;
+    rfdc_pll_config result;
+    if (XRFdc_GetPLLConfig(rfdc_inst_ptr, is_dac, tile_id, &settings) != XRFDC_SUCCESS) {
+        throw mpm::runtime_error("Error in RFDC code: Failed to get PLL status");
+    }
+    result.status           = settings.Enabled == 0 ? rfdc_pll_config::PLL_bypassed
+                                                    : rfdc_pll_config::PLL_enabled;
+    result.ref_clk_freq     = settings.RefClkFreq * 1e6;
+    result.sample_rate      = settings.SampleRate * 1e9;
+    result.ref_clk_divider  = settings.RefClkDivider;
+    result.feedback_divider = settings.FeedbackDivider;
+    result.output_divider   = settings.OutputDivider;
+    return result;
 }
 
 bool rfdc_ctrl::set_if(uint32_t tile_id, uint32_t block_id, bool is_dac, double if_freq)
@@ -625,12 +665,13 @@ void rfdc_ctrl::clear_data_fifo_interrupts(
     }
 }
 
-bool rfdc_ctrl::sync_tiles(const std::vector<uint32_t>& tiles, bool is_dac, uint32_t latency)
+bool rfdc_ctrl::sync_tiles(
+    const std::vector<uint32_t>& tiles, bool is_dac, int32_t latency)
 {
     XRFdc_MultiConverter_Sync_Config* sync_config = is_dac ? &rfdc_dac_sync_config
                                                            : &rfdc_adc_sync_config;
-    sync_config->Tiles = 0;
-    sync_config->Target_Latency = latency;
+    sync_config->Tiles                            = 0;
+    sync_config->Target_Latency                   = static_cast<int>(latency);
 
     for (auto tile = tiles.begin(); tile != tiles.end(); ++tile) {
         // sync_config->Tiles is a bitmask, we need to "bump" each bit (0->1)
@@ -640,7 +681,7 @@ bool rfdc_ctrl::sync_tiles(const std::vector<uint32_t>& tiles, bool is_dac, uint
 
     return XRFDC_MTS_OK
            == XRFdc_MultiConverter_Sync(
-                  &rfdc_inst, is_dac ? XRFDC_DAC_TILE : XRFDC_ADC_TILE, sync_config);
+               &rfdc_inst, is_dac ? XRFDC_DAC_TILE : XRFDC_ADC_TILE, sync_config);
 }
 
 uint32_t rfdc_ctrl::get_tile_latency(uint32_t tile_index, bool is_dac)
@@ -700,11 +741,12 @@ bool rfdc_ctrl::get_cal_frozen(const uint32_t tile_id, const uint32_t block_id)
     return cal_freeze_settings.CalFrozen;
 }
 
-void rfdc_ctrl::set_adc_cal_coefficients(uint32_t tile_id, uint32_t block_id, uint32_t cal_block, std::vector<uint32_t> coefs)
+void rfdc_ctrl::set_adc_cal_coefficients(
+    uint32_t tile_id, uint32_t block_id, uint32_t cal_block, std::vector<uint32_t> coefs)
 {
-    if (coefs.size() != 8)
-    {
-        throw mpm::runtime_error("set_adc_cal_coefficients requires that exactly 8 coefficients be passed");
+    if (coefs.size() != 8) {
+        throw mpm::runtime_error(
+            "set_adc_cal_coefficients requires that exactly 8 coefficients be passed");
     }
 
     XRFdc_Calibration_Coefficients cs;
@@ -717,16 +759,19 @@ void rfdc_ctrl::set_adc_cal_coefficients(uint32_t tile_id, uint32_t block_id, ui
     cs.Coeff6 = coefs[6];
     cs.Coeff7 = coefs[7];
 
-    if (XRFdc_SetCalCoefficients(&rfdc_inst, tile_id, block_id, cal_block, &cs) != XRFDC_SUCCESS) {
+    if (XRFdc_SetCalCoefficients(&rfdc_inst, tile_id, block_id, cal_block, &cs)
+        != XRFDC_SUCCESS) {
         throw mpm::runtime_error("Error returned from XRFdc_SetCalCoefficients");
     }
 }
 
-std::vector<uint32_t> rfdc_ctrl::get_adc_cal_coefficients(uint32_t tile_id, uint32_t block_id, uint32_t cal_block)
+std::vector<uint32_t> rfdc_ctrl::get_adc_cal_coefficients(
+    uint32_t tile_id, uint32_t block_id, uint32_t cal_block)
 {
     std::vector<uint32_t> result;
     XRFdc_Calibration_Coefficients cs;
-    if (XRFdc_GetCalCoefficients(&rfdc_inst, tile_id, block_id, cal_block, &cs) != XRFDC_SUCCESS) {
+    if (XRFdc_GetCalCoefficients(&rfdc_inst, tile_id, block_id, cal_block, &cs)
+        != XRFDC_SUCCESS) {
         throw mpm::runtime_error("Error returned from XRFdc_GetCalCoefficients");
     }
 
@@ -740,6 +785,24 @@ std::vector<uint32_t> rfdc_ctrl::get_adc_cal_coefficients(uint32_t tile_id, uint
     result.push_back(cs.Coeff7);
 
     return result;
+}
+
+std::string rfdc_ctrl::get_metal_version(bool libver)
+{
+    if (libver) {
+        return metal_ver();
+    }
+
+    return METAL_VER;
+}
+
+std::string rfdc_ctrl::get_rfdc_version()
+{
+    const double rfdc_ver = XRFdc_GetDriverVersion();
+
+    std::stringstream ver_ss;
+    ver_ss << std::fixed << std::setprecision(1) << rfdc_ver;
+    return ver_ss.str();
 }
 
 }} // namespace mpm::rfdc

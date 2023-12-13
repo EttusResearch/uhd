@@ -24,7 +24,7 @@ list(INSERT CMAKE_MODULE_PATH 0 ${UHD_SOURCE_DIR}/cmake/Modules)
 # UHD Dependency Minimum Versions
 ########################################################################
 set(CMAKE_MIN_VERSION "3.8")
-set(GCC_MIN_VERSION "6.3.0")
+set(GCC_MIN_VERSION "7.3.0")
 set(CLANG_MIN_VERSION "6.0.0")
 set(APPLECLANG_MIN_VERSION "800")
 # Make sure to update the next two in unison:

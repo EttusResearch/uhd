@@ -45,7 +45,7 @@ ORIG_RELEASE=`head -1 host/cmake/debian/changelog | sed 's/.*) \(.*\);.*/\1/'`
 # Currently supported versions can be found here:
 # https://launchpad.net/ubuntu/+ppas
 #
-RELEASES="bionic focal jammy kinetic"
+RELEASES="bionic focal jammy lunar"
 PPA=ppa:ettusresearch/uhd
 
 #
@@ -65,19 +65,27 @@ then
     fi
 fi
 
+# debuild expects our directory name to be ${source package}-${version}, so
+# copy files to a directory with that name excluding files that cause problems
+# or are unnecessary for Debian builds
+rm -rf ${UHD_TOP_LEVEL}/../uhd-${VERSION}
+mkdir ${UHD_TOP_LEVEL}/../uhd-${VERSION}
+rsync --exclude='.git*' --exclude='/debian/' --exclude='*.swp' --exclude='/fpga-src/' --exclude='/build' --exclude='/images/*.pyc' --exclude='/images/uhd-*' --exclude='tags' --exclude='/host/cmake/msvc/' --exclude='/host/cmake/vcpkg/' --exclude='/fpga/' -a  ${UHD_TOP_LEVEL}/ ${UHD_TOP_LEVEL}/../uhd-${VERSION}/
+if [ $? != 0 ]
+then
+    echo "Failed to copy UHD source."
+    exit 1
+fi
+cd ${UHD_TOP_LEVEL}/../uhd-${VERSION}
+
 # Generate the TAR file to be uploaded.
 echo "Creating UHD source archive."
-tar --exclude='.git*' --exclude='./debian' --exclude='*.swp' --exclude='fpga-src' --exclude='build' --exclude='./images/*.pyc' --exclude='./images/uhd-*' --exclude='tags' -cJf ../uhd_${VERSION}.orig.tar.xz .
+tar -cJf ../uhd_${VERSION}.orig.tar.xz .
 if [ $? != 0 ]
 then
     echo "Failed to create UHD source archive."
     exit 1
 fi
-
-# debuild expects our directory name to be ${source package}-${version}
-rm -f ${UHD_TOP_LEVEL}/../uhd-${VERSION}
-ln -s ${UHD_TOP_LEVEL} ${UHD_TOP_LEVEL}/../uhd-${VERSION}
-cd ${UHD_TOP_LEVEL}/../uhd-${VERSION}
 
 #
 # Generate package info for each version.
@@ -144,6 +152,6 @@ then
     if [ "$response" = "yes" ]
     then
         cd ..
-        rm -r ${UHD_TOP_LEVEL}/debian uhd-${VERSION} uhd_${VERSION}.orig.tar.xz uhd*dsc uhd*changes uhd*debian.tar.* uhd*_source.build uhd*.upload
+        rm -r uhd-${VERSION} uhd_${VERSION}.orig.tar.xz uhd*dsc uhd*changes uhd*debian.tar.* uhd*_source.build uhd*.upload
     fi
 fi

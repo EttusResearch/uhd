@@ -8,7 +8,10 @@
 #include <stddef.h>
 
 static struct pid_info pid_list[] = {
+  { 0xa410, "x410", "X410 Module", 0 },
+  { 0xa440, "x440", "X440 Module", 0 },
   { 0x0410, "x410", "X410 Motherboard", 0 },
+  { 0x0440, "x440", "X440 Motherboard", 0 },
   { 0x4000, NULL, "Power Aux Board", 0 },
   { 0x4001, NULL, "Debug RF DB", 0 },
   { 0x4002, "zbx", "ZBX RF DB", 0},
@@ -16,6 +19,7 @@ static struct pid_info pid_list[] = {
   { 0x4004, NULL, "Clocking Aux Board with GPSDO", 0},
   { 0x4005, NULL, "Clocking Aux Board (no GPSDO)", 0},
   { 0x4006, NULL, "IF Test Manufacturing CCA", 0},
+  { 0x4007, "fbx", "FBX RF DB", 0},
 };
 
 #define ARRAY_SIZE(x) (sizeof((x)) / sizeof((*x)))

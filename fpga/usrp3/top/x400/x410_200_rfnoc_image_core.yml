@@ -2,7 +2,7 @@
 # -----------------------------------------
 schema: rfnoc_imagebuilder_args         # Identifier for the schema used to validate this file
 copyright: >-                           # Copyright information used in file headers
-  Ettus Research, A National Instruments Brand
+  Copyright 2023 Ettus Research, a National Instruments Brand
 license: >-                             # License information used in file headers
   SPDX-License-Identifier: LGPL-3.0-or-later
 version: '1.0'                          # File version
@@ -63,6 +63,10 @@ noc_blocks:
     parameters:
       NUM_PORTS: 2
       NIPC: RADIO_NIPC
+    ctrl_clock: _device_.rfnoc_ctrl     # The clock that is used for the control
+                                        # interface. This is the default clock,
+                                        # so we could skip it.
+    timebase_clock: _device_.radio      # The clock that is used for the timebase.
   duc1:
     block_desc: 'duc.yml'
     parameters:
@@ -76,6 +80,8 @@ noc_blocks:
     parameters:
       NUM_PORTS: 2
       NIPC: RADIO_NIPC
+    ctrl_clock: _device_.rfnoc_ctrl
+    timebase_clock: _device_.radio
   replay0:
     block_desc: 'replay.yml'
     parameters:
@@ -130,7 +136,7 @@ connections:
   # BSP Connections
   - { srcblk: radio0,   srcport: ctrlport,    dstblk: _device_, dstport: ctrlport_radio0 }
   - { srcblk: radio1,   srcport: ctrlport,    dstblk: _device_, dstport: ctrlport_radio1 }
-  - { srcblk: replay0,  srcport: axi_ram,     dstblk: _device_, dstport: dram            }
+  - { srcblk: replay0,  srcport: axi_ram,     dstblk: _device_, dstport: dram0           }
   - { srcblk: _device_, srcport: radio0,      dstblk: radio0,   dstport: radio           }
   - { srcblk: _device_, srcport: radio1,      dstblk: radio1,   dstport: radio           }
   - { srcblk: _device_, srcport: time,        dstblk: radio0,   dstport: time            }
@@ -145,9 +151,9 @@ connections:
 #   - dstport = Clock domain on the destination block to connect
 clk_domains:
     - { srcblk: _device_, srcport: radio,    dstblk: radio0,  dstport: radio }
-    - { srcblk: _device_, srcport: radio_2x, dstblk: duc0,    dstport: ce    }
-    - { srcblk: _device_, srcport: radio_2x, dstblk: ddc0,    dstport: ce    }
+    - { srcblk: _device_, srcport: ce,       dstblk: duc0,    dstport: ce    }
+    - { srcblk: _device_, srcport: ce,       dstblk: ddc0,    dstport: ce    }
     - { srcblk: _device_, srcport: radio,    dstblk: radio1,  dstport: radio }
-    - { srcblk: _device_, srcport: radio_2x, dstblk: duc1,    dstport: ce    }
-    - { srcblk: _device_, srcport: radio_2x, dstblk: ddc1,    dstport: ce    }
+    - { srcblk: _device_, srcport: ce,       dstblk: duc1,    dstport: ce    }
+    - { srcblk: _device_, srcport: ce,       dstblk: ddc1,    dstport: ce    }
     - { srcblk: _device_, srcport: dram,     dstblk: replay0, dstport: mem   }

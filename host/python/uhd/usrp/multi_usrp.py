@@ -186,7 +186,6 @@ class MultiUSRP(lib.usrp.multi_usrp):
         while send_samps < max_samps:
             real_samps = min(proto_len, max_samps-send_samps)
             if real_samps < proto_len:
-                print(waveform_proto[:, :real_samps])
                 samples = streamer.send(waveform_proto[:, :real_samps], metadata)
             else:
                 samples = streamer.send(waveform_proto, metadata)

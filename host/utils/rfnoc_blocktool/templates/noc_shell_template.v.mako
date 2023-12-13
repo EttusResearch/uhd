@@ -16,10 +16,16 @@ import math
 //
 // Parameters:
 //
-//   THIS_PORTID : Control crossbar port to which this block is connected
-//   CHDR_W      : AXIS-CHDR data bus width
-//   MTU         : Maximum transmission unit (i.e., maximum packet size in
-//                 CHDR words is 2**MTU).
+//   THIS_PORTID  : Control crossbar port to which this block is connected
+//   CHDR_W       : AXIS-CHDR data bus width
+//   CTRL_CLK_IDX : The index of the control clock for this block. This is used
+//                  to populate the backend interface, from where UHD can query
+//                  the clock index and thus auto-deduct which clock is used.
+//   TB_CLK_IDX   : The index of the timebase clock for this block. This is used
+//                  to populate the backend interface, from where UHD can query
+//                  the clock index and thus auto-deduct which clock is used.
+//   MTU          : Maximum transmission unit (i.e., maximum packet size in
+//                  CHDR words is 2**MTU).
 //
 
 `default_nettype none
@@ -28,6 +34,8 @@ import math
 module noc_shell_${config['module_name']} #(
   parameter [9:0] THIS_PORTID     = 10'd0,
   parameter       CHDR_W          = 64,
+  parameter [5:0] CTRL_CLK_IDX    = 6'h3F,
+  parameter [5:0] TB_CLK_IDX      = 6'h3F,
   parameter [5:0] MTU             = 10${"," if ('parameters' in config) else ""}
 %if 'parameters' in config:
 <% param_count = 1 %>\

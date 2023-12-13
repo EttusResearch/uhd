@@ -15,8 +15,9 @@
 //   configuration bus to initiate stream creation.
 //
 // Parameters:
-//   - CHDR_W: Width of the CHDR bus in bits
-//   - MTU: Log2 of the maximum number of lines in a packet
+//   - CHDR_W      : Width of the CHDR bus in bits
+//   - MTU         : Log2 of the maximum number of lines in a packet
+//   - EN_PKT_GATE : Enable packet gate to make each packet contiguous
 //
 // Signals:
 //   - m_axis_chdr_* : Output CHDR stream (AXI-Stream)
@@ -24,8 +25,9 @@
 //   - s_axis_strs_* : Input stream status (AXI-Stream)
 
 module chdr_stream_output #(
-  parameter CHDR_W = 256,
-  parameter MTU    = 10
+  parameter CHDR_W      = 256,
+  parameter MTU         = 10,
+  parameter EN_PKT_GATE = 1
 )(
   // Clock, reset and settings
   input  wire              clk,
@@ -84,15 +86,31 @@ module chdr_stream_output #(
   reg               chdr_out_tlast, chdr_out_tvalid;
   wire              chdr_out_tready;
 
-  axi_packet_gate #(
-    .WIDTH(CHDR_W), .SIZE(MTU), .USE_AS_BUFF(0)
-  ) chdr_pkt_gate_i (
-    .clk(clk), .reset(rst), .clear(1'b0),
-    .i_tdata(chdr_out_tdata), .i_tlast(chdr_out_tlast), .i_terror(1'b0),
-    .i_tvalid(chdr_out_tvalid), .i_tready(chdr_out_tready),
-    .o_tdata(m_axis_chdr_tdata), .o_tlast(m_axis_chdr_tlast),
-    .o_tvalid(m_axis_chdr_tvalid), .o_tready(m_axis_chdr_tready)
-  );
+  if (EN_PKT_GATE) begin : gen_pkt_gate
+    axi_packet_gate #(
+      .WIDTH      (CHDR_W),
+      .SIZE       (MTU   ),
+      .USE_AS_BUFF(0     )
+    ) chdr_pkt_gate_i (
+      .clk     (clk               ),
+      .reset   (rst               ),
+      .clear   (1'b0              ),
+      .i_tdata (chdr_out_tdata    ),
+      .i_tlast (chdr_out_tlast    ),
+      .i_terror(1'b0              ),
+      .i_tvalid(chdr_out_tvalid   ),
+      .i_tready(chdr_out_tready   ),
+      .o_tdata (m_axis_chdr_tdata ),
+      .o_tlast (m_axis_chdr_tlast ),
+      .o_tvalid(m_axis_chdr_tvalid),
+      .o_tready(m_axis_chdr_tready)
+    );
+  end else begin : gen_no_pkt_gate
+    assign m_axis_chdr_tdata  = chdr_out_tdata;
+    assign m_axis_chdr_tlast  = chdr_out_tlast;
+    assign m_axis_chdr_tvalid = chdr_out_tvalid;
+    assign chdr_out_tready    = m_axis_chdr_tready;
+  end
 
   // ---------------------------------------------------
   //  Flow Control State

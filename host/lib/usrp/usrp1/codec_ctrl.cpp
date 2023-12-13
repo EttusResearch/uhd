@@ -258,8 +258,8 @@ void usrp1_codec_ctrl_impl::write_aux_dac(aux_dac_t which, double volts)
 {
     // special case for aux dac d (aka sigma delta word)
     if (which == AUX_DAC_D) {
-        uint16_t dac_word = uhd::clip(
-            uhd::narrow_cast<int>(std::lround(volts * 0xfff / 3.3)), 0, 0xfff);
+        uint16_t dac_word =
+            uhd::clip(uhd::narrow_cast<int>(std::lround(volts * 0xfff / 3.3)), 0, 0xfff);
         _ad9862_regs.sig_delt_11_4 = uint8_t(dac_word >> 4);
         _ad9862_regs.sig_delt_3_0  = uint8_t(dac_word & 0xf);
         this->send_reg(42);

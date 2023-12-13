@@ -31,4 +31,3 @@ struct UHD_API if_addrs_t
 UHD_API std::vector<if_addrs_t> get_if_addrs(void);
 
 }} // namespace uhd::transport
-

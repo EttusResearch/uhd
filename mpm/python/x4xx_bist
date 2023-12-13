@@ -13,7 +13,6 @@ Will work on all derivatives of the X4xx series.
 import sys
 import time
 import subprocess
-from usrp_mpm.sys_utils.udev import dt_symbol_get_spidev
 from usrp_mpm import bist
 
 # Timeout values are in seconds:
@@ -27,17 +26,6 @@ DEFAULT_DB_ID = 0
 # We will import stuff as late as possible, intentionally, so let's calm down
 # PyLint
 # pylint: disable=import-outside-toplevel
-
-
-def get_rfdc_config(log):
-    """
-    Return resampling, halfband settings of current FPGA image.
-    """
-    from usrp_mpm.periph_manager import x4xx_rfdc_regs
-    from usrp_mpm.periph_manager import x4xx_rfdc_ctrl
-    rdfc_regs_control = x4xx_rfdc_regs.RfdcRegsControl(
-        x4xx_rfdc_ctrl.X4xxRfdcCtrl.rfdc_regs_label, log)
-    return rdfc_regs_control.get_rfdc_resampling_factor(0)
 
 
 def db_bist(test_fn):
@@ -121,6 +109,9 @@ class X4XXBIST(bist.UsrpBIST):
 
     def __init__(self):
         bist.UsrpBIST.__init__(self)
+        self.product_id = bist.get_product_id_from_eeprom(
+            valid_ids=['x410', 'x440'],
+            cmd='eeprom-id mb')
 
     def get_mb_periph_mgr(self):
         """Return reference to an x4xx periph manager"""
@@ -129,47 +120,19 @@ class X4XXBIST(bist.UsrpBIST):
 
     def get_product_id(self):
         """Return the mboard product ID:"""
-        # TODO: use correct product ID, this is just a hack
-        # TODO: the path to the eeprom is not self-speaking like e.g. mb_eeprom
-        # return bist.get_product_id_from_eeprom(valid_ids=['x410'], eeprom='mb_eeprom')
-        return self.get_product_id_from_eeprom(
-            valid_ids=['0410'],
-            eeprom='/sys/bus/nvmem/devices/13-00500/nvmem')
-
-    def get_product_id_from_eeprom(self, valid_ids, eeprom):
-        """Return the mboard product ID
-        Returns something like x410...
-        """
-        # it is just here as override because eeprom-id installed on the
-        # x410 now needs a parameter while on n310 it runs without
-        # also the path to the eeprom is not self-speaking like e.g. mb_eeprom
-        # last problem is that the returned id is not 'x410' but '0410'
-        cmd = ['eeprom-id']
-        cmd.append(eeprom)
-        cmd = ' '.join(cmd)
-        output = subprocess.check_output(
-            cmd,
-            stderr=subprocess.STDOUT,
-            shell=True,
-            ).decode('utf-8')
-        sys.stderr.write("product_id_from_eeprom: {}".format(str(output)))
-        for valid_id in valid_ids:
-            if valid_id in output:
-                return 'x410'
-        raise AssertionError("Cannot determine product ID.: `{}'".format(output))
+        return self.product_id
 
     def reload_fpga(self, fpga_type, sfp0_addrs):
         """
         Loads the specified fpga and checks for sfp0 address, if the sfp0 address
         existed, restores the original sfp0 address
         """
-        from usrp_mpm.sys_utils import net
         from pyroute2 import IPRoute
         import errno
         bist.load_fpga_image(
                 fpga_type,
                 self.device_args,
-                'x410',
+                self.product_id,
         )
         if sfp0_addrs:
             ipr = IPRoute()
@@ -183,14 +146,12 @@ class X4XXBIST(bist.UsrpBIST):
                     pass
             ipr.link('set', index=dev, state='up')
 
-    def check_fpga_type_clkaux(self):
+    def ensure_oss_image(self):
         """
-        clkaux BISTs require a OSS bitfile, check type and reimage if needed
-        If we have an OSS bitfile, we need to return a mcr that the clkaux
-        lmk can lock to. (Data clock rate of 122.88MHz)
+        If a LV image is present, load the default OSS image. If we already have
+        an OSS image, do nothing.
         """
         from usrp_mpm.periph_manager import x4xx, x4xx_periphs
-
         mboard_regs_control = x4xx_periphs.MboardRegsControl(
             x4xx.x4xx.mboard_regs_label, self.log)
         fpga_str = mboard_regs_control.get_fpga_type()
@@ -198,14 +159,30 @@ class X4XXBIST(bist.UsrpBIST):
             bist.load_fpga_image(
                 self.DEFAULT_FPGA_TYPE,
                 self.device_args,
-                'x410',
+                self.product_id,
             )
 
-        rfdc_resamp, halfband = get_rfdc_config(self.log)
-        mcr = 122880000 * (8 / rfdc_resamp)
-        if halfband:
-            mcr = mcr / 2
-        return mcr
+    def get_valid_mcrs(self):
+        """
+        Return all valid MCRs for the currently loaded bitfile.
+        """
+        from usrp_mpm.periph_manager import x4xx_rfdc_regs
+        from usrp_mpm.periph_manager import x4xx_rfdc_ctrl
+        rfdc_regs_control = x4xx_rfdc_regs.RfdcRegsControl(
+            x4xx_rfdc_ctrl.X4xxRfdcCtrl.rfdc_regs_label, self.log)
+        bandwidth = rfdc_regs_control.get_rfdc_info(0)['bw']
+        return {
+            100: [122.88e6, 125e6],
+            200: [122.88e6*2, 125e6*2],
+            400: [122.88e6*4, 125e6*4],
+            1600: [122.88e6*4, 125e6*4, 2000e6],
+        }[bandwidth]
+
+    def get_default_mcr(self):
+        """
+        Return a valid MCR for the currently loaded bitfile.
+        """
+        return min(self.get_valid_mcrs())
 
 #############################################################################
 # BISTS
@@ -288,7 +265,7 @@ class X4XXBIST(bist.UsrpBIST):
             "Waiting for LOCKOK to go high for up to {} seconds...\n".format(
                 gps_lockok_timeout))
         if not bist.poll_with_timeout(
-                clk_aux_brd.get_gps_lock,
+                clk_aux_brd.get_gps_locked,
                 gps_lockok_timeout*1000,
                 1000
             ):
@@ -326,16 +303,10 @@ class X4XXBIST(bist.UsrpBIST):
         assert 'ref_clock_mboard' in self.tests_to_run
         if self.args.dry_run:
             return True, {'ref_locked': True}
-        from usrp_mpm.periph_manager import x4xx_rfdc_ctrl
-        rfdc_resamp, fpga_halfband = get_rfdc_config(self.log)
-        mcrs_to_test = []
-        for master_clock_rate, (_, decimation, _, halfband) in \
-                x4xx_rfdc_ctrl.X4xxRfdcCtrl.master_to_sample_clk.items():
-            if decimation == rfdc_resamp and fpga_halfband == halfband:
-                mcrs_to_test.append(master_clock_rate)
-
+        mcrs_to_test = self.get_valid_mcrs()
         for master_clock_rate in mcrs_to_test:
-            sys.stderr.write("Testing master_clock_rate {}".format(master_clock_rate))
+            sys.stderr.write(
+                f"Testing master_clock_rate {master_clock_rate/1e6} Msps")
             result = bist.get_ref_clock_prop(
                 'mboard',
                 'internal',
@@ -457,22 +428,21 @@ class X4XXBIST(bist.UsrpBIST):
         """
         BIST for testing the fabric_clk signal from the motherboard
 
-        Description: Checks to see if the LMK on the clocking auxiliary board
-        can lock to the fabric clock signal output by the motherboard. We check
-        this by verifying that the pri_ref signal is being used, the dpll is locked,
-        the apll1 is locked, and apll2 is unlocked.
+        Description: Checks to see if the LMK will detect the experimental fabric_clk 
 
         External Equipment: None
-
+        
         Return dictionary:
-        - fabric_clk pll lock: Did the clkaux lmk lock to the fabric_clk signal
+        - fabric_clk successfully enabled and validated: signal has been validated
+        - fabric_clk successfully disabled: signal has been disabled
         """
         assert 'nsync_fabric' in self.tests_to_run
         import uhd
         from uhd.usrp import multi_usrp
 
         try:
-            mcr = self.check_fpga_type_clkaux()
+            self.ensure_oss_image()
+            mcr = self.get_default_mcr()
             usrp_dev = multi_usrp.MultiUSRP("type=x4xx,addr=localhost,clock_source=nsync,"
                                             "master_clock_rate={}".format(str(mcr)))
         except Exception as ex:
@@ -481,26 +451,29 @@ class X4XXBIST(bist.UsrpBIST):
             }
 
         mpm_c = usrp_dev.get_mpm_client()
-
+        
+        # Make sure fabric_clk is turned off
+        mpm_c.enable_ecpri_clocks(False)
+        # Check validation bit - reg 0x19B second bit as per datasheet
+        pri_ref_disabled_condition = not (int(mpm_c.peek_clkaux(0x19B),16) & 0x4)
+        # Turn on fabric_clk
         mpm_c.nsync_change_input_source('fabric_clk')
-        # The lock should happen fast, but give it half a second
+        # Give it some time
         time.sleep(0.5)
         # Status 1 checks that the lmk is configured to use the priref signal
         # True = secref, False = priref
         using_pri_ref = not mpm_c.clkaux_get_nsync_status1()
-        # Status 0 checks dpll loss of lock
-        dpll_lock = not mpm_c.clkaux_get_nsync_status0()
-        # Reg 0xD checks several APLL statuses, we need to make sure APLL1 is
-        # locked and APLL2 is unlocked
-        apll_lock = mpm_c.peek_clkaux(0xD) == '0x8'
-
-        result = using_pri_ref and dpll_lock and apll_lock
-
+        # Check validation bit - reg 0x19B second bit as per datasheet
+        pri_ref_enabled = (int(mpm_c.peek_clkaux(0x19B),16) & 0x4) == 0x4
+        # Turn off clock
         mpm_c.enable_ecpri_clocks(False)
+        # Check validation bit - reg 0x19B second bit as per datasheet
+        pri_ref_disabled = not (int(mpm_c.peek_clkaux(0x19B),16) & 0x4)
+         
+        result = pri_ref_disabled and using_pri_ref and pri_ref_enabled and pri_ref_disabled_condition
 
-        return result, {"pri_ref_selected": using_pri_ref,
-                        "dpll_locked": dpll_lock,
-                        "apll1_locked_apll2_unlocked": apll_lock}
+        return result, {"fabric_clock_successfully_enabled": pri_ref_enabled,
+                        "fabric_clock_successfully_disabled": pri_ref_disabled}
 
     def bist_nsync_gty(self):
         """
@@ -521,7 +494,8 @@ class X4XXBIST(bist.UsrpBIST):
         from uhd.usrp import multi_usrp
 
         try:
-            mcr = self.check_fpga_type_clkaux()
+            self.ensure_oss_image()
+            mcr = self.get_default_mcr()
             usrp_dev = multi_usrp.MultiUSRP("type=x4xx,addr=localhost,clock_source=nsync,"
                                             "master_clock_rate={}".format(str(mcr)))
         except Exception as ex:
@@ -548,8 +522,14 @@ class X4XXBIST(bist.UsrpBIST):
         mpm_c.enable_ecpri_clocks(False)
         # Set the clock source back to internal, as the register values
         # for locking to the gty_rcv_clk cause the mboard to lose ref_lock
-        # to the nsync lmk.
-        mpm_c.set_clock_source('internal')
+        # to the nsync lmk. For x440 setting clock source must be done
+        # at device initialization.
+        if self.product_id == 'x440':
+            usrp_dev = None
+            usrp_dev = multi_usrp.MultiUSRP("type=x4xx,addr=localhost,clock_source=internal,"
+                                            "master_clock_rate={}".format(str(mcr)))
+        else:
+            mpm_c.set_clock_source('internal')
 
         return result, {"pri_ref_selected": using_pri_ref,
                         "dpll_locked": dpll_lock,
@@ -570,7 +550,8 @@ class X4XXBIST(bist.UsrpBIST):
         from uhd.usrp import multi_usrp
 
         try:
-            mcr = self.check_fpga_type_clkaux()
+            self.ensure_oss_image()
+            mcr = self.get_default_mcr()
             usrp_dev = multi_usrp.MultiUSRP("type=x4xx,addr=localhost,clock_source=nsync,"
                                             "master_clock_rate={}".format(str(mcr)))
         except Exception as ex:
@@ -605,7 +586,8 @@ class X4XXBIST(bist.UsrpBIST):
         from usrp_mpm.sys_utils import net
 
         try:
-            mcr = self.check_fpga_type_clkaux()
+            self.ensure_oss_image()
+            mcr = self.get_default_mcr()
             usrp_dev = multi_usrp.MultiUSRP("type=x4xx,addr=localhost,clock_source=nsync,"
                                             "master_clock_rate={}".format(str(mcr)))
         except Exception as ex:
@@ -641,7 +623,7 @@ class X4XXBIST(bist.UsrpBIST):
         Needed Equipment: External loopback cable between port 0 and port 1
 
         Notes:
-        - X410 has two FP-GPIO connectors (HDMI connectors) with 12 programmable
+        - X4xx has two FP-GPIO connectors (HDMI connectors) with 12 programmable
           pins each
 
         Return dictionary:
@@ -906,6 +888,11 @@ class X4XXBIST(bist.UsrpBIST):
         assert 'spi_flash_integrity' in self.tests_to_run
         if self.args.dry_run:
             return True, {}
+        if self.product_id not in [ 'x410']:
+            sys.stderr.write(
+                "Cannot run bist_spi_flash_integrity(): "
+                "This device does not have daughterboard flash memory!\n")
+            return False, {}
 
         import os
         from usrp_mpm.sys_utils.db_flash import DBFlash
@@ -966,6 +953,11 @@ class X4XXBIST(bist.UsrpBIST):
         assert 'spi_flash_speed' in self.tests_to_run
         if self.args.dry_run:
             return True, {}
+        if self.product_id not in ['x410']:
+            sys.stderr.write(
+                "Cannot run bist_spi_flash_speed(): "
+                "This device does not have daughterboard flash memory!\n")
+            return False, {}
 
         import os
         import re

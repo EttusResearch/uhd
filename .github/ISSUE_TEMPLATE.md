@@ -1,5 +1,5 @@
 <!--- Before filing an issue, search for solutions here: -->
-<!--- USRP users mailing list (http://lists.ettus.com/mailman/listinfo/usrp-users_lists.ettus.com) -->
+<!--- USRP users mailing list (https://kb.ettus.com/Mailing_Lists) -->
 <!--- https://kb.ettus.com/Knowledge_Base -->
 <!--- https://files.ettus.com/manual/ -->
 

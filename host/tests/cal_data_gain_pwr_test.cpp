@@ -67,8 +67,8 @@ BOOST_AUTO_TEST_CASE(test_pwr_cal_api)
     // Now clear, then add a more useful data set. We can stay at ROOM_TEMP.
     gain_power_data->clear();
     constexpr double power_offset = -20.0; // 0 dB shall map to -20 dBm
-    constexpr double lin_error = 0.1; // The linearization error shall increase by 0.1
-                               // dB per dB gain
+    constexpr double lin_error    = 0.1; // The linearization error shall increase by 0.1
+                                      // dB per dB gain
     constexpr double ref_freq = 1e9;
     std::map<double, double> test_gain_power;
     constexpr double max_gain = 10.0;
@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE(test_pwr_cal_api)
         gain_power_data->get_gain(test_gain_power.crbegin()->second, ref_freq),
         test_gain_power.crbegin()->first,
         1e-6);
-    BOOST_CHECK_CLOSE(gain_power_data->get_gain(-19.0, ref_freq), 1/1.1, 1e-6);
+    BOOST_CHECK_CLOSE(gain_power_data->get_gain(-19.0, ref_freq), 1 / 1.1, 1e-6);
 }
 
 BOOST_AUTO_TEST_CASE(test_pwr_cal_api_irreg)
@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE(test_pwr_cal_api_irreg)
     const std::string serial = "ABC1234";
     const uint64_t timestamp = 0x12340000;
 
-    auto gain_power_data = pwr_cal::make(name, serial, timestamp);
+    auto gain_power_data    = pwr_cal::make(name, serial, timestamp);
     constexpr int ROOM_TEMP = 20;
     gain_power_data->set_temperature(ROOM_TEMP);
 
@@ -114,19 +114,18 @@ BOOST_AUTO_TEST_CASE(test_pwr_cal_api_irreg)
     // Interpolated readback:
     BOOST_CHECK_CLOSE(gain_power_data->get_power(5.0, 1.5e9), -30.0, 1e-6);
     BOOST_CHECK_CLOSE(gain_power_data->get_gain(-30.0, 1.5e9), 5.0, 0.1);
-
 }
 
 BOOST_AUTO_TEST_CASE(test_pwr_cal_serdes)
 {
-    const std::string name   = "Mock Gain/Power Data";
-    const std::string serial = "ABC1234";
-    const uint64_t timestamp = 0x12340000;
+    const std::string name         = "Mock Gain/Power Data";
+    const std::string serial       = "ABC1234";
+    const uint64_t timestamp       = 0x12340000;
     auto gain_power_data_blueprint = pwr_cal::make(name, serial, timestamp);
 
     constexpr double power_offset = -20.0;
-    constexpr double lin_error = 0.1;
-    constexpr double ref_freq = 1e9;
+    constexpr double lin_error    = 0.1;
+    constexpr double ref_freq     = 1e9;
     std::map<double, double> test_gain_power;
     for (double gain = 0.0; gain < 10.0; gain += 1.0) {
         test_gain_power[gain] = gain + power_offset + lin_error * gain;
@@ -137,16 +136,14 @@ BOOST_AUTO_TEST_CASE(test_pwr_cal_serdes)
         test_gain_power, min_power, max_power, ref_freq);
 
     const auto serialized = gain_power_data_blueprint->serialize();
-    auto pwr_cal_data = container::make<pwr_cal>(serialized);
+    auto pwr_cal_data     = container::make<pwr_cal>(serialized);
 
     BOOST_CHECK_EQUAL(pwr_cal_data->get_name(), name);
     BOOST_CHECK_EQUAL(pwr_cal_data->get_serial(), serial);
     BOOST_CHECK_EQUAL(pwr_cal_data->get_timestamp(), timestamp);
 
     for (auto& gp : test_gain_power) {
-        BOOST_CHECK_EQUAL(
-            pwr_cal_data->get_power(gp.first, ref_freq),
-            gp.second);
+        BOOST_CHECK_EQUAL(pwr_cal_data->get_power(gp.first, ref_freq), gp.second);
     }
 }
 

@@ -15,32 +15,48 @@ The USRP FPGA build system requires a UNIX-like environment with the following d
 - [Doxygen](https://www.doxygen.nl/index.html) (Optional: To build the manual)
 - [ModelSim](https://www.mentor.com/products/fv/modelsim/) (Optional: For simulation)
 
-The following USRPs work with the free versions:
+The following USRPs work with the free versions of the Xilinx tools as well as
+the full licensed versions:
 - USRP B200/B200mini (ISE WebPACK)
 - USRP E310/E312/E313 (Vivado ML Standard)
 
-### What FPGA does my USRP have?
+### System Requirements
 
-| USRP           | FPGA                                          |
-| -------------- | --------------------------------------------- |
-| USRP B200      | Spartan-6 XC6SLX75                            |
-| USRP B210      | Spartan-6 XC6SLX150                           |
-| USRP B200mini  | Spartan-6 XC6SLX75                            |
-| USRP B205mini  | Spartan-6 XC6SLX150                           |
-| USRP X300      | Kintex-7 XC7K325T (7 Series: Kintex-7)        |
-| USRP X310      | Kintex-7 XC7K410T (7 Series: Kintex-7)        |
-| USRP E31x      | Zynq-7000 XC7Z020 (SoCs: Zynq-7000)           |
-| USRP E320      | Zynq-7000 XC7Z045 (SoCs: Zynq-7000)           |
-| USRP N300      | Zynq-7000 XC7Z035 (SoCs: Zynq-7000)           |
-| USRP N310/N320 | Zynq-7000 XC7Z100 (SoCs: Zynq-7000)           |
-| USRP X410      | RFSoC XCZU28DR (SoCs: Zynq UltraScale+ RFSoC) |
+In general, a high-performance PC with a lot of disk space and memory is
+recommended for building FPGA images. For USRP FPGA builds, the following
+system RAM is recommended:
 
-Note: The Xilinx installation must include support for the specified FPGA family. You can save disk space and installation time by only installing support for the FPGAs you intend to use.
+- USRP E3xx, X3xx, and N3xx Series
+  - 12 GiB minimum
+  - 16 GiB recommended
+- USRP X4xx Series
+  - 24 GiB minimum
+  - 32 GiB recommended
 
-### Requirements
+For other system requirements related to the Xilinx tools, see the appropriate
+Xilinx documentation for the build tool required by your FPGA type.
 
 - [Xilinx Vivado Release Notes](https://www.xilinx.com/content/dam/xilinx/support/documents/sw_manuals/xilinx2021_1/ug973-vivado-release-notes-install-license.pdf)
 - [Xilinx ISE Platform Requirements](http://www.xilinx.com/support/documentation/sw_manuals/xilinx14_7/irn.pdf)
+
+### What FPGA does my USRP have?
+
+| USRP           | FPGA                                          | Design Tool       |
+| -------------- | --------------------------------------------- | ----------------- |
+| USRP B200      | Spartan-6 XC6SLX75                            | ISE               |
+| USRP B210      | Spartan-6 XC6SLX150                           | ISE               |
+| USRP B200mini  | Spartan-6 XC6SLX75                            | ISE               |
+| USRP B205mini  | Spartan-6 XC6SLX150                           | ISE               |
+| USRP X300      | Kintex-7 XC7K325T (7 Series: Kintex-7)        | Vivado            |
+| USRP X310      | Kintex-7 XC7K410T (7 Series: Kintex-7)        | Vivado            |
+| USRP E31x      | Zynq-7000 XC7Z020 (SoCs: Zynq-7000)           | Vivado            |
+| USRP E320      | Zynq-7000 XC7Z045 (SoCs: Zynq-7000)           | Vivado            |
+| USRP N300      | Zynq-7000 XC7Z035 (SoCs: Zynq-7000)           | Vivado            |
+| USRP N310/N320 | Zynq-7000 XC7Z100 (SoCs: Zynq-7000)           | Vivado            |
+| USRP X410      | RFSoC XCZU28DR Speed grade 1 (SoCs: Zynq UltraScale+ RFSoC) | Vivado |
+| USRP X440      | RFSoC XCZU28DR Speed grade 2 (SoCs: Zynq UltraScale+ RFSoC) | Vivado |
+
+Note: The Xilinx installation must include support for the specified FPGA family. You can save disk space and installation time by only installing support for the FPGAs you intend to use.
 
 ## Build Environment Setup
 
@@ -64,7 +80,7 @@ link above.
 
 You can install all the dependencies through the package manager:
 
-    sudo apt-get install python bash build-essential doxygen
+    sudo apt-get install python3 bash build-essential doxygen
 
 Your actual command may differ.
 
@@ -72,7 +88,7 @@ Your actual command may differ.
 
 You can install all the dependencies through the package manager:
 
-    sudo yum -y install python bash make doxygen
+    sudo dnf -y install python bash make doxygen
 
 Your actual command may differ.
 
@@ -95,7 +111,7 @@ The following additional packages are also required and can be selected in the G
   + `e31x`: For USRP E310
   + `e320`: For USRP E320
   + `n3xx`: For USRP N300/N310/N320
-  + `x400`: For USRP X410
+  + `x400`: For USRP X410/X440
 
 - To add vivado to the PATH and to setup up the Ettus Xilinx build environment run
   + `source setupenv.sh` (If Vivado is installed in the default path /opt/Xilinx/Vivado) _OR_
@@ -277,7 +293,8 @@ support a 245.76 MHz or 250 MHz master clock rate.
 
 A more detailed description of the targets can be found at \ref x4xx_updating_fpga_types.
 Run `make help` in the `<repo>/fpga/usrp3/top/x400/` directory to see
-the complete list of targets available.
+the complete list of targets available. It will list targets for both X410 and
+X440.
 
 #### Outputs
 - `build/usrp_<product>_fpga.bit` : Configuration bitstream with header

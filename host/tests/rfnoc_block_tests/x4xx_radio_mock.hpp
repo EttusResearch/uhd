@@ -224,7 +224,8 @@ struct uhd_log_enabler
             if (parsed_level) {
                 level = *parsed_level;
             } else {
-                std::cout << "Unable to parse UHD_UNITTEST_LOG_LEVEL " << env_p << std::endl;
+                std::cout << "Unable to parse UHD_UNITTEST_LOG_LEVEL " << env_p
+                          << std::endl;
             }
         }
 

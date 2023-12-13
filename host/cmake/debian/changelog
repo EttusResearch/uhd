@@ -1,3 +1,397 @@
+uhd (4.6.0.0-0ubuntu1) ubuntu_release; urgency=low
+
+  * ci
+    - only build docker images once per week
+    - propagate testLength to RF ATS
+    - replace deprecated ruamel.yaml methods
+    - use build farm for windows builds
+  * cmake
+    - Fix make_x410 and make_x440 targets
+  * deb
+    - copyright file update to eliminate errors and warnings
+  * docs
+    - X440: Add FBX to daughterboard list
+    - X440: Corrected web link syntax in FBX doc.
+    - x440: Add X440_X4_200 to image flavors
+    - Add dual-rate documentation
+  * examples
+    - L band capture example using dual rate
+  * fpga
+    - ci: Add X440_X4_200 to pipelines
+    - lib: Allow buffering in eth_ipv4_chdr_adapter
+    - n3xx: Add CE clock
+    - rfnoc: Add clock info to backend ifc
+    - rfnoc: radio: Add clock index parameters
+    - tools: Add X440_X4_200 to X440 package
+    - x400: Add CE clock
+    - x400: Add X440 200 MHz variant with DDC/DUC
+    - x400: Split DRAM interface into two banks
+    - x400: Update PL DRAM speed bin
+    - x400: bump minor revision
+    - x400: pps_sync cleanup
+    - x400: propagate pps_sync changes
+    - x400: update signals to run on two domains
+    - x440: cpld: led control cleanup
+    - x440: remove extra synchronizer
+  * images
+    - bump x4xx fpga images
+    - update non-x4xx images
+  * lib
+    - rfnoc: Add clock info fields to client zero
+    - rfnoc: Add support for auto-clock discovery
+    - x4xx: Use auto clock ID in x400_radio_control
+  * mpm
+    - x440: Add lookup table for default MCR per DSP bandwidth
+    - x440: Multi-Tile Sync disabled when using dual rate
+    - x400: Align FPGA revision
+    - x400: match HDL PPS updates
+    - x400: make PRC a multiple of both rfdc rates
+    - fix timekeeper misalignment
+  * multi_usrp
+    - Added module_serial to info
+  * rfnoc
+    - Enable SEP throttle register
+    - image builder: Add clock index support to image builder
+  * utils
+    - init device with gpsdo sources in query_gpsdo_sensors
+  * x4xx
+    - Add support for auto clock ID
+    - FPGA designs now use a replay block per utilized DRAM bank
+  * x440
+    - Add support for using radio block specific master clock rates
+    - X4_440 and X4_1600 fpga image now contain 2 replay blocks
+      (number of ports per replay block halved compared to previous release)
+
+ -- Ettus Research <packages@ettus.com>  Sun, 12 Nov 2023 02:44:06 -0800
+
+
+uhd (4.5.0.0-0ubuntu1) ubuntu_release; urgency=low
+
+  * b200
+    - Fix invalid RF switch positions
+  * ci
+    - add attempt number to uhd build artifact name on failure
+    - Add conditions for embedded builds, HW tests
+    - add pytest args option to test dev pipeline
+    - add step for x440 embedded runs
+    - Allow internal fileserver usage for MS installer builds
+    - Auto-detect conditionals for pipeline stages
+    - Default to internal fileserver for FPGA images
+    - Disable PR runs for draft PRs
+    - Enable X440
+    - Fix swallowed return codes in CI script steps
+    - Fix the chocolately version to use
+    - fixup typo in x440 sdr-test0 template
+    - increase build timeouts to 90 minutes
+    - increase win docker image build timeout
+    - modify default sfp0 and reboot
+    - Remove Fedora 35 and add Fedora 37
+    - restrict analyze changeset pool
+    - select docker image repo directly at container endpoint definitions
+    - select docker registry based on branch
+    - splitup x410 test stage in hardware test dev pipeline
+    - Update CLA Assistant to v2.3.0
+    - update docker builds to run twice a week
+    - update docker service connection
+    - update to build docker builds for all release branches
+    - updates for new E320 in devtest system
+  * clang
+    - Apply clang-formatting to all C/C++ files
+    - Modify files for treatment with clang-format
+    - Update clang-format for version 14
+  * cmake
+    - Fix auto-detection of Python install directory
+    - Fix linking DPDK when installed at non-standard location
+  * cpld
+    - Adapt CPLD updater for future X4x0 dboards
+  * debian
+    - Fix copyright dates in changelog
+  * devtest
+    - add exemptions for x440 python API test
+    - correct docstrings with example being run
+    - disable rx_samples_to_file_test for x440
+    - fix typo in error message
+    - gpio test updates
+    - remove API calls that now error
+    - remove benchmark_rate test for x440
+  * docs
+    - Add page on timed commands
+    - add python package requirement for usrpctl MPM reset
+    - add updated msgpack rpc package
+    - b200: Improve docs (auto MCR, GPIOs)
+    - Document throttle stream arg
+    - Fix argument for uhd_image_loader in E3xx docs
+    - Fix docstring for get_block_chain()
+    - fix typo and consistency in usrpctl docs
+    - Improve documentation on timekeepers
+    - Make X410 dboard a subpage of the X4xx page
+    - rfnoc: Document RFNoC overrun handling algorithm
+    - Update clocking theory of operations for X4xx
+    - update docs for reset command
+    - update FPGA build docs
+    - update remote streaming supported version
+    - Update X4x0 manual
+    - Update X4xx manual wrt. self-cal
+    - x410: Document UC_200 image flavor
+    - x440: Added FBX to UM daughterboards page
+    - x440: Extend X4x0 Usage Manual for x440
+    - x440: Fixed incorrect use of paragraph elements
+  * examples
+    - Add power controls to rx_ascii_art_dft.cpp
+    - Add throttle to replay_capture.py
+    - Amend tx_waveforms.py to use DramTransmitter
+    - Fix play region in replay_capture.py
+    - Remove default --ref and --pps values
+    - rx_samples_to_file: multi_streamer option
+  * experts
+    - Add force_dirty() call
+  * extension
+    - windows: Fixed linking extension example to uhd.lib
+  * fpga
+    - Add BUILD_BASE_DIR option to makefiles
+    - Add BUILD_SEED variable
+    - Add time changed pulse to timekeeper
+    - Add X440/FBX support
+    - ci: Add MAX_CPU to pool demands
+    - ci: Add X410_UC_200 to default bitfiles
+    - ci: Add X410_UC_200 to release pipeline
+    - ci: Enable publishing to internal server
+    - ci: Fix branches
+    - ci: Include modified manifest in artifacts
+    - ci: Support parallel jobs for IP builds
+    - ci: Use different seed for each job attempt
+    - ci: Use repeat_fpga_build for pipeline builds
+    - Clear clang-format settings for FPGA code
+    - docs: Add system memory recommendations
+    - docs: Clarify design tool requirements
+    - Fix RFNoC OOT Makefile inclusion
+    - lib: Add axis_pkt_throttle.sv
+    - lib: Add clock_div module
+    - lib: Add ctrl_port_to_wb_i2c module
+    - lib: Fix IPv4 CHDR TUSER width
+    - lib: Fix Vivado warnings
+    - lib: rfnoc: Add resize capability to chdr_stream_endpoint
+    - lib: rfnoc: Make RFNoC packet gates removable
+    - lib: rfnoc: Remove redundant packet gate
+    - lib: rfnoc: Support multiple port widths on crossbar
+    - Reformat javascript in doc
+    - rfnoc: Add DEVICE_FAMILY to stream endpoint
+    - rfnoc: Add throttle to stream endpoints
+    - rfnoc: Add ULTRASCALE to chdr_ingress_fifo
+    - Synchronize X300 RX frontends on time change
+    - tools: Add repeat_fpga_build.py
+    - tools: Add X410_UC_200 image to X410 package
+    - Update all RFNoC image core files
+    - Update RFNoC YAML copyright
+    - x400: Add 1x64, 2x64, and 1x128 DRAM interconnect
+    - x400: Add CG_200 RFNoC image cores
+    - x400: Add ifdef to remove QSFP wrappers when unused
+    - x400: Add support for X4C, C1, and UC variants
+    - x400: Add X440 to default make targets
+    - x400: Add X4C_200 RFNoC image cores
+    - x400: Fix DB1 timekeeper strobe
+    - x400: Fix PRC divider register map
+    - x400: Fix SPI trigger clock crossing
+    - x400: Make transport adapter width configurable
+    - x400: Remove CPU_W parameter
+    - x400: Set QSFP LEDs on startup
+    - x400: sim: Add 10 GbE with wide CHDR
+    - x400: Use x410_200 image core for x410_100 images
+    - x440: fbx: clean up I2C triggers
+    - x4xx: Refactor MB CPLD code for future devices
+    - x4xx: Rename x410 -> x4xx for common DTS files
+  * github
+    - Fix URL for mailing list
+  * host
+    - Add cstdint include to fix gcc-13 compile.
+    - Add in OpenBSD support to uhd::path_expandvars
+    - Bump minimum gcc version to 7.3.0
+    - doc: Add documentation for tertiary, quaternary QSFP adapter
+    - fix & improve EAL args for DPDK v21.11
+    - fix build with DPDK v22.11 LTS
+    - improve DPDK frame_size error message
+    - docs: Fix link to MSVC Redistributable Package
+    - python: Update last_gain at end of run_rx_cal loop
+  * images
+    - Add X410_UC_200 to manifest
+    - add X440 dependencies to manifest
+    - bump x4xx fpga images
+    - bump x4xx fpga images
+    - update FPGA images for E3xx, X3xx, N3xx
+    - Update manifest for SEP throttling
+    - Update X410 manifest
+  * lib
+    - Add default virtual dtor to filter_node
+    - Add X440/FBX support
+    - fbx: Remove unused lambda captures
+    - Fix time-cast for dboard_iface::sleep()
+    - Mark select x400_dboard_iface methods as const
+    - Mark selected x400_dboard_iface child methods final
+    - max287x: Remove unused class attributes
+    - mb_controller: Minor fixes to logging, formatting
+    - rfnoc: Fix linter issue regarding virtual dtor
+    - rfnoc: Fix logic in can_connect_device_to_device()
+    - rfnoc: Use device cache for rfnoc_graph::make()
+    - tests: Mark mock pop_host_tasks() as override
+    - mpm: Add MPM synchronization API
+  * mpm
+    - Add ability to query enabled state of ADC/DAC blocks
+    - Add dboard_info to db_iface initialization
+    - Add LogRuntimeError class
+    - Add revE support to zbx_update_cpld
+    - Add support for X440/FBX
+    - allow for mpm device to tell host to reboot mpm
+    - bist: Improve --help message
+    - Bump compat number to 5.0
+    - dboard_iface: Remove {set/get}_if_freq() APIs
+    - dboard_manager: Fix linter issues in dboard_manager/base.py
+    - Demote sync_tiles() error to warning
+    - Disable PRC to DB if not required
+    - e3xx: Fix inheritance order for DB classes
+    - enable Xilinx API for PLL config
+    - fix get_product_id in x4xx BIST
+    - fix GPS lock sensor method name
+    - Fix test utilities
+    - Fix ZBX CPLD updater
+    - lmk04832: Move general APIs to base class
+    - Move get_dboard_class_from_pid()
+    - move pop_host_tasks to PeriphManagerBase
+    - mpmutils: Add parse_multi_device_arg() function
+    - mpmutils: Fix Pylint warning
+    - Normalize name for gps_locked sensor
+    - periph_manager: Remove vestigial Python-six
+    - Refactor LMK04832X4xx and LMK03328X4xx
+    - rfdc_ctrl: Change latency argument to signed
+    - rfdc: Enhance converter checks
+    - rfdc: Remove set_sample_rate() API call
+    - Simplify x4xx_bist nsync_fabric
+    - Update X440 clock policy
+    - Updated default MCR for X440
+    - utils: Add LogWrapper
+    - x440: Move clock info logging out of policy
+    - x4xx: Add additional args parsing in init()
+    - x4xx: Add intermediate clock settings to clock policy
+    - x4xx: add intermediate clocking setting
+    - x4xx: Add logging for metal and rfdc versions
+    - x4xx: Add master_clock_rates argument to _set_ref_clock_freq()
+    - x4xx: add multiple latency detect iterations
+    - x4xx: Add rfdc rate as a sensor to X4xx dboards
+    - x4xx: Add UC FPGA type
+    - X4xx: Change reset strategy to cover all X4xx
+    - x4xx: Check for tear_down()'s existence
+    - x4xx: Conditionally initialize DB flash
+    - x4xx: Enable DBs to have updateable_components
+    - x4xx: Enable MMCM configuration based on policy
+    - x4xx: Enable MPM sync API for X410
+    - x4xx: Explicitly pass MCR values to set_sync_source()
+    - x4xx: Extend x4xx_rfdc_regs
+    - x4xx: Factor clock control out of X4xxClockManager
+    - x4xx: filter MCR list
+    - x4xx: Improve SPLL comments
+    - x4xx: Introduce X4xxClockPolicy
+    - x4xx: Let RFDC control use clock policy
+    - x4xx: Make sysref_delay part of clock policy
+    - x4xx: mb_cpld: Add missing bitfields
+    - x4xx: Minor preparations to x4xx.py for X440 support
+    - x4xx: Move all clock control to single class
+    - x4xx: Move common DB tasks from ZBX class to mixin
+    - x4xx: Move enable_iq_swap to x4xx_rfdc_ctrl.py
+    - x4xx: Move get_master_clock_rate() to DB-RPC
+    - x4xx: Move MB CPLD creation to factory
+    - x4xx: Move SPLL sync before RFDC config
+    - x4xx: Optimize clock configuration at init
+    - x4xx: Prepare clock management for multi-mcr
+    - x4xx: Refactor x4xx_rfdc_ctrl
+    - x4xx: Remove get_cal_eeprom_spi_node()
+    - x4xx: Remove internal_temp_sensor
+    - x4xx: Rename 'both' argument to 'all'
+    - x4xx: rfdc: Add get_converter_rate() API
+    - x4xx: rfdc: Pull fabric words value from registers
+    - x4xx: Separate RFDC and MMCM resets
+    - x4xx: Separate RFDC reset from its configuration
+    - x4xx: Shut down tiles on tear_down()
+    - x4xx: Trust the clock policy's default MCR
+    - fpga: x4xx: Major updates in preparation for future devices
+  * multi_usrp
+    - rfnoc: Added warning when handling tune_request
+  * octoclock
+    - Fix uhd_usrp_probe error
+  * python
+    - Add 'const' to get_continuous_tone(); improve sanity-checks
+    - Add DramTransmitter class
+    - Add X440 to image builder
+    - Fix subdev_spec_t wrapping
+    - multi_usrp: Remove spurious print
+    - rfnoc: Add radio_control.get_{ticks,time}_now
+    - signal: Add more waveforms to get_continuous_tone()
+    - stream: Overload TxStreamer.recv_async_msg()
+    - Wrap direction_t
+    - Wrap stream_cmd_t::stream_mode
+  * Replay buffered TX streamer
+    - Fix gaps in TX
+  * rfnoc
+    - Add options for RFNoC image core headers
+    - Add set_command_time and clear_command_time binding to Python API.
+    - Allow interruption of streaming during overrun handling
+    - Coerce replay packets to atomic item size
+    - Demote some de-init DEBUG messages
+    - Enable SEP throttle register
+    - Fix disconnecting back-edges from graphs
+    - Fix doxygen comments in rfnoc_graph
+    - Fix sync calls for multi-timekeeper operation
+    - Improve Doxygen for sync calls
+    - Make edge comparison more flexible
+    - radio: Always prefer register-based time access
+    - radio: Make default SPP a multiple of max CHDR width
+    - replay: Make default IPP a multiple of max CHDR width
+    - Set DEVICE_FAMILY on stream endpoints
+    - Support multiple CHDR widths in RFNoC image builder
+    - update switchboard forwarding on property set
+  * SelfCal
+    - Add startup_tile() for cal_mode selection
+    - Enable parameters in self-cal executable
+    - Expose config parameters
+    - Remove self-cal from boot and fpga update
+    - Trigger if clocking has changed
+  * tests
+    - add delayed streaming start args
+    - add packet capture raw udp tests
+    - add streaming tests for UC_200 bitfile
+    - benchmark_rate improvements
+    - Fix Python warnings in parse_benchmark_rate.py
+    - fix when the rx cmd's stream_now is set
+  * tools
+    - Add changeset analyzer
+    - Add clang-formatting tools
+    - add devtest rule for changeset_analyzer
+    - Remove fpga directory from Debian build
+    - run all tests for manifest update
+    - Update upload_debs.sh script
+  * UBX
+    - Add VCO band calibration and map access
+    - Initialize UBX set_tx_freq freq_lo variables to 0.0
+    - Shift IF for RX frequencies <100 MHz
+  * uhd
+    - doc: Add documentation for ADC self calibration
+    - multi_usrp: Support multiple timekeepers on rfnoc devices
+    - Update changelog with 4.1.0.x releases
+    - x4xx: Add methods to query number of chans, samp rate
+    - x4xx: Refactor ADC self cal
+  * usrpctl
+    - add reset command
+  * utils
+    - Add X4xx ADC threshold query script
+    - Fix usrp2_recovery.py for Python3
+  * x4xx
+    - get bool for force_reinit arg
+    - pass reboot mpm command to host on new clock config for x440
+    - Update BIST to match clocking refactoring
+  * x4xx_bist
+    - replace set_clock_source for x440
+
+ -- Ettus Research <packages@ettus.com>  Mon, 11 Sep 2023 10:43:15 -0800
+
+
 uhd (4.4.0.0-0ubuntu1) ubuntu_release; urgency=low
 
   * Features
@@ -199,7 +593,8 @@ uhd (4.3.0.0-0ubuntu1) ubuntu_release; urgency=low
     - Revert Raw UDP Host Changes
     - update to uniform SPDX license identifier
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Mon, 12 Sep 2022 05:10:25 -0800
+
 
 uhd (4.2.0.1-0ubuntu1) ubuntu_release; urgency=low
 
@@ -330,7 +725,7 @@ uhd (4.2.0.1-0ubuntu1) ubuntu_release; urgency=low
   * zbx
     - Remove stray include
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Wed, 20 Jul 2022 05:33:58 -0800
 
 uhd (4.2.0.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -918,7 +1313,256 @@ uhd (4.2.0.0-0ubuntu1) ubuntu_release; urgency=low
   * x4xx_bist
     - Use get_mpm_client in gpio bist
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 19 Apr 2022 13:55:00 -0800
+
+
+uhd (4.1.0.7-0ubuntu1) ubuntu_release; urgency=low
+
+  * mpm
+    - Simplify x4xx_bist nsync_fabric
+  * ci
+    - Update commit vcpkg and CMake version
+  * test
+    - Add proper include
+
+ -- Ettus Research <packages@ettus.com>  Tue, 25 Apr 2023 04:15:34 -0800
+
+
+uhd (4.1.0.6-0ubuntu1) ubuntu_release; urgency=low
+
+  * mpm
+    - add support for lattice zbx cpld
+  * N320
+    -  Revert PLL lock time reduction
+  * images
+    -  Update manifest with latest cpld firmware
+    -  Update ZBX CPLD image in manifest
+    -  zbx lattice cpld image manifest
+  * uhd
+    - fixup! add support for max10 variants
+
+ -- Ettus Research <packages@ettus.com>  Thu, 04 Aug 2022 09:43:17 -0800
+
+
+uhd (4.1.0.5-0ubuntu1) ubuntu_release; urgency=low
+
+  * ad9361
+    -  Add comment re overclocking
+    -  Modify set-tx-gain procedure to update gain in one go
+  * b200
+    -  Re-sync times
+    -  Move the B200 radio control core into usrp/b200/
+  * cal
+    -  Use safe version of set_thread_priority()
+  * ci
+    -  Device wait to redlock scope for Vivado close
+    -  Add Fedora 34 and remove Fedora 32
+    -  Refactor installers and add Windows support
+    -  Add custom boost version support
+    -  Remove documentation-only changes from pipeline runs
+    -  enable batch CI
+    -  Split CI and PR pipelines for mono pipeline
+    -  Enable custom CXX flags, enable -Werror
+    -  Let make keep building upon failure
+    -  Add clang as a compiler to all Fedora and Ubuntu containers
+  * cmake
+    -  use LooseVersion to ensure correct version comparisons
+    -  Fix rfnoc-example (CMake paths)
+    -  Fix issues with static builds and CMRC
+    -  Replace CMAKE_{SOURCE,BINARY}_DIR with UHD_*_DIR
+    -  tests: Add build-python path to PYTHONPATH
+    -  Add check for libatomic linking requirement
+    -  remove duplicate entry in LIBUHD_PYTHON_GEN_SOURCE
+    -  Fix VS names and use relative for images
+  * dbsrx
+    -  Fix issue with loop variable
+  * debs
+    -  Update upload_debs script
+  * devtest
+    -  Clarify data type in multi_usrp_test::send_waveform()
+    -  Add receive stability test to B2xx devtest
+    -  Add receive stability test
+  * dissectors
+    -  Fix whitespace formatting in CMake files
+    -  Fix inclusion of glib.h and Python version
+  * docs
+    -  Several minor manual improvements
+    -  Collect all RFNoC block controllers in a module in the manual
+    -  Align dependencies and bump deb package versions
+    -  Clarify set/get_gpio_attr() and GPIO banks
+    -  Fix GPIO documentation example
+    -  x410: Fix info on loading SD card images with bmaptool
+    -  Improve docs for rx_streamer::recv() on overruns
+    -  sync: Update page on synchronization
+    -  Fix typo in ZBX Block Diagram
+    -  x4xx: Document configuring eth0 static IP
+    -  Remove bmaptool instructions for writing filesystems
+  * examples
+    -  Use cmul for gain block in-tree IP example
+    -  Test all variants in gain testbench
+    -  Make IQ order clear in gain RFNoC block
+    -  Improve txrx_loopback_to_file (late recv, Boost, timing)
+    -  Show how to use in-tree Verilog header
+    -  Add x400/x410 target to RFNoC example
+    -  gpio: Separate bank and port arguments
+    -  usrp_power_meter: fix channel indexing when reading USRP power
+  * fpga
+    -  Revert "Add ability to get time from Radio block"
+    -  Add ability to get time from Radio block
+    -  rfnoc: Add RFNoC CHDR resize module
+    -  rfnoc: Add CHDR management util functions
+    -  lib: Clean up axi_mux
+    -  rfnoc: Add labels to axi_switch generate blocks
+    -  rfnoc: Add labels to chdr_mgmt_pkt_handler
+    -  rfnoc: Add documentation to chdr_xb_routing_table
+    -  Shorten line length for Launchpad linter
+    -  x300: Update synchronizer constraint
+    -  n3xx: Update synchronizer constraint
+    -  lib: Update example constraint in synchronizer
+    -  Update help message for setupenv.sh
+    -  Remove stale references to UHD_FPGA_DIR
+    -  tools: Add UHD_FPGA_DIR definition to synthesis
+    -  Set default part for sim in setupenv.sh
+    -  Fix Xilinx bitfile parser for Python 3
+    -  rfnoc: Fix EOB loss in DUC
+    -  sim: Add PkgComplex, PkgMath, and PkgRandom
+    -  lib: Clean up and document lib files
+    -  x400: Remove stale information in register map
+    -  ci: Add testbench pipeline
+  * host
+    -  Revert "Add ability to get time from Radio block"
+    -  Add ability to get time from Radio block
+    -  python: Return mb_controller with reference_internal
+    -  x4xx: Implement GPIO API
+    -  Add GPIO functions to MPM RPC shim
+    -  gpio: Create gpio_atr_offsets to store GPIO registers
+  * images
+    -  Update image packager script for Python 3
+  * lib
+    -  Remove all remaining usage of boost::numeric::bounds<>
+    -  transport: Mark typecast as intended
+    -  transport: Initialize _hshake_args_server
+    -  rfnoc: Make implicit typecasts explicit
+    -  rfnoc: Change enum node_type to enum class
+    -  Add various missing includes
+  * libusb
+    -  Remove unused context variable
+  * mpm
+    -  x4xx: update mboard_max_rev
+    -  x4xx: Allow GPIO0 and GPIO1 as port names
+    -  x4xx: add DIO GPIO API configuration methods
+    -  mpm: x4xx: Add checks before accessing self.dio_control
+    -  Fix handling of rfic_digital_loopback argument
+    -  rfdc: Tear down RFDC on teardown
+    -  add X410 support for 250e6 master clock rate
+    -  Expose motherboard regs for debugging
+  * mpmd
+    -  Increase UHD-side MTU cap for 10 GbE and 1 GbE
+  * multi_usrp_rfnoc
+    -  Revert "Reduce latency of get_time_now()"
+    -  Reduce latency of get_time_now()
+  * n320
+    -  Reduce PLL lock time
+  * n3x0/e3x0
+    -  Remove reference to "master FP-GPIO radio"
+  * n3xx
+    -  Add support for rev 10
+    -  Fix White Rabbit
+  * python
+    -  multi_usrp: Add set_rx_spp()
+    -  multi_usrp: Fix issues in send_waveform()
+    -  multi_usrp: Fix issues with recv_num_samps()
+    -  Fix dropped-sample calculation in benchmark_rate.py
+    -  multi_usrp: Fix overloaded function definition
+    -  Add new method bindings to noc_block_base
+    -  rfnoc: Change reference type for noc_block_base export
+  * responder
+    -  Fix printw function arguments
+  * rfnoc
+    -  radio: Fix async message handling channel checks
+    -  mgmt_portal: Fix order of validity checks
+    -  blocks: Minor cleanup (whitespace, typos)
+    -  mgmt_portal: Remove two unused variables
+    -  Add vivado-path to rfnoc_image_builder
+    -  ddc: Improve unit tests and documentation
+    -  duc: Fix frequency range for DUC block
+    -  duc: Remove stale references to CORDIC
+    -  siggen: Fix direction of rotation
+  * rh
+    -  Fix auto DC-offset correction and auto-IQ balance APIs
+  * tests
+    -  Remove skip_dram from streaming performance test script
+    -  Fix rfnoc_graph mock nodes stop-stream command
+    -  Use reference type to prevent copy
+    -  Fix check in link_test
+    -  Fix potential resource leak
+  * tools
+    -  Fix rfnoc dissector build
+  * uhd
+    -  add support for max10 variants
+    -  update manifest for x410 cpld
+    -  Update manifest
+    -  update num_recv_frames calculation for ctrl links
+    -  Remove spurious template from property dtor
+    -  Fix spelling errors
+    -  mpm: Expose filesystem version information on MPM tree
+    -  Remove Boost version checks for Boost 1.61
+    -  Fix usage of std::abs with template parameters
+  * utils
+    -  Get signal above noise floor when finding optimal gain
+  * x300
+    -  Fix error message for wrong reference frequency
+    -  Remove unused variables in x300_eth_mgr.cpp
+    -  Fix MAX_RATE_1GIGE value
+    -  Fix sfpp_io_core tuser width
+    -  Initialize struct variable before using it
+  * x410
+    -  correct 100GbE link speed
+
+ -- Ettus Research <packages@ettus.com>  Tue, 14 Dec 2021 12:35:55 -0800
+
+
+uhd (4.1.0.4-0ubuntu1) ubuntu_release; urgency=low
+
+  * uhd
+    - Update version in UHDVersion.cmake
+
+ -- Ettus Research <packages@ettus.com>  Wed, 29 Sep 2021 09:25:20 -0800
+
+
+uhd (4.1.0.3-0ubuntu1) ubuntu_release; urgency=low
+
+  * uhd
+    - zbx: Prevent TX antenna config from disrupting RX
+
+ -- Ettus Research <packages@ettus.com>  Mon, 20 Sep 2021 11:57:31 -0800
+
+
+uhd (4.1.0.2-0ubuntu1) ubuntu_release; urgency=low
+
+  * b200
+    -  Fix overflow handling
+  * fpga
+    -  Re-order error and data packets
+    -  Fix sc16 to sc12 converter
+  * host
+    -  Add static_assert to prevent meta_range_t(0,0)
+  * mpm
+    -  x4xx: update mboard_max_rev
+  * mpmd
+    -  Add discoverable feature for trig i/o mode
+  * sim
+    -  Update chdr_16sc_to_sc12 testbench
+  * tests
+    -  Add recv(0) case to rx_streamer_test
+  * uhd
+    -  transport: Avoid exceptions in disconnect_receiver()
+    -  streamer: Restore original recv(0) semantics
+  * x4xx_bist
+    -  use get_mpm_client in gpio bist
+
+ -- Ettus Research <packages@ettus.com>  Fri, 10 Sep 2021 12:59:22 -0800
+
 
 uhd (4.1.0.1-0ubuntu1) ubuntu_release; urgency=low
 
@@ -937,7 +1581,8 @@ uhd (4.1.0.1-0ubuntu1) ubuntu_release; urgency=low
     - max10_cpld_flash_ctrl: improve programming log
     - Skip DTS compatibility check if DTS is not being updated
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Mon, 12 Jul 2021 04:29:39 -0800
+
 
 uhd (4.1.0.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -1345,7 +1990,8 @@ uhd (4.1.0.0-0ubuntu1) ubuntu_release; urgency=low
     - Fix clang compiler warnings
     - Fix compilation on clang-10
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Fri, 25 Jun 2021 01:13:18 -0800
+
 
 uhd (4.0.0.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -1578,7 +2224,8 @@ uhd (4.0.0.0-0ubuntu1) ubuntu_release; urgency=low
     - Expand DRAM address space to 1G
     - Add front-panel GPIO source control
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Sun, 13 Sep 2020 12:08:55 -0800
+
 
 uhd (3.15.0.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -1673,7 +2320,7 @@ uhd (3.15.0.0-0ubuntu1) ubuntu_release; urgency=low
   * Octoclock: Clear OctoClock packets and initialize version/seq num
     before transmission
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.14.1.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -1715,7 +2362,7 @@ uhd (3.14.1.0-0ubuntu1) ubuntu_release; urgency=low
   tools: Fix for proj creation in ip_utils for tcl-based IP
   tests: Fix mock_ctrl_iface for 32-bit MSVC
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.14.0.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -1929,7 +2576,7 @@ uhd (3.14.0.0-0ubuntu1) ubuntu_release; urgency=low
   * Cmake: Use native format for setup.py
   * CPack: Fix RPM generation
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.13.1.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2045,7 +2692,7 @@ uhd (3.13.1.0-0ubuntu1) ubuntu_release; urgency=low
   * Debian: Update control files
   * Images: Add N3xx CPLD file to manifest
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.13.0.2-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2057,7 +2704,7 @@ uhd (3.13.0.2-0ubuntu1) ubuntu_release; urgency=low
   * Docs: Add section on building fs/SD images for N3xx
   * Docs: Fix Doxygen warnings
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.13.0.1-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2065,7 +2712,7 @@ uhd (3.13.0.1-0ubuntu1) ubuntu_release; urgency=low
   * N3xx: Fix EEPROM parsing (for upcoming hardware)
   * UHD: Fix install path for Python API
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.13.0.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2090,7 +2737,7 @@ uhd (3.13.0.0-0ubuntu1) ubuntu_release; urgency=low
   * CMake: Allow to override UHD_GIT_BRANCH, fix Python-finding logic, add
            ENABLE_N300 target
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.12.0.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2127,7 +2774,7 @@ uhd (3.12.0.0-0ubuntu1) ubuntu_release; urgency=low
   * Known issues: N310: In some rare scenarios at high rates, streaming
     can fail and even bring the FPGA into a bad state.
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.11.1.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2185,7 +2832,7 @@ uhd (3.11.1.0-0ubuntu1) ubuntu_release; urgency=low
   * cmake: update NSIS template
   * cmake: Remove images downloader section (replaced by manifest)
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.11.0.1-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2204,7 +2851,7 @@ uhd (3.11.0.1-0ubuntu1) ubuntu_release; urgency=low
   * cmake: Correctly fail when an unavailable component is requested
   * debian: Add UHDConfig.cmake to install list for libuhd-dev
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.11.0.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2227,7 +2874,7 @@ uhd (3.11.0.0-0ubuntu1) ubuntu_release; urgency=low
   * This release includes all bugfixes and features from previous releases, in
     particular, the 3.10.* release cycle
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.10.3.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2263,7 +2910,7 @@ uhd (3.10.3.0-0ubuntu1) ubuntu_release; urgency=low
   ** Fix build with Boost 1.66
   ** Add EEPROM info to dboard_base class so daughterboard code can access all EEPROM info
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.10.2.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2295,7 +2942,7 @@ uhd (3.10.2.0-0ubuntu1) ubuntu_release; urgency=low
   * CMake: Fixed GCC 4.4 compilation issue. Added ability to specify package
            names.
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.10.1.1-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2318,7 +2965,7 @@ uhd (3.10.1.1-0ubuntu1) ubuntu_release; urgency=low
   * FPGA repository: Merged usrp3_rfnoc and usrp3 directories again. Cleaned up
     superfluous files. Clean separation between Gen-3 and other devices in usrp3.
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.10.1.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2346,7 +2993,7 @@ uhd (3.10.1.0-0ubuntu1) ubuntu_release; urgency=low
   * Tools: Merged dissectors into common directory.
   * CMake: -Og is the default now for gcc-based Debug builds.
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.10.0.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2370,7 +3017,7 @@ uhd (3.10.0.0-0ubuntu1) ubuntu_release; urgency=low
   * Added more aggressive optimization strategies for FPGA builds
   * Xilinx IP tool upgrade scripts cleaned up
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.9.5-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2388,7 +3035,7 @@ uhd (3.9.5-0ubuntu1) ubuntu_release; urgency=low
     fixes (off-by-one errors). uhd_usrp_probe will pick up an OC now,
     added Wireshark dissector for OC packets
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.9.4-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2403,7 +3050,7 @@ uhd (3.9.4-0ubuntu1) ubuntu_release; urgency=low
   * Windows: Include registry file in installation
   * Converters: Improve NEON converters
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.9.3-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2419,7 +3066,7 @@ uhd (3.9.3-0ubuntu1) ubuntu_release; urgency=low
   * Fixed several compiler warnings and minor bugs
   * Examples: Updated benchmark_rate for improved thread safety
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.9.2-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2435,7 +3082,7 @@ uhd (3.9.2-0ubuntu1) ubuntu_release; urgency=low
   * E310: DRAM testbenching
   * Docs/Manual: Many updates and fixes
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.9.1-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2447,7 +3094,7 @@ uhd (3.9.1-0ubuntu1) ubuntu_release; urgency=low
   * Examples: Added PPS source option
   * Docs: Multiple manual updates
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.9.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2492,7 +3139,7 @@ uhd (3.9.0-0ubuntu1) ubuntu_release; urgency=low
   * Utils: Read more property tree types from the command line
   * Tools: kitchen sink updated, added mega_fft
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.8.5-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2509,7 +3156,7 @@ uhd (3.8.5-0ubuntu1) ubuntu_release; urgency=low
   * Build System: Fixed builds on some Windows platforms, removed
     stray prints
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.8.4-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2520,7 +3167,7 @@ uhd (3.8.4-0ubuntu1) ubuntu_release; urgency=low
   * USRP2: Bugfix that allows latest UHD to work with USRP2
   * Documentation: Many fixes for E300 section, added FPGA manual
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.8.3-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2534,7 +3181,7 @@ uhd (3.8.3-0ubuntu1) ubuntu_release; urgency=low
   * CMake: Build fixes
   * E300: Flow control fix
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.8.2-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2552,7 +3199,7 @@ uhd (3.8.2-0ubuntu1) ubuntu_release; urgency=low
   * Path handling vastly improved, made more consistent
   * Minor UHD fixes
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.8.1-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2566,7 +3213,7 @@ uhd (3.8.1-0ubuntu1) ubuntu_release; urgency=low
   * Examples: Multiple bugfixes (multi-channel ops)
   * Docs/Manual: Multiple fixes, E310 panel images
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.8.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2595,7 +3242,7 @@ uhd (3.8.0-0ubuntu1) ubuntu_release; urgency=low
   * Examples: Improved GPIO example, rx_samples_to_file
   * Bumped minimum Boost version to 1.46
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.7.3-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2609,7 +3256,7 @@ uhd (3.7.3-0ubuntu1) ubuntu_release; urgency=low
   * Multiple FPGA improvements, as well as upgrade of build env
   * Added support for B200 vs B210 discovery
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.7.2-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2638,7 +3285,7 @@ uhd (3.7.2-0ubuntu1) ubuntu_release; urgency=low
   * Fixed issue with filter selection in B200 that caused loss of RX power.
   * Removed ref lock check from X300 where it wasn't necessary.
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.7.1-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2661,7 +3308,7 @@ uhd (3.7.1-0ubuntu1) ubuntu_release; urgency=low
   * Fixed MTU / frame size detection for X3xx devices.
   * Fixed B2xx filter chain causing wrong sample rate in some circumstances.
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.7.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2675,7 +3322,7 @@ uhd (3.7.0-0ubuntu1) ubuntu_release; urgency=low
   * Fixed threading bug in USRP B2xx code causing GQRX issue
   * General UHD bug fixes & improvements
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.6.2-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2694,20 +3341,20 @@ uhd (3.6.2-0ubuntu1) ubuntu_release; urgency=low
   * N-Series: netburner now accepts relative paths with '~'
   * Completely re-written UHD Images Downloader, with numerous bug fixes and new features.
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.6.1-0ubuntu1) ubuntu_release; urgency=low
 
   * B2xx: Fixed critical bug in 003.006.000 regarding USRP B2xx operation
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.6.0-0ubuntu1) ubuntu_release; urgency=low
 
   * Many small fixes for bugs revealed by static analysis.
   * Introduced support for the USRP B200 / B210
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.5.3-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2717,7 +3364,7 @@ uhd (3.5.3-0ubuntu1) ubuntu_release; urgency=low
   ** Fixed timespec irrational rate rounding
   ** Multichan streamer CPU utilization
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.5.2-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2728,7 +3375,7 @@ uhd (3.5.2-0ubuntu1) ubuntu_release; urgency=low
   * USRP1:
   ** Restore broken EEPROM writing
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.5.1-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2740,7 +3387,7 @@ uhd (3.5.1-0ubuntu1) ubuntu_release; urgency=low
   ** Fix for socket send code newer OS versions
   * Changes from 3.4.5
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.5.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2766,7 +3413,7 @@ uhd (3.5.0-0ubuntu1) ubuntu_release; urgency=low
   ** Added multi-threading to packet converters
   ** Added automatic images fetcher application
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.4.5-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2778,7 +3425,7 @@ uhd (3.4.5-0ubuntu1) ubuntu_release; urgency=low
   ** Fix to rx_samples_to_udp byte count
   ** stream command enums easy on SWIG
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.4.4-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2788,7 +3435,7 @@ uhd (3.4.4-0ubuntu1) ubuntu_release; urgency=low
   ** Fixed RX ADC IQ inversion swap
   ** Incremented FPGA compat number to 9.4
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.4.3-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2804,7 +3451,7 @@ uhd (3.4.3-0ubuntu1) ubuntu_release; urgency=low
   ** Shutoff the DAC on transmit EOB flags
   ** Revert 1st nyquist zone DAC calculation
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.4.2-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2824,7 +3471,7 @@ uhd (3.4.2-0ubuntu1) ubuntu_release; urgency=low
   ** SIMD conversion routines priority over table look-up
   ** Fix undefined GCC float conversion behaviour for sc8
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.4.1-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2845,7 +3492,7 @@ uhd (3.4.1-0ubuntu1) ubuntu_release; urgency=low
   * FreeBSD:
   ** Fixed network relay example compilation
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.4.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2868,7 +3515,7 @@ uhd (3.4.0-0ubuntu1) ubuntu_release; urgency=low
   ** Added API calls for DC offset correction
   ** Added API calls for IQ balance correction
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.3.2-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2884,7 +3531,7 @@ uhd (3.3.2-0ubuntu1) ubuntu_release; urgency=low
   ** Handle EINTR on select() w/ udp transport
   ** Minor fixes for compiling on FreeBSD
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
   ## Release 003.003.001
   * B100/E1x0:
@@ -2892,7 +3539,7 @@ uhd (3.3.2-0ubuntu1) ubuntu_release; urgency=low
   * B100:
   ** Fixed discovery throwing when device claimed
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.3.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2914,7 +3561,7 @@ uhd (3.3.0-0ubuntu1) ubuntu_release; urgency=low
   * Gen2:
   ** Fix DSP rate selection clipping for very low rates
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.2.4-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2933,7 +3580,7 @@ uhd (3.2.4-0ubuntu1) ubuntu_release; urgency=low
   ** Fix bounds checking on stream num samps
   ** Fix error using PPS_NEG in clock config
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.2.3-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2951,7 +3598,7 @@ uhd (3.2.3-0ubuntu1) ubuntu_release; urgency=low
   ** Clip the reported tune range to the dboard bandwidth
   ** Preserve bands when calculating overall tune range
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.2.2-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2975,7 +3622,7 @@ uhd (3.2.2-0ubuntu1) ubuntu_release; urgency=low
   ** Fix send to return zero on empty packets
   ** Perform version check on liborc
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.2.1-0ubuntu1) ubuntu_release; urgency=low
 
@@ -2983,7 +3630,7 @@ uhd (3.2.1-0ubuntu1) ubuntu_release; urgency=low
   ** Firmware fix to shutoff streaming when socket unreachable
   ** Incremented firmware image compat number to 10.3
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.2.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -3016,7 +3663,7 @@ uhd (3.2.0-0ubuntu1) ubuntu_release; urgency=low
   ** Code reorganization with property tree
   ** Calibration support in gen2 FPGAs
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.1.2-0ubuntu1) ubuntu_release; urgency=low
 
@@ -3025,7 +3672,7 @@ uhd (3.1.2-0ubuntu1) ubuntu_release; urgency=low
   * XCVR2450:
   ** Fix for descontructor throwing on hardware disconnect
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.1.1-0ubuntu1) ubuntu_release; urgency=low
 
@@ -3037,7 +3684,7 @@ uhd (3.1.1-0ubuntu1) ubuntu_release; urgency=low
   * WBX
   ** Keep mixers on between bursts to maintain phase offsets
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.1.0-0ubuntu1) ubuntu_release; urgency=low
 
@@ -3073,7 +3720,7 @@ uhd (3.1.0-0ubuntu1) ubuntu_release; urgency=low
   ** Deprecated API in utils/warning.hpp
   ** Fixed race condition in device discovery/factory
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.0.1-0ubuntu1) ubuntu_release; urgency=low
 
@@ -3086,9 +3733,11 @@ uhd (3.0.1-0ubuntu1) ubuntu_release; urgency=low
   * build: various work on build system
   * build: include FPGA and firmware images in installers
 
- -- Ettus Research <packages@ettus.com>  Fri, 27 Jan 2023 01:16:40 -0800
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 
 uhd (3.0.0-0ubuntu1) ubuntu_release; urgency=low
 
   Initial (formal) release, no changes to mention.
+
+ -- Ettus Research <packages@ettus.com>  Tue, 31 Dec 2019 07:24:06 -0800
 

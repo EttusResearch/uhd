@@ -717,8 +717,8 @@ b200_impl::b200_impl(
         .set_publisher(
             std::bind(&time_core_3000::get_time_last_pps, _radio_perifs[0].time64));
     _tree->access<time_spec_t>(mb_path / "time" / "pps")
-        .add_coerced_subscriber(std::bind(
-            &b200_impl::set_time_next_pps, this, std::placeholders::_1));
+        .add_coerced_subscriber(
+            std::bind(&b200_impl::set_time_next_pps, this, std::placeholders::_1));
 
     // setup time source props
     const std::vector<std::string> time_sources =
@@ -747,9 +747,8 @@ b200_impl::b200_impl(
     ////////////////////////////////////////////////////////////////////
     // front panel gpio
     ////////////////////////////////////////////////////////////////////
-    _radio_perifs[0].fp_gpio =
-        gpio_atr_3000::make(_radio_perifs[0].ctrl,
-            gpio_atr_offsets::make_default(TOREG(SR_FP_GPIO), RB32_FP_GPIO));
+    _radio_perifs[0].fp_gpio = gpio_atr_3000::make(_radio_perifs[0].ctrl,
+        gpio_atr_offsets::make_default(TOREG(SR_FP_GPIO), RB32_FP_GPIO));
     for (const auto& attr : gpio_attr_map) {
         switch (attr.first) {
             case usrp::gpio_atr::GPIO_SRC:
@@ -883,7 +882,8 @@ void b200_impl::setup_radio(const size_t dspno)
     ////////////////////////////////////////////////////////////////////
     // Set up peripherals
     ////////////////////////////////////////////////////////////////////
-    perif.atr = gpio_atr_3000::make(perif.ctrl, gpio_atr_offsets::make_write_only(TOREG(SR_ATR)));
+    perif.atr =
+        gpio_atr_3000::make(perif.ctrl, gpio_atr_offsets::make_write_only(TOREG(SR_ATR)));
     perif.atr->set_atr_mode(MODE_ATR, 0xFFFFFFFF);
     // create rx dsp control objects
     perif.framer = rx_vita_core_3000::make(perif.ctrl, TOREG(SR_RX_CTRL));
@@ -1400,9 +1400,9 @@ void b200_impl::update_atrs(void)
         const bool enb_tx     = bool(perif.tx_streamer.lock());
         const bool is_rx2     = perif.ant_rx2;
         const uint32_t rxonly = (enb_rx) ? ((is_rx2) ? STATE_RX1_RX2 : STATE_RX1_TXRX)
-                                         : STATE_OFF;
-        const uint32_t txonly = (enb_tx) ? (STATE_TX1_TXRX) : STATE_OFF;
-        uint32_t fd           = STATE_OFF;
+                                         : STATE_RX1_OFF;
+        const uint32_t txonly = (enb_tx) ? (STATE_TX1_TXRX) : STATE_RX1_OFF;
+        uint32_t fd           = STATE_RX1_OFF;
         if (enb_rx and enb_tx)
             fd = STATE_FDX1_TXRX;
         if (enb_rx and not enb_tx)
@@ -1410,7 +1410,7 @@ void b200_impl::update_atrs(void)
         if (not enb_rx and enb_tx)
             fd = txonly;
         gpio_atr_3000::sptr atr = perif.atr;
-        atr->set_atr_reg(ATR_REG_IDLE, STATE_OFF);
+        atr->set_atr_reg(ATR_REG_IDLE, STATE_RX1_OFF);
         atr->set_atr_reg(ATR_REG_RX_ONLY, rxonly);
         atr->set_atr_reg(ATR_REG_TX_ONLY, txonly);
         atr->set_atr_reg(ATR_REG_FULL_DUPLEX, fd);
@@ -1421,9 +1421,9 @@ void b200_impl::update_atrs(void)
         const bool enb_tx     = bool(perif.tx_streamer.lock());
         const bool is_rx2     = perif.ant_rx2;
         const uint32_t rxonly = (enb_rx) ? ((is_rx2) ? STATE_RX2_RX2 : STATE_RX2_TXRX)
-                                         : STATE_OFF;
-        const uint32_t txonly = (enb_tx) ? (STATE_TX2_TXRX) : STATE_OFF;
-        uint32_t fd           = STATE_OFF;
+                                         : STATE_RX2_OFF;
+        const uint32_t txonly = (enb_tx) ? (STATE_TX2_TXRX) : STATE_RX2_OFF;
+        uint32_t fd           = STATE_RX2_OFF;
         if (enb_rx and enb_tx)
             fd = STATE_FDX2_TXRX;
         if (enb_rx and not enb_tx)
@@ -1431,7 +1431,7 @@ void b200_impl::update_atrs(void)
         if (not enb_rx and enb_tx)
             fd = txonly;
         gpio_atr_3000::sptr atr = perif.atr;
-        atr->set_atr_reg(ATR_REG_IDLE, STATE_OFF);
+        atr->set_atr_reg(ATR_REG_IDLE, STATE_RX2_OFF);
         atr->set_atr_reg(ATR_REG_RX_ONLY, rxonly);
         atr->set_atr_reg(ATR_REG_TX_ONLY, txonly);
         atr->set_atr_reg(ATR_REG_FULL_DUPLEX, fd);

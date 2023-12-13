@@ -64,31 +64,31 @@ public:
         uhd::usrp::zbx_rpc_iface::sptr rpcc,
         uhd::rfnoc::x400::rfdc_control::sptr rfdcc,
         uhd::property_tree::sptr tree);
-    virtual ~zbx_dboard_impl();
+    ~zbx_dboard_impl() override;
 
     size_t get_chan_from_dboard_fe(
-        const std::string& fe, const uhd::direction_t) const override;
+        const std::string& fe, const uhd::direction_t) const final;
     std::string get_dboard_fe_from_chan(
-        const size_t chan, const uhd::direction_t) const override;
+        const size_t chan, const uhd::direction_t) const final;
 
     /************************************************************************
      * node_t && noc_block_base API calls
      ***********************************************************************/
     void deinit();
 
-    void set_command_time(uhd::time_spec_t time, const size_t chan) override;
+    void set_command_time(uhd::time_spec_t time, const size_t chan) final;
 
     /************************************************************************
      * API calls
      ***********************************************************************/
 
-    bool is_adc_self_cal_supported() override
+    bool is_adc_self_cal_supported() final
     {
         return true;
     }
 
     uhd::usrp::x400::adc_self_cal_params_t get_adc_self_cal_params(
-        const double tone_freq) override
+        const double tone_freq) final
     {
         // This is chosen such that the IF2 frequency is 1.06G
         const double rx_freq  = 4.7e9 - 5.12e6;
@@ -100,42 +100,64 @@ public:
         return {
             rx_freq, // rx_freq
             tx_freq, // tx_freq
+            {32768 / 2, 0}, // Configure the output DAC mux to output
+                            // 1/2 full scale dac data (only I, no Q)
+            100, // delay
+            8000, // under
+            8192, //  over, Set the threshold to detect half-scale
+                  //  setup_threshold call uses 14-bit ADC values
             "calib_mode2", // calibration_mode
+            2000, // 2 seconds were found to be sufficent
         };
     }
 
-    bool select_adc_self_cal_gain(size_t chan) override;
+    bool select_adc_self_cal_gain(size_t chan) final;
 
-    rf_control::gain_profile_iface::sptr get_tx_gain_profile_api() override
+    rf_control::gain_profile_iface::sptr get_tx_gain_profile_api() final
     {
         return _tx_gain_profile_api;
     }
-    rf_control::gain_profile_iface::sptr get_rx_gain_profile_api() override
+    rf_control::gain_profile_iface::sptr get_rx_gain_profile_api() final
     {
         return _rx_gain_profile_api;
     }
 
-    double set_tx_frequency(const double freq, const size_t chan) override;
-    double set_rx_frequency(const double freq, const size_t chan) override;
-    uhd::freq_range_t get_tx_frequency_range(const size_t /*chan*/) const override
+    double get_converter_rate() const final
+    {
+        return _rfdc_rate;
+    }
+
+    size_t get_num_rx_channels() const final
+    {
+        return _num_rx_chans;
+    }
+
+    size_t get_num_tx_channels() const final
+    {
+        return _num_tx_chans;
+    }
+
+    double set_tx_frequency(const double freq, const size_t chan) final;
+    double set_rx_frequency(const double freq, const size_t chan) final;
+    uhd::freq_range_t get_tx_frequency_range(const size_t /*chan*/) const final
     {
         return ZBX_FREQ_RANGE;
     }
-    uhd::freq_range_t get_rx_frequency_range(const size_t /*chan*/) const override
+    uhd::freq_range_t get_rx_frequency_range(const size_t /*chan*/) const final
     {
         return ZBX_FREQ_RANGE;
     }
 
-    double set_tx_bandwidth(const double bandwidth, const size_t chan) override;
-    double set_rx_bandwidth(const double bandwidth, const size_t chan) override;
-    uhd::meta_range_t get_tx_bandwidth_range(size_t chan) const override
+    double set_tx_bandwidth(const double bandwidth, const size_t chan) final;
+    double set_rx_bandwidth(const double bandwidth, const size_t chan) final;
+    uhd::meta_range_t get_tx_bandwidth_range(size_t chan) const final
     {
         return _tree
             ->access<uhd::meta_range_t>(
                 _get_frontend_path(TX_DIRECTION, chan) / "bandwidth" / "range")
             .get();
     }
-    uhd::meta_range_t get_rx_bandwidth_range(size_t chan) const override
+    uhd::meta_range_t get_rx_bandwidth_range(size_t chan) const final
     {
         return _tree
             ->access<uhd::meta_range_t>(
@@ -151,98 +173,96 @@ public:
     using core_iface::set_tx_gain;
 
     double set_tx_gain(
-        const double gain, const std::string& name, const size_t chan) override;
+        const double gain, const std::string& name, const size_t chan) final;
     double set_rx_gain(
-        const double gain, const std::string& name, const size_t chan) override;
-    double get_rx_gain(const std::string& name, const size_t chan) override;
-    double get_tx_gain(const std::string& name, const size_t chan) override;
+        const double gain, const std::string& name, const size_t chan) final;
+    double get_rx_gain(const std::string& name, const size_t chan) final;
+    double get_tx_gain(const std::string& name, const size_t chan) final;
 
     // LO Property Getters
-    std::vector<std::string> get_tx_lo_names(const size_t /*chan*/) const override
+    std::vector<std::string> get_tx_lo_names(const size_t /*chan*/) const final
     {
         return ZBX_LOS;
     }
-    std::vector<std::string> get_rx_lo_names(const size_t /*chan*/) const override
+    std::vector<std::string> get_rx_lo_names(const size_t /*chan*/) const final
     {
         return ZBX_LOS;
     }
     std::vector<std::string> get_tx_lo_sources(
-        const std::string& /*name*/, const size_t /*chan*/) const override
+        const std::string& /*name*/, const size_t /*chan*/) const final
     {
         return std::vector<std::string>{"internal", "external"};
     }
     std::vector<std::string> get_rx_lo_sources(
-        const std::string& /*name*/, const size_t /*chan*/) const override
+        const std::string& /*name*/, const size_t /*chan*/) const final
     {
         return std::vector<std::string>{"internal", "external"};
     }
 
     // LO Frequency Control
     double set_tx_lo_freq(
-        const double freq, const std::string& name, const size_t chan) override;
+        const double freq, const std::string& name, const size_t chan) final;
     double set_rx_lo_freq(
-        const double freq, const std::string& name, const size_t chan) override;
-    double get_tx_lo_freq(const std::string& name, const size_t chan) override;
-    double get_rx_lo_freq(const std::string& name, size_t chan) override;
+        const double freq, const std::string& name, const size_t chan) final;
+    double get_tx_lo_freq(const std::string& name, const size_t chan) final;
+    double get_rx_lo_freq(const std::string& name, size_t chan) final;
 
     // LO Source Control
     void set_tx_lo_source(
-        const std::string& src, const std::string& name, const size_t chan) override;
+        const std::string& src, const std::string& name, const size_t chan) final;
     void set_rx_lo_source(
-        const std::string& src, const std::string& name, const size_t chan) override;
-    const std::string get_tx_lo_source(
-        const std::string& name, const size_t chan) override;
-    const std::string get_rx_lo_source(
-        const std::string& name, const size_t chan) override;
+        const std::string& src, const std::string& name, const size_t chan) final;
+    const std::string get_tx_lo_source(const std::string& name, const size_t chan) final;
+    const std::string get_rx_lo_source(const std::string& name, const size_t chan) final;
 
     uhd::freq_range_t get_rx_lo_freq_range(
-        const std::string& name, const size_t chan) const override
+        const std::string& name, const size_t chan) const final
     {
         return _get_lo_freq_range(name, chan);
     }
 
     // TODO: Why is this not const?
     uhd::freq_range_t get_tx_lo_freq_range(
-        const std::string& name, const size_t chan) override
+        const std::string& name, const size_t chan) final
     {
         return _get_lo_freq_range(name, chan);
     }
 
     void set_rx_lo_export_enabled(
-        const bool enabled, const std::string& name, const size_t chan) override;
-    bool get_rx_lo_export_enabled(const std::string& name, const size_t chan) override;
+        const bool enabled, const std::string& name, const size_t chan) final;
+    bool get_rx_lo_export_enabled(const std::string& name, const size_t chan) final;
     void set_tx_lo_export_enabled(
-        const bool enabled, const std::string& name, const size_t chan) override;
-    bool get_tx_lo_export_enabled(const std::string& name, const size_t chan) override;
+        const bool enabled, const std::string& name, const size_t chan) final;
+    bool get_tx_lo_export_enabled(const std::string& name, const size_t chan) final;
 
 
     /******************************************************************************
      * EEPROM API
      *****************************************************************************/
-    eeprom_map_t get_db_eeprom() override;
+    eeprom_map_t get_db_eeprom() final;
 
     /**************************************************************************
      * Radio Identification API Calls
      *************************************************************************/
 
-    double get_tx_frequency(size_t chan) override;
-    double get_rx_frequency(size_t chan) override;
-    double get_rx_bandwidth(size_t chan) override;
-    double get_tx_bandwidth(size_t chan) override;
-    void set_tx_tune_args(const uhd::device_addr_t&, const size_t) override;
-    void set_rx_tune_args(const uhd::device_addr_t&, const size_t) override;
-    std::vector<std::string> get_tx_gain_names(size_t) const override;
-    std::vector<std::string> get_rx_gain_names(size_t) const override;
+    double get_tx_frequency(size_t chan) final;
+    double get_rx_frequency(size_t chan) final;
+    double get_rx_bandwidth(size_t chan) final;
+    double get_tx_bandwidth(size_t chan) final;
+    void set_tx_tune_args(const uhd::device_addr_t&, const size_t) final;
+    void set_rx_tune_args(const uhd::device_addr_t&, const size_t) final;
+    std::vector<std::string> get_tx_gain_names(size_t) const final;
+    std::vector<std::string> get_rx_gain_names(size_t) const final;
 
     uhd::gain_range_t get_tx_gain_range(
-        const std::string& name, const size_t chan) const override;
+        const std::string& name, const size_t chan) const final;
 
     uhd::gain_range_t get_rx_gain_range(
-        const std::string& name, const size_t chan) const override;
+        const std::string& name, const size_t chan) const final;
 
-    void set_rx_agc(const bool, const size_t) override;
+    void set_rx_agc(const bool, const size_t) final;
 
-    std::vector<uhd::usrp::pwr_cal_mgr::sptr>& get_pwr_mgr(uhd::direction_t trx) override;
+    std::vector<uhd::usrp::pwr_cal_mgr::sptr>& get_pwr_mgr(uhd::direction_t trx) final;
 
 private:
     uhd::property_tree::sptr get_tree()

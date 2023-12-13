@@ -176,7 +176,7 @@ uhd::transport::usb_device_handle::sptr open_device(
             if (user_supplied) {
                 std::cerr << (boost::format("Failed to open device with VID 0x%04x and "
                                             "PID 0x%04x - trying other known VID/PIDs")
-                                 % vid % pid)
+                              % vid % pid)
                                  .str()
                           << std::endl;
             }
@@ -192,7 +192,7 @@ uhd::transport::usb_device_handle::sptr open_device(
         if (!handles.empty()) {
             handle = handles[0];
             std::cout << (boost::format("Device opened (VID=0x%04x,PID=0x%04x)") % vp.vid
-                             % vp.pid)
+                          % vp.pid)
                              .str()
                       << std::endl;
         }
@@ -680,10 +680,10 @@ int32_t main(int32_t argc, char* argv[])
             std::cout << "No bootloader found on device" << std::endl;
             return EXIT_FAILURE;
         }
-        auto vidpid = b200->read_eeprom(
-                EEPROM_DATA_ADDR_HIGH_BYTE, EEPROM_DATA_VID_PID_ADDR, 4);
-        auto eeprom_data = b200->read_eeprom(
-                EEPROM_DATA_ADDR_HIGH_BYTE, EEPROM_DATA_OLD_DATA_ADDR, 36);
+        auto vidpid =
+            b200->read_eeprom(EEPROM_DATA_ADDR_HIGH_BYTE, EEPROM_DATA_VID_PID_ADDR, 4);
+        auto eeprom_data =
+            b200->read_eeprom(EEPROM_DATA_ADDR_HIGH_BYTE, EEPROM_DATA_OLD_DATA_ADDR, 36);
 
         uhd::byte_vector_t first_bl_record(OLD_EEPROM_SIGNATURE);
         first_bl_record.push_back(vidpid[2]);

@@ -1,0 +1,30 @@
+parameters:
+- name: testOS
+  type: string
+  values:
+    - ubuntu1804
+- name: uhdArtifactSource
+  type: string
+  default: current
+
+jobs:
+- template: templates/job-uhd-x4xx-hardware-tests.yml
+  parameters:
+    suiteName: 'sdr_test0_x440'
+    testOS: '${{ parameters.testOS }}'
+    toolset: 'make'
+    runPyTest: false
+    runDevTest: true
+    runSystemImageTest: true
+    uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
+    xilinxLocation: /opt/Xilinx/SDK/2019.1
+    dutMatrix:
+      sdr-test0-x440-0:
+        dutName: 'sdr-test0-x440-0'
+        dutType: 'x4xx'
+        devtestPattern: 'x440'
+        master_clock_rate: '125e6'
+        dutFPGA: 'X4_400'
+        dutEmbeddedImagesArtifact: 'x4xx-images'
+        uartSerial: '251635284FC7'
+        pipelineAgent: sdr-test0

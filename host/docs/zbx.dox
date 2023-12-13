@@ -22,6 +22,9 @@ Feature list:
 - Maximum input power: 0 dBm (operational, see
   <a href="http://www.ni.com/pdf/manuals/378493a">specifications</a> for damage
   levels)
+- Timed tuning is not supported by the X410, even though it is possible to tune
+  the ZBX LOs at a given time, because timed tuning of the NCO (within the RFSoC)
+  is not supported.
 
 See the RF section in the <a href="http://www.ni.com/pdf/manuals/378493a">Ettus
 USRP X410 Specifications</a> for a comprehensive ZBX daughterboard
@@ -43,7 +46,7 @@ the IF directly, and downconvert to or from DC digitally.
 
 The TX and RX paths are almost symmetric, with slight variations on the various
 frequency bands. The various gain stages are spread out along the TX and RX
-paths (see also \ref zbx_gain_control, note that the TX path includes selectable
+paths (see also \ref zbx_gain_control; note that the TX path includes selectable
 amplifiers as well as DSAs). All LO synthesizers are identical (LMX2572).
 
 \subsection zbx_too_cpld Digital Control
@@ -293,7 +296,7 @@ usrp->set_tx_gain_profile("table");
 usrp->set_tx_gain(30); // ERROR: Now, we have to specify a name
 usrp->get_radio_control().set_tx_gain(5); // This works, though. The radio_control
                                           // object is smart enough to infer that
-					  // this is the only action left.
+                                          // this is the only action left.
 // The previous line and the following have the same effect:
 usrp->set_tx_gain(5, "TABLE");
 // The CPLD DSA table entry at index 5 is now loaded and applied to the TX and
@@ -309,8 +312,8 @@ std::cout << usrp->get_tx_gain() << std::endl;
 // the CPLD, which is not possible if there are timed commands queued up.
 std::cout << usrp->get_tx_gain("DSA1") << std::endl; // Should print whatever
                                                      // was originally stored
-						     // in TX0_TABLE_DSA1, which
-						     // was copied to TX0_DSA1
+                                                     // in TX0_TABLE_DSA1, which
+                                                     // was copied to TX0_DSA1
 ~~~
 
 \subsection zbx_gain_tablenoatr CPLD-Table Gain Profile without ATR control
@@ -331,7 +334,7 @@ usrp->set_tx_gain_profile("table_noatr");
 usrp->set_tx_gain(30); // ERROR: Now, we have to specify a name
 usrp->get_radio_control().set_tx_gain(5); // This works, though. The radio_control
                                           // object is smart enough to infer that
-					  // this is the only action left.
+                                          // this is the only action left.
 // The previous line and the following have the same effect (but it's a different
 // effect than when using gain profile 'table'):
 usrp->set_tx_gain(5, "TABLE");
@@ -349,8 +352,8 @@ usrp->set_tx_gain(5, "TABLE");
 // This is not possible if there are timed commands queued up.
 std::cout << usrp->get_tx_gain("DSA1") << std::endl; // Should print whatever
                                                      // is currently in TX0_DSA1[i],
-						     // where i is the value of
-						     // SW_RF0_DSA_CONFIG.
+                                                     // where i is the value of
+                                                     // SW_RF0_DSA_CONFIG.
 ~~~
 
 \section zbx_atr Auto-Transmit-Receive Registers (ATR)

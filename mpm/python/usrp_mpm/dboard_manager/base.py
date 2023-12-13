@@ -7,12 +7,10 @@
 dboard base implementation module
 """
 
-from builtins import object
-from six import iteritems
 from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.mpmutils import to_native_str
 
-class DboardManagerBase(object):
+class DboardManagerBase:
     """
     Base class for daughterboard controls
     """
@@ -36,6 +34,10 @@ class DboardManagerBase(object):
     # maps these keys to actual spidev paths. Also throws a warning/error if
     # the SPI configuration is invalid.
     spi_chipselect = {}
+    # If the daughterboard adds updateable components, add them there. This can
+    # also be used to amend already existing updateable components, such as the
+    # FPGA.
+    updateable_components = {}
     ### End of overridables #################################################
 
     def __init__(self, slot_idx, **kwargs):
@@ -72,7 +74,7 @@ class DboardManagerBase(object):
             return {}
         return {
             spi_device: spi_devices[chip_select]
-            for spi_device, chip_select in iteritems(chip_select_map)
+            for spi_device, chip_select in chip_select_map.items()
         }
 
     def init(self, args):
@@ -99,7 +101,6 @@ class DboardManagerBase(object):
         Tear down all members that need to be specially handled before
         deconstruction.
         """
-        pass
 
     def get_serial(self):
         """
@@ -110,7 +111,7 @@ class DboardManagerBase(object):
 
     def get_revision(self):
         """
-        Return this daughterboard's revision number as integer. Will return 
+        Return this daughterboard's revision number as integer. Will return
         -1 if no revision can be found or revision is not an integer
         """
         try:
@@ -133,13 +134,34 @@ class DboardManagerBase(object):
         """
         Called when the motherboard is reconfiguring its clocks.
         """
-        pass
 
     def update_ref_clock_freq(self, freq, **kwargs):
         """
         Call this function if the frequency of the reference clock changes.
         """
         self.log.warning("update_ref_clock_freq() called but not implemented")
+
+    def get_master_clock_rate(self):
+        """
+        Return this device's master clock rate.
+
+        Why is this part of the DboardManager, and not the PeriphManager?
+
+        In most cases, the master clock rate is a property of a USRP, and is
+        defined once per motherboard. However, it makes more sense to leave
+        ownership of this API to the daughterboard, for a few reasons:
+        - Many USRPs (E3x0 series, N310) manage the master clock rate through
+          the daughterboard anyway.
+        - All daughterboard classes either require or simply have access to
+          the master clock rate
+        - By putting this API here rather than into the PeriphManager class, we
+          allow the option of having multiple master clock rates per USRP (one
+          per daughterboard)
+        - In UHD, the place where we need access to this value is always the
+          dboard control code, rarely if ever the mpmd motherboard control code
+        """
+        raise NotImplementedError(
+            "DboardManagerBase::get_master_clock_rate() not implemented!")
 
     ##########################################################################
     # Sensors
@@ -150,10 +172,11 @@ class DboardManagerBase(object):
 
         direction needs to be either RX or TX.
         """
+        assert direction.lower() in ('rx', 'tx')
         if direction.lower() == 'rx':
             return list(self.rx_sensor_callback_map.keys())
-        else:
-            return list(self.tx_sensor_callback_map.keys())
+        # else:
+        return list(self.tx_sensor_callback_map.keys())
 
     def get_sensor(self, direction, sensor_name, chan=0):
         """
@@ -176,4 +199,3 @@ class DboardManagerBase(object):
         return getattr(
             self, callback_map.get(sensor_name)
         )(chan)
-

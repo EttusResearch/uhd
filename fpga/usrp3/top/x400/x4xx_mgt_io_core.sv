@@ -157,8 +157,11 @@ module x4xx_mgt_io_core #(
   logic [31:0] mac_status, phy_status;
   logic [31:0] mac_status_bclk, phy_status_bclk;
   logic activity_bclk, link_up_bclk;
+  logic [31:0] port_info_bclk;
 
-  assign port_info = {COMPAT_NUM, 6'h0, activity_bclk, link_up_bclk, MGT_PROTOCOL, PORTNUM};
+  // readback on m_axi.clk outside this core
+  assign port_info = {COMPAT_NUM, 6'h0, activity, link_up, MGT_PROTOCOL, PORTNUM};
+  assign port_info_bclk = {COMPAT_NUM, 6'h0, activity_bclk, link_up_bclk, MGT_PROTOCOL, PORTNUM};
 
   always @(posedge bus_clk) begin
     // No reset handling needed for readback
@@ -166,7 +169,7 @@ module x4xx_mgt_io_core #(
       reg_rd_resp <= 1'b1;
       case(reg_rd_addr)
         REG_PORT_INFO:
-          reg_rd_data <= port_info;
+          reg_rd_data <= port_info_bclk;
         REG_MAC_CTRL_STATUS:
           reg_rd_data <= mac_status_bclk;
         REG_PHY_CTRL_STATUS:

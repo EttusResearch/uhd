@@ -43,6 +43,42 @@ BUILD_VIVADO_IP = \
 	exit $$VIV_ERR
 
 # -------------------------------------------------------------------
+# Usage: BUILD_VIVADO_IP_WITH_SUBCORES
+# Args: $1 = IP_NAME (IP name)
+#       $2 = ARCH (zynq, kintex7, etc)
+#       $3 = PART_ID (<device>/<package>/<speedgrade>[/<tempgrade>[/<silicon revision>]])
+#       $4 = IP_SRC_DIR (Absolute path to the top level ip src dir)
+#       $5 = IP_BUILD_DIR (Absolute path to the top level ip build dir)
+#       $6 = GENERATE_EXAMPLE (0 or 1)
+# Prereqs:
+# - TOOLS_DIR must be defined globally
+# -------------------------------------------------------------------
+
+BUILD_VIVADO_IP_WITH_SUBCORES = \
+	@ \
+	echo "========================================================"; \
+	echo "BUILDER: Building IP $(1)"; \
+	echo "========================================================"; \
+	export XCI_FILE=$(call RESOLVE_PATH,$(5)/$(1)/$(1).xci); \
+	export PART_NAME=`python3 $(TOOLS_DIR)/scripts/viv_gen_part_id.py $(2)/$(3)`; \
+	export GEN_EXAMPLE=$(6); \
+	export SYNTH_IP=$(SYNTH_IP); \
+	echo "BUILDER: Staging IP in build directory..."; \
+	rm -rf $(5)/$(1); \
+	mkdir -p $(5)/$(1); \
+	$(TOOLS_DIR)/scripts/shared-ip-loc-manage.sh --path=$(5)/$(1) reserve; \
+	cp -rf $(4)/$(1)/* $(5)/$(1); \
+	echo "BUILDER: Retargeting IP to part $(2)/$(3)..."; \
+	python3 $(TOOLS_DIR)/scripts/viv_ip_xci_editor.py --output_dir=$(5)/$(1) --target=$(2)/$(3) retarget $(4)/$(1)/$(1).xci; \
+	python3 $(TOOLS_DIR)/scripts/viv_ip_retarget_subcores.py --output_dir=$(5)/$(1) --target=$(2)/$(3) $(4)/$(1)/$(1).xci; \
+	cd $(5); \
+	echo "BUILDER: Building IP..."; \
+	export VIV_ERR=0; \
+	$(TOOLS_DIR)/scripts/launch_vivado.py -mode batch -source $(call RESOLVE_PATH,$(TOOLS_DIR)/scripts/viv_generate_ip.tcl) -log $(1).log -nojournal || export VIV_ERR=$$?; \
+	$(TOOLS_DIR)/scripts/shared-ip-loc-manage.sh --path=$(5)/$(1) release; \
+	exit $$VIV_ERR
+
+# -------------------------------------------------------------------
 # Usage: REBUILD_VIVADO_IP_WITH_PATCH
 # Args: $1 = IP_NAME (IP name)
 #       $2 = ARCH (zynq, kintex7, etc)

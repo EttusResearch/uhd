@@ -10,33 +10,33 @@
 #include <uhdlib/usrp/common/max287x.hpp>
 
 // LO Related
-#define ADF435X_CE (1 << 3)
-#define ADF435X_PDBRF (1 << 2)
+#define ADF435X_CE     (1 << 3)
+#define ADF435X_PDBRF  (1 << 2)
 #define ADF435X_MUXOUT (1 << 1) // INPUT!!!
-#define LOCKDET_MASK (1 << 0) // INPUT!!!
+#define LOCKDET_MASK   (1 << 0) // INPUT!!!
 
 // Common IO Pins
 #define LO_LPF_EN (1 << 15)
 
 // TX IO Pins
-#define TRSW (1 << 14) // 0 = TX, 1 = RX
-#define TX_LED_TXRX (1 << 7) // LED for TX Antenna Selection TX/RX
-#define TX_LED_LD (1 << 6) // LED for TX Lock Detect
+#define TRSW         (1 << 14) // 0 = TX, 1 = RX
+#define TX_LED_TXRX  (1 << 7) // LED for TX Antenna Selection TX/RX
+#define TX_LED_LD    (1 << 6) // LED for TX Lock Detect
 #define DIS_POWER_TX (1 << 5) // on UNIT_TX, 0 powers up TX
-#define TX_ENABLE (1 << 4) // on UNIT_TX, 0 disables TX Mixer
+#define TX_ENABLE    (1 << 4) // on UNIT_TX, 0 disables TX Mixer
 
 // RX IO Pins
-#define LNASW (1 << 14) // 0 = TX/RX, 1 = RX2
+#define LNASW         (1 << 14) // 0 = TX/RX, 1 = RX2
 #define RX_LED_RX1RX2 (1 << 7) // LED for RX Antenna Selection RX1/RX2
-#define RX_LED_LD (1 << 6) // LED for RX Lock Detect
-#define DIS_POWER_RX (1 << 5) // on UNIT_RX, 0 powers up RX
-#define RX_DISABLE (1 << 4) // on UNIT_RX, 1 disables RX Mixer and Baseband
+#define RX_LED_LD     (1 << 6) // LED for RX Lock Detect
+#define DIS_POWER_RX  (1 << 5) // on UNIT_RX, 0 powers up RX
+#define RX_DISABLE    (1 << 4) // on UNIT_RX, 1 disables RX Mixer and Baseband
 #define RX_ATTN_SHIFT 8 // lsb of RX Attenuator Control
-#define RX_ATTN_MASK (63 << RX_ATTN_SHIFT) // valid bits of RX Attenuator Control
+#define RX_ATTN_MASK  (63 << RX_ATTN_SHIFT) // valid bits of RX Attenuator Control
 
 // TX Attenuator Pins
 #define TX_ATTN_SHIFT 8 // lsb of TX Attenuator Control
-#define TX_ATTN_MASK (63 << TX_ATTN_SHIFT) // valid bits of TX Attenuator Control
+#define TX_ATTN_MASK  (63 << TX_ATTN_SHIFT) // valid bits of TX Attenuator Control
 
 // Mixer functions
 #define TX_MIXER_ENB (ADF435X_PDBRF | TX_ENABLE)
@@ -57,18 +57,18 @@
         | RX_DISABLE)
 
 // Power functions
-#define TX_POWER_UP (ADF435X_CE)
+#define TX_POWER_UP   (ADF435X_CE)
 #define TX_POWER_DOWN (DIS_POWER_TX)
 
-#define RX_POWER_UP (ADF435X_CE)
+#define RX_POWER_UP   (ADF435X_CE)
 #define RX_POWER_DOWN (DIS_POWER_RX)
 
 // Antenna constants
-#define ANT_TX TRSW // the tx line is transmitting
-#define ANT_RX 0 // the tx line is receiving
+#define ANT_TX   TRSW // the tx line is transmitting
+#define ANT_RX   0 // the tx line is receiving
 #define ANT_TXRX 0 // the rx line is on txrx
-#define ANT_RX2 LNASW // the rx line in on rx2
-#define ANT_XX LNASW // dont care how the antenna is set
+#define ANT_RX2  LNASW // the rx line in on rx2
+#define ANT_XX   LNASW // dont care how the antenna is set
 
 
 #include <uhd/types/dict.hpp>

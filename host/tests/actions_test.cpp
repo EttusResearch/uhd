@@ -221,4 +221,3 @@ BOOST_AUTO_TEST_CASE(test_action_forwarding_map_exception_invalid_destination)
     auto cmd = action_info::make("action");
     BOOST_REQUIRE_THROW(generator.post_output_edge_action(cmd, 0), uhd::rfnoc_error);
 }
-

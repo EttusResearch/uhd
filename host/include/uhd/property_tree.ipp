@@ -169,7 +169,7 @@ private:
     std::unique_ptr<T> _coerced_value;
 };
 
-}} // namespace uhd::
+}} // namespace uhd
 
 /***********************************************************************
  * Implement templated methods for the property tree
@@ -188,7 +188,8 @@ property<T>& property_tree::access(const fs_path& path)
 {
     auto ptr = std::dynamic_pointer_cast<property<T>>(this->_access(path));
     if (!ptr) {
-        throw uhd::type_error("Property " + path + " exists, but was accessed with wrong type");
+        throw uhd::type_error(
+            "Property " + path + " exists, but was accessed with wrong type");
     }
     return *ptr;
 }
@@ -198,7 +199,8 @@ typename std::shared_ptr<property<T>> property_tree::pop(const fs_path& path)
 {
     auto ptr = std::dynamic_pointer_cast<property<T>>(this->_pop(path));
     if (!ptr) {
-        throw uhd::type_error("Property " + path + " exists, but was accessed with wrong type");
+        throw uhd::type_error(
+            "Property " + path + " exists, but was accessed with wrong type");
     }
     return ptr;
 }

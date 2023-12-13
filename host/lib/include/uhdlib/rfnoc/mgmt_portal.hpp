@@ -147,6 +147,7 @@ public:
         const sw_buff_t mdata_buff_fmt,
         const stream_buff_params_t& fc_freq,
         const stream_buff_params_t& fc_headroom,
+        const std::string& throttle_ratio,
         const bool reset = false) = 0;
 
     //! Finish configuring a flow controlled receive data stream from the endpoint with

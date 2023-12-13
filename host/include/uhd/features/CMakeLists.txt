@@ -12,6 +12,7 @@ UHD_INSTALL(FILES
     ref_clk_calibration_iface.hpp
     spi_getter_iface.hpp
     trig_io_mode_iface.hpp
+    internal_sync_iface.hpp
     DESTINATION ${INCLUDE_DIR}/uhd/features
     COMPONENT headers
 )

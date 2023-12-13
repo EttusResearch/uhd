@@ -207,10 +207,10 @@ module crossbar_tb #(
     );
   end else if (ROUTER_IMPL == "chdr_crossbar_nxn") begin
     chdr_crossbar_nxn #(
-      .CHDR_W         (ROUTER_DWIDTH),
+      .PORT_W         (ROUTER_DWIDTH),
       .NPORTS         (ROUTER_PORTS),
       .DEFAULT_PORT   (0),
-      .MTU            (MTU_LOG2),
+      .BYTE_MTU       (MTU_LOG2 + $clog2(ROUTER_DWIDTH/8)),
       .ROUTE_TBL_SIZE (6),
       .MUX_ALLOC      ("ROUND-ROBIN"),
       .OPTIMIZE       ("AREA"),

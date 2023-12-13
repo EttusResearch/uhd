@@ -1,7 +1,8 @@
+// This is a template, so clang-format needs to ignore this file
+// clang-format off
 {autogen_msg}
 
-#ifndef INCLUDED_{lvbitx_classname_u}_LVBITX_HPP
-#define INCLUDED_{lvbitx_classname_u}_LVBITX_HPP
+#pragma once
 
 #include <uhd/transport/nirio/nifpga_lvbitx.h>
 
@@ -29,8 +30,8 @@ public:
     virtual size_t get_indicator_count();
     virtual const char** get_indicator_names();
 
-    virtual void init_register_info(nirio_register_info_vtr& vtr);
-    virtual void init_fifo_info(nirio_fifo_info_vtr& vtr);
+    virtual void init_register_info(nirio_register_info_vtr & vtr);
+    virtual void init_fifo_info(nirio_fifo_info_vtr & vtr);
 
     static const char* CONTROLS[];
     static const char* INDICATORS[];
@@ -43,6 +44,3 @@ private:
 }};
 
 }}}}
-
-#endif /* INCLUDED_{lvbitx_classname_u}_LVBITX_HPP */
-

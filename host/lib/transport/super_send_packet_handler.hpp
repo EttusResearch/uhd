@@ -264,10 +264,10 @@ public:
         if_packet_info.eob = metadata.end_of_burst;
         size_t nsamps_sent = total_num_samps_sent
                              + send_one_packet(buffs,
-                                   final_length,
-                                   if_packet_info,
-                                   timeout,
-                                   total_num_samps_sent * _bytes_per_cpu_item);
+                                 final_length,
+                                 if_packet_info,
+                                 timeout,
+                                 total_num_samps_sent * _bytes_per_cpu_item);
         return nsamps_sent;
     }
 

@@ -250,6 +250,7 @@ module x300_core #(
    wire [63:0] s00_axi_rdata, s01_axi_rdata;
    wire [1:0]  s00_axi_rresp, s01_axi_rresp;
    wire [0:0]  s00_axi_ruser, s01_axi_ruser;
+   wire        time_sync;
 
 
    /////////////////////////////////////////////////////////////////////////////////
@@ -287,6 +288,7 @@ module x300_core #(
       .leds(led_misc), .sw_rst(sw_rst),
       // Timekeeper
       .pps(pps_rclk),
+      .time_sync(time_sync),
       // Block connections
       .ce_clk     (ce_clk),
       .ce_rst     (ce_rst),
@@ -609,7 +611,7 @@ module x300_core #(
        ) x300_fe_core_i (
          .clk(radio_clk), .reset(radio_rst),
          .set_stb(db_fe_set_stb[i]), .set_addr(db_fe_set_addr[i]), .set_data(db_fe_set_data[i]),
-         .time_sync(),
+         .time_sync(time_sync),
          .tx_stb(tx_stb_r[i]), .tx_data_in(tx_data_r[i]), .tx_data_out(tx_data_out_r[i]),
          .rx_stb(rx_stb_r[i]), .rx_data_in(rx_data_in_r[i]), .rx_data_out(rx_data_r[i])
        );

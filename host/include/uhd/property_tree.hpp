@@ -21,7 +21,8 @@ namespace uhd {
  * A non-templated class which exists solely so we can
  * dynamic_cast between properties.
  */
-class UHD_API property_iface {
+class UHD_API property_iface
+{
 public:
     virtual ~property_iface() = default;
 };
@@ -257,8 +258,8 @@ private:
     virtual std::shared_ptr<property_iface> _pop(const fs_path& path) = 0;
 
     //! Internal create property with wild-card type
-    virtual void _create(const fs_path& path,
-        const std::shared_ptr<property_iface>& prop) = 0;
+    virtual void _create(
+        const fs_path& path, const std::shared_ptr<property_iface>& prop) = 0;
 
     //! Internal access property with wild-card type
     virtual std::shared_ptr<property_iface>& _access(const fs_path& path) const = 0;

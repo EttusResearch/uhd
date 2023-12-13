@@ -14,17 +14,20 @@
 //
 // Parameters:
 //
-//   WIDTH   : Data width of the CHDR interfaces (TDATA)
-//   MTU     : Maximum transmission unit, in WIDTH-sized words, is 2**MTU
-//   DEST_W  : Width of the destination routing information (TDEST)
-//   NODE_ID : Numeric identifier for this port
+//   WIDTH       : Data width of the CHDR interfaces (TDATA)
+//   MTU         : Maximum transmission unit, in WIDTH-sized words, is 2**MTU
+//   DEST_W      : Width of the destination routing information (TDEST)
+//   NODE_ID     : Numeric identifier for this port
+//   EN_PKT_GATE : Enable packet gate to make each packet contiguous. This
+//                 reduces congestion in the crossbar.
 //
 
 module chdr_xb_ingress_buff #(
-  parameter       WIDTH   = 64,
-  parameter       MTU     = 10,
-  parameter       DEST_W  = 4,
-  parameter [9:0] NODE_ID = 0
+  parameter       WIDTH       = 64,
+  parameter       MTU         = 10,
+  parameter       DEST_W      = 4,
+  parameter [9:0] NODE_ID     = 0,
+  parameter       EN_PKT_GATE = 0
 ) (
   input  wire               clk,
   input  wire               reset,
@@ -69,23 +72,41 @@ module chdr_xb_ingress_buff #(
 
   // The axi_packet_gate queues up an entire packet before letting it go out.
   // This reduces congestion in the crossbar for slowly-built packets.
-  axi_packet_gate #(
-    .WIDTH (WIDTH),
-    .SIZE  (MTU)
-  ) axi_packet_gate_i (
-    .clk      (clk),
-    .reset    (reset),
-    .clear    (1'b0),
-    .i_tdata  (gate_i_tdata),
-    .i_tlast  (gate_i_tlast),
-    .i_terror (1'b0),
-    .i_tvalid (gate_i_tvalid),
-    .i_tready (gate_i_tready),
-    .o_tdata  (gate_o_tdata),
-    .o_tlast  (gate_o_tlast),
-    .o_tvalid (gate_o_tvalid),
-    .o_tready (gate_o_tready)
-  );
+  if (EN_PKT_GATE) begin : gen_pkt_gate
+    axi_packet_gate #(
+      .WIDTH (WIDTH),
+      .SIZE  (MTU)
+    ) axi_packet_gate_i (
+      .clk      (clk),
+      .reset    (reset),
+      .clear    (1'b0),
+      .i_tdata  (gate_i_tdata),
+      .i_tlast  (gate_i_tlast),
+      .i_terror (1'b0),
+      .i_tvalid (gate_i_tvalid),
+      .i_tready (gate_i_tready),
+      .o_tdata  (gate_o_tdata),
+      .o_tlast  (gate_o_tlast),
+      .o_tvalid (gate_o_tvalid),
+      .o_tready (gate_o_tready)
+    );
+  end else begin : gen_no_pkt_gate
+    axi_fifo_flop2 #(
+      .WIDTH(WIDTH+1)
+    ) axi_fifo_flop2_i (
+      .clk     (clk                         ),
+      .reset   (reset                       ),
+      .clear   (1'b0                        ),
+      .i_tdata ({gate_i_tlast, gate_i_tdata}),
+      .i_tvalid(gate_i_tvalid               ),
+      .i_tready(gate_i_tready               ),
+      .o_tdata ({gate_o_tlast, gate_o_tdata}),
+      .o_tvalid(gate_o_tvalid               ),
+      .o_tready(gate_o_tready               ),
+      .space   (                            ),
+      .occupied(                            )
+    );
+  end
 
 
   //---------------------------------------------------------------------------

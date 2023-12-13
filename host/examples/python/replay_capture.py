@@ -36,6 +36,9 @@ try:
 except ImportError:
     HAVE_TQDM = False
 
+# sc16 (32-bit) samples on the USRP
+BYTES_PER_SAMP = 4
+
 
 # pylint: disable=too-many-arguments
 def parse_args():
@@ -72,6 +75,10 @@ def parse_args():
                         help="Save output file in NumPy format (default: No)")
     parser.add_argument("--cpu-format", default="sc16", choices=["sc16", "fc32"],
                         help="Data format for storing data")
+    parser.add_argument("--throttle", type=float, default=0.25,
+                        help="Throttle for streaming to host, range (0, 1] (default: 0.25)")
+    parser.add_argument("--no-progress", "-N", action="store_true",
+                        help="Do not display progress bar during data transfer")
     return parser.parse_args()
 
 def enumerate_radios(graph, radio_chans):
@@ -158,22 +165,16 @@ def _sanitize_args(replay, num_ports, num_bytes, pkt_size_bytes=None):
         replay.set_play_type("sc16", 0)
         replay.set_record_type("sc16", 0)
         if pkt_size_bytes is not None:
-            replay.set_max_items_per_packet(pkt_size_bytes // 4, port)
+            replay.set_max_items_per_packet(pkt_size_bytes // BYTES_PER_SAMP, port)
     return mem_stride, num_bytes
 
 
-def run_capture(graph, replay, radio_chan_pairs, num_samps, rate,
-                cap_delay, pkt_size_bytes=None):
+def run_capture(graph, replay, radio_chan_pairs, mem_stride, num_samps, rate,
+                cap_delay):
     """
     Record from radio into DRAM
     """
-    mem_stride, num_bytes = _sanitize_args(
-        replay,
-        len(radio_chan_pairs),
-        num_samps * 4 if num_samps is not None else None,
-        pkt_size_bytes,
-    )
-    num_samps = num_bytes // 4
+    num_bytes = num_samps * BYTES_PER_SAMP
     num_ports = len(radio_chan_pairs)
     ## Arm replay block for recording
     for idx in range(len(radio_chan_pairs)):
@@ -213,9 +214,10 @@ def run_capture(graph, replay, radio_chan_pairs, num_samps, rate,
             time.sleep(0.200)
             if time.monotonic() > timeout:
                 raise RuntimeError("Timeout while loading replay buffer!")
-    return num_bytes // 4
+    return num_bytes // BYTES_PER_SAMP
 
-def rx_data_to_host(rx_streamer, output_data, num_words, pkt_size_words):
+def rx_data_to_host(replay, rx_streamer, output_data, mem_stride, num_samps,
+                    pkt_size_bytes):
     """
     Download data from a previously configured replay block via a streamer
     object.
@@ -223,9 +225,14 @@ def rx_data_to_host(rx_streamer, output_data, num_words, pkt_size_words):
     print("Downloading data to host...")
     rx_md = uhd.types.RXMetadata()
     num_ports = rx_streamer.get_num_channels()
-    num_bytes = num_words * 4
+    num_bytes = num_samps * BYTES_PER_SAMP
+    max_samps_per_pkt = pkt_size_bytes // BYTES_PER_SAMP
+    mem_stride = replay.get_mem_size() // num_ports
+    # Configure playback regions
+    for idx in range(num_ports):
+        replay.config_play(idx * mem_stride, num_bytes, idx)
     stream_cmd = uhd.types.StreamCMD(uhd.types.StreamMode.num_done)
-    stream_cmd.num_samps = num_words
+    stream_cmd.num_samps = num_samps
     # This is not strictly necessary, but the streamer will not allow a
     # multi-chan operation without a time spec.
     stream_cmd.stream_now = False
@@ -233,10 +240,10 @@ def rx_data_to_host(rx_streamer, output_data, num_words, pkt_size_words):
     rx_streamer.issue_stream_cmd(stream_cmd)
     if HAVE_TQDM:
         num_rx = 0
-        output_buf = np.zeros((num_ports, pkt_size_words), dtype=output_data.dtype)
+        output_buf = np.zeros((num_ports, 1000*max_samps_per_pkt), dtype=output_data.dtype)
         with tqdm.tqdm(total=num_bytes*num_ports,
                        unit_scale=True, unit="byte") as pbar:
-            while num_rx < num_words:
+            while num_rx < num_samps:
                 num_rx_i = rx_streamer.recv(output_buf, rx_md, 1.0)
                 if rx_md.error_code == uhd.types.RXMetadataErrorCode.timeout:
                     print("recv() timed out. Exiting...")
@@ -248,14 +255,14 @@ def rx_data_to_host(rx_streamer, output_data, num_words, pkt_size_words):
                     print("ERROR: Overflow detected!")
                 elif rx_md.error_code != uhd.types.RXMetadataErrorCode.none:
                     print("ERROR: recv() gave unexpected error code: " + rx_md.strerror())
-                pbar.update(num_rx_i * 4 * num_ports)
+                pbar.update(num_rx_i * BYTES_PER_SAMP * num_ports)
                 output_data[:, num_rx:num_rx+num_rx_i] = output_buf[:, 0:num_rx_i]
                 num_rx += num_rx_i
     else:
         num_rx = rx_streamer.recv(output_data, rx_md, 5.0)
         if rx_md.error_code != uhd.types.RXMetadataErrorCode.none:
             print("Error during download: " + rx_md.strerror())
-    if num_rx != num_words:
+    if num_rx != num_samps:
         print("ERROR: Fewer samples received than expected!")
     print("Download complete.")
     return num_rx
@@ -265,7 +272,10 @@ def main():
     """
     Run capture
     """
+    global HAVE_TQDM
     args = parse_args()
+    if args.no_progress:
+        HAVE_TQDM = False
     graph = uhd.rfnoc.RfnocGraph(args.args)
     replay = uhd.rfnoc.ReplayBlockControl(graph.get_block(args.block))
     radio_chan_pairs = enumerate_radios(graph, args.radio_channels)
@@ -274,6 +284,7 @@ def main():
     print(f"Using rate: {rate/1e6:.3f} Msps")
     # Set up streamer
     stream_args = uhd.usrp.StreamArgs(args.cpu_format, "sc16")
+    stream_args.args['throttle'] = str(args.throttle)
     rx_streamer = graph.create_rx_streamer(len(radio_chan_pairs), stream_args)
     num_ports = rx_streamer.get_num_channels()
     for chan in range(len(radio_chan_pairs)):
@@ -281,10 +292,20 @@ def main():
         # replay block.
         graph.connect(replay.get_unique_id(), chan, rx_streamer, chan)
     graph.commit()
+
+    num_bytes = (
+        args.duration * rate * BYTES_PER_SAMP if args.duration is not None else None
+    )
+    mem_stride, num_bytes = _sanitize_args(
+        replay,
+        len(radio_chan_pairs),
+        num_bytes,
+        pkt_size_bytes=args.pkt_size,
+    )
     num_samps = run_capture(
         graph, replay, radio_chan_pairs,
-        args.duration * rate if args.duration is not None else None, rate,
-        args.delay, pkt_size_bytes=args.pkt_size)
+        mem_stride, num_bytes//BYTES_PER_SAMP, rate,
+        args.delay)
 
     if args.numpy:
         tmp_dir = tempfile.mkdtemp()
@@ -297,7 +318,8 @@ def main():
         mmap_filename, shape=(num_ports, num_samps), mode='w+', dtype=cap_dtype)
     output_data.flush()
 
-    rx_data_to_host(rx_streamer, output_data, num_samps, replay.get_max_packet_size(0))
+    rx_data_to_host(replay, rx_streamer, output_data,
+        mem_stride, num_samps, replay.get_max_packet_size(0))
     if args.numpy:
         print(f"Saving data as Numpy array to {args.output_file}...")
         with open(args.output_file, 'wb') as out_file:

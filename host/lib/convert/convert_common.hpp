@@ -11,8 +11,8 @@
 #include <uhd/convert.hpp>
 #include <uhd/utils/static.hpp>
 #include <stdint.h>
-#include <limits>
 #include <complex>
+#include <limits>
 
 #define _DECLARE_CONVERTER(name, in_form, num_in, out_form, num_out, prio)    \
     struct name : public uhd::convert::converter                              \

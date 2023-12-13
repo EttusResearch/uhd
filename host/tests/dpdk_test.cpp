@@ -282,9 +282,9 @@ int main(int argc, char** argv)
     std::string args;
     std::string cpusets;
     po::options_description desc("Allowed options");
-    desc.add_options()("help", "help message")(
-        "args", po::value<std::string>(&args)->default_value(""), "UHD-DPDK args")(
-        "polling-mode", "Use polling mode (single thread on own core)");
+    desc.add_options()("help", "help message")("args",
+        po::value<std::string>(&args)->default_value(""),
+        "UHD-DPDK args")("polling-mode", "Use polling mode (single thread on own core)");
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);

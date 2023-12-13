@@ -10,36 +10,16 @@ ZBX dboard implementation module
 import time
 from usrp_mpm import tlv_eeprom
 from usrp_mpm.dboard_manager import DboardManagerBase
-from usrp_mpm.mpmlog import get_logger
+from usrp_mpm.dboard_manager.x4xx_db import X4xxDbMixin
 from usrp_mpm.chips.ic_reg_maps import zbx_cpld_regs_t
 from usrp_mpm.periph_manager.x4xx_periphs import get_temp_sensor
 from usrp_mpm.sys_utils.udev import get_eeprom_paths_by_symbol
 from usrp_mpm.mpmutils import parse_encoded_git_hash
 
 ###############################################################################
-# Helpers
-###############################################################################
-# pylint: disable=too-few-public-methods
-class EepromTagMap:
-    """
-    Defines the tagmap for EEPROMs matching this magic.
-    The tagmap is a dictionary mapping an 8-bit tag to a NamedStruct instance.
-    The canonical list of tags and the binary layout of the associated structs
-    is defined in mpm/tools/tlv_eeprom/usrp_eeprom.h. Only the subset relevant
-    to MPM are included below.
-    """
-    magic = 0x55535250
-    tagmap = {
-        # 0x10: usrp_eeprom_board_info
-        0x10: tlv_eeprom.NamedStruct('< H H H 7s 1x',
-                                     ['pid', 'rev', 'rev_compat', 'serial']),
-    }
-
-
-###############################################################################
 # Main dboard control class
 ###############################################################################
-class ZBX(DboardManagerBase):
+class ZBX(X4xxDbMixin, DboardManagerBase):
     """
     Holds all dboard specific information and methods of the ZBX dboard
     """
@@ -51,9 +31,28 @@ class ZBX(DboardManagerBase):
     pids = [0x4002]
     rx_sensor_callback_map = {
         'temperature': 'get_rf_temp_sensor',
+        'rfdc_rate': 'get_rfdc_rate_sensor',
     }
     tx_sensor_callback_map = {
         'temperature': 'get_rf_temp_sensor',
+        'rfdc_rate': 'get_rfdc_rate_sensor',
+    }
+    has_db_flash = True
+    # ZBX depends on two types of RF core implementations which each have
+    # compat versions.
+    updateable_components = {
+        'fpga': {
+            'compatibility': {
+                'rf_core_100m': {
+                    'current': (1, 0),
+                    'oldest': (1, 0),
+                },
+                'rf_core_400m': {
+                    'current': (1, 0),
+                    'oldest': (1, 0),
+                },
+            }
+        },
     }
     ### End of overridables #################################################
 
@@ -85,29 +84,16 @@ class ZBX(DboardManagerBase):
     # MPM Initialization
     #########################################################################
     def __init__(self, slot_idx, **kwargs):
-        DboardManagerBase.__init__(self, slot_idx, **kwargs)
-        self.log = get_logger("ZBX-{}".format(slot_idx))
-        self.log.trace("Initializing ZBX daughterboard, slot index %d",
-                       self.slot_idx)
+        super().__init__("ZBX", slot_idx, **kwargs)
 
         # local variable to track if PLL ref clock is enabled for the CPLD logic
         self._clock_enabled = False
 
-        # Interface with MB HW
-        if 'db_iface' not in kwargs:
-            self.log.error("Required DB Iface was not provided!")
-            raise RuntimeError("Required DB Iface was not provided!")
-        self.db_iface = kwargs['db_iface']
-
-        self.eeprom_symbol = f"db{slot_idx}_eeprom"
-        eeprom = self._get_eeprom()
-        self._assert_rev_compatibility(eeprom["rev_compat"])
         # Initialize daughterboard CPLD control
         self.poke_cpld = self.db_iface.poke_db_cpld
         self.peek_cpld = self.db_iface.peek_db_cpld
         self.regs = zbx_cpld_regs_t()
         self._spi_addr = self.regs.SPI_READY_addr
-        self._enable_base_power()
         # Check register map compatibility
         self._check_compat_version()
         self.log.debug("ZBX CPLD build git hash: %s", self._get_cpld_git_hash())
@@ -116,47 +102,6 @@ class ZBX(DboardManagerBase):
         # enable PLL reference clock
         self.reset_clock(False)
         self._cpld_set_safe_defaults()
-
-    def _get_eeprom(self):
-        """
-        Return the eeprom data.
-        """
-        path = get_eeprom_paths_by_symbol(self.eeprom_symbol)[self.eeprom_symbol]
-        eeprom, _ = tlv_eeprom.read_eeprom(path, EepromTagMap.tagmap, EepromTagMap.magic, None)
-        return eeprom
-
-    def _assert_rev_compatibility(self, rev_compat):
-        """
-        Check the ZBX hardware revision compatibility with this driver.
-
-        Throws a RuntimeError() if this version of MPM does not recognize the
-        hardware.
-
-        Note: The CPLD image version is checked separately.
-        """
-        if rev_compat not in self.DBOARD_SUPPORTED_COMPAT_REVS:
-            err = "This MPM version is not compatible with this ZBX daughterboard. " \
-                f"Found rev_compat value: 0x{rev_compat:02x}. " \
-                "Please update your MPM version to support this daughterboard revision."
-            self.log.error(err)
-            raise RuntimeError(err)
-
-    def _enable_base_power(self, enable=True):
-        """
-        Enables or disables power to the DB which enables communication to DB CPLD
-        """
-        if enable:
-            self.db_iface.enable_daughterboard(enable=True)
-            if not self.db_iface.check_enable_daughterboard():
-                self.db_iface.enable_daughterboard(enable=False)
-                self.log.error('ZBX {} power up failed'.format(self.slot_idx))
-                raise RuntimeError('ZBX {} power up failed'.format(self.slot_idx))
-        else: # disable
-            # Removing power from the CPLD will set all the the output pins to open and the
-            # supplies default to disabled on power up.
-            self.db_iface.enable_daughterboard(enable=False)
-            if self.db_iface.check_enable_daughterboard():
-                self.log.error('ZBX {} power down failed'.format(self.slot_idx))
 
     def _enable_power(self, enable=True):
         """ Enables or disables power switches internal to the DB CPLD """
@@ -167,6 +112,9 @@ class ZBX(DboardManagerBase):
             self.regs.ENABLE_POS_3V3_addr,
             self.regs.get_reg(self.regs.ENABLE_POS_3V3_addr))
 
+    #########################################################################
+    # DB-CPLD Interfacing
+    #########################################################################
     def _check_compat_version(self):
         """ Check compatibility of DB CPLD image and SW regmap """
         compat_revision_addr = self.regs.OLDEST_COMPAT_REVISION_addr
@@ -286,6 +234,15 @@ class ZBX(DboardManagerBase):
             self.poke_cpld(addr, cpld_regs.get_reg(addr))
         # pylint: enable=too-many-statements
 
+    def _get_cpld_git_hash(self):
+        """
+        Trace build of MB CPLD
+        """
+        git_hash_rb = self.peek_cpld(self.regs.GIT_HASH_addr)
+        (git_hash, dirtiness_qualifier) = parse_encoded_git_hash(git_hash_rb)
+        return "{:07x} ({})".format(git_hash, dirtiness_qualifier)
+
+
     #########################################################################
     # UHD (De-)Initialization
     #########################################################################
@@ -312,38 +269,12 @@ class ZBX(DboardManagerBase):
     #########################################################################
     # API calls needed by the zbx_dboard driver
     #########################################################################
-    def enable_iq_swap(self, enable, trx, channel):
-        """
-        Turn on IQ swapping in the RFDC
-        """
-        self.db_iface.enable_iq_swap(enable, trx, channel)
-
-    def get_dboard_sample_rate(self):
-        """
-        Return the RFDC rate. This is usually a big number in the 3 GHz range.
-        """
-        return self.db_iface.get_sample_rate()
-
-    def get_dboard_prc_rate(self):
-        """
-        Return the PRC rate. The CPLD and LOs are clocked with this.
-        """
-        return self.db_iface.get_prc_rate()
-
     def _has_compat_version(self, min_required_version):
         """
         Check for a minimum required version.
         """
         cpld_image_compat_revision = self.peek_cpld(self.regs.REVISION_addr)
         return cpld_image_compat_revision >= min_required_version
-
-    def _get_cpld_git_hash(self):
-        """
-        Trace build of MB CPLD
-        """
-        git_hash_rb = self.peek_cpld(self.regs.GIT_HASH_addr)
-        (git_hash, dirtiness_qualifier) = parse_encoded_git_hash(git_hash_rb)
-        return "{:07x} ({})".format(git_hash, dirtiness_qualifier)
 
     def reset_clock(self, value):
         """

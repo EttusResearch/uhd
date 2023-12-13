@@ -6,14 +6,14 @@
 
 parameters:
 - name: build_linux
-  type: boolean
-  default: true
+  type: string
+  default: Auto-detect
 - name: build_mac
-  type: boolean
-  default: true
+  type: string
+  default: Auto-detect
 - name: build_win
-  type: boolean
-  default: true
+  type: string
+  default: Auto-detect
 - name: custom_boost_version
   type: boolean
   default: false
@@ -26,8 +26,8 @@ parameters:
 - name: testLength
   type: string
 - name: run_streaming_tests
-  type: boolean
-  default: true
+  type: string
+  default: Auto-detect
 - name: build_sdk
   type: boolean
   default: false
@@ -49,6 +49,13 @@ parameters:
 - name: build_x4xx
   type: boolean
   default: true
+- name: fpga_imgs_base_url
+  type: string
+  displayName: FPGA Images Base URL
+  default: 'Internal'
+- name: skip_analyze_changeset
+  type: boolean
+  default: false
 
 variables:
 - template: ../uhd-pipeline-vars.yml
@@ -84,10 +91,38 @@ resources:
     ref: master
 
 stages:
+  # This stage will analyze code that is being tested, and generate variables
+  # that can be used to control conditional execution of future stages. Any
+  # stage that shall run conditionally must therefore depend on this stage.
+- stage: analyze_changeset
+  displayName: Analyze Changeset
+  dependsOn: []
+  jobs:
+  - template: job-analyze-changeset.yml
+    parameters:
+      skip_analyze_changeset: ${{ parameters.skip_analyze_changeset }}
 - stage: build_uhd_stage_linux
   displayName: Build UHD Linux
-  dependsOn: []
-  condition: and(succeeded(), ${{ parameters.build_linux }})
+  dependsOn: analyze_changeset
+  # This will make $(UhdTestList) available to jobs/steps/tasks, but not for the
+  # condition.
+  variables:
+    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
+  # This stage is executed if any of these are true:
+  # - build_linux is set to Force-yes
+  # - build_linux is set to auto, and the UhdTestList contains UHD Linux builds
+  condition: >
+    and(succeeded(),
+    or(
+      eq('${{ parameters.build_linux }}', 'Force-yes'),
+      and(
+        eq('${{ parameters.build_linux }}', 'Auto-detect'),
+        or(
+          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.linux'),
+          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.all')
+        )
+      )
+    ))
   jobs:
   - template: job-get-latest-uhd-docker.yml
   - template: job-uhd-build-src.yml
@@ -107,8 +142,19 @@ stages:
 
 - stage: build_uhd_stage_win
   displayName: Build UHD Windows
-  dependsOn: []
-  condition: and(succeeded(), ${{ parameters.build_win }})
+  dependsOn: analyze_changeset
+  condition: >
+    and(succeeded(),
+    or(
+      eq('${{ parameters.build_win }}', 'Force-yes'),
+      and(
+        eq('${{ parameters.build_win }}', 'Auto-detect'),
+        or(
+          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.windows'),
+          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.all')
+        )
+      )
+    ))
   jobs:
   - template: job-get-latest-uhd-docker.yml
   - template: job-uhd-build-src.yml
@@ -122,8 +168,19 @@ stages:
 
 - stage: build_uhd_stage_mac
   displayName: Build UHD macOS
-  dependsOn: []
-  condition: and(succeeded(), ${{ parameters.build_mac }})
+  dependsOn: analyze_changeset
+  condition: >
+    and(succeeded(),
+    or(
+      eq('${{ parameters.build_mac }}', 'Force-yes'),
+      and(
+        eq('${{ parameters.build_mac }}', 'Auto-detect'),
+        or(
+          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.mac'),
+          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.all')
+        )
+      )
+    ))
   jobs:
   - template: job-get-latest-uhd-docker.yml
   - template: job-uhd-build-src.yml
@@ -132,7 +189,46 @@ stages:
 
 - stage: build_uhd_embedded_system_images
   displayName: Build UHD Embedded System Images
-  dependsOn: []
+  dependsOn: analyze_changeset
+  # If skip_analyze_changeset is true (e.g., during a regular mono pipeline)
+  # then we build depending on the checkboxes (e.g., build_x4xx). If
+  # skip_analyze_changeset is false (e.g., during a PR mono pipeline) we AND
+  # the checkboxes with their respective conditions. This can be improved: Right
+  # now, if any embedded condition is true, then all embedded targets with a
+  # checkbox will be built.
+  condition: >
+    and(
+      succeeded(),
+      or(
+        and(
+          ${{ parameters.skip_analyze_changeset }},
+          or(
+            ${{ parameters.build_e310_sg1 }},
+            ${{ parameters.build_e310_sg3 }},
+            ${{ parameters.build_e320 }},
+            ${{ parameters.build_n3xx }},
+            ${{ parameters.build_x4xx }}
+          )
+        ),
+        or(
+          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.all'),
+          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.linux'),
+          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'mpm.build'),
+          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.all'),
+          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.e3'),
+          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.n3'),
+          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.x4'),
+          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
+          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.e3'),
+          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.n3'),
+          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x4'),
+          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.all'),
+          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.e3'),
+          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.n3'),
+          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.x4')
+        )
+      )
+    )
   variables:
     AUTO_CONF: $(Agent.BuildDirectory)/auto.conf
   jobs:
@@ -168,6 +264,17 @@ stages:
                 path: host
               - package: mpmd
                 path: mpm
+        # If requested, we set a variable "UHD_BASE_URL", which is consumed by
+        # the uhd-fpga-images recipe to an internal file server which is closer
+        # to the build machines. It is simply appended to auto.conf, where
+        # bitbake will pick it up and apply it to the recipe.
+        - ${{ if contains(parameters.fpga_imgs_base_url, 'Internal') }}:
+          - bash: |
+              cat <<EOF >>$AUTO_CONF
+              UHD_BASE_URL = "$FILE_SERVER_URL"
+              EOF
+            env:
+              FILE_SERVER_URL: $(InternalFileServerUrl)
         postbuild_steps:
         - script: |
             rm $(AUTO_CONF)
@@ -176,7 +283,7 @@ stages:
 
 - stage: package_uhd_src
   displayName: Package UHD Source
-  dependsOn: []
+  dependsOn: analyze_changeset
   jobs:
   - template: job-get-latest-uhd-docker.yml
   - template: job-uhd-package-src.yml
@@ -187,7 +294,22 @@ stages:
 
 - stage: build_gnuradio_stage_linux
   displayName: Build gnuradio Linux
-  dependsOn: build_uhd_stage_linux
+  dependsOn:
+  - build_uhd_stage_linux
+  - analyze_changeset
+  # Anytime we build UHD, we also rebuild GNU Radio to see if we broke compat.
+  condition: >
+    and(succeeded(),
+    or(
+      eq('${{ parameters.build_linux }}', 'Force-yes'),
+      and(
+        eq('${{ parameters.build_linux }}', 'Auto-detect'),
+        or(
+          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.linux'),
+          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.all')
+        )
+      )
+    ))
   jobs:
   - template: job-get-latest-uhd-docker.yml
   - template: job-gnuradio-grettus-build-src.yml
@@ -225,10 +347,12 @@ stages:
         toolset: msbuild
         installer: nsis
         releaseBinaries: ${{ parameters.release_binaries }}
+        fpga_imgs_base_url: ${{ parameters.fpga_imgs_base_url }}
     - template: job-uhd-build-installer.yml
       parameters:
         toolset: msbuild_python
         installer: nsis
+        fpga_imgs_base_url: ${{ parameters.fpga_imgs_base_url }}
     - ${{ if parameters.release_binaries }}:
       - template: job-uhd-build-installer-signing.yml
         parameters:
@@ -239,6 +363,17 @@ stages:
   displayName: devtest UHD x3xx b2xx
   dependsOn:
   - build_uhd_stage_linux
+  - analyze_changeset
+  condition: >
+    and(
+      succeeded(),
+      or(
+        ${{ parameters.skip_analyze_changeset }},
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.all'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.b2'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.x3')
+      )
+    )
   jobs:
   - template: job-uhd-devtest-rhombus.yml
     parameters:
@@ -251,6 +386,17 @@ stages:
   dependsOn:
   - build_uhd_stage_linux
   - build_uhd_embedded_system_images
+  - analyze_changeset
+  condition: >
+    and(
+      succeeded(),
+      or(
+        ${{ parameters.skip_analyze_changeset }},
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.all'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.n3'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.e320')
+      )
+    )
   jobs:
   - template: job-uhd-devtest-rhombus.yml
     parameters:
@@ -264,20 +410,57 @@ stages:
   - build_uhd_stage_linux
   - build_uhd_embedded_system_images
   - build_gnuradio_stage_linux
+  - analyze_changeset
+  # This will make $(UhdTestList) available to jobs/steps/tasks, but not for the
+  # condition.
+  variables:
+    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
+  condition: >
+    and(
+      succeeded(),
+      or(
+        ${{ parameters.skip_analyze_changeset }},
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x4xx'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x410'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x440'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.all'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.x410'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.x440')
+    ))
   jobs:
-  - template: tests/job-uhd-x4xx-hardware-tests-sdr-test0.yml
+  - template: tests/job-uhd-x410-hardware-tests-sdr-test0.yml
     parameters:
       testOS: ubuntu1804
-  - template: tests/job-uhd-x4xx-hardware-tests-pebbles.yml
+  - template: tests/job-uhd-x440-hardware-tests-sdr-test0.yml
     parameters:
       testOS: ubuntu1804
+  - template: tests/job-uhd-x410-hardware-tests-pebbles.yml
+    parameters:
+      testOS: ubuntu1804
+      testLength: ${{ parameters.testLength }}
+  - template: tests/job-uhd-x440-hardware-tests-pebbles.yml
+    parameters:
+      testOS: ubuntu1804
+      testLength: ${{ parameters.testLength }}
 
 - stage: test_uhd_rf_test_stage
   displayName: Run rf tests n3xx
   dependsOn:
+  - analyze_changeset
   - build_uhd_stage_linux
   - build_uhd_embedded_system_images
   - build_gnuradio_stage_linux
+  condition: >
+    and(
+      succeeded(),
+      or(
+        ${{ parameters.skip_analyze_changeset }},
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.n320'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.n310'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.n3xx')
+    ))
   jobs:
   - template: job-uhd-rf-tests-pebbles.yml
     parameters:
@@ -288,9 +471,19 @@ stages:
 - stage: test_streaming_stage
   displayName: Test UHD Streaming
   dependsOn:
+  - analyze_changeset
   - build_uhd_stage_linux
   - build_uhd_embedded_system_images
-  condition: and(succeeded('build_uhd_stage_linux'), succeeded('build_uhd_embedded_system_images'), ${{ parameters.run_streaming_tests }})
+  condition: >
+    and(
+      succeeded('build_uhd_stage_linux'),
+      succeeded('build_uhd_embedded_system_images'),
+      ${{ parameters.run_streaming_tests }},
+      or(
+        ${{ parameters.skip_analyze_changeset }},
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming')
+      )
+    )
   jobs:
   - template: job-uhd-streaming-tests-beauty.yml
     parameters:

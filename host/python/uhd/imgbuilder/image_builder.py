@@ -14,6 +14,7 @@ import logging
 import os
 import re
 import sys
+import numpy as np
 
 import mako.lookup
 import mako.template
@@ -47,6 +48,7 @@ DEVICE_DIR_MAP = {
     'n320': 'n3xx',
     'x400': 'x400',
     'x410': 'x400',
+    'x440': 'x400',
 }
 
 # Picks the default make target per device
@@ -219,9 +221,9 @@ class ImageBuilderConfig:
         self.__dict__.update(**config)
         self.blocks = blocks
         self.device = device
+        self._update_sep_defaults()
         self._check_configuration()
         self._check_deprecated_signatures()
-        self._update_sep_defaults()
         self._set_indices()
         self._collect_noc_ports()
         self._collect_io_ports()
@@ -288,6 +290,48 @@ class ImageBuilderConfig:
                 + requested_version
             )
         self.rfnoc_version = RFNOC_PROTO_VERSION
+        # Give block_chdr_width a default value
+        if not hasattr(self, "block_chdr_width"):
+            self.block_chdr_width = self.chdr_width
+        # Check crossbar_routes
+        num_tas = len(self.device.transports)
+        num_seps = len(self.stream_endpoints)
+        num_ports = num_tas + num_seps
+        if hasattr(self, "crossbar_routes"):
+            # Check that crossbar_routes is an NxN array of ones and zeros
+            routes = np.array(self.crossbar_routes)
+            num_rows = routes.shape[0]
+            num_cols = routes.shape[1]
+            num_digits = np.count_nonzero(routes == 0) + np.count_nonzero(routes == 1)
+            if routes.shape != (num_ports, num_ports) or num_digits != num_ports**2:
+                failure = (
+                    "crossbar_routes must be a "
+                    + str(num_ports)
+                    + " by "
+                    + str(num_ports)
+                    + " binary array"
+                )
+        else:
+            # Give crossbar_routes a default value
+            routes = np.ones([num_ports, num_ports])
+            # Disable all TA to TA paths, except loopback (required for discovery)
+            for i in range(0, num_tas):
+                routes[i, 0:num_tas] = 0
+                routes[i, i] = 1
+            self.crossbar_routes = routes.tolist()
+        # Check SEP has buff_size and buff_size_bytes parameters
+        for sep_name in self.stream_endpoints:
+            sep = self.stream_endpoints[sep_name]
+            if "buff_size" not in sep and "buff_size_bytes" not in sep:
+                failure = (
+                    f"You must specify buff_size or buff_size_bytes for {sep_name}"
+                )
+            # Initialize the one not set by user (schema doesn't allow both)
+            if "buff_size_bytes" in sep:
+                sep["buff_size"] = sep["buff_size_bytes"] // (sep["chdr_width"] // 8)
+            elif "buff_size" in sep:
+                sep["buff_size_bytes"] = sep["buff_size"] * (sep["chdr_width"] // 8)
+        # Handle any errors
         if failure:
             logging.error(failure)
             raise ValueError(failure)
@@ -301,6 +345,8 @@ class ImageBuilderConfig:
                 self.stream_endpoints[sep]["num_data_i"] = 1
             if "num_data_o" not in self.stream_endpoints[sep]:
                 self.stream_endpoints[sep]["num_data_o"] = 1
+            if "chdr_width" not in self.stream_endpoints[sep]:
+                self.stream_endpoints[sep]["chdr_width"] = self.chdr_width
 
     def _set_indices(self):
         """
@@ -434,21 +480,61 @@ class ImageBuilderConfig:
 
     def _collect_clocks(self):
         """
-        Create lookup table for clocks. The key is a tuple of block name
-        (_device_ for clocks of the bsp), the clock name and flow
-        direction
+        Create lookup table for clocks. The key is a combination of block name
+        (_device_ for clocks of the bsp) and the clock name (e.g.,
+        _device_.rfnoc_chdr, or ddc0.ce)
         """
+        min_user_clock_index = 10
+        clk_indices = {
+            1: '_device_.rfnoc_ctrl',
+            2: '_device_.rfnoc_chdr',
+        }
+        def register_clk_index(clock_id, clock_info):
+            if 'index' in clock_info:
+                clk_index = int(clock_info['index'])
+                if clk_index in clk_indices and clk_indices[clk_index] != clock_id:
+                    logging.error(
+                        "Conflicting clock indices found. Index %d is defined by "
+                        "%s and %s.", clk_index, clk_indices[clk_index], clock_id)
+                    sys.exit(1)
+            else:
+                # Automatically assign an index
+                min_clk_index = max(min_user_clock_index, *list(clk_indices.keys()))
+                clk_index = min_clk_index + 1
+                logging.debug("Assigning clock index %d to clock %s.", clk_index, clock_id)
+            clk_indices[clk_index] = clock_id
+        # Collect clocks from block definitions
         for name, block in self.noc_blocks.items():
             desc = self.blocks[block["block_desc"]]
-            if hasattr(desc, "clocks"):
-                self.clocks.update({
-                    (name, clk["name"]): clk for clk in desc.clocks})
-        if hasattr(self.device, "clocks"):
-            self.clocks.update({
-                ("_device_", clk["name"]): clk for clk in self.device.clocks})
-        # Add the implied clocks for the BSP
-        self.clocks[("_device_", "rfnoc_ctrl")] = {"freq": '[]', "name": "rfnoc_ctrl"}
-        self.clocks[("_device_", "rfnoc_chdr")] = {"freq": '[]', "name": "rfnoc_chdr"}
+            block_clocks = getattr(desc, "clocks", {})
+            for clock in block_clocks:
+                clock_id = name + '.' + clock["name"]
+                # Sanitize the direction field: Block clocks are by default inputs
+                if 'direction' not in clock:
+                    clock['direction'] = 'in'
+                self.clocks[clock_id] = clock
+        # Collect clocks from device BSP
+        for bsp_clk in getattr(self.device, 'clocks', {}):
+            clock_id = "_device_." + bsp_clk["name"]
+            # Sanitize the direction field: Block clocks are by default outputs
+            if 'direction' not in bsp_clk:
+                bsp_clk['direction'] = 'out'
+            self.clocks[clock_id] = bsp_clk
+            register_clk_index(clock_id, bsp_clk)
+        # Some clocks always have to be present. If the BSP does not define them,
+        # then we do it for them.
+        for required_bsp_clock in "rfnoc_ctrl", "rfnoc_chdr":
+            clock_id = "_device_." + required_bsp_clock
+            if clock_id not in self.clocks:
+                logging.debug("Adding required clock not present in BSP: %s", required_bsp_clock)
+                self.clocks[clock_id] = {
+                    "name": required_bsp_clock,
+                    # For the index, we do a reverse lookup from clk_indices
+                    "index": {clk_id: idx
+                              for idx, clk_id in clk_indices.items()
+                              if clk_id.startswith('_device_.')
+                             }[clock_id]
+                }
 
     def pick_clk_domains(self):
         """
@@ -458,21 +544,23 @@ class ImageBuilderConfig:
         """
         (self.clk_domain_con, self.clk_domains) = split(
             self.clk_domains, lambda con:
-            (con["srcblk"], con["srcport"]) in self.clocks and
-            (con["dstblk"], con["dstport"]) in self.clocks)
+            (con["srcblk"] + '.' + con["srcport"]) in self.clocks and
+            (con["dstblk"] + '.' + con["dstport"]) in self.clocks)
 
         # Check if there are unconnected clocks
-        connected = [(con["dstblk"], con["dstport"]) for con in self.clk_domain_con]
+        connected = [(con["dstblk"] + '.' + con["dstport"]) for con in self.clk_domain_con]
         unconnected = []
-        for clk in self.clocks:
-            if clk[0] != "_device_" and \
-               clk[1] not in ["rfnoc_ctrl", "rfnoc_chdr"] and \
-               clk not in connected:
+        for clk, clk_info in self.clocks.items():
+            clk_blk, clk_port = clk.split('.', 2)
+            if clk_blk != "_device_" and \
+                    clk_port not in ('rfnoc_ctrl', 'rfnoc_chdr') and \
+                    clk not in connected and \
+                    clk_info['direction'] == 'in':
                 unconnected.append(clk)
         if unconnected:
-            logging.error("%d unresolved clk domain(s)", len(unconnected))
+            logging.error("%d unconnected clk domain(s)", len(unconnected))
             for clk in unconnected:
-                logging.error("    %s:%s", clk[0], clk[1])
+                logging.error("    %s", clk)
             logging.error("Please specify the clock(s) to connect")
             sys.exit(1)
 
@@ -785,7 +873,7 @@ def write_edges(config, destination):
                           ((dst[0] << 6) | dst[1])))
 
 
-def write_verilog(config, destination, source, source_hash):
+def write_verilog(config, destination, args):
     """
     Generates rfnoc_image_core.v file for the device.
 
@@ -796,8 +884,7 @@ def write_verilog(config, destination, source, source_hash):
     template engine.
     :param config: ImageBuilderConfig derived from script parameter
     :param destination: Filepath to write to
-    :param source: Filepath to the image YAML/GRC to generate from
-    :param source_hash: Source file hash value
+    :param args: Dictionary of arguments for the code generation
     :return: None
     """
     template_dir = os.path.join(os.path.dirname(__file__), "templates")
@@ -811,8 +898,7 @@ def write_verilog(config, destination, source, source_hash):
     try:
         block = tpl.render(**{
             "config": config,
-            "source": source,
-            "source_hash": source_hash,
+            "args": args,
             })
     except:
         print(exceptions.text_error_template().render())
@@ -823,13 +909,12 @@ def write_verilog(config, destination, source, source_hash):
         image_core_file.write(block)
 
 
-def write_verilog_header(config, destination, source, source_hash):
+def write_verilog_header(config, destination, args):
     """
     Generates rfnoc_image_core.vh file for the device.
     :param config: ImageBuilderConfig derived from script parameter
     :param destination: Filepath to write to
-    :param source: Filepath to the image YAML/GRC to generate from
-    :param source_hash: Source file hash value
+    :param args: Dictionary of arguments for the code generation
     :return: None
     """
     template_dir = os.path.join(os.path.dirname(__file__), "templates")
@@ -843,8 +928,7 @@ def write_verilog_header(config, destination, source, source_hash):
     try:
         block = tpl.render(**{
             "config": config,
-            "source": source,
-            "source_hash": source_hash,
+            "args": args,
             })
     except:
         print(exceptions.text_error_template().render())
@@ -1041,13 +1125,13 @@ def build_image(config, fpga_path, config_path, device, **args):
     write_verilog(
         builder_conf,
         image_core_path,
-        source=args.get('source'),
-        source_hash=args.get('source_hash'))
+        args,
+    )
     write_verilog_header(
         builder_conf,
         image_core_header_path,
-        source=args.get('source'),
-        source_hash=args.get('source_hash'))
+        args,
+    )
     write_build_env()
 
     if "generate_only" in args and args["generate_only"]:
