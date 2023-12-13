@@ -3,11 +3,11 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// Module: x4xx_qsfp_wrapper_tb
+// Module: rfnoc_ta_x4xx_eth_tb
 //
 // Description:
 //
-//   Testbench for x4xx_qsfp_wrapper.
+//   Testbench for rfnoc_ta_x4xx_eth.
 //
 // Parameters:
 //
@@ -20,8 +20,8 @@
 `include "./x4xx_mgt_types.vh"
 
 
-module x4xx_qsfp_wrapper_tb #(
-  parameter       TEST_NAME  = "x4xx_qsfp_wrapper_tb",
+module rfnoc_ta_x4xx_eth_tb #(
+  parameter       TEST_NAME  = "rfnoc_ta_x4xx_eth_tb",
   parameter       PROTOCOL0  = `MGT_10GbE,
   parameter       PROTOCOL1  = `MGT_Disabled,
   parameter       PROTOCOL2  = `MGT_Disabled,
@@ -175,51 +175,44 @@ module x4xx_qsfp_wrapper_tb #(
   `define MGT_IO3 dut.x4xx_qsfp_wrapper_i.mgt_lanes.lane_loop[3].x4xx_mgt_io_core_i
   `define QSFP_W dut.x4xx_qsfp_wrapper_i
 
-  x4xx_qsfp_wrapper_temp #(
-    .PROTOCOL0     (PROTOCOL0),
-    .PROTOCOL1     (PROTOCOL1),
-    .PROTOCOL2     (PROTOCOL2),
-    .PROTOCOL3     (PROTOCOL3),
-    .CHDR_W        (CHDR_W),
-    .PORTNUM       (0)
+  rfnoc_ta_x4xx_eth #(
+    .PROTOCOL ({PROTOCOL3, PROTOCOL2, PROTOCOL1, PROTOCOL0}),
+    .CHDR_W   (CHDR_W),
+    .QSFP_NUM (0)
   ) dut (
-    .areset          (refclk_rst),
-    .refclk_p        (refclk_p),
-    .refclk_n        (refclk_n),
-    .bus_rst         (clk200_rst),
-    .clk40_rst       (clk40_rst),
-    .clk100          (clk100),
-    .bus_clk         (clk200),
-    .clk40           (clk40),
-    `AXI4_PORT_ASSIGN_NR(axi_hp,axi_hp_v)
-    `AXI4LITE_PORT_ASSIGN_NR(s_axi,s_axi_v)
-    .tx_p            (tx_p),
-    .tx_n            (tx_n),
-    .rx_p            (rx_p),
-    .rx_n            (rx_n),
-
-    .e2v_tdata       ({e2v[3].tdata,  e2v[2].tdata,  e2v[1].tdata,  e2v[0].tdata}),
-    .e2v_tlast       ({e2v[3].tlast,  e2v[2].tlast,  e2v[1].tlast,  e2v[0].tlast}),
-    .e2v_tvalid      ({e2v[3].tvalid, e2v[2].tvalid, e2v[1].tvalid, e2v[0].tvalid}),
-    .e2v_tready      ({e2v[3].tready, e2v[2].tready, e2v[1].tready, e2v[0].tready}),
-    .v2e_tdata       ({v2e[3].tdata,  v2e[2].tdata,  v2e[1].tdata,  v2e[0].tdata}),
-    .v2e_tlast       ({v2e[3].tlast,  v2e[2].tlast,  v2e[1].tlast,  v2e[0].tlast}),
-    .v2e_tvalid      ({v2e[3].tvalid, v2e[2].tvalid, v2e[1].tvalid, v2e[0].tvalid}),
-    .v2e_tready      ({v2e[3].tready, v2e[2].tready, v2e[1].tready, v2e[0].tready}),
-
-    .eth_tx_irq      (eth_tx_irq),
-    .eth_rx_irq      (eth_rx_irq),
-
-    .rx_rec_clk_out  (),
-    .device_id       (device_id),
-
-    .port_info_0     (port_info[0]),
-    .port_info_1     (port_info[1]),
-    .port_info_2     (port_info[2]),
-    .port_info_3     (port_info[3]),
-
-    .link_up         (link_up),
-    .activity        (activity)
+    .core_arst               (refclk_rst),
+    .rfnoc_ctrl_clk          (clk40),
+    .rfnoc_ctrl_rst          (clk40_rst),
+    .rfnoc_chdr_clk          (clk200),
+    .rfnoc_chdr_rst          (clk200_rst),
+    .refclk_p                (refclk_p),
+    .refclk_n                (refclk_n),
+    .dclk                    (clk100),
+    .tx_p                    (tx_p),
+    .tx_n                    (tx_n),
+    .rx_p                    (rx_p),
+    .rx_n                    (rx_n),
+    .recovered_clk           (),
+    .device_id               (device_id),
+    .rx_irq                  (eth_rx_irq),
+    .tx_irq                  (eth_tx_irq),
+    .port_info               ({port_info[3], port_info[2], port_info[1], port_info[0]}),
+    .link_up                 (link_up),
+    .activity                (activity),
+    .axil_rst                (clk40_rst),
+    .axil_clk                (clk40),
+    `AXI4LITE_PORT_ASSIGN_NR (axil,s_axi_v)
+    .axi_rst                 (clk40_rst),
+    .axi_clk                 (clk40),
+    `AXI4_PORT_ASSIGN_NR     (axi,axi_hp_v)
+    .s_rfnoc_chdr_tdata      ({e2v[3].tdata,  e2v[2].tdata,  e2v[1].tdata,  e2v[0].tdata} ),
+    .s_rfnoc_chdr_tlast      ({e2v[3].tlast,  e2v[2].tlast,  e2v[1].tlast,  e2v[0].tlast} ),
+    .s_rfnoc_chdr_tvalid     ({e2v[3].tvalid, e2v[2].tvalid, e2v[1].tvalid, e2v[0].tvalid}),
+    .s_rfnoc_chdr_tready     ({e2v[3].tready, e2v[2].tready, e2v[1].tready, e2v[0].tready}),
+    .m_rfnoc_chdr_tdata      ({v2e[3].tdata,  v2e[2].tdata,  v2e[1].tdata,  v2e[0].tdata} ),
+    .m_rfnoc_chdr_tlast      ({v2e[3].tlast,  v2e[2].tlast,  v2e[1].tlast,  v2e[0].tlast} ),
+    .m_rfnoc_chdr_tvalid     ({v2e[3].tvalid, v2e[2].tvalid, v2e[1].tvalid, v2e[0].tvalid}),
+    .m_rfnoc_chdr_tready     ({v2e[3].tready, v2e[2].tready, v2e[1].tready, v2e[0].tready})
   );
 
 

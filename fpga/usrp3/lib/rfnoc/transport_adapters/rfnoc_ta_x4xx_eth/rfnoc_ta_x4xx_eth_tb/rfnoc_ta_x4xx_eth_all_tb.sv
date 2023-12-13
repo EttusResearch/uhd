@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// Module: x4xx_qsfp_wrapper_all_tb
+// Module: rfnoc_ta_x4xx_eth_all_tb
 //
 // Description:
 //
@@ -12,30 +12,30 @@
 
 `include "./x4xx_mgt_types.vh"
 
-module x4xx_qsfp_wrapper_all_tb;
+module rfnoc_ta_x4xx_eth_all_tb;
 
-  x4xx_qsfp_wrapper_tb #(
+  rfnoc_ta_x4xx_eth_tb #(
     .TEST_NAME ("100GbE_F"),
     .PROTOCOL0 (`MGT_100GbE),
     .CHDR_W    (512),
     .USE_MAC   (0)
   ) ETH_100Gb_fast ();
 
-  x4xx_qsfp_wrapper_tb #(
+  rfnoc_ta_x4xx_eth_tb #(
     .TEST_NAME ("10GbE_F"),
     .PROTOCOL0 (`MGT_10GbE),
     .CHDR_W    (64),
     .USE_MAC   (0)
   ) ETH_10Gb_fast ();
 
-  x4xx_qsfp_wrapper_tb #(
+  rfnoc_ta_x4xx_eth_tb #(
     .TEST_NAME ("10GbE_F_512"),
     .PROTOCOL0 (`MGT_10GbE),
     .CHDR_W    (512),
     .USE_MAC   (0)
   ) ETH_10Gb_fast_512 ();
 
-  x4xx_qsfp_wrapper_tb #(
+  rfnoc_ta_x4xx_eth_tb #(
     .TEST_NAME ("10GbE_x4_F"),
     .PROTOCOL0 (`MGT_10GbE),
     .PROTOCOL1 (`MGT_10GbE),
@@ -45,21 +45,21 @@ module x4xx_qsfp_wrapper_all_tb;
     .USE_MAC   (0)
   ) ETH_10Gb_x4_fast ();
 
-  x4xx_qsfp_wrapper_tb #(
+  rfnoc_ta_x4xx_eth_tb #(
     .TEST_NAME ("100GbE_512S"),
     .PROTOCOL0 (`MGT_100GbE),
     .CHDR_W    (512),
     .USE_MAC   (1)
   ) ETH_100Gb_512serial ();
 
-  x4xx_qsfp_wrapper_tb #(
+  rfnoc_ta_x4xx_eth_tb #(
     .TEST_NAME ("100GbE_128S"),
     .PROTOCOL0 (`MGT_100GbE),
     .CHDR_W    (128),
     .USE_MAC   (1)
   ) ETH_100Gb_128serial ();
 
-  x4xx_qsfp_wrapper_tb #(
+  rfnoc_ta_x4xx_eth_tb #(
     .TEST_NAME ("10GbE_S"),
     .PROTOCOL0 (`MGT_10GbE),
     .CHDR_W    (64),

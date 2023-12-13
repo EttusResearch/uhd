@@ -1,0 +1,11 @@
+#
+# Copyright 2023 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+RFNOC_TA_X4XX_ETH_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/rfnoc/transport_adapters/rfnoc_ta_x4xx_eth/, \
+rfnoc_ta_x4xx_eth.sv \
+x4xx_mgt_io_core.sv \
+x4xx_qsfp_wrapper.sv \
+))

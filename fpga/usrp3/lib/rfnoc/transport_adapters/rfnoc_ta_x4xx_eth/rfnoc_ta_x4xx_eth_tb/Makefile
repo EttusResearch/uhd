@@ -8,7 +8,7 @@
 # Top-of-Makefile
 #-------------------------------------------------
 # Define BASE_DIR to point to the "top" dir
-BASE_DIR = $(abspath ../../../../top)
+BASE_DIR = $(abspath ../../../../../top)
 
 # Include viv_sim_preamble after defining BASE_DIR
 include $(BASE_DIR)/../tools/make/viv_sim_preamble.mak
@@ -43,9 +43,9 @@ $(RFNOC_CORE_SRCS) \
 
 # Add files for the DUT
 DESIGN_SRCS += $(abspath \
-$(BASE_DIR)/x400/x4xx_mgt_io_core.sv \
-$(BASE_DIR)/x400/x4xx_qsfp_wrapper.sv \
-$(BASE_DIR)/x400/x4xx_qsfp_wrapper_temp.sv \
+../x4xx_mgt_io_core.sv \
+../x4xx_qsfp_wrapper.sv \
+../rfnoc_ta_x4xx_eth.sv \
 )
 
 #-------------------------------------------------
@@ -53,7 +53,7 @@ $(BASE_DIR)/x400/x4xx_qsfp_wrapper_temp.sv \
 #-------------------------------------------------
 # If simulation contains IP, define the IP_DIR and point
 # it to the base level IP directory
-IP_DIR = ../../ip
+IP_DIR = $(BASE_DIR)/x400/ip
 
 # Include makefiles and sources for all IP components
 # *after* defining the IP_DIR
@@ -133,12 +133,12 @@ SVLOG_ARGS += -suppress 2583
 # Testbench Specific
 #-------------------------------------------------
 # Define only one top-level module
-TB_TOP_MODULE ?= x4xx_qsfp_wrapper_all_tb
+TB_TOP_MODULE ?= rfnoc_ta_x4xx_eth_all_tb
 
 SIM_TOP = $(TB_TOP_MODULE)
 
 SIM_SRCS = \
-$(abspath x4xx_qsfp_wrapper_tb.sv) \
+$(abspath rfnoc_ta_x4xx_eth_tb.sv) \
 $(abspath $(TB_TOP_MODULE).sv) \
 
 #-------------------------------------------------

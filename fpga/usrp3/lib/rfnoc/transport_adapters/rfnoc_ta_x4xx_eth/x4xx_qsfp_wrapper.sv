@@ -41,7 +41,6 @@ module x4xx_qsfp_wrapper #(
   // Resets
   input logic areset,
   input logic bus_rst,
-  input logic clk40_rst,
 
   // Clocks
   input logic refclk_p,

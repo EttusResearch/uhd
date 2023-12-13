@@ -17,7 +17,7 @@
 //   CPU_FIFO_SIZE    : Log2 of the FIFO depth (in bytes) for the CPU egress path
 //   CHDR_FIFO_SIZE   : Log2 of the FIFO depth (in bytes) for the CHDR egress path
 //   RT_TBL_SIZE      : Log2 of the depth of the return-address routing table
-//   NODE_INST        : The node type to return for a node-info discovery
+//   NODE_INST        : The node instance number to return for a node-info discovery
 //   DROP_UNKNOWN_MAC : Drop packets not addressed to us?
 //   DROP_MIN_PACKET  : Drop packets smaller than 64 bytes?
 //   PREAMBLE_BYTES   : Number of bytes of preamble on Ethernet interface
