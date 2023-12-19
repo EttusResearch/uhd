@@ -36,11 +36,14 @@ parameters:
 - name: warmUpAfterBoot
   type: number
   default: 0
+- name: timeoutInMinutes
+  type: number
+  default: 120
 
 jobs:
 - job: x4xx_hardware_test_${{ parameters.suiteName }}
   displayName: x4xx hardware test ${{ parameters.suiteName }}
-  timeoutInMinutes: 120
+  timeoutInMinutes: ${{ parameters.timeoutInMinutes }}
   strategy:
     matrix: ${{ parameters.dutMatrix }}
 
