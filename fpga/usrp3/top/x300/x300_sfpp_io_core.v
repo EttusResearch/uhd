@@ -395,16 +395,6 @@ generate
          .bist_checker_errors(bist_checker_errors)
       );
 
-       reg mac_crit_err_latch;
-       always @(posedge bus_clk) begin
-          if (bus_rst | mac_clear) begin
-             mac_crit_err_latch <= 1'b0;
-          end else begin
-             if (mac_crit_err_bclk)
-                mac_crit_err_latch <= 1'b1;
-          end
-       end
-
       assign m_axis_tuser = 4'd0;
 
       wire        set_stb;
@@ -449,15 +439,15 @@ generate
             bist_lock_latency <= bist_lock_latency + 20'd1;
       end
 
-       reg mac_crit_err_latch;
-       always @(posedge bus_clk) begin
-          if (bus_rst | mac_clear) begin
-             mac_crit_err_latch <= 1'b0;
-          end else begin
-             if (mac_crit_err_bclk)
-                mac_crit_err_latch <= 1'b1;
-          end
-       end
+      reg mac_crit_err_latch;
+      always @(posedge bus_clk) begin
+        if (bus_rst | mac_clear) begin
+          mac_crit_err_latch <= 1'b0;
+        end else begin
+          if (mac_crit_err_bclk)
+               mac_crit_err_latch <= 1'b1;
+        end
+      end
 
       wire [31:0] core_status = {
          6'h0,                      //[31:26]
