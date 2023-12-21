@@ -35,7 +35,7 @@ parameters:
 jobs:
 - job: x4xx_hardware_test_${{ parameters.suiteName }}
   displayName: x4xx hardware test ${{ parameters.suiteName }}
-  timeoutInMinutes: 90
+  timeoutInMinutes: 120
   strategy:
     matrix: ${{ parameters.dutMatrix }}
 
