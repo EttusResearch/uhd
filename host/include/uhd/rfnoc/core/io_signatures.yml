@@ -242,3 +242,9 @@ axis_chdr:
   # - IRQ x 4
   # - Link Up x 4
   # - Link Activity x 4
+
+pps:
+  type: broadcaster-listener
+  ports:
+  - name: pps
+    width: 1

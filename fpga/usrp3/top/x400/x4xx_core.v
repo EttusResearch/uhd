@@ -848,8 +848,11 @@ module x4xx_core #(
   `ifdef X440
     .radio_time0                    (radio_time[0*64+:64]),
     .radio_time1                    (radio_time[1*64+:64]),
+    .pps0                           (pps_radioclk[0]     ),
+    .pps1                           (pps_radioclk[1]     ),
   `else
     .radio_time                     (radio_time[0*64+:64]),
+    .pps                            (pps_radioclk[0]     ),
   `endif
     .dram0_axi_rst                  (dram_rst),
     .dram0_m_axi_awid               (dram0_axi_awid),

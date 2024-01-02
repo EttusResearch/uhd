@@ -75,6 +75,18 @@ io_ports:
     rename:
       pattern: time(.*)
       repl: \1time1
+  pps0:
+    type: pps
+    drive: broadcaster
+    rename:
+      pattern: pps
+      repl: pps0
+  pps1:
+    type: pps
+    drive: broadcaster
+    rename:
+      pattern: pps
+      repl: pps1
   radio0:
     type: radio
     drive: master
