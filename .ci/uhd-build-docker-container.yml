@@ -158,7 +158,6 @@ jobs:
       - docker
   strategy:
     matrix: $[ variables.winDockerImages ]
-    maxParallel: 2
   steps:
   - checkout: self
     clean: true
