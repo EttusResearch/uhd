@@ -3,8 +3,9 @@
 ## Reporting Bugs and other Issues
 
 **Please don't use the bug/issue tracker to ask questions. If you have
-questions, please ask on the usrp-users mailing list, or email
-support@ettus.com!**
+questions, please ask on the usrp-users mailing list or file an NI Service Request for direct technical support.**
+
+The [NI Service Request Manager](https://kb.ettus.com/NI_SRM) is used to file service requests. 
 
 If you have found an issue or bug in UHD, you can use the
 [GitHub issue tracker](https://github.com/EttusResearch/uhd/issues) to submit a
