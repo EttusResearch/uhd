@@ -495,3 +495,8 @@ stages:
       testOS: ubuntu2004
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
       testLength: ${{ parameters.testLength }}
+  - template: job-uhd-streaming-tests-x440.yml
+    parameters:
+      testOS: ubuntu2204
+      uhdSrcDir: $(Build.SourcesDirectory)/uhddev
+      testLength: ${{ parameters.testLength }}

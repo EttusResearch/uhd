@@ -80,6 +80,46 @@ def generate_x410_100GbE_test_cases(metafunc, test_length, dut_fpga, sfp_int0, s
     stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
     parametrize_test_length(metafunc, test_length, fast_params, stress_params)
 
+def generate_x440_100GbE_test_cases(metafunc, test_length, dut_fpga, sfp_int0, sfp_int1):
+    if dut_fpga.upper() == 'CG_400':
+        test_cases = [
+            # Test Lengths                                         dual_SFP  rate    rx_rate  rx_channels dest_addr        dest_port adapter host_interface keep_hdr test case ID
+            # --------------------------------------------------------------------------------------------------------------------------------------------------------
+            [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,    500e6,  500e6,   "0",        "192.168.110.1", 1234,     "sfp0", sfp_int0,      True,    id="SFP0_FULL_PACKET_1x100GbE-1xRX@500e6")],
+            [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,    500e6,  500e6,   "1",        "192.168.110.1", 1234,     "sfp0", sfp_int0,      False,   id="SFP0_RAW_PAYLOAD_1x100GbE-1xRX@500e6")],
+            [{},                                      pytest.param(False,    500e6,  500e6,   "2",        "192.168.110.1", 1234,     "sfp0", sfp_int0,      True,    id="SFP0_FULL_PACKET_1x100GbE-1xRX@500e6")],
+            [{},                                      pytest.param(False,    500e6,  500e6,   "3",        "192.168.110.1", 1234,     "sfp0", sfp_int0,      False,   id="SFP0_RAW_PAYLOAD_1x100GbE-1xRX@500e6")],
+            [{},                                      pytest.param(False,    500e6,  500e6,   "4",        "192.168.110.1", 1234,     "sfp0", sfp_int0,      True,    id="SFP0_FULL_PACKET_1x100GbE-1xRX@500e6")],
+            [{},                                      pytest.param(False,    500e6,  500e6,   "5",        "192.168.110.1", 1234,     "sfp0", sfp_int0,      False,   id="SFP0_RAW_PAYLOAD_1x100GbE-1xRX@500e6")],
+            [{},                                      pytest.param(False,    500e6,  500e6,   "6",        "192.168.110.1", 1234,     "sfp0", sfp_int0,      True,    id="SFP0_FULL_PACKET_1x100GbE-1xRX@500e6")],
+            [{},                                      pytest.param(False,    500e6,  500e6,   "7",        "192.168.110.1", 1234,     "sfp0", sfp_int0,      False,   id="SFP0_RAW_PAYLOAD_1x100GbE-1xRX@500e6")],
+            [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,    500e6,  500e6,   "0",        "192.168.120.1", 1234,     "sfp1", sfp_int1,      True,    id="SFP1_FULL_PACKET_1x100GbE-1xRX@500e6")],
+            [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,    500e6,  500e6,   "1",        "192.168.120.1", 1234,     "sfp1", sfp_int1,      False,   id="SFP1_RAW_PAYLOAD_1x100GbE-1xRX@500e6")],
+            [{},                                      pytest.param(False,    500e6,  500e6,   "2",        "192.168.120.1", 1234,     "sfp1", sfp_int1,      True,    id="SFP1_FULL_PACKET_1x100GbE-1xRX@500e6")],
+            [{},                                      pytest.param(False,    500e6,  500e6,   "3",        "192.168.120.1", 1234,     "sfp1", sfp_int1,      False,   id="SFP1_RAW_PAYLOAD_1x100GbE-1xRX@500e6")],
+            [{},                                      pytest.param(False,    500e6,  500e6,   "4",        "192.168.120.1", 1234,     "sfp1", sfp_int1,      True,    id="SFP1_FULL_PACKET_1x100GbE-1xRX@500e6")],
+            [{},                                      pytest.param(False,    500e6,  500e6,   "5",        "192.168.120.1", 1234,     "sfp1", sfp_int1,      False,   id="SFP1_RAW_PAYLOAD_1x100GbE-1xRX@500e6")],
+            [{},                                      pytest.param(False,    500e6,  500e6,   "6",        "192.168.120.1", 1234,     "sfp1", sfp_int1,      True,    id="SFP1_FULL_PACKET_1x100GbE-1xRX@500e6")],
+            [{},                                      pytest.param(False,    500e6,  500e6,   "7",        "192.168.120.1", 1234,     "sfp1", sfp_int1,      False,   id="SFP1_RAW_PAYLOAD_1x100GbE-1xRX@500e6")],
+        ]
+
+    if dut_fpga.upper() == 'CG_1600':
+        test_cases = [
+            # Test Lengths                                         dual_SFP  rate   rx_rate  rx_channels dest_addr        dest_port  adapter  host_interface  keep_hdr test case ID
+            # --------------------------------------------------------------------------------------------------------------------------------------------------------
+            [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,    1000e6, 1000e6,   "0",        "192.168.110.1", 1234,      "sfp0",  sfp_int0,       True,    id="SFP0_FULL_PACKET_1x100GbE-1xRX@1000e6")],
+            [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,    1000e6, 1000e6,   "1",        "192.168.110.1", 1234,      "sfp0",  sfp_int0,       False,   id="SFP0_RAW_PAYLOAD_1x100GbE-1xRX@1000e6")],
+            [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,    1000e6, 1000e6,   "0",        "192.168.120.1", 1234,      "sfp1",  sfp_int1,       True,    id="SFP1_FULL_PACKET_1x100GbE-1xRX@1000e6")],
+            [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,    1000e6, 1000e6,   "1",        "192.168.120.1", 1234,      "sfp1",  sfp_int1,       False,   id="SFP1_RAW_PAYLOAD_1x100GbE-1xRX@1000e6")],
+        ]
+
+    argvalues = test_length_utils.select_test_cases_by_length(test_length, test_cases)
+    metafunc.parametrize(ARGNAMES_DUAL_SFP, argvalues)
+
+    fast_params = test_length_utils.test_length_params(iterations=5, duration=0.5)
+    stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
+    parametrize_test_length(metafunc, test_length, fast_params, stress_params)
+
 def generate_X310_10GbE_test_cases(metafunc, test_length, sfp_int0, sfp_int1):
     test_cases = [
         # Test Lengths                                        dual_SFP  rate  rx_rate  rx_channels dest_addr        dest_port   adapter  host_interface   keep_hdr test case ID
@@ -110,6 +150,8 @@ def pytest_generate_tests(metafunc):
         generate_x410_10GbE_test_cases(metafunc, test_length, sfp_int0, sfp_int1)
     if dut_type.lower() == 'x410' and dut_fpga.upper() in {'CG_400', 'UC_200'}:
         generate_x410_100GbE_test_cases(metafunc, test_length, dut_fpga, sfp_int0, sfp_int1)
+    if dut_type.lower() == 'x440' and dut_fpga.upper() in {'CG_400', 'CG_1600'}:
+        generate_x440_100GbE_test_cases(metafunc, test_length, dut_fpga, sfp_int0, sfp_int1)
     if dut_type.lower() == 'x310' and dut_fpga.upper() == 'XG':
         generate_X310_10GbE_test_cases(metafunc, test_length, sfp_int0, sfp_int1)
 
@@ -122,8 +164,12 @@ def test_raw_udp_streaming(pytestconfig, dut_type, dual_SFP, rate, rx_rate, rx_c
     device_args = ""
 
     # construct device args string
-    if dut_type.lower() in ['n310', 'n320', 'e320', 'x310', 'x410']:
+    if dut_type.lower() in ['n310', 'n320', 'e320', 'x310', 'x410', 'x440']:
         device_args += f"master_clock_rate={rate},"
+
+    # mpm reboot on x440 is for spurrious RF performance, these tests do not care about RF performance
+    if dut_type.lower() == 'x440':
+        device_args += f"skip_mpm_reboot=1,"
 
     addr = pytestconfig.getoption('addr')
     second_addr = pytestconfig.getoption('second_addr')

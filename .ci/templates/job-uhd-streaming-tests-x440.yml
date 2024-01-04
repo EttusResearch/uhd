@@ -1,0 +1,55 @@
+parameters:
+- name: testOS
+  type: string
+  values:
+    - ubuntu2204
+- name: uhdSrcDir
+  type: string
+- name: uhdArtifactSource
+  type: string
+  default: current
+- name: testLength
+  type: string
+
+jobs:
+- template: job-uhd-streaming-tests.yml
+  parameters:
+    suiteName: 'streamingx440'
+    testOS: '${{ parameters.testOS }}'
+    testLength: '${{ parameters.testLength }}'
+    toolset: 'make'
+    nicType: '100gbe'
+    uhdSrcDir: '${{ parameters.uhdSrcDir }}'
+    uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
+    xilinxLocation: /opt/Xilinx/Vivado_Lab/2023.2
+    dutMatrix:
+      X440-0 CG_400:
+        dutName: 'streaming-X440-0'
+        dutFamily: 'x4xx'
+        dutType: 'x440'
+        dutAddr: '192.168.110.2'
+        dutSecondAddr: '192.168.120.2'
+        dutMgmtAddr: '10.0.57.38'
+        dutFPGA: 'CG_400'
+        dutNameId: ''
+        dutEmbeddedImagesArtifact: 'x4xx-images'
+        uartSerial: '251635271947'
+        dutNumRecvFrames: ''
+        dutNumSendFrames: ''
+        sfpInt0: 'enp1s0f0np0'
+        sfpInt1: 'enp1s0f1np1'
+      X440-0 CG_1600:
+        dutName: 'streaming-X440-0'
+        dutFamily: 'x4xx'
+        dutType: 'x440'
+        dutAddr: '192.168.110.2'
+        dutSecondAddr: '192.168.120.2'
+        dutMgmtAddr: '10.0.57.38'
+        dutFPGA: 'CG_1600'
+        dutNameId: ''
+        dutEmbeddedImagesArtifact: 'x4xx-images'
+        uartSerial: '251635271947'
+        dutNumRecvFrames: ''
+        dutNumSendFrames: ''
+        sfpInt0: 'enp1s0f0np0'
+        sfpInt1: 'enp1s0f1np1'

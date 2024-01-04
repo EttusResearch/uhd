@@ -20,6 +20,9 @@ parameters:
     - 'smoke'
     - 'full'
     - 'stress'
+- name: nicType
+  type: string
+  default: '10gbe'
 - name: uhdArtifactSource
   type: string
   default: current
@@ -157,30 +160,34 @@ jobs:
       ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ethtool -A sfp0 tx on"
     displayName: Enable Tx Pause Frames on sfp0
-    condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'), eq(variables.dutFPGA, 'CG_400'))
+    condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'), in(variables.dutFPGA, 'CG_400', 'CG_1600'))
 
   - script: |
       ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ethtool -A sfp1 tx on"
     displayName: Enable Tx Pause Frames on sfp1
-    condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'), in(variables.dutFPGA, 'CG_400', 'UC_200'))
+    condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'), in(variables.dutFPGA, 'CG_400', 'UC_200', 'CG_1600'))
 
   - script: |
       ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ip addr add $(dutAddr)/24 dev sfp0"
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ip addr del 192.168.10.2/24 dev sfp0"
     displayName: Setup IP addresses on sfp0
-    condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'), eq(variables.dutFPGA, 'CG_400'))
+    condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'), in(variables.dutFPGA, 'CG_400', 'CG_1600'))
 
   - script: |
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ip addr add $(dutSecondAddr)/24 dev sfp1"
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ip addr del 192.168.20.2/24 dev sfp1"
     displayName: Setup IP addresses on sfp1
-    condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'), in(variables.dutFPGA, 'CG_400', 'UC_200'))
+    condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'), in(variables.dutFPGA, 'CG_400', 'UC_200', 'CG_1600'))
 
   - script: |
       cd ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
-      sudo ./setup.sh --auto
+      if [ "${{ parameters.nicType }}" = "100gbe" ]; then
+        sudo ./setup100gbe.sh --auto
+      else
+        sudo ./setup10gbe.sh --auto
+      fi
       EXITCODE=$?
       sleep 5
       exit $EXITCODE
@@ -210,7 +217,11 @@ jobs:
 
   - script: |
       cd ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
-      sudo ./setup.sh --auto --ramdisk
+      if [ "${{ parameters.nicType }}" = "100gbe" ]; then
+        sudo ./setup100gbe.sh --ramdisk
+      else
+        sudo ./setup10gbe.sh --ramdisk
+      fi
       sleep 5
     displayName: setup interfaces for use raw udp streaming
 
@@ -239,7 +250,11 @@ jobs:
 
   - script: |
       cd ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
-      sudo ./setup.sh --auto --dpdk
+      if [ "${{ parameters.nicType }}" = "100gbe" ]; then
+        sudo ./setup100gbe.sh --auto --dpdk
+      else
+        sudo ./setup10gbe.sh --auto --dpdk
+      fi
       EXITCODE=$?
       sleep 5
       exit $EXITCODE
@@ -258,7 +273,10 @@ jobs:
     condition: succeeded()
 
   - script: |
-      if [ "$(dutFPGA)" = "CG_400" ]; then
+      if [ "$(dutType)" = "x440" ]; then
+        echo "##vso[task.setvariable variable=config_file]${{ parameters.uhdSrcDir }}/host/tests/pytests/uhd_configs/uhd_dpdk_100GbE_x440.conf"
+        echo "Using x440 100 GbE UHD Config File"
+      elif [ "$(dutFPGA)" = "CG_400" ]; then
         echo "##vso[task.setvariable variable=config_file]${{ parameters.uhdSrcDir }}/host/tests/pytests/uhd_configs/uhd_dpdk_100GbE.conf"
         echo "Using 100 GbE UHD Config File"
       elif [ "$(dutFPGA)" = "UC_200" ]; then

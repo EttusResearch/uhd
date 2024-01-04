@@ -15,6 +15,10 @@ parameters:
   type: boolean
   displayName: Run Streaming Tests
   default: false
+- name: run_x440_streaming_tests
+  type: boolean
+  displayName: Run X440 Streaming Tests
+  default: false
 - name: run_devtests
   type: boolean
   displayName: Run devtests
@@ -100,6 +104,18 @@ stages:
   - template: templates/job-uhd-streaming-tests-beauty.yml
     parameters:
       testOS: ubuntu2004
+      uhdSrcDir: $(Build.SourcesDirectory)/uhddev
+      uhdArtifactSource: uhd_mono_pipeline
+      testLength: ${{ parameters.testLength }}
+
+- stage: test_x440_streaming_stage
+  displayName: Test X440 Streaming
+  dependsOn: []
+  condition: ${{ parameters.run_x440_streaming_tests }}
+  jobs:
+  - template: templates/job-uhd-streaming-tests-x440.yml
+    parameters:
+      testOS: ubuntu2204
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
       uhdArtifactSource: uhd_mono_pipeline
       testLength: ${{ parameters.testLength }}
