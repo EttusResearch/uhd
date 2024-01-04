@@ -5,6 +5,7 @@ parameters:
   type: string
   values:
     - ubuntu2004
+    - ubuntu2204
 - name: toolset
   type: string
   values:
@@ -56,12 +57,12 @@ jobs:
       rm -rf $(uhd_artifact_directory)/$(dutEmbeddedImagesArtifact)
       rm -rf $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
     displayName: Cleanup from prior run
-    condition: and(succeeded(), eq(variables.dutType, 'x4xx'))
+    condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'))
 
   - download: ${{ parameters.uhdArtifactSource }}
     artifact: $(dutEmbeddedImagesArtifact)
     displayName: Download $(dutEmbeddedImagesArtifact)
-    condition: and(succeeded(), eq(variables.dutType, 'x4xx'))
+    condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'))
 
   - task: ExtractFiles@1
     inputs:
@@ -70,7 +71,7 @@ jobs:
       cleanDestinationFolder: false
       overwriteExistingFiles: true
     displayName: Extract JTAG artifact
-    condition: and(succeeded(), eq(variables.dutType, 'x4xx'))
+    condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'))
 
   - download: ${{ parameters.uhdArtifactSource }}
     artifact: uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
@@ -94,14 +95,14 @@ jobs:
       pip3 install wheel
       pip3 install --upgrade $(Build.SourcesDirectory)/meta-ettus-dev/contrib/test/usrp_emb
     displayName: Create usrp_emb venv
-    condition: and(succeeded(), eq(variables.dutType, 'x4xx'))
+    condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'))
 
   - script: |
       source ${{ parameters.xilinxLocation }}/settings64.sh
       source $USRP_EMB_VENV/bin/activate
       usrp_emb_x4xx_mender_update
     displayName: Update device using Mender
-    condition: and(succeeded(), eq(variables.dutType, 'x4xx'))
+    condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'))
 
   - script: |
       source $USRP_EMB_VENV/bin/activate
@@ -109,7 +110,7 @@ jobs:
       echo Target IP is $USRP_EMB_TARGET_IP
       echo '##vso[task.setvariable variable=USRP_EMB_TARGET_IP]'$USRP_EMB_TARGET_IP
     displayName: Boot target, get mgmt IP
-    condition: and(succeeded(), eq(variables.dutType, 'x4xx'))
+    condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'))
 
   # Setting the timezone on the embedded device is
   # required to make the test runtimes to look sane.
@@ -118,21 +119,21 @@ jobs:
       ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "timedatectl set-timezone $HOST_TIME_ZONE"
     displayName: Set timezone to Host
-    condition: and(succeeded(), eq(variables.dutType, 'x4xx'))
+    condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'))
 
   - script: |
         sleep 60
     displayName: Wait for device to finish booting
-    condition: and(succeeded(), eq(variables.dutType, 'x4xx'))
+    condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'))
 
   - script: |
         ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
-        ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "uhd_image_loader --args addr=localhost,type=$(dutType),fpga=$(dutFPGA)"
+        ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "uhd_image_loader --args addr=localhost,type=$(dutFamily),fpga=$(dutFPGA)"
         EXITCODE=$?
         sleep 60
         exit $EXITCODE
     displayName: Flash FPGA $(dutFPGA)
-    condition: and(succeeded(), eq(variables.dutType, 'x4xx'))
+    condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'))
 
   - script: |
       export UHD_IMAGES_DIR=$(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images
@@ -156,23 +157,27 @@ jobs:
       ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ethtool -A sfp0 tx on"
     displayName: Enable Tx Pause Frames on sfp0
-    condition: and(succeeded(), eq(variables.dutType, 'x4xx'), eq(variables.dutFPGA, 'CG_400'))
+    condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'), eq(variables.dutFPGA, 'CG_400'))
+
   - script: |
       ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ethtool -A sfp1 tx on"
     displayName: Enable Tx Pause Frames on sfp1
-    condition: and(succeeded(), eq(variables.dutType, 'x4xx'), in(variables.dutFPGA, 'CG_400', 'UC_200'))
+    condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'), in(variables.dutFPGA, 'CG_400', 'UC_200'))
+
   - script: |
       ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ip addr add $(dutAddr)/24 dev sfp0"
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ip addr del 192.168.10.2/24 dev sfp0"
     displayName: Setup IP addresses on sfp0
-    condition: and(succeeded(), eq(variables.dutType, 'x4xx'), eq(variables.dutFPGA, 'CG_400'))
+    condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'), eq(variables.dutFPGA, 'CG_400'))
+
   - script: |
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ip addr add $(dutSecondAddr)/24 dev sfp1"
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ip addr del 192.168.20.2/24 dev sfp1"
     displayName: Setup IP addresses on sfp1
-    condition: and(succeeded(), eq(variables.dutType, 'x4xx'), in(variables.dutFPGA, 'CG_400', 'UC_200'))
+    condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'), in(variables.dutFPGA, 'CG_400', 'UC_200'))
+
   - script: |
       cd ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
       sudo ./setup.sh --auto
@@ -180,6 +185,7 @@ jobs:
       sleep 5
       exit $EXITCODE
     displayName: setup interfaces for use without DPDK
+
   - script: |
       echo "##[group]Printing Environment"
       printenv
@@ -200,12 +206,14 @@ jobs:
       UHD_IMAGES_DIR: $(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images
     continueOnError: true
     displayName: Run streaming tests on $(dutName)
-    condition: and(succeeded(), not(eq(variables.dutType, 'x4xx')))
+    condition: and(succeeded(), not(eq(variables.dutFamily, 'x4xx')))
+
   - script: |
       cd ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
       sudo ./setup.sh --auto --ramdisk
       sleep 5
     displayName: setup interfaces for use raw udp streaming
+
   - script: |
       export PYTHON_VERSION=$(python3 -c "import sys; print('python'+str(sys.version_info.major) + '.' + str(sys.version_info.minor))")
       export PYTHONPATH=$(Build.BinariesDirectory)/uhddev/build-installed/lib/$PYTHON_VERSION/site-packages:${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
@@ -220,14 +228,15 @@ jobs:
         --dut_type $(dutType) --dut_fpga $(dutFPGA) --test_length ${{ parameters.testLength }} \
         --uhd_build_dir $(Build.BinariesDirectory)/uhddev/build-installed/lib/uhd --junitxml $(Common.TestResultsDirectory)/TEST-$(dutName).xml \
         --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $(dutMgmtAddr) --name $(dutNameId) \
-        --num_recv_frames $(dutNumRecvFrames) --num_send_frames $(dutNumSendFrames)
+        --num_recv_frames $(dutNumRecvFrames) --num_send_frames $(dutNumSendFrames) --sfp_int0 $(sfpInt0) --sfp_int1 $(sfpInt1)
     env:
       UHD_CONFIG_FILE: $(config_file)
       LD_LIBRARY_PATH: $(Build.BinariesDirectory)/uhddev/build-installed/lib
       UHD_IMAGES_DIR: $(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images
     continueOnError: true
     displayName: Run raw udp streaming tests on $(dutName)
-    condition: and(succeeded(), or(eq(variables.dutType, 'x4xx'), eq(variables.dutType, 'X310')))
+    condition: and(succeeded(), or(eq(variables.dutFamily, 'x4xx'), eq(variables.dutType, 'X310')))
+
   - script: |
       cd ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
       sudo ./setup.sh --auto --dpdk
@@ -236,6 +245,18 @@ jobs:
       exit $EXITCODE
     displayName: setup interfaces for use with DPDK
     condition: and(succeeded(), not(eq(variables.dutType, 'B210')))
+
+  # This step is needed because the agent used to build UHD that gets installed may have a slightly different dpdk setup.
+  # For example, if the streaming system uses a Mellanox NIC and thus needs Mellanox drivers installed but the agent used to build UHD doesn't
+  # then you can get an access violation when using that version of UHD with dpdk on the streaming system
+  - script: |
+      mkdir ${{ parameters.uhdSrcDir }}/host/build
+      cd ${{ parameters.uhdSrcDir }}/host/build
+      cmake -DCMAKE_INSTALL_PREFIX=$(Build.BinariesDirectory)/uhddev/build-installed ..
+      make -j8 install
+    displayName: build UHD for dpdk installed on test machine
+    condition: succeeded()
+
   - script: |
       if [ "$(dutFPGA)" = "CG_400" ]; then
         echo "##vso[task.setvariable variable=config_file]${{ parameters.uhdSrcDir }}/host/tests/pytests/uhd_configs/uhd_dpdk_100GbE.conf"
@@ -248,6 +269,7 @@ jobs:
         echo "Using 10 GbE UHD Config File"
       fi
     displayName: select UHD config file for DPDK
+
   - script: |
       echo "##[group]Printing Environment"
       printenv
@@ -268,6 +290,7 @@ jobs:
     continueOnError: true
     displayName: Run streaming tests with DPDK on $(dutName)
     condition: and(succeeded(), not(eq(variables.dutType, 'B210')))
+
   - task: PublishTestResults@2
     inputs:
       testResultsFormat: 'JUnit'
@@ -277,10 +300,10 @@ jobs:
       mergeTestResults: true
       failTaskOnFailedTests: false
     displayName: Upload streaming test results
+
   - script: |
       echo "A previous step failed. See steps with warnings."
       echo "Marking the overall build status as a failure."
       exit 1
     condition: in(variables['Agent.JobStatus'],  'SucceededWithIssues')
     displayName: Mark build as failure
-

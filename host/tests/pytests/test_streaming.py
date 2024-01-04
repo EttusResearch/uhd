@@ -156,7 +156,7 @@ def generate_X310_TwinRx_test_cases(metafunc, test_length):
     stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
     parametrize_test_length(metafunc, test_length, fast_params, stress_params)
 
-def generate_x4xx_test_cases(metafunc, test_length, dut_fpga):
+def generate_x410_test_cases(metafunc, test_length, dut_fpga):
     if dut_fpga.upper() == 'CG_400':
         test_cases = [
             # Test Lengths                                         dual_SFP  rate     rx_rate  rx_channels tx_rate  tx_channels  test case ID
@@ -193,7 +193,6 @@ def generate_x4xx_test_cases(metafunc, test_length, dut_fpga):
     stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
     parametrize_test_length(metafunc, test_length, fast_params, stress_params)
 
-
 def pytest_generate_tests(metafunc):
     dut_type = metafunc.config.getoption("dut_type")
     dut_fpga = metafunc.config.getoption("dut_fpga")
@@ -226,8 +225,8 @@ def pytest_generate_tests(metafunc):
         generate_X310_test_cases(metafunc, test_length)
     elif dut_type.lower() == 'x310_twinrx':
         generate_X310_TwinRx_test_cases(metafunc, test_length)
-    elif dut_type.lower() == 'x4xx':
-        generate_x4xx_test_cases(metafunc, test_length, dut_fpga)
+    elif dut_type.lower() == 'x410':
+        generate_x410_test_cases(metafunc, test_length, dut_fpga)
 
 
 def test_streaming(pytestconfig, dut_type, use_dpdk, dual_SFP, rate, rx_rate, rx_channels,
@@ -291,7 +290,7 @@ def test_streaming(pytestconfig, dut_type, use_dpdk, dual_SFP, rate, rx_rate, rx
 
     # Run X410 streaming tests in multi_streamer mode and high thread priority
     # since those settings allow for best performance.
-    if dut_type.lower() == "x4xx":
+    if dut_type.lower() == "x410":
         benchmark_rate_params["multi_streamer"] = 1
         benchmark_rate_params["priority"] = "high"
         dut_fpga = pytestconfig.getoption('dut_fpga')
