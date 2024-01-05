@@ -159,7 +159,8 @@ jobs:
       ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "sed -i 's/192.168.10.2/$(sfp0ip)/g' /data/network/sfp0.network"
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "reboot"
-      sleep 140
+      echo "Waiting 240 s for sfp0 at ip $(sfp0ip) to be reachable from host..."
+      timeout=240 ; wait_counter=0 ; until $(ping -c 1 -W 1 $(sfp0ip) &>/dev/null) ; do if [ $wait_counter -eq $timeout ]; then echo "Device with ip $(sfp0ip) did not start up within $timeout seconds!" ;break; fi; wait_counter=$((wait_counter+1)); done
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ifconfig sfp0"
     displayName: Set sfp0 IP
     condition: and(succeeded(), ${{ parameters.runPyTest }})
