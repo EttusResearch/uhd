@@ -1079,6 +1079,28 @@ two rates, UHD will go through the following steps:
     this in a warning log message. 
 3. The chosen MCR and converter rate values will be shown in the info log.
 
+Note: When using dual rate on X440, the multi-tile synchronization (MTS) is disabled. That means
+that the phase relationship between channels is not guaranteed over retunes and reboots for
+channels of the same daughterboard and an undefined phase relationship will be preserved
+between channels of different daughterboards. MTS synchronizes all RF tiles with tile 0.
+As this tile controls RX and TX channels on daughterboard 0 only, it is not feasible to synchronize
+any tiles on daughterboard 1 if it runs on a different master clock rate. Channels on the same RF
+tile will always be synchronized, though. The following table gives an overview about the
+distribution of channels among RF tiles. MTS is only performed on the ADC, therefore the DAC
+column is for information only.
+
+RFDC Tile | RX Channel | TX Channel |
+:--------:|:----------:|:----------:|
+       0  |    1,2     | 0,1,2,3    |
+       1  |    0,3     | 4,5,6,7    |
+       2  |    5,6     |            |
+       3  |    4,7     |            |
+
+With the RFSoC variant used in X440 it is not feasible to use an additional tile as reference tile.
+Therefore it is not feasible to synchronize the tiles individually for daughterboard 1. While
+in theory it is possible to run MTS for daughterboard 0 only, it was skipped completely to
+prevent any unexpected side-effects.
+
 \subsection x4xx_usage_timedcmds Timed Commands
 
 The USRP X4x0 series can execute \ref page_timedcmds the same way as other USRPs,
