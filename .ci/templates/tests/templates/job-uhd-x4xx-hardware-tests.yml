@@ -149,8 +149,7 @@ jobs:
 
   - script: |
         sleep 60
-        sleep ${{ parameters.warmUpAfterBoot }}
-    displayName: Wait for device to finish booting with optional warmup
+    displayName: Wait for device to finish booting
 
   - script: |
         ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
@@ -234,6 +233,9 @@ jobs:
     displayName: cat devtest log
     condition: and(succeeded(), ${{ parameters.runDevTest }})
 
+  # warmUpAfterBoot optional parameter added to allow device to warm up before running tests
+  # For example, the phase test pass/fail requirements are based on declared specs measured after a warm up to 23 deg C
+  # https://www.ni.com/docs/en-US/bundle/ettus-usrp-x440-specs/page/specs.html#d668e1387
   - script: |
       export UHD_INSTALL_PATH=$(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev/build-installed
       export GNURADIO_GRETTUS_INSTALL_PATH=$(uhd_artifact_directory)/gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}/gnuradio/build-installed
@@ -256,6 +258,10 @@ jobs:
       fi
 
       cd $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests
+      if [ ${{ parameters.warmUpAfterBoot }} > 0 ]; then
+        echo 'sleeping ${{ parameters.warmUpAfterBoot }} seconds before testing...'
+        sleep ${{ parameters.warmUpAfterBoot }}
+      fi
       uhd_find_devices --args type=$(dutType)
       python3 automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) --results_path '$(Common.TestResultsDirectory)/pytest/host' --test_length ${{ parameters.testLength }} ${{ parameters.extra_rf_test_args }}
     displayName: Run pytest on host
