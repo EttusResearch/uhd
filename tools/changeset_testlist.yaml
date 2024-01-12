@@ -184,3 +184,11 @@
     - hw.streaming.all
     - hw.rf.all
     - devtest.all
+
+###############################################################################
+# CI CHANGES
+###############################################################################
+- re: .ci/templates/tests/templates/job-uhd-x4xx-hardware-tests.yml
+  add:
+    - uhd.build.linux
+    - hw.rf.x4xx
