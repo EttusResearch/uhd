@@ -35,6 +35,7 @@ add_library(pyuhd SHARED
     ${UHD_SOURCE_DIR}/lib/property_tree_python.cpp
     ${UHD_SOURCE_DIR}/lib/device_python.cpp
     ${UHD_SOURCE_DIR}/lib/usrp/multi_usrp_python.cpp
+    ${UHD_SOURCE_DIR}/lib/usrp_clock/multi_usrp_clock_python.cpp
 )
 # python expects extension modules with a particular suffix
 if(WIN32)

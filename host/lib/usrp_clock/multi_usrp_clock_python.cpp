@@ -1,0 +1,41 @@
+//
+// Copyright 2017-2018 Ettus Research, a National Instruments Company
+// Copyright 2019-2020 Ettus Research, a National Instruments Brand
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+
+#include <pybind11/complex.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+
+namespace py = pybind11;
+
+#include "multi_usrp_clock_python.hpp"
+#include <uhd/usrp_clock/multi_usrp_clock.hpp>
+
+void export_multi_usrp_clock(py::module& m)
+{
+    using multi_usrp_clock = uhd::usrp_clock::multi_usrp_clock;
+
+    // Const?
+
+    // clang-format off
+    py::class_<multi_usrp_clock, multi_usrp_clock::sptr>(m, "multi_usrp_clock")
+
+        // Factory
+        .def(py::init(&multi_usrp_clock::make))
+
+        // clang-format off
+        //.def("get_tree"                , [](multi_usrp_clock& self){ return self.get_tree().get(); }, py::return_value_policy::reference_internal)
+
+        // General OCTOCLOCK methods
+        .def("get_pp_string"           , &multi_usrp_clock::get_pp_string)
+        .def("get_num_boards"          , &multi_usrp_clock::get_num_boards)
+        .def("get_time"                , &multi_usrp_clock::get_time, py::arg("board") = 0)
+        .def("get_sensor"              , &multi_usrp_clock::get_sensor, py::arg("name"), py::arg("board") = 0)
+        .def("get_sensor_names"        , &multi_usrp_clock::get_sensor_names, py::arg("board") = 0)
+        // clang-format off
+        ;
+    // clang-format on
+}
