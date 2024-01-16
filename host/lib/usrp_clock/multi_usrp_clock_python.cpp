@@ -18,16 +18,11 @@ void export_multi_usrp_clock(py::module& m)
 {
     using multi_usrp_clock = uhd::usrp_clock::multi_usrp_clock;
 
-    // Const?
-
     // clang-format off
     py::class_<multi_usrp_clock, multi_usrp_clock::sptr>(m, "multi_usrp_clock")
 
         // Factory
         .def(py::init(&multi_usrp_clock::make))
-
-        // clang-format off
-        //.def("get_tree"                , [](multi_usrp_clock& self){ return self.get_tree().get(); }, py::return_value_policy::reference_internal)
 
         // General OCTOCLOCK methods
         .def("get_pp_string"           , &multi_usrp_clock::get_pp_string)
