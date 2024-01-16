@@ -27,7 +27,7 @@ if os.name == "nt" and hasattr(os, "add_dll_directory"):
                 "Failed to add uhd.dll path to DLL search, module may not import properly, use os.add_dll_directory to add the correct path manually."
             )
 
-from . import chdr, dsp, filters, rfnoc, types, usrp, usrpctl
+from . import chdr, dsp, filters, rfnoc, types, usrp, usrp_clock, usrpctl
 from .libpyuhd import find, get_abi_string, get_component, get_version_string
 from .libpyuhd.paths import *  # noqa: F403
 from .property_tree import PropertyTree
