@@ -56,10 +56,6 @@ jobs:
     artifact: uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
     displayName: Download uhddev-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
 
-  - download: ${{ parameters.uhdArtifactSource }}
-    artifact: uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
-    displayName: Download uhddev-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
-
   - task: ExtractFiles@1
     inputs:
       archiveFilePatterns: $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}.tar.gz
