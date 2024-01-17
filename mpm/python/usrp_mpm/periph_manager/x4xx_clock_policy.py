@@ -471,7 +471,7 @@ class X440ClockPolicy(X4xxClockPolicy):
         self.conv_rates = self.args.get("converter_rate")
         if self.conv_rates is None:
             return
-        self.conv_rates = parse_multi_device_arg(self.args['converter_rate'], conv=float)
+        self.conv_rates = list(parse_multi_device_arg(self.args['converter_rate'], conv=float))
         if len(self.conv_rates) == 1:
             self.conv_rates = [self.conv_rates[0]] * self.get_num_rates()
         elif len(self.conv_rates) != self.get_num_rates():
