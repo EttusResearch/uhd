@@ -8,8 +8,8 @@
 #pragma once
 
 #include <uhd/config.hpp>
-#include <string>
 #include <type_traits>
+#include <string>
 #include <vector>
 
 namespace uhd {
@@ -81,10 +81,8 @@ struct UHD_API meta_range_t : public std::vector<range_t>
         // meta_range_t(0, 0)
         // which probably was supposed to call meta_range_t(double, double, double)
         // but actually calls this constructor.
-        static_assert(
-            !std::is_integral<typename std::decay<InputIterator>::type>::value,
-            "You can't pass integers to meta_range_t's constructor!"
-        );
+        static_assert(!std::is_integral<typename std::decay<InputIterator>::type>::value,
+            "You can't pass integers to meta_range_t's constructor!");
     }
 
     /*!

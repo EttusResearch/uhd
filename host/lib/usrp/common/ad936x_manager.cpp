@@ -148,7 +148,7 @@ public:
         if (uhd::math::fp_compare::fp_compare_delta<double>(
                 lcm_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ)
             > uhd::math::fp_compare::fp_compare_delta<double>(
-                  max_tick_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ)) {
+                max_tick_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ)) {
             throw uhd::value_error(
                 str(boost::format("[ad936x_manager] Cannot get determine a tick rate if "
                                   "sampling rate exceeds maximum tick rate (%f > %f)")
@@ -179,11 +179,11 @@ public:
         UHD_ASSERT_THROW(uhd::math::fp_compare::fp_compare_delta<double>(
                              new_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ)
                          >= uhd::math::fp_compare::fp_compare_delta<double>(
-                                min_tick_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ));
+                             min_tick_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ));
         UHD_ASSERT_THROW(uhd::math::fp_compare::fp_compare_delta<double>(
                              new_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ)
                          <= uhd::math::fp_compare::fp_compare_delta<double>(
-                                max_tick_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ));
+                             max_tick_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ));
 
         return new_rate;
     }

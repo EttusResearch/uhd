@@ -622,15 +622,15 @@ void zbx_cpld_ctrl::set_leds(const size_t channel,
 {
     UHD_ASSERT_THROW(channel < ZBX_NUM_CHANS);
     if (channel == 0) {
-        _regs.RX0_RX_LED[idx] = rx ? zbx_cpld_regs_t::RX0_RX_LED_ENABLE
-                                   : zbx_cpld_regs_t::RX0_RX_LED_DISABLE;
+        _regs.RX0_RX_LED[idx]  = rx ? zbx_cpld_regs_t::RX0_RX_LED_ENABLE
+                                    : zbx_cpld_regs_t::RX0_RX_LED_DISABLE;
         _regs.RX0_TRX_LED[idx] = trx_rx ? zbx_cpld_regs_t::RX0_TRX_LED_ENABLE
                                         : zbx_cpld_regs_t::RX0_TRX_LED_DISABLE;
         _regs.TX0_TRX_LED[idx] = trx_tx ? zbx_cpld_regs_t::TX0_TRX_LED_ENABLE
                                         : zbx_cpld_regs_t::TX0_TRX_LED_DISABLE;
     } else {
-        _regs.RX1_RX_LED[idx] = rx ? zbx_cpld_regs_t::RX1_RX_LED_ENABLE
-                                   : zbx_cpld_regs_t::RX1_RX_LED_DISABLE;
+        _regs.RX1_RX_LED[idx]  = rx ? zbx_cpld_regs_t::RX1_RX_LED_ENABLE
+                                    : zbx_cpld_regs_t::RX1_RX_LED_DISABLE;
         _regs.RX1_TRX_LED[idx] = trx_rx ? zbx_cpld_regs_t::RX1_TRX_LED_ENABLE
                                         : zbx_cpld_regs_t::RX1_TRX_LED_DISABLE;
         _regs.TX1_TRX_LED[idx] = trx_tx ? zbx_cpld_regs_t::TX1_TRX_LED_ENABLE
@@ -864,7 +864,7 @@ void zbx_cpld_ctrl::_lo_spi_transact(const zbx_lo_t lo,
     _regs.DATA      = data;
     _regs.READ_FLAG = (xact_type == spi_xact_t::WRITE) ? zbx_cpld_regs_t::READ_FLAG_WRITE
                                                        : zbx_cpld_regs_t::READ_FLAG_READ;
-    _regs.LO_SELECT         = zbx_cpld_regs_t::LO_SELECT_t(lo);
+    _regs.LO_SELECT = zbx_cpld_regs_t::LO_SELECT_t(lo);
     _regs.START_TRANSACTION = zbx_cpld_regs_t::START_TRANSACTION_ENABLE;
     _poke32(_lo_spi_offset, _regs.get_reg(_lo_spi_offset), chan);
     _regs.START_TRANSACTION = zbx_cpld_regs_t::START_TRANSACTION_DISABLE;

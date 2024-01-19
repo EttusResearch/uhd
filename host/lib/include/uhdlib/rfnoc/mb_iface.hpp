@@ -84,9 +84,20 @@ public:
     virtual void reset_network() = 0;
 
     /*! Return a reference to a clock iface
+     *
+     * The MB interface may interact with the hardware to determine clock
+     * properties, such as their frequency.
+     *
+     * \param clock_name The clock name that the block was registered with at
+     *                   compile time
+     * \param clk_idx The clock index that is reported during bitstream generation
+     *                If \p clock_name is set to CLOCK_KEY_AUTO, then we use
+     *                this index to identify the clock. This assumes that the
+     *                bitfile image was generated with the clock information
+     *                included.
      */
     virtual std::shared_ptr<clock_iface> get_clock_iface(
-        const std::string& clock_name) = 0;
+        const std::string& clock_name, const uint8_t clk_idx) = 0;
 
     /*! Set the IO service manager
      *

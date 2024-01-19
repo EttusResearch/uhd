@@ -185,8 +185,7 @@ private:
             register_property(&_prop_phase_inc.back(), [this, port]() {
                 const double phase_inc = _prop_phase_inc.at(port).get();
                 if (phase_inc < (-uhd::math::PI) || phase_inc > (uhd::math::PI)) {
-                    throw uhd::value_error(
-                        "Phase increment value must be in [-pi, pi]");
+                    throw uhd::value_error("Phase increment value must be in [-pi, pi]");
                 }
                 const int16_t phase_inc_scaled_rads_fp =
                     clamp<int16_t>((phase_inc / uhd::math::PI) * 8192.0);
@@ -293,7 +292,7 @@ private:
         const int16_t constant_q_fp =
             clamp<int16_t>(_prop_constant_q.at(port).get() * 32768.0);
         const uint32_t constant_reg_value = (uint32_t(constant_i_fp) << 16)
-                                      | (uint32_t(constant_q_fp) & 0xffff);
+                                            | (uint32_t(constant_q_fp) & 0xffff);
 
         _siggen_reg_iface.poke32(REG_CONSTANT_OFFSET, constant_reg_value, port);
     }

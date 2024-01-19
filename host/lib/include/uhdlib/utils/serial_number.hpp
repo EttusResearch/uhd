@@ -5,7 +5,7 @@
 //
 
 #ifndef INCLUDED_UHDLIB_UTILS_SERIAL_NUMBER_HPP
-#    define INCLUDED_UHDLIB_UTILS_SERIAL_NUMBER_HPP
+#define INCLUDED_UHDLIB_UTILS_SERIAL_NUMBER_HPP
 
 #include <string>
 
@@ -24,6 +24,6 @@ namespace uhd { namespace utils {
  */
 bool serial_numbers_match(const std::string& serial_a, const std::string& serial_b);
 
-}}
+}} // namespace uhd::utils
 
 #endif /* INCLUDED_UHDLIB_UTILS_SERIAL_NUMBER_HPP */

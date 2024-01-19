@@ -73,10 +73,10 @@ mpmd_link_if_ctrl_udp::udp_link_info_map get_udp_info_from_xport_info(
             throw uhd::runtime_error(
                 "Invalid response from get_chdr_link_options()! No `port' key!");
         }
-        const std::string udp_port = link_info.at("port");
-        const size_t link_rate     = link_info.count("link_rate")
-                                     ? std::stoul(link_info.at("link_rate"))
-                                     : MAX_RATE_1GIGE;
+        const std::string udp_port  = link_info.at("port");
+        const size_t link_rate      = link_info.count("link_rate")
+                                          ? std::stoul(link_info.at("link_rate"))
+                                          : MAX_RATE_1GIGE;
         const std::string link_type = link_info.at("type");
         const size_t if_mtu         = std::stoul(link_info.at("mtu"));
         result.emplace(link_info.at("ipv4"),
@@ -110,14 +110,15 @@ std::vector<std::string> get_addrs_from_mb_args(const uhd::device_addr_t& mb_arg
             addrs.push_back(mb_args[FOURTH_ADDR_KEY]);
         }
     }
-    if(addrs.empty()) {
+    if (addrs.empty()) {
         if (!link_info_list.empty()) {
             addrs.push_back(link_info_list.begin()->first);
         } else {
             UHD_LOG_WARNING("MPMD::XPORT::UDP",
-                "The `" << FIRST_ADDR_KEY
-                        << "' key must be specified in "
-                        "device args to create an Ethernet transport to an RFNoC block");
+                "The `"
+                    << FIRST_ADDR_KEY
+                    << "' key must be specified in "
+                       "device args to create an Ethernet transport to an RFNoC block");
             return {};
         }
     }
@@ -319,10 +320,11 @@ mpmd_link_if_ctrl_udp::mpmd_link_if_ctrl_udp(const uhd::device_addr_t& mb_args,
                                                   << std::to_string(info.if_mtu));
                 _mtu = std::min(_mtu, info.if_mtu);
             } else {
-                _mtu = std::min(_mtu, discover_mtu_for_ip(ip_addr,
-                                    info.link_rate == MAX_RATE_1GIGE ?
-                                    MPMD_1GE_DATA_FRAME_MAX_SIZE :
-                                    MPMD_10GE_DATA_FRAME_MAX_SIZE));
+                _mtu = std::min(_mtu,
+                    discover_mtu_for_ip(ip_addr,
+                        info.link_rate == MAX_RATE_1GIGE
+                            ? MPMD_1GE_DATA_FRAME_MAX_SIZE
+                            : MPMD_10GE_DATA_FRAME_MAX_SIZE));
             }
             _available_addrs.push_back(ip_addr);
         } catch (const uhd::exception& ex) {
@@ -347,27 +349,26 @@ uhd::transport::both_links_t mpmd_link_if_ctrl_udp::get_link(const size_t link_i
     const bool enable_fc   = not link_args.has_key("enable_fc")
                            || uhd::cast::from_str<bool>(link_args.get("enable_fc"));
     const bool lossy_xport = enable_fc;
-    const bool use_dpdk = _mb_args.has_key("use_dpdk");  // FIXME use constrained device args
+    const bool use_dpdk =
+        _mb_args.has_key("use_dpdk"); // FIXME use constrained device args
     link_params_t default_link_params;
     default_link_params.num_send_frames = MPMD_ETH_NUM_FRAMES;
     default_link_params.num_recv_frames = MPMD_ETH_NUM_FRAMES;
-    default_link_params.send_frame_size = (link_rate == MAX_RATE_10GIGE)
-                                              ? MPMD_10GE_DATA_FRAME_MAX_SIZE
-                                              : (link_rate == MAX_RATE_1GIGE)
-                                                    ? MPMD_1GE_DATA_FRAME_MAX_SIZE
-                                                    : get_mtu(uhd::TX_DIRECTION);
-    default_link_params.recv_frame_size = (link_rate == MAX_RATE_10GIGE)
-                                              ? MPMD_10GE_DATA_FRAME_MAX_SIZE
-                                              : (link_rate == MAX_RATE_1GIGE)
-                                                    ? MPMD_1GE_DATA_FRAME_MAX_SIZE
-                                                    : get_mtu(uhd::RX_DIRECTION);
+    default_link_params.send_frame_size =
+        (link_rate == MAX_RATE_10GIGE)  ? MPMD_10GE_DATA_FRAME_MAX_SIZE
+        : (link_rate == MAX_RATE_1GIGE) ? MPMD_1GE_DATA_FRAME_MAX_SIZE
+                                        : get_mtu(uhd::TX_DIRECTION);
+    default_link_params.recv_frame_size =
+        (link_rate == MAX_RATE_10GIGE)  ? MPMD_10GE_DATA_FRAME_MAX_SIZE
+        : (link_rate == MAX_RATE_1GIGE) ? MPMD_1GE_DATA_FRAME_MAX_SIZE
+                                        : get_mtu(uhd::RX_DIRECTION);
     default_link_params.send_buff_size = get_link_rate(link_idx) * MPMD_BUFFER_DEPTH;
     default_link_params.recv_buff_size = get_link_rate(link_idx) * MPMD_BUFFER_DEPTH;
 
 #ifdef HAVE_DPDK
-    if(use_dpdk) {
-        default_link_params.num_recv_frames = default_link_params.recv_buff_size /
-            default_link_params.recv_frame_size;
+    if (use_dpdk) {
+        default_link_params.num_recv_frames =
+            default_link_params.recv_buff_size / default_link_params.recv_frame_size;
     }
 #endif
 

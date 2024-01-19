@@ -135,7 +135,7 @@ of back to the controlling UHD session.
 
 \subsection stream_remote_rfnoc RFNoC Devices (X410, X3x0, N3xx Series, E320)
 
-Starting with UHD 4.3, these devices allow streaming data to alternative
+Starting with UHD 4.4, these devices allow streaming data to alternative
 locations from their QSFP/SFP connectors (streaming data to alternative locations
 from the RJ45 connector is not possible).
 

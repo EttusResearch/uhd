@@ -24,9 +24,9 @@ namespace asio = boost::asio;
 using namespace uhd::transport;
 
 #define NUM_WRAPS_EQUAL (_state.num_wraps == _device_state.num_wraps)
-#define POS_EQUAL (_state.pos == _device_state.pos)
-#define STATES_EQUAL (NUM_WRAPS_EQUAL && POS_EQUAL)
-#define MAX_CACHE_AGE 256 // seconds
+#define POS_EQUAL       (_state.pos == _device_state.pos)
+#define STATES_EQUAL    (NUM_WRAPS_EQUAL && POS_EQUAL)
+#define MAX_CACHE_AGE   256 // seconds
 
 namespace uhd {
 octoclock_uart_iface::octoclock_uart_iface(udp_simple::sptr udp, uint32_t proto_ver)

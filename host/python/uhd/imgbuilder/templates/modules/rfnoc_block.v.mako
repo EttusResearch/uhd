@@ -1,4 +1,4 @@
-<%page args="block_id, block_number, block_name, block, block_params, block_ports"/>\
+<%page args="block_id, block_number, block_name, block, block_params, block_ports, ctrl_clock, timebase_clock, clocks"/>\
 \
 <%
   import re
@@ -52,6 +52,20 @@
 %for name, value in block_params.items():
     .${"%-20s" % name}(${value}),
 %endfor
+<%
+    if ctrl_clock and '.' not in ctrl_clock:
+        ctrl_clock = '_device_.' + ctrl_clock
+    if timebase_clock and '.' not in timebase_clock:
+        timebase_clock = '_device_.' + timebase_clock
+    ctrl_clk_index = clocks.get(ctrl_clock, {}).get('index')
+    timebase_clk_index = clocks.get(timebase_clock, {}).get('index')
+%>\
+%if ctrl_clk_index is not None:
+    .CTRL_CLK_IDX        (${ctrl_clk_index}),
+%endif
+%if timebase_clk_index is not None:
+    .TB_CLK_IDX          (${timebase_clk_index}),
+%endif
     .MTU                 (BLOCK_MTU)
   ) b_${block_name}_${block_number} (
     .rfnoc_chdr_clk      (rfnoc_chdr_clk),

@@ -163,8 +163,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                     all_matched = false;
                     std::cerr << (boost::format("ERROR: Times are not aligned: USRP "
                                                 "0=%0.9f, USRP %d=%0.9f")
-                                     % mboard0_time.get_real_secs() % mboard
-                                     % mboard_time.get_real_secs())
+                                  % mboard0_time.get_real_secs() % mboard
+                                  % mboard_time.get_real_secs())
                               << std::endl;
                 }
             }

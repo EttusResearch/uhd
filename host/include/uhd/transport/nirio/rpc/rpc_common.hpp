@@ -32,7 +32,7 @@ typedef uint64_t client_id_t;
 #define build_client_id(host_id, process_id) \
     ((static_cast<uint64_t>(host_id) << 32) | static_cast<uint64_t>(process_id))
 #define get_process_id_from_client_id(client_id) (static_cast<int32_t>(client_id))
-#define get_host_id_from_client_id(client_id) (static_cast<uint32_t>(client_id >> 32))
+#define get_host_id_from_client_id(client_id)    (static_cast<uint32_t>(client_id >> 32))
 
 //[Over-the-wire] Handshake format
 struct hshake_args_t

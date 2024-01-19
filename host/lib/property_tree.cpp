@@ -164,7 +164,8 @@ public:
         return prop;
     }
 
-    void _create(const fs_path& path_, const std::shared_ptr<property_iface>& prop) override
+    void _create(
+        const fs_path& path_, const std::shared_ptr<property_iface>& prop) override
     {
         const fs_path path = _root / path_;
         std::lock_guard<std::mutex> lock(_guts->mutex);

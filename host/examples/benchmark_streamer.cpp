@@ -609,7 +609,7 @@ std::deque<noc_block_endpoint> create_noc_block_queue(const size_t num_blocks,
         } else {
             const std::string format_str = prefix + "_%d";
             noc_block_endpoint block     = {
-                str(boost::format(format_str) % (i / num_ports)), i % num_ports};
+                    str(boost::format(format_str) % (i / num_ports)), i % num_ports};
             result.push_back(block);
         }
     }

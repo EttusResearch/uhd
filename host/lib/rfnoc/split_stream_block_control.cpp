@@ -7,9 +7,9 @@
 #include <uhd/convert.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/rfnoc/defaults.hpp>
-#include <uhd/rfnoc/split_stream_block_control.hpp>
 #include <uhd/rfnoc/property.hpp>
 #include <uhd/rfnoc/registry.hpp>
+#include <uhd/rfnoc/split_stream_block_control.hpp>
 #include <string>
 
 using namespace uhd::rfnoc;
@@ -109,5 +109,8 @@ public:
     }
 };
 
-UHD_RFNOC_BLOCK_REGISTER_DIRECT(
-    split_stream_block_control, SPLIT_STREAM_BLOCK, "SplitStream", CLOCK_KEY_GRAPH, "bus_clk")
+UHD_RFNOC_BLOCK_REGISTER_DIRECT(split_stream_block_control,
+    SPLIT_STREAM_BLOCK,
+    "SplitStream",
+    CLOCK_KEY_GRAPH,
+    "bus_clk")

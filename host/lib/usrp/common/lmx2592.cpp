@@ -261,7 +261,7 @@ public:
                               pfd_freq,
                               output_divider,
                               spur_dodging_threshold)
-                                         : initial_fnum;
+                                                 : initial_fnum;
 
         // Calculate mash_seed
         // if spur_dodging is true, mash_seed is the first odd value less than fden

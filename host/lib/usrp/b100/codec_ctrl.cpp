@@ -14,9 +14,9 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhdlib/utils/narrow.hpp>
-#include <cstdint>
 #include <boost/assign/list_of.hpp>
 #include <cmath>
+#include <cstdint>
 #include <tuple>
 
 using namespace uhd;
@@ -85,7 +85,7 @@ b100_codec_ctrl_impl::b100_codec_ctrl_impl(spi_iface::sptr iface)
     _ad9862_regs.rx_hilbert   = ad9862_regs_t::RX_HILBERT_DIS;
 
     // setup tx side of codec
-    _ad9862_regs.two_data_paths = ad9862_regs_t::TWO_DATA_PATHS_BOTH;
+    _ad9862_regs.two_data_paths    = ad9862_regs_t::TWO_DATA_PATHS_BOTH;
     _ad9862_regs.interleaved       = ad9862_regs_t::INTERLEAVED_INTERLEAVED;
     _ad9862_regs.tx_retime         = ad9862_regs_t::TX_RETIME_CLKOUT2;
     _ad9862_regs.tx_pga_gain       = 199; // TODO bring under api control

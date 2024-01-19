@@ -208,7 +208,7 @@ bool check_locked_sensor(std::vector<std::string> sensor_names,
                 std::cout << std::endl;
                 throw std::runtime_error(
                     std::string("timed out waiting for consecutive locks on sensor \"")
-                                + sensor_name + "\"");
+                    + sensor_name + "\"");
             }
             std::cout << "_";
             std::cout.flush();
@@ -313,13 +313,13 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     uhd::rfnoc::block_id_t last_block_in_chain;
     size_t last_port_in_chain;
     uhd::rfnoc::ddc_block_control::sptr ddc_ctrl;
-    size_t ddc_chan = 0;
+    size_t ddc_chan       = 0;
     bool user_block_found = false;
 
     { // First, connect everything dangling off of the radio
         auto edges = uhd::rfnoc::get_block_chain(graph, radio_ctrl_id, radio_chan, true);
         last_block_in_chain = edges.back().src_blockid;
-        last_port_in_chain = edges.back().src_port;
+        last_port_in_chain  = edges.back().src_port;
         if (edges.size() > 1) {
             uhd::rfnoc::connect_through_blocks(graph,
                 radio_ctrl_id,

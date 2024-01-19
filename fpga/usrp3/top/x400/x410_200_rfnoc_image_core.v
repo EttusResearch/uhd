@@ -36,6 +36,7 @@ module rfnoc_image_core #(
   input  wire         chdr_aclk,
   input  wire         ctrl_aclk,
   input  wire         core_arst,
+  input  wire         ce_clk,
   input  wire         radio_clk,
   input  wire         radio_2x_clk,
   input  wire         dram_clk,
@@ -69,65 +70,111 @@ module rfnoc_image_core #(
   // time
   input  wire [  63:0] radio_time,
   // radio0
-  input  wire [ 255:0] radio_rx_data_radio0,
-  input  wire [   7:0] radio_rx_stb_radio0,
-  output wire [   7:0] radio_rx_running_radio0,
-  output wire [ 255:0] radio_tx_data_radio0,
-  input  wire [   7:0] radio_tx_stb_radio0,
-  output wire [   7:0] radio_tx_running_radio0,
+  input  wire [1023:0] radio_rx_data_radio0,
+  input  wire [  31:0] radio_rx_stb_radio0,
+  output wire [  31:0] radio_rx_running_radio0,
+  output wire [1023:0] radio_tx_data_radio0,
+  input  wire [  31:0] radio_tx_stb_radio0,
+  output wire [  31:0] radio_tx_running_radio0,
   // radio1
-  input  wire [ 255:0] radio_rx_data_radio1,
-  input  wire [   7:0] radio_rx_stb_radio1,
-  output wire [   7:0] radio_rx_running_radio1,
-  output wire [ 255:0] radio_tx_data_radio1,
-  input  wire [   7:0] radio_tx_stb_radio1,
-  output wire [   7:0] radio_tx_running_radio1,
-  // dram
-  input  wire [   0:0] axi_rst,
-  output wire [   3:0] m_axi_awid,
-  output wire [ 191:0] m_axi_awaddr,
-  output wire [  31:0] m_axi_awlen,
-  output wire [  11:0] m_axi_awsize,
-  output wire [   7:0] m_axi_awburst,
-  output wire [   3:0] m_axi_awlock,
-  output wire [  15:0] m_axi_awcache,
-  output wire [  11:0] m_axi_awprot,
-  output wire [  15:0] m_axi_awqos,
-  output wire [  15:0] m_axi_awregion,
-  output wire [   3:0] m_axi_awuser,
-  output wire [   3:0] m_axi_awvalid,
-  input  wire [   3:0] m_axi_awready,
-  output wire [2047:0] m_axi_wdata,
-  output wire [ 255:0] m_axi_wstrb,
-  output wire [   3:0] m_axi_wlast,
-  output wire [   3:0] m_axi_wuser,
-  output wire [   3:0] m_axi_wvalid,
-  input  wire [   3:0] m_axi_wready,
-  input  wire [   3:0] m_axi_bid,
-  input  wire [   7:0] m_axi_bresp,
-  input  wire [   3:0] m_axi_buser,
-  input  wire [   3:0] m_axi_bvalid,
-  output wire [   3:0] m_axi_bready,
-  output wire [   3:0] m_axi_arid,
-  output wire [ 191:0] m_axi_araddr,
-  output wire [  31:0] m_axi_arlen,
-  output wire [  11:0] m_axi_arsize,
-  output wire [   7:0] m_axi_arburst,
-  output wire [   3:0] m_axi_arlock,
-  output wire [  15:0] m_axi_arcache,
-  output wire [  11:0] m_axi_arprot,
-  output wire [  15:0] m_axi_arqos,
-  output wire [  15:0] m_axi_arregion,
-  output wire [   3:0] m_axi_aruser,
-  output wire [   3:0] m_axi_arvalid,
-  input  wire [   3:0] m_axi_arready,
-  input  wire [   3:0] m_axi_rid,
-  input  wire [2047:0] m_axi_rdata,
-  input  wire [   7:0] m_axi_rresp,
-  input  wire [   3:0] m_axi_rlast,
-  input  wire [   3:0] m_axi_ruser,
-  input  wire [   3:0] m_axi_rvalid,
-  output wire [   3:0] m_axi_rready,
+  input  wire [1023:0] radio_rx_data_radio1,
+  input  wire [  31:0] radio_rx_stb_radio1,
+  output wire [  31:0] radio_rx_running_radio1,
+  output wire [1023:0] radio_tx_data_radio1,
+  input  wire [  31:0] radio_tx_stb_radio1,
+  output wire [  31:0] radio_tx_running_radio1,
+  // dram0
+  input  wire [   0:0] dram0_axi_rst,
+  output wire [   7:0] dram0_m_axi_awid,
+  output wire [ 383:0] dram0_m_axi_awaddr,
+  output wire [  63:0] dram0_m_axi_awlen,
+  output wire [  23:0] dram0_m_axi_awsize,
+  output wire [  15:0] dram0_m_axi_awburst,
+  output wire [   7:0] dram0_m_axi_awlock,
+  output wire [  31:0] dram0_m_axi_awcache,
+  output wire [  23:0] dram0_m_axi_awprot,
+  output wire [  31:0] dram0_m_axi_awqos,
+  output wire [  31:0] dram0_m_axi_awregion,
+  output wire [   7:0] dram0_m_axi_awuser,
+  output wire [   7:0] dram0_m_axi_awvalid,
+  input  wire [   7:0] dram0_m_axi_awready,
+  output wire [4191:0] dram0_m_axi_wdata,
+  output wire [ 511:0] dram0_m_axi_wstrb,
+  output wire [   7:0] dram0_m_axi_wlast,
+  output wire [   7:0] dram0_m_axi_wuser,
+  output wire [   7:0] dram0_m_axi_wvalid,
+  input  wire [   7:0] dram0_m_axi_wready,
+  input  wire [   7:0] dram0_m_axi_bid,
+  input  wire [  15:0] dram0_m_axi_bresp,
+  input  wire [   7:0] dram0_m_axi_buser,
+  input  wire [   7:0] dram0_m_axi_bvalid,
+  output wire [   7:0] dram0_m_axi_bready,
+  output wire [   7:0] dram0_m_axi_arid,
+  output wire [ 383:0] dram0_m_axi_araddr,
+  output wire [  63:0] dram0_m_axi_arlen,
+  output wire [  23:0] dram0_m_axi_arsize,
+  output wire [  15:0] dram0_m_axi_arburst,
+  output wire [   7:0] dram0_m_axi_arlock,
+  output wire [  31:0] dram0_m_axi_arcache,
+  output wire [  31:0] dram0_m_axi_arprot,
+  output wire [  31:0] dram0_m_axi_arqos,
+  output wire [  31:0] dram0_m_axi_arregion,
+  output wire [   7:0] dram0_m_axi_aruser,
+  output wire [   7:0] dram0_m_axi_arvalid,
+  input  wire [   7:0] dram0_m_axi_arready,
+  input  wire [   7:0] dram0_m_axi_rid,
+  input  wire [4191:0] dram0_m_axi_rdata,
+  input  wire [  15:0] dram0_m_axi_rresp,
+  input  wire [   7:0] dram0_m_axi_rlast,
+  input  wire [   7:0] dram0_m_axi_ruser,
+  input  wire [   7:0] dram0_m_axi_rvalid,
+  output wire [   7:0] dram0_m_axi_rready,
+  // dram1
+  input  wire [   0:0] dram1_axi_rst,
+  output wire [   7:0] dram1_m_axi_awid,
+  output wire [ 383:0] dram1_m_axi_awaddr,
+  output wire [  63:0] dram1_m_axi_awlen,
+  output wire [  23:0] dram1_m_axi_awsize,
+  output wire [  15:0] dram1_m_axi_awburst,
+  output wire [   7:0] dram1_m_axi_awlock,
+  output wire [  31:0] dram1_m_axi_awcache,
+  output wire [  23:0] dram1_m_axi_awprot,
+  output wire [  31:0] dram1_m_axi_awqos,
+  output wire [  31:0] dram1_m_axi_awregion,
+  output wire [   7:0] dram1_m_axi_awuser,
+  output wire [   7:0] dram1_m_axi_awvalid,
+  input  wire [   7:0] dram1_m_axi_awready,
+  output wire [4191:0] dram1_m_axi_wdata,
+  output wire [ 511:0] dram1_m_axi_wstrb,
+  output wire [   7:0] dram1_m_axi_wlast,
+  output wire [   7:0] dram1_m_axi_wuser,
+  output wire [   7:0] dram1_m_axi_wvalid,
+  input  wire [   7:0] dram1_m_axi_wready,
+  input  wire [   7:0] dram1_m_axi_bid,
+  input  wire [  15:0] dram1_m_axi_bresp,
+  input  wire [   7:0] dram1_m_axi_buser,
+  input  wire [   7:0] dram1_m_axi_bvalid,
+  output wire [   7:0] dram1_m_axi_bready,
+  output wire [   7:0] dram1_m_axi_arid,
+  output wire [ 383:0] dram1_m_axi_araddr,
+  output wire [  63:0] dram1_m_axi_arlen,
+  output wire [  23:0] dram1_m_axi_arsize,
+  output wire [  15:0] dram1_m_axi_arburst,
+  output wire [   7:0] dram1_m_axi_arlock,
+  output wire [  31:0] dram1_m_axi_arcache,
+  output wire [  31:0] dram1_m_axi_arprot,
+  output wire [  31:0] dram1_m_axi_arqos,
+  output wire [  31:0] dram1_m_axi_arregion,
+  output wire [   7:0] dram1_m_axi_aruser,
+  output wire [   7:0] dram1_m_axi_arvalid,
+  input  wire [   7:0] dram1_m_axi_arready,
+  input  wire [   7:0] dram1_m_axi_rid,
+  input  wire [4191:0] dram1_m_axi_rdata,
+  input  wire [  15:0] dram1_m_axi_rresp,
+  input  wire [   7:0] dram1_m_axi_rlast,
+  input  wire [   7:0] dram1_m_axi_ruser,
+  input  wire [   7:0] dram1_m_axi_rvalid,
+  output wire [   7:0] dram1_m_axi_rready,
 
   // Transport Adapters ///////////////
 
@@ -1123,12 +1170,12 @@ module rfnoc_image_core #(
   // time
   wire [  63:0] radio0_radio_time;
   // radio
-  wire [ 255:0] radio0_radio_rx_data;
-  wire [   7:0] radio0_radio_rx_stb;
-  wire [   7:0] radio0_radio_rx_running;
-  wire [ 255:0] radio0_radio_tx_data;
-  wire [   7:0] radio0_radio_tx_stb;
-  wire [   7:0] radio0_radio_tx_running;
+  wire [1023:0] radio0_radio_rx_data;
+  wire [  31:0] radio0_radio_rx_stb;
+  wire [  31:0] radio0_radio_rx_running;
+  wire [1023:0] radio0_radio_tx_data;
+  wire [  31:0] radio0_radio_tx_stb;
+  wire [  31:0] radio0_radio_tx_running;
 
   rfnoc_block_radio #(
     .THIS_PORTID         (4),
@@ -1136,6 +1183,8 @@ module rfnoc_image_core #(
     .NUM_PORTS           (2),
     .NIPC                (RADIO_NIPC),
     .ITEM_W              (32),
+    .CTRL_CLK_IDX        (1),
+    .TB_CLK_IDX          (4),
     .MTU                 (BLOCK_MTU)
   ) b_radio0_2 (
     .rfnoc_chdr_clk      (rfnoc_chdr_clk),
@@ -1296,12 +1345,12 @@ module rfnoc_image_core #(
   // time
   wire [  63:0] radio1_radio_time;
   // radio
-  wire [ 255:0] radio1_radio_rx_data;
-  wire [   7:0] radio1_radio_rx_stb;
-  wire [   7:0] radio1_radio_rx_running;
-  wire [ 255:0] radio1_radio_tx_data;
-  wire [   7:0] radio1_radio_tx_stb;
-  wire [   7:0] radio1_radio_tx_running;
+  wire [1023:0] radio1_radio_rx_data;
+  wire [  31:0] radio1_radio_rx_stb;
+  wire [  31:0] radio1_radio_rx_running;
+  wire [1023:0] radio1_radio_tx_data;
+  wire [  31:0] radio1_radio_tx_stb;
+  wire [  31:0] radio1_radio_tx_running;
 
   rfnoc_block_radio #(
     .THIS_PORTID         (7),
@@ -1309,6 +1358,8 @@ module rfnoc_image_core #(
     .NUM_PORTS           (2),
     .NIPC                (RADIO_NIPC),
     .ITEM_W              (32),
+    .CTRL_CLK_IDX        (1),
+    .TB_CLK_IDX          (4),
     .MTU                 (BLOCK_MTU)
   ) b_radio1_5 (
     .rfnoc_chdr_clk      (rfnoc_chdr_clk),
@@ -1367,50 +1418,50 @@ module rfnoc_image_core #(
 
   // axi_ram
   wire [   0:0] replay0_axi_rst;
-  wire [   3:0] replay0_m_axi_awid;
-  wire [ 191:0] replay0_m_axi_awaddr;
-  wire [  31:0] replay0_m_axi_awlen;
-  wire [  11:0] replay0_m_axi_awsize;
-  wire [   7:0] replay0_m_axi_awburst;
-  wire [   3:0] replay0_m_axi_awlock;
-  wire [  15:0] replay0_m_axi_awcache;
-  wire [  11:0] replay0_m_axi_awprot;
-  wire [  15:0] replay0_m_axi_awqos;
-  wire [  15:0] replay0_m_axi_awregion;
-  wire [   3:0] replay0_m_axi_awuser;
-  wire [   3:0] replay0_m_axi_awvalid;
-  wire [   3:0] replay0_m_axi_awready;
-  wire [2047:0] replay0_m_axi_wdata;
-  wire [ 255:0] replay0_m_axi_wstrb;
-  wire [   3:0] replay0_m_axi_wlast;
-  wire [   3:0] replay0_m_axi_wuser;
-  wire [   3:0] replay0_m_axi_wvalid;
-  wire [   3:0] replay0_m_axi_wready;
-  wire [   3:0] replay0_m_axi_bid;
-  wire [   7:0] replay0_m_axi_bresp;
-  wire [   3:0] replay0_m_axi_buser;
-  wire [   3:0] replay0_m_axi_bvalid;
-  wire [   3:0] replay0_m_axi_bready;
-  wire [   3:0] replay0_m_axi_arid;
-  wire [ 191:0] replay0_m_axi_araddr;
-  wire [  31:0] replay0_m_axi_arlen;
-  wire [  11:0] replay0_m_axi_arsize;
-  wire [   7:0] replay0_m_axi_arburst;
-  wire [   3:0] replay0_m_axi_arlock;
-  wire [  15:0] replay0_m_axi_arcache;
-  wire [  11:0] replay0_m_axi_arprot;
-  wire [  15:0] replay0_m_axi_arqos;
-  wire [  15:0] replay0_m_axi_arregion;
-  wire [   3:0] replay0_m_axi_aruser;
-  wire [   3:0] replay0_m_axi_arvalid;
-  wire [   3:0] replay0_m_axi_arready;
-  wire [   3:0] replay0_m_axi_rid;
-  wire [2047:0] replay0_m_axi_rdata;
-  wire [   7:0] replay0_m_axi_rresp;
-  wire [   3:0] replay0_m_axi_rlast;
-  wire [   3:0] replay0_m_axi_ruser;
-  wire [   3:0] replay0_m_axi_rvalid;
-  wire [   3:0] replay0_m_axi_rready;
+  wire [   7:0] replay0_m_axi_awid;
+  wire [ 383:0] replay0_m_axi_awaddr;
+  wire [  63:0] replay0_m_axi_awlen;
+  wire [  23:0] replay0_m_axi_awsize;
+  wire [  15:0] replay0_m_axi_awburst;
+  wire [   7:0] replay0_m_axi_awlock;
+  wire [  31:0] replay0_m_axi_awcache;
+  wire [  23:0] replay0_m_axi_awprot;
+  wire [  31:0] replay0_m_axi_awqos;
+  wire [  31:0] replay0_m_axi_awregion;
+  wire [   7:0] replay0_m_axi_awuser;
+  wire [   7:0] replay0_m_axi_awvalid;
+  wire [   7:0] replay0_m_axi_awready;
+  wire [4191:0] replay0_m_axi_wdata;
+  wire [ 511:0] replay0_m_axi_wstrb;
+  wire [   7:0] replay0_m_axi_wlast;
+  wire [   7:0] replay0_m_axi_wuser;
+  wire [   7:0] replay0_m_axi_wvalid;
+  wire [   7:0] replay0_m_axi_wready;
+  wire [   7:0] replay0_m_axi_bid;
+  wire [  15:0] replay0_m_axi_bresp;
+  wire [   7:0] replay0_m_axi_buser;
+  wire [   7:0] replay0_m_axi_bvalid;
+  wire [   7:0] replay0_m_axi_bready;
+  wire [   7:0] replay0_m_axi_arid;
+  wire [ 383:0] replay0_m_axi_araddr;
+  wire [  63:0] replay0_m_axi_arlen;
+  wire [  23:0] replay0_m_axi_arsize;
+  wire [  15:0] replay0_m_axi_arburst;
+  wire [   7:0] replay0_m_axi_arlock;
+  wire [  31:0] replay0_m_axi_arcache;
+  wire [  31:0] replay0_m_axi_arprot;
+  wire [  31:0] replay0_m_axi_arqos;
+  wire [  31:0] replay0_m_axi_arregion;
+  wire [   7:0] replay0_m_axi_aruser;
+  wire [   7:0] replay0_m_axi_arvalid;
+  wire [   7:0] replay0_m_axi_arready;
+  wire [   7:0] replay0_m_axi_rid;
+  wire [4191:0] replay0_m_axi_rdata;
+  wire [  15:0] replay0_m_axi_rresp;
+  wire [   7:0] replay0_m_axi_rlast;
+  wire [   7:0] replay0_m_axi_ruser;
+  wire [   7:0] replay0_m_axi_rvalid;
+  wire [   7:0] replay0_m_axi_rready;
 
   rfnoc_block_replay #(
     .THIS_PORTID         (8),
@@ -1624,11 +1675,11 @@ module rfnoc_image_core #(
   //---------------------------------------------------------------------------
 
   assign radio0_radio_clk = radio_clk;
-  assign duc0_ce_clk = radio_2x_clk;
-  assign ddc0_ce_clk = radio_2x_clk;
+  assign duc0_ce_clk = ce_clk;
+  assign ddc0_ce_clk = ce_clk;
   assign radio1_radio_clk = radio_clk;
-  assign duc1_ce_clk = radio_2x_clk;
-  assign ddc1_ce_clk = radio_2x_clk;
+  assign duc1_ce_clk = ce_clk;
+  assign ddc1_ce_clk = ce_clk;
   assign replay0_mem_clk = dram_clk;
 
 
@@ -1659,51 +1710,51 @@ module rfnoc_image_core #(
   assign radio1_m_ctrlport_resp_status = m_ctrlport_radio1_resp_status;
   assign radio1_m_ctrlport_resp_data = m_ctrlport_radio1_resp_data;
 
-  assign replay0_axi_rst = axi_rst;
-  assign m_axi_awid = replay0_m_axi_awid;
-  assign m_axi_awaddr = replay0_m_axi_awaddr;
-  assign m_axi_awlen = replay0_m_axi_awlen;
-  assign m_axi_awsize = replay0_m_axi_awsize;
-  assign m_axi_awburst = replay0_m_axi_awburst;
-  assign m_axi_awlock = replay0_m_axi_awlock;
-  assign m_axi_awcache = replay0_m_axi_awcache;
-  assign m_axi_awprot = replay0_m_axi_awprot;
-  assign m_axi_awqos = replay0_m_axi_awqos;
-  assign m_axi_awregion = replay0_m_axi_awregion;
-  assign m_axi_awuser = replay0_m_axi_awuser;
-  assign m_axi_awvalid = replay0_m_axi_awvalid;
-  assign replay0_m_axi_awready = m_axi_awready;
-  assign m_axi_wdata = replay0_m_axi_wdata;
-  assign m_axi_wstrb = replay0_m_axi_wstrb;
-  assign m_axi_wlast = replay0_m_axi_wlast;
-  assign m_axi_wuser = replay0_m_axi_wuser;
-  assign m_axi_wvalid = replay0_m_axi_wvalid;
-  assign replay0_m_axi_wready = m_axi_wready;
-  assign replay0_m_axi_bid = m_axi_bid;
-  assign replay0_m_axi_bresp = m_axi_bresp;
-  assign replay0_m_axi_buser = m_axi_buser;
-  assign replay0_m_axi_bvalid = m_axi_bvalid;
-  assign m_axi_bready = replay0_m_axi_bready;
-  assign m_axi_arid = replay0_m_axi_arid;
-  assign m_axi_araddr = replay0_m_axi_araddr;
-  assign m_axi_arlen = replay0_m_axi_arlen;
-  assign m_axi_arsize = replay0_m_axi_arsize;
-  assign m_axi_arburst = replay0_m_axi_arburst;
-  assign m_axi_arlock = replay0_m_axi_arlock;
-  assign m_axi_arcache = replay0_m_axi_arcache;
-  assign m_axi_arprot = replay0_m_axi_arprot;
-  assign m_axi_arqos = replay0_m_axi_arqos;
-  assign m_axi_arregion = replay0_m_axi_arregion;
-  assign m_axi_aruser = replay0_m_axi_aruser;
-  assign m_axi_arvalid = replay0_m_axi_arvalid;
-  assign replay0_m_axi_arready = m_axi_arready;
-  assign replay0_m_axi_rid = m_axi_rid;
-  assign replay0_m_axi_rdata = m_axi_rdata;
-  assign replay0_m_axi_rresp = m_axi_rresp;
-  assign replay0_m_axi_rlast = m_axi_rlast;
-  assign replay0_m_axi_ruser = m_axi_ruser;
-  assign replay0_m_axi_rvalid = m_axi_rvalid;
-  assign m_axi_rready = replay0_m_axi_rready;
+  assign replay0_axi_rst = dram0_axi_rst;
+  assign dram0_m_axi_awid = replay0_m_axi_awid;
+  assign dram0_m_axi_awaddr = replay0_m_axi_awaddr;
+  assign dram0_m_axi_awlen = replay0_m_axi_awlen;
+  assign dram0_m_axi_awsize = replay0_m_axi_awsize;
+  assign dram0_m_axi_awburst = replay0_m_axi_awburst;
+  assign dram0_m_axi_awlock = replay0_m_axi_awlock;
+  assign dram0_m_axi_awcache = replay0_m_axi_awcache;
+  assign dram0_m_axi_awprot = replay0_m_axi_awprot;
+  assign dram0_m_axi_awqos = replay0_m_axi_awqos;
+  assign dram0_m_axi_awregion = replay0_m_axi_awregion;
+  assign dram0_m_axi_awuser = replay0_m_axi_awuser;
+  assign dram0_m_axi_awvalid = replay0_m_axi_awvalid;
+  assign replay0_m_axi_awready = dram0_m_axi_awready;
+  assign dram0_m_axi_wdata = replay0_m_axi_wdata;
+  assign dram0_m_axi_wstrb = replay0_m_axi_wstrb;
+  assign dram0_m_axi_wlast = replay0_m_axi_wlast;
+  assign dram0_m_axi_wuser = replay0_m_axi_wuser;
+  assign dram0_m_axi_wvalid = replay0_m_axi_wvalid;
+  assign replay0_m_axi_wready = dram0_m_axi_wready;
+  assign replay0_m_axi_bid = dram0_m_axi_bid;
+  assign replay0_m_axi_bresp = dram0_m_axi_bresp;
+  assign replay0_m_axi_buser = dram0_m_axi_buser;
+  assign replay0_m_axi_bvalid = dram0_m_axi_bvalid;
+  assign dram0_m_axi_bready = replay0_m_axi_bready;
+  assign dram0_m_axi_arid = replay0_m_axi_arid;
+  assign dram0_m_axi_araddr = replay0_m_axi_araddr;
+  assign dram0_m_axi_arlen = replay0_m_axi_arlen;
+  assign dram0_m_axi_arsize = replay0_m_axi_arsize;
+  assign dram0_m_axi_arburst = replay0_m_axi_arburst;
+  assign dram0_m_axi_arlock = replay0_m_axi_arlock;
+  assign dram0_m_axi_arcache = replay0_m_axi_arcache;
+  assign dram0_m_axi_arprot = replay0_m_axi_arprot;
+  assign dram0_m_axi_arqos = replay0_m_axi_arqos;
+  assign dram0_m_axi_arregion = replay0_m_axi_arregion;
+  assign dram0_m_axi_aruser = replay0_m_axi_aruser;
+  assign dram0_m_axi_arvalid = replay0_m_axi_arvalid;
+  assign replay0_m_axi_arready = dram0_m_axi_arready;
+  assign replay0_m_axi_rid = dram0_m_axi_rid;
+  assign replay0_m_axi_rdata = dram0_m_axi_rdata;
+  assign replay0_m_axi_rresp = dram0_m_axi_rresp;
+  assign replay0_m_axi_rlast = dram0_m_axi_rlast;
+  assign replay0_m_axi_ruser = dram0_m_axi_ruser;
+  assign replay0_m_axi_rvalid = dram0_m_axi_rvalid;
+  assign dram0_m_axi_rready = replay0_m_axi_rready;
 
   assign radio0_radio_rx_data = radio_rx_data_radio0;
   assign radio0_radio_rx_stb = radio_rx_stb_radio0;

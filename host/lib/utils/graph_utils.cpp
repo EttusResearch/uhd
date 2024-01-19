@@ -56,7 +56,8 @@ std::vector<graph_edge_t> get_block_chain(const rfnoc_graph::sptr graph,
                 // If the current block is the edge's source, make the edge's
                 // destination the current block
                 next_found = true;
-                UHD_LOG_TRACE("GRAPH_UTILS", " --> Found next block: " + edge.dst_blockid);
+                UHD_LOG_TRACE(
+                    "GRAPH_UTILS", " --> Found next block: " + edge.dst_blockid);
 
                 block_chain.push_back(edge);
                 current_block = (source_chain) ? edge.dst_blockid : edge.src_blockid;
@@ -150,8 +151,11 @@ std::vector<graph_edge_t> connect_through_blocks(rfnoc_graph::sptr graph,
             sep_to_dst_id             = edge.dst_blockid;
             sep_to_dst_port           = edge.dst_port;
         } else {
-            graph->connect(
-                edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port, skip_pp);
+            graph->connect(edge.src_blockid,
+                edge.src_port,
+                edge.dst_blockid,
+                edge.dst_port,
+                skip_pp);
             skip_pp = false;
         }
     }

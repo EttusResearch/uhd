@@ -44,8 +44,7 @@ device_addr_t::device_addr_t(const std::string& args)
     }
 }
 
-device_addr_t::device_addr_t(const char* args) :
-    device_addr_t(std::string(args))
+device_addr_t::device_addr_t(const char* args) : device_addr_t(std::string(args))
 {
     // No additional construction is necessary
 }

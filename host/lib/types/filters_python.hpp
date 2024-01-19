@@ -12,7 +12,6 @@
 
 void export_filters(py::module& m)
 {
-
     using filter_info_base        = uhd::filter_info_base;
     using filter_info_type        = filter_info_base::filter_type;
     using analog_filter_base      = uhd::analog_filter_base;

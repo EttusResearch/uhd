@@ -15,26 +15,30 @@
 //
 // Parameters:
 //
-//   THIS_PORTID : Control crossbar port to which this block is connected
-//   CHDR_W      : AXIS-CHDR data bus width
-//   MTU         : Maximum transmission unit (i.e., maximum packet size in
-//                 CHDR words is 2**MTU).
-//   NUM_PORTS   : Number of replay instances to instantiate. Each one will
-//                 have its own register set and memory interface.
-//   MEM_DATA_W  : Data width to use for the memory interface.
-//   MEM_ADDR_W  : Byte address width to use for the memory interface.
+//   THIS_PORTID  : Control crossbar port to which this block is connected
+//   CHDR_W       : AXIS-CHDR data bus width
+//   MTU          : Maximum transmission unit (i.e., maximum packet size in
+//                  CHDR words is 2**MTU).
+//   NUM_PORTS    : Number of replay instances to instantiate. Each one will
+//                  have its own register set and memory interface.
+//   MEM_DATA_W   : Data width to use for the memory interface.
+//   MEM_ADDR_W   : Byte address width to use for the memory interface.
+//   BURST_LENGTH : Burst length to use in bytes. Must not exceed 256 words. It
+//                  can be larger than the 4096-byte limit of AXI, but this
+//                  might not be compatible with all memories.
 //
 
 `default_nettype none
 
 
 module rfnoc_block_replay #(
-  parameter [9:0] THIS_PORTID = 10'd0,
-  parameter       CHDR_W      = 64,
-  parameter [5:0] MTU         = 10,
-  parameter       NUM_PORTS   = 1,
-  parameter       MEM_DATA_W  = 64,
-  parameter       MEM_ADDR_W  = 30
+  parameter [9:0] THIS_PORTID  = 10'd0,
+  parameter       CHDR_W       = 64,
+  parameter [5:0] MTU          = 10,
+  parameter       NUM_PORTS    = 1,
+  parameter       MEM_DATA_W   = 64,
+  parameter       MEM_ADDR_W   = 30,
+  parameter       BURST_LENGTH = MEM_DATA_W/8 * 256
 ) (
   //---------------------------------------------------------------------------
   // AXIS-CHDR Port
@@ -323,11 +327,10 @@ module rfnoc_block_replay #(
   //---------------------------------------------------------------------------
 
   // Width of memory transfer count. This controls the maximum burst length
-  // supported by the Replay block. For AXI compatibility, it must be 8 or less
-  // and should not represent more than 4 KiB. Here we set it to 2 KiB by
-  // default.
-  localparam MEM_COUNT_W = (MEM_DATA_W <= 64) ? 8 :        // Max width allowed
-                           $clog2(2048 / (MEM_DATA_W/8));  // 2 KiB
+  // supported by the Replay block. For AXI, it must not exceed 8 and it should
+  // be no more than 4096 unless supported by the memory being used.
+  localparam DESIRED_MEM_COUNT_W = $clog2(BURST_LENGTH / (MEM_DATA_W/8));
+  localparam MEM_COUNT_W = (DESIRED_MEM_COUNT_W > 8) ? 8 : DESIRED_MEM_COUNT_W;
 
   genvar i;
   generate

@@ -10,19 +10,19 @@
 #include <uhdlib/usrp/cores/time64_core_200.hpp>
 #include <boost/math/special_functions/round.hpp>
 
-#define REG_TIME64_TICKS_HI _base + 0
-#define REG_TIME64_TICKS_LO _base + 4
-#define REG_TIME64_FLAGS _base + 8
-#define REG_TIME64_IMM _base + 12
+#define REG_TIME64_TICKS_HI  _base + 0
+#define REG_TIME64_TICKS_LO  _base + 4
+#define REG_TIME64_FLAGS     _base + 8
+#define REG_TIME64_IMM       _base + 12
 #define REG_TIME64_MIMO_SYNC _base + 20 // lower byte is delay cycles
 
 // pps flags (see above)
 #define FLAG_TIME64_PPS_NEGEDGE (0 << 0)
 #define FLAG_TIME64_PPS_POSEDGE (1 << 0)
-#define FLAG_TIME64_PPS_SMA (0 << 1)
-#define FLAG_TIME64_PPS_MIMO (1 << 1) // apparently not used
+#define FLAG_TIME64_PPS_SMA     (0 << 1)
+#define FLAG_TIME64_PPS_MIMO    (1 << 1) // apparently not used
 
-#define FLAG_TIME64_LATCH_NOW 1
+#define FLAG_TIME64_LATCH_NOW      1
 #define FLAG_TIME64_LATCH_NEXT_PPS 0
 
 #define FLAG_TIME64_MIMO_SYNC (1 << 8)

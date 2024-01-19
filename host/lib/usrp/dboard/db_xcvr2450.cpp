@@ -6,38 +6,38 @@
 //
 
 // TX IO Pins
-#define HB_PA_OFF_TXIO (1 << 15) // 5GHz PA, 1 = off, 0 = on
-#define LB_PA_OFF_TXIO (1 << 14) // 2.4GHz PA, 1 = off, 0 = on
+#define HB_PA_OFF_TXIO      (1 << 15) // 5GHz PA, 1 = off, 0 = on
+#define LB_PA_OFF_TXIO      (1 << 14) // 2.4GHz PA, 1 = off, 0 = on
 #define ANTSEL_TX1_RX2_TXIO (1 << 13) // 1 = Ant 1 to TX, Ant 2 to RX
 #define ANTSEL_TX2_RX1_TXIO (1 << 12) // 1 = Ant 2 to TX, Ant 1 to RX
-#define TX_EN_TXIO (1 << 11) // 1 = TX on, 0 = TX off
-#define AD9515DIV_TXIO (1 << 4) // 1 = Div  by 3, 0 = Div by 2
+#define TX_EN_TXIO          (1 << 11) // 1 = TX on, 0 = TX off
+#define AD9515DIV_TXIO      (1 << 4) // 1 = Div  by 3, 0 = Div by 2
 
 #define TXIO_MASK                                                                \
     (HB_PA_OFF_TXIO | LB_PA_OFF_TXIO | ANTSEL_TX1_RX2_TXIO | ANTSEL_TX2_RX1_TXIO \
         | TX_EN_TXIO | AD9515DIV_TXIO)
 
 // TX IO Functions
-#define HB_PA_TXIO LB_PA_OFF_TXIO
-#define LB_PA_TXIO HB_PA_OFF_TXIO
-#define TX_ENB_TXIO TX_EN_TXIO
-#define TX_DIS_TXIO (HB_PA_OFF_TXIO | LB_PA_OFF_TXIO)
+#define HB_PA_TXIO       LB_PA_OFF_TXIO
+#define LB_PA_TXIO       HB_PA_OFF_TXIO
+#define TX_ENB_TXIO      TX_EN_TXIO
+#define TX_DIS_TXIO      (HB_PA_OFF_TXIO | LB_PA_OFF_TXIO)
 #define AD9515DIV_3_TXIO AD9515DIV_TXIO
 #define AD9515DIV_2_TXIO 0
 
 // RX IO Pins
 #define LOCKDET_RXIO (1 << 15) // This is an INPUT!!!
-#define POWER_RXIO (1 << 14) // 1 = power on, 0 = shutdown
-#define RX_EN_RXIO (1 << 13) // 1 = RX on, 0 = RX off
-#define RX_HP_RXIO (1 << 12) // 0 = Fc set by rx_hpf, 1 = 600 KHz
+#define POWER_RXIO   (1 << 14) // 1 = power on, 0 = shutdown
+#define RX_EN_RXIO   (1 << 13) // 1 = RX on, 0 = RX off
+#define RX_HP_RXIO   (1 << 12) // 0 = Fc set by rx_hpf, 1 = 600 KHz
 
 #define RXIO_MASK (POWER_RXIO | RX_EN_RXIO | RX_HP_RXIO)
 
 // RX IO Functions
-#define POWER_UP_RXIO POWER_RXIO
+#define POWER_UP_RXIO   POWER_RXIO
 #define POWER_DOWN_RXIO 0
-#define RX_ENB_RXIO RX_EN_RXIO
-#define RX_DIS_RXIO 0
+#define RX_ENB_RXIO     RX_EN_RXIO
+#define RX_DIS_RXIO     0
 
 #include "max2829_regs.hpp"
 #include <uhd/types/dict.hpp>
@@ -463,10 +463,10 @@ done_loop:
 
     // load the reference divider and band select into registers
     // toggle the bandswitch from off to automatic (which really means start)
-    _max2829_regs.ref_divider = R;
-    _max2829_regs.band_select = (xcvr2450::is_highband(_lo_freq))
-                                    ? max2829_regs_t::BAND_SELECT_5GHZ
-                                    : max2829_regs_t::BAND_SELECT_2_4GHZ;
+    _max2829_regs.ref_divider    = R;
+    _max2829_regs.band_select    = (xcvr2450::is_highband(_lo_freq))
+                                       ? max2829_regs_t::BAND_SELECT_5GHZ
+                                       : max2829_regs_t::BAND_SELECT_2_4GHZ;
     _max2829_regs.vco_bandswitch = max2829_regs_t::VCO_BANDSWITCH_DISABLE;
     this->send_reg(0x5);
     _max2829_regs.vco_bandswitch = max2829_regs_t::VCO_BANDSWITCH_AUTOMATIC;
@@ -621,7 +621,8 @@ double xcvr2450::set_rx_gain(double gain, const std::string& name)
 static max2829_regs_t::tx_lpf_coarse_adj_t bandwidth_to_tx_lpf_coarse_reg(
     double& bandwidth)
 {
-    int reg = uhd::clip(uhd::narrow_cast<int>(std::lround((bandwidth - 6.0e6)) / 6.0e6), 1, 3);
+    int reg =
+        uhd::clip(uhd::narrow_cast<int>(std::lround((bandwidth - 6.0e6)) / 6.0e6), 1, 3);
 
     switch (reg) {
         case 1: // bandwidth < 15MHz

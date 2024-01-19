@@ -48,6 +48,7 @@ DEVICE_DIR_MAP = {
     'n320': 'n3xx',
     'x400': 'x400',
     'x410': 'x400',
+    'x440': 'x400',
 }
 
 # Picks the default make target per device
@@ -479,21 +480,61 @@ class ImageBuilderConfig:
 
     def _collect_clocks(self):
         """
-        Create lookup table for clocks. The key is a tuple of block name
-        (_device_ for clocks of the bsp), the clock name and flow
-        direction
+        Create lookup table for clocks. The key is a combination of block name
+        (_device_ for clocks of the bsp) and the clock name (e.g.,
+        _device_.rfnoc_chdr, or ddc0.ce)
         """
+        min_user_clock_index = 10
+        clk_indices = {
+            1: '_device_.rfnoc_ctrl',
+            2: '_device_.rfnoc_chdr',
+        }
+        def register_clk_index(clock_id, clock_info):
+            if 'index' in clock_info:
+                clk_index = int(clock_info['index'])
+                if clk_index in clk_indices and clk_indices[clk_index] != clock_id:
+                    logging.error(
+                        "Conflicting clock indices found. Index %d is defined by "
+                        "%s and %s.", clk_index, clk_indices[clk_index], clock_id)
+                    sys.exit(1)
+            else:
+                # Automatically assign an index
+                min_clk_index = max(min_user_clock_index, *list(clk_indices.keys()))
+                clk_index = min_clk_index + 1
+                logging.debug("Assigning clock index %d to clock %s.", clk_index, clock_id)
+            clk_indices[clk_index] = clock_id
+        # Collect clocks from block definitions
         for name, block in self.noc_blocks.items():
             desc = self.blocks[block["block_desc"]]
-            if hasattr(desc, "clocks"):
-                self.clocks.update({
-                    (name, clk["name"]): clk for clk in desc.clocks})
-        if hasattr(self.device, "clocks"):
-            self.clocks.update({
-                ("_device_", clk["name"]): clk for clk in self.device.clocks})
-        # Add the implied clocks for the BSP
-        self.clocks[("_device_", "rfnoc_ctrl")] = {"freq": '[]', "name": "rfnoc_ctrl"}
-        self.clocks[("_device_", "rfnoc_chdr")] = {"freq": '[]', "name": "rfnoc_chdr"}
+            block_clocks = getattr(desc, "clocks", {})
+            for clock in block_clocks:
+                clock_id = name + '.' + clock["name"]
+                # Sanitize the direction field: Block clocks are by default inputs
+                if 'direction' not in clock:
+                    clock['direction'] = 'in'
+                self.clocks[clock_id] = clock
+        # Collect clocks from device BSP
+        for bsp_clk in getattr(self.device, 'clocks', {}):
+            clock_id = "_device_." + bsp_clk["name"]
+            # Sanitize the direction field: Block clocks are by default outputs
+            if 'direction' not in bsp_clk:
+                bsp_clk['direction'] = 'out'
+            self.clocks[clock_id] = bsp_clk
+            register_clk_index(clock_id, bsp_clk)
+        # Some clocks always have to be present. If the BSP does not define them,
+        # then we do it for them.
+        for required_bsp_clock in "rfnoc_ctrl", "rfnoc_chdr":
+            clock_id = "_device_." + required_bsp_clock
+            if clock_id not in self.clocks:
+                logging.debug("Adding required clock not present in BSP: %s", required_bsp_clock)
+                self.clocks[clock_id] = {
+                    "name": required_bsp_clock,
+                    # For the index, we do a reverse lookup from clk_indices
+                    "index": {clk_id: idx
+                              for idx, clk_id in clk_indices.items()
+                              if clk_id.startswith('_device_.')
+                             }[clock_id]
+                }
 
     def pick_clk_domains(self):
         """
@@ -503,21 +544,23 @@ class ImageBuilderConfig:
         """
         (self.clk_domain_con, self.clk_domains) = split(
             self.clk_domains, lambda con:
-            (con["srcblk"], con["srcport"]) in self.clocks and
-            (con["dstblk"], con["dstport"]) in self.clocks)
+            (con["srcblk"] + '.' + con["srcport"]) in self.clocks and
+            (con["dstblk"] + '.' + con["dstport"]) in self.clocks)
 
         # Check if there are unconnected clocks
-        connected = [(con["dstblk"], con["dstport"]) for con in self.clk_domain_con]
+        connected = [(con["dstblk"] + '.' + con["dstport"]) for con in self.clk_domain_con]
         unconnected = []
-        for clk in self.clocks:
-            if clk[0] != "_device_" and \
-               clk[1] not in ["rfnoc_ctrl", "rfnoc_chdr"] and \
-               clk not in connected:
+        for clk, clk_info in self.clocks.items():
+            clk_blk, clk_port = clk.split('.', 2)
+            if clk_blk != "_device_" and \
+                    clk_port not in ('rfnoc_ctrl', 'rfnoc_chdr') and \
+                    clk not in connected and \
+                    clk_info['direction'] == 'in':
                 unconnected.append(clk)
         if unconnected:
-            logging.error("%d unresolved clk domain(s)", len(unconnected))
+            logging.error("%d unconnected clk domain(s)", len(unconnected))
             for clk in unconnected:
-                logging.error("    %s:%s", clk[0], clk[1])
+                logging.error("    %s", clk)
             logging.error("Please specify the clock(s) to connect")
             sys.exit(1)
 

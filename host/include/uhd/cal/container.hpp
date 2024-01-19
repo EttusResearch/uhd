@@ -9,8 +9,8 @@
 #include <uhd/config.hpp>
 #include <stdint.h>
 #include <memory>
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace uhd { namespace usrp { namespace cal {
 

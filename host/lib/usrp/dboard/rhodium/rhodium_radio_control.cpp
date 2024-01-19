@@ -208,7 +208,7 @@ double rhodium_radio_control_impl::set_tx_frequency(const double freq, const siz
         is_highband ? coerced_target_freq : _get_lowband_lo_freq() - coerced_target_freq;
     const double actual_lo_freq = set_tx_lo_freq(target_lo_freq, RHODIUM_LO1, chan);
     const double coerced_freq   = is_highband ? actual_lo_freq
-                                            : _get_lowband_lo_freq() - actual_lo_freq;
+                                              : _get_lowband_lo_freq() - actual_lo_freq;
     const auto conn = is_highband ? TX_FE_CONNECTION_HIGHBAND : TX_FE_CONNECTION_LOWBAND;
 
     // update the cached frequency value now so calls to set gain and update
@@ -260,7 +260,7 @@ double rhodium_radio_control_impl::set_rx_frequency(const double freq, const siz
         is_highband ? coerced_target_freq : _get_lowband_lo_freq() - coerced_target_freq;
     const double actual_lo_freq = set_rx_lo_freq(target_lo_freq, RHODIUM_LO1, chan);
     const double coerced_freq   = is_highband ? actual_lo_freq
-                                            : _get_lowband_lo_freq() - actual_lo_freq;
+                                              : _get_lowband_lo_freq() - actual_lo_freq;
     const auto conn = is_highband ? RX_FE_CONNECTION_HIGHBAND : RX_FE_CONNECTION_LOWBAND;
 
     // update the cached frequency value now so calls to set gain and update
@@ -446,7 +446,7 @@ void rhodium_radio_control_impl::_update_corrections(
 {
     const std::string fe_path_part = dir == RX_DIRECTION ? "rx_fe_corrections"
                                                          : "tx_fe_corrections";
-    const fs_path fe_corr_path = FE_PATH / fe_path_part / 0;
+    const fs_path fe_corr_path     = FE_PATH / fe_path_part / 0;
 
     if (enable) {
         const std::vector<uint8_t> db_serial_u8 = get_db_eeprom().count("serial")
@@ -576,7 +576,7 @@ uhd::meta_range_t rhodium_radio_control_impl::get_rx_bandwidth_range(size_t) con
  *************************************************************************/
 size_t rhodium_radio_control_impl::get_chan_from_dboard_fe(
     const std::string& fe, const direction_t /* dir */
-    ) const
+) const
 {
     UHD_ASSERT_THROW(boost::lexical_cast<size_t>(fe) == 0);
     return 0;
@@ -584,7 +584,7 @@ size_t rhodium_radio_control_impl::get_chan_from_dboard_fe(
 
 std::string rhodium_radio_control_impl::get_dboard_fe_from_chan(
     const size_t chan, const direction_t /* dir */
-    ) const
+) const
 {
     UHD_ASSERT_THROW(chan == 0);
     return "0";

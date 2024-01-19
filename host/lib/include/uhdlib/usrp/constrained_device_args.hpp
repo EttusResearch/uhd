@@ -227,8 +227,8 @@ public: // Types
                 }
             } catch (std::exception& ex) {
                 throw uhd::value_error(
-                    str(boost::format("Error parsing boolean parameter %s: %s.")
-                        % key() % ex.what()));
+                    str(boost::format("Error parsing boolean parameter %s: %s.") % key()
+                        % ex.what()));
             }
         }
         inline std::string to_string() const override

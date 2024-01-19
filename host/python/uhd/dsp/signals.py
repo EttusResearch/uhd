@@ -11,7 +11,7 @@ import math
 import numpy
 import uhd
 
-def get_continuous_tone(rate, freq, ampl, desired_size=None, max_size=None):
+def get_continuous_tone(rate, freq, ampl, desired_size=None, max_size=None, waveform='sine'):
     """
     Return a buffer containing a complex tone at frequency freq. The tone is
     continuous, that is, repeating this signal will produce a continuous phase
@@ -25,6 +25,7 @@ def get_continuous_tone(rate, freq, ampl, desired_size=None, max_size=None):
     ampl   -- Amplitude
     desired_size -- Number of samples ideally in returned buffer
     max_size -- Number of samples maximally in returned buffer
+    waveform -- Waveform type: 'sine', 'square', 'ramp'
     """
     desired_size = desired_size or 1.0 * rate # About one second worth of data
     max_size = max_size or 100e6
@@ -34,10 +35,26 @@ def get_continuous_tone(rate, freq, ampl, desired_size=None, max_size=None):
     gcd = math.gcd(rate_int, freq_int)
     rate_int = rate_int / gcd
     freq_int = freq_int / gcd
-    length = max(freq_int * rate_int, 1) # freq may be zero
-    tone = \
-        numpy.exp(1j * 2 * numpy.pi * (freq/rate) * numpy.arange(length), dtype=numpy.complex64) \
-        * ampl
+    length = int(max(freq_int * rate_int, 1)) # freq may be zero
+    f_norm = freq/rate
+    if waveform in ('sine', 'square'):
+        tone = \
+            numpy.exp(1j * 2 * numpy.pi * f_norm * numpy.arange(length),
+                      dtype=numpy.complex64)
+        if waveform == 'square':
+            tone = numpy.sign(tone) * ampl
+        else:
+            tone = tone * ampl
+    elif waveform == 'ramp':
+        tone = numpy.array(
+            [2 * (n * f_norm - numpy.floor(float(0.5 + n * f_norm)))
+             for n in range(length)],
+            dtype=numpy.complex64)
+    elif waveform == 'const':
+        tone = numpy.ones(length, dtype=numpy.complex64) * ampl
+    else:
+        raise KeyError(f"Invalid waveform type: `{waveform}'")
+
     if length < desired_size:
         tone = numpy.tile(tone, int(desired_size // length))
     if length > max_size:

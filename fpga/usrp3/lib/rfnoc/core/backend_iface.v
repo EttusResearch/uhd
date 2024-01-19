@@ -7,6 +7,15 @@
 // Description:
 //   A noc_shell interface to the backend infrastructure
 //
+// Parameters:
+// - CTRL_CLK_IDX: The index of the clock that is used for the control interface.
+//                 UHD will query this to generate a clock interface object for
+//                 the register interface. Set to 0 to let UHD figure this out
+//                 itself.
+// - TB_CLK_IDX: The index of the clock that is used as the timebase for this
+//               block. UHD will query this to generate a clock interface object
+//               for the register interface. This allows converting real-valued
+//               timestamps into tick counts.
 
 module backend_iface #(
   parameter [31:0] NOC_ID              = 32'h0,
@@ -14,6 +23,8 @@ module backend_iface #(
   parameter  [5:0] NUM_DATA_O          = 0,
   parameter  [5:0] CTRL_FIFOSIZE       = 0,
   parameter  [7:0] CTRL_MAX_ASYNC_MSGS = 0,
+  parameter  [5:0] CTRL_CLK_IDX        = 6'h3F,
+  parameter  [5:0] TB_CLK_IDX          = 6'h3F,
   parameter  [5:0] MTU                 = 0
 )(
   // Input clock
@@ -135,6 +146,8 @@ module backend_iface #(
   assign rfnoc_core_status[BES_FLUSH_ACTIVE_OFFSET       +:BES_FLUSH_ACTIVE_WIDTH       ] = flush_active_ctclk;
   assign rfnoc_core_status[BES_FLUSH_DONE_OFFSET         +:BES_FLUSH_DONE_WIDTH         ] = flush_done_ctclk;
   assign rfnoc_core_status[BES_DATA_MTU_OFFSET           +:BES_DATA_MTU_WIDTH           ] = MTU;
+  assign rfnoc_core_status[BES_CTRL_CLK_IDX_OFFSET       +:BES_CTRL_CLK_IDX_WIDTH       ] = CTRL_CLK_IDX;
+  assign rfnoc_core_status[BES_TB_CLK_IDX_OFFSET         +:BES_TB_CLK_IDX_WIDTH         ] = TB_CLK_IDX;
   // Assign the rest to 0
   assign rfnoc_core_status[511:BES_TOTAL_WIDTH] = {(512-BES_TOTAL_WIDTH){1'b0}};
 

@@ -79,7 +79,7 @@ struct vector_iir_block_fixture
 {
     vector_iir_block_fixture()
         : reg_iface(
-              std::make_shared<vector_iir_mock_reg_iface_t>(NUM_CHANS, MAX_DELAY_LEN))
+            std::make_shared<vector_iir_mock_reg_iface_t>(NUM_CHANS, MAX_DELAY_LEN))
         , block_container(get_mock_block(VECTOR_IIR_BLOCK,
               NUM_CHANS,
               NUM_CHANS,
@@ -216,4 +216,3 @@ BOOST_FIXTURE_TEST_CASE(vector_iir_test_ranges, vector_iir_block_fixture)
             uhd::value_error);
     }
 }
-

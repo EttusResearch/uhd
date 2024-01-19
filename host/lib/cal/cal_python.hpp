@@ -8,9 +8,9 @@
 #define INCLUDED_UHD_CAL_PYTHON_HPP
 
 #include <uhd/cal/database.hpp>
+#include <uhd/cal/dsa_cal.hpp>
 #include <uhd/cal/iq_cal.hpp>
 #include <uhd/cal/pwr_cal.hpp>
-#include <uhd/cal/dsa_cal.hpp>
 #include <uhd/utils/interpolation.hpp>
 #include <uhd/utils/pybind_adaptors.hpp>
 #include <pybind11/stl.h>
@@ -167,7 +167,6 @@ void export_cal(py::module& m)
             &zbx_rx_dsa_cal::get_dsa_setting,
             py::arg("freq"),
             py::arg("gain_index"));
-
 }
 
 #endif /* INCLUDED_UHD_CAL_PYTHON_HPP */

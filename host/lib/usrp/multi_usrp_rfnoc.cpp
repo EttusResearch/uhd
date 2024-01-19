@@ -528,6 +528,8 @@ public:
         auto mb_eeprom      = mbc->get_eeprom();
 
         dict<std::string, std::string> usrp_info;
+        usrp_info["module_serial"] =
+            mb_eeprom.get("module_serial", mb_eeprom.get("serial", "n/a"));
         usrp_info["mboard_id"]      = mbc->get_mboard_name();
         usrp_info["mboard_name"]    = mb_eeprom.get("name", "n/a");
         usrp_info["mboard_serial"]  = mb_eeprom.get("serial", "n/a");
@@ -541,7 +543,7 @@ public:
             : db_eeprom.count("serial")  ? bytes_to_str(db_eeprom.at("serial"))
                                          : "";
         usrp_info["rx_id"] = db_eeprom.count("rx_id")
-                ? bytes_to_str(db_eeprom.at("rx_id"))
+                                 ? bytes_to_str(db_eeprom.at("rx_id"))
                              : db_eeprom.count("pid") ? bytes_to_str(db_eeprom.at("pid"))
                                                       : "";
 
@@ -568,6 +570,8 @@ public:
         auto mb_eeprom      = mbc->get_eeprom();
 
         dict<std::string, std::string> usrp_info;
+        usrp_info["module_serial"] =
+            mb_eeprom.get("module_serial", mb_eeprom.get("serial", "n/a"));
         usrp_info["mboard_id"]      = mbc->get_mboard_name();
         usrp_info["mboard_name"]    = mb_eeprom.get("name", "n/a");
         usrp_info["mboard_serial"]  = mb_eeprom.get("serial", "n/a");
@@ -581,7 +585,7 @@ public:
             : db_eeprom.count("serial")  ? bytes_to_str(db_eeprom.at("serial"))
                                          : "";
         usrp_info["tx_id"] = db_eeprom.count("tx_id")
-                ? bytes_to_str(db_eeprom.at("tx_id"))
+                                 ? bytes_to_str(db_eeprom.at("tx_id"))
                              : db_eeprom.count("pid") ? bytes_to_str(db_eeprom.at("pid"))
                                                       : "";
 
@@ -634,8 +638,8 @@ public:
             case tune_request_t::POLICY_MANUAL:
                 if ((tune_request.dsp_freq_policy == tune_request_t::POLICY_AUTO)
                     && (dsp_freq_range.size() == 1) && dsp_freq_range.stop() == 0) {
-                    /* Hardware does not incl. DSP chain 
-                     * (dsp_freq_range only has single item, with value 0), 
+                    /* Hardware does not incl. DSP chain
+                     * (dsp_freq_range only has single item, with value 0),
                      * requested dsp frequency will be combined with rf frequency.
                      * The case to handle uses MANUAL rf_freq_policy and
                      * AUTOMATIC dsp_freq_policy */

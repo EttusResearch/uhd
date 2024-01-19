@@ -40,7 +40,7 @@ fe_connection_t::fe_connection_t(const std::string& conn_str, double if_freq)
             // Connection in {I(b?)Q(b?), Q(b?)I(b?), I(b?)I(b?), Q(b?)Q(b?)}
             _sampling_mode = (matches[1].str() == matches[4].str()) ? HETERODYNE
                                                                     : QUADRATURE;
-            _iq_swapped  = (matches[1].str() == "Q");
+            _iq_swapped    = (matches[1].str() == "Q");
             size_t i_idx = _iq_swapped ? 5 : 2, q_idx = _iq_swapped ? 2 : 5;
             _i_inverted = (matches[i_idx].length() != 0);
             _q_inverted = (matches[q_idx].length() != 0);

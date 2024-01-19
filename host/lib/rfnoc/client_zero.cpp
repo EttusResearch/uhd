@@ -37,6 +37,15 @@ constexpr int FLUSH_RESET_ADDR = 1 * 4;
 constexpr size_t ADJACENCY_BASE_ADDR = 0x10000;
 //! Each port is allocated this many registers in the backend register space
 constexpr size_t REGS_PER_PORT = 16;
+
+
+// Backend Interface: Status Registers
+constexpr uint32_t BES_BLOCK_INFO_OFFSET   = 0 * 4;
+constexpr uint32_t BES_NOC_ID_OFFSET       = 1 * 4;
+constexpr uint32_t BES_FLUSH_STATUS_OFFSET = 2 * 4;
+constexpr uint32_t BES_MTU_INFO_OFFSET     = 2 * 4; // Shared with flush info
+
+
 } // namespace
 
 client_zero::client_zero(register_iface::sptr reg)
@@ -107,7 +116,7 @@ uint32_t client_zero::get_noc_id(uint16_t portno)
 {
     _check_port_number(portno);
     // The NOC ID is the second entry in the port's register space
-    return regs().peek32(_get_port_base_addr(portno) + 4);
+    return regs().peek32(_get_port_base_addr(portno) + BES_NOC_ID_OFFSET);
 }
 
 bool client_zero::get_flush_active(uint16_t portno)
@@ -204,16 +213,22 @@ void client_zero::reset_chdr(uint16_t portno)
 client_zero::block_config_info client_zero::get_block_info(uint16_t portno)
 {
     _check_port_number(portno);
-    // The block and ctrl information is in the port's first register
-    uint32_t config_reg_val = regs().peek32(_get_port_base_addr(portno) + 0);
-    // The block and ctrl information is in the port's third register
-    uint32_t data_reg_val = regs().peek32(_get_port_base_addr(portno) + 8);
-    return {uhd::narrow_cast<uint8_t>((config_reg_val & 0x0000003F) >> 0),
+    // Most of the block info comes from the first register
+    const uint32_t config_reg_val =
+        regs().peek32(_get_port_base_addr(portno) + BES_BLOCK_INFO_OFFSET);
+    // MTU info is on a separate register
+    const uint32_t data_reg_val =
+        regs().peek32(_get_port_base_addr(portno) + BES_MTU_INFO_OFFSET);
+    return {
+        uhd::narrow_cast<uint8_t>((config_reg_val & 0x0000003F) >> 0),
         uhd::narrow_cast<uint8_t>((config_reg_val & 0x00000FC0) >> 6),
         uhd::narrow_cast<uint8_t>((config_reg_val & 0x0003F000) >> 12),
         uhd::narrow_cast<uint8_t>((config_reg_val & 0x00FC0000) >> 18),
         uhd::narrow_cast<uint8_t>((config_reg_val & 0xFF000000) >> 24),
-        uhd::narrow_cast<uint8_t>((data_reg_val & 0x000000FC) >> 2)};
+        uhd::narrow_cast<uint8_t>((data_reg_val & 0x000000FC) >> 2),
+        uhd::narrow_cast<uint8_t>((data_reg_val & 0x00003F00) >> 8),
+        uhd::narrow_cast<uint8_t>((data_reg_val & 0x000FC000) >> 14),
+    };
 }
 
 uint32_t client_zero::_get_port_base_addr(uint16_t portno)
@@ -239,8 +254,7 @@ void client_zero::_check_port_number(uint16_t portno)
 uint32_t client_zero::_get_flush_status_flags(uint16_t portno)
 {
     _check_port_number(portno);
-    // The flush status flags are in the third register of the port
-    return regs().peek32(_get_port_base_addr(portno) + 8);
+    return regs().peek32(_get_port_base_addr(portno) + BES_FLUSH_STATUS_OFFSET);
 }
 
 client_zero::sptr client_zero::make(chdr_ctrl_endpoint& chdr_ctrl_ep, sep_id_t dst_epid)

@@ -9,9 +9,9 @@
 #include <uhd/config.hpp>
 #include <stddef.h>
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <vector>
-#include <functional>
 
 namespace uhd { namespace usrp { namespace cal {
 

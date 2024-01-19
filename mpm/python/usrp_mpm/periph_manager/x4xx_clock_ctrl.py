@@ -233,7 +233,7 @@ class X4xxClockCtrl:
             self,
             tk_idx: int,
             enable: bool,
-            master_clock_rate: float,
+            radio_clock_rate: float,
             delay: float = 1.0):
         """
         Configures the PPS forwarding to the sample clock domain (master
@@ -259,7 +259,7 @@ class X4xxClockCtrl:
         """
         # FIXME MULTI_RATE enable multiple MCRs / timekeepers, use tk_idx
         return self.mboard_regs_control.configure_pps_forwarding(
-            enable, master_clock_rate, self.get_prc_rate(), delay)
+            enable, tk_idx, radio_clock_rate, self.get_prc_rate(), delay)
 
 
     def get_ref_locked(self):

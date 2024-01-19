@@ -26,7 +26,7 @@ class UHD_API keep_one_in_n_block_control : public noc_block_base
 public:
     RFNOC_DECLARE_BLOCK(keep_one_in_n_block_control)
 
-    enum class mode {SAMPLE_MODE, PACKET_MODE};
+    enum class mode { SAMPLE_MODE, PACKET_MODE };
 
     // Block registers
     static const uint32_t REG_N_OFFSET;

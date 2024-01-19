@@ -5,7 +5,7 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-""" Run the test for tx_burst """
+""" Run the test for uhd_usrp_probe """
 
 import re
 from uhd_test_base import uhd_example_test_case

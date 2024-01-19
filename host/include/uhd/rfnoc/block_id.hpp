@@ -169,20 +169,20 @@ public:
     {
         return (_device_no < block_id.get_device_no()
                 or (_device_no == block_id.get_device_no()
-                       and _block_name < block_id.get_block_name())
+                    and _block_name < block_id.get_block_name())
                 or (_device_no == block_id.get_device_no()
-                       and _block_name == block_id.get_block_name()
-                       and _block_ctr < block_id.get_block_count()));
+                    and _block_name == block_id.get_block_name()
+                    and _block_ctr < block_id.get_block_count()));
     }
 
     bool operator>(const block_id_t& block_id) const
     {
         return (_device_no > block_id.get_device_no()
                 or (_device_no == block_id.get_device_no()
-                       and _block_name > block_id.get_block_name())
+                    and _block_name > block_id.get_block_name())
                 or (_device_no == block_id.get_device_no()
-                       and _block_name == block_id.get_block_name()
-                       and _block_ctr > block_id.get_block_count()));
+                    and _block_name == block_id.get_block_name()
+                    and _block_ctr > block_id.get_block_count()));
     }
 
     //! Check if a string matches the entire block ID (not like match())

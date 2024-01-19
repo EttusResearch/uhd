@@ -31,19 +31,19 @@ using namespace uhd::usrp;
 //  ...
 // 1f:   .. negative of the sum of bytes [0x00, 0x1e]
 
-#define DB_EEPROM_MAGIC 0x00
-#define DB_EEPROM_MAGIC_VALUE 0xDB
-#define DB_EEPROM_ID_LSB 0x01
-#define DB_EEPROM_ID_MSB 0x02
-#define DB_EEPROM_REV_LSB 0x03
-#define DB_EEPROM_REV_MSB 0x04
+#define DB_EEPROM_MAGIC        0x00
+#define DB_EEPROM_MAGIC_VALUE  0xDB
+#define DB_EEPROM_ID_LSB       0x01
+#define DB_EEPROM_ID_MSB       0x02
+#define DB_EEPROM_REV_LSB      0x03
+#define DB_EEPROM_REV_MSB      0x04
 #define DB_EEPROM_OFFSET_0_LSB 0x05 // offset correction for ADC or DAC 0
 #define DB_EEPROM_OFFSET_0_MSB 0x06
 #define DB_EEPROM_OFFSET_1_LSB 0x07 // offset correction for ADC or DAC 1
 #define DB_EEPROM_OFFSET_1_MSB 0x08
-#define DB_EEPROM_SERIAL 0x09
-#define DB_EEPROM_SERIAL_LEN 0x09 // 9 ASCII characters
-#define DB_EEPROM_CHKSUM 0x1f
+#define DB_EEPROM_SERIAL       0x09
+#define DB_EEPROM_SERIAL_LEN   0x09 // 9 ASCII characters
+#define DB_EEPROM_CHKSUM       0x1f
 
 #define DB_EEPROM_CLEN 0x20 // length of common portion of eeprom
 

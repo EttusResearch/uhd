@@ -69,8 +69,8 @@ double sbx_xcvr::cbx::set_lo_freq(dboard_iface::unit_t unit, double target_freq)
     property_tree::sptr subtree = (unit == dboard_iface::UNIT_RX)
                                       ? self_base->get_rx_subtree()
                                       : self_base->get_tx_subtree();
-    device_addr_t tune_args = subtree->access<device_addr_t>("tune_args").get();
-    bool is_int_n           = boost::iequals(tune_args.get("mode_n", ""), "integer");
+    device_addr_t tune_args     = subtree->access<device_addr_t>("tune_args").get();
+    bool is_int_n               = boost::iequals(tune_args.get("mode_n", ""), "integer");
 
     if (unit == dboard_iface::UNIT_RX) {
         actual_freq =

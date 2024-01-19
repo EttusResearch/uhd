@@ -11,8 +11,7 @@
 
 namespace uhd { namespace features {
 
-std::vector<std::string>
-discoverable_feature_registry::enumerate_features()
+std::vector<std::string> discoverable_feature_registry::enumerate_features()
 {
     std::vector<std::string> features;
     for (auto& entry : _features) {

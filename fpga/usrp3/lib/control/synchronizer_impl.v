@@ -5,15 +5,17 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
+`default_nettype none
+
 module synchronizer_impl #(
    parameter WIDTH       = 1,
    parameter STAGES      = 2,
    parameter INITIAL_VAL = 0
 )(
-   input              clk,
-   input              rst,
-   input  [WIDTH-1:0] in,
-   output [WIDTH-1:0] out
+   input  wire             clk,
+   input  wire             rst,
+   input  wire [WIDTH-1:0] in,
+   output wire [WIDTH-1:0] out
 );
 
    (* ASYNC_REG = "TRUE" *) reg [WIDTH-1:0] value[0:STAGES-1];
@@ -45,3 +47,5 @@ module synchronizer_impl #(
    assign out = value[STAGES-1];
 
 endmodule   //synchronizer_impl
+
+`default_nettype wire

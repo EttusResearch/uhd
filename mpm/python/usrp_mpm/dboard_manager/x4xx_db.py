@@ -125,6 +125,21 @@ class X4xxDbMixin:
     ###########################################################################
     # Clocking and RFDC interface
     ###########################################################################
+    def get_rfdc_rate_sensor(self, _):
+        """
+        Return the RFDC rate (the ADC/DAC converter rate) of this daughterboard's
+        converters as a sensor value.
+        """
+        return {
+            'name': 'rfdc_rate',
+            'type': 'REALNUM',
+            'unit': 'Hz',
+            'value': str(self.get_dboard_sample_rate()),
+        }
+
+    ###########################################################################
+    # Clocking and RFDC interface
+    ###########################################################################
     def enable_iq_swap(self, enable, trx, channel):
         """
         Turn on IQ swapping in the RFDC

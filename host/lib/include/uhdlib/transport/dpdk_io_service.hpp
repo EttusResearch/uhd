@@ -179,7 +179,8 @@ private:
      * \param mbuf a pointer to the packet buffer container
      * \param pkt a pointer to the IPv4 header of the packet
      */
-    int _process_ipv4(dpdk::dpdk_port* port, struct rte_mbuf* mbuf, struct rte_ipv4_hdr* pkt);
+    int _process_ipv4(
+        dpdk::dpdk_port* port, struct rte_mbuf* mbuf, struct rte_ipv4_hdr* pkt);
 
     /*!
      * Helper function for I/O thread to process an IPv4 packet
@@ -190,8 +191,10 @@ private:
      * \param bcast whether this packet was destined for the port's broadcast
      *              IPv4 address
      */
-    int _process_udp(
-        dpdk::dpdk_port* port, struct rte_mbuf* mbuf, struct rte_udp_hdr* pkt, bool bcast);
+    int _process_udp(dpdk::dpdk_port* port,
+        struct rte_mbuf* mbuf,
+        struct rte_udp_hdr* pkt,
+        bool bcast);
 
     /*!
      * Helper function to get a unique client ID

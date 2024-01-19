@@ -381,15 +381,13 @@ public:
     {
         const uint32_t item_size = get_play_item_size(port);
         set_property<uint32_t>(
-            PROP_KEY_PYLD_SIZE, ipp * item_size,
-            {res_source_info::USER, port});
+            PROP_KEY_PYLD_SIZE, ipp * item_size, {res_source_info::USER, port});
     }
 
     void set_max_packet_size(const uint32_t size, const size_t port) override
     {
         set_property<uint32_t>(
-            PROP_KEY_PYLD_SIZE, size - get_chdr_hdr_len(),
-            {res_source_info::USER, port});
+            PROP_KEY_PYLD_SIZE, size - get_chdr_hdr_len(), {res_source_info::USER, port});
     }
 
     void issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd, const size_t port) override
@@ -523,8 +521,9 @@ private:
         const io_type_t default_type = IO_TYPE_SC16;
         const uint64_t play_offset   = 0;
         const uint64_t play_size     = _mem_size;
-        const uint32_t max_payload   = get_max_payload_size({res_source_info::OUTPUT_EDGE, port});
-        const uint32_t payload_size  = max_payload - (max_payload % DEFAULT_MULT);
+        const uint32_t max_payload =
+            get_max_payload_size({res_source_info::OUTPUT_EDGE, port});
+        const uint32_t payload_size = max_payload - (max_payload % DEFAULT_MULT);
 
         // Initialize properties
         _play_type.emplace_back(property_t<std::string>(
@@ -633,13 +632,14 @@ private:
     // property value to a legal value if necessary.
     void _set_payload_size(const uint32_t payload_size, const size_t port)
     {
-        const size_t max_pyld_size = get_max_payload_size(
-            {res_source_info::OUTPUT_EDGE, port}, true);
+        const size_t max_pyld_size =
+            get_max_payload_size({res_source_info::OUTPUT_EDGE, port}, true);
         uint32_t new_pyld_size = payload_size;
         if (new_pyld_size > max_pyld_size) {
             new_pyld_size = max_pyld_size;
-            RFNOC_LOG_DEBUG("Requested payload size " << payload_size <<
-                            " exceeds maximum! Coercing to " << new_pyld_size);
+            RFNOC_LOG_DEBUG("Requested payload size " << payload_size
+                                                      << " exceeds maximum! Coercing to "
+                                                      << new_pyld_size);
         }
 
         // For correct behavior, we must ensure that the replay payload size is
@@ -647,23 +647,23 @@ private:
         //   - Replay word size (_word_size)
         //   - Atomic item size (e.g., the radio word size)
         //   - Configured item size (e.g., sample size)
-        const uint32_t item_size = get_play_item_size(port);
+        const uint32_t item_size        = get_play_item_size(port);
         const uint32_t atomic_item_size = _atomic_item_size_out.at(port).get();
-        const uint32_t min_chunk = uhd::math::lcm<uint32_t>(
-            uhd::math::lcm<uint32_t>(item_size, atomic_item_size),
-            _word_size);
+        const uint32_t min_chunk        = uhd::math::lcm<uint32_t>(
+            uhd::math::lcm<uint32_t>(item_size, atomic_item_size), _word_size);
 
         if (new_pyld_size % min_chunk != 0) {
-            const uint32_t coerced_size =
-                new_pyld_size - (new_pyld_size % min_chunk);
-            RFNOC_LOG_WARNING("Payload size " << new_pyld_size <<
-                              " is not compatible! Coercing to " << coerced_size);
+            const uint32_t coerced_size = new_pyld_size - (new_pyld_size % min_chunk);
+            RFNOC_LOG_WARNING("Payload size " << new_pyld_size
+                                              << " is not compatible! Coercing to "
+                                              << coerced_size);
             new_pyld_size = coerced_size;
         }
         if (new_pyld_size < min_chunk) {
             const uint32_t coerced_size = min_chunk;
-            RFNOC_LOG_WARNING("Payload size " << new_pyld_size <<
-                              " is too small! Coercing to " << coerced_size);
+            RFNOC_LOG_WARNING("Payload size " << new_pyld_size
+                                              << " is too small! Coercing to "
+                                              << coerced_size);
             new_pyld_size = coerced_size;
         }
 

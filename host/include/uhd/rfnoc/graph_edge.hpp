@@ -34,10 +34,7 @@ struct UHD_API graph_edge_t
         const size_t dst_port_,
         const edge_t edge_,
         const bool fwd_edge)
-        : src_port(src_port_)
-        , dst_port(dst_port_)
-        , edge(edge_)
-        , is_forward_edge(fwd_edge)
+        : src_port(src_port_), dst_port(dst_port_), edge(edge_), is_forward_edge(fwd_edge)
     {
     }
 
@@ -52,7 +49,7 @@ struct UHD_API graph_edge_t
     //! The type of edge
     edge_t edge = DYNAMIC;
     //! When false, the framework will assume this is a back-edge. Back-edges
-    //are not used for sorting the graph as a DAG.
+    // are not used for sorting the graph as a DAG.
     bool is_forward_edge = true;
 
     //! Equality operator: Compare two edges if they match, including edge

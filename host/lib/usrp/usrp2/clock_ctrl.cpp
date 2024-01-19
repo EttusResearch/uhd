@@ -296,8 +296,8 @@ public:
     {
         _ad9510_regs.charge_pump_mode = (enb) ? ad9510_regs_t::CHARGE_PUMP_MODE_NORMAL
                                               : ad9510_regs_t::CHARGE_PUMP_MODE_3STATE;
-        _ad9510_regs.pll_mux_control = ad9510_regs_t::PLL_MUX_CONTROL_DLD_HIGH;
-        _ad9510_regs.pfd_polarity    = ad9510_regs_t::PFD_POLARITY_POS;
+        _ad9510_regs.pll_mux_control  = ad9510_regs_t::PLL_MUX_CONTROL_DLD_HIGH;
+        _ad9510_regs.pfd_polarity     = ad9510_regs_t::PFD_POLARITY_POS;
         this->write_reg(clk_regs.pll_2);
         this->update_regs();
     }

@@ -43,16 +43,18 @@
 //                      tool analyze this path.
 //
 
+`default_nettype none
+
 module synchronizer #(
    parameter WIDTH            = 1,
    parameter STAGES           = 2,
    parameter INITIAL_VAL      = 0,
    parameter FALSE_PATH_TO_IN = 1
 )(
-   input              clk,
-   input              rst,
-   input  [WIDTH-1:0] in,
-   output [WIDTH-1:0] out
+   input  wire             clk,
+   input  wire             rst,
+   input  wire [WIDTH-1:0] in,
+   output wire [WIDTH-1:0] out
 );
 
    generate if (FALSE_PATH_TO_IN == 1) begin
@@ -70,3 +72,5 @@ module synchronizer #(
    end endgenerate
 
 endmodule   //synchronizer
+//
+`default_nettype wire

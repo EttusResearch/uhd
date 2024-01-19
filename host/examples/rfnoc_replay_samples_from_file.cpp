@@ -231,7 +231,6 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
 
-
     /************************************************************************
      * Read the data to replay
      ***********************************************************************/

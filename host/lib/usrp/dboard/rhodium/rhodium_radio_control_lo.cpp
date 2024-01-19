@@ -424,8 +424,8 @@ void rhodium_radio_control_impl::_set_lo_output_enabled(
     auto index = std::distance(LO_OUTPUT_PORT_NAMES.begin(), name_iter);
 
     _rpcc->notify_with_token(_rpc_prefix + "enable_lo_output", direction, index, enabled);
-    auto out_enabled = (dir == RX_DIRECTION) ? _lo_dist_rx_out_enabled
-                                             : _lo_dist_tx_out_enabled;
+    auto out_enabled   = (dir == RX_DIRECTION) ? _lo_dist_rx_out_enabled
+                                               : _lo_dist_tx_out_enabled;
     out_enabled[index] = enabled;
 }
 

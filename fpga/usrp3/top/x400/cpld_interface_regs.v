@@ -46,7 +46,11 @@ module cpld_interface_regs #(
 );
 
   // Variant-dependent register map.
-  `include "regmap/x410/versioning_regs_regmap_utils.vh"
+  `ifdef X440
+    `include "regmap/x440/versioning_regs_regmap_utils.vh"
+  `else // Use X410 as the default variant for regmap.
+    `include "regmap/x410/versioning_regs_regmap_utils.vh"
+  `endif
 
   `include "regmap/versioning_utils.vh"
   `include "regmap/cpld_interface_regmap_utils.vh"

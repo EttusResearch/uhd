@@ -42,27 +42,26 @@
 
 
 #include "tda18272hnm_regs.hpp"
-#include <uhd/utils/static.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhd/utils/static.hpp>
 
-#include <uhd/utils/safe_call.hpp>
-#include <uhd/utils/assert_has.hpp>
-#include <uhd/utils/algorithm.hpp>
+#include <uhd/types/dict.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>
-#include <uhd/types/dict.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
-#include <boost/assign/list_of.hpp>
+#include <uhd/utils/algorithm.hpp>
+#include <uhd/utils/assert_has.hpp>
+#include <uhd/utils/safe_call.hpp>
 #include <uhdlib/utils/narrow.hpp>
-#include <boost/format.hpp>
 #include <boost/array.hpp>
-#include <cmath>
-#include <utility>
-#include <cmath>
+#include <boost/assign/list_of.hpp>
+#include <boost/format.hpp>
 #include <chrono>
-#include <thread>
+#include <cmath>
 #include <functional>
+#include <thread>
+#include <utility>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -1059,7 +1058,7 @@ tvrx2::tvrx2(ctor_args_t args) : rx_dboard_base(args)
     UHD_LOGGER_TRACE("TVRX") << boost::format("TVRX2 (%s): Refclock %f Hz, scalar = %f")
                                     % (get_subdev_name())
                                     % (this->get_iface()->get_clock_rate(
-                                          dboard_iface::UNIT_RX))
+                                        dboard_iface::UNIT_RX))
                                     % _freq_scalar;
 
     _tda18272hnm_regs.irq_polarity = tda18272hnm_regs_t::IRQ_POLARITY_RAISED_VCC;
@@ -1344,8 +1343,8 @@ void tvrx2::tvrx2_tda18272_init_rfcal(void)
                                   + tvrx2_tda18272_cal_map[result + 1]
                                         .c_offset[_rfcal_results[result].c_offset])
                                  - (_rfcal_results[result].delta_c
-                                       + tvrx2_tda18272_cal_map[result]
-                                             .c_offset[_rfcal_results[result].c_offset]))
+                                     + tvrx2_tda18272_cal_map[result]
+                                           .c_offset[_rfcal_results[result].c_offset]))
                              * 1000000);
 
         uint32_t divisor =
@@ -1538,90 +1537,90 @@ void tvrx2::test_rf_filter_robustness(void)
             if (name == "VHFLow_0")
                 partial = 100
                           * (45
-                                - 39.8225
-                                      * (1
-                                            + (0.31
-                                                  * (cal_result < 64 ? cal_result
-                                                                     : cal_result - 128))
-                                                  / 1.0 / 100.0))
+                              - 39.8225
+                                    * (1
+                                        + (0.31
+                                              * (cal_result < 64 ? cal_result
+                                                                 : cal_result - 128))
+                                              / 1.0 / 100.0))
                           / 45.0;
 
             else if (name == "VHFLow_1")
-                partial = 100
-                          * (152.1828
-                                    * (1
-                                          + (1.53
-                                                * (cal_result < 64 ? cal_result
-                                                                   : cal_result - 128))
-                                                / 1.0 / 100.0)
-                                - (144.896 - 6))
-                          / (144.896 - 6);
+                partial =
+                    100
+                    * (152.1828
+                            * (1
+                                + (1.53
+                                      * (cal_result < 64 ? cal_result : cal_result - 128))
+                                      / 1.0 / 100.0)
+                        - (144.896 - 6))
+                    / (144.896 - 6);
 
             else if (name == "VHFHigh_0")
                 partial = 100
                           * ((144.896 + 6)
-                                - 135.4063
-                                      * (1
-                                            + (0.27
-                                                  * (cal_result < 64 ? cal_result
-                                                                     : cal_result - 128))
-                                                  / 1.0 / 100.0))
+                              - 135.4063
+                                    * (1
+                                        + (0.27
+                                              * (cal_result < 64 ? cal_result
+                                                                 : cal_result - 128))
+                                              / 1.0 / 100.0))
                           / (144.896 + 6);
 
             else if (name == "VHFHigh_1")
-                partial = 100
-                          * (383.1455
-                                    * (1
-                                          + (0.91
-                                                * (cal_result < 64 ? cal_result
-                                                                   : cal_result - 128))
-                                                / 1.0 / 100.0)
-                                - (367.104 - 8))
-                          / (367.104 - 8);
+                partial =
+                    100
+                    * (383.1455
+                            * (1
+                                + (0.91
+                                      * (cal_result < 64 ? cal_result : cal_result - 128))
+                                      / 1.0 / 100.0)
+                        - (367.104 - 8))
+                    / (367.104 - 8);
 
             else if (name == "UHFLow_0")
                 partial = 100
                           * ((367.104 + 8)
-                                - 342.6224
-                                      * (1
-                                            + (0.21
-                                                  * (cal_result < 64 ? cal_result
-                                                                     : cal_result - 128))
-                                                  / 1.0 / 100.0))
+                              - 342.6224
+                                    * (1
+                                        + (0.21
+                                              * (cal_result < 64 ? cal_result
+                                                                 : cal_result - 128))
+                                              / 1.0 / 100.0))
                           / (367.104 + 8);
 
             else if (name == "UHFLow_1")
-                partial = 100
-                          * (662.5595
-                                    * (1
-                                          + (0.33
-                                                * (cal_result < 64 ? cal_result
-                                                                   : cal_result - 128))
-                                                / 1.0 / 100.0)
-                                - (624.128 - 2))
-                          / (624.128 - 2);
+                partial =
+                    100
+                    * (662.5595
+                            * (1
+                                + (0.33
+                                      * (cal_result < 64 ? cal_result : cal_result - 128))
+                                      / 1.0 / 100.0)
+                        - (624.128 - 2))
+                    / (624.128 - 2);
 
             else if (name == "UHFHigh_0")
                 partial = 100
                           * ((624.128 + 2)
-                                - 508.2747
-                                      * (1
-                                            + (0.23
-                                                  * (cal_result < 64 ? cal_result
-                                                                     : cal_result - 128))
-                                                  / 1.0 / 100.0))
+                              - 508.2747
+                                    * (1
+                                        + (0.23
+                                              * (cal_result < 64 ? cal_result
+                                                                 : cal_result - 128))
+                                              / 1.0 / 100.0))
                           / (624.128 + 2);
 
             else if (name == "UHFHigh_1")
-                partial = 100
-                          * (947.8913
-                                    * (1
-                                          + (0.3
-                                                * (cal_result < 64 ? cal_result
-                                                                   : cal_result - 128))
-                                                / 1.0 / 100.0)
-                                - (866 - 14))
-                          / (866 - 14);
+                partial =
+                    100
+                    * (947.8913
+                            * (1
+                                + (0.3
+                                      * (cal_result < 64 ? cal_result : cal_result - 128))
+                                      / 1.0 / 100.0)
+                        - (866 - 14))
+                    / (866 - 14);
 
             else
                 UHD_THROW_INVALID_CODE_PATH();

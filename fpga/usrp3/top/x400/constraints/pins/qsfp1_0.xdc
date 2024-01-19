@@ -26,4 +26,3 @@ set_property PACKAGE_PIN Y36  [get_ports {QSFP1_0_TX_N}]
 
 set_property PACKAGE_PIN Y31 [get_ports {GTY_RCV_CLK_P}]
 set_property PACKAGE_PIN Y32 [get_ports {GTY_RCV_CLK_N}]
-set_property IOSTANDARD DIFF_SSTL12 [get_ports {GTY_RCV_CLK_*}]

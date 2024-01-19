@@ -157,4 +157,9 @@ LIBUHD_PYTHON_GEN_SOURCE(
     ${CMAKE_CURRENT_BINARY_DIR}/zbx_cpld_regs.hpp
     )
 
+LIBUHD_PYTHON_GEN_SOURCE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/gen_fbx_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/fbx_regs.hpp
+    )
+    
 set(LIBUHD_PYTHON_GEN_SOURCE_DEPS)

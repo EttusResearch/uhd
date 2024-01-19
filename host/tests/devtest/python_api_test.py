@@ -12,7 +12,7 @@ from uhd_test_base import shell_application
 from uhd_test_base import UHDPythonTestCase
 
 class uhd_python_api_test(UHDPythonTestCase):
-    """ Run multi_usrp_test """
+    """ Run python_api_test """
     test_name = 'uhd_python_api_test'
 
     def run_test(self, test_name, test_args):

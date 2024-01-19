@@ -80,6 +80,7 @@ $(abspath tb_ddc_400m_saturate.vhd        ) \
 $(abspath tb_duc_400m_saturate.vhd        ) \
 $(abspath tb_rf_nco_reset.vhd             ) \
 $(abspath tb_x410_rf_reset_controller.vhd ) \
+$(abspath tb_adc_iq_repacker.sv           ) \
 $(abspath rf_all_tb.sv                    ) \
 
 #-------------------------------------------------

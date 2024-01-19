@@ -261,14 +261,18 @@ def get_test(usrp, prop, num_chans):
         # Refresh dictionary for each channel
         dictionary = getattr(usrp, "get_usrp_rx_info")(chan) if "rx" in prop \
                     else getattr(usrp, "get_usrp_tx_info")(chan)
-        value = getattr(usrp, getter)(chan) if prop != 'mboard_name' \
-            else getattr(usrp, getter)(0)
-        # get_mboard_name function maps to mboard_id field in dict.
-        dict_value = dictionary['mboard_id'] if prop == 'mboard_name' \
-            else dictionary[prop]
-        if value != dict_value:
-            raise Exception("value in dict is {} and callback value is {}"
-                            .format(dictionary[prop], value))
+        if "_info" in prop:
+            if not "module_serial" in dictionary.keys() or dictionary["module_serial"] == "n/a":
+                raise Exception("Module serial number missing")
+        else:
+            value = getattr(usrp, getter)(chan) if prop != 'mboard_name' \
+                else getattr(usrp, getter)(0)
+            # get_mboard_name function maps to mboard_id field in dict.
+            dict_value = dictionary['mboard_id'] if prop == 'mboard_name' \
+                else dictionary[prop]
+            if value != dict_value:
+                raise Exception("value in dict is {} and callback value is {}"
+                                .format(dictionary[prop], value))
     return True
 
 
@@ -517,8 +521,6 @@ def run_api_test(usrp, device_config):
         'issue_stream_cmd', # Gets called by recv_num_samps
         'get_rx_num_channels', # Got called above
         'get_tx_num_channels', # Got called above
-        'get_usrp_rx_info',
-        'get_usrp_tx_info',
         'get_num_mboards', #  Got called above
         'get_rx_stream',
         'get_tx_stream',  # Require stream_args_t
@@ -526,6 +528,10 @@ def run_api_test(usrp, device_config):
     method_executor.tested.extend(device_config.get('imply_tested', []))
 
     actual_tests = [
+        (['get_usrp_rx_info'],
+         lambda: get_test(usrp, 'usrp_rx_info', num_rx_chans)),
+        (['get_usrp_tx_info'],
+         lambda: get_test(usrp, 'usrp_tx_info', num_tx_chans)),
         (['get_rx_freq', 'set_rx_freq', 'get_rx_freq_range'],
          lambda: range_test(usrp, 'rx_freq', num_rx_chans, 'coerce',
                             arg_converter=uhd.types.TuneRequest)),
@@ -770,6 +776,40 @@ def get_device_config(usrp_type, device_config_path=None):
                 'set_tx_lo_source',
                 'set_rx_lo_export_enabled',
                 'set_tx_lo_export_enabled',
+            ],
+            'clock_sources': ['internal', 'mboard'],
+        }
+    if usrp_type == 'x440':
+        return {
+            'skip': [
+                # No AGC on FBX
+                'set_rx_agc',
+                # No IQ imbalance on FBX
+                'set_rx_iq_balance',
+                'set_tx_iq_balance',
+                # No DC offset on FBX
+                'set_rx_dc_offset',
+                'set_tx_dc_offset',
+                # No LO source control on FBX
+                'set_rx_lo_source',
+                'set_tx_lo_source',
+                'set_rx_lo_export_enabled',
+                'set_tx_lo_export_enabled',
+                # No Filters on FBX
+                'get_rx_filter',
+                'set_rx_filter',
+                'get_rx_filter_names',
+                'get_tx_filter',
+                'set_tx_filter',
+                'get_tx_filter_names',
+                # No Gain control on FBX, getters return 0, setters do nothing
+                'get_normalized_rx_gain',
+                'set_normalized_rx_gain',
+                'get_normalized_tx_gain',
+                'set_normalized_tx_gain',
+                # Changing clock or time source after device init throws an error
+                'set_clock_source',
+                'set_time_source',
             ],
             'clock_sources': ['internal', 'mboard'],
         }

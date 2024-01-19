@@ -30,8 +30,8 @@ USRP devices.
 ### Generation 3
 
 \li Directory: __usrp3__
-\li Devices: USRP B2X0, USRP X Series, USRP E3X0
-\li Tools: ISE from Xilinx, GNU make
+\li Devices: USRP B2X0, USRP E3XX, USRP N3XX, USRP X3XX, USRP X4XX
+\li Tools: Vivado/ISE from Xilinx, GNU make
 \li \subpage md_usrp3_build_instructions "Build Instructions"
 \li \subpage md_usrp3_simulation "Simulation"
 

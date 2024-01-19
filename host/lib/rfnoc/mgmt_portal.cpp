@@ -162,6 +162,9 @@ public:
             mgmt_op_t::cfg_payload(REG_RESET_AND_FLUSH, RESET_AND_FLUSH_ALL)));
         cfg_hop.add_op(mgmt_op_t(
             mgmt_op_t::MGMT_OP_CFG_WR_REQ, mgmt_op_t::cfg_payload(REG_EPID_SELF, epid)));
+        // Reset throttle to default value of 1.0 to prevent adverse effects of
+        // last configured value.
+        _push_ostrm_throttle_config("1.0", cfg_hop);
         cfg_hop.add_op(mgmt_op_t(mgmt_op_t::MGMT_OP_RETURN));
         cfg_xact.add_hop(cfg_hop);
 
@@ -222,10 +225,10 @@ public:
 
         // Build a return val
         sep_info_t retval;
-        retval.has_ctrl        = (key_node.extended_info >> 0) & 0x1;
-        retval.has_data        = (key_node.extended_info >> 1) & 0x1;
-        retval.num_input_ports = retval.has_data ? ((key_node.extended_info >> 2) & 0x3F)
-                                                 : 0;
+        retval.has_ctrl         = (key_node.extended_info >> 0) & 0x1;
+        retval.has_data         = (key_node.extended_info >> 1) & 0x1;
+        retval.num_input_ports  = retval.has_data ? ((key_node.extended_info >> 2) & 0x3F)
+                                                  : 0;
         retval.num_output_ports = retval.has_data ? ((key_node.extended_info >> 8) & 0x3F)
                                                   : 0;
         retval.reports_strm_errs = (key_node.extended_info >> 14) & 0x1;
@@ -458,8 +461,8 @@ public:
         cfg_xact.add_hop(cfg_hop);
         _send_recv_mgmt_transaction(xport, cfg_xact);
 
-        UHD_LOG_DEBUG(LOG_ID,
-            (boost::format("Initiated RX stream setup for EPID=%d") % epid));
+        UHD_LOG_DEBUG(
+            LOG_ID, (boost::format("Initiated RX stream setup for EPID=%d") % epid));
     }
 
     stream_buff_params_t config_local_rx_stream_commit(chdr_ctrl_xport& xport,
@@ -474,8 +477,8 @@ public:
         // Wait for stream configuration to finish on the HW side
         _validate_stream_setup(xport, dst_node, timeout, fc_enabled);
 
-        UHD_LOG_DEBUG(LOG_ID,
-            (boost::format("Finished RX stream setup for EPID=%d") % epid));
+        UHD_LOG_DEBUG(
+            LOG_ID, (boost::format("Finished RX stream setup for EPID=%d") % epid));
 
         // Return discovered buffer parameters
         return std::get<1>(_get_ostrm_status(xport, dst_node));
@@ -520,8 +523,8 @@ public:
         // We don't care about the contents of the response.
         _send_recv_mgmt_transaction(xport, cfg_xact);
 
-        UHD_LOG_DEBUG(LOG_ID,
-            (boost::format("Finished TX stream setup for EPID=%d") % epid));
+        UHD_LOG_DEBUG(
+            LOG_ID, (boost::format("Finished TX stream setup for EPID=%d") % epid));
     }
 
     stream_buff_params_t config_remote_stream(chdr_ctrl_xport& xport,
@@ -572,6 +575,9 @@ public:
             // Configure flow control parameters
             _push_ostrm_flow_control_config(
                 lossy_xport, BUFF_U64, BUFF_U64, false, fc_freq, fc_headroom, cfg_hop);
+            // Reset throttle to default value of 1.0 to prevent adverse effects of
+            // last configured value.
+            _push_ostrm_throttle_config("1.0", cfg_hop);
             // Return the packet back to us
             cfg_hop.add_op(mgmt_op_t(mgmt_op_t::MGMT_OP_RETURN));
 
@@ -633,8 +639,8 @@ private: // Functions
         const auto my_epid = xport.get_epid();
 
         // Add ourselves to the the pending queue to kick off the search
-        UHD_LOG_DEBUG(LOG_ID,
-            "Starting topology discovery from " << _my_node_id.to_string());
+        UHD_LOG_DEBUG(
+            LOG_ID, "Starting topology discovery from " << _my_node_id.to_string());
         pending_paths.push({_my_node_id, port_t(-1)});
 
         while (!pending_paths.empty()) {

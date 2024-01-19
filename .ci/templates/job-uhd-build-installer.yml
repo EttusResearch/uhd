@@ -17,12 +17,15 @@ parameters:
 - name: releaseBinaries
   type: boolean
   default: false
+- name: fpga_imgs_base_url
+  type: string
+  default: 'Internal'
 
 jobs:
 - job: build_uhd_installer_${{ parameters.toolset }}
   displayName: ${{ parameters.toolset }} UHD installer
   dependsOn: get_latest_uhd_docker
-  timeoutInMinutes: 90
+  timeoutInMinutes: 120
   variables:
     # Docker vars from job-get-latest-uhd-docker.yml
     dockerBuildNumber: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerBuildNumber'] ]
@@ -35,15 +38,11 @@ jobs:
     dockerImageMatrixFedoraRpm: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixFedoraRpm'] ]
     dockerImageMatrixWinPythonBuild: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixWinPythonBuild'] ]
   pool:
-    ${{ if contains(parameters.toolset, 'msbuild') }}:
-      name: de-dre-lab
-    ${{ if not(contains(parameters.toolset, 'msbuild')) }}:
-      name: Drivers-NIBuildFarm-RFMIBUILD
+    name: Drivers-NIBuildFarm-RFMIBUILD
     demands:
       - docker
       - ${{ if contains(parameters.toolset, 'msbuild') }}:
         - Agent.OS -equals Windows_NT
-        - rfsdr-build
       - ${{ if not(contains(parameters.toolset, 'msbuild')) }}:
         - Agent.OS -equals Linux
   workspace:
@@ -61,7 +60,12 @@ jobs:
       matrix: $[ variables.dockerImageMatrixFedoraRpm ]
   container:
     image: '$(dockerImagePrefix)$(DockerImageName):$(dockerBuildNumber)'
-    endpoint: 'rnd-docker-niartifacts-pre-readonly'
+    ${{ if or(eq(parameters.toolset, 'msbuild'), eq(parameters.toolset, 'msbuild_python')) }}:
+        options: --cpu-count 6 --memory 12G
+    ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/UHD-')) }}:
+      endpoint: rnd-docker-niartifacts-ci-readonly
+    ${{ else }}:
+      endpoint: rnd-docker-niartifacts-pre-readonly
     ${{ if eq(parameters.toolset, 'ubuntu_deb') }}:
       #pbuilder requires access to /proc
       options: --privileged
@@ -88,10 +92,12 @@ jobs:
     - template: steps-build-uhd-installer-msbuild-nsis.yml
       parameters:
         uhdSrcDir: $(Build.SourcesDirectory)
-        uhdBuildDir: $(Build.BinariesDirectory)\\uhddev\\build
-        uhdInstallerDir: $(Build.BinariesDirectory)\\uhddev-installer
-        uhdImageDir: $(Build.BinariesDirectory)\\uhd-images
+        uhdBuildDir: c:\uhddev\build
+        uhdInstallerDir: c:\uhddev-installer
+        uhdImageDir: c:\uhd-images
         uhdReleaseBinaries: ${{ parameters.releaseBinaries }}
+        ${{ if contains(parameters.fpga_imgs_base_url, 'Internal') }}:
+          uhdImagesDownloaderExtraArgs: '-b $(InternalFileServerUrl)'
         cmakeCompiler: $(cmakeCompiler)
         cmakeArch: $(cmakeArch)
         vsArch: $(vsArch)
@@ -100,11 +106,13 @@ jobs:
     - template: steps-build-uhd-installer-msbuild-nsis.yml
       parameters:
         uhdSrcDir: $(Build.SourcesDirectory)
-        uhdBuildDir: $(Build.BinariesDirectory)\\uhddev\\build
-        uhdInstallerDir: $(Build.BinariesDirectory)\\uhddev-installer
-        uhdImageDir: $(Build.BinariesDirectory)\\uhd-images
+        uhdBuildDir: c:\uhddev\build
+        uhdInstallerDir: c:\uhddev-installer
+        uhdImageDir: c:\uhd-images
         uhdReleaseBinaries: ${{ parameters.releaseBinaries }}
         uhdBuildPythonAPI: True
+        ${{ if contains(parameters.fpga_imgs_base_url, 'Internal') }}:
+          uhdImagesDownloaderExtraArgs: '-b $(InternalFileServerUrl)'
         cmakeCompiler: $(cmakeCompiler)
         cmakeArch: $(cmakeArch)
         vsArch: $(vsArch)

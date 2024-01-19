@@ -33,7 +33,7 @@ struct logpwr_block_fixture
 {
     logpwr_block_fixture()
         : block_container(
-              get_mock_block(LOGPWR_BLOCK, NUM_CHANS, NUM_CHANS, uhd::device_addr_t()))
+            get_mock_block(LOGPWR_BLOCK, NUM_CHANS, NUM_CHANS, uhd::device_addr_t()))
         , test_logpwr(block_container.get_block<logpwr_block_control>())
     {
         node_accessor.init_props(test_logpwr.get());

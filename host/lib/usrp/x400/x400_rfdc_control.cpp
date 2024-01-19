@@ -50,8 +50,12 @@ void rfdc_control::reset_gearboxes(
     static const std::unordered_map<rfdc_type, const uint32_t> gb_map{
         {rfdc_type::TX0, regmap::DAC_RESET_MSB},
         {rfdc_type::TX1, regmap::DAC_RESET_MSB},
+        {rfdc_type::TX2, regmap::DAC_RESET_MSB},
+        {rfdc_type::TX3, regmap::DAC_RESET_MSB},
         {rfdc_type::RX0, regmap::ADC_RESET_MSB},
-        {rfdc_type::RX1, regmap::ADC_RESET_MSB}};
+        {rfdc_type::RX1, regmap::ADC_RESET_MSB},
+        {rfdc_type::RX2, regmap::ADC_RESET_MSB},
+        {rfdc_type::RX3, regmap::ADC_RESET_MSB}};
 
     uint32_t reset_word = 0;
     for (const auto gb : gearboxes) {

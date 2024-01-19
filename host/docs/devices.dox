@@ -9,6 +9,7 @@
 \li \subpage page_images
 \li \subpage page_transport
 \li \subpage page_sync
+\li \subpage page_timedcmds
 \li \subpage page_calibration
 \li \subpage page_mpm
 \li \subpage page_dpdk
@@ -52,6 +53,7 @@ unless stated otherwise, they will still work with this version of UHD.
 \li \subpage page_dboards
 \li \ref page_twinrx
 \li \ref page_zbx
+\li \ref page_fbx
 
 ## OctoClock
 

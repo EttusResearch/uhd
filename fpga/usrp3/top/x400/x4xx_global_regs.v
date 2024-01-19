@@ -55,8 +55,8 @@ module x4xx_global_regs #(
   input  wire        pll_sync_done,
   output reg  [ 7:0] pps_brc_delay     = 8'b0,
   output reg  [25:0] pps_prc_delay     = 26'b0,
-  output reg  [ 1:0] prc_rc0_divider   = 2'b0,
-  output reg  [ 1:0] prc_rc1_divider   = 2'b0,
+  output reg  [ 4:0] prc_rc0_divider   = 5'b0,
+  output reg  [ 4:0] prc_rc1_divider   = 5'b0,
   output reg         pps_rc_enabled    = 1'b0,
 
   // Misc control and status signals (domain: s_ctrlport_clk)
@@ -80,7 +80,11 @@ module x4xx_global_regs #(
   `include "regmap/global_regs_regmap_utils.vh"
 
   // Variant-dependent register map.
-  `include "regmap/x410/versioning_regs_regmap_utils.vh"
+  `ifdef X440
+    `include "regmap/x440/versioning_regs_regmap_utils.vh"
+  `else // Use X410 as the default variant for regmap.
+    `include "regmap/x410/versioning_regs_regmap_utils.vh"
+  `endif
 
 
   // Make DEVICE_ID default to anything but 0, since that has special meaning
@@ -195,9 +199,12 @@ module x4xx_global_regs #(
 
           REG_BASE + PPS_CTRL_REG: begin
             pps_prc_delay  <= s_ctrlport_req_data[PPS_PRC_DELAY_MSB:PPS_PRC_DELAY];
+            pps_rc_enabled <= s_ctrlport_req_data[PPS_RC_ENABLED];
+          end
+
+          REG_BASE + PPS_CROSSING_REG: begin
             prc_rc0_divider <= s_ctrlport_req_data[PRC_RC0_DIVIDER_MSB:PRC_RC0_DIVIDER];
             prc_rc1_divider <= s_ctrlport_req_data[PRC_RC1_DIVIDER_MSB:PRC_RC1_DIVIDER];
-            pps_rc_enabled <= s_ctrlport_req_data[PPS_RC_ENABLED];
           end
 
           REG_BASE + SERIAL_NUM_LOW_REG: begin
@@ -277,9 +284,12 @@ module x4xx_global_regs #(
 
           REG_BASE + PPS_CTRL_REG: begin
             s_ctrlport_resp_data[PPS_RC_ENABLED]                    <= pps_rc_enabled;
+            s_ctrlport_resp_data[PPS_PRC_DELAY_MSB:PPS_PRC_DELAY]   <= pps_prc_delay;
+          end
+
+          REG_BASE + PPS_CROSSING_REG: begin
             s_ctrlport_resp_data[PRC_RC0_DIVIDER_MSB:PRC_RC0_DIVIDER] <= prc_rc0_divider;
             s_ctrlport_resp_data[PRC_RC1_DIVIDER_MSB:PRC_RC1_DIVIDER] <= prc_rc1_divider;
-            s_ctrlport_resp_data[PPS_PRC_DELAY_MSB:PPS_PRC_DELAY]   <= pps_prc_delay;
           end
 
           REG_BASE + CHDR_CLK_RATE_REG: begin
@@ -578,32 +588,18 @@ endmodule
 //          desired aligned edge to issue the PPS in radio clock domain. This
 //          delay is configurable to any aligned edge within a maximum delay of 1
 //          second (period of PPS). <br>
-//          The value written to the register has to be reduced by 4 due to
-//          HDL implementation.
-//        </info>
-//      </bitfield>
-//      <bitfield name="PRC_RC1_DIVIDER" range="27..26">
-//        <info>
-//          Clock multiplier used to generate radio clock 1 from PLL reference clock.
-//          The value written to the register has to be reduced by 2 due to
-//          HDL implementation.
-//        </info>
-//      </bitfield>
-//      <bitfield name="PRC_RC0_DIVIDER" range="29..28">
-//        <info>
-//          Clock multiplier used to generate radio clock 0 from PLL reference clock.
-//          The value written to the register has to be reduced by 2 due to
+//          The value written to the register has to be reduced by 5 due to
 //          HDL implementation.
 //        </info>
 //      </bitfield>
 //      <bitfield name="PPS_RC_ENABLED" range="31">
 //        <info>
 //          Enables the PPS signal in radio clock domain. Please make sure that
-//          the values of @.PPS_BRC_DELAY, @.PPS_PRC_DELAY and @.PRC_RC_DIVIDER are
-//          set before enabling this bit. It is recommended to disable the PPS
-//          for changes on the other values. Use a wait time of at least 1 second
-//          before changing this value to ensure the values are stable for the
-//          next PPS edge.
+//          the values of @.PPS_BRC_DELAY, @.PPS_PRC_DELAY, @.PRC_RC0_DIVIDER and
+//          @.PRC_RC1_DIVIDER are set before enabling this bit. It is recommended
+//          to disable the PPS for changes on the other values. Use a wait time of
+//          at least 1 second before changing this value to ensure the values are
+//          stable for the next PPS edge.
 //        </info>
 //      </bitfield>
 //    </register>
@@ -624,6 +620,23 @@ endmodule
 //        ensures that compilation results are affected by the value in this
 //        register.
 //      </info>
+//    </register>
+//    <register name="PPS_CROSSING_REG" offset="0x30" size="32">
+//      <info>Control registers for PPS clock crossing to the radio clock domain.</info>
+//      <bitfield name="PRC_RC1_DIVIDER" range="20..16">
+//        <info>
+//          Clock multiplier used to generate radio clock 1 from PLL reference clock.
+//          The value written to the register has to follow the following formula:
+//          <code>PRC_RC1_DIVIDER = (RADIO_CLK_1 / PRC_CLK) * 2 - 2</code>
+//        </info>
+//      </bitfield>
+//      <bitfield name="PRC_RC0_DIVIDER" range="4..0">
+//        <info>
+//          Clock multiplier used to generate radio clock 0 from PLL reference clock.
+//          The value written to the register has to follow the following formula:
+//          <code>PRC_RC0_DIVIDER = (RADIO_CLK_0 / PRC_CLK) * 2 - 2</code>
+//        </info>
+//      </bitfield>
 //    </register>
 //    <register name="QSFP_PORT_0_0_INFO_REG"   offset="0x60" size="32" writable="false">
 //      <info>
@@ -667,13 +680,13 @@ endmodule
 //    </register>
 //    <register name="GPS_CTRL_REG"        offset="0x38" size="32">
 //      <info>
-//        RESERVED. This register is not implemented on X4xx. GPS is connected 
+//        RESERVED. This register is not implemented on X4xx. GPS is connected
 //        to the PS via a UART.
 //      </info>
 //    </register>
 //    <register name="GPS_STATUS_REG"      offset="0x3C" size="32" writable="false">
 //      <info>
-//        RESERVED. This register is not implemented on X4xx. GPS is connected 
+//        RESERVED. This register is not implemented on X4xx. GPS is connected
 //        to the PS via a UART.
 //      </info>
 //    </register>

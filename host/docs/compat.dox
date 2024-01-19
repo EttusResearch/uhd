@@ -77,7 +77,7 @@ Note to change IP address (or resource) and type of the device accordingly.
 The X300, as a generation-3 devices, also runs RFNoC blocks which have their own
 compat numbers (see \ref compat_rfnoc).
 
-\section compat_mpm MPM Devices (N310, E320)
+\section compat_mpm MPM Devices (N310, E320, X4x0)
 
 See also \ref page_mpm.
 
@@ -180,6 +180,7 @@ modules that do not run within the same process, for example:
 - RFNoC block and block controller
 - UHD and MPM
 - UHD and the X300 core register interface
+- MPM and the FPGA register space
 
 ...and so on. In most cases, updating the FPGA image is the solution to
 resolving compat number errors.

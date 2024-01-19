@@ -204,7 +204,7 @@ double run_benchmark(converter::sptr conv,
     for (size_t i = 0; i < iterations; i++) {
         conv->conv(input_buf_refs, output_buf_refs, n_items);
     }
-    auto stop = std::chrono::steady_clock::now();
+    auto stop                              = std::chrono::steady_clock::now();
     std::chrono::duration<double> duration = stop - start;
     return duration.count();
 }

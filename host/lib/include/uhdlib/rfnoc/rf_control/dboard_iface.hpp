@@ -8,8 +8,8 @@
 
 #include <uhd/rfnoc/rf_control/core_iface.hpp>
 #include <uhd/types/direction.hpp>
-#include <uhd/types/time_spec.hpp>
 #include <uhd/types/eeprom.hpp>
+#include <uhd/types/time_spec.hpp>
 #include <uhdlib/rfnoc/rf_control/gain_profile_iface.hpp>
 #include <uhdlib/usrp/common/pwr_cal_mgr.hpp>
 #include <memory>

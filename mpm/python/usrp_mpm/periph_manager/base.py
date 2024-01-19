@@ -210,6 +210,15 @@ class PeriphManagerBase:
         device_args -- Arbitrary dictionary of info, typically user-defined
         """
         return []
+
+    def pop_host_tasks(self, task):
+        """
+        Queries all known sources of host tasks and returns a list of dicts
+        that can be used for parameterization of the requested task. Depending
+        on the return value of this, the host can trigger tasks. Currently we
+        only have such tasks in the clock manager.
+        """
+        return []
     # pylint: enable=unused-argument
     ### End of overridables ###################################################
 
@@ -1386,7 +1395,7 @@ class PeriphManagerBase:
         This is the main MPM-based synchronization call. It should be called if
         there are synchronization-related settings that need to be applied to
         devices that can only be set via MPM (exluding setting the time of
-        timekeepers).
+        timekeepers). It is called from mpmd_mb_controller::_pre_timekeeper_synchronize()
 
         For example, on RFSoC-based devices, we need to make sure to set the
         same tile latency on all devices.

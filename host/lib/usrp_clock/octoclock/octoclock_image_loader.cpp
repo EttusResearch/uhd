@@ -35,7 +35,7 @@ using namespace uhd::usrp_clock;
 using namespace uhd::transport;
 
 #define OCTOCLOCK_FIRMWARE_MAX_SIZE_BYTES (1024 * 120) // Last 8 MB are for bootloader
-#define OCTOCLOCK_BLOCK_SIZE 256
+#define OCTOCLOCK_BLOCK_SIZE              256
 
 /*
  * OctoClock burn session
@@ -293,10 +293,10 @@ static void octoclock_verify(octoclock_session_t& session)
         pkt_out.sequence = uhd::htonx<uint32_t>(++session.sequence);
         pkt_out.addr     = i * OCTOCLOCK_BLOCK_SIZE;
 
-        std::cout << str(boost::format(
-                             "\r -- Verifying firmware load: %d%% (%d/%d blocks)")
-                         % int((double(i) / double(session.num_blocks)) * 100) % i
-                         % session.num_blocks)
+        std::cout << str(
+            boost::format("\r -- Verifying firmware load: %d%% (%d/%d blocks)")
+            % int((double(i) / double(session.num_blocks)) * 100) % i
+            % session.num_blocks)
                   << std::flush;
 
         memset(image_part, 0, OCTOCLOCK_BLOCK_SIZE);

@@ -210,8 +210,12 @@ def get_mb_info(item):
 def get_default_cpld_image_names(pid, compat_rev):
     """Determine the default CPLD image name based on the compat_rev"""
     if pid==0x410:
+
         default_cpld_image_10m04 = ['cpld-x410-10m04.rpd', 'usrp_x410_cpld_10m04.rpd']
         default_cpld_image_10m08 = ['cpld-x410-10m08.rpd', 'usrp_x410_cpld_10m08.rpd']
+    elif pid==0x440:
+        default_cpld_image_10m04 = ['cpld-x440-10m04.rpd', 'usrp_x440_cpld_10m04.rpd']
+        default_cpld_image_10m08 = ['cpld-x440-10m08.rpd', 'usrp_x440_cpld_10m08.rpd']
     else:
         raise NotImplementedError(f"No default CPLD image found for PID 0x{pid:x}")
 
@@ -267,7 +271,7 @@ def main():
         )
         args = parser.parse_args()
         if (os.path.basename(args.file) not in default_image_names) and not args.force:
-            devices = {0x410: 'X410'}
+            devices = {0x410: 'X410', 0x440: 'X440'}
             device = devices.get(pid, "unknown device")
             parser.epilog = f"\nERROR: Valid CPLD image names for {device} compat_rev "\
                 f"{get_mb_info('compat_rev')} are {' and '.join(default_image_names)}, " \

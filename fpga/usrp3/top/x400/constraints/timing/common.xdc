@@ -52,6 +52,7 @@ create_clock -name clk166 -period  6.000 \
 create_clock -name clk200 -period  5.000 \
   [get_pins -of_objects [get_cells -hierarchical {*PS8_i}] -filter {NAME =~ *PLCLK[3]}]
 
+create_generated_clock -name ce_clk [get_pins {ce_clk_gen_i/CLKOUT0}]
 
 ###############################################################################
 # Sync to DB synthesizer sync CPLD input

@@ -77,7 +77,7 @@ void b200_impl::set_auto_tick_rate(
     using namespace uhd::math;
     if (rate != 0.0
         and (fp_compare::fp_compare_delta<double>(rate, FREQ_COMPARISON_DELTA_HZ)
-                > max_tick_rate)) {
+             > max_tick_rate)) {
         throw uhd::value_error(str(boost::format("Requested sampling rate (%.2f Msps) "
                                                  "exceeds maximum tick rate of %.2f MHz.")
                                    % (rate / 1e6) % (max_tick_rate / 1e6)));
@@ -180,8 +180,8 @@ void b200_impl::update_tx_dsp_tick_rate(
     if (uhd::math::fp_compare::fp_compare_delta<double>(                              \
             rate, uhd::math::FREQ_COMPARISON_DELTA_HZ)                                \
         > uhd::math::fp_compare::fp_compare_delta<double>(                            \
-              ad9361_device_t::AD9361_MAX_CLOCK_RATE,                                 \
-              uhd::math::FREQ_COMPARISON_DELTA_HZ)) {                                 \
+            ad9361_device_t::AD9361_MAX_CLOCK_RATE,                                   \
+            uhd::math::FREQ_COMPARISON_DELTA_HZ)) {                                   \
         throw uhd::value_error(                                                       \
             str(boost::format(                                                        \
                     "Requested sampling rate (%.2f Msps) exceeds maximum tick rate.") \
@@ -497,8 +497,10 @@ void b200_impl::handle_overflow(const size_t radio_index)
         // stop streaming
         my_streamer->issue_stream_cmd(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
         // flush data
-        while (_demux->get_recv_buff(B200_RX_DATA0_SID, 0.001)) {}
-        while (_demux->get_recv_buff(B200_RX_DATA1_SID, 0.001)) {}
+        while (_demux->get_recv_buff(B200_RX_DATA0_SID, 0.001)) {
+        }
+        while (_demux->get_recv_buff(B200_RX_DATA1_SID, 0.001)) {
+        }
         // restart streaming
         if (in_continuous_streaming_mode) {
             stream_cmd_t stream_cmd(stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
@@ -510,7 +512,8 @@ void b200_impl::handle_overflow(const size_t radio_index)
     } else {
         const uint32_t sid = radio_index == 0 ? B200_RX_DATA0_SID : B200_RX_DATA1_SID;
         // flush data
-        while (_demux->get_recv_buff(sid, 0.001)) {}
+        while (_demux->get_recv_buff(sid, 0.001)) {
+        }
         // restart streaming
         _radio_perifs[radio_index].framer->handle_overflow();
     }

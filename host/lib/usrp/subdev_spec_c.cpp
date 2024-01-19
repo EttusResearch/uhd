@@ -10,13 +10,14 @@
 
 uhd_error uhd_subdev_spec_pair_free(uhd_subdev_spec_pair_t* subdev_spec_pair)
 {
-    UHD_SAFE_C(if (subdev_spec_pair->db_name) {
-        free(subdev_spec_pair->db_name);
-        subdev_spec_pair->db_name = NULL;
-    } if (subdev_spec_pair->sd_name) {
-        free(subdev_spec_pair->sd_name);
-        subdev_spec_pair->sd_name = NULL;
-    })
+    UHD_SAFE_C(
+        if (subdev_spec_pair->db_name) {
+            free(subdev_spec_pair->db_name);
+            subdev_spec_pair->db_name = NULL;
+        } if (subdev_spec_pair->sd_name) {
+            free(subdev_spec_pair->sd_name);
+            subdev_spec_pair->sd_name = NULL;
+        })
 }
 
 uhd_error uhd_subdev_spec_pairs_equal(const uhd_subdev_spec_pair_t* first,

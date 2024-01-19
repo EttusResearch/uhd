@@ -6621,42 +6621,20 @@ Control registers for PPS generation.
               <td>
                 <p><span class="name"><a name="GLOBAL_REGS_REGMAP|PPS_CTRL_REG|PPS_RC_ENABLED"></a>PPS_RC_ENABLED</span><span class="attr"> </span></p>
                 <p>Enables the PPS signal in radio clock domain. Please make sure that
-          the values of <a href="#GLOBAL_REGS_REGMAP|CLOCK_CTRL_REG|PPS_BRC_DELAY">PPS_BRC_DELAY</a>, <a href="#GLOBAL_REGS_REGMAP|PPS_CTRL_REG|PPS_PRC_DELAY">PPS_PRC_DELAY</a> and @.PRC_RC_DIVIDER are
-          set before enabling this bit. It is recommended to disable the PPS
-          for changes on the other values. Use a wait time of at least 1 second
-          before changing this value to ensure the values are stable for the
-          next PPS edge.</p>
+          the values of <a href="#GLOBAL_REGS_REGMAP|CLOCK_CTRL_REG|PPS_BRC_DELAY">PPS_BRC_DELAY</a>, <a href="#GLOBAL_REGS_REGMAP|PPS_CTRL_REG|PPS_PRC_DELAY">PPS_PRC_DELAY</a>, <a href="#GLOBAL_REGS_REGMAP|PPS_CROSSING_REG|PRC_RC0_DIVIDER">PRC_RC0_DIVIDER</a> and
+          <a href="#GLOBAL_REGS_REGMAP|PPS_CROSSING_REG|PRC_RC1_DIVIDER">PRC_RC1_DIVIDER</a> are set before enabling this bit. It is recommended
+          to disable the PPS for changes on the other values. Use a wait time of
+          at least 1 second before changing this value to ensure the values are
+          stable for the next PPS edge.</p>
             
               </td>
             </tr>
             
             <tr  valign="top">
-              <td class="bits">30</td>
+              <td class="bits">30..26</td>
               <td>
                 <p><span class="name">Reserved</span><span class="attr"> </span></p>
                 <p></p>
-            
-              </td>
-            </tr>
-            
-            <tr  valign="top">
-              <td class="bits">29..28</td>
-              <td>
-                <p><span class="name"><a name="GLOBAL_REGS_REGMAP|PPS_CTRL_REG|PRC_RC0_DIVIDER"></a>PRC_RC0_DIVIDER</span><span class="attr"> </span></p>
-                <p>Clock multiplier used to generate radio clock 0 from PLL reference clock.
-          The value written to the register has to be reduced by 2 due to
-          HDL implementation.</p>
-            
-              </td>
-            </tr>
-            
-            <tr  valign="top">
-              <td class="bits">27..26</td>
-              <td>
-                <p><span class="name"><a name="GLOBAL_REGS_REGMAP|PPS_CTRL_REG|PRC_RC1_DIVIDER"></a>PRC_RC1_DIVIDER</span><span class="attr"> </span></p>
-                <p>Clock multiplier used to generate radio clock 1 from PLL reference clock.
-          The value written to the register has to be reduced by 2 due to
-          HDL implementation.</p>
             
               </td>
             </tr>
@@ -6669,7 +6647,7 @@ Control registers for PPS generation.
           desired aligned edge to issue the PPS in radio clock domain. This
           delay is configurable to any aligned edge within a maximum delay of 1
           second (period of PPS). <br>
-          The value written to the register has to be reduced by 4 due to
+          The value written to the register has to be reduced by 5 due to
           HDL implementation.</p>
             
               </td>
@@ -6940,6 +6918,150 @@ Build seed used for this compilation. Making this value readable
 </div>
 
             <div class="register">
+              <a name="GLOBAL_REGS_REGMAP|PPS_CROSSING_REG"></a>
+            
+<h3 class="register">Offset 0x0030: PPS_CROSSING_REG Register (R|W)</h3>
+
+                 <a class="sh_addrs" href="javascript:sa('GLOBAL_REGS_REGMAP|PPS_CROSSING_REG_in')">(<span id="show_GLOBAL_REGS_REGMAP|PPS_CROSSING_REG_in">show</span> extended info)</a>
+                 <div class="sh_addrs" id="div_GLOBAL_REGS_REGMAP|PPS_CROSSING_REG_in">
+                 
+                <table class="extended_info">
+                
+<tr>
+
+<td class="outercell" rowspan="1">
+
+                  <table border="0" cellspacing="0" cellpadding="0">
+                    <tr><td class="offset_info" align="right">Port <a href="#X410_FPGA|ARM_M_AXI_HPM0">ARM_M_AXI_HPM0</a></td></tr>
+                  </table>
+               
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#AXI_HPM0_REGMAP|CORE_REGS">AXI_HPM0_REGMAP|CORE_REGS</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x10000A0000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#CORE_REGS_REGMAP|GLOBAL_REGS">CORE_REGS_REGMAP|GLOBAL_REGS</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x000000</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right">PPS_CROSSING_REG</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x0030</td></tr>
+</table>
+
+</td>
+
+<td class="outercell" rowspan="1">
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr><td class="offset_info">
+
+
+Total Offset =</td></tr>
+<tr><td class="offset_info">&nbsp;&nbsp;0x10000A0030
+
+</td></tr>
+</table>
+
+</td>
+
+</tr>
+
+</table><p/>
+
+<p class="reg_info">Initial Value not specified
+</p>
+
+<p class="reg_info">This register is defined in HDL source file x4xx_global_regs.v.</p>
+
+</div>
+
+<div class="info">
+
+Control registers for PPS clock crossing to the radio clock domain.
+
+</div>
+
+                <table class="bitfields" border="0" cellspacing="0" cellpadding="0">
+                  <tr class="header"><td class="bits">Bits</td><td>Name</td></tr>
+                
+            <tr  valign="top">
+              <td class="bits">31..24</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr class='byte' valign="top">
+              <td class="bits">23..21</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">20..16</td>
+              <td>
+                <p><span class="name"><a name="GLOBAL_REGS_REGMAP|PPS_CROSSING_REG|PRC_RC1_DIVIDER"></a>PRC_RC1_DIVIDER</span><span class="attr"> </span></p>
+                <p>Clock multiplier used to generate radio clock 1 from PLL reference clock.
+          The value written to the register has to follow the following formula:
+          <code>PRC_RC1_DIVIDER = (RADIO_CLK_1 / PRC_CLK) * 2 - 2</code></p>
+            
+              </td>
+            </tr>
+            
+            <tr class='byte' valign="top">
+              <td class="bits">15..8</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr class='byte' valign="top">
+              <td class="bits">7..5</td>
+              <td>
+                <p><span class="name">Reserved</span><span class="attr"> </span></p>
+                <p></p>
+            
+              </td>
+            </tr>
+            
+            <tr  valign="top">
+              <td class="bits">4..0</td>
+              <td>
+                <p><span class="name"><a name="GLOBAL_REGS_REGMAP|PPS_CROSSING_REG|PRC_RC0_DIVIDER"></a>PRC_RC0_DIVIDER</span><span class="attr"> </span></p>
+                <p>Clock multiplier used to generate radio clock 0 from PLL reference clock.
+          The value written to the register has to follow the following formula:
+          <code>PRC_RC0_DIVIDER = (RADIO_CLK_0 / PRC_CLK) * 2 - 2</code></p>
+            
+              </td>
+            </tr>
+            
+</table>
+
+</div>
+
+            <div class="register">
               <a name="GLOBAL_REGS_REGMAP|GPS_CTRL_REG"></a>
             
 <h3 class="register">Offset 0x0038: GPS_CTRL_REG Register (R|W)</h3>
@@ -7014,7 +7136,7 @@ Total Offset =</td></tr>
 
 <div class="info">
 
-RESERVED. This register is not implemented on X4xx. GPS is connected 
+RESERVED. This register is not implemented on X4xx. GPS is connected
         to the PS via a UART.
 
 </div>
@@ -7096,7 +7218,7 @@ Total Offset =</td></tr>
 
 <div class="info">
 
-RESERVED. This register is not implemented on X4xx. GPS is connected 
+RESERVED. This register is not implemented on X4xx. GPS is connected
         to the PS via a UART.
 
 </div>
@@ -24991,19 +25113,6 @@ FPGA version.<BR/>
                             <td class='l'>0x00000000</td>
                             
                             <td class="l" style="text-align: left;">
-                              <p class="name"><a name='VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_CURRENT_VERSION_MINOR'></a>FPGA_CURRENT_VERSION_MINOR</p>
-                            
-</td>
-
-</tr>
-
-<tr valign="top">
-
-                        <td class='value'>0</td>
-                        
-                            <td class='l'>0x00000000</td>
-                            
-                            <td class="l" style="text-align: left;">
                               <p class="name"><a name='VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_CURRENT_VERSION_BUILD'></a>FPGA_CURRENT_VERSION_BUILD</p>
                             
 </td>
@@ -25017,7 +25126,7 @@ FPGA version.<BR/>
                             <td class='l'>0x00000000</td>
                             
                             <td class="l" style="text-align: left;">
-                              <p class="name"><a name='VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_OLDEST_COMPATIBLE_VERSION_MINOR'></a>FPGA_OLDEST_COMPATIBLE_VERSION_MINOR</p>
+                              <p class="name"><a name='VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_OLDEST_COMPATIBLE_VERSION_BUILD'></a>FPGA_OLDEST_COMPATIBLE_VERSION_BUILD</p>
                             
 </td>
 
@@ -25025,12 +25134,25 @@ FPGA version.<BR/>
 
 <tr valign="top">
 
-                        <td class='value'>0</td>
+                        <td class='value'>2</td>
                         
-                            <td class='l'>0x00000000</td>
+                            <td class='l'>0x00000002</td>
                             
                             <td class="l" style="text-align: left;">
-                              <p class="name"><a name='VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_OLDEST_COMPATIBLE_VERSION_BUILD'></a>FPGA_OLDEST_COMPATIBLE_VERSION_BUILD</p>
+                              <p class="name"><a name='VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_CURRENT_VERSION_MINOR'></a>FPGA_CURRENT_VERSION_MINOR</p>
+                            
+</td>
+
+</tr>
+
+<tr valign="top">
+
+                        <td class='value'>2</td>
+                        
+                            <td class='l'>0x00000002</td>
+                            
+                            <td class="l" style="text-align: left;">
+                              <p class="name"><a name='VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_OLDEST_COMPATIBLE_VERSION_MINOR'></a>FPGA_OLDEST_COMPATIBLE_VERSION_MINOR</p>
                             
 </td>
 
@@ -25064,9 +25186,9 @@ FPGA version.<BR/>
 
 <tr valign="top">
 
-                        <td class='value'>587472913</td>
+                        <td class='value'>588260368</td>
                         
-                            <td class='l'>0x23042011</td>
+                            <td class='l'>0x23102410</td>
                             
                             <td class="l" style="text-align: left;">
                               <p class="name"><a name='VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_VERSION_LAST_MODIFIED_TIME'></a>FPGA_VERSION_LAST_MODIFIED_TIME</p>

@@ -34,8 +34,8 @@ namespace uhd { namespace rfnoc {
 class UHD_API node_t
 {
 public:
-    using resolver_fn_t      = std::function<void(void)>;
-    using resolve_callback_t = std::function<void(void)>;
+    using resolver_fn_t          = std::function<void(void)>;
+    using resolve_callback_t     = std::function<void(void)>;
     using graph_mutex_callback_t = std::function<std::recursive_mutex&(void)>;
     using action_handler_t =
         std::function<void(const res_source_info&, action_info::sptr)>;
@@ -668,7 +668,8 @@ private:
 
     //! Implementation for set_property \p id \p prop_data_t \p src_info
     template <typename prop_data_t>
-    void _set_property(const std::string& id, const prop_data_t& val, const res_source_info& src_info);
+    void _set_property(
+        const std::string& id, const prop_data_t& val, const res_source_info& src_info);
 
     /****** Attributes *******************************************************/
     //! Mutex to lock access to the property registry. Note: This is not the

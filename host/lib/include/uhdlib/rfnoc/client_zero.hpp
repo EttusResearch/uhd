@@ -48,6 +48,8 @@ public:
         uint8_t ctrl_fifo_size;
         uint8_t ctrl_max_async_msgs;
         uint8_t data_mtu;
+        uint8_t ctrl_clk_idx;
+        uint8_t tb_clk_idx;
     };
 
     //! Return the RFNoC protocol version for this motherboard

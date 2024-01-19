@@ -44,7 +44,11 @@ module n3xx_clocking (
   output meas_clk,
   output ddr3_dma_clk,
   input  misc_clks_reset,
-  output misc_clks_locked,
+  output reg misc_clks_locked,
+
+  // CE Clock
+  input clk200,
+  output ce_clk,
 
   // PPS Capture & Selection
   input       ext_pps_from_pin,
@@ -137,14 +141,93 @@ module n3xx_clocking (
   //----------------------------------------------------------------------------
   // __primary________166.666667____________0.010
 
+  wire misc_locked;
+
   misc_clock_gen misc_clock_gen_i (
     .clk_in       (misc_clks_ref),
     .meas_clk     (meas_clk),
     .ddr3_dma_clk (ddr3_dma_clk),
     .reset        (misc_clks_reset),
-    .locked       (misc_clks_locked)
+    .locked       (misc_locked)
   );
 
+  // Compute Engine Clock
+  //
+  //----------------------------------------------------------------------------
+  //  Output     Output      Phase    Duty Cycle   Pk-to-Pk     Phase
+  //   Clock     Freq (MHz)  (degrees)    (%)     Jitter (ps)  Error (ps)
+  //----------------------------------------------------------------------------
+  // __ce_clk__266.66667______0.000______50.0______112.125____110.663
+  //
+  //----------------------------------------------------------------------------
+  // Input Clock   Freq (MHz)    Input Jitter (UI)
+  //----------------------------------------------------------------------------
+  // __primary_____________200____________0.010
+
+  wire ce_gen_clkfbout;
+  wire ce_gen_clkout0;
+  wire ce_gen_locked;
+
+  PLLE2_ADV #(
+    .BANDWIDTH         ("OPTIMIZED"),
+    .COMPENSATION      ("ZHOLD"    ),
+    .STARTUP_WAIT      ("FALSE"    ),
+    .DIVCLK_DIVIDE     (3          ),
+    .CLKFBOUT_MULT     (16         ),
+    .CLKFBOUT_PHASE    (0.000      ),
+    .CLKOUT0_DIVIDE    (4          ),
+    .CLKOUT0_PHASE     (0.000      ),
+    .CLKOUT0_DUTY_CYCLE(0.500      ),
+    .CLKIN1_PERIOD     (5.000      )
+  ) ce_clk_gen_i (
+    .CLKFBOUT(ce_gen_clkfbout),
+    .CLKOUT0 (ce_gen_clkout0 ),
+    .CLKOUT1 (               ),
+    .CLKOUT2 (               ),
+    .CLKOUT3 (               ),
+    .CLKOUT4 (               ),
+    .CLKOUT5 (               ),
+    .CLKFBIN (ce_gen_clkfbout),
+    .CLKIN1  (clk200         ),
+    .CLKIN2  (1'b0           ),
+    .CLKINSEL(1'b1           ),
+    .DADDR   (7'h0           ),
+    .DCLK    (1'b0           ),
+    .DEN     (1'b0           ),
+    .DI      (16'h0          ),
+    .DO      (               ),
+    .DRDY    (               ),
+    .DWE     (1'b0           ),
+    .LOCKED  (ce_gen_locked  ),
+    .PWRDWN  (1'b0           ),
+    .RST     (misc_clks_reset)
+  );
+
+  BUFG ce_clk_buf (
+    .O(ce_clk        ),
+    .I(ce_gen_clkout0)
+  );
+
+  wire misc_locked_clk200;
+  wire ce_lockec_clk200;
+
+  synchronizer synchronizer_misc (
+    .clk(clk200            ),
+    .rst(1'b0              ),
+    .in (misc_locked       ),
+    .out(misc_locked_clk200)
+  );
+
+  synchronizer synchronizer_ce (
+    .clk(clk200          ),
+    .rst(1'b0            ),
+    .in (ce_gen_locked   ),
+    .out(ce_locked_clk200)
+  );
+
+  always @(posedge clk200) begin
+    misc_clks_locked <= misc_locked_clk200 & ce_locked_clk200;
+  end
 
   // PPS Capture and Generation : ///////////////////////////////////////////////////////
   //

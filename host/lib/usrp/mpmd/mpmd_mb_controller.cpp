@@ -16,30 +16,31 @@ namespace {
 constexpr size_t MPMD_DEFAULT_LONG_TIMEOUT = 30000; // ms
 } // namespace
 
-mpmd_mb_controller::fpga_onload::fpga_onload()
-{}
+mpmd_mb_controller::fpga_onload::fpga_onload() {}
 
 void mpmd_mb_controller::fpga_onload::onload()
 {
-    for (auto& cb : _cbs)
-    {
-        if (auto spt = cb.lock())
-        {
+    for (auto& cb : _cbs) {
+        if (auto spt = cb.lock()) {
             spt->onload();
         }
     }
 }
 
-void mpmd_mb_controller::fpga_onload::request_cb(uhd::features::fpga_load_notification_iface::sptr handler)
+void mpmd_mb_controller::fpga_onload::request_cb(
+    uhd::features::fpga_load_notification_iface::sptr handler)
 {
     _cbs.emplace_back(handler);
 }
 
-mpmd_mb_controller::ref_clk_calibration::ref_clk_calibration(uhd::usrp::mpmd_rpc_iface::sptr rpcc)
+mpmd_mb_controller::ref_clk_calibration::ref_clk_calibration(
+    uhd::usrp::mpmd_rpc_iface::sptr rpcc)
     : _rpcc(rpcc)
-{}
+{
+}
 
-void mpmd_mb_controller::ref_clk_calibration::set_ref_clk_tuning_word(uint32_t tuning_word)
+void mpmd_mb_controller::ref_clk_calibration::set_ref_clk_tuning_word(
+    uint32_t tuning_word)
 {
     _rpcc->set_ref_clk_tuning_word(tuning_word);
 }
@@ -49,7 +50,8 @@ uint32_t mpmd_mb_controller::ref_clk_calibration::get_ref_clk_tuning_word()
     return _rpcc->get_ref_clk_tuning_word();
 }
 
-void mpmd_mb_controller::ref_clk_calibration::store_ref_clk_tuning_word(uint32_t tuning_word)
+void mpmd_mb_controller::ref_clk_calibration::store_ref_clk_tuning_word(
+    uint32_t tuning_word)
 {
     _rpcc->store_ref_clk_tuning_word(tuning_word);
 }
@@ -79,7 +81,8 @@ void mpmd_mb_controller::trig_io_mode::set_trig_io_mode(const uhd::trig_io_mode_
 mpmd_mb_controller::gpio_power::gpio_power(
     uhd::usrp::dio_rpc_iface::sptr rpcc, const std::vector<std::string>& ports)
     : _rpcc(rpcc), _ports(ports)
-{}
+{
+}
 
 std::vector<std::string> mpmd_mb_controller::gpio_power::get_supported_voltages(
     const std::string& port) const
@@ -194,7 +197,8 @@ std::string mpmd_mb_controller::get_mboard_name() const
 
 void mpmd_mb_controller::set_time_source(const std::string& source)
 {
-    _rpc->get_raw_rpc_client()->notify_with_token(MPMD_DEFAULT_LONG_TIMEOUT, "set_time_source", source);
+    _rpc->get_raw_rpc_client()->notify_with_token(
+        MPMD_DEFAULT_LONG_TIMEOUT, "set_time_source", source);
     if (!_sync_source_updaters.empty()) {
         mb_controller::sync_source_t sync_source;
         sync_source["time_source"] = source;
@@ -216,7 +220,8 @@ std::vector<std::string> mpmd_mb_controller::get_time_sources() const
 
 void mpmd_mb_controller::set_clock_source(const std::string& source)
 {
-    _rpc->get_raw_rpc_client()->notify_with_token(MPMD_DEFAULT_LONG_TIMEOUT, "set_clock_source", source);
+    _rpc->get_raw_rpc_client()->notify_with_token(
+        MPMD_DEFAULT_LONG_TIMEOUT, "set_clock_source", source);
     if (!_sync_source_updaters.empty()) {
         mb_controller::sync_source_t sync_source;
         sync_source["clock_source"] = source;
@@ -284,12 +289,9 @@ void mpmd_mb_controller::set_clock_source_out(const bool enb)
 
 void mpmd_mb_controller::set_time_source_out(const bool enb)
 {
-    if (_rpc->supports_feature("time_export"))
-    {
+    if (_rpc->supports_feature("time_export")) {
         _rpc->set_trigger_io(enb ? "pps_output" : "off");
-    }
-    else
-    {
+    } else {
         throw uhd::not_implemented_error(
             "set_time_source_out() not implemented on this device!");
     }
@@ -367,11 +369,6 @@ bool mpmd_mb_controller::synchronize(std::vector<mb_controller::sptr>& mb_contro
     const uhd::time_spec_t& time_spec,
     const bool quiet)
 {
-    // First, synchronize timekeepers
-    if (!mb_controller::synchronize(mb_controllers, time_spec, quiet)) {
-        return false;
-    }
-
     // Filter out MB controllers that aren't mpmd_mb_controllers. This is safe-
     // guarding against future changes where we allow multiple types of USRP in
     // a single rfnoc_graph session.
@@ -390,6 +387,27 @@ bool mpmd_mb_controller::synchronize(std::vector<mb_controller::sptr>& mb_contro
         mb_controllers.push_back(mb_controller);
     }
 
+    if (!_pre_timekeeper_synchronize(mpmd_mb_controllers)) {
+        return false;
+    }
+
+    // Synchronize the timekeepers; doing this earlier causes the timekeepers
+    // in multi-device case to get misaligned due to delay adjustment resulting
+    // from MTS procedure on X4xx RFSoC based devices.
+    if (!_timekeeper_synchronize(mb_controllers, time_spec, quiet)) {
+        return false;
+    }
+
+    if (!_post_timekeeper_synchronize()) {
+        return false;
+    }
+
+    return true;
+}
+
+bool mpmd_mb_controller::_pre_timekeeper_synchronize(
+    std::vector<std::shared_ptr<mpmd_mb_controller>> mpmd_mb_controllers)
+{
     // The MPM additional sync works like this:
     // - We allow all devices to run a preliminary sync. This call will return
     //   a dictionary of data from each device.
@@ -405,7 +423,7 @@ bool mpmd_mb_controller::synchronize(std::vector<mb_controller::sptr>& mb_contro
     // much hardware-specific knowledge onto the devices.
 
     std::vector<std::future<std::map<std::string, std::string>>> sync_tasks;
-    sync_tasks.reserve(mb_controllers.size());
+    sync_tasks.reserve(mpmd_mb_controllers.size());
     // It would be nice to initialize the initial sync args with this MB's
     // device args, but we don't have access to them here. Might be a useful
     // change.
@@ -434,7 +452,7 @@ bool mpmd_mb_controller::synchronize(std::vector<mb_controller::sptr>& mb_contro
                     ->_aggregate_sync_info(collated_sync_args);
 
     sync_tasks.clear();
-    sync_tasks.reserve(mb_controllers.size());
+    sync_tasks.reserve(mpmd_mb_controllers.size());
     // Now prime the sync args (in parallel) on all relevant devices.
     for (auto& mbc : mpmd_mb_controllers) {
         sync_tasks.emplace_back(std::async(std::launch::async,
@@ -449,6 +467,19 @@ bool mpmd_mb_controller::synchronize(std::vector<mb_controller::sptr>& mb_contro
         }
     }
 
+    return true;
+}
+
+bool mpmd_mb_controller::_timekeeper_synchronize(
+    std::vector<mb_controller::sptr>& mb_controllers,
+    const uhd::time_spec_t& time_spec,
+    const bool quiet)
+{
+    return mb_controller::synchronize(mb_controllers, time_spec, quiet);
+}
+
+bool mpmd_mb_controller::_post_timekeeper_synchronize(void)
+{ // NOP for now.
     return true;
 }
 

@@ -63,7 +63,9 @@
             "type": "object",
             "properties": {
                 "block_desc": { "type": "string", "pattern": "^.*\\.yml" },
-                "parameters": { "$ref": "#/definitions/parameter" }
+                "parameters": { "$ref": "#/definitions/parameter" },
+                "ctrl_clock":     { "type": "string", "pattern": "[a-z0-9_.]+"},
+                "timebase_clock": { "type": "string", "pattern": "[a-z0-9_.]+"}
             },
             "required": ["block_desc"],
             "additionalProperties": false

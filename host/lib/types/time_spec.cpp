@@ -123,5 +123,5 @@ bool uhd::operator<(const time_spec_t& lhs, const time_spec_t& rhs)
 {
     return ((lhs.get_full_secs() < rhs.get_full_secs())
             or ((lhs.get_full_secs() == rhs.get_full_secs())
-                   and (lhs.get_frac_secs() < rhs.get_frac_secs())));
+                and (lhs.get_frac_secs() < rhs.get_frac_secs())));
 }

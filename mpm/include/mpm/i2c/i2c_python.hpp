@@ -18,5 +18,9 @@ void export_i2c(py::module& top_module)
     m.def("make_i2cdev_regs_iface", &mpm::i2c::make_i2cdev_regs_iface);
 
     py::class_<mpm::i2c::i2c_iface, std::shared_ptr<mpm::i2c::i2c_iface>>(m, "i2c_iface")
-        .def("transfer", (std::vector<uint8_t> (mpm::i2c::i2c_iface::*)(std::vector<uint8_t>&, size_t, bool)) &mpm::i2c::i2c_iface::transfer, "Transfer i2c data");
+        .def("transfer",
+            (std::vector<uint8_t>(mpm::i2c::i2c_iface::*)(
+                std::vector<uint8_t>&, size_t, bool))
+                & mpm::i2c::i2c_iface::transfer,
+            "Transfer i2c data");
 }

@@ -32,6 +32,7 @@ OUTPUT_HEADER_CPP = """//
 
 #include <tuple>
 
+// clang-format off
 """
 
 OUTPUT_HEADER_PYTHON = """#
@@ -72,7 +73,7 @@ while True:
     m = define_pat.match(line)
     if m:
         cpp_file.write("uint8_t {}[] = {{ // {}\n".format(m.group(1), m.group(2)))
-        python_file.write("{} = bytes([ # {}\n".format(m.group(1), m.group(2)))
+        python_file.write("{} = bytes([ # {}\n".format(m.group(1), m.group(2).strip()))
         var_sort_match = var_sort_pat.match(m.group(1))
         if var_sort_match:
             var_names_peer_0.append(m.group(1))
@@ -96,7 +97,7 @@ for peer_name, var_names in [("peer0", var_names_peer_0), ("peer1", var_names_pe
     python_file.write("{} = [\n\t".format(peer_name))
 
     for var_name in var_names:
-        cpp_file.write("\tstd::make_tuple({0}, sizeof({0})),\n".format(var_name))
+        cpp_file.write("    std::make_tuple({0}, sizeof({0})),\n".format(var_name))
     cpp_file.write("};\n")
 
     for i, var_name in enumerate(var_names):

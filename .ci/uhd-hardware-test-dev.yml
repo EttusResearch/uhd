@@ -3,9 +3,13 @@ trigger: none
 pr: none
 
 parameters:
-- name: run_embedded_tests
+- name: run_x410_embedded_tests
   type: boolean
   displayName: Run X410 Embedded Tests
+  default: false
+- name: run_x440_embedded_tests
+  type: boolean
+  displayName: Run X440 Embedded Tests
   default: false
 - name: run_streaming_tests
   type: boolean
@@ -23,9 +27,13 @@ parameters:
   type: boolean
   displayName: Run X410 RF tests
   default: false
+- name: run_x440_rf_tests
+  type: boolean
+  displayName: Run X440 RF tests
+  default: false
 - name: extra_rf_test_args
   type: string
-  displayName: Extra UHD RF ATS Arguments (for N310 and X410 runs)
+  displayName: Extra UHD RF ATS Arguments (for N310 and X4x0 runs)
   default: ' '
 - name: testLength
   type: string
@@ -60,16 +68,25 @@ resources:
     ref: master
 
 stages:
-- stage: test_uhd_embedded_stage
-  displayName: Test Embedded UHD
+- stage: test_uhd_x410_embedded_stage
+  displayName: Test X410 Embedded UHD
   dependsOn: []
-  condition: ${{ parameters.run_embedded_tests }}
+  condition: ${{ parameters.run_x410_embedded_tests }}
   jobs:
-  - template: templates/tests/job-uhd-x4xx-hardware-tests-sdr-test0.yml
+  - template: templates/tests/job-uhd-x410-hardware-tests-sdr-test0.yml
     parameters:
       testOS: ubuntu1804
       uhdArtifactSource: uhd_mono_pipeline
 
+- stage: test_uhd_x440_embedded_stage
+  displayName: Test X440 Embedded UHD
+  dependsOn: []
+  condition: ${{ parameters.run_x440_embedded_tests }}
+  jobs:
+  - template: templates/tests/job-uhd-x440-hardware-tests-sdr-test0.yml
+    parameters:
+      testOS: ubuntu1804
+      uhdArtifactSource: uhd_mono_pipeline
 
 - stage: test_streaming_stage
   displayName: Test UHD Streaming
@@ -111,8 +128,22 @@ stages:
   dependsOn: []
   condition: ${{ parameters.run_x410_rf_tests }}
   jobs:
-  - template: templates/tests/job-uhd-x4xx-hardware-tests-pebbles.yml
+  - template: templates/tests/job-uhd-x410-hardware-tests-pebbles.yml
     parameters:
       testOS: ubuntu1804
       uhdArtifactSource: uhd_mono_pipeline
       extra_rf_test_args: ${{ parameters.extra_rf_test_args }}
+      testLength: ${{ parameters.testLength }}
+
+
+- stage: test_x440_rf_tests
+  displayName: Run X440 RF tests
+  dependsOn: []
+  condition: ${{ parameters.run_x440_rf_tests }}
+  jobs:
+  - template: templates/tests/job-uhd-x440-hardware-tests-pebbles.yml
+    parameters:
+      testOS: ubuntu1804
+      uhdArtifactSource: uhd_mono_pipeline
+      extra_rf_test_args: ${{ parameters.extra_rf_test_args }}
+      testLength: ${{ parameters.testLength }}

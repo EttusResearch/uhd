@@ -46,7 +46,11 @@ localparam BES_FLUSH_DONE_OFFSET          = BES_FLUSH_ACTIVE_OFFSET + BES_FLUSH_
 localparam BES_FLUSH_DONE_WIDTH           = 1;
 localparam BES_DATA_MTU_OFFSET            = BES_FLUSH_DONE_OFFSET + BES_FLUSH_DONE_WIDTH;
 localparam BES_DATA_MTU_WIDTH             = 6;
-localparam BES_TOTAL_WIDTH                = BES_DATA_MTU_OFFSET + BES_DATA_MTU_WIDTH;
+localparam BES_CTRL_CLK_IDX_OFFSET        = BES_DATA_MTU_OFFSET + BES_DATA_MTU_WIDTH;
+localparam BES_CTRL_CLK_IDX_WIDTH         = 6;
+localparam BES_TB_CLK_IDX_OFFSET          = BES_CTRL_CLK_IDX_OFFSET + BES_CTRL_CLK_IDX_WIDTH;
+localparam BES_TB_CLK_IDX_WIDTH           = 6;
+localparam BES_TOTAL_WIDTH                = BES_TB_CLK_IDX_OFFSET + BES_TB_CLK_IDX_WIDTH;
 
 // Protocol version for this definition
 localparam [5:0] BACKEND_PROTO_VER  = 6'd1;

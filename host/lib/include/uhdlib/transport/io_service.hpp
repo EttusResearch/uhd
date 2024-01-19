@@ -367,8 +367,8 @@ public:
         size_t num_send_frames,
         recv_io_if::fc_callback_t fc_cb) = 0;
 
-    io_service()                  = default;
-    io_service(const io_service&) = delete;
+    io_service()                             = default;
+    io_service(const io_service&)            = delete;
     io_service& operator=(const io_service&) = delete;
     virtual ~io_service()                    = default;
 };
