@@ -95,6 +95,8 @@ stages:
     parameters:
       testOS: ubuntu1804
       uhdArtifactSource: uhd_mono_pipeline
+      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
 
 - stage: test_uhd_x440_embedded_stage
   displayName: Test X440 Embedded UHD
@@ -105,6 +107,8 @@ stages:
     parameters:
       testOS: ubuntu1804
       uhdArtifactSource: uhd_mono_pipeline
+      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
 
 - stage: test_streaming_stage
   displayName: Test UHD Streaming
@@ -166,6 +170,8 @@ stages:
     parameters:
       testOS: ubuntu1804
       uhdArtifactSource: uhd_mono_pipeline
+      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       extra_rf_test_args: ${{ parameters.extra_rf_test_args }}
       testLength: ${{ parameters.testLength }}
 
@@ -179,6 +185,8 @@ stages:
     parameters:
       testOS: ubuntu1804
       uhdArtifactSource: uhd_mono_pipeline
+      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       extra_rf_test_args: ${{ parameters.extra_rf_test_args }}
       testLength: ${{ parameters.testLength }}
 
@@ -191,6 +199,8 @@ stages:
     parameters:
       testOS: ubuntu2204
       uhdArtifactSource: uhd_mono_pipeline
+      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       ${{ if contains(parameters['extra_rf_test_args'],  'test_selector') }}:
         extra_rf_test_args: ${{ parameters.extra_rf_test_args }}
       ${{ else }}:

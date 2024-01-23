@@ -25,6 +25,10 @@ parameters:
 - name: uhdArtifactSource
   type: string
   default: current
+- name: uhdFpgaArtifactSource
+  type: string
+- name: fpga_imgs_source
+  type: string
 - name: xilinxLocation
   type: string
 - name: extra_rf_test_args
@@ -65,14 +69,33 @@ jobs:
     displayName: Set uhddev pipeline artifact location
 
   - script: |
+      if [ "${{ parameters.uhdFpgaArtifactSource }}" = "current" ]; then
+        echo '##vso[task.setvariable variable=uhd_fpga_artifact_directory]'$(Agent.BuildDirectory)
+      else
+        echo '##vso[task.setvariable variable=uhd_fpga_artifact_directory]'$(Agent.BuildDirectory)/${{ parameters.uhdFpgaArtifactSource }}
+      fi
+    displayName: Set uhddev FPGA pipeline artifact location
+
+  - script: |
       rm -rf $(uhd_artifact_directory)/$(dutEmbeddedImagesArtifact)
       rm -rf $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
       rm -rf $(uhd_artifact_directory)/gnuradio-${{ parameters.testOS }}-${{ parameters.toolset }}
+      if [ ! -z "${{ parameters.uhdFpgaArtifactSource }}" ]; then
+        rm -rf $(Agent.BuildDirectory)/${{ parameters.uhdFpgaArtifactSource }}
+      fi
     displayName: Cleanup from prior run
 
   - download: ${{ parameters.uhdArtifactSource }}
     artifact: $(dutEmbeddedImagesArtifact)
     displayName: Download $(dutEmbeddedImagesArtifact)
+
+  - download: ${{ parameters.uhdFpgaArtifactSource }}
+    patterns: |
+      usrp_$(pytestDUT)_fpga_$(dutFPGA).bit
+      usrp_$(pytestDUT)_fpga_$(dutFPGA).dts
+      usrp_$(pytestDUT)_fpga_$(dutFPGA).rpt
+    displayName: Download FPGA pipeline artifacts
+    condition: and(succeeded(), eq('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline'))
 
   - task: ExtractFiles@1
     inputs:
@@ -153,6 +176,14 @@ jobs:
 
   - script: |
         ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
+        scp -o StrictHostKeyChecking=no $(uhd_fpga_artifact_directory)/*/usrp_$(pytestDUT)_* root@$USRP_EMB_TARGET_IP:/usr/share/uhd/images/
+        ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "md5sum /usr/share/uhd/images/usrp_$(pytestDUT)_fpga_$(dutFPGA).bit > /usr/share/uhd/images/usrp_$(pytestDUT)_fpga_$(dutFPGA).bit.md5"
+        ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "md5sum /usr/share/uhd/images/usrp_$(pytestDUT)_fpga_$(dutFPGA).dts > /usr/share/uhd/images/usrp_$(pytestDUT)_fpga_$(dutFPGA).dts.md5"
+    displayName: Copy FPGA pipeline images to device
+    condition: and(succeeded(), eq('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline'))
+
+  - script: |
+        ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
         ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "uhd_image_loader --args addr=localhost,type=$(dutType),fpga=$(dutFPGA)"
         EXITCODE=$?
         sleep 60
@@ -205,6 +236,13 @@ jobs:
     continueOnError: true
 
   - script: |
+      export UHD_INSTALL_PATH=$(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev/build-installed
+      export PATH=$UHD_INSTALL_PATH/bin:$PATH
+      if [ -d "$UHD_INSTALL_PATH/lib64" ]; then
+        export LD_LIBRARY_PATH=$UHD_INSTALL_PATH/lib64:$LD_LIBRARY_PATH
+      else
+        export LD_LIBRARY_PATH=$UHD_INSTALL_PATH/lib:$LD_LIBRARY_PATH
+      fi
       mkdir -p $(Common.TestResultsDirectory)/devtest
       cd $(Common.TestResultsDirectory)/devtest
       if [ -z "$(master_clock_rate)" ]; then
@@ -213,6 +251,7 @@ jobs:
         args="addr=$USRP_EMB_TARGET_IP,type=$(dutType),master_clock_rate=$(master_clock_rate)"
       fi
       echo $args
+      uhd_usrp_probe --args $args
       python3 $(Build.SourcesDirectory)/uhddev/host/tests/devtest/run_testsuite.py \
         --src-dir $(Build.SourcesDirectory)/uhddev/host/tests/devtest \
         --devtest-pattern $(devtestPattern) --args $args \
@@ -267,6 +306,7 @@ jobs:
         sleep ${{ parameters.warmUpAfterBoot }}
       fi
       uhd_find_devices --args type=$(dutType)
+      uhd_usrp_probe --args addr=$USRP_EMB_TARGET_IP,type=$(dutType)
       python3 ../automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) --results_path '$(Common.TestResultsDirectory)/pytest/host' --test_length ${{ parameters.testLength }} ${{ parameters.extra_rf_test_args }}
     displayName: Run pytest on host
     continueOnError: true
