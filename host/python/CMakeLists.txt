@@ -4,10 +4,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-########################################################################
-# This file included, use CMake directory variables
-########################################################################
-
 PYTHON_CHECK_MODULE(
     "virtual environment"
     "sys"
@@ -15,15 +11,18 @@ PYTHON_CHECK_MODULE(
     HAVE_PYTHON_VIRTUALENV
 )
 
+if(pybind11_FOUND)
+  message(STATUS "Using Pybind11 from: ${pybind11_INCLUDE_DIR}")
+else()
+  set(pybind11_INCLUDE_DIR
+      "${UHD_SOURCE_DIR}/lib/deps/pybind11/include"
+      CACHE STRING
+      "Location of PyBind11 includes"
+  )
+  message(STATUS "Using in-tree Pybind11.")
+endif()
+
 # Get include dirs
-include_directories(${PYTHON_INCLUDE_DIRS})
-set(PYBIND11_INCLUDE_DIR
-    "${UHD_SOURCE_DIR}/lib/deps/pybind11/include"
-    CACHE
-    STRING
-    "Location of PyBind11 includes"
-)
-include_directories(${PYBIND11_INCLUDE_DIR})
 execute_process(
     COMMAND "${PYTHON_EXECUTABLE}" -c
     "try:\n import numpy\n import os\n inc_path = numpy.get_include()\n if os.path.exists(os.path.join(inc_path, 'numpy', 'arrayobject.h')):\n  print(inc_path, end='')\nexcept:\n pass"
@@ -36,6 +35,7 @@ add_library(pyuhd SHARED
     ${UHD_SOURCE_DIR}/lib/device_python.cpp
     ${UHD_SOURCE_DIR}/lib/usrp/multi_usrp_python.cpp
 )
+
 # python expects extension modules with a particular suffix
 if(WIN32)
     set_target_properties(pyuhd PROPERTIES PREFIX "lib" SUFFIX ".pyd")
@@ -56,9 +56,10 @@ else()
     )
 endif(WIN32)
 target_include_directories(pyuhd PUBLIC
+    ${PYTHON_INCLUDE_DIRS}
     ${PYTHON_NUMPY_INCLUDE_DIR}
     ${UHD_SOURCE_DIR}/lib
-    ${PYBIND11_INCLUDE_DIR}
+    ${pybind11_INCLUDE_DIR}
 )
 
 if(WIN32)

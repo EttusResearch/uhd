@@ -18,6 +18,14 @@ if(NOT DEFINED INCLUDED_UHD_PYTHON_CMAKE)
 set(INCLUDED_UHD_PYTHON_CMAKE TRUE)
 
 ########################################################################
+# Setup Python Part 0: Pybind11
+#
+# We do this first so it doesn't interfere with the other steps. In
+# particular, searching for pybind11 will mess with PYTHON_VERSION.
+########################################################################
+find_package(pybind11 ${PYBIND11_MIN_VERSION} QUIET)
+
+########################################################################
 # Setup Python Part 1: Find the interpreters
 ########################################################################
 message(STATUS "")
@@ -211,7 +219,7 @@ exit(0)
     )
     if(python_result EQUAL 0)
         if(${version_output} VERSION_GREATER_EQUAL ${min_module_version})
-            message(STATUS "Python checking for ${desc} - ${version_output} satisifes minimum required version ${min_module_version}")
+            message(STATUS "Python checking for ${desc} - ${version_output} satisfies minimum required version ${min_module_version}")
             set(${have_var} TRUE)
         else()
             message(STATUS "Python checking for ${desc} - ${version_output} does not satisfy minimum required version ${min_module_version}")

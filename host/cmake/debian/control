@@ -22,7 +22,8 @@ Build-Depends: cmake,
                python3-numpy,
                python3-requests,
                python3-ruamel.yaml,
-               python3-setuptools
+               python3-setuptools,
+               pybind11-dev
 Build-Depends-Indep: doxygen,
               	     doxygen-latex,
                	     graphviz [!powerpcspe]
