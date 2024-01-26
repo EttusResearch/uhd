@@ -31,6 +31,7 @@ UHD_INSTALL(FILES
     # Infrastructure
     actions.hpp
     block_id.hpp
+    block_controller_factory_python.hpp
     blockdef.hpp
     chdr_types.hpp
     constants.hpp

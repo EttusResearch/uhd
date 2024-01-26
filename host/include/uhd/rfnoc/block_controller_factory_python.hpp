@@ -8,9 +8,7 @@
 
 #include <uhd/rfnoc/noc_block_base.hpp>
 
-using namespace uhd::rfnoc;
-
-namespace {
+namespace uhd { namespace rfnoc {
 
 // Static factory for constructing a block controller T given an instance of
 // the superclass noc_block_base for the block controller, as might be
@@ -21,10 +19,10 @@ template <typename T>
 class block_controller_factory
 {
 public:
-    static typename T::sptr make_from(noc_block_base::sptr block_base)
+    static typename T::sptr make_from(uhd::rfnoc::noc_block_base::sptr block_base)
     {
         return std::dynamic_pointer_cast<T>(block_base);
     }
 };
 
-} // namespace
+}} // namespace uhd::rfnoc
