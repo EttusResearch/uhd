@@ -21,12 +21,13 @@ from tftp import TFTPServer
 
 bitfile_name = "usrp_{}_fpga_{}.bit"
 
-def jtag_x3xx(dev_type, dev_model, jtag_server, jtag_serial, fpga_folder, fpga, redis_server):
+def jtag_x3xx(dev_type, dev_model, jtag_server, jtag_serial, fpga_folder, fpga, redis_server, vivado_dir):
     if dev_model not in ["x300", "x310"]:
         raise RuntimeError(f'{dev_type} not supported with jtag_x3xx')
     remote_working_dir = "pipeline_fpga"
-    vivado_program_jtag = "/opt/Xilinx/Vivado_Lab/2020.1/bin/vivado_lab -mode batch -source {}/viv_hardware_utils.tcl -nolog -nojournal -tclargs program".format(
-        remote_working_dir)
+    vivado_lab_path = os.path.join(vivado_dir, "bin/vivado_lab")
+    vivado_program_jtag = "{} -mode batch -source {}/viv_hardware_utils.tcl -nolog -nojournal -tclargs program".format(
+        vivado_lab_path, remote_working_dir)
     print("Waiting on jtag mutex for {}".format(jtag_server), flush=True)
     with Redlock(key="hw_jtag_{}".format(jtag_server),
                  masters=redis_server, auto_release_time=1000 * 60 * 5):
@@ -233,8 +234,8 @@ def main(args):
                 os.chdir(os.path.join(working_dir, fpga))
 
                 if args.jtag_x3xx:
-                    dev_type, dev_model, jtag_server, jtag_serial, fpga_folder = args.jtag_x3xx.split(',')
-                    jtag_x3xx(dev_type, dev_model, jtag_server, jtag_serial, fpga_folder, fpga, redis_server)
+                    dev_type, dev_model, jtag_server, jtag_serial, fpga_folder, vivado_dir = args.jtag_x3xx.split(',')
+                    jtag_x3xx(dev_type, dev_model, jtag_server, jtag_serial, fpga_folder, fpga, redis_server, vivado_dir)
 
                 if dev_type and dev_type in ["n3xx", "e3xx"]:
                     subprocess.run(shlex.split(f"uhd_image_loader --args=mgmt_addr={mgmt_addr},type={dev_type},fpga={fpga}"))
