@@ -977,26 +977,33 @@ def build(fpga_path, device, image_core_path, edge_file, **args):
     ] + args.get("extra_makefile_srcs", [])
     logging.debug("Temporarily changing working directory to %s", build_dir)
     os.chdir(build_dir)
-    make_cmd = ". ./setupenv.sh "
+    setup_cmd = ". ./setupenv.sh "
     if "vivado_path" in args and args["vivado_path"]:
-        make_cmd = make_cmd + "--vivado-path=" + args["vivado_path"] + " "
+        setup_cmd += "--vivado-path=" + args["vivado_path"] + " "
+    make_cmd = ""
     if "clean_all" in args and args["clean_all"]:
-        make_cmd = make_cmd + "&& make cleanall "
+        make_cmd += "make cleanall && "
     target = args["target"] if "target" in args else ""
-    make_cmd = make_cmd + "&& make " + default_target(device, target)
-    make_cmd += " IMAGE_CORE={} EDGE_FILE={}".format(image_core_path,
-                                                     edge_file)
+    make_cmd += "make " + default_target(device, target)
+    make_cmd += f" IMAGE_CORE={image_core_path} EDGE_FILE={edge_file}"
     if makefile_src_paths:
         make_cmd += " RFNOC_OOT_MAKEFILE_SRCS=" + "\\ ".join(makefile_src_paths)
     if "GUI" in args and args["GUI"]:
         make_cmd = make_cmd + " GUI=1"
+
+    if args.get('generate_only'):
+        logging.info("Skip build (generate only option given)")
+        logging.info("Use the following command to build the image: %s", make_cmd)
+        return 0
+
+    make_cmd = setup_cmd + " && " + make_cmd
     logging.info("Launching build with the following settings:")
     logging.info(" * Build Directory: %s", build_dir)
     logging.info(" * Target: %s", target)
     logging.info(" * Image Core File: %s", image_core_path)
     logging.info(" * Edge Table File: %s", edge_file)
     # Wrap it into a bash call:
-    make_cmd = '{bash} -c "{cmd}"'.format(bash=BASH_EXECUTABLE, cmd=make_cmd)
+    make_cmd = f'{BASH_EXECUTABLE} -c "{make_cmd}"'
     logging.debug("Executing the following command: %s", make_cmd)
     ret_val = os.system(make_cmd)
     os.chdir(cwd)
@@ -1133,10 +1140,6 @@ def build_image(config, fpga_path, config_path, device, **args):
         args,
     )
     write_build_env()
-
-    if "generate_only" in args and args["generate_only"]:
-        logging.info("Skip build (generate only option given)")
-        return 0
 
     # Check if the YAML files require additional Makefile.srcs
     extra_makefile_srcs = set()
