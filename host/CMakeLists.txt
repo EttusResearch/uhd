@@ -441,6 +441,11 @@ endif(WIN32)
 LIBUHD_REGISTER_COMPONENT("Examples" ENABLE_EXAMPLES ON "ENABLE_LIBUHD" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("Utils" ENABLE_UTILS ON "ENABLE_LIBUHD" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("Tests" ENABLE_TESTS ON "ENABLE_LIBUHD" OFF OFF)
+LIBUHD_REGISTER_COMPONENT(
+    "Python Module (Utils only)"
+    ENABLE_PYMOD_UTILS OFF
+    "HAVE_PYTHON_MODULE_NUMPY;HAVE_PYTHON_MODULE_MAKO;HAVE_PYTHON_MODULE_YAML"
+    OFF OFF)
 
 ########################################################################
 # Add the subdirectories
@@ -459,13 +464,13 @@ if(ENABLE_TESTS)
     add_subdirectory(tests)
 endif(ENABLE_TESTS)
 
-if(ENABLE_UTILS)
+if(ENABLE_UTILS OR ENABLE_PYMOD_UTILS)
     add_subdirectory(utils)
-endif(ENABLE_UTILS)
+endif(ENABLE_UTILS OR ENABLE_PYMOD_UTILS)
 
 add_subdirectory(docs)
 
-if(ENABLE_PYTHON_API)
+if(ENABLE_PYTHON_API OR ENABLE_PYMOD_UTILS)
     add_subdirectory(python)
 endif()
 
