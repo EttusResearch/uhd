@@ -182,6 +182,7 @@ def load_config_validate(config_file, config_path, allow_inherit=True):
             for inherit in inherits:
                 logging.debug("Image core file inherits from %s...", inherit)
                 parent_file = find_file(inherit, '', False) or \
+                        find_file(inherit, os.path.dirname(config_file), False) or \
                         find_file(inherit, get_core_config_path(config_path))
                 logging.debug("Found parent file: %s", parent_file)
                 if not parent_file:

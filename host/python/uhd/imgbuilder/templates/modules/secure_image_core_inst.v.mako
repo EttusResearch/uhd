@@ -80,7 +80,7 @@
     .BLOCK_CHDR_W  (BLOCK_CHDR_W),
     .PROTOVER      (PROTOVER),
     .BLOCK_MTU     (BLOCK_MTU)
-  ) secure_image_core_inst (
+  ) secure_image_core_i (
     .chdr_aclk                     (chdr_aclk),
     .ctrl_aclk                     (ctrl_aclk),
     .core_arst                     (core_arst),

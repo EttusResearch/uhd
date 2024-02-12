@@ -84,7 +84,13 @@ def setup_parser():
         action="store_true")
     parser.add_argument(
         "-S", "--secure-core",
-        help="Build a secure image core instead of a bitfile.",
+        help="Build a secure image core instead of a bitfile. "
+             "This argument provides the name of the generated YAML.",
+        )
+    parser.add_argument(
+        "-K", "--secure-key",
+        help="Path to encryption key file to use for secure core.",
+        default="",
         )
     parser.add_argument(
         "-d", "--device",
@@ -250,9 +256,6 @@ def main():
     with open(source, "rb") as source_file:
         source_hash.update(source_file.read())
 
-    if args.secure_core:
-        target = 'secure_core'
-
     image_builder.build_image(
         config=config,
         repo_fpga_path=get_fpga_path(args),
@@ -276,7 +279,9 @@ def main():
         vivado_path=args.vivado_path,
         no_date=args.no_date,
         no_hash=args.no_hash,
-        build_secure_core=args.secure_core,
+        secure_core=args.secure_core,
+        secure_key_file=args.secure_key,
+        yaml_path=args.yaml_config if args.yaml_config else args.grc_config,
         )
 
 if __name__ == "__main__":

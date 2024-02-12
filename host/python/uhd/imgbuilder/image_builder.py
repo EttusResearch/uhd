@@ -11,6 +11,8 @@ import logging
 import os
 import sys
 import pathlib
+import shutil
+import re
 
 import mako.lookup
 import mako.template
@@ -53,6 +55,20 @@ DEVICE_DEFAULTTARGET_MAP = {
     'n320': 'N320_XG',
 }
 
+# Secure core RTL hierarchical path
+SECURE_CORE_INST_PATH = {
+    'x300': 'x300_core/bus_int/rfnoc_sandbox_i/secure_image_core_i',
+    'x310': 'x300_core/bus_int/rfnoc_sandbox_i/secure_image_core_i',
+    'e310': 'e31x_core_inst/rfnoc_image_core_i/secure_image_core_i',
+    'e320': 'e320_core_i/rfnoc_sandbox_i/secure_image_core_i',
+    'n300': 'n3xx_core/rfnoc_sandbox_i/secure_image_core_i',
+    'n310': 'n3xx_core/rfnoc_sandbox_i/secure_image_core_i',
+    'n320': 'n3xx_core/rfnoc_sandbox_i/secure_image_core_i',
+    'x400': 'x4xx_core_i/rfnoc_image_core_i/secure_image_core_i',
+    'x410': 'x4xx_core_i/rfnoc_image_core_i/secure_image_core_i',
+    'x440': 'x4xx_core_i/rfnoc_image_core_i/secure_image_core_i',
+}
+
 def write_verilog(config, destination, args, template):
     """
     Generates rfnoc_image_core.v file for the device.
@@ -65,6 +81,7 @@ def write_verilog(config, destination, args, template):
     :param config: ImageBuilderConfig derived from script parameter
     :param destination: Filepath to write to
     :param args: Dictionary of arguments for the code generation
+    :param template: Mako template to use
     :return: None
     """
     template_dir = os.path.join(os.path.dirname(__file__), "templates")
@@ -85,21 +102,81 @@ def write_verilog(config, destination, args, template):
         image_core_file.write(block)
 
 
-def gen_make_command(args, artifact_dir, device):
+def patch_netlist_constraints(device, artifact_dir):
+    """
+    Updates the constraints for the secure_image_core netlist so that they will
+    work when applied to the top-level design. The constraints output by Vivado
+    assume the netlist is the top level. We need to adjust the constraints so
+    that they apply to the correct level of the hierarchy when applied to the
+    actual top level.
+
+    :param device: The device to build for (x310, x410, e320, etc).
+    :param artifact_dir: The build directory where all the build artifacts are
+                         stored.
+    :return: None
+    """
+    if device not in SECURE_CORE_INST_PATH:
+        logging.warning(f'Device {device} not found. Skipping secure core netlist patch.')
+        return
+    netlist_root = SECURE_CORE_INST_PATH[device]
+    # Make a backup of "secure_image_core.xdc" in the artifact directory
+    secure_xdc = os.path.join(artifact_dir, "secure_image_core.xdc")
+    secure_xdc_bak = os.path.join(artifact_dir, "secure_image_core.xdc.bak")
+    shutil.copy(secure_xdc, secure_xdc_bak)
+    # Update all calls to "current_instance" to have the correct relative path.
+    # Some examples:
+    # current_instance                  -> current_instance {new_path}
+    # current_instance -quiet           -> current_instance -quiet {new_path}
+    # current_instance {path/in/design} -> current_instance {new_path/path/in/design}
+    with open(secure_xdc, "r") as file:
+        constraints = file.read()
+    # Update path in calls that already include a path
+    constraints = re.sub(
+        r'^(\s*current_instance\s*(?:-quiet)?)\s*{(.*)}\s*$',
+        fr'\1 {{{netlist_root}/\2}}', constraints,
+        flags=re.MULTILINE,
+    )
+    # Substitute calls that don't include a path
+    constraints = re.sub(
+        r'^(\s*current_instance\s*(?:-quiet)?)\s*$',
+        fr'\1 {{{netlist_root}}}', constraints,
+        flags=re.MULTILINE,
+    )
+    # Set the current instance at the start and reset it at the end
+    constraints = (
+        f'current_instance {{{netlist_root}}}\n' +
+        constraints +
+        '\ncurrent_instance -quiet\n'
+    )
+    # Replace the constraints file with the new constraints
+    with open(secure_xdc, "w") as file:
+        file.write(constraints)
+
+
+def gen_make_command(args, artifact_dir, device, use_secure_netlist):
     """
     Generates the 'make' command that will build the desired bitfiles, including
     all the necessary options.
     """
     target = args["target"] if "target" in args else ""
-    make_cmd = \
-        f"make {default_target(device, target)} " \
-        f"ARTIFACT_DIR={artifact_dir} " \
-        f"IMAGE_CORE_NAME={args['image_core_name']} " \
+    make_cmd = (
+        f"make {default_target(device, target)} "
+        + (
+            f"SECURE_CORE=1 SECURE_KEY={args.get('secure_key_file')} "
+            if args.get("secure_core")
+            else ""
+        )
+        + (
+            f"SECURE_NETLIST=1 " if use_secure_netlist else ""
+        ) +
+        f"ARTIFACT_DIR={artifact_dir} "
+        f"IMAGE_CORE_NAME={args['image_core_name']} "
         f"{'GUI=1' if 'GUI' in args and args['GUI'] else ''} "
+    )
     return make_cmd
 
 
-def build(fpga_top_dir, device, artifact_dir, **args):
+def build(fpga_path, device, artifact_dir, use_secure_netlist, **args):
     """
     Call FPGA toolchain to actually build the image
 
@@ -113,6 +190,8 @@ def build(fpga_top_dir, device, artifact_dir, **args):
     :param artifact_dir: The build directory where all the build artifacts are
                          stored.
                          (e.g., .../usrp3/x400/build-x410_XG_200_rfnoc_image_core/)
+    :param use_secure_netlist: Boolean for whether the build with secure image
+                               core netlist
     :param **args: Additional options
                    target: The target to build (leave empty for default).
                    clean_all: passed to Makefile
@@ -131,7 +210,8 @@ def build(fpga_top_dir, device, artifact_dir, **args):
     ret_val = 0
     artifact_dir = os.path.abspath(artifact_dir)
     cwd = os.getcwd()
-    build_base_dir = fpga_top_dir
+    fpga_dir = os.path.join(yaml_utils.get_top_path(os.path.abspath(fpga_path)), target_dir(device))
+    build_base_dir = fpga_dir
     build_output_dir = os.path.join(build_base_dir, "build")
     if not os.path.isdir(fpga_top_dir):
         logging.error("Not a valid directory: %s", fpga_top_dir)
@@ -150,7 +230,7 @@ def build(fpga_top_dir, device, artifact_dir, **args):
     make_cmd = ""
     if "clean_all" in args and args["clean_all"]:
         make_cmd += "make cleanall && "
-    make_cmd += gen_make_command(args, artifact_dir, device)
+    make_cmd += gen_make_command(args, artifact_dir, device, use_secure_netlist)
     if makefile_src_paths:
         make_cmd += " RFNOC_OOT_MAKEFILE_SRCS=" + "\\ ".join(makefile_src_paths)
     if "num_jobs" in args and args["num_jobs"]:
@@ -183,6 +263,8 @@ def build(fpga_top_dir, device, artifact_dir, **args):
     make_cmd = f'{BASH_EXECUTABLE} -c "{make_cmd}"'
     logging.debug("Executing the following command: %s", make_cmd)
     ret_val = os.system(make_cmd)
+    if ret_val == 0 and args.get('secure_core'):
+        patch_netlist_constraints(device, artifact_dir)
     os.chdir(cwd)
     return ret_val
 
@@ -344,13 +426,32 @@ def build_image(config, repo_fpga_path, config_path, device, **args):
         else:
             logging.info("Skipping generation of %s: File already exists and "
                          "reuse was requested.", path)
-    if args.get('build_secure_core'):
+    # Are we generating the secure image core?
+    netlist_files = config.get('secure_image_core', {}).get('netlist_files')
+    if args.get('secure_core'):
         secure_core_def = builder_conf.get_secure_core_def()
-        secure_core_yml = f"{args.get('build_secure_core')}.yml"
-        logging.info("Writing secure core YAML to %s.", secure_core_yml)
+        secure_core_yml = args.get('secure_core')
+        new_netlist_files = [
+            'secure_image_core.vp',
+            'secure_image_core.xdc',
+        ]
+        secure_core_def['secure_image_core']['netlist_files'] = new_netlist_files
+        logging.info("Writing secure core YAML to %s", secure_core_yml)
         yaml_utils.write_yaml(secure_core_def, secure_core_yml)
-        logging.warning("SECURE IMAGE BUILDING NOT YET IMPLEMENTED.")
-        return 0
+    elif netlist_files:
+        # The YAML includes a set of secure image netlist files. Copy them to
+        # the artifact directory.
+        netlist_dir = os.path.dirname(args.get('yaml_path'))
+        for file in netlist_files:
+            try:
+                # Assume netlist file path is relative to YAML file
+                source = os.path.join(netlist_dir, file)
+                destination = os.path.join(artifact_dir, os.path.basename(file))
+                logging.info(f"Copying {file} to {destination}")
+                shutil.copy(source, destination)
+            except:
+                logging.error(f"Failed to copy {source} to artifact directory")
+                return 1
 
     ret_val = build(fpga_top_dir, device, artifact_dir, bool(netlist_files), **args)
     if args.get('generate_only'):

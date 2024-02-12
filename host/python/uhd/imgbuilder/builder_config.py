@@ -116,11 +116,11 @@ class ImageBuilderConfig:
                 logging.error("Cannot find include: %s", inc)
                 sys.exit(1)
             inc_data = includes[key]
-            if 'secure_image_core' not in inc_data:
+            if not hasattr(inc_data, 'secure_image_core'):
                 logging.error("Include %s does not contain a valid secure image core!",
                               key)
                 sys.exit(1)
-            merge_dicts(target, inc_data['secure_image_core'])
+            merge_dicts(target, inc_data.secure_image_core)
             return target
         if secure_config:
             # The secure image core may use an include statement
