@@ -56,11 +56,13 @@ jobs:
   steps:
     - checkout: self
       clean: true
+      fetchDepth: 1
 
     - checkout: hwtools
       clean: true
       path: s/hwtools/head
       persistCredentials: true
+      fetchDepth: 1
 
     - download: current
       artifact: ${{ parameters.ip_artifact }}
