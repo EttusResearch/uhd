@@ -47,18 +47,22 @@ parameters:
   displayName: X410 Targets
   default:
     X410_XG_100:
+      image_core: x410_200_rfnoc_image_core.yml
       target_name: X410_XG_100
       timeout: 720
       max_attempts: 2
     X410_UC_200:
+      image_core: x410_200_rfnoc_image_core.yml
       target_name: X410_UC_200
       timeout: 720
       max_attempts: 2
     X410_X4_200:
+      image_core: x410_200_rfnoc_image_core.yml
       target_name: X410_X4_200
       timeout: 720
       max_attempts: 2
     X410_CG_400:
+      image_core: x410_400_rfnoc_image_core.yml
       target_name: X410_CG_400
       timeout: 720
       max_attempts: 2
@@ -67,22 +71,27 @@ parameters:
   displayName: X440 Targets
   default:
     X440_CG_1600:
+      image_core: x440_1600_rfnoc_image_core.yml
       target_name: X440_CG_1600
       timeout: 720
       max_attempts: 2
     X440_CG_400:
+      image_core: x440_400_rfnoc_image_core.yml
       target_name: X440_CG_400
       timeout: 720
       max_attempts: 2
     X440_X4_1600:
+      image_core: x440_1600_d_rfnoc_image_core.yml
       target_name: X440_X4_1600
       timeout: 720
       max_attempts: 2
     X440_X4_400:
+      image_core: x440_400_d_rfnoc_image_core.yml
       target_name: X440_X4_400
       timeout: 720
       max_attempts: 2
     X440_X4_200:
+      image_core: x440_200_rfnoc_image_core.yml
       target_name: X440_X4_200
       timeout: 720
       max_attempts: 2
