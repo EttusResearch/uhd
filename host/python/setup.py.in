@@ -8,7 +8,7 @@
 
 from setuptools import setup, find_packages
 
-packages = find_packages()
+packages = find_packages() + ['uhd.imgbuilder.templates', 'uhd.imgbuilder.templates.modules']
 
 print("Including packages in pyuhd:", packages)
 
@@ -28,7 +28,11 @@ setup(name='uhd',
       url='https://www.ettus.com/',
       license='GPLv3',
       package_dir={'': r'${NATIVE_CURRENT_BINARY_DIR}'},
-      package_data={'uhd': ['*.so']},
+      package_data={
+          'uhd': ['*.so'],
+          'uhd.imgbuilder.templates': ['*.mako'],
+          'uhd.imgbuilder.templates.modules': ['*.mako'],
+      },
       zip_safe=False,
       packages=packages,
       install_requires=['numpy'])
