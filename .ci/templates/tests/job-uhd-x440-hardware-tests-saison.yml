@@ -33,7 +33,7 @@ jobs:
     ${{ else }}:
       timeoutInMinutes: 150
     dutMatrix:
-      pebbles-x440-0:
+      saison-x440-0:
         dutName: 'saison-x440-0'
         dutType: 'x4xx'
         devtestPattern: 'x4x0'
