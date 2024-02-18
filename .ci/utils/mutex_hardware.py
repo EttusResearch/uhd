@@ -243,13 +243,19 @@ def main(args):
                         set_sfp_addrs(mgmt_addr, sfp_addrs)
 
                 for command in args.test_commands:
-                    result = subprocess.run(shlex.split(command.format(fpga=fpga)))
+                    if args.working_dir:
+                        result = subprocess.run(shlex.split(command.format(fpga=fpga)), cwd=args.working_dir)
+                    else:
+                        result = subprocess.run(shlex.split(command.format(fpga=fpga)))
                     if(return_code == 0):
                         return_code = result.returncode
             sys.exit(return_code)
         else:
             for command in args.test_commands:
-                result = subprocess.run(shlex.split(command))
+                if args.working_dir:
+                    result = subprocess.run(shlex.split(command), cwd=args.working_dir)
+                else:
+                    result = subprocess.run(shlex.split(command))
                 if(result.returncode != 0):
                     sys.exit(result.returncode)
             sys.exit(0)
@@ -273,6 +279,8 @@ if __name__ == "__main__":
                         help="Comma delimited list of FPGAs to test")
     parser.add_argument("--dut_timeout", type=int, default=60,
                         help="Dut mutex timeout in minutes")
+    parser.add_argument("--working_dir", type=str,
+                        help="Change working directory for commands to be run")
     parser.add_argument("redis_server", type=str,
                         help="Redis server for mutex")
     parser.add_argument("dut_name", type=str,

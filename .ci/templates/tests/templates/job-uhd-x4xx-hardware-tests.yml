@@ -261,13 +261,13 @@ jobs:
         export PYTHONPATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib/python3/dist-packages:$PYTHONPATH
       fi
 
-      cd $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests
+      cd $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/pytests
       if [ ${{ parameters.warmUpAfterBoot }} > 0 ]; then
         echo 'sleeping ${{ parameters.warmUpAfterBoot }} seconds before testing...'
         sleep ${{ parameters.warmUpAfterBoot }}
       fi
       uhd_find_devices --args type=$(dutType)
-      python3 automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) --results_path '$(Common.TestResultsDirectory)/pytest/host' --test_length ${{ parameters.testLength }} ${{ parameters.extra_rf_test_args }}
+      python3 ../automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) --results_path '$(Common.TestResultsDirectory)/pytest/host' --test_length ${{ parameters.testLength }} ${{ parameters.extra_rf_test_args }}
     displayName: Run pytest on host
     continueOnError: true
     condition: and(succeeded(), ${{ parameters.runPyTest }})
@@ -279,7 +279,8 @@ jobs:
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "pip3 install --upgrade pytest pytest-helpers-namespace pytest-tempdir pytest-salt"
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "rm -rf ~/usrp_pytest && mkdir -p ~/usrp_pytest"
       scp -o StrictHostKeyChecking=no -r $(Build.SourcesDirectory)/ettus-rts/config/remote/ root@$USRP_EMB_TARGET_IP:~/usrp_pytest
-      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "cd ~/usrp_pytest/remote/python_tests && python3 automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) --test_selector pytests/test_gnuradio_sanity.py --run_embedded"
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "cd ~/usrp_pytest/remote/python_tests/pytests && \
+        python3 ../automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) --test_selector test_gnuradio_sanity.py --run_embedded"
       EXITCODE=$?
       scp -o StrictHostKeyChecking=no -r root@$USRP_EMB_TARGET_IP:~/usrp_pytest .
       exit $EXITCODE

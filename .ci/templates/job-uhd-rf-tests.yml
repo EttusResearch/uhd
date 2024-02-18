@@ -127,9 +127,10 @@ jobs:
         --sdimage_sdmux $(devType),$(devModel),$(uhd_artifact_directory)/$(devType)-images/$(devSDImage),${{ parameters.uhdSrcDir }}/$(devLabgridConfig),$(devHostname) \
         --fpgas $(devFpga) \
         --sfp_addrs $(sfpAddrs) \
+        --working_dir "$(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/pytests/" \
         ${{ parameters.redisHost }} $(devName) \
         "uhd_usrp_probe --args addr=$(devAddr)" \
-        "python3 $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) \
+        "python3 ../automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) \
           --results_path $(Common.TestResultsDirectory)/pytest/{fpga} ${{ parameters.extra_rf_test_args }}"
     continueOnError: true
     condition: and(succeeded(), eq(variables.devType, 'n3xx'), eq(variables.devBus, 'ip'))

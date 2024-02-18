@@ -180,5 +180,5 @@ stages:
       ${{ if contains(parameters['extra_rf_test_args'],  'test_selector') }}:
         extra_rf_test_args: ${{ parameters.extra_rf_test_args }}
       ${{ else }}:
-        extra_rf_test_args: ${{ parameters.extra_rf_test_args }} --test_selector pytests/test_rx_phase_coherence.py pytests/test_tx_phase_coherence.py
+        extra_rf_test_args: ${{ parameters.extra_rf_test_args }} --test_selector test_rx_phase_coherence.py test_tx_phase_coherence.py
       testLength: ${{ parameters.testLength }}
