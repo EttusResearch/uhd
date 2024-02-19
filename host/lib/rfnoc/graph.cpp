@@ -6,6 +6,7 @@
 
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhd/utils/scope_exit.hpp>
 #include <uhdlib/rfnoc/graph.hpp>
 #include <uhdlib/rfnoc/node_accessor.hpp>
 #include <boost/graph/filtered_graph.hpp>
@@ -557,6 +558,8 @@ void graph_t::enqueue_action(
                                                               << action->id);
         return;
     }
+    auto reset_handling_flag =
+        uhd::utils::scope_exit::make([&]() { _action_handling_ongoing.clear(); });
 
     unsigned iteration_count = 0;
     while (!_action_queue.empty()) {
@@ -607,10 +610,8 @@ void graph_t::enqueue_action(
     }
     UHD_LOG_TRACE(LOG_ID, "Delivered all actions, terminating action handling.");
 
-    // Release the action handling flag
-    _action_handling_ongoing.clear();
-    // Now, the _graph_mutex is released, and someone else can start sending
-    // actions.
+    // Now, the _graph_mutex and _action_handling_ongoing are released, and
+    // someone else can start sending actions.
 }
 
 /******************************************************************************
