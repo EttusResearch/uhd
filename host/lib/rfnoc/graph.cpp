@@ -42,6 +42,37 @@ auto get_dirty_props(graph_t::node_ref_t node_ref)
     });
 }
 
+/*! Atomic flag locking RAII wrapper
+ */
+class atomic_flag_lock
+{
+private:
+    atomic_flag_lock(const atomic_flag_lock&)            = delete;
+    atomic_flag_lock(atomic_flag_lock&&)                 = delete;
+    atomic_flag_lock& operator=(const atomic_flag_lock&) = delete;
+    atomic_flag_lock& operator=(atomic_flag_lock&&)      = delete;
+
+public:
+    atomic_flag_lock(std::atomic_flag& flag)
+        : _flag(flag), _owns_lock(!flag.test_and_set())
+    {
+    }
+
+    ~atomic_flag_lock()
+    {
+        if (_owns_lock)
+            _flag.clear();
+    }
+
+    bool owns_lock() const
+    {
+        return _owns_lock;
+    }
+private:
+    std::atomic_flag& _flag;
+    bool _owns_lock;
+};
+
 } // namespace
 
 /*! Graph-filtering predicate to find dirty nodes only
@@ -481,11 +512,11 @@ void graph_t::enqueue_action(
     // Check if we're already in the middle of handling actions. In that case,
     // we're already in the loop below, and then all we want to do is to enqueue
     // this action tuple. The first call to enqueue_action() within this thread
-    // context will have handling_ongoing == false.
-    const bool handling_ongoing = _action_handling_ongoing.test_and_set();
+    // context will have handling_ongoing.owns_lock() == true.
+    const atomic_flag_lock handling_ongoing{_action_handling_ongoing};
     // In any case, stash the new action at the end of the action queue
     _action_queue.emplace_back(std::make_tuple(src_node, src_edge, action));
-    if (handling_ongoing) {
+    if (!handling_ongoing.owns_lock()) {
         UHD_LOG_TRACE(LOG_ID,
             "Action handling ongoing, deferring delivery of " << action->key << "#"
                                                               << action->id);
@@ -541,10 +572,8 @@ void graph_t::enqueue_action(
     }
     UHD_LOG_TRACE(LOG_ID, "Delivered all actions, terminating action handling.");
 
-    // Release the action handling flag
-    _action_handling_ongoing.clear();
-    // Now, the _graph_mutex is released, and someone else can start sending
-    // actions.
+    // Now, the _graph_mutex and handling_ongoing are released, and someone else can start
+    // sending actions.
 }
 
 /******************************************************************************
