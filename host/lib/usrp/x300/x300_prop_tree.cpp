@@ -8,13 +8,17 @@
 #include "x300_mb_controller.hpp"
 #include <uhd/property_tree.hpp>
 #include <uhd/utils/math.hpp>
+#include <uhdlib/utils/compat_check.hpp>
 
 using namespace uhd;
 using namespace uhd::rfnoc;
 
 namespace uhd { namespace usrp { namespace x300 {
 
-void init_prop_tree(const size_t mb_idx, x300_mb_controller* mbc, property_tree::sptr pt)
+void init_prop_tree(const size_t mb_idx,
+    x300_mb_controller* mbc,
+    property_tree::sptr pt,
+    const uhd::compat_num32 fpga_compat)
 {
     const fs_path mb_path = fs_path("/mboards") / mb_idx;
     try {
@@ -28,6 +32,17 @@ void init_prop_tree(const size_t mb_idx, x300_mb_controller* mbc, property_tree:
     }
     pt->create<std::string>(mb_path / "name").set(mbc->get_mboard_name());
     pt->create<std::string>(mb_path / "codename").set("Yetti");
+
+    if (fpga_compat >= MIN_COMPAT_NUM_DNA) {
+        const uint64_t device_dna_lo = static_cast<uint64_t>(
+            mbc->get_zpu_ctrl()->peek32(SR_ADDR(SET0_BASE, ZPU_RB_DNA_LO)));
+        const uint64_t device_dna_hi = static_cast<uint64_t>(
+            mbc->get_zpu_ctrl()->peek32(SR_ADDR(SET0_BASE, ZPU_RB_DNA_HI)));
+        const uint64_t device_dna = device_dna_lo | (device_dna_hi << 32);
+        pt->create<std::string>(mb_path / "device_dna")
+            .set(str(boost::format("%016X") % device_dna));
+        UHD_LOG_DEBUG("X300", "Device DNA: " << boost::format("%016X") % device_dna);
+    }
 
     ////////////////////////////////////////////////////////////////////
     // create clock properties

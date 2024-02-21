@@ -177,11 +177,13 @@ module bus_int #(
    localparam RB_FP_GPIO_SRC     = 8'd13;
    localparam RB_DEVICE_ID       = 8'd14;
    localparam RB_BUILD_SEED      = 8'd15;
+   localparam RB_DEVICE_DNA_LO   = 8'd16;
+   localparam RB_DEVICE_DNA_HI   = 8'd17;
    localparam RB_TA_SFP0_BASE    = SR_TA_SFP0_BASE;
    localparam RB_TA_SFP1_BASE    = SR_TA_SFP1_BASE;
 
    localparam COMPAT_MAJOR       = 16'h0027;
-   localparam COMPAT_MINOR       = 16'h0002;
+   localparam COMPAT_MINOR       = 16'h0003;
    localparam NUM_TIMEKEEPERS    = 1;
 
    // Include the RFNoC image core header file
@@ -212,6 +214,7 @@ module bus_int #(
    wire                 spi_ready;
    wire [31:0] 	        rb_spi_data;
    wire [15:0]          device_id;
+   wire [63:0]          dna; // DNA is 57 bits, but we pad to 64
 
    wire                 m_ctrlport_req_wr_radio0;
    wire                 m_ctrlport_req_rd_radio0;
@@ -468,6 +471,8 @@ module bus_int #(
   `define BUILD_SEED 32'b0
 `endif
        RB_BUILD_SEED: rb_data = `BUILD_SEED;
+       RB_DEVICE_DNA_LO: rb_data = dna[31:0];
+       RB_DEVICE_DNA_HI: rb_data = dna[63:32];
        RB_XADC_VALS: rb_data = xadc_readback;
        RB_FP_GPIO_SRC: rb_data = fp_gpio_src;
        SR_BASE_TIME: begin
@@ -783,6 +788,7 @@ module bus_int #(
     .radio_clk               (radio_clk  ),
     .ce_clk                  (ce_clk     ),
     .dram_clk                (ddr3_axi_clk_x2),
+    .dna                     (dna        ),
     .m_ctrlport_radio1_req_wr       (m_ctrlport_req_wr_radio1      ),
     .m_ctrlport_radio1_req_rd       (m_ctrlport_req_rd_radio1      ),
     .m_ctrlport_radio1_req_addr     (m_ctrlport_req_addr_radio1    ),

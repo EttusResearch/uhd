@@ -54,3 +54,17 @@ io_ports:
   dram:
     type: axi4_mm
     drive: slave
+  serial:
+    type: device_dna
+    drive: listener
+    parameters:
+      width: 64
+
+default_secure_image_core:
+    modules:
+      device_dna:
+        block_desc: 'device_dna.yml'
+        parameters:
+          device_type: "7SERIES"
+    connections:
+    - { srcblk: device_dna, srcport: device_dna, dstblk: _device_, dstport: serial}

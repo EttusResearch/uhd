@@ -58,23 +58,28 @@ static const int ZPU_SR_SFP1_ADAPTER = 160;
 #define ZPU_SR_SW_RST_RADIO_CLK_PLL  (1 << 2)
 #define ZPU_SR_SW_RST_ADC_IDELAYCTRL (1 << 3)
 
+// These registers are read directly out of the FPGA via wishbone (starting at
+// SET0_BASE). They have corresponding localparams in bus_int.v.
 static const int ZPU_RB_SPI         = 2;
 static const int ZPU_RB_CLK_STATUS  = 3;
-static const int ZPU_RB_COMPAT_NUM  = 6;
-static const int ZPU_RB_RFNOC_INFO  = 7;
-static const int ZPU_RB_GIT_HASH    = 10;
 static const int ZPU_RB_SFP0_TYPE   = 4;
 static const int ZPU_RB_SFP1_TYPE   = 5;
+static const int ZPU_RB_COMPAT_NUM  = 6;
+static const int ZPU_RB_RFNOC_INFO  = 7; // See defines below for bits
+static const int ZPU_RB_GIT_HASH    = 10;
 static const int ZPU_RB_FP_GPIO_SRC = 13;
 static const int ZPU_RB_DEVICE_ID   = 14;
+static const int ZPU_RB_BUILD_SEED  = 15;
+static const int ZPU_RB_DNA_LO      = 16;
+static const int ZPU_RB_DNA_HI      = 17;
+// RFNoC info bits
+#define ZPU_RB_RFNOC_INFO_PROTOVER(X)   (((X) >> 0) & 0xFFFF)
+#define ZPU_RB_RFNOC_INFO_CHDR_WIDTH(X) (((X) >> 16) & 0xFFFF)
 
 static const uint32_t RB_SFP_1G_ETH  = 0;
 static const uint32_t RB_SFP_10G_ETH = 1;
 static const uint32_t RB_SFP_AURORA  = 2;
 
-// RFNoC info bits
-#define ZPU_RB_RFNOC_INFO_PROTOVER(X)   (((X) >> 0) & 0xFFFF)
-#define ZPU_RB_RFNOC_INFO_CHDR_WIDTH(X) (((X) >> 16) & 0xFFFF)
 
 // spi slaves on radio
 #define DB_DAC_SEN      (1 << 7)

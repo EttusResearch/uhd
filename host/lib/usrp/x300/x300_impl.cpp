@@ -23,6 +23,7 @@
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhdlib/rfnoc/device_id.hpp>
+#include <uhdlib/utils/compat_check.hpp>
 #include <chrono>
 #include <fstream>
 #include <thread>
@@ -40,8 +41,10 @@ namespace asio = boost::asio;
 
 namespace uhd { namespace usrp { namespace x300 {
 
-void init_prop_tree(
-    const size_t mb_idx, uhd::rfnoc::x300_mb_controller* mbc, property_tree::sptr pt);
+void init_prop_tree(const size_t mb_idx,
+    uhd::rfnoc::x300_mb_controller* mbc,
+    property_tree::sptr pt,
+    const uhd::compat_num32 fpga_compat);
 
 }}} // namespace uhd::usrp::x300
 
@@ -416,7 +419,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t& dev_addr)
     ////////////////////////////////////////////////////////////////////
     // setup properties
     ////////////////////////////////////////////////////////////////////
-    init_prop_tree(mb_i, mb_ctrl.get(), _tree);
+    init_prop_tree(mb_i, mb_ctrl.get(), _tree, fpga_compat);
 
     ////////////////////////////////////////////////////////////////////
     // RFNoC Stuff
