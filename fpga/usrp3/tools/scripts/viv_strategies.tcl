@@ -13,18 +13,18 @@ namespace eval ::vivado_strategies {
         check_strategy \
         print_strategy
 
-    variable g_viv_version [version -short]
+    # Required environment variables
+    variable g_output_dir  $::env(VIV_OUTPUT_DIR)
 }
 
 # ---------------------------------------------------
 # Return a preset strategy with the most commonly used options
 # ---------------------------------------------------
 proc ::vivado_strategies::get_impl_preset {preset} {
-    variable g_viv_version
-
     set strategy [dict create]
     switch -nocase $preset {
         "Default" {
+            dict set strategy "implementation.incremental"              0
             dict set strategy "opt_design.is_enabled"                   1
             dict set strategy "opt_design.directive"                    "Default"
             dict set strategy "post_opt_power_opt_design.is_enabled"    0
@@ -38,6 +38,7 @@ proc ::vivado_strategies::get_impl_preset {preset} {
             dict set strategy "post_route_phys_opt_design.directive"    "Default"
         }
         "Performance_Explore" {
+            dict set strategy "implementation.incremental"              0
             dict set strategy "opt_design.is_enabled"                   1
             dict set strategy "opt_design.directive"                    "Explore"
             dict set strategy "post_opt_power_opt_design.is_enabled"    0
@@ -51,6 +52,7 @@ proc ::vivado_strategies::get_impl_preset {preset} {
             dict set strategy "post_route_phys_opt_design.directive"    "Explore"
         }
         "Performance_ExplorePostRoutePhysOpt" {
+            dict set strategy "implementation.incremental"              0
             dict set strategy "opt_design.is_enabled"                   1
             dict set strategy "opt_design.directive"                    "Explore"
             dict set strategy "post_opt_power_opt_design.is_enabled"    0
@@ -71,7 +73,7 @@ proc ::vivado_strategies::get_impl_preset {preset} {
 # Execute the specified implementation strategy
 # ---------------------------------------------------
 proc ::vivado_strategies::implement_design {strategy} {
-    variable g_viv_version
+    variable g_output_dir
 
     # Check strategy for validity and print
     vivado_strategies::check_strategy $strategy
@@ -83,6 +85,17 @@ proc ::vivado_strategies::implement_design {strategy} {
     if [dict get $strategy "opt_design.is_enabled"] {
         set opt_dir [dict get $strategy "opt_design.directive"]
         opt_design -directive $opt_dir
+    }
+
+    # Reading former post-route checkpoint for incremental implementation.
+    # This will set all consecutive operations into incremental operation mode in case there
+    # is a post_route checkpoint from a previous run.
+    if [dict get $strategy "implementation.incremental"] {
+        set impl_checkpoint $g_output_dir/post_route.dcp
+        if {[file exists $impl_checkpoint]} {
+            # read incremental checkpoint
+            read_checkpoint -incremental $impl_checkpoint
+        }
     }
 
     # Optimize dynamic power using intelligent clock gating after optimization
@@ -133,10 +146,9 @@ proc ::vivado_strategies::implement_design {strategy} {
 # Sanity-check the specified strategy
 # ---------------------------------------------------
 proc ::vivado_strategies::check_strategy {strategy} {
-    variable g_viv_version
-
     set strategy_options [dict keys $strategy]
     set required_options {\
+        implementation.incremental \
         opt_design.is_enabled \
         opt_design.directive \
         post_opt_power_opt_design.is_enabled \
@@ -165,8 +177,6 @@ proc ::vivado_strategies::check_strategy {strategy} {
 # Print strategy parameters to the console
 # ---------------------------------------------------
 proc ::vivado_strategies::print_strategy {strategy} {
-    variable g_viv_version
-
     foreach opt [dict keys $strategy] {
         set val [dict get $strategy $opt]
         puts "         * $opt = $val"

@@ -16,6 +16,7 @@ SIMULATION = 0
 # - BUILD_DIR must be defined globally
 # - DESIGN_SRCS must be defined and should contain all source files
 # - VERILOG_DEFS must be defined and should contain all PP defines
+# - INCR_BUILD can be defined and runs parts of the Vivado flow in incremental mode
 # -------------------------------------------------------------------
 BUILD_VIVADO_DESIGN = \
 	@ \
@@ -26,6 +27,7 @@ BUILD_VIVADO_DESIGN = \
 	export VIV_MODE=$(VIVADO_MODE); \
 	export VIV_DESIGN_SRCS=$(call RESOLVE_PATHS,$(call uniq,$(DESIGN_SRCS))); \
 	export VIV_VERILOG_DEFS="$(VERILOG_DEFS) UHD_FPGA_DIR=$(BASE_DIR)/../.."; \
+	export VIV_INCR_BUILD=$(INCR_BUILD); \
 	cd $(BUILD_DIR); \
 	$(TOOLS_DIR)/scripts/launch_vivado.py --parse-config $(BUILD_DIR)/../dev_config.json -mode $(VIVADO_MODE) -source $(call RESOLVE_PATH,$(1)) -log build.log -journal $(2).jou
 

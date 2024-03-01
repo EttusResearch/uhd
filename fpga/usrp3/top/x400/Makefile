@@ -82,6 +82,9 @@ DEFS += $(OPTIONS)
 BUILD_SEED ?= 0
 DEFS += BUILD_SEED=$(BUILD_SEED)
 
+# Default value for incremental Vivado build is disabled. 
+INCR_BUILD ?= 0
+
 # Defaults specific to the various targets:
 X410_200_DEFAULTS     := DEFAULT_RFNOC_IMAGE_CORE_FILE=x410_200_rfnoc_image_core.v     DEFAULT_EDGE_FILE=$(abspath x410_200_static_router.hex)
 X410_X4C_200_DEFAULTS := DEFAULT_RFNOC_IMAGE_CORE_FILE=x410_x4c_200_rfnoc_image_core.v DEFAULT_EDGE_FILE=$(abspath x410_x4c_200_static_router.hex)
@@ -107,7 +110,7 @@ endif
 TOP ?= x4xx
 
 # vivado_build($1=Device, $2=Definitions, $3=Defaults)
-vivado_build = make -f Makefile.x4xx.inc $(TARGET) NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2" $3
+vivado_build = make -f Makefile.x4xx.inc $(TARGET) NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2" $3 INCR_BUILD=$(INCR_BUILD)
 vivado_ip    = make -f Makefile.x4xx.inc viv_ip    NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2" $3
 
 # vivado_build($1=Device, $2=Option)
@@ -325,6 +328,7 @@ help:         ##Show this help message.
 ##
 ##Supported Options
 ##-----------------
+##INCR_BUILD=0   Use incremental Vivado build to speed up consecutive runs
 ##DRAM=0         Exclude DDR4 memory controller IP from the FPGA build.
 ##GUI=1          Launch the build in the Vivado GUI.
 ##CHECK=1        Launch the syntax checker instead of building a bitfile.
