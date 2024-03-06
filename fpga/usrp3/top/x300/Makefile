@@ -35,10 +35,12 @@ XA_DEFS=BUILD_10G=1 BUILD_AURORA=1 SFP0_10GBE=1 SFP1_AURORA=1 $(OPTIONS) BUILD_S
 
 # Set build option (check RTL, run synthesis, or do a full build)
 ifndef TARGET
-	ifdef CHECK
+	ifeq ($(CHECK), 1)
 		TARGET = rtl
-	else ifdef SYNTH
+	else ifeq ($(SYNTH), 1)
 		TARGET = synth
+	else ifeq ($(IP_ONLY), 1)
+		TARGET = viv_ip
 	else
 		TARGET = bin
 	endif
@@ -155,6 +157,7 @@ help:     ##Show this help message.
 ##GUI=1          Launch the build in the Vivado GUI.
 ##PROJECT=1      Save Vivado project file, otherwise it's created in memory.
 ##CHECK=1        Launch the syntax checker instead of building a bitfile.
+##IP_ONLY=1      Launch the build but stop after IP generation.
 ##SYNTH=1        Launch the build but stop after synthesis.
 ##BUILD_SEED=<N> Build seed to used to affect build results. (Default is 0)
 ##TOP=<module>   Specify a top module for syntax checking. (Default is the bitfile top)
