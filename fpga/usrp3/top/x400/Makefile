@@ -331,6 +331,7 @@ help:         ##Show this help message.
 ##INCR_BUILD=0   Use incremental Vivado build to speed up consecutive runs
 ##DRAM=0         Exclude DDR4 memory controller IP from the FPGA build.
 ##GUI=1          Launch the build in the Vivado GUI.
+##PROJECT=1      Save Vivado project file, otherwise it's created in memory.
 ##CHECK=1        Launch the syntax checker instead of building a bitfile.
 ##SYNTH=1        Launch the build but stop after synthesis.
 ##BUILD_SEED=<N> Build seed to used to affect build results. (Default is 0)
