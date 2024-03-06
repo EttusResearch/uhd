@@ -97,6 +97,10 @@ def setup_parser():
         help="Open Vivado GUI during the FPGA building process",
         action="store_true")
     parser.add_argument(
+        "-s", "--save-project",
+        help="Save Vivado project to disk",
+        action="store_true")
+    parser.add_argument(
         "-c", "--clean-all",
         help="Cleans the IP before a new build",
         action="store_true")
@@ -226,6 +230,7 @@ def main():
         generate_only=args.generate_only,
         clean_all=args.clean_all,
         GUI=args.GUI,
+        save_project=args.save_project,
         source=source,
         source_hash=source_hash.hexdigest(),
         output_path=args.image_core_output,
