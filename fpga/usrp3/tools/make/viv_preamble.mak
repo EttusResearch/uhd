@@ -53,6 +53,15 @@ VIVADO_MODE=batch
 endif
 
 # -------------------------------------------------------------------
+# Project mode switch. Calling with PROJECT:=1 will use Vivado project file
+# -------------------------------------------------------------------
+ifeq ($(PROJECT),1)
+VIVADO_PROJECT=1
+else
+VIVADO_PROJECT=0
+endif
+
+# -------------------------------------------------------------------
 # Toolchain dependency target
 # -------------------------------------------------------------------
 .check_tool:
