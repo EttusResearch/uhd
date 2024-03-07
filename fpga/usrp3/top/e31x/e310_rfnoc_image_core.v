@@ -52,58 +52,58 @@ module rfnoc_image_core #(
   // time
   input  wire [  63:0] radio_time,
   // radio
-  input  wire [ 255:0] radio_rx_data,
-  input  wire [   7:0] radio_rx_stb,
-  output wire [   7:0] radio_rx_running,
-  output wire [ 255:0] radio_tx_data,
-  input  wire [   7:0] radio_tx_stb,
-  output wire [   7:0] radio_tx_running,
+  input  wire [1023:0] radio_rx_data,
+  input  wire [  31:0] radio_rx_stb,
+  output wire [  31:0] radio_rx_running,
+  output wire [1023:0] radio_tx_data,
+  input  wire [  31:0] radio_tx_stb,
+  output wire [  31:0] radio_tx_running,
   // dram
   input  wire [   0:0] axi_rst,
-  output wire [   3:0] m_axi_awid,
-  output wire [ 191:0] m_axi_awaddr,
-  output wire [  31:0] m_axi_awlen,
-  output wire [  11:0] m_axi_awsize,
-  output wire [   7:0] m_axi_awburst,
-  output wire [   3:0] m_axi_awlock,
-  output wire [  15:0] m_axi_awcache,
-  output wire [  11:0] m_axi_awprot,
-  output wire [  15:0] m_axi_awqos,
-  output wire [  15:0] m_axi_awregion,
-  output wire [   3:0] m_axi_awuser,
-  output wire [   3:0] m_axi_awvalid,
-  input  wire [   3:0] m_axi_awready,
-  output wire [2047:0] m_axi_wdata,
-  output wire [ 255:0] m_axi_wstrb,
-  output wire [   3:0] m_axi_wlast,
-  output wire [   3:0] m_axi_wuser,
-  output wire [   3:0] m_axi_wvalid,
-  input  wire [   3:0] m_axi_wready,
-  input  wire [   3:0] m_axi_bid,
-  input  wire [   7:0] m_axi_bresp,
-  input  wire [   3:0] m_axi_buser,
-  input  wire [   3:0] m_axi_bvalid,
-  output wire [   3:0] m_axi_bready,
-  output wire [   3:0] m_axi_arid,
-  output wire [ 191:0] m_axi_araddr,
-  output wire [  31:0] m_axi_arlen,
-  output wire [  11:0] m_axi_arsize,
-  output wire [   7:0] m_axi_arburst,
-  output wire [   3:0] m_axi_arlock,
-  output wire [  15:0] m_axi_arcache,
-  output wire [  11:0] m_axi_arprot,
-  output wire [  15:0] m_axi_arqos,
-  output wire [  15:0] m_axi_arregion,
-  output wire [   3:0] m_axi_aruser,
-  output wire [   3:0] m_axi_arvalid,
-  input  wire [   3:0] m_axi_arready,
-  input  wire [   3:0] m_axi_rid,
-  input  wire [2047:0] m_axi_rdata,
-  input  wire [   7:0] m_axi_rresp,
-  input  wire [   3:0] m_axi_rlast,
-  input  wire [   3:0] m_axi_ruser,
-  input  wire [   3:0] m_axi_rvalid,
-  output wire [   3:0] m_axi_rready,
+  output wire [   7:0] m_axi_awid,
+  output wire [ 383:0] m_axi_awaddr,
+  output wire [  63:0] m_axi_awlen,
+  output wire [  23:0] m_axi_awsize,
+  output wire [  15:0] m_axi_awburst,
+  output wire [   7:0] m_axi_awlock,
+  output wire [  31:0] m_axi_awcache,
+  output wire [  23:0] m_axi_awprot,
+  output wire [  31:0] m_axi_awqos,
+  output wire [  31:0] m_axi_awregion,
+  output wire [   7:0] m_axi_awuser,
+  output wire [   7:0] m_axi_awvalid,
+  input  wire [   7:0] m_axi_awready,
+  output wire [4191:0] m_axi_wdata,
+  output wire [ 511:0] m_axi_wstrb,
+  output wire [   7:0] m_axi_wlast,
+  output wire [   7:0] m_axi_wuser,
+  output wire [   7:0] m_axi_wvalid,
+  input  wire [   7:0] m_axi_wready,
+  input  wire [   7:0] m_axi_bid,
+  input  wire [  15:0] m_axi_bresp,
+  input  wire [   7:0] m_axi_buser,
+  input  wire [   7:0] m_axi_bvalid,
+  output wire [   7:0] m_axi_bready,
+  output wire [   7:0] m_axi_arid,
+  output wire [ 383:0] m_axi_araddr,
+  output wire [  63:0] m_axi_arlen,
+  output wire [  23:0] m_axi_arsize,
+  output wire [  15:0] m_axi_arburst,
+  output wire [   7:0] m_axi_arlock,
+  output wire [  31:0] m_axi_arcache,
+  output wire [  31:0] m_axi_arprot,
+  output wire [  31:0] m_axi_arqos,
+  output wire [  31:0] m_axi_arregion,
+  output wire [   7:0] m_axi_aruser,
+  output wire [   7:0] m_axi_arvalid,
+  input  wire [   7:0] m_axi_arready,
+  input  wire [   7:0] m_axi_rid,
+  input  wire [4191:0] m_axi_rdata,
+  input  wire [  15:0] m_axi_rresp,
+  input  wire [   7:0] m_axi_rlast,
+  input  wire [   7:0] m_axi_ruser,
+  input  wire [   7:0] m_axi_rvalid,
+  output wire [   7:0] m_axi_rready,
 
   // Transport Adapters ///////////////
 
@@ -443,12 +443,12 @@ module rfnoc_image_core #(
   // time
   wire [  63:0] radio0_radio_time;
   // radio
-  wire [ 255:0] radio0_radio_rx_data;
-  wire [   7:0] radio0_radio_rx_stb;
-  wire [   7:0] radio0_radio_rx_running;
-  wire [ 255:0] radio0_radio_tx_data;
-  wire [   7:0] radio0_radio_tx_stb;
-  wire [   7:0] radio0_radio_tx_running;
+  wire [1023:0] radio0_radio_rx_data;
+  wire [  31:0] radio0_radio_rx_stb;
+  wire [  31:0] radio0_radio_rx_running;
+  wire [1023:0] radio0_radio_tx_data;
+  wire [  31:0] radio0_radio_tx_stb;
+  wire [  31:0] radio0_radio_tx_running;
 
   rfnoc_block_radio #(
     .THIS_PORTID         (2),
