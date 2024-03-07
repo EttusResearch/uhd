@@ -31,7 +31,7 @@ def parse_args():
                         help="Digital gain")
     parser.add_argument("-c", "--channel", type=int, default=0,
                         help="Radio block channel index")
-    parser.add_argument("-t", "--antenna",
+    parser.add_argument("-t", "--antenna", default="",
                         help="USRP RX Antenna")
     parser.add_argument("-r", "--rate", default=1e6, type=float,
                         help="Sampling Rate")
@@ -72,9 +72,10 @@ def main():
     print(
         f"Requested RX frequency: {args.freq/1e9:.3f} GHz, "
         f"actual RX frequency: {radio_block.get_rx_frequency(radio_chan)/1e9:.3f} GHz")
-    radio_block.set_rx_antenna(args.antenna, radio_chan)
+    if args.antenna:
+        radio_block.set_rx_antenna(args.antenna, radio_chan)
     print(
-        f"Requested RX antenna: {args.antenna}, "
+        f"Requested RX antenna: '{args.antenna}', "
         f"actual RX antenna: {radio_block.get_rx_antenna(radio_chan)}")
     radio_block.set_rx_gain(args.gain, radio_chan)
     print(
