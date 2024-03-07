@@ -35,6 +35,26 @@ parameters:
   - 'files.ettus.com (Public)'
   displayName: Published Package Access
   default: 'Internal'
+- name: skip_analyze_changeset
+  type: boolean
+  displayName: Skip Analyze Changeset
+  default: true
+- name: build_x3x0
+  type: boolean
+  displayName: Build X3x0
+  default: true
+- name: build_n3xx
+  type: boolean
+  displayName: Build N3xx
+  default: true
+- name: build_e31x
+  type: boolean
+  displayName: Build E31x
+  default: true
+- name: build_e32x
+  type: boolean
+  displayName: Build E32x
+  default: true
 - name: build_x410
   type: boolean
   displayName: Build X410
@@ -52,7 +72,7 @@ trigger:
   paths:
     include:
     - fpga/usrp3/lib
-    - fpga/usrp3/top/x400
+    - fpga/usrp3/top
     - fpga/.ci
 
 pr: none
@@ -72,5 +92,10 @@ extends:
     clean_ip_build: ${{ parameters.clean_ip_build }}
     package_and_publish_images: ${{ parameters.package_and_publish_images }}
     package_access: ${{ parameters.package_access }}
+    skip_analyze_changeset: ${{ parameters.skip_analyze_changeset }}
+    build_x3x0: ${{ parameters.build_x3x0 }}
+    build_n3xx: ${{ parameters.build_n3xx }}
+    build_e31x: ${{ parameters.build_e31x }}
+    build_e32x: ${{ parameters.build_e32x }}
     build_x410: ${{ parameters.build_x410 }}
     build_x440: ${{ parameters.build_x440 }}

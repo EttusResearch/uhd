@@ -1,0 +1,197 @@
+#
+# Copyright 2024 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+# Description:
+#
+#   This template defines a stages-based pipeline for building X300 and X310 FPGA.
+#
+#   See https://aka.ms/yaml for pipeline YAML documentation.
+#
+
+parameters:
+## Optional parameters
+# Run testbenches
+- name: run_testbenches
+  type: boolean
+  default: true
+# Option to ignore cached artifacts (if available) and perform
+# a clean IP build.
+- name: clean_ip_build
+  type: boolean
+  default: false
+# Number of parallel jobs to use for IP build
+- name: num_ip_jobs
+  type: number
+  default: 5
+# Option to publish intermediate files
+- name: publish_int_files
+  type: boolean
+  default: false
+# Package and publish images
+- name: package_and_publish_images
+  type: boolean
+  default: true
+# Package access in the SDR server ('Internal' or 'Public')
+- name: package_access
+  type: string
+  default: 'Internal'
+# Build X300 FPGA targets
+- name: build_x3x0
+  type: boolean
+  default: true
+# X300 FPGA targets to build (if build_x300 is true)
+- name: x300_full_targets_matrix
+  type: object
+  default:
+    X300_HG:
+      image_core: x300_rfnoc_image_core.yml
+      target_name: X300_HG
+      timeout: 720
+      max_attempts: 2
+    X300_XG:
+      image_core: x300_rfnoc_image_core.yml
+      target_name: X300_XG
+      timeout: 720
+      max_attempts: 2
+- name: x300_reduced_targets_matrix
+  type: object
+  default:
+    X300_XG:
+      image_core: x300_rfnoc_image_core.yml
+      target_name: X300_XG
+      timeout: 720
+      max_attempts: 2
+# X310 FPGA targets to build (if build_x310 is true)
+- name: x310_full_targets_matrix
+  type: object
+  default:
+    X310_HG:
+      image_core: x310_rfnoc_image_core.yml
+      target_name: X310_HG
+      timeout: 720
+      max_attempts: 2
+    X310_XG:
+      image_core: x310_rfnoc_image_core.yml
+      target_name: X310_XG
+      timeout: 720
+      max_attempts: 2
+- name: x310_reduced_targets_matrix
+  type: object
+  default:
+    X310_XG:
+      image_core: x310_rfnoc_image_core.yml
+      target_name: X310_XG
+      timeout: 720
+      max_attempts: 2
+
+
+stages:
+
+### START: X300 stages
+
+- stage: build_x300_ip_stage
+  displayName: Build X300 IP
+  dependsOn: analyze_changeset
+  condition: and( succeeded(),
+                  or(
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.HdlChangeList'], 'fpga.usrp3.x3xx'),
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.HdlChangeList'], 'fpga.usrp3.all'),
+                    eq('${{ parameters.build_x3x0 }}', 'true')
+                  )
+                )
+  jobs:
+  - template: ../templates/job-build-ip.yml
+    parameters:
+      directory: uhddev/fpga/usrp3/top/x300
+      ip_target: X300_IP
+      clean_build: ${{ parameters.clean_ip_build }}
+      num_jobs: ${{ parameters.num_ip_jobs }}
+
+- stage: build_x300_targets_stage
+  displayName: Build X300 FPGA Targets
+  dependsOn: build_x300_ip_stage
+  condition: succeeded('build_x300_ip_stage')
+  jobs:
+  - ${{ if eq(parameters.package_and_publish_images, true) }}:
+    - template: ../templates/job-build-fpga.yml
+      parameters:
+        targets_matrix: ${{ parameters.x300_full_targets_matrix }}
+        ip_artifact: X300_IP
+        top_dir: uhddev/fpga/usrp3/top/x300
+        publish_int_files: ${{ parameters.publish_int_files }}
+  - ${{ if eq(parameters.package_and_publish_images, false) }}:
+    - template: ../templates/job-build-fpga.yml
+      parameters:
+        targets_matrix: ${{ parameters.x300_reduced_targets_matrix }}
+        ip_artifact: X300_IP
+        top_dir: uhddev/fpga/usrp3/top/x300
+        publish_int_files: ${{ parameters.publish_int_files }}
+
+- stage: create_x300_packages_stage
+  displayName: Package & Publish X300 Binaries
+  dependsOn: build_x300_targets_stage
+  condition: and(succeeded('build_x300_targets_stage'), eq('${{ parameters.package_and_publish_images }}', 'true'))
+  jobs:
+  - template: ../templates/job-package-images.yml
+    parameters:
+      package_name: x3xx_x300_fpga_default
+      artifacts_matrix: ${{ parameters.x300_full_targets_matrix }}
+      build_directory: uhddev/fpga/usrp3/top/x300/build/
+      package_access: ${{ parameters.package_access }}
+
+### END: X300 stages
+
+### START: X310 stages
+
+- stage: build_x310_ip_stage
+  displayName: Build X310 IP
+  dependsOn: analyze_changeset
+  condition: and( succeeded(),
+                  or(
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.HdlChangeList'], 'fpga.usrp3.x3xx'),
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.HdlChangeList'], 'fpga.usrp3.all'),
+                    eq('${{ parameters.build_x3x0 }}', 'true')
+                  )
+                )
+  jobs:
+  - template: ../templates/job-build-ip.yml
+    parameters:
+      directory: uhddev/fpga/usrp3/top/x300
+      ip_target: X310_IP
+      clean_build: ${{ parameters.clean_ip_build }}
+
+- stage: build_x310_targets_stage
+  displayName: Build X310 FPGA Targets
+  dependsOn: build_x310_ip_stage
+  condition: succeeded('build_x310_ip_stage')
+  jobs:
+  - ${{ if eq(parameters.package_and_publish_images, true) }}:
+    - template: ../templates/job-build-fpga.yml
+      parameters:
+        targets_matrix: ${{ parameters.x310_full_targets_matrix }}
+        ip_artifact: X310_IP
+        top_dir: uhddev/fpga/usrp3/top/x300
+        publish_int_files: ${{ parameters.publish_int_files }}
+  - ${{ if eq(parameters.package_and_publish_images, false) }}:
+    - template: ../templates/job-build-fpga.yml
+      parameters:
+        targets_matrix: ${{ parameters.x310_reduced_targets_matrix }}
+        ip_artifact: X310_IP
+        top_dir: uhddev/fpga/usrp3/top/x300
+        publish_int_files: ${{ parameters.publish_int_files }}
+
+- stage: create_x310_packages_stage
+  displayName: Package & Publish X310 Binaries
+  dependsOn: build_x310_targets_stage
+  condition: and(succeeded('build_x310_targets_stage'), eq('${{ parameters.package_and_publish_images }}', 'true'))
+  jobs:
+  - template: ../templates/job-package-images.yml
+    parameters:
+      package_name: x3xx_x310_fpga_default
+      artifacts_matrix: ${{ parameters.x310_full_targets_matrix }}
+      build_directory: uhddev/fpga/usrp3/top/x300/build/
+      package_access: ${{ parameters.package_access }}
+
+### END: X310 stages

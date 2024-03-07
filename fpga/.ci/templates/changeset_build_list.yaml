@@ -1,0 +1,37 @@
+# build targets:
+# - fpga.usrp3.$PLATFORM: Build FPGA images for given platforms.
+
+# library changes
+- re: fpga/usrp3/lib
+  add:
+    - fpga.usrp3.all
+
+# Device-specific changes.
+- re: fpga/usrp3/top/x400
+  add:
+    - fpga.usrp3.x4xx
+- re: fpga/usrp3/top/x300
+  add:
+    - fpga.usrp3.x3xx
+- re: fpga/usrp3/top/b200
+  add:
+    - fpga.usrp3.b200
+- re: fpga/usrp3/top/b200mini
+  add:
+    - fpga.usrp3.b200mini
+- re: fpga/usrp3/top/e31x
+  add:
+    - fpga.usrp3.e31x
+- re: fpga/usrp3/top/e320
+  add:
+    - fpga.usrp3.e320
+- re: fpga/usrp3/top/n3xx
+  add:
+    - fpga.usrp3.n3xx
+
+###############################################################################
+# CI CHANGES
+###############################################################################
+- re: fpga/.ci/*
+  add:
+    - fpga.usrp3.all

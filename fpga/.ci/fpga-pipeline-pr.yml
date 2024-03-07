@@ -26,7 +26,7 @@ parameters:
 - name: package_and_publish_images
   type: boolean
   displayName: Package & Publish Images
-  default: true
+  default: false
 - name: package_access
   type: string
   values:
@@ -34,14 +34,35 @@ parameters:
   - 'files.ettus.com (Public)'
   displayName: Published Package Access
   default: 'Internal'
+- name: skip_analyze_changeset
+  type: boolean
+  displayName: Skip Analyze Changeset
+  default: false
+- name: build_x3x0
+  type: boolean
+  displayName: Build X3x0
+  default: false
+- name: build_n3xx
+  type: boolean
+  displayName: Build N3xx
+  default: false
+- name: build_e31x
+  type: boolean
+  displayName: Build E31x
+  default: false
+- name: build_e32x
+  type: boolean
+  displayName: Build E32x
+  default: false
 - name: build_x410
   type: boolean
   displayName: Build X410
-  default: true
+  default: false
 - name: build_x440
   type: boolean
   displayName: Build X440
-  default: true
+  default: false
+# Requested X410 targets
 - name: x410_targets_matrix
   type: object
   displayName: X410 Targets
@@ -105,7 +126,7 @@ pr:
   paths:
     include:
     - fpga/usrp3/lib
-    - fpga/usrp3/top/x400
+    - fpga/usrp3/top
     - fpga/.ci
 
 schedules:
@@ -124,6 +145,11 @@ extends:
     publish_int_files: true
     package_and_publish_images: ${{ parameters.package_and_publish_images }}
     package_access: ${{ parameters.package_access }}
+    skip_analyze_changeset: ${{ parameters.skip_analyze_changeset }}
+    build_x3x0: ${{ parameters.build_x3x0 }}
+    build_n3xx: ${{ parameters.build_n3xx }}
+    build_e31x: ${{ parameters.build_e31x }}
+    build_e32x: ${{ parameters.build_e32x }}
     build_x410: ${{ parameters.build_x410 }}
     build_x440: ${{ parameters.build_x440 }}
     x410_targets_matrix: ${{ parameters.x410_targets_matrix }}

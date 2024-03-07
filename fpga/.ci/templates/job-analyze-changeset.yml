@@ -1,0 +1,33 @@
+# This job will execute the changeset_testlist.py script, which in turn will
+# compute a list of tests that need to be executed.
+# The script itself produces the correct output to set a variable for a future
+# stage.
+
+parameters:
+- name: skip_analyze_changeset
+  type: boolean
+  default: false
+
+jobs:
+  - job: analyze
+    displayName: Analyze Changeset
+    pool:
+      name: Drivers-NIBuildFarm-RFMIBUILD
+      demands: sh
+    condition: not(${{ parameters.skip_analyze_changeset }})
+    steps:
+    - checkout: self
+      clean: true
+    - bash: |
+        if [[ $AGENT_OS == "Windows_NT" ]]; then
+            VENV_BIN_DIR="Scripts"
+        else
+            VENV_BIN_DIR="bin"
+        fi
+        python3 -m venv $AGENT_TEMPDIRECTORY/ac_venv
+        $AGENT_TEMPDIRECTORY/ac_venv/$VENV_BIN_DIR/pip install --upgrade pip
+        $AGENT_TEMPDIRECTORY/ac_venv/$VENV_BIN_DIR/pip install ruamel.yaml
+        git branch
+        $AGENT_TEMPDIRECTORY/ac_venv/$VENV_BIN_DIR/python3 tools/changeset_testlist.py --target-branch origin/master --set-azdo-var HdlChangeList --rule-file fpga/.ci/templates/changeset_build_list.yaml
+      name: gen_build_list
+      displayName: Generate Build-List
