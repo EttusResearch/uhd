@@ -30,7 +30,7 @@ BUILD_VIVADO_DESIGN = \
 	export VIV_VERILOG_DEFS="$(VERILOG_DEFS) UHD_FPGA_DIR=$(BASE_DIR)/../.."; \
 	export VIV_INCR_BUILD=$(INCR_BUILD); \
 	cd $(BUILD_DIR); \
-	$(TOOLS_DIR)/scripts/launch_vivado.py --parse-config $(BUILD_DIR)/../dev_config.json -mode $(VIVADO_MODE) -source $(call RESOLVE_PATH,$(1)) -log build.log -journal $(2).jou
+	$(TOOLS_DIR)/scripts/launch_vivado.py --parse-config $(MAKEFILE_DIR)/dev_config.json -mode $(VIVADO_MODE) -source $(call RESOLVE_PATH,$(1)) -log build.log -journal $(2).jou
 
 
 # -------------------------------------------------------------------

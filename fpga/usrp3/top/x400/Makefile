@@ -12,12 +12,15 @@
 ##  make <Targets> <Options>
 ##
 ##Output:
-##  build/usrp_<product>_fpga_<image_type>.bit:  Configuration bitstream with header
-##  build/usrp_<product>_fpga_<image_type>.dts:  Device tree source file
-##  build/usrp_<product>_fpga_<image_type>.rpt:  Build report (includes utilization and timing summary)
+##  $(BUILD_OUTPUT_DIR)/usrp_<product>_fpga_<image_type>.bit:  Configuration bitstream with header
+##  $(BUILD_OUTPUT_DIR)/usrp_<product>_fpga_<image_type>.dts:  Device tree source file
+##  $(BUILD_OUTPUT_DIR)/usrp_<product>_fpga_<image_type>.rpt:  Build report (includes utilization and timing summary)
 
-# Base output directory for all builds
+
+# Base output directory for all builds.
 BUILD_BASE_DIR ?= .
+# Base directory for the build outputs.
+BUILD_OUTPUT_DIR ?= $(BUILD_BASE_DIR)/build
 
 # Definitions
 # MGT Types from x4xx_mgt_type.vh
@@ -118,11 +121,11 @@ vivado_ip    = make -f Makefile.x4xx.inc viv_ip    NAME=$@ ARCH=$(XIL_ARCH_$1) P
 # vivado_build($1=Device, $2=Option)
 ifeq ($(TARGET),bin)
 	post_build = @\
-		mkdir -p build; \
+		mkdir -p $(BUILD_OUTPUT_DIR); \
 		echo "Exporting bitstream file..."; \
-		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/x4xx.bit build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bit; \
+		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/x4xx.bit $(BUILD_OUTPUT_DIR)/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bit; \
 		echo "Exporting build report..."; \
-		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/build.rpt build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).rpt; \
+		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/build.rpt $(BUILD_OUTPUT_DIR)/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).rpt; \
 		echo "Build DONE ... $(1)_$(2)";
 else
 	post_build = @echo "Skipping bitfile export."
@@ -162,111 +165,111 @@ endif
 ##* Note: Not all targets are shipped with UHD
 ##* Note: Some YAML configurations might not use all available DRAM channels.
 
-X410_X1_100: X410_IP build/usrp_x410_fpga_X1_100.dts
+X410_X1_100: X410_IP $(BUILD_OUTPUT_DIR)/usrp_x410_fpga_X1_100.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_200_DEFAULTS))
 	$(call post_build,X410,X1_100)
 
-X410_XG_100: X410_IP build/usrp_x410_fpga_XG_100.dts
+X410_XG_100: X410_IP $(BUILD_OUTPUT_DIR)/usrp_x410_fpga_XG_100.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_200_DEFAULTS))
 	$(call post_build,X410,XG_100)
 
-X410_X4_100: X410_IP build/usrp_x410_fpga_X4_100.dts
+X410_X4_100: X410_IP $(BUILD_OUTPUT_DIR)/usrp_x410_fpga_X4_100.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_200_DEFAULTS))
 	$(call post_build,X410,X4_100)
 
-X410_X4C_100: X410_IP build/usrp_x410_fpga_X4C_100.dts
+X410_X4C_100: X410_IP $(BUILD_OUTPUT_DIR)/usrp_x410_fpga_X4C_100.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_X4C_200_DEFAULTS))
 	$(call post_build,X410,X4C_100)
 
-X410_C1_100: X410_IP build/usrp_x410_fpga_C1_100.dts
+X410_C1_100: X410_IP $(BUILD_OUTPUT_DIR)/usrp_x410_fpga_C1_100.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_CG_200_DEFAULTS))
 	$(call post_build,X410,C1_100)
 
-X410_UC_100: X410_IP build/usrp_x410_fpga_UC_100.dts
+X410_UC_100: X410_IP $(BUILD_OUTPUT_DIR)/usrp_x410_fpga_UC_100.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_CG_200_DEFAULTS))
 	$(call post_build,X410,UC_100)
 
-X410_X1_200: X410_IP build/usrp_x410_fpga_X1_200.dts
+X410_X1_200: X410_IP $(BUILD_OUTPUT_DIR)/usrp_x410_fpga_X1_200.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_200_DEFAULTS))
 	$(call post_build,X410,X1_200)
 
-X410_XG_200: X410_IP build/usrp_x410_fpga_XG_200.dts
+X410_XG_200: X410_IP $(BUILD_OUTPUT_DIR)/usrp_x410_fpga_XG_200.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_200_DEFAULTS))
 	$(call post_build,X410,XG_200)
 
-X410_X4_200: X410_IP build/usrp_x410_fpga_X4_200.dts
+X410_X4_200: X410_IP $(BUILD_OUTPUT_DIR)/usrp_x410_fpga_X4_200.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_200_DEFAULTS))
 	$(call post_build,X410,X4_200)
 
-X410_X4C_200: X410_IP build/usrp_x410_fpga_X4C_200.dts
+X410_X4C_200: X410_IP $(BUILD_OUTPUT_DIR)/usrp_x410_fpga_X4C_200.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_X4C_200_DEFAULTS))
 	$(call post_build,X410,X4C_200)
 
-X410_C1_200: X410_IP build/usrp_x410_fpga_C1_200.dts
+X410_C1_200: X410_IP $(BUILD_OUTPUT_DIR)/usrp_x410_fpga_C1_200.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_CG_200_DEFAULTS))
 	$(call post_build,X410,C1_200)
 
-X410_UC_200: X410_IP build/usrp_x410_fpga_UC_200.dts
+X410_UC_200: X410_IP $(BUILD_OUTPUT_DIR)/usrp_x410_fpga_UC_200.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_CG_200_DEFAULTS))
 	$(call post_build,X410,UC_200)
 
-X410_X1_400: X410_IP build/usrp_x410_fpga_X1_400.dts
+X410_X1_400: X410_IP $(BUILD_OUTPUT_DIR)/usrp_x410_fpga_X1_400.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_400_D_DEFAULTS))
 	$(call post_build,X410,X1_400)
 
-X410_XG_400: X410_IP build/usrp_x410_fpga_XG_400.dts
+X410_XG_400: X410_IP $(BUILD_OUTPUT_DIR)/usrp_x410_fpga_XG_400.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_400_D_DEFAULTS))
 	$(call post_build,X410,XG_400)
 
-X410_X4_400: X410_IP build/usrp_x410_fpga_X4_400.dts
+X410_X4_400: X410_IP $(BUILD_OUTPUT_DIR)/usrp_x410_fpga_X4_400.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_400_D_DEFAULTS))
 	$(call post_build,X410,X4_400)
 
-X410_C1_400: X410_IP build/usrp_x410_fpga_C1_400.dts
+X410_C1_400: X410_IP $(BUILD_OUTPUT_DIR)/usrp_x410_fpga_C1_400.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_400_DEFAULTS))
 	$(call post_build,X410,C1_400)
 
-X410_UC_400: X410_IP build/usrp_x410_fpga_UC_400.dts
+X410_UC_400: X410_IP $(BUILD_OUTPUT_DIR)/usrp_x410_fpga_UC_400.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_400_DEFAULTS))
 	$(call post_build,X410,UC_400)
 
-X410_CG_400: X410_IP build/usrp_x410_fpga_CG_400.dts
+X410_CG_400: X410_IP $(BUILD_OUTPUT_DIR)/usrp_x410_fpga_CG_400.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_400_DEFAULTS))
 	$(call post_build,X410,CG_400)
 
-X440_X4_200: X440_IP build/usrp_x440_fpga_X4_200.dts
+X440_X4_200: X440_IP $(BUILD_OUTPUT_DIR)/usrp_x440_fpga_X4_200.dts
 	$(call vivado_build,X440,$(DEFS) X440=1,$(X440_200_DEFAULTS))
 	$(call post_build,X440,X4_200)
 
-X440_X1_400: X440_IP build/usrp_x440_fpga_X1_400.dts
+X440_X1_400: X440_IP $(BUILD_OUTPUT_DIR)/usrp_x440_fpga_X1_400.dts
 	$(call vivado_build,X440,$(DEFS) X440=1,$(X440_400_D_DEFAULTS))
 	$(call post_build,X440,X1_400)
 
-X440_X4_400: X440_IP build/usrp_x440_fpga_X4_400.dts
+X440_X4_400: X440_IP $(BUILD_OUTPUT_DIR)/usrp_x440_fpga_X4_400.dts
 	$(call vivado_build,X440,$(DEFS) X440=1,$(X440_400_D_DEFAULTS))
 	$(call post_build,X440,X4_400)
 
-X440_C1_400: X440_IP build/usrp_x440_fpga_C1_400.dts
+X440_C1_400: X440_IP $(BUILD_OUTPUT_DIR)/usrp_x440_fpga_C1_400.dts
 	$(call vivado_build,X440,$(DEFS) X440=1,$(X440_400_DEFAULTS))
 	$(call post_build,X440,C1_400)
 
-X440_CG_400: X440_IP build/usrp_x440_fpga_CG_400.dts
+X440_CG_400: X440_IP $(BUILD_OUTPUT_DIR)/usrp_x440_fpga_CG_400.dts
 	$(call vivado_build,X440,$(DEFS) X440=1,$(X440_400_DEFAULTS))
 	$(call post_build,X440,CG_400)
 
-X440_X1_1600: X440_IP build/usrp_x440_fpga_X1_1600.dts
+X440_X1_1600: X440_IP $(BUILD_OUTPUT_DIR)/usrp_x440_fpga_X1_1600.dts
 	$(call vivado_build,X440,$(DEFS) X440=1,$(X440_1600_D_DEFAULTS))
 	$(call post_build,X440,X1_1600)
 
-X440_X4_1600: X440_IP build/usrp_x440_fpga_X4_1600.dts
+X440_X4_1600: X440_IP $(BUILD_OUTPUT_DIR)/usrp_x440_fpga_X4_1600.dts
 	$(call vivado_build,X440,$(DEFS) X440=1,$(X440_1600_D_DEFAULTS))
 	$(call post_build,X440,X4_1600)
 
-X440_C1_1600: X440_IP build/usrp_x440_fpga_C1_1600.dts
+X440_C1_1600: X440_IP $(BUILD_OUTPUT_DIR)/usrp_x440_fpga_C1_1600.dts
 	$(call vivado_build,X440,$(DEFS) X440=1,$(X440_1600_DEFAULTS))
 	$(call post_build,X440,C1_1600)
 
-X440_CG_1600: X440_IP build/usrp_x440_fpga_CG_1600.dts
+X440_CG_1600: X440_IP $(BUILD_OUTPUT_DIR)/usrp_x440_fpga_CG_1600.dts
 	$(call vivado_build,X440,$(DEFS) X440=1,$(X440_1600_DEFAULTS))
 	$(call post_build,X440,CG_1600)
 
@@ -277,7 +280,7 @@ X440_CG_1600: X440_IP build/usrp_x440_fpga_CG_1600.dts
 ##-------------|-----------|----|-----------------|-----------------|------------
 ##X410_CG_200  | 200       | 4  | 100 GbE         | 100 GbE         | 64b x 4 Ch
 
-X410_CG_200: X410_IP build/usrp_x410_fpga_CG_200.dts
+X410_CG_200: X410_IP $(BUILD_OUTPUT_DIR)/usrp_x410_fpga_CG_200.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_CG_200_DEFAULTS))
 	$(call post_build,X410,CG_200)
 
@@ -295,8 +298,8 @@ X410_IP:      ##Build IP only.
 X440_IP:      ##Build IP only.
 	+$(call vivado_ip,X440,$(DEFS) X440=1)
 
-build/usrp_x410%.dts: dts/*.dts dts/*.dtsi
-	-mkdir -p build
+$(BUILD_OUTPUT_DIR)/usrp_x410%.dts: dts/*.dts dts/*.dtsi
+	-mkdir -p $(BUILD_OUTPUT_DIR)
 	tools/parse_versions_for_dts.py \
 		--input regmap/x410/versioning_regs_regmap_utils.vh \
 		--output dts/x410-version-info.dtsi \
@@ -304,8 +307,8 @@ build/usrp_x410%.dts: dts/*.dts dts/*.dtsi
 	${CC} -o $@ -C -E -I dts -nostdinc -undef -x assembler-with-cpp -D__DTS__ \
 		$$(python3 tools/get_dts_input.py --target $@)
 
-build/usrp_x440%.dts: dts/*.dts dts/*.dtsi
-	-mkdir -p build
+$(BUILD_OUTPUT_DIR)/usrp_x440%.dts: dts/*.dts dts/*.dtsi
+	-mkdir -p $(BUILD_OUTPUT_DIR)
 	tools/parse_versions_for_dts.py \
 		--input regmap/x440/versioning_regs_regmap_utils.vh \
 		--output dts/x440-version-info.dtsi \
@@ -315,14 +318,14 @@ build/usrp_x440%.dts: dts/*.dts dts/*.dtsi
 
 clean:        ##Clean up all target build outputs.
 	@echo "Cleaning targets..."
-	@rm -rf build-X4*
-	@rm -rf build
+	@rm -rf $(BUILD_BASE_DIR)/build-X4*
+	@rm -rf $(BUILD_OUTPUT_DIR)
 
 cleanall:     ##Clean up all target and IP build outputs.
 	@echo "Cleaning targets and IP..."
 	@rm -rf build-ip
-	@rm -rf build-X4*
-	@rm -rf build
+	@rm -rf $(BUILD_BASE_DIR)/build-X4*
+	@rm -rf $(BUILD_OUTPUT_DIR)
 
 help:         ##Show this help message.
 	@grep -h "##" Makefile | grep -v "\"##\"" | sed -e 's/\\$$//' | sed -e 's/##//'

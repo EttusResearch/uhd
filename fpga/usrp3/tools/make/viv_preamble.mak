@@ -27,7 +27,10 @@ SIMLIB_DIR = $(abspath $(BASE_DIR)/../sim)
 LIB_IP_DIR = $(abspath $(LIB_DIR)/ip)
 HLS_IP_DIR = $(abspath $(LIB_DIR)/hls)
 
-BUILD_BASE_DIR ?= .
+MAKEFILE_DIR = $(abspath .)
+
+IP_BUILD_DIR ?= $(abspath ./build-ip/$(subst /,,$(PART_ID)))
+BUILD_BASE_DIR ?= $(abspath .)
 
 ifdef NAME
 BUILD_DIR = $(abspath $(BUILD_BASE_DIR)/build-$(NAME))
@@ -35,7 +38,6 @@ else
 BUILD_DIR = $(abspath $(BUILD_BASE_DIR)/build)
 endif
 
-IP_BUILD_DIR = $(abspath ./build-ip/$(subst /,,$(PART_ID)))
 
 # -------------------------------------------------------------------
 # Git Hash Retrieval
