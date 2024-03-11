@@ -105,6 +105,11 @@ def setup_parser():
         help="Build only the required IPs",
         action="store_true")
     parser.add_argument(
+        "-j", "--jobs",
+        help="Number of parallel jobs to use with make",
+        required=False,
+        default=None)
+    parser.add_argument(
         "-c", "--clean-all",
         help="Cleans the IP before a new build",
         action="store_true")
@@ -236,6 +241,7 @@ def main():
         GUI=args.GUI,
         save_project=args.save_project,
         ip_only=args.ip_only,
+        num_jobs=args.jobs,
         source=source,
         source_hash=source_hash.hexdigest(),
         output_path=args.image_core_output,

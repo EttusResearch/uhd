@@ -958,6 +958,7 @@ def build(fpga_path, device, image_core_path, edge_file, **args):
                    GUI: passed to Makefile
                    save_project: passed to Makefile
                    ip_only: passed to Makefile
+                   num_jobs: Number of make jobs to use
                    source: The source of the build (YAML or GRC file path)
                    include_paths: List of paths to OOT modules
                    extra_makefile_srcs: An additional list of paths to modules
@@ -990,6 +991,8 @@ def build(fpga_path, device, image_core_path, edge_file, **args):
     make_cmd += f" IMAGE_CORE={image_core_path} EDGE_FILE={edge_file}"
     if makefile_src_paths:
         make_cmd += " RFNOC_OOT_MAKEFILE_SRCS=" + "\\ ".join(makefile_src_paths)
+    if "num_jobs" in args and args["num_jobs"]:
+        make_cmd = make_cmd + " --jobs " + args["num_jobs"]
     if "GUI" in args and args["GUI"]:
         make_cmd = make_cmd + " GUI=1"
     if "save_project" in args and args["save_project"]:
