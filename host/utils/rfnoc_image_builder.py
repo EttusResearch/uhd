@@ -62,12 +62,12 @@ def setup_parser():
         default=None)
     parser.add_argument(
         "-I", "--include-dir",
-        help="Path directory of the RFNoC Out-of-Tree module",
+        help="Path to directory of the RFNoC Out-of-Tree module",
         action='append', default=[]
         )
     parser.add_argument(
         "-b", "--grc-blocks",
-        help="Path directory of GRC block descriptions (needed for --grc-config only)",
+        help="Path to directory of GRC block descriptions (needed for --grc-config only)",
         default=None)
     parser.add_argument(
         "-l", "--log-level",
@@ -107,6 +107,18 @@ def setup_parser():
     parser.add_argument(
         "-j", "--jobs",
         help="Number of parallel jobs to use with make",
+        required=False,
+        default=None)
+    parser.add_argument(
+        "-B", "--build-base-dir",
+        help="Path to base directory for FPGA build process. "
+             "Defaults to the device directory of the FPGA source tree.",
+        required=False,
+        default=None)
+    parser.add_argument(
+        "-O", "--build-output-dir",
+        help="Path to directory for final FPGA build outputs. "
+             "Defaults to the build base directory + /build",
         required=False,
         default=None)
     parser.add_argument(
@@ -242,6 +254,8 @@ def main():
         save_project=args.save_project,
         ip_only=args.ip_only,
         num_jobs=args.jobs,
+        build_base_dir=args.build_base_dir,
+        build_output_dir=args.build_output_dir,
         source=source,
         source_hash=source_hash.hexdigest(),
         output_path=args.image_core_output,

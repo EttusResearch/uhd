@@ -959,6 +959,8 @@ def build(fpga_path, device, image_core_path, edge_file, **args):
                    save_project: passed to Makefile
                    ip_only: passed to Makefile
                    num_jobs: Number of make jobs to use
+                   build_base_dir: Custom base directory for FPGA builds
+                   build_output_dir: Custom bitstream output directory
                    source: The source of the build (YAML or GRC file path)
                    include_paths: List of paths to OOT modules
                    extra_makefile_srcs: An additional list of paths to modules
@@ -968,9 +970,11 @@ def build(fpga_path, device, image_core_path, edge_file, **args):
     """
     ret_val = 0
     cwd = os.path.dirname(__file__)
-    build_dir = os.path.join(get_top_path(os.path.abspath(fpga_path)), target_dir(device))
-    if not os.path.isdir(build_dir):
-        logging.error("Not a valid directory: %s", build_dir)
+    fpga_dir = os.path.join(get_top_path(os.path.abspath(fpga_path)), target_dir(device))
+    build_base_dir = fpga_dir
+    build_output_dir = os.path.join(build_base_dir, "build")
+    if not os.path.isdir(fpga_dir):
+        logging.error("Not a valid directory: %s", fpga_dir)
         return 1
     makefile_src_paths = [
         os.path.join(
@@ -978,8 +982,8 @@ def build(fpga_path, device, image_core_path, edge_file, **args):
             os.path.join('fpga', 'Makefile.srcs'))
         for x in args.get("include_paths", [])
     ] + args.get("extra_makefile_srcs", [])
-    logging.debug("Temporarily changing working directory to %s", build_dir)
-    os.chdir(build_dir)
+    logging.debug("Temporarily changing working directory to %s", fpga_dir)
+    os.chdir(fpga_dir)
     setup_cmd = ". ./setupenv.sh "
     if "vivado_path" in args and args["vivado_path"]:
         setup_cmd += "--vivado-path=" + args["vivado_path"] + " "
@@ -999,6 +1003,12 @@ def build(fpga_path, device, image_core_path, edge_file, **args):
         make_cmd = make_cmd + " PROJECT=1"
     if "ip_only" in args and args["ip_only"]:
         make_cmd = make_cmd + " IP_ONLY=1"
+    if "build_base_dir" in args and args["build_base_dir"]:
+        make_cmd = make_cmd + " BUILD_BASE_DIR=" + args["build_base_dir"]
+        build_base_dir = args["build_base_dir"]
+    if "build_output_dir" in args and args["build_output_dir"]:
+        make_cmd = make_cmd + " BUILD_OUTPUT_DIR=" + args["build_output_dir"]
+        build_output_dir = args["build_output_dir"]
 
     if args.get('generate_only'):
         logging.info("Skip build (generate only option given)")
@@ -1007,7 +1017,9 @@ def build(fpga_path, device, image_core_path, edge_file, **args):
 
     make_cmd = setup_cmd + " && " + make_cmd
     logging.info("Launching build with the following settings:")
-    logging.info(" * Build Directory: %s", build_dir)
+    logging.info(" * FPGA Directory: %s", fpga_dir)
+    logging.info(" * Build Base Directory: %s", build_base_dir)
+    logging.info(" * Build Output Directory: %s", build_output_dir)
     logging.info(" * Target: %s", target)
     logging.info(" * Image Core File: %s", image_core_path)
     logging.info(" * Edge Table File: %s", edge_file)
@@ -1108,6 +1120,8 @@ def build_image(config, fpga_path, config_path, device, **args):
                    GUI: passed to Makefile
                    save_project: passed to Makefile
                    ip_only: passed to Makefile
+                   build_base_dir: passed to Makefile
+                   build_output_dir: passed to Makefile
                    include_paths: Paths to additional blocks
     :return: Exit result of build process or 0 if generate-only is given.
     """
