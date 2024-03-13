@@ -130,7 +130,7 @@ if { [string compare $cmd "create"] == 0 } {
             puts "INFO: BD TCL source updated: $src_dir/$src_rootname.tcl"
             # Export HDL source files into a seperate TCL file
             puts "INFO: Generating hdl_sources.tcl file from project..."
-            set hdlSources -quiet [get_files -filter {FILE_TYPE == VHDL || FILE_TYPE == Verilog || FILE_TYPE == SystemVerilog}]
+            set hdlSources [get_files -quiet -filter {FILE_TYPE == VHDL || FILE_TYPE == Verilog || FILE_TYPE == SystemVerilog}]
             if {[llength $hdlSources] == 0} {
                 puts "INFO: No HDL sources found in project"
             } else {
