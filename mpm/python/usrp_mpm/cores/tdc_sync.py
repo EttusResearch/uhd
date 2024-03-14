@@ -9,7 +9,11 @@ TDC clock synchronization
 
 import time
 import math
-from fractions import gcd
+import sys
+if sys.version_info >= (3,9,0):
+    from math import gcd
+else:
+    from fractions import gcd
 from functools import reduce
 from builtins import object
 from usrp_mpm.mpmutils import poll_with_timeout
@@ -302,7 +306,7 @@ class ClockSynchronizer(object):
             """
             # The Restart-pulser must run at the GCD of the RP and SP rates, not the
             # Reference Clock and Radio Clock rates!
-            pulse_rate = find_rate(self.ref_clk_freq, [gcd(rp_rate, sp_rate)])
+            pulse_rate = find_rate(self.ref_clk_freq, [gcd(int(rp_rate), int(sp_rate))])
             period = int(self.ref_clk_freq/pulse_rate)
             hi_time = int(math.floor(period/2))
             # The re-pulse is broken into two registers:
