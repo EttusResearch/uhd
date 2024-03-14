@@ -8,6 +8,7 @@ license: >-                             # License information used in file heade
 version: '1.0'                          # File version
 chdr_width: 64                          # Bit width of the CHDR bus for this image
 device: 'n300'
+image_core_name: 'n300_bist'            # Name to use for the RFNoC Image Core files
 default_target: 'N300_AA'
 
 # A list of all stream endpoints in design
