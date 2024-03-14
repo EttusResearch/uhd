@@ -13,12 +13,6 @@
 - re: fpga/usrp3/top/x300
   add:
     - fpga.usrp3.x3xx
-- re: fpga/usrp3/top/b200
-  add:
-    - fpga.usrp3.b200
-- re: fpga/usrp3/top/b200mini
-  add:
-    - fpga.usrp3.b200mini
 - re: fpga/usrp3/top/e31x
   add:
     - fpga.usrp3.e31x
@@ -32,6 +26,25 @@
 ###############################################################################
 # CI CHANGES
 ###############################################################################
-- re: fpga/.ci/*
+- re: fpga/.ci/fpga-pipeline*
   add:
     - fpga.usrp3.all
+- re: fpga/.ci/templates*
+  add:
+    - fpga.usrp3.all
+# Device-specific pipeline changes.
+- re: fpga/.ci/devices/job-build-x400.yml
+  add:
+    - fpga.usrp3.x4xx
+- re: fpga/.ci/devices/job-build-x300.yml
+  add:
+    - fpga.usrp3.x3xx
+- re: fpga/.ci/devices/job-build-e31x.yml
+  add:
+    - fpga.usrp3.e31x
+- re: fpga/.ci/devices/job-build-e320.yml
+  add:
+    - fpga.usrp3.e320
+- re: fpga/.ci/devices/job-build-n3xx.yml
+  add:
+    - fpga.usrp3.n3xx

@@ -173,7 +173,7 @@ stages:
         top_dir: uhddev/fpga/usrp3/top/x400
         publish_int_files: ${{ parameters.publish_int_files }}
   # trigger reduced list of targets if packaging is disabled, and no specific targets are requested
-  - ${{ if and(eq(parameters.package_and_publish_images, false),eq(parameters.build_x410, false)) }}:
+  - ${{ if and(eq(parameters.package_and_publish_images, false), eq(parameters.build_x410, false)) }}:
     - template: ../templates/job-build-fpga.yml
       parameters:
         targets_matrix: ${{ parameters.x410_reduced_targets_matrix }}
@@ -181,7 +181,7 @@ stages:
         top_dir: uhddev/fpga/usrp3/top/x400
         publish_int_files: ${{ parameters.publish_int_files }}
   # trigger specific targets if packaging is disabled, and specific targets are requested
-  - ${{ if and(eq(parameters.package_and_publish_images, true),eq(parameters.build_x410, true)) }}:
+  - ${{ if and(eq(parameters.package_and_publish_images, false), eq(parameters.build_x410, true)) }}:
     - template: ../templates/job-build-fpga.yml
       parameters:
         targets_matrix: ${{ parameters.x410_requests_matrix }}
