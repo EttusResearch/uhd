@@ -61,7 +61,7 @@ parameters:
       timeout: 720
       max_attempts: 2
     N300_AA:
-      image_core: n300_bist_image_core.yml
+      image_core: n300_bist_rfnoc_image_core.yml
       target_name: N300_AA
       timeout: 720
       max_attempts: 2
@@ -93,7 +93,7 @@ parameters:
       timeout: 720
       max_attempts: 2
     N310_AA:
-      image_core: n310_bist_image_core.yml
+      image_core: n310_bist_rfnoc_image_core.yml
       target_name: N310_AA
       timeout: 720
       max_attempts: 2
@@ -125,7 +125,7 @@ parameters:
       timeout: 720
       max_attempts: 2
     N320_AA:
-      image_core: n320_rfnoc_bist_core.yml
+      image_core: n320_bist_rfnoc_image_core.yml
       target_name: N320_AA
       timeout: 720
       max_attempts: 2
