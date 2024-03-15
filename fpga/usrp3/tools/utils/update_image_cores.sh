@@ -8,6 +8,6 @@ for device_top in e31x e320 n3xx x300 x400; do
     cd $curr_path
     for yml_f in *core.yml; do
         echo "Regenerating from $yml_f..."
-        rfnoc_image_builder -y $yml_f -o `basename $yml_f .yml`.v -H -D -G -l warning $@
+        rfnoc_image_builder -y $yml_f -H -D -G -l warning $@
     done
 done
