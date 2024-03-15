@@ -28,21 +28,39 @@ schedules:
     - master
   always: true
 
+parameters:
+- name: build_linux
+  type: boolean
+  displayName: Build Linux images
+  default: true
+- name: build_windows
+  type: boolean
+  displayName: Build Windows images
+  default: true
+
 variables:
 - template: uhd-pipeline-vars.yml
-- name: linuxDockerImages
-  value:
-    "{'Fedora-36-builder':{'buildOSName':'fedora36','dockerImageName':'uhd-builder-fedora36'},
-    'Fedora-37-builder':{'buildOSName':'fedora37','dockerImageName':'uhd-builder-fedora37'},
-    'Ubuntu-1804-builder':{'buildOSName':'ubuntu1804','dockerImageName':'uhd-builder-ubuntu1804'},
-    'Ubuntu-2004-builder':{'buildOSName':'ubuntu2004','dockerImageName':'uhd-builder-ubuntu2004'},
-    'Ubuntu-2204-builder':{'buildOSName':'ubuntu2204','dockerImageName':'uhd-builder-ubuntu2204'}}"
-- name: winDockerImages
-  value:
-    "{'VS2017-x86-builder':{'buildOSName':'win-vs17-v141-x86','dockerImageName':'uhd-builder-vs2017-v141-x86','cmakeCompiler':'Visual Studio 15 2017','cmakeArch':'Win32','vsArch':'x86','vsYear':'2017'},
-    'VS2017-x64-builder':{'buildOSName':'win-vs17-v141-x64','dockerImageName':'uhd-builder-vs2017-v141-x64','cmakeCompiler':'Visual Studio 15 2017','cmakeArch':'x64','vsArch':'x64','vsYear':'2017'},
-    'VS2019-x86-builder':{'buildOSName':'win-vs19-v142-x86','dockerImageName':'uhd-builder-vs2019-v142-x86','cmakeCompiler':'Visual Studio 16 2019','cmakeArch':'Win32','vsArch':'x86','vsYear':'2019'},
-    'VS2019-x64-builder':{'buildOSName':'win-vs19-v142-x64','dockerImageName':'uhd-builder-vs2019-v142-x64','cmakeCompiler':'Visual Studio 16 2019','cmakeArch':'x64','vsArch':'x64','vsYear':'2019'}}"
+- ${{ if parameters.build_linux }}:
+  - name: linuxDockerImages
+    value:
+      "{'Fedora-36-builder':{'buildOSName':'fedora36','dockerImageName':'uhd-builder-fedora36'},
+      'Fedora-37-builder':{'buildOSName':'fedora37','dockerImageName':'uhd-builder-fedora37'},
+      'Ubuntu-1804-builder':{'buildOSName':'ubuntu1804','dockerImageName':'uhd-builder-ubuntu1804'},
+      'Ubuntu-2004-builder':{'buildOSName':'ubuntu2004','dockerImageName':'uhd-builder-ubuntu2004'},
+      'Ubuntu-2204-builder':{'buildOSName':'ubuntu2204','dockerImageName':'uhd-builder-ubuntu2204'}}"
+- ${{ else }}:
+  - name: linuxDockerImages
+    value:
+- ${{ if parameters.build_windows }}:
+  - name: winDockerImages
+    value:
+      "{'VS2017-x86-builder':{'buildOSName':'win-vs17-v141-x86','dockerImageName':'uhd-builder-vs2017-v141-x86','cmakeCompiler':'Visual Studio 15 2017','cmakeArch':'Win32','vsArch':'x86','vsYear':'2017'},
+      'VS2017-x64-builder':{'buildOSName':'win-vs17-v141-x64','dockerImageName':'uhd-builder-vs2017-v141-x64','cmakeCompiler':'Visual Studio 15 2017','cmakeArch':'x64','vsArch':'x64','vsYear':'2017'},
+      'VS2019-x86-builder':{'buildOSName':'win-vs19-v142-x86','dockerImageName':'uhd-builder-vs2019-v142-x86','cmakeCompiler':'Visual Studio 16 2019','cmakeArch':'Win32','vsArch':'x86','vsYear':'2019'},
+      'VS2019-x64-builder':{'buildOSName':'win-vs19-v142-x64','dockerImageName':'uhd-builder-vs2019-v142-x64','cmakeCompiler':'Visual Studio 16 2019','cmakeArch':'x64','vsArch':'x64','vsYear':'2019'}}"
+- ${{ else }}:
+  - name: winDockerImages
+    value:
 
 - name: ubuntuDebDockerImages
   # Match with Ubuntu images in linuxDockerImages
@@ -114,6 +132,7 @@ jobs:
     demands:
       - agent.os -equals Linux
       - docker
+  condition: and(succeeded(), ${{ parameters.build_linux }})
   strategy:
     matrix: $[ variables.linuxDockerImages ]
   steps:
@@ -191,6 +210,7 @@ jobs:
     demands:
       - agent.os -equals Windows_NT
       - docker
+  condition: and(succeeded(), ${{ parameters.build_windows }})
   strategy:
     matrix: $[ variables.winDockerImages ]
   steps:
