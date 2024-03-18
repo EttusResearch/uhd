@@ -528,12 +528,12 @@ void dpdk_io_service::_service_xport_disconnect(dpdk::wait_req* req)
         auto& xport_list = _recv_xport_map.at(port->get_port_id());
         xport_list.remove(recv_client);
         while (!rte_ring_empty(recv_client->_recv_queue)) {
-            frame_buff* buff_ptr;
+            frame_buff* buff_ptr = nullptr;
             rte_ring_dequeue(recv_client->_recv_queue, (void**)&buff_ptr);
             dpdk_io->link->release_recv_buff(frame_buff::uptr(buff_ptr));
         }
         while (!rte_ring_empty(recv_client->_release_queue)) {
-            frame_buff* buff_ptr;
+            frame_buff* buff_ptr = nullptr;
             rte_ring_dequeue(recv_client->_release_queue, (void**)&buff_ptr);
             dpdk_io->link->release_recv_buff(frame_buff::uptr(buff_ptr));
         }
@@ -544,12 +544,12 @@ void dpdk_io_service::_service_xport_disconnect(dpdk::wait_req* req)
         auto& xport_list = _tx_queues.at(port->get_port_id());
         xport_list.remove(send_client);
         while (!rte_ring_empty(send_client->_send_queue)) {
-            frame_buff* buff_ptr;
+            frame_buff* buff_ptr = nullptr;
             rte_ring_dequeue(send_client->_send_queue, (void**)&buff_ptr);
             dpdk_io->link->release_send_buff(frame_buff::uptr(buff_ptr));
         }
         while (!rte_ring_empty(send_client->_buffer_queue)) {
-            frame_buff* buff_ptr;
+            frame_buff* buff_ptr = nullptr;
             rte_ring_dequeue(send_client->_buffer_queue, (void**)&buff_ptr);
             dpdk_io->link->release_send_buff(frame_buff::uptr(buff_ptr));
         }
