@@ -3,7 +3,7 @@ module_name: fir_filter
 version: "1.0"
 rfnoc_version: "1.0"
 chdr_width: 64
-noc_id: 0xF1120000
+noc_id: 0xF1120002
 makefile_srcs: "${fpga_lib_dir}/blocks/rfnoc_block_fir_filter/Makefile.srcs"
 
 parameters:

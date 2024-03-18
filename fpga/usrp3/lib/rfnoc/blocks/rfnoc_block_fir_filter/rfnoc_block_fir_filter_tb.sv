@@ -27,7 +27,7 @@ module rfnoc_block_fir_filter_tb #(
   // Local Parameters
   //---------------------------------------------------------------------------
 
-  localparam int NOC_ID = 32'hF112_0000;
+  localparam int NOC_ID = 32'hF112_0002;
 
   // Simulation parameters
   localparam real CHDR_CLK_PER = 6.0; // 166 MHz
@@ -255,7 +255,7 @@ module rfnoc_block_fir_filter_tb #(
         // If using embedded register, coefficients must be preloaded
         if (USE_EMBEDDED_REGS_COEFFS) begin
           int i;
-          for (i = 0; i < num_coeffs_to_send-1; i++) begin
+          for (i = num_coeffs_to_send-1; i > 0; i--) begin
             write_reg(port, REG_FIR_LOAD_COEFF, COEFFS_VEC_0[COEFF_WIDTH*i +: COEFF_WIDTH]);
           end
           write_reg(port, REG_FIR_LOAD_COEFF_LAST, COEFFS_VEC_0[COEFF_WIDTH*i +: COEFF_WIDTH]);
@@ -351,7 +351,7 @@ module rfnoc_block_fir_filter_tb #(
         end
 
         test.start_test("Load new coefficients", 20us);
-        for (i = 0; i < num_coeffs_to_send-1; i++) begin
+        for (i = num_coeffs_to_send-1; i > 0; i--) begin
           write_reg(port, REG_FIR_LOAD_COEFF, COEFFS_VEC_1[COEFF_WIDTH*i +: COEFF_WIDTH]);
         end
         write_reg(port, REG_FIR_LOAD_COEFF_LAST, COEFFS_VEC_1[COEFF_WIDTH*i +: COEFF_WIDTH]);

@@ -37,7 +37,7 @@ module fir_filter_slice #(
   reg signed [IN_WIDTH-1:0] a_reg[0:1];
   reg signed [IN_WIDTH-1:0] d_reg;
   reg signed [IN_WIDTH:0] ad_reg;
-  reg signed [COEFF_WIDTH-1:0] b_reg[0:1];
+  reg signed [COEFF_WIDTH-1:0] b_reg;
   reg signed [IN_WIDTH+COEFF_WIDTH:0] m_reg;
   reg signed [ACCUM_WIDTH-1:0] p_reg;
 
@@ -46,8 +46,7 @@ module fir_filter_slice #(
       a_reg[0]   <= 0;
       a_reg[1]   <= 0;
       d_reg      <= 0;
-      b_reg[0]   <= 0;
-      b_reg[1]   <= 0;
+      b_reg      <= 0;
       ad_reg     <= 0;
       m_reg      <= 0;
       p_reg      <= 0;
@@ -57,17 +56,16 @@ module fir_filter_slice #(
         a_reg[1] <= a_reg[0];
         d_reg    <= sample_in_b;
         ad_reg   <= a_reg[1] + d_reg;
-        m_reg    <= ad_reg * b_reg[1];
+        m_reg    <= ad_reg * b_reg;
         p_reg    <= sample_accum + m_reg;
       end
       if (coeff_load_stb) begin
-        b_reg[0] <= coeff_in;
+        b_reg <= coeff_in;
       end
-      b_reg[1]   <= b_reg[0];
     end
   end
 
-  assign coeff_forward  = b_reg[0];
+  assign coeff_forward  = b_reg;
   assign sample_forward = a_reg[1];
   assign sample_out     = p_reg[OUT_WIDTH-1:0];
 
