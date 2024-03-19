@@ -28,11 +28,13 @@ steps:
       -G "Unix Makefiles" \
       ${{ parameters.uhdSrcDir }}/host
   displayName: cmake rpm
+  condition: and(succeeded(), not(in(variables.buildOSName, 'fedora39')))
 
 - script: |
     cd ${{ parameters.uhdBuildDir }}
     make package -j$(nproc)
   displayName: make package rpm
+  condition: and(succeeded(), not(in(variables.buildOSName, 'fedora39')))
 
 - task: CopyFiles@2
   inputs:
@@ -41,3 +43,4 @@ steps:
     targetFolder: ${{ parameters.uhdInstallerDir }}
     cleanTargetFolder: true
   displayName: Copy rpm installer
+  condition: and(succeeded(), not(in(variables.buildOSName, 'fedora39')))
