@@ -157,8 +157,8 @@ static const ubx_gpio_field_info_t ubx_proto_gpio_info[] = {
     {TX_LO_LOCKED,  dboard_iface::UNIT_TX,  6,  0x1<<6,     1,  ubx_gpio_field_info_t::OUTPUT, false,  0,  0,  0,  0},
     {RX_LO_LOCKED,  dboard_iface::UNIT_TX,  7,  0x1<<7,     1,  ubx_gpio_field_info_t::OUTPUT, false,  0,  0,  0,  0},
     {CPLD_RST_N,    dboard_iface::UNIT_TX,  9,  0x1<<9,     1,  ubx_gpio_field_info_t::INPUT,  false,  0,  0,  0,  0},
-    {TX_GAIN,       dboard_iface::UNIT_TX,  10, 0x3F<<10,   10, ubx_gpio_field_info_t::INPUT,  false,  0,  0,  0,  0},
-    {RX_GAIN,       dboard_iface::UNIT_RX,  10, 0x3F<<10,   10, ubx_gpio_field_info_t::INPUT,  false,  0,  0,  0,  0}
+    {TX_GAIN,       dboard_iface::UNIT_TX,  10, 0x3F<<10,   6,  ubx_gpio_field_info_t::INPUT,  false,  0,  0,  0,  0},
+    {RX_GAIN,       dboard_iface::UNIT_RX,  10, 0x3F<<10,   6,  ubx_gpio_field_info_t::INPUT,  false,  0,  0,  0,  0}
 };
 
 static const ubx_gpio_field_info_t ubx_v1_gpio_info[] = {
@@ -170,12 +170,12 @@ static const ubx_gpio_field_info_t ubx_v1_gpio_info[] = {
     {RX_EN_N,       dboard_iface::UNIT_TX,   6,  0x1<<6,     1,  ubx_gpio_field_info_t::INPUT,  true,   1,  1,  0,  0},
     {TXLO1_SYNC,    dboard_iface::UNIT_TX,   7,  0x1<<7,     1,  ubx_gpio_field_info_t::INPUT,  true,   0,  0,  0,  0},
     {TXLO2_SYNC,    dboard_iface::UNIT_TX,   9,  0x1<<9,     1,  ubx_gpio_field_info_t::INPUT,  true,   0,  0,  0,  0},
-    {TX_GAIN,       dboard_iface::UNIT_TX,   10, 0x3F<<10,   10, ubx_gpio_field_info_t::INPUT,  false,  0,  0,  0,  0},
+    {TX_GAIN,       dboard_iface::UNIT_TX,   10, 0x3F<<10,   6,  ubx_gpio_field_info_t::INPUT,  false,  0,  0,  0,  0},
     {RX_LO_LOCKED,  dboard_iface::UNIT_RX,   0,  0x1,        1,  ubx_gpio_field_info_t::OUTPUT, false,  0,  0,  0,  0},
     {TX_LO_LOCKED,  dboard_iface::UNIT_RX,   1,  0x1<<1,     1,  ubx_gpio_field_info_t::OUTPUT, false,  0,  0,  0,  0},
     {RXLO1_SYNC,    dboard_iface::UNIT_RX,   5,  0x1<<5,     1,  ubx_gpio_field_info_t::INPUT,  true,   0,  0,  0,  0},
     {RXLO2_SYNC,    dboard_iface::UNIT_RX,   7,  0x1<<7,     1,  ubx_gpio_field_info_t::INPUT,  true,   0,  0,  0,  0},
-    {RX_GAIN,       dboard_iface::UNIT_RX,   10, 0x3F<<10,   10, ubx_gpio_field_info_t::INPUT,  false,  0,  0,  0,  0}
+    {RX_GAIN,       dboard_iface::UNIT_RX,   10, 0x3F<<10,   6,  ubx_gpio_field_info_t::INPUT,  false,  0,  0,  0,  0}
 };
 // clang-format on
 
@@ -652,10 +652,10 @@ private:
     void set_gpio_field(ubx_gpio_field_id_t id, uint32_t value)
     {
         // Look up field info
-        std::map<ubx_gpio_field_id_t, ubx_gpio_field_info_t>::iterator entry =
-            _gpio_map.find(id);
-        if (entry == _gpio_map.end())
+        auto entry = _gpio_map.find(id);
+        if (entry == _gpio_map.end()) {
             return;
+        }
         ubx_gpio_field_info_t field_info = entry->second;
         if (field_info.direction == ubx_gpio_field_info_t::OUTPUT)
             return;
@@ -680,10 +680,10 @@ private:
     uint32_t get_gpio_field(ubx_gpio_field_id_t id)
     {
         // Look up field info
-        std::map<ubx_gpio_field_id_t, ubx_gpio_field_info_t>::iterator entry =
-            _gpio_map.find(id);
-        if (entry == _gpio_map.end())
+        auto entry = _gpio_map.find(id);
+        if (entry == _gpio_map.end()) {
             return 0;
+        }
         ubx_gpio_field_info_t field_info = entry->second;
         if (field_info.direction == ubx_gpio_field_info_t::INPUT) {
             ubx_gpio_reg_t* reg = (field_info.unit == dboard_iface::UNIT_TX
@@ -848,14 +848,13 @@ private:
     double set_tx_gain(double gain)
     {
         std::lock_guard<std::mutex> lock(_mutex);
-        gain              = ubx_tx_gain_range.clip(gain);
-        int attn_code     = int(std::floor(gain * 2));
-        _ubx_tx_atten_val = ((attn_code & 0x3F) << 10);
+        gain                = ubx_tx_gain_range.clip(gain);
+        const int attn_code = int(std::floor(gain * 2));
         set_gpio_field(TX_GAIN, attn_code);
         write_gpio();
-        UHD_LOGGER_TRACE("UBX")
-            << boost::format("UBX TX Gain: %f dB, Code: %d, IO Bits 0x%04x") % gain
-                   % attn_code % _ubx_tx_atten_val;
+        UHD_LOG_TRACE("UBX",
+            boost::format("UBX TX Gain: %f dB, Code: %d, IO Bits 0x%04x") % gain
+                % attn_code % (attn_code << 10));
         _tx_gain = gain;
         return gain;
     }
@@ -863,14 +862,13 @@ private:
     double set_rx_gain(double gain)
     {
         std::lock_guard<std::mutex> lock(_mutex);
-        gain              = ubx_rx_gain_range.clip(gain);
-        int attn_code     = int(std::floor(gain * 2));
-        _ubx_rx_atten_val = ((attn_code & 0x3F) << 10);
+        gain                = ubx_rx_gain_range.clip(gain);
+        const int attn_code = int(std::floor(gain * 2));
         set_gpio_field(RX_GAIN, attn_code);
         write_gpio();
-        UHD_LOGGER_TRACE("UBX")
-            << boost::format("UBX RX Gain: %f dB, Code: %d, IO Bits 0x%04x") % gain
-                   % attn_code % _ubx_rx_atten_val;
+        UHD_LOG_TRACE("UBX",
+            boost::format("UBX RX Gain: %f dB, Code: %d, IO Bits 0x%04x") % gain
+                % attn_code % (attn_code << 10));
         _rx_gain = gain;
         return gain;
     }
@@ -1446,8 +1444,6 @@ private:
     bool _rxlo_locked;
     bool _txlo_locked;
     std::string _rx_ant;
-    int _ubx_tx_atten_val;
-    int _ubx_rx_atten_val;
     power_mode_t _power_mode;
     xcvr_mode_t _xcvr_mode;
     size_t _rev;
