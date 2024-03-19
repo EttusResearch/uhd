@@ -332,11 +332,21 @@ std::string graph_t::to_dot()
     }
     result += "\n";
 
+    static const std::map<uhd::rfnoc::graph_edge_t::edge_t, std::string> edge_format_map =
+        {{uhd::rfnoc::graph_edge_t::edge_t::DYNAMIC, "label=\"dynamic\""},
+            {uhd::rfnoc::graph_edge_t::edge_t::STATIC,
+                "color=\"black:white:black\",label=\"static\",weight=10"},
+            {uhd::rfnoc::graph_edge_t::edge_t::RX_STREAM,
+                "style=\"dashed\",label=\"RX stream\""},
+            {uhd::rfnoc::graph_edge_t::edge_t::TX_STREAM,
+                "style=\"dashed\",label=\"TX stream\""}};
+
     // add current connections
     for (const auto& elem : enumerate_edges()) {
         result +=
-            str(boost::format("  \"%s_out\":\"out_%d\" -> \"%s_in\":\"in_%d\"\n")
-                % elem.src_blockid % elem.src_port % elem.dst_blockid % elem.dst_port);
+            str(boost::format("  \"%s_out\":\"out_%d\" -> \"%s_in\":\"in_%d\" [%s]\n")
+                % elem.src_blockid % elem.src_port % elem.dst_blockid % elem.dst_port
+                % edge_format_map.at(elem.edge));
     }
     result += "}\n";
     return result;
