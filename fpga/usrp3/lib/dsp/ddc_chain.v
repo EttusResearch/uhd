@@ -191,8 +191,8 @@ module ddc_chain
 	    .coef_din(coef_din), // input [17 : 0] coef_din
 	    .rfd(rfd2), // output rfd
 	    .nd(nd2), // input nd
-	    .din_1(i_hb1[23+HB1_SCALE:HB1_SCALE]), // input [23 : 0] din_1
-	    .din_2(q_hb1[23+HB1_SCALE:HB1_SCALE]), // input [23 : 0] din_2
+	    .din_1(i_hb1[WIDTH-1+HB1_SCALE:HB1_SCALE]), // input [23 : 0] din_1
+	    .din_2(q_hb1[WIDTH-1+HB1_SCALE:HB1_SCALE]), // input [23 : 0] din_2
 	    .rdy(rdy2), // output rdy
 	    .data_valid(data_valid2), // output data_valid
 	    .dout_1(i_hb2), // output [46 : 0] dout_1
@@ -200,8 +200,8 @@ module ddc_chain
 
 
 
-	 reg [18:0]  i_unscaled, q_unscaled;
-	 reg 	     strobe_unscaled;
+	 reg [WIDTH-1:0]  i_unscaled, q_unscaled;
+	 reg              strobe_unscaled;
 
 	 always @(posedge clk)
 	   case({enable_hb1,enable_hb2})
@@ -209,31 +209,37 @@ module ddc_chain
 	     2'd0 :
 	       begin
 		  strobe_unscaled <= strobe_cic;
-		  i_unscaled <= i_cic[23:5];
-		  q_unscaled <= q_cic[23:5];
+		  i_unscaled <= i_cic;
+		  q_unscaled <= q_cic;
 	       end
 	     // ILLEGAL. Only half sample rate half band enabled.
 	     2'd1 :
 	       begin
 		  strobe_unscaled <= strobe_cic;
-		  i_unscaled <= i_cic[23:5];
-		  q_unscaled <= q_cic[23:5];
+		  i_unscaled <= i_cic;
+		  q_unscaled <= q_cic;
 	       end
 	     // One Halfband enabled, decimate by 2.
 	     2'd2 :
 	       begin
 		  strobe_unscaled <= strobe_hb1;
-		  i_unscaled <= i_hb1[23+HB1_SCALE:5+HB1_SCALE];
-		  q_unscaled <= q_hb1[23+HB1_SCALE:5+HB1_SCALE];
+		  i_unscaled <= i_hb1[WIDTH-1+HB1_SCALE:HB1_SCALE];
+		  q_unscaled <= q_hb1[WIDTH-1+HB1_SCALE:HB1_SCALE];
 	       end
 	     // Both Halfbands enabled, decimate by 4.
 	     2'd3 :
 	       begin
 		  strobe_unscaled <= strobe_hb2;
-		  i_unscaled <= i_hb2[23+HB2_SCALE:5+HB2_SCALE];
-		  q_unscaled <= q_hb2[23+HB2_SCALE:5+HB2_SCALE];
+		  i_unscaled <= i_hb2[WIDTH-1+HB2_SCALE:HB2_SCALE];
+		  q_unscaled <= q_hb2[WIDTH-1+HB2_SCALE:HB2_SCALE];
 	     end
 	   endcase // case (hb_rate)
+
+	 // round to 19 bits for clip (->18) followed by multiplication (total gain of 6 bits)
+	 wire [18:0]  i_unscaled_rnd, q_unscaled_rnd;
+
+	 round #(.bits_in(WIDTH),.bits_out(19)) unscaled_rnd_i (.in(i_unscaled), .out(i_unscaled_rnd));
+	 round #(.bits_in(WIDTH),.bits_out(19)) unscaled_rnd_q (.in(q_unscaled), .out(q_unscaled_rnd));
 
 	 // Need to clip 1 bit here or we loose small signal performance out the truncated LSB's for worst case CIC gain cases.
 	 // NOTE: We can only clip here with CORDIC rotating, CIC in it's highest gain configurations and an input signal thats
@@ -242,9 +248,9 @@ module ddc_chain
 	 wire [17:0] i_unscaled_clip, q_unscaled_clip;
 
 	 clip_reg #(.bits_in(19), .bits_out(18), .STROBED(1)) unscaled_clip_i
-	   (.clk(clk), .in(i_unscaled[18:0]), .strobe_in(strobe_unscaled), .out(i_unscaled_clip[17:0]), .strobe_out(strobe_unscaled_clip));
+	   (.clk(clk), .in(i_unscaled_rnd), .strobe_in(strobe_unscaled), .out(i_unscaled_clip[17:0]), .strobe_out(strobe_unscaled_clip));
 	 clip_reg #(.bits_in(19), .bits_out(18), .STROBED(1)) unscaled_clip_q
-	   (.clk(clk), .in(q_unscaled[18:0]), .strobe_in(strobe_unscaled), .out(q_unscaled_clip[17:0]), .strobe_out());
+	   (.clk(clk), .in(q_unscaled_rnd), .strobe_in(strobe_unscaled), .out(q_unscaled_clip[17:0]), .strobe_out());
 
 	 // Apply scaling gain to compensate for CORDIC and CIC gain adjustments so that signal swing over network transport has
 	 // optimal dynamic range.
@@ -315,14 +321,20 @@ module ddc_chain
 	   (.clk(clk),.rst(rst),.bypass(~enable_hb2),.run(run),.cpi(cpi_hb),
 	    .stb_in(strobe_hb1),.data_in(q_hb1),.stb_out(),.data_out(q_hb2));
 
+	 // round to 19 bits for clip (->18) followed by multiplication (total gain of 6 bits)
+	 wire [18:0]  i_hb_out_rnd, q_hb_out_rnd;
+
+	 round #(.bits_in(WIDTH),.bits_out(19)) hb_out_rnd_i (.in(i_hb2), .out(i_hb_out_rnd));
+	 round #(.bits_in(WIDTH),.bits_out(19)) hb_out_rnd_q (.in(q_hb2), .out(q_hb_out_rnd));
+
 	 // Need to clip 1 bit here or we loose small signal performance out the truncated LSB's for worst case CIC gain cases.
 	 wire strobe_unscaled_clip;
 	 wire [17:0] i_unscaled_clip, q_unscaled_clip;
 
 	 clip_reg #(.bits_in(19), .bits_out(18), .STROBED(1)) unscaled_clip_i
-	   (.clk(clk), .in(i_hb2[WIDTH-1:WIDTH-19]), .strobe_in(strobe_hb2), .out(i_unscaled_clip[17:0]), .strobe_out(strobe_unscaled_clip));
+	   (.clk(clk), .in(i_hb_out_rnd), .strobe_in(strobe_hb2), .out(i_unscaled_clip[17:0]), .strobe_out(strobe_unscaled_clip));
 	 clip_reg #(.bits_in(19), .bits_out(18), .STROBED(1)) unscaled_clip_q
-	   (.clk(clk), .in(q_hb2[WIDTH-1:WIDTH-19]), .strobe_in(strobe_hb2), .out(q_unscaled_clip[17:0]), .strobe_out());
+	   (.clk(clk), .in(q_hb_out_rnd), .strobe_in(strobe_hb2), .out(q_unscaled_clip[17:0]), .strobe_out());
 
 	 //scalar operation (gain of 6 bits)
 	 wire [35:0] 	  prod_i, prod_q;

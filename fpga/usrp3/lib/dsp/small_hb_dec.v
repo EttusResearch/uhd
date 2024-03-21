@@ -110,13 +110,18 @@ module small_hb_dec
    localparam ACCWIDTH = 30;
    reg [ACCWIDTH-1:0] 	 accum;
 
+   wire [ACCWIDTH-1:0] prod_acc_rnd;
+   round #(.bits_in(36),.bits_out(ACCWIDTH),
+           .round_to_zero(1),.round_to_nearest(0),.trunc(0)) round_prod
+     (.in(prod), .out(prod_acc_rnd));
+
    always @(posedge clk)
      if(rst)
        accum <= 0;
      else if(go_d2)
-       accum <= {middle_d1[17],middle_d1[17],middle_d1,{(16+ACCWIDTH-36){1'b0}}} + {prod[35:36-ACCWIDTH]};
+       accum <= {middle_d1[17],middle_d1[17],middle_d1,{(16+ACCWIDTH-36){1'b0}}} + prod_acc_rnd;
      else if(go_d3)
-       accum <= accum + {prod[35:36-ACCWIDTH]};
+       accum <= accum + prod_acc_rnd;
 
    wire [WIDTH:0] 	 accum_rnd;
    wire [WIDTH-1:0] 	 accum_rnd_clip;
