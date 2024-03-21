@@ -9,6 +9,7 @@ UHD Python API module
 
 from . import types
 from . import usrp
+from . import usrp_clock
 from . import usrpctl
 from . import filters
 from . import rfnoc
