@@ -22,13 +22,16 @@ steps:
       -DCMAKE_PREFIX_PATH="${{ parameters.uhdInstalledArtifactPath }};${{ parameters.gnuradioInstalledArtifactPath }}" \
       ${{ parameters.grettusSrcDir }}
   displayName: cmake make gr-ettus
+  condition: and(succeeded(), in(variables.buildOSName, 'ubuntu1804'))
 
 - script: |
     cd ${{ parameters.grettusBuildDir }}
     make -j$(nproc) -k
   displayName: make gr-ettus
+  condition: and(succeeded(), in(variables.buildOSName, 'ubuntu1804'))
 
 - script: |
     cd ${{ parameters.grettusBuildDir }}
     make install
   displayName: Install gr-ettus to grettusInstallPath
+  condition: and(succeeded(), in(variables.buildOSName, 'ubuntu1804'))

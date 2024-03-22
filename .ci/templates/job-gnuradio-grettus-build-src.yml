@@ -57,8 +57,14 @@ jobs:
   - checkout: gnuradio
     clean: true
     submodules: recursive
+    condition: and(succeeded(), not(in(variables.buildOSName, 'ubuntu1804')))
+  - checkout: gnuradio-3-8
+    clean: true
+    submodules: recursive
+    condition: and(succeeded(), in(variables.buildOSName, 'ubuntu1804'))
   - checkout: gr-ettus
     clean: true
+    condition: and(succeeded(), in(variables.buildOSName, 'ubuntu1804'))
 
   - task: DeleteFiles@1
     inputs:

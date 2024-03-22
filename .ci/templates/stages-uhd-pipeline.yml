@@ -78,6 +78,11 @@ resources:
     type: github
     name: gnuradio/gnuradio
     endpoint: EttusResearch
+    ref: maint-3.10
+  - repository: gnuradio-3-8
+    type: github
+    name: gnuradio/gnuradio
+    endpoint: EttusResearch
     ref: maint-3.8
   - repository: gr-ettus
     type: github
