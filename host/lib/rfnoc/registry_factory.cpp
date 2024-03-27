@@ -87,7 +87,7 @@ void registry::register_block_direct(std::vector<noc_id_t> noc_ids,
             mb_access,
             timebase_clock,
             ctrlport_clock,
-            std::move(factory_fn));
+            factory_fn);
     }
 }
 

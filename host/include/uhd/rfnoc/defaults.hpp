@@ -78,6 +78,7 @@ static const noc_id_t DUC_BLOCK            = 0xD0C00000;
 static const noc_id_t DDC_BLOCK            = 0xDDC00000;
 static const noc_id_t FFT_BLOCK            = 0xFF700000;
 static const noc_id_t FIR_FILTER_BLOCK     = 0xF1120000;
+static const noc_id_t FIR_FILTER_BLOCK_V2  = 0xF1120002;
 static const noc_id_t FOSPHOR_BLOCK        = 0x666F0000;
 static const noc_id_t LOGPWR_BLOCK         = 0x4C500000;
 static const noc_id_t KEEP_ONE_IN_N_BLOCK  = 0x02460000;
