@@ -19,7 +19,7 @@
 
 using namespace uhd::rfnoc;
 
-/*! Pair type for device depended block definitions. */
+/*! Pair type for device dependent block definitions. */
 using block_device_pair_t = std::pair<noc_id_t, device_type_t>;
 
 
@@ -70,6 +70,25 @@ void registry::register_block_direct(noc_id_t noc_id,
             timebase_clock,
             ctrlport_clock,
             std::move(factory_fn)});
+}
+
+void registry::register_block_direct(std::vector<noc_id_t> noc_ids,
+    device_type_t device_id,
+    const std::string& block_name,
+    bool mb_access,
+    const std::string& timebase_clock,
+    const std::string& ctrlport_clock,
+    factory_t factory_fn)
+{
+    for (auto noc_id : noc_ids) {
+        register_block_direct(noc_id,
+            device_id,
+            block_name,
+            mb_access,
+            timebase_clock,
+            ctrlport_clock,
+            std::move(factory_fn));
+    }
 }
 
 void registry::register_block_descriptor(
