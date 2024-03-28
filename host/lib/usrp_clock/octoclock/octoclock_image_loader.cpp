@@ -95,7 +95,7 @@ static void octoclock_validate_firmware_image(octoclock_session_t& session)
                                      % session.image_filepath));
     }
 
-    std::string extension = fs::extension(session.image_filepath);
+    const std::string extension = fs::path(session.image_filepath).extension().string();
     if (extension == ".bin") {
         octoclock_read_bin(session);
     } else if (extension == ".hex") {

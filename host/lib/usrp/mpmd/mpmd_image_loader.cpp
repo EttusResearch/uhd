@@ -27,8 +27,6 @@
 #include <cctype>
 #include <fstream>
 #include <iterator>
-#include <sstream>
-#include <streambuf>
 #include <string>
 #include <vector>
 
@@ -271,7 +269,7 @@ static uhd::usrp::component_files_t bin_dts_to_component_files(
     // DTS component struct
     // First, we need to determine the name
     const std::string base_name =
-        boost::filesystem::change_extension(fpga_path, "").string();
+        boost::filesystem::path(fpga_path).replace_extension("").string();
     if (base_name == fpga_path) {
         const std::string err_msg(
             "Can't cut extension from FPGA filename... " + fpga_path);
@@ -340,7 +338,7 @@ static void mpmd_send_fpga_to_device(
         UHD_LOG_TRACE("MPMD IMAGE LOADER", "FPGA path: " << fpga_path);
 
         // If the fpga_path is a lvbitx file, parse it as such
-        if (boost::filesystem::extension(fpga_path) == ".lvbitx") {
+        if (boost::filesystem::path(fpga_path).extension() == ".lvbitx") {
             all_component_files = lvbitx_to_component_files(fpga_path, delay_reload);
         } else {
             all_component_files = bin_dts_to_component_files(fpga_path, delay_reload);
