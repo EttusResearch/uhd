@@ -60,7 +60,7 @@ steps:
     fi
     if [[ "${{ parameters.uhdAllowWarnings }}" = "False" ]]; then
       echo "Warnings not allowed for this build."
-      export CXXFLAGS="-Werror -Wno-error=maybe-uninitialized -Wno-error=deprecated-declarations $CXXFLAGS"
+      export CXXFLAGS="-Werror -Wno-error=maybe-uninitialized $CXXFLAGS"
     fi
     export CXXFLAGS="${{ parameters.uhdCxxFlags }} $CXXFLAGS"
     if [[ "${{ parameters.uhdCustomBoostPackage }}" = "True" ]]; then
