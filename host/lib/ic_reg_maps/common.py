@@ -376,7 +376,7 @@ class mreg:
             raise Exception('Error parsing meta register description: "%s"\nWhat: %s'%(mreg_des, e))
 
     def parse(self, mreg_des, regs):
-        x = re.match('^~(\w*)\s+(.*)\s*$', mreg_des)
+        x = re.match(r'^~(\w*)\s+(.*)\s*$', mreg_des)
         self._name, reg_names = x.groups()
         regs_dict = dict([(reg.get_name(), reg) for reg in regs])
         self._regs = [regs_dict[reg_name.strip()] for reg_name in reg_names.split(',')]
