@@ -49,10 +49,10 @@ parameters:
 - name: build_x4xx
   type: boolean
   default: true
-- name: fpga_imgs_base_url
+- name: fpga_imgs_source
   type: string
-  displayName: FPGA Images Base URL
-  default: 'Internal'
+  displayName: FPGA Images Source
+  default: 'FPGA Pipeline'
 - name: skip_analyze_changeset
   type: boolean
   default: false
@@ -68,6 +68,9 @@ resources:
   - pipeline: usrp-kas-pipeline
     source: 'usrp-kas'
     branch: zeus-ci
+  - pipeline: uhd_fpga_pipeline
+    source: 'uhddev fpga pipeline'
+    branch: master
   repositories:
   - repository: meta-ettus
     type: github
@@ -273,7 +276,7 @@ stages:
         # the uhd-fpga-images recipe to an internal file server which is closer
         # to the build machines. It is simply appended to auto.conf, where
         # bitbake will pick it up and apply it to the recipe.
-        - ${{ if contains(parameters.fpga_imgs_base_url, 'Internal') }}:
+        - ${{ if contains(parameters.fpga_imgs_source, 'Internal') }}:
           - bash: |
               cat <<EOF >>$AUTO_CONF
               UHD_BASE_URL = "$FILE_SERVER_URL"
@@ -352,12 +355,12 @@ stages:
         toolset: msbuild
         installer: nsis
         releaseBinaries: ${{ parameters.release_binaries }}
-        fpga_imgs_base_url: ${{ parameters.fpga_imgs_base_url }}
+        fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
     - template: job-uhd-build-installer.yml
       parameters:
         toolset: msbuild_python
         installer: nsis
-        fpga_imgs_base_url: ${{ parameters.fpga_imgs_base_url }}
+        fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
     - ${{ if parameters.release_binaries }}:
       - template: job-uhd-build-installer-signing.yml
         parameters:
@@ -384,6 +387,8 @@ stages:
     parameters:
       testOS: ubuntu2004
       uhdSrcDir: $(Build.SourcesDirectory)
+      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testDevices: 'x3xx,b2xx'
 
 - stage: devtest_uhd_n3xx_e320_stage
@@ -407,6 +412,8 @@ stages:
     parameters:
       testOS: ubuntu2004
       uhdSrcDir: $(Build.SourcesDirectory)
+      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testDevices: 'n3xx,e320'
 
 - stage: test_uhd_x4xx_stage
@@ -475,6 +482,8 @@ stages:
   - template: job-uhd-rf-tests-pebbles.yml
     parameters:
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
+      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testOS: ubuntu1804
       testDevices: 'n3xx'
 

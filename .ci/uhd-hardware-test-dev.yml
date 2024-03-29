@@ -39,6 +39,13 @@ parameters:
   type: boolean
   displayName: Run X440 Phase tests
   default: false
+- name: fpga_imgs_source
+  type: string
+  values:
+  - 'Filesytem/Images Downloader'
+  - 'FPGA Pipeline'
+  displayName: FPGA Images Source
+  default: 'Filesytem/Images Downloader'
 - name: extra_rf_test_args
   type: string
   displayName: Extra UHD RF ATS Arguments (for N310 and X4x0 runs)
@@ -58,6 +65,9 @@ resources:
   - pipeline: usrp-kas-pipeline
     source: 'usrp-kas'
     branch: zeus-ci
+  - pipeline: uhd_fpga_pipeline
+    source: 'uhddev fpga pipeline'
+    branch: master
   repositories:
   - repository: meta-ettus
     type: github
@@ -130,6 +140,8 @@ stages:
       testOS: ubuntu2004
       uhdSrcDir: $(Build.SourcesDirectory)
       uhdArtifactSource: uhd_mono_pipeline
+      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
 
 - stage: test_n310_rf_tests
   displayName: Run N310 RF tests
@@ -141,6 +153,8 @@ stages:
       testOS: ubuntu1804
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
       uhdArtifactSource: uhd_mono_pipeline
+      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       extra_rf_test_args: ${{ parameters.extra_rf_test_args }}
 
 - stage: test_x410_rf_tests
