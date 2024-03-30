@@ -518,9 +518,13 @@ stages:
     parameters:
       testOS: ubuntu2004
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
+      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testLength: ${{ parameters.testLength }}
   - template: job-uhd-streaming-tests-x440.yml
     parameters:
       testOS: ubuntu2204
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
+      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testLength: ${{ parameters.testLength }}

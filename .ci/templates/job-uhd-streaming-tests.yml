@@ -26,6 +26,10 @@ parameters:
 - name: uhdArtifactSource
   type: string
   default: current
+- name: uhdFpgaArtifactSource
+  type: string
+- name: fpga_imgs_source
+  type: string
 - name: xilinxLocation
   type: string
 
@@ -57,15 +61,38 @@ jobs:
     displayName: Set uhddev pipeline artifact location
 
   - script: |
+      if [ "${{ parameters.uhdFpgaArtifactSource }}" = "current" ]; then
+        echo '##vso[task.setvariable variable=uhd_fpga_artifact_directory]'$(Agent.BuildDirectory)
+      else
+        echo '##vso[task.setvariable variable=uhd_fpga_artifact_directory]'$(Agent.BuildDirectory)/${{ parameters.uhdFpgaArtifactSource }}
+      fi
+    displayName: Set uhddev FPGA pipeline artifact location
+
+  - script: |
       rm -rf $(uhd_artifact_directory)/$(dutEmbeddedImagesArtifact)
       rm -rf $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
     displayName: Cleanup from prior run
     condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'))
 
+  - script: |
+      if [ ! -z "${{ parameters.uhdFpgaArtifactSource }}" ]; then
+        rm -rf $(Agent.BuildDirectory)/${{ parameters.uhdFpgaArtifactSource }}
+      fi
+    displayName: Cleanup from prior run
+    condition: eq('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline')
+
   - download: ${{ parameters.uhdArtifactSource }}
     artifact: $(dutEmbeddedImagesArtifact)
     displayName: Download $(dutEmbeddedImagesArtifact)
     condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'))
+
+  - download: ${{ parameters.uhdFpgaArtifactSource }}
+    patterns: |
+      usrp_$(dutType)*.bit
+      usrp_$(dutType)*.dts
+      usrp_$(dutType)*.rpt
+    displayName: Download FPGA artifacts
+    condition: eq('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline')
 
   - task: ExtractFiles@1
     inputs:
@@ -131,6 +158,14 @@ jobs:
 
   - script: |
         ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
+        scp -o StrictHostKeyChecking=no $(uhd_fpga_artifact_directory)/*/usrp_$(dutType)_* root@$USRP_EMB_TARGET_IP:/usr/share/uhd/images/
+        ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "md5sum /usr/share/uhd/images/usrp_$(dutType)_fpga_$(dutFPGA).bit > /usr/share/uhd/images/usrp_$(dutType)_fpga_$(dutFPGA).bit.md5"
+        ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "md5sum /usr/share/uhd/images/usrp_$(dutType)_fpga_$(dutFPGA).dts > /usr/share/uhd/images/usrp_$(dutType)_fpga_$(dutFPGA).dts.md5"
+    displayName: Copy FPGA pipeline images to device
+    condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'), eq('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline'))
+
+  - script: |
+        ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
         ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "uhd_image_loader --args addr=localhost,type=$(dutFamily),fpga=$(dutFPGA)"
         EXITCODE=$?
         sleep 60
@@ -147,7 +182,11 @@ jobs:
 
   - script: |
       export UHD_IMAGES_DIR=$(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images
-      $(Build.BinariesDirectory)/uhddev/build-installed/bin/uhd_images_downloader -t x310
+      if [ "${{ parameters.fpga_imgs_source }}" = "FPGA Pipeline" ]; then
+        cp $(uhd_fpga_artifact_directory)/*/* $(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images/
+      else
+        $(Build.BinariesDirectory)/uhddev/build-installed/bin/uhd_images_downloader -t x310
+      fi
       openFPGALoader -c digilent --ftdi-serial $(jtagSerial) --ftdi-channel 0 $UHD_IMAGES_DIR/usrp_x310_fpga_$(dutFPGA).bit
       EXITCODE=$?
       echo "Waiting for device to boot"
