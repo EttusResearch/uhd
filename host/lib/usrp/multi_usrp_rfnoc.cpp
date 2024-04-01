@@ -749,38 +749,63 @@ public:
 
     double get_master_clock_rate(size_t mboard) override
     {
-        // We pick the first radio we can find on this mboard, and hope that all
-        // radios have the same range.
+        // We pick the first radio we can find on this mboard and get its master clock
+        // rate. A warning is thrown if there are different rates in different radios.
+        std::vector<double> mcrs;
         for (auto& chain : _rx_chans) {
             auto radio = chain.second.radio;
+            radio->get_unique_id();
             if (radio->get_block_id().get_device_no() == mboard) {
-                return radio->get_tick_rate();
+                mcrs.push_back(radio->get_tick_rate());
             }
         }
         for (auto& chain : _tx_chans) {
             auto radio = chain.second.radio;
             if (radio->get_block_id().get_device_no() == mboard) {
-                return radio->get_tick_rate();
+                mcrs.push_back(radio->get_tick_rate());
             }
+        }
+        if (!mcrs.empty()) {
+            if (!std::equal(mcrs.begin() + 1, mcrs.end(), mcrs.begin())) {
+                UHD_LOGGER_WARNING("MULTI_USRP")
+                    << "Different master clock rates on different radio blocks. "
+                       "Returning value for radio block #0 only. Consider using "
+                       "get_tick_rate() on the RFNoC radio block to retrieve the master "
+                       "clock rates per radio block.";
+            }
+            return mcrs[0];
         }
         throw uhd::key_error("Invalid mboard index!");
     }
 
     meta_range_t get_master_clock_rate_range(const size_t mboard) override
     {
-        // We pick the first radio we can find on this mboard, and hope that all
-        // radios have the same range.
+        // We pick the first radio we can find on this mboard, and get its range. Since
+        // most devices don't support changing the MCR at runtime, the range thus consists
+        // of a single value. A warning is thrown if there are different rate ranges in
+        // different radios.
+        std::vector<meta_range_t> ranges;
         for (auto& chain : _rx_chans) {
             auto radio = chain.second.radio;
             if (radio->get_block_id().get_device_no() == mboard) {
-                return radio->get_rate_range();
+                ranges.push_back(radio->get_rate_range());
             }
         }
         for (auto& chain : _tx_chans) {
             auto radio = chain.second.radio;
             if (radio->get_block_id().get_device_no() == mboard) {
-                return radio->get_rate_range();
+                ranges.push_back(radio->get_rate_range());
             }
+        }
+        if (!ranges.empty()) {
+            if (!std::equal(ranges.begin() + 1, ranges.end(), ranges.begin())) {
+                UHD_LOGGER_WARNING("MULTI_USRP")
+                    << "Different master clock rate ranges on different radio blocks. "
+                       "Returning value for radio block #0 only. Consider using "
+                       "get_rate_range() on the RFNoC radio block to retrieve the master "
+                       "clock rate ranges per radio block.";
+            }
+            return ranges[0];
         }
         throw uhd::key_error("Invalid mboard index!");
     }
@@ -2743,7 +2768,7 @@ private:
         typename GetSubdevSpecFn,
         typename GenChansFn,
         typename CheckEdgeForSepFn>
-    void _set_subdev_spec(std::unordered_map<size_t, ChanType>& chans,
+    void _set_subdev_spec(std::map<size_t, ChanType>& chans,
         GetSubdevSpecFn&& get_subdev_spec,
         GenChansFn&& generate_chans,
         CheckEdgeForSepFn&& check_edge_for_sep,
@@ -2811,9 +2836,11 @@ private:
     //! Mapping between device number and the radio blocks
     std::unordered_map<size_t, std::vector<uhd::rfnoc::radio_control::sptr>> _radios;
     //! Mapping between channel number and the RFNoC blocks in that RX chain
-    std::unordered_map<size_t, rx_chan_t> _rx_chans;
+    // Using map instead of unordered map to have a guaranteed order when iterating over
+    // it, e.g. for getting the master clock rate.
+    std::map<size_t, rx_chan_t> _rx_chans;
     //! Mapping between channel number and the RFNoC blocks in that TX chain
-    std::unordered_map<size_t, tx_chan_t> _tx_chans;
+    std::map<size_t, tx_chan_t> _tx_chans;
     //! Cache the requested RX rates
     std::unordered_map<size_t, double> _rx_rates;
     //! Cache the requested TX rates

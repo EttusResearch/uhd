@@ -124,6 +124,7 @@
 # other tests, too
 - re: ^mpm/.+hpp$|^mpm/.+cpp$|^mpm/.+py$|^mpm/.+/tests/|^mpm/.+CMakeLists.txt$
   add:
+    - uhd.build.linux
     - mpm.utest.all
   stop: False
 - re: ^mpm/.+/ad9361|^mpm/.+catalina$|^mpm/.+/dboard_manager/ad936x_db.py
@@ -184,3 +185,11 @@
     - hw.streaming.all
     - hw.rf.all
     - devtest.all
+
+###############################################################################
+# CI CHANGES
+###############################################################################
+- re: .ci/templates/tests/templates/job-uhd-x4xx-hardware-tests.yml
+  add:
+    - uhd.build.linux
+    - hw.rf.x4xx

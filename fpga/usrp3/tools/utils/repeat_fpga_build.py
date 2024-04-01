@@ -33,8 +33,14 @@ def parse_args():
         "--target",
         "-t",
         type=str,
-        required=True,
         help="FPGA make target to build (e.g., X310_XG).",
+    )
+    parser.add_argument(
+        "--image-core",
+        "-y",
+        type=str,
+        help="For using the image builder instead of make, use this to specify "
+        "the image core YAML.",
     )
     parser.add_argument(
         "--num",
@@ -65,12 +71,52 @@ def parse_args():
     return parser.parse_args()
 
 
-def run_fpga_build(build_seed, target):
+def prepare_build(target, image_core):
+    """
+    Run tasks to prepare the build. In particular, execute the RFNoC image builder
+    if desired.
+    """
+    if image_core:
+        logging.info("Calling rfnoc_image_builder to prepare FPGA build.")
+        cmd = [
+            "rfnoc_image_builder",
+            "--yaml-config",
+            image_core,
+            "--generate-only",
+            "--no-hash",
+            "--no-date",
+        ]
+        if target:
+            cmd += ["--target", target]
+        result = subprocess.run(
+            cmd,
+            check=False,
+            encoding="utf-8",
+            capture_output=True,
+        )
+        logging.info("rfnoc_image_builder output:")
+        logging.info("stdout:\n%s", result.stdout)
+        logging.info("stderr:\n%s", result.stderr)
+        if result.returncode:
+            logging.error("Image builder failed! Consult output for details.")
+        result.check_returncode()
+        # Parse the image builder output to get the make command we need to build the FPGA
+        make_command = re.search(r"(?<=: )make.*$", result.stderr, flags=re.M).group(0)
+        logging.info("Using make command: %s", make_command)
+    else:
+        assert target
+        make_command = f"make {target}"
+    return {
+        "make_command": make_command,
+    }
+
+
+def run_fpga_build(build_seed, cfg):
     """Performs one iteration of an FPGA build.
 
     Args:
         build_seed: 32-bit signed integer to seed the FPGA build.
-        target: Make target name (e.g., X310_XG).
+        cfg: Build configuration info
 
     Returns:
         0: The build succeeded.
@@ -78,7 +124,8 @@ def run_fpga_build(build_seed, target):
         2: There was some other error that should cause us to stop trying.
     """
     output = ""
-    cmd = f'/bin/bash -c "make {target} BUILD_SEED={build_seed}"'
+    make_cmd = cfg["make_command"]
+    cmd = f'/bin/bash -c "{make_cmd} BUILD_SEED={build_seed}"'
     with subprocess.Popen(
         cmd,
         shell=True,
@@ -134,17 +181,21 @@ def main():
     logging.basicConfig(format="[REPEAT BUILD][%(levelname)s] %(message)s")
     logging.root.setLevel(logging.INFO)
     args = parse_args()
+    if not args.target and not args.image_core:
+        logging.error("Either --target or --image-core must be provided!")
+        return 1
     build_seed = args.seed
     status = 128
+    cfg = prepare_build(args.target, args.image_core)
     try:
         for build_num in range(1, args.num + 1):
-            logging.info(f"Starting FPGA build {build_num} with seed {build_seed}")
-            status = run_fpga_build(build_seed, args.target)
-            logging.info(f"Finished FPGA build {build_num}")
+            logging.info("Starting FPGA build %d with seed %s", build_num, build_seed)
+            status = run_fpga_build(build_seed, cfg)
+            logging.info("Finished FPGA build %d", build_num)
             if status == 0:
-                logging.info(f"FPBA build succeeded on attempt number {build_num}")
+                logging.info("FPGA build succeeded on attempt number %s", build_num)
                 break
-            elif build_num == args.num:
+            if build_num == args.num:
                 logging.error("Reached maximum number of FPGA build attempts")
             elif status == 1:
                 logging.info("FPGA build will be restarted due to unsuccessful attempt")
@@ -152,7 +203,7 @@ def main():
                 logging.error("Stopping due to unexpected FPGA build error")
                 break
             build_seed = next_build_seed(build_seed)
-    except (KeyboardInterrupt):
+    except KeyboardInterrupt:
         logging.info("Received SIGINT. Aborting . . .")
         # Return normal Bash value for SIGINT (128+2)
         return 130

@@ -72,8 +72,10 @@ jobs:
   steps:
   - checkout: self
     clean: true
+    condition: and(succeeded(), ne(variables.buildOSName, 'ubuntu1804'))
 
   - download: uhd_build_docker_container
+    condition: and(succeeded(), ne(variables.buildOSName, 'ubuntu1804'))
   - ${{ if eq(parameters.toolset, 'fedora_rpm') }}:
     - template: steps-build-uhd-installer-fedora-rpm.yml
       parameters:
@@ -95,6 +97,7 @@ jobs:
         uhdBuildDir: c:\uhddev\build
         uhdInstallerDir: c:\uhddev-installer
         uhdImageDir: c:\uhd-images
+        uhdVcpkgManifestDir: c:\uhd-vcpkg
         uhdReleaseBinaries: ${{ parameters.releaseBinaries }}
         ${{ if contains(parameters.fpga_imgs_base_url, 'Internal') }}:
           uhdImagesDownloaderExtraArgs: '-b $(InternalFileServerUrl)'
@@ -109,6 +112,7 @@ jobs:
         uhdBuildDir: c:\uhddev\build
         uhdInstallerDir: c:\uhddev-installer
         uhdImageDir: c:\uhd-images
+        uhdVcpkgManifestDir: c:\uhd-vcpkg
         uhdReleaseBinaries: ${{ parameters.releaseBinaries }}
         uhdBuildPythonAPI: True
         ${{ if contains(parameters.fpga_imgs_base_url, 'Internal') }}:
@@ -122,3 +126,4 @@ jobs:
       targetPath: '$(Build.BinariesDirectory)/uhddev-installer'
       artifactName: 'uhddev-$(buildOSName)-${{ parameters.toolset }}-${{ parameters.installer }}-installer'
     displayName: Upload uhd installer artifact
+    condition: and(succeeded(), ne(variables.buildOSName, 'ubuntu1804'))

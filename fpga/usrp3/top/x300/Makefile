@@ -10,19 +10,21 @@
 ## make <Targets> <Options>
 ##
 ##Output:
-## build/usrp_<product>_fpga_<image_type>.bit:    Configuration bitstream with header
-## build/usrp_<product>_fpga_<image_type>.bin:    Configuration bitstream without header
-## build/usrp_<product>_fpga_<image_type>.lvbitx: Configuration bitstream for PCIe (NI-RIO)
-## build/usrp_<product>_fpga_<image_type>.rpt:    Build report (includes utilization and timing summary)
+## $(BUILD_OUTPUT_DIR)/usrp_<product>_fpga_<image_type>.bit:    Configuration bitstream with header
+## $(BUILD_OUTPUT_DIR)/usrp_<product>_fpga_<image_type>.bin:    Configuration bitstream without header
+## $(BUILD_OUTPUT_DIR)/usrp_<product>_fpga_<image_type>.lvbitx: Configuration bitstream for PCIe (NI-RIO)
+## $(BUILD_OUTPUT_DIR)/usrp_<product>_fpga_<image_type>.rpt:    Build report (includes utilization and timing summary)
 
 # Debug Options
 # Uncomment the following line to add a debug UART on GPIO 10 & 11
 #OPTIONS += DEBUG_UART=1
 
-CREATE_LVBITX=python ../../lib/io_port2/create-lvbitx.py
+CREATE_LVBITX=python3 ../../lib/io_port2/create-lvbitx.py
 
-# Base output directory for all builds
+# Base output directory for all builds.
 BUILD_BASE_DIR ?= .
+# Base directory for the build outputs.
+BUILD_OUTPUT_DIR ?= $(BUILD_BASE_DIR)/build
 
 # Initialize a build seed. This can be changed to randomly affect build results.
 BUILD_SEED ?= 0
@@ -35,10 +37,12 @@ XA_DEFS=BUILD_10G=1 BUILD_AURORA=1 SFP0_10GBE=1 SFP1_AURORA=1 $(OPTIONS) BUILD_S
 
 # Set build option (check RTL, run synthesis, or do a full build)
 ifndef TARGET
-	ifdef CHECK
+	ifeq ($(CHECK), 1)
 		TARGET = rtl
-	else ifdef SYNTH
+	else ifeq ($(SYNTH), 1)
 		TARGET = synth
+	else ifeq ($(IP_ONLY), 1)
+		TARGET = viv_ip
 	else
 		TARGET = bin
 	endif
@@ -57,15 +61,15 @@ vivado_ip    = make -f Makefile.x300.inc viv_ip    NAME=$@ ARCH=$(XIL_ARCH_$1) P
 # post_build($1=Device, $2=Option)
 ifeq ($(TARGET),bin)
 	post_build = @\
-		mkdir -p build; \
+		mkdir -p $(BUILD_OUTPUT_DIR); \
 		echo "Exporting bitstream files..."; \
-		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/x300.bin build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bin; \
-		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/x300.bit build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bit; \
+		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/x300.bin $(BUILD_OUTPUT_DIR)/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bin; \
+		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/x300.bit $(BUILD_OUTPUT_DIR)/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bit; \
 		echo "Generating LVBITX..."; \
-		$(CREATE_LVBITX) --input-bin=$(BUILD_BASE_DIR)/build-$(1)_$(2)/x300.bin --output-lvbitx=build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).lvbitx --device="USRP $(1)" x3x0_base.lvbitx; \
-		cp -f x3x0_base.lvbitx build/`echo $(1) | tr A-Z a-z`.lvbitx_base; \
+		$(CREATE_LVBITX) --input-bin=$(BUILD_BASE_DIR)/build-$(1)_$(2)/x300.bin --output-lvbitx=$(BUILD_OUTPUT_DIR)/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).lvbitx --device="USRP $(1)" x3x0_base.lvbitx; \
+		cp -f x3x0_base.lvbitx $(BUILD_OUTPUT_DIR)/`echo $(1) | tr A-Z a-z`.lvbitx_base; \
 		echo "Exporting build report..."; \
-		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/build.rpt build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).rpt; \
+		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/build.rpt $(BUILD_OUTPUT_DIR)/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).rpt; \
 		echo "Build DONE ... $(1)_$(2)";
 else
 	post_build = @echo "Skipping bitfile export."
@@ -137,14 +141,14 @@ X300_XA: X300_IP
 
 clean:    ##Clean up all target build outputs.
 	@echo "Cleaning targets..."
-	@rm -rf build-X3*_*
-	@rm -rf build
+	@rm -rf $(BUILD_BASE_DIR)/build-X3*_*
+	@rm -rf $(BUILD_OUTPUT_DIR)
 
 cleanall: ##Clean up all target and ip build outputs.
 	@echo "Cleaning targets and IP..."
 	@rm -rf build-ip
-	@rm -rf build-X3*_*
-	@rm -rf build
+	@rm -rf $(BUILD_BASE_DIR)/build-X3*_*
+	@rm -rf $(BUILD_OUTPUT_DIR)
 
 help:     ##Show this help message.
 	@grep -h "##" Makefile | grep -v "\"##\"" | sed -e 's/\\$$//' | sed -e 's/##//'
@@ -153,7 +157,9 @@ help:     ##Show this help message.
 ##Supported Options
 ##-----------------
 ##GUI=1          Launch the build in the Vivado GUI.
+##PROJECT=1      Save Vivado project file, otherwise it's created in memory.
 ##CHECK=1        Launch the syntax checker instead of building a bitfile.
+##IP_ONLY=1      Launch the build but stop after IP generation.
 ##SYNTH=1        Launch the build but stop after synthesis.
 ##BUILD_SEED=<N> Build seed to used to affect build results. (Default is 0)
 ##TOP=<module>   Specify a top module for syntax checking. (Default is the bitfile top)

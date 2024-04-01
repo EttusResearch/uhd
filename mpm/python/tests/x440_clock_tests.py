@@ -161,6 +161,56 @@ class TestX440ClockConfig(TestBase):
         self.assertEqual(clk_config.spll_config.sysref_div, 2400)
         self.assertEqual(clk_config.spll_config.clkin0_r_div, 200)
         self.assertEqual(clk_config.spll_config.pll2_n_cal_div, clk_config.spll_config.pll2_n_div)
+    
+
+    def test_two_sample_rates_inverted(self):
+        """
+        Checking that configurations are only mirrored but not completely different
+        if the two MCRs are swapped
+        """
+        log = logging.getLogger()
+        cp = X440ClockPolicy(None, None, {}, log)
+        dsp_info = {
+            'num_rx_chans': 4,
+            'num_tx_chans': 4,
+            'bw': 1600,
+            'extra_resampling': 1,
+            'spc_rx': 8,
+            'spc_tx': 8,
+        }
+        cp.set_dsp_info([dsp_info, dsp_info])
+        mcr0 = [250e6, 1500e6]
+        mcr1 = mcr0.copy()
+        mcr1.reverse()
+        ref_clock_freq = 10e6
+        mcr0 = cp.coerce_mcr(mcr0)
+        mcr1 = cp.coerce_mcr(mcr1)
+        clk_config0 = cp.get_config(ref_clock_freq, mcr0)
+        clk_config1 = cp.get_config(ref_clock_freq, mcr1)
+        self.assertEqual(clk_config0.mmcm_use_defaults, False)
+        self.assertEqual(clk_config1.mmcm_use_defaults, False)
+        # We need to calculate if the values lead to what we want
+        for idx, clock_rate in enumerate(mcr0):
+            self.assertTrue(clk_config0.rfdc_configs[idx].resampling in X4xxRfdcCtrl.RFDC_RESAMPLER)
+            conv_rate0 = clock_rate * clk_config0.rfdc_configs[idx].resampling
+            conv_rate1 = mcr1[1-idx] * clk_config1.rfdc_configs[1-idx].resampling
+            self.assertEqual(conv_rate0, conv_rate1)
+        lmk_vco_rate = clk_config0.spll_config.output_divider * clk_config1.spll_config.output_freq
+        # Overall PLL2 N divider as combination of prescalar and n div
+        pll2_n0 = clk_config0.spll_config.pll2_prescaler * clk_config0.spll_config.pll2_n_div
+        pll2_n1 = clk_config1.spll_config.pll2_prescaler * clk_config1.spll_config.pll2_n_div
+        self.assertEqual(pll2_n0, pll2_n1)
+        mmcm_vco_rate0 = lmk_vco_rate / clk_config0.spll_config.prc_divider * clk_config0.mmcm_feedback_divider
+        mmcm_vco_rate1 = lmk_vco_rate / clk_config1.spll_config.prc_divider * clk_config1.mmcm_feedback_divider
+        self.assertEqual(mmcm_vco_rate0, mmcm_vco_rate1)
+        self.assertEqual(clk_config0.spll_config.sysref_div, clk_config1.spll_config.sysref_div)
+        self.assertEqual(clk_config0.spll_config.clkin0_r_div, clk_config1.spll_config.clkin0_r_div)
+
+        self.assertEqual(clk_config0.mmcm_output_div_map['r0_clk'], clk_config1.mmcm_output_div_map['r1_clk'])
+        self.assertEqual(clk_config0.mmcm_output_div_map['r1_clk'], clk_config1.mmcm_output_div_map['r0_clk'])
+        self.assertEqual(clk_config0.spll_config.vcxo_freq, clk_config1.spll_config.vcxo_freq)
+        self.assertEqual(clk_config0.rfdc_configs[0], clk_config1.rfdc_configs[1])
+        self.assertEqual(clk_config0.rfdc_configs[1], clk_config1.rfdc_configs[0])
 
     def test_two_incompatible_sample_rates(self):
         """

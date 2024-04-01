@@ -11,7 +11,7 @@ The USRP FPGA build system requires a UNIX-like environment with the following d
 - [Xilinx ISE Design Suite 14.7](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/archive-ise.html) (For all other FPGAs)
 - [GNU Make 3.6+](https://www.gnu.org/software/make/)
 - [GNU Bash 4.0+](https://www.gnu.org/software/bash/)
-- [Python 3.5+](https://www.python.org/)
+- [Python 3.6+](https://www.python.org/)
 - [Doxygen](https://www.doxygen.nl/index.html) (Optional: To build the manual)
 - [ModelSim](https://www.mentor.com/products/fv/modelsim/) (Optional: For simulation)
 

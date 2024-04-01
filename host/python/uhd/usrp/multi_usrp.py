@@ -183,6 +183,7 @@ class MultiUSRP(lib.usrp.multi_usrp):
         metadata = lib.types.tx_metadata()
         if start_time is not None:
             metadata.time_spec = start_time
+            metadata.has_time_spec = True
         while send_samps < max_samps:
             real_samps = min(proto_len, max_samps-send_samps)
             if real_samps < proto_len:

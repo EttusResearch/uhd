@@ -1,0 +1,194 @@
+#
+# Copyright 2024 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+# Description:
+#
+#   This template defines a stages-based pipeline for building E31X FPGA targets.
+#
+#   See https://aka.ms/yaml for pipeline YAML documentation.
+#
+
+parameters:
+## Optional parameters
+# Run testbenches
+- name: run_testbenches
+  type: boolean
+  default: true
+# Option to ignore cached artifacts (if available) and perform
+# a clean IP build.
+- name: clean_ip_build
+  type: boolean
+  default: false
+# Number of parallel jobs to use for IP build
+- name: num_ip_jobs
+  type: number
+  default: 5
+# Option to publish intermediate files
+- name: publish_int_files
+  type: boolean
+  default: false
+# Package and publish images
+- name: package_and_publish_images
+  type: boolean
+  default: true
+# Package access in the SDR server ('Internal' or 'Public')
+- name: package_access
+  type: string
+  default: 'Internal'
+# Build E310 FPGA targets
+- name: build_e31x
+  type: boolean
+  default: true
+# E310 FPGA targets to build (if build_e31x is true)
+- name: e31x_sg1_full_targets_matrix
+  type: object
+  default:
+    E310_SG1:
+      image_core: e310_rfnoc_image_core.yml
+      target_name: E310_SG1
+      timeout: 720
+      max_attempts: 2
+    E310_SG1_IDLE:
+      image_core: e310_rfnoc_image_core.yml
+      target_name: E310_SG1_IDLE
+      timeout: 720
+      max_attempts: 2
+- name: e31x_sg1_reduced_targets_matrix
+  type: object
+  default:
+    E310_SG1:
+      image_core: e310_rfnoc_image_core.yml
+      target_name: E310_SG1
+      timeout: 720
+      max_attempts: 2
+- name: e31x_sg3_full_targets_matrix
+  type: object
+  default:
+    E310_SG3:
+      image_core: e310_rfnoc_image_core.yml
+      target_name: E310_SG3
+      timeout: 720
+      max_attempts: 2
+    E310_SG3_IDLE:
+      image_core: e310_rfnoc_image_core.yml
+      target_name: E310_SG3_IDLE
+      timeout: 720
+      max_attempts: 2
+- name: e31x_sg3_reduced_targets_matrix
+  type: object
+  default:
+    E310_SG3:
+      image_core: e310_rfnoc_image_core.yml
+      target_name: E310_SG3
+      timeout: 720
+      max_attempts: 2
+
+stages:
+
+### START: E310 stages
+
+- stage: build_e31x_sg1_ip_stage
+  displayName: Build E310 SG1 IP
+  dependsOn: analyze_changeset
+  condition: and( succeeded(),
+                  or(
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.HdlChangeList'], 'fpga.usrp3.e31x'),
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.HdlChangeList'], 'fpga.usrp3.all'),
+                    eq('${{ parameters.build_e31x }}', 'true')
+                  )
+                )
+  jobs:
+  - template: ../templates/job-build-ip.yml
+    parameters:
+      directory: uhddev/fpga/usrp3/top/e31x
+      ip_target: E310_SG1_IP
+      clean_build: ${{ parameters.clean_ip_build }}
+      num_jobs: ${{ parameters.num_ip_jobs }}
+
+- stage: build_e31x_sg1_targets_stage
+  displayName: Build E310 FPGA Targets
+  dependsOn: build_e31x_sg1_ip_stage
+  condition: succeeded('build_e31x_sg1_ip_stage')
+  jobs:
+  - ${{ if eq(parameters.package_and_publish_images, true) }}:
+    - template: ../templates/job-build-fpga.yml
+      parameters:
+        targets_matrix: ${{ parameters.e31x_sg1_full_targets_matrix }}
+        ip_artifact: E310_SG1_IP
+        top_dir: uhddev/fpga/usrp3/top/e31x
+        publish_int_files: ${{ parameters.publish_int_files }}
+  - ${{ if eq(parameters.package_and_publish_images, false) }}:
+    - template: ../templates/job-build-fpga.yml
+      parameters:
+        targets_matrix: ${{ parameters.e31x_sg1_reduced_targets_matrix }}
+        ip_artifact: E310_SG1_IP
+        top_dir: uhddev/fpga/usrp3/top/e31x
+        publish_int_files: ${{ parameters.publish_int_files }}
+
+- stage: create_e31x_sg1_packages_stage
+  displayName: Package & Publish E310 SG1 Binaries
+  dependsOn: build_e31x_sg1_targets_stage
+  condition: and(succeeded('build_e31x_sg1_targets_stage'),
+                 eq('${{ parameters.package_and_publish_images }}', 'true'))
+  jobs:
+  - template: ../templates/job-package-images.yml
+    parameters:
+      package_name: e3xx_e310_sg1_fpga_default
+      artifacts_matrix: ${{ parameters.e31x_sg1_full_targets_matrix }}
+      build_directory: uhddev/fpga/usrp3/top/e31x/build/
+      package_access: ${{ parameters.package_access }}
+
+- stage: build_e31x_sg3_ip_stage
+  displayName: Build E310 SG3 IP
+  dependsOn: analyze_changeset
+  condition: and( succeeded(),
+                  or(
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.HdlChangeList'], 'fpga.usrp3.e31x'),
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.HdlChangeList'], 'fpga.usrp3.all'),
+                    eq('${{ parameters.build_e31x }}', 'true')
+                  )
+                )
+  jobs:
+  - template: ../templates/job-build-ip.yml
+    parameters:
+      directory: uhddev/fpga/usrp3/top/e31x
+      ip_target: E310_SG3_IP
+      clean_build: ${{ parameters.clean_ip_build }}
+      num_jobs: ${{ parameters.num_ip_jobs }}
+
+- stage: build_e31x_sg3_targets_stage
+  displayName: Build E310 SG3 FPGA Targets
+  dependsOn: build_e31x_sg3_ip_stage
+  condition: succeeded('build_e31x_sg3_ip_stage')
+  jobs:
+  - ${{ if eq(parameters.package_and_publish_images, true) }}:
+    - template: ../templates/job-build-fpga.yml
+      parameters:
+        targets_matrix: ${{ parameters.e31x_sg3_full_targets_matrix }}
+        ip_artifact: E310_SG3_IP
+        top_dir: uhddev/fpga/usrp3/top/e31x
+        publish_int_files: ${{ parameters.publish_int_files }}
+  - ${{ if eq(parameters.package_and_publish_images, false) }}:
+    - template: ../templates/job-build-fpga.yml
+      parameters:
+        targets_matrix: ${{ parameters.e31x_sg3_reduced_targets_matrix }}
+        ip_artifact: E310_SG3_IP
+        top_dir: uhddev/fpga/usrp3/top/e31x
+        publish_int_files: ${{ parameters.publish_int_files }}
+
+- stage: create_e31x_sg3_packages_stage
+  displayName: Package & Publish E310 Binaries
+  dependsOn: build_e31x_sg3_targets_stage
+  condition: and(succeeded('build_e31x_sg3_targets_stage'),
+                 eq('${{ parameters.package_and_publish_images }}', 'true'))
+  jobs:
+  - template: ../templates/job-package-images.yml
+    parameters:
+      package_name: e3xx_e310_sg3_fpga_default
+      artifacts_matrix: ${{ parameters.e31x_sg3_full_targets_matrix }}
+      build_directory: uhddev/fpga/usrp3/top/e31x/build/
+      package_access: ${{ parameters.package_access }}
+
+### END: E310 stages

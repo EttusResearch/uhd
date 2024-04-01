@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "block_controller_factory_python.hpp"
+#include <uhd/rfnoc/block_controller_factory_python.hpp>
 #include <uhd/rfnoc/vector_iir_block_control.hpp>
 
 using namespace uhd::rfnoc;

@@ -21,12 +21,13 @@ from tftp import TFTPServer
 
 bitfile_name = "usrp_{}_fpga_{}.bit"
 
-def jtag_x3xx(dev_type, dev_model, jtag_server, jtag_serial, fpga_folder, fpga, redis_server):
+def jtag_x3xx(dev_type, dev_model, jtag_server, jtag_serial, fpga_folder, fpga, redis_server, vivado_dir):
     if dev_model not in ["x300", "x310"]:
         raise RuntimeError(f'{dev_type} not supported with jtag_x3xx')
     remote_working_dir = "pipeline_fpga"
-    vivado_program_jtag = "/opt/Xilinx/Vivado_Lab/2020.1/bin/vivado_lab -mode batch -source {}/viv_hardware_utils.tcl -nolog -nojournal -tclargs program".format(
-        remote_working_dir)
+    vivado_lab_path = os.path.join(vivado_dir, "bin/vivado_lab")
+    vivado_program_jtag = "{} -mode batch -source {}/viv_hardware_utils.tcl -nolog -nojournal -tclargs program".format(
+        vivado_lab_path, remote_working_dir)
     print("Waiting on jtag mutex for {}".format(jtag_server), flush=True)
     with Redlock(key="hw_jtag_{}".format(jtag_server),
                  masters=redis_server, auto_release_time=1000 * 60 * 5):
@@ -233,8 +234,8 @@ def main(args):
                 os.chdir(os.path.join(working_dir, fpga))
 
                 if args.jtag_x3xx:
-                    dev_type, dev_model, jtag_server, jtag_serial, fpga_folder = args.jtag_x3xx.split(',')
-                    jtag_x3xx(dev_type, dev_model, jtag_server, jtag_serial, fpga_folder, fpga, redis_server)
+                    dev_type, dev_model, jtag_server, jtag_serial, fpga_folder, vivado_dir = args.jtag_x3xx.split(',')
+                    jtag_x3xx(dev_type, dev_model, jtag_server, jtag_serial, fpga_folder, fpga, redis_server, vivado_dir)
 
                 if dev_type and dev_type in ["n3xx", "e3xx"]:
                     subprocess.run(shlex.split(f"uhd_image_loader --args=mgmt_addr={mgmt_addr},type={dev_type},fpga={fpga}"))
@@ -242,13 +243,19 @@ def main(args):
                         set_sfp_addrs(mgmt_addr, sfp_addrs)
 
                 for command in args.test_commands:
-                    result = subprocess.run(shlex.split(command.format(fpga=fpga)))
+                    if args.working_dir:
+                        result = subprocess.run(shlex.split(command.format(fpga=fpga)), cwd=args.working_dir)
+                    else:
+                        result = subprocess.run(shlex.split(command.format(fpga=fpga)))
                     if(return_code == 0):
                         return_code = result.returncode
             sys.exit(return_code)
         else:
             for command in args.test_commands:
-                result = subprocess.run(shlex.split(command))
+                if args.working_dir:
+                    result = subprocess.run(shlex.split(command), cwd=args.working_dir)
+                else:
+                    result = subprocess.run(shlex.split(command))
                 if(result.returncode != 0):
                     sys.exit(result.returncode)
             sys.exit(0)
@@ -272,6 +279,8 @@ if __name__ == "__main__":
                         help="Comma delimited list of FPGAs to test")
     parser.add_argument("--dut_timeout", type=int, default=60,
                         help="Dut mutex timeout in minutes")
+    parser.add_argument("--working_dir", type=str,
+                        help="Change working directory for commands to be run")
     parser.add_argument("redis_server", type=str,
                         help="Redis server for mutex")
     parser.add_argument("dut_name", type=str,

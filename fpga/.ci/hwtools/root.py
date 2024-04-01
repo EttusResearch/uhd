@@ -18,7 +18,7 @@ def do_setup():
     rootapi.set_workspace_name(name="uhddev", pretty_name="UHD FPGA")
     rootapi.set_major_version("1")
 
-    rootapi.add_tool(name="hwtools", version="head")
+    rootapi.add_tool(name="hwtools", version="2023.29")
     rootapi.add_tool(name="Vivado",   version="2021.1", allowlater=False)
     rootapi.add_tool(name="modelsim", version="2020.4", allowlater=True)
 

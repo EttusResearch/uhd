@@ -56,7 +56,3 @@ data:
       payload_fifo_depth: 32
       format: sc16
       mdata_sig: ~
-
-registers:
-
-properties:

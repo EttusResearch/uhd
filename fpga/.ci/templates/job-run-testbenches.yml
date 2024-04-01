@@ -14,9 +14,9 @@ jobs:
   displayName: "ModelSim Simulation"
   timeoutInMinutes: 360
   pool:
-    name: Hardware
+    name: Drivers-NIBuildFarm-RFMIBUILD
     demands:
-    - MAX_CPU -equals 4
+    - Agent.OS -equals Linux
   variables:
   - group: sdr-pipeline-vars
   steps:
@@ -34,7 +34,7 @@ jobs:
 
         echo "---- Run testbenches ----"
         pushd ./tools/utils
-        python3 ./run_testbenches.py --logged --simulator modelsim --excludes=modelsim.excludes -j2 run
+        python3 ./run_testbenches.py --logged --simulator modelsim --excludes=modelsim.excludes -j4 run
         popd
       workingDirectory: uhddev/fpga/usrp3
       env:

@@ -37,9 +37,9 @@ jobs:
 - job: ${{ parameters.ip_target }}
   displayName: 'Build ${{ parameters.ip_target }}'
   pool:
-    name: Hardware
+    name: Drivers-NIBuildFarm-RFMIBUILD
     demands:
-    - MAX_CPU -equals 4
+    - Agent.OS -equals Linux
   timeoutInMinutes: 240
   variables:
   - group: sdr-pipeline-vars

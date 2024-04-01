@@ -17,6 +17,7 @@
 #include <uhd/usrp/gps_ctrl.hpp>
 #include <uhdlib/features/discoverable_feature_registry.hpp>
 #include <unordered_set>
+#include <string>
 
 namespace uhd { namespace rfnoc {
 

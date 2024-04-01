@@ -671,6 +671,28 @@ will look like this:
 
 \section n3xx_synchronization Clock/Time Synchronization
 
+\subsection n3xx_synchronization_overview Overview
+
+To choose a source for clock (frequency) and PPS (time), use the `clock_source`
+and `time_source` device arguments just like with any other USRP (see also
+\ref page_sync). The following combinations are supported:
+
+`clock_source`  | `time_source`  | Notes
+----------------|----------------|---------------------------------------------
+`internal`      | `internal`     | Default value
+`external`      | `internal`     | The PPS will be generated from the reference signal, but this does not allow time synchronization between devices.
+`external`      | `external`     | The device assumes that the external reference clock and PPS are synchronized.
+`gpsdo`         | `gpsdo`        | This will work even without GPS reception (see below).
+
+The combination of `clock_source=external,time_source=gpsdo` is not available
+out of the box, but can be enabled by patching the MPM source code (n3xx.py).
+This is considered an advanced and unsupported use case. Read the appropriate
+source code for a description of drawbacks. Using this mode will cause unreliable
+phase alignment.
+
+See the following sections for more details on the individual synchronization
+options.
+
 \subsection n3xx_synchronization_internal Internal references
 
 The N3xx series has an onboard GPSDO as well as a 25 MHz reference oscillator,

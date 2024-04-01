@@ -46,6 +46,7 @@ namespace py = pybind11;
 #include "usrp/subdev_spec_python.hpp"
 #include "utils/paths_python.hpp"
 #include "utils/utils_python.hpp"
+#include "version_python.hpp"
 
 // We need this hack because import_array() returns NULL
 // for newer Python versions.
@@ -65,6 +66,9 @@ PYBIND11_MODULE(libpyuhd, m)
 
     // Register uhd::device::find
     export_device(m);
+
+    // Register version API
+    export_version(m);
 
     // Register paths submodule
     auto paths_module = m.def_submodule("paths", "Path Utilities");

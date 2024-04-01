@@ -1,0 +1,126 @@
+#
+# Copyright 2024 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+# Description:
+#
+#   This template defines a stages-based pipeline for building E32X FPGA targets.
+#
+#   See https://aka.ms/yaml for pipeline YAML documentation.
+#
+
+parameters:
+## Optional parameters
+# Run testbenches
+- name: run_testbenches
+  type: boolean
+  default: true
+# Option to ignore cached artifacts (if available) and perform
+# a clean IP build.
+- name: clean_ip_build
+  type: boolean
+  default: false
+# Number of parallel jobs to use for IP build
+- name: num_ip_jobs
+  type: number
+  default: 5
+# Option to publish intermediate files
+- name: publish_int_files
+  type: boolean
+  default: false
+# Package and publish images
+- name: package_and_publish_images
+  type: boolean
+  default: true
+# Package access in the SDR server ('Internal' or 'Public')
+- name: package_access
+  type: string
+  default: 'Internal'
+# Build E320 FPGA targets
+- name: build_e320
+  type: boolean
+  default: true
+# E320 FPGA targets to build (if build_e320 is true)
+- name: e320_full_targets_matrix
+  type: object
+  default:
+    E320_1G:
+      image_core: e320_rfnoc_image_core.yml
+      target_name: E320_1G
+      timeout: 720
+      max_attempts: 2
+    E320_XG:
+      image_core: e320_rfnoc_image_core.yml
+      target_name: E320_XG
+      timeout: 720
+      max_attempts: 2
+    E320_AA:
+      image_core: e320_rfnoc_image_core.yml
+      target_name: E320_AA
+      timeout: 720
+      max_attempts: 2
+- name: e320_reduced_targets_matrix
+  type: object
+  default:
+    E320_XG:
+      image_core: e320_rfnoc_image_core.yml
+      target_name: E320_XG
+      timeout: 720
+      max_attempts: 2
+
+stages:
+
+### START: E320 stages
+
+- stage: build_e320_ip_stage
+  displayName: Build E320 IP
+  dependsOn: analyze_changeset
+  condition: and( succeeded(),
+                  or(
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.HdlChangeList'], 'fpga.usrp3.e320'),
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.HdlChangeList'], 'fpga.usrp3.all'),
+                    eq('${{ parameters.build_e320 }}', 'true')
+                  )
+                )
+  jobs:
+  - template: ../templates/job-build-ip.yml
+    parameters:
+      directory: uhddev/fpga/usrp3/top/e320
+      ip_target: E320_IP
+      clean_build: ${{ parameters.clean_ip_build }}
+      num_jobs: ${{ parameters.num_ip_jobs }}
+
+- stage: build_e320_targets_stage
+  displayName: Build E320 FPGA Targets
+  dependsOn: build_e320_ip_stage
+  condition: succeeded('build_e320_ip_stage')
+  jobs:
+  - ${{ if eq(parameters.package_and_publish_images, true) }}:
+    - template: ../templates/job-build-fpga.yml
+      parameters:
+        targets_matrix: ${{ parameters.e320_full_targets_matrix }}
+        ip_artifact: E320_IP
+        top_dir: uhddev/fpga/usrp3/top/e320
+        publish_int_files: ${{ parameters.publish_int_files }}
+  - ${{ if eq(parameters.package_and_publish_images, false) }}:
+    - template: ../templates/job-build-fpga.yml
+      parameters:
+        targets_matrix: ${{ parameters.e320_reduced_targets_matrix }}
+        ip_artifact: E320_IP
+        top_dir: uhddev/fpga/usrp3/top/e320
+        publish_int_files: ${{ parameters.publish_int_files }}
+
+- stage: create_e320_packages_stage
+  displayName: Package & Publish E320 Binaries
+  dependsOn: build_e320_targets_stage
+  condition: and(succeeded('build_e320_targets_stage'), eq('${{ parameters.package_and_publish_images }}', 'true'))
+  jobs:
+  - template: ../templates/job-package-images.yml
+    parameters:
+      package_name: e3xx_e320_fpga_default
+      artifacts_matrix: ${{ parameters.e320_full_targets_matrix }}
+      build_directory: uhddev/fpga/usrp3/top/e320/build/
+      package_access: ${{ parameters.package_access }}
+
+### END: E320 stages

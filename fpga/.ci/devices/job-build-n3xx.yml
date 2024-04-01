@@ -1,0 +1,315 @@
+#
+# Copyright 2024 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+# Description:
+#
+#   This template defines a stages-based pipeline for building N3xx FPGA targets.
+#
+#   See https://aka.ms/yaml for pipeline YAML documentation.
+#
+
+parameters:
+## Optional parameters
+# Run testbenches
+- name: run_testbenches
+  type: boolean
+  default: true
+# Option to ignore cached artifacts (if available) and perform
+# a clean IP build.
+- name: clean_ip_build
+  type: boolean
+  default: false
+# Number of parallel jobs to use for IP build
+- name: num_ip_jobs
+  type: number
+  default: 5
+# Option to publish intermediate files
+- name: publish_int_files
+  type: boolean
+  default: false
+# Package and publish images
+- name: package_and_publish_images
+  type: boolean
+  default: true
+# Package access in the SDR server ('Internal' or 'Public')
+- name: package_access
+  type: string
+  default: 'Internal'
+# Build N300 FPGA targets
+- name: build_n3xx
+  type: boolean
+  default: true
+# N300 FPGA targets to build (if build_n3xx is true)
+- name: n300_full_targets_matrix
+  type: object
+  default:
+    N300_HG:
+      image_core: n300_rfnoc_image_core.yml
+      target_name: N300_HG
+      timeout: 720
+      max_attempts: 2
+    N300_XG:
+      image_core: n300_rfnoc_image_core.yml
+      target_name: N300_XG
+      timeout: 720
+      max_attempts: 2
+    N300_WX:
+      image_core: n300_rfnoc_image_core.yml
+      target_name: N300_WX
+      timeout: 720
+      max_attempts: 2
+    N300_AA:
+      image_core: n300_bist_rfnoc_image_core.yml
+      target_name: N300_AA
+      timeout: 720
+      max_attempts: 2
+- name: n300_reduced_targets_matrix
+  type: object
+  default:
+    N300_HG:
+      image_core: n300_rfnoc_image_core.yml
+      target_name: N300_HG
+      timeout: 720
+      max_attempts: 2
+# N310 FPGA targets to build (if build_n3xx is true)
+- name: n310_full_targets_matrix
+  type: object
+  default:
+    N310_HG:
+      image_core: n310_rfnoc_image_core.yml
+      target_name: N310_HG
+      timeout: 720
+      max_attempts: 2
+    N310_XG:
+      image_core: n310_rfnoc_image_core.yml
+      target_name: N310_XG
+      timeout: 720
+      max_attempts: 2
+    N310_WX:
+      image_core: n310_rfnoc_image_core.yml
+      target_name: N310_WX
+      timeout: 720
+      max_attempts: 2
+    N310_AA:
+      image_core: n310_bist_rfnoc_image_core.yml
+      target_name: N310_AA
+      timeout: 720
+      max_attempts: 2
+- name: n310_reduced_targets_matrix
+  type: object
+  default:
+    N310_HG:
+      image_core: n310_rfnoc_image_core.yml
+      target_name: N310_HG
+      timeout: 720
+      max_attempts: 2
+# N320 FPGA targets to build (if build_n3xx is true)
+- name: n320_full_targets_matrix
+  type: object
+  default:
+    N320_HG:
+      image_core: n320_rfnoc_image_core.yml
+      target_name: N320_HG
+      timeout: 720
+      max_attempts: 2
+    N320_XG:
+      image_core: n320_rfnoc_image_core.yml
+      target_name: N320_XG
+      timeout: 720
+      max_attempts: 2
+    N320_WX:
+      image_core: n320_rfnoc_image_core.yml
+      target_name: N320_WX
+      timeout: 720
+      max_attempts: 2
+    N320_AA:
+      image_core: n320_bist_rfnoc_image_core.yml
+      target_name: N320_AA
+      timeout: 720
+      max_attempts: 2
+    N320_AQ:
+      image_core: n320_rfnoc_image_core.yml
+      target_name: N320_AQ
+      timeout: 720
+      max_attempts: 2
+    N320_XQ:
+      image_core: n320_rfnoc_image_core.yml
+      target_name: N320_XQ
+      timeout: 720
+      max_attempts: 2
+- name: n320_reduced_targets_matrix
+  type: object
+  default:
+    N320_HG:
+      image_core: n320_rfnoc_image_core.yml
+      target_name: N320_HG
+      timeout: 720
+      max_attempts: 2
+
+
+stages:
+
+### START: N300 stages
+
+- stage: build_n300_ip_stage
+  displayName: Build N300 IP
+  dependsOn: analyze_changeset
+  condition: and( succeeded(),
+                  or(
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.HdlChangeList'], 'fpga.usrp3.n3xx'),
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.HdlChangeList'], 'fpga.usrp3.all'),
+                    eq('${{ parameters.build_n3xx }}', 'true')
+                  )
+                )
+  jobs:
+  - template: ../templates/job-build-ip.yml
+    parameters:
+      directory: uhddev/fpga/usrp3/top/n3xx
+      ip_target: N300_IP
+      clean_build: ${{ parameters.clean_ip_build }}
+      num_jobs: ${{ parameters.num_ip_jobs }}
+
+- stage: build_n300_targets_stage
+  displayName: Build N300 FPGA Targets
+  dependsOn: build_n300_ip_stage
+  condition: succeeded('build_n300_ip_stage')
+  jobs:
+  - ${{ if eq(parameters.package_and_publish_images, true) }}:
+    - template: ../templates/job-build-fpga.yml
+      parameters:
+        targets_matrix: ${{ parameters.n300_full_targets_matrix }}
+        ip_artifact: N300_IP
+        top_dir: uhddev/fpga/usrp3/top/n3xx
+        publish_int_files: ${{ parameters.publish_int_files }}
+  - ${{ if eq(parameters.package_and_publish_images, false) }}:
+    - template: ../templates/job-build-fpga.yml
+      parameters:
+        targets_matrix: ${{ parameters.n300_reduced_targets_matrix }}
+        ip_artifact: N300_IP
+        top_dir: uhddev/fpga/usrp3/top/n3xx
+        publish_int_files: ${{ parameters.publish_int_files }}
+
+- stage: create_n300_packages_stage
+  displayName: Package & Publish N300 Binaries
+  dependsOn: build_n300_targets_stage
+  condition: and(succeeded('build_n300_targets_stage'), eq('${{ parameters.package_and_publish_images }}', 'true'))
+  jobs:
+  - template: ../templates/job-package-images.yml
+    parameters:
+      package_name: n3xx_n300_fpga_default
+      artifacts_matrix: ${{ parameters.n300_full_targets_matrix }}
+      build_directory: uhddev/fpga/usrp3/top/n3xx/build/
+      package_access: ${{ parameters.package_access }}
+
+### END: N300 stages
+
+### START: N310 stages
+
+- stage: build_n310_ip_stage
+  displayName: Build N310 IP
+  dependsOn: analyze_changeset
+  condition: and( succeeded(),
+                  or(
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.HdlChangeList'], 'fpga.usrp3.n3xx'),
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.HdlChangeList'], 'fpga.usrp3.all'),
+                    eq('${{ parameters.build_n3xx }}', 'true')
+                  )
+                )
+  jobs:
+  - template: ../templates/job-build-ip.yml
+    parameters:
+      directory: uhddev/fpga/usrp3/top/n3xx
+      ip_target: N310_IP
+      clean_build: ${{ parameters.clean_ip_build }}
+      num_jobs: ${{ parameters.num_ip_jobs }}
+
+- stage: build_n310_targets_stage
+  displayName: Build N310 FPGA Targets
+  dependsOn: build_n310_ip_stage
+  condition: succeeded('build_n310_ip_stage')
+  jobs:
+  - ${{ if eq(parameters.package_and_publish_images, true) }}:
+    - template: ../templates/job-build-fpga.yml
+      parameters:
+        targets_matrix: ${{ parameters.n310_full_targets_matrix }}
+        ip_artifact: N310_IP
+        top_dir: uhddev/fpga/usrp3/top/n3xx
+        publish_int_files: ${{ parameters.publish_int_files }}
+  - ${{ if eq(parameters.package_and_publish_images, false) }}:
+    - template: ../templates/job-build-fpga.yml
+      parameters:
+        targets_matrix: ${{ parameters.n310_reduced_targets_matrix }}
+        ip_artifact: N310_IP
+        top_dir: uhddev/fpga/usrp3/top/n3xx
+        publish_int_files: ${{ parameters.publish_int_files }}
+
+- stage: create_n310_packages_stage
+  displayName: Package & Publish N310 Binaries
+  dependsOn: build_n310_targets_stage
+  condition: and(succeeded('build_n310_targets_stage'), eq('${{ parameters.package_and_publish_images }}', 'true'))
+  jobs:
+  - template: ../templates/job-package-images.yml
+    parameters:
+      package_name: n3xx_n310_fpga_default
+      artifacts_matrix: ${{ parameters.n310_full_targets_matrix }}
+      build_directory: uhddev/fpga/usrp3/top/n3xx/build/
+      package_access: ${{ parameters.package_access }}
+
+### END: N310 stages
+
+### START: N320 stages
+
+- stage: build_n320_ip_stage
+  displayName: Build N320 IP
+  dependsOn: analyze_changeset
+  condition: and( succeeded(),
+                  or(
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.HdlChangeList'], 'fpga.usrp3.n3xx'),
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.HdlChangeList'], 'fpga.usrp3.all'),
+                    eq('${{ parameters.build_n3xx }}', 'true')
+                  )
+                )
+  jobs:
+  - template: ../templates/job-build-ip.yml
+    parameters:
+      directory: uhddev/fpga/usrp3/top/n3xx
+      ip_target: N320_IP
+      clean_build: ${{ parameters.clean_ip_build }}
+      num_jobs: ${{ parameters.num_ip_jobs }}
+
+- stage: build_n320_targets_stage
+  displayName: Build N320 FPGA Targets
+  dependsOn: build_n320_ip_stage
+  condition: succeeded('build_n320_ip_stage')
+  jobs:
+  - ${{ if eq(parameters.package_and_publish_images, true) }}:
+    - template: ../templates/job-build-fpga.yml
+      parameters:
+        targets_matrix: ${{ parameters.n320_full_targets_matrix }}
+        ip_artifact: N320_IP
+        top_dir: uhddev/fpga/usrp3/top/n3xx
+        publish_int_files: ${{ parameters.publish_int_files }}
+  - ${{ if eq(parameters.package_and_publish_images, false) }}:
+    - template: ../templates/job-build-fpga.yml
+      parameters:
+        targets_matrix: ${{ parameters.n320_reduced_targets_matrix }}
+        ip_artifact: N320_IP
+        top_dir: uhddev/fpga/usrp3/top/n3xx
+        publish_int_files: ${{ parameters.publish_int_files }}
+
+- stage: create_n320_packages_stage
+  displayName: Package & Publish N320 Binaries
+  dependsOn: build_n320_targets_stage
+  condition: and(succeeded('build_n320_targets_stage'), eq('${{ parameters.package_and_publish_images }}', 'true'))
+  jobs:
+  - template: ../templates/job-package-images.yml
+    parameters:
+      package_name: n3xx_n320_fpga_default
+      artifacts_matrix: ${{ parameters.n320_full_targets_matrix }}
+      build_directory: uhddev/fpga/usrp3/top/n3xx/build/
+      package_access: ${{ parameters.package_access }}
+
+### END: N320 stages
+

@@ -133,7 +133,7 @@ convert.hpp and \ref page_converters for further documentation.
 Ethernet-based devices allow sending data to an alternative destination instead
 of back to the controlling UHD session.
 
-\subsection stream_remote_rfnoc RFNoC Devices (X410, X3x0, N3xx Series, E320)
+\subsection stream_remote_rfnoc RFNoC Devices (X440, X410, X3x0, N3xx Series, E320)
 
 Starting with UHD 4.4, these devices allow streaming data to alternative
 locations from their QSFP/SFP connectors (streaming data to alternative locations

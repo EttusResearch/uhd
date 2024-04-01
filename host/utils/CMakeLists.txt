@@ -5,6 +5,100 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
+
+########################################################################
+# First, only utilities which get installed with ENABLE_PYMOD_UTILS
+########################################################################
+if(ENABLE_PYMOD_UTILS OR ENABLE_UTILS)
+    ### RFNoC Image Builder
+    set(CONFIG_PATH "${CMAKE_INSTALL_PREFIX}/${PKG_DATA_DIR}")
+    configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/rfnoc_image_builder.py"
+        "${CMAKE_CURRENT_BINARY_DIR}/rfnoc_image_builder"
+    )
+    UHD_INSTALL(PROGRAMS
+        ${CMAKE_CURRENT_BINARY_DIR}/rfnoc_image_builder
+        RENAME rfnoc_image_builder
+        DESTINATION ${RUNTIME_DIR}
+        COMPONENT utilities
+    )
+
+    ### UHD Images downloader
+    # Configure the scripts
+    file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../../images/manifest.txt CMAKE_MANIFEST_CONTENTS)
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/uhd_images_downloader.py.in
+        ${CMAKE_CURRENT_BINARY_DIR}/uhd_images_downloader.py
+    @ONLY)
+    # TODO: FIXME when know how.
+    # This is a hack to force cmake regenerate uhd_images_downloader.py
+    # whenever manifest.txt file changed.
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../images/manifest.txt
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../images/manifest.txt
+    COPYONLY)
+
+    UHD_INSTALL(PROGRAMS
+        ${CMAKE_CURRENT_BINARY_DIR}/uhd_images_downloader.py
+        DESTINATION ${PKG_LIB_DIR}/utils
+        COMPONENT utilities
+    )
+    # On Linux/Unix systems, also install into $PATH
+    if(LINUX)
+        UHD_INSTALL(PROGRAMS
+            ${CMAKE_CURRENT_BINARY_DIR}/uhd_images_downloader.py
+            RENAME uhd_images_downloader
+            DESTINATION ${RUNTIME_DIR}
+            COMPONENT utilities
+        )
+    endif(LINUX)
+    if(NOT HAVE_PYTHON_MODULE_REQUESTS)
+        message(WARNING
+            "Python module `requests' not found -- uhd_images_downloader.py "
+            "will not work without it.")
+        message(WARNING
+            "You may be able to install this by running 'pip install requests'")
+    endif(NOT HAVE_PYTHON_MODULE_REQUESTS)
+
+    ### USRP2 Card Burner
+    if(ENABLE_USRP2)
+        if(WIN32 AND UHD_RELEASE_MODE) #include dd.exe
+            file(DOWNLOAD
+                "http://files.ettus.com/dd.exe"
+                ${CMAKE_CURRENT_BINARY_DIR}/dd.exe
+            )
+            UHD_INSTALL(FILES
+                ${CMAKE_CURRENT_BINARY_DIR}/dd.exe
+                DESTINATION ${PKG_LIB_DIR}/utils
+                COMPONENT utilities
+            )
+        endif(WIN32 AND UHD_RELEASE_MODE)
+        if(LINUX)
+            UHD_INSTALL(PROGRAMS
+                usrp2_recovery.py
+                DESTINATION ${PKG_LIB_DIR}/utils
+                COMPONENT utilities
+            )
+            UHD_INSTALL(PROGRAMS
+                usrp2_card_burner.py
+                RENAME usrp2_card_burner
+                DESTINATION ${RUNTIME_DIR}
+                COMPONENT utilities
+            )
+        endif(LINUX)
+        UHD_INSTALL(PROGRAMS
+            usrp2_card_burner.py
+            DESTINATION ${PKG_LIB_DIR}/utils
+            COMPONENT utilities
+        )
+    endif(ENABLE_USRP2)
+
+endif(ENABLE_PYMOD_UTILS OR ENABLE_UTILS)
+
+if(NOT ENABLE_UTILS)
+    return()
+endif()
+
 ########################################################################
 # Utilities that get installed into the runtime path
 ########################################################################
@@ -27,27 +121,18 @@ foreach(util_source ${util_runtime_sources})
     UHD_INSTALL(TARGETS ${util_name} RUNTIME DESTINATION ${RUNTIME_DIR} COMPONENT utilities)
 endforeach(util_source)
 
-set(CONFIG_PATH "${CMAKE_INSTALL_PREFIX}/${PKG_DATA_DIR}")
-configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/rfnoc_image_builder.py"
-    "${CMAKE_CURRENT_BINARY_DIR}/rfnoc_image_builder"
-)
-UHD_INSTALL(PROGRAMS
-    ${CMAKE_CURRENT_BINARY_DIR}/rfnoc_image_builder
-    RENAME rfnoc_image_builder
-    DESTINATION ${RUNTIME_DIR}
-    COMPONENT utilities
-)
-configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/usrpctl.py"
-    "${CMAKE_CURRENT_BINARY_DIR}/usrpctl"
-)
-UHD_INSTALL(PROGRAMS
-    ${CMAKE_CURRENT_BINARY_DIR}/usrpctl
-    RENAME usrpctl
-    DESTINATION ${RUNTIME_DIR}
-    COMPONENT utilities
-)
+if(ENABLE_PYTHON_API)
+    configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/usrpctl.py"
+        "${CMAKE_CURRENT_BINARY_DIR}/usrpctl"
+    )
+    UHD_INSTALL(PROGRAMS
+        ${CMAKE_CURRENT_BINARY_DIR}/usrpctl
+        RENAME usrpctl
+        DESTINATION ${RUNTIME_DIR}
+        COMPONENT utilities
+    )
+endif()
 
 ########################################################################
 # Utilities that get installed into the share path
@@ -110,78 +195,6 @@ foreach(util_source ${util_share_sources_py})
         COMPONENT utilities
     )
 endforeach(util_source)
-
-#UHD images downloader configuration
-file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../../images/manifest.txt CMAKE_MANIFEST_CONTENTS)
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/uhd_images_downloader.py.in
-    ${CMAKE_CURRENT_BINARY_DIR}/uhd_images_downloader.py
-@ONLY)
-# TODO: FIXME when know how.
-# This is a hack to force cmake regenerate uhd_images_downloader.py
-# whenever manifest.txt file changed.
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../images/manifest.txt
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../images/manifest.txt
-COPYONLY)
-
-UHD_INSTALL(PROGRAMS
-    ${CMAKE_CURRENT_BINARY_DIR}/uhd_images_downloader.py
-    DESTINATION ${PKG_LIB_DIR}/utils
-    COMPONENT utilities
-)
-
-if(LINUX)
-    UHD_INSTALL(PROGRAMS
-        ${CMAKE_CURRENT_BINARY_DIR}/uhd_images_downloader.py
-        RENAME uhd_images_downloader
-        DESTINATION ${RUNTIME_DIR}
-        COMPONENT utilities
-    )
-endif(LINUX)
-if(NOT HAVE_PYTHON_MODULE_REQUESTS)
-    message(WARNING "Python module `requests' not found -- uhd_images_downloader.py will not work without it.")
-    message(WARNING "You may be able to install this by running 'pip install requests'")
-endif(NOT HAVE_PYTHON_MODULE_REQUESTS)
-
-if(ENABLE_USRP2)
-    set(burners
-        usrp2_card_burner.py
-    )
-
-    if(WIN32 AND UHD_RELEASE_MODE) #include dd.exe
-        file(DOWNLOAD
-            "http://files.ettus.com/dd.exe"
-            ${CMAKE_CURRENT_BINARY_DIR}/dd.exe
-        )
-        UHD_INSTALL(FILES
-            ${CMAKE_CURRENT_BINARY_DIR}/dd.exe
-            DESTINATION ${PKG_LIB_DIR}/utils
-            COMPONENT utilities
-        )
-    endif(WIN32 AND UHD_RELEASE_MODE)
-    if(LINUX)
-        UHD_INSTALL(PROGRAMS
-            usrp2_recovery.py
-            DESTINATION ${PKG_LIB_DIR}/utils
-            COMPONENT utilities
-        )
-        UHD_INSTALL(PROGRAMS
-            usrp2_card_burner.py
-            RENAME usrp2_card_burner
-            DESTINATION ${RUNTIME_DIR}
-            COMPONENT utilities
-        )
-    endif(LINUX)
-    foreach(burner ${burners})
-        UHD_INSTALL(PROGRAMS
-            ${burner}
-            DESTINATION ${PKG_LIB_DIR}/utils
-            COMPONENT utilities
-        )
-    endforeach(burner ${burners})
-
-endif(ENABLE_USRP2)
 
 ########################################################################
 # Other files that are not utilities or executables

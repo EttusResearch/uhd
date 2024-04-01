@@ -38,55 +38,88 @@ parameters:
 - name: package_access
   type: string
   default: 'Internal'
+# Skip analyze changeset stage
+- name: skip_analyze_changeset
+  type: boolean
+  default: false
+# Build X3x0 FPGA targets
+- name: build_x3x0
+  type: boolean
+  displayName: Build X3x0
+  default: false
+# Build N3xx FPGA targets
+- name: build_n3xx
+  type: boolean
+  displayName: Build N3xx
+  default: false
+# Build E31x FPGA targets
+- name: build_e31x
+  type: boolean
+  displayName: Build E31x
+  default: false
+# Build E32x FPGA targets
+- name: build_e32x
+  type: boolean
+  displayName: Build E32x
+  default: false
 # Build X410 FPGA targets
 - name: build_x410
   type: boolean
-  default: true
-# X410 FPGA targets to build (if build_x410 is true)
+  default: false
+# Requested X410 targets (if build_x410 is true)
 - name: x410_targets_matrix
   type: object
   default:
     X410_X4_200:
+      image_core: x410_200_rfnoc_image_core.yml
       target_name: X410_X4_200
       timeout: 720
       max_attempts: 2
     X410_UC_200:
+      image_core: x410_200_rfnoc_image_core.yml
       target_name: X410_UC_200
       timeout: 720
       max_attempts: 2
     X410_X4_400:
+      image_core: x410_400_d_rfnoc_image_core.yml
       target_name: X410_X4_400
       timeout: 720
       max_attempts: 2
     X410_CG_400:
+      image_core: x410_400_rfnoc_image_core.yml
       target_name: X410_CG_400
       timeout: 720
       max_attempts: 2
 # Build X440 FPGA targets
 - name: build_x440
   type: boolean
-  default: true
-# X440 FPGA targets to build (if build_x440 is true)
+  default: false
+# Requested X440 targets
 - name: x440_targets_matrix
   type: object
   default:
     X440_CG_1600:
+      image_core: x440_1600_rfnoc_image_core.yml
       target_name: X440_CG_1600
       timeout: 720
       max_attempts: 2
     X440_CG_400:
+      image_core: x440_400_rfnoc_image_core.yml
       target_name: X440_CG_400
       timeout: 720
       max_attempts: 2
     X440_X4_1600:
+      image_core: x440_1600_d_rfnoc_image_core.yml
       target_name: X440_X4_1600
       timeout: 720
       max_attempts: 2
     X440_X4_400:
+      image_core: x440_400_d_rfnoc_image_core.yml
       target_name: X440_X4_400
       timeout: 720
       max_attempts: 2
     X440_X4_200:
+      image_core: x440_200_rfnoc_image_core.yml
       target_name: X440_X4_200
       timeout: 720
       max_attempts: 2
@@ -114,81 +147,76 @@ stages:
 ### END: Testbenches stage
 
 
-### START: X410 stages
-
-- stage: build_x410_ip_stage
-  displayName: Build X410 IP
+### START: Change History analysis stage
+- stage: analyze_changeset
+  displayName: Analyze Changeset
   dependsOn: []
-  condition: and(succeeded(), eq('${{ parameters.build_x410 }}', 'true'))
   jobs:
-  - template: job-build-ip.yml
+  - template: job-analyze-changeset.yml
     parameters:
-      directory: uhddev/fpga/usrp3/top/x400
-      ip_target: X410_IP
-      clean_build: ${{ parameters.clean_ip_build }}
-      num_jobs: ${{ parameters.num_ip_jobs }}
+      skip_analyze_changeset: ${{ parameters.skip_analyze_changeset }}
 
-- stage: build_x410_targets_stage
-  displayName: Build X410 FPGA Targets
-  dependsOn: build_x410_ip_stage
-  condition: succeeded('build_x410_ip_stage')
-  jobs:
-  - template: job-build-fpga.yml
-    parameters:
-      targets_matrix: ${{ parameters.x410_targets_matrix }}
-      ip_artifact: X410_IP
-      top_dir: uhddev/fpga/usrp3/top/x400
-      publish_int_files: ${{ parameters.publish_int_files }}
+### END: Change History analysis stage
 
-- stage: create_x410_packages_stage
-  displayName: Package & Publish X410 Binaries
-  dependsOn: build_x410_targets_stage
-  condition: and(succeeded('build_x410_targets_stage'), eq('${{ parameters.package_and_publish_images }}', 'true'))
-  jobs:
-  - template: job-package-images.yml
-    parameters:
-      package_name: x4xx_x410_fpga_default
-      artifacts_matrix: ${{ parameters.x410_targets_matrix }}
-      build_directory: uhddev/fpga/usrp3/top/x400/build/
-      package_access: ${{ parameters.package_access }}
+### START: X400 stages
 
-### END: X410 stages
+- template: ../devices/job-build-x400.yml
+  parameters:
+    clean_ip_build: ${{ parameters.clean_ip_build }}
+    publish_int_files: true
+    package_and_publish_images: ${{ parameters.package_and_publish_images }}
+    package_access: ${{ parameters.package_access }}
+    build_x410: ${{ parameters.build_x410 }}
+    build_x440: ${{ parameters.build_x440 }}
+    x410_requests_matrix: ${{ parameters.x410_targets_matrix }}
+    x440_requests_matrix: ${{ parameters.x440_targets_matrix }}
 
-### START: X440 stages
+### END: X400 stages
 
-- stage: build_x440_ip_stage
-  displayName: Build X440 IP
-  dependsOn: []
-  condition: and(succeeded(), eq('${{ parameters.build_x440 }}', 'true'))
-  jobs:
-  - template: job-build-ip.yml
-    parameters:
-      directory: uhddev/fpga/usrp3/top/x400
-      ip_target: X440_IP
-      clean_build: ${{ parameters.clean_ip_build }}
+### START: X3x0 stages
 
-- stage: build_x440_targets_stage
-  displayName: Build X440 FPGA Targets
-  dependsOn: build_x440_ip_stage
-  condition: succeeded('build_x440_ip_stage')
-  jobs:
-  - template: job-build-fpga.yml
-    parameters:
-      targets_matrix: ${{ parameters.x440_targets_matrix }}
-      ip_artifact: X440_IP
-      top_dir: uhddev/fpga/usrp3/top/x400
-      publish_int_files: ${{ parameters.publish_int_files }}
+- template: ../devices/job-build-x300.yml
+  parameters:
+    clean_ip_build: ${{ parameters.clean_ip_build }}
+    publish_int_files: true
+    package_and_publish_images: ${{ parameters.package_and_publish_images }}
+    package_access: ${{ parameters.package_access }}
+    build_x3x0: ${{ parameters.build_x3x0 }}
 
-- stage: create_x440_packages_stage
-  displayName: Package & Publish X440 Binaries
-  dependsOn: build_x440_targets_stage
-  condition: and(succeeded('build_x440_targets_stage'), eq('${{ parameters.package_and_publish_images }}', 'true'))
-  jobs:
-  - template: job-package-images.yml
-    parameters:
-      package_name: x4xx_x440_fpga_default
-      artifacts_matrix: ${{ parameters.x440_targets_matrix }}
-      build_directory: uhddev/fpga/usrp3/top/x400/build/
-      package_access: ${{ parameters.package_access }}
+### END: X3x0 stages
 
-### END: X440 stages
+### START: N3xx stages
+
+- template: ../devices/job-build-n3xx.yml
+  parameters:
+    clean_ip_build: ${{ parameters.clean_ip_build }}
+    publish_int_files: true
+    package_and_publish_images: ${{ parameters.package_and_publish_images }}
+    package_access: ${{ parameters.package_access }}
+    build_n3xx: ${{ parameters.build_n3xx }}
+
+### END: N3xx stages
+
+### START: E31x stages
+
+- template: ../devices/job-build-e31x.yml
+  parameters:
+    clean_ip_build: ${{ parameters.clean_ip_build }}
+    publish_int_files: true
+    package_and_publish_images: ${{ parameters.package_and_publish_images }}
+    package_access: ${{ parameters.package_access }}
+    build_e31x: ${{ parameters.build_e31x }}
+
+### END: E31x stages
+
+### START: E320 stages
+
+- template: ../devices/job-build-e320.yml
+  parameters:
+    clean_ip_build: ${{ parameters.clean_ip_build }}
+    publish_int_files: true
+    package_and_publish_images: ${{ parameters.package_and_publish_images }}
+    package_access: ${{ parameters.package_access }}
+    build_e320: ${{ parameters.build_e32x }}
+
+### END: E320 stages

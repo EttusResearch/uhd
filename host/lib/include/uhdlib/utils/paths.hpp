@@ -28,6 +28,10 @@ std::string get_appdata_path(void);
 //
 // Even on non-Linux systems, this should return the place where app data is
 // written to. For UHD, this is data such as calibration data.
+//
+// There are valid scenarios when there is no such variable, e.g., when a process
+// is being spawned as a system process (there is no 'user' specified). If no
+// such path can be found, an empty string is returned.
 boost::filesystem::path get_xdg_data_home();
 
 //! Return a path to XDG_CONFIG_HOME
@@ -36,9 +40,15 @@ boost::filesystem::path get_xdg_data_home();
 //
 // Even on non-Linux systems, this should return the place where the
 // configuration file can be stored.
+//
+// There are valid scenarios when there is no such variable, e.g., when a process
+// is being spawned as a system process (there is no 'user' specified). If no
+// such path can be found, an empty string is returned.
 boost::filesystem::path get_xdg_config_home();
 
 //! Return a path to ~/.uhd
+//
+// If no home directory can be found, an empty string is returned.
 boost::filesystem::path get_legacy_config_home();
 
 } /* namespace uhd */

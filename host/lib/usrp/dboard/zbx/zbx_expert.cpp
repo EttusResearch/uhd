@@ -80,7 +80,7 @@ double _calc_lo2_freq(
 
 double _calc_if2_freq(const double if1_freq, const double lo2_freq)
 {
-    return abs(if1_freq - lo2_freq);
+    return std::abs(if1_freq - lo2_freq);
 }
 
 std::string _get_trx_string(const direction_t dir)

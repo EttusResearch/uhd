@@ -1004,7 +1004,7 @@ select set of MCR during testing and design validation. For the X440, these are:
 |:--:|:--:|:--:|:--:|:--:|--|
 |368.64 MHz|2.94912 GHz| 8 | 295 MHz | xx_400, \n xx_1600 | Same Fc as X410, UHD default |
 |2000 MHz | 4.0 GHz | 2 | 1600 MHz | xx_1600 | Maximum Digital Bandwidth |
-|1000 MHz | 4.0 GHz | 4 | 1600 MHz | xx_1600 |  |
+|1000 MHz | 4.0 GHz | 4 | 800 MHz | xx_1600 |  |
 |500 MHz | 4.0 GHz | 8 | 400 MHz | xx_400, \n xx_1600 | Maximum Fc |
 |400 MHz | 3.2 GHz | 8 | 320 MHz | xx_400, \n xx_1600 |  |
 |360 MHz | 2.88 GHz | 8 | 288 MHz | xx_400, \n xx_1600 | L-Band Applications |
@@ -1078,6 +1078,28 @@ two rates, UHD will go through the following steps:
 2b) If they cannot be combined, UHD will fall back to the MCR of radio 0 and report
     this in a warning log message. 
 3. The chosen MCR and converter rate values will be shown in the info log.
+
+Note: When using dual rate on X440, the multi-tile synchronization (MTS) is disabled. That means
+that the phase relationship between channels is not guaranteed over retunes and reboots for
+channels of the same daughterboard and an undefined phase relationship will be preserved
+between channels of different daughterboards. MTS synchronizes all RF tiles with tile 0.
+As this tile controls RX and TX channels on daughterboard 0 only, it is not feasible to synchronize
+any tiles on daughterboard 1 if it runs on a different master clock rate. Channels on the same RF
+tile will always be synchronized, though. The following table gives an overview about the
+distribution of channels among RF tiles. MTS is only performed on the ADC, therefore the DAC
+column is for information only.
+
+RFDC Tile | RX Channel | TX Channel |
+:--------:|:----------:|:----------:|
+       0  |    1,2     | 0,1,2,3    |
+       1  |    0,3     | 4,5,6,7    |
+       2  |    5,6     |            |
+       3  |    4,7     |            |
+
+With the RFSoC variant used in X440 it is not feasible to use an additional tile as reference tile.
+Therefore it is not feasible to synchronize the tiles individually for daughterboard 1. While
+in theory it is possible to run MTS for daughterboard 0 only, it was skipped completely to
+prevent any unexpected side-effects.
 
 \subsection x4xx_usage_timedcmds Timed Commands
 

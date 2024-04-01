@@ -128,6 +128,35 @@ if { [string compare $cmd "create"] == 0 } {
             # Rewrite TCL BD file
             write_bd_tcl -make_local -force "$src_dir/$src_rootname.tcl"
             puts "INFO: BD TCL source updated: $src_dir/$src_rootname.tcl"
+            # Export HDL source files into a seperate TCL file
+            puts "INFO: Generating hdl_sources.tcl file from project..."
+            set hdlSources [get_files -quiet -filter {FILE_TYPE == VHDL || FILE_TYPE == Verilog || FILE_TYPE == SystemVerilog}]
+            if {[llength $hdlSources] == 0} {
+                puts "INFO: No HDL sources found in project"
+            } else {
+                set hdlFileName "$src_dir/hdl_sources.tcl"
+                set fh [open $hdlFileName w]
+                # write file header
+                puts $fh "set script_loc \[file normalize \[info script\]\]"
+                puts $fh "set script_dir \[file dirname \$script_loc\]"
+                puts $fh ""
+                # sort the file list to make the output deterministic
+                set hdlSources [lsort $hdlSources]
+                # print file relative to the script location
+                foreach file $hdlSources {
+                    set file_type [get_property FILE_TYPE $file]
+                    set rel_file_path [exec realpath -s --relative-to=$src_dir $file]
+                    if { $file_type == "VHDL"} {
+                        puts $fh "read_vhdl        -library work \$script_dir/$rel_file_path"
+                    } elseif { $file_type == "Verilog"} {
+                        puts $fh "read_verilog     -library work \$script_dir/$rel_file_path"
+                    } else {
+                        puts $fh "read_verilog -sv -library work \$script_dir/$rel_file_path"
+                    }
+                }
+                puts "INFO: $src_dir/hdl_sources.tcl file created or updated"
+                close $fh
+            }
             # Close and delete tmp_bd project, not needed anymore.
             close_project
             puts "INFO: Deleting temp Vivado BD project..."

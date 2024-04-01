@@ -1,5 +1,7 @@
 #
-# Copyright 2016 Ettus Research
+# Copyright 2024 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
 #
 
 source $::env(VIV_TOOLS_DIR)/scripts/viv_utils.tcl
@@ -14,6 +16,7 @@ vivado_utils::generate_post_synth_reports
 
 # STEP#3: Run implementation strategy
 set e3xx_strategy [dict create]
+dict set e3xx_strategy "implementation.incremental"              0
 dict set e3xx_strategy "opt_design.is_enabled"                   1
 dict set e3xx_strategy "opt_design.directive"                    "Default"
 dict set e3xx_strategy "post_opt_power_opt_design.is_enabled"    0

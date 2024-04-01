@@ -166,13 +166,20 @@ class n3xx(ZynqComponents, PeriphManagerBase):
     #########################################################################
     # Others properties
     #########################################################################
-     # All valid sync_sources for N3xx in the form of (clock_source, time_source)
+    # All valid sync_sources for N3xx in the form of (clock_source, time_source)
+    # When changing this list, also update usrp_n3xx.dox (Section "Clock/Time
+    # Synchronization").
     valid_sync_sources = {
         ('internal', 'internal'),
         ('internal', 'sfp0'),
         ('external', 'external'),
         ('external', 'internal'),
         ('gpsdo', 'gpsdo'),
+        # To enable the external reference and GPSDO PPS combination, uncomment
+        # the following line. Note that using this combination will cause loss
+        # of phase alignment between devices.  See also comments in
+        # n3xx_clocking.v ("PPS Capture and Generation").
+        # ('external', 'gpsdo'),
     }
     @classmethod
     def generate_device_info(cls, eeprom_md, mboard_info, dboard_infos):

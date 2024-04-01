@@ -45,9 +45,9 @@ jobs:
   displayName: 'Build FPGA'
   timeoutInMinutes: $[ variables['timeout'] ]
   pool:
-    name: hardware
+    name: Drivers-NIBuildFarm-RFMIBUILD
     demands:
-    - MAX_CPU -equals 4
+    - Agent.OS -equals Linux
   variables:
   - group: sdr-pipeline-vars
   strategy:
@@ -56,11 +56,13 @@ jobs:
   steps:
     - checkout: self
       clean: true
+      fetchDepth: 1
 
     - checkout: hwtools
       clean: true
       path: s/hwtools/head
       persistCredentials: true
+      fetchDepth: 1
 
     - download: current
       artifact: ${{ parameters.ip_artifact }}
@@ -72,8 +74,28 @@ jobs:
       displayName: 'Populate build-ip'
 
     - bash: |
+        mkdir -p $(Build.BinariesDirectory)/prefix
+        # hwtools hwsetup.sh will setup a venv, so we'll reuse that for the
+        # image builder! That's also why we install the image builder in the
+        # same step as building the bitfile: To avoid having to run hwsetup.sh
+        # twice.
         source $(Build.SourcesDirectory)/uhddev/fpga/.ci/scripts/run_setup.sh ./
-        python3 ../../tools/utils/repeat_fpga_build.py --target $(target_name) --num $(max_attempts) --seed $(($(System.JobAttempt)-1)) --persistent
+        pip3 install -U numpy mako "ruamel.yaml<0.18.0" jsonschema
+        set -o xtrace
+        # hwsetup.sh injects garbage cmake versions into PATH, so avoid that by
+        # going straight to /usr/bin/cmake
+        /usr/bin/cmake -S $(Build.SourcesDirectory)/uhddev/host \
+          -B $(Build.BinariesDirectory)/build_image_builder \
+          -DCMAKE_INSTALL_PREFIX=$(Build.BinariesDirectory)/prefix \
+          -DUHD_BOOST_REQUIRED=OFF \
+          -DENABLE_LIBUHD=OFF -DENABLE_PYMOD_UTILS=ON \
+          -DENABLE_DOXYGEN=OFF -DENABLE_MAN_PAGES=OFF -DENABLE_MANUAL=OFF
+        /usr/bin/cmake --build $(Build.BinariesDirectory)/build_image_builder
+        /usr/bin/cmake --install $(Build.BinariesDirectory)/build_image_builder
+        # rfnoc_image_builder does not currently get installed to a bin/ folder
+        # via pip, so we add it to PATH
+        export PATH=$BUILD_BINARIESDIRECTORY/prefix/bin:$VIRTUAL_ENV/bin:$PATH
+        python3 ../../tools/utils/repeat_fpga_build.py --target $(target_name) --image-core $(image_core) --num $(max_attempts) --seed $(($(System.JobAttempt)-1)) --persistent
       workingDirectory: ${{ parameters.top_dir }}
       env:
         PATCHES_PATH: $(sdr-vivado-patches)

@@ -26,6 +26,7 @@ namespace eval ::vivado_utils {
     variable g_output_dir   $::env(VIV_OUTPUT_DIR)
     variable g_source_files $::env(VIV_DESIGN_SRCS)
     variable g_vivado_mode  $::env(VIV_MODE)
+    variable g_project_save $::env(VIV_SAVE)
 
     # Optional environment variables
     variable g_verilog_defs ""
@@ -46,12 +47,13 @@ proc ::vivado_utils::initialize_project { {save_to_disk 0} } {
     variable g_part_name
     variable g_output_dir
     variable g_source_files
+    variable g_project_save
 
     variable bd_files ""
 
     file delete -force $g_output_dir/build.rpt
 
-    if {$save_to_disk == 1} {
+    if {$save_to_disk == 1 || $g_project_save == 1} {
         puts "BUILDER: Creating Vivado project ${g_top_module}_project.xpr for part $g_part_name"
         create_project -part $g_part_name ${g_top_module}_project
     } else {

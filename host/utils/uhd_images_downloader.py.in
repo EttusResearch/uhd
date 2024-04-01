@@ -67,7 +67,6 @@ _BASE_DIR_STRUCTURE_PARTS = ["share", "uhd", "images"]
 _DEFAULT_INSTALL_PATH     = os.path.join("@CMAKE_INSTALL_PREFIX@", *_BASE_DIR_STRUCTURE_PARTS)
 _DEFAULT_BASE_URL         = "https://files.ettus.com/binaries/cache/"
 _INVENTORY_FILENAME       = "inventory.json"
-_CONTACT                  = "support@ettus.com"
 _DEFAULT_BUFFER_SIZE      = 8192
 _DEFAULT_DOWNLOAD_LIMIT   = 1024 * 1024 * 1024 # Bytes
 _ARCHIVE_DEFAULT_TYPE     = "zip"
@@ -637,9 +636,9 @@ def main():
 
     except Exception as ex:
         log("ERROR", "Downloader raised an unhandled exception: {ex}\n"
-            "You can run this again with the '--verbose' flag to see more information\n"
-            "If the problem persists, please email the output to: {contact}"
-            .format(contact=_CONTACT, ex=ex))
+            "You can run this again with the '--verbose' flag to see more information.\n"
+            "If the problem persists, please email the output to the usrp-users mailing list."
+            .format(ex=ex))
         # Again, we wait on Windows systems because if this is executed in a
         # window, and immediately fails, the user doesn't have a way to see the
         # error message, and if they're not very savvy, they won't know how to

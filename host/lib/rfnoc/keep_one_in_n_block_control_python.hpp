@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "block_controller_factory_python.hpp"
+#include <uhd/rfnoc/block_controller_factory_python.hpp>
 #include <uhd/rfnoc/keep_one_in_n_block_control.hpp>
 
 using namespace uhd::rfnoc;

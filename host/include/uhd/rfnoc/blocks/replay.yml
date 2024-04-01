@@ -56,7 +56,3 @@ io_ports:
   axi_ram:
     type: axi4_mm
     drive: master
-
-registers:
-
-properties:

@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include "block_controller_factory_python.hpp"
 #include <uhd/features/discoverable_feature.hpp>
 #include <uhd/features/internal_sync_iface.hpp>
+#include <uhd/rfnoc/block_controller_factory_python.hpp>
 #include <uhd/rfnoc/radio_control.hpp>
 #include <pybind11/stl.h>
 

@@ -52,7 +52,3 @@ data:
       sideband_at_end: False
       format: u8
       mdata_sig: ~
-
-registers:
-
-properties:

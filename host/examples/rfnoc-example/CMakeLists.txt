@@ -8,20 +8,22 @@ cmake_minimum_required(VERSION 3.8)
 project(rfnoc-example CXX C)
 
 #make sure our local CMake Modules path comes first
-#list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake/Modules)
+list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
-#install to PyBOMBS target prefix if defined
-#if(DEFINED ENV{PYBOMBS_PREFIX})
-#    set(CMAKE_INSTALL_PREFIX $ENV{PYBOMBS_PREFIX})
-#    message(STATUS "PyBOMBS installed GNU Radio. Setting CMAKE_INSTALL_PREFIX to $ENV{PYBOMBS_PREFIX}")
-#endif()
+# Set the version information here
+set(VERSION_MAJOR 4)
+set(VERSION_API   9)
+set(VERSION_ABI   0)
 
 ########################################################################
 # Setup install directories
 ########################################################################
-set(RFNOC_DATA_DIR     share                          CACHE PATH "Base location for data")
-set(RFNOC_PKG_DATA_DIR ${RFNOC_DATA_DIR}/uhd/rfnoc/   CACHE PATH "Path to install RFNoC package data")
-set(PROJECT_DATA_DIR   ${RFNOC_PKG_DATA_DIR}/example/ CACHE PATH "Path for this project's package data")
+set(RFNOC_DATA_DIR     share
+    CACHE PATH "Base location for data")
+set(RFNOC_PKG_DATA_DIR ${RFNOC_DATA_DIR}/uhd/rfnoc/
+    CACHE PATH "Path to install RFNoC package data")
+set(PROJECT_DATA_DIR   ${RFNOC_PKG_DATA_DIR}/example/
+    CACHE PATH "Path for this project's package data")
 
 if(NOT DEFINED LIB_SUFFIX AND REDHAT AND CMAKE_SYSTEM_PROCESSOR MATCHES "64$")
     set(LIB_SUFFIX 64)
@@ -49,9 +51,10 @@ endif()
 ###########################################################################
 # Find UHD
 ###########################################################################
-find_package(UHD)
+find_package(UHD 4.6)
 if(UHD_FOUND)
     message(STATUS "Found UHD:")
+    message(STATUS " * Version: ${UHD_VERSION}")
     include_directories(${UHD_INCLUDE_DIRS})
     message(STATUS " * INCLUDES = ${UHD_INCLUDE_DIRS}")
     link_directories(${UHD_LIBRARIES})
@@ -65,6 +68,30 @@ if(UHD_FOUND)
     endif()
 else()
     message(WARNING "UHD not found. Cannot build block controllers.")
+endif()
+
+###########################################################################
+# Find Python and uhd Python module
+###########################################################################
+include(UHDPython)
+
+PYTHON_CHECK_MODULE(
+    "UHD Python API"
+    "uhd"
+    "uhd.__version__ == '${UHD_VERSION}'"
+    HAVE_PYTHON_MODULE_UHD
+)
+
+if(pybind11_FOUND AND HAVE_PYTHON_MODULE_UHD)
+    set(ENABLE_PYTHON_API TRUE
+        CACHE BOOL "Enable Python API")
+else()
+    set(ENABLE_PYTHON_API FALSE
+        CACHE BOOL "Enable Python API")
+endif()
+
+if(ENABLE_PYTHON_API)
+    message(STATUS "Enabling Python API for this module.")
 endif()
 
 ###########################################################################
@@ -178,4 +205,7 @@ if(UHD_FOUND)
     add_subdirectory(include/rfnoc/example)
     add_subdirectory(lib)
     add_subdirectory(apps)
+endif()
+if(ENABLE_PYTHON_API)
+    add_subdirectory(python)
 endif()

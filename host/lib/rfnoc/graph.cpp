@@ -286,6 +286,62 @@ std::vector<graph_t::graph_edge_t> graph_t::enumerate_edges()
     return result;
 }
 
+std::string graph_t::to_dot()
+{
+    std::string result("digraph rfnoc_graph {\n"
+                       "  rankdir=LR\n"
+                       "  node [shape=record]\n\n");
+
+    for (const auto& elem : _node_map) {
+        // add block, prepend with cluster,
+        // the cluster prefix ensures a box around the node
+        result += str(boost::format("  subgraph \"cluster_%s\" {\n"
+                                    "    label=\"%s\"\n")
+                      % elem.first->get_unique_id() % elem.first->get_unique_id());
+
+        // add input ports as joint blocks using "|<ref> label" notation
+        if (elem.first->get_num_input_ports() > 0) {
+            result += str(
+                boost::format("    \"%s_in\" [label=\"in") % elem.first->get_unique_id());
+            for (size_t i = 0; i < elem.first->get_num_input_ports(); i++) {
+                result += str(boost::format("|<in_%d> %d") % i % i);
+            }
+            result += "\"]\n";
+        }
+
+        // add input ports as joint blocks using "|<ref> label" notation
+        if (elem.first->get_num_output_ports() > 0) {
+            result += str(boost::format("    \"%s_out\" [label=\"out")
+                          % elem.first->get_unique_id());
+            for (size_t i = 0; i < elem.first->get_num_output_ports(); i++) {
+                result += str(boost::format("|<out_%d> %d") % i % i);
+            }
+            result += "\"]\n";
+        }
+
+        result += "  }\n";
+
+        // add an invisible connection between in and out ports so they
+        // get aligned inputs left and outputs right
+        if ((elem.first->get_num_input_ports() > 0)
+            && (elem.first->get_num_output_ports() > 0)) {
+            result += str(boost::format("  \"%s_in\" -> \"%s_out\" [style=invis]\n")
+                          % elem.first->get_unique_id() % elem.first->get_unique_id());
+        }
+        result += "\n";
+    }
+    result += "\n";
+
+    // add current connections
+    for (const auto& elem : enumerate_edges()) {
+        result +=
+            str(boost::format("  \"%s_out\":\"out_%d\" -> \"%s_in\":\"in_%d\"\n")
+                % elem.src_blockid % elem.src_port % elem.dst_blockid % elem.dst_port);
+    }
+    result += "}\n";
+    return result;
+}
+
 /******************************************************************************
  * Private methods to be called by friends
  *****************************************************************************/

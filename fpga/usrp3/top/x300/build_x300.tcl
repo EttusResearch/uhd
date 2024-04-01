@@ -1,5 +1,7 @@
 #
-# Copyright 2014-2015 Ettus Research
+# Copyright 2024 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
 #
 
 source $::env(VIV_TOOLS_DIR)/scripts/viv_utils.tcl
@@ -8,12 +10,13 @@ source $::env(VIV_TOOLS_DIR)/scripts/viv_strategies.tcl
 # STEP#1: Create project, add sources, refresh IP
 vivado_utils::initialize_project
 
-# STEP#2: Run synthesis 
+# STEP#2: Run synthesis
 vivado_utils::synthesize_design
 vivado_utils::generate_post_synth_reports
 
 # STEP#3: Run implementation strategy
 set x3xx_strategy [dict create]
+dict set x3xx_strategy "implementation.incremental"              0
 dict set x3xx_strategy "opt_design.is_enabled"                   1
 dict set x3xx_strategy "opt_design.directive"                    "NoBramPowerOpt"
 dict set x3xx_strategy "post_opt_power_opt_design.is_enabled"    0

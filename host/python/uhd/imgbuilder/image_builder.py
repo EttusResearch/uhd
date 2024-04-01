@@ -956,6 +956,11 @@ def build(fpga_path, device, image_core_path, edge_file, **args):
                    target: The target to build (leave empty for default).
                    clean_all: passed to Makefile
                    GUI: passed to Makefile
+                   save_project: passed to Makefile
+                   ip_only: passed to Makefile
+                   num_jobs: Number of make jobs to use
+                   build_base_dir: Custom base directory for FPGA builds
+                   build_output_dir: Custom bitstream output directory
                    source: The source of the build (YAML or GRC file path)
                    include_paths: List of paths to OOT modules
                    extra_makefile_srcs: An additional list of paths to modules
@@ -965,9 +970,11 @@ def build(fpga_path, device, image_core_path, edge_file, **args):
     """
     ret_val = 0
     cwd = os.path.dirname(__file__)
-    build_dir = os.path.join(get_top_path(os.path.abspath(fpga_path)), target_dir(device))
-    if not os.path.isdir(build_dir):
-        logging.error("Not a valid directory: %s", build_dir)
+    fpga_dir = os.path.join(get_top_path(os.path.abspath(fpga_path)), target_dir(device))
+    build_base_dir = fpga_dir
+    build_output_dir = os.path.join(build_base_dir, "build")
+    if not os.path.isdir(fpga_dir):
+        logging.error("Not a valid directory: %s", fpga_dir)
         return 1
     makefile_src_paths = [
         os.path.join(
@@ -975,28 +982,49 @@ def build(fpga_path, device, image_core_path, edge_file, **args):
             os.path.join('fpga', 'Makefile.srcs'))
         for x in args.get("include_paths", [])
     ] + args.get("extra_makefile_srcs", [])
-    logging.debug("Temporarily changing working directory to %s", build_dir)
-    os.chdir(build_dir)
-    make_cmd = ". ./setupenv.sh "
+    logging.debug("Temporarily changing working directory to %s", fpga_dir)
+    os.chdir(fpga_dir)
+    setup_cmd = ". ./setupenv.sh "
     if "vivado_path" in args and args["vivado_path"]:
-        make_cmd = make_cmd + "--vivado-path=" + args["vivado_path"] + " "
+        setup_cmd += "--vivado-path=" + args["vivado_path"] + " "
+    make_cmd = ""
     if "clean_all" in args and args["clean_all"]:
-        make_cmd = make_cmd + "&& make cleanall "
+        make_cmd += "make cleanall && "
     target = args["target"] if "target" in args else ""
-    make_cmd = make_cmd + "&& make " + default_target(device, target)
-    make_cmd += " IMAGE_CORE={} EDGE_FILE={}".format(image_core_path,
-                                                     edge_file)
+    make_cmd += "make " + default_target(device, target)
+    make_cmd += f" IMAGE_CORE={image_core_path} EDGE_FILE={edge_file}"
     if makefile_src_paths:
         make_cmd += " RFNOC_OOT_MAKEFILE_SRCS=" + "\\ ".join(makefile_src_paths)
+    if "num_jobs" in args and args["num_jobs"]:
+        make_cmd = make_cmd + " --jobs " + args["num_jobs"]
     if "GUI" in args and args["GUI"]:
         make_cmd = make_cmd + " GUI=1"
+    if "save_project" in args and args["save_project"]:
+        make_cmd = make_cmd + " PROJECT=1"
+    if "ip_only" in args and args["ip_only"]:
+        make_cmd = make_cmd + " IP_ONLY=1"
+    if "build_base_dir" in args and args["build_base_dir"]:
+        make_cmd = make_cmd + " BUILD_BASE_DIR=" + args["build_base_dir"]
+        build_base_dir = args["build_base_dir"]
+    if "build_output_dir" in args and args["build_output_dir"]:
+        make_cmd = make_cmd + " BUILD_OUTPUT_DIR=" + args["build_output_dir"]
+        build_output_dir = args["build_output_dir"]
+
+    if args.get('generate_only'):
+        logging.info("Skip build (generate only option given)")
+        logging.info("Use the following command to build the image: %s", make_cmd)
+        return 0
+
+    make_cmd = setup_cmd + " && " + make_cmd
     logging.info("Launching build with the following settings:")
-    logging.info(" * Build Directory: %s", build_dir)
+    logging.info(" * FPGA Directory: %s", fpga_dir)
+    logging.info(" * Build Base Directory: %s", build_base_dir)
+    logging.info(" * Build Output Directory: %s", build_output_dir)
     logging.info(" * Target: %s", target)
     logging.info(" * Image Core File: %s", image_core_path)
     logging.info(" * Edge Table File: %s", edge_file)
     # Wrap it into a bash call:
-    make_cmd = '{bash} -c "{cmd}"'.format(bash=BASH_EXECUTABLE, cmd=make_cmd)
+    make_cmd = f'{BASH_EXECUTABLE} -c "{make_cmd}"'
     logging.debug("Executing the following command: %s", make_cmd)
     ret_val = os.system(make_cmd)
     os.chdir(cwd)
@@ -1090,6 +1118,10 @@ def build_image(config, fpga_path, config_path, device, **args):
                    generate_only: Do not build the code after generation.
                    clean_all: passed to Makefile
                    GUI: passed to Makefile
+                   save_project: passed to Makefile
+                   ip_only: passed to Makefile
+                   build_base_dir: passed to Makefile
+                   build_output_dir: passed to Makefile
                    include_paths: Paths to additional blocks
     :return: Exit result of build process or 0 if generate-only is given.
     """
@@ -1133,10 +1165,6 @@ def build_image(config, fpga_path, config_path, device, **args):
         args,
     )
     write_build_env()
-
-    if "generate_only" in args and args["generate_only"]:
-        logging.info("Skip build (generate only option given)")
-        return 0
 
     # Check if the YAML files require additional Makefile.srcs
     extra_makefile_srcs = set()

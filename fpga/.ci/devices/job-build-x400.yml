@@ -1,0 +1,267 @@
+#
+# Copyright 2024 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+# Description:
+#
+#   This template defines a stages-based pipeline for building X410 and X440 FPGA.
+#
+#   See https://aka.ms/yaml for pipeline YAML documentation.
+#
+
+parameters:
+## Optional parameters
+# Run testbenches
+- name: run_testbenches
+  type: boolean
+  default: true
+# Option to ignore cached artifacts (if available) and perform
+# a clean IP build.
+- name: clean_ip_build
+  type: boolean
+  default: false
+# Number of parallel jobs to use for IP build
+- name: num_ip_jobs
+  type: number
+  default: 5
+# Option to publish intermediate files
+- name: publish_int_files
+  type: boolean
+  default: false
+# Package and publish images
+- name: package_and_publish_images
+  type: boolean
+  default: true
+# Package access in the SDR server ('Internal' or 'Public')
+- name: package_access
+  type: string
+  default: 'Internal'
+# Build X410 FPGA targets
+- name: build_x410
+  type: boolean
+  default: true
+# X410 FPGA targets to build(if triggered by changeset, packaging enabled)
+- name: x410_full_targets_matrix
+  type: object
+  default:
+    X410_X4_200:
+      image_core: x410_200_rfnoc_image_core.yml
+      target_name: X410_X4_200
+      timeout: 720
+      max_attempts: 2
+    X410_UC_200:
+      image_core: x410_200_rfnoc_image_core.yml
+      target_name: X410_UC_200
+      timeout: 720
+      max_attempts: 2
+    X410_X4_400:
+      image_core: x410_400_d_rfnoc_image_core.yml
+      target_name: X410_X4_400
+      timeout: 720
+      max_attempts: 2
+    X410_CG_400:
+      image_core: x410_400_rfnoc_image_core.yml
+      target_name: X410_CG_400
+      timeout: 720
+      max_attempts: 2
+- name: x410_reduced_targets_matrix
+# X410 FPGA targets to build (if triggered by changeset, no packaging)
+  type: object
+  default:
+    X410_X4_200:
+      image_core: x410_200_rfnoc_image_core.yml
+      target_name: X410_X4_200
+      timeout: 720
+      max_attempts: 2
+    X410_X4_400:
+      image_core: x410_400_d_rfnoc_image_core.yml
+      target_name: X410_X4_400
+      timeout: 720
+      max_attempts: 2
+# Build X440 FPGA targets
+- name: build_x440
+  type: boolean
+  default: true
+# X440 FPGA targets to build(if triggered by changeset, packaging enabled)
+- name: x440_full_targets_matrix
+  type: object
+  default:
+    X440_CG_1600:
+      image_core: x440_1600_rfnoc_image_core.yml
+      target_name: X440_CG_1600
+      timeout: 720
+      max_attempts: 2
+    X440_CG_400:
+      image_core: x440_400_rfnoc_image_core.yml
+      target_name: X440_CG_400
+      timeout: 720
+      max_attempts: 2
+    X440_X4_1600:
+      image_core: x440_1600_d_rfnoc_image_core.yml
+      target_name: X440_X4_1600
+      timeout: 720
+      max_attempts: 2
+    X440_X4_400:
+      image_core: x440_400_d_rfnoc_image_core.yml
+      target_name: X440_X4_400
+      timeout: 720
+      max_attempts: 2
+    X440_X4_200:
+      image_core: x440_200_rfnoc_image_core.yml
+      target_name: X440_X4_200
+      timeout: 720
+      max_attempts: 2
+# X440 FPGA targets to build (if triggered by changeset, no packaging)
+- name: x440_reduced_targets_matrix
+  type: object
+  default:
+    X440_CG_400:
+      image_core: x440_400_rfnoc_image_core.yml
+      target_name: X440_CG_400
+      timeout: 720
+      max_attempts: 2
+    X440_X4_400:
+      image_core: x440_400_d_rfnoc_image_core.yml
+      target_name: X440_X4_400
+      timeout: 720
+      max_attempts: 2
+# Requested X410 targets(used if build_x410 is true)
+- name: x410_requests_matrix
+  type: object
+  displayName: X410 Targets
+  default: []
+# Requested X440 target(used if build_x440 is true)
+- name: x440_requests_matrix
+  type: object
+  displayName: X440 Targets
+  default: []
+
+stages:
+
+### START: X410 stages
+
+- stage: build_x410_ip_stage
+  displayName: Build X410 IP
+  dependsOn: analyze_changeset
+  condition: and( succeeded(),
+                  or(
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.HdlChangeList'], 'fpga.usrp3.x4xx'),
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.HdlChangeList'], 'fpga.usrp3.all'),
+                    eq('${{ parameters.build_x410 }}', 'true')
+                  )
+                )
+  jobs:
+  - template: ../templates/job-build-ip.yml
+    parameters:
+      directory: uhddev/fpga/usrp3/top/x400
+      ip_target: X410_IP
+      clean_build: ${{ parameters.clean_ip_build }}
+      num_jobs: ${{ parameters.num_ip_jobs }}
+
+- stage: build_x410_targets_stage
+  displayName: Build X410 FPGA Targets
+  dependsOn: build_x410_ip_stage
+  condition: succeeded('build_x410_ip_stage')
+  jobs:
+  # trigger full list of targets if packaging is enabled
+  - ${{ if eq(parameters.package_and_publish_images, true) }}:
+    - template: ../templates/job-build-fpga.yml
+      parameters:
+        targets_matrix: ${{ parameters.x410_full_targets_matrix }}
+        ip_artifact: X410_IP
+        top_dir: uhddev/fpga/usrp3/top/x400
+        publish_int_files: ${{ parameters.publish_int_files }}
+  # trigger reduced list of targets if packaging is disabled, and no specific targets are requested
+  - ${{ if and(eq(parameters.package_and_publish_images, false), eq(parameters.build_x410, false)) }}:
+    - template: ../templates/job-build-fpga.yml
+      parameters:
+        targets_matrix: ${{ parameters.x410_reduced_targets_matrix }}
+        ip_artifact: X410_IP
+        top_dir: uhddev/fpga/usrp3/top/x400
+        publish_int_files: ${{ parameters.publish_int_files }}
+  # trigger specific targets if packaging is disabled, and specific targets are requested
+  - ${{ if and(eq(parameters.package_and_publish_images, false), eq(parameters.build_x410, true)) }}:
+    - template: ../templates/job-build-fpga.yml
+      parameters:
+        targets_matrix: ${{ parameters.x410_requests_matrix }}
+        ip_artifact: X410_IP
+        top_dir: uhddev/fpga/usrp3/top/x400
+        publish_int_files: ${{ parameters.publish_int_files }}
+
+- stage: create_x410_packages_stage
+  displayName: Package & Publish X410 Binaries
+  dependsOn: build_x410_targets_stage
+  condition: and(succeeded('build_x410_targets_stage'), eq('${{ parameters.package_and_publish_images }}', 'true'))
+  jobs:
+  - template: ../templates/job-package-images.yml
+    parameters:
+      package_name: x4xx_x410_fpga_default
+      artifacts_matrix: ${{ parameters.x410_full_targets_matrix }}
+      build_directory: uhddev/fpga/usrp3/top/x400/build/
+      package_access: ${{ parameters.package_access }}
+
+### END: X410 stages
+
+### START: X440 stages
+
+- stage: build_x440_ip_stage
+  displayName: Build X440 IP
+  dependsOn: analyze_changeset
+  condition: and( succeeded(),
+                  or(
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.HdlChangeList'], 'fpga.usrp3.x4xx'),
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.HdlChangeList'], 'fpga.usrp3.all'),
+                    eq('${{ parameters.build_x440 }}', 'true')
+                  )
+                )
+  jobs:
+  - template: ../templates/job-build-ip.yml
+    parameters:
+      directory: uhddev/fpga/usrp3/top/x400
+      ip_target: X440_IP
+      clean_build: ${{ parameters.clean_ip_build }}
+
+- stage: build_x440_targets_stage
+  displayName: Build X440 FPGA Targets
+  dependsOn: build_x440_ip_stage
+  condition: succeeded('build_x440_ip_stage')
+  jobs:
+  # trigger full list of targets if packaging is enabled
+  - ${{ if eq(parameters.package_and_publish_images, true) }}:
+    - template: ../templates/job-build-fpga.yml
+      parameters:
+        targets_matrix: ${{ parameters.x440_full_targets_matrix }}
+        ip_artifact: X440_IP
+        top_dir: uhddev/fpga/usrp3/top/x400
+        publish_int_files: ${{ parameters.publish_int_files }}
+  # trigger reduced list of targets if packaging is disabled, and no specific targets are requested
+  - ${{ if and(eq(parameters.package_and_publish_images, false),eq(parameters.build_x440, false)) }}:
+    - template: ../templates/job-build-fpga.yml
+      parameters:
+        targets_matrix: ${{ parameters.x440_reduced_targets_matrix }}
+        ip_artifact: X440_IP
+        top_dir: uhddev/fpga/usrp3/top/x400
+        publish_int_files: ${{ parameters.publish_int_files }}
+  # trigger specific targets if packaging is disabled, and specific targets are requested
+  - ${{ if and(eq(parameters.package_and_publish_images, false),eq(parameters.build_x440, true)) }}:
+    - template: ../templates/job-build-fpga.yml
+      parameters:
+        targets_matrix: ${{ parameters.x440_requests_matrix }}
+        ip_artifact: X440_IP
+        top_dir: uhddev/fpga/usrp3/top/x400
+        publish_int_files: ${{ parameters.publish_int_files }}
+
+- stage: create_x440_packages_stage
+  displayName: Package & Publish X440 Binaries
+  dependsOn: build_x440_targets_stage
+  condition: and(succeeded('build_x440_targets_stage'), eq('${{ parameters.package_and_publish_images }}', 'true'))
+  jobs:
+  - template: ../templates/job-package-images.yml
+    parameters:
+      package_name: x4xx_x440_fpga_default
+      artifacts_matrix: ${{ parameters.x440_full_targets_matrix }}
+      build_directory: uhddev/fpga/usrp3/top/x400/build/
+      package_access: ${{ parameters.package_access }}
+
+### END: X440 stages

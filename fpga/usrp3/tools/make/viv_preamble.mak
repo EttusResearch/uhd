@@ -13,6 +13,9 @@ RESOLVE_PATH = $(1)
 RESOLVE_PATHS = "$(1)"
 endif
 
+# A function that removes duplicate entries from lists without changing its order
+uniq = $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))
+
 # -------------------------------------------------------------------
 # Project Setup
 # -------------------------------------------------------------------
@@ -24,7 +27,10 @@ SIMLIB_DIR = $(abspath $(BASE_DIR)/../sim)
 LIB_IP_DIR = $(abspath $(LIB_DIR)/ip)
 HLS_IP_DIR = $(abspath $(LIB_DIR)/hls)
 
-BUILD_BASE_DIR ?= .
+MAKEFILE_DIR = $(abspath .)
+
+IP_BUILD_DIR ?= $(abspath ./build-ip/$(subst /,,$(PART_ID)))
+BUILD_BASE_DIR ?= $(abspath .)
 
 ifdef NAME
 BUILD_DIR = $(abspath $(BUILD_BASE_DIR)/build-$(NAME))
@@ -32,7 +38,6 @@ else
 BUILD_DIR = $(abspath $(BUILD_BASE_DIR)/build)
 endif
 
-IP_BUILD_DIR = $(abspath ./build-ip/$(subst /,,$(PART_ID)))
 
 # -------------------------------------------------------------------
 # Git Hash Retrieval
@@ -47,6 +52,15 @@ ifeq ($(GUI),1)
 VIVADO_MODE=gui
 else
 VIVADO_MODE=batch
+endif
+
+# -------------------------------------------------------------------
+# Project mode switch. Calling with PROJECT:=1 will use Vivado project file
+# -------------------------------------------------------------------
+ifeq ($(PROJECT),1)
+VIVADO_PROJECT=1
+else
+VIVADO_PROJECT=0
 endif
 
 # -------------------------------------------------------------------

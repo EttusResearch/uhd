@@ -10,12 +10,14 @@
 ## make <Targets> <Options>
 ##
 ##Output:
-## build/usrp_<product>_fpga_<image_type>.bit:    Configuration bitstream with header
-## build/usrp_<product>_fpga_<image_type>.dts:    Device tree source file
-## build/usrp_<product>_fpga_<image_type>.rpt:    Build report (includes utilization and timing summary)
+## $(BUILD_OUTPUT_DIR)/usrp_<product>_fpga_<image_type>.bit:    Configuration bitstream with header
+## $(BUILD_OUTPUT_DIR)/usrp_<product>_fpga_<image_type>.dts:    Device tree source file
+## $(BUILD_OUTPUT_DIR)/usrp_<product>_fpga_<image_type>.rpt:    Build report (includes utilization and timing summary)
 
-# Base output directory for all builds
+# Base output directory for all builds.
 BUILD_BASE_DIR ?= .
+# Base directory for the build outputs.
+BUILD_OUTPUT_DIR ?= $(BUILD_BASE_DIR)/build
 
 # Initialize a build seed. This can be changed to randomly affect build results.
 BUILD_SEED ?= 0
@@ -26,10 +28,12 @@ AA_DEFS=SFP_AURORA=1 BUILD_AURORA=1 $(OPTIONS) BUILD_SEED=$(BUILD_SEED)
 
 # Set build option (check RTL, run synthesis, or do a full build)
 ifndef TARGET
-	ifdef CHECK
+	ifeq ($(CHECK), 1)
 		TARGET = rtl
-	else ifdef SYNTH
+	else ifeq ($(SYNTH), 1)
 		TARGET = synth
+	else ifeq ($(IP_ONLY), 1)
+		TARGET = viv_ip
 	else
 		TARGET = bin
 	endif
@@ -46,11 +50,11 @@ vivado_ip    = make -f Makefile.e320.inc viv_ip    NAME=$@ ARCH=$(XIL_ARCH_$1) P
 # post_build($1=Device, $2=Option)
 ifeq ($(TARGET),bin)
 	post_build = @\
-		mkdir -p build; \
+		mkdir -p $(BUILD_OUTPUT_DIR); \
 		echo "Exporting bitstream file..."; \
-		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/e320.bit build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bit; \
+		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/e320.bit $(BUILD_OUTPUT_DIR)/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bit; \
 		echo "Exporting build report..."; \
-		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/build.rpt build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).rpt; \
+		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/build.rpt $(BUILD_OUTPUT_DIR)/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).rpt; \
 		echo "Build DONE ... $(1)_$(2)";
 else
 	post_build = @echo "Skipping bitfile export."
@@ -67,35 +71,34 @@ E320_IP:
 	+$(call vivado_ip,E320,$(XG_DEFS) E320=1)
 
 ##E320_1G:  1GigE on SFP+ Port.
-E320_1G: E320_IP build/usrp_e320_fpga_1G.dts
+E320_1G: E320_IP $(BUILD_OUTPUT_DIR)/usrp_e320_fpga_1G.dts
 	$(call vivado_build,E320,$(1G_DEFS) E320=1)
 	$(call post_build,E320,1G)
 
 ##E320_XG:  10GigE on SFP+ Port.
-E320_XG: E320_IP build/usrp_e320_fpga_XG.dts
+E320_XG: E320_IP $(BUILD_OUTPUT_DIR)/usrp_e320_fpga_XG.dts
 	$(call vivado_build,E320,$(XG_DEFS) E320=1)
 	$(call post_build,E320,XG)
 
 ##E320_AA:  Aurora on SFP+ Port.
-E320_AA: E320_IP build/usrp_e320_fpga_AA.dts
+E320_AA: E320_IP $(BUILD_OUTPUT_DIR)/usrp_e320_fpga_AA.dts
 	$(call vivado_build,E320,$(AA_DEFS) E320=1)
 	$(call post_build,E320,AA)
 
-
-build/%.dts: dts/%.dts dts/*.dtsi
-	-mkdir -p build
+$(BUILD_OUTPUT_DIR)/%.dts: dts/%.dts dts/*.dtsi
+	-mkdir -p $(BUILD_OUTPUT_DIR)
 	${CC} -o $@ -E -I dts -nostdinc -undef -x assembler-with-cpp -D__DTS__ $<
 
 clean:    ##Clean up all target build outputs.
 	@echo "Cleaning targets..."
-	@rm -rf build-E3*_*
-	@rm -rf build
+	@rm -rf $(BUILD_BASE_DIR)/build-E3*_*
+	@rm -rf $(BUILD_OUTPUT_DIR)
 
 cleanall: ##Clean up all target and ip build outputs.
 	@echo "Cleaning targets and IP..."
 	@rm -rf build-ip
-	@rm -rf build-E3*_*
-	@rm -rf build
+	@rm -rf $(BUILD_BASE_DIR)/build-E3*_*
+	@rm -rf $(BUILD_OUTPUT_DIR)
 
 help:     ##Show this help message.
 	@grep -h "##" Makefile | grep -v "\"##\"" | sed -e 's/\\$$//' | sed -e 's/##//'
@@ -104,7 +107,9 @@ help:     ##Show this help message.
 ##Supported Options
 ##-----------------
 ##GUI=1          Launch the build in the Vivado GUI.
+##PROJECT=1      Save Vivado project file, otherwise it's created in memory.
 ##CHECK=1        Launch the syntax checker instead of building a bitfile.
+##IP_ONLY=1      Launch the build but stop after IP generation.
 ##SYNTH=1        Launch the build but stop after synthesis.
 ##BUILD_SEED=<N> Build seed to used to affect build results. (Default is 0)
 ##TOP=<module>   Specify a top module for syntax checking. (Default is the bitfile top)

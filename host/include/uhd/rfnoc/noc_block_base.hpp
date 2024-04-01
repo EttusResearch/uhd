@@ -64,23 +64,25 @@ public:
         return get_block_id().to_string();
     }
 
-    //! Number of input ports. Note: This gets passed into this block from the
-    // information stored in the global register space.
-    //
-    // Note: This may be overridden by the block (e.g., the X300 radio may not
-    // have all ports available if no TwinRX board is plugged in), but the
-    // subclassed version may never report more ports than this.
+    /*! Number of input ports. Note: This gets passed into this block from the
+     * information stored in the global register space.
+     *
+     * Note: This may be overridden by the block (e.g., the X300 radio may not
+     * have all ports available if no TwinRX board is plugged in), but the
+     * subclassed version may never report more ports than this.
+     */
     size_t get_num_input_ports() const override
     {
         return _num_input_ports;
     }
 
-    //! Number of output ports. Note: This gets passed outto this block from the
-    // information stored in the global register space.
-    //
-    // Note: This may be overridden by the block (e.g., the X300 radio may not
-    // have all ports available if no TwinRX board is plugged in), but the
-    // subclassed version may never report more ports than this.
+    /*! Number of output ports. Note: This gets passed into this block from the
+     * information stored in the global register space.
+     *
+     * Note: This may be overridden by the block (e.g., the X300 radio may not
+     * have all ports available if no TwinRX board is plugged in), but the
+     * subclassed version may never report more ports than this.
+     */
     size_t get_num_output_ports() const override
     {
         return _num_output_ports;
@@ -211,29 +213,31 @@ public:
 protected:
     noc_block_base(make_args_ptr make_args);
 
-    //! Update number of input ports.
-    //
-    // - The new number of ports may not exceed the old number. This can only
-    //   be used to 'decrease' the number of ports.
-    // - This is considered an 'advanced' API and should rarely be called by
-    //   blocks. See also get_num_output_ports().
-    //
-    // \throws uhd::value_error if \p num_ports is larger than the current
-    //         number of ports.
+    /*! Update number of input ports.
+     *
+     * - The new number of ports may not exceed the old number. This can only
+     *   be used to 'decrease' the number of ports.
+     * - This is considered an 'advanced' API and should rarely be called by
+     *   blocks. See also get_num_output_ports().
+     *
+     * \throws uhd::value_error if \p num_ports is larger than the current
+     *         number of ports.
+     */
     void set_num_input_ports(const size_t num_ports);
 
-    //! Update number of output ports.
-    //
-    // - The new number of ports may not exceed the old number. This can only
-    //   be used to 'decrease' the number of ports.
-    // - This is considered an 'advanced' API and should rarely be called by
-    //   blocks. An example of where this is useful is the X310 radio block,
-    //   which has 2 output ports, but only 1 is useful for UBX/SBX/WBX boards
-    //   (i.e., boards with 1 frontend). In that case, software can make a
-    //   determination to 'invalidate' one of the ports.
-    //
-    // \throws uhd::value_error if \p num_ports is larger than the current
-    //         number of ports.
+    /*! Update number of output ports.
+     *
+     * - The new number of ports may not exceed the old number. This can only
+     *   be used to 'decrease' the number of ports.
+     * - This is considered an 'advanced' API and should rarely be called by
+     *   blocks. An example of where this is useful is the X310 radio block,
+     *   which has 2 output ports, but only 1 is useful for UBX/SBX/WBX boards
+     *   (i.e., boards with 1 frontend). In that case, software can make a
+     *   determination to 'invalidate' one of the ports.
+     *
+     * \throws uhd::value_error if \p num_ports is larger than the current
+     *         number of ports.
+     */
     void set_num_output_ports(const size_t num_ports);
 
     /*! Update tick rate for this node and all the connected nodes

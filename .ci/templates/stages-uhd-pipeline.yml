@@ -443,6 +443,11 @@ stages:
     parameters:
       testOS: ubuntu1804
       testLength: ${{ parameters.testLength }}
+  - template: tests/job-uhd-x440-hardware-tests-saison.yml
+    parameters:
+      testOS: ubuntu2204
+      extra_rf_test_args: --test_selector test_rx_phase_coherence.py test_tx_phase_coherence.py
+      testLength: ${{ parameters.testLength }}
 
 - stage: test_uhd_rf_test_stage
   displayName: Run rf tests n3xx
@@ -488,5 +493,10 @@ stages:
   - template: job-uhd-streaming-tests-beauty.yml
     parameters:
       testOS: ubuntu2004
+      uhdSrcDir: $(Build.SourcesDirectory)/uhddev
+      testLength: ${{ parameters.testLength }}
+  - template: job-uhd-streaming-tests-x440.yml
+    parameters:
+      testOS: ubuntu2204
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
       testLength: ${{ parameters.testLength }}
