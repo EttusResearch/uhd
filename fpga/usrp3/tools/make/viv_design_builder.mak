@@ -25,7 +25,7 @@ BUILD_VIVADO_DESIGN = \
 	export VIV_TOP_MODULE=$(2); \
 	export VIV_PART_NAME=`python3 $(TOOLS_DIR)/scripts/viv_gen_part_id.py $(3)/$(4)`; \
 	export VIV_MODE=$(VIVADO_MODE); \
-	export VIV_SAVE=$(VIVADO_SAVE); \
+	export VIV_PROJECT=$(VIVADO_PROJECT); \
 	export VIV_DESIGN_SRCS=$(call RESOLVE_PATHS,$(call uniq,$(DESIGN_SRCS))); \
 	export VIV_VERILOG_DEFS="$(VERILOG_DEFS) UHD_FPGA_DIR=$(BASE_DIR)/../.."; \
 	export VIV_INCR_BUILD=$(INCR_BUILD); \

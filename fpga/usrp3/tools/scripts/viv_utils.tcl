@@ -26,7 +26,7 @@ namespace eval ::vivado_utils {
     variable g_output_dir   $::env(VIV_OUTPUT_DIR)
     variable g_source_files $::env(VIV_DESIGN_SRCS)
     variable g_vivado_mode  $::env(VIV_MODE)
-    variable g_project_save $::env(VIV_SAVE)
+    variable g_project_save $::env(VIV_PROJECT)
 
     # Optional environment variables
     variable g_verilog_defs ""
