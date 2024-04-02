@@ -588,7 +588,7 @@ public:
 
     std::string to_dot() override
     {
-	return _graph->to_dot();
+        return _graph->to_dot();
     }
 
 private:

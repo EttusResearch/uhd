@@ -114,12 +114,13 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     uhd::device_addr_t new_args(vm["args"].as<std::string>());
 
     new_args["clock_source"] = "gpsdo";
-    new_args["time_source"] = "gpsdo";
+    new_args["time_source"]  = "gpsdo";
 
     // Create a USRP device
-    std::cout << boost::format("\nCreating the USRP device with: %s...\n") % new_args.to_string();
+    std::cout << "Creating the USRP device with: " << new_args.to_string() << "..."
+              << std::endl;
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(new_args);
-    std::cout << boost::format("Using Device: %s\n") % usrp->get_pp_string();
+    std::cout << "Using Device: " << usrp->get_pp_string() << std::endl;
 
     // Verify GPS sensors are present (i.e. EEPROM has been burnt)
     std::vector<std::string> sensor_names = usrp->get_mboard_sensor_names(0);
