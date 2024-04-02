@@ -72,9 +72,9 @@ double disk_rate_check(const size_t sample_type_size,
     try {
         boost::process::child c(
             disk_check_proc_str, boost::process::std_err > pipe_stream);
-        if (!c.wait_for(std::chrono::duration<float>(1s))) {
-            kill(c.id(), SIGINT);
-            c.wait();
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        if (c.running()) {
+            c.terminate();
         }
     } catch (std::system_error& err) {
         std::cerr << err_msg << std::endl;
