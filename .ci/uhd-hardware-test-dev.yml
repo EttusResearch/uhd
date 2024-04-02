@@ -44,6 +44,7 @@ parameters:
   values:
   - 'Filesytem/Images Downloader'
   - 'FPGA Pipeline'
+  - 'FPGA Pipeline PR'
   displayName: FPGA Images Source
   default: 'Filesytem/Images Downloader'
 - name: extra_rf_test_args
@@ -67,6 +68,9 @@ resources:
     branch: zeus-ci
   - pipeline: uhd_fpga_pipeline
     source: 'uhddev fpga pipeline'
+    branch: master
+  - pipeline: uhd_fpga_pr_pipeline
+    source: 'uhddev fpga pipeline PR'
     branch: master
   repositories:
   - repository: meta-ettus
@@ -95,7 +99,10 @@ stages:
     parameters:
       testOS: ubuntu1804
       uhdArtifactSource: uhd_mono_pipeline
-      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      ${{ if eq(parameters.fpga_imgs_source,  'FPGA Pipeline PR') }}:
+        uhdFpgaArtifactSource: uhd_fpga_pr_pipeline
+      ${{ else }}:
+        uhdFpgaArtifactSource: uhd_fpga_pipeline
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
 
 - stage: test_uhd_x440_embedded_stage
@@ -107,7 +114,10 @@ stages:
     parameters:
       testOS: ubuntu1804
       uhdArtifactSource: uhd_mono_pipeline
-      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      ${{ if eq(parameters.fpga_imgs_source,  'FPGA Pipeline PR') }}:
+        uhdFpgaArtifactSource: uhd_fpga_pr_pipeline
+      ${{ else }}:
+        uhdFpgaArtifactSource: uhd_fpga_pipeline
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
 
 - stage: test_streaming_stage
@@ -120,7 +130,10 @@ stages:
       testOS: ubuntu2004
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
       uhdArtifactSource: uhd_mono_pipeline
-      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      ${{ if eq(parameters.fpga_imgs_source,  'FPGA Pipeline PR') }}:
+        uhdFpgaArtifactSource: uhd_fpga_pr_pipeline
+      ${{ else }}:
+        uhdFpgaArtifactSource: uhd_fpga_pipeline
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testLength: ${{ parameters.testLength }}
 
@@ -134,7 +147,10 @@ stages:
       testOS: ubuntu2204
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
       uhdArtifactSource: uhd_mono_pipeline
-      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      ${{ if eq(parameters.fpga_imgs_source,  'FPGA Pipeline PR') }}:
+        uhdFpgaArtifactSource: uhd_fpga_pr_pipeline
+      ${{ else }}:
+        uhdFpgaArtifactSource: uhd_fpga_pipeline
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testLength: ${{ parameters.testLength }}
 
@@ -148,7 +164,10 @@ stages:
       testOS: ubuntu2004
       uhdSrcDir: $(Build.SourcesDirectory)
       uhdArtifactSource: uhd_mono_pipeline
-      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      ${{ if eq(parameters.fpga_imgs_source,  'FPGA Pipeline PR') }}:
+        uhdFpgaArtifactSource: uhd_fpga_pr_pipeline
+      ${{ else }}:
+        uhdFpgaArtifactSource: uhd_fpga_pipeline
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
 
 - stage: test_n310_rf_tests
@@ -161,7 +180,10 @@ stages:
       testOS: ubuntu1804
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
       uhdArtifactSource: uhd_mono_pipeline
-      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      ${{ if eq(parameters.fpga_imgs_source,  'FPGA Pipeline PR') }}:
+        uhdFpgaArtifactSource: uhd_fpga_pr_pipeline
+      ${{ else }}:
+        uhdFpgaArtifactSource: uhd_fpga_pipeline
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       extra_rf_test_args: ${{ parameters.extra_rf_test_args }}
 
@@ -174,7 +196,10 @@ stages:
     parameters:
       testOS: ubuntu1804
       uhdArtifactSource: uhd_mono_pipeline
-      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      ${{ if eq(parameters.fpga_imgs_source,  'FPGA Pipeline PR') }}:
+        uhdFpgaArtifactSource: uhd_fpga_pr_pipeline
+      ${{ else }}:
+        uhdFpgaArtifactSource: uhd_fpga_pipeline
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       extra_rf_test_args: ${{ parameters.extra_rf_test_args }}
       testLength: ${{ parameters.testLength }}
@@ -189,7 +214,10 @@ stages:
     parameters:
       testOS: ubuntu1804
       uhdArtifactSource: uhd_mono_pipeline
-      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      ${{ if eq(parameters.fpga_imgs_source,  'FPGA Pipeline PR') }}:
+        uhdFpgaArtifactSource: uhd_fpga_pr_pipeline
+      ${{ else }}:
+        uhdFpgaArtifactSource: uhd_fpga_pipeline
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       extra_rf_test_args: ${{ parameters.extra_rf_test_args }}
       testLength: ${{ parameters.testLength }}
@@ -203,7 +231,10 @@ stages:
     parameters:
       testOS: ubuntu2204
       uhdArtifactSource: uhd_mono_pipeline
-      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      ${{ if eq(parameters.fpga_imgs_source,  'FPGA Pipeline PR') }}:
+        uhdFpgaArtifactSource: uhd_fpga_pr_pipeline
+      ${{ else }}:
+        uhdFpgaArtifactSource: uhd_fpga_pipeline
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       ${{ if contains(parameters['extra_rf_test_args'],  'test_selector') }}:
         extra_rf_test_args: ${{ parameters.extra_rf_test_args }}

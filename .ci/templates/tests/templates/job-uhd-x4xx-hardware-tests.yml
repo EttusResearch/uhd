@@ -95,7 +95,7 @@ jobs:
       usrp_$(pytestDUT)_fpga_$(dutFPGA).dts
       usrp_$(pytestDUT)_fpga_$(dutFPGA).rpt
     displayName: Download FPGA pipeline artifacts
-    condition: and(succeeded(), eq('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline'))
+    condition: and(succeeded(), in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'))
 
   - task: ExtractFiles@1
     inputs:
@@ -180,7 +180,7 @@ jobs:
         ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "md5sum /usr/share/uhd/images/usrp_$(pytestDUT)_fpga_$(dutFPGA).bit > /usr/share/uhd/images/usrp_$(pytestDUT)_fpga_$(dutFPGA).bit.md5"
         ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "md5sum /usr/share/uhd/images/usrp_$(pytestDUT)_fpga_$(dutFPGA).dts > /usr/share/uhd/images/usrp_$(pytestDUT)_fpga_$(dutFPGA).dts.md5"
     displayName: Copy FPGA pipeline images to device
-    condition: and(succeeded(), eq('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline'))
+    condition: and(succeeded(), in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'))
 
   - script: |
         ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
