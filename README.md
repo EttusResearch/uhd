@@ -47,7 +47,7 @@ third-party applications. Some common toolkits / frameworks are:
 * [OpenBTS GSM](http://openbts.org)
 * [Osmocom GSM](https://osmocom.org)
 * [Amarisoft LTE](https://www.amarisoft.com/products-lte-ue-ots-sdr-pcie)
-* [Software Radio Systems srsRAN](https://www.softwareradiosystems.com/products)
+* [Software Radio Systems srsRAN](https://www.srsran.com/)
 * [Eurecom OpenAirInterface](https://gitlab.eurecom.fr/oai/openairinterface5g)
 
 ## Directories
