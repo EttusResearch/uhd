@@ -24,7 +24,8 @@ helpful move for the team and future maintainability of the UHD codebase.
 * Code layout: We use 4 spaces for indentation levels, and never tabs.
 * Code is read more often than it's written. Code readability is thus something
   worth optimizing for.
-* Try and keep line lengths to 79 characters, unless readability suffers. We
+* Try and keep lines short (79 characters is nice, maximum is 90/100 characaters
+  for C/C++ and Python, respectively), unless readability suffers. We
   often have to do fun things like SSH into machines and edit code in a
   terminal, and do side-by-side views of code on small-ish screens, so this is
   actually pretty helpful.
@@ -68,8 +69,8 @@ helpful move for the team and future maintainability of the UHD codebase.
 
 * Feel free to use modern C/C++ features even if they were not used before.
   Make sure they work with the compilers and dependencies which are set for the
-  version of UHD the commit will be made upon. The Ettus CI system will be able
-  to confirm this.
+  version of UHD the commit will be made upon. Our continuous integration system
+  will be able to confirm this.
   For interesting new features, use 'anchor commits', which describe clearly
   which new feature was used. They can be used as a reference for other
   developers. Example:
@@ -122,10 +123,10 @@ std::map<std::string, std::string> bar =
 
 * Starting with UHD 4.0, Python 2 is no longer supported, and we don't need to
   accommodate for it any longer. Prefer Python 3 constructs.
-* Follow the suggestions in [PEP8][Pep8] and [PEP257][Pep257]. The former is about
-  code layout in general, the latter about docstrings.
-* Pylint is good tool for helping with following code guidelines. It's very
-  fussy though, so don't get too worked up about following its suggestions.
+* We follow the [NI Python Style Guidelines](ni-python). Install
+  `ni-python-styleguide` to help following the recommendations (e.g., by running
+  `pip install ni-python-styleguide`. The tool is available
+  [on GitHub](https://github.com/ni/python-styleguide).
 
 ## CMake-specific Guidelines
 
@@ -151,6 +152,39 @@ std::map<std::string, std::string> bar =
 * Remember that we ship git repositories, not just code. This means every
   commit is part of our product and should be treated as such.
 
+## Useful tooling
+
+### Autoformatters
+
+- Before checking in C/C++/Python code, make sure it was reformatted with an
+  autoformatter. For C/C++, that's `clang-format`. For Python, use `black` and
+  `isort`, or install `ni-python-styleguide` which incorporates all of those
+  tools.
+
+### Linters
+
+There are a variety of linters available, all of which provide valuable insight:
+
+- `flake8` is a very, very nitpicky linter for Python. It is integrated into
+  `ni-python-styleguide` with some additional configuration, so we recommend
+  using the latter.
+- `clang-tidy` can do some static analysis on C and C++ files.
+- For HDL code, Verilator and iverilog can be integrated as syntax error checkers
+  in some editors, but keep in mind they often can't find available modules, and
+  not always support SystemVerilog.
+
+### Git hooks
+
+The easiest way to use git hooks is to use `pre-commit`:
+
+- Install `pre-commit` (e.g., `pip install pre-commit`, or `apt install pre-commit`).
+- In your UHD repository, install the pre-commit hooks by running
+  `pre-commit install`
+- Manually install `ni-python-styleguide` (`pip install ni-python-styleguide`)
+
+Before attempting to commit changes, the files will be automatically scanned for
+style/formatting issues.
+
 ## FPGA Guidelines
 
 FPGA guidelines are stored in a separate file. See [CODING.md][fpga-coding] in
@@ -160,3 +194,4 @@ the FPGA repository.
 [PEP8]: https://www.python.org/dev/peps/pep-0008/
 [Pep257]: https://www.python.org/dev/peps/pep-0257/
 [fpga-coding]: https://github.com/EttusResearch/uhd/blob/master/fpga/CODING.md
+[ni-python]: https://ni.github.io/python-styleguide/
