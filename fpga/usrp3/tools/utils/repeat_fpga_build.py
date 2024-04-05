@@ -43,6 +43,11 @@ def parse_args():
         "the image core YAML.",
     )
     parser.add_argument(
+        "--image-core-name",
+        type=str,
+        help="Specifies the image core name to pass to rfnoc_image_builder using the -n argument.",
+    )
+    parser.add_argument(
         "--num",
         "-n",
         type=int,
@@ -71,7 +76,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def prepare_build(target, image_core):
+def prepare_build(target, image_core, image_core_name):
     """
     Run tasks to prepare the build. In particular, execute the RFNoC image builder
     if desired.
@@ -88,6 +93,8 @@ def prepare_build(target, image_core):
         ]
         if target:
             cmd += ["--target", target]
+        if image_core_name:
+            cmd += ["--image_core_name", image_core_name]
         result = subprocess.run(
             cmd,
             check=False,
@@ -186,7 +193,7 @@ def main():
         return 1
     build_seed = args.seed
     status = 128
-    cfg = prepare_build(args.target, args.image_core)
+    cfg = prepare_build(args.target, args.image_core, args.image_core_name)
     try:
         for build_num in range(1, args.num + 1):
             logging.info("Starting FPGA build %d with seed %s", build_num, build_seed)

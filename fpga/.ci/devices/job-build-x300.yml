@@ -86,8 +86,8 @@ parameters:
   type: object
   default:
     X310_XG:
-      image_core: x310_rfnoc_image_core.yml
-      target_name: X310_XG
+      image_core: x310_XG_rfnoc_image_core.yml
+      image_core_name: usrp_x310_fpga_XG
       timeout: 720
       max_attempts: 2
 
