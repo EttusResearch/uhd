@@ -48,16 +48,22 @@ parameters:
     E320_1G:
       image_core: e320_rfnoc_image_core.yml
       target_name: E320_1G
+      artifact_name: E320_1G
+      image_core_name: usrp_e320_fpga_1G
       timeout: 720
       max_attempts: 2
     E320_XG:
       image_core: e320_rfnoc_image_core.yml
       target_name: E320_XG
+      artifact_name: E320_XG
+      image_core_name: usrp_e320_fpga_XG
       timeout: 720
       max_attempts: 2
     E320_AA:
       image_core: e320_rfnoc_image_core.yml
       target_name: E320_AA
+      artifact_name: E320_AA
+      image_core_name: usrp_e320_fpga_AA
       timeout: 720
       max_attempts: 2
 - name: e320_reduced_targets_matrix
@@ -66,6 +72,8 @@ parameters:
     E320_XG:
       image_core: e320_rfnoc_image_core.yml
       target_name: E320_XG
+      artifact_name: E320_XG
+      image_core_name: usrp_e320_fpga_XG
       timeout: 720
       max_attempts: 2
 

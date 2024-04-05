@@ -8,7 +8,10 @@ license: >-                             # License information used in file heade
 version: '1.0'                          # File version
 chdr_width: 64                          # Bit width of the CHDR bus for this image
 device: 'e320'
-default_target: 'E320_1G'
+default_target: 'E320_1G'               # Target. This controls which transports are instantiated.
+image_core_name: 'usrp_e320_fpga_1G'    # Name to use for the generated output files.
+                                        # Change image_core_name and default_target in tandem,
+                                        # because we won't generate the correct DTS files otherwise.
 
 # A list of all stream endpoints in design
 # ----------------------------------------

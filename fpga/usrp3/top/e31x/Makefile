@@ -4,10 +4,18 @@
 
 # NOTE: All comments prefixed with a "##" will be displayed as a part of the "make help" target
 ##-------------------
-##USRP E3XX FPGA Help
+##USRP E31X FPGA Help
 ##-------------------
 ##Usage:
-## make <Targets> <Options>
+##  rfnoc_image_builder -y <image core file> -t <target> -n <image core name>
+##
+## NOTE: For building E3x0 bitfiles, do not run make directly! Instead, use
+## rfnoc_image_builder. It will create all intermediate files, set up a Vivado
+## environment, and run Vivado to build a bitfile.
+##
+## There exist some special make targets which can be called directly like this:
+##
+##  make <Targets> <Options>
 ##
 ##Output:
 ## $(BUILD_OUTPUT_DIR)/usrp_<product>_fpga_<image_type>.bit:    Configuration bitstream with header
@@ -37,20 +45,18 @@ ifndef TARGET
 endif
 TOP ?= e31x
 
-DEFAULT_IMAGE_CORE_FILE_E31X=e310_rfnoc_image_core.v
-
 # vivado_build($1=Device, $2=Definitions)
-vivado_build = make -f Makefile.e31x.inc $(TARGET) NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2" DEFAULT_RFNOC_IMAGE_CORE_FILE=$(DEFAULT_IMAGE_CORE_FILE_E31X)
-vivado_ip    = make -f Makefile.e31x.inc viv_ip    NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2" DEFAULT_RFNOC_IMAGE_CORE_FILE=$(DEFAULT_IMAGE_CORE_FILE_E31X)
+vivado_build = make -f Makefile.e31x.inc $(TARGET) NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2"
+vivado_ip    = make -f Makefile.e31x.inc viv_ip    NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2"
 
-# post_build($1=Device, $2=Option)
+# post_build($1=Device)
 ifeq ($(TARGET),bin)
 	post_build = @\
 		mkdir -p $(BUILD_OUTPUT_DIR); \
 		echo "Exporting bitstream file..."; \
-		cp $(BUILD_BASE_DIR)/build-$(1)/e31x.bit $(BUILD_OUTPUT_DIR)/usrp_`echo $(2) | tr A-Z a-z`_fpga.bit; \
+		cp $(BUILD_DIR)/e31x.bit $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).bit; \
 		echo "Exporting build report..."; \
-		cp $(BUILD_BASE_DIR)/build-$(1)/build.rpt $(BUILD_OUTPUT_DIR)/usrp_`echo $(2) | tr A-Z a-z`_fpga.rpt; \
+		cp $(BUILD_DIR)/build.rpt $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).rpt; \
 		echo "Build DONE ... $(1)";
 else
 	post_build = @echo "Skipping bitfile export."
@@ -59,50 +65,76 @@ endif
 ##
 ##Supported Targets
 ##-----------------
+##Reminder: Targets are built by calling
+##
+##   $ rfnoc_image_builder -y <image core file.yml> -t <target name> -n <image core name>
+##
+##The following table lists all valid combinations:
+##
+##--------------------------|---------------|-------------------------|------------------
+## Default Image core file  | Target        | Image core name         | Description
+##--------------------------|---------------|-------------------------|------------------
+##e310_rfnoc_image_core.yml | E310_SG1      | usrp_e310_sg1_fpga      | E310 speedgrade 1
+##e310_rfnoc_image_core.yml | E310_SG1_IDLE | usrp_e310_sg1_idle_fpga | E310 speedgrade 1, idle image
+##e310_rfnoc_image_core.yml | E310_SG3      | usrp_e310_sg3_fpga      | E310 speedgrade 3
+##e310_rfnoc_image_core.yml | E310_SG3_IDLE | usrp_e310_sg3_idle_fpga | E310 speedgrade 3, idle image
+##
+##Of course, a custom YAML file may be used.
+##
 
-all:            E310_SG1_IDLE E310_SG3_IDLE E310_SG1 E310_SG3 ##(Default target)
-
-##E310_SG1_IP:    Build IP for E310_SG1 only.
-E310_SG1_IP:
-	+$(call vivado_ip,E310_SG1,E310_SG1=1)
-
-##E310_SG3_IP:    Build IP for E310_SG3 only.
-E310_SG3_IP:
-	+$(call vivado_ip,E310_SG3,E310_SG3=1)
+check-variables:
+ifndef IMAGE_CORE_NAME
+	$(error IMAGE_CORE_NAME is not set! Use rfnoc_image_builder to create valid make commands)
+endif
+ifndef BUILD_DIR
+	$(error BUILD_DIR is not set! Use rfnoc_image_builder to create valid make commands)
+endif
 
 ##E310_SG1_IDLE:  Build USRP E3XX idle design (Speed Grade 1).
-E310_SG1_IDLE E3XX_idle: E310_SG1_IP $(BUILD_OUTPUT_DIR)/usrp_e310_sg1_idle_fpga.dts
+E310_SG1_IDLE E3XX_idle: check-variables E310_SG1_IP $(BUILD_OUTPUT_DIR)/usrp_e310_sg1_idle_fpga.dts
 	$(call vivado_build,E310_SG1,$(DEFS) E310_IDLE_IMAGE=1 E310_SG1=1)
-	$(call post_build,$@,E310_SG1_IDLE)
+	$(call post_build,$@)
 
 ##E310_SG3_IDLE:  Build USRP E3XX idle design (Speed Grade 3).
-E310_SG3_IDLE E3XX_idle_sg3: E310_SG3_IP $(BUILD_OUTPUT_DIR)/usrp_e310_sg3_idle_fpga.dts
+E310_SG3_IDLE E3XX_idle_sg3: check-variables E310_SG3_IP $(BUILD_OUTPUT_DIR)/usrp_e310_sg3_idle_fpga.dts
 	$(call vivado_build,E310_SG3,$(DEFS) E310_IDLE_IMAGE=1 E310_SG3=1)
-	$(call post_build,$@,E310_SG3_IDLE)
+	$(call post_build,$@)
 
 ##E310_SG1:       Build USRP E3XX (Speed Grade 1).
-E310_SG1 E310: E310_SG1_IP $(BUILD_OUTPUT_DIR)/usrp_e310_sg1_fpga.dts
+E310_SG1 E310: check-variables E310_SG1_IP $(BUILD_OUTPUT_DIR)/usrp_e310_sg1_fpga.dts
 	$(call vivado_build,E310_SG1,$(DEFS) E310_SG1=1 $(if $(DRAM),ENABLE_DRAM=1,))
-	$(call post_build,$@,E310_SG1)
+	$(call post_build,$@)
 
 ##E310_SG3:       Build USRP E3XX (Speed Grade 3).
-E310_SG3 E310_sg3: E310_SG3_IP $(BUILD_OUTPUT_DIR)/usrp_e310_sg3_fpga.dts
+E310_SG3 E310_sg3: check-variables E310_SG3_IP $(BUILD_OUTPUT_DIR)/usrp_e310_sg3_fpga.dts
 	$(call vivado_build,E310_SG3,$(DEFS) E310_SG3=1 $(if $(DRAM),ENABLE_DRAM=1,))
-	$(call post_build,$@,E310_SG3)
+	$(call post_build,$@)
 
 $(BUILD_OUTPUT_DIR)/%.dts: dts/%.dts dts/*.dtsi
 	-mkdir -p $(BUILD_OUTPUT_DIR)
 	${CC} -o $@ -E -I dts -nostdinc -undef -x assembler-with-cpp -D__DTS__ $<
 
+##
+##Other Make Targets (these should be called directly)
+##----------------------------------------------------
+
+##E310_SG1_IP:    Build IP for E310_SG1 only. Use the -j option to build multiple IP blocks simultaneously.
+E310_SG1_IP:
+	+$(call vivado_ip,E310_SG1,E310_SG1=1)
+
+##E310_SG3_IP:    Build IP for E310_SG3 only. Use the -j option to build multiple IP blocks simultaneously.
+E310_SG3_IP:
+	+$(call vivado_ip,E310_SG3,E310_SG3=1)
+
 clean:          ##Clean up all target build outputs.
 	@echo "Cleaning targets..."
-	@rm -rf $(BUILD_BASE_DIR)/build-E3*
+	@rm -rf $(BUILD_BASE_DIR)/build-E3* $(BUILD_BASE_DIR)/build-usrp* $(BUILD_DIR)
 	@rm -rf $(BUILD_OUTPUT_DIR)
 
 cleanall:       ##Clean up all target and ip build outputs.
 	@echo "Cleaning targets and IP..."
 	@rm -rf build-ip
-	@rm -rf $(BUILD_BASE_DIR)/build-E3*
+	@rm -rf $(BUILD_BASE_DIR)/build-* $(BUILD_DIR)
 	@rm -rf $(BUILD_OUTPUT_DIR)
 
 help:           ##Show this help message.

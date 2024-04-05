@@ -20,6 +20,8 @@ SIMULATION = 0
 # -------------------------------------------------------------------
 BUILD_VIVADO_DESIGN = \
 	@ \
+	$(if $(BUILD_DIR),,$(error "BUILD_DIR" is not defined! Use rfnoc_image_builder to create valid commands)) \
+	$(if $(IMAGE_CORE_NAME),,$(error "IMAGE_CORE_NAME" is not defined! Use rfnoc_image_builder to create valid commands)) \
 	export VIV_TOOLS_DIR=$(call RESOLVE_PATH,$(TOOLS_DIR)); \
 	export VIV_OUTPUT_DIR=$(call RESOLVE_PATH,$(BUILD_DIR)); \
 	export VIV_TOP_MODULE=$(2); \

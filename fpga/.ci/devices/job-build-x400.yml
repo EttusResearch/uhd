@@ -46,23 +46,27 @@ parameters:
   type: object
   default:
     X410_X4_200:
-      image_core: x410_200_rfnoc_image_core.yml
-      target_name: X410_X4_200
+      image_core: x410_X4_200_rfnoc_image_core.yml
+      image_core_name: usrp_x410_fpga_X4_200
+      artifact_name: X410_X4_200
       timeout: 720
       max_attempts: 2
     X410_UC_200:
-      image_core: x410_cg_200_rfnoc_image_core.yml
-      target_name: X410_UC_200
+      image_core: x410_UC_200_rfnoc_image_core.yml
+      image_core_name: usrp_x410_fpga_UC_200
+      artifact_name: X410_UC_200
       timeout: 720
       max_attempts: 2
     X410_X4_400:
-      image_core: x410_400_d_rfnoc_image_core.yml
-      target_name: X410_X4_400
+      image_core: x410_X4_400_rfnoc_image_core.yml
+      image_core_name: usrp_x410_fpga_X4_400
+      artifact_name: X410_X4_400
       timeout: 720
       max_attempts: 2
     X410_CG_400:
-      image_core: x410_400_rfnoc_image_core.yml
-      target_name: X410_CG_400
+      image_core: x410_CG_400_rfnoc_image_core.yml
+      image_core_name: usrp_x410_fpga_CG_400
+      artifact_name: X410_CG_400
       timeout: 720
       max_attempts: 2
 - name: x410_reduced_targets_matrix
@@ -70,13 +74,15 @@ parameters:
   type: object
   default:
     X410_X4_200:
-      image_core: x410_200_rfnoc_image_core.yml
-      target_name: X410_X4_200
+      image_core: x410_X4_200_rfnoc_image_core.yml
+      image_core_name: usrp_x410_fpga_X4_200
+      artifact_name: X410_X4_200
       timeout: 720
       max_attempts: 2
     X410_X4_400:
-      image_core: x410_400_d_rfnoc_image_core.yml
-      target_name: X410_X4_400
+      image_core: x410_X4_400_rfnoc_image_core.yml
+      image_core_name: usrp_x410_fpga_X4_400
+      artifact_name: X410_X4_400
       timeout: 720
       max_attempts: 2
 # Build X440 FPGA targets
@@ -88,28 +94,33 @@ parameters:
   type: object
   default:
     X440_CG_1600:
-      image_core: x440_1600_rfnoc_image_core.yml
-      target_name: X440_CG_1600
+      image_core: x440_CG_1600_rfnoc_image_core.yml
+      image_core_name: usrp_x440_fpga_CG_1600
+      artifact_name: X440_CG_1600
       timeout: 720
       max_attempts: 2
     X440_CG_400:
-      image_core: x440_400_rfnoc_image_core.yml
-      target_name: X440_CG_400
+      image_core: x440_CG_400_rfnoc_image_core.yml
+      image_core_name: usrp_x440_fpga_CG_400
+      artifact_name: X440_CG_400
       timeout: 720
       max_attempts: 2
     X440_X4_1600:
-      image_core: x440_1600_d_rfnoc_image_core.yml
-      target_name: X440_X4_1600
+      image_core: x440_X4_1600_rfnoc_image_core.yml
+      image_core_name: usrp_x440_fpga_X4_1600
+      artifact_name: X440_X4_1600
       timeout: 720
       max_attempts: 2
     X440_X4_400:
-      image_core: x440_400_d_rfnoc_image_core.yml
-      target_name: X440_X4_400
+      image_core: x440_X4_400_rfnoc_image_core.yml
+      image_core_name: usrp_x440_fpga_X4_400
+      artifact_name: X440_X4_400
       timeout: 720
       max_attempts: 2
     X440_X4_200:
-      image_core: x440_200_rfnoc_image_core.yml
-      target_name: X440_X4_200
+      image_core: x440_X4_200_rfnoc_image_core.yml
+      image_core_name: usrp_x440_fpga_X4_200
+      artifact_name: X440_X4_200
       timeout: 720
       max_attempts: 2
 # X440 FPGA targets to build (if triggered by changeset, no packaging)
@@ -117,13 +128,15 @@ parameters:
   type: object
   default:
     X440_CG_400:
-      image_core: x440_400_rfnoc_image_core.yml
-      target_name: X440_CG_400
+      image_core: x440_CG_400_rfnoc_image_core.yml
+      image_core_name: usrp_x440_fpga_CG_400
+      artifact_name: X440_CG_400
       timeout: 720
       max_attempts: 2
     X440_X4_400:
-      image_core: x440_400_d_rfnoc_image_core.yml
-      target_name: X440_X4_400
+      image_core: x440_X4_400_rfnoc_image_core.yml
+      image_core_name: usrp_x440_fpga_X4_400
+      artifact_name: X440_X4_400
       timeout: 720
       max_attempts: 2
 # Requested X410 targets(used if build_x410 is true)

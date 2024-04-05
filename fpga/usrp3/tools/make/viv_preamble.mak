@@ -32,17 +32,6 @@ MAKEFILE_DIR = $(abspath .)
 IP_BUILD_DIR ?= $(abspath ./build-ip/$(subst /,,$(PART_ID)))
 BUILD_BASE_DIR ?= $(abspath .)
 
-ifdef ARTIFACT_DIR
-BUILD_DIR = $(abspath $(ARTIFACT_DIR))
-else
-ifdef NAME
-BUILD_DIR = $(abspath $(BUILD_BASE_DIR)/build-$(NAME))
-else
-BUILD_DIR = $(abspath $(BUILD_BASE_DIR)/build)
-endif
-endif
-
-
 # -------------------------------------------------------------------
 # Git Hash Retrieval
 # -------------------------------------------------------------------
@@ -80,7 +69,9 @@ endif
 # Intermediate build dirs 
 # -------------------------------------------------------------------
 .build_dirs:
+ifdef BUILD_DIR
 	@mkdir -p $(BUILD_DIR)
+endif
 	@mkdir -p $(IP_BUILD_DIR)
 
 .prereqs: .check_tool .build_dirs

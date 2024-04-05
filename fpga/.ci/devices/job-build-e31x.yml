@@ -48,11 +48,15 @@ parameters:
     E310_SG1:
       image_core: e310_rfnoc_image_core.yml
       target_name: E310_SG1
+      image_core_name: usrp_e310_sg1_fpga
+      artifact_name: E310_SG1
       timeout: 720
       max_attempts: 2
     E310_SG1_IDLE:
       image_core: e310_rfnoc_image_core.yml
       target_name: E310_SG1_IDLE
+      image_core_name: usrp_e310_sg1_idle_fpga
+      artifact_name: E310_SG1_IDLE
       timeout: 720
       max_attempts: 2
 - name: e31x_sg1_reduced_targets_matrix
@@ -61,6 +65,8 @@ parameters:
     E310_SG1:
       image_core: e310_rfnoc_image_core.yml
       target_name: E310_SG1
+      image_core_name: usrp_e310_sg1_fpga
+      artifact_name: E310_SG1
       timeout: 720
       max_attempts: 2
 - name: e31x_sg3_full_targets_matrix
@@ -69,11 +75,15 @@ parameters:
     E310_SG3:
       image_core: e310_rfnoc_image_core.yml
       target_name: E310_SG3
+      image_core_name: usrp_e310_sg3_fpga
+      artifact_name: E310_SG3
       timeout: 720
       max_attempts: 2
     E310_SG3_IDLE:
       image_core: e310_rfnoc_image_core.yml
       target_name: E310_SG3_IDLE
+      artifact_name: E310_SG3_IDLE
+      image_core_name: usrp_e310_sg3_idle_fpga
       timeout: 720
       max_attempts: 2
 - name: e31x_sg3_reduced_targets_matrix
@@ -82,6 +92,8 @@ parameters:
     E310_SG3:
       image_core: e310_rfnoc_image_core.yml
       target_name: E310_SG3
+      image_core_name: usrp_e310_sg3_fpga
+      artifact_name: E310_SG3
       timeout: 720
       max_attempts: 2
 

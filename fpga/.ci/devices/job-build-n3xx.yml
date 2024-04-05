@@ -48,21 +48,29 @@ parameters:
     N300_HG:
       image_core: n300_rfnoc_image_core.yml
       target_name: N300_HG
+      artifact_name: N300_HG
+      image_core_name: usrp_n300_fpga_HG
       timeout: 720
       max_attempts: 2
     N300_XG:
       image_core: n300_rfnoc_image_core.yml
       target_name: N300_XG
+      artifact_name: N300_XG
+      image_core_name: usrp_n300_fpga_XG
       timeout: 720
       max_attempts: 2
     N300_WX:
       image_core: n300_rfnoc_image_core.yml
       target_name: N300_WX
+      artifact_name: N300_WX
+      image_core_name: usrp_n300_fpga_WX
       timeout: 720
       max_attempts: 2
     N300_AA:
       image_core: n300_bist_rfnoc_image_core.yml
       target_name: N300_AA
+      artifact_name: N300_AA
+      image_core_name: usrp_n300_fpga_AA
       timeout: 720
       max_attempts: 2
 - name: n300_reduced_targets_matrix
@@ -71,6 +79,8 @@ parameters:
     N300_HG:
       image_core: n300_rfnoc_image_core.yml
       target_name: N300_HG
+      artifact_name: N300_HG
+      image_core_name: usrp_n300_fpga_HG
       timeout: 720
       max_attempts: 2
 # N310 FPGA targets to build (if build_n3xx is true)
@@ -80,21 +90,29 @@ parameters:
     N310_HG:
       image_core: n310_rfnoc_image_core.yml
       target_name: N310_HG
+      artifact_name: N310_HG
+      image_core_name: usrp_n310_fpga_HG
       timeout: 720
       max_attempts: 2
     N310_XG:
       image_core: n310_rfnoc_image_core.yml
       target_name: N310_XG
+      artifact_name: N310_XG
+      image_core_name: usrp_n310_fpga_XG
       timeout: 720
       max_attempts: 2
     N310_WX:
       image_core: n310_rfnoc_image_core.yml
       target_name: N310_WX
+      artifact_name: N310_WX
+      image_core_name: usrp_n310_fpga_WX
       timeout: 720
       max_attempts: 2
     N310_AA:
       image_core: n310_bist_rfnoc_image_core.yml
       target_name: N310_AA
+      artifact_name: N310_AA
+      image_core_name: usrp_n310_fpga_AA
       timeout: 720
       max_attempts: 2
 - name: n310_reduced_targets_matrix
@@ -103,6 +121,8 @@ parameters:
     N310_HG:
       image_core: n310_rfnoc_image_core.yml
       target_name: N310_HG
+      artifact_name: N310_HG
+      image_core_name: usrp_n310_fpga_HG
       timeout: 720
       max_attempts: 2
 # N320 FPGA targets to build (if build_n3xx is true)
@@ -112,31 +132,43 @@ parameters:
     N320_HG:
       image_core: n320_rfnoc_image_core.yml
       target_name: N320_HG
+      artifact_name: N320_HG
+      image_core_name: usrp_n320_fpga_HG
       timeout: 720
       max_attempts: 2
     N320_XG:
       image_core: n320_rfnoc_image_core.yml
       target_name: N320_XG
+      artifact_name: N320_XG
+      image_core_name: usrp_n320_fpga_XG
       timeout: 720
       max_attempts: 2
     N320_WX:
       image_core: n320_rfnoc_image_core.yml
       target_name: N320_WX
+      artifact_name: N320_WX
+      image_core_name: usrp_n320_fpga_WX
       timeout: 720
       max_attempts: 2
     N320_AA:
       image_core: n320_bist_rfnoc_image_core.yml
       target_name: N320_AA
+      artifact_name: N320_AA
+      image_core_name: usrp_n320_fpga_AA
       timeout: 720
       max_attempts: 2
     N320_AQ:
       image_core: n320_rfnoc_image_core.yml
       target_name: N320_AQ
+      artifact_name: N320_AQ
+      image_core_name: usrp_n320_fpga_AQ
       timeout: 720
       max_attempts: 2
     N320_XQ:
       image_core: n320_rfnoc_image_core.yml
       target_name: N320_XQ
+      artifact_name: N320_XQ
+      image_core_name: usrp_n320_fpga_XQ
       timeout: 720
       max_attempts: 2
 - name: n320_reduced_targets_matrix
@@ -145,6 +177,8 @@ parameters:
     N320_HG:
       image_core: n320_rfnoc_image_core.yml
       target_name: N320_HG
+      artifact_name: N320_HG
+      image_core_name: usrp_n320_fpga_HG
       timeout: 720
       max_attempts: 2
 

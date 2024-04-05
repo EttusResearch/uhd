@@ -102,7 +102,7 @@ def write_verilog(config, destination, args, template):
         image_core_file.write(block)
 
 
-def patch_netlist_constraints(device, artifact_dir):
+def patch_netlist_constraints(device, build_dir):
     """
     Updates the constraints for the secure_image_core netlist so that they will
     work when applied to the top-level design. The constraints output by Vivado
@@ -111,8 +111,7 @@ def patch_netlist_constraints(device, artifact_dir):
     actual top level.
 
     :param device: The device to build for (x310, x410, e320, etc).
-    :param artifact_dir: The build directory where all the build artifacts are
-                         stored.
+    :param build_dir: The build directory where all the build artifacts are stored.
     :return: None
     """
     if device not in SECURE_CORE_INST_PATH:
@@ -120,8 +119,8 @@ def patch_netlist_constraints(device, artifact_dir):
         return
     netlist_root = SECURE_CORE_INST_PATH[device]
     # Make a backup of "secure_image_core.xdc" in the artifact directory
-    secure_xdc = os.path.join(artifact_dir, "secure_image_core.xdc")
-    secure_xdc_bak = os.path.join(artifact_dir, "secure_image_core.xdc.bak")
+    secure_xdc = os.path.join(build_dir, "secure_image_core.xdc")
+    secure_xdc_bak = os.path.join(build_dir, "secure_image_core.xdc.bak")
     shutil.copy(secure_xdc, secure_xdc_bak)
     # Update all calls to "current_instance" to have the correct relative path.
     # Some examples:
@@ -153,13 +152,13 @@ def patch_netlist_constraints(device, artifact_dir):
         file.write(constraints)
 
 
-def gen_make_command(args, artifact_dir, device, use_secure_netlist):
+def gen_make_command(args, build_dir, device, use_secure_netlist):
     """
     Generates the 'make' command that will build the desired bitfiles, including
     all the necessary options.
     """
     target = args["target"] if "target" in args else ""
-    make_cmd = (
+    return (
         f"make {default_target(device, target)} "
         + (
             f"SECURE_CORE=1 SECURE_KEY={args.get('secure_key_file')} "
@@ -167,16 +166,15 @@ def gen_make_command(args, artifact_dir, device, use_secure_netlist):
             else ""
         )
         + (
-            f"SECURE_NETLIST=1 " if use_secure_netlist else ""
+            "SECURE_NETLIST=1 " if use_secure_netlist else ""
         ) +
-        f"ARTIFACT_DIR={artifact_dir} "
+        f"BUILD_DIR={build_dir} "
         f"IMAGE_CORE_NAME={args['image_core_name']} "
         f"{'GUI=1' if 'GUI' in args and args['GUI'] else ''} "
     )
-    return make_cmd
 
 
-def build(fpga_path, device, artifact_dir, use_secure_netlist, **args):
+def build(fpga_top_dir, device, build_dir, use_secure_netlist, **args):
     """
     Call FPGA toolchain to actually build the image
 
@@ -187,8 +185,7 @@ def build(fpga_path, device, artifact_dir, use_secure_netlist, **args):
     :param build_make_cmd: The make command to actually build the bitfile. Targets
                            like 'cleanall' and so on are all appended by this
                            function.
-    :param artifact_dir: The build directory where all the build artifacts are
-                         stored.
+    :param build_dir: The build directory where all the build artifacts are stored.
                          (e.g., .../usrp3/x400/build-x410_XG_200_rfnoc_image_core/)
     :param use_secure_netlist: Boolean for whether the build with secure image
                                core netlist
@@ -199,7 +196,6 @@ def build(fpga_path, device, artifact_dir, use_secure_netlist, **args):
                    save_project: passed to Makefile
                    ip_only: passed to Makefile
                    num_jobs: Number of make jobs to use
-                   build_base_dir: Custom base directory for FPGA builds
                    build_output_dir: Custom bitstream output directory
                    source: The source of the build (YAML or GRC file path)
                    include_paths: List of paths to OOT modules
@@ -208,11 +204,9 @@ def build(fpga_path, device, artifact_dir, use_secure_netlist, **args):
     :return: exit value of build process
     """
     ret_val = 0
-    artifact_dir = os.path.abspath(artifact_dir)
+    build_dir = os.path.abspath(build_dir)
     cwd = os.getcwd()
-    fpga_dir = os.path.join(yaml_utils.get_top_path(os.path.abspath(fpga_path)), target_dir(device))
-    build_base_dir = fpga_dir
-    build_output_dir = os.path.join(build_base_dir, "build")
+    build_output_dir = args.get("build_output_dir", os.path.join(fpga_top_dir, "build"))
     if not os.path.isdir(fpga_top_dir):
         logging.error("Not a valid directory: %s", fpga_top_dir)
         return 1
@@ -230,7 +224,7 @@ def build(fpga_path, device, artifact_dir, use_secure_netlist, **args):
     make_cmd = ""
     if "clean_all" in args and args["clean_all"]:
         make_cmd += "make cleanall && "
-    make_cmd += gen_make_command(args, artifact_dir, device, use_secure_netlist)
+    make_cmd += gen_make_command(args, build_dir, device, use_secure_netlist)
     if makefile_src_paths:
         make_cmd += " RFNOC_OOT_MAKEFILE_SRCS=" + "\\ ".join(makefile_src_paths)
     if "num_jobs" in args and args["num_jobs"]:
@@ -241,12 +235,8 @@ def build(fpga_path, device, artifact_dir, use_secure_netlist, **args):
         make_cmd = make_cmd + " PROJECT=1"
     if "ip_only" in args and args["ip_only"]:
         make_cmd = make_cmd + " IP_ONLY=1"
-    if "build_base_dir" in args and args["build_base_dir"]:
-        make_cmd = make_cmd + " BUILD_BASE_DIR=" + args["build_base_dir"]
-        build_base_dir = args["build_base_dir"]
     if "build_output_dir" in args and args["build_output_dir"]:
         make_cmd = make_cmd + " BUILD_OUTPUT_DIR=" + args["build_output_dir"]
-        build_output_dir = args["build_output_dir"]
 
     if args.get('generate_only'):
         logging.info("Skip build (generate only option given)")
@@ -256,15 +246,14 @@ def build(fpga_path, device, artifact_dir, use_secure_netlist, **args):
     make_cmd = setup_cmd + " && " + make_cmd
     logging.info("Launching build with the following settings:")
     logging.info(" * FPGA Directory: %s", fpga_top_dir)
-    logging.info(" * Build Base Directory: %s", build_base_dir)
-    logging.info(" * Artifact directory: %s", artifact_dir)
+    logging.info(" * Build Artifacts Directory: %s", build_dir)
     logging.info(" * Build Output Directory: %s", build_output_dir)
     # Wrap it into a bash call:
     make_cmd = f'{BASH_EXECUTABLE} -c "{make_cmd}"'
     logging.debug("Executing the following command: %s", make_cmd)
     ret_val = os.system(make_cmd)
     if ret_val == 0 and args.get('secure_core'):
-        patch_netlist_constraints(device, artifact_dir)
+        patch_netlist_constraints(device, build_dir)
     os.chdir(cwd)
     return ret_val
 
@@ -288,24 +277,6 @@ def default_target(device, target):
     if target is None:
         return DEVICE_DEFAULTTARGET_MAP.get(device.lower())
     return target
-
-def generate_output_path(
-        output_path,
-        name,
-        source,
-        file_ext=None,
-        fname_format=None):
-    """
-    Creates the path where an output image core file gets to be stored.
-
-    output_path: If not None, this is returned
-    name: Device name string, used to generate default file name
-    source: Otherwise, this path is returned, combined with a default file name
-    """
-    if output_path is not None:
-        return os.path.splitext(output_path)[0] + file_ext
-    source = os.path.split(os.path.abspath(os.path.normpath(source)))[0]
-    return os.path.join(source, fname_format.format(name))
 
 
 def load_module_yamls(config_path, include_paths):
@@ -345,43 +316,43 @@ def build_image(config, repo_fpga_path, config_path, device, **args):
     :param device: The device to build for.
     :param **args: Additional options including
                    target: The target to build (leave empty for default).
-                   generate_only: Do not build the code after generation.
+                   generate_only: Do not build the bitfile after generating the code.
                    clean_all: passed to Makefile
                    GUI: passed to Makefile
                    save_project: passed to Makefile
                    ip_only: passed to Makefile
-                   build_base_dir: passed to Makefile
                    build_output_dir: passed to Makefile
                    include_paths: Paths to additional blocks
+                   image_core_name: The name of the image core to be generated
+                                    (e.g., usrp_x410_fpga_CG_400)
     :return: Exit result of build process or 0 if generate-only is given.
     """
     assert 'source' in args
     logging.info("Selected device %s", device)
     image_core_name = args.get('image_core_name')
-    if not image_core_name:
-        image_core_name = os.path.splitext(os.path.basename(args['source']))[0]
-        args['image_core_name'] = image_core_name
+    assert image_core_name
     logging.debug("Image core name: %s", image_core_name)
-    if 'image_core_output' in args:
-        artifact_dir = args['image_core_output']
+    if 'build_dir' in args and args['build_dir']:
+        build_dir = args['build_dir']
     else:
-        build_subdir = "build-" + image_core_name
-        artifact_dir = os.path.join(
+        build_dir = os.path.join(
             os.path.normpath(os.path.split(args.get('source'))[0]),
-            build_subdir)
-    logging.debug("Using artifact directory: %s", artifact_dir)
-    if pathlib.Path(artifact_dir).is_file():
-        logging.error("Artifact directory is pointing to a file: %s", artifact_dir)
-    elif pathlib.Path(artifact_dir).is_dir():
-        logging.debug("Artifact directory already exists.")
+            "build-" + image_core_name)
+    args.pop('build_dir', None)
+    logging.debug("Using build artifacts directory: %s", build_dir)
+    if pathlib.Path(build_dir).is_file():
+        logging.error("Build artifacts directory is pointing to a file: %s", build_dir)
+        return 1
+    elif pathlib.Path(build_dir).is_dir():
+        logging.info("Build artifacts directory already exists (contents will be overwritten).")
     else:
-        logging.debug("Creating artifact directory...")
-        pathlib.Path(artifact_dir).mkdir(parents=True, exist_ok=True)
-    image_core_path = os.path.join(artifact_dir, "rfnoc_image_core.sv")
-    image_core_header_path = os.path.join(artifact_dir, "rfnoc_image_core.vh")
-    secure_core_path = os.path.join(artifact_dir, "secure_image_core.sv")
-    dts_path = os.path.join(artifact_dir, "device_tree.dts")
-    makefile_srcs_path = os.path.join(artifact_dir, "Makefile.inc")
+        logging.debug("Creating build artifacts directory...")
+        pathlib.Path(build_dir).mkdir(parents=True, exist_ok=True)
+    image_core_path = os.path.join(build_dir, "rfnoc_image_core.sv")
+    image_core_header_path = os.path.join(build_dir, "rfnoc_image_core.vh")
+    secure_core_path = os.path.join(build_dir, "secure_image_core.sv")
+    dts_path = os.path.join(build_dir, "device_tree.dts")
+    makefile_srcs_path = os.path.join(build_dir, "Makefile.inc")
     fpga_top_dir = os.path.join(
             yaml_utils.get_top_path(os.path.abspath(repo_fpga_path)),
             target_dir(device))
@@ -446,14 +417,14 @@ def build_image(config, repo_fpga_path, config_path, device, **args):
             try:
                 # Assume netlist file path is relative to YAML file
                 source = os.path.join(netlist_dir, file)
-                destination = os.path.join(artifact_dir, os.path.basename(file))
+                destination = os.path.join(build_dir, os.path.basename(file))
                 logging.info(f"Copying {file} to {destination}")
                 shutil.copy(source, destination)
             except:
                 logging.error(f"Failed to copy {source} to artifact directory")
                 return 1
 
-    ret_val = build(fpga_top_dir, device, artifact_dir, bool(netlist_files), **args)
+    ret_val = build(fpga_top_dir, device, build_dir, bool(netlist_files), **args)
     if args.get('generate_only'):
         return ret_val
 
@@ -461,7 +432,7 @@ def build_image(config, repo_fpga_path, config_path, device, **args):
         # We built the secure image core netlist. Copy the resulting netlist
         # and constraint files.
         secure_core_yml_dir = os.path.dirname(args.get('secure_core'))
-        file_list = [os.path.join(artifact_dir, x) for x in new_netlist_files]
+        file_list = [os.path.join(build_dir, x) for x in new_netlist_files]
         for file in file_list:
             try:
                 logging.info(f"Copying {file} to {secure_core_yml_dir}")

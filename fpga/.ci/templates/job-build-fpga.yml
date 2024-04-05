@@ -105,7 +105,7 @@ jobs:
 
     # Publish the final result only if all previous steps passed
     - publish: ${{ parameters.top_dir }}/build
-      artifact: '$(target_name)'
+      artifact: '$(artifact_name)'
       displayName: 'Publish FPGA'
 
     # Publish intermediate files.

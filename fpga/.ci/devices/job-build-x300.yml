@@ -46,21 +46,24 @@ parameters:
   type: object
   default:
     X300_HG:
-      image_core: x300_rfnoc_image_core.yml
-      target_name: X300_HG
+      image_core: x300_HG_rfnoc_image_core.yml
+      image_core_name: usrp_x300_fpga_HG
+      artifact_name: X300_HG
       timeout: 720
       max_attempts: 2
     X300_XG:
-      image_core: x300_rfnoc_image_core.yml
-      target_name: X300_XG
+      image_core: x300_XG_rfnoc_image_core.yml
+      image_core_name: usrp_x300_fpga_XG
+      artifact_name: X300_XG
       timeout: 720
       max_attempts: 2
 - name: x300_reduced_targets_matrix
   type: object
   default:
     X300_XG:
-      image_core: x300_rfnoc_image_core.yml
-      target_name: X300_XG
+      image_core: x300_XG_rfnoc_image_core.yml
+      image_core_name: usrp_x300_fpga_XG
+      artifact_name: X300_XG
       timeout: 720
       max_attempts: 2
 # X310 FPGA targets to build (if build_x310 is true)
@@ -68,13 +71,15 @@ parameters:
   type: object
   default:
     X310_HG:
-      image_core: x310_rfnoc_image_core.yml
-      target_name: X310_HG
+      image_core: x310_HG_rfnoc_image_core.yml
+      image_core_name: usrp_x310_fpga_HG
+      artifact_name: X310_HG
       timeout: 720
       max_attempts: 2
     X310_XG:
-      image_core: x310_rfnoc_image_core.yml
-      target_name: X310_XG
+      image_core: x310_XG_rfnoc_image_core.yml
+      image_core_name: usrp_x310_fpga_XG
+      artifact_name: X310_XG
       timeout: 720
       max_attempts: 2
 - name: x310_reduced_targets_matrix

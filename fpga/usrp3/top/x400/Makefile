@@ -9,13 +9,20 @@
 ##USRP X4xx FPGA Help
 ##-------------------
 ##Usage:
+##  rfnoc_image_builder -y <image core file>
+##
+## NOTE: For building X4x0 bitfiles, do not run make directly! Instead, use
+## rfnoc_image_builder. It will create all intermediate files, set up a Vivado
+## environment, and run Vivado to build a bitfile.
+##
+## There exist some special make targets which can be called directly like this:
+##
 ##  make <Targets> <Options>
 ##
 ##Output:
 ##  $(BUILD_OUTPUT_DIR)/usrp_<product>_fpga_<image_type>.bit:  Configuration bitstream with header
 ##  $(BUILD_OUTPUT_DIR)/usrp_<product>_fpga_<image_type>.dts:  Device tree source file
 ##  $(BUILD_OUTPUT_DIR)/usrp_<product>_fpga_<image_type>.rpt:  Build report (includes utilization and timing summary)
-
 
 # Base output directory for all builds.
 BUILD_BASE_DIR ?= .
@@ -30,7 +37,6 @@ X440_IP: DEFS += QSFP0_0=2 RF_BW=400
 # exclude it. Note that some targets exclude it regardless of this setting.
 DRAM ?= 1
 
-IMAGE_CORE_NAME ?= usrp_fpga
 DEFS += $(OPTIONS)
 
 # Initialize a build seed. This can be changed to randomly affect build results.
@@ -57,10 +63,6 @@ ifndef TARGET
 endif
 TOP ?= x4xx
 
-ifdef ARTIFACT_DIR
-	BUILD_DIR = $(ARTIFACT_DIR)
-endif
-
 # vivado_build($1=Device (X410 or X440), $2=Definitions)
 vivado_build = make -f Makefile.x4xx.inc $(TARGET) NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) EXTRA_DEFS="$2" TOP_MODULE=$(TOP) $2 INCR_BUILD=$(INCR_BUILD)
 vivado_ip    = make -f Makefile.x4xx.inc viv_ip    NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) EXTRA_DEFS="$2" TOP_MODULE=$(TOP) $2
@@ -70,99 +72,93 @@ ifeq ($(TARGET),bin)
 	post_build = @\
 		mkdir -p $(BUILD_OUTPUT_DIR); \
 		echo "Exporting bitstream file..."; \
-		cp $(ARTIFACT_DIR)/x4xx.bit $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).bit; \
+		cp $(BUILD_DIR)/x4xx.bit $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).bit; \
 		echo "Exporting build report..."; \
-		cp $(ARTIFACT_DIR)/build.rpt $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).rpt; \
+		cp $(BUILD_DIR)/build.rpt $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).rpt; \
 		echo "Build DONE ... $(IMAGE_CORE_NAME)";
 else
 	post_build = @echo "Skipping bitfile export."
 endif
 
 ##
-##Available Targets
+##Available Targets:
+##
+##Reminder: Targets are built by calling
+##
+##   $ rfnoc_image_builder -y <image core file.yml>
+##
+##The following default image core files are provided:
+##
+##-----------------------------------|-----------|----|-----------------|-----------------|------------
+##Image core name                    | Bandwidth | Ch | QSFP0           | QSFP1           | DRAM
+##-----------------------------------|-----------|----|-----------------|-----------------|------------
+##x410_CG_400_rfnoc_image_core.yml   | 400 MHz   | 4  | 100 GbE         | 100 GbE         | Unused
+##x410_UC_200_rfnoc_image_core.yml   | 200 MHz   | 4  | Unused          | 100 GbE         | 64b x 4 Ch
+##x410_X4_200_rfnoc_image_core.yml   | 200 MHz   | 4  | 4 x 10 GbE      | Unused          | 64b x 4 Ch
+##x410_XG_200_rfnoc_image_core.yml   | 200 MHz   | 4  | 10 GbE (Lane 0) | 10 GbE (Lane 0) | 64b x 4 Ch
+##x440_CG_400_rfnoc_image_core.yml   | 400 MHz   | 8  | 100 GbE         | 100 GbE         | Unused
+##x440_CG_1600_rfnoc_image_core.yml  | 1.6 GHz   | 2  | 100 GbE         | 100 GbE         | Unused
+##x440_X4_200_rfnoc_image_core.yml   | 200 MHz   | 8  | 4 x 10 GbE      | Unused          | Unused
+##x440_X4_400_rfnoc_image_core.yml   | 400 MHz   | 8  | 4 x 10 GbE      | Unused          | 128b x 8 Ch
+##x440_X4_1600_rfnoc_image_core.yml  | 1.6 GHz   | 2  | 4 x 10 GbE      | Unused          | 512b x 2 Ch
+##
+##Of course, a custom YAML file may be used.
+##
+check-variables:
+ifndef IMAGE_CORE_NAME
+	$(error IMAGE_CORE_NAME is not set! Use rfnoc_image_builder to create valid make commands)
+endif
+ifndef BUILD_DIR
+	$(error BUILD_DIR is not set! Use rfnoc_image_builder to create valid make commands)
+endif
 
-
-##-------------|-----------|----|-----------------|-----------------|------------
-##Target       | Bandwidth | Ch | QSFP0           | QSFP1           | DRAM
-##-------------|-----------|----|-----------------|-----------------|------------
-##X410_X1_100  | 100 MHz   | 4  | 10 GbE (Lane 0) | Unused          | 64b x 4 Ch
-##X410_XG_100  | 100 MHz   | 4  | 10 GbE (Lane 0) | 10 GbE (Lane 0) | 64b x 4 Ch
-##X410_X4_100  | 100 MHz   | 4  | 4 x 10 GbE      | Unused          | 64b x 4 Ch
-##X410_X4C_100 | 100 MHz   | 4  | 4 x 10 GbE      | 100 GbE         | Unused
-##X410_C1_100  | 100 MHz   | 4  | 100 GbE         | Unused          | 64b x 4 Ch
-##X410_UC_100  | 100 MHz   | 4  | Unused          | 100 GbE         | 64b x 4 Ch
-##X410_X1_200  | 200 MHz   | 4  | 10 GbE (Lane 0) | Unused          | 64b x 4 Ch
-##X410_XG_200  | 200 MHz   | 4  | 10 GbE (Lane 0) | 10 GbE (Lane 0) | 64b x 4 Ch
-##X410_X4_200  | 200 MHz   | 4  | 4 x 10 GbE      | Unused          | 64b x 4 Ch
-##X410_X4C_200 | 200 MHz   | 4  | 4 x 10 GbE      | 100 GbE         | Unused
-##X410_C1_200  | 200 MHz   | 4  | 100 GbE         | Unused          | 64b x 4 Ch
-##X410_UC_200  | 200 MHz   | 4  | Unused          | 100 GbE         | 64b x 4 Ch
-##X410_X1_400  | 400 MHz   | 4  | 10 GbE (Lane 0) | Unused          | 128b x 4 Ch
-##X410_XG_400  | 400 MHz   | 4  | 10 GbE (Lane 0) | 10 GbE (Lane 0) | 128b x 4 ch
-##X410_X4_400  | 400 MHz   | 4  | 4 x 10 GbE      | Unused          | 128b x 4 Ch
-##X410_C1_400  | 400 MHz   | 4  | 100 GbE         | Unused          | Unused
-##X410_UC_400  | 400 MHz   | 4  | Unused          | 100 GbE         | Unused
-##X410_CG_400  | 400 MHz   | 4  | 100 GbE         | 100 GbE         | Unused
-##X440_X1_400  | 400 MHz   | 8  | 10 GbE (Lane 0) | Unused          | 128b x 8 Ch
-##X440_X4_400  | 400 MHz   | 8  | 4 x 10 GbE      | Unused          | 128b x 8 Ch
-##X440_C1_400  | 400 MHz   | 8  | 100 GbE         | Unused          | Unused
-##X440_CG_400  | 400 MHz   | 8  | 100 GbE         | 100 GbE         | Unused
-##X440_X1_1600 | 1.6 GHz   | 2  | 10 GbE (Lane 0) | Unused          | 512b x 2 Ch
-##X440_X4_1600 | 1.6 GHz   | 2  | 4 x 10 GbE      | Unused          | 512b x 2 Ch
-##X440_C1_1600 | 1.6 GHz   | 2  | 100 GbE         | Unused          | Unused
-##X440_CG_1600 | 1.6 GHz   | 2  | 100 GbE         | 100 GbE         | Unused
-##* Note: Not all targets are shipped with UHD
-##* Note: Some YAML configurations might not use all available DRAM channels.
-
-X410: X410_IP build/$(IMAGE_CORE_NAME).dts
+X410: check-variables X410_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
 	$(call vivado_build,X410,$(DEFS) X410=1)
 	$(call post_build,X410)
-X440: X440_IP build/$(IMAGE_CORE_NAME).dts
+X440: check-variables X440_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
 	$(call vivado_build,X440,$(DEFS) X440=1)
 	$(call post_build,X440)
 
 
 ##
-##Other Make Targets
-##------------------
+##Other Make Targets (these should be called directly)
+##----------------------------------------------------
 
 .DEFAULT_GOAL := all
 
-all:          X410_IP
-
-X410_IP:      ##Build X410 IP only.
+X410_IP:      ##Build X410 IP only. Use the -j option to build multiple IP blocks simultaneously.
 	+$(call vivado_ip,X410,$(DEFS) X410=1)
 
-X440_IP:      ##Build X440 IP only.
+X440_IP:      ##Build X440 IP only. Use the -j option to build multiple IP blocks simultaneously.
 	+$(call vivado_ip,X440,$(DEFS) X440=1)
 
-$(BUILD_OUTPUT_DIR)/usrp_x410%.dts: dts/*.dts dts/*.dtsi
+$(BUILD_OUTPUT_DIR)/usrp_x410%.dts: dts/*.dts dts/*.dtsi $(BUILD_DIR)/device_tree.dts
 	-mkdir -p $(BUILD_OUTPUT_DIR)
 	tools/parse_versions_for_dts.py \
 		--input regmap/x410/versioning_regs_regmap_utils.vh \
 		--output dts/x410-version-info.dtsi \
 		--components fpga,cpld_ifc,db_gpio_ifc,rf_core_100m,rf_core_400m
 	${CC} -o $@ -C -E -I dts -nostdinc -undef -x assembler-with-cpp -D__DTS__ \
-		$(ARTIFACT_DIR)/device_tree.dts
+		$(BUILD_DIR)/device_tree.dts
 
-$(BUILD_OUTPUT_DIR)/usrp_x440%.dts: dts/*.dts dts/*.dtsi
+$(BUILD_OUTPUT_DIR)/usrp_x440%.dts: dts/*.dts dts/*.dtsi $(BUILD_DIR)/device_tree.dts
 	-mkdir -p $(BUILD_OUTPUT_DIR)
 	tools/parse_versions_for_dts.py \
 		--input regmap/x440/versioning_regs_regmap_utils.vh \
 		--output dts/x440-version-info.dtsi \
 		--components fpga,cpld_ifc,db_gpio_ifc,rf_core_full
 	${CC} -o $@ -C -E -I dts -nostdinc -undef -x assembler-with-cpp -D__DTS__ \
-		$(ARTIFACT_DIR)/device_tree.dts
+		$(BUILD_DIR)/device_tree.dts
 
 clean:        ##Clean up all target build outputs.
 	@echo "Cleaning targets..."
-	@rm -rf $(BUILD_BASE_DIR)/build-X* $(BUILD_BASE_DIR)/build-x*
+	@rm -rf $(BUILD_BASE_DIR)/build-X* $(BUILD_BASE_DIR)/build-x* $(BUILD_DIR)
 	@rm -rf $(BUILD_OUTPUT_DIR)
 
 cleanall:     ##Clean up all target and IP build outputs.
 	@echo "Cleaning targets and IP..."
 	@rm -rf build-ip
-	@rm -rf $(BUILD_BASE_DIR)/build-*
+	@rm -rf $(BUILD_BASE_DIR)/build-* $(BUILD_DIR)
 	@rm -rf $(BUILD_OUTPUT_DIR)
 
 help:         ##Show this help message.

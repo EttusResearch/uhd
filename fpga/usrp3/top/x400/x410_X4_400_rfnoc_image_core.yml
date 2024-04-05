@@ -6,12 +6,20 @@ copyright: >-                           # Copyright information used in file hea
 license: >-                             # License information used in file headers
   SPDX-License-Identifier: LGPL-3.0-or-later
 version: '1.0'                          # File version
-chdr_width: 64                          # Bit width of the CHDR bus for this block
-device: 'n310'
-default_target: 'N310_AA'
-image_core_name: 'usrp_n310_fpga_AA'    # Name to use for the generated output files.
-                                        # Change image_core_name and default_target in tandem,
-                                        # because we won't generate the correct DTS files otherwise.
+chdr_width: 128                         # Bit width of the CHDR bus for this image
+device: 'x410'                          # USRP type
+image_core_name: 'usrp_x410_fpga_X4_400'# Name to use for the RFNoC Image Core files
+default_target: 'X410'                  # Default make target
+inherit:
+  - 'yaml_include/x410_radio_base.yml'
+  - 'yaml_include/x4xx_x4_base.yml'
+
+parameters:
+  RF_BW: 400
+  ENABLE_DRAM: True
+  NUM_DRAM_BANKS: 1
+  NUM_DRAM_CHANS: 4
+  DRAM_WIDTH: 128
 
 # A list of all stream endpoints in design
 # ----------------------------------------
@@ -19,50 +27,59 @@ stream_endpoints:
   ep0:                                  # Stream endpoint name
     ctrl: True                          # Endpoint passes control traffic
     data: True                          # Endpoint passes data traffic
-    buff_size: 16384                    # Ingress buffer size for data
+    buff_size_bytes: 32768              # Stream endpoint buffer size
   ep1:
     ctrl: False
     data: True
-    buff_size: 16384
+    buff_size_bytes: 32768
   ep2:
     ctrl: False
     data: True
-    buff_size: 16384
+    buff_size_bytes: 32768
   ep3:
     ctrl: False
     data: True
-    buff_size: 16384
+    buff_size_bytes: 32768
   ep4:
     ctrl: False
     data: True
-    buff_size: 16384
+    buff_size_bytes: 32768
   ep5:
     ctrl: False
     data: True
-    buff_size: 16384
+    buff_size_bytes: 32768
+  ep6:
+    ctrl: False
+    data: True
+    buff_size_bytes: 32768
+  ep7:
+    ctrl: False
+    data: True
+    buff_size_bytes: 32768
 
 # A list of all NoC blocks in design
 # ----------------------------------
 noc_blocks:
-  radio0:                               # NoC block name
-    block_desc: 'radio.yml'             # Block device descriptor file
+  radio0:
+    block_desc: 'radio.yml'
     parameters:
       NUM_PORTS: 2
   radio1:
     block_desc: 'radio.yml'
     parameters:
       NUM_PORTS: 2
-  fifo0:
-    block_desc: 'axi_ram_fifo.yml'
+  replay0:
+    block_desc: 'replay.yml'
     parameters:
-      # These parameters match the memory interface on the N3XX
-      NUM_PORTS: 4
-      MEM_DATA_W: 64
-      MEM_ADDR_W: 31
-      # Create two non-overlapping 32 MB buffers by default
-      FIFO_ADDR_BASE: "{31'h06000000, 31'h04000000, 31'h02000000, 31'h00000000}"
-      FIFO_ADDR_MASK: "{31'h01FFFFFF, 31'h01FFFFFF, 31'h01FFFFFF, 31'h01FFFFFF}"
-      MEM_CLK_RATE: "303819444" # 166.666666 MHz * 21.875 / 4 / 3 = 303.819444 MHz
+      NUM_PORTS: 2
+      MEM_DATA_W: 128
+      MEM_ADDR_W: 32
+  replay1:
+    block_desc: 'replay.yml'
+    parameters:
+      NUM_PORTS: 2
+      MEM_DATA_W: 128
+      MEM_ADDR_W: 32
 
 # A list of all static connections in design
 # ------------------------------------------
@@ -72,29 +89,33 @@ noc_blocks:
 #   - dstblk  = Destination block to connect
 #   - dstport = Port on the destination block to connect
 connections:
-  # RF 0 TX
+  # RF A:0 TX
   - { srcblk: ep0,    srcport: out0,  dstblk: radio0, dstport: in_0 }
-  # RF 0 RX
+  # RF A:0 RX
   - { srcblk: radio0, srcport: out_0, dstblk: ep0,    dstport: in0  }
-  # RF 1 TX
+  # RF A:1 TX
   - { srcblk: ep1,    srcport: out0,  dstblk: radio0, dstport: in_1 }
-  # RF 1 RX
+  # RF A:1 RX
   - { srcblk: radio0, srcport: out_1, dstblk: ep1,    dstport: in0  }
   #
-  # RF 2 TX
+  # RF B:0 TX
   - { srcblk: ep2,    srcport: out0,  dstblk: radio1, dstport: in_0 }
-  # RF 2 RX
+  # RF B:0 RX
   - { srcblk: radio1, srcport: out_0, dstblk: ep2,    dstport: in0  }
-  # RF 3 TX
+  # RF B:1 TX
   - { srcblk: ep3,    srcport: out0,  dstblk: radio1, dstport: in_1 }
-  # RF 3 RX
+  # RF B:1 RX
   - { srcblk: radio1, srcport: out_1, dstblk: ep3,    dstport: in0  }
   #
-  # DRAM FIFO Connections
-  - { srcblk: ep4,   srcport: out0,  dstblk: fifo0, dstport: in_0 }
-  - { srcblk: fifo0, srcport: out_0, dstblk: ep4,   dstport: in0  }
-  - { srcblk: ep5,   srcport: out0,  dstblk: fifo0, dstport: in_1 }
-  - { srcblk: fifo0, srcport: out_1, dstblk: ep5,   dstport: in0  }
+  # Replay Connections
+  - { srcblk: ep4,      srcport: out0,     dstblk: replay0,  dstport: in_0            }
+  - { srcblk: replay0,  srcport: out_0,    dstblk: ep4,      dstport: in0             }
+  - { srcblk: ep5,      srcport: out0,     dstblk: replay0,  dstport: in_1            }
+  - { srcblk: replay0,  srcport: out_1,    dstblk: ep5,      dstport: in0             }
+  - { srcblk: ep6,      srcport: out0,     dstblk: replay1,  dstport: in_0            }
+  - { srcblk: replay1,  srcport: out_0,    dstblk: ep6,      dstport: in0             }
+  - { srcblk: ep7,      srcport: out0,     dstblk: replay1,  dstport: in_1            }
+  - { srcblk: replay1,  srcport: out_1,    dstblk: ep7,      dstport: in0             }
   #
   # BSP Connections
   - { srcblk: radio0,   srcport: ctrlport, dstblk: _device_, dstport: ctrlport_radio0 }
@@ -103,16 +124,18 @@ connections:
   - { srcblk: _device_, srcport: radio1,   dstblk: radio1,   dstport: radio           }
   - { srcblk: _device_, srcport: time,     dstblk: radio0,   dstport: time            }
   - { srcblk: _device_, srcport: time,     dstblk: radio1,   dstport: time            }
-  - { srcblk: fifo0,    srcport: axi_ram,  dstblk: _device_, dstport: dram            }
+  - { srcblk: replay0,  srcport: axi_ram,  dstblk: _device_, dstport: dram0           }
+  - { srcblk: replay1,  srcport: axi_ram,  dstblk: _device_, dstport: dram1           }
 
 # A list of all clock domain connections in design
 # ------------------------------------------------
 # Format: A list of connection maps (list of key-value pairs) with the following keys
-#   - srcblk  = Source block to connect (Always "_device"_)
+#   - srcblk  = Source block to connect (Always "_device_")
 #   - srcport = Clock domain on the source block to connect
 #   - dstblk  = Destination block to connect
 #   - dstport = Clock domain on the destination block to connect
 clk_domains:
-  - { srcblk: _device_, srcport: radio, dstblk: radio0, dstport: radio }
-  - { srcblk: _device_, srcport: radio, dstblk: radio1, dstport: radio }
-  - { srcblk: _device_, srcport: dram,  dstblk: fifo0,  dstport: mem   }
+  - { srcblk: _device_, srcport: radio, dstblk: radio0,  dstport: radio }
+  - { srcblk: _device_, srcport: radio, dstblk: radio1,  dstport: radio }
+  - { srcblk: _device_, srcport: dram,  dstblk: replay0, dstport: mem   }
+  - { srcblk: _device_, srcport: dram,  dstblk: replay1, dstport: mem   }

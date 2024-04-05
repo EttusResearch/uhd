@@ -46,9 +46,9 @@ include $(LIB_DIR)/rfnoc/xport_sv/Makefile.srcs
 # Those files need to amend the RFNOC_OOT_SRCS variable with a list of actual
 # source files.
 -include $(RFNOC_OOT_MAKEFILE_SRCS)
-
-ifdef ARTIFACT_DIR
-include $(ARTIFACT_DIR)/Makefile.inc
+# Now include everything that falls out of the image builder
+ifdef BUILD_DIR
+include $(BUILD_DIR)/Makefile.inc
 endif
 
 ##################################################
@@ -162,7 +162,7 @@ $(RFNOC_IMAGE_CORE_SRCS) \
 
 # Pass the image core header files required by RFNoC
 # to Vivado as Verilog definitions.
-IMAGE_CORE_HEADER_DEF="RFNOC_IMAGE_CORE_HDR=$(ARTIFACT_DIR)/rfnoc_image_core.vh"
+IMAGE_CORE_HEADER_DEF="RFNOC_IMAGE_CORE_HDR=$(BUILD_DIR)/rfnoc_image_core.vh"
 
 ##################################################
 # Dependency Targets
@@ -175,7 +175,7 @@ VERILOG_DEFS=$(EXTRA_DEFS) $(CUSTOM_DEFS) $(GIT_HASH_VERILOG_DEF) $(IMAGE_CORE_H
 bin: .prereqs
 	@echo "Build directory:: $(BUILD_DIR)"
 	@echo "Printing MB_XDC:: $(MB_XDC)"
-	@echo "Printing EXTRA_DEFS:: $(EXTRA_DEFS) $(RFNOC_IMAGE_CORE_DEFS)"
+	@echo "Printing VERILOG_DEFS:: $(VERILOG_DEFS)"
 	$(call BUILD_VIVADO_DESIGN,$(abspath ./build_x4xx.tcl),$(TOP_MODULE),$(ARCH),$(PART_ID))
 
 synth: .prereqs

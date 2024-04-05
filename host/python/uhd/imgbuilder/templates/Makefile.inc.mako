@@ -19,16 +19,16 @@ ${constraint} ${"\\"}
 % if hasattr(config, 'secure_image_core'):
 ifdef SECURE_NETLIST
 RFNOC_IMAGE_CORE_SRCS = $(abspath ${"\\"}
-$(ARTIFACT_DIR)/secure_image_core.vp ${"\\"}
-$(ARTIFACT_DIR)/secure_image_core.xdc ${"\\"}
+$(BUILD_DIR)/secure_image_core.vp ${"\\"}
+$(BUILD_DIR)/secure_image_core.xdc ${"\\"}
 )
 else
-RFNOC_IMAGE_CORE_SRCS = $(abspath $(ARTIFACT_DIR)/secure_image_core.sv)
+RFNOC_IMAGE_CORE_SRCS = $(abspath $(BUILD_DIR)/secure_image_core.sv)
 endif
 
 % endif
 RFNOC_IMAGE_CORE_SRCS += $(abspath ${"\\"}
-$(ARTIFACT_DIR)/rfnoc_image_core.sv ${"\\"}
+$(BUILD_DIR)/rfnoc_image_core.sv ${"\\"}
 $(RFNOC_CORE_HEADERS) ${"\\"}
 % for fpga_include in list(dict.fromkeys([inc['make_var'] for inc in config.fpga_includes if 'make_var' in inc])):
 ${fpga_include} ${"\\"}

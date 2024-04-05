@@ -47,3 +47,7 @@ io_ports:
   axi_ram:
     type: axi4_mm
     drive: master
+
+fpga_includes:
+  - include: "$(LIB_DIR)/rfnoc/blocks/rfnoc_block_axi_ram_fifo/Makefile.srcs"
+    make_var: "$(RFNOC_BLOCK_AXI_RAM_FIFO_SRCS)"
