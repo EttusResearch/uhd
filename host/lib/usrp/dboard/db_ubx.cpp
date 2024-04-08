@@ -144,7 +144,7 @@ static const std::vector<std::string> ubx_plls{"TXLO", "RXLO"};
 static const std::vector<std::string> ubx_tx_antennas{"TX/RX", "CAL"};
 static const std::vector<std::string> ubx_rx_antennas{"TX/RX", "RX2", "CAL"};
 static const std::vector<std::string> ubx_power_modes{"performance", "powersave"};
-static const std::vector<std::string> ubx_xcvr_modes{"FDX", "TX", "TX/RX", "RX"};
+static const std::vector<std::string> ubx_xcvr_modes{"FDX", "TDD", "TX", "RX"};
 static const std::vector<std::string> ubx_temp_comp_modes{"enabled", "disabled"};
 
 // clang-format off
