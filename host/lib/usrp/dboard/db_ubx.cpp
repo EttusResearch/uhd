@@ -1110,7 +1110,7 @@ private:
             // Set LO2 to IF minus desired frequency
             freq_lo2 = _rxlo2->set_frequency(
                 freq_lo1 - freq, ref_freq, target_pfd_freq, is_int_n);
-            _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
+            _rxlo2->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         } else if ((freq >= 500 * fMHz) && (freq < 800 * fMHz)) {
             set_cpld_field(SEL_LNA1, 0);
             set_cpld_field(SEL_LNA2, 1);
