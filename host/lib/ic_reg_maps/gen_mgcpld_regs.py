@@ -12,7 +12,7 @@ Register map for the Magnesium CPLD. This is controlled via SPI.
 # Template for raw text data describing registers
 # name addr[bit range inclusive] default optional enums
 ########################################################################
-REGS_TMPL="""\
+REGS_TMPL = """\
 scratch               0x0040[0:15]      0
 cpld_reset            0x0041[0]         0
 ch1_idle_tx_sw1       0x0050[0:1]       0 ShutdownTxSw1,FromTxFilterLp1700MHz,FromTxFilterLp3400MHz,FromTxFilterLp0800MHz
@@ -129,7 +129,7 @@ ch2_on_rx_myk_en      0x0065[10]        1
 ########################################################################
 # Template for methods in the body of the struct
 ########################################################################
-BODY_TMPL="""\
+BODY_TMPL = """\
 uint32_t get_reg(uint8_t addr){
     uint32_t reg = 0;
     switch(addr){
@@ -155,11 +155,12 @@ std::set<size_t> get_all_addrs()
 }
 """
 
-if __name__ == '__main__':
-    import common; common.generate(
-        name='magnesium_cpld_regs',
+if __name__ == "__main__":
+    import common
+
+    common.generate(
+        name="magnesium_cpld_regs",
         regs_tmpl=REGS_TMPL,
         body_tmpl=BODY_TMPL,
         file=__file__,
     )
-

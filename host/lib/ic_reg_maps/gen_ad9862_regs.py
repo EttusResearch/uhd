@@ -10,7 +10,7 @@
 # Template for raw text data describing registers
 # name addr[bit range inclusive] default optional enums
 ########################################################################
-REGS_TMPL="""\
+REGS_TMPL = """\
 ########################################################################
 ## General
 ########################################################################
@@ -191,7 +191,7 @@ chip_id                63[0:7]            0
 ########################################################################
 # Header and Source templates below
 ########################################################################
-BODY_TMPL="""
+BODY_TMPL = """
 uint8_t get_reg(uint8_t addr){
     uint8_t reg = 0;
     switch(addr){
@@ -227,9 +227,11 @@ uint16_t get_read_reg(uint8_t addr){
 }
 """
 
-if __name__ == '__main__':
-    import common; common.generate(
-        name='ad9862_regs',
+if __name__ == "__main__":
+    import common
+
+    common.generate(
+        name="ad9862_regs",
         regs_tmpl=REGS_TMPL,
         body_tmpl=BODY_TMPL,
         file=__file__,

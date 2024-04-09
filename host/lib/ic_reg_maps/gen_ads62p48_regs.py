@@ -10,7 +10,7 @@
 # Template for raw text data describing registers
 # name addr[bit range inclusive] default optional enums
 ########################################################################
-REGS_TMPL="""\
+REGS_TMPL = """\
 reset                   0[7]          0
 serial_readout          0[0]          0
 enable_low_speed_mode   0x20[2]       0
@@ -41,7 +41,7 @@ offset_pedestal_chB            0x76[5:0]       0
 ########################################################################
 # Template for methods in the body of the struct
 ########################################################################
-BODY_TMPL="""\
+BODY_TMPL = """\
 uint8_t get_reg(uint8_t addr){
     uint8_t reg = 0;
     switch(addr){
@@ -65,9 +65,11 @@ uint16_t get_read_reg(uint8_t addr){
 }
 """
 
-if __name__ == '__main__':
-    import common; common.generate(
-        name='ads62p48_regs',
+if __name__ == "__main__":
+    import common
+
+    common.generate(
+        name="ads62p48_regs",
         regs_tmpl=REGS_TMPL,
         body_tmpl=BODY_TMPL,
         file=__file__,

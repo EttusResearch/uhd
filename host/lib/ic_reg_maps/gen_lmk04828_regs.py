@@ -84,11 +84,12 @@ uint32_t get_reg(int addr){
 }
 """
 
-if __name__ == '__main__':
-    import common; common.generate(
-        name='lmk04828_regs',
+if __name__ == "__main__":
+    import common
+
+    common.generate(
+        name="lmk04828_regs",
         regs_tmpl=REGS_TMPL,
         body_tmpl=BODY_TMPL,
         file=__file__,
     )
-

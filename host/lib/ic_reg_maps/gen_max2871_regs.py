@@ -11,7 +11,7 @@
 # name addr[bit range inclusive] default optional enums
 ########################################################################
 
-REGS_TMPL="""\
+REGS_TMPL = """\
 ########################################################################
 ## Address 0x00
 ## Divider control
@@ -113,7 +113,7 @@ adc_mode                0x05[2:0]       0       disabled, temp_sensor, res2, res
 ########################################################################
 # Template for methods in the body of the struct
 ########################################################################
-BODY_TMPL="""\
+BODY_TMPL = """\
 enum addr_t{
     ADDR_R0 = 0,
     ADDR_R1 = 1,
@@ -138,11 +138,12 @@ uint32_t get_reg(uint8_t addr){
 }
 """
 
-if __name__ == '__main__':
-    import common; common.generate(
-        name='max2871_regs',
+if __name__ == "__main__":
+    import common
+
+    common.generate(
+        name="max2871_regs",
         regs_tmpl=REGS_TMPL,
         body_tmpl=BODY_TMPL,
         file=__file__,
     )
-

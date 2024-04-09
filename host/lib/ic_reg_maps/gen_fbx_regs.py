@@ -370,19 +370,21 @@ uint16_t get_addr(const std::string& reg_name)
 }
 """
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sys
+
     import common
-    outfile=sys.argv[1]
+
+    outfile = sys.argv[1]
     if outfile.endswith(".hpp"):
         all_addr_filter = lambda reg: "mpm" not in reg.options.get("scope", "")
     else:
         all_addr_filter = lambda reg: True
     common.generate(
-        name='fbx_regs',
+        name="fbx_regs",
         regs_tmpl=REGS_TMPL,
         body_tmpl=BODY_TMPL,
         py_body_tmpl=PY_BODY_TMPL,
         file=__file__,
-        all_addr_filter=all_addr_filter
+        all_addr_filter=all_addr_filter,
     )

@@ -10,7 +10,7 @@
 # Template for raw text data describing registers
 # name addr[bit range inclusive] default optional enums
 ########################################################################
-REGS_TMPL="""\
+REGS_TMPL = """\
 ########################################################################
 ## address 0
 ########################################################################
@@ -77,7 +77,7 @@ qdac_ioffset_direction  0xC[7]   0     out_a, out_b
 ########################################################################
 # Template for methods in the body of the struct
 ########################################################################
-BODY_TMPL="""\
+BODY_TMPL = """\
 uint8_t get_reg(uint8_t addr){
     uint8_t reg = 0;
     switch(addr){
@@ -101,9 +101,11 @@ uint16_t get_read_reg(uint8_t addr){
 }
 """
 
-if __name__ == '__main__':
-    import common; common.generate(
-        name='ad9777_regs',
+if __name__ == "__main__":
+    import common
+
+    common.generate(
+        name="ad9777_regs",
         regs_tmpl=REGS_TMPL,
         body_tmpl=BODY_TMPL,
         file=__file__,

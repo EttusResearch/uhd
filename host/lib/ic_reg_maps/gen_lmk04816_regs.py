@@ -1,5 +1,5 @@
-#Copyright 2010,2015 Ettus Research LLC
-#Copyright 2018 Ettus Research, a National Instruments Company
+# Copyright 2010,2015 Ettus Research LLC
+# Copyright 2018 Ettus Research, a National Instruments Company
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -8,7 +8,7 @@
 # Template for raw text data describing registers
 # name addr[bit range inclusive] default optional enums
 ########################################################################
-REGS_TMPL="""\
+REGS_TMPL = """\
 ########################################################################
 ## address 0
 ########################################################################
@@ -355,7 +355,7 @@ Required_615             31[6:15]    0
 READBACK_ADDR            31[16:20]   31		R0=0, R1=1, R2=2, R3=3, R4=4, R5=5, R6=6, R7=7, R8=8, R10=10, R11=11, R12=12, R13=13, R14=14, R15=15, R24=24, R25=25, R26=26, R27=27, R28=28, R29=29, R30=30, R31=31
 READBACK_LE              31[21]      0		LE_low=0, LE_high=1
 Required_2231            31[22:31]   0
-""" 
+"""
 ########################################################################
 # Template for methods in the body of the struct
 ########################################################################
@@ -398,9 +398,11 @@ def get_reg(self, addr):
 
 """
 
-if __name__ == '__main__':
-    import common; common.generate(
-        name='lmk04816_regs',
+if __name__ == "__main__":
+    import common
+
+    common.generate(
+        name="lmk04816_regs",
         regs_tmpl=REGS_TMPL,
         body_tmpl=BODY_TMPL,
         py_body_tmpl=PY_BODY_TMPL,

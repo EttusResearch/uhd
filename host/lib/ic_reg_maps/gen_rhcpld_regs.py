@@ -12,7 +12,7 @@ Register map for the Rhodium CPLD. This is controlled via SPI.
 # Template for raw text data describing registers
 # name addr[bit range inclusive] default optional enums
 ########################################################################
-REGS_TMPL="""\
+REGS_TMPL = """\
 ########################################################################
 ## address 5 Scratch
 ########################################################################
@@ -57,7 +57,7 @@ rx_lo_filter_sel        8[14:15]    3       0_9ghz_lpf, 5_85ghz_lpf, 2_25ghz_lpf
 ########################################################################
 # Template for methods in the body of the struct
 ########################################################################
-BODY_TMPL="""\
+BODY_TMPL = """\
 uint32_t get_reg(uint8_t addr){
     uint32_t reg = 0;
     switch(addr){
@@ -83,11 +83,12 @@ std::set<size_t> get_all_addrs()
 }
 """
 
-if __name__ == '__main__':
-    import common; common.generate(
-        name='rhodium_cpld_regs',
+if __name__ == "__main__":
+    import common
+
+    common.generate(
+        name="rhodium_cpld_regs",
         regs_tmpl=REGS_TMPL,
         body_tmpl=BODY_TMPL,
         file=__file__,
     )
-

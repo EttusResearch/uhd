@@ -652,10 +652,11 @@ def get_reg(self, addr):
 
 """
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import common
+
     common.generate(
-        name='lmx2572_regs',
+        name="lmx2572_regs",
         regs_tmpl=REGS_TMPL,
         body_tmpl=BODY_TMPL,
         py_body_tmpl=PY_BODY_TMPL,
