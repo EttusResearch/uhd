@@ -5,6 +5,13 @@
 # - hw.rf.$DEVICE: Run RF tests for $DEVICE.
 # - devtest.$DEVICE: Run devtests for $DEVICE.
 
+###############################################################################
+# STYLE / FORMATTING CHANGES
+###############################################################################
+- re: \.[ch]pp$
+  add:
+    - clang-format
+  stop: False
 
 ###############################################################################
 # HOST CHANGES (UHD)
