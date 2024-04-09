@@ -230,6 +230,22 @@ public:
      * @param map the VCO map
      */
     virtual void set_vco_map(const vco_map_t& map) = 0;
+
+    /**
+     * Set Register Value
+     * @param reg register number
+     * @param mask mask to apply when setting new value of register
+     * @param value value to set
+     * @param commit optionally commit the register state to the hardware
+     */
+    virtual void set_register(
+        uint8_t reg, uint32_t mask, uint32_t value, bool commit = false) = 0;
+
+    /**
+     * Get Register Value
+     * @param reg register number
+     */
+    virtual uint32_t get_register(uint8_t reg) = 0;
 };
 
 /**
@@ -266,6 +282,9 @@ public:
         double target_pfd_freq) override;
     vco_map_t get_vco_map() override;
     void set_vco_map(const vco_map_t& map) override;
+    void set_register(
+        uint8_t reg, uint32_t mask, uint32_t value, bool commit = false) override;
+    uint32_t get_register(uint8_t reg) override;
 
 protected:
     max287x_regs_t _regs;
@@ -607,6 +626,20 @@ public:
         } else {
             _can_sync = false;
         }
+    }
+
+    void set_register(
+        uint8_t addr, uint32_t mask, uint32_t value, bool commit = false) final
+    {
+        _regs.set_reg(addr, mask, value);
+        if (commit) {
+            max2871::commit();
+        }
+    }
+
+    uint32_t get_register(uint8_t addr) final
+    {
+        return _regs.get_reg(addr);
     }
 
 private:
@@ -1109,6 +1142,18 @@ max287x_iface::vco_map_t max287x<max287x_regs_t>::get_vco_map()
 
 template <typename max287x_regs_t>
 void max287x<max287x_regs_t>::set_vco_map(const max287x_iface::vco_map_t&)
+{
+    UHD_THROW_INVALID_CODE_PATH();
+}
+
+template <typename max287x_regs_t>
+void max287x<max287x_regs_t>::set_register(uint8_t, uint32_t, uint32_t, bool)
+{
+    UHD_THROW_INVALID_CODE_PATH();
+}
+
+template <typename max287x_regs_t>
+uint32_t max287x<max287x_regs_t>::get_register(uint8_t)
 {
     UHD_THROW_INVALID_CODE_PATH();
 }

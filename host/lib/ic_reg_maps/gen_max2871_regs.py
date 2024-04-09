@@ -136,6 +136,21 @@ uint32_t get_reg(uint8_t addr){
     }
     return reg;
 }
+
+void set_reg(uint8_t addr, uint32_t mask, uint32_t val){
+    uint32_t prev_val = get_reg(addr);
+    uint32_t new_val = prev_val & ~mask;
+    new_val |= val & mask;
+    switch(addr){
+    % for addr in range(5+1):
+    case ${addr}:
+        % for reg in filter(lambda r: r.get_addr() == addr, regs):
+        ${reg.get_name()} = static_cast<${reg.get_type()}>((new_val >> ${reg.get_shift()}) & ${reg.get_mask()});
+        % endfor
+        break;
+    % endfor
+    }
+}
 """
 
 if __name__ == "__main__":
