@@ -48,6 +48,14 @@ def parse_args():
         help="Specifies the image core name to pass to rfnoc_image_builder using the -n argument.",
     )
     parser.add_argument(
+        "--fpga-dir",
+        "-F",
+        type=str,
+        default=None,
+        required=False,
+        help="Specifies the FPGA directory to pass to rfnoc_image_builder using the -F argument.",
+    )
+    parser.add_argument(
         "--num",
         "-n",
         type=int,
@@ -76,7 +84,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def prepare_build(target, image_core, image_core_name):
+def prepare_build(target, image_core, image_core_name, fpga_dir):
     """
     Run tasks to prepare the build. In particular, execute the RFNoC image builder
     if desired.
@@ -95,6 +103,9 @@ def prepare_build(target, image_core, image_core_name):
             cmd += ["--target", target]
         if image_core_name:
             cmd += ["--image_core_name", image_core_name]
+        if fpga_dir:
+            cmd += ["--fpga-dir", fpga_dir]
+        #logging.info("Command:", cmd)
         result = subprocess.run(
             cmd,
             check=False,
@@ -193,7 +204,7 @@ def main():
         return 1
     build_seed = args.seed
     status = 128
-    cfg = prepare_build(args.target, args.image_core, args.image_core_name)
+    cfg = prepare_build(args.target, args.image_core, args.image_core_name, args.fpga_dir)
     try:
         for build_num in range(1, args.num + 1):
             logging.info("Starting FPGA build %d with seed %s", build_num, build_seed)
