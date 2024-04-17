@@ -21,7 +21,6 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/archive/iterators/binary_from_base64.hpp>
 #include <boost/archive/iterators/transform_width.hpp>
-#include <boost/filesystem/convenience.hpp>
 #include <boost/optional.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <cctype>
