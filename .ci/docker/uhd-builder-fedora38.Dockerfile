@@ -56,5 +56,8 @@ RUN dnf install -y \
         python3-scipy \
         python3-cairo-devel \
         python3-gobject \
+        spdlog-devel \
         && \
     dnf clean all
+
+RUN pip install pygccxml pyyaml
