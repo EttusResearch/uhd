@@ -59,7 +59,7 @@ proc ::vivado_utils::initialize_project { {save_to_disk 0} } {
 
     if {$save_to_disk == 1 || $g_project_save == 1} {
         puts "BUILDER: Creating Vivado project ${g_top_module}_project.xpr for part $g_part_name"
-        create_project -part $g_part_name ${g_top_module}_project
+        create_project -force -part $g_part_name ${g_top_module}_project
     } else {
         puts "BUILDER: Creating Vivado project in memory for part $g_part_name"
         create_project -in_memory -part $g_part_name
