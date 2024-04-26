@@ -5,6 +5,8 @@ parameters:
   type: string
 - name: gnuradioInstallPath
   type: string
+- name: volkInstalledArtifactPath
+  type: string
 - name: uhdInstalledArtifactPath
   type: string
 
@@ -17,7 +19,7 @@ steps:
     export UHD_CI_CMAKE_OPTIONS="-DCMAKE_INSTALL_PREFIX=${{ parameters.gnuradioInstallPath }}"
     cmake \
       $UHD_CI_CMAKE_OPTIONS \
-      -DCMAKE_PREFIX_PATH="${{ parameters.uhdInstalledArtifactPath }}" \
+      -DCMAKE_PREFIX_PATH="${{ parameters.uhdInstalledArtifactPath }};${{ parameters.volkInstalledArtifactPath }}" \
       -DPYTHON_EXECUTABLE=/usr/bin/python3 \
       ${{ parameters.gnuradioSrcDir }}
   displayName: cmake make gnuradio

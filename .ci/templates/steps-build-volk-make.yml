@@ -1,0 +1,32 @@
+parameters:
+- name: volkSrcDir
+  type: string
+- name: volkBuildDir
+  type: string
+- name: volkInstallPath
+  type: string
+
+steps:
+- script: |
+    mkdir -p ${{ parameters.volkBuildDir }}
+    cd ${{ parameters.volkBuildDir }}
+    mkdir -p ${{ parameters.volkInstallPath }}
+    echo "Setting CMAKE_INSTALL_PREFIX to ${{ parameters.volkInstallPath }}"
+    export VOLK_CI_CMAKE_OPTIONS="-DCMAKE_INSTALL_PREFIX=${{ parameters.volkInstallPath }}"
+    cmake \
+      $VOLK_CI_CMAKE_OPTIONS \
+      ${{ parameters.volkSrcDir }}
+  displayName: cmake make volk
+  condition: and(succeeded(), not(in(variables.buildOSName, 'ubuntu1804')))
+
+- script: |
+    cd ${{ parameters.volkBuildDir }}
+    make -j$(nproc) -k
+  displayName: make volk
+  condition: and(succeeded(), not(in(variables.buildOSName, 'ubuntu1804')))
+
+- script: |
+    cd ${{ parameters.volkBuildDir }}
+    make install
+  displayName: Install volk to volkInstallPath
+  condition: and(succeeded(), not(in(variables.buildOSName, 'ubuntu1804')))

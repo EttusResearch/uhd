@@ -58,6 +58,10 @@ jobs:
     clean: true
     submodules: recursive
     condition: and(succeeded(), not(in(variables.buildOSName, 'ubuntu1804')))
+  - checkout: volk
+    clean: true
+    submodules: true
+    condition: and(succeeded(), not(in(variables.buildOSName, 'ubuntu1804')))
   - checkout: gnuradio-3-8
     clean: true
     submodules: recursive
@@ -87,11 +91,19 @@ jobs:
     displayName: Extract uhddev-$(buildOSName)-${{ parameters.toolset }} artifacts
 
   - ${{ if eq(parameters.toolset, 'make') }}:
+    - template: steps-build-volk-make.yml
+      parameters:
+        volkSrcDir: $(Build.SourcesDirectory)/volk
+        volkBuildDir: $(Build.BinariesDirectory)/volk/build
+        volkInstallPath: $(Build.BinariesDirectory)/volk/build-installed
+
+  - ${{ if eq(parameters.toolset, 'make') }}:
     - template: steps-build-gnuradio-make.yml
       parameters:
         gnuradioSrcDir: $(Build.SourcesDirectory)/gnuradio
         gnuradioBuildDir: $(Build.BinariesDirectory)/gnuradio/build
         gnuradioInstallPath: $(Build.BinariesDirectory)/gnuradio/build-installed
+        volkInstalledArtifactPath: $(Build.BinariesDirectory)/volk/build-installed
         uhdInstalledArtifactPath: $(Agent.BuildDirectory)/uhddev-$(buildOSName)-${{ parameters.toolset }}/uhddev/build-installed
 
   - ${{ if eq(parameters.toolset, 'make') }}:
