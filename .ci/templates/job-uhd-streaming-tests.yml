@@ -238,6 +238,12 @@ jobs:
       echo "##[endgroup]"
       set -x
       cd ${{ parameters.uhdSrcDir }}/host/tests/pytests
+      export PATH=$(Build.BinariesDirectory)/uhddev/build-installed/bin:$PATH
+      # B210, or other usb devices, do not have an address to probe, ignore probe for now as
+      # B210 is not currently built by the FPGA pipeline
+      if [ -n "$DUTADDR" ]; then
+        uhd_usrp_probe --args addr=$DUTADDR
+      fi
       # Disable creation of __pycache__ files using -B to avoid errors on clean up during next run
       # as using sudo below creates them with root priveleges.
       sudo -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONPATH=$PYTHONPATH python3 -B -m pytest -s test_streaming.py -m "not dpdk" \
@@ -272,6 +278,12 @@ jobs:
       echo "##[endgroup]"
       set -x
       cd ${{ parameters.uhdSrcDir }}/host/tests/pytests
+      export PATH=$(Build.BinariesDirectory)/uhddev/build-installed/bin:$PATH
+      # B210, or other usb devices, do not have an address to probe, ignore probe for now as
+      # B210 is not currently built by the FPGA pipeline
+      if [ -n "$DUTADDR" ]; then
+        uhd_usrp_probe --args addr=$DUTADDR
+      fi
       # Disable creation of __pycache__ files using -B to avoid errors on clean up during next run
       # as using sudo below creates them with root priveleges.
       sudo -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONPATH=$PYTHONPATH python3 -B -m pytest -s test_raw_udp_streaming.py \
