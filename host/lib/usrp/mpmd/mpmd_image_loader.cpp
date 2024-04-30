@@ -361,9 +361,13 @@ static bool mpmd_image_loader(const image_loader::image_loader_args_t& image_loa
     find_hint.set("find_all", "1"); // We need to find all devices
     device_addrs_t devs = mpmd_find(find_hint);
 
-    if (devs.size() != 1) {
+    if (devs.size() > 1) {
         UHD_LOG_ERROR(
             "MPMD IMAGE LOADER", "mpmd_image_loader only supports a single device.");
+        return false;
+    } else if (devs.empty()) {
+        UHD_LOG_ERROR(
+            "MPMD IMAGE LOADER", "No MPM devices found for the specified arguments.");
         return false;
     }
     // Grab the first device_addr
