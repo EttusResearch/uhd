@@ -74,6 +74,8 @@ jobs:
       displayName: 'Populate build-ip'
 
     - bash: |
+        # Purge any existing UHD install
+        rm -rf $(Build.BinariesDirectory)/prefix $(Build.BinariesDirectory)/build_image_builder
         mkdir -p $(Build.BinariesDirectory)/prefix
         # hwtools hwsetup.sh will setup a venv, so we'll reuse that for the
         # image builder! That's also why we install the image builder in the
