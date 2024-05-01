@@ -73,7 +73,7 @@ parameters:
       timeout: 720
       max_attempts: 2
     X410_UC_200:
-      image_core: x410_200_rfnoc_image_core.yml
+      image_core: x410_cg_200_rfnoc_image_core.yml
       target_name: X410_UC_200
       timeout: 720
       max_attempts: 2
