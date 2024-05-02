@@ -17,8 +17,10 @@ steps:
     mkdir -p ${{ parameters.gnuradioInstallPath }}
     echo "Setting CMAKE_INSTALL_PREFIX to ${{ parameters.gnuradioInstallPath }}"
     export UHD_CI_CMAKE_OPTIONS="-DCMAKE_INSTALL_PREFIX=${{ parameters.gnuradioInstallPath }}"
+    export CMAKE_REQUIRED_COMPONENTS="-DENABLE_PYTHON=ON -DENABLE_GR_UHD=ON -DENABLE_GNURADIO_RUNTIME=ON"
     cmake \
       $UHD_CI_CMAKE_OPTIONS \
+      $CMAKE_REQUIRED_COMPONENTS \
       -DCMAKE_PREFIX_PATH="${{ parameters.uhdInstalledArtifactPath }};${{ parameters.volkInstalledArtifactPath }}" \
       -DPYTHON_EXECUTABLE=/usr/bin/python3 \
       ${{ parameters.gnuradioSrcDir }}
