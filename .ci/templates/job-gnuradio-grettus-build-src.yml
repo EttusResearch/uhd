@@ -115,9 +115,17 @@ jobs:
         uhdInstalledArtifactPath: $(Agent.BuildDirectory)/uhddev-$(buildOSName)-${{ parameters.toolset }}/uhddev/build-installed
         gnuradioInstalledArtifactPath: $(Build.BinariesDirectory)/gnuradio/build-installed
 
+  - task: CopyFiles@2
+    inputs:
+      sourceFolder: $(Build.BinariesDirectory)
+      targetFolder: $(Build.BinariesDirectory)/artifacts
+      contents: |
+        **/build-installed/**
+    displayName:  Copy only build-installed folders to artifact folder
+
   - task: ArchiveFiles@2
     inputs:
-      rootFolderOrFile: $(Build.BinariesDirectory)
+      rootFolderOrFile: $(Build.BinariesDirectory)/artifacts
       includeRootFolder: false
       archiveType: tar
       tarCompression: gz
