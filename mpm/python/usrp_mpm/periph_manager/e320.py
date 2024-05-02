@@ -18,7 +18,7 @@ from usrp_mpm.dboard_manager import Neon
 from usrp_mpm.gpsd_iface import GPSDIfaceExtension
 from usrp_mpm.mpmutils import assert_compat_number, str2bool
 from usrp_mpm.periph_manager import PeriphManagerBase
-from usrp_mpm.rpc_server import no_rpc
+from usrp_mpm.rpc_server import no_rpc, _get_map_for_rpc
 from usrp_mpm.sys_utils import dtoverlay
 from usrp_mpm.sys_utils.sysfs_thermal import read_thermal_sensor_value, read_thermal_sensors_value
 from usrp_mpm.sys_utils.udev import get_spidev_nodes
@@ -647,7 +647,7 @@ class e320(ZynqComponents, PeriphManagerBase):
         mboard info again. This filters the EEPROM contents to what we think
         the user wants to know/see.
         """
-        return self.mboard_info
+        return _get_map_for_rpc(self.mboard_info, self.log)
 
     def set_mb_eeprom(self, eeprom_vals):
         """

@@ -442,7 +442,7 @@ class MPMServer(RPCServer):
         get device information
         This is as safe method which can be called without a claim on the device
         """
-        info = self.periph_manager.get_device_info()
+        info = _get_map_for_rpc(self.periph_manager.get_device_info(), self.log)
         info["mpm_version"] = "{}.{}".format(*MPM_COMPAT_NUM)
         if _is_connection_local(self.client_host):
             info["connection"] = "local"
@@ -654,3 +654,16 @@ def spawn_rpc_process(state, udp_port, default_args):
     )
     proc.start()
     return proc
+
+
+def _get_map_for_rpc(map, log):
+    """
+    ensure the map contains only string values otherwise it cannot be
+    casted to std::map<string, string> in C++
+    # TODO reconsider the workaround once we transition away from mprpc
+    """
+    for key, value in map.items():
+        if value is None:
+            log.warning('casting parameter "{}" from None to "n/a"'.format(key))
+            map[key] = "n/a"
+    return map
