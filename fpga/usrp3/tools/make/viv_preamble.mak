@@ -26,10 +26,12 @@ HLS_IP_DIR = $(abspath $(LIB_DIR)/hls)
 
 BUILD_BASE_DIR ?= .
 
+ifndef BUILD_DIR
 ifdef NAME
 BUILD_DIR = $(abspath $(BUILD_BASE_DIR)/build-$(NAME))
 else
 BUILD_DIR = $(abspath $(BUILD_BASE_DIR)/build)
+endif
 endif
 
 IP_BUILD_DIR = $(abspath ./build-ip/$(subst /,,$(PART_ID)))
