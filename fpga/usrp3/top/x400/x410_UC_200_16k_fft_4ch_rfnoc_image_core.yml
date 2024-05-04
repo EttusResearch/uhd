@@ -1,0 +1,182 @@
+# General parameters
+# -----------------------------------------
+schema: rfnoc_imagebuilder_args          # Identifier for the schema used to validate this file
+copyright: >-                            # Copyright information used in file headers
+  Copyright 2025 Ettus Research, a National Instruments Brand
+license: >-                              # License information used in file headers
+  SPDX-License-Identifier: LGPL-3.0-or-later
+version: '1.0'                           # File version
+chdr_width: 256                          # Bit width of the CHDR bus for this image
+device: 'x410'                           # USRP type
+image_core_name: 'usrp_x410_fpga_UC_200_16k_fft_4ch' # Name to use for the generated output files
+default_target: 'X410'                   # Default make target
+inherit:
+  - 'yaml_include/x410_radio_base.yml'
+  - 'yaml_include/x4xx_uc_base.yml'
+
+parameters:
+  RF_BW: 200
+  ENABLE_DRAM: False
+  NUM_DRAM_BANKS: 0
+  NUM_DRAM_CHANS: 0
+
+# A list of all stream endpoints in design
+# ----------------------------------------
+stream_endpoints:
+  ep0:                                  # Stream endpoint name
+    ctrl: True                          # Endpoint passes control traffic
+    data: True                          # Endpoint passes data traffic
+    buff_size_bytes: 262144             # Ingress buffer size for data
+  ep1:
+    ctrl: False
+    data: True
+    buff_size_bytes: 262144
+  ep2:
+    ctrl: False
+    data: True
+    buff_size_bytes: 262144
+  ep3:
+    ctrl: False
+    data: True
+    buff_size_bytes: 262144
+
+# A table of which crossbar routes to include
+# -------------------------------------------
+# Rows correspond to input ports and columns correspond to output ports.
+# Entering a 1 includes and a 0 removes that route from the crossbar.
+crossbar_routes:
+  #  eth1  ep0   ep2
+  #     dma   ep1   ep3
+  - [ 1, 0, 1, 1, 1, 1 ] # eth1 (QSFP Port 1)
+  - [ 0, 1, 1, 1, 1, 1 ] # dma
+  - [ 1, 1, 0, 0, 0, 0 ] # ep0  (radio0.0)
+  - [ 1, 1, 0, 0, 0, 0 ] # ep1  (radio0.1)
+  - [ 1, 1, 0, 0, 0, 0 ] # ep2  (radio1.0)
+  - [ 1, 1, 0, 0, 0, 0 ] # ep3  (radio1.1)
+
+# A list of all NoC blocks in design
+# ----------------------------------
+#block_chdr_width: 64
+noc_blocks:
+  fft_tx0:
+    block_desc: 'fft.yml'
+    parameters:
+      NUM_PORTS: 2
+      MAX_FFT_SIZE_LOG2: 14
+      EN_CP_REMOVAL: 0
+      EN_CP_INSERTION: 1
+      EN_MAGNITUDE: 0
+      EN_MAGNITUDE_SQ: 0
+  fft_rx0:
+    block_desc: 'fft.yml'
+    parameters:
+      NUM_PORTS: 2
+      MAX_FFT_SIZE_LOG2: 14
+      EN_CP_REMOVAL: 1
+      EN_CP_INSERTION: 0
+      EN_MAGNITUDE: 0
+      EN_MAGNITUDE_SQ: 0
+  duc0:
+    block_desc: 'duc.yml'
+    parameters:
+      NUM_PORTS: 2
+  ddc0:
+    block_desc: 'ddc.yml'
+    parameters:
+      NUM_PORTS: 2
+  radio0:
+    block_desc: 'radio.yml'
+    parameters:
+      NUM_PORTS: 2
+  fft_tx1:
+    block_desc: 'fft.yml'
+    parameters:
+      NUM_PORTS: 2
+      MAX_FFT_SIZE_LOG2: 14
+      EN_CP_REMOVAL: 0
+      EN_CP_INSERTION: 1
+      EN_MAGNITUDE: 0
+      EN_MAGNITUDE_SQ: 0
+  fft_rx1:
+    block_desc: 'fft.yml'
+    parameters:
+      NUM_PORTS: 2
+      MAX_FFT_SIZE_LOG2: 14
+      EN_CP_REMOVAL: 1
+      EN_CP_INSERTION: 0
+      EN_MAGNITUDE: 0
+      EN_MAGNITUDE_SQ: 0
+  duc1:
+    block_desc: 'duc.yml'
+    parameters:
+      NUM_PORTS: 2
+  ddc1:
+    block_desc: 'ddc.yml'
+    parameters:
+      NUM_PORTS: 2
+  radio1:
+    block_desc: 'radio.yml'
+    parameters:
+      NUM_PORTS: 2
+
+# A list of all static connections in design
+# ------------------------------------------
+# Format: A list of connection maps (list of key-value pairs) with the following keys
+#   - srcblk  = Source block to connect
+#   - srcport = Port on the source block to connect
+#   - dstblk  = Destination block to connect
+#   - dstport = Port on the destination block to connect
+connections:
+  # RF A:0 TX
+  - { srcblk: ep0,     srcport: out0,  dstblk: fft_tx0, dstport: in_0 }
+  - { srcblk: fft_tx0, srcport: out_0, dstblk: duc0,    dstport: in_0 }
+  - { srcblk: duc0,    srcport: out_0, dstblk: radio0,  dstport: in_0 }
+  # RF A:0 RX
+  - { srcblk: radio0,  srcport: out_0, dstblk: ddc0,    dstport: in_0 }
+  - { srcblk: ddc0,    srcport: out_0, dstblk: fft_rx0, dstport: in_0 }
+  - { srcblk: fft_rx0, srcport: out_0, dstblk: ep0,     dstport: in0  }
+  # RF A:1 TX
+  - { srcblk: ep1,     srcport: out0,  dstblk: fft_tx0, dstport: in_1 }
+  - { srcblk: fft_tx0, srcport: out_1, dstblk: duc0,    dstport: in_1 }
+  - { srcblk: duc0,    srcport: out_1, dstblk: radio0,  dstport: in_1 }
+  # RF A:1 RX
+  - { srcblk: radio0,  srcport: out_1, dstblk: ddc0,    dstport: in_1 }
+  - { srcblk: ddc0,    srcport: out_1, dstblk: fft_rx0, dstport: in_1 }
+  - { srcblk: fft_rx0, srcport: out_1, dstblk: ep1,     dstport: in0  }
+  #
+  # RF B:0 TX
+  - { srcblk: ep2,     srcport: out0,  dstblk: fft_tx1, dstport: in_0 }
+  - { srcblk: fft_tx1, srcport: out_0, dstblk: duc1,    dstport: in_0 }
+  - { srcblk: duc1,    srcport: out_0, dstblk: radio1,  dstport: in_0 }
+  # RF B:0 RX
+  - { srcblk: radio1,  srcport: out_0, dstblk: ddc1,    dstport: in_0 }
+  - { srcblk: ddc1,    srcport: out_0, dstblk: fft_rx1, dstport: in_0 }
+  - { srcblk: fft_rx1, srcport: out_0, dstblk: ep2,     dstport: in0  }
+  # RF B:1 TX
+  - { srcblk: ep3,     srcport: out0,  dstblk: fft_tx1, dstport: in_1 }
+  - { srcblk: fft_tx1, srcport: out_1, dstblk: duc1,    dstport: in_1 }
+  - { srcblk: duc1,    srcport: out_1, dstblk: radio1,  dstport: in_1 }
+  # RF B:1 RX
+  - { srcblk: radio1,  srcport: out_1, dstblk: ddc1,    dstport: in_1 }
+  - { srcblk: ddc1,    srcport: out_1, dstblk: fft_rx1, dstport: in_1 }
+  - { srcblk: fft_rx1, srcport: out_1, dstblk: ep3,     dstport: in0  }
+  # Other BSP connections are inherited from YAML include files
+
+# A list of all clock domain connections in design
+# ------------------------------------------------
+# Format: A list of connection maps (list of key-value pairs) with the following keys
+#   - srcblk  = Source block to connect (Always "_device"_)
+#   - srcport = Clock domain on the source block to connect
+#   - dstblk  = Destination block to connect
+#   - dstport = Clock domain on the destination block to connect
+#
+# Note that radio clocks are already defined in x410_radio_base.yml.
+clk_domains:
+  - { srcblk: _device_, srcport: ce, dstblk: duc0,    dstport: ce    }
+  - { srcblk: _device_, srcport: ce, dstblk: ddc0,    dstport: ce    }
+  - { srcblk: _device_, srcport: ce, dstblk: duc1,    dstport: ce    }
+  - { srcblk: _device_, srcport: ce, dstblk: ddc1,    dstport: ce    }
+  - { srcblk: _device_, srcport: ce, dstblk: fft_tx0, dstport: ce    }
+  - { srcblk: _device_, srcport: ce, dstblk: fft_rx0, dstport: ce    }
+  - { srcblk: _device_, srcport: ce, dstblk: fft_tx1, dstport: ce    }
+  - { srcblk: _device_, srcport: ce, dstblk: fft_rx1, dstport: ce    }
