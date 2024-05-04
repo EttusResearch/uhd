@@ -41,6 +41,10 @@ include $(LIB_DIR)/axi4s_sv/Makefile.srcs
 include $(LIB_DIR)/axi4lite_sv/Makefile.srcs
 include $(LIB_DIR)/rfnoc/xport_sv/Makefile.srcs
 
+# TODO: Figure out why this is needed
+include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_fft/Makefile.srcs
+include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_ofdm/Makefile.srcs
+
 # For sake of convenience, we include the Makefile.srcs for DRAM FIFO, DDC, and
 # DUC, Replay, and of course the radio. Any other block needs to use the
 # RFNOC_OOT_MAKEFILE_SRCS variable (see below).
