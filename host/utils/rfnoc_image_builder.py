@@ -64,6 +64,12 @@ def setup_parser():
         required=False,
         default=None)
     parser.add_argument(
+        "-E", "--build-ip-dir",
+        help="Path to directory for IP build artifacts. "
+             "Defaults to the FPGA's top-level directory + /build-ip",
+        required=False,
+        default=None)
+    parser.add_argument(
         "-o", "--image-core-output",
         help="DEPRECATED! This has been replaced by --build-dir. ")
     parser.add_argument(
@@ -285,6 +291,7 @@ def main():
         # Provide all the paths
         build_dir=args.build_dir,
         build_output_dir=args.build_output_dir,
+        build_ip_dir=args.build_ip_dir,
         repo_fpga_path=get_fpga_path(args),
         config_path=get_config_path(),
         yaml_path=args.yaml_config if args.yaml_config else args.grc_config,

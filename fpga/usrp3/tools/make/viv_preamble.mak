@@ -29,8 +29,16 @@ HLS_IP_DIR = $(abspath $(LIB_DIR)/hls)
 
 MAKEFILE_DIR = $(abspath .)
 
-IP_BUILD_DIR ?= $(abspath ./build-ip/$(subst /,,$(PART_ID)))
 BUILD_BASE_DIR ?= $(abspath .)
+
+# -------------------------------------------------------------------
+# IP Build Directory. Call with BUILD_IP_DIR to use that as base dir.
+# -------------------------------------------------------------------
+ifdef BUILD_IP_DIR
+	IP_BUILD_DIR = $(abspath $(BUILD_IP_DIR)/$(subst /,,$(PART_ID)))
+else
+	IP_BUILD_DIR = $(abspath $(BUILD_BASE_DIR)/build-ip/$(subst /,,$(PART_ID)))
+endif
 
 # -------------------------------------------------------------------
 # Git Hash Retrieval

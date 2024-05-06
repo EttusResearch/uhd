@@ -171,6 +171,9 @@ IMAGE_CORE_HEADER_DEF="RFNOC_IMAGE_CORE_HDR=$(BUILD_DIR)/rfnoc_image_core.vh"
 
 VERILOG_DEFS=$(EXTRA_DEFS) $(CUSTOM_DEFS) $(GIT_HASH_VERILOG_DEF) $(IMAGE_CORE_HEADER_DEF) $(RFNOC_IMAGE_CORE_DEFS)
 
+show-var:
+	@echo "IP_BUILD_DIR: $(IP_BUILD_DIR)"
+
 # DESIGN_SRCS and VERILOG_DEFS must be defined
 bin: .prereqs
 	@echo "Build directory:: $(BUILD_DIR)"
@@ -184,7 +187,7 @@ synth: .prereqs
 rtl: .prereqs
 	$(call CHECK_VIVADO_DESIGN,$(TOOLS_DIR)/scripts/viv_check_syntax.tcl,$(TOP_MODULE),$(ARCH),$(PART_ID))
 
-viv_ip: .prereqs $$(DESIGN_SRCS) ip
+viv_ip: show-var .prereqs $$(DESIGN_SRCS) ip
 	@echo "IP build for $(NAME) DONE . . ."
 
 secure_core: .prereqs

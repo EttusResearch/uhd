@@ -152,25 +152,30 @@ def patch_netlist_constraints(device, build_dir):
         file.write(constraints)
 
 
-def gen_make_command(args, build_dir, device, use_secure_netlist):
-    """
-    Generates the 'make' command that will build the desired bitfiles, including
-    all the necessary options.
+def gen_make_command(args, build_dir, device, use_secure_netlist, makefile_src_paths):
+    """Generate the 'make' command that will build the desired bitfiles.
+
+    This generates a full make command, including all the necessary options.
     """
     target = args["target"] if "target" in args else ""
     return (
         f"make {default_target(device, target)} "
+        f"BUILD_DIR={build_dir} IMAGE_CORE_NAME={args['image_core_name']}"
         + (
-            f"SECURE_CORE=1 SECURE_KEY={args.get('secure_key_file')} "
+            f" SECURE_CORE=1 SECURE_KEY={args.get('secure_key_file')}"
             if args.get("secure_core")
             else ""
-        )
-        + (
-            "SECURE_NETLIST=1 " if use_secure_netlist else ""
         ) +
-        f"BUILD_DIR={build_dir} "
-        f"IMAGE_CORE_NAME={args['image_core_name']} "
-        f"{'GUI=1' if 'GUI' in args and args['GUI'] else ''} "
+        (" SECURE_NETLIST=1" if use_secure_netlist else "") +
+        (" GUI=1 " if args.get("GUI") else "") +
+        (" RFNOC_OOT_MAKEFILE_SRCS=" + "\\ ".join(makefile_src_paths)
+         if makefile_src_paths else "") +
+        (" --jobs " + args["num_jobs"] if args.get("num_jobs") else "") +
+        (" GUI=1" if args.get("GUI") else "") +
+        (" PROJECT=1" if args.get("save_project") else "") +
+        (" IP_ONLY=1" if args.get("ip_only") else "") +
+        (" BUILD_OUTPUT_DIR=" + os.path.abspath(args["build_output_dir"]) if args.get("build_output_dir") else "") +
+        (" BUILD_IP_DIR=" + os.path.abspath(args["build_ip_dir"]) if args.get("build_ip_dir") else "")
     )
 
 
@@ -206,7 +211,6 @@ def build(fpga_top_dir, device, build_dir, use_secure_netlist, **args):
     ret_val = 0
     build_dir = os.path.abspath(build_dir)
     cwd = os.getcwd()
-    build_output_dir = args.get("build_output_dir", os.path.join(fpga_top_dir, "build"))
     if not os.path.isdir(fpga_top_dir):
         logging.error("Not a valid directory: %s", fpga_top_dir)
         return 1
@@ -216,41 +220,40 @@ def build(fpga_top_dir, device, build_dir, use_secure_netlist, **args):
             os.path.join('fpga', 'Makefile.srcs'))
         for x in args.get("include_paths", [])
     ] + args.get("extra_makefile_srcs", [])
-    logging.debug("Temporarily changing working directory to %s", fpga_top_dir)
-    os.chdir(fpga_top_dir)
     setup_cmd = ". ./setupenv.sh "
     if "vivado_path" in args and args["vivado_path"]:
         setup_cmd += "--vivado-path=" + args["vivado_path"] + " "
     make_cmd = ""
     if "clean_all" in args and args["clean_all"]:
         make_cmd += "make cleanall && "
-    make_cmd += gen_make_command(args, build_dir, device, use_secure_netlist)
-    if makefile_src_paths:
-        make_cmd += " RFNOC_OOT_MAKEFILE_SRCS=" + "\\ ".join(makefile_src_paths)
-    if "num_jobs" in args and args["num_jobs"]:
-        make_cmd = make_cmd + " --jobs " + args["num_jobs"]
-    if "GUI" in args and args["GUI"]:
-        make_cmd = make_cmd + " GUI=1"
-    if "save_project" in args and args["save_project"]:
-        make_cmd = make_cmd + " PROJECT=1"
-    if "ip_only" in args and args["ip_only"]:
-        make_cmd = make_cmd + " IP_ONLY=1"
-    if "build_output_dir" in args and args["build_output_dir"]:
-        make_cmd = make_cmd + " BUILD_OUTPUT_DIR=" + args["build_output_dir"]
+    make_cmd += gen_make_command(args, build_dir, device, use_secure_netlist, makefile_src_paths)
 
     if args.get('generate_only'):
         logging.info("Skip build (generate only option given)")
         logging.info("Use the following command to build the image: %s", make_cmd)
         return 0
 
-    make_cmd = setup_cmd + " && " + make_cmd
+    make_cmd = setup_cmd + "&& " + make_cmd
+    build_output_dir = args.get("build_output_dir")
+    if build_output_dir is None:
+        build_output_dir = os.path.join(fpga_top_dir, "build")
+    else:
+        build_output_dir = os.path.abspath(build_output_dir)
+    build_ip_dir = args.get("build_ip_dir")
+    if build_ip_dir is None:
+        build_ip_dir = os.path.join(fpga_top_dir, "build-ip")
+    else:
+        build_ip_dir = os.path.abspath(build_ip_dir)
     logging.info("Launching build with the following settings:")
     logging.info(" * FPGA Directory: %s", fpga_top_dir)
     logging.info(" * Build Artifacts Directory: %s", build_dir)
     logging.info(" * Build Output Directory: %s", build_output_dir)
+    logging.info(" * Build IP Directory: %s", build_ip_dir)
     # Wrap it into a bash call:
+    logging.debug("Temporarily changing working directory to %s", fpga_top_dir)
+    os.chdir(fpga_top_dir)
     make_cmd = f'{BASH_EXECUTABLE} -c "{make_cmd}"'
-    logging.debug("Executing the following command: %s", make_cmd)
+    logging.info("Executing the following command: %s", make_cmd)
     ret_val = os.system(make_cmd)
     if ret_val == 0 and args.get('secure_core'):
         patch_netlist_constraints(device, build_dir)
