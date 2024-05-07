@@ -89,6 +89,14 @@ public:
         UHD_LOG_ERROR("REGS", "Attempting to use invalidated register interface!");
         return 0;
     }
+
+    void define_custom_register_space(uint32_t,
+        uint32_t,
+        std::function<void(uint32_t, uint32_t)>,
+        std::function<uint32_t(uint32_t)>) override
+    {
+        UHD_LOG_ERROR("REGS", "Attempting to use invalidated register interface!");
+    }
 }; // class invalid_register_iface
 
 void register_iface_holder::update_reg_iface(register_iface::sptr new_iface)
