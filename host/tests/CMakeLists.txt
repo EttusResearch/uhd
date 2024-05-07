@@ -511,6 +511,12 @@ UHD_ADD_NONAPI_TEST(
     ${UHD_SOURCE_DIR}/lib/usrp/cores/xport_adapter_ctrl.cpp
 )
 
+UHD_ADD_NONAPI_TEST(
+    TARGET "custom_reg_test.cpp"
+    EXTRA_SOURCES
+    ${UHD_SOURCE_DIR}/lib/rfnoc/ctrlport_endpoint.cpp
+)
+
 ########################################################################
 # demo of a loadable module
 ########################################################################
