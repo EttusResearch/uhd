@@ -15,6 +15,7 @@
 #include <uhd/utils/pimpl.hpp>
 #include <stdint.h>
 #include <chrono>
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -281,6 +282,17 @@ public:
      * \param time time to sleep in nanoseconds
      */
     virtual void sleep(const std::chrono::nanoseconds& time);
+
+    /*! Used to allow daughterboards to be able to call into the
+     * define_custom_register_space function of the NoC block, see register_iface.hpp for
+     * more information.
+     */
+    virtual void define_custom_register_space(const uint32_t,
+        const uint32_t,
+        std::function<void(uint32_t, uint32_t)>,
+        std::function<uint32_t(uint32_t)>)
+    { /* noop*/
+    }
 };
 
 }} // namespace uhd::usrp

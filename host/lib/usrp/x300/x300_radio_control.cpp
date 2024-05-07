@@ -1539,11 +1539,18 @@ private:
 
         // create a new dboard interface
         x300_dboard_iface_config_t db_config;
-        db_config.gpio           = gpio_atr::db_gpio_atr_3000::make(_wb_iface,
+        db_config.gpio = gpio_atr::db_gpio_atr_3000::make(_wb_iface,
             gpio_atr::gpio_atr_offsets::make_default(x300_regs::SR_DB_GPIO,
                 x300_regs::RB_DB_GPIO,
                 x300_regs::PERIPH_REG_OFFSET));
-        db_config.spi            = _spi;
+        db_config.spi  = _spi;
+        db_config.define_custom_register_space =
+            [this](uint32_t start_addr,
+                uint32_t length,
+                std::function<void(uint32_t, uint32_t)> poke_fn,
+                std::function<uint32_t(uint32_t)> peek_fn) {
+                regs().define_custom_register_space(start_addr, length, poke_fn, peek_fn);
+            };
         db_config.rx_spi_slaveno = DB_RX_SEN;
         db_config.tx_spi_slaveno = DB_TX_SEN;
         db_config.i2c            = zpu_i2c;
