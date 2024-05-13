@@ -104,10 +104,11 @@ res5_26_28              0x05[26:28]     0
 shutdown_pll            0x05[25]        0       enabled, disabled
 f01                     0x05[24]        1       frac_n, auto
 ld_pin_mode             0x05[22:23]     1       low, dld, ald, high
+res_19_21               0x05[19:21]     0
 mux_sdo                 0x05[18]        0       normal, sdo
 res5_7_17               0x05[7:17]      0
 adc_start               0x05[6]         0       normal, start_conversion
-adc_mode                0x05[2:0]       0       disabled, temp_sensor, res2, res3, tune_pin, res5, res6, res7
+adc_mode                0x05[5:3]       0       disabled, temp_sensor, res2, res3, tune_pin, res5, res6, res7
 """
 
 ########################################################################

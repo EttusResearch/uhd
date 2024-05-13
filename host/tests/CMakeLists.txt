@@ -304,6 +304,14 @@ UHD_ADD_NONAPI_TEST(
     ${UHD_BINARY_DIR}/lib/ic_reg_maps
 )
 
+UHD_ADD_NONAPI_TEST(
+    TARGET "max287x_test.cpp"
+    EXTRA_SOURCES
+    ${UHD_SOURCE_DIR}/lib/include/uhdlib/usrp/common/max287x.hpp
+    INCLUDE_DIRS
+    ${UHD_BINARY_DIR}/lib/ic_reg_maps
+)
+
 set_source_files_properties(
     ${UHD_SOURCE_DIR}/lib/utils/system_time.cpp
     PROPERTIES COMPILE_DEFINITIONS
