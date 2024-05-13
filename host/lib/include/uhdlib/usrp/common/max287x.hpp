@@ -92,6 +92,13 @@ public:
     } output_power_t;
 
     typedef enum {
+        AUX_OUTPUT_POWER_M4DBM,
+        AUX_OUTPUT_POWER_M1DBM,
+        AUX_OUTPUT_POWER_2DBM,
+        AUX_OUTPUT_POWER_5DBM
+    } aux_output_power_t;
+
+    typedef enum {
         LOW_NOISE_AND_SPUR_LOW_NOISE,
         LOW_NOISE_AND_SPUR_LOW_SPUR_1,
         LOW_NOISE_AND_SPUR_LOW_SPUR_2
@@ -146,10 +153,22 @@ public:
         double target_freq, double ref_freq, double target_pfd_freq, bool is_int_n) = 0;
 
     /**
-     * Set output power
+     * Set output power (RFOUTA)
      * @param power output power
      */
     virtual void set_output_power(output_power_t power) = 0;
+
+    /**
+     * Set output power for aux port (RFOUTB)
+     * @param power output power
+     */
+    virtual void set_aux_output_power(aux_output_power_t power) = 0;
+
+    /**
+     * Enable or disable aux output power (RFOUTB)
+     * @param enable output power enabled
+     */
+    virtual void set_aux_output_power_enable(bool enable) = 0;
 
     /**
      * Set lock detect pin mode
@@ -266,6 +285,8 @@ public:
         double target_pfd_freq,
         bool is_int_n) override;
     void set_output_power(output_power_t power) override;
+    void set_aux_output_power(aux_output_power_t power) override;
+    void set_aux_output_power_enable(bool enable) override;
     void set_ld_pin_mode(ld_pin_mode_t mode) override;
     void set_muxout_mode(muxout_mode_t mode) override;
     void set_charge_pump_current(charge_pump_current_t cp_current) override;
@@ -901,6 +922,34 @@ void max287x<max287x_regs_t>::set_output_power(output_power_t power)
         default:
             UHD_THROW_INVALID_CODE_PATH();
     }
+}
+
+template <typename max287x_regs_t>
+void max287x<max287x_regs_t>::set_aux_output_power(aux_output_power_t power)
+{
+    switch (power) {
+        case AUX_OUTPUT_POWER_M4DBM:
+            _regs.aux_output_power = max287x_regs_t::AUX_OUTPUT_POWER_M4DBM;
+            break;
+        case AUX_OUTPUT_POWER_M1DBM:
+            _regs.aux_output_power = max287x_regs_t::AUX_OUTPUT_POWER_M1DBM;
+            break;
+        case AUX_OUTPUT_POWER_2DBM:
+            _regs.aux_output_power = max287x_regs_t::AUX_OUTPUT_POWER_2DBM;
+            break;
+        case AUX_OUTPUT_POWER_5DBM:
+            _regs.aux_output_power = max287x_regs_t::AUX_OUTPUT_POWER_5DBM;
+            break;
+        default:
+            UHD_THROW_INVALID_CODE_PATH();
+    }
+}
+
+template <typename max287x_regs_t>
+void max287x<max287x_regs_t>::set_aux_output_power_enable(bool enable)
+{
+    _regs.aux_output_enable = enable ? max287x_regs_t::AUX_OUTPUT_ENABLE_ENABLED
+                                     : max287x_regs_t::AUX_OUTPUT_ENABLE_DISABLED;
 }
 
 template <typename max287x_regs_t>
