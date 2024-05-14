@@ -30,7 +30,7 @@ package PkgTestExec;
     time   start_time, end_time;      // Start and end time of the testbench
     bit    stop_on_error = 1;         // Configuration option to stop when an error occurs
     bit    done = 0;                  // Flag that sets when tb is finished
-    bit    test_status[$];            // Pass/fail status of each test
+    logic  test_status[$];            // Pass/fail of each test where index matches test number
 
     timeout_t tb_timeout;             // Handle to timeout for the overall testbench
     timeout_t test_timeout;           // Handle to timeout for current test
@@ -61,7 +61,7 @@ package PkgTestExec;
       $display("========================================================");
       this.tb_name = tb_name;
       start_time   = $time;
-      test_status  = {};
+      test_status  = { 1'bX };  // There is no test 0, so set it to X
       num_started  = 0;
       num_finished = 0;
       num_passed   = 0;
@@ -148,7 +148,7 @@ package PkgTestExec;
 
       end_timeout(test_timeout);
 
-      passed = test_status[num_started-1] && test_result;
+      passed = test_status[num_started] && test_result;
       num_finished++;
       $display("[TEST CASE %3d] (t = %t) DONE... %s",
                num_started, $time, passed ? "Passed" : "FAILED");
