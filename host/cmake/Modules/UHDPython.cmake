@@ -20,14 +20,6 @@ if(NOT DEFINED INCLUDED_UHD_PYTHON_CMAKE)
 set(INCLUDED_UHD_PYTHON_CMAKE TRUE)
 
 ########################################################################
-# Setup Python Part 0: Pybind11
-#
-# We do this first so it doesn't interfere with the other steps. In
-# particular, searching for pybind11 will mess with PYTHON_VERSION.
-########################################################################
-find_package(pybind11 ${PYBIND11_MIN_VERSION} QUIET)
-
-########################################################################
 # Setup Python Part 1: Find the interpreters
 ########################################################################
 message(STATUS "")
@@ -56,7 +48,7 @@ endif(NOT PYTHONINTERP_FOUND)
 # If that fails, try using the build-in find program routine.
 if(NOT PYTHONINTERP_FOUND)
     message(STATUS "Attempting to find Python without CMake...")
-    find_program(PYTHON_EXECUTABLE NAMES python3 python3.6 python3.7 python3.8 python3.9)
+    find_program(PYTHON_EXECUTABLE NAMES python3 python3.7 python3.8 python3.9 python3.10)
     if(PYTHON_EXECUTABLE)
         set(PYTHONINTERP_FOUND TRUE)
     endif(PYTHON_EXECUTABLE)
@@ -366,5 +358,28 @@ if(NOT PYTHON_INCLUDE_DIR)
         "Python include dirs")
     mark_as_advanced(PYTHON_INCLUDE_DIRS)
 endif(NOT PYTHON_INCLUDE_DIR)
+
+########################################################################
+# Setup Python Part 3: Pybind11
+#
+# Note that find_package(pybind11) breaks all sorts of stuff because it
+# uses its own Python-finding CMake code. We therefore limit its scope.
+# When we switch to CMake 3.12, we can probably simplify this by calling
+# find_package(Python ...) above.
+########################################################################
+function(FIND_PYBIND11)
+  set(PYBIND11_FINDPYTHON ON)
+  find_package(pybind11 ${PYBIND11_MIN_VERSION} QUIET)
+  if(DEFINED pybind11_INCLUDE_DIR)
+    set(pybind11_INCLUDE_DIR ${pybind11_INCLUDE_DIR} PARENT_SCOPE)
+    set(pybind11_INCLUDE_DIRS ${pybind11_INCLUDE_DIRS} PARENT_SCOPE)
+    set(pybind11_FOUND ${pybind11_FOUND} PARENT_SCOPE)
+    set(pybind11_DEFINITIONS ${pybind11_DEFINITIONS} PARENT_SCOPE)
+    set(pybind11_LIBRARIES ${pybind11_LIBRARIES} PARENT_SCOPE)
+    set(pybind11_LIBRARY ${pybind11_LIBRARY} PARENT_SCOPE)
+  endif()
+endfunction()
+
+FIND_PYBIND11()
 
 endif(NOT DEFINED INCLUDED_UHD_PYTHON_CMAKE)
