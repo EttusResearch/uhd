@@ -745,6 +745,13 @@ class PeriphManagerBase:
                     udp_xport_mgr.iface_config[x['iface']]['label'])
                 for x in chdr_link_options if x['type'] == 'sfp'
             }
+            ta_insts = [mgr.get_xport_adapter_inst() for mgr in self._xport_adapter_mgrs.values()]
+            if len(ta_insts) != len(set(ta_insts)):
+                self.log.error(
+                    "Transport adapters have duplicate instance values: " +
+                    " ".join(f"{k}: {v.get_xport_adapter_inst()}" for k, v in self._xport_adapter_mgrs.items()))
+                raise RuntimeError(
+                    "Invalid FPGA configuration: Transport adapters have duplicate instance values")
             # Remove transport adapters without capabilities
             self._xport_adapter_mgrs = {
                 iface: mgr
