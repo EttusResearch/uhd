@@ -19,6 +19,7 @@
 #include <uhdlib/usrp/dboard/null_dboard.hpp>
 #include <uhdlib/usrp/dboard/zbx/zbx_dboard.hpp>
 #include <uhdlib/utils/prefs.hpp>
+#include <future>
 
 namespace uhd { namespace rfnoc {
 
@@ -234,7 +235,7 @@ x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
     }
 
     uhd::rfnoc::mb_controller::sync_source_updater_t self_cal_runner =
-        [&](const uhd::rfnoc::mb_controller::sync_source_t&) {
+        [&, pid](const uhd::rfnoc::mb_controller::sync_source_t&) {
             auto mpm_rpc = _mb_control->dynamic_cast_rpc_as<uhd::usrp::mpmd_rpc_iface>();
             auto self_cal_req = mpm_rpc->pop_host_tasks(
                 "db" + std::to_string(get_block_id().get_block_count()) + "_ADCSelfCal");
@@ -255,19 +256,31 @@ x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
                     auto resume_guided_mode = uhd::utils::scope_exit::make(
                         [&]() { uhd::prefs::resume_guided_mode(); });
 
+                    std::vector<std::future<void>> cal_futures;
                     for (size_t i = 0; i < num_channels; i++) {
                         auto abs_ch = get_block_id().get_block_count() * num_channels + i;
                         if (ch_list.size() == 0
                             or ch_list.find(std::to_string(abs_ch))
                                    != std::string::npos) {
-                            RFNOC_LOG_INFO("Calibrating channel " << abs_ch << "...");
-                            self_cal.run(i, args);
+                            // Run self-cal in parallel on FBX daughterboards
+                            if (std::stol(pid) == uhd::usrp::fbx::FBX_PID) {
+                                cal_futures.push_back(std::async(std::launch::async,
+                                    [&self_cal, i, args]() { self_cal.run(i, args); }));
+                            } else {
+                                self_cal.run(i, args);
+                                RFNOC_LOG_INFO("Calibrating channel " << abs_ch << "...");
+                            }
                             num_calibrations++;
                         }
                     }
+                    // Wait for all channels to complete on FBX daughterboards
+                    if (std::stol(pid) == uhd::usrp::fbx::FBX_PID) {
+                        for (auto& f : cal_futures) {
+                            f.get();
+                        }
+                    }
                     if (num_calibrations > 0) {
-                        RFNOC_LOG_DEBUG(
-                            "Calibrated " << num_calibrations << " channels.");
+                        RFNOC_LOG_INFO("Calibrated " << num_calibrations << " channels.");
                     } else {
                         RFNOC_LOG_WARNING("Did not find any channels to calibrate!");
                     }
