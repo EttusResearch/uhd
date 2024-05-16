@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE(adf5356_init_test)
 BOOST_AUTO_TEST_CASE(adf5356_test_freqs)
 {
     auto mem = adf535x_mem<adf5356_regs_t>{};
-    auto lo = adf535x_iface::make_adf5356(
+    auto lo  = adf535x_iface::make_adf5356(
         [&](const std::vector<uint32_t> regs) {
             for (auto& reg : regs) {
                 mem.poke32(uhd::narrow_cast<uint8_t>(reg & 0xF), reg);

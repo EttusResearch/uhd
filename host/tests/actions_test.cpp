@@ -243,7 +243,14 @@ BOOST_AUTO_TEST_CASE(test_action_exception_handling)
     graph.connect(&mock_radio, &mock_radio, {0, 0, graph_edge_t::DYNAMIC, false});
     graph.commit();
     // Check that it throws the first time
-    BOOST_REQUIRE_THROW(node_accessor.post_action(&mock_radio, {res_source_info::USER, 0}, action_info::make("throwing_action")), uhd::runtime_error);
-    // It should also throw the second time: we should actually be running this action even though the previous one threw an exception
-    BOOST_REQUIRE_THROW(node_accessor.post_action(&mock_radio, {res_source_info::USER, 0}, action_info::make("throwing_action")), uhd::runtime_error);
+    BOOST_REQUIRE_THROW(node_accessor.post_action(&mock_radio,
+                            {res_source_info::USER, 0},
+                            action_info::make("throwing_action")),
+        uhd::runtime_error);
+    // It should also throw the second time: we should actually be running this action
+    // even though the previous one threw an exception
+    BOOST_REQUIRE_THROW(node_accessor.post_action(&mock_radio,
+                            {res_source_info::USER, 0},
+                            action_info::make("throwing_action")),
+        uhd::runtime_error);
 }
