@@ -130,7 +130,9 @@ if { [string compare $cmd "create"] == 0 } {
             puts "INFO: BD TCL source updated: $src_dir/$src_rootname.tcl"
             # Export HDL source files into a seperate TCL file
             puts "INFO: Generating hdl_sources.tcl file from project..."
-            set hdlSources [get_files -quiet -filter {FILE_TYPE == VHDL || FILE_TYPE == Verilog || FILE_TYPE == SystemVerilog}]
+            # The VHDL part captures the 2008 standard as well.
+            # The Verilog part comprises SystemVerilog and Verilog files along with header files.
+            set hdlSources [get_files -quiet -filter {FILE_TYPE =~ "*VHDL*" || FILE_TYPE =~ "*Verilog*"}]
             if {[llength $hdlSources] == 0} {
                 puts "INFO: No HDL sources found in project"
             } else {
@@ -146,12 +148,20 @@ if { [string compare $cmd "create"] == 0 } {
                 foreach file $hdlSources {
                     set file_type [get_property FILE_TYPE $file]
                     set rel_file_path [exec realpath -s --relative-to=$src_dir $file]
-                    if { $file_type == "VHDL"} {
-                        puts $fh "read_vhdl        -library work \$script_dir/$rel_file_path"
-                    } elseif { $file_type == "Verilog"} {
-                        puts $fh "read_verilog     -library work \$script_dir/$rel_file_path"
+                    # check whether file_type contains the word VHDL
+                    if { [ string first "VHDL" $file_type ] != -1 } {
+                        if { $file_type == "VHDL" } {
+                            puts $fh "read_vhdl           -library work \$script_dir/$rel_file_path"
+                        } else {
+                            puts $fh "read_vhdl ‑vhdl2008 -library work \$script_dir/$rel_file_path"
+                        }
+                    # must be one of the verilog types
                     } else {
-                        puts $fh "read_verilog -sv -library work \$script_dir/$rel_file_path"
+                        if { $file_type != "SystemVerilog" } {
+                            puts $fh "read_verilog        -library work \$script_dir/$rel_file_path"
+                        } else {
+                            puts $fh "read_verilog -sv    -library work \$script_dir/$rel_file_path"
+                        }
                     }
                 }
                 puts "INFO: $src_dir/hdl_sources.tcl file created or updated"
