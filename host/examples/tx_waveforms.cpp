@@ -147,20 +147,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         std::lround(wave_freq / usrp->get_tx_rate(channel_nums.front()) * wave_table_len);
     size_t index = 0;
 
+    // Defer setting the frequency and LO offset until synchronization setup is complete,
+    // configuring here only gains, bandwidth, and antenna
     for (std::size_t channel : channel_nums) {
-        std::cout << boost::format("Setting TX Freq: %f MHz...") % (freq / 1e6)
-                  << std::endl;
-        std::cout << boost::format("Setting TX LO Offset: %f MHz...") % (lo_offset / 1e6)
-                  << std::endl;
-        uhd::tune_request_t tune_request(freq, lo_offset);
-        if (vm.count("int-n"))
-            tune_request.args = uhd::device_addr_t("mode_n=integer");
-        usrp->set_tx_freq(tune_request, channel);
-        std::cout << boost::format("Actual TX Freq: %f MHz...")
-                         % (usrp->get_tx_freq(channel) / 1e6)
-                  << std::endl
-                  << std::endl;
-
         // set the rf gain
         if (vm.count("power")) {
             if (!usrp->has_tx_power_reference(channel)) {
@@ -286,6 +275,31 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         std::cout << boost::format("Checking TX: %s ...") % ref_locked.to_pp_string()
                   << std::endl;
         UHD_ASSERT_THROW(ref_locked.to_bool());
+    }
+
+    // Now, that clock sync setup is complete do timed tuning of LOs and NCOs
+    std::cout << boost::format("Setting TX Freq: %f MHz...") % (freq / 1e6)
+                << std::endl;
+    std::cout << boost::format("Setting TX LO Offset: %f MHz...") % (lo_offset / 1e6)
+                << std::endl;
+    const float cmd_time_offset = 0.1;
+    const uhd::time_spec_t now = usrp->get_time_now();
+    const uhd::time_spec_t cmd_time = now + uhd::time_spec_t(cmd_time_offset);
+    usrp->set_command_time(cmd_time);
+    for (std::size_t channel : channel_nums) {
+        uhd::tune_request_t tune_request(freq, lo_offset);
+        if (vm.count("int-n"))
+            tune_request.args = uhd::device_addr_t("mode_n=integer");
+        usrp->set_tx_freq(tune_request, channel);
+    }
+    usrp->clear_command_time();
+    std::this_thread::sleep_for(std::chrono::milliseconds(int64_t(1e3 * cmd_time_offset))); // wait until the command time has passed for sure
+
+    for (std::size_t channel : channel_nums) {
+        std::cout << boost::format("Actual TX Freq: %f MHz...")
+                         % (usrp->get_tx_freq(channel) / 1e6)
+                  << std::endl
+                  << std::endl;
     }
 
     std::signal(SIGINT, &sig_int_handler);
