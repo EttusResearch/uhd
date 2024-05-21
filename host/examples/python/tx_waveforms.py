@@ -77,14 +77,27 @@ def rfnoc_dram_tx(args):
     dram = dram_utils.DramTransmitter(graph, radio_chans, cpu_format='fc32')
     replay = dram.replay_blocks[0]
     print(f"Using replay block: {replay.get_unique_id()}")
+    # Separate loops for setting rate and frequency to minimize timed cmd queue
     for (radio, radio_chan), duc_info in zip(dram.radio_chan_pairs, dram.duc_chan_pairs):
-        radio.set_tx_frequency(args.freq, radio_chan)
         radio.set_tx_gain(args.gain, radio_chan)
         if duc_info:
             duc, duc_chan = duc_info
             duc.set_output_rate(args.rate, duc_chan)
         else:
             radio.set_rate(args.rate)
+
+    # Use timed commands to set frequency to minimize phase differences
+    # between channels.
+    cmd_time_offset = 0.1
+    cmd_time = dram.radio_chan_pairs[0][0].get_time_now() + cmd_time_offset
+    for (radio, radio_chan) in dram.radio_chan_pairs:
+        radio.set_command_time(cmd_time, radio_chan)
+        radio.set_tx_frequency(args.freq, radio_chan)
+    for (radio, radio_chan) in dram.radio_chan_pairs:
+        radio.clear_command_time(radio_chan)
+    # Enough time for tune time to expire
+    time.sleep(cmd_time_offset)
+ 
     # Overwrite default memory regions to maximize available memory
     mem_regions = [(0, replay.get_mem_size()) for _ in args.channels]
     dram.mem_regions = mem_regions
