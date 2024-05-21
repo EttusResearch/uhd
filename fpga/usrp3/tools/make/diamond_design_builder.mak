@@ -28,6 +28,7 @@ BUILD_DIAMOND_DESIGN = \
 	export DMD_GIT_HASH=$(GIT_HASH_VERILOG_DEF); \
 	export DMD_PROJECT_FILE="$(1).ldf"; \
 	export DMD_IMPL=$(5); \
+	export LC_ALL=en_US.UTF-8; \
 	cp $(TOOLS_DIR)/scripts/dmd_design_build.tcl $(4)/build.tcl; \
 	cd $(4); \
 	echo "BUILDER: Implementating design..."; \
