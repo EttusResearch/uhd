@@ -29,6 +29,8 @@ def parse_args():
     parser.add_argument("-g", "--gain", type=int, default=10)
     parser.add_argument("--wave-freq", default=1e4, type=float)
     parser.add_argument("--wave-ampl", default=0.3, type=float)
+    parser.add_argument("--tx-delay", default=0.5, type=float,
+                        help="Delay before simultaneously starting transmission on all channels")
     parser.add_argument("--dram", action='store_true',
                         help="If given, will attempt to stream via DRAM")
     return parser.parse_args()
@@ -44,6 +46,15 @@ def multi_usrp_tx(args):
         desired_size = 1e6 # Just pick a value
     else:
         desired_size = 10 * np.floor(args.rate / args.wave_freq)
+    
+    if args.tx_delay == 0:
+        tx_start_time = None # Start transmission immediately  
+    else:
+        # Delay transmission start. This will will allow SW to apply all 
+        # configurations and start transmission on all channels simultaneously.
+        # If tx_delay is to small, tx_start_time may be in the past by the time
+        # all configurations are applied and late command errors being reported.
+        tx_start_time = usrp.get_time_now() + args.tx_delay
     data = uhd.dsp.signals.get_continuous_tone(
         args.rate,
         args.wave_freq,
@@ -52,7 +63,7 @@ def multi_usrp_tx(args):
         max_size=(args.duration * args.rate),
         waveform=args.waveform)
     usrp.send_waveform(data, args.duration, args.freq, args.rate,
-                       args.channels, args.gain)
+                       args.channels, args.gain, tx_start_time)
 
 def rfnoc_dram_tx(args):
     """
@@ -124,11 +135,18 @@ def rfnoc_dram_tx(args):
         print(f"Uploading waveform data ({data.nbytes/(1024**2):.2f} MiB) "
               f"and starting streaming...")
         tx_md = uhd.types.TXMetadata()
-        tx_md.has_time_spec = False
+        if args.tx_delay == 0:
+            tx_md.has_time_spec = False
+        else:
+            # In this case the tx_start_time needs to be sufficiently in the future
+            # to also allow uploading of the data to the DRAM.
+            tx_md.has_time_spec = True
+            tx_md.time_spec = dram.radio_chan_pairs[0][0].get_time_now() + args.tx_delay
         # These flags actually don't do anything; but if this was a regular TX
         # streamer object, that's what we would write here.
         tx_md.start_of_burst = True
         tx_md.end_of_burst = True
+        # Upload and send at time specified by tx_start_time
         dram.send(data, tx_md, 1.0)
     else:
         # Upload
@@ -141,13 +159,17 @@ def rfnoc_dram_tx(args):
         stream_cmd = uhd.types.StreamCMD(stream_mode)
         if args.duration > 0:
             stream_cmd.num_samps = int(args.duration * args.rate)
-        stream_cmd.stream_now = len(radio_chans) == 1
-        stream_cmd.time_spec = dram.radio_chan_pairs[0][0].get_time_now() + 0.5
+        if args.tx_delay == 0:
+            stream_cmd.stream_now = True
+        else:
+            stream_cmd.stream_now = False
+            stream_cmd.time_spec = dram.radio_chan_pairs[0][0].get_time_now() + args.tx_delay
         print("Starting streaming...")
         dram.issue_stream_cmd(stream_cmd)
     if args.duration > 0:
         print("Waiting for transmission to complete...")
-        time.sleep(args.duration + 1.0 + 0.5)
+        # Sleep time allows for 1s of extra time for the transmission to complete
+        time.sleep(args.duration + 1.0 + args.tx_delay)
         async_timeout = time.monotonic() + 5.0
         async_md = None
         while time.monotonic() < async_timeout:
@@ -169,7 +191,7 @@ def rfnoc_dram_tx(args):
         stream_cmd = uhd.types.StreamCMD(uhd.types.StreamMode.stop_cont)
         stream_cmd.stream_now = True
         dram.issue_stream_cmd(stream_cmd)
-        time.sleep(0.5)
+        time.sleep(args.tx_delay)
 
 
 def main():
