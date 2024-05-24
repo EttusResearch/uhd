@@ -3,16 +3,25 @@ module_name: fft
 version: "1.0"
 rfnoc_version: "1.0"
 chdr_width: 64
-noc_id: 0xFF700000
+noc_id: 0xFF700002
+
 # Provide a custom path to Makefile.srcs for this block relative to the
 # FPGA repository
 makefile_srcs: "${fpga_lib_dir}/blocks/rfnoc_block_fft/Makefile.srcs"
 
 parameters:
-  EN_MAGNITUDE_OUT: 0
-  EN_MAGNITUDE_APPROX_OUT: 1
-  EN_MAGNITUDE_SQ_OUT: 1
-  EN_FFT_SHIFT: 1
+  NUM_PORTS: 1
+  NUM_CORES: 1
+  MAX_FFT_SIZE_LOG2: 12
+  MAX_CP_LIST_LEN_INS_LOG2: 5
+  MAX_CP_LIST_LEN_REM_LOG2: 5
+  CP_INSERTION_REPEAT: 1
+  CP_REMOVAL_REPEAT: 1
+  EN_FFT_BYPASS: 0
+  EN_FFT_ORDER: 1
+  EN_MAGNITUDE: 1
+  EN_MAGNITUDE_SQ: 1
+  USE_APPROX_MAG: 1
 
 clocks:
   - name: rfnoc_chdr
@@ -33,21 +42,24 @@ control:
     has_status: False
 
 data:
-  fpga_iface: axis_pyld_ctxt
+  fpga_iface: axis_data
   clk_domain: ce
   inputs:
-    in_0:
+    in:
+      num_ports: NUM_PORTS
       item_width: 32
       nipc: 1
-      context_fifo_depth: 2
+      info_fifo_depth: 32
       payload_fifo_depth: 32
       format: sc16
       mdata_sig: ~
   outputs:
-    out_0:
+    out:
+      num_ports: NUM_PORTS
       item_width: 32
       nipc: 1
-      context_fifo_depth: 2
-      payload_fifo_depth: 32
+      info_fifo_depth: 32
+      payload_fifo_depth: 2**MTU
+      sideband_at_end: True
       format: sc16
       mdata_sig: ~
