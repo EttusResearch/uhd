@@ -1,0 +1,10 @@
+#
+# Copyright 2024 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+FFT_REORDER_SRCS += $(abspath $(addprefix $(BASE_DIR)/../lib/rfnoc/blocks/rfnoc_block_fft/, \
+fft_reorder_pkg.sv \
+fft_reorder.sv \
+))

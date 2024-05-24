@@ -1,5 +1,5 @@
 //
-// Copyright 2022 Ettus Research, a National Instruments Brand
+// Copyright 2024 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -7,7 +7,7 @@
 //
 // Description:
 //
-//   This is a tool-generated NoC-shell for the fft block.
+//   This is a tool-generated NoC-shell for the FFT block.
 //   See the RFNoC specification for more information about NoC shells.
 //
 // Parameters:
@@ -22,13 +22,12 @@
 
 
 module noc_shell_fft #(
-  parameter [9:0] THIS_PORTID     = 10'd0,
-  parameter       CHDR_W          = 64,
-  parameter [5:0] MTU             = 10,
-  parameter       EN_MAGNITUDE_OUT = 0,
-  parameter       EN_MAGNITUDE_APPROX_OUT = 1,
-  parameter       EN_MAGNITUDE_SQ_OUT = 1,
-  parameter       EN_FFT_SHIFT    = 1
+  parameter [9:0] THIS_PORTID = 10'd0,
+  parameter       CHDR_W      = 64,
+  parameter [5:0] MTU         = 10,
+  parameter       NUM_PORTS   = 2,
+  parameter       NIPC        = 1,
+  parameter       ITEM_W      = 32
 ) (
   //---------------------
   // Framework Interface
@@ -49,15 +48,15 @@ module noc_shell_fft #(
   output wire [511:0]          rfnoc_core_status,
 
   // AXIS-CHDR Input Ports (from framework)
-  input  wire [(1)*CHDR_W-1:0] s_rfnoc_chdr_tdata,
-  input  wire [(1)-1:0]        s_rfnoc_chdr_tlast,
-  input  wire [(1)-1:0]        s_rfnoc_chdr_tvalid,
-  output wire [(1)-1:0]        s_rfnoc_chdr_tready,
+  input  wire [NUM_PORTS*CHDR_W-1:0] s_rfnoc_chdr_tdata,
+  input  wire [NUM_PORTS-1:0]        s_rfnoc_chdr_tlast,
+  input  wire [NUM_PORTS-1:0]        s_rfnoc_chdr_tvalid,
+  output wire [NUM_PORTS-1:0]        s_rfnoc_chdr_tready,
   // AXIS-CHDR Output Ports (to framework)
-  output wire [(1)*CHDR_W-1:0] m_rfnoc_chdr_tdata,
-  output wire [(1)-1:0]        m_rfnoc_chdr_tlast,
-  output wire [(1)-1:0]        m_rfnoc_chdr_tvalid,
-  input  wire [(1)-1:0]        m_rfnoc_chdr_tready,
+  output wire [NUM_PORTS*CHDR_W-1:0] m_rfnoc_chdr_tdata,
+  output wire [NUM_PORTS-1:0]        m_rfnoc_chdr_tlast,
+  output wire [NUM_PORTS-1:0]        m_rfnoc_chdr_tvalid,
+  input  wire [NUM_PORTS-1:0]        m_rfnoc_chdr_tready,
 
   // AXIS-Ctrl Control Input Port (from framework)
   input  wire [31:0]           s_rfnoc_ctrl_tdata,
@@ -85,33 +84,31 @@ module noc_shell_fft #(
   input  wire               m_ctrlport_resp_ack,
   input  wire [31:0]        m_ctrlport_resp_data,
 
-  // AXI-Stream Payload Context Clock and Reset
+  // AXI-Stream Data Clock and Reset
   output wire               axis_data_clk,
   output wire               axis_data_rst,
-  // Payload Stream to User Logic: in_0
-  output wire [32*1-1:0]    m_in_0_payload_tdata,
-  output wire [1-1:0]       m_in_0_payload_tkeep,
-  output wire               m_in_0_payload_tlast,
-  output wire               m_in_0_payload_tvalid,
-  input  wire               m_in_0_payload_tready,
-  // Context Stream to User Logic: in_0
-  output wire [CHDR_W-1:0]  m_in_0_context_tdata,
-  output wire [3:0]         m_in_0_context_tuser,
-  output wire               m_in_0_context_tlast,
-  output wire               m_in_0_context_tvalid,
-  input  wire               m_in_0_context_tready,
-  // Payload Stream from User Logic: out_0
-  input  wire [32*1-1:0]    s_out_0_payload_tdata,
-  input  wire [0:0]         s_out_0_payload_tkeep,
-  input  wire               s_out_0_payload_tlast,
-  input  wire               s_out_0_payload_tvalid,
-  output wire               s_out_0_payload_tready,
-  // Context Stream from User Logic: out_0
-  input  wire [CHDR_W-1:0]  s_out_0_context_tdata,
-  input  wire [3:0]         s_out_0_context_tuser,
-  input  wire               s_out_0_context_tlast,
-  input  wire               s_out_0_context_tvalid,
-  output wire               s_out_0_context_tready
+  // Data Stream to User Logic: in
+  output wire [NUM_PORTS*ITEM_W*NIPC-1:0] m_in_axis_tdata,
+  output wire [NUM_PORTS*NIPC-1:0]        m_in_axis_tkeep,
+  output wire [NUM_PORTS-1:0]             m_in_axis_tlast,
+  output wire [NUM_PORTS-1:0]             m_in_axis_tvalid,
+  input  wire [NUM_PORTS-1:0]             m_in_axis_tready,
+  output wire [NUM_PORTS*64-1:0]          m_in_axis_ttimestamp,
+  output wire [NUM_PORTS-1:0]             m_in_axis_thas_time,
+  output wire [NUM_PORTS*16-1:0]          m_in_axis_tlength,
+  output wire [NUM_PORTS-1:0]             m_in_axis_teov,
+  output wire [NUM_PORTS-1:0]             m_in_axis_teob,
+  // Data Stream from User Logic: out
+  input  wire [NUM_PORTS*ITEM_W*NIPC-1:0] s_out_axis_tdata,
+  input  wire [NUM_PORTS*NIPC-1:0]        s_out_axis_tkeep,
+  input  wire [NUM_PORTS-1:0]             s_out_axis_tlast,
+  input  wire [NUM_PORTS-1:0]             s_out_axis_tvalid,
+  output wire [NUM_PORTS-1:0]             s_out_axis_tready,
+  input  wire [NUM_PORTS*64-1:0]          s_out_axis_ttimestamp,
+  input  wire [NUM_PORTS-1:0]             s_out_axis_thas_time,
+  input  wire [NUM_PORTS*16-1:0]          s_out_axis_tlength,
+  input  wire [NUM_PORTS-1:0]             s_out_axis_teov,
+  input  wire [NUM_PORTS-1:0]             s_out_axis_teob
 );
 
   //---------------------------------------------------------------------------
@@ -128,9 +125,9 @@ module noc_shell_fft #(
   wire [63:0]  data_o_flush_done;
 
   backend_iface #(
-    .NOC_ID        (32'hFF700000),
-    .NUM_DATA_I    (1),
-    .NUM_DATA_O    (1),
+    .NOC_ID        (32'hFF700002),
+    .NUM_DATA_I    (NUM_PORTS),
+    .NUM_DATA_O    (NUM_PORTS),
     .CTRL_FIFOSIZE ($clog2(32)),
     .MTU           (MTU)
   ) backend_iface_i (
@@ -230,77 +227,79 @@ module noc_shell_fft #(
   // Input Data Paths
   //---------------------
 
-  chdr_to_axis_pyld_ctxt #(
-    .CHDR_W              (CHDR_W),
-    .ITEM_W              (32),
-    .NIPC                (1),
-    .SYNC_CLKS           (0),
-    .CONTEXT_FIFO_SIZE   ($clog2(2)),
-    .PAYLOAD_FIFO_SIZE   ($clog2(32)),
-    .CONTEXT_PREFETCH_EN (1)
-  ) chdr_to_axis_pyld_ctxt_in_in_0 (
-    .axis_chdr_clk         (rfnoc_chdr_clk),
-    .axis_chdr_rst         (rfnoc_chdr_rst),
-    .axis_data_clk         (axis_data_clk),
-    .axis_data_rst         (axis_data_rst),
-    .s_axis_chdr_tdata     (s_rfnoc_chdr_tdata[(0)*CHDR_W+:CHDR_W]),
-    .s_axis_chdr_tlast     (s_rfnoc_chdr_tlast[0]),
-    .s_axis_chdr_tvalid    (s_rfnoc_chdr_tvalid[0]),
-    .s_axis_chdr_tready    (s_rfnoc_chdr_tready[0]),
-    .m_axis_payload_tdata  (m_in_0_payload_tdata),
-    .m_axis_payload_tkeep  (m_in_0_payload_tkeep),
-    .m_axis_payload_tlast  (m_in_0_payload_tlast),
-    .m_axis_payload_tvalid (m_in_0_payload_tvalid),
-    .m_axis_payload_tready (m_in_0_payload_tready),
-    .m_axis_context_tdata  (m_in_0_context_tdata),
-    .m_axis_context_tuser  (m_in_0_context_tuser),
-    .m_axis_context_tlast  (m_in_0_context_tlast),
-    .m_axis_context_tvalid (m_in_0_context_tvalid),
-    .m_axis_context_tready (m_in_0_context_tready),
-    .flush_en              (data_i_flush_en),
-    .flush_timeout         (data_i_flush_timeout),
-    .flush_active          (data_i_flush_active[0]),
-    .flush_done            (data_i_flush_done[0])
-  );
+  for (i = 0; i < NUM_PORTS; i = i + 1) begin: gen_input_in
+    chdr_to_axis_data #(
+      .CHDR_W         (CHDR_W),
+      .ITEM_W         (ITEM_W),
+      .NIPC           (NIPC),
+      .SYNC_CLKS      (0),
+      .INFO_FIFO_SIZE ($clog2(32)),
+      .PYLD_FIFO_SIZE ($clog2(32))
+    ) chdr_to_axis_data_in_in (
+      .axis_chdr_clk      (rfnoc_chdr_clk),
+      .axis_chdr_rst      (rfnoc_chdr_rst),
+      .axis_data_clk      (axis_data_clk),
+      .axis_data_rst      (axis_data_rst),
+      .s_axis_chdr_tdata  (s_rfnoc_chdr_tdata[((0+i)*CHDR_W)+:CHDR_W]),
+      .s_axis_chdr_tlast  (s_rfnoc_chdr_tlast[0+i]),
+      .s_axis_chdr_tvalid (s_rfnoc_chdr_tvalid[0+i]),
+      .s_axis_chdr_tready (s_rfnoc_chdr_tready[0+i]),
+      .m_axis_tdata       (m_in_axis_tdata[(ITEM_W*NIPC)*i+:(ITEM_W*NIPC)]),
+      .m_axis_tkeep       (m_in_axis_tkeep[NIPC*i+:NIPC]),
+      .m_axis_tlast       (m_in_axis_tlast[i]),
+      .m_axis_tvalid      (m_in_axis_tvalid[i]),
+      .m_axis_tready      (m_in_axis_tready[i]),
+      .m_axis_ttimestamp  (m_in_axis_ttimestamp[64*i+:64]),
+      .m_axis_thas_time   (m_in_axis_thas_time[i]),
+      .m_axis_tlength     (m_in_axis_tlength[16*i+:16]),
+      .m_axis_teov        (m_in_axis_teov[i]),
+      .m_axis_teob        (m_in_axis_teob[i]),
+      .flush_en           (data_i_flush_en),
+      .flush_timeout      (data_i_flush_timeout),
+      .flush_active       (data_i_flush_active[0+i]),
+      .flush_done         (data_i_flush_done[0+i])
+    );
+  end
 
   //---------------------
   // Output Data Paths
   //---------------------
 
-  axis_pyld_ctxt_to_chdr #(
-    .CHDR_W              (CHDR_W),
-    .ITEM_W              (32),
-    .NIPC                (1),
-    .SYNC_CLKS           (0),
-    .CONTEXT_FIFO_SIZE   ($clog2(2)),
-    .PAYLOAD_FIFO_SIZE   ($clog2(32)),
-    .MTU                 (MTU),
-    .CONTEXT_PREFETCH_EN (1)
-  ) axis_pyld_ctxt_to_chdr_out_out_0 (
-    .axis_chdr_clk         (rfnoc_chdr_clk),
-    .axis_chdr_rst         (rfnoc_chdr_rst),
-    .axis_data_clk         (axis_data_clk),
-    .axis_data_rst         (axis_data_rst),
-    .m_axis_chdr_tdata     (m_rfnoc_chdr_tdata[(0)*CHDR_W+:CHDR_W]),
-    .m_axis_chdr_tlast     (m_rfnoc_chdr_tlast[0]),
-    .m_axis_chdr_tvalid    (m_rfnoc_chdr_tvalid[0]),
-    .m_axis_chdr_tready    (m_rfnoc_chdr_tready[0]),
-    .s_axis_payload_tdata  (s_out_0_payload_tdata),
-    .s_axis_payload_tkeep  (s_out_0_payload_tkeep),
-    .s_axis_payload_tlast  (s_out_0_payload_tlast),
-    .s_axis_payload_tvalid (s_out_0_payload_tvalid),
-    .s_axis_payload_tready (s_out_0_payload_tready),
-    .s_axis_context_tdata  (s_out_0_context_tdata),
-    .s_axis_context_tuser  (s_out_0_context_tuser),
-    .s_axis_context_tlast  (s_out_0_context_tlast),
-    .s_axis_context_tvalid (s_out_0_context_tvalid),
-    .s_axis_context_tready (s_out_0_context_tready),
-    .framer_errors         (),
-    .flush_en              (data_o_flush_en),
-    .flush_timeout         (data_o_flush_timeout),
-    .flush_active          (data_o_flush_active[0]),
-    .flush_done            (data_o_flush_done[0])
-  );
+  for (i = 0; i < NUM_PORTS; i = i + 1) begin: gen_output_out
+    axis_data_to_chdr #(
+      .CHDR_W          (CHDR_W),
+      .ITEM_W          (ITEM_W),
+      .NIPC            (NIPC),
+      .SYNC_CLKS       (0),
+      .INFO_FIFO_SIZE  ($clog2(32)),
+      .PYLD_FIFO_SIZE  ($clog2(2**MTU)),
+      .MTU             (MTU),
+      .SIDEBAND_AT_END (1)
+    ) axis_data_to_chdr_out_out (
+      .axis_chdr_clk      (rfnoc_chdr_clk),
+      .axis_chdr_rst      (rfnoc_chdr_rst),
+      .axis_data_clk      (axis_data_clk),
+      .axis_data_rst      (axis_data_rst),
+      .m_axis_chdr_tdata  (m_rfnoc_chdr_tdata[(0+i)*CHDR_W+:CHDR_W]),
+      .m_axis_chdr_tlast  (m_rfnoc_chdr_tlast[0+i]),
+      .m_axis_chdr_tvalid (m_rfnoc_chdr_tvalid[0+i]),
+      .m_axis_chdr_tready (m_rfnoc_chdr_tready[0+i]),
+      .s_axis_tdata       (s_out_axis_tdata[(ITEM_W*NIPC)*i+:(ITEM_W*NIPC)]),
+      .s_axis_tkeep       (s_out_axis_tkeep[NIPC*i+:NIPC]),
+      .s_axis_tlast       (s_out_axis_tlast[i]),
+      .s_axis_tvalid      (s_out_axis_tvalid[i]),
+      .s_axis_tready      (s_out_axis_tready[i]),
+      .s_axis_ttimestamp  (s_out_axis_ttimestamp[64*i+:64]),
+      .s_axis_thas_time   (s_out_axis_thas_time[i]),
+      .s_axis_tlength     (s_out_axis_tlength[16*i+:16]),
+      .s_axis_teov        (s_out_axis_teov[i]),
+      .s_axis_teob        (s_out_axis_teob[i]),
+      .flush_en           (data_o_flush_en),
+      .flush_timeout      (data_o_flush_timeout),
+      .flush_active       (data_o_flush_active[0+i]),
+      .flush_done         (data_o_flush_done[0+i])
+    );
+  end
 
 endmodule // noc_shell_fft
 

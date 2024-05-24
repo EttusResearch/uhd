@@ -1,10 +1,19 @@
 #
-# Copyright 2019 Ettus Research, a National Instruments Brand
+# Copyright 2024 Ettus Research, a National Instruments Brand
 #
 # SPDX-License-Identifier: LGPL-3.0-or-later
 #
 
 RFNOC_OOT_SRCS += $(abspath $(addprefix $(BASE_DIR)/../lib/rfnoc/blocks/rfnoc_block_fft/, \
+fft_reorder_pkg.sv \
+fft_reorder.sv \
+fft_post_processing.sv \
+cp_removal.sv \
+axis_cp_list.sv \
 noc_shell_fft.v \
-rfnoc_block_fft.v \
+xfft_config_pkg.sv \
+fft_core_regs_pkg.sv \
+xfft_wrapper.sv \
+fft_core.sv \
+rfnoc_block_fft.sv \
 ))
