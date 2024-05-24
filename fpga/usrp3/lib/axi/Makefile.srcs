@@ -38,4 +38,5 @@ axis_pkt_throttle.sv \
 axis_data_if_packetize.v \
 axis_combine.v \
 axis_split_bus.v \
+axis_sideband_tuser.v \
 ))
