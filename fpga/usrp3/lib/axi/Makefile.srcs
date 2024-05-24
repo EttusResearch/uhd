@@ -36,4 +36,5 @@ axis_split.v \
 axis_packetize.v \
 axis_pkt_throttle.sv \
 axis_data_if_packetize.v \
+axis_combine.v \
 ))
