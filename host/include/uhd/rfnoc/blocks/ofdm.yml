@@ -1,0 +1,56 @@
+schema: rfnoc_modtool_args
+module_name: ofdm
+version: "1.0"
+rfnoc_version: "1.0"
+chdr_width: 64
+noc_id: 0x0FD3_0000
+
+parameters:
+  NUM_PORTS: 1
+  MAX_FFT_SIZE_LOG2: 12
+  MAX_CP_LEN_LOG2: 12
+  MAX_CP_LIST_LEN_INS_LOG2: 5
+  MAX_CP_LIST_LEN_REM_LOG2: 5
+  CP_INSERTION_REPEAT: 1
+  CP_REMOVAL_REPEAT: 1
+
+clocks:
+  - name: rfnoc_chdr
+    freq: "[]"
+  - name: rfnoc_ctrl
+    freq: "[]"
+  - name: ce
+    freq: "[]"
+
+control:
+  fpga_iface: ctrlport
+  interface_direction: slave
+  fifo_depth: 32
+  clk_domain: ce
+  ctrlport:
+    byte_mode: False
+    timed: False
+    has_status: False
+
+data:
+  fpga_iface: axis_data
+  clk_domain: ce
+  inputs:
+    in:
+      num_ports: NUM_PORTS
+      item_width: 32
+      nipc: 1
+      info_fifo_depth: 32
+      payload_fifo_depth: 32
+      format: sc16
+      mdata_sig: ~
+  outputs:
+    out:
+      num_ports: NUM_PORTS
+      item_width: 32
+      nipc: 1
+      info_fifo_depth: 32
+      payload_fifo_depth: 2**MTU
+      sideband_at_end: True
+      format: sc16
+      mdata_sig: ~
