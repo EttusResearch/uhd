@@ -33,6 +33,7 @@ axis_upsizer.v \
 axis_downsizer.v \
 axis_width_conv.v \
 axis_split.v \
+axis_combine.v \
 axis_packetize.v \
 axis_pkt_throttle.sv \
 axis_data_if_packetize.v \
