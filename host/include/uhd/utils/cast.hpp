@@ -77,4 +77,7 @@ UHD_API int from_str(const std::string& val);
 template <>
 UHD_API std::string from_str(const std::string& val);
 
+//! Create an ordinal string from a number.
+UHD_API std::string to_ordinal_string(int val);
+
 }} // namespace uhd::cast

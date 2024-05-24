@@ -164,7 +164,7 @@ struct UHD_API logging_info
 /*! Set the global log level
  *
  * The global log level gets applied before the specific log level.
- * So, if the global log level is 'info', no logger can can print
+ * So, if the global log level is 'info', no logger can print
  * messages at level 'debug' or below.
  */
 UHD_API void set_log_level(uhd::log::severity_level level);

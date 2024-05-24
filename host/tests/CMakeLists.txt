@@ -417,6 +417,10 @@ IF(ENABLE_X400)
             ${UHD_SOURCE_DIR}/lib/usrp/cores/gpio_atr_3000.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/cores/spi_core_4000.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/x400/x400_internal_sync.cpp
+            ${UHD_SOURCE_DIR}/lib/utils/prefs.cpp
+            ${UHD_SOURCE_DIR}/lib/utils/pathslib.cpp
+            ${UHD_SOURCE_DIR}/lib/utils/paths.cpp
+            ${UHD_SOURCE_DIR}/lib/utils/config_parser.cpp
             $<TARGET_OBJECTS:uhd_rpclib>
             INCLUDE_DIRS ${UHD_SOURCE_DIR}/lib/deps/rpclib/include
             INCLUDE_DIRS ${UHD_SOURCE_DIR}/lib/deps/flatbuffers/include
@@ -448,6 +452,10 @@ IF(ENABLE_X400)
             ${UHD_SOURCE_DIR}/lib/usrp/cores/gpio_atr_3000.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/cores/spi_core_4000.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/x400/x400_internal_sync.cpp
+            ${UHD_SOURCE_DIR}/lib/utils/prefs.cpp
+            ${UHD_SOURCE_DIR}/lib/utils/pathslib.cpp
+            ${UHD_SOURCE_DIR}/lib/utils/paths.cpp
+            ${UHD_SOURCE_DIR}/lib/utils/config_parser.cpp
             $<TARGET_OBJECTS:uhd_rpclib>
             INCLUDE_DIRS ${UHD_SOURCE_DIR}/lib/deps/rpclib/include
             INCLUDE_DIRS ${UHD_SOURCE_DIR}/lib/deps/flatbuffers/include
