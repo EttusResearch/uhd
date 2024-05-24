@@ -20,6 +20,7 @@ namespace py = pybind11;
 #include "rfnoc/ddc_block_control_python.hpp"
 #include "rfnoc/duc_block_control_python.hpp"
 #include "rfnoc/fft_block_control_python.hpp"
+#include "rfnoc/ofdm_block_control_python.hpp"
 #include "rfnoc/fir_filter_block_control_python.hpp"
 #include "rfnoc/fosphor_block_control_python.hpp"
 #include "rfnoc/keep_one_in_n_block_control_python.hpp"
@@ -98,6 +99,7 @@ PYBIND11_MODULE(libpyuhd, m)
     export_ddc_block_control(rfnoc_module);
     export_duc_block_control(rfnoc_module);
     export_fft_block_control(rfnoc_module);
+    export_ofdm_block_control(rfnoc_module);
     export_fosphor_block_control(rfnoc_module);
     export_fir_filter_block_control(rfnoc_module);
     export_keep_one_in_n_block_control(rfnoc_module);
