@@ -165,7 +165,7 @@ def run():
         return False
     apply_image(mender_image)
     print("Applied image. After reboot, check if everything works, and then "
-          "run the command '$ mender -commit' to confirm (otherwise, this "
+          "run the command '$ mender commit' to confirm (otherwise, this "
           "update will be undone).")
     print("Note: Any data stored in this partition will be not accessible "
           "after reboot.")
