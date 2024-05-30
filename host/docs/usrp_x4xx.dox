@@ -634,6 +634,17 @@ To update to the most-recent filesystem, run:
 
     $ usrp_update_fs -t master
 
+To update to a specific version of the filesystem (e.g. 4.7.0.0), run:
+
+    $ usrp_update_fs -t v4.7.0.0
+
+Note: The `usrp_update_fs` utility will trigger a reboot to switch to the new
+filesystem. After the reboot run:
+
+    $ mender commit
+
+on the device to make the change permanent.
+
 Note: Old filesystems may not support this utility. Alternatively, one may use
 Mender to update the filesystem. See \ref x4xx_updating_filesystems_mender.
 
