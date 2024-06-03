@@ -22,42 +22,28 @@ from tftp import TFTPServer
 
 bitfile_name = "usrp_{}_fpga_{}.bit"
 
-
-def aquire(labgrid_device_yaml):
-    """Acquire a device defined in labgrid_device_yaml.
-
-    This function first checks whether there is a lock on the device at all using the
-    show command. The lock will only be released if the device is acquired at all
-    (otherwise the log will contain an error printout that the device is not acquired
-    which cannot be suppressed).
-    If it is ensured there is no device lock on the device, the device is acquired.
-    The function will raise a RuntimeError if any of the steps fail.
-
-    Args: labgrid_device_yaml (str): Path to labgrid device yaml file.
-    Raises: RuntimeError: If device cannot be acquired or previous lock cannot be released.
-    Returns: None
+class AcquiredPlace():
+    """This class provides the default target from a given yaml configuration file.
+    A context manager is used to automatically acquire and release the associated
+    place. Instantiate the class using the 'with' statement as follows:
+    
+    with AcquiredPlace(config) as target:
+        (...)
     """
-    run_result = subprocess.run(
-        args=shlex.split(f'labgrid-client -c {labgrid_device_yaml} show | grep "acquired: None"'),
-        check=False,
-    )
+    def __init__(self, config):
+        self.config = config
+        self.env = labgrid.environment.Environment(self.config)
 
-    if run_result.returncode > 0:
-        run_result = subprocess.run(
-            args=shlex.split(f"labgrid-client -c {labgrid_device_yaml} release --kick"), check=False
-        )
-        if not run_result.returncode:
-            raise RuntimeError(
-                f"Failed to force release device {labgrid_device_yaml} (return code {run_result.returncode})"
-            )
+    def __enter__(self):
+        """Acquire the place and return the target"""
+        proc = subprocess.run(['labgrid-client', '-c', self.config, 'acquire'])
+        if proc.returncode != 0:
+            sys.exit(proc.returncode)
+        return self.env.get_target()
 
-    run_result = subprocess.run(
-        args=shlex.split(f"labgrid-client -c {labgrid_device_yaml} acquire"), check=None
-    )
-    if not run_result.returncode:
-        raise RuntimeError(
-            f"Failed to aquire device {labgrid_device_yaml} (return code {run_result.returncode})"
-        )
+    def __exit__(self, *args):
+        """Release the place"""
+        subprocess.run(['labgrid-client', '-c', self.config, 'release'])
 
 
 def jtag_x3xx(
@@ -121,54 +107,51 @@ def flash_sdimage_sdmux(dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr,
     """
     if dev_model not in ["n300", "n310", "n320", "n321"]:
         raise RuntimeError(f"{dev_model} not supported with sdimage_sdmux")
-    aquire(labgrid_device_yaml)
-    env = labgrid.Environment(labgrid_device_yaml)
-    target = env.get_target()
+    
+    with AcquiredPlace(labgrid_device_yaml) as target:
 
-    cp_scu = target.get_driver(labgrid.protocol.ConsoleProtocol, name="scu_serial_driver")
-    cp_linux = target.get_driver(labgrid.protocol.ConsoleProtocol, name="linux_serial_driver")
+        cp_scu = target.get_driver(labgrid.protocol.ConsoleProtocol, name="scu_serial_driver")
+        cp_linux = target.get_driver(labgrid.protocol.ConsoleProtocol, name="linux_serial_driver")
 
-    print("Powering down DUT", flush=True)
-    cp_scu.write("\napshutdown\n".encode())
+        print("Powering down DUT", flush=True)
+        cp_scu.write("\napshutdown\n".encode())
 
-    print("Switching SDMux to Host", flush=True)
-    sdmux = target.get_driver(labgrid.driver.USBSDMuxDriver)
-    sdmux.set_mode("host")
+        print("Switching SDMux to Host", flush=True)
+        sdmux = target.get_driver(labgrid.driver.USBSDMuxDriver)
+        sdmux.set_mode("host")
 
-    print(f"Writing SDMux using {sdimage_path}", flush=True)
-    massstore = target.get_driver(labgrid.driver.USBStorageDriver)
-    # This uses bmaptool in --nobmap mode to write the sdimg,
-    # since it automatically decompresses the image. Do not
-    # include the .bmap file since it can cause corruption with mender.
-    # See: https://github.com/mendersoftware/meta-mender/pull/1076
-    massstore.write_image(sdimage_path, mode=labgrid.driver.usbstoragedriver.Mode.BMAPTOOL)
-    time.sleep(30)
+        print(f"Writing SDMux using {sdimage_path}", flush=True)
+        massstore = target.get_driver(labgrid.driver.USBStorageDriver)
+        # This uses bmaptool in --nobmap mode to write the sdimg,
+        # since it automatically decompresses the image. Do not
+        # include the .bmap file since it can cause corruption with mender.
+        # See: https://github.com/mendersoftware/meta-mender/pull/1076
+        massstore.write_image(sdimage_path, mode=labgrid.driver.usbstoragedriver.Mode.BMAPTOOL)
+        time.sleep(30)
 
-    print("Switching SDMux to DUT", flush=True)
-    sdmux.set_mode("dut")
-    time.sleep(30)
+        print("Switching SDMux to DUT", flush=True)
+        sdmux.set_mode("dut")
+        time.sleep(30)
 
-    print("Powering on DUT", flush=True)
-    cp_scu.write("\npowerbtn\n".encode())
-
-    try:
-        cp_linux.expect("Enter 'noautoboot' to enter prompt without timeout", timeout=5)
-    except Exception:
-        # Sometimes it requires multiple powerbtn calls to turn on device
-        print("Device didn't power on with first attempt. Trying again...")
+        print("Powering on DUT", flush=True)
         cp_scu.write("\npowerbtn\n".encode())
-        cp_linux.expect("Enter 'noautoboot' to enter prompt without timeout", timeout=5)
 
-    print("Waiting 2 minutes for device to boot", flush=True)
-    time.sleep(120)
-    cp_linux.expect("login:", timeout=5)
-    known_hosts_path = os.path.expanduser("~/.ssh/known_hosts")
-    subprocess.run(shlex.split(f'ssh-keygen -f "{known_hosts_path}" -R "{mgmt_addr}"'))
+        try:
+            cp_linux.expect("Enter 'noautoboot' to enter prompt without timeout", timeout=5)
+        except Exception:
+            # Sometimes it requires multiple powerbtn calls to turn on device
+            print("Device didn't power on with first attempt. Trying again...")
+            cp_scu.write("\npowerbtn\n".encode())
+            cp_linux.expect("Enter 'noautoboot' to enter prompt without timeout", timeout=5)
 
-    if sfp_addrs:
-        set_sfp_addrs(mgmt_addr, sfp_addrs)
+        print("Waiting 2 minutes for device to boot", flush=True)
+        time.sleep(120)
+        cp_linux.expect("login:", timeout=5)
+        known_hosts_path = os.path.expanduser("~/.ssh/known_hosts")
+        subprocess.run(shlex.split(f'ssh-keygen -f "{known_hosts_path}" -R "{mgmt_addr}"'))
 
-    subprocess.run(shlex.split(f"labgrid-client -c {labgrid_device_yaml} release"))
+        if sfp_addrs:
+            set_sfp_addrs(mgmt_addr, sfp_addrs)
 
 
 def flash_sdimage_tftp(
@@ -187,93 +170,88 @@ def flash_sdimage_tftp(
         dev_ram_address = "0x20000000"
         dev_bootm_config = "conf@zynq-ni-${mboard}.dtb"
 
-    aquire(labgrid_device_yaml)
-    env = labgrid.Environment(labgrid_device_yaml)
-    target = env.get_target()
+    with AcquiredPlace(labgrid_device_yaml) as target:
 
-    cp_scu = target.get_driver(labgrid.protocol.ConsoleProtocol, name="scu_serial_driver")
-    cp_linux = target.get_driver(labgrid.protocol.ConsoleProtocol, name="linux_serial_driver")
+        cp_scu = target.get_driver(labgrid.protocol.ConsoleProtocol, name="scu_serial_driver")
+        cp_linux = target.get_driver(labgrid.protocol.ConsoleProtocol, name="linux_serial_driver")
 
-    print("Powering down DUT", flush=True)
-    cp_scu.write("\napshutdown\n".encode())
-    time.sleep(10)
+        print("Powering down DUT", flush=True)
+        cp_scu.write("\napshutdown\n".encode())
+        time.sleep(10)
 
-    print("Powering on DUT", flush=True)
-    cp_scu.write("\npowerbtn\n".encode())
-    # Sometimes it requires multiple powerbtn calls to turn on device
-    try:
-        cp_linux.expect("Enter 'noautoboot' to enter prompt without timeout", timeout=5)
-    except Exception:
-        print("Device didn't power on with first attempt. Trying again...", flush=True)
+        print("Powering on DUT", flush=True)
         cp_scu.write("\npowerbtn\n".encode())
-        cp_linux.expect("Enter 'noautoboot' to enter prompt without timeout", timeout=5)
+        # Sometimes it requires multiple powerbtn calls to turn on device
+        try:
+            cp_linux.expect("Enter 'noautoboot' to enter prompt without timeout", timeout=5)
+        except Exception:
+            print("Device didn't power on with first attempt. Trying again...", flush=True)
+            cp_scu.write("\npowerbtn\n".encode())
+            cp_linux.expect("Enter 'noautoboot' to enter prompt without timeout", timeout=5)
 
-    print("Attempting to get into uboot console", flush=True)
-    cp_linux.write("noautoboot".encode())
-    # Handle if the watchdog triggers
-    try:
-        cp_linux.expect("Enter 'noautoboot' to enter prompt without timeout", timeout=30)
+        print("Attempting to get into uboot console", flush=True)
         cp_linux.write("noautoboot".encode())
-    except Exception:
-        pass
-    cp_linux.expect("uboot>")
-    print("Waiting for NIC to come up", flush=True)
-    time.sleep(10)
-    cp_linux.write(f"setenv autoload no; dhcp;\n".encode())
-    cp_linux.expect("DHCP client bound to address")
-    expect_index, expect_before, expect_match, expect_after = cp_linux.expect(
-        r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b"
-    )
-    mgmt_addr = expect_match[0].decode()
-    print(f"Dev got IP Address {mgmt_addr}")
-
-    with TFTPServer(initramfs_path, mgmt_addr) as server:
-        time.sleep(10)
+        # Handle if the watchdog triggers
+        try:
+            cp_linux.expect("Enter 'noautoboot' to enter prompt without timeout", timeout=30)
+            cp_linux.write("noautoboot".encode())
+        except Exception:
+            pass
         cp_linux.expect("uboot>")
-        cp_linux.write(f"setenv tftpdstp {server.port}\n".encode())
-        cp_linux.expect("uboot>")
-        print("TFTPing initramfs image", flush=True)
-        cp_linux.write(
-            f"tftpboot {dev_ram_address} {server.ip}:{os.path.basename(initramfs_path)}\n".encode()
-        )
-        cp_linux.expect("uboot>", timeout=120)
-        print("Booting into initramfs", flush=True)
-        cp_linux.write(f"bootm {dev_ram_address}#{dev_bootm_config}\n".encode())
-        cp_linux.expect("mender login:", timeout=120)
-        print("Logging into Linux", flush=True)
-        cp_linux.write("root\n".encode())
-        cp_linux.expect("mender:~#")
-        print("Waiting for NIC to DHCP", flush=True)
+        print("Waiting for NIC to come up", flush=True)
         time.sleep(10)
-
-    with HTTPServer(os.path.dirname(sdimage_path), mgmt_addr) as server:
-        print(f"Writing SD Card using {sdimage_path}", flush=True)
-        print("Running bmaptool... This will take awhile", flush=True)
-        cp_linux.write(
-            f"bmaptool copy --nobmap {server.get_url(os.path.basename(sdimage_path))} /dev/mmcblk0\n".encode()
+        cp_linux.write(f"setenv autoload no; dhcp;\n".encode())
+        cp_linux.expect("DHCP client bound to address")
+        expect_index, expect_before, expect_match, expect_after = cp_linux.expect(
+            r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b"
         )
-        cp_linux.expect("mender:~#", timeout=1800)
-        cp_linux.write("echo bmaptool exit code: $?\n".encode())
-        cp_linux.expect("bmaptool exit code: 0", timeout=10)
-        time.sleep(10)
-        print("Rebooting into new image from sd card", flush=True)
-        cp_linux.write("reboot\n".encode())
+        mgmt_addr = expect_match[0].decode()
+        print(f"Dev got IP Address {mgmt_addr}")
 
-    print("Waiting 2 minutes for device to boot", flush=True)
-    time.sleep(120)
-    cp_linux.expect("login:", timeout=30)
-    known_hosts_path = os.path.expanduser("~/.ssh/known_hosts")
-    subprocess.run(
-        args=shlex.split(f'ssh-keygen -f "{known_hosts_path}" -R "{mgmt_addr}"'), check=False
-    )
+        with TFTPServer(initramfs_path, mgmt_addr) as server:
+            time.sleep(10)
+            cp_linux.expect("uboot>")
+            cp_linux.write(f"setenv tftpdstp {server.port}\n".encode())
+            cp_linux.expect("uboot>")
+            print("TFTPing initramfs image", flush=True)
+            cp_linux.write(
+                f"tftpboot {dev_ram_address} {server.ip}:{os.path.basename(initramfs_path)}\n".encode()
+            )
+            cp_linux.expect("uboot>", timeout=120)
+            print("Booting into initramfs", flush=True)
+            cp_linux.write(f"bootm {dev_ram_address}#{dev_bootm_config}\n".encode())
+            cp_linux.expect("mender login:", timeout=120)
+            print("Logging into Linux", flush=True)
+            cp_linux.write("root\n".encode())
+            cp_linux.expect("mender:~#")
+            print("Waiting for NIC to DHCP", flush=True)
+            time.sleep(10)
 
-    if sfp_addrs:
-        set_sfp_addrs(mgmt_addr, sfp_addrs)
+        with HTTPServer(os.path.dirname(sdimage_path), mgmt_addr) as server:
+            print(f"Writing SD Card using {sdimage_path}", flush=True)
+            print("Running bmaptool... This will take awhile", flush=True)
+            cp_linux.write(
+                f"bmaptool copy --nobmap {server.get_url(os.path.basename(sdimage_path))} /dev/mmcblk0\n".encode()
+            )
+            cp_linux.expect("mender:~#", timeout=1800)
+            cp_linux.write("echo bmaptool exit code: $?\n".encode())
+            cp_linux.expect("bmaptool exit code: 0", timeout=10)
+            time.sleep(10)
+            print("Rebooting into new image from sd card", flush=True)
+            cp_linux.write("reboot\n".encode())
 
-    subprocess.run(
-        args=shlex.split(f"labgrid-client -c {labgrid_device_yaml} release"), check=False
-    )
-    return mgmt_addr
+        print("Waiting 2 minutes for device to boot", flush=True)
+        time.sleep(120)
+        cp_linux.expect("login:", timeout=30)
+        known_hosts_path = os.path.expanduser("~/.ssh/known_hosts")
+        subprocess.run(
+            args=shlex.split(f'ssh-keygen -f "{known_hosts_path}" -R "{mgmt_addr}"'), check=False
+        )
+
+        if sfp_addrs:
+            set_sfp_addrs(mgmt_addr, sfp_addrs)
+
+        return mgmt_addr
 
 
 def main(args):
