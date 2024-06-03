@@ -281,6 +281,7 @@ module rfnoc_block_ofdm #(
   reg  [REG_USER_RESET_WIDTH-1:0]                    reg_user_reset                     = 1'b0;
   reg  [REG_FFT_SIZE_LOG2_WIDTH-1:0]                 reg_fft_size_log2                  = DEFAULT_FFT_SIZE_LOG2;
   reg  [REG_FFT_SCALING_WIDTH-1:0]                   reg_fft_scaling                    = DEFAULT_FFT_SCALING;
+  reg  [FFT_CP_LEN_W-1:0]                            reg_cp_length                      = DEFAULT_CP_LEN;
   reg  [REG_FFT_DIRECTION_WIDTH-1:0]                 reg_fft_direction                  = DEFAULT_FFT_DIRECTION;
   reg                                                reg_fft_commit                     = 1'b0;
   reg  [REG_CP_INSERTION_CP_LEN_WIDTH-1:0]           reg_cp_insertion_len               = DEFAULT_CP_LEN;
@@ -361,7 +362,7 @@ module rfnoc_block_ofdm #(
       reg_cp_insertion_cp_len_fifo_clr  <= 1'b0;
       reg_cp_removal_cp_len_fifo_load   <= 1'b0;
       reg_cp_removal_cp_len_fifo_clr    <= 1'b0;
-    end 
+    end
   end
 
   //---------------------------------------------------------------------------
@@ -660,12 +661,22 @@ module rfnoc_block_ofdm #(
     end
   end
 
+  always_ff @(posedge axis_data_clk) begin : shift_cp_length
+    // The CP insertion length is always clog2(fft_size) bits wide and must be
+    // shifted into the uppermost bits of the field.
+    if (cp_len_fifo_empty) begin
+      reg_cp_length <= DEFAULT_CP_LEN << (MAX_FFT_SIZE_LOG2 - reg_fft_size_log2);
+    end else begin
+      reg_cp_length <= m_axis_cp_len_fifo_tdata << (MAX_FFT_SIZE_LOG2 - reg_fft_size_log2);
+    end
+  end
+
   assign s_axis_fft_config_tdata = {
     {FFT_SCALE_PAD_W{1'b0}},
     reg_fft_scaling,
     reg_fft_direction,
     {FFT_CP_LEN_PAD_W{1'b0}},
-    FFT_CP_LEN_W'(cp_len_fifo_empty ? DEFAULT_CP_LEN : m_axis_cp_len_fifo_tdata),
+    reg_cp_length,
     {FFT_NFFT_PAD_W{1'b0}},
     reg_fft_size_log2
   };
@@ -680,7 +691,7 @@ module rfnoc_block_ofdm #(
 
 
   //assign s_axis_fft_config_tvalid = reg_fft_commit;
-  assign s_axis_fft_config_tvalid = (fft_config_state == S_FFT_CONFIG) ? s_axis_fft_data_tvalid : 1'b0;
+  assign s_axis_fft_config_tvalid = (fft_config_state == S_FFT_CONFIG) ? s_axis_fft_data_tvalid && s_axis_fft_data_tready : 1'b0;
 
   // No cyclic prefix fifo loopback. New configs can be written at any time.
   if (CP_INSERTION_REPEAT == 0) begin : gen_cp_ins_repeat

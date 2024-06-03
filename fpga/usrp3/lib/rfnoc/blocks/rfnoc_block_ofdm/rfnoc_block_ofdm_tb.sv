@@ -38,13 +38,17 @@ module rfnoc_block_ofdm_tb;
   // User Configuration
   //---------------------------------------------------------------------------
   localparam int    NUM_PORTS                = 1;
-  localparam int    CP_INSERTION_REPEAT      = 1;  // Enable CP list FIFO loopback
   localparam int    MAX_CP_LIST_LEN_INS_LOG2 = 5;  // Up to 32 CP lengths in FIFO
-  localparam int    CP_REMOVAL_REPEAT        = 1;  // Enable CP list FIFO loopback
   localparam int    MAX_CP_LIST_LEN_REM_LOG2 = 5;  // Up to 32 CP lengths in FIFO
+  localparam int    MAX_CP_LIST_LEN_INS      = 2**MAX_CP_LIST_LEN_INS_LOG2-1;
+  localparam int    MAX_CP_LIST_LEN_REM      = 2**MAX_CP_LIST_LEN_REM_LOG2-1;
+  localparam int    CP_INSERTION_REPEAT      = 1;  // Enable CP list FIFO loopback
+  localparam int    CP_REMOVAL_REPEAT        = 1;  // Enable CP list FIFO loopback
   localparam int    MAX_CP_LEN_LOG2          = 12;
   localparam int    MAX_FFT_SIZE_LOG2        = 12;
   localparam int    MAX_FFT_SIZE             = 2**MAX_FFT_SIZE_LOG2;
+  localparam int    MIN_FFT_SIZE_LOG2        = 3;  // This is fixed for the Xilinx FFT core
+  localparam int    MIN_FFT_SIZE             = 2**MIN_FFT_SIZE_LOG2;
   localparam int    FFT_SCALING              = dut.DEFAULT_FFT_SCALING;
 
   localparam bit    CHECK_OUTPUT             = 1;
@@ -65,7 +69,7 @@ module rfnoc_block_ofdm_tb;
   localparam int    NUM_PORTS_I     = NUM_PORTS;
   localparam int    NUM_PORTS_O     = NUM_PORTS;
   localparam int    ITEM_W          = 32;     // Sample size in bits
-  localparam int    SPP             = 64;     // Samples per packet
+  localparam int    SPP             = 64;     // Samples per packet. Must be a power of 2 for FFT.
   localparam int    PKT_SIZE_BYTES  = SPP * (ITEM_W/8);
   localparam int    STALL_PROB      = 0;     // Default BFM stall probability
   localparam real   CHDR_CLK_PER    = 5.0;   // 200 MHz
@@ -260,11 +264,19 @@ module rfnoc_block_ofdm_tb;
     $display("config_fft(): Setting FFT Direction to %0d",   fft_direction);
     write_reg(dut.REG_FFT_DIRECTION_ADDR,                    fft_direction);
     foreach (cyclic_prefix_insertion_lengths[i]) begin
+      `ASSERT_ERROR(
+        cyclic_prefix_insertion_lengths[i] < fft_size,
+        "Cyclic prefix insertion length must be less than FFT size"
+      );
       $display("config_fft(): Setting Cyclic Prefix (insertion) %0d", cyclic_prefix_insertion_lengths[i]);
       write_reg(dut.REG_CP_INSERTION_CP_LEN_ADDR,                     cyclic_prefix_insertion_lengths[i]);
       write_reg(dut.REG_CP_INSERTION_CP_LEN_FIFO_LOAD_ADDR,           1'b1);
     end
     foreach (cyclic_prefix_removal_lengths[i]) begin
+      `ASSERT_ERROR(
+        cyclic_prefix_removal_lengths[i] < fft_size,
+        "Cyclic prefix removal length must be less than FFT size"
+      );
       $display("config_fft(): Setting Cyclic Prefix (removal) %0d", cyclic_prefix_removal_lengths[i]);
       write_reg(dut.REG_CP_REMOVAL_CP_LEN_ADDR,                     cyclic_prefix_removal_lengths[i]);
       write_reg(dut.REG_CP_REMOVAL_CP_LEN_FIFO_LOAD_ADDR,           1'b1);
@@ -778,23 +790,27 @@ module rfnoc_block_ofdm_tb;
     int cp_insertions[] = {},
     int cp_removals[]   = {},
     int pkt_size        = fft_size < SPP ? fft_size : SPP,
+    bit timed           = 1,
     int port            = 0
   );
-
-    // For now, we send one FFT per packet, unless the FFT is larger than the
-    // packet size, which is supported.
-    assert(fft_size % pkt_size == 0) else
-      $error("pkt_size must be a multiple of fft_size");
-
-    // This might work, but it's not an expected use case
-    assert(!(cp_insertions.size() && cp_removals.size())) else
-      $error("Cannot specify both CP insertion and CP removal");
-
     $display("test_fft_sine():");
     $display("    fft_size:      %0d", fft_size);
     $display("    num_ffts:      %0d", num_ffts);
     $display("    cp_insertions: %p",  cp_insertions);
     $display("    cp_removals:   %p",  cp_removals);
+    $display("    pkt_size:      %0d", pkt_size);
+    $display("    port:          %0d", port);
+
+
+    // For now, we send one FFT per packet, unless the FFT is larger than the
+    // packet size, which is supported.
+    assert(fft_size % pkt_size == 0) else
+      $error("fft_size must be a multiple of pkt_size");
+
+    // Having both insertion and removal might work, but we're not going to
+    // test it.
+    assert(!(cp_insertions.size() && cp_removals.size())) else
+      $error("Cannot specify both CP insertion and CP removal");
 
     config_fft(fft_size, cp_insertions, cp_removals, dut.DEFAULT_FFT_SCALING, dut.FFT_FORWARD);
 
@@ -805,11 +821,13 @@ module rfnoc_block_ofdm_tb;
         int           cp_removal_len;
         int           num_pkts_per_fft;
         int           total_fft_size;
+        int           samp_count;
 
         send_pkt_info = '0;
 
         $display("test_fft_sine(): send: Start send thread");
 
+        samp_count = 0;
         for (int fft_count = 0; fft_count < num_ffts; fft_count++) begin
           // This emulates the CP removal FIFO's behavior
           if (cp_removals.size() == 0) cp_removal_len = 0;
@@ -832,8 +850,15 @@ module rfnoc_block_ofdm_tb;
             send_pkt_info.eob = (fft_count == num_ffts-1 && pkt_count == num_pkts_per_fft-1);
             // TODO: Set EOV? send_pkt_info.eov = (pkt_count == num_pkts_per_fft-1);
 
+            if (timed) begin
+              send_pkt_info.has_time = 1;
+              send_pkt_info.timestamp = samp_count + 'hDEADBEEF;
+            end
+
             blk_ctrl.send_items(port, send_payload[start : start+len-1], , send_pkt_info);
             blk_ctrl.wait_complete(port);
+
+            samp_count += len;
           end
         end
         $display("test_fft_sine(): send: End send thread");
@@ -844,9 +869,10 @@ module rfnoc_block_ofdm_tb;
         chdr_word_t   recv_metadata[$];
         packet_info_t recv_pkt_info;
         int           cp_insertion_len;
-        bit           eob, eov;
+        bit           eob, eov, has_time;
+        longint       timestamp;
         int           num_pkts_per_fft;
-        int           samp_count;
+        int           fft_samp_count;
         int           total_fft_size;
 
 
@@ -862,8 +888,10 @@ module rfnoc_block_ofdm_tb;
 
           $display("test_fft_sine(): recv: Starting FFT %0d for %0d+%0d = %0d samples", fft_count, cp_insertion_len, fft_size, total_fft_size);
 
-          samp_count = 0;
+          fft_samp_count = 0;
           for (int pkt_count = 0; pkt_count < num_pkts_per_fft; pkt_count++) begin
+            int peak_index;
+            int cp_peak_index;
             //$display("test_fft_sine(): recv: FFT %0d, PKT %0d: Receiving samples", fft_count, pkt_count);
 
             eob = (fft_count == num_ffts-1);
@@ -883,9 +911,37 @@ module rfnoc_block_ofdm_tb;
               end
             end
 
+            has_time = (fft_count == 0 && fft_samp_count == 0);
+            timestamp = fft_samp_count + 'hDEADBEEF;
+
+            // Check timestamp
+            if (timed && has_time) begin
+              `ASSERT_ERROR(
+                recv_pkt_info.has_time == has_time,
+                $sformatf("test_fft_sine(): recv: FFT %0d, PKT %0d: Expected timestamp on first packet",
+                  fft_count, pkt_count)
+              );
+              `ASSERT_ERROR(
+                recv_pkt_info.timestamp == timestamp,
+                $sformatf("test_fft_sine(): recv: FFT %0d, PKT %0d: Expected timestamp of 0x%X, received 0x%x",
+                  fft_count, pkt_count, timestamp, recv_pkt_info.timestamp)
+              );
+            end else begin
+              `ASSERT_ERROR(
+                recv_pkt_info.has_time == 0,
+                $sformatf("test_fft_sine(): recv: FFT %0d, PKT %0d: Unexpected timestamp",
+                  fft_count, pkt_count)
+              );
+            end
+
+            // We should see a peak in the FFT region but may see one in the
+            // cyclic prefix as well if it is long enough.
+            peak_index = cp_insertion_len + fft_size/4;
+            cp_peak_index = peak_index - fft_size;
+
             // Verify the sample values
             foreach (recv_payload[samp_i]) begin
-              if (samp_count == (cp_insertion_len + fft_size/4)) begin
+              if (fft_samp_count == peak_index || fft_samp_count == cp_peak_index) begin
                 bit signed [15:0] real_val, imag_val;
                 int magnitude;
                 {real_val, imag_val} = recv_payload[samp_i];
@@ -893,29 +949,29 @@ module rfnoc_block_ofdm_tb;
                 `ASSERT_ERROR(
                   imag_val == 0,
                   $sformatf("test_fft_sine(): recv: FFT %0d, PKT %0d: Expected 0 for im at sample %0d, received 0x%x",
-                    fft_count, pkt_count, samp_count, recv_payload[samp_i])
+                    fft_count, pkt_count, fft_samp_count, recv_payload[samp_i])
                 );
                 `ASSERT_ERROR(
                   real_val >= 16368,
                   $sformatf("test_fft_sine(): recv: FFT %0d, PKT %0d: Expected re >= 16368 at sample %0d, received 0x%x",
-                    fft_count, pkt_count, samp_count, recv_payload[samp_i])
+                    fft_count, pkt_count, fft_samp_count, recv_payload[samp_i])
                 );
               end else begin
                 `ASSERT_ERROR(
                   recv_payload[samp_i] == 0,
                   $sformatf("test_fft_sine(): recv: FFT %0d, PKT %0d: Expected 0 at sample %0d, received 0x%x",
-                    fft_count, pkt_count, samp_count, recv_payload[samp_i])
+                    fft_count, pkt_count, fft_samp_count, recv_payload[samp_i])
                 );
               end
-              samp_count++;
+              fft_samp_count++;
             end
           end
 
           // Check the length
           `ASSERT_ERROR(
-            samp_count == total_fft_size,
+            fft_samp_count == total_fft_size,
             $sformatf("test_fft_sine(): recv: FFT %0d: Expected %0d samples but received %0d",
-              fft_count, total_fft_size, samp_count)
+              fft_count, total_fft_size, fft_samp_count)
           );
         end
         $display("test_fft_sine(): recv: End recv thread");
@@ -981,10 +1037,10 @@ module rfnoc_block_ofdm_tb;
 
     // Get the the resulting signal
     blk_ctrl.recv_packets_items(port, signal);
-    $display("Received %0d samples:", signal.size());
-    for (int i; i < 16; i++) begin
-      $display("(%d,%d)", signed'(signal[i][31:16]), signed'(signal[i][15:0]));
-    end
+    // $display("Received %0d samples:", signal.size());
+    // for (int i = 0; i < 16; i++) begin
+    //   $display("(%d,%d)", signed'(signal[i][31:16]), signed'(signal[i][15:0]));
+    // end
 
     // Configure for IFFT
     config_fft(fft_size, , , fft_scaling, dut.FFT_FORWARD);
@@ -997,10 +1053,108 @@ module rfnoc_block_ofdm_tb;
 
     // Get the the resulting FFT
     blk_ctrl.recv_packets_items(port, data_out);
-    $display("Received %0d samples:", data_out.size());
-    foreach (data_out[i]) begin
-      if (data_out[i] != 0) $display("Output peak at %0d with value (%d,%d)",
-        i, signed'(data_out[i][31:16]), signed'(data_out[i][15:0]));
+    // $display("Received %0d samples:", data_out.size());
+    // foreach (data_out[i]) begin
+    //   if (data_out[i] != 0) $display("Output peak at %0d with value (%d,%d)",
+    //     i, signed'(data_out[i][31:16]), signed'(data_out[i][15:0]));
+    // end
+    `ASSERT_ERROR(data_in == data_out, "test_loopback(): Output data didn't match input data");
+  endtask
+
+
+  task automatic test_random(
+    int num_iterations,
+    int max_fft_size = MAX_FFT_SIZE,
+    int min_fft_size = MIN_FFT_SIZE
+  );
+    $display("test_random():");
+    $display("    num_iterations: %0d", num_iterations);
+    $display("    max_fft_size:   %0d", max_fft_size);
+    $display("    min_fft_size:   %0d", min_fft_size);
+    for (int test_iter = 0; test_iter < num_iterations; test_iter++) begin
+      bit timed = $urandom_range(0, 1);
+      int fft_size = 2**$urandom_range($clog2(min_fft_size), $clog2(max_fft_size));
+      int num_ffts = $urandom_range(1, 3);
+      bit insert = $urandom_range(0, 1);
+      bit has_cp = $urandom_range(0, 1);
+      int cp_list_len = $urandom_range(0, `MIN(num_ffts-1, `MIN(MAX_CP_LIST_LEN_REM, MAX_CP_LIST_LEN_INS)));
+      int cp_lengths[] = new [cp_list_len];
+
+      // TODO: Support packet size that is a multiple of the FFT size
+      int pkt_size = (fft_size < SPP) ? fft_size : SPP;
+
+      foreach (cp_lengths[i]) begin
+        cp_lengths[i] = $urandom_range(0, fft_size-1);
+      end
+
+      if (insert) begin
+        test_fft_sine(fft_size, num_ffts, .timed(timed), .cp_insertions(cp_lengths), .pkt_size(pkt_size));
+      end else begin
+        test_fft_sine(fft_size, num_ffts, .timed(timed), .cp_removals(cp_lengths), .pkt_size(pkt_size));
+      end
+    end
+  endtask
+
+
+  // Test max and min FFT size without CP
+  task automatic test_max_min_fft();
+    $display("test_max_min_fft():");
+    test_fft_sine(MAX_FFT_SIZE, 2);
+  endtask
+
+
+  // Test max CP list length (2**MAX_CP_LIST_LEN_LOG2 - 1)
+  task automatic test_max_cp_list_len(int fft_size = MIN_FFT_SIZE);
+    $display("test_max_cp_list_len():");
+    $display("    fft_size: %0d", fft_size);
+
+    for (int insert = 0; insert < 2; insert++) begin
+      int cp_list_len = insert ? MAX_CP_LIST_LEN_INS : MAX_CP_LIST_LEN_REM;
+      int cp_lengths [] = new [cp_list_len];
+
+      foreach (cp_lengths[i]) begin
+        // Keep the insertion length small to limit test length. We'll test the
+        // max length in another test.
+        cp_lengths[i] = $urandom_range(0, 1);
+      end
+
+      // Test one FFT more than the CP list length to make sure it repeats
+      if (insert) begin
+        test_fft_sine(
+          .fft_size     (fft_size),
+          .num_ffts     (cp_list_len+1),
+          .cp_insertions(cp_lengths)
+        );
+      end else begin
+        test_fft_sine(
+          .fft_size     (fft_size),
+          .num_ffts     (cp_list_len+1),
+          .cp_removals  (cp_lengths)
+        );
+      end
+    end
+  endtask
+
+
+  // Test max FFT size with max and min CP insertion and removal lengths
+  task automatic test_max_min_cp_len();
+    int cp_lengths [] = {MAX_FFT_SIZE-1, 1};
+    $display("test_max_min_cp_len():");
+
+    for (int insert = 0; insert < 2; insert++) begin
+      if (insert) begin
+        test_fft_sine(
+          .fft_size     (MAX_FFT_SIZE),
+          .num_ffts     (2),
+          .cp_insertions(cp_lengths)
+        );
+      end else begin
+        test_fft_sine(
+          .fft_size     (MAX_FFT_SIZE),
+          .num_ffts     (2),
+          .cp_removals  (cp_lengths)
+        );
+      end
     end
   endtask
 
@@ -1010,7 +1164,7 @@ module rfnoc_block_ofdm_tb;
   //---------------------------------------------------------------------------
   initial begin : tb_main
 
-    automatic int cp_lengths_single[] = '{320};
+    automatic int cp_lengths_single[] = '{12};
     automatic int cp_lengths_multi[]  = '{320, 288, 111, 0, 320};
     automatic int cp_lengths_golden[] = '{320, 288, 288, 288, 288, 288, 288, 288, 288, 288, 288, 288, 288, 288};
 
@@ -1045,7 +1199,48 @@ module rfnoc_block_ofdm_tb;
     // Test Sequences
     //--------------------------------
 
-    test.start_test("Basic tests");
+    test.start_test("Test Configuration Registers", 100us);
+    test_user_reg("FFT Size",      dut.REG_FFT_SIZE_LOG2_ADDR, MAX_FFT_SIZE_LOG2, dut.REG_FFT_SIZE_LOG2_WIDTH);
+    test_user_reg("FFT Scaling",   dut.REG_FFT_SCALING_ADDR,   FFT_SCALING,   dut.REG_FFT_SCALING_WIDTH);
+    test_user_reg("FFT Direction", dut.REG_FFT_DIRECTION_ADDR, dut.FFT_FORWARD, dut.REG_FFT_DIRECTION_WIDTH);
+    test.end_test();
+
+    test.start_test("Test normal FFT", 1ms);
+    test_fft_sine(4096, 3, .timed(1));
+    test.end_test();
+
+    test.start_test("Test CP insertion and removal", 1ms);
+    test_fft_sine_wave(4096, .num_ports(NUM_PORTS), .cyclic_prefix_insertion_lengths(cp_lengths_single));
+    test_fft_sine_wave(4096, .num_ports(NUM_PORTS), .cyclic_prefix_insertion_lengths(cp_lengths_multi));
+    test_fft_sine_wave(4096, .num_ports(NUM_PORTS), .cyclic_prefix_removal_lengths(cp_lengths_single));
+    test_fft_sine_wave(4096, .num_ports(NUM_PORTS), .cyclic_prefix_removal_lengths(cp_lengths_multi));
+    test.end_test();
+
+    if (NUM_PORTS == 1) begin
+      test.start_test("Test customer config", 2ms);
+      test_customer_config(4096, 1024);
+      test.end_test();
+
+      test.start_test("Test loopback", 1ms);
+      test_loopback();
+      test.end_test();
+
+      test.start_test("Test min/max values", 5ms);
+      test_max_min_fft();
+      test.end_test();
+
+      test.start_test("Test maximum CP list size", 5ms);
+      test_max_cp_list_len();
+      test.end_test();
+
+      test.start_test("Test min/max CP lengths", 5ms);
+      test_max_min_cp_len();
+      test.end_test();
+
+      test.start_test("Test random configurations", 5ms);
+      test_random(.num_iterations(200), .max_fft_size(128), .min_fft_size(MIN_FFT_SIZE));
+      test.end_test();
+    end
 
     // TODO:
     //   - Test with multiple ports with different delays
@@ -1054,73 +1249,24 @@ module rfnoc_block_ofdm_tb;
     //   - Test EOV being added at appropriate intervals when input packets are larger than FFT
     //   - Add register to read back capabilities (FFT size, CP size, etc.)
     //   - Add compat register
+    //   - Test an input burst that's not a multiple of the packet size.
+    //   - Do throughput tests (can't underflow with expected clock rate)
+    //   - Test timestamps
+    //   - Test FFT and IFFT, checking the data output by the Xilinx core
 
-    if (NUM_PORTS > 1) begin
-      test_fft_sine_wave(4096, .num_ports(NUM_PORTS), .cyclic_prefix_insertion_lengths(cp_lengths_single));
-      test_fft_sine_wave(4096, .num_ports(NUM_PORTS), .cyclic_prefix_insertion_lengths(cp_lengths_multi));
-      test_fft_sine_wave(4096, .num_ports(NUM_PORTS), .cyclic_prefix_removal_lengths(cp_lengths_single));
-      test_fft_sine_wave(4096, .num_ports(NUM_PORTS), .cyclic_prefix_removal_lengths(cp_lengths_multi));
-    end else begin
-      // Test the customer use cases
-      test_customer_config(4096, 1024);
+    // // This test mosly passes, but fails after a bunch of packets.
+    // test.start_test("Test Golden Input Data", 1ms);
 
-      test_loopback();
+    // user_reset();
+    // config_fft(FFT_SIZE, cp_lengths_golden, /* No CP removal */, dut.DEFAULT_FFT_SCALING, dut.FFT_FORWARD, 1);
+    // check_input_vectors(input_filenames,           // Golden input file
+    //                     expected_output_filenames, // Golden expected output file
+    //                     write_output_filenames,    // Output file
+    //                     0,  // Number of input samples to send, 0 for entire file
+    //                     0); // Number of output samples to check, 0 for entire file
 
-      // Run all the old tests
-      test_fft_sine_wave(4096, .num_ports(1), .cyclic_prefix_insertion_lengths(cp_lengths_single));
-      test_fft_sine_wave(4096, .num_ports(1), .cyclic_prefix_insertion_lengths(cp_lengths_multi));
-      test_fft_sine_wave(4096, .num_ports(1), .cyclic_prefix_removal_lengths(cp_lengths_single));
-      test_fft_sine_wave(4096, .num_ports(1), .cyclic_prefix_removal_lengths(cp_lengths_multi));
+    // test.end_test();
 
-      test_fft_sine(4096, cp_lengths_single.size(), .cp_removals  (cp_lengths_single));
-      test_fft_sine(4096, cp_lengths_multi.size(),  .cp_removals  (cp_lengths_multi));
-      test_fft_sine(4096, cp_lengths_single.size(), .cp_insertions(cp_lengths_single));
-      test_fft_sine(4096, cp_lengths_multi.size(),  .cp_insertions(cp_lengths_multi));
-    end
-
-    test.end_test();
-
-//    // Set and check configuration registers
-//    test.start_test("Test Configuration Registers", 100us);
-//
-//    test_user_reg("FFT Size",      dut.REG_FFT_SIZE_LOG2_ADDR, FFT_SIZE_LOG2, dut.REG_FFT_SIZE_LOG2_WIDTH);
-//    test_user_reg("FFT Scaling",   dut.REG_FFT_SCALING_ADDR,   FFT_SCALING,   dut.REG_FFT_SCALING_WIDTH);
-//    test_user_reg("FFT Direction", dut.REG_FFT_DIRECTION_ADDR, FFT_DIRECTION, dut.REG_FFT_DIRECTION_WIDTH);
-//
-//    test.end_test();
-//
-//    // Test IFFT with cyclic prefix insertion with a sine wave
-//    test.start_test("Test Cyclic Prefix Insertion", 1ms);
-//
-//    user_reset();
-//
-//    test_fft_sine_wave(FFT_SIZE, cp_lengths_single, /* No CP removal */);
-//    test_fft_sine_wave(FFT_SIZE, cp_lengths_multi, /* No CP removal */);
-//
-//    test.end_test();
-//
-//    test.start_test("Test Cyclic Prefix Removal", 1ms);
-//
-//    user_reset();
-//
-//    test_fft_sine_wave(FFT_SIZE, /* No CP insertion */, cp_lengths_single);
-//    test_fft_sine_wave(FFT_SIZE, /* No CP insertion */, cp_lengths_multi);
-//
-//    test.end_test();
-//
-//  // This test mosly passes, but fails after a bunch of packets.
-//  test.start_test("Test Golden Input Data", 1ms);
-//
-//  user_reset();
-//  config_fft(FFT_SIZE, cp_lengths_golden, /* No CP removal */, dut.DEFAULT_FFT_SCALING, dut.FFT_FORWARD, 1);
-//  check_input_vectors(input_filenames,           // Golden input file
-//                      expected_output_filenames, // Golden expected output file
-//                      write_output_filenames,    // Output file
-//                      0,  // Number of input samples to send, 0 for entire file
-//                      0); // Number of output samples to check, 0 for entire file
-//
-//  test.end_test();
-//
     //--------------------------------
     // Finish Up
     //--------------------------------
