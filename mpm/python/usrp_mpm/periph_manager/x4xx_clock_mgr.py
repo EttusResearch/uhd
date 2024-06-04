@@ -45,7 +45,7 @@ from usrp_mpm.mpmutils import parse_multi_device_arg, str2bool
 from usrp_mpm.periph_manager.x4xx_clk_aux import ClockingAuxBrdControl
 from usrp_mpm.periph_manager.x4xx_clock_types import RpllRefSel, BrcSource
 from usrp_mpm.periph_manager.x4xx_clock_ctrl import X4xxClockCtrl
-from usrp_mpm.rpc_server import no_rpc
+from usrp_mpm.rpc_utils import no_rpc
 
 class X4xxClockManager:
     """

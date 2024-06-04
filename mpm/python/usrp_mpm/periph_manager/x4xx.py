@@ -21,7 +21,7 @@ from usrp_mpm.sys_utils import ectool
 from usrp_mpm.sys_utils import i2c_dev
 from usrp_mpm.sys_utils.gpio import Gpio
 from usrp_mpm.sys_utils.udev import dt_symbol_get_spidev
-from usrp_mpm.rpc_server import no_claim, no_rpc
+from usrp_mpm.rpc_utils import no_claim, no_rpc
 from usrp_mpm.mpmutils import assert_compat_number, poll_with_timeout
 from usrp_mpm.periph_manager import PeriphManagerBase
 from usrp_mpm.xports import XportMgrUDP

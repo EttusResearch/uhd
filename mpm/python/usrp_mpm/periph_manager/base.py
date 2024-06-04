@@ -22,7 +22,7 @@ from usrp_mpm.sys_utils.udev import get_spidev_nodes
 from usrp_mpm.sys_utils import dtoverlay
 from usrp_mpm.sys_utils import net
 from usrp_mpm.xports import XportAdapterMgr
-from usrp_mpm.rpc_server import no_claim, no_rpc
+from usrp_mpm.rpc_utils import no_claim, no_rpc
 from usrp_mpm.mpmutils import get_dboard_class_from_pid
 from usrp_mpm import eeprom
 from usrp_mpm import prefs

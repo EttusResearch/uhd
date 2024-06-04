@@ -13,7 +13,7 @@ configuration by using the cmake flag -DMPM_DEVICE=sim
 from pyroute2 import IPRoute
 from usrp_mpm.xports import XportMgrUDP
 from usrp_mpm.mpmlog import get_logger
-from usrp_mpm.rpc_server import no_claim
+from usrp_mpm.rpc_utils import no_claim
 from usrp_mpm.periph_manager import PeriphManagerBase
 from usrp_mpm.simulator.sim_dboard import registry as dboards
 from usrp_mpm.simulator.chdr_endpoint import ChdrEndpoint

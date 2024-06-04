@@ -13,6 +13,8 @@ import time
 import argparse
 from gevent import signal
 import usrp_mpm as mpm
+import usrp_mpm.rpc_server
+import usrp_mpm.discovery
 from usrp_mpm.mpmtypes import SharedState
 from usrp_mpm.sys_utils import watchdog
 
@@ -162,14 +164,14 @@ def spawn_processes(log, args):
     shared = SharedState()
     log.info("Spawning RPC process...")
     _PROCESSES.append(
-        mpm.spawn_rpc_process(
+        mpm.rpc_server.spawn_rpc_process(
             shared, mpm.mpmtypes.MPM_RPC_PORT, args.default_args))
     log.debug("RPC process has PID: %d", _PROCESSES[-1].pid)
     if watchdog.has_watchdog():
         watchdog.transfer_control(_PROCESSES[-1].pid)
     log.info("Spawning discovery process...")
     _PROCESSES.append(
-        mpm.spawn_discovery_process(shared, args.discovery_addr)
+        mpm.discovery.spawn_discovery_process(shared, args.discovery_addr)
     )
     log.debug("Discovery process has PID: %d", _PROCESSES[-1].pid)
     log.info("Processes launched. Registering signal handlers.")

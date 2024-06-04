@@ -29,22 +29,14 @@ from usrp_mpm.mpmlog import get_main_logger
 from usrp_mpm.mpmutils import to_binary_str
 from usrp_mpm.sys_utils import watchdog
 from usrp_mpm.sys_utils import net
+from usrp_mpm.rpc_utils import get_map_for_rpc
+
 
 TIMEOUT_INTERVAL = 5.0 # Seconds before claim expires (default value)
 LOCK_ACQ_TIMEOUT = 1 # Seconds to wait for acquiring shared lock (default value)
 TOKEN_LEN = 16 # Length of the token string
 # Compatibility number for MPM
 MPM_COMPAT_NUM = (5, 3)
-
-def no_claim(func):
-    " Decorator for functions that require no token check "
-    func._notok = True
-    return func
-
-def no_rpc(func):
-    " Decorator for functions that should not be exposed via RPC "
-    func._norpc = True
-    return func
 
 class MPMServer(RPCServer):
     """
@@ -442,7 +434,7 @@ class MPMServer(RPCServer):
         get device information
         This is as safe method which can be called without a claim on the device
         """
-        info = _get_map_for_rpc(self.periph_manager.get_device_info(), self.log)
+        info = get_map_for_rpc(self.periph_manager.get_device_info(), self.log)
         info["mpm_version"] = "{}.{}".format(*MPM_COMPAT_NUM)
         if _is_connection_local(self.client_host):
             info["connection"] = "local"
@@ -654,16 +646,3 @@ def spawn_rpc_process(state, udp_port, default_args):
     )
     proc.start()
     return proc
-
-
-def _get_map_for_rpc(map, log):
-    """
-    ensure the map contains only string values otherwise it cannot be
-    casted to std::map<string, string> in C++
-    # TODO reconsider the workaround once we transition away from mprpc
-    """
-    for key, value in map.items():
-        if value is None:
-            log.warning('casting parameter "{}" from None to "n/a"'.format(key))
-            map[key] = "n/a"
-    return map
