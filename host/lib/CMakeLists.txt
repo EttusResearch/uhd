@@ -197,13 +197,18 @@ endif(DEFINED LIBUHD_OUTPUT_NAME)
 
 if(ENABLE_SIM)
     # Get python include dirs
+    # This contitional code somewhat duplicates logic also found in 
+    # ../python/CMakeLists.txt but omits user messages. This avoid 
+    # duplicate output, since SIM mode requires python support. 
     include_directories(${PYTHON_INCLUDE_DIRS})
-    set(PYBIND11_INCLUDE_DIR
-        "${UHD_SOURCE_DIR}/lib/deps/pybind11/include"
-        CACHE
-        STRING
-        "Location of PyBind11 includes"
-    )
+    if(NOT pybind11_FOUND)
+        set(PYBIND11_INCLUDE_DIR
+            "${UHD_SOURCE_DIR}/lib/deps/pybind11/include"
+            CACHE
+            STRING
+            "Location of PyBind11 includes"
+        )
+    endif()
     include_directories(${PYBIND11_INCLUDE_DIR})
 
     # For PYUHD we don't link against the python libraries, but when calling

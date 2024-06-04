@@ -40,7 +40,7 @@ set(NUMPY_MIN_VERSION "1.11")
 set(RUAMEL.YAML_MIN_VERSION "0.15")
 set(PY_MAKO_MIN_VERSION "0.4.2")
 set(PY_REQUESTS_MIN_VERSION "2.0")
-set(PYBIND11_MIN_VERSION "2.4")
+set(PYBIND11_MIN_VERSION "2.7")
 
 ########################################################################
 # Check Compiler Version
