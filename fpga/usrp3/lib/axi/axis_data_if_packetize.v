@@ -198,7 +198,7 @@ module axis_data_if_packetize
           if ((out_pkt_cnt >= out_pkt_size) || s_axis_user_tlast) begin
             set_has_time <= 1'b0;
             out_pkt_cnt  <= (WIDTH/8);
-            if (s_axis_user_teob) begin
+            if (s_axis_user_teob && s_axis_user_tlast) begin
               out_state  <= S_OUT_WAIT_FOR_FWD_FIFO;
             end
           end
