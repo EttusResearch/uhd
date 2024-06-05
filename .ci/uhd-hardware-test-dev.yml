@@ -65,7 +65,7 @@ resources:
     branch: master
   - pipeline: usrp-kas-pipeline
     source: 'usrp-kas'
-    branch: zeus-ci
+    branch: kirkstone
   - pipeline: uhd_fpga_pipeline
     source: 'uhddev fpga pipeline'
     branch: master
@@ -77,7 +77,7 @@ resources:
     type: github
     name: EttusResearch/meta-ettus-dev
     endpoint: EttusResearch
-    ref: zeus-ci
+    ref: kirkstone
   - repository: gr-ettus
     type: github
     name: EttusResearch/gr-ettusdev
