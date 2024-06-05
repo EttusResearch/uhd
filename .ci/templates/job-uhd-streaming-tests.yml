@@ -249,7 +249,7 @@ jobs:
       sudo -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONPATH=$PYTHONPATH python3 -B -m pytest -s test_streaming.py -m "not dpdk" \
         --dut_type $(dutType) --test_length ${{ parameters.testLength }} \
         --uhd_build_dir $(Build.BinariesDirectory)/uhddev/build --junitxml $(Common.TestResultsDirectory)/TEST-$(dutName).xml \
-        --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $(dutMgmtAddr) --name $(dutNameId) \
+        --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $USRP_EMB_TARGET_IP --name $(dutNameId) \
         --num_recv_frames $(dutNumRecvFrames) --num_send_frames $(dutNumSendFrames)
     env:
       UHD_CONFIG_FILE: $(config_file)
@@ -289,7 +289,7 @@ jobs:
       sudo -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONPATH=$PYTHONPATH python3 -B -m pytest -s test_raw_udp_streaming.py \
         --dut_type $(dutType) --dut_fpga $(dutFPGA) --test_length ${{ parameters.testLength }} \
         --uhd_build_dir $(Build.BinariesDirectory)/uhddev/build-installed/lib/uhd --junitxml $(Common.TestResultsDirectory)/TEST-$(dutName).xml \
-        --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $(dutMgmtAddr) --name $(dutNameId) \
+        --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $USRP_EMB_TARGET_IP --name $(dutNameId) \
         --num_recv_frames $(dutNumRecvFrames) --num_send_frames $(dutNumSendFrames) --sfp_int0 $(sfpInt0) --sfp_int1 $(sfpInt1)
     env:
       UHD_CONFIG_FILE: $(config_file)
@@ -350,7 +350,7 @@ jobs:
       sudo -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONPATH=$PYTHONPATH python3 -B -m pytest -s test_streaming.py -m "dpdk" \
         --dut_type $(dutType) --dut_fpga $(dutFPGA) --test_length ${{ parameters.testLength }} \
         --uhd_build_dir $(Build.BinariesDirectory)/uhddev/build --junitxml $(Common.TestResultsDirectory)/TEST-$(dutName)-dpdk.xml \
-        --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $(dutMgmtAddr) --name $(dutNameId)
+        --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $USRP_EMB_TARGET_IP --name $(dutNameId)
     env:
       UHD_CONFIG_FILE: $(config_file)
       PYTHONPATH: ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
