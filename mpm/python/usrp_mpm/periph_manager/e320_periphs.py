@@ -8,6 +8,7 @@ E320 peripherals
 """
 
 import math
+import time
 from usrp_mpm.sys_utils.sysfs_gpio import SysFSGPIO, GPIOBank
 from usrp_mpm.periph_manager.common import MboardRegsCommon
 
@@ -76,7 +77,21 @@ class MboardRegsControl(MboardRegsCommon):
 
     # Bitfield locations for the MB_GPS_CTRL register.
     MB_GPS_CTRL_PWR_EN = 0
+    # This is connected to pin 23 (manual reset) of the GPS module.
+    # Section 2.3.9 (System Reset) of the data sheet says:
+    # This pin [...] can be connected to a reset switch. Initiating a system
+    # reset will cause the GPS receiver to not generate GPS fixes for up to 35
+    # seconds if power had been off for prolonged periods of time, and down to
+    # 3 seconds typically if the unit had been powered-on recently.
+    #
+    # Note that in this use case, we typically don't use the system reset during
+    # normal operations. Instead, we always fully power the GPS down when it's
+    # not needed. Standard operation is to power-up the GPS when the device boots
+    # and leave it running. GPS can also be powered-up or -down for the duration
+    # of a single UHD session, and the default state can be overriden in mpm.conf.
     MB_GPS_CTRL_RST_N = 1
+    # This pin is for auto-survey mode, which we do not use. This pin is kept
+    # low at all times, as this mode is not intended for stationary use.
     MB_GPS_CTRL_INITSURV_N = 2
 
     # Bitfield locations for the MB_GPS_STATUS register.
@@ -271,19 +286,44 @@ class MboardRegsControl(MboardRegsCommon):
         return gps_status
 
     def enable_gps(self, enable):
-        """
-        Turn power to the GPS (CLK_GPS_PWR_EN) off or on.
+        """Turn power to the GPS (CLK_GPS_PWR_EN) off or on.
+
+        When enabling the power, we sequence the power such that we first power
+        the chip, then bring it out of reset with a short delay.
+        When powering down the GPS, we make sure that all pins are low.
+
         Power signal is GPS_3V3.
+
+        Note: This logic keeps MB_GPS_CTRL_INITSURV_N low at all times. Should
+        a different behaviour be desired, we need to change this to also
+        factor in the desired state of INITSURV_N. However, we are intentionally
+        keeping INITSURV mode off, as it's not intended for stationary use.
         """
         self.log.trace("{} power to GPS".format(
             "Enabling" if enable else "Disabling"
         ))
-        mask = 0xFFFFFFFF ^ (0b1 << self.MB_GPS_CTRL_PWR_EN)
+        pwr_en_mask = (0b1 << self.MB_GPS_CTRL_PWR_EN)
+        rstn_mask = (0b1 << self.MB_GPS_CTRL_RST_N)
+        enabled_mask = pwr_en_mask | rstn_mask
         with self.regs:
-            reg_val = self.peek32(self.MB_GPS_CTRL) & mask
-            reg_val = reg_val | (enable << self.MB_GPS_CTRL_PWR_EN)
-            self.log.trace("Writing MB_GPS_CTRL to 0x{:08X}".format(reg_val))
-            return self.poke32(self.MB_GPS_CTRL, reg_val)
+            cur_reg_val = self.peek32(self.MB_GPS_CTRL)
+            if enable and (cur_reg_val & enabled_mask != enabled_mask):
+                # First bring up supply, then bring out of reset
+                self.log.trace(f"Setting MB_GPS_CTRL to 0x{pwr_en_mask:08X} (power enable)")
+                self.poke32(self.MB_GPS_CTRL, pwr_en_mask)
+                # Jackson Labs data sheet says: "Pull to ground for >50ms to
+                # initiate a system reset." Technically, we're powering the device
+                # on and pulling it out of reset, so the full reset time is not
+                # necessary, but we like sticking to values in data sheets and
+                # this is a safe number.
+                time.sleep(0.060)
+
+                self.log.trace(f"Setting MB_GPS_CTRL to 0x{enabled_mask:08X} (out of reset)")
+                return self.poke32(self.MB_GPS_CTRL, enabled_mask)
+            elif not enable:
+                # All controls pins low to avoid backfeeding I/O pins when unpowered
+                self.log.trace("Setting MB_GPS_CTRL to 0x00000000")
+                return self.poke32(self.MB_GPS_CTRL, 0)
 
     def get_refclk_lock(self):
         """
