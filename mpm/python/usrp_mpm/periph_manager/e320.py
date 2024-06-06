@@ -10,6 +10,7 @@ E320 implementation module
 import bisect
 import copy
 import re
+import time
 from functools import partial
 from six import iteritems
 from usrp_mpm.compat_num import CompatNumber
@@ -261,7 +262,11 @@ class e320(ZynqComponents, PeriphManagerBase):
         # Init peripherals
         self._gps_enabled = None  # Assume indeterminant, will latch _def_gps_enabled
         self._def_gps_enabled = str2bool(args.get('enable_gps', E320_DEFAULT_ENABLE_GPS))
-        self.enable_gps(self._def_gps_enabled)
+        # Ensure clean power-on for GPS receiver
+        self.enable_gps(False)
+        if self._def_gps_enabled:
+            time.sleep(0.100) # held off for 100ms
+            self.enable_gps(True)
         self.enable_fp_gpio(
             enable=args.get('enable_fp_gpio', E320_DEFAULT_ENABLE_FPGPIO)
         )
