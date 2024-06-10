@@ -834,7 +834,7 @@ void magnesium_radio_control_impl::set_rx_lo_source(
     }
 }
 
-const std::string magnesium_radio_control_impl::get_rx_lo_source(
+std::string magnesium_radio_control_impl::get_rx_lo_source(
     const std::string& name, const size_t /*chan*/
 )
 {
@@ -962,7 +962,7 @@ void magnesium_radio_control_impl::set_tx_lo_source(
     }
 }
 
-const std::string magnesium_radio_control_impl::get_tx_lo_source(
+std::string magnesium_radio_control_impl::get_tx_lo_source(
     const std::string& name, const size_t /*chan*/
 )
 {

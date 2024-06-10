@@ -78,14 +78,14 @@ void chdr_packet::set_payload(payload_t payload, uhd::endianness_t endianness)
 }
 
 template <typename payload_t>
-const std::string chdr_packet::to_string_with_payload(uhd::endianness_t endianness) const
+std::string chdr_packet::to_string_with_payload(uhd::endianness_t endianness) const
 {
     payload_t payload = this->get_payload<payload_t>(endianness);
     return to_string() + payload.to_string();
 }
 
 template <>
-const std::string chdr_packet::to_string_with_payload<chdr_rfnoc::mgmt_payload>(
+std::string chdr_packet::to_string_with_payload<chdr_rfnoc::mgmt_payload>(
     uhd::endianness_t endianness) const
 {
     chdr_rfnoc::mgmt_payload payload =

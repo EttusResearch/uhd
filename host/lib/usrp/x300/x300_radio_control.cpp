@@ -657,8 +657,7 @@ public:
         }
     }
 
-    const std::string get_rx_lo_source(
-        const std::string& name, const size_t chan) override
+    std::string get_rx_lo_source(const std::string& name, const size_t chan) override
     {
         fs_path rx_fe_fe_root = get_db_path("rx", chan);
 

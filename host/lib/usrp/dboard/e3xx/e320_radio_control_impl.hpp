@@ -103,7 +103,7 @@ protected:
     /************************************************************************
      * E3XX API calls
      ***********************************************************************/
-    const std::string get_default_timing_mode() override
+    std::string get_default_timing_mode() override
     {
         return TIMING_MODE_2R2T;
     };

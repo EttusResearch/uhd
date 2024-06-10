@@ -154,7 +154,7 @@ public:
 
     //! Return a function to convert a word of type data_t to host order
     template <typename data_t>
-    const std::function<data_t(data_t)> conv_to_host() const
+    std::function<data_t(data_t)> conv_to_host() const
     {
         return (get_byte_order() == uhd::ENDIANNESS_BIG) ? uhd::ntohx<data_t>
                                                          : uhd::wtohx<data_t>;
@@ -162,7 +162,7 @@ public:
 
     //! Return a function to convert a word of type data_t from host order
     template <typename data_t>
-    const std::function<data_t(data_t)> conv_from_host() const
+    std::function<data_t(data_t)> conv_from_host() const
     {
         return (get_byte_order() == uhd::ENDIANNESS_BIG) ? uhd::htonx<data_t>
                                                          : uhd::htowx<data_t>;

@@ -246,12 +246,12 @@ public:
         _validate_lo_name(name, "set_rx_lo_source");
     }
 
-    const std::string get_tx_lo_source(const std::string&, const size_t) override
+    std::string get_tx_lo_source(const std::string&, const size_t) override
     {
         return "internal";
     }
 
-    const std::string get_rx_lo_source(const std::string&, const size_t) override
+    std::string get_rx_lo_source(const std::string&, const size_t) override
     {
         return "internal";
     }

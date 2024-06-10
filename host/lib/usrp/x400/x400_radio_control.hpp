@@ -135,8 +135,7 @@ public:
         const std::string& name, const size_t chan) const override;
     void set_rx_lo_source(
         const std::string& src, const std::string& name, const size_t chan) override;
-    const std::string get_rx_lo_source(
-        const std::string& name, const size_t chan) override;
+    std::string get_rx_lo_source(const std::string& name, const size_t chan) override;
     void set_rx_lo_export_enabled(
         bool enabled, const std::string& name, const size_t chan) override;
     bool get_rx_lo_export_enabled(const std::string& name, const size_t chan) override;
@@ -150,8 +149,7 @@ public:
         const std::string& name, const size_t chan) override;
     void set_tx_lo_source(
         const std::string& src, const std::string& name, const size_t chan) override;
-    const std::string get_tx_lo_source(
-        const std::string& name, const size_t chan) override;
+    std::string get_tx_lo_source(const std::string& name, const size_t chan) override;
     void set_tx_lo_export_enabled(
         const bool enabled, const std::string& name, const size_t chan) override;
     bool get_tx_lo_export_enabled(const std::string& name, const size_t chan) override;

@@ -47,7 +47,7 @@ public:
     double step(void) const;
 
     //! Convert this range to a printable string
-    const std::string to_pp_string(void) const;
+    std::string to_pp_string(void) const;
 
     //! Equality operator
     bool operator==(const range_t& other) const;
@@ -124,7 +124,7 @@ struct UHD_API meta_range_t : public std::vector<range_t>
     meta_range_t as_monotonic() const;
 
     //! Convert this meta-range to a printable string
-    const std::string to_pp_string(void) const;
+    std::string to_pp_string(void) const;
 };
 
 typedef meta_range_t gain_range_t;

@@ -212,8 +212,8 @@ public:
         const std::string& src, const std::string& name, const size_t chan) final;
     void set_rx_lo_source(
         const std::string& src, const std::string& name, const size_t chan) final;
-    const std::string get_tx_lo_source(const std::string& name, const size_t chan) final;
-    const std::string get_rx_lo_source(const std::string& name, const size_t chan) final;
+    std::string get_tx_lo_source(const std::string& name, const size_t chan) final;
+    std::string get_rx_lo_source(const std::string& name, const size_t chan) final;
 
     uhd::freq_range_t get_rx_lo_freq_range(
         const std::string& name, const size_t chan) const final

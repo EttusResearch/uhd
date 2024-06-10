@@ -739,7 +739,7 @@ void x400_radio_control_impl::set_rx_lo_source(
     _daughterboard->set_rx_lo_source(src, name, chan);
 }
 
-const std::string x400_radio_control_impl::get_rx_lo_source(
+std::string x400_radio_control_impl::get_rx_lo_source(
     const std::string& name, const size_t chan)
 {
     std::lock_guard<std::recursive_mutex> l(_lock);
@@ -800,7 +800,7 @@ void x400_radio_control_impl::set_tx_lo_source(
     _daughterboard->set_tx_lo_source(src, name, chan);
 }
 
-const std::string x400_radio_control_impl::get_tx_lo_source(
+std::string x400_radio_control_impl::get_tx_lo_source(
     const std::string& name, const size_t chan)
 {
     std::lock_guard<std::recursive_mutex> l(_lock);
