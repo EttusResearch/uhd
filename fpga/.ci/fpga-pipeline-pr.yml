@@ -129,6 +129,7 @@ pr:
     include:
     - fpga/usrp3/lib
     - fpga/usrp3/top
+    - fpga/usrp3/sim
     - fpga/.ci
 
 schedules:

@@ -15,7 +15,7 @@ parameters:
 - name: run_testbenches
   type: boolean
   displayName: Run Testbenches
-  default: false
+  default: true
 - name: clean_ip_build
   type: boolean
   displayName: Clean IP Build
@@ -73,6 +73,7 @@ trigger:
     include:
     - fpga/usrp3/lib
     - fpga/usrp3/top
+    - fpga/usrp3/sim
     - fpga/.ci
 
 pr: none
