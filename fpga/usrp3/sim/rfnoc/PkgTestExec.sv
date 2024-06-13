@@ -30,7 +30,7 @@ package PkgTestExec;
     time   start_time, end_time;      // Start and end time of the testbench
     bit    stop_on_error = 1;         // Configuration option to stop when an error occurs
     bit    done = 0;                  // Flag that sets when tb is finished
-    logic  test_status[$];            // Pass/fail of each test where index matches test number
+    logic  test_status[$] = { 1'bX }; // Pass/fail of each test where index matches test number
 
     timeout_t tb_timeout;             // Handle to timeout for the overall testbench
     timeout_t test_timeout;           // Handle to timeout for current test
