@@ -151,8 +151,10 @@ void fbx_rfdc_freq_expert::resolve()
                     _get_trx_string(_trx)
                     << " operation in this Nyquist zone will result in decreased RF "
                        "performance.");
-            } auto passband_freq = static_cast<int>(std::round(_if_frequency_coerced))
-                                   % static_cast<int>(nyquist_boundary);
+            };
+            // passband_freq is the if_frequency relative to the start of the Nyquist zone
+            auto passband_freq = static_cast<uint32_t>(std::round(_if_frequency_coerced))
+                                 % static_cast<uint32_t>(nyquist_boundary);
             if (passband_freq < 0.1 * nyquist_boundary
                 || passband_freq > 0.9 * nyquist_boundary) {
                 auto pass_low_mhz =
