@@ -10,7 +10,7 @@ parameters:
   feature_list:
     - 0xC0DE
     - 0xF00D
-  device_type: "ULTRASCALE"
+  device_type: "${ config.family }"
   private_key: "${env['RFNOC_PRIVATE_KEY']}"
   serial_width: "${96 if parameters['device_type'] == 'ULTRASCALE' else 64}"
 
