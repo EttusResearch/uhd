@@ -3,7 +3,11 @@ module_name: device_dna
 version: "1.0"
 
 parameters:
-  device_type: "${ config.family }"
+  device_type: "${config.family}"
+
+checks:
+  - condition: "${parameters['device_type'] in ['ULTRASCALE', '7SERIES']}"
+    message: "Device type must be either 'ULTRASCALE' or '7SERIES'."
 
 hdl_parameters:
   DNA_WIDTH: "${96 if parameters['device_type'] == 'ULTRASCALE' else 64}"
