@@ -232,7 +232,7 @@ def load_config(filename):
     dirname, basename = os.path.split(filename)
     try:
         with open(filename, encoding='utf-8') as stream:
-            logging.info(
+            logging.debug(
                 "Using %s from %s.", basename, os.path.normpath(dirname))
             config = ordered_load(stream)
         return config
@@ -332,7 +332,7 @@ def read_yaml_definitions(*paths):
                             logging.warning("Skipping deprecated block description "
                                 "%s (%s).", filename, os.path.normpath(root))
                         else:
-                            logging.info("Adding file %s (%s).",
+                            logging.debug("Adding file %s (%s).",
                                          filename, os.path.normpath(root))
                             blocks[filename] = data
     return blocks

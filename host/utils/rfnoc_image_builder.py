@@ -25,7 +25,33 @@ import sys
 
 import yaml
 
-logging.basicConfig(format='[%(levelname).3s] %(message)s')
+#logging.basicConfig(format='[%(levelname).3s] %(message)s')
+
+class CustomFormatter(logging.Formatter):
+    """Logging Formatter to add colors and icons."""
+    grey = "\x1b[38;20m"
+    black = "\x1b[30;20m"
+    yellow = "\x1b[33;20m"
+    red = "\x1b[31;20m"
+    reset = "\x1b[0m"
+    FORMATS = {
+        logging.DEBUG: grey + "[debug] %(message)s" + reset,
+        logging.INFO: black + "%(message)s" + reset,
+        logging.WARNING: yellow + "⚠   %(message)s" + reset,
+        logging.ERROR: red + "⛔   %(message)s" + reset,
+        logging.CRITICAL: red + "⛔   %(message)s" + reset,
+    }
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno)
+        return logging.Formatter(log_fmt).format(record)
+
+
+handler = logging.StreamHandler()
+handler.setFormatter(CustomFormatter())
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+logger.addHandler(handler)
+
 
 from uhd.imgbuilder import image_builder
 from uhd.imgbuilder import yaml_utils

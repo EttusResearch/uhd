@@ -97,7 +97,7 @@ def write_verilog(config, destination, args, template):
         print(exceptions.text_error_template().render())
         sys.exit(1)
 
-    logging.info("Writing output to %s", destination)
+    logging.debug("Writing output to %s", destination)
     with open(destination, "w", encoding="utf-8") as image_core_file:
         image_core_file.write(block)
 
@@ -229,8 +229,8 @@ def build(fpga_top_dir, device, build_dir, use_secure_netlist, **args):
     make_cmd += gen_make_command(args, build_dir, device, use_secure_netlist, makefile_src_paths)
 
     if args.get('generate_only'):
-        logging.info("Skip build (generate only option given)")
-        logging.info("Use the following command to build the image: %s", make_cmd)
+        logging.info("Skipping build (--generate-only option given)!")
+        logging.info("Use the following command to manually build the image: %s", make_cmd)
         return 0
 
     make_cmd = setup_cmd + "&& " + make_cmd
@@ -331,7 +331,7 @@ def build_image(config, repo_fpga_path, config_path, device, **args):
     :return: Exit result of build process or 0 if generate-only is given.
     """
     assert 'source' in args
-    logging.info("Selected device %s", device)
+    logging.info("Selected device: %s", device)
     image_core_name = args.get('image_core_name')
     assert image_core_name
     logging.debug("Image core name: %s", image_core_name)
@@ -420,7 +420,7 @@ def build_image(config, repo_fpga_path, config_path, device, **args):
             try:
                 # Assume netlist file path is relative to YAML file
                 source = os.path.join(netlist_dir, file)
-                destination = os.path.join(build_dir, os.path.basename(file))
+                destination = os.path.normpath(os.path.join(build_dir, os.path.basename(file)))
                 logging.info(f"Copying {file} to {destination}")
                 shutil.copy(source, destination)
             except:

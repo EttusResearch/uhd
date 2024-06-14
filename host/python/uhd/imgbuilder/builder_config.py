@@ -263,10 +263,9 @@ class ImageBuilderConfig:
                     con[port] = yaml_utils.deprecated_port_name_map[con[port]]
 
     def _check_configuration(self):
+        """Check current configuration.
         """
-        Do plausibility checks on the current configuration
-        """
-        logging.info("Plausibility checks on the current configuration")
+        logging.debug("Running checks on the current configuration...")
         failures = []
         if not any(bool(sep["ctrl"]) for sep in self.stream_endpoints.values()):
             failures = "At least one streaming endpoint needs to have ctrl enabled"
@@ -314,7 +313,7 @@ class ImageBuilderConfig:
                     f"crossbar_routes must be a {num_ports} by {num_ports} binary array"
                 ]
         else:
-            logging.info("Generating default crossbar routes...")
+            logging.debug("Generating default crossbar routes...")
             # Give crossbar_routes a default value
             routes = np.ones([num_ports, num_ports])
             # Disable all TA to TA paths, except loopback (required for discovery)
@@ -601,7 +600,7 @@ class ImageBuilderConfig:
                 index = 0
                 data_ports = getattr(block.desc, "data", {}).get(direction, {}).items()
                 if not data_ports:
-                    logging.info("Block %s has no data %s.", block.desc.module_name, direction)
+                    logging.debug("Block %s has no data %s.", block.desc.module_name, direction)
                 for port_name, port_info in data_ports:
                     num_ports = 1
                     if "num_ports" in port_info:
