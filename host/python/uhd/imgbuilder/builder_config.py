@@ -332,6 +332,33 @@ class ImageBuilderConfig:
                 sep["buff_size"] = sep["buff_size_bytes"] // (sep["chdr_width"] // 8)
             elif "buff_size" in sep:
                 sep["buff_size_bytes"] = sep["buff_size"] * (sep["chdr_width"] // 8)
+        # Run checks on noc blocks/modules/transport adapters
+        for module_type in ("noc_blocks", "modules", "transport_adapters"):
+            for module_name, module in getattr(self, module_type).items():
+                checks = getattr(module.desc, "checks", [])
+                for check in checks:
+                    if "condition" in check:
+                        if not bool(resolve(check["condition"], config=self, **module)):
+                            if "message" in check:
+                                failures += [
+                                    f"Condition failed for {module_name}: "
+                                    + resolve(check["message"], config=self, **module)
+                                ]
+                            else:
+                                failures += [
+                                    f"Condition failed for {module_name}: {check['condition']}"
+                                ]
+                    if "run" in check:
+                        try:
+                            resolve(check["run"], config=self, **module)
+                        except Exception as ex:
+                            if "message" in check:
+                                failures += [
+                                    f"Condition failed for {module_name}: "
+                                    + resolve(check["message"], config=self, **module, error=ex)
+                                ]
+                            else:
+                                failures += [f"Condition failed for {module_name}: {str(ex)}"]
         # Handle any errors
         if failures:
             logging.error("The image core configuration is invalid:")
@@ -879,14 +906,53 @@ class ImageBuilderConfig:
                 con['dsttype'] = dst_blk.io_ports[con['dstport']]['drive']
                 con['src_iosig'] = copy.deepcopy(src_blk.io_ports[con['srcport']])
                 con['dst_iosig'] = copy.deepcopy(dst_blk.io_ports[con['dstport']])
+                if con['src_iosig'].get('type') != con['dst_iosig'].get('type'):
+                    failure += f"IO port type mismatch: {con['srcblk']}.{con['srcport']} " \
+                                 f"(type: {con['src_iosig'].get('type')}) → {con['dstblk']}.{con['dstport']} " \
+                                    f"(type: {con['dst_iosig'].get('type')})\n"
             else:
                 failure += f"Unresolved connection: " \
                            f"{con['srcblk']}:{con['srcport']} → " \
                            f"{con['dstblk']}:{con['dstport']}\n"
             self.connections[conn_idx] = con
 
+        # Go through all the modules and check IO ports are connected
+        for module_type in ("noc_blocks", "modules", "transport_adapters"):
+            for module_name, module in getattr(self, module_type).items():
+                for io_port_name, io_port in module.io_ports.items():
+                    required = io_port.get("required")
+                    if required:
+                        is_connected = any(
+                            con["srcblk"] == module_name
+                            and con["srcport"] == io_port_name
+                            or con["dstblk"] == module_name
+                            and con["dstport"] == io_port_name
+                            for con in self.connections
+                        )
+                        if not is_connected:
+                            if required == "recommended":
+                                logging.warning(
+                                    "IO port %s.%s is not connected", module_name, io_port_name
+                                )
+                            else:
+                                failure += (
+                                    f"IO port {module_name}.{io_port_name} is not connected\n"
+                                )
+        # Go through blocks and check all ports are connected
+        for block_name, block in self.noc_blocks.items():
+            for direction in ("inputs", "outputs"):
+                for port_name in block["data"][direction]:
+                    if not any(
+                        con["srcblk"] == block_name
+                        and con["srcport"] == port_name
+                        or con["dstblk"] == block_name
+                        and con["dstport"] == port_name
+                        for con in self.connections
+                    ):
+                        logging.warning("Block port %s.%s is not connected", block_name, port_name)
+
         if failure:
-            logging.error(failure)
+            logging.error("There are errors in the image core file's connection settings:\n" + failure)
             logging.info("    Make sure block ports are connected output "
                           "(src) to input (dst)")
             logging.info("    Available block ports for connections:")
