@@ -11,11 +11,12 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/process.hpp>
 #include <boost/program_options.hpp>
+#ifdef __linux__
+#    include <boost/filesystem.hpp>
+#    include <boost/process.hpp>
+#endif
 #include <chrono>
 #include <complex>
 #include <csignal>
@@ -39,7 +40,7 @@ void sig_int_handler(int)
     stop_signal_called = true;
 }
 
-
+#ifdef __linux__
 /*
  * Very simple disk write test using dd for at most 1 second.
  * Measures an upper bound of the maximum
@@ -56,8 +57,6 @@ double disk_rate_check(const size_t sample_type_size,
     size_t samps_per_buff,
     const std::string& file)
 {
-#ifdef __linux__
-
     std::string err_msg =
         "Disk benchmark tool 'dd' did not run or returned an unexpected output format";
     boost::process::ipstream pipe_stream;
@@ -129,9 +128,9 @@ double disk_rate_check(const size_t sample_type_size,
                 std::cerr << err_msg << std::endl;
         }
     }
-#endif
     return 0;
 }
+#endif
 
 
 template <typename samp_type>
@@ -557,6 +556,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         std::cout << "Press Ctrl + C to stop streaming..." << std::endl;
     }
 
+#ifdef __linux__
     const double req_disk_rate = usrp->get_rx_rate(channel_list[0]) * channel_list.size()
                                  * uhd::convert::get_bytes_per_item(wirefmt);
     const double disk_rate_meas = disk_rate_check(
@@ -571,6 +571,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                    "  and OS/disk caching capacity.\n")
                    % (req_disk_rate / 1e6) % (disk_rate_meas / 1e6);
     }
+#endif
 
     std::vector<size_t> chans_in_thread;
     std::vector<double> rates(channel_list.size());
