@@ -872,6 +872,44 @@ class ImageBuilderConfig:
             self.clk_domains[clk_i]['dstport'] = self.clocks[clk_dst]['name']
 
 
+    def _get_available_ports(self, io_port):
+        """Return a list of available ports for an unconnected IO port.
+
+        - If io_port is a master, then it can only connect to slave ports, and
+          vice versa. The other port must be disconnected.
+        - If io_port is a broadcaster, then it can only connect to listener ports,
+          and vice versa. If we are looking for a broadcaster port, then it may be
+          connected.
+        - The port types must match.
+        """
+        desired_drive = {
+            "master": "slave",
+            "slave": "master",
+            "broadcaster": "listener",
+            "listener": "broadcaster",
+        }[io_port["drive"]]
+        desired_srcdst = "src" if desired_drive in ("master", "broadcaster") else "dst"
+        desired_type = io_port.get("type")
+        desired_disconnected = desired_drive != "broadcaster"
+        candidates = []
+        for module_name, module in self.get_module_list("all").items():
+            for io_port_name, des_io_port in module.io_ports.items():
+                if des_io_port.get("drive") == desired_drive and \
+                        des_io_port.get("type") == desired_type:
+                    candidates.append((module_name, io_port_name, desired_srcdst))
+        if desired_disconnected:
+            candidates = [
+                (module_name, io_port_name, src_or_dst)
+                for module_name, io_port_name, src_or_dst in candidates
+                if not any(
+                    con[f"{src_or_dst}blk"] == module_name and
+                    con[f"{src_or_dst}port"] == io_port_name
+                    for con in self.connections
+                )
+            ]
+        return candidates
+
+
     def _check_connections(self):
         """
         - Validate the list of connections
@@ -908,8 +946,9 @@ class ImageBuilderConfig:
                 con['dst_iosig'] = copy.deepcopy(dst_blk.io_ports[con['dstport']])
                 if con['src_iosig'].get('type') != con['dst_iosig'].get('type'):
                     failure += f"IO port type mismatch: {con['srcblk']}.{con['srcport']} " \
-                                 f"(type: {con['src_iosig'].get('type')}) → {con['dstblk']}.{con['dstport']} " \
-                                    f"(type: {con['dst_iosig'].get('type')})\n"
+                               f"(type: {con['src_iosig'].get('type')}) → " \
+                               f"{con['dstblk']}.{con['dstport']} " \
+                               f"(type: {con['dst_iosig'].get('type')})\n"
             else:
                 failure += f"Unresolved connection: " \
                            f"{con['srcblk']}:{con['srcport']} → " \
@@ -930,14 +969,39 @@ class ImageBuilderConfig:
                             for con in self.connections
                         )
                         if not is_connected:
-                            if required == "recommended":
-                                logging.warning(
-                                    "IO port %s.%s is not connected", module_name, io_port_name
-                                )
+                            available_ports = self._get_available_ports(io_port)
+                            msg = f"IO port {module_name}.{io_port_name} is not connected. "
+                            if len(available_ports) == 1:
+                                msg += f"Suggested connection: " \
+                                       f"{available_ports[0][0]}.{available_ports[0][1]}\n"
+                                msg += f"Add the following connection to the image core file to " \
+                                       f"use this connection:\n"
+                                if available_ports[0][2] == "src":
+                                    msg += f"{{ srcblk: {available_ports[0][0]}, " \
+                                           f"srcport: {available_ports[0][1]}, dstblk: " \
+                                           f"{module_name}, dstport: {io_port_name} }}"
+                                else:
+                                    msg += f"{{ srcblk: {module_name}, srcport: {io_port_name}, " \
+                                           f"dstblk: {available_ports[0][0]}, dstport: " \
+                                           f"{available_ports[0][1]} }}"
+                            elif len(available_ports) > 1:
+                                msg += f"Available connections:\n"
+                                for port in available_ports:
+                                    msg += f"    {port[0]}.{port[1]}\n"
+                                msg += "Add a connection line to the image core file to enable " \
+                                       "this connection:\n"
+                                if available_ports[0][2] == "src":
+                                    msg += f"{{ srcblk: ..., srcport: ..., dstblk: " \
+                                           f"{module_name}, dstport: {io_port_name} }}"
+                                else:
+                                    msg += f"{{ srcblk: {module_name}, srcport: {io_port_name}, " \
+                                           f"dstblk: ..., dstport: ... }}"
                             else:
-                                failure += (
-                                    f"IO port {module_name}.{io_port_name} is not connected\n"
-                                )
+                                msg += f"No available IO ports found!"
+                            if required == "recommended":
+                                logging.warning(msg)
+                            else:
+                                failure += msg
         # Go through blocks and check all ports are connected
         for block_name, block in self.noc_blocks.items():
             for direction in ("inputs", "outputs"):
@@ -1091,11 +1155,20 @@ class ImageBuilderConfig:
         domain: One of 'all', 'secure_core', 'top'.
         """
         assert domain in ('top', 'all', 'secure_core')
-        assert mod_type in ('noc_blocks', 'transport_adapters', 'modules')
+        assert mod_type in ('noc_blocks', 'transport_adapters', 'modules', 'device', 'all')
+        if mod_type == 'all':
+            return {
+                **self.get_module_list('noc_blocks', domain),
+                **self.get_module_list('transport_adapters', domain),
+                **self.get_module_list('modules', domain),
+                **self.get_module_list('device', domain),
+            }
+        if mod_type == 'device':
+            return {DEVICE_NAME: self.device}
         if domain == 'top':
             return getattr(self, mod_type)
         secure_mods = {}
-        if self.secure_config:
+        if getattr(self, 'secure_config', None):
             secure_mods = getattr(self.secure_config, mod_type)
         if domain == 'secure_core':
             return secure_mods
