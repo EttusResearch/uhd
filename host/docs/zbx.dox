@@ -441,6 +441,7 @@ You can now update to the new CPLD image:
 
     zbx_update_cpld --updater=legacy --file=~/cpld-zbx-x03lf.svf 
 
+Note: non-x03lf variant do not require the updater argument
 
 \subsection zbx_updating_cpld_details CPLD Programming: Details
 
@@ -476,6 +477,8 @@ To specify a programming mode, use the `--updater` argument. For example, to
 force the legacy mode, use the following command:
 
     zbx_update_cpld --updater=legacy --file=/lib/firmware/ni/cpld-zbx-x03lf.svf 
+
+Note: non-x03lf variant do not require the updater argument
 
 This will program the image from the default location onto the CPLD using the
 'legacy' method.
