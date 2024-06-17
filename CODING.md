@@ -123,7 +123,7 @@ std::map<std::string, std::string> bar =
 
 * Starting with UHD 4.0, Python 2 is no longer supported, and we don't need to
   accommodate for it any longer. Prefer Python 3 constructs.
-* We follow the [NI Python Style Guidelines](ni-python). Install
+* We follow the [NI Python Style Guidelines][ni-python]. Install
   `ni-python-styleguide` to help following the recommendations (e.g., by running
   `pip install ni-python-styleguide`. The tool is available
   [on GitHub](https://github.com/ni/python-styleguide).
