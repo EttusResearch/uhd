@@ -12,10 +12,6 @@
 
 parameters:
 ## Optional parameters
-# Run testbenches
-- name: run_testbenches
-  type: boolean
-  default: true
 # Option to ignore cached artifacts (if available) and perform
 # a clean IP build.
 - name: clean_ip_build
