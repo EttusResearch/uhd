@@ -13,6 +13,8 @@ import sys
 import pathlib
 import shutil
 import re
+import subprocess
+import glob
 
 import mako.lookup
 import mako.template
@@ -69,6 +71,29 @@ SECURE_CORE_INST_PATH = {
     'x440': 'x4xx_core_i/rfnoc_image_core_i/secure_image_core_i',
 }
 
+def get_vivado_path(fpga_top_dir, args):
+    """Return path to Vivado installation directory."""
+    viv_path = None
+    if args.get("vivado_path"):
+        viv_path = args["vivado_path"]
+    else:
+        get_viv_path_cmd = ". ./setupenv.sh && echo \"VIVADO_PATH=\$VIVADO_PATH\""
+        try:
+            output = subprocess.check_output(
+                f"{BASH_EXECUTABLE} -c \"{get_viv_path_cmd}\"",
+                shell=True, cwd=fpga_top_dir, text=True)
+            viv_path = re.search(r'VIVADO_PATH=(.*)', output).group(1)
+        except subprocess.CalledProcessError:
+            logging.error("Failed to get Vivado path from setupenv.sh")
+            sys.exit(1)
+    logging.debug("Using Vivado path: %s", viv_path)
+    # check if viv_path is a directory
+    if not os.path.isdir(viv_path):
+        logging.error("Vivado path not found: %s", viv_path)
+        sys.exit(1)
+    return viv_path
+
+
 def write_verilog(config, destination, args, template):
     """
     Generates rfnoc_image_core.v file for the device.
@@ -92,7 +117,7 @@ def write_verilog(config, destination, args, template):
         lookup=lookup,
         strict_undefined=True)
     try:
-        block = tpl.render(**{ "config": config, "args": args, })
+        block = tpl.render(**{"config": config, "args": args})
     except:
         print(exceptions.text_error_template().render())
         sys.exit(1)
@@ -412,6 +437,19 @@ def build_image(config, repo_fpga_path, config_path, device, **args):
         secure_core_def['secure_image_core']['netlist_files'] = new_netlist_files
         logging.info("Writing secure core YAML to %s", secure_core_yml)
         yaml_utils.write_yaml(secure_core_def, secure_core_yml)
+        if not args.get("secure_key_file"):
+            viv_path = get_vivado_path(fpga_top_dir, args)
+            key_dir = os.path.join(viv_path, 'data', 'pubkey')
+            keyfiles = sorted(glob.glob(os.path.join(key_dir, 'xilinxt*active.v')))
+            if not keyfiles:
+                logging.error("No key file found in %s", key_dir)
+                return 1
+            logging.info("No key file provided: Using default Vivado key from %s.", keyfiles[-1])
+            with open(keyfiles[-1], 'r') as f:
+                write_verilog(
+                    {}, os.path.join(build_dir, "keyfile.v"),
+                    {"key_info": f.read()}, "keyfile.v.mako")
+            args['secure_key_file'] = os.path.join(build_dir, "keyfile.v")
     elif netlist_files:
         # The YAML includes a set of secure image netlist files. Copy them to
         # the artifact directory.
