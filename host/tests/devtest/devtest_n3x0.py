@@ -4,60 +4,66 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-"""
-Run device tests for the n3x0 series.
-"""
+"""Run device tests for the n3x0 series."""
+
+# flake8: noqa
 
 from benchmark_rate_test import uhd_benchmark_rate_test
+
 uhd_benchmark_rate_test.tests = {
-    'mimo_slow': {
-        'duration': 1,
-        'direction': 'tx,rx',
-        'chan': '0,1',
-        'rate': 1e6,
-        'acceptable-underruns': 500,
-        'tx_buffer': (0.1*1e6)+32e6*8*1/32,  # 32 MB DRAM for each channel (32 bit OTW format),
-        'rx_buffer': 0.1*1e6,
+    "mimo_slow": {
+        "duration": 1,
+        "direction": "tx,rx",
+        "chan": "0,1",
+        "rate": 1e6,
+        "acceptable-underruns": 500,
+        "tx_buffer": (0.1 * 1e6)
+        + 32e6 * 8 * 1 / 32,  # 32 MB DRAM for each channel (32 bit OTW format),
+        "rx_buffer": 0.1 * 1e6,
     },
-    'mimo_fast': {
-        'duration': 1,
-        'direction': 'tx,rx',
-        'chan': '0,1',
-        'rate': 12.5e6,
-        'acceptable-underruns': 500,
-        'tx_buffer': (0.1*12.5e6)+32e6*8*1/32,  # 32 MB DRAM for each channel (32 bit OTW format),
-        'rx_buffer': 0.1*12.5e6,
+    "mimo_fast": {
+        "duration": 1,
+        "direction": "tx,rx",
+        "chan": "0,1",
+        "rate": 12.5e6,
+        "acceptable-underruns": 500,
+        "tx_buffer": (0.1 * 12.5e6)
+        + 32e6 * 8 * 1 / 32,  # 32 MB DRAM for each channel (32 bit OTW format),
+        "rx_buffer": 0.1 * 12.5e6,
     },
-    'siso_chan0_slow': {
-        'duration': 1,
-        'direction': 'tx,rx',
-        'chan': '0',
-        'rate': 1e6,
-        'acceptable-underruns': 10,
-        'tx_buffer': (0.1*1e6)+32e6*8*1/32,  # 32 MB DRAM for each channel (32 bit OTW format),
-        'rx_buffer': 0.1*1e6,
+    "siso_chan0_slow": {
+        "duration": 1,
+        "direction": "tx,rx",
+        "chan": "0",
+        "rate": 1e6,
+        "acceptable-underruns": 10,
+        "tx_buffer": (0.1 * 1e6)
+        + 32e6 * 8 * 1 / 32,  # 32 MB DRAM for each channel (32 bit OTW format),
+        "rx_buffer": 0.1 * 1e6,
     },
-    'siso_chan1_slow': {
-        'duration': 1,
-        'direction': 'tx,rx',
-        'chan': '1',
-        'rate': 1e6,
-        'acceptable-underruns': 10,
-        'tx_buffer': (0.1*1e6)+32e6*8*1/32,  # 32 MB DRAM for each channel (32 bit OTW format),
-        'rx_buffer': 0.1*1e6,
+    "siso_chan1_slow": {
+        "duration": 1,
+        "direction": "tx,rx",
+        "chan": "1",
+        "rate": 1e6,
+        "acceptable-underruns": 10,
+        "tx_buffer": (0.1 * 1e6)
+        + 32e6 * 8 * 1 / 32,  # 32 MB DRAM for each channel (32 bit OTW format),
+        "rx_buffer": 0.1 * 1e6,
     },
 }
 
 from tx_waveforms_test import uhd_tx_waveforms_test
+
 uhd_tx_waveforms_test.tests = {
-    'chan0': {
-        'chan': '0',
+    "chan0": {
+        "chan": "0",
     },
-    'chan1': {
-        'chan': '0',
+    "chan1": {
+        "chan": "0",
     },
-    'both_chans': {
-        'chan': '0,1',
+    "both_chans": {
+        "chan": "0,1",
     },
 }
 
