@@ -11,12 +11,12 @@
 # pylint: disable=unused-import
 # flake8: noqa
 
-from usrp_probe_test import uhd_usrp_probe_test
-from python_api_test import uhd_python_api_test
-from python_rx_stability_test import uhd_python_rx_stability_test
-from benchmark_rate_test import uhd_benchmark_rate_test
+from usrp_probe_test import UhdUsrpProbeTest
+from python_api_test import UhdPythonApiTest
+from python_rx_stability_test import UhdPythonRxStabilityTest
+from benchmark_rate_test import UhdBenchmarkRateTest
 
-uhd_benchmark_rate_test.tests = {
+UhdBenchmarkRateTest.tests = {
     "mimo": {
         "duration": 1,
         "direction": "tx,rx",
@@ -70,9 +70,9 @@ uhd_benchmark_rate_test.tests = {
     # },
 }
 
-from rx_samples_to_file_test import rx_samples_to_file_test
+from rx_samples_to_file_test import RxSamplesToFileTest
 
-rx_samples_to_file_test.tests = {
+RxSamplesToFileTest.tests = {
     "default": {
         "duration": 1,
         "subdev": "A:A",
@@ -84,9 +84,9 @@ rx_samples_to_file_test.tests = {
     },
 }
 
-from tx_waveforms_test import uhd_tx_waveforms_test
+from tx_waveforms_test import UhdTxWaveformsTest
 
-uhd_tx_waveforms_test.tests = {
+UhdTxWaveformsTest.tests = {
     "chan0": {
         "chan": "0",
     },
@@ -104,7 +104,7 @@ uhd_tx_waveforms_test.tests = {
     },
 }
 
-from tx_bursts_test import uhd_tx_bursts_test
-from test_pps_test import uhd_test_pps_test
-from gpio_test import gpio_test
-from list_sensors_test import list_sensors_test
+from tx_bursts_test import UhdTxBurstsTest
+from test_pps_test import UhdTestPpsTest
+from gpio_test import GpioTest
+from list_sensors_test import ListSensorsTest

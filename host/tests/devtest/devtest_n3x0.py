@@ -8,9 +8,9 @@
 
 # flake8: noqa
 
-from benchmark_rate_test import uhd_benchmark_rate_test
+from benchmark_rate_test import UhdBenchmarkRateTest
 
-uhd_benchmark_rate_test.tests = {
+UhdBenchmarkRateTest.tests = {
     "mimo_slow": {
         "duration": 1,
         "direction": "tx,rx",
@@ -53,9 +53,9 @@ uhd_benchmark_rate_test.tests = {
     },
 }
 
-from tx_waveforms_test import uhd_tx_waveforms_test
+from tx_waveforms_test import UhdTxWaveformsTest
 
-uhd_tx_waveforms_test.tests = {
+UhdTxWaveformsTest.tests = {
     "chan0": {
         "chan": "0",
     },
@@ -67,12 +67,12 @@ uhd_tx_waveforms_test.tests = {
     },
 }
 
-from rx_samples_to_file_test import rx_samples_to_file_test
-from tx_bursts_test import uhd_tx_bursts_test
-from test_pps_test import uhd_test_pps_test
-from gpio_test import gpio_test
-from bitbang_test import bitbang_test
-from list_sensors_test import list_sensors_test
-from test_messages_test import test_messages_test
-from rx_multi_spc_timed_commands_test import rx_multi_spc_timed_commands_test
-from tx_multi_spc_timed_commands_test import tx_multi_spc_timed_commands_test
+from rx_samples_to_file_test import RxSamplesToFileTest
+from tx_bursts_test import UhdTxBurstsTest
+from test_pps_test import UhdTestPpsTest
+from gpio_test import GpioTest
+from bitbang_test import BitbangTest
+from list_sensors_test import ListSensorsTest
+from test_messages_test import TestMessagesTest
+from rx_multi_spc_timed_commands_test import RxMultiSpcTimedCommandsTest
+from tx_multi_spc_timed_commands_test import TxMultiSpcTimedCommandsTest

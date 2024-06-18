@@ -6,29 +6,34 @@
 #
 """ Test all python API functions for the connected device. """
 
-import sys
 import argparse
+import sys
+
 import numpy
 import uhd
+
 try:
     from ruamel import yaml
-except:
+except ImportError:
     import yaml
 
 # pylint: disable=broad-except
 
+
 class MethodExecutor(object):
-    """
-    Object for executing tests. Handles returned errors and mantains
+    """Object for executing tests.
+
+    Handles returned errors and mantains
     tested & failed lists.
     """
+
     def __init__(self):
+        """Initialize the MethodExecutor object."""
         self.tested = []
         self.failed = []
 
     def execute_methods(self, method_names, method_callback):
-        """
-        Execute API methods in 'method_names' by calling 'method_callback'.
+        """Execute API methods in 'method_names' by calling 'method_callback'.
 
         The callback must throw an exception if something went wrong. If no
         exception is thrown, the assumption is that all went fine.
@@ -42,16 +47,15 @@ class MethodExecutor(object):
         try:
             method_callback()
         except Exception as ex:
-            print(f"Error while executing methods: \n`{method_names_str}`:\n{ex}",
-                  file=sys.stderr)
+            print(f"Error while executing methods: \n`{method_names_str}`:\n{ex}", file=sys.stderr)
             self.failed.extend(method_names)
             return False
         return True
 
 
 def chan_test(usrp, prop, num_chans, error_handling, get_range, arg_converter=None):
-    """
-    Test methods that take channel number as input.
+    """Test methods that take channel number as input.
+
     usrp -- Device object to run tests on.
     prop -- String of function to be tested.
     num_chans -- Integer for number of channels.
@@ -59,8 +63,8 @@ def chan_test(usrp, prop, num_chans, error_handling, get_range, arg_converter=No
     get_range -- String for the get_range function.
     arg_converter -- String for type to convert values to.
     """
-    getter = 'get_{}'.format(prop)
-    setter = 'set_{}'.format(prop)
+    getter = "get_{}".format(prop)
+    setter = "set_{}".format(prop)
     for chan in range(num_chans):
         initial_value = getattr(usrp, getter)(chan)
         # Test value below, above, and within range
@@ -77,28 +81,27 @@ def chan_test(usrp, prop, num_chans, error_handling, get_range, arg_converter=No
             mid_point = (get_range[0] + get_range[1]) / 2
 
         # Values must be converted to TuneRequest type for these functions.
-        arg_converter = arg_converter if arg_converter is not None \
-            else lambda x: x
+        arg_converter = arg_converter if arg_converter is not None else lambda x: x
         min_val = arg_converter(min_val)
         max_val = arg_converter(max_val)
         # If setter is expected to throw errors, we set some invalid values and
         # verify we get an exception:
-        if error_handling == 'throw':
+        if error_handling == "throw":
             try:
                 getattr(usrp, setter)(min_val, chan)
             except RuntimeError:
                 pass
             else:
-                raise Exception('error found in min test of ', prop)
+                raise Exception("error found in min test of ", prop)
             try:
                 getattr(usrp, setter)(max_val, chan)
             except RuntimeError:
                 pass
             else:
-                raise Exception('error found in max test of ', prop)
+                raise Exception("error found in max test of ", prop)
         # If setter implements error coercion, then we should be able to set
         # invalid values without an exception occurring:
-        elif error_handling == 'coerce':
+        elif error_handling == "coerce":
             getattr(usrp, setter)(min_val, chan)
             getattr(usrp, setter)(max_val, chan)
 
@@ -108,29 +111,30 @@ def chan_test(usrp, prop, num_chans, error_handling, get_range, arg_converter=No
         get_value = float(getattr(usrp, getter)(chan))
         if not numpy.isclose(get_value, mid_point, 0.005):
             raise Exception(
-                f'Error found in setting acceptable value in {prop}.\n'
-                f'Expected {mid_point}, got {get_value}.')
+                f"Error found in setting acceptable value in {prop}.\n"
+                f"Expected {mid_point}, got {get_value}."
+            )
         # Put it back the way we found it
         getattr(usrp, setter)(initial_value, chan)
     return True
 
 
 def lo_name_test(usrp, prop, num_chans, get_range):
-    """
-    Test methods that have an lo_name string as an argument.
+    """Test methods that have an lo_name string as an argument.
+
     usrp -- Device object to run tests on.
     prop -- String of function to be tested.
     num_chans -- Integer for number of channels.
     get_range -- String for the get_range function.
     """
-    getter = 'get_{}'.format(prop)
-    setter = 'set_{}'.format(prop)
+    getter = "get_{}".format(prop)
+    setter = "set_{}".format(prop)
     # For each channel, get lo_names.
     for chan in range(num_chans):
-        if prop == 'tx_lo_freq':
-            lo_names = getattr(usrp, 'get_tx_lo_names')(chan)
+        if prop == "tx_lo_freq":
+            lo_names = getattr(usrp, "get_tx_lo_names")(chan)
         else:
-            lo_names = getattr(usrp, 'get_rx_lo_names')(chan)
+            lo_names = getattr(usrp, "get_rx_lo_names")(chan)
         # For each lo_name, set a value below minimum,
         # above maximum, and within range.
         for lo_name in lo_names:
@@ -138,34 +142,34 @@ def lo_name_test(usrp, prop, num_chans, get_range):
             prop_range = getattr(usrp, get_range)(lo_name, chan)
             min_val = prop_range.start()
             max_val = prop_range.stop()
-            mid_point = \
-                prop_range.clip(
-                    (prop_range.start() + prop_range.stop()) / 2, True)
+            mid_point = prop_range.clip((prop_range.start() + prop_range.stop()) / 2, True)
             try:
                 getattr(usrp, setter)(min_val, lo_name, chan)
             except RuntimeError:
-                raise Exception('error found in min test of ', prop)
+                raise Exception("error found in min test of ", prop)
             try:
                 getattr(usrp, setter)(max_val, lo_name, chan)
             except RuntimeError:
-                raise Exception('error found in max test of ', prop)
+                raise Exception("error found in max test of ", prop)
             getattr(usrp, setter)(mid_point, lo_name, chan)
             # Check if the actual value is within range of set value
             get_value = float(getattr(usrp, getter)(lo_name, chan))
             if not numpy.isclose(mid_point, get_value, 0.005):
                 raise Exception(
-                    f'Error found in setting acceptable value in {prop} '
-                    f'for LO {lo_name} on channel {chan}.\n'
-                    f'Expected value: {mid_point} Actual: {get_value}')
+                    f"Error found in setting acceptable value in {prop} "
+                    f"for LO {lo_name} on channel {chan}.\n"
+                    f"Expected value: {mid_point} Actual: {get_value}"
+                )
             # Put it back the way we found it
             getattr(usrp, setter)(initial_value, lo_name, chan)
     return True
 
 
-def range_test(usrp, prop, num_chans, error_handling=None,
-               args_type='chan', arg_converter=None, get_range=None):
-    """
-    Function to perform range_tests using getrange, getters, and setters.
+def range_test(
+    usrp, prop, num_chans, error_handling=None, args_type="chan", arg_converter=None, get_range=None
+):
+    """Function to perform range_tests using getrange, getters, and setters.
+
     usrp           -- Device object to run tests on.
     prop           -- String of function to be tested.
     num_chans      -- Integer for number of channels.
@@ -176,38 +180,34 @@ def range_test(usrp, prop, num_chans, error_handling=None,
     arg_converter  -- String for type to convert values to.
     get_range      -- String for get_range function
     """
-    assert error_handling in ('coerce', 'throw')
-    assert args_type in ('chan', 'lo_name')
+    assert error_handling in ("coerce", "throw")
+    assert args_type in ("chan", "lo_name")
     if get_range is None:
-        get_range = 'get_{}_range'.format(prop)
-    if args_type == 'chan':
-        to_ret = chan_test(usrp, prop, num_chans,
-                           error_handling, get_range, arg_converter)
-    else: # args_type == 'lo_name':
+        get_range = "get_{}_range".format(prop)
+    if args_type == "chan":
+        to_ret = chan_test(usrp, prop, num_chans, error_handling, get_range, arg_converter)
+    else:  # args_type == 'lo_name':
         to_ret = lo_name_test(usrp, prop, num_chans, get_range)
     return to_ret
 
 
-def discrete_options_test(usrp, prop, num_chans,
-                          error_handling=None):
-    """
-    Function to perform tests on methods that return list of possible discrete
-    values (floats).
+def discrete_options_test(usrp, prop, num_chans, error_handling=None):
+    """Function to perform tests on methods that return list of possible discrete values (floats).
+
     usrp -- Device object to run tests on.
     prop -- String of function to be tested.
     num_chans -- Integer for number of channels.
     error_handling -- coercer or throw, depending on expected results.
     """
-    assert error_handling in ('coerce', 'throw')
-    get_range = 'get_{}s'.format(prop)
+    assert error_handling in ("coerce", "throw")
+    get_range = "get_{}s".format(prop)
     # Generate all possible set values
     return chan_test(usrp, prop, num_chans, error_handling, get_range)
 
 
 def list_test(usrp, prop, error_handling, post_hook=None, safe_values=None):
-    """
-    Function to perform tests on methods that return lists of possible
-    discrete values (strings).
+    """Function to perform tests on methods that return lists of possible discrete values (strings).
+
     usrp -- Device object to run tests on.
     prop -- String of function to be tested.
     error_handling -- coercer or throw, depending on expected results.
@@ -215,18 +215,17 @@ def list_test(usrp, prop, error_handling, post_hook=None, safe_values=None):
                  reset something)
     safe_values -- A list of safe values that can be tested from the range.
     """
-    assert error_handling in ('coerce', 'throw')
+    assert error_handling in ("coerce", "throw")
     # The following functions have different get_range functions.
-    if 'gain_profile' in prop:
-        get_range = 'get_{}_names'.format(prop)
+    if "gain_profile" in prop:
+        get_range = "get_{}_names".format(prop)
     else:
-        get_range = 'get_{}s'.format(prop)
-    getter = 'get_{}'.format(prop)
-    setter = 'set_{}'.format(prop)
+        get_range = "get_{}s".format(prop)
+    getter = "get_{}".format(prop)
+    setter = "set_{}".format(prop)
 
     # lo_source function does not take int as argument
-    names = getattr(usrp, get_range)(0) if 'lo_source' not in prop \
-        else getattr(usrp, get_range)()
+    names = getattr(usrp, get_range)(0) if "lo_source" not in prop else getattr(usrp, get_range)()
     # Try to set every possible value.
     for name in names:
         if safe_values and name not in safe_values:
@@ -236,13 +235,11 @@ def list_test(usrp, prop, error_handling, post_hook=None, safe_values=None):
         try:
             getattr(usrp, setter)(name)
         except RuntimeError as ex:
-            raise Exception('error found in setting {} to {} => {}'
-                            .format(prop, name, str(ex)))
+            raise Exception("error found in setting {} to {} => {}".format(prop, name, str(ex)))
         # Check if get function returns set value.
         get_value = getattr(usrp, getter)(0)
         if get_value != name:
-            raise Exception('Error in setting acceptable value in {}'
-                            .format(prop))
+            raise Exception("Error in setting acceptable value in {}".format(prop))
         getattr(usrp, setter)(initial_value)
     if post_hook:
         post_hook()
@@ -250,35 +247,39 @@ def list_test(usrp, prop, error_handling, post_hook=None, safe_values=None):
 
 
 def get_test(usrp, prop, num_chans):
-    """
-    For testing only get methods that have no set counterpart.
+    """For testing only get methods that have no set counterpart.
+
     usrp -- Device object to run tests on.
     prop -- String of function to be tested.
     num_chans -- Integer for number of channels.
     """
-    getter = 'get_{}'.format(prop)
+    getter = "get_{}".format(prop)
     for chan in range(num_chans):
         # Refresh dictionary for each channel
-        dictionary = getattr(usrp, "get_usrp_rx_info")(chan) if "rx" in prop \
-                    else getattr(usrp, "get_usrp_tx_info")(chan)
+        dictionary = (
+            getattr(usrp, "get_usrp_rx_info")(chan)
+            if "rx" in prop
+            else getattr(usrp, "get_usrp_tx_info")(chan)
+        )
         if "_info" in prop:
-            if not "module_serial" in dictionary.keys() or dictionary["module_serial"] == "n/a":
+            if "module_serial" not in dictionary.keys() or dictionary["module_serial"] == "n/a":
                 raise Exception("Module serial number missing")
         else:
-            value = getattr(usrp, getter)(chan) if prop != 'mboard_name' \
-                else getattr(usrp, getter)(0)
+            value = (
+                getattr(usrp, getter)(chan) if prop != "mboard_name" else getattr(usrp, getter)(0)
+            )
             # get_mboard_name function maps to mboard_id field in dict.
-            dict_value = dictionary['mboard_id'] if prop == 'mboard_name' \
-                else dictionary[prop]
+            dict_value = dictionary["mboard_id"] if prop == "mboard_name" else dictionary[prop]
             if value != dict_value:
-                raise Exception("value in dict is {} and callback value is {}"
-                                .format(dictionary[prop], value))
+                raise Exception(
+                    "value in dict is {} and callback value is {}".format(dictionary[prop], value)
+                )
     return True
 
 
 def recv_num_samps(usrp):
-    """
-    Test recv_num_samps method.
+    """Test recv_num_samps method.
+
     usrp -- Device object to run tests on.
     """
     num_samps = 1000
@@ -291,8 +292,8 @@ def recv_num_samps(usrp):
 
 
 def send_waveform(usrp):
-    """
-    Test send_waveform method.
+    """Test send_waveform method.
+
     usrp -- Device object to run tests on.
     """
     rate = getattr(usrp, "get_rx_rate")()
@@ -301,79 +302,80 @@ def send_waveform(usrp):
 
 
 def test_sensor_api(usrp, sensor_type, num_indices):
-    """
-    Test the sensor API. It consists of two API calls ("get_sensor_names" and
-    "get_sensor"). It will read out all the sensors and print their values.
+    """Test the sensor API.
+
+    It consists of two API calls ("get_sensor_names" and "get_sensor").
+    It will read out all the sensors and print their values.
 
     This will work for the mboard and TX/RX sensors.
     usrp -- Device object to run tests on.
     sensor_type -- String containing "RX" or "TX"
     num_indices -- Integer denoting the number of sensors.
     """
-    list_sensor_method = 'get_{}_sensor_names'.format(sensor_type)
-    get_sensor_method = 'get_{}_sensor'.format(sensor_type)
+    list_sensor_method = "get_{}_sensor_names".format(sensor_type)
+    get_sensor_method = "get_{}_sensor".format(sensor_type)
     for sensor_index in range(num_indices):
         sensor_names = getattr(usrp, list_sensor_method)(sensor_index)
         for sensor_name in sensor_names:
-            print("Reading sensor: {sensor_name} ({sensor_index}/{num_indices}): "
-                  .format(
-                      sensor_name=sensor_name,
-                      sensor_index=sensor_index,
-                      num_indices=num_indices,
-                  ))
-            sensor_value = getattr(usrp, get_sensor_method)(
-                sensor_name,
-                sensor_index
+            print(
+                "Reading sensor: {sensor_name} ({sensor_index}/{num_indices}): ".format(
+                    sensor_name=sensor_name,
+                    sensor_index=sensor_index,
+                    num_indices=num_indices,
+                )
             )
+            sensor_value = getattr(usrp, get_sensor_method)(sensor_name, sensor_index)
             print(str(sensor_value))
 
 
 def test_time(usrp, prop):
-    """
-    Perform tests on functions that take time as an argument.
+    """Perform tests on functions that take time as an argument.
+
     usrp -- Device object to run tests on.
     prop -- String of function to be tested.
     """
-    time = getattr(usrp, 'get_time_last_pps')()
+    time = getattr(usrp, "get_time_last_pps")()
     time = time + 10
     getattr(usrp, prop)(time)
     return True
 
 
 def set_subdev_spec(usrp, prop):
-    """
-    Function for performing test on set_subdev_spec methods.
+    """Function for performing test on set_subdev_spec methods.
+
     usrp -- Device object to run tests on.
     prop -- String of function to be tested.
     """
-    spec = getattr(usrp, 'get_rx_subdev_spec')() if prop == \
-        'set_rx_subdev_spec' else getattr(usrp, 'get_tx_subdev_spec')()
+    spec = (
+        getattr(usrp, "get_rx_subdev_spec")()
+        if prop == "set_rx_subdev_spec"
+        else getattr(usrp, "get_tx_subdev_spec")()
+    )
     getattr(usrp, prop)(spec)
     return True
 
 
 def mboard_range_test(usrp, prop, num_mboards):
-    """
-    Execute tests on methods that need to be tested on a range of motherboards.
+    """Execute tests on methods that need to be tested on a range of motherboards.
+
     usrp -- Device object to run tests on.
     prop -- String of function to be tested.
     num_mboards -- Integer value of number of motherboards.
     """
     for mboard in range(0, num_mboards):
         if getattr(usrp, prop)(mboard) is None:
-            raise Exception("{} function with argument {} returns None".
-                            format(prop, mboard))
+            raise Exception("{} function with argument {} returns None".format(prop, mboard))
     return True
 
 
 def chan_range_test(usrp, prop, num_chans):
-    """
-    Execute tests on methods that need to be tested on a range of channels.
+    """Execute tests on methods that need to be tested on a range of channels.
+
     usrp -- Device object to run tests on.
     prop -- String of function to be tested.
     num_chans -- Integer value of number of channels.
     """
-    if prop in ('set_rx_iq_balance', 'set_tx_iq_balance'):
+    if prop in ("set_rx_iq_balance", "set_tx_iq_balance"):
         for chan in range(0, num_chans):
             getattr(usrp, prop)(1, chan)
     else:
@@ -384,8 +386,7 @@ def chan_range_test(usrp, prop, num_chans):
 
 
 def gpio_attr_test(usrp, num_mboards):
-    """
-    Perform tests for get_gpio_attr and set_gpio_attr.
+    """Perform tests for get_gpio_attr and set_gpio_attr.
 
     usrp -- Device object to run tests on.
     num_mboards -- Integer value of number of motherboards.
@@ -393,14 +394,14 @@ def gpio_attr_test(usrp, num_mboards):
     for mboard in range(0, num_mboards):
         banks = usrp.get_gpio_banks(mboard)
         for bank in banks:
-            value = usrp.get_gpio_attr(bank, 'CTRL')
-            usrp.set_gpio_attr(bank, 'CTRL', value)
+            value = usrp.get_gpio_attr(bank, "CTRL")
+            usrp.set_gpio_attr(bank, "CTRL", value)
     return True
 
 
 def iq_balance_test(usrp, prop, num_chans):
-    """
-    Function for testing rx and tx iq_balance functions.
+    """Function for testing rx and tx iq_balance functions.
+
     usrp -- Device object to run tests on.
     prop -- String of function to be tested.
     num_chans -- Integer value of number of channels.
@@ -411,22 +412,21 @@ def iq_balance_test(usrp, prop, num_chans):
 
 
 def filter_test(usrp, prop, num_chans):
-    """
-    Test specifically for the get_filter function
+    """Test specifically for the get_filter function.
+
     usrp -- Device object to run tests on.
     prop -- String of function to be tested.
     """
     for chan in range(num_chans):
-        filters = getattr(usrp, 'get_{}_filter_names'.format(prop))(chan)
+        filters = getattr(usrp, "get_{}_filter_names".format(prop))(chan)
         for filter_name in filters:
             # Read a filter object...
-            filter_obj = getattr(usrp, 'get_{}_filter'.format(prop))(filter_name, chan)
+            filter_obj = getattr(usrp, "get_{}_filter".format(prop))(filter_name, chan)
             if filter_obj is None:
-                raise Exception("Filter object for {} returns None"
-                                .format(filter_name))
+                raise Exception("Filter object for {} returns None".format(filter_name))
             # ... and write it back:
             try:
-                getattr(usrp, 'set_{}_filter'.format(prop))(filter_name, filter_obj, chan)
+                getattr(usrp, "set_{}_filter".format(prop))(filter_name, filter_obj, chan)
             except RuntimeError as ex:
                 if "can not be written" not in str(ex):
                     raise
@@ -434,9 +434,7 @@ def filter_test(usrp, prop, num_chans):
 
 
 def tree_test(usrp):
-    """
-    Test prop tree access
-    """
+    """Test prop tree access."""
     tree = usrp.get_tree()
     name = tree.access_str("/name").get()
     print("Property tree got name: " + name)
@@ -444,42 +442,48 @@ def tree_test(usrp):
 
 
 def power_test(usrp, direction, num_chans):
+    """Test the power reference API.
+
+    If we don't have a power cal API available, then we check it fails.
     """
-    Test the power reference API. If we don't have a power cal API available,
-    then we check it fails.
-    """
-    has_cb = getattr(usrp, f'has_{direction}_power_reference')
-    get_range_cb = getattr(usrp, f'get_{direction}_power_range')
-    get_cb = getattr(usrp, f'get_{direction}_power_reference')
-    set_cb = getattr(usrp, f'set_{direction}_power_reference')
+    has_cb = getattr(usrp, f"has_{direction}_power_reference")
+    get_range_cb = getattr(usrp, f"get_{direction}_power_range")
+    get_cb = getattr(usrp, f"get_{direction}_power_reference")
+    set_cb = getattr(usrp, f"set_{direction}_power_reference")
     for chan in range(num_chans):
         # pylint: disable=bare-except
         if not has_cb(chan):
             try:
                 get_range_cb(chan)
-            except:
+            except:  # noqa: E722
                 pass
             else:
-                raise(f"get_{direction}_power_range({chan}): "
-                      "Expected exception (no power cal), none occurred.")
+                raise (
+                    f"get_{direction}_power_range({chan}): "
+                    "Expected exception (no power cal), none occurred."
+                )
             try:
                 get_cb(chan)
-            except:
+            except:  # noqa: E722
                 pass
             else:
-                raise(f"get_{direction}_power_reference({chan}): "
-                      "Expected exception (no power cal), none occurred.")
+                raise (
+                    f"get_{direction}_power_reference({chan}): "
+                    "Expected exception (no power cal), none occurred."
+                )
             try:
                 set_cb(100, chan)
-            except:
+            except:  # noqa: E722
                 pass
             else:
-                raise(f"set_{direction}_power_reference({chan}): "
-                      "Expected exception (no power cal), none occurred.")
+                raise (
+                    f"set_{direction}_power_reference({chan}): "
+                    "Expected exception (no power cal), none occurred."
+                )
             continue
         # pylint: enable=bare-except
         # Now check power API for reals:
-        initial_value = getattr(usrp, f'get_{direction}_gain')(chan)
+        initial_value = getattr(usrp, f"get_{direction}_gain")(chan)
         # Test value below, above, and within range
         prop_range = get_range_cb(chan)
         min_val = prop_range.start() - 10
@@ -496,37 +500,42 @@ def power_test(usrp, direction, num_chans):
         # constraints
         if not numpy.isclose(actual_value, mid_point, 10):
             raise Exception(
-                f'Error found in setting midpoint power value for {direction}.\n'
-                f'Expected {mid_point}, got {actual_value}.')
+                f"Error found in setting midpoint power value for {direction}.\n"
+                f"Expected {mid_point}, got {actual_value}."
+            )
         # Put it back the way we found it
-        getattr(usrp, f'set_{direction}_gain')(initial_value, chan)
+        getattr(usrp, f"set_{direction}_gain")(initial_value, chan)
     return True
 
+
 def run_api_test(usrp, device_config):
-    """
-    Name functions to be tested.
+    """Name functions to be tested.
+
     usrp -- device object to run tests on
     device_config -- Dictionary that contains further configuration for various
                      tests.
     """
-    num_rx_chans = device_config.get('num_rx_channels', usrp.get_rx_num_channels())
-    num_tx_chans = device_config.get('num_tx_channels', usrp.get_tx_num_channels())
+    num_rx_chans = device_config.get("num_rx_channels", usrp.get_rx_num_channels())
+    num_tx_chans = device_config.get("num_tx_channels", usrp.get_tx_num_channels())
     num_mboards = usrp.get_num_mboards()
 
     method_executor = MethodExecutor()
 
     # Append functions already called or will be called implicitly.
-    method_executor.tested.extend((
-        'make',
-        'issue_stream_cmd', # Gets called by recv_num_samps
-        'get_rx_num_channels', # Got called above
-        'get_tx_num_channels', # Got called above
-        'get_num_mboards', #  Got called above
-        'get_rx_stream',
-        'get_tx_stream',  # Require stream_args_t
-    ))
-    method_executor.tested.extend(device_config.get('imply_tested', []))
+    method_executor.tested.extend(
+        (
+            "make",
+            "issue_stream_cmd",  # Gets called by recv_num_samps
+            "get_rx_num_channels",  # Got called above
+            "get_tx_num_channels",  # Got called above
+            "get_num_mboards",  #  Got called above
+            "get_rx_stream",
+            "get_tx_stream",  # Require stream_args_t
+        )
+    )
+    method_executor.tested.extend(device_config.get("imply_tested", []))
 
+    # fmt: off
     actual_tests = [
         (['get_usrp_rx_info'],
          lambda: get_test(usrp, 'usrp_rx_info', num_rx_chans)),
@@ -669,26 +678,29 @@ def run_api_test(usrp, device_config):
          ], lambda: power_test(usrp, 'rx', num_rx_chans),
         ),
     ]
+    # fmt: on
 
     # List of tests that we don't test, but that's OK.
-    white_listed = ['set_rx_lo_export_enabled',  # Not supported w/all devices.
-                    'set_tx_lo_export_enabled',  # Not supported w/all devices.
-                    'set_time_source_out',  # Not supported on all devices.
-                    'get_register_info',  # Requires path to register
-                    # Need register path, but enumerate_registers returns None
-                    'read_register', 'write_register',
-                    'set_command_time',  # Time_spec_t required
-                    'set_filter',  # Requires passing sptr into function
-                    'set_user_register',  # Not always callable
-                    'set_clock_source_out',
-                    'get_tx_dboard_iface',
-                    'get_rx_dboard_iface',
-                    'set_time_unknown_pps',
-                    'get_radio_control',
-                    'get_mb_controller',
-                    'get_mpm_client',
-                   ]
-    blacklist = device_config.get('skip', [])
+    white_listed = [
+        "set_rx_lo_export_enabled",  # Not supported w/all devices.
+        "set_tx_lo_export_enabled",  # Not supported w/all devices.
+        "set_time_source_out",  # Not supported on all devices.
+        "get_register_info",  # Requires path to register
+        # Need register path, but enumerate_registers returns None
+        "read_register",
+        "write_register",
+        "set_command_time",  # Time_spec_t required
+        "set_filter",  # Requires passing sptr into function
+        "set_user_register",  # Not always callable
+        "set_clock_source_out",
+        "get_tx_dboard_iface",
+        "get_rx_dboard_iface",
+        "set_time_unknown_pps",
+        "get_radio_control",
+        "get_mb_controller",
+        "get_mpm_client",
+    ]
+    blacklist = device_config.get("skip", [])
     success = True
 
     # ...then we can run them all through the executor like this:
@@ -699,10 +711,11 @@ def run_api_test(usrp, device_config):
             success = False
 
     untested = [
-        test + (" [blacklisted]" if test in blacklist else "") for test in dir(usrp)
-        if test not in method_executor.tested \
-                and test not in white_listed \
-                and not test.startswith('_')
+        test + (" [blacklisted]" if test in blacklist else "")
+        for test in dir(usrp)
+        if test not in method_executor.tested
+        and test not in white_listed
+        and not test.startswith("_")
     ]
 
     if method_executor.failed:
@@ -716,127 +729,120 @@ def run_api_test(usrp, device_config):
 
 
 def parse_args():
-    """
-    Parse args.
-    """
+    """Parse args."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--args', default='',
+        "--args",
+        default="",
     )
     parser.add_argument(
-        '--dump-defaults',
-        help="Specify a device type, and the default config will be dumped as YAML"
+        "--dump-defaults",
+        help="Specify a device type, and the default config will be dumped as YAML",
     )
-    parser.add_argument(
-        '--device-config',
-        help="Specify path to YAML file to use as device config"
-    )
+    parser.add_argument("--device-config", help="Specify path to YAML file to use as device config")
     return parser.parse_args()
 
 
 def get_device_config(usrp_type, device_config_path=None):
-    """
-    Return a device configuration object.
-    """
+    """Return a device configuration object."""
     if device_config_path:
-        with open(device_config_path, 'r') as yaml_f:
+        with open(device_config_path, "r") as yaml_f:
             return yaml.load(yaml_f)
-    if usrp_type in ('B205mini', 'B200mini', 'B200', 'B210'):
+    if usrp_type in ("B205mini", "B200mini", "B200", "B210"):
         return {
-            'skip': [
-                'set_rx_lo_export_enabled',
-                'set_tx_lo_export_enabled',
-                'get_rx_lo_source',
-                'set_rx_lo_source',
-                'get_rx_lo_source_names',
-                'get_tx_lo_source',
-                'set_tx_lo_source',
-                'get_tx_lo_names',
-                'get_master_clock_rate',
-                'set_master_clock_rate',
-                'get_master_clock_rate_range',
-                'get_gpio_attr',
-                'set_gpio_attr',
-                'get_gpio_banks',
+            "skip": [
+                "set_rx_lo_export_enabled",
+                "set_tx_lo_export_enabled",
+                "get_rx_lo_source",
+                "set_rx_lo_source",
+                "get_rx_lo_source_names",
+                "get_tx_lo_source",
+                "set_tx_lo_source",
+                "get_tx_lo_names",
+                "get_master_clock_rate",
+                "set_master_clock_rate",
+                "get_master_clock_rate_range",
+                "get_gpio_attr",
+                "set_gpio_attr",
+                "get_gpio_banks",
             ],
         }
-    if usrp_type == 'x410':
+    if usrp_type == "x410":
         return {
-            'skip': [
+            "skip": [
                 # No AGC on ZBX
-                'set_rx_agc',
+                "set_rx_agc",
                 # No IQ imbalance on ZBX
-                'set_rx_iq_balance',
-                'set_tx_iq_balance',
+                "set_rx_iq_balance",
+                "set_tx_iq_balance",
                 # No DC offset on ZBX
-                'set_rx_dc_offset',
-                'set_tx_dc_offset',
+                "set_rx_dc_offset",
+                "set_tx_dc_offset",
                 # No LO source control on ZBX
-                'set_rx_lo_source',
-                'set_tx_lo_source',
-                'set_rx_lo_export_enabled',
-                'set_tx_lo_export_enabled',
+                "set_rx_lo_source",
+                "set_tx_lo_source",
+                "set_rx_lo_export_enabled",
+                "set_tx_lo_export_enabled",
             ],
-            'clock_sources': ['internal', 'mboard'],
+            "clock_sources": ["internal", "mboard"],
         }
-    if usrp_type == 'x440':
+    if usrp_type == "x440":
         return {
-            'skip': [
+            "skip": [
                 # No AGC on FBX
-                'set_rx_agc',
+                "set_rx_agc",
                 # No IQ imbalance on FBX
-                'set_rx_iq_balance',
-                'set_tx_iq_balance',
+                "set_rx_iq_balance",
+                "set_tx_iq_balance",
                 # No DC offset on FBX
-                'set_rx_dc_offset',
-                'set_tx_dc_offset',
+                "set_rx_dc_offset",
+                "set_tx_dc_offset",
                 # No LO source control on FBX
-                'set_rx_lo_source',
-                'set_tx_lo_source',
-                'set_rx_lo_export_enabled',
-                'set_tx_lo_export_enabled',
+                "set_rx_lo_source",
+                "set_tx_lo_source",
+                "set_rx_lo_export_enabled",
+                "set_tx_lo_export_enabled",
                 # No Filters on FBX
-                'get_rx_filter',
-                'set_rx_filter',
-                'get_rx_filter_names',
-                'get_tx_filter',
-                'set_tx_filter',
-                'get_tx_filter_names',
+                "get_rx_filter",
+                "set_rx_filter",
+                "get_rx_filter_names",
+                "get_tx_filter",
+                "set_tx_filter",
+                "get_tx_filter_names",
                 # No Gain control on FBX, getters return 0, setters do nothing
-                'get_normalized_rx_gain',
-                'set_normalized_rx_gain',
-                'get_normalized_tx_gain',
-                'set_normalized_tx_gain',
+                "get_normalized_rx_gain",
+                "set_normalized_rx_gain",
+                "get_normalized_tx_gain",
+                "set_normalized_tx_gain",
                 # Changing clock or time source after device init throws an error
-                'set_clock_source',
-                'set_time_source',
+                "set_clock_source",
+                "set_time_source",
             ],
-            'clock_sources': ['internal', 'mboard'],
+            "clock_sources": ["internal", "mboard"],
         }
     return {}
 
+
 def dump_defaults(usrp_type):
-    """
-    Print the hard-coded defaults as YAML
-    """
+    """Print the hard-coded defaults as YAML."""
     defaults = get_device_config(usrp_type)
     print(yaml.dump(defaults, default_flow_style=False))
 
+
 def main():
-    """
-    Returns True on Success
-    """
+    """Returns True on Success."""
     args = parse_args()
     if args.dump_defaults:
         dump_defaults(args.dump_defaults)
         return 0
     usrp = uhd.usrp.MultiUSRP(args.args)
-    usrp_type = usrp.get_usrp_rx_info().get('mboard_id')
+    usrp_type = usrp.get_usrp_rx_info().get("mboard_id")
     device_config = get_device_config(usrp_type, args.device_config)
     ret_val = run_api_test(usrp, device_config)
     if ret_val != 1:
         raise Exception("Python API Tester Received Errors")
     return ret_val
+
 
 if __name__ == "__main__":
     sys.exit(not main())

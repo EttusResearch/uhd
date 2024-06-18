@@ -9,10 +9,9 @@
 # pylint: disable=wrong-import-position
 # pylint: disable=unused-import
 # flake8: noqa
+from benchmark_rate_test import UhdBenchmarkRateTest
 
-from benchmark_rate_test import uhd_benchmark_rate_test
-
-uhd_benchmark_rate_test.tests = {
+UhdBenchmarkRateTest.tests = {
     "mimo_slow": {
         "duration": 1,
         "direction": "tx,rx",
@@ -55,9 +54,9 @@ uhd_benchmark_rate_test.tests = {
     },
 }
 
-from tx_waveforms_test import uhd_tx_waveforms_test
+from tx_waveforms_test import UhdTxWaveformsTest
 
-uhd_tx_waveforms_test.tests = {
+UhdTxWaveformsTest.tests = {
     "chan0": {
         "chan": "0",
     },
@@ -69,16 +68,16 @@ uhd_tx_waveforms_test.tests = {
     },
 }
 
-from rx_samples_to_file_test import rx_samples_to_file_test
-from tx_bursts_test import uhd_tx_bursts_test
-from test_pps_test import uhd_test_pps_test
+from rx_samples_to_file_test import RxSamplesToFileTest
+from tx_bursts_test import UhdTxBurstsTest
+from test_pps_test import UhdTestPpsTest
 
-from gpio_test import gpio_test
+from gpio_test import GpioTest
 
-gpio_test.tests = {}
+GpioTest.tests = {}
 for port in ["GPIO0", "GPIO1"]:
     for bank, driver in [("GPIOA", "DB0_RF0")]:
-        gpio_test.tests[f"{port}_{driver}"] = {
+        GpioTest.tests[f"{port}_{driver}"] = {
             "addl_args": [
                 "--src",
                 " ".join([driver] * 12),
@@ -91,9 +90,9 @@ for port in ["GPIO0", "GPIO1"]:
             ],
         }
 
-from gpio_test import gpio_x4xx_set_get_source_test
+from gpio_test import GpioX4xxSetGetSourceTest
 
-gpio_x4xx_set_get_source_test.test_params = {
+GpioX4xxSetGetSourceTest.test_params = {
     "possible_sources": [
         "PS",
         "MPM",
@@ -108,27 +107,27 @@ gpio_x4xx_set_get_source_test.test_params = {
     "num_pins": 12,
 }
 
-from gpio_test import x4xx_gpio_power_test
+from gpio_test import X4xxGpioPowerTest
 
-from bitbang_test import bitbang_test
+from bitbang_test import BitbangTest
 
-bitbang_test.tests = {}
+BitbangTest.tests = {}
 for port in ["GPIO0", "GPIO1"]:
     for bank, driver in [("GPIOA", "DB0_RF0"), ("GPIOB", "DB1_RF0")]:
-        bitbang_test.tests[f"{port}_{driver}"] = {
+        BitbangTest.tests[f"{port}_{driver}"] = {
             "addl_args": ["--bank", bank, "--port", port, "--src", " ".join([driver] * 12)]
         }
 
-from gpio_test import gpio_atr_readback_test
+from gpio_test import GpioAtrReadbackTest
 
-gpio_atr_readback_test.test_params = [
+GpioAtrReadbackTest.test_params = [
     ("GPIOA", "DB0_RF0"),
     ("GPIOA", "DB0_RF1"),
     ("GPIOB", "DB1_RF0"),
     ("GPIOB", "DB1_RF1"),
 ]
 
-from list_sensors_test import list_sensors_test
-from python_api_test import uhd_python_api_test
-from rx_multi_spc_timed_commands_test import rx_multi_spc_timed_commands_test
-from tx_multi_spc_timed_commands_test import tx_multi_spc_timed_commands_test
+from list_sensors_test import ListSensorsTest
+from python_api_test import UhdPythonApiTest
+from rx_multi_spc_timed_commands_test import RxMultiSpcTimedCommandsTest
+from tx_multi_spc_timed_commands_test import TxMultiSpcTimedCommandsTest

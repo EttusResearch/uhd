@@ -17,12 +17,12 @@ num_chans = get_num_chans(os.getenv("_UHD_TEST_ARGS_STR", ""))
 tx_chans = num_chans["tx"]
 rx_chans = num_chans["rx"]
 
-from benchmark_rate_test import uhd_benchmark_rate_test
+from benchmark_rate_test import UhdBenchmarkRateTest
 
-uhd_benchmark_rate_test.tests = {}
+UhdBenchmarkRateTest.tests = {}
 for rate, speed in [(1e6, "slow"), (25e6, "fast")]:
     for chan in range(tx_chans):
-        uhd_benchmark_rate_test.tests.update(
+        UhdBenchmarkRateTest.tests.update(
             {
                 "tx_chan{}_{}".format(chan, speed): {
                     "duration": 1,
@@ -36,7 +36,7 @@ for rate, speed in [(1e6, "slow"), (25e6, "fast")]:
             }
         )
     for chan in range(rx_chans):
-        uhd_benchmark_rate_test.tests.update(
+        UhdBenchmarkRateTest.tests.update(
             {
                 "rx_chan{}_{}".format(chan, speed): {
                     "duration": 1,
@@ -49,7 +49,7 @@ for rate, speed in [(1e6, "slow"), (25e6, "fast")]:
         )
     if tx_chans > 0:
         all_chans_str = ",".join([str(chan) for chan in range(tx_chans)])
-        uhd_benchmark_rate_test.tests.update(
+        UhdBenchmarkRateTest.tests.update(
             {
                 "all_tx_chans_{}".format(speed): {
                     "duration": 1,
@@ -64,7 +64,7 @@ for rate, speed in [(1e6, "slow"), (25e6, "fast")]:
         )
     if rx_chans > 0:
         all_chans_str = ",".join([str(chan) for chan in range(rx_chans)])
-        uhd_benchmark_rate_test.tests.update(
+        UhdBenchmarkRateTest.tests.update(
             {
                 "all_rx_chans_{}".format(speed): {
                     "duration": 1,
@@ -77,7 +77,7 @@ for rate, speed in [(1e6, "slow"), (25e6, "fast")]:
         )
     if tx_chans == rx_chans:
         for chan in range(tx_chans):
-            uhd_benchmark_rate_test.tests.update(
+            UhdBenchmarkRateTest.tests.update(
                 {
                     "siso_chan{}_{}".format(chan, speed): {
                         "duration": 1,
@@ -92,7 +92,7 @@ for rate, speed in [(1e6, "slow"), (25e6, "fast")]:
                 }
             )
         all_chans_str = ",".join([str(chan) for chan in range(tx_chans)])
-        uhd_benchmark_rate_test.tests.update(
+        UhdBenchmarkRateTest.tests.update(
             {
                 "mimo_{}".format(speed): {
                     "duration": 1,
@@ -108,24 +108,24 @@ for rate, speed in [(1e6, "slow"), (25e6, "fast")]:
         )
 
 if tx_chans > 0:
-    from tx_waveforms_test import uhd_tx_waveforms_test
+    from tx_waveforms_test import UhdTxWaveformsTest
 
-    uhd_tx_waveforms_test.tests = {}
+    UhdTxWaveformsTest.tests = {}
     all_chans = []
     for i in range(tx_chans):
         all_chans.append(str(i))
         test_name = "chan{}".format(i)
-        uhd_tx_waveforms_test.tests.update({test_name: {"chan": i}})
+        UhdTxWaveformsTest.tests.update({test_name: {"chan": i}})
     if tx_chans > 1:
-        uhd_tx_waveforms_test.tests.update({"all_chans": {"chan": ",".join(all_chans)}})
-    from tx_bursts_test import uhd_tx_bursts_test
-    from tx_multi_spc_timed_commands_test import tx_multi_spc_timed_commands_test
+        UhdTxWaveformsTest.tests.update({"all_chans": {"chan": ",".join(all_chans)}})
+    from tx_bursts_test import UhdTxBurstsTest
+    from tx_multi_spc_timed_commands_test import TxMultiSpcTimedCommandsTest
 
 if rx_chans > 0:
-    from rx_samples_to_file_test import rx_samples_to_file_test
-    from rx_multi_spc_timed_commands_test import rx_multi_spc_timed_commands_test
-from test_pps_test import uhd_test_pps_test
-from gpio_test import gpio_test
-from bitbang_test import bitbang_test
-from list_sensors_test import list_sensors_test
-from test_messages_test import test_messages_test
+    from rx_samples_to_file_test import RxSamplesToFileTest
+    from rx_multi_spc_timed_commands_test import RxMultiSpcTimedCommandsTest
+from test_pps_test import UhdTestPpsTest
+from gpio_test import GpioTest
+from bitbang_test import BitbangTest
+from list_sensors_test import ListSensorsTest
+from test_messages_test import TestMessagesTest
