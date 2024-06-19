@@ -32,15 +32,32 @@ module capture_sysref (
   output wire sysref_out_rclk  // RFDC output  (Domain: rfdc_clk).
 );
 
-  (* ASYNC_REG = "TRUE" *) reg sysref_pclk_ms = 1'b0;
-  reg sysref_pclk = 1'b0;
-  reg sysref_rclk = 1'b0;
+  (* ASYNC_REG = "TRUE" *) reg sysref_neg_pclk_ms = 1'b0;
+  (* ASYNC_REG = "TRUE" *) reg sysref_pos_pclk_ms = 1'b0;
+  reg sysref_pclk     = 1'b0;
+  reg sysref_rclk     = 1'b0;
 
-  // Capture SYSREF synchronously with the pll_ref_clk, but double-sync it just
-  // in case static timing isn't met so as not to destroy downstream logic.
+  // The following waveform illustrates the capture process of SYSREF.
+  //
+  // PRC                   ___/-----\_____/-----\_____/-----\_____/----
+  // SYSREF                ___/----------------------------------------
+  // falling edge FF MS    ---------|R|--------------------------------
+  // rising edge FF MS     ---------------|R|--------------------------
+  // rising edge FF        ---------------------------|R|--------------
+  //
+  // Capture SYSREF synchronously with the pll_ref_clk, but at the falling edge.
+  // This is done to ensure that SYSREF is captured well after its initial
+  // rising edge to ensure a stable signal.
+  // But to be on the safe side when combining this FPGA code with older
+  // LMK04832 MPM configuration (before June 2024), the signal is considered
+  // metastable and requires additional double synchronization.
+  always @ (negedge pll_ref_clk) begin
+    sysref_neg_pclk_ms <= sysref_in;
+  end
+  
   always @ (posedge pll_ref_clk) begin
-    sysref_pclk_ms <= sysref_in;
-    sysref_pclk    <= sysref_pclk_ms;
+    sysref_pos_pclk_ms  <= sysref_neg_pclk_ms;
+    sysref_pclk         <= sysref_pos_pclk_ms;
   end
 
   assign sysref_out_pclk = sysref_pclk;
