@@ -13,6 +13,7 @@ import json
 import logging
 import os
 import sys
+from collections.abc import Mapping
 from collections import OrderedDict
 from ruamel import yaml
 
@@ -61,7 +62,7 @@ deprecated_port_name_map = {
 
 
 # pylint: disable=too-few-public-methods
-class IOConfig:
+class IOConfig(Mapping):
     """
     Class containing configuration from a yml file.
 
@@ -78,6 +79,15 @@ class IOConfig:
         self.__dict__.update(**config)
         if hasattr(self, "io_ports"):
             expand_io_port_desc(getattr(self, "io_ports"), signatures)
+
+    def __iter__(self):
+        return iter(self.__dict__)
+
+    def __getitem__(self, key):
+        return self.__dict__[key]
+
+    def __len__(self) -> int:
+        return len(self.__dict__)
 # pylint: enable=too-few-public-methods
 
 USRP3_TOP_DIR = os.path.join('usrp3', 'top')

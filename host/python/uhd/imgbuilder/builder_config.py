@@ -142,9 +142,7 @@ class ImageBuilderConfig:
             raise ValueError(failure)
 
     def _sort_modules(self):
-        """
-        Sort blocks in the desired order.
-        """
+        """ Sort blocks in the desired order.  """
         for sort_modules in ('noc_blocks', 'modules', 'transport_adapters'):
             module_dict = getattr(self, sort_modules)
             setattr(self, sort_modules,
@@ -152,9 +150,7 @@ class ImageBuilderConfig:
 
 
     def _attach_defs(self, known_modules):
-        """
-        Attach the block/module definitions to the individual block/module
-        instances.
+        """Attach the block/module definitions to the individual block/module instances.
         """
         for module_type, defs in known_modules.items():
             if module_type == "includes":
@@ -175,6 +171,20 @@ class ImageBuilderConfig:
                     logging.warning(
                         "%s contains unknown parameter(s): %s",
                         name, ", ".join(invalid_keys))
+        # Also set parameters for the device
+        default_params = getattr(self.device, 'parameters', {})
+        self.parameters = {
+            **default_params,
+            **{k: v for k, v in self.parameters.items() if k in default_params}
+        }
+        invalid_keys = [k for k in self.parameters if k not in default_params]
+        if invalid_keys:
+            logging.warning(
+                "Device contains unknown parameter(s): %s",
+                ", ".join(invalid_keys))
+        setattr(self.device, 'parameters', self.parameters)
+        # For the sake of symmetry, create a desc attribute on self.device as a copy of itself
+        setattr(self.device, 'desc', self.device)
 
     def _annotate_modules(self):
         """Add information to all the module types.
@@ -332,33 +342,32 @@ class ImageBuilderConfig:
                 sep["buff_size"] = sep["buff_size_bytes"] // (sep["chdr_width"] // 8)
             elif "buff_size" in sep:
                 sep["buff_size_bytes"] = sep["buff_size"] * (sep["chdr_width"] // 8)
-        # Run checks on noc blocks/modules/transport adapters
-        for module_type in ("noc_blocks", "modules", "transport_adapters"):
-            for module_name, module in getattr(self, module_type).items():
-                checks = getattr(module.desc, "checks", [])
-                for check in checks:
-                    if "condition" in check:
-                        if not bool(resolve(check["condition"], config=self, **module)):
-                            if "message" in check:
-                                failures += [
-                                    f"Condition failed for {module_name}: "
-                                    + resolve(check["message"], config=self, **module)
-                                ]
-                            else:
-                                failures += [
-                                    f"Condition failed for {module_name}: {check['condition']}"
-                                ]
-                    if "run" in check:
-                        try:
-                            resolve(check["run"], config=self, **module)
-                        except Exception as ex:
-                            if "message" in check:
-                                failures += [
-                                    f"Condition failed for {module_name}: "
-                                    + resolve(check["message"], config=self, **module, error=ex)
-                                ]
-                            else:
-                                failures += [f"Condition failed for {module_name}: {str(ex)}"]
+        # Run checks on noc blocks/modules/transport adapters/device
+        for module_name, module in self.get_module_list("all").items():
+            checks = getattr(module.desc, "checks", [])
+            for check in checks:
+                if "condition" in check:
+                    if not bool(resolve(check["condition"], config=self, **module)):
+                        if "message" in check:
+                            msg = f"Condition failed for {module_name}: " \
+                                + resolve(check["message"], config=self, **module)
+                        else:
+                            msg = f"Condition failed for {module_name}: {check['condition']}"
+                        if check.get("severity", "error") == "warning":
+                            logging.warning(msg)
+                        else:
+                            failures += [msg]
+                if "run" in check:
+                    try:
+                        resolve(check["run"], config=self, **module)
+                    except Exception as ex:
+                        if "message" in check:
+                            failures += [
+                                f"Condition failed for {module_name}: "
+                                + resolve(check["message"], config=self, **module, error=ex)
+                            ]
+                        else:
+                            failures += [f"Condition failed for {module_name}: {str(ex)}"]
         # Handle any errors
         if failures:
             logging.error("The image core configuration is invalid:")
@@ -956,52 +965,51 @@ class ImageBuilderConfig:
             self.connections[conn_idx] = con
 
         # Go through all the modules and check IO ports are connected
-        for module_type in ("noc_blocks", "modules", "transport_adapters"):
-            for module_name, module in getattr(self, module_type).items():
-                for io_port_name, io_port in module.io_ports.items():
-                    required = io_port.get("required")
-                    if required:
-                        is_connected = any(
-                            con["srcblk"] == module_name
-                            and con["srcport"] == io_port_name
-                            or con["dstblk"] == module_name
-                            and con["dstport"] == io_port_name
-                            for con in self.connections
-                        )
-                        if not is_connected:
-                            available_ports = self._get_available_ports(io_port)
-                            msg = f"IO port {module_name}.{io_port_name} is not connected. "
-                            if len(available_ports) == 1:
-                                msg += f"Suggested connection: " \
-                                       f"{available_ports[0][0]}.{available_ports[0][1]}\n"
-                                msg += f"Add the following connection to the image core file to " \
-                                       f"use this connection:\n"
-                                if available_ports[0][2] == "src":
-                                    msg += f"{{ srcblk: {available_ports[0][0]}, " \
-                                           f"srcport: {available_ports[0][1]}, dstblk: " \
-                                           f"{module_name}, dstport: {io_port_name} }}"
-                                else:
-                                    msg += f"{{ srcblk: {module_name}, srcport: {io_port_name}, " \
-                                           f"dstblk: {available_ports[0][0]}, dstport: " \
-                                           f"{available_ports[0][1]} }}"
-                            elif len(available_ports) > 1:
-                                msg += f"Available connections:\n"
-                                for port in available_ports:
-                                    msg += f"    {port[0]}.{port[1]}\n"
-                                msg += "Add a connection line to the image core file to enable " \
-                                       "this connection:\n"
-                                if available_ports[0][2] == "src":
-                                    msg += f"{{ srcblk: ..., srcport: ..., dstblk: " \
-                                           f"{module_name}, dstport: {io_port_name} }}"
-                                else:
-                                    msg += f"{{ srcblk: {module_name}, srcport: {io_port_name}, " \
-                                           f"dstblk: ..., dstport: ... }}"
+        for module_name, module in self.get_module_list("all").items():
+            for io_port_name, io_port in module.io_ports.items():
+                required = io_port.get("required")
+                if required:
+                    is_connected = any(
+                        con["srcblk"] == module_name
+                        and con["srcport"] == io_port_name
+                        or con["dstblk"] == module_name
+                        and con["dstport"] == io_port_name
+                        for con in self.connections
+                    )
+                    if not is_connected:
+                        available_ports = self._get_available_ports(io_port)
+                        msg = f"IO port {module_name}.{io_port_name} is not connected. "
+                        if len(available_ports) == 1:
+                            msg += f"Suggested connection: " \
+                                    f"{available_ports[0][0]}.{available_ports[0][1]}\n"
+                            msg += f"Add the following connection to the image core file to " \
+                                    f"use this connection:\n"
+                            if available_ports[0][2] == "src":
+                                msg += f"{{ srcblk: {available_ports[0][0]}, " \
+                                        f"srcport: {available_ports[0][1]}, dstblk: " \
+                                        f"{module_name}, dstport: {io_port_name} }}"
                             else:
-                                msg += f"No available IO ports found!"
-                            if required == "recommended":
-                                logging.warning(msg)
+                                msg += f"{{ srcblk: {module_name}, srcport: {io_port_name}, " \
+                                        f"dstblk: {available_ports[0][0]}, dstport: " \
+                                        f"{available_ports[0][1]} }}"
+                        elif len(available_ports) > 1:
+                            msg += f"Available connections:\n"
+                            for port in available_ports:
+                                msg += f"    {port[0]}.{port[1]}\n"
+                            msg += "Add a connection line to the image core file to enable " \
+                                    "this connection:\n"
+                            if available_ports[0][2] == "src":
+                                msg += f"{{ srcblk: ..., srcport: ..., dstblk: " \
+                                        f"{module_name}, dstport: {io_port_name} }}"
                             else:
-                                failure += msg
+                                msg += f"{{ srcblk: {module_name}, srcport: {io_port_name}, " \
+                                        f"dstblk: ..., dstport: ... }}"
+                        else:
+                            msg += f"No available IO ports found!"
+                        if required == "recommended":
+                            logging.warning(msg)
+                        else:
+                            failure += msg
         # Go through blocks and check all ports are connected
         for block_name, block in self.noc_blocks.items():
             for direction in ("inputs", "outputs"):
