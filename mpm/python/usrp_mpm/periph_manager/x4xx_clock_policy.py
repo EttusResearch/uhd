@@ -58,7 +58,6 @@ class SpllConfig:
     prc_divider: int
     vcxo_freq: Spll1Vco
     sysref_div: int
-    sysref_delay: int
     clkin0_r_div: int
     pll1_n_div: int
     pll2_prescaler: int
@@ -315,7 +314,6 @@ class X410ClockPolicy(X4xxClockPolicy):
                 "prc_divider": 0x3C if legacy_mode else 0x30,
                 "vcxo_freq": Spll1Vco.VCO122_88MHz,
                 "sysref_div": 1152,
-                "sysref_delay": 32,
                 "clkin0_r_div": int(ref_clock_freq / pfd1),
                 "pll1_n_div": 64,
                 "pll2_prescaler": 2,
@@ -330,7 +328,6 @@ class X410ClockPolicy(X4xxClockPolicy):
                 "prc_divider": 0x3C if legacy_mode else 0x30,
                 "vcxo_freq": Spll1Vco.VCO100MHz,
                 "sysref_div": 1200,
-                "sysref_delay": 32,
                 "clkin0_r_div": int(ref_clock_freq / pfd1),
                 "pll1_n_div": 50,
                 "pll2_prescaler": 3,
@@ -345,7 +342,6 @@ class X410ClockPolicy(X4xxClockPolicy):
                 "prc_divider": 0x3C if legacy_mode else 0x30,
                 "vcxo_freq": Spll1Vco.VCO122_88MHz,
                 "sysref_div": 1200,
-                "sysref_delay": 32,
                 "clkin0_r_div": int(ref_clock_freq / pfd1),
                 "pll1_n_div": 64,
                 "pll2_prescaler": 5,
@@ -843,7 +839,6 @@ class X440ClockPolicy(X4xxClockPolicy):
             "prc_divider": prc_div,
             "vcxo_freq": Spll1Vco.VCO100MHz if spll1_vco == 100e6 else Spll1Vco.VCO122_88MHz,
             "sysref_div": int(lmk_vco / sysref_config["SYSREF_FREQ"]),
-            "sysref_delay": int(lmk_vco / prc_rate / 2),
             "clkin0_r_div": int(ref_clock_freq / sysref_config["PDF"]),
             "pll1_n_div": int(sysref_config["SYSREF_FREQ"] / sysref_config["PDF"]),
             "pll2_prescaler": int(pll2_prescaler[0]),
