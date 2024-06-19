@@ -124,7 +124,14 @@ def setup_parser():
         help="Just generate files without building the FPGA",
         action="store_true")
     parser.add_argument(
-        "-S", "--secure-core",
+        "-W",
+        "--ignore-warnings",
+        help="Run build even when there are warnings in the build process",
+        action="store_true",
+    )
+    parser.add_argument(
+        "-S",
+        "--secure-core",
         help="Build a secure image core instead of a bitfile. "
              "This argument provides the name of the generated YAML.",
         )
@@ -326,6 +333,7 @@ def main():
         # Various build config parameters
         reuse=args.reuse,
         generate_only=args.generate_only,
+        continue_on_warnings=args.ignore_warnings,
         clean_all=args.clean_all,
         GUI=args.GUI,
         save_project=args.save_project,

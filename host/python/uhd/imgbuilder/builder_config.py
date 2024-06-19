@@ -7,7 +7,6 @@ This contains the big ImageBuilderConfig class, which is the data structure
 that is passed to the templates.
 """
 
-import os
 import re
 import sys
 import copy
@@ -58,6 +57,22 @@ class ImageBuilderConfig:
         self.resets = []
         self.block_ports = {}
         self.clocks = {}
+        self.log = logging.getLogger(__name__)
+        self.warnings = []
+        self.errors = []
+
+        def _make_store_and_log(store_list, orig_logger):
+            """Create a logger that stores messages in a list"""
+
+            def store_and_log(*msg):
+                store_list.append(msg[0] % msg[1:])
+                orig_logger(*msg)
+
+            return store_and_log
+
+        self.log.warning = _make_store_and_log(self.warnings, self.log.warning)
+        self.log.error = _make_store_and_log(self.errors, self.log.error)
+        self.log.critical = _make_store_and_log(self.errors, self.log.critical)
         # read configuration from config dictionary
         self.__dict__.update(**config)
         self.device = device
@@ -101,23 +116,23 @@ class ImageBuilderConfig:
             if getattr(desc, 'secure_core', None):
                 error_msg = f"Invalid configuration: The block {name} must be " \
                             f"placed inside a secure image core."
-                logging.error(error_msg)
+                self.log.error(error_msg)
                 failure += error_msg + "\n"
             if name in secure_config.get('noc_blocks', {}):
                 error_msg = f"Invalid configuration: The block {name} is declared " \
                             f"both inside and outside the secure image core."
-                logging.error(error_msg)
+                self.log.error(error_msg)
                 failure += error_msg + "\n"
         def merge_include(target, inc):
             """Helper to merge an include into a dict"""
-            logging.debug("Loading secure image core configuration %s", inc)
+            self.log.debug("Loading secure image core configuration %s", inc)
             key = inc + '.yml'
             if key not in includes:
-                logging.error("Cannot find include: %s", inc)
+                self.log.error("Cannot find include: %s", inc)
                 sys.exit(1)
             inc_data = includes[key]
             if not hasattr(inc_data, 'secure_image_core'):
-                logging.error("Include %s does not contain a valid secure image core!",
+                self.log.error("Include %s does not contain a valid secure image core!",
                               key)
                 sys.exit(1)
             merge_dicts(target, inc_data.secure_image_core)
@@ -130,7 +145,7 @@ class ImageBuilderConfig:
             # Now fold the secure config onto the main config
             merge_dicts(self.__dict__, secure_config)
         elif default_secure_config:
-            logging.debug("Populating config with default secure core.")
+            self.log.debug("Populating config with default secure core.")
             merge_dicts(self.__dict__, default_secure_config)
         for name in secure_config.get('noc_blocks', {}).keys():
             self.noc_blocks[name]['domain'] = 'secure_core'
@@ -168,7 +183,7 @@ class ImageBuilderConfig:
                         **{k: v for k, v in user_params.items() if k in default_params}}
                 invalid_keys = [k for k in user_params if k not in default_params]
                 if invalid_keys:
-                    logging.warning(
+                    self.log.warning(
                         "%s contains unknown parameter(s): %s",
                         name, ", ".join(invalid_keys))
         # Also set parameters for the device
@@ -179,7 +194,7 @@ class ImageBuilderConfig:
         }
         invalid_keys = [k for k in self.parameters if k not in default_params]
         if invalid_keys:
-            logging.warning(
+            self.log.warning(
                 "Device contains unknown parameter(s): %s",
                 ", ".join(invalid_keys))
         setattr(self.device, 'parameters', self.parameters)
@@ -255,7 +270,7 @@ class ImageBuilderConfig:
         for _name, block in self.noc_blocks.items():
             desc = block['block_desc']
             if desc in yaml_utils.deprecated_block_yml_map:
-                logging.warning(
+                self.log.warning(
                     "The block description '%s' has been deprecated. "
                     "Please update your image to use '%s'.",
                     desc, yaml_utils.deprecated_block_yml_map[desc])
@@ -265,7 +280,7 @@ class ImageBuilderConfig:
         for con in self.connections:
             for port in ('srcport', 'dstport'):
                 if con[port] in yaml_utils.deprecated_port_name_map:
-                    logging.warning(
+                    self.log.warning(
                         "The port name '%s' has been deprecated. "
                         "Please update your image to use '%s'.",
                         con[port], yaml_utils.deprecated_port_name_map[con[port]])
@@ -273,9 +288,8 @@ class ImageBuilderConfig:
                     con[port] = yaml_utils.deprecated_port_name_map[con[port]]
 
     def _check_configuration(self):
-        """Check current configuration.
-        """
-        logging.debug("Running checks on the current configuration...")
+        """Check current configuration."""
+        self.log.debug("Running checks on the current configuration...")
         failures = []
         if not any(bool(sep["ctrl"]) for sep in self.stream_endpoints.values()):
             failures = "At least one streaming endpoint needs to have ctrl enabled"
@@ -291,9 +305,11 @@ class ImageBuilderConfig:
                 + RFNOC_PROTO_VERSION
             ]
         elif requested_version != RFNOC_PROTO_VERSION:
-            logging.warning(
-                "Generating code for latest RFNoC protocol version %s instead " \
-                "of requested %s", RFNOC_PROTO_VERSION, requested_version)
+            self.log.warning(
+                "Generating code for latest RFNoC protocol version %s instead " "of requested %s",
+                RFNOC_PROTO_VERSION,
+                requested_version,
+            )
         self.rfnoc_version = RFNOC_PROTO_VERSION
         # Give block_chdr_width a default value
         if not hasattr(self, "block_chdr_width"):
@@ -323,7 +339,7 @@ class ImageBuilderConfig:
                     f"crossbar_routes must be a {num_ports} by {num_ports} binary array"
                 ]
         else:
-            logging.debug("Generating default crossbar routes...")
+            self.log.debug("Generating default crossbar routes...")
             # Give crossbar_routes a default value
             routes = np.ones([num_ports, num_ports])
             # Disable all TA to TA paths, except loopback (required for discovery)
@@ -354,7 +370,7 @@ class ImageBuilderConfig:
                         else:
                             msg = f"Condition failed for {module_name}: {check['condition']}"
                         if check.get("severity", "error") == "warning":
-                            logging.warning(msg)
+                            self.log.warning(msg)
                         else:
                             failures += [msg]
                 if "run" in check:
@@ -370,9 +386,9 @@ class ImageBuilderConfig:
                             failures += [f"Condition failed for {module_name}: {str(ex)}"]
         # Handle any errors
         if failures:
-            logging.error("The image core configuration is invalid:")
+            self.log.error("The image core configuration is invalid:")
             for failure in failures:
-                logging.error("* %s", failure)
+                self.log.error("* %s", failure)
             raise ValueError("The image core configuration is invalid.")
 
     def _split_secure_core(self):
@@ -508,11 +524,11 @@ class ImageBuilderConfig:
                 # this
                 if con[f'{nonsec_side}blk'] == DEVICE_NAME:
                     continue
-                logging.info("updating %s", con)
+                self.log.info("updating %s", con)
                 # Otherwise, we sever the connection and make it a device IO port
                 con[f'{nonsec_side}port'] = con['srcblk'] + '_' + con['srcport']
                 con[f'{nonsec_side}blk'] = DEVICE_NAME
-                logging.info("-> %s", con)
+                self.log.info("-> %s", con)
                 # Update the connection info
                 getattr(sconfig, 'clk_domains' if clk_rst_t == 'clk' else 'resets')[con_i] = con
         # On the top side, this is a bit simpler. We simply reroute clocks and
@@ -636,7 +652,7 @@ class ImageBuilderConfig:
                 index = 0
                 data_ports = getattr(block.desc, "data", {}).get(direction, {}).items()
                 if not data_ports:
-                    logging.debug("Block %s has no data %s.", block.desc.module_name, direction)
+                    self.log.debug("Block %s has no data %s.", block.desc.module_name, direction)
                 for port_name, port_info in data_ports:
                     num_ports = 1
                     if "num_ports" in port_info:
@@ -680,13 +696,13 @@ class ImageBuilderConfig:
 
                     # Make sure the parameter resolved to a number
                     if not isinstance(num_ports, int):
-                        logging.error(
+                        self.log.error(
                             "'num_ports' of port '%s' on block '%s' "
                             "resolved to invalid value of '%s'",
                             port_name, name, str(num_ports))
                         sys.exit(1)
                     if num_ports < 1 or num_ports > 64:
-                        logging.error(
+                        self.log.error(
                             "'num_ports' of port '%s' on block '%s' "
                             "has invalid value '%s', must be in [1, 64]",
                             port_name, name, str(num_ports))
@@ -742,14 +758,14 @@ class ImageBuilderConfig:
                 setattr(block, 'io_ports',
                         expand_io_port(getattr(block.desc, 'io_ports', {}), block))
             except ValueError as ex:
-                logging.error("Error parsing IO ports for %s: %s", name, str(ex))
+                self.log.error("Error parsing IO ports for %s: %s", name, str(ex))
                 sys.exit(1)
         for name, module in self.modules.items():
             try:
                 setattr(module, 'io_ports',
                         expand_io_port(getattr(module.desc, 'io_ports', {}), module))
             except ValueError as ex:
-                logging.error("Error parsing IO ports for %s: %s", name, str(ex))
+                self.log.error("Error parsing IO ports for %s: %s", name, str(ex))
                 sys.exit(1)
         for name, transport_adapter in self.transport_adapters.items():
             try:
@@ -765,12 +781,12 @@ class ImageBuilderConfig:
                             data_d[direction][io_k][k] = resolve(val, **transport_adapter)
                 setattr(transport_adapter, 'data', data_d)
             except (ValueError, NameError) as ex:
-                logging.error("Error parsing IO/data ports for %s: %s", name, str(ex))
+                self.log.error("Error parsing IO/data ports for %s: %s", name, str(ex))
                 sys.exit(1)
         try:
             self.device.io_ports = expand_io_port(self.device.io_ports, {})
         except ValueError as ex:
-            logging.error("Error parsing IO ports for _device_: %s", str(ex))
+            self.log.error("Error parsing IO ports for _device_: %s", str(ex))
             sys.exit(1)
 
 
@@ -789,15 +805,18 @@ class ImageBuilderConfig:
             if 'index' in clock_info:
                 clk_index = int(clock_info['index'])
                 if clk_index in clk_indices and clk_indices[clk_index] != clock_id:
-                    logging.error(
-                        "Conflicting clock indices found. Index %d is defined by "
-                        "%s and %s.", clk_index, clk_indices[clk_index], clock_id)
+                    self.log.error(
+                        "Conflicting clock indices found. Index %d is defined by " "%s and %s.",
+                        clk_index,
+                        clk_indices[clk_index],
+                        clock_id,
+                    )
                     sys.exit(1)
             else:
                 # Automatically assign an index
                 min_clk_index = max(min_user_clock_index, *list(clk_indices.keys()))
                 clk_index = min_clk_index + 1
-                logging.debug("Assigning clock index %d to clock %s.", clk_index, clock_id)
+                self.log.debug("Assigning clock index %d to clock %s.", clk_index, clock_id)
             clk_indices[clk_index] = clock_id
         # Collect clocks from block definitions
         for name, block in self.noc_blocks.items():
@@ -830,7 +849,7 @@ class ImageBuilderConfig:
         for required_bsp_clock in "rfnoc_ctrl", "rfnoc_chdr":
             clock_id = "_device_." + required_bsp_clock
             if clock_id not in self.clocks:
-                logging.debug("Adding required clock not present in BSP: %s", required_bsp_clock)
+                self.log.debug("Adding required clock not present in BSP: %s", required_bsp_clock)
                 self.clocks[clock_id] = {
                     "name": required_bsp_clock,
                     # For the index, we do a reverse lookup from clk_indices
@@ -871,7 +890,7 @@ class ImageBuilderConfig:
                 else:
                     failure += f"Unconnected clock domain: {clk}"
         if failure:
-            logging.error("Clock domains have invalid configuration:\n%s", failure)
+            self.log.error("Clock domains have invalid configuration:\n%s", failure)
             sys.exit(1)
         # Annotate the list of clock connections
         for clk_i, clk_domain in enumerate(self.clk_domains):
@@ -1007,7 +1026,7 @@ class ImageBuilderConfig:
                         else:
                             msg += f"No available IO ports found!"
                         if required == "recommended":
-                            logging.warning(msg)
+                            self.log.warning(msg)
                         else:
                             failure += msg
         # Go through blocks and check all ports are connected
@@ -1021,28 +1040,29 @@ class ImageBuilderConfig:
                         and con["dstport"] == port_name
                         for con in self.connections
                     ):
-                        logging.warning("Block port %s.%s is not connected", block_name, port_name)
+                        self.log.warning("Block port %s.%s is not connected", block_name, port_name)
 
         if failure:
-            logging.error("There are errors in the image core file's connection settings:\n" + failure)
-            logging.info("    Make sure block ports are connected output "
-                          "(src) to input (dst)")
-            logging.info("    Available block ports for connections:")
+            self.log.error(
+                "There are errors in the image core file's connection settings:\n" + failure
+            )
+            self.log.info("    Make sure block ports are connected output " "(src) to input (dst)")
+            self.log.info("    Available block ports for connections:")
             for block in self.block_ports:
-                logging.info("        %s", (block,))
-            logging.info("    Make sure io ports are connected master      "
-                          "(src) to slave    (dst)")
-            logging.info("                                  or broadcaster "
-                          "(src) to listener (dst)")
-            logging.info("    Available IO ports for connections:")
+                self.log.info("        %s", (block,))
+            self.log.info(
+                "    Make sure io ports are connected master      " "(src) to slave    (dst)"
+            )
+            self.log.info(
+                "                                  or broadcaster " "(src) to listener (dst)"
+            )
+            self.log.info("    Available IO ports for connections:")
             for mod_list in (self.noc_blocks, self.modules):
                 for module_name, module in mod_list.items():
                     for io_name, io_port in module.io_ports.items():
-                        logging.info("        %s.%s (%s)",
-                                     module_name, io_name, io_port['type'])
+                        self.log.info("        %s.%s (%s)", module_name, io_name, io_port["type"])
             for io_name, io_port in self.device.io_ports.items():
-                logging.info("        %s.%s (%s)",
-                             DEVICE_NAME, io_name, io_port['type'])
+                self.log.info("        %s.%s (%s)", DEVICE_NAME, io_name, io_port["type"])
             sys.exit(1)
 
     def _check_resets(self):
@@ -1078,8 +1098,8 @@ class ImageBuilderConfig:
                     dst_module.resets[srcport].get('direction', 'in') != 'in':
                 failure += f"Invalid reset destination: {dst}.{dstport}\n"
         if failure:
-            logging.error("Invalid reset connections:")
-            logging.error(failure)
+            self.log.error("Invalid reset connections:")
+            self.log.error(failure)
             sys.exit(1)
         # Now see if there are resets that need auto-connecting
         for module_name, module in self.modules.items():

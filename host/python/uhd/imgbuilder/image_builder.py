@@ -403,11 +403,20 @@ def build_image(config, repo_fpga_path, config_path, device, **args):
         yaml_utils.resolve_io_signatures(defs, signatures_conf, require_schema)
 
     # Load the image core config
-    builder_conf = ImageBuilderConfig(
-        config,
-        known_modules,
-        device_conf,
-        args.get("include_paths", []))
+    try:
+        builder_conf = ImageBuilderConfig(
+            config, known_modules, device_conf, args.get("include_paths", [])
+        )
+    except (ValueError, KeyError) as e:
+        logging.error("Error parsing image configuration: %s", e)
+        return 1
+    if not args.get("continue_on_warnings"):
+        if builder_conf.warnings or builder_conf.errors:
+            logging.error(
+                "Image configuration contains issues: Skipping build. "
+                "Use --ignore-warnings to build despite warnings."
+            )
+            return 1
     # Generate verilog output
     output_list = [
         ("rfnoc_image_core.sv.mako", image_core_path, builder_conf),
