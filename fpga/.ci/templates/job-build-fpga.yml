@@ -54,6 +54,11 @@ jobs:
     matrix:
       ${{ parameters.targets_matrix }}
   steps:
+    - task: NugetToolInstaller@1
+      inputs:
+        versionSpec: "6.1"
+      displayName: Install NuGet
+
     - checkout: self
       clean: true
       fetchDepth: 1
