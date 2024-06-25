@@ -111,6 +111,11 @@ public:
         CLOCK_DIV_MODE_PHASE
     } clock_divider_mode_t;
 
+    // Note that in the current datasheets, RFOUTA and RFOUTB are used,
+    // but the code has referred to these are rf_output and aux_output.
+    // So, when comparing with the datasheet, RF_OUT is RFOUTA and AUX_OUT is RFOUTB.
+    typedef enum { RF_OUT, AUX_OUT, BOTH } rf_output_port_t;
+
     /**
      * Make a synthesizer
      * @param write write function
@@ -148,10 +153,15 @@ public:
      * @param ref_freq reference frequency
      * @param target_pfd_freq target phase detector frequency
      * @param is_int_n enable integer-N tuning
+     * @param output_port which output port should output the requested frequency,
+     *                    defaults to port RF_OUT
      * @return actual frequency
      */
-    virtual double set_frequency(
-        double target_freq, double ref_freq, double target_pfd_freq, bool is_int_n) = 0;
+    virtual double set_frequency(double target_freq,
+        double ref_freq,
+        double target_pfd_freq,
+        bool is_int_n,
+        rf_output_port_t output_port = RF_OUT) = 0;
 
     /**
      * Set output power (RFOUTA)
@@ -164,6 +174,12 @@ public:
      * @param power output power
      */
     virtual void set_aux_output_power(aux_output_power_t power) = 0;
+
+    /**
+     * Enable or disable output power (RFOUTA)
+     * @param enable output power enabled
+     */
+    virtual void set_output_power_enable(bool enable) = 0;
 
     /**
      * Enable or disable aux output power (RFOUTB)
@@ -284,9 +300,11 @@ public:
     double set_frequency(double target_freq,
         double ref_freq,
         double target_pfd_freq,
-        bool is_int_n) override;
+        bool is_int_n,
+        rf_output_port_t output_port = RF_OUT) override;
     void set_output_power(output_power_t power) override;
     void set_aux_output_power(aux_output_power_t power) override;
+    void set_output_power_enable(bool enable) override;
     void set_aux_output_power_enable(bool enable) override;
     void set_ld_pin_mode(ld_pin_mode_t mode) override;
     void set_muxout_mode(muxout_mode_t mode) override;
@@ -330,7 +348,8 @@ public:
     double set_frequency(double target_freq,
         double ref_freq,
         double target_pfd_freq,
-        bool is_int_n) override
+        bool is_int_n,
+        rf_output_port_t output_port = RF_OUT) override
     {
         _regs.cpoc            = is_int_n ? max2870_regs_t::CPOC_ENABLED
                                          : max2870_regs_t::CPOC_DISABLED;
@@ -339,7 +358,7 @@ public:
                                     : max2870_regs_t::FEEDBACK_SELECT_FUNDAMENTAL;
 
         return max287x<max2870_regs_t>::set_frequency(
-            target_freq, ref_freq, target_pfd_freq, is_int_n);
+            target_freq, ref_freq, target_pfd_freq, is_int_n, output_port);
     }
     void commit(void) override
     {
@@ -438,11 +457,12 @@ public:
     double set_frequency(double target_freq,
         double ref_freq,
         double target_pfd_freq,
-        bool is_int_n) override
+        bool is_int_n,
+        rf_output_port_t output_port = RF_OUT) override
     {
         _regs.feedback_select = max2871_regs_t::FEEDBACK_SELECT_DIVIDED;
         double freq           = max287x<max2871_regs_t>::set_frequency(
-            target_freq, ref_freq, target_pfd_freq, is_int_n);
+            target_freq, ref_freq, target_pfd_freq, is_int_n, output_port);
 
         // To support phase synchronization on MAX2871, the same VCO
         // subband must be manually programmed on all synthesizers and
@@ -728,8 +748,11 @@ bool max287x<max287x_regs_t>::is_shutdown(void)
 }
 
 template <typename max287x_regs_t>
-double max287x<max287x_regs_t>::set_frequency(
-    double target_freq, double ref_freq, double target_pfd_freq, bool is_int_n)
+double max287x<max287x_regs_t>::set_frequency(double target_freq,
+    double ref_freq,
+    double target_pfd_freq,
+    bool is_int_n,
+    rf_output_port_t output_port)
 {
     // map rf divider select output dividers to enums
     static const std::map<int, typename max287x_regs_t::rf_divider_select_t>
@@ -864,7 +887,13 @@ double max287x<max287x_regs_t>::set_frequency(
                % (pfd_freq / 1e6) % (pfd_freq / BS / 1e6);
 
     // load the register values
-    _regs.rf_output_enable = max287x_regs_t::RF_OUTPUT_ENABLE_ENABLED;
+    _regs.rf_output_enable = output_port == RF_OUT || output_port == BOTH
+                                 ? max287x_regs_t::RF_OUTPUT_ENABLE_ENABLED
+                                 : max287x_regs_t::RF_OUTPUT_ENABLE_DISABLED;
+
+    _regs.aux_output_enable = output_port == AUX_OUT || output_port == BOTH
+                                  ? max287x_regs_t::AUX_OUTPUT_ENABLE_ENABLED
+                                  : max287x_regs_t::AUX_OUTPUT_ENABLE_DISABLED;
 
     if (is_int_n) {
         _regs.cpl        = max287x_regs_t::CPL_DISABLED;
@@ -944,6 +973,13 @@ void max287x<max287x_regs_t>::set_aux_output_power(aux_output_power_t power)
         default:
             UHD_THROW_INVALID_CODE_PATH();
     }
+}
+
+template <typename max287x_regs_t>
+void max287x<max287x_regs_t>::set_output_power_enable(bool enable)
+{
+    _regs.rf_output_enable = enable ? max287x_regs_t::RF_OUTPUT_ENABLE_ENABLED
+                                    : max287x_regs_t::RF_OUTPUT_ENABLE_DISABLED;
 }
 
 template <typename max287x_regs_t>
