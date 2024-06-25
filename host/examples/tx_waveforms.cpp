@@ -249,19 +249,32 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     std::cout << boost::format("Setting TX Freq: %f MHz...") % (freq / 1e6) << std::endl;
     std::cout << boost::format("Setting TX LO Offset: %f MHz...") % (lo_offset / 1e6)
               << std::endl;
-    const float cmd_time_offset     = 0.1;
-    const uhd::time_spec_t now      = usrp->get_time_now();
-    const uhd::time_spec_t cmd_time = now + uhd::time_spec_t(cmd_time_offset);
-    usrp->set_command_time(cmd_time);
+
+    // use timed tuning for more that one channel on all devices except X410
+    // X410 does not yet support timed tuning
+    const bool timed_tuning = usrp->get_mboard_name() != "x410"
+                              and channel_nums.size() > 1;
+    const float cmd_time_offset = 0.1;
+
+    if (timed_tuning) {
+        const uhd::time_spec_t now      = usrp->get_time_now();
+        const uhd::time_spec_t cmd_time = now + uhd::time_spec_t(cmd_time_offset);
+        usrp->set_command_time(cmd_time);
+    }
+
     for (std::size_t channel : channel_nums) {
         uhd::tune_request_t tune_request(freq, lo_offset);
         if (vm.count("int-n"))
             tune_request.args = uhd::device_addr_t("mode_n=integer");
         usrp->set_tx_freq(tune_request, channel);
     }
-    usrp->clear_command_time();
-    std::this_thread::sleep_for(std::chrono::milliseconds(int64_t(
-        1e3 * cmd_time_offset))); // wait until the command time has passed for sure
+
+    // clear command time and wait to finish for timed tuning
+    if (timed_tuning) {
+        usrp->clear_command_time();
+        std::this_thread::sleep_for(std::chrono::milliseconds(int64_t(
+            1e3 * cmd_time_offset))); // wait until the command time has passed for sure
+    }
 
     for (std::size_t channel : channel_nums) {
         std::cout << boost::format("Actual TX Freq: %f MHz...")
