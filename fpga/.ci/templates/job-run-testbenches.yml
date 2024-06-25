@@ -20,19 +20,7 @@ jobs:
   variables:
   - group: sdr-pipeline-vars
   steps:
-    - task: NugetToolInstaller@1
-      inputs:
-        versionSpec: "6.1"
-      displayName: Install NuGet
-
-    - checkout: self
-      clean: true
-      persistCredentials: true
-
-    - checkout: hwtools
-      clean: true
-      path: s/hwtools/head
-      persistCredentials: true
+    - template: setup_steps.yml
 
     - bash: |
         source $(Build.SourcesDirectory)/uhddev/fpga/.ci/scripts/run_setup.sh ./top/x300
