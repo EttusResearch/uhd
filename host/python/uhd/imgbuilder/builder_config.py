@@ -24,6 +24,7 @@ from . import yaml_utils
 RFNOC_PROTO_VERSION = "1.0"
 
 DEVICE_NAME = "_device_"
+NONE_PORT = "_none_"
 
 
 class ImageBuilderConfig:
@@ -977,6 +978,8 @@ class ImageBuilderConfig:
                                f"(type: {con['src_iosig'].get('type')}) → " \
                                f"{con['dstblk']}.{con['dstport']} " \
                                f"(type: {con['dst_iosig'].get('type')})\n"
+            elif con["srcport"] == NONE_PORT or con["dstport"] == NONE_PORT:
+                pass
             else:
                 failure += f"Unresolved connection: " \
                            f"{con['srcblk']}:{con['srcport']} → " \
@@ -1041,6 +1044,10 @@ class ImageBuilderConfig:
                         for con in self.connections
                     ):
                         self.log.warning("Block port %s.%s is not connected", block_name, port_name)
+        # Drop empty connections
+        self.connections = [
+            c for c in self.connections if c["srcport"] != NONE_PORT and c["dstport"] != NONE_PORT
+        ]
 
         if failure:
             self.log.error(
