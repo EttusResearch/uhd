@@ -285,6 +285,20 @@ public:
         }
     }
 
+    std::string send_cmd(const std::string &cmd){
+        _send(cmd);
+        std::this_thread::sleep_for(std::chrono::milliseconds(GPSDO_COMMAND_DELAY_MS));
+        update_cache();
+        std::string resp;
+        try {
+            resp = get_sentence(boost::to_upper_copy(cmd.substr(0, cmd.find(":"))), GPS_SERVO_FRESHNESS, GPS_TIMEOUT_DELAY_MS); // Cheat for now - it should flow through as a malformed GPS message into the cache.
+        } catch (const std::exception &ex) {
+            UHD_LOGGER_WARNING("GPS") << "Caught Exception: " << ex.what();
+            resp = cmd;
+        }
+        return resp;
+    }
+
 private:
     void init_gpsdo(void)
     {

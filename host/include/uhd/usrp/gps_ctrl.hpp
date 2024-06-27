@@ -44,6 +44,7 @@ public:
     virtual bool gps_detected(void) = 0;
 
     // TODO: other fun things you can do with a GPS.
+    virtual std::string send_cmd(const std::string& cmd) = 0;
 };
 
 } // namespace uhd
