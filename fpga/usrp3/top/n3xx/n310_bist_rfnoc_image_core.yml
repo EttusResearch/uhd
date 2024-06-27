@@ -95,6 +95,13 @@ connections:
   - { srcblk: fifo0, srcport: out_0, dstblk: ep4,   dstport: in0  }
   - { srcblk: ep5,   srcport: out0,  dstblk: fifo0, dstport: in_1 }
   - { srcblk: fifo0, srcport: out_1, dstblk: ep5,   dstport: in0  }
+  # The FIFO block has four ports to match the memory configuration, but their
+  # RFNoC ports don't get connected. We flag that here explicitly to avoid
+  # warnings from the image builder.
+  - { srcblk: _device_,  srcport: _none_, dstblk: fifo0,    dstport: in_2    }
+  - { srcblk: fifo0,     srcport: out_2,  dstblk: _device_, dstport: _none_  }
+  - { srcblk: _device_,  srcport: _none_, dstblk: fifo0,    dstport: in_3    }
+  - { srcblk: fifo0,     srcport: out_3,  dstblk: _device_, dstport: _none_  }
   #
   # BSP Connections
   - { srcblk: radio0,   srcport: ctrlport, dstblk: _device_, dstport: ctrlport_radio0 }
