@@ -15,27 +15,34 @@ Change Log for Releases
     - Added ability to query dot representation of RFNoC graph
   - Python support
     - Added DRAMReceiver class and amend rx_to_file.py example to use new class.
-      This supplements the DRAMTransmitter class and simplifies using the DRAM-backed 
+      This supplements the DRAMTransmitter class and simplifies using the DRAM-backed
       RFNoC replay block to when signal bandwidth exceeds available streaming bandwidth.
   - CMake
     - We now search for a system version of Pybind11 before falling back to the
       bundled version. The system version is preferred, and the bundled version
       may be removed in a future release.
-   - RFNoC
+  - RFNoC
     - Image builder: Major update, which adds support for defining transport
       adapters in the image builder YAML files, adding custom modules, choosing
       custom directories for build, IP, and intermediate files, building IP
       only, saving Vivado projects, and more. Image core YAML files created with
       this version are not compatible with previous versions, and vice versa!
+      Also adds many more checks to avoid building bitfiles that are either
+      incomplete, or valid but probably not the desired outcome.
     - Added support for defining custom register spaces in RFNoC blocks.
     - Added license checking subsystem. This allows creating RFNoC blocks that
       require a license key to operate.
     - Add device DNA feature for X310, X410, X440. This allows reading back the
       FPGA's DNA, which is a unique identifier.
+  - Embedded OS for E3xx, N3xx, and X4xx devices
+    - With the switch to Yocto 4.0 (kirkstone), the SD card and eMMC images no 
+      longer pre-populate the second system partition. Refer to the device 
+      specific "Updating Filesystems" section in the user manual for how to populate it.
+      This reduces the size of compressed .sdimg filesystem images.
   - X440
-    - Added new guided log info mode to provide more information about the Nyquist 
+    - Added new guided log info mode to provide more information about the Nyquist
       zone in which the chosen frequency is located. These additional info logs
-      are enabled by default. For disabling the guided mode, add the entry 
+      are enabled by default. For disabling the guided mode, add the entry
       `guided_mode=false` to the UHD config file in the "Global" section.
   - Examples
     - rfnoc-example now also generates Python bindings for OOT block control functions.
@@ -47,11 +54,12 @@ Change Log for Releases
   - General UHD
     - Fix issue with undefined HOME or XDG_CONFIG_HOME
     - Fix compilation error with boost 1.85.0 (closed issue 740)
-    - Fixed cmake find_library for UHD to fail if the library is not found 
+    - Fixed cmake find_library for UHD to fail if the library is not found
     - Fixed setters for ALL_CHANS in multi_usrp
-    - Demote safe call logging to warning
-    - Fix outstanding clang-format issues
-    - fix compiling with gcc 13.2
+    - Demoted safe call logging to warning
+    - Fixed outstanding clang-format issues
+    - Fixed compiling with gcc 13.2
+    - Removed superfluous usage of const in return values
   - Python support
     - YAML files are now listed as part of the package
     - Fix setting start_time having no effect
@@ -61,7 +69,7 @@ Change Log for Releases
     - FIR filters now uses newer IP revisions
     - Reverse FIR filter coefficients now get embedded in DSPE48
   - B2xx
-    - Fixed FRAC2 calculation (closed issue 684). 
+    - Fixed FRAC2 calculation (closed issue 684).
     - Fix DC truncation bias by adding rounding to DDC chain
   - X310
     - Fix warning about duplicate reg
@@ -71,10 +79,12 @@ Change Log for Releases
       - Fix width of gain register
   - MPM
     - Deactivate explicit DAD (Duplicate Address Detection) on int0 interface
-      since this is the default behavior of systemd v250.5 (Yocto release kirkstone) 
+      since this is the default behavior of systemd v250.5 (Yocto release kirkstone)
       for static IPv4 addresses if the IP address is a link local address.
     - Correct outdated mender command in prints of usrp_update_fs utility
     - No longer import from from rpc_server when already importing usrp_mpm
+    - Demoted log level of ECHO send error
+    - No longer print iptables errors when setting up forwarding
   - X400 Platform
     - Add PPS interface to X410/X440 BSP
     - Add netlist make flow
@@ -96,14 +106,16 @@ Change Log for Releases
   - Examples
     - Fix rx_samples_to_file failure for multichannel fullpath.
     - Fixed bugs observing cmd argument -c in remote_rx.py example.
-    - Updated tx_waveforms examples now also use timed commands during frequency tuning.
-      On X440 this allows reproducing specified channel to channel phase alignments. 
+    - Updated tx_waveforms examples now also use timed commands during
+      frequency tuning for all devices except for x410.
+      On X440 this allows reproducing specified channel to channel phase alignments.
+    - Consistently comment out sections in rx_samples_to_file.
 * Validated OS Environments
   (Versions for build and runtime dependencies can be determined from the
    docker container definitions in the UHD repository at .ci/docker/...)
-  - Linux 
+  - Linux:
     - Ubuntu: bionic (18.04), focal (20.04), jammy (22.04), noble (24.04)
-    - Fedora: 34, 35, 36 
+    - Fedora: 34, 35, 36
   - Windows: 10 21H2, 11 21H2
   - MacOS: Monterey (12.6)
 
