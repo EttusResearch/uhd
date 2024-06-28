@@ -192,8 +192,6 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             usrp->set_tx_antenna(ant, channel);
     }
 
-    std::this_thread::sleep_for(std::chrono::seconds(1)); // allow for some setup time
-
     // error when the waveform is not possible to generate
     if (std::abs(wave_freq) > usrp->get_tx_rate() / 2) {
         throw std::runtime_error("wave freq out of Nyquist zone");
@@ -282,6 +280,12 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                   << std::endl
                   << std::endl;
     }
+
+    // Allow for some setup time: In particular, LOs and other tuning-related
+    // components might need some time to lock. 1 second is way more than enough
+    // time. If there were no sleep time at all, we might see LO lock errors
+    // as the following check does not include a polling loop.
+    std::this_thread::sleep_for(std::chrono::seconds(1));
 
     // Check Ref and LO Lock detect
     std::vector<std::string> sensor_names;
