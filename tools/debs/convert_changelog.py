@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # Copyright 2015 National Instruments Corp.
@@ -16,76 +16,89 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-"""
-Converts our changelog into a format suitable for Debian packaging
-"""
+"""Convert our changelog into a format suitable for Debian packaging."""
 
+import argparse
 import datetime
-from optparse import OptionParser
-import os
 import re
-import sys
+
 
 # Pass in first line of Debian changelog file, should contain last version
 def detect_last_version(line):
-    return convert_version_string(re.search("[0-9]+\.[0-9]+\.[0-9\.]+", line).group(), False)
+    """Return the version string (e.g. 004.006.000.001) from line."""
+    return convert_version_string(re.search(r"[0-9]+\.[0-9]+\.[0-9\.]+", line).group(), False)
 
-# "## 003.008.005" to "3.8.5" or vice versa
+
 def convert_version_string(version, to_debian=True):
-    if version == None:
+    """Convert 003.008.005" to "3.8.5" or vice versa."""
+    if version is None:
         return ""
 
     if to_debian:
-        return ".".join(list(str(int(num)) for num in re.split('[ .]', version)[1:]))
-    else:
-        return "## {0}".format(".".join("{0:03d}".format(int(num)) for num in version.split(".")))
+        return ".".join(list(str(int(num)) for num in re.split("[ .]", version)[1:]))
+    return "## {0}".format(".".join("{0:03d}".format(int(num)) for num in version.split(".")))
+
 
 def get_header(version):
-    return "uhd ({0}-0ubuntu1) ubuntu_release; urgency=low\n\n".format(convert_version_string(version))
+    """Return a Debian-compatible header (including version string)."""
+    return "uhd ({0}-0ubuntu1) ubuntu_release; urgency=low\n\n".format(
+        convert_version_string(version)
+    )
+
 
 def get_footer(uploader_name, uploader_email):
-    return " -- {0} <{1}>  {2}\n\n".format(uploader_name, uploader_email, datetime.datetime.now().strftime("%a, %d %b %Y %I:%M:%S %Z-0800"))
+    """Return Debian-compatible changelog footer."""
+    return " -- {0} <{1}>  {2}\n\n".format(
+        uploader_name,
+        uploader_email,
+        datetime.datetime.now().strftime("%a, %d %b %Y %I:%M:%S %Z-0800"),
+    )
+
 
 if __name__ == "__main__":
 
-    parser = OptionParser()
-    parser.add_option(
-        "--input-file",     type="string", default='CHANGELOG',
-        help="Input UHD top-level changelog file"
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--input-file",
+        default="CHANGELOG",
+        help="Input UHD top-level changelog file",
     )
-    parser.add_option("--output-file",
-        type="string", default='host/cmake/debian/changelog',
-        help="Output Debian changelog file (will append onto existing)"
+    parser.add_argument(
+        "--output-file",
+        default="host/cmake/debian/changelog",
+        help="Output Debian changelog file (will append onto existing)",
     )
-    parser.add_option("--uploader-name",
-        type="string", default='Ettus Research',
+    parser.add_argument(
+        "--uploader-name",
+        default="Ettus Research",
         help="Uploader name (must match GPG key)",
     )
-    parser.add_option("--uploader-email",
-        type="string", default='packages@ettus.com',
-        help="Uploader email (must match GPG key)"
+    parser.add_argument(
+        "--uploader-email",
+        default="packages@ettus.com",
+        help="Uploader email (must match GPG key)",
     )
-    parser.add_option("--last-version",   type="string", help="Manually specify last version (Debian format)", default="")
-    (options, args) = parser.parse_args()
+    parser.add_argument(
+        "--last-version",
+        help="Manually specify last version (Debian format)",
+        default="",
+    )
+    options = parser.parse_args()
 
     # Input file
-    f = open(options.input_file, "r")
-    lines_in = f.readlines()
-    f.close()
+    with open(options.input_file, "r") as f:
+        lines_in = f.readlines()
 
-    f = open(options.output_file, "r")
-    lines_out = f.readlines()
-    f.close()
-
-    g = open(options.output_file, "w")
+    with open(options.output_file, "r") as f:
+        lines_out = f.readlines()
 
     if options.last_version == "":
-        if(len(lines_out) > 0):
+        if len(lines_out) > 0:
             last_version = detect_last_version(lines_out[0])
             check_last_version = True
         else:
             last_version = ""
-            check_last_version = False # Will do every version
+            check_last_version = False  # Will do every version
     else:
         last_version = convert_version_string(options.last_version, False)
         check_last_version = True
@@ -95,7 +108,7 @@ if __name__ == "__main__":
         if line.rstrip() == last_version and last_version != "":
             # We've fully updated, stop here
             break
-        elif re.search("^## [0-9]{3}\.[0-9]{3}\.[0-9]{3}", line):
+        elif re.search(r"^## [0-9]{3}\.[0-9]{3}\.[0-9]{3}", line):
             # New version
             new_lines_out += [get_header(line.rstrip())]
         elif line == "\n":
@@ -110,7 +123,5 @@ if __name__ == "__main__":
 
     new_lines_out += lines_out
 
-    g = open(options.output_file, "w")
-    for line in new_lines_out:
-        g.write(line)
-    g.close()
+    with open(options.output_file, "w", newline="\n") as g:
+        g.writelines(new_lines_out)
