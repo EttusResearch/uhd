@@ -1,75 +1,60 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright 2014 Ettus Research LLC
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-"""
-Command-line utility to create a .zip-file with the current image set.
-"""
+"""Command-line utility to create a .zip-file with the current image set."""
 
-import sys
-import re
-import os
-import subprocess
 import argparse
+import os
+import re
 import shutil
+import subprocess
+import sys
+
 import populate_images
 
+
 def parse_args():
-    """ Parse args, duh """
+    """Parse args, duh."""
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--version',
-        help="Specify version. Will detect from tag otherwise."
-    )
+    parser.add_argument("--version", help="Specify version. Will detect from tag otherwise.")
     return parser.parse_args()
 
+
 def download_images(img_root_dir):
-    """
-    Run the images downloader
-    """
+    """Run the images downloader."""
     populate_images.download_images(img_root_dir)
 
+
 def get_version():
-    """
-    Figure out version based on tag.
-    """
+    """Figure out version based on tag."""
     try:
-        git_cmd = ['git', 'describe', '--abbrev=0', '--tags']
-        git_output = subprocess.check_output(git_cmd).decode('UTF-8')
+        git_cmd = ["git", "describe", "--abbrev=0", "--tags"]
+        git_output = subprocess.check_output(git_cmd).decode("UTF-8")
     except subprocess.CalledProcessError as ex:
-        print(ex.output)
+        print((ex.output))
         sys.exit(1)
-    print("Detected tag: {}".format(git_output))
-    version_mobj = re.search(r'[0-9]+\.[0-9]+\.[0-9]+\.[0-9]', git_output)
+    print(("Detected tag: {}".format(git_output)))
+    version_mobj = re.search(r"[0-9]+\.[0-9]+\.[0-9]+\.[0-9]", git_output)
     if version_mobj is None:
         print("Error: Failure to resolve version from tag!")
         sys.exit(1)
     return version_mobj.group(0)
 
+
 def main():
-    """ Go, go, go! """
+    """Go, go, go."""
     args = parse_args()
-    img_root_dir = os.path.join(populate_images.get_images_dir(), 'images')
-    print("== Clearing out the images directory at {}, if present...".format(img_root_dir))
+    img_root_dir = os.path.join(populate_images.get_images_dir(), "images")
+    print(f"== Clearing out the images directory at {img_root_dir}, if present...")
     shutil.rmtree(img_root_dir, ignore_errors=True)
     print("== Downloading images...")
     download_images(img_root_dir)
     print("== Determining version...")
     version = args.version if args.version is not None else get_version()
-    print("Version string: {}".format(version))
+    print(f"Version string: {version}")
     print("== Creating archives...")
     archive_cmd = ["./make_zip.sh", version]
     try:
@@ -78,6 +63,7 @@ def main():
         print(ex.output)
         sys.exit(1)
     print("== Done!")
+
 
 if __name__ == "__main__":
     main()
