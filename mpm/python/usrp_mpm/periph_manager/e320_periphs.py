@@ -8,6 +8,7 @@ E320 peripherals
 """
 
 import math
+import time
 from usrp_mpm.sys_utils.sysfs_gpio import SysFSGPIO, GPIOBank
 from usrp_mpm.periph_manager.common import MboardRegsCommon
 
@@ -278,12 +279,23 @@ class MboardRegsControl(MboardRegsCommon):
         self.log.trace("{} power to GPS".format(
             "Enabling" if enable else "Disabling"
         ))
-        mask = 0xFFFFFFFF ^ (0b1 << self.MB_GPS_CTRL_PWR_EN)
+        pwr_en_mask = (0b1 << self.MB_GPS_CTRL_PWR_EN)
+        rstn_mask = (0b1 << self.MB_GPS_CTRL_RST_N)
+        enabled_mask = pwr_en_mask | rstn_mask
         with self.regs:
-            reg_val = self.peek32(self.MB_GPS_CTRL) & mask
-            reg_val = reg_val | (enable << self.MB_GPS_CTRL_PWR_EN)
-            self.log.trace("Writing MB_GPS_CTRL to 0x{:08X}".format(reg_val))
-            return self.poke32(self.MB_GPS_CTRL, reg_val)
+            cur_reg_val = self.peek32(self.MB_GPS_CTRL)
+            if enable and (cur_reg_val & enabled_mask != enabled_mask):
+                # First bring up supply, then bring out of reset
+                self.log.trace("Writing MB_GPS_CTRL to 0x{:08X}".format(pwr_en_mask))
+                self.poke32(self.MB_GPS_CTRL, pwr_en_mask)
+                time.sleep(0.001) # 1 ms
+
+                self.log.trace("Writing MB_GPS_CTRL to 0x{:08X}".format(enabled_mask))
+                return self.poke32(self.MB_GPS_CTRL, enabled_mask)
+            elif not enable:
+                # All controls pins low to avoid backfeeding I/O pins when unpowered
+                self.log.trace("Writing MB_GPS_CTRL to 0x{:08X}".format(0))
+                return self.poke32(self.MB_GPS_CTRL, 0)
 
     def get_refclk_lock(self):
         """
