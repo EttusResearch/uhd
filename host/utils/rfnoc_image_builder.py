@@ -31,17 +31,34 @@ from uhd.imgbuilder import grc, image_builder, yaml_utils
 class CustomFormatter(logging.Formatter):
     """Logging Formatter to add colors and icons."""
 
-    grey = "\x1b[38;20m"
-    black = "\x1b[30;20m"
-    yellow = "\x1b[33;20m"
-    red = "\x1b[31;20m"
-    reset = "\x1b[0m"
+    RESET = 0
+    BOLD = 1
+    DIM = 2
+    GREY = "38;20"
+    BLACK = "30;20"
+    YELLOW = "33;20"
+    RED = "31;20"
+    BRIGHTRED = 91
+    BRIGHT = 99
+
+    @staticmethod
+    def c(colors):
+        """Format escape sequence from list of colors."""
+        return f"\x1b[{';'.join(str(c) for c in colors)}m"
+
+    debug_color = c([DIM])
+    info_color = c([BRIGHT, BOLD])
+    warning_color = c([YELLOW])
+    error_color = c([BRIGHTRED])
+    crit_color = c([RED, BOLD])
+    reset = c([RESET])
+
     FORMATS = {
-        logging.DEBUG: grey + "[debug] %(message)s" + reset,
-        logging.INFO: black + "%(message)s" + reset,
-        logging.WARNING: yellow + "⚠   %(message)s" + reset,
-        logging.ERROR: red + "⛔   %(message)s" + reset,
-        logging.CRITICAL: red + "⛔   %(message)s" + reset,
+        logging.DEBUG: debug_color + "[debug] %(message)s" + reset,
+        logging.INFO: info_color + "%(message)s" + reset,
+        logging.WARNING: warning_color + "⚠   %(message)s" + reset,
+        logging.ERROR: error_color + "⛔   %(message)s" + reset,
+        logging.CRITICAL: crit_color + "⛔   %(message)s" + reset,
     }
 
     def format(self, record):
