@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""
+"""RFNoC Image Builder: Create RFNoC FPGA bitfiles from YAML input.
+
 Copyright 2019 Ettus Research, A National Instrument Brand
 
 This program is free software: you can redistribute it and/or modify
@@ -24,11 +25,12 @@ import re
 import sys
 
 import yaml
+from uhd.imgbuilder import grc, image_builder, yaml_utils
 
-#logging.basicConfig(format='[%(levelname).3s] %(message)s')
 
 class CustomFormatter(logging.Formatter):
     """Logging Formatter to add colors and icons."""
+
     grey = "\x1b[38;20m"
     black = "\x1b[30;20m"
     yellow = "\x1b[33;20m"
@@ -41,7 +43,9 @@ class CustomFormatter(logging.Formatter):
         logging.ERROR: red + "⛔   %(message)s" + reset,
         logging.CRITICAL: red + "⛔   %(message)s" + reset,
     }
+
     def format(self, record):
+        """Format a record the way we like it."""
         log_fmt = self.FORMATS.get(record.levelno)
         return logging.Formatter(log_fmt).format(record)
 
@@ -53,11 +57,6 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(handler)
 
 
-from uhd.imgbuilder import image_builder
-from uhd.imgbuilder import yaml_utils
-from uhd.imgbuilder import grc
-
-
 def setup_parser():
     """Create argument parser."""
     parser = argparse.ArgumentParser(
@@ -65,64 +64,72 @@ def setup_parser():
     )
 
     config_group = parser.add_mutually_exclusive_group(required=True)
-    config_group.add_argument(
-        "-y", "--yaml-config",
-        help="Path to yml configuration file")
-    config_group.add_argument(
-        "-r", "--grc-config",
-        help="Path to grc file to generate config from")
+    config_group.add_argument("-y", "--yaml-config", help="Path to yml configuration file")
+    config_group.add_argument("-r", "--grc-config", help="Path to grc file to generate config from")
     parser.add_argument(
-        "-F", "--fpga-dir",
+        "-F",
+        "--fpga-dir",
         help="Path to directory for the FPGA source tree. "
-             "Defaults to the FPGA source tree of the current repo.",
+        "Defaults to the FPGA source tree of the current repo.",
         required=False,
-        default=None)
+        default=None,
+    )
     parser.add_argument(
-        "-B", "--build-dir",
+        "-B",
+        "--build-dir",
         help="Path to directory where the image core and and build artifacts will be generated. "
-             "Defaults to build-<image-core-name> in the same directory as the source file.",
+        "Defaults to build-<image-core-name> in the same directory as the source file.",
         required=False,
-        default=None)
+        default=None,
+    )
     parser.add_argument(
-        "-O", "--build-output-dir",
+        "-O",
+        "--build-output-dir",
         help="Path to directory for final FPGA build outputs. "
-             "Defaults to the FPGA's top-level directory + /build",
+        "Defaults to the FPGA's top-level directory + /build",
         required=False,
-        default=None)
+        default=None,
+    )
     parser.add_argument(
-        "-E", "--build-ip-dir",
+        "-E",
+        "--build-ip-dir",
         help="Path to directory for IP build artifacts. "
-             "Defaults to the FPGA's top-level directory + /build-ip",
+        "Defaults to the FPGA's top-level directory + /build-ip",
         required=False,
-        default=None)
+        default=None,
+    )
     parser.add_argument(
-        "-o", "--image-core-output",
-        help="DEPRECATED! This has been replaced by --build-dir. ")
+        "-o", "--image-core-output", help="DEPRECATED! This has been replaced by --build-dir. "
+    )
     parser.add_argument(
-        "-x", "--router-hex-output",
-        help="DEPRECATED! This option will be ignored. ",
-        default=None)
+        "-x", "--router-hex-output", help="DEPRECATED! This option will be ignored. ", default=None
+    )
     parser.add_argument(
-        "-I", "--include-dir",
+        "-I",
+        "--include-dir",
         help="Path to directory of the RFNoC Out-of-Tree module",
-        action='append', default=[]
-        )
+        action="append",
+        default=[],
+    )
     parser.add_argument(
-        "-b", "--grc-blocks",
+        "-b",
+        "--grc-blocks",
         help="Path to directory of GRC block descriptions (needed for --grc-config only)",
-        default=None)
+        default=None,
+    )
+    parser.add_argument("-l", "--log-level", help="Adjust log level", default="info")
     parser.add_argument(
-        "-l", "--log-level",
-        help="Adjust log level",
-        default='info')
-    parser.add_argument(
-        "-R", "--reuse",
+        "-R",
+        "--reuse",
         help="Reuse existing files (do not regenerate image core).",
-        action="store_true")
+        action="store_true",
+    )
     parser.add_argument(
-        "-G", "--generate-only",
+        "-G",
+        "--generate-only",
         help="Just generate files without building the FPGA",
-        action="store_true")
+        action="store_true",
+    )
     parser.add_argument(
         "-W",
         "--ignore-warnings",
@@ -133,64 +140,73 @@ def setup_parser():
         "-S",
         "--secure-core",
         help="Build a secure image core instead of a bitfile. "
-             "This argument provides the name of the generated YAML.",
-        )
+        "This argument provides the name of the generated YAML.",
+    )
     parser.add_argument(
-        "-K", "--secure-key",
+        "-K",
+        "--secure-key",
         help="Path to encryption key file to use for secure core.",
         default="",
-        )
+    )
     parser.add_argument(
-        "-d", "--device",
+        "-d",
+        "--device",
         help="Device to be programmed [x300, x310, e310, e320, n300, n310, n320, x410, x440]. "
-             "Needs to be specified either here, or in the configuration file.",
-        default=None)
+        "Needs to be specified either here, or in the configuration file.",
+        default=None,
+    )
     parser.add_argument(
-        "-n", "--image_core_name",
+        "-n",
+        "--image_core_name",
         help="Name to use for the RFNoC image core. "
-             "Defaults to name of the image core YML file, without the extension.",
-        default=None)
+        "Defaults to name of the image core YML file, without the extension.",
+        default=None,
+    )
     parser.add_argument(
-        "-t", "--target",
+        "-t",
+        "--target",
         help="Build target (e.g. X310_HG, N320_XG, ...). Needs to be specified "
-             "either here, on the configuration file.",
-        default=None)
+        "either here, on the configuration file.",
+        default=None,
+    )
     parser.add_argument(
-        "-g", "--GUI",
-        help="Open Vivado GUI during the FPGA building process",
-        action="store_true")
+        "-g", "--GUI", help="Open Vivado GUI during the FPGA building process", action="store_true"
+    )
     parser.add_argument(
-        "-s", "--save-project",
-        help="Save Vivado project to disk",
-        action="store_true")
+        "-s", "--save-project", help="Save Vivado project to disk", action="store_true"
+    )
+    parser.add_argument("-P", "--ip-only", help="Build only the required IPs", action="store_true")
     parser.add_argument(
-        "-P", "--ip-only",
-        help="Build only the required IPs",
-        action="store_true")
-    parser.add_argument(
-        "-j", "--jobs",
+        "-j",
+        "--jobs",
         help="Number of parallel jobs to use with make",
         required=False,
-        default=None)
+        default=None,
+    )
     parser.add_argument(
-        "-c", "--clean-all",
-        help="Cleans the IP before a new build",
-        action="store_true")
+        "-c", "--clean-all", help="Cleans the IP before a new build", action="store_true"
+    )
     parser.add_argument(
-        "-p", "--vivado-path",
+        "-p",
+        "--vivado-path",
         help="Path to the base install for Xilinx Vivado if not in default "
-             "location (e.g., /tools/Xilinx/Vivado).",
-        default=None)
+        "location (e.g., /tools/Xilinx/Vivado).",
+        default=None,
+    )
     parser.add_argument(
-        "-H", "--no-hash",
+        "-H",
+        "--no-hash",
         help="Do not include source YAML hash in the generated source code.",
         action="store_true",
-        default=False)
+        default=False,
+    )
     parser.add_argument(
-        "-D", "--no-date",
+        "-D",
+        "--no-date",
         help="Do not include date or time in the generated source code.",
         action="store_true",
-        default=False)
+        default=False,
+    )
 
     return parser
 
@@ -206,13 +222,15 @@ def image_config(args):
     """
     if args.yaml_config:
         config = yaml_utils.load_config_validate(args.yaml_config, get_config_path(), True)
-        device = config.get('device') if args.device is None else args.device
-        target = config.get('default_target') if args.target is None else args.target
-        image_core_name = config.get('image_core_name') if args.image_core_name is None else args.image_core_name
+        device = config.get("device") if args.device is None else args.device
+        target = config.get("default_target") if args.target is None else args.target
+        image_core_name = (
+            config.get("image_core_name") if args.image_core_name is None else args.image_core_name
+        )
         if image_core_name is None:
             image_core_name = os.path.splitext(os.path.basename(args.yaml_config))[0]
         return config, args.yaml_config, device, image_core_name, target
-    with open(args.grc_config, encoding='utf-8') as grc_file:
+    with open(args.grc_config, encoding="utf-8") as grc_file:
         config = yaml.load(grc_file)
         logging.info("Converting GNU Radio Companion file to image builder format")
         config = grc.convert_to_image_config(config, args.grc_blocks)
@@ -253,14 +271,14 @@ def get_fpga_path(args):
     while True:
         repo_base = os.path.split(repo_base)[0]
         top_dir = os.path.split(repo_base)[1]
-        if top_dir == 'uhd' or top_dir == 'uhddev':
-            fpga_path = os.path.join(repo_base, 'fpga')
+        if top_dir == "uhd" or top_dir == "uhddev":
+            fpga_path = os.path.join(repo_base, "fpga")
             break
-        if top_dir == '':
+        if top_dir == "":
             fpga_path = None
             break
     # If it's valid FPGA base path, use that
-    if fpga_path and os.path.isdir(os.path.join(fpga_path, 'usrp3', 'top')):
+    if fpga_path and os.path.isdir(os.path.join(fpga_path, "usrp3", "top")):
         logging.info("Using FPGA directory %s", fpga_path)
         return fpga_path
     # No valid path found
@@ -277,8 +295,11 @@ def get_config_path():
 
     :return: Configuration path
     """
-    return os.path.normpath(resolve_path("@CONFIG_PATH@", os.path.join(
-        os.path.dirname(__file__), '..', 'include', 'uhd')))
+    return os.path.normpath(
+        resolve_path(
+            "@CONFIG_PATH@", os.path.join(os.path.dirname(__file__), "..", "include", "uhd")
+        )
+    )
 
 
 def main():
@@ -300,11 +321,12 @@ def main():
         logging.warning(
             "Using deprecated command line option --image-core-output (-o)! "
             "Use --build-dir instead."
-            "This option will be removed in future versions of UHD.")
+            "This option will be removed in future versions of UHD."
+        )
         if args.build_dir:
             logging.warning(
-                "Both --build-dir and --image-core-output are used. Ignoring "
-                "the latter.")
+                "Both --build-dir and --image-core-output are used. Ignoring the latter."
+            )
         else:
             args.build_dir = args.image_core_output
 
@@ -341,7 +363,7 @@ def main():
         num_jobs=args.jobs,
         secure_core=args.secure_core,
         secure_key_file=args.secure_key,
-        )
+    )
 
 
 if __name__ == "__main__":
