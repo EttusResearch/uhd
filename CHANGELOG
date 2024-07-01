@@ -115,7 +115,7 @@ Change Log for Releases
    docker container definitions in the UHD repository at .ci/docker/...)
   - Linux:
     - Ubuntu: bionic (18.04), focal (20.04), jammy (22.04), noble (24.04)
-    - Fedora: 34, 35, 36
+    - Fedora: 37, 38
   - Windows: 10 21H2, 11 21H2
   - MacOS: Monterey (12.6)
 
