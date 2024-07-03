@@ -37,6 +37,7 @@ RUN apt-get update && \
         python3-numpy \
         python3-pip \
         python3-requests \
+        pybind11-dev \
     # Install deb dependencies
         debootstrap \
         devscripts \
@@ -65,5 +66,9 @@ RUN apt-get update && \
         python3-zmq \
         python3-scipy \
         python3-gi-cairo \
+        python3-pygccxml \
+        python3-jsonschema \
+        libspdlog-dev \
+        libsndfile1-dev \
         && \
     rm -rf /var/lib/apt/lists/*

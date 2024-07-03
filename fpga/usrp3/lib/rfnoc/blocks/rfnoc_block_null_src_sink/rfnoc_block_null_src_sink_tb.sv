@@ -235,13 +235,20 @@ module rfnoc_block_null_src_sink_tb #(
       for (int p = 0; p < rvalue; p++) begin
         chdr_word_t exp_data[$];
         chdr_word_t rx_data[$];
+        chdr_word_t   metadata[$];
+        packet_info_t pkt_info;
         int rx_bytes;
         test.start_timeout(timeout, 5us, "Waiting for pkt to arrive");
         exp_data.delete();
         for (int i = p*LPP; i < (p+1)*LPP; i++)
           exp_data.push_back({NIPC{{~i[ITEM_W/2-1:0], i[ITEM_W/2-1:0]}}});
-        blk_ctrl.recv(PORT_SRCSNK, rx_data, rx_bytes);
+        blk_ctrl.recv_adv(PORT_SRCSNK, rx_data, rx_bytes, metadata, pkt_info);
         `ASSERT_ERROR(blk_ctrl.compare_data(exp_data, rx_data), "Data mismatch");
+        if (p == rvalue-1) begin
+           `ASSERT_ERROR(pkt_info.eob == 1, "EOB was not set on last packet from source");
+        end else begin
+           `ASSERT_ERROR(pkt_info.eob == 0, "EOB was set on middle packet from source");
+        end
         test.end_timeout(timeout);
       end
     end

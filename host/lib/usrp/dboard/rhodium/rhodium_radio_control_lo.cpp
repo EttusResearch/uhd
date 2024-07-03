@@ -302,7 +302,7 @@ void rhodium_radio_control_impl::set_rx_lo_source(
     _rx_lo_source = src;
 }
 
-const std::string rhodium_radio_control_impl::get_tx_lo_source(
+std::string rhodium_radio_control_impl::get_tx_lo_source(
     const std::string& name, const size_t chan)
 {
     RFNOC_LOG_TRACE("get_tx_lo_source(name=" << name << ", chan=" << chan << ")");
@@ -311,7 +311,7 @@ const std::string rhodium_radio_control_impl::get_tx_lo_source(
     return (name == RHODIUM_LO1 or name == ALL_LOS) ? _tx_lo_source : "internal";
 }
 
-const std::string rhodium_radio_control_impl::get_rx_lo_source(
+std::string rhodium_radio_control_impl::get_rx_lo_source(
     const std::string& name, const size_t chan)
 {
     RFNOC_LOG_TRACE("get_rx_lo_source(name=" << name << ", chan=" << chan << ")");

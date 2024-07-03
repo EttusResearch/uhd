@@ -26,7 +26,7 @@ module hb_dec
      output reg [WIDTH-1:0] data_out);
 
    localparam INTWIDTH = 17;
-   localparam ACCWIDTH = WIDTH + 3;
+   localparam ACCWIDTH = 36;
 
    // Round off inputs to 17 bits because of 18 bit multipliers
    wire [INTWIDTH-1:0] 	     data_rnd;
@@ -174,20 +174,30 @@ module hb_dec
    always @(posedge clk) sum_of_prod <= prod1 + prod2;   // Can't overflow
 
    wire [ACCWIDTH-1:0] 	acc_out;
-   acc #(.IWIDTH(ACCWIDTH-2),.OWIDTH(ACCWIDTH))
-     acc (.clk(clk),.clear(clear),.acc(do_acc),.in(sum_of_prod[35:38-ACCWIDTH]),.out(acc_out));
+   acc #(.IWIDTH(36),.OWIDTH(ACCWIDTH))
+     acc (.clk(clk),.clear(clear),.acc(do_acc),.in(sum_of_prod),.out(acc_out));
 
-   wire [ACCWIDTH-1:0] 	data_even_signext;
+   wire [WIDTH:0] acc_out_rnd;
+   round #(
+     .bits_in(ACCWIDTH),
+     .bits_out(WIDTH+1)
+   ) round_acc (
+     .in(acc_out),
+     .out(acc_out_rnd)
+   );
 
-   localparam SHIFT_FACTOR = 6;
+   wire [WIDTH:0]     data_even_signext;
 
-   sign_extend #(.bits_in(INTWIDTH),.bits_out(ACCWIDTH-SHIFT_FACTOR)) signext_data_even
-     (.in(data_even),.out(data_even_signext[ACCWIDTH-1:SHIFT_FACTOR]));
-   assign 		data_even_signext[SHIFT_FACTOR-1:0] = 0;
+   localparam SHIFT_FACTOR = 17 - (ACCWIDTH - (WIDTH+1));
 
-   always @(posedge clk) final_sum <= acc_out + data_even_signext;
+   sign_extend #(.bits_in(INTWIDTH),.bits_out(WIDTH+1-SHIFT_FACTOR)) signext_data_even
+     (.in(data_even),.out(data_even_signext[WIDTH:SHIFT_FACTOR]));
+   assign       data_even_signext[SHIFT_FACTOR-1:0] = 0;
 
-   clip #(.bits_in(WIDTH+1), .bits_out(WIDTH)) clip (.in(final_sum), .out(final_sum_clip));
+   always @(posedge clk) final_sum <= acc_out_rnd + data_even_signext;
+
+   clip #(.bits_in(WIDTH+1),.bits_out(WIDTH)) clip_finalsum
+     (.in(final_sum), .out(final_sum_clip));
 
    // Output MUX to allow for bypass
    wire 		selected_stb = bypass ? stb_in : stb_out_pre[8];

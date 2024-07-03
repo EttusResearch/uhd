@@ -44,7 +44,7 @@ double range_t::step(void) const
     return _step;
 }
 
-const std::string range_t::to_pp_string(void) const
+std::string range_t::to_pp_string(void) const
 {
     std::stringstream ss;
     ss << "(" << this->start();
@@ -190,7 +190,7 @@ double meta_range_t::clip(double value, bool clip_step) const
     return last_stop;
 }
 
-const std::string meta_range_t::to_pp_string(void) const
+std::string meta_range_t::to_pp_string(void) const
 {
     std::stringstream ss;
     for (const range_t& r : (*this)) {

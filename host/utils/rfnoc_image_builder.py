@@ -16,23 +16,50 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import sys
 import argparse
 import hashlib
 import logging
 import os
 import re
+import sys
+
 import yaml
 
-logging.basicConfig(format='[%(levelname).3s] %(message)s')
+#logging.basicConfig(format='[%(levelname).3s] %(message)s')
+
+class CustomFormatter(logging.Formatter):
+    """Logging Formatter to add colors and icons."""
+    grey = "\x1b[38;20m"
+    black = "\x1b[30;20m"
+    yellow = "\x1b[33;20m"
+    red = "\x1b[31;20m"
+    reset = "\x1b[0m"
+    FORMATS = {
+        logging.DEBUG: grey + "[debug] %(message)s" + reset,
+        logging.INFO: black + "%(message)s" + reset,
+        logging.WARNING: yellow + "⚠   %(message)s" + reset,
+        logging.ERROR: red + "⛔   %(message)s" + reset,
+        logging.CRITICAL: red + "⛔   %(message)s" + reset,
+    }
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno)
+        return logging.Formatter(log_fmt).format(record)
+
+
+handler = logging.StreamHandler()
+handler.setFormatter(CustomFormatter())
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+logger.addHandler(handler)
+
 
 from uhd.imgbuilder import image_builder
 from uhd.imgbuilder import yaml_utils
+from uhd.imgbuilder import grc
+
 
 def setup_parser():
-    """
-    Create argument parser
-    """
+    """Create argument parser."""
     parser = argparse.ArgumentParser(
         description="Build UHD image using RFNoC blocks",
     )
@@ -51,32 +78,68 @@ def setup_parser():
         required=False,
         default=None)
     parser.add_argument(
-        "-o", "--image-core-output",
-        help="Path to where to save the image core Verilog source. "
-             "Defaults to the directory of the YAML file, filename <DEVICE>_rfnoc_image_core.v",
+        "-B", "--build-dir",
+        help="Path to directory where the image core and and build artifacts will be generated. "
+             "Defaults to build-<image-core-name> in the same directory as the source file.",
+        required=False,
         default=None)
     parser.add_argument(
+        "-O", "--build-output-dir",
+        help="Path to directory for final FPGA build outputs. "
+             "Defaults to the FPGA's top-level directory + /build",
+        required=False,
+        default=None)
+    parser.add_argument(
+        "-E", "--build-ip-dir",
+        help="Path to directory for IP build artifacts. "
+             "Defaults to the FPGA's top-level directory + /build-ip",
+        required=False,
+        default=None)
+    parser.add_argument(
+        "-o", "--image-core-output",
+        help="DEPRECATED! This has been replaced by --build-dir. ")
+    parser.add_argument(
         "-x", "--router-hex-output",
-        help="Path to where to save the static router hex file. "
-             "Defaults to the directory of the YAML file, filename <DEVICE>_static_router.hex",
+        help="DEPRECATED! This option will be ignored. ",
         default=None)
     parser.add_argument(
         "-I", "--include-dir",
-        help="Path directory of the RFNoC Out-of-Tree module",
+        help="Path to directory of the RFNoC Out-of-Tree module",
         action='append', default=[]
         )
     parser.add_argument(
         "-b", "--grc-blocks",
-        help="Path directory of GRC block descriptions (needed for --grc-config only)",
+        help="Path to directory of GRC block descriptions (needed for --grc-config only)",
         default=None)
     parser.add_argument(
         "-l", "--log-level",
         help="Adjust log level",
         default='info')
     parser.add_argument(
-        "-G", "--generate-only",
-        help="Just generate files without building IP",
+        "-R", "--reuse",
+        help="Reuse existing files (do not regenerate image core).",
         action="store_true")
+    parser.add_argument(
+        "-G", "--generate-only",
+        help="Just generate files without building the FPGA",
+        action="store_true")
+    parser.add_argument(
+        "-W",
+        "--ignore-warnings",
+        help="Run build even when there are warnings in the build process",
+        action="store_true",
+    )
+    parser.add_argument(
+        "-S",
+        "--secure-core",
+        help="Build a secure image core instead of a bitfile. "
+             "This argument provides the name of the generated YAML.",
+        )
+    parser.add_argument(
+        "-K", "--secure-key",
+        help="Path to encryption key file to use for secure core.",
+        default="",
+        )
     parser.add_argument(
         "-d", "--device",
         help="Device to be programmed [x300, x310, e310, e320, n300, n310, n320, x410, x440]. "
@@ -85,7 +148,7 @@ def setup_parser():
     parser.add_argument(
         "-n", "--image_core_name",
         help="Name to use for the RFNoC image core. "
-             "Defaults to the device name.",
+             "Defaults to name of the image core YML file, without the extension.",
         default=None)
     parser.add_argument(
         "-t", "--target",
@@ -96,6 +159,19 @@ def setup_parser():
         "-g", "--GUI",
         help="Open Vivado GUI during the FPGA building process",
         action="store_true")
+    parser.add_argument(
+        "-s", "--save-project",
+        help="Save Vivado project to disk",
+        action="store_true")
+    parser.add_argument(
+        "-P", "--ip-only",
+        help="Build only the required IPs",
+        action="store_true")
+    parser.add_argument(
+        "-j", "--jobs",
+        help="Number of parallel jobs to use with make",
+        required=False,
+        default=None)
     parser.add_argument(
         "-c", "--clean-all",
         help="Cleans the IP before a new build",
@@ -120,8 +196,7 @@ def setup_parser():
 
 
 def image_config(args):
-    """
-    Load image configuration.
+    """Load image configuration.
 
     The configuration can be either passed as RFNoC image configuration or as
     GNU Radio Companion grc. In latter case the grc files is converted into a
@@ -130,24 +205,24 @@ def image_config(args):
     :return: image configuration as dictionary
     """
     if args.yaml_config:
-        config = yaml_utils.load_config(args.yaml_config, get_config_path())
+        config = yaml_utils.load_config_validate(args.yaml_config, get_config_path(), True)
         device = config.get('device') if args.device is None else args.device
         target = config.get('default_target') if args.target is None else args.target
         image_core_name = config.get('image_core_name') if args.image_core_name is None else args.image_core_name
         if image_core_name is None:
-            image_core_name = device
+            image_core_name = os.path.splitext(os.path.basename(args.yaml_config))[0]
         return config, args.yaml_config, device, image_core_name, target
-    with open(args.grc_config) as grc_file:
+    with open(args.grc_config, encoding='utf-8') as grc_file:
         config = yaml.load(grc_file)
         logging.info("Converting GNU Radio Companion file to image builder format")
-        config = image_builder.convert_to_image_config(config, args.grc_blocks)
+        config = grc.convert_to_image_config(config, args.grc_blocks)
         image_core_name = args.device if args.image_core_name is None else args.image_core_name
         return config, args.grc_config, args.device, image_core_name, args.target
 
 
 def resolve_path(path, local):
-    """
-    Replaced path by local if path is enclosed with "@" (placeholder markers)
+    """Replace path by local if path is enclosed with "@" (placeholder markers).
+
     :param path: the path to check
     :param local: new path content if path is placeholder
     :return: path if path is not a placeholder else local
@@ -156,8 +231,9 @@ def resolve_path(path, local):
 
 
 def get_fpga_path(args):
-    """
-    Returns FPGA path. This is the fpga_dir from the arguments. If fpga_dir
+    """Return FPGA path.
+
+    This is the fpga_dir from the arguments. If fpga_dir
     does not exist, it is changed to the FPGA source path of the current repo.
     If current directory is not in a repo, an error is generated.
     :param args: arguments passed to the script
@@ -193,9 +269,12 @@ def get_fpga_path(args):
 
 
 def get_config_path():
-    """
-    Returns path that contains configurations files (yml descriptions for
-    block, IO signatures and device bsp).
+    """Return path that contains configurations files.
+
+    Will return the directory path where the YAML configuration files are stored
+    (yml descriptions for block, IO signatures and device bsp, not the image
+    core files).
+
     :return: Configuration path
     """
     return os.path.normpath(resolve_path("@CONFIG_PATH@", os.path.join(
@@ -203,8 +282,8 @@ def get_config_path():
 
 
 def main():
-    """
-    Wrapper for image_builder.build_image.
+    """Run image_builder.build_image.
+
     :return: exit code
     """
     args = setup_parser().parse_args()
@@ -216,25 +295,54 @@ def main():
     with open(source, "rb") as source_file:
         source_hash.update(source_file.read())
 
-    image_builder.build_image(
+    # Do some more sanitization of command line arguments
+    if args.image_core_output:
+        logging.warning(
+            "Using deprecated command line option --image-core-output (-o)! "
+            "Use --build-dir instead."
+            "This option will be removed in future versions of UHD.")
+        if args.build_dir:
+            logging.warning(
+                "Both --build-dir and --image-core-output are used. Ignoring "
+                "the latter.")
+        else:
+            args.build_dir = args.image_core_output
+
+    return image_builder.build_image(
+        # This is the big config object
         config=config,
-        fpga_path=get_fpga_path(args),
-        config_path=get_config_path(),
+        # Sanitized device ID string (e.g., x410, n320, ...)
         device=device,
+        # Build target info
         image_core_name=image_core_name,
         target=target,
-        generate_only=args.generate_only,
-        clean_all=args.clean_all,
-        GUI=args.GUI,
+        # Image core source file info
         source=source,
         source_hash=source_hash.hexdigest(),
-        output_path=args.image_core_output,
-        router_hex_path=args.router_hex_output,
-        include_paths=args.include_dir,
-        vivado_path=args.vivado_path,
         no_date=args.no_date,
         no_hash=args.no_hash,
+        # Provide all the paths
+        build_dir=args.build_dir,
+        build_output_dir=args.build_output_dir,
+        build_ip_dir=args.build_ip_dir,
+        repo_fpga_path=get_fpga_path(args),
+        config_path=get_config_path(),
+        yaml_path=args.yaml_config if args.yaml_config else args.grc_config,
+        include_paths=args.include_dir,
+        vivado_path=args.vivado_path,
+        # Various build config parameters
+        reuse=args.reuse,
+        generate_only=args.generate_only,
+        continue_on_warnings=args.ignore_warnings,
+        clean_all=args.clean_all,
+        GUI=args.GUI,
+        save_project=args.save_project,
+        ip_only=args.ip_only,
+        num_jobs=args.jobs,
+        secure_core=args.secure_core,
+        secure_key_file=args.secure_key,
         )
+
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -62,6 +62,8 @@ class MboardRegsControl(MboardRegsCommon):
     CURRENT_VERSION_OFFSET           = 0x0
     OLDEST_COMPATIBLE_VERSION_OFFSET = 0x4
     VERSION_LAST_MODIFIED_OFFSET     = 0x8
+    # Device DNA
+    MB_DEVICE_DNA_BASE = 0x0100
     # Timekeeper registers start at 0x1000 (see MboardRegsCommon)
 
     # Clock control register bit masks
@@ -125,6 +127,19 @@ class MboardRegsControl(MboardRegsCommon):
         major = (version >> 23) & 0x1FF
         minor = (version >> 12) & 0x7FF
         return (major, minor)
+
+    def get_device_dna(self):
+        """
+        Read back the device DNA from 3 separate peeks, and return it as a
+        string, hex representation.
+        """
+        dna_0 = self.peek32(self.MB_DEVICE_DNA_BASE)
+        dna_32 = self.peek32(self.MB_DEVICE_DNA_BASE+4)
+        dna_64 = self.peek32(self.MB_DEVICE_DNA_BASE+8)
+        dna_str = f"{dna_64:08X}{dna_32:08X}{dna_0:08X}"
+        self.log.debug(f"DNA: {dna_str}")
+        return dna_str
+
 
     def get_db_gpio_ifc_version(self, slot_id):
         """

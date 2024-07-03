@@ -81,13 +81,14 @@ parameters:
   type: boolean
   displayName: Build x4xx image
   default: true
-- name: fpga_imgs_base_url
+- name: fpga_imgs_source
   type: string
   values:
   - 'files.ettus.com (Public)'
-  - 'Internal'
-  displayName: FPGA Images Base URL
-  default: 'Internal'
+  - 'Internal Repo'
+  - 'FPGA Pipeline'
+  displayName: FPGA Images Source
+  default: 'FPGA Pipeline'
 
 trigger: none
 
@@ -126,4 +127,4 @@ extends:
     build_e320: ${{ parameters.build_e320 }}
     build_n3xx: ${{ parameters.build_n3xx }}
     build_x4xx: ${{ parameters.build_x4xx }}
-    fpga_imgs_base_url: ${{ parameters.fpga_imgs_base_url }}
+    fpga_imgs_source: ${{ parameters.fpga_imgs_source }}

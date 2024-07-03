@@ -1,0 +1,7 @@
+{
+   "dependencies": [
+     "libusb",
+     "boost"
+   ],
+   "builtin-baseline": "af2287382b1991dbdcb7e5112d236f3323b9dd7a"
+ }

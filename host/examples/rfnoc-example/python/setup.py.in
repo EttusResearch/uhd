@@ -1,0 +1,34 @@
+#!/usr/bin/env python3
+#
+#  Copyright 2024 Ettus Research, a National Instruments Company
+#
+#  SPDX-License-Identifier: GPL-3.0-or-later
+#
+"""Setup file for rfnoc-example module"""
+
+from setuptools import setup, find_packages
+
+packages = find_packages()
+
+print("Including packages in rfnoc-example:", packages)
+
+setup(name='rfnoc_example',
+      version='${VERSION_MAJOR}.${VERSION_API}.${VERSION_ABI}',
+      description='rfnoc-example: An example module for RFNoC OOT Python support',
+      classifiers=[
+          'Development Status :: 4 - Beta',
+          'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+          'Programming Language :: C++',
+          'Programming Language :: Python',
+          'Topic :: System :: Hardware :: Hardware Drivers',
+      ],
+      keywords='SDR UHD USRP',
+      author='Ettus Research',
+      author_email='packages@ettus.com',
+      url='https://www.ettus.com/',
+      license='GPLv3',
+      package_dir={'': r'${NATIVE_CURRENT_BINARY_DIR}'},
+      package_data={'uhd': ['*.so']},
+      zip_safe=False,
+      packages=packages,
+      install_requires=[])

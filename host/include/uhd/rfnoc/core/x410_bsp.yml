@@ -1,27 +1,71 @@
 type: x410
 type_id: A400
 family: ULTRASCALE
-transports:
-# QSFP Ethernet Ports:
-- name: eth0
-  type: 10G
-  width: 64
-- name: eth1
-  type: 10G
-  width: 64
-- name: eth2
-  type: 10G
-  width: 64
-- name: eth3
-  type: 10G
-  width: 64
-- name: eth4
-  type: 10G
-  width: 64
-# ARM CPU:
-- name: dma
-  type: dma
-  width: 64
+
+parameters:
+  RF_BW: 200
+  ENABLE_DRAM: True
+  NUM_DRAM_BANKS: 1
+  NUM_DRAM_CHANS: 4
+  DRAM_WIDTH: 64
+
+checks:
+  - condition: ${int(parameters['RF_BW'] in [100, 200, 400])}
+    message: "RF_BW must be one of 100, 200, 400 (is: ${parameters['RF_BW']})."
+  - condition: ${not parameters['ENABLE_DRAM'] or int(parameters['NUM_DRAM_BANKS']) in [1, 2]}
+    message: "NUM_DRAM_BANKS must be 1 or 2 when enabling DRAM (is: ${parameters['NUM_DRAM_BANKS']})."
+  - condition: ${int(parameters['DRAM_WIDTH'] in [64, 128, 512])}
+    message: "DRAM_WIDTH must be one of 64, 128, 512 (is: ${parameters['DRAM_WIDTH']})."
+  - condition: ${0 <= int(parameters['NUM_DRAM_CHANS']) <= 8}
+    message: "NUM_DRAM_CHANS must be between 0 and 8 (is: ${parameters['NUM_DRAM_CHANS']})."
+  - condition: ${any(c['srcblk'] == "_device_" and c['srcport'] == "chdr_dma_m" for c in config.connections) and any(c['dstblk'] == "_device_" and c['dstport'] == "chdr_dma_s" for c in config.connections)}
+    message: |
+      The CHDR DMA is not connected,
+      which means the embedded processor will not be able to open a UHD connection
+      to the FPGA, nor will UHD communication over the RJ45 port work!
+      To fix this, add a CHDR DMA transport adapter to the image core,
+      and connect it to the corresponding IO ports:
+      transport_adapters:
+        dma:
+          block_desc : 'chdr_dma.yml'
+      connections:
+        - {srcblk: dma,       srcport: chdr_dma_s, dstblk: _device_, dstport: chdr_dma_s}
+        - {srcblk: _device_,  srcport: chdr_dma_m, dstblk: dma,      dstport: chdr_dma_m}
+    severity: warning
+  - condition: ${any(c['dstblk'] == "_device_" and c['dstport'] == "qsfp0" for c in config.connections) or any(c['dstblk'] == "_device_" and c['dstport'] == "qsfp1" for c in config.connections)}
+    message: |
+      Neither the QSFP0 nor QSFP1 ports are connected in the design. No
+      communication over the QSFP ports will be possible with this bitfile.
+      For example, to add a 100 GbE connection to QSFP0, add these lines:
+      transport_adapters:
+        eth_qsfp0:
+          block_desc : 'x4xx_eth.yml'
+          parameters:
+            port_type0: 5
+            port_type1: 0
+            port_type2: 0
+            port_type3: 0
+            qsfp_num: 0
+      connections:
+        - {srcblk: eth_qsfp0, srcport: qsfp,       dstblk: _device_, dstport: qsfp0   }
+    severity: warning
+
+make_defs:
+  - RF_BW=${parameters['RF_BW']}
+  - RF_CORE_${parameters['RF_BW']}M=1
+  - DRAM_BANKS=${0 if not parameters['ENABLE_DRAM'] else parameters['NUM_DRAM_BANKS']}
+  - DRAM_CH=${0 if not parameters['ENABLE_DRAM'] else parameters['NUM_DRAM_CHANS']}
+  - DRAM_W=${parameters['DRAM_WIDTH']}
+
+generate_dts: True
+dts_includes:
+  - x410-version-info.dtsi
+  - x410-fpga.dtsi
+  - x4xx-common.dtsi
+  - x410-rfdc.dtsi
+  # Strictly speaking, this one is for the DMA/CHDR transport adapter, but as
+  # the DMA engine is always instantiated, we include it here.
+  - x4xx-dma.dtsi
 
 # This describes available clocks from the BSP. Note that the indices are not
 # arbitrary: Making clock info fully discoverable through registers would be
@@ -59,15 +103,24 @@ io_ports:
   time:
     type: timekeeper
     drive: broadcaster
+  pps:
+    type: pps
+    drive: broadcaster
   radio0:
     type: radio
     drive: master
+    parameters:
+      spc: 4
+      num_ports: 2
     rename:
       pattern: (.*)
       repl: \1_radio0
   radio1:
     type: radio
     drive: master
+    parameters:
+      spc: 4
+      num_ports: 2
     rename:
       pattern: (.*)
       repl: \1_radio1
@@ -83,3 +136,48 @@ io_ports:
     rename:
       pattern: (.*)
       repl: dram1_\1
+  serial:
+    type: device_dna
+    drive: listener
+    parameters:
+      width: 96
+    required: recommended
+  qsfp0:
+    type: x4xx_qsfp
+    drive: slave
+    rename:
+      pattern: (.*)
+      repl: qsfp0_\1
+  qsfp1:
+    type: x4xx_qsfp
+    drive: slave
+    rename:
+      pattern: (.*)
+      repl: qsfp1_\1
+  chdr_dma_s:
+    type: axis_chdr
+    drive: slave
+    parameters:
+      width: ${ config.chdr_width }
+    rename:
+      pattern: (.*)
+      repl: s_dma_\1
+    required: recommended
+  chdr_dma_m:
+    type: axis_chdr
+    drive: master
+    parameters:
+      width: ${ config.chdr_width }
+    rename:
+      pattern: (.*)
+      repl: m_dma_\1
+    required: recommended
+
+default_secure_image_core:
+    modules:
+      device_dna:
+        block_desc: 'device_dna.yml'
+        parameters:
+          device_type: "ULTRASCALE"
+    connections:
+    - { srcblk: device_dna, srcport: device_dna, dstblk: _device_, dstport: serial}

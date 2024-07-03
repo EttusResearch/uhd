@@ -15,10 +15,16 @@ parameters:
   type: string
 - name: uhdArtifactSource
   type: string
+- name: uhdFpgaArtifactSource
+  type: string
+- name: fpga_imgs_source
+  type: string
 - name: redisHost
   type: string
 - name: dutMatrix
   type: object
+- name: vivado_dir
+  type: string
 
 jobs:
 - job: uhd_devtest_${{ parameters.suiteName }}_${{ parameters.testOS }}
@@ -56,6 +62,22 @@ jobs:
       fi
     displayName: Set uhddev pipeline artifact location
 
+  - script: |
+      if [ "${{ parameters.uhdFpgaArtifactSource }}" = "current" ]; then
+        echo '##vso[task.setvariable variable=uhd_fpga_artifact_directory]'$(Agent.BuildDirectory)
+      else
+        echo '##vso[task.setvariable variable=uhd_fpga_artifact_directory]'$(Agent.BuildDirectory)/${{ parameters.uhdFpgaArtifactSource }}
+      fi
+    displayName: Set uhddev FPGA pipeline artifact location
+    condition: and(succeeded(), and(in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'), ne(variables.devType, 'b200')))
+
+  - script: |
+      if [ ! -z "${{ parameters.uhdFpgaArtifactSource }}" ]; then
+        rm -rf $(Agent.BuildDirectory)/${{ parameters.uhdFpgaArtifactSource }}
+      fi
+    displayName: Cleanup from prior run
+    condition: and(succeeded(), in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'), ne(variables.devType, 'b200'))
+
   - download: ${{ parameters.uhdArtifactSource }}
     artifact: uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
     displayName: Download uhddev-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
@@ -86,6 +108,20 @@ jobs:
     displayName: Download $(devType)-images artifact
     condition: and(succeeded(), eq(variables.devModel, 'e320'))
 
+  - download: ${{ parameters.uhdFpgaArtifactSource }}
+    patterns: |
+      usrp_$(devModel)*.bit
+      usrp_$(devModel)*.dts
+      usrp_$(devModel)*.rpt
+    displayName: Download FPGA artifacts
+    condition: and(succeeded(), and(in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'), ne(variables.devType, 'b200')))
+
+  - script: |
+      mkdir -p $(Build.BinariesDirectory)/uhddev/build/fpga_images/
+      cp $(uhd_fpga_artifact_directory)/*/* $(Build.BinariesDirectory)/uhddev/build/fpga_images/
+    displayName: Copy FPGA images to expected directory
+    condition: and(succeeded(), and(in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'), ne(variables.devType, 'b200')))
+
   - script: |
       cd $(Build.BinariesDirectory)/uhddev/build
       mkdir -p fpga_images
@@ -97,6 +133,7 @@ jobs:
           -b $(sdr-fileserver)
       fi
     displayName: Download FPGA Images
+    condition: and(succeeded(), or(not(in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR')), eq(variables.devType, 'b200')))
 
   - script: |
       mkdir -p $(Common.TestResultsDirectory)/devtest
@@ -165,7 +202,7 @@ jobs:
       export PATH=$(Build.BinariesDirectory)/uhddev/build/utils:$(Build.BinariesDirectory)/uhddev/build/examples:$PATH
       export LD_LIBRARY_PATH=$(Build.BinariesDirectory)/uhddev/build/lib:$LD_LIBRARY_PATH
       python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
-        --jtag_x3xx $(devType),$(devModel),$(jtagServer),$(jtagSerial),$(Build.BinariesDirectory)/uhddev/build/fpga_images/ \
+        --jtag_x3xx $(devType),$(devModel),$(jtagServer),$(jtagSerial),$(Build.BinariesDirectory)/uhddev/build/fpga_images/,${{ parameters.vivado_dir }} \
         --fpgas $(devFpga) \
         ${{ parameters.redisHost }} $(devName) \
         "$(Build.BinariesDirectory)/uhddev/build/utils/uhd_usrp_probe --args addr=$(devAddr)" \

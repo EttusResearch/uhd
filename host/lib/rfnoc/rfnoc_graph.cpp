@@ -578,11 +578,17 @@ public:
     void commit() override
     {
         _graph->commit();
+        UHD_LOG_TRACE(LOG_ID, "new graph committed" << std::endl << _graph->to_dot());
     }
 
     void release() override
     {
         _graph->release();
+    }
+
+    std::string to_dot() override
+    {
+        return _graph->to_dot();
     }
 
 private:

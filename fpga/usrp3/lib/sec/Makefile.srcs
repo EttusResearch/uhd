@@ -1,0 +1,17 @@
+#
+# Copyright 2023 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+##################################################
+# DSP Sources
+##################################################
+SEC_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/sec/, \
+sha256.v \
+sha256_core.v \
+sha256_k_constants.v \
+sha256_stream.v \
+sha256_w_mem.v \
+license_check.sv \
+))

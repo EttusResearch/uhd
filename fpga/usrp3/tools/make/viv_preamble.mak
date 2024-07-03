@@ -13,6 +13,9 @@ RESOLVE_PATH = $(1)
 RESOLVE_PATHS = "$(1)"
 endif
 
+# A function that removes duplicate entries from lists without changing its order
+uniq = $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))
+
 # -------------------------------------------------------------------
 # Project Setup
 # -------------------------------------------------------------------
@@ -24,15 +27,18 @@ SIMLIB_DIR = $(abspath $(BASE_DIR)/../sim)
 LIB_IP_DIR = $(abspath $(LIB_DIR)/ip)
 HLS_IP_DIR = $(abspath $(LIB_DIR)/hls)
 
-BUILD_BASE_DIR ?= .
+MAKEFILE_DIR = $(abspath .)
 
-ifdef NAME
-BUILD_DIR = $(abspath $(BUILD_BASE_DIR)/build-$(NAME))
+BUILD_BASE_DIR ?= $(abspath .)
+
+# -------------------------------------------------------------------
+# IP Build Directory. Call with BUILD_IP_DIR to use that as base dir.
+# -------------------------------------------------------------------
+ifdef BUILD_IP_DIR
+	IP_BUILD_DIR = $(abspath $(BUILD_IP_DIR)/$(subst /,,$(PART_ID)))
 else
-BUILD_DIR = $(abspath $(BUILD_BASE_DIR)/build)
+	IP_BUILD_DIR = $(abspath $(BUILD_BASE_DIR)/build-ip/$(subst /,,$(PART_ID)))
 endif
-
-IP_BUILD_DIR = $(abspath ./build-ip/$(subst /,,$(PART_ID)))
 
 # -------------------------------------------------------------------
 # Git Hash Retrieval
@@ -50,6 +56,15 @@ VIVADO_MODE=batch
 endif
 
 # -------------------------------------------------------------------
+# Project mode switch. Calling with PROJECT:=1 will use Vivado project file
+# -------------------------------------------------------------------
+ifeq ($(PROJECT),1)
+VIVADO_PROJECT=1
+else
+VIVADO_PROJECT=0
+endif
+
+# -------------------------------------------------------------------
 # Toolchain dependency target
 # -------------------------------------------------------------------
 .check_tool:
@@ -62,7 +77,9 @@ endif
 # Intermediate build dirs 
 # -------------------------------------------------------------------
 .build_dirs:
+ifdef BUILD_DIR
 	@mkdir -p $(BUILD_DIR)
+endif
 	@mkdir -p $(IP_BUILD_DIR)
 
 .prereqs: .check_tool .build_dirs

@@ -7,18 +7,7 @@
 #
 # Copyright 2016 Ettus Research
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
 """
 Run Vivado builds
@@ -39,32 +28,6 @@ READ_TIMEOUT = 0.1 # s
 
 #############################################################################
 # The following functions were copied with minor modifications from PyBOMBS:
-def get_console_width():
-    '''
-    Returns width of console.
-
-    http://stackoverflow.com/questions/566746/how-to-get-console-window-width-in-python
-    '''
-    env = os.environ
-    def ioctl_GWINSZ(fd):
-        try:
-            import fcntl, termios, struct
-            cr = struct.unpack('hh', fcntl.ioctl(fd, termios.TIOCGWINSZ, '1234'))
-        except:
-            return
-        return cr
-    cr = ioctl_GWINSZ(0) or ioctl_GWINSZ(1) or ioctl_GWINSZ(2)
-    if not cr:
-        try:
-            fd = os.open(os.ctermid(), os.O_RDONLY)
-            cr = ioctl_GWINSZ(fd)
-            os.close(fd)
-        except:
-            pass
-    if not cr:
-        cr = (env.get('LINES', 25), env.get('COLUMNS', 80))
-    return cr[1]
-
 def which(program):
     """
     Equivalent to Unix' `which` command.
@@ -80,11 +43,10 @@ def which(program):
         return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
     if os.path.split(program)[0] and is_exe(program):
         return program
-    else:
-        for path in os.environ.get("PATH", "").split(os.pathsep):
-            exe_file = os.path.join(path, program)
-            if is_exe(exe_file):
-                return exe_file
+    for path in os.environ.get("PATH", "").split(os.pathsep):
+        exe_file = os.path.join(path, program)
+        if is_exe(exe_file):
+            return exe_file
     return None
 #
 # End of functions copied from PyBOMBS.
@@ -94,9 +56,7 @@ def print_timer(time_delta):
     """docstring for print_timer"""
     hours, secs = divmod(time_delta.seconds, 3600)
     mins, secs = divmod(secs, 60)
-    return "[{h:02}:{m:02}:{s:02}]".format(
-        h=hours, m=mins, s=secs,
-    )
+    return f"[{hours:02}:{mins:02}:{secs:02}]"
 
 def list_search(patterns, string):
     " Returns True if string matches any element of pattern "
@@ -133,7 +93,7 @@ def parse_args():
     our_args, viv_args = parser.parse_known_args()
     return our_args, " ".join(viv_args)
 
-class VivadoRunner(object):
+class VivadoRunner:
     " Vivado Runner "
     colors = {
         'warning': '\033[0;35m',
@@ -174,6 +134,18 @@ class VivadoRunner(object):
         self.notif_queue = Queue()
         self.msg_counters = {}
         self.fatal_error_found = False
+        # This is a list of types of lines that the Vivado build can output.
+        # All of these can be amended (within limits) by the dev_config.json
+        # file that is part of a devices top-level directory (e.g., usrp3/top/x400).
+        #
+        # The JSON file may contain 'regexes', 'ignore', or 'fatal' entries for
+        # any of these line types. The entries hard-coded in this file are
+        # retained (they are not overwritten by the JSON file).
+        #
+        # See the entry for 'warning' for additional documentation.
+        #
+        # Every line that Vivado outputs can only be of one line type. Regular
+        # expressions are tested in the order they are given here.
         self.line_types = {
             'cmd': {
                 'regexes': [
@@ -184,30 +156,42 @@ class VivadoRunner(object):
             },
             'task': {
                 'regexes': [
-                    '^Starting .* Task',
-                    '^.*Translating synthesized netlist.*',
-                    '^\[TEST CASE .*',
+                    r'^Starting .* Task',
+                    r'^.*Translating synthesized netlist.*',
+                    r'^\[TEST CASE .*',
                 ],
                 'action': self.update_task,
                 'id': "Task",
             },
             'phase': {
                 'regexes': [
-                    '^Phase (?P<id>[a-zA-Z0-9/. ]*)$',
-                    '^Start (?P<id>[a-zA-Z0-9/. ]*)$',
-                    '^(?P<id>TESTBENCH STARTED: [\w_]*)$',
+                    r'^Phase (?P<id>[a-zA-Z0-9/. ]*)$',
+                    r'^Start (?P<id>[a-zA-Z0-9/. ]*)$',
+                    r'^(?P<id>TESTBENCH STARTED: [\w_]*)$',
                 ],
                 'action': self.update_phase,
                 'id': "Phase",
             },
             'warning': {
+                # This is a list of regular expressions that identify a Vivado
+                # output line as a warning. Careful: if we choose a regex that
+                # identifies a critical warning here, then such lines will never
+                # be classified as 'critical warning' below.
                 'regexes': [
-                    '^WARNING'
+                    '^WARNING',
                 ],
                 'action': lambda x: self.act_on_build_msg('warning', x),
                 'id': "Warning",
-                'fatal': [
-                ]
+                # The 'fatal' list is a list of regular expressions that identify
+                # a warning as fatal, even if Vivado is OK with the warning.
+                # This list can be amended by dev_config.json.
+                'fatal': [],
+                # The 'ignore' list is a list of regular expressions that identify
+                # a warning as unimportant. These will not be printed. Use this
+                # for warnings that are unavoidable, e.g., because they come
+                # from Vivado IP and we have no way to fix them.
+                # This list can be amended by dev_config.json.
+                'ignore': [],
             },
             'critical warning': {
                 'regexes': [
@@ -243,20 +227,20 @@ class VivadoRunner(object):
         if args.parse_config is not None:
             try:
                 args.parse_config = os.path.normpath(args.parse_config)
-                parse_config = json.load(open(args.parse_config))
+                with open(args.parse_config, encoding="utf-8") as conf_file:
+                    parse_config = json.load(conf_file)
                 self.add_notification(
-                    "Using parser configuration from: {pc}".format(pc=args.parse_config),
+                    f"Using parser configuration from: {args.parse_config}",
                     color=self.colors.get('normal')
                 )
                 loadables = ('regexes', 'ignore', 'fatal')
-                for line_type in self.line_types:
+                for line_type_name, line_type in self.line_types.items():
                     for loadable in loadables:
-                        self.line_types[line_type][loadable] = \
-                                self.line_types[line_type].get(loadable, []) + \
-                                parse_config.get(line_type, {}).get(loadable, [])
+                        line_type[loadable] = line_type.get(loadable, []) + \
+                                parse_config.get(line_type_name, {}).get(loadable, [])
             except (IOError, ValueError):
                 self.add_notification(
-                    "Could not read parser configuration from: {pc}".format(pc=args.parse_config),
+                    f"Could not read parser configuration from: {args.parse_config}",
                     color=self.colors.get('warning')
                 )
         self.tty = sys.stdout.isatty()
@@ -284,7 +268,8 @@ class VivadoRunner(object):
             return ""
         # Start process
         self.add_notification(
-            "Executing command: {cmd}".format(cmd=self.command), add_time=True, color=self.colors.get('cmd')
+            f"Executing command: {self.command}",
+            add_time=True, color=self.colors.get('cmd')
         )
         proc = subprocess.Popen(
             self.command,
@@ -297,7 +282,9 @@ class VivadoRunner(object):
         # End the thread when the program terminates
         t.daemon = True
         t.start()
-        status_line_t = threading.Thread(target=VivadoRunner.run_loop, args=(self.print_status_line, 0.5 if self.tty else 60*10))
+        status_line_t = threading.Thread(
+            target=VivadoRunner.run_loop,
+            args=(self.print_status_line, 0.5 if self.tty else 60*10))
         status_line_t.daemon = True
         status_line_t.start()
         # Run loop
@@ -314,6 +301,9 @@ class VivadoRunner(object):
 
     @staticmethod
     def run_loop(func, delay, *args, **kwargs):
+        """
+        Runs 'func' in a loop until thread terminates.
+        """
         while True:
             func(*args, **kwargs)
             time.sleep(delay)
@@ -335,7 +325,7 @@ class VivadoRunner(object):
         # Check message counts are within limits
         self.update_phase("Finished")
         self.add_notification(
-            "Process terminated. Status: {status}".format(status='Success' if success else 'Failure'),
+            "Process terminated. Status: " + ('Success' if success else 'Failure'),
             add_time=True,
             color=self.colors.get("task" if success else "error")
         )
@@ -362,11 +352,11 @@ class VivadoRunner(object):
         """
         Identify the current line. Return None if the line can't be identified.
         """
-        for line_type in self.line_types:
-            for regex in self.line_types[line_type]['regexes']:
+        for line_type_name, line_type in self.line_types.items():
+            for regex in line_type['regexes']:
                 re_obj = re.search(regex, line)
                 if re_obj is not None:
-                    return line_type, re_obj.groupdict().get('id', line)
+                    return line_type_name, re_obj.groupdict().get('id', line)
         return None, None
 
     def update_status_line(self):
@@ -415,7 +405,7 @@ class VivadoRunner(object):
         #sys.stdout.write("\n")
         self.add_notification("Executing Tcl: " + tcl_cmd,
                               add_time=True, color=self.colors.get("cmd"))
-        cmd = tcl_cmd.strip().split()[0];
+        cmd = tcl_cmd.strip().split()[0]
         if cmd in self.viv_tcl_cmds:
             cmd = self.viv_tcl_cmds[cmd]
         self.update_task("Starting " + cmd + " Command", is_new=False)
@@ -467,4 +457,4 @@ def main():
         return False
 
 if __name__ == "__main__":
-    exit(not main())
+    sys.exit(not main())

@@ -10,7 +10,7 @@
 # Template for raw text data describing write registers
 # name addr[bit range inclusive] default optional enums
 ########################################################################
-REGS_TMPL="""\
+REGS_TMPL = """\
 ########################################################################
 ## Note: offsets given from perspective of data bits (excludes address)
 ########################################################################
@@ -473,7 +473,7 @@ magic                 0x43[7]       1   untouched, xtal_cal_dac
 ########################################################################
 # Template for methods in the body of the struct
 ########################################################################
-BODY_TMPL="""\
+BODY_TMPL = """\
 uint8_t get_reg(uint8_t addr){
     uint8_t reg = 0;
     switch(addr){
@@ -501,9 +501,11 @@ void set_reg(uint8_t addr, uint8_t reg){
 }
 """
 
-if __name__ == '__main__':
-    import common; common.generate(
-        name='tda18272hnm_regs',
+if __name__ == "__main__":
+    import common
+
+    common.generate(
+        name="tda18272hnm_regs",
         regs_tmpl=REGS_TMPL,
         body_tmpl=BODY_TMPL,
         file=__file__,

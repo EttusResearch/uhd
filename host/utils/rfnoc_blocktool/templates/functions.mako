@@ -5,7 +5,8 @@
   # argument should be the string 'inputs' or 'outputs'.
   num_ports_cnt = 0
   num_ports_str = ''
-  for port_name, port_info in config['data'][direction].items():
+  data_ports = config.get('data', {}).get(direction, {})
+  for port_name, port_info in data_ports.items():
     if 'num_ports' in port_info:
       if str(port_info['num_ports']).isdecimal():
         num_ports_cnt = num_ports_cnt + int(port_info['num_ports'])

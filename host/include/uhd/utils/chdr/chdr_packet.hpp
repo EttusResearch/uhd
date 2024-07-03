@@ -147,11 +147,11 @@ public:
         payload_t payload, uhd::endianness_t endianness = uhd::ENDIANNESS_LITTLE);
 
     //! Return a string representation of this object
-    const std::string to_string() const;
+    std::string to_string() const;
 
     //! Return a string representation of this object and deserialize its payload
     template <typename payload_t>
-    const std::string to_string_with_payload(
+    std::string to_string_with_payload(
         uhd::endianness_t endianness = uhd::ENDIANNESS_LITTLE) const;
 
 private:

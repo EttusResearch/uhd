@@ -1,11 +1,15 @@
-<%page args="connections, clocks"/>\
+<%page args="connections, core_domain='top', clk_or_rst='clk'"/>\
 \
 %for connection in connections:
 <%
-  src_name = connection["srcblk"] # Should always be "_device_"
-  src = clocks[src_name + "." + connection["srcport"]]
-  dst_name = connection["dstblk"]
-  dst = clocks[dst_name + "." + connection["dstport"]]
+  def format_name(blk, port):
+    if blk == "_device_":
+      return f"{port}_{clk_or_rst}"
+    return f"{blk}_{port}_{clk_or_rst}"
+  src_wire_suffix = '_s' if core_domain == 'secure_core' and connection['srcblk'] != "_device_" else ''
+  dst_wire_suffix = '_s' if core_domain == 'secure_core' and connection['dstblk'] != "_device_" else ''
+  src_wire_name = format_name(connection['srcblk'], connection['srcport'])
+  dst_wire_name = format_name(connection['dstblk'], connection['dstport'])
 %>\
-  assign ${dst_name}_${dst["name"]}_clk = ${src["name"]}_clk;
+  assign ${dst_wire_name}${dst_wire_suffix} = ${src_wire_name}${src_wire_suffix};
 %endfor

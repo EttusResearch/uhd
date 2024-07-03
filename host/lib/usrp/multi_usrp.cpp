@@ -1453,37 +1453,27 @@ public:
      *************************************************************************/
     void set_rx_gain(double gain, const std::string& name, size_t chan) override
     {
-        /* Check if any AGC mode is enable and if so warn the user */
-        if (chan != ALL_CHANS) {
-            if (_tree->exists(rx_rf_fe_root(chan) / "gain" / "agc")) {
+        /* Check if any AGC mode is enabled and if so warn the user */
+        for (size_t c = 0; c < get_rx_num_channels(); c++) {
+            if (chan != ALL_CHANS && c != chan) {
+                continue;
+            }
+            if (_tree->exists(rx_rf_fe_root(c) / "gain" / "agc")) {
                 bool agc =
-                    _tree->access<bool>(rx_rf_fe_root(chan) / "gain" / "agc" / "enable")
+                    _tree->access<bool>(rx_rf_fe_root(c) / "gain" / "agc" / "enable")
                         .get();
                 if (agc) {
-                    UHD_LOGGER_WARNING("MULTI_USRP")
-                        << "AGC enabled for this channel. Setting will be ignored.";
+                    UHD_LOGGER_WARNING("MULTI_USRP") << "AGC enabled for channel " << c
+                                                     << ". Setting will be ignored.";
                 }
             }
-        } else {
-            for (size_t c = 0; c < get_rx_num_channels(); c++) {
-                if (_tree->exists(rx_rf_fe_root(c) / "gain" / "agc")) {
-                    bool agc = _tree
-                                   ->access<bool>(
-                                       rx_rf_fe_root(chan) / "gain" / "agc" / "enable")
-                                   .get();
-                    if (agc) {
-                        UHD_LOGGER_WARNING("MULTI_USRP")
-                            << "AGC enabled for this channel. Setting will be ignored.";
-                    }
-                }
+            /* Apply gain settings to all channels.
+             * If device is in AGC mode it will ignore the setting. */
+            try {
+                rx_gain_group(c)->set_value(gain, name);
+            } catch (uhd::key_error&) {
+                THROW_GAIN_NAME_ERROR(name, c, rx);
             }
-        }
-        /* Apply gain setting.
-         * If device is in AGC mode it will ignore the setting. */
-        try {
-            return rx_gain_group(chan)->set_value(gain, name);
-        } catch (uhd::key_error&) {
-            THROW_GAIN_NAME_ERROR(name, chan, rx);
         }
     }
 
@@ -2011,10 +2001,15 @@ public:
 
     void set_tx_gain(double gain, const std::string& name, size_t chan) override
     {
-        try {
-            return tx_gain_group(chan)->set_value(gain, name);
-        } catch (uhd::key_error&) {
-            THROW_GAIN_NAME_ERROR(name, chan, tx);
+        for (size_t c = 0; c < get_tx_num_channels(); c++) {
+            if (chan != ALL_CHANS && c != chan) {
+                continue;
+            }
+            try {
+                tx_gain_group(c)->set_value(gain, name);
+            } catch (uhd::key_error&) {
+                THROW_GAIN_NAME_ERROR(name, c, tx);
+            }
         }
     }
 

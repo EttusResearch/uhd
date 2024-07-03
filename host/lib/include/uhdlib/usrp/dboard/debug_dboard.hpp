@@ -309,12 +309,10 @@ public:
         return meta_range_t(0.0, 0.0);
     }
 
-    void set_rx_lo_source(const std::string&, const std::string&, const size_t) override
-    {
-        UHD_LOG_SKIP_CFG()
-    }
+    void set_rx_lo_source(const std::string&, const std::string&, const size_t) override{
+        UHD_LOG_SKIP_CFG()}
 
-    const std::string get_rx_lo_source(const std::string&, const size_t) override
+    std::string get_rx_lo_source(const std::string&, const size_t) override
     {
         return "";
     }
@@ -356,12 +354,10 @@ public:
         return meta_range_t(0.0, 0.0);
     }
 
-    void set_tx_lo_source(const std::string&, const std::string&, const size_t) override
-    {
-        UHD_LOG_SKIP_CFG()
-    }
+    void set_tx_lo_source(const std::string&, const std::string&, const size_t) override{
+        UHD_LOG_SKIP_CFG()}
 
-    const std::string get_tx_lo_source(const std::string&, const size_t) override
+    std::string get_tx_lo_source(const std::string&, const size_t) override
     {
         return "";
     }

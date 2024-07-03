@@ -7,6 +7,9 @@ parameters:
 - name: skip_analyze_changeset
   type: boolean
   default: false
+- name: target_branch
+  type: string
+  default: "origin/master"
 
 jobs:
   - job: analyze
@@ -26,8 +29,34 @@ jobs:
         fi
         python3 -m venv $AGENT_TEMPDIRECTORY/ac_venv
         $AGENT_TEMPDIRECTORY/ac_venv/$VENV_BIN_DIR/pip install --upgrade pip
-        $AGENT_TEMPDIRECTORY/ac_venv/$VENV_BIN_DIR/pip install ruamel.yaml
+        $AGENT_TEMPDIRECTORY/ac_venv/$VENV_BIN_DIR/pip install ruamel.yaml clang-format==14.0.6 ni-python-styleguide
         git branch
-        $AGENT_TEMPDIRECTORY/ac_venv/$VENV_BIN_DIR/python3 tools/changeset_testlist.py --target-branch origin/master --set-azdo-var UhdTestList --list-tests
+        set -o xtrace
+        $AGENT_TEMPDIRECTORY/ac_venv/$VENV_BIN_DIR/python3 tools/changeset_testlist.py \
+                --target-branch $TARGET_BRANCH \
+                --set-azdo-var UhdTestList \
+                --list-tests
       name: gen_testlist
       displayName: Generate Test-List
+      env:
+        TARGET_BRANCH: ${{ parameters.target_branch }}
+    - bash: |
+        if [[ $AGENT_OS == "Windows_NT" ]]; then
+            VENV_BIN_DIR="Scripts"
+        else
+            VENV_BIN_DIR="bin"
+        fi
+        source $AGENT_TEMPDIRECTORY/ac_venv/$VENV_BIN_DIR/activate
+        if [[ $GEN_TESTLIST_UHDTESTLIST =~ "clang-format" ]]; then
+            $AGENT_TEMPDIRECTORY/ac_venv/$VENV_BIN_DIR/python3 \
+                tools/run-clang-format.py . -r --patch-file clang-format.patch \
+                    --clang-format-executable `which clang-format`
+        fi
+      name: run_clang_format
+      displayName: Conditionally run clang-format
+
+    - publish: clang-format.patch
+      artifact: clang-format patch file
+      displayName: Publish clang-format patch file
+      condition: failed()
+

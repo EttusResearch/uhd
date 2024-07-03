@@ -48,7 +48,3 @@ data:
       sideband_at_end: False
       format: sc16
       mdata_sig: ~
-
-registers:
-
-properties:

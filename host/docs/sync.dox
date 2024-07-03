@@ -17,7 +17,8 @@ USRP devices take two reference signals in order to synchronize clocks
 and time:
 
 -   A 10 MHz reference to provide a single frequency reference for all
-    devices.
+    devices (in some devices, other reference frequencies than 10 MHz are
+    also supported).
 -   A pulse-per-second (PPS) to synchronize the sample time across
     devices.
 

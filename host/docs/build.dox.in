@@ -64,7 +64,7 @@ The directory to which you extract libusb must not contain spaces. This is to sa
 ### Python
 
 - **Purpose:** Used by mako build time,  and utility scripts and the Python API at runtime
-- **Minimum Version:** 3.5
+- **Minimum Version:** @PYTHON_MIN_VERSION@
 - **Usage:** build time + runtime utility scripts (required)
 - **Download URL:** http://www.python.org/download/
 - **Comments for Windows Users:**
@@ -88,11 +88,29 @@ The directory to which you extract libusb must not contain spaces. This is to sa
 
     python3 -m pip3 install curses-2.2-cp37-cp37m-win_amd64.whl
 
+
+### Pybind11
+
+<b>Note:</b> Pybind11 is shipped with UHD, and if no version of Pybind11 is
+found in the usual paths, the in-tree version will be used. For compatibility
+with other software that also uses Pybind11 (e.g., GNU Radio) it is generally
+recommended to use the system version, but it is no requirement for UHD in
+general.
+
+- **Purpose:** Used to build the UHD Python API
+- **Minimum Version:** @PYBIND11_MIN_VERSION@
+- **Usage:** build time (for Python API only)
+- **Download URL:** https://github.com/pybind/pybind11://github.com/pybind/pybind11/
+- **Alternative method:** As mentioned above, you don't have to install Pybind11
+  yourself to enable the Python API. On most Linux distributions, it can be
+  installed through the package manager.
+
+
 ### Mako
 
 - **Purpose:** source code generation
 - **Minimum Version:** @PY_MAKO_MIN_VERSION@
-- **Usage:** build time (required)
+- **Usage:** build time (required), RFNoC image builder (runtime)
 - **Download URL:** http://www.makotemplates.org/download.html
 - **Alternative method:** You can use `pip3` or `easy_install` to install Mako from PyPi. To install it using 'pip3' on Windows, navigate to Python scripts folder, e.g. `C:\local\Python37\Scripts`, and run the following command:
 

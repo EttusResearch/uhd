@@ -30,6 +30,13 @@ void export_time_spec(py::module& m)
         .def("get_full_secs", &time_spec_t::get_full_secs)
         .def("get_frac_secs", &time_spec_t::get_frac_secs)
 
+        .def(py::self == py::self)
+        .def(py::self != py::self)
+        .def(py::self > py::self)
+        .def(py::self >= py::self)
+        .def(py::self < py::self)
+        .def(py::self <= py::self)
+
         .def(py::self += time_spec_t())
         .def(py::self -= time_spec_t())
         .def(py::self + time_spec_t())

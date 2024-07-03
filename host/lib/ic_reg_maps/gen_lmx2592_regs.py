@@ -9,7 +9,7 @@
 # Template for raw text data describing registers
 # name addr[bit range inclusive] default optional enums
 ########################################################################
-REGS_TMPL="""\
+REGS_TMPL = """\
 ########################################################################
 ## address 0
 ########################################################################
@@ -271,7 +271,7 @@ reg64_reserved1         64[10:15]   0x0
 ########################################################################
 # Template for methods in the body of the struct
 ########################################################################
-BODY_TMPL="""\
+BODY_TMPL = """\
 enum addr_t{
     ADDR_R0 = 0,
     ADDR_R1 = 1,
@@ -343,9 +343,11 @@ std::set<size_t> get_all_addrs()
 }
 """
 
-if __name__ == '__main__':
-    import common; common.generate(
-        name='lmx2592_regs',
+if __name__ == "__main__":
+    import common
+
+    common.generate(
+        name="lmx2592_regs",
         regs_tmpl=REGS_TMPL,
         body_tmpl=BODY_TMPL,
         file=__file__,

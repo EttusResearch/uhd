@@ -11,11 +11,12 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/process.hpp>
 #include <boost/program_options.hpp>
+#ifdef __linux__
+#    include <boost/filesystem.hpp>
+#    include <boost/process.hpp>
+#endif
 #include <chrono>
 #include <complex>
 #include <csignal>
@@ -39,7 +40,7 @@ void sig_int_handler(int)
     stop_signal_called = true;
 }
 
-
+#ifdef __linux__
 /*
  * Very simple disk write test using dd for at most 1 second.
  * Measures an upper bound of the maximum
@@ -56,8 +57,6 @@ double disk_rate_check(const size_t sample_type_size,
     size_t samps_per_buff,
     const std::string& file)
 {
-#ifdef __linux__
-
     std::string err_msg =
         "Disk benchmark tool 'dd' did not run or returned an unexpected output format";
     boost::process::ipstream pipe_stream;
@@ -72,9 +71,9 @@ double disk_rate_check(const size_t sample_type_size,
     try {
         boost::process::child c(
             disk_check_proc_str, boost::process::std_err > pipe_stream);
-        if (!c.wait_for(std::chrono::duration<float>(1s))) {
-            kill(c.id(), SIGINT);
-            c.wait();
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        if (c.running()) {
+            c.terminate();
         }
     } catch (std::system_error& err) {
         std::cerr << err_msg << std::endl;
@@ -129,9 +128,9 @@ double disk_rate_check(const size_t sample_type_size,
                 std::cerr << err_msg << std::endl;
         }
     }
-#endif
     return 0;
 }
+#endif
 
 
 template <typename samp_type>
@@ -175,12 +174,23 @@ void recv_to_file(uhd::usrp::multi_usrp::sptr usrp,
     }
 
     std::vector<std::ofstream> outfiles(rx_stream->get_num_channels());
+    std::string filename;
     for (size_t ch = 0; ch < rx_stream->get_num_channels(); ch++) {
         if (not null) {
-            std::string filename =
-                rx_stream->get_num_channels() == 1
-                    ? file
-                    : "ch" + std::to_string(channel_nums[ch]) + "_" + file;
+            if (rx_stream->get_num_channels() == 1) { // single channel
+                filename = file;
+            } else { // multiple channels
+                // check if file extension exists
+                if (file.find('.') != std::string::npos) {
+                    const std::string base_name = file.substr(0, file.find_last_of('.'));
+                    const std::string extension = file.substr(file.find_last_of('.'));
+                    filename = base_name + "_" + "ch" + std::to_string(channel_nums[ch])
+                               + extension;
+                } else {
+                    // file extension does not exist
+                    filename = file + "_" + "ch" + std::to_string(channel_nums[ch]);
+                }
+            }
             outfiles[ch].open(filename.c_str(), std::ofstream::binary);
         }
     }
@@ -546,6 +556,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         std::cout << "Press Ctrl + C to stop streaming..." << std::endl;
     }
 
+#ifdef __linux__
     const double req_disk_rate = usrp->get_rx_rate(channel_list[0]) * channel_list.size()
                                  * uhd::convert::get_bytes_per_item(wirefmt);
     const double disk_rate_meas = disk_rate_check(
@@ -560,6 +571,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                    "  and OS/disk caching capacity.\n")
                    % (req_disk_rate / 1e6) % (disk_rate_meas / 1e6);
     }
+#endif
 
     std::vector<size_t> chans_in_thread;
     std::vector<double> rates(channel_list.size());

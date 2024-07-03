@@ -1,5 +1,5 @@
 //
-// Copyright 2023 Ettus Research, A National Instruments Company
+// Copyright 2024 Ettus Research, A National Instruments Company
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -40,6 +40,9 @@
   // QSFP_PORT_1_1_INFO_REG : 0x74 (x4xx_global_regs.v)
   // QSFP_PORT_1_2_INFO_REG : 0x78 (x4xx_global_regs.v)
   // QSFP_PORT_1_3_INFO_REG : 0x7C (x4xx_global_regs.v)
+  // DEVICE_DNA0_REG        : 0x100 (x4xx_global_regs.v)
+  // DEVICE_DNA1_REG        : 0x104 (x4xx_global_regs.v)
+  // DEVICE_DNA2_REG        : 0x108 (x4xx_global_regs.v)
 
 //===============================================================================
 // RegTypes
@@ -287,3 +290,18 @@
   localparam QSFP_PORT_1_3_INFO_REG = 'h7C; // Register Offset
   localparam QSFP_PORT_1_3_INFO_REG_SIZE = 32;  // register width in bits
   localparam QSFP_PORT_1_3_INFO_REG_MASK = 32'h0;
+
+  // DEVICE_DNA0_REG Register (from x4xx_global_regs.v)
+  localparam DEVICE_DNA0_REG = 'h100; // Register Offset
+  localparam DEVICE_DNA0_REG_SIZE = 32;  // register width in bits
+  localparam DEVICE_DNA0_REG_MASK = 32'h0;
+
+  // DEVICE_DNA1_REG Register (from x4xx_global_regs.v)
+  localparam DEVICE_DNA1_REG = 'h104; // Register Offset
+  localparam DEVICE_DNA1_REG_SIZE = 32;  // register width in bits
+  localparam DEVICE_DNA1_REG_MASK = 32'h0;
+
+  // DEVICE_DNA2_REG Register (from x4xx_global_regs.v)
+  localparam DEVICE_DNA2_REG = 'h108; // Register Offset
+  localparam DEVICE_DNA2_REG_SIZE = 32;  // register width in bits
+  localparam DEVICE_DNA2_REG_MASK = 32'h0;

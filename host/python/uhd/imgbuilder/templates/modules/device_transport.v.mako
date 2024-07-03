@@ -1,5 +1,5 @@
 <%page args="transports"/>
-  // Transport Adapters ///////////////
+  // Fixed Transport Adapters (Defined outside image core) ///////////////
 
 %for i, transport in enumerate(transports):
   // Transport ${i} (${transport["name"]})

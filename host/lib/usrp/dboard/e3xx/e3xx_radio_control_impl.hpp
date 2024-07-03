@@ -168,7 +168,7 @@ protected:
     //  tx_band::INVALID_BAND if the frequency is out of range.
     tx_band map_freq_to_tx_band(const double freq);
 
-    virtual const std::string get_default_timing_mode() = 0;
+    virtual std::string get_default_timing_mode() = 0;
 
     /*! Run a loopback self test.
      *

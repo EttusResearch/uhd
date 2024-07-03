@@ -602,7 +602,7 @@ fsk_spi_dev             124[0:15]   0
 ########################################################################
 ## address 125
 ########################################################################
-reg125                  125[0:16]   0x2288
+reg125                  125[0:15]   0x2288
 """
 ########################################################################
 # Template for methods in the body of the struct
@@ -652,10 +652,11 @@ def get_reg(self, addr):
 
 """
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import common
+
     common.generate(
-        name='lmx2572_regs',
+        name="lmx2572_regs",
         regs_tmpl=REGS_TMPL,
         body_tmpl=BODY_TMPL,
         py_body_tmpl=PY_BODY_TMPL,

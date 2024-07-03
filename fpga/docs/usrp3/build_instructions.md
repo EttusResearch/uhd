@@ -11,7 +11,7 @@ The USRP FPGA build system requires a UNIX-like environment with the following d
 - [Xilinx ISE Design Suite 14.7](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/archive-ise.html) (For all other FPGAs)
 - [GNU Make 3.6+](https://www.gnu.org/software/make/)
 - [GNU Bash 4.0+](https://www.gnu.org/software/bash/)
-- [Python 3.5+](https://www.python.org/)
+- [Python 3.6+](https://www.python.org/)
 - [Doxygen](https://www.doxygen.nl/index.html) (Optional: To build the manual)
 - [ModelSim](https://www.mentor.com/products/fv/modelsim/) (Optional: For simulation)
 
@@ -49,7 +49,7 @@ Xilinx documentation for the build tool required by your FPGA type.
 | USRP B205mini  | Spartan-6 XC6SLX150                           | ISE               |
 | USRP X300      | Kintex-7 XC7K325T (7 Series: Kintex-7)        | Vivado            |
 | USRP X310      | Kintex-7 XC7K410T (7 Series: Kintex-7)        | Vivado            |
-| USRP E31x      | Zynq-7000 XC7Z020 (SoCs: Zynq-7000)           | Vivado            |
+| USRP E31x      | Zynq-7000 XC7Z020 (SoCs: Zynq-7000), Speed grade 1 or 3 (depending on revision)  | Vivado |
 | USRP E320      | Zynq-7000 XC7Z045 (SoCs: Zynq-7000)           | Vivado            |
 | USRP N300      | Zynq-7000 XC7Z035 (SoCs: Zynq-7000)           | Vivado            |
 | USRP N310/N320 | Zynq-7000 XC7Z100 (SoCs: Zynq-7000)           | Vivado            |
@@ -84,6 +84,10 @@ You can install all the dependencies through the package manager:
 
 Your actual command may differ.
 
+For building any RFNoC-capable device (out of the list above, that is all devices
+except for the B200 series USRPs), you also need to have `rfnoc_image_builder`
+installed. This will be installed as part of a regular UHD installation.
+
 ### Setting up build dependencies on Fedora
 
 You can install all the dependencies through the package manager:
@@ -104,6 +108,9 @@ The following additional packages are also required and can be selected in the G
 
 ## Build Instructions (Xilinx Vivado only)
 
+**Important**: Starting with UHD 4.7, all RFNoC capable targets must be built
+using `rfnoc_image_builder`, which is installed as part of UHD.
+
 ### Makefile based Builder
 
 - Navigate to `<repo>/fpga/usrp3/top/{project}` where `{project}` is:
@@ -113,16 +120,29 @@ The following additional packages are also required and can be selected in the G
   + `n3xx`: For USRP N300/N310/N320
   + `x400`: For USRP X410/X440
 
-- To add vivado to the PATH and to setup up the Ettus Xilinx build environment run
-  + `source setupenv.sh` (If Vivado is installed in the default path /opt/Xilinx/Vivado) _OR_
-  + `source setupenv.sh --vivado-path=<VIVADO_PATH>` (where VIVADO_PATH is a non-default installation path)
+Then, call `rfnoc_image_builder` to set up a build environment for Vivado and
+start the build:
 
-- To build a binary configuration bitstream run `make <target>`
-  where the target is specific to each product. To get a list of supported targets run
-  `make help`.
+    rfnoc_image_builder -y <IMAGE CORE FILE>.yml [--target <TARGET_NAME>] \
+            [--vivado-path <VIVADO_PATH>] [--image_core_name <IMAGE_CORE_NAME>]
 
-- The build output will be specific to the product and will be located in the
-  `<repo>/fpga/usrp3/top/{project}/build` directory. Run `make help` for more information.
+
+Notes:
+- If Vivado is installed into a standard location, then `--vivado-path` is not
+  necessary. Otherwise, use this to allow the image builder to identify the
+  Vivado path.
+- Depending on the device type, using `--target` may or may not be necessary.
+  See the individual device documentation further down.
+- The build output will be specific to the product and will, by default, be
+  located in the `<repo>/fpga/usrp3/top/{project}/build` directory. Run `make
+  help` for more device-specific information.
+- Some make targets can be called directly, and do not require `rfnoc_image_builder`
+  (e.g., all USRPs have an 'IP' target which pre-builds all IP). To call those,
+  it is necessary to run
+
+    source ./setupenv.sh
+
+  first, before calling make.
 
 ### Environment Utilities
 
@@ -169,7 +189,7 @@ to connect to the hardware:
 
     set_param labtools.override_cs_server_version_check 1
 
-## Build Instructions (Xilinx ISE only)
+## Build Instructions (Xilinx ISE only, for B200 series)
 
 ### Makefile Based Builder
 
@@ -202,9 +222,25 @@ to connect to the hardware:
 - `build/usrp_<product>_fpga.syr` : Xilinx system report
 - `build/usrp_<product>_fpga.twr` : Xilinx timing report
 
+### B2xx-mini Targets and Outputs
+
+#### Supported Targets
+- B200mini:  Builds the USRP B200-mini design.
+- B205mini:  Builds the USRP B205-mini design.
+
+#### Outputs
+- `build/usrp_<product>_fpga.bit` : Configuration bitstream with header
+- `build/usrp_<product>_fpga.bin` : Configuration bitstream without header
+- `build/usrp_<product>_fpga.syr` : Xilinx system report
+- `build/usrp_<product>_fpga.twr` : Xilinx timing report
+
 ### X3x0 Targets and Outputs
 
 #### Supported Targets
+
+Use `make help` to produce a list of valid targets, as well as how to build them
+using `rfnoc_image_builder`.
+
 - X310_1G:  USRP X310. 1GigE on both SFP+ ports.
 - X300_1G:  USRP X300. 1GigE on both SFP+ ports.
 - X310_HG:  USRP X310. 1GigE on SFP+ Port0, 10Gig on SFP+ Port1.
@@ -225,10 +261,14 @@ to connect to the hardware:
 ### E310 Targets and Outputs
 
 #### Supported Targets
+
+Use `make help` to produce a list of valid targets, as well as how to build them
+using `rfnoc_image_builder`.
+
 - E310_SG1 or E310:  Builds the USRP E310 (speed grade 1).
 - E310_SG3 or E310_sg3:  Builds the USRP E310 (speed grade 3).
 - E310_SG1_IDLE:  Builds the USRP E310 idle design (speed grade 1).
-- E310_SG3_IDLE:  Builds the USRP E310 idle design (sSpeed grade 3).
+- E310_SG3_IDLE:  Builds the USRP E310 idle design (speed grade 3).
 
 #### Outputs
 - `build/usrp_<product>_fpga.bit` : Configuration bitstream with header
@@ -238,6 +278,9 @@ to connect to the hardware:
 ### E320 Targets and Outputs
 
 #### Supported Targets
+Use `make help` to produce a list of valid targets, as well as how to build them
+using `rfnoc_image_builder`.
+
 - E320_1G: 1GigE on SFP+ Port.
 - E320_XG: 10GigE on SFP+ Port.
 - E320_AA: Aurora on SFP+ Port.
@@ -255,6 +298,9 @@ The targets depend on the actual hardware the FPGA image is being deployed to.
 Unlike the X300 Series, the daughterboards are an integral part of the module
 and not meant to be removed. Therefore, the target is specific to the
 combination of motherboard and daughterboards.
+
+Use `make help` to produce a list of valid targets, as well as how to build them
+using `rfnoc_image_builder`.
 
 - N300_AA: Aurora on both SFP+ ports
 - N300_HA: 1GigE on SFP0, Aurora on SFP1
@@ -286,14 +332,18 @@ For the N320 targets see also the N320 manual page on the UHD manual.
 
 #### Supported Targets
 
-Unlike the USRP X310, the target types do not only describe the connector
+Unlike other USRPs, the target types do not only describe the connector
 configuration, but also the available master clock rates. For example, the FPGA
 target type `X4_200` is configured for a 200 MHz analog bandwidth, and can
 support a 245.76 MHz or 250 MHz master clock rate.
 
+Furthermore, the image core YAML file itself describes the connector configuration,
+not the chosen target. Therefore, the `--target` option on the image builder is
+generally not necessary.
+
 A more detailed description of the targets can be found at \ref x4xx_updating_fpga_types.
 Run `make help` in the `<repo>/fpga/usrp3/top/x400/` directory to see
-the complete list of targets available. It will list targets for both X410 and
+the complete list of options available. It will list targets for both X410 and
 X440.
 
 #### Outputs

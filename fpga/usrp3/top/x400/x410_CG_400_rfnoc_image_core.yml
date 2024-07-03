@@ -1,0 +1,76 @@
+# General parameters
+# -----------------------------------------
+schema: rfnoc_imagebuilder_args          # Identifier for the schema used to validate this file
+copyright: >-                            # Copyright information used in file headers
+  Copyright 2023 Ettus Research, a National Instruments Brand
+license: >-                              # License information used in file headers
+  SPDX-License-Identifier: LGPL-3.0-or-later
+version: '1.0'                           # File version
+chdr_width: 512                          # Bit width of the CHDR bus for this image
+device: 'x410'                           # USRP type
+image_core_name: 'usrp_x410_fpga_CG_400' # Name to use for the generated output files
+default_target: 'X410'                   # Default make target
+inherit:
+  - 'yaml_include/x410_radio_base.yml'
+  - 'yaml_include/x4xx_cg_base.yml'
+
+parameters:
+  RF_BW: 400
+  ENABLE_DRAM: False
+  NUM_DRAM_BANKS: 0
+  NUM_DRAM_CHANS: 0
+  DRAM_WIDTH: 64
+
+# A list of all stream endpoints in design
+# ----------------------------------------
+stream_endpoints:
+  ep0:                                  # Stream endpoint name
+    ctrl: True                          # Endpoint passes control traffic
+    data: True                          # Endpoint passes data traffic
+    buff_size_bytes: 524288             # Ingress buffer size for data
+  ep1:
+    ctrl: False
+    data: True
+    buff_size_bytes: 524288
+  ep2:
+    ctrl: False
+    data: True
+    buff_size_bytes: 524288
+  ep3:
+    ctrl: False
+    data: True
+    buff_size_bytes: 524288
+
+# NoC blocks: Are defined in x410_radio_base.yml
+# (as are their clock domain connections)
+# ----------------------------------------------
+
+# A list of all static connections in design
+# ------------------------------------------
+# Format: A list of connection maps (list of key-value pairs) with the following keys
+#   - srcblk  = Source block to connect
+#   - srcport = Port on the source block to connect
+#   - dstblk  = Destination block to connect
+#   - dstport = Port on the destination block to connect
+connections:
+  # RF A:0 TX
+  - { srcblk: ep0,    srcport: out0,  dstblk: radio0, dstport: in_0 }
+  # RF A:0 RX
+  - { srcblk: radio0, srcport: out_0, dstblk: ep0,    dstport: in0  }
+  # RF A:1 TX
+  - { srcblk: ep1,    srcport: out0,  dstblk: radio0, dstport: in_1 }
+  # RF A:1 RX
+  - { srcblk: radio0, srcport: out_1, dstblk: ep1,    dstport: in0  }
+  #
+  # RF B:0 TX
+  - { srcblk: ep2,    srcport: out0,  dstblk: radio1, dstport: in_0 }
+  # RF B:0 RX
+  - { srcblk: radio1, srcport: out_0, dstblk: ep2,    dstport: in0  }
+  # RF B:1 TX
+  - { srcblk: ep3,    srcport: out0,  dstblk: radio1, dstport: in_1 }
+  # RF B:1 RX
+  - { srcblk: radio1, srcport: out_1, dstblk: ep3,    dstport: in0  }
+  #
+  # BSP connections are inherited from YAML include files
+
+# Clock domains are inherited from YAML include files

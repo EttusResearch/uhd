@@ -23,6 +23,8 @@
 //                        transports are directly connected to SEPs
 //   - EDGE_TBL_FILE: The memory init file for the static connection
 //                    adjacency list
+//   - EDGE_TBL: The adjacency list as a parameter. If EDGE_TBL_FILE is provided,
+  //             this is ignored for backward compatibility.
 //
 // Signals:
 //   - chdr_aclk : The input CHDR clock (may be unbuffered if SAFE_START_CLKS=1)
@@ -50,7 +52,8 @@ module rfnoc_core_kernel #(
   parameter [9:0]  NUM_TRANSPORTS       = 0,
   parameter [11:0] NUM_EDGES            = 0,
   parameter [0:0]  CHDR_XBAR_PRESENT    = 1,
-  parameter        EDGE_TBL_FILE        = ""
+  parameter        EDGE_TBL_FILE        = "",
+  parameter [(NUM_EDGES*32)-1:0] EDGE_TBL = {NUM_EDGES{32'b0}}
 )(
   // Input clocks and resets
   input  wire                        chdr_aclk,
@@ -362,7 +365,7 @@ module rfnoc_core_kernel #(
   // The BlkIndex is the port number of the block on the control crossbar amd the BlkPort is
   // the index of the input or output port of the block.
 
-  generate if (EDGE_TBL_FILE == "" || NUM_EDGES == 0) begin
+  generate if ((EDGE_TBL_FILE == "" && EDGE_TBL == 0) || NUM_EDGES == 0) begin
     // If no file is specified or if the number of edges is zero
     // then just return zero for all transactions
     always @(posedge core_ctrl_clk) begin
@@ -372,8 +375,21 @@ module rfnoc_core_kernel #(
   end else begin
     // Initialize ROM from file and read it during a reg transaction
     reg [31:0] edge_tbl_rom[0:NUM_EDGES];
-    initial begin
-      $readmemh(EDGE_TBL_FILE, edge_tbl_rom, 0, NUM_EDGES);
+    if (EDGE_TBL_FILE != "") begin
+      initial begin
+        $readmemh(EDGE_TBL_FILE, edge_tbl_rom, 0, NUM_EDGES);
+      end
+    end if (EDGE_TBL == 0) begin
+      ERROR_edge_tbl_not_defined();
+    end else begin
+      integer edge_idx;
+      initial begin
+        edge_tbl_rom[0] = {20'b0, NUM_EDGES};
+        for (edge_idx = 1; edge_idx < NUM_EDGES + 1; edge_idx = edge_idx + 1) begin
+          edge_tbl_rom[edge_idx] = EDGE_TBL[(32*edge_idx)-1 -: 32];
+        end
+      end
+
     end
     always @(posedge core_ctrl_clk) begin
       con_resp_ack  <= (con_req_wr | con_req_rd);

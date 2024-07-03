@@ -92,6 +92,16 @@ public:
         const std::string& ctrlport_clock,
         factory_t factory_fn);
 
+    /*! Same as above, but with multiple noc_ids
+     */
+    static void register_block_direct(std::vector<noc_id_t> noc_ids,
+        device_type_t device_id,
+        const std::string& block_name,
+        bool mb_access,
+        const std::string& timebase_clock,
+        const std::string& ctrlport_clock,
+        factory_t factory_fn);
+
     /*! Register a block that does use a block descriptor file
      *
      * Use this registry function for blocks that also have a textual

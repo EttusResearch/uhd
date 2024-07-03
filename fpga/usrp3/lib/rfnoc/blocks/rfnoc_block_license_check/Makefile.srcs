@@ -1,0 +1,17 @@
+#
+# Copyright 2023 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+include $(LIB_DIR)/sec/Makefile.srcs
+include $(LIB_DIR)/hwutils/Makefile.srcs
+
+RFNOC_BLOCK_LICENSE_CHECK_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/rfnoc/blocks/rfnoc_block_license_check/, \
+noc_shell_license_check.v \
+rfnoc_block_license_check_regs.vh \
+rfnoc_block_license_check.v \
+))
+
+RFNOC_BLOCK_LICENSE_CHECK_SRCS += $(SEC_SRCS) $(HWUTILS_SRCS)
+

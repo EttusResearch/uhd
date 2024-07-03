@@ -33,6 +33,7 @@
 // Notes:
 // - If using USE_EMBEDDED_REGS_COEFFS, coefficients must be written at least once as COEFFS_VEC is ignored!
 // - If using SYMMETRIC_COEFFS, only send half the coeffients! i.e. NUM_COEFFS = 11, send the first 6.
+// - If using RELOADABLE_COEFFS, coefficients must be written in reverse order!
 //
 module axi_fir_filter #(
   parameter IN_WIDTH                  = 16,
@@ -106,9 +107,9 @@ module axi_fir_filter #(
           end else begin
             if (s_axis_reload_tvalid & s_axis_reload_tready) begin
               for (k = NUM_SLICES-1; k > 0; k = k - 1) begin
-                coeffs[k-1] <= coeffs[k];
+                coeffs[k] <= coeffs[k-1];
               end
-              coeffs[NUM_SLICES-1] <= s_axis_reload_tdata;
+              coeffs[0] <= s_axis_reload_tdata;
             end
             coeff_load_stb <= s_axis_reload_tvalid & s_axis_reload_tready & s_axis_reload_tlast;
           end
@@ -156,18 +157,18 @@ module axi_fir_filter #(
   //                               |                                |
   //                               v                                v
   //                            +-----+                          +-----+
-  // *----------------------*   |     |                          |     |
-  // | Note: Coeffs are     |   +-----+                          +-----+
-  // | loaded backwards     |      |                                |
-  // | for proper alignment |      |         .----------------------^----------------<
-  // *----------------------*      |         |                      |
-  //           +--+   +--+         v         |   +--+   +--+        v
-  //  Coeff In |  |   |  |   +------------+  |   |  |   |  |  +------------+
-  //      .--->|  |-->|  |-->| Multiplier |  '-->|  |-->|  |->| Multiplier |
-  //      |    |  |   |  |   +------------+      |  | | |  |  +------------+
-  //      |    +--+   +--+         |             +--+ | +--+        |
-  //      |                        |                  |             |
-  //      '------------------------^------------------'             |
+  //                            |     |                          |     |
+  //                            +-----+                          +-----+
+  //                               |                                |
+  //                               |                                |
+  //                               |                                |
+  //           +--+                v                +--+            v
+  //  Coeff In |  |          +------------+         |  |      +------------+
+  // +-------->|  |--------->| Multiplier |    .--->|  |----->| Multiplier |
+  //           |  |     |    +------------+    |    |  |   |  +------------+
+  //           +--+     |          |           |    +--+   |        |
+  //                    |          |           |           |        |
+  //                    '----------^-----------'           '--------^-------------->
   //                               |           Coeff                |
   //                               v           Forward              v
   //                            +-----+                          +-----+
@@ -230,7 +231,7 @@ module axi_fir_filter #(
     wire [COEFF_WIDTH-1:0] coeff_forward[0:NUM_SLICES]; //   generate loop easier to read
     assign sample_in[0]              = s_axis_data_tdata;
     assign sample_accum[0]           = 0;
-    assign coeff_forward[NUM_SLICES] = s_axis_reload_tdata;
+    assign coeff_forward[0]          = s_axis_reload_tdata;
 
     // Build up FIR filter with multiply-accumulate slices (fir_filter_slice)
     for (i = 0; i < NUM_SLICES; i = i + 1) begin
@@ -252,13 +253,13 @@ module axi_fir_filter #(
               sample_accum_reg <= sample_accum[i];
             end
             if (coeff_load_stb) begin
-              coeff_in_reg     <= coeff_forward[i+1];
+              coeff_in_reg <= coeff_forward[i];
             end
           end
         end
-        assign sample_in[i+1]    = sample_in_reg[1];
-        assign sample_accum[i+1] = sample_accum_reg;
-        assign coeff_forward[i]  = coeff_in_reg;
+        assign sample_in[i+1]     = sample_in_reg[1];
+        assign sample_accum[i+1]  = sample_accum_reg;
+        assign coeff_forward[i+1] = coeff_in_reg;
       end else begin
         fir_filter_slice #(
           .IN_WIDTH(IN_WIDTH),
@@ -275,8 +276,8 @@ module axi_fir_filter #(
           .sample_in_b(((SYMMETRIC_COEFFS == 0) || ((ODD_LEN == 1) && (i == NUM_SLICES-1))) ? {IN_WIDTH{1'b0}} : sample_shift_reg[NUM_COEFFS-1]),
           .sample_forward(sample_in[i+1]),
           // For proper coeffient loading, coeff_forward must be shifted in backwards. coeffs[] is already backwards.
-          .coeff_in(((USE_EMBEDDED_REGS_COEFFS == 1) && (RELOADABLE_COEFFS == 1)) ? coeff_forward[i+1] : coeffs[i]),
-          .coeff_forward(coeff_forward[i]),
+          .coeff_in(((USE_EMBEDDED_REGS_COEFFS == 1) && (RELOADABLE_COEFFS == 1)) ? coeff_forward[i] : coeffs[i]),
+          .coeff_forward(coeff_forward[i+1]),
           .coeff_load_stb(coeff_load_stb),
           .sample_accum(sample_accum[i]),
           .sample_out(sample_accum[i+1]));

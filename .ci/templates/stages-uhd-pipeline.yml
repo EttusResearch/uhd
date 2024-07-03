@@ -49,10 +49,10 @@ parameters:
 - name: build_x4xx
   type: boolean
   default: true
-- name: fpga_imgs_base_url
+- name: fpga_imgs_source
   type: string
-  displayName: FPGA Images Base URL
-  default: 'Internal'
+  displayName: FPGA Images Source
+  default: 'FPGA Pipeline'
 - name: skip_analyze_changeset
   type: boolean
   default: false
@@ -67,14 +67,29 @@ resources:
     branch: master
   - pipeline: usrp-kas-pipeline
     source: 'usrp-kas'
-    branch: zeus-ci
+    branch: kirkstone
+  - pipeline: uhd_fpga_pipeline
+    source: 'uhddev fpga pipeline'
+    branch: master
   repositories:
   - repository: meta-ettus
     type: github
     name: EttusResearch/meta-ettus-dev
     endpoint: EttusResearch
-    ref: zeus-ci
+    ref: kirkstone
   - repository: gnuradio
+    type: github
+    name: gnuradio/gnuradio
+    endpoint: EttusResearch
+    ref: maint-3.10
+  - repository: volk
+    type: github
+    name: gnuradio/volk
+    endpoint: EttusResearch
+    # 3.1.2 is the latest release at the moment. The maint branch hasn't been
+    # updated in years and directly using main would be risky.
+    ref: refs/tags/v3.1.2
+  - repository: gnuradio-3-8
     type: github
     name: gnuradio/gnuradio
     endpoint: EttusResearch
@@ -238,16 +253,21 @@ stages:
         cache_sstate: ${{ parameters.cache_sstate }}
         cache_downloads: False
         machines:
-          - ${{ if parameters.build_e310_sg1 }}:
-            - e310_sg1
-          - ${{ if parameters.build_e310_sg3 }}:
-            - e310_sg3
-          - ${{ if parameters.build_e320 }}:
-            - e320
-          - ${{ if parameters.build_n3xx }}:
-            - n3xx
-          - ${{ if parameters.build_x4xx }}:
-            - x4xx
+          ${{ if parameters.build_e310_sg1 }}:
+            e310_sg1:
+              machineName: e310_sg1
+          ${{ if parameters.build_e310_sg3 }}:
+            e310_sg3:
+              machineName: e310_sg3
+          ${{ if parameters.build_e320 }}:
+            e320:
+              machineName: e320
+          ${{ if parameters.build_n3xx }}:
+            n3xx:
+              machineName: n3xx
+          ${{ if parameters.build_x4xx }}:
+            x4xx:
+              machineName: x4xx
         auto_conf: $AUTO_CONF
         run_from_external_repo: true
         prebuild_steps:
@@ -268,7 +288,7 @@ stages:
         # the uhd-fpga-images recipe to an internal file server which is closer
         # to the build machines. It is simply appended to auto.conf, where
         # bitbake will pick it up and apply it to the recipe.
-        - ${{ if contains(parameters.fpga_imgs_base_url, 'Internal') }}:
+        - ${{ if contains(parameters.fpga_imgs_source, 'Internal') }}:
           - bash: |
               cat <<EOF >>$AUTO_CONF
               UHD_BASE_URL = "$FILE_SERVER_URL"
@@ -347,12 +367,12 @@ stages:
         toolset: msbuild
         installer: nsis
         releaseBinaries: ${{ parameters.release_binaries }}
-        fpga_imgs_base_url: ${{ parameters.fpga_imgs_base_url }}
+        fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
     - template: job-uhd-build-installer.yml
       parameters:
         toolset: msbuild_python
         installer: nsis
-        fpga_imgs_base_url: ${{ parameters.fpga_imgs_base_url }}
+        fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
     - ${{ if parameters.release_binaries }}:
       - template: job-uhd-build-installer-signing.yml
         parameters:
@@ -379,6 +399,8 @@ stages:
     parameters:
       testOS: ubuntu2004
       uhdSrcDir: $(Build.SourcesDirectory)
+      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testDevices: 'x3xx,b2xx'
 
 - stage: devtest_uhd_n3xx_e320_stage
@@ -402,6 +424,8 @@ stages:
     parameters:
       testOS: ubuntu2004
       uhdSrcDir: $(Build.SourcesDirectory)
+      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testDevices: 'n3xx,e320'
 
 - stage: test_uhd_x4xx_stage
@@ -432,16 +456,31 @@ stages:
   - template: tests/job-uhd-x410-hardware-tests-sdr-test0.yml
     parameters:
       testOS: ubuntu1804
+      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
   - template: tests/job-uhd-x440-hardware-tests-sdr-test0.yml
     parameters:
       testOS: ubuntu1804
+      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
   - template: tests/job-uhd-x410-hardware-tests-pebbles.yml
     parameters:
       testOS: ubuntu1804
+      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testLength: ${{ parameters.testLength }}
   - template: tests/job-uhd-x440-hardware-tests-pebbles.yml
     parameters:
       testOS: ubuntu1804
+      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+      testLength: ${{ parameters.testLength }}
+  - template: tests/job-uhd-x440-hardware-tests-saison.yml
+    parameters:
+      testOS: ubuntu2204
+      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+      extra_rf_test_args: --test_selector test_rx_phase_coherence.py test_tx_phase_coherence.py
       testLength: ${{ parameters.testLength }}
 
 - stage: test_uhd_rf_test_stage
@@ -465,6 +504,8 @@ stages:
   - template: job-uhd-rf-tests-pebbles.yml
     parameters:
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
+      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testOS: ubuntu1804
       testDevices: 'n3xx'
 
@@ -489,4 +530,13 @@ stages:
     parameters:
       testOS: ubuntu2004
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
+      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+      testLength: ${{ parameters.testLength }}
+  - template: job-uhd-streaming-tests-x440.yml
+    parameters:
+      testOS: ubuntu2204
+      uhdSrcDir: $(Build.SourcesDirectory)/uhddev
+      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testLength: ${{ parameters.testLength }}

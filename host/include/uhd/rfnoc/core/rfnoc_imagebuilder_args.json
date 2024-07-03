@@ -11,18 +11,22 @@
         "rfnoc_version":    { "type":  "string" },
         "chdr_width":       { "enum":  [64, 128, 256, 512] },
         "block_chdr_width": { "enum":  [64, 128, 256, 512] },
+        "parameters":       { "$ref": "#/definitions/parameter" },
         "crossbar_routes":  { "type":  "array" },
         "stream_endpoints": { "$ref": "#/definitions/stream_endpoints" },
         "noc_blocks":       { "$ref": "#/definitions/noc_blocks" },
+        "modules":          { "$ref": "#/definitions/modules" },
+        "transport_adapters":{ "$ref": "#/definitions/transport_adapters" },
         "clk_domains":      { "type": "array",
                               "items": { "$ref": "#/definitions/connection" } },
         "connections":      { "type": "array",
-                              "items": { "$ref": "#/definitions/connection" } }
+                              "items": { "$ref": "#/definitions/connection" } },
+        "secure_image_core":{ "$ref": "#/definitions/secure_image_core" }
     },
     "required":             ["schema",
                              "chdr_width",
                              "noc_blocks"],
-    "additionalProperties": false,
+    "additionalProperties": true,
 
     "definitions": {
 
@@ -37,6 +41,20 @@
             "type": "object",
             "patternProperties": {
                 ".*": { "$ref": "#/definitions/noc_block" }
+            }
+        },
+
+        "modules": {
+            "type": "object",
+            "patternProperties": {
+                ".*": { "$ref": "#/definitions/modules" }
+            }
+        },
+
+        "transport_adapters": {
+            "type": "object",
+            "patternProperties": {
+                ".*": { "$ref": "#/definitions/transport_adapter" }
             }
         },
 
@@ -65,10 +83,33 @@
                 "block_desc": { "type": "string", "pattern": "^.*\\.yml" },
                 "parameters": { "$ref": "#/definitions/parameter" },
                 "ctrl_clock":     { "type": "string", "pattern": "[a-z0-9_.]+"},
-                "timebase_clock": { "type": "string", "pattern": "[a-z0-9_.]+"}
+                "timebase_clock": { "type": "string", "pattern": "[a-z0-9_.]+"},
+                "priority":       { "type": "integer" }
             },
             "required": ["block_desc"],
             "additionalProperties": false
+        },
+
+        "module": {
+            "type": "object",
+            "properties": {
+                "block_desc": { "type": "string", "pattern": "^.*\\.yml" },
+                "parameters": { "$ref": "#/definitions/parameter" },
+                "priority":   { "type": "integer" }
+            },
+            "required": ["block_desc"],
+            "additionalProperties": false
+        },
+
+        "transport_adapter": {
+            "type": "object",
+            "properties": {
+                "block_desc": { "type": "string", "pattern": "^.*\\.yml" },
+                "parameters": { "$ref": "#/definitions/parameter" },
+                "priority":   { "type": "integer" }
+            },
+            "required": ["block_desc"],
+            "additionalProperties": true
         },
 
         "parameter": {
@@ -85,6 +126,14 @@
             },
             "required": ["srcblk", "srcport", "dstblk", "dstport"],
             "additionalProperties": false
+        },
+
+        "secure_image_core": {
+            "type": "object",
+            "properties": {
+                "noc_blocks":       { "$ref": "#/definitions/noc_blocks" }
+            }
         }
+
     }
 }

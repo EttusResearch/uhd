@@ -98,7 +98,7 @@ typedef uint32_t item32_t;
 typedef item32_t (*xtox_t)(item32_t);
 
 template <class T, class U>
-const T clamp(const U v)
+T clamp(const U v)
 {
     constexpr T min_t = std::numeric_limits<T>::min();
     constexpr T max_t = std::numeric_limits<T>::max();

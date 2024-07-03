@@ -1,0 +1,329 @@
+# Similar to how the CHDR ports are implied for RFNoC blocks, the device-side
+# ports are implied for the transport adapter, so are not listed here.
+
+schema: rfnoc_modtool_args
+transport_name: x4xx_eth
+version: "1.0"
+
+parameters:
+  # Same as RFNoC blocks, parameters get passed to the top-level Verilog.
+  # For each of the four ports, we can choose the interface type.
+  # (0=disable, 2=10GbE, 5=100GbE, string description also available)
+  port_type0: 10GbE
+  port_type1: 0
+  port_type2: 0
+  port_type3: 0
+  qsfp_num: 0
+
+hdl_parameters:
+  PROTOCOL: |
+    <%
+      type_map = {'10GbE': 2, '100GbE': 5, 'disable': 0}
+      ## Reversed to match the HDL parameter
+      port_types = reversed([parameters.get(f'port_type{i}', 0) for i in range(4)])
+      port_types = [type_map.get(p, p) for p in port_types]
+    %>"{ ${", ".join(str(port_t) for port_t in port_types)} }"
+  QSFP_NUM: ${ parameters['qsfp_num'] }
+  NODE_INST: ${ xbar_port }
+
+# This is the name of the (System-)Verilog module that will be instantiated
+module_name: rfnoc_ta_x4xx_eth
+
+# Same as RFNoC blocks, we list the rfnoc_chdr clock, which is required and
+# will always be connected automatically by the image builder.
+clocks:
+  - name: rfnoc_chdr
+  # Also need to add the ability to have output clocks. Example:
+  # - name: mgt_clk
+  #   direction: out
+
+# The RFNoC side CHDR ports are listed here. These are automatically connected
+# to the crossbar by the image builder. The structure here differs from the way
+# ports are defined in RFNoC blocks, because ports are always symmetric, have
+# fewer options, and are always connected to the crossbar.
+data:
+  inputs:
+    in:
+      num_ports: ${ len([parameters[f'port_type{i}'] for i in range(4) if parameters[f'port_type{i}'] not in (0, 'disabled')]) }
+  outputs:
+    out:
+      num_ports: ${ len([parameters[f'port_type{i}'] for i in range(4) if parameters[f'port_type{i}'] not in (0, 'disabled')]) }
+
+make_defs:
+  # These are appended as backtick-defines in the FPGA make process
+  - |
+    <%
+      con = parameters['qsfp_num']
+      type_map = {'10GbE': 2, '100GbE': 5, 'disable': 0}
+      port_types = [parameters.get(f'port_type{i}', 0) for i in range(4)]
+      port_types = [type_map.get(p, p) for p in port_types]
+      is_100gbe = port_types[0] == 5
+    %>\
+    QSFP${con}_0=${port_types[0]} ${" ".join([f'QSFP{con}_{i+1}={p}' for i, p in enumerate(port_types[1:]) if p != 0 or is_100gbe])}\
+
+constraints:
+  - |
+    <%
+      type_map = {'10GbE': 2, '100GbE': 5, 'disable': 0}
+      port_types = [parameters.get(f'port_type{i}', 0) for i in range(4)]
+      port_types = [type_map.get(p, p) for p in port_types]
+    %>\
+    ${ "$(LIB_DIR)/rfnoc/transport_adapters/rfnoc_ta_x4xx_eth/constraints/qsfp_10gbe.xdc" if any(p == 2 for p in port_types) else "" }
+  - constraints/pins/qsfp${parameters['qsfp_num']}_0.xdc
+  # The other pins need constraints if they carry 10 GbE traffic, or if we're using 100GbE (then all pins are connected)
+  - ${ f"constraints/pins/qsfp{parameters['qsfp_num']}_1.xdc" if parameters['port_type1'] not in (0, 'disabled') or parameters['port_type0'] in (5, '100GbE') else "" }
+  - ${ f"constraints/pins/qsfp{parameters['qsfp_num']}_2.xdc" if parameters['port_type2'] not in (0, 'disabled') or parameters['port_type0'] in (5, '100GbE') else "" }
+  - ${ f"constraints/pins/qsfp{parameters['qsfp_num']}_3.xdc" if parameters['port_type3'] not in (0, 'disabled') or parameters['port_type0'] in (5, '100GbE') else "" }
+
+dts_includes:
+  - |
+    <%
+      import os
+      con = parameters['qsfp_num']
+      type_map = {'10GbE': 2, '100GbE': 5, 'disable': 0}
+      port_types = [parameters.get(f'port_type{i}', 0) for i in range(4)]
+      port_types = [type_map.get(p, p) for p in port_types]
+      dts_include = ''
+      if port_types == [2, 0, 0, 0]:
+        dts_include = f'x4xx-10gbe-port{con}.dtsi'
+      elif port_types == [2, 2, 2, 2]:
+        dts_include = f'x4xx-10gbe-port{con}-x4.dtsi'
+      elif port_types == [5, 0, 0, 0]:
+        dts_include = f'x4xx-100gbe-port{con}.dtsi'
+    %>\
+    ${ os.path.join(device.top_dir, 'dts', dts_include) }
+
+io_ports:
+  # The actual connections for the QSFP are listed as IO ports.
+  qsfp:
+    # This is the actual connection to the QSFP pins.
+    type: x4xx_qsfp
+    drive: master
+
+fpga_includes:
+  - include: "$(LIB_DIR)/rfnoc/transport_adapters/rfnoc_ta_x4xx_eth/Makefile.srcs"
+    make_var: "$(RFNOC_TA_X4XX_ETH_SRCS)"
+
+io_signatures:
+  x4xx_qsfp:
+    # X4xx Transport Adapter QSFP Interface: Connects the QSFP pins to the x4xx_eth
+    # transport adapter.
+    type: master-slave
+    ports:
+    - name: refclk_p
+      type: to-master
+      width: 1
+    - name: refclk_n
+      type: to-master
+      width: 1
+    - name: dclk
+      type: to-master
+      width: 1
+    - name: tx_p
+      type: from-master
+      width: 4
+    - name: tx_n
+      type: from-master
+      width: 4
+    - name: rx_p
+      type: to-master
+      width: 4
+    - name: rx_n
+      type: to-master
+      width: 4
+    # Transport adapter status
+    - name: recovered_clk
+      type: from-master
+      width: 1
+    - name: device_id
+      type: to-master
+      width: 16
+    - name: rx_irq
+      type: from-master
+      width: 4
+    - name: tx_irq
+      type: from-master
+      width: 4
+    - name: port_info
+      type: from-master
+      width: 128
+    - name: link_up
+      type: from-master
+      width: 4
+    - name: activity
+      type: from-master
+      width: 4
+    # AXI-Lite Register Interface
+    - name: axil_rst
+      type: to-master
+      width: 1
+    - name: axil_clk
+      type: to-master
+      width: 1
+    - name: axil_awaddr
+      type: to-master
+      width: 40
+    - name: axil_awvalid
+      type: to-master
+      width: 1
+    - name: axil_awready
+      type: from-master
+      width: 1
+      safe: "1'h1"
+    - name: axil_wdata
+      type: to-master
+      width: 32
+    - name: axil_wstrb
+      type: to-master
+      width: 4
+    - name: axil_wvalid
+      type: to-master
+      width: 1
+    - name: axil_wready
+      type: from-master
+      width: 1
+      safe: "1'h1"
+    - name: axil_bresp
+      type: from-master
+      width: 2
+    - name: axil_bvalid
+      type: from-master
+      width: 1
+    - name: axil_bready
+      type: to-master
+      width: 1
+      safe: "1'h1"
+    - name: axil_araddr
+      type: to-master
+      width: 40
+    - name: axil_arvalid
+      type: to-master
+      width: 1
+    - name: axil_arready
+      type: from-master
+      width: 1
+      safe: "1'h1"
+    - name: axil_rdata
+      type: from-master
+      width: 32
+    - name: axil_rresp
+      type: from-master
+      width: 2
+    - name: axil_rvalid
+      type: from-master
+      width: 1
+    - name: axil_rready
+      type: to-master
+      width: 1
+      safe: "1'h1"
+    - name: axi_rst
+      type: to-master
+      width: 1
+    - name: axi_clk
+      type: to-master
+      width: 1
+    - name: axi_araddr
+      type: from-master
+      width: 49
+    - name: axi_arburst
+      type: from-master
+      width: 2
+    - name: axi_arcache
+      type: from-master
+      width: 4
+    - name: axi_arlen
+      type: from-master
+      width: 8
+    - name: axi_arlock
+      type: from-master
+      width: 1
+    - name: axi_arprot
+      type: from-master
+      width: 3
+    - name: axi_arqos
+      type: from-master
+      width: 4
+    - name: axi_arready
+      type: to-master
+      width: 1
+      safe: "1'h1"
+    - name: axi_arsize
+      type: from-master
+      width: 3
+    - name: axi_arvalid
+      type: from-master
+      width: 1
+    - name: axi_awaddr
+      type: from-master
+      width: 49
+    - name: axi_awburst
+      type: from-master
+      width: 2
+    - name: axi_awcache
+      type: from-master
+      width: 4
+    - name: axi_awlen
+      type: from-master
+      width: 8
+    - name: axi_awlock
+      type: from-master
+      width: 1
+    - name: axi_awprot
+      type: from-master
+      width: 3
+    - name: axi_awqos
+      type: from-master
+      width: 4
+    - name: axi_awready
+      type: to-master
+      width: 1
+      safe: "1'h1"
+    - name: axi_awsize
+      type: from-master
+      width: 3
+    - name: axi_awvalid
+      type: from-master
+      width: 1
+    - name: axi_bready
+      type: from-master
+      width: 1
+      safe: "1'h1"
+    - name: axi_bresp
+      type: to-master
+      width: 2
+    - name: axi_bvalid
+      type: to-master
+      width: 1
+      safe: "1'h1"
+    - name: axi_rdata
+      type: to-master
+      width: 128
+    - name: axi_rlast
+      type: to-master
+      width: 1
+    - name: axi_rready
+      type: from-master
+      width: 1
+      safe: "1'h1"
+    - name: axi_rresp
+      type: to-master
+      width: 2
+    - name: axi_rvalid
+      type: to-master
+      width: 1
+    - name: axi_wdata
+      type: from-master
+      width: 128
+    - name: axi_wlast
+      type: from-master
+      width: 1
+    - name: axi_wready
+      type: to-master
+      width: 1
+      safe: "1'h1"
+    - name: axi_wstrb
+      type: from-master
+      width: 16
+    - name: axi_wvalid
+      type: from-master
+      width: 1

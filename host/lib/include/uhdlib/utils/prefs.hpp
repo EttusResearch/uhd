@@ -12,12 +12,29 @@
 
 namespace uhd { namespace prefs {
 
+/*! For general configuration items not targeted to a specific device we have the
+ * "General" section.
+ */
+constexpr char GLOBAL_SECTION[] = "Global";
+
 /*! Return a reference to an object representing the UHD config file
  *  state.
  *
  * Note: Don't call this in static initializers.
  */
 config_parser& get_uhd_config();
+
+/*! Guided mode helps the user by providing additional information about current settings
+ * via info level log messages. In case this is too much it can be turned off in the
+ * config file. This is the check if guided mode is enabled.
+ */
+bool is_guided_mode();
+
+/*! Sets the `guided_mode_suspended` flag in the config to true. */
+void suspend_guided_mode();
+
+/*! Sets the `guided_mode_suspended` flag in the config to false. */
+void resume_guided_mode();
 
 /*! Convenience function to update device args with settings from
  *  config files.

@@ -221,3 +221,36 @@ BOOST_AUTO_TEST_CASE(test_action_forwarding_map_exception_invalid_destination)
     auto cmd = action_info::make("action");
     BOOST_REQUIRE_THROW(generator.post_output_edge_action(cmd, 0), uhd::rfnoc_error);
 }
+
+BOOST_AUTO_TEST_CASE(test_action_exception_handling)
+{
+    node_accessor_t node_accessor{};
+    uhd::rfnoc::detail::graph_t graph{};
+
+    class mock_throwing_node_t : public mock_radio_node_t
+    {
+    public:
+        mock_throwing_node_t() : mock_radio_node_t(0)
+        {
+            register_action_handler(
+                "throwing_action", [](const res_source_info&, action_info::sptr) {
+                    throw uhd::runtime_error("Arbitrary UHD exception");
+                });
+        }
+    };
+
+    mock_throwing_node_t mock_radio{};
+    graph.connect(&mock_radio, &mock_radio, {0, 0, graph_edge_t::DYNAMIC, false});
+    graph.commit();
+    // Check that it throws the first time
+    BOOST_REQUIRE_THROW(node_accessor.post_action(&mock_radio,
+                            {res_source_info::USER, 0},
+                            action_info::make("throwing_action")),
+        uhd::runtime_error);
+    // It should also throw the second time: we should actually be running this action
+    // even though the previous one threw an exception
+    BOOST_REQUIRE_THROW(node_accessor.post_action(&mock_radio,
+                            {res_source_info::USER, 0},
+                            action_info::make("throwing_action")),
+        uhd::runtime_error);
+}

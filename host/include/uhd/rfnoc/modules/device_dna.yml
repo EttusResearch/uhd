@@ -1,0 +1,45 @@
+schema: rfnoc_modtool_args
+module_name: device_dna
+version: "1.0"
+
+parameters:
+  device_type: "${config.family}"
+
+checks:
+  - condition: "${parameters['device_type'] in ['ULTRASCALE', '7SERIES']}"
+    message: "Device type must be either 'ULTRASCALE' or '7SERIES'."
+
+hdl_parameters:
+  DNA_WIDTH: "${96 if parameters['device_type'] == 'ULTRASCALE' else 64}"
+  # To include quotes in the rendered string, providing these triple-quotes is
+  # required to avoid the rendering engine to not strip them while evaluating
+  # parameters.
+  DEVICE_TYPE: "'\"${parameters['device_type']}\"'"
+
+io_ports:
+  device_dna:
+    type: device_dna
+    drive: broadcaster
+    parameters:
+      width: "${96 if parameters['device_type'] == 'ULTRASCALE' else 64}"
+
+clocks:
+  - name: clk
+    default: _device_.rfnoc_ctrl
+
+resets:
+  - name: rst
+    default: _device_.rfnoc_ctrl
+
+fpga_includes:
+  - include: "$(LIB_DIR)/hwutils/Makefile.srcs"
+    make_var: "$(HWUTILS_SRCS)"
+
+io_signatures:
+  device_dna:
+    type: broadcaster-listener
+    parameters:
+      width: 96
+    ports:
+    - name: dna
+      width: "${parameters['width']}"

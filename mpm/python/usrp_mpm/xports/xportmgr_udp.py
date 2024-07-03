@@ -276,6 +276,7 @@ class XportMgrUDP:
         try:
             result = subprocess.run(
                 ['iptables', '-C'] + prerouting_arguments,
+                capture_output=True,
                 timeout=2)
             if result.returncode != 0:
                 self.log.debug('Adding iptables prerouting rule')
@@ -285,6 +286,7 @@ class XportMgrUDP:
                     check=True)
             result = subprocess.run(
                 ['iptables', '-C'] + forward_arguments,
+                capture_output=True,
                 timeout=2)
             if result.returncode != 0:
                 self.log.debug('Adding iptables forward rule')

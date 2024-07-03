@@ -11,6 +11,7 @@
 #include "ad5623_regs.hpp" //aux dac
 #include "ad7922_regs.hpp" //aux adc
 #include "x300_clock_ctrl.hpp"
+#include <uhd/rfnoc/register_iface.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhdlib/usrp/cores/gpio_atr_3000.hpp>
@@ -18,10 +19,16 @@
 #include <uhdlib/usrp/cores/rx_frontend_core_3000.hpp>
 #include <uhdlib/usrp/cores/spi_core_3000.hpp>
 
+
 struct x300_dboard_iface_config_t
 {
     uhd::usrp::gpio_atr::db_gpio_atr_3000::sptr gpio;
     spi_core_3000::sptr spi;
+    std::function<void(uint32_t start_addr,
+        uint32_t length,
+        std::function<void(uint32_t, uint32_t)> poke_fn,
+        std::function<uint32_t(uint32_t)> peek_fn)>
+        define_custom_register_space;
     size_t rx_spi_slaveno;
     size_t tx_spi_slaveno;
     uhd::i2c_iface::sptr i2c;
@@ -92,6 +99,11 @@ public:
     }
 
     void add_rx_fe(const std::string& fe_name, rx_frontend_core_3000::sptr fe_core);
+
+    void define_custom_register_space(const uint32_t start_addr,
+        const uint32_t length,
+        std::function<void(uint32_t, uint32_t)> poke_fn,
+        std::function<uint32_t(uint32_t)> peek_fn) override;
 
 private:
     const x300_dboard_iface_config_t _config;

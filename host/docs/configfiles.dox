@@ -47,6 +47,19 @@ This will act as if this key/value pair had been passed to the device args
 directly. This means the valid key/value pairs for the config files are the
 same as those for the device args (see \ref config_devaddr).
 
+\section configfiles_uhd_session Configuring UHD Sessions
+
+For settings that are not specific to a device, but rather to the UHD session,
+there is the `Global` section. At the time of writing this, there is only one
+setting available in this section which is the `guided_mode` which supports
+the user on X440 devices. For turning it off, the following can be added to the
+config file:
+
+~~~~{.ini}
+[Global]
+guided_mode=false
+~~~~
+
 \section configfiles_usrps_dpdk Configuring DPDK
 
 DPDK is a special case. Because there are so many things to configure for

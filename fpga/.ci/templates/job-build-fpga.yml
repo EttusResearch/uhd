@@ -45,22 +45,16 @@ jobs:
   displayName: 'Build FPGA'
   timeoutInMinutes: $[ variables['timeout'] ]
   pool:
-    name: hardware
+    name: Drivers-NIBuildFarm-RFMIBUILD
     demands:
-    - MAX_CPU -equals 4
+    - Agent.OS -equals Linux
   variables:
   - group: sdr-pipeline-vars
   strategy:
     matrix:
       ${{ parameters.targets_matrix }}
   steps:
-    - checkout: self
-      clean: true
-
-    - checkout: hwtools
-      clean: true
-      path: s/hwtools/head
-      persistCredentials: true
+    - template: setup_steps.yml
 
     - download: current
       artifact: ${{ parameters.ip_artifact }}
@@ -72,21 +66,60 @@ jobs:
       displayName: 'Populate build-ip'
 
     - bash: |
+        # Purge any existing UHD install
+        rm -rf $(Build.BinariesDirectory)/prefix $(Build.BinariesDirectory)/build_image_builder
+        mkdir -p $(Build.BinariesDirectory)/prefix
+        # hwtools hwsetup.sh will setup a venv, so we'll reuse that for the
+        # image builder! That's also why we install the image builder in the
+        # same step as building the bitfile: To avoid having to run hwsetup.sh
+        # twice.
+        echo "##[group]Setting up build environment..."
         source $(Build.SourcesDirectory)/uhddev/fpga/.ci/scripts/run_setup.sh ./
-        python3 ../../tools/utils/repeat_fpga_build.py --target $(target_name) --num $(max_attempts) --seed $(($(System.JobAttempt)-1)) --persistent
+        pip3 install -U numpy mako "ruamel.yaml<0.18.0" jsonschema
+        set -o xtrace
+        # hwsetup.sh injects garbage cmake versions into PATH, so avoid that by
+        # going straight to /usr/bin/cmake
+        /usr/bin/cmake -S $(Build.SourcesDirectory)/uhddev/host \
+          -B $(Build.BinariesDirectory)/build_image_builder \
+          -DCMAKE_INSTALL_PREFIX=$(Build.BinariesDirectory)/prefix \
+          -DUHD_BOOST_REQUIRED=OFF \
+          -DENABLE_LIBUHD=OFF -DENABLE_PYMOD_UTILS=ON \
+          -DENABLE_DOXYGEN=OFF -DENABLE_MAN_PAGES=OFF -DENABLE_MANUAL=OFF
+        /usr/bin/cmake --build $(Build.BinariesDirectory)/build_image_builder
+        /usr/bin/cmake --install $(Build.BinariesDirectory)/build_image_builder
+        echo "##[group]Executing FPGA build..."
+        # rfnoc_image_builder does not currently get installed to a bin/ folder
+        # via pip, so we add it to PATH
+        export PATH=$BUILD_BINARIESDIRECTORY/prefix/bin:$VIRTUAL_ENV/bin:$PATH
+        if [ -n "$TARGET_NAME" ]; then
+            export TARGET_ARG="--target $TARGET_NAME"
+        fi
+        if [ -z "$IMAGE_CORE_NAME" ]; then
+            echo "##vso[task.logissue type=error]image_core_name must be set for proper functioning of pipeline!"
+            exit 1
+        fi
+        python3 ../../tools/utils/repeat_fpga_build.py \
+            --image-core $(image_core) $TARGET_ARG $BITFILE_NAME_ARG \
+            --image-core-name $IMAGE_CORE_NAME \
+            --num $(max_attempts) --seed $(($(System.JobAttempt)-1)) --persistent
+        export BUILD_ARTIFACT_DIR=`ls | grep build-usrp`
+        echo "Build artifact dir: $BUILD_ARTIFACT_DIR"
+        echo "##vso[task.setvariable variable=BuildArtifactDir;isOutput=true]$BUILD_ARTIFACT_DIR"
+        pip3 uninstall -y uhd
       workingDirectory: ${{ parameters.top_dir }}
       env:
         PATCHES_PATH: $(sdr-vivado-patches)
       displayName: 'Build Target'
+      name: build_target
 
     # Publish the final result only if all previous steps passed
     - publish: ${{ parameters.top_dir }}/build
-      artifact: '$(target_name)'
+      artifact: '$(artifact_name)'
       displayName: 'Publish FPGA'
 
     # Publish intermediate files.
-    - publish: ${{ parameters.top_dir }}/build-$(target_name)
-      artifact: 'Build artifacts $(target_name) (Attempt $(System.JobAttempt))'
+    - publish: ${{ parameters.top_dir }}/$(build_target.BuildArtifactDir)
+      artifact: 'Build artifacts for $(image_core) (Target $(target_name), Image core name $(image_core_name),  Attempt $(System.JobAttempt))'
       condition: and(always(), eq('${{ parameters.publish_int_files }}', true))
       displayName: 'Publish Build Directory'
 
@@ -94,3 +127,8 @@ jobs:
     - template: check_clean_repo_steps.yml
       parameters:
         directory: ${{ parameters.top_dir }}
+
+    - bash: |
+        make cleanall
+      workingDirectory: ${{ parameters.top_dir }}
+      displayName: 'Clean up build artifacts'

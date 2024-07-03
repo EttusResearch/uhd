@@ -132,6 +132,14 @@ public:
         return 0;
     }
 
+    void define_custom_register_space(const uint32_t /*start_addr*/,
+        const uint32_t /*length*/,
+        std::function<void(uint32_t, uint32_t)> /*poke_fn*/,
+        std::function<uint32_t(uint32_t)> /*peek_fn*/) override
+    {
+        // nop
+    }
+
     bool force_timeout = false;
 
     //! All pokes end up writing to this map

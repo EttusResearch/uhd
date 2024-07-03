@@ -8,7 +8,4 @@
 if(ENABLE_MPMD)
     add_subdirectory(rpclib)
 endif()
-if(ENABLE_PYTHON_API)
-    add_subdirectory(pybind11)
-endif()
 add_subdirectory(flatbuffers)

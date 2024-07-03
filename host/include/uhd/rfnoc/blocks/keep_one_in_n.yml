@@ -49,7 +49,3 @@ data:
       payload_fifo_depth: 2**MTU
       format: int32
       mdata_sig: ~
-
-registers:
-
-properties:

@@ -10,7 +10,7 @@ Mixin class for daughterboard classes that live on a X4xx motherboard
 from usrp_mpm.mpmlog import get_logger
 from usrp_mpm import tlv_eeprom
 from usrp_mpm.sys_utils.udev import get_eeprom_paths_by_symbol
-from usrp_mpm.rpc_server import no_rpc
+from usrp_mpm.rpc_utils import no_rpc
 
 # pylint: disable=too-few-public-methods
 class EepromTagMap:

@@ -154,6 +154,7 @@ void fbx_dboard_impl::_init_experts(expert_container::sptr expert,
         fe_path,
         trx,
         chan_idx,
+        _rfdc_rate,
         _rpc_prefix,
         _db_idx,
         _mb_rpcc);

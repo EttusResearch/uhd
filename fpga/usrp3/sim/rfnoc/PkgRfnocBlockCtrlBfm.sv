@@ -97,18 +97,14 @@ package PkgRfnocBlockCtrlBfm;
   //
   //---------------------------------------------------------------------------
 
-  class RfnocBlockCtrlBfm #(CHDR_W = 64, ITEM_W = 32);
+  // Control functionality only
+  class RfnocBlockCtrlBfmCtrlOnly;
 
-    local virtual RfnocBackendIf.master  backend;
-    local CtrlIfaceBfm                   ctrl;
-    local ChdrIfaceBfm #(CHDR_W, ITEM_W) m_data[$];
-    local ChdrIfaceBfm #(CHDR_W, ITEM_W) s_data[$];
-    local bit                            running;
+    protected virtual RfnocBackendIf.master  backend;
+    protected CtrlIfaceBfm                   ctrl;
+    protected bit                            running;
 
     localparam CMD_PROP_CYC = 5;
-
-    typedef ChdrData #(CHDR_W, ITEM_W)::chdr_word_t chdr_word_t;
-    typedef ChdrData #(CHDR_W, ITEM_W)::item_t      item_t;
 
     // Class constructor to create a new BFM instance.
     //
@@ -128,6 +124,123 @@ package PkgRfnocBlockCtrlBfm;
       this.backend = backend;
       this.ctrl = new(m_ctrl, s_ctrl, dst_port, src_port);
       this.running = 0;
+    endfunction : new
+
+    // Start the data and control BFM's processes running.
+    task run();
+      assert (backend.sts.v1.proto_ver == 1) else begin
+        $fatal(1, "The connected block has an incompatible backend interface");
+      end
+      if (!running) begin
+        ctrl.run();
+        running = 1;
+      end
+    endtask : run
+
+    // Get static info about the block
+    function logic [7:0] get_proto_ver();
+      return backend.sts.v1.proto_ver;
+    endfunction : get_proto_ver
+
+    function logic [31:0] get_noc_id();
+      return backend.sts.v1.noc_id;
+    endfunction : get_noc_id
+
+    function logic [5:0] get_num_data_i();
+      return backend.sts.v1.num_data_i;
+    endfunction : get_num_data_i
+
+    function logic [5:0] get_num_data_o();
+      return backend.sts.v1.num_data_o;
+    endfunction : get_num_data_o
+
+    function logic [5:0] get_ctrl_fifosize();
+      return backend.sts.v1.ctrl_fifosize;
+    endfunction : get_ctrl_fifosize
+
+    function logic [5:0] get_mtu();
+      return backend.sts.v1.mtu;
+    endfunction : get_mtu
+
+    // Soft-Reset the Control path
+    //
+    //   rst_cyc: Number of cycles to wait for reset completion
+    //
+    task reset_ctrl(input int rst_cyc = 100);
+      assert (running) else begin
+        $fatal(1, "Cannot call flush_and_reset until RfnocBlockCtrlBfm is running");
+      end
+
+      // Assert soft_ctrl_rst then wait
+      @(posedge backend.ctrl_clk);
+      backend.cfg.v1.soft_ctrl_rst = 1;
+      repeat (CMD_PROP_CYC) @(posedge backend.ctrl_clk);
+      backend.cfg.v1.soft_ctrl_rst = 0;
+      repeat (rst_cyc) @(posedge backend.ctrl_clk);
+    endtask : reset_ctrl
+
+    // Send a read request packet on the AXIS-Ctrl interface and get the
+    // response.
+    //
+    //   addr:   Address for the read request
+    //   word:   Data word that was returned in response to the read
+    //
+    task reg_read(
+      input  ctrl_address_t addr,
+      output ctrl_word_t    word
+    );
+      assert (running) else begin
+        $fatal(1, "Cannot call reg_read until RfnocBlockCtrlBfm is running");
+      end
+
+      ctrl.reg_read(addr, word);
+    endtask : reg_read
+
+
+    // Send a a write request packet on the AXIS-Ctrl interface and get the
+    // response.
+    //
+    //   addr:   Address for the write request
+    //   word:   Data word to write
+    //
+    task reg_write(
+      ctrl_address_t addr,
+      ctrl_word_t    word
+    );
+      assert (running) else begin
+        $fatal(1, "Cannot call reg_write until RfnocBlockCtrlBfm is running");
+      end
+
+      ctrl.reg_write(addr, word);
+    endtask : reg_write
+
+  endclass : RfnocBlockCtrlBfmCtrlOnly
+
+  // Control functionality plus streaming (the normal/default case)
+  class RfnocBlockCtrlBfm #(CHDR_W = 64, ITEM_W = 32) extends RfnocBlockCtrlBfmCtrlOnly;
+
+    local ChdrIfaceBfm #(CHDR_W, ITEM_W) m_data[$];
+    local ChdrIfaceBfm #(CHDR_W, ITEM_W) s_data[$];
+
+    typedef ChdrData #(CHDR_W, ITEM_W)::chdr_word_t chdr_word_t;
+    typedef ChdrData #(CHDR_W, ITEM_W)::item_t      item_t;
+
+    // Class constructor to create a new BFM instance.
+    //
+    //   backend:   Interface for the backend signals of a block
+    //   m_ctrl:    Interface for the CTRL master connection (EP's AXIS-Ctrl output)
+    //   s_ctrl:    Interface for the CTRL slave connection (EP's AXIS-Ctrl input)
+    //   dst_port:  Destination port to use in generated control packets
+    //   src_port:  Source port to use in generated control packets
+    //
+    function new(
+      virtual RfnocBackendIf.master    backend,
+      virtual AxiStreamIf #(32).master m_ctrl,
+      virtual AxiStreamIf #(32).slave  s_ctrl,
+      input   ctrl_port_t              dst_port = 10'd2,
+      input   ctrl_port_t              src_port = 10'd1
+    );
+      super.new(backend, m_ctrl, s_ctrl, dst_port, src_port);
     endfunction : new
 
     // Add a master data port. This should connect to a DUT slave input.
@@ -202,7 +315,7 @@ package PkgRfnocBlockCtrlBfm;
 
     // Start the data and control BFM's processes running.
     task run();
-      assert (backend.sts.v1.proto_ver == 1) else begin
+      assert (super.backend.sts.v1.proto_ver == 1) else begin
         $fatal(1, "The connected block has an incompatible backend interface");
       end
       if (!running) begin
@@ -284,31 +397,6 @@ package PkgRfnocBlockCtrlBfm;
       return m_data[port].get_ticks_per_word();
     endfunction
 
-    // Get static info about the block
-    function logic [7:0] get_proto_ver();
-      return backend.sts.v1.proto_ver;
-    endfunction : get_proto_ver
-
-    function logic [31:0] get_noc_id();
-      return backend.sts.v1.noc_id;
-    endfunction : get_noc_id
-
-    function logic [5:0] get_num_data_i();
-      return backend.sts.v1.num_data_i;
-    endfunction : get_num_data_i
-
-    function logic [5:0] get_num_data_o();
-      return backend.sts.v1.num_data_o;
-    endfunction : get_num_data_o
-
-    function logic [5:0] get_ctrl_fifosize();
-      return backend.sts.v1.ctrl_fifosize;
-    endfunction : get_ctrl_fifosize
-
-    function logic [5:0] get_mtu();
-      return backend.sts.v1.mtu;
-    endfunction : get_mtu
-
     // Soft-Reset the CHDR path 
     //
     //   rst_cyc: Number of cycles to wait for reset completion
@@ -327,23 +415,6 @@ package PkgRfnocBlockCtrlBfm;
       @(posedge backend.ctrl_clk);
       repeat (rst_cyc) @(posedge backend.ctrl_clk);
     endtask : reset_chdr
-
-    // Soft-Reset the Control path 
-    //
-    //   rst_cyc: Number of cycles to wait for reset completion
-    //
-    task reset_ctrl(input int rst_cyc = 100);
-      assert (running) else begin
-        $fatal(1, "Cannot call flush_and_reset until RfnocBlockCtrlBfm is running");
-      end
-
-      // Assert soft_ctrl_rst then wait
-      @(posedge backend.ctrl_clk);
-      backend.cfg.v1.soft_ctrl_rst = 1;
-      repeat (CMD_PROP_CYC) @(posedge backend.ctrl_clk);
-      backend.cfg.v1.soft_ctrl_rst = 0;
-      repeat (rst_cyc) @(posedge backend.ctrl_clk);
-    endtask : reset_ctrl
 
     // Flush the data ports of the block
     //
@@ -821,42 +892,6 @@ package PkgRfnocBlockCtrlBfm;
 
       m_data[port].set_master_stall_prob(stall_prob);
     endfunction
-
-
-    // Send a read request packet on the AXIS-Ctrl interface and get the
-    // response.
-    //
-    //   addr:   Address for the read request
-    //   word:   Data word that was returned in response to the read
-    //
-    task reg_read(
-      input  ctrl_address_t addr,
-      output ctrl_word_t    word
-    );
-      assert (running) else begin
-        $fatal(1, "Cannot call reg_read until RfnocBlockCtrlBfm is running");
-      end
-
-      ctrl.reg_read(addr, word);
-    endtask : reg_read
-
-
-    // Send a a write request packet on the AXIS-Ctrl interface and get the
-    // response.
-    //
-    //   addr:   Address for the write request
-    //   word:   Data word to write
-    //
-    task reg_write(
-      ctrl_address_t addr,
-      ctrl_word_t    word
-    );
-      assert (running) else begin
-        $fatal(1, "Cannot call reg_write until RfnocBlockCtrlBfm is running");
-      end
-
-      ctrl.reg_write(addr, word);
-    endtask : reg_write
 
     // Compare data vectors
     static function bit compare_data(

@@ -88,6 +88,16 @@ an RF-ADC consists of 8 interleaved sub-ADCs. The resulting interleaved
 spurs are minimized by the integrated self-calibration executed by UHD. For 
 details on controlling the self calibration execution refer to \ref x4xx_adc_self_cal.
 
+Note: Due to the direct sampling architecture without filters on the FBX daughterboard,
+TX ports will output the converter rate (Fc) with a low power (<-50 dBm) as soon as the
+corresponding ADCs and DACs are enabled, even if the DACs are not actively transmitting.
+This is a known limitation of the X440 and FBX design.
+For instance when acquiring a signal on the RX1 port of RF0, the converter rate (Fc)
+can be measured on the TX/RX0 port of RF0.
+While operation around the converter rate (Fc) is not recommended anyway, it is possible to
+suppress the converter rate (Fc) by using a frontend module with a sufficiently high
+attenuation at the converter rate.
+
 \section fbx_too_dctrl Digital Control
 
 All switches on the FBX are controlled via registers that are exposed as a

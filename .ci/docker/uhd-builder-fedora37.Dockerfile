@@ -20,6 +20,7 @@ RUN dnf install -y \
         make \
         ncompress \
         ninja-build \
+        pybind11-devel \
         python3-devel \
         python3-docutils \
         python3-mako \
@@ -55,5 +56,8 @@ RUN dnf install -y \
         python3-scipy \
         python3-cairo-devel \
         python3-gobject \
+        spdlog-devel \
         && \
     dnf clean all
+
+RUN pip install pygccxml pyyaml

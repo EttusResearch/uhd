@@ -12,7 +12,7 @@ import itertools
 from dataclasses import dataclass
 from usrp_mpm import lib # Pulls in everything from C++-land
 from usrp_mpm.periph_manager.x4xx_rfdc_regs import RfdcRegsControl
-from usrp_mpm.rpc_server import no_rpc
+from usrp_mpm.rpc_utils import no_rpc
 from usrp_mpm.mpmutils import LogRuntimeError
 
 RFDC_DEVICE_ID = 0

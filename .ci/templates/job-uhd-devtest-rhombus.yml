@@ -8,6 +8,10 @@ parameters:
 - name: uhdArtifactSource
   type: string
   default: current
+- name: uhdFpgaArtifactSource
+  type: string
+- name: fpga_imgs_source
+  type: string
 - name: testDevices
   type: string
   default: 'x3xx,b2xx,n3xx,e320'
@@ -21,7 +25,10 @@ jobs:
     toolset: 'make'
     uhdSrcDir: '${{ parameters.uhdSrcDir }}'
     uhdArtifactSource: '${{ parameters.uhdArtifactSource }}'
+    uhdFpgaArtifactSource: '${{ parameters.uhdFpgaArtifactSource }}'
+    fpga_imgs_source: '${{ parameters.fpga_imgs_source }}'
     redisHost: 'sdr-rhombus'
+    vivado_dir: '/opt/Xilinx/Vivado_Lab/2020.1/'
     dutMatrix:
       ${{ if contains(parameters.testDevices, 'x3xx') }}:
         rhombus-x300-UBX-0:
@@ -143,8 +150,8 @@ jobs:
           devType: 'e3xx'
           devModel: 'e320'
           devName: rhombus-e320-0
-          devSerial: '31E3581'
-          devHostname: 'ni-e320-31E3581'
+          devSerial: '321D096'
+          devHostname: 'ni-e320-321D096'
           devBus: 'ip'
           devAddr: '192.168.20.7'
           sfpAddrs: '192.168.20.7'

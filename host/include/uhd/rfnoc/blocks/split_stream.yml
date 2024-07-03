@@ -31,7 +31,3 @@ data:
   outputs:
     out:
       num_ports: NUM_PORTS*NUM_BRANCHES
-
-registers:
-
-properties:

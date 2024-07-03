@@ -279,10 +279,11 @@ def set_reg(self, addr, reg):
     % endfor
 """
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import common
+
     common.generate(
-        name='x4xx_rfdc_regmap',
+        name="x4xx_rfdc_regmap",
         regs_tmpl=REGS_TMPL,
         body_tmpl="",
         py_body_tmpl=PY_BODY_TMPL,

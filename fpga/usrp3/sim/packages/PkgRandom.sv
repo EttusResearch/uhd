@@ -115,16 +115,16 @@ package PkgRandom;
         a = b;
         b = temp;
       end
-      num_bits = $clog2(b - a + unsigned_t'{1});
+      num_bits = $clog2(b - a + (WIDTH+1)'(1));
       do begin
-        num = a + (rand_bit() & ((unsigned_t'{1} << num_bits) - 1));
+        num = a + (rand_bit() & (((WIDTH+1)'(1) << num_bits) - 1));
       end while (num > b);
       return num;
     endfunction : rand_bit_range
 
 
     // Returns a random number in the given SIGNED range. Behavior is the same
-    // as rand_bit_range(), bunsigned_t treats the range values as SIGNED numbers.
+    // as rand_bit_range(), but treats the range values as SIGNED numbers.
     static function signed_t rand_sbit_range(
       signed_t a = {1'b0, {WIDTH{1'b1}}},
       signed_t b = 0

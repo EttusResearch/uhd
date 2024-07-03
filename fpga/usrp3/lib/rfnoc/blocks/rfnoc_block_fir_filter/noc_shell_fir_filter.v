@@ -132,7 +132,7 @@ module noc_shell_fir_filter #(
   wire [63:0]  data_o_flush_done;
 
   backend_iface #(
-    .NOC_ID        (32'hF1120000),
+    .NOC_ID        (32'hF1120002),
     .NUM_DATA_I    (0+NUM_PORTS),
     .NUM_DATA_O    (0+NUM_PORTS),
     .CTRL_FIFOSIZE ($clog2(32)),

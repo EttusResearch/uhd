@@ -1,0 +1,45 @@
+# This is the description of the DMA transport adapter, which directly connects
+# the PL to the PS. The DMA engine itself is not part of the image core (it is
+# always instantiated), so the transport is mostly a passthrough.
+
+schema: rfnoc_modtool_args
+transport_name: chdr
+version: "1.0"
+
+# This is the name of the (System-)Verilog module that will be instantiated
+module_name: rfnoc_ta_chdr_dma
+
+# Same as RFNoC blocks, we list the rfnoc_chdr clock, which is required and
+# will always be connected automatically by the image builder.
+clocks:
+  - name: rfnoc_chdr
+
+data:
+  inputs:
+    in:
+      num_ports: 1
+  outputs:
+    out:
+      num_ports: 1
+
+io_ports:
+  chdr_dma_s:
+    type: axis_chdr
+    drive: master
+    parameters:
+      width: "${config.chdr_width}"
+    rename:
+      pattern: (.*)
+      repl: s_dma_\1
+  chdr_dma_m:
+    type: axis_chdr
+    drive: slave
+    parameters:
+      width: "${config.chdr_width}"
+    rename:
+      pattern: (.*)
+      repl: m_dma_\1
+
+fpga_includes:
+  - include: "$(LIB_DIR)/rfnoc/transport_adapters/rfnoc_ta_chdr_dma/Makefile.srcs"
+    make_var: "$(RFNOC_TA_CHDR_DMA_SRCS)"
