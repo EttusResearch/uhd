@@ -27,11 +27,15 @@ class UHD_API fir_filter_block_control : public noc_block_base
 public:
     RFNOC_DECLARE_BLOCK(fir_filter_block_control)
 
+    static const uint16_t MINOR_COMPAT;
+    static const uint16_t MAJOR_COMPAT;
+
     // Block registers
     static const uint32_t REG_FIR_BLOCK_SIZE;
     static const uint32_t REG_FIR_MAX_NUM_COEFFS_ADDR;
     static const uint32_t REG_FIR_LOAD_COEFF_ADDR;
     static const uint32_t REG_FIR_LOAD_COEFF_LAST_ADDR;
+    static const uint32_t REG_COMPAT_NUM_ADDR;
 
     /*! Get the maximum number of filter coefficients supported by this block
      *

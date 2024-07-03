@@ -126,6 +126,10 @@ void mpmd_impl::init_property_tree(
         .set(mb->device_info.get("mpm_sw_version", "UNKNOWN"));
     tree->create<std::string>(mb_path / "fs_version")
         .set(mb->device_info.get("fs_version", "UNKNOWN"));
+    if (mb->device_info.has_key("device_dna")) {
+        tree->create<std::string>(mb_path / "device_dna")
+            .set(mb->device_info.get("device_dna", "UNKNOWN"));
+    }
 
     /*** Clocking *******************************************************/
     tree->create<std::string>(mb_path / "clock_source/value")

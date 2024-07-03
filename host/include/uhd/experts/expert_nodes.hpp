@@ -215,7 +215,7 @@ public:
         }
     }
 
-    const data_t retrieve() const
+    data_t retrieve() const
     {
         if (_callback_mutex == NULL)
             throw uhd::assertion_error(

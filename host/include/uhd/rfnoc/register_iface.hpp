@@ -15,6 +15,16 @@
 
 namespace uhd { namespace rfnoc {
 
+/*! custom_register_space doesn't store start_addr, as start_addr should be stored as the
+ * key value for the map that keeps track of custom register spaces
+ */
+struct custom_register_space
+{
+    uint32_t end_addr;
+    std::function<void(uint32_t, uint32_t)> poke_fn;
+    std::function<uint32_t(uint32_t)> peek_fn;
+};
+
 /*!  A software interface to access low-level registers in a NoC block.
  *
  * This interface supports the following:
@@ -312,6 +322,23 @@ public:
      * \return The 10-bit port number
      */
     virtual uint16_t get_port_num() const = 0;
+
+    /*! Define a custom register space that overrides peek and poke operations,
+     *  directing peek and poke operations that fall within the custom space to
+     *  the provided custom peek and poke functions instead.
+     *
+     *  Callers should be aware of the NoC block's register space, so that peeks and
+     *  pokes do not unintentionally override existing functionality.
+     *
+     * \param start_addr The start address of the custom register space
+     * \param length The length of the custom address space
+     * \param poke_fn The function to call when the custom register space is poked
+     * \param peek_fn The function to call when the custom register space is peeked
+     */
+    virtual void define_custom_register_space(const uint32_t start_addr,
+        const uint32_t length,
+        std::function<void(uint32_t, uint32_t)> poke_fn,
+        std::function<uint32_t(uint32_t)> peek_fn) = 0;
 
 }; // class register_iface
 

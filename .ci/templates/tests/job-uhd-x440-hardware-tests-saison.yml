@@ -1,0 +1,52 @@
+parameters:
+- name: testOS
+  type: string
+  values:
+    - ubuntu2204
+- name: uhdArtifactSource
+  type: string
+  default: current
+- name: uhdFpgaArtifactSource
+  type: string
+- name: fpga_imgs_source
+  type: string
+- name: extra_rf_test_args
+  type: string
+  default: ''
+- name: testLength
+  type: string
+
+jobs:
+- template: templates/job-uhd-x4xx-hardware-tests.yml
+  parameters:
+    suiteName: 'saison_x440'
+    testOS: '${{ parameters.testOS }}'
+    toolset: 'make'
+    runPyTest: true
+    runDevTest: false
+    runSystemImageTest: false
+    uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
+    uhdFpgaArtifactSource: ${{ parameters.uhdFpgaArtifactSource }}
+    fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+    xilinxLocation: /opt/Xilinx/Vivado/2019.1
+    extra_rf_test_args: '${{ parameters.extra_rf_test_args }}'
+    testLength: '${{ parameters.testLength }}'
+    warmUpAfterBoot: 360
+    ${{ if eq(parameters['testLength'], 'full') }}:
+      timeoutInMinutes: 1300
+    ${{ elseif eq(parameters['testLength'], 'stress') }}:
+      timeoutInMinutes: 3200
+    ${{ else }}:
+      timeoutInMinutes: 150
+    dutMatrix:
+      saison-x440-0:
+        dutName: 'saison-x440-0'
+        dutType: 'x4xx'
+        devtestPattern: 'x4x0'
+        dutFPGA: 'X4_400'
+        dutEmbeddedImagesArtifact: 'x4xx-images'
+        uartSerial: '251635284FCA'
+        pipelineAgent: saison-agent-1
+        pytestAtsConfig: saison_multichan_ats
+        pytestDUT: 'x440'
+        sfp0ip: '192.168.77.42'

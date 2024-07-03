@@ -63,6 +63,16 @@ public:
         uhd::time_spec_t timestamp = uhd::time_spec_t::ASAP,
         bool ack                   = false) override
     {
+        for (auto it = _custom_register_spaces.begin();
+             it != _custom_register_spaces.end() && addr >= it->first;
+             ++it) {
+            if (addr >= it->first && addr < it->second.end_addr) {
+                UHD_LOG_TRACE("CTRLEP",
+                    "Poking custom register space at address 0x" << std::hex << addr);
+                it->second.poke_fn(addr, data);
+                return;
+            }
+        }
         // Send request and optionally wait for an ACK
         send_request_packet(OP_WRITE, addr, {data}, timestamp, ack);
     }
@@ -104,6 +114,15 @@ public:
     uint32_t peek32(
         uint32_t addr, uhd::time_spec_t timestamp = uhd::time_spec_t::ASAP) override
     {
+        for (auto it = _custom_register_spaces.begin();
+             it != _custom_register_spaces.end() && addr >= it->first;
+             ++it) {
+            if (addr >= it->first && addr < it->second.end_addr) {
+                UHD_LOG_TRACE("CTRLEP",
+                    "Peeking custom register space at address 0x" << std::hex << addr);
+                return it->second.peek_fn(addr);
+            }
+        }
         // Send request and wait for an ACK
         boost::optional<ctrl_payload> response;
         std::tie(std::ignore, response) =
@@ -329,6 +348,36 @@ public:
     {
         // Is const, does not require a mutex
         return _local_port;
+    }
+
+    void define_custom_register_space(uint32_t start_addr,
+        uint32_t length,
+        std::function<void(uint32_t, uint32_t)> poke_fn,
+        std::function<uint32_t(uint32_t)> peek_fn) override
+    {
+        uint32_t end_addr = start_addr + length;
+
+        // This will be the case if the caller either specifies a zero length space or the
+        // end_addr ends up exceeding the maximum value for a uint32_t
+        if (end_addr <= start_addr) {
+            throw uhd::value_error(
+                "Length of custom register space causes an invalid register space");
+        }
+
+        if (!_custom_register_spaces.empty()) {
+            for (auto it = _custom_register_spaces.begin();
+                 it != _custom_register_spaces.end();
+                 ++it) {
+                if ((start_addr >= it->first && start_addr < it->second.end_addr)
+                    || (start_addr < it->first && end_addr > it->first)) {
+                    throw uhd::rfnoc_error(
+                        "Register space overlaps with existing register space");
+                }
+            }
+        }
+
+        _custom_register_spaces.emplace(
+            start_addr, custom_register_space{end_addr, poke_fn, peek_fn});
     }
 
 private:
@@ -585,6 +634,9 @@ private:
     // request packets for which the client cares about receiving ACKs
     using wanted_ack_key = std::tuple<uint8_t, ctrl_opcode_t, uint32_t>;
     std::set<wanted_ack_key> _wanted_acks;
+    //! Map of custom defined peek/poke functions with end address for custom register
+    // space starting address
+    std::map<uint32_t, custom_register_space> _custom_register_spaces;
 };
 
 ctrlport_endpoint::sptr ctrlport_endpoint::make(const send_fn_t& handle_send,

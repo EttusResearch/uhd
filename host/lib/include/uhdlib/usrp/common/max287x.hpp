@@ -92,6 +92,13 @@ public:
     } output_power_t;
 
     typedef enum {
+        AUX_OUTPUT_POWER_M4DBM,
+        AUX_OUTPUT_POWER_M1DBM,
+        AUX_OUTPUT_POWER_2DBM,
+        AUX_OUTPUT_POWER_5DBM
+    } aux_output_power_t;
+
+    typedef enum {
         LOW_NOISE_AND_SPUR_LOW_NOISE,
         LOW_NOISE_AND_SPUR_LOW_SPUR_1,
         LOW_NOISE_AND_SPUR_LOW_SPUR_2
@@ -146,10 +153,22 @@ public:
         double target_freq, double ref_freq, double target_pfd_freq, bool is_int_n) = 0;
 
     /**
-     * Set output power
+     * Set output power (RFOUTA)
      * @param power output power
      */
     virtual void set_output_power(output_power_t power) = 0;
+
+    /**
+     * Set output power for aux port (RFOUTB)
+     * @param power output power
+     */
+    virtual void set_aux_output_power(aux_output_power_t power) = 0;
+
+    /**
+     * Enable or disable aux output power (RFOUTB)
+     * @param enable output power enabled
+     */
+    virtual void set_aux_output_power_enable(bool enable) = 0;
 
     /**
      * Set lock detect pin mode
@@ -230,6 +249,22 @@ public:
      * @param map the VCO map
      */
     virtual void set_vco_map(const vco_map_t& map) = 0;
+
+    /**
+     * Set Register Value
+     * @param reg register number
+     * @param mask mask to apply when setting new value of register
+     * @param value value to set
+     * @param commit optionally commit the register state to the hardware
+     */
+    virtual void set_register(
+        uint8_t reg, uint32_t mask, uint32_t value, bool commit = false) = 0;
+
+    /**
+     * Get Register Value
+     * @param reg register number
+     */
+    virtual uint32_t get_register(uint8_t reg) = 0;
 };
 
 /**
@@ -250,6 +285,8 @@ public:
         double target_pfd_freq,
         bool is_int_n) override;
     void set_output_power(output_power_t power) override;
+    void set_aux_output_power(aux_output_power_t power) override;
+    void set_aux_output_power_enable(bool enable) override;
     void set_ld_pin_mode(ld_pin_mode_t mode) override;
     void set_muxout_mode(muxout_mode_t mode) override;
     void set_charge_pump_current(charge_pump_current_t cp_current) override;
@@ -266,6 +303,9 @@ public:
         double target_pfd_freq) override;
     vco_map_t get_vco_map() override;
     void set_vco_map(const vco_map_t& map) override;
+    void set_register(
+        uint8_t reg, uint32_t mask, uint32_t value, bool commit = false) override;
+    uint32_t get_register(uint8_t reg) override;
 
 protected:
     max287x_regs_t _regs;
@@ -609,6 +649,20 @@ public:
         }
     }
 
+    void set_register(
+        uint8_t addr, uint32_t mask, uint32_t value, bool commit = false) final
+    {
+        _regs.set_reg(addr, mask, value);
+        if (commit) {
+            max2871::commit();
+        }
+    }
+
+    uint32_t get_register(uint8_t addr) final
+    {
+        return _regs.get_reg(addr);
+    }
+
 private:
     vco_map_t _vco_map;
 };
@@ -871,6 +925,34 @@ void max287x<max287x_regs_t>::set_output_power(output_power_t power)
 }
 
 template <typename max287x_regs_t>
+void max287x<max287x_regs_t>::set_aux_output_power(aux_output_power_t power)
+{
+    switch (power) {
+        case AUX_OUTPUT_POWER_M4DBM:
+            _regs.aux_output_power = max287x_regs_t::AUX_OUTPUT_POWER_M4DBM;
+            break;
+        case AUX_OUTPUT_POWER_M1DBM:
+            _regs.aux_output_power = max287x_regs_t::AUX_OUTPUT_POWER_M1DBM;
+            break;
+        case AUX_OUTPUT_POWER_2DBM:
+            _regs.aux_output_power = max287x_regs_t::AUX_OUTPUT_POWER_2DBM;
+            break;
+        case AUX_OUTPUT_POWER_5DBM:
+            _regs.aux_output_power = max287x_regs_t::AUX_OUTPUT_POWER_5DBM;
+            break;
+        default:
+            UHD_THROW_INVALID_CODE_PATH();
+    }
+}
+
+template <typename max287x_regs_t>
+void max287x<max287x_regs_t>::set_aux_output_power_enable(bool enable)
+{
+    _regs.aux_output_enable = enable ? max287x_regs_t::AUX_OUTPUT_ENABLE_ENABLED
+                                     : max287x_regs_t::AUX_OUTPUT_ENABLE_DISABLED;
+}
+
+template <typename max287x_regs_t>
 void max287x<max287x_regs_t>::set_ld_pin_mode(ld_pin_mode_t mode)
 {
     switch (mode) {
@@ -1109,6 +1191,18 @@ max287x_iface::vco_map_t max287x<max287x_regs_t>::get_vco_map()
 
 template <typename max287x_regs_t>
 void max287x<max287x_regs_t>::set_vco_map(const max287x_iface::vco_map_t&)
+{
+    UHD_THROW_INVALID_CODE_PATH();
+}
+
+template <typename max287x_regs_t>
+void max287x<max287x_regs_t>::set_register(uint8_t, uint32_t, uint32_t, bool)
+{
+    UHD_THROW_INVALID_CODE_PATH();
+}
+
+template <typename max287x_regs_t>
+uint32_t max287x<max287x_regs_t>::get_register(uint8_t)
 {
     UHD_THROW_INVALID_CODE_PATH();
 }

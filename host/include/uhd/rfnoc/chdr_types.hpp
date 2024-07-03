@@ -354,7 +354,7 @@ public: // Functions
     }
 
     //! Return a string representation of this object
-    const std::string to_string() const;
+    std::string to_string() const;
 
 private:
     static constexpr size_t DST_PORT_WIDTH    = 10;
@@ -477,7 +477,7 @@ public: // Functions
     }
 
     //! Return a string representation of this object
-    const std::string to_string() const;
+    std::string to_string() const;
 
 private:
     static constexpr size_t SRC_EPID_WIDTH        = 16;
@@ -584,7 +584,7 @@ public: // Functions
     }
 
     //! Return a string representation of this object
-    const std::string to_string() const;
+    std::string to_string() const;
 
 private:
     static constexpr size_t SRC_EPID_WIDTH = 16;
@@ -739,7 +739,7 @@ public:
     }
 
     //! Return a string representation of this object
-    const std::string to_string() const;
+    std::string to_string() const;
 
 private:
     op_code_t _op_code;
@@ -796,7 +796,7 @@ public:
     }
 
     //! Return a string representation of this object
-    const std::string to_string() const;
+    std::string to_string() const;
 
 private:
     std::vector<mgmt_op_t> _ops;
@@ -901,10 +901,10 @@ public:
     size_t get_length() const;
 
     //! Return a string representation of this object
-    const std::string to_string() const;
+    std::string to_string() const;
 
     //! Return a string representaiton of the hops contained by this object
-    const std::string hops_to_string() const;
+    std::string hops_to_string() const;
 
     //! Return the source EPID for this transaction
     inline sep_id_t get_src_epid() const

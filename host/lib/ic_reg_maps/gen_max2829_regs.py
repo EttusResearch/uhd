@@ -10,7 +10,7 @@
 # Template for raw text data describing registers
 # name addr[bit range inclusive] default optional enums
 ########################################################################
-REGS_TMPL="""\
+REGS_TMPL = """\
 ########################################################################
 ## Note: offsets given from perspective of data bits (excludes address)
 ########################################################################
@@ -98,7 +98,7 @@ tx_vga_gain           12[0:5]       0
 ########################################################################
 # Template for methods in the body of the struct
 ########################################################################
-BODY_TMPL="""\
+BODY_TMPL = """\
 uint32_t get_reg(uint8_t addr){
     uint16_t reg = 0;
     switch(addr){
@@ -114,9 +114,11 @@ uint32_t get_reg(uint8_t addr){
 }
 """
 
-if __name__ == '__main__':
-    import common; common.generate(
-        name='max2829_regs',
+if __name__ == "__main__":
+    import common
+
+    common.generate(
+        name="max2829_regs",
         regs_tmpl=REGS_TMPL,
         body_tmpl=BODY_TMPL,
         file=__file__,

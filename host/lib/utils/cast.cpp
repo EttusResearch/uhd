@@ -60,3 +60,12 @@ std::string cast::from_str(const std::string& val)
 {
     return val;
 }
+
+std::string cast::to_ordinal_string(int val)
+{
+    const std::string ordinals = "thstndrd";
+    std::string result         = std::to_string(val);
+    int index = (val % 10) * (val % 10 < 4 && !(10 < val % 100 && val % 100 < 14));
+    result += ordinals.substr(2 * index, 2);
+    return result;
+}

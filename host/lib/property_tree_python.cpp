@@ -7,6 +7,7 @@
 #include "property_tree_python.hpp"
 #include <uhd/property_tree.hpp>
 #include <uhd/types/device_addr.hpp>
+#include <uhd/usrp/dboard_iface.hpp>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <string>
@@ -41,6 +42,7 @@ void export_property_tree(py::module& m)
     export_property<std::string>(m, "str");
     export_property<bool>(m, "bool");
     export_property<uhd::device_addr_t>(m, "device_addr");
+    export_property<uhd::usrp::dboard_iface::sptr>(m, "dboard_iface");
 
     py::class_<property_tree>(m, "property_tree")
         .def("subtree", &property_tree::subtree, py::arg("path"))
@@ -60,6 +62,9 @@ void export_property_tree(py::module& m)
             py::return_value_policy::reference)
         .def("access_device_addr",
             &property_tree::access<uhd::device_addr_t>,
+            py::return_value_policy::reference)
+        .def("access_dboard_iface",
+            &property_tree::access<uhd::usrp::dboard_iface::sptr>,
             py::return_value_policy::reference)
         // End of types
         ;

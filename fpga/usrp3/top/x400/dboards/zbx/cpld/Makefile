@@ -13,11 +13,10 @@
 ##
 ##Output:
 ## build/<device-id>/usrp_zbx_cpld_10m04.pof:            Bitstream to use with JTAG programmer
-## build/<device-id>/usrp_zbx_cpld_10m04.svf:            Bitstream to use with PS JTAG engine (background programming)
 ## build/<device-id>/usrp_zbx_cpld_10m04.rpd:            Bitstream to use via reconfig engine
-## build/<device-id>/usrp_zbx_cpld_10m04_isp_off.svf:    Bitstream to use with JTAG test points (initial programming)
+## build/<device-id>/usrp_zbx_cpld_10m04_isp_off.svf:    Bitstream to use with JTAG
 ## build/<device-id>/usrp_zbx_cpld_xo3lf.jed:            Bitstream to use with JTAG programmer
-## build/<device-id>/usrp_zbx_cpld_xo3lf.svf:            Bitstream to use with PS JTAG engine (background programming)
+## build/<device-id>/usrp_zbx_cpld_xo3lf.svf:            Bitstream to use with JTAG
 
 # Definitions
 10M04_ID = "10M04SAU324I7G"
@@ -53,11 +52,10 @@ ifeq ($(TARGET),bin)
 		cp build-$@/output_files/$(TOP)_isp_off.svf              build/$(1)_10m04_isp_off.svf; \
 		cp build-$@/output_files/$(TOP)_isp_on.svf               build/$(1)_10m04.svf; \
 		cp build-$@/output_files/$(TOP)_converted_cfm0_auto.rpd  build/$(1)_10m04.rpd; \
-		echo -ne "\n\n---- Make: MB CPLD ready!\n"; \
+		echo -ne "\n\n---- Make: ZBX CPLD ready!\n"; \
 		echo -ne "     Use build/$(1).pof via JTAG programmer or\n"; \
-		echo -ne "         build/$(1).svf (ISP on) via PS JTAG-engine (background programming) or\n"; \
 		echo -ne "         build/$(1).rpd via reconfig engine or\n"; \
-		echo -ne "         build/$(1)_isp_off.svf via JTAG test points (initial programming)\n";
+		echo -ne "         build/$(1)_isp_off.svf via JTAG\n";
 else
 	post_quar_build = @echo "Skipping bitfile export."
 endif
@@ -71,8 +69,8 @@ ifeq ($(TARGET),bin)
 		mkdir -p build/; \
 		echo "Exporting bitstream files..."; \
 		cp build-$@/$(2)/$(TOP)_$(2).svf  build/$(1)_xo3lf.svf; \
-		echo -ne "\n\n---- Make: MB CPLD ready!\n"; \
-		echo -ne "     Use build/$(1)_xo3lf.svf via PS JTAG-engine \n";
+		echo -ne "\n\n---- Make: ZBX CPLD ready!\n"; \
+		echo -ne "     Use build/$(1)_xo3lf.svf\n";
 else
 	post_dmd_build = @echo "Skipping bitfile export."
 endif

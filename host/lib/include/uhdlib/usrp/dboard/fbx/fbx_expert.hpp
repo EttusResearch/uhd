@@ -209,6 +209,7 @@ public:
         const uhd::fs_path fe_path,
         const uhd::direction_t trx,
         const size_t chan,
+        const double rfdc_rate,
         const std::string rpc_prefix,
         int db_idx,
         uhd::usrp::x400_rpc_iface::sptr rpcc)
@@ -224,6 +225,7 @@ public:
         , _db_idx(db_idx)
         , _rpcc(rpcc)
         , _trx(trx)
+        , _rfdc_rate(rfdc_rate)
         , _chan(chan)
     {
         bind_accessor(_rfdc_freq_desired);
@@ -255,6 +257,7 @@ private:
     const size_t _db_idx;
     uhd::usrp::x400_rpc_iface::sptr _rpcc;
     const uhd::direction_t _trx;
+    const double _rfdc_rate;
     const size_t _chan;
 };
 

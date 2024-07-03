@@ -33,6 +33,11 @@ REGS_PY_FILE=$(PROJECT_DIR)/../../../../../../../host/lib/ic_reg_maps/gen_zbx_cp
 INIT_FILES_DIR=$(PROJECT_DIR)/register_endpoints/memory_init_files/
 REGS_PY_MODULE=$(INIT_FILES_DIR)/zbx_cpld_regs_t.py
 
+.init_files_prereqs:
+	@echo "BUILDER: Checking tools..."
+	@echo -n "* "; python3 --version || (echo "ERROR: Python not found in environment. Please install it"; exit 1;)
+	@echo -n "* "; python3 -c "import mako" || (echo "ERROR: Python package mako not installed. Please install it"; exit 1;)
+
 $(REGS_PY_MODULE): $(REGS_PY_FILE)
 	@python3 $(REGS_PY_FILE) $(REGS_PY_MODULE)
 
@@ -42,7 +47,7 @@ INIT_FILES := $(INIT_FILES_DIR)/rx0_path_defaults.hex
 $(INIT_FILES): $(REGS_PY_MODULE) $(INIT_FILES_DIR)/gen_defaults.py
 	@python3 $(INIT_FILES_DIR)/gen_defaults.py
 
-cpld_defaults: .prereqs $(INIT_FILES)
+cpld_defaults: .init_files_prereqs $(INIT_FILES)
 	@echo "Initialization files DONE ..."
 
 bin: .prereqs

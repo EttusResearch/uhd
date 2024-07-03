@@ -148,15 +148,7 @@ fs::path uhd::get_xdg_data_home()
 #endif
     const std::string home = get_env_var("HOME", "");
     if (home.empty()) {
-#ifdef UHD_PLATFORM_WIN32
-        const std::string err_msg =
-            "get_xdg_data_home(): Unable to find \%HOME\%, \%XDG_DATA_HOME\%, "
-            "\%LOCALAPPDATA\% or \%APPDATA\%.";
-#else
-        const std::string err_msg =
-            "get_xdg_data_home(): Unable to find $HOME or $XDG_DATA_HOME.";
-#endif
-        throw uhd::runtime_error(err_msg);
+        return fs::path("");
     }
     return fs::path(home) / ".local" / "share";
 }
@@ -180,15 +172,7 @@ fs::path uhd::get_xdg_config_home()
 #endif
     const std::string home = get_env_var("HOME", "");
     if (home.empty()) {
-#ifdef UHD_PLATFORM_WIN32
-        const std::string err_msg =
-            "get_xdg_config_home(): Unable to find \%HOME\%, \%XDG_CONFIG_HOME\%, "
-            "\%LOCALAPPDATA\% or \%APPDATA\%.";
-#else
-        const std::string err_msg =
-            "get_xdg_config_home(): Unable to find $HOME or $XDG_CONFIG_HOME.";
-#endif
-        throw uhd::runtime_error(err_msg);
+        return fs::path("");
     }
     return fs::path(home) / ".config";
 }
@@ -207,7 +191,7 @@ fs::path uhd::get_legacy_config_home()
 #endif
     const std::string home = get_env_var("HOME", "");
     if (home.empty()) {
-        throw uhd::runtime_error("Unable to find $HOME.");
+        return fs::path("");
     }
     return fs::path(home) / ".uhd";
 }

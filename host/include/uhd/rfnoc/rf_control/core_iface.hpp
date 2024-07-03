@@ -311,8 +311,7 @@ public:
      * \param chan the channel index 0 to N-1
      * \return the configured LO source
      */
-    virtual const std::string get_rx_lo_source(
-        const std::string& name, const size_t chan) = 0;
+    virtual std::string get_rx_lo_source(const std::string& name, const size_t chan) = 0;
 
     /*!
      * Set whether the LO used by the usrp device is exported
@@ -401,8 +400,7 @@ public:
      * \param chan the channel index 0 to N-1
      * \return the configured LO source
      */
-    virtual const std::string get_tx_lo_source(
-        const std::string& name, const size_t chan) = 0;
+    virtual std::string get_tx_lo_source(const std::string& name, const size_t chan) = 0;
 
     /*!
      * Set whether the LO used by the usrp device is exported

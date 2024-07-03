@@ -10,7 +10,7 @@
 # Template for raw text data describing registers
 # name addr[bit range inclusive] default optional enums
 ########################################################################
-REGS_TMPL="""\
+REGS_TMPL = """\
 data             0[4:15]           0
 addr             0[16:18]          0       DAC_A=0, DAC_B=1, ALL=7
 cmd              0[19:21]          0       wr_input_n, up_dac_n, wr_input_n_up_all, wr_up_dac_chan_n, power_down, reset, load_ldac
@@ -19,7 +19,7 @@ cmd              0[19:21]          0       wr_input_n, up_dac_n, wr_input_n_up_a
 ########################################################################
 # Template for methods in the body of the struct
 ########################################################################
-BODY_TMPL="""\
+BODY_TMPL = """\
 uint32_t get_reg(void){
     uint32_t reg = 0;
     % for reg in filter(lambda r: r.get_addr() == 0, regs):
@@ -29,9 +29,11 @@ uint32_t get_reg(void){
 }
 """
 
-if __name__ == '__main__':
-    import common; common.generate(
-        name='ad5623_regs',
+if __name__ == "__main__":
+    import common
+
+    common.generate(
+        name="ad5623_regs",
         regs_tmpl=REGS_TMPL,
         body_tmpl=BODY_TMPL,
         file=__file__,

@@ -2,8 +2,13 @@
 Name=int0
 
 [Network]
-Address=169.254.0.1/24
 IPForward=ipv4
+
+[Address]
+Address=169.254.0.1/24
+# The setting actually means DuplicateAddressDetection=none. We use the old flag here
+# on purpose to remain backward compatibility with systemd v243.2 (Yocto release zeus)
+DuplicateAddressDetection=true
 
 [Link]
 MTUBytes=9000

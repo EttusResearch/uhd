@@ -49,3 +49,13 @@ localparam REG_FIR_LOAD_COEFF = 'h4;
 // [COEFF_WIDTH-1:0]     : The next coefficient to be loaded
 //
 localparam REG_FIR_LOAD_COEFF_LAST = 'h8;
+
+
+// REG_FIR_COMPAT_NUM (R)
+//
+// Contains the compatibility number of the block.
+//
+// [31:16] : Returns the major compatibility number (read-only)
+// [15:0] : Returns the minor compatibility number (read-only)
+//
+localparam REG_FIR_COMPAT_NUM = 'hC;

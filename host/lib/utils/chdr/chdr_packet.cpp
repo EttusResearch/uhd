@@ -161,7 +161,7 @@ void chdr_util::chdr_packet::set_payload_bytes(std::vector<uint8_t> bytes)
 }
 
 //! Return a string representation of this object
-const std::string chdr_util::chdr_packet::to_string() const
+std::string chdr_util::chdr_packet::to_string() const
 {
     return str(boost::format("chdr_packet{chdr_w:%u}\n%s")
                % uhd::rfnoc::chdr_w_to_bits(_chdr_w) % _header.to_string());

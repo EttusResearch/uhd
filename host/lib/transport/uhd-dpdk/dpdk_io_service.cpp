@@ -267,7 +267,11 @@ int dpdk_io_service::_io_worker(void* arg)
 
     char name[16];
     snprintf(name, sizeof(name), "dpdk-io_%hu", (uint16_t)lcore_id);
+#if RTE_VER_YEAR >= 23
+    rte_thread_set_name(rte_thread_self(), name);
+#else
     rte_thread_setname(pthread_self(), name);
+#endif
     UHD_LOG_TRACE("DPDK::IO_SERVICE",
         "I/O service thread '" << name << "' started on lcore " << lcore_id);
 
@@ -524,12 +528,12 @@ void dpdk_io_service::_service_xport_disconnect(dpdk::wait_req* req)
         auto& xport_list = _recv_xport_map.at(port->get_port_id());
         xport_list.remove(recv_client);
         while (!rte_ring_empty(recv_client->_recv_queue)) {
-            frame_buff* buff_ptr;
+            frame_buff* buff_ptr = nullptr;
             rte_ring_dequeue(recv_client->_recv_queue, (void**)&buff_ptr);
             dpdk_io->link->release_recv_buff(frame_buff::uptr(buff_ptr));
         }
         while (!rte_ring_empty(recv_client->_release_queue)) {
-            frame_buff* buff_ptr;
+            frame_buff* buff_ptr = nullptr;
             rte_ring_dequeue(recv_client->_release_queue, (void**)&buff_ptr);
             dpdk_io->link->release_recv_buff(frame_buff::uptr(buff_ptr));
         }
@@ -540,12 +544,12 @@ void dpdk_io_service::_service_xport_disconnect(dpdk::wait_req* req)
         auto& xport_list = _tx_queues.at(port->get_port_id());
         xport_list.remove(send_client);
         while (!rte_ring_empty(send_client->_send_queue)) {
-            frame_buff* buff_ptr;
+            frame_buff* buff_ptr = nullptr;
             rte_ring_dequeue(send_client->_send_queue, (void**)&buff_ptr);
             dpdk_io->link->release_send_buff(frame_buff::uptr(buff_ptr));
         }
         while (!rte_ring_empty(send_client->_buffer_queue)) {
-            frame_buff* buff_ptr;
+            frame_buff* buff_ptr = nullptr;
             rte_ring_dequeue(send_client->_buffer_queue, (void**)&buff_ptr);
             dpdk_io->link->release_send_buff(frame_buff::uptr(buff_ptr));
         }

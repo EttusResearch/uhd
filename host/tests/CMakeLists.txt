@@ -296,6 +296,22 @@ UHD_ADD_NONAPI_TEST(
     ${UHD_BINARY_DIR}/lib/ic_reg_maps
 )
 
+UHD_ADD_NONAPI_TEST(
+    TARGET adf535x_test.cpp
+    EXTRA_SOURCES
+    ${UHD_SOURCE_DIR}/lib/usrp/common/adf535x.cpp
+    INCLUDE_DIRS
+    ${UHD_BINARY_DIR}/lib/ic_reg_maps
+)
+
+UHD_ADD_NONAPI_TEST(
+    TARGET "max287x_test.cpp"
+    EXTRA_SOURCES
+    ${UHD_SOURCE_DIR}/lib/include/uhdlib/usrp/common/max287x.hpp
+    INCLUDE_DIRS
+    ${UHD_BINARY_DIR}/lib/ic_reg_maps
+)
+
 set_source_files_properties(
     ${UHD_SOURCE_DIR}/lib/utils/system_time.cpp
     PROPERTIES COMPILE_DEFINITIONS
@@ -366,6 +382,10 @@ UHD_ADD_RFNOC_BLOCK_TEST(
     TARGET window_block_test.cpp
 )
 
+UHD_ADD_RFNOC_BLOCK_TEST(
+    TARGET lc_block_test.cpp
+)
+
 IF(ENABLE_X400)
     if (NOT APPLE)
     # This test isn't supported on macOS because there are
@@ -395,8 +415,12 @@ IF(ENABLE_X400)
             ${UHD_SOURCE_DIR}/lib/utils/compat_check.cpp
             ${UHD_SOURCE_DIR}/lib/features/discoverable_feature_registry.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/cores/gpio_atr_3000.cpp
-	        ${UHD_SOURCE_DIR}/lib/usrp/cores/spi_core_4000.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/cores/spi_core_4000.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/x400/x400_internal_sync.cpp
+            ${UHD_SOURCE_DIR}/lib/utils/prefs.cpp
+            ${UHD_SOURCE_DIR}/lib/utils/pathslib.cpp
+            ${UHD_SOURCE_DIR}/lib/utils/paths.cpp
+            ${UHD_SOURCE_DIR}/lib/utils/config_parser.cpp
             $<TARGET_OBJECTS:uhd_rpclib>
             INCLUDE_DIRS ${UHD_SOURCE_DIR}/lib/deps/rpclib/include
             INCLUDE_DIRS ${UHD_SOURCE_DIR}/lib/deps/flatbuffers/include
@@ -426,8 +450,12 @@ IF(ENABLE_X400)
             ${UHD_SOURCE_DIR}/lib/utils/compat_check.cpp
             ${UHD_SOURCE_DIR}/lib/features/discoverable_feature_registry.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/cores/gpio_atr_3000.cpp
-	        ${UHD_SOURCE_DIR}/lib/usrp/cores/spi_core_4000.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/cores/spi_core_4000.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/x400/x400_internal_sync.cpp
+            ${UHD_SOURCE_DIR}/lib/utils/prefs.cpp
+            ${UHD_SOURCE_DIR}/lib/utils/pathslib.cpp
+            ${UHD_SOURCE_DIR}/lib/utils/paths.cpp
+            ${UHD_SOURCE_DIR}/lib/utils/config_parser.cpp
             $<TARGET_OBJECTS:uhd_rpclib>
             INCLUDE_DIRS ${UHD_SOURCE_DIR}/lib/deps/rpclib/include
             INCLUDE_DIRS ${UHD_SOURCE_DIR}/lib/deps/flatbuffers/include
@@ -493,6 +521,12 @@ UHD_ADD_NONAPI_TEST(
     TARGET "xport_adapter_ctrl_test.cpp"
     EXTRA_SOURCES
     ${UHD_SOURCE_DIR}/lib/usrp/cores/xport_adapter_ctrl.cpp
+)
+
+UHD_ADD_NONAPI_TEST(
+    TARGET "custom_reg_test.cpp"
+    EXTRA_SOURCES
+    ${UHD_SOURCE_DIR}/lib/rfnoc/ctrlport_endpoint.cpp
 )
 
 ########################################################################

@@ -134,6 +134,11 @@ public:
 
         /*! Set the time at next PPS from a time spec
          *
+         * \b Note: When changing clock sources, a previously set time will
+         * most likely be lost. It is recommended to set the time after
+         * changing the clock source. Otherwise, an unexpected time may line
+         * up with future PPS edges.
+         *
          * This will convert \p time into a tick count value and use that to
          * call set_ticks_next_pps().
          */
@@ -348,14 +353,22 @@ public:
      *
      * Example:
      * ~~~{.cpp}
-     * auto usrp = uhd::usrp::multi_usrp::make("");
-     * usrp->set_sync_source(
+     * auto graph = uhd::rfnoc::rfnoc_graph::make("");
+     * graph->get_mb_controller(0)->set_sync_source(
      *     device_addr_t("clock_source=external,time_source=external"));
      * ~~~
      *
      * This function does not force a re-initialization of the underlying
      * hardware when the value does not change. See also set_time_source() and
      * set_clock_source() for more details.
+     *
+     * \b Note: Reconfiguring the sync source may affect the clocking
+     * within the FPGAs of USRPs, and affect timekeeping as well as proper
+     * functioning of blocks that depend on these clocks. It is therefore
+     * strongly recommended to configure clock and time source before doing
+     * anything else. In particular, setting the device time should be done
+     * after calling this, and there should be no ongoing streaming operation
+     * while reconfiguring the sync source.
      *
      * \param sync_source A dictionary representing the various source settings.
      * \throws uhd::value_error if the sources don't actually exist or if the

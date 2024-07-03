@@ -8,6 +8,7 @@
 #define INCLUDED_X300_DEFAULTS_HPP
 
 #include <uhd/transport/udp_simple.hpp> //mtu
+#include <uhdlib/utils/compat_check.hpp>
 #include <string>
 #include <vector>
 
@@ -54,6 +55,8 @@ static constexpr double RECV_OFFLOAD_BUFFER_TIMEOUT = 0.1; // seconds
 static constexpr double THREAD_BUFFER_TIMEOUT       = 0.1; // Time in seconds
 
 static constexpr double DEFAULT_EXT_ADC_SELF_TEST_DURATION = 30.0;
+
+static constexpr uhd::compat_num32 MIN_COMPAT_NUM_DNA = {0x27, 0x3};
 
 }}} /* namespace uhd::usrp::x300 */
 

@@ -6,6 +6,7 @@
 
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhd/utils/scope_exit.hpp>
 #include <uhdlib/rfnoc/graph.hpp>
 #include <uhdlib/rfnoc/node_accessor.hpp>
 #include <boost/graph/filtered_graph.hpp>
@@ -286,6 +287,72 @@ std::vector<graph_t::graph_edge_t> graph_t::enumerate_edges()
     return result;
 }
 
+std::string graph_t::to_dot()
+{
+    std::string result("digraph rfnoc_graph {\n"
+                       "  rankdir=LR\n"
+                       "  node [shape=record]\n\n");
+
+    for (const auto& elem : _node_map) {
+        // add block, prepend with cluster,
+        // the cluster prefix ensures a box around the node
+        result += str(boost::format("  subgraph \"cluster_%s\" {\n"
+                                    "    label=\"%s\"\n")
+                      % elem.first->get_unique_id() % elem.first->get_unique_id());
+
+        // add input ports as joint blocks using "|<ref> label" notation
+        if (elem.first->get_num_input_ports() > 0) {
+            result += str(
+                boost::format("    \"%s_in\" [label=\"in") % elem.first->get_unique_id());
+            for (size_t i = 0; i < elem.first->get_num_input_ports(); i++) {
+                result += str(boost::format("|<in_%d> %d") % i % i);
+            }
+            result += "\"]\n";
+        }
+
+        // add input ports as joint blocks using "|<ref> label" notation
+        if (elem.first->get_num_output_ports() > 0) {
+            result += str(boost::format("    \"%s_out\" [label=\"out")
+                          % elem.first->get_unique_id());
+            for (size_t i = 0; i < elem.first->get_num_output_ports(); i++) {
+                result += str(boost::format("|<out_%d> %d") % i % i);
+            }
+            result += "\"]\n";
+        }
+
+        result += "  }\n";
+
+        // add an invisible connection between in and out ports so they
+        // get aligned inputs left and outputs right
+        if ((elem.first->get_num_input_ports() > 0)
+            && (elem.first->get_num_output_ports() > 0)) {
+            result += str(boost::format("  \"%s_in\" -> \"%s_out\" [style=invis]\n")
+                          % elem.first->get_unique_id() % elem.first->get_unique_id());
+        }
+        result += "\n";
+    }
+    result += "\n";
+
+    static const std::map<uhd::rfnoc::graph_edge_t::edge_t, std::string> edge_format_map =
+        {{uhd::rfnoc::graph_edge_t::edge_t::DYNAMIC, "label=\"dynamic\""},
+            {uhd::rfnoc::graph_edge_t::edge_t::STATIC,
+                "color=\"black:white:black\",label=\"static\",weight=10"},
+            {uhd::rfnoc::graph_edge_t::edge_t::RX_STREAM,
+                "style=\"dashed\",label=\"RX stream\""},
+            {uhd::rfnoc::graph_edge_t::edge_t::TX_STREAM,
+                "style=\"dashed\",label=\"TX stream\""}};
+
+    // add current connections
+    for (const auto& elem : enumerate_edges()) {
+        result +=
+            str(boost::format("  \"%s_out\":\"out_%d\" -> \"%s_in\":\"in_%d\" [%s]\n")
+                % elem.src_blockid % elem.src_port % elem.dst_blockid % elem.dst_port
+                % edge_format_map.at(elem.edge));
+    }
+    result += "}\n";
+    return result;
+}
+
 /******************************************************************************
  * Private methods to be called by friends
  *****************************************************************************/
@@ -491,6 +558,8 @@ void graph_t::enqueue_action(
                                                               << action->id);
         return;
     }
+    auto reset_handling_flag =
+        uhd::utils::scope_exit::make([&]() { _action_handling_ongoing.clear(); });
 
     unsigned iteration_count = 0;
     while (!_action_queue.empty()) {
@@ -541,10 +610,8 @@ void graph_t::enqueue_action(
     }
     UHD_LOG_TRACE(LOG_ID, "Delivered all actions, terminating action handling.");
 
-    // Release the action handling flag
-    _action_handling_ongoing.clear();
-    // Now, the _graph_mutex is released, and someone else can start sending
-    // actions.
+    // Now, the _graph_mutex and _action_handling_ongoing are released, and
+    // someone else can start sending actions.
 }
 
 /******************************************************************************

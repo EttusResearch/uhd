@@ -83,14 +83,14 @@ def _discovery_process(state, discovery_addr):
                 send_data = resp_str
                 log.trace("Return data: %s", send_data)
                 sock.sendto(send_data, sender)
-            elif data.strip(b"\0").startswith(b"MPM-ECHO"):
-                log.debug("Received echo request from {sender}"
-                          .format(sender=sender[0]))
+            elif data.startswith(b"MPM-ECHO"):
+                log.debug("Received echo request ({len} bytes) from {sender}"
+                          .format(len=len(data), sender=sender[0]))
                 send_data = data
                 try:
                     sock.sendto(send_data, sender)
                 except OSError as ex:
-                    log.warning("ECHO send error: %s", str(ex))
+                    log.debug("ECHO send error: %s", str(ex))
     except Exception as err:
         log.error("Unexpected error: `%s' Type: `%s'", str(err), type(err))
         sock.close()

@@ -32,7 +32,7 @@ def parse_args():
                         help="Which channel(s) to use (specify \"0\", \"1\", \"0 1\", etc)")
     parser.add_argument("-i", "--dest-addr", type=str, required=True,
                         help="Remote destination IP address")
-    parser.add_argument("-p", "--dest-port", type=int, required=True,
+    parser.add_argument("-p", "--dest-port", nargs="+", type=int, required=True,
                         help="Remote destination UDP port")
     parser.add_argument("--adapter", type=str,
                         help="Adapter to use for remote streaming (e.g. 'sfp0')")
@@ -44,7 +44,7 @@ def parse_args():
                         help="Specify this argument to keep CHDR headers on outgoing packets")
     return parser.parse_args()
 
-def get_stream_cmd(usrp, rate, duration, num_channels):
+def get_stream_cmd(usrp, rate, duration, start_time = None):
     """
     Generate a stream command based on rate and duration.
     """
@@ -53,9 +53,11 @@ def get_stream_cmd(usrp, rate, duration, num_channels):
         stream_cmd.num_samps = int(rate * duration)
     else:
         stream_cmd = uhd.types.StreamCMD(uhd.types.StreamMode.start_cont)
-    stream_cmd.stream_now = (num_channels == 1)
-    if num_channels > 1:
-        stream_cmd.time_spec = uhd.types.TimeSpec(usrp.get_time_now().get_real_secs() + INIT_DELAY)
+    if start_time is None:
+        stream_cmd.stream_now = True
+    else:
+        stream_cmd.stream_now = False
+        stream_cmd.time_spec = start_time
     return stream_cmd
 
 def check_channels(usrp, args):
@@ -75,46 +77,55 @@ def main():
     """
     args = parse_args()
     usrp = uhd.usrp.MultiUSRP(args.args)
-    chan = 0
-    if args.rate:
-        print(f"Requesting sampling rate {args.rate/1e6} Msps...")
-        usrp.set_rx_rate(args.rate, chan)
-    actual_rate = usrp.get_rx_rate(chan)
-    print(f"Using sampling rate: {usrp.get_rx_rate(chan)/1e6} Msps.")
-    print(f"Requesting center frequency {args.freq/1e6} MHz...")
-    usrp.set_rx_freq(args.freq, chan)
-    print(f"Actual center frequency: {usrp.get_rx_freq(chan)/1e6} MHz.")
-    print(f"Requesting gain {args.gain} dB...")
-    usrp.set_rx_gain(args.gain, chan)
-    print(f"Actual gain: {usrp.get_rx_gain(chan)} dB.")
     channels = check_channels(usrp, args)
     if not channels:
         return False
-    print("Selected {} RX channels.".format(', '.join(str(ch) for ch in channels)))
+    if len(channels) != len(args.dest_port):
+        print("Number of channels must match number of ports.")
+        return False
+    print("Selected RX channels: {}.".format(', '.join(str(ch) for ch in channels)))
+    if args.rate:
+        print(f"Requesting sampling rate {args.rate/1e6} Msps...")
+        for chan in channels:
+            usrp.set_rx_rate(args.rate, chan)
+    actual_rate = usrp.get_rx_rate(channels[0])
+    print(f"Using sampling rate: {actual_rate/1e6} Msps.")
+    print(f"Requesting center frequency {args.freq/1e6} MHz...")
+    for chan in channels:
+        usrp.set_rx_freq(args.freq, chan)
+    print(f"Actual center frequency: {usrp.get_rx_freq(channels[0])/1e6} MHz.")
+    print(f"Requesting gain {args.gain} dB...")
+    for chan in channels:
+        usrp.set_rx_gain(args.gain, chan)
+    print(f"Actual gain: {usrp.get_rx_gain(channels[0])} dB.")
     print("Generating RX streamer object...")
-    stream_args = uhd.usrp.StreamArgs("sc16", "sc16")
-    stream_args.channels = channels
-    stream_args.args = \
-        f"dest_addr={args.dest_addr},dest_port={args.dest_port}," \
-        f"stream_mode={'full_packet' if args.keep_hdr else 'raw_payload'}" + \
-        (f",adapter={args.adapter}" if args.adapter else "") + \
-        (f",dest_mac_addr={args.dest_mac_addr}" if args.dest_mac_addr else "")
-    rx_streamer = usrp.get_rx_stream(stream_args)
-    print("Starting stream...")
-    num_channels = rx_streamer.get_num_channels()
-    stream_cmd = get_stream_cmd(usrp, actual_rate, args.duration, num_channels)
-    rx_streamer.issue_stream_cmd(stream_cmd)
+    rx_streamers = []
+    for chx, chan in enumerate(channels):
+        stream_args = uhd.usrp.StreamArgs("sc16", "sc16")
+        stream_args.channels = [chan]
+        stream_args.args = \
+            f"dest_addr={args.dest_addr},dest_port={args.dest_port[chx]}," \
+            f"stream_mode={'full_packet' if args.keep_hdr else 'raw_payload'}" + \
+            (f",adapter={args.adapter}" if args.adapter else "") + \
+            (f",dest_mac_addr={args.dest_mac_addr}" if args.dest_mac_addr else "")
+        rx_streamers.append(usrp.get_rx_stream(stream_args))
+    print("Starting stream(s)...")
+    start_time = uhd.types.TimeSpec(usrp.get_time_now().get_real_secs() + INIT_DELAY) if len(channels) > 1 else None
+    for rx_streamer in rx_streamers:
+        stream_cmd = get_stream_cmd(usrp, actual_rate, args.duration, start_time)
+        rx_streamer.issue_stream_cmd(stream_cmd)
     print("Stream started. Press Ctrl-C to stop.")
-    if num_channels > 1:
-        args.duration += INIT_DELAY
     timeout = time.monotonic() + args.duration if args.duration else None
+    if timeout and len(channels) > 1:
+        timeout += INIT_DELAY
     try:
         while timeout is None or time.monotonic() < timeout:
             time.sleep(1)
     except KeyboardInterrupt:
         pass
     print("Stopping stream...")
-    rx_streamer.issue_stream_cmd(uhd.types.StreamCMD(uhd.types.StreamMode.stop_cont))
+    for rx_streamer in rx_streamers:
+        rx_streamer.issue_stream_cmd(uhd.types.StreamCMD(uhd.types.StreamMode.stop_cont))
     print("Streaming complete. Exiting.")
     return 0
 

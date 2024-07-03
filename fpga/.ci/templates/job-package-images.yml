@@ -43,9 +43,9 @@ jobs:
   displayName: 'Create ${{ parameters.package_name }}'
   timeoutInMinutes: 10
   pool:
-    name: hardware
+    name: Drivers-NIBuildFarm-RFMIBUILD
     demands:
-    - MAX_CPU -equals 4
+    - Agent.OS -equals Linux
   variables:
     - group: sdr-pipeline-vars
   steps:
@@ -54,16 +54,16 @@ jobs:
 
     - ${{ each artifact in parameters.artifacts_matrix }}:
       - download: current
-        artifact: ${{ artifact.key }}
-        displayName: 'Download ${{ artifact.key }}'
+        artifact: ${{ artifact.value.artifact_name }}
+        displayName: 'Download ${{ artifact.value.artifact_name }}'
 
     - ${{ each artifact in parameters.artifacts_matrix }}:
       - bash: |
           mkdir -p ${{ parameters.build_directory }}
-          cp $(Pipeline.Workspace)/${{ artifact.key }}/* \
+          cp $(Pipeline.Workspace)/${{ artifact.value.artifact_name }}/* \
              ${{ parameters.build_directory }}/
-          rm -rf $(Pipeline.Workspace)/${{ artifact.key }}/
-        displayName: 'Populate ${{ artifact.key }} artifacts'
+          rm -rf $(Pipeline.Workspace)/${{ artifact.value.artifact_name }}/
+        displayName: 'Populate ${{ artifact.value.artifact_name }} artifacts'
 
     - bash: |
         OSS_REPO_HASH="$(git rev-parse --verify HEAD --short=7 2>/dev/null)"

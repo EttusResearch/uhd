@@ -166,7 +166,7 @@ bool ctrl_payload::operator==(const ctrl_payload& rhs) const
            && (status == rhs.status);
 }
 
-const std::string ctrl_payload::to_string() const
+std::string ctrl_payload::to_string() const
 {
     return str(
         boost::format("ctrl_payload{dst_port:%d, dst_port:%d, seq_num:%d, timestamp:%s, "
@@ -269,7 +269,7 @@ bool strs_payload::operator==(const strs_payload& rhs) const
            && (status_info == rhs.status_info);
 }
 
-const std::string strs_payload::to_string() const
+std::string strs_payload::to_string() const
 {
     return str(boost::format("strs_payload{src_epid:%lu, status:%d, capacity_bytes:%lu, "
                              "capacity_pkts:%lu, "
@@ -340,7 +340,7 @@ bool strc_payload::operator==(const strc_payload& rhs) const
            && (num_bytes == rhs.num_bytes);
 }
 
-const std::string strc_payload::to_string() const
+std::string strc_payload::to_string() const
 {
     return str(boost::format("strc_payload{src_epid:%lu, op_code:%d, op_data:0x%x, "
                              "num_pkts:%lu, num_bytes:%lu}\n")
@@ -351,7 +351,7 @@ const std::string strc_payload::to_string() const
 // CHDR Management Payload
 //----------------------------------------------------
 
-const std::string mgmt_op_t::to_string() const
+std::string mgmt_op_t::to_string() const
 {
     std::stringstream stream;
     switch (get_op_code()) {
@@ -461,7 +461,7 @@ void mgmt_hop_t::deserialize(std::list<uint64_t>& src,
     } while (ops_remaining > 0);
 }
 
-const std::string mgmt_hop_t::to_string() const
+std::string mgmt_hop_t::to_string() const
 {
     std::stringstream stream;
     for (size_t op_index = 0; op_index < get_num_ops(); op_index++) {
@@ -556,14 +556,14 @@ size_t mgmt_payload::get_length() const
     return length;
 }
 
-const std::string mgmt_payload::to_string() const
+std::string mgmt_payload::to_string() const
 {
     return str(boost::format(
                    "mgmt_payload{src_epid:%lu, chdr_w:%d, protover:0x%x, num_hops:%lu}\n")
                % _src_epid % int(_chdr_w) % _protover % _hops.size());
 }
 
-const std::string mgmt_payload::hops_to_string() const
+std::string mgmt_payload::hops_to_string() const
 {
     std::stringstream stream;
     for (size_t hop_index = 0; hop_index < get_num_hops(); hop_index++) {

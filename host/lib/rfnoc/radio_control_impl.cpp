@@ -746,7 +746,7 @@ void radio_control_impl::set_rx_lo_source(
     throw uhd::not_implemented_error("set_rx_lo_source is not supported on this radio");
 }
 
-const std::string radio_control_impl::get_rx_lo_source(const std::string&, const size_t)
+std::string radio_control_impl::get_rx_lo_source(const std::string&, const size_t)
 {
     return "internal";
 }
@@ -793,7 +793,7 @@ void radio_control_impl::set_tx_lo_source(
 {
     throw uhd::not_implemented_error("set_tx_lo_source is not supported on this radio");
 }
-const std::string radio_control_impl::get_tx_lo_source(const std::string&, const size_t)
+std::string radio_control_impl::get_tx_lo_source(const std::string&, const size_t)
 {
     return "internal";
 }

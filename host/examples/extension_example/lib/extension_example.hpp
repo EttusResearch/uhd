@@ -194,7 +194,7 @@ public:
             "set_rx_lo_source is not supported on this radio");
     }
 
-    const std::string get_rx_lo_source(const std::string&, const size_t) override
+    std::string get_rx_lo_source(const std::string&, const size_t) override
     {
         throw uhd::not_implemented_error(
             "get_rx_lo_source is not supported on this radio");
@@ -245,7 +245,7 @@ public:
             "set_tx_lo_source is not supported on this radio");
     }
 
-    const std::string get_tx_lo_source(const std::string&, const size_t) override
+    std::string get_tx_lo_source(const std::string&, const size_t) override
     {
         throw uhd::not_implemented_error(
             "get_tx_lo_source is not supported on this radio");

@@ -18,7 +18,7 @@ from usrp_mpm.components import ZynqComponents
 from usrp_mpm.gpsd_iface import GPSDIfaceExtension
 from usrp_mpm.periph_manager import PeriphManagerBase
 from usrp_mpm.mpmutils import assert_compat_number, str2bool, poll_with_timeout
-from usrp_mpm.rpc_server import no_rpc
+from usrp_mpm.rpc_utils import no_rpc, get_map_for_rpc
 from usrp_mpm.sys_utils import dtoverlay
 from usrp_mpm.sys_utils import i2c_dev
 from usrp_mpm.sys_utils.sysfs_thermal import read_thermal_sensor_value
@@ -166,13 +166,20 @@ class n3xx(ZynqComponents, PeriphManagerBase):
     #########################################################################
     # Others properties
     #########################################################################
-     # All valid sync_sources for N3xx in the form of (clock_source, time_source)
+    # All valid sync_sources for N3xx in the form of (clock_source, time_source)
+    # When changing this list, also update usrp_n3xx.dox (Section "Clock/Time
+    # Synchronization").
     valid_sync_sources = {
         ('internal', 'internal'),
         ('internal', 'sfp0'),
         ('external', 'external'),
         ('external', 'internal'),
         ('gpsdo', 'gpsdo'),
+        # To enable the external reference and GPSDO PPS combination, uncomment
+        # the following line. Note that using this combination will cause loss
+        # of phase alignment between devices.  See also comments in
+        # n3xx_clocking.v ("PPS Capture and Generation").
+        # ('external', 'gpsdo'),
     }
     @classmethod
     def generate_device_info(cls, eeprom_md, mboard_info, dboard_infos):
@@ -920,7 +927,7 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         mboard info again. This filters the EEPROM contents to what we think
         the user wants to know/see.
         """
-        return self.mboard_info
+        return get_map_for_rpc(self.mboard_info, self.log)
 
     def get_db_eeprom(self, dboard_idx):
         """

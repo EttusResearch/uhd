@@ -156,6 +156,8 @@ public:
         write_ad9146_reg(0x03, (1 << 6)); // 2s comp, i first, byte mode
 
         // Configure interpolation filters
+        // Both Halfband Filters are set to Mode 0 for an interpolation
+        // factor of 4, without frequency shift and modulation
         write_ad9146_reg(0x1C, 0x00); // Configure HB1
         write_ad9146_reg(0x1D, 0x00); // Configure HB2
         write_ad9146_reg(0x1B, 0xE4); // Bypass: Modulator, InvSinc, IQ Bal

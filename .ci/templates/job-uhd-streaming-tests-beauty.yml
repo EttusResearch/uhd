@@ -8,6 +8,10 @@ parameters:
 - name: uhdArtifactSource
   type: string
   default: current
+- name: uhdFpgaArtifactSource
+  type: string
+- name: fpga_imgs_source
+  type: string
 - name: testLength
   type: string
 
@@ -20,6 +24,8 @@ jobs:
     toolset: 'make'
     uhdSrcDir: '${{ parameters.uhdSrcDir }}'
     uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
+    uhdFpgaArtifactSource: ${{ parameters.uhdFpgaArtifactSource }}
+    fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
     xilinxLocation: /opt/Xilinx/Vivado_Lab/2019.1
     dutMatrix:
       # beauty-N320-0 XG:
@@ -27,7 +33,6 @@ jobs:
       #   dutType: 'N320'
       #   dutAddr: '192.168.10.4'
       #   dutSecondAddr: '192.168.20.4'
-      #   dutMgmtAddr: '10.0.57.13'
       #   dutFPGA: 'XG'
       #   dutNameId: ''
       #   dutNumRecvFrames: ''
@@ -37,52 +42,58 @@ jobs:
         dutType: 'X310'
         dutAddr: '192.168.10.3'
         dutSecondAddr: '192.168.20.3'
-        dutMgmtAddr: ''
         dutFPGA: 'XG'
         dutNameId: ''
         dutNumRecvFrames: ''
         dutNumSendFrames: ''
         jtagSerial: '251635138E94'
+        sfpInt0: 'ens4f0'
+        sfpInt1: 'ens4f1'
       # beauty-X410-0 X4_200:
       #   dutName: 'beauty-X410-0'
-      #   dutType: 'x4xx'
+      #   dutFamily: 'x4xx'
+      #   dutType: 'x410'
       #   dutAddr: '192.168.10.2'
       #   dutSecondAddr: '192.168.20.2'
-      #   dutMgmtAddr: '10.0.57.29'
       #   dutFPGA:'X4_200'
       #   dutNameId: ''
       #   dutNumRecvFrames: ''
       #   dutNumSendFrames: ''
+      #   sfpInt0: 'ens6f0'
+      #   sfpInt1: 'ens6f1'
       beauty-X410-0 CG_400:
         dutName: 'beauty-X410-0'
-        dutType: 'x4xx'
+        dutFamily: 'x4xx'
+        dutType: 'x410'
         dutAddr: '192.168.110.2'
         dutSecondAddr: '192.168.120.2'
-        dutMgmtAddr: '10.0.57.29'
         dutFPGA: 'CG_400'
         dutNameId: ''
         dutEmbeddedImagesArtifact: 'x4xx-images'
         uartSerial: '2516351E2C9A'
         dutNumRecvFrames: ''
         dutNumSendFrames: ''
+        sfpInt0: 'ens6f0'
+        sfpInt1: 'ens6f1'
       beauty-X410-0 UC_200:
         dutName: 'beauty-X410-0'
-        dutType: 'x4xx'
+        dutFamily: 'x4xx'
+        dutType: 'x410'
         dutAddr: '192.168.120.2'
         dutSecondAddr: '192.168.120.2'
-        dutMgmtAddr: '10.0.57.29'
         dutFPGA: 'UC_200'
         dutNameId: ''
         dutEmbeddedImagesArtifact: 'x4xx-images'
         uartSerial: '2516351E2C9A'
         dutNumRecvFrames: ''
         dutNumSendFrames: ''
+        sfpInt0: 'ens6f0'
+        sfpInt1: 'ens6f1'
       # beauty-E320-0:
       #   dutName: 'beauty-E320-0'
       #   dutType: 'E320'
       #   dutAddr: '192.168.10.5'
       #   dutSecondAddr: ''
-      #   dutMgmtAddr: '10.0.57.38'
       #   dutFPGA: 'XG'
       #   dutNameId: ''
       #   dutNumRecvFrames: ''
@@ -92,7 +103,6 @@ jobs:
       #   dutType: 'N310'
       #   dutAddr: '192.168.10.6'
       #   dutSecondAddr: '192.168.20.6'
-      #   dutMgmtAddr: '10.0.57.31'
       #   dutFPGA: 'XG'
       #   dutNameId: ''
       #   dutNumRecvFrames: ''
@@ -102,17 +112,17 @@ jobs:
       #   dutType: 'X310_TwinRx'
       #   dutAddr: '192.168.10.7'
       #   dutSecondAddr: '192.168.20.7'
-      #   dutMgmtAddr: ''
       #   dutFPGA: 'XG'
       #   dutNameId: ''
       #   dutNumRecvFrames: ''
       #   dutNumSendFrames: ''
+      #   sfpInt0: 'ens4f0'
+      #   sfpInt1: 'ens4f1'
       beauty-B210-0:
         dutName: 'beauty-B210-0'
         dutType: 'B210'
         dutAddr: ''
         dutSecondAddr: ''
-        dutMgmtAddr: ''
         dutFPGA: ''
         dutNameId: 'MyB210'
         dutNumRecvFrames: '256'

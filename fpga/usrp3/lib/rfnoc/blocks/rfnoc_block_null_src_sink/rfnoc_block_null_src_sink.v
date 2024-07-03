@@ -225,6 +225,7 @@ module rfnoc_block_null_src_sink #(
   // NULL Source
   // ---------------------------
   reg        reg_src_en = 1'b0;
+  reg        reg_src_eob = 1'b0;
   reg [11:0] reg_src_lpp = 12'd0;
   reg [15:0] reg_src_bpp = 16'd0;
   reg [9:0]  reg_throttle_cyc = 10'd0;
@@ -253,6 +254,10 @@ module rfnoc_block_null_src_sink #(
             if (src_pyld_tlast) begin
               if (reg_throttle_cyc == 10'd0) begin
                 state <= ST_HDR;
+                if (!reg_src_en && !reg_src_eob)
+                  reg_src_eob  <=  1'b1;
+                else
+                  reg_src_eob  <=  1'b0;
               end else begin
                 state <= ST_WAIT;
                 throttle_cntr <= reg_throttle_cyc;
@@ -263,10 +268,15 @@ module rfnoc_block_null_src_sink #(
           end
         end
         ST_WAIT: begin
-          if (throttle_cntr == 10'd0)
+          if (throttle_cntr == 10'd0) begin
             state <= ST_HDR;
-          else
+            if (!reg_src_en && !reg_src_eob)
+              reg_src_eob  <=  1'b1;
+            else
+              reg_src_eob  <=  1'b0;
+          end else begin
             throttle_cntr <= throttle_cntr - 10'd1;
+          end
         end
         default: begin
           state <= ST_HDR;
@@ -281,10 +291,10 @@ module rfnoc_block_null_src_sink #(
   assign src_pyld_tvalid = (state == ST_PYLD);
 
   assign src_ctxt_tdata  = chdr_build_header(
-    6'd0, 1'b0, 1'b0, CHDR_PKT_TYPE_DATA, CHDR_NO_MDATA, src_pkt_cnt[15:0], reg_src_bpp, 16'd0);
+    6'd0, reg_src_eob, 1'b0, CHDR_PKT_TYPE_DATA, CHDR_NO_MDATA, src_pkt_cnt[15:0], reg_src_bpp, 16'd0);
   assign src_ctxt_tuser  = CHDR_W > 64 ? CONTEXT_FIELD_HDR_TS : CONTEXT_FIELD_HDR;
   assign src_ctxt_tlast  = 1'b1;
-  assign src_ctxt_tvalid = (state == ST_HDR && reg_src_en);
+  assign src_ctxt_tvalid = (state == ST_HDR && (reg_src_en || reg_src_eob));
 
   // Register Interface
   // ---------------------------

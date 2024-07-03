@@ -159,8 +159,9 @@ module x4xx_core_common #(
 
   // Version (Constant)
   // Each component consists of a 96-bit vector (refer to versioning_utils.vh)
-  input wire [64*96-1:0] version_info
+  input wire [64*96-1:0] version_info,
 
+  input wire [95:0] device_dna
 );
 
   `include "regmap/radio_ctrlport_regmap_utils.vh"
@@ -304,7 +305,8 @@ module x4xx_core_common #(
     .mfg_test_en_fabric_clk  (mfg_test_en_fabric_clk),
     .mfg_test_en_gty_rcv_clk (mfg_test_en_gty_rcv_clk),
     .fpga_aux_ref            (fpga_aux_ref),
-    .device_id               (device_id)
+    .device_id               (device_id),
+    .device_dna              (device_dna)
   );
 
 

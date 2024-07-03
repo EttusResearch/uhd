@@ -32,7 +32,7 @@ def get_mender_artifact(filesystem_root='/', parse_manually=False):
             return None
         return parse_artifact(file.read_text())
     try:
-        output = subprocess.check_output(['/usr/bin/mender', '-show-artifact']).decode('utf-8')
+        output = subprocess.check_output(['/usr/bin/mender', 'show-artifact']).decode('utf-8')
         return output.splitlines()[0]
     except:
         return None

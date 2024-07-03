@@ -27,7 +27,7 @@
         <Source name="../../../../../../lib/control/synchronizer_impl.v" type="Verilog" type_short="Verilog">
             <Options/>
         </Source>
-        <Source name="../../../../cpld/reconfig_engine.v" type="Verilog" type_short="Verilog">
+        <Source name="../../../../cpld/common/reconfig_engine.v" type="Verilog" type_short="Verilog">
             <Options/>
         </Source>
         <Source name="../../../ctrlport_byte_deserializer.v" type="Verilog" type_short="Verilog">
@@ -45,10 +45,10 @@
         <Source name="../../../../../../lib/wb_spi/rtl/verilog/spi_top.v" type="Verilog" type_short="Verilog">
             <Options/>
         </Source>
-        <Source name="../../../../cpld/spi_slave.v" type="Verilog" type_short="Verilog">
+        <Source name="../../../../cpld/common/spi_slave.v" type="Verilog" type_short="Verilog">
             <Options/>
         </Source>
-        <Source name="../../../../cpld/spi_slave_to_ctrlport_master.v" type="Verilog" type_short="Verilog">
+        <Source name="../../../../cpld/common/spi_slave_to_ctrlport_master.v" type="Verilog" type_short="Verilog">
             <Options/>
         </Source>
         <Source name="../../../../../../lib/rfnoc/utils/ctrlport_window.v" type="Verilog" type_short="Verilog">

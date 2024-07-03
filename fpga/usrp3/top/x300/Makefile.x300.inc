@@ -39,23 +39,15 @@ include $(LIB_DIR)/rfnoc/Makefile.srcs
 include $(LIB_DIR)/axi4s_sv/Makefile.srcs
 include $(LIB_DIR)/rfnoc/xport_sv/Makefile.srcs
 
-# For sake of convenience, we include the Makefile.srcs for DRAM FIFO, DDC, and
-# DUC, Replay, and of course the radio. Any other block needs to use the
-# RFNOC_OOT_MAKEFILE_SRCS variable (see below).
-include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_axi_ram_fifo/Makefile.srcs
-include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_radio/Makefile.srcs
-include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_ddc/Makefile.srcs
-include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_duc/Makefile.srcs
-include $(LIB_DIR)/rfnoc/blocks/rfnoc_block_replay/Makefile.srcs
-
 # If out-of-tree modules want to be compiled into this image, then they need to
 # pass in the RFNOC_OOT_MAKEFILE_SRCS as a list of Makefile.srcs files.
 # Those files need to amend the RFNOC_OOT_SRCS variable with a list of actual
 # source files.
 -include $(RFNOC_OOT_MAKEFILE_SRCS)
 
-IMAGE_CORE ?= $(DEFAULT_RFNOC_IMAGE_CORE_FILE)
-EDGE_FILE ?= $(DEFAULT_EDGE_FILE)
+ifdef BUILD_DIR
+include $(BUILD_DIR)/Makefile.inc
+endif
 
 ##################################################
 # Sources
@@ -73,8 +65,7 @@ capture_ddrlvds.v \
 gen_ddrlvds.v \
 bus_int.v \
 x300.xdc \
-timing.xdc \
-$(IMAGE_CORE)
+timing.xdc
 
 ifdef BUILD_10G
 SFP_SERDES_SRCS += $(XGE_SRCS) $(XGE_INTERFACE_SRCS) $(abspath x300_10ge.xdc) $(TEN_GIGE_PHY_SRCS) $(IP_TEN_GIGE_PHY_XCI_SRCS)
@@ -112,24 +103,26 @@ $(PACKET_PROC_SRCS) $(DSP_SRCS) $(DRAM_SRCS) \
 $(AXI_SRCS) $(CAP_GEN_GENERIC_SRCS) $(IP_XCI_SRCS) $(BD_SRCS) \
 $(RFNOC_SRCS) $(LIB_IP_XCI_SRCS) \
 $(RFNOC_FRAMEWORK_SRCS) \
-$(RFNOC_BLOCK_DUC_SRCS) $(RFNOC_BLOCK_DDC_SRCS) $(RFNOC_BLOCK_RADIO_SRCS) \
-$(RFNOC_BLOCK_AXI_RAM_FIFO_SRCS) \
-$(RFNOC_BLOCK_REPLAY_SRCS) \
 $(RFNOC_OOT_SRCS) \
 $(AXI4S_SV_SRCS) $(RFNOC_XPORT_SV_SRCS) \
+$(RFNOC_IMAGE_CORE_SRCS)
 
-EDGE_TBL_DEF="RFNOC_EDGE_TBL_FILE=$(call RESOLVE_PATH,$(EDGE_FILE))"
-IMAGE_CORE_DEF="RFNOC_IMAGE_CORE_HDR=$(DEFAULT_RFNOC_IMAGE_CORE_FILE:.v=.vh)"
+# Pass the image core header files required by RFNoC
+# to Vivado as Verilog definitions.
+IMAGE_CORE_HEADER_DEF="RFNOC_IMAGE_CORE_HDR=$(BUILD_DIR)/rfnoc_image_core.vh"
 
 ##################################################
 # Dependency Targets
 ##################################################
 .SECONDEXPANSION:
 
-VERILOG_DEFS=$(EXTRA_DEFS) $(CUSTOM_DEFS) $(GIT_HASH_VERILOG_DEF) $(EDGE_TBL_DEF) $(IMAGE_CORE_DEF)
+VERILOG_DEFS=$(EXTRA_DEFS) $(CUSTOM_DEFS) $(GIT_HASH_VERILOG_DEF) $(IMAGE_CORE_HEADER_DEF) $(RFNOC_IMAGE_CORE_DEFS)
 
 # DESIGN_SRCS and VERILOG_DEFS must be defined
 bin: .prereqs
+	@echo "Build directory:: $(BUILD_DIR)"
+	@echo "Printing MB_XDC:: $(MB_XDC)"
+	@echo "Printing VERILOG_DEFS:: $(VERILOG_DEFS)"
 	$(call BUILD_VIVADO_DESIGN,$(abspath ./build_x300.tcl),$(TOP_MODULE),$(ARCH),$(PART_ID))
 
 synth: .prereqs

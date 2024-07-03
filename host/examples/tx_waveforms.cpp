@@ -117,10 +117,13 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         return ~0;
     }
     std::cout << boost::format("Setting TX Rate: %f Msps...") % (rate / 1e6) << std::endl;
-    usrp->set_tx_rate(rate);
-    std::cout << boost::format("Actual TX Rate: %f Msps...") % (usrp->get_tx_rate() / 1e6)
-              << std::endl
-              << std::endl;
+    for (std::size_t channel : channel_nums) {
+        usrp->set_tx_rate(rate, channel);
+        std::cout << boost::format("Actual TX Rate: %f Msps...")
+                         % (usrp->get_tx_rate(channel) / 1e6)
+                  << std::endl
+                  << std::endl;
+    }
 
     // set the center frequency
     if (not vm.count("freq")) {
@@ -131,7 +134,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     // for the const wave, set the wave freq for small samples per period
     if (wave_freq == 0) {
         if (wave_type == "CONST") {
-            wave_freq = usrp->get_tx_rate() / 2;
+            wave_freq = usrp->get_tx_rate(channel_nums.front()) / 2;
         } else {
             throw std::runtime_error(
                 "wave freq cannot be 0 with wave type other than CONST");
@@ -140,34 +143,24 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     // pre-compute the waveform values
     const wave_table_class wave_table(wave_type, ampl);
-    const size_t step = std::lround(wave_freq / usrp->get_tx_rate() * wave_table_len);
-    size_t index      = 0;
+    const size_t step =
+        std::lround(wave_freq / usrp->get_tx_rate(channel_nums.front()) * wave_table_len);
+    size_t index = 0;
 
-    for (size_t ch = 0; ch < channel_nums.size(); ch++) {
-        std::cout << boost::format("Setting TX Freq: %f MHz...") % (freq / 1e6)
-                  << std::endl;
-        std::cout << boost::format("Setting TX LO Offset: %f MHz...") % (lo_offset / 1e6)
-                  << std::endl;
-        uhd::tune_request_t tune_request(freq, lo_offset);
-        if (vm.count("int-n"))
-            tune_request.args = uhd::device_addr_t("mode_n=integer");
-        usrp->set_tx_freq(tune_request, channel_nums[ch]);
-        std::cout << boost::format("Actual TX Freq: %f MHz...")
-                         % (usrp->get_tx_freq(channel_nums[ch]) / 1e6)
-                  << std::endl
-                  << std::endl;
-
+    // Defer setting the frequency and LO offset until synchronization setup is complete,
+    // configuring here only gains, bandwidth, and antenna
+    for (std::size_t channel : channel_nums) {
         // set the rf gain
         if (vm.count("power")) {
-            if (!usrp->has_tx_power_reference(ch)) {
+            if (!usrp->has_tx_power_reference(channel)) {
                 std::cout << "ERROR: USRP does not have a reference power API on channel "
-                          << ch << "!" << std::endl;
+                          << channel << "!" << std::endl;
                 return EXIT_FAILURE;
             }
             std::cout << "Setting TX output power: " << power << " dBm..." << std::endl;
-            usrp->set_tx_power_reference(power - wave_table.get_power(), ch);
+            usrp->set_tx_power_reference(power - wave_table.get_power(), channel);
             std::cout << "Actual TX output power: "
-                      << usrp->get_tx_power_reference(ch) + wave_table.get_power()
+                      << usrp->get_tx_power_reference(channel) + wave_table.get_power()
                       << " dBm..." << std::endl;
             if (vm.count("gain")) {
                 std::cout << "WARNING: If you specify both --power and --gain, "
@@ -176,9 +169,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             }
         } else if (vm.count("gain")) {
             std::cout << boost::format("Setting TX Gain: %f dB...") % gain << std::endl;
-            usrp->set_tx_gain(gain, channel_nums[ch]);
+            usrp->set_tx_gain(gain, channel);
             std::cout << boost::format("Actual TX Gain: %f dB...")
-                             % usrp->get_tx_gain(channel_nums[ch])
+                             % usrp->get_tx_gain(channel)
                       << std::endl
                       << std::endl;
         }
@@ -187,19 +180,17 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         if (vm.count("bw")) {
             std::cout << boost::format("Setting TX Bandwidth: %f MHz...") % bw
                       << std::endl;
-            usrp->set_tx_bandwidth(bw, channel_nums[ch]);
+            usrp->set_tx_bandwidth(bw, channel);
             std::cout << boost::format("Actual TX Bandwidth: %f MHz...")
-                             % usrp->get_tx_bandwidth(channel_nums[ch])
+                             % usrp->get_tx_bandwidth(channel)
                       << std::endl
                       << std::endl;
         }
 
         // set the antenna
         if (vm.count("ant"))
-            usrp->set_tx_antenna(ant, channel_nums[ch]);
+            usrp->set_tx_antenna(ant, channel);
     }
-
-    std::this_thread::sleep_for(std::chrono::seconds(1)); // allow for some setup time
 
     // error when the waveform is not possible to generate
     if (std::abs(wave_freq) > usrp->get_tx_rate() / 2) {
@@ -251,6 +242,50 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     } else {
         usrp->set_time_now(0.0);
     }
+
+    // Now, that clock sync setup is complete do timed tuning of LOs and NCOs
+    std::cout << boost::format("Setting TX Freq: %f MHz...") % (freq / 1e6) << std::endl;
+    std::cout << boost::format("Setting TX LO Offset: %f MHz...") % (lo_offset / 1e6)
+              << std::endl;
+
+    // use timed tuning for more that one channel on all devices except X410
+    // X410 does not yet support timed tuning
+    const bool timed_tuning = usrp->get_mboard_name() != "x410"
+                              and channel_nums.size() > 1;
+    const float cmd_time_offset = 0.1;
+
+    if (timed_tuning) {
+        const uhd::time_spec_t now      = usrp->get_time_now();
+        const uhd::time_spec_t cmd_time = now + uhd::time_spec_t(cmd_time_offset);
+        usrp->set_command_time(cmd_time);
+    }
+
+    for (std::size_t channel : channel_nums) {
+        uhd::tune_request_t tune_request(freq, lo_offset);
+        if (vm.count("int-n"))
+            tune_request.args = uhd::device_addr_t("mode_n=integer");
+        usrp->set_tx_freq(tune_request, channel);
+    }
+
+    // clear command time and wait to finish for timed tuning
+    if (timed_tuning) {
+        usrp->clear_command_time();
+        std::this_thread::sleep_for(std::chrono::milliseconds(int64_t(
+            1e3 * cmd_time_offset))); // wait until the command time has passed for sure
+    }
+
+    for (std::size_t channel : channel_nums) {
+        std::cout << boost::format("Actual TX Freq: %f MHz...")
+                         % (usrp->get_tx_freq(channel) / 1e6)
+                  << std::endl
+                  << std::endl;
+    }
+
+    // Allow for some setup time: In particular, LOs and other tuning-related
+    // components might need some time to lock. 1 second is way more than enough
+    // time. If there were no sleep time at all, we might see LO lock errors
+    // as the following check does not include a polling loop.
+    std::this_thread::sleep_for(std::chrono::seconds(1));
 
     // Check Ref and LO Lock detect
     std::vector<std::string> sensor_names;

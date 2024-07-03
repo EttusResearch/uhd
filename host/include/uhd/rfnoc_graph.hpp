@@ -327,6 +327,14 @@ public:
      */
     virtual void release() = 0;
 
+    /*! Create a dot representation of the current graph
+     *
+     * The graph is represented in the dot language, which can be visualized
+     * using the Graphviz tools. It contains all blocks and their connections.
+     * The connections are drawn between the ports of the blocks.
+     */
+    virtual std::string to_dot() = 0;
+
     /******************************************
      * Streaming
      ******************************************/

@@ -11,7 +11,10 @@
 
 `default_nettype none
 
-
+<%
+    has_inputs = 'inputs' in config.get('data', {})
+    has_outputs = 'outputs' in config.get('data', {})
+%>
 module rfnoc_block_${config['module_name']}_tb;
 
   `include "test_exec.svh"
@@ -79,48 +82,70 @@ module rfnoc_block_${config['module_name']}_tb;
   AxiStreamIf #(32) m_ctrl (rfnoc_ctrl_clk, 1'b0);
   AxiStreamIf #(32) s_ctrl (rfnoc_ctrl_clk, 1'b0);
 
+%if has_inputs:
   // AXIS-CHDR Interfaces
   AxiStreamIf #(CHDR_W) m_chdr [NUM_PORTS_I] (rfnoc_chdr_clk, 1'b0);
+%endif
+%if has_outputs:
   AxiStreamIf #(CHDR_W) s_chdr [NUM_PORTS_O] (rfnoc_chdr_clk, 1'b0);
+%endif
 
+%if has_inputs or has_outputs:
   // Block Controller BFM
   RfnocBlockCtrlBfm #(CHDR_W, ITEM_W) blk_ctrl = new(backend, m_ctrl, s_ctrl);
 
   // CHDR word and item/sample data types
   typedef ChdrData #(CHDR_W, ITEM_W)::chdr_word_t chdr_word_t;
   typedef ChdrData #(CHDR_W, ITEM_W)::item_t      item_t;
+%else:
+  // Block Controller BFM
+  RfnocBlockCtrlBfmCtrlOnly blk_ctrl = new(backend, m_ctrl, s_ctrl);
+%endif
 
+%if has_inputs or has_outputs:
   // Connect block controller to BFMs
+%endif
+%if has_inputs:
   for (genvar i = 0; i < NUM_PORTS_I; i++) begin : gen_bfm_input_connections
     initial begin
       blk_ctrl.connect_master_data_port(i, m_chdr[i], PKT_SIZE_BYTES);
       blk_ctrl.set_master_stall_prob(i, STALL_PROB);
     end
   end
+%endif
+%if has_outputs:
   for (genvar i = 0; i < NUM_PORTS_O; i++) begin : gen_bfm_output_connections
     initial begin
       blk_ctrl.connect_slave_data_port(i, s_chdr[i]);
       blk_ctrl.set_slave_stall_prob(i, STALL_PROB);
     end
   end
+%endif
 
   //---------------------------------------------------------------------------
   // Device Under Test (DUT)
   //---------------------------------------------------------------------------
 
+%if has_inputs:
   // DUT Slave (Input) Port Signals
   logic [CHDR_W*NUM_PORTS_I-1:0] s_rfnoc_chdr_tdata;
   logic [       NUM_PORTS_I-1:0] s_rfnoc_chdr_tlast;
   logic [       NUM_PORTS_I-1:0] s_rfnoc_chdr_tvalid;
   logic [       NUM_PORTS_I-1:0] s_rfnoc_chdr_tready;
+%endif
 
+%if has_outputs:
   // DUT Master (Output) Port Signals
   logic [CHDR_W*NUM_PORTS_O-1:0] m_rfnoc_chdr_tdata;
   logic [       NUM_PORTS_O-1:0] m_rfnoc_chdr_tlast;
   logic [       NUM_PORTS_O-1:0] m_rfnoc_chdr_tvalid;
   logic [       NUM_PORTS_O-1:0] m_rfnoc_chdr_tready;
+%endif
 
+%if has_inputs or has_outputs:
   // Map the array of BFMs to a flat vector for the DUT connections
+%endif
+%if has_inputs:
   for (genvar i = 0; i < NUM_PORTS_I; i++) begin : gen_dut_input_connections
     // Connect BFM master to DUT slave port
     assign s_rfnoc_chdr_tdata[CHDR_W*i+:CHDR_W] = m_chdr[i].tdata;
@@ -128,6 +153,8 @@ module rfnoc_block_${config['module_name']}_tb;
     assign s_rfnoc_chdr_tvalid[i]               = m_chdr[i].tvalid;
     assign m_chdr[i].tready                     = s_rfnoc_chdr_tready[i];
   end
+%endif
+%if has_outputs:
   for (genvar i = 0; i < NUM_PORTS_O; i++) begin : gen_dut_output_connections
     // Connect BFM slave to DUT master port
     assign s_chdr[i].tdata        = m_rfnoc_chdr_tdata[CHDR_W*i+:CHDR_W];
@@ -135,6 +162,7 @@ module rfnoc_block_${config['module_name']}_tb;
     assign s_chdr[i].tvalid       = m_rfnoc_chdr_tvalid[i];
     assign m_rfnoc_chdr_tready[i] = s_chdr[i].tready;
   end
+%endif
 
   rfnoc_block_${config['module_name']} #(
     .THIS_PORTID         (THIS_PORTID),
@@ -157,14 +185,18 @@ module rfnoc_block_${config['module_name']}_tb;
 %endfor
     .rfnoc_core_config   (backend.cfg),
     .rfnoc_core_status   (backend.sts),
+%if has_inputs:
     .s_rfnoc_chdr_tdata  (s_rfnoc_chdr_tdata),
     .s_rfnoc_chdr_tlast  (s_rfnoc_chdr_tlast),
     .s_rfnoc_chdr_tvalid (s_rfnoc_chdr_tvalid),
     .s_rfnoc_chdr_tready (s_rfnoc_chdr_tready),
+%endif
+%if has_outputs:
     .m_rfnoc_chdr_tdata  (m_rfnoc_chdr_tdata),
     .m_rfnoc_chdr_tlast  (m_rfnoc_chdr_tlast),
     .m_rfnoc_chdr_tvalid (m_rfnoc_chdr_tvalid),
     .m_rfnoc_chdr_tready (m_rfnoc_chdr_tready),
+%endif
     .s_rfnoc_ctrl_tdata  (m_ctrl.tdata),
     .s_rfnoc_ctrl_tlast  (m_ctrl.tlast),
     .s_rfnoc_ctrl_tvalid (m_ctrl.tvalid),

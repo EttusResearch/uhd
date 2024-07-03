@@ -15,6 +15,12 @@ RESOLVE_PATH = $(1)
 RESOLVE_PATHS = "$(1)"
 endif
 
+ifeq ($(OS),Windows_NT)
+DIAMOND_EXE = "pnmainc"
+else
+DIAMOND_EXE = "diamondc"
+endif
+
 # -------------------------------------------------------------------
 # Project Setup
 # -------------------------------------------------------------------
@@ -46,7 +52,7 @@ GIT_HASH_VERILOG_DEF = "GIT_HASH=32'h$(GIT_HASH)"
 	@echo "BUILDER: Checking tools..."
 	@echo -n "* "; bash --version | grep bash || (echo "ERROR: Bash not found in environment. Please install it"; exit 1;)
 	@echo -n "* "; python3 --version || (echo "ERROR: Python not found in environment. Please install it"; exit 1;)
-	@echo -n "* "; which pnmainc 2>&1 | grep diamond|| (echo "ERROR: Diamond TCL Console not found in environment."; exit 1;)
+	@echo -n "* "; which $(DIAMOND_EXE) 2>&1 | grep diamond || (echo "ERROR: Diamond TCL Console not found in environment."; exit 1;)
 
 # -------------------------------------------------------------------
 # Intermediate build dirs

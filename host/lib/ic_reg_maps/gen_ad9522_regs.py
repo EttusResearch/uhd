@@ -10,7 +10,7 @@
 # Template for raw text data describing registers
 # name addr[bit range inclusive] default optional enums
 ########################################################################
-REGS_TMPL="""\
+REGS_TMPL = """\
 sdo_active                  0x000[7]                 0           sdio, sdo_sdio
 lsb_first_addr_incr         0x000[6]                 0           msb, lsb
 soft_reset                  0x000[5]                 0
@@ -130,7 +130,7 @@ reg2eeprom                   0xB03[0]                0
 ########################################################################
 # Template for methods in the body of the struct
 ########################################################################
-BODY_TMPL="""\
+BODY_TMPL = """\
 uint32_t get_reg(uint16_t addr){
     uint32_t reg = 0;
     switch(addr){
@@ -173,9 +173,11 @@ uint32_t get_read_reg(uint16_t addr){
 
 """
 
-if __name__ == '__main__':
-    import common; common.generate(
-        name='ad9522_regs',
+if __name__ == "__main__":
+    import common
+
+    common.generate(
+        name="ad9522_regs",
         regs_tmpl=REGS_TMPL,
         body_tmpl=BODY_TMPL,
         file=__file__,

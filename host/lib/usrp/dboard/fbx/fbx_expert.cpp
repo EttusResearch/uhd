@@ -6,10 +6,12 @@
 
 #include <uhd/types/direction.hpp>
 #include <uhd/utils/assert_has.hpp>
+#include <uhd/utils/cast.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/math.hpp>
 #include <uhdlib/usrp/dboard/fbx/fbx_expert.hpp>
 #include <uhdlib/utils/interpolation.hpp>
+#include <uhdlib/utils/log.hpp>
 #include <algorithm>
 #include <array>
 
@@ -127,6 +129,46 @@ void fbx_rfdc_freq_expert::resolve()
         _get_trx_string(_trx), _db_idx, _chan, desired_rfdc_freq);
     _if_frequency_coerced = _rfdc_freq_coerced;
     _coerced_frequency    = _if_frequency_coerced;
+
+    // Both are dirty during the session start and we don't want to spam the user with
+    // logs there.
+    if (!(_rfdc_freq_desired.is_dirty() && _frequency_desired.is_dirty())) {
+        UHD_LOG_IF_GUIDED(
+            auto nyquist_boundary = _rfdc_rate / 2;
+            uint32_t nyquist_zone =
+                std::floor(_if_frequency_coerced / nyquist_boundary) + 1;
+            // Provide more information about implications of chosen frequency.
+            UHD_LOG_GUIDE(_get_trx_string(_trx)
+                          << " frequency " << (_if_frequency_coerced / 1e6)
+                          << " MHz on DB " << _db_idx << ", channel " << _chan
+                          << " is in the " << uhd::cast::to_ordinal_string(nyquist_zone)
+                          << " Nyquist zone.");
+            // warnings according to
+            // https://kb.ettus.com/About_Sampling_Rates_and_Master_Clock_Rates_for_the_USRP_X440#Aliases_and_Nyquist_Zones
+            if ((nyquist_zone > 2 && _trx == TX_DIRECTION)
+                || (nyquist_zone > 3 && _trx == RX_DIRECTION)) {
+                UHD_LOG_GUIDE(
+                    _get_trx_string(_trx)
+                    << " operation in this Nyquist zone will result in decreased RF "
+                       "performance.");
+            };
+            // passband_freq is the if_frequency relative to the start of the Nyquist zone
+            auto passband_freq = static_cast<uint32_t>(std::round(_if_frequency_coerced))
+                                 % static_cast<uint32_t>(nyquist_boundary);
+            if (passband_freq < 0.1 * nyquist_boundary
+                || passband_freq > 0.9 * nyquist_boundary) {
+                auto pass_low_mhz =
+                    (nyquist_zone * nyquist_boundary - 0.9 * nyquist_boundary) / 1e6;
+                auto pass_high_mhz =
+                    (nyquist_zone * nyquist_boundary - 0.1 * nyquist_boundary) / 1e6;
+                UHD_LOG_GUIDE(_get_trx_string(_trx)
+                              << " frequency " << (_if_frequency_coerced / 1e6)
+                              << " MHz is outside the 80% Nyquist passband ("
+                              << pass_low_mhz << " MHz to " << pass_high_mhz
+                              << " MHz for this Nyquist zone). This "
+                              << "may result in aliasing and undesired effects.");
+            });
+    }
 }
 
 void fbx_sync_expert::resolve()

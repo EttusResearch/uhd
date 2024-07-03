@@ -84,6 +84,7 @@ find_library(
     HINTS ${UHD_LIBDIR_HINTS}
     PATHS /usr/local/lib
           /usr/lib
+    REQUIRED
 )
 
 get_filename_component(UHD_LIB_PATH ${UHD_LIBRARIES} PATH)

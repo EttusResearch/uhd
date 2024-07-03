@@ -11,7 +11,7 @@
 # name addr[bit range inclusive] default optional enums
 ########################################################################
 
-REGS_TMPL="""\
+REGS_TMPL = """\
 ########################################################################
 ## Address 0x00
 ## Divider control
@@ -104,16 +104,17 @@ res5_26_28              0x05[26:28]     0
 shutdown_pll            0x05[25]        0       enabled, disabled
 f01                     0x05[24]        1       frac_n, auto
 ld_pin_mode             0x05[22:23]     1       low, dld, ald, high
+res_19_21               0x05[19:21]     0
 mux_sdo                 0x05[18]        0       normal, sdo
 res5_7_17               0x05[7:17]      0
 adc_start               0x05[6]         0       normal, start_conversion
-adc_mode                0x05[2:0]       0       disabled, temp_sensor, res2, res3, tune_pin, res5, res6, res7
+adc_mode                0x05[5:3]       0       disabled, temp_sensor, res2, res3, tune_pin, res5, res6, res7
 """
 
 ########################################################################
 # Template for methods in the body of the struct
 ########################################################################
-BODY_TMPL="""\
+BODY_TMPL = """\
 enum addr_t{
     ADDR_R0 = 0,
     ADDR_R1 = 1,
@@ -136,13 +137,29 @@ uint32_t get_reg(uint8_t addr){
     }
     return reg;
 }
+
+void set_reg(uint8_t addr, uint32_t mask, uint32_t val){
+    uint32_t prev_val = get_reg(addr);
+    uint32_t new_val = prev_val & ~mask;
+    new_val |= val & mask;
+    switch(addr){
+    % for addr in range(5+1):
+    case ${addr}:
+        % for reg in filter(lambda r: r.get_addr() == addr, regs):
+        ${reg.get_name()} = static_cast<${reg.get_type()}>((new_val >> ${reg.get_shift()}) & ${reg.get_mask()});
+        % endfor
+        break;
+    % endfor
+    }
+}
 """
 
-if __name__ == '__main__':
-    import common; common.generate(
-        name='max2871_regs',
+if __name__ == "__main__":
+    import common
+
+    common.generate(
+        name="max2871_regs",
         regs_tmpl=REGS_TMPL,
         body_tmpl=BODY_TMPL,
         file=__file__,
     )
-

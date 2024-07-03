@@ -156,7 +156,7 @@ def generate_X310_TwinRx_test_cases(metafunc, test_length):
     stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
     parametrize_test_length(metafunc, test_length, fast_params, stress_params)
 
-def generate_x4xx_test_cases(metafunc, test_length, dut_fpga):
+def generate_x410_test_cases(metafunc, test_length, dut_fpga):
     if dut_fpga.upper() == 'CG_400':
         test_cases = [
             # Test Lengths                                         dual_SFP  rate     rx_rate  rx_channels tx_rate  tx_channels  test case ID
@@ -184,6 +184,35 @@ def generate_x4xx_test_cases(metafunc, test_length, dut_fpga):
             [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,      250e6,   250e6,    "0,1,2",    250e6,  "0,1,2",     id="1x100GbE-3xTRX@250e6")],
             [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,      250e6,   0,        "",         250e6,  "0,1,2,3",   id="1x100GbE-4xTX@250e6")],
             [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,      250e6,   250e6,    "0,1,2,3",  0,      "",          id="1x100GbE-4xRX@250e6")],
+        ]
+
+    argvalues = test_length_utils.select_test_cases_by_length(test_length, test_cases)
+    metafunc.parametrize(ARGNAMES_DUAL_SFP, argvalues)
+
+    fast_params = test_length_utils.test_length_params(iterations=10, duration=30)
+    stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
+    parametrize_test_length(metafunc, test_length, fast_params, stress_params)
+
+def generate_x440_test_cases(metafunc, test_length, dut_fpga):
+    # Test Cases chosen from published spec: https://kb.ettus.com/X440#100_Gigabit_Ethernet
+    # Note some cases reduced number of channels on Tx 450 for and rate reduced for CG_1600 Tx
+    if dut_fpga.upper() == 'CG_400':
+        test_cases = [
+            # Test Lengths                                         dual_SFP  rate       rx_rate  rx_channels       tx_rate   tx_channels        test case ID
+            # -------------------------------------------------------------------------------------------------------------------------------------------
+            [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(True,     500e6,    500e6,    "0,1,2,3,4,5",     0,        "",                id="2x100GbE-6xRX@500e6")],
+            [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(True,     500e6,    0,        "",                500e6,    "0,1,2,3,4,5",     id="2x100GbE-6xTX@500e6")],
+            [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(True,     450e6,    0,        "",                450e6,    "0,1,2,3,4,5",     id="2x100GbE-6xTX@450e6")],
+            [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(True,     500e6,    500e6,    "0,1,2,3",         500e6,    "0,1,2,3",         id="2x100GbE-4xTRX@500e6")],
+            [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(True,     250e6,    250e6,    "0,1,2,3,4,5,6,7", 250e6,    "0,1,2,3,4,5,6,7", id="2x100GbE-8xTRX@250e6")],
+        ]
+    if dut_fpga.upper() == 'CG_1600':
+        test_cases = [
+            # Test Lengths                                         dual_SFP  rate       rx_rate   rx_channels tx_rate   tx_channels  test case ID
+            # ------------------------------------------------------------------------------------------------------------------------------
+            [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(True,     1000e6,    1000e6,   "0,1",      0,        "",          id="2x100GbE-2xRX@1000e6")],
+            [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(True,     1000e6,    0,        "",         1000e6,   "0,1",       id="2x100GbE-2xTX@1000e6")],
+            [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(True,     1000e6,    1000e6,   "0,1",      1000e6,   "0,1",       id="2x100GbE-2xTRX@1000e6")],
         ]
 
     argvalues = test_length_utils.select_test_cases_by_length(test_length, test_cases)
@@ -226,8 +255,10 @@ def pytest_generate_tests(metafunc):
         generate_X310_test_cases(metafunc, test_length)
     elif dut_type.lower() == 'x310_twinrx':
         generate_X310_TwinRx_test_cases(metafunc, test_length)
-    elif dut_type.lower() == 'x4xx':
-        generate_x4xx_test_cases(metafunc, test_length, dut_fpga)
+    elif dut_type.lower() == 'x410':
+        generate_x410_test_cases(metafunc, test_length, dut_fpga)
+    elif dut_type.lower() == 'x440':
+        generate_x440_test_cases(metafunc, test_length, dut_fpga)
 
 
 def test_streaming(pytestconfig, dut_type, use_dpdk, dual_SFP, rate, rx_rate, rx_channels,
@@ -238,8 +269,12 @@ def test_streaming(pytestconfig, dut_type, use_dpdk, dual_SFP, rate, rx_rate, rx
     device_args = ""
 
     # construct device args string
-    if dut_type.lower() in ['n310', 'n320', 'e320', 'b210']:
+    if dut_type.lower() in ['n310', 'n320', 'e320', 'b210', 'x440']:
         device_args += f"master_clock_rate={rate},"
+    
+    # mpm reboot on x440 is for spurrious RF performance, these tests do not care about RF performance
+    if dut_type.lower() == 'x440':
+        device_args += f"skip_mpm_reboot=1,"
 
     if dut_type == "B210":
         device_args += f"name={pytestconfig.getoption('name')},"
@@ -291,7 +326,7 @@ def test_streaming(pytestconfig, dut_type, use_dpdk, dual_SFP, rate, rx_rate, rx
 
     # Run X410 streaming tests in multi_streamer mode and high thread priority
     # since those settings allow for best performance.
-    if dut_type.lower() == "x4xx":
+    if dut_type.lower() == "x410" or dut_type.lower() == "x440":
         benchmark_rate_params["multi_streamer"] = 1
         benchmark_rate_params["priority"] = "high"
         dut_fpga = pytestconfig.getoption('dut_fpga')
@@ -300,6 +335,11 @@ def test_streaming(pytestconfig, dut_type, use_dpdk, dual_SFP, rate, rx_rate, rx
             # config are resolved for UC_200.
             benchmark_rate_params["tx_delay"] = 1.5
             benchmark_rate_params["rx_delay"] = 0.5
+        if dut_fpga.upper() == 'CG_400' or dut_fpga.upper() == 'CG_1600':
+            # TODO: Remove this delay workaround when IO errors on multi_streamer
+            # config are resolved for UC_200.
+            benchmark_rate_params["tx_delay"] = 2
+            benchmark_rate_params["rx_delay"] = 2
 
     # run benchmark rate
     print()

@@ -1,0 +1,102 @@
+schema: rfnoc_modtool_args
+module_name: license_check
+version: "1.0"
+rfnoc_version: "1.0"
+chdr_width: 64
+noc_id: 0x11C0CECC
+secure_core: True
+
+parameters:
+  feature_list:
+    - 0xC0DE
+    - 0xF00D
+  device_type: "${ config.family }"
+  private_key: "${env['RFNOC_PRIVATE_KEY']}"
+  serial_width: "${96 if parameters['device_type'] == 'ULTRASCALE' else 64}"
+
+checks:
+  - condition: "${ all(isinstance(f, int) and f >= 0 and f < 2**32 for f in parameters['feature_list']) }"
+    message: "Feature list must be a list of integers in the range [0, 2^32)."
+  - condition: "${ parameters['device_type'] in ['ULTRASCALE', '7SERIES'] }"
+    message: "Device type must be either 'ULTRASCALE' or '7SERIES'."
+  - run: |
+      <%
+        import re
+        pkey_w = 408 - int(parameters['serial_width'])
+        assert re.match(r"^(0x)?[0-9a-fA-F]+$", parameters['private_key']) or \
+              re.match(str(pkey_w) + r"'h[0-9a-fA-F]+$", parameters['private_key']), \
+              f"Private key must be a hex string, maximum length {pkey_w} bits (given key: {parameters['private_key']})."
+      %>
+
+hdl_parameters:
+  NUM_FEATURES: ${len(parameters['feature_list']) if isinstance(parameters['feature_list'], (list, tuple)) else 1}
+  FEATURE_IDS: |
+    <%
+      if isinstance(parameters['feature_list'], (str, int)):
+        feature_ids = f"32'h{int(parameters['feature_list']):X}"
+      else:
+        feature_ids = "{" + ", ".join(f"32'h{int(f):X}" for f in parameters['feature_list']) + "}"
+    %>${feature_ids}\
+  SERIAL_W: ${parameters['serial_width']}
+  PKEY_W: ${408 - int(parameters['serial_width'])}
+  PRIVATE_KEY: |
+    <%
+      import re
+      pkey = parameters['private_key']
+      pkey_w = 408 - int(parameters['serial_width'])
+      if pkey.startswith("0x"):
+        pkey = f"{pkey_w}'h{pkey[2:]}"
+      elif re.match(r"^[0-9a-fA-F]+$", pkey):
+        pkey = f"{pkey_w}'h{pkey}"
+    %>${ pkey }\
+  
+clocks:
+  - name: rfnoc_chdr
+    freq: "[]"
+  - name: rfnoc_ctrl
+    freq: "[]"
+
+control:
+  fpga_iface: ctrlport
+  interface_direction: slave
+  fifo_depth: 64
+  clk_domain: rfnoc_ctrl
+  ctrlport:
+    byte_mode: False
+    timed: False
+    has_status: False
+
+io_ports:
+  serial:
+    type: device_dna
+    drive: listener
+    parameters:
+      width: "${parameters['serial_width']}"
+    rename:
+      pattern: dna
+      repl: serial
+  feature_enable:
+    type: license_enable
+    drive: broadcaster
+    rename:
+      pattern: license_enable
+      repl: feature_enable
+    parameters:
+      # We can resolve these like templates, we have access to parameters
+      # dictionary from above
+      num_features: ${len(parameters['feature_list']) if isinstance(parameters['feature_list'], (list, tuple)) else 1}
+
+
+fpga_includes:
+  - include: "$(LIB_DIR)/rfnoc/blocks/rfnoc_block_license_check/Makefile.srcs"
+    make_var: "$(RFNOC_BLOCK_LICENSE_CHECK_SRCS)"
+
+io_signatures:
+  license_enable:
+    parameters:
+      # This is just a default value, there may be more than one feature
+      num_features: 1
+    type: broadcaster-listener
+    ports:
+    - name: license_enable
+      width: ${parameters.get('num_features', 1)}

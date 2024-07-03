@@ -284,6 +284,14 @@ void x300_dboard_iface::add_rx_fe(
     _rx_fes[fe_name] = fe_core;
 }
 
+void x300_dboard_iface::define_custom_register_space(const uint32_t start_addr,
+    const uint32_t length,
+    std::function<void(uint32_t, uint32_t)> poke_fn,
+    std::function<uint32_t(uint32_t)> peek_fn)
+{
+    _config.define_custom_register_space(start_addr, length, poke_fn, peek_fn);
+}
+
 void x300_dboard_iface::set_fe_connection(
     unit_t unit, const std::string& fe_name, const fe_connection_t& fe_conn)
 {

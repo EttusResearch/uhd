@@ -432,8 +432,7 @@ std::vector<std::string> zbx_dboard_impl::get_rx_gain_names(const size_t chan) c
     return ZBX_RX_GAIN_STAGES;
 }
 
-const std::string zbx_dboard_impl::get_tx_lo_source(
-    const std::string& name, const size_t chan)
+std::string zbx_dboard_impl::get_tx_lo_source(const std::string& name, const size_t chan)
 {
     const fs_path fe_path = _get_frontend_path(TX_DIRECTION, chan);
     if (!_tree->exists(fe_path / "ch" / name)) {
@@ -445,8 +444,7 @@ const std::string zbx_dboard_impl::get_tx_lo_source(
     return lo_source == zbx_lo_source_t::internal ? "internal" : "external";
 }
 
-const std::string zbx_dboard_impl::get_rx_lo_source(
-    const std::string& name, const size_t chan)
+std::string zbx_dboard_impl::get_rx_lo_source(const std::string& name, const size_t chan)
 {
     const fs_path fe_path = _get_frontend_path(RX_DIRECTION, chan);
     if (!_tree->exists(fe_path / "ch" / name)) {

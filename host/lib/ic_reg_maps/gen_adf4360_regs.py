@@ -10,7 +10,7 @@
 # Template for raw text data describing registers
 # name addr[bit range inclusive] default optional enums
 ########################################################################
-REGS_TMPL="""\
+REGS_TMPL = """\
 ########################################################################
 ## address 0
 ########################################################################
@@ -48,7 +48,7 @@ band_select_clock_div    1[20:21]   0           1, 2, 4, 8
 ########################################################################
 # Template for methods in the body of the struct
 ########################################################################
-BODY_TMPL="""\
+BODY_TMPL = """\
 enum addr_t{
     ADDR_CONTROL = 0,
     ADDR_NCOUNTER = 2,
@@ -70,9 +70,11 @@ uint32_t get_reg(addr_t addr){
 }
 """
 
-if __name__ == '__main__':
-    import common; common.generate(
-        name='adf4360_regs',
+if __name__ == "__main__":
+    import common
+
+    common.generate(
+        name="adf4360_regs",
         regs_tmpl=REGS_TMPL,
         body_tmpl=BODY_TMPL,
         file=__file__,

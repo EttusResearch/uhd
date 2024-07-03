@@ -21,7 +21,7 @@ from usrp_mpm.sys_utils import ectool
 from usrp_mpm.sys_utils import i2c_dev
 from usrp_mpm.sys_utils.gpio import Gpio
 from usrp_mpm.sys_utils.udev import dt_symbol_get_spidev
-from usrp_mpm.rpc_server import no_claim, no_rpc
+from usrp_mpm.rpc_utils import no_claim, no_rpc
 from usrp_mpm.mpmutils import assert_compat_number, poll_with_timeout
 from usrp_mpm.periph_manager import PeriphManagerBase
 from usrp_mpm.xports import XportMgrUDP
@@ -41,6 +41,8 @@ from usrp_mpm.dboard_manager.x4xx_db_iface import X4xxDboardIface
 X400_FPGA_COMPAT = (8, 2)
 # The compat number at which remote streaming was added:
 X400_REMOTE_STREAMING_COMPAT = (7, 9)
+# The compat number at which DNA support was added:
+X400_DEVICE_DNA_COMPAT = (8, 3)
 X400_DEFAULT_ENABLE_PPS_EXPORT = True
 X400_DEFAULT_TRIG_DIRECTION = ClockingAuxBrdControl.DIRECTION_OUTPUT
 X400_MONITOR_THREAD_INTERVAL = 1.0 # seconds
@@ -345,9 +347,10 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         )
         if CompatNumber(actual_compat) >= CompatNumber(X400_REMOTE_STREAMING_COMPAT):
             self.fpga_features.add('remote_udp_streaming')
+        if CompatNumber(actual_compat) >= CompatNumber(X400_DEVICE_DNA_COMPAT):
+            self.fpga_features.add('device_dna')
         self.log.debug(
-            "FPGA supports the following features: {}"
-            .format(", ".join(self.fpga_features)))
+            f"FPGA supports the following features: {', '.join(self.fpga_features)}")
 
     def _init_gps_mgr(self):
         """
@@ -484,6 +487,8 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         self.mboard_regs_control.set_serial_number(serial_number)
         self.mboard_regs_control.get_git_hash()
         self.mboard_regs_control.get_build_timestamp()
+        if 'device_dna' in self.fpga_features:
+            self._device_dna = self.mboard_regs_control.get_device_dna()
         # The clock manager needs access to this object -- we will make that
         # available after the RFDC object is created.
 
@@ -697,6 +702,8 @@ class x4xx(ZynqComponents, PeriphManagerBase):
                 *self.mboard_regs_control.get_git_hash()),
             'fpga': self.updateable_components.get('fpga', {}).get('type', ""),
         })
+        if 'device_dna' in self.fpga_features:
+            device_info.update({'device_dna': self._device_dna})
         return device_info
 
     def is_db_gpio_ifc_present(self, slot_id):

@@ -10,7 +10,7 @@ import os
 import re
 import shutil
 import subprocess
-from usrp_mpm.rpc_server import no_rpc
+from usrp_mpm.rpc_utils import no_rpc
 
 
 class ZynqComponents:

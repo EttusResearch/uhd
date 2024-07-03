@@ -122,3 +122,7 @@ set spi_max_out_delay  9.500
 set spi_out_ports [get_ports {PL_CPLD_SCLK PL_CPLD_MOSI PL_CPLD_CS0_n PL_CPLD_CS1_n}]
 set_output_delay -clock [get_clocks pll_ref_clk] -min $spi_min_out_delay $spi_out_ports
 set_output_delay -clock [get_clocks pll_ref_clk] -max $spi_max_out_delay $spi_out_ports
+
+# Force SPI registers into IOB.
+set_property IOB TRUE [get_cells "cpld_interface_i/ctrlport_spi_master_i/simple_spi_core_64bit_i/sclk_reg"]
+set_property IOB TRUE [get_cells "cpld_interface_i/ctrlport_spi_master_i/simple_spi_core_64bit_i/mosi_reg"]

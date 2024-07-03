@@ -235,122 +235,15 @@ public:
      * \tparam argN_t Data type of the Nth argument to the constructor
      *
      * \param container A shared pointer to the container to add the node to
-     * \param arg1 First arg to ctor
+     * \param args arguments to the ctor
      * \param ...
      *
      */
-    template <typename worker_t, typename arg1_t>
+    template <typename worker_t, typename... Args>
     inline static void add_worker_node(
-        expert_container::sptr container, arg1_t const& arg1)
+        expert_container::sptr container, Args const&... args)
     {
-        container->add_worker(new worker_t(arg1));
-    }
-
-    template <typename worker_t, typename arg1_t, typename arg2_t>
-    inline static void add_worker_node(
-        expert_container::sptr container, arg1_t const& arg1, arg2_t const& arg2)
-    {
-        container->add_worker(new worker_t(arg1, arg2));
-    }
-
-    template <typename worker_t, typename arg1_t, typename arg2_t, typename arg3_t>
-    inline static void add_worker_node(expert_container::sptr container,
-        arg1_t const& arg1,
-        arg2_t const& arg2,
-        arg3_t const& arg3)
-    {
-        container->add_worker(new worker_t(arg1, arg2, arg3));
-    }
-
-    template <typename worker_t,
-        typename arg1_t,
-        typename arg2_t,
-        typename arg3_t,
-        typename arg4_t>
-    inline static void add_worker_node(expert_container::sptr container,
-        arg1_t const& arg1,
-        arg2_t const& arg2,
-        arg3_t const& arg3,
-        arg4_t const& arg4)
-    {
-        container->add_worker(new worker_t(arg1, arg2, arg3, arg4));
-    }
-
-    template <typename worker_t,
-        typename arg1_t,
-        typename arg2_t,
-        typename arg3_t,
-        typename arg4_t,
-        typename arg5_t>
-    inline static void add_worker_node(expert_container::sptr container,
-        arg1_t const& arg1,
-        arg2_t const& arg2,
-        arg3_t const& arg3,
-        arg4_t const& arg4,
-        arg5_t const& arg5)
-    {
-        container->add_worker(new worker_t(arg1, arg2, arg3, arg4, arg5));
-    }
-
-    template <typename worker_t,
-        typename arg1_t,
-        typename arg2_t,
-        typename arg3_t,
-        typename arg4_t,
-        typename arg5_t,
-        typename arg6_t>
-    inline static void add_worker_node(expert_container::sptr container,
-        arg1_t const& arg1,
-        arg2_t const& arg2,
-        arg3_t const& arg3,
-        arg4_t const& arg4,
-        arg5_t const& arg5,
-        arg6_t const& arg6)
-    {
-        container->add_worker(new worker_t(arg1, arg2, arg3, arg4, arg5, arg6));
-    }
-
-    template <typename worker_t,
-        typename arg1_t,
-        typename arg2_t,
-        typename arg3_t,
-        typename arg4_t,
-        typename arg5_t,
-        typename arg6_t,
-        typename arg7_t>
-    inline static void add_worker_node(expert_container::sptr container,
-        arg1_t const& arg1,
-        arg2_t const& arg2,
-        arg3_t const& arg3,
-        arg4_t const& arg4,
-        arg5_t const& arg5,
-        arg6_t const& arg6,
-        arg7_t const& arg7)
-    {
-        container->add_worker(new worker_t(arg1, arg2, arg3, arg4, arg5, arg6, arg7));
-    }
-
-    template <typename worker_t,
-        typename arg1_t,
-        typename arg2_t,
-        typename arg3_t,
-        typename arg4_t,
-        typename arg5_t,
-        typename arg6_t,
-        typename arg7_t,
-        typename arg8_t>
-    inline static void add_worker_node(expert_container::sptr container,
-        arg1_t const& arg1,
-        arg2_t const& arg2,
-        arg3_t const& arg3,
-        arg4_t const& arg4,
-        arg5_t const& arg5,
-        arg6_t const& arg6,
-        arg7_t const& arg7,
-        arg7_t const& arg8)
-    {
-        container->add_worker(
-            new worker_t(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8));
+        container->add_worker(new worker_t(args...));
     }
 };
 }} // namespace uhd::experts

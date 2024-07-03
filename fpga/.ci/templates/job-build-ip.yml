@@ -37,21 +37,14 @@ jobs:
 - job: ${{ parameters.ip_target }}
   displayName: 'Build ${{ parameters.ip_target }}'
   pool:
-    name: Hardware
+    name: Drivers-NIBuildFarm-RFMIBUILD
     demands:
-    - MAX_CPU -equals 4
+    - Agent.OS -equals Linux
   timeoutInMinutes: 240
   variables:
   - group: sdr-pipeline-vars
   steps:
-    - checkout: self
-      clean: true
-      persistCredentials: true
-
-    - checkout: hwtools
-      clean: true
-      path: s/hwtools/head
-      persistCredentials: true
+    - template: setup_steps.yml
 
     # Pipeline caching is leveraged in this job to minimize the time it takes
     # to build all the IP.

@@ -9,6 +9,9 @@ version: '1.0'                          # File version
 chdr_width: 64                          # Bit width of the CHDR bus for this image
 device: 'n320'
 default_target: 'N320_HG'
+image_core_name: 'usrp_n320_fpga_HG'    # Name to use for the generated output files.
+                                        # Change image_core_name and default_target in tandem,
+                                        # because we won't generate the correct DTS files otherwise.
 
 # A list of all stream endpoints in design
 # ----------------------------------------

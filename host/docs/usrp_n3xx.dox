@@ -123,17 +123,20 @@ system (Linux kernel, libraries) and any user data are stored on this SD card.
 
 The SD card is partitioned into four partitions:
 
-1. Boot partition (contains the bootloader). This partition usually does not
-   require touching.
-2. A data partition, mounted in /data. This is the only partition that is not
-   erased during file system updates.
-2. Two identical system partitions (root file systems). These contain the
-   operating system and the home directory (anything mounted under / that is not
-   the data or boot partition). The reason there are two of these is to enable
-   remote updates: An update running on one partition can update the other one
-   without any effect to the currently running system. Note that the system
-   partitions are erased during updates and are thus unsuitable for permanently
-   storing information.
+- Boot partition (contains the bootloader). This partition usually does not
+  require any modifications.
+- Two system partitions (root file systems). These contain the operating system
+  and the home directory (anything mounted under / that is not the data or boot
+  partition). Up until UHD 4.6/Yocto release zeus, the two rootfs partitions are
+  identical in the .sdimg filesystem image. Starting from UHD4.7/Yocto release
+  kirkstone, only the first partition is populated in the .sdimg filesystem
+  image and the second rootfs partition is empty.
+  The reason there are two of these is to enable remote updates: An update
+  running on one partition can update the other one without any effect to the
+  currently running system. Note that the system partitions are erased during
+  updates and are thus unsuitable for permanently storing information.
+- A data partition, mounted in /data. This is the only partition that is not
+  erased during file system updates.
 
 Note: It is possible to access the currently inactive root file system by
 mounting it. After logging into the device using serial console or SSH (see the
@@ -670,6 +673,28 @@ will look like this:
 
 
 \section n3xx_synchronization Clock/Time Synchronization
+
+\subsection n3xx_synchronization_overview Overview
+
+To choose a source for clock (frequency) and PPS (time), use the `clock_source`
+and `time_source` device arguments just like with any other USRP (see also
+\ref page_sync). The following combinations are supported:
+
+`clock_source`  | `time_source`  | Notes
+----------------|----------------|---------------------------------------------
+`internal`      | `internal`     | Default value
+`external`      | `internal`     | The PPS will be generated from the reference signal, but this does not allow time synchronization between devices.
+`external`      | `external`     | The device assumes that the external reference clock and PPS are synchronized.
+`gpsdo`         | `gpsdo`        | This will work even without GPS reception (see below).
+
+The combination of `clock_source=external,time_source=gpsdo` is not available
+out of the box, but can be enabled by patching the MPM source code (n3xx.py).
+This is considered an advanced and unsupported use case. Read the appropriate
+source code for a description of drawbacks. Using this mode will cause unreliable
+phase alignment.
+
+See the following sections for more details on the individual synchronization
+options.
 
 \subsection n3xx_synchronization_internal Internal references
 

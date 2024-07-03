@@ -1,0 +1,127 @@
+# General parameters
+# -----------------------------------------
+schema: rfnoc_imagebuilder_args          # Identifier for the schema used to validate this file
+copyright: >-                            # Copyright information used in file headers
+  Copyright 2023 Ettus Research, a National Instruments Brand
+license: >-                              # License information used in file headers
+  SPDX-License-Identifier: LGPL-3.0-or-later
+version: '1.0'                           # File version
+chdr_width: 512                          # Bit width of the CHDR bus for this image
+device: 'x440'                           # USRP type
+image_core_name: 'usrp_x440_fpga_CG_400' # Name to use for the generated output files
+default_target: 'X440'                   # Default make target
+inherit:
+  - 'yaml_include/x440_radio_base.yml'
+  - 'yaml_include/x4xx_cg_base.yml'
+
+parameters:
+  RF_BW: 400
+  ENABLE_DRAM: False
+  NUM_DRAM_BANKS: 0
+  NUM_DRAM_CHANS: 0
+  DRAM_WIDTH: 128
+
+# A list of all stream endpoints in design
+# ----------------------------------------
+stream_endpoints:
+  ep0:                                  # Stream endpoint name
+    ctrl: True                          # Endpoint passes control traffic
+    data: True                          # Endpoint passes data traffic
+    buff_size_bytes: 524288             # Ingress buffer size for data
+  ep1:
+    ctrl: False
+    data: True
+    buff_size_bytes: 524288
+  ep2:
+    ctrl: False
+    data: True
+    buff_size_bytes: 524288
+  ep3:
+    ctrl: False
+    data: True
+    buff_size_bytes: 524288
+  ep4:
+    ctrl: False
+    data: True
+    buff_size_bytes: 524288
+  ep5:
+    ctrl: False
+    data: True
+    buff_size_bytes: 524288
+  ep6:
+    ctrl: False
+    data: True
+    buff_size_bytes: 524288
+  ep7:
+    ctrl: False
+    data: True
+    buff_size_bytes: 524288
+
+# A table of which crossbar routes to include
+# -------------------------------------------
+# Rows correspond to input ports and columns correspond to output ports.
+# Entering a 1 includes and a 0 removes that route from the crossbar.
+crossbar_routes:
+  #  eth0  dma   ep1   ep3   ep5   ep7
+  #     eth1  ep0   ep2   ep4   ep6
+  - [ 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1 ] # eth0 (QSFP Port 0)
+  - [ 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1 ] # eth1 (QSFP Port 1)
+  - [ 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1 ] # dma
+  - [ 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 ] # ep0 (radio0.0)
+  - [ 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 ] # ep1 (radio0.1)
+  - [ 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 ] # ep2 (radio0.2)
+  - [ 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 ] # ep3 (radio0.3)
+  - [ 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 ] # ep4 (radio1.0)
+  - [ 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 ] # ep5 (radio1.1)
+  - [ 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 ] # ep6 (radio1.2)
+  - [ 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 ] # ep7 (radio1.3)
+
+# A list of all NoC blocks in design
+# ----------------------------------
+  # Are defined in x440_radio_base.yml
+
+# A list of all static connections in design
+# ------------------------------------------
+# Format: A list of connection maps (list of key-value pairs) with the following keys
+#   - srcblk  = Source block to connect
+#   - srcport = Port on the source block to connect
+#   - dstblk  = Destination block to connect
+#   - dstport = Port on the destination block to connect
+connections:
+  # RF A:0 TX
+  - { srcblk: ep0,    srcport: out0,  dstblk: radio0, dstport: in_0 }
+  # RF A:0 RX
+  - { srcblk: radio0, srcport: out_0, dstblk: ep0,    dstport: in0  }
+  # RF A:1 TX
+  - { srcblk: ep1,    srcport: out0,  dstblk: radio0, dstport: in_1 }
+  # RF A:1 RX
+  - { srcblk: radio0, srcport: out_1, dstblk: ep1,    dstport: in0  }
+  # RF A:2 TX
+  - { srcblk: ep2,    srcport: out0,  dstblk: radio0, dstport: in_2 }
+  # RF A:2 RX
+  - { srcblk: radio0, srcport: out_2, dstblk: ep2,    dstport: in0  }
+  # RF A:3 TX
+  - { srcblk: ep3,    srcport: out0,  dstblk: radio0, dstport: in_3 }
+  # RF A:3 RX
+  - { srcblk: radio0, srcport: out_3, dstblk: ep3,    dstport: in0  }
+  #
+  # RF B:0 TX
+  - { srcblk: ep4,    srcport: out0,  dstblk: radio1, dstport: in_0 }
+  # RF B:0 RX
+  - { srcblk: radio1, srcport: out_0, dstblk: ep4,    dstport: in0  }
+  # RF B:1 TX
+  - { srcblk: ep5,    srcport: out0,  dstblk: radio1, dstport: in_1 }
+  # RF B:1 RX
+  - { srcblk: radio1, srcport: out_1, dstblk: ep5,    dstport: in0  }
+  # RF B:2 TX
+  - { srcblk: ep6,    srcport: out0,  dstblk: radio1, dstport: in_2 }
+  # RF B:2 RX
+  - { srcblk: radio1, srcport: out_2, dstblk: ep6,    dstport: in0  }
+  # RF B:3 TX
+  - { srcblk: ep7,    srcport: out0,  dstblk: radio1, dstport: in_3 }
+  # RF B:3 RX
+  - { srcblk: radio1, srcport: out_3, dstblk: ep7,    dstport: in0  }
+  #
+  # BSP connections are inherited from YAML include files
+
+# Clock domains are inherited from YAML include files

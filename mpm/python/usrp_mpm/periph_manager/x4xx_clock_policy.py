@@ -130,7 +130,7 @@ class X4xxClockPolicy:
         depending on whether or not the DSP info is set.
         """
         raise NotImplementedError()
-    
+
     def get_radio_clock_rate(self, mcr):
         """
         Return the radio clock rates for the current configuration.
@@ -471,7 +471,7 @@ class X440ClockPolicy(X4xxClockPolicy):
         self.conv_rates = self.args.get("converter_rate")
         if self.conv_rates is None:
             return
-        self.conv_rates = parse_multi_device_arg(self.args['converter_rate'], conv=float)
+        self.conv_rates = list(parse_multi_device_arg(self.args['converter_rate'], conv=float))
         if len(self.conv_rates) == 1:
             self.conv_rates = [self.conv_rates[0]] * self.get_num_rates()
         elif len(self.conv_rates) != self.get_num_rates():
@@ -486,10 +486,11 @@ class X440ClockPolicy(X4xxClockPolicy):
         use_pll_bypass = False
 
         # Check if both DBs require the same LMK VCO rate (otherwise we can return here already).
-        if MCR_LMK_VCO[mcrs[0]] != MCR_LMK_VCO[mcrs[1]]:
+        common_vco_rates = self._get_common_lmk_vco_rates(mcrs)
+        if (len(common_vco_rates)) == 0:
             return False, None, None
         # Now we can be sure we have a valid number here
-        lmk_vco = int(MCR_LMK_VCO[mcrs[0]])
+        lmk_vco = int(common_vco_rates[0])
         # Calculate which LMK output rate is required to serve both DBs (least common multiple):
         required_rate = lcm(mcrs[0], mcrs[1])
         lmk_od = None
@@ -544,15 +545,22 @@ class X440ClockPolicy(X4xxClockPolicy):
                     break
         return coerced_mcr, coerced_mcr * div
 
+    def _get_common_lmk_vco_rates(self, mcrs):
+        """
+        Returns a list of LMK VCO rates that can be used with both master clock rates.
+        """
+        vco_rates = [set(MCR_LMK_VCO[mcr]) for mcr in mcrs]
+        return list(vco_rates[0].intersection(vco_rates[1]))
+
     def _get_common_spll_out_freqs(self, conv_rates, mcrs):
         """
         Calculates possible common LMK output frequencies to achieve the two converter rates
         """
         # First get the required VCO rates for both DBs
-        vco_rates = [MCR_LMK_VCO[mcr] for mcr in mcrs]
-        # If we have different values, there is no common spll_out_freq, so we return early
-        if not all(vco_rate == vco_rates[0] for vco_rate in vco_rates):
-            return list()
+        vco_rates = self._get_common_lmk_vco_rates(mcrs)
+        # If we don't have common values, there is no common spll_out_freq, so we return early
+        if len(vco_rates) == 0:
+            return []
 
         # Get a list of all possible spll out frequencies for these converter rates
         spll_out_freqs = list(set.intersection(*[set(v) for k,v in RFDC_PLL_CONFIGS.items()
@@ -626,14 +634,14 @@ class X440ClockPolicy(X4xxClockPolicy):
             if mmcm_input:
                 break
         if len(mmcm_cfg.keys()) == 0:
-            self.log.error(f"Unable to find a valid MMCM configuration for Master Clock Rate(s)"
-                           f" requested. Refer to \"About Sampling Rates and Master Clock Rates"
-                           f" for the USRP X440\" in Knowledge Base for more information on"
-                           f" supported rates.")
-            raise RuntimeError(f"Unable to find a valid MMCM configuration for Master Clock Rate(s)"
-                               f" requested. Refer to \"About Sampling Rates and Master Clock Rates"
-                               f" for the USRP X440\" in Knowledge Base for more information on"
-                               f" supported rates.")
+            error_msg = (
+                "Unable to find a valid MMCM configuration for Master Clock Rate(s)"
+                ' requested. Refer to "About Sampling Rates and Master Clock Rates'
+                ' for the USRP X440" in Knowledge Base for more information on'
+                " supported rates."
+            )
+            self.log.error(error_msg)
+            raise RuntimeError(error_msg)
         return max(mmcm_cfg), mmcm_cfg[max(mmcm_cfg)]
 
     def get_intermediate_clk_settings(self, ref_clk_freq, old_mcrs, new_mcrs):
@@ -741,7 +749,7 @@ class X440ClockPolicy(X4xxClockPolicy):
             # Use the maximum value
             output_freq = max(common_out)
             # Find out how to configure the LMK for this output freq:
-            lmk_vco = int(MCR_LMK_VCO[mcrs[0]])
+            lmk_vco = self._get_common_lmk_vco_rates(mcrs)[0]
             lmk_od = int(lmk_vco / output_freq)
         self.conv_rates = conv_rates
         spll1_vco = 100e6 if lmk_vco % 100e6 == 0 else 122.88e6
@@ -754,12 +762,11 @@ class X440ClockPolicy(X4xxClockPolicy):
         prc_rate = mmcm_input
 
         if not mmcm_input or mmcm_input > lmk_vco:
-            self.log.error(f"Unable to find a valid MMCM configuration for Master Clock Rate(s) "
+            error_msg = (f"Unable to find a valid MMCM configuration for Master Clock Rate(s) "
                            f"{mcrs[0]/1e6} MHz and {mcrs[1]/1e6} MHz. Please choose different "
                            f"Master Clock Rate(s).")
-            raise RuntimeError(f"Unable to find a valid MMCM configuration for Master Clock Rate(s)"
-                           f" {mcrs[0]/1e6} MHz and {mcrs[1]/1e6} MHz. Please choose different "
-                           f"Master Clock Rate(s).")
+            self.log.error(error_msg)
+            raise RuntimeError(error_msg)
         prc_div = int(lmk_vco / mmcm_input)
         assert prc_div in LMK04832X4xx.PRC_OUT_DIVIDERS, \
             "Invalid LMK PRC output divider."
@@ -782,9 +789,12 @@ class X440ClockPolicy(X4xxClockPolicy):
         assert X4xxRfdcCtrl.MMCM_OD_MIN <= prc_out_div <= X4xxRfdcCtrl.MMCM_OD_MAX, \
             "Invalid MMCM output divider for PRC."
 
+        # When looking for the correct sysref config we need to get the MCR that belongs to the
+        # greatest converter rate used
+        max_cr_mcr = mcrs[conv_rates.index(max(conv_rates))]
         sysref_config = next(sysref_setting
                         for sysref_setting in LMK04832X4xx.SYSREF_CONFIG[spll1_vco]
-                        if sysref_setting['SYSREF_FREQ'] in self._find_sysref_matches(mcrs[0]))
+                        if all(sysref_setting['SYSREF_FREQ'] in self._find_sysref_matches(mcr) for mcr in mcrs))
 
         # The following asserts are to explicitly check for SYSREF requirements
         # as per pg269, Ch. 4, Section "SYSREF Signal Requirements"

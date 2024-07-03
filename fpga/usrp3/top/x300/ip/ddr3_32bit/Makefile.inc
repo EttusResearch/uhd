@@ -4,6 +4,8 @@
 
 include $(TOOLS_DIR)/make/viv_ip_builder.mak
 
+# Including mig_7series_v4_2_tempmon.v will cause a critical warning, but leaving
+# it out will cause the build to fail.
 IP_DDR3_32BIT_SRCS = \
 $(IP_BUILD_DIR)/ddr3_32bit/ddr3_32bit.xci \
 $(IP_BUILD_DIR)/ddr3_32bit/ddr3_32bit/user_design/rtl/clocking/mig_7series_v4_2_tempmon.v

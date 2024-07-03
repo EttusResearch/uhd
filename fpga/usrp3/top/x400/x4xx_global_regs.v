@@ -73,7 +73,10 @@ module x4xx_global_regs #(
   input  wire        fpga_aux_ref,
 
   // Device ID used by RFNoC, transports, etc. (Domain: rfnoc_chdr_clk)
-  output reg [15:0] device_id
+  output reg [15:0] device_id,
+
+  // Device DNA (SoC serial)
+  input wire [95:0] device_dna
 );
 
   `include "../../lib/rfnoc/core/ctrlport.vh"
@@ -358,6 +361,16 @@ module x4xx_global_regs #(
 
           REG_BASE + MFG_TEST_STATUS_REG: begin
             s_ctrlport_resp_data[MFG_TEST_FPGA_AUX_REF_FREQ_MSB:MFG_TEST_FPGA_AUX_REF_FREQ] <= fpga_aux_ref_freq;
+          end
+
+          REG_BASE + DEVICE_DNA0_REG: begin
+            s_ctrlport_resp_data[31:0] <= device_dna[31:0];
+          end
+          REG_BASE + DEVICE_DNA1_REG: begin
+            s_ctrlport_resp_data[31:0] <= device_dna[63:32];
+          end
+          REG_BASE + DEVICE_DNA2_REG: begin
+            s_ctrlport_resp_data[31:0] <= device_dna[95:64];
           end
 
           // No register implementation for provided address
@@ -734,6 +747,15 @@ endmodule
 //          to zero.
 //        </info>
 //      </bitfield>
+//    </register>
+//    <register name="DEVICE_DNA0_REG" offset="0x100" size="32">
+//      <info>Least significant bytes of 12 byte device</info>
+//    </register>
+//    <register name="DEVICE_DNA1_REG" offset="0x104" size="32">
+//      <info>Second-least significant bytes of 12 byte device</info>
+//    </register>
+//    <register name="DEVICE_DNA2_REG" offset="0x108" size="32">
+//      <info>Most significant bytes of 12 byte device</info>
 //    </register>
 //  </group>
 //</regmap>

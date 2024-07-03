@@ -37,25 +37,28 @@ timekeeper:
 # Radio interface (up to 32 channels or 32 samples per clock)
 radio:
   type: master-slave
+  parameters:
+    spc: 1
+    num_ports: 2
   ports:
   - name: radio_rx_data
     type: from-master
-    width: 1024
+    width: ${32*int(parameters['spc'])*int(parameters['num_ports']) if isinstance(parameters['spc'], int) and isinstance(parameters['num_ports'], int) else f"32*{parameters['spc']}*{parameters['num_ports']}"}
   - name: radio_rx_stb
     type: from-master
-    width: 32
+    width: ${parameters['num_ports']}
   - name: radio_rx_running
     type: to-master
-    width: 32
+    width: ${parameters['num_ports']}
   - name: radio_tx_data
     type: to-master
-    width: 1024
+    width: ${32*int(parameters['spc'])*int(parameters['num_ports']) if isinstance(parameters['spc'], int) and isinstance(parameters['num_ports'], int) else f"32*{parameters['spc']}*{parameters['num_ports']}"}
   - name: radio_tx_stb
     type: from-master
-    width: 32
+    width: ${parameters['num_ports']}
   - name: radio_tx_running
     type: to-master
-    width: 32
+    width: ${parameters['num_ports']}
 
 # AXI4 memory-mapped interface (up to 8 x 512-bit data and 48-bit address)
 axi4_mm:
@@ -103,6 +106,7 @@ axi4_mm:
   - name: m_axi_awready
     type: to-master
     width: 8
+    safe: "8'hFF"
   - name: m_axi_wdata
     type: from-master
     width: 4192
@@ -121,6 +125,7 @@ axi4_mm:
   - name: m_axi_wready
     type: to-master
     width: 8
+    safe: "8'hFF"
   - name: m_axi_bid
     type: to-master
     width: 8
@@ -136,6 +141,7 @@ axi4_mm:
   - name: m_axi_bready
     type: from-master
     width: 8
+    safe: "8'hFF"
   - name: m_axi_arid
     type: from-master
     width: 8
@@ -175,6 +181,7 @@ axi4_mm:
   - name: m_axi_arready
     type: to-master
     width: 8
+    safe: "8'hFF"
   - name: m_axi_rid
     type: to-master
     width: 8
@@ -196,3 +203,48 @@ axi4_mm:
   - name: m_axi_rready
     type: from-master
     width: 8
+    safe: "8'hFF"
+
+axis_chdr:
+  # CHDR over AXI-Stream, e.g. between the crossbar and transport adapters.
+  # There is no tuser here, because all the metadata is in the CHDR header.
+  parameters:
+    width: 64
+  type: master-slave
+  ports:
+  - name: tdata
+    type: to-master
+    width: "${parameters['width']}"
+  - name: tlast
+    type: to-master
+    width: 1
+  - name: tvalid
+    type: to-master
+    width: 1
+  - name: tready
+    type: from-master
+    width: 1
+
+  #
+  # - TODO
+  #
+  # Register Access (AXI-Lite)
+  # - TODO
+  #
+  # DMA (AXI-Stream)
+  # - TODO
+  #
+  # Transceiver Pins
+  # - TODO
+  #
+  # Misc Pins
+  # - Port Info x 4 (Output from transport adapter to tell software via global_regs what type of bitstream is loaded, e.g., X4, CG, etc.)
+  # - IRQ x 4
+  # - Link Up x 4
+  # - Link Activity x 4
+
+pps:
+  type: broadcaster-listener
+  ports:
+  - name: pps
+    width: 1

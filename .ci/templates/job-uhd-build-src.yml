@@ -103,6 +103,7 @@ jobs:
       parameters:
         uhdSrcDir: $(Build.SourcesDirectory)
         uhdBuildDir: c:\uhddev\build
+        uhdVcpkgManifestDir: c:\uhd-vcpkg
         uhdReleaseBinaries: ${{ parameters.release_binaries }}
         uhdBuildPythonAPI: false
         cmakeCompiler: $(cmakeCompiler)
@@ -116,6 +117,7 @@ jobs:
       parameters:
         uhdSrcDir: $(Build.SourcesDirectory)
         uhdBuildDir: c:\uhddev\build
+        uhdVcpkgManifestDir: c:\uhd-vcpkg
         uhdReleaseBinaries: ${{ parameters.release_binaries }}
         uhdBuildPythonAPI: true
         cmakeCompiler: $(cmakeCompiler)

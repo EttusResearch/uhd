@@ -23,6 +23,9 @@ io_ports:
   radio:
     type: radio
     drive: master
+    parameters:
+      spc: 1
+      num_ports: 2
   dram:
     type: axi4_mm
     drive: slave

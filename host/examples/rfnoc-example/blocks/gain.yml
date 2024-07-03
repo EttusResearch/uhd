@@ -42,9 +42,3 @@ data:
       payload_fifo_depth: 2
       format: int32
       mdata_sig: ~
-
-io_port:
-
-registers:
-
-properties:

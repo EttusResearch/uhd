@@ -9,7 +9,7 @@
 # Template for raw text data describing registers
 # name addr[bit range inclusive] default optional enums
 ########################################################################
-REGS_TMPL="""\
+REGS_TMPL = """\
 ########################################################################
 ## address 0
 ########################################################################
@@ -122,7 +122,7 @@ frac2_msb              13[18:31]    0
 ########################################################################
 # Template for methods in the body of the struct
 ########################################################################
-BODY_TMPL="""\
+BODY_TMPL = """\
 enum addr_t{
     ADDR_R0 = 0,
     ADDR_R1 = 1,
@@ -155,9 +155,11 @@ uint32_t get_reg(uint8_t addr){
 }
 """
 
-if __name__ == '__main__':
-    import common; common.generate(
-        name='adf5356_regs',
+if __name__ == "__main__":
+    import common
+
+    common.generate(
+        name="adf5356_regs",
         regs_tmpl=REGS_TMPL,
         body_tmpl=BODY_TMPL,
         file=__file__,

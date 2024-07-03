@@ -11,17 +11,17 @@ source $::env(VIV_TOOLS_DIR)/scripts/viv_strategies.tcl
 vivado_utils::initialize_project
 
 # STEP#2: Run synthesis
-
-
 vivado_utils::synthesize_design
 vivado_utils::generate_post_synth_reports
 
 # STEP#3: Run implementation strategy
 set strategy [vivado_strategies::get_impl_preset "Performance_ExplorePostRoutePhysOpt"]
+# Enable incremental build
+dict set strategy "implementation.incremental" $::env(VIV_INCR_BUILD)
 # Turn up uncertainty on 100Gb clocks(-quiet so if it fails because the clocks don't exist, it won't error)
 set_clock_uncertainty 0.5 -quiet -setup [get_clocks txoutclk_out*]
 # Vivado has been underestimating routing delays.
-dict set strategy "place_design.directive"                  "ExtraNetDelay_high"
+dict set strategy "place_design.directive" "ExtraNetDelay_high"
 # Turn down uncertainty on 100Gb clocks
 dict set strategy "route_design.pre_hook" {set_clock_uncertainty 0.0 -quiet -setup [get_clocks txoutclk_out*]}
 vivado_strategies::implement_design $strategy

@@ -8,8 +8,10 @@ license: >-                             # License information used in file heade
 version: '1.0'                          # File version
 chdr_width: 64                          # Bit width of the CHDR bus for this image
 device: 'e310'                          # USRP type
-image_core_name: 'e310'                 # Name to use for the RFNoC Image Core files
 default_target: 'E310_SG3'
+image_core_name: 'usrp_e310_sg3_fpga'   # Name to use for the generated output files.
+                                        # Change image_core_name and default_target in tandem,
+                                        # because we won't generate the correct DTS files otherwise.
 
 # A list of all stream endpoints in design
 # ----------------------------------------
@@ -30,6 +32,7 @@ noc_blocks:
     block_desc: 'radio.yml'             # Block device descriptor
     parameters:
       NUM_PORTS: 2
+      NIPC: RADIO_NIPC
 
 # A list of all static connections in design
 # ------------------------------------------

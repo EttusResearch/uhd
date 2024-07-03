@@ -18,6 +18,7 @@
 #include <uhdlib/usrp/dboard/fbx/fbx_dboard.hpp>
 #include <uhdlib/usrp/dboard/null_dboard.hpp>
 #include <uhdlib/usrp/dboard/zbx/zbx_dboard.hpp>
+#include <uhdlib/utils/prefs.hpp>
 
 namespace uhd { namespace rfnoc {
 
@@ -247,6 +248,13 @@ x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
                     auto& self_cal =
                         get_feature<uhd::features::adc_self_calibration_iface>();
                     const size_t num_channels = get_num_output_ports();
+                    // Get current setting for guided mode and disable it for the duration
+                    // of the calibration
+
+                    uhd::prefs::suspend_guided_mode();
+                    auto resume_guided_mode = uhd::utils::scope_exit::make(
+                        [&]() { uhd::prefs::resume_guided_mode(); });
+
                     for (size_t i = 0; i < num_channels; i++) {
                         auto abs_ch = get_block_id().get_block_count() * num_channels + i;
                         if (ch_list.size() == 0
@@ -731,7 +739,7 @@ void x400_radio_control_impl::set_rx_lo_source(
     _daughterboard->set_rx_lo_source(src, name, chan);
 }
 
-const std::string x400_radio_control_impl::get_rx_lo_source(
+std::string x400_radio_control_impl::get_rx_lo_source(
     const std::string& name, const size_t chan)
 {
     std::lock_guard<std::recursive_mutex> l(_lock);
@@ -792,7 +800,7 @@ void x400_radio_control_impl::set_tx_lo_source(
     _daughterboard->set_tx_lo_source(src, name, chan);
 }
 
-const std::string x400_radio_control_impl::get_tx_lo_source(
+std::string x400_radio_control_impl::get_tx_lo_source(
     const std::string& name, const size_t chan)
 {
     std::lock_guard<std::recursive_mutex> l(_lock);

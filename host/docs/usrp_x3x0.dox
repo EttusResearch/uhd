@@ -716,7 +716,7 @@ Afterward, power-cycle your X-Series device for the changes to take effect.
 
 Using an external 10 MHz reference clock, a square wave will offer the best phase
 noise performance, but a sinusoid is acceptable.
-The power level of the reference clock must exceed +15 dBm.
+The power level of the reference clock must not exceed +15 dBm.
 
 The following reference frequencies are supported:
 - 10 MHz

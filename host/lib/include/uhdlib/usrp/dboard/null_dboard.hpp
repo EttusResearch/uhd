@@ -298,7 +298,7 @@ public:
         throw _no_dboard_exception();
     }
 
-    const std::string get_rx_lo_source(const std::string&, const size_t) final
+    std::string get_rx_lo_source(const std::string&, const size_t) final
     {
         throw _no_dboard_exception();
     }
@@ -344,7 +344,7 @@ public:
         throw _no_dboard_exception();
     }
 
-    const std::string get_tx_lo_source(const std::string&, const size_t) final
+    std::string get_tx_lo_source(const std::string&, const size_t) final
     {
         throw _no_dboard_exception();
     }

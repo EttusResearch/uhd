@@ -108,6 +108,8 @@ module rfnoc_fir_filter_core #(
   //---------------------------------------------------------------------------
   // Registers
   //---------------------------------------------------------------------------
+  localparam COMPAT_MAJOR  = 16'h1;
+  localparam COMPAT_MINOR  = 16'h1;
 
   `include "rfnoc_fir_filter_regs.vh"
 
@@ -153,6 +155,9 @@ module rfnoc_fir_filter_core #(
         // Ignore the upper bits so the we respond to any port
         if (reg_addr == REG_FIR_NUM_COEFFS) begin
           s_ctrlport_resp_data <= NUM_COEFFS;
+          s_ctrlport_resp_ack  <= 1;
+        end else if (reg_addr == REG_FIR_COMPAT_NUM) begin
+          s_ctrlport_resp_data <= {COMPAT_MAJOR, COMPAT_MINOR};
           s_ctrlport_resp_ack  <= 1;
         end
       end

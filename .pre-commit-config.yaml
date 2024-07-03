@@ -1,0 +1,19 @@
+repos:
+- repo: git@github.com:ssciwr/clang-format-hook.git
+  rev: 'v14.0.6'
+  hooks:
+  -   id: clang-format
+- repo: local
+  hooks:
+  - id: ni-python-styleguide-fix
+    name: ni-python-styleguide-fix
+    description: Run NI Python Style Checker (Fixer)
+    language: python
+    types_or: [python]
+    entry: ni-python-styleguide fix
+  - id: ni-python-styleguide-lint
+    name: ni-python-styleguide-lint
+    description: Run NI Python Style Checker (Linter)
+    language: python
+    types_or: [python]
+    entry: ni-python-styleguide lint

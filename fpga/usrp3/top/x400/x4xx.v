@@ -272,7 +272,6 @@ module x4xx (
 
   `include "regmap/global_regs_regmap_utils.vh"
   `include "regmap/versioning_utils.vh"
-  `include "x4xx_mgt_types.vh"
 
 
   //---------------------------------------------------------------------------
@@ -323,19 +322,7 @@ module x4xx (
     localparam NUM_TIMEKEEPERS = 1;
   `endif
 
-  // Set the width for each transport adapter. All ports within a single QSFP
-  // will have the same width.
-  localparam [31:0] QSFP0_W = `CHDR_WIDTH;
-  localparam [31:0] QSFP1_W = `CHDR_WIDTH;
-  // Width of the signals used to connect the Ethernet transport adapters to
-  // RFNoC. Set this to the width of the widest port.
-  localparam [31:0] ENET_W = (QSFP0_W > QSFP1_W) ? QSFP0_W : QSFP1_W;
-  // Actual width of each SFP port's transport adapter interface. Each port of
-  // the same QSFP must have the same width.
-  localparam [8*32-1:0] ENET_WIDTHS = {{4{QSFP1_W}}, {4{QSFP0_W}}};
-
   localparam RFNOC_PROTOVER = `RFNOC_PROTOVER;
-  localparam NET_CHDR_W     = ENET_W;
   localparam CHDR_W         = `CHDR_WIDTH;
   localparam DMA_W          = `CHDR_WIDTH;
 
@@ -2452,19 +2439,6 @@ module x4xx (
   wire [15:0] device_id;
   wire        rx_rec_clk_out1; // output GTY on QSFP1
 
-  // e2v and v2e are flattened arrays, where e2v_tdata[ENET_W*N +: ENET_W] is
-  // the data for RFNoC port N. RFNoC ports 0-3 map to QSFP0 and ports 4-7 map
-  // to QSFP1. Note that each port might use less than ENET_W bits.
-  wire [ENET_W*8-1:0] e2v_tdata;
-  wire [       8-1:0] e2v_tlast;
-  wire [       8-1:0] e2v_tready;
-  wire [       8-1:0] e2v_tvalid;
-
-  wire [ENET_W*8-1:0] v2e_tdata;
-  wire [       8-1:0] v2e_tlast;
-  wire [       8-1:0] v2e_tready;
-  wire [       8-1:0] v2e_tvalid;
-
   `ifdef QSFP0_0
     assign QSFP0_0_TX_P  = qsfp0_tx_p[0];
     assign QSFP0_0_TX_N  = qsfp0_tx_n[0];
@@ -2539,239 +2513,6 @@ module x4xx (
     assign qsfp1_rx_n[3] = 1'b1;
   `endif
 
-  `ifdef QSFP0_0
-    x4xx_qsfp_wrapper_temp #(
-      `ifdef QSFP0_0
-      .PROTOCOL0      (`QSFP0_0),
-      `endif
-      `ifdef QSFP0_1
-      .PROTOCOL1      (`QSFP0_1),
-      `endif
-      `ifdef QSFP0_2
-      .PROTOCOL2      (`QSFP0_2),
-      `endif
-      `ifdef QSFP0_3
-      .PROTOCOL3      (`QSFP0_3),
-      `endif
-      .CHDR_W         (QSFP0_W),
-      .NET_CHDR_W     (NET_CHDR_W),
-      .BYTE_MTU       (BYTE_MTU),
-      .PORTNUM        (0),
-      .NODE_INST      (0),
-      .RFNOC_PROTOVER (RFNOC_PROTOVER)
-    ) x4xx_qsfp_wrapper_0 (
-      .areset         (areset),
-      .refclk_p       (MGT_REFCLK_LMK0_P),
-      .refclk_n       (MGT_REFCLK_LMK0_N),
-      .clk100         (clk100),                // IP configured for 100 MHz DClk
-      .bus_rst        (bus_clk_rst),
-      .bus_clk        (bus_clk),
-      .clk40_rst      (clk40_rst),
-      .clk40          (clk40),
-      // Register Access
-      .s_axi_awaddr   (axi_qsfp0_awaddr),
-      .s_axi_awvalid  (axi_qsfp0_awvalid),
-      .s_axi_awready  (axi_qsfp0_awready),
-      .s_axi_wdata    (axi_qsfp0_wdata),
-      .s_axi_wstrb    (axi_qsfp0_wstrb),
-      .s_axi_wvalid   (axi_qsfp0_wvalid),
-      .s_axi_wready   (axi_qsfp0_wready),
-      .s_axi_bresp    (axi_qsfp0_bresp),
-      .s_axi_bvalid   (axi_qsfp0_bvalid),
-      .s_axi_bready   (axi_qsfp0_bready),
-      .s_axi_araddr   (axi_qsfp0_araddr),
-      .s_axi_arvalid  (axi_qsfp0_arvalid),
-      .s_axi_arready  (axi_qsfp0_arready),
-      .s_axi_rdata    (axi_qsfp0_rdata),
-      .s_axi_rresp    (axi_qsfp0_rresp),
-      .s_axi_rvalid   (axi_qsfp0_rvalid),
-      .s_axi_rready   (axi_qsfp0_rready),
-      // DMA Access
-      .axi_hp_araddr  (axi_hp0_araddr),
-      .axi_hp_arburst (axi_hp0_arburst),
-      .axi_hp_arcache (axi_hp0_arcache),
-      .axi_hp_arlen   (axi_hp0_arlen),
-      .axi_hp_arlock  (axi_hp0_arlock),
-      .axi_hp_arprot  (axi_hp0_arprot),
-      .axi_hp_arqos   (axi_hp0_arqos),
-      .axi_hp_arready (axi_hp0_arready),
-      .axi_hp_arsize  (axi_hp0_arsize),
-      .axi_hp_arvalid (axi_hp0_arvalid),
-      .axi_hp_awaddr  (axi_hp0_awaddr),
-      .axi_hp_awburst (axi_hp0_awburst),
-      .axi_hp_awcache (axi_hp0_awcache),
-      .axi_hp_awlen   (axi_hp0_awlen),
-      .axi_hp_awlock  (axi_hp0_awlock),
-      .axi_hp_awprot  (axi_hp0_awprot),
-      .axi_hp_awqos   (axi_hp0_awqos),
-      .axi_hp_awready (axi_hp0_awready),
-      .axi_hp_awsize  (axi_hp0_awsize),
-      .axi_hp_awvalid (axi_hp0_awvalid),
-      .axi_hp_bready  (axi_hp0_bready),
-      .axi_hp_bresp   (axi_hp0_bresp),
-      .axi_hp_bvalid  (axi_hp0_bvalid),
-      .axi_hp_rdata   (axi_hp0_rdata),
-      .axi_hp_rlast   (axi_hp0_rlast),
-      .axi_hp_rready  (axi_hp0_rready),
-      .axi_hp_rresp   (axi_hp0_rresp),
-      .axi_hp_rvalid  (axi_hp0_rvalid),
-      .axi_hp_wdata   (axi_hp0_wdata),
-      .axi_hp_wlast   (axi_hp0_wlast),
-      .axi_hp_wready  (axi_hp0_wready),
-      .axi_hp_wstrb   (axi_hp0_wstrb),
-      .axi_hp_wvalid  (axi_hp0_wvalid),
-      // Transceivers
-      .tx_p           (qsfp0_tx_p),
-      .tx_n           (qsfp0_tx_n),
-      .rx_p           (qsfp0_rx_p),
-      .rx_n           (qsfp0_rx_n),
-      // Ethernet to CHDR
-      .e2v_tdata      ({ e2v_tdata [3*ENET_W +: QSFP0_W],
-                         e2v_tdata [2*ENET_W +: QSFP0_W],
-                         e2v_tdata [1*ENET_W +: QSFP0_W],
-                         e2v_tdata [0*ENET_W +: QSFP0_W] }),
-      .e2v_tlast      (e2v_tlast [0 +: 4]),
-      .e2v_tvalid     (e2v_tvalid[0 +: 4]),
-      .e2v_tready     (e2v_tready[0 +: 4]),
-      // CHDR to Ethernet
-      .v2e_tdata      ({ v2e_tdata[3*ENET_W +: QSFP0_W],
-                         v2e_tdata[2*ENET_W +: QSFP0_W],
-                         v2e_tdata[1*ENET_W +: QSFP0_W],
-                         v2e_tdata[0*ENET_W +: QSFP0_W] }),
-      .v2e_tlast      (v2e_tlast [0 +: 4]),
-      .v2e_tvalid     (v2e_tvalid[0 +: 4]),
-      .v2e_tready     (v2e_tready[0 +: 4]),
-      // Misc
-      .eth_rx_irq     (eth0_rx_irq),
-      .eth_tx_irq     (eth0_tx_irq),
-      .device_id      (device_id),
-      .rx_rec_clk_out (),
-      .port_info_0    (qsfp_port_0_0_info),
-      .port_info_1    (qsfp_port_0_1_info),
-      .port_info_2    (qsfp_port_0_2_info),
-      .port_info_3    (qsfp_port_0_3_info),
-      .link_up        (eth0_link_up),
-      .activity       (eth0_activity)
-    );
-  `endif
-
-
-  `ifdef QSFP1_0
-    x4xx_qsfp_wrapper_temp #(
-      `ifdef QSFP1_0
-      .PROTOCOL0      (`QSFP1_0),
-      `endif
-      `ifdef QSFP1_1
-      .PROTOCOL1      (`QSFP1_1),
-      `endif
-      `ifdef QSFP1_2
-      .PROTOCOL2      (`QSFP1_2),
-      `endif
-      `ifdef QSFP1_3
-      .PROTOCOL3      (`QSFP1_3),
-      `endif
-      .CHDR_W         (QSFP1_W),
-      .NET_CHDR_W     (NET_CHDR_W),
-      .BYTE_MTU       (BYTE_MTU),
-      .PORTNUM        (1),
-      .NODE_INST      (4),
-      .RFNOC_PROTOVER (RFNOC_PROTOVER)
-    ) x4xx_qsfp_wrapper_1 (
-      .areset         (areset),
-      .refclk_p       (MGT_REFCLK_LMK3_P),
-      .refclk_n       (MGT_REFCLK_LMK3_N),
-      .clk100         (clk100),                // IP configured for 100 MHz DClk
-      .bus_rst        (bus_clk_rst),
-      .bus_clk        (bus_clk),
-      .clk40_rst      (clk40_rst),
-      .clk40          (clk40),
-      //Register Access
-      .s_axi_awaddr   (axi_qsfp1_awaddr),
-      .s_axi_awvalid  (axi_qsfp1_awvalid),
-      .s_axi_awready  (axi_qsfp1_awready),
-      .s_axi_wdata    (axi_qsfp1_wdata),
-      .s_axi_wstrb    (axi_qsfp1_wstrb),
-      .s_axi_wvalid   (axi_qsfp1_wvalid),
-      .s_axi_wready   (axi_qsfp1_wready),
-      .s_axi_bresp    (axi_qsfp1_bresp),
-      .s_axi_bvalid   (axi_qsfp1_bvalid),
-      .s_axi_bready   (axi_qsfp1_bready),
-      .s_axi_araddr   (axi_qsfp1_araddr),
-      .s_axi_arvalid  (axi_qsfp1_arvalid),
-      .s_axi_arready  (axi_qsfp1_arready),
-      .s_axi_rdata    (axi_qsfp1_rdata),
-      .s_axi_rresp    (axi_qsfp1_rresp),
-      .s_axi_rvalid   (axi_qsfp1_rvalid),
-      .s_axi_rready   (axi_qsfp1_rready),
-      // DMA Access
-      .axi_hp_araddr  (axi_hp1_araddr),
-      .axi_hp_arburst (axi_hp1_arburst),
-      .axi_hp_arcache (axi_hp1_arcache),
-      .axi_hp_arlen   (axi_hp1_arlen),
-      .axi_hp_arlock  (axi_hp1_arlock),
-      .axi_hp_arprot  (axi_hp1_arprot),
-      .axi_hp_arqos   (axi_hp1_arqos),
-      .axi_hp_arready (axi_hp1_arready),
-      .axi_hp_arsize  (axi_hp1_arsize),
-      .axi_hp_arvalid (axi_hp1_arvalid),
-      .axi_hp_awaddr  (axi_hp1_awaddr),
-      .axi_hp_awburst (axi_hp1_awburst),
-      .axi_hp_awcache (axi_hp1_awcache),
-      .axi_hp_awlen   (axi_hp1_awlen),
-      .axi_hp_awlock  (axi_hp1_awlock),
-      .axi_hp_awprot  (axi_hp1_awprot),
-      .axi_hp_awqos   (axi_hp1_awqos),
-      .axi_hp_awready (axi_hp1_awready),
-      .axi_hp_awsize  (axi_hp1_awsize),
-      .axi_hp_awvalid (axi_hp1_awvalid),
-      .axi_hp_bready  (axi_hp1_bready),
-      .axi_hp_bresp   (axi_hp1_bresp),
-      .axi_hp_bvalid  (axi_hp1_bvalid),
-      .axi_hp_rdata   (axi_hp1_rdata),
-      .axi_hp_rlast   (axi_hp1_rlast),
-      .axi_hp_rready  (axi_hp1_rready),
-      .axi_hp_rresp   (axi_hp1_rresp),
-      .axi_hp_rvalid  (axi_hp1_rvalid),
-      .axi_hp_wdata   (axi_hp1_wdata),
-      .axi_hp_wlast   (axi_hp1_wlast),
-      .axi_hp_wready  (axi_hp1_wready),
-      .axi_hp_wstrb   (axi_hp1_wstrb),
-      .axi_hp_wvalid  (axi_hp1_wvalid),
-      // Transceivers
-      .tx_p           (qsfp1_tx_p),
-      .tx_n           (qsfp1_tx_n),
-      .rx_p           (qsfp1_rx_p),
-      .rx_n           (qsfp1_rx_n),
-      // Ethernet to CHDR
-      .e2v_tdata      ({ e2v_tdata[4*ENET_W + 3*ENET_W +: QSFP1_W],
-                         e2v_tdata[4*ENET_W + 2*ENET_W +: QSFP1_W],
-                         e2v_tdata[4*ENET_W + 1*ENET_W +: QSFP1_W],
-                         e2v_tdata[4*ENET_W + 0*ENET_W +: QSFP1_W] }),
-      .e2v_tlast      (e2v_tlast [4 +: 4]),
-      .e2v_tvalid     (e2v_tvalid[4 +: 4]),
-      .e2v_tready     (e2v_tready[4 +: 4]),
-      // CHDR to Ethernet
-      .v2e_tdata      ({ v2e_tdata[4*ENET_W + 3*ENET_W +: QSFP1_W],
-                         v2e_tdata[4*ENET_W + 2*ENET_W +: QSFP1_W],
-                         v2e_tdata[4*ENET_W + 1*ENET_W +: QSFP1_W],
-                         v2e_tdata[4*ENET_W + 0*ENET_W +: QSFP1_W] }),
-      .v2e_tlast      (v2e_tlast [4 +: 4]),
-      .v2e_tvalid     (v2e_tvalid[4 +: 4]),
-      .v2e_tready     (v2e_tready[4 +: 4]),
-      // Misc
-      .eth_rx_irq     (eth1_rx_irq),
-      .eth_tx_irq     (eth1_tx_irq),
-      .device_id      (device_id),
-      .rx_rec_clk_out (rx_rec_clk_out1),
-      .port_info_0    (qsfp_port_1_0_info),
-      .port_info_1    (qsfp_port_1_1_info),
-      .port_info_2    (qsfp_port_1_2_info),
-      .port_info_3    (qsfp_port_1_3_info),
-      .link_up        (eth1_link_up),
-      .activity       (eth1_activity)
-    );
-  `endif
-
 
   //---------------------------------------------------------------------------
   // Internal Ethernet Interface
@@ -2789,7 +2530,7 @@ module x4xx (
 
   eth_ipv4_internal #(
     .CHDR_W         (DMA_W),
-    .NET_CHDR_W     (NET_CHDR_W),
+    .NET_CHDR_W     (CHDR_W),
     .BYTE_MTU       (BYTE_MTU),
     .DWIDTH         (REG_DWIDTH),
     .AWIDTH         (REG_AWIDTH),
@@ -3005,6 +2746,11 @@ module x4xx (
   assign x4xx_core_version_info[COMPONENT_VERSIONS_SIZE*DB0_GPIO_IFC_INDEX  +: COMPONENT_VERSIONS_SIZE] = db_gpio_ifc_version[0];
   assign x4xx_core_version_info[COMPONENT_VERSIONS_SIZE*DB1_GPIO_IFC_INDEX  +: COMPONENT_VERSIONS_SIZE] = db_gpio_ifc_version[1];
 
+  wire [127:0] qsfp0_port_info;
+  wire [127:0] qsfp1_port_info;
+  assign { qsfp_port_0_3_info, qsfp_port_0_2_info, qsfp_port_0_1_info, qsfp_port_0_0_info } = qsfp0_port_info;
+  assign { qsfp_port_1_3_info, qsfp_port_1_2_info, qsfp_port_1_1_info, qsfp_port_1_0_info } = qsfp1_port_info;
+
   x4xx_core #(
     .NUM_DBOARDS     (NUM_DBOARDS),
     .REG_DWIDTH      (REG_DWIDTH),
@@ -3014,15 +2760,12 @@ module x4xx (
     .NUM_CHANNELS    (NUM_CHANNELS),
     .NUM_TIMEKEEPERS (NUM_TIMEKEEPERS),
     .CHDR_W          (CHDR_W),
-    .DMA_W           (DMA_W),
-    .NET_CHDR_W      (NET_CHDR_W),
-    .ENET_W          (ENET_W),
-    .ENET_WIDTHS     (ENET_WIDTHS),
     .MTU             (CHDR_MTU),
     .RFNOC_PROTOVER  (RFNOC_PROTOVER),
     .RADIO_SPC       (RADIO_SPC),
     .RF_BANDWIDTH    (RF_BANDWIDTH)
   ) x4xx_core_i (
+    .areset                        (areset),
     .radio_clk                     (radio_clk),
     .radio_rst                     (radio_rst),
     .radio_clk_2x                  (radio_clk_2x),
@@ -3063,6 +2806,142 @@ module x4xx (
     .dram1_dq                      (DRAM1_DQ),
     .dram1_dqs_t                   (DRAM1_DQS_p),
     .dram1_dqs_c                   (DRAM1_DQS_n),
+    .qsfp0_refclk_p                (MGT_REFCLK_LMK0_P),
+    .qsfp0_refclk_n                (MGT_REFCLK_LMK0_N),
+    .qsfp0_dclk                    (clk100),
+    .qsfp0_tx_p                    (qsfp0_tx_p),
+    .qsfp0_tx_n                    (qsfp0_tx_n),
+    .qsfp0_rx_p                    (qsfp0_rx_p),
+    .qsfp0_rx_n                    (qsfp0_rx_n),
+    .qsfp0_recovered_clk           (),
+    .qsfp0_device_id               (device_id),
+    .qsfp0_rx_irq                  (eth0_rx_irq),
+    .qsfp0_tx_irq                  (eth0_tx_irq),
+    .qsfp0_port_info               (qsfp0_port_info),
+    .qsfp0_link_up                 (eth0_link_up),
+    .qsfp0_activity                (eth0_activity),
+    .qsfp0_axil_rst                (clk40_rst),
+    .qsfp0_axil_clk                (clk40),
+    .qsfp0_axil_awaddr             (axi_qsfp0_awaddr),
+    .qsfp0_axil_awvalid            (axi_qsfp0_awvalid),
+    .qsfp0_axil_awready            (axi_qsfp0_awready),
+    .qsfp0_axil_wdata              (axi_qsfp0_wdata),
+    .qsfp0_axil_wstrb              (axi_qsfp0_wstrb),
+    .qsfp0_axil_wvalid             (axi_qsfp0_wvalid),
+    .qsfp0_axil_wready             (axi_qsfp0_wready),
+    .qsfp0_axil_bresp              (axi_qsfp0_bresp),
+    .qsfp0_axil_bvalid             (axi_qsfp0_bvalid),
+    .qsfp0_axil_bready             (axi_qsfp0_bready),
+    .qsfp0_axil_araddr             (axi_qsfp0_araddr),
+    .qsfp0_axil_arvalid            (axi_qsfp0_arvalid),
+    .qsfp0_axil_arready            (axi_qsfp0_arready),
+    .qsfp0_axil_rdata              (axi_qsfp0_rdata),
+    .qsfp0_axil_rresp              (axi_qsfp0_rresp),
+    .qsfp0_axil_rvalid             (axi_qsfp0_rvalid),
+    .qsfp0_axil_rready             (axi_qsfp0_rready),
+    .qsfp0_axi_rst                 (clk40_rst),
+    .qsfp0_axi_clk                 (clk40),
+    .qsfp0_axi_araddr              (axi_hp0_araddr),
+    .qsfp0_axi_arburst             (axi_hp0_arburst),
+    .qsfp0_axi_arcache             (axi_hp0_arcache),
+    .qsfp0_axi_arlen               (axi_hp0_arlen),
+    .qsfp0_axi_arlock              (axi_hp0_arlock),
+    .qsfp0_axi_arprot              (axi_hp0_arprot),
+    .qsfp0_axi_arqos               (axi_hp0_arqos),
+    .qsfp0_axi_arready             (axi_hp0_arready),
+    .qsfp0_axi_arsize              (axi_hp0_arsize),
+    .qsfp0_axi_arvalid             (axi_hp0_arvalid),
+    .qsfp0_axi_awaddr              (axi_hp0_awaddr),
+    .qsfp0_axi_awburst             (axi_hp0_awburst),
+    .qsfp0_axi_awcache             (axi_hp0_awcache),
+    .qsfp0_axi_awlen               (axi_hp0_awlen),
+    .qsfp0_axi_awlock              (axi_hp0_awlock),
+    .qsfp0_axi_awprot              (axi_hp0_awprot),
+    .qsfp0_axi_awqos               (axi_hp0_awqos),
+    .qsfp0_axi_awready             (axi_hp0_awready),
+    .qsfp0_axi_awsize              (axi_hp0_awsize),
+    .qsfp0_axi_awvalid             (axi_hp0_awvalid),
+    .qsfp0_axi_bready              (axi_hp0_bready),
+    .qsfp0_axi_bresp               (axi_hp0_bresp),
+    .qsfp0_axi_bvalid              (axi_hp0_bvalid),
+    .qsfp0_axi_rdata               (axi_hp0_rdata),
+    .qsfp0_axi_rlast               (axi_hp0_rlast),
+    .qsfp0_axi_rready              (axi_hp0_rready),
+    .qsfp0_axi_rresp               (axi_hp0_rresp),
+    .qsfp0_axi_rvalid              (axi_hp0_rvalid),
+    .qsfp0_axi_wdata               (axi_hp0_wdata),
+    .qsfp0_axi_wlast               (axi_hp0_wlast),
+    .qsfp0_axi_wready              (axi_hp0_wready),
+    .qsfp0_axi_wstrb               (axi_hp0_wstrb),
+    .qsfp0_axi_wvalid              (axi_hp0_wvalid),
+    .qsfp1_refclk_p                (MGT_REFCLK_LMK3_P),
+    .qsfp1_refclk_n                (MGT_REFCLK_LMK3_N),
+    .qsfp1_dclk                    (clk100),
+    .qsfp1_tx_p                    (qsfp1_tx_p),
+    .qsfp1_tx_n                    (qsfp1_tx_n),
+    .qsfp1_rx_p                    (qsfp1_rx_p),
+    .qsfp1_rx_n                    (qsfp1_rx_n),
+    .qsfp1_recovered_clk           (rx_rec_clk_out1),           
+    .qsfp1_device_id               (device_id),
+    .qsfp1_rx_irq                  (eth1_rx_irq),
+    .qsfp1_tx_irq                  (eth1_tx_irq),
+    .qsfp1_port_info               (qsfp1_port_info),
+    .qsfp1_link_up                 (eth1_link_up),
+    .qsfp1_activity                (eth1_activity),
+    .qsfp1_axil_rst                (clk40_rst),
+    .qsfp1_axil_clk                (clk40),
+    .qsfp1_axil_awaddr             (axi_qsfp1_awaddr),
+    .qsfp1_axil_awvalid            (axi_qsfp1_awvalid),
+    .qsfp1_axil_awready            (axi_qsfp1_awready),
+    .qsfp1_axil_wdata              (axi_qsfp1_wdata),
+    .qsfp1_axil_wstrb              (axi_qsfp1_wstrb),
+    .qsfp1_axil_wvalid             (axi_qsfp1_wvalid),
+    .qsfp1_axil_wready             (axi_qsfp1_wready),
+    .qsfp1_axil_bresp              (axi_qsfp1_bresp),
+    .qsfp1_axil_bvalid             (axi_qsfp1_bvalid),
+    .qsfp1_axil_bready             (axi_qsfp1_bready),
+    .qsfp1_axil_araddr             (axi_qsfp1_araddr),
+    .qsfp1_axil_arvalid            (axi_qsfp1_arvalid),
+    .qsfp1_axil_arready            (axi_qsfp1_arready),
+    .qsfp1_axil_rdata              (axi_qsfp1_rdata),
+    .qsfp1_axil_rresp              (axi_qsfp1_rresp),
+    .qsfp1_axil_rvalid             (axi_qsfp1_rvalid),
+    .qsfp1_axil_rready             (axi_qsfp1_rready),
+    .qsfp1_axi_rst                 (clk40_rst),
+    .qsfp1_axi_clk                 (clk40),
+    .qsfp1_axi_araddr              (axi_hp1_araddr),
+    .qsfp1_axi_arburst             (axi_hp1_arburst),
+    .qsfp1_axi_arcache             (axi_hp1_arcache),
+    .qsfp1_axi_arlen               (axi_hp1_arlen),
+    .qsfp1_axi_arlock              (axi_hp1_arlock),
+    .qsfp1_axi_arprot              (axi_hp1_arprot),
+    .qsfp1_axi_arqos               (axi_hp1_arqos),
+    .qsfp1_axi_arready             (axi_hp1_arready),
+    .qsfp1_axi_arsize              (axi_hp1_arsize),
+    .qsfp1_axi_arvalid             (axi_hp1_arvalid),
+    .qsfp1_axi_awaddr              (axi_hp1_awaddr),
+    .qsfp1_axi_awburst             (axi_hp1_awburst),
+    .qsfp1_axi_awcache             (axi_hp1_awcache),
+    .qsfp1_axi_awlen               (axi_hp1_awlen),
+    .qsfp1_axi_awlock              (axi_hp1_awlock),
+    .qsfp1_axi_awprot              (axi_hp1_awprot),
+    .qsfp1_axi_awqos               (axi_hp1_awqos),
+    .qsfp1_axi_awready             (axi_hp1_awready),
+    .qsfp1_axi_awsize              (axi_hp1_awsize),
+    .qsfp1_axi_awvalid             (axi_hp1_awvalid),
+    .qsfp1_axi_bready              (axi_hp1_bready),
+    .qsfp1_axi_bresp               (axi_hp1_bresp),
+    .qsfp1_axi_bvalid              (axi_hp1_bvalid),
+    .qsfp1_axi_rdata               (axi_hp1_rdata),
+    .qsfp1_axi_rlast               (axi_hp1_rlast),
+    .qsfp1_axi_rready              (axi_hp1_rready),
+    .qsfp1_axi_rresp               (axi_hp1_rresp),
+    .qsfp1_axi_rvalid              (axi_hp1_rvalid),
+    .qsfp1_axi_wdata               (axi_hp1_wdata),
+    .qsfp1_axi_wlast               (axi_hp1_wlast),
+    .qsfp1_axi_wready              (axi_hp1_wready),
+    .qsfp1_axi_wstrb               (axi_hp1_wstrb),
+    .qsfp1_axi_wvalid              (axi_hp1_wvalid),
     .s_axi_aclk                    (clk40),
     .s_axi_aresetn                 (clk40_rstn),
     .s_axi_awaddr                  (axi_core_awaddr[REG_AWIDTH-1:0]),
@@ -3099,22 +2978,14 @@ module x4xx (
     .tx_data                       (tx_data_iq),
     .tx_stb                        (tx_stb),
     .tx_running                    (tx_running),
-    .dmao_tdata                    (v2e_dma_tdata),
-    .dmao_tlast                    (v2e_dma_tlast),
-    .dmao_tvalid                   (v2e_dma_tvalid),
-    .dmao_tready                   (v2e_dma_tready),
-    .dmai_tdata                    (e2v_dma_tdata),
-    .dmai_tlast                    (e2v_dma_tlast),
-    .dmai_tvalid                   (e2v_dma_tvalid),
-    .dmai_tready                   (e2v_dma_tready),
-    .e2v_tdata                     (e2v_tdata),
-    .e2v_tlast                     (e2v_tlast),
-    .e2v_tvalid                    (e2v_tvalid),
-    .e2v_tready                    (e2v_tready),
-    .v2e_tdata                     (v2e_tdata),
-    .v2e_tlast                     (v2e_tlast),
-    .v2e_tvalid                    (v2e_tvalid),
-    .v2e_tready                    (v2e_tready),
+    .m_dma_tdata                   (v2e_dma_tdata),
+    .m_dma_tlast                   (v2e_dma_tlast),
+    .m_dma_tvalid                  (v2e_dma_tvalid),
+    .m_dma_tready                  (v2e_dma_tready),
+    .s_dma_tdata                   (e2v_dma_tdata),
+    .s_dma_tlast                   (e2v_dma_tlast),
+    .s_dma_tvalid                  (e2v_dma_tvalid),
+    .s_dma_tready                  (e2v_dma_tready),
     .gpio_in_a                     (DIOA_FPGA),
     .gpio_in_b                     (DIOB_FPGA),
     .gpio_out_a                    (gpio_out_a),
@@ -3252,7 +3123,7 @@ endmodule
 //        <li> Version last modified: @.VERSIONING_REGS_REGMAP..VERSION_LAST_MODIFIED
 //      </info>
 //      <value name="FPGA_CURRENT_VERSION_MAJOR"           integer="8"/>
-//      <value name="FPGA_CURRENT_VERSION_MINOR"           integer="2"/>
+//      <value name="FPGA_CURRENT_VERSION_MINOR"           integer="3"/>
 //      <value name="FPGA_CURRENT_VERSION_BUILD"           integer="0"/>
 //      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_MAJOR" integer="8"/>
 //      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_MINOR" integer="2"/>

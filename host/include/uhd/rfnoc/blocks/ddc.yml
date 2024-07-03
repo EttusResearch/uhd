@@ -51,6 +51,6 @@ data:
       format: sc16
       mdata_sig: ~
 
-registers:
-
-properties:
+fpga_includes:
+  - include: "$(LIB_DIR)/rfnoc/blocks/rfnoc_block_ddc/Makefile.srcs"
+    make_var: "$(RFNOC_BLOCK_DDC_SRCS)"

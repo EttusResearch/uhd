@@ -10,7 +10,7 @@
 # Template for raw text data describing write registers
 # name addr[bit range inclusive] default optional enums
 ########################################################################
-WRITE_REGS_TMPL="""\
+WRITE_REGS_TMPL = """\
 ########################################################################
 ## Note: offsets given from perspective of data bits (excludes address)
 ########################################################################
@@ -59,7 +59,7 @@ gc2                   5[0:4]        0x1F
 # Template for raw text data describing read registers
 # name addr[bit range inclusive] default optional enums
 ########################################################################
-READ_REGS_TMPL="""\
+READ_REGS_TMPL = """\
 ########################################################################
 ## Status (0) Read
 ########################################################################
@@ -76,7 +76,7 @@ filter_dac            1[0:6]        0
 ########################################################################
 # Template for methods in the body of the struct
 ########################################################################
-BODY_TMPL="""\
+BODY_TMPL = """\
 uint8_t get_reg(uint8_t addr){
     uint8_t reg = 0;
     switch(addr){
@@ -104,16 +104,20 @@ void set_reg(uint8_t addr, uint8_t reg){
 }
 """
 
-if __name__ == '__main__':
-    import common; common.generate(
-        name='max2118_write_regs',
+if __name__ == "__main__":
+    import common
+
+    common.generate(
+        name="max2118_write_regs",
         regs_tmpl=WRITE_REGS_TMPL,
         body_tmpl=BODY_TMPL,
         file=__file__,
     )
 
-    import common; common.generate(
-        name='max2118_read_regs',
+    import common
+
+    common.generate(
+        name="max2118_read_regs",
         regs_tmpl=READ_REGS_TMPL,
         body_tmpl=BODY_TMPL,
         file=__file__,

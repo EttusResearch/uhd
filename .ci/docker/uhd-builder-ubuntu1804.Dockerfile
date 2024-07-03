@@ -38,22 +38,19 @@ RUN apt-get update && \
         libusb-1.0-0-dev \
         ncompress \
         ninja-build \
-        python3-dev \
-        python3-docutils \
-        python3-mako \
-        python3-numpy \
+        python3.7 \
+        python3.7-dev \
+        python3.7-venv \
         python3-pip \
         python3-requests \
+        pybind11-dev \
     # Install deb dependencies
         debootstrap \
         devscripts \
         pbuilder \
         debhelper \
         libncurses5-dev \
-        python3-ruamel.yaml \
     # Install GNURadio dependencies
-        python3-sphinx \
-        python3-lxml \
         libsdl1.2-dev \
         libgsl-dev \
         libqwt-qt5-dev \
@@ -63,14 +60,28 @@ RUN apt-get update && \
         swig \
         gir1.2-gtk-3.0 \
         libpango1.0-dev \
-        python3-pyqt5 \
         liblog4cpp5-dev \
         libzmq3-dev \
-        python3-ruamel.yaml \
-        python3-click \
-        python3-click-plugins \
-        python3-zmq \
-        python3-scipy \
-        python3-gi-cairo \
         && \
     rm -rf /var/lib/apt/lists/*
+
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 5 && \
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 10 && \
+    python3 -m pip install --upgrade pip
+
+RUN python3 -m pip install \
+    # Install UHD python dependencies
+        docutils \
+        mako \
+        numpy \
+        requests \
+    # Install deb python dependencies
+        ruamel.yaml \
+    # Install GNURadio dependencies
+        sphinx \
+        lxml \
+        pyqt5 \
+        click \
+        click-plugins \
+        zmq \
+        scipy

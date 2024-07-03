@@ -20,6 +20,8 @@ parameters:
 - name: uhdGenerateTestBinaries
   type: boolean
   default: false
+- name: uhdVcpkgManifestDir
+  type: string
 
 steps:
 - script: |
@@ -42,6 +44,8 @@ steps:
     cmake ${{ parameters.uhdSrcDir }}/host ^
       -DVCPKG_TARGET_TRIPLET=uhd-$(vsArch)-windows-static-md ^
       -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALL_DIR%/scripts/buildsystems/vcpkg.cmake ^
+      -DVCPKG_INSTALLED_DIR=${{ parameters.uhdVcpkgManifestDir }}\vcpkg_installed ^
+      -DVCPKG_MANIFEST_DIR=${{ parameters.uhdVcpkgManifestDir }} ^
       -DSPECIFY_MSVC_VERSION=ON ^
       -DENABLE_DOXYGEN_SHORTNAMES=ON ^
       %UHD_CI_CMAKE_OPTIONS% ^
@@ -87,6 +91,8 @@ steps:
       -DCMAKE_PREFIX_PATH=${{ parameters.uhdBuildDir }}-installed ^
       -DVCPKG_TARGET_TRIPLET=uhd-$(vsArch)-windows-static-md ^
       -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALL_DIR%/scripts/buildsystems/vcpkg.cmake ^
+      -DVCPKG_INSTALLED_DIR=${{ parameters.uhdVcpkgManifestDir }}\vcpkg_installed ^
+      -DVCPKG_MANIFEST_DIR=${{ parameters.uhdVcpkgManifestDir }} ^
       -DSPECIFY_MSVC_VERSION=ON ^
       -DENABLE_DOXYGEN_SHORTNAMES=ON ^
       %UHD_CI_CMAKE_OPTIONS% ^
