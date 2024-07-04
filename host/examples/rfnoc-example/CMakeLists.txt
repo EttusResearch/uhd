@@ -51,7 +51,7 @@ endif()
 ###########################################################################
 # Find UHD
 ###########################################################################
-find_package(UHD 4.6)
+find_package(UHD 4.7)
 if(UHD_FOUND)
     message(STATUS "Found UHD:")
     message(STATUS " * Version: ${UHD_VERSION}")
@@ -165,7 +165,7 @@ macro(RFNOC_REGISTER_IMAGE_CORE)
     if (_rfnoc_image_builder_exe)
         message(STATUS "Adding image core target: ${_target_name}")
         add_custom_target(${_target_name}
-            COMMAND ${_rfnoc_image_builder_exe} -F ${UHD_FPGA_DIR} -y ${CMAKE_CURRENT_SOURCE_DIR}/${_rfnoc_image_core_SRC} -I ${CMAKE_SOURCE_DIR}
+            COMMAND ${_rfnoc_image_builder_exe} -F ${UHD_FPGA_DIR} -y ${CMAKE_CURRENT_SOURCE_DIR}/${_rfnoc_image_core_SRC} -I ${CMAKE_SOURCE_DIR} -B ${CMAKE_BINARY_DIR}/build-${_target_name} -O ${CMAKE_BINARY_DIR} -E ${CMAKE_BINARY_DIR}/build-ip
         )
     endif()
 endmacro()
