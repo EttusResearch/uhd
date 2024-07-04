@@ -8,6 +8,7 @@
 #include <uhd/rfnoc/mb_controller.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/log.hpp>
+#include <boost/format.hpp>
 #include <atomic>
 #include <chrono>
 #include <future>

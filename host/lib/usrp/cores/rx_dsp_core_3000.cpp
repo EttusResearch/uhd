@@ -160,13 +160,12 @@ public:
 
             if (decim > 1 and hb0 == 0 and hb1 == 0) {
                 UHD_LOGGER_WARNING("CORES")
-                    << boost::format(
-                           "The requested decimation is odd; the user should expect CIC "
-                           "rolloff.\n"
-                           "Select an even decimation to ensure that a halfband filter "
-                           "is enabled.\n"
-                           "decimation = dsp_rate/samp_rate -> %d = (%f MHz)/(%f MHz)\n")
-                           % decim_rate % (_tick_rate / 1e6) % (rate / 1e6);
+                    << "The requested decimation is odd; the user should expect CIC "
+                       "rolloff.\n"
+                       "Select an even decimation to ensure that a halfband filter "
+                       "is enabled.\n"
+                    << decim_rate << " = (" << (_tick_rate / 1e6) << " MHz)/("
+                    << (rate / 1e6) << " MHz)\n";
             }
         } else {
             // Encode Halfband config for setting register programming.
@@ -183,15 +182,15 @@ public:
 
             if (decim > 1 and hb0 == 0 and hb1 == 0 and hb2 == 0) {
                 UHD_LOGGER_WARNING("CORES")
-                    << boost::format(
-                           "The requested decimation is odd; the user should expect "
-                           "passband CIC rolloff.\n"
-                           "Select an even decimation to ensure that a halfband filter "
-                           "is enabled.\n"
-                           "Decimations factorable by 4 will enable 2 halfbands, those "
-                           "factorable by 8 will enable 3 halfbands.\n"
-                           "decimation = dsp_rate/samp_rate -> %d = (%f MHz)/(%f MHz)\n")
-                           % decim_rate % (_tick_rate / 1e6) % (rate / 1e6);
+                    << "The requested decimation is odd; the user should expect "
+                       "passband CIC rolloff.\n"
+                       "Select an even decimation to ensure that a halfband filter "
+                       "is enabled.\n"
+                       "Decimations factorable by 4 will enable 2 halfbands, those "
+                       "factorable by 8 will enable 3 halfbands.\n"
+                       "decimation = dsp_rate/samp_rate -> "
+                    << decim_rate << " = (" << (_tick_rate / 1e6) << " MHz)/("
+                    << (rate / 1e6) << " MHz)\n";
             }
         }
 

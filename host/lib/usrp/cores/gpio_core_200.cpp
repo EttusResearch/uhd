@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include <uhd/exception.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhdlib/usrp/cores/gpio_core_200.hpp>
 

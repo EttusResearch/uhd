@@ -11,7 +11,9 @@
 #include <uhd/types/serial.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <boost/asio/buffer.hpp>
+#include <cstddef>
 #include <memory>
+#include <string>
 
 namespace uhd { namespace transport {
 

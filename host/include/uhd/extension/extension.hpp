@@ -6,9 +6,11 @@
 
 #pragma once
 
+#include <uhd/config.hpp>
 #include <uhd/rfnoc/mb_controller.hpp>
 #include <uhd/rfnoc/radio_control.hpp>
 #include <uhd/rfnoc/rf_control/core_iface.hpp>
+#include <uhd/rfnoc/rf_control/power_reference_iface.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <uhd/utils/static.hpp>
 #include <functional>

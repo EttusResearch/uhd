@@ -10,6 +10,7 @@
 #include <uhd/exception.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/types/ranges.hpp>
+#include <uhd/usrp/fe_connection.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/math.hpp>
 #include <boost/assign/list_of.hpp>

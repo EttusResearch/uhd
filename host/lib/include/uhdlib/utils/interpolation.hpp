@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <uhd/exception.hpp>
 #include <uhd/utils/interpolation.hpp>
 #include <uhd/utils/math.hpp>
 #include <map>

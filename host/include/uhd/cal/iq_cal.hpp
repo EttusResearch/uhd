@@ -10,6 +10,7 @@
 #include <uhd/config.hpp>
 #include <uhd/utils/interpolation.hpp>
 #include <complex>
+#include <cstdint>
 #include <memory>
 #include <string>
 

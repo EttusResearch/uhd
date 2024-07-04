@@ -11,6 +11,8 @@
 #include <uhd/types/metadata.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <boost/optional.hpp>
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>

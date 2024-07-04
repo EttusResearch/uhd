@@ -7,7 +7,6 @@
 #pragma once
 
 #include <uhd/config.hpp>
-#include <stddef.h>
 #include <cstdint>
 #include <functional>
 #include <string>

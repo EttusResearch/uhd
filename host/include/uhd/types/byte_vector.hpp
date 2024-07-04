@@ -10,6 +10,8 @@
 #include <uhd/config.hpp>
 #include <boost/range.hpp>
 #include <algorithm>
+#include <cstddef>
+#include <cstdint>
 #include <string>
 #include <vector>
 

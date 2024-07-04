@@ -10,6 +10,7 @@
 #include <uhd/config.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/utils/noncopyable.hpp>
+#include <cstddef>
 #include <functional>
 #include <memory>
 #include <string>

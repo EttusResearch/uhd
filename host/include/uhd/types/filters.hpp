@@ -10,11 +10,9 @@
 #include <uhd/config.hpp>
 #include <uhd/utils/log.hpp>
 #include <stdint.h>
-#include <boost/scoped_array.hpp>
+#include <cstddef>
 #include <iostream>
 #include <memory>
-#include <ostream>
-#include <sstream>
 #include <string>
 #include <vector>
 

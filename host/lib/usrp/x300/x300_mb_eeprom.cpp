@@ -5,6 +5,7 @@
 //
 
 #include "x300_mb_eeprom.hpp"
+#include <uhd/exception.hpp>
 #include <uhd/types/serial.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhdlib/utils/eeprom_utils.hpp>

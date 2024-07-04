@@ -8,7 +8,8 @@
 #pragma once
 
 #include <uhd/config.hpp>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>

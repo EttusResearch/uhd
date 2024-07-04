@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include <uhd/exception.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>

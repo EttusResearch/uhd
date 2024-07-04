@@ -12,6 +12,7 @@
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/transport/usb_control.hpp>
+#include <uhd/types/metadata.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/utils/cast.hpp>
 #include <uhd/utils/log.hpp>

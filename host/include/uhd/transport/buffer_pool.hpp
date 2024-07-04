@@ -9,6 +9,7 @@
 
 #include <uhd/config.hpp>
 #include <uhd/utils/noncopyable.hpp>
+#include <cstddef>
 #include <memory>
 
 namespace uhd { namespace transport {

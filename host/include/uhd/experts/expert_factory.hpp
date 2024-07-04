@@ -9,10 +9,12 @@
 
 #include <uhd/config.hpp>
 #include <uhd/experts/expert_container.hpp>
+#include <uhd/experts/expert_nodes.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <functional>
 #include <memory>
+#include <string>
 
 
 namespace uhd { namespace experts {

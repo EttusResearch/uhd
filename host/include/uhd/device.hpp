@@ -12,12 +12,12 @@
 #include <uhd/stream.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhd/utils/noncopyable.hpp>
+#include <cstddef>
 #include <functional>
 #include <memory>
 
 namespace uhd {
-
-class property_tree; // forward declaration
+struct async_metadata_t;
 
 /*!
  * The device interface represents the hardware.

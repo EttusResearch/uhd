@@ -10,6 +10,7 @@
 #include <uhd/config.hpp>
 #include <uhd/types/dict.hpp>
 #include <boost/lexical_cast.hpp>
+#include <algorithm>
 #include <map>
 #include <stdexcept>
 #include <string>

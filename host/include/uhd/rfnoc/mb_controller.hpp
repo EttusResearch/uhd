@@ -14,8 +14,11 @@
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <unordered_map>
+#include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace uhd { namespace rfnoc {

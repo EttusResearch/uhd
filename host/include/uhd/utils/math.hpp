@@ -8,9 +8,8 @@
 #pragma once
 
 #include <uhd/config.hpp>
-#include <uhd/exception.hpp>
-#include <stdint.h>
 #include <boost/numeric/conversion/bounds.hpp>
+#include <boost/version.hpp>
 #include <cmath>
 #if BOOST_VERSION >= 106700
 #    include <boost/integer/common_factor.hpp>

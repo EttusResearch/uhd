@@ -10,17 +10,17 @@
 #include <uhd/config.hpp>
 #include <uhd/types/serial.hpp>
 #include <uhd/types/time_spec.hpp>
-#include <uhd/usrp/fe_connection.hpp>
 #include <uhd/usrp/gpio_defs.hpp>
-#include <uhd/utils/pimpl.hpp>
-#include <stdint.h>
 #include <chrono>
+#include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <string>
 #include <vector>
 
 namespace uhd { namespace usrp {
+class fe_connection_t;
 
 //! Special properties that differentiate this daughterboard slot
 struct UHD_API dboard_iface_special_props_t

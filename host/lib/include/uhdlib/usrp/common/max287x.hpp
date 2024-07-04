@@ -17,6 +17,7 @@
 #include <uhd/utils/math.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <stdint.h>
+#include <boost/format.hpp>
 #include <chrono>
 #include <cmath>
 #include <functional>

@@ -9,16 +9,18 @@
 
 #include <uhd/config.hpp>
 #include <uhd/types/device_addr.hpp>
-#include <uhd/types/metadata.hpp>
 #include <uhd/types/ref_vector.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <boost/utility.hpp>
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <vector>
 
 namespace uhd {
+struct async_metadata_t;
+struct rx_metadata_t;
+struct tx_metadata_t;
 
 /*!
  * A struct of parameters to construct a streamer.

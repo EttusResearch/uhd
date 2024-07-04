@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include <uhd/exception.hpp>
 #include <uhd/transport/buffer_pool.hpp>
 #include <uhd/transport/usb_zero_copy.hpp>
 #include <uhd/utils/byteswap.hpp>

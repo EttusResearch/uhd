@@ -9,8 +9,12 @@
 #include <uhd/cal/container.hpp>
 #include <uhd/config.hpp>
 #include <uhd/types/ranges.hpp>
+#include <boost/none.hpp>
 #include <boost/optional.hpp>
+#include <cstdint>
 #include <map>
+#include <memory>
+#include <string>
 
 namespace uhd { namespace usrp { namespace cal {
 

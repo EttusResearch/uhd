@@ -6,9 +6,15 @@
 
 #pragma once
 
+#include <uhd/config.hpp>
 #include <uhd/rfnoc/chdr_types.hpp>
+#include <uhd/rfnoc/rfnoc_types.hpp>
+#include <uhd/types/endianness.hpp>
+#include <boost/none.hpp>
 #include <boost/optional.hpp>
-#include <memory>
+#include <cstddef>
+#include <cstdint>
+#include <string>
 #include <vector>
 
 namespace uhd { namespace utils { namespace chdr {

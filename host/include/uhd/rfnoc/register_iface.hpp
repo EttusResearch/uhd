@@ -8,6 +8,7 @@
 
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/time_spec.hpp>
+#include <boost/optional.hpp>
 #include <cstdint>
 #include <functional>
 #include <memory>

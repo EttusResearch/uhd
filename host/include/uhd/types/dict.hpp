@@ -8,8 +8,10 @@
 #pragma once
 
 #include <uhd/config.hpp>
+#include <cstddef>
 #include <list>
 #include <map>
+#include <utility>
 #include <vector>
 
 namespace uhd {
