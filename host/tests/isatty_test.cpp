@@ -4,8 +4,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhdlib/utils/isatty.hpp>
 #include <boost/test/unit_test.hpp>
+
+#include <uhdlib/utils/isatty.hpp>
 #include <cstdio>
 #include <iostream>
 
