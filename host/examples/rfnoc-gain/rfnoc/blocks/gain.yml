@@ -1,0 +1,83 @@
+schema: rfnoc_modtool_args
+module_name: gain
+version: "1.0"
+rfnoc_version: "1.0"
+chdr_width: 64
+noc_id: 0xB16
+
+# These parameters will be available to the block in the image core.
+parameters:
+  ip_option: HDL_IP
+
+# If there is a separate hdl_parameters section, then this is the list of
+# parameters that the HDL module can consume. In this case, we only do some
+# sanitization of the ip_option parameter above.
+hdl_parameters:
+  IP_OPTION: "'\"${parameters['ip_option'].upper()}\"'"
+
+checks:
+  - condition: ${ parameters['ip_option'] in ('HDL_IP', 'IN_TREE_IP', 'OUT_OF_TREE_IP') }
+    message: "ip_option parameter must be one of HDL_IP, IN_TREE_IP, OUT_OF_TREE_IP. Is: ${ parameters['ip_option']"
+
+
+clocks:
+  - name: rfnoc_chdr
+    freq: "[]"
+  - name: rfnoc_ctrl
+    freq: "[]"
+
+control:
+  fpga_iface: ctrlport
+  interface_direction: slave
+  fifo_depth: 32
+  clk_domain: rfnoc_chdr
+  ctrlport:
+    byte_mode: False
+    timed: False
+    has_status: False
+
+data:
+  fpga_iface: axis_pyld_ctxt
+  clk_domain: rfnoc_chdr
+  inputs:
+    in:
+      index: 0
+      item_width: 32
+      nipc: 1
+      context_fifo_depth: 2
+      payload_fifo_depth: 2
+      format: int32
+  outputs:
+    out:
+      index: 0
+      item_width: 32
+      nipc: 1
+      context_fifo_depth: 2
+      payload_fifo_depth: 2
+      format: int32
+
+fpga_includes:
+    # This path is the exact path to the relevant Makefile.srcs in this repository.
+    # After installation, the whole directory will become available under a
+    # similar path, also in the include directories of the image builder, e.g.
+    # under /usr/share/uhd/rfnoc/fpga/gain/rfnoc_block_gain/Makefile.srcs.
+  - include: "fpga/gain/rfnoc_block_gain/Makefile.srcs"
+    # This make variable has to match the one in the file referenced above.
+    make_var: "$(RFNOC_BLOCK_GAIN_SRCS)"
+    # Because this block requires external IP, we also list that here.
+  - include: "fpga/gain/ip/cmplx_mul/Makefile.inc"
+    # Like above, this is the Make variable that lists the sources for the IP
+    # we require here.
+    make_var: "$(LIB_IP_CMPLX_MUL_SRCS)"
+
+
+# This is just an example on how to add DTS info. The gain block does not
+# require any DTS files. It also serves as an example for how to dynamically
+# compute DTS files.
+dts_includes:
+  - |
+    <%
+      dtsi_file = ""
+      if config.device.type == 'x410':
+        dtsi_file = "dts/gain_block.dtsi"
+    %>${ dtsi_file }\

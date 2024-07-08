@@ -1,0 +1,3 @@
+// This RFNoC bitfile includes a gain block!
+// The gain block requires no device tree information. We add this file simply
+// as an example.
