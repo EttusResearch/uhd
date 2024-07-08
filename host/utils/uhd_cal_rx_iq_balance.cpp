@@ -125,7 +125,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     if (not vm.count("freq_start"))
         freq_start = usrp->get_fe_rx_freq_range().start();
     if (not vm.count("freq_stop"))
-        freq_stop = usrp->get_fe_tx_freq_range().stop();
+        freq_stop = usrp->get_fe_rx_freq_range().stop();
 
     // check start and stop frequencies
     if (freq_start < usrp->get_fe_rx_freq_range().start()) {
