@@ -119,7 +119,7 @@ def prepare_build(target, image_core, image_core_name, fpga_dir):
             logging.error("Image builder failed! Consult output for details.")
         result.check_returncode()
         # Parse the image builder output to get the make command we need to build the FPGA
-        make_command = re.search(r"(?<=: )make.*$", result.stderr, flags=re.M).group(0)
+        make_command = re.search(r": (make [^\x1b\n\r]+)", result.stderr, flags=re.M).group(1)
         logging.info("Using make command: %s", make_command)
     else:
         assert target
