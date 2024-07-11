@@ -1,4 +1,7 @@
-"""
+"""Image builder: Build dispatch.
+
+This is the entrypoint into the module from rfnoc_image_builder.py.
+
 Copyright 2019 Ettus Research, A National Instrument Brand
 
 SPDX-License-Identifier: GPL-3.0-or-later
@@ -7,14 +10,14 @@ RFNoC image builder: All the algorithms required to turn either a YAML
 description or a GRC file into an rfnoc_image_core.v file.
 """
 
+import glob
 import logging
 import os
-import sys
 import pathlib
-import shutil
 import re
+import shutil
 import subprocess
-import glob
+import sys
 
 import mako.lookup
 import mako.template
@@ -26,50 +29,51 @@ from .builder_config import ImageBuilderConfig
 ### DATA ######################################################################
 # Directory under the FPGA repo where the device directories are
 
-USRP3_LIB_RFNOC_DIR = os.path.join('usrp3', 'lib', 'rfnoc')
+USRP3_LIB_RFNOC_DIR = os.path.join("usrp3", "lib", "rfnoc")
 
 # Path to the system's bash executable
-BASH_EXECUTABLE = '/bin/bash' # FIXME this should come from somewhere
+BASH_EXECUTABLE = "/bin/bash"  # FIXME this should come from somewhere
 
 # Map device names to the corresponding directory under usrp3/top
 DEVICE_DIR_MAP = {
-    'x300': 'x300',
-    'x310': 'x300',
-    'e300': 'e300',
-    'e310': 'e31x',
-    'e320': 'e320',
-    'n300': 'n3xx',
-    'n310': 'n3xx',
-    'n320': 'n3xx',
-    'x400': 'x400',
-    'x410': 'x400',
-    'x440': 'x400',
+    "x300": "x300",
+    "x310": "x300",
+    "e300": "e300",
+    "e310": "e31x",
+    "e320": "e320",
+    "n300": "n3xx",
+    "n310": "n3xx",
+    "n320": "n3xx",
+    "x400": "x400",
+    "x410": "x400",
+    "x440": "x400",
 }
 
 # Picks the default make target per device
 DEVICE_DEFAULTTARGET_MAP = {
-    'x300': 'X300_HG',
-    'x310': 'X310_HG',
-    'e310': 'E310_SG3',
-    'e320': 'E320_1G',
-    'n300': 'N300_HG',
-    'n310': 'N310_HG',
-    'n320': 'N320_XG',
+    "x300": "X300_HG",
+    "x310": "X310_HG",
+    "e310": "E310_SG3",
+    "e320": "E320_1G",
+    "n300": "N300_HG",
+    "n310": "N310_HG",
+    "n320": "N320_XG",
 }
 
 # Secure core RTL hierarchical path
 SECURE_CORE_INST_PATH = {
-    'x300': 'x300_core/bus_int/rfnoc_sandbox_i/secure_image_core_i',
-    'x310': 'x300_core/bus_int/rfnoc_sandbox_i/secure_image_core_i',
-    'e310': 'e31x_core_inst/rfnoc_image_core_i/secure_image_core_i',
-    'e320': 'e320_core_i/rfnoc_sandbox_i/secure_image_core_i',
-    'n300': 'n3xx_core/rfnoc_sandbox_i/secure_image_core_i',
-    'n310': 'n3xx_core/rfnoc_sandbox_i/secure_image_core_i',
-    'n320': 'n3xx_core/rfnoc_sandbox_i/secure_image_core_i',
-    'x400': 'x4xx_core_i/rfnoc_image_core_i/secure_image_core_i',
-    'x410': 'x4xx_core_i/rfnoc_image_core_i/secure_image_core_i',
-    'x440': 'x4xx_core_i/rfnoc_image_core_i/secure_image_core_i',
+    "x300": "x300_core/bus_int/rfnoc_sandbox_i/secure_image_core_i",
+    "x310": "x300_core/bus_int/rfnoc_sandbox_i/secure_image_core_i",
+    "e310": "e31x_core_inst/rfnoc_image_core_i/secure_image_core_i",
+    "e320": "e320_core_i/rfnoc_sandbox_i/secure_image_core_i",
+    "n300": "n3xx_core/rfnoc_sandbox_i/secure_image_core_i",
+    "n310": "n3xx_core/rfnoc_sandbox_i/secure_image_core_i",
+    "n320": "n3xx_core/rfnoc_sandbox_i/secure_image_core_i",
+    "x400": "x4xx_core_i/rfnoc_image_core_i/secure_image_core_i",
+    "x410": "x4xx_core_i/rfnoc_image_core_i/secure_image_core_i",
+    "x440": "x4xx_core_i/rfnoc_image_core_i/secure_image_core_i",
 }
+
 
 def get_vivado_path(fpga_top_dir, args):
     """Return path to Vivado installation directory."""
@@ -77,12 +81,15 @@ def get_vivado_path(fpga_top_dir, args):
     if args.get("vivado_path"):
         viv_path = args["vivado_path"]
     else:
-        get_viv_path_cmd = ". ./setupenv.sh && echo \"VIVADO_PATH=\$VIVADO_PATH\""
+        get_viv_path_cmd = '. ./setupenv.sh && echo "VIVADO_PATH=\$VIVADO_PATH"'
         try:
             output = subprocess.check_output(
-                f"{BASH_EXECUTABLE} -c \"{get_viv_path_cmd}\"",
-                shell=True, cwd=fpga_top_dir, text=True)
-            viv_path = re.search(r'VIVADO_PATH=(.*)', output).group(1)
+                f'{BASH_EXECUTABLE} -c "{get_viv_path_cmd}"',
+                shell=True,
+                cwd=fpga_top_dir,
+                text=True,
+            )
+            viv_path = re.search(r"VIVADO_PATH=(.*)", output).group(1)
         except subprocess.CalledProcessError:
             logging.error("Failed to get Vivado path from setupenv.sh")
             sys.exit(1)
@@ -95,8 +102,7 @@ def get_vivado_path(fpga_top_dir, args):
 
 
 def write_verilog(config, destination, args, template):
-    """
-    Generates rfnoc_image_core.v file for the device.
+    """Generate Verilog output from a template.
 
     Mako templates from local template folder are used to generate the image
     core file. The template engine does not do any computation on the script
@@ -112,10 +118,7 @@ def write_verilog(config, destination, args, template):
     template_dir = os.path.join(os.path.dirname(__file__), "templates")
     lookup = mako.lookup.TemplateLookup(directories=[template_dir])
     tpl_filename = os.path.join(template_dir, template)
-    tpl = mako.template.Template(
-        filename=tpl_filename,
-        lookup=lookup,
-        strict_undefined=True)
+    tpl = mako.template.Template(filename=tpl_filename, lookup=lookup, strict_undefined=True)
     try:
         block = tpl.render(**{"config": config, "args": args})
     except:
@@ -128,7 +131,8 @@ def write_verilog(config, destination, args, template):
 
 
 def patch_netlist_constraints(device, build_dir):
-    """
+    """Update constraints for the secure_image_core netlist.
+
     Updates the constraints for the secure_image_core netlist so that they will
     work when applied to the top-level design. The constraints output by Vivado
     assume the netlist is the top level. We need to adjust the constraints so
@@ -140,7 +144,7 @@ def patch_netlist_constraints(device, build_dir):
     :return: None
     """
     if device not in SECURE_CORE_INST_PATH:
-        logging.warning(f'Device {device} not found. Skipping secure core netlist patch.')
+        logging.warning(f"Device {device} not found. Skipping secure core netlist patch.")
         return
     netlist_root = SECURE_CORE_INST_PATH[device]
     # Make a backup of "secure_image_core.xdc" in the artifact directory
@@ -156,21 +160,21 @@ def patch_netlist_constraints(device, build_dir):
         constraints = file.read()
     # Update path in calls that already include a path
     constraints = re.sub(
-        r'^(\s*current_instance\s*(?:-quiet)?)\s*{(.*)}\s*$',
-        fr'\1 {{{netlist_root}/\2}}', constraints,
+        r"^(\s*current_instance\s*(?:-quiet)?)\s*{(.*)}\s*$",
+        rf"\1 {{{netlist_root}/\2}}",
+        constraints,
         flags=re.MULTILINE,
     )
     # Substitute calls that don't include a path
     constraints = re.sub(
-        r'^(\s*current_instance\s*(?:-quiet)?)\s*$',
-        fr'\1 {{{netlist_root}}}', constraints,
+        r"^(\s*current_instance\s*(?:-quiet)?)\s*$",
+        rf"\1 {{{netlist_root}}}",
+        constraints,
         flags=re.MULTILINE,
     )
     # Set the current instance at the start and reset it at the end
     constraints = (
-        f'current_instance {{{netlist_root}}}\n' +
-        constraints +
-        '\ncurrent_instance -quiet\n'
+        f"current_instance {{{netlist_root}}}\n" + constraints + "\ncurrent_instance -quiet\n"
     )
     # Replace the constraints file with the new constraints
     with open(secure_xdc, "w") as file:
@@ -190,23 +194,33 @@ def gen_make_command(args, build_dir, device, use_secure_netlist, makefile_src_p
             f" SECURE_CORE=1 SECURE_KEY={args.get('secure_key_file')}"
             if args.get("secure_core")
             else ""
-        ) +
-        (" SECURE_NETLIST=1" if use_secure_netlist else "") +
-        (" GUI=1 " if args.get("GUI") else "") +
-        (" RFNOC_OOT_MAKEFILE_SRCS=" + "\\ ".join(makefile_src_paths)
-         if makefile_src_paths else "") +
-        (" --jobs " + args["num_jobs"] if args.get("num_jobs") else "") +
-        (" GUI=1" if args.get("GUI") else "") +
-        (" PROJECT=1" if args.get("save_project") else "") +
-        (" IP_ONLY=1" if args.get("ip_only") else "") +
-        (" BUILD_OUTPUT_DIR=" + os.path.abspath(args["build_output_dir"]) if args.get("build_output_dir") else "") +
-        (" BUILD_IP_DIR=" + os.path.abspath(args["build_ip_dir"]) if args.get("build_ip_dir") else "")
+        )
+        + (" SECURE_NETLIST=1" if use_secure_netlist else "")
+        + (" GUI=1 " if args.get("GUI") else "")
+        + (
+            " RFNOC_OOT_MAKEFILE_SRCS=" + "\\ ".join(makefile_src_paths)
+            if makefile_src_paths
+            else ""
+        )
+        + (" --jobs " + args["num_jobs"] if args.get("num_jobs") else "")
+        + (" GUI=1" if args.get("GUI") else "")
+        + (" PROJECT=1" if args.get("save_project") else "")
+        + (" IP_ONLY=1" if args.get("ip_only") else "")
+        + (
+            " BUILD_OUTPUT_DIR=" + os.path.abspath(args["build_output_dir"])
+            if args.get("build_output_dir")
+            else ""
+        )
+        + (
+            " BUILD_IP_DIR=" + os.path.abspath(args["build_ip_dir"])
+            if args.get("build_ip_dir")
+            else ""
+        )
     )
 
 
 def build(fpga_top_dir, device, build_dir, use_secure_netlist, **args):
-    """
-    Call FPGA toolchain to actually build the image
+    """Call FPGA toolchain to actually build the image.
 
     :param fpga_top_dir: A path to the FPGA device source directory
                          (/path/to/uhd/fpga/usrp3/top/<device>)
@@ -240,9 +254,7 @@ def build(fpga_top_dir, device, build_dir, use_secure_netlist, **args):
         logging.error("Not a valid directory: %s", fpga_top_dir)
         return 1
     makefile_src_paths = [
-        os.path.join(
-            os.path.abspath(os.path.normpath(x)),
-            os.path.join('fpga', 'Makefile.srcs'))
+        os.path.join(os.path.abspath(os.path.normpath(x)), os.path.join("fpga", "Makefile.srcs"))
         for x in args.get("include_paths", [])
     ] + args.get("extra_makefile_srcs", [])
     setup_cmd = ". ./setupenv.sh "
@@ -253,7 +265,7 @@ def build(fpga_top_dir, device, build_dir, use_secure_netlist, **args):
         make_cmd += "make cleanall && "
     make_cmd += gen_make_command(args, build_dir, device, use_secure_netlist, makefile_src_paths)
 
-    if args.get('generate_only'):
+    if args.get("generate_only"):
         logging.info("Skipping build (--generate-only option given)!")
         logging.info("Use the following command to manually build the image: %s", make_cmd)
         return 0
@@ -280,25 +292,29 @@ def build(fpga_top_dir, device, build_dir, use_secure_netlist, **args):
     make_cmd = f'{BASH_EXECUTABLE} -c "{make_cmd}"'
     logging.info("Executing the following command: %s", make_cmd)
     ret_val = os.system(make_cmd)
-    if ret_val == 0 and args.get('secure_core'):
+    if ret_val == 0 and args.get("secure_core"):
         patch_netlist_constraints(device, build_dir)
     os.chdir(cwd)
     return ret_val
 
+
 def target_dir(device):
-    """
-    Target directory derived from chosen device
+    """Return target directory derived from chosen device.
+
     :param device: device to build for
     :return: target directory (relative path)
     """
     if not device.lower() in DEVICE_DIR_MAP:
-        logging.error("Unsupported device %s. Supported devices are %s",
-                      device, DEVICE_DIR_MAP.keys())
+        logging.error(
+            "Unsupported device %s. Supported devices are %s", device, DEVICE_DIR_MAP.keys()
+        )
         sys.exit(1)
     return DEVICE_DIR_MAP[device.lower()]
 
+
 def default_target(device, target):
-    """
+    """Select a valid target.
+
     If no target specified, selects the default building target based on the
     targeted device
     """
@@ -308,14 +324,15 @@ def default_target(device, target):
 
 
 def load_module_yamls(config_path, include_paths):
-    """
+    """Load all known descriptor YAMLs.
+
     Loads all known block, module, transport adapter, or include YAMLs that are
     available to us.
     """
-    # Load separate block/module defs
+
     def load_module_descs(module_type):
-        paths = yaml_utils.collect_module_paths(
-                config_path, include_paths, module_type)
+        """Load separate block/module defs."""
+        paths = yaml_utils.collect_module_paths(config_path, include_paths, module_type)
         logging.debug("Looking for %s descriptors in:", module_type[:-1])
         for path in paths:
             logging.debug("    %s", os.path.normpath(path))
@@ -332,9 +349,7 @@ def load_module_yamls(config_path, include_paths):
 
 
 def build_image(config, repo_fpga_path, config_path, device, **args):
-    """
-    Generate image dependent Verilog code and run FPGA toolchain, if
-    requested.
+    """Generate image dependent Verilog code and run FPGA toolchain, if requested.
 
     :param config: A dictionary containing the image configuration options.
                    This must obey the rfnoc_image_builder_args schema.
@@ -355,18 +370,18 @@ def build_image(config, repo_fpga_path, config_path, device, **args):
                                     (e.g., usrp_x410_fpga_CG_400)
     :return: Exit result of build process or 0 if generate-only is given.
     """
-    assert 'source' in args
+    assert "source" in args
     logging.info("Selected device: %s", device)
-    image_core_name = args.get('image_core_name')
+    image_core_name = args.get("image_core_name")
     assert image_core_name
     logging.debug("Image core name: %s", image_core_name)
-    if 'build_dir' in args and args['build_dir']:
-        build_dir = args['build_dir']
+    if "build_dir" in args and args["build_dir"]:
+        build_dir = args["build_dir"]
     else:
         build_dir = os.path.join(
-            os.path.normpath(os.path.split(args.get('source'))[0]),
-            "build-" + image_core_name)
-    args.pop('build_dir', None)
+            os.path.normpath(os.path.split(args.get("source"))[0]), "build-" + image_core_name
+        )
+    args.pop("build_dir", None)
     logging.debug("Using build artifacts directory: %s", build_dir)
     if pathlib.Path(build_dir).is_file():
         logging.error("Build artifacts directory is pointing to a file: %s", build_dir)
@@ -382,22 +397,22 @@ def build_image(config, repo_fpga_path, config_path, device, **args):
     dts_path = os.path.join(build_dir, "device_tree.dts")
     makefile_srcs_path = os.path.join(build_dir, "Makefile.inc")
     fpga_top_dir = os.path.join(
-            yaml_utils.get_top_path(os.path.abspath(repo_fpga_path)),
-            target_dir(device))
+        yaml_utils.get_top_path(os.path.abspath(repo_fpga_path)), target_dir(device)
+    )
 
     # Now load core configs
     core_config_path = yaml_utils.get_core_config_path(config_path)
 
-    known_modules = load_module_yamls(config_path, args.get('include_paths', []))
+    known_modules = load_module_yamls(config_path, args.get("include_paths", []))
 
     # resolve signature after modules have been loaded (the module YAML files
     # may contain signatures themselves)
-    signatures_conf = yaml_utils.io_signatures(core_config_path,
-        *list(known_modules.values()))
+    signatures_conf = yaml_utils.io_signatures(core_config_path, *list(known_modules.values()))
     device_conf = yaml_utils.IOConfig(
-        yaml_utils.device_config(core_config_path, device), signatures_conf)
-    if not hasattr(device_conf, 'top_dir'):
-        setattr(device_conf, 'top_dir', fpga_top_dir)
+        yaml_utils.device_config(core_config_path, device), signatures_conf
+    )
+    if not hasattr(device_conf, "top_dir"):
+        setattr(device_conf, "top_dir", fpga_top_dir)
     for module_type, defs in known_modules.items():
         require_schema = None if module_type == "includes" else "rfnoc_modtool_args"
         yaml_utils.resolve_io_signatures(defs, signatures_conf, require_schema)
@@ -418,51 +433,67 @@ def build_image(config, repo_fpga_path, config_path, device, **args):
             )
             return 1
     # Generate verilog output
-    output_list = [
-        ("rfnoc_image_core.sv.mako", image_core_path, builder_conf),
-        ("rfnoc_image_core.vh.mako", image_core_header_path, builder_conf),
-        ("Makefile.inc.mako", makefile_srcs_path, builder_conf),
-    ] + ([
-        ("secure_image_core.sv.mako", secure_core_path, builder_conf.secure_config),
-    ] if hasattr(builder_conf, 'secure_image_core') else []) + ([
-        ("device_tree.dts.mako", dts_path, builder_conf),
-    ] if getattr(builder_conf.device, 'generate_dts', False) else [])
-    reuse = args.get('reuse', False)
+    output_list = (
+        [
+            ("rfnoc_image_core.sv.mako", image_core_path, builder_conf),
+            ("rfnoc_image_core.vh.mako", image_core_header_path, builder_conf),
+            ("Makefile.inc.mako", makefile_srcs_path, builder_conf),
+        ]
+        + (
+            [
+                ("secure_image_core.sv.mako", secure_core_path, builder_conf.secure_config),
+            ]
+            if hasattr(builder_conf, "secure_image_core")
+            else []
+        )
+        + (
+            [
+                ("device_tree.dts.mako", dts_path, builder_conf),
+            ]
+            if getattr(builder_conf.device, "generate_dts", False)
+            else []
+        )
+    )
+    reuse = args.get("reuse", False)
     for tpl, path, conf in output_list:
         if not (reuse and pathlib.Path(path).exists()):
             write_verilog(conf, path, args, template=tpl)
         else:
-            logging.info("Skipping generation of %s: File already exists and "
-                         "reuse was requested.", path)
+            logging.info(
+                "Skipping generation of %s: File already exists and " "reuse was requested.", path
+            )
     # Are we generating the secure image core?
-    netlist_files = config.get('secure_image_core', {}).get('netlist_files')
-    if args.get('secure_core'):
+    netlist_files = config.get("secure_image_core", {}).get("netlist_files")
+    if args.get("secure_core"):
         secure_core_def = builder_conf.get_secure_core_def()
-        secure_core_yml = args.get('secure_core')
+        secure_core_yml = args.get("secure_core")
         new_netlist_files = [
-            'secure_image_core.vp',
-            'secure_image_core.xdc',
+            "secure_image_core.vp",
+            "secure_image_core.xdc",
         ]
-        secure_core_def['secure_image_core']['netlist_files'] = new_netlist_files
+        secure_core_def["secure_image_core"]["netlist_files"] = new_netlist_files
         logging.info("Writing secure core YAML to %s", secure_core_yml)
         yaml_utils.write_yaml(secure_core_def, secure_core_yml)
         if not args.get("secure_key_file"):
             viv_path = get_vivado_path(fpga_top_dir, args)
-            key_dir = os.path.join(viv_path, 'data', 'pubkey')
-            keyfiles = sorted(glob.glob(os.path.join(key_dir, 'xilinxt*active.v')))
+            key_dir = os.path.join(viv_path, "data", "pubkey")
+            keyfiles = sorted(glob.glob(os.path.join(key_dir, "xilinxt*active.v")))
             if not keyfiles:
                 logging.error("No key file found in %s", key_dir)
                 return 1
             logging.info("No key file provided: Using default Vivado key from %s.", keyfiles[-1])
-            with open(keyfiles[-1], 'r') as f:
+            with open(keyfiles[-1], "r") as f:
                 write_verilog(
-                    {}, os.path.join(build_dir, "keyfile.v"),
-                    {"key_info": f.read()}, "keyfile.v.mako")
-            args['secure_key_file'] = os.path.join(build_dir, "keyfile.v")
+                    {},
+                    os.path.join(build_dir, "keyfile.v"),
+                    {"key_info": f.read()},
+                    "keyfile.v.mako",
+                )
+            args["secure_key_file"] = os.path.join(build_dir, "keyfile.v")
     elif netlist_files:
         # The YAML includes a set of secure image netlist files. Copy them to
         # the artifact directory.
-        netlist_dir = os.path.dirname(args.get('yaml_path'))
+        netlist_dir = os.path.dirname(args.get("yaml_path"))
         for file in netlist_files:
             try:
                 # Assume netlist file path is relative to YAML file
@@ -475,13 +506,13 @@ def build_image(config, repo_fpga_path, config_path, device, **args):
                 return 1
 
     ret_val = build(fpga_top_dir, device, build_dir, bool(netlist_files), **args)
-    if args.get('generate_only'):
+    if args.get("generate_only"):
         return ret_val
 
-    if ret_val == 0 and args.get('secure_core'):
+    if ret_val == 0 and args.get("secure_core"):
         # We built the secure image core netlist. Copy the resulting netlist
         # and constraint files.
-        secure_core_yml_dir = os.path.dirname(args.get('secure_core'))
+        secure_core_yml_dir = os.path.dirname(args.get("secure_core"))
         file_list = [os.path.join(build_dir, x) for x in new_netlist_files]
         for file in file_list:
             try:
