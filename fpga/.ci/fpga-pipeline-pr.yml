@@ -131,6 +131,8 @@ pr:
     - fpga/usrp3/top
     - fpga/usrp3/sim
     - fpga/.ci
+    - host/utils/rfnoc_image_builder.py
+    - host/python/uhd/imgbuilder
 
 schedules:
 - cron: "0 18 * * Sun"
