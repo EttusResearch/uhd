@@ -28,7 +28,7 @@ import yaml
 from uhd.imgbuilder import grc, image_builder, yaml_utils
 
 
-class CustomFormatter(logging.Formatter):
+class ColorFormatter(logging.Formatter):
     """Logging Formatter to add colors and icons."""
 
     RESET = 0
@@ -41,7 +41,7 @@ class CustomFormatter(logging.Formatter):
     BRIGHTRED = 91
     BRIGHT = 99
 
-    def c(colors):
+    def c(colors): # noqa -- should be staticmethod but that requires Python 3.10
         """Format escape sequence from list of colors."""
         return f"\x1b[{';'.join(str(c) for c in colors)}m"
 
@@ -65,12 +65,22 @@ class CustomFormatter(logging.Formatter):
         log_fmt = self.FORMATS.get(record.levelno)
         return logging.Formatter(log_fmt).format(record)
 
+class SimpleFormatter(logging.Formatter):
+    """Logging Formatter for non-interactive shells."""
 
-handler = logging.StreamHandler()
-handler.setFormatter(CustomFormatter())
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-logger.addHandler(handler)
+    FORMATS = {
+        logging.DEBUG: "[debug] %(message)s",
+        logging.INFO: "%(message)s",
+        logging.WARNING: "[warning] %(message)s",
+        logging.ERROR: "[error] %(message)s",
+        logging.CRITICAL: "[critical] %(message)s",
+    }
+
+    def format(self, record):
+        """Format a record the way we like it."""
+        log_fmt = self.FORMATS.get(record.levelno)
+        return logging.Formatter(log_fmt).format(record)
+
 
 
 def setup_parser():
@@ -223,6 +233,12 @@ def setup_parser():
         action="store_true",
         default=False,
     )
+    parser.add_argument(
+        "--color",
+        choices=("never", "auto", "always"),
+        default="auto",
+        help="Enable colorful output. When set to 'auto' will only show color "
+             "output in TTY environments (e.g., interactive shells)")
 
     return parser
 
@@ -324,6 +340,14 @@ def main():
     :return: exit code
     """
     args = setup_parser().parse_args()
+    use_color = (args.color == "always") or \
+                (args.color == "auto" and sys.__stdout__.isatty() and sys.__stderr__.isatty())
+    handler = logging.StreamHandler()
+    handler.setFormatter(ColorFormatter() if use_color else SimpleFormatter())
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
+
     if args.log_level is not None:
         logging.root.setLevel(args.log_level.upper())
 
