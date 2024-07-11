@@ -10,6 +10,7 @@ that is passed to the templates.
 
 import copy
 import logging
+import os
 import re
 import sys
 
@@ -1193,49 +1194,95 @@ class ImageBuilderConfig:
                     )
 
     def _collect_make_args(self, include_paths):
-        """Expand arguments to the make process."""
-        # Collect make arguments from the device
-        for make_arg_type in ("make_defs", "constraints", "dts_includes"):
-            for arg in getattr(self.device, make_arg_type, []):
-                arg = resolve(arg, parameters=self.parameters).strip()
-                if arg:
-                    getattr(self, make_arg_type).append(arg)
+        """Expand arguments to the make process.
 
-        for ta in self.transport_adapters.values():
+        The make process understands three types of arguments in this case:
+
+        - Definitions: These are key=value pairs that are passed as arguments
+          to the make process itself, e.g. ENABLE_DRAM=1
+        - Constraints: This is a list of constraint files that is included in
+          the build process. For example, different transport adapters (10GbE
+          vs. 100GbE) would require different constraints as the pins are used
+          differently.
+        - DTS includes: For devices running an embedded Linux, we create a DTS
+          file which may contain custom DTS includes, which are listed here.
+          Note that DTS files may be given as a list of relative paths, in which
+          case this function will expand them to absolute paths using include_paths.
+        """
+        dtsi_include_paths = include_paths + [os.path.join(self.device.top_dir, "dts")]
+        for module_name, module in self.get_module_list("all").items():
             for make_arg_type in ("make_defs", "constraints", "dts_includes"):
-                for arg in getattr(ta.desc, make_arg_type, []):
-                    arg = resolve(arg, **{**ta, "device": self.device}).strip()
-                    if arg:
-                        if make_arg_type == "dts_includes":
-                            arg = find_include_file(arg, include_paths)
-                        getattr(self, make_arg_type).append(arg)
+                for arg in getattr(module.desc, make_arg_type, []):
+                    arg = resolve(arg, device=self.device, config=self, **module).strip()
+                    # Because we use `resolve()`, we allow values to resolve to
+                    # empty strings, which means the descriptor file has decided
+                    # that the make arg (or whatever) is not relevant and can
+                    # be skipped.
+                    if not arg:
+                        continue
+                    if make_arg_type == "dts_includes":
+                        try:
+                            arg = find_include_file(arg, dtsi_include_paths)
+                        except FileNotFoundError:
+                            self.log.error(
+                                "Error evaluating %s: Could not find DTS file %s!", module_name, arg
+                            )
+                    getattr(self, make_arg_type).append(arg)
 
         def remove_dupes(lst):
             return list(dict.fromkeys(lst))
 
-        self.constraints = remove_dupes(self.constraints)
-        self.make_defs = remove_dupes(self.make_defs)
-        self.dts_includes = remove_dupes(self.dts_includes)
+        for make_arg_type in ("make_defs", "constraints", "dts_includes"):
+            setattr(self, make_arg_type, remove_dupes(getattr(self, make_arg_type)))
 
     def _collect_fpga_includes(self, include_paths):
-        """Find the include files for the FPGA build process."""
+        """Generate list of Makefile includes for FPGA build procesds.
 
-        def resolve_include_path(include_dict, paths):
-            if "include" in include_dict:
-                include_dict["include"] = find_include_file(include_dict["include"], paths)
-            return include_dict
+        Based on all the modules used in this image configuration, this will
+        create a list of paths to Makefile include files (typically, these are
+        files called 'Makefile.srcs'). These files are included in the make
+        process that actually builds the bitfile.
 
-        mod_list = {**self.noc_blocks, **self.modules, **self.transport_adapters}
-        for block in list(mod_list.values()):
-            for inc in getattr(block.desc, "fpga_includes", []):
-                self.fpga_includes.append(resolve(inc, **block))
-            if hasattr(block.desc, "makefile_srcs"):
-                self.fpga_includes.append(
-                    {"include": resolve(block.desc.makefile_srcs, fpga_lib_dir="$(LIB_DIR)/rfnoc")}
-                )
-        self.fpga_includes = list(
-            map(lambda x: resolve_include_path(x, include_paths), self.fpga_includes)
-        )
+        Blocks and other modules have different options for how to reference
+        include files:
+        - The standard way is to have an fpga_includes section in the block YAML.
+          This is a list of dictionaries with two keys: `include` and `make_var`.
+          The former (`include`) points to the file. The latter (`make_var`)
+          specifies the name of the Make variable that contains the sources to
+          include. Note that either key is optional.
+          Both values can use Mako syntax to conditionally evaluate.
+          If the include path is relative, then the image builder will attempt
+          to find the full path by looking in all the 'include_paths'.
+        - For backward compatibility, a makefile_srcs key is supported that may
+          contain a single entry to a Makefile.srcs file. Note that in this case,
+          there is no option to specify a makefile variable, so in this case,
+          sources must be added to the RFNOC_OOT_SRCS variable.
+        """
+        for block_name, block in self.get_module_list("all").items():
+            try:
+                r = lambda val: resolve(val, **block)
+                self.fpga_includes += [
+                    {
+                        k: find_include_file(r(v), include_paths) if k == "include" else r(v)
+                        for k, v in inc.items()
+                    }
+                    for inc in getattr(block.desc, "fpga_includes", [])
+                ]
+                if hasattr(block.desc, "makefile_srcs"):
+                    self.fpga_includes.append(
+                        {
+                            "include": find_include_file(
+                                resolve(
+                                    block.desc.makefile_srcs,
+                                    **block,
+                                    fpga_lib_dir="$(LIB_DIR)/rfnoc",
+                                ),
+                                include_paths,
+                            )
+                        }
+                    )
+            except FileNotFoundError as ex:
+                self.log.error("Error evaluating %s: %s", block_name, ex)
 
     def get_module(self, block_or_module):
         """Get reference to either a block, module, or _device_ by name."""

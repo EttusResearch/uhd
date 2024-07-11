@@ -307,19 +307,6 @@ def io_signatures(config_path, *modules):
     return result
 
 
-def collect_module_paths(config_path, include_paths, module_type):
-    """Create a list of directories that contain noc block configuration files.
-
-    :param config_path: root path holding configuration files
-    :return: list of noc block directories
-    """
-    # rfnoc blocks
-    result = [os.path.join(config_path, "rfnoc", module_type)] + [
-        os.path.join(x, module_type) for x in include_paths
-    ]
-    return result
-
-
 def read_yaml_definitions(*paths):
     """Non-recursively search all paths for YAML definitions.
 

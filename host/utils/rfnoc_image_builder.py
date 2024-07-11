@@ -321,6 +321,8 @@ def get_fpga_path(args):
 def get_config_path():
     """Return path that contains configurations files.
 
+    This is the main UHD installation path for package data (e.g., /usr/share/uhd).
+
     Will return the directory path where the YAML configuration files are stored
     (yml descriptions for block, IO signatures and device bsp, not the image
     core files).

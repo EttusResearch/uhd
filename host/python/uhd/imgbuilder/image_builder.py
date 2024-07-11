@@ -323,16 +323,12 @@ def default_target(device, target):
     return target
 
 
-def load_module_yamls(config_path, include_paths):
-    """Load all known descriptor YAMLs.
-
-    Loads all known block, module, transport adapter, or include YAMLs that are
-    available to us.
-    """
+def load_module_yamls(include_paths):
+    """Load all known descriptor YAMLs."""
 
     def load_module_descs(module_type):
         """Load separate block/module defs."""
-        paths = yaml_utils.collect_module_paths(config_path, include_paths, module_type)
+        paths = [os.path.join(x, module_type) for x in include_paths]
         logging.debug("Looking for %s descriptors in:", module_type[:-1])
         for path in paths:
             logging.debug("    %s", os.path.normpath(path))
@@ -403,7 +399,10 @@ def build_image(config, repo_fpga_path, config_path, device, **args):
     # Now load core configs
     core_config_path = yaml_utils.get_core_config_path(config_path)
 
-    known_modules = load_module_yamls(config_path, args.get("include_paths", []))
+    # TODO does this work for both block yamls and HDL sources?
+    include_paths = args.get('include_paths', []) + [os.path.join(config_path, 'rfnoc')]
+
+    known_modules = load_module_yamls(include_paths)
 
     # resolve signature after modules have been loaded (the module YAML files
     # may contain signatures themselves)
@@ -420,7 +419,7 @@ def build_image(config, repo_fpga_path, config_path, device, **args):
     # Load the image core config
     try:
         builder_conf = ImageBuilderConfig(
-            config, known_modules, device_conf, args.get("include_paths", [])
+            config, known_modules, device_conf, include_paths
         )
     except (ValueError, KeyError) as e:
         logging.error("Error parsing image configuration: %s", e)

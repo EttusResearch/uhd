@@ -161,4 +161,4 @@ def find_include_file(filename, include_paths):
         if os.path.isfile(candidate):
             return os.path.realpath(candidate)
 
-    raise FileNotFoundError(f"File {filename} not found in {include_paths}")
+    raise FileNotFoundError(f"File {filename} not found in include paths: {include_paths}")
