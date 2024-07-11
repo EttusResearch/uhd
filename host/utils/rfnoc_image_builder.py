@@ -41,7 +41,6 @@ class CustomFormatter(logging.Formatter):
     BRIGHTRED = 91
     BRIGHT = 99
 
-    @staticmethod
     def c(colors):
         """Format escape sequence from list of colors."""
         return f"\x1b[{';'.join(str(c) for c in colors)}m"
