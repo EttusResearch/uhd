@@ -29,6 +29,10 @@ out-of-tree blocks.
   (e.g., `/usr/share/uhd/rfnoc/fpga/gain`) so the image builder can find
   all the source files when compiling bitfiles that use multiple OOT modules.
 
+* `gr-rfnoc_gain`: An out-of-tree module for GNU Radio, which depends on this
+  RFNoC out-of-tree module and provides GNU Radio and GNU Radio Companion
+  bindings for using the gain block from within GNU Radio.
+
 * `icores`: Stores full image core files. YAML files in this directory get
   picked up by CMake and get turned into build targets. For example, here we
   include an image core file called `x310_rfnoc_image_core.yml` which defines

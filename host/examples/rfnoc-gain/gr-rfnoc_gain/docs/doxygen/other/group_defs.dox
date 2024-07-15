@@ -1,0 +1,6 @@
+/*!
+ * \defgroup block GNU Radio RFNOC_GAIN C++ Signal Processing Blocks
+ * \brief All C++ blocks that can be used from the RFNOC_GAIN GNU Radio
+ *        module are listed here or in the subcategories below.
+ *
+ */

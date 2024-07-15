@@ -1,0 +1,44 @@
+id: rfnoc_gain_gain_native
+label: RFNoC Gain Block (Native C++ Version)
+category: '[rfnoc_gain]'
+
+templates:
+  imports: from gnuradio import rfnoc_gain
+  make: rfnoc_gain.rfnoc_gain(
+        self.rfnoc_graph,
+        ${gain},
+        uhd.device_addr(""),
+        ${device_select},
+        ${instance_index})
+  callbacks:
+    - set_gain(${gain})
+
+parameters:
+- id: gain
+  label: Gain
+  dtype: int
+  default: 1
+- id: device_select
+  label: Device Select
+  dtype: int
+  default: -1
+  hide: ${ 'part' if device_select == -1 else 'none'}
+- id: instance_index
+  label: Instance Select
+  dtype: int
+  default: -1
+  hide: ${ 'part' if instance_index == -1 else 'none'}
+
+inputs:
+- label: in
+  domain: rfnoc
+  dtype: sc16
+  vlen: 1
+
+outputs:
+- label: out
+  domain: rfnoc
+  dtype: sc16
+  vlen: 1
+
+file_format: 1

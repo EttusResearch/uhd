@@ -1,0 +1,49 @@
+id: rfnoc_gain_gain_generic
+label: RFNoC Gain Block (Generic Version)
+category: '[rfnoc_gain]'
+
+templates:
+  imports: from gnuradio import uhd
+  make: |-
+    uhd.rfnoc_block_generic(
+        self.rfnoc_graph,
+        uhd.device_addr("gain=${gain}"),
+        "Gain",
+        ${device_select},
+        ${instance_index})
+
+parameters:
+- id: gain
+  label: Gain
+  dtype: int
+  default: 1
+- id: device_select
+  label: Device Select
+  dtype: int
+  default: -1
+  hide: ${ 'part' if device_select == -1 else 'none'}
+- id: instance_index
+  label: Instance Select
+  dtype: int
+  default: -1
+  hide: ${ 'part' if instance_index == -1 else 'none'}
+
+inputs:
+- label: in
+  domain: rfnoc
+  dtype: sc16
+  vlen: 1
+  optional: false
+
+outputs:
+- label: out
+  domain: rfnoc
+  dtype: sc16
+  vlen: 1
+  optional: false
+
+documentation: |-
+  RFNoC Gain Block:
+  Multiplies the samples of the input stream with the gain value.
+
+file_format: 1

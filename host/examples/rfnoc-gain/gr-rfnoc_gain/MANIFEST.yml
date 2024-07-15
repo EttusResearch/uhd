@@ -1,0 +1,19 @@
+title: The RFNOC_GAIN OOT Module
+version: 1.0
+brief: This is an example OOT module for RFNoC-based GNU Radio bindings.
+tags: # Tags are arbitrary, but look at CGRAN what other authors are using
+  - sdr
+  - rfnoc
+author:
+  - Ettus Research <packages@ettus.com>
+copyright_owner:
+  - NI
+license:
+gr_supported_version:
+  - 3.10
+repo: # Put the URL of the repository here
+website: # If you have a separate project website, put it here
+#icon: # Put a URL to a square image here that will be used as an icon
+description: |-
+  This OOT Module contains GNU Radio bindings for the rfnoc-gain block.
+file_format: 1
