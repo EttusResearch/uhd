@@ -409,13 +409,30 @@ Selecting another compiler is as simple as changing the CC and CXX pre-arguments
 
 - For USB-Based devices, make sure to read \ref transport_usb for platform-specific post-installation tasks.
 
+\section build_pymod_only Only building Python utilities
+
+In order to build FPGA bitfiles for RFNoC-based devices, the `rfnoc_image_builder`
+is a required tool, and it will be installed with UHD. However, if a dedicated
+system is being used to build bitfiles (this includes building bitfiles within
+a continuous integration system), only the Python utilities are required. To
+skip the full build and installation of UHD and only install these utilities,
+cmake can be configured as follows (in this example, the manual and any other
+documentation is also not built):
+
+    cmake -DENABLE_LIBUHD=OFF -DENABLE_PYMOD_UTILS=ON \ # Skip UHD library, install utilities
+          -DUHD_BOOST_REQUIRED=OFF \ # Don't even check for Boost
+          -DENABLE_DOXYGEN=OFF -DENABLE_MAN_PAGES=OFF -DENABLE_MANUAL=OFF # Skip all documentation
+
+Building and installation of UHD with these options will take less than a
+minute, and will have a minimal footprint on the installed system.
+
 \section build_apps Building applications that require UHD using CMake
 
 If your application uses CMake as a build system, the following command
 will setup up your build environment to link against UHD:
 
 \code{.cmake}
-find_package(UHD "3.10.0")
+find_package(UHD 4.7.0)
 \endcode
 
 This will set the CMake variable `UHD_INCLUDE_DIRS` and `UHD_LIBRARIES`

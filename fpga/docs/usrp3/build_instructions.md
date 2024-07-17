@@ -76,23 +76,21 @@ link above.
 - Supported versions are PE, DE, SE, DE-64 and SE-64
 - You may need to acquire a license from Mentor Graphics to run ModelSim
 
-### Setting up build dependencies on Ubuntu
-
-You can install all the dependencies through the package manager:
-
-    sudo apt-get install python3 bash build-essential doxygen
-
-Your actual command may differ.
+### Setting up build dependencies on Ubuntu and Fedora
 
 For building any RFNoC-capable device (out of the list above, that is all devices
-except for the B200 series USRPs), you also need to have `rfnoc_image_builder`
-installed. This will be installed as part of a regular UHD installation.
+except for the B200 series USRPs), the `rfnoc_image_builder` utility must be
+installed. This will be installed as part of a regular UHD installation. For
+information on how to install UHD from source, refer to the [build guide](./page_build_guide.html).
 
-### Setting up build dependencies on Fedora
+Note that only the Python utilities are required, not a full UHD installation,
+unless the intention is to use the USRP from the same system. To only install
+these utilities, [refer to the build manual](./page_build_guide.html#build_pymod_only).
 
-You can install all the dependencies through the package manager:
+To only install dependencies for building B200 images, use the package manager:
 
-    sudo dnf -y install python bash make doxygen
+    sudo apt-get install python3 bash build-essential doxygen # Ubuntu, Debian
+    sudo dnf -y install python bash make doxygen # Fedora
 
 Your actual command may differ.
 
