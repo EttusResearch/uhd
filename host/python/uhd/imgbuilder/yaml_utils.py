@@ -220,28 +220,6 @@ def load_config_validate(config_file, config_path, allow_inherit=True):
         return config
 
 
-# Adapted from code found at
-# https://stackoverflow.com/questions/5121931/
-#     in-python-how-can-you-load-yaml-mappings-as-ordereddicts
-# (Accessed 17 October 2019)
-def ordered_load(stream, Loader=yaml.SafeLoader, object_pairs_hook=OrderedDict):
-    """Implement ordered load for YAMLs.
-
-    In Python 3.5, element insertion order into dictionaries is not preserved.
-    This function uses an OrderedDict to read a YAML file, which does preserve order.
-    """
-
-    class OrderedLoader(Loader):
-        pass
-
-    def construct_mapping(loader, node):
-        loader.flatten_mapping(node)
-        return object_pairs_hook(loader.construct_pairs(node))
-
-    OrderedLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, construct_mapping)
-    return yaml.load(stream, OrderedLoader)
-
-
 def load_config(filename):
     """Load YAML configuration from filename.
 
@@ -255,7 +233,8 @@ def load_config(filename):
     try:
         with open(filename, encoding="utf-8") as stream:
             logging.debug("Using %s from %s.", basename, os.path.normpath(dirname))
-            config = ordered_load(stream)
+            rt_yaml = yaml.YAML(typ="rt")
+            config = rt_yaml.load(stream)
         return config
     except IOError:
         logging.error("%s misses %s", os.path.normpath(dirname), basename)
@@ -358,7 +337,8 @@ def read_yaml_definitions(*paths):
             for filename in files:
                 if re.match(r".*\.ya?ml$", filename):
                     with open(os.path.join(root, filename), encoding="utf-8") as stream:
-                        data = ordered_load(stream)
+                        yaml_rt = yaml.YAML(typ="rt")
+                        data = yaml_rt.load(stream)
                         if filename in deprecated_block_yml_map:
                             logging.warning(
                                 "Skipping deprecated block description " "%s (%s).",
@@ -448,4 +428,7 @@ def write_yaml(config, destination):
     """Write a config object as a YAML file."""
     with open(destination, "w", encoding="utf-8") as out_file:
         # TODO remove superfluous comments
-        yaml.round_trip_dump(config, out_file, default_flow_style=False, indent=4)
+        rt_yaml = yaml.YAML(typ="rt")
+        rt_yaml.default_flow_style = False
+        rt_yaml.indent(mapping=4)
+        rt_yaml.dump(config, out_file)
