@@ -9,7 +9,7 @@
 # Project setup
 ########################################################################
 # NOTE! If you change the version in the following line, also change
-# CMAKE_MIN_VERSION below. (This won't take a variable).
+# UHD_CMAKE_MIN_VERSION in UHDMinDepVersions. (This won't take a variable).
 cmake_minimum_required(VERSION 3.8)
 if(POLICY CMP0048)
   cmake_policy(SET CMP0048 NEW) # Suppress Version warnings
@@ -21,37 +21,28 @@ enable_testing()
 list(INSERT CMAKE_MODULE_PATH 0 ${UHD_SOURCE_DIR}/cmake/Modules)
 
 ########################################################################
-# UHD Dependency Minimum Versions
+# UHD Dependency Minimum Versions are stored in a separate file
 ########################################################################
-set(CMAKE_MIN_VERSION "3.8")
-set(GCC_MIN_VERSION "7.3.0")
-set(CLANG_MIN_VERSION "6.0.0")
-set(APPLECLANG_MIN_VERSION "800")
-# Make sure to update the next two in unison:
-set(MSVC_MIN_VERSION "1910")
-set(MSVC_MIN_VERSION_READABLE "15.0")
-# This Python version gets used for Python API (if requested) as well as
-# all the build-time Python scripts
-set(PYTHON_MIN_VERSION "3.7")
-# Other deps
-set(SETUPTOOLS_MIN_VERSION "40.0")
-set(BOOST_MIN_VERSION "1.65")
-set(NUMPY_MIN_VERSION "1.11")
-set(RUAMEL.YAML_MIN_VERSION "0.15")
-set(PY_MAKO_MIN_VERSION "0.4.2")
-set(PY_REQUESTS_MIN_VERSION "2.0")
-set(PYBIND11_MIN_VERSION "2.7")
+include(UHDMinDepVersions)
 
 ########################################################################
 # Check Compiler Version
 ########################################################################
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
     if(DEFINED CMAKE_CXX_COMPILER_VERSION)
-        if(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS ${GCC_MIN_VERSION})
-            message(WARNING "\nThe compiler selected to build UHD (GCC version ${CMAKE_CXX_COMPILER_VERSION} : ${CMAKE_CXX_COMPILER}) is older than that officially supported (${GCC_MIN_VERSION} minimum). This build may or not work. We highly recommend using a more recent GCC version.")
+        if(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS ${UHD_GCC_MIN_VERSION})
+            message(WARNING
+              "\nThe compiler selected to build UHD "
+              "(GCC version ${CMAKE_CXX_COMPILER_VERSION} : ${CMAKE_CXX_COMPILER}) "
+              "is older than that officially supported (${UHD_GCC_MIN_VERSION} minimum). "
+              "This build may or not work. "
+              "We highly recommend using a more recent GCC version.")
          endif()
     else()
-        message(WARNING "\nCannot determine the version of the compiler selected to build UHD (GCC : ${CMAKE_CXX_COMPILER}). This build may or not work. We highly recommend using GCC version ${GCC_MIN_VERSION} or more recent.")
+        message(WARNING
+          "\nCannot determine the version of the compiler selected to build UHD "
+          "(GCC : ${CMAKE_CXX_COMPILER}). This build may or not work. We highly "
+          "recommend using GCC version ${UHD_GCC_MIN_VERSION} or more recent.")
     endif()
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og")
 elseif(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
@@ -63,29 +54,41 @@ elseif(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
         # output is in error stream
         string(REGEX MATCH "^Apple.*" IS_APPLE ${err})
         if("${IS_APPLE}" STREQUAL "")
-            set(MIN_VERSION ${CLANG_MIN_VERSION})
+            set(MIN_VERSION ${UHD_CLANG_MIN_VERSION})
             set(APPLE_STR "")
             # retrieve the compiler's version from it
             string(REGEX MATCH "clang version [0-9.]+" CLANG_OTHER_VERSION ${err})
             string(REGEX MATCH "[0-9.]+" CLANG_VERSION ${CLANG_OTHER_VERSION})
         else()
-            set(MIN_VERSION ${APPLECLANG_MIN_VERSION})
+            set(MIN_VERSION ${UHD_APPLECLANG_MIN_VERSION})
             set(APPLE_STR "Apple ")
             # retrieve the compiler's version from it
             string(REGEX MATCH "(clang-[0-9.]+)" CLANG_APPLE_VERSION ${err})
             string(REGEX MATCH "[0-9.]+" CLANG_VERSION ${CLANG_APPLE_VERSION})
         endif()
         if(${CLANG_VERSION} VERSION_LESS "${MIN_VERSION}")
-            message(WARNING "\nThe compiler selected to build UHD (${APPLE_STR}Clang version ${CLANG_VERSION} : ${CMAKE_CXX_COMPILER}) is older than that officially supported (${MIN_VERSION} minimum). This build may or not work. We highly recommend using Apple Clang version ${APPLECLANG_MIN_VERSION} or more recent, or Clang version ${CLANG_MIN_VERSION} or more recent.")
+            message(WARNING
+              "\nThe compiler selected to build UHD "
+              "(${APPLE_STR}Clang version ${CLANG_VERSION} : ${CMAKE_CXX_COMPILER}) "
+              "is older than that officially supported (${MIN_VERSION} minimum). "
+              "This build may or not work. We highly recommend using Apple Clang "
+              "version ${UHD_APPLECLANG_MIN_VERSION} or more recent, "
+              "or Clang version ${UHD_CLANG_MIN_VERSION} or more recent.")
         endif()
     else()
-        message(WARNING "\nCannot determine the version of the compiler selected to build UHD (${APPLE_STR}Clang : ${CMAKE_CXX_COMPILER}). This build may or not work. We highly recommend using Apple Clang version ${APPLECLANG_MIN_VERSION} or more recent, or Clang version ${CLANG_MIN_VERSION} or more recent.")
+        message(WARNING
+          "\nCannot determine the version of the compiler selected to build UHD "
+          "(${APPLE_STR}Clang : ${CMAKE_CXX_COMPILER}). This build may or not work. "
+          "We highly recommend using Apple Clang version ${UHD_APPLECLANG_MIN_VERSION} "
+          "or more recent, or Clang version ${UHD_CLANG_MIN_VERSION} or more recent.")
     endif()
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og")
 elseif(MSVC)
-    if(${MSVC_VERSION} VERSION_LESS ${MSVC_MIN_VERSION})
-	message(FATAL_ERROR "\nMSVC version is less than the required minimum. Required: ${MSVC_MIN_VERSION_READABLE}")
-    endif(${MSVC_VERSION} VERSION_LESS ${MSVC_MIN_VERSION})
+    if(${MSVC_VERSION} VERSION_LESS ${UHD_MSVC_MIN_VERSION})
+	message(FATAL_ERROR
+          "\nMSVC version is less than the required minimum. "
+          "Required: ${UHD_MSVC_MIN_VERSION_READABLE}")
+    endif(${MSVC_VERSION} VERSION_LESS ${UHD_MSVC_MIN_VERSION})
 endif()
 
 set(CMAKE_CXX_STANDARD 14)
@@ -313,43 +316,43 @@ include(UHDLog)
 ########################################################################
 include(UHDPython)
 
-PYTHON_CHECK_MODULE_VERSION(
+UHD_PYTHON_CHECK_MODULE_VERSION(
     "compatible Python version"
     "platform"
     "platform.python_version()"
-    ${PYTHON_MIN_VERSION}
+    ${UHD_PYTHON_MIN_VERSION}
     HAVE_PYTHON_PLAT_MIN_VERSION
 )
 
-PYTHON_CHECK_MODULE_VERSION(
+UHD_PYTHON_CHECK_MODULE_VERSION(
     "Mako templates module"
     "mako"
     "mako.__version__"
-    ${PY_MAKO_MIN_VERSION}
+    ${UHD_PY_MAKO_MIN_VERSION}
     HAVE_PYTHON_MODULE_MAKO
 )
 
-PYTHON_CHECK_MODULE_VERSION(
+UHD_PYTHON_CHECK_MODULE_VERSION(
     "requests module"
     "requests"
     "requests.__version__"
-    ${PY_REQUESTS_MIN_VERSION}
+    ${UHD_PY_REQUESTS_MIN_VERSION}
     HAVE_PYTHON_MODULE_REQUESTS
 )
 
-PYTHON_CHECK_MODULE_VERSION(
+UHD_PYTHON_CHECK_MODULE_VERSION(
     "numpy module"
     "numpy"
     "numpy.__version__"
-    ${NUMPY_MIN_VERSION}
+    ${UHD_NUMPY_MIN_VERSION}
     HAVE_PYTHON_MODULE_NUMPY
 )
 
-PYTHON_CHECK_MODULE_VERSION(
+UHD_PYTHON_CHECK_MODULE_VERSION(
     "ruamel.yaml module"
     "ruamel.yaml"
     "ruamel.yaml.__version__"
-    ${RUAMEL.YAML_MIN_VERSION}
+    ${UHD_RUAMEL_YAML_MIN_VERSION}
     HAVE_PYTHON_MODULE_YAML
 )
 
@@ -542,6 +545,8 @@ set(uhd_cmake_scripts
     ${UHD_BINARY_DIR}/cmake/Modules/UHDConfig.cmake
     ${UHD_BINARY_DIR}/cmake/Modules/UHDConfigVersion.cmake
     ${UHD_SOURCE_DIR}/cmake/Modules/UHDBoost.cmake
+    ${UHD_SOURCE_DIR}/cmake/Modules/UHDPython.cmake
+    ${UHD_SOURCE_DIR}/cmake/Modules/UHDMinDepVersions.cmake
 )
 
 UHD_INSTALL(

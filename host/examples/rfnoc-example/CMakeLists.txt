@@ -75,7 +75,7 @@ endif()
 ###########################################################################
 include(UHDPython)
 
-PYTHON_CHECK_MODULE(
+UHD_PYTHON_CHECK_MODULE(
     "UHD Python API"
     "uhd"
     "uhd.__version__ == '${UHD_VERSION}'"

@@ -55,7 +55,7 @@ if(NOT ENABLE_PYTHON_API AND ENABLE_PYMOD_UTILS)
         COMMAND ${CMAKE_COMMAND} -E touch ${TIMESTAMP_FILE}
         DEPENDS ${PYUHD_FILES})
     add_custom_target(pyuhd_library ALL DEPENDS ${TIMESTAMP_FILE})
-    PYTHON_INSTALL_MODULE(
+    UHD_PYTHON_INSTALL_MODULE(
         MODULE "uhd"
     )
     return()
@@ -214,7 +214,7 @@ add_custom_command(OUTPUT ${TIMESTAMP_FILE}
 add_custom_target(pyuhd_library ALL DEPENDS ${TIMESTAMP_FILE} pyuhd)
 
 # Now install the Python module from the build directory to the final destination.
-PYTHON_INSTALL_MODULE(
+UHD_PYTHON_INSTALL_MODULE(
     MODULE "uhd"
     LIBTARGET pyuhd
 )

@@ -26,16 +26,16 @@ follow the auxiliary download URL for the Windows installer (below).
 
 The following compilers are known to work and officially supported:
 
-- GCC >= @GCC_MIN_VERSION@
-- Clang >= @CLANG_MIN_VERSION@
-- MSVC >= @MSVC_MIN_VERSION_READABLE@; the free version works. Users need to install the "Desktop Development with C++" Workload for Visual Studio. On Windows, it can be found in: Tools -> Get Tools and Features... -> Workloads -> Windows
+- GCC >= @UHD_GCC_MIN_VERSION@
+- Clang >= @UHD_CLANG_MIN_VERSION@
+- MSVC >= @UHD_MSVC_MIN_VERSION_READABLE@; the free version works. Users need to install the "Desktop Development with C++" Workload for Visual Studio. On Windows, it can be found in: Tools -> Get Tools and Features... -> Workloads -> Windows
 
 Other compilers (or lower versions) may work, but are unsupported.
 
 ### CMake
 
 - **Purpose:** generates project build files
-- **Minimum Version:** @CMAKE_MIN_VERSION@
+- **Minimum Version:** @UHD_CMAKE_MIN_VERSION@
 - **Usage:** build time (required)
 - **Download URL:** http://www.cmake.org/cmake/resources/software.html
 
@@ -44,7 +44,7 @@ For Windows users, copy the CMake file to Program Files, e.g. `C:\Program Files\
 ### Boost
 
 - **Purpose:** C++ library
-- **Minimum Version:** @BOOST_MIN_VERSION@
+- **Minimum Version:** @UHD_BOOST_MIN_VERSION@
 - **Usage:** build time + runtime (required)
 - **Download URL:** http://www.boost.org/users/download/
 - **Download URL (Windows installer):** http://sourceforge.net/projects/boost/files/boost-binaries/
@@ -64,7 +64,7 @@ The directory to which you extract libusb must not contain spaces. This is to sa
 ### Python
 
 - **Purpose:** Used by mako build time,  and utility scripts and the Python API at runtime
-- **Minimum Version:** @PYTHON_MIN_VERSION@
+- **Minimum Version:** @UHD_PYTHON_MIN_VERSION@
 - **Usage:** build time + runtime utility scripts (required)
 - **Download URL:** http://www.python.org/download/
 - **Comments for Windows Users:**
@@ -98,7 +98,7 @@ recommended to use the system version, but it is no requirement for UHD in
 general.
 
 - **Purpose:** Used to build the UHD Python API
-- **Minimum Version:** @PYBIND11_MIN_VERSION@
+- **Minimum Version:** @UHD_PYBIND11_MIN_VERSION@
 - **Usage:** build time (for Python API only)
 - **Download URL:** https://github.com/pybind/pybind11://github.com/pybind/pybind11/
 - **Alternative method:** As mentioned above, you don't have to install Pybind11
@@ -109,7 +109,7 @@ general.
 ### Mako
 
 - **Purpose:** source code generation
-- **Minimum Version:** @PY_MAKO_MIN_VERSION@
+- **Minimum Version:** @UHD_PY_MAKO_MIN_VERSION@
 - **Usage:** build time (required), RFNoC image builder (runtime)
 - **Download URL:** http://www.makotemplates.org/download.html
 - **Alternative method:** You can use `pip3` or `easy_install` to install Mako from PyPi. To install it using 'pip3' on Windows, navigate to Python scripts folder, e.g. `C:\local\Python37\Scripts`, and run the following command:

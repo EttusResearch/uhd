@@ -28,6 +28,10 @@ find_package(UHD 4.1.0 REQUIRED)
 # To specify an exact version:
 #find_package(UHD 4.0.0 EXACT REQUIRED)
 
+# We copy the same mininum versions that UHD has. This might not be the right
+# choice for your application.
+include(UHDMinDepVersions)
+
 # This example also requires Boost.
 # Set components here, then include UHDBoost to do the actual finding
 set(UHD_BOOST_REQUIRED_COMPONENTS
@@ -35,7 +39,6 @@ set(UHD_BOOST_REQUIRED_COMPONENTS
     system
     thread
 )
-set(BOOST_MIN_VERSION 1.65)
 include(UHDBoost)
 
 # need these include and link directories for the build

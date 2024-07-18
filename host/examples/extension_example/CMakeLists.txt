@@ -37,7 +37,7 @@ set(UHD_BOOST_REQUIRED_COMPONENTS
     system
     thread
 )
-set(BOOST_MIN_VERSION 1.71)
+set(UHD_BOOST_MIN_VERSION 1.71)
 include(UHDBoost)
 
 # need these include and link directories for the build

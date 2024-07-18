@@ -55,7 +55,7 @@
 #
 ########################################################################
 message(STATUS "")
-message(STATUS "Checking for Boost version ${BOOST_MIN_VERSION} or greater")
+message(STATUS "Checking for Boost version ${UHD_BOOST_MIN_VERSION} or greater")
 
 # unset return variables
 unset(Boost_FOUND)
@@ -85,11 +85,11 @@ list(LENGTH UHD_BOOST_REQUIRED_COMPONENTS UHD_BOOST_REQUIRED_COMPONENTS_LEN)
 if(UHD_BOOST_OPTIONAL_COMPONENTS_LEN EQUAL 0 AND
    UHD_BOOST_REQUIRED_COMPONENTS_LEN EQUAL 0)
     # just see if Boost can be found
-    find_package(Boost ${BOOST_MIN_VERSION} QUIET ${UHD_BOOST_REQUIRED})
+    find_package(Boost ${UHD_BOOST_MIN_VERSION} QUIET ${UHD_BOOST_REQUIRED})
     if(Boost_FOUND)
-        message(STATUS "Boost version ${BOOST_MIN_VERSION} or greater - found")
+        message(STATUS "Boost version ${UHD_BOOST_MIN_VERSION} or greater - found")
     else()
-        message(STATUS "Boost version ${BOOST_MIN_VERSION} or greater - not found")
+        message(STATUS "Boost version ${UHD_BOOST_MIN_VERSION} or greater - not found")
     endif()
     return()
 endif()
@@ -181,13 +181,13 @@ endif()
 
 if(${UHD_BOOST_OPTIONAL_COMPONENTS_LEN} GREATER 0)
     message(STATUS "  Looking for optional Boost components...")
-    find_package(Boost ${BOOST_MIN_VERSION} QUIET
+    find_package(Boost ${UHD_BOOST_MIN_VERSION} QUIET
         OPTIONAL_COMPONENTS ${UHD_BOOST_OPTIONAL_COMPONENTS})
 endif()
 
 if(${UHD_BOOST_REQUIRED_COMPONENTS_LEN} GREATER 0)
     message(STATUS "  Looking for required Boost components...")
-    find_package(Boost ${BOOST_MIN_VERSION} QUIET
+    find_package(Boost ${UHD_BOOST_MIN_VERSION} QUIET
         COMPONENTS ${UHD_BOOST_REQUIRED_COMPONENTS} ${UHD_BOOST_REQUIRED})
 endif()
 
@@ -328,9 +328,9 @@ else()
 endif()
 
 if(Boost_FOUND)
-    message(STATUS "Looking for Boost version ${BOOST_MIN_VERSION} or greater - found")
+    message(STATUS "Looking for Boost version ${UHD_BOOST_MIN_VERSION} or greater - found")
 else()
-    message(STATUS "Looking for Boost version ${BOOST_MIN_VERSION} or greater - not found")
+    message(STATUS "Looking for Boost version ${UHD_BOOST_MIN_VERSION} or greater - not found")
 endif()
 
 # unset some internal variables, if set

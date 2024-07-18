@@ -78,7 +78,7 @@ add_custom_target(pymodule_library
     ALL DEPENDS ${TIMESTAMP_FILE} ${PYMODULE_NAME}_python)
 
 # Now install the Python module from the build directory to the final destination.
-PYTHON_INSTALL_MODULE(
+UHD_PYTHON_INSTALL_MODULE(
     MODULE "${PYMODULE_NAME}"
     LIBTARGET "${PYMODULE_NAME}_python"
 )

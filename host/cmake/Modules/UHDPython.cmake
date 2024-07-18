@@ -5,8 +5,8 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-# Note: When modifying this file, check if the changes also need to go into
-# host/examples/rfnoc-example/cmake/Modules/UHDPython.cmake.
+# Note: This file gets installed into lib/cmake/uhd, and used by RFNoC OOT
+# modules, so keep that in mind when editing this file!
 
 if (POLICY CMP0094)
   # See https://cmake.org/cmake/help/v3.15/policy/CMP0094.html
@@ -19,6 +19,10 @@ endif()
 if(NOT DEFINED INCLUDED_UHD_PYTHON_CMAKE)
 set(INCLUDED_UHD_PYTHON_CMAKE TRUE)
 
+if(NOT DEFINED UHD_PYTHON_MIN_VERSION OR NOT DEFINED UHD_PYBIND11_MIN_VERSION)
+  include(UHDMinDepVersions)
+endif()
+
 ########################################################################
 # Setup Python Part 1: Find the interpreters
 ########################################################################
@@ -30,7 +34,7 @@ if(PYTHON_EXECUTABLE)
 endif(PYTHON_EXECUTABLE)
 
 if(NOT PYTHONINTERP_FOUND)
-    find_package(Python3 ${PYTHON_MIN_VERSION} QUIET)
+    find_package(Python3 ${UHD_PYTHON_MIN_VERSION} QUIET)
     if(Python3_Interpreter_FOUND)
         set(PYTHON_VERSION ${Python3_VERSION})
         set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE})
@@ -39,7 +43,7 @@ if(NOT PYTHONINTERP_FOUND)
 endif(NOT PYTHONINTERP_FOUND)
 
 if(NOT PYTHONINTERP_FOUND)
-    find_package(PythonInterp ${PYTHON_MIN_VERSION} QUIET)
+    find_package(PythonInterp ${UHD_PYTHON_MIN_VERSION} QUIET)
     if(PYTHONINTERP_FOUND)
         set(PYTHON_VERSION ${PYTHON_VERSION_STRING})
     endif(PYTHONINTERP_FOUND)
@@ -85,11 +89,11 @@ message(STATUS "Override with: -DPYTHON_EXECUTABLE=<path-to-python>")
 if(NOT RUNTIME_PYTHON_EXECUTABLE)
     if(CMAKE_CROSSCOMPILING)
         message(STATUS "Cross compiling, setting python runtime to /usr/bin/python3")
-        message(STATUS "and interpreter to min. required version ${PYTHON_MIN_VERSION}")
+        message(STATUS "and interpreter to min. required version ${UHD_PYTHON_MIN_VERSION}")
         message(STATUS "If this is not what you want, please set RUNTIME_PYTHON_EXECUTABLE")
         message(STATUS "and RUNTIME_PYTHON_VERSION manually")
         set(RUNTIME_PYTHON_EXECUTABLE "/usr/bin/python3")
-        set(RUNTIME_PYTHON_VERSION ${PYTHON_MIN_VERSION})
+        set(RUNTIME_PYTHON_VERSION ${UHD_PYTHON_MIN_VERSION})
         set(EXACT_ARGUMENT "")
     else(CMAKE_CROSSCOMPILING)
         #default to the buildtime interpreter
@@ -138,7 +142,7 @@ message(STATUS "Override with: -DRUNTIME_PYTHON_EXECUTABLE=<path-to-python>")
 # - have_ver:
 #    The variable name to be set to TRUE if the Python expression returns True,
 #    or FALSE otherwise
-macro(PYTHON_CHECK_MODULE desc module bool_expr have_var)
+macro(UHD_PYTHON_CHECK_MODULE desc module bool_expr have_var)
     message(STATUS "")
     message(STATUS "Python checking for ${desc}")
     execute_process(
@@ -169,7 +173,7 @@ exit(0)
         message(STATUS "Python checking for ${desc} - unknown error")
         set(${have_var} FALSE)
     endif()
-endmacro(PYTHON_CHECK_MODULE)
+endmacro()
 
 
 ###############################################################################
@@ -190,7 +194,7 @@ endmacro(PYTHON_CHECK_MODULE)
 # - have_ver:
 #    The variable name to be set to TRUE if the module is present and meets
 #    the minimum version requirement or FALSE otherwise
-macro(PYTHON_CHECK_MODULE_VERSION desc module module_version_expr min_module_version have_var)
+macro(UHD_PYTHON_CHECK_MODULE_VERSION desc module module_version_expr min_module_version have_var)
     message(STATUS "")
     message(STATUS "Python checking for ${desc}")
     execute_process(
@@ -229,7 +233,7 @@ exit(0)
         message(STATUS "Python checking for ${desc} - unknown error")
         set(${have_var} FALSE)
     endif()
-endmacro(PYTHON_CHECK_MODULE_VERSION)
+endmacro()
 
 
 ###############################################################################
@@ -239,7 +243,7 @@ endmacro(PYTHON_CHECK_MODULE_VERSION)
 #              If so, state its name here. It will update RPATH on Linux/Unix
 #              systems.
 # - MODULE: Name of module (e.g., 'uhd')
-macro(PYTHON_INSTALL_MODULE)
+macro(UHD_PYTHON_INSTALL_MODULE)
     cmake_parse_arguments(
         _py_install_mod
         "" "LIBTARGET;MODULE" ""
@@ -248,7 +252,7 @@ macro(PYTHON_INSTALL_MODULE)
 
     # Check if we're in a virtual environment -- the rules are a bit different
     # there.
-    PYTHON_CHECK_MODULE(
+    UHD_PYTHON_CHECK_MODULE(
         "virtual environment"
         "sys"
         "sys.prefix != sys.base_prefix"
@@ -301,7 +305,7 @@ macro(PYTHON_INSTALL_MODULE)
             )
         endif()
     endif(HAVE_PYTHON_VIRTUALENV)
-endmacro(PYTHON_INSTALL_MODULE)
+endmacro()
 
 ###############################################################################
 # Part 2: Python Libraries
@@ -367,9 +371,9 @@ endif(NOT PYTHON_INCLUDE_DIR)
 # When we switch to CMake 3.12, we can probably simplify this by calling
 # find_package(Python ...) above.
 ########################################################################
-function(FIND_PYBIND11)
+function(UHD_FIND_PYBIND11)
   set(PYBIND11_FINDPYTHON ON)
-  find_package(pybind11 ${PYBIND11_MIN_VERSION} QUIET)
+  find_package(pybind11 ${UHD_PYBIND11_MIN_VERSION} QUIET)
   if(DEFINED pybind11_INCLUDE_DIR)
     set(pybind11_INCLUDE_DIR ${pybind11_INCLUDE_DIR} PARENT_SCOPE)
     set(pybind11_INCLUDE_DIRS ${pybind11_INCLUDE_DIRS} PARENT_SCOPE)
@@ -380,6 +384,6 @@ function(FIND_PYBIND11)
   endif()
 endfunction()
 
-FIND_PYBIND11()
+UHD_FIND_PYBIND11()
 
 endif(NOT DEFINED INCLUDED_UHD_PYTHON_CMAKE)

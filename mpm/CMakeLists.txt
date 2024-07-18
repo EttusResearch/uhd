@@ -35,7 +35,7 @@ include(UHDPython)
 ########################################################################
 # Find Python Modules
 ########################################################################
-PYTHON_CHECK_MODULE_VERSION(
+UHD_PYTHON_CHECK_MODULE_VERSION(
     "Mako templates"
     "mako"
     "mako.__version__"
