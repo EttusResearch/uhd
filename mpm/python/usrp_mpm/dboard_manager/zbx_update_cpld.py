@@ -160,6 +160,7 @@ def get_cpld_update_strategies(rev):
         3: cpld_image_10m04_update_strategies, # revC
         4: cpld_image_xo3lf_update_strategies, # revD
         5: cpld_image_xo3lf_update_strategies, # revE
+        6: cpld_image_10m04_update_strategies, # revF
         '10m04': cpld_image_10m04_update_strategies, # 10m04
         'xo3lf': cpld_image_xo3lf_update_strategies # xo3lf
     }
