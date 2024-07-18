@@ -1,0 +1,107 @@
+#
+# Copyright 2024 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+help: |
+  Add a new block to an RFNoC OOT module based on a descriptor file.
+
+  Note: Must be called from within a valid RFNoC OOT module directory. Use -C to
+  specify the module directory if necessary.
+
+# These get turned into command line arguments for this command. May not contain
+# variable references (they get evaluated later).
+args:
+  blockname:
+    name_or_flags: blockname
+    type: str
+    help: Name of the new block to add to the module
+  yaml_descriptor:
+    name_or_flags: ["-y", "--yaml-descriptor"]
+    type: str
+    metavar: YAML_FILE
+    help: >
+      Path to the YAML descriptor file for the new block. Defaults to rfnoc/blocks/<blockname>.yml.
+      If this file does not exist, the command will fail with an error.
+  copyright_holder:
+    name_or_flags: "--copyright-holder"
+    default: "<author>"
+  license:
+    name_or_flags: "--license"
+    default: "SPDX-License-Identifier: GPL-3.0-or-later"
+  skip_testbench:
+    name_or_flags: "--skip-testbench"
+    action: store_true
+    help: Skip generating the testbench for the new block
+
+# Note: Variables get resolved in order, that means later vars can reference earlier ones
+variables:
+  # Type is block or transport_adapter (latter not yet implemented)
+  type: block
+  type_d: blocks
+  blockname: "${ args.blockname }"
+  descriptor: "${ args.yaml_descriptor if args.yaml_descriptor else 'rfnoc/' + type_d + '/' + args.blockname + '.yml' }"
+  blockname_full: "${ f'rfnoc_{type}_{blockname}' }"
+  copyright_holder: "${ args.copyright_holder }"
+  license: "${ args.license }"
+
+
+# Steps:
+# - Create controller C++
+# - Create Python bindings
+
+
+# This tells us that templates come from the blocktool/ subdirectory
+template_namespace: blocktool
+
+steps:
+  - parse_descriptor:
+      source: "${ descriptor }"
+  # RFNoC block gateware
+  - write_template:
+      template: noc_shell_template.sv.mako
+      dest: "fpga/${ MODULE_NAME }/${ blockname_full }/noc_shell_${ blockname }.sv"
+  - write_template:
+      template: rfnoc_block_template.sv.mako
+      dest: "fpga/${ MODULE_NAME }/${ blockname_full }/${ blockname_full }.sv"
+  - write_template:
+      template: Makefile.srcs.mako
+      dest: "fpga/${ MODULE_NAME }/${ blockname_full }/Makefile.srcs"
+  # RFNoC block testbench
+  - run_if:
+      condition: "${ not args.skip_testbench }"
+      steps:
+      - write_template:
+          template: rfnoc_block_template_tb.sv.mako
+          dest: "fpga/${ MODULE_NAME }/${ blockname_full }/${ blockname_full }_tb.sv"
+      - write_template:
+          template: Makefile.mako
+          dest: "fpga/${ MODULE_NAME }/${ blockname_full }/Makefile"
+  # RFNoC block C++ controller
+  - write_template:
+      template: template_block_control.hpp.mako
+      dest: "include/rfnoc/${ MODULE_NAME }/${ blockname }_block_control.hpp"
+  - write_template:
+      template: template_block_control.cpp.mako
+      dest: "lib/${ blockname }_block_control.cpp"
+  - insert_after:
+      file: "include/rfnoc/${ MODULE_NAME }/CMakeLists.txt"
+      pattern: "install.*FILES"
+      text: "\n    ${ blockname }_block_control.hpp"
+  - insert_after:
+      file: "lib/CMakeLists.txt"
+      pattern: "APPEND *rfnoc_${ MODULE_NAME }_sources"
+      text: "\n    ${ blockname }_block_control.cpp"
+  # RFNoC block Python bindings
+  - write_template:
+      template: template_block_control_python.hpp.mako
+      dest: "python/${ blockname }_block_control_python.hpp"
+  - insert_after:
+      file: "python/pyrfnoc-${ MODULE_NAME}.cpp"
+      pattern: "PYBIND11_MODULE[^}]*"
+      text: "    export_${ blockname }_block_control(m);\n"
+  - insert_before:
+      file: "python/pyrfnoc-${ MODULE_NAME}.cpp"
+      pattern: "\nPYBIND11_MODULE"
+      text: '#include "${ blockname }_block_control_python.hpp"\n'

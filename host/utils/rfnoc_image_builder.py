@@ -1,20 +1,7 @@
 #!/usr/bin/env python3
 """RFNoC Image Builder: Create RFNoC FPGA bitfiles from YAML input.
 
-Copyright 2019 Ettus Research, A National Instrument Brand
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+SPDX-License-Identifier: GPL-3.0-or-later
 """
 
 import argparse
@@ -24,63 +11,7 @@ import os
 import re
 import sys
 
-import yaml
-from uhd.rfnoc_utils import grc, image_builder, yaml_utils
-
-
-class ColorFormatter(logging.Formatter):
-    """Logging Formatter to add colors and icons."""
-
-    RESET = 0
-    BOLD = 1
-    DIM = 2
-    GREY = "38;20"
-    BLACK = "30;20"
-    YELLOW = "33;20"
-    RED = "31;20"
-    BRIGHTRED = 91
-    BRIGHT = 99
-
-    def c(colors): # noqa -- should be staticmethod but that requires Python 3.10
-        """Format escape sequence from list of colors."""
-        return f"\x1b[{';'.join(str(c) for c in colors)}m"
-
-    debug_color = c([DIM])
-    info_color = c([BRIGHT, BOLD])
-    warning_color = c([YELLOW])
-    error_color = c([BRIGHTRED])
-    crit_color = c([RED, BOLD])
-    reset = c([RESET])
-
-    FORMATS = {
-        logging.DEBUG: debug_color + "[debug] %(message)s" + reset,
-        logging.INFO: info_color + "%(message)s" + reset,
-        logging.WARNING: warning_color + "⚠   %(message)s" + reset,
-        logging.ERROR: error_color + "⛔   %(message)s" + reset,
-        logging.CRITICAL: crit_color + "⛔   %(message)s" + reset,
-    }
-
-    def format(self, record):
-        """Format a record the way we like it."""
-        log_fmt = self.FORMATS.get(record.levelno)
-        return logging.Formatter(log_fmt).format(record)
-
-class SimpleFormatter(logging.Formatter):
-    """Logging Formatter for non-interactive shells."""
-
-    FORMATS = {
-        logging.DEBUG: "[debug] %(message)s",
-        logging.INFO: "%(message)s",
-        logging.WARNING: "[warning] %(message)s",
-        logging.ERROR: "[error] %(message)s",
-        logging.CRITICAL: "[critical] %(message)s",
-    }
-
-    def format(self, record):
-        """Format a record the way we like it."""
-        log_fmt = self.FORMATS.get(record.levelno)
-        return logging.Formatter(log_fmt).format(record)
-
+from uhd.rfnoc_utils import grc, image_builder, log as rfnoc_log, yaml_utils
 
 
 def setup_parser():
@@ -238,7 +169,8 @@ def setup_parser():
         choices=("never", "auto", "always"),
         default="auto",
         help="Enable colorful output. When set to 'auto' will only show color "
-             "output in TTY environments (e.g., interactive shells)")
+        "output in TTY environments (e.g., interactive shells)",
+    )
 
     return parser
 
@@ -262,6 +194,9 @@ def image_config(args):
         if image_core_name is None:
             image_core_name = os.path.splitext(os.path.basename(args.yaml_config))[0]
         return config, args.yaml_config, device, image_core_name, target
+    # FIXME replace with ruamel.yaml
+    import yaml
+
     with open(args.grc_config, encoding="utf-8") as grc_file:
         config = yaml.load(grc_file)
         logging.info("Converting GNU Radio Companion file to image builder format")
@@ -342,16 +277,7 @@ def main():
     :return: exit code
     """
     args = setup_parser().parse_args()
-    use_color = (args.color == "always") or \
-                (args.color == "auto" and sys.__stdout__.isatty() and sys.__stderr__.isatty())
-    handler = logging.StreamHandler()
-    handler.setFormatter(ColorFormatter() if use_color else SimpleFormatter())
-    logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
-    logger.addHandler(handler)
-
-    if args.log_level is not None:
-        logging.root.setLevel(args.log_level.upper())
+    rfnoc_log.init_logging(args.color, args.log_level)
 
     config, source, device, image_core_name, target = image_config(args)
     source_hash = hashlib.sha256()

@@ -121,6 +121,7 @@ set(man_page_sources
     uhd_usrp_probe.1
     usrp_n2xx_simple_net_burner.1
     usrp2_card_burner.1
+    rfnoc_modtool.1
 )
 
 if (ENABLE_PYTHON_API)

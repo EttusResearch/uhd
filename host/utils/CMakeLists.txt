@@ -23,6 +23,47 @@ if(ENABLE_PYMOD_UTILS OR ENABLE_UTILS)
         COMPONENT utilities
     )
 
+    ### RFNoC modtool. Note this also requires the RFNoC gain OOT.
+    configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/rfnoc_modtool.py"
+        "${CMAKE_CURRENT_BINARY_DIR}/rfnoc_modtool"
+    )
+    UHD_INSTALL(PROGRAMS
+        ${CMAKE_CURRENT_BINARY_DIR}/rfnoc_modtool
+        RENAME rfnoc_modtool
+        DESTINATION ${RUNTIME_DIR}
+        COMPONENT utilities
+    )
+
+    file(GLOB_RECURSE RFNOC_GAIN_OOT_FILES
+        ${CMAKE_CURRENT_SOURCE_DIR}/../examples/rfnoc-gain/apps/CMakeLists.txt
+        ${CMAKE_CURRENT_SOURCE_DIR}/../examples/rfnoc-gain/cmake/*
+        ${CMAKE_CURRENT_SOURCE_DIR}/../examples/rfnoc-gain/CMakeLists.txt
+        ${CMAKE_CURRENT_SOURCE_DIR}/../examples/rfnoc-gain/examples/CMakeLists.txt
+        ${CMAKE_CURRENT_SOURCE_DIR}/../examples/rfnoc-gain/fpga/gain/CMakeLists.txt
+        ${CMAKE_CURRENT_SOURCE_DIR}/../examples/rfnoc-gain/include/rfnoc/gain/CMakeLists.txt
+        ${CMAKE_CURRENT_SOURCE_DIR}/../examples/rfnoc-gain/lib/CMakeLists.txt
+        ${CMAKE_CURRENT_SOURCE_DIR}/../examples/rfnoc-gain/python/*
+        ${CMAKE_CURRENT_SOURCE_DIR}/../examples/rfnoc-gain/README.md
+        ${CMAKE_CURRENT_SOURCE_DIR}/../examples/rfnoc-gain/rfnoc/CMakeLists.txt
+        ${CMAKE_CURRENT_SOURCE_DIR}/../examples/rfnoc-gain/rfnoc/blocks/CMakeLists.txt
+        )
+
+    add_custom_target(
+        rfnoc_newmod ALL
+        DEPENDS ${RFNOC_GAIN_OOT_FILES}
+        COMMAND
+        "${PYTHON_EXECUTABLE}" "${UHD_SOURCE_DIR}/cmake/Modules/copy_rfnoc_newmod.py"
+        "--source" "${CMAKE_CURRENT_SOURCE_DIR}/../examples/rfnoc-gain"
+        "--dest" "${CMAKE_CURRENT_BINARY_DIR}/rfnoc-newmod"
+        "--module-dir" "${CMAKE_CURRENT_SOURCE_DIR}/../python/uhd"
+        COMMENT "Generating rfnoc-newmod"
+    )
+    install(DIRECTORY
+        ${CMAKE_CURRENT_BINARY_DIR}/rfnoc-newmod
+        DESTINATION ${PKG_DATA_DIR}
+        COMPONENT utilities)
+
     ### UHD Images downloader
     # Configure the scripts
     file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../../images/manifest.txt CMAKE_MANIFEST_CONTENTS)

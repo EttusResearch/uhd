@@ -42,6 +42,7 @@ if(NOT ENABLE_PYTHON_API AND ENABLE_PYMOD_UTILS)
         ${CMAKE_CURRENT_SOURCE_DIR}/uhd/dsp/*.py
         ${CMAKE_CURRENT_SOURCE_DIR}/uhd/rfnoc_utils/*.py
         ${CMAKE_CURRENT_SOURCE_DIR}/uhd/rfnoc_utils/*.mako
+        ${CMAKE_CURRENT_SOURCE_DIR}/uhd/rfnoc_utils/*.yml
     )
     # This copies the contents of host/python/uhd into the build directory. We will
     # use that as a staging ground for installing the final module to the system.
@@ -133,6 +134,8 @@ add_custom_command(TARGET pyuhd
 # dependency list until CMake is re-run.
 file(GLOB_RECURSE PYUHD_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/uhd/*.py
+    ${CMAKE_CURRENT_SOURCE_DIR}/uhd/*.mako
+    ${CMAKE_CURRENT_SOURCE_DIR}/uhd/*.yml
 )
 
 if(ENABLE_SIM)

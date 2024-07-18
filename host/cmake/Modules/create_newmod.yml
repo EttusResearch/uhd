@@ -1,0 +1,109 @@
+steps:
+- rmtree:
+    dir: "${ DEST_DIR }"
+- chdir:
+    dir: "${ SOURCE_DIR }"
+- copy_dir:
+    src: "${ SOURCE_DIR }"
+    dst: "${ DEST_DIR }"
+    ignore_globs:
+    - "*.hpp"
+    - "apps/*.cpp"
+    - "build"
+    - "examples/*.py"
+    - "fpga/gain/ip"
+    - "fpga/gain/rfnoc_block_gain"
+    - "icores/*.yml"
+    - "lib/*.cpp"
+    - "gr-*"
+    - "rfnoc/**/*.yml"
+    - "rfnoc/dts"
+    - "xsim_proj"
+    - "modelsim_proj"
+- chdir:
+    dir: "${ DEST_DIR }"
+- multi_rename:
+    glob: "**/*gain*"
+    pattern: gain
+    repl: newmod
+- comment_out:
+    file: apps/CMakeLists.txt
+    range: [7, -1]
+    character: "#"
+- insert_after:
+    file: apps/CMakeLists.txt
+    pattern: "or-later..."
+    text: "\n# Edit this to add your own apps!\n"
+- search_and_replace:
+    file: examples/CMakeLists.txt
+    pattern: "^    .+py$"
+    repl: "    # Insert your example sources here if you want them to be installed"
+- comment_out:
+    file: fpga/newmod/CMakeLists.txt
+    range: [9, 13]
+- search_and_replace:
+    file: fpga/newmod/CMakeLists.txt
+    pattern: "add_subdirectory\\(([a-z0-9_]+)\\)"
+    repl: "#add_subdirectory(rfnoc_block_myblock)"
+- insert_before:
+    file: fpga/newmod/CMakeLists.txt
+    pattern: "# IP gets"
+    text: "# Uncomment the following lines to add your own IP:\n"
+- search_and_replace:
+    file: icores/CMakeLists.txt
+    pattern: "RFNOC_REGISTER.*$"
+    repl: "# Add one line for every image core here:\n#RFNOC_REGISTER_BLOCK(SRC my_image_core)"
+- search_and_replace:
+    file: include/rfnoc/newmod/CMakeLists.txt
+    pattern: "gain_block_control.hpp"
+    repl: "#my_block_control.hpp"
+- search_and_replace:
+    file: lib/CMakeLists.txt
+    pattern: "gain_block_control.cpp"
+    repl: "#my_block_control.cpp"
+- search_and_replace:
+    file: python/rfnoc_newmod/__init__.py
+    pattern: "GainBlockControl.*$"
+    repl: "#MyBlockControl = lib.my_block_control"
+- search_and_replace:
+    file: python/pyrfnoc-newmod.cpp
+    pattern: '#include "gain_block_control_python.hpp"\n'
+    repl: ""
+- search_and_replace:
+    file: python/pyrfnoc-newmod.cpp
+    pattern: "export_gain_block_control\\(m\\);\n"
+    repl: ""
+- search_and_replace:
+    file: README.md
+    pattern: ".*(?=## Directory Structure)"
+    repl: |
+      # RFNoC Out-of-Tree Module
+
+      This is a template for creating an RFNoC out-of-tree module. It is based on the
+      rfnoc-gain example that ships with UHD.
+
+      We recommend sticking to this directory structure and file layout.\n
+    count: 1
+- search_and_replace:
+    file: rfnoc/CMakeLists.txt
+    pattern: "add_subdirectory\\(dts\\)"
+    repl: "#add_subdirectory(dts)"
+- search_and_replace:
+    files:
+    - CMakeLists.txt
+    - apps/CMakeLists.txt
+    - examples/CMakeLists.txt
+    - python/rfnoc_newmod/__init__.py
+    - python/CMakeLists.txt
+    pattern: r"rfnoc(.)gain"
+    repl: r"rfnoc\1newmod"
+- search_and_replace:
+    files:
+    - CMakeLists.txt
+    - include/rfnoc/newmod/CMakeLists.txt
+    - lib/CMakeLists.txt
+    - python/pyrfnoc-newmod.cpp
+    - python/setup.py.in
+    - README.md
+    pattern: "gain"
+    repl: "newmod"

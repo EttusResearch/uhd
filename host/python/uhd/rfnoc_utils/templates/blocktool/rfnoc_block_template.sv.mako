@@ -3,9 +3,9 @@ import math
 %>\
 <%namespace name="func" file="/functions.mako"/>\
 //
-// Copyright ${year} Ettus Research, a National Instruments Brand
+// Copyright ${year} ${copyright_holder}
 //
-// SPDX-License-Identifier: LGPL-3.0-or-later
+// ${license}
 //
 // Module: rfnoc_block_${config['module_name']}
 //

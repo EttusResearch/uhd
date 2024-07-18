@@ -26,9 +26,10 @@ include $(BASE_DIR)/../lib/rfnoc/utils/Makefile.srcs
 include Makefile.srcs
 
 DESIGN_SRCS += $(abspath ${"\\"}
+$(RFNOC_SRCS)      ${"\\"}
 $(RFNOC_CORE_SRCS) ${"\\"}
 $(RFNOC_UTIL_SRCS) ${"\\"}
-$(RFNOC_OOT_SRCS)  ${"\\"}
+$(${ blockname_full.upper() }_SRCS)  ${"\\"}
 )
 
 #-------------------------------------------------

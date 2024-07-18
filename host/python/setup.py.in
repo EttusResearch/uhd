@@ -1,38 +1,50 @@
 #!/usr/bin/env python3
-#
-#  Copyright 2017-2018 Ettus Research, a National Instruments Company
-#
-#  SPDX-License-Identifier: GPL-3.0-or-later
-#
-"""Setup file for uhd module"""
+"""Setup file for uhd module.
 
-from setuptools import setup, find_packages
+Copyright 2017-2018 Ettus Research, a National Instruments Company
 
-packages = find_packages() + ['uhd.rfnoc_utils.templates', 'uhd.rfnoc_utils.templates.modules']
+SPDX-License-Identifier: GPL-3.0-or-later
+"""
+
+from setuptools import find_packages, setup
+
+packages = find_packages() + [
+    "uhd.rfnoc_utils.templates",
+    "uhd.rfnoc_utils.templates.modules",
+    "uhd.rfnoc_utils.modtool_commands",
+]
 
 print("Including packages in pyuhd:", packages)
 
-setup(name='uhd',
-      version='${UHD_VERSION_MAJOR}.${UHD_VERSION_API}.${UHD_VERSION_ABI}',
-      description='Universal Software Radio Peripheral (USRP) Hardware Driver Python API',
-      classifiers=[
-          'Development Status :: 4 - Beta',
-          'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
-          'Programming Language :: C++',
-          'Programming Language :: Python',
-          'Topic :: System :: Hardware :: Hardware Drivers',
-      ],
-      keywords='SDR UHD USRP',
-      author='Ettus Research',
-      author_email='packages@ettus.com',
-      url='https://www.ettus.com/',
-      license='GPLv3',
-      package_dir={'': r'${NATIVE_CURRENT_BINARY_DIR}'},
-      package_data={
-          'uhd': ['*.so'],
-          'uhd.rfnoc_utils.templates': ['*.mako'],
-          'uhd.rfnoc_utils.templates.modules': ['*.mako'],
-      },
-      zip_safe=False,
-      packages=packages,
-      install_requires=['numpy'])
+setup(
+    name="uhd",
+    version="${UHD_VERSION_MAJOR}.${UHD_VERSION_API}.${UHD_VERSION_ABI}",
+    description="Universal Software Radio Peripheral (USRP) Hardware Driver Python API",
+    classifiers=[
+        "Development Status :: 4 - Beta",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+        "Programming Language :: C++",
+        "Programming Language :: Python",
+        "Topic :: System :: Hardware :: Hardware Drivers",
+    ],
+    keywords="SDR UHD USRP",
+    author="Ettus Research",
+    author_email="packages@ettus.com",
+    url="https://www.ettus.com/",
+    license="GPLv3",
+    package_dir={"": r"${NATIVE_CURRENT_BINARY_DIR}"},
+    package_data={
+        "uhd": ["*.so"],
+        "uhd.rfnoc_utils.templates": ["*.mako"],
+        "uhd.rfnoc_utils.templates.modules": ["*.mako"],
+        "uhd.rfnoc_utils.modtool_commands": ["*.yml"],
+    },
+    zip_safe=False,
+    packages=packages,
+    install_requires=["numpy", "ruamel.yaml", "mako"],
+    entry_points={
+        "console_scripts": [
+            "rfnoc_modtool = uhd.rfnoc_utils.rfnoc_modtool:main",
+        ]
+    },
+)

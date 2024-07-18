@@ -1,0 +1,69 @@
+.TH "rfnoc_modtool" 1 "4.8.0" UHD "User Commands"
+.SH NAME
+rfnoc_modtool - RFNoC OOT module management tool
+
+.SH DESCRIPTION
+Create and manage RFNoC OOT modules.
+
+
+.SH SYNOPSIS
+.B  rfnoc_modtool [COMMAND] [OPTIONS]
+
+.SH COMMANDS
+Run rfnoc_modtool COMMAND --help for more information on a specific command.
+
+.IP "create"
+Create a new RFNoC OOT module.
+.IP "add"
+Add a new block to an existing RFNoC OOT module.
+
+.SH CREATING NEW MODULES
+.sp
+When running rfnoc_modtool create, a new directory will be created that contains
+the necessary files for a new RFNoC OOT module. This directory will only contain
+boilerplate code, and the user will need to add their own blocks to the module.
+
+.SH ADDING BLOCKS
+.sp
+When running rfnoc_modtool add, a new block will be added to an existing RFNoC OOT module.
+This requires previously having run rfnoc_modtool create to create the module.
+
+
+.SH EXAMPLES
+
+.SS Create a new RFNoC OOT module called "filter"
+.sp
+rfnoc_modtool create filter
+.ft
+
+.SS Add a block called "fir" to the "filter" module (this requires having create a fir.yml block descriptor file)
+.sp
+rfnoc_modtool -C ./rfnoc-filter add fir -y rfnoc-foo/rfnoc/blocks/fir.yml
+.ft
+
+.fi
+
+.SH SEE ALSO
+UHD documentation:
+.B http://files.ettus.com/manual/
+.LP
+GR-UHD documentation:
+.B http://gnuradio.org/doc/doxygen/page_uhd.html
+.LP
+Other UHD programs:
+.sp
+rfnoc_image_builder(1)
+.SH AUTHOR
+This manual page was written by Martin Braun.
+.SH COPYRIGHT
+Copyright (c) 2015-2022 Ettus Research, A National Instruments Brand
+.LP
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+.LP
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.

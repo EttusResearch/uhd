@@ -1,0 +1,45 @@
+#
+# Copyright 2024 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+# Because this is for creating a new module, we skip the step of finding a valid
+# module to operate in. This requires us to go switch directories further down.
+skip_identify_module: true
+
+help: |
+  Create a new RFNoC OOT module
+
+# These get turned into command line arguments for this command. May not contain
+# variable references (they get evaluated later).
+args:
+  module_name:
+    name_or_flags: module_name
+    type: str
+    help: Name of the new RFNoC OOT module, without the leading "rfnoc-"
+
+# These variables may be used in the steps below
+variables:
+  module_name: "${ args.module_name }"
+  module_name_full: "${ args.module_name if args.module_name.startswith('rfnoc-') else 'rfnoc-' + args.module_name }"
+
+steps:
+  - copy_dir:
+      src: "${ RFNOC_PKG_DIR }/rfnoc-newmod"
+      dst: "${ CWD }/${ module_name_full }"
+  - chdir:
+      dir: "${ CWD }/${ module_name_full }"
+  - search_and_replace:
+      glob: "**"
+      pattern: 'newmod'
+      repl: "${ module_name }"
+      quiet: true
+  - search_and_replace:
+      glob: README.md
+      pattern: "${ module_name } example that ships with"
+      repl: "gain example that ships with"
+  - multi_rename:
+      glob: "**/*newmod*"
+      pattern: 'newmod'
+      repl: "${ module_name }"
