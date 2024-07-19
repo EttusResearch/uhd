@@ -8,7 +8,7 @@
 
 from setuptools import setup, find_packages
 
-packages = find_packages() + ['uhd.imgbuilder.templates', 'uhd.imgbuilder.templates.modules']
+packages = find_packages() + ['uhd.rfnoc_utils.templates', 'uhd.rfnoc_utils.templates.modules']
 
 print("Including packages in pyuhd:", packages)
 
@@ -30,8 +30,8 @@ setup(name='uhd',
       package_dir={'': r'${NATIVE_CURRENT_BINARY_DIR}'},
       package_data={
           'uhd': ['*.so'],
-          'uhd.imgbuilder.templates': ['*.mako'],
-          'uhd.imgbuilder.templates.modules': ['*.mako'],
+          'uhd.rfnoc_utils.templates': ['*.mako'],
+          'uhd.rfnoc_utils.templates.modules': ['*.mako'],
       },
       zip_safe=False,
       packages=packages,

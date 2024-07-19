@@ -40,8 +40,8 @@ if(NOT ENABLE_PYTHON_API AND ENABLE_PYMOD_UTILS)
     # dependency list until CMake is re-run.
     file(GLOB_RECURSE PYUHD_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/uhd/dsp/*.py
-        ${CMAKE_CURRENT_SOURCE_DIR}/uhd/imgbuilder/*.py
-        ${CMAKE_CURRENT_SOURCE_DIR}/uhd/imgbuilder/*.mako
+        ${CMAKE_CURRENT_SOURCE_DIR}/uhd/rfnoc_utils/*.py
+        ${CMAKE_CURRENT_SOURCE_DIR}/uhd/rfnoc_utils/*.mako
     )
     # This copies the contents of host/python/uhd into the build directory. We will
     # use that as a staging ground for installing the final module to the system.
@@ -49,7 +49,7 @@ if(NOT ENABLE_PYTHON_API AND ENABLE_PYMOD_UTILS)
     add_custom_command(OUTPUT ${TIMESTAMP_FILE}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/uhd/
         COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/uhd/__init__.py
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/uhd/imgbuilder ${CMAKE_CURRENT_BINARY_DIR}/uhd/imgbuilder
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/uhd/rfnoc_utils ${CMAKE_CURRENT_BINARY_DIR}/uhd/rfnoc_utils
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/uhd/dsp ${CMAKE_CURRENT_BINARY_DIR}/uhd/dsp
         COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} -q build
         COMMAND ${CMAKE_COMMAND} -E touch ${TIMESTAMP_FILE}

@@ -25,7 +25,7 @@ import re
 import sys
 
 import yaml
-from uhd.imgbuilder import grc, image_builder, yaml_utils
+from uhd.rfnoc_utils import grc, image_builder, yaml_utils
 
 
 class ColorFormatter(logging.Formatter):
