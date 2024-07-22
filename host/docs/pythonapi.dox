@@ -40,18 +40,16 @@ module depends on to load correctly.
 Python 3.8
 <a href="https://docs.python.org/3/whatsnew/3.8.html#bpo-36085-whatsnew">includes
 a change</a> to the paths Windows searches when attempting to find a module's
-dependent DLLs. To ensure that Python is able to find and load the DLLs
-required to import the UHD module, it is advised that the uhd.dll and
-libusb-1.0.dll (if UHD was build with USB support) DLLs be copied to one of
-the following directories:
+dependent DLLs. The UHD python package attempts using 
+<a href="https://docs.python.org/3/library/os.html#os.add_dll_directory">os.add_dll_directory</a> 
+to add the directory for uhd.dll to the DLL search path. First, it will try based on the UHD_PKG_PATH environment 
+variable that will be created by the NSIS Windows installer, and if that fails, it will try to use a variable configured
+by CMake based on the CMAKE_INSTALL_PREFIX variable. If both fail, you will need to use
+os.add_dll_directory to add the path of uhd.dll to the DLL search path.
 
-- The `%%windows%\system32` directory
-- The directory where the Python UHD package is installed (by default, this
-  is `C:\Program Files (x86)\UHD\lib\site-packages\uhd`
-- The directory from which the Python executable is run
-- Paths added to the import extension module DLL search path via Python's
-  <a href="https://docs.python.org/3/library/os.html#os.add_dll_directory">os.add_dll_directory</a>
-  function
+If UHD was built with USB support, you will need to add the path of libusb-1.0.dll to the DLL search path
+before importing the UHD package. You can do this by copying the libusb-1.0.dll to the same directory as the uhd.dll. 
+Alternatively, you can add the DLL to the search path by using os.add_dll_directory in your python script.
 
 \subsection python_install_adv Advanced Usage Notes
 
