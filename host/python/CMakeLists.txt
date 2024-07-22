@@ -196,11 +196,17 @@ if(ENABLE_SIM)
     set(PYUHD_FILES ${PYUHD_FILES} copy_mpm_packages)
 endif(ENABLE_SIM)
 
-# This copies the contents of host/python/uhd into the build directory. We will
-# use that as a staging ground for installing the final module to the system.
+# This sets the UHD_INSTALL_PATH variable in the __init__.py file so that the UHD python module can find the UHD library.
+set(UHD_INSTALL_PATH ${CMAKE_INSTALL_PREFIX})
+set(UHD_INIT_IN "${CMAKE_CURRENT_SOURCE_DIR}/uhd/__init__.py.in")
+set(UHD_INIT "${CMAKE_CURRENT_BINARY_DIR}/uhd/__init__.py")
+configure_file(${UHD_INIT_IN} ${UHD_INIT} @ONLY)
+
+# This copies the *.py and *.mako files of host/python/uhd into the build directory. 
+# We will use that as a staging ground for installing the final module to the system.
 # We make sure that we always have an up-to-date copy in here.
 add_custom_command(OUTPUT ${TIMESTAMP_FILE}
-  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/uhd ${CMAKE_CURRENT_BINARY_DIR}/uhd
+  COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}" -DBINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}" -P ${CMAKE_CURRENT_SOURCE_DIR}/copy_python_module.cmake
   COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} -q build
   COMMAND ${CMAKE_COMMAND} -E touch ${TIMESTAMP_FILE}
   DEPENDS ${PYUHD_FILES})

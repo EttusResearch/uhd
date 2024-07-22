@@ -1,0 +1,35 @@
+#
+# Copyright 2017-2018 Ettus Research, a National Instruments Company
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+"""UHD Python API module."""
+
+import os
+
+# As of python3.8, python stopped using PATH to search for DLLs on Windows, and
+# required the use of os.add_dll_directory to add paths to the DLL search.
+if os.name == "nt" and hasattr(os, "add_dll_directory"):
+    # The UHD_PKG_PATH will be set if UHD was installed with a UHD NSIS installer, use this path to
+    # find the uhd.dll and add it to the DLL search.
+    uhd_pkg_dir = os.environ.get("UHD_PKG_PATH")
+    if uhd_pkg_dir is not None and os.path.exists(os.path.join(uhd_pkg_dir, "bin", "uhd.dll")):
+        os.add_dll_directory(os.path.join(uhd_pkg_dir, "bin"))
+    else:
+        # If UHD_PKG_PATH is not set, the UHD may have been built and installed from source.
+        # CMake will generate the UHD_INSTALL_PATH variable in the config_vars.py file using the
+        # CMAKE_INSTALL_PREFIX, try to find the uhd.dll with this path.
+        UHD_INSTALL_PATH = "@UHD_INSTALL_PATH@"
+        if os.path.exists(os.path.join(UHD_INSTALL_PATH, "bin", "uhd.dll")):
+            os.add_dll_directory(os.path.join(UHD_INSTALL_PATH, "bin"))
+        else:
+            print(
+                "Failed to add uhd.dll path to DLL search, module may not import properly, use os.add_dll_directory to add the correct path manually."
+            )
+
+from . import chdr, dsp, filters, rfnoc, types, usrp, usrpctl
+from .libpyuhd import find, get_abi_string, get_component, get_version_string
+from .libpyuhd.paths import *  # noqa: F403
+from .property_tree import PropertyTree
+
+__version__ = get_version_string()
