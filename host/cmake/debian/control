@@ -44,7 +44,8 @@ Depends: libuhd4.9.0 (= ${binary:Version}),
          ${misc:Depends},
          ${shlibs:Depends}
 Recommends: curl, procps
-Suggests: gnuradio
+Suggests: gnuradio,
+          uhd-rfnoc-dev (= ${binary:Version})
 Description: hardware driver for Ettus Research products - host apps
  Host utilities for the USRP Hardware Driver for Ettus Research products.
  .
@@ -76,7 +77,7 @@ Package: libuhd-dev
 Architecture: any
 Section: libdevel
 Depends: libuhd4.9.0 (= ${binary:Version}), ${misc:Depends}, ${shlibs:Depends}
-Recommends: gnuradio-dev
+Recommends: gnuradio-dev, uhd-rfnoc-dev (= ${binary:Version})
 Suggests: uhd-doc
 Description: universal hardware driver for Ettus Research products
  Host library for the USRP Hardware Driver for Ettus Research products.
@@ -121,3 +122,17 @@ Description: universal hardware driver for Ettus Research products - doc
  Detailed documentation for the Universal Hardware Driver.
  .
  This package includes the Doxygen generated documentation.
+
+Package: uhd-rfnoc-dev
+Architecture: all
+Section: libdevel
+Depends: python3, csh, ${misc:Depends}
+Recommends: libuhd-dev (= ${binary:Version})
+Suggests: uhd-doc
+Multi-Arch: foreign
+Description: USRP hardware driver for Ettus Research products - RFNoC development
+ Gateware source files for developing with RFNoC.
+ .
+ This package contains all the HDL source files and build scripts for building
+ RFNoC bitfiles and creating new RFNoC blocks. Note that AMD/Xilinx Vivado is
+ required to build the bitfiles.

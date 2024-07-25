@@ -208,6 +208,80 @@ Copyright: Copyright (c) 2015-2017 Analog Devices Inc.
 License: AD9371-API
 Comment: Not used for uhd-host package
 
+Files: fpga/usrp3/*
+Copyright: Copyright Ettus Research, A National Instruments Brand
+License: LGPL-3+
+
+Files: fpga/usrp3/lib/control/map/cam*
+Copyright: Copyright (c) 2015-2016 Alex Forencich
+License: MIT
+
+Files: fpga/usrp3/lib/sec/sha256*
+Copyright: Copyright (c) 2013, 201, Secworks Sweden AB
+License: BSD-2-Clause
+
+Files: fpga/usrp3/lib/wb_spi/rtl/verilog/*
+Copyright: Copyright (C) 2002 Simon Srot (simons@opencores.org)
+License: LGPL-2.1+
+
+Files: fpga/usrp3/lib/vivado_ipi/axi_dmac/*
+       fpga/usrp3/lib/vivado_ipi/util_axis_fifo/*
+       fpga/usrp3/lib/vivado_ipi/util_axis_resize/*
+Copyright: Copyright (c) Analog Devices Inc.
+License: BSD-ADI
+
+Files: fpga/usrp3/lib/white_rabbit/*
+Copyright: Copyright (c) 2012-2017 CERN
+License: LGPL-2.1+
+
+Files: fpga/usrp3/lib/white_rabbit/wr_cores_v4_2/board/eeprom/*
+Copyright: Copyright Ettus Research, A National Instruments Brand
+License: LGPL-3+
+
+Files: fpga/usrp3/lib/white_rabbit/wr_cores_v4_2/ip_cores/etherbone_core/*
+Copyright: Copyright (C) GSI Helmholtz Centre for Heavy Ion Research GmbH
+License: LGPL-3+
+
+Files: fpga/usrp3/lib/white_rabbit/wr_cores_v4_2/ip_cores/general-cores/modules/common
+Copyright: Copyright (C) 2005 Geir Drange, gedra@opencores.org and OPENCORES.ORG
+License: LGPL-3+
+
+Files: fpga/usrp3/lib/white_rabbit/wr_cores_v4_2/ip_cores/general-cores/modules/genrams/common/generic_shiftreg_fifo.vhd
+Copyright: Copyright (C) 2008 Andrew Mulcock, amulcock@opencores.org and OPENCORES.ORG
+License: LGPL-2.1+
+
+
+Files: fpga/usrp3/lib/wishbone/i2c_master_bit_ctrl.v
+       fpga/usrp3/lib/wishbone/i2c_master_byte_ctrl.v
+       fpga/usrp3/lib/wishbone/i2c_master_defines.v
+       fpga/usrp3/lib/wishbone/i2c_master_top.v
+Copyright: Copyright (C) 2001 Richard Herveille richard@asics.ws
+License: 2-clause-BSD-wishbone
+
+Files: fpga/usrp3/lib/wishbone/wb1_master.v
+Copyright: Copyright (C) 2000, 2007 Johny Chi, Matt Ettus and OPENCORES.ORG
+License: LGPL-2.1+
+
+Files: fpga/usrp3/lib/xge/*
+Copyright: A. Tanguay (antanguay@opencores.org)
+License: LGPL-2.1+
+
+Files: fpga/usrp3/lib/xge/rtl/include/CRC32*
+       fpga/usrp3/lib/xge/rtl/verilog/CRC32*
+Copyright: Copyright (C) 1999-2003 Easics NV.
+License: BSD-easics
+
+Files: fpga/usrp3/lib/zpu/*
+Copyright: Copyright 2004-2008 oharboe - Øyvind Harboe - oyvind.harboe@zylin.com
+License: FreeBSD
+
+Files: fpga/usrp3/lib/zpu/zpu_bootram.v
+       fpga/usrp3/lib/zpu/zpu_top_pkg.vhd
+       fpga/usrp3/lib/zpu/zpu_wb_top.vhd
+Copyright: Copyright Ettus Research, A National Instruments Brand
+License: LGPL-3+
+
+
 License: GPL-2+
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -813,3 +887,116 @@ License: Apache-2.0
  .
  On Debian systems, the complete text of the Apache version 2.0 license
  can be found in "/usr/share/common-licenses/Apache-2.0".
+
+License: BSD-easics
+ This source file may be used and distributed without restriction
+ provided that this copyright statement is not removed from the file
+ and that any derivative work contains the original copyright notice
+ and the associated disclaimer.
+ .
+ THIS SOURCE FILE IS PROVIDED "AS IS" AND WITHOUT ANY EXPRESS
+ OR IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+
+License: FreeBSD
+ The FreeBSD license
+ .
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+ .
+ 1. Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+ 2. Redistributions in binary form must reproduce the above
+    copyright notice, this list of conditions and the following
+    disclaimer in the documentation and/or other materials
+    provided with the distribution.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE ZPU PROJECT ``AS IS'' AND ANY
+ EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+ PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ ZPU PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+License: 2-clause-BSD-wishbone
+ This source file may be used and distributed without
+ restriction provided that this copyright statement is not
+ removed from the file and that any derivative work contains
+ the original copyright notice and the associated disclaimer.
+ .
+     THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY
+ EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL THE AUTHOR
+ OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ LIABILITY, WHETHER IN  CONTRACT, STRICT LIABILITY, OR TORT
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ POSSIBILITY OF SUCH DAMAGE.
+
+License: BSD-ADI
+ Redistribution and use in source and binary forms, with or without modification,
+ are permitted provided that the following conditions are met:
+     - Redistributions of source code must retain the above copyright
+       notice, this list of conditions and the following disclaimer.
+     - Redistributions in binary form must reproduce the above copyright
+       notice, this list of conditions and the following disclaimer in
+       the documentation and/or other materials provided with the
+       distribution.
+     - Neither the name of Analog Devices, Inc. nor the names of its
+       contributors may be used to endorse or promote products derived
+       from this software without specific prior written permission.
+     - The use of this software may or may not infringe the patent rights
+       of one or more patent holders.  This license does not release you
+       from the requirement that you obtain separate licenses from these
+       patent holders to use this software.
+     - Use of the software either in source or binary form, must be run
+       on or directly connected to an Analog Devices Inc. component.
+ .
+ THIS SOFTWARE IS PROVIDED BY ANALOG DEVICES "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ INCLUDING, BUT NOT LIMITED TO, NON-INFRINGEMENT, MERCHANTABILITY AND FITNESS FOR A
+ PARTICULAR PURPOSE ARE DISCLAIMED.
+ .
+ IN NO EVENT SHALL ANALOG DEVICES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, INTELLECTUAL PROPERTY
+ RIGHTS, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
+ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+License: BSD-2-Clause
+ Redistribution and use in source and binary forms, with or
+ without modification, are permitted provided that the following
+ conditions are met:
+ .
+ 1. Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+ 2. Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
