@@ -424,7 +424,7 @@ program, use the following options:
 - `--file=<path_to_cpld_image>`
 
 By default, the `cpld-zbx-10m04.rpd` or `cpld-zbx-xo3lf.svf` file will be provided at
-`/lib/firmware/ni/*`. Note that after downloading the ZBX CPLD, you
+`/lib/firmware/ni/`. Note that after downloading the ZBX CPLD, you
 will need to completely shut down and power-cycle the device.
 
 If you are updating the image during a filesystem update, i.e., after installing
