@@ -511,10 +511,18 @@ public:
         get_tx_subtree()->create<std::string>("connection").set("QI");
         get_tx_subtree()->create<bool>("enabled").set(true); // always enabled
         get_tx_subtree()->create<bool>("use_lo_offset").set(false);
-        get_tx_subtree()->create<double>("bandwidth/value").set(bw);
         get_tx_subtree()
             ->create<meta_range_t>("bandwidth/range")
             .set(freq_range_t(bw, bw));
+        get_tx_subtree()
+            ->create<double>("bandwidth/value")
+            .set_coercer([this](const double bandwidth) {
+                return get_tx_subtree()
+                    ->access<meta_range_t>("bandwidth/range")
+                    .get()
+                    .clip(bandwidth);
+            })
+            .set(bw);
         get_tx_subtree()
             ->create<int64_t>("sync_delay")
             .add_coerced_subscriber(
@@ -563,10 +571,18 @@ public:
         get_rx_subtree()->create<std::string>("connection").set("IQ");
         get_rx_subtree()->create<bool>("enabled").set(true); // always enabled
         get_rx_subtree()->create<bool>("use_lo_offset").set(false);
-        get_rx_subtree()->create<double>("bandwidth/value").set(bw);
         get_rx_subtree()
             ->create<meta_range_t>("bandwidth/range")
             .set(freq_range_t(bw, bw));
+        get_rx_subtree()
+            ->create<double>("bandwidth/value")
+            .set_coercer([this](const double bandwidth) {
+                return get_rx_subtree()
+                    ->access<meta_range_t>("bandwidth/range")
+                    .get()
+                    .clip(bandwidth);
+            })
+            .set(bw);
         get_rx_subtree()
             ->create<int64_t>("sync_delay")
             .add_coerced_subscriber(

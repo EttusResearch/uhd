@@ -192,10 +192,18 @@ sbx_xcvr::sbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args)
 
     // Value of bw low-pass dependent on board, we want complex double-sided
     double rx_bw = ((rx_id != 0x0083) && (rx_id != 0x0085)) ? 20.0e6 : 60.0e6;
-    this->get_rx_subtree()->create<double>("bandwidth/value").set(2 * rx_bw);
     this->get_rx_subtree()
         ->create<meta_range_t>("bandwidth/range")
         .set(freq_range_t(2 * rx_bw, 2 * rx_bw));
+    this->get_rx_subtree()
+        ->create<double>("bandwidth/value")
+        .set_coercer([this](const double bandwidth) {
+            return get_rx_subtree()
+                ->access<meta_range_t>("bandwidth/range")
+                .get()
+                .clip(bandwidth);
+        })
+        .set(2 * rx_bw);
 
     ////////////////////////////////////////////////////////////////////
     // Register TX properties
@@ -249,10 +257,18 @@ sbx_xcvr::sbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args)
 
     // Value of bw low-pass dependent on board, we want complex double-sided
     double tx_bw = ((tx_id != 0x0082) && (tx_id != 0x0084)) ? 20.0e6 : 60.0e6;
-    this->get_tx_subtree()->create<double>("bandwidth/value").set(2 * tx_bw);
     this->get_tx_subtree()
         ->create<meta_range_t>("bandwidth/range")
         .set(freq_range_t(2 * tx_bw, 2 * tx_bw));
+    this->get_tx_subtree()
+        ->create<double>("bandwidth/value")
+        .set_coercer([this](const double bandwidth) {
+            return get_tx_subtree()
+                ->access<meta_range_t>("bandwidth/range")
+                .get()
+                .clip(bandwidth);
+        })
+        .set(2 * tx_bw);
 
     // enable the clocks that we need
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_TX, true);

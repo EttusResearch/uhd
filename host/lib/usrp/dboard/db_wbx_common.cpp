@@ -84,14 +84,30 @@ wbx_base::wbx_base(ctor_args_t args) : xcvr_dboard_base(args)
 
     // Value of bw low-pass dependent on board, we want complex double-sided
     double bw = (rx_id != 0x0081) ? 20.0e6 : 60.0e6;
-    this->get_rx_subtree()->create<double>("bandwidth/value").set(2 * bw);
     this->get_rx_subtree()
         ->create<meta_range_t>("bandwidth/range")
         .set(freq_range_t(2 * bw, 2 * bw));
-    this->get_tx_subtree()->create<double>("bandwidth/value").set(2 * bw);
+    this->get_rx_subtree()
+        ->create<double>("bandwidth/value")
+        .set_coercer([this](const double bandwidth) {
+            return get_rx_subtree()
+                ->access<meta_range_t>("bandwidth/range")
+                .get()
+                .clip(bandwidth);
+        })
+        .set(2 * bw);
     this->get_tx_subtree()
         ->create<meta_range_t>("bandwidth/range")
         .set(freq_range_t(2 * bw, 2 * bw));
+    this->get_tx_subtree()
+        ->create<double>("bandwidth/value")
+        .set_coercer([this](const double bandwidth) {
+            return get_tx_subtree()
+                ->access<meta_range_t>("bandwidth/range")
+                .get()
+                .clip(bandwidth);
+        })
+        .set(2 * bw);
 
     this->get_tx_subtree()->create<device_addr_t>("tune_args").set(device_addr_t());
     this->get_tx_subtree()
