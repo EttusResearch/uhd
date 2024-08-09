@@ -5,5 +5,5 @@
 #
 
 RF_FULL_SRCS = $(abspath $(addprefix $(BASE_DIR)/../top/x400/rf/full/, \
-rf_core_full.v \
+rf_core_full.sv \
 ))

@@ -55,7 +55,7 @@ endif
 # Sources
 ##################################################
 TOP_SRCS = \
-x4xx.v \
+x4xx.sv \
 x4xx_core.v \
 x4xx_core_common.v \
 x4xx_global_regs.v \
@@ -90,7 +90,8 @@ endif
 ifdef X440
 TOP_SRCS += \
 rf/100m/rf_core_100m.v \
-rf/full/rf_core_full.v \
+rf/full/rf_core_full.sv \
+rf/common/adc_iq_repacker.v \
 rf/x440/x440_rf_reset_controller.vhd \
 dboards/fbx/db_gpio_interface.v \
 dboards/fbx/ctrlport_to_i2c_sync_ctrl.v \

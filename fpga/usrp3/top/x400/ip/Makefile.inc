@@ -34,7 +34,6 @@ include $(IP_DIR)/x4xx_ps_rfdc_bd/x410_ps_rfdc_bd/Makefile.inc
 endif
 
 ifdef X440
-include $(IP_DIR)/adc_full_bd/Makefile.inc
 include $(IP_DIR)/adc_100m_bd/Makefile.inc
 include $(IP_DIR)/dac_100m_bd/Makefile.inc
 include $(IP_DIR)/ddr4_64bits_x440/Makefile.inc
@@ -76,7 +75,6 @@ endif
 
 ifdef X440
 BD_SRCS += \
-$(IP_ADC_FULL_BD_SRCS)   \
 $(IP_ADC_FULL_HDL_SRCS)  \
 $(IP_ADC_100M_BD_SRCS)   \
 $(IP_ADC_100M_HDL_SRCS)  \
@@ -128,7 +126,6 @@ endif
 
 ifdef X440
 BD_OUTPUTS += \
-$(BD_ADC_FULL_BD_OUTS) \
 $(BD_ADC_100M_BD_OUTS) \
 $(BD_DAC_100M_BD_OUTS)
 endif
