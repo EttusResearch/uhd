@@ -10,6 +10,8 @@ to install UHD from source.
 \subsection install_win_libusb LibUSBx
 
 All Windows installers are built with LibUSBx to enable USB3 support.
+LibUSBx binaries are not part of the installer and must be installed
+manually.
 
 \subsection install_win_installer Installer Packages
 
@@ -17,19 +19,47 @@ Installer packages are built from release tags of the maint branch.
 
 Please find the latest installer here: http://files.ettus.com/binaries/uhd/latest_release
 
-Older installers of all previous releases can be downloaded from: http://files.ettus.com/binaries/uhd/ (browse to the desired release).
+Older installers of all previous releases can be downloaded from:
+http://files.ettus.com/binaries/uhd/ (browse to the desired release).
 
 \subsection install_win_post Post-Install Tasks
-
-Using a USB-based device?
-
-- Download and install Windows UHD USB Drivers: http://files.ettus.com/binaries/misc/erllc_uhd_winusb_driver.zip
-- \ref transport_usb_installwin
 
 Install the MSVC Redistributable Package:
 
 - Download <a href="https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2015-2017-2019-and-2022
 ">MSVC Redistributable Package</a>
+
+\subsubsection install_libUSB Install libUSB
+
+LibUSBx binaries need to be installed on your system if they aren’t
+already present. You can download the latest version of libUSB from the
+<a href="https://github.com/libusb/libusb/releases">LibUSB GitHub releases page</a>.
+Each release includes binaries built for various platforms and compiler
+versions. It’s crucial that the LibUSB binary corresponds to the platform
+and compiler version used for the UHD binaries. This detail is indicated
+in the name of the installer executable;
+for example, uhd_4.7.0.0-release_Win64_VS2017.exe indicates it was built
+for the 64-bit Windows platform using the Visual Studio 2017 compiler suite.
+Copy all files from the path \VS20XX\MSYY\dll within the archive to the bin folder
+of the UHD installation location (by default "C:\Program Files\UHD\bin").
+VS20XX is the Visual Studio version that you find in the name of the UHD installer.
+YY is the bitness of your Windows version (32 or 64).
+
+To validate that LibUSB has been successfully installed,
+run uhd_find_devices from the bin folder of your UHD installation.
+
+If the program fails to locate the LibUSB binaries an error message is displayed.
+This can happen for the following reasons:
+
+1. You’ve copied an incorrect version.
+2. The binaries are not in a searchable location for the UHD binaries.
+3. A conflicting LibUSB binary installed on your system which is not compatible
+   is detected first.
+
+\subsubsection USB_based_device Installation of additional drivers to use USB-based USRPs
+
+- Download and install Windows UHD USB Drivers: http://files.ettus.com/binaries/misc/erllc_uhd_winusb_driver.zip
+- \ref transport_usb_installwin
 
 \subsection install_win_source Building from source
 
