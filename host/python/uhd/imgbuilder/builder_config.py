@@ -1224,9 +1224,13 @@ class ImageBuilderConfig:
                         try:
                             arg = find_include_file(arg, dtsi_include_paths)
                         except FileNotFoundError:
-                            self.log.error(
-                                "Error evaluating %s: Could not find DTS file %s!", module_name, arg
-                            )
+                            # Create log entry for all missing dts include files
+                            # except for files ending in 'version-info.dtsi',
+                            # as these are dynamically generated.
+                            if not arg.endswith('version-info.dtsi'):
+                                self.log.error(
+                                    "Error evaluating %s: Could not find DTS file %s!", module_name, arg
+                                    )
                     getattr(self, make_arg_type).append(arg)
 
         def remove_dupes(lst):
