@@ -6,6 +6,14 @@
   add:
     - fpga.usrp3.all
 
+# image builder changes
+- re: host/utils/rfnoc_image_builder.py
+  add:
+    - fpga.usrp3.all
+- re: host/python/uhd/imgbuilder
+  add:
+    - fpga.usrp3.all
+
 # Device-specific changes.
 - re: fpga/usrp3/top/x400
   add:
