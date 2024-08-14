@@ -8,10 +8,10 @@
 //  CHDR Bitfields
 // =============================================================
 //
-// The Condensed Hierarchical Datagram for RFNoC (CHDR) is 
+// The Condensed Hierarchical Datagram for RFNoC (CHDR) is
 // a protocol that defines the fundamental unit of data transfer
-// in an RFNoC network. 
-// 
+// in an RFNoC network.
+//
 // -----------------------
 //  Header
 // -----------------------
@@ -25,7 +25,7 @@
 // 47:32    seq_num    Sequence number for the packet
 // 31:16    length     Length of the datagram in bytes
 // 15:0     dst_epid   Destination Endpoint ID
-// 
+//
 // Field: Packet Type
 // -----------------------
 // 3'd0     Management
@@ -56,6 +56,17 @@ localparam [4:0] CHDR_NO_MDATA = 5'd0;
 
 // EPID
 localparam [15:0] NULL_EPID = 16'd0;
+
+// CHDR field lengths
+localparam CHDR_VC_W        = 6;
+localparam CHDR_EOB_W       = 1;
+localparam CHDR_EOV_W       = 1;
+localparam CHDR_PKT_TYPE_W  = 3;
+localparam CHDR_NUM_MDATA_W = 5;
+localparam CHDR_SEQ_NUM_W   = 16;
+localparam CHDR_LENGTH_W    = 16;
+localparam CHDR_DST_EPID_W  = 16;
+localparam CHDR_TIMESTAMP_W = 64;
 
 // CHDR Getter Functions
 //
@@ -215,7 +226,7 @@ function [63:0] chdr_update_length(
     end
     mdata_length = chdr_get_num_mdata(base_hdr) * (chdr_w/8);
     length = header_length + mdata_length + payload_length;
-    
+
     chdr_update_length = chdr_set_length(base_hdr, length);
   end
 endfunction

@@ -15,6 +15,8 @@ ctrlport.vh \
 ))
 
 RFNOC_CORE_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/rfnoc/core/, \
+rfnoc_chdr_utils_pkg.sv \
+ctrlport_pkg.sv \
 axis_ctrl_endpoint.v \
 axis_ctrl_master.v \
 axis_ctrl_slave.v \
