@@ -102,9 +102,6 @@ jobs:
             --image-core $(image_core) $TARGET_ARG $BITFILE_NAME_ARG \
             --image-core-name $IMAGE_CORE_NAME \
             --num $(max_attempts) --seed $(($(System.JobAttempt)-1)) --persistent
-        export BUILD_ARTIFACT_DIR=`ls | grep build-usrp`
-        echo "Build artifact dir: $BUILD_ARTIFACT_DIR"
-        echo "##vso[task.setvariable variable=BuildArtifactDir;isOutput=true]$BUILD_ARTIFACT_DIR"
         pip3 uninstall -y uhd
       workingDirectory: ${{ parameters.top_dir }}
       env:
@@ -117,8 +114,18 @@ jobs:
       artifact: '$(artifact_name)'
       displayName: 'Publish FPGA'
 
+    # extract build artifact directory
+    - bash: |
+        export BUILD_ARTIFACT_DIR=`ls | grep build-usrp`
+        echo "Build artifact dir: $BUILD_ARTIFACT_DIR"
+        echo "##vso[task.setvariable variable=BuildArtifactDir;isOutput=true]$BUILD_ARTIFACT_DIR"
+      workingDirectory: ${{ parameters.top_dir }}
+      displayName: 'Find Build Artifact Directory'
+      name: find_build_artifact_dir 
+      condition: and(always(), eq('${{ parameters.publish_int_files }}', true))
+
     # Publish intermediate files.
-    - publish: ${{ parameters.top_dir }}/$(build_target.BuildArtifactDir)
+    - publish: ${{ parameters.top_dir }}/$(find_build_artifact_dir.BuildArtifactDir)
       artifact: 'Build artifacts for $(image_core) (Target $(target_name), Image core name $(image_core_name),  Attempt $(System.JobAttempt))'
       condition: and(always(), eq('${{ parameters.publish_int_files }}', true))
       displayName: 'Publish Build Directory'
