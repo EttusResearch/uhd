@@ -38,6 +38,7 @@ module rfnoc_block_gain_tb #(
   localparam int    STALL_PROB      = 25;      // Default BFM stall probability
   localparam real   CHDR_CLK_PER    = 5.0;     // 200 MHz
   localparam real   CTRL_CLK_PER    = 25.0;    // 40 MHz
+  localparam real   CE_CLK_PER      = 4.0;     // 250 MHz
 
   //---------------------------------------------------------------------------
   // Clocks and Resets
@@ -45,11 +46,14 @@ module rfnoc_block_gain_tb #(
 
   bit rfnoc_chdr_clk;
   bit rfnoc_ctrl_clk;
+  bit ce_clk;
 
   sim_clock_gen #(.PERIOD(CHDR_CLK_PER), .AUTOSTART(0))
     rfnoc_chdr_clk_gen (.clk(rfnoc_chdr_clk), .rst());
   sim_clock_gen #(.PERIOD(CTRL_CLK_PER), .AUTOSTART(0))
     rfnoc_ctrl_clk_gen (.clk(rfnoc_ctrl_clk), .rst());
+  sim_clock_gen #(.PERIOD(CE_CLK_PER), .AUTOSTART(0))
+    ce_clk_gen (.clk(ce_clk), .rst());
 
   //---------------------------------------------------------------------------
   // Bus Functional Models
@@ -127,6 +131,7 @@ module rfnoc_block_gain_tb #(
   ) dut (
     .rfnoc_chdr_clk      (rfnoc_chdr_clk),
     .rfnoc_ctrl_clk      (rfnoc_ctrl_clk),
+    .ce_clk              (ce_clk),
     .rfnoc_core_config   (backend.cfg),
     .rfnoc_core_status   (backend.sts),
     .s_rfnoc_chdr_tdata  (s_rfnoc_chdr_tdata),
@@ -184,6 +189,7 @@ module rfnoc_block_gain_tb #(
     // simulating idle clock cycles.
     rfnoc_chdr_clk_gen.start();
     rfnoc_ctrl_clk_gen.start();
+    ce_clk_gen.start();
 
     //--------------------------------
     // Reset
@@ -305,6 +311,7 @@ module rfnoc_block_gain_tb #(
     // Kill the clocks to end this instance of the testbench
     rfnoc_chdr_clk_gen.kill();
     rfnoc_ctrl_clk_gen.kill();
+    ce_clk_gen.kill();
   end : tb_main
 
 endmodule : rfnoc_block_gain_tb

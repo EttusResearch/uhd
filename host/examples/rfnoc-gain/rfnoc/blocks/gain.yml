@@ -25,6 +25,8 @@ clocks:
     freq: "[]"
   - name: rfnoc_ctrl
     freq: "[]"
+  - name: ce
+    freq: "[]"
 
 control:
   fpga_iface: ctrlport
@@ -38,7 +40,7 @@ control:
 
 data:
   fpga_iface: axis_pyld_ctxt
-  clk_domain: rfnoc_chdr
+  clk_domain: ce
   inputs:
     in:
       index: 0

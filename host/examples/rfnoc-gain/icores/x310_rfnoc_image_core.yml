@@ -121,3 +121,4 @@ clk_domains:
     - { srcblk: _device_, srcport: radio, dstblk: radio1, dstport: radio }
     - { srcblk: _device_, srcport: ce,    dstblk: ddc1,   dstport: ce    }
     - { srcblk: _device_, srcport: ce,    dstblk: duc1,   dstport: ce    }
+    - { srcblk: _device_, srcport: ce,    dstblk: gain0,  dstport: ce    }

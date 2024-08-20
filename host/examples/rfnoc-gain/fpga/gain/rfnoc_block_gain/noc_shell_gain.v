@@ -1,5 +1,5 @@
 //
-// Copyright 2022 Ettus Research, a National Instruments Brand
+// Copyright 2024 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -33,10 +33,12 @@ module noc_shell_gain #(
   // RFNoC Framework Clocks
   input  wire rfnoc_chdr_clk,
   input  wire rfnoc_ctrl_clk,
+  input  wire ce_clk,
 
   // NoC Shell Generated Resets
   output wire rfnoc_chdr_rst,
   output wire rfnoc_ctrl_rst,
+  output wire ce_rst,
 
   // RFNoC Backend Interface
   input  wire [511:0]          rfnoc_core_config,
@@ -145,11 +147,27 @@ module noc_shell_gain #(
   );
 
   //---------------------------------------------------------------------------
+  //  Reset Generation
+  //---------------------------------------------------------------------------
+
+  wire ce_rst_pulse;
+
+  pulse_synchronizer #(.MODE ("POSEDGE")) pulse_synchronizer_ce (
+    .clk_a(rfnoc_chdr_clk), .rst_a(1'b0), .pulse_a (rfnoc_chdr_rst), .busy_a (),
+    .clk_b(ce_clk), .pulse_b (ce_rst_pulse)
+  );
+
+  pulse_stretch_min #(.LENGTH(32)) pulse_stretch_min_ce (
+    .clk(ce_clk), .rst(1'b0),
+    .pulse_in(ce_rst_pulse), .pulse_out(ce_rst)
+  );
+
+  //---------------------------------------------------------------------------
   //  Control Path
   //---------------------------------------------------------------------------
 
-  assign ctrlport_clk = rfnoc_chdr_clk;
-  assign ctrlport_rst = rfnoc_chdr_rst;
+  assign ctrlport_clk = ce_clk;
+  assign ctrlport_rst = ce_rst;
 
   ctrlport_endpoint #(
     .THIS_PORTID      (THIS_PORTID),
@@ -201,8 +219,8 @@ module noc_shell_gain #(
 
   genvar i;
 
-  assign axis_data_clk = rfnoc_chdr_clk;
-  assign axis_data_rst = rfnoc_chdr_rst;
+  assign axis_data_clk = ce_clk;
+  assign axis_data_rst = ce_rst;
 
   //---------------------
   // Input Data Paths
@@ -212,7 +230,7 @@ module noc_shell_gain #(
     .CHDR_W              (CHDR_W),
     .ITEM_W              (32),
     .NIPC                (1),
-    .SYNC_CLKS           (1),
+    .SYNC_CLKS           (0),
     .CONTEXT_FIFO_SIZE   ($clog2(2)),
     .PAYLOAD_FIFO_SIZE   ($clog2(2)),
     .CONTEXT_PREFETCH_EN (1)
@@ -249,7 +267,7 @@ module noc_shell_gain #(
     .CHDR_W              (CHDR_W),
     .ITEM_W              (32),
     .NIPC                (1),
-    .SYNC_CLKS           (1),
+    .SYNC_CLKS           (0),
     .CONTEXT_FIFO_SIZE   ($clog2(2)),
     .PAYLOAD_FIFO_SIZE   ($clog2(2)),
     .MTU                 (MTU),

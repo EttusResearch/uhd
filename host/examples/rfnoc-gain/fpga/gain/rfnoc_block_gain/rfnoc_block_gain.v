@@ -36,6 +36,7 @@ module rfnoc_block_gain #(
   // RFNoC Framework Clocks and Resets
   input  wire                   rfnoc_chdr_clk,
   input  wire                   rfnoc_ctrl_clk,
+  input  wire                   ce_clk,
   // RFNoC Backend Interface
   input  wire [511:0]           rfnoc_core_config,
   output wire [511:0]           rfnoc_core_status,
@@ -135,9 +136,11 @@ module rfnoc_block_gain #(
     // Clock Inputs
     .rfnoc_chdr_clk      (rfnoc_chdr_clk),
     .rfnoc_ctrl_clk      (rfnoc_ctrl_clk),
+    .ce_clk              (ce_clk),
     // Reset Outputs
     .rfnoc_chdr_rst      (),
     .rfnoc_ctrl_rst      (),
+    .ce_rst              (),
     // RFNoC Backend Interface
     .rfnoc_core_config   (rfnoc_core_config),
     .rfnoc_core_status   (rfnoc_core_status),
