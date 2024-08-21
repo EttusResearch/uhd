@@ -22,6 +22,8 @@ class UHD_API gain_block_control : public uhd::rfnoc::noc_block_base
 public:
     RFNOC_DECLARE_BLOCK(gain_block_control)
 
+    static const std::string PROP_KEY_GAIN;
+
     //! The register address of the gain value
     static const uint32_t REG_GAIN_VALUE;
 
