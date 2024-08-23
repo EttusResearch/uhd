@@ -193,7 +193,7 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
                 RFNOC_LOG_TRACE("Calling resolver for spp@" << chan);
                 const size_t max_pyld =
                     get_max_payload_size({res_source_info::OUTPUT_EDGE, chan});
-                const int max_spp = get_max_spp(max_pyld);
+                const int max_spp = get_max_spp(max_pyld - max_pyld % ais_out.get());
                 if (spp.get() > max_spp) {
                     RFNOC_LOG_DEBUG("spp value "
                                     << spp.get() << " exceeds MTU of "
