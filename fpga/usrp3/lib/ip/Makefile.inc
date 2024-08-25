@@ -8,6 +8,7 @@ include $(LIB_IP_DIR)/axi_fft/Makefile.inc
 include $(LIB_IP_DIR)/axi_hb31/Makefile.inc
 include $(LIB_IP_DIR)/axi_hb47/Makefile.inc
 include $(LIB_IP_DIR)/complex_to_magphase/Makefile.inc
+include $(LIB_IP_DIR)/complex_to_magphase_int17/Makefile.inc
 include $(LIB_IP_DIR)/complex_to_magphase_int16_int24/Makefile.inc
 include $(LIB_IP_DIR)/complex_to_magphase_int32/Makefile.inc
 include $(LIB_IP_DIR)/complex_multiplier/Makefile.inc
@@ -28,6 +29,7 @@ $(LIB_IP_AXI_FFT_SRCS) \
 $(LIB_IP_AXI_HB31_SRCS) \
 $(LIB_IP_AXI_HB47_SRCS) \
 $(LIB_IP_COMPLEX_TO_MAGPHASE_SRCS) \
+$(LIB_IP_COMPLEX_TO_MAGPHASE_INT17_SRCS) \
 $(LIB_IP_COMPLEX_TO_MAGPHASE_INT16_INT24_SRCS) \
 $(LIB_IP_COMPLEX_TO_MAGPHASE_INT32_SRCS) \
 $(LIB_IP_COMPLEX_MULTIPLIER_SRCS) \
@@ -48,6 +50,7 @@ $(LIB_IP_AXI_FFT_OUTS) \
 $(LIB_IP_AXI_HB31_OUTS) \
 $(LIB_IP_AXI_HB47_OUTS) \
 $(LIB_IP_COMPLEX_TO_MAGPHASE_OUTS) \
+$(LIB_IP_COMPLEX_TO_MAGPHASE_INT17_OUTS) \
 $(LIB_IP_COMPLEX_TO_MAGPHASE_INT16_INT24_OUTS) \
 $(LIB_IP_COMPLEX_TO_MAGPHASE_INT32_OUTS) \
 $(LIB_IP_COMPLEX_MULTIPLIER_OUTS) \
