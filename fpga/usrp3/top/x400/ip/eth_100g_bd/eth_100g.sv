@@ -101,8 +101,8 @@ module eth_100g #(
     assert (mgt_tx.DATA_WIDTH == 512) else
      $fatal(1, "mgt_rx.DATA_WIDTH must be 512");
     // $clog2(512/8)+1
-    assert (mgt_rx.USER_WIDTH == 7) else
-     $fatal(1, "mgt_rx.USER_WIDTH must be 7");
+    assert (mgt_tx.USER_WIDTH == 7) else
+     $fatal(1, "mgt_tx.USER_WIDTH must be 7");
     assert (mgt_tx.TDATA == 1) else
      $fatal(1, "mgt_tx.TDATA must be enabled");
     assert (mgt_tx.TUSER == 1) else
@@ -127,6 +127,17 @@ module eth_100g #(
   end
   // synthesis translate_on
 
+  // Add additional register to allow this path to allow placer to cover more distance on the FPGA
+  // die.
+  AxiStreamIf #(.DATA_WIDTH(mgt_tx.DATA_WIDTH), .USER_WIDTH(mgt_tx.USER_WIDTH))
+    mgt_tx_dly(mgt_clk,mgt_rst);
+  axi4s_fifo #(
+    .SIZE(1)
+  ) mgt_tx_reg (
+    .clear(1'b0),.space(),.occupied(),
+    .i(mgt_tx), .o(mgt_tx_dly)
+  );
+
   AxiStreamIf #(.DATA_WIDTH(512),.TUSER(0),.TKEEP(0))
     eth100g_tx(mgt_clk,mgt_rst);
   AxiStreamIf #(.DATA_WIDTH(512),.USER_WIDTH(7),.TKEEP(0))
@@ -136,12 +147,12 @@ module eth_100g #(
   logic mgt_tx_pause;
 
   always_comb begin
-    eth100g_tx.tdata  = mgt_tx.tdata;
+    eth100g_tx.tdata  = mgt_tx_dly.tdata;
     eth100g_tx.tuser  = 0;
-    eth100g_tx.tkeep  = mgt_tx.tkeep;
-    eth100g_tx.tvalid = mgt_tx.tvalid && !mgt_tx_pause;
-    eth100g_tx.tlast  = mgt_tx.tlast;
-    mgt_tx.tready = eth100g_tx.tready && !mgt_tx_pause;
+    eth100g_tx.tkeep  = mgt_tx_dly.tkeep;
+    eth100g_tx.tvalid = mgt_tx_dly.tvalid && !mgt_tx_pause;
+    eth100g_tx.tlast  = mgt_tx_dly.tlast;
+    mgt_tx_dly.tready = eth100g_tx.tready && !mgt_tx_pause;
   end
 
   always_comb begin
