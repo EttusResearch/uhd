@@ -172,7 +172,7 @@ stages:
 - template: ../devices/job-build-x400.yml
   parameters:
     clean_ip_build: ${{ parameters.clean_ip_build }}
-    publish_int_files: true
+    publish_int_files: ${{ parameters.publish_int_files }}
     package_and_publish_images: ${{ parameters.package_and_publish_images }}
     package_access: ${{ parameters.package_access }}
     build_x410: ${{ parameters.build_x410 }}
@@ -187,7 +187,7 @@ stages:
 - template: ../devices/job-build-x300.yml
   parameters:
     clean_ip_build: ${{ parameters.clean_ip_build }}
-    publish_int_files: true
+    publish_int_files: ${{ parameters.publish_int_files }}
     package_and_publish_images: ${{ parameters.package_and_publish_images }}
     package_access: ${{ parameters.package_access }}
     build_x3x0: ${{ parameters.build_x3x0 }}
@@ -199,7 +199,7 @@ stages:
 - template: ../devices/job-build-n3xx.yml
   parameters:
     clean_ip_build: ${{ parameters.clean_ip_build }}
-    publish_int_files: true
+    publish_int_files:  ${{ parameters.publish_int_files }}
     package_and_publish_images: ${{ parameters.package_and_publish_images }}
     package_access: ${{ parameters.package_access }}
     build_n3xx: ${{ parameters.build_n3xx }}
@@ -211,7 +211,7 @@ stages:
 - template: ../devices/job-build-e31x.yml
   parameters:
     clean_ip_build: ${{ parameters.clean_ip_build }}
-    publish_int_files: true
+    publish_int_files:  ${{ parameters.publish_int_files }}
     package_and_publish_images: ${{ parameters.package_and_publish_images }}
     package_access: ${{ parameters.package_access }}
     build_e31x: ${{ parameters.build_e31x }}
@@ -223,7 +223,7 @@ stages:
 - template: ../devices/job-build-e320.yml
   parameters:
     clean_ip_build: ${{ parameters.clean_ip_build }}
-    publish_int_files: true
+    publish_int_files:  ${{ parameters.publish_int_files }}
     package_and_publish_images: ${{ parameters.package_and_publish_images }}
     package_access: ${{ parameters.package_access }}
     build_e320: ${{ parameters.build_e32x }}
