@@ -338,7 +338,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     bool random_nsamps = false;
     std::atomic<bool> burst_timer_elapsed(false);
     size_t overrun_threshold, underrun_threshold, drop_threshold, seq_threshold;
-    size_t rx_spp, tx_spp, rx_spb, tx_spb;
+    size_t rx_spp, tx_spp, rx_spb, tx_spb, tx_align;
     double tx_delay, rx_delay, adjusted_tx_delay, adjusted_rx_delay;
     bool rx_stream_now = false;
     std::string priority;
@@ -361,6 +361,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("tx_spp", po::value<size_t>(&tx_spp), "samples/packet value for TX")
         ("rx_spb", po::value<size_t>(&rx_spb), "samples/buffer value for RX")
         ("tx_spb", po::value<size_t>(&tx_spb), "samples/buffer value for TX")
+        ("tx_sample_align", po::value<size_t>(&tx_align), "Align samples/packet (use to enforce optimal sample alignment with respect to CHDR width and radio samples per cycle)")
         ("rx_otw", po::value<std::string>(&rx_otw)->default_value("sc16"), "specify the over-the-wire sample mode for RX")
         ("tx_otw", po::value<std::string>(&tx_otw)->default_value("sc16"), "specify the over-the-wire sample mode for TX")
         ("rx_cpu", po::value<std::string>(&rx_cpu)->default_value("fc32"), "specify the host/cpu sample mode for RX")
@@ -643,6 +644,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                 size_t spp                       = max_spp;
                 if (vm.count("tx_spp")) {
                     spp = std::min(spp, tx_spp);
+                }
+                if (vm.count("tx_sample_align")) {
+                    spp = spp - (spp % tx_align);
                 }
                 size_t spb = spp;
                 if (vm.count("tx_spb")) {
