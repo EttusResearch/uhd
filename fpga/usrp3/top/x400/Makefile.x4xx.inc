@@ -106,11 +106,11 @@ constraints/timing/x410_clocks.xdc
 endif
 
 ifdef X440
-ifeq ($(RF_BW), 400)
+ifneq (,$(findstring RF_BW=400,$(RFNOC_IMAGE_CORE_DEFS)))
 MB_XDC += \
 constraints/timing/x440_clocks_400.xdc
 endif
-ifeq ($(RF_BW), 1600)
+ifneq (,$(findstring RF_BW=1600,$(RFNOC_IMAGE_CORE_DEFS)))
 MB_XDC += \
 constraints/timing/x440_clocks_1600.xdc
 endif
