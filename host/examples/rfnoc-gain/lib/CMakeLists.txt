@@ -43,6 +43,8 @@ target_link_libraries(rfnoc-gain
 set_target_properties(rfnoc-gain
     PROPERTIES DEFINE_SYMBOL "rfnoc_gain_EXPORTS")
 
+file(GENERATE OUTPUT ${CMAKE_BINARY_DIR}/lib/rfnoc-gain CONTENT "$<TARGET_FILE_NAME:rfnoc-gain>\n")
+
 ########################################################################
 # Install built library files
 ########################################################################
@@ -50,4 +52,9 @@ install(TARGETS rfnoc-gain
     LIBRARY DESTINATION lib${LIB_SUFFIX} # .so/.dylib file
     ARCHIVE DESTINATION lib${LIB_SUFFIX} # .lib file
     RUNTIME DESTINATION bin              # .dll file
+)
+install(FILES
+    ${CMAKE_BINARY_DIR}/lib/rfnoc-gain
+    DESTINATION ${MODULES_D_DIR}
+    COMPONENT libraries
 )

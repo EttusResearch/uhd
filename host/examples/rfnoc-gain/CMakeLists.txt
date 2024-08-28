@@ -28,6 +28,8 @@ set(GATEWARE_PKG_DATA_DIR ${RFNOC_PKG_DATA_DIR}/fpga/gain
     CACHE PATH "Path to install RFNoC package data")
 set(PROJECT_DATA_DIR   ${RFNOC_PKG_DATA_DIR}/gain/
     CACHE PATH "Path for this project's package data")
+set(MODULES_D_DIR   ${UHD_PKG_DATA_DIR}/modules.d/
+    CACHE PATH "Path for the UHD modules.d/ directory")
 
 if(NOT DEFINED LIB_SUFFIX AND REDHAT AND CMAKE_SYSTEM_PROCESSOR MATCHES "64$")
     set(LIB_SUFFIX 64)
