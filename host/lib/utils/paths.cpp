@@ -308,6 +308,22 @@ std::vector<fs::path> uhd::get_module_paths(void)
     return paths;
 }
 
+std::vector<fs::path> uhd::get_module_d_paths(void)
+{
+    std::vector<fs::path> paths;
+
+    std::vector<std::string> env_paths = get_env_paths("UHD_MODULE_D_PATH");
+    for (std::string& str_path : env_paths) {
+        paths.push_back(str_path);
+    }
+
+    constexpr char module_d_dir[] = "modules.d";
+    paths.push_back(fs::path(uhd::get_lib_path()) / "uhd" / module_d_dir);
+    paths.push_back(fs::path(uhd::get_pkg_path()) / "share" / "uhd" / module_d_dir);
+
+    return paths;
+}
+
 #ifdef UHD_PLATFORM_WIN32
 #    include <windows.h>
 /*!
