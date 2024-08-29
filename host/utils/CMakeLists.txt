@@ -7,9 +7,10 @@
 
 
 ########################################################################
-# First, only utilities which get installed with ENABLE_PYMOD_UTILS
+# First, only utilities which get installed with ENABLE_PYMOD_UTILS.
+# These require Mako and ruamel.yaml.
 ########################################################################
-if(ENABLE_PYMOD_UTILS OR ENABLE_UTILS)
+if(ENABLE_PYMOD_UTILS)
     ### RFNoC Image Builder
     set(CONFIG_PATH "${CMAKE_INSTALL_PREFIX}/${PKG_DATA_DIR}")
     configure_file(
@@ -63,7 +64,12 @@ if(ENABLE_PYMOD_UTILS OR ENABLE_UTILS)
         ${CMAKE_CURRENT_BINARY_DIR}/rfnoc-newmod
         DESTINATION ${PKG_DATA_DIR}
         COMPONENT utilities)
+endif(ENABLE_PYMOD_UTILS)
 
+########################################################################
+# Now, utilities which do not depend on Mako or ruamel.yaml
+########################################################################
+if(ENABLE_PYMOD_UTILS OR ENABLE_UTILS)
     ### UHD Images downloader
     # Configure the scripts
     file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../../images/manifest.txt CMAKE_MANIFEST_CONTENTS)
