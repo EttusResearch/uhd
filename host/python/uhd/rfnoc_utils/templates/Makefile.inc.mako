@@ -28,11 +28,10 @@ endif
 
 % endif
 RFNOC_IMAGE_CORE_SRCS += $(abspath ${"\\"}
-$(BUILD_DIR)/rfnoc_image_core.sv ${"\\"}
-$(RFNOC_CORE_HEADERS) ${"\\"}
 % for fpga_include in list(dict.fromkeys([inc['make_var'] for inc in config.fpga_includes if 'make_var' in inc])):
 ${fpga_include} ${"\\"}
 % endfor
+$(BUILD_DIR)/rfnoc_image_core.sv ${"\\"}
 )
 
 RFNOC_IMAGE_CORE_DEFS = ${ " ".join(config.make_defs) }
