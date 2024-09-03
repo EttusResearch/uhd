@@ -117,11 +117,10 @@ endif
 
 DB_SRCS += $(DB_COMMON_SRCS)
 
-# The XDC files must be read in a specific order, motherboard first and then daughterboard,
-# and the clocking XDC files must be before other XDC files.
-# Outside of that, all the other sources can be read in any order desired.
-DESIGN_SRCS = $(MB_CLOCKS_XDC) $(DB_CLOCKS_XDC) $(abspath $(MB_XDC)) $(DB_SRCS) \
-$(abspath $(TOP_SRCS)) $(AXI_SRCS) $(FIFO_SRCS) \
+# The XDC files must be read in a specific order, motherboard first and then
+# daughterboard, and the clocking XDC files must be before other XDC files.
+DESIGN_SRCS = $(abspath \
+$(AXI_SRCS) $(AXI4S_SV_SRCS) $(FIFO_SRCS) \
 $(CONTROL_LIB_SRCS) $(SDR_LIB_SRCS) $(SERDES_SRCS) \
 $(SIMPLE_GEMAC_SRCS) $(TIMING_SRCS) $(COREGEN_DSP_SRCS) \
 $(UDP_SRCS) $(EXTRAM_SRCS) $(WISHBONE_SRCS) \
@@ -129,11 +128,13 @@ $(XGE_SRCS) $(XGE_INTERFACE_SRCS) $(AURORA_PHY_SRCS) \
 $(TEN_GIGE_PHY_SRCS) $(ONE_GIGE_PHY_SRCS) \
 $(PACKET_PROC_SRCS) $(DSP_SRCS) $(DRAM_SRCS) \
 $(RADIO_SRCS) $(CAP_GEN_GENERIC_SRCS) $(IP_XCI_SRCS) $(BD_SRCS) \
+$(RFNOC_FRAMEWORK_SRCS) \
 $(RFNOC_SRCS) $(RFNOC_OOT_SRCS) $(LIB_IP_XCI_SRCS) $(LIB_HLS_IP_SRCS) \
 $(WHITE_RABBIT_SRCS) \
-$(RFNOC_FRAMEWORK_SRCS) \
-$(AXI4S_SV_SRCS) $(RFNOC_XPORT_SV_SRCS) \
+$(RFNOC_XPORT_SV_SRCS) \
 $(RFNOC_IMAGE_CORE_SRCS) \
+$(MB_CLOCKS_XDC) $(DB_CLOCKS_XDC) $(MB_XDC) $(DB_SRCS) $(TOP_SRCS) \
+)
 
 # Pass the image core header files required by RFNoC
 # to Vivado as Verilog definitions.

@@ -83,10 +83,7 @@ else
 DRAM_SRCS =
 endif
 
-# The XDC files must be read in a specific order, motherboard first and then daughterboard.
-# Outside of that, all the other sources can be read in any order desired.
-DESIGN_SRCS = \
-$(abspath $(TOP_SRCS)) \
+DESIGN_SRCS = $(abspath \
 $(CONTROL_LIB_SRCS) \
 $(IP_XCI_SRCS) \
 $(TEN_GIGE_PHY_SRCS) \
@@ -94,6 +91,7 @@ $(XGE_SRCS) \
 $(XGE_INTERFACE_SRCS) \
 $(PACKET_PROC_SRCS) \
 $(AXI_SRCS) \
+$(AXI4S_SV_SRCS) \
 $(FIFO_SRCS) \
 $(ONE_GIGE_PHY_SRCS) \
 $(SIMPLE_GEMAC_SRCS) \
@@ -108,12 +106,14 @@ $(LIB_IP_XCI_SRCS) \
 $(LIB_HLS_IP_SRCS) \
 $(EXTRAM_SRCS) \
 $(CAP_GEN_GENERIC_SRCS) \
+$(RFNOC_FRAMEWORK_SRCS) \
 $(RFNOC_SRCS) \
 $(RFNOC_OOT_SRCS) \
-$(RFNOC_FRAMEWORK_SRCS) \
-$(AXI4S_SV_SRCS) $(RFNOC_XPORT_SV_SRCS) \
-$(abspath $(MB_XDC)) \
-$(RFNOC_IMAGE_CORE_SRCS)
+$(RFNOC_XPORT_SV_SRCS) \
+$(RFNOC_IMAGE_CORE_SRCS) \
+$(TOP_SRCS) \
+$(MB_XDC) \
+)
 
 IMAGE_CORE_HEADER_DEF="RFNOC_IMAGE_CORE_HDR=$(BUILD_DIR)/rfnoc_image_core.vh"
 

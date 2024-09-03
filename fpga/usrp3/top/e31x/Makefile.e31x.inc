@@ -68,10 +68,7 @@ endif
 
 DRAM_SRCS = $(IP_DRAM_XCI_SRCS)
 
-# The XDC files must be read in a specific order, motherboard first and then daughterboard.
-# Outside of that, all the other sources can be read in any order desired.
-DESIGN_SRCS = \
-$(abspath $(TOP_SRCS)) \
+DESIGN_SRCS = $(abspath \
 $(CONTROL_LIB_SRCS) \
 $(IP_XCI_SRCS) \
 $(XGE_INTERFACE_SRCS) \
@@ -91,12 +88,13 @@ $(LIB_IP_XCI_SRCS) \
 $(LIB_HLS_IP_SRCS) \
 $(EXTRAM_SRCS) \
 $(CAP_GEN_GENERIC_SRCS) \
+$(RFNOC_FRAMEWORK_SRCS) \
 $(RFNOC_SRCS) \
 $(RFNOC_OOT_SRCS)\
-$(RFNOC_FRAMEWORK_SRCS) \
-$(RFNOC_BLOCK_EXAMPLE_SRCS) \
 $(RFNOC_IMAGE_CORE_SRCS) \
-$(abspath $(MB_XDC))
+$(TOP_SRCS) \
+$(MB_XDC) \
+)
 
 # Pass the image core header files required by RFNoC
 # to Vivado as Verilog definitions.
