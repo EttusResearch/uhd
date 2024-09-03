@@ -74,7 +74,21 @@ if(NOT ENABLE_SIM)
         ${UHD_SOURCE_DIR}/lib/deps/pybind11/include
     )
     target_link_libraries(pyusrp_periphs ${Boost_LIBRARIES} usrp-periphs)
-    add_custom_command(TARGET pyusrp_periphs POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/libpyusrp_periphs.so ${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm/libpyusrp_periphs.so)
+    message(STATUS "Determining on-target Python version...")
+    # The sysconfig module in the SDK provides the environment on the target.
+    # Therefore sysconfig.get_python_version() returns the Python version on the
+    # target.
+    execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "import sysconfig
+print(sysconfig.get_python_version())"
+        OUTPUT_VARIABLE UHD_PYTHON_VERSION_ON_TARGET
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    message(STATUS "On-target Python version: ${UHD_PYTHON_VERSION_ON_TARGET}")
+    # Now install the Python module from the build directory to the final destination.
+    set(UHD_PYTHON_DIR "${LIBRARY_DIR}/python${UHD_PYTHON_VERSION_ON_TARGET}/site-packages")
+    UHD_PYTHON_INSTALL_MODULE(
+        MODULE "usrp_mpm"
+        LIBTARGET pyusrp_periphs
+    )
 endif(NOT ENABLE_SIM)
 
 set(USRP_MPM_FILES "")
