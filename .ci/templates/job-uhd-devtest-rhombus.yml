@@ -120,8 +120,8 @@ jobs:
           devType: 'n3xx'
           devModel: 'n310'
           devName: rhombus-n310-0
-          devSerial: '3176DF3'
-          devHostname: 'ni-n3xx-3176df3'
+          devSerial: '3214166'
+          devHostname: 'ni-n3xx-3214166'
           devBus: 'ip'
           devAddr: '192.168.20.5'
           sfpAddrs: '192.168.10.5,192.168.20.5'
