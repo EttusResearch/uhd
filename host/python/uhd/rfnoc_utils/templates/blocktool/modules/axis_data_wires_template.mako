@@ -32,7 +32,7 @@
   ${out_wire}wire [${num_ports}-1:0]        ${ma_pre}${port_name}_axis_thas_time${term}
   ${out_wire}wire [${num_ports}*16-1:0]     ${ma_pre}${port_name}_axis_tlength${term}
   ${out_wire}wire [${num_ports}-1:0]        ${ma_pre}${port_name}_axis_teov${term}
-  ${out_wire}wire [${num_ports}-1:0]        ${ma_pre}${port_name}_axis_teob${term if (term == ";") or (idx < num_inputs - 1) or (num_outputs > 0) else ""}
+  ${out_wire}wire [${num_ports}-1:0]        ${ma_pre}${port_name}_axis_teob${term}
 %else:
   // Data Stream to User Logic: ${port_name}
   ${out_wire}wire [${port_info['item_width']}*${port_info['nipc']}-1:0]    ${ma_pre}${port_name}_axis_tdata${term}
@@ -44,7 +44,7 @@
   ${out_wire}wire               ${ma_pre}${port_name}_axis_thas_time${term}
   ${out_wire}wire [15:0]        ${ma_pre}${port_name}_axis_tlength${term}
   ${out_wire}wire               ${ma_pre}${port_name}_axis_teov${term}
-  ${out_wire}wire               ${ma_pre}${port_name}_axis_teob${term if (term == ";") or (idx < num_inputs - 1) or (num_outputs > 0) else ""}
+  ${out_wire}wire               ${ma_pre}${port_name}_axis_teob${term}
 %endif
 %endfor
 %for idx, port_name in enumerate(config['data']['outputs']):
@@ -63,7 +63,7 @@
   ${in_wire}wire [${num_ports}-1:0]        ${sl_pre}${port_name}_axis_thas_time${term}
   ${in_wire}wire [${num_ports}*16-1:0]     ${sl_pre}${port_name}_axis_tlength${term}
   ${in_wire}wire [${num_ports}-1:0]        ${sl_pre}${port_name}_axis_teov${term}
-  ${in_wire}wire [${num_ports}-1:0]        ${sl_pre}${port_name}_axis_teob${term if (term == ";") or (idx < num_inputs - 1) else ""}
+  ${in_wire}wire [${num_ports}-1:0]        ${sl_pre}${port_name}_axis_teob${term}
 %else:
   // Data Stream from User Logic: ${port_name}
   ${in_wire}wire [${port_info['item_width']}*${port_info['nipc']}-1:0]    ${sl_pre}${port_name}_axis_tdata${term}
@@ -75,6 +75,6 @@
   ${in_wire}wire               ${sl_pre}${port_name}_axis_thas_time${term}
   ${in_wire}wire [15:0]        ${sl_pre}${port_name}_axis_tlength${term}
   ${in_wire}wire               ${sl_pre}${port_name}_axis_teov${term}
-  ${in_wire}wire               ${sl_pre}${port_name}_axis_teob${term if (term == ";") or (idx < num_outputs - 1) else ""}
+  ${in_wire}wire               ${sl_pre}${port_name}_axis_teob${term}
 %endif
 %endfor
