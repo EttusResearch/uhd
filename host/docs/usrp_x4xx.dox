@@ -722,10 +722,10 @@ the boot loader knows to permanently boot into this partition:
 
     $ mender commit
 
-To identify the currently installed Mender artifact from the command line, the
-following file can be queried:
+To identify the currently installed Mender artifact from the command line, run
+the following command:
 
-    $ cat /etc/mender/artifact_info
+    $ mender show-artifact
 
 If you are running a hosted server, the updates can be initiated from a web
 dashboard. From there, you can start the updates without having to log into the
