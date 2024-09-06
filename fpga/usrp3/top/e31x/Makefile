@@ -91,26 +91,26 @@ ifndef BUILD_DIR
 endif
 
 ##E310_SG1_IDLE:  Build USRP E3XX idle design (Speed Grade 1).
-E310_SG1_IDLE E3XX_idle: check-variables E310_SG1_IP $(BUILD_OUTPUT_DIR)/usrp_e310_sg1_idle_fpga.dts
+E310_SG1_IDLE E3XX_idle: check-variables E310_SG1_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
 	$(call vivado_build,E310_SG1,$(DEFS) E310_IDLE_IMAGE=1 E310_SG1=1)
 	$(call post_build,$@)
 
 ##E310_SG3_IDLE:  Build USRP E3XX idle design (Speed Grade 3).
-E310_SG3_IDLE E3XX_idle_sg3: check-variables E310_SG3_IP $(BUILD_OUTPUT_DIR)/usrp_e310_sg3_idle_fpga.dts
+E310_SG3_IDLE E3XX_idle_sg3: check-variables E310_SG3_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
 	$(call vivado_build,E310_SG3,$(DEFS) E310_IDLE_IMAGE=1 E310_SG3=1)
 	$(call post_build,$@)
 
 ##E310_SG1:       Build USRP E3XX (Speed Grade 1).
-E310_SG1 E310: check-variables E310_SG1_IP $(BUILD_OUTPUT_DIR)/usrp_e310_sg1_fpga.dts
+E310_SG1 E310: check-variables E310_SG1_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
 	$(call vivado_build,E310_SG1,$(DEFS) E310_SG1=1 $(if $(DRAM),ENABLE_DRAM=1,))
 	$(call post_build,$@)
 
 ##E310_SG3:       Build USRP E3XX (Speed Grade 3).
-E310_SG3 E310_sg3: check-variables E310_SG3_IP $(BUILD_OUTPUT_DIR)/usrp_e310_sg3_fpga.dts
+E310_SG3 E310_sg3: check-variables E310_SG3_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
 	$(call vivado_build,E310_SG3,$(DEFS) E310_SG3=1 $(if $(DRAM),ENABLE_DRAM=1,))
 	$(call post_build,$@)
 
-$(BUILD_OUTPUT_DIR)/%.dts: dts/%.dts dts/*.dtsi
+$(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts: dts/*.dts dts/*.dtsi
 	-mkdir -p $(BUILD_OUTPUT_DIR)
 	${CC} -o $@ -E -I dts -nostdinc -undef -x assembler-with-cpp -D__DTS__ $<
 

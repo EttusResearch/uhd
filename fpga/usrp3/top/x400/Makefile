@@ -132,7 +132,8 @@ X410_IP:      ##Build X410 IP only. Use the -j option to build multiple IP block
 X440_IP:      ##Build X440 IP only. Use the -j option to build multiple IP blocks simultaneously.
 	+$(call vivado_ip,X440,$(DEFS) X440=1)
 
-$(BUILD_OUTPUT_DIR)/usrp_x410%.dts: dts/*.dts dts/*.dtsi $(BUILD_DIR)/device_tree.dts
+ifeq ($(MAKECMDGOALS),X410)
+$(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts: dts/*.dts dts/*.dtsi $(BUILD_DIR)/device_tree.dts
 	-mkdir -p $(BUILD_OUTPUT_DIR)
 	tools/parse_versions_for_dts.py \
 		--input regmap/x410/versioning_regs_regmap_utils.vh \
@@ -140,8 +141,9 @@ $(BUILD_OUTPUT_DIR)/usrp_x410%.dts: dts/*.dts dts/*.dtsi $(BUILD_DIR)/device_tre
 		--components fpga,cpld_ifc,db_gpio_ifc,rf_core_100m,rf_core_400m
 	${CC} -o $@ -C -E -I dts -nostdinc -undef -x assembler-with-cpp -D__DTS__ \
 		$(BUILD_DIR)/device_tree.dts
-
-$(BUILD_OUTPUT_DIR)/usrp_x440%.dts: dts/*.dts dts/*.dtsi $(BUILD_DIR)/device_tree.dts
+endif
+ifeq ($(MAKECMDGOALS),X440)
+$(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts: dts/*.dts dts/*.dtsi $(BUILD_DIR)/device_tree.dts
 	-mkdir -p $(BUILD_OUTPUT_DIR)
 	tools/parse_versions_for_dts.py \
 		--input regmap/x440/versioning_regs_regmap_utils.vh \
@@ -149,6 +151,7 @@ $(BUILD_OUTPUT_DIR)/usrp_x440%.dts: dts/*.dts dts/*.dtsi $(BUILD_DIR)/device_tre
 		--components fpga,cpld_ifc,db_gpio_ifc,rf_core_full
 	${CC} -o $@ -C -E -I dts -nostdinc -undef -x assembler-with-cpp -D__DTS__ \
 		$(BUILD_DIR)/device_tree.dts
+endif
 
 clean:        ##Clean up all target build outputs.
 	@echo "Cleaning targets..."
