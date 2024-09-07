@@ -155,7 +155,7 @@ endif
 
 clean:        ##Clean up all target build outputs.
 	@echo "Cleaning targets..."
-	@rm -rf $(BUILD_BASE_DIR)/build-X* $(BUILD_BASE_DIR)/build-x* $(BUILD_DIR)
+	@rm -rf $(BUILD_BASE_DIR)/build-X* $(BUILD_BASE_DIR)/build-x* $(BUILD_BASE_DIR)/build-usrp* $(BUILD_DIR)
 	@rm -rf $(BUILD_OUTPUT_DIR)
 
 cleanall:     ##Clean up all target and IP build outputs.

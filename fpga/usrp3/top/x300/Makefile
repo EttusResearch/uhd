@@ -187,7 +187,7 @@ X310_IP:
 
 clean:    ##Clean up all target build outputs.
 	@echo "Cleaning targets..."
-	@rm -rf $(BUILD_BASE_DIR)/build-X3*_* $(BUILD_BASE_DIR)/build-x3* $(BUILD_DIR)
+	@rm -rf $(BUILD_BASE_DIR)/build-X3*_* $(BUILD_BASE_DIR)/build-x3* $(BUILD_BASE_DIR)/build-usrp* $(BUILD_DIR)
 	@rm -rf $(BUILD_OUTPUT_DIR)
 
 cleanall: ##Clean up all target and ip build outputs.
