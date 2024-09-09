@@ -10,7 +10,8 @@
 - re: host/utils/rfnoc_image_builder.py
   add:
     - fpga.usrp3.all
-- re: host/python/uhd/imgbuilder
+# only trigger on .py files, exclude modtools_commands and templates
+- re: host/python/uhd/rfnoc_utils/[^/]+py$
   add:
     - fpga.usrp3.all
 

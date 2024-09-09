@@ -76,7 +76,7 @@ trigger:
     - fpga/usrp3/sim
     - fpga/.ci
     - host/utils/rfnoc_image_builder.py
-    - host/python/uhd/imgbuilder
+    - host/python/uhd/rfnoc_utils
 
 pr: none
 
