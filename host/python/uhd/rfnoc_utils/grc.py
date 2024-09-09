@@ -8,140 +8,307 @@ This module contains files for handling GRC based image cores.
 """
 
 import logging
-import os
-import re
-from collections import deque
+import sys
 
 from . import yaml_utils
+from .utils import resolve
 
 
-def split(iterable, function):
-    """Split an iterable by condition.
+def sanitize_connection(connection, known_modules, device, grc_block_dict):
+    """Sanitize a connection tuple.
 
-    Matching items are returned in the first deque of the returned tuple,
-    unmatched in the second
-    :param iterable: an iterable to split
-    :param function: an expression that returns True/False for iterable values
-    :return: 2-tuple with deque for matching/non-matching items
+    Analyze the connection info that GRC provides and apply some rules to make
+    it compatible with UHD's image builder.
+
+    The following rules are checked:
+    1. If a block is a terminator block, replace the block name with "_device_"
+       and the port name with "_none_".
+    2. If one of the ports goes to the BSP (device block), replace the block name with "_device_".
+    3. In GRC, all port names must be unique. However, clock ports, IO ports and
+       data ports are all the same thing. We therefore strip trailing "_clk" from
+       port names.
+    4. Fix multiplicity name modifier. In GNU Radio, if a port has a 'multiplicity' parameter,
+       GRC will append numbers to the port name (e.g,. in0, in1, in2, ...), but
+       only if 'multiplicity' is greater than 1. In UHD, if there is a num_ports
+       parameter for a data port, then the number is always appended, even if
+       there is only one port.
+    5. If the block used an alias, then we need to also update the connection
+       tuple.
     """
-    dq_true = deque()
-    dq_false = deque()
+    con_src = connection[0:2]
+    con_dst = connection[2:4]
 
-    deque(((dq_true if function(item) else dq_false).append(item) for item in iterable), maxlen=0)
+    def sanitize_clkname(clkname):
+        if clkname.endswith("_clk"):
+            return clkname[:-4]
+        return clkname
 
-    return dq_true, dq_false
+    def sanitize_dataport_multiplicity(block_name, port_name, in_out):
+        """Sanitize multiplicity name modifier (see docstring up top).
+
+        This is not an optimal implementation. TODO: Create better tooling around
+        programmatically "understanding" the block's ports and their multiplicity.
+        Such code could be reused in builder_config.py, where we parse the
+        num_ports parameter of a block's data port.
+        """
+        # Check if this is a regular block
+        if (
+            block_name not in grc_block_dict
+            or grc_block_dict[block_name].get("parameters", {}).get("type") != "block"
+        ):
+            return [block_name, port_name]
+        block_info = known_modules["noc_blocks"].get(
+            grc_block_dict[block_name]["parameters"]["desc"]
+        )
+        # Check if this block has a data port with a variable num_ports parameter
+        for k, v in block_info.get("data", {}).get(in_out, {}).items():
+            if (
+                port_name.startswith(k)
+                and (v.get("num_ports") in block_info["parameters"])
+                and port_name.endswith("_")
+            ):
+                return [block_name, port_name + "0"]
+        return [block_name, port_name]
+
+    # Apply rules
+    for con in (con_src, con_dst):
+        # Rule 1
+        if grc_block_dict[con[0]]["parameters"].get("type") == "term":
+            con[0] = "_device_"
+            con[1] = "_none_"
+        # Rule 2
+        if con[0] == device["name"]:
+            con[0] = "_device_"
+        # Rule 3
+        con[1] = sanitize_clkname(con[1])
+    # Rule 4
+    con_src = sanitize_dataport_multiplicity(*con_src, "outputs")
+    con_dst = sanitize_dataport_multiplicity(*con_dst, "inputs")
+    # Rule 5
+    for con in (con_src, con_dst):
+        if con[0] in grc_block_dict and grc_block_dict[con[0]].get("parameters", {}).get("alias"):
+            con[0] = grc_block_dict[con[0]]["parameters"]["alias"]
+    return [con_src[0], con_src[1], con_dst[0], con_dst[1]]
 
 
-def read_grc_block_configs(path):
-    """Read RFNoC config block used by Gnuradio Companion.
+def handle_block_quirks(block_dict, block_type, block):
+    """Handle quirks of certain blocks.
 
-    :param path: location of grc block configuration files
-    :return: dictionary of block (id mapped to description)
+    Sadly, the mapping from GRC to image configuration is not always 1:1. This
+    means we need to hardcode special rules for certain blocks. This function
+    applies these rules.
     """
-    result = {}
-
-    for root, _dirs, names in os.walk(path):
-        for name in names:
-            if re.match(r".*\.block\.yml", name):
-                with open(os.path.join(root, name), encoding="utf-8") as stream:
-                    config = yaml_utils.ordered_load(stream)
-                    result[config["id"]] = config
-    return result
+    if block_type == "noc_blocks" and block_dict["block_desc"] == "radio.yml":
+        if block["parameters"].get("ctrl_clock"):
+            block_dict["ctrl_clock"] = block["parameters"]["ctrl_clock"]
+        if block["parameters"].get("timebase_clock"):
+            block_dict["timebase_clock"] = block["parameters"]["timebase_clock"]
+    return block_dict
 
 
-def convert_to_image_config(grc, grc_config_path):
+def load_variables(grc):
+    """Load variables from GRC file.
+
+    This will load all variables from the GRC file and return them as a
+    dictionary. Only works for variables that can directly be evaluated.
+    """
+    var_blocks = [item for item in grc["blocks"] if item["id"] == "variable"]
+    variables = {}
+    for vb in var_blocks:
+        try:
+            variables[vb["name"]] = eval(vb["parameters"]["value"], variables)
+        except (NameError, SyntaxError) as ex:
+            logging.warning(
+                "Could not evaluate variable %s == %s: %s",
+                vb["name"],
+                vb["parameters"]["value"],
+                ex,
+            )
+    return variables
+
+
+def convert_to_image_config(grc, config_path, known_modules):
     """Convert GRC file into image configuration.
 
     :param grc:
     :return: image configuration as it would be returned by image_config(args)
     """
-    grc_blocks = read_grc_block_configs(grc_config_path)
-    # filter all blocks that have no block representation
-    seps = {item["name"]: item for item in grc["blocks"] if item["parameters"]["type"] == "sep"}
-    blocks = {item["name"]: item for item in grc["blocks"] if item["parameters"]["type"] == "block"}
-    device = [item for item in grc["blocks"] if item["parameters"]["type"] == "device"]
+    # This is a list of parameters that are generally part of GNU Radio blocks,
+    # but can be ignored when creating the image configuration.
+    param_blacklist = ["desc", "type", "affinity", "alias", "comment", "maxoutbuf", "minoutbuf"]
+    grc_block_dict = {item["name"]: item for item in grc["blocks"]}
+    variables = load_variables(grc)
+
+    def param_resolve(value):
+        """Resolve a parameter value.
+
+        This will resolve variables defined in the GRC file, which means you
+        can use variables in the GRC file to define parameters of blocks.
+        """
+        if value in variables:
+            logging.debug("Resolving variable %s to %s", value, variables[value])
+            return variables[value]
+        return resolve(value)
+
+    ###########################################################################
+    # Find device configuration
+    device = [item for item in grc["blocks"] if item["parameters"].get("type") == "device"]
     if len(device) == 1:
         device = device[0]
-    else:
-        logging.error("More than one or no device found in grc file")
+    elif len(device) == 0:
+        logging.error("No device found in grc file")
         return None
-
+    else:
+        logging.error("More than one device found in grc file")
+        return None
+    device_config = yaml_utils.device_config(config_path, device["parameters"]["device"])
+    # Generate base image configuration
     result = {
-        "schema": "rfnoc_imagebuilder",
-        "copyright": "Ettus Research, A National Instruments Brand",
+        "schema": "rfnoc_imagebuilder_args",
+        "copyright": grc["options"]["parameters"]["copyright"],
         "license": "SPDX-License-Identifier: LGPL-3.0-or-later",
         "version": "1.0",
-        "rfnoc_version": "1.0",
+        "chdr_width": int(device["parameters"]["chdr_width"]),
+        "device": device["parameters"]["device"],
+        "image_core_name": grc["options"]["parameters"]["id"],
+        "default_target": device["parameters"].get("default_target", None),
+        "parameters": {
+            k: param_resolve(v)
+            for k, v in device["parameters"].items()
+            if k not in param_blacklist and k in device_config.get("parameters", {})
+        },
+        "stream_endpoints": {},
+        "transport_adapters": {},
+        "modules": {},
+        "noc_blocks": {},
+        "connections": [],
+        "clk_domains": [],
     }
-    # for param in [item for item in grc["blocks"] if item["id"] == "parameter"]:
-    #     result[param["name"]] = {
-    #         "str": lambda value: str,
-    #         "": lambda value: str,
-    #         "complex": str,
-    #         "intx": int,
-    #         "long": int,
-    #     }[param["parameters"]["type"]](param["parameters"]["value"])
-
-    result["stream_endpoints"] = {}
-    for sep in seps.values():
-        result["stream_endpoints"][sep["name"]] = {
-            "ctrl": bool(sep["parameters"]["ctrl"]),
-            "data": bool(sep["parameters"]["data"]),
+    clocks = {"_device_": [clk["name"] for clk in device_config["clocks"]]}
+    ###########################################################################
+    # Stream Endpoints
+    seps = {item["name"]: item for item in grc["blocks"] if item["parameters"].get("type") == "sep"}
+    for sep_name, sep in seps.items():
+        if sep["parameters"].get("alias"):
+            sep_name = sep["parameters"]["alias"]
+        clocks[sep_name] = []
+        try:
+            result["stream_endpoints"][sep_name] = {
+                "ctrl": (
+                    "auto"
+                    if sep["parameters"]["ctrl"].lower() == "auto"
+                    else bool(sep["parameters"]["ctrl"].lower() in ("true", "1", "yes"))
+                ),
+                "data": bool(sep["parameters"]["data"].lower() in ("true", "1", "yes")),
+            }
+            # We support both buff_size and buff_size_bytes
+            for bufsiz_type in ("buff_size", "buff_size_bytes"):
+                if bufsiz_type in sep["parameters"]:
+                    result["stream_endpoints"][sep_name][bufsiz_type] = int(
+                        sep["parameters"][bufsiz_type]
+                    )
+        except KeyError:
+            logging.error("Error parsing stream endpoint %s", sep)
+            sys.exit(1)
+    # Resolve 'auto' ctrl for stream endpoints. The rules are simple: If there
+    # is any SEP with ctrl set to True, then all SEPs with ctrl set to 'auto'
+    # will have no control. If there is no SEP with ctrl set to True, then the
+    # first SEP with ctrl set to 'auto' will have control.
+    if all(sep["ctrl"] is not True for sep in result["stream_endpoints"].values()):
+        for sep in result["stream_endpoints"].values():
+            if sep["ctrl"] == "auto":
+                sep["ctrl"] = True
+                break
+    for sep in result["stream_endpoints"].values():
+        if sep["ctrl"] == "auto":
+            sep["ctrl"] = False
+    assert all(type(sep["ctrl"]) is bool for sep in result["stream_endpoints"].values())
+    assert all(type(sep["data"]) is bool for sep in result["stream_endpoints"].values())
+    ###########################################################################
+    # Blocks (NoC Blocks, Transport Adapters, Modules)
+    design_blocks = {}
+    for grc_blocktype, blocktype in (
+        ("block", "noc_blocks"),
+        ("transport_adapter", "transport_adapters"),
+        ("module", "modules"),
+    ):
+        design_blocks[blocktype] = {
+            item["name"]: item
+            for item in grc["blocks"]
+            if item["parameters"].get("type") == grc_blocktype
         }
-        if "buff_size" in sep["parameters"]:
-            result["stream_endpoints"][sep["name"]]["buff_size"] = int(
-                sep["parameters"]["buff_size"]
-            )
-        if "buff_size_bytes" in sep["parameters"]:
-            result["stream_endpoints"][sep["name"]]["buff_size_bytes"] = int(
-                sep["parameters"]["buff_size_bytes"]
-            )
-
-    result["noc_blocks"] = {}
-    for block in blocks.values():
-        result["noc_blocks"][block["name"]] = {"block_desc": block["parameters"]["desc"]}
-        if "nports" in block["parameters"]:
-            result["noc_blocks"][block["name"]]["parameters"] = {
-                "NUM_PORTS": block["parameters"]["nports"]
+        for block_name, block in design_blocks[blocktype].items():
+            if block["parameters"]["desc"] not in known_modules[blocktype]:
+                logging.error("Block %s not found.", block["parameters"]["desc"])
+                sys.exit(1)
+            clocks[block_name] = [
+                clk["name"]
+                for clk in known_modules[blocktype][block["parameters"]["desc"]].get("clocks", [])
+            ]
+    for block_type in ("noc_blocks", "transport_adapters", "modules"):
+        for block in design_blocks.get(block_type, {}).values():
+            block_dict = {
+                "block_desc": block["parameters"]["desc"],
+                "parameters": {},
             }
-
-    device_clocks = {
-        port["id"]: port
-        for port in grc_blocks[device["id"]]["outputs"]
-        if port["dtype"] == "message"
-    }
-
-    for connection in grc["connections"]:
-        if connection[0] == device["name"]:
-            connection[0] = "_device_"
-        if connection[2] == device["name"]:
-            connection[2] = "_device_"
+            if block_dict["block_desc"] not in known_modules[block_type]:
+                logging.error("Block %s not found.", block_dict["block_desc"])
+                sys.exit(1)
+            block_param_info = known_modules[block_type][block_dict["block_desc"]].get(
+                "parameters", {}
+            )
+            block_dict["parameters"] = {
+                param_name: param_resolve(param_value)
+                for param_name, param_value in block.get("parameters", {}).items()
+                if param_name not in param_blacklist
+                and not param_name.startswith("_")
+                and param_name in block_param_info
+            }
+            # 'priority' is a special parameter that is not part of the block's
+            # parameter list, but rather directly a key of the block.
+            if "priority" in block["parameters"]:
+                block_dict["priority"] = param_resolve(block["parameters"]["priority"])
+            block_dict = handle_block_quirks(block_dict, block_type, block)
+            block_name = block["name"]
+            if grc_block_dict[block_name]["parameters"].get("alias"):
+                alias = grc_block_dict[block_name]["parameters"]["alias"]
+                clocks[alias] = clocks[block_name]  # Update from old block name to alias
+                block_name = alias
+            if block_name in result[block_type]:
+                logging.error("Block %s already exists.", block_name)
+                sys.exit(1)
+            result[block_type][block_name] = block_dict
+    ###########################################################################
+    # Connections
+    # First, sanitize connections. The format from GRC is not directly compatible
+    # with the image builder.
+    grc["connections"] = [
+        sanitize_connection(connection, known_modules, device, grc_block_dict)
+        for connection in grc["connections"]
+    ]
     device["name"] = "_device_"
-
-    (clk_connections, connections) = split(
-        grc["connections"], lambda con: con[0] == device["name"] and con[1] in device_clocks
-    )
-
-    result["connections"] = []
-    for connection in connections:
-        result["connections"].append(
+    # Now, add connections to the image configuration. We need to determine if
+    # a connection is a clock domain connection or a regular connection.
+    for con in grc["connections"]:
+        src_blk = con[0]
+        dst_blk = con[2]
+        con_type = (
+            "clk_domains"
+            if con[1] in clocks[src_blk] and con[3] in clocks[dst_blk]
+            else "connections"
+        )
+        result[con_type].append(
             {
-                "srcblk": connection[0],
-                "srcport": connection[1],
-                "dstblk": connection[2],
-                "dstport": connection[3],
+                "srcblk": con[0],
+                "srcport": con[1],
+                "dstblk": con[2],
+                "dstport": con[3],
             }
         )
 
-    result["clk_domains"] = []
-    for connection in clk_connections:
-        result["clk_domains"].append(
-            {
-                "srcblk": connection[0],
-                "srcport": connection[1],
-                "dstblk": connection[2],
-                "dstport": connection[3],
-            }
-        )
-
+    ###########################################################################
+    # Housekeeping / sanity checks / cleanup
+    empty_keys = [k for k, v in result.items() if not v]
+    for k in empty_keys:
+        del result[k]
     return result

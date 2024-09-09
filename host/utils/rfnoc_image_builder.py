@@ -11,7 +11,7 @@ import os
 import re
 import sys
 
-from uhd.rfnoc_utils import grc, image_builder, log as rfnoc_log, yaml_utils
+from uhd.rfnoc_utils import image_builder, log as rfnoc_log
 
 
 def setup_parser():
@@ -188,36 +188,6 @@ def setup_parser():
     return parser
 
 
-def image_config(args):
-    """Load image configuration.
-
-    The configuration can be either passed as RFNoC image configuration or as
-    GNU Radio Companion grc. In latter case the grc files is converted into a
-    RFNoC image configuration on the fly.
-    :param args: arguments passed to the script.
-    :return: image configuration as dictionary
-    """
-    if args.yaml_config:
-        config = yaml_utils.load_config_validate(args.yaml_config, get_config_path(), True)
-        device = config.get("device") if args.device is None else args.device
-        target = config.get("default_target") if args.target is None else args.target
-        image_core_name = (
-            config.get("image_core_name") if args.image_core_name is None else args.image_core_name
-        )
-        if image_core_name is None:
-            image_core_name = os.path.splitext(os.path.basename(args.yaml_config))[0]
-        return config, args.yaml_config, device, image_core_name, target
-    # FIXME replace with ruamel.yaml
-    import yaml
-
-    with open(args.grc_config, encoding="utf-8") as grc_file:
-        config = yaml.load(grc_file)
-        logging.info("Converting GNU Radio Companion file to image builder format")
-        config = grc.convert_to_image_config(config, args.grc_blocks)
-        image_core_name = args.device if args.image_core_name is None else args.image_core_name
-        return config, args.grc_config, args.device, image_core_name, args.target
-
-
 def resolve_path(path, local):
     """Replace path by local if path is enclosed with "@" (placeholder markers).
 
@@ -292,10 +262,17 @@ def main():
     args = setup_parser().parse_args()
     rfnoc_log.init_logging(args.color, args.log_level)
 
-    config, source, device, image_core_name, target = image_config(args)
+    source = args.yaml_config if args.yaml_config else args.grc_config
+    source_type = "yaml" if args.yaml_config else "grc"
+    if not os.path.isfile(source):
+        logging.error("Source file %s does not exist", source)
+        return 1
+
     source_hash = hashlib.sha256()
     with open(source, "rb") as source_file:
         source_hash.update(source_file.read())
+
+    dump_config = args.grc_config and not args.yaml_config
 
     # Do some more sanitization of command line arguments
     if args.image_core_output:
@@ -312,18 +289,17 @@ def main():
             args.build_dir = args.image_core_output
 
     return image_builder.build_image(
-        # This is the big config object
-        config=config,
-        # Sanitized device ID string (e.g., x410, n320, ...)
-        device=device,
-        # Build target info
-        image_core_name=image_core_name,
-        target=target,
         # Image core source file info
         source=source,
+        source_type=source_type,
         source_hash=source_hash.hexdigest(),
         no_date=args.no_date,
         no_hash=args.no_hash,
+        # Unsanitized device ID string from cmd line (e.g., x410, n320, ...)
+        device=args.device,
+        # Build target info (unsanitized, from command line)
+        image_core_name=args.image_core_name,
+        target=args.target,
         # Provide all the paths
         build_dir=args.build_dir,
         build_output_dir=args.build_output_dir,
@@ -333,6 +309,7 @@ def main():
         yaml_path=args.yaml_config if args.yaml_config else args.grc_config,
         include_paths=args.include_dir,
         vivado_path=args.vivado_path,
+        grc_blocks=args.grc_blocks,
         # Various build config parameters
         reuse=args.reuse,
         generate_only=args.generate_only,
@@ -346,6 +323,7 @@ def main():
         num_jobs=args.jobs,
         secure_core=args.secure_core,
         secure_key_file=args.secure_key,
+        dump_config=dump_config,
     )
 
 

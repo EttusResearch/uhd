@@ -23,7 +23,7 @@ import mako.lookup
 import mako.template
 from mako import exceptions
 
-from . import yaml_utils
+from . import grc, yaml_utils
 from .builder_config import ImageBuilderConfig
 
 ### DATA ######################################################################
@@ -347,7 +347,51 @@ def load_module_yamls(include_paths):
     return known_modules
 
 
-def build_image(config, repo_fpga_path, config_path, device, **args):
+def load_image_core_source(
+    source,
+    source_type,
+    config_path,
+    core_config_path,
+    device,
+    target,
+    image_core_name,
+    known_modules,
+):
+    """Load image configuration.
+
+    The configuration can be either passed as RFNoC image configuration or as
+    GNU Radio Companion grc. In latter case the grc files is converted into a
+    RFNoC image configuration on the fly.
+    :param source: Path to the source f ile
+    :param source_type: Type of the source file (yaml or grc)
+    :return: image configuration as dictionary
+    """
+
+    def get_image_core_name(config):
+        icore_name = image_core_name or config.get("image_core_name")
+        if not icore_name:
+            icore_name = os.path.splitext(os.path.basename(source))[0]
+        return icore_name
+
+    if source_type == "yaml":
+        config = yaml_utils.load_config_validate(source, config_path, True)
+    # Otherwise, it's a GRC file
+    elif source_type == "grc":
+        config = yaml_utils.read_yaml(source)
+        logging.info("Converting GNU Radio Companion file to image builder format")
+        config = grc.convert_to_image_config(config, core_config_path, known_modules)
+        # Run it through ruamel.yaml backwards and forwards to guarantee the
+        # same object types as if we had loaded it directly from a YAML file.
+        config = yaml_utils.reload_dict(config)
+    else:
+        logging.error("No configuration file provided")
+        sys.exit(1)
+    device = device or config.get("device")
+    target = target or config.get("default_target")
+    return config, device, get_image_core_name(config), target
+
+
+def build_image(repo_fpga_path, config_path, device, **args):
     """Generate image dependent Verilog code and run FPGA toolchain, if requested.
 
     :param config: A dictionary containing the image configuration options.
@@ -369,10 +413,32 @@ def build_image(config, repo_fpga_path, config_path, device, **args):
                                     (e.g., usrp_x410_fpga_CG_400)
     :return: Exit result of build process or 0 if generate-only is given.
     """
+    # We start by loading some core/standard files that are always needed.
+    core_config_path = yaml_utils.get_core_config_path(config_path)
+
+    # TODO does this work for both block yamls and HDL sources?
+    include_paths = args.get("include_paths", []) + [os.path.join(config_path, "rfnoc")]
+    # A list of all known module descriptors
+    known_modules = load_module_yamls(include_paths)
+    # resolve signature after modules have been loaded (the module YAML files
+    # may contain signatures themselves)
+    signatures_conf = yaml_utils.io_signatures(core_config_path, *list(known_modules.values()))
+
+    # Next, load the image core configuration
     assert "source" in args
+    config, device, image_core_name, target = load_image_core_source(
+        args["source"],
+        args["source_type"],
+        config_path,
+        core_config_path,
+        device,
+        args.get("target"),
+        args.get("image_core_name"),
+        known_modules,
+    )
     logging.info("Selected device: %s", device)
-    image_core_name = args.get("image_core_name")
     assert image_core_name
+    args["image_core_name"] = image_core_name
     logging.debug("Image core name: %s", image_core_name)
     if "build_dir" in args and args["build_dir"]:
         build_dir = args["build_dir"]
@@ -399,17 +465,10 @@ def build_image(config, repo_fpga_path, config_path, device, **args):
         yaml_utils.get_top_path(os.path.abspath(repo_fpga_path)), target_dir(device)
     )
 
-    # Now load core configs
-    core_config_path = yaml_utils.get_core_config_path(config_path)
+    # If desired, dump the configuration into the build directory
+    if args.get("dump_config"):
+        yaml_utils.write_yaml(config, os.path.join(build_dir, f"{image_core_name}.yml"))
 
-    # TODO does this work for both block yamls and HDL sources?
-    include_paths = args.get("include_paths", []) + [os.path.join(config_path, "rfnoc")]
-
-    known_modules = load_module_yamls(include_paths)
-
-    # resolve signature after modules have been loaded (the module YAML files
-    # may contain signatures themselves)
-    signatures_conf = yaml_utils.io_signatures(core_config_path, *list(known_modules.values()))
     device_conf = yaml_utils.IOConfig(
         yaml_utils.device_config(core_config_path, device), signatures_conf
     )
