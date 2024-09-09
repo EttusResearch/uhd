@@ -335,4 +335,9 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    ret_val = main()
+    # In some cases, we can get return codes out of the standard 0-254 range.
+    # Coerce it the standard value of 255 to indicate it was out of range.
+    if ret_val > 255:
+        ret_val = 255
+    sys.exit(ret_val)
