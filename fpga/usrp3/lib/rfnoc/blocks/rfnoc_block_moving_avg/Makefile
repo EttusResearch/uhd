@@ -10,7 +10,7 @@
 # Define BASE_DIR to point to the "top" dir. Note:
 # UHD_FPGA_DIR must be passed into this Makefile.
 BASE_DIR = ../../../../top
-# Include viv_sim_preample after defining BASE_DIR
+# Include viv_sim_preamble after defining BASE_DIR
 include $(BASE_DIR)/../tools/make/viv_sim_preamble.mak
 
 #-------------------------------------------------

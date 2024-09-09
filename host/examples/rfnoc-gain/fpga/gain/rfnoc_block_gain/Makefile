@@ -16,7 +16,7 @@ ifndef UHD_FPGA_DIR
 $(error "UHD_FPGA_DIR is not set! Must point to UHD FPGA repository!")
 endif
 BASE_DIR = $(UHD_FPGA_DIR)/usrp3/top
-# Include viv_sim_preample after defining BASE_DIR
+# Include viv_sim_preamble after defining BASE_DIR
 include $(BASE_DIR)/../tools/make/viv_sim_preamble.mak
 
 #-------------------------------------------------
