@@ -1,5 +1,5 @@
 //
-// Copyright 2021 Ettus Research, a National Instruments Brand
+// Copyright 2024 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -18,8 +18,8 @@
 //     Data Rate: 122.88 or 125 MSps @ 1 SPC
 //
 //   Input Clocks, all aligned to one another and coming from same MMCM
-//     rfdc_clk:    184.32 or 187.5 MHz (3x pll_ref_clk)
-//     rfdc_clk_2x: 368.64 or 375 MHz (6x pll_ref_clk)
+//     rfdc_clk:     46.08 or 46.875.5 MHz (3/4x pll_ref_clk)
+//     rfdc_clk_8x: 368.64 or 375 MHz (6x pll_ref_clk)
 //     data_clk:    122.88 or 125 MHz (2x pll_ref_clk)
 //
 
@@ -33,7 +33,7 @@ module rf_core_100m (
 
   // Main Clock Inputs
   input  wire rfdc_clk,
-  input  wire rfdc_clk_2x,
+  input  wire rfdc_clk_8x,
   input  wire data_clk,
   input  wire data_clk_2x, // Unused, kept for rf_core_* interface consistency.
 
@@ -48,26 +48,26 @@ module rf_core_100m (
   // All ports here are in the rfdc_clk domain.
 
   // ADC
-  input  wire [31:0] adc_data_in_i_tdata_0,
-  output wire        adc_data_in_i_tready_0,
-  input  wire        adc_data_in_i_tvalid_0,
-  input  wire [31:0] adc_data_in_q_tdata_0,
-  output wire        adc_data_in_q_tready_0,
-  input  wire        adc_data_in_q_tvalid_0,
-  input  wire [31:0] adc_data_in_i_tdata_1,
-  output wire        adc_data_in_i_tready_1,
-  input  wire        adc_data_in_i_tvalid_1,
-  input  wire [31:0] adc_data_in_q_tdata_1,
-  output wire        adc_data_in_q_tready_1,
-  input  wire        adc_data_in_q_tvalid_1,
+  input  wire [127:0] adc_data_in_i_tdata_0,
+  output wire         adc_data_in_i_tready_0,
+  input  wire         adc_data_in_i_tvalid_0,
+  input  wire [127:0] adc_data_in_q_tdata_0,
+  output wire         adc_data_in_q_tready_0,
+  input  wire         adc_data_in_q_tvalid_0,
+  input  wire [127:0] adc_data_in_i_tdata_1,
+  output wire         adc_data_in_i_tready_1,
+  input  wire         adc_data_in_i_tvalid_1,
+  input  wire [127:0] adc_data_in_q_tdata_1,
+  output wire         adc_data_in_q_tready_1,
+  input  wire         adc_data_in_q_tvalid_1,
 
   // DAC
-  output wire [63:0] dac_data_out_tdata_0,
-  input  wire        dac_data_out_tready_0,
-  output wire        dac_data_out_tvalid_0,
-  output wire [63:0] dac_data_out_tdata_1,
-  input  wire        dac_data_out_tready_1,
-  output wire        dac_data_out_tvalid_1,
+  output wire [255:0] dac_data_out_tdata_0,
+  input  wire         dac_data_out_tready_0,
+  output wire         dac_data_out_tvalid_0,
+  output wire [255:0] dac_data_out_tdata_1,
+  input  wire         dac_data_out_tready_1,
+  output wire         dac_data_out_tvalid_1,
 
   //---------------------------------------------------------------------------
   // User Data Interfaces
@@ -93,8 +93,8 @@ module rf_core_100m (
   //---------------------------------------------------------------------------
 
   // Invert I/Q control signals from RFDC to DSP chain.
-  input  wire [3:0] invert_adc_iq_rclk2,
-  input  wire [3:0] invert_dac_iq_rclk2,
+  input  wire [3:0] invert_adc_iq_rclk8,
+  input  wire [3:0] invert_dac_iq_rclk8,
 
   // Control/status vectors from/to RFDC.
   // Notice these are all in the s_axi_config_clk domain.
@@ -108,8 +108,8 @@ module rf_core_100m (
   input wire adc_rfdc_axi_resetn_rclk,
   input wire dac_data_in_resetn_dclk,
   input wire dac_data_in_resetn_rclk,
-  input wire dac_data_in_resetn_rclk2x,
-  input wire fir_resetn_rclk2x,
+  input wire dac_data_in_resetn_rclk8x,
+  input wire fir_resetn_rclk8x,
 
   // Version (Constant)
   output wire [95:0] version_info
@@ -124,24 +124,24 @@ module rf_core_100m (
   localparam NUM_DAC_CHANNELS = 2;
 
   // ADC data interface from RFDC.
-  wire [31:0] adc_data_in_i_tdata       [0:7]; // 2 SPC (I)
-  wire [31:0] adc_data_in_q_tdata       [0:7]; // 2 SPC (Q)
+  wire [127:0] adc_data_in_i_tdata      [0:NUM_ADC_CHANNELS-1]; // 8 SPC (I)
+  wire [127:0] adc_data_in_q_tdata      [0:NUM_ADC_CHANNELS-1]; // 8 SPC (Q)
   wire [ 7:0] adc_data_in_i_tready;
   wire [ 7:0] adc_data_in_q_tready;
   wire [ 7:0] adc_data_in_i_tvalid;
   wire [ 7:0] adc_data_in_q_tvalid;
   // DAC data interface to RFDC.
-  wire [63:0] dac_data_out_tdata        [0:7]; // 2 SPC (I + Q)
+  wire [255:0] dac_data_out_tdata       [0:NUM_DAC_CHANNELS-1]; // 8 SPC (I + Q)
   wire [ 7:0] dac_data_out_tready;
   wire [ 7:0] dac_data_out_tvalid;
 
   // ADC data interface to user.
-  wire [31:0] adc_data_out_tdata        [0:7]; // 1 SPC (I + Q)
+  wire [31:0] adc_data_out_tdata        [0:NUM_ADC_CHANNELS-1]; // 1 SPC (I + Q)
   wire [ 7:0] adc_data_out_tready;
   wire [ 7:0] adc_data_out_tvalid;
   // DAC data interface from user.
-  wire [31:0] dac_data_in_tdata_preswap [0:7]; // 1 SPC (I + Q)
-  wire [31:0] dac_data_in_tdata         [0:7]; // 1 SPC (I + Q)
+  wire [31:0] dac_data_in_tdata_preswap [0:NUM_DAC_CHANNELS-1]; // 1 SPC (I + Q)
+  wire [31:0] dac_data_in_tdata         [0:NUM_DAC_CHANNELS-1]; // 1 SPC (I + Q)
   wire [ 7:0] dac_data_in_tready;
   wire [ 7:0] dac_data_in_tvalid;
 
@@ -181,16 +181,19 @@ module rf_core_100m (
   assign dsp_info_sclk[FABRIC_DSP_RX_CNT_MSB:FABRIC_DSP_RX_CNT] = NUM_ADC_CHANNELS;
   assign dsp_info_sclk[FABRIC_DSP_TX_CNT_MSB:FABRIC_DSP_TX_CNT] = NUM_DAC_CHANNELS;
 
-  // This RF core always consumes 2 SPC from the gearbox per I/Q signal
-  assign rfdc_info_sclk[RFDC_INFO_SPC_RX_MSB:RFDC_INFO_SPC_RX] = $clog2(2);
-  assign rfdc_info_sclk[RFDC_INFO_SPC_TX_MSB:RFDC_INFO_SPC_TX] = $clog2(4);
+  // This RF core always consumes 8 SPC from the gearbox per I/Q signal
+  assign rfdc_info_sclk[RFDC_INFO_SPC_RX_MSB:RFDC_INFO_SPC_RX] = $clog2(8);
+  assign rfdc_info_sclk[RFDC_INFO_SPC_TX_MSB:RFDC_INFO_SPC_TX] = $clog2(16);
   assign rfdc_info_sclk[RFDC_INFO_XTRA_RESAMP_MSB:RFDC_INFO_XTRA_RESAMP] = 4'd3;
+  // Enable the 4x clock divider in the RFDC block diagram in order to match the clock rate
+  // with the ADC/DAC interface of the RF core for this specific 100 MHz core.
+  assign rfdc_info_sclk[RFDC_CLK_DIV4_ENABLE] = 1'b1;
 
   //---------------------------------------------------------------------------
   // ADC Post-Processing
   //---------------------------------------------------------------------------
 
-  // Data comes from the RFDC as 2 SPC, separate streams for each channel and
+  // Data comes from the RFDC as 8 SPC, separate streams for each channel and
   // I/Q.
   assign adc_data_in_i_tdata[0]  = adc_data_in_i_tdata_0;
   assign adc_data_in_q_tdata[0]  = adc_data_in_q_tdata_0;
@@ -206,7 +209,7 @@ module rf_core_100m (
   assign adc_data_in_q_tready_1  = adc_data_in_q_tready[1];
   assign adc_data_in_q_tvalid[1] = adc_data_in_q_tvalid_1;
 
-  // ADC Data from the RFDC arrives here as 2 SPC with separate I and Q
+  // ADC Data from the RFDC arrives here as 8 SPC with separate I and Q
   // streams. It leaves the adc_100m_bd as 1 SPC with I and Q packed into a
   // single 32 bit word.
   genvar adc_num;
@@ -217,11 +220,11 @@ module rf_core_100m (
         .adc_data_out_resetn_dclk (adc_data_out_resetn_dclk),
         .data_clk                 (data_clk),
         .enable_data_to_fir_rclk  (adc_enable_data_rclk),
-        .fir_resetn_rclk2x        (fir_resetn_rclk2x),
+        .fir_resetn_rclk8x        (fir_resetn_rclk8x),
         .rfdc_adc_axi_resetn_rclk (adc_rfdc_axi_resetn_rclk),
         .rfdc_clk                 (rfdc_clk),
-        .rfdc_clk_2x              (rfdc_clk_2x),
-        .swap_iq_2x               (invert_adc_iq_rclk2 [adc_num]),
+        .rfdc_clk_8x              (rfdc_clk_8x),
+        .swap_iq_8x               (invert_adc_iq_rclk8 [adc_num]),
         .adc_data_out_tvalid      (adc_data_out_tvalid [adc_num]),
         .adc_data_out_tdata       (adc_data_out_tdata  [adc_num]),
         .adc_i_data_in_tvalid     (adc_data_in_i_tvalid[adc_num]),
@@ -270,7 +273,7 @@ module rf_core_100m (
   ) synchronizer_invert_dac_iq (
     .clk  (data_clk),
     .rst  (1'b0),
-    .in   (invert_dac_iq_rclk2),
+    .in   (invert_dac_iq_rclk8),
     .out  (invert_dac_iq_dclk)
   );
 
@@ -286,7 +289,7 @@ module rf_core_100m (
   endgenerate
 
   // These streams are then interpolated by dac_100m_bd, and form a single
-  // stream per channel, 2 SPC, packed: MSB [Sample1Q, Sample1I, Sample0Q,
+  // stream per channel, 8 SPC, packed: MSB [Sample7Q, Sample7I, ..., Sample0Q,
   // Sample0I] LSB.
   generate
   for (dac_num=0; dac_num < (NUM_DAC_CHANNELS); dac_num = dac_num + 1)
@@ -294,10 +297,10 @@ module rf_core_100m (
       dac_100m_bd dac_100m_bd_gen (
         .dac_data_in_resetn_dclk   (dac_data_in_resetn_dclk),
         .dac_data_in_resetn_rclk   (dac_data_in_resetn_rclk),
-        .dac_data_in_resetn_rclk2x (dac_data_in_resetn_rclk2x),
+        .dac_data_in_resetn_rclk8x (dac_data_in_resetn_rclk8x),
         .data_clk                  (data_clk),
         .rfdc_clk                  (rfdc_clk),
-        .rfdc_clk_2x               (rfdc_clk_2x),
+        .rfdc_clk_8x               (rfdc_clk_8x),
         .dac_data_out_tdata        (dac_data_out_tdata [dac_num]),
         .dac_data_out_tvalid       (dac_data_out_tvalid[dac_num]),
         .dac_data_out_tready       (dac_data_out_tready[dac_num]),
@@ -308,7 +311,7 @@ module rf_core_100m (
     end
   endgenerate
 
-  // Data is released to the RFDC as 2 SPC, separate streams per channel (I/Q
+  // Data is released to the RFDC as 8 SPC, separate streams per channel (I/Q
   // together).
   assign dac_data_out_tdata_0 = dac_data_out_tdata[0];
   assign dac_data_out_tdata_1 = dac_data_out_tdata[1];
@@ -355,12 +358,12 @@ endmodule
 //        <li> Version last modified: @.VERSIONING_REGS_REGMAP..VERSION_LAST_MODIFIED
 //      </info>
 //      <value name="RF_CORE_100M_CURRENT_VERSION_MAJOR"           integer="1"/>
-//      <value name="RF_CORE_100M_CURRENT_VERSION_MINOR"           integer="0"/>
+//      <value name="RF_CORE_100M_CURRENT_VERSION_MINOR"           integer="1"/>
 //      <value name="RF_CORE_100M_CURRENT_VERSION_BUILD"           integer="0"/>
 //      <value name="RF_CORE_100M_OLDEST_COMPATIBLE_VERSION_MAJOR" integer="1"/>
 //      <value name="RF_CORE_100M_OLDEST_COMPATIBLE_VERSION_MINOR" integer="0"/>
 //      <value name="RF_CORE_100M_OLDEST_COMPATIBLE_VERSION_BUILD" integer="0"/>
-//      <value name="RF_CORE_100M_VERSION_LAST_MODIFIED_TIME"      integer="0x20102617"/>
+//      <value name="RF_CORE_100M_VERSION_LAST_MODIFIED_TIME"      integer="0x26011520"/>
 //    </enumeratedtype>
 //  </group>
 //</regmap>

@@ -13,7 +13,7 @@ dac_100m_bd.tcl \
 IP_DAC_100M_HDL_SRCS = $(addprefix $(BASE_DIR)/x400/rf/100m/, \
 duc_saturate.vhd \
 dac_1_3_clk_converter.vhd \
-dac_2_1_clk_converter.vhd \
+dac_8_1_clk_converter.vhd \
 )
 
 IP_DAC_100M_BDTCL_SRCS = $(addprefix $(IP_BUILD_DIR)/dac_100m_bd/, \

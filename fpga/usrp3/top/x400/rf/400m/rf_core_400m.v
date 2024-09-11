@@ -189,6 +189,7 @@ module rf_core_400m (
   assign rfdc_info_sclk[RFDC_INFO_SPC_RX_MSB:RFDC_INFO_SPC_RX] = $clog2(8);
   assign rfdc_info_sclk[RFDC_INFO_SPC_TX_MSB:RFDC_INFO_SPC_TX] = $clog2(16);
   assign rfdc_info_sclk[RFDC_INFO_XTRA_RESAMP_MSB:RFDC_INFO_XTRA_RESAMP] = 4'd3;
+  assign rfdc_info_sclk[RFDC_CLK_DIV4_ENABLE] = 1'b0;
 
   //---------------------------------------------------------------------------
   // ADC Post-Processing

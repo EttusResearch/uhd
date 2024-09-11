@@ -69,7 +69,7 @@ SIM_TOP = rf_all_tb
 SIM_RUNTIME_US = 1000
 
 SIM_SRCS = \
-$(abspath tb_adc_gearbox_2x1.vhd          ) \
+$(abspath tb_adc_gearbox_8x1.vhd          ) \
 $(abspath tb_adc_gearbox_2x4.vhd          ) \
 $(abspath tb_adc_gearbox_8x4.vhd          ) \
 $(abspath tb_capture_sysref.vhd           ) \

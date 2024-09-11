@@ -13,6 +13,9 @@ x410_ps_rfdc_bd.tcl \
 IP_X4XX_PS_RFDC_HDL_SRCS = $(addprefix $(BASE_DIR)/x400/rf/common/, \
 rfdc_info_pkg.sv \
 ) \
+$(addprefix $(BASE_DIR)/x400/rf/100m/, \
+clock_mux.vhd \
+) \
 $(addprefix $(BASE_DIR)/x400/rf/x410/, \
 x410_rf_reset_controller.vhd \
 x410_clock_gates.vhd \

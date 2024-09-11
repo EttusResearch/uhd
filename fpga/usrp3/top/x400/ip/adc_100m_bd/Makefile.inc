@@ -13,7 +13,7 @@ adc_100m_bd.tcl \
 IP_ADC_100M_HDL_SRCS = $(addprefix $(BASE_DIR)/x400/rf/, \
 100m/ddc_saturate.vhd \
 100m/adc_3_1_clk_converter.vhd \
-100m/adc_gearbox_2x1.v \
+100m/adc_gearbox_8x1.v \
 common/PkgRf.vhd \
 common/scale_2x.vhd \
 )

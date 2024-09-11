@@ -41,6 +41,14 @@ parameters:
 - name: x410_full_targets_matrix
   type: object
   default:
+    X410_X4_100:
+      image_core: x410_X4_100_rfnoc_image_core.yml
+      image_core_name: usrp_x410_fpga_X4_100
+      target_name: X410
+      artifact_name: X410_X4_100
+      timeout: 720
+      attempt_timeout: 360
+      max_attempts: 2
     X410_X4_200:
       image_core: x410_X4_200_rfnoc_image_core.yml
       image_core_name: usrp_x410_fpga_X4_200
@@ -77,6 +85,14 @@ parameters:
 # X410 FPGA targets to build (if triggered by changeset, no packaging)
   type: object
   default:
+    X410_X4_100:
+      image_core: x410_X4_100_rfnoc_image_core.yml
+      image_core_name: usrp_x410_fpga_X4_100
+      target_name: X410
+      artifact_name: X410_X4_100
+      timeout: 720
+      attempt_timeout: 360
+      max_attempts: 2
     X410_X4_200:
       image_core: x410_X4_200_rfnoc_image_core.yml
       image_core_name: usrp_x410_fpga_X4_200

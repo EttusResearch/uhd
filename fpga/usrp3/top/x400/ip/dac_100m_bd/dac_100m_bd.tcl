@@ -40,7 +40,7 @@ if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
 
 # The design that will be created by this Tcl script contains the following 
 # module references:
-# dac_1_3_clk_converter, dac_2_1_clk_converter, duc_saturate
+# dac_1_3_clk_converter, dac_8_1_clk_converter, duc_saturate
 
 # Please add the sources of those modules before sourcing this Tcl script.
 
@@ -160,7 +160,7 @@ set bCheckModules 1
 if { $bCheckModules == 1 } {
    set list_check_mods "\ 
 dac_1_3_clk_converter\
-dac_2_1_clk_converter\
+dac_8_1_clk_converter\
 duc_saturate\
 "
 
@@ -240,28 +240,28 @@ proc create_root_design { parentCell } {
 
   set dac_data_out [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:axis_rtl:1.0 dac_data_out ]
   set_property -dict [ list \
-   CONFIG.FREQ_HZ {184320000} \
+   CONFIG.FREQ_HZ {46080000} \
    ] $dac_data_out
 
 
   # Create ports
   set dac_data_in_resetn_dclk [ create_bd_port -dir I -type rst dac_data_in_resetn_dclk ]
   set dac_data_in_resetn_rclk [ create_bd_port -dir I -type rst dac_data_in_resetn_rclk ]
-  set dac_data_in_resetn_rclk2x [ create_bd_port -dir I -type rst dac_data_in_resetn_rclk2x ]
+  set dac_data_in_resetn_rclk8x [ create_bd_port -dir I -type rst dac_data_in_resetn_rclk8x ]
   set data_clk [ create_bd_port -dir I -type clk -freq_hz 122880000 data_clk ]
   set_property -dict [ list \
    CONFIG.ASSOCIATED_BUSIF {dac_data_in} \
    CONFIG.ASSOCIATED_RESET {dac_data_in_resetn_dclk} \
  ] $data_clk
-  set rfdc_clk [ create_bd_port -dir I -type clk -freq_hz 184320000 rfdc_clk ]
+  set rfdc_clk [ create_bd_port -dir I -type clk -freq_hz 46080000 rfdc_clk ]
   set_property -dict [ list \
    CONFIG.ASSOCIATED_BUSIF {dac_data_out} \
    CONFIG.ASSOCIATED_RESET {dac_data_in_resetn_rclk} \
  ] $rfdc_clk
-  set rfdc_clk_2x [ create_bd_port -dir I -type clk -freq_hz 368640000 rfdc_clk_2x ]
+  set rfdc_clk_8x [ create_bd_port -dir I -type clk -freq_hz 368640000 rfdc_clk_8x ]
   set_property -dict [ list \
-   CONFIG.ASSOCIATED_RESET {dac_data_in_resetn_rclk2x} \
- ] $rfdc_clk_2x
+   CONFIG.ASSOCIATED_RESET {dac_data_in_resetn_rclk8x} \
+ ] $rfdc_clk_8x
 
   # Create instance: constant_high, and set properties
   set constant_high [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 constant_high ]
@@ -277,13 +277,13 @@ proc create_root_design { parentCell } {
      return 1
    }
   
-  # Create instance: dac_2_1_clk_converter_0, and set properties
-  set block_name dac_2_1_clk_converter
-  set block_cell_name dac_2_1_clk_converter_0
-  if { [catch {set dac_2_1_clk_converter_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
+  # Create instance: dac_8_1_clk_converter_0, and set properties
+  set block_name dac_8_1_clk_converter
+  set block_cell_name dac_8_1_clk_converter_0
+  if { [catch {set dac_8_1_clk_converter_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
      catch {common::send_gid_msg -ssname BD::TCL -id 2095 -severity "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
-   } elseif { $dac_2_1_clk_converter_0 eq "" } {
+   } elseif { $dac_8_1_clk_converter_0 eq "" } {
      catch {common::send_gid_msg -ssname BD::TCL -id 2096 -severity "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
    }
@@ -322,8 +322,7 @@ proc create_root_design { parentCell } {
   # Create instance: data_combiner, and set properties
   set data_combiner [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat:2.1 data_combiner ]
   set_property -dict [ list \
-   CONFIG.IN0_WIDTH {32} \
-   CONFIG.IN1_WIDTH {32} \
+   CONFIG.NUM_PORTS {8} \
  ] $data_combiner
 
   # Create instance: duc_saturate, and set properties
@@ -337,33 +336,93 @@ proc create_root_design { parentCell } {
      return 1
    }
   
-  # Create instance: registered_dac_data, and set properties
-  set registered_dac_data [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_register_slice:1.1 registered_dac_data ]
+  # Create instance: registered_dac_data1, and set properties
+  set registered_dac_data1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_register_slice:1.1 registered_dac_data1 ]
   set_property -dict [ list \
    CONFIG.REG_CONFIG {1} \
    CONFIG.TDATA_NUM_BYTES {4} \
- ] $registered_dac_data
+ ] $registered_dac_data1
+
+  # Create instance: registered_dac_data2, and set properties
+  set registered_dac_data2 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_register_slice:1.1 registered_dac_data2 ]
+  set_property -dict [ list \
+   CONFIG.REG_CONFIG {1} \
+   CONFIG.TDATA_NUM_BYTES {4} \
+ ] $registered_dac_data2
+
+  # Create instance: registered_dac_data3, and set properties
+  set registered_dac_data3 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_register_slice:1.1 registered_dac_data3 ]
+  set_property -dict [ list \
+   CONFIG.REG_CONFIG {1} \
+   CONFIG.TDATA_NUM_BYTES {4} \
+ ] $registered_dac_data3
+
+  # Create instance: registered_dac_data4, and set properties
+  set registered_dac_data4 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_register_slice:1.1 registered_dac_data4 ]
+  set_property -dict [ list \
+   CONFIG.REG_CONFIG {1} \
+   CONFIG.TDATA_NUM_BYTES {4} \
+ ] $registered_dac_data4
+
+  # Create instance: registered_dac_data5, and set properties
+  set registered_dac_data5 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_register_slice:1.1 registered_dac_data5 ]
+  set_property -dict [ list \
+   CONFIG.REG_CONFIG {1} \
+   CONFIG.TDATA_NUM_BYTES {4} \
+ ] $registered_dac_data5
+
+  # Create instance: registered_dac_data6, and set properties
+  set registered_dac_data6 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_register_slice:1.1 registered_dac_data6 ]
+  set_property -dict [ list \
+   CONFIG.REG_CONFIG {1} \
+   CONFIG.TDATA_NUM_BYTES {4} \
+ ] $registered_dac_data6
+
+  # Create instance: registered_dac_data7, and set properties
+  set registered_dac_data7 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_register_slice:1.1 registered_dac_data7 ]
+  set_property -dict [ list \
+   CONFIG.REG_CONFIG {1} \
+   CONFIG.TDATA_NUM_BYTES {4} \
+ ] $registered_dac_data7
 
   # Create interface connections
   connect_bd_intf_net -intf_net dac_1_3_clk_converter_0_m_axis [get_bd_intf_pins dac_1_3_clk_converter_0/m_axis] [get_bd_intf_pins dac_interpolator/S_AXIS_DATA]
-  connect_bd_intf_net -intf_net dac_2_1_clk_converter_0_m_axis [get_bd_intf_ports dac_data_out] [get_bd_intf_pins dac_2_1_clk_converter_0/m_axis]
+  connect_bd_intf_net -intf_net dac_8_1_clk_converter_0_m_axis [get_bd_intf_ports dac_data_out] [get_bd_intf_pins dac_8_1_clk_converter_0/m_axis]
   connect_bd_intf_net -intf_net dac_data_in_1 [get_bd_intf_ports dac_data_in] [get_bd_intf_pins dac_1_3_clk_converter_0/s_axis]
 
   # Create port connections
   connect_bd_net -net aclk_0_1 [get_bd_ports data_clk] [get_bd_pins dac_1_3_clk_converter_0/s_axis_aclk]
   connect_bd_net -net aresetn_0_1 [get_bd_ports dac_data_in_resetn_dclk] [get_bd_pins dac_1_3_clk_converter_0/s_axis_aresetn]
-  connect_bd_net -net axis_register_slice_0_m_axis_tdata [get_bd_pins data_combiner/In0] [get_bd_pins registered_dac_data/m_axis_tdata]
-  connect_bd_net -net dac_data_in_resetn_rclk2x [get_bd_ports dac_data_in_resetn_rclk2x] [get_bd_pins dac_1_3_clk_converter_0/m_axis_aresetn] [get_bd_pins dac_2_1_clk_converter_0/s_axis_aresetn] [get_bd_pins dac_interpolator/aresetn] [get_bd_pins registered_dac_data/aresetn]
-  connect_bd_net -net dac_data_in_resetn_rclk_1 [get_bd_ports dac_data_in_resetn_rclk] [get_bd_pins dac_2_1_clk_converter_0/m_axis_aresetn]
+  connect_bd_net -net constant_high_dout [get_bd_pins constant_high/dout] [get_bd_pins registered_dac_data7/m_axis_tready]
+  connect_bd_net -net dac_data_in_resetn_rclk2x [get_bd_ports dac_data_in_resetn_rclk8x] [get_bd_pins dac_1_3_clk_converter_0/m_axis_aresetn] [get_bd_pins dac_8_1_clk_converter_0/s_axis_aresetn] [get_bd_pins dac_interpolator/aresetn] [get_bd_pins registered_dac_data1/aresetn] [get_bd_pins registered_dac_data2/aresetn] [get_bd_pins registered_dac_data3/aresetn] [get_bd_pins registered_dac_data4/aresetn] [get_bd_pins registered_dac_data5/aresetn] [get_bd_pins registered_dac_data6/aresetn] [get_bd_pins registered_dac_data7/aresetn]
+  connect_bd_net -net dac_data_in_resetn_rclk_1 [get_bd_ports dac_data_in_resetn_rclk] [get_bd_pins dac_8_1_clk_converter_0/m_axis_aresetn]
   connect_bd_net -net dac_interpolator_m_axis_data_tdata [get_bd_pins dac_interpolator/m_axis_data_tdata] [get_bd_pins duc_saturate/cDataIn]
   connect_bd_net -net dac_interpolator_m_axis_data_tvalid [get_bd_pins dac_interpolator/m_axis_data_tvalid] [get_bd_pins duc_saturate/cDataValidIn]
-  connect_bd_net -net data_combiner_dout [get_bd_pins dac_2_1_clk_converter_0/s_axis_tdata] [get_bd_pins data_combiner/dout]
-  connect_bd_net -net ddc_saturate_0_cDataOut [get_bd_pins data_combiner/In1] [get_bd_pins duc_saturate/cDataOut] [get_bd_pins registered_dac_data/s_axis_tdata]
-  connect_bd_net -net duc_saturate_0_cDataValidOut [get_bd_pins duc_saturate/cDataValidOut] [get_bd_pins registered_dac_data/s_axis_tvalid]
-  connect_bd_net -net m_axis_aclk_0_1 [get_bd_ports rfdc_clk_2x] [get_bd_pins dac_1_3_clk_converter_0/m_axis_aclk] [get_bd_pins dac_2_1_clk_converter_0/s_axis_aclk] [get_bd_pins dac_interpolator/aclk] [get_bd_pins duc_saturate/Clk] [get_bd_pins registered_dac_data/aclk]
-  connect_bd_net -net registered_dac_data_m_axis_tvalid [get_bd_pins dac_2_1_clk_converter_0/s_axis_tvalid] [get_bd_pins registered_dac_data/m_axis_tvalid]
-  connect_bd_net -net rfdc_clk_1 [get_bd_ports rfdc_clk] [get_bd_pins dac_2_1_clk_converter_0/m_axis_aclk]
-  connect_bd_net -net xlconstant_0_dout [get_bd_pins constant_high/dout] [get_bd_pins registered_dac_data/m_axis_tready]
+  connect_bd_net -net data_combiner_dout [get_bd_pins dac_8_1_clk_converter_0/s_axis_tdata] [get_bd_pins data_combiner/dout]
+  connect_bd_net -net duc_saturate_0_cDataValidOut [get_bd_pins duc_saturate/cDataValidOut] [get_bd_pins registered_dac_data1/s_axis_tvalid]
+  connect_bd_net -net duc_saturate_cDataOut [get_bd_pins data_combiner/In7] [get_bd_pins duc_saturate/cDataOut] [get_bd_pins registered_dac_data1/s_axis_tdata]
+  connect_bd_net -net m_axis_aclk_0_1 [get_bd_ports rfdc_clk_8x] [get_bd_pins dac_1_3_clk_converter_0/m_axis_aclk] [get_bd_pins dac_8_1_clk_converter_0/s_axis_aclk] [get_bd_pins dac_interpolator/aclk] [get_bd_pins duc_saturate/Clk] [get_bd_pins registered_dac_data1/aclk] [get_bd_pins registered_dac_data2/aclk] [get_bd_pins registered_dac_data3/aclk] [get_bd_pins registered_dac_data4/aclk] [get_bd_pins registered_dac_data5/aclk] [get_bd_pins registered_dac_data6/aclk] [get_bd_pins registered_dac_data7/aclk]
+  connect_bd_net -net registered_dac_data1_m_axis_tdata [get_bd_pins data_combiner/In6] [get_bd_pins registered_dac_data1/m_axis_tdata] [get_bd_pins registered_dac_data2/s_axis_tdata]
+  connect_bd_net -net registered_dac_data1_m_axis_tvalid [get_bd_pins registered_dac_data1/m_axis_tvalid] [get_bd_pins registered_dac_data2/s_axis_tvalid]
+  connect_bd_net -net registered_dac_data2_m_axis_tdata [get_bd_pins data_combiner/In5] [get_bd_pins registered_dac_data2/m_axis_tdata] [get_bd_pins registered_dac_data3/s_axis_tdata]
+  connect_bd_net -net registered_dac_data2_m_axis_tvalid [get_bd_pins registered_dac_data2/m_axis_tvalid] [get_bd_pins registered_dac_data3/s_axis_tvalid]
+  connect_bd_net -net registered_dac_data2_s_axis_tready [get_bd_pins registered_dac_data1/m_axis_tready] [get_bd_pins registered_dac_data2/s_axis_tready]
+  connect_bd_net -net registered_dac_data3_m_axis_tdata [get_bd_pins data_combiner/In4] [get_bd_pins registered_dac_data3/m_axis_tdata] [get_bd_pins registered_dac_data4/s_axis_tdata]
+  connect_bd_net -net registered_dac_data3_m_axis_tvalid [get_bd_pins registered_dac_data3/m_axis_tvalid] [get_bd_pins registered_dac_data4/s_axis_tvalid]
+  connect_bd_net -net registered_dac_data3_s_axis_tready [get_bd_pins registered_dac_data2/m_axis_tready] [get_bd_pins registered_dac_data3/s_axis_tready]
+  connect_bd_net -net registered_dac_data4_m_axis_tdata [get_bd_pins data_combiner/In3] [get_bd_pins registered_dac_data4/m_axis_tdata] [get_bd_pins registered_dac_data5/s_axis_tdata]
+  connect_bd_net -net registered_dac_data4_m_axis_tvalid [get_bd_pins registered_dac_data4/m_axis_tvalid] [get_bd_pins registered_dac_data5/s_axis_tvalid]
+  connect_bd_net -net registered_dac_data4_s_axis_tready [get_bd_pins registered_dac_data3/m_axis_tready] [get_bd_pins registered_dac_data4/s_axis_tready]
+  connect_bd_net -net registered_dac_data5_m_axis_tdata [get_bd_pins data_combiner/In2] [get_bd_pins registered_dac_data5/m_axis_tdata] [get_bd_pins registered_dac_data6/s_axis_tdata]
+  connect_bd_net -net registered_dac_data5_m_axis_tvalid [get_bd_pins registered_dac_data5/m_axis_tvalid] [get_bd_pins registered_dac_data6/s_axis_tvalid]
+  connect_bd_net -net registered_dac_data5_s_axis_tready [get_bd_pins registered_dac_data4/m_axis_tready] [get_bd_pins registered_dac_data5/s_axis_tready]
+  connect_bd_net -net registered_dac_data6_m_axis_tdata [get_bd_pins data_combiner/In1] [get_bd_pins registered_dac_data6/m_axis_tdata] [get_bd_pins registered_dac_data7/s_axis_tdata]
+  connect_bd_net -net registered_dac_data6_m_axis_tvalid [get_bd_pins registered_dac_data6/m_axis_tvalid] [get_bd_pins registered_dac_data7/s_axis_tvalid]
+  connect_bd_net -net registered_dac_data6_s_axis_tready [get_bd_pins registered_dac_data5/m_axis_tready] [get_bd_pins registered_dac_data6/s_axis_tready]
+  connect_bd_net -net registered_dac_data7_m_axis_tdata [get_bd_pins data_combiner/In0] [get_bd_pins registered_dac_data7/m_axis_tdata]
+  connect_bd_net -net registered_dac_data7_m_axis_tvalid [get_bd_pins dac_8_1_clk_converter_0/s_axis_tvalid] [get_bd_pins registered_dac_data7/m_axis_tvalid]
+  connect_bd_net -net registered_dac_data7_s_axis_tready [get_bd_pins registered_dac_data6/m_axis_tready] [get_bd_pins registered_dac_data7/s_axis_tready]
+  connect_bd_net -net rfdc_clk_1 [get_bd_ports rfdc_clk] [get_bd_pins dac_8_1_clk_converter_0/m_axis_aclk]
 
   # Create address segments
 

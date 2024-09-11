@@ -9,6 +9,8 @@ from hwtools.api import vapi
 
 def do_options():
     vapi.set_project_name(name="X410_FPGA", pretty_name="USRP X410 FPGA")
+    vapi.set_top_sim_entity("x4xx")
+    vapi.set_top_synth_entity("x4xx")
 
 def do_files():
     # x400 related files
@@ -32,6 +34,15 @@ def do_files():
     vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/top/x400/regmap/x410", tree=False)
     vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/top/x400/cpld/regmap", tree=False)
     vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/top/x400/cpld/regmap/x410", tree=False)
+
+    # simulation files
+    vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/top/x400/rf/sim")
+
+    vapi.remove_from_fileset("/build-ip/")
+    vapi.remove_from_fileset("/build")
+    vapi.remove_from_fileset("/xsim_proj/")
+    vapi.remove_from_fileset(".*lib/rfnoc/.*_tb")
+    vapi.remove_from_fileset("pll-v")
 
 def do_preparse():
     pass

@@ -1991,11 +1991,12 @@ module x4xx (
   generate
     for ( db_i = 0; db_i < NUM_DBOARDS; db_i = db_i + 1) begin : gen_rf_cores
       if (RF_CORE == "100M") begin : gen_rf_core_100m
-        localparam ADC_AXIS_W = 32;
-        localparam DAC_AXIS_W = 64;
+        localparam ADC_AXIS_W = 128;
+        localparam DAC_AXIS_W = 256;
+        // The ratio between rfdc_clk and rfdc_clk_2x in this case is 1:8.
         rf_core_100m rf_core_100m_i (
           .rfdc_clk                  (rfdc_clk[0]),
-          .rfdc_clk_2x               (rfdc_clk_2x[0]),
+          .rfdc_clk_8x               (rfdc_clk_2x[0]),
           .data_clk                  (data_clk),
           .data_clk_2x               (data_clk_2x),
           .s_axi_config_clk          (clk40),
@@ -2027,8 +2028,8 @@ module x4xx (
           .dac_data_in_tdata_1       (dac_data_in_tdata[NUM_CH_PER_DB*db_i+1]),
           .dac_data_in_tready_1      (dac_data_in_tready[NUM_CH_PER_DB*db_i+1]),
           .dac_data_in_tvalid_1      (dac_data_in_tvalid[NUM_CH_PER_DB*db_i+1]),
-          .invert_adc_iq_rclk2       (swapped_invert_adc_iq_rclk2[4*db_i+:4]),
-          .invert_dac_iq_rclk2       (swapped_invert_dac_iq_rclk2[4*db_i+:4]),
+          .invert_adc_iq_rclk8       (swapped_invert_adc_iq_rclk2[4*db_i+:4]),
+          .invert_dac_iq_rclk8       (swapped_invert_dac_iq_rclk2[4*db_i+:4]),
           .dsp_info_sclk             (rf_dsp_info_clk40[10*db_i+:10]),
           .rfdc_info_sclk            (rf_rfdc_info_clk40[16*db_i+:16]),
           .axi_status_sclk           (rf_axi_status_clk40[16*db_i+:16]),
@@ -2037,8 +2038,8 @@ module x4xx (
           .adc_rfdc_axi_resetn_rclk  (adc_rfdc_axi_resetn_rclk),
           .dac_data_in_resetn_dclk   (dac_data_in_resetn_dclk),
           .dac_data_in_resetn_rclk   (dac_data_in_resetn_rclk),
-          .dac_data_in_resetn_rclk2x (dac_data_in_resetn_rclk2x),
-          .fir_resetn_rclk2x         (fir_resetn_rclk2x),
+          .dac_data_in_resetn_rclk8x (dac_data_in_resetn_rclk2x),
+          .fir_resetn_rclk8x         (fir_resetn_rclk2x),
           .version_info              (rf_core_version[db_i])
         );
       end else if (RF_CORE == "200M") begin : gen_rf_core_200m

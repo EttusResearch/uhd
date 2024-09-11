@@ -3,12 +3,12 @@
 --
 -- SPDX-License-Identifier: LGPL-3.0-or-later
 --
--- Module: dac_2_1_clk_converter
+-- Module: dac_8_1_clk_converter
 --
 -- Description:
 --
 --   This module transfers data from s_axis_aclk to m_axis_aclk. s_axis_aclk
---   must be two times the frequency of m_axis_aclk, and the two clocks must be
+--   must be eight times the frequency of m_axis_aclk, and the two clocks must be
 --   related (this module requires timing closure across the clock domain
 --   boundary).
 --
@@ -16,32 +16,32 @@
 library IEEE;
   use IEEE.std_logic_1164.all;
 
-entity dac_2_1_clk_converter is
+entity dac_8_1_clk_converter is
   port (
     s_axis_aclk    : in  std_logic;
     s_axis_aresetn : in  std_logic;
     s_axis_tvalid  : in  std_logic;
-    s_axis_tdata   : in  std_logic_vector(63 downto 0);
+    s_axis_tdata   : in  std_logic_vector(255 downto 0);
 
     m_axis_aclk    : in  std_logic;
     m_axis_aresetn : in  std_logic;
     m_axis_tready  : in  std_logic;
     m_axis_tvalid  : out std_logic;
-    m_axis_tdata   : out std_logic_vector(63 downto 0)
+    m_axis_tdata   : out std_logic_vector(255 downto 0)
   );
-end entity dac_2_1_clk_converter;
+end entity dac_8_1_clk_converter;
 
-architecture RTL of dac_2_1_clk_converter is
+architecture RTL of dac_8_1_clk_converter is
 
   -- To keep the implementation simple, this module does not implement a
   -- correct AXIS handshake - it ignores m_axis_tready. dac_100m_bd already had
   -- an assumption that the AXIS handshake is unneeded: duc_saturate does not
   -- accept _tready from the following component. Also, registered_dac_data has
-  -- never accepted _tready from dac_2_1_clk_converter, so dac_100m_bd has
+  -- never accepted _tready from dac_8_1_clk_converter, so dac_100m_bd has
   -- never supported complete AXIS dataflow.
 
   subtype Word_t is std_logic_vector(s_axis_tdata'range);
-  signal s_axis_tvalid_pipe : std_logic_vector(1 downto 0);
+  signal s_axis_tvalid_pipe : std_logic_vector(7 downto 0);
   signal s_axis_tdata_reg : Word_t;
 
   -- These _CDC signals will be sampled in the destination clock domain, but
@@ -83,8 +83,8 @@ begin
         s_axis_tvalid_pipe <= (others => '0');
         s_axis_tvalid_CDC <= '0';
       else
-        s_axis_tvalid_pipe <= s_axis_tvalid_pipe(0) & s_axis_tvalid;
-        if (s_axis_tvalid_pipe /= "00") then
+        s_axis_tvalid_pipe <= s_axis_tvalid_pipe(6 downto 0) & s_axis_tvalid;
+        if (s_axis_tvalid_pipe /= x"00") then
           s_axis_tvalid_CDC <= '1';
         else
           s_axis_tvalid_CDC <= '0';

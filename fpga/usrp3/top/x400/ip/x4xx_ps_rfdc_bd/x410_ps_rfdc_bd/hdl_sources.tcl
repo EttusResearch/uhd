@@ -9,6 +9,7 @@ read_verilog        -library work $script_dir/../../../../../lib/control/synchro
 read_verilog        -library work $script_dir/../../../../../lib/control/synchronizer_impl.v
 read_verilog        -library work $script_dir/../../../../../lib/rfnoc/core/ctrlport.vh
 read_vhdl           -library work $script_dir/../../../regmap/x410/PkgRFDC_REGS_REGMAP.vhd
+read_vhdl           -library work $script_dir/../../../rf/100m/clock_mux.vhd
 read_verilog        -library work $script_dir/../../../rf/common/axi_rfdc_info_memory.v
 read_vhdl           -library work $script_dir/../../../rf/common/axis_mux.vhd
 read_verilog        -library work $script_dir/../../../rf/common/capture_sysref.v

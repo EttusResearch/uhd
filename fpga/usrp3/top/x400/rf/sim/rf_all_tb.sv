@@ -15,7 +15,7 @@ module rf_all_tb;
   `include "test_exec.svh"
   import PkgTestExec::*;
 
-  tb_adc_gearbox_2x1          tb_adc_gearbox_2x1_i          ();
+  tb_adc_gearbox_8x1          tb_adc_gearbox_8x1_i          ();
   tb_adc_gearbox_2x4          tb_adc_gearbox_2x4_i          ();
   tb_adc_gearbox_8x4          tb_adc_gearbox_8x4_i          ();
   tb_capture_sysref           tb_capture_sysref_i           ();
@@ -35,7 +35,7 @@ module rf_all_tb;
     forever begin
       #100ns;
       if (
-        tb_adc_gearbox_2x1_i.StopSim           &&
+        tb_adc_gearbox_8x1_i.StopSim           &&
         tb_adc_gearbox_2x4_i.StopSim           &&
         tb_adc_gearbox_8x4_i.StopSim           &&
         tb_capture_sysref_i.StopSim            &&

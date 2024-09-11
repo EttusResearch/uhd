@@ -183,7 +183,7 @@ package PkgRFDC_REGS_REGMAP is
 
   -- RFDC_INFO_REGTYPE Type (from common_regs.v)
   constant kRFDC_INFO_REGTYPESize: integer := 32;
-  constant kRFDC_INFO_REGTYPEMask : std_logic_vector(31 downto 0) := X"03ff03ff";
+  constant kRFDC_INFO_REGTYPEMask : std_logic_vector(31 downto 0) := X"03ff83ff";
   constant kRFDC_INFO_XTRA_RESAMPSize       : integer := 4;  --RFDC_INFO_REGTYPE:RFDC_INFO_XTRA_RESAMP
   constant kRFDC_INFO_XTRA_RESAMPMsb        : integer := 3;  --RFDC_INFO_REGTYPE:RFDC_INFO_XTRA_RESAMP
   constant kRFDC_INFO_XTRA_RESAMP           : integer := 0;  --RFDC_INFO_REGTYPE:RFDC_INFO_XTRA_RESAMP
@@ -193,6 +193,9 @@ package PkgRFDC_REGS_REGMAP is
   constant kRFDC_INFO_SPC_TXSize       : integer := 3;  --RFDC_INFO_REGTYPE:RFDC_INFO_SPC_TX
   constant kRFDC_INFO_SPC_TXMsb        : integer := 9;  --RFDC_INFO_REGTYPE:RFDC_INFO_SPC_TX
   constant kRFDC_INFO_SPC_TX           : integer := 7;  --RFDC_INFO_REGTYPE:RFDC_INFO_SPC_TX
+  constant kRFDC_CLK_DIV4_ENABLESize       : integer :=  1;  --RFDC_INFO_REGTYPE:RFDC_CLK_DIV4_ENABLE
+  constant kRFDC_CLK_DIV4_ENABLEMsb        : integer := 15;  --RFDC_INFO_REGTYPE:RFDC_CLK_DIV4_ENABLE
+  constant kRFDC_CLK_DIV4_ENABLE           : integer := 15;  --RFDC_INFO_REGTYPE:RFDC_CLK_DIV4_ENABLE
   constant kRFDC_INFO_XTRA_RESAMP_DB1Size       : integer :=  4;  --RFDC_INFO_REGTYPE:RFDC_INFO_XTRA_RESAMP_DB1
   constant kRFDC_INFO_XTRA_RESAMP_DB1Msb        : integer := 19;  --RFDC_INFO_REGTYPE:RFDC_INFO_XTRA_RESAMP_DB1
   constant kRFDC_INFO_XTRA_RESAMP_DB1           : integer := 16;  --RFDC_INFO_REGTYPE:RFDC_INFO_XTRA_RESAMP_DB1

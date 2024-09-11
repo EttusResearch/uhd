@@ -24978,7 +24978,17 @@ Sets I/O state to control Sync Switch 5.
                     </tr>
                     
                     <tr class="byte" valign="top">
-                        <td class="bits">15..10</td>
+                        <td class="bits">15</td>
+                        <td>
+                            <p><span class="name"><a name="RFDC_REGS_REGMAP|RFDC_INFO_REG|RFDC_CLK_DIV4_ENABLE"></a>RFDC_CLK_DIV4_ENABLE</span><span class="attr">&nbsp;&nbsp;&nbsp;(initialvalue=0)</span></p>
+                            <p>This flag applies to X410 only.
+          RFDC clock in PS block diagram gets divided by 4 if this flag is set.
+          The resulting ratio between rfdc_clk and rfdc_clk2x is 1:8.</p>
+                        </td>
+                    </tr>
+                    
+                    <tr class="" valign="top">
+                        <td class="bits">14..10</td>
                         <td>
                             <p><span class="name">Reserved</span><span class="attr">&nbsp;&nbsp;&nbsp;</span></p>
                             <p></p>

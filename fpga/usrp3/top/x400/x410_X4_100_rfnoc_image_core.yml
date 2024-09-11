@@ -1,0 +1,18 @@
+# General parameters
+# -----------------------------------------
+schema: rfnoc_imagebuilder_args          # Identifier for the schema used to validate this file
+copyright: >-                            # Copyright information used in file headers
+  Copyright 2026 Ettus Research, a National Instruments Brand
+license: >-                              # License information used in file headers
+  SPDX-License-Identifier: LGPL-3.0-or-later
+version: '1.0'                           # File version
+chdr_width: 64                           # Bit width of the CHDR bus for this image
+device: 'x410'                           # USRP type
+image_core_name: 'usrp_x410_fpga_X4_100' # Name to use for the generated output files
+default_target: 'X410'                   # Default make target
+# This image is identical to the 200 MHz image, except for the RF bandwidth
+inherit:
+  - 'x410_X4_200_rfnoc_image_core.yml'
+
+parameters:
+  RF_BW: 100

@@ -28700,7 +28700,17 @@ When clear the activity LED set on any TX or RX traffic to the mgt</p></div></p>
                     </tr>
                     
                     <tr class="byte" valign="top">
-                        <td class="bits">15..10</td>
+                        <td class="bits">15</td>
+                        <td>
+                            <p><span class="name"><a name="RFDC_REGS_REGMAP|RFDC_INFO_REG|RFDC_CLK_DIV4_ENABLE"></a>RFDC_CLK_DIV4_ENABLE</span><span class="attr">&nbsp;&nbsp;&nbsp;(initialvalue=0)</span></p>
+                            <p>This flag applies to X410 only.
+          RFDC clock in PS block diagram gets divided by 4 if this flag is set.
+          The resulting ratio between rfdc_clk and rfdc_clk2x is 1:8.</p>
+                        </td>
+                    </tr>
+                    
+                    <tr class="" valign="top">
+                        <td class="bits">14..10</td>
                         <td>
                             <p><span class="name">Reserved</span><span class="attr">&nbsp;&nbsp;&nbsp;</span></p>
                             <p></p>
@@ -32934,19 +32944,6 @@ used with 100Gb ethernet</p></div></p>
                             <td class="l">0x00000000</td>
                             <td class="l" style="text-align: left;">
                                 <p class="name">
-                                    <a name="VERSIONING_REGS_REGMAP|RF_CORE_100M_VERSION|RF_CORE_100M_CURRENT_VERSION_MINOR"></a>
-                                    RF_CORE_100M_CURRENT_VERSION_MINOR
-                                </p>
-                                
-                            </td>
-            </tr>
-            <tr valign="top">
-                
-                    
-                        <td class="value">0</td>
-                            <td class="l">0x00000000</td>
-                            <td class="l" style="text-align: left;">
-                                <p class="name">
                                     <a name="VERSIONING_REGS_REGMAP|RF_CORE_100M_VERSION|RF_CORE_100M_CURRENT_VERSION_BUILD"></a>
                                     RF_CORE_100M_CURRENT_VERSION_BUILD
                                 </p>
@@ -32999,6 +32996,19 @@ used with 100Gb ethernet</p></div></p>
                             <td class="l">0x00000001</td>
                             <td class="l" style="text-align: left;">
                                 <p class="name">
+                                    <a name="VERSIONING_REGS_REGMAP|RF_CORE_100M_VERSION|RF_CORE_100M_CURRENT_VERSION_MINOR"></a>
+                                    RF_CORE_100M_CURRENT_VERSION_MINOR
+                                </p>
+                                
+                            </td>
+            </tr>
+            <tr valign="top">
+                
+                    
+                        <td class="value">1</td>
+                            <td class="l">0x00000001</td>
+                            <td class="l" style="text-align: left;">
+                                <p class="name">
                                     <a name="VERSIONING_REGS_REGMAP|RF_CORE_100M_VERSION|RF_CORE_100M_OLDEST_COMPATIBLE_VERSION_MAJOR"></a>
                                     RF_CORE_100M_OLDEST_COMPATIBLE_VERSION_MAJOR
                                 </p>
@@ -33008,8 +33018,8 @@ used with 100Gb ethernet</p></div></p>
             <tr valign="top">
                 
                     
-                        <td class="value">537929239</td>
-                            <td class="l">0x20102617</td>
+                        <td class="value">637605152</td>
+                            <td class="l">0x26011520</td>
                             <td class="l" style="text-align: left;">
                                 <p class="name">
                                     <a name="VERSIONING_REGS_REGMAP|RF_CORE_100M_VERSION|RF_CORE_100M_VERSION_LAST_MODIFIED_TIME"></a>
