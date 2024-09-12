@@ -60,6 +60,8 @@ ifeq ($(TARGET),bin)
 		cp $(BUILD_DIR)/e320.bit $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).bit; \
 		echo "Exporting build report..."; \
 		cp $(BUILD_DIR)/build.rpt $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).rpt; \
+		echo "Exporting devicetree file..."; \
+		cp $(BUILD_DIR)/$(1).dts $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts; \
 		echo "Build DONE ... $(1)";
 else
 	post_build = @echo "Skipping bitfile export."
@@ -91,22 +93,21 @@ ifndef BUILD_DIR
 endif
 
 ##E320_1G:  1GigE on SFP+ Port.
-E320_1G: check-variables E320_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
+E320_1G: check-variables E320_IP $(BUILD_DIR)/E320_1G.dts
 	$(call vivado_build,E320,$(1G_DEFS) E320=1)
 	$(call post_build,E320_1G)
 
 ##E320_XG:  10GigE on SFP+ Port.
-E320_XG: check-variables E320_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
+E320_XG: check-variables E320_IP $(BUILD_DIR)/E320_XG.dts
 	$(call vivado_build,E320,$(XG_DEFS) E320=1)
 	$(call post_build,E320_XG)
 
 ##E320_AA:  Aurora on SFP+ Port.
-E320_AA: check-variables E320_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
+E320_AA: check-variables E320_IP $(BUILD_DIR)/E320_AA.dts
 	$(call vivado_build,E320,$(AA_DEFS) E320=1)
 	$(call post_build,E320_AA)
 
-$(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts: dts/*.dts dts/*.dtsi
-	-mkdir -p $(BUILD_OUTPUT_DIR)
+$(BUILD_DIR)/%.dts: dts/%.dts dts/*.dtsi
 	${CC} -o $@ -E -I dts -nostdinc -undef -x assembler-with-cpp -D__DTS__ $<
 
 ##

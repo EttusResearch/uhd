@@ -86,6 +86,8 @@ ifeq ($(TARGET),bin)
 		cp $(BUILD_DIR)/n3xx.bit $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).bit; \
 		echo "Exporting build report..."; \
 		cp $(BUILD_DIR)/build.rpt $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).rpt; \
+		echo "Exporting devicetree file..."; \
+		cp $(BUILD_DIR)/$(1)_$(2).dts $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts; \
 		echo "Build DONE ... $(1)_$(2)";
 else
 	post_build = @echo "Skipping bitfile export."
@@ -122,97 +124,96 @@ ifndef BUILD_DIR
 endif
 
 ##N310_WX:  1GigE White Rabbit on SFP+ Port0, 10Gig on SFP+ Port1.
-N310_WX: check-variables N3X0_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
+N310_WX: check-variables N3X0_IP $(BUILD_DIR)/N310_WX.dts
 	$(call vivado_build,N310,$(WX_DEFS) N310=1,$(N310_DEFAULTS))
 	$(call post_build,N310,WX)
 
 ##N310_HG:  1GigE on SFP+ Port0, 10Gig on SFP+ Port1.
-N310_HG: check-variables N3X0_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
+N310_HG: check-variables N3X0_IP $(BUILD_DIR)/N310_HG.dts
 	$(call vivado_build,N310,$(HG_DEFS) N310=1,$(N310_DEFAULTS))
 	$(call post_build,N310,HG)
 
 ##N310_XG:  10GigE on SFP+ Port0, 10Gig on SFP+ Port1.
-N310_XG: check-variables N3X0_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
+N310_XG: check-variables N3X0_IP $(BUILD_DIR)/N310_XG.dts
 	$(call vivado_build,N310,$(XG_DEFS) N310=1,$(N310_DEFAULTS))
 	$(call post_build,N310,XG)
 
 ##N310_HA:  1Gig on SFP+ Port0, Aurora on SFP+ Port1.
-N310_HA: check-variables N3X0_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
+N310_HA: check-variables N3X0_IP $(BUILD_DIR)/N310_HA.dts
 	$(call vivado_build,N310,$(HA_DEFS) N310=1,$(N310_DEFAULTS))
 	$(call post_build,N310,HA)
 
 ##N310_XA:  10Gig on SFP+ Port0, Aurora on SFP+ Port1.
-N310_XA: check-variables N3X0_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
+N310_XA: check-variables N3X0_IP $(BUILD_DIR)/N310_XA.dts
 	$(call vivado_build,N310,$(XA_DEFS) N310=1,$(N310_DEFAULTS))
 	$(call post_build,N310,XA)
 
 ##N310_AA:  Aurora on SFP+ Port0, Aurora on SFP+ Port1.
-N310_AA: check-variables N3X0_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
+N310_AA: check-variables N3X0_IP $(BUILD_DIR)/N310_AA.dts
 	$(call vivado_build,N310,$(AA_DEFS) N310=1,$(N310AA_DEFAULTS))
 	$(call post_build,N310,AA)
 
 ##N300_WX:  1GigE White Rabbit on SFP+ Port0, 10Gig on SFP+ Port1.
-N300_WX: check-variables N300_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
+N300_WX: check-variables N300_IP $(BUILD_DIR)/N300_WX.dts
 	$(call vivado_build,N300,$(WX_DEFS) N300=1,$(N300_DEFAULTS))
 	$(call post_build,N300,WX)
 
 ##N300_HG:  1GigE on SFP+ Port0, 10Gig on SFP+ Port1.
-N300_HG: check-variables N300_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
+N300_HG: check-variables N300_IP $(BUILD_DIR)/N300_HG.dts
 	$(call vivado_build,N300,$(HG_DEFS) N300=1,$(N300_DEFAULTS))
 	$(call post_build,N300,HG)
 
 ##N300_XG:  10GigE on SFP+ Port0, 10Gig on SFP+ Port1.
-N300_XG: check-variables N300_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
+N300_XG: check-variables N300_IP $(BUILD_DIR)/N300_XG.dts
 	$(call vivado_build,N300,$(XG_DEFS) N300=1,$(N300_DEFAULTS))
 	$(call post_build,N300,XG)
 
 ##N300_HA:  1Gig on SFP+ Port0, Aurora on SFP+ Port1.
-N300_HA: check-variables N300_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
+N300_HA: check-variables N300_IP $(BUILD_DIR)/N300_HA.dts
 	$(call vivado_build,N300,$(HA_DEFS) N300=1,$(N300_DEFAULTS))
 	$(call post_build,N300,HA)
 
 ##N300_XA:  10Gig on SFP+ Port0, Aurora on SFP+ Port1.
-N300_XA: check-variables N300_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
+N300_XA: check-variables N300_IP $(BUILD_DIR)/N300_XA.dts
 	$(call vivado_build,N300,$(XA_DEFS) N300=1,$(N300_DEFAULTS))
 	$(call post_build,N300,XA)
 
 ##N300_AA:  Aurora on SFP+ Port0, Aurora on SFP+ Port1.
-N300_AA: check-variables N300_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
+N300_AA: check-variables N300_IP $(BUILD_DIR)/N300_AA.dts
 	$(call vivado_build,N300,$(AA_DEFS) N300=1,$(N300AA_DEFAULTS))
 	$(call post_build,N300,AA)
 
 ##N320_WX:  1GigE White Rabbit on SFP+ Port0, 10Gig on SFP+ Port1.
-N320_WX: check-variables N3X0_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
+N320_WX: check-variables N3X0_IP $(BUILD_DIR)/N320_WX.dts
 	$(call vivado_build,N320,$(WX_DEFS) N320=1,$(N320_DEFAULTS))
 	$(call post_build,N320,WX)
 
 ##N320_HG:  1GigE on SFP+ Port0, 10Gig on SFP+ Port1.
-N320_HG: check-variables N3X0_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
+N320_HG: check-variables N3X0_IP $(BUILD_DIR)/N320_HG.dts
 	$(call vivado_build,N320,$(HG_DEFS) N320=1,$(N320_DEFAULTS))
 	$(call post_build,N320,HG)
 
 ##N320_XG:  10GigE on SFP+ Port0, 10Gig on SFP+ Port1.
-N320_XG: check-variables N3X0_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
+N320_XG: check-variables N3X0_IP $(BUILD_DIR)/N320_XG.dts
 	$(call vivado_build,N320,$(XG_DEFS) N320=1,$(N320_DEFAULTS))
 	$(call post_build,N320,XG)
 
 ##N320_XQ:  WR on SFP+ Port0, 10Gig on QSFP+ Port0,1.
-N320_XQ: check-variables N3X0_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
+N320_XQ: check-variables N3X0_IP $(BUILD_DIR)/N320_XQ.dts
 	$(call vivado_build,N320,$(XQ_DEFS) N320=1,$(N320_DEFAULTS))
 	$(call post_build,N320,XQ)
 
 ##N320_AQ:  10Gig on SFP+ Port0,1 Aurora on QSFP+ Port0,1,2,3.
-N320_AQ: check-variables N3X0_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
+N320_AQ: check-variables N3X0_IP $(BUILD_DIR)/N320_AQ.dts
 	$(call vivado_build,N320,$(AQ_DEFS) N320=1,$(N320_DEFAULTS))
 	$(call post_build,N320,AQ)
 
 ##N320_AA:  Aurora on SFP+ Port0, Aurora on SFP+ Port1.
-N320_AA: check-variables N3X0_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
+N320_AA: check-variables N3X0_IP $(BUILD_DIR)/N320_AA.dts
 	$(call vivado_build,N320,$(AA_DEFS) N320=1,$(N320AA_DEFAULTS))
 	$(call post_build,N320,AA)
 
-$(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts: dts/*.dts dts/*.dtsi
-	-mkdir -p $(BUILD_OUTPUT_DIR)
+$(BUILD_DIR)/%.dts: dts/%.dts dts/*.dtsi
 	${CC} -o $@ -E -I dts -nostdinc -undef -x assembler-with-cpp -D__DTS__ $<
 
 ##

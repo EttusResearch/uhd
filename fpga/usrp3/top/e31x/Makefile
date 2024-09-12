@@ -57,6 +57,8 @@ ifeq ($(TARGET),bin)
 		cp $(BUILD_DIR)/e31x.bit $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).bit; \
 		echo "Exporting build report..."; \
 		cp $(BUILD_DIR)/build.rpt $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).rpt; \
+		echo "Exporting devicetree file..."; \
+		cp $(BUILD_DIR)/$(1).dts $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts; \
 		echo "Build DONE ... $(1)";
 else
 	post_build = @echo "Skipping bitfile export."
@@ -91,27 +93,26 @@ ifndef BUILD_DIR
 endif
 
 ##E310_SG1_IDLE:  Build USRP E3XX idle design (Speed Grade 1).
-E310_SG1_IDLE E3XX_idle: check-variables E310_SG1_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
+E310_SG1_IDLE E3XX_idle: check-variables E310_SG1_IP $(BUILD_DIR)/E310_SG1_IDLE.dts
 	$(call vivado_build,E310_SG1,$(DEFS) E310_IDLE_IMAGE=1 E310_SG1=1)
-	$(call post_build,$@)
+	$(call post_build,E310_SG1_IDLE)
 
 ##E310_SG3_IDLE:  Build USRP E3XX idle design (Speed Grade 3).
-E310_SG3_IDLE E3XX_idle_sg3: check-variables E310_SG3_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
+E310_SG3_IDLE E3XX_idle_sg3: check-variables E310_SG3_IP $(BUILD_DIR)/E310_SG3_IDLE.dts
 	$(call vivado_build,E310_SG3,$(DEFS) E310_IDLE_IMAGE=1 E310_SG3=1)
-	$(call post_build,$@)
+	$(call post_build,E310_SG3_IDLE)
 
 ##E310_SG1:       Build USRP E3XX (Speed Grade 1).
-E310_SG1 E310: check-variables E310_SG1_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
+E310_SG1 E310: check-variables E310_SG1_IP $(BUILD_DIR)/E310_SG1.dts
 	$(call vivado_build,E310_SG1,$(DEFS) E310_SG1=1 $(if $(DRAM),ENABLE_DRAM=1,))
-	$(call post_build,$@)
+	$(call post_build,E310_SG1)
 
 ##E310_SG3:       Build USRP E3XX (Speed Grade 3).
-E310_SG3 E310_sg3: check-variables E310_SG3_IP $(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts
+E310_SG3 E310_sg3: check-variables E310_SG3_IP $(BUILD_DIR)/E310_SG3.dts
 	$(call vivado_build,E310_SG3,$(DEFS) E310_SG3=1 $(if $(DRAM),ENABLE_DRAM=1,))
-	$(call post_build,$@)
+	$(call post_build,E310_SG3)
 
-$(BUILD_OUTPUT_DIR)/$(IMAGE_CORE_NAME).dts: dts/*.dts dts/*.dtsi
-	-mkdir -p $(BUILD_OUTPUT_DIR)
+$(BUILD_DIR)/%.dts: dts/%.dts dts/*.dtsi
 	${CC} -o $@ -E -I dts -nostdinc -undef -x assembler-with-cpp -D__DTS__ $<
 
 ##
