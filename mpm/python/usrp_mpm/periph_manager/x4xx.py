@@ -1022,6 +1022,14 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         """Poke the ClkAux DB over SPI"""
         self._clocking_auxbrd.poke8(addr, val)
 
+    def peek_rfdc(self, addr):
+        """Peek the RFDC registers."""
+        return "0x{:X}".format(self.rfdc._rfdc_regs._peek(addr))
+
+    def poke_rfdc(self, addr, val):
+        """Poke the RFDC registers."""
+        self.rfdc._rfdc_regs._poke(addr, val)
+
     ###########################################################################
     # Sensors
     ###########################################################################
