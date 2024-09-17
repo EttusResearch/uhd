@@ -106,7 +106,7 @@ double disk_rate_check(const size_t sample_type_size,
     );
     std::regex_match(dd_output, dd_matchs, dd_regex);
 
-    if (dd_matchs[0].str() != dd_output) {
+    if ((dd_output.length() == 0) || (dd_matchs[0].str() != dd_output)) {
         std::cerr << err_msg << std::endl;
     } else {
         double disk_rate_sigfigs = std::stod(dd_matchs[1]);
