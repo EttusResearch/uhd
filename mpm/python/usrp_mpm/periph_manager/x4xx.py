@@ -7,36 +7,37 @@
 X400 implementation module
 """
 
-import threading
 import copy
-from time import sleep
-from os import path
+import threading
 from collections import namedtuple
-from usrp_mpm import lib # Pulls in everything from C++-land
+from os import path
+from time import sleep
+
+from usrp_mpm import lib  # Pulls in everything from C++-land
 from usrp_mpm import tlv_eeprom
 from usrp_mpm.compat_num import CompatNumber
 from usrp_mpm.components import ZynqComponents
-from usrp_mpm.sys_utils import dtoverlay
-from usrp_mpm.sys_utils import ectool
-from usrp_mpm.sys_utils import i2c_dev
-from usrp_mpm.sys_utils.gpio import Gpio
-from usrp_mpm.sys_utils.udev import dt_symbol_get_spidev
-from usrp_mpm.rpc_utils import no_claim, no_rpc
+from usrp_mpm.dboard_manager.x4xx_db_iface import X4xxDboardIface
 from usrp_mpm.mpmutils import assert_compat_number, poll_with_timeout
 from usrp_mpm.periph_manager import PeriphManagerBase
-from usrp_mpm.xports import XportMgrUDP
-from usrp_mpm.periph_manager.x4xx_periphs import MboardRegsControl
-from usrp_mpm.periph_manager.x4xx_periphs import CtrlportRegs
-from usrp_mpm.periph_manager.x4xx_dio_control import DioControl
-from usrp_mpm.periph_manager.x4xx_periphs import QSFPModule
-from usrp_mpm.periph_manager.x4xx_periphs import get_temp_sensor
-from usrp_mpm.periph_manager.x4xx_mb_cpld import make_mb_cpld_ctrl
 from usrp_mpm.periph_manager.x4xx_clk_aux import ClockingAuxBrdControl
 from usrp_mpm.periph_manager.x4xx_clock_mgr import X4xxClockManager
-from usrp_mpm.periph_manager.x4xx_gps_mgr import X4xxGPSMgr
-from usrp_mpm.periph_manager.x4xx_rfdc_ctrl import X4xxRfdcCtrl
 from usrp_mpm.periph_manager.x4xx_clock_policy import get_clock_policy
-from usrp_mpm.dboard_manager.x4xx_db_iface import X4xxDboardIface
+from usrp_mpm.periph_manager.x4xx_dio_control import DioControl
+from usrp_mpm.periph_manager.x4xx_gps_mgr import X4xxGPSMgr
+from usrp_mpm.periph_manager.x4xx_mb_cpld import make_mb_cpld_ctrl
+from usrp_mpm.periph_manager.x4xx_periphs import (
+    CtrlportRegs,
+    MboardRegsControl,
+    QSFPModule,
+    get_temp_sensor,
+)
+from usrp_mpm.periph_manager.x4xx_rfdc_ctrl import X4xxRfdcCtrl
+from usrp_mpm.rpc_utils import no_claim, no_rpc
+from usrp_mpm.sys_utils import dtoverlay, ectool, i2c_dev
+from usrp_mpm.sys_utils.gpio import Gpio
+from usrp_mpm.sys_utils.udev import dt_symbol_get_spidev
+from usrp_mpm.xports import XportMgrUDP
 
 X400_FPGA_COMPAT = (8, 2)
 # The compat number at which remote streaming was added:
@@ -45,27 +46,29 @@ X400_REMOTE_STREAMING_COMPAT = (7, 9)
 X400_DEVICE_DNA_COMPAT = (8, 3)
 X400_DEFAULT_ENABLE_PPS_EXPORT = True
 X400_DEFAULT_TRIG_DIRECTION = ClockingAuxBrdControl.DIRECTION_OUTPUT
-X400_MONITOR_THREAD_INTERVAL = 1.0 # seconds
+X400_MONITOR_THREAD_INTERVAL = 1.0  # seconds
 QSFPModuleConfig = namedtuple("QSFPModuleConfig", "modprs modsel devsymbol")
 X400_QSFP_I2C_CONFIGS = [
-        QSFPModuleConfig(modprs='QSFP0_MODPRS', modsel='QSFP0_MODSEL_n', devsymbol='qsfp0_i2c'),
-        QSFPModuleConfig(modprs='QSFP1_MODPRS', modsel='QSFP1_MODSEL_n', devsymbol='qsfp1_i2c')]
-RPU_SUCCESS_REPORT = 'Success'
-RPU_FAILURE_REPORT = 'Failure'
-RPU_REMOTEPROC_FIRMWARE_PATH = '/lib/firmware'
-RPU_REMOTEPROC_PREFIX_PATH = '/sys/class/remoteproc/remoteproc'
-RPU_REMOTEPROC_PROPERTY_FIRMWARE = 'firmware'
-RPU_REMOTEPROC_PROPERTY_STATE = 'state'
-RPU_STATE_COMMAND_START = 'start'
-RPU_STATE_COMMAND_STOP = 'stop'
-RPU_STATE_OFFLINE = 'offline'
-RPU_STATE_RUNNING = 'running'
+    QSFPModuleConfig(modprs="QSFP0_MODPRS", modsel="QSFP0_MODSEL_n", devsymbol="qsfp0_i2c"),
+    QSFPModuleConfig(modprs="QSFP1_MODPRS", modsel="QSFP1_MODSEL_n", devsymbol="qsfp1_i2c"),
+]
+RPU_SUCCESS_REPORT = "Success"
+RPU_FAILURE_REPORT = "Failure"
+RPU_REMOTEPROC_FIRMWARE_PATH = "/lib/firmware"
+RPU_REMOTEPROC_PREFIX_PATH = "/sys/class/remoteproc/remoteproc"
+RPU_REMOTEPROC_PROPERTY_FIRMWARE = "firmware"
+RPU_REMOTEPROC_PROPERTY_STATE = "state"
+RPU_STATE_COMMAND_START = "start"
+RPU_STATE_COMMAND_STOP = "stop"
+RPU_STATE_OFFLINE = "offline"
+RPU_STATE_RUNNING = "running"
 RPU_MAX_FIRMWARE_SIZE = 0x100000
 RPU_MAX_STATE_CHANGE_TIME_IN_MS = 10000
 RPU_STATE_CHANGE_POLLING_INTERVAL_IN_MS = 100
 
 DIOAUX_EEPROM = "dioaux_eeprom"
 DIOAUX_PID = 0x4003
+
 
 # pylint: disable=too-few-public-methods
 class EepromTagMap:
@@ -76,14 +79,13 @@ class EepromTagMap:
     is defined in mpm/tools/tlv_eeprom/usrp_eeprom.h. Only the subset relevant
     to MPM are included below.
     """
+
     magic = 0x55535250
     tagmap = {
         # 0x10: usrp_eeprom_board_info
-        0x10: tlv_eeprom.NamedStruct('< H H H 7s 1x',
-                                     ['pid', 'rev', 'rev_compat', 'serial']),
+        0x10: tlv_eeprom.NamedStruct("< H H H 7s 1x", ["pid", "rev", "rev_compat", "serial"]),
         # 0x11: usrp_eeprom_module_info
-        0x11: tlv_eeprom.NamedStruct('< H H 7s 1x',
-                                     ['module_pid', 'module_rev', 'module_serial']),
+        0x11: tlv_eeprom.NamedStruct("< H H 7s 1x", ["module_pid", "module_rev", "module_serial"]),
     }
 
 
@@ -93,47 +95,49 @@ class EepromTagMap:
 class X400XportMgrUDP(XportMgrUDP):
     "X400-specific UDP configuration"
     iface_config = {
-        'sfp0': {
-            'label': 'misc-enet-regs0',
-            'type': 'sfp',
+        "sfp0": {
+            "label": "misc-enet-regs0",
+            "type": "sfp",
         },
-        'sfp0_1': {
-            'label': 'misc-enet-regs0-1',
-            'type': 'sfp',
+        "sfp0_1": {
+            "label": "misc-enet-regs0-1",
+            "type": "sfp",
         },
-        'sfp0_2': {
-            'label': 'misc-enet-regs0-2',
-            'type': 'sfp',
+        "sfp0_2": {
+            "label": "misc-enet-regs0-2",
+            "type": "sfp",
         },
-        'sfp0_3': {
-            'label': 'misc-enet-regs0-3',
-            'type': 'sfp',
+        "sfp0_3": {
+            "label": "misc-enet-regs0-3",
+            "type": "sfp",
         },
-        'sfp1': {
-            'label': 'misc-enet-regs1',
-            'type': 'sfp',
+        "sfp1": {
+            "label": "misc-enet-regs1",
+            "type": "sfp",
         },
-        'sfp1_1': {
-            'label': 'misc-enet-regs1-1',
-            'type': 'sfp',
+        "sfp1_1": {
+            "label": "misc-enet-regs1-1",
+            "type": "sfp",
         },
-        'sfp1_2': {
-            'label': 'misc-enet-regs1-2',
-            'type': 'sfp',
+        "sfp1_2": {
+            "label": "misc-enet-regs1-2",
+            "type": "sfp",
         },
-        'sfp1_3': {
-            'label': 'misc-enet-regs1-3',
-            'type': 'sfp',
+        "sfp1_3": {
+            "label": "misc-enet-regs1-3",
+            "type": "sfp",
         },
-        'int0': {
-            'label': 'misc-enet-int-regs',
-            'type': 'internal',
+        "int0": {
+            "label": "misc-enet-int-regs",
+            "type": "internal",
         },
-        'eth0': {
-            'label': '',
-            'type': 'forward',
-        }
+        "eth0": {
+            "label": "",
+            "type": "forward",
+        },
     }
+
+
 # pylint: enable=too-few-public-methods
 
 
@@ -144,15 +148,14 @@ class x4xx(ZynqComponents, PeriphManagerBase):
     """
     Holds X400 specific attributes and methods
     """
+
     #########################################################################
     # Overridables
     #
     # See PeriphManagerBase for documentation on these fields. We try and keep
     # them in the same order as they are in PeriphManagerBase for easier lookup.
     #########################################################################
-    pids = {
-        0x0410: 'x410',
-        0x0440: 'x440'}
+    pids = {0x0410: "x410", 0x0440: "x440"}
     description = "X400-Series Device"
     eeprom_search = PeriphManagerBase._EepromSearch.SYMBOL
     # This is not in the overridables section from PeriphManagerBase, but we use
@@ -168,42 +171,42 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         # List of motherboard sensors that are always available. There are also
         # GPS sensors, but they get added during __init__() only when there is
         # a GPS available.
-        'ref_locked': 'get_ref_lock_sensor',
-        'fan0': 'get_fan0_sensor',
-        'fan1': 'get_fan1_sensor',
-        'temp_fpga' : 'get_fpga_temp_sensor',
-        'temp_main_power' : 'get_main_power_temp_sensor',
-        'temp_scu_internal' : 'get_scu_internal_temp_sensor',
+        "ref_locked": "get_ref_lock_sensor",
+        "fan0": "get_fan0_sensor",
+        "fan1": "get_fan1_sensor",
+        "temp_fpga": "get_fpga_temp_sensor",
+        "temp_main_power": "get_main_power_temp_sensor",
+        "temp_scu_internal": "get_scu_internal_temp_sensor",
     }
     db_iface = X4xxDboardIface
     dboard_eeprom_magic = eeprom_magic
     # Note: Daughterboard classes also carry updateable_components information.
     updateable_components = {
-        'fpga': {
-            'callback': "update_fpga",
-            'path': '/lib/firmware/{}.bin',
-            'reset': True,
-            'check_dts_for_compatibility': True,
-            'compatibility': {
-                'fpga': {
-                    'current': X400_FPGA_COMPAT,
-                    'oldest': (8, 2),
+        "fpga": {
+            "callback": "update_fpga",
+            "path": "/lib/firmware/{}.bin",
+            "reset": True,
+            "check_dts_for_compatibility": True,
+            "compatibility": {
+                "fpga": {
+                    "current": X400_FPGA_COMPAT,
+                    "oldest": (8, 2),
                 },
-                'cpld_ifc' : {
-                    'current': (2, 0),
-                    'oldest': (2, 0),
+                "cpld_ifc": {
+                    "current": (2, 0),
+                    "oldest": (2, 0),
                 },
-                'db_gpio_ifc': {
-                    'current': (1, 0),
-                    'oldest': (1, 0),
+                "db_gpio_ifc": {
+                    "current": (1, 0),
+                    "oldest": (1, 0),
                 },
-            }
+            },
         },
-        'dts': {
-            'callback': "update_dts",
-            'path': '/lib/firmware/{}.dts',
-            'output': '/lib/firmware/{}.dtbo',
-            'reset': False,
+        "dts": {
+            "callback": "update_dts",
+            "path": "/lib/firmware/{}.dts",
+            "output": "/lib/firmware/{}.dtbo",
+            "reset": False,
         },
     }
     discoverable_features = ["ref_clk_calibration", "time_export", "trig_io_mode", "gpio_power"]
@@ -222,14 +225,13 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         Hard-code our product map
         """
         # Add the default PeriphManagerBase information first
-        device_info = super().generate_device_info(
-            eeprom_md, mboard_info, dboard_infos)
+        device_info = super().generate_device_info(eeprom_md, mboard_info, dboard_infos)
         # Then add X4xx-specific information
-        mb_pid = eeprom_md.get('pid')
-        device_info['product'] = cls.pids.get(mb_pid, 'unknown')
-        module_serial = eeprom_md.get('module_serial')
+        mb_pid = eeprom_md.get("pid")
+        device_info["product"] = cls.pids.get(mb_pid, "unknown")
+        module_serial = eeprom_md.get("module_serial")
         if module_serial is not None:
-            device_info['serial'] = module_serial
+            device_info["serial"] = module_serial
         return device_info
 
     @staticmethod
@@ -242,7 +244,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         eeprom_md -- Dictionary of info read out from the mboard EEPROM
         device_args -- Arbitrary dictionary of info, typically user-defined
         """
-        return [device_info['product']]
+        return [device_info["product"]]
 
     def _init_mboard_overlays(self):
         """
@@ -253,9 +255,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         requested_overlays = self.list_required_dt_overlays(
             self.device_info,
         )
-        self.log.debug("Motherboard requests device tree overlays: {}".format(
-            requested_overlays
-        ))
+        self.log.debug("Motherboard requests device tree overlays: {}".format(requested_overlays))
         # Remove all overlays before applying new ones
         for overlay in requested_overlays:
             dtoverlay.rm_overlay_safe(overlay)
@@ -288,7 +288,8 @@ class x4xx(ZynqComponents, PeriphManagerBase):
             # since it needs information about available dboards
             self._init_dio_control(args)
             self.clk_mgr.set_dboard_reset_cb(
-                lambda enable: [db.reset_clock(enable) for db in self.dboards])
+                lambda enable: [db.reset_clock(enable) for db in self.dboards]
+            )
         except Exception as ex:
             self.log.error("Failed to initialize motherboard: %s", str(ex), exc_info=ex)
             self._initialization_status = str(ex)
@@ -297,8 +298,8 @@ class x4xx(ZynqComponents, PeriphManagerBase):
             # Don't try and figure out what's going on. Just give up.
             return
         try:
-            if not args.get('skip_boot_init', False):
-                args['boot_init'] = True
+            if not args.get("skip_boot_init", False):
+                args["boot_init"] = True
                 self.init(args)
         except Exception as ex:
             self.log.warning("Failed to initialize device on boot: %s", str(ex))
@@ -311,18 +312,17 @@ class x4xx(ZynqComponents, PeriphManagerBase):
     # these versions don't.
     # pylint: disable=no-self-use
     def _read_mboard_eeprom_data(self, eeprom_path):
-        """ Returns a tuple (eeprom_dict, eeprom_rawdata) for the motherboard
+        """Returns a tuple (eeprom_dict, eeprom_rawdata) for the motherboard
         EEPROM.
         """
-        return tlv_eeprom.read_eeprom(eeprom_path, EepromTagMap.tagmap,
-                                      EepromTagMap.magic, None)
+        return tlv_eeprom.read_eeprom(eeprom_path, EepromTagMap.tagmap, EepromTagMap.magic, None)
 
     def _read_dboard_eeprom_data(self, eeprom_path):
-        """ Returns a tuple (eeprom_dict, eeprom_rawdata) for a daughterboard
+        """Returns a tuple (eeprom_dict, eeprom_rawdata) for a daughterboard
         EEPROM.
         """
-        return tlv_eeprom.read_eeprom(eeprom_path, EepromTagMap.tagmap,
-                                      EepromTagMap.magic, None)
+        return tlv_eeprom.read_eeprom(eeprom_path, EepromTagMap.tagmap, EepromTagMap.magic, None)
+
     # pylint: enable=no-self-use
 
     def _check_fpga_compat(self):
@@ -335,22 +335,17 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         features.
         """
         actual_compat = self.mboard_regs_control.get_compat_number()
-        self.log.debug("Actual FPGA compat number: {:d}.{:d}".format(
-            actual_compat[0], actual_compat[1]
-        ))
+        self.log.debug(
+            "Actual FPGA compat number: {:d}.{:d}".format(actual_compat[0], actual_compat[1])
+        )
         assert_compat_number(
-            X400_FPGA_COMPAT,
-            actual_compat,
-            component="FPGA",
-            fail_on_old_minor=False,
-            log=self.log
+            X400_FPGA_COMPAT, actual_compat, component="FPGA", fail_on_old_minor=False, log=self.log
         )
         if CompatNumber(actual_compat) >= CompatNumber(X400_REMOTE_STREAMING_COMPAT):
-            self.fpga_features.add('remote_udp_streaming')
+            self.fpga_features.add("remote_udp_streaming")
         if CompatNumber(actual_compat) >= CompatNumber(X400_DEVICE_DNA_COMPAT):
-            self.fpga_features.add('device_dna')
-        self.log.debug(
-            f"FPGA supports the following features: {', '.join(self.fpga_features)}")
+            self.fpga_features.add("device_dna")
+        self.log.debug(f"FPGA supports the following features: {', '.join(self.fpga_features)}")
 
     def _init_gps_mgr(self):
         """
@@ -381,13 +376,11 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         cond = threading.Condition()
         cond.acquire()
         while not self._tear_down:
-            ref_locked = self.get_ref_lock_sensor()['value'] == 'true'
+            ref_locked = self.get_ref_lock_sensor()["value"] == "true"
             if self._clocking_auxbrd is not None:
                 self._clocking_auxbrd.set_ref_lock_led(ref_locked)
             # Now wait
-            if cond.wait_for(
-                    lambda: self._tear_down,
-                    X400_MONITOR_THREAD_INTERVAL):
+            if cond.wait_for(lambda: self._tear_down, X400_MONITOR_THREAD_INTERVAL):
                 break
         cond.release()
         self.log.trace("Terminating monitor loop.")
@@ -409,9 +402,10 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         serial_number = self._eeprom_head.get("module_serial")
         if serial_number is None:
             self.log.warning(
-                'Module serial number not programmed, falling back to motherboard serial')
+                "Module serial number not programmed, falling back to motherboard serial"
+            )
             serial_number = self._eeprom_head["serial"]
-        return serial_number.rstrip(b'\x00')
+        return serial_number.rstrip(b"\x00")
 
     def _init_peripherals(self, args):
         """
@@ -426,10 +420,11 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         everything else, in particular the clocks, are running as desired.
         """
         # Sanity checks
-        assert self.mboard_info.get('product') in self.pids.values(), \
-            "Device product could not be determined!"
+        assert (
+            self.mboard_info.get("product") in self.pids.values()
+        ), "Device product could not be determined!"
         # Init peripherals
-        self._rfdc_powered = Gpio('RFDC_POWERED', Gpio.INPUT)
+        self._rfdc_powered = Gpio("RFDC_POWERED", Gpio.INPUT)
         # Init RPU Manager
         self.log.trace("Initializing RPU manager peripheral...")
         self.init_rpu()
@@ -444,11 +439,12 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         except RuntimeError:
             self.log.warning(
                 "GPIO I2C bus could not be found for the Clocking Aux Board, "
-                "disabling Clocking Aux Board functionality.")
+                "disabling Clocking Aux Board functionality."
+            )
             self._clocking_auxbrd = None
 
         # Init CPLD before talking to clocking ICs
-        cpld_spi_node = dt_symbol_get_spidev('mb_cpld')
+        cpld_spi_node = dt_symbol_get_spidev("mb_cpld")
         # This factory function will check signature and compat-rev, and
         # therefore could throw if the CPLD is not compatible.
         self.cpld_control = make_mb_cpld_ctrl(cpld_spi_node, self.log)
@@ -466,12 +462,13 @@ class x4xx(ZynqComponents, PeriphManagerBase):
             clk_policy=get_clock_policy(self.mboard_info, self.dboard_infos, args, self.log),
             clk_aux_board=self._clocking_auxbrd,
             cpld_control=self.cpld_control,
-            log=self.log)
+            log=self.log,
+        )
         self._add_public_methods(
             self.clk_mgr,
             prefix="",
-            filter_cb=lambda name, method: not hasattr(method, '_norpc'),
-            allow_overwrite=True
+            filter_cb=lambda name, method: not hasattr(method, "_norpc"),
+            allow_overwrite=True,
         )
 
         # Overlay must be applied after clocks have been configured. This will
@@ -481,13 +478,12 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         # Init Mboard Regs
         self.log.trace("Initializing MBoard reg controls...")
         serial_number = self._get_serial_number()
-        self.mboard_regs_control = MboardRegsControl(
-            self.mboard_regs_label, self.log)
+        self.mboard_regs_control = MboardRegsControl(self.mboard_regs_label, self.log)
         self._check_fpga_compat()
         self.mboard_regs_control.set_serial_number(serial_number)
         self.mboard_regs_control.get_git_hash()
         self.mboard_regs_control.get_build_timestamp()
-        if 'device_dna' in self.fpga_features:
+        if "device_dna" in self.fpga_features:
             self._device_dna = self.mboard_regs_control.get_device_dna()
         # The clock manager needs access to this object -- we will make that
         # available after the RFDC object is created.
@@ -495,8 +491,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         # Create control for RFDC
         self.rfdc = X4xxRfdcCtrl(self.log)
         self._add_public_methods(
-            self.rfdc, prefix="",
-            filter_cb=lambda name, method: not hasattr(method, '_norpc')
+            self.rfdc, prefix="", filter_cb=lambda name, method: not hasattr(method, "_norpc")
         )
 
         self._update_fpga_type()
@@ -514,8 +509,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
 
         # Init IPass cable status forwarding and CMI
         self.cpld_control.set_serial_number(serial_number)
-        self.cpld_control.set_cmi_device_ready(
-            self.mboard_regs_control.is_pcie_present())
+        self.cpld_control.set_cmi_device_ready(self.mboard_regs_control.is_pcie_present())
         # The CMI transmission can be disabled by setting the cable status
         # to be not connected. All images except for the LV PCIe variant
         # provide a fixed "cables are unconnected" status. The LV PCIe image
@@ -525,8 +519,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
 
         # Init QSFP modules
         for idx, config in enumerate(X400_QSFP_I2C_CONFIGS):
-            attr = QSFPModule(
-                config.modprs, config.modsel, config.devsymbol, self.log)
+            attr = QSFPModule(config.modprs, config.modsel, config.devsymbol, self.log)
             setattr(self, "_qsfp_module{}".format(idx), attr)
             self._add_public_methods(attr, "qsfp{}".format(idx))
 
@@ -535,7 +528,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
             self._gps_mgr = self._init_gps_mgr()
         # Init CHDR transports
         self._xport_mgrs = {
-            'udp': X400XportMgrUDP(self.log, args),
+            "udp": X400XportMgrUDP(self.log, args),
         }
         # Spawn status monitoring thread
         self.log.trace("Spawning status monitor thread...")
@@ -554,9 +547,9 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         sure to catch it.
         """
         if self._check_compat_aux_board(DIOAUX_EEPROM, DIOAUX_PID):
-            self.dio_control = DioControl(self.mboard_regs_control,
-                                          self.cpld_control, self.log,
-                                          self.dboards)
+            self.dio_control = DioControl(
+                self.mboard_regs_control, self.cpld_control, self.log, self.dboards
+            )
             # add dio_control public methods to MPM API
             self._add_public_methods(self.dio_control, "dio")
 
@@ -569,17 +562,18 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         :return True if board is available with matching PID,
                 False otherwise
         """
-        assert(isinstance(self._aux_board_infos, dict)), "No EEPROM data"
+        assert isinstance(self._aux_board_infos, dict), "No EEPROM data"
         board_info = self._aux_board_infos.get(name, None)
         if board_info is None:
             self.log.warning("Board for %s not present" % name)
             return False
         if board_info.get("pid", 0) != pid:
-            self.log.error("Expected PID for board %s to be 0x%04x but found "
-                           "0x%04x" % (name, pid, board_info["pid"]))
+            self.log.error(
+                "Expected PID for board %s to be 0x%04x but found "
+                "0x%04x" % (name, pid, board_info["pid"])
+            )
             return False
-        self.log.debug("Found compatible board for %s "
-                       "(PID: 0x%04x)" % (name, board_info["pid"]))
+        self.log.debug("Found compatible board for %s " "(PID: 0x%04x)" % (name, board_info["pid"]))
         return True
 
     def init_rpu(self):
@@ -593,17 +587,15 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         try:
             for core_number in [0, 1]:
                 self.log.trace(
-                    "RPU Core %d state: %s",
-                    core_number,
-                    self.get_rpu_state(core_number))
+                    "RPU Core %d state: %s", core_number, self.get_rpu_state(core_number)
+                )
                 # TODO [psisterh, 5 Dec 2019]
                 # Should we force core to
                 #   stop if running or in error state?
             self.log.trace("Initialized RPU cores successfully.")
             self._rpu_initialized = True
         except FileNotFoundError:
-            self.log.warning(
-                "Failed to initialize RPU: remoteproc sysfs not present.")
+            self.log.warning("Failed to initialize RPU: remoteproc sysfs not present.")
 
     ###########################################################################
     # Session init and deinit
@@ -614,8 +606,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         dispatchers accordingly.
         """
         if not self._device_initialized:
-            self.log.warning(
-                "Cannot run init(), device was never fully initialized!")
+            self.log.warning("Cannot run init(), device was never fully initialized!")
             return False
         args = self._update_default_args(args)
 
@@ -638,9 +629,9 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         # Now the clocks are all enabled, we can also enable PPS export:
         if self._clocking_auxbrd is not None:
             self._clocking_auxbrd.set_trig(
-                args.get('pps_export', X400_DEFAULT_ENABLE_PPS_EXPORT),
-                args.get('trig_direction', X400_DEFAULT_TRIG_DIRECTION)
-                )
+                args.get("pps_export", X400_DEFAULT_ENABLE_PPS_EXPORT),
+                args.get("trig_direction", X400_DEFAULT_TRIG_DIRECTION),
+            )
         return result
 
     def deinit(self):
@@ -648,8 +639,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         Clean up after a UHD session terminates.
         """
         if not self._device_initialized:
-            self.log.warning(
-                "Cannot run deinit(), device was never fully initialized!")
+            self.log.warning("Cannot run deinit(), device was never fully initialized!")
             return
         self.clk_mgr.deinit()
 
@@ -667,8 +657,9 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         if self._device_initialized:
             self._status_monitor_thread.join(3 * X400_MONITOR_THREAD_INTERVAL)
             if self._status_monitor_thread.is_alive():
-                self.log.error("Could not terminate monitor thread! "
-                               "This could result in resource leaks.")
+                self.log.error(
+                    "Could not terminate monitor thread! " "This could result in resource leaks."
+                )
         # call tear_down on daughterboards first
         super(x4xx, self).tear_down()
         if self.dio_control is not None:
@@ -679,9 +670,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
             self.clk_mgr.tear_down()
         # remove x4xx overlay
         active_overlays = self.list_active_overlays()
-        self.log.trace("X4xx has active device tree overlays: {}".format(
-            active_overlays
-        ))
+        self.log.trace("X4xx has active device tree overlays: {}".format(active_overlays))
         for overlay in active_overlays:
             dtoverlay.rm_overlay(overlay)
 
@@ -694,16 +683,16 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         """
         if not self._device_initialized:
             return {}
-        device_info = self._xport_mgrs['udp'].get_xport_info()
-        device_info.update({
-            'fpga_version': "{}.{}".format(
-                *self.mboard_regs_control.get_compat_number()),
-            'fpga_version_hash': "{:x}.{}".format(
-                *self.mboard_regs_control.get_git_hash()),
-            'fpga': self.updateable_components.get('fpga', {}).get('type', ""),
-        })
-        if 'device_dna' in self.fpga_features:
-            device_info.update({'device_dna': self._device_dna})
+        device_info = self._xport_mgrs["udp"].get_xport_info()
+        device_info.update(
+            {
+                "fpga_version": "{}.{}".format(*self.mboard_regs_control.get_compat_number()),
+                "fpga_version_hash": "{:x}.{}".format(*self.mboard_regs_control.get_git_hash()),
+                "fpga": self.updateable_components.get("fpga", {}).get("type", ""),
+            }
+        )
+        if "device_dna" in self.fpga_features:
+            device_info.update({"device_dna": self._device_dna})
         return device_info
 
     def is_db_gpio_ifc_present(self, slot_id):
@@ -737,8 +726,9 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         if not self._clocking_auxbrd:
             raise RuntimeError("No clocking aux board available")
         if not direction in directions:
-            raise RuntimeError("Invalid trigger io direction (%s). Use one of %s"
-                               % (direction, directions))
+            raise RuntimeError(
+                "Invalid trigger io direction (%s). Use one of %s" % (direction, directions)
+            )
 
         # Switching order of trigger I/O lines depends on requested direction.
         # Always turn on new driver last so both drivers cannot be active
@@ -749,7 +739,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         elif direction == PPS_OUTPUT:
             self._clocking_auxbrd.set_trig(1, ClockingAuxBrdControl.DIRECTION_OUTPUT)
             self.mboard_regs_control.set_trig_io_output(True)
-        else: # direction == OFF:
+        else:  # direction == OFF:
             self.mboard_regs_control.set_trig_io_output(False)
             self._clocking_auxbrd.set_trig(0)
 
@@ -765,8 +755,10 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         try:
             dboard = self.dboards[dboard_idx]
         except IndexError:
-            error_msg = "Attempted to access invalid dboard index `{}' " \
-                        "in get_db_eeprom()!".format(dboard_idx)
+            error_msg = (
+                "Attempted to access invalid dboard index `{}' "
+                "in get_db_eeprom()!".format(dboard_idx)
+            )
             self.log.error(error_msg)
             raise RuntimeError(error_msg)
         db_eeprom_data = copy.copy(dboard.device_info)
@@ -780,10 +772,10 @@ class x4xx(ZynqComponents, PeriphManagerBase):
     def _update_fpga_type(self):
         """Update the fpga type stored in the updateable components"""
         fpga_string = "{}_{}".format(
-            self.mboard_regs_control.get_fpga_type(),
-            self.rfdc.get_dsp_bw())
+            self.mboard_regs_control.get_fpga_type(), self.rfdc.get_dsp_bw()
+        )
         self.log.debug("Updating mboard FPGA type info to {}".format(fpga_string))
-        self.updateable_components['fpga']['type'] = fpga_string
+        self.updateable_components["fpga"]["type"] = fpga_string
 
     ###########################################################################
     # GPIO API
@@ -832,23 +824,21 @@ class x4xx(ZynqComponents, PeriphManagerBase):
     ###########################################################################
     @no_rpc
     def _validate_rpu_core_number(self, core_number):
-        if ((core_number < 0) or (core_number > 1)):
+        if (core_number < 0) or (core_number > 1):
             raise RuntimeError("RPU core number must be 0 or 1.")
-
 
     ###########################################################################
     # Utility for validating RPU state change command
     ###########################################################################
     @no_rpc
     def _validate_rpu_state(self, new_state_command, previous_state):
-        if ((new_state_command != RPU_STATE_COMMAND_START)
-                and (new_state_command != RPU_STATE_COMMAND_STOP)):
+        if (new_state_command != RPU_STATE_COMMAND_START) and (
+            new_state_command != RPU_STATE_COMMAND_STOP
+        ):
             raise RuntimeError("RPU state command must be start or stop.")
-        if ((new_state_command == RPU_STATE_COMMAND_START)
-                and (previous_state == RPU_STATE_RUNNING)):
+        if (new_state_command == RPU_STATE_COMMAND_START) and (previous_state == RPU_STATE_RUNNING):
             raise RuntimeError("RPU already running.")
-        if ((new_state_command == RPU_STATE_COMMAND_STOP)
-                and (previous_state == RPU_STATE_OFFLINE)):
+        if (new_state_command == RPU_STATE_COMMAND_STOP) and (previous_state == RPU_STATE_OFFLINE):
             raise RuntimeError("RPU already offline.")
 
     ###########################################################################
@@ -866,9 +856,8 @@ class x4xx(ZynqComponents, PeriphManagerBase):
     @no_rpc
     def _read_file(self, file_path):
         self.log.trace("_read_file: file_path= %s", file_path)
-        with open(file_path, 'r') as f:
+        with open(file_path, "r") as f:
             return f.read().strip()
-
 
     ###########################################################################
     # Utility for writing contents of a file
@@ -876,29 +865,24 @@ class x4xx(ZynqComponents, PeriphManagerBase):
     @no_rpc
     def _write_file(self, file_path, data):
         self.log.trace("_write_file: file_path= %s, data= %s", file_path, data)
-        with open(file_path, 'w') as f:
+        with open(file_path, "w") as f:
             f.write(data)
-
 
     ###########################################################################
     # RPU Image Deployment API
     ###########################################################################
     def get_rpu_state(self, core_number, validate=True):
-        """ Report the state for the specified RPU core """
+        """Report the state for the specified RPU core"""
         if validate:
             self._validate_rpu_core_number(core_number)
         return self._read_file(
-            path.join(
-                RPU_REMOTEPROC_PREFIX_PATH + str(core_number),
-                RPU_REMOTEPROC_PROPERTY_STATE))
-
+            path.join(RPU_REMOTEPROC_PREFIX_PATH + str(core_number), RPU_REMOTEPROC_PROPERTY_STATE)
+        )
 
     def set_rpu_state(self, core_number, new_state_command, validate=True):
-        """ Set the specified state for the specified RPU core """
+        """Set the specified state for the specified RPU core"""
         if not self._rpu_initialized:
-            self.log.warning(
-                "Failed to set RPU state: RPU peripheral not "\
-                "initialized.")
+            self.log.warning("Failed to set RPU state: RPU peripheral not " "initialized.")
             return RPU_FAILURE_REPORT
         # OK, RPU is initialized, now go set its state:
         if validate:
@@ -907,49 +891,43 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         if validate:
             self._validate_rpu_state(new_state_command, previous_state)
         self._write_file(
-            path.join(
-                RPU_REMOTEPROC_PREFIX_PATH + str(core_number),
-                RPU_REMOTEPROC_PROPERTY_STATE),
-            new_state_command)
+            path.join(RPU_REMOTEPROC_PREFIX_PATH + str(core_number), RPU_REMOTEPROC_PROPERTY_STATE),
+            new_state_command,
+        )
 
         # Give RPU core time to change state (might load new fw)
         poll_with_timeout(
             lambda: previous_state != self.get_rpu_state(core_number, False),
             RPU_MAX_STATE_CHANGE_TIME_IN_MS,
-            RPU_STATE_CHANGE_POLLING_INTERVAL_IN_MS)
+            RPU_STATE_CHANGE_POLLING_INTERVAL_IN_MS,
+        )
 
         # Quick validation of new state
         resulting_state = self.get_rpu_state(core_number, False)
-        if ((new_state_command == RPU_STATE_COMMAND_START)
-                and (resulting_state != RPU_STATE_RUNNING)):
-            raise RuntimeError('Unable to start specified RPU core.')
-        if ((new_state_command == RPU_STATE_COMMAND_STOP)
-                and (resulting_state != RPU_STATE_OFFLINE)):
-            raise RuntimeError('Unable to stop specified RPU core.')
+        if (new_state_command == RPU_STATE_COMMAND_START) and (
+            resulting_state != RPU_STATE_RUNNING
+        ):
+            raise RuntimeError("Unable to start specified RPU core.")
+        if (new_state_command == RPU_STATE_COMMAND_STOP) and (resulting_state != RPU_STATE_OFFLINE):
+            raise RuntimeError("Unable to stop specified RPU core.")
         return RPU_SUCCESS_REPORT
 
     def get_rpu_firmware(self, core_number):
-        """ Report the firmware for the specified RPU core """
+        """Report the firmware for the specified RPU core"""
         self._validate_rpu_core_number(core_number)
         return self._read_file(
             path.join(
-                RPU_REMOTEPROC_PREFIX_PATH + str(core_number),
-                RPU_REMOTEPROC_PROPERTY_FIRMWARE))
-
+                RPU_REMOTEPROC_PREFIX_PATH + str(core_number), RPU_REMOTEPROC_PROPERTY_FIRMWARE
+            )
+        )
 
     def set_rpu_firmware(self, core_number, firmware, start=0):
-        """ Deploy the image at the specified path to the RPU """
+        """Deploy the image at the specified path to the RPU"""
         self.log.trace("set_rpu_firmware")
-        self.log.trace(
-            "image path: %s, core_number: %d, start?: %d",
-            firmware,
-            core_number,
-            start)
+        self.log.trace("image path: %s, core_number: %d, start?: %d", firmware, core_number, start)
 
         if not self._rpu_initialized:
-            self.log.warning(
-                "Failed to deploy RPU image: "\
-                "RPU peripheral not initialized.")
+            self.log.warning("Failed to deploy RPU image: " "RPU peripheral not initialized.")
             return RPU_FAILURE_REPORT
         # RPU is initialized, now go set firmware:
         self._validate_rpu_core_number(core_number)
@@ -962,9 +940,10 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         # Set the new firmware path
         self._write_file(
             path.join(
-                RPU_REMOTEPROC_PREFIX_PATH + str(core_number),
-                RPU_REMOTEPROC_PROPERTY_FIRMWARE),
-            firmware)
+                RPU_REMOTEPROC_PREFIX_PATH + str(core_number), RPU_REMOTEPROC_PROPERTY_FIRMWARE
+            ),
+            firmware,
+        )
 
         # Start the core if requested
         if start != 0:
@@ -977,46 +956,44 @@ class x4xx(ZynqComponents, PeriphManagerBase):
     # development for these components is ongoing.
     #######################################################################
     def peek_ctrlport(self, addr):
-        """ Peek the MPM Endpoint to ctrlport registers on the FPGA """
-        return '0x{:X}'.format(self.ctrlport_regs.peek32(addr))
+        """Peek the MPM Endpoint to ctrlport registers on the FPGA"""
+        return "0x{:X}".format(self.ctrlport_regs.peek32(addr))
 
     def poke_ctrlport(self, addr, val):
-        """ Poke the MPM Endpoint to ctrlport registers on the FPGA """
+        """Poke the MPM Endpoint to ctrlport registers on the FPGA"""
         self.ctrlport_regs.poke32(addr, val)
 
     def peek_cpld(self, addr):
-        """ Peek the PS portion of the MB CPLD """
-        return '0x{:X}'.format(self.cpld_control.peek32(addr))
+        """Peek the PS portion of the MB CPLD"""
+        return "0x{:X}".format(self.cpld_control.peek32(addr))
 
     def poke_cpld(self, addr, val):
-        """ Poke the PS portion of the MB CPLD """
+        """Poke the PS portion of the MB CPLD"""
         self.cpld_control.poke32(addr, val)
 
     def peek_mb(self, addr):
-        """ Peek the MB Regs """
-        return '0x{:X}'.format(
-            self.mboard_regs_control.peek32(addr))
+        """Peek the MB Regs"""
+        return "0x{:X}".format(self.mboard_regs_control.peek32(addr))
 
     def poke_mb(self, addr, val):
-        """ Poke the MB CPLD """
+        """Poke the MB CPLD"""
         self.mboard_regs_control.poke32(addr, val)
 
     def peek_db(self, db_id, addr):
-        """ Peek the DB CPLD, even if the DB is not discovered by MPM """
+        """Peek the DB CPLD, even if the DB is not discovered by MPM"""
         assert db_id in (0, 1)
         self.cpld_control.enable_daughterboard(db_id)
-        return '0x{:X}'.format(
-            self.ctrlport_regs.get_db_cpld_iface(db_id).peek32(addr))
+        return "0x{:X}".format(self.ctrlport_regs.get_db_cpld_iface(db_id).peek32(addr))
 
     def poke_db(self, db_id, addr, val):
-        """ Poke the DB CPLD, even if the DB is not discovered by MPM """
+        """Poke the DB CPLD, even if the DB is not discovered by MPM"""
         assert db_id in (0, 1)
         self.cpld_control.enable_daughterboard(db_id)
         self.ctrlport_regs.get_db_cpld_iface(db_id).poke32(addr, val)
 
     def peek_clkaux(self, addr):
         """Peek the ClkAux DB over SPI"""
-        return '0x{:X}'.format(self._clocking_auxbrd.peek8(addr))
+        return "0x{:X}".format(self._clocking_auxbrd.peek8(addr))
 
     def poke_clkaux(self, addr, val):
         """Poke the ClkAux DB over SPI"""
@@ -1040,14 +1017,14 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         """
         lock_status = self.clk_mgr.clk_ctrl.get_ref_locked()
         return {
-            'name': 'ref_locked',
-            'type': 'BOOLEAN',
-            'unit': 'locked' if lock_status else 'unlocked',
-            'value': str(lock_status).lower(),
+            "name": "ref_locked",
+            "type": "BOOLEAN",
+            "unit": "locked" if lock_status else "unlocked",
+            "value": str(lock_status).lower(),
         }
 
     def get_fpga_temp_sensor(self):
-        """ Get temperature sensor reading of the X4xx FPGA. """
+        """Get temperature sensor reading of the X4xx FPGA."""
         self.log.trace("Reading FPGA temperature.")
         return get_temp_sensor(["RFSoC"], log=self.log)
 
@@ -1060,35 +1037,28 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         return get_temp_sensor(["PMBUS-0", "PMBUS-1"], log=self.log)
 
     def get_scu_internal_temp_sensor(self):
-        """ Get temperature sensor reading of STM32 SCU's internal sensor. """
+        """Get temperature sensor reading of STM32 SCU's internal sensor."""
         self.log.trace("Reading SCU internal temperature.")
         return get_temp_sensor(["EC Internal"], log=self.log)
 
-    def _get_fan_sensor(self, fan='fan0'):
-        """ Get fan speed. """
+    def _get_fan_sensor(self, fan="fan0"):
+        """Get fan speed."""
         self.log.trace("Reading {} speed sensor.".format(fan))
         fan_rpm = -1
         try:
             fan_rpm_all = ectool.get_fan_rpm()
             fan_rpm = fan_rpm_all[fan]
         except Exception as ex:
-            self.log.warning(
-                "Error occurred when getting {} speed value: {} "
-                .format(fan, str(ex)))
-        return {
-            'name': fan,
-            'type': 'INTEGER',
-            'unit': 'rpm',
-            'value': str(fan_rpm)
-        }
+            self.log.warning("Error occurred when getting {} speed value: {} ".format(fan, str(ex)))
+        return {"name": fan, "type": "INTEGER", "unit": "rpm", "value": str(fan_rpm)}
 
     def get_fan0_sensor(self):
-        """ Get fan0 speed. """
-        return self._get_fan_sensor('fan0')
+        """Get fan0 speed."""
+        return self._get_fan_sensor("fan0")
 
     def get_fan1_sensor(self):
-        """ Get fan1 speed."""
-        return self._get_fan_sensor('fan1')
+        """Get fan1 speed."""
+        return self._get_fan_sensor("fan1")
 
     def get_gps_sensor_status(self):
         """
