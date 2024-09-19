@@ -100,30 +100,38 @@ module x4xx_pps_sync #(
     .out (pps_ext_brc)
   );
 
-  // Synchronize the select bits over to the reference clock as well. Note that this is
-  // a vector, so we could have some invalid values creep through when changing.
-  // See the note below as to why this is safe.
-  wire [1:0] pps_select_brc;
-  synchronizer #(
-    .FALSE_PATH_TO_IN (1),
-    .WIDTH            (2)
-  ) synchronizer_pps_select (
-    .clk (base_ref_clk),
-    .rst (1'b0),
-    .in  (pps_select),
-    .out (pps_select_brc)
+  // Synchronize the select bits over to the reference clock using a handshake
+  // to guarantee transfer of the complete pps_select signal.
+  // Further include the LMK sync trigger to make sure both signals are aligned.
+  reg  [1:0] pps_select_brc;
+  reg        pll_sync_trigger_brc;
+  wire       pps_handshake_out_valid;
+  wire [2:0] pps_handshake_out_data;
+  handshake #(
+    .WIDTH (3)
+  ) handshake_pps (
+    .clk_a   (ctrl_clk),
+    .rst_a   (1'b0),
+    .valid_a (1'b1),
+    .data_a  ({pps_select, pll_sync_trigger}),
+    .busy_a  (),
+    .clk_b   (base_ref_clk),
+    .valid_b (pps_handshake_out_valid),
+    .data_b  (pps_handshake_out_data)
   );
+  always @(posedge base_ref_clk) begin
+    if (pps_handshake_out_valid) begin
+      {pps_select_brc, pll_sync_trigger_brc} <= pps_handshake_out_data;
+    end
+  end
 
   // PPS MUX - selects internal or external PPS.
-  reg pps_brc = 1'b0;
+  // Generate the signal new_pps_selected to indicate a change in the PPS source.
+  reg       pps_brc = 1'b0;
+  reg [1:0] pps_select_delayed_brc = 2'b00;
+  reg       new_pps_selected = 1'b0;
   always @(posedge base_ref_clk) begin
-    // It is possible when the vector is being double-synchronized to the
-    // reference clock domain that there could be multiple bits asserted
-    // simultaneously. This is not problematic because the order of operations
-    // in the following selection mux should take over and only one PPS should
-    // win. This could result in glitches, but that is expected during ANY PPS
-    // switchover since the switch is performed asynchronously to the PPS
-    // signal.
+    // generate PPS signal based on selected source
     case (pps_select_brc)
       PPS_INT_10MHZ: begin
         pps_brc <= pps_int_10mhz_brc;
@@ -135,6 +143,16 @@ module x4xx_pps_sync #(
         pps_brc <= pps_ext_brc;
       end
     endcase
+
+    // Delay the select signal to compare with the current value
+    pps_select_delayed_brc <= pps_select_brc;
+
+    // Indicate the first cycle of a newly selected PPS source
+    if (pps_select_brc != pps_select_delayed_brc) begin
+      new_pps_selected <= 1'b1;
+    end else begin
+      new_pps_selected <= 1'b0;
+    end
   end
 
   // forward BRC based PPS to output
@@ -146,23 +164,15 @@ module x4xx_pps_sync #(
   //---------------------------------------------------------------------------
 
   // Detect rising edge of PPS
+  // Ignore the first cycle after a new PPS source is selected as this might cause a change in the
+  // PPS signal as the PPS sources are not aligned.
+  // Skipping this switching cycle ensures the rising edge is detected from the selected PPS source.
   reg  pps_brc_delayed;
   wire pps_rising_edge_brc;
   always @(posedge base_ref_clk) begin
     pps_brc_delayed <= pps_brc;
   end
-  assign pps_rising_edge_brc = pps_brc & ~pps_brc_delayed;
-
-  // Transfer control signals to internal clock domain
-  wire pll_sync_trigger_brc;
-  synchronizer #(
-    .FALSE_PATH_TO_IN (1)
-  ) synchronizer_sync_trigger (
-    .clk (base_ref_clk),
-    .rst (1'b0),
-    .in  (pll_sync_trigger),
-    .out (pll_sync_trigger_brc)
-  );
+  assign pps_rising_edge_brc = pps_brc & ~pps_brc_delayed & ~new_pps_selected;
 
   // There is no data coherency guaranteed by this synchronizer, but this is
   // not required. The information is derived in the same clock domain as the
