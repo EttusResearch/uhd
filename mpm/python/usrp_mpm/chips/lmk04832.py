@@ -162,9 +162,10 @@ class LMK04832:
         """
 
         # 1) Setup device for synchronizing PLL1 R
-        self.poke8(0x145, 0x50) # PLL1R_SYNC_EN    (6) = 1
-                                # PLL1R_SYNC_SRC (5,4) = Sync pin
-                                # PLL2R_SYNC_EN    (3) = 0
+        # PLL1R_SYNC_EN    (6) = 1
+        # PLL1R_SYNC_SRC (5,4) = Sync pin
+        # PLL2R_SYNC_EN    (3) = 0
+        self.poke8(0x145, 0x50)
 
         # Do NOT change clkin0_TYPE and Clkin[0,1]_DEMUX.
         # Both are set in initialization and remain static.
@@ -172,13 +173,16 @@ class LMK04832:
         # 2) Arm PLL1 R divider for synchronization
         self.poke8(0x177, 0x20)
         self.poke8(0x177, 0)
+        # 3) wait for the writes to complete by triggering a read
+        self.get_chip_id()
 
-        # 3) Send rising edge on SYNC pin
+        # 4) Send rising edge on SYNC pin
         result = sync_pin_callback()
 
-        # reset 0x145 to safe value (no sync enable set, sync src invalidated
+        # 5) reset 0x145 to safe value (no sync enable set, sync src invalidated)
         self.poke8(0x145, 0)
 
+        # 6) wait for PLL1 to lock
         if result:
             return self.wait_for_pll_lock("PLL1")
         return False
