@@ -35,7 +35,7 @@ UHD_INLINE void unpack_sc32_4x(const __m128i& in,
     out3                = _mm_mul_ps(_mm_cvtepi32_ps(tmp3), scalar);
 }
 
-DECLARE_CONVERTER(sc8_item32_be, 1, fc32, 1, PRIORITY_SIMD)
+DECLARE_CONVERTER_SSE2(sc8_item32_be, 1, fc32, 1, PRIORITY_SIMD)
 {
     const item32_t* input = reinterpret_cast<const item32_t*>(size_t(inputs[0]) & ~0x3);
     fc32_t* output        = reinterpret_cast<fc32_t*>(outputs[0]);
@@ -78,7 +78,7 @@ DECLARE_CONVERTER(sc8_item32_be, 1, fc32, 1, PRIORITY_SIMD)
     item32_sc8_to_xx<uhd::ntohx>(input + i, output + j, num_samps - j, scale_factor);
 }
 
-DECLARE_CONVERTER(sc8_item32_le, 1, fc32, 1, PRIORITY_SIMD)
+DECLARE_CONVERTER_SSE2(sc8_item32_le, 1, fc32, 1, PRIORITY_SIMD)
 {
     const item32_t* input = reinterpret_cast<const item32_t*>(size_t(inputs[0]) & ~0x3);
     fc32_t* output        = reinterpret_cast<fc32_t*>(outputs[0]);

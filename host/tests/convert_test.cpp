@@ -43,7 +43,7 @@ struct benchmark_result
 
 // List of priority types. This must be manually kept in sync with whatever is
 // defined in convert_common.hpp
-const std::array<uhd::convert::priority_type, 5> CONV_PRIO_TYPES{-1, 0, 1, 2, 3};
+const std::array<uhd::convert::priority_type, 7> CONV_PRIO_TYPES{-1, 0, 1, 2, 3, 4, 5};
 
 // Use this to create a converter with fixed prio in a test case. If prio does
 // not exist, we simply exit the test case. That's normal.

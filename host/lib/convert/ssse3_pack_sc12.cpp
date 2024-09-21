@@ -6,6 +6,7 @@
 //
 
 #include "convert_pack_sc12.hpp"
+#include "simd_features.hpp"
 #include <tmmintrin.h>
 
 /*
@@ -237,6 +238,10 @@ static converter::sptr make_convert_sc16_1_to_sc12_item32_le_1(void)
 
 UHD_STATIC_BLOCK(register_sse_pack_sc12)
 {
+    if (!uhd::convert::cpu_has_ssse3()) {
+        return;
+    }
+
     uhd::convert::id_type id;
     id.num_inputs  = 1;
     id.num_outputs = 1;

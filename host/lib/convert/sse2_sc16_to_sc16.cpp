@@ -70,7 +70,7 @@ using namespace uhd::convert;
         _mm_store##_oalign_##si128((__m128i*)(output + i), m0);      \
     }
 
-DECLARE_CONVERTER(sc16, 1, sc16_item32_le, 1, PRIORITY_SIMD)
+DECLARE_CONVERTER_SSE2(sc16, 1, sc16_item32_le, 1, PRIORITY_SIMD)
 {
     const sc16_t* input = reinterpret_cast<const sc16_t*>(inputs[0]);
     item32_t* output    = reinterpret_cast<item32_t*>(outputs[0]);
@@ -105,7 +105,7 @@ DECLARE_CONVERTER(sc16, 1, sc16_item32_le, 1, PRIORITY_SIMD)
     xx_to_item32_sc16<uhd::htowx>(input + i, output + i, nsamps - i, 1.0);
 }
 
-DECLARE_CONVERTER(sc16, 1, sc16_item32_be, 1, PRIORITY_SIMD)
+DECLARE_CONVERTER_SSE2(sc16, 1, sc16_item32_be, 1, PRIORITY_SIMD)
 {
     const sc16_t* input = reinterpret_cast<const sc16_t*>(inputs[0]);
     item32_t* output    = reinterpret_cast<item32_t*>(outputs[0]);
@@ -140,7 +140,7 @@ DECLARE_CONVERTER(sc16, 1, sc16_item32_be, 1, PRIORITY_SIMD)
     xx_to_item32_sc16<uhd::htonx>(input + i, output + i, nsamps - i, 1.0);
 }
 
-DECLARE_CONVERTER(sc16_item32_le, 1, sc16, 1, PRIORITY_SIMD)
+DECLARE_CONVERTER_SSE2(sc16_item32_le, 1, sc16, 1, PRIORITY_SIMD)
 {
     const item32_t* input = reinterpret_cast<const item32_t*>(inputs[0]);
     sc16_t* output        = reinterpret_cast<sc16_t*>(outputs[0]);
@@ -175,7 +175,7 @@ DECLARE_CONVERTER(sc16_item32_le, 1, sc16, 1, PRIORITY_SIMD)
     item32_sc16_to_xx<uhd::htowx>(input + i, output + i, nsamps - i, 1.0);
 }
 
-DECLARE_CONVERTER(sc16_item32_be, 1, sc16, 1, PRIORITY_SIMD)
+DECLARE_CONVERTER_SSE2(sc16_item32_be, 1, sc16, 1, PRIORITY_SIMD)
 {
     const item32_t* input = reinterpret_cast<const item32_t*>(inputs[0]);
     sc16_t* output        = reinterpret_cast<sc16_t*>(outputs[0]);
