@@ -114,6 +114,7 @@ def setup_parser():
     )
     parser.add_argument(
         "-n",
+        "--image-core-name",
         "--image_core_name",
         help="Name to use for the RFNoC image core. "
         "Defaults to name of the image core YML file, without the extension.",
