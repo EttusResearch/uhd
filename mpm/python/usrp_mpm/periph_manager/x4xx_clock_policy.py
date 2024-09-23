@@ -600,7 +600,7 @@ class X440ClockPolicy(X4xxClockPolicy):
             X4xxRfdcCtrl.CONV_RATE_MIN / max(X4xxRfdcCtrl.RFDC_RESAMPLER) / self._extra_resampling
         )
 
-    def _get_mmcm_rates(self, rfdc_rate, lmk_vco):
+    def _get_mmcm_rates(self, rfdc_rate, lmk_vco, sysref_rate):
         """Find MMCM config."""
         min_common_rfdc_rate = lcm(rfdc_rate[0], rfdc_rate[1])
         # Find the MMCM VCO rate that fits into the valid range and can serve both MCRs
@@ -642,8 +642,9 @@ class X440ClockPolicy(X4xxClockPolicy):
                     and not (mmcm_vco_rate / rfdc_rate[1] / 2) % 1
                     and
                     # RFDC rate must be a multiple of the PRC(==mmcm_input)
-                    all([(rate % mmcm_input) == 0 for rate in rfdc_rate])
-                ):
+                    all([(rate % mmcm_input) == 0 for rate in rfdc_rate]) and
+                    # PRC must be an integer multiple of SYSREF
+                    mmcm_input % sysref_rate == 0):
                     if not mmcm_cfg.get(mmcm_input) or mmcm_cfg.get(mmcm_input) > mmcm_vco_rate:
                         mmcm_cfg.update({mmcm_input: mmcm_vco_rate})
                 mmcm_input = False
@@ -778,8 +779,20 @@ class X440ClockPolicy(X4xxClockPolicy):
         pll2_prescaler = [x for x in LMK04832.PLL2_PRESCALER if not pll2_n % x]
         pll2_n_div = int(pll2_n / pll2_prescaler[0])
 
+        # Looking for the correct sysref config needed for both MCRs
+        sysref_config = next(sysref_setting
+                        for sysref_setting in LMK04832X4xx.SYSREF_CONFIG[spll1_vco]
+                        if all(sysref_setting['SYSREF_FREQ'] in self._find_sysref_matches(mcr) for mcr in mcrs))
+
+        # The following asserts are to explicitly check for SYSREF requirements
+        # as per pg269, Ch. 4, Section "SYSREF Signal Requirements"
+        assert sysref_config['SYSREF_FREQ'] < 10e6, "SysRef frequency exceeds limit of 10 MHz"
+        assert all(
+            conv_rate % sysref_config['SYSREF_FREQ'] == 0.0
+            for conv_rate in conv_rates), "Converter Rate is not a multiple of the SysRef freq"
+
         rfdc_rate = list(map(lambda x: int(x / (self._spc * self._extra_resampling)), mcrs))
-        mmcm_input, mmcm_vco_rate = self._get_mmcm_rates(rfdc_rate, lmk_vco)
+        mmcm_input, mmcm_vco_rate = self._get_mmcm_rates(rfdc_rate, lmk_vco, sysref_config['SYSREF_FREQ'])
         prc_rate = mmcm_input
 
         if not mmcm_input or mmcm_input > lmk_vco:
@@ -816,21 +829,6 @@ class X440ClockPolicy(X4xxClockPolicy):
         assert (
             X4xxRfdcCtrl.MMCM_OD_MIN <= prc_out_div <= X4xxRfdcCtrl.MMCM_OD_MAX
         ), "Invalid MMCM output divider for PRC."
-
-        # When looking for the correct sysref config we need to get the MCR that belongs to the
-        # greatest converter rate used
-        sysref_config = next(
-            sysref_setting
-            for sysref_setting in LMK04832X4xx.SYSREF_CONFIG[spll1_vco]
-            if all(sysref_setting["SYSREF_FREQ"] in self._find_sysref_matches(mcr) for mcr in mcrs)
-        )
-
-        # The following asserts are to explicitly check for SYSREF requirements
-        # as per pg269, Ch. 4, Section "SYSREF Signal Requirements"
-        assert sysref_config["SYSREF_FREQ"] < 10e6, "SysRef frequency exceeds limit of 10 MHz"
-        assert all(
-            conv_rate % sysref_config["SYSREF_FREQ"] == 0.0 for conv_rate in conv_rates
-        ), "Converter Rate is not a multiple of the SysRef freq"
 
         spll_cfg = {
             "ref_freq": ref_clock_freq,
