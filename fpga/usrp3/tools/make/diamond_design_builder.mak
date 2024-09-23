@@ -33,9 +33,18 @@ BUILD_DIAMOND_DESIGN = \
 	cd $(4); \
 	echo "BUILDER: Implementating design..."; \
 	$(DIAMOND_EXE) build.tcl > $(1)_log.txt ; \
+	if [ $$? -ne 0 ]; \
+	then \
+		echo "BUILDER: Build failed. See $(1)_log.txt for details."; \
+		exit 1; \
+	fi; \
 	echo "BUILDER: Parsing reports..."; \
-	grep "Cumulative negative slack: 0 (0+0)" impl1/$(1)_impl1.twr ; \
-		if [ $$? -ne 0 ]; then exit 1; fi; \
+	grep "Cumulative negative slack: 0 (0+0)" impl1/$(1)_impl1.twr > /dev/null 2>&1; \
+		if [ $$? -ne 0 ]; \
+		then \
+			echo "BUILDER: Timing failed. See $(1)_impl1.twr for details."; \
+			exit 1; \
+		fi; \
 	echo "BUILDER: Generating bitfile..."; \
 	ddtcmd -oft -svfsingle -if $(5)/$(1)_$(5).jed			 	\
 		-dev $(2) -op "FLASH Erase,Program,Verify" -revd	\
