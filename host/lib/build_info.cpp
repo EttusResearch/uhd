@@ -14,6 +14,10 @@
 #    include <libusb.h>
 #endif
 
+#ifdef HAVE_DPDK
+#    include <rte_version.h>
+#endif
+
 namespace uhd { namespace build_info {
 
 const std::string boost_version()
@@ -97,6 +101,22 @@ const std::string libusb_version()
 #    else
     return "< 1.0.13";
 #    endif
+#else
+    return "N/A";
+#endif
+}
+
+const std::string dpdk_version()
+{
+#ifdef HAVE_DPDK
+    // rte_version() returns e.g. "DPDK 22.11.6"
+    std::string version   = rte_version();
+    std::size_t space_pos = version.find(" ");
+    if (space_pos != std::string::npos) {
+        return version.substr(space_pos + 1);
+    } else {
+        return version;
+    }
 #else
     return "N/A";
 #endif

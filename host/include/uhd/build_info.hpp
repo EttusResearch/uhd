@@ -37,4 +37,7 @@ UHD_API const std::string install_prefix();
 
 //! Return the version of libusb this build was built with.
 UHD_API const std::string libusb_version();
+
+//! Return the version of DPDK this build was built with.
+UHD_API const std::string dpdk_version();
 }} // namespace uhd::build_info

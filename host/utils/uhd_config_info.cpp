@@ -27,6 +27,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("enabled-components", "Print built-time enabled components")
         ("install-prefix",     "Print install prefix")
         ("boost-version",      "Print Boost version")
+        ("dpdk-version",       "Print DPDK version")
         ("libusb-version",     "Print libusb version")
         ("pkg-path",           "Print pkg path")
         ("lib-path",           "Print library path")
@@ -77,6 +78,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     }
     if (vm.count("boost-version") > 0 or print_all) {
         std::cout << "Boost version: " << uhd::build_info::boost_version() << std::endl;
+    }
+    if (vm.count("dpdk-version") > 0 or print_all) {
+        std::cout << "DPDK version: " << uhd::build_info::dpdk_version() << std::endl;
     }
     if (vm.count("libusb-version") > 0 or print_all) {
         std::string _libusb_version = uhd::build_info::libusb_version();
