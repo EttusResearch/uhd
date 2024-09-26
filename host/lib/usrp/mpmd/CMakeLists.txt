@@ -25,7 +25,6 @@ if(ENABLE_MPMD)
     endif(ENABLE_SIM)
 
     if(ENABLE_DPDK)
-        include_directories(${DPDK_INCLUDE_DIRS})
         set_property(
             SOURCE
             ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_link_if_ctrl_udp.cpp

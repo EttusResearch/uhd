@@ -192,12 +192,8 @@ if(ENABLE_DPDK)
         EXTRA_LIBS ${DPDK_LIBRARIES}
         NOAUTORUN # Don't register for auto-run, it requires special config
     )
-    set_source_files_properties(
-        ${UHD_SOURCE_DIR}/lib/transport/uhd-dpdk/dpdk_common.cpp
-        ${UHD_SOURCE_DIR}/lib/transport/uhd-dpdk/dpdk_io_service.cpp
-        ${UHD_SOURCE_DIR}/lib/transport/udp_dpdk_link.cpp
-        PROPERTIES COMPILE_FLAGS "-march=native -D_GNU_SOURCE"
-    )
+    target_compile_options(dpdk_test PRIVATE ${DPDK_CFLAGS})
+    target_compile_options(dpdk_port_test PRIVATE ${DPDK_CFLAGS})
 ENDIF(ENABLE_DPDK)
 
 UHD_ADD_NONAPI_TEST(

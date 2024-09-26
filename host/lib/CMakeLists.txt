@@ -182,9 +182,17 @@ if(ENABLE_MPMD)
 endif()
 add_library(uhd SHARED ${libuhd_sources})
 target_link_libraries(uhd ${Boost_LIBRARIES} ${libuhd_libs})
-if(DPDK_FOUND)
+if(ENABLE_DPDK)
+    add_definitions(-DHAVE_DPDK)
+    # The compile flags DPDK_CFLAGS add the DPDK_INCLUDE_DIRS include
+    # directories and set the -march=native compiler flag.
     target_compile_options(uhd PRIVATE ${DPDK_CFLAGS})
+    # The linker flags DPDK_LDFLAGS contains the list of DPDK libraries
+    # as well as the path where to find the libraries
     target_link_options(uhd PUBLIC ${DPDK_LDFLAGS})
+    # explicitly link against the DPDK libraries, otherwise there are
+    # undefined references when linking libuhd
+    target_link_libraries(uhd ${DPDK_LIBRARIES})
 endif()
 if(APPLE)
     target_link_options(uhd PRIVATE "LINKER:-undefined,dynamic_lookup")
