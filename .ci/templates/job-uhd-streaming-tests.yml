@@ -32,6 +32,9 @@ parameters:
   type: string
 - name: xilinxLocation
   type: string
+- name: dpdkDir
+  type: string
+  default: '/'
 
 jobs:
 - job: uhd_streaming_tests_${{ parameters.suiteName }}
@@ -316,28 +319,46 @@ jobs:
   # For example, if the streaming system uses a Mellanox NIC and thus needs Mellanox drivers installed but the agent used to build UHD doesn't
   # then you can get an access violation when using that version of UHD with dpdk on the streaming system
   - script: |
+      set -e
       mkdir ${{ parameters.uhdSrcDir }}/host/build
       cd ${{ parameters.uhdSrcDir }}/host/build
+      if [ "${{ parameters.dpdkDir }}" != "/" ]; then
+        export PKG_CONFIG_PATH="${{ parameters.dpdkDir }}/lib/x86_64-linux-gnu/pkgconfig"
+        export LD_LIBRARY_PATH="${{ parameters.dpdkDir }}/lib/x86_64-linux-gnu"
+      else
+        export LD_LIBRARY_PATH=""
+      fi
+      echo "##vso[task.setvariable variable=LD_LIBRARY_PATH;isOutput=true]$LD_LIBRARY_PATH"
       cmake -DCMAKE_INSTALL_PREFIX=$(Build.BinariesDirectory)/uhddev/build-installed ..
-      make -j8 install
+      make -j$(nproc) install
+      sudo LD_LIBRARY_PATH=$LD_LIBRARY_PATH tests/dpdk_test || true
+      utils/uhd_config_info --print-all
+    name: dpdk_build
     displayName: build UHD for dpdk installed on test machine
-    condition: succeeded()
+    condition: and(succeeded(), not(eq(variables.dutType, 'B210')))
 
   - script: |
       if [ "$(dutType)" = "x440" ]; then
-        echo "##vso[task.setvariable variable=config_file]${{ parameters.uhdSrcDir }}/host/tests/pytests/uhd_configs/uhd_dpdk_100GbE_x440.conf"
-        echo "Using x440 100 GbE UHD Config File"
+        config_file="${{ parameters.uhdSrcDir }}/host/tests/pytests/uhd_configs/uhd_dpdk_100GbE_x440.conf"
+        echo "Using x440 100 GbE UHD Config File ($config_file)"
       elif [ "$(dutFPGA)" = "CG_400" ]; then
-        echo "##vso[task.setvariable variable=config_file]${{ parameters.uhdSrcDir }}/host/tests/pytests/uhd_configs/uhd_dpdk_100GbE.conf"
-        echo "Using 100 GbE UHD Config File"
+        config_file="${{ parameters.uhdSrcDir }}/host/tests/pytests/uhd_configs/uhd_dpdk_100GbE.conf"
+        echo "Using 100 GbE UHD Config File ($config_file)"
       elif [ "$(dutFPGA)" = "UC_200" ]; then
-        echo "##vso[task.setvariable variable=config_file]${{ parameters.uhdSrcDir }}/host/tests/pytests/uhd_configs/uhd_dpdk_100GbE_SFP1.conf"
-        echo "Using 100 GbE SFP1 UHD Config File"
+        config_file="${{ parameters.uhdSrcDir }}/host/tests/pytests/uhd_configs/uhd_dpdk_100GbE_SFP1.conf"
+        echo "Using 100 GbE SFP1 UHD Config File ($config_file)"
       else
-        echo "##vso[task.setvariable variable=config_file]${{ parameters.uhdSrcDir }}/host/tests/pytests/uhd_configs/uhd_dpdk_10GbE.conf"
-        echo "Using 10 GbE UHD Config File"
+        config_file="${{ parameters.uhdSrcDir }}/host/tests/pytests/uhd_configs/uhd_dpdk_10GbE.conf"
+        echo "Using 10 GbE UHD Config File ($config_file)"
+      fi
+      echo "##vso[task.setvariable variable=config_file]$config_file"
+      if [ "${{ parameters.dpdkDir }}" != "/" ]; then
+        dpdk_driver=$(find "${{ parameters.dpdkDir }}/lib/x86_64-linux-gnu" -name "pmds-*" -type d)
+        echo "Setting dpdk_driver to $dpdk_driver"
+        sed -i "s|^dpdk_driver.*|dpdk_driver = $dpdk_driver|" $config_file
       fi
     displayName: select UHD config file for DPDK
+    condition: and(succeeded(), not(eq(variables.dutType, 'B210')))
 
   - script: |
       echo "##[group]Printing Environment"
@@ -354,7 +375,7 @@ jobs:
     env:
       UHD_CONFIG_FILE: $(config_file)
       PYTHONPATH: ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
-      LD_LIBRARY_PATH: $(Build.BinariesDirectory)/uhddev/build-installed/lib
+      LD_LIBRARY_PATH: $(Build.BinariesDirectory)/uhddev/build-installed/lib:$(dpdk_build.LD_LIBRARY_PATH)
       UHD_IMAGES_DIR: $(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images
     continueOnError: true
     displayName: Run streaming tests with DPDK on $(dutName)
