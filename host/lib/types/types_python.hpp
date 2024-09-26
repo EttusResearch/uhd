@@ -12,6 +12,7 @@
 #include <uhd/types/dict.hpp>
 #include <uhd/types/direction.hpp>
 #include <uhd/types/stream_cmd.hpp>
+#include <uhd/types/wb_iface.hpp>
 #include <pybind11/stl.h>
 #include <map>
 #include <string>
@@ -137,6 +138,18 @@ void export_types(py::module& m)
 
 
         ;
+
+    py::class_<uhd::wb_iface>(m, "wb_iface")
+        .def("poke64", &uhd::wb_iface::poke64)
+        .def("peek64", &uhd::wb_iface::peek64)
+        .def("poke32", &uhd::wb_iface::poke32)
+        .def("peek32", &uhd::wb_iface::peek32)
+        .def("poke16", &uhd::wb_iface::poke16)
+        .def("peek16", &uhd::wb_iface::peek16);
+
+    py::class_<uhd::timed_wb_iface, uhd::wb_iface>(m, "timed_wb_iface")
+        .def("get_time", &uhd::timed_wb_iface::get_time)
+        .def("set_time", &uhd::timed_wb_iface::set_time);
 }
 
 #endif /* INCLUDED_UHD_TYPES_PYTHON_HPP */

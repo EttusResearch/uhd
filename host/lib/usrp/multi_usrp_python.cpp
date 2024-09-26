@@ -197,6 +197,10 @@ void export_multi_usrp(py::module& m)
         .def("get_tx_filter_names"     , &multi_usrp::get_tx_filter_names)
         .def("get_tx_filter"           , &multi_usrp::get_tx_filter)
         .def("set_tx_filter"           , &multi_usrp::set_tx_filter)
+
+        // Low-level register access
+        .def("set_user_register"       , &multi_usrp::set_user_register, py::arg("addr"), py::arg("data"), py::arg("mboard") = ALL_MBOARDS)
+        .def("get_user_settings_iface" , &multi_usrp::get_user_settings_iface, py::arg("chan") = 0)
         // clang-format off
         ;
     // clang-format on
