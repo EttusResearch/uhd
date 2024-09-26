@@ -100,7 +100,7 @@ general.
 - **Purpose:** Used to build the UHD Python API
 - **Minimum Version:** @UHD_PYBIND11_MIN_VERSION@
 - **Usage:** build time (for Python API only)
-- **Download URL:** https://github.com/pybind/pybind11://github.com/pybind/pybind11/
+- **Download URL:** https://github.com/pybind/pybind11
 - **Alternative method:** As mentioned above, you don't have to install Pybind11
   yourself to enable the Python API. On most Linux distributions, it can be
   installed through the package manager.
