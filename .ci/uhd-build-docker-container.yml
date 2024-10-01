@@ -59,7 +59,8 @@ variables:
       "{'VS2017-x86-builder':{'buildOSName':'win-vs17-v141-x86','dockerImageName':'uhd-builder-vs2017-v141-x86','cmakeCompiler':'Visual Studio 15 2017','cmakeArch':'Win32','vsArch':'x86','vsYear':'2017'},
       'VS2017-x64-builder':{'buildOSName':'win-vs17-v141-x64','dockerImageName':'uhd-builder-vs2017-v141-x64','cmakeCompiler':'Visual Studio 15 2017','cmakeArch':'x64','vsArch':'x64','vsYear':'2017'},
       'VS2019-x86-builder':{'buildOSName':'win-vs19-v142-x86','dockerImageName':'uhd-builder-vs2019-v142-x86','cmakeCompiler':'Visual Studio 16 2019','cmakeArch':'Win32','vsArch':'x86','vsYear':'2019'},
-      'VS2019-x64-builder':{'buildOSName':'win-vs19-v142-x64','dockerImageName':'uhd-builder-vs2019-v142-x64','cmakeCompiler':'Visual Studio 16 2019','cmakeArch':'x64','vsArch':'x64','vsYear':'2019'}}"
+      'VS2019-x64-builder':{'buildOSName':'win-vs19-v142-x64','dockerImageName':'uhd-builder-vs2019-v142-x64','cmakeCompiler':'Visual Studio 16 2019','cmakeArch':'x64','vsArch':'x64','vsYear':'2019'},
+      'VS2022-x64-builder':{'buildOSName':'win-vs22-v143-x64','dockerImageName':'uhd-builder-vs2022-v143-x64','cmakeCompiler':'Visual Studio 17 2022','cmakeArch':'x64','vsArch':'x64','vsYear':'2022'}}"
 - ${{ else }}:
   - name: winDockerImages
     value:
