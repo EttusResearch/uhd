@@ -35,6 +35,8 @@ axis_width_conv.v \
 axis_split.v \
 axis_split_bus.v \
 axis_combine.v \
+axis_load_split.sv \
+axis_load_merge.sv \
 axis_packetize.v \
 axis_pkt_throttle.sv \
 axis_data_if_packetize.v \
