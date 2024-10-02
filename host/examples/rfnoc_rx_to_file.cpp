@@ -226,7 +226,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     std::string args, file, format, ant, subdev, ref, wirefmt, streamargs, block_id,
         block_props;
     size_t total_num_samps, spb, spp, radio_id, radio_chan, block_port;
-    double rate, freq, gain, bw, total_time, setup_time;
+    double rate, freq, gain, bw, total_time, setup_time, lo_offset;
 
     // setup the program options
     po::options_description desc("Allowed options");
@@ -253,6 +253,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("radio-chan", po::value<size_t>(&radio_chan)->default_value(0), "Radio channel")
         ("rate", po::value<double>(&rate)->default_value(1e6), "RX rate of the radio block")
         ("freq", po::value<double>(&freq)->default_value(0.0), "RF center frequency in Hz")
+        ("lo-offset", po::value<double>(&lo_offset), "Offset for frontend LO in Hz (optional)")
         ("gain", po::value<double>(&gain), "gain for the RF chain")
         ("ant", po::value<std::string>(&ant), "antenna selection")
         ("bw", po::value<double>(&bw), "analog frontend filter bandwidth in Hz")
@@ -376,21 +377,6 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         graph->get_mb_controller(0)->set_clock_source(ref);
     }
 
-    // set the center frequency
-    if (vm.count("freq")) {
-        std::cout << "Requesting RX Freq: " << (freq / 1e6) << " MHz..." << std::endl;
-        uhd::tune_request_t tune_request(freq);
-        if (vm.count("int-n")) {
-            radio_ctrl->set_rx_tune_args(
-                uhd::device_addr_t("mode_n=integer"), radio_chan);
-        }
-        radio_ctrl->set_rx_frequency(freq, radio_chan);
-        std::cout << "Actual RX Freq: "
-                  << (radio_ctrl->get_rx_frequency(radio_chan) / 1e6) << " MHz..."
-                  << std::endl
-                  << std::endl;
-    }
-
     // set the rf gain
     if (vm.count("gain")) {
         std::cout << "Requesting RX Gain: " << gain << " dB..." << std::endl;
@@ -468,6 +454,32 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
      * Set up sampling rate and (optional) user block properties. We do this
      * after commit() so we can use the property propagation.
      ***********************************************************************/
+
+    // set the center frequency
+    if (vm.count("freq")) {
+        std::cout << "Requesting RX Freq: " << (freq / 1e6) << " MHz..." << std::endl;
+        uhd::tune_request_t tune_request(freq);
+
+        if (vm.count("lo-offset")) {
+            std::cout << boost::format("Setting RX LO Offset: %f MHz...")
+                             % (lo_offset / 1e6)
+                      << std::endl;
+            tune_request = uhd::tune_request_t(freq, lo_offset);
+        }
+
+        if (vm.count("int-n")) {
+            tune_request.args = uhd::device_addr_t("mode_n=integer");
+        }
+        auto tune_req_action = uhd::rfnoc::tune_request_action_info::make(tune_request);
+        tune_req_action->tune_request = tune_request;
+        rx_stream->post_input_action(tune_req_action, 0);
+
+        std::cout << "Actual RX Freq: "
+                  << (radio_ctrl->get_rx_frequency(radio_chan) / 1e6) << " MHz..."
+                  << std::endl
+                  << std::endl;
+    }
+
     // set the sample rate
     if (rate <= 0.0) {
         std::cerr << "Please specify a valid sample rate" << std::endl;

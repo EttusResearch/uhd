@@ -55,7 +55,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
      * Set up the program options
      ***********************************************************************/
     std::string args, tx_args, file, ant, ref;
-    double rate, freq, gain, bw;
+    double rate, freq, gain, bw, lo_offset;
     size_t radio_id, radio_chan, replay_id, replay_chan, nsamps;
 
     po::options_description desc("Allowed Options");
@@ -71,11 +71,13 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("nsamps", po::value<size_t>(&nsamps)->default_value(0), "number of samples to play (0 for infinite)")
         ("file", po::value<std::string>(&file)->default_value("usrp_samples.dat"), "name of the file to read binary samples from")
         ("freq", po::value<double>(&freq), "RF center frequency in Hz")
+        ("lo-offset", po::value<double>(&lo_offset), "Offset for frontend LO in Hz (optional)")
         ("rate", po::value<double>(&rate), "rate of radio block")
         ("gain", po::value<double>(&gain), "gain for the RF chain")
         ("ant", po::value<std::string>(&ant), "antenna selection")
         ("bw", po::value<double>(&bw), "analog front-end filter bandwidth in Hz")
         ("ref", po::value<std::string>(&ref), "clock reference (internal, external, mimo, gpsdo)")
+        ("dot", "instead of a textual representation, generate a dot graph of the RFNoC connections")
     ;
     // clang-format on
     po::variables_map vm;
@@ -138,7 +140,6 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                   << duc_chan << std::endl;
     }
 
-
     /************************************************************************
      * Set up streamer to Replay block and commit graph
      ***********************************************************************/
@@ -151,6 +152,14 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     tx_stream        = graph->create_tx_streamer(1, stream_args);
     graph->connect(tx_stream, 0, replay_ctrl->get_block_id(), replay_chan);
     graph->commit();
+    std::cout << "Active connections:" << std::endl;
+    if (vm.count("dot")) {
+        std::cout << graph->to_dot() << std::endl;
+    } else {
+        for (auto& edge : graph->enumerate_active_connections()) {
+            std::cout << "* " << edge.to_string() << std::endl;
+        }
+    }
 
     /************************************************************************
      * Set up radio
@@ -175,10 +184,25 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     }
     std::cout << std::fixed;
     std::cout << "Requesting TX Freq: " << (freq / 1e6) << " MHz..." << std::endl;
-    radio_ctrl->set_tx_frequency(freq, radio_chan);
-    std::cout << "Actual TX Freq: " << (radio_ctrl->get_tx_frequency(radio_chan) / 1e6)
+    uhd::tune_request_t tune_request(freq);
+    if (vm.count("lo-offset")) {
+        std::cout << boost::format("Setting TX LO Offset: %f MHz...") % (lo_offset / 1e6)
+                  << std::endl;
+        tune_request = uhd::tune_request_t(freq, lo_offset);
+    }
+
+    if (vm.count("int-n")) {
+        tune_request.args = uhd::device_addr_t("mode_n=integer");
+    }
+
+    auto tune_req_action = uhd::rfnoc::tune_request_action_info::make(tune_request);
+    tune_req_action->tune_request = tune_request;
+    replay_ctrl->post_output_action(tune_req_action, 0);
+
+    std::cout << "TX Freq at Radio: " << (radio_ctrl->get_tx_frequency(radio_chan) / 1e6)
               << " MHz..." << std::endl
               << std::endl;
+
     std::cout << std::resetiosflags(std::ios::fixed);
 
     // Set the sample rate
