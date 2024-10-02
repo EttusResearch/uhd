@@ -126,6 +126,11 @@ public:
 
     void issue_stream_cmd(const stream_cmd_t&) override {}
 
+    void post_input_action(
+        const std::shared_ptr<uhd::rfnoc::action_info>&, const size_t) override
+    {
+    }
+
     void set_tick_rate(double rate)
     {
         rx_streamer_impl::set_tick_rate(rate);

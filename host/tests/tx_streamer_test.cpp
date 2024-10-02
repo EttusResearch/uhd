@@ -68,6 +68,7 @@ public:
         return get_mtu() - get_chdr_hdr_len();
     }
 
+
 private:
     mock_send_link::sptr _send_link;
 };
@@ -102,6 +103,12 @@ public:
         uhd::async_metadata_t& /*async_metadata*/, double /*timeout = 0.1*/) override
     {
         return false;
+    }
+
+    void post_output_action(
+        const std::shared_ptr<uhd::rfnoc::action_info>&, const size_t) override
+    {
+        // NOP
     }
 };
 

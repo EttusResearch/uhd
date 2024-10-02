@@ -66,8 +66,8 @@ BOOST_AUTO_TEST_CASE(test_ddc_block)
     edge_info.is_forward_edge = true;
     edge_info.edge            = detail::graph_t::graph_edge_t::DYNAMIC;
 
-    mock_terminator_t mock_source_term(1);
-    mock_terminator_t mock_sink_term(1);
+    mock_terminator_t mock_source_term(1, {ACTION_KEY_TUNE_REQUEST});
+    mock_terminator_t mock_sink_term(1, {ACTION_KEY_TUNE_REQUEST});
 
     UHD_LOG_INFO("TEST", "Priming mock source node props");
     mock_source_term.set_edge_property<std::string>(
@@ -142,4 +142,24 @@ BOOST_AUTO_TEST_CASE(test_ddc_block)
     test_ddc->set_properties(uhd::device_addr_t("decim=1,freq=0.0,foo=bar"), 0);
     BOOST_CHECK_EQUAL(test_ddc->get_property<int>("decim", 0), 1);
     BOOST_CHECK_EQUAL(test_ddc->get_property<double>("freq", 0), 0.0);
+
+    // Check that an action originating on an input stream is forwarded to
+    // the port corresponding to that stream on all output branches.
+    UHD_LOG_INFO("TEST", "DDC: Testing Tune request action forwarding");
+    uhd::tune_request_t tune_request(70e6, 20e6);
+    auto tune_req_action = uhd::rfnoc::tune_request_action_info::make(tune_request);
+    tune_req_action->tune_request = tune_request;
+
+    node_accessor.post_action(
+        &mock_source_term, {res_source_info::OUTPUT_EDGE, 0}, tune_req_action);
+    BOOST_REQUIRE(!mock_sink_term.received_actions.empty());
+
+    auto tune_req_received = std::dynamic_pointer_cast<tune_request_action_info>(
+        mock_sink_term.received_actions.back());
+    BOOST_CHECK(tune_req_received);
+    BOOST_CHECK_EQUAL(
+        tune_req_received->tune_request.target_freq, tune_request.target_freq);
+    BOOST_CHECK_CLOSE(tune_req_received->tune_result.target_dsp_freq,
+        tune_req_received->tune_result.actual_dsp_freq,
+        1e-5);
 }
