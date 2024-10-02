@@ -42,6 +42,17 @@ rfnoc_tx_streamer::rfnoc_tx_streamer(const size_t num_chans,
             _handle_tx_event_action(src, tx_event_action);
         });
 
+    register_action_handler(ACTION_KEY_TUNE_REQUEST,
+        [this](const res_source_info& src, action_info::sptr action) {
+            tune_request_action_info::sptr tune_request_action =
+                std::dynamic_pointer_cast<tune_request_action_info>(action);
+            if (!tune_request_action) {
+                RFNOC_LOG_WARNING("Received invalid tune request action!");
+                return;
+            }
+            RFNOC_LOG_DEBUG("Received tune request on " << src.to_string());
+        });
+
     // Initialize properties
     _scaling_out.reserve(num_chans);
     _samp_rate_out.reserve(num_chans);
@@ -104,6 +115,16 @@ size_t rfnoc_tx_streamer::get_num_input_ports() const
 size_t rfnoc_tx_streamer::get_num_output_ports() const
 {
     return get_num_channels();
+}
+
+void rfnoc_tx_streamer::post_output_action(
+    const std::shared_ptr<uhd::rfnoc::action_info>& action, const size_t port)
+{
+    if (port > get_num_channels()) {
+        throw uhd::runtime_error("Invalid channel. Please provide a valid channel");
+    }
+    const uhd::rfnoc::res_source_info info(res_source_info::OUTPUT_EDGE, port);
+    post_action(info, action);
 }
 
 const uhd::stream_args_t& rfnoc_tx_streamer::get_stream_args() const

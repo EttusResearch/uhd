@@ -832,6 +832,13 @@ public:
         return recv_packet_handler::issue_stream_cmd(stream_cmd);
     }
 
+    // Post an action to the input edge.
+    void post_input_action(
+        const std::shared_ptr<uhd::rfnoc::action_info>&, const size_t) override
+    {
+        throw uhd::not_implemented_error("post_input_action is not implemented here!");
+    }
+
 private:
     size_t _max_num_samps;
 };

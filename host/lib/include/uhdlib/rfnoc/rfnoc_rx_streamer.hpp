@@ -68,6 +68,14 @@ public:
      */
     void issue_stream_cmd(const stream_cmd_t& stream_cmd) override;
 
+    /*! Implementation of a generic action request
+     *
+     * \param action shared pointer to the corresponding action_info request
+     * \param port the port to which to post action
+     */
+    void post_input_action(const std::shared_ptr<uhd::rfnoc::action_info>& action,
+        const size_t port) override;
+
     /*! Returns stream args provided at creation
      *
      * \return stream args provided when streamer is created

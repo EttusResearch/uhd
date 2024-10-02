@@ -9,7 +9,11 @@
 #include <uhd/config.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/metadata.hpp>
+#include <uhd/types/ranges.hpp>
 #include <uhd/types/stream_cmd.hpp>
+#include <uhd/types/time_spec.hpp>
+#include <uhd/types/tune_request.hpp>
+#include <uhd/types/tune_result.hpp>
 #include <boost/optional.hpp>
 #include <cstddef>
 #include <cstdint>
@@ -101,6 +105,25 @@ public:
 protected:
     tx_event_action_info(uhd::async_metadata_t::event_code_t event_code,
         const boost::optional<uint64_t>& tsf);
+};
+
+//! Action object for graph-based tuning
+struct UHD_API tune_request_action_info : public action_info
+{
+public:
+    using sptr = std::shared_ptr<tune_request_action_info>;
+
+    uhd::tune_request_t tune_request;
+    uhd::time_spec_t time_spec;
+    uhd::tune_result_t tune_result;
+    uhd::freq_range_t dsp_range;
+    uhd::freq_range_t rf_range;
+    uhd::freq_range_t overall_freq_range;
+    //! Factory function
+    static sptr make(const uhd::tune_request_t tune_request);
+
+private:
+    tune_request_action_info(const uhd::tune_request_t tune_request);
 };
 
 }} /* namespace uhd::rfnoc */

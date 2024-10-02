@@ -53,6 +53,16 @@ rfnoc_rx_streamer::rfnoc_rx_streamer(const size_t num_chans,
             }
             _handle_stream_cmd_action(src, stream_cmd_action);
         });
+    register_action_handler(ACTION_KEY_TUNE_REQUEST,
+        [this](const res_source_info& src, action_info::sptr action) {
+            tune_request_action_info::sptr tune_request_action =
+                std::dynamic_pointer_cast<tune_request_action_info>(action);
+            if (!tune_request_action) {
+                RFNOC_LOG_WARNING("Received invalid tune request action!");
+                return;
+            }
+            RFNOC_LOG_DEBUG("Received tune request on " << src.to_string());
+        });
 
     // Initialize properties
     _scaling_in.reserve(num_chans);
@@ -139,6 +149,16 @@ void rfnoc_rx_streamer::issue_stream_cmd(const stream_cmd_t& stream_cmd)
     }
 }
 
+void rfnoc_rx_streamer::post_input_action(
+    const std::shared_ptr<uhd::rfnoc::action_info>& action, const size_t port)
+{
+    if (port > get_num_channels()) {
+        throw uhd::runtime_error("Invalid channel. Please provide a valid channel");
+    }
+    const uhd::rfnoc::res_source_info info(res_source_info::INPUT_EDGE, port);
+    post_action(info, action);
+}
+
 const uhd::stream_args_t& rfnoc_rx_streamer::get_stream_args() const
 {
     return _stream_args;
@@ -169,7 +189,6 @@ void rfnoc_rx_streamer::connect_channel(
     const size_t channel, chdr_rx_data_xport::uptr xport)
 {
     UHD_ASSERT_THROW(channel < _mtu_in.size());
-
     // Stash away the MTU before we lose access to xports
     const size_t mtu = xport->get_mtu();
 
@@ -305,7 +324,7 @@ void rfnoc_rx_streamer::_handle_rx_event_action(
 void rfnoc_rx_streamer::_handle_stream_cmd_action(
     const res_source_info& src, stream_cmd_action_info::sptr stream_cmd_action)
 {
-    RFNOC_LOG_TRACE("Received stream command on " << src.to_string());
+    RFNOC_LOG_DEBUG("Received stream command on " << src.to_string());
     UHD_ASSERT_THROW(src.type == res_source_info::INPUT_EDGE);
     auto start_action =
         stream_cmd_action_info::make(stream_cmd_action->stream_cmd.stream_mode);

@@ -71,6 +71,16 @@ struct UHD_API tune_result_t
      * \return the printable string
      */
     std::string to_pp_string(void) const;
+
+    tune_result_t()
+        : clipped_rf_freq(0.0)
+        , target_rf_freq(0.0)
+        , actual_rf_freq(0.0)
+        , target_dsp_freq(0.0)
+        , actual_dsp_freq(0.0)
+    {
+        /* NOP */
+    }
 };
 
 } // namespace uhd

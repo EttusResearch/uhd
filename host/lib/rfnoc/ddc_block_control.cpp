@@ -77,6 +77,7 @@ public:
         // This line is not strictly necessary, as ONE_TO_ONE is the default.
         // We set it make it explicit how this block works.
         set_mtu_forwarding_policy(forwarding_policy_t::ONE_TO_ONE);
+
         // Load list of valid decimation values
         std::set<size_t> decims{1}; // 1 is always a valid decimation
         for (size_t hb = 0; hb < _num_halfbands; hb++) {
@@ -104,6 +105,7 @@ public:
             _register_props(chan);
         }
         register_issue_stream_cmd();
+        register_issue_tune_request();
     }
 
     double set_freq(const double freq,
@@ -451,6 +453,115 @@ private:
         }
 
         post_action(dst_edge, new_action);
+    }
+
+    void register_issue_tune_request()
+    {
+        register_action_handler(ACTION_KEY_TUNE_REQUEST,
+            [this](const res_source_info& src, action_info::sptr action) {
+                tune_request_action_info::sptr tune_request_action =
+                    std::dynamic_pointer_cast<tune_request_action_info>(action);
+                if (!tune_request_action) {
+                    throw uhd::runtime_error(
+                        "Received tune_request of invalid action type!");
+                }
+                issue_tune_request_action_handler(src, tune_request_action);
+            });
+    }
+
+    void issue_tune_request_action_handler(
+        const res_source_info& src, tune_request_action_info::sptr tune_request_action)
+    {
+        RFNOC_LOG_TRACE("DDC issue_tune_request_action_handler");
+        res_source_info dst_edge{res_source_info::invert_edge(src.type), src.instance};
+        const size_t chan                = src.instance;
+        uhd::tune_request_t tune_request = tune_request_action->tune_request;
+        RFNOC_LOG_TRACE("Received tune_request to "
+                        << src.to_string() << ", id==" << tune_request_action->id);
+
+        uhd::freq_range_t dsp_range    = get_frequency_range(chan);
+        uhd::freq_range_t tune_range   = tune_request_action->overall_freq_range;
+        tune_request_action->dsp_range = dsp_range;
+
+        if (tune_range.empty()) {
+            tune_range = dsp_range;
+        }
+
+        if (src.type == res_source_info::INPUT_EDGE) {
+            auto set_dsp_freq = [this, chan](
+                                    double freq) { set_freq(freq, chan, boost::none); };
+
+            double clipped_requested_freq = tune_range.clip(tune_request.target_freq);
+            tune_request_action->tune_result.target_dsp_freq = abs(
+                tune_request_action->tune_result.actual_rf_freq - clipped_requested_freq);
+
+            //------------------------------------------------------------------
+            //-- Set the DSP frequency depending upon the DSP frequency policy.
+            //------------------------------------------------------------------
+            double target_dsp_freq = 0.0;
+            switch (tune_request.dsp_freq_policy) {
+                case uhd::tune_request_t::POLICY_AUTO:
+                    /* If we are using the AUTO tuning policy, then we prevent the
+                     * CORDIC from spinning us outside of the range of the baseband
+                     * filter, regardless of what the user requested. This could happen
+                     * if the user requested a center frequency so far outside of the
+                     * tunable range of the FE that the CORDIC would spin outside the
+                     * filtered baseband. */
+                    target_dsp_freq = tune_request_action->tune_result.target_dsp_freq
+                                      - tune_request_action->tune_result.actual_dsp_freq;
+                    break;
+
+                case uhd::tune_request_t::POLICY_MANUAL:
+                    /* If the user has specified a manual tune policy, we will allow
+                     * tuning outside of the baseband filter, but will still clip the
+                     * target DSP frequency to within the bounds of the CORDIC to
+                     * prevent undefined behavior (likely an overflow). */
+                    target_dsp_freq = dsp_range.clip(tune_request.dsp_freq);
+                    break;
+
+                case uhd::tune_request_t::POLICY_NONE:
+                    break; // does not set
+            }
+            RFNOC_LOG_TRACE(
+                str(boost::format("Target DSP Freq: %.6fMHz") % (target_dsp_freq / 1e6)));
+
+            //------------------------------------------------------------------
+            //-- Tune the DSP
+            //------------------------------------------------------------------
+            if (tune_request.dsp_freq_policy != uhd::tune_request_t::POLICY_NONE) {
+                set_dsp_freq(target_dsp_freq);
+            }
+            const double actual_dsp_freq = get_freq(chan);
+
+            RFNOC_LOG_TRACE(
+                str(boost::format("Actual DSP Freq: %.6fMHz") % (actual_dsp_freq / 1e6)));
+
+            tune_request_action->tune_result.actual_dsp_freq += actual_dsp_freq;
+
+            RFNOC_LOG_TRACE(
+                "Tune_result details DDC : target_rf_frq = "
+                << tune_request_action->tune_result.target_rf_freq
+                << " target dsp freq = "
+                << tune_request_action->tune_result.target_dsp_freq << " clipped rf_freq "
+                << tune_request_action->tune_result.clipped_rf_freq
+                << " actual_rf_freq = " << tune_request_action->tune_result.actual_rf_freq
+                << " actual dsp_freq= "
+                << tune_request_action->tune_result.actual_dsp_freq);
+
+            auto new_action                = tune_request_action_info::make(tune_request);
+            new_action->tune_request       = tune_request_action->tune_request;
+            new_action->tune_result        = tune_request_action->tune_result;
+            new_action->dsp_range          = tune_request_action->dsp_range;
+            new_action->overall_freq_range = tune_request_action->overall_freq_range;
+            post_action(dst_edge, new_action);
+        } else {
+            auto new_action                = tune_request_action_info::make(tune_request);
+            new_action->tune_request       = tune_request_action->tune_request;
+            new_action->tune_result        = tune_request_action->tune_result;
+            new_action->dsp_range          = tune_request_action->dsp_range;
+            new_action->overall_freq_range = tune_request_action->overall_freq_range;
+            post_action(dst_edge, new_action);
+        }
     }
 
     /**************************************************************************

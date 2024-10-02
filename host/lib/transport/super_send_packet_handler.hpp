@@ -418,6 +418,12 @@ public:
     {
         return send_packet_handler::recv_async_msg(async_metadata, timeout);
     }
+    // Post an action to the output edge
+    void post_output_action(
+        const std::shared_ptr<uhd::rfnoc::action_info>&, const size_t) override
+    {
+        throw uhd::not_implemented_error("post_output_action is not implemented here!");
+    }
 
 private:
     size_t _max_num_samps;

@@ -368,6 +368,13 @@ public:
         _stc->issue_stream_cmd(stream_cmd);
     }
 
+    void post_input_action(
+        const std::shared_ptr<uhd::rfnoc::action_info>&, const size_t) override
+    {
+        throw uhd::not_implemented_error(
+            "post_input_action is currently not implemented here!");
+    }
+
 private:
     size_t _max_num_samps;
     soft_time_ctrl::sptr _stc;
@@ -429,6 +436,13 @@ public:
     bool recv_async_msg(async_metadata_t& async_metadata, double timeout = 0.1) override
     {
         return _stc->get_async_queue().pop_with_timed_wait(async_metadata, timeout);
+    }
+
+    void post_output_action(
+        const std::shared_ptr<uhd::rfnoc::action_info>&, const size_t) override
+    {
+        throw uhd::not_implemented_error(
+            "post_output_action is currently not implemented here!");
     }
 
 private:

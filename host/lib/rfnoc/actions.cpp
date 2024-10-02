@@ -94,3 +94,17 @@ tx_event_action_info::sptr tx_event_action_info::make(
     };
     return std::make_shared<tx_event_action_info_make_shared>(event_code, tsf);
 }
+
+/*** Tune Request Metadata Action Info *************************************************/
+tune_request_action_info::tune_request_action_info(
+    const uhd::tune_request_t tune_request_)
+    : action_info(ACTION_KEY_TUNE_REQUEST), tune_request(tune_request_)
+{
+    // nop
+}
+
+tune_request_action_info::sptr tune_request_action_info::make(
+    const uhd::tune_request_t tune_request)
+{
+    return sptr(new tune_request_action_info(tune_request));
+}

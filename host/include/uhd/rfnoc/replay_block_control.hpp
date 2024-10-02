@@ -463,6 +463,26 @@ public:
      */
     virtual void issue_stream_cmd(
         const uhd::stream_cmd_t& stream_cmd, const size_t port = 0) = 0;
+
+    /*! Issue an action from the replay block
+     *
+     * Post an action to the input of replay block.
+     *
+     * \param action The action pointer to post
+     * \param port Which input port of the replay block to use
+     */
+    virtual void post_input_action(
+        const std::shared_ptr<uhd::rfnoc::action_info>& action, const size_t port) = 0;
+
+    /*! Issue an action from the replay block
+     *
+     * Post an action to the output of replay block.
+     *
+     * \param action The action pointer to post
+     * \param port Which output port of the replay block to use
+     */
+    virtual void post_output_action(
+        const std::shared_ptr<uhd::rfnoc::action_info>& action, const size_t port) = 0;
 };
 
 }} /* namespace uhd::rfnoc */
