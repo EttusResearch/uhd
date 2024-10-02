@@ -308,6 +308,12 @@ UHD_ADD_NONAPI_TEST(
     ${UHD_BINARY_DIR}/lib/ic_reg_maps
 )
 
+UHD_ADD_NONAPI_TEST(
+    TARGET "tmp468_test.cpp"
+    EXTRA_SOURCES
+    ${UHD_SOURCE_DIR}/lib/usrp/common/tmp468.cpp
+)
+
 set_source_files_properties(
     ${UHD_SOURCE_DIR}/lib/utils/system_time.cpp
     PROPERTIES COMPILE_DEFINITIONS
