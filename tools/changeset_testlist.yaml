@@ -200,3 +200,19 @@
   add:
     - uhd.build.linux
     - hw.rf.x4xx
+
+###############################################################################
+# LABEL-BASED RULES
+###############################################################################
+- label: ci:skip_hw_tests
+  remove_re:
+    - "^hw"
+    - "^devtest"
+
+- label: ci:skip_devtests
+  remove_re:
+    - "^devtest"
+
+- label: ci:skip_rf_tests
+  remove_re:
+    - "^hw.rf"

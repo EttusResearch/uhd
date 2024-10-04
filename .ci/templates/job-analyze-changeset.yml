@@ -29,7 +29,7 @@ jobs:
         fi
         python3 -m venv $AGENT_TEMPDIRECTORY/ac_venv
         $AGENT_TEMPDIRECTORY/ac_venv/$VENV_BIN_DIR/pip install --upgrade pip
-        $AGENT_TEMPDIRECTORY/ac_venv/$VENV_BIN_DIR/pip install ruamel.yaml clang-format==14.0.6 ni-python-styleguide
+        $AGENT_TEMPDIRECTORY/ac_venv/$VENV_BIN_DIR/pip install ruamel.yaml clang-format==14.0.6 ni-python-styleguide requests
         git branch
         set -o xtrace
         $AGENT_TEMPDIRECTORY/ac_venv/$VENV_BIN_DIR/python3 tools/changeset_testlist.py \
