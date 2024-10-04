@@ -13,6 +13,7 @@ set(python_examples
     usrp_power_meter.py
     remote_rx.py
     x440_L_band_capture.py
+    fft_loopback.py
 )
 
 UHD_INSTALL(PROGRAMS ${python_examples}
