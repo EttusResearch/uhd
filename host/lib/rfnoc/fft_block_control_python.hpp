@@ -40,7 +40,18 @@ void export_fft_block_control(py::module& m)
         .def("set_shift_config", &fft_block_control::set_shift_config)
         .def("get_shift_config", &fft_block_control::get_shift_config)
         .def("set_scaling", &fft_block_control::set_scaling)
+        .def("set_scaling_factor", &fft_block_control::set_scaling_factor)
         .def("get_scaling", &fft_block_control::get_scaling)
         .def("set_length", &fft_block_control::set_length)
-        .def("get_length", &fft_block_control::get_length);
+        .def("get_length", &fft_block_control::get_length)
+        .def("get_max_length", &fft_block_control::get_max_length)
+        .def("get_max_cp_length", &fft_block_control::get_max_cp_length)
+        .def("get_max_cp_removal_list_length",
+            &fft_block_control::get_max_cp_removal_list_length)
+        .def("get_max_cp_insertion_list_length",
+            &fft_block_control::get_max_cp_insertion_list_length)
+        .def("set_cp_insertion_list", &fft_block_control::set_cp_insertion_list)
+        .def("get_cp_insertion_list", &fft_block_control::get_cp_insertion_list)
+        .def("set_cp_removal_list", &fft_block_control::set_cp_removal_list)
+        .def("get_cp_removal_list", &fft_block_control::get_cp_removal_list);
 }
