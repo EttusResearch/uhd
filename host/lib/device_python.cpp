@@ -15,5 +15,10 @@ namespace py = pybind11;
 
 void export_device(py::module& m)
 {
-    m.def("find", [](const uhd::device_addr_t& hint) { return uhd::device::find(hint); });
+    m.def("find", [](const uhd::device_addr_t& hint) {
+        // release the GIL before calling into find.
+        // otherwise find would block any other Python thread
+        py::gil_scoped_release release;
+        return uhd::device::find(hint);
+    });
 }

@@ -135,11 +135,11 @@ From the <a href="https://wiki.python.org/moin/GlobalInterpreterLock">Python wik
 
 During some performance-critical function calls, the UHD Python API releases the
 GIL, during which Python objects have their contents modified. The functions
-calls which do so are uhd::rx_streamer::recv, uhd::tx_streamer::send, and
-uhd::tx_streamer::recv_async_msg. To be clear, the functions listed here violate
-the expected contract set out by the GIL by accessing Python objects (from C++)
-without holding the GIL. This is necessary to achieve rates similar to what the
-C++ API can provide.
+calls which do so are uhd::rx_streamer::recv, uhd::tx_streamer::send,
+uhd::tx_streamer::recv_async_msg and uhd::find. To be clear, the streamer functions
+listed here violate the expected contract set out by the GIL by accessing
+Python objects (from C++) without holding the GIL. This is necessary to achieve
+rates similar to what the C++ API can provide.
 
 To this end, users must ensure that the Python objects accessed by the listed
 functions are handled with care. In simple, single threaded applications, this
