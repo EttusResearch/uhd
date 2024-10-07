@@ -14,6 +14,8 @@ parameters:
 jobs:
   - job: analyze
     displayName: Analyze Changeset
+    variables:
+      - group: github-ettusresearch-uhddev
     pool:
       name: Drivers-NIBuildFarm-RFMIBUILD
       demands: sh
@@ -32,14 +34,18 @@ jobs:
         $AGENT_TEMPDIRECTORY/ac_venv/$VENV_BIN_DIR/pip install ruamel.yaml clang-format==14.0.6 ni-python-styleguide requests
         git branch
         set -o xtrace
+        if [ "$BUILD_REASON" == "PullRequest" ]; then
+          EXTRA_ARGS="--github-label-api-endpoint https://oauth2:$OAUTH_TOKEN@api.github.com/repos/$BUILD_REPOSITORY_ID/issues/$SYSTEM_PULLREQUEST_PULLREQUESTNUMBER/labels"
+        fi
         $AGENT_TEMPDIRECTORY/ac_venv/$VENV_BIN_DIR/python3 tools/changeset_testlist.py \
                 --target-branch $TARGET_BRANCH \
                 --set-azdo-var UhdTestList \
-                --list-tests
+                --list-tests $EXTRA_ARGS
       name: gen_testlist
       displayName: Generate Test-List
       env:
         TARGET_BRANCH: ${{ parameters.target_branch }}
+        OAUTH_TOKEN: $(github_uhddev_token)
     - bash: |
         if [[ $AGENT_OS == "Windows_NT" ]]; then
             VENV_BIN_DIR="Scripts"
