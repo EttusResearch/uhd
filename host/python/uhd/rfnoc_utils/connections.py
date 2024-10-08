@@ -114,32 +114,43 @@ def check_and_sanitize(config):
             con = sanitize_port(con, s_d, failure)
         src_blk = config.get_module(con["srcblk"])
         dst_blk = config.get_module(con["dstblk"])
-        if (con["srcblk"], con["srcport"], "output") in config.block_ports and (
-            con["dstblk"],
-            con["dstport"],
-            "input",
-        ) in config.block_ports:
-            con["srctype"] = "output"
-            con["dsttype"] = "input"
-        elif (
-            src_blk.io_ports.get(con["srcport"], {}).get("drive") == "master"
-            and dst_blk.io_ports.get(con["dstport"], {}).get("drive") == "slave"
-        ) or (
-            src_blk.io_ports.get(con["srcport"], {}).get("drive") == "broadcaster"
-            and dst_blk.io_ports.get(con["dstport"], {}).get("drive") == "listener"
-        ):
-            # In this case, we have an IO port. Make sure we have the IO
-            # signature copied into the connection object.
-            con["srctype"] = src_blk.io_ports[con["srcport"]]["drive"]
-            con["dsttype"] = dst_blk.io_ports[con["dstport"]]["drive"]
-            con["src_iosig"] = copy.deepcopy(src_blk.io_ports[con["srcport"]])
-            con["dst_iosig"] = copy.deepcopy(dst_blk.io_ports[con["dstport"]])
-            _check_io_port_compatibility(con, config.log)
-        elif con["srcport"] == NONE_PORT or con["dstport"] == NONE_PORT:
-            pass
-        else:
-            failure += "Unresolved connection: " + con2str(con) + "\n"
-        config.connections[conn_idx] = con
+        try:
+            # If dummy connection, we just skip this.
+            if con["srcport"] == NONE_PORT or con["dstport"] == NONE_PORT:
+                pass
+            # If this is a connection between blocks, or between stream endpoints and
+            # blocks, then we can determine the connection type.
+            elif (con["srcblk"], con["srcport"], "output") in config.block_ports and (
+                con["dstblk"],
+                con["dstport"],
+                "input",
+            ) in config.block_ports:
+                con["srctype"] = "output"
+                con["dsttype"] = "input"
+            # If it's none of the above, it's either an IO port connection, or it's
+            # not valid.
+            elif (
+                src_blk.io_ports.get(con["srcport"], {}).get("drive") == "master"
+                and dst_blk.io_ports.get(con["dstport"], {}).get("drive") == "slave"
+            ) or (
+                src_blk.io_ports.get(con["srcport"], {}).get("drive") == "broadcaster"
+                and dst_blk.io_ports.get(con["dstport"], {}).get("drive") == "listener"
+            ):
+                # In this case, we have an IO port. Make sure we have the IO
+                # signature copied into the connection object.
+                con["srctype"] = src_blk.io_ports[con["srcport"]]["drive"]
+                con["dsttype"] = dst_blk.io_ports[con["dstport"]]["drive"]
+                con["src_iosig"] = copy.deepcopy(src_blk.io_ports[con["srcport"]])
+                con["dst_iosig"] = copy.deepcopy(dst_blk.io_ports[con["dstport"]])
+                _check_io_port_compatibility(con, config.log)
+            elif con["srcport"] == NONE_PORT or con["dstport"] == NONE_PORT:
+                pass
+            else:
+                failure += "Unresolved connection: " + con2str(con) + "\n"
+            config.connections[conn_idx] = con
+        except AttributeError as ex:
+            config.log.error("Error parsing connection: %s. No io_ports attribute on source or dest:\n%s\n%s", con, src_blk, dst_blk)
+            raise
 
     # Go through all the modules and check IO ports are connected
     for module_name, module in config.get_module_list("all").items():
