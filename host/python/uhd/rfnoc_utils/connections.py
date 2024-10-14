@@ -19,6 +19,49 @@ def con2str(con):
     return f"{con['srcblk']}:{con['srcport']} → {con['dstblk']}:{con['dstport']}"
 
 
+def _check_duplicate_connections(config):
+    """Check that ports don't have duplicate connections.
+
+    Checks that a port that is referenced in a connection is not referenced in
+    any other connection. The exception are broadcasters, which can have multiple
+    destinations.
+
+    As a reminder, the connections object looks something like this:
+    [
+        {'srcblk': src1, 'srcport': srcport1, 'dstblk': dst1, 'dstport': dstport1},
+        {'srcblk': src2, 'srcport': srcport2, 'dstblk': dst2, 'dstport': dstport2},
+        ...
+    ]
+
+    A duplicate connection is any tuple of connections where either the srcblk
+    and srcport or the dstblk and dstport are the same (again, with the exception
+    of broadcasters).
+    """
+    for con_idx, con in enumerate(config.connections):
+        for s_d in ("src", "dst"):
+
+            def is_broadcast(c):
+                return s_d == "src" and c["srctype"] == "broadcaster"
+
+            def port_match(c):
+                return con[f"{s_d}blk"] == c[f"{s_d}blk"] and con[f"{s_d}port"] == c[f"{s_d}port"]
+
+            dupes = [
+                other
+                for other in config.connections[con_idx + 1 :]
+                if port_match(other) and not is_broadcast(other)
+            ]
+            if dupes:
+                error = (
+                    f"The {'source' if s_d == 'src' else 'destination'} port {con[f'{s_d}blk']}:{con[f'{s_d}port']} is "
+                    f"connected to multiple {'destinations' if s_d == 'src' else 'sources'} via the following connections:\n"
+                    f"{con2str(con)}\n"
+                )
+                for dupe in dupes:
+                    error += con2str(dupe) + "\n"
+                config.log.error(error)
+
+
 def check_and_sanitize(config):
     """Check and sanitize connections of an image builder configuration.
 
@@ -153,6 +196,8 @@ def check_and_sanitize(config):
     config.connections = [
         c for c in config.connections if c["srcport"] != NONE_PORT and c["dstport"] != NONE_PORT
     ]
+    # Now make sure there are no duplicate connections
+    _check_duplicate_connections(config)
 
     if failure:
         config.log.error(
