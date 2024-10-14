@@ -209,8 +209,8 @@ def get_fpga_path(args):
     """
     # If a valid path is given, use that
     if args.fpga_dir:
-        if os.path.isdir(args.fpga_dir):
-            fpga_path = os.path.abspath(args.fpga_dir)
+        fpga_path = os.path.normpath(os.path.abspath(os.path.expanduser(args.fpga_dir)))
+        if os.path.isdir(fpga_path):
             logging.info("Using FPGA directory %s", fpga_path)
             return fpga_path
         else:
@@ -262,7 +262,8 @@ def main():
     args = setup_parser().parse_args()
     rfnoc_log.init_logging(args.color, args.log_level)
 
-    source = args.yaml_config if args.yaml_config else args.grc_config
+    source_arg = args.yaml_config if args.yaml_config else args.grc_config
+    source = os.path.normpath(os.path.abspath(os.path.expanduser(source_arg)))
     source_type = "yaml" if args.yaml_config else "grc"
     if not os.path.isfile(source):
         logging.error("Source file %s does not exist", source)
