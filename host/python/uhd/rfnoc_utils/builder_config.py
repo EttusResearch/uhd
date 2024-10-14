@@ -286,7 +286,7 @@ class ImageBuilderConfig:
         self.log.debug("Running checks on the current configuration...")
         failures = []
         if not any(bool(sep["ctrl"]) for sep in self.stream_endpoints.values()):
-            failures = "At least one streaming endpoint needs to have ctrl enabled"
+            failures += ["At least one streaming endpoint needs to have ctrl enabled"]
         # Check RFNoC protocol version. Use latest if it was not specified.
         requested_version = self.rfnoc_version
         [requested_major, requested_minor, *_] = requested_version.split(".")
