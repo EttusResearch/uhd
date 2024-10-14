@@ -229,6 +229,10 @@ class X410ClockPolicy(X4xxClockPolicy):
     def set_dsp_info(self, dsp_info):
         """Store the DSP info of the current FPGA image."""
         self._dsp_info = dsp_info
+        if self._dsp_info[0]["num_rx_chans"] == 0 and self._dsp_info[0]["num_tx_chans"] == 0:
+            return
+
+        # this part of DSP initialization is only relevant for radio frontends
         self._dsp_bw = dsp_info[0]["bw"]
         assert self._dsp_bw in [x[0] for x in self.master_to_sample_clk.values()]
 
@@ -406,6 +410,10 @@ class X440ClockPolicy(X4xxClockPolicy):
     def set_dsp_info(self, dsp_info):
         """Store the DSP info of the current FPGA image."""
         self._dsp_info = dsp_info
+        if self._dsp_info[0]["num_rx_chans"] == 0 and self._dsp_info[0]["num_tx_chans"] == 0:
+            return
+
+        # this part of DSP initialization is only relevant for radio frontends
         self._dsp_bw = dsp_info[0]["bw"]
         # We assume that SPC == the bitfile's spc_rx
         self._spc = dsp_info[0]["spc_rx"]
