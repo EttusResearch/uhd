@@ -133,6 +133,11 @@ class StepExecutor:
     def multi_rename(self, pattern, repl, **kwargs):
         """Rename multiple files with a regex pattern."""
         paths_to_rename = glob.glob(kwargs["glob"], recursive=kwargs.get("glob_recursive", True))
+        # make sure files are renamed before the directories which contain the files by
+        # sorting and reversing the list, example:
+        # - first rename file "old/old.cc" to "old/new.cc"
+        # - then rename directory "old" to "new"
+        paths_to_rename.sort(reverse=True)
         for path in paths_to_rename:
             head, tail = os.path.split(path)
             new_path = os.path.join(head, re.sub(pattern, repl, tail))
