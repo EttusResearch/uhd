@@ -53,6 +53,8 @@ DEVICE_DIR_MAP = {
 DEVICE_DEFAULTTARGET_MAP = {
     "x300": "X300_HG",
     "x310": "X310_HG",
+    "x410": "X410",
+    "x440": "X440",
     "e310": "E310_SG3",
     "e320": "E320_1G",
     "n300": "N300_HG",
