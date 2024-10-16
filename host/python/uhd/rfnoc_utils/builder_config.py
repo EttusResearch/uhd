@@ -839,95 +839,110 @@ class ImageBuilderConfig:
                 clk_index = min_clk_index + 1
                 self.log.debug("Assigning clock index %d to clock %s.", clk_index, clock_id)
             clk_indices[clk_index] = clock_id
+            return clk_index
 
-        # Collect clocks from block definitions
-        for name, block in self.noc_blocks.items():
-            block_clocks = getattr(block.desc, "clocks", {})
-            for clock in block_clocks:
-                clock_id = name + "." + clock["name"]
-                # Sanitize the direction field: Block clocks are by default inputs
-                if "direction" not in clock:
-                    clock["direction"] = "in"
-                self.clocks[clock_id] = clock
-        # Collect clocks from device BSP
-        for bsp_clk in getattr(self.device, "clocks", {}):
-            clock_id = "_device_." + bsp_clk["name"]
+        # Go through clocks from device BSP
+        setattr(self.device, "clocks", getattr(self.device, "clocks", {}))
+        for clock in self.device.clocks:
             # Sanitize the direction field: BSP clocks are by default outputs
-            if "direction" not in bsp_clk:
-                bsp_clk["direction"] = "out"
-            self.clocks[clock_id] = bsp_clk
-            register_clk_index(clock_id, bsp_clk)
-        # Collect clocks from generic modules
-        for name, module in self.modules.items():
-            mod_clocks = getattr(module.desc, "clocks", {})
-            for clock in mod_clocks:
-                clock_id = name + "." + clock["name"]
+            if "direction" not in clock:
+                clock["direction"] = "out"
+            clock["index"] = register_clk_index("_device_." + clock["name"], clock)
+        # Go through clocks from blocks, modules, and transport adapters
+        for name, block in self.get_module_list("nodevice").items():
+            setattr(block, "clocks", getattr(block.desc, "clocks", {}))
+            for clock in block.clocks:
                 # Sanitize the direction field: Block clocks are by default inputs
                 if "direction" not in clock:
                     clock["direction"] = "in"
-                self.clocks[clock_id] = clock
-        # Some clocks always have to be present. If the BSP does not define them,
-        # then we do it for them.
-        for required_bsp_clock in "rfnoc_ctrl", "rfnoc_chdr":
-            clock_id = "_device_." + required_bsp_clock
-            if clock_id not in self.clocks:
-                self.log.debug("Adding required clock not present in BSP: %s", required_bsp_clock)
-                self.clocks[clock_id] = {
-                    "name": required_bsp_clock,
-                    # For the index, we do a reverse lookup from clk_indices
-                    "index": {
-                        clk_id: idx
-                        for idx, clk_id in clk_indices.items()
-                        if clk_id.startswith("_device_.")
-                    }[clock_id],
-                }
+                if clock["direction"] == "out":
+                    clock["index"] = register_clk_index(name + "." + clock["name"], clock)
 
     def _check_clk_domains(self):
         """Check/sanitize clock domain connections.
 
         - Check every clock domain connection for validity
-        - Add unconnected clocks if they provide a default clock domain
+        - Auto-connect unconnected clocks if they provide a default clock domain,
+          or warn if they don't
         """
-        failure = ""
-        connected_clk_inputs = []
-        # Check the given clock domains are valid
+        # Check the given clock connections are valid
         for clk_domain in self.clk_domains:
-            clk_src = clk_domain["srcblk"] + "." + clk_domain["srcport"]
-            clk_dst = clk_domain["dstblk"] + "." + clk_domain["dstport"]
-            if not (clk_src in self.clocks and clk_dst in self.clocks):
-                failure += f"Invalid clock domain connection: " f"{clk_src} → {clk_dst}\n"
+            srcblk = self.get_module(clk_domain["srcblk"])
+            dstblk = self.get_module(clk_domain["dstblk"])
+            if not srcblk:
+                self.log.error(
+                    "Invalid clock domain connection: %s (source block is not defined)",
+                    connections.con2str(clk_domain),
+                )
                 continue
-            connected_clk_inputs.append(clk_dst)
-        # Check if there are unconnected clocks
-        for clk, clk_info in self.clocks.items():
-            clk_blk, clk_port = clk.split(".", 2)
-            if (
-                clk_blk != DEVICE_NAME
-                and clk_port not in self.DEFAULT_CLK_NAMES
-                and clk not in connected_clk_inputs
-                and clk_info["direction"] == "in"
-            ):
-                if "default" in clk_info:
-                    srcclk_blk, srcclk_port = clk_info["default"].split(".", 2)
-                    self.clk_domains.append(
-                        {
-                            "srcblk": srcclk_blk,
-                            "srcport": srcclk_port,
-                            "dstblk": clk_blk,
-                            "dstport": clk_port,
-                        }
-                    )
-                else:
-                    failure += f"Unconnected clock domain: {clk}"
-        if failure:
-            self.log.error("Clock domains have invalid configuration:\n%s", failure)
-            sys.exit(1)
-        # Annotate the list of clock connections
-        for clk_i, clk_domain in enumerate(self.clk_domains):
-            clk_src = clk_domain["srcblk"] + "." + clk_domain["srcport"]
-            clk_dst = clk_domain["dstblk"] + "." + clk_domain["dstport"]
-            self.clk_domains[clk_i]["srcport"] = self.clocks[clk_src]["name"]
-            self.clk_domains[clk_i]["dstport"] = self.clocks[clk_dst]["name"]
+            if not dstblk:
+                self.log.error(
+                    "Invalid clock domain connection: %s (destination block is not defined)",
+                    connections.con2str(clk_domain),
+                )
+                continue
+            src_clk = [c for c in srcblk.clocks if c["name"] == clk_domain["srcport"]]
+            dst_clk = [c for c in dstblk.clocks if c["name"] == clk_domain["dstport"]]
+            if not src_clk or src_clk[0]["direction"] != "out":
+                self.log.error(
+                    "Invalid clock domain connection: %s (%s is not a clock output)",
+                    connections.con2str(clk_domain),
+                    clk_domain["srcport"],
+                )
+                continue
+            if not dst_clk or dst_clk[0]["direction"] != "in":
+                self.log.error(
+                    "Invalid clock domain connection: %s (%s is not a clock input)",
+                    connections.con2str(clk_domain),
+                    clk_domain["dstport"],
+                )
+                continue
+        # Go through all modules and check that their input clocks are connected
+        for module_name, module in self.get_module_list("all").items():
+            for clk_info in module.clocks:
+                if clk_info["direction"] == "in":
+                    if (
+                        not any(
+                            c["dstblk"] == module_name and c["dstport"] == clk_info["name"]
+                            for c in self.clk_domains
+                        )
+                        and clk_info["name"] not in self.DEFAULT_CLK_NAMES
+                    ):
+                        if "default" in clk_info:
+                            # If the clock provided a default, then we can infer
+                            # the connection.
+                            self.clk_domains.append(
+                                {
+                                    "srcblk": clk_info["default"].split(".")[0],
+                                    "srcport": clk_info["default"].split(".")[1],
+                                    "dstblk": module_name,
+                                    "dstport": clk_info["name"],
+                                }
+                            )
+                            self.log.debug(
+                                "Inferring clock connection: %s",
+                                connections.con2str(self.clk_domains[-1]),
+                            )
+                        else:
+                            # Otherwise, we warn.
+                            self.log.warning(
+                                "Unconnected clock input: %s.%s", module_name, clk_info["name"]
+                            )
+        # Check ctrl and timebase clocks
+        for block_name, block in self.get_module_list("noc_blocks").items():
+            for clk_type in ("ctrl_clock", "timebase_clock"):
+                clk = block.get(clk_type)
+                if clk:
+                    if "." not in clk:
+                        clk = "_device_." + clk
+                    srcblk, clk_name = clk.split(".", 1)
+                    if not [c for c in self.get_module(srcblk).clocks if c["name"] == clk_name]:
+                        self.log.error(
+                            "Invalid %s for block %s: %s",
+                            clk_type,
+                            block_name,
+                            clk,
+                        )
 
     def _get_available_ports(self, io_port):
         """Return a list of available ports for an unconnected IO port.
@@ -1248,3 +1263,14 @@ class ImageBuilderConfig:
                 }
             )
         return result
+
+    def get_clock_index(self, clk_name):
+        """Return the integer clock index given a clock name."""
+        if not clk_name:
+            return None
+        if "." not in clk_name:
+            clk_name = "_device_." + clk_name
+        srcblk, clk_name = clk_name.split(".", 1)
+        clk_info = [c for c in self.get_module(srcblk).clocks if c["name"] == clk_name]
+        assert clk_info # We checked timebase clocks are valid earlier
+        return clk_info[0].get("index")

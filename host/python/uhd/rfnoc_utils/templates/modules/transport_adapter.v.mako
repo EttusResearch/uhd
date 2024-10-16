@@ -1,6 +1,5 @@
 <%page args="config, ta_name, ta, core_domain='top'"/>\
 <%
-  clocks = config.clocks
   ta_domain = ta.get('domain')
   hdl_params = config.get_hdl_parameters(ta_name)
   # We assume that inputs and outputs are symmetric
