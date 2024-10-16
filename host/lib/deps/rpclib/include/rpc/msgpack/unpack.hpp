@@ -1106,7 +1106,7 @@ private:
     std::size_t m_free;
     std::size_t m_off;
     std::size_t m_parsed;
-    clmdep_msgpack::unique_ptr<clmdep_msgpack::zone> m_z;
+    std::unique_ptr<clmdep_msgpack::zone> m_z;
     std::size_t m_initial_buffer_size;
     detail::context m_ctx;
 
@@ -1532,7 +1532,7 @@ inline unpacked unpack(
     unpack_reference_func f, void* user_data, unpack_limit const& limit)
 {
     clmdep_msgpack::object obj;
-    clmdep_msgpack::unique_ptr<clmdep_msgpack::zone> z(new clmdep_msgpack::zone);
+    std::unique_ptr<clmdep_msgpack::zone> z(new clmdep_msgpack::zone);
     referenced = false;
     std::size_t noff = off;
     unpack_return ret = detail::unpack_imp(
@@ -1541,10 +1541,10 @@ inline unpacked unpack(
     switch(ret) {
     case UNPACK_SUCCESS:
         off = noff;
-        return unpacked(obj, clmdep_msgpack::move(z));
+        return unpacked(obj, std::move(z));
     case UNPACK_EXTRA_BYTES:
         off = noff;
-        return unpacked(obj, clmdep_msgpack::move(z));
+        return unpacked(obj, std::move(z));
     case UNPACK_CONTINUE:
         throw clmdep_msgpack::insufficient_bytes("insufficient bytes");
     case UNPACK_PARSE_ERROR:
@@ -1584,7 +1584,7 @@ inline void unpack(unpacked& result,
                    unpack_reference_func f, void* user_data, unpack_limit const& limit)
 {
     clmdep_msgpack::object obj;
-    clmdep_msgpack::unique_ptr<clmdep_msgpack::zone> z(new clmdep_msgpack::zone);
+    std::unique_ptr<clmdep_msgpack::zone> z(new clmdep_msgpack::zone);
     referenced = false;
     std::size_t noff = off;
     unpack_return ret = detail::unpack_imp(
@@ -1594,12 +1594,12 @@ inline void unpack(unpacked& result,
     case UNPACK_SUCCESS:
         off = noff;
         result.set(obj);
-        result.zone() = clmdep_msgpack::move(z);
+        result.zone() = std::move(z);
         return;
     case UNPACK_EXTRA_BYTES:
         off = noff;
         result.set(obj);
-        result.zone() = clmdep_msgpack::move(z);
+        result.zone() = std::move(z);
         return;
     case UNPACK_CONTINUE:
         throw clmdep_msgpack::insufficient_bytes("insufficient bytes");

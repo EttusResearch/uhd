@@ -158,7 +158,7 @@ public:
     void push_finalizer(void (*func)(void*), void* data);
 
     template <typename T>
-    void push_finalizer(clmdep_msgpack::unique_ptr<T> obj);
+    void push_finalizer(std::unique_ptr<T> obj);
 
     void clear();
 
@@ -316,7 +316,7 @@ inline void zone::push_finalizer(void (*func)(void*), void* data)
 }
 
 template <typename T>
-inline void zone::push_finalizer(clmdep_msgpack::unique_ptr<T> obj)
+inline void zone::push_finalizer(std::unique_ptr<T> obj)
 {
     m_finalizer_array.push(&zone::object_delete<T>, obj.release());
 }

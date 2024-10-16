@@ -49,13 +49,8 @@ class object_handle {
 public:
     object_handle() {}
 
-    object_handle(clmdep_msgpack::object const& obj, clmdep_msgpack::unique_ptr<clmdep_msgpack::zone> z) :
-        m_obj(obj), m_zone(clmdep_msgpack::move(z)) { }
-
-#ifdef _MSC_VER
-	object_handle(clmdep_msgpack::object const& obj, std::unique_ptr<clmdep_msgpack::zone>&& z) :
-		m_obj(obj), m_zone(z.release()) { }
-#endif
+    object_handle(clmdep_msgpack::object const& obj, std::unique_ptr<clmdep_msgpack::zone> z) :
+        m_obj(obj), m_zone(std::move(z)) { }
 
     // obsolete
     void set(clmdep_msgpack::object const& obj)
@@ -70,10 +65,10 @@ public:
     template <typename T>
     void convert(T&& v) { m_obj.convert(std::forward<T>(v)); }
 
-    clmdep_msgpack::unique_ptr<clmdep_msgpack::zone>& zone()
+    std::unique_ptr<clmdep_msgpack::zone>& zone()
         { return m_zone; }
 
-    const clmdep_msgpack::unique_ptr<clmdep_msgpack::zone>& zone() const
+    const std::unique_ptr<clmdep_msgpack::zone>& zone() const
         { return m_zone; }
 
 #if defined(MSGPACK_USE_CPP03)
@@ -84,23 +79,23 @@ public:
 
     object_handle(object_handle& other):
         m_obj(other.m_obj),
-        m_zone(clmdep_msgpack::move(other.m_zone)) {
+        m_zone(std::move(other.m_zone)) {
     }
 
     object_handle(object_handle_ref ref):
         m_obj(ref.m_oh->m_obj),
-        m_zone(clmdep_msgpack::move(ref.m_oh->m_zone)) {
+        m_zone(std::move(ref.m_oh->m_zone)) {
     }
 
     object_handle& operator=(object_handle& other) {
         m_obj = other.m_obj;
-        m_zone = clmdep_msgpack::move(other.m_zone);
+        m_zone = std::move(other.m_zone);
         return *this;
     }
 
     object_handle& operator=(object_handle_ref ref) {
         m_obj = ref.m_oh->m_obj;
-        m_zone = clmdep_msgpack::move(ref.m_oh->m_zone);
+        m_zone = std::move(ref.m_oh->m_zone);
         return *this;
     }
 
@@ -111,13 +106,13 @@ public:
 
     object_handle& assign(object_handle&& other) {
         m_obj = other.m_obj;
-        m_zone = clmdep_msgpack::move(other.m_zone);
+        m_zone = std::move(other.m_zone);
         return *this;
     }
 
 private:
     clmdep_msgpack::object m_obj;
-    clmdep_msgpack::unique_ptr<clmdep_msgpack::zone> m_zone;
+    std::unique_ptr<clmdep_msgpack::zone> m_zone;
 };
 
 namespace detail {
@@ -168,9 +163,9 @@ inline std::size_t aligned_zone_size(clmdep_msgpack::object const& obj) {
 
 inline object_handle clone(clmdep_msgpack::object const& obj) {
     std::size_t size = clmdep_msgpack::aligned_zone_size(obj);
-    clmdep_msgpack::unique_ptr<clmdep_msgpack::zone> z(size == 0 ? nullptr : new clmdep_msgpack::zone(size));
+    std::unique_ptr<clmdep_msgpack::zone> z(size == 0 ? nullptr : new clmdep_msgpack::zone(size));
     clmdep_msgpack::object newobj = z.get() ? clmdep_msgpack::object(obj, *z) : obj;
-    return object_handle(newobj, clmdep_msgpack::move(z));
+    return object_handle(newobj, std::move(z));
 }
 
 struct object::implicit_type {
