@@ -116,7 +116,7 @@
     - hw.rf.all
     - devtest.all
 # Catchall rule for UHD changes
-- re: host/.+cpp$|host/.+CMakeLists.txt|host/.+hpp$|host/.+ipp$|host/.+c$|host/.+h$|host/.+py$
+- re: host/.+cpp$|host/.*CMakeLists.txt|host/.+hpp$|host/.+ipp$|host/.+c$|host/.+h$|host/.+py$
   add:
     - uhd.build.all
     - uhd.utest.all
@@ -129,7 +129,7 @@
 ###############################################################################
 # When any code file changes, we want to run the unit tests, but run the
 # other tests, too
-- re: ^mpm/.+hpp$|^mpm/.+cpp$|^mpm/.+py$|^mpm/.+/tests/|^mpm/.+CMakeLists.txt$
+- re: ^mpm/.+hpp$|^mpm/.+cpp$|^mpm/.+py$|^mpm/.+/tests/|^mpm/.*CMakeLists.txt$
   add:
     - uhd.build.linux
     - mpm.utest.all
