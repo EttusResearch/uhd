@@ -146,11 +146,11 @@ private:
         read_reg(0xC, 0xD);
 
         // mask and return lock detect
-        bool locked =
-            (_max2112_read_regs.ld & _max2112_read_regs.vasa & _max2112_read_regs.vase)
-            != 0;
+        const bool locked = static_cast<bool>(_max2112_read_regs.ld)
+                            && static_cast<bool>(_max2112_read_regs.vasa)
+                            && static_cast<bool>(_max2112_read_regs.vase);
 
-        UHD_LOGGER_TRACE("DBSRX") << boost::format("DBSRX2 locked: %d") % locked;
+        UHD_LOG_TRACE("DBSRX", "DBSRX2 locked: " << locked);
 
         return sensor_value_t("LO", locked, "locked", "unlocked");
     }

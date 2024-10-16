@@ -75,7 +75,7 @@ bool _is_band_inverted(const uhd::direction_t trx,
 double _calc_lo2_freq(
     const double if1_freq, const double if2_freq, const lo_inj_side_t lo2_inj_side)
 {
-    return if1_freq - lo2_inj_side * if2_freq;
+    return if1_freq - static_cast<double>(lo2_inj_side) * if2_freq;
 }
 
 double _calc_if2_freq(const double if1_freq, const double lo2_freq)
@@ -171,14 +171,16 @@ void zbx_freq_fe_expert::resolve()
         // desired IF, and then applying an offset such that CH0 and CH1 tune to distinct
         // LO1 frequencies: This is done to prevent the LO's from interfering with each
         // other in a phenomenon known as injection locking.
-        const double lo1_freq = if1_freq - (_tune_settings.lo1_inj_side * tune_freq)
-                                + (lo_offset_sign * lo_step);
+        const double lo1_freq =
+            if1_freq - (static_cast<double>(_tune_settings.lo1_inj_side) * tune_freq)
+            + (lo_offset_sign * lo_step);
         // Now, quantize the LO frequency to the nearest valid value:
         _desired_lo1_frequency = _lo_freq_range.clip(lo1_freq, true);
         // Because LO1 frequency probably changed during quantization, we simply
         // re-calculate the now-valid IF1 (the following equation is the same as
         // the LO1 frequency calculation, but solved for if1_freq):
-        if1_freq = _desired_lo1_frequency + (_tune_settings.lo1_inj_side * tune_freq);
+        if1_freq = _desired_lo1_frequency
+                   + static_cast<double>(_tune_settings.lo1_inj_side) * tune_freq;
     }
 
     _lo2_enabled = true;
@@ -215,7 +217,8 @@ void zbx_freq_fe_expert::resolve()
 void zbx_freq_be_expert::resolve()
 {
     const double coerced_if1_freq =
-        _coerced_lo2_frequency + (_coerced_if2_frequency * _lo2_inj_side);
+        _coerced_lo2_frequency
+        + _coerced_if2_frequency * static_cast<double>(_lo2_inj_side);
     if (_is_highband) {
         _coerced_frequency = coerced_if1_freq;
     } else {
