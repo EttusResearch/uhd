@@ -16,6 +16,7 @@
 #include <future>
 #include <memory>
 #include <mutex>
+#include <set>
 #include <tuple>
 
 using namespace uhd;
@@ -100,6 +101,19 @@ device_addrs_t device::find(const device_addr_t& hint, device_filter_t filter)
             UHD_LOGGER_ERROR("UHD") << "Device discovery error: " << e.what();
         }
     }
+
+    // find might return duplicate entries if a device received a broadcast multiple
+    // times. These entries needs to be removed from the result.
+    std::set<size_t> device_hashes;
+    device_addrs.erase(std::remove_if(device_addrs.begin(),
+                           device_addrs.end(),
+                           [&device_hashes](const device_addr_t& other) {
+                               size_t hash       = hash_device_addr(other);
+                               const bool result = device_hashes.count(hash);
+                               device_hashes.insert(hash);
+                               return result;
+                           }),
+        device_addrs.end());
 
     return device_addrs;
 }
