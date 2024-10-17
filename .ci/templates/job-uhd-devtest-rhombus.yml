@@ -55,18 +55,6 @@ jobs:
           devtestPattern: 'x3x0'
           jtagSerial: '251635138E98'
           jtagServer: 'nitest@sdr-rhombus'
-        rhombus-x310-CBX-0:
-          devAgent: x3xxb2xx
-          devType: 'x300'
-          devModel: 'x310'
-          devName: 'rhombus-x310-CBX-0'
-          devSerial: '30796C2'
-          devBus: 'ip'
-          devAddr: '192.168.40.4'
-          devFpga: 'HG,XG'
-          devtestPattern: 'x3x0'
-          jtagSerial: '2516350796C2'
-          jtagServer: 'nitest@sdr-rhombus'
         rhombus-x310-WBX-0:
           devAgent: x3xxb2xx
           devType: 'x300'
