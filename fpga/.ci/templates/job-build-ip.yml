@@ -92,8 +92,6 @@ jobs:
         mkdir -p build-ip/.ci/
         git rev-parse --verify HEAD 2>/dev/null 1>build-ip/.ci/build-hash
       workingDirectory: ${{ parameters.directory }}
-      env:
-        PATCHES_PATH: $(sdr-vivado-patches)
       displayName: "Build IP"
 
     - publish: ${{ parameters.directory }}/build-ip

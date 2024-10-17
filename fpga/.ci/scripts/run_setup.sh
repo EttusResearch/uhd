@@ -49,11 +49,11 @@ export PATCHES_DIR=$BUILD_SOURCESDIRECTORY/patches
 mkdir -p $PATCHES_DIR
 pushd $PATCHES_DIR
 # Fetch the AR76780 patch for Vivado
-wget -q $PATCHES_PATH/2021.1/AR76780_Vivado_2021_1_preliminary_rev1.zip -O ./AR76780_Vivado_2021_1_preliminary_rev1.zip
+cp /opt/synced/Xilinx/patches/AR76780_Vivado_2021_1_preliminary_rev1.zip ./AR76780_Vivado_2021_1_preliminary_rev1.zip
 unzip -q -o ./AR76780_Vivado_2021_1_preliminary_rev1.zip -d ./AR76780_Vivado_2021/
 rm -f AR76780_Vivado_2021_1_preliminary_rev1.zip
 # Add the AR76780 patch for the simulation library
-wget -q $PATCHES_PATH/2021.1/fir_compiler_v7_2_76780.zip -O ./fir_compiler_v7_2_76780.zip
+cp /opt/synced/modelsim/patches/fir_compiler_v7_2_76780.zip ./fir_compiler_v7_2_76780.zip
 unzip -q -o ./fir_compiler_v7_2_76780.zip -d ./fir_compiler_v7_2_76780/
 rm -f ./fir_compiler_v7_2_76780.zip
 popd
