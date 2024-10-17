@@ -5,9 +5,9 @@
 //
 
 #include <uhd/exception.hpp>
-#include <uhd/utils/math.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhdlib/rfnoc/rfnoc_tx_streamer_replay_buffered.hpp>
+#include <numeric>
 
 using namespace uhd;
 using namespace uhd::rfnoc;
@@ -66,7 +66,7 @@ size_t rfnoc_tx_streamer_replay_buffered::send(const buffs_type& buffs,
             throw uhd::runtime_error(
                 "[multi_usrp] Number of samples for send() call must be a "
                 "multiple of "
-                + std::to_string(uhd::math::lcm<uint64_t>(
+                + std::to_string(std::lcm<uint64_t>(
                     replay->get_word_size(), uint64_t(_bytes_per_otw_item)))
                 + " for DRAM alignment");
         }

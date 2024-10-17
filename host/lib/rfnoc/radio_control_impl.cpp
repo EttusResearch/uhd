@@ -9,10 +9,10 @@
 #include <uhd/rfnoc/multichan_register_iface.hpp>
 #include <uhd/rfnoc/register_iface.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhd/utils/math.hpp>
 #include <uhdlib/rfnoc/radio_control_impl.hpp>
 #include <uhdlib/utils/compat_check.hpp>
 #include <map>
+#include <numeric>
 #include <tuple>
 
 using namespace uhd::rfnoc;
@@ -173,7 +173,7 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
             {&_atomic_item_size_in.back()},
             [this, chan, &ais_in = _atomic_item_size_in.back()]() {
                 RFNOC_LOG_TRACE("Calling resolver for atomic_item_size in@" << chan);
-                ais_in = uhd::math::lcm<size_t>(ais_in, get_atomic_item_size());
+                ais_in = std::lcm<size_t>(ais_in, get_atomic_item_size());
                 ais_in = std::min<size_t>(
                     ais_in, get_mtu({res_source_info::INPUT_EDGE, chan}));
                 if ((ais_in % get_atomic_item_size()) > 0) {
@@ -186,7 +186,7 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
             {&_atomic_item_size_out.back()},
             [this, chan, &ais_out = _atomic_item_size_out.back()]() {
                 RFNOC_LOG_TRACE("Calling resolver for atomic_item_size out@" << chan);
-                ais_out = uhd::math::lcm<size_t>(ais_out, get_atomic_item_size());
+                ais_out = std::lcm<size_t>(ais_out, get_atomic_item_size());
                 ais_out = std::min<size_t>(
                     ais_out, get_mtu({res_source_info::OUTPUT_EDGE, chan}));
                 if ((ais_out % get_atomic_item_size()) > 0) {

@@ -1,6 +1,14 @@
 Change Log for Releases
 ==============================
 
+## 004.next
+
+* API Changes
+  - `uhd::math::gcd` and `uhd::math::lcm` are removed from the public
+     headers. Use `std::gcd` and `std::lcm` instead if C++17 is available,
+     or `boost::math::gcd` and `boost::math::lcm` if not.
+
+
 ## 004.008.000.000
 * Highlights / Main Changes
   - Addition of rfnoc_modtool and further improvements to RFNoC Image Builder

@@ -14,6 +14,7 @@
 #include <uhdlib/usrp/common/validate_subdev_spec.hpp>
 #include <functional>
 #include <memory>
+#include <numeric>
 #include <set>
 
 using namespace uhd;
@@ -110,7 +111,7 @@ void b200_impl::set_auto_tick_rate(
             }
             // Clean up floating point rounding errors if they crept in
             this_dsp_rate = std::min(max_tick_rate, this_dsp_rate);
-            lcm_rate      = uhd::math::lcm<uint32_t>(
+            lcm_rate      = std::lcm<uint32_t>(
                 lcm_rate, static_cast<uint32_t>(floor(this_dsp_rate + 0.5)));
         }
     }

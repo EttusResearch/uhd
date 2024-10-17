@@ -5,14 +5,13 @@
 //
 
 #include <uhd/rfnoc/defaults.hpp>
-#include <uhd/utils/math.hpp>
 #include <uhdlib/rfnoc/node_accessor.hpp>
 #include <uhdlib/rfnoc/rfnoc_rx_streamer.hpp>
 #include <atomic>
+#include <numeric>
 #include <thread>
 
 using namespace std::chrono_literals;
-;
 using namespace uhd;
 using namespace uhd::rfnoc;
 
@@ -267,7 +266,7 @@ void rfnoc_rx_streamer::_register_props(const size_t chan, const std::string& ot
             if (ais.is_valid()) {
                 const size_t bpi          = convert::get_bytes_per_item(type.get());
                 const size_t spp          = this->rx_streamer_impl::get_max_num_samps();
-                const size_t spp_multiple = uhd::math::lcm<size_t>(ais.get(), bpi) / bpi;
+                const size_t spp_multiple = std::lcm<size_t>(ais.get(), bpi) / bpi;
                 if (spp < spp_multiple) {
                     RFNOC_LOG_ERROR("Cannot resolve spp! Must be a multiple of "
                                     << spp_multiple << " but max value is " << spp);

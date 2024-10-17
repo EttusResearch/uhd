@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <functional>
 #include <iomanip>
+#include <numeric>
 #include <utility>
 #include <vector>
 
@@ -421,7 +422,7 @@ inline double adf535x_impl<adf5355_regs_t>::_set_frequency(
     // The data sheet recommends reducing FRAC2 and MOD2 to the lowest possible values
     const uint16_t frac2 = static_cast<uint16_t>(
         std::min(ceil(residue * mod2), static_cast<double>(ADF5355_MAX_FRAC2)));
-    const auto gcd = uhd::math::gcd(static_cast<int>(frac2), static_cast<int>(mod2));
+    const auto gcd = std::gcd(static_cast<int>(frac2), static_cast<int>(mod2));
     // FRAC2 and MOD2 are 14-bit numbers
     const uint16_t FRAC2 = (frac2 == 0) ? 0 : frac2 / gcd;
     const uint16_t MOD2  = (frac2 == 0) ? 2 : mod2 / gcd;
@@ -563,7 +564,7 @@ inline double adf535x_impl<adf5356_regs_t>::_set_frequency(
     // The data sheet recommends reducing FRAC2 and MOD2 to the lowest possible values
     const uint32_t frac2 = static_cast<uint32_t>(
         std::min(ceil(residue * mod2), static_cast<double>(ADF5356_MAX_FRAC2)));
-    const auto gcd = uhd::math::gcd(static_cast<int>(frac2), static_cast<int>(mod2));
+    const auto gcd = std::gcd(static_cast<int>(frac2), static_cast<int>(mod2));
     // FRAC2 and MOD2 are 28-bit numbers
     const uint32_t FRAC2 = (frac2 == 0) ? 0 : frac2 / gcd;
     const uint32_t MOD2  = (frac2 == 0) ? 2 : mod2 / gcd;

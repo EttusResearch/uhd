@@ -13,9 +13,9 @@
 #include <uhd/rfnoc/replay_block_control.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/types/stream_cmd.hpp>
-#include <uhd/utils/math.hpp>
 #include <uhdlib/utils/compat_check.hpp>
 #include <uhdlib/utils/narrow.hpp>
+#include <numeric>
 #include <string>
 
 using namespace uhd::rfnoc;
@@ -535,7 +535,7 @@ private:
                                   get_mtu_prop_ref({res_source_info::INPUT_EDGE, port})},
             {&_atomic_item_size_in.back()},
             [this, port, &ais_in = _atomic_item_size_in.back()]() {
-                ais_in = uhd::math::lcm<size_t>(ais_in, get_word_size());
+                ais_in = std::lcm<size_t>(ais_in, get_word_size());
                 ais_in = std::min<size_t>(
                     ais_in, get_mtu({res_source_info::INPUT_EDGE, port}));
                 if (ais_in.get() % get_word_size() > 0) {
@@ -598,7 +598,7 @@ private:
                                   get_mtu_prop_ref({res_source_info::OUTPUT_EDGE, port})},
             {&_atomic_item_size_out.back()},
             [this, port, &ais_out = _atomic_item_size_out.back()]() {
-                ais_out = uhd::math::lcm<size_t>(ais_out, get_word_size());
+                ais_out = std::lcm<size_t>(ais_out, get_word_size());
                 ais_out = std::min<size_t>(
                     ais_out, get_mtu({res_source_info::OUTPUT_EDGE, port}));
                 if (ais_out.get() % get_word_size() > 0) {
@@ -679,8 +679,8 @@ private:
         //   - Configured item size (e.g., sample size)
         const uint32_t item_size        = get_play_item_size(port);
         const uint32_t atomic_item_size = _atomic_item_size_out.at(port).get();
-        const uint32_t min_chunk        = uhd::math::lcm<uint32_t>(
-            uhd::math::lcm<uint32_t>(item_size, atomic_item_size), _word_size);
+        const uint32_t min_chunk        = std::lcm<uint32_t>(
+            std::lcm<uint32_t>(item_size, atomic_item_size), _word_size);
 
         if (new_pyld_size % min_chunk != 0) {
             const uint32_t coerced_size = new_pyld_size - (new_pyld_size % min_chunk);
