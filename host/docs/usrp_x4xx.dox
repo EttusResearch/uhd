@@ -1144,8 +1144,19 @@ on the rear panel (see \ref x4xx_overview_panels). When the X4x0 has access to
 GPS satellite signals, it can use this module to read out the current GPS time
 and location as well as to discipline an onboard OCXO.
 
-To use the GPS as a clock and time reference, simply use `gpsdo` as a clock or
-time source. Alternatively, set `gpsdo` as a synchronization source:
+To use the GPS as a clock and time reference, set the \ref x4xx_usage_args
+`time_source` and `clock_source` to `gpsdo`.
+
+Note the GPS module is not enabled when the clock source is not set to `gpsdo`.
+Its power-on status can be queried using the `gps_enabled` GPS sensor (see also
+\ref x4xx_usage_sensors). When disabled, none of the sensors will return useful
+(if any) values.
+
+Note that acquiring a GPS lock can take some time after enabling the GPS, so if
+a UHD application is enabling the GPS dynamically, it might take some time
+before a GPS lock is reported.
+
+To set the clock source and time source dynamically, see the following code:
 
 ~~~{.cpp}
 // Set clock/time individually:
@@ -1156,15 +1167,6 @@ usrp->set_time_source("gpsdo");
 // between these calls.
 usrp->set_sync_source("clock_source=gpsdo,time_source=gpsdo");
 ~~~
-
-Note the GPS module is not always enabled. Its power-on status can be queried
-using the `gps_enabled` GPS sensor (see also \ref x4xx_usage_sensors). When
-disabled, none of the sensors will return useful (if any) values.
-
-When selecting `gpsdo` as a clock source, the GPS will always be enabled. Note
-that acquiring a GPS lock can take some time after enabling the GPS, so if 
-a UHD application is enabling the GPS dynamically, it might take some time 
-before a GPS lock is reported.
 
 \subsection x4xx_usage_gpio Front-Panel Programmable GPIOs
 
