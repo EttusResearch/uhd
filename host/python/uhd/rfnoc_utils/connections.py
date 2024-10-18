@@ -62,6 +62,32 @@ def _check_duplicate_connections(config):
                 config.log.error(error)
 
 
+def _check_io_port_compatibility(con, log):
+    """Check if source and destination IO ports are compatible."""
+    if con["src_iosig"].get("type") != con["dst_iosig"].get("type"):
+        log.error(
+            f"IO port type mismatch: {con['srcblk']}.{con['srcport']} "
+            f"(type: {con['src_iosig'].get('type')}) → "
+            f"{con['dstblk']}.{con['dstport']} "
+            f"(type: {con['dst_iosig'].get('type')})"
+        )
+    src_ports = con["src_iosig"].get("wires", [])
+    dst_ports = con["dst_iosig"].get("wires", [])
+    if len(src_ports) != len(dst_ports):
+        log.warning(
+            f"Connection {con2str(con)} has a port number mismatch. "
+            f"Counting {len(src_ports)} ports on source and {len(dst_ports)} ports on destination."
+        )
+    for src_port, dst_port in zip(src_ports, dst_ports):
+        src_width = src_port.get("width", 1)
+        dst_width = dst_port.get("width", 1)
+        if src_width != dst_width:
+            log.warning(
+                f"Connection {con2str(con)} has a wire width mismatch. "
+                f"Source port {src_port['name']} has width {src_width}, destination port {dst_port['name']} has width {dst_width}."
+            )
+
+
 def check_and_sanitize(config):
     """Check and sanitize connections of an image builder configuration.
 
@@ -102,18 +128,13 @@ def check_and_sanitize(config):
             src_blk.io_ports.get(con["srcport"], {}).get("drive") == "broadcaster"
             and dst_blk.io_ports.get(con["dstport"], {}).get("drive") == "listener"
         ):
-            # TODO: Check IO port compatibility (e.g. wire widths)
+            # In this case, we have an IO port. Make sure we have the IO
+            # signature copied into the connection object.
             con["srctype"] = src_blk.io_ports[con["srcport"]]["drive"]
             con["dsttype"] = dst_blk.io_ports[con["dstport"]]["drive"]
             con["src_iosig"] = copy.deepcopy(src_blk.io_ports[con["srcport"]])
             con["dst_iosig"] = copy.deepcopy(dst_blk.io_ports[con["dstport"]])
-            if con["src_iosig"].get("type") != con["dst_iosig"].get("type"):
-                failure += (
-                    f"IO port type mismatch: {con['srcblk']}.{con['srcport']} "
-                    f"(type: {con['src_iosig'].get('type')}) → "
-                    f"{con['dstblk']}.{con['dstport']} "
-                    f"(type: {con['dst_iosig'].get('type')})\n"
-                )
+            _check_io_port_compatibility(con, config.log)
         elif con["srcport"] == NONE_PORT or con["dstport"] == NONE_PORT:
             pass
         else:
