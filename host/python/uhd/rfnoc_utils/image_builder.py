@@ -199,13 +199,14 @@ def gen_make_command(args, build_dir, device, use_secure_netlist, makefile_src_p
         )
         + (" SECURE_NETLIST=1" if use_secure_netlist else "")
         + (" GUI=1 " if args.get("GUI") else "")
+        + (" CHECK=1" if args.get("check_hdl") else "")
+        + (" SYNTH=1" if args.get("synthesize_only") else "")
         + (
             " RFNOC_OOT_MAKEFILE_SRCS=" + "\\ ".join(makefile_src_paths)
             if makefile_src_paths
             else ""
         )
         + (" --jobs " + args["num_jobs"] if args.get("num_jobs") else "")
-        + (" GUI=1" if args.get("GUI") else "")
         + (" PROJECT=1" if args.get("save_project") else "")
         + (" IP_ONLY=1" if args.get("ip_only") else "")
         + (
@@ -402,7 +403,7 @@ def build_image(config, repo_fpga_path, config_path, device, **args):
     core_config_path = yaml_utils.get_core_config_path(config_path)
 
     # TODO does this work for both block yamls and HDL sources?
-    include_paths = args.get('include_paths', []) + [os.path.join(config_path, 'rfnoc')]
+    include_paths = args.get("include_paths", []) + [os.path.join(config_path, "rfnoc")]
 
     known_modules = load_module_yamls(include_paths)
 
@@ -420,9 +421,7 @@ def build_image(config, repo_fpga_path, config_path, device, **args):
 
     # Load the image core config
     try:
-        builder_conf = ImageBuilderConfig(
-            config, known_modules, device_conf, include_paths
-        )
+        builder_conf = ImageBuilderConfig(config, known_modules, device_conf, include_paths)
     except (ValueError, KeyError) as e:
         logging.error("Error parsing image configuration: %s", e)
         return 1

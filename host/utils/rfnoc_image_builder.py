@@ -131,6 +131,18 @@ def setup_parser():
         "-g", "--GUI", help="Open Vivado GUI during the FPGA building process", action="store_true"
     )
     parser.add_argument(
+        "-Y",
+        "--SYNTH",
+        help="Stop the FPGA build process after Synthesis",
+        action="store_true",
+    )
+    parser.add_argument(
+        "-C",
+        "--CHECK",
+        help="Run elaboration only to check HDL syntax",
+        action="store_true",
+    )
+    parser.add_argument(
         "-s", "--save-project", help="Save Vivado project to disk", action="store_true"
     )
     parser.add_argument("-P", "--ip-only", help="Build only the required IPs", action="store_true")
@@ -327,6 +339,8 @@ def main():
         continue_on_warnings=args.ignore_warnings,
         clean_all=args.clean_all,
         GUI=args.GUI,
+        synthesize_only=args.SYNTH,
+        check_hdl=args.CHECK,
         save_project=args.save_project,
         ip_only=args.ip_only,
         num_jobs=args.jobs,
