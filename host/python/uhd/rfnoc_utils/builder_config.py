@@ -1144,11 +1144,19 @@ class ImageBuilderConfig:
         """Return module dictionary.
 
         Arguments:
-        mod_type: One of 'noc_blocks', 'transport_adapters', 'modules'.
+        mod_type: One of 'noc_blocks', 'transport_adapters', 'modules',
+                 'device', 'nodevice', 'all'.
         domain: One of 'all', 'secure_core', 'top'.
         """
         assert domain in ("top", "all", "secure_core")
-        assert mod_type in ("noc_blocks", "transport_adapters", "modules", "device", "all")
+        assert mod_type in (
+            "noc_blocks",
+            "transport_adapters",
+            "modules",
+            "device",
+            "nodevice",
+            "all",
+        )
         if mod_type == "all":
             # Ensure that device related entries are included first which, most importantly,
             # includes the loading of the FPGA bitfile. If the order is violated, the kernel tries
@@ -1156,6 +1164,12 @@ class ImageBuilderConfig:
             # behavior and kernel crashes.
             return {
                 **self.get_module_list("device", domain),
+                **self.get_module_list("transport_adapters", domain),
+                **self.get_module_list("modules", domain),
+                **self.get_module_list("noc_blocks", domain),
+            }
+        if mod_type == "nodevice":
+            return {
                 **self.get_module_list("transport_adapters", domain),
                 **self.get_module_list("modules", domain),
                 **self.get_module_list("noc_blocks", domain),
