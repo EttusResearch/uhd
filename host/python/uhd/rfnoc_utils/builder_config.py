@@ -190,8 +190,8 @@ class ImageBuilderConfig:
         # Also set parameters for the device
         default_params = getattr(self.device, "parameters", {})
         self.parameters = {
-            **default_params,
-            **{k: v for k, v in self.parameters.items() if k in default_params},
+            **{k: resolve(v, parameters=self.parameters, config=self) for k, v in default_params.items()},
+            **{k: resolve(v, parameters=self.parameters, config=self) for k, v in self.parameters.items() if k in default_params},
         }
         invalid_keys = [k for k in self.parameters if k not in default_params]
         if invalid_keys:
@@ -248,13 +248,11 @@ class ImageBuilderConfig:
                 )
 
     def _resolve_parameters(self):
-        """Expand block/module parameters."""
-        module_types = ["noc_blocks", "modules", "transport_adapters"]
-        for module_type in module_types:
-            for _, module in getattr(self, module_type).items():
-                module["parameters"] = {
-                    k: resolve(v, **module) for k, v in module.get("parameters", {}).items()
-                }
+        """Expand block/module/device parameters."""
+        for module in self.get_module_list("nodevice").values():
+            module["parameters"] = {
+                k: resolve(v, **module, config=self) for k, v in module.get("parameters", {}).items()
+            }
 
     def _check_deprecated_signatures(self):
         """Check if the configuration uses deprecated IO signatures or block descriptions."""
