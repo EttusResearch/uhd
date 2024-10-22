@@ -38,7 +38,7 @@ io_ports:
     drive: master
     parameters:
       spc: 1
-      num_ports: 2
+      num_ports: 1
     rename:
       pattern: (.*)
       repl: \1_radio0
@@ -47,7 +47,7 @@ io_ports:
     drive: master
     parameters:
       spc: 1
-      num_ports: 2
+      num_ports: 1
     rename:
       pattern: (.*)
       repl: \1_radio1

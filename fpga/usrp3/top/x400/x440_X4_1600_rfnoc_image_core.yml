@@ -65,12 +65,10 @@ noc_blocks:
     block_desc: 'radio.yml'
     parameters:
       NUM_PORTS: 1
-      NIPC: RADIO_NIPC
   radio1:
     block_desc: 'radio.yml'
     parameters:
       NUM_PORTS: 1
-      NIPC: RADIO_NIPC
   replay0:
     block_desc: 'replay.yml'
     parameters:

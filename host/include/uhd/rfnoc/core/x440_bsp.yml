@@ -8,6 +8,7 @@ parameters:
   NUM_DRAM_BANKS: 0
   NUM_DRAM_CHANS: 0
   DRAM_WIDTH: 64
+  RADIO_NIPC: 8
 
 checks:
   - condition: ${int(parameters['RF_BW'] in [200, 400, 1600])}
@@ -49,6 +50,11 @@ checks:
       connections:
         - {srcblk: eth_qsfp0, srcport: qsfp,       dstblk: _device_, dstport: qsfp0   }
     severity: warning
+  - condition: ${ parameters['RADIO_NIPC'] == 8 }
+    message: |
+      The RADIO_NIPC value is not valid. The default values of RADIO_NIPC will
+      be correct, so please remove the RADIO_NIPC parameter from the image core file.
+    severity: error
 
 make_defs:
   - RF_BW=${parameters['RF_BW']}

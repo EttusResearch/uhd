@@ -7,7 +7,7 @@ noc_id: 0x12AD1000
 
 parameters:
   NUM_PORTS: 2
-  NIPC: 1
+  NIPC: ${ config.device.parameters.get("RADIO_NIPC", 1) }
   ITEM_W: 32
 
 checks:

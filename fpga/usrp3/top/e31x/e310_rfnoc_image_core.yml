@@ -32,7 +32,6 @@ noc_blocks:
     block_desc: 'radio.yml'             # Block device descriptor
     parameters:
       NUM_PORTS: 2
-      NIPC: RADIO_NIPC
 
 # A list of all static connections in design
 # ------------------------------------------
