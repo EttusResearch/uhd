@@ -277,9 +277,9 @@ module radio_tx_core #(
 
       if (radio_tx_stb) begin
         // Register time comparisons so they don't become the critical path
-        time_now_m1 <= (radio_time[63:SHIFT_W]+1 == s_axis_ttimestamp[63:SHIFT_W]);
+        time_now_m1 <= (radio_time[63:SHIFT_W] == s_axis_ttimestamp[63:SHIFT_W]-1);
         time_now    <= time_now_m1;
-        time_past   <= (radio_time[63:SHIFT_W]    > s_axis_ttimestamp[63:SHIFT_W]);
+        time_past   <= (radio_time[63:SHIFT_W]  > s_axis_ttimestamp[63:SHIFT_W]);
       end
 
       if (NSPC > 1) begin

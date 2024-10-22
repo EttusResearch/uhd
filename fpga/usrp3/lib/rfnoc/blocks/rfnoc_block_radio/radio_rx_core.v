@@ -421,12 +421,12 @@ module radio_rx_core #(
 
       if (radio_rx_stb) begin
         // Register time comparisons so they don't become the critical path.
-        // Add two to compensate for the pipeline delays of this comparison and
-        // its propagation through the state machine. This ensures that the
+        // Subtract two to compensate for the pipeline delays of this comparison
+        // and its propagation through the state machine. This ensures that the
         // timestamp in the packet matches the requested timestamp.
-        time_now    <= (radio_time[63:SHIFT_W]+2 == cmd_time[63:SHIFT_W]);
+        time_now    <= (radio_time[63:SHIFT_W] == cmd_time[63:SHIFT_W]-2);
         time_now_p1 <= time_now;
-        time_past   <= (radio_time[63:SHIFT_W]   >= cmd_time[63:SHIFT_W]);
+        time_past   <= (radio_time[63:SHIFT_W] >= cmd_time[63:SHIFT_W]);
       end
 
       case (state)
