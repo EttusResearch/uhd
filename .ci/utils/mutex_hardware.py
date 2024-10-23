@@ -328,18 +328,25 @@ def main(args):
                         )
                     else:
                         result = subprocess.run(shlex.split(command.format(fpga=fpga)))
-                    if return_code == 0:
+                    if result.returncode != 0:
+                        print("Command exited with return code {}".format(result.returncode), flush=True)
+                        print("Aborting execution (fpga={})".format(fpga), flush=True)
                         return_code = result.returncode
+                        break
             sys.exit(return_code)
         else:
+            return_code = 0
             for command in args.test_commands:
                 if args.working_dir:
                     result = subprocess.run(shlex.split(command), cwd=args.working_dir)
                 else:
                     result = subprocess.run(shlex.split(command))
                 if result.returncode != 0:
-                    sys.exit(result.returncode)
-            sys.exit(0)
+                    print("Command exited with return code {}".format(result.returncode), flush=True)
+                    print("Aborting execution", flush=True)
+                    return_code = result.returncode
+                    break
+            sys.exit(return_code)
 
 
 if __name__ == "__main__":
