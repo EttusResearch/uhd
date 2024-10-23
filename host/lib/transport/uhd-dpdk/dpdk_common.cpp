@@ -530,7 +530,7 @@ void dpdk_ctx::init(const device_addr_t& user_args)
                 if (cpu_socket == SOCKET_ID_ANY) {
                     UHD_LOG_TRACE("DPDK",
                         "NIC(" << i << ") has no restrictions regarding NUMA nodes");
-                    pool_index = i;
+                    pool_index = 0;
                 } else {
                     UHD_LOG_TRACE("DPDK",
                         "NIC(" << i << ") is connected to NUMA node " << cpu_socket);
