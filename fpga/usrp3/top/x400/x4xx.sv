@@ -461,12 +461,17 @@ module x4xx (
   `ifdef X440
     wire clk5;
 
-    clock_div #(
-      .N(2)
+    BUFGCE_DIV #(
+      .BUFGCE_DIVIDE(2),
+      .SIM_DEVICE("ULTRASCALE_PLUS"),
+      .IS_CE_INVERTED(1'b0),
+      .IS_CLR_INVERTED(1'b0),
+      .IS_I_INVERTED(1'b0)
     ) clock_div_5mhz (
-      .clk_in     (base_ref_clk),
-      .clk_in_rst (brc_rst),
-      .clk_out    (clk5)
+      .I    (base_ref_clk),
+      .CLR  (brc_rst),
+      .CE   (1'b1),
+      .O    (clk5)
     );
   `endif
 
