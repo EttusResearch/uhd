@@ -63,7 +63,7 @@ addition, it features two QSFP28 connectors, which allow for up to 4x10 GbE or
 1x100 GbE connections each. The RFSoC used on the USRP X410 is a ZU28DR speed grade 1,
 on the USRP X440 the ZU28DR speed grade 2.
 
-The front panel provides access to the RF connectors (SMA for X410, MMCX for
+The front panel provides access to the RF connectors (SMA for X410, MMPX for
 X440), Tx/Rx status LEDs, programmable GPIOs, and the power button. The rear
 panel is where the power and data connections go (Ethernet, USB) as well as
 time/clock reference signals and GPS antenna.
