@@ -1526,6 +1526,14 @@ private:
                     _basic_lf_tx         = true;
                     break;
             }
+// If we take all supported versions of clang, gcc, and MSVC, we get some versions
+// that require lambda captures for constexpr, and some compilers throw a warnings
+// when you use a lambdas capture.
+// To make everyone "happy", we turn off those warnings for clang.
+#pragma GCC diagnostic push
+#ifdef __clang__
+#    pragma GCC diagnostic ignored "-Wunused-lambda-capture"
+#endif
             // Add to tree
             get_tree()
                 ->create<dboard_eeprom_t>(DB_PATH / EEPROM_PATHS[i])
@@ -1534,6 +1542,7 @@ private:
                                             const uhd::usrp::dboard_eeprom_t& db_eeprom) {
                     _set_db_eeprom(zpu_i2c, BASE_ADDR | addr, db_eeprom);
                 });
+#pragma GCC diagnostic pop
         }
 
         // create a new dboard interface
