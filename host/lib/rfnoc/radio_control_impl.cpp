@@ -17,12 +17,6 @@
 
 using namespace uhd::rfnoc;
 
-namespace {
-
-const std::string DEFAULT_GAIN_PROFILE("default");
-
-} // namespace
-
 const std::string radio_control::ALL_LOS   = "all";
 const std::string radio_control::ALL_GAINS = "";
 
@@ -235,7 +229,8 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
                 chan,
                 &samp_rate_in  = _samp_rate_in.at(chan),
                 &samp_rate_out = _samp_rate_out.at(chan)]() {
-                RFNOC_LOG_TRACE("Calling resolver for samp_rate@" << chan);
+                UHD_LOGGER_TRACE(this->get_unique_id())
+                    << "Calling resolver for samp_rate@" << chan;
                 samp_rate_in  = coerce_rate(samp_rate_in.get());
                 samp_rate_out = samp_rate_in.get();
             });

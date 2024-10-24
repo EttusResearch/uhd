@@ -33,14 +33,12 @@ struct usrprio_device_info
     std::string interface_path;
 
     template <typename Archive>
-    void serialize(Archive& ar, const unsigned int version)
+    void serialize(Archive& ar, const unsigned int /* version */)
     {
-        if (version || !version) { // Suppress unused warning
-            ar& interface_num;
-            ar& resource_name;
-            ar& pcie_serial_num;
-            ar& interface_path;
-        }
+        ar& interface_num;
+        ar& resource_name;
+        ar& pcie_serial_num;
+        ar& interface_path;
     }
 };
 typedef std::vector<usrprio_device_info> usrprio_device_info_vtr;
