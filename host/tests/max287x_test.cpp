@@ -55,7 +55,7 @@ void set_field(uint32_t& reg, uint32_t mask, uint32_t shift, uint32_t value)
 BOOST_AUTO_TEST_CASE(max2871_set_get_register_test)
 {
     auto test_lo =
-        max287x_iface::make<max2871>([this](const std::vector<uint32_t>&) { /* noop */ });
+        max287x_iface::make<max2871>([](const std::vector<uint32_t>&) { /* noop */ });
 
     test_lo->set_register(0, 0xFFFFFFF8, 0x12345678);
     test_lo->set_register(1, 0xFFFFFFF8, 0x12345678);
@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(max2871_set_get_register_test)
 BOOST_AUTO_TEST_CASE(max2871_init_test)
 {
     auto test_lo =
-        max287x_iface::make<max2871>([this](const std::vector<uint32_t>&) { /* noop */ });
+        max287x_iface::make<max2871>([](const std::vector<uint32_t>&) { /* noop */ });
 
     UHD_CHECK_REGMAP(test_lo, expected_init_values);
 }
@@ -97,7 +97,7 @@ BOOST_AUTO_TEST_CASE(max2871_init_test)
 BOOST_AUTO_TEST_CASE(max2871_set_output_power_test)
 {
     auto test_lo =
-        max287x_iface::make<max2871>([this](const std::vector<uint32_t>&) { /* noop */ });
+        max287x_iface::make<max2871>([](const std::vector<uint32_t>&) { /* noop */ });
 
     // set_output_power should only affect RFOUTA Output Power (bits 4:3 of reg 4)
     test_lo->set_output_power(max287x_iface::OUTPUT_POWER_5DBM);
@@ -132,7 +132,7 @@ BOOST_AUTO_TEST_CASE(max2871_set_output_power_test)
 BOOST_AUTO_TEST_CASE(max2871_phase_sync_test)
 {
     auto test_lo =
-        max287x_iface::make<max2871>([this](const std::vector<uint32_t>&) { /* noop */ });
+        max287x_iface::make<max2871>([](const std::vector<uint32_t>&) { /* noop */ });
 
     test_lo->set_frequency(2e9, 50e6, 50e6, true);
     BOOST_CHECK_EQUAL(max2871_regs_t::SHUTDOWN_VAS_ENABLED,
@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE(max2871_phase_sync_test)
 BOOST_AUTO_TEST_CASE(max2871_set_frequency_int_n_test)
 {
     auto test_lo =
-        max287x_iface::make<max2871>([this](const std::vector<uint32_t>&) { /* noop */ });
+        max287x_iface::make<max2871>([](const std::vector<uint32_t>&) { /* noop */ });
 
     // set_frequency with int_n = true, ensure that all registers that need to be set for
     // int_n are set correctly (other arguments set arbitrarily for this test)
