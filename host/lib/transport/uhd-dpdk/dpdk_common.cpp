@@ -18,11 +18,11 @@
 namespace uhd { namespace transport { namespace dpdk {
 
 namespace {
-constexpr uint64_t USEC                      = 1000000;
-constexpr size_t DEFAULT_FRAME_SIZE          = 8000;
-constexpr int DEFAULT_NUM_MBUFS              = 1024;
-constexpr int DEFAULT_MBUF_CACHE_SIZE        = 315;
-constexpr size_t DPDK_HEADERS_SIZE           = 14 + 20 + 8; // Ethernet + IPv4 + UDP
+
+constexpr size_t DEFAULT_FRAME_SIZE   = 8000;
+constexpr int DEFAULT_NUM_MBUFS       = 1024;
+constexpr int DEFAULT_MBUF_CACHE_SIZE = 315;
+// constexpr size_t DPDK_HEADERS_SIZE           = 14 + 20 + 8; // Ethernet + IPv4 + UDP
 constexpr uint16_t DPDK_DEFAULT_RING_SIZE    = 512;
 constexpr int DEFAULT_DPDK_LINK_INIT_TIMEOUT = 1000;
 constexpr int LINK_STATUS_INTERVAL           = 250;

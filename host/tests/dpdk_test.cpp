@@ -28,14 +28,14 @@
 namespace po = boost::program_options;
 
 namespace {
-constexpr unsigned int NUM_MBUFS       = 8192; /* Total number of mbufs in pool */
-constexpr unsigned int MBUF_CACHE_SIZE = 384; /* Size of cpu-local mbuf cache */
-constexpr unsigned int BURST_SIZE      = 64; /* Maximum burst size for RX */
+// constexpr unsigned int NUM_MBUFS       = 8192; /* Total number of mbufs in pool */
+// constexpr unsigned int MBUF_CACHE_SIZE = 384; /* Size of cpu-local mbuf cache */
+constexpr unsigned int BURST_SIZE = 64; /* Maximum burst size for RX */
 
 constexpr unsigned int NUM_PORTS  = 2; /* Number of NIC ports */
 constexpr unsigned int TX_CREDITS = 28; /* Number of TX credits */
-constexpr unsigned int RX_CREDITS = 64; /* Number of RX credits */
-constexpr unsigned int BENCH_SPP  = 700; /* "Samples" per packet */
+// constexpr unsigned int RX_CREDITS = 64; /* Number of RX credits */
+constexpr unsigned int BENCH_SPP = 700; /* "Samples" per packet */
 } // namespace
 
 struct dpdk_test_args
@@ -215,19 +215,6 @@ static void bench(uhd::transport::mock_send_transport::sptr* tx_stream,
         printf("\n");
     }
     free(stats);
-}
-
-static inline void set_cpu(pthread_t t, int cpu)
-{
-    cpu_set_t cpuset;
-    CPU_ZERO(&cpuset);
-    CPU_SET(cpu, &cpuset);
-    int status = pthread_setaffinity_np(t, sizeof(cpu_set_t), &cpuset);
-    if (status) {
-        perror("Could not set affinity");
-    } else {
-        printf("Set CPU to %d\n", cpu);
-    }
 }
 
 std::string get_ipv4_addr(unsigned int port_id)
