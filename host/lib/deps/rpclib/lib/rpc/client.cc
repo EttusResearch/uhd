@@ -21,6 +21,15 @@ using namespace boost::asio;
 using boost::asio::ip::tcp;
 using namespace rpc::detail;
 
+// If we take all supported versions of clang, gcc, and MSVC, we get some versions
+// that require lambda captures for constexpr, and some compilers throw a warnings
+// when you use a lambdas capture.
+// To make everyone "happy", we turn off those warnings for clang.
+#pragma GCC diagnostic push
+#ifdef __clang__
+#  pragma GCC diagnostic ignored "-Wunused-lambda-capture"
+#endif
+
 namespace rpc {
 
 static constexpr uint32_t default_buffer_size = rpc::constants::DEFAULT_BUFFER_SIZE;
@@ -224,3 +233,5 @@ client::~client() {
     pimpl->io_thread_.join();
 }
 }
+
+#pragma GCC diagnostic pop
