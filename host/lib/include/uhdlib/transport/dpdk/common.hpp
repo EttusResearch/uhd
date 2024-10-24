@@ -163,7 +163,7 @@ private:
  * structure.
  */
 constexpr size_t DPDK_MBUF_PRIV_SIZE =
-    RTE_ALIGN(sizeof(struct dpdk_frame_buff), RTE_MBUF_PRIV_ALIGN);
+    RTE_ALIGN(sizeof(class dpdk_frame_buff), RTE_MBUF_PRIV_ALIGN);
 
 /*!
  * Class representing a DPDK NIC port
