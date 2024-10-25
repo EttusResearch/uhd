@@ -10,16 +10,19 @@ noc_id: 0xFF700002
 makefile_srcs: "${fpga_lib_dir}/blocks/rfnoc_block_fft/Makefile.srcs"
 
 parameters:
+  NIPC: 1
   NUM_PORTS: 1
   NUM_CORES: 1
-  MAX_FFT_SIZE_LOG2: 12
+  MAX_FFT_SIZE_LOG2: 10
+  EN_CP_REMOVAL: 1
+  EN_CP_INSERTION: 1
   MAX_CP_LIST_LEN_INS_LOG2: 5
   MAX_CP_LIST_LEN_REM_LOG2: 5
   CP_INSERTION_REPEAT: 1
   CP_REMOVAL_REPEAT: 1
   EN_FFT_BYPASS: 0
   EN_FFT_ORDER: 1
-  EN_MAGNITUDE: 1
+  EN_MAGNITUDE: 0
   EN_MAGNITUDE_SQ: 1
   USE_APPROX_MAG: 1
 
@@ -59,7 +62,7 @@ data:
       item_width: 32
       nipc: 1
       info_fifo_depth: 32
-      payload_fifo_depth: 2**MTU
+      payload_fifo_depth: 32
       sideband_at_end: True
       format: sc16
       mdata_sig: ~
