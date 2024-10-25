@@ -57,10 +57,11 @@ parameters:
   - 'smoke'
   - 'full'
   - 'stress'
-- name: dpdkDir
-  type: string
-  displayName: DPDK Directory on Agent
-  default: '/'
+- name: dpdkDirs
+  type: object
+  default:
+  - '/opt/dpdk-19.11'
+  - '/opt/dpdk-23.11'
 
 resources:
   pipelines:
@@ -140,7 +141,7 @@ stages:
         uhdFpgaArtifactSource: uhd_fpga_pipeline
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testLength: ${{ parameters.testLength }}
-      dpdkDir: '${{ parameters.dpdkDir }}'
+      dpdkDirs: '${{ parameters.dpdkDirs }}'
 
 - stage: test_x440_streaming_stage
   displayName: Test X440 Streaming
@@ -158,7 +159,7 @@ stages:
         uhdFpgaArtifactSource: uhd_fpga_pipeline
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testLength: ${{ parameters.testLength }}
-      dpdkDir: '${{ parameters.dpdkDir }}'
+      dpdkDirs: '${{ parameters.dpdkDirs }}'
 
 - stage: test_uhd_devtest
   displayName: Test UHD Devtest

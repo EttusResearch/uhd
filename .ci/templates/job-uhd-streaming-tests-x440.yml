@@ -14,9 +14,11 @@ parameters:
   type: string
 - name: testLength
   type: string
-- name: dpdkDir
-  type: string
-  default: '/'
+- name: dpdkDirs
+  type: object
+  default:
+  - '/opt/dpdk-19.11'
+  - '/opt/dpdk-23.11'
 
 jobs:
 - template: job-uhd-streaming-tests.yml
@@ -31,7 +33,7 @@ jobs:
     uhdFpgaArtifactSource: ${{ parameters.uhdFpgaArtifactSource }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
     xilinxLocation: /opt/Xilinx/Vivado_Lab/2023.2
-    dpdkDir: '${{ parameters.dpdkDir }}'
+    dpdkDirs: '${{ parameters.dpdkDirs }}'
     dutMatrix:
       X440-0 CG_400:
         dutName: 'streaming-X440-0'

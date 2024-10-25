@@ -14,9 +14,11 @@ parameters:
   type: string
 - name: testLength
   type: string
-- name: dpdkDir
-  type: string
-  default: '/'
+- name: dpdkDirs
+  type: object
+  default:
+  - '/opt/dpdk-19.11'
+  - '/opt/dpdk-23.11'
 
 jobs:
 - template: job-uhd-streaming-tests.yml
@@ -30,7 +32,7 @@ jobs:
     uhdFpgaArtifactSource: ${{ parameters.uhdFpgaArtifactSource }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
     xilinxLocation: /opt/Xilinx/Vivado_Lab/2019.1
-    dpdkDir: '${{ parameters.dpdkDir }}'
+    dpdkDirs: '${{ parameters.dpdkDirs }}'
     dutMatrix:
       # beauty-N320-0 XG:
       #   dutName: 'beauty-N320-0'

@@ -32,9 +32,10 @@ parameters:
   type: string
 - name: xilinxLocation
   type: string
-- name: dpdkDir
-  type: string
-  default: '/'
+- name: dpdkDirs
+  type: object
+  default:
+  - '/'
 
 jobs:
 - job: uhd_streaming_tests_${{ parameters.suiteName }}
@@ -315,72 +316,6 @@ jobs:
     displayName: setup interfaces for use with DPDK
     condition: and(succeeded(), not(eq(variables.dutType, 'B210')))
 
-  # This step is needed because the agent used to build UHD that gets installed may have a slightly different dpdk setup.
-  # For example, if the streaming system uses a Mellanox NIC and thus needs Mellanox drivers installed but the agent used to build UHD doesn't
-  # then you can get an access violation when using that version of UHD with dpdk on the streaming system
-  - script: |
-      set -e
-      mkdir ${{ parameters.uhdSrcDir }}/host/build
-      cd ${{ parameters.uhdSrcDir }}/host/build
-      if [ "${{ parameters.dpdkDir }}" != "/" ]; then
-        export PKG_CONFIG_PATH="${{ parameters.dpdkDir }}/lib/x86_64-linux-gnu/pkgconfig"
-        export LD_LIBRARY_PATH="${{ parameters.dpdkDir }}/lib/x86_64-linux-gnu"
-      else
-        export LD_LIBRARY_PATH=""
-      fi
-      echo "##vso[task.setvariable variable=LD_LIBRARY_PATH;isOutput=true]$LD_LIBRARY_PATH"
-      cmake -DCMAKE_INSTALL_PREFIX=$(Build.BinariesDirectory)/uhddev/build-installed ..
-      make -j$(nproc) install
-      sudo LD_LIBRARY_PATH=$LD_LIBRARY_PATH tests/dpdk_test || true
-      utils/uhd_config_info --print-all
-    name: dpdk_build
-    displayName: build UHD for dpdk installed on test machine
-    condition: and(succeeded(), not(eq(variables.dutType, 'B210')))
-
-  - script: |
-      if [ "$(dutType)" = "x440" ]; then
-        config_file="${{ parameters.uhdSrcDir }}/host/tests/pytests/uhd_configs/uhd_dpdk_100GbE_x440.conf"
-        echo "Using x440 100 GbE UHD Config File ($config_file)"
-      elif [ "$(dutFPGA)" = "CG_400" ]; then
-        config_file="${{ parameters.uhdSrcDir }}/host/tests/pytests/uhd_configs/uhd_dpdk_100GbE.conf"
-        echo "Using 100 GbE UHD Config File ($config_file)"
-      elif [ "$(dutFPGA)" = "UC_200" ]; then
-        config_file="${{ parameters.uhdSrcDir }}/host/tests/pytests/uhd_configs/uhd_dpdk_100GbE_SFP1.conf"
-        echo "Using 100 GbE SFP1 UHD Config File ($config_file)"
-      else
-        config_file="${{ parameters.uhdSrcDir }}/host/tests/pytests/uhd_configs/uhd_dpdk_10GbE.conf"
-        echo "Using 10 GbE UHD Config File ($config_file)"
-      fi
-      echo "##vso[task.setvariable variable=config_file]$config_file"
-      if [ "${{ parameters.dpdkDir }}" != "/" ]; then
-        dpdk_driver=$(find "${{ parameters.dpdkDir }}/lib/x86_64-linux-gnu" -name "pmds-*" -type d)
-        echo "Setting dpdk_driver to $dpdk_driver"
-        sed -i "s|^dpdk_driver.*|dpdk_driver = $dpdk_driver|" $config_file
-      fi
-    displayName: select UHD config file for DPDK
-    condition: and(succeeded(), not(eq(variables.dutType, 'B210')))
-
-  - script: |
-      echo "##[group]Printing Environment"
-      printenv
-      echo "##[endgroup]"
-      set -x
-      cd ${{ parameters.uhdSrcDir }}/host/tests/pytests
-      # Disable creation of __pycache__ files using -B to avoid errors on clean up during next run
-      # as using sudo below creates them with root priveleges.
-      sudo -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONPATH=$PYTHONPATH python3 -B -m pytest -s test_streaming.py -m "dpdk" \
-        --dut_type $(dutType) --dut_fpga $(dutFPGA) --test_length ${{ parameters.testLength }} \
-        --uhd_build_dir $(Build.BinariesDirectory)/uhddev/build --junitxml $(Common.TestResultsDirectory)/TEST-$(dutName)-dpdk.xml \
-        --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $USRP_EMB_TARGET_IP --name $(dutNameId)
-    env:
-      UHD_CONFIG_FILE: $(config_file)
-      PYTHONPATH: ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
-      LD_LIBRARY_PATH: $(Build.BinariesDirectory)/uhddev/build-installed/lib:$(dpdk_build.LD_LIBRARY_PATH)
-      UHD_IMAGES_DIR: $(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images
-    continueOnError: true
-    displayName: Run streaming tests with DPDK on $(dutName)
-    condition: and(succeeded(), not(eq(variables.dutType, 'B210')))
-
   - task: PublishTestResults@2
     inputs:
       testResultsFormat: 'JUnit'
@@ -390,6 +325,94 @@ jobs:
       mergeTestResults: true
       failTaskOnFailedTests: false
     displayName: Upload streaming test results
+
+  - ${{ each dpdkDir in parameters.dpdkDirs }}:
+    - script: |
+        rm -fv TEST-*.xml
+      workingDirectory: $(Common.TestResultsDirectory)
+      displayName: remove old test results (${{ dpdkDir }})
+
+    # This step is needed because the agent used to build UHD that gets installed may have a slightly different dpdk setup.
+    # For example, if the streaming system uses a Mellanox NIC and thus needs Mellanox drivers installed but the agent used to build UHD doesn't
+    # then you can get an access violation when using that version of UHD with dpdk on the streaming system
+    - script: |
+        set -e
+        mkdir -p ${{ parameters.uhdSrcDir }}/host/build
+        cd ${{ parameters.uhdSrcDir }}/host/build
+        if [ -e "CMakeCache.txt" ]; then
+          echo "Cleaning cmake output from previous run"
+          rm -rf CMakeFiles/ CMakeCache.txt
+        fi
+        if [ "${{ dpdkDir }}" != "/" ]; then
+          export PKG_CONFIG_PATH="${{ dpdkDir }}/lib/x86_64-linux-gnu/pkgconfig"
+          export LD_LIBRARY_PATH="${{ dpdkDir }}/lib/x86_64-linux-gnu"
+        else
+          export LD_LIBRARY_PATH=""
+        fi
+        echo "##vso[task.setvariable variable=LD_LIBRARY_PATH_DPDK]$LD_LIBRARY_PATH"
+        cmake -DCMAKE_INSTALL_PREFIX=$(Build.BinariesDirectory)/uhddev/build-installed ..
+        make -j$(nproc) install
+        sudo LD_LIBRARY_PATH=$LD_LIBRARY_PATH UHD_LOG_CONSOLE_LEVEL=debug tests/dpdk_test || true
+        utils/uhd_config_info --print-all
+        DPDK_VERSION_STRING=$(utils/uhd_config_info --dpdk-version | awk '{print $3;}')
+        echo "##vso[task.setvariable variable=DPDK_VERSION_STRING]$DPDK_VERSION_STRING"
+      displayName: build UHD for DPDK (${{ dpdkDir }})
+      condition: and(succeeded(), not(eq(variables.dutType, 'B210')))
+
+    - script: |
+        if [ "$(dutType)" = "x440" ]; then
+          config_file="${{ parameters.uhdSrcDir }}/host/tests/pytests/uhd_configs/uhd_dpdk_100GbE_x440.conf"
+          echo "Using x440 100 GbE UHD Config File ($config_file)"
+        elif [ "$(dutFPGA)" = "CG_400" ]; then
+          config_file="${{ parameters.uhdSrcDir }}/host/tests/pytests/uhd_configs/uhd_dpdk_100GbE.conf"
+          echo "Using 100 GbE UHD Config File ($config_file)"
+        elif [ "$(dutFPGA)" = "UC_200" ]; then
+          config_file="${{ parameters.uhdSrcDir }}/host/tests/pytests/uhd_configs/uhd_dpdk_100GbE_SFP1.conf"
+          echo "Using 100 GbE SFP1 UHD Config File ($config_file)"
+        else
+          config_file="${{ parameters.uhdSrcDir }}/host/tests/pytests/uhd_configs/uhd_dpdk_10GbE.conf"
+          echo "Using 10 GbE UHD Config File ($config_file)"
+        fi
+        echo "##vso[task.setvariable variable=config_file]$config_file"
+        if [ "${{ dpdkDir }}" != "/" ]; then
+          dpdk_driver=$(find "${{ dpdkDir }}/lib/x86_64-linux-gnu" -name "pmds-*" -type d)
+          echo "Setting dpdk_driver to $dpdk_driver"
+          sed -i "s|^dpdk_driver.*|dpdk_driver = $dpdk_driver|" $config_file
+        fi
+      displayName: select UHD config file for DPDK $[[ variables.DPDK_VERSION_STRING ]]
+      condition: and(succeeded(), not(eq(variables.dutType, 'B210')))
+
+    - script: |
+        echo "##[group]Printing Environment"
+        printenv
+        echo "##[endgroup]"
+        set -x
+        cd ${{ parameters.uhdSrcDir }}/host/tests/pytests
+        # Disable creation of __pycache__ files using -B to avoid errors on clean up during next run
+        # as using sudo below creates them with root priveleges.
+        sudo -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONPATH=$PYTHONPATH python3 -B -m pytest -s test_streaming.py -m "dpdk" \
+          --dut_type $(dutType) --dut_fpga $(dutFPGA) --test_length ${{ parameters.testLength }} \
+          --uhd_build_dir $(Build.BinariesDirectory)/uhddev/build \
+          --junitxml $(Common.TestResultsDirectory)/TEST-$(dutName)-dpdk-$(DPDK_VERSION_STRING).xml \
+          --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $USRP_EMB_TARGET_IP --name $(dutNameId)
+      env:
+        UHD_CONFIG_FILE: $(config_file)
+        PYTHONPATH: ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
+        LD_LIBRARY_PATH: $(Build.BinariesDirectory)/uhddev/build-installed/lib:$(LD_LIBRARY_PATH_DPDK)
+        UHD_IMAGES_DIR: $(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images
+      continueOnError: true
+      displayName: Run streaming tests with DPDK $[[ variables.DPDK_VERSION_STRING ]] on $(dutName)
+      condition: and(succeeded(), not(eq(variables.dutType, 'B210')))
+
+    - task: PublishTestResults@2
+      inputs:
+        testResultsFormat: 'JUnit'
+        testResultsFiles: '$(Common.TestResultsDirectory)/TEST-*.xml'
+        testRunTitle: $(dutName) DPDK $(DPDK_VERSION_STRING) streaming tests
+        buildConfiguration: 'Release'
+        mergeTestResults: true
+        failTaskOnFailedTests: false
+      displayName: Upload streaming test results with DPDK $[[ variables.DPDK_VERSION_STRING ]]
 
   - script: |
       echo "A previous step failed. See steps with warnings."
