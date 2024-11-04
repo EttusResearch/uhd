@@ -879,6 +879,11 @@ class ImageBuilderConfig:
                     connections.con2str(clk_domain),
                 )
                 continue
+            if (
+                clk_domain["srcblk"] == DEVICE_NAME
+                and clk_domain["srcport"] in self.DEFAULT_CLK_NAMES
+            ):
+                continue
             src_clk = [c for c in srcblk.clocks if c["name"] == clk_domain["srcport"]]
             dst_clk = [c for c in dstblk.clocks if c["name"] == clk_domain["dstport"]]
             if not src_clk or src_clk[0]["direction"] != "out":
