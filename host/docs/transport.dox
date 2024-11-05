@@ -61,6 +61,36 @@ details.
 The UDP transport is implemented with user-space sockets. This means
 standard Berkeley sockets API using `send()`/`recv()`.
 
+\subsection transport_data_size_restrictions Data size restrictions in transport
+
+UHD passes data over transports using packets. The maximum size of such
+a packet is known as the MTU. The MTU is limited by a variety of things such as
+networking hardware capabilities.
+A packet size larger than the MTU of the transport medium will drop or fragment
+packets while smaller packets will decrease the achievable throughput.
+In setups with different MTUs along the transport the smallest MTU
+determines the overall MTU (path MTU).
+
+For transport, one sets an over the wire (OTW) data type with the streamer
+which determines the size of one sample in bytes, e.g. four bytes for sc16.
+The number of samples per packet (SPP) will be a multiple of this sample
+size. The maximum samples per packet are limited by the MTU. Note that,
+depending on the transport medium, there will be some additional bytes needed
+for header information.
+
+In RFNoC, a block can set further contraints on the samples transferred
+in a packet (see also \ref props_common_props). This is called the atomic
+item size (AIS) and denotes the number of bytes the block expects per packet
+(or a multiple of it). This enables easier data processing on the FPGA
+(think of an FFT that does not need to handle samples for one transformation
+spread over more than one packet).
+
+\ref props_resolvers "Property resolvers" in the graph will ensure that MTU,
+SPP and AIS matches with each other. If necessary, values will be coerced.
+If there is no achievable configuration (e.g. AIS is bigger than max payload
+defined by the MTU, or SPP times samples size in bytes is smaller than AIS), then an
+exception will be thrown.
+
 \subsection transport_udp_params Transport parameters
 
 The following parameters can be used to alter the transport's default
