@@ -1,7 +1,17 @@
-<!--- Before filing an issue, search for solutions here: -->
-<!--- USRP users mailing list (https://kb.ettus.com/Mailing_Lists) -->
-<!--- https://kb.ettus.com/Knowledge_Base -->
-<!--- https://files.ettus.com/manual/ -->
+<!---
+
+Please use the issue tracker to report bugs, request features, or to report
+other issues with the code. If you have a question or need support, please use
+Technical Support or the mailing list to ensure your request gets the proper
+visibility.
+
+Before filing an issue or seeking support, search for solutions here:
+
+ - USRP Users Mailing List:  https://kb.ettus.com/Mailing_Lists
+ - Ettus Support:            https://www.ettus.com/support
+ - User Manual:              https://files.ettus.com/manual
+ - Knowledge Base:           https://kb.ettus.com/Knowledge_Base
+-->
 
 ## Issue Description ##
 <!--- [Describe the issue in detail] -->
