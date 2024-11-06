@@ -4,6 +4,7 @@ family: ULTRASCALE
 
 parameters:
   RF_BW: 1600
+  NUM_PORTS_PER_RADIO: ${ 1 if parameters['RF_BW'] == 1600 else 4 }
   ENABLE_DRAM: False
   NUM_DRAM_BANKS: 0
   NUM_DRAM_CHANS: 0
@@ -54,6 +55,11 @@ checks:
     message: |
       The RADIO_NIPC value is not valid. The default values of RADIO_NIPC will
       be correct, so please remove the RADIO_NIPC parameter from the image core file.
+    severity: error
+  - condition: ${ (parameters['NUM_PORTS_PER_RADIO'] == 1 and parameters['RF_BW'] == 1600) or (parameters['NUM_PORTS_PER_RADIO'] == 4 and parameters['RF_BW'] != 1600)}
+    message: |
+      The NUM_PORTS_PER_RADIO value is not valid. The default values of NUM_PORTS_PER_RADIO will
+      be correct, so please remove the NUM_PORTS_PER_RADIO parameter from the image core file.
     severity: error
 
 make_defs:
@@ -138,8 +144,8 @@ io_ports:
     type: radio
     drive: master
     parameters:
-      spc: 8
-      num_ports: 4
+      spc: ${ config.device.parameters['RADIO_NIPC'] }
+      num_ports: ${ config.device.parameters['NUM_PORTS_PER_RADIO'] }
     rename:
       pattern: (.*)
       repl: \1_radio0
@@ -147,8 +153,8 @@ io_ports:
     type: radio
     drive: master
     parameters:
-      spc: 8
-      num_ports: 4
+      spc: ${ config.device.parameters['RADIO_NIPC'] }
+      num_ports: ${ config.device.parameters['NUM_PORTS_PER_RADIO'] }
     rename:
       pattern: (.*)
       repl: \1_radio1
