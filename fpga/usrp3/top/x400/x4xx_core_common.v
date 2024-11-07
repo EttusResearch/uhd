@@ -133,6 +133,15 @@ module x4xx_core_common #(
   input  wire [  2*NUM_DBOARDS-1:0] m_radio_ctrlport_resp_status,
   input  wire [ 32*NUM_DBOARDS-1:0] m_radio_ctrlport_resp_data,
 
+  // CtrlPort Master (to RF cores, Domain: radio_clk)
+  output wire [  1*NUM_DBOARDS-1:0] m_rf_core_ctrlport_req_wr,
+  output wire [  1*NUM_DBOARDS-1:0] m_rf_core_ctrlport_req_rd,
+  output wire [ 20*NUM_DBOARDS-1:0] m_rf_core_ctrlport_req_addr,
+  output wire [ 32*NUM_DBOARDS-1:0] m_rf_core_ctrlport_req_data,
+  input  wire [  1*NUM_DBOARDS-1:0] m_rf_core_ctrlport_resp_ack,
+  input  wire [  2*NUM_DBOARDS-1:0] m_rf_core_ctrlport_resp_status,
+  input  wire [ 32*NUM_DBOARDS-1:0] m_rf_core_ctrlport_resp_data,
+
   // RF Reset Control
   output wire                       start_nco_reset,
   input  wire                       nco_reset_done,
@@ -477,6 +486,7 @@ module x4xx_core_common #(
       localparam [19:0] DIGITAL_IFC_OFFSET = DIO_WINDOW + DIGITAL_IFC_REGS;
 
       // Register space size calculation
+      localparam [31:0] RF_CORE_WINDOW_SIZE_W     = $clog2(RF_CORE_WINDOW_SIZE);
       localparam [31:0] RFDC_TIMING_WINDOW_SIZE_W = $clog2(RFDC_TIMING_WINDOW_SIZE);
       localparam [31:0] DB_WINDOW_SIZE_W          = $clog2(DB_WINDOW_SIZE);
       localparam [31:0] DIO_SOURCE_CONTROL_SIZE_W = $clog2(DIO_SOURCE_CONTROL_SIZE);
@@ -484,16 +494,18 @@ module x4xx_core_common #(
       localparam [31:0] DIGITAL_IFC_REGS_SIZE_W   = $clog2(DIGITAL_IFC_REGS_SIZE);
 
       ctrlport_decoder_param #(
-        .NUM_SLAVES  (5),
+        .NUM_SLAVES  (6),
         .PORT_BASE   ({ DIGITAL_IFC_OFFSET,
                         DIO_SOURCE_CONTROL_OFFSET,
                         RADIO_GPIO_ATR_OFFSET,
+                        RF_CORE_WINDOW[19:0],
                         RFDC_TIMING_WINDOW[19:0],
                         DB_WINDOW[19:0]
                       }),
         .PORT_ADDR_W ({ DIGITAL_IFC_REGS_SIZE_W,
                         DIO_SOURCE_CONTROL_SIZE_W,
                         RADIO_GPIO_ATR_SIZE_W,
+                        RF_CORE_WINDOW_SIZE_W,
                         RFDC_TIMING_WINDOW_SIZE_W,
                         DB_WINDOW_SIZE_W
                       })
@@ -513,21 +525,25 @@ module x4xx_core_common #(
         .m_ctrlport_req_wr       ({ gpio_spi_ctrlport_req_wr        [ 1*db_i+: 1],
                                     radio_dio_req_wr                [ 1*db_i+: 1],
                                     gpio_atr_ctrlport_req_wr        [ 1*db_i+: 1],
+                                    m_rf_core_ctrlport_req_wr       [ 1*db_i+: 1],
                                     rf_ctrlport_req_wr              [ 1*db_i+: 1],
                                     m_radio_ctrlport_req_wr         [ 1*db_i+: 1] }),
         .m_ctrlport_req_rd       ({ gpio_spi_ctrlport_req_rd        [ 1*db_i+: 1],
                                     radio_dio_req_rd                [ 1*db_i+: 1],
                                     gpio_atr_ctrlport_req_rd        [ 1*db_i+: 1],
+                                    m_rf_core_ctrlport_req_rd       [ 1*db_i+: 1],
                                     rf_ctrlport_req_rd              [ 1*db_i+: 1],
                                     m_radio_ctrlport_req_rd         [ 1*db_i+: 1] }),
         .m_ctrlport_req_addr     ({ gpio_spi_ctrlport_req_addr      [20*db_i+:20],
                                     radio_dio_req_addr              [20*db_i+:20],
                                     gpio_atr_ctrlport_req_addr      [20*db_i+:20],
+                                    m_rf_core_ctrlport_req_addr     [20*db_i+:20],
                                     rf_ctrlport_req_addr            [20*db_i+:20],
                                     m_radio_ctrlport_req_addr       [20*db_i+:20] }),
         .m_ctrlport_req_data     ({ gpio_spi_ctrlport_req_data      [32*db_i+:32],
                                     radio_dio_req_data              [32*db_i+:32],
                                     gpio_atr_ctrlport_req_data      [32*db_i+:32],
+                                    m_rf_core_ctrlport_req_data     [32*db_i+:32],
                                     rf_ctrlport_req_data            [32*db_i+:32],
                                     m_radio_ctrlport_req_data       [32*db_i+:32] }),
         .m_ctrlport_req_byte_en  (),
@@ -536,16 +552,19 @@ module x4xx_core_common #(
         .m_ctrlport_resp_ack     ({ gpio_spi_ctrlport_resp_ack      [ 1*db_i+: 1],
                                     radio_dio_resp_ack              [ 1*db_i+: 1],
                                     gpio_atr_ctrlport_resp_ack      [ 1*db_i+: 1],
+                                    m_rf_core_ctrlport_resp_ack     [ 1*db_i+: 1],
                                     rf_ctrlport_resp_ack            [ 1*db_i+: 1],
                                     m_radio_ctrlport_resp_ack       [ 1*db_i+: 1] }),
         .m_ctrlport_resp_status  ({ gpio_spi_ctrlport_resp_status   [ 2*db_i+: 2],
                                     radio_dio_resp_status           [ 2*db_i+: 2],
                                     gpio_atr_ctrlport_resp_status   [ 2*db_i+: 2],
+                                    m_rf_core_ctrlport_resp_status  [ 2*db_i+: 2],
                                     rf_ctrlport_resp_status         [ 2*db_i+: 2],
                                     m_radio_ctrlport_resp_status    [ 2*db_i+: 2] }),
         .m_ctrlport_resp_data    ({ gpio_spi_ctrlport_resp_data     [32*db_i+:32],
                                     radio_dio_resp_data             [32*db_i+:32],
                                     gpio_atr_ctrlport_resp_data     [32*db_i+:32],
+                                    m_rf_core_ctrlport_resp_data    [32*db_i+:32],
                                     rf_ctrlport_resp_data           [32*db_i+:32],
                                     m_radio_ctrlport_resp_data      [32*db_i+:32] })
       );
@@ -891,8 +910,11 @@ endmodule
 //      <info>Daughterboard GPIO interface. Register access within this space
 //      is directed to the associated daughterboard CPLD.</info>
 //    </window>
-//    <window name="RFDC_TIMING_WINDOW" offset="0x08000" size="0x04000" targetregmap="RFDC_TIMING_REGMAP">
+//    <window name="RFDC_TIMING_WINDOW" offset="0x08000" size="0x02000" targetregmap="RFDC_TIMING_REGMAP">
 //      <info>RFDC timing control interface.</info>
+//    </window>
+//    <window name="RF_CORE_WINDOW" offset="0x0A000" size="0x02000">
+//      <info>Interface for the RF core.</info>
 //    </window>
 //    <window name="DIO_WINDOW" offset="0x0C000" size="0x04000" targetregmap="RADIO_DIO_REGMAP">
 //      <info>DIO control interface. Interacts with the DIO source selection

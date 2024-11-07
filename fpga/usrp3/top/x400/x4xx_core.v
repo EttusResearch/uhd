@@ -326,6 +326,14 @@ module x4xx_core #(
   input  wire [  2*NUM_DBOARDS-1:0] m_ctrlport_radio_resp_status,
   input  wire [ 32*NUM_DBOARDS-1:0] m_ctrlport_radio_resp_data,
 
+  output wire [  1*NUM_DBOARDS-1:0] m_ctrlport_rf_core_req_wr,
+  output wire [  1*NUM_DBOARDS-1:0] m_ctrlport_rf_core_req_rd,
+  output wire [ 20*NUM_DBOARDS-1:0] m_ctrlport_rf_core_req_addr,
+  output wire [ 32*NUM_DBOARDS-1:0] m_ctrlport_rf_core_req_data,
+  input  wire [  1*NUM_DBOARDS-1:0] m_ctrlport_rf_core_resp_ack,
+  input  wire [  2*NUM_DBOARDS-1:0] m_ctrlport_rf_core_resp_status,
+  input  wire [ 32*NUM_DBOARDS-1:0] m_ctrlport_rf_core_resp_data,
+
   // RF Reset Control
   output wire                       start_nco_reset,
   input  wire                       nco_reset_done,
@@ -501,6 +509,13 @@ module x4xx_core #(
     .m_radio_ctrlport_resp_ack        (m_ctrlport_radio_resp_ack),
     .m_radio_ctrlport_resp_status     (m_ctrlport_radio_resp_status),
     .m_radio_ctrlport_resp_data       (m_ctrlport_radio_resp_data),
+    .m_rf_core_ctrlport_req_wr        (m_ctrlport_rf_core_req_wr),
+    .m_rf_core_ctrlport_req_rd        (m_ctrlport_rf_core_req_rd),
+    .m_rf_core_ctrlport_req_addr      (m_ctrlport_rf_core_req_addr),
+    .m_rf_core_ctrlport_req_data      (m_ctrlport_rf_core_req_data),
+    .m_rf_core_ctrlport_resp_ack      (m_ctrlport_rf_core_resp_ack),
+    .m_rf_core_ctrlport_resp_status   (m_ctrlport_rf_core_resp_status),
+    .m_rf_core_ctrlport_resp_data     (m_ctrlport_rf_core_resp_data),
     .start_nco_reset                  (start_nco_reset),
     .nco_reset_done                   (nco_reset_done),
     .adc_reset_pulse                  (adc_reset_pulse),
