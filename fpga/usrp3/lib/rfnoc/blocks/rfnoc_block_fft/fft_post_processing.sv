@@ -350,7 +350,7 @@ module fft_post_processing #(
       .WIDTH         (32),
       .SIZE          (3),
       .PRE_FIFO_SIZE (0),
-      .POST_FIFO_SIZE(0)
+      .POST_FIFO_SIZE(1)
     ) axi_demux_i (
       .clk     (clk),
       .reset   (rst),

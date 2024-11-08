@@ -272,9 +272,9 @@ module noc_shell_fft #(
       .NIPC            (NIPC),
       .SYNC_CLKS       (0),
       .INFO_FIFO_SIZE  ($clog2(32)),
-      .PYLD_FIFO_SIZE  ($clog2(2**MTU)),
+      .PYLD_FIFO_SIZE  ($clog2(32)),
       .MTU             (MTU),
-      .SIDEBAND_AT_END (1)
+      .SIDEBAND_AT_END (0)
     ) axis_data_to_chdr_out_out (
       .axis_chdr_clk      (rfnoc_chdr_clk),
       .axis_chdr_rst      (rfnoc_chdr_rst),

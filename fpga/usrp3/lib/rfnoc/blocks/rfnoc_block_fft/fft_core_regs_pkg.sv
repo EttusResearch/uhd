@@ -80,17 +80,24 @@ package fft_core_regs_pkg;
   //
   // Returns information about the post-processing capabilities.
   //
-  //  [3] : MAGNITUDE_SQ. Indicates whether or not the magnitude-squared
-  //        output capability is present in the core.
-  //  [2] : MAGNITUDE. Indicates whether or not the magnitude output option
-  //        is present in the core.
-  //  [1] : FFT_ORDER. Indicates whether or not the FFT reorder capability is
-  //        present in the core.
-  //  [0] : FFT_BYPASS. Indicates whether or not the FFT bypass capability is
-  //        present in the core.
+  // [11:8] : Log base 2 of the number of items per clock cycle (NIPC)
+  //          processed by this core. For example, a value of 3 in this field
+  //          means that the NIPC is 2**3 == 8. Packet sizes and cyclic prefix
+  //          lengths must be a multiple of the NIPC value.
+  // [ 7:6] : Reserved
+  // [   5] : CP_INSERTION. Indicates if cyclic-prefix insertion is available.
+  // [   4] : CP_REMOVAL. Indicates if cyclic-prefix removal is available.
+  // [   3] : MAGNITUDE_SQ. Indicates whether or not the magnitude-squared
+  //          output capability is present in the core.
+  // [   2] : MAGNITUDE. Indicates whether or not the magnitude output option
+  //          is present in the core.
+  // [   1] : FFT_ORDER. Indicates whether or not the FFT reorder capability is
+  //          present in the core.
+  // [   0] : FFT_BYPASS. Indicates whether or not the FFT bypass capability is
+  //         present in the core.
   //
   localparam int REG_CAPABILITIES2_ADDR  = 'h0C;
-  localparam int REG_CAPABILITIES2_WIDTH = 4;
+  localparam int REG_CAPABILITIES2_WIDTH = 12;
 
   // REG_RESET (Write-only strobe)
   //
@@ -239,13 +246,17 @@ package fft_core_regs_pkg;
   //       negative frequencies. 0 Hz in the center.
   //   2 : NATURAL. Positive frequencies are first, followed by negative
   //       frequencies. 0 Hz is on the left.
+  //   3 : BIT_REVERSE. Like natural, but the bits of the indices are in
+  //       reverse order. For example, for a size 16 FFT, bin 0000 is output
+  //       first, followed by bin 1000, 0100, 1100, 0010, etc.
   //
   localparam int REG_ORDER_ADDR  = 'h48;
   localparam int REG_ORDER_WIDTH = 2;
   //
-  localparam int FFT_ORDER_NORMAL  = 0;
-  localparam int FFT_ORDER_REVERSE = 1;
-  localparam int FFT_ORDER_NATURAL = 2;
+  localparam int FFT_ORDER_NORMAL      = 0;
+  localparam int FFT_ORDER_REVERSE     = 1;
+  localparam int FFT_ORDER_NATURAL     = 2;
+  localparam int FFT_ORDER_BIT_REVERSE = 3;
 
   // REG_MAGNITUDE (Read/Write)
   //

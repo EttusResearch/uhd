@@ -14,6 +14,8 @@
 //   THIS_PORTID              : Control crossbar port to which this block is connected
 //   CHDR_W                   : AXIS-CHDR data bus width
 //   MTU                      : Log2 of maximum transmission unit
+//   NIPC                     : Number of samples/items per clock cycle to
+//                              process internally.
 //   NUM_PORTS                : Total number of FFT channels
 //   NUM_CORES                : Number of individual cores to instantiate.
 //                              Setting to 1 means all ports use a shared core
@@ -25,6 +27,11 @@
 //                              must be a multiple of NUM_CORES.
 //   MAX_FFT_SIZE_LOG2        : Log2 of maximum configurable FFT size. That is,
 //                              the FFT size is exactly 2**fft_size_log2.
+//   EN_CP_INSERTION          : Controls whether to include the cyclic prefix
+//                              insertion logic. If included, EN_FFT_ORDER must
+//                              be 1.
+//   EN_CP_REMOVAL            : Controls whether to include the cyclic prefix
+//                              removal logic.
 //   MAX_CP_LIST_LEN_INS_LOG2 : Log2 of max length of cyclic prefix insertion
 //                              list. Actual max is 2**MAX_CP_LIST_LEN_INS_LOG2.
 //   MAX_CP_LIST_LEN_REM_LOG2 : Log2 of max length of cyclic prefix removal
@@ -54,16 +61,19 @@ module rfnoc_block_fft #(
   logic [9:0] THIS_PORTID              = 10'd0,
   int         CHDR_W                   = 64,
   logic [5:0] MTU                      = 6'd10,
+  int         NIPC                     = 1,
   int         NUM_PORTS                = 1,
   int         NUM_CORES                = 1,
-  int         MAX_FFT_SIZE_LOG2        = 12,
+  int         MAX_FFT_SIZE_LOG2        = 10,
+  bit         EN_CP_REMOVAL            = 1,
+  bit         EN_CP_INSERTION          = 1,
   int         MAX_CP_LIST_LEN_INS_LOG2 = 5,
   int         MAX_CP_LIST_LEN_REM_LOG2 = 5,
   bit         CP_INSERTION_REPEAT      = 1,
   bit         CP_REMOVAL_REPEAT        = 1,
-  bit         EN_FFT_BYPASS            = 1,
+  bit         EN_FFT_BYPASS            = 0,
   bit         EN_FFT_ORDER             = 1,
-  bit         EN_MAGNITUDE             = 1,
+  bit         EN_MAGNITUDE             = 0,
   bit         EN_MAGNITUDE_SQ          = 1,
   bit         USE_APPROX_MAG           = 1
 ) (
@@ -109,6 +119,14 @@ module rfnoc_block_fft #(
 
   localparam ITEM_W = 32;
 
+  // Calculate the number of channels per core
+  localparam int NCPC = NUM_PORTS / NUM_CORES;
+
+  // We require each FFT core instance to have the same number of channels
+  if (NUM_CORES * NCPC != NUM_PORTS) begin : check_num_ports_per_core
+    $error("NUM_PORTS must be a multiple of NUM_CORES");
+  end
+
 
   //---------------------------------------------------------------------------
   // Signal Declarations
@@ -124,27 +142,27 @@ module rfnoc_block_fft #(
   logic                       ctrlport_resp_ack;
   logic [CTRLPORT_DATA_W-1:0] ctrlport_resp_data;
 
-  logic [          ITEM_W*NUM_PORTS-1:0] in_axis_tdata;
-  logic [                 NUM_PORTS-1:0] in_axis_tkeep;
-  logic [                 NUM_PORTS-1:0] in_axis_tlast;
-  logic [                 NUM_PORTS-1:0] in_axis_tvalid;
-  logic [                 NUM_PORTS-1:0] in_axis_tready;
-  logic [CHDR_TIMESTAMP_W*NUM_PORTS-1:0] in_axis_ttimestamp;
-  logic [                 NUM_PORTS-1:0] in_axis_thas_time;
-  logic [   CHDR_LENGTH_W*NUM_PORTS-1:0] in_axis_tlength;
-  logic [                 NUM_PORTS-1:0] in_axis_teov;
-  logic [                 NUM_PORTS-1:0] in_axis_teob;
+  logic [NUM_CORES-1:0][NCPC-1:0][     ITEM_W*NIPC-1:0] in_axis_tdata;
+  logic [NUM_CORES-1:0][NCPC-1:0][            NIPC-1:0] in_axis_tkeep;
+  logic [NUM_CORES-1:0][NCPC-1:0][                 0:0] in_axis_tlast;
+  logic [NUM_CORES-1:0][NCPC-1:0][                 0:0] in_axis_tvalid;
+  logic [NUM_CORES-1:0][NCPC-1:0][                 0:0] in_axis_tready;
+  logic [NUM_CORES-1:0][NCPC-1:0][CHDR_TIMESTAMP_W-1:0] in_axis_ttimestamp;
+  logic [NUM_CORES-1:0][NCPC-1:0][                 0:0] in_axis_thas_time;
+  logic [NUM_CORES-1:0][NCPC-1:0][   CHDR_LENGTH_W-1:0] in_axis_tlength;
+  logic [NUM_CORES-1:0][NCPC-1:0][                 0:0] in_axis_teov;
+  logic [NUM_CORES-1:0][NCPC-1:0][                 0:0] in_axis_teob;
 
-  logic [          ITEM_W*NUM_PORTS-1:0] out_axis_tdata;
-  logic [                 NUM_PORTS-1:0] out_axis_tkeep;
-  logic [                 NUM_PORTS-1:0] out_axis_tlast;
-  logic [                 NUM_PORTS-1:0] out_axis_tvalid;
-  logic [                 NUM_PORTS-1:0] out_axis_tready;
-  logic [CHDR_TIMESTAMP_W*NUM_PORTS-1:0] out_axis_ttimestamp;
-  logic [                 NUM_PORTS-1:0] out_axis_thas_time;
-  logic [   CHDR_LENGTH_W*NUM_PORTS-1:0] out_axis_tlength;
-  logic [                 NUM_PORTS-1:0] out_axis_teov;
-  logic [                 NUM_PORTS-1:0] out_axis_teob;
+  logic [NUM_CORES-1:0][NCPC-1:0][     ITEM_W*NIPC-1:0] out_axis_tdata;
+  logic [NUM_CORES-1:0][NCPC-1:0][            NIPC-1:0] out_axis_tkeep;
+  logic [NUM_CORES-1:0][NCPC-1:0][                 0:0] out_axis_tlast;
+  logic [NUM_CORES-1:0][NCPC-1:0][                 0:0] out_axis_tvalid;
+  logic [NUM_CORES-1:0][NCPC-1:0][                 0:0] out_axis_tready;
+  logic [NUM_CORES-1:0][NCPC-1:0][CHDR_TIMESTAMP_W-1:0] out_axis_ttimestamp;
+  logic [NUM_CORES-1:0][NCPC-1:0][                 0:0] out_axis_thas_time;
+  logic [NUM_CORES-1:0][NCPC-1:0][   CHDR_LENGTH_W-1:0] out_axis_tlength;
+  logic [NUM_CORES-1:0][NCPC-1:0][                 0:0] out_axis_teov;
+  logic [NUM_CORES-1:0][NCPC-1:0][                 0:0] out_axis_teob;
 
 
   //---------------------------------------------------------------------------
@@ -155,7 +173,9 @@ module rfnoc_block_fft #(
     .CHDR_W     (CHDR_W),
     .THIS_PORTID(THIS_PORTID),
     .MTU        (MTU),
-    .NUM_PORTS  (NUM_PORTS)
+    .NUM_PORTS  (NUM_PORTS),
+    .NIPC       (NIPC),
+    .ITEM_W     (ITEM_W)
   ) noc_shell_fft_i (
     //---------------------
     // Framework Interface
@@ -236,12 +256,12 @@ module rfnoc_block_fft #(
   // CtrlPort Splitter
   //---------------------------------------------------------------------------
 
-  wire [                NUM_CORES-1:0] dec_ctrlport_req_wr;
-  wire [                NUM_CORES-1:0] dec_ctrlport_req_rd;
-  wire [CTRLPORT_ADDR_W*NUM_CORES-1:0] dec_ctrlport_req_addr;
-  wire [CTRLPORT_DATA_W*NUM_CORES-1:0] dec_ctrlport_req_data;
-  wire [                NUM_CORES-1:0] dec_ctrlport_resp_ack;
-  wire [CTRLPORT_DATA_W*NUM_CORES-1:0] dec_ctrlport_resp_data;
+  logic [NUM_CORES-1:0][                0:0] dec_ctrlport_req_wr;
+  logic [NUM_CORES-1:0][                0:0] dec_ctrlport_req_rd;
+  logic [NUM_CORES-1:0][CTRLPORT_ADDR_W-1:0] dec_ctrlport_req_addr;
+  logic [NUM_CORES-1:0][CTRLPORT_DATA_W-1:0] dec_ctrlport_req_data;
+  logic [NUM_CORES-1:0][                0:0] dec_ctrlport_resp_ack;
+  logic [NUM_CORES-1:0][CTRLPORT_DATA_W-1:0] dec_ctrlport_resp_data;
 
   generate
     if (NUM_CORES > 1) begin : gen_ctrlport_decoder
@@ -276,8 +296,7 @@ module rfnoc_block_fft #(
     end else begin : gen_no_decoder
       assign dec_ctrlport_req_wr   = ctrlport_req_wr;
       assign dec_ctrlport_req_rd   = ctrlport_req_rd;
-      assign dec_ctrlport_req_addr = {{CTRLPORT_DATA_W-FFT_CORE_ADDR_W{1'b0}},
-                                     ctrlport_req_addr[FFT_CORE_ADDR_W-1:0]};
+      assign dec_ctrlport_req_addr = CTRLPORT_ADDR_W'(ctrlport_req_addr[FFT_CORE_ADDR_W-1:0]);
       assign dec_ctrlport_req_data = ctrlport_req_data;
       assign ctrlport_resp_ack     = dec_ctrlport_resp_ack;
       assign ctrlport_resp_data    = dec_ctrlport_resp_data;
@@ -289,59 +308,56 @@ module rfnoc_block_fft #(
   // FFT Core
   //---------------------------------------------------------------------------
 
-  // Calculate the number of ports per core
-  localparam int NPPC = NUM_PORTS / NUM_CORES;
+  // Convert CHDR MTU to packet size in items
+  localparam int MAX_PKT_SIZE_LOG2 = $clog2(2**MTU * CHDR_W/ITEM_W);
 
-  if (NUM_CORES * NPPC != NUM_PORTS) begin : check_num_ports_per_core
-    // We require each FFT core instance to have the same number of channels.
-    ERROR__NUM_PORTS_must_be_a_multiple_of_NUM_CORES();
-  end : check_num_ports_per_core
-
-  genvar core_i;
-
-  for (core_i = 0; core_i < NUM_CORES; core_i = core_i+1) begin : gen_fft_cores
+  for (genvar core_i = 0; core_i < NUM_CORES; core_i = core_i+1) begin : gen_fft_cores
     fft_core #(
-      .NUM_CHAN                (NPPC),
-      .NUM_CORES               (NUM_CORES),
-      .MAX_FFT_SIZE_LOG2       (MAX_FFT_SIZE_LOG2),
+      .NIPC                    (NIPC                    ),
+      .NUM_CHAN                (NCPC                    ),
+      .NUM_CORES               (NUM_CORES               ),
+      .MAX_PKT_SIZE_LOG2       (MAX_PKT_SIZE_LOG2       ),
+      .MAX_FFT_SIZE_LOG2       (MAX_FFT_SIZE_LOG2       ),
+      .EN_CP_REMOVAL           (EN_CP_REMOVAL           ),
+      .EN_CP_INSERTION         (EN_CP_INSERTION         ),
       .MAX_CP_LIST_LEN_INS_LOG2(MAX_CP_LIST_LEN_INS_LOG2),
       .MAX_CP_LIST_LEN_REM_LOG2(MAX_CP_LIST_LEN_REM_LOG2),
-      .CP_INSERTION_REPEAT     (CP_INSERTION_REPEAT),
-      .CP_REMOVAL_REPEAT       (CP_REMOVAL_REPEAT),
-      .EN_FFT_BYPASS           (EN_FFT_BYPASS),
-      .EN_FFT_ORDER            (EN_FFT_ORDER),
-      .EN_MAGNITUDE            (EN_MAGNITUDE),
-      .EN_MAGNITUDE_SQ         (EN_MAGNITUDE_SQ),
-      .USE_APPROX_MAG          (USE_APPROX_MAG)
+      .CP_INSERTION_REPEAT     (CP_INSERTION_REPEAT     ),
+      .CP_REMOVAL_REPEAT       (CP_REMOVAL_REPEAT       ),
+      .EN_FFT_BYPASS           (EN_FFT_BYPASS           ),
+      .EN_FFT_ORDER            (EN_FFT_ORDER            ),
+      .EN_MAGNITUDE            (EN_MAGNITUDE            ),
+      .EN_MAGNITUDE_SQ         (EN_MAGNITUDE_SQ         ),
+      .USE_APPROX_MAG          (USE_APPROX_MAG          )
     ) fft_core_i (
       .ce_clk               (ce_clk),
       .ce_rst               (ce_rst),
-      .s_ctrlport_req_wr    (`BUS_I(dec_ctrlport_req_wr,                     1, core_i)),
-      .s_ctrlport_req_rd    (`BUS_I(dec_ctrlport_req_rd,                     1, core_i)),
-      .s_ctrlport_req_addr  (`BUS_I(dec_ctrlport_req_addr,     CTRLPORT_ADDR_W, core_i)),
-      .s_ctrlport_req_data  (`BUS_I(dec_ctrlport_req_data,     CTRLPORT_DATA_W, core_i)),
-      .s_ctrlport_resp_ack  (`BUS_I(dec_ctrlport_resp_ack,                   1, core_i)),
-      .s_ctrlport_resp_data (`BUS_I(dec_ctrlport_resp_data,    CTRLPORT_DATA_W, core_i)),
-      .s_in_axis_tdata      (`BUS_I(in_axis_tdata,                 ITEM_W*NPPC, core_i)),
-      .s_in_axis_tkeep      (`BUS_I(in_axis_tkeep,                      1*NPPC, core_i)),
-      .s_in_axis_tlast      (`BUS_I(in_axis_tlast,                      1*NPPC, core_i)),
-      .s_in_axis_tvalid     (`BUS_I(in_axis_tvalid,                     1*NPPC, core_i)),
-      .s_in_axis_tready     (`BUS_I(in_axis_tready,                     1*NPPC, core_i)),
-      .s_in_axis_ttimestamp (`BUS_I(in_axis_ttimestamp,  CHDR_TIMESTAMP_W*NPPC, core_i)),
-      .s_in_axis_thas_time  (`BUS_I(in_axis_thas_time,                  1*NPPC, core_i)),
-      .s_in_axis_tlength    (`BUS_I(in_axis_tlength,        CHDR_LENGTH_W*NPPC, core_i)),
-      .s_in_axis_teov       (`BUS_I(in_axis_teov,                       1*NPPC, core_i)),
-      .s_in_axis_teob       (`BUS_I(in_axis_teob,                       1*NPPC, core_i)),
-      .m_out_axis_tdata     (`BUS_I(out_axis_tdata,                ITEM_W*NPPC, core_i)),
-      .m_out_axis_tkeep     (`BUS_I(out_axis_tkeep,                     1*NPPC, core_i)),
-      .m_out_axis_tlast     (`BUS_I(out_axis_tlast,                     1*NPPC, core_i)),
-      .m_out_axis_tvalid    (`BUS_I(out_axis_tvalid,                    1*NPPC, core_i)),
-      .m_out_axis_tready    (`BUS_I(out_axis_tready,                    1*NPPC, core_i)),
-      .m_out_axis_ttimestamp(`BUS_I(out_axis_ttimestamp, CHDR_TIMESTAMP_W*NPPC, core_i)),
-      .m_out_axis_thas_time (`BUS_I(out_axis_thas_time,                 1*NPPC, core_i)),
-      .m_out_axis_tlength   (`BUS_I(out_axis_tlength,       CHDR_LENGTH_W*NPPC, core_i)),
-      .m_out_axis_teov      (`BUS_I(out_axis_teov,                      1*NPPC, core_i)),
-      .m_out_axis_teob      (`BUS_I(out_axis_teob,                      1*NPPC, core_i))
+      .s_ctrlport_req_wr    (dec_ctrlport_req_wr   [core_i]),
+      .s_ctrlport_req_rd    (dec_ctrlport_req_rd   [core_i]),
+      .s_ctrlport_req_addr  (dec_ctrlport_req_addr [core_i]),
+      .s_ctrlport_req_data  (dec_ctrlport_req_data [core_i]),
+      .s_ctrlport_resp_ack  (dec_ctrlport_resp_ack [core_i]),
+      .s_ctrlport_resp_data (dec_ctrlport_resp_data[core_i]),
+      .s_in_axis_tdata      (in_axis_tdata         [core_i]),
+      .s_in_axis_tkeep      (in_axis_tkeep         [core_i]),
+      .s_in_axis_tlast      (in_axis_tlast         [core_i]),
+      .s_in_axis_tvalid     (in_axis_tvalid        [core_i]),
+      .s_in_axis_tready     (in_axis_tready        [core_i]),
+      .s_in_axis_ttimestamp (in_axis_ttimestamp    [core_i]),
+      .s_in_axis_thas_time  (in_axis_thas_time     [core_i]),
+      .s_in_axis_tlength    (in_axis_tlength       [core_i]),
+      .s_in_axis_teov       (in_axis_teov          [core_i]),
+      .s_in_axis_teob       (in_axis_teob          [core_i]),
+      .m_out_axis_tdata     (out_axis_tdata        [core_i]),
+      .m_out_axis_tkeep     (out_axis_tkeep        [core_i]),
+      .m_out_axis_tlast     (out_axis_tlast        [core_i]),
+      .m_out_axis_tvalid    (out_axis_tvalid       [core_i]),
+      .m_out_axis_tready    (out_axis_tready       [core_i]),
+      .m_out_axis_ttimestamp(out_axis_ttimestamp   [core_i]),
+      .m_out_axis_thas_time (out_axis_thas_time    [core_i]),
+      .m_out_axis_tlength   (out_axis_tlength      [core_i]),
+      .m_out_axis_teov      (out_axis_teov         [core_i]),
+      .m_out_axis_teob      (out_axis_teob         [core_i])
     );
   end : gen_fft_cores
 
