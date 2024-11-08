@@ -393,8 +393,7 @@ module fft_reorder
   if (EN_CP_INSERTION) begin: gen_cp_ins_fifo
     logic [CP_LEN_W-1:0] cp_len_tdata;
     logic                cp_len_tvalid;
-    logic                cp_len_tready;
-    logic                i_tvalid;
+    logic                tmp_i_tvalid;
     logic                in_fifo_o_tfirst = '1;   // First transfer of packet
 
     // Create a register that indicates when the next transfer is the start of
@@ -410,7 +409,7 @@ module fft_reorder
     end
 
     // Write the first tuser word of the packet into the CP length FIFO
-    assign i_tvalid = in_fifo_o_tvalid && in_fifo_o_tready && in_fifo_o_tfirst;
+    assign tmp_i_tvalid = in_fifo_o_tvalid && in_fifo_o_tready && in_fifo_o_tfirst;
 
     // The dual RAM buffer can only hold two FFTs at a time, so we can
     // guarantee this FIFO has sufficient room and will always be ready by
@@ -423,7 +422,7 @@ module fft_reorder
       .reset   (rst),
       .clear   ('0),
       .i_tdata (in_fifo_o_tuser),
-      .i_tvalid(i_tvalid),
+      .i_tvalid(tmp_i_tvalid),
       .i_tready(),
       .o_tdata (cp_len_tdata),
       .o_tvalid(cp_len_tvalid),

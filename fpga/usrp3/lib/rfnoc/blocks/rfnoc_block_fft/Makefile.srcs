@@ -8,14 +8,16 @@ RFNOC_OOT_SRCS += $(abspath $(addprefix $(BASE_DIR)/../lib/rfnoc/blocks/rfnoc_bl
 fft_reorder_pkg.sv \
 fft_reorder.sv \
 fft_post_processing.sv \
-cp_removal.sv \
 axis_cp_list.sv \
+cp_removal.sv \
 noc_shell_fft.v \
 xfft_config_pkg.sv \
 fft_core_regs_pkg.sv \
 fft_packetize_pkg.sv \
 fft_packetize.sv \
 fft_depacketize.sv \
+fft_pipeline.sv \
+fft_pipeline_wrapper.sv \
 xfft_wrapper.sv \
 fft_core.sv \
 rfnoc_block_fft.sv \

@@ -227,7 +227,7 @@ module fft_depacketize
 
     symbol_state_t symbol_state = WAIT_SYMBOL_ST;
 
-    logic                  last_symbol;
+    logic                  cp_last_symbol;
     logic                  prefix_rd_stb = 1'b0;
     logic [  CP_LEN_W-1:0] cp_len;
     logic [FFT_SIZE_W-1:0] symbol_size;
@@ -258,7 +258,7 @@ module fft_depacketize
           // wait for their tready signals to be asserted, which on the
           // axi_fifo indicates that they are not full.
           i_symbol_tready <= i_symbol_fifo_tready && i_cp_ins_fifo_tready;
-          last_symbol     <= i_symbol_tdata.last;
+          cp_last_symbol  <= i_symbol_tdata.last;
           cp_len          <= i_cp_ins_tdata;
           if (i_symbol_tvalid && i_symbol_tready) begin
             i_symbol_tready <= 1'b0;
@@ -289,7 +289,7 @@ module fft_depacketize
         prefix_rd_stb        <= 1'b0;
         i_symbol_tready      <= 1'b0;
         i_symbol_fifo_tvalid <= 1'b0;
-        last_symbol          <= 1'bX;
+        cp_last_symbol       <= 1'bX;
         cp_len               <= 'X;
         symbol_size          <= 'X;
       end
@@ -300,9 +300,7 @@ module fft_depacketize
     // Symbol Information FIFO
     //---------------------------------
 
-    logic [15:0] symbol_fifo_space;
-
-    assign i_symbol_fifo_tdata = '{ last_symbol, symbol_size };
+    assign i_symbol_fifo_tdata = '{ cp_last_symbol, symbol_size };
 
     axi_fifo #(
       .WIDTH($bits(symbol_fifo_t)),
@@ -317,7 +315,7 @@ module fft_depacketize
       .o_tdata (o_symbol_fifo_tdata ),
       .o_tvalid(o_symbol_fifo_tvalid),
       .o_tready(o_symbol_fifo_tready),
-      .space   (symbol_fifo_space   ),
+      .space   (                    ),
       .occupied(                    )
     );
 
@@ -427,8 +425,6 @@ module fft_depacketize
   // sizes, and pass through the FFT data.
   //
   //---------------------------------------------------------------------------
-
-  localparam int BYTES_PER_ITEM = (ITEM_W/8);
 
   typedef enum logic [2:0] {
     WAIT_BURST_ST,

@@ -423,7 +423,9 @@ module fft_packetize
       .i_tready(i_fft_tready                           ),
       .o_tdata ({o_fft_tlast, o_fft_tkeep, o_fft_tdata}),
       .o_tvalid(o_fft_tvalid                           ),
-      .o_tready(o_fft_tready                           )
+      .o_tready(o_fft_tready                           ),
+      .space   (                                       ),
+      .occupied(                                       )
     );
   end else begin : gen_no_output_fifo
     assign o_fft_tdata  = i_fft_tdata;
