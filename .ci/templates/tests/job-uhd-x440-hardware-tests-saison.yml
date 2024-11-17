@@ -45,7 +45,7 @@ jobs:
         devtestPattern: 'x4x0'
         dutFPGA: 'X4_400'
         dutEmbeddedImagesArtifact: 'x4xx-images'
-        uartSerial: '251635284FCA'
+        uartSerial: $(x440_uartSerial)
         pipelineAgent: saison-agent-1
         pytestAtsConfig: saison_multichan_ats
         pytestDUT: 'x440'

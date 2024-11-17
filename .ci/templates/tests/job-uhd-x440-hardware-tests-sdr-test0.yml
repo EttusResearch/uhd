@@ -32,6 +32,6 @@ jobs:
         master_clock_rate: '125e6'
         dutFPGA: 'X4_400'
         dutEmbeddedImagesArtifact: 'x4xx-images'
-        uartSerial: '25163525D2B3'
+        uartSerial: $(x440_uartSerial)
         pytestDUT: 'x440'
         pipelineAgent: sdr-test0

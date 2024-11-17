@@ -31,6 +31,6 @@ jobs:
         devtestPattern: 'x410'
         dutFPGA: 'X4_200'
         dutEmbeddedImagesArtifact: 'x4xx-images'
-        uartSerial: '2516351FE64E'
+        uartSerial: $(x410_uartSerial)
         pytestDUT: 'x410'
         pipelineAgent: sdr-test0

@@ -38,7 +38,7 @@ jobs:
         devtestPattern: 'x4x0'
         dutFPGA: 'X4_200'
         dutEmbeddedImagesArtifact: 'x4xx-images'
-        uartSerial: '2516351DDCC0'
+        uartSerial: $(x410_uartSerial)
         pipelineAgent: pebbles-agent-1
         pytestAtsConfig: uhd_oss_ats
         pytestDUT: 'x410'
