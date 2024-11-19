@@ -26,7 +26,15 @@ else
     else
         VIVADO_BASE_PATH="/opt/Xilinx/Vivado"
     fi
-    MODELSIM_BASE_PATH="/opt/mentor/modelsim"
+    if [[ -d "/opt/mentor/questasim" ]]; then
+        MODELSIM_BASE_PATH="/opt/mentor/questasim"
+    elif [[ -d "/opt/local/mentor/questasim" ]]; then
+        MODELSIM_BASE_PATH="/opt/local/mentor/questasim"
+    elif [[ -d "/opt/local/mentor/modelsim" ]]; then
+        MODELSIM_BASE_PATH="/opt/local/mentor/modelsim"
+    else
+        MODELSIM_BASE_PATH="/opt/mentor/modelsim"
+    fi
 fi
 
 function resolve_viv_path {
@@ -45,20 +53,23 @@ function setupenv_help {
 
 Usage: source setupenv.sh [--help|-h] [--vivado-path=<PATH>] [--modelsim-path=<PATH>]
 
---vivado-path   : Path to the base install directory for Xilinx Vivado if it is
-                  not installed in one of the default search locations (e.g.,
-                  /opt/Xilinx/Vivado).
---modelsim-path : Path to the base install directory for ModelSim if it is not
-                  installed in one of the default search locations (e.g.,
-                  /opt/mentor/modelsim). This simulation tool is optional.
---help -h       : Shows this message.
+--vivado-path    : Path to the directory for Xilinx Vivado where settings64.sh
+                   is located, if Vivado is not installed in one of the default
+                   search locations (e.g., /opt/Xilinx/Vivado).
+--modelsim-path  : Path to the base install directory for ModelSim if it is not
+                   installed in one of the default search locations (e.g.,
+                   /opt/mentor/modelsim). This simulation tool is optional.
+--questasim-path : Path to the base install directory for QuestaSim if it is
+                   not installed in one of the default search locations (e.g.,
+                   /opt/mentor/questasim). This simulation tool is optional.
+--help -h        : Shows this message.
 
-This script sets up the environment required to build FPGA images for the Ettus Research
-${DISPLAY_NAME}. It will also optionally set up the the environment to run the
-Modelsim simulator (although this tool is not required).
+This script sets up the environment required to build FPGA images for the Ettus
+Research ${DISPLAY_NAME}. It will also optionally set up the the environment to
+run the ModelSim simulator (although this tool is not required).
 
 Required tools: Xilinx Vivado $VIVADO_VER (Synthesis and Simulation)
-Optional tools: Mentor Graphics Modelsim (Simulation)
+Optional tools: Siemens ModelSim or Questa (Simulation)
 
 EOHELP
 }
@@ -127,12 +138,12 @@ for i in "$@"; do
         --vivado-version)
             PARSE_STATE="vivado-version"
         ;;
-        --modelsim-path=*)
+        --modelsim-path=*|--questasim-path=*)
             MODELSIM_BASE_PATH="${i#*=}"
             MODELSIM_REQUESTED=1
             PARSE_STATE=""
         ;;
-        --modelsim-path)
+        --modelsim-path|--questasim-path)
             PARSE_STATE="modelsim-path"
         ;;
         *)
@@ -173,6 +184,7 @@ export VIVADO_PATH=$VIVADO_BASE_PATH/$VIVADO_VER
 export VIVADO_HLS_PATH=$VIVADO_BASE_PATH/../Vitis_HLS/$VIVADO_VER
 
 echo "Setting up a ${BITNESS}-bit FPGA build environment for the ${DISPLAY_NAME}..."
+
 #----------------------------------------------------------------------------
 # Prepare Vivado environment
 #----------------------------------------------------------------------------
@@ -228,7 +240,7 @@ if [[ -n $VIVADO_VER_FULL ]]; then
 fi
 
 #----------------------------------------------------------------------------
-# Prepare Modelsim environment
+# Prepare ModelSim environment
 #----------------------------------------------------------------------------
 if [[ -d $MODELSIM_BASE_PATH ]]; then
     if [[ $VIV_PLATFORM = "Cygwin" ]]; then
@@ -238,63 +250,116 @@ if [[ -d $MODELSIM_BASE_PATH ]]; then
     fi
 fi
 if [[ $VSIM_PATH ]]; then
+    # ModelSim prints a string like "Model Technology ModelSim SE-64 vsim ..."
+    # or "Model Technology ModelSim DE vsim ..." for 32-bit.
     if [[ $($VSIM_PATH -version) =~ .*ModelSim[[:space:]](.+)[[:space:]]vsim.* ]]; then
         MODELSIM_VER=${BASH_REMATCH[1]}
         MODELSIM_PATH=$(dirname $VSIM_PATH)
+    # Questa Core/Prime prints "Questa Sim-64 vsim ...""
+    elif [[ $($VSIM_PATH -version) =~ .*Questa[[:space:]]Sim-64[[:space:]]vsim.* ]]; then
+        MODELSIM_VER=QuestaSim-64
+        MODELSIM_PATH=$(dirname $VSIM_PATH)
+    # Questa Base prints "QuestaSim Base Edition-64 vsim ..."
+    elif [[ $($VSIM_PATH -version) =~ .*QuestaSim[[:space:]]Base[[:space:]]Edition-64[[:space:]]vsim.* ]]; then
+        MODELSIM_VER=QuestaSim-64
+        MODELSIM_PATH=$(dirname $VSIM_PATH)
     fi
     case $MODELSIM_VER in
+        QuestaSim-64)
+            export MODELSIM_64BIT=1
+            if [[ -z $SIM_COMPLIBDIR ]]; then
+                export SIM_COMPLIBDIR=$VIVADO_PATH/questasim64
+            fi
+        ;;
         DE-64|SE-64)
             export MODELSIM_64BIT=1
-            if [[ -z $MSIM_VIV_COMPLIBDIR ]]; then
+            if [[ -z $SIM_COMPLIBDIR ]]; then
                 export SIM_COMPLIBDIR=$VIVADO_PATH/modelsim64
-            else
-                export SIM_COMPLIBDIR=$MSIM_VIV_COMPLIBDIR
             fi
         ;;
         DE|SE|PE)
             export MODELSIM_64BIT=0
-            if [[ -z $MSIM_VIV_COMPLIBDIR ]]; then
+            if [[ -z $SIM_COMPLIBDIR ]]; then
                 export SIM_COMPLIBDIR=$VIVADO_PATH/modelsim32
-            else
-                export SIM_COMPLIBDIR=$MSIM_VIV_COMPLIBDIR
             fi
         ;;
         *)
         ;;
     esac
-    # If MSIM_MODELSIM_INI is not defined, use the modelsim.ini in the compiled
-    # libraries directory. Otherwise use the one defined by MSIM_MODELSIM_INI.
-    # Set MSIM_MODELSIM_INI to an empty string to use the modelsim.ini in the
-    # ModelSim installation folder.
-    if [[ ! -v MSIM_MODELSIM_INI ]]; then
+    # Make it an absolute path
+    export SIM_COMPLIBDIR=$(resolve_viv_path $SIM_COMPLIBDIR)
+    # If there's a modelsim.ini in the simulation library directory, use that.
+    # Otherwise, don't set the variable so ModelSim's default location is used.
+    if [[ -f $(resolve_viv_path $SIM_COMPLIBDIR/modelsim.ini) ]]; then
         export MODELSIM_INI=$(resolve_viv_path $SIM_COMPLIBDIR/modelsim.ini)
     fi
 fi
 
 function build_simlibs {
-    mkdir -p $SIM_COMPLIBDIR
-    pushd $SIM_COMPLIBDIR
+    while [[ "$#" -gt 0 ]]; do
+        arg="$1"
+        case $arg in
+            --path=*)
+                export SIM_COMPLIBDIR=$(resolve_viv_path "${arg#*=}")
+                echo "Setting SIM_COMPLIBDIR to $SIM_COMPLIBDIR"
+                shift
+            ;;
+            --path)
+                # Grab the next argument as the path
+                export SIM_COMPLIBDIR=$(resolve_viv_path "${2#*=}")
+                echo "Setting SIM_COMPLIBDIR to $SIM_COMPLIBDIR"
+                shift 2
+            ;;
+            --help)
+                echo "Builds the Xilinx simulation libraries. By default, the SIM_COMPLIBDIR"
+                echo "environment variable is used as the location for the libraries. The"
+                echo "current setting is:"
+                echo "SIM_COMPLIBDIR=$SIM_COMPLIBDIR"
+                echo ""
+                echo "Usage: build_simlibs [--path=/path/to/folder] [--help]"
+                echo
+                echo "Options:"
+                echo "  --path=PATH : Specify a different path to use."
+                echo "  --help      : Display this help message."
+                return 0
+            ;;
+            *)
+                echo "Unknown option: $arg"
+                echo "Try running: build_simlibs --help"
+                return 1
+            ;;
+        esac
+    done
+    # Update the MODELSIM_INI location in case the SIM_COMPLIBDIR changed
+    export MODELSIM_INI=$(resolve_viv_path $SIM_COMPLIBDIR/modelsim.ini)
     CMD_PATH=`mktemp XXXXXXXX.vivado_simgen.tcl`
-    if [[ $MODELSIM_64BIT -eq 1 ]]; then
-        echo "compile_simlib -force -simulator modelsim -family all -language all -library all -directory ." > $CMD_PATH
+    if [[ $MODELSIM_64BIT -eq 0 ]]; then
+        CSL_BITNESS="-32bit"
+        CSL_SIMULATOR="modelsim"
     else
-        echo "compile_simlib -force -simulator modelsim -family all -language all -library all -32bit -directory ." > $CMD_PATH
+        CSL_BITNESS=""
+        if [[ $MODELSIM_VER = "QuestaSim-64" ]]; then
+            CSL_SIMULATOR="questasim"
+        else
+            CSL_SIMULATOR="modelsim"
+        fi
     fi
+    echo "compile_simlib -force -simulator $CSL_SIMULATOR -simulator_exec_path $(dirname $VSIM_PATH) -family all -language all -library all $CSL_BITNESS -directory $SIM_COMPLIBDIR" > $CMD_PATH
     $VIVADO_EXEC -mode batch -source $(resolve_viv_path $CMD_PATH) -nolog -nojournal
     rm -f $CMD_PATH
-    popd
+    echo "Simulation libraries were compiled in: $SIM_COMPLIBDIR"
 }
 
 if [[ $MODELSIM_VER ]]; then
-    echo "- Modelsim: Found ($MODELSIM_VER, $MODELSIM_PATH)"
+    echo "- ModelSim/Questa: Found ($MODELSIM_VER, $MODELSIM_PATH)"
     if [[ -e "$SIM_COMPLIBDIR/modelsim.ini" ]]; then
-        echo "- Modelsim Compiled Libs: Found ($SIM_COMPLIBDIR)"
+        echo "- ModelSim/Questa Compiled Libs: Found ($SIM_COMPLIBDIR)"
     else
-        echo "- Modelsim Compiled Libs: Not found! (Run build_simlibs to generate them.)"
+        echo "- ModelSim/Questa Compiled Libs: Not found! (Run build_simlibs to generate them.)"
     fi
 else
     if [[ $MODELSIM_REQUESTED -eq 1 ]]; then
-        echo "- Modelsim: Not found in $MODELSIM_BASE_PATH (WARNING.. Simulations with vsim will not work)"
+        echo "- ModelSim/Questa: Not found in $MODELSIM_BASE_PATH (WARNING: Simulations with ModelSim/Questa might not work!)"
     fi
 fi
 

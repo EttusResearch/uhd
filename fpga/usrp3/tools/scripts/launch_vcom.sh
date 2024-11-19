@@ -59,16 +59,16 @@ function replace_dirs_with_source {
 WORKING_DIR=$(pwd)
 
 # Use specified modelsim.ini, if set
-if [[ -z $VLINT_MODELSIM_INI ]]; then
+if [[ -z $VCOM_MODELSIM_INI ]]; then
     MODELSIMINI_ARG=""
 else
-    MODELSIMINI_ARG="-modelsimini $VLINT_MODELSIM_INI"
+    MODELSIMINI_ARG="-modelsimini $VCOM_MODELSIM_INI"
 fi
 
 # Define arguments to pass to the compile
-SVLOG_ARGS="$VLINT_SVLOG_ARGS $MODELSIMINI_ARG -quiet +define+WORKING_DIR=$WORKING_DIR"
-VLOG_ARGS="$VLINT_VLOG_ARGS $MODELSIMINI_ARG -quiet +define+WORKING_DIR=$WORKING_DIR"
-VHDL_ARGS="$VLINT_VHDL_ARGS $MODELSIMINI_ARG -quiet"
+SVLOG_ARGS="$VCOM_SVLOG_ARGS $MODELSIMINI_ARG -quiet +define+WORKING_DIR=$WORKING_DIR"
+VLOG_ARGS="$VCOM_VLOG_ARGS $MODELSIMINI_ARG -quiet +define+WORKING_DIR=$WORKING_DIR"
+VHDL_ARGS="$VCOM_VHDL_ARGS $MODELSIMINI_ARG -quiet"
 
 # Define files in which to store all the compiler arguments
 SV_ARGS_FILE=svlogarglist.txt
@@ -77,9 +77,9 @@ VHD_ARGS_FILE=vcomarglist.txt
 
 # Replace any directories with the sources they contain
 SOURCES=
-SOURCES+=$(replace_dirs_with_source $VLINT_INC_SRCS)
-SOURCES+=$(replace_dirs_with_source $VLINT_DESIGN_SRCS)
-SOURCES+=$(replace_dirs_with_source $VLINT_SIM_SRCS)
+SOURCES+=$(replace_dirs_with_source $VCOM_INC_SRCS)
+SOURCES+=$(replace_dirs_with_source $VCOM_DESIGN_SRCS)
+SOURCES+=$(replace_dirs_with_source $VCOM_SIM_SRCS)
 
 # Separate the files by type and determine include directories to use
 V_FILES=
@@ -112,8 +112,8 @@ V_INC=$(printf '%s\n' $V_INC | awk '!a[$0]++')
 #------------------------------------------
 
 # Generate argument files
-mkdir -p ./$VLINT_PROJ_DIR
-cd ./$VLINT_PROJ_DIR
+mkdir -p ./$VCOM_PROJ_DIR
+cd ./$VCOM_PROJ_DIR
 
 echo "/* Auto generated argument file for vlog -sv */" > $SV_ARGS_FILE
 echo "-sv" >> $SV_ARGS_FILE
