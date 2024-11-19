@@ -45,12 +45,10 @@ function print_color {
 
 SCRIPT_DIR=$(dirname "$(realpath "$0")")
 
-# Using -voptargs=+acc makes everything visible in the simulator for GUI mode
-# and avoids some cases where simulation mismatch could otherwise occur.
 # Setting -onfinish to "stop" prevents the simulator from immediately trying to
 # exit when finish() is called. This is annoying in the GUI and important for
 # error detection in batch mode.
-MSIM_DEFAULT="-voptargs=+acc -quiet -L unisims_ver -onfinish stop"
+MSIM_DEFAULT="-quiet -L unisims_ver -onfinish stop"
 
 # Use specified modelsim.ini, if set
 if [[ -z $MSIM_MODELSIM_INI ]]; then
@@ -69,15 +67,30 @@ do
 done
 
 if [ $MSIM_MODE == "gui" ]; then
-    echo "* Launching ModelSim"
-    vsim $MSIM_DEFAULT $MODELSIMINI_ARG $MSIM_ARGS $MSIM_LIB_ARGS $MSIM_SIM_TOP 2>&1 | while IFS= read -r line; do
+    if [ $MSIM_VARIANT == "questa" ]; then
+        echo "* Launching Visualizer GUI"
+        MSIM_DEFAULT+=" -voptargs=\"-debug,events,livesim +designfile\" -visualizer -qwavedb=+signal+memory+vhdlvariable+class"
+    else
+        echo "* Launching ModelSim GUI"
+        MSIM_DEFAULT+=" -voptargs=+acc"
+    fi
+    # Use stdbuf to line buffer the pipe and avoid long block buffering delays
+    stdbuf -oL -eL vsim $MSIM_DEFAULT $MODELSIMINI_ARG $MSIM_ARGS $MSIM_LIB_ARGS $MSIM_SIM_TOP 2>&1 | while IFS= read -r line; do
         print_color $line
     done
     exit_status=${PIPESTATUS[0]}
     if [ ${exit_status} -ne 0 ]; then exit ${exit_status}; fi
 elif [ $MSIM_MODE == "batch" ]; then
-    echo "* Launching ModelSim"
-    vsim -batch -do $SCRIPT_DIR/modelsim.do $MODELSIMINI_ARG $MSIM_DEFAULT $MSIM_ARGS $MSIM_LIB_ARGS $MSIM_SIM_TOP 2>&1 | while IFS= read -r line; do
+    if [ $MSIM_VARIANT == "questa" ]; then
+        echo "* Launching Questa batch mode"
+    else
+        echo "* Launching ModelSim batch mode"
+        # Using +acc for GUI and batch sim ensures we get the same behavior in
+        # both, with the downside that simulation might be slower.
+        MSIM_DEFAULT+=" -voptargs=+acc"
+    fi
+    # Use stdbuf to line buffer the pipe and avoid long block buffering delays
+    stdbuf -oL -eL vsim -batch -do $SCRIPT_DIR/modelsim.do $MODELSIMINI_ARG $MSIM_DEFAULT $MSIM_ARGS $MSIM_LIB_ARGS $MSIM_SIM_TOP 2>&1 | while IFS= read -r line; do
         print_color $line
     done
     exit_status=${PIPESTATUS[0]}

@@ -73,7 +73,7 @@ SETUP_AND_LAUNCH_VLINT = \
 	$(TOOLS_DIR)/scripts/launch_vlint.sh
 
 # -------------------------------------------------------------------
-# Usage: SETUP_AND_LAUNCH_VLINT
+# Usage: SETUP_AND_LAUNCH_MODELSIM
 # Args: N/A
 # -------------------------------------------------------------------
 
@@ -85,6 +85,24 @@ SETUP_AND_LAUNCH_MODELSIM = \
 	export MSIM_LIBS="$(MODELSIM_LIBS)"; \
 	export MSIM_MODE=$(VIVADO_MODE); \
 	export MSIM_MODELSIM_INI="$(MODELSIM_INI)"; \
+	export MSIM_VARIANT=legacy; \
+	$(TOOLS_DIR)/scripts/launch_modelsim.sh
+
+# -------------------------------------------------------------------
+# Usage: SETUP_AND_LAUNCH_QUESTASIM
+# Args: N/A
+# -------------------------------------------------------------------
+
+SETUP_AND_LAUNCH_QUESTASIM = \
+	@ \
+	export MSIM_GUI=visualizer; \
+	export MSIM_PROJ_DIR=$(MODELSIM_PROJ_DIR); \
+	export MSIM_SIM_TOP="$(SIM_TOP)"; \
+	export MSIM_ARGS="$(MODELSIM_ARGS)"; \
+	export MSIM_LIBS="$(MODELSIM_LIBS)"; \
+	export MSIM_MODE=$(VIVADO_MODE); \
+	export MSIM_MODELSIM_INI="$(MODELSIM_INI)"; \
+	export MSIM_VARIANT=questa; \
 	$(TOOLS_DIR)/scripts/launch_modelsim.sh
 
 .SECONDEXPANSION:
@@ -113,6 +131,10 @@ vsim: .check_tool $(COMPLIBDIR) $(DESIGN_SRCS) $(SIM_SRCS) $(INC_SRCS)
 ##modelsim:   Run the simulation using Modelsim (natively)
 modelsim: .check_tool vlint
 	$(call SETUP_AND_LAUNCH_MODELSIM)
+
+##qsim:       Run the simulation using Questa (natively)
+qsim: .check_tool vlint
+	$(call SETUP_AND_LAUNCH_QUESTASIM)
 
 # NOTE: VHDL files require a correct compile order.  This script compiles files
 #       in the order they are defined in $(DESIGN_SRC), then $SIM_SRC)
