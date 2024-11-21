@@ -72,11 +72,12 @@ static const std::vector<std::string> FBX_LOS = {RFDC_NCO};
 static constexpr size_t FBX_MAX_NUM_CHANS = 4;
 
 // These are addresses for the various table-based registers
-static constexpr uint32_t ATR_ADDR_0X = 0;
-static constexpr uint32_t ATR_ADDR_RX = 1;
-static constexpr uint32_t ATR_ADDR_TX = 2;
-static constexpr uint32_t ATR_ADDR_XX = 3; // Full-duplex
+static constexpr uint32_t ATR_ADDR_0X    = 0;
+static constexpr uint32_t ATR_ADDR_RX    = 1;
+static constexpr uint32_t ATR_ADDR_TX    = 2;
+static constexpr uint32_t ATR_ADDR_XX    = 3; // Full-duplex
+static constexpr uint32_t NUM_ATR_STATES = 4;
 // Helper for looping
-static constexpr std::array<uint32_t, FBX_MAX_NUM_CHANS> ATR_ADDRS{0, 1, 2, 3};
+static constexpr std::array<uint32_t, NUM_ATR_STATES> ATR_ADDRS{0, 1, 2, 3};
 
 }}} // namespace uhd::usrp::fbx
