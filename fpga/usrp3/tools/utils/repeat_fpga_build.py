@@ -203,6 +203,12 @@ def parse_args():
         default=None,
     )
     parser.add_argument(
+        "--ignore-warnings",
+        "-W",
+        help="Run build even when there are warnings from the RFNoC image builder",
+        action="store_true",
+    )
+    parser.add_argument(
         "--num",
         "-n",
         type=int,
@@ -282,6 +288,7 @@ def rfnoc_image_builder_cmd(
     image_core_name,
     fpga_dir,
     vivado_path,
+    ignore_warnings,
     build_num=None,
 ):
     """
@@ -300,6 +307,8 @@ def rfnoc_image_builder_cmd(
         cmd += f"--fpga-dir {fpga_dir} "
     if vivado_path:
         cmd += f"--vivado-path {vivado_path} "
+    if ignore_warnings:
+        cmd += "--ignore-warnings "
     return cmd
 
 
@@ -313,6 +322,7 @@ def run_fpga_build(
     image_core_name,
     fpga_dir,
     vivado_path,
+    ignore_warnings,
     parallel_builds,
 ):
     """Performs one iteration of an FPGA build.
@@ -327,6 +337,8 @@ def run_fpga_build(
         image_core_name: --image-core-name argument to be passed
         fpga_dir: --fpga-dir argument to be passed
         vivado_path: --vivado-path argument to be passed
+        ignore_warnings: --ignore-warnings argument to be passed
+        parallel_builds: Indicates if we are doing builds in parallel
 
     Returns:
         Status.SUCCESS: The build succeeded
@@ -343,6 +355,7 @@ def run_fpga_build(
         image_core_name,
         fpga_dir,
         vivado_path,
+        ignore_warnings,
         cmd_build_num,
     )
     logging.info(f"Running FPGA build command: {cmd}")
@@ -388,7 +401,9 @@ def run_fpga_build(
     return status
 
 
-def run_ip_build(ip_jobs, target, image_core, image_core_name, fpga_dir, vivado_path):
+def run_ip_build(
+    ip_jobs, target, image_core, image_core_name, fpga_dir, vivado_path, ignore_warnings
+):
     """Performs the IP build.
 
     This is done separately so that when we do parallel FPGA builds, they don't
@@ -401,13 +416,21 @@ def run_ip_build(ip_jobs, target, image_core, image_core_name, fpga_dir, vivado_
         image_core_name: --image-core-name argument to be passed
         fpga_dir: --fpga-dir argument to be passed
         vivado_path: --vivado-path argument to be passed
+        ignore_warnings: --ignore-warnings argument to be passed
 
     Returns:
         0: The IP build succeeded
         non-zero: The IP build failed
     """
     cmd = rfnoc_image_builder_cmd(
-        None, target, image_core, image_core_name, fpga_dir, vivado_path, None
+        None,
+        target,
+        image_core,
+        image_core_name,
+        fpga_dir,
+        vivado_path,
+        ignore_warnings,
+        None,
     )
     cmd += f" --ip-only --jobs {ip_jobs}"
     logging.info(f"Running IP build with command: {cmd}")
@@ -475,6 +498,7 @@ def main():
         args.image_core_name,
         args.fpga_dir,
         args.vivado_path,
+        args.ignore_warnings,
     )
     if status != Status.SUCCESS:
         return status.value
@@ -502,6 +526,7 @@ def main():
                         args.image_core_name,
                         args.fpga_dir,
                         args.vivado_path,
+                        args.ignore_warnings,
                         args.fpga_jobs > 1,
                     ),
                 )
