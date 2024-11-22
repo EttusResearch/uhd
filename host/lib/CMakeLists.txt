@@ -143,7 +143,6 @@ LIBUHD_APPEND_LIBS(uhd_rc)
 # Add DLL resource file to Windows build
 ########################################################################
 if(MSVC)
-    math(EXPR RC_VERSION_MAJOR_API "${UHD_VERSION_MAJOR} * 1000 + ${UHD_VERSION_API}")
     set(RC_VERSION_PATCH ${UHD_VERSION_PATCH})
     if(UHD_VERSION_DEVEL)
         set(RC_VERSION_PATCH "999")
