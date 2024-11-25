@@ -423,8 +423,8 @@ stages:
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testDevices: 'n3xx,e320'
 
-- stage: test_uhd_x4xx_stage
-  displayName: Test UHD x4xx
+- stage: test_uhd_x4xx_sdrtest0_stage
+  displayName: Test UHD x4xx sdr-test-0
   dependsOn:
   - build_uhd_stage_linux
   - build_uhd_embedded_system_images
@@ -458,6 +458,32 @@ stages:
       testOS: ubuntu1804
       uhdFpgaArtifactSource: uhd_fpga_pipeline
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+
+- stage: test_uhd_x4xx_pebbles_stage
+  displayName: Test UHD x4xx pebbles
+  dependsOn:
+  - build_uhd_stage_linux
+  - build_uhd_embedded_system_images
+  - build_gnuradio_stage_linux
+  - analyze_changeset
+  # This will make $(UhdTestList) available to jobs/steps/tasks, but not for the
+  # condition.
+  variables:
+    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
+  condition: >
+    and(
+      succeeded(),
+      or(
+        ${{ parameters.skip_analyze_changeset }},
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x4xx'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x410'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x440'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.all'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.x410'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.x440')
+    ))
+  jobs:
   - template: tests/job-uhd-x410-hardware-tests-pebbles.yml
     parameters:
       testOS: ubuntu1804
@@ -470,6 +496,32 @@ stages:
       uhdFpgaArtifactSource: uhd_fpga_pipeline
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testLength: ${{ parameters.testLength }}
+
+- stage: test_uhd_x4xx_saison_stage
+  displayName: Test UHD x4xx saison
+  dependsOn:
+  - build_uhd_stage_linux
+  - build_uhd_embedded_system_images
+  - build_gnuradio_stage_linux
+  - analyze_changeset
+  # This will make $(UhdTestList) available to jobs/steps/tasks, but not for the
+  # condition.
+  variables:
+    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
+  condition: >
+    and(
+      succeeded(),
+      or(
+        ${{ parameters.skip_analyze_changeset }},
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x4xx'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x410'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x440'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.all'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.x410'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.x440')
+    ))
+  jobs:
   - template: tests/job-uhd-x440-hardware-tests-saison.yml
     parameters:
       testOS: ubuntu2204
@@ -504,8 +556,8 @@ stages:
       testOS: ubuntu1804
       testDevices: 'n3xx'
 
-- stage: test_streaming_stage
-  displayName: Test UHD Streaming
+- stage: test_streaming_beauty_stage
+  displayName: Test UHD Streaming beauty
   dependsOn:
   - analyze_changeset
   - build_uhd_stage_linux
@@ -528,6 +580,24 @@ stages:
       uhdFpgaArtifactSource: uhd_fpga_pipeline
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testLength: ${{ parameters.testLength }}
+
+- stage: test_streaming_x440_stage
+  displayName: Test UHD Streaming x440
+  dependsOn:
+  - analyze_changeset
+  - build_uhd_stage_linux
+  - build_uhd_embedded_system_images
+  condition: >
+    and(
+      succeeded('build_uhd_stage_linux'),
+      succeeded('build_uhd_embedded_system_images'),
+      ${{ parameters.run_streaming_tests }},
+      or(
+        ${{ parameters.skip_analyze_changeset }},
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming')
+      )
+    )
+  jobs:
   - template: job-uhd-streaming-tests-x440.yml
     parameters:
       testOS: ubuntu2204
