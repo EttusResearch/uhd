@@ -8,7 +8,7 @@
 # Note: These variables are in a separate file so other projects can check these
 # versions, but they are not prefixed with UHD_ so be aware of that.
 
-set(UHD_CMAKE_MIN_VERSION           "3.8"     )
+set(UHD_CMAKE_MIN_VERSION           "3.12"     )
 set(UHD_GCC_MIN_VERSION             "7.3.0"   )
 set(UHD_CLANG_MIN_VERSION           "6.0.0"   )
 set(UHD_APPLECLANG_MIN_VERSION      "800"     )
