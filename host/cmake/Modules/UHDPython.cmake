@@ -42,13 +42,6 @@ if(NOT PYTHONINTERP_FOUND)
     endif(Python3_Interpreter_FOUND)
 endif(NOT PYTHONINTERP_FOUND)
 
-if(NOT PYTHONINTERP_FOUND)
-    find_package(PythonInterp ${UHD_PYTHON_MIN_VERSION} QUIET)
-    if(PYTHONINTERP_FOUND)
-        set(PYTHON_VERSION ${PYTHON_VERSION_STRING})
-    endif(PYTHONINTERP_FOUND)
-endif(NOT PYTHONINTERP_FOUND)
-
 # If that fails, try using the build-in find program routine.
 if(NOT PYTHONINTERP_FOUND)
     message(STATUS "Attempting to find Python without CMake...")
@@ -315,30 +308,14 @@ endmacro()
 # - See if Python3_LIBRARIES is already set (or Python2_LIBRARIES)
 if(NOT PYTHON_LIBRARIES OR NOT PYTHON_INCLUDE_DIRS)
     message(STATUS "Finding Python Libraries...")
-    find_package(PythonLibs ${RUNTIME_PYTHON_VERSION} ${EXACT_ARGUMENT} QUIET)
-    if(NOT RUNTIME_PYTHON_VERSION VERSION_LESS 3)
-        if(NOT PYTHON_LIBRARIES OR NOT PYTHON_INCLUDE_DIRS)
-            find_package(Python3 ${RUNTIME_PYTHON_VERSION}
-                ${EXACT_ARGUMENT}
-                QUIET
-                COMPONENTS Interpreter Development)
-            if(Python3_Development_FOUND)
-                set(PYTHON_LIBRARIES ${Python3_LIBRARIES})
-                set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS})
-            endif(Python3_Development_FOUND)
-        endif(NOT PYTHON_LIBRARIES OR NOT PYTHON_INCLUDE_DIRS)
-    else(NOT RUNTIME_PYTHON_VERSION VERSION_LESS 3)
-        if(NOT PYTHON_LIBRARIES OR NOT PYTHON_INCLUDE_DIRS)
-            find_package(Python2 ${RUNTIME_PYTHON_VERSION}
-                ${EXACT_ARGUMENT}
-                QUIET
-                COMPONENTS Interpreter Development)
-            if(Python2_Development_FOUND)
-                set(PYTHON_LIBRARIES ${Python2_LIBRARIES})
-                set(PYTHON_INCLUDE_DIRS ${Python2_INCLUDE_DIRS})
-            endif(Python2_Development_FOUND)
-        endif(NOT PYTHON_LIBRARIES OR NOT PYTHON_INCLUDE_DIRS)
-    endif(NOT RUNTIME_PYTHON_VERSION VERSION_LESS 3)
+    find_package(Python3 ${RUNTIME_PYTHON_VERSION}
+        ${EXACT_ARGUMENT}
+        QUIET
+        COMPONENTS Interpreter Development)
+    if(Python3_Development_FOUND)
+        set(PYTHON_LIBRARIES ${Python3_LIBRARIES})
+        set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS})
+    endif(Python3_Development_FOUND)
     if(NOT PYTHON_LIBRARIES OR NOT PYTHON_INCLUDE_DIRS)
         message(STATUS "Could not find Python Libraries.")
     endif(NOT PYTHON_LIBRARIES OR NOT PYTHON_INCLUDE_DIRS)
