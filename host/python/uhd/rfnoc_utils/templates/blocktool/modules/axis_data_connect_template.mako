@@ -17,7 +17,7 @@
     .m_${port_name}_axis_thas_time  (m_${port_name}_axis_thas_time),
     .m_${port_name}_axis_tlength    (m_${port_name}_axis_tlength),
     .m_${port_name}_axis_teov       (m_${port_name}_axis_teov),
-    .m_${port_name}_axis_teob       (m_${port_name}_axis_teob)${"," if (idx < num_inputs - 1) or (num_outputs > 0) else ""}
+    .m_${port_name}_axis_teob       (m_${port_name}_axis_teob),
 %endfor
 %for idx, port_name in enumerate(config['data']['outputs']):
     // Data Stream from User Logic: ${port_name}
@@ -30,5 +30,5 @@
     .s_${port_name}_axis_thas_time  (s_${port_name}_axis_thas_time),
     .s_${port_name}_axis_tlength    (s_${port_name}_axis_tlength),
     .s_${port_name}_axis_teov       (s_${port_name}_axis_teov),
-    .s_${port_name}_axis_teob       (s_${port_name}_axis_teob)${"," if (idx < num_outputs -1) else ""}
+    .s_${port_name}_axis_teob       (s_${port_name}_axis_teob),
 %endfor

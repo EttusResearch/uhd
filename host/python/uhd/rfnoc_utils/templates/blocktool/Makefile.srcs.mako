@@ -16,7 +16,7 @@ ${"##################################################"}
 # calling this file. RFNOC_OOT_SRCS needs to be a simply expanded variable
 # (not a recursively expanded variable), and we take care of that in the build
 # infrastructure.
-${ blockname_full.upper() }_SRCS += $(addprefix $(dir $(abspath $(lastword $(MAKEFILE_LIST)))), ${"\\"}
-rfnoc_block_${config['module_name']}.v ${"\\"}
-noc_shell_${config['module_name']}.v ${"\\"}
+${ blockname_full.upper() }_SRCS := $(addprefix $(dir $(abspath $(lastword $(MAKEFILE_LIST)))), ${"\\"}
+rfnoc_block_${config['module_name']}.sv ${"\\"}
+noc_shell_${config['module_name']}.sv ${"\\"}
 )

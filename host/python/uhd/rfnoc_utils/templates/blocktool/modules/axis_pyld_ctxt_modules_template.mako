@@ -19,8 +19,8 @@ import math
       .ITEM_W              (${port_info['item_width']}),
       .NIPC                (${port_info['nipc']}),
       .SYNC_CLKS           (${1 if config['data']['clk_domain'] == "rfnoc_chdr" else 0}),
-      .CONTEXT_FIFO_SIZE   ($clog2(${port_info['context_fifo_depth']})),
-      .PAYLOAD_FIFO_SIZE   ($clog2(${port_info['payload_fifo_depth']})),
+      .CONTEXT_FIFO_SIZE   ($clog2(${port_info.get('context_fifo_depth', 2)})),
+      .PAYLOAD_FIFO_SIZE   ($clog2(${port_info.get('payload_fifo_depth', 32)})),
       .CONTEXT_PREFETCH_EN (1)
     ) chdr_to_axis_pyld_ctxt_in_${port_name} (
       .axis_chdr_clk         (rfnoc_chdr_clk),
@@ -53,8 +53,8 @@ import math
     .ITEM_W              (${port_info['item_width']}),
     .NIPC                (${port_info['nipc']}),
     .SYNC_CLKS           (${1 if config['data']['clk_domain'] == "rfnoc_chdr" else 0}),
-    .CONTEXT_FIFO_SIZE   ($clog2(${port_info['context_fifo_depth']})),
-    .PAYLOAD_FIFO_SIZE   ($clog2(${port_info['payload_fifo_depth']})),
+    .CONTEXT_FIFO_SIZE   ($clog2(${port_info.get('context_fifo_depth', 2)})),
+    .PAYLOAD_FIFO_SIZE   ($clog2(${port_info.get('payload_fifo_depth', 32)})),
     .CONTEXT_PREFETCH_EN (1)
   ) chdr_to_axis_pyld_ctxt_in_${port_name} (
     .axis_chdr_clk         (rfnoc_chdr_clk),
@@ -105,8 +105,8 @@ import math
       .ITEM_W              (${port_info['item_width']}),
       .NIPC                (${port_info['nipc']}),
       .SYNC_CLKS           (${1 if config['data']['clk_domain'] == "rfnoc_chdr" else 0}),
-      .CONTEXT_FIFO_SIZE   ($clog2(${port_info['context_fifo_depth']})),
-      .PAYLOAD_FIFO_SIZE   ($clog2(${port_info['payload_fifo_depth']})),
+      .CONTEXT_FIFO_SIZE   ($clog2(${port_info.get('context_fifo_depth', 2)})),
+      .PAYLOAD_FIFO_SIZE   ($clog2(${port_info.get('payload_fifo_depth', 32)})),
       .MTU                 (MTU),
       .CONTEXT_PREFETCH_EN (1)
     ) axis_pyld_ctxt_to_chdr_out_${port_name} (
@@ -141,8 +141,8 @@ import math
     .ITEM_W              (${port_info['item_width']}),
     .NIPC                (${port_info['nipc']}),
     .SYNC_CLKS           (${1 if config['data']['clk_domain'] == "rfnoc_chdr" else 0}),
-    .CONTEXT_FIFO_SIZE   ($clog2(${port_info['context_fifo_depth']})),
-    .PAYLOAD_FIFO_SIZE   ($clog2(${port_info['payload_fifo_depth']})),
+    .CONTEXT_FIFO_SIZE   ($clog2(${port_info.get('context_fifo_depth', 2)})),
+    .PAYLOAD_FIFO_SIZE   ($clog2(${port_info.get('payload_fifo_depth', 32)})),
     .MTU                 (MTU),
     .CONTEXT_PREFETCH_EN (1)
   ) axis_pyld_ctxt_to_chdr_out_${port_name} (

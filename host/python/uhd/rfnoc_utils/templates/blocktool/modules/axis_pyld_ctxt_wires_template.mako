@@ -33,7 +33,7 @@
   ${out_wire}wire [${num_ports}*4-1:0]      ${ma_pre}${port}_context_tuser${term}
   ${out_wire}wire [${num_ports}-1:0]        ${ma_pre}${port}_context_tlast${term}
   ${out_wire}wire [${num_ports}-1:0]        ${ma_pre}${port}_context_tvalid${term}
-  ${in_wire}wire [${num_ports}-1:0]        ${ma_pre}${port}_context_tready${term if (term == ";") or (idx < num_inputs - 1) or (num_outputs > 0) else ""}
+  ${in_wire}wire [${num_ports}-1:0]        ${ma_pre}${port}_context_tready${term}
 %else:
   // Payload Stream to User Logic: ${port}
   ${out_wire}wire [${port_info['item_width']}*${port_info['nipc']}-1:0]    ${ma_pre}${port}_payload_tdata${term}
@@ -46,7 +46,7 @@
   ${out_wire}wire [3:0]         ${ma_pre}${port}_context_tuser${term}
   ${out_wire}wire               ${ma_pre}${port}_context_tlast${term}
   ${out_wire}wire               ${ma_pre}${port}_context_tvalid${term}
-  ${in_wire}wire               ${ma_pre}${port}_context_tready${term if (term == ";") or (idx < num_inputs - 1) or (num_outputs > 0) else ""}
+  ${in_wire}wire               ${ma_pre}${port}_context_tready${term}
 %endif
 %endfor
 %for idx, port in enumerate(config['data']['outputs']):
@@ -66,7 +66,7 @@
   ${in_wire}wire [${num_ports}*4-1:0]      ${sl_pre}${port}_context_tuser${term}
   ${in_wire}wire [${num_ports}-1:0]        ${sl_pre}${port}_context_tlast${term}
   ${in_wire}wire [${num_ports}-1:0]        ${sl_pre}${port}_context_tvalid${term}
-  ${out_wire}wire [${num_ports}-1:0]        ${sl_pre}${port}_context_tready${term if (term == ";") or (idx < num_inputs - 1) else ""}
+  ${out_wire}wire [${num_ports}-1:0]        ${sl_pre}${port}_context_tready${term}
 %else:
   // Payload Stream from User Logic: ${port}
   ${in_wire}wire [${port_info['item_width']}*${port_info['nipc']}-1:0]    ${sl_pre}${port}_payload_tdata${term}
@@ -79,6 +79,6 @@
   ${in_wire}wire [3:0]         ${sl_pre}${port}_context_tuser${term}
   ${in_wire}wire               ${sl_pre}${port}_context_tlast${term}
   ${in_wire}wire               ${sl_pre}${port}_context_tvalid${term}
-  ${out_wire}wire               ${sl_pre}${port}_context_tready${term if (term == ";") or (idx < num_outputs - 1) else ""}
+  ${out_wire}wire               ${sl_pre}${port}_context_tready${term}
 %endif
 %endfor

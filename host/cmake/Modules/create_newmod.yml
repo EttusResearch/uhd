@@ -52,7 +52,7 @@ steps:
 - search_and_replace:
     file: icores/CMakeLists.txt
     pattern: "RFNOC_REGISTER.*$"
-    repl: "# Add one line for every image core here:\n#RFNOC_REGISTER_BLOCK(SRC my_image_core)"
+    repl: "# Add one line for every image core here:\n#RFNOC_REGISTER_IMAGE_CORE(SRC my_image_core)"
 - search_and_replace:
     file: include/rfnoc/newmod/CMakeLists.txt
     pattern: "gain_block_control.hpp"

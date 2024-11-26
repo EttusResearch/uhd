@@ -206,6 +206,14 @@ class StepExecutor:
             with open(file, "w", encoding="utf-8") as f:
                 f.write(contents)
 
+    def append(self, text, **kwargs):
+        """Append text to a file."""
+        file_list = get_file_list(**kwargs)
+        for file in file_list:
+            self.log.debug("Appending to file %s", file)
+            with open(file, "a", encoding="utf-8") as f:
+                f.write(text)
+
     def comment_out(self, character="#", **kwargs):
         """Modify all lines in range to prepend character.
 

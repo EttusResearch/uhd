@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.12)
 project(rfnoc-gain CXX C)
 
 #make sure our local CMake Modules path comes first
@@ -134,7 +134,7 @@ macro(RFNOC_ADD_TB_DIR)
         set(_target_name "${_tb_dir}_tb")
         message(STATUS "Adding testbench target: ${_target_name}")
         add_custom_target(${_target_name}
-            COMMAND ${CMAKE_BINARY_DIR}/cmake/Modules/run_testbench.sh ${UHD_FPGA_DIR} ${UHD_FPGA_DEFAULT_DEVICE} ${CMAKE_CURRENT_SOURCE_DIR} ${FPGA_SIM_CMD}
+            COMMAND ${BASH} ${CMAKE_BINARY_DIR}/cmake/Modules/run_testbench.sh ${UHD_FPGA_DIR} ${UHD_FPGA_DEFAULT_DEVICE} ${CMAKE_CURRENT_SOURCE_DIR} ${FPGA_SIM_CMD}
         )
         add_dependencies(testbenches ${_target_name})
     endif()

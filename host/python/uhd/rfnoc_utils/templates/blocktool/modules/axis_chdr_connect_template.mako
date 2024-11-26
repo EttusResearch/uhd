@@ -11,12 +11,12 @@
     .m_${port_name}_chdr_tdata  (m_${port_name}_chdr_tdata),
     .m_${port_name}_chdr_tlast  (m_${port_name}_chdr_tlast),
     .m_${port_name}_chdr_tvalid (m_${port_name}_chdr_tvalid),
-    .m_${port_name}_chdr_tready (m_${port_name}_chdr_tready)${"," if (idx < num_inputs -1) or (num_outputs > 0) else ""}
+    .m_${port_name}_chdr_tready (m_${port_name}_chdr_tready),
 %endfor
     // AXIS-CHDR from User Logic
 %for idx, port_name in enumerate(config['data']['outputs']):
     .s_${port_name}_chdr_tdata  (s_${port_name}_chdr_tdata),
     .s_${port_name}_chdr_tlast  (s_${port_name}_chdr_tlast),
     .s_${port_name}_chdr_tvalid (s_${port_name}_chdr_tvalid),
-    .s_${port_name}_chdr_tready (s_${port_name}_chdr_tready)${"," if (idx < num_outputs -1) else ""}
+    .s_${port_name}_chdr_tready (s_${port_name}_chdr_tready),
 %endfor

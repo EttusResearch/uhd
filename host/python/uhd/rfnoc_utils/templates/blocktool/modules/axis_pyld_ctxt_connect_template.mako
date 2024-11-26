@@ -18,7 +18,7 @@
     .m_${port_name}_context_tuser  (m_${port_name}_context_tuser),
     .m_${port_name}_context_tlast  (m_${port_name}_context_tlast),
     .m_${port_name}_context_tvalid (m_${port_name}_context_tvalid),
-    .m_${port_name}_context_tready (m_${port_name}_context_tready)${"," if (idx < num_inputs - 1) or (num_outputs > 0) else ""}
+    .m_${port_name}_context_tready (m_${port_name}_context_tready),
 %endfor
 %for idx, port_name in enumerate(config['data']['outputs']):
     // Payload Stream from User Logic: ${port_name}
@@ -32,5 +32,5 @@
     .s_${port_name}_context_tuser  (s_${port_name}_context_tuser),
     .s_${port_name}_context_tlast  (s_${port_name}_context_tlast),
     .s_${port_name}_context_tvalid (s_${port_name}_context_tvalid),
-    .s_${port_name}_context_tready (s_${port_name}_context_tready)${"," if (idx < num_outputs -1) else ""}
+    .s_${port_name}_context_tready (s_${port_name}_context_tready),
 %endfor
