@@ -175,8 +175,14 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         "fan0": "get_fan0_sensor",
         "fan1": "get_fan1_sensor",
         "temp_fpga": "get_fpga_temp_sensor",
-        "temp_main_power": "get_main_power_temp_sensor",
+        "temp_main_power0" : "get_main_power_temp_sensor0",
+        "temp_main_power1" : "get_main_power_temp_sensor1",
         "temp_scu_internal": "get_scu_internal_temp_sensor",
+        "temp_sample_clock_pcb" : "get_sample_clock_pcb_temp_sensor",
+        "temp_dram_pcb" : "get_dram_pcb_temp_sensor",
+        "temp_tmp464_internal" : "get_tmp464_internal_temp_sensor",
+        "temp_power_supply_pcb" : "get_power_supply_pcb_temp_sensor"
+
     }
     db_iface = X4xxDboardIface
     dboard_eeprom_magic = eeprom_magic
@@ -1028,18 +1034,46 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         self.log.trace("Reading FPGA temperature.")
         return get_temp_sensor(["RFSoC"], log=self.log)
 
-    def get_main_power_temp_sensor(self):
+    def get_main_power_temp_sensor0(self):
         """
-        Get temperature sensor reading of PM-BUS devices which supply
+        Get temperature sensor reading of PM-BUS 0 devices which supply
         0.85V power supply to RFSoC.
         """
-        self.log.trace("Reading PMBus Power Supply Chip(s) temperature.")
-        return get_temp_sensor(["PMBUS-0", "PMBUS-1"], log=self.log)
+        self.log.trace("Reading PMBus 0 Power Supply Chip(s) temperature.")
+        return get_temp_sensor(["PMBUS-0"], log=self.log)
+
+    def get_main_power_temp_sensor1(self):
+        """
+        Get temperature sensor reading of PM-BUS 1 devices which supply
+        0.85V power supply to RFSoC.
+        """
+        self.log.trace("Reading PMBus 1 Power Supply Chip(s) temperature.")
+        return get_temp_sensor(["PMBUS-1"], log=self.log)
 
     def get_scu_internal_temp_sensor(self):
         """Get temperature sensor reading of STM32 SCU's internal sensor."""
         self.log.trace("Reading SCU internal temperature.")
-        return get_temp_sensor(["EC Internal"], log=self.log)
+        return get_temp_sensor(["EC Internal"], log=self.log)    
+        
+    def get_sample_clock_pcb_temp_sensor(self):
+        """ Get temperature sensor reading of the SPLL. """
+        self.log.trace("Reading Sample Clock PCB temperature.")
+        return get_temp_sensor(["Sample Clock PCB"], log=self.log)
+    
+    def get_dram_pcb_temp_sensor(self):
+        """ Get temperature sensor reading of the DRAM. """
+        self.log.trace("Reading DRAM PCB temperature.")
+        return get_temp_sensor(["DRAM PCB"], log=self.log)
+    
+    def get_tmp464_internal_temp_sensor(self):
+        """ Get temperature sensor reading of the internal TMP464 sensor. """
+        self.log.trace("Reading TMP464 Internal temperature.")
+        return get_temp_sensor(["TMP464 Internal"], log=self.log)
+    
+    def get_power_supply_pcb_temp_sensor(self):
+        """ Get temperature sensor reading of the Power Supply PCB sensor. """
+        self.log.trace("Reading Power Supply PCB temperature.")
+        return get_temp_sensor(["Power Supply PCB"], log=self.log)
 
     def _get_fan_sensor(self, fan="fan0"):
         """Get fan speed."""
