@@ -25,6 +25,13 @@
 - re: ^host/docs/
   add:
     - uhd.docs
+# If a comment in a public header changed, then most likely the documentation
+# changed, but we still want to run other tests, too
+- re: ^host/include/uhd/.+\.hpp$
+  add:
+    - uhd.docs
+  include_content: comments
+  stop: False
 # Device-specific changes. These should trigger HW tests only on those devices
 # they affect. We start with daughterboard rules, then motherboard rules.
 - re: host/lib/usrp/dboard/zbx/
