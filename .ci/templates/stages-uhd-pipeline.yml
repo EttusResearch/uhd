@@ -375,7 +375,7 @@ stages:
           installer: nsis
 
 - stage: devtest_uhd_x3xx_b2xx_stage
-  displayName: devtest UHD x3xx b2xx
+  displayName: Dev Test UHD x3xx b2xx
   dependsOn:
   - build_uhd_stage_linux
   - analyze_changeset
@@ -399,7 +399,7 @@ stages:
       testDevices: 'x3xx,b2xx'
 
 - stage: devtest_uhd_n3xx_e320_stage
-  displayName: devtest UHD n3xx e320
+  displayName: Dev Test UHD n3xx e320
   dependsOn:
   - build_uhd_stage_linux
   - build_uhd_embedded_system_images
@@ -424,7 +424,7 @@ stages:
       testDevices: 'n3xx,e320'
 
 - stage: test_uhd_x4xx_sdrtest0_stage
-  displayName: Test UHD x4xx sdr-test-0
+  displayName: RF Test UHD x4xx sdr-test0
   dependsOn:
   - build_uhd_stage_linux
   - build_uhd_embedded_system_images
@@ -460,7 +460,7 @@ stages:
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
 
 - stage: test_uhd_x4xx_pebbles_stage
-  displayName: Test UHD x4xx pebbles
+  displayName: RF Test UHD x4xx pebbles
   dependsOn:
   - build_uhd_stage_linux
   - build_uhd_embedded_system_images
@@ -498,7 +498,7 @@ stages:
       testLength: ${{ parameters.testLength }}
 
 - stage: test_uhd_x4xx_saison_stage
-  displayName: Test UHD x4xx saison
+  displayName: RF Test UHD x4xx saison
   dependsOn:
   - build_uhd_stage_linux
   - build_uhd_embedded_system_images
@@ -531,7 +531,7 @@ stages:
       testLength: ${{ parameters.testLength }}
 
 - stage: test_uhd_rf_test_stage
-  displayName: Run rf tests n3xx
+  displayName: RF Test UHD n3xx pebbles
   dependsOn:
   - analyze_changeset
   - build_uhd_stage_linux
