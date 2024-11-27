@@ -196,7 +196,36 @@
 ###############################################################################
 # CI CHANGES
 ###############################################################################
-- re: .ci/templates/tests/templates/job-uhd-x4xx-hardware-tests.yml
+# Changes to pipeline infrastructure or build jobs -> build and test all
+- re: .ci/templates/stages-.*.yml
+  add:
+    - uhd.build.all
+    - hw.streaming.all
+    - hw.rf.all
+    - devtest.all
+- re: .ci/templates/.*-build.*.yml
+  add:
+    - uhd.build.all
+    - hw.streaming.all
+    - hw.rf.all
+    - devtest.all
+# Devtest
+- re: .ci/templates/.*-devtest.*.yml
+  add:
+    - uhd.build.linux
+    - devtest.all
+# RF Test
+- re: .ci/templates/.*-rf-tests.*.yml
+  add:
+    - uhd.build.linux
+    - hw.rf.all
+# Streaming Test
+- re: .ci/templates/.*-streaming.*.yml
+  add:
+    - uhd.build.linux
+    - hw.streaming.all
+# RF Test x4xx
+- re: .ci/templates/tests/.*.yml
   add:
     - uhd.build.linux
     - hw.rf.x4xx
