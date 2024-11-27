@@ -40,7 +40,7 @@ jobs:
         $AGENT_TEMPDIRECTORY/ac_venv/$VENV_BIN_DIR/python3 tools/changeset_testlist.py \
                 --target-branch $TARGET_BRANCH \
                 --set-azdo-var UhdTestList \
-                --list-tests $EXTRA_ARGS
+                --list-tests --verbose $EXTRA_ARGS
       name: gen_testlist
       displayName: Generate Test-List
       env:
