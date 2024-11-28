@@ -105,6 +105,14 @@ class ImageBuilderConfig:
         failure = ""
         # Check blocks outside of secure image core if they are allowed to be there
         for name, block in self.noc_blocks.items():
+            if block["block_desc"] not in block_defs:
+                error_msg = (
+                    f"Invalid configuration: The block {name} has an "
+                    f"unknown block description: {block['block_desc']}."
+                )
+                self.log.error(error_msg)
+                failure += error_msg + "\n"
+                continue
             desc = block_defs[block["block_desc"]]
             if getattr(desc, "secure_core", None):
                 error_msg = (
