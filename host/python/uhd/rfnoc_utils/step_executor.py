@@ -20,9 +20,9 @@ import sys
 from pathlib import Path
 
 import mako.lookup
-import mako.template
 from ruamel.yaml import YAML
 
+from .template import Template
 from .utils import resolve
 
 
@@ -159,9 +159,7 @@ class StepExecutor:
         )
         lookup = mako.lookup.TemplateLookup(directories=[template_dir])
         Path(dest).parent.mkdir(parents=True, exist_ok=True)
-        tpl = mako.template.Template(
-            filename=os.path.join(template_dir, template), lookup=lookup, strict_undefined=True
-        )
+        tpl = Template(filename=os.path.join(template_dir, template), lookup=lookup)
         vars = self.cmd.get("variables", {}).copy()
         # Make sure standard template variables are available
         if "year" in kwargs:

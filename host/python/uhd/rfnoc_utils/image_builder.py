@@ -20,11 +20,11 @@ import subprocess
 import sys
 
 import mako.lookup
-import mako.template
 from mako import exceptions
 
 from . import grc, yaml_utils
 from .builder_config import ImageBuilderConfig
+from .template import Template
 
 ### DATA ######################################################################
 # Directory under the FPGA repo where the device directories are
@@ -120,7 +120,7 @@ def write_verilog(config, destination, args, template):
     template_dir = os.path.join(os.path.dirname(__file__), "templates")
     lookup = mako.lookup.TemplateLookup(directories=[template_dir])
     tpl_filename = os.path.join(template_dir, template)
-    tpl = mako.template.Template(filename=tpl_filename, lookup=lookup, strict_undefined=True)
+    tpl = Template(filename=tpl_filename, lookup=lookup)
     try:
         block = tpl.render(**{"config": config, "args": args})
     except:
