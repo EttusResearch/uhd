@@ -12,6 +12,15 @@ This is a wrapper around the Mako templating engine.
 import mako.template
 
 
+def quote(s):
+    """Return a quoted string.
+
+    The intention is to use this in templates to quote strings, such that they
+    have quotes around them in the final output.
+    """
+    return f"'\"{s}\"'"
+
+
 class Template(mako.template.Template):
     """Wrapper around the Mako template engine."""
 
@@ -30,6 +39,8 @@ class Template(mako.template.Template):
 
         This is identical to the parent class, but with the following extensions:
 
-        - n/a
+        - A 'quote' filter is provided. It is aliased to 'q'.
         """
+        kwargs["quote"] = quote
+        kwargs["q"] = quote
         return super().render(**kwargs)
