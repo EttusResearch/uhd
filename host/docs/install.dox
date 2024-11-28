@@ -40,7 +40,7 @@ and compiler version used for the UHD binaries. This detail is indicated
 in the name of the installer executable;
 for example, uhd_4.7.0.0-release_Win64_VS2017.exe indicates it was built
 for the 64-bit Windows platform using the Visual Studio 2017 compiler suite.
-Copy all files from the path \VS20XX\MSYY\dll within the archive to the bin folder
+Copy all files from the path \\VS20XX\\MSYY\\dll within the archive to the bin folder
 of the UHD installation location (by default "C:\Program Files\UHD\bin").
 VS20XX is the Visual Studio version that you find in the name of the UHD installer.
 YY is the bitness of your Windows version (32 or 64).
