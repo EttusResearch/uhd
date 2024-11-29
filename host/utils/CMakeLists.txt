@@ -69,6 +69,14 @@ endif(ENABLE_PYMOD_UTILS)
 ########################################################################
 # Now, utilities which do not depend on Mako or ruamel.yaml
 ########################################################################
+# Decide if we install all utilities into the runtime path
+if(LINUX OR BSD OR CMAKE_SYSTEM_NAME STREQUAL "GNU")
+    set(UHD_INSTALL_ALL_UTILS TRUE)
+else()
+    set(UHD_INSTALL_ALL_UTILS FALSE)
+endif()
+
+
 if(ENABLE_PYMOD_UTILS OR ENABLE_UTILS)
     ### UHD Images downloader
     # Configure the scripts
@@ -91,14 +99,14 @@ if(ENABLE_PYMOD_UTILS OR ENABLE_UTILS)
         COMPONENT utilities
     )
     # On Linux/Unix systems, also install into $PATH
-    if(LINUX)
+    if(UHD_INSTALL_ALL_UTILS)
         UHD_INSTALL(PROGRAMS
             ${CMAKE_CURRENT_BINARY_DIR}/uhd_images_downloader.py
             RENAME uhd_images_downloader
             DESTINATION ${RUNTIME_DIR}
             COMPONENT utilities
         )
-    endif(LINUX)
+    endif()
     if(NOT HAVE_PYTHON_MODULE_REQUESTS)
         message(WARNING
             "Python module `requests' not found -- uhd_images_downloader.py "
@@ -120,7 +128,7 @@ if(ENABLE_PYMOD_UTILS OR ENABLE_UTILS)
                 COMPONENT utilities
             )
         endif(WIN32 AND UHD_RELEASE_MODE)
-        if(LINUX)
+        if(UHD_INSTALL_ALL_UTILS)
             UHD_INSTALL(PROGRAMS
                 usrp2_recovery.py
                 DESTINATION ${PKG_LIB_DIR}/utils
@@ -132,7 +140,7 @@ if(ENABLE_PYMOD_UTILS OR ENABLE_UTILS)
                 DESTINATION ${RUNTIME_DIR}
                 COMPONENT utilities
             )
-        endif(LINUX)
+        endif()
         UHD_INSTALL(PROGRAMS
             usrp2_card_burner.py
             DESTINATION ${PKG_LIB_DIR}/utils
