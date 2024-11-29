@@ -34,6 +34,7 @@ Vcs-Git: https://github.com/EttusResearch/uhd.git
 Package: uhd-host
 Architecture: any
 Depends: libuhd4.7.0 (= ${binary:Version}),
+         python3-uhd (= ${binary:Version}),
          python3,
          python3-mako,
          python3-numpy,
