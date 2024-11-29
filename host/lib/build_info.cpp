@@ -121,4 +121,10 @@ const std::string dpdk_version()
     return "N/A";
 #endif
 }
+
+const std::string pkg_data_dir()
+{
+    return "@PKG_DATA_DIR@";
+}
+
 }} // namespace uhd::build_info
