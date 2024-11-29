@@ -272,6 +272,15 @@ std::string uhd::get_pkg_path(void)
     return get_env_var("UHD_PKG_PATH", pkg_path.string());
 }
 
+
+std::string uhd::get_pkg_data_path()
+{
+    return get_env_var("UHD_PKG_DATA_PATH",
+        (fs::path(uhd::get_pkg_path() / fs::path(uhd::build_info::pkg_data_dir()))
+                .string()));
+}
+
+
 std::string uhd::get_lib_path(void)
 {
     fs::path runtime_libfile_path = boost::dll::this_line_location();
@@ -302,8 +311,9 @@ std::vector<fs::path> uhd::get_module_paths(void)
         paths.push_back(str_path);
     }
 
-    paths.push_back(fs::path(uhd::get_lib_path()) / "uhd" / "modules");
-    paths.push_back(fs::path(uhd::get_pkg_path()) / "share" / "uhd" / "modules");
+    constexpr char module_dir[] = "modules";
+    paths.push_back(fs::path(uhd::get_lib_path()) / "uhd" / module_dir);
+    paths.push_back(fs::path(uhd::get_pkg_data_path()) / module_dir);
 
     return paths;
 }
@@ -319,7 +329,7 @@ std::vector<fs::path> uhd::get_module_d_paths(void)
 
     constexpr char module_d_dir[] = "modules.d";
     paths.push_back(fs::path(uhd::get_lib_path()) / "uhd" / module_d_dir);
-    paths.push_back(fs::path(uhd::get_pkg_path()) / "share" / "uhd" / module_d_dir);
+    paths.push_back(fs::path(uhd::get_pkg_data_path()) / module_d_dir);
 
     return paths;
 }
@@ -466,11 +476,14 @@ std::string uhd::get_images_dir(const std::string& search_paths)
     }
 
     /* Finally, check for the default UHD images installation paths */
-    for (auto& prefix : {uhd::get_pkg_path(), uhd::build_info::install_prefix()}) {
-        fs::path default_images_path = fs::path(prefix) / "share" / "uhd" / "images";
-        if (fs::is_directory(default_images_path)) {
-            return default_images_path.string();
-        }
+    const auto pkg_data_imgs_dir = fs::path(uhd::get_pkg_data_path()) / "images";
+    if (fs::is_directory(pkg_data_imgs_dir)) {
+        return pkg_data_imgs_dir.string();
+    }
+    const auto install_prefix_imgs_dir =
+        fs::path(uhd::build_info::install_prefix()) / "share" / "uhd" / "images";
+    if (fs::is_directory(install_prefix_imgs_dir)) {
+        return install_prefix_imgs_dir.string();
     }
 
     /* No luck. Return an empty string. */

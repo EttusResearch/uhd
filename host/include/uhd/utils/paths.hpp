@@ -40,6 +40,16 @@ UHD_API std::string get_lib_path(void);
 // returning the parent directory of the library path.
 UHD_API std::string get_pkg_path(void);
 
+
+//! Get a string representing the system's package data directory ("share")
+//
+// This path is typically identical with get_pkg_path()/share/uhd, but can be
+// overridden with the UHD_PKG_DATA_PATH environment variable.
+//
+// This path is where UHD stores data files that are not part of the library
+// itself, such as images, RFNoC YAML files, and calibration data.
+UHD_API std::string get_pkg_data_path(void);
+
 //! Get a string representing the location of the calibration database
 UHD_API std::string get_cal_data_path(void);
 

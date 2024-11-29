@@ -19,6 +19,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/static.hpp>
+#include <uhdlib/utils/paths.hpp>
 #include <stdint.h>
 #include <boost/asio.hpp>
 #include <boost/assign.hpp>
