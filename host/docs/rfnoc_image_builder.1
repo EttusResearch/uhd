@@ -1,71 +1,119 @@
-.TH UHD "1" "August 2020" "UHD 4" "User Commands"
+.TH UHD "1" "December 2024" "UHD 4" "User Commands"
 .SH NAME
 rfnoc_image_builder - Build UHD image using RFNoC blocks.
 .SH USAGE
 rfnoc_image_builder [\-h] (\fB\-y\fR YAML_CONFIG | \fB\-r\fR GRC_CONFIG) [\-F FPGA_DIR]
-.TP
-[\-o IMAGE_CORE_OUTPUT] [\-x ROUTER_HEX_OUTPUT]
-[\-I INCLUDE_DIR] [\-b GRC_BLOCKS] [\-l LOG_LEVEL]
-[\-\-generate\-only] [\-d DEVICE] [\-t TARGET] [\-g] [\-c]
+[\-B BUILD_DIR] [\-O BUILD_OUTPUT_DIR] [\-E BUILD_IP_DIR] [\-o IMAGE_CORE_OUTPUT]
+[\-I INCLUDE_DIR] [\-b GRC_BLOCKS] [\-l LOG_LEVEL] [\-R] [\-G] [\-W] [\-S SECURE_CORE]
+[\-K SECURE_KEY] [\-d DEVICE] [\-n IMAGE_CORE_NAME] [\-t TARGET] [\-g] [\-Y] [\-C] [\-s]
+[\-P] [\-j JOBS] [\-c] [\-p VIVADO_PATH] [\-H] [\-D] [\-\-color {never,auto,always}]
 .SS "optional arguments:"
 .TP
 \fB\-h\fR, \fB\-\-help\fR
-show this help message and exit
+show a help message and exit
 .TP
 \fB\-y\fR YAML_CONFIG, \fB\-\-yaml\-config\fR YAML_CONFIG
-Path to yml configuration file
+Path to YAML configuration file (image core file). Either this option or \fB\-\-grc\-config\fR is required.
 .TP
 \fB\-r\fR GRC_CONFIG, \fB\-\-grc\-config\fR GRC_CONFIG
-Path to grc file to generate config from
+Path to .grc file to generate config from
 .TP
 \fB\-F\fR FPGA_DIR, \fB\-\-fpga\-dir\fR FPGA_DIR
-Path to directory for the FPGA source tree.Defaults to
+Path to directory for the FPGA source tree. Defaults to
 the FPGA source tree of the current repo.
 .TP
+\fB\-B\fR BUILD_DIR, \fB\-\-build\-dir\fR BUILD_DIR
+Path to directory where the image core and and build artifacts will be generated. Defaults to build-<image-core-name> in the same directory as the source file.
+.TP
+\fB\-O\fR BUILD_OUTPUT_DIR, \fB\-\-build\-output\-dir\fR BUILD_OUTPUT_DIR
+Path to directory for final FPGA build outputs. Defaults to
+the FPGA's top\-level directory + /build.
+.TP
+\fB\-E\fR BUILD_IP_DIR, \fB\-\-build\-ip\-dir\fR BUILD_IP_DIR
+Path to directory for IP build artifacts. Defaults to the
+FPGA's top\-level directory + /build\-ip.
+.TP
 \fB\-o\fR IMAGE_CORE_OUTPUT, \fB\-\-image\-core\-output\fR IMAGE_CORE_OUTPUT
-Path to where to save the image core Verilog source.
-Defaults to the directory of the YAML file, filename
-<DEVICE>_rfnoc_image_core.v
+DEPRECATED! This has been replaced by \fB\-\-build\-dir\fR.
 .TP
 \fB\-x\fR ROUTER_HEX_OUTPUT, \fB\-\-router\-hex\-output\fR ROUTER_HEX_OUTPUT
-Path to where to save the static router hex file.
-Defaults to the directory of the YAML file, filename
-<DEVICE>_static_router.hex
+DEPRECATED! This option will be ignored.
 .TP
 \fB\-I\fR INCLUDE_DIR, \fB\-\-include\-dir\fR INCLUDE_DIR
-Path directory of the RFNoC Out\-of\-Tree module
+Path to directory of the RFNoC Out\-of\-Tree module
 .TP
 \fB\-b\fR GRC_BLOCKS, \fB\-\-grc\-blocks\fR GRC_BLOCKS
-Path directory of GRC block descriptions (needed for
+Path to directory of GRC block descriptions (needed for
 \fB\-\-grc\-config\fR only)
 .TP
 \fB\-l\fR LOG_LEVEL, \fB\-\-log\-level\fR LOG_LEVEL
 Adjust log level
 .TP
-\fB\-\-generate\-only\fR
-Just generate files without building IP
+\fB\-R\fR, \fB\-\-reuse\fR
+Reuse existing files (do not regenerate image core).
+.TP
+\fB\-G\fR, \fB\-\-generate\-only\fR
+Just generate files without building the FPGA
+.TP
+\fB\-W\fR, \fB\-\-ignore\-warnings\fR
+Run build even when there are warnings in the build process.
+.TP
+\fB\-S\fR SECURE_CORE, \fB\-\-secure\-core\fR SECURE_CORE
+Build a secure image core instead of a bitfile. This argument provides the name of the generated YAML.
+.TP
+\fB\-K\fR SECURE_KEY, \fB\-\-secure\-key\fR SECURE_KEY
+Path to encryption key file to use for secure core.
 .TP
 \fB\-d\fR DEVICE, \fB\-\-device\fR DEVICE
-Device to be programmed [x300, x310, e310, e320, n300,
-n310, n320].Needs to be specified either here, or in
-the configuration file.
+Device to be programmed [x300, x310, e310, e320, n300, n310, n320, x410, x440]. Needs to be specified either here, or in the configuration file.
+.TP
+\fB\-n\fR IMAGE_CORE_NAME, \fB\-\-image\-core\-name\fR IMAGE_CORE_NAME, \fB\-\-image_core_name\fR IMAGE_CORE_NAME
+Name to use for the RFNoC image core. Defaults to name of the image core YML file, without the extension.
 .TP
 \fB\-t\fR TARGET, \fB\-\-target\fR TARGET
-Build target (e.g. X310_HG, N320_XG, ...). Needs to be
-specified either here, on the configuration file.
+Build target (e.g. X310_HG, N320_XG, ...). Needs to be specified either here, on the configuration file.
 .TP
 \fB\-g\fR, \fB\-\-GUI\fR
-Open Vivado GUI during the FPGA building process
+Open Vivado GUI during the FPGA building process.
+.TP
+\fB\-Y\fR, \fB\-\-SYNTH\fR
+Stop the FPGA build process after Synthesis.
+.TP
+\fB\-C\fR, \fB\-\-CHECK\fR
+Run elaboration only to check HDL syntax.
+.TP
+\fB\-s\fR, \fB\-\-save\-project\fR
+Save Vivado project to disk.
+.TP
+\fB\-P\fR, \fB\-\-ip\-only\fR
+Build only the required IPs.
+.TP
+\fB\-j\fR JOBS, \fB\-\-jobs\fR JOBS
+Number of parallel jobs to use with make.
 .TP
 \fB\-c\fR, \fB\-\-clean\-all\fR
-Cleans the IP before a new build
+Cleans the IP before a new build.
 .TP
-[\-o IMAGE_CORE_OUTPUT] [\-x ROUTER_HEX_OUTPUT]
-[\-I INCLUDE_DIR] [\-b GRC_BLOCKS] [\-l LOG_LEVEL]
-[\-\-generate\-only] [\-d DEVICE] [\-t TARGET] [\-g] [\-c]
+\fB\-p\fR VIVADO_PATH, \fB\-\-vivado\-path\fR VIVADO_PATH
+Path to the base install for Xilinx Vivado if not in default location (e.g., /tools/Xilinx/Vivado).
+.TP
+\fB\-H\fR, \fB\-\-no\-hash\fR
+Do not include source YAML hash in the generated source code.
+.TP
+\fB\-D\fR, \fB\-\-no\-date\fR
+Do not include date or time in the generated source code.
+.TP
+\fB\-\-color\fR {never,auto,always}
+Enable colorful output. When set to 'auto' will only show color output in TTY environments (e.g., interactive shells).
+.SH "DESCRIPTION"
+This tool takes a YAML configuration file and generates an FPGA bitfile that
+can be used with an RFNoC-capable UHD device. The YAML configuration file
+describes the RFNoC blocks that are to be included in the FPGA image, along with
+the connections between the blocks, and any additional configuration that is
+required for the blocks.
 .SH "SEE ALSO"
 UHD documentation:
-.B https://files.ettus.com/manual/
+.B https://uhd.readthedocs.io/
 .LP
 Other UHD programs:
 .sp
