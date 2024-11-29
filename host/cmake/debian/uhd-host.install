@@ -12,3 +12,4 @@ usr/bin/uhd_image_loader
 usr/bin/uhd_images_downloader
 usr/bin/uhd_usrp_probe
 usr/bin/usrp2_card_burner
+usr/share/uhd
