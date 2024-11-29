@@ -523,3 +523,8 @@ std::string uhd::print_utility_error(const std::string& name, const std::string&
            + "\"";
 #endif
 }
+
+std::string uhd::find_uhd_command(const std::string& command)
+{
+    return (fs::path(uhd::get_pkg_path()) / "bin" / command).string();
+}

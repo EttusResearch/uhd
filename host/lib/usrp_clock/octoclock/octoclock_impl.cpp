@@ -492,8 +492,7 @@ std::string octoclock_impl::_get_images_help_message(const std::string& addr)
 #endif
 
     // Get burner command
-    const std::string burner_path =
-        (fs::path(uhd::get_pkg_path()) / "bin" / "uhd_image_loader").string();
+    const std::string burner_path = uhd::find_uhd_command("uhd_image_loader");
     const std::string burner_cmd =
         str(boost::format("%s %s--addr=\"%s\"") % burner_path % ml % addr);
     return str(boost::format("%s\n%s")
