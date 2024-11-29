@@ -111,6 +111,7 @@ endif(ENABLE_MANUAL_OR_DOXYGEN)
 ########################################################################
 
 set(man_page_sources
+    uhd_adc_self_cal.1
     uhd_cal_rx_iq_balance.1
     uhd_cal_tx_dc_offset.1
     uhd_cal_tx_iq_balance.1
@@ -122,6 +123,7 @@ set(man_page_sources
     usrp_n2xx_simple_net_burner.1
     usrp2_card_burner.1
     rfnoc_modtool.1
+    rfnoc_image_builder.1
 )
 
 if (ENABLE_PYTHON_API)

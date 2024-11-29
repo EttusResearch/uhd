@@ -1,0 +1,88 @@
+.TH UHD "1" "August 2020" "UHD 4" "User Commands"
+.SH NAME
+rfnoc_image_builder - Build UHD image using RFNoC blocks.
+.SH USAGE
+rfnoc_image_builder [\-h] (\fB\-y\fR YAML_CONFIG | \fB\-r\fR GRC_CONFIG) [\-F FPGA_DIR]
+.TP
+[\-o IMAGE_CORE_OUTPUT] [\-x ROUTER_HEX_OUTPUT]
+[\-I INCLUDE_DIR] [\-b GRC_BLOCKS] [\-l LOG_LEVEL]
+[\-\-generate\-only] [\-d DEVICE] [\-t TARGET] [\-g] [\-c]
+.SS "optional arguments:"
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-y\fR YAML_CONFIG, \fB\-\-yaml\-config\fR YAML_CONFIG
+Path to yml configuration file
+.TP
+\fB\-r\fR GRC_CONFIG, \fB\-\-grc\-config\fR GRC_CONFIG
+Path to grc file to generate config from
+.TP
+\fB\-F\fR FPGA_DIR, \fB\-\-fpga\-dir\fR FPGA_DIR
+Path to directory for the FPGA source tree.Defaults to
+the FPGA source tree of the current repo.
+.TP
+\fB\-o\fR IMAGE_CORE_OUTPUT, \fB\-\-image\-core\-output\fR IMAGE_CORE_OUTPUT
+Path to where to save the image core Verilog source.
+Defaults to the directory of the YAML file, filename
+<DEVICE>_rfnoc_image_core.v
+.TP
+\fB\-x\fR ROUTER_HEX_OUTPUT, \fB\-\-router\-hex\-output\fR ROUTER_HEX_OUTPUT
+Path to where to save the static router hex file.
+Defaults to the directory of the YAML file, filename
+<DEVICE>_static_router.hex
+.TP
+\fB\-I\fR INCLUDE_DIR, \fB\-\-include\-dir\fR INCLUDE_DIR
+Path directory of the RFNoC Out\-of\-Tree module
+.TP
+\fB\-b\fR GRC_BLOCKS, \fB\-\-grc\-blocks\fR GRC_BLOCKS
+Path directory of GRC block descriptions (needed for
+\fB\-\-grc\-config\fR only)
+.TP
+\fB\-l\fR LOG_LEVEL, \fB\-\-log\-level\fR LOG_LEVEL
+Adjust log level
+.TP
+\fB\-\-generate\-only\fR
+Just generate files without building IP
+.TP
+\fB\-d\fR DEVICE, \fB\-\-device\fR DEVICE
+Device to be programmed [x300, x310, e310, e320, n300,
+n310, n320].Needs to be specified either here, or in
+the configuration file.
+.TP
+\fB\-t\fR TARGET, \fB\-\-target\fR TARGET
+Build target (e.g. X310_HG, N320_XG, ...). Needs to be
+specified either here, on the configuration file.
+.TP
+\fB\-g\fR, \fB\-\-GUI\fR
+Open Vivado GUI during the FPGA building process
+.TP
+\fB\-c\fR, \fB\-\-clean\-all\fR
+Cleans the IP before a new build
+.TP
+[\-o IMAGE_CORE_OUTPUT] [\-x ROUTER_HEX_OUTPUT]
+[\-I INCLUDE_DIR] [\-b GRC_BLOCKS] [\-l LOG_LEVEL]
+[\-\-generate\-only] [\-d DEVICE] [\-t TARGET] [\-g] [\-c]
+.SH "SEE ALSO"
+UHD documentation:
+.B https://files.ettus.com/manual/
+.LP
+Other UHD programs:
+.sp
+uhd_cal_tx_dc_offset(1) uhd_cal_rx_iq_balance(1) uhd_images_downloader(1)
+uhd_config_info(1) uhd_find_devices(1)
+.SH AUTHOR
+This manual page was written by Maitland Bottoms
+for the Debian project (but may be used by others).
+.SH COPYRIGHT
+Copyright (c) 2020 Ettus Research LLC
+.LP
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+.LP
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
