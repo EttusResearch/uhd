@@ -4,4 +4,3 @@ build-*
 *.jou
 vivado*.str
 ip/*/sim/
-dts/x4*0-version-info.dtsi

@@ -272,6 +272,7 @@ module x4xx (
 
   `include "regmap/global_regs_regmap_utils.vh"
   `include "regmap/versioning_utils.vh"
+  `include "../../lib/rfnoc/core/ctrlport.vh"
 
 
   //---------------------------------------------------------------------------
@@ -1922,6 +1923,15 @@ module x4xx (
   wire [31:0] db_ctrlport_resp_data    [0:NUM_DBOARDS-1];
   wire [ 1:0] db_ctrlport_resp_status  [0:NUM_DBOARDS-1];
 
+  // RF core ctrlport interface
+  wire        rf_core_ctrlport_req_rd       [0:NUM_DBOARDS-1];
+  wire        rf_core_ctrlport_req_wr       [0:NUM_DBOARDS-1];
+  wire [19:0] rf_core_ctrlport_req_addr     [0:NUM_DBOARDS-1];
+  wire [31:0] rf_core_ctrlport_req_data     [0:NUM_DBOARDS-1];
+  wire        rf_core_ctrlport_resp_ack     [0:NUM_DBOARDS-1];
+  wire [31:0] rf_core_ctrlport_resp_data    [0:NUM_DBOARDS-1];
+  wire [ 1:0] rf_core_ctrlport_resp_status  [0:NUM_DBOARDS-1];
+
   // GPIO to CPLD ctrlport interface
   wire        db_to_cpld_ctrlport_req_rd       [0:NUM_DBOARDS-1];
   wire        db_to_cpld_ctrlport_req_wr       [0:NUM_DBOARDS-1];
@@ -2162,6 +2172,22 @@ module x4xx (
           .version_info              (rf_core_version[db_i])
         );
       end // gen_rf_core_full
+
+    // terminate unused rf core ctrlport interfaces
+    ctrlport_terminator #(
+      .START_ADDRESS (0),
+      .LAST_ADDRESS  (2**CTRLPORT_ADDR_W-1)
+    ) pl_terminator (
+      .ctrlport_clk           (rfdc_clk[db_i]),
+      .ctrlport_rst           (radio_rst[db_i]),
+      .s_ctrlport_req_wr      (rf_core_ctrlport_req_wr[db_i]),
+      .s_ctrlport_req_rd      (rf_core_ctrlport_req_rd[db_i]),
+      .s_ctrlport_req_addr    (rf_core_ctrlport_req_addr[db_i]),
+      .s_ctrlport_req_data    (rf_core_ctrlport_req_data[db_i]),
+      .s_ctrlport_resp_ack    (rf_core_ctrlport_resp_ack[db_i]),
+      .s_ctrlport_resp_status (rf_core_ctrlport_resp_status[db_i]),
+      .s_ctrlport_resp_data   (rf_core_ctrlport_resp_data[db_i])
+    );
     end // gen_rf_cores
 
     `ifdef X440
@@ -2975,6 +3001,13 @@ module x4xx (
     .m_ctrlport_radio_resp_ack     ({ db_ctrlport_resp_ack     [1], db_ctrlport_resp_ack     [0] }),
     .m_ctrlport_radio_resp_status  ({ db_ctrlport_resp_status  [1], db_ctrlport_resp_status  [0] }),
     .m_ctrlport_radio_resp_data    ({ db_ctrlport_resp_data    [1], db_ctrlport_resp_data    [0] }),
+    .m_ctrlport_rf_core_req_wr     ({ rf_core_ctrlport_req_wr      [1], rf_core_ctrlport_req_wr      [0] }),
+    .m_ctrlport_rf_core_req_rd     ({ rf_core_ctrlport_req_rd      [1], rf_core_ctrlport_req_rd      [0] }),
+    .m_ctrlport_rf_core_req_addr   ({ rf_core_ctrlport_req_addr    [1], rf_core_ctrlport_req_addr    [0] }),
+    .m_ctrlport_rf_core_req_data   ({ rf_core_ctrlport_req_data    [1], rf_core_ctrlport_req_data    [0] }),
+    .m_ctrlport_rf_core_resp_ack   ({ rf_core_ctrlport_resp_ack    [1], rf_core_ctrlport_resp_ack    [0] }),
+    .m_ctrlport_rf_core_resp_status({ rf_core_ctrlport_resp_status [1], rf_core_ctrlport_resp_status [0] }),
+    .m_ctrlport_rf_core_resp_data  ({ rf_core_ctrlport_resp_data   [1], rf_core_ctrlport_resp_data   [0] }),
     .start_nco_reset               (start_nco_reset),
     .nco_reset_done                (nco_reset_done),
     .adc_reset_pulse               (adc_reset_pulse),

@@ -55,10 +55,96 @@ def parse_args():
     return parser.parse_args()
 
 
-def get_changed_files(repo_path, target_branch, source_branch, include_target):
+def check_changeset_content(file, **kwargs):
+    """Check changeset content for code and/or comments changes
+
+    For example, if a .cpp file only has a comment change, we can use this to
+    remove it from the "changed files" list. This is useful when we only want to
+    only include tests if the underlying code was actually changed, and not just
+    a comment (which cannot change the outcome of a hardware test).
+
+    The values of the include_content argument have the following meaning:
+    - 'code': at least one line with code changed
+    - 'code-only': all changed lines must be code changes
+    - 'comments': at least one line with comments changed
+    - 'comments-only': all changed lines must be comment changes
+    - 'code-and-comments': either code or comments changes (always True)
+
+    Arguments:
+    file: List of files that have been changed.
+    repo_path: Path to the UHD repository.
+    git_cmd: Path to the git command.
+    include_content: allowed values are: code, code-only, comments,
+        comments-only, code-and-comments
+
+    Returns: True if the file should be included, False otherwise.
     """
-    Returns a list of paths in the UHD repository that have are different between
-    two branches.
+
+    def identify_comment_line_cpp(line):
+        """Identify if a line is a comment in a C++ file."""
+        line = line.strip()
+        return line.startswith("//") or line.startswith("/*") or line.startswith("*")
+
+    def identify_comment_line_py(line):
+        """Identify if a line is a comment in a Python file."""
+        line = line.strip()
+        return line.startswith("#")
+
+    comment_identifer = {
+        ".cpp": identify_comment_line_cpp,
+        ".hpp": identify_comment_line_cpp,
+        ".c": identify_comment_line_cpp,
+        ".h": identify_comment_line_cpp,
+        ".py": identify_comment_line_py,
+    }
+
+    include_content = kwargs.get("include_content", None)
+    if include_content == "code-and-comments":
+        # No need to check, result will always be true
+        return True
+    elif include_content in ["code", "code-only"]:
+        invert = True
+    elif include_content in ["comments", "comments-only"]:
+        invert = False
+    else:
+        raise ValueError(f"Unsupported argument: include_content={include_content}")
+
+    target_branch = kwargs["target_branch"]
+    if kwargs.get("include_target"):
+        target_branch += "..."
+    get_diff_args = [
+        shutil.which("git"),
+        "-C",
+        kwargs["repo_path"],
+        "diff",
+        "--no-color",
+        "--unified=0",
+        target_branch,
+        "--",
+    ]
+
+    ext = os.path.splitext(file)[1]
+    if ext not in comment_identifer:
+        # If we have no rule to check, then always include the file.
+        return True
+    diff_lines = (
+        subprocess.check_output(get_diff_args + [file], encoding="utf-8").strip().split("\n")[4:]
+    )
+    line_matches = [comment_identifer[ext](line[1:])^invert for line in diff_lines if line[0] in ("-", "+")]
+    if include_content.endswith("-only"):
+        return all(line_matches)
+    else:
+        return any(line_matches)
+
+
+def get_changed_files(repo_path, target_branch, source_branch, include_target):
+    """Return a list of paths in the UHD repository that have are different between two branches.
+
+    Arguments:
+    repo_path: Path to the UHD repository.
+    target_branch: Branch to compare against (e.g., master).
+    source_branch: Branch to compare from. Defaults to the current branch.
+    include_target: Include changes that originate from the target branch.
     """
     assert target_branch
     # If include_target is false, then current (unstaged/uncommited) changes are
@@ -84,14 +170,16 @@ def load_rules(rule_file):
 class RuleApplier:
     """Helper class to update an internal test list based on a set of rules."""
 
-    def __init__(self, rules, labels):
+    def __init__(self, rules, labels, **kwargs):
         """Initialize.
 
         Arguments:
         rules: List of rules to apply.
+        labels: List of labels relevant to the current changeset.
         """
         self.rules = rules
         self.labels = labels
+        self.args = kwargs
         self.test_list = set()
 
     def apply(self, filename, verbose=False):
@@ -130,9 +218,20 @@ class RuleApplier:
         if verbose:
             sys.stderr.write(f"Filename {filename} matches rule: {rule}\n")
         if "label" in rule and not rule["label"] in self.labels:
+            if verbose:
+                sys.stderr.write(f"Skipping file based on missing label: {rule['label']}\n")
             return False
         if "label" in rule and verbose:
             sys.stderr.write(f"Label {rule['label']} found\n")
+        include_content = rule.get("include_content", "code")
+        if not check_changeset_content(
+            filename, **self.args, include_content=include_content
+        ):
+            if verbose:
+                sys.stderr.write(
+                    f"Skipping {filename} based on content rule: include_content='{include_content}'\n"
+                )
+            return False
         if "add" in rule:
             self.test_list.update(rule["add"])
         if "remove" in rule:
@@ -170,7 +269,15 @@ def main():
         args.include_target,
     )
     labels = get_labels(args.github_label_api_endpoint, args.github_token)
-    rule_applier = RuleApplier(load_rules(rule_file), labels)
+    rule_applier = RuleApplier(
+        load_rules(rule_file),
+        labels,
+        repo_path=args.repo_path,
+        target_branch=args.target_branch,
+        source_branch=args.source_branch,
+        include_target=args.include_target,
+        verbose=args.verbose,
+    )
     for filename in file_list:
         rule_applier.apply(filename, args.verbose)
     rule_applier.apply_labels()

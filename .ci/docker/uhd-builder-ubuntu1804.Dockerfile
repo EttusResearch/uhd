@@ -27,7 +27,6 @@ RUN apt-get update && \
         sudo \
     # Install UHD dependencies
         abi-dumper \
-        cmake \
         doxygen \
         dpdk \
         libboost-all-dev \
@@ -85,3 +84,10 @@ RUN python3 -m pip install \
         click-plugins \
         zmq \
         scipy
+
+RUN wget https://cmake.org/files/v3.12/cmake-3.12.4-Linux-x86_64.tar.gz -O /tmp/cmake.tar.gz && \
+        (echo "486edd6710b5250946b4b199406ccbf8f567ef0e23cfe38f7938b8c78a2ffa5f  /tmp/cmake.tar.gz" | sha256sum --check --status ) && \
+        tar -zxvf /tmp/cmake.tar.gz -C /opt && \
+        cp -r /opt/cmake-3.12.4-Linux-x86_64/bin/* /usr/local/bin/ && \
+        cp -r /opt/cmake-3.12.4-Linux-x86_64/share/* /usr/local/share/ && \
+        rm /tmp/cmake.tar.gz

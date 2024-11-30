@@ -37,8 +37,8 @@ jobs:
           devType: 'n3xx'
           devModel: 'n310'
           devName: pebbles-n310-0
-          devSerial: '3176DDF'
-          devHostname: 'ni-n3xx-3176DDF'
+          devSerial: '$(n310_devSerial)'
+          devHostname: 'ni-n3xx-$(n310_devSerial)'
           devBus: 'ip'
           devAddr: '192.168.40.17'
           sfpAddrs: '192.168.10.17,192.168.40.17'

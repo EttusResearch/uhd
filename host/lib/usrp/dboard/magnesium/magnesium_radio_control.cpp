@@ -897,7 +897,7 @@ double magnesium_radio_control_impl::get_rx_lo_freq(
     std::string source = this->get_rx_lo_source(name, chan);
     if (name == MAGNESIUM_LO1) {
         return _ad9371_freq.at(RX_DIRECTION);
-    } else if (name == "adf4531") {
+    } else if (name == MAGNESIUM_LO2) {
         return _adf4351_freq.at(RX_DIRECTION);
     } else {
         RFNOC_LOG_ERROR("get_rx_lo_freq(): No such LO: " << name);

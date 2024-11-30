@@ -184,12 +184,13 @@ static constexpr std::array<size_t, 2> ZBX_CHANNELS{0, 1};
 static constexpr double ZBX_MIX1_MN_THRESHOLD = 4e9;
 
 // These are addresses for the various table-based registers
-static constexpr uint32_t ATR_ADDR_0X = 0;
-static constexpr uint32_t ATR_ADDR_RX = 1;
-static constexpr uint32_t ATR_ADDR_TX = 2;
-static constexpr uint32_t ATR_ADDR_XX = 3; // Full-duplex
+static constexpr uint32_t ATR_ADDR_0X    = 0;
+static constexpr uint32_t ATR_ADDR_RX    = 1;
+static constexpr uint32_t ATR_ADDR_TX    = 2;
+static constexpr uint32_t ATR_ADDR_XX    = 3; // Full-duplex
+static constexpr uint32_t NUM_ATR_STATES = 4;
 // Helper for looping
-static constexpr std::array<uint32_t, 4> ATR_ADDRS{0, 1, 2, 3};
+static constexpr std::array<uint32_t, NUM_ATR_STATES> ATR_ADDRS{0, 1, 2, 3};
 
 // Turn clang-formatting off so it doesn't compress these tables into a mess.
 // clang-format off
