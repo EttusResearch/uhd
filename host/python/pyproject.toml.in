@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "uhd"
+version = "${UHD_VERSION_MAJOR}.${UHD_VERSION_API}.${UHD_VERSION_ABI}"
+description = "Universal Software Radio Peripheral (USRP) Hardware Driver Python API"
+keywords=["SDR", "UHD", "USRP"]
+authors=["Ettus Research <uhd.maintainer@emerson.com>"]
+license="GPLv3"
+exclude = [
+    "usrp_mpm"
+]
+
+[tool.poetry.dependencies]
+python = "~@Python_VERSION_MAJOR@.@Python_VERSION_MINOR@"
+numpy = "^@UHD_NUMPY_MIN_VERSION@"
+mako = ">=@UHD_PY_MAKO_MIN_VERSION@"
+ruamel-yaml = ">=@UHD_RUAMEL_YAML_MIN_VERSION@"
+
+[tool.poetry.build]
+# Poetry should build a platform specific wheel, because the binding lib
+# is build beforehand using cmake poetry does not know it should build
+# a platform specific wheel but by providing an empty `build.py`.
+script = "build.py"
+generate-setup-file = true
+
+[tool.black]
+line-length = 100
+
+[build-system]
+requires = ["poetry-core", "setuptools"]
+build-backend = "poetry.core.masonry.api"

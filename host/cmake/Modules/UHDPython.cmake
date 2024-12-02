@@ -63,6 +63,16 @@ print('{}.{}.{}'.format(
         OUTPUT_STRIP_TRAILING_WHITESPACE)
 endif(NOT PYTHON_VERSION)
 
+string(REPLACE "." ";" PYTHON_VERSION_LIST "${PYTHON_VERSION}")
+list(LENGTH PYTHON_VERSION_LIST PYTHON_VERSION_LIST_LEN)
+if(PYTHON_VERSION_LIST_LEN GREATER 1)
+    list(GET PYTHON_VERSION_LIST 0 Python_VERSION_MAJOR)
+    list(GET PYTHON_VERSION_LIST 1 Python_VERSION_MINOR)
+else(PYTHON_VERSION_LIST_LEN GREATER 1)
+    set(Python_VERSION_MAJOR "UNKNOWN")
+    set(Python_VERSION_MINOR "UNKNOWN")
+endif(PYTHON_VERSION_LIST_LEN GREATER 1)
+
 # If we still haven't found a Python interpreter, then we're done.
 if(NOT PYTHONINTERP_FOUND)
     message(FATAL_ERROR "Error: Python interpreter required by the build system.")

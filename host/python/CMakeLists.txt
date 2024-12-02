@@ -9,12 +9,16 @@
 ########################################################################
 
 # Global Python API constants
-set(SETUP_PY_IN    "${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in")
-set(SETUP_PY       "${CMAKE_CURRENT_BINARY_DIR}/setup.py")
-set(TIMESTAMP_FILE "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")
+set(SETUP_PY_IN       "${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in")
+set(SETUP_PY          "${CMAKE_CURRENT_BINARY_DIR}/setup.py")
+set(PYPROJECT_TOML_IN "${CMAKE_CURRENT_SOURCE_DIR}/pyproject.toml.in")
+set(PYPROJECT_TOML    "${CMAKE_CURRENT_BINARY_DIR}/pyproject.toml")
+set(TIMESTAMP_FILE    "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")
 # convert binary directory to native format to use in SETUP_PY file.
 file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR} NATIVE_CURRENT_BINARY_DIR)
 configure_file(${SETUP_PY_IN} ${SETUP_PY})
+configure_file(${PYPROJECT_TOML_IN} ${PYPROJECT_TOML})
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/build.py" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 
 # If we're not in a virtual environment, then we need to figure out where to
 # install the Python module. Do this here so we can use the value for UHD_PYTHON_DIR
@@ -214,6 +218,16 @@ add_custom_command(OUTPUT ${TIMESTAMP_FILE}
   COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} -q build
   COMMAND ${CMAKE_COMMAND} -E touch ${TIMESTAMP_FILE}
   DEPENDS ${PYUHD_FILES})
+
+if (WIN32)
+	add_custom_target(pyuhd_wheel ALL
+		DEPENDS ${PYUHD_FILES} pyuhd_library)
+	add_custom_command(
+		TARGET pyuhd_wheel
+		COMMAND ${PYTHON_EXECUTABLE} -m pip install poetry
+		COMMAND ${PYTHON_EXECUTABLE} -m poetry build
+	)
+endif(WIN32)
 
 add_custom_target(pyuhd_library ALL DEPENDS ${TIMESTAMP_FILE} pyuhd)
 
