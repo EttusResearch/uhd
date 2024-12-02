@@ -29,7 +29,7 @@ setup(
     ],
     keywords="SDR UHD USRP",
     author="Ettus Research",
-    author_email="packages@ettus.com",
+    author_email="uhd.maintainer@emerson.com",
     url="https://www.ettus.com/",
     license="GPLv3",
     package_dir={"": r"${NATIVE_CURRENT_BINARY_DIR}"},

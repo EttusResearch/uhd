@@ -75,7 +75,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--uploader-email",
-        default="packages@ettus.com",
+        default="uhd.maintainer@emerson.com",
         help="Uploader email (must match GPG key)",
     )
     parser.add_argument(

@@ -94,8 +94,8 @@ endif()
 # Setup CPack General
 ########################################################################
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Ettus Research - USRP Hardware Driver")
-set(CPACK_PACKAGE_VENDOR              "Ettus Research (National Instruments)")
-set(CPACK_PACKAGE_CONTACT             "Ettus Research <packages@ettus.com>")
+set(CPACK_PACKAGE_VENDOR              "Ettus Research (NI, now part of Emerson)")
+set(CPACK_PACKAGE_CONTACT             "Ettus Research <uhd.maintainer@emerson.com>")
 set(CPACK_PACKAGE_VERSION "${UHD_VERSION}")
 set(CPACK_RESOURCE_FILE_WELCOME ${UHD_SOURCE_DIR}/README.md)
 set(CPACK_RESOURCE_FILE_LICENSE ${UHD_SOURCE_DIR}/LICENSE)

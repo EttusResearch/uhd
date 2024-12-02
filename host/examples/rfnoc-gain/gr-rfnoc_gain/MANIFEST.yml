@@ -5,7 +5,7 @@ tags: # Tags are arbitrary, but look at CGRAN what other authors are using
   - sdr
   - rfnoc
 author:
-  - Ettus Research <packages@ettus.com>
+  - Ettus Research <uhd.maintainer@emerson.com>
 copyright_owner:
   - NI
 license:

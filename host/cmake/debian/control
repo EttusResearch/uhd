@@ -1,8 +1,8 @@
 Source: uhd
 Section: science
 Priority: optional
-Maintainer: Ettus Research <packages@ettus.com>
-Uploaders: Joerg Hofrichter <joerg.hofrichter@ni.com>
+Maintainer: Ettus Research <uhd.maintainer@emerson.com>
+Uploaders: Joerg Hofrichter <joerg.hofrichter@emerson.com>
 Build-Depends: cmake,
                debhelper (>= 9),
                libboost-date-time-dev,
