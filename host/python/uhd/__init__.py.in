@@ -51,9 +51,39 @@ if os.name == "nt":
             'For Python version < 3.8 the "UHD\\bin" directory needs to be added to PATH environment variable.'
         )
 
-from . import chdr, dsp, filters, rfnoc, types, usrp, usrp_clock, usrpctl
-from .libpyuhd import find, get_abi_string, get_component, get_version_string
-from .libpyuhd.paths import *  # noqa: F403
-from .property_tree import PropertyTree
+try:
+    from . import chdr, dsp, filters, rfnoc, types, usrp, usrp_clock, usrpctl
+    from .libpyuhd import find, get_abi_string, get_component, get_version_string
+    from .libpyuhd.paths import *  # noqa: F403
+    from .property_tree import PropertyTree
 
-__version__ = get_version_string()
+    __version__ = get_version_string()
+except ImportError as e:
+    enable_pymod_utils = "@ENABLE_PYMOD_UTILS@"
+    if enable_pymod_utils != "ON":
+        raise e
+
+    def get_tmp_path():
+        """Return the path to the temporary directory (Python-only version)."""
+        env_path = os.environ.get("UHD_TEMP_PATH")
+        if env_path is not None and os.path.isdir(env_path):
+            return env_path
+        import tempfile
+
+        return tempfile.gettempdir()
+
+    def get_pkg_path():
+        """Return the path to the UHD package directory (Python-only version)."""
+        env_path = os.environ.get("UHD_PKG_PATH")
+        if env_path is not None and os.path.isdir(env_path):
+            return env_path
+        return "@UHD_INSTALL_PATH@"
+
+    def get_pkg_data_path():
+        """Return the path to the UHD package directory (Python-only version)."""
+        env_path = os.environ.get("UHD_PKG_DATA_PATH")
+        if env_path is not None and os.path.isdir(env_path):
+            return env_path
+        return os.path.join("@CMAKE_INSTALL_PREFIX@", "@PKG_DATA_DIR@")
+
+    __version__ = "@UHD_VERSION@"
