@@ -8,13 +8,13 @@
 
 #include <uhd/config.hpp>
 #include <uhd/transport/buffer_pool.hpp>
-#include <uhd/transport/nirio/nirio_fifo.h>
-#include <uhd/transport/nirio/niriok_proxy.h>
-#include <uhd/transport/nirio/niusrprio_session.h>
 #include <uhd/types/device_addr.hpp>
 #include <uhdlib/transport/adapter_info.hpp>
 #include <uhdlib/transport/link_base.hpp>
 #include <uhdlib/transport/links.hpp>
+#include <uhdlib/transport/nirio/nirio_fifo.h>
+#include <uhdlib/transport/nirio/niriok_proxy.h>
+#include <uhdlib/transport/nirio/niusrprio_session.h>
 #include <memory>
 #include <vector>
 

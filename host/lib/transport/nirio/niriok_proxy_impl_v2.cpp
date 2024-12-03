@@ -6,7 +6,7 @@
 //
 
 
-#include <uhd/transport/nirio/niriok_proxy_impl_v2.h>
+#include <uhdlib/transport/nirio/niriok_proxy_impl_v2.h>
 #include <cstring>
 
 // "push" and "pop" introduced in GCC 4.6; works with all clang

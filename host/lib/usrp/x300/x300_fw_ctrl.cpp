@@ -8,12 +8,12 @@
 #include "x300_fw_common.h"
 #include "x300_regs.hpp"
 #include <uhd/exception.hpp>
-#include <uhd/transport/nirio/niriok_proxy.h>
-#include <uhd/transport/nirio/status.h>
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhdlib/transport/nirio/niriok_proxy.h>
+#include <uhdlib/transport/nirio/status.h>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/format.hpp>
 #include <chrono>

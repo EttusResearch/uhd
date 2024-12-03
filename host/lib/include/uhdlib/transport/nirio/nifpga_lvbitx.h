@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include <uhd/transport/nirio/nirio_resource_manager.h>
-#include <uhd/transport/nirio/niriok_proxy.h>
+#include <uhdlib/transport/nirio/nirio_resource_manager.h>
+#include <uhdlib/transport/nirio/niriok_proxy.h>
 
 namespace uhd { namespace niusrprio {
 

@@ -12,12 +12,12 @@
 #include <uhd/device.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/image_loader.hpp>
-#include <uhd/transport/nirio/niusrprio_session.h>
-#include <uhd/transport/nirio/status.h>
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/static.hpp>
+#include <uhdlib/transport/nirio/niusrprio_session.h>
+#include <uhdlib/transport/nirio/status.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/property_tree/ptree.hpp>

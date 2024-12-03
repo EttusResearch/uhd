@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <uhd/transport/nirio/rpc/rpc_common.hpp>
+#include <uhdlib/transport/nirio/rpc/rpc_common.hpp>
 
 namespace uhd { namespace usrprio_rpc {
 

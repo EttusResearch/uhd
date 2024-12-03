@@ -8,9 +8,9 @@
 #pragma once
 
 #include <uhd/config.hpp>
-#include <uhd/transport/nirio/niusrprio_session.h>
 #include <uhd/transport/zero_copy.hpp>
 #include <uhd/types/device_addr.hpp>
+#include <uhdlib/transport/nirio/niusrprio_session.h>
 #include <stdint.h>
 #include <memory>
 

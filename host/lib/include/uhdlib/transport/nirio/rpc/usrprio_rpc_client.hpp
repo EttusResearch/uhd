@@ -7,10 +7,10 @@
 
 #pragma once
 
-#include <uhd/transport/nirio/rpc/rpc_client.hpp>
-#include <uhd/transport/nirio/rpc/rpc_common.hpp>
-#include <uhd/transport/nirio/rpc/usrprio_rpc_common.hpp>
-#include <uhd/transport/nirio/status.h>
+#include <uhdlib/transport/nirio/rpc/rpc_client.hpp>
+#include <uhdlib/transport/nirio/rpc/rpc_common.hpp>
+#include <uhdlib/transport/nirio/rpc/usrprio_rpc_common.hpp>
+#include <uhdlib/transport/nirio/status.h>
 
 namespace uhd { namespace usrprio_rpc {
 

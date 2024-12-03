@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include <uhd/transport/nirio/nirio_fifo.h>
-#include <uhd/transport/nirio/niriok_proxy.h>
+#include <uhdlib/transport/nirio/nirio_fifo.h>
+#include <uhdlib/transport/nirio/niriok_proxy.h>
 #include <stdint.h>
 #include <map>
 #include <string>

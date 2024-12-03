@@ -5,8 +5,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhd/transport/nirio/rpc/usrprio_rpc_client.hpp>
 #include <uhd/utils/platform.hpp>
+#include <uhdlib/transport/nirio/rpc/usrprio_rpc_client.hpp>
 
 namespace {
 constexpr int64_t DEFAULT_TIMEOUT_IN_MS = 5000;

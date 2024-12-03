@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <uhd/transport/nirio/nifpga_lvbitx.h>
+#include <uhdlib/transport/nirio/nifpga_lvbitx.h>
 
 namespace uhd {{ namespace niusrprio {{
 

@@ -8,7 +8,7 @@
 #pragma once
 
 #include <uhd/config.hpp>
-#include <uhd/transport/nirio/status.h>
+#include <uhdlib/transport/nirio/status.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string>

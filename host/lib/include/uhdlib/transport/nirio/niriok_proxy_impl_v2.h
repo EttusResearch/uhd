@@ -7,24 +7,23 @@
 
 #pragma once
 
-#include <uhd/transport/nirio/nirio_driver_iface.h>
-#include <uhd/transport/nirio/nirio_quirks.h>
-#include <uhd/transport/nirio/niriok_proxy.h>
-#include <uhd/utils/noncopyable.hpp>
+#include <uhdlib/transport/nirio/nirio_driver_iface.h>
+#include <uhdlib/transport/nirio/nirio_quirks.h>
+#include <uhdlib/transport/nirio/niriok_proxy.h>
 
 namespace uhd { namespace niusrprio {
 /*
    This file defines the types, enumerations, and classes needed to
    directly access a subset of the NI-RIO kernel interface.
-   These definitions are specific to NI-RIO versions < 14.0.  These
-   are not compatible with NI-RIO 14.0 and later.
+   These definitions are specific to NI-RIO versions >= 14.0.  These
+   are not compatible with NI-RIO versions older than 14.0.
 */
 
-class UHD_API niriok_proxy_impl_v1 : virtual public niriok_proxy
+class UHD_API niriok_proxy_impl_v2 : virtual public niriok_proxy
 {
 public:
-    niriok_proxy_impl_v1();
-    virtual ~niriok_proxy_impl_v1();
+    niriok_proxy_impl_v2();
+    virtual ~niriok_proxy_impl_v2();
 
     // File operations
     virtual nirio_status open(const std::string& interface_path);
@@ -108,12 +107,6 @@ public:
 protected:
     // protected close function that doesn't acquire synchronization lock
     virtual void _close();
-
-private:
-    nirio_status sync_operation(const void* writeBuffer,
-        size_t writeBufferLength,
-        void* readBuffer,
-        size_t readBufferLength);
 };
 
 }} // namespace uhd::niusrprio

@@ -5,9 +5,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhd/transport/nirio/nirio_fifo.h>
-#include <uhd/transport/nirio_zero_copy.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhdlib/transport/nirio/nirio_fifo.h>
+#include <uhdlib/transport/nirio_zero_copy.hpp>
 #include <uhdlib/utils/atomic.hpp>
 #include <stdio.h>
 #include <boost/date_time/posix_time/posix_time.hpp>

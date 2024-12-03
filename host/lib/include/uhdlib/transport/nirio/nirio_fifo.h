@@ -9,10 +9,10 @@
 
 #pragma once
 
-#include <uhd/transport/nirio/nirio_driver_iface.h>
-#include <uhd/transport/nirio/niriok_proxy.h>
-#include <uhd/transport/nirio/status.h>
 #include <uhd/utils/noncopyable.hpp>
+#include <uhdlib/transport/nirio/nirio_driver_iface.h>
+#include <uhdlib/transport/nirio/niriok_proxy.h>
+#include <uhdlib/transport/nirio/status.h>
 #include <atomic>
 #include <chrono>
 #include <cstdint>
@@ -232,6 +232,6 @@ private: // Members
     static const uint32_t FIFO_LOCK_TIMEOUT_IN_MS = 5000;
 };
 
-#include <uhd/transport/nirio/nirio_fifo.ipp>
+#include <uhdlib/transport/nirio/nirio_fifo.ipp>
 
 }} // namespace uhd::niusrprio

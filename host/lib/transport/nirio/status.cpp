@@ -6,7 +6,7 @@
 //
 
 
-#include <uhd/transport/nirio/status.h>
+#include <uhdlib/transport/nirio/status.h>
 #include <boost/format.hpp>
 
 namespace uhd { namespace niusrprio {
@@ -14,7 +14,7 @@ namespace uhd { namespace niusrprio {
 #define NIRIO_ERR_INFO(CONST_NAME, ERR_CODE, ERR_MSG) nirio_err_info(ERR_CODE, ERR_MSG),
 
 const nirio_err_info nirio_err_info::NIRIO_ERROR_TABLE[] = {
-#include "../../../include/uhd/transport/nirio/nirio_err_template.h"
+#include "../../../include/uhdlib/transport/nirio/nirio_err_template.h"
 };
 
 #undef NIRIO_ERR_INFO

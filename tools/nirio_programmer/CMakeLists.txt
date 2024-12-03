@@ -45,6 +45,7 @@ include(UHDBoost)
 ### Configure Compiler ########################################################
 include_directories(
     "${CMAKE_CURRENT_SOURCE_DIR}/../../host/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../host/lib/include"
     ${Boost_INCLUDE_DIRS}
     ${UHD_INCLUDE_DIRS}
 )

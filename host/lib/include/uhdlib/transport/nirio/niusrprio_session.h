@@ -8,11 +8,11 @@
 
 #pragma once
 
-#include <uhd/transport/nirio/nifpga_lvbitx.h>
-#include <uhd/transport/nirio/nirio_resource_manager.h>
-#include <uhd/transport/nirio/niriok_proxy.h>
-#include <uhd/transport/nirio/rpc/usrprio_rpc_client.hpp>
 #include <uhd/utils/noncopyable.hpp>
+#include <uhdlib/transport/nirio/nifpga_lvbitx.h>
+#include <uhdlib/transport/nirio/nirio_resource_manager.h>
+#include <uhdlib/transport/nirio/niriok_proxy.h>
+#include <uhdlib/transport/nirio/rpc/usrprio_rpc_client.hpp>
 #include <cstdint>
 #include <mutex>
 #include <string>

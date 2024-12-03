@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include <uhd/transport/nirio/nirio_driver_iface.h>
-#include <uhd/transport/nirio/nirio_quirks.h>
 #include <uhd/utils/noncopyable.hpp>
+#include <uhdlib/transport/nirio/nirio_driver_iface.h>
+#include <uhdlib/transport/nirio/nirio_quirks.h>
 #include <stdint.h>
 #include <boost/thread/locks.hpp>
 #include <boost/thread/shared_mutex.hpp>

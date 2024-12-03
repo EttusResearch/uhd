@@ -15,9 +15,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/transport/nirio/niusrprio_session.h>
-#include <uhd/transport/nirio/niriok_proxy.h>
-#include <uhd/transport/nirio/nifpga_lvbitx.h>
+#include <uhdlib/transport/nirio/niusrprio_session.h>
+#include <uhdlib/transport/nirio/niriok_proxy.h>
+#include <uhdlib/transport/nirio/nifpga_lvbitx.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>

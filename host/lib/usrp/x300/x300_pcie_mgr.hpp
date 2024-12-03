@@ -11,10 +11,10 @@
 #include "x300_device_args.hpp"
 #include "x300_mboard_type.hpp"
 #include <uhd/property_tree.hpp>
-#include <uhd/transport/nirio/niusrprio_session.h>
 #include <uhd/types/direction.hpp>
 #include <uhdlib/rfnoc/rfnoc_common.hpp>
 #include <uhdlib/transport/links.hpp>
+#include <uhdlib/transport/nirio/niusrprio_session.h>
 #include <mutex>
 
 namespace uhd { namespace usrp { namespace x300 {
