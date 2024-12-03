@@ -81,17 +81,16 @@ UHD_INLINE bool wait_for_recv_ready(int sock_fd, int32_t timeout_ms)
 }
 
 UHD_INLINE socket_sptr open_udp_socket(
-    const std::string& addr, const std::string& port, boost::asio::io_service& io_service)
+    const std::string& addr, const std::string& port, boost::asio::io_context& io_context)
 {
     using udp = boost::asio::ip::udp;
 
     // resolve the address
-    udp::resolver resolver(io_service);
-    udp::resolver::query query(udp::v4(), addr, port);
-    udp::endpoint receiver_endpoint = *resolver.resolve(query);
+    udp::resolver resolver(io_context);
+    udp::endpoint receiver_endpoint = *resolver.resolve(udp::v4(), addr, port).begin();
 
     // create, open, and connect the socket
-    socket_sptr socket = socket_sptr(new udp::socket(io_service));
+    socket_sptr socket = socket_sptr(new udp::socket(io_context));
     socket->open(udp::v4());
     socket->connect(receiver_endpoint);
 

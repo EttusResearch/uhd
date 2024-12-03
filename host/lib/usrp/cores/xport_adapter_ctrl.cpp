@@ -28,13 +28,12 @@ std::pair<uint32_t, uint32_t> cast_ipv4_and_port(
     const std::string& ipv4, const std::string& port)
 {
     using namespace boost::asio;
-    io_service io_service;
-    ip::udp::resolver resolver(io_service);
+    io_context io_context;
+    ip::udp::resolver resolver(io_context);
     try {
-        ip::udp::resolver::query query(ip::udp::v4(), ipv4, port);
-        ip::udp::endpoint endpoint = *resolver.resolve(query);
+        ip::udp::endpoint endpoint = *(resolver.resolve(ipv4, port).begin());
         return {
-            uint32_t(endpoint.address().to_v4().to_ulong()), uint32_t(endpoint.port())};
+            uint32_t(endpoint.address().to_v4().to_uint()), uint32_t(endpoint.port())};
     } catch (const std::exception&) {
         throw uhd::value_error("Invalid UDP address: " + ipv4 + ":" + port);
     }

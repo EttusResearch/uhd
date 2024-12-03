@@ -161,7 +161,7 @@ public:
         check_registry_for_fast_send_threshold(this->get_send_frame_size());
 #endif /*CHECK_REG_SEND_THRESH*/
 
-        _socket  = open_udp_socket(addr, port, _io_service);
+        _socket  = open_udp_socket(addr, port, _io_context);
         _sock_fd = _socket->native_handle();
 
         UHD_LOGGER_TRACE("UDP") << boost::format("Local UDP socket endpoint: %s:%s")
@@ -252,7 +252,7 @@ private:
     size_t _next_recv_buff_index, _next_send_buff_index;
 
     // asio guts -> socket and service
-    asio::io_service _io_service;
+    asio::io_context _io_context;
     socket_sptr _socket;
     int _sock_fd;
 };

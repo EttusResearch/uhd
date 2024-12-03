@@ -19,9 +19,9 @@ namespace detail {
 //! \brief Common logic for classes that have a write queue with async writing.
 class async_writer : public std::enable_shared_from_this<async_writer> {
 public:
-    async_writer(boost::asio::io_service *io,
+    async_writer(boost::asio::io_context* io,
                  boost::asio::ip::tcp::socket socket)
-        : socket_(std::move(socket)), write_strand_(*io), exit_(false) {}
+        : socket_(std::move(socket)), write_strand_(io->get_executor()), exit_(false) {}
 
     void do_write() {
         if (exit_) {
@@ -31,9 +31,9 @@ public:
         auto &item = write_queue_.front();
         // the data in item remains valid until the handler is called
         // since it will still be in the queue physically until then.
-        boost::asio::async_write(
-            socket_, boost::asio::buffer(item.data(), item.size()),
-            write_strand_.wrap(
+        boost::asio::async_write(socket_,
+            boost::asio::buffer(item.data(), item.size()),
+            boost::asio::bind_executor(write_strand_,
                 [this, self](boost::system::error_code ec, std::size_t transferred) {
                     (void)transferred;
                     if (!ec) {
@@ -69,7 +69,7 @@ public:
 
 protected:
     boost::asio::ip::tcp::socket socket_;
-    boost::asio::io_service::strand write_strand_;
+    boost::asio::strand<boost::asio::io_context::executor_type> write_strand_;
     std::atomic_bool exit_{false};
     bool exited_ = false;
     std::mutex m_exit_;

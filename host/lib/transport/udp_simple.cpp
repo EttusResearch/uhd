@@ -8,7 +8,6 @@
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/transport/udp_common.hpp>
-#include <boost/format.hpp>
 
 using namespace uhd::transport;
 namespace asio = boost::asio;
@@ -23,17 +22,19 @@ public:
         const std::string& addr, const std::string& port, bool bcast, bool connect)
         : _connected(connect)
     {
-        UHD_LOGGER_TRACE("UDP")
-            << boost::format("Creating udp transport for %s %s") % addr % port;
+        UHD_LOG_TRACE("UDP", "Creating udp transport for " << addr << " " << port);
 
         // resolve the address
-        asio::ip::udp::resolver resolver(_io_service);
-        asio::ip::udp::resolver::query query(
-            asio::ip::udp::v4(), addr, port, asio::ip::resolver_query_base::all_matching);
-        _send_endpoint = *resolver.resolve(query);
+        asio::ip::udp::resolver resolver(_io_context);
+        _send_endpoint = *resolver
+                              .resolve(asio::ip::udp::v4(),
+                                  addr,
+                                  port,
+                                  asio::ip::resolver_query_base::all_matching)
+                              .begin();
 
         // create and open the socket
-        _socket = socket_sptr(new asio::ip::udp::socket(_io_service));
+        _socket = socket_sptr(new asio::ip::udp::socket(_io_context));
         _socket->open(asio::ip::udp::v4());
 
         // allow broadcasting
@@ -72,7 +73,7 @@ public:
 
 private:
     bool _connected;
-    asio::io_service _io_service;
+    asio::io_context _io_context;
     socket_sptr _socket;
     asio::ip::udp::endpoint _send_endpoint;
     asio::ip::udp::endpoint _recv_endpoint;

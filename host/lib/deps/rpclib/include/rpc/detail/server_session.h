@@ -22,7 +22,7 @@ namespace detail {
 
 class server_session : public async_writer {
 public:
-    server_session(server *srv, boost::asio::io_service *io,
+    server_session(server* srv, boost::asio::io_context* io,
                    boost::asio::ip::tcp::socket socket,
                    std::shared_ptr<dispatcher> disp, bool suppress_exceptions);
     void start();
@@ -34,8 +34,8 @@ private:
 
 private:
     server* parent_;
-    boost::asio::io_service *io_;
-    boost::asio::io_service::strand read_strand_;
+    boost::asio::io_context* io_;
+    boost::asio::strand<boost::asio::io_context::executor_type> read_strand_;
     std::shared_ptr<dispatcher> disp_;
     RPCLIB_MSGPACK::unpacker pac_;
     RPCLIB_MSGPACK::sbuffer output_buf_;

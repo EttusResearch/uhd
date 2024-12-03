@@ -44,13 +44,37 @@ BOOST_AUTO_TEST_CASE(test_eeprom_duplicate_check)
         map_list_of("0", "b")("1", "B");
     const std::vector<std::string> keys = {"0", "1", "2"};
 
-    BOOST_CHECK_EQUAL(check_for_duplicates<upper_case_char>(
-                          "TEST", new_eeprom_no_dups, curr_eeprom, "Test Value", keys),
+    BOOST_CHECK_EQUAL(check_for_duplicates("TEST",
+                          new_eeprom_no_dups,
+                          curr_eeprom,
+                          "Test Value",
+                          keys,
+                          [](const std::string& str) {
+                              return upper_case_char::from_string(str).to_string();
+                          }),
         false);
-    BOOST_CHECK(check_for_duplicates<upper_case_char>(
-        "TEST", new_eeprom_dups_in_curr, curr_eeprom, "Test Value", keys));
-    BOOST_CHECK(check_for_duplicates<upper_case_char>(
-        "TEST", new_eeprom_dups_in_new, curr_eeprom, "Test Value", keys));
-    BOOST_CHECK(check_for_duplicates<upper_case_char>(
-        "TEST", new_eeprom_dups_in_both, curr_eeprom, "Test Value", keys));
+    BOOST_CHECK(check_for_duplicates("TEST",
+        new_eeprom_dups_in_curr,
+        curr_eeprom,
+        "Test Value",
+        keys,
+        [](const std::string& str) {
+            return upper_case_char::from_string(str).to_string();
+        }));
+    BOOST_CHECK(check_for_duplicates("TEST",
+        new_eeprom_dups_in_new,
+        curr_eeprom,
+        "Test Value",
+        keys,
+        [](const std::string& str) {
+            return upper_case_char::from_string(str).to_string();
+        }));
+    BOOST_CHECK(check_for_duplicates("TEST",
+        new_eeprom_dups_in_both,
+        curr_eeprom,
+        "Test Value",
+        keys,
+        [](const std::string& str) {
+            return upper_case_char::from_string(str).to_string();
+        }));
 }

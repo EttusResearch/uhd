@@ -141,8 +141,7 @@ void usrp2_impl::set_mb_eeprom(const std::string& mb, const mboard_eeprom_t& mb_
 
     if (mb_eeprom.has_key("ip-addr")) {
         byte_vector_t ip_addr_bytes(4);
-        byte_copy(
-            boost::asio::ip::address_v4::from_string(mb_eeprom["ip-addr"]).to_bytes(),
+        byte_copy(boost::asio::ip::make_address_v4(mb_eeprom["ip-addr"]).to_bytes(),
             ip_addr_bytes);
         iface->write_eeprom(
             N200_EEPROM_ADDR, offsetof(n200_eeprom_map, ip_addr), ip_addr_bytes);
@@ -150,8 +149,7 @@ void usrp2_impl::set_mb_eeprom(const std::string& mb, const mboard_eeprom_t& mb_
 
     if (mb_eeprom.has_key("subnet")) {
         byte_vector_t ip_addr_bytes(4);
-        byte_copy(
-            boost::asio::ip::address_v4::from_string(mb_eeprom["subnet"]).to_bytes(),
+        byte_copy(boost::asio::ip::make_address_v4(mb_eeprom["subnet"]).to_bytes(),
             ip_addr_bytes);
         iface->write_eeprom(
             N200_EEPROM_ADDR, offsetof(n200_eeprom_map, subnet), ip_addr_bytes);
@@ -159,8 +157,7 @@ void usrp2_impl::set_mb_eeprom(const std::string& mb, const mboard_eeprom_t& mb_
 
     if (mb_eeprom.has_key("gateway")) {
         byte_vector_t ip_addr_bytes(4);
-        byte_copy(
-            boost::asio::ip::address_v4::from_string(mb_eeprom["gateway"]).to_bytes(),
+        byte_copy(boost::asio::ip::make_address_v4(mb_eeprom["gateway"]).to_bytes(),
             ip_addr_bytes);
         iface->write_eeprom(
             N200_EEPROM_ADDR, offsetof(n200_eeprom_map, gateway), ip_addr_bytes);

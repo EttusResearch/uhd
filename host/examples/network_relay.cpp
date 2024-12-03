@@ -78,21 +78,21 @@ public:
         : _port(port)
     {
         {
-            asio::ip::udp::resolver resolver(_io_service);
-            asio::ip::udp::resolver::query query(asio::ip::udp::v4(), server_addr, port);
-            asio::ip::udp::endpoint endpoint = *resolver.resolve(query);
+            asio::ip::udp::resolver resolver(_io_context);
+            asio::ip::udp::endpoint endpoint =
+                *resolver.resolve(asio::ip::udp::v4(), server_addr, port).begin();
 
             _server_socket = std::shared_ptr<asio::ip::udp::socket>(
-                new asio::ip::udp::socket(_io_service, endpoint));
+                new asio::ip::udp::socket(_io_context, endpoint));
             resize_buffs(_server_socket, server_rx_size, server_tx_size);
         }
         {
-            asio::ip::udp::resolver resolver(_io_service);
-            asio::ip::udp::resolver::query query(asio::ip::udp::v4(), client_addr, port);
-            asio::ip::udp::endpoint endpoint = *resolver.resolve(query);
+            asio::ip::udp::resolver resolver(_io_context);
+            asio::ip::udp::endpoint endpoint =
+                *resolver.resolve(asio::ip::udp::v4(), client_addr, port).begin();
 
             _client_socket = std::shared_ptr<asio::ip::udp::socket>(
-                new asio::ip::udp::socket(_io_service));
+                new asio::ip::udp::socket(_io_context));
             _client_socket->open(asio::ip::udp::v4());
             _client_socket->connect(endpoint);
             resize_buffs(_client_socket, client_rx_size, client_tx_size);
@@ -173,7 +173,7 @@ private:
 
     const std::string _port;
     boost::thread_group _thread_group;
-    asio::io_service _io_service;
+    asio::io_context _io_context;
     asio::ip::udp::endpoint _endpoint;
     std::mutex _endpoint_mutex;
     socket_type _server_socket, _client_socket;

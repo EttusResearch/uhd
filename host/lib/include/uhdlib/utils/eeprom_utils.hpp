@@ -10,7 +10,6 @@
 #include <uhd/types/dict.hpp>
 #include <uhd/types/mac_addr.hpp>
 #include <uhd/utils/log.hpp>
-#include <boost/asio/ip/address_v4.hpp>
 #include <string>
 #include <vector>
 
@@ -29,7 +28,7 @@ std::string uint16_bytes_to_string(const uhd::byte_vector_t& bytes);
  * see if the resulting contents will contain duplicates.  Useful error
  * messages are logged describing any duplicates.
  *
- * <field_type> must provide to_string() and from_string() functions
+ * <field_type> must provide from_string() functions
  *
  * \param error_label Label to put on error messages
  * \param new_eeprom New EEPROM contents
@@ -38,12 +37,13 @@ std::string uint16_bytes_to_string(const uhd::byte_vector_t& bytes);
  * \param keys Keys to examine for duplicate values
  * \return true if duplicates are found, false if not
  */
-template <typename field_type>
+template <typename str_normalizer_type>
 bool check_for_duplicates(const std::string& error_label,
     const uhd::dict<std::string, std::string>& new_eeprom,
     const uhd::dict<std::string, std::string>& curr_eeprom,
     const std::string& category,
-    const std::vector<std::string>& keys)
+    const std::vector<std::string>& keys,
+    str_normalizer_type&& str_normalizer)
 {
     bool has_duplicates = false;
     for (size_t i = 0; i < keys.size(); i++) {
@@ -54,7 +54,7 @@ bool check_for_duplicates(const std::string& error_label,
             continue;
         }
 
-        auto value = field_type::from_string(new_eeprom[key]).to_string();
+        auto value = str_normalizer(new_eeprom[key]);
 
         // Check other values in new_eeprom for duplicate
         // Starting at key index i+1 so the same duplicate is not found twice
@@ -63,7 +63,7 @@ bool check_for_duplicates(const std::string& error_label,
             if (not new_eeprom.has_key(other_key)) {
                 continue;
             }
-            auto other_value = field_type::from_string(new_eeprom[other_key]).to_string();
+            auto other_value = str_normalizer(new_eeprom[other_key]);
             if (value == other_value) {
                 // Value is a duplicate of another supplied value
                 UHD_LOG_ERROR(error_label,

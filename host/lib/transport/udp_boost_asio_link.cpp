@@ -37,7 +37,7 @@ udp_boost_asio_link::udp_boost_asio_link(
     }
 
     // create, open, and connect the socket
-    _socket  = open_udp_socket(addr, port, _io_service);
+    _socket  = open_udp_socket(addr, port, _io_context);
     _sock_fd = _socket->native_handle();
 
     auto info   = udp_boost_asio_adapter_info(*_socket);

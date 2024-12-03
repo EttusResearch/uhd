@@ -27,7 +27,7 @@ rpc_client::rpc_client(const std::string& server,
     const std::string& port,
     uint32_t process_id,
     uint32_t host_id)
-    : _socket(_io_service), _hshake_args_server()
+    : _socket(_io_context), _hshake_args_server()
 {
     // Fill in handshake info
     _hshake_args_client.version             = CURRENT_VERSION;
@@ -38,16 +38,14 @@ rpc_client::rpc_client(const std::string& server,
 
     try {
         // Synchronous resolve + connect
-        tcp::resolver resolver(_io_service);
-        // Create flags object with all special flags disabled. Especially the following:
+        tcp::resolver resolver(_io_context);
+        // All special flags disabled. Especially the following:
         //- address_configured: Only return addresses if a non-loopback address is
         // configured for the system.
         //- numeric_host: No name resolution should be attempted for host
         //- numeric_service: No name resolution should be attempted for service
-        tcp::resolver::query::flags query_flags(tcp::resolver::query::passive);
-        tcp::resolver::query query(tcp::v4(), server, port, query_flags);
-        tcp::resolver::iterator iterator = resolver.resolve(query);
-        boost::asio::connect(_socket, iterator);
+        auto endpoints = resolver.resolve(server, port, tcp::resolver::passive);
+        boost::asio::connect(_socket, endpoints);
 
         UHD_LOGGER_TRACE("NIRIO") << "rpc_client connected to server.";
 
@@ -73,10 +71,10 @@ rpc_client::rpc_client(const std::string& server,
                 UHD_LOGGER_TRACE("NIRIO") << "rpc_client bound to server.";
                 _wait_for_next_response_header();
 
-                // Spawn a thread for the io_service callback handler. This thread will
+                // Spawn a thread for the io_context callback handler. This thread will
                 // run until rpc_client is destroyed.
-                _io_service_thread.reset(new boost::thread(
-                    boost::bind(&boost::asio::io_service::run, &_io_service)));
+                _io_context_thread.reset(new boost::thread(
+                    boost::bind(&boost::asio::io_context::run, &_io_context)));
             } else {
                 UHD_LOGGER_DEBUG("NIRIO") << "rpc_client handshake failed.";
                 _exec_err.assign(boost::asio::error::connection_refused,
@@ -100,7 +98,7 @@ rpc_client::rpc_client(const std::string& server,
 
 rpc_client::~rpc_client()
 {
-    _stop_io_service();
+    _stop_io_context();
 }
 
 const boost::system::error_code& rpc_client::call(func_id_t func_id,
@@ -110,7 +108,7 @@ const boost::system::error_code& rpc_client::call(func_id_t func_id,
 {
     std::unique_lock<std::mutex> lock(_mutex);
 
-    if (_io_service_thread.get()) {
+    if (_io_context_thread.get()) {
         _request.header.func_id = func_id;
         in_args.store(_request.data);
         _request.header.func_args_size = uhd::narrow_cast<uint32_t>(_request.data.size());
@@ -147,7 +145,7 @@ const boost::system::error_code& rpc_client::call(func_id_t func_id,
             UHD_LOGGER_DEBUG("NIRIO") << "rpc_client connection dropped.";
             _exec_err.assign(boost::asio::error::connection_aborted,
                 boost::asio::error::get_system_category());
-            _stop_io_service();
+            _stop_io_context();
         }
 
         // Verify that we are talking to the correct endpoint

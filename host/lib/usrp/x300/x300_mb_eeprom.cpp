@@ -9,6 +9,7 @@
 #include <uhd/types/serial.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhdlib/utils/eeprom_utils.hpp>
+#include <boost/asio.hpp>
 
 namespace {
 const uint8_t X300_EEPROM_ADDR = 0x50;
@@ -122,10 +123,22 @@ void uhd::usrp::x300::set_mb_eeprom(
         "ip-addr0", "ip-addr1", "ip-addr2", "ip-addr3"};
 
     // make sure there are no duplicate values
-    if (check_for_duplicates<uhd::mac_addr_t>(
-            "X300", mb_eeprom, curr_eeprom, "MAC address", mac_keys)
-        or check_for_duplicates<boost::asio::ip::address_v4>(
-            "X300", mb_eeprom, curr_eeprom, "IP address", ip_keys)) {
+    if (check_for_duplicates("X300",
+            mb_eeprom,
+            curr_eeprom,
+            "MAC address",
+            mac_keys,
+            [](const std::string& str) {
+                return mac_addr_t::from_string(str).to_string();
+            })
+        or check_for_duplicates("X300",
+            mb_eeprom,
+            curr_eeprom,
+            "IP address",
+            ip_keys,
+            [](const std::string& str) {
+                return boost::asio::ip::make_address(str).to_string();
+            })) {
         throw uhd::value_error(
             "Duplicate values not permitted - write to EEPROM aborted");
     }
@@ -161,8 +174,7 @@ void uhd::usrp::x300::set_mb_eeprom(
     // store the ip addresses
     byte_vector_t ip_addr_bytes(4);
     if (mb_eeprom.has_key("gateway")) {
-        byte_copy(
-            boost::asio::ip::address_v4::from_string(mb_eeprom["gateway"]).to_bytes(),
+        byte_copy(boost::asio::ip::make_address_v4(mb_eeprom["gateway"]).to_bytes(),
             ip_addr_bytes);
         iface->write_eeprom(
             X300_EEPROM_ADDR, offsetof(x300_eeprom_map, gateway), ip_addr_bytes);
@@ -170,8 +182,8 @@ void uhd::usrp::x300::set_mb_eeprom(
     for (size_t i = 0; i < 4; i++) {
         const std::string n(1, char(i) + '0');
         if (mb_eeprom.has_key("ip-addr" + n)) {
-            byte_copy(boost::asio::ip::address_v4::from_string(mb_eeprom["ip-addr" + n])
-                          .to_bytes(),
+            byte_copy(
+                boost::asio::ip::make_address_v4(mb_eeprom["ip-addr" + n]).to_bytes(),
                 ip_addr_bytes);
             iface->write_eeprom(X300_EEPROM_ADDR,
                 offsetof(x300_eeprom_map, ip_addr) + (i * 4),
@@ -179,8 +191,8 @@ void uhd::usrp::x300::set_mb_eeprom(
         }
 
         if (mb_eeprom.has_key("subnet" + n)) {
-            byte_copy(boost::asio::ip::address_v4::from_string(mb_eeprom["subnet" + n])
-                          .to_bytes(),
+            byte_copy(
+                boost::asio::ip::make_address_v4(mb_eeprom["subnet" + n]).to_bytes(),
                 ip_addr_bytes);
             iface->write_eeprom(X300_EEPROM_ADDR,
                 offsetof(x300_eeprom_map, subnet) + (i * 4),
