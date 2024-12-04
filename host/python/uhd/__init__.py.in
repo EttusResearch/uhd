@@ -9,23 +9,40 @@ import os
 
 # As of python3.8, python stopped using PATH to search for DLLs on Windows, and
 # required the use of os.add_dll_directory to add paths to the DLL search.
-if os.name == "nt" and hasattr(os, "add_dll_directory"):
-    # The UHD_PKG_PATH will be set if UHD was installed with a UHD NSIS installer, use this path to
-    # find the uhd.dll and add it to the DLL search.
-    uhd_pkg_dir = os.environ.get("UHD_PKG_PATH")
-    if uhd_pkg_dir is not None and os.path.exists(os.path.join(uhd_pkg_dir, "bin", "uhd.dll")):
-        os.add_dll_directory(os.path.join(uhd_pkg_dir, "bin"))
-    else:
-        # If UHD_PKG_PATH is not set, the UHD may have been built and installed from source.
-        # CMake will generate the UHD_INSTALL_PATH variable in the config_vars.py file using the
-        # CMAKE_INSTALL_PREFIX, try to find the uhd.dll with this path.
-        UHD_INSTALL_PATH = "@UHD_INSTALL_PATH@"
-        if os.path.exists(os.path.join(UHD_INSTALL_PATH, "bin", "uhd.dll")):
-            os.add_dll_directory(os.path.join(UHD_INSTALL_PATH, "bin"))
+if os.name == "nt":
+    uhd_dll_name = "uhd.dll"
+    uhd_dll_dir = None
+    if hasattr(os, "add_dll_directory"):
+        # The UHD_PKG_PATH will be set if UHD was installed with a UHD NSIS installer, use this path to
+        # find the uhd.dll and add it to the DLL search.
+        uhd_pkg_dir = os.environ.get("UHD_PKG_PATH")
+        if uhd_pkg_dir is not None and os.path.exists(os.path.join(uhd_pkg_dir, "bin", uhd_dll_name)):
+            uhd_dll_dir = os.path.join(uhd_pkg_dir, "bin")
         else:
-            print(
-                "Failed to add uhd.dll path to DLL search, module may not import properly, use os.add_dll_directory to add the correct path manually."
-            )
+            # If UHD_PKG_PATH is not set, the UHD may have been built and installed from source.
+            # CMake will generate the UHD_INSTALL_PATH variable in the config_vars.py file using the
+            # CMAKE_INSTALL_PREFIX, try to find the uhd.dll with this path.
+            UHD_INSTALL_PATH = "@UHD_INSTALL_PATH@"
+            if os.path.exists(os.path.join(UHD_INSTALL_PATH, "bin", uhd_dll_name)):
+                uhd_dll_dir = os.path.join(UHD_INSTALL_PATH, "bin")  
+        # perform version check if uhd.dll path was found
+        if uhd_dll_dir:
+            # compare version of uhd.dll against the version used for the cmake build process
+            # potentially this could be a different version, if the NSIS installer did perform 
+            # an upgrade of uhd.dll separately
+            UHD_VERSION = "@UHD_VERSION@"
+            from .utils.version_check import get_windll_version, compare_versions
+            os.add_dll_directory(uhd_dll_dir)
+            uhd_dll_version = get_windll_version(os.path.join(uhd_dll_dir, uhd_dll_name))
+            if compare_versions(uhd_dll_version, UHD_VERSION) != 0:
+                print(f'WARNING: Version conflict between {uhd_dll_name}({uhd_dll_version}) and '
+                      f'the Python API build version({UHD_VERSION})!\nIt is recommended to align '
+                      'the UHD binary installation and the UHD Python module to the exact same version '
+                      'by upgrading the older component.')
+    else:
+        print(f'WARNING: Failed to add {uhd_dll_name} path to DLL search, module may not import properly, '
+              'version check skipped.\nPlease ensure UHD_PKG_DIR (binary installation) is set correctly. '
+              'For Python version < 3.8 the "UHD\\bin" directory needs to be added to PATH environment variable.')
 
 from . import chdr, dsp, filters, rfnoc, types, usrp, usrp_clock, usrpctl
 from .libpyuhd import find, get_abi_string, get_component, get_version_string
