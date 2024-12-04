@@ -29,7 +29,6 @@ RUN apt-get update && \
         abi-dumper \
         doxygen \
         dpdk \
-        libboost-all-dev \
         libdpdk-dev \
         libgps-dev \
         libgps-dev \
@@ -91,3 +90,12 @@ RUN wget https://cmake.org/files/v3.12/cmake-3.12.4-Linux-x86_64.tar.gz -O /tmp/
         cp -r /opt/cmake-3.12.4-Linux-x86_64/bin/* /usr/local/bin/ && \
         cp -r /opt/cmake-3.12.4-Linux-x86_64/share/* /usr/local/share/ && \
         rm /tmp/cmake.tar.gz
+
+
+RUN wget https://archives.boost.io/release/1.66.0/source/boost_1_66_0.tar.bz2 -O /tmp/boost.tar.bz2 && \
+        (echo "5721818253e6a0989583192f96782c4a98eb6204965316df9f5ad75819225ca9 /tmp/boost.tar.bz2" | sha256sum --check --status ) && \
+        tar -jxf /tmp/boost.tar.bz2 -C /tmp && \
+        cd /tmp/boost_1_66_0 && \
+        ./bootstrap.sh --prefix=/usr --with-libraries=atomic,date_time,exception,filesystem,graph,math,program_options,regex,serialization,stacktrace,signals,system,test,thread,timer && \
+        ./b2 install && \
+        rm -rf /tmp/boost.tar.bz2 /tmp/boost_1_66_0
