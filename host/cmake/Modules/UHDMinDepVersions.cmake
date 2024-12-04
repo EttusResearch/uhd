@@ -20,7 +20,7 @@ set(UHD_MSVC_MIN_VERSION_READABLE   "15.0"    )
 set(UHD_PYTHON_MIN_VERSION          "3.7"     )
 # Other deps
 set(UHD_SETUPTOOLS_MIN_VERSION      "40.0"    )
-set(UHD_BOOST_MIN_VERSION           "1.65"    )
+set(UHD_BOOST_MIN_VERSION           "1.66"    )
 set(UHD_NUMPY_MIN_VERSION           "1.11"    )
 set(UHD_RUAMEL_YAML_MIN_VERSION     "0.15"    )
 set(UHD_PY_MAKO_MIN_VERSION         "0.4.2"   )
