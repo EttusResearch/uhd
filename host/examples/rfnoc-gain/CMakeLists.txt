@@ -41,7 +41,7 @@ endif()
 ########################################################################
 # Find bash (for executing make and sourcing the Vivado env)
 ########################################################################
-find_package(UnixCommands)
+find_program(BASH "bash")
 if(BASH)
     message(STATUS "Found bash interpreter: ${BASH}")
     configure_file(
