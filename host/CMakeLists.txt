@@ -461,7 +461,17 @@ LIBUHD_REGISTER_COMPONENT(
     ENABLE_PYMOD_UTILS ON
     "HAVE_PYTHON_MODULE_NUMPY;HAVE_PYTHON_MODULE_MAKO;HAVE_PYTHON_MODULE_YAML"
     OFF OFF)
-
+if(WIN32)
+    LIBUHD_REGISTER_COMPONENT(
+        "UHD Extended Packaging for Windows" 
+        ENABLE_EXTEND_WIN_PACKAGING 
+        OFF 
+        "ENABLE_LIBUHD"
+        OFF
+        OFF)
+else()
+    unset(ENABLE_EXTEND_WIN_PACKAGING CACHE)
+endif(WIN32)
 ########################################################################
 # Add the subdirectories
 ########################################################################
@@ -579,6 +589,25 @@ if(DEFINED UHD_IMAGES_SRC_DIR AND EXISTS "${UHD_IMAGES_SRC_DIR}")
     endforeach(_img)
     UHD_INSTALL(FILES ${_image_files} DESTINATION ${PKG_DATA_DIR}/images COMPONENT images)
 endif(DEFINED UHD_IMAGES_SRC_DIR AND EXISTS "${UHD_IMAGES_SRC_DIR}")
+
+########################################################################
+# Handle pre-built UHD functional dependencies specific to Windows for
+# packaging
+#
+#   1. WinUSB driver installer (required for B-Series devices)
+########################################################################
+if(ENABLE_EXTEND_WIN_PACKAGING)
+    file(GLOB_RECURSE _usbinstaller_files RELATIVE "${UHD_SOURCE_DIR}" "${UHD_SOURCE_DIR}/cmake/msvc/*")
+    message(STATUS "Reading Windows USB Installer sources from directory `${UHD_SOURCE_DIR}/cmake/msvc'.")
+    message(STATUS "  These files will be installed/packaged at ${PKG_DATA_DIR}/usbdriver.")
+    UHD_INSTALL(
+        DIRECTORY ${UHD_SOURCE_DIR}/cmake/msvc/
+        DESTINATION ${PKG_DATA_DIR}/usbdriver
+        COMPONENT winusbsupport
+        PATTERN ".gitattributes" EXCLUDE
+        PATTERN "*makecat.cdf" EXCLUDE
+    )
+endif(ENABLE_EXTEND_WIN_PACKAGING)
 
 ########################################################################
 # Print Summary

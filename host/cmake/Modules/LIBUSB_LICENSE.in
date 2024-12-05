@@ -1,0 +1,5 @@
+﻿This product includes code from libusb @LIBUSB_VERSION@ licensed by a third party or 
+parties pursuant to the GNU LGPL, v2.1, software license, and that is subject 
+to the following notice(s):
+
+@LIBUSB_INCLUDE_COMMENT_HEADER@

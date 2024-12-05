@@ -90,6 +90,7 @@ if(${CPACK_GENERATOR} STREQUAL NSIS)
     endif(SPECIFY_MSVC_VERSION)
 
     set(CPACK_PACKAGE_INSTALL_DIRECTORY "${CMAKE_PROJECT_NAME}")
+
 endif()
 
 ########################################################################
@@ -120,6 +121,7 @@ set(CPACK_COMPONENT_EXAMPLES_GROUP       "Runtime")
 set(CPACK_COMPONENT_MANUAL_GROUP         "Documentation")
 set(CPACK_COMPONENT_DOXYGEN_GROUP        "Documentation")
 set(CPACK_COMPONENT_README_GROUP         "Documentation")
+set(CPACK_COMPONENT_WINUSBSUPPORT_GROUP  "Runtime")
 
 set(CPACK_COMPONENT_LIBRARIES_DISPLAY_NAME      "Libraries")
 set(CPACK_COMPONENT_PYTHONAPI_DISPLAY_NAME      "UHD Python API")
@@ -130,6 +132,7 @@ set(CPACK_COMPONENT_MANUAL_DISPLAY_NAME         "Manual")
 set(CPACK_COMPONENT_DOXYGEN_DISPLAY_NAME        "Doxygen")
 set(CPACK_COMPONENT_README_DISPLAY_NAME         "Readme")
 set(CPACK_COMPONENT_IMAGES_DISPLAY_NAME         "Images")
+set(CPACK_COMPONENT_WINUSBSUPPORT_DISPLAY_NAME  "USB Drivers")
 
 set(CPACK_COMPONENT_LIBRARIES_DESCRIPTION     "Dynamic link library")
 set(CPACK_COMPONENT_PYTHONAPI_DESCRIPTION     "UHD Python API")
@@ -140,6 +143,7 @@ set(CPACK_COMPONENT_MANUAL_DESCRIPTION        "Manual/application notes (rst and
 set(CPACK_COMPONENT_DOXYGEN_DESCRIPTION       "API documentation (html)")
 set(CPACK_COMPONENT_README_DESCRIPTION        "Readme files (txt)")
 set(CPACK_COMPONENT_IMAGES_DESCRIPTION        "FPGA and firmware images")
+set(CPACK_COMPONENT_WINLUSBSUPPORT_DESCRIPTION "Ettus USB driver installers")
 
 set(CPACK_COMPONENT_README_REQUIRED TRUE)
 
@@ -181,10 +185,20 @@ set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "
     DeleteRegValue HKLM ${HLKM_ENV} \\\"UHD_PKG_PATH\\\"
 ")
 
-if(WIN32)
-    #Install necessary runtime DLL's
+if(WIN32 AND ENABLE_EXTEND_WIN_PACKAGING)
+    #Install necessary runtime DLL's into prefix (these are not included in the installer)
     include(InstallRequiredSystemLibraries)
-endif(WIN32)
+    # Single source path definition of dynamically generated libusb license file 
+    # Variable defined here is also consumed by module USBLIBUSB, 
+    # which is included via lib/CMakeLists.txt
+    set(UHD_LIBUSB_LICENSEFILE "${UHD_BINARY_DIR}/LIBUSB_LICENSE")
+    # This works as long as path of UHD_LIBUSB_LICENSEFILE does not contain spaces,
+    # may need to change it to a relative path (to ?)
+    set(CPACK_RESOURCE_FILE_LICENSE_LIBUSB "!insertmacro MUI_PAGE_LICENSE ${UHD_LIBUSB_LICENSEFILE}")
+    set(CPACK_COMPONENT_WINLUSBSUPPORT_DEPENDS libraries)
+    # Extend all components list after defining new component relationships
+    set(CPACK_COMPONENTS_ALL ${CPACK_COMPONENTS_ALL} winusbsupport)
+endif(WIN32 AND ENABLE_EXTEND_WIN_PACKAGING)
 
 ########################################################################
 include(CPack) #include after setting vars

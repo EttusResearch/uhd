@@ -248,3 +248,34 @@ if(ENABLE_STATIC_LIBS)
         ARCHIVE DESTINATION lib${LIB_SUFFIX} # .lib or .a file
     )
 endif(ENABLE_STATIC_LIBS)
+
+if(ENABLE_EXTEND_WIN_PACKAGING)
+    if(ENABLE_USB AND NOT ENABLE_STATIC_LIBS)
+        include(UHDLIBUSB)
+
+        if(DEFINED UHD_LIBUSBDLLPATH)
+            # UHD_INSTALL(FILES 
+            #     ${UHD_LIBUSBDLLPATH} 
+            #     DESTINATION ${RUNTIME_DIR}
+            #     COMPONENT winlibusb)
+        install(FILES 
+                ${UHD_LIBUSBDLLPATH} 
+                DESTINATION ${RUNTIME_DIR}
+                COMPONENT libraries)
+        else()
+            message(WARNING "Unable to locate libusb dynamic link library from LIBUSB_LIBRARIES: ${LIBUSB_LIBRARIES}")
+        endif(DEFINED UHD_LIBUSBDLLPATH)
+
+        # Variable LIBUSB_LICENSE_FILE is defined in top level CMakeLists.txt,
+        # and the files gets generated in the UHDLIBUSB module.
+        if(EXISTS ${UHD_LIBUSB_LICENSEFILE})
+            UHD_INSTALL(FILES 
+                ${UHD_LIBUSB_LICENSEFILE} 
+                DESTINATION ${PKG_DOC_DIR}
+                COMPONENT readme
+            )
+        else()
+            message(WARNING "Did not find generated libusb license files at ${UHD_LIBUSB_LICENSEFILE}")
+        endif(EXISTS ${UHD_LIBUSB_LICENSEFILE})
+    endif(ENABLE_USB AND NOT ENABLE_STATIC_LIBS)
+endif(ENABLE_EXTEND_WIN_PACKAGING)

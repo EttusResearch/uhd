@@ -265,10 +265,11 @@ device:
 \subsection transport_usb_installwin Install USB driver (Windows)
 
 A driver package must be installed to use a USB-based product with UHD
-software:
+software. To install the driver when building and installing UHD from 
+source perform the following steps for each desired USB device type:
 
--   Download the driver from the UHD wiki page
-    <a href="http://files.ettus.com/binaries/misc/erllc_uhd_winusb_driver.zip">here</a>.
+-   Download the driver from the UHD wiki page: 
+    <a href="http://files.ettus.com/binaries/misc/erllc_uhd_winusb_driver.zip">erllc_uhd_winusb_driver.zip</a>.
 -   Unzip the file into a known location. We will refer to this as the `<directory>`.
 -   Open the device manager and plug in the USRP device. You will see an
     unrecognized USB device in the device manager.
@@ -278,6 +279,9 @@ software:
     browse to the `<directory>`, and select the `.inf` file.
 -   Continue through the installation wizard until the driver is
     installed.
+
+Note: As of UHD 4.8 the UHD software installer for Windows omits the need
+      for this individual download, refer to \ref install_libUSB.
 
 \section transport_pcie PCIe Transport (NI-RIO)
 

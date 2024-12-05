@@ -4,35 +4,63 @@
 
 \section install_win Installation on Windows
 
-We provide UHD software installers for Windows users who do not wish
+We provide UHD software installers for 64-bit Windows users who do not wish
 to install UHD from source.
 
 \subsection install_win_libusb LibUSBx
 
 All Windows installers are built with LibUSBx to enable USB3 support.
-LibUSBx binaries are not part of the installer and must be installed
-manually.
+LibUSBx binaries are included in Ettus Research supplied installers
+starting from UHD version 4.8. If desired, the installed LibUSB DLL
+(at \<UHD Install Dir\>\\bin) may be replaced with a custom, compatible 
+version. Refer to \ref install_libUSB
 
 \subsection install_win_installer Installer Packages
 
-Installer packages are built from release tags of the maint branch.
-
+Windows installers are provided for a select set of hardware architectures 
+and compiler version combinations. These are encoded in the installer file names.
+For example a installer ending with the name .._Win64_VS2017.exe indicates 
+UHD was build for the 64-bit Windows platform using the Visual Studio 2017 
+compiler suite.
 Please find the latest installer here: http://files.ettus.com/binaries/uhd/latest_release
 
 Older installers of all previous releases can be downloaded from:
 http://files.ettus.com/binaries/uhd/ (browse to the desired release).
 
+After running the Installer for the desired MSVC Compiler consider the 
+following post-install tasks.
+
 \subsection install_win_post Post-Install Tasks
 
-Install the MSVC Redistributable Package:
+Install the MSVC Redistributable Package
 
 - Download <a href="https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2015-2017-2019-and-2022
-">MSVC Redistributable Package</a>
+">MSVC Redistributable Package</a> for the hardware architecture encoded in 
+the UHD installer file name and run the downloaded installer package.
 
-\subsubsection install_libUSB Install libUSB
+Using a USB-based device?
 
-LibUSBx binaries need to be installed on your system if they aren’t
-already present. You can download the latest version of libUSB from the
+- Starting from UHD version 4.8 the UHD Installer package installs a copy of 
+  the Windows UHD USB Driver within the UHD installation folder 
+  (by default "C:\\Program Files\\UHD"). Alternatively, these may be 
+  separately downloaded from the UHD wiki page: 
+  <a href="http://files.ettus.com/binaries/misc/erllc_uhd_winusb_driver.zip">erllc_uhd_winusb_driver.zip</a>.
+- These driver installer packages must be installed once per host computer 
+  to use a USB-based product with UHD software. Perform the following steps 
+  for each USB device type:
+  + Open the device manager and plug in the USRP device. 
+    You will see an unrecognized USB device in the device manager.
+  + Right click on the unrecognized USB device and select update/install 
+    driver software (may vary for your OS).
+  + In the driver installation wizard, select "browse for driver", 
+    browse to \<UHD Install Dir\>\\share\\uhd\\usbdriver folder, and select the 
+    .inf file for your USRP device type.
+  + Continue through the installation wizard until the driver is installed.
+
+\subsubsection install_libUSB Manual Install of libUSB
+
+If you wish to use an alternative version of LibUSB to the one provided with the installer,
+you can download the latest version of libUSB from the
 <a href="https://github.com/libusb/libusb/releases">LibUSB GitHub releases page</a>.
 Each release includes binaries built for various platforms and compiler
 versions. It’s crucial that the LibUSB binary corresponds to the platform
@@ -56,10 +84,6 @@ This can happen for the following reasons:
 3. A conflicting LibUSB binary installed on your system which is not compatible
    is detected first.
 
-\subsubsection USB_based_device Installation of additional drivers to use USB-based USRPs
-
-- Download and install Windows UHD USB Drivers: http://files.ettus.com/binaries/misc/erllc_uhd_winusb_driver.zip
-- \ref transport_usb_installwin
 
 \subsection install_win_source Building from source
 

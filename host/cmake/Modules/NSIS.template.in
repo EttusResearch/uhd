@@ -1,4 +1,5 @@
 ; CPack install script designed for a nmake build
+Unicode true
 
 ;--------------------------------
 ; You must define these values
@@ -548,6 +549,8 @@ FunctionEnd
   !insertmacro MUI_PAGE_WELCOME
 
   !insertmacro MUI_PAGE_LICENSE "@CPACK_RESOURCE_FILE_LICENSE@"
+  @CPACK_RESOURCE_FILE_LICENSE_LIBUSB@
+
   Page custom InstallOptionsPage
   !insertmacro MUI_PAGE_DIRECTORY
   
