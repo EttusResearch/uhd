@@ -8,6 +8,7 @@
 #pragma once
 
 #include <uhd/config.hpp>
+#include <initializer_list>
 #include <type_traits>
 #include <string>
 #include <vector>
@@ -83,6 +84,13 @@ struct UHD_API meta_range_t : public std::vector<range_t>
         // but actually calls this constructor.
         static_assert(!std::is_integral<typename std::decay<InputIterator>::type>::value,
             "You can't pass integers to meta_range_t's constructor!");
+    }
+
+    /*! Initializer list constructor
+     */
+    meta_range_t(std::initializer_list<range_t> il) : std::vector<range_t>(il)
+    {
+        /* NOP */
     }
 
     /*!

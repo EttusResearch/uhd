@@ -110,3 +110,10 @@ BOOST_AUTO_TEST_CASE(test_meta_range_monotonize)
     BOOST_CHECK_CLOSE(monotonic_mr.at(1).start(), 2.1, tolerance);
     BOOST_CHECK_CLOSE(monotonic_mr.at(1).stop(), 4.0, tolerance);
 }
+
+BOOST_AUTO_TEST_CASE(test_meta_range_init_list)
+{
+    meta_range_t mr{range_t(1.0, 2.0), range_t(3.0, 4.0)};
+    BOOST_CHECK(mr.start() == 1.0);
+    BOOST_CHECK(mr.stop() == 4.0);
+}
