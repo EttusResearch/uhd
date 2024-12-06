@@ -1,7 +1,28 @@
 {
    "dependencies": [
      "libusb",
-     "boost"
+     "boost-asio",
+     "boost-assign",
+     "boost-atomic",
+     "boost-circular-buffer",
+     "boost-date-time",
+     "boost-dll",
+     "boost-exception",
+     "boost-filesystem",
+     "boost-format",
+     "boost-graph",
+     "boost-lockfree",
+     "boost-math",
+     "boost-program-options",
+     "boost-regex",
+     "boost-serialization",
+     "boost-stacktrace",
+     "boost-signals2",
+     "boost-system",
+     "boost-test",
+     "boost-thread",
+     "boost-timer",
+     "boost-units"
    ],
-   "builtin-baseline": "af2287382b1991dbdcb7e5112d236f3323b9dd7a"
+   "builtin-baseline": "f176b58f35a75f9f8f54099cd9df97d2e2793a2e"
  }

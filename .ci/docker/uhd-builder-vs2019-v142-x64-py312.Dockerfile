@@ -10,6 +10,8 @@
 FROM mcr.microsoft.com/windows/servercore:1809
 LABEL maintainer="Ettus Research"
 
+ENV VCPKG_DISABLE_METRICS=1
+
 RUN setx chocolateyVersion 1.4.0 /m
 RUN @"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" \
     -NoProfile -InputFormat None -ExecutionPolicy Bypass \
@@ -21,8 +23,8 @@ RUN choco install -y doxygen.install --version=1.9.1
 RUN choco install -y git
 RUN choco install -y NSIS --version=3.06.1
 RUN choco install -y vim
-RUN choco install -y python3 --version=3.7.9
-RUN pip install mako requests numpy ruamel.yaml
+RUN choco install -y python3 --version=3.12.6
+RUN pip install mako requests numpy ruamel.yaml setuptools
 
 RUN powershell -NoProfile -ExecutionPolicy Bypass -Command \
     Invoke-WebRequest "https://aka.ms/vs/16/release/vs_buildtools.exe" \

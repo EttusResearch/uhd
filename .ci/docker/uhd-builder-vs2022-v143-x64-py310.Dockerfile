@@ -10,6 +10,8 @@
 FROM mcr.microsoft.com/windows/servercore:1809
 LABEL maintainer="Ettus Research"
 
+ENV VCPKG_DISABLE_METRICS=1
+
 RUN setx chocolateyVersion 1.4.0 /m
 RUN @"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" \
     -NoProfile -InputFormat None -ExecutionPolicy Bypass \
@@ -21,7 +23,7 @@ RUN choco install -y doxygen.install --version=1.9.1
 RUN choco install -y git
 RUN choco install -y NSIS --version=3.06.1
 RUN choco install -y vim
-RUN choco install -y python3 --version=3.7.9
+RUN choco install -y python3 --version=3.10.11
 RUN pip install mako requests numpy ruamel.yaml
 
 RUN powershell -NoProfile -ExecutionPolicy Bypass -Command \
@@ -38,7 +40,7 @@ RUN git clone https://github.com/microsoft/vcpkg %VCPKG_INSTALL_DIR% && \
     # Add custom UHD vcpkg triplet
 COPY host/cmake/vcpkg/* c:/vcpkg/triplets/
 RUN mkdir c:\\uhd-vcpkg
-COPY .ci\\docker\\vcpkg\\vcpkg-vs2022.json c:/uhd-vcpkg/vcpkg.json
+COPY .ci\\docker\\vcpkg\\vcpkg.json c:/uhd-vcpkg/vcpkg.json
 RUN cd c:\\uhd-vcpkg && %VCPKG_INSTALL_DIR%\vcpkg.exe install \
     --triplet uhd-x64-windows-static-md \
     --clean-after-build

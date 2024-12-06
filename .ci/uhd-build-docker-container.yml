@@ -56,11 +56,10 @@ variables:
 - ${{ if parameters.build_windows }}:
   - name: winDockerImages
     value:
-      "{'VS2017-x86-builder':{'buildOSName':'win-vs17-v141-x86','dockerImageName':'uhd-builder-vs2017-v141-x86','cmakeCompiler':'Visual Studio 15 2017','cmakeArch':'Win32','vsArch':'x86','vsYear':'2017'},
-      'VS2017-x64-builder':{'buildOSName':'win-vs17-v141-x64','dockerImageName':'uhd-builder-vs2017-v141-x64','cmakeCompiler':'Visual Studio 15 2017','cmakeArch':'x64','vsArch':'x64','vsYear':'2017'},
-      'VS2019-x86-builder':{'buildOSName':'win-vs19-v142-x86','dockerImageName':'uhd-builder-vs2019-v142-x86','cmakeCompiler':'Visual Studio 16 2019','cmakeArch':'Win32','vsArch':'x86','vsYear':'2019'},
-      'VS2019-x64-builder':{'buildOSName':'win-vs19-v142-x64','dockerImageName':'uhd-builder-vs2019-v142-x64','cmakeCompiler':'Visual Studio 16 2019','cmakeArch':'x64','vsArch':'x64','vsYear':'2019'},
-      'VS2022-x64-builder':{'buildOSName':'win-vs22-v143-x64','dockerImageName':'uhd-builder-vs2022-v143-x64','cmakeCompiler':'Visual Studio 17 2022','cmakeArch':'x64','vsArch':'x64','vsYear':'2022'}}"
+      "{'VS2019-x64-py310-builder':{'buildOSName':'win-vs19-v142-x64-py310','dockerImageName':'uhd-builder-vs2019-v142-x64-py310','cmakeCompiler':'Visual Studio 16 2019','cmakeArch':'x64','vsArch':'x64','vsYear':'2019','pythonVersion':'python310'},
+      'VS2019-x64-py312-builder':{'buildOSName':'win-vs19-v142-x64-py312','dockerImageName':'uhd-builder-vs2019-v142-x64-py312','cmakeCompiler':'Visual Studio 16 2019','cmakeArch':'x64','vsArch':'x64','vsYear':'2019','pythonVersion':'python312'},
+      'VS2022-x64-py310-builder':{'buildOSName':'win-vs22-v143-x64-py310','dockerImageName':'uhd-builder-vs2022-v143-x64-py310','cmakeCompiler':'Visual Studio 17 2022','cmakeArch':'x64','vsArch':'x64','vsYear':'2022','pythonVersion':'python310'},
+      'VS2022-x64-py312-builder':{'buildOSName':'win-vs22-v143-x64-py312','dockerImageName':'uhd-builder-vs2022-v143-x64-py312','cmakeCompiler':'Visual Studio 17 2022','cmakeArch':'x64','vsArch':'x64','vsYear':'2022','pythonVersion':'python312'}}"
 - ${{ else }}:
   - name: winDockerImages
     value:
@@ -92,7 +91,7 @@ variables:
 - name: winDockerImagesPythonBuild
   # Match with one of the images in winDockerImages
   value:
-    "{'VS2019-x64-builder':{'buildOSName':'win-vs19-v142-x64','dockerImageName':'uhd-builder-vs2019-v142-x64','cmakeCompiler':'Visual Studio 16 2019','cmakeArch':'x64','vsArch':'x64','vsYear':'2019'}}"
+    "{}"
 
 - ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/UHD-')) }}:
   - name: dockerImagePrefix
@@ -207,7 +206,7 @@ jobs:
 - job: build_image_win
   dependsOn: set_uhd_docker_image_version
   displayName: Build Docker Image Windows
-  timeoutInMinutes: 180
+  timeoutInMinutes: 120
   variables:
     uhdDockerImageVersion: $[ dependencies.set_uhd_docker_image_version.outputs['set_uhd_version.uhdDockerImageVersion'] ]
   pool:
