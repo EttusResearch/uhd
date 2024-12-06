@@ -155,32 +155,6 @@ stages:
         toolset: make_custom_boost_version
         custom_boost_version_url: ${{ parameters.custom_boost_version_url }}
 
-- stage: build_uhd_stage_win
-  displayName: Build UHD Windows
-  dependsOn: analyze_changeset
-  condition: >
-    and(succeeded(),
-    or(
-      eq('${{ parameters.build_win }}', 'Force-yes'),
-      and(
-        eq('${{ parameters.build_win }}', 'Auto-detect'),
-        or(
-          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.windows'),
-          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.all')
-        )
-      )
-    ))
-  jobs:
-  - template: job-get-latest-uhd-docker.yml
-  - template: job-uhd-build-src.yml
-    parameters:
-      toolset: msbuild
-      release_binaries: ${{ parameters.release_binaries }}
-  - template: job-uhd-build-src.yml
-    parameters:
-      toolset: msbuild_python
-      release_binaries: ${{ parameters.release_binaries }}
-
 - stage: build_uhd_stage_mac
   displayName: Build UHD macOS
   dependsOn: analyze_changeset
@@ -354,7 +328,19 @@ stages:
 
 - stage: build_uhd_installer_stage_win
   displayName: Build UHD Installers Windows
-  dependsOn: build_uhd_stage_win
+  dependsOn: analyze_changeset
+  condition: >
+    and(succeeded(),
+    or(
+      eq('${{ parameters.build_win }}', 'Force-yes'),
+      and(
+        eq('${{ parameters.build_win }}', 'Auto-detect'),
+        or(
+          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.windows'),
+          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.all')
+        )
+      )
+    ))
   jobs:
     - template: job-get-latest-uhd-docker.yml
     - template: job-uhd-build-installer.yml
@@ -362,11 +348,6 @@ stages:
         toolset: msbuild
         installer: nsis
         releaseBinaries: ${{ parameters.release_binaries }}
-        fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
-    - template: job-uhd-build-installer.yml
-      parameters:
-        toolset: msbuild_python
-        installer: nsis
         fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
     - ${{ if parameters.release_binaries }}:
       - template: job-uhd-build-installer-signing.yml
