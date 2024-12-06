@@ -8,7 +8,6 @@
 #include <uhd/error.h>
 #include <uhd/types/dict.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/assign.hpp>
 #include <boost/format.hpp>
 #include <boost/test/unit_test.hpp>
 
@@ -50,14 +49,23 @@ UHD_INLINE uhd_error throw_unknown_exception(dummy_handle_t* handle)
 }
 
 // There are enough non-standard names that we can't just use a conversion function
-static const uhd::dict<std::string, std::string> pretty_exception_names =
-    boost::assign::map_list_of("assertion_error", "AssertionError")(
-        "lookup_error", "LookupError")("index_error", "LookupError: IndexError")(
-        "key_error", "LookupError: KeyError")("type_error", "TypeError")("value_error",
-        "ValueError")("runtime_error", "RuntimeError")("not_implemented_error",
-        "RuntimeError: NotImplementedError")("usb_error", "RuntimeError: USBError 1")(
-        "environment_error", "EnvironmentError")("io_error", "EnvironmentError: IOError")(
-        "os_error", "EnvironmentError: OSError")("system_error", "SystemError");
+// clang-format off
+static const uhd::dict<std::string, std::string> pretty_exception_names{
+    {"assertion_error",       "AssertionError"                   },
+    {"lookup_error",          "LookupError"                      },
+    {"index_error",           "LookupError: IndexError"          },
+    {"key_error",             "LookupError: KeyError"            },
+    {"type_error",            "TypeError"                        },
+    {"value_error",           "ValueError"                       },
+    {"runtime_error",         "RuntimeError"                     },
+    {"not_implemented_error", "RuntimeError: NotImplementedError"},
+    {"usb_error",             "RuntimeError: USBError 1"         },
+    {"environment_error",     "EnvironmentError"                 },
+    {"io_error",              "EnvironmentError: IOError"        },
+    {"os_error",              "EnvironmentError: OSError"        },
+    {"system_error",          "SystemError"                      }
+};
+// clang-format on
 
 #define UHD_TEST_CHECK_ERROR_CODE(cpp_exception_type, c_error_code)                      \
     expected_msg =                                                                       \

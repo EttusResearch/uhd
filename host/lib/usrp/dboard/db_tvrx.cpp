@@ -30,7 +30,6 @@
 #include <uhdlib/utils/narrow.hpp>
 #include <tuner_4937di5_regs.hpp>
 #include <boost/array.hpp>
-#include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <cfloat>
 #include <cmath>
@@ -40,18 +39,18 @@
 
 using namespace uhd;
 using namespace uhd::usrp;
-using namespace boost::assign;
 
 /***********************************************************************
  * The tvrx constants
  **********************************************************************/
 static const freq_range_t tvrx_freq_range(50e6, 860e6);
 
-static const std::vector<std::string> tvrx_antennas = list_of("RX");
+static const std::vector<std::string> tvrx_antennas{"RX"};
 
-static const uhd::dict<std::string, freq_range_t> tvrx_freq_ranges =
-    map_list_of("VHFLO", freq_range_t(50e6, 158e6))("VHFHI", freq_range_t(158e6, 454e6))(
-        "UHF", freq_range_t(454e6, 860e6));
+static const uhd::dict<std::string, freq_range_t> tvrx_freq_ranges{
+    {"VHFLO", freq_range_t(50e6, 158e6)},
+    {"VHFHI", freq_range_t(158e6, 454e6)},
+    {"UHF", freq_range_t(454e6, 860e6)}};
 
 static const boost::array<double, 17> vhflo_gains_db = {{-6.00000,
     -6.00000,
@@ -131,8 +130,8 @@ static const boost::array<double, 17> tvrx_if_gains_db = {{-1.50000,
 // need dang near as many coefficients as to just map it like this and interp.
 // these numbers are culled from the 4937DI5 datasheet and are probably totally inaccurate
 // but if it's better than the old linear fit i'm happy
-static const uhd::dict<std::string, boost::array<double, 17>> tvrx_rf_gains_db =
-    map_list_of("VHFLO", vhflo_gains_db)("VHFHI", vhfhi_gains_db)("UHF", uhf_gains_db);
+static const uhd::dict<std::string, boost::array<double, 17>> tvrx_rf_gains_db{
+    {"VHFLO", vhflo_gains_db}, {"VHFHI", vhfhi_gains_db}, {"UHF", uhf_gains_db}};
 
 // sample voltages for the above points
 static const boost::array<double, 17> tvrx_gains_volts = {{0.8,
@@ -166,11 +165,11 @@ static uhd::dict<std::string, gain_range_t> get_tvrx_gain_ranges(void)
             rfmin = my_min;
     }
 
-    double ifmin = tvrx_if_gains_db.front();
-    double ifmax = tvrx_if_gains_db.back();
+    const double ifmin = tvrx_if_gains_db.front();
+    const double ifmax = tvrx_if_gains_db.back();
 
-    return map_list_of("RF", gain_range_t(rfmin, rfmax, (rfmax - rfmin) / 4096.0))(
-        "IF", gain_range_t(ifmin, ifmax, (ifmax - ifmin) / 4096.0));
+    return {{"RF", gain_range_t(rfmin, rfmax, (rfmax - rfmin) / 4096.0)},
+        {"IF", gain_range_t(ifmin, ifmax, (ifmax - ifmin) / 4096.0)}};
 }
 
 static const double opamp_gain          = 1.22; // onboard DAC opamp gain

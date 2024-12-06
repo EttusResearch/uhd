@@ -80,12 +80,10 @@
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
-#include <boost/assign/list_of.hpp>
 
 
 using namespace uhd;
 using namespace uhd::usrp;
-using namespace boost::assign;
 
 
 /***********************************************************************
@@ -94,25 +92,25 @@ using namespace boost::assign;
 static const freq_range_t sbx_freq_range(400e6, 4.4e9);
 static const freq_range_t cbx_freq_range(1200e6, 6.0e9);
 
-static const freq_range_t sbx_tx_lo_2dbm = list_of(range_t(0.35e9, 0.37e9));
+static const freq_range_t sbx_tx_lo_2dbm{range_t(0.35e9, 0.37e9)};
 
-static const freq_range_t sbx_enable_tx_lo_filter = list_of(range_t(0.4e9, 1.5e9));
+static const freq_range_t sbx_enable_tx_lo_filter{range_t(0.4e9, 1.5e9)};
 
-static const freq_range_t sbx_enable_rx_lo_filter = list_of(range_t(0.4e9, 1.5e9));
+static const freq_range_t sbx_enable_rx_lo_filter{range_t(0.4e9, 1.5e9)};
 
-static const freq_range_t cbx_enable_tx_lo_filter = list_of(range_t(1.2e9, 2e9));
+static const freq_range_t cbx_enable_tx_lo_filter{range_t(1.2e9, 2e9)};
 
-static const freq_range_t cbx_enable_rx_lo_filter = list_of(range_t(1.2e9, 2e9));
+static const freq_range_t cbx_enable_rx_lo_filter{range_t(1.2e9, 2e9)};
 
-static const std::vector<std::string> sbx_tx_antennas = list_of("TX/RX")("CAL");
+static const std::vector<std::string> sbx_tx_antennas{"TX/RX", "CAL"};
 
-static const std::vector<std::string> sbx_rx_antennas = list_of("TX/RX")("RX2")("CAL");
+static const std::vector<std::string> sbx_rx_antennas{"TX/RX", "RX2", "CAL"};
 
-static const uhd::dict<std::string, gain_range_t> sbx_tx_gain_ranges =
-    map_list_of("PGA0", gain_range_t(0, 31.5, double(0.5)));
+static const uhd::dict<std::string, gain_range_t> sbx_tx_gain_ranges{
+    {"PGA0", gain_range_t(0, 31.5, double(0.5))}};
 
-static const uhd::dict<std::string, gain_range_t> sbx_rx_gain_ranges =
-    map_list_of("PGA0", gain_range_t(0, 31.5, double(0.5)));
+static const uhd::dict<std::string, gain_range_t> sbx_rx_gain_ranges{
+    {"PGA0", gain_range_t(0, 31.5, double(0.5))}};
 
 /***********************************************************************
  * The SBX dboard

@@ -19,7 +19,6 @@
 #include <uhd/utils/static.hpp>
 #include <boost/algorithm/string/erase.hpp>
 #include <boost/asio/ip/address_v4.hpp>
-#include <boost/assign.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <cstring>
@@ -86,10 +85,13 @@ typedef enum {
 /*
  * Mapping revision numbers to names
  */
-static const uhd::dict<uint32_t, std::string> n200_filename_map =
-    boost::assign::map_list_of(
-        0, "n2xx") // Is an N-Series, but the EEPROM value is invalid
-    (0xa, "n200_r3")(0x100a, "n200_r4")(0x10a, "n210_r3")(0x110a, "n210_r4");
+static const uhd::dict<uint32_t, std::string> n200_filename_map{
+    // Is an N-Series, but the EEPROM value is invalid:
+    {0, "n2xx"},
+    {0xa, "n200_r3"},
+    {0x100a, "n200_r4"},
+    {0x10a, "n210_r3"},
+    {0x110a, "n210_r4"}};
 
 /*
  * Packet structure

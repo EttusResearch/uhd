@@ -17,7 +17,6 @@
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
-#include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <cmath>
 #include <functional>
@@ -25,7 +24,6 @@
 
 using namespace uhd;
 using namespace uhd::usrp;
-using namespace boost::assign;
 
 /***********************************************************************
  * The DBSRX2 constants
@@ -37,10 +35,10 @@ static const freq_range_t dbsrx2_bandwidth_range(2.0 * 4.0e6, 2.0 * 40.0e6);
 
 static const int dbsrx2_ref_divider = 4; // Hitachi HMC426 divider (U7)
 
-static const std::vector<std::string> dbsrx2_antennas = list_of("J3");
+static const std::vector<std::string> dbsrx2_antennas{"J3"};
 
-static const uhd::dict<std::string, gain_range_t> dbsrx2_gain_ranges =
-    map_list_of("GC1", gain_range_t(0, 73, 0.05))("BBG", gain_range_t(0, 15, 1));
+static const uhd::dict<std::string, gain_range_t> dbsrx2_gain_ranges{
+    {"GC1", gain_range_t(0, 73, 0.05)}, {"BBG", gain_range_t(0, 15, 1)}};
 
 /***********************************************************************
  * The DBSRX2 dboard class

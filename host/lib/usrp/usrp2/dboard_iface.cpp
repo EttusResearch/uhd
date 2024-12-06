@@ -17,12 +17,10 @@
 #include <uhd/utils/algorithm.hpp>
 #include <uhdlib/asio.hpp> //htonl and ntohl
 #include <uhdlib/usrp/cores/gpio_core_200.hpp>
-#include <boost/assign/list_of.hpp>
 #include <cmath>
 
 using namespace uhd;
 using namespace uhd::usrp;
-using namespace boost::assign;
 
 class usrp2_dboard_iface : public dboard_iface
 {
@@ -250,8 +248,8 @@ uint32_t usrp2_dboard_iface::read_gpio(unit_t unit)
 /***********************************************************************
  * SPI
  **********************************************************************/
-static const uhd::dict<dboard_iface::unit_t, int> unit_to_spi_dev =
-    map_list_of(dboard_iface::UNIT_TX, SPI_SS_TX_DB)(dboard_iface::UNIT_RX, SPI_SS_RX_DB);
+static const uhd::dict<dboard_iface::unit_t, int> unit_to_spi_dev{
+    {dboard_iface::UNIT_TX, SPI_SS_TX_DB}, {dboard_iface::UNIT_RX, SPI_SS_RX_DB}};
 
 void usrp2_dboard_iface::write_spi(
     unit_t unit, const spi_config_t& config, uint32_t data, size_t num_bits)
@@ -287,8 +285,8 @@ byte_vector_t usrp2_dboard_iface::read_i2c(uint16_t addr, size_t num_bytes)
  **********************************************************************/
 void usrp2_dboard_iface::_write_aux_dac(unit_t unit)
 {
-    static const uhd::dict<unit_t, int> unit_to_spi_dac =
-        map_list_of(UNIT_RX, SPI_SS_RX_DAC)(UNIT_TX, SPI_SS_TX_DAC);
+    static const uhd::dict<unit_t, int> unit_to_spi_dac{
+        {UNIT_RX, SPI_SS_RX_DAC}, {UNIT_TX, SPI_SS_TX_DAC}};
     if (unit == UNIT_BOTH)
         throw uhd::runtime_error("UNIT_BOTH not supported.");
     _spi_iface->write_spi(
@@ -304,22 +302,25 @@ void usrp2_dboard_iface::write_aux_dac(unit_t unit, aux_dac_t which, double valu
     _dac_regs[unit].cmd  = ad5623_regs_t::CMD_WR_UP_DAC_CHAN_N;
 
     typedef uhd::dict<aux_dac_t, ad5623_regs_t::addr_t> aux_dac_to_addr;
-    static const uhd::dict<unit_t, aux_dac_to_addr> unit_to_which_to_addr =
-        map_list_of(UNIT_RX,
-            map_list_of(AUX_DAC_A, ad5623_regs_t::ADDR_DAC_B)(AUX_DAC_B,
-                ad5623_regs_t::ADDR_DAC_A)(AUX_DAC_C, ad5623_regs_t::ADDR_DAC_A)(
-                AUX_DAC_D, ad5623_regs_t::ADDR_DAC_B))(UNIT_TX,
-            map_list_of(AUX_DAC_A, ad5623_regs_t::ADDR_DAC_A)(AUX_DAC_B,
-                ad5623_regs_t::ADDR_DAC_B)(AUX_DAC_C, ad5623_regs_t::ADDR_DAC_B)(
-                AUX_DAC_D, ad5623_regs_t::ADDR_DAC_A));
+    static const uhd::dict<unit_t, aux_dac_to_addr> unit_to_which_to_addr{
+        {UNIT_RX,
+            {{AUX_DAC_A, ad5623_regs_t::ADDR_DAC_B},
+                {AUX_DAC_B, ad5623_regs_t::ADDR_DAC_A},
+                {AUX_DAC_C, ad5623_regs_t::ADDR_DAC_A},
+                {AUX_DAC_D, ad5623_regs_t::ADDR_DAC_B}}},
+        {UNIT_TX,
+            {{AUX_DAC_A, ad5623_regs_t::ADDR_DAC_A},
+                {AUX_DAC_B, ad5623_regs_t::ADDR_DAC_B},
+                {AUX_DAC_C, ad5623_regs_t::ADDR_DAC_B},
+                {AUX_DAC_D, ad5623_regs_t::ADDR_DAC_A}}}};
     _dac_regs[unit].addr = unit_to_which_to_addr[unit][which];
     this->_write_aux_dac(unit);
 }
 
 double usrp2_dboard_iface::read_aux_adc(unit_t unit, aux_adc_t which)
 {
-    static const uhd::dict<unit_t, int> unit_to_spi_adc =
-        map_list_of(UNIT_RX, SPI_SS_RX_ADC)(UNIT_TX, SPI_SS_TX_ADC);
+    static const uhd::dict<unit_t, int> unit_to_spi_adc{
+        {UNIT_RX, SPI_SS_RX_ADC}, {UNIT_TX, SPI_SS_TX_ADC}};
 
     if (unit == UNIT_BOTH)
         throw uhd::runtime_error("UNIT_BOTH not supported.");

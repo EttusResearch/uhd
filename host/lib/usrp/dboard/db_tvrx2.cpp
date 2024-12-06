@@ -55,7 +55,6 @@
 #include <uhd/utils/safe_call.hpp>
 #include <uhdlib/utils/narrow.hpp>
 #include <boost/array.hpp>
-#include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <chrono>
 #include <cmath>
@@ -65,7 +64,6 @@
 
 using namespace uhd;
 using namespace uhd::usrp;
-using namespace boost::assign;
 
 /***********************************************************************
  * The TVRX2 types
@@ -99,6 +97,17 @@ struct tvrx2_tda18272_cal_map_t
         cal_freq = freqs;
         c_offset = offsets;
     }
+    // For readability, this file initializes c_offset with integers, so
+    // this is a converting constructor that converts integers to uint8_t
+    // without compiler issues.
+    tvrx2_tda18272_cal_map_t(
+        boost::array<uint32_t, 4> freqs, boost::array<int, 4> offsets)
+    {
+        cal_freq = freqs;
+        for (size_t i = 0; i < 4; i++) {
+            c_offset[i] = uhd::narrow_cast<uint8_t>(offsets[i]);
+        }
+    }
 };
 
 struct tvrx2_tda18272_freq_map_t
@@ -120,640 +129,640 @@ struct tvrx2_tda18272_freq_map_t
  * The TVRX2 constants
  **********************************************************************/
 // clang-format off
-static const boost::array<freq_range_t, 4> tvrx2_tda18272_rf_bands = list_of
-    ( freq_range_t(  44.056e6, 144.408e6) )
-    ( freq_range_t( 145.432e6, 361.496e6) )
-    ( freq_range_t( 365.592e6, 618.520e6) )
-    ( freq_range_t( 619.544e6, 865.304e6) )
-;
+static const boost::array<freq_range_t, 4> tvrx2_tda18272_rf_bands{
+    freq_range_t(  44.056e6, 144.408e6),
+    freq_range_t( 145.432e6, 361.496e6),
+    freq_range_t( 365.592e6, 618.520e6),
+    freq_range_t( 619.544e6, 865.304e6)
+};
 
 #define TVRX2_TDA18272_FREQ_MAP_ENTRIES (565)
 
-static const uhd::dict<uint32_t, tvrx2_tda18272_cal_map_t> tvrx2_tda18272_cal_map = map_list_of
-    (  0, tvrx2_tda18272_cal_map_t( list_of( 44032000)( 48128000)( 52224000)( 56320000), list_of(15)( 0)(10)(17) ) )
-    (  1, tvrx2_tda18272_cal_map_t( list_of( 84992000)( 89088000)( 93184000)( 97280000), list_of( 1)( 0)(-2)( 3) ) )
-    (  2, tvrx2_tda18272_cal_map_t( list_of(106496000)(111616000)(115712000)(123904000), list_of( 0)(-1)( 1)( 2) ) )
-    (  3, tvrx2_tda18272_cal_map_t( list_of(161792000)(165888000)(169984000)(174080000), list_of( 3)( 0)( 1)( 2) ) )
-    (  4, tvrx2_tda18272_cal_map_t( list_of(224256000)(228352000)(232448000)(235520000), list_of( 3)( 0)( 1)( 2) ) )
-    (  5, tvrx2_tda18272_cal_map_t( list_of(301056000)(312320000)(322560000)(335872000), list_of( 0)(-1)( 1)( 2) ) )
-    (  6, tvrx2_tda18272_cal_map_t( list_of(389120000)(393216000)(397312000)(401408000), list_of(-2)( 0)(-1)( 1) ) )
-    (  7, tvrx2_tda18272_cal_map_t( list_of(455680000)(460800000)(465920000)(471040000), list_of( 0)(-2)(-3)( 1) ) )
-    (  8, tvrx2_tda18272_cal_map_t( list_of(555008000)(563200000)(570368000)(577536000), list_of(-1)( 0)(-3)(-2) ) )
-    (  9, tvrx2_tda18272_cal_map_t( list_of(647168000)(652288000)(658432000)(662528000), list_of(-6)(-3)( 0)(-5) ) )
-    ( 10, tvrx2_tda18272_cal_map_t( list_of(748544000)(755712000)(762880000)(770048000), list_of(-6)(-3)( 0)(-5) ) )
-    ( 11, tvrx2_tda18272_cal_map_t( list_of(792576000)(801792000)(809984000)(818176000), list_of(-5)(-2)( 0)(-4) ) )
-;
+static const uhd::dict<uint32_t, tvrx2_tda18272_cal_map_t> tvrx2_tda18272_cal_map{
+    { 0, tvrx2_tda18272_cal_map_t({ 44032000,  48128000,  52224000,  56320000}, boost::array<int, 4>{15, 0,10,17} ) },
+    { 1, tvrx2_tda18272_cal_map_t({ 84992000,  89088000,  93184000,  97280000}, boost::array<int, 4>{ 1, 0,-2, 3} ) },
+    { 2, tvrx2_tda18272_cal_map_t({106496000, 111616000, 115712000, 123904000}, boost::array<int, 4>{ 0,-1, 1, 2} ) },
+    { 3, tvrx2_tda18272_cal_map_t({161792000, 165888000, 169984000, 174080000}, boost::array<int, 4>{ 3, 0, 1, 2} ) },
+    { 4, tvrx2_tda18272_cal_map_t({224256000, 228352000, 232448000, 235520000}, boost::array<int, 4>{ 3, 0, 1, 2} ) },
+    { 5, tvrx2_tda18272_cal_map_t({301056000, 312320000, 322560000, 335872000}, boost::array<int, 4>{ 0,-1, 1, 2} ) },
+    { 6, tvrx2_tda18272_cal_map_t({389120000, 393216000, 397312000, 401408000}, boost::array<int, 4>{-2, 0,-1, 1} ) },
+    { 7, tvrx2_tda18272_cal_map_t({455680000, 460800000, 465920000, 471040000}, boost::array<int, 4>{ 0,-2,-3, 1} ) },
+    { 8, tvrx2_tda18272_cal_map_t({555008000, 563200000, 570368000, 577536000}, boost::array<int, 4>{-1, 0,-3,-2} ) },
+    { 9, tvrx2_tda18272_cal_map_t({647168000, 652288000, 658432000, 662528000}, boost::array<int, 4>{-6,-3, 0,-5} ) },
+    {10, tvrx2_tda18272_cal_map_t({748544000, 755712000, 762880000, 770048000}, boost::array<int, 4>{-6,-3, 0,-5} ) },
+    {11, tvrx2_tda18272_cal_map_t({792576000, 801792000, 809984000, 818176000}, boost::array<int, 4>{-5,-2, 0,-4} ) }
+};
 
-static const std::vector<tvrx2_tda18272_freq_map_t> tvrx2_tda18272_freq_map = list_of
-    ( tvrx2_tda18272_freq_map_t( 39936000, 0xFF, 0x17, 0) )
-    ( tvrx2_tda18272_freq_map_t( 40960000, 0xFD, 0x17, 0) )
-    ( tvrx2_tda18272_freq_map_t( 41984000, 0xF1, 0x15, 0) )
-    ( tvrx2_tda18272_freq_map_t( 43008000, 0xE5, 0x13, 0) )
-    ( tvrx2_tda18272_freq_map_t( 44032000, 0xDB, 0x13, 0) )
-    ( tvrx2_tda18272_freq_map_t( 45056000, 0xD1, 0x12, 0) )
-    ( tvrx2_tda18272_freq_map_t( 46080000, 0xC7, 0x10, 0) )
-    ( tvrx2_tda18272_freq_map_t( 47104000, 0xBE, 0x0F, 0) )
-    ( tvrx2_tda18272_freq_map_t( 48128000, 0xB5, 0x0F, 0) )
-    ( tvrx2_tda18272_freq_map_t( 49152000, 0xAD, 0x0F, 0) )
-    ( tvrx2_tda18272_freq_map_t( 50176000, 0xA6, 0x0F, 0) )
-    ( tvrx2_tda18272_freq_map_t( 51200000, 0x9F, 0x0F, 0) )
-    ( tvrx2_tda18272_freq_map_t( 52224000, 0x98, 0x0F, 0) )
-    ( tvrx2_tda18272_freq_map_t( 53248000, 0x91, 0x0F, 0) )
-    ( tvrx2_tda18272_freq_map_t( 54272000, 0x8B, 0x0F, 0) )
-    ( tvrx2_tda18272_freq_map_t( 55296000, 0x86, 0x0F, 0) )
-    ( tvrx2_tda18272_freq_map_t( 56320000, 0x80, 0x0F, 0) )
-    ( tvrx2_tda18272_freq_map_t( 57344000, 0x7B, 0x0E, 0) )
-    ( tvrx2_tda18272_freq_map_t( 58368000, 0x76, 0x0E, 0) )
-    ( tvrx2_tda18272_freq_map_t( 59392000, 0x72, 0x0D, 0) )
-    ( tvrx2_tda18272_freq_map_t( 60416000, 0x6D, 0x0D, 0) )
-    ( tvrx2_tda18272_freq_map_t( 61440000, 0x69, 0x0C, 0) )
-    ( tvrx2_tda18272_freq_map_t( 62464000, 0x65, 0x0C, 0) )
-    ( tvrx2_tda18272_freq_map_t( 63488000, 0x61, 0x0B, 0) )
-    ( tvrx2_tda18272_freq_map_t( 64512000, 0x5E, 0x0B, 0) )
-    ( tvrx2_tda18272_freq_map_t( 64512000, 0x5A, 0x0B, 0) )
-    ( tvrx2_tda18272_freq_map_t( 65536000, 0x57, 0x0A, 0) )
-    ( tvrx2_tda18272_freq_map_t( 66560000, 0x54, 0x0A, 0) )
-    ( tvrx2_tda18272_freq_map_t( 67584000, 0x51, 0x09, 0) )
-    ( tvrx2_tda18272_freq_map_t( 68608000, 0x4E, 0x09, 0) )
-    ( tvrx2_tda18272_freq_map_t( 69632000, 0x4B, 0x09, 0) )
-    ( tvrx2_tda18272_freq_map_t( 70656000, 0x49, 0x08, 0) )
-    ( tvrx2_tda18272_freq_map_t( 71680000, 0x46, 0x08, 0) )
-    ( tvrx2_tda18272_freq_map_t( 72704000, 0x44, 0x08, 0) )
-    ( tvrx2_tda18272_freq_map_t( 73728000, 0x41, 0x07, 0) )
-    ( tvrx2_tda18272_freq_map_t( 74752000, 0x3F, 0x07, 0) )
-    ( tvrx2_tda18272_freq_map_t( 75776000, 0x3D, 0x07, 0) )
-    ( tvrx2_tda18272_freq_map_t( 76800000, 0x3B, 0x07, 0) )
-    ( tvrx2_tda18272_freq_map_t( 77824000, 0x39, 0x07, 0) )
-    ( tvrx2_tda18272_freq_map_t( 78848000, 0x37, 0x07, 0) )
-    ( tvrx2_tda18272_freq_map_t( 79872000, 0x35, 0x07, 0) )
-    ( tvrx2_tda18272_freq_map_t( 80896000, 0x33, 0x07, 0) )
-    ( tvrx2_tda18272_freq_map_t( 81920000, 0x32, 0x07, 0) )
-    ( tvrx2_tda18272_freq_map_t( 82944000, 0x30, 0x07, 0) )
-    ( tvrx2_tda18272_freq_map_t( 83968000, 0x2F, 0x07, 0) )
-    ( tvrx2_tda18272_freq_map_t( 84992000, 0x2D, 0x07, 0) )
-    ( tvrx2_tda18272_freq_map_t( 86016000, 0x2C, 0x07, 0) )
-    ( tvrx2_tda18272_freq_map_t( 87040000, 0x2A, 0x07, 0) )
-    ( tvrx2_tda18272_freq_map_t( 88064000, 0x29, 0x06, 0) )
-    ( tvrx2_tda18272_freq_map_t( 89088000, 0x27, 0x06, 0) )
-    ( tvrx2_tda18272_freq_map_t( 90112000, 0x26, 0x06, 0) )
-    ( tvrx2_tda18272_freq_map_t( 91136000, 0x25, 0x06, 0) )
-    ( tvrx2_tda18272_freq_map_t( 92160000, 0x24, 0x06, 0) )
-    ( tvrx2_tda18272_freq_map_t( 93184000, 0x22, 0x05, 0) )
-    ( tvrx2_tda18272_freq_map_t( 94208000, 0x21, 0x05, 0) )
-    ( tvrx2_tda18272_freq_map_t( 95232000, 0x20, 0x05, 0) )
-    ( tvrx2_tda18272_freq_map_t( 96256000, 0x1F, 0x05, 0) )
-    ( tvrx2_tda18272_freq_map_t( 97280000, 0x1E, 0x05, 0) )
-    ( tvrx2_tda18272_freq_map_t( 98304000, 0x1D, 0x05, 0) )
-    ( tvrx2_tda18272_freq_map_t( 99328000, 0x1C, 0x04, 0) )
-    ( tvrx2_tda18272_freq_map_t(100352000, 0x1B, 0x04, 0) )
-    ( tvrx2_tda18272_freq_map_t(101376000, 0x1A, 0x04, 0) )
-    ( tvrx2_tda18272_freq_map_t(103424000, 0x19, 0x04, 0) )
-    ( tvrx2_tda18272_freq_map_t(104448000, 0x18, 0x04, 0) )
-    ( tvrx2_tda18272_freq_map_t(105472000, 0x17, 0x04, 0) )
-    ( tvrx2_tda18272_freq_map_t(106496000, 0x16, 0x03, 0) )
-    ( tvrx2_tda18272_freq_map_t(106496000, 0x15, 0x03, 0) )
-    ( tvrx2_tda18272_freq_map_t(108544000, 0x14, 0x03, 0) )
-    ( tvrx2_tda18272_freq_map_t(109568000, 0x13, 0x03, 0) )
-    ( tvrx2_tda18272_freq_map_t(111616000, 0x12, 0x03, 0) )
-    ( tvrx2_tda18272_freq_map_t(112640000, 0x11, 0x03, 0) )
-    ( tvrx2_tda18272_freq_map_t(113664000, 0x11, 0x07, 0) )
-    ( tvrx2_tda18272_freq_map_t(114688000, 0x10, 0x07, 0) )
-    ( tvrx2_tda18272_freq_map_t(115712000, 0x0F, 0x07, 0) )
-    ( tvrx2_tda18272_freq_map_t(117760000, 0x0E, 0x07, 0) )
-    ( tvrx2_tda18272_freq_map_t(119808000, 0x0D, 0x06, 0) )
-    ( tvrx2_tda18272_freq_map_t(121856000, 0x0C, 0x06, 0) )
-    ( tvrx2_tda18272_freq_map_t(123904000, 0x0B, 0x06, 0) )
-    ( tvrx2_tda18272_freq_map_t(125952000, 0x0A, 0x05, 0) )
-    ( tvrx2_tda18272_freq_map_t(128000000, 0x09, 0x05, 0) )
-    ( tvrx2_tda18272_freq_map_t(130048000, 0x08, 0x05, 0) )
-    ( tvrx2_tda18272_freq_map_t(133120000, 0x07, 0x04, 0) )
-    ( tvrx2_tda18272_freq_map_t(135168000, 0x06, 0x04, 0) )
-    ( tvrx2_tda18272_freq_map_t(138240000, 0x05, 0x04, 0) )
-    ( tvrx2_tda18272_freq_map_t(141312000, 0x04, 0x04, 0) )
-    ( tvrx2_tda18272_freq_map_t(144384000, 0x03, 0x03, 0) )
-    ( tvrx2_tda18272_freq_map_t(145408000, 0xE0, 0x3F, 1) )
-    ( tvrx2_tda18272_freq_map_t(147456000, 0xDC, 0x37, 1) )
-    ( tvrx2_tda18272_freq_map_t(148480000, 0xD9, 0x32, 1) )
-    ( tvrx2_tda18272_freq_map_t(149504000, 0xD6, 0x2F, 1) )
-    ( tvrx2_tda18272_freq_map_t(149504000, 0xD2, 0x2F, 1) )
-    ( tvrx2_tda18272_freq_map_t(150528000, 0xCF, 0x2F, 1) )
-    ( tvrx2_tda18272_freq_map_t(151552000, 0xCC, 0x2B, 1) )
-    ( tvrx2_tda18272_freq_map_t(152576000, 0xC9, 0x27, 1) )
-    ( tvrx2_tda18272_freq_map_t(153600000, 0xC5, 0x27, 1) )
-    ( tvrx2_tda18272_freq_map_t(154624000, 0xC2, 0x25, 1) )
-    ( tvrx2_tda18272_freq_map_t(155648000, 0xBF, 0x23, 1) )
-    ( tvrx2_tda18272_freq_map_t(156672000, 0xBD, 0x20, 1) )
-    ( tvrx2_tda18272_freq_map_t(157696000, 0xBA, 0x1F, 1) )
-    ( tvrx2_tda18272_freq_map_t(158720000, 0xB7, 0x1F, 1) )
-    ( tvrx2_tda18272_freq_map_t(159744000, 0xB4, 0x1F, 1) )
-    ( tvrx2_tda18272_freq_map_t(160768000, 0xB1, 0x1F, 1) )
-    ( tvrx2_tda18272_freq_map_t(161792000, 0xAF, 0x1F, 1) )
-    ( tvrx2_tda18272_freq_map_t(162816000, 0xAC, 0x1F, 1) )
-    ( tvrx2_tda18272_freq_map_t(163840000, 0xAA, 0x1F, 1) )
-    ( tvrx2_tda18272_freq_map_t(164864000, 0xA7, 0x1F, 1) )
-    ( tvrx2_tda18272_freq_map_t(165888000, 0xA5, 0x1F, 1) )
-    ( tvrx2_tda18272_freq_map_t(166912000, 0xA2, 0x1F, 1) )
-    ( tvrx2_tda18272_freq_map_t(167936000, 0xA0, 0x1F, 1) )
-    ( tvrx2_tda18272_freq_map_t(168960000, 0x9D, 0x1F, 1) )
-    ( tvrx2_tda18272_freq_map_t(169984000, 0x9B, 0x1F, 1) )
-    ( tvrx2_tda18272_freq_map_t(171008000, 0x99, 0x1F, 1) )
-    ( tvrx2_tda18272_freq_map_t(172032000, 0x97, 0x1E, 1) )
-    ( tvrx2_tda18272_freq_map_t(173056000, 0x95, 0x1D, 1) )
-    ( tvrx2_tda18272_freq_map_t(174080000, 0x92, 0x1C, 1) )
-    ( tvrx2_tda18272_freq_map_t(175104000, 0x90, 0x1B, 1) )
-    ( tvrx2_tda18272_freq_map_t(176128000, 0x8E, 0x1A, 1) )
-    ( tvrx2_tda18272_freq_map_t(177152000, 0x8C, 0x19, 1) )
-    ( tvrx2_tda18272_freq_map_t(178176000, 0x8A, 0x18, 1) )
-    ( tvrx2_tda18272_freq_map_t(179200000, 0x88, 0x17, 1) )
-    ( tvrx2_tda18272_freq_map_t(180224000, 0x86, 0x17, 1) )
-    ( tvrx2_tda18272_freq_map_t(181248000, 0x84, 0x17, 1) )
-    ( tvrx2_tda18272_freq_map_t(182272000, 0x82, 0x17, 1) )
-    ( tvrx2_tda18272_freq_map_t(183296000, 0x81, 0x17, 1) )
-    ( tvrx2_tda18272_freq_map_t(184320000, 0x7F, 0x17, 1) )
-    ( tvrx2_tda18272_freq_map_t(185344000, 0x7D, 0x16, 1) )
-    ( tvrx2_tda18272_freq_map_t(186368000, 0x7B, 0x15, 1) )
-    ( tvrx2_tda18272_freq_map_t(187392000, 0x7A, 0x14, 1) )
-    ( tvrx2_tda18272_freq_map_t(188416000, 0x78, 0x14, 1) )
-    ( tvrx2_tda18272_freq_map_t(189440000, 0x76, 0x13, 1) )
-    ( tvrx2_tda18272_freq_map_t(190464000, 0x75, 0x13, 1) )
-    ( tvrx2_tda18272_freq_map_t(191488000, 0x73, 0x13, 1) )
-    ( tvrx2_tda18272_freq_map_t(192512000, 0x71, 0x12, 1) )
-    ( tvrx2_tda18272_freq_map_t(192512000, 0x70, 0x11, 1) )
-    ( tvrx2_tda18272_freq_map_t(193536000, 0x6E, 0x11, 1) )
-    ( tvrx2_tda18272_freq_map_t(194560000, 0x6D, 0x10, 1) )
-    ( tvrx2_tda18272_freq_map_t(195584000, 0x6B, 0x10, 1) )
-    ( tvrx2_tda18272_freq_map_t(196608000, 0x6A, 0x0F, 1) )
-    ( tvrx2_tda18272_freq_map_t(197632000, 0x68, 0x0F, 1) )
-    ( tvrx2_tda18272_freq_map_t(198656000, 0x67, 0x0F, 1) )
-    ( tvrx2_tda18272_freq_map_t(199680000, 0x65, 0x0F, 1) )
-    ( tvrx2_tda18272_freq_map_t(200704000, 0x64, 0x0F, 1) )
-    ( tvrx2_tda18272_freq_map_t(201728000, 0x63, 0x0F, 1) )
-    ( tvrx2_tda18272_freq_map_t(202752000, 0x61, 0x0F, 1) )
-    ( tvrx2_tda18272_freq_map_t(203776000, 0x60, 0x0F, 1) )
-    ( tvrx2_tda18272_freq_map_t(204800000, 0x5F, 0x0F, 1) )
-    ( tvrx2_tda18272_freq_map_t(205824000, 0x5D, 0x0F, 1) )
-    ( tvrx2_tda18272_freq_map_t(206848000, 0x5C, 0x0F, 1) )
-    ( tvrx2_tda18272_freq_map_t(207872000, 0x5B, 0x0F, 1) )
-    ( tvrx2_tda18272_freq_map_t(208896000, 0x5A, 0x0F, 1) )
-    ( tvrx2_tda18272_freq_map_t(209920000, 0x58, 0x0F, 1) )
-    ( tvrx2_tda18272_freq_map_t(210944000, 0x57, 0x0F, 1) )
-    ( tvrx2_tda18272_freq_map_t(211968000, 0x56, 0x0F, 1) )
-    ( tvrx2_tda18272_freq_map_t(212992000, 0x55, 0x0F, 1) )
-    ( tvrx2_tda18272_freq_map_t(214016000, 0x54, 0x0F, 1) )
-    ( tvrx2_tda18272_freq_map_t(215040000, 0x53, 0x0F, 1) )
-    ( tvrx2_tda18272_freq_map_t(216064000, 0x52, 0x0F, 1) )
-    ( tvrx2_tda18272_freq_map_t(217088000, 0x50, 0x0F, 1) )
-    ( tvrx2_tda18272_freq_map_t(218112000, 0x4F, 0x0F, 1) )
-    ( tvrx2_tda18272_freq_map_t(219136000, 0x4E, 0x0F, 1) )
-    ( tvrx2_tda18272_freq_map_t(220160000, 0x4D, 0x0E, 1) )
-    ( tvrx2_tda18272_freq_map_t(221184000, 0x4C, 0x0E, 1) )
-    ( tvrx2_tda18272_freq_map_t(222208000, 0x4B, 0x0E, 1) )
-    ( tvrx2_tda18272_freq_map_t(223232000, 0x4A, 0x0E, 1) )
-    ( tvrx2_tda18272_freq_map_t(224256000, 0x49, 0x0D, 1) )
-    ( tvrx2_tda18272_freq_map_t(225280000, 0x48, 0x0D, 1) )
-    ( tvrx2_tda18272_freq_map_t(226304000, 0x47, 0x0D, 1) )
-    ( tvrx2_tda18272_freq_map_t(227328000, 0x46, 0x0D, 1) )
-    ( tvrx2_tda18272_freq_map_t(228352000, 0x45, 0x0C, 1) )
-    ( tvrx2_tda18272_freq_map_t(229376000, 0x44, 0x0C, 1) )
-    ( tvrx2_tda18272_freq_map_t(230400000, 0x43, 0x0C, 1) )
-    ( tvrx2_tda18272_freq_map_t(231424000, 0x42, 0x0C, 1) )
-    ( tvrx2_tda18272_freq_map_t(232448000, 0x42, 0x0B, 1) )
-    ( tvrx2_tda18272_freq_map_t(233472000, 0x41, 0x0B, 1) )
-    ( tvrx2_tda18272_freq_map_t(234496000, 0x40, 0x0B, 1) )
-    ( tvrx2_tda18272_freq_map_t(234496000, 0x3F, 0x0B, 1) )
-    ( tvrx2_tda18272_freq_map_t(235520000, 0x3E, 0x0B, 1) )
-    ( tvrx2_tda18272_freq_map_t(236544000, 0x3D, 0x0B, 1) )
-    ( tvrx2_tda18272_freq_map_t(237568000, 0x3C, 0x0B, 1) )
-    ( tvrx2_tda18272_freq_map_t(239616000, 0x3B, 0x0A, 1) )
-    ( tvrx2_tda18272_freq_map_t(240640000, 0x3A, 0x0A, 1) )
-    ( tvrx2_tda18272_freq_map_t(241664000, 0x39, 0x0A, 1) )
-    ( tvrx2_tda18272_freq_map_t(242688000, 0x38, 0x0A, 1) )
-    ( tvrx2_tda18272_freq_map_t(244736000, 0x37, 0x09, 1) )
-    ( tvrx2_tda18272_freq_map_t(245760000, 0x36, 0x09, 1) )
-    ( tvrx2_tda18272_freq_map_t(246784000, 0x35, 0x09, 1) )
-    ( tvrx2_tda18272_freq_map_t(248832000, 0x34, 0x09, 1) )
-    ( tvrx2_tda18272_freq_map_t(249856000, 0x33, 0x09, 1) )
-    ( tvrx2_tda18272_freq_map_t(250880000, 0x32, 0x08, 1) )
-    ( tvrx2_tda18272_freq_map_t(252928000, 0x31, 0x08, 1) )
-    ( tvrx2_tda18272_freq_map_t(253952000, 0x30, 0x08, 1) )
-    ( tvrx2_tda18272_freq_map_t(256000000, 0x2F, 0x08, 1) )
-    ( tvrx2_tda18272_freq_map_t(257024000, 0x2E, 0x08, 1) )
-    ( tvrx2_tda18272_freq_map_t(259072000, 0x2D, 0x07, 1) )
-    ( tvrx2_tda18272_freq_map_t(260096000, 0x2C, 0x07, 1) )
-    ( tvrx2_tda18272_freq_map_t(262144000, 0x2B, 0x07, 1) )
-    ( tvrx2_tda18272_freq_map_t(264192000, 0x2A, 0x07, 1) )
-    ( tvrx2_tda18272_freq_map_t(265216000, 0x29, 0x07, 1) )
-    ( tvrx2_tda18272_freq_map_t(267264000, 0x28, 0x07, 1) )
-    ( tvrx2_tda18272_freq_map_t(269312000, 0x27, 0x07, 1) )
-    ( tvrx2_tda18272_freq_map_t(270336000, 0x26, 0x07, 1) )
-    ( tvrx2_tda18272_freq_map_t(272384000, 0x25, 0x07, 1) )
-    ( tvrx2_tda18272_freq_map_t(274432000, 0x24, 0x07, 1) )
-    ( tvrx2_tda18272_freq_map_t(276480000, 0x23, 0x07, 1) )
-    ( tvrx2_tda18272_freq_map_t(277504000, 0x22, 0x07, 1) )
-    ( tvrx2_tda18272_freq_map_t(279552000, 0x21, 0x07, 1) )
-    ( tvrx2_tda18272_freq_map_t(281600000, 0x20, 0x07, 1) )
-    ( tvrx2_tda18272_freq_map_t(283648000, 0x1F, 0x07, 1) )
-    ( tvrx2_tda18272_freq_map_t(285696000, 0x1E, 0x0F, 1) )
-    ( tvrx2_tda18272_freq_map_t(287744000, 0x1D, 0x0F, 1) )
-    ( tvrx2_tda18272_freq_map_t(289792000, 0x1C, 0x0E, 1) )
-    ( tvrx2_tda18272_freq_map_t(291840000, 0x1B, 0x0E, 1) )
-    ( tvrx2_tda18272_freq_map_t(293888000, 0x1A, 0x0D, 1) )
-    ( tvrx2_tda18272_freq_map_t(296960000, 0x19, 0x0D, 1) )
-    ( tvrx2_tda18272_freq_map_t(299008000, 0x18, 0x0C, 1) )
-    ( tvrx2_tda18272_freq_map_t(301056000, 0x17, 0x0C, 1) )
-    ( tvrx2_tda18272_freq_map_t(304128000, 0x16, 0x0C, 1) )
-    ( tvrx2_tda18272_freq_map_t(306176000, 0x15, 0x0B, 1) )
-    ( tvrx2_tda18272_freq_map_t(309248000, 0x14, 0x0B, 1) )
-    ( tvrx2_tda18272_freq_map_t(312320000, 0x13, 0x0B, 1) )
-    ( tvrx2_tda18272_freq_map_t(314368000, 0x12, 0x0B, 1) )
-    ( tvrx2_tda18272_freq_map_t(317440000, 0x11, 0x0A, 1) )
-    ( tvrx2_tda18272_freq_map_t(320512000, 0x10, 0x0A, 1) )
-    ( tvrx2_tda18272_freq_map_t(322560000, 0x0F, 0x0A, 1) )
-    ( tvrx2_tda18272_freq_map_t(325632000, 0x0E, 0x09, 1) )
-    ( tvrx2_tda18272_freq_map_t(328704000, 0x0D, 0x09, 1) )
-    ( tvrx2_tda18272_freq_map_t(331776000, 0x0C, 0x08, 1) )
-    ( tvrx2_tda18272_freq_map_t(335872000, 0x0B, 0x08, 1) )
-    ( tvrx2_tda18272_freq_map_t(338944000, 0x0A, 0x08, 1) )
-    ( tvrx2_tda18272_freq_map_t(343040000, 0x09, 0x07, 1) )
-    ( tvrx2_tda18272_freq_map_t(346112000, 0x08, 0x07, 1) )
-    ( tvrx2_tda18272_freq_map_t(350208000, 0x07, 0x07, 1) )
-    ( tvrx2_tda18272_freq_map_t(354304000, 0x06, 0x07, 1) )
-    ( tvrx2_tda18272_freq_map_t(358400000, 0x05, 0x07, 1) )
-    ( tvrx2_tda18272_freq_map_t(362496000, 0x04, 0x07, 1) )
-    ( tvrx2_tda18272_freq_map_t(365568000, 0x04, 0x07, 1) )
-    ( tvrx2_tda18272_freq_map_t(367616000, 0xDA, 0x2A, 2) )
-    ( tvrx2_tda18272_freq_map_t(367616000, 0xD9, 0x27, 2) )
-    ( tvrx2_tda18272_freq_map_t(368640000, 0xD8, 0x27, 2) )
-    ( tvrx2_tda18272_freq_map_t(369664000, 0xD6, 0x27, 2) )
-    ( tvrx2_tda18272_freq_map_t(370688000, 0xD5, 0x27, 2) )
-    ( tvrx2_tda18272_freq_map_t(371712000, 0xD3, 0x25, 2) )
-    ( tvrx2_tda18272_freq_map_t(372736000, 0xD2, 0x23, 2) )
-    ( tvrx2_tda18272_freq_map_t(373760000, 0xD0, 0x23, 2) )
-    ( tvrx2_tda18272_freq_map_t(374784000, 0xCF, 0x21, 2) )
-    ( tvrx2_tda18272_freq_map_t(375808000, 0xCD, 0x1F, 2) )
-    ( tvrx2_tda18272_freq_map_t(376832000, 0xCC, 0x1F, 2) )
-    ( tvrx2_tda18272_freq_map_t(377856000, 0xCA, 0x1F, 2) )
-    ( tvrx2_tda18272_freq_map_t(378880000, 0xC9, 0x1F, 2) )
-    ( tvrx2_tda18272_freq_map_t(379904000, 0xC7, 0x1F, 2) )
-    ( tvrx2_tda18272_freq_map_t(380928000, 0xC6, 0x1F, 2) )
-    ( tvrx2_tda18272_freq_map_t(381952000, 0xC4, 0x1F, 2) )
-    ( tvrx2_tda18272_freq_map_t(382976000, 0xC3, 0x1F, 2) )
-    ( tvrx2_tda18272_freq_map_t(384000000, 0xC1, 0x1F, 2) )
-    ( tvrx2_tda18272_freq_map_t(385024000, 0xC0, 0x1F, 2) )
-    ( tvrx2_tda18272_freq_map_t(386048000, 0xBF, 0x1F, 2) )
-    ( tvrx2_tda18272_freq_map_t(387072000, 0xBD, 0x1F, 2) )
-    ( tvrx2_tda18272_freq_map_t(388096000, 0xBC, 0x1F, 2) )
-    ( tvrx2_tda18272_freq_map_t(389120000, 0xBB, 0x1F, 2) )
-    ( tvrx2_tda18272_freq_map_t(390144000, 0xB9, 0x1F, 2) )
-    ( tvrx2_tda18272_freq_map_t(391168000, 0xB8, 0x1F, 2) )
-    ( tvrx2_tda18272_freq_map_t(392192000, 0xB7, 0x1F, 2) )
-    ( tvrx2_tda18272_freq_map_t(393216000, 0xB5, 0x1F, 2) )
-    ( tvrx2_tda18272_freq_map_t(394240000, 0xB4, 0x1F, 2) )
-    ( tvrx2_tda18272_freq_map_t(395264000, 0xB3, 0x1F, 2) )
-    ( tvrx2_tda18272_freq_map_t(396288000, 0xB1, 0x1F, 2) )
-    ( tvrx2_tda18272_freq_map_t(397312000, 0xB0, 0x1F, 2) )
-    ( tvrx2_tda18272_freq_map_t(398336000, 0xAF, 0x1F, 2) )
-    ( tvrx2_tda18272_freq_map_t(399360000, 0xAD, 0x1F, 2) )
-    ( tvrx2_tda18272_freq_map_t(400384000, 0xAC, 0x1F, 2) )
-    ( tvrx2_tda18272_freq_map_t(401408000, 0xAB, 0x1F, 2) )
-    ( tvrx2_tda18272_freq_map_t(402432000, 0xAA, 0x1F, 2) )
-    ( tvrx2_tda18272_freq_map_t(403456000, 0xA8, 0x1E, 2) )
-    ( tvrx2_tda18272_freq_map_t(404480000, 0xA7, 0x1D, 2) )
-    ( tvrx2_tda18272_freq_map_t(405504000, 0xA6, 0x1D, 2) )
-    ( tvrx2_tda18272_freq_map_t(405504000, 0xA5, 0x1C, 2) )
-    ( tvrx2_tda18272_freq_map_t(406528000, 0xA3, 0x1C, 2) )
-    ( tvrx2_tda18272_freq_map_t(407552000, 0xA2, 0x1B, 2) )
-    ( tvrx2_tda18272_freq_map_t(408576000, 0xA1, 0x1B, 2) )
-    ( tvrx2_tda18272_freq_map_t(409600000, 0xA0, 0x1B, 2) )
-    ( tvrx2_tda18272_freq_map_t(410624000, 0x9F, 0x1A, 2) )
-    ( tvrx2_tda18272_freq_map_t(411648000, 0x9D, 0x1A, 2) )
-    ( tvrx2_tda18272_freq_map_t(412672000, 0x9C, 0x19, 2) )
-    ( tvrx2_tda18272_freq_map_t(413696000, 0x9B, 0x18, 2) )
-    ( tvrx2_tda18272_freq_map_t(414720000, 0x9A, 0x18, 2) )
-    ( tvrx2_tda18272_freq_map_t(415744000, 0x99, 0x17, 2) )
-    ( tvrx2_tda18272_freq_map_t(416768000, 0x98, 0x17, 2) )
-    ( tvrx2_tda18272_freq_map_t(417792000, 0x97, 0x17, 2) )
-    ( tvrx2_tda18272_freq_map_t(418816000, 0x95, 0x17, 2) )
-    ( tvrx2_tda18272_freq_map_t(419840000, 0x94, 0x17, 2) )
-    ( tvrx2_tda18272_freq_map_t(420864000, 0x93, 0x17, 2) )
-    ( tvrx2_tda18272_freq_map_t(421888000, 0x92, 0x17, 2) )
-    ( tvrx2_tda18272_freq_map_t(422912000, 0x91, 0x17, 2) )
-    ( tvrx2_tda18272_freq_map_t(423936000, 0x90, 0x17, 2) )
-    ( tvrx2_tda18272_freq_map_t(424960000, 0x8F, 0x17, 2) )
-    ( tvrx2_tda18272_freq_map_t(425984000, 0x8E, 0x16, 2) )
-    ( tvrx2_tda18272_freq_map_t(427008000, 0x8D, 0x16, 2) )
-    ( tvrx2_tda18272_freq_map_t(428032000, 0x8C, 0x15, 2) )
-    ( tvrx2_tda18272_freq_map_t(429056000, 0x8B, 0x15, 2) )
-    ( tvrx2_tda18272_freq_map_t(430080000, 0x8A, 0x15, 2) )
-    ( tvrx2_tda18272_freq_map_t(431104000, 0x88, 0x14, 2) )
-    ( tvrx2_tda18272_freq_map_t(432128000, 0x87, 0x14, 2) )
-    ( tvrx2_tda18272_freq_map_t(433152000, 0x86, 0x14, 2) )
-    ( tvrx2_tda18272_freq_map_t(434176000, 0x85, 0x13, 2) )
-    ( tvrx2_tda18272_freq_map_t(435200000, 0x84, 0x13, 2) )
-    ( tvrx2_tda18272_freq_map_t(436224000, 0x83, 0x13, 2) )
-    ( tvrx2_tda18272_freq_map_t(437248000, 0x82, 0x13, 2) )
-    ( tvrx2_tda18272_freq_map_t(438272000, 0x81, 0x13, 2) )
-    ( tvrx2_tda18272_freq_map_t(439296000, 0x80, 0x12, 2) )
-    ( tvrx2_tda18272_freq_map_t(440320000, 0x7F, 0x12, 2) )
-    ( tvrx2_tda18272_freq_map_t(441344000, 0x7E, 0x12, 2) )
-    ( tvrx2_tda18272_freq_map_t(442368000, 0x7D, 0x11, 2) )
-    ( tvrx2_tda18272_freq_map_t(444416000, 0x7C, 0x11, 2) )
-    ( tvrx2_tda18272_freq_map_t(445440000, 0x7B, 0x10, 2) )
-    ( tvrx2_tda18272_freq_map_t(446464000, 0x7A, 0x10, 2) )
-    ( tvrx2_tda18272_freq_map_t(447488000, 0x79, 0x10, 2) )
-    ( tvrx2_tda18272_freq_map_t(448512000, 0x78, 0x10, 2) )
-    ( tvrx2_tda18272_freq_map_t(448512000, 0x77, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(449536000, 0x76, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(450560000, 0x75, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(451584000, 0x74, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(452608000, 0x73, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(453632000, 0x72, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(454656000, 0x71, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(455680000, 0x70, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(457728000, 0x6F, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(458752000, 0x6E, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(459776000, 0x6D, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(460800000, 0x6C, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(461824000, 0x6B, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(462848000, 0x6A, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(464896000, 0x69, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(465920000, 0x68, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(466944000, 0x67, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(467968000, 0x66, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(468992000, 0x65, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(471040000, 0x64, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(472064000, 0x63, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(473088000, 0x62, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(474112000, 0x61, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(476160000, 0x60, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(477184000, 0x5F, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(478208000, 0x5E, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(479232000, 0x5D, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(481280000, 0x5C, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(482304000, 0x5B, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(483328000, 0x5A, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(485376000, 0x59, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(486400000, 0x58, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(487424000, 0x57, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(489472000, 0x56, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(490496000, 0x55, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(490496000, 0x54, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(492544000, 0x53, 0x0E, 2) )
-    ( tvrx2_tda18272_freq_map_t(493568000, 0x52, 0x0E, 2) )
-    ( tvrx2_tda18272_freq_map_t(495616000, 0x51, 0x0E, 2) )
-    ( tvrx2_tda18272_freq_map_t(496640000, 0x50, 0x0E, 2) )
-    ( tvrx2_tda18272_freq_map_t(497664000, 0x4F, 0x0E, 2) )
-    ( tvrx2_tda18272_freq_map_t(499712000, 0x4E, 0x0D, 2) )
-    ( tvrx2_tda18272_freq_map_t(500736000, 0x4D, 0x0D, 2) )
-    ( tvrx2_tda18272_freq_map_t(502784000, 0x4C, 0x0D, 2) )
-    ( tvrx2_tda18272_freq_map_t(503808000, 0x4B, 0x0D, 2) )
-    ( tvrx2_tda18272_freq_map_t(505856000, 0x4A, 0x0C, 2) )
-    ( tvrx2_tda18272_freq_map_t(506880000, 0x49, 0x0C, 2) )
-    ( tvrx2_tda18272_freq_map_t(508928000, 0x48, 0x0C, 2) )
-    ( tvrx2_tda18272_freq_map_t(509952000, 0x47, 0x0C, 2) )
-    ( tvrx2_tda18272_freq_map_t(512000000, 0x46, 0x0C, 2) )
-    ( tvrx2_tda18272_freq_map_t(513024000, 0x45, 0x0B, 2) )
-    ( tvrx2_tda18272_freq_map_t(515072000, 0x44, 0x0B, 2) )
-    ( tvrx2_tda18272_freq_map_t(517120000, 0x43, 0x0B, 2) )
-    ( tvrx2_tda18272_freq_map_t(518144000, 0x42, 0x0B, 2) )
-    ( tvrx2_tda18272_freq_map_t(520192000, 0x41, 0x0B, 2) )
-    ( tvrx2_tda18272_freq_map_t(521216000, 0x40, 0x0B, 2) )
-    ( tvrx2_tda18272_freq_map_t(523264000, 0x3F, 0x0B, 2) )
-    ( tvrx2_tda18272_freq_map_t(525312000, 0x3E, 0x0B, 2) )
-    ( tvrx2_tda18272_freq_map_t(526336000, 0x3D, 0x0B, 2) )
-    ( tvrx2_tda18272_freq_map_t(528384000, 0x3C, 0x0A, 2) )
-    ( tvrx2_tda18272_freq_map_t(530432000, 0x3B, 0x0A, 2) )
-    ( tvrx2_tda18272_freq_map_t(531456000, 0x3A, 0x0A, 2) )
-    ( tvrx2_tda18272_freq_map_t(533504000, 0x39, 0x0A, 2) )
-    ( tvrx2_tda18272_freq_map_t(534528000, 0x38, 0x0A, 2) )
-    ( tvrx2_tda18272_freq_map_t(536576000, 0x37, 0x0A, 2) )
-    ( tvrx2_tda18272_freq_map_t(537600000, 0x36, 0x09, 2) )
-    ( tvrx2_tda18272_freq_map_t(539648000, 0x35, 0x09, 2) )
-    ( tvrx2_tda18272_freq_map_t(541696000, 0x34, 0x09, 2) )
-    ( tvrx2_tda18272_freq_map_t(543744000, 0x33, 0x09, 2) )
-    ( tvrx2_tda18272_freq_map_t(544768000, 0x32, 0x09, 2) )
-    ( tvrx2_tda18272_freq_map_t(546816000, 0x31, 0x09, 2) )
-    ( tvrx2_tda18272_freq_map_t(548864000, 0x30, 0x08, 2) )
-    ( tvrx2_tda18272_freq_map_t(550912000, 0x2F, 0x08, 2) )
-    ( tvrx2_tda18272_freq_map_t(552960000, 0x2E, 0x08, 2) )
-    ( tvrx2_tda18272_freq_map_t(555008000, 0x2D, 0x08, 2) )
-    ( tvrx2_tda18272_freq_map_t(557056000, 0x2C, 0x08, 2) )
-    ( tvrx2_tda18272_freq_map_t(559104000, 0x2B, 0x08, 2) )
-    ( tvrx2_tda18272_freq_map_t(561152000, 0x2A, 0x07, 2) )
-    ( tvrx2_tda18272_freq_map_t(563200000, 0x29, 0x07, 2) )
-    ( tvrx2_tda18272_freq_map_t(565248000, 0x28, 0x07, 2) )
-    ( tvrx2_tda18272_freq_map_t(567296000, 0x27, 0x07, 2) )
-    ( tvrx2_tda18272_freq_map_t(569344000, 0x26, 0x07, 2) )
-    ( tvrx2_tda18272_freq_map_t(570368000, 0x26, 0x07, 2) )
-    ( tvrx2_tda18272_freq_map_t(571392000, 0x25, 0x07, 2) )
-    ( tvrx2_tda18272_freq_map_t(573440000, 0x24, 0x07, 2) )
-    ( tvrx2_tda18272_freq_map_t(575488000, 0x23, 0x07, 2) )
-    ( tvrx2_tda18272_freq_map_t(577536000, 0x22, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(578560000, 0x21, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(580608000, 0x20, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(583680000, 0x1F, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(585728000, 0x1E, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(587776000, 0x1D, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(589824000, 0x1C, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(592896000, 0x1B, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(594944000, 0x1A, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(596992000, 0x19, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(600064000, 0x18, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(602112000, 0x17, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(604160000, 0x16, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(607232000, 0x15, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(609280000, 0x14, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(612352000, 0x13, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(615424000, 0x12, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(617472000, 0x11, 0x0F, 2) )
-    ( tvrx2_tda18272_freq_map_t(619520000, 0x10, 0x0E, 2) )
-    ( tvrx2_tda18272_freq_map_t(621568000, 0x0F, 0x0E, 2) )
-    ( tvrx2_tda18272_freq_map_t(623616000, 0x0F, 0x0E, 2) )
-    ( tvrx2_tda18272_freq_map_t(624640000, 0xA3, 0x1F, 3) )
-    ( tvrx2_tda18272_freq_map_t(625664000, 0xA2, 0x1F, 3) )
-    ( tvrx2_tda18272_freq_map_t(626688000, 0xA1, 0x1F, 3) )
-    ( tvrx2_tda18272_freq_map_t(627712000, 0xA0, 0x1F, 3) )
-    ( tvrx2_tda18272_freq_map_t(628736000, 0x9F, 0x1F, 3) )
-    ( tvrx2_tda18272_freq_map_t(630784000, 0x9E, 0x1F, 3) )
-    ( tvrx2_tda18272_freq_map_t(631808000, 0x9D, 0x1F, 3) )
-    ( tvrx2_tda18272_freq_map_t(632832000, 0x9C, 0x1F, 3) )
-    ( tvrx2_tda18272_freq_map_t(633856000, 0x9B, 0x1F, 3) )
-    ( tvrx2_tda18272_freq_map_t(635904000, 0x9A, 0x1F, 3) )
-    ( tvrx2_tda18272_freq_map_t(636928000, 0x99, 0x1F, 3) )
-    ( tvrx2_tda18272_freq_map_t(637952000, 0x98, 0x1F, 3) )
-    ( tvrx2_tda18272_freq_map_t(638976000, 0x97, 0x1F, 3) )
-    ( tvrx2_tda18272_freq_map_t(641024000, 0x96, 0x1E, 3) )
-    ( tvrx2_tda18272_freq_map_t(642048000, 0x95, 0x1E, 3) )
-    ( tvrx2_tda18272_freq_map_t(643072000, 0x94, 0x1E, 3) )
-    ( tvrx2_tda18272_freq_map_t(644096000, 0x93, 0x1D, 3) )
-    ( tvrx2_tda18272_freq_map_t(646144000, 0x92, 0x1D, 3) )
-    ( tvrx2_tda18272_freq_map_t(647168000, 0x91, 0x1C, 3) )
-    ( tvrx2_tda18272_freq_map_t(648192000, 0x90, 0x1C, 3) )
-    ( tvrx2_tda18272_freq_map_t(650240000, 0x8F, 0x1B, 3) )
-    ( tvrx2_tda18272_freq_map_t(651264000, 0x8E, 0x1B, 3) )
-    ( tvrx2_tda18272_freq_map_t(652288000, 0x8D, 0x1B, 3) )
-    ( tvrx2_tda18272_freq_map_t(654336000, 0x8C, 0x1B, 3) )
-    ( tvrx2_tda18272_freq_map_t(655360000, 0x8B, 0x1B, 3) )
-    ( tvrx2_tda18272_freq_map_t(656384000, 0x8A, 0x1B, 3) )
-    ( tvrx2_tda18272_freq_map_t(658432000, 0x89, 0x1A, 3) )
-    ( tvrx2_tda18272_freq_map_t(659456000, 0x88, 0x1A, 3) )
-    ( tvrx2_tda18272_freq_map_t(660480000, 0x87, 0x1A, 3) )
-    ( tvrx2_tda18272_freq_map_t(661504000, 0x86, 0x19, 3) )
-    ( tvrx2_tda18272_freq_map_t(662528000, 0x85, 0x19, 3) )
-    ( tvrx2_tda18272_freq_map_t(664576000, 0x84, 0x18, 3) )
-    ( tvrx2_tda18272_freq_map_t(665600000, 0x83, 0x18, 3) )
-    ( tvrx2_tda18272_freq_map_t(666624000, 0x82, 0x18, 3) )
-    ( tvrx2_tda18272_freq_map_t(668672000, 0x81, 0x18, 3) )
-    ( tvrx2_tda18272_freq_map_t(669696000, 0x80, 0x17, 3) )
-    ( tvrx2_tda18272_freq_map_t(671744000, 0x7F, 0x17, 3) )
-    ( tvrx2_tda18272_freq_map_t(672768000, 0x7E, 0x17, 3) )
-    ( tvrx2_tda18272_freq_map_t(674816000, 0x7D, 0x17, 3) )
-    ( tvrx2_tda18272_freq_map_t(675840000, 0x7C, 0x17, 3) )
-    ( tvrx2_tda18272_freq_map_t(676864000, 0x7B, 0x17, 3) )
-    ( tvrx2_tda18272_freq_map_t(678912000, 0x7A, 0x17, 3) )
-    ( tvrx2_tda18272_freq_map_t(679936000, 0x79, 0x17, 3) )
-    ( tvrx2_tda18272_freq_map_t(681984000, 0x78, 0x17, 3) )
-    ( tvrx2_tda18272_freq_map_t(683008000, 0x77, 0x17, 3) )
-    ( tvrx2_tda18272_freq_map_t(685056000, 0x76, 0x17, 3) )
-    ( tvrx2_tda18272_freq_map_t(686080000, 0x75, 0x17, 3) )
-    ( tvrx2_tda18272_freq_map_t(688128000, 0x74, 0x17, 3) )
-    ( tvrx2_tda18272_freq_map_t(689152000, 0x73, 0x17, 3) )
-    ( tvrx2_tda18272_freq_map_t(691200000, 0x72, 0x16, 3) )
-    ( tvrx2_tda18272_freq_map_t(693248000, 0x71, 0x16, 3) )
-    ( tvrx2_tda18272_freq_map_t(694272000, 0x70, 0x16, 3) )
-    ( tvrx2_tda18272_freq_map_t(696320000, 0x6F, 0x15, 3) )
-    ( tvrx2_tda18272_freq_map_t(697344000, 0x6E, 0x15, 3) )
-    ( tvrx2_tda18272_freq_map_t(699392000, 0x6D, 0x15, 3) )
-    ( tvrx2_tda18272_freq_map_t(700416000, 0x6C, 0x15, 3) )
-    ( tvrx2_tda18272_freq_map_t(702464000, 0x6B, 0x14, 3) )
-    ( tvrx2_tda18272_freq_map_t(704512000, 0x6A, 0x14, 3) )
-    ( tvrx2_tda18272_freq_map_t(704512000, 0x69, 0x14, 3) )
-    ( tvrx2_tda18272_freq_map_t(706560000, 0x68, 0x14, 3) )
-    ( tvrx2_tda18272_freq_map_t(707584000, 0x67, 0x13, 3) )
-    ( tvrx2_tda18272_freq_map_t(709632000, 0x66, 0x13, 3) )
-    ( tvrx2_tda18272_freq_map_t(711680000, 0x65, 0x13, 3) )
-    ( tvrx2_tda18272_freq_map_t(712704000, 0x64, 0x13, 3) )
-    ( tvrx2_tda18272_freq_map_t(714752000, 0x63, 0x13, 3) )
-    ( tvrx2_tda18272_freq_map_t(716800000, 0x62, 0x13, 3) )
-    ( tvrx2_tda18272_freq_map_t(717824000, 0x61, 0x13, 3) )
-    ( tvrx2_tda18272_freq_map_t(719872000, 0x60, 0x13, 3) )
-    ( tvrx2_tda18272_freq_map_t(721920000, 0x5F, 0x12, 3) )
-    ( tvrx2_tda18272_freq_map_t(723968000, 0x5E, 0x12, 3) )
-    ( tvrx2_tda18272_freq_map_t(724992000, 0x5D, 0x12, 3) )
-    ( tvrx2_tda18272_freq_map_t(727040000, 0x5C, 0x12, 3) )
-    ( tvrx2_tda18272_freq_map_t(729088000, 0x5B, 0x11, 3) )
-    ( tvrx2_tda18272_freq_map_t(731136000, 0x5A, 0x11, 3) )
-    ( tvrx2_tda18272_freq_map_t(732160000, 0x59, 0x11, 3) )
-    ( tvrx2_tda18272_freq_map_t(734208000, 0x58, 0x11, 3) )
-    ( tvrx2_tda18272_freq_map_t(736256000, 0x57, 0x10, 3) )
-    ( tvrx2_tda18272_freq_map_t(738304000, 0x56, 0x10, 3) )
-    ( tvrx2_tda18272_freq_map_t(740352000, 0x55, 0x10, 3) )
-    ( tvrx2_tda18272_freq_map_t(741376000, 0x54, 0x10, 3) )
-    ( tvrx2_tda18272_freq_map_t(743424000, 0x53, 0x10, 3) )
-    ( tvrx2_tda18272_freq_map_t(745472000, 0x52, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(746496000, 0x51, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(748544000, 0x50, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(750592000, 0x4F, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(752640000, 0x4E, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(753664000, 0x4D, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(755712000, 0x4C, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(757760000, 0x4B, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(759808000, 0x4A, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(761856000, 0x49, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(762880000, 0x49, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(763904000, 0x48, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(765952000, 0x47, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(768000000, 0x46, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(770048000, 0x45, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(772096000, 0x44, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(774144000, 0x43, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(776192000, 0x42, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(778240000, 0x41, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(780288000, 0x40, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(783360000, 0x3F, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(785408000, 0x3E, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(787456000, 0x3D, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(789504000, 0x3C, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(790528000, 0x3B, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(792576000, 0x3A, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(794624000, 0x39, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(797696000, 0x38, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(799744000, 0x37, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(801792000, 0x36, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(803840000, 0x35, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(806912000, 0x34, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(808960000, 0x33, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(809984000, 0x33, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(811008000, 0x32, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(813056000, 0x31, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(816128000, 0x30, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(818176000, 0x2F, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(820224000, 0x2E, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(823296000, 0x2D, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(825344000, 0x2C, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(828416000, 0x2B, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(830464000, 0x2A, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(832512000, 0x29, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(834560000, 0x28, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(836608000, 0x27, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(839680000, 0x26, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(841728000, 0x25, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(844800000, 0x24, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(847872000, 0x23, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(849920000, 0x22, 0x0F, 3) )
-    ( tvrx2_tda18272_freq_map_t(852992000, 0x21, 0x0E, 3) )
-    ( tvrx2_tda18272_freq_map_t(855040000, 0x20, 0x0E, 3) )
-    ( tvrx2_tda18272_freq_map_t(858112000, 0x1F, 0x0E, 3) )
-    ( tvrx2_tda18272_freq_map_t(861184000, 0x1E, 0x0E, 3) )
-    ( tvrx2_tda18272_freq_map_t(863232000, 0x1D, 0x0E, 3) )
-    ( tvrx2_tda18272_freq_map_t(866304000, 0x1C, 0x0E, 3) )
-    ( tvrx2_tda18272_freq_map_t(900096000, 0x10, 0x0C, 3) )
-    ( tvrx2_tda18272_freq_map_t(929792000, 0x07, 0x0B, 3) )
-    ( tvrx2_tda18272_freq_map_t(969728000, 0x00, 0x0A, 3) )
-;
+static const std::vector<tvrx2_tda18272_freq_map_t> tvrx2_tda18272_freq_map{
+    tvrx2_tda18272_freq_map_t( 39936000, 0xFF, 0x17, 0),
+    tvrx2_tda18272_freq_map_t( 40960000, 0xFD, 0x17, 0),
+    tvrx2_tda18272_freq_map_t( 41984000, 0xF1, 0x15, 0),
+    tvrx2_tda18272_freq_map_t( 43008000, 0xE5, 0x13, 0),
+    tvrx2_tda18272_freq_map_t( 44032000, 0xDB, 0x13, 0),
+    tvrx2_tda18272_freq_map_t( 45056000, 0xD1, 0x12, 0),
+    tvrx2_tda18272_freq_map_t( 46080000, 0xC7, 0x10, 0),
+    tvrx2_tda18272_freq_map_t( 47104000, 0xBE, 0x0F, 0),
+    tvrx2_tda18272_freq_map_t( 48128000, 0xB5, 0x0F, 0),
+    tvrx2_tda18272_freq_map_t( 49152000, 0xAD, 0x0F, 0),
+    tvrx2_tda18272_freq_map_t( 50176000, 0xA6, 0x0F, 0),
+    tvrx2_tda18272_freq_map_t( 51200000, 0x9F, 0x0F, 0),
+    tvrx2_tda18272_freq_map_t( 52224000, 0x98, 0x0F, 0),
+    tvrx2_tda18272_freq_map_t( 53248000, 0x91, 0x0F, 0),
+    tvrx2_tda18272_freq_map_t( 54272000, 0x8B, 0x0F, 0),
+    tvrx2_tda18272_freq_map_t( 55296000, 0x86, 0x0F, 0),
+    tvrx2_tda18272_freq_map_t( 56320000, 0x80, 0x0F, 0),
+    tvrx2_tda18272_freq_map_t( 57344000, 0x7B, 0x0E, 0),
+    tvrx2_tda18272_freq_map_t( 58368000, 0x76, 0x0E, 0),
+    tvrx2_tda18272_freq_map_t( 59392000, 0x72, 0x0D, 0),
+    tvrx2_tda18272_freq_map_t( 60416000, 0x6D, 0x0D, 0),
+    tvrx2_tda18272_freq_map_t( 61440000, 0x69, 0x0C, 0),
+    tvrx2_tda18272_freq_map_t( 62464000, 0x65, 0x0C, 0),
+    tvrx2_tda18272_freq_map_t( 63488000, 0x61, 0x0B, 0),
+    tvrx2_tda18272_freq_map_t( 64512000, 0x5E, 0x0B, 0),
+    tvrx2_tda18272_freq_map_t( 64512000, 0x5A, 0x0B, 0),
+    tvrx2_tda18272_freq_map_t( 65536000, 0x57, 0x0A, 0),
+    tvrx2_tda18272_freq_map_t( 66560000, 0x54, 0x0A, 0),
+    tvrx2_tda18272_freq_map_t( 67584000, 0x51, 0x09, 0),
+    tvrx2_tda18272_freq_map_t( 68608000, 0x4E, 0x09, 0),
+    tvrx2_tda18272_freq_map_t( 69632000, 0x4B, 0x09, 0),
+    tvrx2_tda18272_freq_map_t( 70656000, 0x49, 0x08, 0),
+    tvrx2_tda18272_freq_map_t( 71680000, 0x46, 0x08, 0),
+    tvrx2_tda18272_freq_map_t( 72704000, 0x44, 0x08, 0),
+    tvrx2_tda18272_freq_map_t( 73728000, 0x41, 0x07, 0),
+    tvrx2_tda18272_freq_map_t( 74752000, 0x3F, 0x07, 0),
+    tvrx2_tda18272_freq_map_t( 75776000, 0x3D, 0x07, 0),
+    tvrx2_tda18272_freq_map_t( 76800000, 0x3B, 0x07, 0),
+    tvrx2_tda18272_freq_map_t( 77824000, 0x39, 0x07, 0),
+    tvrx2_tda18272_freq_map_t( 78848000, 0x37, 0x07, 0),
+    tvrx2_tda18272_freq_map_t( 79872000, 0x35, 0x07, 0),
+    tvrx2_tda18272_freq_map_t( 80896000, 0x33, 0x07, 0),
+    tvrx2_tda18272_freq_map_t( 81920000, 0x32, 0x07, 0),
+    tvrx2_tda18272_freq_map_t( 82944000, 0x30, 0x07, 0),
+    tvrx2_tda18272_freq_map_t( 83968000, 0x2F, 0x07, 0),
+    tvrx2_tda18272_freq_map_t( 84992000, 0x2D, 0x07, 0),
+    tvrx2_tda18272_freq_map_t( 86016000, 0x2C, 0x07, 0),
+    tvrx2_tda18272_freq_map_t( 87040000, 0x2A, 0x07, 0),
+    tvrx2_tda18272_freq_map_t( 88064000, 0x29, 0x06, 0),
+    tvrx2_tda18272_freq_map_t( 89088000, 0x27, 0x06, 0),
+    tvrx2_tda18272_freq_map_t( 90112000, 0x26, 0x06, 0),
+    tvrx2_tda18272_freq_map_t( 91136000, 0x25, 0x06, 0),
+    tvrx2_tda18272_freq_map_t( 92160000, 0x24, 0x06, 0),
+    tvrx2_tda18272_freq_map_t( 93184000, 0x22, 0x05, 0),
+    tvrx2_tda18272_freq_map_t( 94208000, 0x21, 0x05, 0),
+    tvrx2_tda18272_freq_map_t( 95232000, 0x20, 0x05, 0),
+    tvrx2_tda18272_freq_map_t( 96256000, 0x1F, 0x05, 0),
+    tvrx2_tda18272_freq_map_t( 97280000, 0x1E, 0x05, 0),
+    tvrx2_tda18272_freq_map_t( 98304000, 0x1D, 0x05, 0),
+    tvrx2_tda18272_freq_map_t( 99328000, 0x1C, 0x04, 0),
+    tvrx2_tda18272_freq_map_t(100352000, 0x1B, 0x04, 0),
+    tvrx2_tda18272_freq_map_t(101376000, 0x1A, 0x04, 0),
+    tvrx2_tda18272_freq_map_t(103424000, 0x19, 0x04, 0),
+    tvrx2_tda18272_freq_map_t(104448000, 0x18, 0x04, 0),
+    tvrx2_tda18272_freq_map_t(105472000, 0x17, 0x04, 0),
+    tvrx2_tda18272_freq_map_t(106496000, 0x16, 0x03, 0),
+    tvrx2_tda18272_freq_map_t(106496000, 0x15, 0x03, 0),
+    tvrx2_tda18272_freq_map_t(108544000, 0x14, 0x03, 0),
+    tvrx2_tda18272_freq_map_t(109568000, 0x13, 0x03, 0),
+    tvrx2_tda18272_freq_map_t(111616000, 0x12, 0x03, 0),
+    tvrx2_tda18272_freq_map_t(112640000, 0x11, 0x03, 0),
+    tvrx2_tda18272_freq_map_t(113664000, 0x11, 0x07, 0),
+    tvrx2_tda18272_freq_map_t(114688000, 0x10, 0x07, 0),
+    tvrx2_tda18272_freq_map_t(115712000, 0x0F, 0x07, 0),
+    tvrx2_tda18272_freq_map_t(117760000, 0x0E, 0x07, 0),
+    tvrx2_tda18272_freq_map_t(119808000, 0x0D, 0x06, 0),
+    tvrx2_tda18272_freq_map_t(121856000, 0x0C, 0x06, 0),
+    tvrx2_tda18272_freq_map_t(123904000, 0x0B, 0x06, 0),
+    tvrx2_tda18272_freq_map_t(125952000, 0x0A, 0x05, 0),
+    tvrx2_tda18272_freq_map_t(128000000, 0x09, 0x05, 0),
+    tvrx2_tda18272_freq_map_t(130048000, 0x08, 0x05, 0),
+    tvrx2_tda18272_freq_map_t(133120000, 0x07, 0x04, 0),
+    tvrx2_tda18272_freq_map_t(135168000, 0x06, 0x04, 0),
+    tvrx2_tda18272_freq_map_t(138240000, 0x05, 0x04, 0),
+    tvrx2_tda18272_freq_map_t(141312000, 0x04, 0x04, 0),
+    tvrx2_tda18272_freq_map_t(144384000, 0x03, 0x03, 0),
+    tvrx2_tda18272_freq_map_t(145408000, 0xE0, 0x3F, 1),
+    tvrx2_tda18272_freq_map_t(147456000, 0xDC, 0x37, 1),
+    tvrx2_tda18272_freq_map_t(148480000, 0xD9, 0x32, 1),
+    tvrx2_tda18272_freq_map_t(149504000, 0xD6, 0x2F, 1),
+    tvrx2_tda18272_freq_map_t(149504000, 0xD2, 0x2F, 1),
+    tvrx2_tda18272_freq_map_t(150528000, 0xCF, 0x2F, 1),
+    tvrx2_tda18272_freq_map_t(151552000, 0xCC, 0x2B, 1),
+    tvrx2_tda18272_freq_map_t(152576000, 0xC9, 0x27, 1),
+    tvrx2_tda18272_freq_map_t(153600000, 0xC5, 0x27, 1),
+    tvrx2_tda18272_freq_map_t(154624000, 0xC2, 0x25, 1),
+    tvrx2_tda18272_freq_map_t(155648000, 0xBF, 0x23, 1),
+    tvrx2_tda18272_freq_map_t(156672000, 0xBD, 0x20, 1),
+    tvrx2_tda18272_freq_map_t(157696000, 0xBA, 0x1F, 1),
+    tvrx2_tda18272_freq_map_t(158720000, 0xB7, 0x1F, 1),
+    tvrx2_tda18272_freq_map_t(159744000, 0xB4, 0x1F, 1),
+    tvrx2_tda18272_freq_map_t(160768000, 0xB1, 0x1F, 1),
+    tvrx2_tda18272_freq_map_t(161792000, 0xAF, 0x1F, 1),
+    tvrx2_tda18272_freq_map_t(162816000, 0xAC, 0x1F, 1),
+    tvrx2_tda18272_freq_map_t(163840000, 0xAA, 0x1F, 1),
+    tvrx2_tda18272_freq_map_t(164864000, 0xA7, 0x1F, 1),
+    tvrx2_tda18272_freq_map_t(165888000, 0xA5, 0x1F, 1),
+    tvrx2_tda18272_freq_map_t(166912000, 0xA2, 0x1F, 1),
+    tvrx2_tda18272_freq_map_t(167936000, 0xA0, 0x1F, 1),
+    tvrx2_tda18272_freq_map_t(168960000, 0x9D, 0x1F, 1),
+    tvrx2_tda18272_freq_map_t(169984000, 0x9B, 0x1F, 1),
+    tvrx2_tda18272_freq_map_t(171008000, 0x99, 0x1F, 1),
+    tvrx2_tda18272_freq_map_t(172032000, 0x97, 0x1E, 1),
+    tvrx2_tda18272_freq_map_t(173056000, 0x95, 0x1D, 1),
+    tvrx2_tda18272_freq_map_t(174080000, 0x92, 0x1C, 1),
+    tvrx2_tda18272_freq_map_t(175104000, 0x90, 0x1B, 1),
+    tvrx2_tda18272_freq_map_t(176128000, 0x8E, 0x1A, 1),
+    tvrx2_tda18272_freq_map_t(177152000, 0x8C, 0x19, 1),
+    tvrx2_tda18272_freq_map_t(178176000, 0x8A, 0x18, 1),
+    tvrx2_tda18272_freq_map_t(179200000, 0x88, 0x17, 1),
+    tvrx2_tda18272_freq_map_t(180224000, 0x86, 0x17, 1),
+    tvrx2_tda18272_freq_map_t(181248000, 0x84, 0x17, 1),
+    tvrx2_tda18272_freq_map_t(182272000, 0x82, 0x17, 1),
+    tvrx2_tda18272_freq_map_t(183296000, 0x81, 0x17, 1),
+    tvrx2_tda18272_freq_map_t(184320000, 0x7F, 0x17, 1),
+    tvrx2_tda18272_freq_map_t(185344000, 0x7D, 0x16, 1),
+    tvrx2_tda18272_freq_map_t(186368000, 0x7B, 0x15, 1),
+    tvrx2_tda18272_freq_map_t(187392000, 0x7A, 0x14, 1),
+    tvrx2_tda18272_freq_map_t(188416000, 0x78, 0x14, 1),
+    tvrx2_tda18272_freq_map_t(189440000, 0x76, 0x13, 1),
+    tvrx2_tda18272_freq_map_t(190464000, 0x75, 0x13, 1),
+    tvrx2_tda18272_freq_map_t(191488000, 0x73, 0x13, 1),
+    tvrx2_tda18272_freq_map_t(192512000, 0x71, 0x12, 1),
+    tvrx2_tda18272_freq_map_t(192512000, 0x70, 0x11, 1),
+    tvrx2_tda18272_freq_map_t(193536000, 0x6E, 0x11, 1),
+    tvrx2_tda18272_freq_map_t(194560000, 0x6D, 0x10, 1),
+    tvrx2_tda18272_freq_map_t(195584000, 0x6B, 0x10, 1),
+    tvrx2_tda18272_freq_map_t(196608000, 0x6A, 0x0F, 1),
+    tvrx2_tda18272_freq_map_t(197632000, 0x68, 0x0F, 1),
+    tvrx2_tda18272_freq_map_t(198656000, 0x67, 0x0F, 1),
+    tvrx2_tda18272_freq_map_t(199680000, 0x65, 0x0F, 1),
+    tvrx2_tda18272_freq_map_t(200704000, 0x64, 0x0F, 1),
+    tvrx2_tda18272_freq_map_t(201728000, 0x63, 0x0F, 1),
+    tvrx2_tda18272_freq_map_t(202752000, 0x61, 0x0F, 1),
+    tvrx2_tda18272_freq_map_t(203776000, 0x60, 0x0F, 1),
+    tvrx2_tda18272_freq_map_t(204800000, 0x5F, 0x0F, 1),
+    tvrx2_tda18272_freq_map_t(205824000, 0x5D, 0x0F, 1),
+    tvrx2_tda18272_freq_map_t(206848000, 0x5C, 0x0F, 1),
+    tvrx2_tda18272_freq_map_t(207872000, 0x5B, 0x0F, 1),
+    tvrx2_tda18272_freq_map_t(208896000, 0x5A, 0x0F, 1),
+    tvrx2_tda18272_freq_map_t(209920000, 0x58, 0x0F, 1),
+    tvrx2_tda18272_freq_map_t(210944000, 0x57, 0x0F, 1),
+    tvrx2_tda18272_freq_map_t(211968000, 0x56, 0x0F, 1),
+    tvrx2_tda18272_freq_map_t(212992000, 0x55, 0x0F, 1),
+    tvrx2_tda18272_freq_map_t(214016000, 0x54, 0x0F, 1),
+    tvrx2_tda18272_freq_map_t(215040000, 0x53, 0x0F, 1),
+    tvrx2_tda18272_freq_map_t(216064000, 0x52, 0x0F, 1),
+    tvrx2_tda18272_freq_map_t(217088000, 0x50, 0x0F, 1),
+    tvrx2_tda18272_freq_map_t(218112000, 0x4F, 0x0F, 1),
+    tvrx2_tda18272_freq_map_t(219136000, 0x4E, 0x0F, 1),
+    tvrx2_tda18272_freq_map_t(220160000, 0x4D, 0x0E, 1),
+    tvrx2_tda18272_freq_map_t(221184000, 0x4C, 0x0E, 1),
+    tvrx2_tda18272_freq_map_t(222208000, 0x4B, 0x0E, 1),
+    tvrx2_tda18272_freq_map_t(223232000, 0x4A, 0x0E, 1),
+    tvrx2_tda18272_freq_map_t(224256000, 0x49, 0x0D, 1),
+    tvrx2_tda18272_freq_map_t(225280000, 0x48, 0x0D, 1),
+    tvrx2_tda18272_freq_map_t(226304000, 0x47, 0x0D, 1),
+    tvrx2_tda18272_freq_map_t(227328000, 0x46, 0x0D, 1),
+    tvrx2_tda18272_freq_map_t(228352000, 0x45, 0x0C, 1),
+    tvrx2_tda18272_freq_map_t(229376000, 0x44, 0x0C, 1),
+    tvrx2_tda18272_freq_map_t(230400000, 0x43, 0x0C, 1),
+    tvrx2_tda18272_freq_map_t(231424000, 0x42, 0x0C, 1),
+    tvrx2_tda18272_freq_map_t(232448000, 0x42, 0x0B, 1),
+    tvrx2_tda18272_freq_map_t(233472000, 0x41, 0x0B, 1),
+    tvrx2_tda18272_freq_map_t(234496000, 0x40, 0x0B, 1),
+    tvrx2_tda18272_freq_map_t(234496000, 0x3F, 0x0B, 1),
+    tvrx2_tda18272_freq_map_t(235520000, 0x3E, 0x0B, 1),
+    tvrx2_tda18272_freq_map_t(236544000, 0x3D, 0x0B, 1),
+    tvrx2_tda18272_freq_map_t(237568000, 0x3C, 0x0B, 1),
+    tvrx2_tda18272_freq_map_t(239616000, 0x3B, 0x0A, 1),
+    tvrx2_tda18272_freq_map_t(240640000, 0x3A, 0x0A, 1),
+    tvrx2_tda18272_freq_map_t(241664000, 0x39, 0x0A, 1),
+    tvrx2_tda18272_freq_map_t(242688000, 0x38, 0x0A, 1),
+    tvrx2_tda18272_freq_map_t(244736000, 0x37, 0x09, 1),
+    tvrx2_tda18272_freq_map_t(245760000, 0x36, 0x09, 1),
+    tvrx2_tda18272_freq_map_t(246784000, 0x35, 0x09, 1),
+    tvrx2_tda18272_freq_map_t(248832000, 0x34, 0x09, 1),
+    tvrx2_tda18272_freq_map_t(249856000, 0x33, 0x09, 1),
+    tvrx2_tda18272_freq_map_t(250880000, 0x32, 0x08, 1),
+    tvrx2_tda18272_freq_map_t(252928000, 0x31, 0x08, 1),
+    tvrx2_tda18272_freq_map_t(253952000, 0x30, 0x08, 1),
+    tvrx2_tda18272_freq_map_t(256000000, 0x2F, 0x08, 1),
+    tvrx2_tda18272_freq_map_t(257024000, 0x2E, 0x08, 1),
+    tvrx2_tda18272_freq_map_t(259072000, 0x2D, 0x07, 1),
+    tvrx2_tda18272_freq_map_t(260096000, 0x2C, 0x07, 1),
+    tvrx2_tda18272_freq_map_t(262144000, 0x2B, 0x07, 1),
+    tvrx2_tda18272_freq_map_t(264192000, 0x2A, 0x07, 1),
+    tvrx2_tda18272_freq_map_t(265216000, 0x29, 0x07, 1),
+    tvrx2_tda18272_freq_map_t(267264000, 0x28, 0x07, 1),
+    tvrx2_tda18272_freq_map_t(269312000, 0x27, 0x07, 1),
+    tvrx2_tda18272_freq_map_t(270336000, 0x26, 0x07, 1),
+    tvrx2_tda18272_freq_map_t(272384000, 0x25, 0x07, 1),
+    tvrx2_tda18272_freq_map_t(274432000, 0x24, 0x07, 1),
+    tvrx2_tda18272_freq_map_t(276480000, 0x23, 0x07, 1),
+    tvrx2_tda18272_freq_map_t(277504000, 0x22, 0x07, 1),
+    tvrx2_tda18272_freq_map_t(279552000, 0x21, 0x07, 1),
+    tvrx2_tda18272_freq_map_t(281600000, 0x20, 0x07, 1),
+    tvrx2_tda18272_freq_map_t(283648000, 0x1F, 0x07, 1),
+    tvrx2_tda18272_freq_map_t(285696000, 0x1E, 0x0F, 1),
+    tvrx2_tda18272_freq_map_t(287744000, 0x1D, 0x0F, 1),
+    tvrx2_tda18272_freq_map_t(289792000, 0x1C, 0x0E, 1),
+    tvrx2_tda18272_freq_map_t(291840000, 0x1B, 0x0E, 1),
+    tvrx2_tda18272_freq_map_t(293888000, 0x1A, 0x0D, 1),
+    tvrx2_tda18272_freq_map_t(296960000, 0x19, 0x0D, 1),
+    tvrx2_tda18272_freq_map_t(299008000, 0x18, 0x0C, 1),
+    tvrx2_tda18272_freq_map_t(301056000, 0x17, 0x0C, 1),
+    tvrx2_tda18272_freq_map_t(304128000, 0x16, 0x0C, 1),
+    tvrx2_tda18272_freq_map_t(306176000, 0x15, 0x0B, 1),
+    tvrx2_tda18272_freq_map_t(309248000, 0x14, 0x0B, 1),
+    tvrx2_tda18272_freq_map_t(312320000, 0x13, 0x0B, 1),
+    tvrx2_tda18272_freq_map_t(314368000, 0x12, 0x0B, 1),
+    tvrx2_tda18272_freq_map_t(317440000, 0x11, 0x0A, 1),
+    tvrx2_tda18272_freq_map_t(320512000, 0x10, 0x0A, 1),
+    tvrx2_tda18272_freq_map_t(322560000, 0x0F, 0x0A, 1),
+    tvrx2_tda18272_freq_map_t(325632000, 0x0E, 0x09, 1),
+    tvrx2_tda18272_freq_map_t(328704000, 0x0D, 0x09, 1),
+    tvrx2_tda18272_freq_map_t(331776000, 0x0C, 0x08, 1),
+    tvrx2_tda18272_freq_map_t(335872000, 0x0B, 0x08, 1),
+    tvrx2_tda18272_freq_map_t(338944000, 0x0A, 0x08, 1),
+    tvrx2_tda18272_freq_map_t(343040000, 0x09, 0x07, 1),
+    tvrx2_tda18272_freq_map_t(346112000, 0x08, 0x07, 1),
+    tvrx2_tda18272_freq_map_t(350208000, 0x07, 0x07, 1),
+    tvrx2_tda18272_freq_map_t(354304000, 0x06, 0x07, 1),
+    tvrx2_tda18272_freq_map_t(358400000, 0x05, 0x07, 1),
+    tvrx2_tda18272_freq_map_t(362496000, 0x04, 0x07, 1),
+    tvrx2_tda18272_freq_map_t(365568000, 0x04, 0x07, 1),
+    tvrx2_tda18272_freq_map_t(367616000, 0xDA, 0x2A, 2),
+    tvrx2_tda18272_freq_map_t(367616000, 0xD9, 0x27, 2),
+    tvrx2_tda18272_freq_map_t(368640000, 0xD8, 0x27, 2),
+    tvrx2_tda18272_freq_map_t(369664000, 0xD6, 0x27, 2),
+    tvrx2_tda18272_freq_map_t(370688000, 0xD5, 0x27, 2),
+    tvrx2_tda18272_freq_map_t(371712000, 0xD3, 0x25, 2),
+    tvrx2_tda18272_freq_map_t(372736000, 0xD2, 0x23, 2),
+    tvrx2_tda18272_freq_map_t(373760000, 0xD0, 0x23, 2),
+    tvrx2_tda18272_freq_map_t(374784000, 0xCF, 0x21, 2),
+    tvrx2_tda18272_freq_map_t(375808000, 0xCD, 0x1F, 2),
+    tvrx2_tda18272_freq_map_t(376832000, 0xCC, 0x1F, 2),
+    tvrx2_tda18272_freq_map_t(377856000, 0xCA, 0x1F, 2),
+    tvrx2_tda18272_freq_map_t(378880000, 0xC9, 0x1F, 2),
+    tvrx2_tda18272_freq_map_t(379904000, 0xC7, 0x1F, 2),
+    tvrx2_tda18272_freq_map_t(380928000, 0xC6, 0x1F, 2),
+    tvrx2_tda18272_freq_map_t(381952000, 0xC4, 0x1F, 2),
+    tvrx2_tda18272_freq_map_t(382976000, 0xC3, 0x1F, 2),
+    tvrx2_tda18272_freq_map_t(384000000, 0xC1, 0x1F, 2),
+    tvrx2_tda18272_freq_map_t(385024000, 0xC0, 0x1F, 2),
+    tvrx2_tda18272_freq_map_t(386048000, 0xBF, 0x1F, 2),
+    tvrx2_tda18272_freq_map_t(387072000, 0xBD, 0x1F, 2),
+    tvrx2_tda18272_freq_map_t(388096000, 0xBC, 0x1F, 2),
+    tvrx2_tda18272_freq_map_t(389120000, 0xBB, 0x1F, 2),
+    tvrx2_tda18272_freq_map_t(390144000, 0xB9, 0x1F, 2),
+    tvrx2_tda18272_freq_map_t(391168000, 0xB8, 0x1F, 2),
+    tvrx2_tda18272_freq_map_t(392192000, 0xB7, 0x1F, 2),
+    tvrx2_tda18272_freq_map_t(393216000, 0xB5, 0x1F, 2),
+    tvrx2_tda18272_freq_map_t(394240000, 0xB4, 0x1F, 2),
+    tvrx2_tda18272_freq_map_t(395264000, 0xB3, 0x1F, 2),
+    tvrx2_tda18272_freq_map_t(396288000, 0xB1, 0x1F, 2),
+    tvrx2_tda18272_freq_map_t(397312000, 0xB0, 0x1F, 2),
+    tvrx2_tda18272_freq_map_t(398336000, 0xAF, 0x1F, 2),
+    tvrx2_tda18272_freq_map_t(399360000, 0xAD, 0x1F, 2),
+    tvrx2_tda18272_freq_map_t(400384000, 0xAC, 0x1F, 2),
+    tvrx2_tda18272_freq_map_t(401408000, 0xAB, 0x1F, 2),
+    tvrx2_tda18272_freq_map_t(402432000, 0xAA, 0x1F, 2),
+    tvrx2_tda18272_freq_map_t(403456000, 0xA8, 0x1E, 2),
+    tvrx2_tda18272_freq_map_t(404480000, 0xA7, 0x1D, 2),
+    tvrx2_tda18272_freq_map_t(405504000, 0xA6, 0x1D, 2),
+    tvrx2_tda18272_freq_map_t(405504000, 0xA5, 0x1C, 2),
+    tvrx2_tda18272_freq_map_t(406528000, 0xA3, 0x1C, 2),
+    tvrx2_tda18272_freq_map_t(407552000, 0xA2, 0x1B, 2),
+    tvrx2_tda18272_freq_map_t(408576000, 0xA1, 0x1B, 2),
+    tvrx2_tda18272_freq_map_t(409600000, 0xA0, 0x1B, 2),
+    tvrx2_tda18272_freq_map_t(410624000, 0x9F, 0x1A, 2),
+    tvrx2_tda18272_freq_map_t(411648000, 0x9D, 0x1A, 2),
+    tvrx2_tda18272_freq_map_t(412672000, 0x9C, 0x19, 2),
+    tvrx2_tda18272_freq_map_t(413696000, 0x9B, 0x18, 2),
+    tvrx2_tda18272_freq_map_t(414720000, 0x9A, 0x18, 2),
+    tvrx2_tda18272_freq_map_t(415744000, 0x99, 0x17, 2),
+    tvrx2_tda18272_freq_map_t(416768000, 0x98, 0x17, 2),
+    tvrx2_tda18272_freq_map_t(417792000, 0x97, 0x17, 2),
+    tvrx2_tda18272_freq_map_t(418816000, 0x95, 0x17, 2),
+    tvrx2_tda18272_freq_map_t(419840000, 0x94, 0x17, 2),
+    tvrx2_tda18272_freq_map_t(420864000, 0x93, 0x17, 2),
+    tvrx2_tda18272_freq_map_t(421888000, 0x92, 0x17, 2),
+    tvrx2_tda18272_freq_map_t(422912000, 0x91, 0x17, 2),
+    tvrx2_tda18272_freq_map_t(423936000, 0x90, 0x17, 2),
+    tvrx2_tda18272_freq_map_t(424960000, 0x8F, 0x17, 2),
+    tvrx2_tda18272_freq_map_t(425984000, 0x8E, 0x16, 2),
+    tvrx2_tda18272_freq_map_t(427008000, 0x8D, 0x16, 2),
+    tvrx2_tda18272_freq_map_t(428032000, 0x8C, 0x15, 2),
+    tvrx2_tda18272_freq_map_t(429056000, 0x8B, 0x15, 2),
+    tvrx2_tda18272_freq_map_t(430080000, 0x8A, 0x15, 2),
+    tvrx2_tda18272_freq_map_t(431104000, 0x88, 0x14, 2),
+    tvrx2_tda18272_freq_map_t(432128000, 0x87, 0x14, 2),
+    tvrx2_tda18272_freq_map_t(433152000, 0x86, 0x14, 2),
+    tvrx2_tda18272_freq_map_t(434176000, 0x85, 0x13, 2),
+    tvrx2_tda18272_freq_map_t(435200000, 0x84, 0x13, 2),
+    tvrx2_tda18272_freq_map_t(436224000, 0x83, 0x13, 2),
+    tvrx2_tda18272_freq_map_t(437248000, 0x82, 0x13, 2),
+    tvrx2_tda18272_freq_map_t(438272000, 0x81, 0x13, 2),
+    tvrx2_tda18272_freq_map_t(439296000, 0x80, 0x12, 2),
+    tvrx2_tda18272_freq_map_t(440320000, 0x7F, 0x12, 2),
+    tvrx2_tda18272_freq_map_t(441344000, 0x7E, 0x12, 2),
+    tvrx2_tda18272_freq_map_t(442368000, 0x7D, 0x11, 2),
+    tvrx2_tda18272_freq_map_t(444416000, 0x7C, 0x11, 2),
+    tvrx2_tda18272_freq_map_t(445440000, 0x7B, 0x10, 2),
+    tvrx2_tda18272_freq_map_t(446464000, 0x7A, 0x10, 2),
+    tvrx2_tda18272_freq_map_t(447488000, 0x79, 0x10, 2),
+    tvrx2_tda18272_freq_map_t(448512000, 0x78, 0x10, 2),
+    tvrx2_tda18272_freq_map_t(448512000, 0x77, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(449536000, 0x76, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(450560000, 0x75, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(451584000, 0x74, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(452608000, 0x73, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(453632000, 0x72, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(454656000, 0x71, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(455680000, 0x70, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(457728000, 0x6F, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(458752000, 0x6E, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(459776000, 0x6D, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(460800000, 0x6C, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(461824000, 0x6B, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(462848000, 0x6A, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(464896000, 0x69, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(465920000, 0x68, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(466944000, 0x67, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(467968000, 0x66, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(468992000, 0x65, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(471040000, 0x64, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(472064000, 0x63, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(473088000, 0x62, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(474112000, 0x61, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(476160000, 0x60, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(477184000, 0x5F, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(478208000, 0x5E, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(479232000, 0x5D, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(481280000, 0x5C, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(482304000, 0x5B, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(483328000, 0x5A, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(485376000, 0x59, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(486400000, 0x58, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(487424000, 0x57, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(489472000, 0x56, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(490496000, 0x55, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(490496000, 0x54, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(492544000, 0x53, 0x0E, 2),
+    tvrx2_tda18272_freq_map_t(493568000, 0x52, 0x0E, 2),
+    tvrx2_tda18272_freq_map_t(495616000, 0x51, 0x0E, 2),
+    tvrx2_tda18272_freq_map_t(496640000, 0x50, 0x0E, 2),
+    tvrx2_tda18272_freq_map_t(497664000, 0x4F, 0x0E, 2),
+    tvrx2_tda18272_freq_map_t(499712000, 0x4E, 0x0D, 2),
+    tvrx2_tda18272_freq_map_t(500736000, 0x4D, 0x0D, 2),
+    tvrx2_tda18272_freq_map_t(502784000, 0x4C, 0x0D, 2),
+    tvrx2_tda18272_freq_map_t(503808000, 0x4B, 0x0D, 2),
+    tvrx2_tda18272_freq_map_t(505856000, 0x4A, 0x0C, 2),
+    tvrx2_tda18272_freq_map_t(506880000, 0x49, 0x0C, 2),
+    tvrx2_tda18272_freq_map_t(508928000, 0x48, 0x0C, 2),
+    tvrx2_tda18272_freq_map_t(509952000, 0x47, 0x0C, 2),
+    tvrx2_tda18272_freq_map_t(512000000, 0x46, 0x0C, 2),
+    tvrx2_tda18272_freq_map_t(513024000, 0x45, 0x0B, 2),
+    tvrx2_tda18272_freq_map_t(515072000, 0x44, 0x0B, 2),
+    tvrx2_tda18272_freq_map_t(517120000, 0x43, 0x0B, 2),
+    tvrx2_tda18272_freq_map_t(518144000, 0x42, 0x0B, 2),
+    tvrx2_tda18272_freq_map_t(520192000, 0x41, 0x0B, 2),
+    tvrx2_tda18272_freq_map_t(521216000, 0x40, 0x0B, 2),
+    tvrx2_tda18272_freq_map_t(523264000, 0x3F, 0x0B, 2),
+    tvrx2_tda18272_freq_map_t(525312000, 0x3E, 0x0B, 2),
+    tvrx2_tda18272_freq_map_t(526336000, 0x3D, 0x0B, 2),
+    tvrx2_tda18272_freq_map_t(528384000, 0x3C, 0x0A, 2),
+    tvrx2_tda18272_freq_map_t(530432000, 0x3B, 0x0A, 2),
+    tvrx2_tda18272_freq_map_t(531456000, 0x3A, 0x0A, 2),
+    tvrx2_tda18272_freq_map_t(533504000, 0x39, 0x0A, 2),
+    tvrx2_tda18272_freq_map_t(534528000, 0x38, 0x0A, 2),
+    tvrx2_tda18272_freq_map_t(536576000, 0x37, 0x0A, 2),
+    tvrx2_tda18272_freq_map_t(537600000, 0x36, 0x09, 2),
+    tvrx2_tda18272_freq_map_t(539648000, 0x35, 0x09, 2),
+    tvrx2_tda18272_freq_map_t(541696000, 0x34, 0x09, 2),
+    tvrx2_tda18272_freq_map_t(543744000, 0x33, 0x09, 2),
+    tvrx2_tda18272_freq_map_t(544768000, 0x32, 0x09, 2),
+    tvrx2_tda18272_freq_map_t(546816000, 0x31, 0x09, 2),
+    tvrx2_tda18272_freq_map_t(548864000, 0x30, 0x08, 2),
+    tvrx2_tda18272_freq_map_t(550912000, 0x2F, 0x08, 2),
+    tvrx2_tda18272_freq_map_t(552960000, 0x2E, 0x08, 2),
+    tvrx2_tda18272_freq_map_t(555008000, 0x2D, 0x08, 2),
+    tvrx2_tda18272_freq_map_t(557056000, 0x2C, 0x08, 2),
+    tvrx2_tda18272_freq_map_t(559104000, 0x2B, 0x08, 2),
+    tvrx2_tda18272_freq_map_t(561152000, 0x2A, 0x07, 2),
+    tvrx2_tda18272_freq_map_t(563200000, 0x29, 0x07, 2),
+    tvrx2_tda18272_freq_map_t(565248000, 0x28, 0x07, 2),
+    tvrx2_tda18272_freq_map_t(567296000, 0x27, 0x07, 2),
+    tvrx2_tda18272_freq_map_t(569344000, 0x26, 0x07, 2),
+    tvrx2_tda18272_freq_map_t(570368000, 0x26, 0x07, 2),
+    tvrx2_tda18272_freq_map_t(571392000, 0x25, 0x07, 2),
+    tvrx2_tda18272_freq_map_t(573440000, 0x24, 0x07, 2),
+    tvrx2_tda18272_freq_map_t(575488000, 0x23, 0x07, 2),
+    tvrx2_tda18272_freq_map_t(577536000, 0x22, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(578560000, 0x21, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(580608000, 0x20, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(583680000, 0x1F, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(585728000, 0x1E, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(587776000, 0x1D, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(589824000, 0x1C, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(592896000, 0x1B, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(594944000, 0x1A, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(596992000, 0x19, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(600064000, 0x18, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(602112000, 0x17, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(604160000, 0x16, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(607232000, 0x15, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(609280000, 0x14, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(612352000, 0x13, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(615424000, 0x12, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(617472000, 0x11, 0x0F, 2),
+    tvrx2_tda18272_freq_map_t(619520000, 0x10, 0x0E, 2),
+    tvrx2_tda18272_freq_map_t(621568000, 0x0F, 0x0E, 2),
+    tvrx2_tda18272_freq_map_t(623616000, 0x0F, 0x0E, 2),
+    tvrx2_tda18272_freq_map_t(624640000, 0xA3, 0x1F, 3),
+    tvrx2_tda18272_freq_map_t(625664000, 0xA2, 0x1F, 3),
+    tvrx2_tda18272_freq_map_t(626688000, 0xA1, 0x1F, 3),
+    tvrx2_tda18272_freq_map_t(627712000, 0xA0, 0x1F, 3),
+    tvrx2_tda18272_freq_map_t(628736000, 0x9F, 0x1F, 3),
+    tvrx2_tda18272_freq_map_t(630784000, 0x9E, 0x1F, 3),
+    tvrx2_tda18272_freq_map_t(631808000, 0x9D, 0x1F, 3),
+    tvrx2_tda18272_freq_map_t(632832000, 0x9C, 0x1F, 3),
+    tvrx2_tda18272_freq_map_t(633856000, 0x9B, 0x1F, 3),
+    tvrx2_tda18272_freq_map_t(635904000, 0x9A, 0x1F, 3),
+    tvrx2_tda18272_freq_map_t(636928000, 0x99, 0x1F, 3),
+    tvrx2_tda18272_freq_map_t(637952000, 0x98, 0x1F, 3),
+    tvrx2_tda18272_freq_map_t(638976000, 0x97, 0x1F, 3),
+    tvrx2_tda18272_freq_map_t(641024000, 0x96, 0x1E, 3),
+    tvrx2_tda18272_freq_map_t(642048000, 0x95, 0x1E, 3),
+    tvrx2_tda18272_freq_map_t(643072000, 0x94, 0x1E, 3),
+    tvrx2_tda18272_freq_map_t(644096000, 0x93, 0x1D, 3),
+    tvrx2_tda18272_freq_map_t(646144000, 0x92, 0x1D, 3),
+    tvrx2_tda18272_freq_map_t(647168000, 0x91, 0x1C, 3),
+    tvrx2_tda18272_freq_map_t(648192000, 0x90, 0x1C, 3),
+    tvrx2_tda18272_freq_map_t(650240000, 0x8F, 0x1B, 3),
+    tvrx2_tda18272_freq_map_t(651264000, 0x8E, 0x1B, 3),
+    tvrx2_tda18272_freq_map_t(652288000, 0x8D, 0x1B, 3),
+    tvrx2_tda18272_freq_map_t(654336000, 0x8C, 0x1B, 3),
+    tvrx2_tda18272_freq_map_t(655360000, 0x8B, 0x1B, 3),
+    tvrx2_tda18272_freq_map_t(656384000, 0x8A, 0x1B, 3),
+    tvrx2_tda18272_freq_map_t(658432000, 0x89, 0x1A, 3),
+    tvrx2_tda18272_freq_map_t(659456000, 0x88, 0x1A, 3),
+    tvrx2_tda18272_freq_map_t(660480000, 0x87, 0x1A, 3),
+    tvrx2_tda18272_freq_map_t(661504000, 0x86, 0x19, 3),
+    tvrx2_tda18272_freq_map_t(662528000, 0x85, 0x19, 3),
+    tvrx2_tda18272_freq_map_t(664576000, 0x84, 0x18, 3),
+    tvrx2_tda18272_freq_map_t(665600000, 0x83, 0x18, 3),
+    tvrx2_tda18272_freq_map_t(666624000, 0x82, 0x18, 3),
+    tvrx2_tda18272_freq_map_t(668672000, 0x81, 0x18, 3),
+    tvrx2_tda18272_freq_map_t(669696000, 0x80, 0x17, 3),
+    tvrx2_tda18272_freq_map_t(671744000, 0x7F, 0x17, 3),
+    tvrx2_tda18272_freq_map_t(672768000, 0x7E, 0x17, 3),
+    tvrx2_tda18272_freq_map_t(674816000, 0x7D, 0x17, 3),
+    tvrx2_tda18272_freq_map_t(675840000, 0x7C, 0x17, 3),
+    tvrx2_tda18272_freq_map_t(676864000, 0x7B, 0x17, 3),
+    tvrx2_tda18272_freq_map_t(678912000, 0x7A, 0x17, 3),
+    tvrx2_tda18272_freq_map_t(679936000, 0x79, 0x17, 3),
+    tvrx2_tda18272_freq_map_t(681984000, 0x78, 0x17, 3),
+    tvrx2_tda18272_freq_map_t(683008000, 0x77, 0x17, 3),
+    tvrx2_tda18272_freq_map_t(685056000, 0x76, 0x17, 3),
+    tvrx2_tda18272_freq_map_t(686080000, 0x75, 0x17, 3),
+    tvrx2_tda18272_freq_map_t(688128000, 0x74, 0x17, 3),
+    tvrx2_tda18272_freq_map_t(689152000, 0x73, 0x17, 3),
+    tvrx2_tda18272_freq_map_t(691200000, 0x72, 0x16, 3),
+    tvrx2_tda18272_freq_map_t(693248000, 0x71, 0x16, 3),
+    tvrx2_tda18272_freq_map_t(694272000, 0x70, 0x16, 3),
+    tvrx2_tda18272_freq_map_t(696320000, 0x6F, 0x15, 3),
+    tvrx2_tda18272_freq_map_t(697344000, 0x6E, 0x15, 3),
+    tvrx2_tda18272_freq_map_t(699392000, 0x6D, 0x15, 3),
+    tvrx2_tda18272_freq_map_t(700416000, 0x6C, 0x15, 3),
+    tvrx2_tda18272_freq_map_t(702464000, 0x6B, 0x14, 3),
+    tvrx2_tda18272_freq_map_t(704512000, 0x6A, 0x14, 3),
+    tvrx2_tda18272_freq_map_t(704512000, 0x69, 0x14, 3),
+    tvrx2_tda18272_freq_map_t(706560000, 0x68, 0x14, 3),
+    tvrx2_tda18272_freq_map_t(707584000, 0x67, 0x13, 3),
+    tvrx2_tda18272_freq_map_t(709632000, 0x66, 0x13, 3),
+    tvrx2_tda18272_freq_map_t(711680000, 0x65, 0x13, 3),
+    tvrx2_tda18272_freq_map_t(712704000, 0x64, 0x13, 3),
+    tvrx2_tda18272_freq_map_t(714752000, 0x63, 0x13, 3),
+    tvrx2_tda18272_freq_map_t(716800000, 0x62, 0x13, 3),
+    tvrx2_tda18272_freq_map_t(717824000, 0x61, 0x13, 3),
+    tvrx2_tda18272_freq_map_t(719872000, 0x60, 0x13, 3),
+    tvrx2_tda18272_freq_map_t(721920000, 0x5F, 0x12, 3),
+    tvrx2_tda18272_freq_map_t(723968000, 0x5E, 0x12, 3),
+    tvrx2_tda18272_freq_map_t(724992000, 0x5D, 0x12, 3),
+    tvrx2_tda18272_freq_map_t(727040000, 0x5C, 0x12, 3),
+    tvrx2_tda18272_freq_map_t(729088000, 0x5B, 0x11, 3),
+    tvrx2_tda18272_freq_map_t(731136000, 0x5A, 0x11, 3),
+    tvrx2_tda18272_freq_map_t(732160000, 0x59, 0x11, 3),
+    tvrx2_tda18272_freq_map_t(734208000, 0x58, 0x11, 3),
+    tvrx2_tda18272_freq_map_t(736256000, 0x57, 0x10, 3),
+    tvrx2_tda18272_freq_map_t(738304000, 0x56, 0x10, 3),
+    tvrx2_tda18272_freq_map_t(740352000, 0x55, 0x10, 3),
+    tvrx2_tda18272_freq_map_t(741376000, 0x54, 0x10, 3),
+    tvrx2_tda18272_freq_map_t(743424000, 0x53, 0x10, 3),
+    tvrx2_tda18272_freq_map_t(745472000, 0x52, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(746496000, 0x51, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(748544000, 0x50, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(750592000, 0x4F, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(752640000, 0x4E, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(753664000, 0x4D, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(755712000, 0x4C, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(757760000, 0x4B, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(759808000, 0x4A, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(761856000, 0x49, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(762880000, 0x49, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(763904000, 0x48, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(765952000, 0x47, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(768000000, 0x46, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(770048000, 0x45, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(772096000, 0x44, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(774144000, 0x43, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(776192000, 0x42, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(778240000, 0x41, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(780288000, 0x40, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(783360000, 0x3F, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(785408000, 0x3E, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(787456000, 0x3D, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(789504000, 0x3C, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(790528000, 0x3B, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(792576000, 0x3A, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(794624000, 0x39, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(797696000, 0x38, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(799744000, 0x37, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(801792000, 0x36, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(803840000, 0x35, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(806912000, 0x34, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(808960000, 0x33, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(809984000, 0x33, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(811008000, 0x32, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(813056000, 0x31, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(816128000, 0x30, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(818176000, 0x2F, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(820224000, 0x2E, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(823296000, 0x2D, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(825344000, 0x2C, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(828416000, 0x2B, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(830464000, 0x2A, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(832512000, 0x29, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(834560000, 0x28, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(836608000, 0x27, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(839680000, 0x26, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(841728000, 0x25, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(844800000, 0x24, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(847872000, 0x23, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(849920000, 0x22, 0x0F, 3),
+    tvrx2_tda18272_freq_map_t(852992000, 0x21, 0x0E, 3),
+    tvrx2_tda18272_freq_map_t(855040000, 0x20, 0x0E, 3),
+    tvrx2_tda18272_freq_map_t(858112000, 0x1F, 0x0E, 3),
+    tvrx2_tda18272_freq_map_t(861184000, 0x1E, 0x0E, 3),
+    tvrx2_tda18272_freq_map_t(863232000, 0x1D, 0x0E, 3),
+    tvrx2_tda18272_freq_map_t(866304000, 0x1C, 0x0E, 3),
+    tvrx2_tda18272_freq_map_t(900096000, 0x10, 0x0C, 3),
+    tvrx2_tda18272_freq_map_t(929792000, 0x07, 0x0B, 3),
+    tvrx2_tda18272_freq_map_t(969728000, 0x00, 0x0A, 3)
+};
 
 static const freq_range_t tvrx2_freq_range(42e6, 870e6);
 
-static const freq_range_t tvrx2_bandwidth_range = list_of
-    (range_t(1.7e6))
-    (range_t(6.0e6))
-    (range_t(7.0e6))
-    (range_t(8.0e6))
-    (range_t(10.0e6))
-;
+static const freq_range_t tvrx2_bandwidth_range{
+    range_t(1.7e6),
+    range_t(6.0e6),
+    range_t(7.0e6),
+    range_t(8.0e6),
+    range_t(10.0e6)
+};
 
-static const uhd::dict<std::string, std::string> tvrx2_sd_name_to_antennas = map_list_of
-    ("RX1", "J100")
-    ("RX2", "J140")
-;
+static const uhd::dict<std::string, std::string> tvrx2_sd_name_to_antennas{
+    {"RX1", "J100"},
+    {"RX2", "J140"}
+};
 
-static const uhd::dict<std::string, std::string> tvrx2_sd_name_to_conn = map_list_of
-    ("RX1",  "Q")
-    ("RX2",  "I")
-;
+static const uhd::dict<std::string, std::string> tvrx2_sd_name_to_conn{
+    {"RX1",  "Q"},
+    {"RX2",  "I"}
+};
 
-static const uhd::dict<std::string, uint8_t> tvrx2_sd_name_to_i2c_addr = map_list_of
-    ("RX1", 0x63)
-    ("RX2", 0x60)
-;
+static const uhd::dict<std::string, uint8_t> tvrx2_sd_name_to_i2c_addr{
+    {"RX1", 0x63},
+    {"RX2", 0x60}
+};
 
-static const uhd::dict<std::string, uint8_t> tvrx2_sd_name_to_irq_io = map_list_of
-    ("RX1", (RX1_IRQ))
-    ("RX2", (RX2_IRQ))
-;
+static const uhd::dict<std::string, uint8_t> tvrx2_sd_name_to_irq_io{
+    {"RX1", (RX1_IRQ)},
+    {"RX2", (RX2_IRQ)}
+};
 
-static const uhd::dict<std::string, dboard_iface::aux_dac_t> tvrx2_sd_name_to_dac = map_list_of
-    ("RX1", dboard_iface::AUX_DAC_A)
-    ("RX2", dboard_iface::AUX_DAC_B)
-;
+static const uhd::dict<std::string, dboard_iface::aux_dac_t> tvrx2_sd_name_to_dac{
+    {"RX1", dboard_iface::AUX_DAC_A},
+    {"RX2", dboard_iface::AUX_DAC_B}
+};
 
-static const uhd::dict<std::string, gain_range_t> tvrx2_gain_ranges = map_list_of
-//    ("LNA", gain_range_t(-12, 15, 3))
-//    ("RF_FILTER", gain_range_t(-11, -2, 3))
-//    ("IR_MIXER", gain_range_t(2, 14, 3))
-//    ("LPF", gain_range_t(0, 9, 3))
-    ("IF", gain_range_t(0, 30, 0.5))
-;
+static const uhd::dict<std::string, gain_range_t> tvrx2_gain_ranges{
+//    {"LNA", gain_range_t(-12, 15, 3)       },
+//    {"RF_FILTER", gain_range_t(-11, -2, 3) },
+//    {"IR_MIXER", gain_range_t(2, 14, 3)    },
+//    {"LPF", gain_range_t(0, 9, 3)          },
+    {"IF", gain_range_t(0, 30, 0.5)}
+};
 // clang-format on
 
 /***********************************************************************
@@ -934,19 +943,33 @@ tvrx2::tvrx2(ctor_args_t args) : rx_dboard_base(args)
 {
     // FIXME for USRP1, we can only support one TVRX2 installed
 
-    _rfcal_results = map_list_of(0, tvrx2_tda18272_rfcal_result_t())(
-        1, tvrx2_tda18272_rfcal_result_t())(2, tvrx2_tda18272_rfcal_result_t())(
-        3, tvrx2_tda18272_rfcal_result_t())(4, tvrx2_tda18272_rfcal_result_t())(
-        5, tvrx2_tda18272_rfcal_result_t())(6, tvrx2_tda18272_rfcal_result_t())(
-        7, tvrx2_tda18272_rfcal_result_t())(8, tvrx2_tda18272_rfcal_result_t())(
-        9, tvrx2_tda18272_rfcal_result_t())(10, tvrx2_tda18272_rfcal_result_t())(
-        11, tvrx2_tda18272_rfcal_result_t());
+    // clang-format off
+    _rfcal_results = {
+        { 0, tvrx2_tda18272_rfcal_result_t() },
+        { 1, tvrx2_tda18272_rfcal_result_t() },
+        { 2, tvrx2_tda18272_rfcal_result_t() },
+        { 3, tvrx2_tda18272_rfcal_result_t() },
+        { 4, tvrx2_tda18272_rfcal_result_t() },
+        { 5, tvrx2_tda18272_rfcal_result_t() },
+        { 6, tvrx2_tda18272_rfcal_result_t() },
+        { 7, tvrx2_tda18272_rfcal_result_t() },
+        { 8, tvrx2_tda18272_rfcal_result_t() },
+        { 9, tvrx2_tda18272_rfcal_result_t() },
+        {10, tvrx2_tda18272_rfcal_result_t() },
+        {11, tvrx2_tda18272_rfcal_result_t() }
+    };
 
-    _rfcal_coeffs = map_list_of(0, tvrx2_tda18272_rfcal_coeffs_t(0))(
-        1, tvrx2_tda18272_rfcal_coeffs_t(1))(2, tvrx2_tda18272_rfcal_coeffs_t(3))(
-        3, tvrx2_tda18272_rfcal_coeffs_t(4))(4, tvrx2_tda18272_rfcal_coeffs_t(6))(
-        5, tvrx2_tda18272_rfcal_coeffs_t(7))(6, tvrx2_tda18272_rfcal_coeffs_t(9))(
-        7, tvrx2_tda18272_rfcal_coeffs_t(10));
+    _rfcal_coeffs = {
+        {0, tvrx2_tda18272_rfcal_coeffs_t( 0)},
+        {1, tvrx2_tda18272_rfcal_coeffs_t( 1)},
+        {2, tvrx2_tda18272_rfcal_coeffs_t( 3)},
+        {3, tvrx2_tda18272_rfcal_coeffs_t( 4)},
+        {4, tvrx2_tda18272_rfcal_coeffs_t( 6)},
+        {5, tvrx2_tda18272_rfcal_coeffs_t( 7)},
+        {6, tvrx2_tda18272_rfcal_coeffs_t( 9)},
+        {7, tvrx2_tda18272_rfcal_coeffs_t(10)}
+    };
+    // clang-format on
 
     // set defaults for LO, gains, and filter bandwidth
     _bandwidth = 10e6;
@@ -992,7 +1015,7 @@ tvrx2::tvrx2(ctor_args_t args) : rx_dboard_base(args)
         .set(tvrx2_sd_name_to_antennas[get_subdev_name()]);
     this->get_rx_subtree()
         ->create<std::vector<std::string>>("antenna/options")
-        .set(list_of(tvrx2_sd_name_to_antennas[get_subdev_name()]));
+        .set({tvrx2_sd_name_to_antennas[get_subdev_name()]});
     this->get_rx_subtree()
         ->create<std::string>("connection")
         .set(tvrx2_sd_name_to_conn[get_subdev_name()]);
@@ -1237,62 +1260,75 @@ void tvrx2::read_reg(uint8_t start_reg, uint8_t stop_reg)
  **********************************************************************/
 freq_range_t tvrx2::get_tda18272_rfcal_result_freq_range(uint32_t result)
 {
-    uhd::dict<uint32_t, freq_range_t> result_to_cal_freq_ranges_map = map_list_of(0,
-        freq_range_t(
-            (double)tvrx2_tda18272_cal_map[0].cal_freq[_tda18272hnm_regs.rfcal_freq0]
-                * _freq_scalar,
-            (double)tvrx2_tda18272_cal_map[1].cal_freq[_tda18272hnm_regs.rfcal_freq1]
-                * _freq_scalar))(1,
-        freq_range_t(
-            (double)tvrx2_tda18272_cal_map[1].cal_freq[_tda18272hnm_regs.rfcal_freq1]
-                * _freq_scalar,
-            (double)tvrx2_tda18272_cal_map[2].cal_freq[_tda18272hnm_regs.rfcal_freq2]
-                * _freq_scalar))(2,
-        freq_range_t(
-            (double)tvrx2_tda18272_cal_map[2].cal_freq[_tda18272hnm_regs.rfcal_freq2]
-                * _freq_scalar,
-            (double)tvrx2_tda18272_cal_map[3].cal_freq[_tda18272hnm_regs.rfcal_freq3]
-                * _freq_scalar))(3,
-        freq_range_t(
-            (double)tvrx2_tda18272_cal_map[3].cal_freq[_tda18272hnm_regs.rfcal_freq3]
-                * _freq_scalar,
-            (double)tvrx2_tda18272_cal_map[4].cal_freq[_tda18272hnm_regs.rfcal_freq4]
-                * _freq_scalar))(4,
-        freq_range_t(
-            (double)tvrx2_tda18272_cal_map[4].cal_freq[_tda18272hnm_regs.rfcal_freq4]
-                * _freq_scalar,
-            (double)tvrx2_tda18272_cal_map[5].cal_freq[_tda18272hnm_regs.rfcal_freq5]
-                * _freq_scalar))(5,
-        freq_range_t(
-            (double)tvrx2_tda18272_cal_map[5].cal_freq[_tda18272hnm_regs.rfcal_freq5]
-                * _freq_scalar,
-            (double)tvrx2_tda18272_cal_map[6].cal_freq[_tda18272hnm_regs.rfcal_freq6]
-                * _freq_scalar))(6,
-        freq_range_t(
-            (double)tvrx2_tda18272_cal_map[6].cal_freq[_tda18272hnm_regs.rfcal_freq6]
-                * _freq_scalar,
-            (double)tvrx2_tda18272_cal_map[7].cal_freq[_tda18272hnm_regs.rfcal_freq7]
-                * _freq_scalar))(7,
-        freq_range_t(
-            (double)tvrx2_tda18272_cal_map[7].cal_freq[_tda18272hnm_regs.rfcal_freq7]
-                * _freq_scalar,
-            (double)tvrx2_tda18272_cal_map[8].cal_freq[_tda18272hnm_regs.rfcal_freq8]
-                * _freq_scalar))(8,
-        freq_range_t(
-            (double)tvrx2_tda18272_cal_map[8].cal_freq[_tda18272hnm_regs.rfcal_freq8]
-                * _freq_scalar,
-            (double)tvrx2_tda18272_cal_map[9].cal_freq[_tda18272hnm_regs.rfcal_freq9]
-                * _freq_scalar))(9,
-        freq_range_t(
-            (double)tvrx2_tda18272_cal_map[9].cal_freq[_tda18272hnm_regs.rfcal_freq9]
-                * _freq_scalar,
-            (double)tvrx2_tda18272_cal_map[10].cal_freq[_tda18272hnm_regs.rfcal_freq10]
-                * _freq_scalar))(10,
-        freq_range_t(
-            (double)tvrx2_tda18272_cal_map[10].cal_freq[_tda18272hnm_regs.rfcal_freq10]
-                * _freq_scalar,
-            (double)tvrx2_tda18272_cal_map[11].cal_freq[_tda18272hnm_regs.rfcal_freq11]
-                * _freq_scalar));
+    uhd::dict<uint32_t, freq_range_t> result_to_cal_freq_ranges_map{
+        {0,
+            freq_range_t(
+                (double)tvrx2_tda18272_cal_map[0].cal_freq[_tda18272hnm_regs.rfcal_freq0]
+                    * _freq_scalar,
+                (double)tvrx2_tda18272_cal_map[1].cal_freq[_tda18272hnm_regs.rfcal_freq1]
+                    * _freq_scalar)},
+        {1,
+            freq_range_t(
+                (double)tvrx2_tda18272_cal_map[1].cal_freq[_tda18272hnm_regs.rfcal_freq1]
+                    * _freq_scalar,
+                (double)tvrx2_tda18272_cal_map[2].cal_freq[_tda18272hnm_regs.rfcal_freq2]
+                    * _freq_scalar)},
+        {2,
+            freq_range_t(
+                (double)tvrx2_tda18272_cal_map[2].cal_freq[_tda18272hnm_regs.rfcal_freq2]
+                    * _freq_scalar,
+                (double)tvrx2_tda18272_cal_map[3].cal_freq[_tda18272hnm_regs.rfcal_freq3]
+                    * _freq_scalar)},
+        {3,
+            freq_range_t(
+                (double)tvrx2_tda18272_cal_map[3].cal_freq[_tda18272hnm_regs.rfcal_freq3]
+                    * _freq_scalar,
+                (double)tvrx2_tda18272_cal_map[4].cal_freq[_tda18272hnm_regs.rfcal_freq4]
+                    * _freq_scalar)},
+        {4,
+            freq_range_t(
+                (double)tvrx2_tda18272_cal_map[4].cal_freq[_tda18272hnm_regs.rfcal_freq4]
+                    * _freq_scalar,
+                (double)tvrx2_tda18272_cal_map[5].cal_freq[_tda18272hnm_regs.rfcal_freq5]
+                    * _freq_scalar)},
+        {5,
+            freq_range_t(
+                (double)tvrx2_tda18272_cal_map[5].cal_freq[_tda18272hnm_regs.rfcal_freq5]
+                    * _freq_scalar,
+                (double)tvrx2_tda18272_cal_map[6].cal_freq[_tda18272hnm_regs.rfcal_freq6]
+                    * _freq_scalar)},
+        {6,
+            freq_range_t(
+                (double)tvrx2_tda18272_cal_map[6].cal_freq[_tda18272hnm_regs.rfcal_freq6]
+                    * _freq_scalar,
+                (double)tvrx2_tda18272_cal_map[7].cal_freq[_tda18272hnm_regs.rfcal_freq7]
+                    * _freq_scalar)},
+        {7,
+            freq_range_t(
+                (double)tvrx2_tda18272_cal_map[7].cal_freq[_tda18272hnm_regs.rfcal_freq7]
+                    * _freq_scalar,
+                (double)tvrx2_tda18272_cal_map[8].cal_freq[_tda18272hnm_regs.rfcal_freq8]
+                    * _freq_scalar)},
+        {8,
+            freq_range_t(
+                (double)tvrx2_tda18272_cal_map[8].cal_freq[_tda18272hnm_regs.rfcal_freq8]
+                    * _freq_scalar,
+                (double)tvrx2_tda18272_cal_map[9].cal_freq[_tda18272hnm_regs.rfcal_freq9]
+                    * _freq_scalar)},
+        {9,
+            freq_range_t(
+                (double)tvrx2_tda18272_cal_map[9].cal_freq[_tda18272hnm_regs.rfcal_freq9]
+                    * _freq_scalar,
+                (double)tvrx2_tda18272_cal_map[10]
+                        .cal_freq[_tda18272hnm_regs.rfcal_freq10]
+                    * _freq_scalar)},
+        {10,
+            freq_range_t((double)tvrx2_tda18272_cal_map[10]
+                                 .cal_freq[_tda18272hnm_regs.rfcal_freq10]
+                             * _freq_scalar,
+                (double)tvrx2_tda18272_cal_map[11]
+                        .cal_freq[_tda18272hnm_regs.rfcal_freq11]
+                    * _freq_scalar)}};
 
     if (result < 11)
         return result_to_cal_freq_ranges_map[result];
@@ -1309,13 +1345,18 @@ void tvrx2::tvrx2_tda18272_init_rfcal(void)
     /* read byte 0x38-0x43 */
     read_reg(0x38, 0x43);
 
-    uhd::dict<uint32_t, uint8_t> result_to_cal_regs =
-        map_list_of(0, _tda18272hnm_regs.rfcal_log_1)(1, _tda18272hnm_regs.rfcal_log_2)(
-            2, _tda18272hnm_regs.rfcal_log_3)(3, _tda18272hnm_regs.rfcal_log_4)(
-            4, _tda18272hnm_regs.rfcal_log_5)(5, _tda18272hnm_regs.rfcal_log_6)(
-            6, _tda18272hnm_regs.rfcal_log_7)(7, _tda18272hnm_regs.rfcal_log_8)(
-            8, _tda18272hnm_regs.rfcal_log_9)(9, _tda18272hnm_regs.rfcal_log_10)(
-            10, _tda18272hnm_regs.rfcal_log_11)(11, _tda18272hnm_regs.rfcal_log_12);
+    uhd::dict<uint32_t, uint8_t> result_to_cal_regs{{0, _tda18272hnm_regs.rfcal_log_1},
+        {1, _tda18272hnm_regs.rfcal_log_2},
+        {2, _tda18272hnm_regs.rfcal_log_3},
+        {3, _tda18272hnm_regs.rfcal_log_4},
+        {4, _tda18272hnm_regs.rfcal_log_5},
+        {5, _tda18272hnm_regs.rfcal_log_6},
+        {6, _tda18272hnm_regs.rfcal_log_7},
+        {7, _tda18272hnm_regs.rfcal_log_8},
+        {8, _tda18272hnm_regs.rfcal_log_9},
+        {9, _tda18272hnm_regs.rfcal_log_10},
+        {10, _tda18272hnm_regs.rfcal_log_11},
+        {11, _tda18272hnm_regs.rfcal_log_12}};
 
 
     // Loop through rfcal_log_* registers, initialize _rfcal_results
@@ -1522,9 +1563,14 @@ void tvrx2::test_rf_filter_robustness(void)
 
     read_reg(0x38, 0x43);
 
-    uhd::dict<std::string, uint8_t> filter_cal_regs = map_list_of("VHFLow_0", 0x38)(
-        "VHFLow_1", 0x3a)("VHFHigh_0", 0x3b)("VHFHigh_1", 0x3d)("UHFLow_0", 0x3e)(
-        "UHFLow_1", 0x40)("UHFHigh_0", 0x41)("UHFHigh_1", 0x43);
+    uhd::dict<std::string, uint8_t> filter_cal_regs{{"VHFLow_0", 0x38},
+        {"VHFLow_1", 0x3a},
+        {"VHFHigh_0", 0x3b},
+        {"VHFHigh_1", 0x3d},
+        {"UHFLow_0", 0x3e},
+        {"UHFLow_1", 0x40},
+        {"UHFHigh_0", 0x41},
+        {"UHFHigh_1", 0x43}};
 
     for (const std::string& name : filter_cal_regs.keys()) {
         uint8_t cal_result = _tda18272hnm_regs.get_reg(filter_cal_regs[name]);
