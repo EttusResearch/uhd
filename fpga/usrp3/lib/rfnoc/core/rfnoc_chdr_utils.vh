@@ -58,6 +58,7 @@ localparam [4:0] CHDR_NO_MDATA = 5'd0;
 localparam [15:0] NULL_EPID = 16'd0;
 
 // CHDR field lengths
+localparam CHDR_HEADER_W    = 64;
 localparam CHDR_VC_W        = 6;
 localparam CHDR_EOB_W       = 1;
 localparam CHDR_EOV_W       = 1;
