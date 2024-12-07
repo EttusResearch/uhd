@@ -13,6 +13,9 @@ axis_cp_list.sv \
 noc_shell_fft.v \
 xfft_config_pkg.sv \
 fft_core_regs_pkg.sv \
+fft_packetize_pkg.sv \
+fft_packetize.sv \
+fft_depacketize.sv \
 xfft_wrapper.sv \
 fft_core.sv \
 rfnoc_block_fft.sv \
