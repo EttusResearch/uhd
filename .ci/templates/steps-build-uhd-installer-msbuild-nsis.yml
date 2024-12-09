@@ -26,6 +26,9 @@ parameters:
   type: string
 - name: uhdVcpkgManifestDir
   type: string
+- name: cleanTargetFolder
+  type: boolean
+  default: true
 
 steps:
 - script: |
@@ -80,10 +83,20 @@ steps:
     msbuild.exe package.vcxproj -maxCpuCount -p:configuration=release
   displayName: msbuild package
 
-- task: CopyFiles@2
-  inputs:
-    sourceFolder: ${{ parameters.uhdBuildDir }}
-    contents: 'uhd_*.exe'
-    targetFolder: '$(Build.BinariesDirectory)/uhddev-installer'
-    cleanTargetFolder: true
-  displayName: Copy msbuild installer
+- ${{if not(parameters.uhdBuildPythonAPI) }}:
+  - task: CopyFiles@2
+    inputs:
+      sourceFolder: ${{ parameters.uhdBuildDir }}
+      contents: 'uhd_*.exe'
+      targetFolder: '$(Build.BinariesDirectory)/uhddev-installer'
+      cleanTargetFolder: ${{ parameters.cleanTargetFolder }}
+    displayName: Copy msbuild installer
+- ${{if parameters.uhdBuildPythonAPI }}:
+  - task: CopyFiles@2
+    inputs:
+      sourceFolder: ${{ parameters.uhdBuildDir }}
+      contents: '**/uhd-*.whl'
+      targetFolder: '$(Build.BinariesDirectory)/uhddev-installer'
+      flattenFolders: True
+      cleanTargetFolder: ${{ parameters.cleanTargetFolder }}
+    displayName: Copy wheel from Poetry build
