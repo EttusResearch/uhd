@@ -25,9 +25,11 @@
 #include <uhdlib/rfnoc/device_id.hpp>
 #include <uhdlib/utils/compat_check.hpp>
 #include <uhdlib/utils/paths.hpp>
+#include <boost/format.hpp>
 #include <chrono>
 #include <fstream>
 #include <thread>
+#include <vector>
 #ifdef HAVE_DPDK
 #    include <uhdlib/transport/dpdk/common.hpp>
 #endif
@@ -232,14 +234,16 @@ x300_impl::x300_impl(const uhd::device_addr_t& dev_addr) : rfnoc_device()
     size_t num_usrps   = 0;
     while (num_usrps < total_usrps) {
         size_t init_usrps = std::min(total_usrps - num_usrps, x300::MAX_INIT_THREADS);
-        boost::thread_group setup_threads;
+        std::vector<std::thread> setup_threads;
         for (size_t i = 0; i < init_usrps; i++) {
             const size_t index = num_usrps + i;
-            setup_threads.create_thread([this, index, device_args]() {
+            setup_threads.emplace_back([this, index, device_args]() {
                 this->setup_mb(index, device_args[index]);
             });
         }
-        setup_threads.join_all();
+        for (auto& setup_thread : setup_threads) {
+            setup_thread.join();
+        }
         num_usrps += init_usrps;
     }
 }
