@@ -291,7 +291,7 @@ package PkgAxiStreamBfm;
     // Default values to use for idle bus cycles
     local const AxisPacket_t::data_t IDLE_DATA = {DATA_WIDTH{1'bX}};
     local const AxisPacket_t::user_t IDLE_USER = {(USER_WIDTH > 1 ? USER_WIDTH : 1){1'bX}};
-    local const AxisPacket_t::keep_t IDLE_KEEP = {(DATA_WIDTH/8){1'bX}};
+    local const AxisPacket_t::keep_t IDLE_KEEP = {(DATA_WIDTH/8) > 1 ? (DATA_WIDTH/8) : 1 {1'bX}};
 
     // Virtual interfaces for master and slave connections to DUT
     local virtual AxiStreamIf #(DATA_WIDTH,USER_WIDTH,MAX_PACKET_BYTES,
