@@ -27,7 +27,16 @@ jobs:
 
         echo "---- Run testbenches ----"
         pushd ./tools/utils
-        python3 ./run_testbenches.py --logged --simulator modelsim --excludes=modelsim.excludes -j4 run
+        pip3 install -r requirements.txt
+        python3 ./run_testbenches.py --logged --simulator modelsim --excludes=modelsim.excludes -j4 --report $(Build.ArtifactStagingDirectory)/junit.xml run
         popd
       workingDirectory: uhddev/fpga/usrp3
       displayName: "Run Testbenches"
+
+    - task: PublishTestResults@2
+      inputs:
+        testResultsFormat: 'JUnit'
+        testResultsFiles: 'junit.xml'
+        searchFolder: $(Build.ArtifactStagingDirectory)
+        failTaskOnFailedTests: True
+      condition: succeededOrFailed()
