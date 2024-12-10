@@ -379,7 +379,7 @@ jobs:
           echo "Setting dpdk_driver to $dpdk_driver"
           sed -i "s|^dpdk_driver.*|dpdk_driver = $dpdk_driver|" $config_file
         fi
-      displayName: select UHD config file for DPDK $[[ variables.DPDK_VERSION_STRING ]]
+      displayName: select UHD config file for DPDK ${{ dpdkDir }}
       condition: and(succeeded(), not(eq(variables.dutType, 'B210')))
 
     - script: |
@@ -401,7 +401,7 @@ jobs:
         LD_LIBRARY_PATH: $(Build.BinariesDirectory)/uhddev/build-installed/lib:$(LD_LIBRARY_PATH_DPDK)
         UHD_IMAGES_DIR: $(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images
       continueOnError: true
-      displayName: Run streaming tests with DPDK $[[ variables.DPDK_VERSION_STRING ]] on $(dutName)
+      displayName: Run streaming tests with DPDK ${{ dpdkDir }} on $(dutName)
       condition: and(succeeded(), not(eq(variables.dutType, 'B210')))
 
     - task: PublishTestResults@2
@@ -412,7 +412,7 @@ jobs:
         buildConfiguration: 'Release'
         mergeTestResults: true
         failTaskOnFailedTests: false
-      displayName: Upload streaming test results with DPDK $[[ variables.DPDK_VERSION_STRING ]]
+      displayName: Upload streaming test results with DPDK ${{ dpdkDir }}
 
   - script: |
       echo "A previous step failed. See steps with warnings."
