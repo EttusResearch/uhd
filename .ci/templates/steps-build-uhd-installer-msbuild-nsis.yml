@@ -32,6 +32,12 @@ parameters:
 
 steps:
 - script: |
+    copy /y ${{ parameters.uhdSrcDir }}\.ci\docker\vcpkg\vcpkg.json vcpkg.json
+    %VCPKG_INSTALL_DIR%\vcpkg.exe install --triplet uhd-x64-windows-static-md --clean-after-build
+  workingDirectory: ${{ parameters.uhdVcpkgManifestDir }}
+  displayName: refresh vcpkg dependencies
+
+- script: |
     mkdir ${{ parameters.uhdBuildDir }}
     cd ${{ parameters.uhdBuildDir }}
     cmake ${{ parameters.uhdSrcDir }}/host ^
