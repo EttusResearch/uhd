@@ -141,6 +141,19 @@ if(UHD_RELEASE_MODE)
     )
 endif()
 
+# extract the current tag, if any
+set(UHD_GIT_TAG "" CACHE STRING "GIT tag associated with the current code")
+if(GIT_FOUND)
+    execute_process(
+        WORKING_DIRECTORY ${UHD_SOURCE_DIR}
+        COMMAND ${GIT_EXECUTABLE} describe --exact-match --tags
+        OUTPUT_VARIABLE UHD_GIT_TAG OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE _uhd_git_tag_result
+    )
+    if (NOT _uhd_git_tag_result EQUAL 0)
+        set(UHD_GIT_TAG "")
+    endif()
+endif()
 
 ########################################################################
 # Define the derived version variables:

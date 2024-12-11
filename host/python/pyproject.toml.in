@@ -5,6 +5,13 @@ description = "Universal Software Radio Peripheral (USRP) Hardware Driver Python
 keywords=["SDR", "UHD", "USRP"]
 authors=["Ettus Research <uhd.maintainer@emerson.com>"]
 license="GPLv3"
+classifiers=[
+    "@UHD_DEV_STATUS@",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Programming Language :: C++",
+    "Programming Language :: Python",
+    "Topic :: System :: Hardware :: Hardware Drivers",
+]
 exclude = [
     "usrp_mpm"
 ]
