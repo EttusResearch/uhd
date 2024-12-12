@@ -74,6 +74,7 @@ steps:
       -DVCPKG_MANIFEST_DIR=${{ parameters.uhdVcpkgManifestDir }} ^
       -DUHD_IMAGES_SRC_DIR="${{ parameters.uhdImageDir }}" ^
       -DUHD_IMAGES_DIR="C:\\Program Files (x86)\\UHD\\share\\uhd\\images,C:\\Program Files\\UHD\\share\\uhd\\images" ^
+      -DENABLE_EXTEND_WIN_PACKAGING=ON ^
       -DSPECIFY_MSVC_VERSION=ON ^
       -DENABLE_DOXYGEN_SHORTNAMES=ON ^
       %UHD_CI_CMAKE_OPTIONS% ^
