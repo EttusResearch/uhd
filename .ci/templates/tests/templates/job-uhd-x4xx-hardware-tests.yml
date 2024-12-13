@@ -57,8 +57,11 @@ jobs:
 
   steps:
   - checkout: self
+    clean: True
   - checkout: meta-ettus
+    clean: True
   - checkout: ettus-rts
+    clean: True
 
   - script: |
       if [ "${{ parameters.uhdArtifactSource }}" = "current" ]; then
@@ -331,7 +334,7 @@ jobs:
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "cd ~/usrp_pytest/remote/python_tests/pytests && \
         python3 ../automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) --test_selector test_gnuradio_sanity.py --run_embedded"
       EXITCODE=$?
-      scp -o StrictHostKeyChecking=no -r root@$USRP_EMB_TARGET_IP:~/usrp_pytest .
+      scp -o StrictHostKeyChecking=no -r root@$USRP_EMB_TARGET_IP:~/usrp_pytest/remote/python_tests/pytests/*.xml .
       exit $EXITCODE
     displayName: Run pytest on embedded
     continueOnError: true
@@ -383,7 +386,7 @@ jobs:
   - task: PublishTestResults@2
     inputs:
       testResultsFormat: 'JUnit'
-      testResultsFiles: '$(Common.TestResultsDirectory)/pytest/host/**/*.xml'
+      testResultsFiles: '$(Common.TestResultsDirectory)/pytest/host/*.xml'
       testRunTitle: $(dutName) host pytests
       mergeTestResults: true
       failTaskOnFailedTests: true
@@ -393,7 +396,7 @@ jobs:
   - task: PublishTestResults@2
     inputs:
       testResultsFormat: 'JUnit'
-      testResultsFiles: '$(Common.TestResultsDirectory)/pytest/embedded/**/*.xml'
+      testResultsFiles: '$(Common.TestResultsDirectory)/pytest/embedded/*.xml'
       testRunTitle: $(dutName) embedded pytests
       mergeTestResults: true
       failTaskOnFailedTests: true
