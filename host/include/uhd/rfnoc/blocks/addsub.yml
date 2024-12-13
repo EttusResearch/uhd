@@ -7,7 +7,14 @@ noc_id: 0xADD00000
 makefile_srcs: "${fpga_lib_dir}/blocks/rfnoc_block_addsub/Makefile.srcs"
 
 parameters:
-  USE_IMPL: '"Verilog"'
+  USE_IMPL: Verilog
+
+hdl_parameters:
+  USE_IMPL: ${ parameters['USE_IMPL'] | q}
+
+checks:
+  - condition: ${ parameters['USE_IMPL'] in ('Verilog', 'HLS', 'VHDL') }
+    message: "USE_IMPL parameter must be one of Verilog, HLS, VHDL. Is: ${ parameters['USE_IMPL'] }"
 
 clocks:
   - name: rfnoc_chdr
