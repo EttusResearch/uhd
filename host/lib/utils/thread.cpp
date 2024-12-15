@@ -173,6 +173,7 @@ void uhd::set_thread_priority(float, bool)
 void uhd::set_thread_affinity(const std::vector<size_t>& cpu_affinity_list)
 {
     UHD_LOG_DEBUG("UHD", "Setting thread affinity is not implemented");
+    static_cast<void>(cpu_affinity_list);
 }
 #endif /* HAVE_THREAD_SETAFFINITY_DUMMY */
 
@@ -186,6 +187,8 @@ void uhd::set_thread_name(boost::thread* thrd, const std::string& name)
     // before the logger starts, and thus can't log any error messages.
     // Note that CMake will also tell the user about not being able to set
     // thread names.
+    static_cast<void>(thrd);
+    static_cast<void>(name);
 #endif /* HAVE_THREAD_SETNAME_DUMMY */
 }
 
@@ -199,5 +202,7 @@ void uhd::set_thread_name(std::thread* thrd, const std::string& name)
     // before the logger starts, and thus can't log any error messages.
     // Note that CMake will also tell the user about not being able to set
     // thread names.
+    static_cast<void>(thrd);
+    static_cast<void>(name);
 #endif /* HAVE_THREAD_SETNAME_DUMMY */
 }
