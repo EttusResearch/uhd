@@ -24,6 +24,7 @@
 #include <uhd/utils/static.hpp>
 #include <uhdlib/rfnoc/device_id.hpp>
 #include <uhdlib/utils/compat_check.hpp>
+#include <uhdlib/utils/paths.hpp>
 #include <chrono>
 #include <fstream>
 #include <thread>
@@ -485,13 +486,12 @@ uhd::compat_num32 x300_impl::check_fw_compat(
     const uint32_t compat_minor = (compat_num & 0xffff);
 
     if (compat_major != X300_FW_COMPAT_MAJOR) {
-        const std::string image_loader_path =
-            (fs::path(uhd::get_pkg_path()) / "bin" / "uhd_image_loader").string();
-        const std::string image_loader_cmd = str(
+        const std::string image_loader_path = uhd::find_uhd_command("uhd_image_loader");
+        const std::string image_loader_cmd  = str(
             boost::format("\"%s\" --args=\"type=x300,%s=%s\"") % image_loader_path
             % (members.xport_path == xport_path_t::ETH ? "addr" : "resource")
             % (members.xport_path == xport_path_t::ETH ? members.args.get_first_addr()
-                                                       : members.args.get_resource()));
+                                                        : members.args.get_resource()));
 
         throw uhd::runtime_error(
             str(boost::format(
@@ -522,13 +522,12 @@ uhd::compat_num32 x300_impl::check_fpga_compat(
     int64_t compat_minor  = (compat_num & 0xffff);
 
     if (compat_major != X300_FPGA_COMPAT_MAJOR || compat_minor < X300_FPGA_COMPAT_MINOR) {
-        std::string image_loader_path =
-            (fs::path(uhd::get_pkg_path()) / "bin" / "uhd_image_loader").string();
-        std::string image_loader_cmd = str(
+        const std::string image_loader_path = uhd::find_uhd_command("uhd_image_loader");
+        const std::string image_loader_cmd  = str(
             boost::format("\"%s\" --args=\"type=x300,%s=%s\"") % image_loader_path
             % (members.xport_path == xport_path_t::ETH ? "addr" : "resource")
             % (members.xport_path == xport_path_t::ETH ? members.args.get_first_addr()
-                                                       : members.args.get_resource()));
+                                                        : members.args.get_resource()));
 
         throw uhd::runtime_error(
             str(boost::format(

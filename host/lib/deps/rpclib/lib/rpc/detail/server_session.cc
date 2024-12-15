@@ -22,14 +22,14 @@ namespace detail {
 
 static constexpr std::size_t default_buffer_size = rpc::constants::DEFAULT_BUFFER_SIZE;
 
-server_session::server_session(server *srv, boost::asio::io_service *io,
+server_session::server_session(server *srv, boost::asio::io_context *io,
                                boost::asio::ip::tcp::socket socket,
                                std::shared_ptr<dispatcher> disp,
                                bool suppress_exceptions)
     : async_writer(io, std::move(socket)),
       parent_(srv),
       io_(io),
-      read_strand_(*io),
+      read_strand_(io->get_executor()),
       disp_(disp),
       pac_(),
       suppress_exceptions_(suppress_exceptions) {
@@ -42,7 +42,7 @@ void server_session::start() { do_read(); }
 void server_session::close() {
     LOG_INFO("Closing session.");
     exit_ = true;
-    write_strand_.post([this]() {
+    boost::asio::post(write_strand_, [this]() {
         try {
             socket_.close();
         } catch (const boost::system::system_error&) {
@@ -54,12 +54,11 @@ void server_session::close() {
 void server_session::do_read() {
     auto self(shared_from_this());
     constexpr std::size_t max_read_bytes = default_buffer_size;
-    socket_.async_read_some(
-        boost::asio::buffer(pac_.buffer(), default_buffer_size),
+    socket_.async_read_some(boost::asio::buffer(pac_.buffer(), default_buffer_size),
         // I don't think max_read_bytes needs to be captured explicitly
         // (since it's constexpr), but MSVC insists.
-        read_strand_.wrap([this, self, max_read_bytes](boost::system::error_code ec,
-                                                       std::size_t length) {
+        boost::asio::bind_executor(read_strand_, [this, self, max_read_bytes](boost::system::error_code ec,
+                                                                              std::size_t length) {
             if (!ec) {
                 pac_.buffer_consumed(length);
                 RPCLIB_MSGPACK::unpacked result;
@@ -69,7 +68,7 @@ void server_session::do_read() {
 
                     // any worker thread can take this call
                     auto z = std::shared_ptr<RPCLIB_MSGPACK::zone>(result.zone().release());
-                    io_->post([
+                    boost::asio::post(io_->get_executor(), [
                         this, msg, z
                     ]() {
                         this_handler().clear();
@@ -102,10 +101,10 @@ void server_session::do_read() {
                         if (!resp.is_empty()) {
 #ifdef _MSC_VER
                             // doesn't compile otherwise.
-                            write_strand_.post(
+                            boost::asio::post(write_strand_,
                                 [=]() { write(resp.get_data()); });
 #else
-                            write_strand_.post(
+                            boost::asio::post(write_strand_,
                                 [this, resp, z]() { write(resp.get_data()); });
 #endif
                         }
@@ -114,14 +113,14 @@ void server_session::do_read() {
                             LOG_WARN("Session exit requested from a handler.");
                             // posting through the strand so this comes after
                             // the previous write
-                            write_strand_.post([this]() { exit_ = true; });
+                            boost::asio::post(write_strand_, [this]() { exit_ = true; });
                         }
 
                         if (this_server().stopping_) {
                             LOG_WARN("Server exit requested from a handler.");
                             // posting through the strand so this comes after
                             // the previous write
-                            write_strand_.post(
+                            boost::asio::post(write_strand_,
                                 [this]() { parent_->close_sessions(); });
                         }
                     });

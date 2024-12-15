@@ -1,8 +1,8 @@
 Source: uhd
 Section: science
 Priority: optional
-Maintainer: Ettus Research <packages@ettus.com>
-Uploaders: Joerg Hofrichter <joerg.hofrichter@ni.com>
+Maintainer: Ettus Research <uhd.maintainer@emerson.com>
+Uploaders: Joerg Hofrichter <joerg.hofrichter@emerson.com>
 Build-Depends: cmake,
                debhelper (>= 9),
                libboost-date-time-dev,
@@ -34,6 +34,7 @@ Vcs-Git: https://github.com/EttusResearch/uhd.git
 Package: uhd-host
 Architecture: any
 Depends: libuhd4.7.0 (= ${binary:Version}),
+         python3-uhd (= ${binary:Version}),
          python3,
          python3-mako,
          python3-numpy,

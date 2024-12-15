@@ -195,6 +195,7 @@ jobs:
   # to change sfp0 default on the device
   # after the DUT responds to pings, give the device additional time for
   # things like the RPC server to come up too
+  # Step gets excluded if sfp0ip is not defined for test node
   - script: |
       source $USRP_EMB_VENV/bin/activate
       ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
@@ -206,8 +207,7 @@ jobs:
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ifconfig sfp0"
       sleep 90
     displayName: Set sfp0 IP
-    condition: and(succeeded(), ${{ parameters.runPyTest }})
-
+    condition: and(succeeded(), or( and(${{ parameters.runDevTest }}, ne(variables.sfp0ip, '')), ${{ parameters.runPyTest }}))
 
   - script: |
       mkdir -p $(Common.TestResultsDirectory)/sysimg_tests/sysimg_subsystem_tests
@@ -235,6 +235,10 @@ jobs:
     displayName: Run MPM unit tests
     continueOnError: true
 
+  # Most devtests have no strong requirement on the streaming interface
+  # bandwidth, except for the benchmark rate mimo_fast test.
+  # Retain support for using USRP_EMB_TARGET_IP with max. 1Gbps bandwidth.
+  # This should be the exception rather than the rule.
   - script: |
       export UHD_INSTALL_PATH=$(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev/build-installed
       export PATH=$UHD_INSTALL_PATH/bin:$PATH
@@ -245,10 +249,15 @@ jobs:
       fi
       mkdir -p $(Common.TestResultsDirectory)/devtest
       cd $(Common.TestResultsDirectory)/devtest
-      if [ -z "$(master_clock_rate)" ]; then
-        args="addr=$USRP_EMB_TARGET_IP,type=$(dutType)"
+      if [ -z "$(sfp0ip)" ]; then
+        addr=$USRP_EMB_TARGET_IP
       else
-        args="addr=$USRP_EMB_TARGET_IP,type=$(dutType),master_clock_rate=$(master_clock_rate)"
+        addr=$(sfp0ip)
+      fi
+      if [ -z "$(master_clock_rate)" ]; then
+        args="addr=$addr,type=$(dutType)"
+      else
+        args="addr=$addr,type=$(dutType),master_clock_rate=$(master_clock_rate)"
       fi
       echo $args
       uhd_usrp_probe --args $args

@@ -415,12 +415,12 @@ void usrp2_impl::program_stream_dest(
                              "IPv4 Address: %s, UDP Port: %s")
                    % args.args["addr"] % args.args["port"];
 
-        asio::io_service io_service;
-        asio::ip::udp::resolver resolver(io_service);
-        asio::ip::udp::resolver::query query(
-            asio::ip::udp::v4(), args.args["addr"], args.args["port"]);
-        asio::ip::udp::endpoint endpoint = *resolver.resolve(query);
-        stream_ctrl.ip_addr = uhd::htonx(uint32_t(endpoint.address().to_v4().to_ulong()));
+        asio::io_context io_context;
+        asio::ip::udp::resolver resolver(io_context);
+        asio::ip::udp::endpoint endpoint =
+            *resolver.resolve(asio::ip::udp::v4(), args.args["addr"], args.args["port"])
+                 .begin();
+        stream_ctrl.ip_addr  = uhd::htonx(uint32_t(endpoint.address().to_v4().to_uint()));
         stream_ctrl.udp_port = uhd::htonx(uint32_t(endpoint.port()));
 
         for (size_t i = 0; i < 3; i++) {

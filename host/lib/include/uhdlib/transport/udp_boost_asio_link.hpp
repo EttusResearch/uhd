@@ -146,7 +146,7 @@ private:
     std::vector<udp_boost_asio_frame_buff> _recv_buffs;
     std::vector<udp_boost_asio_frame_buff> _send_buffs;
 
-    boost::asio::io_service _io_service;
+    boost::asio::io_context _io_context;
     std::shared_ptr<boost::asio::ip::udp::socket> _socket;
     int _sock_fd;
     adapter_id_t _adapter_id;

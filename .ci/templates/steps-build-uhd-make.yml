@@ -36,8 +36,8 @@ steps:
       # We reimplement tar's -a flag here so we can pipe from curl straight to tar
       if [[ "${{ parameters.uhdCustomBoostPackageURL }}" =~ bz2$ ]]; then
           export TAR_EXTRACT_FLAG="j"
-      elif [[ "${{ parameters.uhdCustomBoostPackageURL }}" =~ gz2$ ]]; then
-          export TAR_EXTRACT_FLAG="x"
+      elif [[ "${{ parameters.uhdCustomBoostPackageURL }}" =~ gz$ ]]; then
+          export TAR_EXTRACT_FLAG="z"
       elif [[ "${{ parameters.uhdCustomBoostPackageURL }}" =~ xz$ ]]; then
           export TAR_EXTRACT_FLAG="J"
       fi

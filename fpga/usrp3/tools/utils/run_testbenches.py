@@ -13,6 +13,8 @@ import logging
 import re
 import time
 import datetime
+
+from junit_xml import TestSuite, TestCase, to_xml_report_file
 from queue import Queue
 from threading import Thread
 
@@ -44,16 +46,32 @@ def retcode_to_str(code):
         return 'AppError({code})'.format(code=code)
     else:
         return {RETCODE_SUCCESS:'OK',
-            RETCODE_PARSE_ERR:'ParseError', 
-            RETCODE_EXEC_ERR:'ExecError', 
-            RETCODE_COMPILE_ERR:'CompileError', 
+            RETCODE_PARSE_ERR:'ParseError',
+            RETCODE_EXEC_ERR:'ExecError',
+            RETCODE_COMPILE_ERR:'CompileError',
             RETCODE_UNKNOWN_ERR:'UnknownError'
         }[code]
+
+
+def result_to_string(result):
+    """ Convert a result dictionary to a string summarizing the results"""
+    if 'module' in result:
+        retval = 'Expected={:02d}, Run={:02d}, Passed={:02d}, Elapsed={:s}, Returncode={:s}'.format(
+            result['tc_expected'],
+            result['tc_run'],
+            result['tc_passed'],
+            result['wall_time'],
+            retcode_to_str(result['retcode'])
+        )
+    else:
+        retval = "Returncode={:s}".format(retcode_to_str(result['retcode']))
+    return retval
+
 
 def log_with_header(what, minlen = 0, ch = '#'):
     """ Print with a header around the text
     """
-    padlen = max(int((minlen - len(what))/2), 1) 
+    padlen = max(int((minlen - len(what))/2), 1)
     toprint = (' '*padlen) + what + (' '*padlen)
     _LOG.info(ch * len(toprint))
     _LOG.info(toprint)
@@ -121,10 +139,18 @@ def parse_output(simout):
         csm = re.match(rb'source .*viv_sim_project.tcl', line)
         if csm is not None:
             compile_started = True
+        # xsim log
         vsm = re.match(rb'# Start of session at: (.+)', line)
         if vsm is not None:
             results['start_time'] = str(vsm.group(1), 'ascii')
         tfm = re.match(rb'launch_simulation:.*; elapsed = (.+) \..*', line)
+        if tfm is not None:
+            results['wall_time'] = str(tfm.group(1), 'ascii')
+        # modelsim log
+        vsm = re.match(rb'# Start time: (.+)', line)
+        if vsm is not None:
+            results['start_time'] = str(vsm.group(1), 'ascii')
+        tfm = re.match(rb'# End time:.*, Elapsed time: (.+)', line)
         if tfm is not None:
             results['wall_time'] = str(tfm.group(1), 'ascii')
     # Parse testbench results
@@ -162,7 +188,7 @@ def parse_output(simout):
     ])
     m_error = re.search(''.join(tb_match_error), plain_simout)
 
-    # Figure out the returncode 
+    # Figure out the returncode
     retcode = RETCODE_UNKNOWN_ERR
     if m_fmt0 is not None or m_fmt1 is not None:
         retcode = RETCODE_SUCCESS
@@ -254,6 +280,7 @@ def do_list(args):
         print(name)
     return 0
 
+
 def do_run(args):
     """ Build a simulation queue based on the specified
         args and process it
@@ -319,16 +346,16 @@ def do_run(args):
     hdr_len = name_maxlen + 62 # 62 is the report line length
     log_with_header('RESULTS', hdr_len)
     for name in sorted(results):
-        r = results[name]
-        if 'module' in r:
-            _LOG.info('* %s : %s (Expected=%02d, Run=%02d, Passed=%02d, Elapsed=%s)',
-                name.ljust(name_maxlen), ('Passed' if r['passed'] else 'FAILED'), r['tc_expected'], r['tc_run'], r['tc_passed'], r['wall_time'])
-        else:
-            _LOG.info('* %s : %s (Status = %s)', name.ljust(name_maxlen), ('Passed' if r['passed'] else 'FAILED'), 
-                retcode_to_str(r['retcode']))
+        result = results[name]
+        _LOG.info('* %s : %s (%s)',
+                  name.ljust(name_maxlen),
+                  ('Passed' if result['passed'] else 'FAILED'),
+                  result_to_string(result))
     _LOG.info('='*hdr_len)
-    _LOG.info('SUMMARY: %d out of %d tests passed. Time elapsed was %s'%(num_sims - result_all, num_sims, str(datetime.datetime.now() - start).split('.', 2)[0]))   
+    _LOG.info('SUMMARY: %d out of %d tests passed. Time elapsed was %s'%(num_sims - result_all, num_sims, str(datetime.datetime.now() - start).split('.', 2)[0]))
     _LOG.info('#'*hdr_len)
+    if args.report:
+        do_report(args, results)
     return result_all
 
 
@@ -350,34 +377,73 @@ def do_cleanup(args):
         subprocess.Popen('{setupenv} make cleanall'.format(setupenv=setupenv), shell=True).wait()
     return 0
 
-def do_report(args):
-    """ List all simulations that can be run
-    """
+
+def do_report_csv(args, results):
+    """Generate report file (.csv)"""
     keys = ['module', 'status', 'retcode', 'start_time', 'wall_time',
             'sim_time_ns', 'tc_expected', 'tc_run', 'tc_passed']
     with open(args.report, 'w') as repfile:
         repfile.write((','.join([x.upper() for x in keys])) + '\n')
+        for name in sorted(results):
+            r = results[name]
+            if r['retcode'] != RETCODE_SUCCESS:
+                results['retcode'] = retcode_to_str(r['retcode'])
+                results['status'] = 'ERROR'
+                results['start_time'] = r['start_time']
+            else:
+                results = r
+                results['module'] = name
+                results['status'] = 'PASSED' if r['passed'] else 'FAILED'
+                results['retcode'] = retcode_to_str(r['retcode'])
+            repfile.write((','.join([str(results[x]) for x in keys])) + '\n')
+    _LOG.info('Testbench report (CSV format) written to ' + args.report)
+    return 0
+
+
+def do_report_junit(args, results):
+    """Generate JUnit report file (.xml)"""
+    test_cases = []
+    for name in sorted(results):
+        result = results[name]
+        if "wall_time" in result:
+            h, m, s = map(int, result["wall_time"].split(':'))
+            elapsed_sec = h * 3600 + m * 60 + s
+        else:
+            elapsed_sec = None
+        test_case = TestCase(name=name, elapsed_sec=elapsed_sec)
+        if result['retcode'] != RETCODE_SUCCESS:
+            test_case.add_error_info(message=retcode_to_str(result['retcode']),
+                                     output=result['stdout'].decode())
+        test_cases.append(test_case)
+    test_suite = TestSuite(name=f"{args.simulator} testbenches", test_cases=test_cases)
+    with open(args.report, 'w') as repfile:
+        to_xml_report_file(repfile, [test_suite], prettyprint=True)
+    _LOG.info('Testbench report (JUnit format) written to ' + args.report)
+    return 0
+
+
+def do_report(args, results):
+    """Generate report file (either .csv or .xml)"""
+    def _load_results(args):
+        results = {}
         excludes = read_excludes_file(args.excludes)
         for (name, path) in gather_target_sims(args.basedir, args.target, excludes):
-            results = {'module': str(name), 'status':'NOT_RUN', 'retcode':'<unknown>', 
-                       'start_time':'<unknown>', 'wall_time':'<unknown>', 'sim_time_ns':0,
-                       'tc_expected':0, 'tc_run':0, 'tc_passed':0}
             logpath = os.path.join(path, args.simulator + '.log')
             if os.path.isfile(logpath):
                 with open(logpath, 'rb') as logfile:
-                    r = parse_output(logfile.read())
-                    if r['retcode'] != RETCODE_SUCCESS:
-                        results['retcode'] = retcode_to_str(r['retcode'])
-                        results['status'] = 'ERROR'
-                        results['start_time'] = r['start_time']
-                    else:
-                        results = r
-                        results['module'] = name
-                        results['status'] = 'PASSED' if r['passed'] else 'FAILED'
-                        results['retcode'] = retcode_to_str(r['retcode'])
-            repfile.write((','.join([str(results[x]) for x in keys])) + '\n')
-    _LOG.info('Testbench report written to ' + args.report)
-    return 0
+                    result = parse_output(logfile.read())
+                    results[name] = result
+        return results
+    suffix = os.path.splitext(args.report)[1]
+    if results is None:
+        results = _load_results(args)
+    if suffix == '.csv':
+        return do_report_csv(args, results)
+    elif suffix == '.xml':
+        return do_report_junit(args, results)
+    else:
+        raise ValueError(f"Unsupported report suffix: {suffix}")
+
 
 # Parse command line options
 def get_options():

@@ -25,7 +25,7 @@ struct server::impl {
         : parent_(parent),
           io_(),
           acceptor_(io_,
-                    tcp::endpoint(ip::address::from_string(address), port)),
+                    tcp::endpoint(ip::make_address(address), port)),
           socket_(io_),
           suppress_exceptions_(false) {}
 
@@ -66,7 +66,7 @@ struct server::impl {
     }
 
     server *parent_;
-    io_service io_;
+    io_context io_;
     ip::tcp::acceptor acceptor_;
     ip::tcp::socket socket_;
     rpc::detail::thread_group loop_workers_;

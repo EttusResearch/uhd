@@ -99,7 +99,7 @@ void octoclock_eeprom_t::_store() const
     // IP address
     if ((*this).has_key("ip-addr")) {
         ip_v4::bytes_type ip_addr_bytes =
-            ip_v4::from_string((*this)["ip-addr"]).to_bytes();
+            boost::asio::ip::make_address_v4((*this)["ip-addr"]).to_bytes();
         memcpy(&eeprom_out->ip_addr, &ip_addr_bytes, 4);
         eeprom_out->ip_addr = uhd::htonx<uint32_t>(eeprom_out->ip_addr);
     }
@@ -107,7 +107,7 @@ void octoclock_eeprom_t::_store() const
     // Default router
     if ((*this).has_key("gateway")) {
         ip_v4::bytes_type dr_addr_bytes =
-            ip_v4::from_string((*this)["gateway"]).to_bytes();
+            boost::asio::ip::make_address_v4((*this)["gateway"]).to_bytes();
         memcpy(&eeprom_out->dr_addr, &dr_addr_bytes, 4);
         eeprom_out->dr_addr = uhd::htonx<uint32_t>(eeprom_out->dr_addr);
     }
@@ -115,7 +115,7 @@ void octoclock_eeprom_t::_store() const
     // Netmask
     if ((*this).has_key("netmask")) {
         ip_v4::bytes_type netmask_bytes =
-            ip_v4::from_string((*this)["netmask"]).to_bytes();
+            boost::asio::ip::make_address_v4((*this)["netmask"]).to_bytes();
         memcpy(&eeprom_out->netmask, &netmask_bytes, 4);
         eeprom_out->netmask = uhd::htonx<uint32_t>(eeprom_out->netmask);
     }

@@ -45,6 +45,7 @@ variables:
   blockname_full: "${ f'rfnoc_{type}_{blockname}' }"
   copyright_holder: "${ args.copyright_holder }"
   license: "${ args.license }"
+  skip_testbench: "${ args.skip_testbench }"
 
 
 # Steps:
@@ -68,6 +69,12 @@ steps:
   - write_template:
       template: Makefile.srcs.mako
       dest: "fpga/${ MODULE_NAME }/${ blockname_full }/Makefile.srcs"
+  - write_template:
+      template: CMakeLists.txt.mako
+      dest: "fpga/${ MODULE_NAME }/${ blockname_full }/CMakeLists.txt"
+  - append:
+      file: "fpga/${ MODULE_NAME }/CMakeLists.txt"
+      text: "add_subdirectory(${ blockname_full })\n"
   # RFNoC block testbench
   - run_if:
       condition: "${ not args.skip_testbench }"
@@ -98,10 +105,10 @@ steps:
       template: template_block_control_python.hpp.mako
       dest: "python/${ blockname }_block_control_python.hpp"
   - insert_after:
-      file: "python/pyrfnoc-${ MODULE_NAME}.cpp"
+      file: "python/pyrfnoc-${ MODULE_NAME }.cpp"
       pattern: "PYBIND11_MODULE[^}]*"
       text: "    export_${ blockname }_block_control(m);\n"
   - insert_before:
-      file: "python/pyrfnoc-${ MODULE_NAME}.cpp"
+      file: "python/pyrfnoc-${ MODULE_NAME }.cpp"
       pattern: "\nPYBIND11_MODULE"
       text: '#include "${ blockname }_block_control_python.hpp"\n'

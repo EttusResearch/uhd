@@ -30,6 +30,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("dpdk-version",       "Print DPDK version")
         ("libusb-version",     "Print libusb version")
         ("pkg-path",           "Print pkg path")
+        ("pkg-data-path",      "Print package data path")
         ("lib-path",           "Print library path")
         ("images-dir",         "Print images dir")
         ("abi-version",        "Print ABI version string")
@@ -92,6 +93,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     }
     if (vm.count("pkg-path") > 0 or print_all) {
         std::cout << "Package path: " << uhd::get_pkg_path() << std::endl;
+    }
+    if (vm.count("pkg-data-path") > 0 or print_all) {
+        std::cout << "Package data path: " << uhd::get_pkg_data_path() << std::endl;
     }
     if (vm.count("images-dir") > 0 or print_all) {
         std::cout << "Images directory: " << uhd::get_images_dir("") << std::endl;

@@ -464,7 +464,7 @@ end
 function dissect_stream_status_packet(header_buffer, buffer, pinfo, tree)
   local header = tree:add(rfnoc_proto, buffer(), "Stream Status")
   header:add_le(pf_strs_src_epid, buffer(0, 2))
-  header:add_le(pf_strs_status, buffer(2, 1):bitfield(0, 4))
+  header:add_le(pf_strs_status, buffer(2, 1):bitfield(4, 4))
   header:add_le(pf_strs_capacity_bytes, buffer(3, 5))
   header:add_le(pf_strs_capacity_packets, buffer(8, 3))
   header:add_le(pf_strs_xfer_count_packets, buffer(11, 5))
@@ -472,7 +472,7 @@ function dissect_stream_status_packet(header_buffer, buffer, pinfo, tree)
   header:add_le(pf_strs_buff_info, buffer(24, 2))
   header:add_le(pf_strs_status_info, buffer(26, 6))
   return buffer(0, 2):le_uint(), string.format("%s (packets: %s, bytes: %s)",
-      strs_states[buffer(2, 1):bitfield(0, 4)],                           -- stream status
+      strs_states[buffer(2, 1):bitfield(4, 4)],                           -- stream status
       tostring(UInt64(buffer(11, 4):le_uint(), buffer(15, 1):le_uint())), -- transferred packets
       tostring(UInt64(buffer(16, 4):le_uint(), buffer(20, 4):le_uint()))  -- transferred bytes
   )

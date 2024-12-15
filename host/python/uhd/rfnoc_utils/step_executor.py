@@ -20,9 +20,9 @@ import sys
 from pathlib import Path
 
 import mako.lookup
-import mako.template
 from ruamel.yaml import YAML
 
+from .template import Template
 from .utils import resolve
 
 
@@ -159,9 +159,7 @@ class StepExecutor:
         )
         lookup = mako.lookup.TemplateLookup(directories=[template_dir])
         Path(dest).parent.mkdir(parents=True, exist_ok=True)
-        tpl = mako.template.Template(
-            filename=os.path.join(template_dir, template), lookup=lookup, strict_undefined=True
-        )
+        tpl = Template(filename=os.path.join(template_dir, template), lookup=lookup)
         vars = self.cmd.get("variables", {}).copy()
         # Make sure standard template variables are available
         if "year" in kwargs:
@@ -205,6 +203,14 @@ class StepExecutor:
                 self.log.warning("Pattern not found in file %s", file)
             with open(file, "w", encoding="utf-8") as f:
                 f.write(contents)
+
+    def append(self, text, **kwargs):
+        """Append text to a file."""
+        file_list = get_file_list(**kwargs)
+        for file in file_list:
+            self.log.debug("Appending to file %s", file)
+            with open(file, "a", encoding="utf-8") as f:
+                f.write(text)
 
     def comment_out(self, character="#", **kwargs):
         """Modify all lines in range to prepend character.

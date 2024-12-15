@@ -12,8 +12,9 @@ import logging
 import os
 import re
 
-import mako.template
 from mako.exceptions import MakoException
+
+from .template import Template
 
 
 def merge_dicts(origd, newd):
@@ -111,7 +112,7 @@ def resolve(var_val, **kwargs):
     if "env" not in kwargs:
         kwargs["env"] = dict(os.environ)
     try:
-        tpl = mako.template.Template(var_val, strict_undefined=True)
+        tpl = Template(var_val)
         res = tpl.render(**kwargs)
     except MakoException as ex:
         raise SyntaxError(f"Unable to parse:\n{var_val}") from ex

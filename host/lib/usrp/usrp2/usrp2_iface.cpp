@@ -16,6 +16,7 @@
 #include <uhd/utils/platform.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/tasks.hpp>
+#include <uhdlib/utils/paths.hpp>
 #include <boost/asio.hpp> //used for htonl and ntohl
 #include <boost/assign/list_of.hpp>
 #include <boost/filesystem.hpp>
@@ -448,7 +449,7 @@ public:
         } else {
             const std::string addr = _ctrl_transport->get_recv_addr();
             const std::string image_loader_path =
-                (fs::path(uhd::get_pkg_path()) / "bin" / "uhd_image_loader").string();
+                uhd::find_uhd_command("uhd_image_loader");
             const std::string image_loader_cmd =
                 str(boost::format(" \"%s\" %s--args=\"type=usrp2,addr=%s\"")
                     % image_loader_path % ml % addr);

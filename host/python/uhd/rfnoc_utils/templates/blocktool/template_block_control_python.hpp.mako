@@ -9,7 +9,7 @@
 #include <uhd/rfnoc/block_controller_factory_python.hpp>
 #include <rfnoc/${MODULE_NAME}/${blockname}_block_control.hpp>
 
-using namespace rfnoc::gain;
+using namespace rfnoc::${MODULE_NAME};
 
 void export_${blockname}_block_control(py::module& m)
 {

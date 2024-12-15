@@ -12,12 +12,15 @@ parameters:
 # If there is a separate hdl_parameters section, then this is the list of
 # parameters that the HDL module can consume. In this case, we only do some
 # sanitization of the ip_option parameter above.
+# Note the use of the 'q' (or 'quote') filter. This ensures that the string is
+# rendered including quotes, which is necessary for the HDL module to use this
+# value as a string parameter.
 hdl_parameters:
-  IP_OPTION: "'\"${parameters['ip_option'].upper()}\"'"
+  IP_OPTION: ${ parameters['ip_option'] | q}
 
 checks:
   - condition: ${ parameters['ip_option'] in ('HDL_IP', 'IN_TREE_IP', 'OUT_OF_TREE_IP') }
-    message: "ip_option parameter must be one of HDL_IP, IN_TREE_IP, OUT_OF_TREE_IP. Is: ${ parameters['ip_option']"
+    message: "ip_option parameter must be one of HDL_IP, IN_TREE_IP, OUT_OF_TREE_IP. Is: ${ parameters['ip_option'] }"
 
 
 clocks:

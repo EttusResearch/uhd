@@ -105,7 +105,6 @@ jobs:
         cmakeArch: $(cmakeArch)
         vsArch: $(vsArch)
         vsYear: $(vsYear)
-  - ${{ if and(eq(parameters.toolset, 'msbuild_python'), eq(parameters.installer, 'nsis')) }}:
     - template: steps-build-uhd-installer-msbuild-nsis.yml
       parameters:
         uhdSrcDir: $(Build.SourcesDirectory)
@@ -121,6 +120,7 @@ jobs:
         cmakeArch: $(cmakeArch)
         vsArch: $(vsArch)
         vsYear: $(vsYear)
+        cleanTargetFolder: False
   - task: PublishPipelineArtifact@1
     inputs:
       targetPath: '$(Build.BinariesDirectory)/uhddev-installer'

@@ -20,11 +20,11 @@ import subprocess
 import sys
 
 import mako.lookup
-import mako.template
 from mako import exceptions
 
 from . import grc, yaml_utils
 from .builder_config import ImageBuilderConfig
+from .template import Template
 
 ### DATA ######################################################################
 # Directory under the FPGA repo where the device directories are
@@ -120,7 +120,7 @@ def write_verilog(config, destination, args, template):
     template_dir = os.path.join(os.path.dirname(__file__), "templates")
     lookup = mako.lookup.TemplateLookup(directories=[template_dir])
     tpl_filename = os.path.join(template_dir, template)
-    tpl = mako.template.Template(filename=tpl_filename, lookup=lookup, strict_undefined=True)
+    tpl = Template(filename=tpl_filename, lookup=lookup)
     try:
         block = tpl.render(**{"config": config, "args": args})
     except:
@@ -331,7 +331,10 @@ def load_module_yamls(include_paths):
 
     def load_module_descs(module_type):
         """Load separate block/module defs."""
-        paths = [os.path.join(x, module_type) for x in include_paths]
+        paths = [
+            os.path.abspath(os.path.normpath(os.path.join(x, "rfnoc", module_type)))
+            for x in include_paths
+        ]
         logging.debug("Looking for %s descriptors in:", module_type[:-1])
         for path in paths:
             logging.debug("    %s", os.path.normpath(path))
@@ -417,7 +420,8 @@ def build_image(repo_fpga_path, config_path, device, **args):
     core_config_path = yaml_utils.get_core_config_path(config_path)
 
     # TODO does this work for both block yamls and HDL sources?
-    include_paths = args.get("include_paths", []) + [os.path.join(config_path, "rfnoc")]
+    include_paths = args.get("include_paths", []) + [config_path]
+    logging.debug("Include paths: %s", ";".join(include_paths))
     # A list of all known module descriptors
     known_modules = load_module_yamls(include_paths)
     # resolve signature after modules have been loaded (the module YAML files
