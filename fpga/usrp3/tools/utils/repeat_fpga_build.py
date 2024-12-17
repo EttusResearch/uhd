@@ -436,7 +436,7 @@ def run_ip_build(
     logging.info(f"Running IP build with command: {cmd}")
     output = ""
     with subprocess.Popen(
-        f'/bin/bash -c "{cmd}"',
+        cmd,
         shell=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
