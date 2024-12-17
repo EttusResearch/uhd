@@ -291,14 +291,12 @@ def build(fpga_top_dir, device, build_dir, use_secure_netlist, base_dir, **args)
     logging.info(" * Build Output Directory: %s", build_output_dir)
     logging.info(" * Build IP Directory: %s", build_ip_dir)
     # Wrap it into a bash call:
-    logging.debug("Temporarily changing working directory to %s", fpga_top_dir)
-    os.chdir(fpga_top_dir)
     make_cmd = f'{BASH_EXECUTABLE} -c "{make_cmd}"'
     logging.info("Executing the following command: %s", make_cmd)
-    ret_val = os.system(make_cmd)
+    my_env = os.environ.copy()
+    ret_val = subprocess.call(make_cmd, shell=True, env=my_env, cwd=fpga_top_dir)
     if ret_val == 0 and args.get("secure_core"):
         patch_netlist_constraints(device, build_dir)
-    os.chdir(cwd)
     logging.info("Build finished with return code %d.", ret_val)
     logging.info("It was launched with the following settings:")
     logging.info(" * FPGA Directory: %s", fpga_top_dir)
