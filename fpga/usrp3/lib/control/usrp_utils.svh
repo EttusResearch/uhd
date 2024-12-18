@@ -22,6 +22,10 @@
 // Floor of X/Y for integer operands. Use $floor(X/Y) for real numbers.
 `define DIV_FLOOR(X ,Y) ((X) / (Y))
 
+// Convert an unsigned number to a signed number. Note that this requires
+// lengthening the value by one bit to allow for the sign.
+`define TO_SIGNED(X) (signed'({1'b0, (X)}))
+
 // Shorthand to get the I'th port of a concatenated bus. For example, if a bus
 // contains four 16-bit ports, you can get the 3rd port (port 2) using the
 // macro call `BUS_I(my_bus, 16, 2), which is equivalent to my_bus[32+:16], or
