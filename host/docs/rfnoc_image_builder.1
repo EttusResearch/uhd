@@ -2,11 +2,13 @@
 .SH NAME
 rfnoc_image_builder - Build UHD image using RFNoC blocks.
 .SH USAGE
-rfnoc_image_builder [\-h] (\fB\-y\fR YAML_CONFIG | \fB\-r\fR GRC_CONFIG) [\-F FPGA_DIR]
-[\-B BUILD_DIR] [\-O BUILD_OUTPUT_DIR] [\-E BUILD_IP_DIR] [\-o IMAGE_CORE_OUTPUT]
-[\-I INCLUDE_DIR] [\-b GRC_BLOCKS] [\-l LOG_LEVEL] [\-R] [\-G] [\-W] [\-S SECURE_CORE]
-[\-K SECURE_KEY] [\-d DEVICE] [\-n IMAGE_CORE_NAME] [\-t TARGET] [\-g] [\-Y] [\-C] [\-s]
-[\-P] [\-j JOBS] [\-c] [\-p VIVADO_PATH] [\-H] [\-D] [\-\-color {never,auto,always}]
+rfnoc_image_builder [\-h] (\fB\-y\fR YAML_CONFIG | \fB\-r\fR GRC_CONFIG)
+[\-C BASE_DIR] [\-F FPGA_DIR] [\-B BUILD_DIR] [\-O BUILD_OUTPUT_DIR]
+[\-E BUILD_IP_DIR] [\-o IMAGE_CORE_OUTPUT] [\-I INCLUDE_DIR] [\-b GRC_BLOCKS]
+[\-l LOG_LEVEL] [\-R] [\-G] [\-W] [\-S SECURE_CORE] [\-K SECURE_KEY]
+[\-d DEVICE] [\-n IMAGE_CORE_NAME] [\-t TARGET] [\-g] [\-Y] [\-\-CHECK] [\-s]
+[\-P] [\-j JOBS] [\-c] [\-p VIVADO_PATH] [\-H] [\-D]
+[\-\-color {never,auto,always}]
 .SS "optional arguments:"
 .TP
 \fB\-h\fR, \fB\-\-help\fR
@@ -18,20 +20,24 @@ Path to YAML configuration file (image core file). Either this option or \fB\-\-
 \fB\-r\fR GRC_CONFIG, \fB\-\-grc\-config\fR GRC_CONFIG
 Path to .grc file to generate config from
 .TP
+\fB\-C\fR BASE_DIR, \fC\-\-base\-dir\fR BASE_DIR
+Path to the base directory. Defaults to the current directory.
+.TP
 \fB\-F\fR FPGA_DIR, \fB\-\-fpga\-dir\fR FPGA_DIR
-Path to directory for the FPGA source tree. Defaults to
-the FPGA source tree of the current repo.
+Path to directory for the FPGA source tree. Defaults to the FPGA source tree
+of the current repo.
 .TP
 \fB\-B\fR BUILD_DIR, \fB\-\-build\-dir\fR BUILD_DIR
-Path to directory where the image core and and build artifacts will be generated. Defaults to build-<image-core-name> in the same directory as the source file.
+Path to directory where the image core and and build artifacts will be
+generated. Defaults to "build-<image-core-name>" in the base directory.
 .TP
 \fB\-O\fR BUILD_OUTPUT_DIR, \fB\-\-build\-output\-dir\fR BUILD_OUTPUT_DIR
-Path to directory for final FPGA build outputs. Defaults to
-the FPGA's top\-level directory + /build.
+Path to directory for final FPGA build outputs. Defaults to "build" in the
+base directory.
 .TP
 \fB\-E\fR BUILD_IP_DIR, \fB\-\-build\-ip\-dir\fR BUILD_IP_DIR
-Path to directory for IP build artifacts. Defaults to the
-FPGA's top\-level directory + /build\-ip.
+Path to directory for IP build artifacts. Defaults to "build-ip" in the
+base directory.
 .TP
 \fB\-o\fR IMAGE_CORE_OUTPUT, \fB\-\-image\-core\-output\fR IMAGE_CORE_OUTPUT
 DEPRECATED! This has been replaced by \fB\-\-build\-dir\fR.

@@ -222,7 +222,7 @@ def gen_make_command(args, build_dir, device, use_secure_netlist, makefile_src_p
     )
 
 
-def build(fpga_top_dir, device, build_dir, use_secure_netlist, **args):
+def build(fpga_top_dir, device, build_dir, use_secure_netlist, base_dir, **args):
     """Call FPGA toolchain to actually build the image.
 
     :param fpga_top_dir: A path to the FPGA device source directory
@@ -236,6 +236,7 @@ def build(fpga_top_dir, device, build_dir, use_secure_netlist, **args):
                          (e.g., .../usrp3/x400/build-x410_XG_200_rfnoc_image_core/)
     :param use_secure_netlist: Boolean for whether the build with secure image
                                core netlist
+    :param base_dir: The base directory
     :param **args: Additional options
                    target: The target to build (leave empty for default).
                    clean_all: passed to Makefile
@@ -276,12 +277,12 @@ def build(fpga_top_dir, device, build_dir, use_secure_netlist, **args):
     make_cmd = setup_cmd + "&& " + make_cmd
     build_output_dir = args.get("build_output_dir")
     if build_output_dir is None:
-        build_output_dir = os.path.join(fpga_top_dir, "build")
+        build_output_dir = os.path.join(base_dir, "build")
     else:
         build_output_dir = os.path.abspath(build_output_dir)
     build_ip_dir = args.get("build_ip_dir")
     if build_ip_dir is None:
-        build_ip_dir = os.path.join(fpga_top_dir, "build-ip")
+        build_ip_dir = os.path.join(base_dir, "build-ip")
     else:
         build_ip_dir = os.path.abspath(build_ip_dir)
     logging.info("Launching build with the following settings:")
@@ -450,12 +451,16 @@ def build_image(repo_fpga_path, config_path, device, **args):
     assert image_core_name
     args["image_core_name"] = image_core_name
     logging.debug("Image core name: %s", image_core_name)
+    if "base_dir" in args and args["base_dir"]:
+        base_dir = args["base_dir"]
+    else:
+        base_dir = os.getcwd()
+    args.pop("base_dir", None)
+    logging.debug("Using base directory: %s", base_dir)
     if "build_dir" in args and args["build_dir"]:
         build_dir = args["build_dir"]
     else:
-        build_dir = os.path.join(
-            os.path.normpath(os.path.split(args.get("source"))[0]), "build-" + image_core_name
-        )
+        build_dir = os.path.join(base_dir, "build-" + image_core_name)
     args.pop("build_dir", None)
     logging.debug("Using build artifacts directory: %s", build_dir)
     if pathlib.Path(build_dir).is_file():
@@ -574,7 +579,7 @@ def build_image(repo_fpga_path, config_path, device, **args):
                 logging.error(f"Failed to copy {source} to artifact directory")
                 return 1
 
-    ret_val = build(fpga_top_dir, device, build_dir, bool(netlist_files), **args)
+    ret_val = build(fpga_top_dir, device, build_dir, bool(netlist_files), base_dir, **args)
     if args.get("generate_only"):
         return ret_val
 

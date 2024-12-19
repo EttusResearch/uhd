@@ -24,6 +24,13 @@ def setup_parser():
     config_group.add_argument("-y", "--yaml-config", help="Path to yml configuration file")
     config_group.add_argument("-r", "--grc-config", help="Path to grc file to generate config from")
     parser.add_argument(
+        "-C",
+        "--base-dir",
+        help="Path to the base directory. Defaults to the current directory.",
+        required=False,
+        default=os.getcwd(),
+    )
+    parser.add_argument(
         "-F",
         "--fpga-dir",
         help="Path to directory for the FPGA source tree. "
@@ -35,7 +42,7 @@ def setup_parser():
         "-B",
         "--build-dir",
         help="Path to directory where the image core and and build artifacts will be generated. "
-        "Defaults to build-<image-core-name> in the same directory as the source file.",
+        "Defaults to \"build-<image-core-name>\" in the base directory.",
         required=False,
         default=None,
     )
@@ -43,7 +50,7 @@ def setup_parser():
         "-O",
         "--build-output-dir",
         help="Path to directory for final FPGA build outputs. "
-        "Defaults to the FPGA's top-level directory + /build",
+        "Defaults to \"build\" in the base directory.",
         required=False,
         default=None,
     )
@@ -51,7 +58,7 @@ def setup_parser():
         "-E",
         "--build-ip-dir",
         help="Path to directory for IP build artifacts. "
-        "Defaults to the FPGA's top-level directory + /build-ip",
+        "Defaults to \"build-ip\" in the base directory.",
         required=False,
         default=None,
     )
@@ -137,7 +144,6 @@ def setup_parser():
         action="store_true",
     )
     parser.add_argument(
-        "-C",
         "--CHECK",
         help="Run elaboration only to check HDL syntax",
         action="store_true",
@@ -302,6 +308,7 @@ def main():
         image_core_name=args.image_core_name,
         target=args.target,
         # Provide all the paths
+        base_dir = args.base_dir,
         build_dir=args.build_dir,
         build_output_dir=args.build_output_dir,
         build_ip_dir=args.build_ip_dir,
