@@ -200,8 +200,6 @@ set(util_share_sources
 )
 set(util_share_sources_py
     converter_benchmark.py
-    convert_cal_data.py
-    uhd_power_cal.py
 )
 if(ENABLE_USB)
     find_package(LIBUSB)

@@ -247,67 +247,69 @@ endmacro()
 #              systems.
 # - MODULE: Name of module (e.g., 'uhd')
 macro(UHD_PYTHON_INSTALL_MODULE)
-    cmake_parse_arguments(
-        _py_install_mod
-        "" "LIBTARGET;MODULE" ""
-        ${ARGN}
-    )
-
-    # Check if we're in a virtual environment -- the rules are a bit different
-    # there.
-    UHD_PYTHON_CHECK_MODULE(
-        "virtual environment"
-        "sys"
-        "sys.prefix != sys.base_prefix"
-        HAVE_PYTHON_VIRTUALENV
-    )
-
-    if(HAVE_PYTHON_VIRTUALENV)
-        message(
-          STATUS
-          "Python virtual environment detected -- Ignoring UHD_PYTHON_DIR.")
-          # In virtualenvs, let setuptools do its thing
-          install(CODE "message(\"Installing ${_py_install_mod_MODULE} Python module into venv via pip.\")")
-          install(CODE
-            "execute_process(COMMAND pip3 install . --force-reinstall WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})")
-    else()
-        # Otherwise, use sysconfig to determine the correct relative path for Python
-        # packages, and install to our prefix
-        if(NOT DEFINED UHD_PYTHON_DIR)
-            execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
-                # Avoid the posix_local install scheme
-                "import os,sysconfig;\
-                install_scheme = 'posix_user';\
-                platlib = sysconfig.get_path('platlib', scheme=install_scheme);\
-                prefix = sysconfig.get_config_var('prefix');\
-                print(os.path.relpath(platlib, prefix));"
-                OUTPUT_VARIABLE UHD_PYTHON_DIR
-                OUTPUT_STRIP_TRAILING_WHITESPACE
-            )
-        endif(NOT DEFINED UHD_PYTHON_DIR)
-        file(TO_CMAKE_PATH ${UHD_PYTHON_DIR} UHD_PYTHON_DIR)
-
-        message(
-            STATUS
-            "Installing '${_py_install_mod_MODULE}' Python module to: "
-            "${CMAKE_INSTALL_PREFIX}/${UHD_PYTHON_DIR}")
-        # We use sysconfig (above) to figure out the destination path, and then
-        # we simply copy this module recursively into its final destination.
-        install(DIRECTORY
-            ${CMAKE_CURRENT_BINARY_DIR}/${_py_install_mod_MODULE}
-            DESTINATION ${UHD_PYTHON_DIR}
-            COMPONENT pythonapi
+    if (NOT WIN32)
+        cmake_parse_arguments(
+            _py_install_mod
+            "" "LIBTARGET;MODULE" ""
+            ${ARGN}
         )
-        # On Linux/Unix systems, we must properly install the library file.
-        # install(DIRECTORY) will treat the .so file like any other file, which
-        # means it won't update its RPATH, and thus the RPATH would be stuck to the
-        # build directory.
-        if(UNIX AND _py_install_mod_LIBTARGET)
-            install(TARGETS ${_py_install_mod_LIBTARGET}
-                DESTINATION ${UHD_PYTHON_DIR}/${_py_install_mod_MODULE}
+
+        # Check if we're in a virtual environment -- the rules are a bit different
+        # there.
+        UHD_PYTHON_CHECK_MODULE(
+            "virtual environment"
+            "sys"
+            "sys.prefix != sys.base_prefix"
+            HAVE_PYTHON_VIRTUALENV
+        )
+
+        if(HAVE_PYTHON_VIRTUALENV)
+            message(
+            STATUS
+            "Python virtual environment detected -- Ignoring UHD_PYTHON_DIR.")
+            # In virtualenvs, let setuptools do its thing
+            install(CODE "message(\"Installing ${_py_install_mod_MODULE} Python module into venv via pip.\")")
+            install(CODE
+                "execute_process(COMMAND pip3 install . --force-reinstall WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})")
+        else()
+            # Otherwise, use sysconfig to determine the correct relative path for Python
+            # packages, and install to our prefix
+            if(NOT DEFINED UHD_PYTHON_DIR)
+                execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
+                    # Avoid the posix_local install scheme
+                    "import os,sysconfig;\
+                    install_scheme = 'posix_user';\
+                    platlib = sysconfig.get_path('platlib', scheme=install_scheme);\
+                    prefix = sysconfig.get_config_var('prefix');\
+                    print(os.path.relpath(platlib, prefix));"
+                    OUTPUT_VARIABLE UHD_PYTHON_DIR
+                    OUTPUT_STRIP_TRAILING_WHITESPACE
+                )
+            endif(NOT DEFINED UHD_PYTHON_DIR)
+            file(TO_CMAKE_PATH ${UHD_PYTHON_DIR} UHD_PYTHON_DIR)
+
+            message(
+                STATUS
+                "Installing '${_py_install_mod_MODULE}' Python module to: "
+                "${CMAKE_INSTALL_PREFIX}/${UHD_PYTHON_DIR}")
+            # We use sysconfig (above) to figure out the destination path, and then
+            # we simply copy this module recursively into its final destination.
+            install(DIRECTORY
+                ${CMAKE_CURRENT_BINARY_DIR}/${_py_install_mod_MODULE}
+                DESTINATION ${UHD_PYTHON_DIR}
+                COMPONENT pythonapi
             )
-        endif()
-    endif(HAVE_PYTHON_VIRTUALENV)
+            # On Linux/Unix systems, we must properly install the library file.
+            # install(DIRECTORY) will treat the .so file like any other file, which
+            # means it won't update its RPATH, and thus the RPATH would be stuck to the
+            # build directory.
+            if(UNIX AND _py_install_mod_LIBTARGET)
+                install(TARGETS ${_py_install_mod_LIBTARGET}
+                    DESTINATION ${UHD_PYTHON_DIR}/${_py_install_mod_MODULE}
+                )
+            endif()
+        endif(HAVE_PYTHON_VIRTUALENV)
+    endif(NOT WIN32)
 endmacro()
 
 ###############################################################################
