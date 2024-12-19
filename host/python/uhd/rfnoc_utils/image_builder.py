@@ -298,6 +298,12 @@ def build(fpga_top_dir, device, build_dir, use_secure_netlist, **args):
     if ret_val == 0 and args.get("secure_core"):
         patch_netlist_constraints(device, build_dir)
     os.chdir(cwd)
+    logging.info("Build finished with return code %d.", ret_val)
+    logging.info("It was launched with the following settings:")
+    logging.info(" * FPGA Directory: %s", fpga_top_dir)
+    logging.info(" * Build Artifacts Directory: %s", build_dir)
+    logging.info(" * Build Output Directory: %s", build_output_dir)
+    logging.info(" * Build IP Directory: %s", build_ip_dir)
     return ret_val
 
 
