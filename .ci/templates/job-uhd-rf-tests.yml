@@ -141,6 +141,7 @@ jobs:
 
       export UHD_INSTALL_PATH=$(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev/build-installed
       export GNURADIO_GRETTUS_INSTALL_PATH=$(uhd_artifact_directory)/gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}/gnuradio/build-installed
+      export GNURADIO_GRETTUS_VOLK_INSTALL_PATH=$(uhd_artifact_directory)/gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}/volk/build-installed
       export PATH=$UHD_INSTALL_PATH/bin:$PATH
       export PATH=$GNURADIO_GRETTUS_INSTALL_PATH/bin:$PATH
       export PYTHON_VERSION=$(python3 -c "import sys; print('python'+str(sys.version_info.major) + '.' + str(sys.version_info.minor))")
@@ -150,14 +151,18 @@ jobs:
         export PATH=$UHD_INSTALL_PATH/lib64/uhd/examples:$PATH
         export LD_LIBRARY_PATH=$UHD_INSTALL_PATH/lib64:$LD_LIBRARY_PATH
         export LD_LIBRARY_PATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib64:$LD_LIBRARY_PATH
+        export LD_LIBRARY_PATH=$GNURADIO_GRETTUS_VOLK_INSTALL_PATH/lib64:$LD_LIBRARY_PATH
         export PYTHONPATH=$UHD_INSTALL_PATH/lib64/$PYTHON_VERSION/site-packages:$PYTHONPATH
         export PYTHONPATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib64/python3/dist-packages:$PYTHONPATH
+        export PYTHONPATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib64/$PYTHON_VERSION/site-packages:$PYTHONPATH
       else
         export PATH=$UHD_INSTALL_PATH/lib/uhd/examples:$PATH
         export LD_LIBRARY_PATH=$UHD_INSTALL_PATH/lib:$LD_LIBRARY_PATH
         export LD_LIBRARY_PATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib:$LD_LIBRARY_PATH
+        export LD_LIBRARY_PATH=$GNURADIO_GRETTUS_VOLK_INSTALL_PATH/lib:$LD_LIBRARY_PATH
         export PYTHONPATH=$UHD_INSTALL_PATH/lib/$PYTHON_VERSION/site-packages:$PYTHONPATH
         export PYTHONPATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib/python3/dist-packages:$PYTHONPATH
+        export PYTHONPATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib/$PYTHON_VERSION/site-packages:$PYTHONPATH
       fi
 
       python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
