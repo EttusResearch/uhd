@@ -67,7 +67,7 @@ multi_usrp object, it is possible to get a direct reference to an MPM client:
 ~~~{.python}
 import uhd
 # Assume args contains valid device args:
-usrp = uhd.MultiUSRP(args)
+usrp = uhd.usrp.MultiUSRP(args)
 mpmc = usrp.get_mpm_client()
 # Now load device info over RPC and print:
 print(mpmc.get_device_info())
