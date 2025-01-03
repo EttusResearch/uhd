@@ -32,9 +32,8 @@ class WaveformGenerator:
         if not self._streamer:
             raise RuntimeError("No streamer defined!")
         self._run = True
-        self._thread = threading.Thread(target=self._worker)
+        self._thread = threading.Thread(target=self._worker, name="cal_tx")
         self._thread.start()
-        self._thread.setName("cal_tx")
 
     def stop(self):
         """Stop the transmitter."""

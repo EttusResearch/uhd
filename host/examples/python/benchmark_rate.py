@@ -468,10 +468,10 @@ def main():
         rx_thread = threading.Thread(
             target=benchmark_rx_rate,
             args=(usrp, rx_streamer, args.random, quit_event, rx_statistics),
+            name="bmark_rx_stream",
         )
         threads.append(rx_thread)
         rx_thread.start()
-        rx_thread.setName("bmark_rx_stream")
 
     # Create a dictionary for the RX statistics
     # Note: we're going to use this without locks, so don't access it from the main thread until
@@ -488,18 +488,18 @@ def main():
         tx_thread = threading.Thread(
             target=benchmark_tx_rate,
             args=(usrp, tx_streamer, args.random, quit_event, tx_statistics),
+            name="bmark_tx_stream",
         )
         threads.append(tx_thread)
         tx_thread.start()
-        tx_thread.setName("bmark_tx_stream")
 
         tx_async_thread = threading.Thread(
             target=benchmark_tx_rate_async_helper,
             args=(tx_streamer, quit_event, tx_async_statistics),
+            name="bmark_tx_helper",
         )
         threads.append(tx_async_thread)
         tx_async_thread.start()
-        tx_async_thread.setName("bmark_tx_helper")
 
     # Sleep for the required duration
     # If we have a multichannel test, add some time for initialization
