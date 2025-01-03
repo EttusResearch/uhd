@@ -74,6 +74,8 @@ constraints:
   - ${ f"constraints/pins/qsfp{parameters['qsfp_num']}_1.xdc" if parameters['port_type1'] not in (0, 'disabled') or parameters['port_type0'] in (5, '100GbE') else "" }
   - ${ f"constraints/pins/qsfp{parameters['qsfp_num']}_2.xdc" if parameters['port_type2'] not in (0, 'disabled') or parameters['port_type0'] in (5, '100GbE') else "" }
   - ${ f"constraints/pins/qsfp{parameters['qsfp_num']}_3.xdc" if parameters['port_type3'] not in (0, 'disabled') or parameters['port_type0'] in (5, '100GbE') else "" }
+  # placement constraints for 100GbE
+  - ${ f"$(LIB_DIR)/rfnoc/transport_adapters/rfnoc_ta_x4xx_eth/constraints/qsfp_100gbe_port{parameters['qsfp_num']}.xdc" if parameters['port_type0'] in (5, '100GbE') else "" }
 
 dts_includes:
   - |
