@@ -4,11 +4,11 @@ Upstream-Contact: http://www.ettus.com/contact
 Source: https://github.com/EttusResearch/uhd
 Comment: Only the host directory of the distributed source is used
  to build the uhd-host package for Debian main.
-Copyright: Copyright 2010-2023 Ettus Research, a National Instruments Brand
+Copyright: Copyright 2010-2025 Ettus Research, a National Instruments Brand
 License: GPL-3+
 
 Files: *
-Copyright: Copyright 2010-2023 Ettus Research, A National Instruments Brand
+Copyright: Copyright 2010-2025 Ettus Research, A National Instruments Brand
 License: GPL-3+
 
 Files: host/lib/deps/rpclib/*
