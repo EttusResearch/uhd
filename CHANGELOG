@@ -1,9 +1,16 @@
 Change Log for Releases
 ==============================
 
-## Next Release
-* New Features:
-  - Image Builder:
+## 004.008.000.000
+* Highlights / Main Changes
+  - Addition of rfnoc_modtool and further improvements to RFNoC Image Builder
+    toolsets. This further improves the ability to design RFNoC blocks and
+    create custom FPGA bitfiles.
+  - Replaced RFNoC FFT block with a new version
+  - Improved Windows installation capabilities including distribution
+    of binary Python bindings for Windows though PyPI
+* New Features
+  - Image Builder
     - Add GRC support. This allows designing RFNoC bitfiles from GNU Radio
       Companion (GRC).
     - Improve clock connection checks and checks for duplicate connections.
@@ -11,10 +18,12 @@ Change Log for Releases
     - Allow default clocks in domain checks.
     - Simplify image core YAMLs by better usage of RADIO_NIPC parameter.
     - Improve parameter resolution.
+    - Improve error messages for missing YAML files.
     - Add --SYNTH and --CHECK options.
     - Add support for building an FPGA image using multiple parallel jobs and
       unique seeds with repeat_fpga_build.py and the --fpga-jobs option.
-  - rfnoc-gain (OOT RFNoC example):
+    - Add 'q' (or 'quote') filter to YAML files to allow quoting strings.
+  - rfnoc-gain (OOT RFNoC example)
     - Overhaul directory structure, and rename to rfnoc-gain from
       rfnoc-example.
     - Simplify dynamic loading of OOT DLLs by using the new modules.d feature.
@@ -22,38 +31,76 @@ Change Log for Releases
     - Add a GNU Radio subdirectory with examples of how to run the gain block
       in GNU Radio.
   - Add rfnoc_modtool. This is a command line utility to help design OOT RFNoC
-    blocks.
-  - RFNoC:
-    - Add tune requests. This allows tuning a complete graph as known from 
+    blocks and replaces the previously available blocktool.
+  - RFNoC
+    - Add tune requests. This allows tuning a complete graph as known from
       multi_usrp instead of single blocks individually.
-  - multi_usrp:
+    - Replace FFT block with a new version supporting larger FFT sizes and
+      cyclic prefix insertion and removal.
+  - multi_usrp
     - Add Python bindings for get_user_settings_iface()
-  - General UHD:
+  - General UHD
     - Add modules.d support
+    - Add uhd::find_uhd_command() API call
+    - Remove old-style Boost.Asio usage for compatibility with future versions
+      of Boost.
+  - Embedded Filesystem
+    - Support for USB Audio devices on E31X, E320, N3XX and X4XX
+  - Windows binary installer
+    - Simplified the Windows installer experience by reducing the number of
+      individual downloads from 4 (for USB devices) to 2, by including
+      libusb.dll and USB driver installer files into NSIS-built installer
+      binaries.
+    - Add new cmake feature option called ENABLE_EXTEND_WIN_PACKAGING,
+      which defaults to off. Enabling this feature will cause a number
+      of convenience components to be included into the Windows deployment
+      package (aka. installer).
+      Enabling this feature has no effect on other platforms.
+    - Added binary Python bindings for Windows installable through PyPI
+      (pip install uhd)
+  - Documentation
+    - Add documentation about relationship of MTU, samples per packet and
+      atomic item size
+* Dependencies changes
+  - Increase minimum required versions
+    - CMake to 3.12
+    - Boost to 1.66
 * Bug Fixes
+  - General UHD
+    - Fix compatibility with DPDK >= 22.11
+    - Fix compiler warnings for better compatibility with C++17 and 20.
+    - Add logic for loading uhd.dll from the correct path for Windows with
+      Python3.8+.
+    - Add logic to warn about potential incompatibilities when importing
+      Python bindings.
+    - Remove duplicate results from find
+    - Release GIL when calling find from Python which improves response time
+      for large setups.
+  - Python support
+    - On Windows now also enable building python support if minimum supported
+      python version is detected.
+    - Changed version number format for build Windows binaries to common
+      major.api.abi.patch format.
+  - MPM
+    - Allow images without RF frontend (will only be initialized if FPGA
+      reports availability)
   - E320: Ensure consistent sequencing when powering on/off GPSDO
-  - RFNoC:
+  - N310/N300: Fix LO query API for lowband LO
+  - RFNoC
     - RFNoC DDC/DUC block (used in all Gen-3 USRPs and X410): Fix fractional
       frequency offset.
     - Fix AIS/spp calculation (e.g., for connecting FFT blocks).
-  - Image Builder:
+    - Fix USE_IMPL rendering for the addsub block.
+  - Image Builder
     - Fix colors
     - Fix error message for missing control SEP
     - Improve error reporting for invalid connections
     - Accept ~ and ~user on command line
     - Fix deprecated usage of yaml.load()
-    - Ensure correct device tree files generation when chosing a custom build
+    - Ensure correct device tree files generation when choosing a custom build
       directory
-  - rfnoc_modtool:
+  - rfnoc_modtool
     - Fix generation of noc_shells
-  - General UHD:
-    - Fix compatibility with DPDK >= 22.11
-    - Fix compiler warnings for better compatibility with C++ 17 and 20.
-    - Add logic for loading uhd.dll from the correct path for Windows with Python3.8+.
-    - Remove duplicate results from find
-    - Release GIL when calling find from Python which improves response time for large setups.
-  - MPM:
-    - Allow images without RF frontend (will only be initialized if FPGA reports availability)
 * Validated OS Environments
   (Versions for build and runtime dependencies can be determined from the
    docker container definitions in the UHD repository at .ci/docker/...)
@@ -62,7 +109,6 @@ Change Log for Releases
     - Fedora: 39, 40, 41
   - Windows: 10 21H2, 11 21H2
   - MacOS: Monterey (12.6)
-
 
 ## 004.007.000.000
 * Highlights / Main Changes
