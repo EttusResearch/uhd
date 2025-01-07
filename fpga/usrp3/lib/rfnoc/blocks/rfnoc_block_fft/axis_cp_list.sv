@@ -43,20 +43,20 @@ module axis_cp_list #(
   bit                REPEAT  = 1,
   logic [DATA_W-1:0] DEFAULT = '0
 ) (
-  input  wire              clk,
-  input  wire              rst,
+  input  wire               clk,
+  input  wire               rst,
 
-  input  wire              clear,
+  input  wire               clear,
 
-  input  wire [DATA_W-1:0] i_tdata,
-  input  wire              i_tvalid,
-  output wire              i_tready,
+  input  wire  [DATA_W-1:0] i_tdata,
+  input  wire               i_tvalid,
+  output wire               i_tready,
 
-  output reg  [DATA_W-1:0] o_tdata,
-  output reg               o_tvalid,
-  input  wire              o_tready,
+  output logic [DATA_W-1:0] o_tdata = DEFAULT,
+  output logic              o_tvalid,
+  input  wire               o_tready,
 
-  output wire [ADDR_W:0] occupied
+  output wire  [  ADDR_W:0] occupied
 );
 
   // Make addresses one extra bit wide to double as fullness and to detect the
@@ -132,7 +132,7 @@ module axis_cp_list #(
         // The read is available during this cycle
         o_tvalid <= 1'b1;
         o_tdata  <= rd_data;
-        rd_state    <= ST_OUTPUT;
+        rd_state <= ST_OUTPUT;
       end
       ST_OUTPUT : begin
         // Wait for the output to be captured during this cycle
@@ -156,7 +156,7 @@ module axis_cp_list #(
     if (rst | clear) begin
       rd_state <= ST_IDLE;
       rd_addr  <= '0;
-      o_tdata  <= '0;
+      o_tdata  <= DEFAULT;
       o_tvalid <= '0;
     end
   end
