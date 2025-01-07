@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "uhd"
-version = "${UHD_VERSION_MAJOR}.${UHD_VERSION_API}.${UHD_VERSION_ABI}"
+version = "${UHD_VERSION_MAJOR}.${UHD_VERSION_API}.${UHD_VERSION_ABI}.${UHD_VERSION_PATCH_ORIG}"
 description = "Universal Software Radio Peripheral (USRP) Hardware Driver Python API"
 keywords=["SDR", "UHD", "USRP"]
 authors=["Ettus Research <uhd.maintainer@emerson.com>"]

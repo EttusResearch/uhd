@@ -19,11 +19,14 @@ find_package(Git QUIET)
 #     release)
 #  - set UHD_VERSION_DEVEL to true for master and development branches
 ########################################################################
-set(UHD_VERSION_MAJOR 4)
-set(UHD_VERSION_API   7)
-set(UHD_VERSION_ABI   0)
-set(UHD_VERSION_PATCH 0)
-set(UHD_VERSION_DEVEL TRUE)
+set(UHD_VERSION_MAJOR      4)
+set(UHD_VERSION_API        7)
+set(UHD_VERSION_ABI        0)
+set(UHD_VERSION_PATCH      0)
+#TODO add a version tag variable which allows to store additional 
+#     branch information instead of overwriting the patch version.
+set(UHD_VERSION_PATCH_ORIG ${UHD_VERSION_PATCH})
+set(UHD_VERSION_DEVEL      TRUE)
 
 ########################################################################
 # If we're on a development branch, we skip the patch version
