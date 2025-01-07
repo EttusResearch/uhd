@@ -25,8 +25,8 @@ ruamel-yaml = ">=@UHD_RUAMEL_YAML_MIN_VERSION@"
 [tool.poetry.build]
 # Poetry should build a platform specific wheel, because the binding lib
 # is build beforehand using cmake poetry does not know it should build
-# a platform specific wheel but by providing an empty `build.py`.
-script = "build.py"
+# a platform specific wheel but by providing an empty `uhd_build.py`.
+script = "uhd_build.py"
 generate-setup-file = true
 
 [tool.black]
