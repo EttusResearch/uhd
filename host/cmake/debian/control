@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Ettus Research <uhd.maintainer@emerson.com>
 Uploaders: Joerg Hofrichter <joerg.hofrichter@emerson.com>
 Build-Depends: cmake,
-               debhelper (>= 9),
+               debhelper (>= 12),
                libboost-date-time-dev,
                libboost-dev,
                libboost-filesystem-dev,

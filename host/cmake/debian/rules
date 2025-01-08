@@ -18,7 +18,7 @@ DEB_UHD_PACKAGE_CONFIGURATION=$(shell echo "-DCMAKE_BUILD_TYPE=RelWithDebInfo -D
 					$(DEB_NEON_SIMD_OPTION) $(DEB_MIPSEL_PYTHON_API_OPTION)")
 
 %:
-	dh $@ --parallel --sourcedirectory=host --builddirectory=build
+	dh $@ --sourcedirectory=host --builddirectory=build
 
 override_dh_auto_configure:
 	dh_auto_configure -- $(DEB_UHD_PACKAGE_CONFIGURATION)
