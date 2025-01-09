@@ -151,7 +151,11 @@ macro(RFNOC_REGISTER_BLOCK_DIR)
     message(STATUS "Registering RFNoC block: ${_blk_name}")
     file(READ ${CMAKE_CURRENT_SOURCE_DIR}/Makefile.srcs _makefile_srcs)
     list(APPEND _block_src_files "Makefile.srcs")
-    string(REGEX MATCHALL "[a-z0-9_]+\\.(s?v|vhdl?)" _src_files ${_makefile_srcs})
+    # Note: CMake uses an old regex engine that does not (among other things)
+    # support word boundaries. When changing this regex, make sure that it
+    # fully captures intended file names. For example, file.v is a subset of
+    # file.vhd, so the regex should match file.vhd first.
+    string(REGEX MATCHALL "[a-z0-9_]+\\.(vhdl?|s?v)" _src_files ${_makefile_srcs})
     foreach(_src_file ${_src_files})
         string(STRIP "${_src_file}" _src_file})
         list(APPEND _block_src_files "${_src_file}")
