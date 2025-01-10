@@ -21,13 +21,24 @@ Note that since UHD version 4.0.0.0, Python 2 is no longer supported.
 \subsection python_install_windows Installing on Windows
 
 Static linking is unsupported on Windows. Otherwise, compiling the Python API
-on Windows is no different from other operating systems.
+on Windows is no different from other operating systems. Only the build output
+differs. On Windows the Python API is built using poetry tooling as a Python 
+binary distribution package (wheel). It is located in the `dist` directory of
+the build output. 
+The preferred way to install the Python Package is using poetry install command,
+assuming \<python\> as the Python executable in your specific Python Environment
+where poetry is available.
 
-Note that you may have to set the `PYTHONPATH` environment variable to ensure
-that Python is able to find the UHD package. For example, if the UHD install
-base path is `C:\Program Files (x86)\UHD`:
+    cd <build directory>\python
+    <python> -m poetry install
 
-    set PYTHONPATH=%PYTHONPATH%;C:\Program Files (x86)\UHD\lib\site-packages
+Alternatively, you can install the Python package using the pip install command. 
+For example:
+
+    <python> -m pip install <build directory>\python\dist\uhd-4.x.x-cp3xx-cp3xx-win_amd64.whl
+
+For installation of the Python API package from the Python Package Index (PyPI)
+please refer to section \ref install_win_python under page \ref page_install.
 
 <b>Python 3.8 Note:</b> If you receive an error similar to this when running
 `import uhd` in Python 3.8 and above on Windows:
@@ -45,7 +56,8 @@ dependent DLLs. The UHD python package attempts using
 to add the directory for uhd.dll to the DLL search path. First, it will try based on the UHD_PKG_PATH environment 
 variable that will be created by the NSIS Windows installer, and if that fails, it will try to use a variable configured
 by CMake based on the CMAKE_INSTALL_PREFIX variable. If both fail, you will need to use
-os.add_dll_directory to add the path of uhd.dll to the DLL search path.
+os.add_dll_directory to add the path of uhd.dll to the DLL search path. Please also consider the
+troubleshooting notes in section \ref install_win_python.
 
 If UHD was built with USB support, you will need to add the path of libusb-1.0.dll to the DLL search path
 before importing the UHD package. You can do this by copying the libusb-1.0.dll to the same directory as the uhd.dll. 
