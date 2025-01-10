@@ -748,7 +748,7 @@ def get_device_config(usrp_type, device_config_path=None):
     if device_config_path:
         with open(device_config_path, "r") as yaml_f:
             return yaml.load(yaml_f)
-    if usrp_type in ("B205mini", "B200mini", "B200", "B210"):
+    if usrp_type in ("B206mini", "B205mini", "B200mini", "B200", "B210"):
         return {
             "skip": [
                 "set_rx_lo_export_enabled",

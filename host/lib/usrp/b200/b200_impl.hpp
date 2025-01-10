@@ -44,7 +44,7 @@
 static const uint8_t B200_FW_COMPAT_NUM_MAJOR = 8;
 static const uint8_t B200_FW_COMPAT_NUM_MINOR = 0;
 static const uint16_t B200_FPGA_COMPAT_NUM    = 16;
-static const uint16_t B205_FPGA_COMPAT_NUM    = 7;
+static const uint16_t B205_FPGA_COMPAT_NUM    = 7; // applies to all B2xxminis
 static const double B200_BUS_CLOCK_RATE       = 100e6;
 static const uint32_t B200_GPSDO_ST_NONE      = 0x83;
 static constexpr double B200_MAX_RATE_USB2    = 53248000; // bytes/s
@@ -99,6 +99,8 @@ static std::vector<uhd::transport::usb_device_handle::vid_pid_pair_t> b200_vid_p
             B200_VENDOR_ID, B200MINI_PRODUCT_ID))(
         uhd::transport::usb_device_handle::vid_pid_pair_t(
             B200_VENDOR_ID, B205MINI_PRODUCT_ID))(
+        uhd::transport::usb_device_handle::vid_pid_pair_t(
+            B200_VENDOR_ID, B206MINI_PRODUCT_ID))(
         uhd::transport::usb_device_handle::vid_pid_pair_t(
             B200_VENDOR_NI_ID, B200_PRODUCT_NI_ID))(
         uhd::transport::usb_device_handle::vid_pid_pair_t(

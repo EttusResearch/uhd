@@ -55,7 +55,8 @@ b2xx_b200_fpga_default          uhd-c37b318       b2xx/uhd-c37b318/b2xx_b200_fpg
 b2xx_b200mini_fpga_default      uhd-c37b318       b2xx/uhd-c37b318/b2xx_b200mini_fpga_default-gc37b318.zip           c1865c6e574cf453a688c6bfb8fe5e3646cd53458ae403cf11d3eeb7dc6a9918
 b2xx_b210_fpga_default          uhd-c37b318       b2xx/uhd-c37b318/b2xx_b210_fpga_default-gc37b318.zip               ab1cdbe93090fdcf590a79cbe938749f8a5fbd7b45422b7833b8c841aa2106b4
 b2xx_b205mini_fpga_default      uhd-c37b318       b2xx/uhd-c37b318/b2xx_b205mini_fpga_default-gc37b318.zip           dce96120e3512d6e21bb061811c4021cbc90ac4d787248ad821337b7389ff3c4
-b2xx_common_fw_default          uhd-7f7d016         b2xx/uhd-7f7d016/b2xx_common_fw_default-g7f7d016.zip                  22ac0e54cc90d53d8494d481439447a0c89b9bbaced6fabe24df260eda3ce3a3
+b2xx_b206mini_fpga_default      uhd-c37b318       b2xx/uhd-c37b318/b2xx_b205mini_fpga_default-gc37b318.zip           dce96120e3512d6e21bb061811c4021cbc90ac4d787248ad821337b7389ff3c4
+b2xx_common_fw_default          uhd-7f7d016       b2xx/uhd-7f7d016/b2xx_common_fw_default-g7f7d016.zip               22ac0e54cc90d53d8494d481439447a0c89b9bbaced6fabe24df260eda3ce3a3
 
 # USRP2 Devices
 usrp2_usrp2_fw_default          fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_usrp2_fw_default-g6bea23d.zip                  d523a18318cb6a7637be40484bf03a6f54766410fee2c1a1f72e8971ea9a9cb6

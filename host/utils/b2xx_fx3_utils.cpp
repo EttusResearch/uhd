@@ -45,6 +45,7 @@ const vid_pid_t known_vid_pids[] = {{FX3_VID, FX3_DEFAULT_PID},
     {B200_VENDOR_ID, B200_PRODUCT_ID},
     {B200_VENDOR_ID, B200MINI_PRODUCT_ID},
     {B200_VENDOR_ID, B205MINI_PRODUCT_ID},
+    {B200_VENDOR_ID, B206MINI_PRODUCT_ID},
     {B200_VENDOR_NI_ID, B200_PRODUCT_NI_ID},
     {B200_VENDOR_NI_ID, B210_PRODUCT_NI_ID}};
 const std::vector<vid_pid_t> known_vid_pid_vector(known_vid_pids,

@@ -3,6 +3,8 @@ Change Log for Releases
 
 ## 004.next
 
+* Highlights / Main Changes
+  - Support for USRP B206mini-i
 * New Features
   - X3x0: Add support for the gps_iface feature. This allows sending arbitrary
     commands to the GPS module.
