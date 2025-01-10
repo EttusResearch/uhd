@@ -72,10 +72,11 @@ The directory to which you extract libusb must not contain spaces. This is to sa
   - The Python path needs to be added to the environment variables.
   - Install fundamental packages for Python: On Windows Terminal, navigate to Python scripts folder, e.g. `C:\local\Python37\Scripts`, and execute the following commands to install requests and numpy packages, respectively:
 
-    pip3 install requests
-    pip3 install numpy
-    pip3 install ruamel.yaml
-    pip3 install setuptools
+    pip3 install requests \n
+    pip3 install numpy \n
+    pip3 install ruamel.yaml \n
+    pip3 install setuptools \n
+    pip3 install poetry
 
   - For curses package installation:
     - Download URL: https://www.lfd.uci.edu/~gohlke/pythonlibs/
