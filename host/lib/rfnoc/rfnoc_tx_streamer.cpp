@@ -169,6 +169,32 @@ void rfnoc_tx_streamer::connect_channel(
 
     tx_streamer_impl<chdr_tx_data_xport>::connect_channel(channel, std::move(xport));
 
+    const size_t bpi          = convert::get_bytes_per_item(_type_out[channel].get());
+    const size_t chdr_w_bytes = _stream_args.args.cast<size_t>("__chdr_width", 64) / 8;
+    const size_t chdr_w_items = chdr_w_bytes / bpi;
+    const size_t spp          = tx_streamer_impl<chdr_tx_data_xport>::get_max_num_samps();
+    const size_t misalignment = spp % chdr_w_items;
+    if (!_stream_args.args.has_key("spp")) {
+        // By default, find an spp value that is an integer multiple of the CHDR
+        // width. This can improve streaming performance under some conditions.
+        if (misalignment != 0) {
+            RFNOC_LOG_DEBUG("Reducing spp from "
+                            << spp << " to " << spp - misalignment
+                            << " to align with CHDR width of " << chdr_w_bytes
+                            << " bytes (= " << chdr_w_items << " samples).");
+            tx_streamer_impl<chdr_tx_data_xport>::set_max_num_samps(spp - misalignment);
+        }
+    } else {
+        // If the user has provided a custom spp value, check if it is a multiple
+        // of the CHDR width. Generate a warning otherwise.
+        if (misalignment != 0) {
+            RFNOC_LOG_WARNING("Samples per packet (spp="
+                              << spp << ") is not a multiple of CHDR width which is "
+                              << chdr_w_bytes << " bytes (= " << chdr_w_items
+                              << " samples). This may cause performance issues.");
+        }
+    }
+
     // Update MTU property based on xport limits. We need to do this after
     // connect_channel(), because that's where the chdr_tx_data_xport object
     // learns its header size.
@@ -257,8 +283,10 @@ void rfnoc_tx_streamer::_register_props(const size_t chan, const std::string& ot
                 }
                 const auto misalignment = spp % spp_multiple;
                 if (misalignment > 0) {
-                    RFNOC_LOG_TRACE("Reducing spp by "
-                                    << misalignment << " to align with atomic item size");
+                    RFNOC_LOG_DEBUG("Reducing spp from " << spp << " to "
+                                                         << spp - misalignment
+                                                         << " to align with atomic "
+                                                            "item size");
                     this->tx_streamer_impl::set_max_num_samps(spp - misalignment);
                 }
             }

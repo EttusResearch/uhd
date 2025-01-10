@@ -458,6 +458,8 @@ public:
             tx_streamer = std::make_shared<rfnoc_tx_streamer_replay_buffered>(
                 args.channels.size(), args, disconnect, replay_configs);
         } else {
+            args.args["__chdr_width"] =
+                std::to_string(chdr_w_to_bits(_graph->get_chdr_width()));
             tx_streamer = std::make_shared<rfnoc_tx_streamer>(
                 args.channels.size(), args, disconnect);
         }

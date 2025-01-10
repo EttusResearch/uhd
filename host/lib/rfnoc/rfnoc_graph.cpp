@@ -450,8 +450,11 @@ public:
         const size_t num_ports, const uhd::stream_args_t& args) override
     {
         auto this_graph = shared_from_this();
+        auto args_copy  = args;
+        args_copy.args["__chdr_width"] =
+            std::to_string(chdr_w_to_bits(_device->get_mb_iface(0).get_chdr_w()));
         return std::make_shared<rfnoc_rx_streamer>(num_ports,
-            args,
+            args_copy,
             [this_graph](const std::string& id) { this_graph->disconnect(id); });
     }
 
@@ -459,8 +462,11 @@ public:
         const size_t num_ports, const uhd::stream_args_t& args) override
     {
         auto this_graph = shared_from_this();
+        auto args_copy  = args;
+        args_copy.args["__chdr_width"] =
+            std::to_string(chdr_w_to_bits(_device->get_mb_iface(0).get_chdr_w()));
         return std::make_shared<rfnoc_tx_streamer>(num_ports,
-            args,
+            args_copy,
             [this_graph](const std::string& id) { this_graph->disconnect(id); });
     }
 
